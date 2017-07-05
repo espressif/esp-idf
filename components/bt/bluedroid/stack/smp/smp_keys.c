@@ -886,7 +886,7 @@ static void smp_process_ediv(tSMP_CB *p_cb, tSMP_ENC *p)
     /* EDIV = Y xor DIV */
     p_cb->ediv = p_cb->div ^ y;
     /* send LTK ready */
-    SMP_TRACE_ERROR("LTK ready");
+    SMP_TRACE_DEBUG("LTK ready");
     key.key_type = SMP_KEY_TYPE_LTK;
     key.p_data   = p->param_buf;
 

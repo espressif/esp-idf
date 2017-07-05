@@ -88,7 +88,7 @@ typedef intr_handle_t pcnt_isr_handle_t;
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t pcnt_unit_config(pcnt_config_t *pcnt_config);
+esp_err_t pcnt_unit_config(const pcnt_config_t *pcnt_config);
 
 /**
  * @brief Get pulse counter value

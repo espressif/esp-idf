@@ -38,9 +38,11 @@ typedef enum {
     BTC_GATTC_ACT_WRITE_CHAR,
     BTC_GATTC_ACT_WRITE_CHAR_DESCR,
     BTC_GATTC_ACT_PREPARE_WRITE,
+    BTC_GATTC_ACT_PREPARE_WRITE_CHAR_DESCR,
     BTC_GATTC_ACT_EXECUTE_WRITE,
     BTC_GATTC_ACT_REG_FOR_NOTIFY,
-    BTC_GATTC_ACT_UNREG_FOR_NOTIFY
+    BTC_GATTC_ACT_UNREG_FOR_NOTIFY,
+    BTC_GATTC_ACT_CACHE_REFRESH,
 } btc_gattc_act_t;
 
 /* btc_ble_gattc_args_t */
@@ -155,6 +157,17 @@ typedef union {
         uint8_t *value;
         esp_gatt_auth_req_t auth_req;
     } prep_write;
+    //BTC_GATTC_ACT_PREPARE_WRITE_CHAR_DESCR,
+    struct prep_write_descr_arg {
+        uint16_t conn_id;
+        esp_gatt_srvc_id_t service_id;
+        esp_gatt_id_t char_id;
+        esp_gatt_id_t descr_id;
+        uint16_t offset;
+        uint16_t value_len;
+        uint8_t *value;
+        esp_gatt_auth_req_t auth_req;
+    } prep_write_descr;
     //BTC_GATTC_ACT_EXECUTE_WRITE,
     struct exec_write_arg {
         uint16_t conn_id;
@@ -174,6 +187,10 @@ typedef union {
         esp_gatt_srvc_id_t service_id;
         esp_gatt_id_t char_id;
     } unreg_for_notify;
+    //BTC_GATTC_ACT_CACHE_REFRESH,
+    struct cache_refresh_arg {
+        esp_bd_addr_t remote_bda;
+    } cache_refresh;
 } btc_ble_gattc_args_t;
 
 void btc_gattc_call_handler(btc_msg_t *msg);

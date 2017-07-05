@@ -1,6 +1,0 @@
-Config: {execute count: 1, execute order: in order}
-DUT: [SSC2, SSC1]
-Filter:
-- Add:
-    ID:
-      - TCPIP_TCP_5201  # TCP send/recv stress test

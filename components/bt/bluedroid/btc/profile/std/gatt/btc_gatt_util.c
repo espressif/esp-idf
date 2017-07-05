@@ -100,8 +100,10 @@ void btc_to_bta_uuid(tBT_UUID *p_dest, esp_bt_uuid_t *p_src)
         p_dest->uu.uuid32 = p_src->uuid.uuid32;
     } else if (p_src->len == LEN_UUID_128) {
         memcpy(&p_dest->uu.uuid128, p_src->uuid.uuid128, p_dest->len);
+    } else if (p_src->len == 0) {
+        /* do nothing for now, there's some scenario will input 0 */
     } else {
-        LOG_ERROR("%s UUID len is invalid %d\n", __func__, p_dest->len);
+        LOG_ERROR("%s UUID len is invalid %d\n", __func__, p_src->len);
     }
 }
 
@@ -130,8 +132,11 @@ void bta_to_btc_uuid(esp_bt_uuid_t *p_dest, tBT_UUID *p_src)
         p_dest->uuid.uuid32 = p_src->uu.uuid32;
     } else if (p_src->len == LEN_UUID_128) {
         memcpy(&p_dest->uuid.uuid128, p_src->uu.uuid128, p_dest->len);
+    } else if (p_src->len == 0) {
+        /* do nothing for now, there's some scenario will input 0
+           such as, receive notify, the descriptor may be 0 */
     } else {
-        LOG_ERROR("%s UUID len is invalid %d\n", __func__, p_dest->len);
+        LOG_ERROR("%s UUID len is invalid %d\n", __func__, p_src->len);
     }
 }
 

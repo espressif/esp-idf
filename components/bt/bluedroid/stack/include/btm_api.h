@@ -67,7 +67,9 @@ enum {
     BTM_SUCCESS_NO_SECURITY,            /* 17 security passed, no security set  */
     BTM_FAILED_ON_SECURITY,             /* 18 security failed                   */
     BTM_REPEATED_ATTEMPTS,              /* 19 repeated attempts for LE security requests */
-    BTM_MODE4_LEVEL4_NOT_SUPPORTED      /* 20 Secure Connections Only Mode can't be supported */
+    BTM_MODE4_LEVEL4_NOT_SUPPORTED,     /* 20 Secure Connections Only Mode can't be supported */
+    BTM_PEER_LE_DATA_LEN_UNSUPPORTED,   /* 21 peer setting data length is unsupported*/
+    BTM_CONTROL_LE_DATA_LEN_UNSUPPORTED /* 22 controller setting data length is unsupported*/
 };
 
 typedef uint8_t tBTM_STATUS;
@@ -129,6 +131,19 @@ enum {
 
 typedef UINT8 tBTM_DEV_STATUS;
 
+typedef struct {
+    UINT16 rx_len;
+    UINT16 tx_len;
+}tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS;
+
+typedef struct {
+    UINT16              min_conn_int;
+    UINT16              max_conn_int;
+    UINT16              conn_int;
+    UINT16              slave_latency;
+    UINT16              supervision_tout;
+}tBTM_LE_UPDATE_CONN_PRAMS;
+
 
 typedef void (tBTM_DEV_STATUS_CB) (tBTM_DEV_STATUS status);
 
@@ -155,6 +170,11 @@ typedef void (tBTM_VSC_CMPL_CB) (tBTM_VSC_CMPL *p1);
 ** If the app returns none zero, the connection or inquiry result will be dropped.
 */
 typedef UINT8 (tBTM_FILTER_CB) (BD_ADDR bd_addr, DEV_CLASS dc);
+
+typedef void (tBTM_UPDATE_CONN_PARAM_CBACK) (UINT8 status, BD_ADDR bd_addr, tBTM_LE_UPDATE_CONN_PRAMS *update_conn_params);
+
+typedef void (tBTM_SET_PKT_DATA_LENGTH_CBACK) (UINT8 status, tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS *data_length_params);
+
 
 /*****************************************************************************
 **  DEVICE DISCOVERY - Inquiry, Remote Name, Discovery, Class of Device
@@ -611,6 +631,8 @@ typedef struct {
     UINT8       ble_addr_type;
     tBTM_BLE_EVT_TYPE       ble_evt_type;
     UINT8                   flag;
+    UINT8       adv_data_len;
+    UINT8       scan_rsp_len;
 #endif
 } tBTM_INQ_RESULTS;
 
@@ -1348,6 +1370,7 @@ enum {
 };
 typedef UINT8 tBTM_SP_EVT;
 
+/* relate to ESP_IO_CAP_xxx in esp_gap_ble_api.h */
 #define BTM_IO_CAP_OUT      0   /* DisplayOnly */
 #define BTM_IO_CAP_IO       1   /* DisplayYesNo */
 #define BTM_IO_CAP_IN       2   /* KeyboardOnly */
@@ -1380,6 +1403,11 @@ typedef UINT8 tBTM_IO_CAP;
 #define BTM_AUTH_GB_BIT     4   /* the genernal bonding bit */
 #define BTM_AUTH_BONDS      6   /* the general/dedicated bonding bits  */
 #define BTM_AUTH_YN_BIT     1   /* this is the Yes or No bit  */
+
+#define BTM_BLE_ENC_KEY_MASK    (1 << 0)
+#define BTM_BLE_ID_KEY_MASK     (1 << 1)
+#define BTM_BLE_CSR_KEY_MASK    (1 << 2)
+#define BTM_BLE_LINK_KEY_MASK   (1 << 3)
 
 #define BTM_BLE_INITIATOR_KEY_SIZE 15
 #define BTM_BLE_RESPONDER_KEY_SIZE 15
@@ -1524,6 +1552,8 @@ typedef void (tBTM_BOND_CANCEL_CMPL_CALLBACK) (tBTM_STATUS result);
 
 /* LE related event and data structure
 */
+/* relate to ESP_LE_KEY_xxx in esp_gap_ble_api.h */
+#if (SMP_INCLUDED == TRUE)
 #define BTM_LE_IO_REQ_EVT       SMP_IO_CAP_REQ_EVT     /* received IO_CAPABILITY_REQUEST event */
 #define BTM_LE_SEC_REQUEST_EVT  SMP_SEC_REQUEST_EVT    /* security request event */
 #define BTM_LE_KEY_NOTIF_EVT    SMP_PASSKEY_NOTIF_EVT  /* received USER_PASSKEY_NOTIFY event */
@@ -1539,8 +1569,10 @@ typedef void (tBTM_BOND_CANCEL_CMPL_CALLBACK) (tBTM_STATUS result);
 #define BTM_LE_COMPLT_EVT       SMP_COMPLT_EVT         /* SMP complete event */
 #define BTM_LE_LAST_FROM_SMP    BTM_LE_BR_KEYS_REQ_EVT
 #define BTM_LE_KEY_EVT          BTM_LE_LAST_FROM_SMP + 1 /* KEY update event */
+#endif  ///SMP_INCLUDED == TRUE
 typedef UINT8 tBTM_LE_EVT;
 
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
 #define BTM_LE_KEY_NONE           0
 #define BTM_LE_KEY_PENC      SMP_SEC_KEY_TYPE_ENC        /* encryption information of peer device */
 #define BTM_LE_KEY_PID       SMP_SEC_KEY_TYPE_ID         /* identity key of the peer device */
@@ -1550,12 +1582,17 @@ typedef UINT8 tBTM_LE_EVT;
 #define BTM_LE_KEY_LENC      (SMP_SEC_KEY_TYPE_ENC << 4)  /* master role security information:div */
 #define BTM_LE_KEY_LID       (SMP_SEC_KEY_TYPE_ID << 4)   /* master device ID key */
 #define BTM_LE_KEY_LCSRK     (SMP_SEC_KEY_TYPE_CSRK << 4) /* local CSRK has been deliver to peer */
+#endif  ///BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
 typedef UINT8 tBTM_LE_KEY_TYPE;
 
+/* relate to ESP_LE_AUTH_xxx in esp_gap_ble_api.h */
+#if (SMP_INCLUDED == TRUE)
 #define BTM_LE_AUTH_REQ_NO_BOND SMP_AUTH_NO_BOND   /* 0 */
 #define BTM_LE_AUTH_REQ_BOND    SMP_AUTH_GEN_BOND  /* 1 << 0 */
 #define BTM_LE_AUTH_REQ_MITM    SMP_AUTH_YN_BIT    /* 1 << 2 */
+#endif  ///SMP_INCLUDED == TRUE
 typedef UINT8 tBTM_LE_AUTH_REQ;
+#if (SMP_INCLUDED == TRUE)
 #define BTM_LE_SC_SUPPORT_BIT           SMP_SC_SUPPORT_BIT     /* (1 << 3) */
 #define BTM_LE_KP_SUPPORT_BIT           SMP_KP_SUPPORT_BIT     /* (1 << 4) */
 
@@ -1569,6 +1606,7 @@ typedef UINT8 tBTM_LE_AUTH_REQ;
 #define BTM_LE_SEC_NONE             SMP_SEC_NONE
 #define BTM_LE_SEC_UNAUTHENTICATE   SMP_SEC_UNAUTHENTICATE      /* 1 */
 #define BTM_LE_SEC_AUTHENTICATED    SMP_SEC_AUTHENTICATED       /* 4 */
+#endif  ///SMP_INCLUDED == TRUE
 typedef UINT8 tBTM_LE_SEC;
 
 
@@ -2018,6 +2056,7 @@ tBTM_STATUS BTM_VendorSpecificCommand(UINT16 opcode,
 **
 *******************************************************************************/
 //extern
+#if (CLASSIC_BT_INCLUDED == TRUE)
 UINT8 BTM_AllocateSCN(void);
 
 // btla-specific ++
@@ -2046,6 +2085,7 @@ BOOLEAN BTM_TryAllocateSCN(UINT8 scn);
 *******************************************************************************/
 //extern
 BOOLEAN BTM_FreeSCN(UINT8 scn);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
 
 /*******************************************************************************
@@ -3674,6 +3714,17 @@ UINT8 *BTM_ReadOobData(UINT8 *p_data, UINT8 eir_tag, UINT8 *p_len);
 *******************************************************************************/
 //extern
 char *BTM_SecReadDevName (BD_ADDR bd_addr);
+
+/*******************************************************************************
+**
+** Function         BTM_SecClearSecurityFlags
+**
+** Description      Reset the security flags (mark as not-paired) for a given
+**                  remove device.
+**
+*******************************************************************************/
+extern void BTM_SecClearSecurityFlags (BD_ADDR bd_addr);
+
 
 
 /*****************************************************************************

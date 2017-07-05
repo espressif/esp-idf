@@ -1,0 +1,42 @@
+menu "Example Configuration"
+
+choice BASE_MAC_ADDRESS_STORAGE
+    prompt "Storage of the base MAC address"
+    default BASE_MAC_STORED_EFUSE_BLK0 
+    help
+        Select storage of the base MAC address which is used to generate MAC addresses of all network interfaces 
+        when networking is initialized. 
+        If "Default (Espressif factory) EFUSE BLK0" is selected, esp32 will use default base MAC address which is 
+        written into EFUSE block 0 words 1, 2 when the chip is manufactured. 
+        If "Custom EFUSE BLK3" is selected, ESP32 will use customer-defined base MAC address which is written into 
+        EFUSE Block 3 words 0, 1. Users must call esp_efuse_mac_get_custom to get base MAC address and 
+        esp_base_mac_addr_set to set the base MAC address before network interfaces are initialised.
+        If "Other external storage" is selected, esp32 will use customer-defined base MAC address from external
+        storage(flash, EEPROM, etc). Users must get the base MAC address first and call esp_base_mac_addr_set to 
+        set the base MAC address before network interfaces are initialised.
+
+config BASE_MAC_STORED_EFUSE_BLK0
+    bool "Default (Espressif factory) EFUSE BLK0"
+config BASE_MAC_STORED_EFUSE_BLK3
+    bool "Custom EFUSE BLK3"
+config BASE_MAC_STORED_OTHER_EXTERNAL_STORAGE
+    bool "Other external storage"
+endchoice
+
+choice BASE_MAC_STORED_EFUSE_BLK3_ERROR_BEHAVIOR
+    prompt "Read base MAC address from BLK3 of EFUSE error behavior"
+    depends on BASE_MAC_STORED_EFUSE_BLK3
+    default BASE_MAC_STORED_EFUSE_BLK3_ERROR_USE_DEFAULT
+    help
+        Select behavior when reading base MAC address from BLK3 of EFUSE error.
+        If "Abort" is selected, esp32 will abort.
+        If "Use base MAC address from BLK3 of EFUSE" is selected, esp32 will use the base MAC address which is 
+        written into EFUSE block 0 words 1, 2 when the chip is manufactured.
+        
+config BASE_MAC_STORED_EFUSE_BLK3_ERROR_ABORT
+    bool "Abort"
+config BASE_MAC_STORED_EFUSE_BLK3_ERROR_USE_DEFAULT
+    bool "Use base MAC address from BLK3 of EFUSE"
+endchoice
+
+endmenu

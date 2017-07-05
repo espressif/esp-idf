@@ -10,9 +10,9 @@ ESP-IDF is the official development framework for the [ESP32](https://espressif.
 
 See setup guides for detailed instructions to set up the ESP-IDF:
 
-* [Windows Setup Guide](http://esp-idf.readthedocs.io/en/latest/windows-setup.html)
-* [Mac OS Setup Guide](http://esp-idf.readthedocs.io/en/latest/macos-setup.html)
-* [Linux Setup Guide](http://esp-idf.readthedocs.io/en/latest/linux-setup.html)
+* [Windows Setup Guide](http://esp-idf.readthedocs.io/en/latest/get-started/windows-setup.html)
+* [Mac OS Setup Guide](http://esp-idf.readthedocs.io/en/latest/get-started/macos-setup.html)
+* [Linux Setup Guide](http://esp-idf.readthedocs.io/en/latest/get-started/linux-setup.html)
 
 ## Finding a Project
 
@@ -52,7 +52,7 @@ You don't need to run `make all` before running `make flash`, `make flash` will 
 
 ## Viewing Serial Output
 
-The `make monitor` target uses the [idf_monitor tool](http://esp-idf.readthedocs.io/en/latest/idf-monitor.html) to display serial output from the ESP32. idf_monitor also has a range of features to decode crash output and interact with the device. [Check the documentation page for details](http://esp-idf.readthedocs.io/en/latest/idf-monitor.html).
+The `make monitor` target uses the [idf_monitor tool](http://esp-idf.readthedocs.io/en/latest/get-started/idf-monitor.html) to display serial output from the ESP32. idf_monitor also has a range of features to decode crash output and interact with the device. [Check the documentation page for details](http://esp-idf.readthedocs.io/en/latest/get-started/idf-monitor.html).
 
 Exit the monitor by typing Ctrl-].
 
@@ -85,7 +85,7 @@ make -j5 flash monitor
 
 Once you've compiled your project, the "build" directory will contain a binary file with a name like "my_app.bin". This is an ESP32 image binary that can be loaded by the bootloader.
 
-A single ESP32's flash can contain multiple apps, as well as many different kinds of data (calibration data, filesystems, parameter storage, etc). For this reason a partition table is flashed to offset 0x4000 in the flash.
+A single ESP32's flash can contain multiple apps, as well as many different kinds of data (calibration data, filesystems, parameter storage, etc). For this reason a partition table is flashed to offset 0x8000 in the flash.
 
 Each entry in the partition table has a name (label), type (app, data, or something else), subtype and the offset in flash where the partition is loaded.
 
@@ -112,5 +112,5 @@ This can be combined with other targets, ie `make erase_flash flash` will erase 
 
 * [Check the Issues section on github](https://github.com/espressif/esp-idf/issues) if you find a bug or have a feature request. Please check existing Issues before opening a new one.
 
-* If you're interested in contributing to ESP-IDF, please check the [Contributions Guide](http://esp-idf.readthedocs.io/en/latest/contributing.html>).
+* If you're interested in contributing to ESP-IDF, please check the [Contributions Guide](http://esp-idf.readthedocs.io/en/latest/contribute/index.html).
 

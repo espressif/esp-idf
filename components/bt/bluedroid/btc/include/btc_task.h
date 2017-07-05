@@ -16,6 +16,7 @@
 #define __BTC_TASK_H__
 
 #include <stdint.h>
+#include "bt_target.h"
 #include "bt_defs.h"
 #include "thread.h"
 
@@ -35,16 +36,23 @@ typedef enum {
 
 typedef enum {
     BTC_PID_MAIN_INIT = 0,
+    BTC_PID_DEV,
     BTC_PID_GATTS,
+#if (GATTC_INCLUDED == TRUE)
     BTC_PID_GATTC,
+#endif  ///GATTC_INCLUDED == TRUE
     BTC_PID_GAP_BLE,
-    BTC_PID_GAP_BT,
-    BTC_PID_SDP,
     BTC_PID_BLE_HID,
-    BTC_PID_BT_HID,
-    BTC_PID_SPP,
     BTC_PID_SPPLIKE,
     BTC_PID_BLUFI,
+    BTC_PID_DM_SEC,
+    BTC_PID_ALARM,
+#if CONFIG_CLASSIC_BT_ENABLED
+    BTC_PID_GAP_BT,
+    BTC_PID_PRF_QUE,
+    BTC_PID_A2DP,
+    BTC_PID_AVRC,
+#endif  /* CONFIG_CLASSIC_BT_ENABLED */
     BTC_PID_NUM,
 } btc_pid_t; //btc profile id
 

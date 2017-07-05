@@ -28,38 +28,6 @@
 namespace nvs
 {
 
-class CachedFindInfo
-{
-public:
-    CachedFindInfo() { }
-    CachedFindInfo(uint8_t nsIndex, ItemType type, const char* key) :
-        mKeyPtr(key),
-        mNsIndex(nsIndex),
-        mType(type)
-    {
-    }
-
-    bool operator==(const CachedFindInfo& other) const
-    {
-        return mKeyPtr != nullptr && mKeyPtr == other.mKeyPtr && mType == other.mType && mNsIndex == other.mNsIndex;
-    }
-
-    void setItemIndex(uint32_t index)
-    {
-        mItemIndex = index;
-    }
-    uint32_t itemIndex() const
-    {
-        return mItemIndex;
-    }
-
-protected:
-    uint32_t mItemIndex = 0;
-    const char* mKeyPtr = nullptr;
-    uint8_t mNsIndex = 0;
-    ItemType mType;
-
-};
 
 class Page : public intrusive_list_node<Page>
 {
@@ -77,6 +45,8 @@ public:
     static const size_t ENTRY_SIZE  = 32;
     static const size_t ENTRY_COUNT = 126;
     static const uint32_t INVALID_ENTRY = 0xffffffff;
+    
+    static const size_t BLOB_MAX_SIZE = ENTRY_SIZE * (ENTRY_COUNT / 2 - 1);
 
     static const uint8_t NS_INDEX = 0;
     static const uint8_t NS_ANY = 255;
@@ -161,8 +131,6 @@ public:
 
     esp_err_t erase();
 
-    void invalidateCache();
-
     void debugDump() const;
 
 protected:
@@ -235,7 +203,6 @@ protected:
     uint16_t mUsedEntryCount = 0;
     uint16_t mErasedEntryCount = 0;
 
-    CachedFindInfo mFindInfo;
     HashList mHashList;
 
     static const uint32_t HEADER_OFFSET = 0;

@@ -93,6 +93,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "xtensa_rtos.h"
 #include "esp_panic.h"
 #include "sdkconfig.h"
+#include "soc/soc.h"
+#include "soc/dport_reg.h"
+
 /*
   Define for workaround: pin no-cpu-affinity tasks to a cpu when fpu is used.
   Please change this when the tcb structure is changed
@@ -360,19 +363,16 @@ _xt_panic:
 
     /* _xt_context_save seems to save the current a0, but we need the interuptees a0. Fix this. */
     rsr     a0, EXCSAVE_1                   /* save interruptee's a0 */
+
     s32i    a0, sp, XT_STK_A0
 
-    /* Set up PS for C, disable all interrupts, and clear EXCM. */
-    movi    a0, PS_INTLEVEL(7) | PS_UM | PS_WOE
+    /* Set up PS for C, disable all interrupts except NMI and debug, and clear EXCM. */
+    movi    a0, PS_INTLEVEL(5) | PS_UM | PS_WOE
     wsr     a0, PS
 
     //Call panic handler
     mov     a6,sp
     call4 panicHandler
-
-1:  j       1b                              /* loop infinitely */
-
-    retw
 
 
     .align 4
@@ -931,7 +931,6 @@ _xt_coproc_exc:
     addx4   a0, a5, a0                      /* a0 = &_xt_coproc_mask[n] */
     l32i    a0, a0, 0                       /* a0 = (n << 16) | (1 << n) */
 
-    /* TODO: Remove this as soon as coprocessor state moving works across cores - JD */
     /* FPU operations are incompatible with non-pinned tasks. If we have a FPU operation
        here, to keep the entire thing from crashing, it's better to pin the task to whatever
        core we're running on now. */
@@ -944,13 +943,20 @@ _xt_coproc_exc:
 
     /* Grab correct xt_coproc_owner_sa for this core */
     movi    a2, XCHAL_CP_MAX << 2
-    mull    a2, a2, a3
+    mull    a2, a2, a3                      /* multiply by current processor id */
     movi    a3, _xt_coproc_owner_sa         /* a3 = base of owner array */
-    add     a3, a3, a2
+    add     a3, a3, a2                      /* a3 = owner area needed for this processor */
 
     extui   a2, a0, 0, 16                   /* coprocessor bitmask portion */
     or      a4, a4, a2                      /* a4 = CPENABLE | (1 << n) */
     wsr     a4, CPENABLE
+
+/* 
+Keep loading _xt_coproc_owner_sa[n] atomic (=load once, then use that value
+everywhere): _xt_coproc_release assumes it works like this in order not to need
+locking.
+*/
+
 
     /* Get old coprocessor owner thread (save area ptr) and assign new one.  */
     addx4   a3,  a5, a3                      /* a3 = &_xt_coproc_owner_sa[n] */
@@ -1638,34 +1644,84 @@ _xt_highint4:
 1:
     #endif
 
-    /* USER_EDIT:
-    ADD HIGH PRIORITY LEVEL 4 INTERRUPT HANDLER CODE HERE.
-    */
 
+    /* On the ESP32, this level is used for panic events that are detected by hardware and should 
+       also panic when interrupts are disabled. At the moment, these are the interrupt watchdog
+       as well as the cache invalid access interrupt. (24 and 25) */
 
+    /* Allocate exception frame and save minimal context. */
+    mov     a0, sp
+    addi    sp, sp, -XT_STK_FRMSZ
+    s32i    a0, sp, XT_STK_A1
+    #if XCHAL_HAVE_WINDOWED
+    s32e    a0, sp, -12                     /* for debug backtrace */
+    #endif
+    rsr     a0, PS                          /* save interruptee's PS */
+    s32i    a0, sp, XT_STK_PS
+    rsr     a0, EPC_4                       /* save interruptee's PC */
+    s32i    a0, sp, XT_STK_PC
+    #if XCHAL_HAVE_WINDOWED
+    s32e    a0, sp, -16                     /* for debug backtrace */
+    #endif
+    s32i    a12, sp, XT_STK_A12             /* _xt_context_save requires A12- */
+    s32i    a13, sp, XT_STK_A13             /* A13 to have already been saved */
+    call0   _xt_context_save
 
-    /* On the ESP32, this level is used for the INT_WDT handler. If that triggers, the program is stuck with interrupts
-       off and the CPU should panic. */
-    rsr     a0, EXCSAVE_4
-    wsr     a0, EXCSAVE_1 /* panic handler reads this register */
-    /* Set EXCCAUSE to reflect cause of the wdt int trigger */
-    movi    a0,PANIC_RSN_INTWDT_CPU0
-    wsr     a0,EXCCAUSE
+    /* Save vaddr into exception frame */
+    rsr     a0, EXCVADDR
+    s32i    a0, sp, XT_STK_EXCVADDR
+
+    /* Figure out reason, save into EXCCAUSE reg */
+
+    rsr     a0, INTERRUPT
+    extui   a0, a0, ETS_CACHEERR_INUM, 1 /* get cacheerr int bit */
+    beqz    a0, 1f
+    /* Kill this interrupt; we cannot reset it. */
+    rsr     a0, INTENABLE
+    movi    a4, ~(1<<ETS_CACHEERR_INUM)
+    and     a0, a4, a0
+    wsr     a0, INTENABLE
+    movi    a0, PANIC_RSN_CACHEERR
+    j 9f
+1:
 #if CONFIG_INT_WDT_CHECK_CPU1
     /* Check if the cause is the app cpu failing to tick.*/
     movi    a0, int_wdt_app_cpu_ticked
     l32i    a0, a0, 0
-    bnez    a0, 1f
+    bnez    a0, 2f
     /* It is. Modify cause. */
     movi    a0,PANIC_RSN_INTWDT_CPU1
-    wsr     a0,EXCCAUSE
-1:
+    j 9f
+2:
 #endif
-    call0 _xt_panic
+    /* Set EXCCAUSE to reflect cause of the wdt int trigger */
+    movi    a0,PANIC_RSN_INTWDT_CPU0
+9:
+    /* Found the reason, now save it. */
+    s32i    a0, sp, XT_STK_EXCCAUSE
 
+    /* _xt_context_save seems to save the current a0, but we need the interuptees a0. Fix this. */
+    rsr     a0, EXCSAVE_4                   /* save interruptee's a0 */
 
-    .align  4
-.L_xt_highint4_exit:
+    s32i    a0, sp, XT_STK_A0
+
+    /* Set up PS for C, disable all interrupts except NMI and debug, and clear EXCM. */
+    movi    a0, PS_INTLEVEL(5) | PS_UM | PS_WOE
+    wsr     a0, PS
+
+    //Call panic handler
+    mov     a6,sp
+    call4   panicHandler
+
+    call0   _xt_context_restore
+    l32i    a0, sp, XT_STK_PS               /* retrieve interruptee's PS */
+    wsr     a0, PS
+    l32i    a0, sp, XT_STK_PC               /* retrieve interruptee's PC */
+    wsr     a0, EPC_4
+    l32i    a0, sp, XT_STK_A0               /* retrieve interruptee's A0 */
+    l32i    sp, sp, XT_STK_A1               /* remove exception frame */
+    rsync                                   /* ensure PS and EPC written */
+
     rsr     a0, EXCSAVE_4                   /* restore a0 */
     rfi     4
 
@@ -1685,6 +1741,13 @@ _Level5Vector:
 
     .end        literal_prefix
 
+#define L5_INTR_STACK_SIZE  8
+#define L5_INTR_A2_OFFSET   0
+#define L5_INTR_A3_OFFSET   4
+    .data
+_l5_intr_stack:
+    .space      L5_INTR_STACK_SIZE
+
     .section .iram1,"ax"
     .type       _xt_highint5,@function
     .align      4
@@ -1700,9 +1763,60 @@ _xt_highint5:
 1:
     #endif
 
-    /* USER_EDIT:
-    ADD HIGH PRIORITY LEVEL 5 INTERRUPT HANDLER CODE HERE.
-    */
+    /* This section is for access dport register protection */
+    /* Allocate exception frame and save minimal context. */
+    /* Because the interrupt cause code have protection that only
+       allow one cpu enter in L5 interrupt at one time, so 
+       there needn't have two _l5_intr_stack for each cpu */
+
+    movi    a0, _l5_intr_stack
+    s32i    a2, a0, L5_INTR_A2_OFFSET
+    s32i    a3, a0, L5_INTR_A3_OFFSET
+
+    /* Check interrupt */
+    rsr     a0, INTERRUPT
+    extui   a0, a0, ETS_DPORT_INUM, 1 /* get dport int bit */
+    beqz    a0, 1f
+
+    /* handle dport interrupt */
+    /* get CORE_ID */
+    getcoreid   a0
+    beqz    a0, 2f
+
+    /* current cpu is 1 */
+    movi    a0, DPORT_CPU_INTR_FROM_CPU_3_REG
+    movi    a2, 0
+    s32i    a2, a0, 0   /* clear intr */
+    movi    a0, 0       /* other cpu id */
+    j       3f
+2:
+    /* current cpu is 0 */
+    movi    a0, DPORT_CPU_INTR_FROM_CPU_2_REG
+    movi    a2, 0
+    s32i    a2, a0, 0   /* clear intr */
+    movi    a0, 1       /* other cpu id */
+3:
+    /* set and wait flag */
+    movi    a2, dport_access_start
+    addx4   a2, a0, a2
+    movi    a3, 1
+    s32i    a3, a2, 0
+    memw
+    movi    a2, dport_access_end
+    addx4   a2, a0, a2
+.check_dport_access_end:
+    l32i    a3, a2, 0
+    beqz    a3, .check_dport_access_end
+
+1:
+    movi    a0, _l5_intr_stack
+    l32i    a2, a0, L5_INTR_A2_OFFSET
+    l32i    a3, a0, L5_INTR_A3_OFFSET
+    rsync                                   /* ensure register restored */
+
+    rsr     a0, EXCSAVE_5                   /* restore a0 */
+    rfi     5
+
 
     .align  4
 .L_xt_highint5_exit:

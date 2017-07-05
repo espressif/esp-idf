@@ -20,7 +20,6 @@
 #include <stdbool.h>
 #include "rom/queue.h"
 #include "esp_err.h"
-#include "esp_wifi_types.h"
 #include "esp_interface.h"
 
 #ifdef __cplusplus
@@ -124,7 +123,7 @@ typedef struct {
 
 typedef struct {
     uint8_t bssid[6];                     /**< MAC address of AP */
-    uint8_t ssid[32];                     /**< SSID of AP */
+    uint8_t ssid[33];                     /**< SSID of AP */
     uint8_t primary;                      /**< channel of AP */
     wifi_second_chan_t second;            /**< second channel of AP */
     int8_t  rssi;                         /**< signal strength of AP */
@@ -164,6 +163,7 @@ typedef struct {
     uint8_t password[64];  /**< password of target AP*/
     bool bssid_set;        /**< whether set MAC address of target AP or not. Generally, station_config.bssid_set needs to be 0; and it needs to be 1 only when users need to check the MAC address of the AP.*/
     uint8_t bssid[6];     /**< MAC address of target AP*/
+    uint8_t channel;       /**< channel of target AP. Set to 1~13 to scan starting from the specified channel before connecting to AP. If the channel of AP is unknown, set it to 0.*/
 } wifi_sta_config_t;
 
 typedef union {
@@ -188,8 +188,9 @@ typedef enum {
 } wifi_storage_t;
 
 /**
-  * @brief     Vendor IE type
+  * @brief     Vendor Information Element type
   *
+  * Determines the frame type that the IE will be associated with.
   */
 typedef enum {
     WIFI_VND_IE_TYPE_BEACON,
@@ -200,13 +201,29 @@ typedef enum {
 } wifi_vendor_ie_type_t;
 
 /**
-  * @brief     Vendor IE index
+  * @brief     Vendor Information Element index
   *
+  * Each IE type can have up to two associated vendor ID elements.
   */
 typedef enum {
     WIFI_VND_IE_ID_0,
     WIFI_VND_IE_ID_1,
 } wifi_vendor_ie_id_t;
+
+#define WIFI_VENDOR_IE_ELEMENT_ID 0xDD
+
+/**
+ * @brief Vendor Information Element header
+ *
+ * The first bytes of the Information Element will match this header. Payload follows.
+ */
+typedef struct {
+    uint8_t element_id;      /**< Should be set to WIFI_VENDOR_IE_ELEMENT_ID (0xDD) */
+    uint8_t length;          /**< Length of all bytes in the element data following this field. Minimum 4. */
+    uint8_t vendor_oui[3];   /**< Vendor identifier (OUI). */
+    uint8_t vendor_oui_type; /**< Vendor-specific OUI type. */
+    uint8_t payload[0];      /**< Payload. Length is equal to value in 'length' field, minus 4. */
+} vendor_ie_data_t;
 
 typedef struct {
     signed rssi:8;            /**< signal intensity of packet */
@@ -246,11 +263,22 @@ typedef struct {
   *
   */
 typedef enum {
-    WIFI_PKT_CTRL,  /**< control type, receive packet buf is wifi_pkt_rx_ctrl_t */
     WIFI_PKT_MGMT,  /**< management type, receive packet buf is wifi_promiscuous_pkt_t */
     WIFI_PKT_DATA,  /**< data type, receive packet buf is wifi_promiscuous_pkt_t */
-    WIFI_PKT_MISC,  /**< other type, receive packet buf is wifi_promiscuous_pkt_t */
+    WIFI_PKT_MISC,  /**< other type, such as MIMO etc, receive packet buf is wifi_promiscuous_pkt_t but the payload is NULL!!! */
 } wifi_promiscuous_pkt_type_t;
+
+
+#define WIFI_PROMIS_FILTER_MASK_ALL         (0xFFFFFFFF)  /**< filter all packets */
+#define WIFI_PROMIS_FILTER_MASK_MGMT        (1)           /**< filter the packets with type of WIFI_PKT_MGMT */
+#define WIFI_PROMIS_FILTER_MASK_DATA        (1<<1)        /**< filter the packets with type of WIFI_PKT_DATA */
+#define WIFI_PROMIS_FILTER_MASK_MISC        (1<<2)        /**< filter the packets with type of WIFI_PKT_MISC */
+#define WIFI_PROMIS_FILTER_MASK_DATA_MPDU   (1<<3)        /**< filter the MPDU which is a kind of WIFI_PKT_DATA */
+#define WIFI_PROMIS_FILTER_MASK_DATA_AMPDU  (1<<4)        /**< filter the AMPDU which is a kind of WIFI_PKT_DATA */
+
+typedef struct {
+    uint32_t filter_mask;
+} wifi_promiscuous_filter_t;
 
 #ifdef __cplusplus
 }

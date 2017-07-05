@@ -27,7 +27,7 @@ TEST_CASE("Can read partition table", "[partition]")
         ++count;
     }
     esp_partition_iterator_release(it);
-    TEST_ASSERT_EQUAL(3, count);
+    TEST_ASSERT_EQUAL(4, count);
 }
 
 TEST_CASE("Can write, read, mmap partition", "[partition][ignore]")

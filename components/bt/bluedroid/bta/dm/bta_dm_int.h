@@ -57,22 +57,24 @@ enum {
     BTA_DM_ACL_CHANGE_EVT,
     BTA_DM_API_ADD_DEVICE_EVT,
     BTA_DM_API_REMOVE_ACL_EVT,
-
+#if (SMP_INCLUDED == TRUE)
     /* security API events */
     BTA_DM_API_BOND_EVT,
     BTA_DM_API_BOND_CANCEL_EVT,
     BTA_DM_API_PIN_REPLY_EVT,
-
+#endif  ///SMP_INCLUDED == TRUE
+#if (BTM_SSR_INCLUDED == TRUE)
     /* power manger events */
     BTA_DM_PM_BTM_STATUS_EVT,
     BTA_DM_PM_TIMER_EVT,
-
+#endif  ///BTM_SSR_INCLUDED == TRUE
+#if (SMP_INCLUDED == TRUE)
     /* simple pairing events */
     BTA_DM_API_CONFIRM_EVT,
 
     BTA_DM_API_SET_ENCRYPTION_EVT,
-
-#if (BTM_OOB_INCLUDED == TRUE)
+#endif  ///SMP_INCLUDED == TRUE
+#if (BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
     BTA_DM_API_LOC_OOB_EVT,
     BTA_DM_CI_IO_REQ_EVT,
     BTA_DM_CI_RMT_OOB_EVT,
@@ -80,11 +82,13 @@ enum {
 
 
 #if BLE_INCLUDED == TRUE
+#if SMP_INCLUDED == TRUE
     BTA_DM_API_ADD_BLEKEY_EVT,
     BTA_DM_API_ADD_BLEDEVICE_EVT,
     BTA_DM_API_BLE_PASSKEY_REPLY_EVT,
     BTA_DM_API_BLE_CONFIRM_REPLY_EVT,
     BTA_DM_API_BLE_SEC_GRANT_EVT,
+#endif  ///SMP_INCLUDED == TRUE
     BTA_DM_API_BLE_SET_BG_CONN_TYPE,
     BTA_DM_API_BLE_CONN_PARAM_EVT,
     BTA_DM_API_BLE_CONN_SCAN_PARAM_EVT,
@@ -132,6 +136,7 @@ enum {
     BTA_DM_API_BLE_READ_SCAN_REPORTS_EVT,
     BTA_DM_API_BLE_TRACK_ADVERTISER_EVT,
     BTA_DM_API_BLE_ENERGY_INFO_EVT,
+    BTA_DM_API_BLE_DISCONNECT_EVT,
 
 #endif
 
@@ -201,6 +206,7 @@ typedef struct {
 #endif
 } tBTA_DM_API_SEARCH;
 
+#if (SDP_INCLUDED == TRUE)
 /* data type for BTA_DM_API_DISCOVER_EVT */
 typedef struct {
     BT_HDR      hdr;
@@ -215,12 +221,15 @@ typedef struct {
 #endif
     tSDP_UUID    uuid;
 } tBTA_DM_API_DISCOVER;
+#endif  ///SDP_INCLUDED == TRUE
 
 /* data type for BTA_DM_API_DI_DISC_EVT */
 typedef struct {
     BT_HDR              hdr;
     BD_ADDR             bd_addr;
+#if (SDP_INCLUDED == TRUE)
     tBTA_DISCOVERY_DB   *p_sdp_db;
+#endif  ///SDP_INCLUDED == TRUE
     UINT32              len;
     tBTA_DM_SEARCH_CBACK *p_cback;
 } tBTA_DM_API_DI_DISC;
@@ -470,15 +479,18 @@ typedef struct {
 typedef struct {
     BT_HDR                  hdr;
     BOOLEAN                 start;
-    UINT16                  duration;
+    UINT32                  duration;
     tBTA_DM_SEARCH_CBACK    *p_cback;
-    tBTA_START_SCAN_CMPL_CBACK *p_start_scan_cback;
+    tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_scan_cback;
+    tBTA_START_STOP_SCAN_CMPL_CBACK *p_stop_scan_cback;
+    tBTA_START_STOP_ADV_CMPL_CBACK  *p_stop_adv_cback;
 } tBTA_DM_API_BLE_OBSERVE;
 
 typedef struct {
     BT_HDR      hdr;
     BD_ADDR     remote_bda;
     UINT16      tx_data_length;
+    tBTA_SET_PKT_DATA_LENGTH_CBACK *p_set_pkt_data_cback;
 } tBTA_DM_API_BLE_SET_DATA_LENGTH;
 
 /* set the address for BLE device
@@ -603,6 +615,11 @@ typedef struct {
     tBTA_BLE_ENERGY_INFO_CBACK *p_energy_info_cback;
 } tBTA_DM_API_ENERGY_INFO;
 
+typedef struct {
+    BT_HDR      hdr;
+    BD_ADDR     remote_bda;
+} tBTA_DM_API_BLE_DISCONNECT;
+
 #endif /* BLE_INCLUDED */
 
 /* data type for BTA_DM_API_REMOVE_ACL_EVT */
@@ -627,6 +644,7 @@ typedef struct {
     UINT16      max_int;
     UINT16      latency;
     UINT16      timeout;
+    tBTA_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb;
 } tBTA_DM_API_UPDATE_CONN_PARAM;
 
 #if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
@@ -673,9 +691,9 @@ typedef union {
     tBTA_DM_API_REMOVE_DEVICE remove_dev;
 
     tBTA_DM_API_SEARCH search;
-
+#if (SDP_INCLUDED == TRUE)
     tBTA_DM_API_DISCOVER discover;
-
+#endif  ///SDP_INCLUDED == TRUE
     tBTA_DM_API_BOND bond;
 
     tBTA_DM_API_BOND_CANCEL bond_cancel;
@@ -743,6 +761,7 @@ typedef union {
     tBTA_DM_API_DISABLE_SCAN            ble_disable_scan;
     tBTA_DM_API_TRACK_ADVERTISER        ble_track_advert;
     tBTA_DM_API_ENERGY_INFO             ble_energy_info;
+    tBTA_DM_API_BLE_DISCONNECT          ble_disconnect;
 #endif
 
     tBTA_DM_API_REMOVE_ACL              remove_acl;
@@ -868,8 +887,10 @@ typedef struct {
     UINT32                      wbt_sdp_handle;          /* WIDCOMM Extensions SDP record handle */
     UINT8                       wbt_scn;                 /* WIDCOMM Extensions SCN */
     UINT8                       num_master_only;
+#if BTM_SSR_INCLUDED == TRUE
     UINT8                       pm_id;
     tBTA_PM_TIMER               pm_timer[BTA_DM_NUM_PM_TIMER];
+#endif  ///BTM_SSR_INCLUDED == TRUE
     UINT32                      role_policy_mask;   /* the bits set indicates the modules that wants to remove role switch from the default link policy */
     UINT16                      cur_policy;         /* current default link policy */
     UINT16                      rs_event;           /* the event waiting for role switch */
@@ -916,7 +937,9 @@ typedef struct {
     tBTA_SERVICE_MASK      services;
     tBTA_SERVICE_MASK      services_to_search;
     tBTA_SERVICE_MASK      services_found;
+#if (SDP_INCLUDED == TRUE)
     tSDP_DISCOVERY_DB     *p_sdp_db;
+#endif  ///SDP_INCLUDED == TRUE
     UINT16                 state;
     BD_ADDR                peer_bdaddr;
     BOOLEAN                name_discover_done;
@@ -926,14 +949,16 @@ typedef struct {
     tBTA_DM_MSG           *p_search_queue;   /* search or discover commands during search cancel stored here */
     BOOLEAN                wait_disc;
     BOOLEAN                sdp_results;
+#if (SDP_INCLUDED == TRUE)
     tSDP_UUID              uuid;
+#endif  ///SDP_INCLUDED == TRUE
     UINT8                  peer_scn;
     BOOLEAN                sdp_search;
     BOOLEAN                cancel_pending; /* inquiry cancel is pending */
     tBTA_TRANSPORT         transport;
 #if ((defined BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
     tBTA_DM_SEARCH_CBACK *p_scan_cback;
-#if ((defined BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE))
+#if ((defined BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE)
     tBTA_GATTC_IF          client_if;
     UINT8                  num_uuid;
     tBT_UUID               *p_srvc_uuid;
@@ -953,7 +978,9 @@ typedef struct {
 
 /* DI control block */
 typedef struct {
+#if (SDP_INCLUDED == TRUE)
     tSDP_DISCOVERY_DB     *p_di_db;     /* pointer to the DI discovery database */
+#endif  ///SDP_INCLUDED == TRUE
     UINT8               di_num;         /* total local DI record number */
     UINT32              di_handle[BTA_DI_NUM_MAX];  /* local DI record handle, the first one is primary record */
 } tBTA_DM_DI_CB;
@@ -1102,9 +1129,12 @@ extern void bta_dm_ble_set_conn_params (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_scan_params(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_scan_fil_params(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_conn_scan_params (tBTA_DM_MSG *p_data);
+#if ((defined BTA_GATT_INCLUDED) &&  (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE) && (GATTC_INCLUDED == TRUE)
 extern void bta_dm_close_gatt_conn(tBTA_DM_MSG *p_data);
+#endif /* ((defined BTA_GATT_INCLUDED) &&  (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE) && (GATTC_INCLUDED == TRUE) */
 extern void bta_dm_ble_observe (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_update_conn_params (tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_disconnect (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_rand_address(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_stop_advertising(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_config_local_privacy (tBTA_DM_MSG *p_data);
@@ -1150,10 +1180,14 @@ extern UINT8 bta_dm_get_av_count(void);
 extern void bta_dm_search_start (tBTA_DM_MSG *p_data);
 extern void bta_dm_search_cancel (tBTA_DM_MSG *p_data);
 extern void bta_dm_discover (tBTA_DM_MSG *p_data);
+#if (SDP_INCLUDED == TRUE)
 extern void bta_dm_di_disc (tBTA_DM_MSG *p_data);
+#endif  ///SDP_INCLUDED == TRUE
 extern void bta_dm_inq_cmpl (tBTA_DM_MSG *p_data);
 extern void bta_dm_rmt_name (tBTA_DM_MSG *p_data);
+#if (SDP_INCLUDED == TRUE)
 extern void bta_dm_sdp_result (tBTA_DM_MSG *p_data);
+#endif  ///SDP_INCLUDED == TRUE
 extern void bta_dm_search_cmpl (tBTA_DM_MSG *p_data);
 extern void bta_dm_free_sdp_db (tBTA_DM_MSG *p_data);
 extern void bta_dm_disc_result (tBTA_DM_MSG *p_data);

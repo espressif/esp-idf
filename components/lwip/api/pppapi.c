@@ -73,10 +73,10 @@ pppapi_set_default(ppp_pcb *pcb)
 static err_t
 pppapi_do_ppp_set_auth(struct tcpip_api_call *m)
 {
-  struct pppapi_msg_msg *msg = (struct pppapi_msg_msg *)m;
+  struct pppapi_msg *msg = (struct pppapi_msg *)m;
 
-  ppp_set_auth(msg->ppp, msg->msg.setauth.authtype,
-               msg->msg.setauth.user, msg->msg.setauth.passwd);
+  ppp_set_auth(msg->msg.ppp, msg->msg.msg.setauth.authtype,
+               msg->msg.msg.setauth.user, msg->msg.msg.setauth.passwd);
   return ERR_OK;
 }
 
@@ -131,10 +131,10 @@ pppapi_set_notify_phase_callback(ppp_pcb *pcb, ppp_notify_phase_cb_fn notify_pha
 static err_t
 pppapi_do_pppos_create(struct tcpip_api_call *m)
 {
-  struct pppapi_msg_msg *msg = (struct pppapi_msg_msg *)m;
+  struct pppapi_msg *msg = (struct pppapi_msg *)(m);
 
-  msg->ppp = pppos_create(msg->msg.serialcreate.pppif, msg->msg.serialcreate.output_cb,
-    msg->msg.serialcreate.link_status_cb, msg->msg.serialcreate.ctx_cb);
+  msg->msg.ppp = pppos_create(msg->msg.msg.serialcreate.pppif, msg->msg.msg.serialcreate.output_cb,
+    msg->msg.msg.serialcreate.link_status_cb, msg->msg.msg.serialcreate.ctx_cb);
   return ERR_OK;
 }
 
@@ -247,9 +247,9 @@ pppapi_pppol2tp_create(struct netif *pppif, struct netif *netif, ip_addr_t *ipad
 static err_t
 pppapi_do_ppp_connect(struct tcpip_api_call *m)
 {
-  struct pppapi_msg_msg *msg = (struct pppapi_msg_msg *)m;
+  struct pppapi_msg *msg = (struct pppapi_msg *)m;
 
-  return ppp_connect(msg->ppp, msg->msg.connect.holdoff);
+  return ppp_connect(msg->msg.ppp, msg->msg.msg.connect.holdoff);
 }
 
 /**
@@ -300,9 +300,9 @@ pppapi_listen(ppp_pcb *pcb, struct ppp_addrs *addrs)
 static err_t
 pppapi_do_ppp_close(struct tcpip_api_call *m)
 {
-  struct pppapi_msg_msg *msg = (struct pppapi_msg_msg *)m;
+  struct pppapi_msg *msg = (struct pppapi_msg *)m;
 
-  return ppp_close(msg->ppp, msg->msg.close.nocarrier);
+  return ppp_close(msg->msg.ppp, msg->msg.msg.close.nocarrier);
 }
 
 /**
@@ -349,9 +349,9 @@ pppapi_free(ppp_pcb *pcb)
 static err_t
 pppapi_do_ppp_ioctl(struct tcpip_api_call *m)
 {
-  struct pppapi_msg_msg *msg = (struct pppapi_msg_msg *)m;
+  struct pppapi_msg *msg = (struct pppapi_msg *)m;
 
-  return ppp_ioctl(msg->ppp, msg->msg.ioctl.cmd, msg->msg.ioctl.arg);
+  return ppp_ioctl(msg->msg.ppp, msg->msg.msg.ioctl.cmd, msg->msg.msg.ioctl.arg);
 }
 
 /**

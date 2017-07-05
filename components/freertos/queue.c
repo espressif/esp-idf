@@ -70,7 +70,7 @@
 
 
 /*
- ToDo: The multicore implementation of this uses taskENTER_CRITICAL etc to make sure the 
+ ToDo: The multicore implementation of this uses taskENTER_CRITICAL etc to make sure the
  queue structures aren't accessed by another processor or core. It would be useful to have
  IRQs be able to schedule stuff while doing task-related stuff, meaning we have to convert
  the taskENTER_CRITICAL stuff to a lock + a scheduler suspend instead.
@@ -262,7 +262,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 
 	configASSERT( pxQueue );
 
-	if ( xNewQueue == pdTRUE ) 
+	if ( xNewQueue == pdTRUE )
 	{
 		vPortCPUInitializeMutex(&pxQueue->mux);
 	}
@@ -1181,7 +1181,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 		if( ( pxQueue->uxMessagesWaiting < pxQueue->uxLength ) || ( xCopyPosition == queueOVERWRITE ) )
 		{
 			traceQUEUE_SEND_FROM_ISR( pxQueue );
-	
+
 			/* A task can only have an inherited priority if it is a mutex
 			holder - and if there is a mutex holder then the mutex cannot be
 			given from an ISR.  Therefore, unlike the xQueueGenericGive()
@@ -2315,7 +2315,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 	void vQueueAddToRegistry( QueueHandle_t xQueue, const char *pcQueueName ) /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
 	{
 	UBaseType_t ux;
-		
+
 		UNTESTED_FUNCTION();
 		/* See if there is an empty space in the registry.  A NULL name denotes
 		a free slot. */

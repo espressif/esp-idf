@@ -24,8 +24,12 @@
 
 #ifndef HIDDEFS_H
 #define HIDDEFS_H
+#include "bt_target.h"
+#if (HID_HOST_INCLUDED == TRUE)
 
+#if (SDP_INCLUDED == TRUE)
 #include "sdp_api.h"
+#endif    ///SDP_INCLUDED == TRUE
 /*
 ** tHID_STATUS: HID result codes, returned by HID and device and host functions.
 */
@@ -149,8 +153,11 @@ typedef struct sdp_info {
 
     tHID_DEV_DSCP_INFO  dscp_info;   /* Descriptor list and Report list to be set in the SDP record.
                                        This parameter is used if HID_DEV_USE_GLB_SDP_REC is set to FALSE.*/
+#if(SDP_INCLUDED == TRUE)
     tSDP_DISC_REC       *p_sdp_layer_rec;
+#endif  ///SDP_INCLUDED == TRUE
 } tHID_DEV_SDP_INFO;
 
+#endif  ///HID_HOST_INCLUDED == TRUE
 #endif
 

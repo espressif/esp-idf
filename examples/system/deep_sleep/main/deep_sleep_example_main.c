@@ -22,6 +22,7 @@
 #include "driver/rtc_io.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/sens_reg.h"
+#include "soc/rtc.h"
 
 static RTC_DATA_ATTR struct timeval sleep_enter_time;
 
@@ -286,7 +287,7 @@ static void start_ulp_temperature_monitoring()
     assert(size < ULP_DATA_OFFSET && "ULP_DATA_OFFSET needs to be greater or equal to the program size");
 
     // Set ULP wakeup period
-    const uint32_t sleep_cycles = RTC_CNTL_SLOWCLK_FREQ / measurements_per_sec;
+    const uint32_t sleep_cycles = rtc_clk_slow_freq_get_hz() / measurements_per_sec;
     REG_WRITE(SENS_ULP_CP_SLEEP_CYC0_REG, sleep_cycles);
 
     // Start ULP

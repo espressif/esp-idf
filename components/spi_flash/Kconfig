@@ -11,6 +11,14 @@ config SPI_FLASH_ENABLE_COUNTERS
         These APIs may be used to collect performance data for spi_flash APIs
         and to help understand behaviour of libraries which use SPI flash.
 
+config SPI_FLASH_ROM_DRIVER_PATCH
+    bool "Enable SPI flash ROM driver patched functions"
+    default y
+    help
+        Enable this flag to use patched versions of SPI flash ROM driver functions.
+        This option is needed to write to flash on ESP32-D2WD, and any configuration
+        where external SPI flash is connected to non-default pins.
+
 endmenu
 
 

@@ -9,23 +9,20 @@
 /*-----------------------------------------------------------------------*/
 
 #include <string.h>
+#include <time.h>
+#include <sys/time.h>
 #include "diskio.h"		/* FatFs lower layer API */
 #include "ffconf.h"
 #include "ff.h"
-#include "sdmmc_cmd.h"
-#include "esp_log.h"
-#include <time.h>
-#include <sys/time.h>
 
-static const char* TAG = "ff_diskio";
-static ff_diskio_impl_t * s_impls[_VOLUMES];
-static sdmmc_card_t* s_cards[_VOLUMES] = { NULL };
-static bool s_impls_initialized = false;
+static ff_diskio_impl_t * s_impls[_VOLUMES] = { NULL };
 
+#if _MULTI_PARTITION		/* Multiple partition configuration */
 PARTITION VolToPart[] = {
-    {0, 1},    /* Logical drive 0 ==> Physical drive 0, 1st partition */
+    {0, 0},    /* Logical drive 0 ==> Physical drive 0, auto detection */
     {1, 0}     /* Logical drive 1 ==> Physical drive 1, auto detection */
 };
+#endif
 
 esp_err_t ff_diskio_get_drive(BYTE* out_pdrv)
 {
@@ -42,11 +39,6 @@ esp_err_t ff_diskio_get_drive(BYTE* out_pdrv)
 void ff_diskio_register(BYTE pdrv, const ff_diskio_impl_t* discio_impl)
 {
     assert(pdrv < _VOLUMES);
-
-    if (!s_impls_initialized) {
-        s_impls_initialized = true;
-        memset(s_impls, 0, _VOLUMES * sizeof(ff_diskio_impl_t*));
-    }
 
     if (s_impls[pdrv]) {
         ff_diskio_impl_t* im = s_impls[pdrv];
@@ -97,70 +89,3 @@ DWORD get_fattime(void)
             | (WORD)(tmr->tm_min << 5)
             | (WORD)(tmr->tm_sec >> 1);
 }
-
-DSTATUS ff_sdmmc_initialize (BYTE pdrv)
-{
-    return 0;
-}
-
-DSTATUS ff_sdmmc_status (BYTE pdrv)
-{
-    return 0;
-}
-
-DRESULT ff_sdmmc_read (BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
-{
-    sdmmc_card_t* card = s_cards[pdrv];
-    assert(card);
-    esp_err_t err = sdmmc_read_sectors(card, buff, sector, count);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "sdmmc_read_blocks failed (%d)", err);
-        return RES_ERROR;
-    }
-    return RES_OK;
-}
-
-DRESULT ff_sdmmc_write (BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
-{
-    sdmmc_card_t* card = s_cards[pdrv];
-    assert(card);
-    esp_err_t err = sdmmc_write_sectors(card, buff, sector, count);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "sdmmc_write_blocks failed (%d)", err);
-        return RES_ERROR;
-    }
-    return RES_OK;
-}
-
-DRESULT ff_sdmmc_ioctl (BYTE pdrv, BYTE cmd, void* buff)
-{
-    sdmmc_card_t* card = s_cards[pdrv];
-    assert(card);
-    switch(cmd) {
-        case CTRL_SYNC:
-            return RES_OK;
-        case GET_SECTOR_COUNT:
-            *((uint32_t*) buff) = card->csd.capacity;
-            return RES_OK;
-        case GET_SECTOR_SIZE:
-            *((uint32_t*) buff) = card->csd.sector_size;
-            return RES_OK;
-        case GET_BLOCK_SIZE:
-            return RES_ERROR;
-    }
-    return RES_ERROR;
-}
-
-void ff_diskio_register_sdmmc(BYTE pdrv, sdmmc_card_t* card)
-{
-    static const ff_diskio_impl_t sdmmc_impl = {
-        .init = &ff_sdmmc_initialize,
-        .status = &ff_sdmmc_status,
-        .read = &ff_sdmmc_read,
-        .write = &ff_sdmmc_write,
-        .ioctl = &ff_sdmmc_ioctl
-    };
-    s_cards[pdrv] = card;
-    ff_diskio_register(pdrv, &sdmmc_impl);
-}
-

@@ -55,6 +55,7 @@ typedef struct {
     UINT8       inst_id;        /* instance ID */
 } __attribute__((packed)) tBTA_GATT_ID;
 
+/* relate to ESP_GATT_xxx in esp_gatt_def.h */
 /* Success code and error codes */
 #define  BTA_GATT_OK                        GATT_SUCCESS
 #define  BTA_GATT_INVALID_HANDLE            GATT_INVALID_HANDLE                /* 0x0001 */
@@ -94,14 +95,19 @@ typedef struct {
 #define  BTA_GATT_NOT_ENCRYPTED             GATT_NOT_ENCRYPTED                 /* 0x8e */
 #define  BTA_GATT_CONGESTED                 GATT_CONGESTED                     /* 0x8f */
 
-#define  BTA_GATT_DUP_REG                   0x90                               /* 0x90 */
-#define  BTA_GATT_ALREADY_OPEN              0x91                               /* 0x91 */
-#define  BTA_GATT_CANCEL                    0x92                               /* 0x92 */
+#define  BTA_GATT_DUP_REG                   GATT_DUP_REG                       /* 0x90 */
+#define  BTA_GATT_ALREADY_OPEN              GATT_ALREADY_OPEN                  /* 0x91 */
+#define  BTA_GATT_CANCEL                    GATT_CANCEL                        /* 0x92 */
 
 /* 0xE0 ~ 0xFC reserved for future use */
-#define  BTA_GATT_CCC_CFG_ERR                GATT_CCC_CFG_ERR     /* 0xFD Client Characteristic Configuration Descriptor Improperly Configured */
-#define  BTA_GATT_PRC_IN_PROGRESS            GATT_PRC_IN_PROGRESS /* 0xFE Procedure Already in progress */
-#define  BTA_GATT_OUT_OF_RANGE               GATT_OUT_OF_RANGE    /* 0xFFAttribute value out of range */
+#define  BTA_GATT_STACK_RSP                 GATT_STACK_RSP                    /* 0xE0 */
+#define  BTA_GATT_APP_RSP                   GATT_APP_RSP                      /* 0xE1 */
+//Error caused by customer application or stack bug
+#define  BTA_GATT_UNKNOWN_ERROR             GATT_UNKNOWN_ERROR                /* 0XEF */
+
+#define  BTA_GATT_CCC_CFG_ERR               GATT_CCC_CFG_ERR     /* 0xFD Client Characteristic Configuration Descriptor Improperly Configured */
+#define  BTA_GATT_PRC_IN_PROGRESS           GATT_PRC_IN_PROGRESS /* 0xFE Procedure Already in progress */
+#define  BTA_GATT_OUT_OF_RANGE              GATT_OUT_OF_RANGE    /* 0xFFAttribute value out of range */
 
 typedef UINT8 tBTA_GATT_STATUS;
 
@@ -144,6 +150,8 @@ typedef UINT8 tBTA_GATT_STATUS;
 #define BTA_GATTC_SCAN_FLT_PARAM_EVT    32 /* Param filter event */
 #define BTA_GATTC_SCAN_FLT_STATUS_EVT   33 /* Filter status event */
 #define BTA_GATTC_ADV_VSC_EVT           34 /* ADV VSC event */
+#define BTA_GATTC_CONNECT_EVT           35 /* GATTC CONNECT  event */
+#define BTA_GATTC_DISCONNECT_EVT        36 /* GATTC DISCONNECT  event */
 
 typedef UINT8 tBTA_GATTC_EVT;
 
@@ -188,6 +196,7 @@ typedef struct {
 #define BTA_GATTC_TYPE_WRITE_NO_RSP      GATT_WRITE_NO_RSP
 typedef UINT8 tBTA_GATTC_WRITE_TYPE;
 
+/* relate to ESP_GATT_CONN_xxx in esp_gatt_defs.h */
 #define BTA_GATT_CONN_UNKNOWN                   0
 #define BTA_GATT_CONN_L2C_FAILURE               GATT_CONN_L2C_FAILURE         /* general l2cap resource failure */
 #define BTA_GATT_CONN_TIMEOUT                   GATT_CONN_TIMEOUT             /* 0x08 connection timeout  */
@@ -240,6 +249,7 @@ typedef struct {
 
 } tBTA_GATTC_MULTI;
 
+/* relate to ESP_GATT_xxx in esp_gatt_def.h */
 #define BTA_GATT_AUTH_REQ_NONE           GATT_AUTH_REQ_NONE
 #define BTA_GATT_AUTH_REQ_NO_MITM        GATT_AUTH_REQ_NO_MITM            /* unauthenticated encryption */
 #define BTA_GATT_AUTH_REQ_MITM           GATT_AUTH_REQ_MITM               /* authenticated encryption */
@@ -371,6 +381,20 @@ typedef struct {
     BD_ADDR                 remote_bda;
 } tBTA_GATTC_ENC_CMPL_CB;
 
+typedef struct {
+    tBTA_GATT_STATUS    status;
+    UINT16              conn_id;
+    tBTA_GATTC_IF       client_if;
+    BD_ADDR             remote_bda;
+} tBTA_GATTC_CONNECT;
+
+typedef struct {
+    tBTA_GATT_STATUS    status;
+    UINT16              conn_id;
+    tBTA_GATTC_IF       client_if;
+    BD_ADDR             remote_bda;
+} tBTA_GATTC_DISCONNECT;
+
 typedef union {
     tBTA_GATT_STATUS        status;
 
@@ -378,7 +402,9 @@ typedef union {
     tBTA_GATTC_SRVC_RES     srvc_res;          /* discovery result */
     tBTA_GATTC_REG          reg_oper;              /* registration data */
     tBTA_GATTC_OPEN         open;
+    tBTA_GATTC_CONNECT      connect;
     tBTA_GATTC_CLOSE        close;
+    tBTA_GATTC_DISCONNECT   disconnect;
     tBTA_GATTC_READ         read;             /* read attribute/descriptor data */
     tBTA_GATTC_WRITE        write;            /* write complete data */
     tBTA_GATTC_EXEC_CMPL    exec_cmpl;       /*  execute complete */
@@ -418,7 +444,7 @@ typedef void (tBTA_GATTC_CBACK)(tBTA_GATTC_EVT event, tBTA_GATTC *p_data);
 #define BTA_GATTS_CLOSE_EVT                             18
 #define BTA_GATTS_LISTEN_EVT                            19
 #define BTA_GATTS_CONGEST_EVT                           20
-#define BTA_GATTS_SET_ATTR_VAL_EVT                      21
+#define BTA_GATTS_SET_ATTR_VAL_EVT                      23
 
 typedef UINT8  tBTA_GATTS_EVT;
 typedef tGATT_IF tBTA_GATTS_IF;
@@ -489,6 +515,7 @@ typedef tGATT_VALUE tBTA_GATT_VALUE;
 /* attribute response data */
 typedef tGATTS_RSP tBTA_GATTS_RSP;
 
+/* relate to ESP_GATT_PREP_WRITE_xxx in esp_gatt_defs.h */
 /* attribute request data from the client */
 #define BTA_GATT_PREP_WRITE_CANCEL   0x00
 #define BTA_GATT_PREP_WRITE_EXEC     0x01
@@ -573,6 +600,21 @@ typedef struct {
     tBTA_GATT_STATUS status; /* notification/indication status */
 } tBTA_GATTS_CONF;
 
+typedef struct {
+    tBTA_GATT_STATUS    status;
+    UINT16              conn_id;    /* connection ID */
+} tBTA_GATTS_CLOSE;
+
+typedef struct {
+    tBTA_GATT_STATUS    status;
+    tBTA_GATTS_IF       server_if;
+} tBTA_GATTS_OPEN;
+
+typedef struct {
+    tBTA_GATT_STATUS    status;
+    tBTA_GATTS_IF       server_if;
+} tBTA_GATTS_CANCEL_OPEN;
+
 /* GATTS callback data */
 typedef union {
     tBTA_GATTS_REG_OPER         reg_oper;
@@ -587,7 +629,19 @@ typedef union {
     tBTA_GATTS_CONN             conn;           /* BTA_GATTS_CONN_EVT */
     tBTA_GATTS_CONGEST          congest;        /* BTA_GATTS_CONGEST_EVT callback data */
     tBTA_GATTS_CONF             confirm;        /* BTA_GATTS_CONF_EVT callback data */
+    tBTA_GATTS_CLOSE            close;          /* BTA_GATTS_CLOSE_EVT callback data */
+    tBTA_GATTS_OPEN             open;           /* BTA_GATTS_OPEN_EVT callback data */
+    tBTA_GATTS_CANCEL_OPEN      cancel_open;    /* tBTA_GATTS_CANCEL_OPEN callback data */
+
 } tBTA_GATTS;
+
+/* GATTC wait for service change ccc timer callback data */
+typedef struct {
+    UINT16 conn_id;
+    BD_ADDR remote_bda;
+    UINT8 count;
+    UINT8 last_status;
+}tBTA_GATTC_WAIT_CCC_TIMER;
 
 /* GATTS enable callback function */
 typedef void (tBTA_GATTS_ENB_CBACK)(tBTA_GATT_STATUS status);
@@ -984,7 +1038,7 @@ extern tBTA_GATT_STATUS BTA_GATTC_DeregisterForNotifications (tBTA_GATTC_IF     
 ** Description      This function is called to prepare write a characteristic value.
 **
 ** Parameters       conn_id - connection ID.
-**                    p_char_id - GATT characteritic ID of the service.
+**                  p_char_id - GATT characteritic ID of the service.
 **                  offset - offset of the write value.
 **                  len: length of the data to be written.
 **                  p_value - the value to be written.
@@ -999,6 +1053,26 @@ extern void BTA_GATTC_PrepareWrite  (UINT16 conn_id,
                                      UINT8 *p_value,
                                      tBTA_GATT_AUTH_REQ auth_req);
 
+/*******************************************************************************
+**
+** Function         BTA_GATTC_PrepareWriteCharDescr
+**
+** Description      This function is called to prepare write a characteristic descriptor value.
+**
+** Parameters       conn_id - connection ID.
+**                  p_char_descr_id - GATT characteritic descriptor ID of the service.
+**                  offset - offset of the write value.
+**                  len: length of the data to be written.
+**                  p_value - the value to be written.
+**
+** Returns          None
+**
+*******************************************************************************/
+extern void BTA_GATTC_PrepareWriteCharDescr  (UINT16 conn_id,
+                                              tBTA_GATTC_CHAR_DESCR_ID *p_char_descr_id,
+                                              UINT16 offset,
+                                              tBTA_GATT_UNFMT   *p_data,
+                                              tBTA_GATT_AUTH_REQ auth_req);
 /*******************************************************************************
 **
 ** Function         BTA_GATTC_ExecuteWrite

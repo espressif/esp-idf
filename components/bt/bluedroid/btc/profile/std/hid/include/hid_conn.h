@@ -25,7 +25,7 @@
 #ifndef HID_CONN_H
 #define HID_CONN_H
 
-
+#if (HID_HOST_INCLUDED == TRUE)
 /* Define the HID Connection Block
 */
 typedef struct hid_conn {
@@ -65,4 +65,5 @@ typedef struct hid_conn {
 #define HIDD_SEC_CHN    3
 #define HIDD_NOSEC_CHN  4
 
+#endif  ///HID_HOST_INCLUDED == TRUE
 #endif

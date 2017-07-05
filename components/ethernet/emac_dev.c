@@ -95,9 +95,9 @@ void emac_reset(void)
 void emac_enable_clk(bool enable)
 {
     if (enable == true) {
-        REG_SET_BIT(EMAC_CLK_EN_REG, EMAC_CLK_EN);
+        DPORT_REG_SET_BIT(EMAC_CLK_EN_REG, EMAC_CLK_EN);
     } else {
-        REG_CLR_BIT(EMAC_CLK_EN_REG, EMAC_CLK_EN);
+        DPORT_REG_CLR_BIT(EMAC_CLK_EN_REG, EMAC_CLK_EN);
     }
 }
 

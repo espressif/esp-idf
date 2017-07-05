@@ -1,0 +1,27 @@
+menu "Example Configuration"
+
+config WIFI_SSID
+    string "WiFi SSID"
+    default "myssid"
+    help
+	SSID (network name) for the example to connect to.
+
+config WIFI_PASSWORD
+    string "WiFi Password"
+    default "mypassword"
+    help
+	WiFi password (WPA or WPA2) for the example to use.
+
+choice POWER_SAVE_MODE
+    prompt "power save mode"
+    default POWER_SAVE_NONE
+    help
+	Power save mode for the esp32 to use.
+
+config POWER_SAVE_NONE
+    bool "none"
+config POWER_SAVE_MODEM
+    bool "modem"
+endchoice
+
+endmenu

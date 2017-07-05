@@ -133,7 +133,7 @@ void btu_free_core(void)
     l2c_free();
 
 #if BLE_INCLUDED == TRUE
-#if (defined(GATT_INCLUDED) && GATT_INCLUDED == true)
+#if (defined(GATTS_INCLUDED) && GATTS_INCLUDED == true)
     gatt_free();
 #endif
 #endif
@@ -202,7 +202,7 @@ void BTU_StartUp(void)
 
     xBtuQueue = xQueueCreate(BTU_QUEUE_NUM, sizeof(BtTaskEvt_t));
     xTaskCreatePinnedToCore(btu_task_thread_handler, BTU_TASK_NAME, BTU_TASK_STACK_SIZE, NULL, BTU_TASK_PRIO, &xBtuTaskHandle, 0);
-    btu_task_post(SIG_BTU_START_UP);
+    btu_task_post(SIG_BTU_START_UP, TASK_POST_BLOCKING);
     /*
         // Continue startup on bt workqueue thread.
         thread_post(bt_workqueue_thread, btu_task_start_up, NULL);

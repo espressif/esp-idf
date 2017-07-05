@@ -143,6 +143,8 @@ typedef void (*tBTU_EVENT_CALLBACK)(BT_HDR *p_hdr);
 /* eL2CAP Info Request and other proto cmds timer */
 #define BTU_TTYPE_L2CAP_FCR_ACK     78
 #define BTU_TTYPE_L2CAP_INFO        79
+/* L2CAP update connection parameters timer */
+#define BTU_TTYPE_L2CAP_UPDA_CONN_PARAMS            80
 
 #define BTU_TTYPE_MCA_CCB_RSP                       98
 
@@ -160,6 +162,8 @@ typedef void (*tBTU_EVENT_CALLBACK)(BT_HDR *p_hdr);
 
 
 #define BTU_TTYPE_UCD_TO                            108
+
+
 
 /* This is the inquiry response information held by BTU, and available
 ** to applications.

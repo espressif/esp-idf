@@ -123,7 +123,8 @@ typedef union {
     } send_rsp;
 
     //BTC_GATTS_SET_ATTR_VALUE
-    struct set_attr_val_args{
+    struct set_attr_val_args {
+        uint16_t handle;
         uint16_t length;
         uint8_t *value;
     } set_attr_val;

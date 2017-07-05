@@ -16,7 +16,9 @@
 #include "flash_qio_mode.h"
 #include "esp_log.h"
 #include "rom/spi_flash.h"
+#include "rom/efuse.h"
 #include "soc/spi_struct.h"
+#include "soc/efuse_reg.h"
 #include "sdkconfig.h"
 
 /* SPI flash controller */
@@ -32,6 +34,9 @@
 #define CMD_WRDI       0x04
 #define CMD_RDSR       0x05
 #define CMD_RDSR2      0x35 /* Not all SPI flash uses this command */
+
+
+#define ESP32_D2WD_WP_GPIO 7 /* ESP32-D2WD has this GPIO wired to WP pin of flash */
 
 static const char *TAG = "qio_mode";
 
@@ -77,7 +82,7 @@ static void write_status_16b_wrsr(unsigned new_status);
 const static qio_info_t chip_data[] = {
 /*   Manufacturer,   mfg_id, flash_id, id mask, Read Status,                Write Status,          QIE Bit */
     { "MXIC",        0xC2,   0x2000, 0xFF00,    read_status_8b_rdsr,        write_status_8b_wrsr,  6 },
-    { "ISSI",        0x9D,   0x4000, 0xFF00,    read_status_8b_rdsr,        write_status_8b_wrsr,  6 },
+    { "ISSI",        0x9D,   0x4000, 0xCF00,    read_status_8b_rdsr,        write_status_8b_wrsr,  6 }, /* IDs 0x40xx, 0x70xx */
     { "WinBond",     0xEF,   0x4000, 0xFF00,    read_status_16b_rdsr_rdsr2, write_status_16b_wrsr, 9 },
 
     /* Final entry is default entry, if no other IDs have matched.
@@ -102,6 +107,9 @@ static void enable_qio_mode(read_status_fn_t read_status_fn,
 */
 static uint32_t execute_flash_command(uint8_t command, uint32_t mosi_data, uint8_t mosi_len, uint8_t miso_len);
 
+/* dummy_len_plus values defined in ROM for SPI flash configuration */
+extern uint8_t g_rom_spiflash_dummy_len_plus[];
+
 void bootloader_enable_qio_mode(void)
 {
     uint32_t raw_flash_id;
@@ -110,7 +118,7 @@ void bootloader_enable_qio_mode(void)
     int i;
 
     ESP_LOGD(TAG, "Probing for QIO mode enable...");
-    SPI_Wait_Idle(&g_rom_flashchip);
+    esp_rom_spiflash_wait_idle(&g_rom_flashchip);
 
     /* Set up some of the SPIFLASH user/ctrl variables which don't change
        while we're probing using execute_flash_command() */
@@ -149,8 +157,22 @@ static void enable_qio_mode(read_status_fn_t read_status_fn,
                             uint8_t status_qio_bit)
 {
     uint32_t status;
+    const uint32_t spiconfig = ets_efuse_get_spiconfig();
 
-    SPI_Wait_Idle(&g_rom_flashchip);
+    if (spiconfig != EFUSE_SPICONFIG_SPI_DEFAULTS && spiconfig != EFUSE_SPICONFIG_HSPI_DEFAULTS) {
+        // spiconfig specifies a custom efuse pin configuration. This config defines all pins -except- WP.
+        //
+        // For now, in this situation we only support Quad I/O mode for ESP32-D2WD where WP pin is known.
+        uint32_t chip_ver = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_RESERVE);
+        uint32_t pkg_ver = chip_ver & 0x7;
+        const uint32_t PKG_VER_ESP32_D2WD = 2; // TODO: use chip detection API once available
+        if (pkg_ver != PKG_VER_ESP32_D2WD) {
+            ESP_LOGE(TAG, "Quad I/O is only supported for standard pin numbers or ESP32-D2WD. Falling back to Dual I/O.");
+            return;
+        }
+    }
+
+    esp_rom_spiflash_wait_idle(&g_rom_flashchip);
 
     status = read_status_fn();
     ESP_LOGD(TAG, "Initial flash chip status 0x%x", status);
@@ -159,7 +181,7 @@ static void enable_qio_mode(read_status_fn_t read_status_fn,
         execute_flash_command(CMD_WREN, 0, 0, 0);
         write_status_fn(status | (1<<status_qio_bit));
 
-        SPI_Wait_Idle(&g_rom_flashchip);
+        esp_rom_spiflash_wait_idle(&g_rom_flashchip);
 
         status = read_status_fn();
         ESP_LOGD(TAG, "Updated flash chip status 0x%x", status);
@@ -174,13 +196,16 @@ static void enable_qio_mode(read_status_fn_t read_status_fn,
 
     ESP_LOGD(TAG, "Enabling QIO mode...");
 
-    SpiFlashRdMode mode;
+    esp_rom_spiflash_read_mode_t mode;
 #if CONFIG_FLASHMODE_QOUT
-    mode = SPI_FLASH_QOUT_MODE;
+    mode = ESP_ROM_SPIFLASH_QOUT_MODE;
 #else
-    mode = SPI_FLASH_QIO_MODE;
+    mode = ESP_ROM_SPIFLASH_QIO_MODE;
 #endif
-    SPIMasterReadModeCnfig(mode);
+
+    esp_rom_spiflash_config_readmode(mode);
+
+    esp_rom_spiflash_select_qio_pins(ESP32_D2WD_WP_GPIO, spiconfig);
 }
 
 static unsigned read_status_8b_rdsr()
@@ -221,6 +246,17 @@ static uint32_t execute_flash_command(uint8_t command, uint32_t mosi_data, uint8
     SPIFLASH.user.usr_mosi = mosi_len > 0;
     SPIFLASH.mosi_dlen.usr_mosi_dbitlen = mosi_len ? (mosi_len - 1) : 0;
     SPIFLASH.data_buf[0] = mosi_data;
+
+    if (g_rom_spiflash_dummy_len_plus[1]) {
+        /* When flash pins are mapped via GPIO matrix, need a dummy cycle before reading via MISO */
+        if (miso_len > 0) {
+            SPIFLASH.user.usr_dummy = 1;
+            SPIFLASH.user1.usr_dummy_cyclelen = g_rom_spiflash_dummy_len_plus[1] - 1;
+        } else {
+            SPIFLASH.user.usr_dummy = 0;
+            SPIFLASH.user1.usr_dummy_cyclelen = 0;
+        }
+    }
 
     SPIFLASH.cmd.usr = 1;
     while(SPIFLASH.cmd.usr != 0)

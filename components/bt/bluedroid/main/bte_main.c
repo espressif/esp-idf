@@ -117,10 +117,6 @@ extern void osi_mem_dbg_init(void);
 ******************************************************************************/
 int bte_main_boot_entry(bluedroid_init_done_cb_t cb)
 {
-#ifdef CONFIG_BLUEDROID_MEM_DEBUG
-    osi_mem_dbg_init();
-#endif
-
     if (gki_init()) {
         LOG_ERROR("%s: Init GKI Module Failure.\n", __func__);
         return -1;
@@ -143,10 +139,6 @@ int bte_main_boot_entry(bluedroid_init_done_cb_t cb)
     //Caution: No event dispatcher defined now in hci layer
     //data_dispatcher_register_default(hci->event_dispatcher, btu_hci_msg_queue);
     hci->set_data_queue(btu_hci_msg_queue);
-
-#if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
-    //bte_load_ble_conf(BTE_BLE_STACK_CONF_FILE);
-#endif
 
     //Enbale HCI
     bte_main_enable();
@@ -205,7 +197,6 @@ static void bte_main_enable(void)
     }
 
     //Now Test Case Not Supported BTU
-    LOG_ERROR("Startup BTU\n");
     BTU_StartUp();
 }
 

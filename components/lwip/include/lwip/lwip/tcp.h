@@ -310,7 +310,28 @@ struct tcp_pcb {
   u8_t snd_scale;
   u8_t rcv_scale;
 #endif
+
+#if ESP_STATS_TCP
+#define ESP_STATS_TCP_ARRAY_SIZE 20
+  u16_t retry_cnt[TCP_MAXRTX];
+  u16_t rto_cnt[ESP_STATS_TCP_ARRAY_SIZE];
+#endif
 };
+
+#if ESP_STATS_TCP
+#define ESP_STATS_TCP_PCB(_pcb) do {\
+  if ((_pcb)->unacked) {\
+    (_pcb)->retry_cnt[(_pcb)->nrtx]++;\
+    if ((_pcb)->rto < ESP_STATS_TCP_ARRAY_SIZE) {\
+      (_pcb)->rto_cnt[(_pcb)->rto]++;\
+    } else {\
+      (_pcb)->rto_cnt[ESP_STATS_TCP_ARRAY_SIZE-1] ++;\
+    }\
+  }\
+} while(0)
+#else
+#define ESP_STATS_TCP_PCB(pcb) 
+#endif
 
 struct tcp_pcb_listen {
 /* Common members of all PCB types */

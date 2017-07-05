@@ -170,14 +170,14 @@ static void hci_hal_h4_rx_handler(void *arg)
     }
 }
 
-void hci_hal_h4_task_post(void)
+void hci_hal_h4_task_post(task_post_t timeout)
 {
     BtTaskEvt_t evt;
 
     evt.sig = 0xff;
     evt.par = 0;
 
-    if (xQueueSend(xHciH4Queue, &evt, 10 / portTICK_PERIOD_MS) != pdTRUE) {
+    if (xQueueSend(xHciH4Queue, &evt, timeout) != pdTRUE) {
         LOG_ERROR("xHciH4Queue failed\n");
     }
 }
@@ -195,7 +195,7 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
     packet->offset++;
     packet->len--;
     if (type == HCI_BLE_EVENT) {
-        uint8_t len;
+        uint8_t len = 0;
         STREAM_TO_UINT8(len, stream);
         LOG_ERROR("Workround stream corrupted during LE SCAN: pkt_len=%d ble_event_len=%d\n",
                   packet->len, len);
@@ -217,11 +217,8 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
         return;
     }
     if (type == DATA_TYPE_ACL) {
-        packet->offset--;
         stream += hdr_size - 2;
         STREAM_TO_UINT16(length, stream);
-        stream = packet->data + 1;
-        memcpy(packet->data, stream, packet->len);
     } else {
         stream += hdr_size - 1;
         STREAM_TO_UINT8(length, stream);
@@ -251,7 +248,7 @@ static void host_send_pkt_available_cb(void)
 {
     //Controller rx cache buffer is ready for receiving new host packet
     //Just Call Host main thread task to process pending packets.
-    hci_host_task_post();
+    hci_host_task_post(TASK_POST_BLOCKING);
 }
 
 static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
@@ -271,7 +268,7 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
     pkt->layer_specific = 0;
     memcpy(pkt->data, data, len);
     fixed_queue_enqueue(hci_hal_env.rx_q, pkt);
-    hci_hal_h4_task_post();
+    hci_hal_h4_task_post(TASK_POST_BLOCKING);
 
     BTTRC_DUMP_BUFFER("Recv Pkt", pkt->data, len);
 

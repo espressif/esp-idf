@@ -20,6 +20,7 @@
 
 #include "bta_api.h"
 #include "hidh_api.h"
+#if defined(BTA_HH_INCLUDED) && (BTA_HH_INCLUDED == TRUE)
 
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
 #include "gatt_api.h"
@@ -537,5 +538,8 @@ extern void bta_hh_le_hid_read_rpt_clt_cfg(BD_ADDR bd_addr, UINT8 rpt_id);
 #ifdef __cplusplus
 }
 #endif
+
+#endif ///defined(BTA_HH_INCLUDED) && (BTA_HH_INCLUDED == TRUE)
+
 
 #endif  /* BTA_HH_API_H */

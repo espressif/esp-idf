@@ -105,12 +105,21 @@
 
 #include "esp_crosscore_int.h"
 
+#include "esp_intr_alloc.h"
+
 /* Defined in portasm.h */
 extern void _frxt_tick_timer_init(void);
 
 /* Defined in xtensa_context.S */
 extern void _xt_coproc_init(void);
 
+
+#if CONFIG_FREERTOS_CORETIMER_0
+    #define SYSTICK_INTR_ID (ETS_INTERNAL_TIMER0_INTR_SOURCE+ETS_INTERNAL_INTR_SOURCE_OFF)
+#endif
+#if CONFIG_FREERTOS_CORETIMER_1
+    #define SYSTICK_INTR_ID (ETS_INTERNAL_TIMER1_INTR_SOURCE+ETS_INTERNAL_INTR_SOURCE_OFF)
+#endif
 
 /*-----------------------------------------------------------*/
 
@@ -122,7 +131,7 @@ unsigned port_interruptNesting[portNUM_PROCESSORS] = {0};  // Interrupt nesting 
 // User exception dispatcher when exiting
 void _xt_user_exit(void);
 
-/* 
+/*
  * Stack initialization
  */
 #if portUSING_MPU_WRAPPERS
@@ -222,12 +231,14 @@ BaseType_t xPortSysTickHandler( void )
 	BaseType_t ret;
 
 	portbenchmarkIntLatency();
+	traceISR_ENTER(SYSTICK_INTR_ID);
 	ret = xTaskIncrementTick();
 	if( ret != pdFALSE )
 	{
 		portYIELD_FROM_ISR();
+	} else {
+		traceISR_EXIT();
 	}
-
 	return ret;
 }
 
@@ -242,7 +253,7 @@ void vPortYieldOtherCore( BaseType_t coreid ) {
  * Used to set coprocessor area in stack. Current hack is to reuse MPU pointer for coprocessor area.
  */
 #if portUSING_MPU_WRAPPERS
-void vPortStoreTaskMPUSettings( xMPU_SETTINGS *xMPUSettings, const struct xMEMORY_REGION * const xRegions, StackType_t *pxBottomOfStack, uint16_t usStackDepth )
+void vPortStoreTaskMPUSettings( xMPU_SETTINGS *xMPUSettings, const struct xMEMORY_REGION * const xRegions, StackType_t *pxBottomOfStack, uint32_t usStackDepth )
 {
 	#if XCHAL_CP_NUM > 0
 	xMPUSettings->coproc_area = (StackType_t*)((((uint32_t)(pxBottomOfStack + usStackDepth - 1)) - XT_CP_SIZE ) & ~0xf);
@@ -253,8 +264,14 @@ void vPortStoreTaskMPUSettings( xMPU_SETTINGS *xMPUSettings, const struct xMEMOR
 	 */
 	#endif
 }
-#endif
 
+void vPortReleaseTaskMPUSettings( xMPU_SETTINGS *xMPUSettings )
+{
+	/* If task has live floating point registers somewhere, release them */
+	_xt_coproc_release( xMPUSettings->coproc_area );
+}
+
+#endif
 
 /*
  * Returns true if the current core is in ISR context; low prio ISR, med prio ISR or timer tick ISR. High prio ISRs

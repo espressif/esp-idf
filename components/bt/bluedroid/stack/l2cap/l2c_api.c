@@ -38,6 +38,7 @@
 #include "btm_api.h"
 #include "allocator.h"
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         L2CA_Register
@@ -723,6 +724,9 @@ BOOLEAN  L2CA_Echo (BD_ADDR p_bd_addr, BT_HDR *p_data, tL2CA_ECHO_DATA_CB *p_cal
 
 }
 
+#endif ///CLASSIC_BT_INCLUDED == TRUE
+
+
 bool L2CA_GetIdentifiers(uint16_t lcid, uint16_t *rcid, uint16_t *handle)
 {
     tL2C_CCB *control_block = l2cu_find_ccb_by_cid(NULL, lcid);
@@ -785,6 +789,8 @@ BOOLEAN L2CA_SetIdleTimeout (UINT16 cid, UINT16 timeout, BOOLEAN is_global)
     return (TRUE);
 }
 
+
+
 /*******************************************************************************
 **
 ** Function         L2CA_SetIdleTimeoutByBdAddr
@@ -836,6 +842,8 @@ BOOLEAN L2CA_SetIdleTimeoutByBdAddr(BD_ADDR bd_addr, UINT16 timeout, tBT_TRANSPO
 
     return TRUE;
 }
+
+
 
 /*******************************************************************************
 **
@@ -894,6 +902,8 @@ UINT8 L2CA_SetDesireRole (UINT8 new_role)
 
     return (l2cb.desire_role);
 }
+
+#if (CLASSIC_BT_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -1198,6 +1208,8 @@ BOOLEAN L2CA_SetFlushTimeout (BD_ADDR bd_addr, UINT16 flush_tout)
 
     return (TRUE);
 }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+
 
 /*******************************************************************************
 **
@@ -1260,6 +1272,7 @@ BOOLEAN L2CA_GetBDAddrbyHandle (UINT16 handle, BD_ADDR bd_addr)
     return found_dev;
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 **  Function         L2CA_GetChnlFcrMode
@@ -1284,6 +1297,9 @@ UINT8 L2CA_GetChnlFcrMode (UINT16 lcid)
     return (L2CAP_FCR_BASIC_MODE);
 }
 
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+
+
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
 /*******************************************************************************
 **
@@ -1299,6 +1315,7 @@ UINT8 L2CA_GetChnlFcrMode (UINT16 lcid)
 *******************************************************************************/
 BOOLEAN  L2CA_RegisterFixedChannel (UINT16 fixed_cid, tL2CAP_FIXED_CHNL_REG *p_freg)
 {
+    L2CAP_TRACE_DEBUG ("L2CA_RegisterFixedChannel()  CID: 0x%04x, %p", fixed_cid,p_freg);
     if ( (fixed_cid < L2CAP_FIRST_FIXED_CHNL) || (fixed_cid > L2CAP_LAST_FIXED_CHNL) ) {
         L2CAP_TRACE_ERROR ("L2CA_RegisterFixedChannel()  Invalid CID: 0x%04x", fixed_cid);
 
@@ -1638,6 +1655,7 @@ BOOLEAN L2CA_SetFixedChannelTout (BD_ADDR rem_bda, UINT16 fixed_cid, UINT16 idle
 
 #endif /* #if (L2CAP_NUM_FIXED_CHNLS > 0) */
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function     L2CA_GetCurrentConfig
@@ -1723,6 +1741,7 @@ BOOLEAN L2CA_RegForNoCPEvt(tL2CA_NOCP_CB *p_cb, BD_ADDR p_bda)
 
     return TRUE;
 }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -1735,11 +1754,13 @@ BOOLEAN L2CA_RegForNoCPEvt(tL2CA_NOCP_CB *p_cb, BD_ADDR p_bda)
 **                  L2CAP_DW_FAILED, if error
 **
 *******************************************************************************/
+#if (CLASSIC_BT_INCLUDED == TRUE)
 UINT8 L2CA_DataWrite (UINT16 cid, BT_HDR *p_data)
 {
     L2CAP_TRACE_API ("L2CA_DataWrite()  CID: 0x%04x  Len: %d", cid, p_data->len);
     return l2c_data_write (cid, p_data, L2CAP_FLUSHABLE_CH_BASED);
 }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -1787,12 +1808,14 @@ BOOLEAN L2CA_SetChnlFlushability (UINT16 cid, BOOLEAN is_flushable)
 **                  L2CAP_DW_FAILED, if error
 **
 *******************************************************************************/
+#if (CLASSIC_BT_INCLUDED == TRUE)
 UINT8 L2CA_DataWriteEx (UINT16 cid, BT_HDR *p_data, UINT16 flags)
 {
     L2CAP_TRACE_API ("L2CA_DataWriteEx()  CID: 0x%04x  Len: %d Flags:0x%04X",
                      cid, p_data->len, flags);
     return l2c_data_write (cid, p_data, flags);
 }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
 /*******************************************************************************
 **

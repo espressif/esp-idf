@@ -1,7 +1,5 @@
-#include <functional>
 #include <vector>
 #include <algorithm>
-#include <iostream>
 #include "unity.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -57,20 +55,6 @@ TEST_CASE("can use static initializers for non-POD types", "[cxx]")
 {
     TEST_ASSERT_EQUAL(42, non_pod_test_helper(1));
     TEST_ASSERT_EQUAL(1, non_pod_test_helper(0));
-}
-
-TEST_CASE("can call std::function and bind", "[cxx]")
-{
-    int outer = 1;
-    std::function<int(int)> fn = [&outer](int x) -> int {
-        return x + outer;
-    };
-    outer = 5;
-    TEST_ASSERT_EQUAL(6, fn(1));
-    
-    auto bound = std::bind(fn, outer);
-    outer = 10;
-    TEST_ASSERT_EQUAL(15, bound());
 }
 
 TEST_CASE("can use std::vector", "[cxx]")
@@ -203,8 +187,30 @@ TEST_CASE("before scheduler has started, static initializers work correctly", "[
     TEST_ASSERT_EQUAL(2, StaticInitTestBeforeScheduler::order);
 }
 
+/* These test cases pull a lot of code from libstdc++ and are disabled for now
+ */
+#if 0
+#include <iostream>
+#include <functional>
 
 TEST_CASE("can use iostreams", "[cxx]")
 {
     std::cout << "hello world";
 }
+
+TEST_CASE("can call std::function and bind", "[cxx]")
+{
+    int outer = 1;
+    std::function<int(int)> fn = [&outer](int x) -> int {
+        return x + outer;
+    };
+    outer = 5;
+    TEST_ASSERT_EQUAL(6, fn(1));
+
+    auto bound = std::bind(fn, outer);
+    outer = 10;
+    TEST_ASSERT_EQUAL(15, bound());
+}
+
+#endif
+

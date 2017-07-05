@@ -2,7 +2,7 @@ menu "ESP32-specific"
 
 choice ESP32_DEFAULT_CPU_FREQ_MHZ
     prompt "CPU frequency"
-    default ESP32_DEFAULT_CPU_FREQ_240
+    default ESP32_DEFAULT_CPU_FREQ_160
     help
         CPU frequency to be set on application startup.
 
@@ -28,24 +28,33 @@ config MEMMAP_SMP
         to save some memory. (ToDo: Make this automatically depend on unicore support)
 
 config MEMMAP_TRACEMEM
-    bool "Use TRAX tracing feature"
-    default "n"
-    help
-        The ESP32 contains a feature which allows you to trace the execution path the processor
-        has taken through the program. This is stored in a chunk of 32K (16K for single-processor)
-        of memory that can't be used for general purposes anymore. Disable this if you do not know
-        what this is.
+	bool
+	default "n"
 
 config MEMMAP_TRACEMEM_TWOBANKS
-    bool "Reserve memory for tracing both pro as well as app cpu execution"
+    bool
     default "n"
-    depends on MEMMAP_TRACEMEM && MEMMAP_SMP
+
+config ESP32_TRAX
+    bool "Use TRAX tracing feature"
+    default "n"
+    select MEMMAP_TRACEMEM
     help
         The ESP32 contains a feature which allows you to trace the execution path the processor
         has taken through the program. This is stored in a chunk of 32K (16K for single-processor)
         of memory that can't be used for general purposes anymore. Disable this if you do not know
         what this is.
 
+config ESP32_TRAX_TWOBANKS
+    bool "Reserve memory for tracing both pro as well as app cpu execution"
+    default "n"
+    depends on ESP32_TRAX && MEMMAP_SMP
+    select MEMMAP_TRACEMEM_TWOBANKS
+    help
+        The ESP32 contains a feature which allows you to trace the execution path the processor
+        has taken through the program. This is stored in a chunk of 32K (16K for single-processor)
+        of memory that can't be used for general purposes anymore. Disable this if you do not know
+        what this is.
 
 # Memory to reverse for trace, used in linker script
 config TRACEMEM_RESERVE_DRAM
@@ -104,28 +113,36 @@ config MEMMAP_SPISRAM
         The ESP32 can control an external SPI SRAM chip, adding the memory it contains to the
         main memory map. Enable this if you have this hardware and want to use it in the same
         way as on-chip RAM.
-
-choice NUMBER_OF_MAC_ADDRESS_GENERATED_FROM_EFUSE
-    bool "Number of MAC address generated from the hardware MAC address in efuse"
-    default FOUR_MAC_ADDRESS_FROM_EFUSE
+        
+choice NUMBER_OF_UNIVERSAL_MAC_ADDRESS
+    bool "Number of universally administered (by IEEE) MAC address"
+    default FOUR_UNIVERSAL_MAC_ADDRESS
     help
-        Config the number of MAC address which is generated from the hardware MAC address in efuse.
-        If the number is two, the MAC addresses of WiFi station and bluetooth are generated from
-        the hardware MAC address in efuse. The MAC addresses of WiFi softap and ethernet are derived
-        from that of WiFi station and bluetooth respectively. 
-        If the number is four, the MAC addresses of WiFi station, WiFi softap, bluetooth and ethernet
-        are all generated from the hardware MAC address in efuse.
+        Configure the number of universally administered (by IEEE) MAC addresses.
+        During initialisation, MAC addresses for each network interface are generated or derived from a 
+        single base MAC address.
+        If the number of universal MAC addresses is four, all four interfaces (WiFi station, WiFi softap, 
+        Bluetooth and Ethernet) receive a universally administered MAC address. These are generated 
+        sequentially by adding 0, 1, 2 and 3 (respectively) to the final octet of the base MAC address.
+        If the number of universal MAC addresses is two, only two interfaces (WiFi station and Bluetooth) 
+        receive a universally administered MAC address. These are generated sequentially by adding 0 
+        and 1 (respectively) to the base MAC address. The remaining two interfaces (WiFi softap and Ethernet) 
+        receive local MAC addresses. These are derived from the universal WiFi station and Bluetooth MAC 
+        addresses, respectively.
+        When using the default (Espressif-assigned) base MAC address, either setting can be used. When using 
+        a custom universal MAC address range, the correct setting will depend on the allocation of MAC 
+        addresses in this range (either 2 or 4 per device.)
 
-config TWO_MAC_ADDRESS_FROM_EFUSE
+config TWO_UNIVERSAL_MAC_ADDRESS
     bool "Two"
-config FOUR_MAC_ADDRESS_FROM_EFUSE
+config FOUR_UNIVERSAL_MAC_ADDRESS
     bool "Four"
 endchoice
 
-config NUMBER_OF_MAC_ADDRESS_GENERATED_FROM_EFUSE
+config NUMBER_OF_UNIVERSAL_MAC_ADDRESS
     int 
-    default 2 if TWO_MAC_ADDRESS_FROM_EFUSE 
-    default 4 if FOUR_MAC_ADDRESS_FROM_EFUSE 
+    default 2 if TWO_UNIVERSAL_MAC_ADDRESS
+    default 4 if FOUR_UNIVERSAL_MAC_ADDRESS
 
 config SYSTEM_EVENT_QUEUE_SIZE
     int "System event queue size"
@@ -139,13 +156,28 @@ config SYSTEM_EVENT_TASK_STACK_SIZE
     help
         Config system event task stack size in different application.
 
-
 config MAIN_TASK_STACK_SIZE
     int "Main task stack size"
     default 4096
     help
-        Config system event task stack size in different application.
+        Configure the "main task" stack size. This is the stack of the task
+        which calls app_main(). If app_main() returns then this task is deleted
+        and its stack memory is freed.
 
+config IPC_TASK_STACK_SIZE
+    int "Inter-Processor Call (IPC) task stack size"
+    default 1024
+    range 512 65536 if !ESP32_APPTRACE_ENABLE
+    range 2048 65536 if ESP32_APPTRACE_ENABLE
+    help
+        Configure the IPC tasks stack size. One IPC task runs on each core
+        (in dual core mode), and allows for cross-core function calls.
+
+        See IPC documentation for more details.
+
+        The default stack size should be enough for most common use cases.
+        It can be shrunk if you are sure that you do not use any custom
+        IPC functionality.
 
 config NEWLIB_STDOUT_ADDCR
     bool "Standard-out output adds carriage return before newline"
@@ -467,33 +499,75 @@ choice ESP32_RTC_CLOCK_SOURCE
     default ESP32_RTC_CLOCK_SOURCE_INTERNAL_RC
     help
         Choose which clock is used as RTC clock source.
-        The only available option for now is to use internal
-        150kHz RC oscillator.
 
 config ESP32_RTC_CLOCK_SOURCE_INTERNAL_RC
-    bool "Internal RC"
+    bool "Internal 150kHz RC oscillator"
 config ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
     bool "External 32kHz crystal"
-    depends on DOCUMENTATION_FOR_RTC_CNTL
 endchoice
+
+config ESP32_RTC_CLK_CAL_CYCLES
+    int "Number of cycles for RTC_SLOW_CLK calibration"
+    default 1024
+    range 0 125000
+    help
+        When the startup code initializes RTC_SLOW_CLK, it can perform
+        calibration by comparing the RTC_SLOW_CLK frequency with main XTAL
+        frequency. This option sets the number of RTC_SLOW_CLK cycles measured
+        by the calibration routine. Higher numbers increase calibration
+        precision, which may be important for applications which spend a lot of
+        time in deep sleep. Lower numbers reduce startup time.
+        
+        When this option is set to 0, clock calibration will not be performed at
+        startup, and approximate clock frequencies will be assumed:
+        - 150000 Hz if internal RC oscillator is used as clock source
+        - 32768 Hz if the 32k crystal oscillator is used
 
 config ESP32_DEEP_SLEEP_WAKEUP_DELAY
     int "Extra delay in deep sleep wake stub (in us)"
-    default 0
+    default 2000
     range 0 5000
     help
         When ESP32 exits deep sleep, the CPU and the flash chip are powered on
         at the same time. CPU will run deep sleep stub first, and then
         proceed to load code from flash. Some flash chips need sufficient
         time to pass between power on and first read operation. By default,
-        without any extra delay, this time is approximately 900us.
-
-        If you are using a flash chip which needs more than 900us to become
-        ready after power on, set this parameter to add extra delay
-        to the default deep sleep stub.
+        without any extra delay, this time is approximately 900us, although
+        some flash chip types need more than that.
+        
+        By default extra delay is set to 2000us. When optimizing startup time
+        for applications which require it, this value may be reduced. 
 
         If you are seeing "flash read err, 1000" message printed to the
         console after deep sleep reset, try increasing this value.
+
+choice ESP32_XTAL_FREQ_SEL
+    prompt "Main XTAL frequency"
+    default ESP32_XTAL_FREQ_AUTO
+    help
+        ESP32 currently supports the following XTAL frequencies:
+            - 26 MHz
+            - 40 MHz
+        Startup code can automatically estimate XTAL frequency. This feature
+        uses the internal 8MHz oscillator as a reference. Because the internal
+        oscillator frequency is temperature dependent, it is not recommended
+        to use automatic XTAL frequency detection in applications which need
+        to work at high ambient temperatures and use high-temperature
+        qualified chips and modules.
+config ESP32_XTAL_FREQ_40
+    bool "40 MHz"
+config ESP32_XTAL_FREQ_26
+    bool "26 MHz"
+config ESP32_XTAL_FREQ_AUTO
+    bool "Autodetect"
+endchoice
+
+# Keep these values in sync with rtc_xtal_freq_t enum in soc/rtc.h
+config ESP32_XTAL_FREQ
+    int
+    default 0 if ESP32_XTAL_FREQ_AUTO
+    default 40 if ESP32_XTAL_FREQ_40
+    default 26 if ESP32_XTAL_FREQ_26
 
 endmenu
 
@@ -528,8 +602,8 @@ config ESP32_WIFI_STATIC_RX_BUFFER_NUM
 config ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
     int "Max number of WiFi dynamic RX buffers"
     depends on WIFI_ENABLED
-    range 0 64
-    default 0
+    range 0 128
+    default 32
     help
         Set the number of WiFi dynamic rx buffers, 0 means no limitation for dynamic rx buffer
         allocation. The size of dynamic rx buffers is not fixed.

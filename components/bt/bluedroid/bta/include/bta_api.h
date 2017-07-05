@@ -402,6 +402,8 @@ typedef void (tBTA_SET_ADV_DATA_CMPL_CBACK) (tBTA_STATUS status);
 
 typedef void (tBTA_START_ADV_CMPL_CBACK) (tBTA_STATUS status);
 
+typedef tBTM_SET_PKT_DATA_LENGTH_CBACK tBTA_SET_PKT_DATA_LENGTH_CBACK;
+
 /* advertising channel map */
 #define BTA_BLE_ADV_CHNL_37 BTM_BLE_ADV_CHNL_37
 #define BTA_BLE_ADV_CHNL_38 BTM_BLE_ADV_CHNL_38
@@ -635,7 +637,7 @@ typedef struct {
 } tBTA_DM_PIN_REQ;
 
 /* BLE related definition */
-
+#if (SMP_INCLUDED == TRUE)
 #define BTA_DM_AUTH_FAIL_BASE                   (HCI_ERR_MAX_ERR + 10)
 #define BTA_DM_AUTH_CONVERT_SMP_CODE(x)        (BTA_DM_AUTH_FAIL_BASE + (x))
 #define BTA_DM_AUTH_SMP_PASSKEY_FAIL             BTA_DM_AUTH_CONVERT_SMP_CODE (SMP_PASSKEY_ENTRY_FAIL)
@@ -655,7 +657,7 @@ typedef struct {
 #define BTA_DM_AUTH_SMP_BUSY                    (BTA_DM_AUTH_FAIL_BASE + SMP_BUSY)
 #define BTA_DM_AUTH_SMP_ENC_FAIL                (BTA_DM_AUTH_FAIL_BASE + SMP_ENC_FAIL)
 #define BTA_DM_AUTH_SMP_RSP_TIMEOUT             (BTA_DM_AUTH_FAIL_BASE + SMP_RSP_TIMEOUT)
-
+#endif  ///SMP_INCLUDED == TRUE
 /* connection parameter boundary value and dummy value */
 #define BTA_DM_BLE_SCAN_INT_MIN          BTM_BLE_SCAN_INT_MIN
 #define BTA_DM_BLE_SCAN_INT_MAX          BTM_BLE_SCAN_INT_MAX
@@ -668,13 +670,14 @@ typedef struct {
 #define BTA_DM_BLE_CONN_SUP_TOUT_MAX     BTM_BLE_CONN_SUP_TOUT_MAX
 #define BTA_DM_BLE_CONN_PARAM_UNDEF      BTM_BLE_CONN_PARAM_UNDEF  /* use this value when a specific value not to be overwritten */
 
-
+#if (SMP_INCLUDED == TRUE)
 #define BTA_LE_KEY_PENC      BTM_LE_KEY_PENC  /* encryption information of peer device */
 #define BTA_LE_KEY_PID       BTM_LE_KEY_PID   /* identity key of the peer device */
 #define BTA_LE_KEY_PCSRK     BTM_LE_KEY_PCSRK   /* peer SRK */
 #define BTA_LE_KEY_LENC      BTM_LE_KEY_LENC        /* master role security information:div */
 #define BTA_LE_KEY_LID       BTM_LE_KEY_LID         /* master device ID key */
 #define BTA_LE_KEY_LCSRK     BTM_LE_KEY_LCSRK        /* local CSRK has been deliver to peer */
+#endif  ///SMP_INCLUDED == TRUE
 typedef UINT8 tBTA_LE_KEY_TYPE; /* can be used as a bit mask */
 
 
@@ -702,10 +705,11 @@ typedef struct {
     BT_OCTET16       irk;
     BT_OCTET16       dhk;
 } tBTA_BLE_LOCAL_ID_KEYS;
-
+#if (SMP_INCLUDED == TRUE)
 #define BTA_DM_SEC_GRANTED              BTA_SUCCESS
 #define BTA_DM_SEC_PAIR_NOT_SPT         BTA_DM_AUTH_SMP_PAIR_NOT_SUPPORT
 #define BTA_DM_SEC_REP_ATTEMPTS         BTA_DM_AUTH_SMP_REPEATED_ATTEMPT
+#endif  ///SMP_INCLUDED == TRUE
 typedef UINT8 tBTA_DM_BLE_SEC_GRANT;
 
 
@@ -715,6 +719,10 @@ typedef UINT8 tBTA_DM_BLE_SEC_GRANT;
 typedef UINT8 tBTA_DM_BLE_CONN_TYPE;
 
 typedef BOOLEAN (tBTA_DM_BLE_SEL_CBACK)(BD_ADDR random_bda, UINT8 *p_remote_name);
+
+typedef tBTM_LE_UPDATE_CONN_PRAMS tBTA_LE_UPDATE_CONN_PRAMS;
+typedef tBTM_UPDATE_CONN_PARAM_CBACK tBTA_UPDATE_CONN_PARAM_CBACK;
+
 
 /* Structure associated with BTA_DM_BLE_SEC_REQ_EVT */
 typedef struct {
@@ -810,6 +818,7 @@ typedef tBTM_AUTH_REQ   tBTA_AUTH_REQ;
 #define BTA_AUTH_GEN_BOND   BTM_AUTH_SPGB_NO  /* 4 this bit is set for general bonding */
 #define BTA_AUTH_BONDS      BTM_AUTH_BONDS    /* 6 the general/dedicated bonding bits  */
 
+#if (SMP_INCLUDED == TRUE)
 #define BTA_LE_AUTH_NO_BOND    BTM_LE_AUTH_REQ_NO_BOND  /* 0*/
 #define BTA_LE_AUTH_BOND       BTM_LE_AUTH_REQ_BOND     /* 1 << 0 */
 #define BTA_LE_AUTH_REQ_MITM   BTM_LE_AUTH_REQ_MITM    /* 1 << 2 */
@@ -818,6 +827,7 @@ typedef tBTM_AUTH_REQ   tBTA_AUTH_REQ;
 #define BTA_LE_AUTH_REQ_SC_BOND         BTM_LE_AUTH_REQ_SC_BOND      /* 1001 */
 #define BTA_LE_AUTH_REQ_SC_MITM         BTM_LE_AUTH_REQ_SC_MITM      /* 1100 */
 #define BTA_LE_AUTH_REQ_SC_MITM_BOND    BTM_LE_AUTH_REQ_SC_MITM_BOND /* 1101 */
+#endif  ///SMP_INCLUDED == TRUE
 typedef tBTM_LE_AUTH_REQ       tBTA_LE_AUTH_REQ;       /* combination of the above bit pattern */
 
 #define BTA_OOB_NONE        BTM_OOB_NONE
@@ -1003,6 +1013,8 @@ typedef struct {
     tBTM_BLE_EVT_TYPE   ble_evt_type;
     tBT_DEVICE_TYPE     device_type;
     UINT8               flag;
+    UINT8               adv_data_len;
+    UINT8               scan_rsp_len;
 #endif
 
 } tBTA_DM_INQ_RES;
@@ -1061,6 +1073,7 @@ typedef void (tBTA_DM_EXEC_CBACK) (void *p_param);
 /* Encryption callback*/
 typedef void (tBTA_DM_ENCRYPT_CBACK) (BD_ADDR bd_addr, tBTA_TRANSPORT transport, tBTA_STATUS result);
 
+/* relate to ESP_BLE_SEC_xxx in esp_gatt_defs.h */
 #if BLE_INCLUDED == TRUE
 #define BTA_DM_BLE_SEC_NONE         BTM_BLE_SEC_NONE
 #define BTA_DM_BLE_SEC_ENCRYPT      BTM_BLE_SEC_ENCRYPT
@@ -1097,7 +1110,9 @@ typedef void (tBTA_BLE_SCAN_SETUP_CBACK) (tBTA_BLE_BATCH_SCAN_EVT evt,
         tBTA_DM_BLE_REF_VALUE ref_value,
         tBTA_STATUS status);
 
-typedef void (tBTA_START_SCAN_CMPL_CBACK) (tBTA_STATUS status); 
+typedef void (tBTA_START_STOP_SCAN_CMPL_CBACK) (tBTA_STATUS status);
+
+typedef void (tBTA_START_STOP_ADV_CMPL_CBACK) (tBTA_STATUS status);
 
 typedef void (tBTA_BLE_TRACK_ADV_CMPL_CBACK)(int action, tBTA_STATUS status,
         tBTA_DM_BLE_PF_AVBL_SPACE avbl_space,
@@ -1281,7 +1296,7 @@ typedef void (tBTA_DM_SWITCH_CBACK)(tBTA_DM_SWITCH_EVT event, tBTA_STATUS status
 
 typedef UINT8 tBTA_DM_ROUTE_PATH;
 
-
+#if (SDP_INCLUDED == TRUE)
 /* Device Identification (DI) data structure
 */
 /* Used to set the DI record */
@@ -1290,6 +1305,7 @@ typedef tSDP_DI_RECORD          tBTA_DI_RECORD;
 typedef tSDP_DI_GET_RECORD      tBTA_DI_GET_RECORD;
 /* SDP discovery database */
 typedef tSDP_DISCOVERY_DB       tBTA_DISCOVERY_DB;
+#endif  ///SDP_INCLUDED == TRUE
 
 #ifndef         BTA_DI_NUM_MAX
 #define         BTA_DI_NUM_MAX       3
@@ -1442,9 +1458,9 @@ extern void BTA_DmSearchCancel(void);
 ** Returns          void
 **
 *******************************************************************************/
+#if (SDP_INCLUDED == TRUE)
 extern void BTA_DmDiscover(BD_ADDR bd_addr, tBTA_SERVICE_MASK services,
                            tBTA_DM_SEARCH_CBACK *p_cback, BOOLEAN sdp_search);
-
 // btla-specific ++
 /*******************************************************************************
 **
@@ -1459,7 +1475,7 @@ extern void BTA_DmDiscover(BD_ADDR bd_addr, tBTA_SERVICE_MASK services,
 *******************************************************************************/
 extern void BTA_DmDiscoverUUID(BD_ADDR bd_addr, tSDP_UUID *uuid,
                                tBTA_DM_SEARCH_CBACK *p_cback, BOOLEAN sdp_search);
-
+#endif  ///SDP_INCLUDED == TRUE
 /*******************************************************************************
 **
 ** Function         BTA_DmGetCachedRemoteName
@@ -1615,7 +1631,7 @@ extern void BTA_GetEirService( UINT8 *p_eir, tBTA_SERVICE_MASK *p_services );
 *******************************************************************************/
 extern UINT16 BTA_DmGetConnectionState( BD_ADDR bd_addr );
 
-
+#if (SDP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmSetLocalDiRecord
@@ -1627,7 +1643,7 @@ extern UINT16 BTA_DmGetConnectionState( BD_ADDR bd_addr );
 *******************************************************************************/
 extern tBTA_STATUS BTA_DmSetLocalDiRecord( tBTA_DI_RECORD *p_device_info,
         UINT32 *p_handle );
-
+#endif  ///SDP_INCLUDED == TRUE
 /*******************************************************************************
 **
 **
@@ -2000,9 +2016,9 @@ extern void BTA_DmSetEncryption(BD_ADDR bd_addr, tBTA_TRANSPORT transport,
 ** Returns          void
 **
 *******************************************************************************/
-extern void BTA_DmBleObserve(BOOLEAN start, UINT8 duration,
+extern void BTA_DmBleObserve(BOOLEAN start, UINT32 duration,
                              tBTA_DM_SEARCH_CBACK *p_results_cb,
-                             tBTA_START_SCAN_CMPL_CBACK *p_start_scan_cb);
+                             tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_stop_scan_cb);
 
 extern void BTA_DmBleStopAdvertising(void);
 
@@ -2109,11 +2125,12 @@ extern void BTA_DmBleSetScanRspRaw (UINT8 *p_raw_scan_rsp, UINT32 raw_scan_rsp_l
 ** Description      This function starts or stops LE broadcasting.
 **
 ** Parameters       start: start or stop broadcast.
+**                  p_start_stop_adv_cb: stop broadcast completed event
 **
 ** Returns          None
 **
 *******************************************************************************/
-extern void BTA_DmBleBroadcast (BOOLEAN start);
+extern void BTA_DmBleBroadcast (BOOLEAN start, tBTA_START_STOP_ADV_CMPL_CBACK *p_start_stop_adv_cb);
 
 
 /*******************************************************************************
@@ -2191,7 +2208,18 @@ extern void BTA_BleDisableAdvInstance(UINT8 inst_id);
 **
 *******************************************************************************/
 extern void BTA_DmBleUpdateConnectionParams(BD_ADDR bd_addr, UINT16 min_int,
-        UINT16 max_int, UINT16 latency, UINT16 timeout);
+        UINT16 max_int, UINT16 latency, UINT16 timeout, tBTA_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb);
+
+/*******************************************************************************
+**
+** Function         BTA_DmBleDisconnect
+**
+** Description      This function is to disconnect the ble connection
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_DmBleDisconnect(BD_ADDR bd_addr);
 
 /*******************************************************************************
 **
@@ -2202,7 +2230,7 @@ extern void BTA_DmBleUpdateConnectionParams(BD_ADDR bd_addr, UINT16 min_int,
 ** Returns          void
 **
 *******************************************************************************/
-extern void BTA_DmBleSetDataLength(BD_ADDR remote_device, UINT16 tx_data_length);
+extern void BTA_DmBleSetDataLength(BD_ADDR remote_device, UINT16 tx_data_length, tBTA_SET_PKT_DATA_LENGTH_CBACK *p_set_pkt_data_cback);
 
 /*******************************************************************************
 **

@@ -172,6 +172,7 @@ typedef struct {
 #define portASSERT_IF_IN_ISR()        vPortAssertIfInISR()
 void vPortAssertIfInISR();
 
+
 #define portCRITICAL_NESTING_IN_TCB 1 
 
 /*
@@ -193,6 +194,10 @@ do not disable the interrupts (because they already are).
 
 This all assumes that interrupts are either entirely disabled or enabled. Interrupr priority levels
 will break this scheme.
+
+Remark: For the ESP32, portENTER_CRITICAL and portENTER_CRITICAL_ISR both alias vTaskEnterCritical, meaning
+that either function can be called both from ISR as well as task context. This is not standard FreeRTOS 
+behaviour; please keep this in mind if you need any compatibility with other FreeRTOS implementations.
 */
 void vPortCPUInitializeMutex(portMUX_TYPE *mux);
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
@@ -202,8 +207,8 @@ void vTaskEnterCritical( portMUX_TYPE *mux, const char *function, int line );
 void vTaskExitCritical( portMUX_TYPE *mux, const char *function, int line );
 #define portENTER_CRITICAL(mux)        vTaskEnterCritical(mux, __FUNCTION__, __LINE__)
 #define portEXIT_CRITICAL(mux)         vTaskExitCritical(mux, __FUNCTION__, __LINE__)
-#define portENTER_CRITICAL_ISR(mux)    vPortCPUAcquireMutex(mux, __FUNCTION__, __LINE__)
-#define portEXIT_CRITICAL_ISR(mux)    vPortCPUReleaseMutex(mux, __FUNCTION__, __LINE__)
+#define portENTER_CRITICAL_ISR(mux)    vTaskEnterCritical(mux, __FUNCTION__, __LINE__)
+#define portEXIT_CRITICAL_ISR(mux)     vTaskExitCritical(mux, __FUNCTION__, __LINE__)
 #else
 void vTaskExitCritical( portMUX_TYPE *mux );
 void vTaskEnterCritical( portMUX_TYPE *mux );
@@ -211,13 +216,14 @@ void vPortCPUAcquireMutex(portMUX_TYPE *mux);
 portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux);
 #define portENTER_CRITICAL(mux)        vTaskEnterCritical(mux)
 #define portEXIT_CRITICAL(mux)         vTaskExitCritical(mux)
-#define portENTER_CRITICAL_ISR(mux)    vPortCPUAcquireMutex(mux)
-#define portEXIT_CRITICAL_ISR(mux)    vPortCPUReleaseMutex(mux)
+#define portENTER_CRITICAL_ISR(mux)    vTaskEnterCritical(mux)
+#define portEXIT_CRITICAL_ISR(mux)     vTaskExitCritical(mux)
 #endif
 
 // Cleaner and preferred solution allows nested interrupts disabling and restoring via local registers or stack.
 // They can be called from interrupts too.
-//NOT SMP-COMPATIBLE! Use only if all you want is to disable the interrupts locally!
+// WARNING: This ONLY disables interrupt on the current CPU, meaning they cannot be used as a replacement for the vTaskExitCritical spinlock
+// on a multicore system. Only use if disabling interrupts on the current CPU only is indeed what you want.
 static inline unsigned portENTER_CRITICAL_NESTED() { unsigned state = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL); portbenchmarkINTERRUPT_DISABLE(); return state; }
 #define portEXIT_CRITICAL_NESTED(state)   do { portbenchmarkINTERRUPT_RESTORE(state); XTOS_RESTORE_JUST_INTLEVEL(state); } while (0)
 
@@ -262,7 +268,7 @@ static inline void uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, u
 void vPortYield( void );
 void _frxt_setup_switch( void );
 #define portYIELD()					vPortYield()
-#define portYIELD_FROM_ISR()		_frxt_setup_switch()
+#define portYIELD_FROM_ISR()        {traceISR_EXIT_TO_SCHEDULER(); _frxt_setup_switch();}
 
 static inline uint32_t xPortGetCoreID();
 
@@ -312,6 +318,10 @@ typedef struct {
 	#define PRIVILEGED_FUNCTION
 	#define PRIVILEGED_DATA
 #endif
+
+
+void _xt_coproc_release(volatile void * coproc_sa_base);
+
 
 // porttrace
 #if configUSE_TRACE_FACILITY_2

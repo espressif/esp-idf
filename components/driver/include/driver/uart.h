@@ -129,8 +129,8 @@ typedef enum {
     UART_FRAME_ERR,         /*!< UART RX frame error event*/
     UART_PARITY_ERR,        /*!< UART RX parity event*/
     UART_DATA_BREAK,        /*!< UART TX data and break event*/
+    UART_PATTERN_DET,       /*!< UART pattern detected */
     UART_EVENT_MAX,         /*!< UART event max index*/
-    UART_PATTERN_DET,        /*!< UART pattern detected */
 } uart_event_type_t;
 
 /**
@@ -474,6 +474,8 @@ esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_
  * @param rx_buffer_size UART RX ring buffer size, rx_buffer_size should be greater than UART_FIFO_LEN.
  * @param tx_buffer_size UART TX ring buffer size.
  *        If set to zero, driver will not use TX buffer, TX function will block task until all data have been sent out..
+ *        @note tx_buffer_size should be greater than UART_FIFO_LEN.
+ *
  * @param queue_size UART event queue size/depth.
  * @param uart_queue UART event queue handle (out param). On success, a new queue handle is written here to provide
  *        access to UART events. If set to NULL, driver will not use an event queue.

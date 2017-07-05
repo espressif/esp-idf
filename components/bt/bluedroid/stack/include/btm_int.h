@@ -115,7 +115,9 @@ UINT8           conn_addr_type;         /* local device address type for this co
 BD_ADDR         active_remote_addr;     /* remote address used on this connection */
 UINT8           active_remote_addr_type;         /* local device address type for this connection */
 BD_FEATURES     peer_le_features;       /* Peer LE Used features mask for the device */
-
+tBTM_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb;
+tBTM_SET_PKT_DATA_LENGTH_CBACK *p_set_pkt_data_cback;
+tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS data_length_params;
 #endif
 
 } tACL_CONN;
@@ -759,7 +761,9 @@ typedef struct {
     **      ACL Management
     ****************************************************/
     tACL_CONN   acl_db[MAX_L2CAP_LINKS];
+#if (CLASSIC_BT_INCLUDED == TRUE)
     UINT8       btm_scn[BTM_MAX_SCN];        /* current SCNs: TRUE if SCN is in use */
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     UINT16      btm_def_link_policy;
     UINT16      btm_def_link_super_tout;
 
@@ -815,9 +819,11 @@ typedef struct {
     tBTM_APPL_INFO          api;
 
 #define BTM_SEC_MAX_RMT_NAME_CALLBACKS  2
-    tBTM_RMT_NAME_CALLBACK  *p_rmt_name_callback[BTM_SEC_MAX_RMT_NAME_CALLBACKS];
 
+    tBTM_RMT_NAME_CALLBACK  *p_rmt_name_callback[BTM_SEC_MAX_RMT_NAME_CALLBACKS];
+#if (SMP_INCLUDED == TRUE)
     tBTM_SEC_DEV_REC        *p_collided_dev_rec;
+#endif  ///SMP_INCLUDED == TRUE
     TIMER_LIST_ENT           sec_collision_tle;
     UINT32                   collision_start_time;
     UINT32                   max_collision_delay;
@@ -828,6 +834,7 @@ typedef struct {
     BOOLEAN                  security_mode_changed;  /* mode changed during bonding */
     BOOLEAN                  pin_type_changed;       /* pin type changed during bonding */
     BOOLEAN                  sec_req_pending;       /*   TRUE if a request is pending */
+#if (SMP_INCLUDED == TRUE)
 // btla-specific ++
 #ifdef PORCHE_PAIRING_CONFLICT
     UINT8                    pin_code_len_saved;     /* for legacy devices */
@@ -842,7 +849,10 @@ typedef struct {
     TIMER_LIST_ENT           pairing_tle;   /* Timer for pairing process    */
     UINT16                   disc_handle;   /* for legacy devices */
     UINT8                    disc_reason;   /* for legacy devices */
+#endif  ///SMP_INCLUDED == TRUE
+#if SMP_INCLUDED == TRUE || CLASSIC_BT_INCLUDED == TRUE
     tBTM_SEC_SERV_REC        sec_serv_rec[BTM_SEC_MAX_SERVICE_RECORDS];
+#endif // SMP_INCLUDED == TRUE || CLASSIC_BT_ENABLED == TRUE
     tBTM_SEC_DEV_REC         sec_dev_rec[BTM_SEC_MAX_DEVICE_RECORDS];
     tBTM_SEC_SERV_REC       *p_out_serv;
     tBTM_MKEY_CALLBACK      *mkey_cback;
@@ -859,7 +869,6 @@ typedef struct {
     BOOLEAN                 paging;
     BOOLEAN                 discing;
     BUFFER_Q                sec_pending_q;  /* pending sequrity requests in tBTM_SEC_QUEUE_ENTRY format */
-
 #if  (!defined(BT_TRACE_VERBOSE) || (BT_TRACE_VERBOSE == FALSE))
     char state_temp_buffer[BTM_STATE_BUFFER_SIZE];
 #endif
@@ -925,6 +934,7 @@ void         btm_cont_rswitch (tACL_CONN *p,
                                UINT8 hci_status);
 
 UINT8        btm_handle_to_acl_index (UINT16 hci_handle);
+tACL_CONN    *btm_handle_to_acl (UINT16 hci_handle);
 void         btm_read_link_policy_complete (UINT8 *p);
 void         btm_read_rssi_complete (UINT8 *p);
 void         btm_read_tx_power_complete (UINT8 *p, BOOLEAN is_ble);

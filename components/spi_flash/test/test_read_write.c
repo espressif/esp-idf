@@ -71,18 +71,18 @@ static void IRAM_ATTR test_read(int src_off, int dst_off, int len)
 {
     uint32_t src_buf[16];
     char dst_buf[64], dst_gold[64];
+
     fprintf(stderr, "src=%d dst=%d len=%d\n", src_off, dst_off, len);
     memset(src_buf, 0xAA, sizeof(src_buf));
     fill(((char *) src_buf) + src_off, src_off, len);
     ESP_ERROR_CHECK(spi_flash_erase_sector((start + src_off) / SPI_FLASH_SEC_SIZE));
     spi_flash_disable_interrupts_caches_and_other_cpu();
-    SpiFlashOpResult rc = SPIWrite(start, src_buf, sizeof(src_buf));
+    esp_rom_spiflash_result_t rc = esp_rom_spiflash_write(start, src_buf, sizeof(src_buf));
     spi_flash_enable_interrupts_caches_and_other_cpu();
-    TEST_ASSERT_EQUAL_INT(rc, SPI_FLASH_RESULT_OK);
+    TEST_ASSERT_EQUAL_INT(rc, ESP_ROM_SPIFLASH_RESULT_OK);
     memset(dst_buf, 0x55, sizeof(dst_buf));
     memset(dst_gold, 0x55, sizeof(dst_gold));
     fill(dst_gold + dst_off, src_off, len);
-
     ESP_ERROR_CHECK(spi_flash_read(start + src_off, dst_buf + dst_off, len));
     TEST_ASSERT_EQUAL_INT(cmp_or_dump(dst_buf, dst_gold, sizeof(dst_buf)), 0);
 }
@@ -159,9 +159,9 @@ static void IRAM_ATTR test_write(int dst_off, int src_off, int len)
     }
     ESP_ERROR_CHECK(spi_flash_write(start + dst_off, src_buf + src_off, len));
     spi_flash_disable_interrupts_caches_and_other_cpu();
-    SpiFlashOpResult rc = SPIRead(start, dst_buf, sizeof(dst_buf));
+    esp_rom_spiflash_result_t rc = esp_rom_spiflash_read(start, dst_buf, sizeof(dst_buf));
     spi_flash_enable_interrupts_caches_and_other_cpu();
-    TEST_ASSERT_EQUAL_INT(rc, SPI_FLASH_RESULT_OK);
+    TEST_ASSERT_EQUAL_INT(rc, ESP_ROM_SPIFLASH_RESULT_OK);
     TEST_ASSERT_EQUAL_INT(cmp_or_dump(dst_buf, dst_gold, sizeof(dst_buf)), 0);
 }
 

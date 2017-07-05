@@ -32,6 +32,7 @@
 //#if BTA_HH_LE_INCLUDED == TRUE
 #include "bta_gatt_api.h"
 //#endif
+#if defined(BTA_HH_INCLUDED) && (BTA_HH_INCLUDED == TRUE)
 
 /* can be moved to bta_api.h */
 #define BTA_HH_MAX_RPT_CHARS    8
@@ -395,5 +396,6 @@ extern void bta_hh_ci_load_rpt (tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_buf);
 extern void bta_hh_trace_dev_db(void);
 #endif
 
+#endif  ///defined(BTA_HH_INCLUDED) && (BTA_HH_INCLUDED == TRUE)
 #endif
 

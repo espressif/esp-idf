@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -55,10 +55,10 @@ static size_t s_vfs_count = 0;
 esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ctx)
 {
     size_t len = strlen(base_path);
-    if (len < 2 || len > ESP_VFS_PATH_MAX) {
+    if ((len != 0 && len < 2)|| len > ESP_VFS_PATH_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (base_path[0] != '/' || base_path[len - 1] == '/') {
+    if ((len > 0 && base_path[0] != '/') || base_path[len - 1] == '/') {
         return ESP_ERR_INVALID_ARG;
     }
     vfs_entry_t *entry = (vfs_entry_t*) malloc(sizeof(vfs_entry_t));
@@ -91,6 +91,9 @@ esp_err_t esp_vfs_unregister(const char* base_path)
 {
     for (size_t i = 0; i < s_vfs_count; ++i) {
         vfs_entry_t* vfs = s_vfs[i];
+        if (vfs == NULL) {
+            continue;
+        }
         if (memcmp(base_path, vfs->path_prefix, vfs->path_prefix_len) == 0) {
             free(vfs);
             s_vfs[i] = NULL;
@@ -117,26 +120,51 @@ static int translate_fd(const vfs_entry_t* vfs, int fd)
 static const char* translate_path(const vfs_entry_t* vfs, const char* src_path)
 {
     assert(strncmp(src_path, vfs->path_prefix, vfs->path_prefix_len) == 0);
+    if (strlen(src_path) == vfs->path_prefix_len) {
+        // special case when src_path matches the path prefix exactly
+        return "/";
+    }
     return src_path + vfs->path_prefix_len;
 }
 
 static const vfs_entry_t* get_vfs_for_path(const char* path)
 {
+    const vfs_entry_t* best_match = NULL;
+    ssize_t best_match_prefix_len = -1;
     size_t len = strlen(path);
     for (size_t i = 0; i < s_vfs_count; ++i) {
         const vfs_entry_t* vfs = s_vfs[i];
-        if (len < vfs->path_prefix_len + 1) {   // +1 is for the trailing slash after base path
+        if (!vfs) {
             continue;
         }
-        if (memcmp(path, vfs->path_prefix, vfs->path_prefix_len) != 0) {  // match prefix
+        // match path prefix
+        if (len < vfs->path_prefix_len ||
+            memcmp(path, vfs->path_prefix, vfs->path_prefix_len) != 0) {
             continue;
         }
-        if (path[vfs->path_prefix_len] != '/') {   // don't match "/data" prefix for "/data1/foo.txt"
+        // this is the default VFS and we don't have a better match yet.
+        if (vfs->path_prefix_len == 0 && !best_match) {
+            best_match = vfs;
             continue;
         }
-        return vfs;
+        // if path is not equal to the prefix, expect to see a path separator
+        // i.e. don't match "/data" prefix for "/data1/foo.txt" path
+        if (len > vfs->path_prefix_len &&
+                path[vfs->path_prefix_len] != '/') {
+            continue;
+        }
+        // Out of all matching path prefixes, select the longest one;
+        // i.e. if "/dev" and "/dev/uart" both match, for "/dev/uart/1" path,
+        // choose "/dev/uart",
+        // This causes all s_vfs_count VFS entries to be scanned when opening
+        // a file by name. This can be optimized by introducing a table for
+        // FS search order, sorted so that longer prefixes are checked first.
+        if (best_match_prefix_len < (ssize_t) vfs->path_prefix_len) {
+            best_match_prefix_len = (ssize_t) vfs->path_prefix_len;
+            best_match = vfs;
+        }
     }
-    return NULL;
+    return best_match;
 }
 
 /*
@@ -210,7 +238,7 @@ ssize_t esp_vfs_write(struct _reent *r, int fd, const void * data, size_t size)
         return -1;
     }
     int local_fd = translate_fd(vfs, fd);
-    int ret;
+    ssize_t ret;
     CHECK_AND_CALL(ret, r, vfs, write, local_fd, data, size);
     return ret;
 }
@@ -223,7 +251,7 @@ off_t esp_vfs_lseek(struct _reent *r, int fd, off_t size, int mode)
         return -1;
     }
     int local_fd = translate_fd(vfs, fd);
-    int ret;
+    off_t ret;
     CHECK_AND_CALL(ret, r, vfs, lseek, local_fd, size, mode);
     return ret;
 }
@@ -236,7 +264,7 @@ ssize_t esp_vfs_read(struct _reent *r, int fd, void * dst, size_t size)
         return -1;
     }
     int local_fd = translate_fd(vfs, fd);
-    int ret;
+    ssize_t ret;
     CHECK_AND_CALL(ret, r, vfs, read, local_fd, dst, size);
     return ret;
 }

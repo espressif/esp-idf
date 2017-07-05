@@ -286,3 +286,10 @@ test environment:
   test environment detail: 'Web Server target connect with PC by UART.
 
     4 PC with WiFi NIC placed near WebServer1.', test script: EnvBase}
+- PC OS: ''
+  Special: N
+  Target Count: 1
+  script path: EnvBase.py
+  tag: SSC_T1_3
+  test environment detail: 'PC has one BT adapter (dongle). 1 SSC target connect with PC by UART.'
+  test script: EnvBase

@@ -17,6 +17,10 @@
 
 #include <esp_err.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void (*esp_ipc_func_t)(void* arg);
 
 /**
@@ -53,6 +57,10 @@ void esp_ipc_init();
  *
  * In single-core mode, returns ESP_ERR_INVALID_ARG for cpu_id 1.
  *
+ * For complex functions, you may need to increase the stack size of the "IPC task"
+ * which runs the function must be sufficient. See the "Inter-Processor Call (IPC)
+ * task stack size" setting in menuconfig.
+ *
  * @param cpu_id CPU where function should be executed (0 or 1)
  * @param func pointer to a function which should be executed
  * @param arg arbitrary argument to be passed into function
@@ -84,5 +92,8 @@ esp_err_t esp_ipc_call(uint32_t cpu_id, esp_ipc_func_t func, void* arg);
 esp_err_t esp_ipc_call_blocking(uint32_t cpu_id, esp_ipc_func_t func, void* arg);
 
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ESP_IPC_H__ */

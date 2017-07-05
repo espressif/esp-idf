@@ -86,7 +86,6 @@ BOOLEAN btsnd_hcic_ble_write_adv_params (UINT16 adv_int_min, UINT16 adv_int_max,
 {
     BT_HDR *p;
     UINT8 *pp;
-
     if ((p = HCI_GET_CMD_BUF(HCIC_PARAM_SIZE_BLE_WRITE_ADV_PARAMS)) == NULL) {
         return (FALSE);
     }

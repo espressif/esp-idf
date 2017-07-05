@@ -15,7 +15,7 @@ endif
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
 PAPEROPT_letter = -D latex_paper_size=letter
-ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
+ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) -w sphinx-warning-log.txt .
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
@@ -170,14 +170,14 @@ gh-linkcheck:
 		echo "WARNINIG: Some .rst files contain hardcoded Github links."; \
 		echo "Please check above output and replace links with one of the following:"; \
 		echo "- :idf:\`dir\` - points to directory inside ESP-IDF"; \
-		echo "- :idf_blob:\`file\` - points to file inside ESP-IDF"; \
+		echo "- :idf_file:\`file\` - points to file inside ESP-IDF"; \
 		echo "- :idf_raw:\`file\` - points to raw view of the file inside ESP-IDF"; \
 		echo "- :component:\`dir\` - points to directory inside ESP-IDF components dir"; \
-		echo "- :component_blob:\`file\` - points to file inside ESP-IDF components dir"; \
+		echo "- :component_file:\`file\` - points to file inside ESP-IDF components dir"; \
 		echo "- :component_raw:\`file\` - points to raw view of the file inside ESP-IDF"; \
 		echo "  components dir"; \
 		echo "- :example:\`dir\` - points to directory inside ESP-IDF examples dir"; \
-		echo "- :example_blob:\`file\` - points to file inside ESP-IDF examples dir"; \
+		echo "- :example_file:\`file\` - points to file inside ESP-IDF examples dir"; \
 		echo "- :example_raw:\`file\` - points to raw view of the file inside ESP-IDF"; \
 		echo "  examples dir"; \
 		echo "These link types will point to the correct GitHub version automatically"; \

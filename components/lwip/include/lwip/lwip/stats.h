@@ -282,7 +282,7 @@ struct stats_ {
 #if MIB2_STATS
   struct stats_mib2 mib2;
 #endif
-#if ESP_STATS
+#if ESP_STATS_DROP
   struct stats_esp esp;
 #endif
 };
@@ -458,12 +458,12 @@ void stats_init(void);
 #define MIB2_STATS_INC(x)
 #endif
 
-#if ESP_STATS
-#define ESP_STATS_INC(x) STATS_INC(x)
-#define ESP_STATS_DISPLAY() stats_display_esp(&lwip_stats.esp);
+#if ESP_STATS_DROP
+#define ESP_STATS_DROP_INC(x) STATS_INC(x)
+#define ESP_STATS_DROP_DISPLAY() stats_display_esp(&lwip_stats.esp);
 #else
-#define ESP_STATS_INC(x)
-#define ESP_STATS_DISPLAY()
+#define ESP_STATS_DROP_INC(x)
+#define ESP_STATS_DROP_DISPLAY()
 #endif
 
 /* Display of statistics */

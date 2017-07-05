@@ -66,8 +66,8 @@ TEST_CASE("Yield from lower priority task, same CPU", "[freertos]")
         printf("Yielding from lower priority task took %u cycles\n", delta);
         TEST_ASSERT(delta < 10000);
 
-        vQueueDelete(queue);
         vTaskDelete(sender_task);
+        vQueueDelete(queue);
     }
 }
 

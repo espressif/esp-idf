@@ -1,0 +1,8 @@
+ignore:
+  # if the type exist but no value assigned
+  default: "Yes"
+  # if the type is not exist in tag list
+  omitted: "No"
+test_env:
+  default: "UT_T1_1"
+  omitted: "UT_T1_1"

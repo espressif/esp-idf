@@ -34,12 +34,12 @@ queue and re-enabling the interrupt will trigger the interrupt again, which can 
 
 
 #include <string.h>
+#include "driver/spi_common.h"
 #include "driver/spi_master.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/spi_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/spi_struct.h"
-#include "soc/rtc_cntl_reg.h"
 #include "rom/ets_sys.h"
 #include "esp_types.h"
 #include "esp_attr.h"
@@ -54,9 +54,7 @@ queue and re-enabling the interrupt will trigger the interrupt again, which can 
 #include "freertos/ringbuf.h"
 #include "soc/soc.h"
 #include "soc/dport_reg.h"
-#include "soc/uart_struct.h"
 #include "rom/lldesc.h"
-#include "driver/uart.h"
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
 #include "esp_heap_alloc_caps.h"
@@ -71,8 +69,11 @@ typedef struct {
     spi_dev_t *hw;
     spi_transaction_t *cur_trans;
     int cur_cs;
-    lldesc_t dmadesc_tx, dmadesc_rx;
+    lldesc_t *dmadesc_tx;
+    lldesc_t *dmadesc_rx;
     bool no_gpio_matrix;
+    int dma_chan;
+    int max_transfer_sz;
 } spi_host_t;
 
 struct spi_device_t {
@@ -92,182 +93,47 @@ static const char *SPI_TAG = "spi_master";
         return (ret_val); \
     }
 
-/*
- Stores a bunch of per-spi-peripheral data.
-*/
-typedef struct {
-    const uint8_t spiclk_out;       //GPIO mux output signals
-    const uint8_t spid_out;
-    const uint8_t spiq_out;
-    const uint8_t spiwp_out;
-    const uint8_t spihd_out;
-    const uint8_t spid_in;          //GPIO mux input signals
-    const uint8_t spiq_in;
-    const uint8_t spiwp_in;
-    const uint8_t spihd_in;
-    const uint8_t spics_out[3];     // /CS GPIO output mux signals
-    const uint8_t spiclk_native;    //IO pins of IO_MUX muxed signals
-    const uint8_t spid_native;
-    const uint8_t spiq_native;
-    const uint8_t spiwp_native;
-    const uint8_t spihd_native;
-    const uint8_t spics0_native;
-    const uint8_t irq;              //irq source for interrupt mux
-    const uint8_t irq_dma;          //dma irq source for interrupt mux
-    const periph_module_t module;   //peripheral module, for enabling clock etc
-    spi_dev_t *hw;              //Pointer to the hardware registers
-} spi_signal_conn_t;
-
-/*
- Bunch of constants for every SPI peripheral: GPIO signals, irqs, hw addr of registers etc
-*/
-static const spi_signal_conn_t io_signal[3]={
-    {
-        .spiclk_out=SPICLK_OUT_IDX,
-        .spid_out=SPID_OUT_IDX,
-        .spiq_out=SPIQ_OUT_IDX,
-        .spiwp_out=SPIWP_OUT_IDX,
-        .spihd_out=SPIHD_OUT_IDX,
-        .spid_in=SPID_IN_IDX,
-        .spiq_in=SPIQ_IN_IDX,
-        .spiwp_in=SPIWP_IN_IDX,
-        .spihd_in=SPIHD_IN_IDX,
-        .spics_out={SPICS0_OUT_IDX, SPICS1_OUT_IDX, SPICS2_OUT_IDX},
-        .spiclk_native=6,
-        .spid_native=8,
-        .spiq_native=7,
-        .spiwp_native=10,
-        .spihd_native=9,
-        .spics0_native=11,
-        .irq=ETS_SPI1_INTR_SOURCE,
-        .irq_dma=ETS_SPI1_DMA_INTR_SOURCE,
-        .module=PERIPH_SPI_MODULE,
-        .hw=&SPI1
-    }, {
-        .spiclk_out=HSPICLK_OUT_IDX,
-        .spid_out=HSPID_OUT_IDX,
-        .spiq_out=HSPIQ_OUT_IDX,
-        .spiwp_out=HSPIWP_OUT_IDX,
-        .spihd_out=HSPIHD_OUT_IDX,
-        .spid_in=HSPID_IN_IDX,
-        .spiq_in=HSPIQ_IN_IDX,
-        .spiwp_in=HSPIWP_IN_IDX,
-        .spihd_in=HSPIHD_IN_IDX,
-        .spics_out={HSPICS0_OUT_IDX, HSPICS1_OUT_IDX, HSPICS2_OUT_IDX},
-        .spiclk_native=14,
-        .spid_native=13,
-        .spiq_native=12,
-        .spiwp_native=2,
-        .spihd_native=4,
-        .spics0_native=15,
-        .irq=ETS_SPI2_INTR_SOURCE,
-        .irq_dma=ETS_SPI2_DMA_INTR_SOURCE,
-        .module=PERIPH_HSPI_MODULE,
-        .hw=&SPI2
-    }, {
-        .spiclk_out=VSPICLK_OUT_IDX,
-        .spid_out=VSPID_OUT_IDX,
-        .spiq_out=VSPIQ_OUT_IDX,
-        .spiwp_out=VSPIWP_OUT_IDX,
-        .spihd_out=VSPIHD_OUT_IDX,
-        .spid_in=VSPID_IN_IDX,
-        .spiq_in=VSPIQ_IN_IDX,
-        .spiwp_in=VSPIWP_IN_IDX,
-        .spihd_in=VSPIHD_IN_IDX,
-        .spics_out={VSPICS0_OUT_IDX, VSPICS1_OUT_IDX, VSPICS2_OUT_IDX},
-        .spiclk_native=18,
-        .spid_native=23,
-        .spiq_native=19,
-        .spiwp_native=22,
-        .spihd_native=21,
-        .spics0_native=5,
-        .irq=ETS_SPI3_INTR_SOURCE,
-        .irq_dma=ETS_SPI3_DMA_INTR_SOURCE,
-        .module=PERIPH_VSPI_MODULE,
-        .hw=&SPI3
-    }
-};
 
 static void spi_intr(void *arg);
 
-
-esp_err_t spi_bus_initialize(spi_host_device_t host, spi_bus_config_t *bus_config, int dma_chan)
+esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, int dma_chan)
 {
-    bool native=true;
+    bool native, claimed;
     /* ToDo: remove this when we have flash operations cooperating with this */
     SPI_CHECK(host!=SPI_HOST, "SPI1 is not supported", ESP_ERR_NOT_SUPPORTED);
 
     SPI_CHECK(host>=SPI_HOST && host<=VSPI_HOST, "invalid host", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(spihost[host]==NULL, "host already in use", ESP_ERR_INVALID_STATE);
-    
-    SPI_CHECK(bus_config->mosi_io_num<0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->mosi_io_num), "spid pin invalid", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(bus_config->sclk_io_num<0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->sclk_io_num), "spiclk pin invalid", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(bus_config->miso_io_num<0 || GPIO_IS_VALID_GPIO(bus_config->miso_io_num), "spiq pin invalid", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(bus_config->quadwp_io_num<0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->quadwp_io_num), "spiwp pin invalid", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(bus_config->quadhd_io_num<0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->quadhd_io_num), "spihd pin invalid", ESP_ERR_INVALID_ARG);
 
-    //The host struct contains two dma descriptors, so we need DMA'able memory for this.
-    spihost[host]=pvPortMallocCaps(sizeof(spi_host_t), MALLOC_CAP_DMA);
-    if (spihost[host]==NULL) return ESP_ERR_NO_MEM;
+    claimed=spicommon_periph_claim(host);
+    SPI_CHECK(claimed, "host already in use", ESP_ERR_INVALID_STATE);
+
+    spihost[host]=malloc(sizeof(spi_host_t));
+    if (spihost[host]==NULL) goto nomem;
     memset(spihost[host], 0, sizeof(spi_host_t));
     
-    //Check if the selected pins correspond to the native pins of the peripheral
-    if (bus_config->mosi_io_num >= 0 && bus_config->mosi_io_num!=io_signal[host].spid_native) native=false;
-    if (bus_config->miso_io_num >= 0 && bus_config->miso_io_num!=io_signal[host].spiq_native) native=false;
-    if (bus_config->sclk_io_num >= 0 && bus_config->sclk_io_num!=io_signal[host].spiclk_native) native=false;
-    if (bus_config->quadwp_io_num >= 0 && bus_config->quadwp_io_num!=io_signal[host].spiwp_native) native=false;
-    if (bus_config->quadhd_io_num >= 0 && bus_config->quadhd_io_num!=io_signal[host].spihd_native) native=false;
-    
+    spicommon_bus_initialize_io(host, bus_config, dma_chan, SPICOMMON_BUSFLAG_MASTER|SPICOMMON_BUSFLAG_QUAD, &native);
     spihost[host]->no_gpio_matrix=native;
-    if (native) {
-        //All SPI native pin selections resolve to 1, so we put that here instead of trying to figure
-        //out which FUNC_GPIOx_xSPIxx to grab; they all are defined to 1 anyway.
-        if (bus_config->mosi_io_num > 0) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->mosi_io_num], 1);
-        if (bus_config->miso_io_num > 0) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->miso_io_num], 1);
-        if (bus_config->quadwp_io_num > 0) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadwp_io_num], 1);
-        if (bus_config->quadhd_io_num > 0) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadhd_io_num], 1);
-        if (bus_config->sclk_io_num > 0) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->sclk_io_num], 1);
+    
+    spihost[host]->dma_chan=dma_chan;
+    if (dma_chan == 0) {
+        spihost[host]->max_transfer_sz = 32;
     } else {
-        //Use GPIO 
-        if (bus_config->mosi_io_num>0) {
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->mosi_io_num], PIN_FUNC_GPIO);
-            gpio_set_direction(bus_config->mosi_io_num, GPIO_MODE_OUTPUT);
-            gpio_matrix_out(bus_config->mosi_io_num, io_signal[host].spid_out, false, false);
-            gpio_matrix_in(bus_config->mosi_io_num, io_signal[host].spid_in, false);
-        }
-        if (bus_config->miso_io_num>0) {
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->miso_io_num], PIN_FUNC_GPIO);
-            gpio_set_direction(bus_config->miso_io_num, GPIO_MODE_INPUT);
-            gpio_matrix_out(bus_config->miso_io_num, io_signal[host].spiq_out, false, false);
-            gpio_matrix_in(bus_config->miso_io_num, io_signal[host].spiq_in, false);
-        }
-        if (bus_config->quadwp_io_num>0) {
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadwp_io_num], PIN_FUNC_GPIO);
-            gpio_set_direction(bus_config->quadwp_io_num, GPIO_MODE_OUTPUT);
-            gpio_matrix_out(bus_config->quadwp_io_num, io_signal[host].spiwp_out, false, false);
-            gpio_matrix_in(bus_config->quadwp_io_num, io_signal[host].spiwp_in, false);
-        }
-        if (bus_config->quadhd_io_num>0) {
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadhd_io_num], PIN_FUNC_GPIO);
-            gpio_set_direction(bus_config->quadhd_io_num, GPIO_MODE_OUTPUT);
-            gpio_matrix_out(bus_config->quadhd_io_num, io_signal[host].spihd_out, false, false);
-            gpio_matrix_in(bus_config->quadhd_io_num, io_signal[host].spihd_in, false);
-        }
-        if (bus_config->sclk_io_num>0) {
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->sclk_io_num], PIN_FUNC_GPIO);
-            gpio_set_direction(bus_config->sclk_io_num, GPIO_MODE_OUTPUT);
-            gpio_matrix_out(bus_config->sclk_io_num, io_signal[host].spiclk_out, false, false);
-        }
+        //See how many dma descriptors we need and allocate them
+        int dma_desc_ct=(bus_config->max_transfer_sz+SPI_MAX_DMA_LEN-1)/SPI_MAX_DMA_LEN;
+        if (dma_desc_ct==0) dma_desc_ct=1; //default to 4k when max is not given
+        spihost[host]->max_transfer_sz = dma_desc_ct*SPI_MAX_DMA_LEN;
+        spihost[host]->dmadesc_tx=pvPortMallocCaps(sizeof(lldesc_t)*dma_desc_ct, MALLOC_CAP_DMA);
+        spihost[host]->dmadesc_rx=pvPortMallocCaps(sizeof(lldesc_t)*dma_desc_ct, MALLOC_CAP_DMA);
+        if (!spihost[host]->dmadesc_tx || !spihost[host]->dmadesc_rx) goto nomem;
     }
-    periph_module_enable(io_signal[host].module);
-    esp_intr_alloc(io_signal[host].irq, ESP_INTR_FLAG_INTRDISABLED, spi_intr, (void*)spihost[host], &spihost[host]->intr);
-    spihost[host]->hw=io_signal[host].hw;
+    esp_intr_alloc(spicommon_irqsource_for_host(host), ESP_INTR_FLAG_INTRDISABLED, spi_intr, (void*)spihost[host], &spihost[host]->intr);
+    spihost[host]->hw=spicommon_hw_for_host(host);
 
     //Reset DMA
-    spihost[host]->hw->dma_conf.val|=SPI_OUT_RST|SPI_AHBM_RST|SPI_AHBM_FIFO_RST;
+    spihost[host]->hw->dma_conf.val|=SPI_OUT_RST|SPI_IN_RST|SPI_AHBM_RST|SPI_AHBM_FIFO_RST;
     spihost[host]->hw->dma_out_link.start=0;
     spihost[host]->hw->dma_in_link.start=0;
-    spihost[host]->hw->dma_conf.val&=~(SPI_OUT_RST|SPI_AHBM_RST|SPI_AHBM_FIFO_RST);
+    spihost[host]->hw->dma_conf.val&=~(SPI_OUT_RST|SPI_IN_RST|SPI_AHBM_RST|SPI_AHBM_FIFO_RST);
     //Reset timing
     spihost[host]->hw->ctrl2.val=0;
 
@@ -287,10 +153,16 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, spi_bus_config_t *bus_confi
     spihost[host]->hw->slave.trans_inten=1;
     spihost[host]->hw->slave.trans_done=1;
 
-    //Select DMA channel.
-    SET_PERI_REG_BITS(DPORT_SPI_DMA_CHAN_SEL_REG, 3, dma_chan, (host * 2));
-
     return ESP_OK;
+
+nomem:
+    if (spihost[host]) {
+        free(spihost[host]->dmadesc_tx);
+        free(spihost[host]->dmadesc_rx);
+    }
+    free(spihost[host]);
+    spicommon_periph_free(host);
+    return ESP_ERR_NO_MEM;
 }
 
 esp_err_t spi_bus_free(spi_host_device_t host)
@@ -304,7 +176,9 @@ esp_err_t spi_bus_free(spi_host_device_t host)
     spihost[host]->hw->slave.trans_inten=0;
     spihost[host]->hw->slave.trans_done=0;
     esp_intr_free(spihost[host]->intr);
-    periph_module_disable(io_signal[host].module);
+    spicommon_periph_free(host);
+    free(spihost[host]->dmadesc_tx);
+    free(spihost[host]->dmadesc_rx);
     free(spihost[host]);
     spihost[host]=NULL;
     return ESP_OK;
@@ -336,13 +210,14 @@ esp_err_t spi_bus_add_device(spi_host_device_t host, spi_device_interface_config
 
     //Allocate memory for device
     spi_device_t *dev=malloc(sizeof(spi_device_t));
-    if (dev==NULL) return ESP_ERR_NO_MEM;
+    if (dev==NULL) goto nomem;
     memset(dev, 0, sizeof(spi_device_t));
     spihost[host]->device[freecs]=dev;
 
     //Allocate queues, set defaults
     dev->trans_queue=xQueueCreate(dev_config->queue_size, sizeof(spi_transaction_t *));
     dev->ret_queue=xQueueCreate(dev_config->queue_size, sizeof(spi_transaction_t *));
+    if (!dev->trans_queue || !dev->ret_queue) goto nomem;
     if (dev_config->duty_cycle_pos==0) dev_config->duty_cycle_pos=128;
     dev->host=spihost[host];
 
@@ -351,15 +226,8 @@ esp_err_t spi_bus_add_device(spi_host_device_t host, spi_device_interface_config
 
     //Set CS pin, CS options
     if (dev_config->spics_io_num > 0) {
-        if (spihost[host]->no_gpio_matrix &&dev_config->spics_io_num == io_signal[host].spics0_native && freecs==0) {
-            //Again, the cs0s for all SPI peripherals map to pin mux source 1, so we use that instead of a define.
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[dev_config->spics_io_num], 1);
-        } else {
-            //Use GPIO matrix
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[dev_config->spics_io_num], PIN_FUNC_GPIO);
-            gpio_set_direction(dev_config->spics_io_num, GPIO_MODE_OUTPUT);
-            gpio_matrix_out(dev_config->spics_io_num, io_signal[host].spics_out[freecs], false, false);
-        }
+        gpio_set_direction(dev_config->spics_io_num, GPIO_MODE_OUTPUT);
+        spicommon_cs_initialize(host, dev_config->spics_io_num, freecs, spihost[host]->no_gpio_matrix == false);
     }
     if (dev_config->flags&SPI_DEVICE_CLK_AS_CS) {
         spihost[host]->hw->pin.master_ck_sel |= (1<<freecs);
@@ -373,6 +241,14 @@ esp_err_t spi_bus_add_device(spi_host_device_t host, spi_device_interface_config
     }
     *handle=dev;
     return ESP_OK;
+
+nomem:
+    if (dev) {
+        if (dev->trans_queue) vQueueDelete(dev->trans_queue);
+        if (dev->ret_queue) vQueueDelete(dev->ret_queue);
+    }
+    free(dev);
+    return ESP_ERR_NO_MEM;
 }
 
 esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
@@ -426,7 +302,7 @@ static int spi_set_clock(spi_dev_t *hw, int fapb, int hz, int duty_cycle) {
         int bestpre=-1;
         int besterr=0;
         int errval;
-        for (n=1; n<=64; n++) {
+        for (n=2; n<=64; n++) { //Start at 2: we need to be able to set h/l so we have at least one high and one low pulse.
             //Effectively, this does pre=round((fapb/n)/hz).
             pre=((fapb/n)+(hz/2))/hz;
             if (pre<=0) pre=1;
@@ -457,10 +333,6 @@ static int spi_set_clock(spi_dev_t *hw, int fapb, int hz, int duty_cycle) {
 }
 
 
-//If a transaction is smaller than or equal to of bits, we do not use DMA; instead, we directly copy/paste
-//bits from/to the work registers. Keep between 32 and (8*32) please.
-#define THRESH_DMA_TRANS (8*32)
-
 //This is run in interrupt context and apart from initialization and destruction, this is the only code
 //touching the host (=spihost[x]) variable. The rest of the data arrives in queues. That is why there are
 //no muxes in this code.
@@ -478,7 +350,7 @@ static void IRAM_ATTR spi_intr(void *arg)
 
     if (host->cur_trans) {
         //Okay, transaction is done. 
-        if ((host->cur_trans->rx_buffer || (host->cur_trans->flags & SPI_TRANS_USE_RXDATA)) && host->cur_trans->rxlength<=THRESH_DMA_TRANS) {
+        if ((host->cur_trans->rx_buffer || (host->cur_trans->flags & SPI_TRANS_USE_RXDATA)) && host->dma_chan == 0) {
             //Need to copy from SPI regs to result buffer.
             uint32_t *data;
             if (host->cur_trans->flags & SPI_TRANS_USE_RXDATA) {
@@ -489,7 +361,9 @@ static void IRAM_ATTR spi_intr(void *arg)
             for (int x=0; x < host->cur_trans->rxlength; x+=32) {
                 //Do a memcpy to get around possible alignment issues in rx_buffer
                 uint32_t word=host->hw->data_buf[x/32];
-                memcpy(&data[x/32], &word, 4);
+                int len=host->cur_trans->rxlength-x;
+                if (len>32) len=32;
+                memcpy(&data[x/32], &word, (len+7)/8);
             }
         }
         //Call post-transaction callback, if any
@@ -499,6 +373,8 @@ static void IRAM_ATTR spi_intr(void *arg)
         host->cur_trans=NULL;
         prevCs=host->cur_cs;
     }
+    //Tell common code DMA workaround that our DMA channel is idle. If needed, the code will do a DMA reset.
+    if (host->dma_chan) spicommon_dmaworkaround_idle(host->dma_chan);
     //ToDo: This is a stupidly simple low-cs-first priority scheme. Make this configurable somehow. - JD
     for (i=0; i<NO_CS; i++) {
         if (host->device[i]) {
@@ -523,7 +399,7 @@ static void IRAM_ATTR spi_intr(void *arg)
         if (trans->rxlength==0) {
             trans->rxlength=trans->length;
         }
-        
+
         //Reconfigure according to device settings, but only if we change CSses.
         if (i!=prevCs) {
             //Assumes a hardcoded 80MHz Fapb for now. ToDo: figure out something better once we have
@@ -590,12 +466,13 @@ static void IRAM_ATTR spi_intr(void *arg)
             host->hw->pin.cs1_dis=(i==1)?0:1;
             host->hw->pin.cs2_dis=(i==2)?0:1;
         }
-        //Reset DMA
-        host->hw->dma_conf.val |= SPI_OUT_RST|SPI_AHBM_RST|SPI_AHBM_FIFO_RST;
+        //Reset SPI peripheral
+        host->hw->dma_conf.val |= SPI_OUT_RST|SPI_IN_RST|SPI_AHBM_RST|SPI_AHBM_FIFO_RST;
         host->hw->dma_out_link.start=0;
         host->hw->dma_in_link.start=0;
-        host->hw->dma_conf.val &= ~(SPI_OUT_RST|SPI_AHBM_RST|SPI_AHBM_FIFO_RST);
-        //QIO/DIO
+        host->hw->dma_conf.val &= ~(SPI_OUT_RST|SPI_IN_RST|SPI_AHBM_RST|SPI_AHBM_FIFO_RST);
+        host->hw->dma_conf.out_data_burst_en=1;
+        //Set up QIO/DIO if needed
         host->hw->ctrl.val &= ~(SPI_FREAD_DUAL|SPI_FREAD_QUAD|SPI_FREAD_DIO|SPI_FREAD_QIO);
         host->hw->user.val &= ~(SPI_FWRITE_DUAL|SPI_FWRITE_QUAD|SPI_FWRITE_DIO|SPI_FWRITE_QIO);
         if (trans->flags & SPI_TRANS_MODE_DIO) {
@@ -627,17 +504,13 @@ static void IRAM_ATTR spi_intr(void *arg)
             } else {
                 data=trans->rx_buffer;
             }
-            if (trans->rxlength <= THRESH_DMA_TRANS) {
-                //No need for DMA; we'll copy the result out of the work registers directly later.
+            host->hw->user.usr_miso_highpart=0;
+            if (host->dma_chan == 0) {
+                //No need to setup anything; we'll copy the result out of the work registers directly later.
             } else {
-                host->hw->user.usr_miso_highpart=0;
-                host->dmadesc_rx.size=(trans->rxlength+7)/8;
-                host->dmadesc_rx.length=(trans->rxlength+7)/8;
-                host->dmadesc_rx.buf=(uint8_t*)data;
-                host->dmadesc_rx.eof=1;
-                host->dmadesc_rx.sosf=0;
-                host->dmadesc_rx.owner=1;
-                host->hw->dma_in_link.addr=(int)(&host->dmadesc_rx)&0xFFFFF;
+                spicommon_dmaworkaround_transfer_active(host->dma_chan); //mark channel as active
+                spicommon_setup_dma_desc_links(host->dmadesc_rx, ((trans->rxlength+7)/8), (uint8_t*)data, true);
+                host->hw->dma_in_link.addr=(int)(&host->dmadesc_rx[0]) & 0xFFFFF;
                 host->hw->dma_in_link.start=1;
             }
             host->hw->user.usr_miso=1;
@@ -652,8 +525,8 @@ static void IRAM_ATTR spi_intr(void *arg)
             } else {
                 data=(uint32_t *)trans->tx_buffer;
             }
-            if (trans->length <= THRESH_DMA_TRANS) {
-                //No need for DMA.
+            if (host->dma_chan == 0) {
+                //Need to copy data to registers manually
                 for (int x=0; x < trans->length; x+=32) {
                     //Use memcpy to get around alignment issues for txdata
                     uint32_t word;
@@ -662,19 +535,17 @@ static void IRAM_ATTR spi_intr(void *arg)
                 }
                 host->hw->user.usr_mosi_highpart=1;
             } else {
+                spicommon_dmaworkaround_transfer_active(host->dma_chan); //mark channel as active
+                spicommon_setup_dma_desc_links(host->dmadesc_tx, (trans->length+7)/8, (uint8_t*)data, false);
                 host->hw->user.usr_mosi_highpart=0;
-                host->dmadesc_tx.size=(trans->length+7)/8;
-                host->dmadesc_tx.length=(trans->length+7)/8;
-                host->dmadesc_tx.buf=(uint8_t*)data;
-                host->dmadesc_tx.eof=1;
-                host->dmadesc_tx.sosf=0;
-                host->dmadesc_tx.owner=1;
-                host->hw->dma_out_link.addr=(int)(&host->dmadesc_tx) & 0xFFFFF;
+                host->hw->dma_out_link.addr=(int)(&host->dmadesc_tx[0]) & 0xFFFFF;
                 host->hw->dma_out_link.start=1;
+                host->hw->user.usr_mosi_highpart=0;
             }
         }
         host->hw->mosi_dlen.usr_mosi_dbitlen=trans->length-1;
         host->hw->miso_dlen.usr_miso_dbitlen=trans->rxlength-1;
+
         host->hw->user2.usr_command_value=trans->command;
         if (dev->cfg.address_bits>32) {
             host->hw->addr=trans->address >> 32;
@@ -682,8 +553,8 @@ static void IRAM_ATTR spi_intr(void *arg)
         } else {
             host->hw->addr=trans->address & 0xffffffff;
         }
-        host->hw->user.usr_mosi=(trans->tx_buffer==NULL)?0:1;
-        host->hw->user.usr_miso=(trans->rx_buffer==NULL)?0:1;
+        host->hw->user.usr_mosi=(trans->tx_buffer!=NULL || (trans->flags & SPI_TRANS_USE_TXDATA))?1:0;
+        host->hw->user.usr_miso=(trans->rx_buffer!=NULL || (trans->flags & SPI_TRANS_USE_RXDATA))?1:0;
 
         //Call pre-transmission callback, if any
         if (dev->cfg.pre_cb) dev->cfg.pre_cb(trans);
@@ -698,10 +569,16 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
 {
     BaseType_t r;
     SPI_CHECK(handle!=NULL, "invalid dev handle", ESP_ERR_INVALID_ARG);
-    SPI_CHECK((trans_desc->flags & SPI_TRANS_USE_RXDATA)==0 ||trans_desc->length <= 32, "rxdata transfer > 32bytes", ESP_ERR_INVALID_ARG);
-    SPI_CHECK((trans_desc->flags & SPI_TRANS_USE_TXDATA)==0 ||trans_desc->length <= 32, "txdata transfer > 32bytes", ESP_ERR_INVALID_ARG);
+    SPI_CHECK((trans_desc->flags & SPI_TRANS_USE_RXDATA)==0 ||trans_desc->rxlength <= 32, "rxdata transfer > 32 bits", ESP_ERR_INVALID_ARG);
+    SPI_CHECK((trans_desc->flags & SPI_TRANS_USE_TXDATA)==0 ||trans_desc->length <= 32, "txdata transfer > 32 bits", ESP_ERR_INVALID_ARG);
     SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO|SPI_TRANS_MODE_QIO)) && (handle->cfg.flags & SPI_DEVICE_3WIRE)), "incompatible iface params", ESP_ERR_INVALID_ARG);
     SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO|SPI_TRANS_MODE_QIO)) && (!(handle->cfg.flags & SPI_DEVICE_HALFDUPLEX))), "incompatible iface params", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(trans_desc->length <= handle->host->max_transfer_sz*8, "txdata transfer > host maximum", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(trans_desc->rxlength <= handle->host->max_transfer_sz*8, "rxdata transfer > host maximum", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(handle->host->dma_chan == 0 || (trans_desc->flags & SPI_TRANS_USE_TXDATA) || 
+                trans_desc->tx_buffer==NULL || esp_ptr_dma_capable(trans_desc->tx_buffer), "txdata not in DMA-capable memory", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(handle->host->dma_chan == 0 || (trans_desc->flags & SPI_TRANS_USE_RXDATA) || 
+                trans_desc->rx_buffer==NULL || esp_ptr_dma_capable(trans_desc->rx_buffer), "rxdata not in DMA-capable memory", ESP_ERR_INVALID_ARG);
     r=xQueueSend(handle->trans_queue, (void*)&trans_desc, ticks_to_wait);
     if (!r) return ESP_ERR_TIMEOUT;
     esp_intr_enable(handle->host->intr);

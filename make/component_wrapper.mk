@@ -46,6 +46,23 @@ COMPONENT_EMBED_TXTFILES ?=
 COMPONENT_ADD_INCLUDEDIRS = include
 COMPONENT_ADD_LDFLAGS = -l$(COMPONENT_NAME)
 
+# Define optional compiling macros
+define compile_exclude 
+COMPONENT_OBJEXCLUDE += $(1)
+endef
+
+define compile_include
+COMPONENT_OBJINCLUDE += $(1)
+endef
+
+define compile_only_if
+$(eval $(if $(1), $(call compile_include, $(2)), $(call compile_exclude, $(2))))
+endef
+
+define compile_only_if_not 
+$(eval $(if $(1), $(call compile_exclude, $(2)), $(call compile_include, $(2))))
+endef
+
 
 ################################################################################
 # 2) Include the component.mk for the specific component (COMPONENT_MAKEFILE) to
@@ -68,7 +85,16 @@ COMPONENT_OBJS += $(foreach compsrcdir,$(COMPONENT_SRCDIRS),$(patsubst %.cpp,%.o
 COMPONENT_OBJS += $(foreach compsrcdir,$(COMPONENT_SRCDIRS),$(patsubst %.S,%.o,$(wildcard $(COMPONENT_PATH)/$(compsrcdir)/*.S)))
 # Make relative by removing COMPONENT_PATH from all found object paths
 COMPONENT_OBJS := $(patsubst $(COMPONENT_PATH)/%,%,$(COMPONENT_OBJS))
+else
+# Add in components defined by conditional compiling macros
+COMPONENT_OBJS += $(COMPONENT_OBJINCLUDE)
 endif
+# Remove items disabled by optional compilation
+COMPONENT_OBJS := $(foreach obj,$(COMPONENT_OBJS),$(if $(filter $(realpath $(obj)),$(realpath $(COMPONENT_OBJEXCLUDE))), ,$(obj)))
+
+# Remove duplicates
+COMPONENT_OBJS := $(call uniq,$(COMPONENT_OBJS))
+
 
 # Object files with embedded binaries to add to the component library
 # Correspond to the files named in COMPONENT_EMBED_FILES & COMPONENT_EMBED_TXTFILES
@@ -142,7 +168,7 @@ endif
 
 # If COMPONENT_OWNCLEANTARGET is not set, define a phony clean target
 ifndef COMPONENT_OWNCLEANTARGET
-CLEAN_FILES = $(COMPONENT_LIBRARY) $(COMPONENT_OBJS) $(COMPONENT_OBJS:.o=.d) $(COMPONENT_EMBED_OBJS) $(COMPONENT_EXTRA_CLEAN) component_project_vars.mk
+CLEAN_FILES := $(COMPONENT_LIBRARY) $(COMPONENT_OBJS) $(COMPONENT_OBJS:.o=.d) $(COMPONENT_OBJEXCLUDE) $(COMPONENT_OBJEXCLUDE:.o=.d) $(COMPONENT_EMBED_OBJS) $(COMPONENT_EXTRA_CLEAN) component_project_vars.mk
 .PHONY: clean
 clean:
 	$(summary) RM $(CLEAN_FILES)
@@ -154,22 +180,30 @@ endif
 
 # This pattern is generated for each COMPONENT_SRCDIR to compile the files in it.
 define GenerateCompileTargets
-# $(1) - directory containing source files, relative to $(COMPONENT_PATH)
-$(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.c $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(1)
+# $(1) - directory containing source files, relative to $(COMPONENT_PATH) - one of $(COMPONENT_SRCDIRS)
+#
+$(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.c $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
 	$$(summary) CC $$@
 	$$(CC) $$(CFLAGS) $$(CPPFLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
 
-$(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.cpp $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(1)
+$(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.cpp $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
 	$$(summary) CXX $$@
 	$$(CXX) $$(CXXFLAGS) $$(CPPFLAGS) $$(addprefix -I,$$(COMPONENT_INCLUDES)) $$(addprefix -I,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
 
-$(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.S $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(1)
+$(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.S $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
 	$$(summary) AS $$@
 	$$(CC) $$(CPPFLAGS) $$(DEBUG_FLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
 
 # CWD is build dir, create the build subdirectory if it doesn't exist
+#
+# (NB: Each .o file depends on all relative component build dirs $(COMPONENT_SRCDIRS), rather than just $(1), to work
+# around a behaviour make 3.81 where the first pattern (randomly) seems to be matched rather than the best fit. ie if
+# you have objects a/y.o and a/b/c.o then c.o can be matched with $(1)=a & %=b/c, meaning that subdir 'a/b' needs to be
+# created but wouldn't be created if $(1)=a. Make 4.x doesn't have this problem, it seems to preferentially
+# choose the better match ie $(1)=a/b and %=c )
+#
 $(1):
-	@mkdir -p $(1)
+	mkdir -p $(1)
 endef
 
 # Generate all the compile target patterns

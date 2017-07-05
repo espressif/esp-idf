@@ -51,3 +51,30 @@ TEST_CASE("spi_flash_cache_enabled() works on both CPUs", "[spi_flash]")
     vQueueDelete(result_queue);
 }
 
+static const uint32_t s_in_rodata[] = { 0x12345678, 0xfedcba98 };
+
+static void IRAM_ATTR cache_access_test_func(void* arg)
+{
+    spi_flash_disable_interrupts_caches_and_other_cpu();
+    volatile uint32_t* src = (volatile uint32_t*) s_in_rodata;
+    uint32_t v1 = src[0];
+    uint32_t v2 = src[1];
+    bool cache_enabled = spi_flash_cache_enabled();
+    spi_flash_enable_interrupts_caches_and_other_cpu();
+    printf("%d %x %x\n", cache_enabled, v1, v2);
+    vTaskDelete(NULL);
+}
+
+// These tests works properly if they resets the chip with the
+// "Cache disabled but cached memory region accessed" reason and the correct CPU is logged.
+TEST_CASE("invalid access to cache raises panic (PRO CPU)", "[spi_flash][ignore]")
+{
+    xTaskCreatePinnedToCore(&cache_access_test_func, "ia", 2048, NULL, 5, NULL, 0);
+    vTaskDelay(1000/portTICK_PERIOD_MS);
+}
+
+TEST_CASE("invalid access to cache raises panic (APP CPU)", "[spi_flash][ignore]")
+{
+    xTaskCreatePinnedToCore(&cache_access_test_func, "ia", 2048, NULL, 5, NULL, 1);
+    vTaskDelay(1000/portTICK_PERIOD_MS);
+}

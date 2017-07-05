@@ -13,7 +13,13 @@ For example, one can register a FAT filesystem driver with ``/fat`` prefix, and 
 FS registration
 ---------------
 
-To register an FS driver, application needs to define in instance of esp_vfs_t structure and populate it with function pointers to FS APIs::
+
+
+To register an FS driver, application needs to define in instance of esp_vfs_t structure and populate it with function pointers to FS APIs:
+
+.. highlight:: c
+
+::
 
     esp_vfs_t myfs = {
         .fd_offset = 0,
@@ -31,7 +37,7 @@ Depending on the way FS driver declares its APIs, either ``read``, ``write``, et
 
 Case 1: API functions are declared without an extra context pointer (FS driver is a singleton)::
 
-    size_t myfs_write(int fd, const void * data, size_t size);
+    ssize_t myfs_write(int fd, const void * data, size_t size);
 
     // In definition of esp_vfs_t:
         .flags = ESP_VFS_FLAG_DEFAULT,
@@ -43,7 +49,7 @@ Case 1: API functions are declared without an extra context pointer (FS driver i
 
 Case 2: API functions are declared with an extra context pointer (FS driver supports multiple instances)::
 
-    size_t myfs_write(myfs_t* fs, int fd, const void * data, size_t size);
+    ssize_t myfs_write(myfs_t* fs, int fd, const void * data, size_t size);
 
     // In definition of esp_vfs_t:
         .flags = ESP_VFS_FLAG_CONTEXT_PTR,
@@ -64,15 +70,20 @@ Paths
 
 Each registered FS has a path prefix associated with it. This prefix may be considered a "mount point" of this partition.
 
-Registering mount points which have another mount point as a prefix is not supported and results in undefined behavior. For instance, the following is correct and supported:
-
-- FS 1 on /data/fs1
-- FS 2 on /data/fs2
-
-This **will not work** as expected:
+In case when mount points are nested, the mount point with the longest matching path prefix is used when opening the file. For instance, suppose that the following filesystems are registered in VFS:
 
 - FS 1 on /data
-- FS 2 on /data/fs2
+- FS 2 on /data/static
+
+Then:
+
+- FS 1 will be used when opening a file called ``/data/log.txt``
+- FS 2 will be used when opening a file called ``/data/static/index.html``
+- Even if ``/index.html"`` doesn't exist in FS 2, FS 1 will *not* be searched for ``/static/index.html``.
+
+As a general rule, mount point names must start with the path separator (``/``) and must contain at least one character after path separator. However an empty mount point name is also supported, and may be used in cases when application needs to provide "fallback" filesystem, or override VFS functionality altogether. Such filesystem will be used if no prefix matches the path given.
+
+VFS does not handle dots (``.``) in path names in any special way. VFS does not treat ``..`` as a reference to the parent directory. I.e. in the above example, using a path ``/data/static/../log.txt`` will not result in a call to FS 1 to open ``/log.txt``. Specific FS drivers (such as FATFS) may handle dots in file names differently.
 
 When opening files, FS driver will only be given relative path to files. For example:
 
@@ -96,6 +107,8 @@ While file descriptors returned by VFS component to newlib library are rarely se
 Lower ``CONFIG_MAX_FD_BITS`` bits are used to store zero-based file descriptor. If FS driver has a non-zero ``fd_offset`` field, this ``fd_offset`` is subtracted FDs obtained from the FS ``open`` call, and the result is stored in the lower bits of the FD. Higher bits are used to save the index of FS in the internal table of registered filesystems.
 
 When VFS component receives a call from newlib which has a file descriptor, this file descriptor is translated back to the FS-specific file descriptor. First, higher bits of FD are used to identify the FS. Then ``fd_offset`` field of the FS is added to the lower ``CONFIG_MAX_FD_BITS`` bits of the fd, and resulting FD is passed to the FS driver.
+
+.. highlight:: none
 
 ::
 
@@ -132,15 +145,19 @@ Note that while writing to ``stdout`` or ``stderr`` will block until all charact
 Standard streams and FreeRTOS tasks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-``FILE`` objects for ``stdin``, ``stdout``, and ``stderr`` are shared between all FreeRTOS tasks, but the pointers to these objects are are stored in per-task ``struct _reent``. The following code::
+``FILE`` objects for ``stdin``, ``stdout``, and ``stderr`` are shared between all FreeRTOS tasks, but the pointers to these objects are are stored in per-task ``struct _reent``. The following code:
+
+.. highlight:: c
+
+::
 
     fprintf(stderr, "42\n");
 
-actually is translated to to this (by the preprocessor):
+actually is translated to to this (by the preprocessor)::
 
     fprintf(__getreent()->_stderr, "42\n");
 
-where the ``__getreent()`` function returns a per-task pointer to ``struct _reent`` (:component_file:`newlib/include/sys/reent.h#L370-L417>`). This structure is allocated on the TCB of each task. When a task is initialized, ``_stdin``, ``_stdout`` and ``_stderr`` members of ``struct _reent`` are set to the values of ``_stdin``, ``_stdout`` and ``_stderr`` of ``_GLOBAL_REENT`` (i.e. the structure which is used before FreeRTOS is started).
+where the ``__getreent()`` function returns a per-task pointer to ``struct _reent`` (:component_file:`newlib/include/sys/reent.h#L370-L417`). This structure is allocated on the TCB of each task. When a task is initialized, ``_stdin``, ``_stdout`` and ``_stderr`` members of ``struct _reent`` are set to the values of ``_stdin``, ``_stdout`` and ``_stderr`` of ``_GLOBAL_REENT`` (i.e. the structure which is used before FreeRTOS is started).
 
 Such a design has the following consequences:
 

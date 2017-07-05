@@ -30,7 +30,7 @@
 #include "bta_dm_ci.h"
 
 
-#if (BTM_OOB_INCLUDED == TRUE)
+#if (BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_ci_io_req

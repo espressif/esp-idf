@@ -65,6 +65,8 @@ UINT8 GATT_SetTraceLevel (UINT8 new_level)
     return (gatt_cb.trace_level);
 }
 
+
+#if (GATTS_INCLUDED == TRUE)
 /*****************************************************************************
 **
 **                  GATT SERVER API
@@ -214,6 +216,7 @@ UINT16 GATTS_CreateService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid,
 
                 if (p_list) {
                     gatt_remove_an_item_from_list(p_list_info, p_list);
+                    gatt_free_attr_value_buffer(p_list);
                     gatt_free_hdl_buffer(p_list);
                 }
                 return (0);
@@ -227,6 +230,7 @@ UINT16 GATTS_CreateService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid,
         GATT_TRACE_ERROR ("GATTS_ReserveHandles: service DB initialization failed\n");
         if (p_list) {
             gatt_remove_an_item_from_list(p_list_info, p_list);
+            gatt_free_attr_value_buffer(p_list);
             gatt_free_hdl_buffer(p_list);
         }
 
@@ -413,6 +417,7 @@ BOOLEAN GATTS_DeleteService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid, UINT16 svc_
     }
 
     gatt_remove_an_item_from_list(p_list_info, p_list);
+    gatt_free_attr_value_buffer(p_list);
     gatt_free_hdl_buffer(p_list);
 
     return (TRUE);
@@ -437,7 +442,9 @@ tGATT_STATUS GATTS_StartService (tGATT_IF gatt_if, UINT16 service_handle,
     tGATT_SR_REG            *p_sreg;
     tGATT_HDL_LIST_ELEM      *p_list = NULL;
     UINT8                    i_sreg;
+#if (SDP_INCLUDED == TRUE)
     tBT_UUID                *p_uuid;
+#endif  ///SDP_INCLUDED == TRUE
     tGATT_REG              *p_reg = gatt_get_regcb(gatt_if);
 
     tGATTS_PENDING_NEW_SRV_START *p_buf;
@@ -476,9 +483,10 @@ tGATT_STATUS GATTS_StartService (tGATT_IF gatt_if, UINT16 service_handle,
     case GATT_TRANSPORT_BR_EDR:
     case GATT_TRANSPORT_LE_BR_EDR:
         if (p_sreg->type == GATT_UUID_PRI_SERVICE) {
+#if (SDP_INCLUDED == TRUE)
             p_uuid = gatts_get_service_uuid (p_sreg->p_db);
-
             p_sreg->sdp_handle = gatt_add_sdp_record(p_uuid, p_sreg->s_hdl, p_sreg->e_hdl);
+#endif  ///SDP_INCLUDED == TRUE
         }
         break;
     default:
@@ -528,9 +536,11 @@ void GATTS_StopService (UINT16 service_handle)
 
     /* Index 0 is reserved for GATT, and is never stopped */
     if ( (ii > 0) && (ii < GATT_MAX_SR_PROFILES) && (gatt_cb.sr_reg[ii].in_use) ) {
+#if(SDP_INCLUDED == TRUE)
         if (gatt_cb.sr_reg[ii].sdp_handle) {
             SDP_DeleteRecord(gatt_cb.sr_reg[ii].sdp_handle);
         }
+#endif  ///SDP_INCLUDED == TRUE
         gatt_remove_a_srv_from_list(&gatt_cb.srv_list_info, &gatt_cb.srv_list[ii]);
         gatt_cb.srv_list[ii].in_use = FALSE;
         memset (&gatt_cb.sr_reg[ii], 0, sizeof(tGATT_SR_REG));
@@ -755,7 +765,10 @@ tGATT_STATUS GATTS_GetAttributeValue(UINT16 attr_handle, UINT16 *length, UINT8 *
      status =  gatts_get_attribute_value(&p_decl->svc_db, attr_handle, length, value);
      return status;
 }
+#endif  ///GATTS_INCLUDED == TRUE
 
+
+#if (GATTC_INCLUDED == TRUE)
 /*******************************************************************************/
 /* GATT Profile Srvr Functions */
 /*******************************************************************************/
@@ -1109,6 +1122,7 @@ tGATT_STATUS GATTC_SendHandleValueConfirm (UINT16 conn_id, UINT16 handle)
     return ret;
 }
 
+#endif  ///GATTC_INCLUDED == TRUE
 
 /*******************************************************************************/
 /*                                                                             */
@@ -1212,10 +1226,12 @@ void GATT_Deregister (tGATT_IF gatt_if)
 {
     tGATT_REG       *p_reg = gatt_get_regcb(gatt_if);
     tGATT_TCB       *p_tcb;
-    tGATT_CLCB       *p_clcb;
-    UINT8           i, ii, j;
+    tGATT_CLCB      *p_clcb;
+    UINT8           i, j;
+#if (GATTS_INCLUDED == TRUE)
+    UINT8           ii;
     tGATT_SR_REG    *p_sreg;
-
+#endif  ///GATTS_INCLUDED == TRUE
     GATT_TRACE_API ("GATT_Deregister gatt_if=%d", gatt_if);
     /* Index 0 is GAP and is never deregistered */
     if ( (gatt_if == 0) || (p_reg == NULL) ) {
@@ -1227,16 +1243,15 @@ void GATT_Deregister (tGATT_IF gatt_if)
     /* todo an applcaiton can not be deregistered if its services is also used by other application
       deregisteration need to bed performed in an orderly fashion
       no check for now */
-
+#if (GATTS_INCLUDED == TRUE)
     for (ii = 0, p_sreg = gatt_cb.sr_reg; ii < GATT_MAX_SR_PROFILES; ii++, p_sreg++) {
         if (p_sreg->in_use && (p_sreg->gatt_if == gatt_if)) {
             GATTS_StopService(p_sreg->s_hdl);
         }
     }
-
     /* free all services db buffers if owned by this application */
     gatt_free_srvc_db_buffer_app_id(&p_reg->app_uuid128);
-
+#endif  ///GATTS_INCLUDED == TRUE
     /* When an application deregisters, check remove the link associated with the app */
 
     for (i = 0, p_tcb = gatt_cb.tcb; i < GATT_MAX_PHY_CHANNEL; i++, p_tcb++) {

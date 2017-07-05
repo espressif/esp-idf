@@ -42,6 +42,7 @@ typedef uint32_t nvs_handle;
 #define ESP_ERR_NVS_INVALID_STATE       (ESP_ERR_NVS_BASE + 0x0b)  /*!< NVS is in an inconsistent state due to a previous error. Call nvs_flash_init and nvs_open again, then retry. */
 #define ESP_ERR_NVS_INVALID_LENGTH      (ESP_ERR_NVS_BASE + 0x0c)  /*!< String or blob length is not sufficient to store data */
 #define ESP_ERR_NVS_NO_FREE_PAGES       (ESP_ERR_NVS_BASE + 0x0d)  /*!< NVS partition doesn't contain any empty pages. This may happen if NVS partition was truncated. Erase the whole partition and call nvs_flash_init again. */
+#define ESP_ERR_NVS_VALUE_TOO_LONG      (ESP_ERR_NVS_BASE + 0x0e)  /*!< String or blob length is longer than supported by the implementation */
 
 /**
  * @brief Mode of opening the non-volatile storage
@@ -61,7 +62,7 @@ typedef enum {
  *
  * @param[in]  name        Namespace name. Maximal length is determined by the
  *                         underlying implementation, but is guaranteed to be
- *                         at least 16 characters. Shouldn't be empty.
+ *                         at least 15 characters. Shouldn't be empty.
  * @param[in]  open_mode   NVS_READWRITE or NVS_READONLY. If NVS_READONLY, will 
  *                         open a handle for reading only. All write requests will 
  *			   be rejected for this handle.
@@ -89,8 +90,10 @@ esp_err_t nvs_open(const char* name, nvs_open_mode open_mode, nvs_handle *out_ha
  *                     Handles that were opened read only cannot be used.
  * @param[in]  key     Key name. Maximal length is determined by the underlying
  *                     implementation, but is guaranteed to be at least
- *                     16 characters. Shouldn't be empty.
+ *                     15 characters. Shouldn't be empty.
  * @param[in]  value   The value to set.
+ *                     For strings, the maximum length (including null character) is
+ *                     1984 bytes.
  *
  * @return
  *             - ESP_OK if value was set successfully
@@ -103,6 +106,7 @@ esp_err_t nvs_open(const char* name, nvs_open_mode open_mode, nvs_handle *out_ha
  *               write operation has failed. The value was written however, and
  *               update will be finished after re-initialization of nvs, provided that
  *               flash operation doesn't fail again.
+ *             - ESP_ERR_NVS_VALUE_TOO_LONG if the string value is too long
  */
 esp_err_t nvs_set_i8  (nvs_handle handle, const char* key, int8_t value);
 esp_err_t nvs_set_u8  (nvs_handle handle, const char* key, uint8_t value);
@@ -123,11 +127,10 @@ esp_err_t nvs_set_str (nvs_handle handle, const char* key, const char* value);
  *
  * @param[in]  handle  Handle obtained from nvs_open function.
  *                     Handles that were opened read only cannot be used.
- * @param[in]  key     Key name. Maximal length is determined by the underlying
- *                     implementation, but is guaranteed to be at least
- *                     16 characters. Shouldn't be empty.
+ * @param[in]  key     Key name. Maximal length is 15 characters. Shouldn't be empty.
  * @param[in]  value   The value to set.
- * @param[in]  length  length of binary value to set, in bytes.
+ * @param[in]  length  length of binary value to set, in bytes; Maximum length is
+ *                     1984 bytes.
  *
  * @return
  *             - ESP_OK if value was set successfully
@@ -140,6 +143,7 @@ esp_err_t nvs_set_str (nvs_handle handle, const char* key, const char* value);
  *               write operation has failed. The value was written however, and
  *               update will be finished after re-initialization of nvs, provided that
  *               flash operation doesn't fail again.
+ *             - ESP_ERR_NVS_VALUE_TOO_LONG if the value is too long
  */
 esp_err_t nvs_set_blob(nvs_handle handle, const char* key, const void* value, size_t length);
 
@@ -169,7 +173,7 @@ esp_err_t nvs_set_blob(nvs_handle handle, const char* key, const void* value, si
  * @param[in]     handle     Handle obtained from nvs_open function.
  * @param[in]     key        Key name. Maximal length is determined by the underlying
  *                           implementation, but is guaranteed to be at least
- *                           16 characters. Shouldn't be empty.
+ *                           15 characters. Shouldn't be empty.
  * @param         out_value  Pointer to the output value.
  *                           May be NULL for nvs_get_str and nvs_get_blob, in this
  *                           case required length will be returned in length argument.
@@ -230,7 +234,7 @@ esp_err_t nvs_get_u64 (nvs_handle handle, const char* key, uint64_t* out_value);
  * @param[in]     handle     Handle obtained from nvs_open function.
  * @param[in]     key        Key name. Maximal length is determined by the underlying
  *                           implementation, but is guaranteed to be at least
- *                           16 characters. Shouldn't be empty.
+ *                           15 characters. Shouldn't be empty.
  * @param         out_value  Pointer to the output value.
  *                           May be NULL for nvs_get_str and nvs_get_blob, in this
  *                           case required length will be returned in length argument.
@@ -262,7 +266,7 @@ esp_err_t nvs_get_blob(nvs_handle handle, const char* key, void* out_value, size
  *
  * @param[in]  key     Key name. Maximal length is determined by the underlying
  *                     implementation, but is guaranteed to be at least
- *                     16 characters. Shouldn't be empty.
+ *                     15 characters. Shouldn't be empty.
  *
  * @return
  *              - ESP_OK if erase operation was successful

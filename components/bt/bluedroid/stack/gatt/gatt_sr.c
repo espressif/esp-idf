@@ -25,7 +25,7 @@
 #include "bt_target.h"
 //#include "bt_utils.h"
 
-#if BLE_INCLUDED == TRUE
+#if BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE
 #include <string.h>
 #include "gatt_int.h"
 #include "l2c_api.h"
@@ -309,6 +309,9 @@ tGATT_STATUS gatt_sr_process_app_rsp (tGATT_TCB *p_tcb, tGATT_IF gatt_if,
             ret_code = attp_send_sr_msg (p_tcb, p_tcb->sr_cmd.p_rsp_msg);
             p_tcb->sr_cmd.p_rsp_msg = NULL;
         } else {
+            if (p_tcb->sr_cmd.status == GATT_SUCCESS){
+                status = GATT_UNKNOWN_ERROR;
+            }
             ret_code = gatt_send_error_rsp (p_tcb, status, op_code, p_tcb->sr_cmd.handle, FALSE);
         }
 
@@ -1183,6 +1186,11 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
     tGATT_PREPARE_WRITE_RECORD *prepare_record = NULL;
     memset(&sr_data, 0, sizeof(tGATTS_DATA));
 
+    if (len < 2) {
+        GATT_TRACE_ERROR("%s: Prepare write request was invalid - missing offset, sending error response", __func__);
+        gatt_send_error_rsp(p_tcb, GATT_INVALID_PDU, op_code, handle, FALSE);
+        return;
+    }
     //get offset from p_data
     STREAM_TO_UINT16(offset, p);
     len -= 2;
@@ -1228,7 +1236,7 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
                         } else if (p_attr->p_value == NULL) {
                             LOG_ERROR("Error in %s, attribute of handle 0x%x not allocate value buffer\n",
                                         __func__, handle);
-                            status = GATT_ESP_ERROR;
+                            status = GATT_UNKNOWN_ERROR;
                         } else {
                              //valid prepare write request, need to send response and queue the data
                              //status: GATT_SUCCESS
@@ -1240,7 +1248,7 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
                 }
             }
         } else{
-            status = GATT_ESP_ERROR;
+            status = GATT_UNKNOWN_ERROR;
             GATT_TRACE_ERROR("Error in %s, Line %d: GATT BUSY\n", __func__, __LINE__);
         }
     }
@@ -1491,6 +1499,7 @@ static void gatts_proc_srv_chg_ind_ack(tGATT_TCB *p_tcb )
 *******************************************************************************/
 static void gatts_chk_pending_ind(tGATT_TCB *p_tcb )
 {
+#if (GATTS_INCLUDED == TRUE)
     tGATT_VALUE *p_buf = (tGATT_VALUE *)GKI_getfirst(&p_tcb->pending_ind_q);
     GATT_TRACE_DEBUG("gatts_chk_pending_ind");
 
@@ -1501,6 +1510,7 @@ static void gatts_chk_pending_ind(tGATT_TCB *p_tcb )
                                      p_buf->value);
         GKI_freebuf(GKI_remove_from_queue (&p_tcb->pending_ind_q, p_buf));
     }
+#endif  ///GATTS_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -1645,4 +1655,4 @@ void gatt_server_handle_client_req (tGATT_TCB *p_tcb, UINT8 op_code,
     }
 }
 
-#endif /* BLE_INCLUDED */
+#endif /* BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE */

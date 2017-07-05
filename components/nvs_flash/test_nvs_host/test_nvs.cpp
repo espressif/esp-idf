@@ -18,6 +18,9 @@
 #include <sstream>
 #include <iostream>
 
+#define TEST_ESP_ERR(rc, res) CHECK((rc) == (res))
+#define TEST_ESP_OK(rc) CHECK((rc) == ESP_OK)
+
 using namespace std;
 using namespace nvs;
 
@@ -209,6 +212,52 @@ TEST_CASE("can write and read variable length data", "[nvs]")
     CHECK(memcmp(buf, str, strlen(str)) == 0);
 }
 
+TEST_CASE("different key names are distinguished even if the pointer is the same", "[nvs]")
+{
+    SpiFlashEmulator emu(1);
+    Page page;
+    TEST_ESP_OK(page.load(0));
+    TEST_ESP_OK(page.writeItem(1, "i1", 1));
+    TEST_ESP_OK(page.writeItem(1, "i2", 2));
+    int32_t value;
+    char keyname[10] = {0};
+    for (int i = 0; i < 2; ++i) {
+        strncpy(keyname, "i1", sizeof(keyname) - 1);
+        TEST_ESP_OK(page.readItem(1, keyname, value));
+        CHECK(value == 1);
+        strncpy(keyname, "i2", sizeof(keyname) - 1);
+        TEST_ESP_OK(page.readItem(1, keyname, value));
+        CHECK(value == 2);
+    }
+}
+
+TEST_CASE("Page validates key size", "[nvs]")
+{
+    SpiFlashEmulator emu(4);
+    Page page;
+    TEST_ESP_OK(page.load(0));
+    // 16-character key fails
+    TEST_ESP_ERR(page.writeItem(1, "0123456789123456", 1), ESP_ERR_NVS_KEY_TOO_LONG);
+    // 15-character key is okay
+    TEST_ESP_OK(page.writeItem(1, "012345678912345", 1));
+}
+
+TEST_CASE("Page validates blob size", "[nvs]")
+{
+    SpiFlashEmulator emu(4);
+    Page page;
+    TEST_ESP_OK(page.load(0));
+
+    char buf[2048] = { 0 };
+    // There are two potential errors here:
+    // - not enough space in the page (because one value has been written already)
+    // - value is too long
+    // Check that the second one is actually returned.
+    TEST_ESP_ERR(page.writeItem(1, ItemType::BLOB, "2", buf, Page::ENTRY_COUNT * Page::ENTRY_SIZE), ESP_ERR_NVS_VALUE_TOO_LONG);
+    // Should fail as well
+    TEST_ESP_ERR(page.writeItem(1, ItemType::BLOB, "2", buf, Page::BLOB_MAX_SIZE + 1), ESP_ERR_NVS_VALUE_TOO_LONG);
+    TEST_ESP_OK(page.writeItem(1, ItemType::BLOB, "2", buf, Page::BLOB_MAX_SIZE));
+}
 
 TEST_CASE("can init PageManager in empty flash", "[nvs]")
 {
@@ -306,17 +355,19 @@ TEST_CASE("storage can find items on second page if first is not fully written a
     Storage storage;
     CHECK(storage.init(0, 3) == ESP_OK);
     int bar = 0;
-    uint8_t bigdata[100 * 32] = {0};
+    uint8_t bigdata[Page::BLOB_MAX_SIZE] = {0};
     // write one big chunk of data
-    ESP_ERROR_CHECK(storage.writeItem(0, ItemType::BLOB, "first", bigdata, sizeof(bigdata)));
+    ESP_ERROR_CHECK(storage.writeItem(0, ItemType::BLOB, "1", bigdata, sizeof(bigdata)));
+    // write another big chunk of data
+    ESP_ERROR_CHECK(storage.writeItem(0, ItemType::BLOB, "2", bigdata, sizeof(bigdata)));
     
-    // write second one; it will not fit into the first page
-    ESP_ERROR_CHECK(storage.writeItem(0, ItemType::BLOB, "second", bigdata, sizeof(bigdata)));
+    // write third one; it will not fit into the first page
+    ESP_ERROR_CHECK(storage.writeItem(0, ItemType::BLOB, "3", bigdata, sizeof(bigdata)));
     
     size_t size;
-    ESP_ERROR_CHECK(storage.getItemDataSize(0, ItemType::BLOB, "first", size));
+    ESP_ERROR_CHECK(storage.getItemDataSize(0, ItemType::BLOB, "1", size));
     CHECK(size == sizeof(bigdata));
-    ESP_ERROR_CHECK(storage.getItemDataSize(0, ItemType::BLOB, "second", size));
+    ESP_ERROR_CHECK(storage.getItemDataSize(0, ItemType::BLOB, "3", size));
     CHECK(size == sizeof(bigdata));
 }
 
@@ -428,9 +479,6 @@ TEST_CASE("can erase items", "[nvs]")
     CHECK(storage.readItem(3, "key00222", val) == ESP_ERR_NVS_NOT_FOUND);
 }
 
-#define TEST_ESP_ERR(rc, res) CHECK((rc) == (res))
-#define TEST_ESP_OK(rc) CHECK((rc) == ESP_OK)
-
 TEST_CASE("nvs api tests", "[nvs]")
 {
     SpiFlashEmulator emu(10);
@@ -474,6 +522,14 @@ TEST_CASE("nvs api tests", "[nvs]")
     char buf[strlen(str) + 1];
     size_t buf_len = sizeof(buf);
 
+    size_t buf_len_needed;
+    TEST_ESP_OK(nvs_get_str(handle_2, "key", NULL, &buf_len_needed));
+    CHECK(buf_len_needed == buf_len);
+    
+    size_t buf_len_short = buf_len - 1;
+    TEST_ESP_ERR(ESP_ERR_NVS_INVALID_LENGTH, nvs_get_str(handle_2, "key", buf, &buf_len_short));
+    CHECK(buf_len_short == buf_len);
+    
     TEST_ESP_OK(nvs_get_str(handle_2, "key", buf, &buf_len));
 
     CHECK(0 == strcmp(buf, str));
@@ -1110,15 +1166,21 @@ TEST_CASE("read/write failure (TW8406)", "[nvs]")
 
 TEST_CASE("nvs_flash_init checks for an empty page", "[nvs]")
 {
-    const size_t blob_size = 2048; // big enough so that only one can fit into a page
+    const size_t blob_size = Page::BLOB_MAX_SIZE;
     uint8_t blob[blob_size] = {0};
     SpiFlashEmulator emu(5);
     TEST_ESP_OK( nvs_flash_init_custom(0, 5) );
     nvs_handle handle;
     TEST_ESP_OK( nvs_open("test", NVS_READWRITE, &handle) );
-    TEST_ESP_OK( nvs_set_blob(handle, "1", blob, blob_size) );
-    TEST_ESP_OK( nvs_set_blob(handle, "2", blob, blob_size) );
-    TEST_ESP_OK( nvs_set_blob(handle, "3", blob, blob_size) );
+    // Fill first page
+    TEST_ESP_OK( nvs_set_blob(handle, "1a", blob, blob_size) );
+    TEST_ESP_OK( nvs_set_blob(handle, "1b", blob, blob_size) );
+    // Fill second page
+    TEST_ESP_OK( nvs_set_blob(handle, "2a", blob, blob_size) );
+    TEST_ESP_OK( nvs_set_blob(handle, "2b", blob, blob_size) );
+    // Fill third page
+    TEST_ESP_OK( nvs_set_blob(handle, "3a", blob, blob_size) );
+    TEST_ESP_OK( nvs_set_blob(handle, "3b", blob, blob_size) );
     TEST_ESP_OK( nvs_commit(handle) );
     nvs_close(handle);
     // first two pages are now full, third one is writable, last two are empty

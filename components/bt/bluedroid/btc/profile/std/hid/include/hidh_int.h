@@ -29,6 +29,8 @@
 #include "hid_conn.h"
 #include "l2c_api.h"
 
+#if (HID_HOST_INCLUDED == TRUE)
+
 enum {
     HID_DEV_NO_CONN,
     HID_DEV_CONNECTED
@@ -87,5 +89,7 @@ extern tHID_HOST_CTB *hidh_cb_ptr;
 #ifdef __cplusplus
 }
 #endif
+
+#endif  ///HID_HOST_INCLUDED == TRUE
 
 #endif

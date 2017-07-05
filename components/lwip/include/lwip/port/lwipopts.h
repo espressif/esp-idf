@@ -184,6 +184,10 @@
    ----------------------------------
 */
 
+#define LWIP_BROADCAST_PING CONFIG_LWIP_BROADCAST_PING
+
+#define LWIP_MULTICAST_PING CONFIG_LWIP_MULTICAST_PING
+
 /*
    ---------------------------------
    ---------- RAW options ----------
@@ -280,7 +284,7 @@
  * TCP_QUEUE_OOSEQ==1: TCP will queue segments that arrive out of order.
  * Define to 0 if your device is low on memory.
  */
-#define TCP_QUEUE_OOSEQ                 1
+#define TCP_QUEUE_OOSEQ                 CONFIG_TCP_QUEUE_OOSEQ
 
 /*
  *     LWIP_EVENT_API==1: The user defines lwip_tcp_event() to receive all
@@ -288,7 +292,7 @@
  *     LWIP_CALLBACK_API==1: The PCB callback function is called directly
  *         for the event. This is the default.
 */
-#define TCP_MSS                         1460
+#define TCP_MSS                         CONFIG_TCP_MSS
 
 /**
  * TCP_MAXRTX: Maximum number of retransmissions of data segments.
@@ -304,6 +308,24 @@
  * TCP_LISTEN_BACKLOG: Enable the backlog option for tcp listen pcb.
  */
 #define TCP_LISTEN_BACKLOG              1
+
+
+/**
+ * TCP_OVERSIZE: The maximum number of bytes that tcp_write may
+ * allocate ahead of time
+ */
+#ifdef CONFIG_TCP_OVERSIZE_MSS
+#define TCP_OVERSIZE                    TCP_MSS
+#endif
+#ifdef CONFIG_TCP_OVERSIZE_QUARTER_MSS
+#define TCP_OVERSIZE                    (TCP_MSS/4)
+#endif
+#ifdef CONFIG_TCP_OVERSIZE_DISABLE
+#define TCP_OVERSIZE                    0
+#endif
+#ifndef TCP_OVERSIZE
+#error "One of CONFIG_TCP_OVERSIZE_xxx options should be set by sdkconfig"
+#endif
 
 /*
    ----------------------------------
@@ -503,6 +525,56 @@
    ---------------------------------
 */
 
+/**
+ * PPP_SUPPORT==1: Enable PPP.
+ */
+#define PPP_SUPPORT                     CONFIG_PPP_SUPPORT
+
+#if PPP_SUPPORT
+
+/**
+ * PAP_SUPPORT==1: Support PAP.
+ */
+#define PAP_SUPPORT                     CONFIG_PPP_PAP_SUPPORT
+
+/**
+ * CHAP_SUPPORT==1: Support CHAP.
+ */
+#define CHAP_SUPPORT                    CONFIG_PPP_CHAP_SUPPORT
+
+/**
+ * MSCHAP_SUPPORT==1: Support MSCHAP.
+ */
+#define MSCHAP_SUPPORT                  CONFIG_PPP_MSCHAP_SUPPORT
+
+/**
+ * CCP_SUPPORT==1: Support CCP.
+ */
+#define MPPE_SUPPORT                    CONFIG_PPP_MPPE_SUPPORT
+
+/**
+ * PPP_MAXIDLEFLAG: Max Xmit idle time (in ms) before resend flag char.
+ * TODO: If PPP_MAXIDLEFLAG > 0 and next package is send during PPP_MAXIDLEFLAG time,
+ *       then 0x7E is not added at the begining of PPP package but 0x7E termination
+ *       is always at the end. This behaviour brokes PPP dial with GSM (PPPoS).
+ *       The PPP package should always start and end with 0x7E.
+ */
+
+#define PPP_MAXIDLEFLAG                 0
+
+/**
+ * PPP_DEBUG: Enable debugging for PPP.
+ */
+#define PPP_DEBUG_ON					CONFIG_PPP_DEBUG_ON
+
+#if PPP_DEBUG_ON
+#define PPP_DEBUG                       LWIP_DBG_ON
+#else
+#define PPP_DEBUG                       LWIP_DBG_OFF
+#endif
+
+#endif
+
 /*
    --------------------------------------
    ---------- Checksum options ----------
@@ -585,6 +657,18 @@
  */
 #define TCPIP_DEBUG                     LWIP_DBG_OFF
 
+/**
+ * ETHARP_TRUST_IP_MAC==1: Incoming IP packets cause the ARP table to be
+ * updated with the source MAC and IP addresses supplied in the packet.
+ * You may want to disable this if you do not trust LAN peers to have the
+ * correct addresses, or as a limited approach to attempt to handle
+ * spoofing. If disabled, lwIP will need to make a new ARP request if
+ * the peer is not already in the ARP table, adding a little latency.
+ * The peer *is* in the ARP table if it requested our address before.
+ * Also notice that this slows down input processing of every IP packet!
+ */
+#define ETHARP_TRUST_IP_MAC             1
+
 
 /* Enable all Espressif-only options */
 
@@ -601,11 +685,14 @@
 #define ESP_IP4_ATON                    1
 #define ESP_LIGHT_SLEEP                 1
 #define ESP_L2_TO_L3_COPY               CONFIG_L2_TO_L3_COPY
-#define ESP_CNT_DEBUG                   0
+#define ESP_STATS_MEM                   0
+#define ESP_STATS_DROP                  0
+#define ESP_STATS_TCP                   0
 #define ESP_DHCP_TIMER                  1
+#define ESP_LWIP_LOGI(...)              ESP_LOGI("lwip", __VA_ARGS__)
 
-#define TCP_WND_DEFAULT                 (4*TCP_MSS)
-#define TCP_SND_BUF_DEFAULT             (2*TCP_MSS)
+#define TCP_WND_DEFAULT                 CONFIG_TCP_WND_DEFAULT
+#define TCP_SND_BUF_DEFAULT             CONFIG_TCP_SND_BUF_DEFAULT
 
 #if ESP_PERF
 #define DBG_PERF_PATH_SET(dir, point)
@@ -642,7 +729,6 @@ enum {
 #define DHCP_DEBUG                      LWIP_DBG_OFF
 #define LWIP_DEBUG                      LWIP_DBG_OFF
 #define TCP_DEBUG                       LWIP_DBG_OFF
-#define ESP_STATS                       0
 
 #define CHECKSUM_CHECK_UDP              0
 #define CHECKSUM_CHECK_IP               0

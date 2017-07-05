@@ -50,9 +50,9 @@ extern "C" {
   *     0x3ff80000(0x400c0000)  Fast    8192            deep sleep entry code
   *
   *************************************************************************************
-  *     Rtc store registers     usage
-  *     RTC_CNTL_STORE0_REG
-  *     RTC_CNTL_STORE1_REG
+  *     RTC store registers     usage
+  *     RTC_CNTL_STORE0_REG     Reserved
+  *     RTC_CNTL_STORE1_REG     RTC_SLOW_CLK calibration value
   *     RTC_CNTL_STORE2_REG     Boot time, low word
   *     RTC_CNTL_STORE3_REG     Boot time, high word
   *     RTC_CNTL_STORE4_REG     External XTAL frequency
@@ -61,8 +61,12 @@ extern "C" {
   *     RTC_CNTL_STORE7_REG     FAST_RTC_MEMORY_CRC
   *************************************************************************************
   */
+
+#define RTC_SLOW_CLK_CAL_REG    RTC_CNTL_STORE1_REG
 #define RTC_BOOT_TIME_LOW_REG   RTC_CNTL_STORE2_REG
 #define RTC_BOOT_TIME_HIGH_REG  RTC_CNTL_STORE3_REG
+#define RTC_XTAL_FREQ_REG       RTC_CNTL_STORE4_REG
+#define RTC_APB_FREQ_REG        RTC_CNTL_STORE5_REG
 #define RTC_ENTRY_ADDR_REG      RTC_CNTL_STORE6_REG
 #define RTC_MEMORY_CRC_REG      RTC_CNTL_STORE7_REG
 

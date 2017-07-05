@@ -21,6 +21,7 @@
 #include "hiddefs.h"
 #include "sdp_api.h"
 
+#if (HID_HOST_INCLUDED == TRUE)
 /*****************************************************************************
 **  Constants
 *****************************************************************************/
@@ -231,5 +232,7 @@ extern UINT8 HID_HostSetTraceLevel (UINT8 new_level);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  ///HID_HOST_INCLUDED == TRUE
 
 #endif  /* HIDH_API_H */

@@ -14,6 +14,7 @@
 #include "mdns.h"
 
 #include <string.h>
+#ifndef MDNS_TEST_MODE
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -23,6 +24,7 @@
 #include "lwip/igmp.h"
 #include "lwip/udp.h"
 #include "esp_wifi.h"
+#endif
 
 #define MDNS_FLAGS_AUTHORITATIVE    0x8400
 
@@ -162,6 +164,9 @@ static const char * MDNS_DEFAULT_DOMAIN = "local";
 static const char * MDNS_SUB_STR = "_sub";
 
 static mdns_server_t * _mdns_servers[TCPIP_ADAPTER_IF_MAX] = {0,0,0};
+
+#ifndef MDNS_TEST_MODE
+
 static TaskHandle_t _mdns_service_task_handle = NULL;
 static QueueSetHandle_t _mdns_queue_set = NULL;
 
@@ -257,6 +262,7 @@ esp_err_t _mdns_server_deinit(mdns_server_t * server)
     }
     return ESP_OK;
 }
+#endif
 
 /**
  * @brief  send packet over UDP
@@ -269,25 +275,28 @@ esp_err_t _mdns_server_deinit(mdns_server_t * server)
  */
 static size_t _mdns_server_write(mdns_server_t * server, uint8_t * data, size_t len)
 {
+#ifndef MDNS_TEST_MODE
     struct pbuf* pbt = pbuf_alloc(PBUF_TRANSPORT, len, PBUF_RAM);
-    if (pbt != NULL) {
-        uint8_t* dst = (uint8_t *)pbt->payload;
-        memcpy(dst, data, len);
-        err_t err = udp_sendto(server->pcb, pbt, &(server->pcb->remote_ip), server->pcb->remote_port);
-        pbuf_free(pbt);
-        if (err) {
-            return 0;
-        }
-        return len;
+    if (pbt == NULL) {
+        return 0;
     }
-    return 0;
+    uint8_t* dst = (uint8_t *)pbt->payload;
+    memcpy(dst, data, len);
+    err_t err = udp_sendto(server->pcb, pbt, &(server->pcb->remote_ip), server->pcb->remote_port);
+    pbuf_free(pbt);
+    if (err) {
+        return 0;
+    }
+#endif
+    return len;
 }
 
 /*
  * MDNS Servers
  * */
 
-static void _mdns_parse_packet(mdns_server_t * server, const uint8_t * data, size_t len);
+#ifndef MDNS_TEST_MODE
+void mdns_parse_packet(mdns_server_t * server, const uint8_t * data, size_t len);
 
 /**
  * @brief  the main MDNS service task. Packets are received and parsed here
@@ -305,7 +314,7 @@ static void _mdns_service_task(void *pvParameters)
                 mdns_server_t * server = _mdns_servers[i];
                 if (server && server->queue == queue) {
                     MDNS_MUTEX_LOCK();
-                    _mdns_parse_packet(server, (uint8_t*)pb->payload, pb->len);
+                    mdns_parse_packet(server, (uint8_t*)pb->payload, pb->len);
                     MDNS_MUTEX_UNLOCK();
                     break;
                 }
@@ -314,6 +323,7 @@ static void _mdns_service_task(void *pvParameters)
         }
     }
 }
+#endif
 
 /**
  * @brief  get the server assigned to particular interface
@@ -342,6 +352,7 @@ static mdns_server_t * _mdns_server_get(tcpip_adapter_if_t tcpip_if)
  */
 static esp_err_t _mdns_server_add(mdns_server_t * server)
 {
+#ifndef MDNS_TEST_MODE
     if (!_mdns_service_semaphore) {
         _mdns_service_semaphore = xSemaphoreCreateMutex();
         if (!_mdns_service_semaphore) {
@@ -374,7 +385,7 @@ static esp_err_t _mdns_server_add(mdns_server_t * server)
     if (err) {
         return err;
     }
-
+#endif
     _mdns_servers[server->tcpip_if] = server;
 
     return ESP_OK;
@@ -391,10 +402,10 @@ static esp_err_t _mdns_server_add(mdns_server_t * server)
  */
 static esp_err_t _mdns_server_remove(mdns_server_t * server)
 {
+    _mdns_servers[server->tcpip_if] = NULL;
+#ifndef MDNS_TEST_MODE
     //stop UDP
     _mdns_server_deinit(server);
-
-    _mdns_servers[server->tcpip_if] = NULL;
 
     if (xQueueRemoveFromSet(server->queue, _mdns_queue_set) != pdPASS) {
         return ESP_FAIL;
@@ -417,7 +428,7 @@ static esp_err_t _mdns_server_remove(mdns_server_t * server)
         }
         MDNS_SERVICE_UNLOCK();
     }
-
+#endif
     return ESP_OK;
 }
 
@@ -1294,7 +1305,7 @@ static inline uint16_t _mdns_read_u16(const uint8_t * packet, uint16_t index)
  * @param  data         byte array holding the packet data
  * @param  len          length of the byte array
  */
-static void _mdns_parse_packet(mdns_server_t * server, const uint8_t * data, size_t len)
+void mdns_parse_packet(mdns_server_t * server, const uint8_t * data, size_t len)
 {
     static mdns_name_t n;
     static mdns_result_temp_t a;
@@ -1309,11 +1320,13 @@ static void _mdns_parse_packet(mdns_server_t * server, const uint8_t * data, siz
 
     if (questions) {
         uint8_t qs = questions;
-        mdns_answer_item_t * answers = NULL;
+        mdns_answer_item_t * answer_items = NULL;
 
         while(qs--) {
             content = _mdns_parse_fqdn(data, content, name);
             if (!content) {
+                answers = 0;
+                additional = 0;
                 break;//error
             }
 
@@ -1323,7 +1336,7 @@ static void _mdns_parse_packet(mdns_server_t * server, const uint8_t * data, siz
             if (!name->service[0] || !name->proto[0]) {
                 if (type == MDNS_TYPE_A || type == MDNS_TYPE_AAAA || type == MDNS_TYPE_ANY) {//send A + AAAA
                     if (name->host[0] && server->hostname && server->hostname[0] && !strcmp(name->host, server->hostname)) {
-                        answers = _mdns_add_answer(answers, NULL, MDNS_ANSWER_A);
+                        answer_items = _mdns_add_answer(answer_items, NULL, MDNS_ANSWER_A);
                     }
                 }
                 continue;
@@ -1336,7 +1349,7 @@ static void _mdns_parse_packet(mdns_server_t * server, const uint8_t * data, siz
                 mdns_srv_item_t * s = server->services;
                 while(s) {
                     if (s->service->service && s->service->proto) {
-                        answers = _mdns_add_answer(answers, s->service, MDNS_ANSWER_SDPTR);
+                        answer_items = _mdns_add_answer(answer_items, s->service, MDNS_ANSWER_SDPTR);
                     }
                     s = s->next;
                 }
@@ -1354,7 +1367,7 @@ static void _mdns_parse_packet(mdns_server_t * server, const uint8_t * data, siz
             }
 
             if (type == MDNS_TYPE_PTR) {
-                answers = _mdns_add_answer(answers, si->service, MDNS_ANSWER_ALL);
+                answer_items = _mdns_add_answer(answer_items, si->service, MDNS_ANSWER_ALL);
             } else if (type == MDNS_TYPE_TXT) {
                 //match instance/host
                 const char * host = (si->service->instance)?si->service->instance
@@ -1363,7 +1376,7 @@ static void _mdns_parse_packet(mdns_server_t * server, const uint8_t * data, siz
                 if (!host || !host[0] || !name->host[0] || strcmp(name->host, host)) {
                     continue;
                 }
-                answers = _mdns_add_answer(answers, si->service, MDNS_ANSWER_TXT);
+                answer_items = _mdns_add_answer(answer_items, si->service, MDNS_ANSWER_TXT);
             } else if (type == MDNS_TYPE_SRV) {
                 //match instance/host
                 const char * host = (si->service->instance)?si->service->instance
@@ -1372,16 +1385,16 @@ static void _mdns_parse_packet(mdns_server_t * server, const uint8_t * data, siz
                 if (!host || !host[0] || !name->host[0] || strcmp(name->host, host)) {
                     continue;
                 }
-                answers = _mdns_add_answer(answers, si->service, MDNS_ANSWER_SRV | MDNS_ANSWER_A);
+                answer_items = _mdns_add_answer(answer_items, si->service, MDNS_ANSWER_SRV | MDNS_ANSWER_A);
             } else if (type == MDNS_TYPE_ANY) {//send all
                 //match host
                 if (!name->host[0] || !server->hostname || !server->hostname[0] || strcmp(name->host, server->hostname)) {
-                    answers = _mdns_add_answer(answers, si->service, MDNS_ANSWER_ALL);
+                    answer_items = _mdns_add_answer(answer_items, si->service, MDNS_ANSWER_ALL);
                 }
             }
         }
-        if (answers) {
-            _mdns_send_answers(server, answers);
+        if (answer_items) {
+            _mdns_send_answers(server, answer_items);
         }
     }
 
@@ -1392,30 +1405,37 @@ static void _mdns_parse_packet(mdns_server_t * server, const uint8_t * data, siz
         while(content < (data + len)) {
             content = _mdns_parse_fqdn(data, content, name);
             if (!content) {
-                break;//error
+                return;//error
             }
             uint16_t type = _mdns_read_u16(content, MDNS_TYPE_OFFSET);
             uint16_t data_len = _mdns_read_u16(content, MDNS_LEN_OFFSET);
             const uint8_t * data_ptr = content + MDNS_DATA_OFFSET;
 
             content = data_ptr + data_len;
+            if(content > (data + len)){
+                return;
+            }
 
             if (type == MDNS_TYPE_PTR) {
                 if (!_mdns_parse_fqdn(data, data_ptr, name)) {
                     continue;//error
                 }
+#ifndef MDNS_TEST_MODE
                 if (server->search.host[0] ||
                         (strcmp(name->service, server->search.service) != 0) ||
                         (strcmp(name->proto, server->search.proto) != 0)) {
                     continue;//not searching for service or wrong service/proto
                 }
+#endif
                 strlcpy(answer->instance, name->host, MDNS_NAME_BUF_LEN);
             } else if (type == MDNS_TYPE_SRV) {
+#ifndef MDNS_TEST_MODE
                 if (server->search.host[0] ||
                         (strcmp(name->service, server->search.service) != 0) ||
                         (strcmp(name->proto, server->search.proto) != 0)) {
                     continue;//not searching for service or wrong service/proto
                 }
+#endif
                 if (answer->instance[0]) {
                     if (strcmp(answer->instance, name->host) != 0) {
                         continue;//instance name is not the same as the one in the PTR record
@@ -1444,6 +1464,9 @@ static void _mdns_parse_packet(mdns_server_t * server, const uint8_t * data, siz
                 uint16_t i=0,b=0, y;
                 while(i < data_len) {
                     uint8_t partLen = data_ptr[i++];
+                    if((i+partLen) > data_len){
+                        break;//error
+                    }
                     //check if partLen will fit in the buffer
                     if (partLen > (MDNS_TXT_MAX_LEN - b - 1)) {
                         break;
@@ -1459,9 +1482,11 @@ static void _mdns_parse_packet(mdns_server_t * server, const uint8_t * data, siz
                 answer->txt[b] = 0;
             } else if (type == MDNS_TYPE_AAAA) {
                 if (server->search.host[0]) {
+#ifndef MDNS_TEST_MODE
                     if (strcmp(name->host, server->search.host) != 0) {
                         continue;//wrong host
                     }
+#endif
                 } else if (!answer->ptr) {
                     strlcpy(answer->host, name->host, MDNS_NAME_BUF_LEN);
                 } else if (strcmp(answer->host, name->host) != 0) {
@@ -1470,9 +1495,11 @@ static void _mdns_parse_packet(mdns_server_t * server, const uint8_t * data, siz
                 memcpy(answer->addrv6, data_ptr, sizeof(ip6_addr_t));
             } else if (type == MDNS_TYPE_A) {
                 if (server->search.host[0]) {
+#ifndef MDNS_TEST_MODE
                     if (strcmp(name->host, server->search.host) != 0) {
                         continue;//wrong host
                     }
+#endif
                 } else if (!answer->ptr) {
                     strlcpy(answer->host, name->host, MDNS_NAME_BUF_LEN);
                 } else if (strcmp(answer->host, name->host) != 0) {
@@ -1611,12 +1638,11 @@ esp_err_t mdns_set_hostname(mdns_server_t * server, const char * hostname)
     }
     MDNS_MUTEX_LOCK();
     free((char*)server->hostname);
-    server->hostname = (char *)malloc(strlen(hostname)+1);
+    server->hostname = strndup(hostname, MDNS_NAME_BUF_LEN - 1);
     if (!server->hostname) {
         MDNS_MUTEX_UNLOCK();
         return ESP_ERR_NO_MEM;
     }
-    strlcpy((char *)server->hostname, hostname, MDNS_NAME_BUF_LEN);
     MDNS_MUTEX_UNLOCK();
     return ERR_OK;
 }
@@ -1631,12 +1657,11 @@ esp_err_t mdns_set_instance(mdns_server_t * server, const char * instance)
     }
     MDNS_MUTEX_LOCK();
     free((char*)server->instance);
-    server->instance = (char *)malloc(strlen(instance)+1);
+    server->instance = strndup(instance, MDNS_NAME_BUF_LEN - 1);
     if (!server->instance) {
         MDNS_MUTEX_UNLOCK();
         return ESP_ERR_NO_MEM;
     }
-    strlcpy((char *)server->instance, instance, MDNS_NAME_BUF_LEN);
     MDNS_MUTEX_UNLOCK();
     return ERR_OK;
 }
@@ -1812,7 +1837,7 @@ esp_err_t mdns_service_remove_all(mdns_server_t * server)
  * MDNS QUERY
  * */
 
-uint32_t mdns_query(mdns_server_t * server, const char * service, const char * proto, uint32_t timeout)
+size_t mdns_query(mdns_server_t * server, const char * service, const char * proto, uint32_t timeout)
 {
     if (!server || !service) {
         return 0;

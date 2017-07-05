@@ -20,7 +20,7 @@
 
 #include "bt_target.h"
 #include "sdpdefs.h"
-
+#if (SDP_INCLUDED == TRUE)
 /*****************************************************************************
 **  Constants
 *****************************************************************************/
@@ -720,5 +720,7 @@ BOOLEAN SDP_FindServiceUUIDInRec(tSDP_DISC_REC *p_rec, tBT_UUID *p_uuid);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  ///SDP_INCLUDED == TRUE
 
 #endif  /* SDP_API_H */

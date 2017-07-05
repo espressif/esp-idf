@@ -375,7 +375,7 @@ sys_mbox_free(sys_mbox_t *mbox)
     if (post_null){
       LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_mbox_free: post null to mbox\n"));
       if (sys_mbox_trypost( mbox, NULL) != ERR_OK){
-        ESP_STATS_INC(esp.free_mbox_post_fail);
+        ESP_STATS_DROP_INC(esp.free_mbox_post_fail);
         LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_mbox_free: post null mbox fail\n"));
       } else {
         post_null = false;
@@ -437,6 +437,13 @@ sys_init(void)
 
 /*-----------------------------------------------------------------------------------*/
 u32_t
+sys_jiffies(void)
+{
+  return xTaskGetTickCount();
+}
+
+/*-----------------------------------------------------------------------------------*/
+u32_t
 sys_now(void)
 {
   return xTaskGetTickCount();
@@ -473,19 +480,6 @@ void
 sys_arch_unprotect(sys_prot_t pval)
 {
   sys_mutex_unlock(&g_lwip_protect_mutex);
-}
-
-/*-----------------------------------------------------------------------------------*/
-/*
- * Prints an assertion messages and aborts execution.
- */
-void
-sys_arch_assert(const char *file, int line)
-{
-  ESP_LOGE(TAG, "\nAssertion: %d in %s\n", line, file);
-
-//  vTaskEnterCritical();
-  while(1);
 }
 
 #define SYS_TLS_INDEX CONFIG_LWIP_THREAD_LOCAL_STORAGE_INDEX

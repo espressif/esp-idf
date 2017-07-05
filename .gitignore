@@ -26,6 +26,7 @@ examples/**/build
 #Doc build artifacts
 docs/_build/
 docs/doxygen-warning-log.txt
+docs/sphinx-warning-log.txt
 docs/xml/
 docs/man/
 

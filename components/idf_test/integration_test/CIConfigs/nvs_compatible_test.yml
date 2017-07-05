@@ -1,0 +1,11 @@
+BinPath: 
+    path: test_bins/ESP32_IDF/SSC_BLE
+    test app: SSC_BLE
+
+DUT: [SSC1]
+
+Filter:
+- Add:
+    SDK: ESP32_IDF
+    Test App: SSC_BLE
+    summary: 'use old NVS data WIFI function test'

@@ -41,7 +41,7 @@ typedef int32_t INT32;
 typedef bool BOOLEAN;
 
 #define PACKED  __packed
-#define INLINE  __inline
+// #define INLINE  __inline
 
 #define BCM_STRCPY_S(x1,x2,x3)      strcpy((x1),(x3))
 #define BCM_STRNCPY_S(x1,x2,x3,x4)  strncpy((x1),(x3),(x4))
@@ -58,6 +58,7 @@ typedef bool BOOLEAN;
 */
 #define BT_EVT_MASK                 0xFF00
 #define BT_SUB_EVT_MASK             0x00FF
+#define BT_STATIC_RAND_ADDR_MASK    0xC0
 /* To Bluetooth Upper Layers        */
 /************************************/
 #define BT_EVT_TO_BTU_L2C_EVT       0x0900      /* L2CAP event */

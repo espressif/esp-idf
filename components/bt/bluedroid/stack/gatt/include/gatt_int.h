@@ -185,6 +185,7 @@ typedef struct {
     tGATT_ATTR_UUID_TYPE    uuid_type;
     tGATT_PERM              permission;
     tGATTS_ATTR_CONTROL     control;
+    tGATT_ATTR_MASK         mask;
     UINT16                  handle;
     UINT16                  uuid;
 } tGATT_ATTR16;
@@ -197,6 +198,7 @@ typedef struct {
     tGATT_ATTR_UUID_TYPE    uuid_type;
     tGATT_PERM              permission;
     tGATTS_ATTR_CONTROL     control;
+    tGATT_ATTR_MASK         mask;
     UINT16                  handle;
     UINT32                  uuid;
 } tGATT_ATTR32;
@@ -210,6 +212,7 @@ typedef struct {
     tGATT_ATTR_UUID_TYPE    uuid_type;
     tGATT_PERM              permission;
     tGATTS_ATTR_CONTROL     control;
+    tGATT_ATTR_MASK         mask;
     UINT16                  handle;
     UINT8                   uuid[LEN_UUID_128];
 } tGATT_ATTR128;
@@ -382,7 +385,9 @@ typedef struct {
 
     /* server needs */
     /* server response data */
+#if (GATTS_INCLUDED == TRUE)
     tGATT_SR_CMD    sr_cmd;
+#endif  ///GATTS_INCLUDED == TRUE
     UINT16          indicate_handle;
     BUFFER_Q        pending_ind_q;
 
@@ -499,11 +504,12 @@ typedef struct {
     UINT16              next_handle;    /* next available handle */
     tGATT_SVC_CHG       gattp_attr;     /* GATT profile attribute service change */
     tGATT_IF            gatt_if;
+#if (GATTS_INCLUDED == TRUE)    
     tGATT_HDL_LIST_INFO hdl_list_info;
     tGATT_HDL_LIST_ELEM hdl_list[GATT_MAX_SR_PROFILES];
     tGATT_SRV_LIST_INFO srv_list_info;
     tGATT_SRV_LIST_ELEM srv_list[GATT_MAX_SR_PROFILES];
-
+#endif  ///GATTS_INCLUDED == TRUE
     BUFFER_Q            srv_chg_clt_q;   /* service change clients queue */
     BUFFER_Q            pending_new_srv_start_q; /* pending new service start queue */
     tGATT_REG           cl_rcb[GATT_MAX_APPS];
@@ -518,8 +524,9 @@ typedef struct {
     UINT8               err_status;
     UINT16              handle;
 #endif
-
+#if (GATTS_INCLUDED == TRUE)
     tGATT_PROFILE_CLCB  profile_clcb[GATT_MAX_APPS];
+#endif  ///GATTS_INCLUDED == TRUE
     UINT16              handle_of_h_r;          /* Handle of the handles reused characteristic value */
 
     tGATT_APPL_INFO       cb_info;
@@ -586,7 +593,9 @@ extern tGATT_STATUS attp_send_msg_to_l2cap(tGATT_TCB *p_tcb, BT_HDR *p_toL2CAP);
 
 /* utility functions */
 extern UINT8 *gatt_dbg_op_name(UINT8 op_code);
+#if (SDP_INCLUDED == TRUE)
 extern UINT32 gatt_add_sdp_record (tBT_UUID *p_uuid, UINT16 start_hdl, UINT16 end_hdl);
+#endif  ///SDP_INCLUDED == TRUE
 extern BOOLEAN gatt_parse_uuid_from_cmd(tBT_UUID *p_uuid, UINT16 len, UINT8 **p_data);
 extern UINT8 gatt_build_uuid_to_stream(UINT8 **p_dst, tBT_UUID uuid);
 extern BOOLEAN gatt_uuid_compare(tBT_UUID src, tBT_UUID tar);
@@ -621,6 +630,7 @@ extern tGATT_HDL_LIST_ELEM *gatt_find_hdl_buffer_by_handle(UINT16 handle);
 extern tGATT_HDL_LIST_ELEM *gatt_find_hdl_buffer_by_attr_handle(UINT16 attr_handle);
 extern tGATT_HDL_LIST_ELEM *gatt_alloc_hdl_buffer(void);
 extern void gatt_free_hdl_buffer(tGATT_HDL_LIST_ELEM *p);
+extern void gatt_free_attr_value_buffer(tGATT_HDL_LIST_ELEM *p);
 extern BOOLEAN gatt_is_last_attribute(tGATT_SRV_LIST_INFO *p_list, tGATT_SRV_LIST_ELEM *p_start, tBT_UUID value);
 extern void gatt_update_last_pri_srv_info(tGATT_SRV_LIST_INFO *p_list);
 extern BOOLEAN gatt_add_a_srv_to_list(tGATT_SRV_LIST_INFO *p_list, tGATT_SRV_LIST_ELEM *p_new);

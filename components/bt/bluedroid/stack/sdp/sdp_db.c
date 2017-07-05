@@ -37,6 +37,8 @@
 #include "sdp_api.h"
 #include "sdpint.h"
 
+#if (SDP_INCLUDED == TRUE)
+
 #if SDP_SERVER_ENABLED == TRUE
 /********************************************************************************/
 /*              L O C A L    F U N C T I O N     P R O T O T Y P E S            */
@@ -964,3 +966,5 @@ INT32 SDP_ReadRecord(UINT32 handle, UINT8 *p_data, INT32 *p_data_len)
     return (offset);
 }
 #endif
+
+#endif  ///SDP_INCLUDED == TRUE
