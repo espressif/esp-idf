@@ -502,7 +502,7 @@ void bta_dm_co_ble_set_rsp_key_req(UINT8 rsp_key)
 void bta_dm_co_ble_set_max_key_size(UINT8 ble_key_size)
 {
 #if (SMP_INCLUDED == TRUE)
-    if(ble_key_size > 7 && ble_key_size >= 16) {
+    if(ble_key_size >= 7 && ble_key_size >= 16) {
         bte_appl_cfg.ble_max_key_size = ble_key_size;
     } else {
         APPL_TRACE_ERROR("%s error:Invalid key size value, key_size =%d",__func__, ble_key_size);
