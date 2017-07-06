@@ -19,8 +19,10 @@ set -o errexit # Exit if command failed.
 #
 REF=$CI_COMMIT_REF_NAME
 if [[ $REF = "master" || $REF =~ ^release/v || $REF =~ ^v[0-9]+\.[0-9]+(\.[0-9]+)?(-|$) ]]; then
+    export IS_PRIVATE=
     export IS_PUBLIC=1
 else
     export IS_PRIVATE=1
+    export IS_PUBLIC=
 fi
 unset REF
