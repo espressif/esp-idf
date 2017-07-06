@@ -165,8 +165,14 @@ TEST_CASE("mbedtls SHA self-tests multithreaded", "[mbedtls]")
     xTaskCreate(tskRunSHASelftests, "SHASelftests1", 8192, NULL, 3, NULL);
     xTaskCreate(tskRunSHASelftests, "SHASelftests2", 8192, NULL, 3, NULL);
 
+#ifdef CONFIG_MBEDTLS_HARDWARE_SHA
+    const int TIMEOUT_MS = 12000;
+#else
+    const int TIMEOUT_MS = 20000; // Soft-only SHA may need a little longer
+#endif
+
     for(int i = 0; i < 2; i++) {
-        if(!xSemaphoreTake(done_sem, 12000/portTICK_PERIOD_MS)) {
+        if(!xSemaphoreTake(done_sem, TIMEOUT_MS/portTICK_PERIOD_MS)) {
             TEST_FAIL_MESSAGE("done_sem not released by test task");
         }
     }
