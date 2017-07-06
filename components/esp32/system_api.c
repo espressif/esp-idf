@@ -349,6 +349,7 @@ const char* esp_get_idf_version(void)
 
 static void get_chip_info_esp32(esp_chip_info_t* out_info)
 {
+    out_info->model = CHIP_ESP32;
     uint32_t reg = REG_READ(EFUSE_BLK0_RDATA3_REG);
     memset(out_info, 0, sizeof(*out_info));
     if ((reg & EFUSE_RD_CHIP_VER_REV1_M) != 0) {
