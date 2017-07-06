@@ -235,9 +235,12 @@ COMMON_FLAGS = \
 # Optimization flags are set based on menuconfig choice
 ifneq ("$(CONFIG_OPTIMIZATION_LEVEL_RELEASE)","")
 OPTIMIZATION_FLAGS = -Os
-CPPFLAGS += -DNDEBUG
 else
 OPTIMIZATION_FLAGS = -Og
+endif
+
+ifeq ("$(CONFIG_OPTIMIZATION_ASSERTIONS)", "")
+CPPFLAGS += -DNDEBUG
 endif
 
 # Enable generation of debugging symbols

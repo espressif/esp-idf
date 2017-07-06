@@ -23,25 +23,40 @@ endmenu
 
 source "$COMPONENT_KCONFIGS_PROJBUILD"
 
-choice OPTIMIZATION_LEVEL
-    prompt "Optimization level"
+menu "Compiler options"
+
+choice OPTIMIZATION_COMPILER
+    prompt "Optimization Level"
     default OPTIMIZATION_LEVEL_DEBUG
     help
-        This option sets optimization level.
-        
-        - for "Release" setting, -Os flag is added to CFLAGS,
-         and -DNDEBUG flag is added to CPPFLAGS.
-         
+        This option sets compiler optimization level (gcc -O argument).
+
+        - for "Release" setting, -Os flag is added to CFLAGS.
         - for "Debug" setting, -Og flag is added to CFLAGS.
-        
-        To override any of these settings, set CFLAGS and/or CPPFLAGS
-        in project makefile, before including $(IDF_PATH)/make/project.mk.
-        
+
+        "Release" with -Os produces smaller & faster compiled code but it
+        may be harder to correlated code addresses to source files when debugging.
+
+        To add custom optimization settings, set CFLAGS and/or CPPFLAGS
+        in project makefile, before including $(IDF_PATH)/make/project.mk. Note that
+        custom optimization levels may be unsupported.
+
 config OPTIMIZATION_LEVEL_DEBUG
-    bool "Debug"
+    bool "Debug (-Og)"
 config OPTIMIZATION_LEVEL_RELEASE
-    bool "Release"
+    bool "Release (-Os)"
 endchoice
+
+config OPTIMIZATION_ASSERTIONS
+    prompt "Enable assertions"
+    bool
+    default y
+    help
+        Enable assertions.
+
+        If disabled, -DNDEBUG is added to CFLAGS.
+
+endmenu # Optimization level
 
 menu "Component config"
 source "$COMPONENT_KCONFIGS"
