@@ -142,14 +142,14 @@
 
 //write value to register
 #define REG_WRITE(_r, _v) ({                                                                                           \
-            ASSERT_IF_DPORT_REG(_r, REG_WRITE);                                                                        \
+            ASSERT_IF_DPORT_REG((_r), REG_WRITE);                                                                      \
             (*(volatile uint32_t *)(_r)) = (_v);                                                                       \
         })
 
 //read value from register
 #define REG_READ(_r) ({                                                                                                \
             ASSERT_IF_DPORT_REG((_r), REG_READ);                                                                       \
-            (*(volatile uint32_t *)_r);                                                                                \
+            (*(volatile uint32_t *)(_r));                                                                              \
         })
 
 //get bit or get bits from register
