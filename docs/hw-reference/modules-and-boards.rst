@@ -16,9 +16,8 @@ The smallest module intended for installation in final products. Can be also use
     :width: 40%
     :alt: ESP-WROOM-32 module (front and back)
 
-
 * `Schematic <http://dl.espressif.com/dl/schematics/ESP-WROOM-32-v3.2_sch.pdf>`__ (PDF)
-* `Datasheet <https://espressif.com/sites/default/files/documentation/esp_wroom_32_datasheet_en.pdf>`__ (PDF)
+* `Datasheet <http://espressif.com/sites/default/files/documentation/esp-wroom-32_datasheet_en.pdf>`__ (PDF)
 * `ESP32 Module Reference Design <https://espressif.com/sites/default/files/documentation/esp32_module_reference_design.zip>`_ (ZIP) containing OrCAD schematic, PCB layout, gerbers and BOM
 
    
@@ -36,7 +35,6 @@ Small and convenient development board with break out pin headers and minimum ad
 * `ESP32 Development Board Reference Design <https://espressif.com/sites/default/files/documentation/esp32_development_board_reference_design.zip>`_ (ZIP) containing OrCAD schematic, PCB layout, gerbers and BOM
 * :doc:`../get-started/get-started-devkitc`
 * `CP210x USB to UART Bridge VCP Drivers <http://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers>`_
-
 
 
 ESP32 Demo Board V2
@@ -67,19 +65,37 @@ Development board that has dual port USB to serial converter for programming and
 * `FTDI Virtual COM Port Drivers`_
 
 
-ESP32 WROVER KIT V2/V3
-----------------------
+ESP32 WROVER KIT V2
+-------------------
 
-These are updated versions of ESP32 DevKitJ V1 described above with design improvements identified when DevKitJ was in use. All versions of this board are ready to accommodate an ESP-WROOM-32 or ESP32-WROVER module.
+This is updated version of ESP32 DevKitJ V1 described above with design improvements identified when DevKitJ was in use.
 
 .. image:: http://dl.espressif.com/dl/schematics/pictures/esp-wrover-kit-v2.jpg
    :align: center
    :width: 90%
    :alt: ESP32 WROVER KIT V2 board
 
-V2 boards have a shiny black finish and a male camera header, while V3 boards have a matte black finish and a female camera header. Pictured above is a V2 board.
+Comparing to previous version, this board has a shiny black finish and a male camera header.
 
 * `Schematic V2 <http://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_SCH-2.pdf>`__ (PDF)
+* `JTAG Debugging for ESP32`_ (PDF)
+* `FTDI Virtual COM Port Drivers`_
+
+
+ESP32 WROVER KIT V3
+-------------------
+
+This revision of ESP32 WROVER KIT introduced several changes to conditioning and interlocking of signals to the bootstrapping pins. A zero Ohm resistor (R166) has been addedd between WROVER/WROOM module and VDD33 net, which can be desoldered or replaced with a shunt resistor for current measurement. This should facilitate power consumption analysis in varius operation modes of ESP32. Refer to schematic - the changes are enclosed in green border. 
+
+.. image:: http://dl.espressif.com/dl/schematics/pictures/esp-wrover-kit-v3.jpg
+   :align: center
+   :width: 90%
+   :alt: ESP32 WROVER KIT V3 board
+
+The camera header has been changed from male back to female. The board soldermask is matte black.
+
+All versions of ESP32 WROVER KIT are ready to accommodate an ESP-WROOM-32 or ESP32-WROVER module. On picture above ESP32-WROVER is installed.
+
 * `Schematic V3 <http://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_SCH-3.pdf>`__ (PDF)
 * :doc:`../get-started/get-started-wrover-kit`
 * `JTAG Debugging for ESP32`_ (PDF)

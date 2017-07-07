@@ -93,7 +93,7 @@ Micro SD Card
 LCD
     ESP-WROVER-KIT supports mounting and interfacing a 3.2” SPI (standard 4-wire Serial Peripheral Interface) LCD, as shown on figure :ref:`esp-wrover-board-back`.
 
-.. figure:: ../_static/esp32-wrover-kit-layout-front.png
+.. figure:: ../_static/esp32-wrover-kit-layout-front.jpg
     :align: center
     :alt: ESP-WROVER-KIT board layout - front
     :figclass: align-center
@@ -102,7 +102,7 @@ LCD
 
 .. _esp-wrover-board-back:
 
-.. figure:: ../_static/esp32-wrover-kit-layout-back.png
+.. figure:: ../_static/esp32-wrover-kit-layout-back.jpg
     :align: center
     :alt: ESP-WROVER-KIT board layout - back
     :figclass: align-center
@@ -120,10 +120,12 @@ There are five jumper headers available to set up the board functionality. Typic
 +--------+----------------------+-------------------------------------------------+
 | Header | Jumper Setting       | Description of Functionality                    |
 +--------+----------------------+-------------------------------------------------+
-|  JP1   | |jp1-sd_io2|         | Enable pull up for the Micro SD Card            |
-+--------+----------------------+-------------------------------------------------+
 |  JP1   | |jp1-both|           | Assert GPIO2 low during each download           |
 |        |                      | (by jumping it to GPIO0)                        |
++--------+----------------------+-------------------------------------------------+
+|  JP1   | |jp1-sd_io2|         | Enable pull up for the Micro SD Card            |
+|        |                      |                                                 |
+|        |                      | **Note:** applies to ESP-WROVER-KIT V2 only     |
 +--------+----------------------+-------------------------------------------------+
 |  JP7   | |jp7-ext_5v|         | Power ESP-WROVER-KIT board from an external     |
 |        |                      | power supply                                    |
@@ -165,7 +167,7 @@ Do not install any other jumpers.
 Now to Development
 ^^^^^^^^^^^^^^^^^^
 
-To start development of applications for ESP32-DevKitC, proceed to section :doc:`index`, that will walk you through the following steps:
+To start development of applications for ESP-WROVER-KIT, proceed to section :doc:`index`, that will walk you through the following steps:
 
 * :ref:`get-started-setup-toochain` in your PC to develop applications for ESP32 in C language
 * :ref:`get-started-connect` the module to the PC and verify if it is accessible
@@ -180,7 +182,7 @@ Related Documents
 
 * `ESP-WROVER-KIT schematic`_ (PDF)
 * `ESP32 Datasheet <http://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF)
-* `ESP-WROOM-32 Datasheet <http://www.espressif.com/sites/default/files/documentation/esp_wroom_32_datasheet_en.pdf>`_ (PDF)
+* `ESP-WROOM-32 Datasheet <http://espressif.com/sites/default/files/documentation/esp-wroom-32_datasheet_en.pdf>`_ (PDF)
 * `JTAG Debugging for ESP32 <https://espressif.com/sites/default/files/documentation/jtag_debugging_for_esp32_en.pdf>`_ (PDF)
 
 
@@ -193,4 +195,4 @@ Related Documents
 .. |jp11-rx-tx| image:: ../_static/wrover-jp11-tx-rx.png
 .. |jp14| image:: ../_static/wrover-jp14.png
 
-.. _ESP-WROVER-KIT schematic: http://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_SCH-2.pdf
+.. _ESP-WROVER-KIT schematic: http://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_SCH-3.pdf
