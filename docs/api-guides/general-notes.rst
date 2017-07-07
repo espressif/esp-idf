@@ -82,7 +82,7 @@ If some application code needs to be placed into IRAM, it can be done using ``IR
 
 Here are the cases when parts of application may or should be placed into IRAM.
 
-- ISR handlers must always be placed into IRAM. Furthermore, ISR handlers may only call functions placed into IRAM or functions present in ROM. *Note 1:* all FreeRTOS APIs are currently placed into IRAM, so are safe to call from ISR handlers. *Note 1:* all constant data used by ISR handlers and functions called from ISR handlers (including, but not limited to, ``const char`` arrays), must be placed into DRAM using ``DRAM_ATTR``.
+- Interrupt handlers must be placed into IRAM if ``ESP_INTR_FLAG_IRAM`` is used when registering the interrupt handler. In this case, ISR may only call functions placed into IRAM or functions present in ROM. *Note 1:* all FreeRTOS APIs are currently placed into IRAM, so are safe to call from interrupt handlers. If the ISR is placed into IRAM, all constant data used by the ISR and functions called from ISR (including, but not limited to, ``const char`` arrays), must be placed into DRAM using ``DRAM_ATTR``.
 
 - Some timing critical code may be placed into IRAM to reduce the penalty associated with loading the code from flash. ESP32 reads code and data from flash via a 32 kB cache. In some cases, placing a function into IRAM may reduce delays caused by a cache miss.
 
@@ -103,13 +103,13 @@ DRAM (data RAM)
 
 Non-constant static data and zero-initialized data is placed by the linker into the 256 kB ``0x3FFB0000 — 0x3FFF0000`` region. Note that this region is reduced by 64kB (by shifting start address to ``0x3FFC0000``) if Bluetooth stack is used. Length of this region is also reduced by 16 kB or 32kB if trace memory is used. All space which is left in this region after placing static data there is used for the runtime heap.
 
-Constant data may also be placed into DRAM, for example if it is used in an ISR handler (see notes in IRAM section above). To do that, ``DRAM_ATTR`` define can be used::
+Constant data may also be placed into DRAM, for example if it is used in an ISR (see notes in IRAM section above). To do that, ``DRAM_ATTR`` define can be used::
 
 	DRAM_ATTR const char[] format_string = "%p %x";
 	char buffer[64];
 	sprintf(buffer, format_string, ptr, val);
 
-Needless to say, it is not advised to use ``printf`` and other output functions in ISR handlers. For debugging purposes, use ``ESP_EARLY_LOGx`` macros when logging from ISR handlers. Make sure that both ``TAG`` and format string are placed into ``DRAM`` in that case.
+Needless to say, it is not advised to use ``printf`` and other output functions in ISRs. For debugging purposes, use ``ESP_EARLY_LOGx`` macros when logging from ISRs. Make sure that both ``TAG`` and format string are placed into ``DRAM`` in that case.
 
 DROM (data stored in Flash)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^

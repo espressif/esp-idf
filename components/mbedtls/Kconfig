@@ -31,14 +31,25 @@ config MBEDTLS_DEBUG
 	   at runtime in order to enable mbedTLS debug output via the ESP
 	   log mechanism.
 
+config MBEDTLS_UNSAFE_ACCELERATION
+   bool "Allow buggy hardware acceleration features"
+   depends on !FREERTOS_UNICORE
+   default n
+   help
+       A bug currently prevents dual cores & crypto hardware acceleration from being used together.
+
+       Enable this option to allow hardware acceleration anyhow (note that invalid results or crashes may occur.)
+
 config MBEDTLS_HARDWARE_AES
    bool "Enable hardware AES acceleration"
+   depends on MBEDTLS_UNSAFE_ACCELERATION || FREERTOS_UNICORE
    default y
    help
        Enable hardware accelerated AES encryption & decryption.
 
 config MBEDTLS_HARDWARE_MPI
    bool "Enable hardware MPI (bignum) acceleration"
+   depends on MBEDTLS_UNSAFE_ACCELERATION || FREERTOS_UNICORE
    default y
    help
        Enable hardware accelerated multiple precision integer operations.
@@ -60,6 +71,7 @@ config MBEDTLS_MPI_USE_INTERRUPT
 
 config MBEDTLS_HARDWARE_SHA
    bool "Enable hardware SHA acceleration"
+   depends on MBEDTLS_UNSAFE_ACCELERATION || FREERTOS_UNICORE
    default y
    help
        Enable hardware accelerated SHA1, SHA256, SHA384 & SHA512 in mbedTLS.
