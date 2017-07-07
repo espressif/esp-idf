@@ -30,7 +30,7 @@ extern "C" {
 #define _DPORT_REG_WRITE(_r, _v)   (*(volatile uint32_t *)(_r)) = (_v)
 
 //write value to register
-#define DPORT_REG_WRITE(_r, _v)   _DPORT_REG_WRITE(_r, _v)
+#define DPORT_REG_WRITE(_r, _v)   _DPORT_REG_WRITE((_r), (_v))
 
 //read value from register
 static inline uint32_t IRAM_ATTR DPORT_REG_READ(uint32_t reg)
@@ -97,7 +97,7 @@ static inline uint32_t IRAM_ATTR DPORT_READ_PERI_REG(uint32_t addr)
 }
 
 //write value to register
-#define DPORT_WRITE_PERI_REG(addr, val) _DPORT_WRITE_PERI_REG(addr, val)  
+#define DPORT_WRITE_PERI_REG(addr, val) _DPORT_WRITE_PERI_REG((addr), (val))
 
 //clear bits of register controlled by mask
 #define DPORT_CLEAR_PERI_REG_MASK(reg, mask) DPORT_WRITE_PERI_REG((reg), (DPORT_READ_PERI_REG(reg)&(~(mask))))
@@ -112,7 +112,7 @@ static inline uint32_t IRAM_ATTR DPORT_READ_PERI_REG(uint32_t addr)
 #define DPORT_GET_PERI_REG_BITS(reg, hipos,lowpos)     ((DPORT_READ_PERI_REG(reg)>>(lowpos))&((1<<((hipos)-(lowpos)+1))-1))
 
 //set bits of register controlled by mask and shift
-#define DPORT_SET_PERI_REG_BITS(reg,bit_map,value,shift) DPORT_WRITE_PERI_REG((reg),(DPORT_READ_PERI_REG(reg)&(~((bit_map)<<(shift))))|(((value) & bit_map)<<(shift)))
+#define DPORT_SET_PERI_REG_BITS(reg,bit_map,value,shift) DPORT_WRITE_PERI_REG((reg), ((DPORT_READ_PERI_REG(reg)&(~((bit_map)<<(shift))))|(((value) & bit_map)<<(shift))))
 
 //get field of register
 #define DPORT_GET_PERI_REG_BITS2(reg, mask,shift)      ((DPORT_READ_PERI_REG(reg)>>(shift))&(mask))
