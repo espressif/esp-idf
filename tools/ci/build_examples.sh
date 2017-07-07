@@ -50,6 +50,7 @@ die() {
 export BATCH_BUILD=1
 export V=0 # only build verbose if there's an error
 
+shopt -s lastpipe # Workaround for Bash to use variables in loops (http://mywiki.wooledge.org/BashFAQ/024)
 RESULT=0
 FAILED_EXAMPLES=""
 
@@ -113,9 +114,12 @@ build_example () {
         # build non-verbose first
         local BUILDLOG=$(mktemp -t examplebuild.XXXX.log)
         (
-            make clean defconfig
-            make all 2>&1 | tee "${BUILDLOG}"
-        ) || { RESULT=$?; FAILED_EXAMPLES+=" ${EXAMPLE_NAME}"; make V=1; } # verbose output for errors
+            MAKEFLAGS= make clean defconfig &> >(tee -a "${BUILDLOG}") &&
+            make all &> >(tee -a "${BUILDLOG}")
+        ) || {
+            RESULT=$?; FAILED_EXAMPLES+=" ${EXAMPLE_NAME}"
+            make MAKEFLAGS= V=1 clean defconfig && make V=1 # verbose output for errors
+        }
     popd
 
     if grep ": warning:" "${BUILDLOG}" 2>&1 >> "${LOG_WARNINGS}"; then

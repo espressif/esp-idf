@@ -59,7 +59,9 @@ typedef struct {
 } capture;
 
 xQueueHandle cap_queue;
+#if MCPWM_EN_CAPTURE
 static mcpwm_dev_t *MCPWM[2] = {&MCPWM0, &MCPWM1};
+#endif
 
 static void mcpwm_example_gpio_initialize()
 {
@@ -162,6 +164,7 @@ static void disp_captured_signal(void *arg)
     }
 }
 
+#if MCPWM_EN_CAPTURE
 /**
  * @brief this is ISR handler function, here we check for interrupt that triggers rising edge on CAP0 signal and according take action
  */
@@ -187,6 +190,7 @@ static void IRAM_ATTR isr_handler()
     }
     MCPWM[MCPWM_UNIT_0]->int_clr.val = mcpwm_intr_status;
 }
+#endif
 
 /**
  * @brief Configure whole MCPWM module

@@ -48,6 +48,9 @@ function run_tests()
     print_status "Updating template config..."
     make defconfig || exit $?
 
+    print_status "Try to clean fresh directory..."
+    MAKEFLAGS= make clean || exit $?
+
     BOOTLOADER_BINS="bootloader/bootloader.elf bootloader/bootloader.bin"
     APP_BINS="app-template.elf app-template.bin"
 
