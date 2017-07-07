@@ -261,7 +261,7 @@ lwip_freeaddrinfo(struct addrinfo *ai)
  * @param res pointer to a pointer where to store the result (set to NULL on failure)
  * @return 0 on success, non-zero on failure
  *
- * @todo: implement AI_V4MAPPED, AI_ADDRCONFIG
+ * @todo: implement AI_ADDRCONFIG
  */
 int
 lwip_getaddrinfo(const char *nodename, const char *servname,
@@ -330,6 +330,9 @@ lwip_getaddrinfo(const char *nodename, const char *servname,
         type = NETCONN_DNS_IPV4;
       } else if (ai_family == AF_INET6) {
         type = NETCONN_DNS_IPV6;
+        if (hints->ai_flags & AI_V4MAPPED) {
+          type = NETCONN_DNS_IPV6_IPV4;
+        }
       }
 #endif /* LWIP_IPV4 && LWIP_IPV6 */
       err = netconn_gethostbyname_addrtype(nodename, &addr, type);
@@ -345,6 +348,14 @@ lwip_getaddrinfo(const char *nodename, const char *servname,
       ip_addr_set_loopback(ai_family == AF_INET6, &addr);
     }
   }
+
+#if LWIP_IPV4 && LWIP_IPV6
+  if (ai_family == AF_INET6 && (hints->ai_flags & AI_V4MAPPED)
+      && IP_GET_TYPE(&addr) == IPADDR_TYPE_V4) {
+    /* Convert native V4 address to a V4-mapped IPV6 address */
+    ip_addr_make_ip4_mapped_ip6(&addr, &addr);
+  }
+#endif
 
   total_size = sizeof(struct addrinfo) + sizeof(struct sockaddr_storage);
   if (nodename != NULL) {

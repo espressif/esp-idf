@@ -180,6 +180,16 @@ recv_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p,
     return;
   }
 
+#if LWIP_IPV6
+  /* This should be eventually moved to a flag on the UDP PCB, and this drop can happen
+     more correctly in udp_input(). This will also allow icmp_dest_unreach() to be called. */
+  if (conn->flags & NETCONN_FLAG_IPV6_V6ONLY && !ip_current_is_v6()) {
+    LWIP_DEBUGF(API_MSG_DEBUG, ("recv_udp: Dropping IPv4 UDP packet (IPv6-only socket)"));
+    pbuf_free(p);
+    return;
+  }
+#endif
+
   buf = (struct netbuf *)memp_malloc(MEMP_NETBUF);
   if (buf == NULL) {
     pbuf_free(p);
@@ -1388,6 +1398,12 @@ lwip_netconn_do_send(void *m)
 
   if (ERR_IS_FATAL(msg->conn->last_err)) {
     msg->err = msg->conn->last_err;
+#if LWIP_IPV4 && LWIP_IPV6
+  } else if ((msg->conn->flags & NETCONN_FLAG_IPV6_V6ONLY) &&
+             IP_IS_V4MAPPEDV6(&msg->msg.b->addr)) {
+    LWIP_DEBUGF(API_MSG_DEBUG, ("lwip_netconn_do_send: Dropping IPv4 packet on IPv6-only socket"));
+    msg->err = ERR_VAL;
+#endif /* LWIP_IPV4 && LWIP_IPV6 */
   } else {
     msg->err = ERR_CONN;
     if (msg->conn->pcb.tcp != NULL) {
