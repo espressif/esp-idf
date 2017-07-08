@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "freertos/FreeRTOS.h"
 #include "esp_attr.h"
 #include "esp_freertos_hooks.h"
 
@@ -23,15 +24,16 @@
 //an idle or tick hook.
 #define MAX_HOOKS 8
 
-static esp_freertos_idle_cb_t idle_cb[MAX_HOOKS]={0};
-static esp_freertos_tick_cb_t tick_cb[MAX_HOOKS]={0};
+static esp_freertos_idle_cb_t idle_cb[portNUM_PROCESSORS][MAX_HOOKS]={0};
+static esp_freertos_tick_cb_t tick_cb[portNUM_PROCESSORS][MAX_HOOKS]={0};
 
 void IRAM_ATTR esp_vApplicationTickHook() 
 {
     int n;
+    int core = xPortGetCoreID();
     for (n=0; n<MAX_HOOKS; n++) {
-        if (tick_cb[n]!=NULL) {
-            tick_cb[n]();
+        if (tick_cb[core][n]!=NULL) {
+            tick_cb[core][n]();
         }
     }
 }
@@ -41,9 +43,10 @@ void esp_vApplicationIdleHook()
     bool doWait=true;
     bool r;
     int n;
+    int core = xPortGetCoreID();
     for (n=0; n<MAX_HOOKS; n++) {
-        if (idle_cb[n]!=NULL) {
-            r=idle_cb[n]();
+        if (idle_cb[core][n]!=NULL) {
+            r=idle_cb[core][n]();
             if (!r) doWait=false;
         }
     }
@@ -57,9 +60,10 @@ void esp_vApplicationIdleHook()
 esp_err_t esp_register_freertos_idle_hook(esp_freertos_idle_cb_t new_idle_cb) 
 {
     int n;
+    int core = xPortGetCoreID();
     for (n=0; n<MAX_HOOKS; n++) {
-        if (idle_cb[n]==NULL) {
-            idle_cb[n]=new_idle_cb;
+        if (idle_cb[core][n]==NULL) {
+            idle_cb[core][n]=new_idle_cb;
             return ESP_OK;
         }
     }
@@ -69,9 +73,10 @@ esp_err_t esp_register_freertos_idle_hook(esp_freertos_idle_cb_t new_idle_cb)
 esp_err_t esp_register_freertos_tick_hook(esp_freertos_tick_cb_t new_tick_cb) 
 {
     int n;
+    int core = xPortGetCoreID();
     for (n=0; n<MAX_HOOKS; n++) {
-        if (tick_cb[n]==NULL) {
-            tick_cb[n]=new_tick_cb;
+        if (tick_cb[core][n]==NULL) {
+            tick_cb[core][n]=new_tick_cb;
             return ESP_OK;
         }
     }
@@ -81,16 +86,18 @@ esp_err_t esp_register_freertos_tick_hook(esp_freertos_tick_cb_t new_tick_cb)
 void esp_deregister_freertos_idle_hook(esp_freertos_idle_cb_t old_idle_cb)
 {
     int n;
+    int core = xPortGetCoreID();
     for (n=0; n<MAX_HOOKS; n++) {
-        if (idle_cb[n]==old_idle_cb) idle_cb[n]=NULL;
+        if (idle_cb[core][n]==old_idle_cb) idle_cb[core][n]=NULL;
     }
 }
 
 void esp_deregister_freertos_tick_hook(esp_freertos_tick_cb_t old_tick_cb)
 {
     int n;
+    int core = xPortGetCoreID();
     for (n=0; n<MAX_HOOKS; n++) {
-        if (tick_cb[n]==old_tick_cb) tick_cb[n]=NULL;
+        if (tick_cb[core][n]==old_tick_cb) tick_cb[core][n]=NULL;
     }
 }
 
