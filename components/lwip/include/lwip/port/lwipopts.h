@@ -295,6 +295,11 @@
 #define TCP_MSS                         CONFIG_TCP_MSS
 
 /**
+ * TCP_MSL: The maximum segment lifetime in milliseconds
+ */
+#define TCP_MSL                         CONFIG_TCP_MSL
+
+/**
  * TCP_MAXRTX: Maximum number of retransmissions of data segments.
  */
 #define TCP_MAXRTX                      CONFIG_TCP_MAXRTX
