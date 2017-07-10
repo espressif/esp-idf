@@ -5,7 +5,5 @@
 
 PROJECT_NAME := udp-multicast
 
-CFLAGS := -DCONFIG_MDNS
-
 include $(IDF_PATH)/make/project.mk
 

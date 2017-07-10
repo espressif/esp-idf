@@ -221,10 +221,7 @@
    ---------- AUTOIP options ----------
    ------------------------------------
 */
-#if CONFIG_MDNS
- /**
-  * LWIP_AUTOIP==1: Enable AUTOIP module.
-  */
+#ifdef CONFIG_LWIP_AUTOIP
 #define LWIP_AUTOIP                     1
 
 /**
@@ -240,8 +237,13 @@
 * be prepared to handle a changing IP address when DHCP overrides
 * AutoIP.
 */
-#define LWIP_DHCP_AUTOIP_COOP_TRIES     2
-#endif
+#define LWIP_DHCP_AUTOIP_COOP_TRIES     CONFIG_LWIP_AUTOIP_TRIES
+
+#define LWIP_AUTOIP_MAX_CONFLICTS CONFIG_LWIP_AUTOIP_MAX_CONFLICTS
+
+#define LWIP_AUTOIP_RATE_LIMIT_INTERVAL CONFIG_LWIP_AUTOIP_RATE_LIMIT_INTERVAL
+
+#endif /* CONFIG_LWIP_AUTOIP */
 
 /*
    ----------------------------------
@@ -367,7 +369,7 @@
    ---------- LOOPIF options ----------
    ------------------------------------
 */
-#if CONFIG_MDNS
+#ifdef CONFIG_LWIP_NETIF_LOOPBACK
 /**
  * LWIP_NETIF_LOOPBACK==1: Support sending packets with a destination IP
  * address equal to the netif IP address, looping them back up the stack.
@@ -378,7 +380,7 @@
  * LWIP_LOOPBACK_MAX_PBUFS: Maximum number of pbufs on queue for loopback
  * sending for each netif (0 = disabled)
  */
-#define LWIP_LOOPBACK_MAX_PBUFS         8
+#define LWIP_LOOPBACK_MAX_PBUFS         CONFIG_LWIP_LOOPBACK_MAX_PBUFS
 #endif
 
 /*
@@ -506,14 +508,12 @@
  */
 #define SO_REUSE                        CONFIG_LWIP_SO_REUSE
 
-#if CONFIG_MDNS
 /**
  * SO_REUSE_RXTOALL==1: Pass a copy of incoming broadcast/multicast packets
  * to all local matches if SO_REUSEADDR is turned on.
  * WARNING: Adds a memcpy for every packet if passing to more than one pcb!
  */
-#define SO_REUSE_RXTOALL                1
-#endif
+#define SO_REUSE_RXTOALL                CONFIG_LWIP_SO_REUSE_RXTOALL
 
 /*
    ----------------------------------------
