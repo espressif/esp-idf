@@ -98,7 +98,15 @@ uint32_t system_get_free_heap_size(void)  __attribute__ ((deprecated));
 /**
  * @brief  Get one random 32-bit word from hardware RNG
  *
- * @return random value between 0 and UINT32_MAX
+ * The hardware RNG is fully functional whenever an RF subsystem is running (ie Bluetooth or WiFi is enabled). For secure
+ * random values, call this function after WiFi or Bluetooth are started.
+ *
+ * When the app is running without an RF subsystem enabled, it should be considered a PRNG. To help improve this
+ * situation, the RNG is pre-seeded with entropy while the IDF bootloader is running. However no new entropy is
+ * available during the window of time between when the bootloader exits and an RF subsystem starts. It may be possible
+ * to discern a non-random pattern in a very large amount of output captured during this window of time.
+ *
+ * @return Random value between 0 and UINT32_MAX
  */
 uint32_t esp_random(void);
 
