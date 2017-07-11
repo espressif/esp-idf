@@ -164,10 +164,14 @@
 #endif
 
 #ifndef CONFIG_ESP32_APPTRACE_ENABLE
-#define configMINIMAL_STACK_SIZE		512
+#define configMINIMAL_STACK_SIZE		768
 #else
 /* apptrace module requires at least 2KB of stack per task */
 #define configMINIMAL_STACK_SIZE		2048
+#endif
+
+#ifndef configIDLE_TASK_STACK_SIZE
+#define configIDLE_TASK_STACK_SIZE CONFIG_FREERTOS_IDLE_TASK_STACKSIZE
 #endif
 
 /* The Xtensa port uses a separate interrupt stack. Adjust the stack size */

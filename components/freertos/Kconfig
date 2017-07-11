@@ -149,6 +149,15 @@ menuconfig ENABLE_MEMORY_DEBUG
     help
         Enable this option to show malloc heap block and memory crash detect
 
+config FREERTOS_IDLE_TASK_STACKSIZE
+    int "Idle Task stack size"
+    range 768 32768
+    default 1024
+    help
+        The idle task has its own stack, sized in bytes. The default size is enough for most uses. Size can be reduced
+        to 768 bytes if no (or simple) FreeRTOS idle hooks are used. The stack size may need to be increased above the
+        default if the app installs idle hooks that use a lot of stack memory.
+
 config FREERTOS_ISR_STACKSIZE
     int "ISR stack size"
     range 1536 32768
