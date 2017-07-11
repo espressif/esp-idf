@@ -639,7 +639,7 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
                     latency  > BTM_BLE_CONN_LATENCY_MAX ||
                     /*(timeout >= max_interval && latency > (timeout * 10/(max_interval * 1.25) - 1)) ||*/
                     timeout < BTM_BLE_CONN_SUP_TOUT_MIN || timeout > BTM_BLE_CONN_SUP_TOUT_MAX ||
-                    timeout <= ((1 + latency)*BTM_BLE_CONN_INT_MAX*2) ||
+                    timeout <= ((1 + latency)*max_interval*2) ||
                     max_interval < min_interval) {
                 l2cu_send_peer_ble_par_rsp (p_lcb, L2CAP_CFG_UNACCEPTABLE_PARAMS, id);
                 UINT8 status = HCI_ERR_PARAM_OUT_OF_RANGE;
