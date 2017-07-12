@@ -130,12 +130,15 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
         }
     }
     ESP_LOGD(TAG, "host_ocr=0x%x card_ocr=0x%x", host_ocr, card->ocr);
+
     /* Clear all voltage bits in host's OCR which the card doesn't support.
      * Don't touch CCS bit because in SPI mode cards don't report CCS in ACMD41
      * response.
      */
     host_ocr &= (card->ocr | (~SD_OCR_VOL_MASK));
     ESP_LOGD(TAG, "sdmmc_card_init: host_ocr=%08x, card_ocr=%08x", host_ocr, card->ocr);
+
+    /* Read and decode the contents of CID register */
     if (!is_spi) {
         err = sddmc_send_cmd_all_send_cid(card, &card->cid);
         if (err != ESP_OK) {
@@ -155,6 +158,7 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
         }
     }
 
+    /* Get and decode the contents of CSD register. Determine card capacity. */
     err = sdmmc_send_cmd_send_csd(card, &card->csd);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: send_csd (1) returned 0x%x", __func__, err);
@@ -167,6 +171,11 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
                 __func__, card->csd.capacity, max_sdsc_capacity);
         card->csd.capacity = max_sdsc_capacity;
     }
+
+    /* Switch the card from stand-by mode to data transfer mode (not needed if
+     * SPI interface is used). This is needed to issue SET_BLOCKLEN and
+     * SEND_SCR commands.
+     */
     if (!is_spi) {
         err = sdmmc_send_cmd_select_card(card, card->rca);
         if (err != ESP_OK) {
@@ -174,6 +183,11 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
             return err;
         }
     }
+
+    /* SDSC cards support configurable data block lengths.
+     * We don't use this feature and set the block length to 512 bytes,
+     * same as the block length for SDHC cards.
+     */
     if ((card->ocr & SD_OCR_SDHC_CAP) == 0) {
         err = sdmmc_send_cmd_set_blocklen(card, &card->csd);
         if (err != ESP_OK) {
@@ -181,11 +195,21 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
             return err;
         }
     }
+
+    /* Get the contents of SCR register: bus width and the version of SD spec
+     * supported by the card.
+     * In SD mode, this is the first command which uses D0 line. Errors at
+     * this step usually indicate connection issue or lack of pull-up resistor.
+     */
     err = sdmmc_send_cmd_send_scr(card, &card->scr);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: send_scr returned 0x%x", __func__, err);
+        ESP_LOGE(TAG, "%s: send_scr (1) returned 0x%x", __func__, err);
         return err;
     }
+
+    /* If the host has been initialized with 4-bit bus support, and the card
+     * supports 4-bit bus, switch to 4-bit bus now.
+     */
     if ((config->flags & SDMMC_HOST_FLAG_4BIT) &&
         (card->scr.bus_width & SCR_SD_BUS_WIDTHS_4BIT)) {
         ESP_LOGD(TAG, "switching to 4-bit bus mode");
@@ -206,6 +230,8 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
             return err;
         }
     }
+
+    /* Wait for the card to be ready for data transfers */
     uint32_t status = 0;
     while (!host_is_spi(card) && !(status & MMC_R1_READY_FOR_DATA)) {
         // TODO: add some timeout here
