@@ -47,14 +47,39 @@ config OPTIMIZATION_LEVEL_RELEASE
     bool "Release (-Os)"
 endchoice
 
-config OPTIMIZATION_ASSERTIONS
-    prompt "Enable assertions"
-    bool
-    default y
+choice OPTIMIZATION_ASSERTION_LEVEL
+    prompt "Assertion level"
+    default OPTIMIZATION_ASSERTIONS_ENABLED
     help
-        Enable assertions.
+        Assertions can be:
+        - Enabled. Failure will print verbose assertion details. This is the default.
 
-        If disabled, -DNDEBUG is added to CFLAGS.
+        - Set to "silent" to save code size (failed assertions will abort() but user
+          needs to use the aborting address to find the line number with the failed assertion.)
+
+        - Disabled entirely (not recommended for most configurations.) -DNDEBUG is added
+          to CPPFLAGS in this case.
+
+config OPTIMIZATION_ASSERTIONS_ENABLED
+    prompt "Enabled"
+    bool
+    help
+        Enable assertions. Assertion content and line number will be printed on failure.
+
+config OPTIMIZATION_ASSERTIONS_SILENT
+    prompt "Silent (saves code size)"
+    bool
+    help
+        Enable silent assertions. Failed assertions will abort(), user needs to
+        use the aborting address to find the line number with the failed assertion.
+
+config OPTIMIZATION_ASSERTIONS_DISABLED
+    prompt "Disabled (sets -DNDEBUG)"
+    bool
+    help
+        If assertions are disabled, -DNDEBUG is added to CPPFLAGS.
+
+endchoice # assertions
 
 endmenu # Optimization level
 
