@@ -450,7 +450,7 @@ uint32_t xPortGetTickRateHz(void) {
 
 void *pvPortMalloc( size_t xWantedSize )
 {
-	return heap_caps_malloc( MALLOC_CAP_8BIT, xWantedSize);
+	return heap_caps_malloc(xWantedSize, MALLOC_CAP_8BIT);
 }
 
 void vPortFree( void *pv )
