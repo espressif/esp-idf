@@ -57,12 +57,12 @@ def load_memory_config(map_file):
     """ Memory Configuration section is the total size of each output section """
     result = {}
     scan_to_header(map_file, "Memory Configuration")
-    RE_MEMORY_SECTION = r"(?P<name>[^ ]+) +0x(?P<origin>[\da-f]+) 0x(?P<length>[\da-f]+)"
+    RE_MEMORY_SECTION = r"(?P<name>[^ ]+) +0x(?P<origin>[\da-f]+) +0x(?P<length>[\da-f]+)"
     for line in map_file:
         m = re.match(RE_MEMORY_SECTION, line)
         if m is None:
             if len(result) == 0:
-                continue  # whitespace or a header
+                continue  # whitespace or a header, before the content we want
             else:
                 return result  # we're at the end of the Memory Configuration
         section = {
@@ -72,6 +72,7 @@ def load_memory_config(map_file):
         }
         if section["name"] != "*default*":
             result[section["name"]] = section
+    raise RuntimeError("End of file while scanning memory configuration?")
 
 def load_sections(map_file):
     """ Load section size information from the MAP file.
