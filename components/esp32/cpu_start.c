@@ -289,9 +289,10 @@ void start_cpu0_default(void)
     esp_core_dump_init();
 #endif
 
-    xTaskCreatePinnedToCore(&main_task, "main",
-            ESP_TASK_MAIN_STACK, NULL,
-            ESP_TASK_MAIN_PRIO, NULL, 0);
+    portBASE_TYPE res = xTaskCreatePinnedToCore(&main_task, "main",
+                                                ESP_TASK_MAIN_STACK, NULL,
+                                                ESP_TASK_MAIN_PRIO, NULL, 0);
+    assert(res == pdTRUE);
     ESP_LOGI(TAG, "Starting scheduler on PRO CPU.");
     vTaskStartScheduler();
     abort(); /* Only get to here if not enough free heap to start scheduler */
