@@ -294,15 +294,34 @@
 #define SCR_CMD_SUPPORT_CMD20(scr)      MMC_RSP_BITS((scr), 32, 1)
 #define SCR_RESERVED2(scr)              MMC_RSP_BITS((scr), 0, 32)
 
-/* Status of Switch Function */
-#define SFUNC_STATUS_GROUP(status, group) \
-        (__bitfield((uint32_t *)(status), 400 + (group - 1) * 16, 16))
+/* Max supply current in SWITCH_FUNC response (in mA) */
+#define SD_SFUNC_I_MAX(status) (MMC_RSP_BITS((uint32_t *)(status), 496, 16))
 
-#define SD_ACCESS_MODE_SDR12    0
-#define SD_ACCESS_MODE_SDR25    1
-#define SD_ACCESS_MODE_SDR50    2
-#define SD_ACCESS_MODE_SDR104   3
-#define SD_ACCESS_MODE_DDR50    4
+/* Supported flags in SWITCH_FUNC response */
+#define SD_SFUNC_SUPPORTED(status, group) \
+        (MMC_RSP_BITS((uint32_t *)(status), 400 + (group - 1) * 16, 16))
+
+/* Selected function in SWITCH_FUNC response */
+#define SD_SFUNC_SELECTED(status, group) \
+        (MMC_RSP_BITS((uint32_t *)(status), 376 + (group - 1) * 4, 4))
+
+/* Busy flags in SWITCH_FUNC response */
+#define SD_SFUNC_BUSY(status, group) \
+        (MMC_RSP_BITS((uint32_t *)(status), 272 + (group - 1) * 16, 16))
+
+/* Version of SWITCH_FUNC response */
+#define SD_SFUNC_VER(status)    (MMC_RSP_BITS((uint32_t *)(status), 368, 8))
+
+#define SD_SFUNC_GROUP_MAX      6
+#define SD_SFUNC_FUNC_MAX       15
+
+#define SD_ACCESS_MODE          1       /* Function group 1, Access Mode */
+
+#define SD_ACCESS_MODE_SDR12    0       /* 25 MHz clock */
+#define SD_ACCESS_MODE_SDR25    1       /* 50 MHz clock */
+#define SD_ACCESS_MODE_SDR50    2       /* UHS-I, 100 MHz clock */
+#define SD_ACCESS_MODE_SDR104   3       /* UHS-I, 208 MHz clock */
+#define SD_ACCESS_MODE_DDR50    4       /* UHS-I, 50 MHz clock, DDR */
 
 /**
  * @brief Extract up to 32 sequential bits from an array of 32-bit words
