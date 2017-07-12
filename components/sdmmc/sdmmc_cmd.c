@@ -43,7 +43,7 @@ static esp_err_t sdmmc_send_cmd_set_relative_addr(sdmmc_card_t* card, uint16_t* 
 static esp_err_t sdmmc_send_cmd_set_blocklen(sdmmc_card_t* card, sdmmc_csd_t* csd);
 static esp_err_t sdmmc_decode_csd(sdmmc_response_t response, sdmmc_csd_t* out_csd);
 static esp_err_t sdmmc_send_cmd_send_csd(sdmmc_card_t* card, sdmmc_csd_t* out_csd);
-static esp_err_t sdmmc_send_cmd_select_card(sdmmc_card_t* card);
+static esp_err_t sdmmc_send_cmd_select_card(sdmmc_card_t* card, uint32_t rca);
 static esp_err_t sdmmc_decode_scr(uint32_t *raw_scr, sdmmc_scr_t* out_scr);
 static esp_err_t sdmmc_send_cmd_send_scr(sdmmc_card_t* card, sdmmc_scr_t *out_scr);
 static esp_err_t sdmmc_send_cmd_set_bus_width(sdmmc_card_t* card, int width);
@@ -164,7 +164,7 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
         card->csd.capacity = max_sdsc_capacity;
     }
     if (!is_spi) {
-        err = sdmmc_send_cmd_select_card(card);
+        err = sdmmc_send_cmd_select_card(card, card->rca);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "%s: select_card returned 0x%x", __func__, err);
             return err;
@@ -509,12 +509,14 @@ static esp_err_t sdmmc_send_cmd_send_csd(sdmmc_card_t* card, sdmmc_csd_t* out_cs
     return sdmmc_decode_csd(ptr, out_csd);
 }
 
-static esp_err_t sdmmc_send_cmd_select_card(sdmmc_card_t* card)
+static esp_err_t sdmmc_send_cmd_select_card(sdmmc_card_t* card, uint32_t rca)
 {
+    /* Don't expect to see a response when de-selecting a card */
+    uint32_t response = (rca == 0) ? 0 : SCF_RSP_R1;
     sdmmc_command_t cmd = {
             .opcode = MMC_SELECT_CARD,
-            .arg = MMC_ARG_RCA(card->rca),
-            .flags = SCF_CMD_AC | SCF_RSP_R1
+            .arg = MMC_ARG_RCA(rca),
+            .flags = SCF_CMD_AC | response
     };
     return sdmmc_send_cmd(card, &cmd);
 }
