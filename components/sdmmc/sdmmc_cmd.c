@@ -51,7 +51,7 @@ static esp_err_t sdmmc_send_cmd_stop_transmission(sdmmc_card_t* card, uint32_t* 
 static esp_err_t sdmmc_send_cmd_send_status(sdmmc_card_t* card, uint32_t* out_status);
 static esp_err_t sdmmc_send_cmd_crc_on_off(sdmmc_card_t* card, bool crc_enable);
 static uint32_t  get_host_ocr(float voltage);
-static void response_ntoh(sdmmc_response_t response);
+static void flip_byte_order(uint32_t* response, size_t size);
 static esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
         size_t start_block, size_t block_count);
 static esp_err_t sdmmc_read_sectors_dma(sdmmc_card_t* card, void* dst,
@@ -419,7 +419,7 @@ static esp_err_t sdmmc_send_cmd_send_cid(sdmmc_card_t *card, sdmmc_cid_t *out_ci
     if (err != ESP_OK) {
         return err;
     }
-    response_ntoh(buf);
+    flip_byte_order(buf, sizeof(buf));
     return sdmmc_decode_cid(buf, out_cid);
 }
 
@@ -501,10 +501,12 @@ static esp_err_t sdmmc_send_cmd_send_csd(sdmmc_card_t* card, sdmmc_csd_t* out_cs
     if (err != ESP_OK) {
         return err;
     }
+    uint32_t* ptr = cmd.response;
     if (is_spi) {
-        response_ntoh(spi_buf);
+        flip_byte_order(spi_buf,  sizeof(spi_buf));
+        ptr = spi_buf;
     }
-    return sdmmc_decode_csd(is_spi ? spi_buf : cmd.response, out_csd);
+    return sdmmc_decode_csd(ptr, out_csd);
 }
 
 static esp_err_t sdmmc_send_cmd_select_card(sdmmc_card_t* card)
@@ -520,8 +522,8 @@ static esp_err_t sdmmc_send_cmd_select_card(sdmmc_card_t* card)
 static esp_err_t sdmmc_decode_scr(uint32_t *raw_scr, sdmmc_scr_t* out_scr)
 {
     sdmmc_response_t resp = {0xabababab, 0xabababab, 0x12345678, 0x09abcdef};
-    resp[2] = __builtin_bswap32(raw_scr[0]);
-    resp[3] = __builtin_bswap32(raw_scr[1]);
+    resp[1] = __builtin_bswap32(raw_scr[0]);
+    resp[0] = __builtin_bswap32(raw_scr[1]);
     int ver = SCR_STRUCTURE(resp);
     if (ver != 0) {
         return ESP_ERR_NOT_SUPPORTED;
@@ -597,10 +599,15 @@ static uint32_t get_host_ocr(float voltage)
     return SD_OCR_VOL_MASK;
 }
 
-static void response_ntoh(sdmmc_response_t response)
+static void flip_byte_order(uint32_t* response, size_t size)
 {
-    for (int i = 0; i < 4; ++i) {
-        response[i] = __builtin_bswap32(response[i]);
+    assert(size % (2 * sizeof(uint32_t)) == 0);
+    const size_t n_words = size / sizeof(uint32_t);
+    for (int i = 0; i < n_words / 2; ++i) {
+        uint32_t left = __builtin_bswap32(response[i]);
+        uint32_t right = __builtin_bswap32(response[n_words - i - 1]);
+        response[i] = right;
+        response[n_words - i - 1] = left;
     }
 }
 

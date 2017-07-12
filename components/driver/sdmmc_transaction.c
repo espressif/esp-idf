@@ -261,11 +261,8 @@ static void process_command_response(uint32_t status, sdmmc_command_t* cmd)
 {
     if (cmd->flags & SCF_RSP_PRESENT) {
         if (cmd->flags & SCF_RSP_136) {
-            cmd->response[3] = SDMMC.resp[0];
-            cmd->response[2] = SDMMC.resp[1];
-            cmd->response[1] = SDMMC.resp[2];
-            cmd->response[0] = SDMMC.resp[3];
-
+            /* Destination is 4-byte aligned, can memcopy from peripheral registers */
+            memcpy(cmd->response, (uint32_t*) SDMMC.resp, 4 * sizeof(uint32_t));
         } else {
             cmd->response[0] = SDMMC.resp[0];
             cmd->response[1] = 0;

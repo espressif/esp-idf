@@ -304,13 +304,38 @@
 #define SD_ACCESS_MODE_SDR104   3
 #define SD_ACCESS_MODE_DDR50    4
 
+/**
+ * @brief Extract up to 32 sequential bits from an array of 32-bit words
+ *
+ * Bits within the word are numbered in the increasing order from LSB to MSB.
+ *
+ * As an example, consider 2 32-bit words:
+ *
+ * 0x01234567 0x89abcdef
+ *
+ * On a little-endian system, the bytes are stored in memory as follows:
+ *
+ * 67 45 23 01 ef cd ab 89
+ *
+ * MMC_RSP_BITS will extact bits as follows:
+ *
+ * start=0  len=4   -> result=0x00000007
+ * start=0  len=12  -> result=0x00000567
+ * start=28 len=8   -> result=0x000000f0
+ * start=59 len=5   -> result=0x00000011
+ *
+ * @param src array of words to extract bits from
+ * @param start index of the first bit to extract
+ * @param len number of bits to extract, 1 to 32
+ * @return 32-bit word where requested bits start from LSB
+ */
 static inline uint32_t MMC_RSP_BITS(uint32_t *src, int start, int len)
 {
     uint32_t mask = (len % 32 == 0) ? UINT_MAX : UINT_MAX >> (32 - (len % 32));
-    size_t word = 3 - start / 32;
+    size_t word = start / 32;
     size_t shift = start % 32;
     uint32_t right = src[word] >> shift;
-    uint32_t left = (len + shift <= 32) ? 0 : src[word - 1] << ((32 - shift) % 32);
+    uint32_t left = (len + shift <= 32) ? 0 : src[word + 1] << ((32 - shift) % 32);
     return (left | right) & mask;
 }
 
