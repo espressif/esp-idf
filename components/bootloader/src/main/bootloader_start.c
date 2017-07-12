@@ -520,6 +520,13 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
                bootloader RAM... */
 
             if (end_addr < 0x40000000) {
+                if (end_addr > 0x3FFE0000) {
+                    /* Temporary workaround for an ugly crash, until we allow >192KB of static DRAM */
+                    ESP_LOGE(TAG, "DRAM segment %d (start 0x%08x end 0x%08x) too large for IDF to boot",
+                             segment, start_addr, end_addr);
+                    return;
+                }
+
                 sp = (intptr_t)get_sp();
                 if (end_addr > sp) {
                     ESP_LOGE(TAG, "Segment %d end address %08x overlaps bootloader stack %08x - can't load",
