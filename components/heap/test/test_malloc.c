@@ -16,17 +16,23 @@
 #include "soc/dport_reg.h"
 #include "soc/io_mux_reg.h"
 
+#include "esp_panic.h"
+
 static int tryAllocMem() {
     int **mem;
     int i, noAllocated, j;
-    mem=malloc(sizeof(int)*1024);
+
+    mem=malloc(sizeof(int *)*1024);
     if (!mem) return 0;
+
     for (i=0; i<1024; i++) {
         mem[i]=malloc(1024);
         if (mem[i]==NULL) break;
         for (j=0; j<1024/4; j++) mem[i][j]=(0xdeadbeef);
     }
+
     noAllocated=i;
+
     for (i=0; i<noAllocated; i++) {
         for (j=0; j<1024/4; j++) {
             TEST_ASSERT(mem[i][j]==(0xdeadbeef));
@@ -38,7 +44,7 @@ static int tryAllocMem() {
 }
 
 
-TEST_CASE("Malloc/overwrite, then free all available DRAM", "[freertos]")
+TEST_CASE("Malloc/overwrite, then free all available DRAM", "[heap]")
 {
     int m1=0, m2=0;
     m1=tryAllocMem();

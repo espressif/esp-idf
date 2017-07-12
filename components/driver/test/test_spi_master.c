@@ -18,7 +18,7 @@
 #include "soc/dport_reg.h"
 #include "soc/spi_reg.h"
 #include "soc/spi_struct.h"
-#include "esp_heap_alloc_caps.h"
+#include "esp_heap_caps.h"
 
 
 static void check_spi_pre_n_for(int clk, int pre, int n)
@@ -119,8 +119,8 @@ static void spi_test(spi_device_handle_t handle, int num_bytes) {
     esp_err_t ret;
     int x;
     srand(num_bytes);
-    char *sendbuf=pvPortMallocCaps(num_bytes, MALLOC_CAP_DMA);
-    char *recvbuf=pvPortMallocCaps(num_bytes, MALLOC_CAP_DMA);
+    char *sendbuf=heap_caps_malloc(num_bytes, MALLOC_CAP_DMA);
+    char *recvbuf=heap_caps_malloc(num_bytes, MALLOC_CAP_DMA);
     for (x=0; x<num_bytes; x++) {
         sendbuf[x]=rand()&0xff;
         recvbuf[x]=0x55;

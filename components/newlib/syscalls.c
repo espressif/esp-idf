@@ -21,42 +21,28 @@
 #include <stdlib.h>
 #include "esp_attr.h"
 #include "freertos/FreeRTOS.h"
+#include "esp_heap_caps.h"
 
 void* IRAM_ATTR _malloc_r(struct _reent *r, size_t size)
 {
-    return pvPortMalloc(size);
+    return heap_caps_malloc( size, MALLOC_CAP_8BIT );
 }
 
 void IRAM_ATTR _free_r(struct _reent *r, void* ptr)
 {
-    vPortFree(ptr);
+    heap_caps_free( ptr );
 }
 
 void* IRAM_ATTR _realloc_r(struct _reent *r, void* ptr, size_t size)
 {
-    void* new_chunk;
-    if (size == 0) {
-        if (ptr) {
-            vPortFree(ptr);
-        }
-        return NULL;
-    }
-
-    new_chunk = pvPortMalloc(size);
-    if (new_chunk && ptr) {
-        memcpy(new_chunk, ptr, size);
-        vPortFree(ptr);
-    }
-    // realloc behaviour: don't free original chunk if alloc failed
-    return new_chunk;
+    return heap_caps_realloc( ptr, size, MALLOC_CAP_8BIT );
 }
 
 void* IRAM_ATTR _calloc_r(struct _reent *r, size_t count, size_t size)
 {
-    void* result = pvPortMalloc(count * size);
-    if (result)
-    {
-        memset(result, 0, count * size);
+    void* result = heap_caps_malloc(count * size, MALLOC_CAP_8BIT);
+    if (result) {
+        bzero(result, count * size);
     }
     return result;
 }
