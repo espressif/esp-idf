@@ -1406,7 +1406,7 @@ static int ecp_mul_comb( mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
 
 cleanup:
 
-    if( T != NULL && ! p_eq_g )
+    if( T != NULL && T != grp->T )
     {
         for( i = 0; i < pre_len; i++ )
             mbedtls_ecp_point_free( &T[i] );
