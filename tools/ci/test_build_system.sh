@@ -160,13 +160,23 @@ function run_tests()
     assert_rebuilt ${APP_BINS}
     assert_not_rebuilt ${BOOTLOADER_BINS}
 
-    print_status "sdkconfig update triggers recompiles"
+    print_status "sdkconfig update triggers full recompile"
     make
     take_build_snapshot
     touch sdkconfig
     make
     # pick one each of .c, .cpp, .S that #includes sdkconfig.h
     # and therefore should rebuild
+    assert_rebuilt newlib/syscall_table.o
+    assert_rebuilt nvs_flash/src/nvs_api.o
+    assert_rebuilt freertos/xtensa_vectors.o
+
+    print_status "Updating project Makefile triggers full recompile"
+    make
+    take_build_snapshot
+    touch Makefile
+    make
+    # similar to previous test
     assert_rebuilt newlib/syscall_table.o
     assert_rebuilt nvs_flash/src/nvs_api.o
     assert_rebuilt freertos/xtensa_vectors.o
