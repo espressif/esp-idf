@@ -6,7 +6,7 @@ is based on TinyBasic, and statements entered should be in the form of BASIC sta
 preceeding line number, commands entered are executed immediately; lines with a prefixed line number are stored as part of a program.
 
 Full list of supported statements and functions
-===============================================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 System
 ------
@@ -60,7 +60,7 @@ Pin IO
 
 
 Example programs
-================
+~~~~~~~~~~~~~~~~
 
 Here are a few example commands and programs to get you started...
 
@@ -107,7 +107,7 @@ Hook up an LED between GPIO2 and ground. When running the program, the LED shoul
 	RUN
 
 Credits
-=======
+~~~~~~~
 
 The ROM console is based on "TinyBasicPlus" by Mike Field and Scott Lawrence, which is based on "68000 TinyBasic" by Gordon Brandly
 
