@@ -153,11 +153,17 @@ ethernetif_input(struct netif *netif, void *buffer, uint16_t len)
 {
   struct pbuf *p;
 
-  if(buffer== NULL || netif == NULL)
-    goto _exit;
+  if(buffer== NULL || !netif_is_up(netif)) {
+    if (buffer) {
+      esp_eth_free_rx_buf(buffer);
+    }
+    return;
+  }
+
 #ifdef CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
   p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
   if (p == NULL) {
+    esp_eth_free_rx_buf(buffer);
     return;
   }
   p->l2_owner = NULL;
@@ -172,6 +178,7 @@ if (netif->input(p, netif) != ERR_OK) {
 #else
   p = pbuf_alloc(PBUF_RAW, len, PBUF_REF);
   if (p == NULL){
+    esp_eth_free_rx_buf(buffer);
     return;
   }
   p->payload = buffer;
@@ -185,8 +192,6 @@ if (netif->input(p, netif) != ERR_OK) {
   pbuf_free(p);
 }
 #endif
-_exit:
-;
 }
 
 /**
