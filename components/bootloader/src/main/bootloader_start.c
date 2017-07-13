@@ -411,11 +411,18 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
     esp_image_header_t image_header;
     uint32_t image_length;
 
+    /* Reload the RTC memory segments whenever a non-deepsleep reset
+       is occurring */
+    bool load_rtc_memory = rtc_get_reset_reason(0) != DEEPSLEEP_RESET;
+
     /* TODO: verify the app image as part of OTA boot decision, so can have fallbacks */
-    err = esp_image_basic_verify(partition->offset, true, &image_length);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to verify app image @ 0x%x (%d)", partition->offset, err);
-        return;
+    if (load_rtc_memory)
+    {
+        err = esp_image_basic_verify(partition->offset, true, &image_length);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to verify app image @ 0x%x (%d)", partition->offset, err);
+            return;
+        }
     }
 
 #ifdef CONFIG_SECURE_BOOT_ENABLED
@@ -441,10 +448,6 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
     uint32_t irom_addr = 0;
     uint32_t irom_load_addr = 0;
     uint32_t irom_size = 0;
-
-    /* Reload the RTC memory segments whenever a non-deepsleep reset
-       is occurring */
-    bool load_rtc_memory = rtc_get_reset_reason(0) != DEEPSLEEP_RESET;
 
     ESP_LOGD(TAG, "bin_header: %u %u %u %u %08x", image_header.magic,
              image_header.segment_count,
