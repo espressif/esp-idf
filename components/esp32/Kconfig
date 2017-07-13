@@ -407,7 +407,6 @@ config TASK_WDT_CHECK_IDLE_TASK_CPU1
 config BROWNOUT_DET
     bool "Hardware brownout detect & reset"
     default y
-    depends on NEEDS_ESP32_NEW_SILICON_REV
     help
         The ESP32 has a built-in brownout detector which can detect if the voltage is lower than
         a specific value. If this happens, it will reset the chip in order to prevent unintended
@@ -450,16 +449,6 @@ config BROWNOUT_DET_LVL
     default 5 if BROWNOUT_DET_LVL_SEL_5
     default 6 if BROWNOUT_DET_LVL_SEL_6
     default 7 if BROWNOUT_DET_LVL_SEL_7
-
-
-config BROWNOUT_DET_RESETDELAY
-    int "Brownout reset delay (in uS)"
-    depends on BROWNOUT_DET
-    range 0 6820
-    default 1000
-    help
-        The brownout detector can reset the chip after a certain delay, in order to make sure e.g. a voltage dip has entirely passed
-        before trying to restart the chip. You can set the delay here.
 
 
 choice ESP32_TIME_SYSCALL

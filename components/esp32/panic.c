@@ -39,6 +39,7 @@
 #include "esp_spi_flash.h"
 #include "esp_cache_err_int.h"
 #include "esp_app_trace.h"
+#include "esp_system.h"
 #if CONFIG_SYSVIEW_ENABLE
 #include "SEGGER_RTT.h"
 #endif
@@ -408,8 +409,6 @@ static void doBacktrace(XtExcFrame *frame)
     }
     panicPutStr("\r\n\r\n");
 }
-
-void esp_restart_noos() __attribute__ ((noreturn));
 
 /*
   We arrive here after a panic or unhandled exception, when no OCD is detected. Dump the registers to the

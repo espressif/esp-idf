@@ -265,13 +265,15 @@ void IRAM_ATTR esp_restart_noos()
     esp_dport_access_int_deinit();
 
     // We need to disable TG0/TG1 watchdogs
-    // First enable RTC watchdog to be on the safe side
+    // First enable RTC watchdog for 1 second
     REG_WRITE(RTC_CNTL_WDTWPROTECT_REG, RTC_CNTL_WDT_WKEY_VALUE);
     REG_WRITE(RTC_CNTL_WDTCONFIG0_REG,
             RTC_CNTL_WDT_FLASHBOOT_MOD_EN_M |
+            (RTC_WDT_STG_SEL_RESET_SYSTEM << RTC_CNTL_WDT_STG0_S) |
+            (RTC_WDT_STG_SEL_RESET_RTC << RTC_CNTL_WDT_STG1_S) |
             (1 << RTC_CNTL_WDT_SYS_RESET_LENGTH_S) |
             (1 << RTC_CNTL_WDT_CPU_RESET_LENGTH_S) );
-    REG_WRITE(RTC_CNTL_WDTCONFIG1_REG, 128000);
+    REG_WRITE(RTC_CNTL_WDTCONFIG1_REG, rtc_clk_slow_freq_get_hz() * 1);
 
     // Disable TG0/TG1 watchdogs
     TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
