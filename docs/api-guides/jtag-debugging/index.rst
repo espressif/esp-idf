@@ -61,8 +61,6 @@ Debugging using JTAG and application loading / monitoring is integrated under th
 
 If the :doc:`ESP32 WROVER KIT <../../hw-reference/modules-and-boards>` is used, then connection from PC to ESP32 is done effectively with a single USB cable thanks to FT2232H chip installed on WROVER, which provides two USB channels, one for JTAG and the second for JTAG connection.
 
-Loading of application over JTAG connection is not yet implemented.
-
 Depending on user preferences, both `debugger` and `make` can be operated directly from terminal / command line, instead from Eclipse.
 
 
@@ -191,10 +189,24 @@ You should now see similar output (this log is for ESP32 WROVER KIT)::
 * If you see JTAG errors (...all ones/...all zeroes) please check your connections, whether no other signals are connected to JTAG besides ESP32's pins, and see if everything is powered on.
 
 
+.. _jtag-upload-app-debug:
+
 Upload application for debugging
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Build and upload your application to ESP32 as usual, see :ref:`get-started-build-flash`.
+
+Another option is to write application image to flash using OpenOCD via JTAG with commands like this::
+
+    cd ~/esp/openocd-esp32
+    bin/openocd -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg -c "program_esp32 filename.bin 0x10000 verify exit"
+
+OpenOCD flashing command ``program_esp32`` has the following format ``program_esp32 <image_file> <offset> [verify] [reset] [exit]``.
+ - ``image_file`` - path to program image file
+ - ``offset`` - offset in flash bank to write image
+ - ``verify`` - Optional. Verify written flash contents after writing.
+ - ``reset`` - Optional. Reset target after programing.
+ - ``exit`` - Optional. Finally exit OpenOCD.
 
 You are now ready to start application debugging. Follow steps described in section below.
 
