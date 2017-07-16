@@ -188,12 +188,8 @@ extern "C" {
 	#define INCLUDE_xSemaphoreGetMutexHolder INCLUDE_xQueueGetMutexHolder
 #endif
 
-#ifndef INCLUDE_pcTaskGetTaskName
-#if ( configENABLE_MEMORY_DEBUG == 1)
-	#define INCLUDE_pcTaskGetTaskName 1
-#else
-	#define INCLUDE_pcTaskGetTaskName 0
-#endif
+#ifndef INCLUDE_xTaskGetHandle
+	#define INCLUDE_xTaskGetHandle 0
 #endif
 
 #ifndef configUSE_APPLICATION_TASK_TAG
@@ -829,6 +825,7 @@ V8 if desired. */
 	#define xCoRoutineHandle CoRoutineHandle_t
 	#define pdTASK_HOOK_CODE TaskHookFunction_t
 	#define portTICK_RATE_MS portTICK_PERIOD_MS
+	#define pcTaskGetTaskName pcTaskGetName
 
 	/* Backward compatibility within the scheduler code only - these definitions
 	are not really required but are included for completeness. */
