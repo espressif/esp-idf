@@ -68,12 +68,12 @@
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
 
-void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default")));
-void start_cpu0_default(void) IRAM_ATTR;
+void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default"))) __attribute__((noreturn));
+void start_cpu0_default(void) IRAM_ATTR __attribute__((noreturn));
 #if !CONFIG_FREERTOS_UNICORE
-static void IRAM_ATTR call_start_cpu1();
-void start_cpu1(void) __attribute__((weak, alias("start_cpu1_default")));
-void start_cpu1_default(void) IRAM_ATTR;
+static void IRAM_ATTR call_start_cpu1() __attribute__((noreturn));
+void start_cpu1(void) __attribute__((weak, alias("start_cpu1_default"))) __attribute__((noreturn));
+void start_cpu1_default(void) IRAM_ATTR __attribute__((noreturn));
 static bool app_cpu_started = false;
 #endif //!CONFIG_FREERTOS_UNICORE
 
@@ -124,6 +124,13 @@ void IRAM_ATTR call_start_cpu0()
 #endif
     ) {
         esp_panic_wdt_stop();
+    }
+
+    // Temporary workaround for an ugly crash, until we allow > 192KB of static DRAM
+    if ((intptr_t)&_bss_end > 0x3FFE0000) {
+        // Can't use assert() or logging here because there's no .bss
+        ets_printf("ERROR: Static .bss section extends past 0x3FFE0000. IDF cannot boot.\n");
+        abort();
     }
 
     //Clear BSS. Please do not attempt to do any complex stuff (like early logging) before this.
@@ -281,11 +288,13 @@ void start_cpu0_default(void)
     esp_core_dump_init();
 #endif
 
-    xTaskCreatePinnedToCore(&main_task, "main",
-            ESP_TASK_MAIN_STACK, NULL,
-            ESP_TASK_MAIN_PRIO, NULL, 0);
+    portBASE_TYPE res = xTaskCreatePinnedToCore(&main_task, "main",
+                                                ESP_TASK_MAIN_STACK, NULL,
+                                                ESP_TASK_MAIN_PRIO, NULL, 0);
+    assert(res == pdTRUE);
     ESP_LOGI(TAG, "Starting scheduler on PRO CPU.");
     vTaskStartScheduler();
+    abort(); /* Only get to here if not enough free heap to start scheduler */
 }
 
 #if !CONFIG_FREERTOS_UNICORE
@@ -312,6 +321,7 @@ void start_cpu1_default(void)
 
     ESP_EARLY_LOGI(TAG, "Starting scheduler on APP CPU.");
     xPortStartScheduler();
+    abort(); /* Only get to here if FreeRTOS somehow very broken */
 }
 #endif //!CONFIG_FREERTOS_UNICORE
 

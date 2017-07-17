@@ -202,7 +202,7 @@ void esp_task_wdt_init() {
 #if CONFIG_TASK_WDT_CHECK_IDLE_TASK
     esp_register_freertos_idle_hook(idle_hook);
 #endif
-    esp_intr_alloc(ETS_TG0_WDT_LEVEL_INTR_SOURCE, 0, task_wdt_isr, NULL, NULL);
+    ESP_ERROR_CHECK( esp_intr_alloc(ETS_TG0_WDT_LEVEL_INTR_SOURCE, 0, task_wdt_isr, NULL, NULL) );
 }
 
 
