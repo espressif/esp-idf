@@ -67,21 +67,21 @@ typedef struct {
 #define SPI_TRANS_USE_TXDATA          (1<<3)  ///< Transmit tx_data member of spi_transaction_t instead of data at tx_buffer. Do not set tx_buffer when using this.
 
 /**
- * This structure describes one SPI transaction
+ * This structure describes one SPI transaction. The descriptor should not be modified until the transaction finishes.
  */
 struct spi_transaction_t {
     uint32_t flags;                 ///< Bitwise OR of SPI_TRANS_* flags
     uint16_t command;               ///< Command data. Specific length was given when device was added to the bus.
     uint64_t address;               ///< Address. Specific length was given when device was added to the bus.
     size_t length;                  ///< Total data length, in bits
-    size_t rxlength;                ///< Total data length received, if different from length. (0 defaults this to the value of ``length``)
+    size_t rxlength;                ///< Total data length received, should be not greater than ``length`` in full-duplex mode. (0 defaults this to the value of ``length``)
     void *user;                     ///< User-defined variable. Can be used to store eg transaction ID.
     union {
         const void *tx_buffer;      ///< Pointer to transmit buffer, or NULL for no MOSI phase
         uint8_t tx_data[4];         ///< If SPI_USE_TXDATA is set, data set here is sent directly from this variable.
     };
     union {
-        void *rx_buffer;            ///< Pointer to receive buffer, or NULL for no MISO phase
+        void *rx_buffer;            ///< Pointer to receive buffer, or NULL for no MISO phase. Written by 4 bytes-unit if DMA is used.
         uint8_t rx_data[4];         ///< If SPI_USE_RXDATA is set, data is received directly to this variable
     };
 };
@@ -182,8 +182,9 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
  * re-use the buffers.
  *
  * @param handle Device handle obtained using spi_host_add_dev
- * @param trans_desc Pointer to variable able to contain a pointer to the description of the 
- *                   transaction that is executed
+ * @param trans_desc Pointer to variable able to contain a pointer to the description of the transaction 
+        that is executed. The descriptor should not be modified until the descriptor is returned by 
+        spi_device_get_trans_result.
  * @param ticks_to_wait Ticks to wait until there's a returned item; use portMAX_DELAY to never time
                         out.
  * @return 
