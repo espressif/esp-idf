@@ -37,7 +37,7 @@ MEMORY
                                      len = 0x50000 - CONFIG_TRACEMEM_RESERVE_DRAM - CONFIG_BT_RESERVE_DRAM
 
   /* Flash mapped constant data */
-  drom0_0_seg (R) :                  org = 0x3F400010, len = 0x800000
+  drom0_0_seg (R) :                  org = 0x3F400018, len = 0x800000
 
   /* RTC fast memory (executable). Persists over deep sleep.
    */
