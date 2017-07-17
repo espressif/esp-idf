@@ -85,6 +85,7 @@ void tcpip_adapter_init(void)
 
         tcpip_init(NULL, NULL);
 
+        memset(esp_ip, 0, sizeof(tcpip_adapter_ip_info_t)*TCPIP_ADAPTER_IF_MAX);
         IP4_ADDR(&esp_ip[TCPIP_ADAPTER_IF_AP].ip, 192, 168 , 4, 1);
         IP4_ADDR(&esp_ip[TCPIP_ADAPTER_IF_AP].gw, 192, 168 , 4, 1);
         IP4_ADDR(&esp_ip[TCPIP_ADAPTER_IF_AP].netmask, 255, 255 , 255, 0);
@@ -140,8 +141,11 @@ esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, tcpip_a
         return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
     }
 
-    if (esp_netif[tcpip_if] == NULL) {
-        esp_netif[tcpip_if] = calloc(1, sizeof(*esp_netif[tcpip_if]));
+    if (esp_netif[tcpip_if] == NULL || !netif_is_up(esp_netif[tcpip_if])) {
+        if (esp_netif[tcpip_if] == NULL) {
+            esp_netif[tcpip_if] = calloc(1, sizeof(*esp_netif[tcpip_if]));
+        }
+
         if (esp_netif[tcpip_if] == NULL) {
             return ESP_ERR_NO_MEM;
         }
@@ -166,11 +170,11 @@ esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, tcpip_a
     }
 
     /* if ap is on, choose ap as default if */
-    if (esp_netif[TCPIP_ADAPTER_IF_AP]) {
+    if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_AP])) {
         netif_set_default(esp_netif[TCPIP_ADAPTER_IF_AP]);
-    } else if (esp_netif[TCPIP_ADAPTER_IF_STA]) {
+    } else if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_STA])) {
         netif_set_default(esp_netif[TCPIP_ADAPTER_IF_STA]);
-    } else if (esp_netif[TCPIP_ADAPTER_IF_ETH] ) {
+    } else if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_ETH])) {
         netif_set_default(esp_netif[TCPIP_ADAPTER_IF_ETH]);
     }
 
@@ -194,6 +198,11 @@ esp_err_t tcpip_adapter_stop(tcpip_adapter_if_t tcpip_if)
         return ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY;
     }
 
+    if (!netif_is_up(esp_netif[tcpip_if])) {
+        netif_remove(esp_netif[tcpip_if]);
+        return ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY;
+    }
+
     if (tcpip_if == TCPIP_ADAPTER_IF_AP) {
         dhcps_stop(esp_netif[tcpip_if]);    // TODO: dhcps checks status by its self
         if (TCPIP_ADAPTER_DHCP_STOPPED != dhcps_status) {
@@ -211,14 +220,16 @@ esp_err_t tcpip_adapter_stop(tcpip_adapter_if_t tcpip_if)
         ip4_addr_set_zero(&esp_ip[tcpip_if].netmask);
     }
 
+    netif_set_down(esp_netif[tcpip_if]);
     netif_remove(esp_netif[tcpip_if]);
 
-    free(esp_netif[tcpip_if]);
-    esp_netif[tcpip_if] = NULL;
-
     /* in ap + sta mode, if stop ap, choose sta as default if */
-    if (esp_netif[TCPIP_ADAPTER_IF_STA] && tcpip_if == TCPIP_ADAPTER_IF_AP) {
-        netif_set_default(esp_netif[TCPIP_ADAPTER_IF_STA]);
+    if (tcpip_if == TCPIP_ADAPTER_IF_AP) {
+        if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_STA])) {
+            netif_set_default(esp_netif[TCPIP_ADAPTER_IF_STA]);
+        } else if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_ETH])) {
+            netif_set_default(esp_netif[TCPIP_ADAPTER_IF_ETH]);
+        }
     }
 
     return ESP_OK;
@@ -242,6 +253,14 @@ esp_err_t tcpip_adapter_up(tcpip_adapter_if_t tcpip_if)
         /* use last obtained ip, or static ip */
         netif_set_addr(esp_netif[tcpip_if], &esp_ip[tcpip_if].ip, &esp_ip[tcpip_if].netmask, &esp_ip[tcpip_if].gw);
         netif_set_up(esp_netif[tcpip_if]);
+    }
+
+    if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_AP])) {
+        netif_set_default(esp_netif[TCPIP_ADAPTER_IF_AP]);
+    } else if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_STA])) {
+        netif_set_default(esp_netif[TCPIP_ADAPTER_IF_STA]);
+    } else if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_ETH])) {
+        netif_set_default(esp_netif[TCPIP_ADAPTER_IF_ETH]);
     }
 
     return ESP_OK;

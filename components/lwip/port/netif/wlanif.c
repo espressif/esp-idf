@@ -144,8 +144,12 @@ wlanif_input(struct netif *netif, void *buffer, u16_t len, void* eb)
 {
   struct pbuf *p;
 
-  if(!buffer || !netif)
-    goto _exit;
+  if(!buffer || !netif_is_up(netif)) {
+    if (eb) {
+      esp_wifi_internal_free_rx_buffer(eb);
+    }
+    return;
+  }
 
 #if (ESP_L2_TO_L3_COPY == 1)
   p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
@@ -161,6 +165,7 @@ wlanif_input(struct netif *netif, void *buffer, u16_t len, void* eb)
   p = pbuf_alloc(PBUF_RAW, len, PBUF_REF);
   if (p == NULL){
     ESP_STATS_DROP_INC(esp.wlanif_input_pbuf_fail);
+    esp_wifi_internal_free_rx_buffer(eb);
     return;
   }
   p->payload = buffer;
@@ -174,8 +179,6 @@ wlanif_input(struct netif *netif, void *buffer, u16_t len, void* eb)
     pbuf_free(p);
   }
 
-_exit:
-;
 }
 
 /**
