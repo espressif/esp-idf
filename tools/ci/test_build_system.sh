@@ -71,7 +71,7 @@ function run_tests()
 
     print_status "Bootloader source file rebuilds bootloader"
     take_build_snapshot
-    touch ${IDF_PATH}/components/bootloader/src/main/bootloader_start.c
+    touch ${IDF_PATH}/components/bootloader/subproject/main/bootloader_start.c
     make bootloader || failure "Failed to partial build bootloader"
     assert_rebuilt ${BOOTLOADER_BINS} bootloader/main/bootloader_start.o
     assert_not_rebuilt ${APP_BINS} partitions_singleapp.bin
