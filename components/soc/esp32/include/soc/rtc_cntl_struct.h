@@ -550,4 +550,5 @@ typedef volatile struct {
         uint32_t val;
     } date;
 } rtc_cntl_dev_t;
+extern rtc_cntl_dev_t RTCCNTL;
 #endif  /* _SOC_RTC_CNTL_STRUCT_H_ */
