@@ -4,7 +4,8 @@ System API
 .. toctree::
    :maxdepth: 1
 
-   Memory Allocation <mem_alloc>
+   Heap Memory Allocation <mem_alloc>
+   Heap Memory Debugging <heap_debug>
    Interrupt Allocation <intr_alloc>
    Watchdogs <wdts>
    Over The Air Updates (OTA) <ota>

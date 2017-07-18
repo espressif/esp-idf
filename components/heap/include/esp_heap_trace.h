@@ -30,6 +30,9 @@ typedef enum {
     HEAP_TRACE_LEAKS,
 } heap_trace_mode_t;
 
+/**
+ * @brief Trace record data type. Stores information about an allocated region of memory.
+ */
 typedef struct {
     uint32_t ccount; ///< CCOUNT of the CPU when the allocation was made. LSB (bit value 1) is the CPU number (0 or 1). */
     void *address;   ///< Address which was allocated
@@ -46,7 +49,8 @@ typedef struct {
  *
  * To disable heap tracing and allow the buffer to be freed, stop tracing and then call heap_trace_init_standalone(NULL, 0);
  *
- * @param record_buffer Provide a buffer to use for heap trace data. Must remain valid any time heap tracing is enabled.
+ * @param record_buffer Provide a buffer to use for heap trace data. Must remain valid any time heap tracing is enabled, meaning
+ * it must be allocated from internal memory not in PSRAM.
  * @param num_records Size of the heap trace buffer, as number of record structures.
  * @return
  *  - ESP_ERR_NOT_SUPPORTED Project was compiled without heap tracing enabled in menuconfig.
@@ -62,9 +66,9 @@ esp_err_t heap_trace_init_standalone(heap_trace_record_t *record_buffer, size_t 
  *
  * @note Calling this function while heap tracing is running will reset the heap trace state and continue tracing.
  *
- * @param mode_param Mode for tracing.
+ * @param mode Mode for tracing.
  * - HEAP_TRACE_ALL means all heap allocations and frees are traced.
- * - HEAP_TRACE_LEAKS means only suspected memory leaks are traced (freeed memory is removed from the trace buffer.)
+ * - HEAP_TRACE_LEAKS means only suspected memory leaks are traced. (When memory is freed, the record is removed from the trace buffer.)
  * @return
  * - ESP_ERR_NOT_SUPPORTED Project was compiled without heap tracing enabled in menuconfig.
  * - ESP_ERR_INVALID_STATE A non-zero-length buffer has not been set via heap_trace_init_standalone().
@@ -86,7 +90,7 @@ esp_err_t heap_trace_stop(void);
  * @brief Resume heap tracing which was previously stopped.
  *
  * Unlike heap_trace_start(), this function does not clear the
- * buffer of any pre-existing trace data.
+ * buffer of any pre-existing trace records.
  *
  * The heap trace mode is the same as when heap_trace_start() was
  * last called (or HEAP_TRACE_ALL if heap_trace_start() was never called).
@@ -108,11 +112,11 @@ size_t heap_trace_get_count(void);
 /**
  * @brief Return a raw record from the heap trace buffer
  *
- * It is safe to call this function while heap tracing is running, however in HEAP_TRACE_LEAK mode record indexing may
+ * @note It is safe to call this function while heap tracing is running, however in HEAP_TRACE_LEAK mode record indexing may
  * skip entries unless heap tracing is stopped first.
  *
  * @param index Index (zero-based) of the record to return.
- * @param[out] record Record where the heap trace data will be copied.
+ * @param[out] record Record where the heap trace record will be copied.
  * @return
  * - ESP_ERR_NOT_SUPPORTED Project was compiled without heap tracing enabled in menuconfig.
  * - ESP_ERR_INVALID_STATE Heap tracing was not initialised.
@@ -122,13 +126,11 @@ size_t heap_trace_get_count(void);
 esp_err_t heap_trace_get(size_t index, heap_trace_record_t *record);
 
 /**
- * @brief Dump heap trace data to stdout
+ * @brief Dump heap trace record data to stdout
  *
- * It is safe to call this function while heap tracing is running, however in HEAP_TRACE_LEAK mode the dump may skip
+ * @note It is safe to call this function while heap tracing is running, however in HEAP_TRACE_LEAK mode the dump may skip
  * entries unless heap tracing is stopped first.
  *
- * Record data is dumped in summary form. Use a tool like :doc:`idf_monitor </get-started/idf-monitor>` to decode stack
- * trace addresses to the line of code they represent.
  *
  */
 void heap_trace_dump(void);
