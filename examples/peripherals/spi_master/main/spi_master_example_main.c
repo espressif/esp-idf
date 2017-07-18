@@ -18,14 +18,14 @@
 
 
 /*
- This code displays some fancy graphics on the ILI9341-based 320x240 LCD on an ESP-WROVER_KIT board.
+ This code displays some fancy graphics on the 320x240 LCD on an ESP-WROVER_KIT board.
  It is not very fast, even when the SPI transfer itself happens at 8MHz and with DMA, because
  the rest of the code is not very optimized. Especially calculating the image line-by-line
  is inefficient; it would be quicker to send an entire screenful at once. This example does, however,
  demonstrate the use of both spi_device_transmit as well as spi_device_queue_trans/spi_device_get_trans_result
  as well as pre-transmit callbacks.
 
- Some info about the ILI9341: It has an C/D line, which is connected to a GPIO here. It expects this
+ Some info about the ILI9341/ST7789V: It has an C/D line, which is connected to a GPIO here. It expects this
  line to be low for a command and high for data. We use a pre-transmit callback here to control that
  line: every transaction has as the user-definable argument the needed state of the D/C line and just
  before the transaction is sent, the callback will set this line to the correct state.
@@ -42,16 +42,40 @@
 
 
 /*
- The ILI9341 needs a bunch of command/argument values to be initialized. They are stored in this struct.
+ The LCD needs a bunch of command/argument values to be initialized. They are stored in this struct.
 */
 typedef struct {
     uint8_t cmd;
     uint8_t data[16];
     uint8_t databytes; //No of data in data; bit 7 = delay after set; 0xFF = end of cmds.
-} ili_init_cmd_t;
+} lcd_init_cmd_t;
 
 //Place data into DRAM. Constant data gets placed into DROM by default, which is not accessible by DMA.
-DRAM_ATTR static const ili_init_cmd_t ili_init_cmds[]={
+
+#ifdef CONFIG_LCD_TYPE_ST7789V
+
+DRAM_ATTR static const lcd_init_cmd_t lcd_init_cmds[]={
+    {0x36, {(1<<5)|(1<<6)}, 1},
+    {0x3A, {0x55}, 1},
+    {0xB2, {0x0c, 0x0c, 0x00, 0x33, 0x33}, 5},
+    {0xB7, {0x45}, 1},
+    {0xBB, {0x2B}, 1},
+    {0xC0, {0x2C}, 1},
+    {0xC2, {0x01, 0xff}, 2},
+    {0xC3, {0x11}, 1},
+    {0xC4, {0x20}, 1},
+    {0xC6, {0x0f}, 1},
+    {0xD0, {0xA4, 0xA1}, 1},
+    {0xE0, {0xD0, 0x00, 0x05, 0x0E, 0x15, 0x0D, 0x37, 0x43, 0x47, 0x09, 0x15, 0x12, 0x16, 0x19}, 14},
+    {0xE1, {0xD0, 0x00, 0x05, 0x0D, 0x0C, 0x06, 0x2D, 0x44, 0x40, 0x0E, 0x1C, 0x18, 0x16, 0x19}, 14},
+    {0x11, {0}, 0x80},
+    {0x29, {0}, 0x80},
+    {0, {0}, 0xff}
+};
+
+#elif defined(CONFIG_LCD_TYPE_ILI9341)
+
+DRAM_ATTR static const lcd_init_cmd_t lcd_init_cmds[]={
     {0xCF, {0x00, 0x83, 0X30}, 3},
     {0xED, {0x64, 0x03, 0X12, 0X81}, 4},
     {0xE8, {0x85, 0x01, 0x79}, 3},
@@ -79,8 +103,11 @@ DRAM_ATTR static const ili_init_cmd_t ili_init_cmds[]={
     {0, {0}, 0xff},
 };
 
-//Send a command to the ILI9341. Uses spi_device_transmit, which waits until the transfer is complete.
-void ili_cmd(spi_device_handle_t spi, const uint8_t cmd) 
+#endif
+
+
+//Send a command to the LCD. Uses spi_device_transmit, which waits until the transfer is complete.
+void lcd_cmd(spi_device_handle_t spi, const uint8_t cmd) 
 {
     esp_err_t ret;
     spi_transaction_t t;
@@ -92,8 +119,8 @@ void ili_cmd(spi_device_handle_t spi, const uint8_t cmd)
     assert(ret==ESP_OK);            //Should have had no issues.
 }
 
-//Send data to the ILI9341. Uses spi_device_transmit, which waits until the transfer is complete.
-void ili_data(spi_device_handle_t spi, const uint8_t *data, int len) 
+//Send data to the LCD. Uses spi_device_transmit, which waits until the transfer is complete.
+void lcd_data(spi_device_handle_t spi, const uint8_t *data, int len) 
 {
     esp_err_t ret;
     spi_transaction_t t;
@@ -108,14 +135,14 @@ void ili_data(spi_device_handle_t spi, const uint8_t *data, int len)
 
 //This function is called (in irq context!) just before a transmission starts. It will
 //set the D/C line to the value indicated in the user field.
-void ili_spi_pre_transfer_callback(spi_transaction_t *t) 
+void lcd_spi_pre_transfer_callback(spi_transaction_t *t) 
 {
     int dc=(int)t->user;
     gpio_set_level(PIN_NUM_DC, dc);
 }
 
 //Initialize the display
-void ili_init(spi_device_handle_t spi) 
+void lcd_init(spi_device_handle_t spi) 
 {
     int cmd=0;
     //Initialize non-SPI GPIOs
@@ -130,10 +157,17 @@ void ili_init(spi_device_handle_t spi)
     vTaskDelay(100 / portTICK_RATE_MS);
 
     //Send all the commands
-    while (ili_init_cmds[cmd].databytes!=0xff) {
-        ili_cmd(spi, ili_init_cmds[cmd].cmd);
-        ili_data(spi, ili_init_cmds[cmd].data, ili_init_cmds[cmd].databytes&0x1F);
-        if (ili_init_cmds[cmd].databytes&0x80) {
+
+#ifdef CONFIG_LCD_TYPE_ST7789V
+        printf("LCD ST7789V initialization.\n");
+#elif defined( CONFIG_LCD_TYPE_ILI9341)
+        printf("LCD ILI9341 initialization.\n");   
+#endif   
+
+    while (lcd_init_cmds[cmd].databytes!=0xff) {
+        lcd_cmd(spi, lcd_init_cmds[cmd].cmd);
+        lcd_data(spi, lcd_init_cmds[cmd].data, lcd_init_cmds[cmd].databytes&0x1F);
+        if (lcd_init_cmds[cmd].databytes&0x80) {
             vTaskDelay(100 / portTICK_RATE_MS);
         }
         cmd++;
@@ -261,7 +295,7 @@ void app_main()
         .mode=0,                                //SPI mode 0
         .spics_io_num=PIN_NUM_CS,               //CS pin
         .queue_size=7,                          //We want to be able to queue 7 transactions at a time
-        .pre_cb=ili_spi_pre_transfer_callback,  //Specify pre-transfer callback to handle D/C line
+        .pre_cb=lcd_spi_pre_transfer_callback,  //Specify pre-transfer callback to handle D/C line
     };
     //Initialize the SPI bus
     ret=spi_bus_initialize(HSPI_HOST, &buscfg, 1);
@@ -270,7 +304,7 @@ void app_main()
     ret=spi_bus_add_device(HSPI_HOST, &devcfg, &spi);
     assert(ret==ESP_OK);
     //Initialize the LCD
-    ili_init(spi);
+    lcd_init(spi);
     //Go do nice stuff.
     display_pretty_colors(spi);
 }
