@@ -68,6 +68,11 @@ inline static uint32_t get_all_caps(const heap_t *heap)
     return all_caps;
 }
 
+bool heap_caps_match(const heap_t *heap, uint32_t caps)
+{
+    return heap->heap != NULL && ((get_all_caps(heap) & caps) == caps);
+}
+
 /*
 Routine to allocate a bit of memory with certain capabilities. caps is a bitfield of MALLOC_CAP_* bits.
 */
@@ -91,6 +96,9 @@ IRAM_ATTR void *heap_caps_malloc( size_t size, uint32_t caps )
         //Iterate over heaps and check capabilities at this priority
         for (int heap_idx = 0; heap_idx < num_registered_heaps; heap_idx++) {
             heap_t *heap = &registered_heaps[heap_idx];
+            if (heap->heap == NULL) {
+                continue;
+            }
             if ((heap->caps[prio] & caps) != 0) {
                 //Heap has at least one of the caps requested. If caps has other bits set that this prio
                 //doesn't cover, see if they're available in other prios.
@@ -136,7 +144,7 @@ IRAM_ATTR static heap_t *find_containing_heap(void *ptr )
     intptr_t p = (intptr_t)ptr;
     for (size_t i = 0; i < num_registered_heaps; i++) {
         heap_t *heap = &registered_heaps[i];
-        if (p >= heap->start && p < heap->end) {
+        if (heap->heap != NULL && p >= heap->start && p < heap->end) {
             return heap;
         }
     }
@@ -210,7 +218,7 @@ size_t heap_caps_get_free_size( uint32_t caps )
     size_t ret = 0;
     for (int i = 0; i < num_registered_heaps; i++) {
         heap_t *heap = &registered_heaps[i];
-        if ((get_all_caps(heap) & caps) == caps) {
+        if (heap_caps_match(heap, caps)) {
             ret += multi_heap_free_size(heap->heap);
         }
     }
@@ -222,7 +230,7 @@ size_t heap_caps_get_minimum_free_size( uint32_t caps )
     size_t ret = 0;
     for (int i = 0; i < num_registered_heaps; i++) {
         heap_t *heap = &registered_heaps[i];
-        if ((get_all_caps(heap) & caps) == caps) {
+        if (heap_caps_match(heap, caps)) {
             ret += multi_heap_minimum_free_size(heap->heap);
         }
     }
@@ -242,7 +250,7 @@ void heap_caps_get_info( multi_heap_info_t *info, uint32_t caps )
 
     for (int i = 0; i < num_registered_heaps; i++) {
         heap_t *heap = &registered_heaps[i];
-        if ((get_all_caps(heap) & caps) == caps) {
+        if (heap_caps_match(heap, caps)) {
             multi_heap_info_t hinfo;
             multi_heap_get_info(heap->heap, &hinfo);
 
@@ -264,7 +272,7 @@ void heap_caps_print_heap_info( uint32_t caps )
     printf("Heap summary for capabilities 0x%08X:\n", caps);
     for (int i = 0; i < num_registered_heaps; i++) {
         heap_t *heap = &registered_heaps[i];
-        if ((get_all_caps(heap) & caps) == caps) {
+        if (heap_caps_match(heap, caps)) {
             multi_heap_get_info(heap->heap, &info);
 
             printf("  At 0x%08x len %d free %d allocated %d min_free %d\n",

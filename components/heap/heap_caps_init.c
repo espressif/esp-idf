@@ -16,6 +16,7 @@
 #include <string.h>
 #include <esp_log.h>
 #include <multi_heap.h>
+#include <esp_heap_caps.h>
 #include <soc/soc_memory_layout.h>
 
 static const char *TAG = "heap_init";
@@ -26,8 +27,9 @@ size_t num_registered_heaps;
 static void register_heap(heap_t *region)
 {
     region->heap = multi_heap_register((void *)region->start, region->end - region->start);
-    ESP_EARLY_LOGD(TAG, "New heap initialised at %p", region->heap);
-    assert(region->heap);
+    if (region->heap != NULL) {
+        ESP_EARLY_LOGD(TAG, "New heap initialised at %p", region->heap);
+    }
 }
 
 void heap_caps_enable_nonos_stack_heaps()
@@ -38,7 +40,9 @@ void heap_caps_enable_nonos_stack_heaps()
         heap_t *heap = &registered_heaps[i];
         if (heap->heap == NULL) {
             register_heap(heap);
-            multi_heap_set_lock(heap->heap, &heap->heap_mux);
+            if (heap->heap != NULL) {
+                multi_heap_set_lock(heap->heap, &heap->heap_mux);
+            }
         }
     }
 }
@@ -132,7 +136,6 @@ void heap_caps_init()
 
        Once we have a heap to copy it to, we will copy it to a heap buffer.
     */
-    multi_heap_handle_t first_heap = NULL;
     heap_t temp_heaps[num_registered_heaps];
     size_t heap_idx = 0;
 
@@ -161,15 +164,24 @@ void heap_caps_init()
             heap->heap = NULL;
         } else {
             register_heap(heap);
-            if (first_heap == NULL) {
-                first_heap = heap->heap;
-            }
         }
     }
 
-    /* Allocate the permanent heap data that we'll use for runtime */
     assert(heap_idx == num_registered_heaps);
-    registered_heaps = multi_heap_malloc(first_heap, sizeof(heap_t) * num_registered_heaps);
+
+    /* Allocate the permanent heap data that we'll use for runtime */
+    registered_heaps = NULL;
+    for (int i = 0; i < num_registered_heaps; i++) {
+        if (heap_caps_match(&temp_heaps[i], MALLOC_CAP_8BIT)) {
+            /* use the first DRAM heap which can fit the data */
+            registered_heaps = multi_heap_malloc(temp_heaps[i].heap, sizeof(heap_t) * num_registered_heaps);
+            if (registered_heaps != NULL) {
+                break;
+            }
+        }
+    }
+    assert(registered_heaps != NULL); /* if NULL, there's not enough free startup heap space */
+
     memcpy(registered_heaps, temp_heaps, sizeof(heap_t)*num_registered_heaps);
 
     /* Now the heap_mux fields live on the heap, assign them */
