@@ -105,7 +105,7 @@ COMPONENT_EMBED_OBJS ?= $(addsuffix .bin.o,$(notdir $(COMPONENT_EMBED_FILES))) $
 # variable with all the include dirs from all the components in random order. This
 # means we can accidentally grab a header from another component before grabbing our own.
 # To make sure that does not happen, re-order the includes so ours come first.
-OWN_INCLUDES:=$(abspath $(addprefix $(COMPONENT_PATH)/,$(COMPONENT_ADD_INCLUDEDIRS) $(COMPONENT_PRIV_INCLUDEDIRS)))
+OWN_INCLUDES:=$(abspath $(addprefix $(COMPONENT_PATH)/,$(COMPONENT_PRIV_INCLUDEDIRS) $(COMPONENT_ADD_INCLUDEDIRS)))
 COMPONENT_INCLUDES := $(OWN_INCLUDES) $(filter-out $(OWN_INCLUDES),$(COMPONENT_INCLUDES))
 
 
