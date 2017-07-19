@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include "flash_qio_mode.h"
 #include "esp_log.h"
+#include "esp_err.h"
 #include "rom/spi_flash.h"
 #include "rom/efuse.h"
 #include "soc/spi_struct.h"
@@ -34,9 +35,6 @@
 #define CMD_WRDI       0x04
 #define CMD_RDSR       0x05
 #define CMD_RDSR2      0x35 /* Not all SPI flash uses this command */
-
-
-#define ESP32_D2WD_WP_GPIO 7 /* ESP32-D2WD has this GPIO wired to WP pin of flash */
 
 static const char *TAG = "qio_mode";
 
@@ -67,6 +65,12 @@ static void write_status_8b_wrsr2(unsigned new_status);
 /* Write 16 bit status using WRSR */
 static void write_status_16b_wrsr(unsigned new_status);
 
+#define ESP32_D2WD_WP_GPIO 7 /* ESP32-D2WD has this GPIO wired to WP pin of flash */
+
+#ifndef CONFIG_BOOTLOADER_SPI_WP_PIN // Set in menuconfig if SPI flasher config is set to a quad mode
+#define CONFIG_BOOTLOADER_SPI_WP_PIN ESP32_D2WD_WP_GPIO
+#endif
+
 /* Array of known flash chips and data to enable Quad I/O mode
 
    Manufacturer & flash ID can be tested by running "esptool.py
@@ -96,7 +100,7 @@ const static qio_info_t chip_data[] = {
 
 #define NUM_CHIPS (sizeof(chip_data) / sizeof(qio_info_t))
 
-static void enable_qio_mode(read_status_fn_t read_status_fn,
+static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
                             write_status_fn_t write_status_fn,
                             uint8_t status_qio_bit);
 
@@ -112,6 +116,7 @@ extern uint8_t g_rom_spiflash_dummy_len_plus[];
 
 void bootloader_enable_qio_mode(void)
 {
+    uint32_t old_ctrl_reg;
     uint32_t raw_flash_id;
     uint8_t mfg_id;
     uint16_t flash_id;
@@ -122,7 +127,8 @@ void bootloader_enable_qio_mode(void)
 
     /* Set up some of the SPIFLASH user/ctrl variables which don't change
        while we're probing using execute_flash_command() */
-    SPIFLASH.ctrl.val = 0;
+    old_ctrl_reg = SPIFLASH.ctrl.val;
+    SPIFLASH.ctrl.val = SPI_WP_REG; // keep WP high while idle, otherwise leave DIO mode
     SPIFLASH.user.usr_dummy = 0;
     SPIFLASH.user.usr_addr = 0;
     SPIFLASH.user.usr_command = 1;
@@ -147,12 +153,16 @@ void bootloader_enable_qio_mode(void)
         ESP_LOGI(TAG, "Enabling default flash chip QIO");
     }
 
-    enable_qio_mode(chip_data[i].read_status_fn,
-                    chip_data[i].write_status_fn,
-                    chip_data[i].status_qio_bit);
+    esp_err_t res = enable_qio_mode(chip_data[i].read_status_fn,
+                                    chip_data[i].write_status_fn,
+                                    chip_data[i].status_qio_bit);
+    if (res != ESP_OK) {
+        // Restore SPI flash CTRL setting, to keep us in DIO/DOUT mode
+        SPIFLASH.ctrl.val = old_ctrl_reg;
+    }
 }
 
-static void enable_qio_mode(read_status_fn_t read_status_fn,
+static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
                             write_status_fn_t write_status_fn,
                             uint8_t status_qio_bit)
 {
@@ -160,15 +170,16 @@ static void enable_qio_mode(read_status_fn_t read_status_fn,
     const uint32_t spiconfig = ets_efuse_get_spiconfig();
 
     if (spiconfig != EFUSE_SPICONFIG_SPI_DEFAULTS && spiconfig != EFUSE_SPICONFIG_HSPI_DEFAULTS) {
-        // spiconfig specifies a custom efuse pin configuration. This config defines all pins -except- WP.
+        // spiconfig specifies a custom efuse pin configuration. This config defines all pins -except- WP,
+        // which is compiled into the bootloader instead.
         //
-        // For now, in this situation we only support Quad I/O mode for ESP32-D2WD where WP pin is known.
+        // Most commonly an overriden pin mapping means ESP32-D2WD. Warn if chip is ESP32-D2WD
+        // but someone has changed the WP pin assignment from that chip's WP pin.
         uint32_t chip_ver = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_RESERVE);
         uint32_t pkg_ver = chip_ver & 0x7;
-        const uint32_t PKG_VER_ESP32_D2WD = 2; // TODO: use chip detection API once available
-        if (pkg_ver != PKG_VER_ESP32_D2WD) {
-            ESP_LOGE(TAG, "Quad I/O is only supported for standard pin numbers or ESP32-D2WD. Falling back to Dual I/O.");
-            return;
+        const int PKG_VER_ESP32_D2WD = 2; // TODO: use chip detection API once available
+        if (pkg_ver == PKG_VER_ESP32_D2WD && CONFIG_BOOTLOADER_SPI_WP_PIN != ESP32_D2WD_WP_GPIO) {
+            ESP_LOGW(TAG, "Chip is ESP32-D2WD but flash WP pin is different value to internal flash");
         }
     }
 
@@ -187,7 +198,7 @@ static void enable_qio_mode(read_status_fn_t read_status_fn,
         ESP_LOGD(TAG, "Updated flash chip status 0x%x", status);
         if ((status & (1<<status_qio_bit)) == 0) {
             ESP_LOGE(TAG, "Failed to set QIE bit, not enabling QIO mode");
-            return;
+            return ESP_FAIL;
         }
 
     } else {
@@ -205,7 +216,9 @@ static void enable_qio_mode(read_status_fn_t read_status_fn,
 
     esp_rom_spiflash_config_readmode(mode);
 
-    esp_rom_spiflash_select_qio_pins(ESP32_D2WD_WP_GPIO, spiconfig);
+    esp_rom_spiflash_select_qio_pins(CONFIG_BOOTLOADER_SPI_WP_PIN, spiconfig);
+
+    return ESP_OK;
 }
 
 static unsigned read_status_8b_rdsr()
