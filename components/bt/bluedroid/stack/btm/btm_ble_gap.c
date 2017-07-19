@@ -640,10 +640,16 @@ void BTM_BleEnableMixedPrivacyMode(BOOLEAN mixed_on)
 ** Returns          BOOLEAN privacy mode set success; otherwise failed.
 **
 *******************************************************************************/
-BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode)
+BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode, tBTM_SET_LOCAL_PRIVACY_CBACK *set_local_privacy_cback)
 {
 #if BLE_PRIVACY_SPT == TRUE
     tBTM_BLE_CB  *p_cb = &btm_cb.ble_ctr_cb;
+    tBTM_LE_RANDOM_CB *random_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
+    if (random_cb){
+        random_cb->set_local_privacy_cback = set_local_privacy_cback;
+    }else{
+        BTM_TRACE_ERROR("%s,random_cb = NULL", __func__);
+    }
 
     BTM_TRACE_EVENT ("%s\n", __func__);
 

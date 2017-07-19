@@ -69,7 +69,9 @@ enum {
     BTM_REPEATED_ATTEMPTS,              /* 19 repeated attempts for LE security requests */
     BTM_MODE4_LEVEL4_NOT_SUPPORTED,     /* 20 Secure Connections Only Mode can't be supported */
     BTM_PEER_LE_DATA_LEN_UNSUPPORTED,   /* 21 peer setting data length is unsupported*/
-    BTM_CONTROL_LE_DATA_LEN_UNSUPPORTED /* 22 controller setting data length is unsupported*/
+    BTM_CONTROL_LE_DATA_LEN_UNSUPPORTED,/* 22 controller setting data length is unsupported*/
+    BTM_SET_PRIVACY_SUCCESS,            /* 23 enable/disable local privacy success */
+    BTM_SET_PRIVACY_FAIL,               /* 24 enable/disable local privacy failed*/
 };
 
 typedef uint8_t tBTM_STATUS;
@@ -174,6 +176,8 @@ typedef UINT8 (tBTM_FILTER_CB) (BD_ADDR bd_addr, DEV_CLASS dc);
 typedef void (tBTM_UPDATE_CONN_PARAM_CBACK) (UINT8 status, BD_ADDR bd_addr, tBTM_LE_UPDATE_CONN_PRAMS *update_conn_params);
 
 typedef void (tBTM_SET_PKT_DATA_LENGTH_CBACK) (UINT8 status, tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS *data_length_params);
+
+typedef void (tBTM_SET_LOCAL_PRIVACY_CBACK) (UINT8 status);
 
 
 /*****************************************************************************

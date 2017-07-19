@@ -93,6 +93,7 @@ typedef enum {
     ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT,                   /*!< When set the static rand address complete, the event comes */
     ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT,                     /*!< When update connection parameters complete, the event comes */
     ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT,                /*!< When set pkt lenght complete, the event comes */
+    ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT,             /*!< When  Enable/disable privacy on the local device complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
 /// Advertising data maximum length
@@ -539,6 +540,12 @@ typedef union {
         esp_bt_status_t status;                     /*!< Indicate the set pkt data length operation success status */
         esp_ble_pkt_data_length_params_t params;    /*!<  pkt data length value */
     } pkt_data_lenth_cmpl;                          /*!< Event parameter of ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT
+     */
+    struct ble_local_privacy_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate the set local privacy operation success status */
+    } local_privacy_cmpl;                          /*!< Event parameter of ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT */
 } esp_ble_gap_cb_param_t;
 
 /**
