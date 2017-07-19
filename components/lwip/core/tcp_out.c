@@ -152,6 +152,7 @@ tcp_send_fin(struct tcp_pcb *pcb)
       return ERR_OK;
     }
   }
+
   /* no data, no length, flags, copy=1, no optdata */
   return tcp_enqueue_flags(pcb, TCP_FIN);
 }
@@ -1067,7 +1068,7 @@ tcp_output(struct tcp_pcb *pcb)
     seg->oversize_left = 0;
 #endif /* TCP_OVERSIZE_DBGCHECK */
     err = tcp_output_segment(seg, pcb);
-    if (err != ERR_OK) {
+    if ((err != ERR_OK) && (err != ERR_RTE)) {
       /* segment could not be sent, for whatever reason */
       pcb->flags |= TF_NAGLEMEMERR;
       return err;
