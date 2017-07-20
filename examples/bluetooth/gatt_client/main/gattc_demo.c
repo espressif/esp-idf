@@ -24,6 +24,8 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include "nvs.h"
+#include "nvs_flash.h"
 #include "controller.h"
 
 #include "bt.h"
@@ -409,6 +411,14 @@ void gattc_client_test(void)
 
 void app_main()
 {
+    // Initialize NVS.
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( ret );
+
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     esp_bt_controller_init(&bt_cfg);
     esp_bt_controller_enable(ESP_BT_MODE_BTDM);

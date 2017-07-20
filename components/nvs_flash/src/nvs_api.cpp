@@ -86,6 +86,17 @@ extern "C" esp_err_t nvs_flash_init(void)
     return nvs_flash_init_custom(partition->address / SPI_FLASH_SEC_SIZE,
             partition->size / SPI_FLASH_SEC_SIZE);
 }
+
+extern "C" esp_err_t nvs_flash_erase()
+{
+    const esp_partition_t* partition = esp_partition_find_first(
+            ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
+    if (partition == NULL) {
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    return esp_partition_erase_range(partition, 0, partition->size);
+}
 #endif
 
 static esp_err_t nvs_find_ns_handle(nvs_handle handle, HandleEntry& entry)

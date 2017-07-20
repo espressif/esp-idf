@@ -91,7 +91,12 @@ config_t *config_new(const char *filename)
     nvs_handle fp;
     err = nvs_open(filename, NVS_READWRITE, &fp);
     if (err != ESP_OK) {
-        LOG_ERROR("%s unable to open file '%s'\n", __func__, filename);
+        if (err == ESP_ERR_NVS_NOT_INITIALIZED) {
+            LOG_ERROR("%s: NVS not initialized. "
+                      "Call nvs_flash_init before initializing bluetooth.", __func__);
+        } else {
+            LOG_ERROR("%s unable to open NVS namespace '%s'\n", __func__, filename);
+        }
         config_free(config);
         return NULL;
     }
@@ -316,6 +321,10 @@ bool config_save(const config_t *config, const char *filename)
 
     err = nvs_open(filename, NVS_READWRITE, &fp);
     if (err != ESP_OK) {
+        if (err == ESP_ERR_NVS_NOT_INITIALIZED) {
+            LOG_ERROR("%s: NVS not initialized. "
+                      "Call nvs_flash_init before initializing bluetooth.", __func__);
+        }
         err_code |= 0x02;
         goto error;
     }
