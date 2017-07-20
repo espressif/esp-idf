@@ -1,0 +1,50 @@
+menu "FAT FS Wear Levelling Settings"
+
+choice WL_SECTOR_SIZE
+   bool "FAT FS sector size"
+   default WL_SECTOR_SIZE_FAT
+   help
+       Specify the FAT sector size.
+       You can set default sector size or size that will
+       fit to the flash device sector size.
+       
+config WL_SECTOR_SIZE_FAT
+   bool "512"
+config WL_SECTOR_SIZE_FLASH
+   bool "4096"
+endchoice
+
+config WL_SECTOR_SIZE
+    int
+    default 512 if WL_SECTOR_SIZE_FAT
+    default 4096 if WL_SECTOR_SIZE_FLASH
+
+choice WL_SECTOR_MODE
+   bool "Sector store mode"
+   default WL_SECTOR_MODE_PERF
+   help
+       Specify the mode to store data into the flash.
+       
+config WL_SECTOR_MODE_PERF
+   bool "Perfomance"
+   help
+       In Performance mode a data will be stored to the RAM and then 
+       stored back to the flash. Compare to the Safety mode, this operation
+       faster, but if by the erase sector operation power will be off, the 
+       data from complete flash device sector will be lost.
+       
+config WL_SECTOR_MODE_SAFE
+   bool "Safety"
+   help
+       In Safety mode a data from complete flash device sector will be stored to the flash and then 
+       stored back to the flash. Compare to the Performance mode, this operation
+       slower, but if by the erase sector operation power will be off, the 
+       data of the full flash device sector will not be lost.
+endchoice
+
+config WL_SECTOR_MODE
+    int
+    default 0 if WL_SECTOR_MODE_PERF
+    default 1 if WL_SECTOR_MODE_SAFE
+
+endmenu

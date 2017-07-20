@@ -14,6 +14,19 @@ memory mapping data in the external SPI flash through the partition component. I
 also has higher-level APIs which work with FAT filesystem defined in 
 the :doc:`FAT filesystem </api-reference/storage/fatfs>`.
 
+The weat levelling componwnt, together with FAT FS component, works with FAT FS sector size 4096 
+bytes which is standard size of the flash devices. In this mode the component has best perfomance, 
+but needs additional memoty in the RAM. To save internal memory the component has two additional modes 
+to work with sector size 512 bytes: Performance and Safety modes. In Performance mode by erase sector 
+operation data will be stored to the RAM, sector will be erased and then data will be stored 
+back to the flash. If by this operation power off situation will occure, the complete 4096 bytes 
+will be lost. To prevent this the Safety mode was implemented. In dafety mode the data will be first 
+stored to the flash and after sector will be erased, will be stored back. If power off situation will 
+occure, after power on, the data will be recovered. 
+By default defined the sector size 512 bytes and Performance mode. To change these values please use 
+the configuratoin menu.  
+
+
 The wear levelling component does not cache data in RAM. Write and erase functions 
 modify flash directly, and flash contents is consistent when the function returns.
 
