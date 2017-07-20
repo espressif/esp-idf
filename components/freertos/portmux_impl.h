@@ -24,11 +24,12 @@
 /* This header exists for performance reasons, in order to inline the
    implementation of vPortCPUAcquireMutexIntsDisabled and
    vPortCPUReleaseMutexIntsDisabled into the
-   vTaskEnterCritical/vTaskExitCritical functions as well as the
+   vTaskEnterCritical/vTaskExitCritical functions in task.c as well as the
    vPortCPUAcquireMutex/vPortCPUReleaseMutex implementations.
 
-   Normally this kind of performance hack is over the top, but these
-   functions get used a great deal by FreeRTOS internals.
+   Normally this kind of performance hack is over the top, but
+   vTaskEnterCritical/vTaskExitCritical is called a great
+   deal by FreeRTOS internals.
 
    It should be #included by freertos port.c or tasks.c, in esp-idf.
 */
@@ -37,16 +38,28 @@
 /* XOR one core ID with this value to get the other core ID */
 #define CORE_ID_XOR_SWAP (CORE_ID_PRO ^ CORE_ID_APP)
 
+static inline bool __attribute__((always_inline))
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-static inline void vPortCPUAcquireMutexIntsDisabled(portMUX_TYPE *mux, const char *fnName, int line) {
+vPortCPUAcquireMutexIntsDisabled(portMUX_TYPE *mux, int timeout_cycles, const char *fnName, int line) {
 #else
-static inline void vPortCPUAcquireMutexIntsDisabled(portMUX_TYPE *mux) {
+vPortCPUAcquireMutexIntsDisabled(portMUX_TYPE *mux, int timeout_cycles) {
 #endif
 #if !CONFIG_FREERTOS_UNICORE
 	uint32_t res;
 	portBASE_TYPE coreID, otherCoreID;
+	uint32_t ccount_start;
+	bool set_timeout = timeout_cycles > portMUX_NO_TIMEOUT;
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-	uint32_t timeout=(1<<16);
+	if (!set_timeout) {
+		timeout_cycles = 10000; // Always set a timeout in debug mode
+		set_timeout = true;
+	}
+#endif
+	if (set_timeout) { // Timeout
+		RSR(CCOUNT, ccount_start);
+	}
+
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 	uint32_t owner = mux->owner;
 	if (owner != portMUX_FREE_VAL && owner != CORE_ID_PRO && owner != CORE_ID_APP) {
 		ets_printf("ERROR: vPortCPUAcquireMutex: mux %p is uninitialized (0x%X)! Called from %s line %d.\n", mux, owner, fnName, line);
@@ -72,14 +85,22 @@ static inline void vPortCPUAcquireMutexIntsDisabled(portMUX_TYPE *mux) {
 		res = coreID;
 		uxPortCompareSet(&mux->owner, portMUX_FREE_VAL, &res);
 
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
- 		timeout--;
-		if (timeout == 0) {
-			ets_printf("Timeout on mux! last non-recursive lock %s line %d, curr %s line %d\n", mux->lastLockedFn, mux->lastLockedLine, fnName, line);
-			ets_printf("Owner 0x%x count %d\n", mux->owner, mux->count);
+		if (res != otherCoreID) {
+			break; // mux->owner is "our" coreID
 		}
+
+		if (set_timeout) {
+			uint32_t ccount_now;
+			RSR(CCOUNT, ccount_now);
+			if (ccount_now - ccount_start > (unsigned)timeout_cycles) {
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
+				ets_printf("Timeout on mux! last non-recursive lock %s line %d, curr %s line %d\n", mux->lastLockedFn, mux->lastLockedLine, fnName, line);
+				ets_printf("Owner 0x%x count %d\n", mux->owner, mux->count);
 #endif
-	} while (res == otherCoreID);
+				return false;
+			}
+		}
+	} while (1);
 
 	assert(res == coreID || res == portMUX_FREE_VAL); /* any other value implies memory corruption or uninitialized mux */
 	assert((res == portMUX_FREE_VAL) == (mux->count == 0)); /* we're first to lock iff count is zero */
@@ -97,12 +118,13 @@ static inline void vPortCPUAcquireMutexIntsDisabled(portMUX_TYPE *mux) {
 		ets_printf("Recursive lock: count=%d last non-recursive lock %s line %d, curr %s line %d\n", mux->count-1,
 				   mux->lastLockedFn, mux->lastLockedLine, fnName, line);
 	}
-#endif
-#endif
+#endif /* CONFIG_FREERTOS_PORTMUX_DEBUG */
+#endif /* CONFIG_FREERTOS_UNICORE */
+	return true;
 }
 
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-static inline void vPortCPUReleaseMutexIntsDisabled(portMUX_TYPE *mux, const char *fnName, int line) {
+ static inline void vPortCPUReleaseMutexIntsDisabled(portMUX_TYPE *mux, const char *fnName, int line) {
 #else
 static inline void vPortCPUReleaseMutexIntsDisabled(portMUX_TYPE *mux) {
 #endif

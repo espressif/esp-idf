@@ -4121,9 +4121,9 @@ For ESP32 FreeRTOS, vTaskEnterCritical implements both portENTER_CRITICAL and po
 			oldInterruptLevel=portENTER_CRITICAL_NESTED();
 		}
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-		vPortCPUAcquireMutexIntsDisabled( mux, function, line );
+		vPortCPUAcquireMutexIntsDisabled( mux, portMUX_NO_TIMEOUT, function, line );
 #else
-		vPortCPUAcquireMutexIntsDisabled( mux );
+		vPortCPUAcquireMutexIntsDisabled( mux, portMUX_NO_TIMEOUT );
 #endif
 
 		if( schedulerRunning != pdFALSE )

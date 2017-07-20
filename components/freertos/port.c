@@ -315,14 +315,29 @@ void vPortCPUInitializeMutex(portMUX_TYPE *mux) {
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 void vPortCPUAcquireMutex(portMUX_TYPE *mux, const char *fnName, int line) {
 	unsigned int irqStatus = portENTER_CRITICAL_NESTED();
-	vPortCPUAcquireMutexIntsDisabled(mux, fnName, line);
+	vPortCPUAcquireMutexIntsDisabled(mux, portMUX_NO_TIMEOUT, fnName, line);
 	portEXIT_CRITICAL_NESTED(irqStatus);
 }
+
+bool vPortCPUAcquireMutexTimeout(portMUX_TYPE *mux, uint32_t timeout_cycles, const char *fnName, int line) {
+	unsigned int irqStatus = portENTER_CRITICAL_NESTED();
+	bool result = vPortCPUAcquireMutexIntsDisabled(mux, timeout_cycles, fnName, line);
+	portEXIT_CRITICAL_NESTED(irqStatus);
+	return result;
+}
+
 #else
 void vPortCPUAcquireMutex(portMUX_TYPE *mux) {
 	unsigned int irqStatus = portENTER_CRITICAL_NESTED();
-	vPortCPUAcquireMutexIntsDisabled(mux);
+	vPortCPUAcquireMutexIntsDisabled(mux, portMUX_NO_TIMEOUT);
 	portEXIT_CRITICAL_NESTED(irqStatus);
+}
+
+bool vPortCPUAcquireMutexTimeout(portMUX_TYPE *mux, int timeout_cycles) {
+	unsigned int irqStatus = portENTER_CRITICAL_NESTED();
+	bool result = vPortCPUAcquireMutexIntsDisabled(mux, timeout_cycles);
+	portEXIT_CRITICAL_NESTED(irqStatus);
+	return result;
 }
 #endif
 
