@@ -318,8 +318,14 @@ uint64_t esp_deep_sleep_get_ext1_wakeup_status()
     }
     uint32_t status = REG_GET_FIELD(RTC_CNTL_EXT_WAKEUP1_STATUS_REG, RTC_CNTL_EXT_WAKEUP1_STATUS);
     // Translate bit map of RTC IO numbers into the bit map of GPIO numbers
-    uint64_t gpio_mask = 0;
-    for (int gpio = 0; gpio < GPIO_PIN_COUNT; ++gpio) {
+    uint64_t gpio_mask = 1;
+    uint64_t gpio_return = 0;
+    for (unsigned int gpio = 0; gpio < GPIO_PIN_COUNT; ++gpio) {
+
+        if(gpio > 0) {
+            gpio_mask <<= 0x1;
+        }
+
         if (!RTC_GPIO_IS_VALID_GPIO(gpio)) {
             continue;
         }
@@ -327,9 +333,9 @@ uint64_t esp_deep_sleep_get_ext1_wakeup_status()
         if ((status & BIT(rtc_pin)) == 0) {
             continue;
         }
-        gpio_mask |= BIT(gpio);
+        gpio_return |= gpio_mask;
     }
-    return gpio_mask;
+    return gpio_return;
 }
 
 esp_deep_sleep_wakeup_cause_t esp_deep_sleep_get_wakeup_cause()
