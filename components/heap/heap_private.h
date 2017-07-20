@@ -26,7 +26,7 @@
 /* Type for describing each registered heap */
 typedef struct {
     size_t type;
-    uint32_t caps[SOC_MEMORY_TYPE_NO_PRIOS]; ///< Capabilities for the type of memory in this healp (as a prioritised set). Copied from soc_memory_types so it's in RAM not flash.
+    uint32_t caps[SOC_MEMORY_TYPE_NO_PRIOS]; ///< Capabilities for the type of memory in this heap (as a prioritised set). Copied from soc_memory_types so it's in RAM not flash.
     intptr_t start;
     intptr_t end;
     portMUX_TYPE heap_mux;
@@ -35,4 +35,6 @@ typedef struct {
 
 extern heap_t *registered_heaps;
 extern size_t num_registered_heaps;
+
+bool heap_caps_match(const heap_t *heap, uint32_t caps);
 
