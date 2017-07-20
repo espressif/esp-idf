@@ -134,7 +134,7 @@ build_example () {
 
 EXAMPLE_NUM=0
 
-find ${IDF_PATH}/examples/ -type f -name Makefile | \
+find ${IDF_PATH}/examples/ -type f -name Makefile | sort | \
 while read FN
 do
     if [[ $EXAMPLE_NUM -lt $START_NUM || $EXAMPLE_NUM -ge $END_NUM ]]
