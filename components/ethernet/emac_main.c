@@ -449,10 +449,12 @@ static void emac_process_rx_unavail(void)
 
     while (emac_config.cnt_rx < DMA_RX_BUF_NUM) {
 
+        emac_config.cnt_rx++;
+
         //copy data to lwip
         emac_config.emac_tcpip_input((void *)(emac_config.dma_erx[emac_config.dirty_rx].basic.desc2),
                                      (((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
-        emac_config.cnt_rx++;
+
         if (emac_config.cnt_rx > DMA_RX_BUF_NUM) {
             ESP_LOGE(TAG, "emac rx unavail buf err !!\n");
         }
@@ -476,11 +478,11 @@ static void emac_process_rx(void)
     if (((uint32_t) & (emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) != cur_rx_desc)) {
 
         while (((uint32_t) & (emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) != cur_rx_desc) && emac_config.cnt_rx < DMA_RX_BUF_NUM ) {
+            emac_config.cnt_rx++;
+
             //copy data to lwip
             emac_config.emac_tcpip_input((void *)(emac_config.dma_erx[emac_config.dirty_rx].basic.desc2),
                                          (((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
-
-            emac_config.cnt_rx++;
 
             if (emac_config.cnt_rx > DMA_RX_BUF_NUM ) {
                 ESP_LOGE(TAG, "emac rx buf err!!\n");
@@ -494,10 +496,11 @@ static void emac_process_rx(void)
             if ((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0 & EMAC_DESC_RX_OWN) == 0) {
                 while (emac_config.cnt_rx < DMA_RX_BUF_NUM) {
 
+                    emac_config.cnt_rx++;
                     //copy data to lwip
                     emac_config.emac_tcpip_input((void *)(emac_config.dma_erx[emac_config.dirty_rx].basic.desc2),
                                                  (((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
-                    emac_config.cnt_rx++;
+
                     if (emac_config.cnt_rx > DMA_RX_BUF_NUM) {
                         ESP_LOGE(TAG, "emac rx buf err!!!\n");
                     }
