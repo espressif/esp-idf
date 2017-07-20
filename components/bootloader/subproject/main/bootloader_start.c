@@ -53,17 +53,18 @@
 
 extern int _bss_start;
 extern int _bss_end;
+extern int _data_start;
+extern int _data_end;
 
 static const char* TAG = "boot";
-/*
-We arrive here after the bootloader finished loading the program from flash. The hardware is mostly uninitialized,
-flash cache is down and the app CPU is in reset. We do have a stack, so we can do the initialization in C.
-*/
 
+/* Reduce literal size for some generic string literals */
+#define MAP_MSG "Mapping segment %d as %s"
+#define MAP_ERR_MSG "Image contains multiple %s segments. Only the last one will be mapped."
 
 void bootloader_main();
 static void unpack_load_app(const esp_partition_pos_t *app_node);
-void print_flash_info(const esp_image_header_t* pfhdr);
+static void print_flash_info(const esp_image_header_t* pfhdr);
 static void set_cache_and_start_app(uint32_t drom_addr,
     uint32_t drom_load_addr,
     uint32_t drom_size,
@@ -76,9 +77,25 @@ static void clock_configure(void);
 static void uart_console_configure(void);
 static void wdt_reset_check(void);
 
-void IRAM_ATTR call_start_cpu0()
+/*
+ * We arrive here after the ROM bootloader finished loading this second stage bootloader from flash.
+ * The hardware is mostly uninitialized, flash cache is down and the app CPU is in reset.
+ * We do have a stack, so we can do the initialization in C.
+ */
+void call_start_cpu0()
 {
     cpu_configure_region_protection();
+
+    /* Sanity check that static RAM is after the stack */
+#ifndef NDEBUG
+    {
+        int *sp = get_sp();
+        assert(&_bss_start <= &_bss_end);
+        assert(&_data_start <= &_data_end);
+        assert(sp < &_bss_start);
+        assert(sp < &_data_start);
+    }
+#endif
 
     //Clear bss
     memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
@@ -253,7 +270,7 @@ void bootloader_main()
     memset(&bs, 0, sizeof(bs));
 
     ESP_LOGI(TAG, "compile time " __TIME__ );
-    ets_set_appcpu_boot_addr(0); 
+    ets_set_appcpu_boot_addr(0);
 
     /* disable watch dog here */
     REG_CLR_BIT( RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN );
@@ -276,7 +293,8 @@ void bootloader_main()
     bootloader_enable_qio_mode();
 #endif
 
-    if(esp_image_load_header(0x1000, true, &fhdr) != ESP_OK) {
+    if (bootloader_flash_read(ESP_BOOTLOADER_OFFSET, &fhdr,
+                              sizeof(esp_image_header_t), true) != ESP_OK) {
         ESP_LOGE(TAG, "failed to load bootloader header!");
         return;
     }
@@ -408,30 +426,13 @@ void bootloader_main()
 static void unpack_load_app(const esp_partition_pos_t* partition)
 {
     esp_err_t err;
-    esp_image_header_t image_header;
-    uint32_t image_length;
+    esp_image_metadata_t data;
 
-    /* TODO: verify the app image as part of OTA boot decision, so can have fallbacks */
-    err = esp_image_basic_verify(partition->offset, true, &image_length);
+    /* TODO: load the app image as part of OTA boot decision, so can fallback if loading fails */
+    /* Loading the image here also includes secure boot verification */
+    err = esp_image_load(ESP_IMAGE_LOAD, partition, &data);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to verify app image @ 0x%x (%d)", partition->offset, err);
-        return;
-    }
-
-#ifdef CONFIG_SECURE_BOOT_ENABLED
-    if (esp_secure_boot_enabled()) {
-        ESP_LOGI(TAG, "Verifying app signature @ 0x%x (length 0x%x)", partition->offset, image_length);
-        err = esp_secure_boot_verify_signature(partition->offset, image_length);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "App image @ 0x%x failed signature verification (%d)", partition->offset, err);
-            return;
-        }
-        ESP_LOGD(TAG, "App signature is valid");
-    }
-#endif
-
-    if (esp_image_load_header(partition->offset, true, &image_header) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to load app image header @ 0x%x", partition->offset);
         return;
     }
 
@@ -442,124 +443,39 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
     uint32_t irom_load_addr = 0;
     uint32_t irom_size = 0;
 
-    /* Reload the RTC memory segments whenever a non-deepsleep reset
-       is occurring */
-    bool load_rtc_memory = rtc_get_reset_reason(0) != DEEPSLEEP_RESET;
-
-    ESP_LOGD(TAG, "bin_header: %u %u %u %u %08x", image_header.magic,
-             image_header.segment_count,
-             image_header.spi_mode,
-             image_header.spi_size,
-             (unsigned)image_header.entry_addr);
-
-    /* Important: From here on this function cannot access any global data (bss/data segments),
-       as loading the app image may overwrite these.
-    */
-    for (int segment = 0; segment < image_header.segment_count; segment++) {
-        esp_image_segment_header_t segment_header;
-        uint32_t data_offs;
-        if(esp_image_load_segment_header(segment, partition->offset,
-                                         &image_header, true,
-                                         &segment_header, &data_offs) != ESP_OK) {
-            ESP_LOGE(TAG, "failed to load segment header #%d", segment);
-            return;
-        }
-
-        const uint32_t address = segment_header.load_addr;
-        bool load = true;
-        bool map = false;
-        if (address == 0x00000000) {        // padding, ignore block
-            load = false;
-        }
-        if (address == 0x00000004) {
-            load = false;                   // md5 checksum block
-            // TODO: actually check md5
-        }
-
-        if (address >= SOC_DROM_LOW && address < SOC_DROM_HIGH) {
-            ESP_LOGD(TAG, "found drom segment, map from %08x to %08x", data_offs,
-                      segment_header.load_addr);
-            drom_addr = data_offs;
-            drom_load_addr = segment_header.load_addr;
-            drom_size = segment_header.data_len + sizeof(segment_header);
-            load = false;
-            map = true;
-        }
-
-        if (address >= SOC_IROM_LOW && address < SOC_IROM_HIGH) {
-            ESP_LOGD(TAG, "found irom segment, map from %08x to %08x", data_offs,
-                      segment_header.load_addr);
-            irom_addr = data_offs;
-            irom_load_addr = segment_header.load_addr;
-            irom_size = segment_header.data_len + sizeof(segment_header);
-            load = false;
-            map = true;
-        }
-
-        if (!load_rtc_memory && address >= SOC_RTC_IRAM_LOW && address < SOC_RTC_IRAM_HIGH) {
-            ESP_LOGD(TAG, "Skipping RTC code segment at %08x\n", data_offs);
-            load = false;
-        }
-
-        if (!load_rtc_memory && address >= SOC_RTC_DATA_LOW && address < SOC_RTC_DATA_HIGH) {
-            ESP_LOGD(TAG, "Skipping RTC data segment at %08x\n", data_offs);
-            load = false;
-        }
-
-        ESP_LOGI(TAG, "segment %d: paddr=0x%08x vaddr=0x%08x size=0x%05x (%6d) %s", segment, data_offs - sizeof(esp_image_segment_header_t),
-                 segment_header.load_addr, segment_header.data_len, segment_header.data_len, (load)?"load":(map)?"map":"");
-
-        if (load) {
-            intptr_t sp, start_addr, end_addr;
-            ESP_LOGV(TAG, "bootloader_mmap data_offs=%08x data_len=%08x", data_offs, segment_header.data_len);
-
-            start_addr = segment_header.load_addr;
-            end_addr = start_addr + segment_header.data_len;
-
-            /* Before loading segment, check it doesn't clobber
-               bootloader RAM... */
-
-            if (end_addr < 0x40000000) {
-                if (end_addr > 0x3FFE0000) {
-                    /* Temporary workaround for an ugly crash, until we allow >192KB of static DRAM */
-                    ESP_LOGE(TAG, "DRAM segment %d (start 0x%08x end 0x%08x) too large for IDF to boot",
-                             segment, start_addr, end_addr);
-                    return;
-                }
-
-                sp = (intptr_t)get_sp();
-                if (end_addr > sp) {
-                    ESP_LOGE(TAG, "Segment %d end address %08x overlaps bootloader stack %08x - can't load",
-                         segment, end_addr, sp);
-                    return;
-                }
-                if (end_addr > sp - 256) {
-                    /* We don't know for sure this is the stack high water mark, so warn if
-                       it seems like we may overflow.
-                    */
-                    ESP_LOGW(TAG, "Segment %d end address %08x close to stack pointer %08x",
-                             segment, end_addr, sp);
-                }
+    // Find DROM & IROM addresses, to configure cache mappings
+    for (int i = 0; i < data.image.segment_count; i++) {
+        esp_image_segment_header_t *header = &data.segments[i];
+        if (header->load_addr >= SOC_IROM_LOW && header->load_addr < SOC_IROM_HIGH) {
+            if (drom_addr != 0) {
+                ESP_LOGE(TAG, MAP_ERR_MSG, "DROM");
+            } else {
+                ESP_LOGD(TAG, "Mapping segment %d as %s", i, "DROM");
             }
-
-            const void *data = bootloader_mmap(data_offs, segment_header.data_len);
-            if(!data) {
-                ESP_LOGE(TAG, "bootloader_mmap(0x%xc, 0x%x) failed",
-                         data_offs, segment_header.data_len);
-                return;
+            drom_addr = data.segment_data[i];
+            drom_load_addr = header->load_addr;
+            drom_size = header->data_len;
+        }
+        if (header->load_addr >= SOC_DROM_LOW && header->load_addr < SOC_DROM_HIGH) {
+            if (irom_addr != 0) {
+                ESP_LOGE(TAG, MAP_ERR_MSG, "IROM");
+            } else {
+                ESP_LOGD(TAG, "Mapping segment %d as %s", i, "IROM");
             }
-            memcpy((void *)segment_header.load_addr, data, segment_header.data_len);
-            bootloader_munmap(data);
+            irom_addr = data.segment_data[i];
+            irom_load_addr = header->load_addr;
+            irom_size = header->data_len;
         }
     }
 
+    ESP_LOGD(TAG, "calling set_cache_and_start_app");
     set_cache_and_start_app(drom_addr,
         drom_load_addr,
         drom_size,
         irom_addr,
         irom_load_addr,
         irom_size,
-        image_header.entry_addr);
+        data.image.entry_addr);
 }
 
 static void set_cache_and_start_app(
@@ -574,6 +490,14 @@ static void set_cache_and_start_app(
     ESP_LOGD(TAG, "configure drom and irom and start");
     Cache_Read_Disable( 0 );
     Cache_Flush( 0 );
+
+    /* Clear the MMU entries that are already set up,
+       so the new app only has the mappings it creates.
+    */
+    for (int i = 0; i < DPORT_FLASH_MMU_TABLE_SIZE; i++) {
+        DPORT_PRO_FLASH_MMU_TABLE[i] = DPORT_FLASH_MMU_TABLE_INVALID_VAL;
+    }
+
     uint32_t drom_page_count = (drom_size + 64*1024 - 1) / (64*1024); // round up to 64k
     ESP_LOGV(TAG, "d mmu set paddr=%08x vaddr=%08x size=%d n=%d", drom_addr & 0xffff0000, drom_load_addr & 0xffff0000, drom_size, drom_page_count );
     int rc = cache_flash_mmu_set( 0, 0, drom_load_addr & 0xffff0000, drom_addr & 0xffff0000, 64, drom_page_count );
@@ -632,7 +556,7 @@ static void update_flash_config(const esp_image_header_t* pfhdr)
     Cache_Read_Enable( 0 );
 }
 
-void print_flash_info(const esp_image_header_t* phdr)
+static void print_flash_info(const esp_image_header_t* phdr)
 {
 #if (BOOT_LOG_LEVEL >= BOOT_LOG_LEVEL_NOTICE)
 
@@ -861,4 +785,10 @@ static void wdt_reset_check(void)
         wdt_reset_info_dump(1);
     }
     wdt_reset_cpu0_info_enable();
+}
+
+void __assert_func(const char *file, int line, const char *func, const char *expr)
+{
+    ESP_LOGE(TAG, "Assert failed in %s, %s:%d (%s)", func, file, line, expr);
+    while(1) {}
 }
