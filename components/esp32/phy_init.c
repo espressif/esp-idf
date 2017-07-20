@@ -159,22 +159,18 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle handle,
 
 esp_err_t esp_phy_load_cal_data_from_nvs(esp_phy_calibration_data_t* out_cal_data)
 {
-    esp_err_t err = nvs_flash_init();
-    if (err != ESP_OK) {
-        ESP_LOGW(TAG, "%s: failed to initialize NVS (0x%x)", __func__, err);
-        return err;
-    }
     nvs_handle handle;
-    err = nvs_open(PHY_NAMESPACE, NVS_READONLY, &handle);
-    if (err != ESP_OK) {
+    esp_err_t err = nvs_open(PHY_NAMESPACE, NVS_READONLY, &handle);
+    if (err == ESP_ERR_NVS_NOT_INITIALIZED) {
+        ESP_LOGE(TAG, "%s: NVS has not been initialized. "
+                "Call nvs_flash_init before starting WiFi/BT.", __func__);
+    } else if (err != ESP_OK) {
         ESP_LOGD(TAG, "%s: failed to open NVS namespace (0x%x)", __func__, err);
         return err;
     }
-    else {
-        err = load_cal_data_from_nvs_handle(handle, out_cal_data);
-        nvs_close(handle);
-        return err;
-    }
+    err = load_cal_data_from_nvs_handle(handle, out_cal_data);
+    nvs_close(handle);
+    return err;
 }
 
 esp_err_t esp_phy_store_cal_data_to_nvs(const esp_phy_calibration_data_t* cal_data)

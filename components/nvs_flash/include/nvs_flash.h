@@ -18,6 +18,8 @@
 extern "C" {
 #endif
 
+#include "nvs.h"
+
 /**
  * @brief Initialize NVS flash storage with layout given in the partition table.
  *
@@ -29,6 +31,17 @@ extern "C" {
  */
 esp_err_t nvs_flash_init(void);
 
+
+/**
+ * @brief Erase NVS partition
+ *
+ * This function erases all contents of NVS partition
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_FOUND if there is no NVS partition in the partition table
+ */
+esp_err_t nvs_flash_erase(void);
 
 #ifdef __cplusplus
 }
