@@ -514,6 +514,9 @@ esp_err_t ledc_set_fade_with_time(ledc_mode_t speed_mode, ledc_channel_t channel
         return ESP_OK;
     }
     int total_cycles = max_fade_time_ms * freq / 1000;
+    if (total_cycles == 0) {
+        return ledc_set_duty(speed_mode, channel, target_duty);
+    }
     int scale, cycle_num;
     if (total_cycles > duty_delta) {
         scale = 1;
