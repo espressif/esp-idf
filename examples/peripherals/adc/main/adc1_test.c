@@ -15,13 +15,13 @@
 #include "driver/gpio.h"
 #include "driver/adc.h"
 
-#define ADC1_TEST_CHANNEL (4)
+#define ADC1_TEST_CHANNEL (ADC1_CHANNEL_6)
 
 void adc1task(void* arg)
 {
     // initialize ADC
     adc1_config_width(ADC_WIDTH_12Bit);
-    adc1_config_channel_atten(ADC1_TEST_CHANNEL,ADC_ATTEN_11db);
+    adc1_config_channel_atten(ADC1_TEST_CHANNEL, ADC_ATTEN_11db);
     while(1){
         printf("The adc1 value:%d\n",adc1_get_voltage(ADC1_TEST_CHANNEL));
         vTaskDelay(1000/portTICK_PERIOD_MS);

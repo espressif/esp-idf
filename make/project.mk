@@ -10,7 +10,7 @@
 # where this file is located.
 #
 
-.PHONY: build-components menuconfig defconfig all build clean all_binaries check-submodules size size-components size-files
+.PHONY: build-components menuconfig defconfig all build clean all_binaries check-submodules size size-components size-files list-components
 all: all_binaries
 # see below for recipe of 'all' target
 #
@@ -33,6 +33,7 @@ help:
 	@echo "make erase_flash - Erase entire flash contents"
 	@echo "make monitor - Run idf_monitor tool to monitor serial output from app"
 	@echo "make simple_monitor - Monitor serial output on terminal console"
+	@echo "make list-components - List all components in the project"
 	@echo ""
 	@echo "make app - Build just the app"
 	@echo "make app-flash - Flash just the app"
@@ -90,29 +91,40 @@ export PROJECT_PATH
 endif
 
 # A list of the "common" makefiles, to use as a target dependency
-COMMON_MAKEFILES := $(abspath $(IDF_PATH)/make/project.mk $(IDF_PATH)/make/common.mk $(IDF_PATH)/make/component_wrapper.mk)
+COMMON_MAKEFILES := $(abspath $(IDF_PATH)/make/project.mk $(IDF_PATH)/make/common.mk $(IDF_PATH)/make/component_wrapper.mk $(firstword $(MAKEFILE_LIST)))
 export COMMON_MAKEFILES
 
 # The directory where we put all objects/libraries/binaries. The project Makefile can
 # configure this if needed.
-BUILD_DIR_BASE ?= $(PROJECT_PATH)/build
+ifndef BUILD_DIR_BASE
+BUILD_DIR_BASE := $(PROJECT_PATH)/build
+endif
 export BUILD_DIR_BASE
 
-# Component directories. These directories are searched for components.
-# The project Makefile can override these component dirs, or define extra component directories.
-COMPONENT_DIRS ?= $(PROJECT_PATH)/components $(EXTRA_COMPONENT_DIRS) $(IDF_PATH)/components
+# Component directories. These directories are searched for components (either the directory is a component,
+# or the directory contains subdirectories which are components.)
+# The project Makefile can override these component dirs, or add extras via EXTRA_COMPONENT_DIRS
+ifndef COMPONENT_DIRS
+COMPONENT_DIRS := $(PROJECT_PATH)/components $(EXTRA_COMPONENT_DIRS) $(IDF_PATH)/components $(PROJECT_PATH)/main
+endif
 export COMPONENT_DIRS
 
-# Source directories of the project itself (a special, project-specific component.) Defaults to only "main".
-SRCDIRS ?= main
+ifdef SRCDIRS
+$(warning SRCDIRS variable is deprecated. These paths can be added to EXTRA_COMPONENT_DIRS or COMPONENT_DIRS instead.)
+COMPONENT_DIRS += $(abspath $(SRCDIRS))
+endif
 
-# The project Makefile can define a list of components, but if it does not do this we just take
-# all available components in the component dirs.
+# The project Makefile can define a list of components, but if it does not do this we just take all available components
+# in the component dirs. A component is COMPONENT_DIRS directory, or immediate subdirectory, 
+# which contains a component.mk file.
+#
+# Use the "make list-components" target to debug this step.
 ifndef COMPONENTS
 # Find all component names. The component names are the same as the
-# directories they're in, so /bla/components/mycomponent/ -> mycomponent. We then use
-# COMPONENT_DIRS to build COMPONENT_PATHS with the full path to each component.
-COMPONENTS := $(foreach dir,$(COMPONENT_DIRS),$(wildcard $(dir)/*))
+# directories they're in, so /bla/components/mycomponent/component.mk -> mycomponent.
+COMPONENTS := $(dir $(foreach cd,$(COMPONENT_DIRS),                           \
+					$(wildcard $(cd)/*/component.mk) $(wildcard $(cd)/component.mk) \
+				))
 COMPONENTS := $(sort $(foreach comp,$(COMPONENTS),$(lastword $(subst /, ,$(comp)))))
 endif
 export COMPONENTS
@@ -123,11 +135,7 @@ export COMPONENTS
 #
 # NOTE: These paths must be generated WITHOUT a trailing / so we
 # can use $(notdir x) to get the component name.
-COMPONENT_PATHS := $(foreach comp,$(COMPONENTS),$(firstword $(foreach dir,$(COMPONENT_DIRS),$(wildcard $(dir)/$(comp)))))
-COMPONENT_PATHS += $(abspath $(SRCDIRS))
-
-# A component is buildable if it has a component.mk makefile in it
-COMPONENT_PATHS_BUILDABLE := $(foreach cp,$(COMPONENT_PATHS),$(if $(wildcard $(cp)/component.mk),$(cp)))
+COMPONENT_PATHS := $(foreach comp,$(COMPONENTS),$(firstword $(foreach cd,$(COMPONENT_DIRS),$(wildcard $(dir $(cd))$(comp) $(cd)/$(comp)))))
 
 # If TESTS_ALL set to 1, set TEST_COMPONENTS_LIST to all components
 ifeq ($(TESTS_ALL),1)
@@ -159,7 +167,7 @@ COMPONENT_SUBMODULES :=
 # dependencies.
 #
 # See the component_project_vars.mk target in component_wrapper.mk
-COMPONENT_PROJECT_VARS := $(addsuffix /component_project_vars.mk,$(notdir $(COMPONENT_PATHS_BUILDABLE) ) $(TEST_COMPONENT_NAMES))
+COMPONENT_PROJECT_VARS := $(addsuffix /component_project_vars.mk,$(notdir $(COMPONENT_PATHS) ) $(TEST_COMPONENT_NAMES))
 COMPONENT_PROJECT_VARS := $(addprefix $(BUILD_DIR_BASE)/,$(COMPONENT_PROJECT_VARS))
 # this line is -include instead of include to prevent a spurious error message on make 3.81
 -include $(COMPONENT_PROJECT_VARS)
@@ -190,9 +198,7 @@ endif
 IDF_VER := $(shell cd ${IDF_PATH} && git describe --always --tags --dirty)
 
 # Set default LDFLAGS
-SRCDIRS_COMPONENT_NAMES := $(sort $(foreach comp,$(SRCDIRS),$(lastword $(subst /, ,$(comp)))))
 LDFLAGS ?= -nostdlib \
-	$(addprefix -L$(BUILD_DIR_BASE)/,$(COMPONENTS) $(TEST_COMPONENT_NAMES) $(SRCDIRS_COMPONENT_NAMES) ) \
 	-u call_user_start_cpu0	\
 	$(EXTRA_LDFLAGS) \
 	-Wl,--gc-sections	\
@@ -284,7 +290,7 @@ export HOSTCC HOSTLD HOSTAR HOSTOBJCOPY SIZE
 CC := $(call dequote,$(CONFIG_TOOLPREFIX))gcc
 CXX := $(call dequote,$(CONFIG_TOOLPREFIX))c++
 LD := $(call dequote,$(CONFIG_TOOLPREFIX))ld
-AR := $(call dequote,$(CONFIG_TOOLPREFIX))ar
+AR := $(call dequote,$(CONFIG_TOOLPREFIX))gcc-ar
 OBJCOPY := $(call dequote,$(CONFIG_TOOLPREFIX))objcopy
 SIZE := $(call dequote,$(CONFIG_TOOLPREFIX))size
 export CC CXX LD AR OBJCOPY SIZE
@@ -299,11 +305,13 @@ APP_BIN:=$(APP_ELF:.elf=.bin)
 # Include any Makefile.projbuild file letting components add
 # configuration at the project level
 define includeProjBuildMakefile
-$(if $(V),$(if $(wildcard $(1)/Makefile.projbuild),$(info including $(1)/Makefile.projbuild...)))
+$(if $(V),$(info including $(1)/Makefile.projbuild...))
 COMPONENT_PATH := $(1)
--include $(1)/Makefile.projbuild
+include $(1)/Makefile.projbuild
 endef
-$(foreach componentpath,$(COMPONENT_PATHS),$(eval $(call includeProjBuildMakefile,$(componentpath))))
+$(foreach componentpath,$(COMPONENT_PATHS), \
+	$(if $(wildcard $(componentpath)/Makefile.projbuild), \
+		$(eval $(call includeProjBuildMakefile,$(componentpath)))))
 
 # once we know component paths, we can include the config generation targets
 #
@@ -312,22 +320,15 @@ ifndef IS_BOOTLOADER_BUILD
 include $(IDF_PATH)/make/project_config.mk
 endif
 
-# A "component" library is any library in the LDFLAGS where
-# the name of the library is also a name of the component
-APP_LIBRARIES = $(patsubst -l%,%,$(filter -l%,$(LDFLAGS)))
-COMPONENT_LIBRARIES = $(filter $(notdir $(COMPONENT_PATHS_BUILDABLE)) $(TEST_COMPONENT_NAMES),$(APP_LIBRARIES))
-
 # ELF depends on the library archive files for COMPONENT_LIBRARIES
 # the rules to build these are emitted as part of GenerateComponentTarget below
 #
 # also depends on additional dependencies (linker scripts & binary libraries)
 # stored in COMPONENT_LINKER_DEPS, built via component.mk files' COMPONENT_ADD_LINKER_DEPS variable
-$(APP_ELF): $(foreach libcomp,$(COMPONENT_LIBRARIES),$(BUILD_DIR_BASE)/$(libcomp)/lib$(libcomp).a) $(COMPONENT_LINKER_DEPS)
+$(APP_ELF): $(foreach libcomp,$(COMPONENT_LIBRARIES),$(BUILD_DIR_BASE)/$(libcomp)/lib$(libcomp).a) $(COMPONENT_LINKER_DEPS) $(COMPONENT_PROJECT_VARS)
 	$(summary) LD $(notdir $@)
 	$(CC) $(LDFLAGS) -o $@ -Wl,-Map=$(APP_MAP)
 
-# Generation of $(APP_BIN) from $(APP_ELF) is added by the esptool
-# component's Makefile.projbuild
 app: $(APP_BIN)
 ifeq ("$(CONFIG_SECURE_BOOT_ENABLED)$(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)","y") # secure boot enabled, but remote sign app image
 	@echo "App built but not signed. Signing step via espsecure.py:"
@@ -358,12 +359,12 @@ endef
 # $(2) - name of component
 #
 define GenerateComponentTargets
-.PHONY: $(2)-build $(2)-clean
+.PHONY: component-$(2)-build component-$(2)-clean
 
-$(2)-build: check-submodules
+component-$(2)-build: check-submodules
 	$(call ComponentMake,$(1),$(2)) build
 
-$(2)-clean:
+component-$(2)-clean:
 	$(call ComponentMake,$(1),$(2)) clean
 
 $(BUILD_DIR_BASE)/$(2):
@@ -373,7 +374,7 @@ $(BUILD_DIR_BASE)/$(2):
 # (this target exists for all components even ones which don't build libraries, but it's
 # only invoked for the targets whose libraries appear in COMPONENT_LIBRARIES and hence the
 # APP_ELF dependencies.)
-$(BUILD_DIR_BASE)/$(2)/lib$(2).a: $(2)-build
+$(BUILD_DIR_BASE)/$(2)/lib$(2).a: component-$(2)-build
 	$(details) "Target '$$^' responsible for '$$@'" # echo which build target built this file
 
 # add a target to generate the component_project_vars.mk files that
@@ -387,10 +388,10 @@ $(BUILD_DIR_BASE)/$(2)/component_project_vars.mk: $(1)/component.mk $(COMMON_MAK
 	$(call ComponentMake,$(1),$(2)) component_project_vars.mk
 endef
 
-$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentTargets,$(component),$(notdir $(component)))))
+$(foreach component,$(COMPONENT_PATHS),$(eval $(call GenerateComponentTargets,$(component),$(notdir $(component)))))
 $(foreach component,$(TEST_COMPONENT_PATHS),$(eval $(call GenerateComponentTargets,$(component),$(lastword $(subst /, ,$(dir $(component))))_test)))
 
-app-clean: $(addsuffix -clean,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
+app-clean: $(addprefix component-,$(addsuffix -clean,$(notdir $(COMPONENT_PATHS))))
 	$(summary) RM $(APP_ELF)
 	rm -f $(APP_ELF) $(APP_BIN) $(APP_MAP)
 
@@ -438,6 +439,18 @@ endef
 # so the argument is suitable for use with 'git submodule' commands
 $(foreach submodule,$(subst $(IDF_PATH)/,,$(filter $(IDF_PATH)/%,$(COMPONENT_SUBMODULES))),$(eval $(call GenerateSubmoduleCheckTarget,$(submodule))))
 
+
+# PHONY target to list components in the build and their paths
+list-components:
+	$(info $(call dequote,$(SEPARATOR)))
+	$(info COMPONENT_DIRS (components searched for here))
+	$(foreach cd,$(COMPONENT_DIRS),$(info $(cd)))
+	$(info $(call dequote,$(SEPARATOR)))
+	$(info COMPONENTS (list of component names))
+	$(info $(COMPONENTS))
+	$(info $(call dequote,$(SEPARATOR)))
+	$(info COMPONENT_PATHS (paths to all components):)
+	$(foreach cp,$(COMPONENT_PATHS),$(info $(cp)))
 
 # Check toolchain version using the output of xtensa-esp32-elf-gcc --version command.
 # The output normally looks as follows

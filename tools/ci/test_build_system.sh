@@ -71,7 +71,7 @@ function run_tests()
 
     print_status "Bootloader source file rebuilds bootloader"
     take_build_snapshot
-    touch ${IDF_PATH}/components/bootloader/src/main/bootloader_start.c
+    touch ${IDF_PATH}/components/bootloader/subproject/main/bootloader_start.c
     make bootloader || failure "Failed to partial build bootloader"
     assert_rebuilt ${BOOTLOADER_BINS} bootloader/main/bootloader_start.o
     assert_not_rebuilt ${APP_BINS} partitions_singleapp.bin
@@ -160,13 +160,23 @@ function run_tests()
     assert_rebuilt ${APP_BINS}
     assert_not_rebuilt ${BOOTLOADER_BINS}
 
-    print_status "sdkconfig update triggers recompiles"
+    print_status "sdkconfig update triggers full recompile"
     make
     take_build_snapshot
     touch sdkconfig
     make
     # pick one each of .c, .cpp, .S that #includes sdkconfig.h
     # and therefore should rebuild
+    assert_rebuilt newlib/syscall_table.o
+    assert_rebuilt nvs_flash/src/nvs_api.o
+    assert_rebuilt freertos/xtensa_vectors.o
+
+    print_status "Updating project Makefile triggers full recompile"
+    make
+    take_build_snapshot
+    touch Makefile
+    make
+    # similar to previous test
     assert_rebuilt newlib/syscall_table.o
     assert_rebuilt nvs_flash/src/nvs_api.o
     assert_rebuilt freertos/xtensa_vectors.o

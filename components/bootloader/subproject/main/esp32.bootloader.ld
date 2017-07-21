@@ -1,23 +1,21 @@
 /*
 Linker file used to link the bootloader.
-
-*WARNING* For now this linker dumps everything into IRAM/DRAM. ToDo: move
-some/most stuff to DROM/IROM.
-
 */
 
 
-/* THESE ARE THE VIRTUAL RUNTIME ADDRESSES  */
-/* The load addresses are defined later using the AT statements. */
+/* Simplified memory map for the bootloader
+
+   The main purpose is to make sure the bootloader can load into main memory
+   without overwriting itself.
+*/
 MEMORY
 {
-  /* All these values assume the flash cache is on, and have the blocks this uses subtracted from the length
-  of the various regions. The 'data access port' dram/drom regions map to the same iram/irom regions but
-  are connected to the data port of the CPU and eg allow bytewise access. */
-  dport0_seg (RW) :                 	org = 0x3FF00000, len = 0x10		/* IO */
-  iram_seg (RWX) :                 	org = 0x40080000, len = 0x400		/* 1k of IRAM used by bootloader functions which need to flush/enable APP CPU cache */ 
-  iram_pool_1_seg (RWX) :           org = 0x40078000, len = 0x8000    /* IRAM POOL1, used for APP CPU cache. We can abuse it in bootloader because APP CPU is still held in reset, until we enable APP CPU cache */
-  dram_seg (RW) :                  	org = 0x3FFF0000, len = 0x10000		/* 64k at the end of DRAM, after ROM bootloader stack */
+  /* I/O */
+  dport0_seg (RW) :                 	org = 0x3FF00000, len = 0x10
+  /* IRAM POOL1, used for APP CPU cache. We can abuse it in bootloader because APP CPU is still held in reset, the main app enables APP CPU cache */
+  iram_seg (RWX) :           org = 0x40078000, len = 0x8000
+  /* 64k at the end of DRAM, after ROM bootloader stack */
+  dram_seg (RW) :                  	org = 0x3FFF0000, len = 0x10000
 }
 
 /*  Default entry point:  */
@@ -28,19 +26,10 @@ SECTIONS
 {
   .iram1.text :
   {
-    _init_start = ABSOLUTE(.);
-    *(.UserEnter.literal);
-    *(.UserEnter.text);
     . = ALIGN (16);
     *(.entry.text)
     *(.init.literal)
     *(.init)
-    _init_end = ABSOLUTE(.);
-
-	  /* Code marked as runnning out of IRAM */
-	  _iram_text_start = ABSOLUTE(.);
-    *(.iram1 .iram1.*)
-	  _iram_text_end = ABSOLUTE(.);
   } > iram_seg
 
 
@@ -58,7 +47,7 @@ SECTIONS
     *(.sbss2.*)
     *(.gnu.linkonce.sb2.*)
     *(.dynbss)
-    KEEP(*(.bss))
+    *(.bss)
     *(.bss.*)
     *(.gnu.linkonce.b.*)
     *(COMMON)
@@ -66,33 +55,28 @@ SECTIONS
     _bss_end = ABSOLUTE(.);
   } >dram_seg
 
-
   .dram0.data :
   {
     _data_start = ABSOLUTE(.);
-    KEEP(*(.data))
-    KEEP(*(.data.*))
-    KEEP(*(.gnu.linkonce.d.*))
-    KEEP(*(.data1))
-    KEEP(*(.sdata))
-    KEEP(*(.sdata.*))
-    KEEP(*(.gnu.linkonce.s.*))
-    KEEP(*(.sdata2))
-    KEEP(*(.sdata2.*))
-    KEEP(*(.gnu.linkonce.s2.*))
-    KEEP(*(.jcr))
+    *(.data)
+    *(.data.*)
+    *(.gnu.linkonce.d.*)
+    *(.data1)
+    *(.sdata)
+    *(.sdata.*)
+    *(.gnu.linkonce.s.*)
+    *(.sdata2)
+    *(.sdata2.*)
+    *(.gnu.linkonce.s2.*)
+    *(.jcr)
     _data_end = ABSOLUTE(.);
   } >dram_seg
-
-
-
 
   .dram0.rodata :
   {
     _rodata_start = ABSOLUTE(.);
     *(.rodata)
     *(.rodata.*)
-	*(.irom1.text) /* catch stray ICACHE_RODATA_ATTR */
     *(.gnu.linkonce.r.*)
     *(.rodata1)
     __XT_EXCEPTION_TABLE_ = ABSOLUTE(.);
@@ -132,17 +116,17 @@ SECTIONS
     _heap_start = ABSOLUTE(.);
   } >dram_seg
 
-  .iram_pool_1.text :
+  .iram.text :
   {
     _stext = .;
     _text_start = ABSOLUTE(.);
     *(.literal .text .literal.* .text.* .stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
-	*(.irom0.text) /* catch stray ICACHE_RODATA_ATTR */
+    *(.iram1 .iram1.*) /* catch stray IRAM_ATTR */
     *(.fini.literal)
     *(.fini)
     *(.gnu.version)
     _text_end = ABSOLUTE(.);
     _etext = .;
-  } >iram_pool_1_seg
+  } > iram_seg
 
 }

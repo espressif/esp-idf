@@ -28,8 +28,31 @@ config LOG_BOOTLOADER_LEVEL
     default 4 if LOG_BOOTLOADER_LEVEL_DEBUG
     default 5 if LOG_BOOTLOADER_LEVEL_VERBOSE
 
-endmenu
+config BOOTLOADER_SPI_WP_PIN
+    int "SPI Flash WP Pin when customising pins via efuse (read help)"
+    range 0 33
+    default 7
+    depends on FLASHMODE_QIO || FLASHMODE_QOUT
+    help
+        This value is ignored unless flash mode is set to QIO or QOUT *and* the SPI flash pins have been
+        overriden by setting the efuses SPI_PAD_CONFIG_xxx.
 
+        When this is the case, the Efuse config only defines 3 of the 4 Quad I/O data pins. The WP pin (aka ESP32
+        pin "SD_DATA_3" or SPI flash pin "IO2") is not specified in Efuse. That pin number is compiled into the bootloader
+        instead.
+
+        The default value (GPIO 7) is correct for WP pin on ESP32-D2WD integrated flash.
+
+config BOOTLOADER_LTO
+       bool "Build bootloader with Link Time Optimisation"
+       default n
+       help
+           Setting this option enables gcc Link Time Optimisation for the bootloader build & link pass.
+
+           This gives a smaller bootloader binary (can be useful if secure boot & flash encryption & logging are all enabled), and can
+           give faster boot times, but it makes the bootloader harder to debug.
+
+endmenu  # Bootloader config
 
 
 menu "Security features"
@@ -203,7 +226,7 @@ config FLASH_ENCRYPTION_UART_BOOTLOADER_ALLOW_CACHE
 config SECURE_BOOT_TEST_MODE
        bool "Secure boot test mode: don't permanently set any efuses"
        depends on SECURE_BOOT_INSECURE
-       default N
+       default n
        help
           If this option is set, all permanent secure boot changes (via Efuse) are disabled.
 
@@ -212,6 +235,5 @@ config SECURE_BOOT_TEST_MODE
           This option is for testing purposes only - it completely disables secure boot protection.
 
 
-endmenu  # potentially insecure
-
-endmenu
+endmenu  # Potentially Insecure
+endmenu  # Security features
