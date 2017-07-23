@@ -43,16 +43,7 @@ config BOOTLOADER_SPI_WP_PIN
 
         The default value (GPIO 7) is correct for WP pin on ESP32-D2WD integrated flash.
 
-config BOOTLOADER_LTO
-       bool "Build bootloader with Link Time Optimisation"
-       default n
-       help
-           Setting this option enables gcc Link Time Optimisation for the bootloader build & link pass.
-
-           This gives a smaller bootloader binary (can be useful if secure boot & flash encryption & logging are all enabled), and can
-           give faster boot times, but it makes the bootloader harder to debug.
-
-endmenu  # Bootloader config
+endmenu  # Bootloader
 
 
 menu "Security features"
@@ -226,7 +217,7 @@ config FLASH_ENCRYPTION_UART_BOOTLOADER_ALLOW_CACHE
 config SECURE_BOOT_TEST_MODE
        bool "Secure boot test mode: don't permanently set any efuses"
        depends on SECURE_BOOT_INSECURE
-       default n
+       default N
        help
           If this option is set, all permanent secure boot changes (via Efuse) are disabled.
 
