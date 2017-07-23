@@ -229,7 +229,7 @@
 #define INCLUDE_vTaskDelay					1
 #define INCLUDE_uxTaskGetStackHighWaterMark	1
 #define INCLUDE_xTaskGetIdleTaskHandle      1
-#define INCLUDE_xTaskGetHandle      		1
+#define INCLUDE_xTaskGetHandle      		0
 
 #if CONFIG_ENABLE_MEMORY_DEBUG
 #define configENABLE_MEMORY_DEBUG 1

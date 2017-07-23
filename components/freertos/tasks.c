@@ -2348,15 +2348,25 @@ TCB_t *pxTCB;
 
 #if ( INCLUDE_xTaskGetHandle == 1 )
 
+	/* This function takes a relatively long time to complete
+	   and should be #AVOID#ed at best.
+	   
+	   Executing this function will block both cores!
+	   
+	   Once the handle of the requested task is obtained it
+	   would be wise to store locally for re-use. 	  		*/
+	   
 	TaskHandle_t xTaskGetHandle( const char *pcNameToQuery ) /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
 	{
 	UBaseType_t uxQueue = configMAX_PRIORITIES;
 	TCB_t* pxTCB;
 
+		UNTESTED_FUNCTION();
 		/* Task names will be truncated to configMAX_TASK_NAME_LEN - 1 bytes. */
 		configASSERT( strlen( pcNameToQuery ) < configMAX_TASK_NAME_LEN );
 
-		vTaskSuspendAll();
+		taskENTER_CRITICAL(&xTaskQueueMutex);
+//		vTaskSuspendAll();
 		{
 			/* Search the ready lists. */
 			do
@@ -2403,7 +2413,8 @@ TCB_t *pxTCB;
 			}
 			#endif
 		}
-		( void ) xTaskResumeAll();
+//		( void ) xTaskResumeAll();
+		taskEXIT_CRITICAL(&xTaskQueueMutex);
 
 		return ( TaskHandle_t ) pxTCB;
 	}
