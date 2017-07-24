@@ -36,11 +36,14 @@ const static char *TAG = "segger_rtt";
 #endif
 #endif
 
-#define SEGGER_HOST_WAIT_TMO  500 //us
-#define SEGGER_STOP_WAIT_TMO  1000000 //us
+// size of down channel data buf
+#define SYSVIEW_DOWN_BUF_SIZE   32
+#define SEGGER_HOST_WAIT_TMO    500 //us
+#define SEGGER_STOP_WAIT_TMO    1000000 //us
 
 static uint8_t s_events_buf[SYSVIEW_EVENTS_BUF_SZ];
 static uint16_t s_events_buf_filled;
+static uint8_t s_down_buf[SYSVIEW_DOWN_BUF_SIZE];
 
 /*********************************************************************
 *
@@ -216,6 +219,7 @@ int SEGGER_RTT_ConfigUpBuffer(unsigned BufferIndex, const char* sName, void* pBu
 *    Buffer name and flags can be reconfigured using the appropriate functions.
 */
 int SEGGER_RTT_ConfigDownBuffer(unsigned BufferIndex, const char* sName, void* pBuffer, unsigned BufferSize, unsigned Flags) {
+  esp_apptrace_down_buffer_config(s_down_buf, sizeof(s_down_buf));
   return 0;
 }
 

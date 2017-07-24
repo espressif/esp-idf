@@ -322,7 +322,9 @@ void SEGGER_SYSVIEW_X_RTT_Unlock()
 
 void SEGGER_SYSVIEW_X_SysView_Lock()
 {
-    esp_apptrace_lock_take(&s_sys_view_lock, SEGGER_LOCK_WAIT_TMO);
+    esp_apptrace_tmo_t tmo;
+    esp_apptrace_tmo_init(&tmo, SEGGER_LOCK_WAIT_TMO);
+    esp_apptrace_lock_take(&s_sys_view_lock, &tmo);
 }
 
 void SEGGER_SYSVIEW_X_SysView_Unlock()

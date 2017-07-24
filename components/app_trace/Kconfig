@@ -22,6 +22,12 @@ config ESP32_APPTRACE_ENABLE
     help
         Enables/disable application tracing module.
 
+config ESP32_APPTRACE_LOCK_ENABLE
+    bool
+    default !SYSVIEW_ENABLE
+    help
+        Enables/disable application tracing module internal sync lock.
+
 config ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO
     int "Timeout for flushing last trace data to host on panic"
     depends on ESP32_APPTRACE_ENABLE
