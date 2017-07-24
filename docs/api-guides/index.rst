@@ -17,3 +17,4 @@ API Guides
    Unit Testing <unit-tests>
    Application Level Tracing <app_trace>
    ROM debug console <romconsole>
+   WiFi Driver <wifi>
