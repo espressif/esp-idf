@@ -364,24 +364,10 @@ static inline esp_err_t esp_apptrace_lock_cleanup()
 esp_err_t esp_apptrace_lock(esp_apptrace_tmo_t *tmo)
 {
 #if CONFIG_ESP32_APPTRACE_LOCK_ENABLE
-    //unsigned cur, elapsed, start = xthal_get_ccount();
-
     esp_err_t ret = esp_apptrace_lock_take(&s_trace_buf.lock, tmo);
     if (ret != ESP_OK) {
         return ESP_FAIL;
     }
-    // decrease tmo by actual waiting time
-    // cur = xthal_get_ccount();
-    // if (start <= cur) {
-    //     elapsed = cur - start;
-    // } else {
-    //     elapsed = ULONG_MAX - start + cur;
-    // }
-    // if (ESP_APPTRACE_CPUTICKS2US(elapsed) > *tmo) {
-    //     *tmo = 0;
-    // } else {
-    //     *tmo -= ESP_APPTRACE_CPUTICKS2US(elapsed);
-    // }
 #endif
     return ESP_OK;
 }

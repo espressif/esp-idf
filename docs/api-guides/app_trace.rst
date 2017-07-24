@@ -116,7 +116,7 @@ Also according to his needs user may want to receive data from the host. Piece o
         ...
     }
 
-``esp_apptrace_read()`` function uses memcpy to copy host data to user buffer. In some cases it can be more optimal to use ``esp_apptrace_down_buffer_get()`` and ``esp_apptrace_down_buffer_put()`` functions. 
+``esp_apptrace_read()`` function uses memcpy to copy host data to user buffer. In some cases it can be more optimal to use ``esp_apptrace_down_buffer_get()`` and ``esp_apptrace_down_buffer_put()`` functions.
 They allow developers to ocupy chunk of read buffer and process it in-place. The following piece of code shows how to do this.
 
 .. code-block:: c
@@ -135,12 +135,12 @@ They allow developers to ocupy chunk of read buffer and process it in-place. The
         return ESP_FAIL;
     }
     if (sz > 4) {
-      number = (uint32_t *)ptr;
-      printf("Here is the number %d", *number);
+        number = (uint32_t *)ptr;
+        printf("Here is the number %d", *number);
     } else {
-      printf("No data");
+        printf("No data");
     }
-    esp_err_t res = esp_apptrace_buffer_put(ESP_APPTRACE_DEST_TRAX, ptr, 100/*tmo in us*/);
+    esp_err_t res = esp_apptrace_down_buffer_put(ESP_APPTRACE_DEST_TRAX, ptr, 100/*tmo in us*/);
     if (res != ESP_OK) {
         /* in case of error host tracing tool (e.g. OpenOCD) will report incomplete user buffer */
         ESP_LOGE("Failed to put buffer!");
