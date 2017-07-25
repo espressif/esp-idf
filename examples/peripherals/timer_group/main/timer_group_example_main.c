@@ -28,8 +28,8 @@
 
 typedef struct {
     int type;                  /*!< event type */
-    int group;                 /*!< timer group */
-    int idx;                   /*!< timer number */
+    timer_group_t group;       /*!< timer group */
+    timer_idx_t idx;           /*!< timer number */
     uint64_t counter_val;      /*!< timer counter value */
     double time_sec;           /*!< calculated time from counter value */
 } timer_event_t;
@@ -96,8 +96,8 @@ void IRAM_ATTR timer_group0_isr(void *para)
 
         /*Post an event to out example task*/
         evt.type = TEST_WITHOUT_RELOAD;
-        evt.group = 0;
-        evt.idx = timer_idx;
+        evt.group = (timer_group_t) 0;
+        evt.idx = (timer_idx_t) timer_idx;
         evt.counter_val = timer_val;
         evt.time_sec = time;
         xQueueSendFromISR(timer_queue, &evt, NULL);
@@ -122,8 +122,8 @@ void IRAM_ATTR timer_group0_isr(void *para)
         double time = (double) timer_val / (TIMER_BASE_CLK / TIMERG0.hw_timer[timer_idx].config.divider);
         /*Post an event to out example task*/
         evt.type = TEST_WITH_RELOAD;
-        evt.group = 0;
-        evt.idx = timer_idx;
+        evt.group = (timer_group_t) 0;
+        evt.idx = (timer_idx_t) timer_idx;
         evt.counter_val = timer_val;
         evt.time_sec = time;
         xQueueSendFromISR(timer_queue, &evt, NULL);
@@ -137,8 +137,8 @@ void IRAM_ATTR timer_group0_isr(void *para)
  */
 static void example_tg0_timer0_init()
 {
-    int timer_group = TIMER_GROUP_0;
-    int timer_idx = TIMER_0;
+    timer_group_t timer_group = TIMER_GROUP_0;
+    timer_idx_t timer_idx = TIMER_0;
     timer_config_t config;
     config.alarm_en = 1;
     config.auto_reload = 0;
@@ -167,8 +167,8 @@ static void example_tg0_timer0_init()
  */
 static void example_tg0_timer1_init()
 {
-    int timer_group = TIMER_GROUP_0;
-    int timer_idx = TIMER_1;
+    timer_group_t timer_group = TIMER_GROUP_0;
+    timer_idx_t timer_idx = TIMER_1;
     timer_config_t config;
     config.alarm_en = 1;
     config.auto_reload = 1;
@@ -195,11 +195,10 @@ static void example_tg0_timer1_init()
 /**
  * @brief In this test, we will test hardware timer0 and timer1 of timer group0.
  */
-void app_main()
+extern "C" void app_main()
 {
     timer_queue = xQueueCreate(10, sizeof(timer_event_t));
     example_tg0_timer0_init();
     example_tg0_timer1_init();
     xTaskCreate(timer_example_evt_task, "timer_evt_task", 2048, NULL, 5, NULL);
 }
-
