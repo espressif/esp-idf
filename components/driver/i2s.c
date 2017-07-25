@@ -435,7 +435,7 @@ static i2s_dma_t *i2s_create_dma_queue(i2s_port_t i2s_num, int dma_buf_count, in
     dma->buf = (char **)malloc(sizeof(char*) * dma_buf_count);
     if (dma->buf == NULL) {
         ESP_LOGE(I2S_TAG, "Error malloc dma buffer pointer");
-
+        free(dma);
         return NULL;
     }
     memset(dma->buf, 0, sizeof(char*) * dma_buf_count);
