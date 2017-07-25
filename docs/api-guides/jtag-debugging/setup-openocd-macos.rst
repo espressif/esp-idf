@@ -8,12 +8,12 @@ Setup OpenOCD
 
 OpenOCD for MacOS is available for download from Espressif website:
 
-https://dl.espressif.com/dl/openocd-esp32-macos-ed7b1a9.tar.gz
+https://dl.espressif.com/dl/openocd-esp32-macos-a859564.tar.gz 
 
 Download this file, then extract it in ``~/esp`` directory::
 
     cd ~/esp
-    tar -xzf ~/Downloads/openocd-esp32-macos-ed7b1a9.tar.gz
+    tar -xzf ~/Downloads/openocd-esp32-macos-a859564.tar.gz 
 
 
 Next Steps

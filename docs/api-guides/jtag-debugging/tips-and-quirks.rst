@@ -64,7 +64,7 @@ What is the meaning of debugger's startup commands?
 On startup, debugger is issuing sequence of commands to reset the chip and halt it at specific line of code. This sequence (shown below) is user defined to pick up at most convenient / appropriate line and start debugging. 
 
 * ``mon reset halt`` — reset the chip and keep the CPUs halted
-* ``hb app_main`` — insert a hardware breakpoint at app_main, put here another function name if required
+* ``thb app_main`` — insert a temporary hardware breakpoint at ``app_main``, put here another function name if required
 * ``x $a1=0`` — this is the tricky part. As far as we can tell, there is no way for a ``mon`` command to tell GDB that the target state has changed. GDB will assume that whatever stack the target had before ``mon reset halt`` will still be valid. In fact, after reset the target state will change and executing ``x $a1=0`` is a way to force GDB to get new state from the target.
 * ``c`` — resume the program. It will then stop at breakpoint inserted at ``app_main``.
 
@@ -74,7 +74,7 @@ On startup, debugger is issuing sequence of commands to reset the chip and halt 
 Configuration of OpenOCD for specific target
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-OpenOCD needs to be told what JTAG adapter **interface** to use, as well as what type of **board** and processor the JTAG adapter is connected to. To do so, use existing configuration files located in OpenOCD's ``/share/openocd/scripts/interface`` and ``/share/openocd/scripts/board`` folders. 
+OpenOCD needs to be told what JTAG adapter **interface** to use, as well as what type of **board** and processor the JTAG adapter is connected to. To do so, use existing configuration files located in OpenOCD's ``share/openocd/scripts/interface`` and ``share/openocd/scripts/board`` folders. 
 
 For example, if you connect to ESP-WROVER-KIT with ESP-WROOM-32 module installed (see section :doc:`ESP32 WROVER KIT <../../hw-reference/modules-and-boards>`), use the following configuration files:
 
@@ -121,7 +121,7 @@ Power supply voltage of ESP32's SPI flash chip
 
     set ESP32_FLASH_VOLTAGE 1.8
 
-Comment out this line to set 3.3V, ref: :ref:`jtag-debugging-tip-code-flash-voltage`.
+Comment out this line to set 3.3V, ref: :ref:`jtag-debugging-tip-code-flash-voltage`
 
 
 Configuration file for ESP32 targets

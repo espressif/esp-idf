@@ -8,7 +8,7 @@ Setup OpenOCD
 
 OpenOCD for Windows / MSYS2 is available for download from Espressif website:
 
-https://dl.espressif.com/dl/openocd-esp32-win32-ed7b1a9.zip
+https://dl.espressif.com/dl/openocd-esp32-win32-a859564.zip
 
 Download this file and extract ``openocd-esp32`` folder inside to ``~/esp/`` directory.
 

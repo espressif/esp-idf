@@ -46,7 +46,7 @@ This document provides a guide to installing OpenOCD for ESP32 and debugging usi
 How it Works?
 -------------
 
-The key software and hardware to perform debugging of ESP32 with OpenOCD over JTAG (Joint Test Action Group) interface is presented below and includes **xtensa-esp32-elf-gdb debugger**, **OpenOCD** on chip debugger and **JTAG adapter** connected to **ESP32** target.
+The key software and hardware to perform debugging of ESP32 with OpenOCD over JTAG (Joint Test Action Group) interface is presented below and includes **xtensa-esp32-elf-gdb debugger**, **OpenOCD on chip debugger** and **JTAG adapter** connected to **ESP32** target.
 
 .. figure:: ../../_static/jtag-debugging-overview.jpg
     :align: center
@@ -59,7 +59,7 @@ Under "Application Loading and Monitoring" there is another software and hardwar
 
 Debugging using JTAG and application loading / monitoring is integrated under the `Eclipse <http://www.eclipse.org/>`_ environment, to provide quick and easy transition from writing, compiling and loading the code to debugging, back to writing the code, and so on. All the software is available for Windows, Linux and MacOS platforms.
 
-If the :doc:`ESP32 WROVER KIT <../../hw-reference/modules-and-boards>` is used, then connection from PC to ESP32 is done effectively with a single USB cable thanks to FT2232H chip installed on WROVER, which provides two USB channels, one for JTAG and the second for JTAG connection.
+If the :doc:`ESP32 WROVER KIT <../../hw-reference/modules-and-boards>` is used, then connection from PC to ESP32 is done effectively with a single USB cable thanks to FT2232H chip installed on WROVER, which provides two USB channels, one for JTAG and the second for UART connection.
 
 Depending on user preferences, both `debugger` and `make` can be operated directly from terminal / command line, instead from Eclipse.
 
@@ -201,10 +201,13 @@ Another option is to write application image to flash using OpenOCD via JTAG wit
     cd ~/esp/openocd-esp32
     bin/openocd -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg -c "program_esp32 filename.bin 0x10000 verify exit"
 
-OpenOCD flashing command ``program_esp32`` has the following format ``program_esp32 <image_file> <offset> [verify] [reset] [exit]``.
- - ``image_file`` - path to program image file
- - ``offset`` - offset in flash bank to write image
- - ``verify`` - Optional. Verify written flash contents after writing.
+OpenOCD flashing command ``program_esp32`` has the following format:
+
+``program_esp32 <image_file> <offset> [verify] [reset] [exit]``
+
+ - ``image_file`` - Path to program image file.
+ - ``offset`` - Offset in flash bank to write image.
+ - ``verify`` - Optional. Verify flash contents after writing.
  - ``reset`` - Optional. Reset target after programing.
  - ``exit`` - Optional. Finally exit OpenOCD.
 
