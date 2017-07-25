@@ -13,7 +13,7 @@
 // limitations under the License.
 #ifndef _SOC_TIMG_STRUCT_H_
 #define _SOC_TIMG_STRUCT_H_
-typedef volatile struct {
+typedef volatile struct timg_dev_struct {
     struct{
         union {
             struct {
