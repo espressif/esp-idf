@@ -121,7 +121,6 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         mbedtls_md5(blufi_sec->share_key, blufi_sec->share_len, blufi_sec->psk);
 
         mbedtls_aes_setkey_enc(&blufi_sec->aes, blufi_sec->psk, 128);
-        mbedtls_aes_setkey_dec(&blufi_sec->aes, blufi_sec->psk, 128);
         
         /* alloc output data */
         *output_data = &blufi_sec->self_public_key[0];
