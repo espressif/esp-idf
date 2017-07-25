@@ -1,5 +1,9 @@
-ESP-IDF GATT CLIENT demo
+ESP-IDF iBeacon demo
 ========================
+This example demonstrates iBeacon-compatible BLE advertising, and scanning of iBeacons.
+- IBEACON_SENDER: demo to send iBeacon-compatible advertising data.
+- IBEACON_RECEIVER: demo to receive and resolve iBeacon advertising data.
 
-This is the demo for user to use ESP_APIs to create a GATT Client.
+iBeacon is a trademark of Apple Inc.
 
+Before building devices which use iBeacon technology, visit https://developer.apple.com/ibeacon/ to obtain a license.
