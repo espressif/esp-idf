@@ -51,9 +51,17 @@ class PartitionTable(list):
     @classmethod
     def from_csv(cls, csv_contents):
         res = PartitionTable()
-        lines = csv_contents.split("\n")
+        lines = csv_contents.splitlines()
+
+        def expand_vars(f):
+            f = os.path.expandvars(f)
+            m = re.match(r'(?<!\\)\$([A-Za-z_][A-Za-z0-9_]*)', f)
+            if m:
+                raise InputError("unknown variable '%s'" % m.group(1))
+            return f
+
         for line_no in range(len(lines)):
-            line = lines[line_no].strip()
+            line = expand_vars(lines[line_no]).strip()
             if line.startswith("#") or len(line) == 0:
                 continue
             try:
@@ -134,7 +142,7 @@ class PartitionDefinition(object):
         "app" : APP_TYPE,
         "data" : DATA_TYPE,
     }
-    
+
     # Keep this map in sync with esp_partition_subtype_t enum in esp_partition.h 
     SUBTYPES = {
         APP_TYPE : {
@@ -181,13 +189,7 @@ class PartitionDefinition(object):
     def from_csv(cls, line):
         """ Parse a line from the CSV """
         line_w_defaults = line + ",,,,"  # lazy way to support default fields
-        def expand_vars(f):
-            f = os.path.expandvars(f)
-            m = re.match(r'(?<!\\)\$([A-Za-z_][A-Za-z0-9_]*)', f)
-            if m:
-                raise InputError("unknown variable '%s'" % m.group(1))
-            return f
-        fields = [ expand_vars(f.strip()) for f in line_w_defaults.split(",") ]
+        fields = [ f.strip() for f in line_w_defaults.split(",") ]
 
         res = PartitionDefinition()
         res.name = fields[0]
