@@ -100,6 +100,7 @@ struct osi_funcs_t {
     int32_t (* _queue_recv_from_isr)(void *queue, void *item, void *hptw);
     int32_t (* _task_create)(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id);
     void (* _task_delete)(void *task_handle);
+    bool (* _is_in_isr)(void);
     void *(* _malloc)(uint32_t size);
     void (* _free)(void *p);
     int32_t (* _read_efuse_mac)(uint8_t mac[6]);
@@ -230,6 +231,11 @@ static void IRAM_ATTR task_delete_wrapper(void *task_handle)
     vTaskDelete(task_handle);
 }
 
+static bool IRAM_ATTR is_in_isr_wrapper(void)
+{
+    return (bool)xPortInIsrContext();
+}
+
 static int32_t IRAM_ATTR read_mac_wrapper(uint8_t mac[6])
 {
     return esp_read_mac(mac, ESP_MAC_BT);
@@ -270,6 +276,7 @@ static struct osi_funcs_t osi_funcs = {
     ._queue_recv_from_isr = queue_recv_from_isr_wrapper,
     ._task_create = task_create_wrapper,
     ._task_delete = task_delete_wrapper,
+    ._is_in_isr = is_in_isr_wrapper,
     ._malloc = malloc,
     ._free = free,
     ._read_efuse_mac = read_mac_wrapper,
