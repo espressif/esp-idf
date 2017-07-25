@@ -83,6 +83,7 @@ esp_err_t esp_vfs_fat_spiflash_mount(const char* base_path,
             goto fail;
         }
         free(workbuf);
+        workbuf = NULL;
         ESP_LOGI(TAG, "Mounting again");
         fresult = f_mount(fs, drv, 0);
         if (fresult != FR_OK) {
