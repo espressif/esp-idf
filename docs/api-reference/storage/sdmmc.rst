@@ -104,7 +104,7 @@ SPI controllers accessible via spi_master driver (HSPI, VSPI) can be used to wor
 
 SD SPI driver is represented using an ``sdmmc_host_t`` structure initialized using ``SDSPI_HOST_DEFAULT`` macro. For slot initialization, ``SDSPI_SLOT_CONFIG_DEFAULT`` can be used to fill in default pin mapping, which is the same as the pin mapping in SD mode.
 
-SD SPI driver APIs are very similar to SDMMC host APIs. As with the SDMMC host driver, only ``sdspi_host_init``, ``sdspi_host_init_slot``, and ``sdspi_host_deinit`` functions are normally used by the applications. Other functions are called by the protocol level driver via function pointers in ``sdmmc_host_t` structure.
+SD SPI driver APIs are very similar to SDMMC host APIs. As with the SDMMC host driver, only ``sdspi_host_init``, ``sdspi_host_init_slot``, and ``sdspi_host_deinit`` functions are normally used by the applications. Other functions are called by the protocol level driver via function pointers in ``sdmmc_host_t`` structure.
 
 .. doxygenfunction:: sdspi_host_init
 
@@ -119,7 +119,6 @@ SD SPI driver APIs are very similar to SDMMC host APIs. As with the SDMMC host d
 .. doxygendefine:: SDSPI_SLOT_NO_WP
 .. doxygendefine:: SDSPI_SLOT_CONFIG_DEFAULT
 
-.. doxygenfunction:: sdspi_host_set_bus_width
 .. doxygenfunction:: sdspi_host_set_card_clk
 .. doxygenfunction:: sdspi_host_do_transaction
 .. doxygenfunction:: sdspi_host_deinit
