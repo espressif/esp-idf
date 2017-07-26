@@ -18,6 +18,7 @@
 #include "driver/gpio.h"
 #include "driver/sdmmc_types.h"
 #include "driver/sdmmc_host.h"
+#include "driver/sdspi_host.h"
 #include "ff.h"
 #include "wear_levelling.h"
 
@@ -98,9 +99,9 @@ typedef esp_vfs_fat_mount_config_t esp_vfs_fat_sdmmc_mount_config_t;
  * @brief Convenience function to get FAT filesystem on SD card registered in VFS
  *
  * This is an all-in-one function which does the following:
- * - initializes SD/MMC peripheral with configuration in host_config
- * - initializes SD/MMC card with configuration in slot_config
- * - mounts FAT partition on SD/MMC card using FATFS library, with configuration in mount_config
+ * - initializes SDMMC driver or SPI driver with configuration in host_config
+ * - initializes SD card with configuration in slot_config
+ * - mounts FAT partition on SD card using FATFS library, with configuration in mount_config
  * - registers FATFS library with VFS, with prefix given by base_prefix variable
  *
  * This function is intended to make example code more compact.
@@ -109,8 +110,16 @@ typedef esp_vfs_fat_mount_config_t esp_vfs_fat_sdmmc_mount_config_t;
  * with proper error checking and handling of exceptional conditions.
  *
  * @param base_path     path where partition should be registered (e.g. "/sdcard")
- * @param host_config   pointer to structure describing SDMMC host
- * @param slot_config   pointer to structure with extra SDMMC slot configuration
+ * @param host_config   Pointer to structure describing SDMMC host. When using
+ *                      SDMMC peripheral, this structure can be initialized using
+ *                      SDMMC_HOST_DEFAULT() macro. When using SPI peripheral,
+ *                      this structure can be initialized using SDSPI_HOST_DEFAULT()
+ *                      macro.
+ * @param slot_config   Pointer to structure with slot configuration.
+ *                      For SDMMC peripheral, pass a pointer to sdmmc_slot_config_t
+ *                      structure initialized using SDMMC_SLOT_CONFIG_DEFAULT.
+ *                      For SPI peripheral, pass a pointer to sdspi_slot_config_t
+ *                      structure initialized using SDSPI_SLOT_CONFIG_DEFAULT.
  * @param mount_config  pointer to structure with extra parameters for mounting FATFS
  * @param[out] out_card  if not NULL, pointer to the card information structure will be returned via this argument
  * @return
@@ -118,11 +127,11 @@ typedef esp_vfs_fat_mount_config_t esp_vfs_fat_sdmmc_mount_config_t;
  *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_sdmmc_mount was already called
  *      - ESP_ERR_NO_MEM if memory can not be allocated
  *      - ESP_FAIL if partition can not be mounted
- *      - other error codes from SDMMC host, SDMMC protocol, or FATFS drivers
+ *      - other error codes from SDMMC or SPI drivers, SDMMC protocol, or FATFS drivers
  */
 esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
     const sdmmc_host_t* host_config,
-    const sdmmc_slot_config_t* slot_config,
+    const void* slot_config,
     const esp_vfs_fat_mount_config_t* mount_config,
     sdmmc_card_t** out_card);
 
