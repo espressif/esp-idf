@@ -4,7 +4,7 @@
 
 COMPONENT_ADD_INCLUDEDIRS := port/include nghttp2/lib/includes
 
-COMPONENT_SRCDIRS := nghttp2/lib
+COMPONENT_SRCDIRS := nghttp2/lib port
 
 # nghttp2_session.c uses assert(0) in place of abort() in some functions,
 # that miss a return statement if assertions are disabled.
