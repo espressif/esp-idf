@@ -18,6 +18,7 @@
 #include "unity.h"
 #include "driver/gpio.h"
 #include "driver/sdmmc_host.h"
+#include "driver/sdspi_host.h"
 #include "driver/sdmmc_defs.h"
 #include "sdmmc_cmd.h"
 #include "esp_log.h"
@@ -30,16 +31,29 @@ TEST_CASE("can probe SD", "[sd][ignore]")
 {
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
-    sdmmc_host_init();
-    sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config);
+    TEST_ESP_OK(sdmmc_host_init());
+    TEST_ESP_OK(sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config));
     sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
     TEST_ASSERT_NOT_NULL(card);
     TEST_ESP_OK(sdmmc_card_init(&config, card));
     sdmmc_card_print_info(stdout, card);
-    sdmmc_host_deinit();
+    TEST_ESP_OK(sdmmc_host_deinit());
     free(card);
 }
 
+TEST_CASE("can probe SD (using SPI)", "[sdspi][ignore]")
+{
+    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
+    sdspi_slot_config_t slot_config = SDSPI_SLOT_CONFIG_DEFAULT();
+    TEST_ESP_OK(sdspi_host_init());
+    TEST_ESP_OK(sdspi_host_init_slot(config.slot, &slot_config));
+    sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
+    TEST_ASSERT_NOT_NULL(card);
+    TEST_ESP_OK(sdmmc_card_init(&config, card));
+    sdmmc_card_print_info(stdout, card);
+    TEST_ESP_OK(sdspi_host_deinit());
+    free(card);
+}
 
 static void do_single_write_read_test(sdmmc_card_t* card,
         size_t start_block, size_t block_count)
@@ -66,7 +80,7 @@ static void do_single_write_read_test(sdmmc_card_t* card,
     gettimeofday(&t_stop_rd, NULL);
     float time_rd = 1e3f * (t_stop_rd.tv_sec - t_start_rd.tv_sec) + 1e-3f * (t_stop_rd.tv_usec - t_start_rd.tv_usec);
 
-    printf(" |   %6.2f    |      %.2f      |    %.2fs    |     %.2f\n",
+    printf(" |   %6.2f    |      %.2f      |    %.2f     |     %.2f\n",
             time_wr, total_size / (time_wr / 1000) / (1024 * 1024),
             time_rd, total_size / (time_rd / 1000) / (1024 * 1024));
     srand(start_block);
@@ -76,16 +90,8 @@ static void do_single_write_read_test(sdmmc_card_t* card,
     free(buffer);
 }
 
-TEST_CASE("can write and read back blocks", "[sd][ignore]")
+static void read_write_test(sdmmc_card_t* card)
 {
-    sdmmc_host_t config = SDMMC_HOST_DEFAULT();
-    config.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
-    sdmmc_host_init();
-    sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
-    sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config);
-    sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
-    TEST_ASSERT_NOT_NULL(card);
-    TEST_ESP_OK(sdmmc_card_init(&config, card));
     sdmmc_card_print_info(stdout, card);
     printf("  sector  | count | size(kB) | wr_time(ms) | wr_speed(MB/s) | rd_time(ms) | rd_speed(MB/s)\n");
     do_single_write_read_test(card, 0, 1);
@@ -104,6 +110,35 @@ TEST_CASE("can write and read back blocks", "[sd][ignore]")
     do_single_write_read_test(card, card->csd.capacity/2, 32);
     do_single_write_read_test(card, card->csd.capacity/2, 64);
     do_single_write_read_test(card, card->csd.capacity/2, 128);
-    free(card);
-    sdmmc_host_deinit();
 }
+
+TEST_CASE("can write and read back blocks", "[sd][ignore]")
+{
+    sdmmc_host_t config = SDMMC_HOST_DEFAULT();
+    config.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
+    TEST_ESP_OK(sdmmc_host_init());
+    sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
+    TEST_ESP_OK(sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config));
+    sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
+    TEST_ASSERT_NOT_NULL(card);
+    TEST_ESP_OK(sdmmc_card_init(&config, card));
+    read_write_test(card);
+    free(card);
+    TEST_ESP_OK(sdmmc_host_deinit());
+}
+
+TEST_CASE("can write and read back blocks (using SPI)", "[sdspi][ignore]")
+{
+    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
+    config.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
+    sdspi_slot_config_t slot_config = SDSPI_SLOT_CONFIG_DEFAULT();
+    TEST_ESP_OK(sdspi_host_init());
+    TEST_ESP_OK(sdspi_host_init_slot(config.slot, &slot_config));
+    sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
+    TEST_ASSERT_NOT_NULL(card);
+    TEST_ESP_OK(sdmmc_card_init(&config, card));
+    read_write_test(card);
+    free(card);
+    TEST_ESP_OK(sdspi_host_deinit());
+}
+
