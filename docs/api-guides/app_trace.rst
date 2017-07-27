@@ -37,7 +37,7 @@ Config Options and Dependencies
 
 Using of this feature depends on two components:
 
-1. **Host side:** Application tracing is done over JTAG, so it needs OpenOCD to be set up and running on host machine. For instructions how to set it up, please, see :doc:`Debugging <../api-guides/openocd>` for details.
+1. **Host side:** Application tracing is done over JTAG, so it needs OpenOCD to be set up and running on host machine. For instructions how to set it up, please, see :doc:`JTAG Debugging <../api-guides/jtag-debugging/index>` for details.
 2. **Target side:** Application tracing functionality can be enabled by ``CONFIG_ESP32_APPTRACE_ENABLE`` macro via menuconfig. This option enables the module and makes tracing API available for users. Actually there is menu which allows selecting destination for the trace data (HW interface for transport). So choosing one of the destinations automatically enables ``CONFIG_ESP32_APPTRACE_ENABLE`` option.
 
 .. note::
@@ -113,7 +113,7 @@ Also according to his needs user may want to receive data from the host. Piece o
     }
 
 2. The next step is to build the program image and download it to the target as described in :doc:`Build and Flash <../get-started/make-project>`.
-3. Run OpenOCD (see :doc:`Debugging <../api-guides/openocd>`).
+3. Run OpenOCD (see :doc:`JTAG Debugging <../api-guides/jtag-debugging/index>`).
 4. Connect to OpenOCD telnet server. On Linux it can be done using the following command in terminal ``telnet <oocd_host> 4444``. If telnet session is opened on the same machine which runs OpenOCD you can use ``localhost`` as ``<oocd_host>`` in the command above.
 5. Start trace data collection using special OpenOCD command. This command will transfer tracing data and redirect them to specified file or socket (currently only files are supported as trace data destination). For description of the corresponding commands see `OpenOCD Application Level Tracing Commands`_.
 6. The final step is to process received data. Since format of data is defined by user the processing stage is out of the scope of this document. Good starting points for data processor are python scripts in ``$IDF_PATH/tools/esp_app_trace``: ``apptrace_proc.py`` (used for feature tests) and ``logtrace_proc.py`` (see more details in section `Logging to Host`_).
