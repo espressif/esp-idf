@@ -190,6 +190,12 @@ typedef volatile struct {
         uint32_t val;
     } clk;
 } timg_dev_t;
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern timg_dev_t TIMERG0;
 extern timg_dev_t TIMERG1;
+#ifdef __cplusplus
+}
+#endif
 #endif  /* _SOC_TIMG_STRUCT_H_ */
