@@ -24,6 +24,7 @@
 #include "driver/sdmmc_types.h"
 #include "sdmmc_cmd.h"
 #include "sys/param.h"
+#include "soc/soc_memory_layout.h"
 
 #define SDMMC_GO_IDLE_DELAY_MS      20
 
@@ -51,6 +52,10 @@ static esp_err_t sdmmc_send_cmd_send_status(sdmmc_card_t* card, uint32_t* out_st
 static esp_err_t sdmmc_send_cmd_crc_on_off(sdmmc_card_t* card, bool crc_enable);
 static uint32_t  get_host_ocr(float voltage);
 static void response_ntoh(sdmmc_response_t response);
+static esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
+        size_t start_block, size_t block_count);
+static esp_err_t sdmmc_read_sectors_dma(sdmmc_card_t* card, void* dst,
+        size_t start_block, size_t block_count);
 
 
 static bool host_is_spi(const sdmmc_card_t* card)
@@ -619,6 +624,37 @@ static esp_err_t sdmmc_send_cmd_send_status(sdmmc_card_t* card, uint32_t* out_st
 esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
         size_t start_block, size_t block_count)
 {
+    esp_err_t err = ESP_OK;
+    size_t block_size = card->csd.sector_size;
+    if (esp_ptr_dma_capable(src) && (intptr_t)src % 4 == 0) {
+        err = sdmmc_write_sectors_dma(card, src, start_block, block_count);
+    } else {
+        // SDMMC peripheral needs DMA-capable buffers. Split the write into
+        // separate single block writes, if needed, and allocate a temporary
+        // DMA-capable buffer.
+        void* tmp_buf = heap_caps_malloc(block_size, MALLOC_CAP_DMA);
+        if (tmp_buf == NULL) {
+            return ESP_ERR_NO_MEM;
+        }
+        const uint8_t* cur_src = (const uint8_t*) src;
+        for (size_t i = 0; i < block_count; ++i) {
+            memcpy(tmp_buf, cur_src, block_size);
+            cur_src += block_size;
+            err = sdmmc_write_sectors_dma(card, tmp_buf, start_block + i, 1);
+            if (err != ESP_OK) {
+                ESP_LOGD(TAG, "%s: error 0x%x writing block %d+%d",
+                        __func__, err, start_block, i);
+                break;
+            }
+        }
+        free(tmp_buf);
+    }
+    return err;
+}
+
+static esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
+        size_t start_block, size_t block_count)
+{
     if (start_block + block_count > card->csd.capacity) {
         return ESP_ERR_INVALID_SIZE;
     }
@@ -660,6 +696,37 @@ esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
 }
 
 esp_err_t sdmmc_read_sectors(sdmmc_card_t* card, void* dst,
+        size_t start_block, size_t block_count)
+{
+    esp_err_t err = ESP_OK;
+    size_t block_size = card->csd.sector_size;
+    if (esp_ptr_dma_capable(dst) && (intptr_t)dst % 4 == 0) {
+        err = sdmmc_read_sectors_dma(card, dst, start_block, block_count);
+    } else {
+        // SDMMC peripheral needs DMA-capable buffers. Split the read into
+        // separate single block reads, if needed, and allocate a temporary
+        // DMA-capable buffer.
+        void* tmp_buf = heap_caps_malloc(block_size, MALLOC_CAP_DMA);
+        if (tmp_buf == NULL) {
+            return ESP_ERR_NO_MEM;
+        }
+        uint8_t* cur_dst = (uint8_t*) dst;
+        for (size_t i = 0; i < block_count; ++i) {
+            err = sdmmc_read_sectors_dma(card, tmp_buf, start_block + i, 1);
+            if (err != ESP_OK) {
+                ESP_LOGD(TAG, "%s: error 0x%x writing block %d+%d",
+                        __func__, err, start_block, i);
+                break;
+            }
+            memcpy(cur_dst, tmp_buf, block_size);
+            cur_dst += block_size;
+        }
+        free(tmp_buf);
+    }
+    return err;
+}
+
+static esp_err_t sdmmc_read_sectors_dma(sdmmc_card_t* card, void* dst,
         size_t start_block, size_t block_count)
 {
     if (start_block + block_count > card->csd.capacity) {
