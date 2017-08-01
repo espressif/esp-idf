@@ -151,12 +151,7 @@
 
 #define configUSE_TICK_HOOK				( CONFIG_FREERTOS_LEGACY_TICK_HOOK )
 
-//#define configTICK_RATE_HZ				( CONFIG_FREERTOS_HZ )
-#if CONFIG_PLATFORM_UPDATE < 2
-#define configTICK_RATE_HZ 1000
-#else
-#define configTICK_RATE_HZ 100
-#endif
+#define configTICK_RATE_HZ				( CONFIG_FREERTOS_HZ )
 
 /* Default clock rate for simulator */
 //#define configCPU_CLOCK_HZ				80000000
