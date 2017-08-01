@@ -284,6 +284,12 @@ typedef volatile struct {
     uint32_t reserved_fc;
     uint32_t ram_data[32];                          /*This the start address for ram when use apb nonfifo access.*/
 } i2c_dev_t;
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern i2c_dev_t I2C0;
 extern i2c_dev_t I2C1;
+#ifdef __cplusplus
+}
+#endif
 #endif  /* _SOC_I2C_STRUCT_H_ */

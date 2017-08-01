@@ -332,6 +332,12 @@ typedef volatile struct {
     uint32_t reserved_f8;
     uint32_t date;                                         /*version information*/
 } uhci_dev_t;
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern uhci_dev_t UHCI0;
 extern uhci_dev_t UHCI1;
+#ifdef __cplusplus
+}
+#endif
 #endif  /* _SOC_UHCI_STRUCT_H_ */

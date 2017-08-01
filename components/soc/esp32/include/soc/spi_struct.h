@@ -669,8 +669,14 @@ typedef volatile struct {
         uint32_t val;
     } date;
 } spi_dev_t;
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern spi_dev_t SPI0;                                      /* SPI0 IS FOR INTERNAL USE*/
 extern spi_dev_t SPI1;
 extern spi_dev_t SPI2;
 extern spi_dev_t SPI3;
+#ifdef __cplusplus
+}
+#endif
 #endif  /* _SOC_SPI_STRUCT_H_ */

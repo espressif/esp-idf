@@ -455,7 +455,13 @@ typedef volatile struct {
     uint32_t reserved_f8;
     uint32_t date;                                        /**/
 } i2s_dev_t;
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern i2s_dev_t I2S0;
 extern i2s_dev_t I2S1;
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* _SOC_I2S_STRUCT_H_ */

@@ -224,7 +224,13 @@ typedef volatile struct {
     uint32_t reserved_f8;
     uint32_t date;                                      /*This is the version register.*/
 } rmt_dev_t;
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern rmt_dev_t RMT;
+#ifdef __cplusplus
+}
+#endif
 
 typedef struct {
     union {
@@ -257,6 +263,12 @@ typedef volatile struct {
         };
     } chan[8];
 } rmt_mem_t;
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern rmt_mem_t RMTMEM;
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* _SOC_RMT_STRUCT_H_ */
