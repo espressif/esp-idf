@@ -10,7 +10,9 @@ SDMMC peripheral supports SD and MMC memory cards and SDIO cards. SDMMC software
 
 2. SDMMC protocol layer (``sdmmc_cmd.h``) — this component handles specifics of SD protocol such as card initialization and data transfer commands. Despite the name, only SD (SDSC/SDHC/SDXC) cards are supported at the moment. Support for MCC/eMMC cards can be added in the future.
 
-Protocol layer works with the host via ``sdmmc_host_t`` structure. This structure contains pointers to various functions of the host. This design makes it possible to implement an SD host using SPI interface later.
+Protocol layer works with the host via ``sdmmc_host_t`` structure. This structure contains pointers to various functions of the host.
+
+In addition to SDMMC Host peripheral, ESP32 has SPI peripherals which can also be used to work with SD cards. This is supported using a variant of the host driver, ``driver/sdspi_host.h``. This driver has the same interface as SDMMC host driver, and the protocol layer can use either of two.
 
 Application Example
 -------------------
@@ -94,3 +96,29 @@ Of all the funtions listed below, only ``sdmmc_host_init``, ``sdmmc_host_init_sl
 .. doxygenfunction:: sdmmc_host_set_card_clk
 .. doxygenfunction:: sdmmc_host_do_transaction
 .. doxygenfunction:: sdmmc_host_deinit
+
+SD SPI driver APIs
+------------------
+
+SPI controllers accessible via spi_master driver (HSPI, VSPI) can be used to work with SD cards. In SPI mode, SD driver has lower throughput than in 1-line SD mode. However SPI mode makes pin selection more flexible, as SPI peripheral can be connected to any ESP32 pins using GPIO Matrix. SD SPI driver uses software controlled CS signal. Currently SD SPI driver assumes that it can use the SPI controller exclusively, so applications which need to share SPI bus between SD cards and other peripherals need to make sure that SD card and other devices are not used at the same time from different tasks. 
+
+SD SPI driver is represented using an ``sdmmc_host_t`` structure initialized using ``SDSPI_HOST_DEFAULT`` macro. For slot initialization, ``SDSPI_SLOT_CONFIG_DEFAULT`` can be used to fill in default pin mapping, which is the same as the pin mapping in SD mode.
+
+SD SPI driver APIs are very similar to SDMMC host APIs. As with the SDMMC host driver, only ``sdspi_host_init``, ``sdspi_host_init_slot``, and ``sdspi_host_deinit`` functions are normally used by the applications. Other functions are called by the protocol level driver via function pointers in ``sdmmc_host_t`` structure.
+
+.. doxygenfunction:: sdspi_host_init
+
+.. doxygendefine:: SDSPI_HOST_DEFAULT
+
+.. doxygenfunction:: sdspi_host_init_slot
+
+.. doxygenstruct:: sdspi_slot_config_t
+    :members:
+
+.. doxygendefine:: SDSPI_SLOT_NO_CD
+.. doxygendefine:: SDSPI_SLOT_NO_WP
+.. doxygendefine:: SDSPI_SLOT_CONFIG_DEFAULT
+
+.. doxygenfunction:: sdspi_host_set_card_clk
+.. doxygenfunction:: sdspi_host_do_transaction
+.. doxygenfunction:: sdspi_host_deinit

@@ -1,6 +1,6 @@
 # This is a list of python packages used to generate documentation. This file is used with pip:
 # pip install requirements.txt
 #
-sphinx
+sphinx==1.5.6
 sphinx-rtd-theme
 breathe

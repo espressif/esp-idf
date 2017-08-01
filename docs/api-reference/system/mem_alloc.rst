@@ -29,9 +29,9 @@ which it can't do for a normal malloc() call. This can help to use all the avail
 API Reference - Heap Allocation
 -------------------------------
 
-.. include:: /_build/inc/esp_heap_alloc_caps.inc
+.. include:: /_build/inc/esp_heap_caps.inc
 
 API Reference - Heap Regions
 ----------------------------
 
-.. include:: /_build/inc/heap_regions.inc
+.. include:: /_build/inc/multi_heap.inc

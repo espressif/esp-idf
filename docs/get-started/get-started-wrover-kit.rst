@@ -15,7 +15,7 @@ What You Need
 The Board
 ---------
 
-This section describes functionality of ESP-WROVER-KIT board and configuration options. If you like to start using it now, go directly to section :ref:`esp-wrover-start-developement`
+This section describes functionality of ESP-WROVER-KIT board and configuration options. If you like to start using it now, go directly to section :ref:`esp-wrover-start-development`
 
 
 Overview
@@ -25,7 +25,7 @@ The ESP-WROVER-KIT is a development board produced by `Espressif <http://espress
 
 .. note::
 
-    ESP-WROVER-KIT integrates the ESP-WROOM-32 module by default.
+    ESP-WROVER-KIT integrates the ESP-WROOM-32 module, while ESP-WROVER-KIT-RVB integrates the ESP32-WROVER. Both ESP-WROVER-KIT and ESP-WROVER-KIT-RVB have the same baseboard. The only difference is the module. 
 
 
 Functionality Overview
@@ -117,31 +117,33 @@ Setup Options
 
 There are five jumper headers available to set up the board functionality. Typical options to select from are listed in table below.
 
-+--------+----------------------+-------------------------------------------------+
-| Header | Jumper Setting       | Description of Functionality                    |
-+--------+----------------------+-------------------------------------------------+
-|  JP1   | |jp1-both|           | Assert GPIO2 low during each download           |
-|        |                      | (by jumping it to GPIO0)                        |
-+--------+----------------------+-------------------------------------------------+
-|  JP1   | |jp1-sd_io2|         | Enable pull up for the Micro SD Card            |
-|        |                      |                                                 |
-|        |                      | **Note:** applies to ESP-WROVER-KIT V2 only     |
-+--------+----------------------+-------------------------------------------------+
-|  JP7   | |jp7-ext_5v|         | Power ESP-WROVER-KIT board from an external     |
-|        |                      | power supply                                    |
-+--------+----------------------+-------------------------------------------------+
-|  JP7   | |jp7-usb_5v|         | Power ESP-WROVER-KIT board from an USB port     |
-+--------+----------------------+-------------------------------------------------+
-|  JP8   | |jp8|                | Enable JTAG functionality                       |
-+--------+----------------------+-------------------------------------------------+
-|  JP11  | |jp11-rx-tx|         | Enable UART communication                       |
-+--------+----------------------+-------------------------------------------------+
-|  JP14  | |jp14|               | Enable RTS/CTS flow control for serial          |
-|        |                      | communication                                   |
-+--------+----------------------+-------------------------------------------------+
++--------+----------------------+-----------------------------------------------------------+
+| Header | Jumper Setting       | Description of Functionality                              |
++--------+----------------------+-----------------------------------------------------------+
+|  JP1   | |jp1-both|           | Assert GPIO2 low during each download                     |
+|        |                      | (by jumping it to GPIO0)                                  |
++--------+----------------------+-----------------------------------------------------------+
+|  JP1   | |jp1-sd_io2|         | Enable pull up for the Micro SD Card,                     |
+|        |                      | ESP-WROVER-KIT V2 only                                    |
+|        |                      |                                                           |
+|        |                      | **Note:**                                                 |
+|        |                      | No jumpers are needed for SD card function on the V3      |
++--------+----------------------+-----------------------------------------------------------+
+|  JP7   | |jp7-ext_5v|         | Power ESP-WROVER-KIT board from an external               |
+|        |                      | power supply                                              |
++--------+----------------------+-----------------------------------------------------------+
+|  JP7   | |jp7-usb_5v|         | Power ESP-WROVER-KIT board from an USB port               |
++--------+----------------------+-----------------------------------------------------------+
+|  JP8   | |jp8|                | Enable JTAG functionality                                 |
++--------+----------------------+-----------------------------------------------------------+
+|  JP11  | |jp11-rx-tx|         | Enable UART communication                                 |
++--------+----------------------+-----------------------------------------------------------+
+|  JP14  | |jp14|               | Enable RTS/CTS flow control for serial                    |
+|        |                      | communication                                             |
++--------+----------------------+-----------------------------------------------------------+
 
 
-.. _esp-wrover-start-developement:
+.. _esp-wrover-start-development:
 
 Start Application Development
 -----------------------------

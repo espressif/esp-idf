@@ -665,6 +665,28 @@ config ESP32_WIFI_AMPDU_ENABLED
         Select this option to enable AMPDU feature
 
 
+config ESP32_WIFI_TX_BA_WIN
+    int "WiFi AMPDU TX BA window size"
+    depends on ESP32_WIFI_AMPDU_ENABLED
+    range 2 32
+    default 6
+    help
+        Set the size of WiFi Block Ack TX window. Generally a bigger value means higher throughput but
+        more memory. Most of time we should NOT change the default value unless special reason, e.g. 
+        test the maximum UDP TX throughput with iperf etc. For iperf test in shieldbox, the recommended
+        value is 9~12.
+
+config ESP32_WIFI_RX_BA_WIN
+    int "WiFi AMPDU RX BA window size"
+    depends on ESP32_WIFI_AMPDU_ENABLED
+    range 2 32
+    default 6
+    help
+        Set the size of WiFi Block Ack RX window. Generally a bigger value means higher throughput but 
+        more memory. Most of time we should NOT change the default value unless special reason, e.g.  
+        test the maximum UDP RX throughput with iperf etc. For iperf test in shieldbox, the recommended
+        value is 9~12.
+
 config ESP32_WIFI_NVS_ENABLED
     bool "WiFi NVS flash"
     depends on WIFI_ENABLED

@@ -259,3 +259,64 @@ TEST_CASE("SPI Master test, interaction of multiple devs", "[spi][ignore]") {
     destroy_spi_bus(handle1);
 }
 
+TEST_CASE("SPI Master no response when switch from host1 (HSPI) to host2 (VSPI)", "[spi]")
+{
+	//spi config
+	spi_bus_config_t bus_config;
+	spi_device_interface_config_t device_config;
+	spi_device_handle_t spi;
+	spi_host_device_t host;
+	int dma = 1;
+
+	memset(&bus_config, 0, sizeof(spi_bus_config_t));
+	memset(&device_config, 0, sizeof(spi_device_interface_config_t));
+
+	bus_config.miso_io_num = -1;
+	bus_config.mosi_io_num = 26;
+	bus_config.sclk_io_num = 25;
+	bus_config.quadwp_io_num = -1;
+	bus_config.quadhd_io_num = -1;
+
+	device_config.clock_speed_hz = 50000;
+	device_config.mode = 0;
+	device_config.spics_io_num = -1;
+	device_config.queue_size = 1;
+	device_config.flags = SPI_DEVICE_TXBIT_LSBFIRST | SPI_DEVICE_RXBIT_LSBFIRST;
+
+	struct spi_transaction_t transaction = {
+		.flags = SPI_TRANS_USE_TXDATA | SPI_TRANS_USE_RXDATA,
+		.length = 16,
+		.tx_buffer = NULL,
+		.rx_buffer = NULL,
+		.tx_data = {0x04, 0x00}
+	};
+
+
+	//initialize for first host
+	host = 1;
+
+	assert(spi_bus_initialize(host, &bus_config, dma) == ESP_OK);
+	assert(spi_bus_add_device(host, &device_config, &spi) == ESP_OK);
+
+	printf("before first xmit\n");
+	assert(spi_device_transmit(spi, &transaction) == ESP_OK);
+	printf("after first xmit\n");
+
+	assert(spi_bus_remove_device(spi) == ESP_OK);
+	assert(spi_bus_free(host) == ESP_OK);
+
+
+	//for second host and failed before
+	host = 2;
+
+	assert(spi_bus_initialize(host, &bus_config, dma) == ESP_OK);
+	assert(spi_bus_add_device(host, &device_config, &spi) == ESP_OK);
+
+	printf("before second xmit\n");
+	// the original version (bit mis-written) stucks here.
+	assert(spi_device_transmit(spi, &transaction) == ESP_OK);
+	// test case success when see this.
+	printf("after second xmit\n");
+
+
+}
