@@ -269,6 +269,20 @@ esp_err_t uart_set_line_inverse(uart_port_t uart_num, uint32_t inverse_mask);
 esp_err_t uart_set_hw_flow_ctrl(uart_port_t uart_num, uart_hw_flowcontrol_t flow_ctrl, uint8_t rx_thresh);
 
 /**
+ * @brief Set software flow control.
+ *
+ * @param uart_num   UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param enable     switch on or off
+ * @param rx_thresh_xon  low water mark
+ * @param rx_thresh_xoff high water mark
+ *
+ * @return
+ *     - ESP_OK   Success
+ *     - ESP_FAIL Parameter error
+ */
+ esp_err_t uart_set_sw_flow_ctrl(uart_port_t uart_num, bool enable, uint8_t rx_thresh_xon,  uint8_t rx_thresh_xoff);
+
+/**
  * @brief Get hardware flow control mode
  *
  * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
