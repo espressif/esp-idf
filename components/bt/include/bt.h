@@ -19,6 +19,7 @@
 #include <stdbool.h>
 #include "esp_err.h"
 #include "sdkconfig.h"
+#include "esp_task.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,8 +31,10 @@ extern "C" {
  *        some options or parameters of some functions enabled by config mask.
  */
 typedef struct {
-    uint8_t hci_uart_no;            /*!< If use UART1/2 as HCI IO interface, indicate UART number */
-    uint32_t hci_uart_baudrate;     /*!< If use UART1/2 as HCI IO interface, indicate UART baudrate */
+    uint16_t controller_task_stack_size;    /*!< Bluetooth controller task stack size */
+    uint8_t controller_task_prio;           /*!< Bluetooth controller task priority */
+    uint8_t hci_uart_no;                    /*!< If use UART1/2 as HCI IO interface, indicate UART number */
+    uint32_t hci_uart_baudrate;             /*!< If use UART1/2 as HCI IO interface, indicate UART baudrate */
 } esp_bt_controller_config_t;
 
 #ifdef CONFIG_BT_ENABLED
@@ -48,9 +51,11 @@ typedef struct {
 #define BT_HCI_UART_BAUDRATE_DEFAULT 921600
 #endif /* BT_HCI_UART_BAUDRATE_DEFAULT */
 
-#define BT_CONTROLLER_INIT_CONFIG_DEFAULT() { \
-    .hci_uart_no = BT_HCI_UART_NO_DEFAULT,\
-    .hci_uart_baudrate = BT_HCI_UART_BAUDRATE_DEFAULT,\
+#define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {                       \
+    .controller_task_stack_size = ESP_TASK_BT_CONTROLLER_STACK,     \
+    .controller_task_prio = ESP_TASK_BT_CONTROLLER_PRIO,            \
+    .hci_uart_no = BT_HCI_UART_NO_DEFAULT,                          \
+    .hci_uart_baudrate = BT_HCI_UART_BAUDRATE_DEFAULT,              \
 };
 #else
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {0}; _Static_assert(0, "please enable bluetooth in menuconfig to use bt.h");
@@ -76,6 +81,66 @@ typedef enum {
     ESP_BT_CONTROLLER_STATUS_NUM,
 } esp_bt_controller_status_t;
 
+
+/**
+ * @brief BLE tx power type
+ *        ESP_BLE_PWR_TYPE_CONN_HDL0-9: for each connection, and only be set after connetion completed.
+ *                                      when disconnect, the correspond TX power is not effected.
+ *        ESP_BLE_PWR_TYPE_ADV : for advertising/scan response.
+ *        ESP_BLE_PWR_TYPE_SCAN : for scan.
+ *        ESP_BLE_PWR_TYPE_DEFAULT : if each connection's TX power is not set, it will use this default value.
+ *                                   if neither in scan mode nor in adv mode, it will use this default value.
+ *        If none of power type is set, system will use ESP_PWR_LVL_P1 as default for ADV/SCAN/CONN0-9.
+ */
+typedef enum {
+    ESP_BLE_PWR_TYPE_CONN_HDL0  = 0,            /*!< For connection handle 0 */
+    ESP_BLE_PWR_TYPE_CONN_HDL1  = 1,            /*!< For connection handle 1 */
+    ESP_BLE_PWR_TYPE_CONN_HDL2  = 2,            /*!< For connection handle 2 */
+    ESP_BLE_PWR_TYPE_CONN_HDL3  = 3,            /*!< For connection handle 3 */
+    ESP_BLE_PWR_TYPE_CONN_HDL4  = 4,            /*!< For connection handle 4 */
+    ESP_BLE_PWR_TYPE_CONN_HDL5  = 5,            /*!< For connection handle 5 */
+    ESP_BLE_PWR_TYPE_CONN_HDL6  = 6,            /*!< For connection handle 6 */
+    ESP_BLE_PWR_TYPE_CONN_HDL7  = 7,            /*!< For connection handle 7 */
+    ESP_BLE_PWR_TYPE_CONN_HDL8  = 8,            /*!< For connection handle 8 */
+    ESP_BLE_PWR_TYPE_CONN_HDL9  = 9,            /*!< For connection handle 9 */
+    ESP_BLE_PWR_TYPE_ADV        = 10,           /*!< For advertising */
+    ESP_BLE_PWR_TYPE_SCAN       = 11,           /*!< For scan */
+    ESP_BLE_PWR_TYPE_DEFAULT    = 12,           /*!< For default, if not set other, it will use default value */
+    ESP_BLE_PWR_TYPE_NUM        = 13,           /*!< TYPE numbers */
+} esp_ble_power_type_t;
+
+/**
+ * @brief Bluetooth TX power level(index), it's just a index corresponding to power(dbm).
+ */
+typedef enum {
+    ESP_PWR_LVL_N14 = 0,            /*!< Corresponding to -14dbm */
+    ESP_PWR_LVL_N11 = 1,            /*!< Corresponding to -11dbm */
+    ESP_PWR_LVL_N8  = 2,            /*!< Corresponding to  -8dbm */
+    ESP_PWR_LVL_N5  = 3,            /*!< Corresponding to  -5dbm */
+    ESP_PWR_LVL_N2  = 4,            /*!< Corresponding to  -2dbm */
+    ESP_PWR_LVL_P1  = 5,            /*!< Corresponding to   1dbm */
+    ESP_PWR_LVL_P4  = 6,            /*!< Corresponding to   4dbm */
+    ESP_PWR_LVL_P7  = 7,            /*!< Corresponding to   7dbm */
+} esp_power_level_t;
+
+/**
+ * @brief  Set BLE TX power
+ *         Connection Tx power should only be set after connection created.
+ * @param  power_type : The type of which tx power, could set Advertising/Connection/Default and etc
+ * @param  power_level: Power level(index) corresponding to absolute value(dbm)
+ * @return              ESP_OK - success, other - failed
+ */
+esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_t power_level);
+
+/**
+ * @brief  Get BLE TX power
+ *         Connection Tx power should only be get after connection created.
+ * @param  power_type : The type of which tx power, could set Advertising/Connection/Default and etc
+ * @return             >= 0 - Power level, < 0 - Invalid
+ */
+esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type);
+
+
 /**
  * @brief  Initialize BT controller to allocate task and other resource.
  * @param  cfg: Initial configuration of BT controller.
@@ -89,8 +154,9 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg);
  *
  * This function should be called only once, after any other BT functions are called.
  * This function is not whole completed, esp_bt_controller_init cannot called after this function.
+ * @return  ESP_OK - success, other - failed
  */
-void esp_bt_controller_deinit(void);
+esp_err_t esp_bt_controller_deinit(void);
 
 /**
  * @brief Enable BT controller

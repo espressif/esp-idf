@@ -81,7 +81,11 @@ typedef UINT16 tBTA_GATTC_INT_EVT;
 
 /* max known devices GATTC can support */
 #ifndef     BTA_GATTC_KNOWN_SR_MAX
-#define     BTA_GATTC_KNOWN_SR_MAX    3 // 10
+#if (GATT_MAX_PHY_CHANNEL > 3)
+    #define     BTA_GATTC_KNOWN_SR_MAX    GATT_MAX_PHY_CHANNEL
+#else
+    #define     BTA_GATTC_KNOWN_SR_MAX    3 // The origin value is 10
+#endif
 #endif
 
 #define BTA_GATTC_CONN_MAX      GATT_MAX_PHY_CHANNEL

@@ -142,14 +142,14 @@
 
 //write value to register
 #define REG_WRITE(_r, _v) ({                                                                                           \
-            ASSERT_IF_DPORT_REG(_r, REG_WRITE);                                                                        \
+            ASSERT_IF_DPORT_REG((_r), REG_WRITE);                                                                      \
             (*(volatile uint32_t *)(_r)) = (_v);                                                                       \
         })
 
 //read value from register
 #define REG_READ(_r) ({                                                                                                \
             ASSERT_IF_DPORT_REG((_r), REG_READ);                                                                       \
-            (*(volatile uint32_t *)_r);                                                                                \
+            (*(volatile uint32_t *)(_r));                                                                              \
         })
 
 //get bit or get bits from register
@@ -269,6 +269,27 @@
 #define  TICKS_PER_US_ROM                            26              // CPU is 80MHz
 //}}
 
+/* Overall memory map */
+#define SOC_IROM_LOW    0x400D0000
+#define SOC_IROM_HIGH   0x40400000
+#define SOC_IRAM_LOW    0x40080000
+#define SOC_IRAM_HIGH   0x400A0000
+#define SOC_DROM_LOW    0x3F400000
+#define SOC_DROM_HIGH   0x3F800000
+#define SOC_RTC_IRAM_LOW  0x400C0000
+#define SOC_RTC_IRAM_HIGH 0x400C2000
+#define SOC_RTC_DATA_LOW  0x50000000
+#define SOC_RTC_DATA_HIGH 0x50002000
+
+//First and last words of the D/IRAM region, for both the DRAM address as well as the IRAM alias.
+#define SOC_DIRAM_IRAM_LOW    0x400A0000
+#define SOC_DIRAM_IRAM_HIGH   0x400BFFFC
+#define SOC_DIRAM_DRAM_LOW    0x3FFE0000
+#define SOC_DIRAM_DRAM_HIGH   0x3FFFFFFC
+
+// Region of memory accessible via DMA. See esp_ptr_dma_capable().
+#define SOC_DMA_LOW  0x3FFAE000
+#define SOC_DMA_HIGH 0x40000000
 
 //Interrupt hardware source table
 //This table is decided by hardware, don't touch this.
@@ -371,12 +392,12 @@
  *      23                      3               extern level
  *      24                      4               extern level            TG1_WDT
  *      25                      4               extern level            CACHEERR
- *      26                      5               extern level            Reserved                Reserved
+ *      26                      5               extern level
  *      27                      3               extern level            Reserved                Reserved
- *      28                      4               extern edge             
+ *      28                      4               extern edge             DPORT ACCESS            DPORT ACCESS
  *      29                      3               software                Reserved                Reserved
  *      30                      4               extern edge             Reserved                Reserved
- *      31                      5               extern level            DPORT ACCESS            DPORT ACCESS
+ *      31                      5               extern level
  *************************************************************************************************************
  */
 
@@ -388,7 +409,7 @@
 #define ETS_FRC1_INUM                           22
 #define ETS_T1_WDT_INUM                         24
 #define ETS_CACHEERR_INUM                       25
-#define ETS_DPORT_INUM                          31
+#define ETS_DPORT_INUM                          28
 
 //CPU0 Interrupt number used in ROM, should be cancelled in SDK
 #define ETS_SLC_INUM                            1

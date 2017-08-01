@@ -25,8 +25,16 @@ MEMORY
   /* IRAM for PRO cpu. Not sure if happy with this, this is MMU area... */
   iram0_0_seg (RX) :                 org = 0x40080000, len = 0x20000
 
-  /* Even though the segment name is iram, it is actually mapped to flash */
-  iram0_2_seg (RX) :                 org = 0x400D0018, len = 0x330000
+  /* Even though the segment name is iram, it is actually mapped to flash
+  */
+  iram0_2_seg (RX) :                 org = 0x400D0018, len = 0x330000-0x18
+
+  /*
+    (0x18 offset above is a convenience for the app binary image generation. Flash cache has 64KB pages. The .bin file
+    which is flashed to the chip has a 0x18 byte file header. Setting this offset makes it simple to meet the flash
+    cache MMU's constraint that (paddr % 64KB == vaddr % 64KB).)
+  */
+
 
   /* Shared data RAM, excluding memory reserved for ROM bss/data/stack.
 
@@ -37,7 +45,9 @@ MEMORY
                                      len = 0x50000 - CONFIG_TRACEMEM_RESERVE_DRAM - CONFIG_BT_RESERVE_DRAM
 
   /* Flash mapped constant data */
-  drom0_0_seg (R) :                  org = 0x3F400010, len = 0x800000
+  drom0_0_seg (R) :                  org = 0x3F400018, len = 0x400000-0x18
+
+  /* (See iram0_2_seg for meaning of 0x18 offset in the above.) */
 
   /* RTC fast memory (executable). Persists over deep sleep.
    */

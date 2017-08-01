@@ -71,10 +71,11 @@ endef
 
 include $(COMPONENT_MAKEFILE)
 
-
 ################################################################################
 # 3) Set variables that depend on values that may changed by component.mk
 ################################################################################
+
+ifndef COMPONENT_CONFIG_ONLY  # Skip steps 3-5 if COMPONENT_CONFIG_ONLY is set
 
 # Object files which need to be linked into the library
 # By default we take all .c, .cpp & .S files in COMPONENT_SRCDIRS.
@@ -104,7 +105,7 @@ COMPONENT_EMBED_OBJS ?= $(addsuffix .bin.o,$(notdir $(COMPONENT_EMBED_FILES))) $
 # variable with all the include dirs from all the components in random order. This
 # means we can accidentally grab a header from another component before grabbing our own.
 # To make sure that does not happen, re-order the includes so ours come first.
-OWN_INCLUDES:=$(abspath $(addprefix $(COMPONENT_PATH)/,$(COMPONENT_ADD_INCLUDEDIRS) $(COMPONENT_PRIV_INCLUDEDIRS)))
+OWN_INCLUDES:=$(abspath $(addprefix $(COMPONENT_PATH)/,$(COMPONENT_PRIV_INCLUDEDIRS) $(COMPONENT_ADD_INCLUDEDIRS)))
 COMPONENT_INCLUDES := $(OWN_INCLUDES) $(filter-out $(OWN_INCLUDES),$(COMPONENT_INCLUDES))
 
 
@@ -112,6 +113,8 @@ COMPONENT_INCLUDES := $(OWN_INCLUDES) $(filter-out $(OWN_INCLUDES),$(COMPONENT_I
 # 4) Define a target to generate component_project_vars.mk Makefile which
 # contains common per-component settings which are included directly in the
 # top-level project make
+#
+# (Skipped if COMPONENT_CONFIG_ONLY is set.)
 ################################################################################
 
 # macro to generate variable-relative paths inside component_project_vars.mk, whenever possible
@@ -140,23 +143,23 @@ component_project_vars.mk::
 	$(details) "Building component project variables list $(abspath $@)"
 	@echo '# Automatically generated build file. Do not edit.' > $@
 	@echo 'COMPONENT_INCLUDES += $(call MakeVariablePath,$(addprefix $(COMPONENT_PATH)/,$(COMPONENT_ADD_INCLUDEDIRS)))' >> $@
-	@echo 'COMPONENT_LDFLAGS += $(call MakeVariablePath,$(COMPONENT_ADD_LDFLAGS))' >> $@
+	@echo 'COMPONENT_LDFLAGS += $(call MakeVariablePath,-L$(COMPONENT_BUILD_DIR) $(COMPONENT_ADD_LDFLAGS))' >> $@
 	@echo 'COMPONENT_LINKER_DEPS += $(call MakeVariablePath,$(call resolvepath,$(COMPONENT_ADD_LINKER_DEPS),$(COMPONENT_PATH)))' >> $@
 	@echo 'COMPONENT_SUBMODULES += $(call MakeVariablePath,$(addprefix $(COMPONENT_PATH)/,$(COMPONENT_SUBMODULES)))' >> $@
+	@echo 'COMPONENT_LIBRARIES += $(COMPONENT_NAME)' >> $@
 	@echo '$(COMPONENT_NAME)-build: $(addsuffix -build,$(COMPONENT_DEPENDS))' >> $@
 
-
 ################################################################################
-# 5) If COMPONENT_OWNBUILDTARGET / COMPONENT_OWNCLEANTARGET is not set by component.mk,
-#	define default build, clean, etc. targets
+# 5) Where COMPONENT_OWNBUILDTARGET / COMPONENT_OWNCLEANTARGET
+# is not set by component.mk, define default build, clean, etc. targets
+#
+# (Skipped if COMPONENT_CONFIG_ONLY is set.)
 ################################################################################
 
-# If COMPONENT_OWNBUILDTARGET is not set, define a phony build target and
-# a COMPONENT_LIBRARY link target.
+# Default build behaviour: define a phony build target and a COMPONENT_LIBRARY link target.
 ifndef COMPONENT_OWNBUILDTARGET
 .PHONY: build
 build: $(COMPONENT_LIBRARY)
-	@mkdir -p $(COMPONENT_SRCDIRS)
 
 # Build the archive. We remove the archive first, otherwise ar will get confused if we update
 # an archive when multiple filenames have the same name (src1/test.o and src2/test.o)
@@ -178,6 +181,18 @@ endif
 # Include all dependency files already generated
 -include $(COMPONENT_OBJS:.o=.d)
 
+# This is a fix for situation where the project or IDF dir moves, and instead
+# of rebuilding the target the build fails until make clean is run
+#
+# It adds an empty dependency rule for the (possibly non-existent) source file itself,
+# which prevents it not being found from failing the build
+#
+# $1 == Source File, $2 == .o file used for .d file name
+define AppendSourceToDependencies
+echo "$1:" >> $$(patsubst %.o,%.d,$2)
+endef
+
+
 # This pattern is generated for each COMPONENT_SRCDIR to compile the files in it.
 define GenerateCompileTargets
 # $(1) - directory containing source files, relative to $(COMPONENT_PATH) - one of $(COMPONENT_SRCDIRS)
@@ -185,14 +200,17 @@ define GenerateCompileTargets
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.c $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
 	$$(summary) CC $$@
 	$$(CC) $$(CFLAGS) $$(CPPFLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
+	$(call AppendSourceToDependencies,$$<,$$@)
 
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.cpp $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
 	$$(summary) CXX $$@
 	$$(CXX) $$(CXXFLAGS) $$(CPPFLAGS) $$(addprefix -I,$$(COMPONENT_INCLUDES)) $$(addprefix -I,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
+	$(call AppendSourceToDependencies,$$<,$$@)
 
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.S $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
 	$$(summary) AS $$@
 	$$(CC) $$(CPPFLAGS) $$(DEBUG_FLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
+	$(call AppendSourceToDependencies,$$<,$$@)
 
 # CWD is build dir, create the build subdirectory if it doesn't exist
 #
@@ -250,3 +268,19 @@ $(foreach txtfile,$(COMPONENT_EMBED_TXTFILES), $(eval $(call GenerateEmbedTarget
 
 # generate targets to create binary embed directories
 $(foreach bindir,$(sort $(dir $(COMPONENT_EMBED_FILES))), $(eval $(call GenerateBuildDirTarget,$(bindir))))
+
+
+else   # COMPONENT_CONFIG_ONLY is set
+
+build:
+	$(details) "No build needed for $(COMPONENT_NAME) (COMPONENT_CONFIG_ONLY)"
+
+clean:
+	$(summary) RM component_project_vars.mk
+	rm -f component_project_vars.mk
+
+component_project_vars.mk::  # no need to add variables via component.mk
+	@echo '# COMPONENT_CONFIG_ONLY target sets no variables here' > $@
+
+endif  # COMPONENT_CONFIG_ONLY
+

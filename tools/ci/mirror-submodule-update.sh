@@ -26,6 +26,8 @@ die() {
 
 [ -z ${GITLAB_SSH_SERVER:-} ] && die "Have to set up GITLAB_SSH_SERVER environment variable"
 
+ERR_CANNOT_UPDATE=13
+
 REPO_DIR=${1:-"${PWD}"}
 REPO_DIR=$(readlink -f -- "${REPO_DIR}")
 
@@ -70,7 +72,7 @@ done
 
 # 3
 # Getting submodules of the current repository from the local mirrors
-git submodule update
+git submodule update || exit $ERR_CANNOT_UPDATE
 
 # 4
 # Replacing URLs for each sub-submodule.

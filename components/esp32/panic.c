@@ -39,6 +39,7 @@
 #include "esp_spi_flash.h"
 #include "esp_cache_err_int.h"
 #include "esp_app_trace.h"
+#include "esp_system.h"
 #if CONFIG_SYSVIEW_ENABLE
 #include "SEGGER_RTT.h"
 #endif
@@ -409,8 +410,6 @@ static void doBacktrace(XtExcFrame *frame)
     panicPutStr("\r\n\r\n");
 }
 
-void esp_restart_noos() __attribute__ ((noreturn));
-
 /*
   We arrive here after a panic or unhandled exception, when no OCD is detected. Dump the registers to the
   serial port and either jump to the gdb stub, halt the CPU or reboot.
@@ -479,7 +478,7 @@ static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
     esp_core_dump_to_uart(frame);
 #endif
     reconfigureAllWdts();
-#endif
+#endif /* CONFIG_ESP32_ENABLE_COREDUMP */
     esp_panic_wdt_stop();
 #if CONFIG_ESP32_PANIC_PRINT_REBOOT || CONFIG_ESP32_PANIC_SILENT_REBOOT
     panicPutStr("Rebooting...\r\n");
@@ -493,8 +492,8 @@ static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
     disableAllWdts();
     panicPutStr("CPU halted.\r\n");
     while (1);
-#endif
-#endif
+#endif /* CONFIG_ESP32_PANIC_PRINT_REBOOT || CONFIG_ESP32_PANIC_SILENT_REBOOT */
+#endif /* CONFIG_ESP32_PANIC_GDBSTUB */
 }
 
 

@@ -385,7 +385,7 @@ void netif_set_gw(struct netif *netif, const ip4_addr_t *gw);
 void netif_set_up(struct netif *netif);
 void netif_set_down(struct netif *netif);
 /** Ask if an interface is up */
-#define netif_is_up(netif) (((netif)->flags & NETIF_FLAG_UP) ? (u8_t)1 : (u8_t)0)
+#define netif_is_up(netif) ( ((netif) && ((netif)->flags & NETIF_FLAG_UP)) ? (u8_t)1 : (u8_t)0)
 
 #if LWIP_NETIF_STATUS_CALLBACK
 void netif_set_status_callback(struct netif *netif, netif_status_callback_fn status_callback);

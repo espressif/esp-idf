@@ -53,11 +53,12 @@ queue and re-enabling the interrupt will trigger the interrupt again, which can 
 #include "freertos/task.h"
 #include "freertos/ringbuf.h"
 #include "soc/soc.h"
+#include "soc/soc_memory_layout.h"
 #include "soc/dport_reg.h"
 #include "rom/lldesc.h"
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
-#include "esp_heap_alloc_caps.h"
+#include "esp_heap_caps.h"
 
 typedef struct spi_device_t spi_device_t;
 
@@ -122,8 +123,8 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
         int dma_desc_ct=(bus_config->max_transfer_sz+SPI_MAX_DMA_LEN-1)/SPI_MAX_DMA_LEN;
         if (dma_desc_ct==0) dma_desc_ct=1; //default to 4k when max is not given
         spihost[host]->max_transfer_sz = dma_desc_ct*SPI_MAX_DMA_LEN;
-        spihost[host]->dmadesc_tx=pvPortMallocCaps(sizeof(lldesc_t)*dma_desc_ct, MALLOC_CAP_DMA);
-        spihost[host]->dmadesc_rx=pvPortMallocCaps(sizeof(lldesc_t)*dma_desc_ct, MALLOC_CAP_DMA);
+        spihost[host]->dmadesc_tx=heap_caps_malloc(sizeof(lldesc_t)*dma_desc_ct, MALLOC_CAP_DMA);
+        spihost[host]->dmadesc_rx=heap_caps_malloc(sizeof(lldesc_t)*dma_desc_ct, MALLOC_CAP_DMA);
         if (!spihost[host]->dmadesc_tx || !spihost[host]->dmadesc_rx) goto nomem;
     }
     esp_intr_alloc(spicommon_irqsource_for_host(host), ESP_INTR_FLAG_INTRDISABLED, spi_intr, (void*)spihost[host], &spihost[host]->intr);

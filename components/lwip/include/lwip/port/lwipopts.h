@@ -417,14 +417,14 @@
  * NETCONN_UDP. The queue size value itself is platform-dependent, but is passed
  * to sys_mbox_new() when the recvmbox is created.
  */
-#define DEFAULT_UDP_RECVMBOX_SIZE       6
+#define DEFAULT_UDP_RECVMBOX_SIZE       CONFIG_UDP_RECVMBOX_SIZE
 
 /**
  * DEFAULT_TCP_RECVMBOX_SIZE: The mailbox size for the incoming packets on a
  * NETCONN_TCP. The queue size value itself is platform-dependent, but is passed
  * to sys_mbox_new() when the recvmbox is created.
  */
-#define DEFAULT_TCP_RECVMBOX_SIZE       6
+#define DEFAULT_TCP_RECVMBOX_SIZE       CONFIG_TCP_RECVMBOX_SIZE
 
 /**
  * DEFAULT_ACCEPTMBOX_SIZE: The mailbox size for the incoming connections.
@@ -596,6 +596,7 @@
    ---------- Hook options ---------------
    ---------------------------------------
 */
+#define LWIP_HOOK_IP4_ROUTE_SRC         ip4_route_src_hook
 
 /*
    ---------------------------------------

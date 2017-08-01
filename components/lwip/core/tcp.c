@@ -149,6 +149,15 @@ tcp_tmr(void)
   }
 }
 
+void
+tcp_set_fin_wait_1(struct tcp_pcb *pcb)
+{
+  pcb->state = FIN_WAIT_1;
+#if ESP_LWIP
+  pcb->tmr = tcp_ticks;
+#endif
+}
+
 /**
  * Closes the TX side of a connection held by the PCB.
  * For tcp_close(), a RST is sent if the application didn't receive all data
@@ -233,14 +242,14 @@ tcp_close_shutdown(struct tcp_pcb *pcb, u8_t rst_on_unacked_data)
     err = tcp_send_fin(pcb);
     if (err == ERR_OK) {
       MIB2_STATS_INC(mib2.tcpattemptfails);
-      pcb->state = FIN_WAIT_1;
+      tcp_set_fin_wait_1(pcb);
     }
     break;
   case ESTABLISHED:
     err = tcp_send_fin(pcb);
     if (err == ERR_OK) {
       MIB2_STATS_INC(mib2.tcpestabresets);
-      pcb->state = FIN_WAIT_1;
+      tcp_set_fin_wait_1(pcb);
     }
     break;
   case CLOSE_WAIT:
@@ -935,7 +944,11 @@ tcp_slowtmr_start:
       }
     }
     /* Check if this PCB has stayed too long in FIN-WAIT-2 */
+#if ESP_LWIP
+    if ((pcb->state == FIN_WAIT_2) || (pcb->state == FIN_WAIT_1)) {
+#else
     if (pcb->state == FIN_WAIT_2) {
+#endif
       /* If this PCB is in FIN_WAIT_2 because of SHUT_WR don't let it time out. */
       if (pcb->flags & TF_RXCLOSED) {
         /* PCB was fully closed (either through close() or SHUT_RDWR):
@@ -1910,31 +1923,6 @@ tcp_eff_send_mss_impl(u16_t sendmss, const ip_addr_t *dest
 #endif /* TCP_CALCULATE_EFF_SEND_MSS */
 
 #if LWIP_IPV4
-/** Helper function for tcp_netif_ipv4_addr_changed() that iterates a pcb list */
-static void
-tcp_netif_ipv4_addr_changed_pcblist(const ip4_addr_t* old_addr, struct tcp_pcb* pcb_list)
-{
-  struct tcp_pcb *pcb;
-  pcb = pcb_list;
-  while (pcb != NULL) {
-    /* PCB bound to current local interface address? */
-    if (!IP_IS_V6_VAL(pcb->local_ip) && ip4_addr_cmp(ip_2_ip4(&pcb->local_ip), old_addr)
-#if LWIP_AUTOIP
-      /* connections to link-local addresses must persist (RFC3927 ch. 1.9) */
-      && !ip4_addr_islinklocal(ip_2_ip4(&pcb->local_ip))
-#endif /* LWIP_AUTOIP */
-      ) {
-      /* this connection must be aborted */
-      struct tcp_pcb *next = pcb->next;
-      LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_STATE, ("netif_set_ipaddr: aborting TCP pcb %p\n", (void *)pcb));
-      tcp_abort(pcb);
-      pcb = next;
-    } else {
-      pcb = pcb->next;
-    }
-  }
-}
-
 /** This function is called from netif.c when address is changed or netif is removed
  *
  * @param old_addr IPv4 address of the netif before change
@@ -1943,9 +1931,6 @@ tcp_netif_ipv4_addr_changed_pcblist(const ip4_addr_t* old_addr, struct tcp_pcb* 
 void tcp_netif_ipv4_addr_changed(const ip4_addr_t* old_addr, const ip4_addr_t* new_addr)
 {
   struct tcp_pcb_listen *lpcb, *next;
-
-  tcp_netif_ipv4_addr_changed_pcblist(old_addr, tcp_active_pcbs);
-  tcp_netif_ipv4_addr_changed_pcblist(old_addr, tcp_bound_pcbs);
 
   if (!ip4_addr_isany(new_addr)) {
     /* PCB bound to current local interface address? */

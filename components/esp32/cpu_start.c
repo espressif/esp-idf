@@ -40,7 +40,7 @@
 
 #include "tcpip_adapter.h"
 
-#include "esp_heap_alloc_caps.h"
+#include "esp_heap_caps.h"
 #include "sdkconfig.h"
 #include "esp_system.h"
 #include "esp_spi_flash.h"
@@ -68,12 +68,12 @@
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
 
-void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default")));
-void start_cpu0_default(void) IRAM_ATTR;
+void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default"))) __attribute__((noreturn));
+void start_cpu0_default(void) IRAM_ATTR __attribute__((noreturn));
 #if !CONFIG_FREERTOS_UNICORE
-static void IRAM_ATTR call_start_cpu1();
-void start_cpu1(void) __attribute__((weak, alias("start_cpu1_default")));
-void start_cpu1_default(void) IRAM_ATTR;
+static void IRAM_ATTR call_start_cpu1() __attribute__((noreturn));
+void start_cpu1(void) __attribute__((weak, alias("start_cpu1_default"))) __attribute__((noreturn));
+void start_cpu1_default(void) IRAM_ATTR __attribute__((noreturn));
 static bool app_cpu_started = false;
 #endif //!CONFIG_FREERTOS_UNICORE
 
@@ -126,6 +126,13 @@ void IRAM_ATTR call_start_cpu0()
         esp_panic_wdt_stop();
     }
 
+    // Temporary workaround for an ugly crash, until we allow > 192KB of static DRAM
+    if ((intptr_t)&_bss_end > 0x3FFE0000) {
+        // Can't use assert() or logging here because there's no .bss
+        ets_printf("ERROR: Static .bss section extends past 0x3FFE0000. IDF cannot boot.\n");
+        abort();
+    }
+
     //Clear BSS. Please do not attempt to do any complex stuff (like early logging) before this.
     memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
 
@@ -167,8 +174,7 @@ void IRAM_ATTR call_start_cpu0()
        memory also used by the ROM. Starting the app cpu will let its ROM initialize that memory,
        corrupting those linked lists. Initializing the allocator *after* the app cpu has booted
        works around this problem. */
-    heap_alloc_caps_init();
-
+    heap_caps_init();
 
     ESP_EARLY_LOGI(TAG, "Pro cpu start user code");
     start_cpu0();
@@ -282,11 +288,13 @@ void start_cpu0_default(void)
     esp_core_dump_init();
 #endif
 
-    xTaskCreatePinnedToCore(&main_task, "main",
-            ESP_TASK_MAIN_STACK, NULL,
-            ESP_TASK_MAIN_PRIO, NULL, 0);
+    portBASE_TYPE res = xTaskCreatePinnedToCore(&main_task, "main",
+                                                ESP_TASK_MAIN_STACK, NULL,
+                                                ESP_TASK_MAIN_PRIO, NULL, 0);
+    assert(res == pdTRUE);
     ESP_LOGI(TAG, "Starting scheduler on PRO CPU.");
     vTaskStartScheduler();
+    abort(); /* Only get to here if not enough free heap to start scheduler */
 }
 
 #if !CONFIG_FREERTOS_UNICORE
@@ -313,6 +321,7 @@ void start_cpu1_default(void)
 
     ESP_EARLY_LOGI(TAG, "Starting scheduler on APP CPU.");
     xPortStartScheduler();
+    abort(); /* Only get to here if FreeRTOS somehow very broken */
 }
 #endif //!CONFIG_FREERTOS_UNICORE
 
@@ -329,8 +338,14 @@ static void main_task(void* args)
     // Now that the application is about to start, disable boot watchdogs
     REG_CLR_BIT(TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN_S);
     REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN);
+#if !CONFIG_FREERTOS_UNICORE
+    // Wait for FreeRTOS initialization to finish on APP CPU, before replacing its startup stack
+    while (port_xSchedulerRunning[1] == 0) {
+        ;
+    }
+#endif
     //Enable allocation in region where the startup stacks were located.
-    heap_alloc_enable_nonos_stack_tag();
+    heap_caps_enable_nonos_stack_heaps();
     app_main();
     vTaskDelete(NULL);
 }

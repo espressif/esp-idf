@@ -14,7 +14,7 @@
 
 #include <stdio.h>
 #include <string.h>
-
+#include "nvs_flash.h"
 #include "bt.h"
 #include "driver/uart.h"
 #include "esp_log.h"
@@ -33,6 +33,15 @@ static void uart_gpio_reset(void)
 void app_main()
 { 
     esp_err_t ret;
+
+    /* Initialize NVS — it is used to store PHY calibration data */
+    ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( ret );
+
 
     /* As the UART1/2 pin conflict with flash pin, so do matrix of the signal and pin */
     uart_gpio_reset();

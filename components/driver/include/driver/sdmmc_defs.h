@@ -30,6 +30,7 @@
 #define MMC_SELECT_CARD                 7       /* R1 */
 #define MMC_SEND_EXT_CSD                8       /* R1 */
 #define MMC_SEND_CSD                    9       /* R2 */
+#define MMC_SEND_CID                    10      /* R1 */
 #define MMC_STOP_TRANSMISSION           12      /* R1B */
 #define MMC_SEND_STATUS                 13      /* R1 */
 #define MMC_SET_BLOCKLEN                16      /* R1 */
@@ -44,9 +45,12 @@
 #define SD_SEND_RELATIVE_ADDR           3       /* R6 */
 #define SD_SEND_SWITCH_FUNC             6       /* R1 */
 #define SD_SEND_IF_COND                 8       /* R7 */
+#define SD_READ_OCR                     58      /* R3 */
+#define SD_CRC_ON_OFF                   59      /* R1 */
 
 /* SD application commands */                   /* response type */
 #define SD_APP_SET_BUS_WIDTH            6       /* R1 */
+#define SD_APP_SD_STATUS                13      /* R2 */
 #define SD_APP_OP_COND                  41      /* R3 */
 #define SD_APP_SEND_SCR                 51      /* R1 */
 
@@ -76,15 +80,25 @@
 #define SD_OCR_SDHC_CAP                 (1<<30)
 #define SD_OCR_VOL_MASK                 0xFF8000 /* bits 23:15 */
 
-/* R1 response type bits */
+/* SD mode R1 response type bits */
 #define MMC_R1_READY_FOR_DATA           (1<<8)  /* ready for next transfer */
 #define MMC_R1_APP_CMD                  (1<<5)  /* app. commands supported */
+
+/* SPI mode R1 response type bits */
+#define SD_SPI_R1_IDLE_STATE            (1<<0)
+#define SD_SPI_R1_CMD_CRC_ERR           (1<<3)
 
 /* 48-bit response decoding (32 bits w/o CRC) */
 #define MMC_R1(resp)                    ((resp)[0])
 #define MMC_R3(resp)                    ((resp)[0])
 #define SD_R6(resp)                     ((resp)[0])
 #define MMC_R1_CURRENT_STATE(resp)      (((resp)[0] >> 9) & 0xf)
+
+/* SPI mode response decoding */
+#define SD_SPI_R1(resp)                 ((resp)[0] & 0xff)
+#define SD_SPI_R2(resp)                 ((resp)[0] & 0xffff)
+#define SD_SPI_R3(resp)                 ((resp)[0])
+#define SD_SPI_R7(resp)                 ((resp)[0])
 
 /* RCA argument and response */
 #define MMC_ARG_RCA(rca)                ((rca) << 16)

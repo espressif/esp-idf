@@ -60,6 +60,17 @@ void system_restore(void) __attribute__ ((deprecated));
 void esp_restart(void) __attribute__ ((noreturn));
 
 /**
+  * @brief  Internal function to restart PRO and APP CPUs.
+  *
+  * @note This function should not be called from FreeRTOS applications.
+  *       Use esp_restart instead.
+  *
+  * This is an internal function called by esp_restart. It is called directly
+  * by the panic handler and brownout detector interrupt.
+  */
+void esp_restart_noos() __attribute__ ((noreturn));
+
+/**
   * @brief  Restart system.
   *
   * Function has been renamed to esp_restart.
@@ -96,9 +107,24 @@ uint32_t esp_get_free_heap_size(void);
 uint32_t system_get_free_heap_size(void)  __attribute__ ((deprecated));
 
 /**
+  * @brief Get the minimum heap that has ever been available
+  *
+  * @return Minimum free heap ever available
+  */
+uint32_t esp_get_minimum_free_heap_size( void );
+
+/**
  * @brief  Get one random 32-bit word from hardware RNG
  *
- * @return random value between 0 and UINT32_MAX
+ * The hardware RNG is fully functional whenever an RF subsystem is running (ie Bluetooth or WiFi is enabled). For secure
+ * random values, call this function after WiFi or Bluetooth are started.
+ *
+ * When the app is running without an RF subsystem enabled, it should be considered a PRNG. To help improve this
+ * situation, the RNG is pre-seeded with entropy while the IDF bootloader is running. However no new entropy is
+ * available during the window of time between when the bootloader exits and an RF subsystem starts. It may be possible
+ * to discern a non-random pattern in a very large amount of output captured during this window of time.
+ *
+ * @return Random value between 0 and UINT32_MAX
  */
 uint32_t esp_random(void);
 

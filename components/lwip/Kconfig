@@ -122,6 +122,26 @@ config TCP_WND_DEFAULT
         Setting a smaller default receive window size can save some RAM,
         but will significantly decrease performance.
 
+config TCP_RECVMBOX_SIZE
+    int "Default TCP receive mail box size"
+    default 6
+    range 6 32
+    help
+        Set TCP receive mail box size. Generally bigger value means higher throughput
+        but more memory. The recommended value is: TCP_WND_DEFAULT/TCP_MSS + 2, e.g. if 
+        TCP_WND_DEFAULT=14360, TCP_MSS=1436, then the recommended receive mail box size is 
+        (14360/1436 + 2) = 12.
+
+        TCP receive mail box is a per socket mail box, when the application receives packets
+        from TCP socket, LWIP core firstly posts the packets to TCP receive mail box and the 
+        application then fetches the packets from mail box. It means LWIP can caches maximum 
+        TCP_RECCVMBOX_SIZE packets for each TCP socket, so the maximum possible cached TCP packets
+        for all TCP sockets is TCP_RECCVMBOX_SIZE multiples the maximum TCP socket number. In other
+        words, the bigger TCP_RECVMBOX_SIZE means more memory.
+        On the other hand, if the receiv mail box is too small, the mail box may be full. If the 
+        mail box is full, the LWIP drops the packets. So generally we need to make sure the TCP
+        receive mail box is big enough to avoid packet drop between LWIP core and application.
+
 config TCP_QUEUE_OOSEQ
     bool "Queue incoming out-of-order segments"
     default y
@@ -156,6 +176,27 @@ config TCP_OVERSIZE_DISABLE
 endchoice
 
 endmenu # TCP
+
+menu "UDP"
+
+config UDP_RECVMBOX_SIZE
+    int "Default UDP receive mail box size"
+    default 6
+    range 6 32
+    help
+        Set UDP receive mail box size. The recommended value is 6.
+
+        UDP receive mail box is a per socket mail box, when the application receives packets 
+        from UDP socket, LWIP core firstly posts the packets to UDP receive mail box and the
+        application then fetches the packets from mail box. It means LWIP can caches maximum
+        UDP_RECCVMBOX_SIZE packets for each UDP socket, so the maximum possible cached UDP packets 
+        for all UDP sockets is UDP_RECCVMBOX_SIZE multiples the maximum UDP socket number. In other
+        words, the bigger UDP_RECVMBOX_SIZE means more memory.
+        On the other hand, if the receiv mail box is too small, the mail box may be full. If the
+        mail box is full, the LWIP drops the packets. So generally we need to make sure the UDP
+        receive mail box is big enough to avoid packet drop between LWIP core and application.
+
+endmenu # UDP
 
 config LWIP_DHCP_DOES_ARP_CHECK
     bool "Enable an ARP check on the offered address"

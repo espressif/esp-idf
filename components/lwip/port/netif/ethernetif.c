@@ -147,14 +147,28 @@ ethernet_low_level_output(struct netif *netif, struct pbuf *p)
  * the appropriate input function is called.
  *
  * @param netif the lwip network interface structure for this ethernetif
+ * @param buffer the ethernet buffer
+ * @param len the len of buffer
+ *
+ * @note When CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE is enabled, a copy of buffer
+ *       will be made for high layer (LWIP) and ethernet is responsible for
+ *       freeing the buffer. Otherwise, high layer and ethernet share the 
+ *       same buffer and high layer is responsible for freeing the buffer.
  */
 void
 ethernetif_input(struct netif *netif, void *buffer, uint16_t len)
 {
   struct pbuf *p;
 
-  if(buffer== NULL || netif == NULL)
-    goto _exit;
+  if(buffer== NULL || !netif_is_up(netif)) {
+#ifndef CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
+    if (buffer) {
+      esp_eth_free_rx_buf(buffer);
+    }
+#endif
+    return;
+  }
+
 #ifdef CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
   p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
   if (p == NULL) {
@@ -172,6 +186,7 @@ if (netif->input(p, netif) != ERR_OK) {
 #else
   p = pbuf_alloc(PBUF_RAW, len, PBUF_REF);
   if (p == NULL){
+    esp_eth_free_rx_buf(buffer);
     return;
   }
   p->payload = buffer;
@@ -185,8 +200,6 @@ if (netif->input(p, netif) != ERR_OK) {
   pbuf_free(p);
 }
 #endif
-_exit:
-;
 }
 
 /**

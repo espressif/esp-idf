@@ -868,8 +868,9 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
         err = i2s_isr_register(i2s_num, i2s_config->intr_alloc_flags, i2s_intr_handler_default, p_i2s_obj[i2s_num], &p_i2s_obj[i2s_num]->i2s_isr_handle);
         if (err != ESP_OK) {
             free(p_i2s_obj[i2s_num]);
+            p_i2s_obj[i2s_num] = NULL;
             ESP_LOGE(I2S_TAG, "Register I2S Interrupt error");
-            return ESP_FAIL;
+            return err;
         }
         i2s_stop(i2s_num);
         i2s_param_config(i2s_num, i2s_config);

@@ -14,6 +14,9 @@ GEN_ESP32PART := $(PYTHON) $(COMPONENT_PATH)/gen_esp32part.py -q
 # Has a matching value in bootloader_support esp_flash_partitions.h
 PARTITION_TABLE_OFFSET := 0x8000
 
+# if CONFIG_PARTITION_TABLE_FILENAME is unset, means we haven't re-generated config yet...
+ifneq ("$(CONFIG_PARTITION_TABLE_FILENAME)","")
+
 ifndef PARTITION_TABLE_CSV_PATH
 # Path to partition CSV file is relative to project path for custom
 # partition CSV files, but relative to component dir otherwise.$
@@ -21,7 +24,9 @@ PARTITION_TABLE_ROOT := $(call dequote,$(if $(CONFIG_PARTITION_TABLE_CUSTOM),$(P
 PARTITION_TABLE_CSV_PATH := $(call dequote,$(abspath $(PARTITION_TABLE_ROOT)/$(subst $(quote),,$(CONFIG_PARTITION_TABLE_FILENAME))))
 endif
 
-PARTITION_TABLE_BIN := $(BUILD_DIR_BASE)/$(notdir $(PARTITION_TABLE_CSV_PATH:.csv=.bin))
+PARTITION_TABLE_CSV_NAME := $(notdir $(PARTITION_TABLE_CSV_PATH))
+
+PARTITION_TABLE_BIN := $(BUILD_DIR_BASE)/$(PARTITION_TABLE_CSV_NAME:.csv=.bin)
 
 ifdef CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES
 PARTITION_TABLE_BIN_UNSIGNED := $(PARTITION_TABLE_BIN:.bin=-unsigned.bin)
@@ -58,3 +63,5 @@ partition_table-clean:
 	rm -f $(PARTITION_TABLE_BIN)
 
 clean: partition_table-clean
+
+endif

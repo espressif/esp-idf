@@ -19,7 +19,6 @@
 #include "esp_event_loop.h"
 #include "esp_log.h"
 #include "esp_ota_ops.h"
-#include "esp_partition.h"
 
 #include "nvs.h"
 #include "nvs_flash.h"
@@ -286,10 +285,7 @@ void app_main()
         // OTA app partition table has a smaller NVS partition size than the non-OTA
         // partition table. This size mismatch may cause NVS initialization to fail.
         // If this happens, we erase NVS partition and initialize NVS again.
-        const esp_partition_t* nvs_partition = esp_partition_find_first(
-                ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
-        assert(nvs_partition && "partition table must have an NVS partition");
-        ESP_ERROR_CHECK( esp_partition_erase_range(nvs_partition, 0, nvs_partition->size) );
+        ESP_ERROR_CHECK(nvs_flash_erase());
         err = nvs_flash_init();
     }
     ESP_ERROR_CHECK( err );

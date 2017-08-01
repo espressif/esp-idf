@@ -31,7 +31,7 @@
 #include "rom/lldesc.h"
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
-#include "esp_heap_alloc_caps.h"
+#include "esp_heap_caps.h"
 
 #include "driver/spi_common.h"
 

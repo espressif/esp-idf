@@ -17,6 +17,6 @@
 #include <xtensa/config/core.h>
 #include "freertos/xtensa_api.h"
 
-void esp_gdbstub_panic_handler(XtExcFrame *frame);
+void esp_gdbstub_panic_handler(XtExcFrame *frame) __attribute__((noreturn));
 
 #endif

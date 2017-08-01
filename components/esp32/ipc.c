@@ -80,8 +80,9 @@ void esp_ipc_init()
     const char* task_names[2] = {"ipc0", "ipc1"};
     for (int i = 0; i < portNUM_PROCESSORS; ++i) {
         s_ipc_sem[i] = xSemaphoreCreateBinary();
-        xTaskCreatePinnedToCore(ipc_task, task_names[i], CONFIG_IPC_TASK_STACK_SIZE, (void*) i,
-                                configMAX_PRIORITIES - 1, &s_ipc_tasks[i], i);
+        portBASE_TYPE res = xTaskCreatePinnedToCore(ipc_task, task_names[i], CONFIG_IPC_TASK_STACK_SIZE, (void*) i,
+                                                    configMAX_PRIORITIES - 1, &s_ipc_tasks[i], i);
+        assert(res == pdTRUE);
     }
 }
 

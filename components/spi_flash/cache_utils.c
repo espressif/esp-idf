@@ -48,6 +48,7 @@ static volatile int s_flash_op_cpu = -1;
 void spi_flash_init_lock()
 {
     s_flash_op_mutex = xSemaphoreCreateMutex();
+    assert(s_flash_op_mutex != NULL);
 }
 
 void spi_flash_op_lock()

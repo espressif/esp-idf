@@ -33,6 +33,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/xtensa_api.h"
+#include "esp_heap_caps.h"
 
 static const char* TAG = "system_api";
 
@@ -264,13 +265,15 @@ void IRAM_ATTR esp_restart_noos()
     esp_dport_access_int_deinit();
 
     // We need to disable TG0/TG1 watchdogs
-    // First enable RTC watchdog to be on the safe side
+    // First enable RTC watchdog for 1 second
     REG_WRITE(RTC_CNTL_WDTWPROTECT_REG, RTC_CNTL_WDT_WKEY_VALUE);
     REG_WRITE(RTC_CNTL_WDTCONFIG0_REG,
             RTC_CNTL_WDT_FLASHBOOT_MOD_EN_M |
+            (RTC_WDT_STG_SEL_RESET_SYSTEM << RTC_CNTL_WDT_STG0_S) |
+            (RTC_WDT_STG_SEL_RESET_RTC << RTC_CNTL_WDT_STG1_S) |
             (1 << RTC_CNTL_WDT_SYS_RESET_LENGTH_S) |
             (1 << RTC_CNTL_WDT_CPU_RESET_LENGTH_S) );
-    REG_WRITE(RTC_CNTL_WDTCONFIG1_REG, 128000);
+    REG_WRITE(RTC_CNTL_WDTCONFIG1_REG, rtc_clk_slow_freq_get_hz() * 1);
 
     // Disable TG0/TG1 watchdogs
     TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
@@ -330,9 +333,19 @@ void IRAM_ATTR esp_restart_noos()
 
 void system_restart(void) __attribute__((alias("esp_restart")));
 
-uint32_t esp_get_free_heap_size(void)
+void system_restore(void)
 {
-    return xPortGetFreeHeapSize();
+    esp_wifi_restore();
+}
+
+uint32_t esp_get_free_heap_size( void )
+{
+    return heap_caps_get_free_size( MALLOC_CAP_8BIT );
+}
+
+uint32_t esp_get_minimum_free_heap_size( void )
+{
+    return heap_caps_get_minimum_free_size( MALLOC_CAP_8BIT );
 }
 
 uint32_t system_get_free_heap_size(void) __attribute__((alias("esp_get_free_heap_size")));
@@ -349,6 +362,7 @@ const char* esp_get_idf_version(void)
 
 static void get_chip_info_esp32(esp_chip_info_t* out_info)
 {
+    out_info->model = CHIP_ESP32;
     uint32_t reg = REG_READ(EFUSE_BLK0_RDATA3_REG);
     memset(out_info, 0, sizeof(*out_info));
     if ((reg & EFUSE_RD_CHIP_VER_REV1_M) != 0) {
