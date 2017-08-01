@@ -514,9 +514,12 @@ static void IRAM_ATTR spi_intr(void *arg)
                 host->hw->dma_in_link.addr=(int)(&host->dmadesc_rx[0]) & 0xFFFFF;
                 host->hw->dma_in_link.start=1;
             }
-            host->hw->user.usr_miso=1;
         } else {
-            host->hw->user.usr_miso=0;
+            //DMA temporary workaround: let RX DMA work somehow to avoid the issue in ESP32 v0/v1 silicon 
+            if (host->dma_chan != 0 ) {
+                host->hw->dma_in_link.addr=0;
+                host->hw->dma_in_link.start=1;
+            }
         }
 
         if (trans_buf->buffer_to_send) {
@@ -540,7 +543,12 @@ static void IRAM_ATTR spi_intr(void *arg)
         }
 
         host->hw->mosi_dlen.usr_mosi_dbitlen=trans->length-1;
-        host->hw->miso_dlen.usr_miso_dbitlen=trans->rxlength-1;
+        if ( dev->cfg.flags & SPI_DEVICE_HALFDUPLEX ) {
+            host->hw->miso_dlen.usr_miso_dbitlen=trans->rxlength-1;
+        } else {
+            //rxlength is not used in full-duplex mode
+            host->hw->miso_dlen.usr_miso_dbitlen=trans->length-1;
+        }
 
         host->hw->user2.usr_command_value=trans->command;
         if (dev->cfg.address_bits>32) {
@@ -549,7 +557,7 @@ static void IRAM_ATTR spi_intr(void *arg)
         } else {
             host->hw->addr=trans->address & 0xffffffff;
         }
-        host->hw->user.usr_mosi=(trans_buf->buffer_to_send)?1:0;
+        host->hw->user.usr_mosi=( (!(dev->cfg.flags & SPI_DEVICE_HALFDUPLEX) && trans_buf->buffer_to_rcv) || trans_buf->buffer_to_send)?1:0;
         host->hw->user.usr_miso=(trans_buf->buffer_to_rcv)?1:0;
 
         //Call pre-transmission callback, if any
@@ -571,6 +579,7 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
     SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO|SPI_TRANS_MODE_QIO)) && (!(handle->cfg.flags & SPI_DEVICE_HALFDUPLEX))), "incompatible iface params", ESP_ERR_INVALID_ARG);
     SPI_CHECK(trans_desc->length <= handle->host->max_transfer_sz*8, "txdata transfer > host maximum", ESP_ERR_INVALID_ARG);
     SPI_CHECK(trans_desc->rxlength <= handle->host->max_transfer_sz*8, "rxdata transfer > host maximum", ESP_ERR_INVALID_ARG);
+    SPI_CHECK((handle->cfg.flags & SPI_DEVICE_HALFDUPLEX) || trans_desc->rxlength <= trans_desc->length, "rx length > tx length in full duplex mode", ESP_ERR_INVALID_ARG);
 
     //Default rxlength to be the same as length, if not filled in.
     // set rxlength to length is ok, even when rx buffer=NULL
