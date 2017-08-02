@@ -1,5 +1,6 @@
+*****************
 ESP32 ROM console
-=================
+*****************
 
 When an ESP32 is unable to boot from flash ROM (and the fuse disabling it hasn't been blown), it boots into a rom console. The console
 is based on TinyBasic, and statements entered should be in the form of BASIC statements. As is common in the BASIC language, without a 

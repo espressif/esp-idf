@@ -138,7 +138,7 @@ endchoice
 config FREERTOS_BREAK_ON_SCHEDULER_START_JTAG
     bool "Stop program on scheduler start when JTAG/OCD is detected"
     depends on ESP32_DEBUG_OCDAWARE
-    default y
+    default n
     help
         If JTAG/OCD is connected, stop execution when the scheduler is started and the first
         task is executed.

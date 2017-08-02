@@ -4,10 +4,7 @@ High-Level Interrupts
 .. toctree::
    :maxdepth: 1
 
-The Xtensa architecture has support for 32 interrupts, divided over 8 levels, plus an assortment of exceptions. On the ESP32, the interrupt
-mux allows most interrupt sources to be routed to these interrupts using the :doc:`interrupt allocator <api/system/intr_alloc>`. Normally,
-interrupts will be written in C, but ESP-IDF allows high-level interrupts to be written in assembly as well, allowing for very low interrupt
-latencies.
+The Xtensa architecture has support for 32 interrupts, divided over 8 levels, plus an assortment of exceptions. On the ESP32, the interrupt mux allows most interrupt sources to be routed to these interrupts using the :doc:`interrupt allocator <../api-reference/system/intr_alloc>`. Normally, interrupts will be written in C, but ESP-IDF allows high-level interrupts to be written in assembly as well, allowing for very low interrupt latencies.
 
 Interrupt Levels
 ----------------

@@ -14,31 +14,5 @@ Developers can use this library to send application specific state of execution 
 API Reference
 -------------
 
-Header Files
-^^^^^^^^^^^^
+.. include:: /_build/inc/esp_app_trace.inc
 
-  * :component_file:`app_trace/include/esp_app_trace.h`
-
-Macros
-^^^^^^
-
-.. doxygendefine:: ESP_APPTRACE_TMO_INFINITE
-
-Enumerations
-^^^^^^^^^^^^
-
-.. doxygenenum:: esp_apptrace_dest_t
-
-
-Functions
-^^^^^^^^^
-
-.. doxygenfunction:: esp_apptrace_init
-.. doxygenfunction:: esp_apptrace_buffer_get
-.. doxygenfunction:: esp_apptrace_buffer_put
-.. doxygenfunction:: esp_apptrace_write
-.. doxygenfunction:: esp_apptrace_vprintf_to
-.. doxygenfunction:: esp_apptrace_vprintf
-.. doxygenfunction:: esp_apptrace_read
-.. doxygenfunction:: esp_apptrace_flush
-.. doxygenfunction:: esp_apptrace_flush_nolock
