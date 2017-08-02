@@ -35,12 +35,27 @@ typedef struct bt_task_evt BtTaskEvt_t;
 
 typedef bt_status_t (* BtTaskCb_t)(void *arg);
 
-enum {
-    SIG_PRF_START_UP = 0xfc,
-    SIG_PRF_WORK = 0xfd,
-    SIG_BTU_START_UP = 0xfe,
-    SIG_BTU_WORK = 0xff,
-};
+typedef enum {
+    SIG_HCI_HAL_RECV_PACKET = 0,
+    SIG_HCI_HAL_NUM,
+} SIG_HCI_HAL_t;
+
+
+typedef enum {
+    SIG_HCI_HOST_SEND_AVAILABLE = 0,
+    SIG_HCI_HOST_NUM,
+} SIG_HCI_HOST_t;
+
+typedef enum {
+    SIG_BTU_START_UP = 0,
+    SIG_BTU_HCI_MSG,
+    SIG_BTU_BTA_MSG,
+    SIG_BTU_BTA_ALARM,
+    SIG_BTU_GENERAL_ALARM,
+    SIG_BTU_ONESHOT_ALARM,
+    SIG_BTU_L2CAP_ALARM,
+    SIG_BTU_NUM,
+} SIG_BTU_t;
 
 #define HCI_HOST_TASK_STACK_SIZE        (2048 + BT_TASK_EXTRA_STACK_SIZE)
 #define HCI_HOST_TASK_PRIO              (configMAX_PRIORITIES - 3)
@@ -67,9 +82,13 @@ enum {
 #define TASK_POST_BLOCKING              (portMAX_DELAY)
 typedef uint32_t task_post_t;           /* Timeout of task post return, unit TICK */
 
-void btu_task_post(uint32_t sig, task_post_t timeout);
-void hci_host_task_post(task_post_t timeout);
-void hci_hal_h4_task_post(task_post_t timeout);
+typedef enum {
+    TASK_POST_SUCCESS = 0,
+    TASK_POST_FAIL,
+} task_post_status_t;
 
+task_post_status_t btu_task_post(uint32_t sig, void *param, task_post_t timeout);
+task_post_status_t hci_host_task_post(task_post_t timeout);
+task_post_status_t hci_hal_h4_task_post(task_post_t timeout);
 
 #endif /* __THREAD_H__ */

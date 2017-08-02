@@ -54,9 +54,6 @@ typedef struct {
     fixed_queue_t *command_queue;
     fixed_queue_t *packet_queue;
 
-    // The hand-off point for data going to a higher layer, set by the higher layer
-    fixed_queue_t *upwards_data_queue;
-
     command_waiting_response_t cmd_waiting_q;
 
     /*
@@ -135,20 +132,23 @@ void hci_shut_down(void)
 }
 
 
-void hci_host_task_post(task_post_t timeout)
+task_post_status_t hci_host_task_post(task_post_t timeout)
 {
     BtTaskEvt_t evt;
 
     if (hci_host_startup_flag == false) {
-        return;
+        return TASK_POST_FAIL;
     }
 
-    evt.sig = 0xff;
+    evt.sig = SIG_HCI_HOST_SEND_AVAILABLE;
     evt.par = 0;
 
     if (xQueueSend(xHciHostQueue, &evt, timeout) != pdTRUE) {
         LOG_ERROR("xHciHostQueue failed\n");
+        return TASK_POST_FAIL;
     }
+
+    return TASK_POST_SUCCESS;
 }
 
 static int hci_layer_init_env(void)
@@ -227,7 +227,7 @@ static void hci_host_thread_handler(void *arg)
     for (;;) {
         if (pdTRUE == xQueueReceive(xHciHostQueue, &e, (portTickType)portMAX_DELAY)) {
 
-            if (e.sig == 0xff) {
+            if (e.sig == SIG_HCI_HOST_SEND_AVAILABLE) {
                 if (esp_vhci_host_check_send_available()) {
                     /*Now Target only allowed one packet per TX*/
                     BT_HDR *pkt = packet_fragmenter->fragment_current_packet();
@@ -245,11 +245,6 @@ static void hci_host_thread_handler(void *arg)
             }
         }
     }
-}
-
-static void set_data_queue(fixed_queue_t *queue)
-{
-    hci_host_env.upwards_data_queue = queue;
 }
 
 static void transmit_command(
@@ -311,7 +306,7 @@ static void transmit_downward(uint16_t type, void *data)
     } else {
         fixed_queue_enqueue(hci_host_env.packet_queue, data);
     }
-    //ke_event_set(KE_EVENT_HCI_HOST_THREAD);
+
     hci_host_task_post(TASK_POST_BLOCKING);
 }
 
@@ -495,7 +490,6 @@ intercepted:
             !fixed_queue_is_empty(hci_host_env.command_queue)) {
         hci_host_task_post(TASK_POST_BLOCKING);
     }
-    //ke_event_set(KE_EVENT_HCI_HOST_THREAD);
 
     if (wait_entry) {
         // If it has a callback, it's responsible for freeing the packet
@@ -521,13 +515,8 @@ intercepted:
 static void dispatch_reassembled(BT_HDR *packet)
 {
     // Events should already have been dispatched before this point
-
-    if (hci_host_env.upwards_data_queue) {
-        fixed_queue_enqueue(hci_host_env.upwards_data_queue, packet);
-        btu_task_post(SIG_BTU_WORK, TASK_POST_BLOCKING);
-        //Tell Up-layer received packet.
-    } else {
-        LOG_DEBUG("%s had no queue to place upwards data packet in. Dropping it on the floor.", __func__);
+    //Tell Up-layer received packet.
+    if (btu_task_post(SIG_BTU_HCI_MSG, packet, TASK_POST_BLOCKING) != TASK_POST_SUCCESS) {
         buffer_allocator->free(packet);
     }
 }
@@ -576,7 +565,6 @@ static waiting_command_t *get_waiting_command(command_opcode_t opcode)
 static void init_layer_interface()
 {
     if (!interface_created) {
-        interface.set_data_queue = set_data_queue;
         interface.transmit_command = transmit_command;
         interface.transmit_command_futured = transmit_command_futured;
         interface.transmit_downward = transmit_downward;
