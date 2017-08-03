@@ -436,7 +436,7 @@ esp_err_t esp_ble_gattc_execute_write (esp_gatt_if_t gattc_if, uint16_t conn_id,
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_gatt_status_t esp_ble_gattc_register_for_notify (esp_gatt_if_t gattc_if,
+esp_err_t esp_ble_gattc_register_for_notify (esp_gatt_if_t gattc_if,
         esp_bd_addr_t server_bda,
         esp_gatt_srvc_id_t *srvc_id,
         esp_gatt_id_t *char_id)
@@ -459,7 +459,7 @@ esp_gatt_status_t esp_ble_gattc_register_for_notify (esp_gatt_if_t gattc_if,
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_gatt_status_t esp_ble_gattc_unregister_for_notify (esp_gatt_if_t gattc_if,
+esp_err_t esp_ble_gattc_unregister_for_notify (esp_gatt_if_t gattc_if,
         esp_bd_addr_t server_bda,
         esp_gatt_srvc_id_t *srvc_id,
         esp_gatt_id_t *char_id)
