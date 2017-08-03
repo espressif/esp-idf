@@ -115,6 +115,25 @@ static void emac_set_rx_base_reg(void)
     REG_WRITE(EMAC_DMARXBASEADDR_REG, (uint32_t)(emac_config.dma_erx));
 }
 
+/*
+* dirty_rx indicates the hardware has been fed with data packets and is the first node software needs to handle;
+*
+* cur_rx indicates the completion of software handling and is the last node hardware could use;
+*
+* cnt_rx is to count the numbers of packets handled by software, passed to protocol stack and not been freed.
+*
+* (1) Initializing the Linked List. Connect the numerable nodes to a circular linked list, appoint one of the nodes as the head node, mark* the dirty_rx and cur_rx into the node, and mount the node on the hardware base address. Initialize cnt_rx into 0.
+*
+* (2) When hardware receives packets, nodes of linked lists will be fed with data packets from the base address by turns, marks the node 
+* of linked lists as “HARDWARE UNUSABLE” and reports interrupts.
+*
+* (3) When the software receives the interrupts, it will handle the linked lists by turns from dirty_rx, send data packets to protocol 
+* stack. dirty_rx will deviate backwards by turns and cnt_rx will by turns ++.
+*
+* (4) After the protocol stack handles all the data and calls the free function, it will deviate backwards by turns from cur_rx, mark the * node of linked lists as “HARDWARE USABLE” and cnt_rx will by turns ——.
+*
+* (5) Cycle from Step 2 to Step 4 without break and build up circular linked list handling.
+*/
 static void emac_reset_dma_chain(void)
 {
     emac_config.cnt_tx = 0;
