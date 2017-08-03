@@ -164,7 +164,7 @@ build: $(COMPONENT_LIBRARY)
 # Build the archive. We remove the archive first, otherwise ar will get confused if we update
 # an archive when multiple filenames have the same name (src1/test.o and src2/test.o)
 $(COMPONENT_LIBRARY): $(COMPONENT_OBJS) $(COMPONENT_EMBED_OBJS)
-	$(summary) AR $@
+	$(summary) AR $(patsubst $(PWD)/%,%,$(CURDIR))/$@
 	rm -f $@
 	$(AR) cru $@ $^
 endif
@@ -198,17 +198,17 @@ define GenerateCompileTargets
 # $(1) - directory containing source files, relative to $(COMPONENT_PATH) - one of $(COMPONENT_SRCDIRS)
 #
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.c $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
-	$$(summary) CC $$@
+	$$(summary) CC $$(patsubst $$(PWD)/%,%,$$(CURDIR))/$$@
 	$$(CC) $$(CFLAGS) $$(CPPFLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
 	$(call AppendSourceToDependencies,$$<,$$@)
 
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.cpp $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
-	$$(summary) CXX $$@
+	$$(summary) CXX $$(patsubst $$(PWD)/%,%,$$(CURDIR))/$$@
 	$$(CXX) $$(CXXFLAGS) $$(CPPFLAGS) $$(addprefix -I,$$(COMPONENT_INCLUDES)) $$(addprefix -I,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
 	$(call AppendSourceToDependencies,$$<,$$@)
 
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.S $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
-	$$(summary) AS $$@
+	$$(summary) AS $$(patsubst $$(PWD)/%,%,$$(CURDIR))/$$@
 	$$(CC) $$(CPPFLAGS) $$(DEBUG_FLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
 	$(call AppendSourceToDependencies,$$<,$$@)
 
