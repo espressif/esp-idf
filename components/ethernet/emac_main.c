@@ -54,8 +54,8 @@
 
 static struct emac_config_data emac_config;
 
-static uint8_t emac_dma_rx_chain_buf[32 * DMA_RX_BUF_NUM];
-static uint8_t emac_dma_tx_chain_buf[32 * DMA_TX_BUF_NUM];
+static uint8_t emac_dma_rx_chain_buf[sizeof(struct dma_extended_desc) * DMA_RX_BUF_NUM];
+static uint8_t emac_dma_tx_chain_buf[sizeof(struct dma_extended_desc) * DMA_TX_BUF_NUM];
 static uint8_t emac_dma_rx_buf[DMA_RX_BUF_SIZE * DMA_RX_BUF_NUM];
 static uint8_t emac_dma_tx_buf[DMA_TX_BUF_SIZE * DMA_TX_BUF_NUM];
 
@@ -130,7 +130,7 @@ static void emac_set_rx_base_reg(void)
 * (3) When the software receives the interrupts, it will handle the linked lists by turns from dirty_rx, send data packets to protocol 
 * stack. dirty_rx will deviate backwards by turns and cnt_rx will by turns ++.
 *
-* (4) After the protocol stack handles all the data and calls the free function, it will deviate backwards by turns from cur_rx, mark the * node of linked lists as “HARDWARE USABLE” and cnt_rx will by turns ——.
+* (4) After the protocol stack handles all the data and calls the free function, it will deviate backwards by turns from cur_rx, mark the * node of linked lists as “HARDWARE USABLE” and cnt_rx will by turns --.
 *
 * (5) Cycle from Step 2 to Step 4 without break and build up circular linked list handling.
 */
