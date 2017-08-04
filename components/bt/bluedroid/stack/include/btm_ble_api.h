@@ -1596,7 +1596,7 @@ tBTM_STATUS BTM_BleBroadcast(BOOLEAN start);
 **
 *******************************************************************************/
 //extern
-BOOLEAN BTM_BleConfigPrivacy(BOOLEAN enable);
+BOOLEAN BTM_BleConfigPrivacy(BOOLEAN enable, tBTM_SET_LOCAL_PRIVACY_CBACK *set_local_privacy_cabck);
 
 /*******************************************************************************
 **

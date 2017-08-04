@@ -145,6 +145,12 @@ static esp_bt_status_t btc_btm_status_to_esp_status (uint8_t btm_status)
         case BTM_CONTROL_LE_DATA_LEN_UNSUPPORTED:
             esp_status = ESP_BT_STATUS_CONTROL_LE_DATA_LEN_UNSUPPORTED;
             break;
+        case BTM_SET_PRIVACY_SUCCESS:
+            esp_status = ESP_BT_STATUS_SUCCESS;
+            break;
+        case BTM_SET_PRIVACY_FAIL:
+            esp_status = ESP_BT_STATUS_FAIL;
+            break;
         default:
             esp_status = ESP_BT_STATUS_FAIL;
             break;
@@ -661,6 +667,23 @@ static void btc_set_pkt_length_callback(UINT8 status, tBTM_LE_SET_PKT_DATA_LENGT
     }
 }
 
+static void btc_set_local_privacy_callback(UINT8 status)
+{
+    esp_ble_gap_cb_param_t param;
+    bt_status_t ret;
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT;
+    param.local_privacy_cmpl.status = btc_btm_status_to_esp_status(status);
+    ret = btc_transfer_context(&msg, &param,
+                               sizeof(esp_ble_gap_cb_param_t), NULL);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        LOG_ERROR("%s btc_transfer_context failed\n", __func__);
+    }
+}
+
 
 #if (SMP_INCLUDED == TRUE)
 static void btc_set_encryption_callback(BD_ADDR bd_addr, tBTA_TRANSPORT transport, tBTA_STATUS enc_status)
@@ -756,9 +779,9 @@ static void btc_ble_set_rand_addr (BD_ADDR rand_addr)
     }
 }
 
-static void btc_ble_config_local_privacy(bool privacy_enable)
+static void btc_ble_config_local_privacy(bool privacy_enable, tBTA_SET_LOCAL_PRIVACY_CBACK *set_local_privacy_cback)
 {
-    BTA_DmBleConfigLocalPrivacy(privacy_enable);
+    BTA_DmBleConfigLocalPrivacy(privacy_enable, set_local_privacy_cback);
 }
 
 static void btc_ble_disconnect(BD_ADDR bd_addr)
@@ -836,6 +859,9 @@ void btc_gap_ble_cb_handler(btc_msg_t *msg)
         break;
     case ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT:
         btc_gap_ble_cb_to_app(ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT, param);
+        break;
+    case ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT:
+        btc_gap_ble_cb_to_app(ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT, param);
         break;
     default:
         break;
@@ -1000,7 +1026,7 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
         break;
     }
     case BTC_GAP_BLE_ACT_CONFIG_LOCAL_PRIVACY:
-        btc_ble_config_local_privacy(arg->cfg_local_privacy.privacy_enable);
+        btc_ble_config_local_privacy(arg->cfg_local_privacy.privacy_enable, btc_set_local_privacy_callback);
         break;    
     case BTC_GAP_BLE_ACT_CFG_ADV_DATA_RAW:
         btc_ble_set_adv_data_raw(arg->cfg_adv_data_raw.raw_adv,

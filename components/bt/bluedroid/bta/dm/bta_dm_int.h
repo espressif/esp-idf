@@ -444,6 +444,7 @@ typedef struct {
 typedef struct {
     BT_HDR                  hdr;
     BOOLEAN                 privacy_enable;
+    tBTA_SET_LOCAL_PRIVACY_CBACK *set_local_privacy_cback;
 } tBTA_DM_API_LOCAL_PRIVACY;
 
 /* set scan parameter for BLE connections */
