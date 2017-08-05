@@ -9,9 +9,9 @@ IDF provides useful feature for program behaviour analysis: application level tr
 
 Developers can use this library to send application specific state of execution to the host and receive commands or other type of info in the opposite direction at runtime. The main use cases of this library are:
 
-1. System behaviour analysis. See `System Behaviour Analysis with SEGGER SystemView`_.
+1. Collecting application specific data. See `Application Specific Tracing`_.
 2. Lightweight logging to the host. See `Logging to Host`_.
-3. Collecting application specific data. See `Application Specific Tracing`_.
+3. System behaviour analysis. See `System Behaviour Analysis with SEGGER SystemView`_.
 
 Tracing components when working over JTAG interface are shown in the figure below.
 
@@ -33,8 +33,8 @@ The library supports two modes of operation:
 **Streaming mode.** Tracing module enters this mode when host connects to ESP32. In this mode before writing new data to *HW UP BUFFER* tracing module checks that there is enough space in it and if necessary waits for the host to read data and free enough memory. Maximum waiting time is controled via timeout values passed by users to corresponding API routines. So when application tries to write data to trace buffer using finite value of the maximum waiting time it is possible situation that this data will be dropped. Especially this is true for tracing from time critical code (ISRs, OS scheduler code etc.) when infinite timeouts can lead to system malfunction. In order to avoid loss of such critical data developers can enable additional data buffering via menuconfig option *Component config > Application Level Tracing > Size of the pending data buffer* (``CONFIG_ESP32_APPTRACE_PENDING_DATA_SIZE_MAX``). This macro specifies the size of data which can be buffered in above conditions. The option can also help to overcome situation when data transfer to the host is temporarily slowed down, e.g due to USB bus congestions etc. But it will not help when average bitrate of trace data stream exceeds HW interface capabilities.
 
 
-Config Options and Dependencies
--------------------------------
+Configuration Options and Dependencies
+--------------------------------------
 
 Using of this feature depends on two components:
 
@@ -190,7 +190,7 @@ Start command syntax:
 ``outfile``
     Path to file to save data from both CPUs. This argument should have the following format: ``file://path/to/file``.
 ``poll_period``
-    Data polling period (in ms). If greater then 0 then command runs in non-blocking mode. By default 1 ms.  
+    Data polling period (in ms) for available trace data. If greater then 0 then command runs in non-blocking mode. By default 1 ms.  
 ``trace_size``
     Maximum size of data to collect (in bytes). Tracing is stopped after specified amount of data is received. By default -1 (trace size stop trigger is disabled).
 ``stop_tmo``
@@ -202,7 +202,47 @@ Start command syntax:
 
 .. note::
 
-    If ``poll_period`` is 0, OpenOCD telnet command line will not be available until tracing is stopped. You must stop it manually by resetting the board or pressing CTRL+C in OpenOCD window (not one with the telnet session). Another option is to set ``trace_size`` and wait until this size of data is collected. At this point tracing stops automatically.
+    If ``poll_period`` is 0, OpenOCD telnet command line will not be available until tracing is stopped. You must stop it manually by resetting the board or pressing Ctrl+C in OpenOCD window (not one with the telnet session). Another option is to set ``trace_size`` and wait until this size of data is collected. At this point tracing stops automatically.
+
+Command usage examples:
+
+.. highlight:: none
+
+1.	Collect 2048 bytes of tracing data to a file "trace.log". The file will be saved in "openocd-esp32" directory.
+
+	::
+
+		esp32 apptrace start file://trace.log 1 2048 5 0 0
+
+	The tracing data will be retrieved and saved in non-blocking mode. This process will stop automatically after 2048 bytes are collected, or if no data are available for more than 5 seconds. 
+
+	.. note::
+
+		Tracing data is buffered before it is made available to OpenOCD. If you see "Data timeout!" message, then the target is likely sending not enough data to empty the buffer to OpenOCD before expiration of timeout. Either increase the timeout or use a function ``esp_apptrace_flush()`` to flush the data on specific intervals.
+
+2.	Retrieve tracing data indefinitely in non-blocking mode.
+
+	::
+
+		esp32 apptrace start file://trace.log 1 -1 -1 0 0
+
+	There is no limitation on the size of collected data and there is no any data timeout set. This process may be stopped by issuing ``esp32 apptrace stop`` command on OpenOCD telnet prompt, or by pressing Ctrl+C in OpenOCD window.
+
+3.	Retrieve tracing data and save them indefinitely.
+
+	::
+
+		esp32 apptrace start file://trace.log 0 -1 -1 0 0
+
+	OpenOCD telnet command line prompt will not be available until tracing is stopped. To stop tracing press Ctrl+C in OpenOCD window.
+
+4.	Wait for target to be halted. Then resume target's operation and start data retrieval. Stop after collecting 2048 bytes of data:
+
+	::
+
+		esp32 apptrace start file://trace.log 0 2048 -1 1 0
+
+	There is an option to configure target to halt after reset on start of scheduler. To do so, go to menuconfig and enable option *Stop program on scheduler start when JTAG/OCD is detected* under *Component config > FreeRTOS*. 
 
 
 Logging to Host
@@ -262,7 +302,7 @@ In order to use logging via trace module user needs to perform the following ste
     }
 
 2. Follow instructions in items 2-5 in `Application Specific Tracing`_.
-3. To print out collected log records run the following command in terminal: ``$IDF_PATH/tools/esp_app_trace/logtrace_proc.py /path/to/trace/file /path/to/program/elf/file``.
+3. To print out collected log records, run the following command in terminal: ``$IDF_PATH/tools/esp_app_trace/logtrace_proc.py /path/to/trace/file /path/to/program/elf/file``.
 
 
 Log Trace Processor Command Options
@@ -347,7 +387,7 @@ Start command syntax:
 ``outfile2``
     Path to file to save data from APP CPU. This argument should have the following format: ``file://path/to/file``.
 ``poll_period``
-    Data polling period (in ms). If greater then 0 then command runs in non-blocking mode. By default 1 ms.
+    Data polling period (in ms) for available trace data. If greater then 0 then command runs in non-blocking mode. By default 1 ms.  
 ``trace_size``
     Maximum size of data to collect (in bytes). Tracing is stopped after specified amount of data is received. By default -1 (trace size stop trigger is disabled).
 ``stop_tmo``
@@ -355,7 +395,27 @@ Start command syntax:
 
 .. note::
 
-    If ``poll_period`` is 0 OpenOCD telnet command line will not be available until tracing is stopped. You must stop it manually by resetting the board or pressing CTRL+C in OpenOCD window (not one with the telnet session). Another option is to set ``trace_size`` and wait until this size of data is collected. At this point tracing stops automatically.
+    If ``poll_period`` is 0 OpenOCD telnet command line will not be available until tracing is stopped. You must stop it manually by resetting the board or pressing Ctrl+C in OpenOCD window (not one with the telnet session). Another option is to set ``trace_size`` and wait until this size of data is collected. At this point tracing stops automatically.
+
+Command usage examples:
+
+.. highlight:: none
+
+1.	Collect SystemView tracing data to files "pro-cpu.str" and "pro-cpu.str". The files will be saved in "openocd-esp32" directory.
+
+	::
+
+		esp32 sysview start file://pro-cpu.str file://app-cpu.str
+
+	The tracing data will be retrieved and saved in non-blocking mode. To stop data this process enter ``esp32 apptrace stop`` command on OpenOCD telnet prompt, Optionally pressing Ctrl+C in OpenOCD window.
+
+2.	Retrieve tracing data and save them indefinitely.
+
+	::
+
+		esp32 sysview start file://pro-cpu.str file://app-cpu.str 0 -1 -1
+
+	OpenOCD telnet command line prompt will not be available until tracing is stopped. To stop tracing, press Ctrl+C in OpenOCD window.
 
 
 Data Visualization
