@@ -18,7 +18,7 @@ int sampling_period = 20;
 int i = 0;
 uint32_t sampling_start =  esp_log_timestamp();  //this clock counts miliseconds
 do {
-    ESP_LOGI(TAG, "Sample:%d, Value:%d", ++i, adc1_get_voltage(ADC1_TEST_CHANNEL));
+    ESP_LOGI(TAG, "Sample:%d, Value:%d", ++i, adc1_get_raw(ADC1_TEST_CHANNEL));
 } while (esp_log_timestamp() - sampling_start < sampling_period);
 ```
 

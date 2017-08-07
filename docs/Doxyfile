@@ -74,6 +74,7 @@ INPUT = \
     ../components/driver/include/driver/timer.h \
     ../components/driver/include/driver/touch_pad.h \
     ../components/driver/include/driver/uart.h \
+    ../components/esp_adc_cal/include/esp_adc_cal.h \
     ##
     ## Protocols - API Reference
     ##

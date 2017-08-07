@@ -87,7 +87,7 @@ int adc1_sample_and_show(int sampling_period)
     int i = 0;
     uint32_t sampling_start =  esp_log_timestamp();
     do {
-        ESP_LOGI(TAG, "Sample:%d, Value:%d", ++i, adc1_get_voltage(ADC1_TEST_CHANNEL));
+        ESP_LOGI(TAG, "Sample:%d, Value:%d", ++i, adc1_get_raw(ADC1_TEST_CHANNEL));
     } while (esp_log_timestamp() - sampling_start < sampling_period);
     return i;
 }

@@ -21,6 +21,7 @@ extern "C" {
 
 #include <stdint.h>
 #include "esp_err.h"
+#include "driver/gpio.h"
 
 typedef enum {
     ADC_ATTEN_0db   = 0,  /*!<The input voltage of ADC will be reduced to about 1/1 */
@@ -66,7 +67,7 @@ esp_err_t adc1_config_width(adc_bits_width_t width_bit);
  *
  * @note This function also configures the input GPIO pin mux to
  * connect it to the ADC1 channel. It must be called before calling
- * adc1_get_voltage() for this channel.
+ * adc1_get_raw() for this channel.
  *
  * The default ADC full-scale voltage is 1.1V. To read higher voltages (up to the pin maximum voltage,
  * usually 3.3V) requires setting >0dB signal attenuation for that ADC channel.
@@ -107,13 +108,22 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten);
  *     - -1: Parameter error
  *     -  Other: ADC1 channel reading.
  */
-int adc1_get_voltage(adc1_channel_t channel);
+int adc1_get_raw(adc1_channel_t channel);
+
+/** @cond */    //Doxygen command to hide deprecated function from API Reference
+/*
+ * @deprecated This function returns an ADC1 reading but is deprecated due to
+ * a misleading name and has been changed to directly call the new function.
+ * Use the new function adc1_get_raw() instead
+ */
+int adc1_get_voltage(adc1_channel_t channel) __attribute__((deprecated));
+/** @endcond */
 
 /**
  * @brief Configure ADC1 to be usable by the ULP
  *
  * This function reconfigures ADC1 to be controlled by the ULP.
- * Effect of this function can be reverted using adc1_get_voltage function.
+ * Effect of this function can be reverted using adc1_get_raw function.
  *
  * Note that adc1_config_channel_atten, adc1_config_width functions need
  * to be called to configure ADC1 channels, before ADC1 is used by the ULP.
@@ -135,6 +145,22 @@ void adc1_ulp_enable();
  * @return The hall sensor reading.
  */
 int hall_sensor_read();
+
+/**
+ *  @brief Output ADC2 reference voltage to gpio 25 or 26 or 27
+ *
+ *  This function utilizes the testing mux exclusive to ADC 2 to route the
+ *  reference voltage one of ADC2's channels. Supported gpios are gpios
+ *  25, 26, and 27. This refernce voltage can be manually read from the pin
+ *  and used in the esp_adc_cal component.
+ *
+ *  @param[in]  gpio    GPIO number (gpios 25,26,27 supported)
+ *
+ *  @return
+ *                  - ESP_OK: v_ref successfully routed to selected gpio
+ *                  - ESP_ERR_INVALID_ARG: Unsupported gpio
+ */
+esp_err_t adc2_vref_to_gpio(gpio_num_t gpio);
 
 #ifdef __cplusplus
 }
