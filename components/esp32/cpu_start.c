@@ -63,6 +63,7 @@
 #include "esp_core_dump.h"
 #include "esp_app_trace.h"
 #include "esp_clk.h"
+#include "esp_timer.h"
 #include "trax.h"
 
 #define STRINGIFY(s) STRINGIFY2(s)
@@ -245,7 +246,6 @@ void start_cpu0_default(void)
     esp_brownout_init();
 #endif
     rtc_gpio_force_hold_dis_all();
-    esp_setup_time_syscalls();
     esp_vfs_dev_uart_register();
     esp_reent_init(_GLOBAL_REENT);
 #ifndef CONFIG_CONSOLE_UART_NONE
@@ -258,6 +258,8 @@ void start_cpu0_default(void)
     _GLOBAL_REENT->_stdout = (FILE*) &__sf_fake_stdout;
     _GLOBAL_REENT->_stderr = (FILE*) &__sf_fake_stderr;
 #endif
+    esp_timer_init();
+    esp_setup_time_syscalls();
 #if CONFIG_ESP32_APPTRACE_ENABLE
     esp_err_t err = esp_apptrace_init();
     if (err != ESP_OK) {
