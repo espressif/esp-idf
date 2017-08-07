@@ -26,6 +26,7 @@
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
 #include "esp_clk.h"
+#include "../esp32/esp_timer.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
@@ -79,30 +80,9 @@ static uint64_t s_boot_time;
 static _lock_t s_boot_time_lock;
 #endif
 
-#ifdef WITH_FRC1
-#define FRC1_PRESCALER 16
-#define FRC1_PRESCALER_CTL 2
-#define FRC1_TICK_FREQ (APB_CLK_FREQ / FRC1_PRESCALER)
-#define FRC1_TICKS_PER_US (FRC1_TICK_FREQ / 1000000)
-#define FRC1_ISR_PERIOD_US (FRC_TIMER_LOAD_VALUE(0) / FRC1_TICKS_PER_US)
-// Counter frequency will be APB_CLK_FREQ / 16 = 5 MHz
-// 1 tick = 0.2 us
-// Timer has 23 bit counter, so interrupt will fire each 1677721.6 microseconds.
-// This is not a whole number, so timer will drift by 0.3 ppm due to rounding error.
-
-static volatile uint64_t s_microseconds = 0;
-
-static void IRAM_ATTR frc_timer_isr()
-{
-    // Write to FRC_TIMER_INT_REG may not take effect in some cases (root cause TBD)
-    // This extra write works around this issue.
-    // FRC_TIMER_LOAD_REG(0) is used here, but any other DPORT register address can also be used.
-    WRITE_PERI_REG(FRC_TIMER_LOAD_REG(0), FRC_TIMER_LOAD_VALUE(0));
-    WRITE_PERI_REG(FRC_TIMER_INT_REG(0), FRC_TIMER_INT_CLR);
-    s_microseconds += FRC1_ISR_PERIOD_US;
-}
-
-#endif // WITH_FRC1
+#ifdef WITH_RTC
+uint64_t s_microseconds_offset;
+#endif
 
 #if defined(WITH_RTC) || defined(WITH_FRC1)
 static void set_boot_time(uint64_t time_us)
@@ -162,20 +142,8 @@ void esp_setup_time_syscalls()
 #if defined( WITH_FRC1 )
 #if defined( WITH_RTC )
     // initialize time from RTC clock
-    s_microseconds = get_rtc_time_us();
+    s_microseconds_offset = get_rtc_time_us() - esp_timer_get_time();
 #endif //WITH_RTC
-
-    // set up timer
-    WRITE_PERI_REG(FRC_TIMER_CTRL_REG(0), \
-            FRC_TIMER_AUTOLOAD | \
-            (FRC1_PRESCALER_CTL << FRC_TIMER_PRESCALER_S) | \
-            FRC_TIMER_EDGE_INT);
-
-    WRITE_PERI_REG(FRC_TIMER_LOAD_REG(0), FRC_TIMER_LOAD_VALUE(0));
-    SET_PERI_REG_MASK(FRC_TIMER_CTRL_REG(0),
-            FRC_TIMER_ENABLE | \
-            FRC_TIMER_INT_ENABLE);
-    esp_intr_alloc(ETS_TIMER1_INTR_SOURCE, 0, &frc_timer_isr, NULL, NULL);
 #endif // WITH_FRC1
 }
 
@@ -196,16 +164,7 @@ static uint64_t get_time_since_boot()
 {
     uint64_t microseconds = 0;
 #ifdef WITH_FRC1
-    uint32_t timer_ticks_before = READ_PERI_REG(FRC_TIMER_COUNT_REG(0));
-    microseconds = s_microseconds;
-    uint32_t timer_ticks_after = READ_PERI_REG(FRC_TIMER_COUNT_REG(0));
-    if (timer_ticks_after > timer_ticks_before) {
-        // overflow happened at some point between getting
-        // timer_ticks_before and timer_ticks_after
-        // microseconds value is ambiguous, get a new one
-        microseconds = s_microseconds;
-    }
-    microseconds += (FRC_TIMER_LOAD_VALUE(0) - timer_ticks_after) / FRC1_TICKS_PER_US;
+    microseconds = s_microseconds_offset + esp_timer_get_time();
 #elif defined(WITH_RTC)
     microseconds = get_rtc_time_us();
 #endif
