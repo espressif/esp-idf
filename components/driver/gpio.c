@@ -456,3 +456,29 @@ esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num)
     GPIO.pin[gpio_num].wakeup_enable = 0;
     return ESP_OK;
 }
+
+esp_err_t gpio_set_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t strength)
+{
+    GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    GPIO_CHECK(strength < GPIO_DRIVE_CAP_MAX, "GPIO drive capability error", ESP_ERR_INVALID_ARG);
+
+    if (RTC_GPIO_IS_VALID_GPIO(gpio_num)) {
+        rtc_gpio_set_drive_capability(gpio_num, strength);
+    } else {
+        SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[gpio_num], FUN_DRV_V, strength, FUN_DRV_S);
+    }
+    return ESP_OK;
+}
+
+esp_err_t gpio_get_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t* strength)
+{
+    GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    GPIO_CHECK(strength != NULL, "GPIO drive capability pointer error", ESP_ERR_INVALID_ARG);
+
+    if (RTC_GPIO_IS_VALID_GPIO(gpio_num)) {
+        return rtc_gpio_get_drive_capability(gpio_num, strength);
+    } else {
+        *strength = GET_PERI_REG_BITS2(GPIO_PIN_MUX_REG[gpio_num], FUN_DRV_V, FUN_DRV_S);
+    }
+    return ESP_OK;
+}

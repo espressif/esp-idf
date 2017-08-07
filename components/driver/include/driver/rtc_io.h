@@ -40,6 +40,8 @@ typedef struct {
     uint32_t slpie;     /*!< Mask of input enable in sleep mode */
     uint32_t hold;      /*!< Mask of hold enable */
     uint32_t hold_force;/*!< Mask of hold_force bit for RTC IO in RTC_CNTL_HOLD_FORCE_REG */
+    uint32_t drv_v;     /*!< Mask of drive capability */
+    uint32_t drv_s;     /*!< Offset of drive capability */
     int rtc_num;        /*!< RTC IO number, or -1 if not an RTC GPIO */
 } rtc_gpio_desc_t;
 
@@ -232,6 +234,29 @@ esp_err_t rtc_gpio_hold_dis(gpio_num_t gpio_num);
  */
 void rtc_gpio_force_hold_dis_all();
 
+/**
+  * @brief Set RTC GPIO pad drive capability
+  *
+  * @param gpio_num GPIO number, only support output GPIOs
+  * @param strength Drive capability of the pad
+  *
+  * @return
+  *     - ESP_OK Success
+  *     - ESP_ERR_INVALID_ARG Parameter error
+  */
+esp_err_t rtc_gpio_set_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t strength);
+
+/**
+  * @brief Get RTC GPIO pad drive capability
+  *
+  * @param gpio_num GPIO number, only support output GPIOs
+  * @param strength Pointer to accept drive capability of the pad
+  *
+  * @return
+  *     - ESP_OK Success
+  *     - ESP_ERR_INVALID_ARG Parameter error
+  */
+esp_err_t rtc_gpio_get_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t* strength);
 
 #ifdef __cplusplus
 }

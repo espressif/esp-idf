@@ -219,6 +219,14 @@ typedef enum {
     GPIO_FLOATING,                  /*!< Pad floating           */
 } gpio_pull_mode_t;
 
+typedef enum {
+    GPIO_DRIVE_CAP_0       = 0,    /*!< Pad drive capability: weak          */
+    GPIO_DRIVE_CAP_1       = 1,    /*!< Pad drive capability: stronger      */
+    GPIO_DRIVE_CAP_2       = 2,    /*!< Pad drive capability: default value */
+    GPIO_DRIVE_CAP_DEFAULT = 2,    /*!< Pad drive capability: default value */
+    GPIO_DRIVE_CAP_3       = 3,    /*!< Pad drive capability: strongest     */
+    GPIO_DRIVE_CAP_MAX,
+} gpio_drive_cap_t;
 
 typedef void (*gpio_isr_t)(void*);
 typedef intr_handle_t gpio_isr_handle_t;
@@ -481,6 +489,29 @@ esp_err_t gpio_isr_handler_add(gpio_num_t gpio_num, gpio_isr_t isr_handler, void
   */
 esp_err_t gpio_isr_handler_remove(gpio_num_t gpio_num);
 
+/**
+  * @brief Set GPIO pad drive capability
+  *
+  * @param gpio_num GPIO number, only support output GPIOs
+  * @param strength Drive capability of the pad
+  *
+  * @return
+  *     - ESP_OK Success
+  *     - ESP_ERR_INVALID_ARG Parameter error
+  */
+esp_err_t gpio_set_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t strength);
+
+/**
+  * @brief Get GPIO pad drive capability
+  *
+  * @param gpio_num GPIO number, only support output GPIOs
+  * @param strength Pointer to accept drive capability of the pad
+  *
+  * @return
+  *     - ESP_OK Success
+  *     - ESP_ERR_INVALID_ARG Parameter error
+  */
+esp_err_t gpio_get_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t* strength);
 
 #ifdef __cplusplus
 }
