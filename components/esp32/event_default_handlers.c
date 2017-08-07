@@ -408,3 +408,8 @@ esp_err_t esp_event_process_default(system_event_t *event)
     }
     return ESP_OK;
 }
+
+esp_err_t esp_wifi_init(wifi_init_config_t *config)
+{
+     return esp_wifi_init_internal(config);
+}
