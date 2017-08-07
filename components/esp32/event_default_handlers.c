@@ -47,7 +47,6 @@ do{\
 
 typedef esp_err_t (*system_event_handler_t)(system_event_t *e);
 
-#ifdef CONFIG_WIFI_ENABLED
 static esp_err_t system_event_ap_start_handle_default(system_event_t *event);
 static esp_err_t system_event_ap_stop_handle_default(system_event_t *event);
 static esp_err_t system_event_sta_start_handle_default(system_event_t *event);
@@ -55,7 +54,6 @@ static esp_err_t system_event_sta_stop_handle_default(system_event_t *event);
 static esp_err_t system_event_sta_connected_handle_default(system_event_t *event);
 static esp_err_t system_event_sta_disconnected_handle_default(system_event_t *event);
 static esp_err_t system_event_sta_got_ip_default(system_event_t *event);
-#endif
 
 #ifdef CONFIG_ETHERNET
 static esp_err_t system_event_eth_start_handle_default(system_event_t *event);
@@ -68,27 +66,25 @@ static esp_err_t system_event_eth_disconnected_handle_default(system_event_t *ev
 
    Any entry in this table which is disabled by config will have a NULL handler.
 */
-static const system_event_handler_t default_event_handlers[SYSTEM_EVENT_MAX] = {
-#ifdef CONFIG_WIFI_ENABLED
+static system_event_handler_t default_event_handlers[SYSTEM_EVENT_MAX] = {
     [SYSTEM_EVENT_WIFI_READY]          = NULL,
     [SYSTEM_EVENT_SCAN_DONE]           = NULL,
-    [SYSTEM_EVENT_STA_START]           = system_event_sta_start_handle_default,
-    [SYSTEM_EVENT_STA_STOP]            = system_event_sta_stop_handle_default,
-    [SYSTEM_EVENT_STA_CONNECTED]       = system_event_sta_connected_handle_default,
-    [SYSTEM_EVENT_STA_DISCONNECTED]    = system_event_sta_disconnected_handle_default,
+    [SYSTEM_EVENT_STA_START]           = NULL,
+    [SYSTEM_EVENT_STA_STOP]            = NULL,
+    [SYSTEM_EVENT_STA_CONNECTED]       = NULL,
+    [SYSTEM_EVENT_STA_DISCONNECTED]    = NULL,
     [SYSTEM_EVENT_STA_AUTHMODE_CHANGE] = NULL,
-    [SYSTEM_EVENT_STA_GOT_IP]          = system_event_sta_got_ip_default,
+    [SYSTEM_EVENT_STA_GOT_IP]          = NULL,
     [SYSTEM_EVENT_STA_WPS_ER_SUCCESS]  = NULL,
     [SYSTEM_EVENT_STA_WPS_ER_FAILED]   = NULL,
     [SYSTEM_EVENT_STA_WPS_ER_TIMEOUT]  = NULL,
     [SYSTEM_EVENT_STA_WPS_ER_PIN]      = NULL,
-    [SYSTEM_EVENT_AP_START]            = system_event_ap_start_handle_default,
-    [SYSTEM_EVENT_AP_STOP]             = system_event_ap_stop_handle_default,
+    [SYSTEM_EVENT_AP_START]            = NULL,
+    [SYSTEM_EVENT_AP_STOP]             = NULL,
     [SYSTEM_EVENT_AP_STACONNECTED]     = NULL,
     [SYSTEM_EVENT_AP_STADISCONNECTED]  = NULL,
     [SYSTEM_EVENT_AP_PROBEREQRECVED]   = NULL,
     [SYSTEM_EVENT_AP_STA_GOT_IP6]      = NULL,
-#endif
 #ifdef CONFIG_ETHERNET
     [SYSTEM_EVENT_ETH_START]           = system_event_eth_start_handle_default,
     [SYSTEM_EVENT_ETH_STOP]            = system_event_eth_stop_handle_default,
@@ -156,7 +152,6 @@ esp_err_t system_event_eth_disconnected_handle_default(system_event_t *event)
 }
 #endif
 
-#ifdef CONFIG_WIFI_ENABLED
 static esp_err_t system_event_sta_got_ip_default(system_event_t *event)
 {
     WIFI_API_CALL_CHECK("esp_wifi_internal_set_sta_ip", esp_wifi_internal_set_sta_ip(), ESP_OK);
@@ -250,7 +245,6 @@ esp_err_t system_event_sta_disconnected_handle_default(system_event_t *event)
     WIFI_API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, NULL), ESP_OK);
     return ESP_OK;
 }
-#endif
 
 static esp_err_t esp_system_event_debug(system_event_t *event)
 {
@@ -411,5 +405,13 @@ esp_err_t esp_event_process_default(system_event_t *event)
 
 esp_err_t esp_wifi_init(wifi_init_config_t *config)
 {
+     default_event_handlers[SYSTEM_EVENT_STA_START]        = system_event_sta_start_handle_default;
+     default_event_handlers[SYSTEM_EVENT_STA_STOP]         = system_event_sta_stop_handle_default;
+     default_event_handlers[SYSTEM_EVENT_STA_CONNECTED]    = system_event_sta_connected_handle_default;
+     default_event_handlers[SYSTEM_EVENT_STA_DISCONNECTED] = system_event_sta_disconnected_handle_default;
+     default_event_handlers[SYSTEM_EVENT_STA_GOT_IP]       = system_event_sta_got_ip_default;
+     default_event_handlers[SYSTEM_EVENT_AP_START]         = system_event_ap_start_handle_default;
+     default_event_handlers[SYSTEM_EVENT_AP_STOP]          = system_event_ap_stop_handle_default;
+
      return esp_wifi_init_internal(config);
 }
