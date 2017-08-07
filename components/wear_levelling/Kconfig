@@ -2,7 +2,7 @@ menu "Wear Levelling"
 
 choice WL_SECTOR_SIZE
    bool "Wear Levelling library sector size"
-   default WL_SECTOR_SIZE
+   default WL_SECTOR_SIZE_4096
    help
        Sector size used by wear levelling library.
        You can set default sector size or size that will
@@ -20,6 +20,8 @@ choice WL_SECTOR_SIZE
        
 config WL_SECTOR_SIZE_512
    bool "512"
+   # This mode is temporary disabled, until unit test is fixed
+   depends on false
 config WL_SECTOR_SIZE_4096
    bool "4096"
 endchoice
@@ -32,7 +34,7 @@ config WL_SECTOR_SIZE
 choice WL_SECTOR_MODE
    bool "Sector store mode"
    depends on WL_SECTOR_SIZE_512
-   default WL_SECTOR_MODE_PERF
+   default WL_SECTOR_MODE_SAFE
    help
        Specify the mode to store data into flash:
        
