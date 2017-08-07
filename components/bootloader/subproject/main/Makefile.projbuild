@@ -2,8 +2,3 @@
 # paths can be added at this level (we need binary librtc to be
 # available to link bootloader).
 COMPONENT_SUBMODULES += $(IDF_PATH)/components/esp32/lib
-
-ifdef CONFIG_BOOTLOADER_LTO
-CFLAGS += -flto
-EXTRA_LDFLAGS += -Wl,-flto
-endif
