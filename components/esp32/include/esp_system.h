@@ -49,6 +49,15 @@ void system_init(void) __attribute__ ((deprecated));
   */
 void system_restore(void) __attribute__ ((deprecated));
 
+typedef void (*shutdown_handler_t)(void);
+/**
+  * @brief  Register shutdown handler
+  *
+  * This function allows you to register a handler that gets invoked before a
+  * systematic shutdown of the chip.
+  */
+esp_err_t esp_register_shutdown_handler(shutdown_handler_t handle);
+
 /**
   * @brief  Restart PRO and APP CPUs.
   *

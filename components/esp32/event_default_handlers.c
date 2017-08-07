@@ -23,6 +23,7 @@
 #include "esp_event_loop.h"
 #include "esp_task.h"
 #include "esp_eth.h"
+#include "esp_system.h"
 
 #include "rom/ets_sys.h"
 
@@ -413,5 +414,6 @@ esp_err_t esp_wifi_init(wifi_init_config_t *config)
      default_event_handlers[SYSTEM_EVENT_AP_START]         = system_event_ap_start_handle_default;
      default_event_handlers[SYSTEM_EVENT_AP_STOP]          = system_event_ap_stop_handle_default;
 
+     esp_register_shutdown_handler((shutdown_handler_t)esp_wifi_stop);
      return esp_wifi_init_internal(config);
 }
