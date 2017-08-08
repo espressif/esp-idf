@@ -103,7 +103,7 @@ esp_err_t system_event_eth_start_handle_default(system_event_t *event)
 
     esp_eth_get_mac(eth_mac);
     tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_ETH, &eth_ip);
-    tcpip_adapter_start(TCPIP_ADAPTER_IF_ETH, eth_mac, &eth_ip);
+    tcpip_adapter_eth_start(eth_mac, &eth_ip);
 
     return ESP_OK;
 }
@@ -174,7 +174,7 @@ esp_err_t system_event_ap_start_handle_default(system_event_t *event)
     WIFI_API_CALL_CHECK("esp_wifi_mac_get",  esp_wifi_get_mac(ESP_IF_WIFI_AP, ap_mac), ESP_OK);
 
     tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP, &ap_ip);
-    tcpip_adapter_start(TCPIP_ADAPTER_IF_AP, ap_mac, &ap_ip);
+    tcpip_adapter_ap_start(ap_mac, &ap_ip);
 
     return ESP_OK;
 }
@@ -195,7 +195,7 @@ esp_err_t system_event_sta_start_handle_default(system_event_t *event)
 
     WIFI_API_CALL_CHECK("esp_wifi_mac_get",  esp_wifi_get_mac(ESP_IF_WIFI_STA, sta_mac), ESP_OK);
     tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &sta_ip);
-    tcpip_adapter_start(TCPIP_ADAPTER_IF_STA, sta_mac, &sta_ip);
+    tcpip_adapter_sta_start(sta_mac, &sta_ip);
 
     return ESP_OK;
 }

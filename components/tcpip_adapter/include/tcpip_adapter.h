@@ -177,13 +177,8 @@ typedef struct tcpip_adapter_api_msg_s {
 void tcpip_adapter_init(void);
 
 /**
- * @brief  Start an interface with specific MAC and IP
+ * @brief  Start the ethernet interface with specific MAC and IP
  *
- * softAP or station interface will be initialized, connect WiFi stack with TCPIP stack.
- *
- * For softAP interface, DHCP server will be started automatically.
- *
- * @param[in]  tcpip_if: the interface which we will start
  * @param[in]  mac: set MAC address of this interface
  * @param[in]  ip_info: set IP address of this interface
  *
@@ -191,7 +186,37 @@ void tcpip_adapter_init(void);
  *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
  *         ESP_ERR_NO_MEM
  */
-esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, tcpip_adapter_ip_info_t *ip_info);
+esp_err_t tcpip_adapter_eth_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info);
+
+/**
+ * @brief  Start the Wi-Fi station interface with specific MAC and IP
+ *
+ * Station interface will be initialized, connect WiFi stack with TCPIP stack.
+ *
+ * @param[in]  mac: set MAC address of this interface
+ * @param[in]  ip_info: set IP address of this interface
+ *
+ * @return ESP_OK
+ *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
+ *         ESP_ERR_NO_MEM
+ */
+esp_err_t tcpip_adapter_sta_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info);
+
+/**
+ * @brief  Start the Wi-Fi AP interface with specific MAC and IP
+ *
+ * softAP interface will be initialized, connect WiFi stack with TCPIP stack.
+ *
+ * DHCP server will be started automatically.
+ *
+ * @param[in]  mac: set MAC address of this interface
+ * @param[in]  ip_info: set IP address of this interface
+ *
+ * @return ESP_OK
+ *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
+ *         ESP_ERR_NO_MEM
+ */
+esp_err_t tcpip_adapter_ap_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info);
 
 /**
  * @brief  Stop an interface

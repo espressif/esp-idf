@@ -40,6 +40,7 @@
 static struct netif *esp_netif[TCPIP_ADAPTER_IF_MAX];
 static tcpip_adapter_ip_info_t esp_ip[TCPIP_ADAPTER_IF_MAX];
 static tcpip_adapter_ip6_info_t esp_ip6[TCPIP_ADAPTER_IF_MAX];
+static netif_init_fn esp_netif_init_fn[TCPIP_ADAPTER_IF_MAX];
 
 static tcpip_adapter_dhcp_status_t dhcps_status = TCPIP_ADAPTER_DHCP_INIT;
 static tcpip_adapter_dhcp_status_t dhcpc_status[TCPIP_ADAPTER_IF_MAX] = {TCPIP_ADAPTER_DHCP_INIT};
@@ -96,22 +97,12 @@ void tcpip_adapter_init(void)
     }
 }
 
-static netif_init_fn tcpip_if_to_netif_init_fn(tcpip_adapter_if_t tcpip_if)
+static inline netif_init_fn tcpip_if_to_netif_init_fn(tcpip_adapter_if_t tcpip_if)
 {
-    switch(tcpip_if) {
-#ifdef CONFIG_WIFI_ENABLED
-    case TCPIP_ADAPTER_IF_AP:
-        return wlanif_init_ap;
-    case TCPIP_ADAPTER_IF_STA:
-        return wlanif_init_sta;
-#endif
-#ifdef CONFIG_ETHERNET
-        case TCPIP_ADAPTER_IF_ETH:
-            return ethernetif_init;
-#endif
-        default:
-            return NULL;
-    }
+     if (tcpip_if < TCPIP_ADAPTER_IF_MAX)
+	  return esp_netif_init_fn[tcpip_if];
+     else
+	  return NULL;
 }
 
 static int tcpip_adapter_ipc_check(tcpip_adapter_api_msg_t *msg)
@@ -179,6 +170,24 @@ esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, tcpip_a
     }
 
     return ESP_OK;
+}
+
+esp_err_t tcpip_adapter_eth_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info)
+{
+     esp_netif_init_fn[TCPIP_ADAPTER_IF_ETH] = ethernetif_init;
+     return tcpip_adapter_start(TCPIP_ADAPTER_IF_ETH, mac, ip_info);
+}
+
+esp_err_t tcpip_adapter_sta_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info)
+{
+     esp_netif_init_fn[TCPIP_ADAPTER_IF_STA] = wlanif_init_sta;
+     return tcpip_adapter_start(TCPIP_ADAPTER_IF_STA, mac, ip_info);
+}
+
+esp_err_t tcpip_adapter_ap_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info)
+{
+     esp_netif_init_fn[TCPIP_ADAPTER_IF_AP] = wlanif_init_ap;
+     return tcpip_adapter_start(TCPIP_ADAPTER_IF_AP, mac, ip_info);
 }
 
 static esp_err_t tcpip_adapter_start_api(tcpip_adapter_api_msg_t * msg)
