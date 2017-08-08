@@ -22,6 +22,12 @@
 extern "C" {
 #endif
 
+#define ESP_BLUEDROID_STATUS_CHECK(status)           \
+    if (esp_bluedroid_get_status() != (status)) {    \
+        return ESP_ERR_INVALID_STATE;                \
+    }
+
+
 /* relate to BT_STATUS_xxx in bt_def.h */
 /// Status Return Value
 typedef enum {
