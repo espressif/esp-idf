@@ -166,7 +166,7 @@ TEST_CASE("can write and read back blocks (using SPI)", "[sdspi][ignore]")
     TEST_ESP_OK(sdspi_host_deinit());
 }
 
-TEST_CASE("reads and writes with an unaligned buffer", "[sd]")
+TEST_CASE("reads and writes with an unaligned buffer", "[sd][ignore]")
 {
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
     TEST_ESP_OK(sdmmc_host_init());
