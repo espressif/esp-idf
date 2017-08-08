@@ -122,6 +122,7 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
     tL2C_LCB    *p_lcb;
     tL2C_CCB    *p_ccb = NULL;
     UINT16      l2cap_len, rcv_cid, psm;
+    UINT16      credit;
 
     /* Extract the handle */
     STREAM_TO_UINT16 (handle, p);
@@ -275,6 +276,20 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
         if (p_ccb == NULL) {
             osi_free (p_msg);
         } else {
+            if (p_lcb->transport == BT_TRANSPORT_LE) {
+                // Got a pkt, valid send out credits to the peer device
+                credit = L2CAP_LE_DEFAULT_CREDIT;
+                L2CAP_TRACE_DEBUG("%s Credits received %d",__func__, credit);
+                if((p_ccb->peer_conn_cfg.credits + credit) > L2CAP_LE_MAX_CREDIT) {
+                    /* we have received credits more than max coc credits,
+                     * so disconnecting the Le Coc Channel
+                     */
+                    l2cble_send_peer_disc_req (p_ccb);
+                } else {
+                    p_ccb->peer_conn_cfg.credits += credit;
+                    l2c_link_check_send_pkts (p_ccb->p_lcb, NULL, NULL);
+                }
+            }
             /* Basic mode packets go straight to the state machine */
             if (p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_BASIC_MODE) {
 #if (CLASSIC_BT_INCLUDED == TRUE)

@@ -41,6 +41,10 @@
 
 #define L2CAP_CMD_BLE_UPDATE_REQ            0x12
 #define L2CAP_CMD_BLE_UPDATE_RSP            0x13
+#define L2CAP_CMD_BLE_CREDIT_BASED_CONN_REQ 0x14
+#define L2CAP_CMD_BLE_CREDIT_BASED_CONN_RES 0x15
+#define L2CAP_CMD_BLE_FLOW_CTRL_CREDIT      0x16
+
 
 
 /* Define some packet and header lengths
@@ -69,6 +73,11 @@
 
 #define L2CAP_CMD_BLE_UPD_REQ_LEN   8       /* Min and max interval, latency, tout  */
 #define L2CAP_CMD_BLE_UPD_RSP_LEN   2       /* Result                               */
+
+#define L2CAP_CMD_BLE_CREDIT_BASED_CONN_REQ_LEN 10 /* LE_PSM, SCID, MTU, MPS, Init Credit */
+#define L2CAP_CMD_BLE_CREDIT_BASED_CONN_RES_LEN 10 /* DCID, MTU, MPS, Init credit, Result */
+#define L2CAP_CMD_BLE_FLOW_CTRL_CREDIT_LEN      4  /* CID, Credit */
+
 
 
 /* Define the packet boundary flags
