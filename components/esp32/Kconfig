@@ -560,15 +560,11 @@ config ESP32_XTAL_FREQ
 
 endmenu
 
-menuconfig WIFI_ENABLED
-    bool "WiFi"
-    default y
-    help
-       Select this option to enable WiFi stack and show the submenu with WiFi configuration choices.
+menu Wi-Fi
 
 config SW_COEXIST_ENABLE
     bool "Software controls WiFi/Bluetooth coexistence"
-    depends on WIFI_ENABLED && BT_ENABLED
+    depends on BT_ENABLED
     default n
     help
         If enabled, WiFi & Bluetooth coexistence is controlled by software rather than hardware.
@@ -578,7 +574,6 @@ config SW_COEXIST_ENABLE
 
 config ESP32_WIFI_STATIC_RX_BUFFER_NUM
     int "Max number of WiFi static RX buffers"
-    depends on WIFI_ENABLED
     range 2 25
     default 10
     help
@@ -590,7 +585,6 @@ config ESP32_WIFI_STATIC_RX_BUFFER_NUM
 
 config ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
     int "Max number of WiFi dynamic RX buffers"
-    depends on WIFI_ENABLED
     range 0 128
     default 32
     help
@@ -606,7 +600,6 @@ config ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
 
 choice ESP32_WIFI_TX_BUFFER
     prompt "Type of WiFi TX buffers"
-    depends on WIFI_ENABLED
     default ESP32_WIFI_DYNAMIC_TX_BUFFER
     help
         Select type of WiFi tx buffers and show the submenu with the number of WiFi tx buffers choice. 
@@ -626,13 +619,11 @@ endchoice
 
 config ESP32_WIFI_TX_BUFFER_TYPE
     int
-    depends on WIFI_ENABLED
     default 0 if ESP32_WIFI_STATIC_TX_BUFFER
     default 1 if ESP32_WIFI_DYNAMIC_TX_BUFFER
 
 config ESP32_WIFI_STATIC_TX_BUFFER_NUM
     int "Max number of WiFi static TX buffers"
-    depends on WIFI_ENABLED 
     depends on ESP32_WIFI_STATIC_TX_BUFFER
     range 16 64
     default 32
@@ -646,7 +637,6 @@ config ESP32_WIFI_STATIC_TX_BUFFER_NUM
 
 config ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
     int "Max number of WiFi dynamic TX buffers"
-    depends on WIFI_ENABLED 
     depends on ESP32_WIFI_DYNAMIC_TX_BUFFER
     range 16 64
     default 32
@@ -659,7 +649,6 @@ config ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
 
 config ESP32_WIFI_AMPDU_ENABLED
     bool "WiFi AMPDU"
-    depends on WIFI_ENABLED
     default y
     help
         Select this option to enable AMPDU feature
@@ -689,21 +678,14 @@ config ESP32_WIFI_RX_BA_WIN
 
 config ESP32_WIFI_NVS_ENABLED
     bool "WiFi NVS flash"
-    depends on WIFI_ENABLED
     default y
     help
         Select this option to enable WiFi NVS flash
 
-config PHY_ENABLED
-	bool
-	default y if WIFI_ENABLED || BT_ENABLED
-
 menu PHY
-	visible if PHY_ENABLED
 	
 config ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
     bool "Do phy calibration and store calibration data in NVS"
-    depends on PHY_ENABLED
     default y
     help
         If this option is enabled, NVS will be initialized and calibration data will be loaded from there.
@@ -714,7 +696,6 @@ config ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
 
 config ESP32_PHY_INIT_DATA_IN_PARTITION
     bool "Use a partition to store PHY init data"
-    depends on PHY_ENABLED
     default n
     help
         If enabled, PHY init data will be loaded from a partition.
@@ -733,15 +714,13 @@ config ESP32_PHY_MAX_WIFI_TX_POWER
     int "Max WiFi TX power (dBm)"
     range 0 20
     default 20
-    depends on PHY_ENABLED && WIFI_ENABLED
     help
         Set maximum transmit power for WiFi radio. Actual transmit power for high
         data rates may be lower than this setting.
 
 config ESP32_PHY_MAX_TX_POWER
 	int
-	depends on PHY_ENABLED
-	default 20 if !WIFI_ENABLED
-	default ESP32_PHY_MAX_WIFI_TX_POWER if WIFI_ENABLED
+	default ESP32_PHY_MAX_WIFI_TX_POWER
 
+endmenu
 endmenu

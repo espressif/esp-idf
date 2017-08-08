@@ -32,7 +32,6 @@
 #include "nvs_flash.h"
 #include "sdkconfig.h"
 
-#ifdef CONFIG_PHY_ENABLED
 #include "phy.h"
 #include "phy_init_data.h"
 #include "esp_coexist.h"
@@ -298,4 +297,3 @@ void esp_phy_load_cal_and_init(void)
     free(cal_data); // PHY maintains a copy of calibration data, so we can free this
 }
 
-#endif // CONFIG_PHY_ENABLED

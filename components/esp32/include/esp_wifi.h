@@ -144,7 +144,7 @@ typedef struct {
 extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
 
 #define WIFI_INIT_CONFIG_MAGIC    0x1F2F3F4F
-#ifdef CONFIG_WIFI_ENABLED
+
 #define WIFI_INIT_CONFIG_DEFAULT() { \
     .event_handler = &esp_event_send, \
     .wpa_crypto_funcs = g_wifi_default_wpa_crypto_funcs, \
@@ -160,9 +160,6 @@ extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
     .rx_ba_win = CONFIG_ESP32_WIFI_RX_BA_WIN,\
     .magic = WIFI_INIT_CONFIG_MAGIC\
 };
-#else
-#define WIFI_INIT_CONFIG_DEFAULT() {0}; _Static_assert(0, "please enable wifi in menuconfig to use esp_wifi.h");
-#endif
 
 /**
   * @brief  Init WiFi
