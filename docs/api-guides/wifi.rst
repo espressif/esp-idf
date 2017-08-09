@@ -19,6 +19,7 @@ ESP32 Wi-Fi Feature List
 - Supports an Espressif-specific protocol which, in turn, supports up to **1 km** of data traffic
 - Up to 20 MBit/sec TCP throughput and 30 MBit/sec UDP throughput over the air
 - Supports Sniffer
+- Support set fast_crypto algorithm and normal algorithm switch which used in wifi connect
 
 How To Write a Wi-Fi Application
 ----------------------------------
@@ -1214,6 +1215,15 @@ ESP32 Wi-Fi Power-saving Mode
 Currently, ESP32 Wi-Fi supports the Modem-sleep mode which refers to WMM (Wi-Fi Multi Media) power-saving mode in the IEEE 802.11 protocol. If the Modem-sleep mode is enabled and the Wi-Fi enters a sleep state, then, RF, PHY and BB are turned off in order to reduce power consumption. Modem-sleep mode works in Station-only mode and the station must be connected to the AP first.
 
 Call esp_wifi_set_ps(WIFI_PS_MODEM) to enable Modem-sleep mode after calling esp_wifi_init(). About 10 seconds after the station connects to the AP, Modem-sleep will start. When the station disconnects from the AP, Modem-sleep will stop.
+
+ESP32 Wi-Fi Connect Crypto
+-----------------------------------
+Now ESP32 have two group crypto functions can be used when do wifi connect, one is the original functions, the other is optimized by ESP hardware:
+1. Original functions which is the source code used in the folder components/wpa_supplicant/src/crypto function;
+2. The optimized functions is in the folder components/wpa_supplicant/src/fast_crypto, these function used the hardware crypto to make it faster than origin one, the type of function's name add fast_ to distinguish with the original one. For example, the API aes_wrap() is used to encrypt frame information when do 4 way handshake, the fast_aes_wrap() has the same result but can be faster.
+
+Two groups of crypto function can be used when register in the wpa_crypto_funcs_t, wpa2_crypto_funcs_t and wps_crypto_funcs_t structure, also we have given the recommend functions to register in the 
+fast_crypto_ops.c, you can register the function as the way you need, however what should make action is that the crypto_hash_xxx function and crypto_cipher_xxx function need to register with the same function to operation. For example, if you register crypto_hash_init() function to initialize the esp_crypto_hash structure, you need use the crypto_hash_update() and crypto_hash_finish() function to finish the operation, rather than fast_crypto_hash_update() or fast_crypto_hash_finish(). 
 
 ESP32 Wi-Fi Throughput
 -----------------------------------

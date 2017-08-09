@@ -40,7 +40,7 @@
 
 
 static const char *TAG = "example_wps";
-
+static esp_wps_config_t config = WPS_CONFIG_INIT_DEFAULT(WPS_TEST_MODE);
 
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
@@ -68,13 +68,13 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
     case SYSTEM_EVENT_STA_WPS_ER_FAILED:
 	ESP_LOGI(TAG, "SYSTEM_EVENT_STA_WPS_ER_FAILED");
 	ESP_ERROR_CHECK(esp_wifi_wps_disable());
-	ESP_ERROR_CHECK(esp_wifi_wps_enable(WPS_TEST_MODE));
+	ESP_ERROR_CHECK(esp_wifi_wps_enable(&config));
 	ESP_ERROR_CHECK(esp_wifi_wps_start(0));
 	break;
     case SYSTEM_EVENT_STA_WPS_ER_TIMEOUT:
 	ESP_LOGI(TAG, "SYSTEM_EVENT_STA_WPS_ER_TIMEOUT");
 	ESP_ERROR_CHECK(esp_wifi_wps_disable());
-	ESP_ERROR_CHECK(esp_wifi_wps_enable(WPS_TEST_MODE));
+	ESP_ERROR_CHECK(esp_wifi_wps_enable(&config));
 	ESP_ERROR_CHECK(esp_wifi_wps_start(0));
  	break;
     case SYSTEM_EVENT_STA_WPS_ER_PIN:
@@ -95,13 +95,16 @@ static void start_wps(void)
     ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
     
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
     
     ESP_LOGI(TAG, "start wps...");
-    ESP_ERROR_CHECK(esp_wifi_wps_enable(WPS_TEST_MODE));
+    
+       
+    ESP_ERROR_CHECK(esp_wifi_wps_enable(&config));
     ESP_ERROR_CHECK(esp_wifi_wps_start(0));
 }
 
