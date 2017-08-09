@@ -8,8 +8,8 @@ What You Need
 -------------
 
 * 1 × ESP32-DevKitC board
-* 1 × USB A / mini USB B cable 
-* 1 × PC loaded with Windows, Linux or Mac O/S
+* 1 × USB A / micro USB B cable 
+* 1 × PC loaded with Windows, Linux or Mac OS
 
 
 Overview
