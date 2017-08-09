@@ -261,6 +261,23 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         ESP_LOGI(GATTS_TABLE_TAG, "pair status = %s",param->ble_security.auth_cmpl.success ? "success" : "fail");
         break;
     }
+    case ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT: {
+        ESP_LOGD(GATTS_TABLE_TAG, "ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT status = %d", param->remove_bond_dev_cmpl.status);
+        break;
+    }
+    case ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT: {
+        ESP_LOGD(GATTS_TABLE_TAG, "ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT status = %d", param->clear_bond_dev_cmpl.status);
+        break;
+    }
+    case ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT: {
+        ESP_LOGD(GATTS_TABLE_TAG, "ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT status = %d, num = %d", param->get_bond_dev_cmpl.status, param->get_bond_dev_cmpl.dev_num);
+        esp_ble_bond_dev_t *bond_dev = param->get_bond_dev_cmpl.bond_dev;
+        for(int i = 0; i < param->get_bond_dev_cmpl.dev_num; i++) {
+            ESP_LOGD(GATTS_TABLE_TAG, "mask = %x", bond_dev[i].bond_key.key_mask);
+            esp_log_buffer_hex(GATTS_TABLE_TAG, (void *)bond_dev[i].bd_addr, sizeof(esp_bd_addr_t));
+        }
+        break;
+    }
     default:
         break;
     }

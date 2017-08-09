@@ -19,6 +19,7 @@
 #include "esp_err.h"
 #include "btc_config.h"
 #include "alarm.h"
+#include "btc_ble_storage.h"
 
 static future_t *main_future[BTC_MAIN_FUTURE_NUM];
 
@@ -56,6 +57,8 @@ static void btc_init_bluetooth(void)
     osi_alarm_init();
     bte_main_boot_entry(btc_init_callback);
     btc_config_init();
+    //load the ble local key whitch has been store in the flash
+    btc_dm_load_ble_local_keys();
 }
 
 

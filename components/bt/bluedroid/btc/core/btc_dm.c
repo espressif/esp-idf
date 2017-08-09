@@ -23,6 +23,7 @@
 #include "btc_storage.h"
 #include "btc_ble_storage.h"
 #include "esp_gap_ble_api.h"
+#include "btm_int.h"
 #include "bta_api.h"
 #include "bta_gatt_api.h"
 
@@ -118,13 +119,15 @@ static void btc_disable_bluetooth_evt(void)
 static void btc_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
 {
     /* Save link key, if not temporary */
+    LOG_DEBUG("%s, status = %d", __func__, p_auth_cmpl->success);
     bt_status_t status = BT_STATUS_FAIL;
+    int addr_type;
+    bt_bdaddr_t bdaddr;
+    bdcpy(bdaddr.address, p_auth_cmpl->bd_addr);
+    bdcpy(pairing_cb.bd_addr, p_auth_cmpl->bd_addr);
+
     if (p_auth_cmpl->success) {
         status = BT_STATUS_SUCCESS;
-        int addr_type;
-        bt_bdaddr_t bdaddr;
-        bdcpy(bdaddr.address, p_auth_cmpl->bd_addr);
-        bdcpy(pairing_cb.bd_addr, p_auth_cmpl->bd_addr);
         LOG_DEBUG ("%s, -  p_auth_cmpl->bd_addr: %08x%04x", __func__,
                              (p_auth_cmpl->bd_addr[0] << 24) + (p_auth_cmpl->bd_addr[1] << 16) + (p_auth_cmpl->bd_addr[2] << 8) + p_auth_cmpl->bd_addr[3],
                              (p_auth_cmpl->bd_addr[4] << 8) + p_auth_cmpl->bd_addr[5]);
@@ -137,7 +140,7 @@ static void btc_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
         /* check the irk has been save in the flash or not, if the irk has already save, means that the peer device has bonding
            before. */
         if(pairing_cb.ble.is_pid_key_rcvd) {
-            btc_storage_compare_address_key_value(BTM_LE_KEY_PID,
+            btc_storage_compare_address_key_value(&bdaddr, BTM_LE_KEY_PID,
                                                   (void *)&pairing_cb.ble.pid_key, sizeof(tBTM_LE_PID_KEYS));
         }
         btc_save_ble_bonding_keys();
@@ -321,8 +324,6 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         btc_clear_services_mask();
         btc_storage_load_bonded_devices();
 #if (SMP_INCLUDED == TRUE)
-        //load the ble local key whitch has been store in the flash
-        btc_dm_load_ble_local_keys();
         //load the bonding device to the btm layer
         btc_storage_load_bonded_ble_devices();
 #endif  ///SMP_INCLUDED == TRUE
@@ -348,8 +349,20 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     case BTA_DM_BOND_CANCEL_CMPL_EVT:
     case BTA_DM_SP_CFM_REQ_EVT:
     case BTA_DM_SP_KEY_NOTIF_EVT:
-
-    case BTA_DM_DEV_UNPAIRED_EVT:
+        break;
+    case BTA_DM_DEV_UNPAIRED_EVT: {
+        bt_bdaddr_t bd_addr;
+        rsp_app = true;
+        LOG_ERROR("BTA_DM_DEV_UNPAIRED_EVT");
+        memcpy(bd_addr.address, p_data->link_down.bd_addr, sizeof(BD_ADDR));
+        btm_set_bond_type_dev(p_data->link_down.bd_addr, BOND_TYPE_UNKNOWN);
+        //remove the bonded key in the config and nvs flash.
+        //btc_storage_remove_ble_bonding_keys(&bd_addr);
+        ble_msg.act = ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT;
+        param.remove_bond_dev_cmpl.status = (p_data->link_down.status == HCI_SUCCESS) ? ESP_BT_STATUS_SUCCESS : ESP_BT_STATUS_FAIL;
+        memcpy(param.remove_bond_dev_cmpl.bd_addr, p_data->link_down.bd_addr, sizeof(BD_ADDR));
+        break;
+    }
     case BTA_DM_BUSY_LEVEL_EVT:
     case BTA_DM_LINK_UP_EVT:
     case BTA_DM_LINK_DOWN_EVT:
