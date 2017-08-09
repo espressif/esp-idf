@@ -227,10 +227,6 @@ Now you should be ready to build documentation by invoking::
 
 This may take couple of minutes. After completion, documentation will be placed in ``~/esp/esp-idf/docs/_buld/html`` folder. To see it, open ``index.html`` in a web browser.  
 
-.. note::
-
-	If documentation build fails with ``AttributeError: 'NoneType' object has no attribute 'replace'`` message, then apply a fix defined in https://github.com/sphinx-doc/sphinx/issues/3709#issuecomment-299645822 to file ``sphinxrenderer.py``.
-
 
 Wrap up
 -------
