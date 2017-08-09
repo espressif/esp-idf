@@ -404,6 +404,8 @@ typedef void (tBTA_START_ADV_CMPL_CBACK) (tBTA_STATUS status);
 
 typedef tBTM_SET_PKT_DATA_LENGTH_CBACK tBTA_SET_PKT_DATA_LENGTH_CBACK;
 
+typedef tBTM_SET_LOCAL_PRIVACY_CBACK tBTA_SET_LOCAL_PRIVACY_CBACK;
+
 /* advertising channel map */
 #define BTA_BLE_ADV_CHNL_37 BTM_BLE_ADV_CHNL_37
 #define BTA_BLE_ADV_CHNL_38 BTM_BLE_ADV_CHNL_38
@@ -2035,11 +2037,11 @@ extern void BTA_DmSetRandAddress(BD_ADDR rand_addr);
 ** Description      Enable/disable privacy on the local device
 **
 ** Parameters:      privacy_enable   - enable/disabe privacy on remote device.
-**
+**                  set_local_privacy_cback -callback to be called with result
 ** Returns          void
 **
 *******************************************************************************/
-extern void BTA_DmBleConfigLocalPrivacy(BOOLEAN privacy_enable);
+extern void BTA_DmBleConfigLocalPrivacy(BOOLEAN privacy_enable, tBTA_SET_LOCAL_PRIVACY_CBACK *set_local_privacy_cback);
 
 /*******************************************************************************
 **

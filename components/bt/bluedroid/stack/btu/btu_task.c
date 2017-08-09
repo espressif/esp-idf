@@ -27,7 +27,6 @@
 #include "btm_api.h"
 #include "btm_int.h"
 #include "btu.h"
-#include "fixed_queue.h"
 #include "gki.h"
 #include "hash_map.h"
 #include "hcimsgs.h"
@@ -94,34 +93,17 @@ extern void BTE_InitStack(void);
 tBTU_CB  btu_cb;
 #endif
 
-// Communication queue between btu_task and bta.
-extern fixed_queue_t *btu_bta_msg_queue;
-
-// alarm queue between btu_task and bta
-extern fixed_queue_t *btu_bta_alarm_queue;
-
-// Communication queue between btu_task and hci.
-extern fixed_queue_t *btu_hci_msg_queue;
-
-// General timer queue.
-extern fixed_queue_t *btu_general_alarm_queue;
 extern hash_map_t *btu_general_alarm_hash_map;
 extern pthread_mutex_t btu_general_alarm_lock;
 
 // Oneshot timer queue.
-extern fixed_queue_t *btu_oneshot_alarm_queue;
 extern hash_map_t *btu_oneshot_alarm_hash_map;
 extern pthread_mutex_t btu_oneshot_alarm_lock;
 
 // l2cap timer queue.
-extern fixed_queue_t *btu_l2cap_alarm_queue;
 extern hash_map_t *btu_l2cap_alarm_hash_map;
 extern pthread_mutex_t btu_l2cap_alarm_lock;
 
-extern fixed_queue_t *event_queue;
-//extern fixed_queue_t *btif_msg_queue;
-
-//extern thread_t *bt_workqueue_thread;
 extern xTaskHandle  xBtuTaskHandle;
 extern xQueueHandle xBtuQueue;
 extern bluedroid_init_done_cb_t bluedroid_init_done_cb;
@@ -135,87 +117,6 @@ static void btu_hci_msg_process(BT_HDR *p_msg);
 
 #if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)
 static void btu_bta_alarm_process(TIMER_LIST_ENT *p_tle);
-#endif
-
-void btu_hci_msg_ready(fixed_queue_t *queue)
-{
-    BT_HDR *p_msg;
-
-    while (!fixed_queue_is_empty(queue)) {
-        p_msg = (BT_HDR *)fixed_queue_dequeue(queue);
-        btu_hci_msg_process(p_msg);
-    }
-}
-
-void btu_general_alarm_ready(fixed_queue_t *queue)
-{
-    TIMER_LIST_ENT *p_tle;
-
-    while (!fixed_queue_is_empty(queue)) {
-        p_tle = (TIMER_LIST_ENT *)fixed_queue_dequeue(queue);
-        btu_general_alarm_process(p_tle);
-    }
-}
-
-void btu_oneshot_alarm_ready(fixed_queue_t *queue)
-{
-    TIMER_LIST_ENT *p_tle;
-
-    while (!fixed_queue_is_empty(queue)) {
-        p_tle = (TIMER_LIST_ENT *)fixed_queue_dequeue(queue);
-        btu_general_alarm_process(p_tle);
-
-        switch (p_tle->event) {
-#if (defined(BLE_INCLUDED) && BLE_INCLUDED == TRUE)
-        case BTU_TTYPE_BLE_RANDOM_ADDR:
-            btm_ble_timeout(p_tle);
-            break;
-#endif
-        case BTU_TTYPE_USER_FUNC: {
-            tUSER_TIMEOUT_FUNC  *p_uf = (tUSER_TIMEOUT_FUNC *)p_tle->param;
-            (*p_uf)(p_tle);
-        }
-        break;
-
-        default:
-            // FAIL
-            LOG_ERROR("Received unexpected oneshot timer event:0x%x\n",
-                      p_tle->event);
-            break;
-        }
-    }
-}
-
-void btu_l2cap_alarm_ready(fixed_queue_t *queue)
-{
-    TIMER_LIST_ENT *p_tle;
-
-    while (!fixed_queue_is_empty(queue)) {
-        p_tle = (TIMER_LIST_ENT *)fixed_queue_dequeue(queue);
-        btu_l2cap_alarm_process(p_tle);
-    }
-}
-
-#if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)
-void btu_bta_msg_ready(fixed_queue_t *queue)
-{
-    BT_HDR *p_msg;
-
-    while (!fixed_queue_is_empty(queue)) {
-        p_msg = (BT_HDR *)fixed_queue_dequeue(queue);
-        bta_sys_event(p_msg);
-    }
-}
-
-void btu_bta_alarm_ready(fixed_queue_t *queue)
-{
-    TIMER_LIST_ENT *p_tle;
-
-    while (!fixed_queue_is_empty(queue)) {
-        p_tle = (TIMER_LIST_ENT *)fixed_queue_dequeue(queue);
-        btu_bta_alarm_process(p_tle);
-    }
-}
 #endif
 
 static void btu_hci_msg_process(BT_HDR *p_msg)
@@ -317,47 +218,74 @@ void btu_task_thread_handler(void *arg)
     for (;;) {
         if (pdTRUE == xQueueReceive(xBtuQueue, &e, (portTickType)portMAX_DELAY)) {
 
-            if (e.sig == SIG_BTU_WORK) {
-                fixed_queue_process(btu_hci_msg_queue);
-#if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)
-                fixed_queue_process(btu_bta_msg_queue);
-                fixed_queue_process(btu_bta_alarm_queue);
-#endif
-                fixed_queue_process(btu_general_alarm_queue);
-                fixed_queue_process(btu_oneshot_alarm_queue);
-                fixed_queue_process(btu_l2cap_alarm_queue);
-            } else if (e.sig == SIG_BTU_START_UP) {
+            switch (e.sig) {
+            case SIG_BTU_START_UP:
                 btu_task_start_up();
+                break;
+            case SIG_BTU_HCI_MSG:
+                btu_hci_msg_process((BT_HDR *)e.par);
+                break;
+#if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)
+            case SIG_BTU_BTA_MSG:
+                bta_sys_event((BT_HDR *)e.par);
+                break;
+            case SIG_BTU_BTA_ALARM:
+                btu_bta_alarm_process((TIMER_LIST_ENT *)e.par);
+                break;
+#endif
+            case SIG_BTU_GENERAL_ALARM:
+                btu_general_alarm_process((TIMER_LIST_ENT *)e.par);
+                break;
+            case SIG_BTU_ONESHOT_ALARM: {
+                TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)e.par;
+                btu_general_alarm_process(p_tle);
+
+                switch (p_tle->event) {
+#if (defined(BLE_INCLUDED) && BLE_INCLUDED == TRUE)
+                    case BTU_TTYPE_BLE_RANDOM_ADDR:
+                        btm_ble_timeout(p_tle);
+                        break;
+#endif
+                    case BTU_TTYPE_USER_FUNC: {
+                        tUSER_TIMEOUT_FUNC  *p_uf = (tUSER_TIMEOUT_FUNC *)p_tle->param;
+                        (*p_uf)(p_tle);
+                        break;
+                    }
+                    default:
+                        // FAIL
+                        LOG_ERROR("Received unexpected oneshot timer event:0x%x\n", p_tle->event);
+                        break;
+                }
+                break;
+            }
+            case SIG_BTU_L2CAP_ALARM:
+                btu_l2cap_alarm_process((TIMER_LIST_ENT *)e.par);
+                break;
+            default:
+                break;
             }
         }
     }
 }
 
 
-void btu_task_post(uint32_t sig, task_post_t timeout)
+task_post_status_t btu_task_post(uint32_t sig, void *param, task_post_t timeout)
 {
     BtTaskEvt_t evt;
 
     evt.sig = sig;
-    evt.par = 0;
+    evt.par = param;
 
     if (xQueueSend(xBtuQueue, &evt, timeout) != pdTRUE) {
         LOG_ERROR("xBtuQueue failed\n");
+        return TASK_POST_FAIL;
     }
+
+    return TASK_POST_SUCCESS;
 }
 
 void btu_task_start_up(void)
 {
-
-#if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)
-    fixed_queue_register_dequeue(btu_bta_msg_queue, btu_bta_msg_ready);
-#endif
-
-    fixed_queue_register_dequeue(btu_hci_msg_queue, btu_hci_msg_ready);
-    fixed_queue_register_dequeue(btu_general_alarm_queue, btu_general_alarm_ready);
-    fixed_queue_register_dequeue(btu_oneshot_alarm_queue, btu_oneshot_alarm_ready);
-    fixed_queue_register_dequeue(btu_l2cap_alarm_queue, btu_l2cap_alarm_ready);
-
     /* Initialize the mandatory core stack control blocks
        (BTU, BTM, L2CAP, and SDP)
      */
@@ -381,12 +309,7 @@ void btu_task_start_up(void)
 
 void btu_task_shut_down(void)
 {
-    fixed_queue_unregister_dequeue(btu_general_alarm_queue);
-    fixed_queue_unregister_dequeue(btu_oneshot_alarm_queue);
-    fixed_queue_unregister_dequeue(btu_l2cap_alarm_queue);
-
 #if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)
-    fixed_queue_unregister_dequeue(btu_bta_msg_queue);
     bta_sys_free();
 #endif
 
@@ -515,9 +438,7 @@ void btu_general_alarm_cb(void *data)
     assert(data != NULL);
     TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)data;
 
-    fixed_queue_enqueue(btu_general_alarm_queue, p_tle);
-    //ke_event_set(KE_EVENT_BTU_TASK_THREAD);
-    btu_task_post(SIG_BTU_WORK, TASK_POST_BLOCKING);
+    btu_task_post(SIG_BTU_GENERAL_ALARM, p_tle, TASK_POST_BLOCKING);
 }
 
 void btu_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_sec)
@@ -606,9 +527,7 @@ static void btu_l2cap_alarm_cb(void *data)
     assert(data != NULL);
     TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)data;
 
-    fixed_queue_enqueue(btu_l2cap_alarm_queue, p_tle);
-    //ke_event_set(KE_EVENT_BTU_TASK_THREAD);
-    btu_task_post(SIG_BTU_WORK, TASK_POST_BLOCKING);
+    btu_task_post(SIG_BTU_L2CAP_ALARM, p_tle, TASK_POST_BLOCKING);
 }
 
 void btu_start_quick_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_ticks)
@@ -674,9 +593,7 @@ void btu_oneshot_alarm_cb(void *data)
 
     btu_stop_timer_oneshot(p_tle);
 
-    fixed_queue_enqueue(btu_oneshot_alarm_queue, p_tle);
-    //ke_event_set(KE_EVENT_BTU_TASK_THREAD);
-    btu_task_post(SIG_BTU_WORK, TASK_POST_BLOCKING);
+    btu_task_post(SIG_BTU_ONESHOT_ALARM, p_tle, TASK_POST_BLOCKING);
 }
 
 /*

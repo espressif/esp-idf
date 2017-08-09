@@ -17,38 +17,39 @@
 #include "esp_app_trace_util.h"
 
 ///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////// LOCK ////////////////////////////////////////
+///////////////////////////////// TIMEOUT /////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-#define ESP_TEST_CPUTICKS2US(_t_)       ((_t_)/(XT_CLOCK_FREQ/1000000))
+// TODO: get actual clock from PLL config
+#define ESP_APPTRACE_CPUTICKS2US(_t_)       ((_t_)/(XT_CLOCK_FREQ/1000000))
 
 esp_err_t esp_apptrace_tmo_check(esp_apptrace_tmo_t *tmo)
 {
-    unsigned cur, elapsed;
-
-    if (tmo->tmo != 0xFFFFFFFF) {
-        cur = portGET_RUN_TIME_COUNTER_VALUE();
+    if (tmo->tmo != ESP_APPTRACE_TMO_INFINITE) {
+        unsigned cur = portGET_RUN_TIME_COUNTER_VALUE();
         if (tmo->start <= cur) {
-            elapsed = cur - tmo->start;
+            tmo->elapsed = ESP_APPTRACE_CPUTICKS2US(cur - tmo->start);
         } else {
-            elapsed = 0xFFFFFFFF - tmo->start + cur;
+            tmo->elapsed = ESP_APPTRACE_CPUTICKS2US(0xFFFFFFFF - tmo->start + cur);
         }
-        if (ESP_TEST_CPUTICKS2US(elapsed) >= tmo->tmo) {
+        if (tmo->elapsed >= tmo->tmo) {
             return ESP_ERR_TIMEOUT;
         }
     }
     return ESP_OK;
 }
 
-esp_err_t esp_apptrace_lock_take(esp_apptrace_lock_t *lock, uint32_t tmo)
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////// LOCK ////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+esp_err_t esp_apptrace_lock_take(esp_apptrace_lock_t *lock, esp_apptrace_tmo_t *tmo)
 {
     uint32_t res;
 #if CONFIG_SYSVIEW_ENABLE
     uint32_t recCnt;
 #endif
-    esp_apptrace_tmo_t sleeping_tmo;
 
-    esp_apptrace_tmo_init(&sleeping_tmo, tmo);
     while (1) {
         res = (xPortGetCoreID() << portMUX_VAL_SHIFT) | portMUX_MAGIC_VAL;
         // first disable IRQs on this CPU, this will prevent current task from been
@@ -77,7 +78,7 @@ esp_err_t esp_apptrace_lock_take(esp_apptrace_lock_t *lock, uint32_t tmo)
         // if mux is locked by other task/ISR enable IRQs and let other guys work
         portEXIT_CRITICAL_NESTED(irq_stat);
 
-        int err = esp_apptrace_tmo_check(&sleeping_tmo);
+        int err = esp_apptrace_tmo_check(tmo);
         if (err != ESP_OK) {
             return err;
         }
@@ -202,6 +203,22 @@ uint32_t esp_apptrace_rb_read_size_get(esp_apptrace_rb_t *rb)
     } else {
         // |?W......R??|
         size = rb->cur_size - rb->rd;
+    }
+    return size;
+}
+
+uint32_t esp_apptrace_rb_write_size_get(esp_apptrace_rb_t *rb)
+{
+    uint32_t size = 0;
+    if (rb->rd <= rb->wr) {
+        // |?R......W??|
+        size = rb->size - rb->wr;
+        if (size && rb->rd == 0) {
+            size--;
+        }
+    } else {
+        // |?W......R??|
+        size = rb->rd - rb->wr - 1;
     }
     return size;
 }

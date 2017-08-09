@@ -32,56 +32,16 @@
 #include "bt_trace.h"
 #include "osi.h"
 #include "alarm.h"
-#include "fixed_queue.h"
 #include "hash_map.h"
 #include "hash_functions.h"
 #include "controller.h"
 #include "hci_layer.h"
 #include "bta_api.h"
 
-//#include "bluedroid_test.h"
-/*
-#define LOG_TAG "bt_main"
-
-#include <cutils/properties.h>
-#include <fcntl.h>
-#include <hardware/bluetooth.h>
-#include <pthread.h>
-#include <signal.h>
-#include <stdlib.h>
-#include <time.h>
-
-#include "osi/include/alarm.h"
-#include "bta_api.h"
-#include "bt_hci_bdroid.h"
-#include "bte.h"
-#include "btif_common.h"
-#include "btu.h"
-#include "btsnoop.h"
-#include "bt_utils.h"
-#include "btcore/include/counter.h"
-#include "btcore/include/module.h"
-#include "osi/include/fixed_queue.h"
-#include "osi/include/future.h"
-#include "gki.h"
-#include "osi/include/hash_functions.h"
-#include "osi/include/hash_map.h"
-#include "hci_layer.h"
-#include "osi/include/osi.h"
-#include "osi/include/log.h"
-#include "stack_config.h"
-#include "osi/include/thread.h"
-*/
 /*******************************************************************************
 **  Constants & Macros
 *******************************************************************************/
 
-/* Run-time configuration file for BLE*/
-/*
-#ifndef BTE_BLE_STACK_CONF_FILE
-#define BTE_BLE_STACK_CONF_FILE "/etc/bluetooth/ble_stack.conf"
-#endif
-*/
 /******************************************************************************
 **  Variables
 ******************************************************************************/
@@ -100,8 +60,6 @@ static void bte_main_enable(void);
 /*******************************************************************************
 **  Externs
 *******************************************************************************/
-//extern void bte_load_ble_conf(const char *p_path);
-fixed_queue_t *btu_hci_msg_queue;
 
 bluedroid_init_done_cb_t bluedroid_init_done_cb;
 
@@ -128,17 +86,7 @@ int bte_main_boot_entry(bluedroid_init_done_cb_t cb)
         return -2;
     }
 
-    btu_hci_msg_queue = fixed_queue_new(SIZE_MAX);
-    if (btu_hci_msg_queue == NULL) {
-        LOG_ERROR("%s unable to allocate hci message queue.\n", __func__);
-        return -3;
-    }
-
     bluedroid_init_done_cb = cb;
-
-    //Caution: No event dispatcher defined now in hci layer
-    //data_dispatcher_register_default(hci->event_dispatcher, btu_hci_msg_queue);
-    hci->set_data_queue(btu_hci_msg_queue);
 
     //Enbale HCI
     bte_main_enable();
@@ -157,20 +105,6 @@ int bte_main_boot_entry(bluedroid_init_done_cb_t cb)
 ******************************************************************************/
 void bte_main_shutdown(void)
 {
-    //data_dispatcher_register_default(hci_layer_get_interface()->event_dispatcher, NULL);
-    hci->set_data_queue(NULL);
-    fixed_queue_unregister_dequeue(btu_hci_msg_queue);
-    fixed_queue_free(btu_hci_msg_queue, NULL);
-
-    btu_hci_msg_queue = NULL;
-
-    /*
-        module_clean_up(get_module(STACK_CONFIG_MODULE));
-
-        module_clean_up(get_module(COUNTER_MODULE));
-        module_clean_up(get_module(GKI_MODULE));
-    */
-
 #if (BLE_INCLUDED == TRUE)
     BTA_VendorCleanup();
 #endif

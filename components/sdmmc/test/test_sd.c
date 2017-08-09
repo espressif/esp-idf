@@ -22,7 +22,7 @@
 #include "driver/sdmmc_defs.h"
 #include "sdmmc_cmd.h"
 #include "esp_log.h"
-#include "esp_heap_alloc_caps.h"
+#include "esp_heap_caps.h"
 #include <time.h>
 #include <sys/time.h>
 
@@ -55,61 +55,85 @@ TEST_CASE("can probe SD (using SPI)", "[sdspi][ignore]")
     free(card);
 }
 
+// Fill buffer pointed to by 'dst' with 'count' 32-bit ints generated
+// from 'rand' with the starting value of 'seed'
+static void fill_buffer(uint32_t seed, uint8_t* dst, size_t count) {
+    srand(seed);
+    for (size_t i = 0; i < count; ++i) {
+        uint32_t val = rand();
+        memcpy(dst + i * sizeof(uint32_t), &val, sizeof(val));
+    }
+}
+
+// Check if the buffer pointed to by 'dst' contains 'count' 32-bit
+// ints generated from 'rand' with the starting value of 'seed'
+static void check_buffer(uint32_t seed, const uint8_t* src, size_t count) {
+    srand(seed);
+    for (size_t i = 0; i < count; ++i) {
+        uint32_t val;
+        memcpy(&val, src + i * sizeof(uint32_t), sizeof(val));
+        TEST_ASSERT_EQUAL_HEX32(rand(), val);
+    }
+}
+
 static void do_single_write_read_test(sdmmc_card_t* card,
-        size_t start_block, size_t block_count)
+        size_t start_block, size_t block_count, size_t alignment)
 {
     size_t block_size = card->csd.sector_size;
     size_t total_size = block_size * block_count;
-    printf(" %8d |  %3d  |   %4.1f  ", start_block, block_count, total_size / 1024.0f);
-    uint32_t* buffer = pvPortMallocCaps(total_size, MALLOC_CAP_DMA);
-    srand(start_block);
-    for (size_t i = 0; i < total_size / sizeof(buffer[0]); ++i) {
-        buffer[i] = rand();
-    }
+    printf(" %8d |  %3d  |   %d   |    %4.1f  ", start_block, block_count, alignment, total_size / 1024.0f);
+
+    uint32_t* buffer = heap_caps_malloc(total_size + 4, MALLOC_CAP_DMA);
+    size_t offset = alignment % 4;
+    uint8_t* c_buffer = (uint8_t*) buffer + offset;
+    fill_buffer(start_block, c_buffer, total_size / sizeof(buffer[0]));
+
     struct timeval t_start_wr;
     gettimeofday(&t_start_wr, NULL);
-    TEST_ESP_OK(sdmmc_write_sectors(card, buffer, start_block, block_count));
+    TEST_ESP_OK(sdmmc_write_sectors(card, c_buffer, start_block, block_count));
     struct timeval t_stop_wr;
     gettimeofday(&t_stop_wr, NULL);
     float time_wr = 1e3f * (t_stop_wr.tv_sec - t_start_wr.tv_sec) + 1e-3f * (t_stop_wr.tv_usec - t_start_wr.tv_usec);
-    memset(buffer, 0xbb, total_size);
+
+    memset(buffer, 0xbb, total_size + 4);
+
     struct timeval t_start_rd;
     gettimeofday(&t_start_rd, NULL);
-    TEST_ESP_OK(sdmmc_read_sectors(card, buffer, start_block, block_count));
+    TEST_ESP_OK(sdmmc_read_sectors(card, c_buffer, start_block, block_count));
     struct timeval t_stop_rd;
     gettimeofday(&t_stop_rd, NULL);
     float time_rd = 1e3f * (t_stop_rd.tv_sec - t_start_rd.tv_sec) + 1e-3f * (t_stop_rd.tv_usec - t_start_rd.tv_usec);
 
-    printf(" |   %6.2f    |      %.2f      |    %.2f     |     %.2f\n",
+    printf(" |   %6.2f    |      %5.2f      |    %6.2f     |     %5.2f\n",
             time_wr, total_size / (time_wr / 1000) / (1024 * 1024),
             time_rd, total_size / (time_rd / 1000) / (1024 * 1024));
-    srand(start_block);
-    for (size_t i = 0; i < total_size / sizeof(buffer[0]); ++i) {
-        TEST_ASSERT_EQUAL_HEX32(rand(), buffer[i]);
-    }
+    check_buffer(start_block, c_buffer, total_size / sizeof(buffer[0]));
     free(buffer);
 }
 
 static void read_write_test(sdmmc_card_t* card)
 {
     sdmmc_card_print_info(stdout, card);
-    printf("  sector  | count | size(kB) | wr_time(ms) | wr_speed(MB/s) | rd_time(ms) | rd_speed(MB/s)\n");
-    do_single_write_read_test(card, 0, 1);
-    do_single_write_read_test(card, 0, 4);
-    do_single_write_read_test(card, 1, 16);
-    do_single_write_read_test(card, 16, 32);
-    do_single_write_read_test(card, 48, 64);
-    do_single_write_read_test(card, 128, 128);
-    do_single_write_read_test(card, card->csd.capacity - 64, 32);
-    do_single_write_read_test(card, card->csd.capacity - 64, 64);
-    do_single_write_read_test(card, card->csd.capacity - 8, 1);
-    do_single_write_read_test(card, card->csd.capacity/2, 1);
-    do_single_write_read_test(card, card->csd.capacity/2, 4);
-    do_single_write_read_test(card, card->csd.capacity/2, 8);
-    do_single_write_read_test(card, card->csd.capacity/2, 16);
-    do_single_write_read_test(card, card->csd.capacity/2, 32);
-    do_single_write_read_test(card, card->csd.capacity/2, 64);
-    do_single_write_read_test(card, card->csd.capacity/2, 128);
+    printf("  sector  | count | align | size(kB)  | wr_time(ms) | wr_speed(MB/s)  |  rd_time(ms)  | rd_speed(MB/s)\n");
+    do_single_write_read_test(card, 0, 1, 4);
+    do_single_write_read_test(card, 0, 4, 4);
+    do_single_write_read_test(card, 1, 16, 4);
+    do_single_write_read_test(card, 16, 32, 4);
+    do_single_write_read_test(card, 48, 64, 4);
+    do_single_write_read_test(card, 128, 128, 4);
+    do_single_write_read_test(card, card->csd.capacity - 64, 32, 4);
+    do_single_write_read_test(card, card->csd.capacity - 64, 64, 4);
+    do_single_write_read_test(card, card->csd.capacity - 8, 1, 4);
+    do_single_write_read_test(card, card->csd.capacity/2, 1, 4);
+    do_single_write_read_test(card, card->csd.capacity/2, 4, 4);
+    do_single_write_read_test(card, card->csd.capacity/2, 8, 4);
+    do_single_write_read_test(card, card->csd.capacity/2, 16, 4);
+    do_single_write_read_test(card, card->csd.capacity/2, 32, 4);
+    do_single_write_read_test(card, card->csd.capacity/2, 64, 4);
+    do_single_write_read_test(card, card->csd.capacity/2, 128, 4);
+    do_single_write_read_test(card, card->csd.capacity/2, 1, 1);
+    do_single_write_read_test(card, card->csd.capacity/2, 8, 1);
+    do_single_write_read_test(card, card->csd.capacity/2, 128, 1);
 }
 
 TEST_CASE("can write and read back blocks", "[sd][ignore]")
@@ -142,3 +166,37 @@ TEST_CASE("can write and read back blocks (using SPI)", "[sdspi][ignore]")
     TEST_ESP_OK(sdspi_host_deinit());
 }
 
+TEST_CASE("reads and writes with an unaligned buffer", "[sd][ignore]")
+{
+    sdmmc_host_t config = SDMMC_HOST_DEFAULT();
+    TEST_ESP_OK(sdmmc_host_init());
+    sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
+    TEST_ESP_OK(sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config));
+    sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
+    TEST_ASSERT_NOT_NULL(card);
+    TEST_ESP_OK(sdmmc_card_init(&config, card));
+
+    const size_t buffer_size = 4096;
+    const size_t block_count = buffer_size / 512;
+    const size_t extra = 4;
+    uint8_t* buffer = heap_caps_malloc(buffer_size + extra, MALLOC_CAP_DMA);
+
+    // Check read behavior: do aligned write, then unaligned read
+    const uint32_t seed = 0x89abcdef;
+    fill_buffer(seed, buffer, buffer_size / sizeof(uint32_t));
+    TEST_ESP_OK(sdmmc_write_sectors(card, buffer, 0, block_count));
+    memset(buffer, 0xcc, buffer_size + extra);
+    TEST_ESP_OK(sdmmc_read_sectors(card, buffer + 1, 0, block_count));
+    check_buffer(seed, buffer + 1, buffer_size / sizeof(uint32_t));
+
+    // Check write behavior: do unaligned write, then aligned read
+    fill_buffer(seed, buffer + 1, buffer_size / sizeof(uint32_t));
+    TEST_ESP_OK(sdmmc_write_sectors(card, buffer + 1, 8, block_count));
+    memset(buffer, 0xcc, buffer_size + extra);
+    TEST_ESP_OK(sdmmc_read_sectors(card, buffer, 8, block_count));
+    check_buffer(seed, buffer, buffer_size / sizeof(uint32_t));
+
+    free(buffer);
+    free(card);
+    TEST_ESP_OK(sdmmc_host_deinit());
+}

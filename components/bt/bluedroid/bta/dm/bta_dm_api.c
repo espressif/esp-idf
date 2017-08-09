@@ -1575,7 +1575,7 @@ void BTA_DmBleUpdateConnectionParam(BD_ADDR bd_addr, UINT16 min_int,
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_DmBleConfigLocalPrivacy(BOOLEAN privacy_enable)
+void BTA_DmBleConfigLocalPrivacy(BOOLEAN privacy_enable, tBTA_SET_LOCAL_PRIVACY_CBACK *set_local_privacy_cback)
 {
     ///This function used the irk to generate the resolve address
 #if BLE_INCLUDED == TRUE && BLE_PRIVACY_SPT == TRUE
@@ -1586,7 +1586,7 @@ void BTA_DmBleConfigLocalPrivacy(BOOLEAN privacy_enable)
 
         p_msg->hdr.event = BTA_DM_API_LOCAL_PRIVACY_EVT;
         p_msg->privacy_enable   = privacy_enable;
-
+        p_msg->set_local_privacy_cback = set_local_privacy_cback;
         bta_sys_sendmsg(p_msg);
     }
 #else

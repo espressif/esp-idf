@@ -16,10 +16,7 @@
 
 #include <stdarg.h>
 #include "esp_err.h"
-#include "freertos/portmacro.h"
-
-/** Infinite waiting timeout */
-#define ESP_APPTRACE_TMO_INFINITE               ((uint32_t)-1)
+#include "esp_app_trace_util.h" // ESP_APPTRACE_TMO_INFINITE
 
 /**
  * Application trace data destinations bits.
@@ -39,6 +36,16 @@ typedef enum {
 esp_err_t esp_apptrace_init();
 
 /**
+ * @brief Configures down buffer.
+ *        @note Needs to be called before initiating any data transfer using esp_apptrace_buffer_get and esp_apptrace_write.
+ *              This function does not protect internal data by lock.
+ *
+ * @param buf Address of buffer to use for down channel (host to target) data.
+ * @param size Size of the buffer.
+ */
+void esp_apptrace_down_buffer_config(uint8_t *buf, uint32_t size);
+
+/**
  * @brief Allocates buffer for trace data.
  *        After data in buffer are ready to be sent off esp_apptrace_buffer_put must be called to indicate it.
  *
@@ -48,11 +55,11 @@ esp_err_t esp_apptrace_init();
  *
  * @return non-NULL on success, otherwise NULL.
  */
-uint8_t *esp_apptrace_buffer_get(esp_apptrace_dest_t dest, size_t size, uint32_t tmo);
+uint8_t *esp_apptrace_buffer_get(esp_apptrace_dest_t dest, uint32_t size, uint32_t tmo);
 
 /**
  * @brief Indicates that the data in buffer are ready to be sent off.
- *        This function is a counterpart of must be preceeded by esp_apptrace_buffer_get.
+ *        This function is a counterpart of and must be preceeded by esp_apptrace_buffer_get.
  *
  * @param dest Indicates HW interface to send data. Should be identical to the same parameter in call to esp_apptrace_buffer_get.
  * @param ptr  Address of trace buffer to release. Should be the value returned by call to esp_apptrace_buffer_get.
@@ -72,7 +79,7 @@ esp_err_t esp_apptrace_buffer_put(esp_apptrace_dest_t dest, uint8_t *ptr, uint32
  *
  * @return ESP_OK on success, otherwise see esp_err_t
  */
-esp_err_t esp_apptrace_write(esp_apptrace_dest_t dest, const void *data, size_t size, uint32_t tmo);
+esp_err_t esp_apptrace_write(esp_apptrace_dest_t dest, const void *data, uint32_t size, uint32_t tmo);
 
 /**
  * @brief vprintf-like function to sent log messages to host via specified HW interface.
@@ -128,7 +135,30 @@ esp_err_t esp_apptrace_flush_nolock(esp_apptrace_dest_t dest, uint32_t min_sz, u
  *
  * @return ESP_OK on success, otherwise see esp_err_t
  */
-esp_err_t esp_apptrace_read(esp_apptrace_dest_t dest, void *data, size_t *size, uint32_t tmo);
+esp_err_t esp_apptrace_read(esp_apptrace_dest_t dest, void *data, uint32_t *size, uint32_t tmo);
 
+/**
+ * @brief Rertrieves incoming data buffer if any.
+ *        After data in buffer are processed esp_apptrace_down_buffer_put must be called to indicate it.
+ *
+ * @param dest Indicates HW interface to receive data.
+ * @param size Address to store size of available data in down buffer. Must be initializaed with requested value.
+ * @param tmo  Timeout for operation (in us). Use ESP_APPTRACE_TMO_INFINITE to wait indefinetly.
+ *
+ * @return non-NULL on success, otherwise NULL.
+ */
+uint8_t *esp_apptrace_down_buffer_get(esp_apptrace_dest_t dest, uint32_t *size, uint32_t tmo);
+
+/**
+ * @brief Indicates that the data in down buffer are processesd.
+ *        This function is a counterpart of and must be preceeded by esp_apptrace_down_buffer_get.
+ *
+ * @param dest Indicates HW interface to receive data. Should be identical to the same parameter in call to esp_apptrace_down_buffer_get.
+ * @param ptr  Address of trace buffer to release. Should be the value returned by call to esp_apptrace_down_buffer_get.
+ * @param tmo  Timeout for operation (in us). Use ESP_APPTRACE_TMO_INFINITE to wait indefinetly.
+ *
+ * @return ESP_OK on success, otherwise see esp_err_t
+ */
+esp_err_t esp_apptrace_down_buffer_put(esp_apptrace_dest_t dest, uint8_t *ptr, uint32_t tmo);
 
 #endif

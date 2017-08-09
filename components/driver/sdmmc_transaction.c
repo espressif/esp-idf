@@ -20,6 +20,7 @@
 #include "freertos/semphr.h"
 #include "soc/sdmmc_reg.h"
 #include "soc/sdmmc_struct.h"
+#include "soc/soc_memory_layout.h"
 #include "driver/sdmmc_types.h"
 #include "driver/sdmmc_defs.h"
 #include "driver/sdmmc_host.h"
@@ -105,9 +106,16 @@ esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
     // convert cmdinfo to hardware register value
     sdmmc_hw_cmd_t hw_cmd = make_hw_cmd(cmdinfo);
     if (cmdinfo->data) {
-        // these constraints should be handled by upper layer
-        assert(cmdinfo->datalen >= 4);
-        assert(cmdinfo->blklen % 4 == 0);
+        if (cmdinfo->datalen < 4 || cmdinfo->blklen % 4 != 0) {
+            ESP_LOGD(TAG, "%s: invalid size: total=%d block=%d",
+                    __func__, cmdinfo->datalen, cmdinfo->blklen);
+            return ESP_ERR_INVALID_SIZE;
+        }
+        if ((intptr_t) cmdinfo->data % 4 != 0 ||
+                !esp_ptr_dma_capable(cmdinfo->data)) {
+            ESP_LOGD(TAG, "%s: buffer %p can not be used for DMA", __func__, cmdinfo->data);
+            return ESP_ERR_INVALID_ARG;
+        }
         // this clears "owned by IDMAC" bits
         memset(s_dma_desc, 0, sizeof(s_dma_desc));
         // initialize first descriptor

@@ -120,7 +120,7 @@ To use logging via JTAG user needs to perform the following steps:
 2. Build the program image and download it to target as described in :idf:`Developing With the ESP-IDF` section.
 3. Run OpenOCD (see :idf:`OpenOCD setup for ESP32` section).
 4. Connect to OpenOCD telnet server. On Linux it can be done using the following command in terminal ``telnet <oocd_host> 4444``. If telnet session is opened on the same machine which runs OpenOCD you can use `localhost` as `<oocd_host>` in the command.
-5. Run the following command in OpenOCD telnet session: ``esp108 apptrace start /path/to/trace/file -1 -1 0 0 1``. This command will wait for board reset and transfer tracing data at the highest possible rate.
+5. Run the following command in OpenOCD telnet session: ``esp108 apptrace start /path/to/trace/file 0 -1 -1 1``. This command will wait for board reset and transfer tracing data at the highest possible rate.
 6. Reset the board. Logging to host will start automatically.
 7. ``esp108 apptrace`` command with given arguments will never return (see other command options below), so you must stop it manually by resetting the board or pressing CTRL+C in OpenOCD window (not one with the telnet session).
 8. Reset board or press CTRL+C in OpenOCD window (not one with the telnet session) when tracing is completed (for the example code above after the message `"Tracing is finished."` appears on UART).

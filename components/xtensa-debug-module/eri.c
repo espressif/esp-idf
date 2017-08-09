@@ -16,7 +16,7 @@
 
 uint32_t eri_read(int addr) {
     uint32_t ret;
-    asm(
+    asm volatile (
         "RER %0,%1"
         :"=r"(ret):"r"(addr)
         );

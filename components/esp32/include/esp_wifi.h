@@ -65,6 +65,7 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_wifi_types.h"
+#include "esp_wifi_crypto_types.h"
 #include "esp_event.h"
 
 #ifdef __cplusplus
@@ -96,6 +97,7 @@ extern "C" {
  */
 typedef struct {
     system_event_handler_t event_handler;          /**< WiFi event handler */
+    wpa_crypto_funcs_t     wpa_crypto_funcs;       /**< WiFi station crypto functions when connect */
     int                    static_rx_buf_num;      /**< WiFi static RX buffer number */
     int                    dynamic_rx_buf_num;     /**< WiFi dynamic RX buffer number */
     int                    tx_buf_type;            /**< WiFi TX buffer type */
@@ -138,11 +140,14 @@ typedef struct {
 #else
 #define WIFI_NANO_FORMAT_ENABLED  0
 #endif
- 
+
+extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
+
 #define WIFI_INIT_CONFIG_MAGIC    0x1F2F3F4F
 #ifdef CONFIG_WIFI_ENABLED
 #define WIFI_INIT_CONFIG_DEFAULT() { \
     .event_handler = &esp_event_send, \
+    .wpa_crypto_funcs = g_wifi_default_wpa_crypto_funcs, \
     .static_rx_buf_num = CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM,\
     .dynamic_rx_buf_num = CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM,\
     .tx_buf_type = CONFIG_ESP32_WIFI_TX_BUFFER_TYPE,\

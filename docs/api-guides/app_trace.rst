@@ -13,7 +13,7 @@ Developers can use this library to send application specific state of execution 
 
 Tracing components when working over JTAG interface are shown in the figure below.
 
-.. figure:: ../_static/app_trace/overview.png
+.. figure:: ../_static/app_trace/overview.jpg
     :align: center
     :alt: Tracing Components when Working Over JTAG
     :figclass: align-center
@@ -80,13 +80,13 @@ In general user should decide what type of data should be transferred in every d
     #include "esp_app_trace.h"
     ...
     int number = 10;
-    char *ptr = (char *)esp_apptrace_buffer_get(32, 100/*tmo in us*/);
+    char *ptr = (char *)esp_apptrace_buffer_get(ESP_APPTRACE_DEST_TRAX, 32, 100/*tmo in us*/);
     if (ptr == NULL) {
         ESP_LOGE("Failed to get buffer!");
         return ESP_FAIL;
     }
     sprintf(ptr, "Here is the number %d", number);
-    esp_err_t res = esp_apptrace_buffer_put(ptr, 100/*tmo in us*/);
+    esp_err_t res = esp_apptrace_buffer_put(ESP_APPTRACE_DEST_TRAX, ptr, 100/*tmo in us*/);
     if (res != ESP_OK) {
         /* in case of error host tracing tool (e.g. OpenOCD) will report incomplete user buffer */
         ESP_LOGE("Failed to put buffer!");
@@ -100,7 +100,11 @@ Also according to his needs user may want to receive data from the host. Piece o
     #include "esp_app_trace.h"
     ...
     char buf[32];
+    char down_buf[32];
     size_t sz = sizeof(buf);
+
+    /* config down buffer */
+    esp_apptrace_down_buffer_config(down_buf, sizeof(down_buf));
     /* check for incoming data and read them if any */
     esp_err_t res = esp_apptrace_read(ESP_APPTRACE_DEST_TRAX, buf, &sz, 0/*do not wait*/);
     if (res != ESP_OK) {
@@ -110,6 +114,37 @@ Also according to his needs user may want to receive data from the host. Piece o
     if (sz > 0) {
         /* we have data, process them */
         ...
+    }
+
+``esp_apptrace_read()`` function uses memcpy to copy host data to user buffer. In some cases it can be more optimal to use ``esp_apptrace_down_buffer_get()`` and ``esp_apptrace_down_buffer_put()`` functions.
+They allow developers to ocupy chunk of read buffer and process it in-place. The following piece of code shows how to do this.
+
+.. code-block:: c
+
+    #include "esp_app_trace.h"
+    ...
+    char down_buf[32];
+    uint32_t *number;
+    size_t sz = 32;
+
+    /* config down buffer */
+    esp_apptrace_down_buffer_config(down_buf, sizeof(down_buf));
+    char *ptr = (char *)esp_apptrace_down_buffer_get(ESP_APPTRACE_DEST_TRAX, &sz, 100/*tmo in us*/);
+    if (ptr == NULL) {
+        ESP_LOGE("Failed to get buffer!");
+        return ESP_FAIL;
+    }
+    if (sz > 4) {
+        number = (uint32_t *)ptr;
+        printf("Here is the number %d", *number);
+    } else {
+        printf("No data");
+    }
+    esp_err_t res = esp_apptrace_down_buffer_put(ESP_APPTRACE_DEST_TRAX, ptr, 100/*tmo in us*/);
+    if (res != ESP_OK) {
+        /* in case of error host tracing tool (e.g. OpenOCD) will report incomplete user buffer */
+        ESP_LOGE("Failed to put buffer!");
+        return res;
     }
 
 2. The next step is to build the program image and download it to the target as described in :doc:`Build and Flash <../get-started/make-project>`.
@@ -151,7 +186,7 @@ Sub-commands:
 
 Start command syntax:
 
-  ``start <outfile1> [outfile2] [poll_period [trace_size [stop_tmo [wait4halt [skip_size]]]]``
+  ``start <outfile> [poll_period [trace_size [stop_tmo [wait4halt [skip_size]]]]``
 
   .. list-table::
     :widths: 20 80
@@ -159,10 +194,8 @@ Start command syntax:
 
     * - Argument
       - Description
-    * - outfile1
-      - Path to file to save data from PRO CPU. This argument should have the following format: ``file://path/to/file``.
-    * - outfile2
-      - Path to file to save data from APP CPU. This argument should have the following format: ``file://path/to/file``.
+    * - outfile
+      - Path to file to save data from both CPUs. This argument should have the following format: ``file://path/to/file``.
     * - poll_period
       - Data polling period (in ms). If greater then 0 then command runs in non-blocking mode. By default 1 ms.
     * - trace_size

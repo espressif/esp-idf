@@ -8,8 +8,8 @@ What You Need
 -------------
 
 * 1 × ESP-WROVER-KIT board
-* 1 × USB A / mini USB B cable 
-* 1 × PC loaded with Windows, Linux or Mac O/S
+* 1 × USB A / micro USB B cable 
+* 1 × PC loaded with Windows, Linux or Mac OS
 
 
 The Board
@@ -48,6 +48,8 @@ The following list and figures below describe key components, interfaces and con
 
 32.768 kHz
     An external precision 32.768 kHz crystal oscillator provides the chip with a clock of low-power consumption during the Deep-sleep mode.
+0R
+    A zero Ohm resistor intended as a placeholder for a current shunt. May be desoldered or replaced with a current shunt to facilitate measurement of current required by ESP32 module depending on power mode.
 ESP32 Module
     ESP-WROVER-KIT is compatible with both ESP-WROOM-32 and ESP32-WROVER. The ESP32-WROVER module features all the functions of ESP-WROOM-32 and integrates an external 32-MBit PSRAM for flexible extended storage and data processing capabilities.
 
@@ -55,18 +57,20 @@ ESP32 Module
 
         GPIO16 and GPIO17 are used as the CS and clock signal for PSRAM. To ensure reliable performance, the two GPIOs are not broken out.
 
-CTS/RTS
-    Serial port flow control signals: the pins are not connected to the circuitry by default. To enable them, respective pins of JP14 must be shorted with jumpers.
+FT2232
+    FT2232 chip is a multi-protocol USB-to-serial bridge. Users can control and program the FT2232 chip through the USB interface to establish communication with ESP32. The FT2232 chip also features USB-to-JTAG interface. 
+
+    USB-to-JTAG is available on channel A of FT2232, USB-to-serial on channel B.
+
+    The embedded FT2232 chip is one of the distinguishing features of the ESPWROVER-KIT. It enhances users’ convenience in terms of application development and debugging. In addition, uses do not need to buy a JTAG debugger separately, which reduces the development cost. The schematics is provided in section :ref:`wrover-kit-related-documents`.
 UART
     Serial port: the serial TX/RX signals on FT2232HL and ESP32 are broken out to the two sides of JP11. By default, the two signals are connected with jumpers. To use the ESP32 module serial interface only, the jumpers may be removed and the module can be connected to another external serial device.
 SPI
     SPI interface: the SPI interface connects to an external flash (PSRAM). To interface another SPI device, an extra CS signal is needed. If an ESP32-WROVER is being used, please note that the electrical level on the flash and SRAM is 1.8V.
+CTS/RTS
+    Serial port flow control signals: the pins are not connected to the circuitry by default. To enable them, respective pins of JP14 must be shorted with jumpers.
 JTAG
     JTAG interface: the JTAG signals on FT2232HL and ESP32 are broken out to the two sides of JP8. By default, the two signals are disconnected. To enable JTAG, shorting jumpers are required on the signals.
-FT2232
-    FT2232 chip is a multi-protocol USB-to-serial bridge. The FT2232 chip features USB-to-UART and USB-to-JTAG functionalities. Users can control and program the FT2232 chip through the USB interface to establish communication with ESP32.
-
-    The embedded FT2232 chip is one of the distinguishing features of the ESPWROVER-KIT. It enhances users’ convenience in terms of application development and debugging. In addition, uses do not need to buy a JTAG debugger separately, which reduces the development cost. The schematics is provided in section :ref:`wrover-kit-related-documents`.
 EN
     Reset button: pressing this button resets the system.
 Boot
@@ -185,7 +189,7 @@ Related Documents
 * `ESP-WROVER-KIT schematic`_ (PDF)
 * `ESP32 Datasheet <http://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF)
 * `ESP-WROOM-32 Datasheet <http://espressif.com/sites/default/files/documentation/esp-wroom-32_datasheet_en.pdf>`_ (PDF)
-* `JTAG Debugging for ESP32 <https://espressif.com/sites/default/files/documentation/jtag_debugging_for_esp32_en.pdf>`_ (PDF)
+* :doc:`../api-guides/jtag-debugging/index`
 
 
 
