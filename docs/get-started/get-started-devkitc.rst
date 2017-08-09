@@ -24,7 +24,7 @@ Functional Description
 The following list and figure below describe key components, interfaces and controls of ESP32-DevKitC board.
 
 ESP-WROOM-32
-    Standard `ESP-WROOM-32 <http://www.espressif.com/sites/default/files/documentation/esp_wroom_32_datasheet_en.pdf>`_ module soldered to the ESP32-DevKitC board.
+    Standard `ESP-WROOM-32 <http://www.espressif.com/sites/default/files/documentation/esp-wroom-32_datasheet_en.pdf>`_ module soldered to the ESP32-DevKitC board.
 EN
     Reset button: pressing this button resets the system.
 Boot
