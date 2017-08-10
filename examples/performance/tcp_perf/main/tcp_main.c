@@ -36,74 +36,90 @@ step3:
 
 #include "tcp_perf.h"
 
-
-
 //this task establish a TCP connection and receive data from TCP
 static void tcp_conn(void *pvParameters)
 {
-    ESP_LOGI(TAG, "task tcp_conn.");
-    /*wating for connecting to AP*/
-    xEventGroupWaitBits(tcp_event_group, WIFI_CONNECTED_BIT,false, true, portMAX_DELAY);
-
-    ESP_LOGI(TAG, "sta has connected to ap.");
-    
-    /*create tcp socket*/
-    int socket_ret;
-    
-#if EXAMPLE_ESP_TCP_MODE_SERVER
-    ESP_LOGI(TAG, "tcp_server will start after 3s...");
-    vTaskDelay(3000 / portTICK_RATE_MS);
-    ESP_LOGI(TAG, "create_tcp_server.");
-    socket_ret=create_tcp_server();
-#else /*EXAMPLE_ESP_TCP_MODE_SERVER*/
-    ESP_LOGI(TAG, "tcp_client will start after 20s...");
-    vTaskDelay(20000 / portTICK_RATE_MS);
-    ESP_LOGI(TAG, "create_tcp_client.");
-    socket_ret = create_tcp_client();
-#endif
-    if(socket_ret == ESP_FAIL) {
-	ESP_LOGI(TAG, "create tcp socket error,stop.");
-	vTaskDelete(NULL);
-    }
-    
-    /*create a task to tx/rx data*/
-    TaskHandle_t tx_rx_task;
-#if EXAMPLE_ESP_TCP_PERF_TX
-    xTaskCreate(&send_data, "send_data", 4096, NULL, 4, &tx_rx_task);
-#else /*EXAMPLE_ESP_TCP_PERF_TX*/
-    xTaskCreate(&recv_data, "recv_data", 4096, NULL, 4, &tx_rx_task);
-#endif
-    int bps;
     while (1) {
-	total_data = 0;
-	vTaskDelay(3000 / portTICK_RATE_MS);//every 3s
-	bps = total_data / 3;
-	if (total_data <= 0) {
-	    int err_ret = check_working_socket();
-	    if (err_ret == ECONNRESET || ECONNABORTED) {
-		ESP_LOGW(TAG, "tcp disconnected... stop.\n");
-		break;
-	    }
-	}
+
+        g_rxtx_need_restart = false;
+
+        ESP_LOGI(TAG, "task tcp_conn.");
+
+        /*wating for connecting to AP*/
+        xEventGroupWaitBits(tcp_event_group, WIFI_CONNECTED_BIT, false, true, portMAX_DELAY);
+
+        ESP_LOGI(TAG, "sta has connected to ap.");
+
+        int socket_ret = ESP_FAIL;
+
+        TaskHandle_t tx_rx_task = NULL;
+
+#if EXAMPLE_ESP_TCP_MODE_SERVER
+        if (socket_ret == ESP_FAIL) {
+            /*create tcp socket*/
+            ESP_LOGI(TAG, "tcp_server will start after 3s...");
+            vTaskDelay(3000 / portTICK_RATE_MS);
+            ESP_LOGI(TAG, "create_tcp_server.");
+            socket_ret = create_tcp_server();
+        }
+#else /*EXAMPLE_ESP_TCP_MODE_SERVER*/
+        if (socket_ret == ESP_FAIL) {
+            ESP_LOGI(TAG, "tcp_client will start after 20s...");
+            vTaskDelay(20000 / portTICK_RATE_MS);
+            ESP_LOGI(TAG, "create_tcp_client.");
+            socket_ret = create_tcp_client();
+        }
+#endif
+        if (socket_ret == ESP_FAIL) {
+            ESP_LOGI(TAG, "create tcp socket error,stop.");
+            continue;
+        }
+
+        /*create a task to tx/rx data*/
 
 #if EXAMPLE_ESP_TCP_PERF_TX
-	ESP_LOGI(TAG, "tcp send %d byte per sec!", bps);
+        if (tx_rx_task == NULL) {
+            if (pdPASS != xTaskCreate(&send_data, "send_data", 4096, NULL, 4, &tx_rx_task)) {
+                ESP_LOGE(TAG, "Send task create fail!");
+            }
+        }
+#else /*EXAMPLE_ESP_TCP_PERF_TX*/
+        if (tx_rx_task == NULL) {
+            if (pdPASS != xTaskCreate(&recv_data, "recv_data", 4096, NULL, 4, &tx_rx_task)) {
+                ESP_LOGE(TAG, "Recv task create fail!");
+            }
+        }
+#endif
+        double bps;
+
+        while (1) {
+            g_total_data = 0;
+            vTaskDelay(3000 / portTICK_RATE_MS);//every 3s
+            bps = (g_total_data * 8.0 / 3.0) / 1000000.0;
+
+            if (g_rxtx_need_restart) {
+                printf("send or receive task encoutner error, need to restart\n");
+                break;
+            }
+
+#if EXAMPLE_ESP_TCP_PERF_TX
+            ESP_LOGI(TAG, "tcp send %.2f Mbits per sec!\n", bps);
 #if EXAMPLE_ESP_TCP_DELAY_INFO
-	ESP_LOGI(TAG, "tcp send packet total:%d  succeed:%d  failed:%d\n"
-		"time(ms):0-30:%d 30-100:%d 100-300:%d 300-1000:%d 1000+:%d\n",
-		total_pack, send_success, send_fail, delay_classify[0],
-		delay_classify[1], delay_classify[2], delay_classify[3], delay_classify[4]);
+            ESP_LOGI(TAG, "tcp send packet total:%d  succeed:%d  failed:%d\n"
+                     "time(ms):0-30:%d 30-100:%d 100-300:%d 300-1000:%d 1000+:%d\n",
+                     g_total_pack, g_send_success, g_send_fail, g_delay_classify[0],
+                     g_delay_classify[1], g_delay_classify[2], g_delay_classify[3], g_delay_classify[4]);
 #endif /*EXAMPLE_ESP_TCP_DELAY_INFO*/
 #else
-	ESP_LOGI(TAG, "tcp recv %d byte per sec!\n", bps);
+            ESP_LOGI(TAG, "tcp recv %.2f Mbits per sec!\n", bps);
 #endif /*EXAMPLE_ESP_TCP_PERF_TX*/
+        }
+
+        close_socket();
     }
-    close_socket();
-    vTaskDelete(tx_rx_task);
+
     vTaskDelete(NULL);
 }
-
-
 
 void app_main(void)
 {
