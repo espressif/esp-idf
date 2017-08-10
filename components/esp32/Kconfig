@@ -560,6 +560,14 @@ config ESP32_XTAL_FREQ
 
 endmenu
 
+config NO_BLOBS
+    bool "No Binary Blobs"
+    depends on !BT_ENABLED
+    default n
+    help
+       If enabled, this disables the linking of binary libraries in the application build. Note
+       that after enabling this Wi-Fi/Bluetooth will not work.
+
 menu Wi-Fi
 
 config SW_COEXIST_ENABLE
