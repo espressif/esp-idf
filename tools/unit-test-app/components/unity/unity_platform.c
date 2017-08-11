@@ -107,7 +107,7 @@ static void unity_run_single_test_by_name(const char* filter)
     tmp[strlen(filter) - 2] = 0;
     for (const struct test_desc_t* test = s_unity_tests_first; test != NULL; test = test->next)
     {
-        if (strstr(test->name, tmp) != NULL)
+        if (strcmp(test->name, tmp) == 0)
         {
             unity_run_single_test(test);
         }
