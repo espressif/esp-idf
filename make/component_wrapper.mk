@@ -252,7 +252,7 @@ embed_txt/$$(notdir $(1)): $(call resolvepath,$(1),$(COMPONENT_PATH)) | embed_tx
 # messing about with the embed_X subdirectory then using 'cd' for objcopy is because the
 # full path passed to OBJCOPY makes it into the name of the symbols in the .o file
 $$(notdir $(1)).$(2).o: embed_$(2)/$$(notdir $(1))
-	$(summary) EMBED $$@
+	$(summary) EMBED $$(patsubst $$(PWD)/%,%,$$(CURDIR))/$$@
 	cd embed_$(2); $(OBJCOPY) $(OBJCOPY_EMBED_ARGS) $$(notdir $$<) ../$$@
 
 CLEAN_FILES += embed_$(2)/$$(notdir $(1))

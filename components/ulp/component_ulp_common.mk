@@ -26,23 +26,23 @@ ULP_PREPROCESSOR_ARGS := \
 
 # Preprocess LD script used to link ULP program
 $(ULP_LD_SCRIPT): $(ULP_LD_TEMPLATE)
-	$(summary) CPP $(notdir $@)
+	$(summary) CPP $(patsubst $(PWD)/%,%,$(CURDIR))/$@
 	$(CC) $(CPPFLAGS) -MT $(ULP_LD_SCRIPT) -E -P -xc -o $@ $(ULP_PREPROCESSOR_ARGS) $<
 
 # Generate preprocessed assembly files.
 # To inspect these preprocessed files, add a ".PRECIOUS: %.ulp.pS" rule. 
 %.ulp.pS: $(COMPONENT_PATH)/ulp/%.S
-	$(summary) CPP $(notdir $<)
+	$(summary) CPP $(patsubst $(PWD)/%,%,$<)
 	$(CC) $(CPPFLAGS) -MT $(patsubst %.ulp.pS,%.ulp.o,$@) -E -P -xc -o $@ $(ULP_PREPROCESSOR_ARGS) $<
 
 # Compiled preprocessed files into object files.
 %.ulp.o: %.ulp.pS
-	$(summary) ULP_AS $(notdir $@)
+	$(summary) ULP_AS $(patsubst $(PWD)/%,%,$(CURDIR))/$@
 	$(ULP_AS) -al=$(patsubst %.ulp.o,%.ulp.lst,$@) -o $@ $<
 
 # Link object files and generate map file
 $(ULP_ELF): $(ULP_OBJECTS) $(ULP_LD_SCRIPT)
-	$(summary) ULP_LD $(notdir $@)
+	$(summary) ULP_LD $(patsubst $(PWD)/%,%,$(CURDIR))/$@
 	$(ULP_LD) -o $@ -A elf32-esp32ulp -Map=$(ULP_MAP) -T $(ULP_LD_SCRIPT) $<
 
 # Dump the list of global symbols in a convenient format.
@@ -51,7 +51,7 @@ $(ULP_SYM): $(ULP_ELF)
 
 # Dump the binary for inclusion into the project 
 $(COMPONENT_BUILD_DIR)/$(ULP_BIN): $(ULP_ELF)
-	$(summary) ULP_BIN $(notdir $@)
+	$(summary) ULP_BIN $(patsubst $(PWD)/%,%,$@)
 	$(ULP_OBJCOPY) -O binary $< $@
 
 # Left and right side of the rule are the same, but the right side
@@ -67,7 +67,7 @@ $(COMPONENT_BUILD_DIR)/$(ULP_EXPORTS_LD): $(COMPONENT_NAME)_ulp_mapgen_intermedi
 
 # Convert the symbols list into a header file and linker export script.
 $(COMPONENT_NAME)_ulp_mapgen_intermediate: $(ULP_SYM)
-	$(summary) ULP_MAPGEN $(notdir $<)
+	$(summary) ULP_MAPGEN $(patsubst $(PWD)/%,%,$(CURDIR))/$<
 	$(ULP_MAP_GEN) -s $(ULP_SYM) -o $(ULP_EXPORTS_LD:.ld=)
 
 # Building the component separately from the project should result in
