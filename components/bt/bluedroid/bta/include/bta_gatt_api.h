@@ -1409,10 +1409,10 @@ extern void BTA_SetAttributeValue(UINT16 attr_handle, UINT16 length, UINT8 *valu
 **                      length - the value length which has been set to the attribute.
 **                      value - the pointer to the value
 **
-** Returns          None
+** Returns          tBTA_GATT_STATUS
 **
 *******************************************************************************/
-extern void BTA_GetAttributeValue(UINT16 attr_handle, UINT16 *length, UINT8 **value);
+extern tBTA_GATT_STATUS BTA_GetAttributeValue(UINT16 attr_handle, UINT16 *length, UINT8 **value);
 
 /*******************************************************************************
 **
