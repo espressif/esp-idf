@@ -908,11 +908,6 @@ void bta_gattc_cfg_mtu(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 
         /* if failed, return callback here */
         if (status != GATT_SUCCESS && status != GATT_CMD_STARTED) {
-            /* Dequeue the data, if it was enqueued */
-            if (p_clcb->p_q_cmd == p_data) {
-                p_clcb->p_q_cmd = NULL;
-            }
-
             bta_gattc_cmpl_sendmsg(p_clcb->bta_conn_id, GATTC_OPTYPE_CONFIG, status, NULL);
         }
     }
@@ -1070,11 +1065,6 @@ void bta_gattc_read(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 
         /* read fail */
         if (status != BTA_GATT_OK) {
-            /* Dequeue the data, if it was enqueued */
-            if (p_clcb->p_q_cmd == p_data) {
-                p_clcb->p_q_cmd = NULL;
-            }
-
             bta_gattc_cmpl_sendmsg(p_clcb->bta_conn_id, GATTC_OPTYPE_READ, status, NULL);
         }
     }
@@ -1130,11 +1120,6 @@ void bta_gattc_read_multi(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 
         /* read fail */
         if (status != BTA_GATT_OK) {
-            /* Dequeue the data, if it was enqueued */
-            if (p_clcb->p_q_cmd == p_data) {
-                p_clcb->p_q_cmd = NULL;
-            }
-
             bta_gattc_cmpl_sendmsg(p_clcb->bta_conn_id, GATTC_OPTYPE_READ, status, NULL);
         }
     }
@@ -1175,11 +1160,6 @@ void bta_gattc_write(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 
         /* write fail */
         if (status != BTA_GATT_OK) {
-            /* Dequeue the data, if it was enqueued */
-            if (p_clcb->p_q_cmd == p_data) {
-                p_clcb->p_q_cmd = NULL;
-            }
-
             bta_gattc_cmpl_sendmsg(p_clcb->bta_conn_id, GATTC_OPTYPE_WRITE, status, NULL);
         }
     }
@@ -1200,11 +1180,6 @@ void bta_gattc_execute(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
         status = GATTC_ExecuteWrite(p_clcb->bta_conn_id, p_data->api_exec.is_execute);
 
         if (status != BTA_GATT_OK) {
-            /* Dequeue the data, if it was enqueued */
-            if (p_clcb->p_q_cmd == p_data) {
-                p_clcb->p_q_cmd = NULL;
-            }
-
             bta_gattc_cmpl_sendmsg(p_clcb->bta_conn_id, GATTC_OPTYPE_EXE_WRITE, status, NULL);
         }
     }
