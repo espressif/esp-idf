@@ -53,6 +53,16 @@ MacOS ::
     ls /dev/cu.*
 
 
+Adding user to ``dialout`` on Linux
+-----------------------------------
+
+The currently logged user should have read and write access the serial port over USB. This is done by adding the user to ``dialout`` group with the following command::
+
+    sudo usermod -a -G dialout $USER
+
+Make sure you re-login to enable read and write permissions for the serial port. 
+
+
 Verify serial connection
 ------------------------
 

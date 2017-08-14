@@ -2,13 +2,27 @@
 Get Started
 ***********
 
+This document is intended to help users set up the software environment for developement of applications using hardware based on the Espressif ESP32. Through a simple example we would like to illustrate how to use ESP-IDF (Espressif IoT Development Framework), including the menu based configuration, compiling the ESP-IDF and firmware download to ESP32 boards. 
+
+
+Introduction
+============
+
+ESP32 integrates Wi-Fi (2.4 GHz band) and Bluetooth 4.2 solutions on a single chip, along with dual high performance cores, Ultra Low Power co-processor and several peripherals. Powered by 40 nm technology, ESP32 provides a robust, highly integrated platform to meet the continuous demands for efficient power usage, compact design, security, high performance, and reliability.
+
+Espressif provides the basic hardware and software resources that help application developers to build their ideas around the ESP32 series hardware. The software development framework by Espressif is intended for rapidly developing Internet-of-Things (IoT) applications, with Wi-Fi, Bluetooth, power management and several other system features. 
+
+
+What You Need
+=============
+
 To develop applications for ESP32 you need:
 
 * **PC** loaded with either Windows, Linux or Mac operating system
 * **Toolchain** to build the **Application** for ESP32
 * **ESP-IDF** that essentially contains API for ESP32 and scripts to operate the **Toolchain**
 * A text editor to write programs (**Projects**) in C, e.g. `Eclipse <http://www.eclipse.org/>`_
-* **ESP32** board itself
+* The **ESP32** board itself and a **USB cable** to connect it to the **PC**
 
 .. figure:: ../_static/what-you-need.png
     :align: center
@@ -110,13 +124,9 @@ Instead of downloading binary toolchain from Espressif website (:ref:`get-starte
 If you can't think of a reason why you need to build it yourself, then probably it's better to stick with the binary version. However, here are some of the reasons why you might want to compile it from source:
 
 - if you want to customize toolchain build configuration
-
 - if you want to use a different GCC version (such as 4.8.5)
-
 - if you want to hack gcc or newlib or libstdc++
-
 - if you are curious and/or have time to spare
-
 - if you don't trust binaries downloaded from the Internet
 
 In any case, here are the instructions to compile the toolchain yourself.
