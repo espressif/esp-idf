@@ -89,7 +89,7 @@ esp_err_t WL_Ext_Safe::recover()
     WL_Ext_Safe_State state;
     result = WL_Flash::read(this->state_addr, &state, sizeof(WL_Ext_Safe_State));
     WL_EXT_RESULT_CHECK(result);
-    ESP_LOGI(TAG, "%s recover, start_addr = 0x%08x, local_addr_base = 0x%08x, local_addr_shift = %i, count=%i", __func__, state.erase_begin, state.local_addr_base, state.local_addr_shift, state.count);
+    ESP_LOGV(TAG, "%s recover, start_addr = 0x%08x, local_addr_base = 0x%08x, local_addr_shift = %i, count=%i", __func__, state.erase_begin, state.local_addr_base, state.local_addr_shift, state.count);
 
     // check if we have transaction
     if (state.erase_begin == WL_EXT_SAFE_OK) {

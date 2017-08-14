@@ -20,8 +20,6 @@ choice WL_SECTOR_SIZE
        
 config WL_SECTOR_SIZE_512
    bool "512"
-   # This mode is temporary disabled, until unit test is fixed
-   depends on false
 config WL_SECTOR_SIZE_4096
    bool "4096"
 endchoice
