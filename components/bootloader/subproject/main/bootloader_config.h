@@ -28,11 +28,13 @@ extern "C"
 
 #define SPI_ERROR_LOG "spi flash error"
 
+#define MAX_OTA_SLOTS 16
+
 typedef struct {
     esp_partition_pos_t ota_info;
     esp_partition_pos_t factory;
     esp_partition_pos_t test;
-    esp_partition_pos_t ota[16];
+    esp_partition_pos_t ota[MAX_OTA_SLOTS];
     uint32_t app_count;
     uint32_t selected_subtype;
 } bootloader_state_t;

@@ -87,7 +87,7 @@ esp_err_t esp_image_load(esp_image_load_mode_t mode, const esp_partition_pos_t *
 
     if (part->size > SIXTEEN_MB) {
         err = ESP_ERR_INVALID_ARG;
-        FAIL_LOAD("partition size %d invalid, larger than 16MB", part->size);
+        FAIL_LOAD("partition size 0x%x invalid, larger than 16MB", part->size);
     }
 
     bzero(data, sizeof(esp_image_metadata_t));

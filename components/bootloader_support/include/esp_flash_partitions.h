@@ -21,6 +21,7 @@
 /* Pre-partition table fixed flash offsets */
 #define ESP_BOOTLOADER_DIGEST_OFFSET 0x0
 #define ESP_BOOTLOADER_OFFSET 0x1000 /* Offset of bootloader image. Has matching value in bootloader KConfig.projbuild file. */
+#define ESP_BOOTLOADER_SIZE   (ESP_PARTITION_TABLE_OFFSET - ESP_BOOTLOADER_OFFSET)
 #define ESP_PARTITION_TABLE_OFFSET 0x8000 /* Offset of partition table. Has matching value in partition_table Kconfig.projbuild file. */
 
 #define ESP_PARTITION_TABLE_MAX_LEN 0xC00 /* Maximum length of partition table data */
