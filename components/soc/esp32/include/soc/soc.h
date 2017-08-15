@@ -69,6 +69,7 @@
 #define SOC_RTC_DATA_HIGH 0x50002000
 
 #define DR_REG_DPORT_BASE                       0x3ff00000
+#define DR_REG_AES_BASE                         0x3ff01000
 #define DR_REG_RSA_BASE                         0x3ff02000
 #define DR_REG_SHA_BASE                         0x3ff03000
 #define DR_REG_DPORT_END                        0x3ff03FFC

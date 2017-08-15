@@ -57,4 +57,12 @@
 #define SHA_512_LOAD_REG        ((DR_REG_SHA_BASE) + 0xb8)
 #define SHA_512_BUSY_REG        ((DR_REG_SHA_BASE) + 0xbc)
 
+/* AES acceleration registers */
+#define AES_START_REG           ((DR_REG_AES_BASE) + 0x00)
+#define AES_IDLE_REG            ((DR_REG_AES_BASE) + 0x04)
+#define AES_MODE_REG            ((DR_REG_AES_BASE) + 0x08)
+#define AES_KEY_BASE            ((DR_REG_AES_BASE) + 0x10)
+#define AES_TEXT_BASE           ((DR_REG_AES_BASE) + 0x30)
+#define AES_ENDIAN              ((DR_REG_AES_BASE) + 0x40)
+
 #endif

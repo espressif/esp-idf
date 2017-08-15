@@ -3,7 +3,7 @@
  * Based on mbedTLS FIPS-197 compliant version.
  *
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
- *  Additions Copyright (C) 2016, Espressif Systems (Shanghai) PTE Ltd
+ *  Additions Copyright (C) 2016-2017, Espressif Systems (Shanghai) PTE Ltd
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -26,9 +26,10 @@
  *  http://csrc.nist.gov/publications/fips/fips197/fips-197.pdf
  */
 #include <string.h>
+#include "mbedtls/aes.h"
 #include "hwcrypto/aes.h"
-#include "rom/aes.h"
 #include "soc/dport_reg.h"
+#include "soc/hwcrypto_reg.h"
 #include <sys/lock.h>
 
 static _lock_t aes_lock;
@@ -81,55 +82,18 @@ void esp_aes_free( esp_aes_context *ctx )
     bzero( ctx, sizeof( esp_aes_context ) );
 }
 
-/* Translate number of bits to an AES_BITS enum */
-static int keybits_to_aesbits(unsigned int keybits)
-{
-    switch (keybits) {
-    case 128:
-        return AES128;
-    case 192:
-        return AES192;
-        break;
-    case 256:
-        return AES256;
-    default:
-        return ( ERR_ESP_AES_INVALID_KEY_LENGTH );
-    }
-}
-
 /*
- * AES key schedule (encryption)
+ * AES key schedule (same for encryption or decryption, as hardware handles schedule)
  *
  */
-int esp_aes_setkey_enc( esp_aes_context *ctx, const unsigned char *key,
-                        unsigned int keybits )
+int esp_aes_setkey( esp_aes_context *ctx, const unsigned char *key,
+                    unsigned int keybits )
 {
-    uint16_t keybytes = keybits / 8;
-    int aesbits = keybits_to_aesbits(keybits);
-    if (aesbits < 0) {
-        return aesbits;
+    if (keybits != 128 && keybits != 192 && keybits != 256) {
+        return MBEDTLS_ERR_AES_INVALID_KEY_LENGTH;
     }
-    ctx->enc.aesbits = aesbits;
-    bzero(ctx->enc.key, sizeof(ctx->enc.key));
-    memcpy(ctx->enc.key, key, keybytes);
-    return 0;
-}
-
-/*
- * AES key schedule (decryption)
- *
- */
-int esp_aes_setkey_dec( esp_aes_context *ctx, const unsigned char *key,
-                        unsigned int keybits )
-{
-    uint16_t keybytes = keybits / 8;
-    int aesbits = keybits_to_aesbits(keybits);
-    if (aesbits < 0) {
-        return aesbits;
-    }
-    ctx->dec.aesbits = aesbits;
-    bzero(ctx->dec.key, sizeof(ctx->dec.key));
-    memcpy(ctx->dec.key, key, keybytes);
+    ctx->key_bytes = keybits / 8;
+    memcpy(ctx->key, key, ctx->key_bytes);
     return 0;
 }
 
@@ -137,27 +101,41 @@ int esp_aes_setkey_dec( esp_aes_context *ctx, const unsigned char *key,
  * Helper function to copy key from esp_aes_context buffer
  * to hardware key registers.
  *
- * Only call when protected by esp_aes_acquire_hardware().
+ * Call only while holding esp_aes_acquire_hardware().
  */
-static inline int esp_aes_setkey_hardware( esp_aes_context *ctx, int mode)
+static inline void esp_aes_setkey_hardware( esp_aes_context *ctx, int mode)
 {
-    DPORT_ACCESS_BLOCK() {
-        // ROM AES functions access DPORT, so need to be protected as such
-        if ( mode == ESP_AES_ENCRYPT ) {
-            ets_aes_setkey_enc(ctx->enc.key, ctx->enc.aesbits);
-        } else {
-            ets_aes_setkey_dec(ctx->dec.key, ctx->dec.aesbits);
-        }
-    }
-    return 0;
+    const uint32_t MODE_DECRYPT_BIT = 4;
+    unsigned mode_reg_base = (mode == ESP_AES_ENCRYPT) ? 0 : MODE_DECRYPT_BIT;
+
+    memcpy((uint32_t *)AES_KEY_BASE, ctx->key, ctx->key_bytes);
+    DPORT_REG_WRITE(AES_MODE_REG, mode_reg_base + ((ctx->key_bytes / 8) - 2));
 }
 
-static inline void esp_aes_block(const uint8_t input[16], uint8_t output[16])
+/* Run a single 16 byte block of AES, using the hardware engine.
+ *
+ * Call only while holding esp_aes_acquire_hardware().
+ */
+static inline void esp_aes_block(const void *input, void *output)
 {
-    DPORT_ACCESS_BLOCK() {
-        // ROM AES functions access DPORT, so need to be protected as such
-        ets_aes_crypt(input, output);
+    const uint32_t *input_words = (const uint32_t *)input;
+    uint32_t *output_words = (uint32_t *)output;
+    uint32_t *mem_block = (uint32_t *)AES_TEXT_BASE;
+
+    for(int i = 0; i < 4; i++) {
+        mem_block[i] = input_words[i];
     }
+
+    DPORT_REG_WRITE(AES_START_REG, 1);
+
+    DPORT_STALL_OTHER_CPU_START();
+    {
+        while (_DPORT_REG_READ(AES_IDLE_REG) != 1) { }
+        for (int i = 0; i < 4; i++) {
+            output_words[i] = mem_block[i];
+        }
+    }
+    DPORT_STALL_OTHER_CPU_END();
 }
 
 /*
@@ -215,6 +193,9 @@ int esp_aes_crypt_cbc( esp_aes_context *ctx,
                        unsigned char *output )
 {
     int i;
+    uint32_t *output_words = (uint32_t *)output;
+    const uint32_t *input_words = (const uint32_t *)input;
+    uint32_t *iv_words = (uint32_t *)iv;
     unsigned char temp[16];
 
     if ( length % 16 ) {
@@ -222,34 +203,36 @@ int esp_aes_crypt_cbc( esp_aes_context *ctx,
     }
 
     esp_aes_acquire_hardware();
+
     esp_aes_setkey_hardware(ctx, mode);
 
     if ( mode == ESP_AES_DECRYPT ) {
         while ( length > 0 ) {
-            memcpy( temp, input, 16 );
-            esp_aes_block(input, output);
+            memcpy(temp, input_words, 16);
+            esp_aes_block(input_words, output_words);
 
-            for ( i = 0; i < 16; i++ ) {
-                output[i] = (unsigned char)( output[i] ^ iv[i] );
+            for ( i = 0; i < 4; i++ ) {
+                output_words[i] = output_words[i] ^ iv_words[i];
             }
 
-            memcpy( iv, temp, 16 );
+            memcpy( iv_words, temp, 16 );
 
-            input  += 16;
-            output += 16;
+            input_words += 4;
+            output_words += 4;
             length -= 16;
         }
     } else { // ESP_AES_ENCRYPT
         while ( length > 0 ) {
-            for ( i = 0; i < 16; i++ ) {
-                output[i] = (unsigned char)( input[i] ^ iv[i] );
+
+            for ( i = 0; i < 4; i++ ) {
+                output_words[i] = input_words[i] ^ iv_words[i];
             }
 
-            esp_aes_block(output, output);
-            memcpy( iv, output, 16 );
+            esp_aes_block(output_words, output_words);
+            memcpy( iv_words, output_words, 16 );
 
-            input  += 16;
-            output += 16;
+            input_words  += 4;
+            output_words += 4;
             length -= 16;
         }
     }
@@ -274,6 +257,7 @@ int esp_aes_crypt_cfb128( esp_aes_context *ctx,
     size_t n = *iv_off;
 
     esp_aes_acquire_hardware();
+
     esp_aes_setkey_hardware(ctx, ESP_AES_ENCRYPT);
 
     if ( mode == ESP_AES_DECRYPT ) {
@@ -321,6 +305,7 @@ int esp_aes_crypt_cfb8( esp_aes_context *ctx,
     unsigned char ov[17];
 
     esp_aes_acquire_hardware();
+
     esp_aes_setkey_hardware(ctx, ESP_AES_ENCRYPT);
 
     while ( length-- ) {
@@ -360,6 +345,7 @@ int esp_aes_crypt_ctr( esp_aes_context *ctx,
     size_t n = *nc_off;
 
     esp_aes_acquire_hardware();
+
     esp_aes_setkey_hardware(ctx, ESP_AES_ENCRYPT);
 
     while ( length-- ) {
