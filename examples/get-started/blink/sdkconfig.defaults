@@ -1,2 +1,2 @@
-# Disable WiFi stack by default
-CONFIG_WIFI_ENABLED=n
+#
+
