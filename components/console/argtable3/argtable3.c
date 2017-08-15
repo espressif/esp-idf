@@ -4759,7 +4759,6 @@ void arg_print_glossary(FILE *fp, void * *argtable, const char *format)
  *
  * Author: Uli Fouquet
  */
-static
 void arg_print_formatted( FILE *fp,
                           const unsigned lmargin,
                           const unsigned rmargin,

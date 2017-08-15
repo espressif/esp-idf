@@ -295,6 +295,7 @@ void arg_print_glossary(FILE *fp, void **argtable, const char *format);
 void arg_print_glossary_gnu(FILE *fp, void **argtable);
 void arg_print_errors(FILE* fp, struct arg_end* end, const char* progname);
 void arg_freetable(void **argtable, size_t n);
+void arg_print_formatted(FILE *fp, const unsigned lmargin, const unsigned rmargin, const char *text);
 
 /**** deprecated functions, for back-compatibility only ********/
 void arg_free(void **argtable);
