@@ -140,7 +140,13 @@ If "UART for console output" menuconfig option is not set to "None", then ``stdi
 
 Writing to ``stdout`` or ``stderr`` will send characters to the UART transmit FIFO. Reading from ``stdin`` will retrieve characters from the UART receive FIFO.
 
-Note that while writing to ``stdout`` or ``stderr`` will block until all characters are put into the FIFO, reading from ``stdin`` is non-blocking. The function which reads from UART will get all the characters present in the FIFO (if any), and return. I.e. doing ``fscanf("%d\n", &var);`` may not have desired results. This is a temporary limitation which will be removed once ``fcntl`` is added to the VFS interface.
+By default, VFS uses simple functions for reading from and writing to UART. Writes busy-wait until all data is put into UART FIFO, and reads are non-blocking, returning only the data present in the FIFO. Because of this non-blocking read behavior, higher level C library calls, such as ``fscanf("%d\n", &var);`` may not have desired results.
+
+Applications which use UART driver may instruct VFS to use the driver's interrupt driven, blocking read and write functions instead. This can be done using a call to ``esp_vfs_dev_uart_use_driver`` function. It is also possible to revert to the basic non-blocking functions using a call to ``esp_vfs_dev_uart_use_nonblocking``.
+
+VFS also provides optional newline conversion feature for input and output. Internally, most applications send and receive lines terminated by LF (''\n'') character. Different terminal programs may require different line termination, such as CR or CRLF. Applications can configure this separately for input and output either via menuconfig, or by calls to ``esp_vfs_dev_uart_set_rx_line_endings`` and ``esp_vfs_dev_uart_set_tx_line_endings`` functions.
+
+
 
 Standard streams and FreeRTOS tasks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
