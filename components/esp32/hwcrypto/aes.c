@@ -32,12 +32,26 @@
 #include "soc/hwcrypto_reg.h"
 #include <sys/lock.h>
 
-static _lock_t aes_lock;
+#include <freertos/FreeRTOS.h>
+
+#include "soc/cpu.h"
+#include <stdio.h>
+
+
+/* AES uses a spinlock mux not a lock as the underlying block operation
+   only takes 208 cycles (to write key & compute block), +600 cycles
+   for DPORT protection but +3400 cycles again if you use a full sized lock.
+
+   For CBC, CFB, etc. this may mean that interrupts are disabled for a longer
+   period of time for bigger lengths. However at the moment this has to happen
+   anyway due to DPORT protection...
+*/
+static portMUX_TYPE aes_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 void esp_aes_acquire_hardware( void )
 {
     /* newlib locks lazy initialize on ESP-IDF */
-    _lock_acquire(&aes_lock);
+    portENTER_CRITICAL(&aes_spinlock);
 
     DPORT_STALL_OTHER_CPU_START();
     {
@@ -65,7 +79,7 @@ void esp_aes_release_hardware( void )
     }
     DPORT_STALL_OTHER_CPU_END();
 
-    _lock_release(&aes_lock);
+    portEXIT_CRITICAL(&aes_spinlock);
 }
 
 void esp_aes_init( esp_aes_context *ctx )
@@ -178,6 +192,7 @@ int esp_aes_crypt_ecb( esp_aes_context *ctx,
     esp_aes_setkey_hardware(ctx, mode);
     esp_aes_block(input, output);
     esp_aes_release_hardware();
+
     return 0;
 }
 
