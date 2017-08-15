@@ -13,13 +13,16 @@
 #include "freertos/semphr.h"
 #include "unity.h"
 #include "sdkconfig.h"
+#include "test_apb_dport_access.h"
 
 TEST_CASE("mbedtls SHA self-tests", "[mbedtls]")
 {
+    start_apb_access_loop();
     TEST_ASSERT_FALSE_MESSAGE(mbedtls_sha1_self_test(1), "SHA1 self-tests should pass.");
     TEST_ASSERT_FALSE_MESSAGE(mbedtls_sha256_self_test(1), "SHA256 self-tests should pass.");
     TEST_ASSERT_FALSE_MESSAGE(mbedtls_sha512_self_test(1), "SHA512 self-tests should pass.");
     TEST_ASSERT_FALSE_MESSAGE(mbedtls_sha512_self_test(1), "SHA512 self-tests should pass.");
+    verify_apb_access_loop();
 }
 
 static const unsigned char *one_hundred_as = (unsigned char *)
