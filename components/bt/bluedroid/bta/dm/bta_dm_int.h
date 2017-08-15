@@ -145,6 +145,9 @@ enum {
     BTA_DM_API_EXECUTE_CBACK_EVT,
     BTA_DM_API_REMOVE_ALL_ACL_EVT,
     BTA_DM_API_REMOVE_DEVICE_EVT,
+    BTA_DM_API_UPDATE_WHITE_LIST_EVT,
+    BTA_DM_API_BLE_READ_ADV_TX_POWER_EVT,
+    BTA_DM_API_BLE_READ_RSSI_EVT,
     BTA_DM_MAX_EVT
 };
 
@@ -161,8 +164,7 @@ enum {
     BTA_DM_SEARCH_CMPL_EVT,
     BTA_DM_DISCOVERY_RESULT_EVT,
     BTA_DM_API_DI_DISCOVER_EVT,
-    BTA_DM_DISC_CLOSE_TOUT_EVT
-
+    BTA_DM_DISC_CLOSE_TOUT_EVT,
 };
 
 /* data type for BTA_DM_API_ENABLE_EVT */
@@ -176,6 +178,23 @@ typedef struct {
     BT_HDR              hdr;
     BD_NAME             name; /* max 248 bytes name, plus must be Null terminated */
 } tBTA_DM_API_SET_NAME;
+
+typedef struct {
+    BT_HDR    hdr;
+    BOOLEAN   add_remove;
+    BD_ADDR   remote_addr;
+}tBTA_DM_API_UPDATE_WHITE_LIST;
+
+typedef struct {
+    BT_HDR       hdr;
+    tBTA_CMPL_CB *read_tx_power_cb;
+}tBTA_DM_API_READ_ADV_TX_POWER;
+
+typedef struct {
+    BT_HDR        hdr;
+    BD_ADDR       remote_addr;
+    tBTA_CMPL_CB  *read_rssi_cb;
+}tBTA_DM_API_READ_RSSI;
 
 /* data type for BTA_DM_API_SET_VISIBILITY_EVT */
 typedef struct {
@@ -684,6 +703,9 @@ typedef union {
 
     tBTA_DM_API_SET_NAME set_name;
 
+    tBTA_DM_API_UPDATE_WHITE_LIST white_list;
+    tBTA_DM_API_READ_ADV_TX_POWER read_tx_power;
+    tBTA_DM_API_READ_RSSI rssi;
     tBTA_DM_API_SET_VISIBILITY set_visibility;
 
     tBTA_DM_API_ADD_DEVICE  add_dev;
@@ -1101,6 +1123,9 @@ extern void bta_dm_search_sm_disable( void );
 extern void bta_dm_enable (tBTA_DM_MSG *p_data);
 extern void bta_dm_disable (tBTA_DM_MSG *p_data);
 extern void bta_dm_set_dev_name (tBTA_DM_MSG *p_data);
+extern void bta_dm_update_white_list(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_read_adv_tx_power(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_read_rssi(tBTA_DM_MSG *p_data);
 extern void bta_dm_set_visibility (tBTA_DM_MSG *p_data);
 
 extern void bta_dm_set_scan_config(tBTA_DM_MSG *p_data);

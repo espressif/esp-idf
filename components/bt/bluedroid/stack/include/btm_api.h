@@ -2833,6 +2833,11 @@ tBTM_STATUS BTM_ReadRSSI (BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb);
 tBTM_STATUS BTM_ReadTxPower (BD_ADDR remote_bda,
                              tBT_TRANSPORT transport, tBTM_CMPL_CB *p_cb);
 
+tBTM_STATUS BTM_BleReadAdvTxPower(tBTM_CMPL_CB *p_cb);
+
+void BTM_BleGetWhiteListSize(uint16_t *length);
+
+
 /*******************************************************************************
 **
 ** Function         BTM_ReadLinkQuality

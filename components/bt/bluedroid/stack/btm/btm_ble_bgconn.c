@@ -258,18 +258,22 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr)
     tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
 
     if (to_add && p_cb->white_list_avail_size == 0) {
-        BTM_TRACE_ERROR("%s Whitelist full, unable to add device", __func__);
+        BTM_TRACE_DEBUG("%s Whitelist full, unable to add device", __func__);
         return FALSE;
     }
 
     if (to_add) {
+        /* added the bd_addr to the connection hash map queue */
         background_connection_add((bt_bdaddr_t *)bd_addr);
     } else {
+        /* remove the bd_addr to the connection hash map queue */
         background_connection_remove((bt_bdaddr_t *)bd_addr);
     }
-
+    /* stop the auto connect */
     btm_suspend_wl_activity(p_cb->wl_state);
+    /* save the bd_addr to the btm_cb env */
     btm_enq_wl_dev_operation(to_add, bd_addr);
+    /* save the ba_addr to the controller white list & start the auto connet */
     btm_resume_wl_activity(p_cb->wl_state);
     return TRUE;
 }

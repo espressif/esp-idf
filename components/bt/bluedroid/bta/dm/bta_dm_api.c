@@ -183,6 +183,39 @@ void BTA_DmSetDeviceName(char *p_name)
 
 }
 
+void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr)
+{
+    tBTA_DM_API_UPDATE_WHITE_LIST *p_msg;
+    if ((p_msg = (tBTA_DM_API_UPDATE_WHITE_LIST *)osi_malloc(sizeof(tBTA_DM_API_UPDATE_WHITE_LIST))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_UPDATE_WHITE_LIST_EVT;
+        p_msg->add_remove = add_remove;
+        memcpy(p_msg->remote_addr, remote_addr, sizeof(BD_ADDR));
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleReadAdvTxPower(tBTA_CMPL_CB *cmpl_cb)
+{
+    tBTA_DM_API_READ_ADV_TX_POWER *p_msg;
+    if ((p_msg = (tBTA_DM_API_READ_ADV_TX_POWER *)osi_malloc(sizeof(tBTA_DM_API_READ_ADV_TX_POWER))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_BLE_READ_ADV_TX_POWER_EVT;
+        p_msg->read_tx_power_cb = cmpl_cb;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleReadRSSI(BD_ADDR remote_addr, tBTA_CMPL_CB *cmpl_cb)
+{
+    tBTA_DM_API_READ_RSSI *p_msg;
+    if ((p_msg = (tBTA_DM_API_READ_RSSI *)osi_malloc(sizeof(tBTA_DM_API_READ_RSSI))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_BLE_READ_RSSI_EVT;
+        memcpy(p_msg->remote_addr, remote_addr, sizeof(BD_ADDR));
+        p_msg->read_rssi_cb = cmpl_cb;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
 /*******************************************************************************
 **
 ** Function         BTA_DmSetVisibility

@@ -542,7 +542,7 @@ void BTM_BleSetPrefConnParams (BD_ADDR bd_addr,
                                UINT16 min_conn_int, UINT16 max_conn_int,
                                UINT16 slave_latency, UINT16 supervision_tout)
 {
-    tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev (bd_addr);
+    tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_or_alloc_dev (bd_addr);
 
     BTM_TRACE_API ("BTM_BleSetPrefConnParams min: %u  max: %u  latency: %u  \
                     tout: %u",

@@ -140,6 +140,9 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 
     bta_dm_remove_all_acl,                  /* BTA_DM_API_REMOVE_ALL_ACL_EVT */
     bta_dm_remove_device,                   /* BTA_DM_API_REMOVE_DEVICE_EVT */
+    bta_dm_update_white_list,               /* BTA_DM_API_UPDATE_WHITE_LIST_EVT */
+    bta_dm_ble_read_adv_tx_power,           /* BTA_DM_API_BLE_READ_ADV_TX_POWER_EVT */
+    bta_dm_ble_read_rssi,                   /* BTA_DM_API_BLE_READ_RSSI_EVT */
 };
 
 

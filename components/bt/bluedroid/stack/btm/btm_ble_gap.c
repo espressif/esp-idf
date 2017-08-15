@@ -246,10 +246,7 @@ void BTM_BleRegiseterConnParamCallback(tBTM_UPDATE_CONN_PARAM_CBACK *update_conn
 *******************************************************************************/
 BOOLEAN BTM_BleUpdateAdvWhitelist(BOOLEAN add_remove, BD_ADDR remote_bda)
 {
-    UNUSED(add_remove);
-    UNUSED(remote_bda);
-
-    return FALSE;
+    return btm_update_dev_to_white_list(add_remove, remote_bda);
 }
 
 /*******************************************************************************
@@ -3164,7 +3161,8 @@ tBTM_STATUS btm_ble_start_adv(void)
     }
 #endif
     if (p_cb->afp != AP_SCAN_CONN_ALL) {
-        btm_execute_wl_dev_operation();
+        //find the device in the btm dev buffer and write it to the controller white list
+        btm_execute_wl_dev_operation();    
         btm_cb.ble_ctr_cb.wl_state |= BTM_BLE_WL_ADV;
     }
 
