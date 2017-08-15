@@ -458,7 +458,7 @@ def main():
         choices=['CR', 'LF', 'CRLF'],
         type=lambda c: c.upper(),
         help="End of line to use when sending to the serial port",
-        default='CRLF')
+        default='CR')
 
     parser.add_argument(
         'elf_file', help='ELF file of application',
