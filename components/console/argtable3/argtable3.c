@@ -1125,8 +1125,8 @@ char * arg_strptime(const char *buf, const char *fmt, struct tm *tm)
         alt_format = 0;
 
         /* Eat up white-space. */
-        if (isspace(c)) {
-            while (isspace(*bp))
+        if (isspace((int) c)) {
+            while (isspace((int) *bp))
                 bp++;
 
             fmt++;
@@ -1400,7 +1400,7 @@ literal:
         case 'n': /* Any kind of white-space. */
         case 't':
             LEGAL_ALT(0);
-            while (isspace(*bp))
+            while (isspace((int) *bp))
                 bp++;
             break;
 
@@ -2085,7 +2085,7 @@ static long int strtol0X(const char * str,
     const char *ptr = str;        /* ptr to current position in str */
 
     /* skip leading whitespace */
-    while (isspace(*ptr))
+    while (isspace((int) *ptr))
         ptr++;
     /* printf("1) %s\n",ptr); */
 
@@ -2114,7 +2114,7 @@ static long int strtol0X(const char * str,
         return 0;
     }
     /* printf("3) %s\n",ptr); */
-    if (toupper(*ptr++) != toupper(X))
+    if (toupper((int) *ptr++) != toupper((int) X))
     {
         /* printf("failed to detect '%c'\n",X); */
         *endptr = str;
@@ -2141,7 +2141,7 @@ static long int strtol0X(const char * str,
 static int detectsuffix(const char *str, const char *suffix)
 {
     /* scan pairwise through strings until mismatch detected */
-    while( toupper(*str) == toupper(*suffix) )
+    while( toupper((int) *str) == toupper((int) *suffix) )
     {
         /* printf("'%c' '%c'\n", *str, *suffix); */
 
@@ -2160,7 +2160,7 @@ static int detectsuffix(const char *str, const char *suffix)
         return 0;   /* failed to consume entire suffix */
 
     /* skip any remaining whitespace in str */
-    while (isspace(*str))
+    while (isspace((int) *str))
         str++;
 
     /* return 1 (success) if we have reached end of str else return 0 (fail) */
@@ -3034,7 +3034,7 @@ static TRexChar trex_escapechar(TRex *exp)
 		case 'f': exp->_p++; return '\f';
 		default: return (*exp->_p++);
 		}
-	} else if(!scisprint(*exp->_p)) trex_error(exp,_SC("letter expected"));
+	} else if(!scisprint((int) *exp->_p)) trex_error(exp,_SC("letter expected"));
 	return (*exp->_p++);
 }
 
@@ -3076,7 +3076,7 @@ static int trex_charnode(TRex *exp,TRexBool isclass)
 				return trex_newnode(exp,t);
 		}
 	}
-	else if(!scisprint(*exp->_p)) {
+	else if(!scisprint((int) *exp->_p)) {
 
 		trex_error(exp,_SC("letter expected"));
 	}
@@ -3137,7 +3137,7 @@ static int trex_parsenumber(TRex *exp)
 	int ret = *exp->_p-'0';
 	int positions = 10;
 	exp->_p++;
-	while(isdigit(*exp->_p)) {
+	while(isdigit((int) *exp->_p)) {
 		ret = ret*10+(*exp->_p++-'0');
 		if(positions==1000000000) trex_error(exp,_SC("overflow in numeric constant"));
 		positions *= 10;
@@ -3189,7 +3189,7 @@ static int trex_element(TRex *exp)
 			case TREX_SYMBOL_GREEDY_ZERO_OR_ONE: p0 = 0; p1 = 1; exp->_p++; isgreedy = TRex_True; break;
 			case '{':
 				exp->_p++;
-				if(!isdigit(*exp->_p)) trex_error(exp,_SC("number expected"));
+				if(!isdigit((int) *exp->_p)) trex_error(exp,_SC("number expected"));
 				p0 = (unsigned short)trex_parsenumber(exp);
 				/*******************************/
 				switch(*exp->_p) {
@@ -3199,7 +3199,7 @@ static int trex_element(TRex *exp)
 			case ',':
 				exp->_p++;
 				p1 = 0xFFFF;
-				if(isdigit(*exp->_p)){
+				if(isdigit((int) *exp->_p)){
 					p1 = (unsigned short)trex_parsenumber(exp);
 				}
 				trex_expect(exp,'}');
@@ -3252,8 +3252,9 @@ static int trex_list(TRex *exp)
 	return ret;
 }
 
-static TRexBool trex_matchcclass(int cclass,TRexChar c)
+static TRexBool trex_matchcclass(int cclass,TRexChar ch)
 {
+    int c = ch;
 	switch(cclass) {
 	case 'a': return isalpha(c)?TRex_True:TRex_False;
 	case 'A': return !isalpha(c)?TRex_True:TRex_False;
@@ -3415,10 +3416,10 @@ static const TRexChar *trex_matchnode(TRex* exp,TRexNode *node,const TRexChar *s
 			return cur;
 	}
 	case OP_WB:
-		if((str == exp->_bol && !isspace(*str))
-		 || ((str == exp->_eol && !isspace(*(str-1))))
-		 || ((!isspace(*str) && isspace(*(str+1))))
-		 || ((isspace(*str) && !isspace(*(str+1)))) ) {
+		if((str == exp->_bol && !isspace((int) *str))
+		 || ((str == exp->_eol && !isspace((int) *(str-1))))
+		 || ((!isspace((int) *str) && isspace((int) *(str+1))))
+		 || ((isspace((int) *str) && !isspace((int) *(str+1)))) ) {
 			return (node->left == 'b')?str:NULL;
 		}
 		return (node->left == 'b')?NULL:str;
@@ -4778,7 +4779,7 @@ void arg_print_formatted( FILE *fp,
         /* Eat leading whitespaces. This is essential because while
            wrapping lines, there will often be a whitespace at beginning
            of line */
-        while ( isspace(*(text + line_start)) )
+        while ( isspace((int) *(text + line_start)) )
         { line_start++; }
 
         if ((line_end - line_start) > colwidth )
@@ -4787,7 +4788,7 @@ void arg_print_formatted( FILE *fp,
         /* Find last whitespace, that fits into line */
         while ( ( line_end > line_start )
                 && ( line_end - line_start > colwidth )
-                && !isspace(*(text + line_end)))
+                && !isspace((int) *(text + line_end)))
         { line_end--; }
 
         /* Do not print trailing whitespace. If this text
