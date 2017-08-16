@@ -898,7 +898,7 @@ int linenoiseProbe() {
     int timeout_ms = 200;
     size_t read_bytes = 0;
     while (timeout_ms > 0 && read_bytes < 4) { // response is ESC[0n or ESC[3n
-        usleep(1000);
+        usleep(10000);
         char c;
         int cb = fread(&c, 1, 1, stdin);
         read_bytes += cb;
