@@ -36,7 +36,7 @@ typedef volatile struct {
         };
         uint32_t val;
     } cmd;
-    uint32_t addr;                                          /*addr to slave / from master */
+    uint32_t addr;                                          /*addr to slave / from master. SPI transfer from the MSB to the LSB. If length > 32 bits, then address continues from MSB of slv_wr_status.*/
     union {
         struct {
             uint32_t reserved0:         10;                 /*reserved*/

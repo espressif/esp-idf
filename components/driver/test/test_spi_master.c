@@ -131,7 +131,7 @@ static void spi_test(spi_device_handle_t handle, int num_bytes) {
     t.length=num_bytes*8;
     t.tx_buffer=sendbuf;
     t.rx_buffer=recvbuf;
-    t.address=0xA00000000000000FL;
+    t.addr=0xA00000000000000FL;
     t.command=0x55;
 
     printf("Transmitting %d bytes...\n", num_bytes);
