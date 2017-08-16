@@ -14,11 +14,13 @@
 
 #include <string.h>
 #include <stdbool.h>
+#include <stdarg.h>
+#include <sys/errno.h>
+#include <sys/lock.h>
+#include <sys/fcntl.h>
 #include "esp_vfs.h"
 #include "esp_vfs_dev.h"
 #include "esp_attr.h"
-#include "sys/errno.h"
-#include "sys/lock.h"
 #include "soc/uart_struct.h"
 #include "driver/uart.h"
 #include "sdkconfig.h"
@@ -48,6 +50,10 @@ static uart_dev_t* s_uarts[UART_NUM] = {&UART0, &UART1, &UART2};
 static _lock_t s_uart_locks[UART_NUM];
 // One-character buffer used for newline conversion code, per UART
 static int s_peek_char[UART_NUM] = { NONE, NONE, NONE };
+// Per-UART non-blocking flag. Note: default implementation does not honor this
+// flag, all reads are non-blocking. This option becomes effective if UART
+// driver is used.
+static bool s_non_blocking[UART_NUM];
 
 // Newline conversion mode when transmitting
 static esp_line_endings_t s_tx_mode =
@@ -122,8 +128,9 @@ static int uart_rx_char(int fd)
 static int uart_rx_char_via_driver(int fd)
 {
     uint8_t c;
-    int n = uart_read_bytes(fd, &c, 1, portMAX_DELAY);
-    if (n == 0) {
+    int timeout = s_non_blocking[fd] ? 0 : portMAX_DELAY;
+    int n = uart_read_bytes(fd, &c, 1, timeout);
+    if (n <= 0) {
         return NONE;
     }
     return c;
@@ -203,6 +210,8 @@ static ssize_t uart_read(int fd, void* data, size_t size)
                     uart_return_char(fd, c2);
                 }
             }
+        } else if (c == NONE) {
+            break;
         }
         data_c[received] = (char) c;
         ++received;
@@ -231,6 +240,25 @@ static int uart_close(int fd)
     return 0;
 }
 
+static int uart_fcntl(int fd, int cmd, va_list args)
+{
+    assert(fd >=0 && fd < 3);
+    int result = 0;
+    if (cmd == F_GETFL) {
+        if (s_non_blocking[fd]) {
+            result |= O_NONBLOCK;
+        }
+    } else if (cmd == F_SETFL) {
+        int arg = va_arg(args, int);
+        s_non_blocking[fd] = (arg & O_NONBLOCK) != 0;
+    } else {
+        // unsupported operation
+        result = -1;
+        errno = ENOSYS;
+    }
+    return result;
+}
+
 void esp_vfs_dev_uart_register()
 {
     esp_vfs_t vfs = {
@@ -241,11 +269,7 @@ void esp_vfs_dev_uart_register()
         .fstat = &uart_fstat,
         .close = &uart_close,
         .read = &uart_read,
-        .lseek = NULL,
-        .stat = NULL,
-        .link = NULL,
-        .unlink = NULL,
-        .rename = NULL
+        .fcntl = &uart_fcntl
     };
     ESP_ERROR_CHECK(esp_vfs_register("/dev/uart", &vfs, NULL));
 }
