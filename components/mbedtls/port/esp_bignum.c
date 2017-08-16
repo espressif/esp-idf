@@ -76,16 +76,19 @@ void esp_mpi_acquire_hardware( void )
     /* newlib locks lazy initialize on ESP-IDF */
     _lock_acquire(&mpi_lock);
 
-    DPORT_REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_RSA);
-    /* also clear reset on digital signature, otherwise RSA is held in reset */
-    DPORT_REG_CLR_BIT(DPORT_PERI_RST_EN_REG,
-                DPORT_PERI_EN_RSA
-                | DPORT_PERI_EN_DIGITAL_SIGNATURE);
+    DPORT_STALL_OTHER_CPU_START();
+    {
+        _DPORT_REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_RSA);
+        /* also clear reset on digital signature, otherwise RSA is held in reset */
+        _DPORT_REG_CLR_BIT(DPORT_PERI_RST_EN_REG,
+                           DPORT_PERI_EN_RSA
+                           | DPORT_PERI_EN_DIGITAL_SIGNATURE);
 
-    DPORT_REG_CLR_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
+        _DPORT_REG_CLR_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
+    }
+    DPORT_STALL_OTHER_CPU_END();
 
     while(DPORT_REG_READ(RSA_CLEAN_REG) != 1);
-
     // Note: from enabling RSA clock to here takes about 1.3us
 
 #ifdef CONFIG_MBEDTLS_MPI_USE_INTERRUPT
@@ -95,11 +98,15 @@ void esp_mpi_acquire_hardware( void )
 
 void esp_mpi_release_hardware( void )
 {
-    DPORT_REG_SET_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
+    DPORT_STALL_OTHER_CPU_START();
+    {
+        _DPORT_REG_SET_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
 
-    /* don't reset digital signature unit, as this resets AES also */
-    DPORT_REG_SET_BIT(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_RSA);
-    DPORT_REG_CLR_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_RSA);
+        /* don't reset digital signature unit, as this resets AES also */
+        _DPORT_REG_SET_BIT(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_RSA);
+        _DPORT_REG_CLR_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_RSA);
+    }
+    DPORT_STALL_OTHER_CPU_END();
 
     _lock_release(&mpi_lock);
 }
@@ -139,6 +146,9 @@ static inline size_t bits_to_hardware_words(size_t num_bits)
 
    If num_words is higher than the number of words in the bignum then
    these additional words will be zeroed in the memory buffer.
+
+   As this function only writes to DPORT memory, no DPORT_STALL_OTHER_CPU_START()
+   is required.
 */
 static inline void mpi_to_mem_block(uint32_t mem_base, const mbedtls_mpi *mpi, size_t num_words)
 {
@@ -146,10 +156,14 @@ static inline void mpi_to_mem_block(uint32_t mem_base, const mbedtls_mpi *mpi, s
     uint32_t copy_words = num_words < mpi->n ? num_words : mpi->n;
 
     /* Copy MPI data to memory block registers */
-    memcpy(pbase, mpi->p, copy_words * 4);
+    for (int i = 0; i < copy_words; i++) {
+        pbase[i] = mpi->p[i];
+    }
 
     /* Zero any remaining memory block data */
-    bzero(pbase + copy_words, (num_words - copy_words) * 4);
+    for (int i = copy_words; i < num_words; i++) {
+        pbase[i] = 0;
+    }
 
     /* Note: not executing memw here, can do it before we start a bignum operation */
 }
@@ -159,6 +173,8 @@ static inline void mpi_to_mem_block(uint32_t mem_base, const mbedtls_mpi *mpi, s
    Reads num_words words from block.
 
    Can return a failure result if fails to grow the MPI result.
+
+   Cannot be called inside DPORT_STALL_OTHER_CPU_START() (as may allocate memory).
 */
 static inline int mem_block_to_mpi(mbedtls_mpi *x, uint32_t mem_base, int num_words)
 {
@@ -167,9 +183,13 @@ static inline int mem_block_to_mpi(mbedtls_mpi *x, uint32_t mem_base, int num_wo
     MBEDTLS_MPI_CHK( mbedtls_mpi_grow(x, num_words) );
 
     /* Copy data from memory block registers */
-    for (size_t i = 0; i < num_words; ++i) {
-        x->p[i] = DPORT_REG_READ(mem_base + i * 4);
+    DPORT_STALL_OTHER_CPU_START();
+    {
+        for (size_t i = 0; i < num_words; ++i) {
+            x->p[i] = _DPORT_REG_READ(mem_base + i * 4);
+        }
     }
+    DPORT_STALL_OTHER_CPU_END();
 
     /* Zero any remaining limbs in the bignum, if the buffer is bigger
        than num_words */
@@ -238,10 +258,13 @@ static int calculate_rinv(mbedtls_mpi *Rinv, const mbedtls_mpi *M, int num_words
 }
 
 
-/* Execute RSA operation. op_reg specifies which 'START' register
+/* Begin an RSA operation. op_reg specifies which 'START' register
    to write to.
+
+   Because the only DPORT operations here are writes,
+   does not need protecting via DPORT_STALL_OTHER_CPU_START();
 */
-static inline void execute_op(uint32_t op_reg)
+static inline void start_op(uint32_t op_reg)
 {
     /* Clear interrupt status */
     DPORT_REG_WRITE(RSA_INTERRUPT_REG, 1);
@@ -250,7 +273,15 @@ static inline void execute_op(uint32_t op_reg)
        to the memory blocks are also complete. */
 
     DPORT_REG_WRITE(op_reg, 1);
+}
 
+/* Wait for an RSA operation to complete.
+
+   This should NOT be called inside a DPORT_STALL_OTHER_CPU_START(), as it will stall the other CPU for an unacceptably long
+   period (and - depending on config - may require interrupts enabled).
+*/
+static inline void wait_op_complete(uint32_t op_reg)
+{
 #ifdef CONFIG_MBEDTLS_MPI_USE_INTERRUPT
     if (!xSemaphoreTake(op_complete_sem, 2000 / portTICK_PERIOD_MS)) {
         ESP_LOGE(TAG, "Timed out waiting for RSA operation (op_reg 0x%x int_reg 0x%x)",
@@ -258,12 +289,13 @@ static inline void execute_op(uint32_t op_reg)
         abort(); /* indicates a fundamental problem with driver */
     }
 #else
-    while(REG_READ(RSA_INTERRUPT_REG) != 1)
+    while(DPORT_REG_READ(RSA_INTERRUPT_REG) != 1)
        { }
-#endif
 
     /* clear the interrupt */
     DPORT_REG_WRITE(RSA_INTERRUPT_REG, 1);
+#endif
+
 }
 
 /* Sub-stages of modulo multiplication/exponentiation operations */
@@ -287,6 +319,8 @@ int esp_mpi_mul_mpi_mod(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi 
 
     esp_mpi_acquire_hardware();
 
+    /* (As the following are all writes to DPORT memory, no DPORT_STALL_OTHER_CPU_START is required.) */
+
     /* Load M, X, Rinv, Mprime (Mprime is mod 2^32) */
     mpi_to_mem_block(RSA_MEM_M_BLOCK_BASE, M, num_words);
     mpi_to_mem_block(RSA_MEM_X_BLOCK_BASE, X, num_words);
@@ -297,10 +331,12 @@ int esp_mpi_mul_mpi_mod(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi 
     DPORT_REG_WRITE(RSA_MULT_MODE_REG, (num_words / 16) - 1);
 
     /* Execute first stage montgomery multiplication */
-    execute_op(RSA_MULT_START_REG);
+    start_op(RSA_MULT_START_REG);
+
+    wait_op_complete(RSA_MULT_START_REG);
 
     /* execute second stage */
-    MBEDTLS_MPI_CHK( modular_multiply_finish(Z, X, Y, num_words) );
+    ret = modular_multiply_finish(Z, X, Y, num_words);
 
     esp_mpi_release_hardware();
 
@@ -366,6 +402,8 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi
 
     esp_mpi_acquire_hardware();
 
+    /* (As the following are all writes to DPORT memory, no DPORT_STALL_OTHER_CPU_START is required.) */
+
     /* "mode" register loaded with number of 512-bit blocks, minus 1 */
     DPORT_REG_WRITE(RSA_MODEXP_MODE_REG, (num_words / 16) - 1);
 
@@ -376,10 +414,11 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi
     mpi_to_mem_block(RSA_MEM_RB_BLOCK_BASE, Rinv, num_words);
     DPORT_REG_WRITE(RSA_M_DASH_REG, Mprime);
 
-    execute_op(RSA_START_MODEXP_REG);
+    start_op(RSA_START_MODEXP_REG);
+
+    wait_op_complete(RSA_START_MODEXP_REG);
 
     ret = mem_block_to_mpi(Z, RSA_MEM_Z_BLOCK_BASE, num_words);
-
     esp_mpi_release_hardware();
 
  cleanup:
@@ -407,11 +446,14 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi
  */
 static int modular_multiply_finish(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t num_words)
 {
-    int ret;
+    int ret = 0;
+
     /* Load Y to X input memory block, rerun */
     mpi_to_mem_block(RSA_MEM_X_BLOCK_BASE, Y, num_words);
 
-    execute_op(RSA_MULT_START_REG);
+    start_op(RSA_MULT_START_REG);
+
+    wait_op_complete(RSA_MULT_START_REG);
 
     /* Read result into Z */
     ret = mem_block_to_mpi(Z, RSA_MEM_Z_BLOCK_BASE, num_words);
@@ -429,7 +471,7 @@ static int mpi_mult_mpi_overlong(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbe
 /* Z = X * Y */
 int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y )
 {
-    int ret;
+    int ret = 0;
     size_t bits_x, bits_y, words_x, words_y, words_mult, words_z;
 
     /* Count words needed for X & Y in hardware */
@@ -511,7 +553,9 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
     */
     DPORT_REG_WRITE(RSA_MULT_MODE_REG, (words_z / 16) + 7);
 
-    execute_op(RSA_MULT_START_REG);
+    start_op(RSA_MULT_START_REG);
+
+    wait_op_complete(RSA_MULT_START_REG);
 
     /* Read back the result */
     ret = mem_block_to_mpi(Z, RSA_MEM_Z_BLOCK_BASE, words_z);
@@ -566,14 +610,15 @@ static int mpi_mult_mpi_failover_mod_mult(mbedtls_mpi *Z, const mbedtls_mpi *X, 
         DPORT_REG_WRITE(RSA_MEM_RB_BLOCK_BASE + i * 4, 0);
     }
 
-    execute_op(RSA_MULT_START_REG);
+    start_op(RSA_MULT_START_REG);
+
+    wait_op_complete(RSA_MULT_START_REG);
 
     /* finish the modular multiplication */
-    MBEDTLS_MPI_CHK( modular_multiply_finish(Z, X, Y, num_words) );
+    ret = modular_multiply_finish(Z, X, Y, num_words);
 
     esp_mpi_release_hardware();
 
- cleanup:
     return ret;
 }
 
@@ -596,7 +641,7 @@ static int mpi_mult_mpi_failover_mod_mult(mbedtls_mpi *Z, const mbedtls_mpi *X, 
 */
 static int mpi_mult_mpi_overlong(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t bits_y, size_t words_result)
 {
-    int ret;
+    int ret = 0;
     mbedtls_mpi Ztemp;
     const size_t limbs_y = (bits_y + biL - 1) / biL;
     /* Rather than slicing in two on bits we slice on limbs (32 bit words) */
