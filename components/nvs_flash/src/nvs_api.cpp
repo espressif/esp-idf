@@ -30,11 +30,12 @@ static const char* TAG = "nvs";
 
 class HandleEntry : public intrusive_list_node<HandleEntry>
 {
+    static uint32_t s_nvs_next_handle;
 public:
     HandleEntry() {}
 
-    HandleEntry(nvs_handle handle, bool readOnly, uint8_t nsIndex) :
-        mHandle(handle),
+    HandleEntry(bool readOnly, uint8_t nsIndex) :
+        mHandle(++s_nvs_next_handle),  // Begin the handle value with 1
         mReadOnly(readOnly),
         mNsIndex(nsIndex)
     {
@@ -53,7 +54,7 @@ using namespace std;
 using namespace nvs;
 
 static intrusive_list<HandleEntry> s_nvs_handles;
-static uint32_t s_nvs_next_handle = 1;
+uint32_t HandleEntry::s_nvs_next_handle;
 static nvs::Storage s_nvs_storage;
 
 extern "C" void nvs_dump()
@@ -121,11 +122,11 @@ extern "C" esp_err_t nvs_open(const char* name, nvs_open_mode open_mode, nvs_han
         return err;
     }
 
-    uint32_t handle = s_nvs_next_handle;
-    ++s_nvs_next_handle;
-    *out_handle = handle;
+    HandleEntry *handle_entry = new HandleEntry(open_mode==NVS_READONLY, nsIndex);
+    s_nvs_handles.push_back(handle_entry);
 
-    s_nvs_handles.push_back(new HandleEntry(handle, open_mode==NVS_READONLY, nsIndex));
+    *out_handle = handle_entry->mHandle;
+
     return ESP_OK;
 }
 
