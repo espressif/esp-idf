@@ -125,7 +125,7 @@ COMPONENT_DIRS += $(abspath $(SRCDIRS))
 endif
 
 # The project Makefile can define a list of components, but if it does not do this we just take all available components
-# in the component dirs. A component is COMPONENT_DIRS directory, or immediate subdirectory, 
+# in the component dirs. A component is COMPONENT_DIRS directory, or immediate subdirectory,
 # which contains a component.mk file.
 #
 # Use the "make list-components" target to debug this step.
@@ -222,6 +222,7 @@ LDFLAGS ?= -nostdlib \
 	$(COMPONENT_LDFLAGS) \
 	-lgcc \
 	-lstdc++ \
+	-lgcov \
 	-Wl,--end-group \
 	-Wl,-EL
 

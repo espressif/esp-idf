@@ -161,4 +161,105 @@ uint8_t *esp_apptrace_down_buffer_get(esp_apptrace_dest_t dest, uint32_t *size, 
  */
 esp_err_t esp_apptrace_down_buffer_put(esp_apptrace_dest_t dest, uint8_t *ptr, uint32_t tmo);
 
+/**
+ * @brief Checks whether host is connected.
+ *
+ * @param dest Indicates HW interface to use.
+ *
+ * @return true if host is connected, otherwise false
+ */
+bool esp_apptrace_host_is_connected(esp_apptrace_dest_t dest);
+
+/**
+ * @brief Opens file on host.
+ *		  This function has the same semantic as 'fopen' except for the first argument.
+ *
+ * @param dest Indicates HW interface to use.
+ * @param path Path to file.
+ * @param mode Mode string. See fopen for details.
+ *
+ * @return non zero file handle on success, otherwise 0
+ */
+void *esp_apptrace_fopen(esp_apptrace_dest_t dest, const char *path, const char *mode);
+
+/**
+ * @brief Closes file on host.
+ *		  This function has the same semantic as 'fclose' except for the first argument.
+ *
+ * @param dest   Indicates HW interface to use.
+ * @param stream File handle returned by esp_apptrace_fopen.
+ *
+ * @return Zero on success, otherwise non-zero. See fclose for details.
+ */
+int esp_apptrace_fclose(esp_apptrace_dest_t dest, void *stream);
+
+/**
+ * @brief Writes to file on host.
+ *		  This function has the same semantic as 'fwrite' except for the first argument.
+ *
+ * @param dest   Indicates HW interface to use.
+ * @param ptr 	 Address of data to write.
+ * @param size 	 Size of an item.
+ * @param nmemb  Number of items to write.
+ * @param stream File handle returned by esp_apptrace_fopen.
+ *
+ * @return Number of written items. See fwrite for details.
+ */
+size_t esp_apptrace_fwrite(esp_apptrace_dest_t dest, const void *ptr, size_t size, size_t nmemb, void *stream);
+
+/**
+ * @brief Read file on host.
+ *		  This function has the same semantic as 'fread' except for the first argument.
+ *
+ * @param dest   Indicates HW interface to use.
+ * @param ptr 	 Address to store read data.
+ * @param size 	 Size of an item.
+ * @param nmemb  Number of items to read.
+ * @param stream File handle returned by esp_apptrace_fopen.
+ *
+ * @return Number of read items. See fread for details.
+ */
+size_t esp_apptrace_fread(esp_apptrace_dest_t dest, void *ptr, size_t size, size_t nmemb, void *stream);
+
+/**
+ * @brief Set position indicator in file on host.
+ *		  This function has the same semantic as 'fseek' except for the first argument.
+ *
+ * @param dest   Indicates HW interface to use.
+ * @param stream File handle returned by esp_apptrace_fopen.
+ * @param offset Offset. See fseek for details.
+ * @param whence Position in file. See fseek for details.
+ *
+ * @return Zero on success, otherwise non-zero. See fseek for details.
+ */
+int esp_apptrace_fseek(esp_apptrace_dest_t dest, void *stream, long offset, int whence);
+
+/**
+ * @brief Get current position indicator for file on host.
+ *		  This function has the same semantic as 'ftell' except for the first argument.
+ *
+ * @param dest   Indicates HW interface to use.
+ * @param stream File handle returned by esp_apptrace_fopen.
+ *
+ * @return Current position in file. See ftell for details.
+ */
+int esp_apptrace_ftell(esp_apptrace_dest_t dest, void *stream);
+
+/**
+ * @brief Indicates to the host that all file operations are completed.
+ *		  This function should be called after all file operations are finished and 
+ *		  indicate to the host that it can perform cleanup operations (close open files etc.).
+ *
+ * @param dest   Indicates HW interface to use.
+ *
+ * @return ESP_OK on success, otherwise see esp_err_t
+ */
+int esp_apptrace_fstop(esp_apptrace_dest_t dest);
+
+/**
+ * @brief Triggers gcov info dump.
+ *		  This function waits for the host to connect to target before dumping data.
+ */
+void esp_gcov_dump(void);
+
 #endif
