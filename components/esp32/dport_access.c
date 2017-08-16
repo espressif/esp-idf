@@ -69,17 +69,18 @@ static BaseType_t oldInterruptLevel[2];
 void IRAM_ATTR esp_dport_access_stall_other_cpu_start(void)
 {
 #ifndef CONFIG_FREERTOS_UNICORE
-    int cpu_id = xPortGetCoreID();
-
     if (dport_core_state[0] == DPORT_CORE_STATE_IDLE
-            || dport_core_state[1] == DPORT_CORE_STATE_IDLE) {
+        || dport_core_state[1] == DPORT_CORE_STATE_IDLE) {
         return;
     }
+
+    BaseType_t intLvl = portENTER_CRITICAL_NESTED();
+
+    int cpu_id = xPortGetCoreID();
 
 #ifdef DPORT_ACCESS_BENCHMARK
     ccount_start[cpu_id] = XTHAL_GET_CCOUNT();
 #endif
-    BaseType_t intLvl = portENTER_CRITICAL_NESTED();
 
     if (dport_access_ref[cpu_id] == 0) {
         portENTER_CRITICAL_ISR(&g_dport_mux);
