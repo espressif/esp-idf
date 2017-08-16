@@ -105,41 +105,58 @@ void app_main()
     register_system();
     register_wifi();
 
+    /* Prompt to be printed before each line.
+     * This can be customized, made dynamic, etc.
+     */
+    const char* prompt = LOG_COLOR_I "esp32> " LOG_RESET_COLOR;
+
     printf("\n"
            "This is an example of ESP-IDF console component.\n"
            "Type 'help' to get the list of commands.\n"
            "Use UP/DOWN arrows to navigate through command history.\n"
            "Press TAB when typing command name to auto-complete.\n");
 
-    /* Prompt to be printed before each line.
-     * This can be customized, made dynamic, etc.
-     */
-    const char* prompt = LOG_COLOR_I "[esp32]> " LOG_RESET_COLOR;
+    /* Figure out if the terminal supports escape sequences */
+    int probe_status = linenoiseProbe();
+    if (probe_status) { /* zero indicates success */
+        printf("\n"
+               "Your terminal application does not support escape sequences.\n"
+               "Line editing and history features are disabled.\n"
+               "On Windows, try using Putty instead.\n");
+        linenoiseSetDumbMode(1);
+#if CONFIG_LOG_COLORS
+        /* Since the terminal doesn't support escape sequences,
+         * don't use color codes in the prompt.
+         */
+        prompt = "esp32> ";
+#endif //CONFIG_LOG_COLORS
+    }
 
     /* Main loop */
-    char *line;
-    /* Get a line using linenoise.
-     * The line is returned when ENTER is pressed.
-     */
-    while((line = linenoise(prompt)) != NULL) {
-        if (strlen(line) > 0) {  /* Ignore empty lines */
-            /* Add the command to the history */
-            linenoiseHistoryAdd(line);
+    while(true) {
+        /* Get a line using linenoise.
+         * The line is returned when ENTER is pressed.
+         */
+        char* line = linenoise(prompt);
+        if (line == NULL) { /* Ignore empty lines */
+            continue;
+        }
+        /* Add the command to the history */
+        linenoiseHistoryAdd(line);
 #if CONFIG_STORE_HISTORY
-            /* Save command history to filesystem */
-            linenoiseHistorySave(HISTORY_PATH);
+        /* Save command history to filesystem */
+        linenoiseHistorySave(HISTORY_PATH);
 #endif
 
-            /* Try to run the command */
-            int ret;
-            esp_err_t err = esp_console_run(line, &ret);
-            if (err == ESP_ERR_NOT_FOUND) {
-                printf("Unrecognized command\n");
-            } else if (err == ESP_OK && ret != ESP_OK) {
-                printf("Command returned non-zero error code: 0x%x\n", ret);
-            } else if (err != ESP_OK) {
-                printf("Internal error: 0x%x\n", err);
-            }
+        /* Try to run the command */
+        int ret;
+        esp_err_t err = esp_console_run(line, &ret);
+        if (err == ESP_ERR_NOT_FOUND) {
+            printf("Unrecognized command\n");
+        } else if (err == ESP_OK && ret != ESP_OK) {
+            printf("Command returned non-zero error code: 0x%x\n", ret);
+        } else if (err != ESP_OK) {
+            printf("Internal error: 0x%x\n", err);
         }
         /* linenoise allocates line buffer on the heap, so need to free it */
         linenoiseFree(line);

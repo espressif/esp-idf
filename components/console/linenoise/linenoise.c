@@ -112,6 +112,7 @@
 #include <ctype.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/fcntl.h>
 #include <unistd.h>
 #include "linenoise.h"
 
@@ -123,6 +124,7 @@ static linenoiseHintsCallback *hintsCallback = NULL;
 static linenoiseFreeHintsCallback *freeHintsCallback = NULL;
 
 static int mlmode = 0;  /* Multi line mode. Default is single line. */
+static int dumbmode = 0; /* Dumb mode where line editing is disabled. Off by default */
 static int history_max_len = LINENOISE_DEFAULT_HISTORY_MAX_LEN;
 static int history_len = 0;
 static char **history = NULL;
@@ -194,6 +196,11 @@ void linenoiseSetMultiLine(int ml) {
     mlmode = ml;
 }
 
+/* Set if terminal does not recognize escape sequences */
+void linenoiseSetDumbMode(int set) {
+    dumbmode = set;
+}
+
 /* Use the ESC [6n escape sequence to query the horizontal cursor position
  * and return it. On error -1 is returned, on success the position of the
  * cursor. */
@@ -204,6 +211,7 @@ static int getCursorPosition() {
 
     /* Report cursor location */
     fprintf(stdout, "\x1b[6n");
+
     /* Read the response: ESC [ rows ; cols R */
     while (i < sizeof(buf)-1) {
         if (fread(buf+i, 1, 1, stdin) != 1) break;
@@ -875,6 +883,38 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
     return l.len;
 }
 
+int linenoiseProbe() {
+    /* Switch to non-blocking mode */
+    int flags = fcntl(STDIN_FILENO, F_GETFL);
+    flags |= O_NONBLOCK;
+    int res = fcntl(STDIN_FILENO, F_SETFL, flags);
+    if (res != 0) {
+        return -1;
+    }
+    /* Device status request */
+    fprintf(stdout, "\x1b[5n");
+
+    /* Try to read response */
+    int timeout_ms = 200;
+    size_t read_bytes = 0;
+    while (timeout_ms > 0 && read_bytes < 4) { // response is ESC[0n or ESC[3n
+        usleep(1000);
+        char c;
+        int cb = fread(&c, 1, 1, stdin);
+        read_bytes += cb;
+        timeout_ms--;
+    }
+    /* Restore old mode */
+    flags &= ~O_NONBLOCK;
+    res = fcntl(STDIN_FILENO, F_SETFL, flags);
+    if (res != 0) {
+        return -1;
+    }
+    if (read_bytes < 4) {
+        return -2;
+    }
+    return 0;
+}
 
 static int linenoiseRaw(char *buf, size_t buflen, const char *prompt) {
     int count;
@@ -885,18 +925,65 @@ static int linenoiseRaw(char *buf, size_t buflen, const char *prompt) {
     }
 
     count = linenoiseEdit(buf, buflen, prompt);
-    printf("\n");
+    fputc('\n', stdout);
     return count;
+}
+
+static int linenoiseDumb(char* buf, size_t buflen, const char* prompt) {
+    /* dumb terminal, fall back to fgets */
+    fputs(prompt, stdout);
+    int count = 0;
+    while (count < buflen) {
+        int c = fgetc(stdin);
+        if (c == '\n') {
+            break;
+        } else if (c >= 0x1c && c <= 0x1f){
+            continue; /* consume arrow keys */
+        } else if (c == BACKSPACE || c == 0x8) {
+            if (count > 0) {
+                buf[count - 1] = 0;
+                count --;
+            }
+            fputs("\x08 ", stdout); /* Windows CMD: erase symbol under cursor */
+        } else {
+            buf[count] = c;
+            ++count;
+        }
+        fputc(c, stdout); /* echo */
+    }
+    fputc('\n', stdout);
+    return count;
+}
+
+static void sanitize(char* src) {
+    char* dst = src;
+    for (int c = *src; c != 0; src++, c = *src) {
+        if (isprint(c)) {
+            *dst = c;
+            ++dst;
+        }
+    }
+    *dst = 0;
 }
 
 /* The high level function that is the main API of the linenoise library. */
 char *linenoise(const char *prompt) {
-    char buf[LINENOISE_MAX_LINE];
-    int count;
-
-    count = linenoiseRaw(buf,LINENOISE_MAX_LINE,prompt);
-    if (count == -1) return NULL;
-    return strdup(buf);
+    char *buf = calloc(1, LINENOISE_MAX_LINE);
+    int count = 0;
+    if (!dumbmode) {
+        count = linenoiseRaw(buf, LINENOISE_MAX_LINE, prompt);
+    } else {
+        count = linenoiseDumb(buf, LINENOISE_MAX_LINE, prompt);
+    }
+    if (count > 0) {
+        sanitize(buf);
+        count = strlen(buf);
+    }
+    if (count <= 0) {
+        free(buf);
+        return NULL;
+    }
+    return buf;
 }
 
 /* This is just a wrapper the user may want to call in order to make sure

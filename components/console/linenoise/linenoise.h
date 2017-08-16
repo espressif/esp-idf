@@ -56,6 +56,7 @@ void linenoiseSetHintsCallback(linenoiseHintsCallback *);
 void linenoiseSetFreeHintsCallback(linenoiseFreeHintsCallback *);
 void linenoiseAddCompletion(linenoiseCompletions *, const char *);
 
+int linenoiseProbe(void);
 char *linenoise(const char *prompt);
 void linenoiseFree(void *ptr);
 int linenoiseHistoryAdd(const char *line);
@@ -65,6 +66,7 @@ int linenoiseHistoryLoad(const char *filename);
 void linenoiseHistoryFree();
 void linenoiseClearScreen(void);
 void linenoiseSetMultiLine(int ml);
+void linenoiseSetDumbMode(int set);
 void linenoisePrintKeyCodes(void);
 
 #ifdef __cplusplus
