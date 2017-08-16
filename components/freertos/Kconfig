@@ -96,8 +96,7 @@ config FREERTOS_WATCHPOINT_END_OF_STACK
 
 config FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
     int "Number of thread local storage pointers"
-    range 0 256 if !(WIFI_ENABLED || ETHERNET)
-    range 1 256 if WIFI_ENABLED || ETHERNET
+    range 1 256
     default 1
     help
         FreeRTOS has the ability to store per-thread pointers in the task

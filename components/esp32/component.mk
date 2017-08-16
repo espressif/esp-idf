@@ -7,12 +7,8 @@ CFLAGS += -DBOOTLOADER_BUILD
 #endif
 
 COMPONENT_SRCDIRS := . hwcrypto
-LIBS := core rtc
-ifdef CONFIG_PHY_ENABLED # BT || WIFI
-LIBS += phy coexist
-endif
-ifdef CONFIG_WIFI_ENABLED
-LIBS += net80211 pp wpa smartconfig coexist wps wpa2
+ifndef CONFIG_NO_BLOBS
+LIBS := core rtc net80211 pp wpa smartconfig coexist wps wpa2 phy
 endif
 
 LINKER_SCRIPTS += esp32.common.ld esp32.rom.ld esp32.peripherals.ld

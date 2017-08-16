@@ -41,6 +41,20 @@ extern "C" {
 #endif
 
 /**
+ * @brief Initialize Wi-Fi Driver
+ *     Alloc resource for WiFi driver, such as WiFi control structure, RX/TX buffer,
+ *     WiFi NVS structure among others.
+ *
+ * @param  config provide WiFi init configuration
+ *
+ * @return
+ *    - ESP_OK: succeed
+ *    - ESP_ERR_WIFI_NO_MEM: out of memory
+ *    - others: refer to error code esp_err.h
+ */
+esp_err_t esp_wifi_init_internal(wifi_init_config_t *config);
+
+/**
   * @brief  get whether the wifi driver is allowed to transmit data or not
   *
   * @return

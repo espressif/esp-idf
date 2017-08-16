@@ -39,6 +39,9 @@ static const char* TAG = "system_api";
 
 static uint8_t base_mac_addr[6] = { 0 };
 
+#define SHUTDOWN_HANDLERS_NO 2
+static shutdown_handler_t shutdown_handlers[SHUTDOWN_HANDLERS_NO];
+
 void system_init()
 {
 }
@@ -227,23 +230,28 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
     return ESP_OK;
 }
 
-void esp_restart_noos() __attribute__ ((noreturn));
-
-/* Dummy function to be used instead of esp_wifi_stop if WiFi stack is not
- * linked in (even though CONFIG_WIFI_ENABLED is set).
- */
-esp_err_t wifi_stop_noop()
+esp_err_t esp_register_shutdown_handler(shutdown_handler_t handler)
 {
-    return ESP_OK;
+     int i;
+     for (i = 0; i < SHUTDOWN_HANDLERS_NO; i++) {
+	  if (shutdown_handlers[i] == NULL) {
+	       shutdown_handlers[i] = handler;
+	       return ESP_OK;
+	  }
+     }
+     return ESP_FAIL;
 }
 
-esp_err_t esp_wifi_stop(void) __attribute((weak, alias("wifi_stop_noop")));
+void esp_restart_noos() __attribute__ ((noreturn));
 
 void IRAM_ATTR esp_restart(void)
 {
-#ifdef CONFIG_WIFI_ENABLED
-    esp_wifi_stop();
-#endif
+     int i;
+     for (i = 0; i < SHUTDOWN_HANDLERS_NO; i++) {
+	  if (shutdown_handlers[i]) {
+	       shutdown_handlers[i]();
+	  }
+     }
 
     // Disable scheduler on this core.
     vTaskSuspendAll();
