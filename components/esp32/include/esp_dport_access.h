@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sdkconfig.h>
+
 #ifndef _ESP_DPORT_ACCESS_H_
 #define _ESP_DPORT_ACCESS_H_
 
