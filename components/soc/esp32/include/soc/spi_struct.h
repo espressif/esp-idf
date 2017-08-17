@@ -143,7 +143,7 @@ typedef volatile struct {
     } user1;
     union {
         struct {
-            uint32_t usr_command_value: 16;                 /*The value of  command.*/
+            uint32_t usr_command_value: 16;                 /*The value of  command. Output sequence: bit 7-0 and then 15-8.*/
             uint32_t reserved16:        12;                 /*reserved*/
             uint32_t usr_command_bitlen: 4;                 /*The length in bits of command phase. The register value shall be (bit_num-1)*/
         };
