@@ -357,15 +357,7 @@ static esp_err_t process_events(sdmmc_event_t evt, sdmmc_command_t* cmd, sdmmc_r
             case SDMMC_SENDING_CMD:
                 if (mask_check_and_clear(&evt.sdmmc_status, SDMMC_CMD_ERR_MASK)) {
                     process_command_response(orig_evt.sdmmc_status, cmd);
-                    if (cmd->error != ESP_ERR_TIMEOUT) {
-                        // Unless this is a timeout error, we need to wait for the
-                        // CMD_DONE interrupt
-                        break;
-                    }
-                }
-                if (!mask_check_and_clear(&evt.sdmmc_status, SDMMC_INTMASK_CMD_DONE) &&
-                        cmd->error != ESP_ERR_TIMEOUT) {
-                    break;
+                    break;      // Need to wait for the CMD_DONE interrupt
                 }
                 process_command_response(orig_evt.sdmmc_status, cmd);
                 if (cmd->error != ESP_OK || cmd->data == NULL) {
