@@ -254,6 +254,8 @@ static void https_get_task(void *pvParameters)
             ESP_LOGI(TAG, "Certificate verified.");
         }
 
+        ESP_LOGI(TAG, "Cipher suite is %s", mbedtls_ssl_get_ciphersuite(&ssl));
+
         ESP_LOGI(TAG, "Writing HTTP request...");
 
         while((ret = mbedtls_ssl_write(&ssl, (const unsigned char *)REQUEST, strlen(REQUEST))) <= 0)
@@ -296,7 +298,7 @@ static void https_get_task(void *pvParameters)
             }
 
             len = ret;
-            ESP_LOGI(TAG, "%d bytes read", len);
+            ESP_LOGD(TAG, "%d bytes read", len);
             /* Print response directly to stdout as it is read */
             for(int i = 0; i < len; i++) {
                 putchar(buf[i]);
@@ -314,6 +316,11 @@ static void https_get_task(void *pvParameters)
             mbedtls_strerror(ret, buf, 100);
             ESP_LOGE(TAG, "Last error was: -0x%x - %s", -ret, buf);
         }
+
+        putchar('\n'); // JSON output doesn't have a newline at end
+
+        static int request_count;
+        ESP_LOGI(TAG, "Completed %d requests", ++request_count);
 
         for(int countdown = 10; countdown >= 0; countdown--) {
             ESP_LOGI(TAG, "%d...", countdown);
