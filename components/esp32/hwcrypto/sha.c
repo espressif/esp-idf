@@ -172,10 +172,10 @@ static void esp_sha_lock_engine_inner(sha_engine_state *engine)
         DPORT_STALL_OTHER_CPU_END();
     }
 
-    _lock_release(&state_change_lock);
-
     assert( !engine->in_use && "in_use flag should be cleared" );
     engine->in_use = true;
+
+    _lock_release(&state_change_lock);
 }
 
 
