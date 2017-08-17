@@ -115,22 +115,30 @@ void sdmmc_host_reset()
  * field of card's CSD register.
  *
  * 50 MHz can not be obtained exactly, closest we can get is 53 MHz.
- * For now set the first stage divider to generate 40MHz, and then configure
- * the second stage dividers to generate the frequency requested.
+ *
+ * The first stage divider is set to the highest possible value for the given
+ * frequency, and the the second stage dividers are used if division factor
+ * is >16.
  *
  * Of the second stage dividers, div0 is used for card 0, and div1 is used
  * for card 1.
  */
 
-static void sdmmc_host_input_clk_enable()
+static void sdmmc_host_set_clk_div(int div)
 {
-    // Set frequency to 160MHz / (p + 1) = 40MHz, duty cycle (h + 1)/(p + 1) = 1/2
-    SDMMC.clock.div_factor_p = 3;
-    SDMMC.clock.div_factor_h = 1;
-    SDMMC.clock.div_factor_m = 3;
+    // Set frequency to 160MHz / div
+    // div = p + 1
+    // duty cycle = (h + 1)/(p + 1) (should be = 1/2)
+    assert (div > 1 && div <= 16);
+    int p = div - 1;
+    int h = div / 2 - 1;
+
+    SDMMC.clock.div_factor_p = p;
+    SDMMC.clock.div_factor_h = h;
+    SDMMC.clock.div_factor_m = p;
     // Set phases for in/out clocks
-    SDMMC.clock.phase_dout = 4;
-    SDMMC.clock.phase_din = 4;
+    SDMMC.clock.phase_dout = 4;     // 180 degree phase on the output clock
+    SDMMC.clock.phase_din = 4;      // 180 degree phase on the input clock
     SDMMC.clock.phase_core = 0;
     // Wait for the clock to propagate
     ets_delay_us(10);
@@ -181,26 +189,40 @@ esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz)
     SDMMC.clkena.cclk_enable &= ~BIT(slot);
     sdmmc_host_clock_update_command(slot);
 
+    int host_div = 0;   /* clock divider of the host (SDMMC.clock) */
+    int card_div = 0;   /* 1/2 of card clock divider (SDMMC.clkdiv) */
+
     // Calculate new dividers
-    int div = 0;
-    if (freq_khz < clk40m) {
-        // round up; extra *2 is because clock divider divides by 2*n
-        div = (clk40m + freq_khz * 2 - 1) / (freq_khz * 2);
+    if (freq_khz >= SDMMC_FREQ_HIGHSPEED) {
+        host_div = 4;       // 160 MHz / 4 = 40 MHz
+        card_div = 0;
+    } else if (freq_khz == SDMMC_FREQ_DEFAULT) {
+        host_div = 8;       // 160 MHz / 8 = 20 MHz
+        card_div = 0;
+    } else if (freq_khz == SDMMC_FREQ_PROBING) {
+        host_div = 10;      // 160 MHz / 10 / (20 * 2) = 400 kHz
+        card_div = 20;
+    } else {
+        host_div = 2;
+        card_div = (clk40m + freq_khz * 2 - 1) / (freq_khz * 2); // round up
     }
-    ESP_LOGD(TAG, "slot=%d div=%d freq=%dkHz", slot, div,
-            (div == 0) ? clk40m : clk40m / (2 * div));
+
+    ESP_LOGD(TAG, "slot=%d host_div=%d card_div=%d freq=%dkHz",
+            slot, host_div, card_div,
+            2 * APB_CLK_FREQ / host_div / ((card_div == 0) ? 1 : card_div * 2) / 1000);
 
     // Program CLKDIV and CLKSRC, send them to the CIU
     switch(slot) {
         case 0:
             SDMMC.clksrc.card0 = 0;
-            SDMMC.clkdiv.div0 = div;
+            SDMMC.clkdiv.div0 = card_div;
             break;
         case 1:
             SDMMC.clksrc.card1 = 1;
-            SDMMC.clkdiv.div1 = div;
+            SDMMC.clkdiv.div1 = card_div;
             break;
     }
+    sdmmc_host_set_clk_div(host_div);
     sdmmc_host_clock_update_command(slot);
 
     // Re-enable clocks
@@ -243,8 +265,8 @@ esp_err_t sdmmc_host_init()
 
     periph_module_enable(PERIPH_SDMMC_MODULE);
 
-    // Enable clock to peripheral
-    sdmmc_host_input_clk_enable();
+    // Enable clock to peripheral. Use smallest divider first.
+    sdmmc_host_set_clk_div(2);
 
     // Reset
     sdmmc_host_reset();
