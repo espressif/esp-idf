@@ -244,12 +244,6 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
             ESP_LOGE(TAG, "slot->set_bus_width failed");
             return err;
         }
-        uint32_t status;
-        err = sdmmc_send_cmd_stop_transmission(card, &status);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "stop_transmission failed (0x%x)", err);
-            return err;
-        }
     }
 
     /* Wait for the card to be ready for data transfers */
