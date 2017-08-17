@@ -374,7 +374,7 @@ esp_err_t esp_event_process_default(system_event_t *event)
     return ESP_OK;
 }
 
-esp_err_t esp_wifi_init(wifi_init_config_t *config)
+void esp_event_set_default_wifi_handlers()
 {
      default_event_handlers[SYSTEM_EVENT_STA_START]        = system_event_sta_start_handle_default;
      default_event_handlers[SYSTEM_EVENT_STA_STOP]         = system_event_sta_stop_handle_default;
@@ -385,7 +385,6 @@ esp_err_t esp_wifi_init(wifi_init_config_t *config)
      default_event_handlers[SYSTEM_EVENT_AP_STOP]          = system_event_ap_stop_handle_default;
 
      esp_register_shutdown_handler((shutdown_handler_t)esp_wifi_stop);
-     return esp_wifi_init_internal(config);
 }
 
 void esp_event_set_default_eth_handlers()

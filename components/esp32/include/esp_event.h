@@ -165,6 +165,12 @@ esp_err_t esp_event_process_default(system_event_t *event);
   */
 void esp_event_set_default_eth_handlers();
 
+/**
+  * @brief  Install default event handlers for Wi-Fi interfaces (station and AP)
+  *
+  */
+void esp_event_set_default_wifi_handlers();
+
 #ifdef __cplusplus
 }
 #endif

@@ -45,6 +45,12 @@ extern "C" {
  *     Alloc resource for WiFi driver, such as WiFi control structure, RX/TX buffer,
  *     WiFi NVS structure among others.
  *
+ * For the most part, you need not call this function directly. It gets called
+ * from esp_wifi_init().
+ *
+ * This function may be called, if you only need to initialize the Wi-Fi driver
+ * without having to use the network stack on top.
+ *
  * @param  config provide WiFi init configuration
  *
  * @return
