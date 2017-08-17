@@ -287,18 +287,16 @@ static void process_command_response(uint32_t status, sdmmc_command_t* cmd)
             cmd->response[3] = 0;
         }
     }
-
-    if ((status & SDMMC_INTMASK_RTO) &&
-        cmd->opcode != MMC_ALL_SEND_CID &&
-        cmd->opcode != MMC_SELECT_CARD &&
-        cmd->opcode != MMC_STOP_TRANSMISSION) {
+    if (status & SDMMC_INTMASK_RTO) {
+        // response timeout is only possible when response is expected
+        assert(cmd->flags & SCF_RSP_PRESENT);
         cmd->error = ESP_ERR_TIMEOUT;
     } else if ((cmd->flags & SCF_RSP_CRC) && (status & SDMMC_INTMASK_RCRC)) {
         cmd->error = ESP_ERR_INVALID_CRC;
     } else if (status & SDMMC_INTMASK_RESP_ERR) {
         cmd->error = ESP_ERR_INVALID_RESPONSE;
     }
-    if (cmd->error != 0) {
+    if (cmd->error != ESP_OK) {
         if (cmd->data) {
             sdmmc_host_dma_stop();
         }
