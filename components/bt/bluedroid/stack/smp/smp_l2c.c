@@ -23,6 +23,7 @@
  ******************************************************************************/
 
 #include "bt_target.h"
+#include "allocator.h"
 
 #if SMP_INCLUDED == TRUE
 
@@ -151,7 +152,7 @@ static void smp_data_received(UINT16 channel, BD_ADDR bd_addr, BT_HDR *p_buf)
     /* sanity check */
     if ((SMP_OPCODE_MAX < cmd) || (SMP_OPCODE_MIN > cmd)) {
         SMP_TRACE_WARNING( "Ignore received command with RESERVED code 0x%02x\n", cmd);
-        GKI_freebuf (p_buf);
+        osi_free (p_buf);
         return;
     }
 
@@ -162,7 +163,7 @@ static void smp_data_received(UINT16 channel, BD_ADDR bd_addr, BT_HDR *p_buf)
             p_cb->role = L2CA_GetBleConnRole(bd_addr);
             memcpy(&p_cb->pairing_bda[0], bd_addr, BD_ADDR_LEN);
         } else if (memcmp(&bd_addr[0], p_cb->pairing_bda, BD_ADDR_LEN)) {
-            GKI_freebuf (p_buf);
+            osi_free (p_buf);
             smp_reject_unexpected_pairing_command(bd_addr);
             return;
         }
@@ -190,7 +191,7 @@ static void smp_data_received(UINT16 channel, BD_ADDR bd_addr, BT_HDR *p_buf)
         smp_sm_event(p_cb, cmd, p);
     }
 
-    GKI_freebuf (p_buf);
+    osi_free (p_buf);
 }
 
 /*******************************************************************************
@@ -292,7 +293,7 @@ static void smp_br_data_received(UINT16 channel, BD_ADDR bd_addr, BT_HDR *p_buf)
     /* sanity check */
     if ((SMP_OPCODE_MAX < cmd) || (SMP_OPCODE_MIN > cmd)) {
         SMP_TRACE_WARNING( "Ignore received command with RESERVED code 0x%02x", cmd);
-        GKI_freebuf(p_buf);
+        osi_free(p_buf);
         return;
     }
 
@@ -303,7 +304,7 @@ static void smp_br_data_received(UINT16 channel, BD_ADDR bd_addr, BT_HDR *p_buf)
             p_cb->smp_over_br = TRUE;
             memcpy(&p_cb->pairing_bda[0], bd_addr, BD_ADDR_LEN);
         } else if (memcmp(&bd_addr[0], p_cb->pairing_bda, BD_ADDR_LEN)) {
-            GKI_freebuf (p_buf);
+            osi_free (p_buf);
             smp_reject_unexpected_pairing_command(bd_addr);
             return;
         }
@@ -320,7 +321,7 @@ static void smp_br_data_received(UINT16 channel, BD_ADDR bd_addr, BT_HDR *p_buf)
         smp_br_state_machine_event(p_cb, cmd, p);
     }
 
-    GKI_freebuf (p_buf);
+    osi_free (p_buf);
 }
 #endif  /* CLASSIC_BT_INCLUDED == TRUE */
 

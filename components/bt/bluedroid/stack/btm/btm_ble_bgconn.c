@@ -64,7 +64,7 @@ static void background_connections_lazy_init()
 {
     if (!background_connections) {
         background_connections = hash_map_new(background_connection_buckets,
-                                              hash_function_bdaddr, NULL, allocator_calloc.free, bdaddr_equality_fn);
+                                      hash_function_bdaddr, NULL, osi_free_func, bdaddr_equality_fn);
         assert(background_connections);
     }
 }
@@ -672,11 +672,11 @@ void btm_ble_set_conn_st(tBTM_BLE_CONN_ST new_st)
 *******************************************************************************/
 void btm_ble_enqueue_direct_conn_req(void *p_param)
 {
-    tBTM_BLE_CONN_REQ   *p = (tBTM_BLE_CONN_REQ *)GKI_getbuf(sizeof(tBTM_BLE_CONN_REQ));
+    tBTM_BLE_CONN_REQ   *p = (tBTM_BLE_CONN_REQ *)osi_malloc(sizeof(tBTM_BLE_CONN_REQ));
 
     p->p_param = p_param;
 
-    GKI_enqueue (&btm_cb.ble_ctr_cb.conn_pending_q, p);
+    fixed_queue_enqueue(btm_cb.ble_ctr_cb.conn_pending_q, p);
 }
 /*******************************************************************************
 **
@@ -692,12 +692,11 @@ BOOLEAN btm_send_pending_direct_conn(void)
     tBTM_BLE_CONN_REQ *p_req;
     BOOLEAN     rt = FALSE;
 
-    if (!GKI_queue_is_empty(&btm_cb.ble_ctr_cb.conn_pending_q)) {
-        p_req = (tBTM_BLE_CONN_REQ *)GKI_dequeue (&btm_cb.ble_ctr_cb.conn_pending_q);
-
+    p_req = (tBTM_BLE_CONN_REQ*)fixed_queue_try_dequeue(btm_cb.ble_ctr_cb.conn_pending_q);
+    if (p_req != NULL) {
         rt = l2cble_init_direct_conn((tL2C_LCB *)(p_req->p_param));
 
-        GKI_freebuf((void *)p_req);
+        osi_free((void *)p_req);
     }
 
     return rt;

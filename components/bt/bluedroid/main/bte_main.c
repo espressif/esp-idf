@@ -75,11 +75,6 @@ extern void osi_mem_dbg_init(void);
 ******************************************************************************/
 int bte_main_boot_entry(bluedroid_init_done_cb_t cb)
 {
-    if (gki_init()) {
-        LOG_ERROR("%s: Init GKI Module Failure.\n", __func__);
-        return -1;
-    }
-
     hci = hci_layer_get_interface();
     if (!hci) {
         LOG_ERROR("%s could not get hci layer interface.\n", __func__);
@@ -87,6 +82,8 @@ int bte_main_boot_entry(bluedroid_init_done_cb_t cb)
     }
 
     bluedroid_init_done_cb = cb;
+
+    osi_init();
 
     //Enbale HCI
     bte_main_enable();
@@ -109,7 +106,8 @@ void bte_main_shutdown(void)
     BTA_VendorCleanup();
 #endif
     bte_main_disable();
-    gki_clean_up();
+
+    osi_deinit();
 }
 
 /******************************************************************************
@@ -244,6 +242,6 @@ void bte_main_hci_send (BT_HDR *p_msg, UINT16 event)
         hci->transmit_downward(event, p_msg);
     } else {
         //APPL_TRACE_ERROR("Invalid Controller ID. Discarding message.");
-        GKI_freebuf(p_msg);
+        osi_free(p_msg);
     }
 }

@@ -25,6 +25,7 @@
 #include "hash_map.h"
 #include "hash_functions.h"
 #include "thread.h"
+#include "mutex.h"
 
 #include "l2c_int.h"
 #include "dyn_mem.h"
@@ -44,15 +45,15 @@
 #endif
 
 hash_map_t *btu_general_alarm_hash_map;
-pthread_mutex_t btu_general_alarm_lock;
+osi_mutex_t btu_general_alarm_lock;
 static const size_t BTU_GENERAL_ALARM_HASH_MAP_SIZE = 34;
 
 hash_map_t *btu_oneshot_alarm_hash_map;
-pthread_mutex_t btu_oneshot_alarm_lock;
+osi_mutex_t btu_oneshot_alarm_lock;
 static const size_t BTU_ONESHOT_ALARM_HASH_MAP_SIZE = 34;
 
 hash_map_t *btu_l2cap_alarm_hash_map;
-pthread_mutex_t btu_l2cap_alarm_lock;
+osi_mutex_t btu_l2cap_alarm_lock;
 static const size_t BTU_L2CAP_ALARM_HASH_MAP_SIZE = 34;
 
 //thread_t *bt_workqueue_thread;
@@ -121,7 +122,9 @@ void btu_free_core(void)
 #if (defined(GATTS_INCLUDED) && GATTS_INCLUDED == true)
     gatt_free();
 #endif
+    btm_ble_free();
 #endif
+    btm_free();
 }
 
 /*****************************************************************************
@@ -147,7 +150,7 @@ void BTU_StartUp(void)
         goto error_exit;
     }
 
-    pthread_mutex_init(&btu_general_alarm_lock, NULL);
+    osi_mutex_new(&btu_general_alarm_lock);
 
     btu_oneshot_alarm_hash_map = hash_map_new(BTU_ONESHOT_ALARM_HASH_MAP_SIZE,
                                  hash_function_pointer, NULL, (data_free_fn)osi_alarm_free, NULL);
@@ -155,7 +158,7 @@ void BTU_StartUp(void)
         goto error_exit;
     }
 
-    pthread_mutex_init(&btu_oneshot_alarm_lock, NULL);
+    osi_mutex_new(&btu_oneshot_alarm_lock);
 
     btu_l2cap_alarm_hash_map = hash_map_new(BTU_L2CAP_ALARM_HASH_MAP_SIZE,
                                             hash_function_pointer, NULL, (data_free_fn)osi_alarm_free, NULL);
@@ -163,7 +166,7 @@ void BTU_StartUp(void)
         goto error_exit;
     }
 
-    pthread_mutex_init(&btu_l2cap_alarm_lock, NULL);
+    osi_mutex_new(&btu_l2cap_alarm_lock);
 
     xBtuQueue = xQueueCreate(BTU_QUEUE_NUM, sizeof(BtTaskEvt_t));
     xTaskCreatePinnedToCore(btu_task_thread_handler, BTU_TASK_NAME, BTU_TASK_STACK_SIZE, NULL, BTU_TASK_PRIO, &xBtuTaskHandle, 0);
@@ -182,13 +185,13 @@ void BTU_ShutDown(void)
     btu_task_shut_down();
 
     hash_map_free(btu_general_alarm_hash_map);
-    pthread_mutex_destroy(&btu_general_alarm_lock);
+    osi_mutex_free(&btu_general_alarm_lock);
 
     hash_map_free(btu_oneshot_alarm_hash_map);
-    pthread_mutex_destroy(&btu_oneshot_alarm_lock);
+    osi_mutex_free(&btu_oneshot_alarm_lock);
 
     hash_map_free(btu_l2cap_alarm_hash_map);
-    pthread_mutex_destroy(&btu_l2cap_alarm_lock);
+    osi_mutex_free(&btu_l2cap_alarm_lock);
 
     vTaskDelete(xBtuTaskHandle);
     vQueueDelete(xBtuQueue);

@@ -14,6 +14,7 @@
 
 #include <string.h>
 
+#include "allocator.h"
 #include "bt_types.h"
 #include "bt_defs.h"
 #include "bta_api.h"
@@ -46,7 +47,7 @@ static void btc_gap_adv_point_cleanup(void **buf)
     if (NULL == *buf) {
         return;
     }
-    GKI_freebuf(*buf);
+    osi_free(*buf);
     *buf = NULL;
 }
 
@@ -203,9 +204,9 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
     }
 
     if (p_adv_data->manufacturer_len > 0 && p_adv_data->p_manufacturer_data != NULL) {
-        bta_adv_data->p_manu = GKI_getbuf(sizeof(tBTA_BLE_MANU));
+        bta_adv_data->p_manu = osi_malloc(sizeof(tBTA_BLE_MANU));
         if (bta_adv_data->p_manu != NULL) {
-            bta_adv_data->p_manu->p_val = GKI_getbuf(p_adv_data->manufacturer_len);
+            bta_adv_data->p_manu->p_val = osi_malloc(p_adv_data->manufacturer_len);
             if (bta_adv_data->p_manu->p_val != NULL) {
                 mask |= BTM_BLE_AD_BIT_MANU;
                 bta_adv_data->p_manu->len = p_adv_data->manufacturer_len;
@@ -216,35 +217,35 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
 
     tBTA_BLE_PROP_ELEM *p_elem_service_data = NULL;
     if (p_adv_data->service_data_len > 0 && p_adv_data->p_service_data != NULL) {
-        p_elem_service_data = GKI_getbuf(sizeof(tBTA_BLE_PROP_ELEM));
+        p_elem_service_data = osi_malloc(sizeof(tBTA_BLE_PROP_ELEM));
         if (p_elem_service_data != NULL) {
-            p_elem_service_data->p_val = GKI_getbuf(p_adv_data->service_data_len);
+            p_elem_service_data->p_val = osi_malloc(p_adv_data->service_data_len);
             if (p_elem_service_data->p_val != NULL) {
                 p_elem_service_data->adv_type = BTM_BLE_AD_TYPE_SERVICE_DATA;
                 p_elem_service_data->len = p_adv_data->service_data_len;
                 memcpy(p_elem_service_data->p_val, p_adv_data->p_service_data,
                        p_adv_data->service_data_len);
             } else {
-                GKI_freebuf(p_elem_service_data);
+                osi_free(p_elem_service_data);
                 p_elem_service_data = NULL;
             }
         }
     }
 
     if (NULL != p_elem_service_data) {
-        bta_adv_data->p_proprietary = GKI_getbuf(sizeof(tBTA_BLE_PROPRIETARY));
+        bta_adv_data->p_proprietary = osi_malloc(sizeof(tBTA_BLE_PROPRIETARY));
         if (NULL != bta_adv_data->p_proprietary) {
             tBTA_BLE_PROP_ELEM *p_elem = NULL;
             tBTA_BLE_PROPRIETARY *p_prop = bta_adv_data->p_proprietary;
             p_prop->num_elem = 0;
             mask |= BTM_BLE_AD_BIT_PROPRIETARY;
             p_prop->num_elem = 1;
-            p_prop->p_elem = GKI_getbuf(sizeof(tBTA_BLE_PROP_ELEM) * p_prop->num_elem);
+            p_prop->p_elem = osi_malloc(sizeof(tBTA_BLE_PROP_ELEM) * p_prop->num_elem);
             p_elem = p_prop->p_elem;
             if (NULL != p_elem) {
                 memcpy(p_elem++, p_elem_service_data, sizeof(tBTA_BLE_PROP_ELEM));
             }
-            GKI_freebuf(p_elem_service_data);
+            osi_free(p_elem_service_data);
         }
     }
 
@@ -259,10 +260,10 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
             switch (bt_uuid.len) {
             case (LEN_UUID_16): {
                 if (NULL == bta_adv_data->p_services) {
-                    bta_adv_data->p_services = GKI_getbuf(sizeof(tBTA_BLE_SERVICE));
+                    bta_adv_data->p_services = osi_malloc(sizeof(tBTA_BLE_SERVICE));
                     bta_adv_data->p_services->list_cmpl = FALSE;
                     bta_adv_data->p_services->num_service = 0;
-                    bta_adv_data->p_services->p_uuid = GKI_getbuf(p_adv_data->service_uuid_len / LEN_UUID_128 * LEN_UUID_16);
+                    bta_adv_data->p_services->p_uuid = osi_malloc(p_adv_data->service_uuid_len / LEN_UUID_128 * LEN_UUID_16);
                     p_uuid_out16 = bta_adv_data->p_services->p_uuid;
                 }
 
@@ -278,11 +279,11 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
             case (LEN_UUID_32): {
                 if (NULL == bta_adv_data->p_service_32b) {
                     bta_adv_data->p_service_32b =
-                        GKI_getbuf(sizeof(tBTA_BLE_32SERVICE));
+                        osi_malloc(sizeof(tBTA_BLE_32SERVICE));
                     bta_adv_data->p_service_32b->list_cmpl = FALSE;
                     bta_adv_data->p_service_32b->num_service = 0;
                     bta_adv_data->p_service_32b->p_uuid =
-                        GKI_getbuf(p_adv_data->service_uuid_len / LEN_UUID_128 * LEN_UUID_32);
+                        osi_malloc(p_adv_data->service_uuid_len / LEN_UUID_128 * LEN_UUID_32);
                     p_uuid_out32 = bta_adv_data->p_service_32b->p_uuid;
                 }
 
@@ -299,7 +300,7 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
                 /* Currently, only one 128-bit UUID is supported */
                 if (NULL == bta_adv_data->p_services_128b) {
                     bta_adv_data->p_services_128b =
-                        GKI_getbuf(sizeof(tBTA_BLE_128SERVICE));
+                        osi_malloc(sizeof(tBTA_BLE_128SERVICE));
                     if (NULL != bta_adv_data->p_services_128b) {
                         LOG_ERROR("%s - In 128-UUID_data", __FUNCTION__);
                         mask |= BTM_BLE_AD_BIT_SERVICE_128;
@@ -829,7 +830,7 @@ static void btc_ble_get_bond_device_list(void)
     esp_ble_bond_dev_t *bond_dev;
     btc_msg_t msg;
     int num_dev = btc_storage_get_num_ble_bond_devices();
-    bond_dev = GKI_getbuf(sizeof(esp_ble_bond_dev_t)*num_dev);
+    bond_dev = (esp_ble_bond_dev_t *)osi_malloc(sizeof(esp_ble_bond_dev_t)*num_dev);
 
     param.get_bond_dev_cmpl.status = btc_get_bonded_ble_devices_list(bond_dev);
     param.get_bond_dev_cmpl.dev_num = num_dev;
@@ -844,7 +845,7 @@ static void btc_ble_get_bond_device_list(void)
         LOG_ERROR("%s btc_transfer_context failed", __func__);
     }
     // release the buffer after used.
-    GKI_freebuf((void *)bond_dev);
+    osi_free(bond_dev);
 }
 static void btc_ble_config_local_privacy(bool privacy_enable, tBTA_SET_LOCAL_PRIVACY_CBACK *set_local_privacy_cback)
 {
@@ -878,18 +879,18 @@ void btc_gap_ble_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         btc_ble_gap_args_t  *dst = (btc_ble_gap_args_t *) p_dest;
 
         if (src->cfg_adv_data.adv_data.p_manufacturer_data) {
-            dst->cfg_adv_data.adv_data.p_manufacturer_data = GKI_getbuf(src->cfg_adv_data.adv_data.manufacturer_len);
+            dst->cfg_adv_data.adv_data.p_manufacturer_data = osi_malloc(src->cfg_adv_data.adv_data.manufacturer_len);
             memcpy(dst->cfg_adv_data.adv_data.p_manufacturer_data, src->cfg_adv_data.adv_data.p_manufacturer_data,
                    src->cfg_adv_data.adv_data.manufacturer_len);
         }
 
         if (src->cfg_adv_data.adv_data.p_service_data) {
-            dst->cfg_adv_data.adv_data.p_service_data = GKI_getbuf(src->cfg_adv_data.adv_data.service_data_len);
+            dst->cfg_adv_data.adv_data.p_service_data = osi_malloc(src->cfg_adv_data.adv_data.service_data_len);
             memcpy(dst->cfg_adv_data.adv_data.p_service_data, src->cfg_adv_data.adv_data.p_service_data, src->cfg_adv_data.adv_data.service_data_len);
         }
 
         if (src->cfg_adv_data.adv_data.p_service_uuid) {
-            dst->cfg_adv_data.adv_data.p_service_uuid = GKI_getbuf(src->cfg_adv_data.adv_data.service_uuid_len);
+            dst->cfg_adv_data.adv_data.p_service_uuid = osi_malloc(src->cfg_adv_data.adv_data.service_uuid_len);
             memcpy(dst->cfg_adv_data.adv_data.p_service_uuid, src->cfg_adv_data.adv_data.p_service_uuid, src->cfg_adv_data.adv_data.service_uuid_len);
         }
         break;
@@ -899,7 +900,7 @@ void btc_gap_ble_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         btc_ble_gap_args_t *dst = (btc_ble_gap_args_t *) p_dest;
 
         if (src && src->cfg_adv_data_raw.raw_adv && src->cfg_adv_data_raw.raw_adv_len > 0) {
-            dst->cfg_adv_data_raw.raw_adv = GKI_getbuf(src->cfg_adv_data_raw.raw_adv_len);
+            dst->cfg_adv_data_raw.raw_adv = osi_malloc(src->cfg_adv_data_raw.raw_adv_len);
             if (dst->cfg_adv_data_raw.raw_adv) {
                 memcpy(dst->cfg_adv_data_raw.raw_adv, src->cfg_adv_data_raw.raw_adv, src->cfg_adv_data_raw.raw_adv_len);
             }
@@ -911,7 +912,7 @@ void btc_gap_ble_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         btc_ble_gap_args_t *dst = (btc_ble_gap_args_t *) p_dest;
 
         if (src && src->cfg_scan_rsp_data_raw.raw_scan_rsp && src->cfg_scan_rsp_data_raw.raw_scan_rsp_len > 0) {
-            dst->cfg_scan_rsp_data_raw.raw_scan_rsp = GKI_getbuf(src->cfg_scan_rsp_data_raw.raw_scan_rsp_len);
+            dst->cfg_scan_rsp_data_raw.raw_scan_rsp = osi_malloc(src->cfg_scan_rsp_data_raw.raw_scan_rsp_len);
             if (dst->cfg_scan_rsp_data_raw.raw_scan_rsp) {
                 memcpy(dst->cfg_scan_rsp_data_raw.raw_scan_rsp, src->cfg_scan_rsp_data_raw.raw_scan_rsp, src->cfg_scan_rsp_data_raw.raw_scan_rsp_len);
             }
@@ -924,7 +925,7 @@ void btc_gap_ble_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         uint8_t length = 0;
         if (src->set_security_param.value) {
             length = dst->set_security_param.len;
-            dst->set_security_param.value = GKI_getbuf(length);
+            dst->set_security_param.value = osi_malloc(length);
             if (dst->set_security_param.value != NULL) {
                 memcpy(dst->set_security_param.value, src->set_security_param.value, length);
             } else {
@@ -948,7 +949,7 @@ static void btc_gap_ble_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         uint16_t length = 0;
         if (src->get_bond_dev_cmpl.bond_dev) {
             length = (src->get_bond_dev_cmpl.dev_num)*sizeof(esp_ble_bond_dev_t);
-            dst->get_bond_dev_cmpl.bond_dev = GKI_getbuf(length);
+            dst->get_bond_dev_cmpl.bond_dev = (esp_ble_bond_dev_t *)osi_malloc(length);
             if (dst->get_bond_dev_cmpl.bond_dev != NULL) {
                 memcpy(dst->get_bond_dev_cmpl.bond_dev, src->get_bond_dev_cmpl.bond_dev, length);
             } else {
@@ -970,29 +971,29 @@ static void btc_gap_ble_arg_deep_free(btc_msg_t *msg)
     case BTC_GAP_BLE_ACT_CFG_ADV_DATA: {
         esp_ble_adv_data_t *adv = &((btc_ble_gap_args_t *)msg->arg)->cfg_adv_data.adv_data;
         if (adv->p_service_data) {
-            GKI_freebuf(adv->p_service_data);
+            osi_free(adv->p_service_data);
         }
 
         if (adv->p_service_uuid) {
-            GKI_freebuf(adv->p_service_uuid);
+            osi_free(adv->p_service_uuid);
         }
 
         if (adv->p_manufacturer_data) {
-            GKI_freebuf(adv->p_manufacturer_data);
+            osi_free(adv->p_manufacturer_data);
         }
         break;
     }
     case BTC_GAP_BLE_ACT_CFG_ADV_DATA_RAW: {
         uint8_t *raw_adv = ((btc_ble_gap_args_t *)msg->arg)->cfg_adv_data_raw.raw_adv;
         if (raw_adv) {
-            GKI_freebuf(raw_adv);
+            osi_free(raw_adv);
         }
         break;
     }
     case BTC_GAP_BLE_ACT_CFG_SCAN_RSP_DATA_RAW: {
         uint8_t *raw_scan_rsp = ((btc_ble_gap_args_t *)msg->arg)->cfg_scan_rsp_data_raw.raw_scan_rsp;
         if (raw_scan_rsp) {
-            GKI_freebuf(raw_scan_rsp);
+            osi_free(raw_scan_rsp);
         }
         break;
     }
@@ -1009,7 +1010,7 @@ static void btc_gap_ble_cb_deep_free(btc_msg_t *msg)
         case ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT: {
             esp_ble_bond_dev_t *bond_dev = ((esp_ble_gap_cb_param_t *)msg->arg)->get_bond_dev_cmpl.bond_dev;
             if (bond_dev) {
-                GKI_freebuf((void *)bond_dev);
+                osi_free(bond_dev);
             }
             break;
         }

@@ -27,7 +27,6 @@
 
 #include "bt_defs.h"
 #include "bt_target.h"
-#include "gki.h"
 #include "hcidefs.h"
 
 #include "rfcdefs.h"
@@ -367,7 +366,7 @@ typedef struct {
 typedef struct {
     tBTM_ESCO_INFO   esco;              /* Current settings             */
 #if BTM_SCO_HCI_INCLUDED == TRUE
-    BUFFER_Q         xmit_data_q;       /* SCO data transmitting queue  */
+    fixed_queue_t   *xmit_data_q;       /* SCO data transmitting queue  */
 #endif
     tBTM_SCO_CB     *p_conn_cb;         /* Callback for when connected  */
     tBTM_SCO_CB     *p_disc_cb;         /* Callback for when disconnect */
@@ -865,10 +864,10 @@ typedef struct {
     UINT8                   busy_level; /* the current busy level */
     BOOLEAN                 is_paging;  /* TRUE, if paging is in progess */
     BOOLEAN                 is_inquiry; /* TRUE, if inquiry is in progess */
-    BUFFER_Q                page_queue;
+    fixed_queue_t           *page_queue;
     BOOLEAN                 paging;
     BOOLEAN                 discing;
-    BUFFER_Q                sec_pending_q;  /* pending sequrity requests in tBTM_SEC_QUEUE_ENTRY format */
+    fixed_queue_t           *sec_pending_q;  /* pending sequrity requests in tBTM_SEC_QUEUE_ENTRY format */
 #if  (!defined(BT_TRACE_VERBOSE) || (BT_TRACE_VERBOSE == FALSE))
     char state_temp_buffer[BTM_STATE_BUFFER_SIZE];
 #endif
@@ -892,6 +891,7 @@ extern tBTM_CB *btm_cb_ptr;
 ********************************************
 */
 void         btm_init (void);
+void         btm_free (void);
 
 /* Internal functions provided by btm_inq.c
 *******************************************

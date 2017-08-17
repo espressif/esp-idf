@@ -27,13 +27,13 @@
 #include "bt_target.h"
 
 #include "utl.h"
-#include "gki.h"
 #include "bta_sys.h"
 
 #include "bta_gattc_int.h"
 #include "l2c_api.h"
 #include "l2c_int.h"
 #include "gatt_int.h"
+#include "allocator.h"
 
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
 #include "bta_hh_int.h"
@@ -209,7 +209,7 @@ void bta_gattc_register(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_data)
                 /* BTA use the same client interface as BTE GATT statck */
                 cb_data.reg_oper.client_if = p_cb->cl_rcb[i].client_if;
 
-                if ((p_buf = (tBTA_GATTC_INT_START_IF *) GKI_getbuf(sizeof(tBTA_GATTC_INT_START_IF))) != NULL) {
+                if ((p_buf = (tBTA_GATTC_INT_START_IF *) osi_malloc(sizeof(tBTA_GATTC_INT_START_IF))) != NULL) {
                     p_buf->hdr.event    = BTA_GATTC_INT_START_IF_EVT;
                     p_buf->client_if    = p_cb->cl_rcb[i].client_if;
                     APPL_TRACE_DEBUG("GATTC getbuf sucess.\n");
@@ -1004,9 +1004,10 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
     if (p_clcb->status != GATT_SUCCESS) {
         /* clean up cache */
         if (p_clcb->p_srcb && p_clcb->p_srcb->p_srvc_cache) {
-            while (!GKI_queue_is_empty(&p_clcb->p_srcb->cache_buffer)) {
-                GKI_freebuf (GKI_dequeue (&p_clcb->p_srcb->cache_buffer));
+            while (!fixed_queue_is_empty(p_clcb->p_srcb->cache_buffer)) {
+                osi_free(fixed_queue_try_dequeue(p_clcb->p_srcb->cache_buffer));
             }
+            //fixed_queue_free(p_clcb->p_srcb->cache_buffer, NULL);
             p_clcb->p_srcb->p_srvc_cache = NULL;
         }
 
@@ -1756,7 +1757,7 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, BD_ADDR bda, UINT16 conn_id,
     else if ((transport == BT_TRANSPORT_LE) && (connected == FALSE) && (p_conn != NULL)){
             p_conn->service_change_ccc_written = FALSE;
             if (p_conn->ccc_timer_used == TRUE){
-                GKI_freebuf((void *)p_conn->service_change_ccc_timer.param);
+                osi_free((void *)p_conn->service_change_ccc_timer.param);
                 bta_sys_stop_timer(&(p_conn->service_change_ccc_timer));
                 p_conn->ccc_timer_used = FALSE;
             }
@@ -1765,7 +1766,7 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, BD_ADDR bda, UINT16 conn_id,
     bt_bdaddr_t bdaddr;
     bdcpy(bdaddr.address, bda);
 
-    if ((p_buf = (tBTA_GATTC_DATA *) GKI_getbuf(sizeof(tBTA_GATTC_DATA))) != NULL) {
+    if ((p_buf = (tBTA_GATTC_DATA *) osi_malloc(sizeof(tBTA_GATTC_DATA))) != NULL) {
         memset(p_buf, 0, sizeof(tBTA_GATTC_DATA));
 
         p_buf->int_conn.hdr.event            = connected ? BTA_GATTC_INT_CONN_EVT :
@@ -1810,9 +1811,7 @@ static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, BD_ADDR bda)
 
     APPL_TRACE_DEBUG("bta_gattc_enc_cmpl_cback: cif = %d", gattc_if);
 
-    if ((p_buf = (tBTA_GATTC_DATA *) GKI_getbuf(sizeof(tBTA_GATTC_DATA))) != NULL) {
-        memset(p_buf, 0, sizeof(tBTA_GATTC_DATA));
-
+    if ((p_buf = (tBTA_GATTC_DATA *) osi_calloc(sizeof(tBTA_GATTC_DATA))) != NULL) {
         p_buf->enc_cmpl.hdr.event            = BTA_GATTC_ENC_CMPL_EVT;
         p_buf->enc_cmpl.hdr.layer_specific   = p_clcb->bta_conn_id;
         p_buf->enc_cmpl.client_if            = gattc_if;
@@ -1856,10 +1855,10 @@ void bta_gattc_process_api_refresh(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg)
         }
         /* in all other cases, mark it and delete the cache */
         if (p_srvc_cb->p_srvc_cache != NULL) {
-            while (!GKI_queue_is_empty(&p_srvc_cb->cache_buffer)) {
-                GKI_freebuf (GKI_dequeue (&p_srvc_cb->cache_buffer));
+            while (!fixed_queue_is_empty(p_clcb->p_srcb->cache_buffer)) {
+                osi_free(fixed_queue_try_dequeue(p_clcb->p_srcb->cache_buffer));
             }
-
+            //fixed_queue_free(p_clcb->p_srcb->cache_buffer, NULL);
             p_srvc_cb->p_srvc_cache = NULL;
         }
     }
@@ -2095,7 +2094,7 @@ static void bta_gattc_cmpl_sendmsg(UINT16 conn_id, tGATTC_OPTYPE op,
                                    tGATT_CL_COMPLETE *p_data)
 {
     const UINT16         len = sizeof(tBTA_GATTC_OP_CMPL) + sizeof(tGATT_CL_COMPLETE);
-    tBTA_GATTC_OP_CMPL  *p_buf = (tBTA_GATTC_OP_CMPL *) GKI_getbuf(len);
+    tBTA_GATTC_OP_CMPL  *p_buf = (tBTA_GATTC_OP_CMPL *) osi_malloc(len);
 
     if (p_buf != NULL) {
         memset(p_buf, 0, len);
@@ -2295,7 +2294,7 @@ void bta_gattc_broadcast(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg)
 void bta_gattc_start_service_change_ccc_timer(UINT16 conn_id, BD_ADDR bda,UINT32 timeout_ms,
                                               UINT8 timer_cnt, UINT8 last_status, TIMER_LIST_ENT *ccc_timer)
 {
-    tBTA_GATTC_WAIT_CCC_TIMER *p_timer_param = (tBTA_GATTC_WAIT_CCC_TIMER*) GKI_getbuf(sizeof(tBTA_GATTC_WAIT_CCC_TIMER));
+    tBTA_GATTC_WAIT_CCC_TIMER *p_timer_param = (tBTA_GATTC_WAIT_CCC_TIMER*) osi_malloc(sizeof(tBTA_GATTC_WAIT_CCC_TIMER));
     if (p_timer_param != NULL){
         p_timer_param->conn_id = conn_id;
         memcpy(p_timer_param->remote_bda, bda, sizeof(BD_ADDR));
@@ -2467,7 +2466,7 @@ static void bta_gattc_wait4_service_change_ccc_cback (TIMER_LIST_ENT *p_tle)
     tBTA_GATTC_CONN *p_conn = bta_gattc_conn_find(p_timer_param->remote_bda);
     if (p_conn == NULL){
         APPL_TRACE_ERROR("p_conn is NULL in %s\n", __func__);
-        GKI_freebuf(p_timer_param);
+        osi_free(p_timer_param);
         return;
     }
 
@@ -2498,7 +2497,7 @@ static void bta_gattc_wait4_service_change_ccc_cback (TIMER_LIST_ENT *p_tle)
         p_conn->service_change_ccc_written = TRUE;
     }
 
-    GKI_freebuf(p_timer_param);
+    osi_free(p_timer_param);
 }
 
 #endif

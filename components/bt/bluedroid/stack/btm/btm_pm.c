@@ -36,7 +36,6 @@
 #include <stddef.h>
 
 #include "bt_types.h"
-#include "gki.h"
 #include "hcimsgs.h"
 #include "btu.h"
 #include "btm_api.h"
@@ -916,7 +915,7 @@ BOOLEAN btm_pm_device_in_scan_state(void)
     /* Scan state-paging, inquiry, and trying to connect */
 
     /* Check for paging */
-    if (btm_cb.is_paging || GKI_queue_length(&btm_cb.page_queue) > 0 ||
+    if (btm_cb.is_paging || (!fixed_queue_is_empty(btm_cb.page_queue)) ||
             BTM_BL_PAGING_STARTED == btm_cb.busy_level) {
         BTM_TRACE_DEBUG("btm_pm_device_in_scan_state- paging");
         return TRUE;

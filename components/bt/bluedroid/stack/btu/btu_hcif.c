@@ -30,7 +30,6 @@
 //#include <stdlib.h>
 #include <string.h>
 
-#include "gki.h"
 #include "bt_types.h"
 #include "hcimsgs.h"
 #include "btu.h"
@@ -991,7 +990,7 @@ static void btu_hcif_command_complete_evt_on_task(BT_HDR *event)
         hack->response->len - 5, // 3 for the command complete headers, 2 for the event headers
         hack->context);
 
-    GKI_freebuf(hack->response);
+    osi_free(hack->response);
     osi_free(event);
 }
 
@@ -1190,7 +1189,7 @@ static void btu_hcif_command_status_evt_on_task(BT_HDR *event)
         stream,
         hack->context);
 
-    GKI_freebuf(hack->command);
+    osi_free(hack->command);
     osi_free(event);
 }
 

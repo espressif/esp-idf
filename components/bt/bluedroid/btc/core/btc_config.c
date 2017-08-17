@@ -25,6 +25,7 @@
 #include "btc_util.h"
 #include "config.h"
 #include "osi.h"
+#include "mutex.h"
 
 #include "bt_types.h"
 
@@ -75,7 +76,7 @@ bool btc_get_address_type(const BD_ADDR bd_addr, int *p_addr_type)
     return TRUE;
 }
 
-static pthread_mutex_t lock;  // protects operations on |config|.
+static osi_mutex_t lock;  // protects operations on |config|.
 static config_t *config;
 
 bool btc_compare_address_key_value(const char *section, char *key_type, void *key_value, int key_length)
@@ -87,11 +88,11 @@ bool btc_compare_address_key_value(const char *section, char *key_type, void *ke
         return false;
     }
     btc_key_value_to_string((uint8_t *)key_value, value_str, key_length);
-    pthread_mutex_lock(&lock);
+    osi_mutex_lock(&lock, OSI_MUTEX_MAX_TIMEOUT);
     if ((status = config_has_key_in_section(config, key_type, value_str)) == true) {
         config_remove_section(config, section);
     }
-    pthread_mutex_unlock(&lock);
+    osi_mutex_unlock(&lock);
     return status;
 }
 
@@ -114,7 +115,7 @@ static void btc_key_value_to_string(uint8_t *key_vaule, char *value_str, int key
 
 bool btc_config_init(void)
 {
-    pthread_mutex_init(&lock, NULL);
+    osi_mutex_new(&lock);
     config = config_new(CONFIG_FILE_PATH);
     if (!config) {
         LOG_WARN("%s unable to load config file; starting unconfigured.\n", __func__);
@@ -132,7 +133,7 @@ bool btc_config_init(void)
 
 error:;
     config_free(config);
-    pthread_mutex_destroy(&lock);
+    osi_mutex_free(&lock);
     config = NULL;
     LOG_ERROR("%s failed\n", __func__);
     return false;
@@ -149,7 +150,7 @@ bool btc_config_clean_up(void)
     btc_config_flush();
 
     config_free(config);
-    pthread_mutex_destroy(&lock);
+    osi_mutex_free(&lock);
     config = NULL;
     return true;
 }
@@ -159,9 +160,9 @@ bool btc_config_has_section(const char *section)
     assert(config != NULL);
     assert(section != NULL);
 
-    pthread_mutex_lock(&lock);
+    osi_mutex_lock(&lock, OSI_MUTEX_MAX_TIMEOUT);
     bool ret = config_has_section(config, section);
-    pthread_mutex_unlock(&lock);
+    osi_mutex_unlock(&lock);
 
     return ret;
 }
@@ -172,9 +173,9 @@ bool btc_config_exist(const char *section, const char *key)
     assert(section != NULL);
     assert(key != NULL);
 
-    pthread_mutex_lock(&lock);
+    osi_mutex_lock(&lock, OSI_MUTEX_MAX_TIMEOUT);
     bool ret = config_has_key(config, section, key);
-    pthread_mutex_unlock(&lock);
+    osi_mutex_unlock(&lock);
 
     return ret;
 }
@@ -186,12 +187,12 @@ bool btc_config_get_int(const char *section, const char *key, int *value)
     assert(key != NULL);
     assert(value != NULL);
 
-    pthread_mutex_lock(&lock);
+    osi_mutex_lock(&lock, OSI_MUTEX_MAX_TIMEOUT);
     bool ret = config_has_key(config, section, key);
     if (ret) {
         *value = config_get_int(config, section, key, *value);
     }
-    pthread_mutex_unlock(&lock);
+    osi_mutex_unlock(&lock);
 
     return ret;
 }
@@ -202,9 +203,9 @@ bool btc_config_set_int(const char *section, const char *key, int value)
     assert(section != NULL);
     assert(key != NULL);
 
-    pthread_mutex_lock(&lock);
+    osi_mutex_lock(&lock, OSI_MUTEX_MAX_TIMEOUT);
     config_set_int(config, section, key, value);
-    pthread_mutex_unlock(&lock);
+    osi_mutex_unlock(&lock);
 
     return true;
 }
@@ -217,9 +218,9 @@ bool btc_config_get_str(const char *section, const char *key, char *value, int *
     assert(value != NULL);
     assert(size_bytes != NULL);
 
-    pthread_mutex_lock(&lock);
+    osi_mutex_lock(&lock, OSI_MUTEX_MAX_TIMEOUT);
     const char *stored_value = config_get_string(config, section, key, NULL);
-    pthread_mutex_unlock(&lock);
+    osi_mutex_unlock(&lock);
 
     if (!stored_value) {
         return false;
@@ -238,9 +239,9 @@ bool btc_config_set_str(const char *section, const char *key, const char *value)
     assert(key != NULL);
     assert(value != NULL);
 
-    pthread_mutex_lock(&lock);
+    osi_mutex_lock(&lock, OSI_MUTEX_MAX_TIMEOUT);
     config_set_string(config, section, key, value, false);
-    pthread_mutex_unlock(&lock);
+    osi_mutex_unlock(&lock);
 
     return true;
 }
@@ -253,9 +254,9 @@ bool btc_config_get_bin(const char *section, const char *key, uint8_t *value, si
     assert(value != NULL);
     assert(length != NULL);
 
-    pthread_mutex_lock(&lock);
+    osi_mutex_lock(&lock, OSI_MUTEX_MAX_TIMEOUT);
     const char *value_str = config_get_string(config, section, key, NULL);
-    pthread_mutex_unlock(&lock);
+    osi_mutex_unlock(&lock);
 
     if (!value_str) {
         return false;
@@ -286,9 +287,9 @@ size_t btc_config_get_bin_length(const char *section, const char *key)
     assert(section != NULL);
     assert(key != NULL);
 
-    pthread_mutex_lock(&lock);
+    osi_mutex_lock(&lock, OSI_MUTEX_MAX_TIMEOUT);
     const char *value_str = config_get_string(config, section, key, NULL);
-    pthread_mutex_unlock(&lock);
+    osi_mutex_unlock(&lock);
 
     if (!value_str) {
         return 0;
@@ -320,9 +321,9 @@ bool btc_config_set_bin(const char *section, const char *key, const uint8_t *val
         str[(i * 2) + 1] = lookup[value[i] & 0x0F];
     }
 
-    pthread_mutex_lock(&lock);
+    osi_mutex_lock(&lock, OSI_MUTEX_MAX_TIMEOUT);
     config_set_string(config, section, key, str, false);
-    pthread_mutex_unlock(&lock);
+    osi_mutex_unlock(&lock);
 
     osi_free(str);
     return true;
@@ -360,9 +361,9 @@ bool btc_config_remove(const char *section, const char *key)
     assert(section != NULL);
     assert(key != NULL);
 
-    pthread_mutex_lock(&lock);
+    osi_mutex_lock(&lock, OSI_MUTEX_MAX_TIMEOUT);
     bool ret = config_remove_key(config, section, key);
-    pthread_mutex_unlock(&lock);
+    osi_mutex_unlock(&lock);
 
     return ret;
 }
@@ -372,9 +373,9 @@ bool btc_config_remove_section(const char *section)
     assert(config != NULL);
     assert(section != NULL);
 
-    pthread_mutex_lock(&lock);
+    osi_mutex_lock(&lock, OSI_MUTEX_MAX_TIMEOUT);
     bool ret = config_remove_section(config, section);
-    pthread_mutex_unlock(&lock);
+    osi_mutex_unlock(&lock);
 
     return ret;
 }
@@ -393,7 +394,7 @@ void btc_config_save(void)
     size_t num_keys = 0;
     size_t total_candidates = 0;
 
-    pthread_mutex_lock(&lock);
+    osi_mutex_lock(&lock, OSI_MUTEX_MAX_TIMEOUT);
     for (const config_section_node_t *snode = config_section_begin(config); snode != config_section_end(config); snode = config_section_next(snode)) {
         const char *section = config_section_name(snode);
         if (!string_is_bdaddr(section)) {
@@ -421,15 +422,15 @@ void btc_config_save(void)
             config_remove_section(config, keys[--num_keys]);
         }
     config_save(config, CONFIG_FILE_PATH);
-    pthread_mutex_unlock(&lock);
+    osi_mutex_unlock(&lock);
 }
 
 void btc_config_flush(void)
 {
     assert(config != NULL);
-    pthread_mutex_lock(&lock);
+    osi_mutex_lock(&lock, OSI_MUTEX_MAX_TIMEOUT);
     config_save(config, CONFIG_FILE_PATH);
-    pthread_mutex_unlock(&lock);
+    osi_mutex_unlock(&lock);
 }
 
 int btc_config_clear(void)
@@ -437,16 +438,16 @@ int btc_config_clear(void)
     assert(config != NULL);
 
 
-    pthread_mutex_lock(&lock);
+    osi_mutex_lock(&lock, OSI_MUTEX_MAX_TIMEOUT);
     config_free(config);
 
     config = config_new_empty();
     if (config == NULL) {
-        pthread_mutex_unlock(&lock);
+        osi_mutex_unlock(&lock);
         return false;
     }
     int ret = config_save(config, CONFIG_FILE_PATH);
-    pthread_mutex_unlock(&lock);
+    osi_mutex_unlock(&lock);
     return ret;
 }
 

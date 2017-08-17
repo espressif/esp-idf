@@ -27,10 +27,10 @@
 #include <stdbool.h>
 
 #include "btm_api.h"
-#include "gki.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"
 #include "list.h"
+#include "fixed_queue.h"
 
 #define L2CAP_MIN_MTU   48      /* Minimum acceptable MTU is 48 bytes */
 
@@ -176,9 +176,9 @@ typedef struct {
 
     UINT16      rx_sdu_len;                 /* Length of the SDU being received         */
     BT_HDR      *p_rx_sdu;                  /* Buffer holding the SDU being received    */
-    BUFFER_Q    waiting_for_ack_q;          /* Buffers sent and waiting for peer to ack */
-    BUFFER_Q    srej_rcv_hold_q;            /* Buffers rcvd but held pending SREJ rsp   */
-    BUFFER_Q    retrans_q;                  /* Buffers being retransmitted              */
+    fixed_queue_t    *waiting_for_ack_q;          /* Buffers sent and waiting for peer to ack */
+    fixed_queue_t    *srej_rcv_hold_q;            /* Buffers rcvd but held pending SREJ rsp   */
+    fixed_queue_t    *retrans_q;                  /* Buffers being retransmitted              */
 
     TIMER_LIST_ENT ack_timer;               /* Timer delaying RR                        */
     TIMER_LIST_ENT mon_retrans_timer;       /* Timer Monitor or Retransmission          */
@@ -241,6 +241,9 @@ typedef struct {
 } tL2C_RCB;
 
 
+#ifndef L2CAP_CBB_DEFAULT_DATA_RATE_BUFF_QUOTA
+#define L2CAP_CBB_DEFAULT_DATA_RATE_BUFF_QUOTA 100
+#endif
 /* Define a channel control block (CCB). There may be many channel control blocks
 ** between the same two Bluetooth devices (i.e. on the same link).
 ** Each CCB has unique local and remote CIDs. All channel control blocks on
@@ -279,7 +282,7 @@ typedef struct t_l2c_ccb {
     tL2CAP_CH_CFG_BITS  peer_cfg_bits;          /* Store what peer wants to configure */
     tL2CAP_CFG_INFO     peer_cfg;               /* Peer's saved configuration options */
 
-    BUFFER_Q            xmit_hold_q;            /* Transmit data hold queue         */
+    fixed_queue_t       *xmit_hold_q;            /* Transmit data hold queue         */
     BOOLEAN             cong_sent;              /* Set when congested status sent   */
     UINT16              buff_quota;             /* Buffer quota before sending congestion   */
 
@@ -379,8 +382,8 @@ typedef struct t_l2c_linkcb {
     UINT8               peer_chnl_mask[L2CAP_FIXED_CHNL_ARRAY_SIZE];
 #if (L2CAP_UCD_INCLUDED == TRUE)
     UINT16              ucd_mtu;                    /* peer MTU on UCD */
-    BUFFER_Q            ucd_out_sec_pending_q;      /* Security pending outgoing UCD packet  */
-    BUFFER_Q            ucd_in_sec_pending_q;       /* Security pending incoming UCD packet  */
+    fixed_queue_t       *ucd_out_sec_pending_q;      /* Security pending outgoing UCD packet  */
+    fixed_queue_t       *ucd_in_sec_pending_q;       /* Security pending incoming UCD packet  */
 #endif
 
     BT_HDR              *p_hcit_rcv_acl;            /* Current HCIT ACL buf being rcvd  */
@@ -706,7 +709,7 @@ extern void     l2c_fcr_proc_pdu (tL2C_CCB *p_ccb, BT_HDR *p_buf);
 extern void     l2c_fcr_proc_tout (tL2C_CCB *p_ccb);
 extern void     l2c_fcr_proc_ack_tout (tL2C_CCB *p_ccb);
 extern void     l2c_fcr_send_S_frame (tL2C_CCB *p_ccb, UINT16 function_code, UINT16 pf_bit);
-extern BT_HDR   *l2c_fcr_clone_buf (BT_HDR *p_buf, UINT16 new_offset, UINT16 no_of_bytes, UINT8 pool);
+extern BT_HDR   *l2c_fcr_clone_buf (BT_HDR *p_buf, UINT16 new_offset, UINT16 no_of_bytes);
 extern BOOLEAN  l2c_fcr_is_flow_controlled (tL2C_CCB *p_ccb);
 extern BT_HDR   *l2c_fcr_get_next_xmit_sdu_seg (tL2C_CCB *p_ccb, UINT16 max_packet_length);
 extern void     l2c_fcr_start_timer (tL2C_CCB *p_ccb);

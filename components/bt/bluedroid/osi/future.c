@@ -21,7 +21,6 @@
 #include "allocator.h"
 #include "future.h"
 #include "osi.h"
-#include "osi_arch.h"
 
 void future_free(future_t *future);
 
@@ -68,7 +67,7 @@ void future_ready(future_t *future, void *value)
 
     future->ready_can_be_called = false;
     future->result = value;
-    osi_sem_signal(&future->semaphore);
+    osi_sem_give(&future->semaphore);
 }
 
 void *future_await(future_t *future)
@@ -77,7 +76,7 @@ void *future_await(future_t *future)
 
     // If the future is immediate, it will not have a semaphore
     if (future->semaphore) {
-        osi_sem_wait(&future->semaphore, 0);
+        osi_sem_take(&future->semaphore, OSI_SEM_MAX_TIMEOUT);
     }
 
     void *result = future->result;

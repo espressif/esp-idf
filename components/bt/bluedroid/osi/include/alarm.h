@@ -76,4 +76,6 @@ period_ms_t osi_alarm_get_remaining_ms(const osi_alarm_t *alarm);
 // t1 and t2 should be no greater than the time of MAX ticks
 period_ms_t osi_alarm_time_diff(period_ms_t t1, period_ms_t t2);
 
+uint32_t osi_time_get_os_boottime_ms(void);
+
 #endif /*_ALARM_H_*/
