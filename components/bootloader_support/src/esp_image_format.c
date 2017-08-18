@@ -65,7 +65,7 @@ static esp_err_t verify_segment_header(int index, const esp_image_segment_header
 
 static esp_err_t verify_checksum(bootloader_sha256_handle_t sha_handle, uint32_t checksum_word, esp_image_metadata_t *data);
 
-static esp_err_t __attribute__((unused)) verify_secure_boot(bootloader_sha256_handle_t sha_handle, esp_image_metadata_t *data);
+static esp_err_t __attribute__((unused)) verify_secure_boot_signature(bootloader_sha256_handle_t sha_handle, esp_image_metadata_t *data);
 static esp_err_t __attribute__((unused)) verify_simple_hash(bootloader_sha256_handle_t sha_handle, esp_image_metadata_t *data);
 
 esp_err_t esp_image_load(esp_image_load_mode_t mode, const esp_partition_pos_t *part, esp_image_metadata_t *data)
@@ -159,21 +159,32 @@ goto err;
         FAIL_LOAD("Image length %d doesn't fit in partition length %d", data->image_len, part->size);
     }
 
+    bool is_bootloader = (data->start_addr == ESP_BOOTLOADER_OFFSET);
+    /* For secure boot, we don't verify signature on bootloaders.
+
+       For non-secure boot, we don't verify any SHA-256 hash appended to the bootloader because esptool.py may have
+       rewritten the header - rely on esptool.py having verified the bootloader at flashing time, instead.
+    */
+    if (!is_bootloader) {
 #ifdef CONFIG_SECURE_BOOT_ENABLED
-    err = verify_secure_boot(sha_handle, data);
+        // secure boot images have a signature appended
+        err = verify_secure_boot_signature(sha_handle, data);
+#else
+        // No secure boot, but SHA-256 can be appended for basic corruption detection
+        if (sha_handle != NULL) {
+            err = verify_simple_hash(sha_handle, data);
+        }
+#endif // CONFIG_SECURE_BOOT_ENABLED
+    } else { // is_bootloader
+        // bootloader may still have a sha256 digest handle open
+        if (sha_handle != NULL) {
+            bootloader_sha256_finish(sha_handle, NULL);
+        }
+    }
     sha_handle = NULL;
     if (err != ESP_OK) {
         goto err;
     }
-#else // No secure boot, but SHA-256 can be appended for basic corruption detection
-    if (sha_handle != NULL) {
-        err = verify_simple_hash(sha_handle, data);
-        sha_handle = NULL;
-        if (err != ESP_OK) {
-            goto err;
-        }
-    }
-#endif
 
 #ifdef BOOTLOADER_BUILD
     if (do_load) { // Need to deobfuscate RAM
@@ -446,7 +457,7 @@ static esp_err_t verify_checksum(bootloader_sha256_handle_t sha_handle, uint32_t
 
 static void debug_log_hash(const uint8_t *image_hash, const char *caption);
 
-static esp_err_t verify_secure_boot(bootloader_sha256_handle_t sha_handle, esp_image_metadata_t *data)
+static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_handle, esp_image_metadata_t *data)
 {
     uint8_t image_hash[HASH_LEN] = { 0 };
 
