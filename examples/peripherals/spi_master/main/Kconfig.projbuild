@@ -1,0 +1,15 @@
+menu "Example Configuration"
+
+choice LCD_TYPE
+	prompt "LCD module type"
+	default LCD_TYPE_ST7789V
+	help
+		The type of LCD on the evaluation board.
+
+config LCD_TYPE_ST7789V
+	bool "ST7789V (WROVER Kit v2 or v3)"
+config LCD_TYPE_ILI9341
+	bool "ILI9341 (WROVER Kit v1 or DevKitJ v1)"
+endchoice
+
+endmenu
