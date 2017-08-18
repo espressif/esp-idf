@@ -258,17 +258,20 @@ static void https_get_task(void *pvParameters)
 
         ESP_LOGI(TAG, "Writing HTTP request...");
 
-        while((ret = mbedtls_ssl_write(&ssl, (const unsigned char *)REQUEST, strlen(REQUEST))) <= 0)
-        {
-            if(ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE)
-            {
+        size_t written_bytes = 0;
+        do {
+            ret = mbedtls_ssl_write(&ssl,
+                                    (const unsigned char *)REQUEST + written_bytes,
+                                    strlen(REQUEST) - written_bytes);
+            if (ret >= 0) {
+                ESP_LOGI(TAG, "%d bytes written", ret);
+                written_bytes += ret;
+            } else if (ret != MBEDTLS_ERR_SSL_WANT_WRITE && ret != MBEDTLS_ERR_SSL_WANT_READ) {
                 ESP_LOGE(TAG, "mbedtls_ssl_write returned -0x%x", -ret);
                 goto exit;
             }
-        }
+        } while(written_bytes < strlen(REQUEST));
 
-        len = ret;
-        ESP_LOGI(TAG, "%d bytes written", len);
         ESP_LOGI(TAG, "Reading HTTP response...");
 
         do
