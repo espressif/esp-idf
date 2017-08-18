@@ -159,6 +159,17 @@ esp_err_t esp_event_send(system_event_t *event);
   */
 esp_err_t esp_event_process_default(system_event_t *event);
 
+/**
+  * @brief  Install default event handlers for Ethernet interface
+  *
+  */
+void esp_event_set_default_eth_handlers();
+
+/**
+  * @brief  Install default event handlers for Wi-Fi interfaces (station and AP)
+  *
+  */
+void esp_event_set_default_wifi_handlers();
 
 #ifdef __cplusplus
 }

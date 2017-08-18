@@ -118,6 +118,24 @@ typedef struct {
 esp_err_t esp_eth_init(eth_config_t *config);
 
 /**
+ * @brief  Init Ethernet mac driver only
+ *
+ * For the most part, you need not call this function directly. It gets called
+ * from esp_eth_init().
+ *
+ * This function may be called, if you only need to initialize the Ethernet
+ * driver without having to use the network stack on top.
+ *
+ * @note   config can not be NULL,and phy chip must be suitable to phy init func.
+ * @param[in] config  mac init data.
+ *
+ * @return
+ *      - ESP_OK
+ *      - ESP_FAIL
+ */
+esp_err_t esp_eth_init_internal(eth_config_t *config);
+
+/**
  * @brief  Send packet from tcp/ip to mac
  *
  * @note   buf can not be NULL,size must be less than 1580

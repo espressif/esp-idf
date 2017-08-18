@@ -1,14 +1,9 @@
-menuconfig ETHERNET
-    bool "Ethernet"
-    default n
-    help
-        Select this option to enable ethernet driver and show the submenu with ethernet features.
+menu ETHERNET
 
 config DMA_RX_BUF_NUM
     int "Number of DMA RX buffers"
     range 3 20
     default 10
-    depends on ETHERNET
     help
         Number of DMA receive buffers. Each buffer is 1600 bytes.
         Buffers are allocated statically.
@@ -19,7 +14,6 @@ config DMA_TX_BUF_NUM
     int "Number of DMA RX buffers"
     range 3 20
     default 10
-    depends on ETHERNET
     help
         Number of DMA transmit buffers. Each buffer is 1600 bytes.
         Buffers are allocated statically.
@@ -28,7 +22,6 @@ config DMA_TX_BUF_NUM
 config EMAC_L2_TO_L3_RX_BUF_MODE
     bool "Enable copy between Layer2 and Layer3"
     default n
-    depends on ETHERNET
     help
         If this options is selected, a copy of each received buffer will be created when
         passing it from the Ethernet MAC (L2) to the IP stack (L3). Otherwise, IP stack
@@ -46,7 +39,7 @@ config EMAC_TASK_PRIORITY
     int "EMAC_TASK_PRIORITY"
     default 20
     range 3 22
-    depends on ETHERNET
     help
         Ethernet MAC task priority.
 
+endmenu

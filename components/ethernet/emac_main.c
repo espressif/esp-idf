@@ -979,12 +979,13 @@ esp_err_t IRAM_ATTR emac_post(emac_sig_t sig, emac_par_t par)
 
 esp_err_t esp_eth_init(eth_config_t *config)
 {
+     esp_event_set_default_eth_handlers();
+     return esp_eth_init_internal(config);
+}
+
+esp_err_t esp_eth_init_internal(eth_config_t *config)
+{
     esp_err_t ret = ESP_OK;
-#if !CONFIG_ETHERNET
-    ESP_LOGI(TAG, "eth driver init fail,please make menuconfig and enable ethernet .");
-    ret = ESP_FAIL;
-    goto _exit;
-#endif
     if (emac_config.emac_status != EMAC_RUNTIME_NOT_INIT) {
         goto _exit;
     }

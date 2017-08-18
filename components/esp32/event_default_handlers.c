@@ -56,46 +56,17 @@ static esp_err_t system_event_sta_connected_handle_default(system_event_t *event
 static esp_err_t system_event_sta_disconnected_handle_default(system_event_t *event);
 static esp_err_t system_event_sta_got_ip_default(system_event_t *event);
 
-#ifdef CONFIG_ETHERNET
 static esp_err_t system_event_eth_start_handle_default(system_event_t *event);
 static esp_err_t system_event_eth_stop_handle_default(system_event_t *event);
 static esp_err_t system_event_eth_connected_handle_default(system_event_t *event);
 static esp_err_t system_event_eth_disconnected_handle_default(system_event_t *event);
-#endif
 
 /* Default event handler functions
 
    Any entry in this table which is disabled by config will have a NULL handler.
 */
-static system_event_handler_t default_event_handlers[SYSTEM_EVENT_MAX] = {
-    [SYSTEM_EVENT_WIFI_READY]          = NULL,
-    [SYSTEM_EVENT_SCAN_DONE]           = NULL,
-    [SYSTEM_EVENT_STA_START]           = NULL,
-    [SYSTEM_EVENT_STA_STOP]            = NULL,
-    [SYSTEM_EVENT_STA_CONNECTED]       = NULL,
-    [SYSTEM_EVENT_STA_DISCONNECTED]    = NULL,
-    [SYSTEM_EVENT_STA_AUTHMODE_CHANGE] = NULL,
-    [SYSTEM_EVENT_STA_GOT_IP]          = NULL,
-    [SYSTEM_EVENT_STA_WPS_ER_SUCCESS]  = NULL,
-    [SYSTEM_EVENT_STA_WPS_ER_FAILED]   = NULL,
-    [SYSTEM_EVENT_STA_WPS_ER_TIMEOUT]  = NULL,
-    [SYSTEM_EVENT_STA_WPS_ER_PIN]      = NULL,
-    [SYSTEM_EVENT_AP_START]            = NULL,
-    [SYSTEM_EVENT_AP_STOP]             = NULL,
-    [SYSTEM_EVENT_AP_STACONNECTED]     = NULL,
-    [SYSTEM_EVENT_AP_STADISCONNECTED]  = NULL,
-    [SYSTEM_EVENT_AP_PROBEREQRECVED]   = NULL,
-    [SYSTEM_EVENT_AP_STA_GOT_IP6]      = NULL,
-#ifdef CONFIG_ETHERNET
-    [SYSTEM_EVENT_ETH_START]           = system_event_eth_start_handle_default,
-    [SYSTEM_EVENT_ETH_STOP]            = system_event_eth_stop_handle_default,
-    [SYSTEM_EVENT_ETH_CONNECTED]       = system_event_eth_connected_handle_default,
-    [SYSTEM_EVENT_ETH_DISCONNECTED]    = system_event_eth_disconnected_handle_default,
-    [SYSTEM_EVENT_ETH_GOT_IP]          = NULL,
-#endif
-};
+static system_event_handler_t default_event_handlers[SYSTEM_EVENT_MAX] = { 0 };
 
-#ifdef CONFIG_ETHERNET
 esp_err_t system_event_eth_start_handle_default(system_event_t *event)
 {
     tcpip_adapter_ip_info_t eth_ip;
@@ -151,7 +122,6 @@ esp_err_t system_event_eth_disconnected_handle_default(system_event_t *event)
     tcpip_adapter_down(TCPIP_ADAPTER_IF_ETH);
     return ESP_OK;
 }
-#endif
 
 static esp_err_t system_event_sta_got_ip_default(system_event_t *event)
 {
@@ -404,7 +374,7 @@ esp_err_t esp_event_process_default(system_event_t *event)
     return ESP_OK;
 }
 
-esp_err_t esp_wifi_init(wifi_init_config_t *config)
+void esp_event_set_default_wifi_handlers()
 {
      default_event_handlers[SYSTEM_EVENT_STA_START]        = system_event_sta_start_handle_default;
      default_event_handlers[SYSTEM_EVENT_STA_STOP]         = system_event_sta_stop_handle_default;
@@ -415,5 +385,12 @@ esp_err_t esp_wifi_init(wifi_init_config_t *config)
      default_event_handlers[SYSTEM_EVENT_AP_STOP]          = system_event_ap_stop_handle_default;
 
      esp_register_shutdown_handler((shutdown_handler_t)esp_wifi_stop);
-     return esp_wifi_init_internal(config);
+}
+
+void esp_event_set_default_eth_handlers()
+{
+     default_event_handlers[SYSTEM_EVENT_ETH_START]           = system_event_eth_start_handle_default;
+     default_event_handlers[SYSTEM_EVENT_ETH_STOP]            = system_event_eth_stop_handle_default;
+     default_event_handlers[SYSTEM_EVENT_ETH_CONNECTED]       = system_event_eth_connected_handle_default;
+     default_event_handlers[SYSTEM_EVENT_ETH_DISCONNECTED]    = system_event_eth_disconnected_handle_default;
 }
