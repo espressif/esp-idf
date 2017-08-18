@@ -195,6 +195,7 @@ config MBEDTLS_KEY_EXCHANGE_DHE_RSA
 
 config MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE
    bool "Support Elliptic Curve based ciphersuites"
+   depends on MBEDTLS_ECP_C
    default y
    help
        Enable to show Elliptic Curve based ciphersuite mode options.
@@ -205,35 +206,35 @@ config MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE
 
 config MBEDTLS_KEY_EXCHANGE_ECDHE_RSA
    bool "Enable ECDHE-RSA based ciphersuite modes"
-   depends on MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE
+   depends on MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE && MBEDTLS_ECDH_C
    default y
    help
        Enable to support ciphersuites with prefix TLS-ECDHE-RSA-WITH-
 
 config MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA
    bool "Enable ECDHE-ECDSA based ciphersuite modes"
-   depends on MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE
+   depends on MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE && MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C
    default y
    help
        Enable to support ciphersuites with prefix TLS-ECDHE-RSA-WITH-
 
 config MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA
    bool "Enable ECDHE-ECDSA based ciphersuite modes"
-   depends on MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE
+   depends on MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE && MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C
    default y
    help
        Enable to support ciphersuites with prefix TLS-ECDHE-RSA-WITH-
 
 config MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA
    bool "Enable ECDH-ECDSA based ciphersuite modes"
-   depends on MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE
+   depends on MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE && MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C
    default y
    help
        Enable to support ciphersuites with prefix TLS-ECDHE-RSA-WITH-
 
 config MBEDTLS_KEY_EXCHANGE_ECDH_RSA
    bool "Enable ECDH-RSA based ciphersuite modes"
-   depends on MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE
+   depends on MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE && MBEDTLS_ECDH_C
    default y
    help
        Enable to support ciphersuites with prefix TLS-ECDHE-RSA-WITH-
@@ -409,5 +410,118 @@ config MBEDTLS_X509_CSR_PARSE_C
         Support for parsing X.509 Certifificate Signing Requests
 
 endmenu # Certificates
+
+menuconfig MBEDTLS_ECP_C
+    bool  "Elliptic Curve Ciphers"
+    default y
+
+config MBEDTLS_ECDH_C
+    bool "Elliptic Curve Diffie-Hellman (ECDH)"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        Enable ECDH. Needed to use ECDHE-xxx TLS ciphersuites.
+
+config MBEDTLS_ECDSA_C
+    bool "Elliptic Curve DSA"
+    depends on MBEDTLS_ECDH_C
+    default y
+    help
+        Enable ECDSA. Needed to use ECDSA-xxx TLS ciphersuites.
+
+config MBEDTLS_ECP_DP_SECP192R1_ENABLED
+    bool "Enable SECP192R1 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        Enable support for SECP192R1 Elliptic Curve.
+
+config MBEDTLS_ECP_DP_SECP224R1_ENABLED
+    bool "Enable SECP224R1 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        Enable support for SECP224R1 Elliptic Curve.
+
+config MBEDTLS_ECP_DP_SECP256R1_ENABLED
+    bool "Enable SECP256R1 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        Enable support for SECP256R1 Elliptic Curve.
+
+config MBEDTLS_ECP_DP_SECP384R1_ENABLED
+    bool "Enable SECP384R1 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        Enable support for SECP384R1 Elliptic Curve.
+
+config MBEDTLS_ECP_DP_SECP521R1_ENABLED
+    bool "Enable SECP521R1 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        Enable support for SECP521R1 Elliptic Curve.
+
+config MBEDTLS_ECP_DP_SECP192K1_ENABLED
+    bool "Enable SECP192K1 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        Enable support for SECP192K1 Elliptic Curve.
+
+config MBEDTLS_ECP_DP_SECP224K1_ENABLED
+    bool "Enable SECP224K1 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        Enable support for SECP224K1 Elliptic Curve.
+
+config MBEDTLS_ECP_DP_SECP256K1_ENABLED
+    bool "Enable SECP256K1 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        Enable support for SECP256K1 Elliptic Curve.
+
+config MBEDTLS_ECP_DP_BP256R1_ENABLED
+    bool "Enable BP256R1 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        support for DP Elliptic Curve.
+
+config MBEDTLS_ECP_DP_BP384R1_ENABLED
+    bool "Enable BP384R1 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        support for DP Elliptic Curve.
+
+config MBEDTLS_ECP_DP_BP512R1_ENABLED
+    bool "Enable BP512R1 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        support for DP Elliptic Curve.
+
+config MBEDTLS_ECP_DP_CURVE25519_ENABLED
+    bool "Enable CURVE25519 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        Enable support for CURVE25519 Elliptic Curve.
+
+config MBEDTLS_ECP_NIST_OPTIM
+    bool "NIST 'modulo p' optimisations"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        NIST 'modulo p' optimisations increase Elliptic Curve operation performance.
+
+        Disabling this option saves some code size.
+
+# end of Elliptic Curve options
 
 endmenu  # mbedTLS
