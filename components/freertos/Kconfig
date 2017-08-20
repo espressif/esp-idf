@@ -240,7 +240,7 @@ config ENABLE_STATIC_TASK_CLEAN_UP_HOOK
     help
         Enable this option to make FreeRTOS call the static task clean up hook when a task is deleted.
 
-        Bear in mind that if this option is enabled you will need to implement the following function:
+        Bear in mind that if this option is enabled you will need to implement the following function::
 
             void vPortCleanUpTCB ( void *pxTCB ) {
                 // place clean up code here
