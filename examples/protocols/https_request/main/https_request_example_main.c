@@ -254,19 +254,24 @@ static void https_get_task(void *pvParameters)
             ESP_LOGI(TAG, "Certificate verified.");
         }
 
+        ESP_LOGI(TAG, "Cipher suite is %s", mbedtls_ssl_get_ciphersuite(&ssl));
+
         ESP_LOGI(TAG, "Writing HTTP request...");
 
-        while((ret = mbedtls_ssl_write(&ssl, (const unsigned char *)REQUEST, strlen(REQUEST))) <= 0)
-        {
-            if(ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE)
-            {
+        size_t written_bytes = 0;
+        do {
+            ret = mbedtls_ssl_write(&ssl,
+                                    (const unsigned char *)REQUEST + written_bytes,
+                                    strlen(REQUEST) - written_bytes);
+            if (ret >= 0) {
+                ESP_LOGI(TAG, "%d bytes written", ret);
+                written_bytes += ret;
+            } else if (ret != MBEDTLS_ERR_SSL_WANT_WRITE && ret != MBEDTLS_ERR_SSL_WANT_READ) {
                 ESP_LOGE(TAG, "mbedtls_ssl_write returned -0x%x", -ret);
                 goto exit;
             }
-        }
+        } while(written_bytes < strlen(REQUEST));
 
-        len = ret;
-        ESP_LOGI(TAG, "%d bytes written", len);
         ESP_LOGI(TAG, "Reading HTTP response...");
 
         do
@@ -296,7 +301,7 @@ static void https_get_task(void *pvParameters)
             }
 
             len = ret;
-            ESP_LOGI(TAG, "%d bytes read", len);
+            ESP_LOGD(TAG, "%d bytes read", len);
             /* Print response directly to stdout as it is read */
             for(int i = 0; i < len; i++) {
                 putchar(buf[i]);
@@ -314,6 +319,11 @@ static void https_get_task(void *pvParameters)
             mbedtls_strerror(ret, buf, 100);
             ESP_LOGE(TAG, "Last error was: -0x%x - %s", -ret, buf);
         }
+
+        putchar('\n'); // JSON output doesn't have a newline at end
+
+        static int request_count;
+        ESP_LOGI(TAG, "Completed %d requests", ++request_count);
 
         for(int countdown = 10; countdown >= 0; countdown--) {
             ESP_LOGI(TAG, "%d...", countdown);

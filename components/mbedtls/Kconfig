@@ -15,7 +15,7 @@ config MBEDTLS_SSL_MAX_CONTENT_LEN
         Fragment Length Negotiation Extension (max_fragment_length,
         see RFC6066) or you know for certain that it will never send a
         message longer than a certain number of bytes.
-        
+
         If the value is set too low, symptoms are a failed TLS
         handshake or a return value of MBEDTLS_ERR_SSL_INVALID_RECORD
         (-0x7200).
@@ -102,4 +102,426 @@ config MBEDTLS_HAVE_TIME_DATE
 
        It is suggested that you should get the real time by "SNTP".
 
-endmenu
+choice MBEDTLS_TLS_MODE
+    bool "TLS Protocol Role"
+    default MBEDTLS_TLS_SERVER_AND_CLIENT
+    help
+        mbedTLS can be compiled with protocol support for the TLS
+        server, TLS client, or both server and client.
+
+        Reducing the number of TLS roles supported saves code size.
+
+config MBEDTLS_TLS_SERVER_AND_CLIENT
+    bool "Server & Client"
+    select MBEDTLS_TLS_SERVER
+    select MBEDTLS_TLS_CLIENT
+config MBEDTLS_TLS_SERVER_ONLY
+    bool "Server"
+    select MBEDTLS_TLS_SERVER
+config MBEDTLS_TLS_CLIENT_ONLY
+    bool "Client"
+    select MBEDTLS_TLS_CLIENT
+config MBEDTLS_TLS_DISABLED
+    bool "None"
+
+endchoice
+
+config MBEDTLS_TLS_SERVER
+    bool
+    select MBEDTLS_TLS_ENABLED
+config MBEDTLS_TLS_CLIENT
+    bool
+    select MBEDTLS_TLS_ENABLED
+config MBEDTLS_TLS_ENABLED
+    bool
+
+menu "TLS Key Exchange Methods"
+   depends on MBEDTLS_TLS_ENABLED
+
+config MBEDTLS_PSK_MODES
+   bool "Enable pre-shared-key ciphersuites"
+   default n
+   help
+       Enable to show configuration for different types of pre-shared-key TLS authentatication methods.
+
+       Leaving this options disabled will save code size if they are not used.
+
+config MBEDTLS_KEY_EXCHANGE_PSK
+   bool "Enable PSK based ciphersuite modes"
+   depends on MBEDTLS_PSK_MODES
+   default n
+   help
+       Enable to support symmetric key PSK (pre-shared-key) TLS key exchange modes.
+
+config MBEDTLS_KEY_EXCHANGE_DHE_PSK
+   bool "Enable DHE-PSK based ciphersuite modes"
+   depends on MBEDTLS_PSK_MODES
+   default y
+   help
+       Enable to support Diffie-Hellman PSK (pre-shared-key) TLS authentication modes.
+
+config MBEDTLS_KEY_EXCHANGE_DHE_PSK
+   bool "Enable DHE-PSK based ciphersuite modes"
+   depends on MBEDTLS_PSK_MODES
+   default y
+   help
+       Enable to support Diffie-Hellman PSK (pre-shared-key) TLS authentication modes.
+
+config MBEDTLS_KEY_EXCHANGE_ECDHE_PSK
+   bool "Enable ECDHE-PSK based ciphersuite modes"
+   depends on MBEDTLS_PSK_MODES
+   default y
+   help
+       Enable to support Elliptic-Curve-Diffie-Hellman PSK (pre-shared-key) TLS authentication modes.
+
+config MBEDTLS_KEY_EXCHANGE_RSA_PSK
+   bool "Enable RSA-PSK based ciphersuite modes"
+   depends on MBEDTLS_PSK_MODES
+   default y
+   help
+       Enable to support RSA PSK (pre-shared-key) TLS authentication modes.
+
+config MBEDTLS_KEY_EXCHANGE_RSA
+   bool "Enable RSA-only based ciphersuite modes"
+   default y
+   help
+       Enable to support ciphersuites with prefix TLS-RSA-WITH-
+
+config MBEDTLS_KEY_EXCHANGE_DHE_RSA
+   bool "Enable DHE-RSA based ciphersuite modes"
+   default y
+   help
+       Enable to support ciphersuites with prefix TLS-DHE-RSA-WITH-
+
+config MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE
+   bool "Support Elliptic Curve based ciphersuites"
+   depends on MBEDTLS_ECP_C
+   default y
+   help
+       Enable to show Elliptic Curve based ciphersuite mode options.
+
+       Disabling all Elliptic Curve ciphersuites saves code size and
+       can give slightly faster TLS handshakes, provided the server supports
+       RSA-only ciphersuite modes.
+
+config MBEDTLS_KEY_EXCHANGE_ECDHE_RSA
+   bool "Enable ECDHE-RSA based ciphersuite modes"
+   depends on MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE && MBEDTLS_ECDH_C
+   default y
+   help
+       Enable to support ciphersuites with prefix TLS-ECDHE-RSA-WITH-
+
+config MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA
+   bool "Enable ECDHE-ECDSA based ciphersuite modes"
+   depends on MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE && MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C
+   default y
+   help
+       Enable to support ciphersuites with prefix TLS-ECDHE-RSA-WITH-
+
+config MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA
+   bool "Enable ECDHE-ECDSA based ciphersuite modes"
+   depends on MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE && MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C
+   default y
+   help
+       Enable to support ciphersuites with prefix TLS-ECDHE-RSA-WITH-
+
+config MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA
+   bool "Enable ECDH-ECDSA based ciphersuite modes"
+   depends on MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE && MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C
+   default y
+   help
+       Enable to support ciphersuites with prefix TLS-ECDHE-RSA-WITH-
+
+config MBEDTLS_KEY_EXCHANGE_ECDH_RSA
+   bool "Enable ECDH-RSA based ciphersuite modes"
+   depends on MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE && MBEDTLS_ECDH_C
+   default y
+   help
+       Enable to support ciphersuites with prefix TLS-ECDHE-RSA-WITH-
+
+endmenu # TLS key exchange modes
+
+config MBEDTLS_SSL_RENEGOTIATION
+   bool "Support TLS renegotiation"
+   depends on MBEDTLS_TLS_ENABLED
+   default y
+   help
+       The two main uses of renegotiation are (1) refresh keys on long-lived
+       connections and (2) client authentication after the initial handshake.
+       If you don't need renegotiation, disabling it will save code size and
+       reduce the possibility of abuse/vulnerability.
+
+config MBEDTLS_SSL_PROTO_SSL3
+   bool "Legacy SSL 3.0 support"
+   depends on MBEDTLS_TLS_ENABLED
+   default n
+   help
+       Support the legacy SSL 3.0 protocol. Most servers will speak a newer
+       TLS protocol these days.
+
+config MBEDTLS_SSL_PROTO_TLS1
+   bool "Support TLS 1.0 protocol"
+   depends on MBEDTLS_TLS_ENABLED
+   default y
+
+config MBEDTLS_SSL_PROTO_TLS1_1
+   bool "Support TLS 1.1 protocol"
+   depends on MBEDTLS_TLS_ENABLED
+   default y
+
+config MBEDTLS_SSL_PROTO_TLS1_2
+   bool "Support TLS 1.2 protocol"
+   depends on MBEDTLS_TLS_ENABLED
+   default y
+
+config MBEDTLS_SSL_PROTO_DTLS
+   bool "Support DTLS protocol (all versions)"
+   default n
+   depends on MBEDTLS_SSL_PROTO_TLS1_1 || MBEDTLS_SSL_PROTO_TLS1_2
+   help
+       Requires TLS 1.1 to be enabled for DTLS 1.0
+       Requires TLS 1.2 to be enabled for DTLS 1.2
+
+config MBEDTLS_SSL_ALPN
+   bool "Support ALPN (Application Layer Protocol Negotiation)"
+   depends on MBEDTLS_TLS_ENABLED
+   default y
+   help
+       Disabling this option will save some code size if it is not needed.
+
+config MBEDTLS_SSL_SESSION_TICKETS
+   bool "TLS: Support RFC 5077 SSL session tickets"
+   default y
+   depends on MBEDTLS_TLS_ENABLED
+   help
+       Support RFC 5077 session tickets. See mbedTLS documentation for more details.
+
+       Disabling this option will save some code size.
+
+menu "Symmetric Ciphers"
+
+config MBEDTLS_AES_C
+   bool "AES block cipher"
+   default y
+
+config MBEDTLS_CAMELLIA_C
+   bool "Camellia block cipher"
+   default n
+
+config MBEDTLS_DES_C
+   bool "DES block cipher (legacy, insecure)"
+   default n
+   help
+       Enables the DES block cipher to support 3DES-based TLS ciphersuites.
+
+       3DES is vulnerable to the Sweet32 attack and should only be enabled
+       if absolutely necessary.
+
+choice MBEDTLS_RC4_MODE
+    prompt "RC4 Stream Cipher (legacy, insecure)"
+    default MBEDTLS_RC4_DISABLED
+    help
+        ARCFOUR (RC4) stream cipher can be disabled entirely, enabled but not
+        added to default ciphersuites, or enabled completely.
+
+        Please consider the security implications before enabling RC4.
+
+config MBEDTLS_RC4_DISABLED
+    bool "Disabled"
+config MBEDTLS_RC4_ENABLED_NO_DEFAULT
+    bool "Enabled, not in default ciphersuites"
+config MBEDTLS_RC4_ENABLED
+    bool "Enabled"
+endchoice
+
+config MBEDTLS_BLOWFISH_C
+    bool "Blowfish block cipher (read help)"
+    default n
+    help
+        Enables the Blowfish block cipher (not used for TLS sessions.)
+
+        The Blowfish cipher is not used for mbedTLS TLS sessions but can be
+        used for other purposes. Read up on the limitations of Blowfish (including
+        Sweet32) before enabling.
+
+config MBEDTLS_XTEA_C
+    bool "XTEA block cipher"
+    default n
+    help
+        Enables the XTEA block cipher.
+
+
+config MBEDTLS_CCM_C
+    bool "CCM (Counter with CBC-MAC) block cipher modes"
+    default y
+    depends on MBEDTLS_AES_C || MBEDTLS_CAMELLIA_C
+    help
+        Enable Counter with CBC-MAC (CCM) modes for AES and/or Camellia ciphers.
+
+        Disabling this option saves some code size.
+
+config MBEDTLS_GCM_C
+    bool "GCM (Galois/Counter) block cipher modes"
+    default y
+    depends on MBEDTLS_AES_C || MBEDTLS_CAMELLIA_C
+    help
+        Enable Galois/Counter Mode for AES and/or Camellia ciphers.
+
+        This option is generally faster than CCM.
+
+endmenu # Symmetric Ciphers
+
+config MBEDTLS_RIPEMD160_C
+    bool "Enable RIPEMD-160 hash algorithm"
+    default n
+    help
+        Enable the RIPEMD-160 hash algorithm.
+
+menu "Certificates"
+
+config MBEDTLS_PEM_PARSE_C
+    bool "Read & Parse PEM formatted certificates"
+    default y
+    help
+        Enable decoding/parsing of PEM formatted certificates.
+
+        If your certificates are all in the simpler DER format, disabling
+        this option will save some code size.
+
+config MBEDTLS_PEM_WRITE_C
+    bool "Write PEM formatted certificates"
+    default y
+    help
+        Enable writing of PEM formatted certificates.
+
+        If writing certificate data only in DER format, disabling this
+        option will save some code size.
+
+config MBEDTLS_X509_CRL_PARSE_C
+    bool "X.509 CRL parsing"
+    default y
+    help
+        Support for parsing X.509 Certifificate Revocation Lists.
+
+config MBEDTLS_X509_CSR_PARSE_C
+    bool "X.509 CSR parsing"
+    default y
+    help
+        Support for parsing X.509 Certifificate Signing Requests
+
+endmenu # Certificates
+
+menuconfig MBEDTLS_ECP_C
+    bool  "Elliptic Curve Ciphers"
+    default y
+
+config MBEDTLS_ECDH_C
+    bool "Elliptic Curve Diffie-Hellman (ECDH)"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        Enable ECDH. Needed to use ECDHE-xxx TLS ciphersuites.
+
+config MBEDTLS_ECDSA_C
+    bool "Elliptic Curve DSA"
+    depends on MBEDTLS_ECDH_C
+    default y
+    help
+        Enable ECDSA. Needed to use ECDSA-xxx TLS ciphersuites.
+
+config MBEDTLS_ECP_DP_SECP192R1_ENABLED
+    bool "Enable SECP192R1 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        Enable support for SECP192R1 Elliptic Curve.
+
+config MBEDTLS_ECP_DP_SECP224R1_ENABLED
+    bool "Enable SECP224R1 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        Enable support for SECP224R1 Elliptic Curve.
+
+config MBEDTLS_ECP_DP_SECP256R1_ENABLED
+    bool "Enable SECP256R1 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        Enable support for SECP256R1 Elliptic Curve.
+
+config MBEDTLS_ECP_DP_SECP384R1_ENABLED
+    bool "Enable SECP384R1 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        Enable support for SECP384R1 Elliptic Curve.
+
+config MBEDTLS_ECP_DP_SECP521R1_ENABLED
+    bool "Enable SECP521R1 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        Enable support for SECP521R1 Elliptic Curve.
+
+config MBEDTLS_ECP_DP_SECP192K1_ENABLED
+    bool "Enable SECP192K1 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        Enable support for SECP192K1 Elliptic Curve.
+
+config MBEDTLS_ECP_DP_SECP224K1_ENABLED
+    bool "Enable SECP224K1 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        Enable support for SECP224K1 Elliptic Curve.
+
+config MBEDTLS_ECP_DP_SECP256K1_ENABLED
+    bool "Enable SECP256K1 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        Enable support for SECP256K1 Elliptic Curve.
+
+config MBEDTLS_ECP_DP_BP256R1_ENABLED
+    bool "Enable BP256R1 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        support for DP Elliptic Curve.
+
+config MBEDTLS_ECP_DP_BP384R1_ENABLED
+    bool "Enable BP384R1 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        support for DP Elliptic Curve.
+
+config MBEDTLS_ECP_DP_BP512R1_ENABLED
+    bool "Enable BP512R1 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        support for DP Elliptic Curve.
+
+config MBEDTLS_ECP_DP_CURVE25519_ENABLED
+    bool "Enable CURVE25519 curve"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        Enable support for CURVE25519 Elliptic Curve.
+
+config MBEDTLS_ECP_NIST_OPTIM
+    bool "NIST 'modulo p' optimisations"
+    depends on MBEDTLS_ECP_C
+    default y
+    help
+        NIST 'modulo p' optimisations increase Elliptic Curve operation performance.
+
+        Disabling this option saves some code size.
+
+# end of Elliptic Curve options
+
+endmenu  # mbedTLS
