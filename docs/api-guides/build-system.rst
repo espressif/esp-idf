@@ -568,6 +568,8 @@ is overridden then the component can instruct the linker to link other binaries 
 .. _GNU Make Manual: https://www.gnu.org/software/make/manual/make.html
 
 
+.. _custom-sdkconfig-defaults:
+
 Custom sdkconfig defaults
 -------------------------
 

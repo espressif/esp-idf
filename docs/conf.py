@@ -29,6 +29,8 @@ print "Calling Doxygen to generate latest XML files"
 call('doxygen')
 # Generate 'api_name.inc' files using the XML files by Doxygen
 os.system("python gen-dxd.py")
+# Generate 'kconfig.inc' file from components' Kconfig files
+os.system("python gen-kconfig-doc.py > _build/inc/kconfig.inc")
 
 # http://stackoverflow.com/questions/12772927/specifying-an-online-image-in-sphinx-restructuredtext-format
 # 
