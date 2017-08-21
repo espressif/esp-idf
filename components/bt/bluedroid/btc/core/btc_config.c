@@ -47,7 +47,7 @@ bool btc_get_device_type(const BD_ADDR bd_addr, int *p_device_type)
     bdstr_t bd_addr_str;
     bdaddr_to_string(&bda, bd_addr_str, sizeof(bd_addr_str));
 
-    if (!btc_config_get_int(bd_addr_str, "DevType", p_device_type)) {
+    if (!btc_config_get_int(bd_addr_str, BTC_LE_DEV_TYPE, p_device_type)) {
         return FALSE;
     }
 
@@ -78,7 +78,7 @@ bool btc_get_address_type(const BD_ADDR bd_addr, int *p_addr_type)
 static pthread_mutex_t lock;  // protects operations on |config|.
 static config_t *config;
 
-bool btc_compare_address_key_value(char *key_type, void *key_value, int key_length)
+bool btc_compare_address_key_value(const char *section, char *key_type, void *key_value, int key_length)
 {
     assert(key_value != NULL);
     bool status = false;
@@ -88,7 +88,9 @@ bool btc_compare_address_key_value(char *key_type, void *key_value, int key_leng
     }
     btc_key_value_to_string((uint8_t *)key_value, value_str, key_length);
     pthread_mutex_lock(&lock);
-    status = config_has_key_in_section(config, key_type, value_str);
+    if ((status = config_has_key_in_section(config, key_type, value_str)) == true) {
+        config_remove_section(config, section);
+    }
     pthread_mutex_unlock(&lock);
     return status;
 }
@@ -360,6 +362,18 @@ bool btc_config_remove(const char *section, const char *key)
 
     pthread_mutex_lock(&lock);
     bool ret = config_remove_key(config, section, key);
+    pthread_mutex_unlock(&lock);
+
+    return ret;
+}
+
+bool btc_config_remove_section(const char *section)
+{
+    assert(config != NULL);
+    assert(section != NULL);
+
+    pthread_mutex_lock(&lock);
+    bool ret = config_remove_section(config, section);
     pthread_mutex_unlock(&lock);
 
     return ret;

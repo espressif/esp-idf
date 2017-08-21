@@ -94,6 +94,10 @@ typedef enum {
     ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT,                     /*!< When update connection parameters complete, the event comes */
     ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT,                /*!< When set pkt lenght complete, the event comes */
     ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT,             /*!< When  Enable/disable privacy on the local device complete, the event comes */
+    ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT,               /*!< When remove the bond device complete, the event comes */
+    ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT,                /*!< When clear the bond device clear complete, the event comes */
+    ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT,                  /*!< When get the bond device list complete, the event comes */
+    ESP_GAP_BLE_EVT_MAX,
 } esp_gap_ble_cb_event_t;
 
 /// Advertising data maximum length
@@ -294,7 +298,7 @@ typedef struct
     uint16_t             ediv;         /*!< The ediv value*/
     uint8_t              sec_level;    /*!< The security level of the security link*/
     uint8_t              key_size;     /*!< The key size(7~16) of the security link*/
-}esp_ble_penc_keys_t;                  /*!< The key type*/
+} esp_ble_penc_keys_t;                 /*!< The key type*/
 
 /**
 * @brief  BLE CSRK keys 
@@ -304,7 +308,7 @@ typedef struct
     uint32_t            counter;      /*!< The counter */
     esp_bt_octet16_t    csrk;         /*!< The csrk key */
     uint8_t             sec_level;    /*!< The security level */
-}esp_ble_pcsrk_keys_t;                /*!< The pcsrk key type */
+} esp_ble_pcsrk_keys_t;               /*!< The pcsrk key type */
 
 /**
 * @brief  BLE pid keys 
@@ -314,7 +318,7 @@ typedef struct
     esp_bt_octet16_t          irk;           /*!< The irk value */
     esp_ble_addr_type_t       addr_type;     /*!< The address type */
     esp_bd_addr_t             static_addr;   /*!< The static address */
-}esp_ble_pid_keys_t;                         /*!< The pid key type */
+} esp_ble_pid_keys_t;                        /*!< The pid key type */
 
 /**
 * @brief  BLE Encryption reproduction keys
@@ -325,7 +329,7 @@ typedef struct
     uint16_t          div;                  /*!< The div value */
     uint8_t           key_size;             /*!< The key size of the security link */
     uint8_t           sec_level;            /*!< The security level of the security link */
-}esp_ble_lenc_keys_t;                       /*!< The  key type */
+} esp_ble_lenc_keys_t;                      /*!< The  key type */
 
 /**
 * @brief  BLE SRK keys
@@ -335,8 +339,8 @@ typedef struct
     uint32_t          counter;              /*!< The counter value */
     uint16_t          div;                  /*!< The div value */
     uint8_t           sec_level;            /*!< The security level of the security link */
-    esp_bt_octet16_t            csrk;       /*!< The csrk key value */
-}esp_ble_lcsrk_keys;                        /*!< The csrk key type */
+    esp_bt_octet16_t  csrk;                 /*!< The csrk key value */
+} esp_ble_lcsrk_keys;                       /*!< The csrk key type */
 
 /**
 * @brief  Structure associated with ESP_KEY_NOTIF_EVT 
@@ -353,7 +357,7 @@ typedef struct
 typedef struct
 {
     esp_bd_addr_t  bd_addr;        /*!< peer address */
-}esp_ble_sec_req_t;                /*!< BLE security request type*/
+} esp_ble_sec_req_t;               /*!< BLE security request type*/
 
 /**
 * @brief  union type of the security key value
@@ -365,7 +369,27 @@ typedef union
     esp_ble_pid_keys_t    pid_key;        /*!< peer device ID key */
     esp_ble_lenc_keys_t   lenc_key;       /*!< local encryption reproduction keys LTK = = d1(ER,DIV,0)*/
     esp_ble_lcsrk_keys    lcsrk_key;      /*!< local device CSRK = d1(ER,DIV,1)*/
-}esp_ble_key_value_t;                     /*!< ble key value type*/
+} esp_ble_key_value_t;                    /*!< ble key value type*/
+
+/**
+* @brief  struct type of the bond key informatuon value
+*/
+typedef struct
+{
+    esp_ble_key_mask_t    key_mask;       /*!< the key mask to indicate witch key is present */
+    esp_ble_penc_keys_t   penc_key;       /*!< received peer encryption key */
+    esp_ble_pcsrk_keys_t  pcsrk_key;      /*!< received peer device SRK */
+    esp_ble_pid_keys_t    pid_key;        /*!< peer device ID key */
+} esp_ble_bond_key_info_t;                /*!< ble bond key information value type */
+
+/**
+* @brief  struct type of the bond device value
+*/
+typedef struct
+{
+    esp_bd_addr_t  bd_addr;               /*!< peer address */
+    esp_ble_bond_key_info_t bond_key;     /*!< the bond key information */
+} esp_ble_bond_dev_t;                     /*!< the ble bond device type */
 
 
 /**
@@ -376,7 +400,7 @@ typedef struct
     esp_bd_addr_t               bd_addr;        /*!< peer address */
     esp_ble_key_type_t          key_type;       /*!< key type of the security link */
     esp_ble_key_value_t         p_key_value;    /*!< the pointer to the key value */
-}esp_ble_key_t;                                 /*!< the union to the ble key value type*/
+} esp_ble_key_t;                                /*!< the union to the ble key value type*/
 
 /**
 * @brief  structure type of the ble local id keys value
@@ -385,7 +409,7 @@ typedef struct {
     esp_bt_octet16_t       ir;                  /*!< the 16 bits of the ir value */
     esp_bt_octet16_t       irk;                 /*!< the 16 bits of the ir key value */
     esp_bt_octet16_t       dhk;                 /*!< the 16 bits of the dh key value */
-}esp_ble_local_id_keys_t;                       /*!< the structure of the ble local id keys value type*/
+} esp_ble_local_id_keys_t;                      /*!< the structure of the ble local id keys value type*/
 
 
 /**
@@ -401,7 +425,7 @@ typedef struct
     uint8_t               fail_reason;           /*!< The HCI reason/error code for when success=FALSE */
     esp_ble_addr_type_t   addr_type;             /*!< Peer device address type */
     esp_bt_dev_type_t     dev_type;              /*!< Device type */
-}esp_ble_auth_cmpl_t;                            /*!< The ble authentication complite cb type */
+} esp_ble_auth_cmpl_t;                           /*!< The ble authentication complite cb type */
 
 /**
   * @brief union associated with ble security
@@ -413,7 +437,7 @@ typedef union
     esp_ble_key_t              ble_key;        /*!< BLE SMP keys used when pairing */
     esp_ble_local_id_keys_t    ble_id_keys;    /*!< BLE IR event */
     esp_ble_auth_cmpl_t        auth_cmpl;      /*!< Authentication complete indication. */
-}esp_ble_sec_t;                                /*!< Ble  secutity type */
+} esp_ble_sec_t;                               /*!< Ble  secutity type */
 
 /// Sub Event of ESP_GAP_BLE_SCAN_RESULT_EVT
 typedef enum {
@@ -546,6 +570,27 @@ typedef union {
     struct ble_local_privacy_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate the set local privacy operation success status */
     } local_privacy_cmpl;                          /*!< Event parameter of ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT
+     */
+    struct ble_remove_bond_dev_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate the remove bond device operation success status */
+        esp_bd_addr_t bd_addr;                      /*!< The device address which has been remove from the bond list */
+    }remove_bond_dev_cmpl;                          /*!< Event parameter of ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT
+     */
+    struct ble_clear_bond_dev_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate the clear bond device operation success status */
+    }clear_bond_dev_cmpl;                           /*!< Event parameter of ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT
+     */
+    struct ble_get_bond_dev_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate the get bond device operation success status */
+        uint8_t dev_num;                            /*!< Indicate the get number device in the bond list */
+        esp_ble_bond_dev_t *bond_dev;               /*!< the pointer to the bond device Structure */
+    }get_bond_dev_cmpl;                             /*!< Event parameter of ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT */
 } esp_ble_gap_cb_param_t;
 
 /**
@@ -820,6 +865,38 @@ esp_err_t esp_ble_passkey_reply(esp_bd_addr_t bd_addr, bool accept, uint32_t pas
 *
 */
 esp_err_t esp_ble_confirm_reply(esp_bd_addr_t bd_addr, bool accept);
+
+/**
+* @brief           Removes a device from the security database list of
+*                  peer device. It manages unpairing event while connected.
+*
+* @param[in]       bd_addr : BD address of the peer device
+*
+* @return            - ESP_OK : success
+*                       - other  : failed
+*
+*/
+esp_err_t esp_ble_remove_bond_device(esp_bd_addr_t bd_addr);
+
+/**
+* @brief           Removes all of the device from the security database list of
+*                  peer device. It manages unpairing event while connected.
+*
+* @return            - ESP_OK : success
+*                       - other  : failed
+*
+*/
+esp_err_t esp_ble_clear_bond_device_list(void);
+
+/**
+* @brief           Get the device from the security database list of peer device.
+*                  It will return the device bonded information from the ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT event.
+*
+* @return            - ESP_OK : success
+*                       - other  : failed
+*
+*/
+esp_err_t esp_ble_get_bond_device_list(void);
 
 /**
 * @brief           This function is to disconnect the physical connection of the peer device

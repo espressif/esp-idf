@@ -40,6 +40,9 @@ typedef enum {
     BTC_GAP_BLE_PASSKEY_REPLY_EVT,
     BTC_GAP_BLE_CONFIRM_REPLY_EVT,
     BTC_GAP_BLE_DISCONNECT_EVT,
+    BTC_GAP_BLE_REMOVE_BOND_DEV_EVT,
+    BTC_GAP_BLE_CLEAR_BOND_DEV_EVT,
+    BTC_GAP_BLE_GET_BOND_DEV_EVT,
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */
@@ -89,39 +92,41 @@ typedef union {
         uint8_t *raw_scan_rsp;
         uint32_t raw_scan_rsp_len;
     } cfg_scan_rsp_data_raw;
-
+    //BTC_GAP_BLE_SET_ENCRYPTION_EVT
     struct set_encryption_args {
         esp_bd_addr_t bd_addr;
         esp_ble_sec_act_t sec_act;
     } set_encryption;
-
+    //BTC_GAP_BLE_SET_SECURITY_PARAM_EVT
     struct set_security_param_args {
         esp_ble_sm_param_t param_type;
         uint8_t len;
         uint8_t *value;
     } set_security_param;
-
+    //BTC_GAP_BLE_SECURITY_RSP_EVT
     struct enc_rsp_args {
         esp_bd_addr_t bd_addr;
         bool accept;
     } sec_rsp;
-
+    //BTC_GAP_BLE_PASSKEY_REPLY_EVT
     struct enc_passkey_reply_args {
         esp_bd_addr_t bd_addr;
         bool accept;
         uint32_t passkey;
     } enc_passkey_replay;
-
+    //BTC_GAP_BLE_CONFIRM_REPLY_EVT
     struct enc_comfirm_reply_args {
         esp_bd_addr_t bd_addr;
         bool accept;
     } enc_comfirm_replay;
-
     //BTC_GAP_BLE_DISCONNECT_EVT
     struct disconnect_args {
         esp_bd_addr_t remote_device;
     } disconnect;
-
+    //BTC_GAP_BLE_REMOVE_BOND_DEV_EVT
+    struct remove_bond_device_args {
+        esp_bd_addr_t bd_addr;
+    } remove_bond_device;
 } btc_ble_gap_args_t;
 
 void btc_gap_ble_call_handler(btc_msg_t *msg);
