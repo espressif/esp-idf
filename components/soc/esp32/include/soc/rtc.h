@@ -277,6 +277,25 @@ rtc_fast_freq_t rtc_clk_fast_freq_get();
 void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq);
 
 /**
+ * @brief Switch CPU frequency
+ *
+ * This is a faster version of rtc_clk_cpu_freq_set, which can handle some of
+ * the frequency switch paths (XTAL -> PLL, PLL -> XTAL).
+ * When switching from PLL to XTAL, PLL is not disabled (unlike rtc_clk_cpu_freq_set).
+ * When switching back from XTAL to PLL, only the same PLL can be used.
+ * Therefore it is not possible to switch 240 -> XTAL -> (80 or 160) using this
+ * function.
+ *
+ * For unsupported cases, this function falls back to rtc_clk_cpu_freq_set.
+ *
+ * Unlike rtc_clk_cpu_freq_set, this function relies on static data, so it is
+ * less safe to use it e.g. from a panic handler (when memory might be corrupted).
+ *
+ * @param cpu_freq  new CPU frequency
+ */
+void rtc_clk_cpu_freq_set_fast(rtc_cpu_freq_t cpu_freq);
+
+/**
  * @brief Get the currently selected CPU frequency
  *
  * Although CPU can be clocked by APLL and RTC 8M sources, such support is not
