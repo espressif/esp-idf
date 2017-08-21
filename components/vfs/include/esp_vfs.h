@@ -17,6 +17,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdarg.h>
 #include "esp_err.h"
 #include <sys/types.h>
 #include <sys/reent.h>
@@ -139,6 +140,10 @@ typedef struct
     union {
         int (*rmdir_p)(void* ctx, const char* name);
         int (*rmdir)(const char* name);
+    };
+    union {
+        int (*fcntl_p)(void* ctx, int fd, int cmd, va_list args);
+        int (*fcntl)(int fd, int cmd, va_list args);
     };
 } esp_vfs_t;
 

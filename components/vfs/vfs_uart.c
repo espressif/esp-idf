@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,17 +13,80 @@
 // limitations under the License.
 
 #include <string.h>
+#include <stdbool.h>
+#include <stdarg.h>
+#include <sys/errno.h>
+#include <sys/lock.h>
+#include <sys/fcntl.h>
 #include "esp_vfs.h"
+#include "esp_vfs_dev.h"
 #include "esp_attr.h"
-#include "sys/errno.h"
-#include "sys/lock.h"
 #include "soc/uart_struct.h"
+#include "driver/uart.h"
 #include "sdkconfig.h"
 
-static uart_dev_t* s_uarts[3] = {&UART0, &UART1, &UART2};
-static _lock_t s_uart_locks[3]; // per-UART locks, lazily initialized
+// TODO: make the number of UARTs chip dependent
+#define UART_NUM 3
 
-static int IRAM_ATTR uart_open(const char * path, int flags, int mode)
+// Token signifying that no character is available
+#define NONE -1
+
+// UART write bytes function type
+typedef void (*tx_func_t)(int, int);
+// UART read bytes function type
+typedef int (*rx_func_t)(int);
+
+// Basic functions for sending and receiving bytes over UART
+static void uart_tx_char(int fd, int c);
+static int uart_rx_char(int fd);
+
+// Functions for sending and receiving bytes which use UART driver
+static void uart_tx_char_via_driver(int fd, int c);
+static int uart_rx_char_via_driver(int fd);
+
+// Pointers to UART peripherals
+static uart_dev_t* s_uarts[UART_NUM] = {&UART0, &UART1, &UART2};
+// per-UART locks, lazily initialized
+static _lock_t s_uart_locks[UART_NUM];
+// One-character buffer used for newline conversion code, per UART
+static int s_peek_char[UART_NUM] = { NONE, NONE, NONE };
+// Per-UART non-blocking flag. Note: default implementation does not honor this
+// flag, all reads are non-blocking. This option becomes effective if UART
+// driver is used.
+static bool s_non_blocking[UART_NUM];
+
+// Newline conversion mode when transmitting
+static esp_line_endings_t s_tx_mode =
+#if CONFIG_NEWLIB_STDOUT_LINE_ENDING_CRLF
+        ESP_LINE_ENDINGS_CRLF;
+#elif CONFIG_NEWLIB_STDOUT_LINE_ENDING_CR
+        ESP_LINE_ENDINGS_CR;
+#else
+        ESP_LINE_ENDINGS_LF;
+#endif
+
+// Newline conversion mode when receiving
+static esp_line_endings_t s_rx_mode =
+#if CONFIG_NEWLIB_STDIN_LINE_ENDING_CRLF
+        ESP_LINE_ENDINGS_CRLF;
+#elif CONFIG_NEWLIB_STDIN_LINE_ENDING_CR
+        ESP_LINE_ENDINGS_CR;
+#else
+        ESP_LINE_ENDINGS_LF;
+#endif
+
+// Functions used to write bytes to UART. Default to "basic" functions.
+static tx_func_t s_uart_tx_func[UART_NUM] = {
+        &uart_tx_char, &uart_tx_char, &uart_tx_char
+};
+
+// Functions used to read bytes from UART. Default to "basic" functions.
+static rx_func_t s_uart_rx_func[UART_NUM] = {
+        &uart_rx_char, &uart_rx_char, &uart_rx_char
+};
+
+
+static int uart_open(const char * path, int flags, int mode)
 {
     // this is fairly primitive, we should check if file is opened read only,
     // and error out if write is requested
@@ -38,81 +101,123 @@ static int IRAM_ATTR uart_open(const char * path, int flags, int mode)
     return -1;
 }
 
-static void IRAM_ATTR uart_tx_char(uart_dev_t* uart, int c)
+static void uart_tx_char(int fd, int c)
 {
+    uart_dev_t* uart = s_uarts[fd];
     while (uart->status.txfifo_cnt >= 127) {
         ;
     }
     uart->fifo.rw_byte = c;
 }
 
+static void uart_tx_char_via_driver(int fd, int c)
+{
+    char ch = (char) c;
+    uart_write_bytes(fd, &ch, 1);
+}
 
-static ssize_t IRAM_ATTR uart_write(int fd, const void * data, size_t size)
+static int uart_rx_char(int fd)
+{
+    uart_dev_t* uart = s_uarts[fd];
+    if (uart->status.rxfifo_cnt == 0) {
+        return NONE;
+    }
+    return uart->fifo.rw_byte;
+}
+
+static int uart_rx_char_via_driver(int fd)
+{
+    uint8_t c;
+    int timeout = s_non_blocking[fd] ? 0 : portMAX_DELAY;
+    int n = uart_read_bytes(fd, &c, 1, timeout);
+    if (n <= 0) {
+        return NONE;
+    }
+    return c;
+}
+
+static ssize_t uart_write(int fd, const void * data, size_t size)
 {
     assert(fd >=0 && fd < 3);
     const char *data_c = (const char *)data;
-    uart_dev_t* uart = s_uarts[fd];
-    /*
-     *  Even though newlib does stream locking on each individual stream, we need
+    /*  Even though newlib does stream locking on each individual stream, we need
      *  a dedicated UART lock if two streams (stdout and stderr) point to the
      *  same UART.
      */
     _lock_acquire_recursive(&s_uart_locks[fd]);
     for (size_t i = 0; i < size; i++) {
-#if CONFIG_NEWLIB_STDOUT_ADDCR
-        if (data_c[i]=='\n') {
-            uart_tx_char(uart, '\r');
+        int c = data_c[i];
+        if (c == '\n' && s_tx_mode != ESP_LINE_ENDINGS_LF) {
+            s_uart_tx_func[fd](fd, '\r');
+            if (s_tx_mode == ESP_LINE_ENDINGS_CR) {
+                continue;
+            }
         }
-#endif
-        uart_tx_char(uart, data_c[i]);
+        s_uart_tx_func[fd](fd, c);
     }
     _lock_release_recursive(&s_uart_locks[fd]);
     return size;
 }
 
-static ssize_t IRAM_ATTR uart_read(int fd, void* data, size_t size)
+/* Helper function which returns a previous character or reads a new one from
+ * UART. Previous character can be returned ("pushed back") using
+ * uart_return_char function.
+ */
+static int uart_read_char(int fd)
+{
+    /* return character from peek buffer, if it is there */
+    if (s_peek_char[fd] != NONE) {
+        int c = s_peek_char[fd];
+        s_peek_char[fd] = NONE;
+        return c;
+    }
+    return s_uart_rx_func[fd](fd);
+}
+
+/* Push back a character; it will be returned by next call to uart_read_char */
+static void uart_return_char(int fd, int c)
+{
+    assert(s_peek_char[fd] == NONE);
+    s_peek_char[fd] = c;
+}
+
+static ssize_t uart_read(int fd, void* data, size_t size)
 {
     assert(fd >=0 && fd < 3);
-    uint8_t *data_c = (uint8_t *) data;
-    uart_dev_t* uart = s_uarts[fd];
+    char *data_c = (char *) data;
     size_t received = 0;
     _lock_acquire_recursive(&s_uart_locks[fd]);
-    while (uart->status.rxfifo_cnt > 0 && received < size) {
-        uint8_t c = uart->fifo.rw_byte;
-#if CONFIG_NEWLIB_STDOUT_ADDCR
-        /* Convert \r\n sequences to \n.
-         * If \r is received, it is put into 'buffered_char' until the next
-         * character is received. Then depending on the character, we either
-         * drop \r (if the next one is \n) or output \r and then proceed to output
-         * the new character.
-         */
-        const int NONE = -1;
-        static int buffered_char = NONE;
-        if (buffered_char != NONE) {
-            if (buffered_char == '\r' && c == '\n') {
-                buffered_char = NONE;
-            } else {
-                data_c[received] = buffered_char;
-                buffered_char = NONE;
-                ++received;
-                if (received == size) {
-                    /* We have placed the buffered character into the output buffer
-                     * but there won't be enough space for the newly received one.
-                     * Keep the new character in buffered_char until read is called
-                     * again.
-                     */
-                    buffered_char = c;
+    while (received < size) {
+        int c = uart_read_char(fd);
+        if (c == '\r') {
+            if (s_rx_mode == ESP_LINE_ENDINGS_CR) {
+                c = '\n';
+            } else if (s_rx_mode == ESP_LINE_ENDINGS_CRLF) {
+                /* look ahead */
+                int c2 = uart_read_char(fd);
+                if (c2 == NONE) {
+                    /* could not look ahead, put the current character back */
+                    uart_return_char(fd, c);
                     break;
                 }
+                if (c2 == '\n') {
+                    /* this was \r\n sequence. discard \r, return \n */
+                    c = '\n';
+                } else {
+                    /* \r followed by something else. put the second char back,
+                     * it will be processed on next iteration. return \r now.
+                     */
+                    uart_return_char(fd, c2);
+                }
             }
+        } else if (c == NONE) {
+            break;
         }
-        if (c == '\r') {
-            buffered_char = c;
-            continue;
-        }
-#endif //CONFIG_NEWLIB_STDOUT_ADDCR
-        data_c[received] = c;
+        data_c[received] = (char) c;
         ++received;
+        if (c == '\n') {
+            break;
+        }
     }
     _lock_release_recursive(&s_uart_locks[fd]);
     if (received > 0) {
@@ -122,17 +227,36 @@ static ssize_t IRAM_ATTR uart_read(int fd, void* data, size_t size)
     return -1;
 }
 
-static int IRAM_ATTR uart_fstat(int fd, struct stat * st)
+static int uart_fstat(int fd, struct stat * st)
 {
     assert(fd >=0 && fd < 3);
     st->st_mode = S_IFCHR;
     return 0;
 }
 
-static int IRAM_ATTR uart_close(int fd)
+static int uart_close(int fd)
 {
     assert(fd >=0 && fd < 3);
     return 0;
+}
+
+static int uart_fcntl(int fd, int cmd, va_list args)
+{
+    assert(fd >=0 && fd < 3);
+    int result = 0;
+    if (cmd == F_GETFL) {
+        if (s_non_blocking[fd]) {
+            result |= O_NONBLOCK;
+        }
+    } else if (cmd == F_SETFL) {
+        int arg = va_arg(args, int);
+        s_non_blocking[fd] = (arg & O_NONBLOCK) != 0;
+    } else {
+        // unsupported operation
+        result = -1;
+        errno = ENOSYS;
+    }
+    return result;
 }
 
 void esp_vfs_dev_uart_register()
@@ -145,11 +269,33 @@ void esp_vfs_dev_uart_register()
         .fstat = &uart_fstat,
         .close = &uart_close,
         .read = &uart_read,
-        .lseek = NULL,
-        .stat = NULL,
-        .link = NULL,
-        .unlink = NULL,
-        .rename = NULL
+        .fcntl = &uart_fcntl
     };
     ESP_ERROR_CHECK(esp_vfs_register("/dev/uart", &vfs, NULL));
+}
+
+void esp_vfs_dev_uart_set_rx_line_endings(esp_line_endings_t mode)
+{
+    s_rx_mode = mode;
+}
+
+void esp_vfs_dev_uart_set_tx_line_endings(esp_line_endings_t mode)
+{
+    s_tx_mode = mode;
+}
+
+void esp_vfs_dev_uart_use_nonblocking(int fd)
+{
+    _lock_acquire_recursive(&s_uart_locks[fd]);
+    s_uart_tx_func[fd] = uart_tx_char;
+    s_uart_rx_func[fd] = uart_rx_char;
+    _lock_release_recursive(&s_uart_locks[fd]);
+}
+
+void esp_vfs_dev_uart_use_driver(int fd)
+{
+    _lock_acquire_recursive(&s_uart_locks[fd]);
+    s_uart_tx_func[fd] = uart_tx_char_via_driver;
+    s_uart_rx_func[fd] = uart_rx_char_via_driver;
+    _lock_release_recursive(&s_uart_locks[fd]);
 }

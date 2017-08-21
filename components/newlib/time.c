@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <reent.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/reent.h>
 #include <sys/time.h>
@@ -242,6 +243,20 @@ int settimeofday(const struct timeval *tv, const struct timezone *tz)
     errno = ENOSYS;
     return -1;
 #endif
+}
+
+int usleep(useconds_t us)
+{
+    const int us_per_tick = portTICK_PERIOD_MS * 1000;
+    if (us < us_per_tick) {
+        ets_delay_us((uint32_t) us);
+    } else {
+        /* since vTaskDelay(1) blocks for anywhere between 0 and portTICK_PERIOD_MS,
+         * round up to compensate.
+         */
+        vTaskDelay((us + us_per_tick - 1) / us_per_tick);
+    }
+    return 0;
 }
 
 uint32_t system_get_time(void)

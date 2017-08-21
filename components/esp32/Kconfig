@@ -179,20 +179,53 @@ config IPC_TASK_STACK_SIZE
         It can be shrunk if you are sure that you do not use any custom
         IPC functionality.
 
-config NEWLIB_STDOUT_ADDCR
-    bool "Standard-out output adds carriage return before newline"
-    default y
+choice NEWLIB_STDOUT_LINE_ENDING
+    prompt "Line ending for UART output"
+    default NEWLIB_STDOUT_LINE_ENDING_CRLF
     help
-        Most people are used to end their printf strings with a newline. If this
-        is sent as is to the serial port, most terminal programs will only move the
-        cursor one line down, not also move it to the beginning of the line. This
-        is usually done by an added CR character. Enabling this will make the
-        standard output code automatically add a CR character before a LF.
+        This option allows configuring the desired line endings sent to UART
+        when a newline ('\n', LF) appears on stdout.
+        Three options are possible:
         
-        With this option enabled, C standard library functions which read from UART 
-        (like scanf) will convert "\r\n" character sequences back to "\n".
+        CRLF: whenever LF is encountered, prepend it with CR
+        
+        LF: no modification is applied, stdout is sent as is
+        
+        CR: each occurence of LF is replaced with CR
         
         This option doesn't affect behavior of the UART driver (drivers/uart.h).
+        
+config NEWLIB_STDOUT_LINE_ENDING_CRLF
+    bool "CRLF"
+config NEWLIB_STDOUT_LINE_ENDING_LF
+    bool "LF"
+config NEWLIB_STDOUT_LINE_ENDING_CR
+    bool "CR"
+endchoice
+
+choice NEWLIB_STDIN_LINE_ENDING
+    prompt "Line ending for UART input"
+    default NEWLIB_STDIN_LINE_ENDING_CR
+    help
+        This option allows configuring which input sequence on UART produces
+        a newline ('\n', LF) on stdin.
+        Three options are possible:
+        
+        CRLF: CRLF is converted to LF
+        
+        LF: no modification is applied, input is sent to stdin as is
+        
+        CR: each occurence of CR is replaced with LF
+        
+        This option doesn't affect behavior of the UART driver (drivers/uart.h).
+        
+config NEWLIB_STDIN_LINE_ENDING_CRLF
+    bool "CRLF"
+config NEWLIB_STDIN_LINE_ENDING_LF
+    bool "LF"
+config NEWLIB_STDIN_LINE_ENDING_CR
+    bool "CR"
+endchoice
 
 config NEWLIB_NANO_FORMAT
     bool "Enable 'nano' formatting options for printf/scanf family"

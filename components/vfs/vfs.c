@@ -472,3 +472,20 @@ int rmdir(const char* name)
     CHECK_AND_CALL(ret, r, vfs, rmdir, path_within_vfs);
     return ret;
 }
+
+int fcntl(int fd, int cmd, ...)
+{
+    const vfs_entry_t* vfs = get_vfs_for_fd(fd);
+    struct _reent* r = __getreent();
+    if (vfs == NULL) {
+        __errno_r(r) = EBADF;
+        return -1;
+    }
+    int local_fd = translate_fd(vfs, fd);
+    int ret;
+    va_list args;
+    va_start(args, cmd);
+    CHECK_AND_CALL(ret, r, vfs, fcntl, local_fd, cmd, args);
+    va_end(args);
+    return ret;
+}
