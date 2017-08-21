@@ -15,6 +15,7 @@
 
 // Utilities for esp-idf unit tests
 
+#include <stdint.h>
 #include <esp_partition.h>
 
 /* Return the 'flash_test' custom data partition (type 0x55)
@@ -22,3 +23,21 @@
 */
 const esp_partition_t *get_test_data_partition();
 
+/**
+ * @brief Initialize reference clock
+ *
+ * Reference clock provides timestamps at constant 1 MHz frequency, even when
+ * the APB frequency is changing.
+ */
+void ref_clock_init();
+
+/**
+ * @brief Deinitialize reference clock
+ */
+void ref_clock_deinit();
+
+/**
+ * @brief Get reference clock timestamp
+ * @return number of microseconds since the reference clock was initialized
+ */
+uint64_t ref_clock_get();
