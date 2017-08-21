@@ -25,12 +25,13 @@ extern "C" {
  *
  * @note  This API is intended to be used in unit tests.
  * 
+ * @param partName Partition name of the NVS partition as per partition table
  * @param baseSector Flash sector (units of 4096 bytes) offset to start NVS
  * @param sectorCount Length (in flash sectors) of NVS region. 
  					  NVS partition must be at least 3 sectors long.
  * @return ESP_OK if flash was successfully initialized
  */
-esp_err_t nvs_flash_init_custom(uint32_t baseSector, uint32_t sectorCount);
+esp_err_t nvs_flash_init_custom(const char *partName, uint32_t baseSector, uint32_t sectorCount);
 
 
 /**
@@ -38,8 +39,10 @@ esp_err_t nvs_flash_init_custom(uint32_t baseSector, uint32_t sectorCount);
  *
  * This function may be used for debugging purposes to inspect the state
  * of NVS pages. For each page, list of entries is also dumped.
+ *
+ * @param partName Partition name of the NVS partition as per partition table
  */
-void nvs_dump(void);
+void nvs_dump(const char *partName);
 
 
 #ifdef __cplusplus
