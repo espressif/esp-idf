@@ -145,6 +145,14 @@ extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
 
 #define WIFI_INIT_CONFIG_MAGIC    0x1F2F3F4F
 
+#ifdef CONFIG_ESP32_WIFI_AMPDU_ENABLED
+#define WIFI_DEFAULT_TX_BA_WIN CONFIG_ESP32_WIFI_TX_BA_WIN
+#define WIFI_DEFAULT_RX_BA_WIN CONFIG_ESP32_WIFI_RX_BA_WIN
+#else
+#define WIFI_DEFAULT_TX_BA_WIN 0 /* unused if ampdu_enable == false */
+#define WIFI_DEFAULT_RX_BA_WIN 0
+#endif
+
 #define WIFI_INIT_CONFIG_DEFAULT() { \
     .event_handler = &esp_event_send, \
     .wpa_crypto_funcs = g_wifi_default_wpa_crypto_funcs, \
@@ -156,8 +164,8 @@ extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
     .ampdu_enable = WIFI_AMPDU_ENABLED,\
     .nvs_enable = WIFI_NVS_ENABLED,\
     .nano_enable = WIFI_NANO_FORMAT_ENABLED,\
-    .tx_ba_win = CONFIG_ESP32_WIFI_TX_BA_WIN,\
-    .rx_ba_win = CONFIG_ESP32_WIFI_RX_BA_WIN,\
+    .tx_ba_win = WIFI_DEFAULT_TX_BA_WIN,\
+    .rx_ba_win = WIFI_DEFAULT_RX_BA_WIN,\
     .magic = WIFI_INIT_CONFIG_MAGIC\
 };
 
