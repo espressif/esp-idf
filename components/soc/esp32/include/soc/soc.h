@@ -376,7 +376,7 @@
  *      7                       1               software                BT/BLE VHCI             BT/BLE VHCI
  *      8                       1               extern level            BT/BLE BB(RX/TX)        BT/BLE BB(RX/TX)
  *      9                       1               extern level
- *      10                      1               extern edge             Internal Timer
+ *      10                      1               extern edge
  *      11                      3               profiling
  *      12                      1               extern level
  *      13                      1               extern level
@@ -388,7 +388,7 @@
  *      19                      2               extern level
  *      20                      2               extern level
  *      21                      2               extern level
- *      22                      3               extern edge             FRC1 timer
+ *      22                      3               extern edge
  *      23                      3               extern level
  *      24                      4               extern level            TG1_WDT
  *      25                      4               extern level            CACHEERR
