@@ -289,9 +289,18 @@ void start_cpu0_default(void)
     esp_clk_init();
     esp_perip_clk_init();
     intr_matrix_clear();
+
 #ifndef CONFIG_CONSOLE_UART_NONE
-    uart_div_modify(CONFIG_CONSOLE_UART_NUM, (rtc_clk_apb_freq_get() << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
-#endif
+#ifdef CONFIG_PM_ENABLE
+    const int uart_clk_freq = REF_CLK_FREQ;
+    /* When DFS is enabled, use REFTICK as UART clock source */
+    CLEAR_PERI_REG_MASK(UART_CONF0_REG(CONFIG_CONSOLE_UART_NUM), UART_TICK_REF_ALWAYS_ON);
+#else
+    const int uart_clk_freq = APB_CLK_FREQ;
+#endif // CONFIG_PM_DFS_ENABLE
+    uart_div_modify(CONFIG_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
+#endif // CONFIG_CONSOLE_UART_NONE
+
 #if CONFIG_BROWNOUT_DET
     esp_brownout_init();
 #endif
