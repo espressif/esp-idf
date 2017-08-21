@@ -154,6 +154,10 @@ typedef struct tcpip_adapter_api_msg_s {
 
 #define TCPIP_ADAPTER_IPC_CALL(_if, _mac, _ip, _hostname, _fn) do {\
     tcpip_adapter_api_msg_t msg;\
+    if (tcpip_inited == false) {\
+        ESP_LOGE(TAG, "tcpip_adapter is not initialized!");\
+        abort();\
+    }\
     memset(&msg, 0, sizeof(msg));\
     msg.tcpip_if = (_if);\
     msg.mac      = (_mac);\
@@ -168,6 +172,9 @@ typedef struct tcpip_adapter_api_msg_s {
     }\
 }while(0)
 
+typedef struct tcpip_adatper_ip_lost_timer_s {
+    bool timer_running;
+} tcpip_adapter_ip_lost_timer_t;
 
 /**
  * @brief  Initialize tcpip adapter
@@ -278,12 +285,43 @@ esp_err_t tcpip_adapter_get_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_i
  * This function is mainly used for setting static IP.
  *
  * @param[in]  tcpip_if: the interface which we want to set IP information
- * @param[in]  ip_info: If successful, IP information will be returned in this argument.
+ * @param[in]  ip_info: store the IP information which needs to be set to specified interface
  *
  * @return ESP_OK
  *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
  */
 esp_err_t tcpip_adapter_set_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_ip_info_t *ip_info);
+
+/**
+ * @brief  Get interface's old IP information
+ *
+ * When the interface successfully gets a valid IP from DHCP server or static configured, a copy of 
+ * the IP information is set to the old IP information. When IP lost timer expires, the old IP 
+ * information is reset to 0.
+ *
+ * @param[in]   tcpip_if: the interface which we want to get old IP information
+ * @param[out]  ip_info: If successful, IP information will be returned in this argument.
+ *
+ * @return ESP_OK
+ *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
+ */
+esp_err_t tcpip_adapter_get_old_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_ip_info_t *ip_info);
+
+/**
+ * @brief  Set interface's old IP information
+ *
+ * When the interface successfully gets a valid IP from DHCP server or static configured, a copy of 
+ * the IP information is set to the old IP information. When IP lost timer expires, the old IP 
+ * information is reset to 0.
+ *
+ * @param[in]  tcpip_if: the interface which we want to set old IP information
+ * @param[in]  ip_info: store the IP information which needs to be set to specified interface
+ *
+ * @return ESP_OK
+ *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
+ */
+esp_err_t tcpip_adapter_set_old_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_ip_info_t *ip_info);
+
 
 /**
  * @brief  create interface's linklocal IPv6 information

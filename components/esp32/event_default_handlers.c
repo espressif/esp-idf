@@ -55,6 +55,7 @@ static esp_err_t system_event_sta_stop_handle_default(system_event_t *event);
 static esp_err_t system_event_sta_connected_handle_default(system_event_t *event);
 static esp_err_t system_event_sta_disconnected_handle_default(system_event_t *event);
 static esp_err_t system_event_sta_got_ip_default(system_event_t *event);
+static esp_err_t system_event_sta_lost_ip_default(system_event_t *event);
 
 static esp_err_t system_event_eth_start_handle_default(system_event_t *event);
 static esp_err_t system_event_eth_stop_handle_default(system_event_t *event);
@@ -135,6 +136,12 @@ static esp_err_t system_event_sta_got_ip_default(system_event_t *event)
     return ESP_OK;
 }
 
+static esp_err_t system_event_sta_lost_ip_default(system_event_t *event)
+{
+    ESP_LOGI(TAG, "station ip lost");
+    return ESP_OK;
+}
+
 esp_err_t system_event_ap_start_handle_default(system_event_t *event)
 {
     tcpip_adapter_ip_info_t ap_ip;
@@ -191,17 +198,26 @@ esp_err_t system_event_sta_connected_handle_default(system_event_t *event)
         tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
     } else if (status == TCPIP_ADAPTER_DHCP_STOPPED) {
         tcpip_adapter_ip_info_t sta_ip;
+        tcpip_adapter_ip_info_t sta_old_ip;
 
         tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &sta_ip);
+        tcpip_adapter_get_old_ip_info(TCPIP_ADAPTER_IF_STA, &sta_old_ip);
 
         if (!(ip4_addr_isany_val(sta_ip.ip) || ip4_addr_isany_val(sta_ip.netmask) || ip4_addr_isany_val(sta_ip.gw))) {
             system_event_t evt;
 
-            //notify event
             evt.event_id = SYSTEM_EVENT_STA_GOT_IP;
+            evt.event_info.got_ip.ip_changed = false;
+
+            if (memcmp(&sta_ip, &sta_old_ip, sizeof(sta_ip))) {
+                evt.event_info.got_ip.ip_changed = true;
+            }
+
             memcpy(&evt.event_info.got_ip.ip_info, &sta_ip, sizeof(tcpip_adapter_ip_info_t));
+            tcpip_adapter_set_old_ip_info(TCPIP_ADAPTER_IF_STA, &sta_ip);
 
             esp_event_send(&evt);
+            ESP_LOGD(TAG, "static ip: ip changed=%d", evt.event_info.got_ip.ip_changed);
         } else {
             ESP_LOGE(TAG, "invalid static ip");
         }
@@ -261,10 +277,14 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
     }
     case SYSTEM_EVENT_STA_GOT_IP: {
         system_event_sta_got_ip_t *got_ip = &event->event_info.got_ip;
-        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_GOTIP, ip:" IPSTR ", mask:" IPSTR ", gw:" IPSTR,
+        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_GOT_IP, ip:" IPSTR ", mask:" IPSTR ", gw:" IPSTR,
             IP2STR(&got_ip->ip_info.ip),
             IP2STR(&got_ip->ip_info.netmask),
             IP2STR(&got_ip->ip_info.gw));
+        break;
+    }
+    case SYSTEM_EVENT_STA_LOST_IP: {
+        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_LOST_IP");
         break;
     }
     case SYSTEM_EVENT_STA_WPS_ER_SUCCESS: {
@@ -381,6 +401,7 @@ void esp_event_set_default_wifi_handlers()
      default_event_handlers[SYSTEM_EVENT_STA_CONNECTED]    = system_event_sta_connected_handle_default;
      default_event_handlers[SYSTEM_EVENT_STA_DISCONNECTED] = system_event_sta_disconnected_handle_default;
      default_event_handlers[SYSTEM_EVENT_STA_GOT_IP]       = system_event_sta_got_ip_default;
+     default_event_handlers[SYSTEM_EVENT_STA_LOST_IP]      = system_event_sta_lost_ip_default;
      default_event_handlers[SYSTEM_EVENT_AP_START]         = system_event_ap_start_handle_default;
      default_event_handlers[SYSTEM_EVENT_AP_STOP]          = system_event_ap_stop_handle_default;
 
