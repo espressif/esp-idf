@@ -61,6 +61,13 @@ typedef struct {
 typedef uint32_t sdmmc_response_t[4];
 
 /**
+ * SD SWITCH_FUNC response buffer
+ */
+typedef struct {
+    uint32_t data[512 / 8 / sizeof(uint32_t)];  /*!< response data */
+} sdmmc_switch_func_rsp_t;
+
+/**
  * SD/MMC command information
  */
 typedef struct {

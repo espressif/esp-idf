@@ -26,6 +26,15 @@
 #include <time.h>
 #include <sys/time.h>
 
+TEST_CASE("MMC_RSP_BITS", "[sd]")
+{
+    uint32_t data[2] = { 0x01234567, 0x89abcdef };
+    TEST_ASSERT_EQUAL_HEX32(0x7,   MMC_RSP_BITS(data, 0, 4));
+    TEST_ASSERT_EQUAL_HEX32(0x567, MMC_RSP_BITS(data, 0, 12));
+    TEST_ASSERT_EQUAL_HEX32(0xf0,  MMC_RSP_BITS(data, 28, 8));
+    TEST_ASSERT_EQUAL_HEX32(0x3,   MMC_RSP_BITS(data, 1, 3));
+    TEST_ASSERT_EQUAL_HEX32(0x11,  MMC_RSP_BITS(data, 59, 5));
+}
 
 TEST_CASE("can probe SD", "[sd][ignore]")
 {
