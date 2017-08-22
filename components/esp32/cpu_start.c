@@ -62,6 +62,7 @@
 #include "esp_panic.h"
 #include "esp_core_dump.h"
 #include "esp_app_trace.h"
+#include "esp_efuse.h"
 #include "esp_clk.h"
 #include "esp_timer.h"
 #include "trax.h"
@@ -244,6 +245,9 @@ void start_cpu0_default(void)
 #endif
 #if CONFIG_BROWNOUT_DET
     esp_brownout_init();
+#endif
+#if CONFIG_DISABLE_BASIC_ROM_CONSOLE
+    esp_efuse_disable_basic_rom_console();
 #endif
     rtc_gpio_force_hold_dis_all();
     esp_vfs_dev_uart_register();
