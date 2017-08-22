@@ -70,8 +70,8 @@ for try in `seq $RETRIES`; do
         echo "Fetch strategy submodules succeeded" &&
         exit 0
 
-    git submodule foreach "git reset --hard HEAD && git submodule deinit --force ."
-    git submodule deinit --force .
+    git submodule foreach --recursive "git reset --hard HEAD && git submodule deinit --force -- . || true"
+    git reset --hard HEAD && git submodule deinit --force -- . || true
 done
 
 # Then we use the clean way.
