@@ -495,25 +495,13 @@ The scan type and other scan attributes are configured by esp_wifi_scan_start. T
 |                  | in the table below. Here, min is short for scan              |
 |                  | time.active.min and max is short for scan_time.active.max.   |
 |                  |                                                              |
-|                  | +----+----+------------------------------------------------+ |
-|                  | | min| max| Description                                    | |
-|                  | +====+====+================================================+ |
-|                  | | 0  | 0  | scan dwells on each channel for 120 ms.        | |
-|                  | |    |    |                                                | |
-|                  | +----+----+------------------------------------------------+ |
-|                  | | >0 | 0  | scan dwells on each channel for 120 ms.        | |
-|                  | |    |    |                                                | |
-|                  | +----+----+------------------------------------------------+ |
-|                  | | >0 | >0 | The minimum time the scan dwells on each       | |
-|                  | |    |    | channel is min milliseconds. If no AP is found | |
-|                  | |    |    | during this time frame, the scan switches      | |
-|                  | |    |    | to the next channel; otherwise, the scan dwells| |
-|                  | |    |    | on the channel for max milliseconds.           | |
-|                  | |    |    |                                                | |
-|                  | +----+----+------------------------------------------------+ |
-|                  | | 0  | >0 | The scan dwells on each channel for max        | |
-|                  | |    |    | milliseconds.                                  | |
-|                  | +----+----+------------------------------------------------+ |
+|                  | - min=0, max=0: scan dwells on each channel for 120 ms.      |
+|                  | - min>0, max=0: scan dwells on each channel for 120 ms.      |
+|                  | - min=0, max>0: scan dwells on each channel for ``max`` ms.  |
+|                  | - min>0, max>0: the minimum time the scan dwells on each     |
+|                  |   channel is ``min`` ms. If no AP is found during this time  |
+|                  |   frame, the scan switches to the next channel. Otherwise,   |
+|                  |   the scan dwells on the channel for ``max`` ms.             |
 |                  |                                                              |
 |                  | If you want to improve the performance of the                |
 |                  | the scan, you can try to modify these two parameters.        |
