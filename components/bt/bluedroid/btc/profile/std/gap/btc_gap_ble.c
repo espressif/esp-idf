@@ -29,10 +29,6 @@
 static tBTA_BLE_ADV_DATA gl_bta_adv_data;
 static tBTA_BLE_ADV_DATA gl_bta_scan_rsp_data;
 
-static void btc_gap_ble_arg_deep_free(btc_msg_t *msg);
-static void btc_gap_ble_cb_deep_free(btc_msg_t *msg);
-static void btc_gap_ble_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
-
 static inline void btc_gap_ble_cb_to_app(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
     esp_gap_ble_cb_t btc_gap_ble_cb = (esp_gap_ble_cb_t)btc_profile_cb_get(BTC_PID_GAP_BLE);
@@ -784,6 +780,7 @@ static void btc_ble_set_rand_addr (BD_ADDR rand_addr)
     }
 }
 
+#if (SMP_INCLUDED)
 static void btc_ble_remove_bond_device(esp_bt_status_t status)
 {
     int ret;
@@ -846,6 +843,8 @@ static void btc_ble_get_bond_device_list(void)
     // release the buffer after used.
     GKI_freebuf((void *)bond_dev);
 }
+#endif /* #if (SMP_INCLUDED) */
+
 static void btc_ble_config_local_privacy(bool privacy_enable, tBTA_SET_LOCAL_PRIVACY_CBACK *set_local_privacy_cback)
 {
     BTA_DmBleConfigLocalPrivacy(privacy_enable, set_local_privacy_cback);
@@ -939,7 +938,7 @@ void btc_gap_ble_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     }
 }
 
-static void btc_gap_ble_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
+void btc_gap_ble_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 {
     switch (msg->act) {
     case ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT: {
@@ -963,7 +962,7 @@ static void btc_gap_ble_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     }
 }
 
-static void btc_gap_ble_arg_deep_free(btc_msg_t *msg)
+void btc_gap_ble_arg_deep_free(btc_msg_t *msg)
 {
     LOG_DEBUG("%s \n", __func__);
     switch (msg->act) {
@@ -1002,7 +1001,7 @@ static void btc_gap_ble_arg_deep_free(btc_msg_t *msg)
     }
 }
 
-static void btc_gap_ble_cb_deep_free(btc_msg_t *msg)
+void btc_gap_ble_cb_deep_free(btc_msg_t *msg)
 {
     LOG_DEBUG("%s", __func__);
     switch (msg->act) {
