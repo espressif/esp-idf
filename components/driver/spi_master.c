@@ -603,7 +603,7 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
         //if not use RXDATA neither rx_buffer, buffer_to_rcv assigned to NULL
         trans_buf.buffer_to_rcv = trans_desc->rx_buffer;
     }
-    if ( trans_buf.buffer_to_rcv && handle->host->dma_chan && !esp_ptr_dma_capable( trans_buf.buffer_to_rcv )) {
+    if ( trans_buf.buffer_to_rcv && handle->host->dma_chan && (!esp_ptr_dma_capable( trans_buf.buffer_to_rcv ) || ((int)trans_buf.buffer_to_rcv%4!=0)) ) {
         //if rxbuf in the desc not DMA-capable, malloc a new one
         trans_buf.buffer_to_rcv = heap_caps_malloc((trans_desc->rxlength+7)/8, MALLOC_CAP_DMA);
         if ( trans_buf.buffer_to_rcv==NULL ) return ESP_ERR_NO_MEM;
