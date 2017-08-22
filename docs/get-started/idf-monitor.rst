@@ -66,7 +66,7 @@ By default, if an esp-idf app crashes then the panic handler prints registers an
 
 Optionally, the panic handler can be configured to run a serial "gdb stub" which can communicate with a gdb_ debugger program and allow memory to be read, variables and stack frames examined, etc. This is not as versatile as JTAG debugging, but no special hardware is required.
 
-To enable the gdbstub, run ``make menuconfig`` and navigate to ``Component config`` -> ``ESP32-specific`` -> ``Panic handler behaviour``, then set the value to ``Invoke GDBStub``.
+To enable the gdbstub, run ``make menuconfig`` and set :ref:`CONFIG_ESP32_PANIC` option to ``Invoke GDBStub``.
 
 If this option is enabled and idf_monitor sees the gdb stub has loaded, it will automatically pause serial monitoring and run GDB with the correct arguments. After GDB exits, the board will be reset via the RTS serial line (if this is connected.)
 

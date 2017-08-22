@@ -160,13 +160,6 @@ config MBEDTLS_KEY_EXCHANGE_DHE_PSK
    help
        Enable to support Diffie-Hellman PSK (pre-shared-key) TLS authentication modes.
 
-config MBEDTLS_KEY_EXCHANGE_DHE_PSK
-   bool "Enable DHE-PSK based ciphersuite modes"
-   depends on MBEDTLS_PSK_MODES
-   default y
-   help
-       Enable to support Diffie-Hellman PSK (pre-shared-key) TLS authentication modes.
-
 config MBEDTLS_KEY_EXCHANGE_ECDHE_PSK
    bool "Enable ECDHE-PSK based ciphersuite modes"
    depends on MBEDTLS_PSK_MODES
@@ -207,13 +200,6 @@ config MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE
 config MBEDTLS_KEY_EXCHANGE_ECDHE_RSA
    bool "Enable ECDHE-RSA based ciphersuite modes"
    depends on MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE && MBEDTLS_ECDH_C
-   default y
-   help
-       Enable to support ciphersuites with prefix TLS-ECDHE-RSA-WITH-
-
-config MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA
-   bool "Enable ECDHE-ECDSA based ciphersuite modes"
-   depends on MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE && MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C
    default y
    help
        Enable to support ciphersuites with prefix TLS-ECDHE-RSA-WITH-

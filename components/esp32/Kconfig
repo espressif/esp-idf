@@ -253,6 +253,7 @@ choice CONSOLE_UART
     default CONSOLE_UART_DEFAULT
     help
         Select whether to use UART for console output (through stdout and stderr).
+        
         - Default is to use UART0 on pins GPIO1(TX) and GPIO3(RX).
         - If "Custom" is selected, UART0 or UART1 can be chosen,
           and any pins can be selected.
@@ -315,21 +316,16 @@ config ULP_COPROC_ENABLED
         If this option is enabled, further coprocessor configuration will appear in the Components menu.
 
 config ULP_COPROC_RESERVE_MEM
-    int "RTC slow memory reserved for coprocessor"
-    default 512
-    range 32 8192
-    depends on ULP_COPROC_ENABLED
+    int
+    prompt "RTC slow memory reserved for coprocessor" if ULP_COPROC_ENABLED
+    default 512 if ULP_COPROC_ENABLED
+    range 32 8192 if ULP_COPROC_ENABLED
+    default 0 if !ULP_COPROC_ENABLED
+    range 0 0 if !ULP_COPROC_ENABLED
     help
         Bytes of memory to reserve for ULP coprocessor firmware & data.
 
         Data is reserved at the beginning of RTC slow memory.
-
-# Set CONFIG_ULP_COPROC_RESERVE_MEM to 0 if ULP is disabled
-config ULP_COPROC_RESERVE_MEM
-    int
-    default 0
-    depends on !ULP_COPROC_ENABLED
-
 
 choice ESP32_PANIC
     prompt "Panic handler behaviour"
@@ -542,6 +538,7 @@ config ESP32_RTC_CLK_CAL_CYCLES
         
         When this option is set to 0, clock calibration will not be performed at
         startup, and approximate clock frequencies will be assumed:
+
         - 150000 Hz if internal RC oscillator is used as clock source
         - 32768 Hz if the 32k crystal oscillator is used
 
@@ -568,8 +565,10 @@ choice ESP32_XTAL_FREQ_SEL
     default ESP32_XTAL_FREQ_AUTO
     help
         ESP32 currently supports the following XTAL frequencies:
-            - 26 MHz
-            - 40 MHz
+
+        - 26 MHz
+        - 40 MHz
+
         Startup code can automatically estimate XTAL frequency. This feature
         uses the internal 8MHz oscillator as a reference. Because the internal
         oscillator frequency is temperature dependent, it is not recommended
@@ -591,8 +590,6 @@ config ESP32_XTAL_FREQ
     default 40 if ESP32_XTAL_FREQ_40
     default 26 if ESP32_XTAL_FREQ_26
 
-endmenu
-
 config NO_BLOBS
     bool "No Binary Blobs"
     depends on !BT_ENABLED
@@ -600,6 +597,8 @@ config NO_BLOBS
     help
        If enabled, this disables the linking of binary libraries in the application build. Note
        that after enabling this Wi-Fi/Bluetooth will not work.
+
+endmenu
 
 menu Wi-Fi
 
