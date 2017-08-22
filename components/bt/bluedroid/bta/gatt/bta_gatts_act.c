@@ -524,9 +524,10 @@ void bta_gatts_set_attr_value(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_
     }
 }
 
-void bta_gatts_get_attr_value(UINT16 attr_handle, UINT16 *length, UINT8 **value)
+tGATT_STATUS bta_gatts_get_attr_value(UINT16 attr_handle, UINT16 *length, UINT8 **value)
 {
-    GATTS_GetAttributeValue(attr_handle, length, value);
+
+   return GATTS_GetAttributeValue(attr_handle, length, value);
 }
 
 /*******************************************************************************

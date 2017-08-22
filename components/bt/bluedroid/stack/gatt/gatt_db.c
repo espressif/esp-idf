@@ -752,6 +752,14 @@ tGATT_STATUS gatts_get_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
         GATT_TRACE_ERROR("gatts_get_attribute_value Fail:p_db->p_attr_list is NULL.\n");
         return GATT_INVALID_PDU;
     }
+    if (length == NULL){
+        GATT_TRACE_ERROR("gatts_get_attribute_value Fail:length is NULL.\n");
+        return GATT_INVALID_PDU;
+    }
+    if (value == NULL){
+        GATT_TRACE_ERROR("gatts_get_attribute_value Fail:value is NULL.\n");
+        return GATT_INVALID_PDU;
+    }
 
     p_cur    =  (tGATT_ATTR16 *) p_db->p_attr_list;
 
