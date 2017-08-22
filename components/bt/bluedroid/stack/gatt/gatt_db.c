@@ -370,10 +370,16 @@ tGATT_STATUS gatts_db_read_attr_value_by_type (tGATT_TCB   *p_tcb,
                     /* one callback at a time */
                     break;
                 } else if (status == GATT_SUCCESS || status == GATT_STACK_RSP) {
-                    if (status == GATT_STACK_RSP && !have_send_request){
+                    if (status == GATT_STACK_RSP){
                         need_rsp = FALSE;
                         status = gatts_send_app_read_request(p_tcb, op_code, p_attr->handle, 0, trans_id, need_rsp);
-                        have_send_request = true;
+                        if(status == GATT_BUSY)
+                            break;
+
+                        if (!have_send_request){
+                            have_send_request = true;
+                            trans_id = p_tcb->sr_cmd.trans_id;
+                        }
                     }
 
                     if (p_rsp->offset == 0) {
