@@ -144,7 +144,6 @@ bool config_has_key_in_section(config_t *config, char *key, char *key_value)
             LOG_DEBUG("entry->key = %s, entry->value = %s", entry->key, entry->value);
             if (!strcmp(entry->key, key) && !strcmp(entry->value, key_value)) {
                 LOG_DEBUG("%s, the irk aready in the flash.", __func__);
-                section_free((void *)section);
                 return true;
             }
         }
