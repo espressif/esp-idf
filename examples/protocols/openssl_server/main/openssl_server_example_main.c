@@ -194,7 +194,7 @@ failed1:
     return ;
 } 
 
-static void openssl_client_init(void)
+static void openssl_server_init(void)
 {
     int ret;
     xTaskHandle openssl_handle;
@@ -219,7 +219,7 @@ static esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
         break;
     case SYSTEM_EVENT_STA_GOT_IP:
         xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
-        openssl_client_init();
+        openssl_server_init();
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
         /* This is a workaround as ESP32 WiFi libs don't currently
