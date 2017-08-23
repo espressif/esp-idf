@@ -7,8 +7,9 @@ CFLAGS += -DBOOTLOADER_BUILD
 #endif
 
 COMPONENT_SRCDIRS := . hwcrypto
-ifndef CONFIG_NO_BLOBS
-LIBS := core rtc net80211 pp wpa smartconfig coexist wps wpa2 phy
+LIBS ?=
+ifneq ("$(CONFIG_NO_BLOBS)","y")
+LIBS += core rtc net80211 pp wpa smartconfig coexist wps wpa2 phy
 endif
 
 LINKER_SCRIPTS += esp32.common.ld esp32.rom.ld esp32.peripherals.ld
@@ -17,7 +18,7 @@ ifeq ("$(CONFIG_NEWLIB_NANO_FORMAT)","y")
 LINKER_SCRIPTS += esp32.rom.nanofmt.ld
 endif
 
-ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
+ifneq ("$(CONFIG_SPI_FLASH_ROM_DRIVER_PATCH)","y")
 LINKER_SCRIPTS += esp32.rom.spiflash.ld
 endif
 

@@ -12,12 +12,12 @@ COMPONENT_SRCDIRS := src
 #
 # Secure boot signing key support
 #
-ifdef CONFIG_SECURE_BOOT_ENABLED
+ifneq ("$(CONFIG_SECURE_BOOT_ENABLED)","")
 
 # this path is created relative to the component build directory
 SECURE_BOOT_VERIFICATION_KEY := $(abspath signature_verification_key.bin)
 
-ifdef CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES
+ifneq ("$(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)","")
 # verification key derived from signing key.
 $(SECURE_BOOT_VERIFICATION_KEY): $(SECURE_BOOT_SIGNING_KEY) $(SDKCONFIG_MAKEFILE)
 	$(ESPSECUREPY) extract_public_key --keyfile $< $@
