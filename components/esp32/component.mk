@@ -2,10 +2,6 @@
 # Component Makefile
 #
 
-#ifdef IS_BOOTLOADER_BUILD
-CFLAGS += -DBOOTLOADER_BUILD
-#endif
-
 COMPONENT_SRCDIRS := . hwcrypto
 ifndef CONFIG_NO_BLOBS
 LIBS := core rtc net80211 pp wpa smartconfig coexist wps wpa2 phy
