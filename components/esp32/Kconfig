@@ -582,7 +582,7 @@ config ESP32_DEEP_SLEEP_WAKEUP_DELAY
 
 choice ESP32_XTAL_FREQ_SEL
     prompt "Main XTAL frequency"
-    default ESP32_XTAL_FREQ_AUTO
+    default ESP32_XTAL_FREQ_40
     help
         ESP32 currently supports the following XTAL frequencies:
             - 26 MHz
