@@ -18,6 +18,7 @@ Peripherals API
    SPI Master <spi_master>
    SPI Slave <spi_slave>
    Timer <timer>
+   Touch pad <touch_pad>
    UART <uart>
 
 Example code for this API section is provided in :example:`peripherals` directory of ESP-IDF examples.

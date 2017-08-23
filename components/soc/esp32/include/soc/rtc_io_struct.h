@@ -277,4 +277,5 @@ typedef volatile struct {
         uint32_t val;
     } date;
 } rtc_io_dev_t;
+extern rtc_io_dev_t RTCIO;
 #endif  /* _SOC_RTC_IO_STRUCT_H_ */

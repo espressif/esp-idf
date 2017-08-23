@@ -72,6 +72,7 @@ INPUT = \
     ../components/driver/include/driver/spi_master.h \
     ../components/driver/include/driver/spi_slave.h \
     ../components/driver/include/driver/timer.h \
+    ../components/driver/include/driver/touch_pad.h \
     ../components/driver/include/driver/uart.h \
     ##
     ## Protocols - API Reference
