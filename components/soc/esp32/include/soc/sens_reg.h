@@ -297,6 +297,8 @@
 #define SENS_SAR1_ATTEN_M  ((SENS_SAR1_ATTEN_V)<<(SENS_SAR1_ATTEN_S))
 #define SENS_SAR1_ATTEN_V  0xFFFFFFFF
 #define SENS_SAR1_ATTEN_S  0
+#define SENS_SAR1_ATTEN_VAL_MASK   0x3
+#define SENS_SAR2_ATTEN_VAL_MASK   0x3
 
 #define SENS_SAR_ATTEN2_REG          (DR_REG_SENS_BASE + 0x0038)
 /* SENS_SAR2_ATTEN : R/W ;bitpos:[31:0] ;default: 32'hffffffff ; */
