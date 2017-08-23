@@ -27,7 +27,7 @@
 #define BTM_BLE_INT_H
 
 #include "bt_target.h"
-#include "gki.h"
+#include "fixed_queue.h"
 #include "hcidefs.h"
 #include "btm_ble_api.h"
 #include "btm_int.h"
@@ -316,7 +316,7 @@ typedef struct {
     UINT8 white_list_avail_size;
     tBTM_BLE_WL_STATE wl_state;
 
-    BUFFER_Q conn_pending_q;
+    fixed_queue_t *conn_pending_q;
     tBTM_BLE_CONN_ST conn_state;
 
     /* random address management control block */
@@ -363,6 +363,7 @@ BOOLEAN btm_ble_send_extended_scan_params(UINT8 scan_type, UINT32 scan_int,
         UINT8 scan_filter_policy);
 void btm_ble_stop_inquiry(void);
 void btm_ble_init (void);
+void btm_ble_free (void);
 void btm_ble_connected (UINT8 *bda, UINT16 handle, UINT8 enc_mode, UINT8 role, tBLE_ADDR_TYPE addr_type, BOOLEAN addr_matched);
 void btm_ble_read_remote_features_complete(UINT8 *p);
 void btm_ble_write_adv_enable_complete(UINT8 *p);

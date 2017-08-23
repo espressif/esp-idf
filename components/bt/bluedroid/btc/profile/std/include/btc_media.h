@@ -25,7 +25,6 @@
 
 #include <stdbool.h>
 #include "bta_api.h"
-#include "gki.h"
 #include "btc_av_api.h"
 
 #if (BTA_AV_INCLUDED == TRUE)
@@ -174,9 +173,9 @@ extern BOOLEAN btc_media_task_aa_tx_flush_req(void);
  **
  ** Function         btc_media_aa_readbuf
  **
- ** Description      Read an audio GKI buffer from the BTC media TX queue
+ ** Description      Read an audio buffer from the BTC media TX queue
  **
- ** Returns          pointer on a GKI aa buffer ready to send
+ ** Returns          pointer on a aa buffer ready to send
  **
  *******************************************************************************/
 extern BT_HDR *btc_media_aa_readbuf(void);
@@ -198,7 +197,7 @@ UINT8 btc_media_sink_enque_buf(BT_HDR *p_buf);
  **
  ** Function         btc_media_aa_writebuf
  **
- ** Description      Enqueue a Advance Audio media GKI buffer to be processed by btc media task.
+ ** Description      Enqueue a Advance Audio media buffer to be processed by btc media task.
  **
  ** Returns          TRUE is success
  **
@@ -209,7 +208,7 @@ extern void btc_media_aa_writebuf(BT_HDR *pBuf, UINT32 timestamp, UINT16 seq_num
  **
  ** Function         btc_media_av_writebuf
  **
- ** Description      Enqueue a video media GKI buffer to be processed by btc media task.
+ ** Description      Enqueue a video media buffer to be processed by btc media task.
  **
  ** Returns          TRUE is success
  **

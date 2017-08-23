@@ -105,7 +105,7 @@ extern UINT8 utl_itoa(UINT16 i, char *p_s);
 **
 ** Function         utl_freebuf
 **
-** Description      This function calls GKI_freebuf to free the buffer passed
+** Description      This function calls osi_free to free the buffer passed
 **                  in, if buffer pointer is not NULL, and also initializes
 **                  buffer pointer to NULL.
 **

@@ -29,7 +29,7 @@
 #include "bta_gatt_api.h"
 #include "bta_gattc_ci.h"
 #include "bta_gattc_co.h"
-#include "gki.h"
+#include "fixed_queue.h"
 
 /*****************************************************************************
 **  Constants and data types
@@ -302,7 +302,7 @@ typedef struct {
 
     tBTA_GATTC_CACHE    *p_srvc_cache;
     tBTA_GATTC_CACHE    *p_cur_srvc;
-    BUFFER_Q            cache_buffer;   /* buffer queue used for storing the cache data */
+    fixed_queue_t       *cache_buffer;   /* buffer queue used for storing the cache data */
     UINT8               *p_free;        /* starting point to next available byte */
     UINT16              free_byte;      /* number of available bytes in server cache buffer */
     UINT8               update_count;   /* indication received */

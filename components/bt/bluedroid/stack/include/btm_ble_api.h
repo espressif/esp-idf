@@ -27,7 +27,6 @@
 
 #include "bt_defs.h"
 #include "btm_api.h"
-#include "gki.h"
 #include "bt_common_types.h"
 
 #define CHANNEL_MAP_LEN    5

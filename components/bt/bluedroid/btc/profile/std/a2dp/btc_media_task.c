@@ -28,7 +28,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "fixed_queue.h"
-#include "gki.h"
 #include "bta_api.h"
 #include "btu.h"
 #include "bta_sys.h"
@@ -52,6 +51,7 @@
 #include "allocator.h"
 #include "bt_utils.h"
 #include "esp_a2dp_api.h"
+#include "mutex.h"
 
 // #if (BTA_AV_SINK_INCLUDED == TRUE)
 #include "oi_codec_sbc.h"
@@ -124,7 +124,7 @@ typedef struct {
 } tBT_SBC_HDR;
 
 typedef struct {
-    BUFFER_Q RxSbcQ;
+    fixed_queue_t *RxSbcQ;
     void *av_sm_hdl;
     UINT8 peer_sep;
     UINT8 busy_level;
@@ -148,7 +148,7 @@ extern OI_STATUS OI_CODEC_SBC_DecoderReset(OI_CODEC_SBC_DECODER_CONTEXT *context
         OI_BOOL enhanced);
 // #endif
 
-static void btc_media_flush_q(BUFFER_Q *p_q);
+static void btc_media_flush_q(fixed_queue_t *p_q);
 static void btc_media_task_aa_rx_flush(void);
 static const char *dump_media_event(UINT16 event);
 static void btc_media_thread_handle_cmd(fixed_queue_t *queue);
@@ -379,7 +379,7 @@ void btc_a2dp_setup_codec(void)
 
     APPL_TRACE_EVENT("## A2DP SETUP CODEC ##\n");
 
-    GKI_disable();
+    osi_mutex_global_lock();
 
     /* for now hardcode 44.1 khz 16 bit stereo PCM format */
     media_feeding.cfg.pcm.sampling_freq = 44100;
@@ -389,7 +389,8 @@ void btc_a2dp_setup_codec(void)
 
     bta_av_co_audio_set_codec(&media_feeding, &status);
 
-    GKI_enable();
+
+    osi_mutex_global_unlock();
 }
 
 /*****************************************************************************
@@ -428,7 +429,7 @@ BOOLEAN btc_media_task_clear_track(void)
 {
     BT_HDR *p_buf;
 
-    if (NULL == (p_buf = GKI_getbuf(sizeof(BT_HDR)))) {
+    if (NULL == (p_buf = osi_malloc(sizeof(BT_HDR)))) {
         return FALSE;
     }
 
@@ -457,7 +458,7 @@ void btc_reset_decoder(UINT8 *p_av)
                      p_av[4], p_av[5], p_av[6]);
 
     tBTC_MEDIA_SINK_CFG_UPDATE *p_buf;
-    if (NULL == (p_buf = GKI_getbuf(sizeof(tBTC_MEDIA_SINK_CFG_UPDATE)))) {
+    if (NULL == (p_buf = osi_malloc(sizeof(tBTC_MEDIA_SINK_CFG_UPDATE)))) {
         APPL_TRACE_ERROR("btc_reset_decoder No Buffer ");
         return;
     }
@@ -519,26 +520,24 @@ void btc_a2dp_set_rx_flush(BOOLEAN enable)
 
 static void btc_media_task_avk_data_ready(UNUSED_ATTR void *context)
 {
-    UINT8 count;
     tBT_SBC_HDR *p_msg;
 
-    count = btc_media_cb.RxSbcQ._count;
-    if (0 == count) {
+    if (fixed_queue_is_empty(btc_media_cb.RxSbcQ)) {
         APPL_TRACE_DEBUG("  QUE  EMPTY ");
     } else {
         if (btc_media_cb.rx_flush == TRUE) {
-            btc_media_flush_q(&(btc_media_cb.RxSbcQ));
+            btc_media_flush_q(btc_media_cb.RxSbcQ);
             return;
         }
 
-        while ((p_msg = (tBT_SBC_HDR *)GKI_getfirst(&(btc_media_cb.RxSbcQ))) != NULL ) {
+        while ((p_msg = (tBT_SBC_HDR *)fixed_queue_try_peek_first(btc_media_cb.RxSbcQ)) != NULL ) {
             btc_media_task_handle_inc_media(p_msg);
-            p_msg = GKI_dequeue(&(btc_media_cb.RxSbcQ));
+            p_msg = (tBT_SBC_HDR *)fixed_queue_try_dequeue(btc_media_cb.RxSbcQ);
             if ( p_msg == NULL ) {
                 APPL_TRACE_ERROR("Insufficient data in que ");
                 break;
             }
-            GKI_freebuf(p_msg);
+            osi_free(p_msg);
         }
         APPL_TRACE_DEBUG(" Process Frames - ");
     }
@@ -551,6 +550,8 @@ static void btc_media_thread_init(UNUSED_ATTR void *context)
     btc_media_cb.av_sm_hdl = btc_av_get_sm_handle();
     raise_priority_a2dp(TASK_HIGH_MEDIA);
     media_task_running = MEDIA_TASK_STATE_ON;
+
+    btc_media_cb.RxSbcQ = fixed_queue_new(SIZE_MAX);
 }
 
 static void btc_media_thread_cleanup(UNUSED_ATTR void *context)
@@ -561,6 +562,8 @@ static void btc_media_thread_cleanup(UNUSED_ATTR void *context)
     btc_media_cb.data_channel_open = FALSE;
     /* Clear media task flag */
     media_task_running = MEDIA_TASK_STATE_OFF;
+
+    fixed_queue_free(btc_media_cb.RxSbcQ, osi_free_func);
 }
 
 /*******************************************************************************
@@ -572,10 +575,10 @@ static void btc_media_thread_cleanup(UNUSED_ATTR void *context)
  ** Returns          void
  **
  *******************************************************************************/
-static void btc_media_flush_q(BUFFER_Q *p_q)
+static void btc_media_flush_q(fixed_queue_t *p_q)
 {
-    while (!GKI_queue_is_empty(p_q)) {
-        GKI_freebuf(GKI_dequeue(p_q));
+    while (! fixed_queue_is_empty(p_q)) {
+	    osi_free(fixed_queue_try_dequeue(p_q));
     }
 }
 
@@ -600,7 +603,7 @@ static void btc_media_thread_handle_cmd(fixed_queue_t *queue)
         default:
             APPL_TRACE_ERROR("ERROR in %s unknown event %d\n", __func__, p_msg->event);
         }
-        GKI_freebuf(p_msg);
+        osi_free(p_msg);
         APPL_TRACE_VERBOSE("%s: %s DONE\n", __func__, dump_media_event(p_msg->event));
     }
 }
@@ -669,11 +672,11 @@ BOOLEAN btc_media_task_aa_rx_flush_req(void)
 {
     BT_HDR *p_buf;
 
-    if (GKI_queue_is_empty(&(btc_media_cb.RxSbcQ)) == TRUE) { /*  Que is already empty */
+    if (fixed_queue_is_empty(btc_media_cb.RxSbcQ) == TRUE) { /*  Que is already empty */
         return TRUE;
     }
 
-    if (NULL == (p_buf = GKI_getbuf(sizeof(BT_HDR)))) {
+    if (NULL == (p_buf = osi_malloc(sizeof(BT_HDR)))) {
         return FALSE;
     }
 
@@ -695,10 +698,10 @@ BOOLEAN btc_media_task_aa_rx_flush_req(void)
  *******************************************************************************/
 static void btc_media_task_aa_rx_flush(void)
 {
-    /* Flush all enqueued GKI SBC  buffers (encoded) */
+    /* Flush all enqueued SBC  buffers (encoded) */
     APPL_TRACE_DEBUG("btc_media_task_aa_rx_flush");
 
-    btc_media_flush_q(&(btc_media_cb.RxSbcQ));
+    btc_media_flush_q(btc_media_cb.RxSbcQ);
 }
 
 int btc_a2dp_get_track_frequency(UINT8 frequency)
@@ -896,29 +899,29 @@ UINT8 btc_media_sink_enque_buf(BT_HDR *p_pkt)
     tBT_SBC_HDR *p_msg;
 
     if (btc_media_cb.rx_flush == TRUE) { /* Flush enabled, do not enque*/
-        return GKI_queue_length(&btc_media_cb.RxSbcQ);
+        return fixed_queue_length(btc_media_cb.RxSbcQ);
     }
 
-    if (GKI_queue_length(&btc_media_cb.RxSbcQ) >= MAX_OUTPUT_A2DP_FRAME_QUEUE_SZ) {
+    if (fixed_queue_length(btc_media_cb.RxSbcQ) >= MAX_OUTPUT_A2DP_FRAME_QUEUE_SZ) {
         APPL_TRACE_WARNING("Pkt dropped\n");
-        return GKI_queue_length(&btc_media_cb.RxSbcQ);
+        return fixed_queue_length(btc_media_cb.RxSbcQ);
     }
 
     APPL_TRACE_DEBUG("btc_media_sink_enque_buf + ");
 
     /* allocate and Queue this buffer */
-    if ((p_msg = (tBT_SBC_HDR *) GKI_getbuf(sizeof(tBT_SBC_HDR) +
+    if ((p_msg = (tBT_SBC_HDR *) osi_malloc(sizeof(tBT_SBC_HDR) +
                                             p_pkt->offset + p_pkt->len)) != NULL) {
         memcpy(p_msg, p_pkt, (sizeof(BT_HDR) + p_pkt->offset + p_pkt->len));
         p_msg->num_frames_to_be_processed = (*((UINT8 *)(p_msg + 1) + p_msg->offset)) & 0x0f;
         APPL_TRACE_VERBOSE("btc_media_sink_enque_buf %d + \n", p_msg->num_frames_to_be_processed);
-        GKI_enqueue(&(btc_media_cb.RxSbcQ), p_msg);
+        fixed_queue_enqueue(btc_media_cb.RxSbcQ, p_msg);
         btc_media_data_post();
     } else {
         /* let caller deal with a failed allocation */
         APPL_TRACE_WARNING("btc_media_sink_enque_buf No Buffer left - ");
     }
-    return GKI_queue_length(&btc_media_cb.RxSbcQ);
+    return fixed_queue_length(btc_media_cb.RxSbcQ);
 }
 
 /*******************************************************************************

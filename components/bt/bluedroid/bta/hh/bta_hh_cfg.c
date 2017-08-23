@@ -34,7 +34,7 @@
 
 /* size of database for service discovery */
 #ifndef BTA_HH_DISC_BUF_SIZE
-#define BTA_HH_DISC_BUF_SIZE        GKI_MAX_BUF_SIZE
+#define BTA_HH_DISC_BUF_SIZE        BT_DEFAULT_BUFFER_SIZE
 #endif
 
 

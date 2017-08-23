@@ -20,6 +20,7 @@
 #include "btc_manage.h"
 #include "bta_gatt_api.h"
 #include "bt_trace.h"
+#include "allocator.h"
 #include "esp_gattc_api.h"
 
 #if (GATTC_INCLUDED == TRUE)
@@ -38,7 +39,7 @@ void btc_gattc_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 
     switch (msg->act) {
     case BTC_GATTC_ACT_WRITE_CHAR: {
-        dst->write_char.value = (uint8_t *)GKI_getbuf(src->write_char.value_len);
+        dst->write_char.value = (uint8_t *)osi_malloc(src->write_char.value_len);
         if (dst->write_char.value) {
             memcpy(dst->write_char.value, src->write_char.value, src->write_char.value_len);
         } else {
@@ -47,7 +48,7 @@ void btc_gattc_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         break;
     }
     case BTC_GATTC_ACT_WRITE_CHAR_DESCR: {
-        dst->write_descr.value = (uint8_t *)GKI_getbuf(src->write_descr.value_len);
+        dst->write_descr.value = (uint8_t *)osi_malloc(src->write_descr.value_len);
         if (dst->write_descr.value) {
             memcpy(dst->write_descr.value, src->write_descr.value, src->write_descr.value_len);
         } else {
@@ -56,7 +57,7 @@ void btc_gattc_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         break;
     }
     case BTC_GATTC_ACT_PREPARE_WRITE: {
-        dst->prep_write.value = (uint8_t *)GKI_getbuf(src->prep_write.value_len);
+        dst->prep_write.value = (uint8_t *)osi_malloc(src->prep_write.value_len);
         if (dst->prep_write.value) {
             memcpy(dst->prep_write.value, src->prep_write.value, src->prep_write.value_len);
         } else {
@@ -65,7 +66,7 @@ void btc_gattc_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         break;
     }
     case BTC_GATTC_ACT_PREPARE_WRITE_CHAR_DESCR: {
-        dst->prep_write_descr.value = (uint8_t *)GKI_getbuf(src->prep_write_descr.value_len);
+        dst->prep_write_descr.value = (uint8_t *)osi_malloc(src->prep_write_descr.value_len);
         if (dst->prep_write_descr.value) {
             memcpy(dst->prep_write_descr.value, src->prep_write_descr.value, src->prep_write_descr.value_len);
         } else {
@@ -86,25 +87,25 @@ void btc_gattc_arg_deep_free(btc_msg_t *msg)
     switch (msg->act) {
     case BTC_GATTC_ACT_WRITE_CHAR: {
         if (arg->write_char.value) {
-            GKI_freebuf(arg->write_char.value);
+            osi_free(arg->write_char.value);
         }
         break;
     }
     case BTC_GATTC_ACT_WRITE_CHAR_DESCR: {
         if (arg->write_descr.value) {
-            GKI_freebuf(arg->write_descr.value);
+            osi_free(arg->write_descr.value);
         }
         break;
     }
     case BTC_GATTC_ACT_PREPARE_WRITE: {
         if (arg->prep_write.value) {
-            GKI_freebuf(arg->prep_write.value);
+            osi_free(arg->prep_write.value);
         }
         break;
     }
     case BTC_GATTC_ACT_PREPARE_WRITE_CHAR_DESCR: {
         if (arg->prep_write_descr.value) {
-            GKI_freebuf(arg->prep_write_descr.value);
+            osi_free(arg->prep_write_descr.value);
         }
         break;
     }

@@ -18,6 +18,7 @@
 #include "btc_main.h"
 #include "bt.h"
 #include "future.h"
+#include "allocator.h"
 
 static bool bd_already_enable = false;
 static bool bd_already_init = false;

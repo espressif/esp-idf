@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright (C) 1999-2012 Broadcom Corporation
+ *  Copyright (C) 2015 Google, Inc.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,19 +16,28 @@
  *
  ******************************************************************************/
 
-#ifndef _GKI_INT_H_
-#define _GKI_INT_H_
+#ifndef __SEMAPHORE_H__
+#define __SEMAPHORE_H__
 
-//#include <pthread.h>
-#include "bt_defs.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+#include "freertos/semphr.h"
 
-#include "gki_common.h"
+#define OSI_SEM_MAX_TIMEOUT 0xffffffffUL
 
-typedef struct {
-    pthread_mutex_t lock;
-    tGKI_COM_CB com;
-} tGKI_CB;
+typedef xSemaphoreHandle osi_sem_t;
 
-extern tGKI_CB  gki_cb;
+#define osi_sem_valid( x ) ( ( ( *x ) == NULL) ? pdFALSE : pdTRUE )
+#define osi_sem_set_invalid( x ) ( ( *x ) = NULL )
 
-#endif /*_GKI_INT_H_*/
+int osi_sem_new(osi_sem_t *sem, uint32_t max_count, uint32_t init_count);
+
+void osi_sem_free(osi_sem_t *sem);
+
+int osi_sem_take(osi_sem_t *sem, uint32_t timeout);
+
+void osi_sem_give(osi_sem_t *sem);
+
+
+#endif /* __SEMAPHORE_H__ */

@@ -29,7 +29,6 @@
 #include "bta_gatt_api.h"
 #include "gatt_api.h"
 
-#include "gki.h"
 
 /*****************************************************************************
 **  Constants and data types

@@ -26,8 +26,8 @@
 #include <string.h>
 
 #include "bt_target.h"
-// #include "osi/include/log.h"
 #include "bt_trace.h"
+#include "allocator.h"
 
 #if defined(BTA_AV_INCLUDED) && (BTA_AV_INCLUDED == TRUE)
 #include "bta_av_int.h"
@@ -224,7 +224,7 @@ static void bta_av_timer_cback(void *p_tle)
         }
     }
 
-    if (p_scb && (p_buf = (BT_HDR *) GKI_getbuf(sizeof(BT_HDR))) != NULL) {
+    if (p_scb && (p_buf = (BT_HDR *) osi_malloc(sizeof(BT_HDR))) != NULL) {
         /* send the event through the audio state machine.
          * only when the audio SM is open, the main SM opens the RC connection as INT */
         p_buf->event = p->event;
@@ -356,7 +356,7 @@ static tBTA_AV_SCB *bta_av_alloc_scb(tBTA_AV_CHNL chnl)
         for (xx = 0; xx < BTA_AV_NUM_STRS; xx++) {
             if (bta_av_cb.p_scb[xx] == NULL) {
                 /* found an empty spot */
-                p_ret = (tBTA_AV_SCB *)GKI_getbuf(sizeof(tBTA_AV_SCB));
+                p_ret = (tBTA_AV_SCB *)osi_malloc(sizeof(tBTA_AV_SCB));
                 if (p_ret) {
                     memset(p_ret, 0, sizeof(tBTA_AV_SCB));
                     p_ret->rc_handle = BTA_AV_RC_HANDLE_NONE;
@@ -389,7 +389,7 @@ UNUSED_ATTR static void bta_av_free_scb(tBTA_AV_SCB *p_scb)
     assert(p_scb != NULL);
 
     list_free(p_scb->a2d_list);
-    GKI_freebuf(p_scb);
+    osi_free(p_scb);
 }
 
 /*******************************************************************************
@@ -423,7 +423,7 @@ void bta_av_conn_cback(UINT8 handle, BD_ADDR bd_addr, UINT8 event, tAVDT_CTRL *p
             //(AVDT_CONNECT_IND_EVT == event && AVDT_ACP == p_data->hdr.err_param))
 
             (AVDT_CONNECT_IND_EVT == event))&& */
-            (p_msg = (tBTA_AV_STR_MSG *) GKI_getbuf((UINT16) (sizeof(tBTA_AV_STR_MSG)))) != NULL) {
+            (p_msg = (tBTA_AV_STR_MSG *) osi_malloc((UINT16) (sizeof(tBTA_AV_STR_MSG)))) != NULL) {
             p_msg->hdr.event = evt;
             p_msg->hdr.layer_specific = event;
             p_msg->hdr.offset = p_data->hdr.err_param;
@@ -891,7 +891,7 @@ static void bta_av_sys_rs_cback (tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 ap
         /* note that more than one SCB (a2dp & vdp) maybe waiting for this event */
         p_scb = bta_av_cb.p_scb[i];
         if (p_scb && (bdcmp (peer_addr, p_scb->peer_addr) == 0) &&
-                (p_buf = (tBTA_AV_ROLE_RES *) GKI_getbuf(sizeof(tBTA_AV_ROLE_RES))) != NULL) {
+                (p_buf = (tBTA_AV_ROLE_RES *) osi_malloc(sizeof(tBTA_AV_ROLE_RES))) != NULL) {
             APPL_TRACE_DEBUG("new_role:%d, hci_status:x%x hndl: x%x\n", id, app_id, p_scb->hndl);
             /*
             if ((id != BTM_ROLE_MASTER) && (app_id != HCI_SUCCESS))
@@ -1128,7 +1128,7 @@ void bta_av_dup_audio_buf(tBTA_AV_SCB *p_scb, BT_HDR *p_buf)
 {
     tBTA_AV_SCB *p_scbi;
     int     i;
-    UINT16  size, copy_size;
+    UINT16  copy_size;
     BT_HDR *p_new;
 
     if (!p_buf) {
@@ -1136,7 +1136,6 @@ void bta_av_dup_audio_buf(tBTA_AV_SCB *p_scb, BT_HDR *p_buf)
     }
 
     if (bta_av_cb.audio_open_cnt >= 2) {
-        size = GKI_get_buf_size(p_buf);
         copy_size = BT_HDR_SIZE + p_buf->len + p_buf->offset;
         /* more than one audio channel is connected */
         for (i = 0; i < BTA_AV_NUM_STRS; i++) {
@@ -1145,7 +1144,7 @@ void bta_av_dup_audio_buf(tBTA_AV_SCB *p_scb, BT_HDR *p_buf)
                     (bta_av_cb.conn_audio & BTA_AV_HNDL_TO_MSK(i)) && /* connected audio */
                     p_scbi && p_scbi->co_started ) { /* scb is used and started */
                 /* enqueue the data only when the stream is started */
-                p_new = (BT_HDR *)GKI_getbuf(size);
+                p_new = (BT_HDR *)osi_malloc(copy_size);
                 if (p_new) {
                     memcpy(p_new, p_buf, copy_size);
                     list_append(p_scbi->a2d_list, p_new);
@@ -1154,7 +1153,7 @@ void bta_av_dup_audio_buf(tBTA_AV_SCB *p_scb, BT_HDR *p_buf)
                         bta_av_co_audio_drop(p_scbi->hndl);
                         BT_HDR *p_buf = list_front(p_scbi->a2d_list);
                         list_remove(p_scbi->a2d_list, p_buf);
-                        GKI_freebuf(p_buf);
+                        osi_free(p_buf);
                     }
                 }
             }

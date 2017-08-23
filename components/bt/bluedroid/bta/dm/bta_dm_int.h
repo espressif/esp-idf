@@ -679,7 +679,7 @@ typedef struct {
 
 /* union of all data types */
 typedef union {
-    /* GKI event buffer header */
+    /* event buffer header */
     BT_HDR              hdr;
     tBTA_DM_API_ENABLE  enable;
 

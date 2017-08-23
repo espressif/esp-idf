@@ -26,7 +26,6 @@
 #include <string.h>
 #include "bt_types.h"
 #include "bt_target.h"
-#include "gki.h"
 #include "bt_types.h"
 #include "hcimsgs.h"
 #include "btu.h"
@@ -86,10 +85,8 @@ void btm_sco_flush_sco_data(UINT16 sco_inx)
 
     if (sco_inx < BTM_MAX_SCO_LINKS) {
         p = &btm_cb.sco_cb.sco_db[sco_inx];
-        while (p->xmit_data_q.p_first) {
-            if ((p_buf = (BT_HDR *)GKI_dequeue (&p->xmit_data_q)) != NULL) {
-                GKI_freebuf (p_buf);
-            }
+        while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(p->xmit_data_q)) != NULL) {
+            osi_free(p_buf);
         }
     }
 #else
@@ -222,20 +219,19 @@ static void btm_esco_conn_rsp (UINT16 sco_inx, UINT8 hci_status, BD_ADDR bda,
 *******************************************************************************/
 void btm_sco_check_send_pkts (UINT16 sco_inx)
 {
-    BT_HDR  *p_buf;
     tSCO_CB  *p_cb = &btm_cb.sco_cb;
     tSCO_CONN   *p_ccb = &p_cb->sco_db[sco_inx];
 
     /* If there is data to send, send it now */
-    while (p_ccb->xmit_data_q.p_first != NULL) {
-        p_buf = NULL;
-
+    BT_HDR  *p_buf;
+    while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->xmit_data_q)) != NULL)
+    {
 #if BTM_SCO_HCI_DEBUG
-        BTM_TRACE_DEBUG ("btm: [%d] buf in xmit_data_q", p_ccb->xmit_data_q.count );
+        BTM_TRACE_DEBUG("btm: [%d] buf in xmit_data_q",
+                        fixed_queue_length(p_ccb->xmit_data_q) + 1);
 #endif
-        p_buf = (BT_HDR *)GKI_dequeue (&p_ccb->xmit_data_q);
 
-        HCI_SCO_DATA_TO_LOWER (p_buf);
+        HCI_SCO_DATA_TO_LOWER(p_buf);
     }
 }
 #endif /* BTM_SCO_HCI_INCLUDED == TRUE */
@@ -269,15 +265,15 @@ void  btm_route_sco_data(BT_HDR *p_msg)
         if (!btm_cb.sco_cb.p_data_cb )
             /* if no data callback registered,  just free the buffer  */
         {
-            GKI_freebuf (p_msg);
+            osi_free (p_msg);
         } else {
             (*btm_cb.sco_cb.p_data_cb)(sco_inx, p_msg, (tBTM_SCO_DATA_FLAG) pkt_status);
         }
     } else { /* no mapping handle SCO connection is active, free the buffer */
-        GKI_freebuf (p_msg);
+        osi_free (p_msg);
     }
 #else
-    GKI_freebuf(p_msg);
+    osi_free(p_msg);
 #endif
 }
 
@@ -314,7 +310,7 @@ tBTM_STATUS BTM_WriteScoData (UINT16 sco_inx, BT_HDR *p_buf)
         /* Ensure we have enough space in the buffer for the SCO and HCI headers */
         if (p_buf->offset < HCI_SCO_PREAMBLE_SIZE) {
             BTM_TRACE_ERROR ("BTM SCO - cannot send buffer, offset: %d", p_buf->offset);
-            GKI_freebuf (p_buf);
+            osi_free (p_buf);
             status = BTM_ILLEGAL_VALUE;
         } else { /* write HCI header */
             /* Step back 3 bytes to add the headers */
@@ -333,12 +329,12 @@ tBTM_STATUS BTM_WriteScoData (UINT16 sco_inx, BT_HDR *p_buf)
             UINT8_TO_STREAM (p, (UINT8)p_buf->len);
             p_buf->len += HCI_SCO_PREAMBLE_SIZE;
 
-            GKI_enqueue (&p_ccb->xmit_data_q, p_buf);
+            fixed_queue_enqueue(p_ccb->xmit_data_q, p_buf);
 
             btm_sco_check_send_pkts (sco_inx);
         }
     } else {
-        GKI_freebuf(p_buf);
+        osi_free(p_buf);
 
         BTM_TRACE_WARNING ("BTM_WriteScoData, invalid sco index: %d at state [%d]",
                            sco_inx, btm_cb.sco_cb.sco_db[sco_inx].state);

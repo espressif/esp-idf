@@ -18,7 +18,6 @@
 #include "bt_trace.h"
 #include "bt_defs.h"
 #include "btc_profile_queue.h"
-#include "gki.h"
 #include "list.h"
 #include "allocator.h"
 

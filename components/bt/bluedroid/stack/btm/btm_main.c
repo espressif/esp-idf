@@ -27,6 +27,7 @@
 #include "bt_target.h"
 #include <string.h>
 #include "btm_int.h"
+#include "allocator.h"
 
 /* Global BTM control block structure
 */
@@ -51,6 +52,9 @@ void btm_init (void)
     /* All fields are cleared; nonzero fields are reinitialized in appropriate function */
     memset(&btm_cb, 0, sizeof(tBTM_CB));
 
+    btm_cb.page_queue = fixed_queue_new(SIZE_MAX);
+    btm_cb.sec_pending_q = fixed_queue_new(SIZE_MAX);
+
 #if defined(BTM_INITIAL_TRACE_LEVEL)
     btm_cb.trace_level = BTM_INITIAL_TRACE_LEVEL;
 #else
@@ -70,3 +74,17 @@ void btm_init (void)
 }
 
 
+/*******************************************************************************
+**
+** Function         btm_free
+**
+** Description      This function is called at btu core free the fixed queue
+**
+** Returns          void
+**
+*******************************************************************************/
+void btm_free(void)
+{
+    fixed_queue_free(btm_cb.page_queue, osi_free_func);
+    fixed_queue_free(btm_cb.sec_pending_q, osi_free_func);
+}

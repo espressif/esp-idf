@@ -24,10 +24,10 @@
 #include "bt_trace.h"
 #include "bt_types.h"
 #include "allocator.h"
+#include "mutex.h"
 #include "btm_api.h"
 #include "btm_int.h"
 #include "btu.h"
-#include "gki.h"
 #include "hash_map.h"
 #include "hcimsgs.h"
 #include "l2c_int.h"
@@ -94,15 +94,15 @@ tBTU_CB  btu_cb;
 #endif
 
 extern hash_map_t *btu_general_alarm_hash_map;
-extern pthread_mutex_t btu_general_alarm_lock;
+extern osi_mutex_t btu_general_alarm_lock;
 
 // Oneshot timer queue.
 extern hash_map_t *btu_oneshot_alarm_hash_map;
-extern pthread_mutex_t btu_oneshot_alarm_lock;
+extern osi_mutex_t btu_oneshot_alarm_lock;
 
 // l2cap timer queue.
 extern hash_map_t *btu_l2cap_alarm_hash_map;
-extern pthread_mutex_t btu_l2cap_alarm_lock;
+extern osi_mutex_t btu_l2cap_alarm_lock;
 
 extern xTaskHandle  xBtuTaskHandle;
 extern xQueueHandle xBtuQueue;
@@ -147,7 +147,7 @@ static void btu_hci_msg_process(BT_HDR *p_msg)
 
     case BT_EVT_TO_BTU_HCI_EVT:
         btu_hcif_process_event ((UINT8)(p_msg->event & BT_SUB_EVT_MASK), p_msg);
-        GKI_freebuf(p_msg);
+        osi_free(p_msg);
 
 #if (defined(HCILP_INCLUDED) && HCILP_INCLUDED == TRUE)
         /* If host receives events which it doesn't response to, */
@@ -179,7 +179,7 @@ static void btu_hci_msg_process(BT_HDR *p_msg)
         }
 
         if (handled == FALSE) {
-            GKI_freebuf (p_msg);
+            osi_free (p_msg);
         }
 
         break;
@@ -195,10 +195,10 @@ static void btu_bta_alarm_process(TIMER_LIST_ENT *p_tle)
         (*p_tle->p_cback)(p_tle);
     } else if (p_tle->event) {
         BT_HDR *p_msg;
-        if ((p_msg = (BT_HDR *) GKI_getbuf(sizeof(BT_HDR))) != NULL) {
+        if ((p_msg = (BT_HDR *) osi_malloc(sizeof(BT_HDR))) != NULL) {
             p_msg->event = p_tle->event;
             p_msg->layer_specific = 0;
-            //GKI_freebuf(p_msg);
+            //osi_free(p_msg);
             bta_sys_sendmsg(p_msg);
         }
     }
@@ -448,12 +448,12 @@ void btu_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_sec)
     assert(p_tle != NULL);
 
     // Get the alarm for the timer list entry.
-    pthread_mutex_lock(&btu_general_alarm_lock);
+    osi_mutex_lock(&btu_general_alarm_lock, OSI_MUTEX_MAX_TIMEOUT);
     if (!hash_map_has_key(btu_general_alarm_hash_map, p_tle)) {
         alarm = osi_alarm_new("btu_gen", btu_general_alarm_cb, (void *)p_tle, 0);
         hash_map_set(btu_general_alarm_hash_map, p_tle, alarm);
     }
-    pthread_mutex_unlock(&btu_general_alarm_lock);
+    osi_mutex_unlock(&btu_general_alarm_lock);
 
     alarm = hash_map_get(btu_general_alarm_hash_map, p_tle);
     if (alarm == NULL) {
@@ -537,12 +537,12 @@ void btu_start_quick_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_ti
     assert(p_tle != NULL);
 
     // Get the alarm for the timer list entry.
-    pthread_mutex_lock(&btu_l2cap_alarm_lock);
+    osi_mutex_lock(&btu_l2cap_alarm_lock, OSI_MUTEX_MAX_TIMEOUT);
     if (!hash_map_has_key(btu_l2cap_alarm_hash_map, p_tle)) {
         alarm = osi_alarm_new("btu_l2cap", btu_l2cap_alarm_cb, (void *)p_tle, 0);
         hash_map_set(btu_l2cap_alarm_hash_map, p_tle, (void *)alarm);
     }
-    pthread_mutex_unlock(&btu_l2cap_alarm_lock);
+    osi_mutex_unlock(&btu_l2cap_alarm_lock);
 
     alarm = hash_map_get(btu_l2cap_alarm_hash_map, p_tle);
     if (alarm == NULL) {
@@ -606,12 +606,12 @@ void btu_start_timer_oneshot(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_
     assert(p_tle != NULL);
 
     // Get the alarm for the timer list entry.
-    pthread_mutex_lock(&btu_oneshot_alarm_lock);
+    osi_mutex_lock(&btu_oneshot_alarm_lock, OSI_MUTEX_MAX_TIMEOUT);
     if (!hash_map_has_key(btu_oneshot_alarm_hash_map, p_tle)) {
         alarm = osi_alarm_new("btu_oneshot", btu_oneshot_alarm_cb, (void *)p_tle, 0);
         hash_map_set(btu_oneshot_alarm_hash_map, p_tle, alarm);
     }
-    pthread_mutex_unlock(&btu_oneshot_alarm_lock);
+    osi_mutex_unlock(&btu_oneshot_alarm_lock);
 
     alarm = hash_map_get(btu_oneshot_alarm_hash_map, p_tle);
     if (alarm == NULL) {

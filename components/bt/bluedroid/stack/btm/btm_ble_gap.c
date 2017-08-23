@@ -3502,6 +3502,8 @@ void btm_ble_init (void)
     btm_cb.cmn_ble_vsc_cb.values_read = FALSE;
     p_cb->cur_states       = 0;
 
+    p_cb->conn_pending_q = fixed_queue_new(SIZE_MAX);
+
     p_cb->inq_var.adv_mode = BTM_BLE_ADV_DISABLE;
     p_cb->inq_var.scan_type = BTM_BLE_SCAN_MODE_NONE;
     p_cb->inq_var.adv_chnl_map = BTM_BLE_DEFAULT_ADV_CHNL_MAP;
@@ -3518,6 +3520,24 @@ void btm_ble_init (void)
 #if BLE_VND_INCLUDED == FALSE
     btm_ble_adv_filter_init();
 #endif
+}
+
+/*******************************************************************************
+**
+** Function         btm_ble_free
+**
+** Description      free the control block variable values.
+**
+** Returns          void
+**
+*******************************************************************************/
+void btm_ble_free (void)
+{
+    tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
+
+    BTM_TRACE_DEBUG("%s", __func__);
+
+    fixed_queue_free(p_cb->conn_pending_q, osi_free_func);
 }
 
 /*******************************************************************************

@@ -26,6 +26,7 @@
 #include "btm_int.h"
 #include "bta_api.h"
 #include "bta_gatt_api.h"
+#include "allocator.h"
 
 
 /******************************************************************************

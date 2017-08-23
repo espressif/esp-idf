@@ -26,12 +26,11 @@
 
 #if BLE_INCLUDED == TRUE
 
-#include "gki.h"
 #include "gatt_int.h"
 #include "l2c_api.h"
 #include "btm_int.h"
 #include "btm_ble_int.h"
-//#include "bt_utils.h"
+#include "allocator.h"
 
 /* Configuration flags. */
 #define GATT_L2C_CFG_IND_DONE   (1<<0)
@@ -105,9 +104,9 @@ void gatt_init (void)
     gatt_cb.trace_level = BT_TRACE_LEVEL_NONE;    /* No traces */
 #endif
     gatt_cb.def_mtu_size = GATT_DEF_BLE_MTU_SIZE;
-    GKI_init_q (&gatt_cb.sign_op_queue);
-    GKI_init_q (&gatt_cb.srv_chg_clt_q);
-    GKI_init_q (&gatt_cb.pending_new_srv_start_q);
+    gatt_cb.sign_op_queue = fixed_queue_new(SIZE_MAX);
+    gatt_cb.srv_chg_clt_q = fixed_queue_new(SIZE_MAX);
+    gatt_cb.pending_new_srv_start_q = fixed_queue_new(SIZE_MAX);
     /* First, register fixed L2CAP channel for ATT over BLE */
     fixed_reg.fixed_chnl_opts.mode         = L2CAP_FCR_BASIC_MODE;
     fixed_reg.fixed_chnl_opts.max_transmit = 0xFF;
@@ -155,6 +154,25 @@ void gatt_free(void)
 {
     int i;
     GATT_TRACE_DEBUG("gatt_free()");
+    fixed_queue_free(gatt_cb.sign_op_queue, NULL);
+    gatt_cb.sign_op_queue = NULL;
+    fixed_queue_free(gatt_cb.srv_chg_clt_q, NULL);
+    gatt_cb.srv_chg_clt_q = NULL;
+    fixed_queue_free(gatt_cb.pending_new_srv_start_q, NULL);
+    gatt_cb.pending_new_srv_start_q = NULL;
+
+    for (i = 0; i < GATT_MAX_PHY_CHANNEL; i++)
+    {
+        fixed_queue_free(gatt_cb.tcb[i].pending_enc_clcb, NULL);
+        gatt_cb.tcb[i].pending_enc_clcb = NULL;
+
+        fixed_queue_free(gatt_cb.tcb[i].pending_ind_q, NULL);
+        gatt_cb.tcb[i].pending_ind_q = NULL;
+
+        fixed_queue_free(gatt_cb.tcb[i].sr_cmd.multi_rsp_q, NULL);
+        gatt_cb.tcb[i].sr_cmd.multi_rsp_q = NULL;
+    }
+
     for (i = 0; i < GATT_MAX_SR_PROFILES; i++) {
         gatt_free_hdl_buffer(&gatt_cb.hdl_list[i]);
     }
@@ -351,6 +369,8 @@ BOOLEAN gatt_act_connect (tGATT_REG *p_reg, BD_ADDR bd_addr, tBT_TRANSPORT trans
         if ((p_tcb = gatt_allocate_tcb_by_bdaddr(bd_addr, transport)) != NULL) {
             if (!gatt_connect(bd_addr,  p_tcb, transport)) {
                 GATT_TRACE_ERROR("gatt_connect failed");
+                fixed_queue_free(p_tcb->pending_enc_clcb, NULL);
+                fixed_queue_free(p_tcb->pending_ind_q, NULL);
                 memset(p_tcb, 0, sizeof(tGATT_TCB));
             } else {
                 ret = TRUE;
@@ -521,7 +541,7 @@ static void gatt_le_data_ind (UINT16 chan, BD_ADDR bd_addr, BT_HDR *p_buf)
             gatt_get_ch_state(p_tcb) >= GATT_CH_OPEN) {
         gatt_data_process(p_tcb, p_buf);
     } else {
-        GKI_freebuf (p_buf);
+        osi_free (p_buf);
 
         if (p_tcb != NULL) {
             GATT_TRACE_WARNING ("ATT - Ignored L2CAP data while in state: %d\n",
@@ -824,7 +844,7 @@ static void gatt_l2cif_data_ind_cback(UINT16 lcid, BT_HDR *p_buf)
         /* process the data */
         gatt_data_process(p_tcb, p_buf);
     } else { /* prevent buffer leak */
-        GKI_freebuf(p_buf);
+        osi_free(p_buf);
     }
 
 }
@@ -947,7 +967,7 @@ void gatt_data_process (tGATT_TCB *p_tcb, BT_HDR *p_buf)
         GATT_TRACE_ERROR ("invalid data length, ignore\n");
     }
 
-    GKI_freebuf (p_buf);
+    osi_free (p_buf);
 }
 
 /*******************************************************************************

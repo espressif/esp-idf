@@ -17,10 +17,10 @@
  ******************************************************************************/
 #include <string.h>
 #include "bt_target.h"
-#include "gki.h"
 #include "avrc_api.h"
 #include "avrc_defs.h"
 #include "avrc_int.h"
+#include "allocator.h"
 
 #if (defined(AVRC_INCLUDED) && AVRC_INCLUDED == TRUE)
 
@@ -128,14 +128,12 @@ static tAVRC_STS avrc_bld_vol_change_notfn(BT_HDR *p_pkt)
 *******************************************************************************/
 static BT_HDR *avrc_bld_init_cmd_buffer(tAVRC_COMMAND *p_cmd)
 {
-    UINT16 offset = 0, chnl = AVCT_DATA_CTRL, len = AVRC_META_CMD_POOL_SIZE;
-    BT_HDR *p_pkt = NULL;
-    UINT8  opcode;
-
-    opcode = avrc_opcode_from_pdu(p_cmd->pdu);
+    UINT8  opcode = avrc_opcode_from_pdu(p_cmd->pdu);
     AVRC_TRACE_API("avrc_bld_init_cmd_buffer: pdu=%x, opcode=%x", p_cmd->pdu, opcode);
 
-    switch (opcode) {
+    UINT16 offset = 0;
+    switch (opcode)
+    {
     case AVRC_OP_PASS_THRU:
         offset  = AVRC_MSG_PASS_THRU_OFFSET;
         break;
@@ -146,11 +144,11 @@ static BT_HDR *avrc_bld_init_cmd_buffer(tAVRC_COMMAND *p_cmd)
     }
 
     /* allocate and initialize the buffer */
-    p_pkt = (BT_HDR *)GKI_getbuf(len);
+    BT_HDR *p_pkt = (BT_HDR *)osi_malloc(AVRC_META_CMD_BUF_SIZE);
     if (p_pkt) {
         UINT8 *p_data, *p_start;
 
-        p_pkt->layer_specific = chnl;
+    p_pkt->layer_specific = AVCT_DATA_CTRL;
         p_pkt->event    = opcode;
         p_pkt->offset   = offset;
         p_data = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
@@ -236,7 +234,7 @@ tAVRC_STS AVRC_BldCommand( tAVRC_COMMAND *p_cmd, BT_HDR **pp_pkt)
     }
 
     if (alloc && (status != AVRC_STS_NO_ERROR) ) {
-        GKI_freebuf(p_pkt);
+        osi_free(p_pkt);
         *pp_pkt = NULL;
     }
     AVRC_TRACE_API("AVRC_BldCommand: returning %d", status);
