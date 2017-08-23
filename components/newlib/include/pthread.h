@@ -31,7 +31,7 @@ extern "C" {
 
 #include <sys/types.h>
 #include <time.h>
-#include <sys/sched.h>
+#include <sched.h>
 #include <sys/cdefs.h>
 
 struct _pthread_cleanup_context {
