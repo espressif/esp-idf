@@ -36,7 +36,7 @@ TEST_CASE("MMC_RSP_BITS", "[sd]")
     TEST_ASSERT_EQUAL_HEX32(0x11,  MMC_RSP_BITS(data, 59, 5));
 }
 
-TEST_CASE("can probe SD", "[sd][ignore]")
+TEST_CASE("can probe SD", "[sd][test_env=UT_T1_SDMODE]")
 {
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
@@ -50,7 +50,8 @@ TEST_CASE("can probe SD", "[sd][ignore]")
     free(card);
 }
 
-TEST_CASE("can probe SD (using SPI)", "[sdspi][ignore]")
+
+TEST_CASE("can probe SD(using SPI)", "[sdspi][test_env=UT_T1_SPIMODE]")
 {
     sdmmc_host_t config = SDSPI_HOST_DEFAULT();
     sdspi_slot_config_t slot_config = SDSPI_SLOT_CONFIG_DEFAULT();
@@ -145,7 +146,7 @@ static void read_write_test(sdmmc_card_t* card)
     do_single_write_read_test(card, card->csd.capacity/2, 128, 1);
 }
 
-TEST_CASE("can write and read back blocks", "[sd][ignore]")
+TEST_CASE("can write and read back blocks", "[sd][test_env=UT_T1_SDMODE]")
 {
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
     config.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
@@ -160,7 +161,7 @@ TEST_CASE("can write and read back blocks", "[sd][ignore]")
     TEST_ESP_OK(sdmmc_host_deinit());
 }
 
-TEST_CASE("can write and read back blocks (using SPI)", "[sdspi][ignore]")
+TEST_CASE("can write and read back blocks(using SPI)", "[sdspi][test_env=UT_T1_SPIMODE]")
 {
     sdmmc_host_t config = SDSPI_HOST_DEFAULT();
     config.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
@@ -175,11 +176,12 @@ TEST_CASE("can write and read back blocks (using SPI)", "[sdspi][ignore]")
     TEST_ESP_OK(sdspi_host_deinit());
 }
 
-TEST_CASE("reads and writes with an unaligned buffer", "[sd][ignore]")
+TEST_CASE("reads and writes with an unaligned buffer", "[sd][test_env=UT_T1_SDMODE]")
 {
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
-    TEST_ESP_OK(sdmmc_host_init());
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
+    TEST_ESP_OK(sdmmc_host_init());
+
     TEST_ESP_OK(sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config));
     sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
     TEST_ASSERT_NOT_NULL(card);

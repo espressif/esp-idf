@@ -525,6 +525,18 @@ UT_001_04:
     - ESP32_IDF
     - UT_T1_1
 
+UT_001_05:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_SDMODE
+
+UT_001_06:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_SPIMODE
+
 IT_001_01:
   <<: *test_template
   tags:
