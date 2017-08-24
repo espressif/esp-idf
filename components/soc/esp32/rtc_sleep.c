@@ -193,6 +193,12 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
         SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_FORCE_NOSLEEP);
     }
 
+    if (cfg.vddsdio_pd_en) {
+        SET_PERI_REG_MASK(RTC_CNTL_SDIO_CONF_REG, RTC_CNTL_SDIO_PD_EN);
+    } else {
+        CLEAR_PERI_REG_MASK(RTC_CNTL_SDIO_CONF_REG, RTC_CNTL_SDIO_PD_EN);
+    }
+
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DBIAS_SLP, cfg.rtc_dbias_slp);
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DBIAS_WAK, cfg.rtc_dbias_wak);
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, cfg.dig_dbias_wak);
