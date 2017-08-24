@@ -270,7 +270,7 @@ void IRAM_ATTR esp_restart_noos()
     esp_cpu_stall(other_core_id);
 
     // other core is now stalled, can access DPORT registers directly
-    esp_dport_access_int_deinit();
+    esp_dport_access_int_pause();
 
     // We need to disable TG0/TG1 watchdogs
     // First enable RTC watchdog for 1 second

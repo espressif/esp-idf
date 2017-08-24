@@ -211,7 +211,7 @@ void panicHandler(XtExcFrame *frame)
         return;
     }
     haltOtherCore();
-    esp_dport_access_int_deinit();
+    esp_dport_access_int_pause();
     panicPutStr("Guru Meditation Error: Core ");
     panicPutDec(core_id);
     panicPutStr(" panic'ed (");
@@ -264,7 +264,7 @@ void panicHandler(XtExcFrame *frame)
 void xt_unhandled_exception(XtExcFrame *frame)
 {
     haltOtherCore();
-    esp_dport_access_int_deinit();
+    esp_dport_access_int_pause();
     if (!abort_called) {
         panicPutStr("Guru Meditation Error of type ");
         int exccause = frame->exccause;
