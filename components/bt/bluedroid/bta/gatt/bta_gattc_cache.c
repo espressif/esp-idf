@@ -36,6 +36,7 @@
 #include "btm_api.h"
 #include "btm_ble_api.h"
 #include "allocator.h"
+#include "l2c_api.h"
 
 #define LOG_TAG "bt_bta_gattc"
 // #include "osi/include/log.h"
@@ -586,6 +587,13 @@ static void bta_gattc_explore_srvc(UINT16 conn_id, tBTA_GATTC_SERV *p_srvc_cb)
 
 #if (defined BTA_GATT_DEBUG && BTA_GATT_DEBUG == TRUE)
     bta_gattc_display_cache_server(p_srvc_cb->p_srvc_cache);
+#endif
+
+    //server discover end, update connection parameters
+#if BLE_INCLUDED == TRUE
+    if (p_clcb->transport == BTA_TRANSPORT_LE) {
+        L2CA_EnableUpdateBleConnParams(p_clcb->p_srcb->server_bda, TRUE);
+    }
 #endif
     /* save cache to NV */
     p_clcb->p_srcb->state = BTA_GATTC_SERV_SAVE;
