@@ -51,4 +51,12 @@ TEST_CASE("sign tests", "[libsodium]")
     TEST_ASSERT_EQUAL(0, sign_xmain() );
 }
 
+extern int hash_xmain();
+
+TEST_CASE("hash tests", "[libsodium]")
+{
+    printf("Running hash\n");
+    TEST_ASSERT_EQUAL(0, hash_xmain() );
+}
+
 

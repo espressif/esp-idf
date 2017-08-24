@@ -3,7 +3,7 @@ COMPONENT_SUBMODULES += libsodium
 # Common root directory for all source directories
 LSRC := libsodium/src/libsodium
 
-COMPONENT_SRCDIRS := private
+COMPONENT_SRCDIRS := port
 
 # Derived from libsodium/src/libsodium/Makefile.am
 # (ignoring the !MINIMAL set)
@@ -26,9 +26,7 @@ COMPONENT_SRCDIRS += \
 	$(LSRC)/crypto_generichash/blake2b/ref \
 	$(LSRC)/crypto_hash \
 	$(LSRC)/crypto_hash/sha256 \
-	$(LSRC)/crypto_hash/sha256/cp \
 	$(LSRC)/crypto_hash/sha512 \
-	$(LSRC)/crypto_hash/sha512/cp \
 	$(LSRC)/crypto_kdf/blake2b \
 	$(LSRC)/crypto_kdf \
 	$(LSRC)/crypto_kx \
@@ -68,8 +66,9 @@ $(LSRC)/crypto_pwhash/argon2/argon2-core.o: CFLAGS += -Wno-type-limits
 $(LSRC)/crypto_pwhash/scryptsalsa208sha256/pwhash_scryptsalsa208sha256.o: CFLAGS += -Wno-type-limits
 $(LSRC)/sodium/utils.o: CFLAGS += -Wno-unused-variable
 
-COMPONENT_ADD_INCLUDEDIRS := $(LSRC)/include port_include
-COMPONENT_PRIV_INCLUDEDIRS := $(LSRC)/include/sodium port_include/sodium private
+COMPONENT_ADD_INCLUDEDIRS := port_include $(LSRC)/include
+# (port_include repeated here as these include directories come before COMPONENT_ADD_INCLUDEDIRS)
+COMPONENT_PRIV_INCLUDEDIRS := port_include port_include/sodium $(LSRC)/include/sodium port
 
 # Not using autoconf, but this needs to be set
 CFLAGS += -DCONFIGURED
