@@ -181,7 +181,7 @@ static void btc_gattc_close(btc_ble_gattc_args_t *arg)
 
 static void btc_gattc_cfg_mtu(btc_ble_gattc_args_t *arg)
 {
-    BTA_GATTC_ConfigureMTU (arg->cfg_mtu.conn_id, arg->cfg_mtu.mtu);
+    BTA_GATTC_ConfigureMTU (arg->cfg_mtu.conn_id);
 }
 
 static void btc_gattc_search_service(btc_ble_gattc_args_t *arg)

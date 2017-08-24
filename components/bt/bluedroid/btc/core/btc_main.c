@@ -20,6 +20,7 @@
 #include "btc_config.h"
 #include "alarm.h"
 #include "btc_ble_storage.h"
+#include "bta_gatt_common.h"
 
 static future_t *main_future[BTC_MAIN_FUTURE_NUM];
 
@@ -73,6 +74,11 @@ static void btc_deinit_bluetooth(void)
     future_ready(*btc_main_get_future_p(BTC_MAIN_DEINIT_FUTURE), FUTURE_SUCCESS);
 }
 
+static void btc_set_local_mtu(uint16_t mtu)
+{
+    BTA_GATT_SetLocalMTU(mtu);
+}
+
 void btc_main_call_handler(btc_msg_t *msg)
 {
     LOG_DEBUG("%s act %d\n", __func__, msg->act);
@@ -90,6 +96,12 @@ void btc_main_call_handler(btc_msg_t *msg)
     case BTC_MAIN_ACT_DISABLE:
         btc_disable_bluetooth();
         break;
+    case BTC_GATT_ACT_SET_LOCAL_MTU:
+    {
+        btc_ble_main_args_t *arg = (btc_ble_main_args_t *)(msg->arg);
+        btc_set_local_mtu(arg->set_mtu.mtu);
+        break;
+    }
     default:
         LOG_ERROR("%s UNKNOWN ACT %d\n", __func__, msg->act);
         break;

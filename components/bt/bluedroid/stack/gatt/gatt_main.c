@@ -79,6 +79,8 @@ static const tL2CAP_APPL_INFO dyn_info = {
 tGATT_CB  gatt_cb;
 #endif
 
+tGATT_DEFAULT gatt_default;
+
 /*******************************************************************************
 **
 ** Function         gatt_init
@@ -136,7 +138,8 @@ void gatt_init (void)
 #if (GATTS_INCLUDED == TRUE)
     gatt_profile_db_init();
 #endif  ///GATTS_INCLUDED == TRUE
-
+    //init local MTU size
+    gatt_default.local_mtu = GATT_MAX_MTU_SIZE;
 }
 
 
@@ -596,7 +599,7 @@ static void gatt_l2cif_connect_ind_cback (BD_ADDR  bd_addr, UINT16 lcid, UINT16 
         /* Send L2CAP config req */
         memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
         cfg.mtu_present = TRUE;
-        cfg.mtu = GATT_MAX_MTU_SIZE;
+        cfg.mtu = gatt_default.local_mtu;
 
         L2CA_ConfigReq(lcid, &cfg);
     }
@@ -632,7 +635,7 @@ static void gatt_l2cif_connect_cfm_cback(UINT16 lcid, UINT16 result)
                 /* Send L2CAP config req */
                 memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
                 cfg.mtu_present = TRUE;
-                cfg.mtu = GATT_MAX_MTU_SIZE;
+                cfg.mtu = gatt_default.local_mtu;
                 L2CA_ConfigReq(lcid, &cfg);
             }
             /* else initiating connection failure */
@@ -1167,6 +1170,16 @@ tGATT_CH_STATE gatt_get_ch_state(tGATT_TCB *p_tcb)
         ch_state = p_tcb->ch_state;
     }
     return ch_state;
+}
+
+uint16_t gatt_get_local_mtu(void)
+{
+    return gatt_default.local_mtu;
+}
+
+void gatt_set_local_mtu(uint16_t mtu)
+{
+    gatt_default.local_mtu = mtu;
 }
 
 #endif /* BLE_INCLUDED */

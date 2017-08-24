@@ -68,11 +68,6 @@ typedef enum {
     ESP_GATTC_DISCONNECT_EVT          = 41,       /*!< When the ble physical connection disconnected, the event comes */
 } esp_gattc_cb_event_t;
 
-/// Maximum Transmission Unit used in GATT
-#define ESP_GATT_DEF_BLE_MTU_SIZE   23
-
-/// Maximum Transmission Unit allowed in GATT
-#define ESP_GATT_MAX_MTU_SIZE       517
 
 /**
  * @brief Gatt client callback parameters union
@@ -355,18 +350,19 @@ esp_err_t esp_ble_gattc_close (esp_gatt_if_t gattc_if, uint16_t conn_id);
 
 /**
  * @brief           Configure the MTU size in the GATT channel. This can be done
- *                  only once per connection.
+ *                  only once per connection. Before using, use esp_ble_gatt_set_local_mtu()
+ *                  to configure the local MTU size.
+ *
  *
  * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       conn_id: connection ID.
- * @param[in]       mtu: desired MTU size to use.
  *
  * @return
  *                  - ESP_OK: success
  *                  - other: failed
  *
  */
-esp_err_t esp_ble_gattc_config_mtu (esp_gatt_if_t gattc_if, uint16_t conn_id, uint16_t mtu);
+esp_err_t esp_ble_gattc_send_mtu_req (esp_gatt_if_t gattc_if, uint16_t conn_id);
 
 
 /**

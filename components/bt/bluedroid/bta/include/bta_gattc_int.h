@@ -184,7 +184,6 @@ typedef struct {
 
 typedef struct {
     BT_HDR              hdr;
-    UINT16              mtu;
 } tBTA_GATTC_API_CFG_MTU;
 
 typedef struct {
