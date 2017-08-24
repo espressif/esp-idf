@@ -2,43 +2,48 @@
 #include <thread>
 #include <mutex>
 #include "unity.h"
-#include "rom/ets_sys.h"
 
 std::shared_ptr<int> global_sp;
 std::mutex mtx;
 
-void thread_main() {
+static void thread_main() {
     int i = 0;
-    //std::cout << "thread_main!" << std::endl;
-    ets_printf("thread_main\n");
+    std::cout << "thread_main CXX " << std::hex <<  std::this_thread::get_id() << std::endl;
 
-    while (1) {
-        // std::cout << "thread_main " << i << std::endl;
-        ets_printf("thread_main %d\n", i);
-        i++;
+    while (i < 10) {
+	    // mux test
+	    mtx.lock();
+		// yield test
+		std::this_thread::yield();
+	    (*global_sp)++;
+	    mtx.unlock();
+        std::cout << "thread " << std::hex << std::this_thread::get_id() << ": " << i++ << " val= " << *global_sp << std::endl;
+	    // sleep_for test
+        std::chrono::milliseconds dur(300);
+		std::this_thread::sleep_for(dur);
+	    // sleep_until test
+		using std::chrono::system_clock;
+  		std::time_t tt = system_clock::to_time_t(system_clock::now());	    
+	    struct std::tm *ptm = std::localtime(&tt);
+		ptm->tm_sec = 1;
+		std::this_thread::sleep_until(system_clock::from_time_t (mktime(ptm)));
     }
-    // auto local_sp = global_sp;  // OK, copy constructor's parameter is reference-to-const
-
-    // int i = *global_sp;         // OK, operator* is const
-    // int j = *local_sp;          // OK, does not operate on global_sp
-
-    // *global_sp = 2;          // NOT OK, modifies int visible to other threads
-    // *local_sp = 2;           // NOT OK, modifies int visible to other threads
-
-    // mtx.lock();
-    // global_sp.reset();       // NOT OK, reset is non-const
-    // mtx.unlock();
-    //local_sp.reset();           // OK, does not operate on global_sp
 }
 
-//extern "C"
 TEST_CASE("pthread CXX test 1", "[pthread]")
 {
-    std::cout << "Hello world!" << std::endl;
+    std::cout << "TEST START!" << std::endl;
 
     global_sp.reset(new int(1));
     std::thread t1(thread_main);
-    // std::thread t2(thread_main);
-    t1.join();
-    // t2.join();
+    std::thread t2(thread_main);
+    if (t1.joinable()) {
+    	std::cout << "Join thread " << std::hex << t1.get_id() << std::endl;
+    	t1.join();
+    }
+    if (t2.joinable()) {
+    	std::cout << "Join thread " << std::hex << t2.get_id() << std::endl;
+    	t2.join();
+    }
+    std::cout << "TEST END!" << std::endl;
 }

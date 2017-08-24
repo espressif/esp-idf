@@ -2,6 +2,7 @@
 #include <pthread.h>
 #include <string.h>
 #include "esp_err.h"
+#include "esp_attr.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -29,14 +30,9 @@ const static char *TAG = "esp_pthread";
 #define ESP_PTHREAD_LOGD( _tag_, format, ... )  ESP_PTHREAD_LOG_LEV(_tag_, D, ESP_LOG_DEBUG, format, ##__VA_ARGS__)
 #define ESP_PTHREAD_LOGV( _tag_, format, ... )  ESP_PTHREAD_LOG_LEV(_tag_, V, ESP_LOG_VERBOSE, format, ##__VA_ARGS__)
 #define ESP_PTHREAD_LOGO( _tag_, format, ... )  ESP_PTHREAD_LOG_LEV(_tag_, E, ESP_LOG_NONE, format, ##__VA_ARGS__)
-// #define ESP_PTHREAD_LOGE( tag, format, ... )  ESP_PTHREAD_LOG(tag ": " format "\n", ##__VA_ARGS__)
-// #define ESP_PTHREAD_LOGW( tag, format, ... )  ESP_PTHREAD_LOG(tag ": " format "\n", ##__VA_ARGS__)
-// #define ESP_PTHREAD_LOGI( tag, format, ... )  ESP_PTHREAD_LOG(tag ": " format "\n", ##__VA_ARGS__)
-// #define ESP_PTHREAD_LOGD( tag, format, ... )  ESP_PTHREAD_LOG(tag ": " format "\n", ##__VA_ARGS__)
-// #define ESP_PTHREAD_LOGV( tag, format, ... )  ESP_PTHREAD_LOG(tag ": " format "\n", ##__VA_ARGS__)
-// #define ESP_PTHREAD_LOGO( tag, format, ... )  ESP_PTHREAD_LOG(tag ": " format "\n", ##__VA_ARGS__)
 
-#define PTHREAD_TASK_PRIO_DEFAULT	5
+#define PTHREAD_TASK_PRIO_DEFAULT		5
+#define PTHREAD_TASK_STACK_SZ_DEFAULT	(2048)//configMINIMAL_STACK_SIZE is not enough
 
 #define ESP_PTHREAD_STATE_RUN		0
 #define ESP_PTHREAD_STATE_EXIT		1
@@ -53,17 +49,27 @@ typedef struct {
 	void *arg;
 } esp_pthread_task_arg_t;
 
+typedef struct {
+	ListItem_t			list_item;
+	SemaphoreHandle_t 	sem;
+	int 				type;
+} esp_pthread_mutex_t;
+
 static SemaphoreHandle_t s_once_mux = NULL;
 static SemaphoreHandle_t s_threads_mux = NULL;
+//static SemaphoreHandle_t s_mutexes_mux = NULL;
 
 static List_t s_threads_list;
+//static List_t s_mutexes_list;
 //static List_t s_key_list;
+
+static int IRAM_ATTR pthread_mutex_lock_internal(esp_pthread_mutex_t *mux, TickType_t tmo);
 
 int esp_pthread_init(void)
 {
-	ESP_PTHREAD_LOGV(TAG, "%s", __FUNCTION__);
 	vListInitialise((List_t *)&s_threads_list);
-//	vListInitialise((List_t *)&s_key_list);
+	// vListInitialise((List_t *)&s_mutexes_list);
+	// vListInitialise((List_t *)&s_key_list);
 	s_once_mux = xSemaphoreCreateMutex();
 	if (s_once_mux == NULL)
 		return ESP_FAIL;
@@ -72,6 +78,12 @@ int esp_pthread_init(void)
 		vSemaphoreDelete(s_once_mux);
 		return ESP_FAIL;
 	}
+	// s_mutexes_mux = xSemaphoreCreateMutex();
+	// if (s_mutexes_mux == NULL) {
+	// 	vSemaphoreDelete(s_threads_mux);
+	// 	vSemaphoreDelete(s_once_mux);
+	// 	return ESP_FAIL;
+	// }
 	return ESP_OK;
 }
 
@@ -194,7 +206,7 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
 	task_arg->func = start_routine;
 	task_arg->arg = arg;
 	//task_arg->pthread = pthread;
-    BaseType_t res = xTaskCreate(&pthread_task_func, "pthread", configMINIMAL_STACK_SIZE, task_arg, PTHREAD_TASK_PRIO_DEFAULT, &xHandle);
+    BaseType_t res = xTaskCreate(&pthread_task_func, "pthread", PTHREAD_TASK_STACK_SZ_DEFAULT, task_arg, PTHREAD_TASK_PRIO_DEFAULT, &xHandle);
 	if(res != pdPASS) {
 		ESP_PTHREAD_LOGE(TAG, "Failed to create task!");
 		free(pthread);
@@ -237,7 +249,7 @@ int pthread_join(pthread_t thread, void **retval)
 	// find task
     if (xSemaphoreTake(s_threads_mux, portMAX_DELAY) == pdTRUE) {
 		//uxBitsWaitedFor = listGET_LIST_ITEM_VALUE(list_item);
-		// TODO: check if task is joinable
+		// TODO: check if task is joinable???
 	    // TODO: PTHREAD_CANCELED???
 	    TaskHandle_t handle = pthread_find_handle(thread);
 	    if (!handle) {
@@ -287,6 +299,12 @@ int pthread_cancel(pthread_t thread)
 	return -1;
 }
 
+int sched_yield( void )
+{
+	vTaskDelay(0);
+	return 0;
+}
+
 pthread_t pthread_self(void)
 {
 	esp_pthread_t *pthread = pthread_find(xTaskGetCurrentTaskHandle());
@@ -298,7 +316,6 @@ pthread_t pthread_self(void)
 
 int pthread_equal(pthread_t t1, pthread_t t2)
 {
-	ets_printf("%s %x %x\n", __FUNCTION__, t1, t2);
 	return t1 == t2 ? 1 : 0;
 }
 
@@ -306,7 +323,6 @@ int pthread_equal(pthread_t t1, pthread_t t2)
 int pthread_key_create(pthread_key_t *key, void (*destructor)(void*))
 {
 	static int s_created;
-	//struct pthread_key *key;
 
 	ESP_PTHREAD_LOGV(TAG, "%s", __FUNCTION__);
 
@@ -346,14 +362,14 @@ int pthread_key_delete(pthread_key_t key)
 
 void *pthread_getspecific(pthread_key_t key)
 {
-	ets_printf("%s\n", __FUNCTION__);
+	ESP_PTHREAD_LOGV(TAG, "%s", __FUNCTION__);
 	assert(false && "NOT IMPLEMENTED!");
 	return NULL;
 }
 
 int pthread_setspecific(pthread_key_t key, const void *value)
 {
-	ets_printf("%s\n", __FUNCTION__);
+	ESP_PTHREAD_LOGV(TAG, "%s", __FUNCTION__);
 	assert(false && "NOT IMPLEMENTED!");
 	return -1;
 }
@@ -361,8 +377,6 @@ int pthread_setspecific(pthread_key_t key, const void *value)
 /***************** ONCE ******************/
 int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
 {
-	ESP_PTHREAD_LOGV(TAG, "%s", __FUNCTION__);
-
 	if (once_control == NULL || init_routine == NULL || !once_control->is_initialized) {
 		ESP_PTHREAD_LOGE(TAG, "%s: Invalid args!", __FUNCTION__);
 		return EINVAL;
@@ -391,18 +405,142 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
 }
 
 /***************** MUTEX ******************/
-int pthread_mutex_lock(pthread_mutex_t *mutex)
+int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr)
 {
-	ets_printf("%s\n", __FUNCTION__);
-	assert(false && "NOT IMPLEMENTED!");
-	return -1;
+	int type = PTHREAD_MUTEX_NORMAL;
+
+	ESP_PTHREAD_LOGV(TAG, "%s %p", __FUNCTION__, mutex);
+
+	if (!mutex) {
+		errno = EINVAL;
+		return EINVAL;
+	}
+
+	if (attr && attr->is_initialized) {
+		type = attr->type;
+	}
+
+	if (type < PTHREAD_MUTEX_NORMAL || type > PTHREAD_MUTEX_DEFAULT) {
+		errno = EINVAL;
+		return EINVAL;
+	}
+
+	esp_pthread_mutex_t *mux = (esp_pthread_mutex_t *)malloc(sizeof(esp_pthread_mutex_t));
+    if (!mux) {
+        errno = ENOMEM;
+        return ENOMEM;
+	}
+	mux->type = type;
+
+	if (mux->type == PTHREAD_MUTEX_RECURSIVE) {
+        mux->sem = xSemaphoreCreateRecursiveMutex();
+    } else {
+        mux->sem = xSemaphoreCreateMutex();
+    }
+    if (!mux->sem) {
+        free(mux);
+        errno = EAGAIN;
+        return EAGAIN;
+	}
+
+	// vListInitialiseItem((ListItem_t *)&mux->list_item);
+	// listSET_LIST_ITEM_OWNER((ListItem_t *)&mux->list_item, mux);
+	// //listSET_LIST_ITEM_VALUE((ListItem_t *)&pthread->list_item, (TickType_t)xHandle);
+
+ //    if (xSemaphoreTake(s_mutexes_mux, portMAX_DELAY) == pdTRUE) {
+	// 	vListInsertEnd((List_t *)&s_mutexes_list, (ListItem_t *)&mux->list_item);
+ //        xSemaphoreGive(s_mutexes_mux);
+ //    } else {
+	// 	assert(false && "Failed to lock mutexes list!");
+ //    }
+
+	*mutex = (pthread_mutex_t)mux; // pointer value fit into pthread_mutex_t (uint32_t)
+
+	return 0;
 }
 
-//int pthread_mutex_trylock(pthread_mutex_t *mutex);
-int pthread_mutex_unlock(pthread_mutex_t *mutex)
+int pthread_mutex_destroy(pthread_mutex_t *mutex)
 {
-	ets_printf("%s\n", __FUNCTION__);
-	assert(false && "NOT IMPLEMENTED!");
-	return -1;
+	esp_pthread_mutex_t *mux;
+
+	ESP_PTHREAD_LOGV(TAG, "%s %p", __FUNCTION__, mutex);
+
+	if (!mutex) {
+		errno = EINVAL;
+		return EINVAL;
+	}
+	mux = (esp_pthread_mutex_t *)*mutex;
+
+    // check if mux is busy
+    int res = pthread_mutex_lock_internal(mux, 0);
+    if (res == EBUSY) {
+        errno = EBUSY;
+        return EBUSY;
+    }
+
+	vSemaphoreDelete(mux->sem);
+	free(mux);
+
+	return 0;
 }
 
+static int IRAM_ATTR pthread_mutex_lock_internal(esp_pthread_mutex_t *mux, TickType_t tmo)
+{
+    if (mux->type == PTHREAD_MUTEX_RECURSIVE) {
+        if (xSemaphoreTakeRecursive(mux->sem, tmo) != pdTRUE) {
+            errno = EBUSY;
+            return EBUSY;
+        }
+    } else {
+        if (xSemaphoreTake(mux->sem, tmo) != pdTRUE) {
+            errno = EBUSY;
+            return EBUSY;
+        }
+    }
+
+    return 0;
+}
+
+int IRAM_ATTR pthread_mutex_lock(pthread_mutex_t *mutex)
+{
+	if (!mutex) {
+		errno = EINVAL;
+		return EINVAL;
+	}
+    return pthread_mutex_lock_internal((esp_pthread_mutex_t *)*mutex, portMAX_DELAY);
+}
+
+int IRAM_ATTR pthread_mutex_trylock(pthread_mutex_t *mutex)
+{
+	if (!mutex) {
+		errno = EINVAL;
+		return EINVAL;
+	}
+    return pthread_mutex_lock_internal((esp_pthread_mutex_t *)*mutex, 0);
+}
+
+int IRAM_ATTR pthread_mutex_unlock(pthread_mutex_t *mutex)
+{
+	esp_pthread_mutex_t *mux;
+
+	if (!mutex) {
+		errno = EINVAL;
+		return EINVAL;
+	}
+	mux = (esp_pthread_mutex_t *)*mutex;
+
+	if (mux->type == PTHREAD_MUTEX_RECURSIVE) {
+        xSemaphoreGiveRecursive(mux->sem);
+    } else {
+        xSemaphoreGive(mux->sem);
+	}
+	return 0;
+}
+
+// TODO: move to newlib/time.c????
+// needed for std::this_thread::sleep_for
+unsigned int sleep(unsigned int seconds)
+{
+	usleep(seconds*1000000UL);
+	return 0;
+}

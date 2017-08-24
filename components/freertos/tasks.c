@@ -4623,7 +4623,7 @@ TickType_t uxReturn;
 	TickType_t xTimeToWake;
 	BaseType_t xReturn;
 
-		UNTESTED_FUNCTION();
+		// UNTESTED_FUNCTION();
 		taskENTER_CRITICAL(&xTaskQueueMutex);
 		{
 			/* Only block if a notification is not already pending. */
@@ -4747,7 +4747,7 @@ TickType_t uxReturn;
 	eNotifyValue eOriginalNotifyState;
 	BaseType_t xReturn = pdPASS;
 
-		UNTESTED_FUNCTION();
+		// UNTESTED_FUNCTION();
 		configASSERT( xTaskToNotify );
 		pxTCB = ( TCB_t * ) xTaskToNotify;
 
