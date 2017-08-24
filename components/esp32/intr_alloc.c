@@ -317,27 +317,27 @@ static bool is_vect_desc_usable(vector_desc_t *vd, int flags, int cpu, int force
     //Check if interrupt is not reserved by design
     int x = vd->intno;
     if (int_desc[x].cpuflags[cpu]==INTDESC_RESVD) {
-        ALCHLOG(TAG, "....Unusable: reserved");
+        ALCHLOG("....Unusable: reserved");
         return false;
     }
     if (int_desc[x].cpuflags[cpu]==INTDESC_SPECIAL && force==-1) {
-        ALCHLOG(TAG, "....Unusable: special-purpose int");
+        ALCHLOG("....Unusable: special-purpose int");
         return false;
     }
     //Check if the interrupt level is acceptable
     if (!(flags&(1<<int_desc[x].level))) {
-        ALCHLOG(TAG, "....Unusable: incompatible level");
+        ALCHLOG("....Unusable: incompatible level");
         return false;
     }
     //check if edge/level type matches what we want
     if (((flags&ESP_INTR_FLAG_EDGE) && (int_desc[x].type==INTTP_LEVEL)) ||
             (((!(flags&ESP_INTR_FLAG_EDGE)) && (int_desc[x].type==INTTP_EDGE)))) {
-        ALCHLOG(TAG, "....Unusable: incompatible trigger type");
+        ALCHLOG("....Unusable: incompatible trigger type");
         return false;
     }
     //check if interrupt is reserved at runtime
     if (vd->flags&VECDESC_FL_RESERVED)  {
-        ALCHLOG(TAG, "....Unusable: reserved at runtime.");
+        ALCHLOG("....Unusable: reserved at runtime.");
         return false;
     }
     
@@ -345,7 +345,7 @@ static bool is_vect_desc_usable(vector_desc_t *vd, int flags, int cpu, int force
     assert(!((vd->flags&VECDESC_FL_SHARED)&&(vd->flags&VECDESC_FL_NONSHARED)));
     //check if interrupt already is in use by a non-shared interrupt
     if (vd->flags&VECDESC_FL_NONSHARED) {
-        ALCHLOG(TAG, "....Unusable: already in (non-shared) use.");
+        ALCHLOG("....Unusable: already in (non-shared) use.");
         return false;
     }
     // check shared interrupt flags
@@ -355,17 +355,17 @@ static bool is_vect_desc_usable(vector_desc_t *vd, int flags, int cpu, int force
             bool desc_in_iram_flag=((vd->flags&VECDESC_FL_INIRAM)!=0);
             //Bail out if int is shared, but iram property doesn't match what we want.
             if ((vd->flags&VECDESC_FL_SHARED) && (desc_in_iram_flag!=in_iram_flag))  {
-                ALCHLOG(TAG, "....Unusable: shared but iram prop doesn't match");
+                ALCHLOG("....Unusable: shared but iram prop doesn't match");
                 return false;
             }
         } else {
             //We need an unshared IRQ; can't use shared ones; bail out if this is shared.
-            ALCHLOG(TAG, "...Unusable: int is shared, we need non-shared.");
+            ALCHLOG("...Unusable: int is shared, we need non-shared.");
             return false;
         }
     } else if (int_has_handler(x, cpu)) {
         //Check if interrupt already is allocated by xt_set_interrupt_handler
-        ALCHLOG(TAG, "....Unusable: already allocated");
+        ALCHLOG("....Unusable: already allocated");
         return false;
     }
         
@@ -389,22 +389,22 @@ static int get_available_int(int flags, int cpu, int force, int source)
     //Level defaults to any low/med interrupt
     if (!(flags&ESP_INTR_FLAG_LEVELMASK)) flags|=ESP_INTR_FLAG_LOWMED;
 
-    ALCHLOG(TAG, "get_available_int: try to find existing. Cpu: %d, Source: %d", cpu, source);
+    ALCHLOG("get_available_int: try to find existing. Cpu: %d, Source: %d", cpu, source);
     vector_desc_t *vd = find_desc_for_source(source, cpu);
     if ( vd ) {
         // if existing vd found, don't need to search any more.
-        ALCHLOG(TAG, "get_avalible_int: existing vd found. intno: %d", vd->intno);
+        ALCHLOG("get_avalible_int: existing vd found. intno: %d", vd->intno);
         if ( force != -1 && force != vd->intno ) {
-            ALCHLOG(TAG, "get_avalible_int: intr forced but not matach existing. existing intno: %d, force: %d", vd->intno, force);
+            ALCHLOG("get_avalible_int: intr forced but not matach existing. existing intno: %d, force: %d", vd->intno, force);
         } else if ( !is_vect_desc_usable(vd, flags, cpu, force) ) {
-            ALCHLOG(TAG, "get_avalible_int: existing vd invalid.");
+            ALCHLOG("get_avalible_int: existing vd invalid.");
         } else {
             best = vd->intno;
         }
         return best;
     }
     if (force!=-1) {
-        ALCHLOG(TAG, "get_available_int: try to find force. Cpu: %d, Source: %d, Force: %d", cpu, source, force);
+        ALCHLOG("get_available_int: try to find force. Cpu: %d, Source: %d, Force: %d", cpu, source, force);
         //if force assigned, don't need to search any more.
         vd = find_desc_for_int(force, cpu);
         if (vd == NULL ) {
@@ -415,12 +415,12 @@ static int get_available_int(int flags, int cpu, int force, int source)
         if ( is_vect_desc_usable(vd, flags, cpu, force) ) {
             best = vd->intno;
         } else {
-            ALCHLOG(TAG, "get_avalible_int: forced vd invalid.");
+            ALCHLOG("get_avalible_int: forced vd invalid.");
         } 
         return best;
     }
 
-    ALCHLOG(TAG, "get_free_int: start looking. Current cpu: %d", cpu);
+    ALCHLOG("get_free_int: start looking. Current cpu: %d", cpu);
     //No allocated handlers as well as forced intr, iterate over the 32 possible interrupts
     for (x=0; x<32; x++) {
         //Grab the vector_desc for this vector.
@@ -430,7 +430,7 @@ static int get_available_int(int flags, int cpu, int force, int source)
             vd=&empty_vect_desc;
         }
 
-        ALCHLOG(TAG, "Int %d reserved %d level %d %s hasIsr %d",
+        ALCHLOG("Int %d reserved %d level %d %s hasIsr %d",
             x, int_desc[x].cpuflags[cpu]==INTDESC_RESVD, int_desc[x].level,
             int_desc[x].type==INTTP_LEVEL?"LEVEL":"EDGE", int_has_handler(x, cpu));
         
@@ -454,9 +454,9 @@ static int get_available_int(int flags, int cpu, int force, int source)
                     best=x;
                     bestSharedCt=no;
                     bestLevel=int_desc[x].level;
-                    ALCHLOG(TAG, "...int %d more usable as a shared int: has %d existing vectors", x, no);
+                    ALCHLOG("...int %d more usable as a shared int: has %d existing vectors", x, no);
                 } else {
-                    ALCHLOG(TAG, "...worse than int %d", best);
+                    ALCHLOG("...worse than int %d", best);
                 }
             } else {
                 if (best==-1) {
@@ -466,10 +466,10 @@ static int get_available_int(int flags, int cpu, int force, int source)
                     if (bestLevel>int_desc[x].level) {
                         best=x;
                         bestLevel=int_desc[x].level;
-                        ALCHLOG(TAG, "...int %d usable as a new shared int", x);
+                        ALCHLOG("...int %d usable as a new shared int", x);
                     }
                 } else {
-                    ALCHLOG(TAG, "...already have a shared int");
+                    ALCHLOG("...already have a shared int");
                 }
             }
         } else {
@@ -478,11 +478,11 @@ static int get_available_int(int flags, int cpu, int force, int source)
                 best=x;
                 bestLevel=int_desc[x].level;
             } else {
-                ALCHLOG(TAG, "...worse than int %d", best);
+                ALCHLOG("...worse than int %d", best);
             }
         }
     }
-    ALCHLOG(TAG, "get_available_int: using int %d", best);
+    ALCHLOG("get_available_int: using int %d", best);
 
     //Okay, by now we have looked at all potential interrupts and hopefully have selected the best one in best.
     return best;
