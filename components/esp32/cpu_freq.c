@@ -36,7 +36,7 @@ void esp_set_cpu_freq(void)
     // wait uart tx finish, otherwise some uart output will be lost
     uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
 
-    rtc_init_lite(XTAL_AUTO);
+    rtc_init_lite(XTAL_40M);
     // work around a bug that RTC fast memory may be isolated
     // from the system after rtc_init_lite
     SET_PERI_REG_MASK(RTC_CNTL_PWC_REG, RTC_CNTL_FASTMEM_FORCE_NOISO_M);

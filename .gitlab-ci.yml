@@ -337,6 +337,7 @@ check_doc_links:
     # clone test bench
     - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
     - cd auto_test_script
+    - git checkout ${CI_COMMIT_REF_NAME} || echo "Using default branch..."
     # run test
     - python CIRunner.py -l $LOG_PATH -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH -m $MODULE_UPDATE_FILE bin_path $APP_NAME $BIN_PATH
 
@@ -364,6 +365,7 @@ check_doc_links:
     # clone test bench
     - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
     - cd auto_test_script
+    - git checkout ${CI_COMMIT_REF_NAME} || echo "Using default branch..."
     # run test
     - python CIRunner.py -l $LOG_PATH -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH -m $MODULE_UPDATE_FILE bin_path $APP_NAME $BIN_PATH
 
@@ -380,7 +382,7 @@ check_doc_links:
     APP_NAME: "ut"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/unit_test"
     MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/tools/unit-test-app/ModuleDefinition.yml"
-  
+
   dependencies:
     - build_esp_idf_tests
 
