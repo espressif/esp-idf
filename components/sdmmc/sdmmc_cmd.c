@@ -233,7 +233,7 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
 
     /* Wait for the card to be ready for data transfers */
     uint32_t status = 0;
-    while (!host_is_spi(card) && !(status & MMC_R1_READY_FOR_DATA)) {
+    while (!is_spi && !(status & MMC_R1_READY_FOR_DATA)) {
         // TODO: add some timeout here
         uint32_t count = 0;
         err = sdmmc_send_cmd_send_status(card, &status);
@@ -249,7 +249,8 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
      * clock rate which both host and the card support, and switch to it.
      */
     bool freq_switched = false;
-    if (config->max_freq_khz >= SDMMC_FREQ_HIGHSPEED) {
+    if (config->max_freq_khz >= SDMMC_FREQ_HIGHSPEED &&
+            !is_spi /* SPI doesn't support >26MHz in some cases */) {
         /* This will determine if the card supports SWITCH_FUNC command,
          * and high speed mode. If the cards supports both, this will enable
          * high speed mode at the card side.
