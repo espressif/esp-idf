@@ -1,0 +1,20 @@
+menu "Example Configuration"
+
+config CUSTOM_RTC_CLK_8M_DIV
+   bool "Set custom RTC 8 MHz clock divider to lower CW frequency (CHECK HELP FIRST)"
+   default "n"
+   help
+       Set custom / non standard divider for RTC 8 MHz clock.
+       This is to lower minimum frequency of cosine waveform generator (CW)
+       in order to provide sinusoidal signal at about 50 or 60 Hz.
+       
+       WARNINIG: setting non standard divider for the RTC 8 MHz clock
+       will affect functionality of RTC peripherals other than CW.
+
+       This includes ADC sampling, and will in general make
+       all RTC register access slower. 
+
+       DO NOT use this option / change default RTC 8 MHz clock divider
+       in your applications, if you are not sure what you are doing.
+
+endmenu
