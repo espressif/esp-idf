@@ -43,7 +43,9 @@ typedef uint32_t nvs_handle;
 #define ESP_ERR_NVS_INVALID_LENGTH      (ESP_ERR_NVS_BASE + 0x0c)  /*!< String or blob length is not sufficient to store data */
 #define ESP_ERR_NVS_NO_FREE_PAGES       (ESP_ERR_NVS_BASE + 0x0d)  /*!< NVS partition doesn't contain any empty pages. This may happen if NVS partition was truncated. Erase the whole partition and call nvs_flash_init again. */
 #define ESP_ERR_NVS_VALUE_TOO_LONG      (ESP_ERR_NVS_BASE + 0x0e)  /*!< String or blob length is longer than supported by the implementation */
+#define ESP_ERR_NVS_PART_NOT_FOUND      (ESP_ERR_NVS_BASE + 0x0f)  /*!< Partition with specified name is not found in the partition table */
 
+#define NVS_DEFAULT_PART_NAME           "nvs"   /*!< Default partition name of the NVS partition in the partition table */
 /**
  * @brief Mode of opening the non-volatile storage
  *
@@ -54,12 +56,42 @@ typedef enum {
 } nvs_open_mode;
 
 /**
- * @brief      Open non-volatile storage with a given namespace
+ * @brief      Open non-volatile storage with a given namespace from the default NVS partition
  *
  * Multiple internal ESP-IDF and third party application modules can store
  * their key-value pairs in the NVS module. In order to reduce possible
  * conflicts on key names, each module can use its own namespace.
+ * The default NVS partition is the one that is labelled "nvs" in the partition
+ * table.
  *
+ * @param[in]  name        Namespace name. Maximal length is determined by the
+ *                         underlying implementation, but is guaranteed to be
+ *                         at least 15 characters. Shouldn't be empty.
+ * @param[in]  open_mode   NVS_READWRITE or NVS_READONLY. If NVS_READONLY, will
+ *                         open a handle for reading only. All write requests will
+ *			   be rejected for this handle.
+ * @param[out] out_handle  If successful (return code is zero), handle will be
+ *                         returned in this argument.
+ *
+ * @return
+ *             - ESP_OK if storage handle was opened successfully
+ *             - ESP_ERR_NVS_NOT_INITIALIZED if the storage driver is not initialized
+ *             - ESP_ERR_NVS_PART_NOT_FOUND if the partition with label "nvs" is not found
+ *             - ESP_ERR_NVS_NOT_FOUND id namespace doesn't exist yet and
+ *               mode is NVS_READONLY
+ *             - ESP_ERR_NVS_INVALID_NAME if namespace name doesn't satisfy constraints
+ *             - other error codes from the underlying storage driver
+ */
+esp_err_t nvs_open(const char* name, nvs_open_mode open_mode, nvs_handle *out_handle);
+
+/**
+ * @brief      Open non-volatile storage with a given namespace from specified partition
+ *
+ * The behaviour is same as nvs_open() API. However this API can operate on a specified NVS
+ * partition instead of default NVS partition. Note that the specified partition must be registered
+ * with NVS using nvs_flash_init_partition() API.
+ *
+ * @param[in]  part_name   Label (name) of the partition of interest for object read/write/erase
  * @param[in]  name        Namespace name. Maximal length is determined by the
  *                         underlying implementation, but is guaranteed to be
  *                         at least 15 characters. Shouldn't be empty.
@@ -72,12 +104,13 @@ typedef enum {
  * @return
  *             - ESP_OK if storage handle was opened successfully
  *             - ESP_ERR_NVS_NOT_INITIALIZED if the storage driver is not initialized
+ *             - ESP_ERR_NVS_PART_NOT_FOUND if the partition with specified name is not found
  *             - ESP_ERR_NVS_NOT_FOUND id namespace doesn't exist yet and
  *               mode is NVS_READONLY
  *             - ESP_ERR_NVS_INVALID_NAME if namespace name doesn't satisfy constraints
  *             - other error codes from the underlying storage driver
  */
-esp_err_t nvs_open(const char* name, nvs_open_mode open_mode, nvs_handle *out_handle);
+esp_err_t nvs_open_from_partition(const char *part_name, const char* name, nvs_open_mode open_mode, nvs_handle *out_handle);
 
 /**@{*/
 /**
