@@ -1,4 +1,4 @@
-menu ETHERNET
+menu Ethernet
 
 config DMA_RX_BUF_NUM
     int "Number of DMA RX buffers"
