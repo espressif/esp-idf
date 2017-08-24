@@ -5608,7 +5608,7 @@ static void bta_dm_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
         break;
 
     case BTA_GATTC_SEARCH_RES_EVT:
-        bta_dm_gatt_disc_result(p_data->srvc_res.service_uuid.id);
+        bta_dm_gatt_disc_result(p_data->srvc_res.service_uuid);
         break;
 
     case BTA_GATTC_SEARCH_CMPL_EVT:

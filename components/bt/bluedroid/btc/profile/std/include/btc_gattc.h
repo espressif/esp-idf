@@ -27,13 +27,8 @@ typedef enum {
     BTC_GATTC_ACT_CLOSE,
     BTC_GATTC_ACT_CFG_MTU,
     BTC_GATTC_ACT_SEARCH_SERVICE,
-    BTC_GATTC_ACT_GET_FIRST_CHAR,
-    BTC_GATTC_ACT_GET_NEXT_CHAR,
-    BTC_GATTC_ACT_GET_FIRST_DESCR,
-    BTC_GATTC_ACT_GET_NEXT_DESCR,
-    BTC_GATTC_ACT_GET_FIRST_INCL_SERVICE,
-    BTC_GATTC_ACT_GET_NEXT_INCL_SERVICE,
     BTC_GATTC_ACT_READ_CHAR,
+    BTC_GATTC_ACT_READ_MULTIPLE_CHAR,
     BTC_GATTC_ACT_READ_CHAR_DESCR,
     BTC_GATTC_ACT_WRITE_CHAR,
     BTC_GATTC_ACT_WRITE_CHAR_DESCR,
@@ -75,82 +70,67 @@ typedef union {
         bool filter_uuid_enable;
         esp_bt_uuid_t filter_uuid;
     } search_srvc;
-    //BTC_GATTC_ACT_GET_FIRST_CHAR,
-    struct get_first_char_arg {
+    //BTC_GATTC_ACT_GET_CHAR,
+    struct get_char_arg {
         uint16_t conn_id;
-        esp_gatt_srvc_id_t service_id;
-    } get_first_char;
-    //BTC_GATTC_ACT_GET_NEXT_CHAR,
-    struct get_next_char_arg {
+        uint16_t handle;
+    } get_char;
+    //BTC_GATTC_ACT_GET_DESCR,
+    struct get_descr_arg {
         uint16_t conn_id;
-        esp_gatt_srvc_id_t service_id;
-        esp_gatt_id_t char_id;
-    } get_next_char;
-    //BTC_GATTC_ACT_GET_FIRST_DESCR,
-    struct get_first_descr_arg {
-        uint16_t conn_id;
-        esp_gatt_srvc_id_t service_id;
-        esp_gatt_id_t char_id;
-    } get_first_descr;
-    //BTC_GATTC_ACT_GET_NEXT_DESCR,
-    struct get_next_descr_arg {
-        uint16_t conn_id;
-        esp_gatt_srvc_id_t service_id;
-        esp_gatt_id_t char_id;
-        esp_gatt_id_t descr_id;
-    } get_next_descr;
+        uint16_t handle;
+    } get_descr;
     //BTC_GATTC_ACT_GET_FIRST_INCL_SERVICE,
     struct get_first_incl_srvc_arg {
         uint16_t conn_id;
-        esp_gatt_srvc_id_t service_id;
+        uint16_t handle;
     } get_first_incl_srvc;
     //BTC_GATTC_ACT_GET_NEXT_INCL_SERVICE,
     struct get_next_incl_srvc_arg {
         uint16_t conn_id;
-        esp_gatt_srvc_id_t service_id;
-        esp_gatt_srvc_id_t start_service_id;
+        uint16_t handle;
     } get_next_incl_srvc;
     //BTC_GATTC_ACT_READ_CHAR,
     struct read_char_arg {
         uint16_t conn_id;
-        esp_gatt_srvc_id_t service_id;
-        esp_gatt_id_t char_id;
+        uint16_t handle;
         esp_gatt_auth_req_t auth_req;
     } read_char;
+    //BTC_GATTC_ACT_READ_MULTIPLE_CHAR
+    struct read_multiple_arg {
+        uint16_t conn_id;
+        uint8_t  num_attr;
+        uint16_t handles[ESP_GATT_MAX_READ_MULTI_HANDLES];
+        esp_gatt_auth_req_t auth_req;
+    } read_multiple;
     //BTC_GATTC_ACT_READ_CHAR_DESCR,
     struct read_descr_arg {
         uint16_t conn_id;
-        esp_gatt_srvc_id_t service_id;
-        esp_gatt_id_t char_id;
-        esp_gatt_id_t descr_id;
+        uint16_t handle;
         esp_gatt_auth_req_t auth_req;
     } read_descr;
     //BTC_GATTC_ACT_WRITE_CHAR,
     struct write_char_arg {
         uint16_t conn_id;
         uint16_t value_len;
-        esp_gatt_srvc_id_t service_id;
-        esp_gatt_id_t char_id;
+        uint16_t handle;
         uint8_t *value;
-		esp_gatt_write_type_t write_type;
+        esp_gatt_write_type_t write_type;
         esp_gatt_auth_req_t auth_req;
     } write_char;
     //BTC_GATTC_ACT_WRITE_CHAR_DESCR,
     struct write_descr_arg {
         uint16_t conn_id;
         uint16_t value_len;
-        esp_gatt_srvc_id_t service_id;
-        esp_gatt_id_t char_id;
-        esp_gatt_id_t descr_id;
+        uint16_t handle;
         uint8_t *value;
-		esp_gatt_write_type_t write_type;
+        esp_gatt_write_type_t write_type;
         esp_gatt_auth_req_t auth_req;
     } write_descr;
     //BTC_GATTC_ACT_PREPARE_WRITE,
     struct prep_write_arg {
         uint16_t conn_id;
-        esp_gatt_srvc_id_t service_id;
-        esp_gatt_id_t char_id;
+        uint16_t handle;
         uint16_t offset;
         uint16_t value_len;
         uint8_t *value;
@@ -159,9 +139,7 @@ typedef union {
     //BTC_GATTC_ACT_PREPARE_WRITE_CHAR_DESCR,
     struct prep_write_descr_arg {
         uint16_t conn_id;
-        esp_gatt_srvc_id_t service_id;
-        esp_gatt_id_t char_id;
-        esp_gatt_id_t descr_id;
+        uint16_t handle;
         uint16_t offset;
         uint16_t value_len;
         uint8_t *value;
@@ -176,15 +154,13 @@ typedef union {
     struct reg_for_notify_arg {
         esp_gatt_if_t gattc_if;
         esp_bd_addr_t remote_bda;
-        esp_gatt_srvc_id_t service_id;
-        esp_gatt_id_t char_id;
+        uint16_t handle;
     } reg_for_notify;
     //BTC_GATTC_ACT_UNREG_FOR_NOTIFY
     struct unreg_for_notify_arg {
         esp_gatt_if_t gattc_if;
         esp_bd_addr_t remote_bda;
-        esp_gatt_srvc_id_t service_id;
-        esp_gatt_id_t char_id;
+        uint16_t handle;
     } unreg_for_notify;
     //BTC_GATTC_ACT_CACHE_REFRESH,
     struct cache_refresh_arg {
@@ -195,5 +171,56 @@ typedef union {
 void btc_gattc_call_handler(btc_msg_t *msg);
 void btc_gattc_cb_handler(btc_msg_t *msg);
 void btc_gattc_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
+esp_gatt_status_t btc_ble_gattc_get_service(uint16_t conn_id, esp_bt_uuid_t *svc_uuid, 
+                                            esp_gattc_service_elem_t *result,
+                                            uint16_t *count, uint16_t offset);
+esp_gatt_status_t btc_ble_gattc_get_all_char(uint16_t conn_id,
+                                             uint16_t start_handle,
+                                             uint16_t end_handle,
+                                             esp_gattc_char_elem_t *result,
+                                             uint16_t *count, uint16_t offset);
+esp_gatt_status_t btc_ble_gattc_get_all_descr(uint16_t conn_id,
+                                              uint16_t char_handle,
+                                              esp_gattc_descr_elem_t *result,
+                                              uint16_t *count, uint16_t offset);
+esp_gatt_status_t btc_ble_gattc_get_char_by_uuid(uint16_t conn_id,
+                                                 uint16_t start_handle,
+                                                 uint16_t end_handle,
+                                                 esp_bt_uuid_t char_uuid,
+                                                 esp_gattc_char_elem_t *result,
+                                                 uint16_t *count);
+esp_gatt_status_t btc_ble_gattc_get_descr_by_uuid(uint16_t conn_id,
+                                                  uint16_t start_handle,
+                                                  uint16_t end_handle,
+                                                  esp_bt_uuid_t char_uuid,
+                                                  esp_bt_uuid_t descr_uuid,
+                                                  esp_gattc_descr_elem_t *result,
+                                                  uint16_t *count);
+
+esp_gatt_status_t btc_ble_gattc_get_descr_by_char_handle(uint16_t conn_id,
+                                                         uint16_t char_handle,
+                                                         esp_bt_uuid_t descr_uuid,
+                                                         esp_gattc_descr_elem_t *result,
+                                                         uint16_t *count);
+
+esp_gatt_status_t btc_ble_gattc_get_include_service(uint16_t conn_id,
+                                                    uint16_t start_handle,
+                                                    uint16_t end_handle,
+                                                    esp_bt_uuid_t *incl_uuid,
+                                                    esp_gattc_incl_svc_elem_t *result,
+                                                    uint16_t *count);
+
+esp_gatt_status_t btc_ble_gattc_get_attr_count(uint16_t conn_id,
+                                               esp_gatt_db_attr_type_t type,
+                                               uint16_t start_handle,
+                                               uint16_t end_handle,
+                                               uint16_t char_handle,
+                                               uint16_t *count);
+
+esp_gatt_status_t btc_ble_gattc_get_db(uint16_t conn_id, uint16_t start_handle, uint16_t end_handle, 
+                                       esp_gattc_db_elem_t *db, uint16_t *count);
+
+
+
 
 #endif /* __BTC_GATTC_H__ */
