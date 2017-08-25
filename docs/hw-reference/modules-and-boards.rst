@@ -132,9 +132,7 @@ This is updated version of ESP32 DevKitJ V1 described above with design improvem
 Comparing to previous version, this board has a shiny black finish and a male camera header.
 
 * `Schematic V2 <http://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_SCH-2.pdf>`__ (PDF)
-
-.. * :doc:`../get-started/get-started-wrover-kit-v2`
-
+* :doc:`../get-started/get-started-wrover-kit-v2`
 * :doc:`../api-guides/jtag-debugging/index`
 * `FTDI Virtual COM Port Drivers`_
 

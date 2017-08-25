@@ -43,7 +43,7 @@ Using of this feature depends on two components:
 
 .. note::
 
-    In order to achieve higher data rates and minimize number of dropped packets it is recommended to modify JTAG adapter working frequency in respective OpenOCD config file, e.g. ``modules/esp-wroom-32.cfg``, if you are using ESP-WROOM-32 module. For example on ESP-WROVER-KIT board the maximum tested stable speed is 26MHz, so for this board you can update the following statement in your configuration file ``adapter_khz 26000``, instead of the default ``adapter_khz 20000``. Actually maximum stable JTAG frequency can depend on the host system configuration. In general JTAG clock should not exceed APB clock / 4.
+    In order to achieve higher data rates and minimize number of dropped packets it is recommended to optimize setting of JTAG clock frequency, so it is at maximum and still provides stable operation of JTAG, see :ref:`jtag-debugging-tip-optimize-jtag-speed`.
 
 There are two additional menuconfig options not mentioned above:
 
@@ -245,6 +245,8 @@ Command usage examples:
 	There is an option to configure target to halt after reset on start of scheduler. To do so, go to menuconfig and enable option *Stop program on scheduler start when JTAG/OCD is detected* under *Component config > FreeRTOS*. 
 
 
+.. _app_trace-logging-to-host:
+
 Logging to Host
 ^^^^^^^^^^^^^^^
 
@@ -279,28 +281,7 @@ How To Use It
 
 In order to use logging via trace module user needs to perform the following steps:
 
-1. On target side special vprintf-like function needs to be installed. As it was mentioned earlier this function is ``esp_apptrace_vprintf``. It sends log data to the host. Example code is shown below.
-
-.. code-block:: c
-
-    #include "esp_app_trace.h"
-    ...
-    void app_main()
-    {
-        // set log vprintf handler
-        esp_log_set_vprintf(esp_apptrace_vprintf);
-        ...
-        // user code using ESP_LOGx starts here
-        // all data passed to ESP_LOGx are sent to host
-        ...
-        // restore log vprintf handler
-        esp_log_set_vprintf(vprintf);
-        // flush last data to host
-        esp_apptrace_flush(ESP_APPTRACE_DEST_TRAX, 100000 /*tmo in us*/);
-        ESP_LOGI(TAG, "Tracing is finished."); // this will be printed out to UART
-        while (1);
-    }
-
+1. On target side special vprintf-like function needs to be installed. As it was mentioned earlier this function is ``esp_apptrace_vprintf``. It sends log data to the host. Example code is provided in :example:`system/app_trace_to_host`.
 2. Follow instructions in items 2-5 in `Application Specific Tracing`_.
 3. To print out collected log records, run the following command in terminal: ``$IDF_PATH/tools/esp_app_trace/logtrace_proc.py /path/to/trace/file /path/to/program/elf/file``.
 
@@ -401,11 +382,11 @@ Command usage examples:
 
 .. highlight:: none
 
-1.	Collect SystemView tracing data to files "pro-cpu.str" and "pro-cpu.str". The files will be saved in "openocd-esp32" directory.
+1.	Collect SystemView tracing data to files "pro-cpu.SVDat" and "pro-cpu.SVDat". The files will be saved in "openocd-esp32" directory.
 
 	::
 
-		esp32 sysview start file://pro-cpu.str file://app-cpu.str
+		esp32 sysview start file://pro-cpu.SVDat file://app-cpu.SVDat
 
 	The tracing data will be retrieved and saved in non-blocking mode. To stop data this process enter ``esp32 apptrace stop`` command on OpenOCD telnet prompt, Optionally pressing Ctrl+C in OpenOCD window.
 
@@ -413,7 +394,7 @@ Command usage examples:
 
 	::
 
-		esp32 sysview start file://pro-cpu.str file://app-cpu.str 0 -1 -1
+		esp32 sysview start file://pro-cpu.SVDat file://app-cpu.SVDat 0 -1 -1
 
 	OpenOCD telnet command line prompt will not be available until tracing is stopped. To stop tracing, press Ctrl+C in OpenOCD window.
 

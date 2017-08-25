@@ -7,7 +7,7 @@ All versions of ESP32 WROVER KIT boards have JTAG functionality build in. Puttin
 Configure Hardware
 ^^^^^^^^^^^^^^^^^^
 
-1.  Enable on-board JTAG functionality by setting JP8 according to :doc:`../../get-started/get-started-wrover-kit`, section :ref:`esp-wrover-setup-options`. 
+1.  Enable on-board JTAG functionality by setting JP8 according to :doc:`../../get-started/get-started-wrover-kit`, section :ref:`esp-wrover-kit-setup-options`. 
 
 2.  Verify if ESP32 pins used for JTAG communication are not connected to some other h/w that may disturb JTAG operation:
 
@@ -70,7 +70,7 @@ Linux
 
 .. highlight:: none
 
-2.  Open a terminal, enter ``ls -l /dev/ttyUSB*`` command and check, if board's USB ports are recognized by the O/S. You are looking for similar result:
+2.  Open a terminal, enter ``ls -l /dev/ttyUSB*`` command and check, if board's USB ports are recognized by the OS. You are looking for similar result:
 
     ::
 

@@ -11,7 +11,7 @@ GDB. The document is structured as follows:
 :ref:`jtag-debugging-selecting-jtag-adapter`
     What are the criteria and options to select JTAG adapter hardware.
 :ref:`jtag-debugging-setup-openocd`
-    Procedure to install OpenOCD using prebuild software packages for :doc:`Windows <setup-openocd-windows>`, :doc:`Linux <setup-openocd-linux>` and :doc:`MacOS <setup-openocd-macos>` operating systems.
+    Procedure to install OpenOCD using prebuilt software packages for :doc:`Windows <setup-openocd-windows>`, :doc:`Linux <setup-openocd-linux>` and :doc:`MacOS <setup-openocd-macos>` operating systems.
 :ref:`jtag-debugging-configuring-esp32-target`
     Configuration of OpenOCD software and set up JTAG adapter hardware that will make together a debugging target.
 :ref:`jtag-debugging-launching-debugger`
@@ -285,6 +285,7 @@ This section provides collection of links to all tips and quirks referred to fro
 * :ref:`jtag-debugging-tip-code-options`
 * :ref:`jtag-debugging-tip-freertos-support`
 * :ref:`jtag-debugging-tip-code-flash-voltage`
+* :ref:`jtag-debugging-tip-optimize-jtag-speed`
 * :ref:`jtag-debugging-tip-debugger-startup-commands`
 * :ref:`jtag-debugging-tip-openocd-configure-target`
 * :ref:`jtag-debugging-tip-reset-by-debugger`

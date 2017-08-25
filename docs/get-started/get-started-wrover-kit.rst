@@ -1,7 +1,7 @@
 ESP-WROVER-KIT V3 Getting Started Guide
 =======================================
 
-This user guide shows how to get started with ESP-WROVER-KIT V3 development board including description of its functionality and configuration options. You can find out what version you have in section :doc:`../hw-reference/modules-and-boards`.
+This user guide shows how to get started with ESP-WROVER-KIT V3 development board including description of its functionality and configuration options. You can find out what version you have in section :ref:`esp-modules-and-boards-esp-wrover-kit`.
 
 If you like to start using this board right now, go directly to section :ref:`esp-wrover-kit-start-development`.
 
@@ -314,7 +314,7 @@ Now to Development
 
 To start development of applications for ESP-WROVER-KIT, proceed to section :doc:`index`, that will walk you through the following steps:
 
-* :ref:`get-started-setup-toochain` in your PC to develop applications for ESP32 in C language
+* :ref:`get-started-setup-toolchain` in your PC to develop applications for ESP32 in C language
 * :ref:`get-started-connect` the module to the PC and verify if it is accessible
 * :ref:`get-started-build-flash` an example application to the ESP32
 * :ref:`get-started-build-monitor` instantly what the application is doing
@@ -340,3 +340,8 @@ Related Documents
 .. |jp14| image:: ../_static/wrover-jp14.png
 
 .. _ESP-WROVER-KIT V3 schematic: http://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_SCH-3.pdf
+
+.. toctree::
+    :hidden:
+
+    get-started-wrover-kit-v2.rst
