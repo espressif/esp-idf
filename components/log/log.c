@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /*
- * Log library â€implementation notes.
+ * Log library implementation notes.
  *
  * Log library stores all tags provided to esp_log_level_set as a linked
  * list. See uncached_tag_entry_t structure.
@@ -122,16 +122,40 @@ void esp_log_level_set(const char* tag, esp_log_level_t level)
         return;
     }
 
-    // allocate new linked list entry and append it to the head of the list
-    size_t entry_size = offsetof(uncached_tag_entry_t, tag) + strlen(tag) + 1;
-    uncached_tag_entry_t* new_entry = (uncached_tag_entry_t*) malloc(entry_size);
-    if (!new_entry) {
-        xSemaphoreGive(s_log_mutex);
-        return;
+    //searching exist tag
+    uncached_tag_entry_t *it = NULL;
+    SLIST_FOREACH( it, &s_log_tags, entries ) {
+        if ( strcmp(it->tag, tag)==0 ) {
+            //one tag in the linked list match, update the level
+            it->level = level;
+            //quit with it != NULL
+            break;
+        }
     }
-    new_entry->level = (uint8_t) level;
-    strcpy(new_entry->tag, tag);
-    SLIST_INSERT_HEAD( &s_log_tags, new_entry, entries );
+    //no exist tag, append new one
+    if ( it == NULL ) {
+        // allocate new linked list entry and append it to the head of the list
+        size_t entry_size = offsetof(uncached_tag_entry_t, tag) + strlen(tag) + 1;
+        uncached_tag_entry_t* new_entry = (uncached_tag_entry_t*) malloc(entry_size);
+        if (!new_entry) {
+            xSemaphoreGive(s_log_mutex);
+            return;
+        }
+        new_entry->level = (uint8_t) level;
+        strcpy(new_entry->tag, tag);
+        SLIST_INSERT_HEAD( &s_log_tags, new_entry, entries );
+    }
+
+    //search in the cache and update it if exist         
+    for (int i = 0; i < s_log_cache_entry_count; ++i) {
+#ifdef LOG_BUILTIN_CHECKS
+        assert(i == 0 || s_log_cache[(i - 1) / 2].generation < s_log_cache[i].generation);
+#endif
+        if (s_log_cache[i].tag == tag) {
+            s_log_cache[i].level = level;
+            break;
+        }
+    }
     xSemaphoreGive(s_log_mutex);
 }
 
