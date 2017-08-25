@@ -30,7 +30,7 @@ extern "C"
 
 #define SPI_DEVICE_TXBIT_LSBFIRST          (1<<0)  ///< Transmit command/address/data LSB first instead of the default MSB first
 #define SPI_DEVICE_RXBIT_LSBFIRST          (1<<1)  ///< Receive data LSB first instead of the default MSB first
-#define SPI_DEVICE_BIT_LSBFIRST            (SPI_TXBIT_LSBFIRST|SPI_RXBIT_LSBFIRST); ///< Transmit and receive LSB first
+#define SPI_DEVICE_BIT_LSBFIRST            (SPI_DEVICE_TXBIT_LSBFIRST|SPI_DEVICE_RXBIT_LSBFIRST); ///< Transmit and receive LSB first
 #define SPI_DEVICE_3WIRE                   (1<<2)  ///< Use MOSI (=spid) for both sending and receiving data
 #define SPI_DEVICE_POSITIVE_CS             (1<<3)  ///< Make CS positive during a transaction instead of negative
 #define SPI_DEVICE_HALFDUPLEX              (1<<4)  ///< Transmit data before receiving it, instead of simultaneously
@@ -204,8 +204,7 @@ esp_err_t spi_device_get_trans_result(spi_device_handle_t handle, spi_transactio
  * using spi_device_get_trans_result.
  *
  * @param handle Device handle obtained using spi_host_add_dev
- * @param trans_desc Pointer to variable able to contain a pointer to the description of the 
- *                   transaction that is executed
+ * @param trans_desc Description of transaction to execute
  * @return 
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_OK                on success
