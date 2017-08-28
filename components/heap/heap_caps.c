@@ -94,8 +94,8 @@ IRAM_ATTR void *heap_caps_malloc( size_t size, uint32_t caps )
     }
     for (int prio = 0; prio < SOC_MEMORY_TYPE_NO_PRIOS; prio++) {
         //Iterate over heaps and check capabilities at this priority
-        for (int heap_idx = 0; heap_idx < num_registered_heaps; heap_idx++) {
-            heap_t *heap = &registered_heaps[heap_idx];
+        heap_t *heap;
+        SLIST_FOREACH(heap, &registered_heaps, next) {
             if (heap->heap == NULL) {
                 continue;
             }
@@ -142,8 +142,8 @@ IRAM_ATTR void *heap_caps_malloc( size_t size, uint32_t caps )
 IRAM_ATTR static heap_t *find_containing_heap(void *ptr )
 {
     intptr_t p = (intptr_t)ptr;
-    for (size_t i = 0; i < num_registered_heaps; i++) {
-        heap_t *heap = &registered_heaps[i];
+    heap_t *heap;
+    SLIST_FOREACH(heap, &registered_heaps, next) {
         if (heap->heap != NULL && p >= heap->start && p < heap->end) {
             return heap;
         }
@@ -216,8 +216,8 @@ IRAM_ATTR void *heap_caps_realloc( void *ptr, size_t size, int caps)
 size_t heap_caps_get_free_size( uint32_t caps )
 {
     size_t ret = 0;
-    for (int i = 0; i < num_registered_heaps; i++) {
-        heap_t *heap = &registered_heaps[i];
+    heap_t *heap;
+    SLIST_FOREACH(heap, &registered_heaps, next) {
         if (heap_caps_match(heap, caps)) {
             ret += multi_heap_free_size(heap->heap);
         }
@@ -228,8 +228,8 @@ size_t heap_caps_get_free_size( uint32_t caps )
 size_t heap_caps_get_minimum_free_size( uint32_t caps )
 {
     size_t ret = 0;
-    for (int i = 0; i < num_registered_heaps; i++) {
-        heap_t *heap = &registered_heaps[i];
+    heap_t *heap;
+    SLIST_FOREACH(heap, &registered_heaps, next) {
         if (heap_caps_match(heap, caps)) {
             ret += multi_heap_minimum_free_size(heap->heap);
         }
@@ -248,8 +248,8 @@ void heap_caps_get_info( multi_heap_info_t *info, uint32_t caps )
 {
     bzero(info, sizeof(multi_heap_info_t));
 
-    for (int i = 0; i < num_registered_heaps; i++) {
-        heap_t *heap = &registered_heaps[i];
+    heap_t *heap;
+    SLIST_FOREACH(heap, &registered_heaps, next) {
         if (heap_caps_match(heap, caps)) {
             multi_heap_info_t hinfo;
             multi_heap_get_info(heap->heap, &hinfo);
@@ -270,8 +270,8 @@ void heap_caps_print_heap_info( uint32_t caps )
 {
     multi_heap_info_t info;
     printf("Heap summary for capabilities 0x%08X:\n", caps);
-    for (int i = 0; i < num_registered_heaps; i++) {
-        heap_t *heap = &registered_heaps[i];
+    heap_t *heap;
+    SLIST_FOREACH(heap, &registered_heaps, next) {
         if (heap_caps_match(heap, caps)) {
             multi_heap_get_info(heap->heap, &info);
 
