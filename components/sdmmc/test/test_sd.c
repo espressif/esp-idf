@@ -164,7 +164,6 @@ TEST_CASE("can write and read back blocks", "[sd][test_env=UT_T1_SDMODE]")
 TEST_CASE("can write and read back blocks(using SPI)", "[sdspi][test_env=UT_T1_SPIMODE]")
 {
     sdmmc_host_t config = SDSPI_HOST_DEFAULT();
-    config.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
     sdspi_slot_config_t slot_config = SDSPI_SLOT_CONFIG_DEFAULT();
     TEST_ESP_OK(sdspi_host_init());
     TEST_ESP_OK(sdspi_host_init_slot(config.slot, &slot_config));
