@@ -54,7 +54,7 @@ static void thread_main()
     }
 }
 
-TEST_CASE("pthread CXX test 1", "[pthread]")
+TEST_CASE("pthread CXX", "[pthread]")
 {
     global_sp.reset(new int(1));
 
