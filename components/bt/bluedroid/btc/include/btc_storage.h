@@ -19,6 +19,12 @@
 #include "bt_defs.h"
 #include "bt_types.h"
 
+
+#define BTC_STORAGE_DEV_CLASS_STR       "DevClass"
+#define BTC_STORAGE_LINK_KEY_STR        "LinkKey"    /* same as the ble */
+#define BTC_STORAGE_LINK_KEY_TYPE_STR   "LinkKeyType"
+#define BTC_STORAGE_PIN_LENGTH_STR      "PinLength"
+
 /*******************************************************************************
 **
 ** Function         btc_storage_add_bonded_device

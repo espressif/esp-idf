@@ -41,8 +41,6 @@ typedef enum {
     BTC_GAP_BLE_CONFIRM_REPLY_EVT,
     BTC_GAP_BLE_DISCONNECT_EVT,
     BTC_GAP_BLE_REMOVE_BOND_DEV_EVT,
-    BTC_GAP_BLE_CLEAR_BOND_DEV_EVT,
-    BTC_GAP_BLE_GET_BOND_DEV_EVT,
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */
