@@ -71,10 +71,12 @@ typedef struct {
  */
 struct spi_transaction_t {
     uint32_t flags;                 ///< Bitwise OR of SPI_TRANS_* flags
-    uint16_t command;               ///< Command data, of which the length is set in the command_bits of spi_device_interface_config_t.
-    uint64_t addr;                  ///< Address data, of which the length is set in the address_bits of spi_device_interface_config_t.
-                                    ///< <b>NOTE: this field is re-written to be used in a new way.</b> 
-                                    ///< - Example: write 0x123400 and address_bits=24 to send address of 0x12, 0x34, 0x00.  
+    uint16_t cmd;                   ///< Command data, of which the length is set in the ``command_bits`` of spi_device_interface_config_t.
+                                    ///< <b>NOTE: this field, used to be "command" in ESP-IDF 2.1 and before, is re-written to be used in a new way in ESP-IDF 3.0.</b>
+                                    ///< - Example: write 0x0123 and command_bits=12 to send command 0x12, 0x3_ (in previous version, you may have to write 0x3_12).
+    uint64_t addr;                  ///< Address data, of which the length is set in the ``address_bits`` of spi_device_interface_config_t.
+                                    ///< <b>NOTE: this field, used to be "address" in ESP-IDF 2.1 and before, is re-written to be used in a new way in ESP-IDF3.0.</b> 
+                                    ///< - Example: write 0x123400 and address_bits=24 to send address of 0x12, 0x34, 0x00 (in previous version, you may have to write 0x12340000).  
     size_t length;                  ///< Total data length, in bits
     size_t rxlength;                ///< Total data length received, should be not greater than ``length`` in full-duplex mode. (0 defaults this to the value of ``length``)
     void *user;                     ///< User-defined variable. Can be used to store eg transaction ID.

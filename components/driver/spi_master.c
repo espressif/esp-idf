@@ -550,10 +550,9 @@ static void IRAM_ATTR spi_intr(void *arg)
             host->hw->miso_dlen.usr_miso_dbitlen=trans->length-1;
         }
 
-        host->hw->user2.usr_command_value=trans->command;
-               
-        // NOTE: WE CHANGED THE WAY USING ADDRESS FIELD. Now address should be filled in, in the following format:
-        // Example: write 0x123400 and address_bits=24 to send address 0x12, 0x34, 0x00 (in previous version, you may have to write 0x12340000)
+        // output command will be sent from bit 7 to 0 of command_value, and then bit 15 to 8 of the same register field.
+        uint16_t command = trans->cmd << (16-dev->cfg.command_bits);    //shift to MSB
+        host->hw->user2.usr_command_value = (command>>8)|(command<<8);  //swap the first and second byte
         // shift the address to MSB of addr (and maybe slv_wr_status) register. 
         // output address will be sent from MSB to LSB of addr register, then comes the MSB to LSB of slv_wr_status register. 
         if (dev->cfg.address_bits>32) {
