@@ -13,6 +13,11 @@
 // limitations under the License.
 #ifndef _SOC_SPI_STRUCT_H_
 #define _SOC_SPI_STRUCT_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef volatile struct {
     union {
         struct {
@@ -673,4 +678,9 @@ extern spi_dev_t SPI0;                                      /* SPI0 IS FOR INTER
 extern spi_dev_t SPI1;
 extern spi_dev_t SPI2;
 extern spi_dev_t SPI3;
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif  /* _SOC_SPI_STRUCT_H_ */

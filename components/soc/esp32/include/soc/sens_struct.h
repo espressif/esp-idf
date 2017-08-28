@@ -13,6 +13,11 @@
 // limitations under the License.
 #ifndef _SOC_SENS_STRUCT_H_
 #define _SOC_SENS_STRUCT_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef volatile struct {
     union {
         struct {
@@ -313,4 +318,9 @@ typedef volatile struct {
     } sardate;
 } sens_dev_t;
 extern sens_dev_t SENS;
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif  /* _SOC_SENS_STRUCT_H_ */

@@ -13,6 +13,11 @@
 // limitations under the License.
 #ifndef _SOC_RTC_CNTL_STRUCT_H_
 #define _SOC_RTC_CNTL_STRUCT_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef volatile struct {
     union {
         struct {
@@ -551,4 +556,9 @@ typedef volatile struct {
     } date;
 } rtc_cntl_dev_t;
 extern rtc_cntl_dev_t RTCCNTL;
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif  /* _SOC_RTC_CNTL_STRUCT_H_ */
