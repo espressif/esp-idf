@@ -78,7 +78,7 @@ struct spi_transaction_t {
                                     ///< <b>NOTE: this field, used to be "address" in ESP-IDF 2.1 and before, is re-written to be used in a new way in ESP-IDF3.0.</b> 
                                     ///< - Example: write 0x123400 and address_bits=24 to send address of 0x12, 0x34, 0x00 (in previous version, you may have to write 0x12340000).  
     size_t length;                  ///< Total data length, in bits
-    size_t rxlength;                ///< Total data length received, should be not greater than ``length`` in full-duplex mode. (0 defaults this to the value of ``length``)
+    size_t rxlength;                ///< Total data length received, should be not greater than ``length`` in full-duplex mode (0 defaults this to the value of ``length``).
     void *user;                     ///< User-defined variable. Can be used to store eg transaction ID.
     union {
         const void *tx_buffer;      ///< Pointer to transmit buffer, or NULL for no MOSI phase
