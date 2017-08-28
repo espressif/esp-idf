@@ -359,7 +359,13 @@ typedef volatile struct {
     uint32_t date;                                    /**/
     uint32_t id;                                      /**/
 } uart_dev_t;
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern uart_dev_t UART0;
 extern uart_dev_t UART1;
 extern uart_dev_t UART2;
+#ifdef __cplusplus
+}
+#endif
 #endif  /* _SOC_UART_STRUCT_H_ */

@@ -168,5 +168,11 @@ typedef volatile struct {
     uint32_t reserved_f8;
     uint32_t date;                                  /**/
 } pcnt_dev_t;
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern pcnt_dev_t PCNT;
+#ifdef __cplusplus
+}
+#endif
 #endif  /* _SOC_PCNT_STRUCT_H_ */

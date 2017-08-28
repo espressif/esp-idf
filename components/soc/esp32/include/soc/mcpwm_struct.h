@@ -447,6 +447,12 @@ typedef volatile struct {
         uint32_t val;
     }version;
 } mcpwm_dev_t;
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern mcpwm_dev_t MCPWM0;
 extern mcpwm_dev_t MCPWM1;
+#ifdef __cplusplus
+}
+#endif
 #endif  /* _SOC_MCPWM_STRUCT_H__ */

@@ -242,5 +242,11 @@ typedef volatile struct {
     uint32_t reserved_1f8;
     uint32_t date;                                     /*This register represents the version .*/
 } ledc_dev_t;
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern ledc_dev_t LEDC;
+#ifdef __cplusplus
+}
+#endif
 #endif  /* _SOC_LEDC_STRUCT_H_ */

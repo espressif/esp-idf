@@ -200,5 +200,11 @@ typedef volatile struct {
         uint32_t val;
     } func_out_sel_cfg[40];
 } gpio_dev_t;
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern gpio_dev_t GPIO;
+#ifdef __cplusplus
+}
+#endif
 #endif  /* _SOC_GPIO_STRUCT_H_ */

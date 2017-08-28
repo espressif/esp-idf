@@ -362,7 +362,13 @@ typedef volatile struct {
         uint32_t val;
     } clock;
 } sdmmc_dev_t;
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern sdmmc_dev_t SDMMC;
+#ifdef __cplusplus
+}
+#endif
 
 _Static_assert(sizeof(sdmmc_dev_t) == 0x804, "invalid size of sdmmc_dev_t structure");
 
