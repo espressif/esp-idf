@@ -34,6 +34,8 @@
 #include "esp_gattc_api.h"
 #include "esp_gatt_defs.h"
 #include "esp_bt_main.h"
+#include "esp_system.h"
+#include "btc_main.h"
 
 #define GATTC_TAG                   "GATTC_SPP_DEMO"
 #define PROFILE_NUM                 1
@@ -138,6 +140,7 @@ static int need_notify_number  = 0;
 static int char_descr_index_count = 0;
 static char * notify_value_p = NULL;
 static int notify_value_offset = 0;
+static int notify_value_count = 0;
 static spp_ble_gattc_srv_t * temp_srv_p = NULL;
 static spp_ble_gattc_char_t * notify_char_pp = NULL;
 static spp_ble_gattc_char_t notify_char_p[3] ;
@@ -171,6 +174,10 @@ static void print_srv_node(void)
 static void get_char_and_descr(void)
 {
     pGattcCharHead = (spp_ble_gattc_char_head *)malloc(sizeof(spp_ble_gattc_char_head));
+    if(pGattcCharHead == NULL){
+        ESP_LOGE(GATTC_TAG, "malloc failed,%s L#%d\n",__func__,__LINE__);
+        return;
+    }
 
     pGattcCharHead->len = 0;
     pGattcCharHead->pfirst = NULL;
@@ -221,6 +228,7 @@ static void Characteristic_Rd(int32_t srv_index,int32_t char_index)
 
 static void  Characteristic_Wr(int32_t srv_index,int32_t char_index,char * s ,size_t length)
 {
+    future_t **future_p = NULL;
     int32_t len = 0;
     spp_ble_gattc_char_t * pGattc_char_node;
     uint8_t * spp_gattc_wr_buffer = NULL;
@@ -262,6 +270,10 @@ static void  Characteristic_Wr(int32_t srv_index,int32_t char_index,char * s ,si
     }
 
     spp_gattc_wr_buffer = (uint8_t *)malloc(sizeof(uint8_t)*(len));
+    if(spp_gattc_wr_buffer == NULL){
+        ESP_LOGE(GATTC_TAG, "malloc failed,%s L#%d\n",__func__,__LINE__);
+        return;
+    }
     memcpy(spp_gattc_wr_buffer,s,len);
 
     if((pGattc_char_node->char_prop & (ESP_GATT_CHAR_PROP_BIT_WRITE_NR|ESP_GATT_CHAR_PROP_BIT_WRITE)) == 0){
@@ -270,8 +282,18 @@ static void  Characteristic_Wr(int32_t srv_index,int32_t char_index,char * s ,si
         return ;
     }
 
-    esp_ble_gattc_write_char(spp_gattc_if, pGattc_char_node->conn_id, &pGattc_char_node->srvc_id, &pGattc_char_node->char_id, len,spp_gattc_wr_buffer, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
+    future_p = btc_main_get_future_p(BTC_MAIN_ENABLE_FUTURE);
+    *future_p = future_new();
+    if (*future_p == NULL) {
+        ESP_LOGE(GATTC_TAG,"%s failed\n", __func__);
+        return;
+    }
+    esp_ble_gattc_write_char(spp_gattc_if, pGattc_char_node->conn_id, &pGattc_char_node->srvc_id, &pGattc_char_node->char_id, len,spp_gattc_wr_buffer, ESP_GATT_WRITE_TYPE_RSP, ESP_GATT_AUTH_REQ_NONE);
     free(spp_gattc_wr_buffer);
+    if(future_await(*future_p) == FUTURE_FAIL) {
+        ESP_LOGE(GATTC_TAG,"%s failed\n", __func__);
+        return;
+    }
 
     return ;
 }
@@ -282,7 +304,7 @@ static void store_srv_info(esp_ble_gattc_cb_param_t * p_data)
 
     pGattc_srv_node = (spp_ble_gattc_srv_t *)malloc(sizeof(spp_ble_gattc_srv_t));
     if (pGattc_srv_node == NULL) {
-        ESP_LOGE(GATTC_TAG, "%s at_malloc error:", __func__);
+        ESP_LOGE(GATTC_TAG, "malloc failed,%s L#%d\n",__func__,__LINE__);
         return;
     }
     pGattc_srv_node->conn_id = p_data->search_res.conn_id;
@@ -310,6 +332,10 @@ static void store_char_info(esp_ble_gattc_cb_param_t * p_data)
     spp_ble_gattc_char_t * pGattc_char_node = NULL;
 
     pGattc_char_node = (spp_ble_gattc_char_t *)malloc(sizeof(spp_ble_gattc_char_t));
+    if(pGattc_char_node == NULL){
+        ESP_LOGE(GATTC_TAG, "malloc failed,%s L#%d\n",__func__,__LINE__);
+        return;
+    }
     pGattc_char_node->srv_index = temp_srv_p->index;
     pGattc_char_node->char_descr = NULL;
     pGattc_char_node->conn_id = p_data->get_char.conn_id;
@@ -345,6 +371,10 @@ static void store_desc_info(esp_ble_gattc_cb_param_t * p_data)
 
     temp_char_descr_p = temp_gattc_char_p1->char_descr;
     pGattc_char_node_descr = (spp_ble_gattc_char_descr_t *)malloc(sizeof(spp_ble_gattc_char_descr_t));
+    if(pGattc_char_node_descr == NULL){
+        ESP_LOGE(GATTC_TAG, "malloc failed,%s L#%d\n",__func__,__LINE__);
+        return;
+    }
     pGattc_char_node_descr->conn_id = p_data->get_descr.conn_id;
     pGattc_char_node_descr->char_descr_index = ++char_descr_index_count;
     if (temp_char_descr_p == NULL)
@@ -403,31 +433,43 @@ static void notify_event_handler(esp_ble_gattc_cb_param_t * p_data)
         esp_log_buffer_char(GATTC_TAG, (char *)p_data->notify.value, p_data->notify.value_len);
 #else
         if((p_data->notify.value[0] == '#')&&(p_data->notify.value[1] == '#')){
+            if((++notify_value_count) != p_data->notify.value[3]){
+                if(notify_value_p != NULL){
+                    free(notify_value_p);
+                }
+                notify_value_count = 0;
+                notify_value_p = NULL;
+                notify_value_offset = 0;
+                ESP_LOGE(GATTC_TAG,"notify value count is not continuous,%s\n",__func__);
+                return;
+            }
             if(p_data->notify.value[3] == 1){
-                notify_value_p = (char *)malloc(120*sizeof(char));
+                notify_value_p = (char *)malloc(((spp_mtu_size-7)*(p_data->notify.value[2]))*sizeof(char));
                 if(notify_value_p == NULL){
-                    ESP_LOGE(GATTC_TAG,"malloc failed,%s\n",__func__);
+                    ESP_LOGE(GATTC_TAG, "malloc failed,%s L#%d\n",__func__,__LINE__);
+                    notify_value_count = 0;
                     return;
                 }
-                memcpy(notify_value_p,p_data->notify.value,p_data->notify.value_len);
+                memcpy((notify_value_p + notify_value_offset),(p_data->notify.value + 4),(p_data->notify.value_len - 4));
                 if(p_data->notify.value[2] == p_data->notify.value[3]){
-                    uart_write_bytes(UART_NUM_0, (char *)(notify_value_p), (p_data->notify.value_len + notify_value_offset));
+                    uart_write_bytes(UART_NUM_0, (char *)(notify_value_p), (p_data->notify.value_len - 4 + notify_value_offset));
                     free(notify_value_p);
                     notify_value_p = NULL;
                     notify_value_offset = 0;
                     return;
                 }
-                notify_value_offset += p_data->notify.value_len;
+                notify_value_offset += (p_data->notify.value_len - 4);
             }else if(p_data->notify.value[3] <= p_data->notify.value[2]){
-                memcpy((notify_value_p + notify_value_offset),p_data->notify.value,p_data->notify.value_len);
-                if(p_data->notify.value[2] == p_data->notify.value[3]){
-                    uart_write_bytes(UART_NUM_0, (char *)(notify_value_p), (p_data->notify.value_len + notify_value_offset));
+                memcpy((notify_value_p + notify_value_offset),(p_data->notify.value + 4),(p_data->notify.value_len - 4));
+                if(p_data->notify.value[3] == p_data->notify.value[2]){
+                    uart_write_bytes(UART_NUM_0, (char *)(notify_value_p), (p_data->notify.value_len - 4 + notify_value_offset));
                     free(notify_value_p);
+                    notify_value_count = 0;
                     notify_value_p = NULL;
                     notify_value_offset = 0;
                     return;
                 }
-                notify_value_offset += p_data->notify.value_len;
+                notify_value_offset += (p_data->notify.value_len - 4);
             }
         }else{
             uart_write_bytes(UART_NUM_0, (char *)(p_data->notify.value), p_data->notify.value_len);
@@ -498,6 +540,50 @@ static void printf_char_and_descr(uint8_t srv_index)
         temp_gattc_char_p = temp_gattc_char_p->next;
     }
     return ;
+}
+
+static void free_gattc_srv_db(void)
+{
+    spp_ble_gattc_srv_t * temp_service_p = NULL , * temp_service_pp = NULL;
+    spp_ble_gattc_char_head * temp_srv_char_head_p = NULL;
+    spp_ble_gattc_char_t * temp_gattc_char_node_p = NULL , *temp_gattc_char_node_pp =NULL;
+    spp_ble_gattc_char_descr_t * temp_gattc_char_descr_node_p = NULL,* temp_gattc_char_descr_node_pp = NULL;
+
+    temp_service_p = pAtGattcSrvHead.pfirst;
+    while(temp_service_p != NULL){
+        temp_srv_char_head_p = temp_service_p->gattc_srv_char_head;
+        temp_gattc_char_node_p = temp_srv_char_head_p->pfirst;
+        while(temp_gattc_char_node_p != NULL){
+            temp_gattc_char_node_pp = temp_gattc_char_node_p;
+            temp_gattc_char_descr_node_p = temp_gattc_char_node_pp->char_descr;
+            while(temp_gattc_char_descr_node_p != NULL){
+                temp_gattc_char_descr_node_pp = temp_gattc_char_descr_node_p;
+                temp_gattc_char_descr_node_p = temp_gattc_char_descr_node_p->next;
+                free(temp_gattc_char_descr_node_pp);
+            }
+            temp_gattc_char_node_p = temp_gattc_char_node_p->next;
+            free(temp_gattc_char_node_pp);
+        }
+        free(temp_srv_char_head_p);
+
+        temp_service_pp = temp_service_p;
+        temp_service_p = temp_service_p->next;
+        free(temp_service_pp);
+    }
+    pAtGattcSrvHead.len = 0;
+    pAtGattcSrvHead.pfirst = NULL;
+    pAtGattcSrvHead.plast = NULL;
+    is_connect = false;
+    spp_conn_id = 0;
+    spp_mtu_size = 23;
+    cmd = 0;
+    wr_descr_ccc_num = 0;
+    spp_gattc_if = 0xff;
+    need_notify_number  = 0;
+    char_descr_index_count = 0;
+    notify_value_p = NULL;
+    notify_value_offset = 0;
+    notify_value_count = 0;
 }
 
 static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
@@ -625,7 +711,8 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         break;
     case ESP_GATTC_DISCONNECT_EVT:
         ESP_LOGI(GATTC_TAG, "disconnect , status = %d", p_data->disconnect.status);
-        is_connect = false;
+        free_gattc_srv_db();
+        esp_ble_gap_start_scanning(0xffff);
         break;
     case ESP_GATTC_SEARCH_RES_EVT:
         if((p_data->search_res.srvc_id.id.uuid.len == ESP_UUID_LEN_16)&&(p_data->search_res.srvc_id.id.uuid.uuid.uuid16 == 0x1800)){
@@ -640,7 +727,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         break;
     case ESP_GATTC_SEARCH_CMPL_EVT:
         ESP_LOGI(GATTC_TAG, "SEARCH_CMPL: conn_id = %x, status %d", spp_conn_id, p_data->search_cmpl.status);
-        esp_ble_gattc_config_mtu(gattc_if,spp_conn_id, 512);
+        esp_ble_gattc_config_mtu(gattc_if,spp_conn_id, 200);
         break;
     case ESP_GATTC_GET_CHAR_EVT:
         if (p_data->get_char.status != ESP_GATT_OK) {
@@ -687,8 +774,15 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         break;
     case ESP_GATTC_WRITE_CHAR_EVT:
         ESP_LOGI(GATTC_TAG,"ESP_GATTC_WRITE_CHAR_EVT:status=%d,srvc_uuid = 0x%04x, char_uuid = 0x%04x, descr_uuid=0x%04x \n",p_data->write.status , p_data->write.srvc_id.id.uuid.uuid.uuid16, p_data->write.char_id.uuid.uuid.uuid16, p_data->write.descr_id.uuid.uuid.uuid16);
+        if(param->write.status == ESP_GATT_OK){
+            if(param->write.char_id.uuid.uuid.uuid16 == 0xABF1){
+                future_ready(*btc_main_get_future_p(BTC_MAIN_ENABLE_FUTURE), FUTURE_SUCCESS);
+            }
+        }
         break;
     case ESP_GATTC_PREP_WRITE_EVT:
+        break;
+    case ESP_GATTC_EXEC_EVT:
         break;
     case ESP_GATTC_WRITE_DESCR_EVT:
         ESP_LOGI(GATTC_TAG,"ESP_GATTC_WRITE_DESCR_EVT: status =%d,srvc_uuid = 0x%04x, char_uuid = 0x%04x, descr_uuid=0x%04x \n",p_data->write.status,p_data->write.srvc_id.id.uuid.uuid.uuid16, p_data->write.char_id.uuid.uuid.uuid16, p_data->write.descr_id.uuid.uuid.uuid16);
@@ -817,6 +911,10 @@ void uart_task(void *pvParameters)
                 if (event.size) {
                     uint8_t * temp = NULL;
                     temp = (uint8_t *)malloc(sizeof(uint8_t)*event.size);
+                    if(temp == NULL){
+                        ESP_LOGE(GATTC_TAG, "malloc failed,%s L#%d\n",__func__,__LINE__);
+                        break;
+                    }
                     memset(temp,0x0,event.size);
                     uart_read_bytes(UART_NUM_0,temp,event.size,portMAX_DELAY);
                     Characteristic_Wr(SPP_SRV_INDEX,SPP_DATA_RECV_CHAR_INDEX,(char *)temp,event.size);
