@@ -16,6 +16,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
     uint32_t reserved1: 1;
     uint32_t disable_int_on_completion: 1;
@@ -366,6 +370,8 @@ extern sdmmc_dev_t SDMMC;
 
 _Static_assert(sizeof(sdmmc_dev_t) == 0x804, "invalid size of sdmmc_dev_t structure");
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_SOC_SDMMC_STRUCT_H_
