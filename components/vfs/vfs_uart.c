@@ -47,7 +47,8 @@ static int uart_rx_char_via_driver(int fd);
 // Pointers to UART peripherals
 static uart_dev_t* s_uarts[UART_NUM] = {&UART0, &UART1, &UART2};
 // per-UART locks, lazily initialized
-static _lock_t s_uart_locks[UART_NUM];
+static _lock_t s_uart_read_locks[UART_NUM];
+static _lock_t s_uart_write_locks[UART_NUM];
 // One-character buffer used for newline conversion code, per UART
 static int s_peek_char[UART_NUM] = { NONE, NONE, NONE };
 // Per-UART non-blocking flag. Note: default implementation does not honor this
@@ -144,7 +145,7 @@ static ssize_t uart_write(int fd, const void * data, size_t size)
      *  a dedicated UART lock if two streams (stdout and stderr) point to the
      *  same UART.
      */
-    _lock_acquire_recursive(&s_uart_locks[fd]);
+    _lock_acquire_recursive(&s_uart_write_locks[fd]);
     for (size_t i = 0; i < size; i++) {
         int c = data_c[i];
         if (c == '\n' && s_tx_mode != ESP_LINE_ENDINGS_LF) {
@@ -155,7 +156,7 @@ static ssize_t uart_write(int fd, const void * data, size_t size)
         }
         s_uart_tx_func[fd](fd, c);
     }
-    _lock_release_recursive(&s_uart_locks[fd]);
+    _lock_release_recursive(&s_uart_write_locks[fd]);
     return size;
 }
 
@@ -186,7 +187,7 @@ static ssize_t uart_read(int fd, void* data, size_t size)
     assert(fd >=0 && fd < 3);
     char *data_c = (char *) data;
     size_t received = 0;
-    _lock_acquire_recursive(&s_uart_locks[fd]);
+    _lock_acquire_recursive(&s_uart_read_locks[fd]);
     while (received < size) {
         int c = uart_read_char(fd);
         if (c == '\r') {
@@ -219,7 +220,7 @@ static ssize_t uart_read(int fd, void* data, size_t size)
             break;
         }
     }
-    _lock_release_recursive(&s_uart_locks[fd]);
+    _lock_release_recursive(&s_uart_read_locks[fd]);
     if (received > 0) {
         return received;
     }
@@ -286,16 +287,20 @@ void esp_vfs_dev_uart_set_tx_line_endings(esp_line_endings_t mode)
 
 void esp_vfs_dev_uart_use_nonblocking(int fd)
 {
-    _lock_acquire_recursive(&s_uart_locks[fd]);
+    _lock_acquire_recursive(&s_uart_read_locks[fd]);
+    _lock_acquire_recursive(&s_uart_write_locks[fd]);
     s_uart_tx_func[fd] = uart_tx_char;
     s_uart_rx_func[fd] = uart_rx_char;
-    _lock_release_recursive(&s_uart_locks[fd]);
+    _lock_release_recursive(&s_uart_write_locks[fd]);
+    _lock_release_recursive(&s_uart_read_locks[fd]);
 }
 
 void esp_vfs_dev_uart_use_driver(int fd)
 {
-    _lock_acquire_recursive(&s_uart_locks[fd]);
+    _lock_acquire_recursive(&s_uart_read_locks[fd]);
+    _lock_acquire_recursive(&s_uart_write_locks[fd]);
     s_uart_tx_func[fd] = uart_tx_char_via_driver;
     s_uart_rx_func[fd] = uart_rx_char_via_driver;
-    _lock_release_recursive(&s_uart_locks[fd]);
+    _lock_release_recursive(&s_uart_write_locks[fd]);
+    _lock_release_recursive(&s_uart_read_locks[fd]);
 }
