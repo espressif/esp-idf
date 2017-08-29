@@ -137,14 +137,12 @@ uint32_t esp_clk_slowclk_cal_get()
     return REG_READ(RTC_SLOW_CLK_CAL_REG);
 }
 
-void esp_setup_time_syscalls()
+void esp_set_time_from_rtc()
 {
-#if defined( WITH_FRC1 )
-#if defined( WITH_RTC )
+#if defined( WITH_FRC1 ) && defined( WITH_RTC )
     // initialize time from RTC clock
     s_microseconds_offset = get_rtc_time_us() - esp_timer_get_time();
-#endif //WITH_RTC
-#endif // WITH_FRC1
+#endif // WITH_FRC1 && WITH_RTC
 }
 
 clock_t IRAM_ATTR _times_r(struct _reent *r, struct tms *ptms)

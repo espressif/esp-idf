@@ -248,7 +248,7 @@ esp_err_t esp_light_sleep_start()
 
     // At this point, if FRC1 is used for timekeeping, time will be lagging behind.
     // This will update the microsecond count based on RTC timer.
-    esp_setup_time_syscalls();
+    esp_set_time_from_rtc();
 
     // However, we do not advance RTOS ticks here; doing so would be rather messy,
     // as ticks can only be advanced on CPU0.

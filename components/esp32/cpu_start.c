@@ -268,7 +268,7 @@ void start_cpu0_default(void)
     _GLOBAL_REENT->_stderr = (FILE*) &__sf_fake_stderr;
 #endif
     esp_timer_init();
-    esp_setup_time_syscalls();
+    esp_set_time_from_rtc();
 #if CONFIG_ESP32_APPTRACE_ENABLE
     esp_err_t err = esp_apptrace_init();
     if (err != ESP_OK) {
