@@ -604,6 +604,18 @@ config ESP32_XTAL_FREQ
     default 40 if ESP32_XTAL_FREQ_40
     default 26 if ESP32_XTAL_FREQ_26
 
+config DISABLE_BASIC_ROM_CONSOLE
+    bool "Permanently disable BASIC ROM Console"
+    default n
+    help
+        If set, the first time the app boots it will disable the BASIC ROM Console
+        permanently (by burning an efuse).
+
+        Otherwise, the BASIC ROM Console starts on reset if no valid bootloader is
+        read from the flash.
+
+        (Enabling secure boot also disables the BASIC ROM Console by default.)
+
 config NO_BLOBS
     bool "No Binary Blobs"
     depends on !BT_ENABLED
@@ -624,7 +636,7 @@ config ESP_TIMER_PROFILING
 		used for timer storage, and should only be used for debugging/testing
 		purposes.
 
-endmenu
+endmenu  # ESP32-Specific
 
 menu Wi-Fi
 
@@ -748,10 +760,10 @@ config ESP32_WIFI_NVS_ENABLED
     help
         Select this option to enable WiFi NVS flash
 
-endmenu
+endmenu  # Wi-Fi
 
 menu Phy
-	
+
 config ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
     bool "Do phy calibration and store calibration data in NVS"
     default y
@@ -790,4 +802,4 @@ config ESP32_PHY_MAX_TX_POWER
 	int
 	default ESP32_PHY_MAX_WIFI_TX_POWER
 
-endmenu
+endmenu  # PHY

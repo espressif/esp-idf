@@ -168,12 +168,17 @@ menu "Potentially insecure options"
 
 config SECURE_BOOT_ALLOW_ROM_BASIC
        bool "Leave ROM BASIC Interpreter available on reset"
-       depends on SECURE_BOOT_INSECURE
+       depends on SECURE_BOOT_INSECURE || FLASH_ENCRYPTION_INSECURE
        default N
        help
-          If not set (default), bootloader permanently disables ROM BASIC (on UART console) as a fallback if the bootloader image becomes invalid. This happens on first boot.
+          By default, the BASIC ROM Console starts on reset if no valid bootloader is
+          read from the flash.
 
-          Only set this option in testing environments.
+          When either flash encryption or secure boot are enabled, the default is to
+          disable this BASIC fallback mode permanently via efuse.
+
+          If this option is set, this efuse is not burned and the BASIC ROM Console may
+          remain accessible.  Only set this option in testing environments.
 
 config SECURE_BOOT_ALLOW_JTAG
        bool "Allow JTAG Debugging"
