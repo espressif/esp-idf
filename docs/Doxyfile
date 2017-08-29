@@ -75,6 +75,11 @@ INPUT = \
     ../components/driver/include/driver/touch_pad.h \
     ../components/driver/include/driver/uart.h \
     ../components/esp_adc_cal/include/esp_adc_cal.h \
+    ../components/soc/esp32/include/soc/adc_channel.h \
+    ../components/soc/esp32/include/soc/dac_channel.h \
+    ../components/soc/esp32/include/soc/touch_channel.h \
+    ../components/soc/esp32/include/soc/uart_channel.h \
+    ../components/soc/esp32/include/soc/rtc_gpio_channel.h \
     ##
     ## Protocols - API Reference
     ##
