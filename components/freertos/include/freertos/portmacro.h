@@ -121,6 +121,7 @@ typedef unsigned portBASE_TYPE	UBaseType_t;
 #include "portbenchmark.h"
 
 #include "sdkconfig.h"
+#include "esp_attr.h"
 
 #define portFIRST_TASK_HOOK CONFIG_FREERTOS_BREAK_ON_SCHEDULER_START_JTAG
 
