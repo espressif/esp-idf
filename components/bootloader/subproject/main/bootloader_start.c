@@ -262,8 +262,8 @@ static esp_partition_pos_t index_to_partition(const bootloader_state_t *bs, int 
         return bs->test;
     }
 
-    if (index >= 0 && index < MAX_OTA_SLOTS) {
-        return bs->ota[index % bs->app_count];
+    if (index >= 0 && index < MAX_OTA_SLOTS && index < bs->app_count) {
+        return bs->ota[index];
     }
 
     esp_partition_pos_t invalid = { 0 };
@@ -272,15 +272,16 @@ static esp_partition_pos_t index_to_partition(const bootloader_state_t *bs, int 
 
 static void log_invalid_app_partition(int index)
 {
+    const char *not_bootable = " is not bootable"; /* save a few string literal bytes */
     switch(index) {
     case FACTORY_INDEX:
-        ESP_LOGE(TAG, "Factory app partition is not bootable");
+        ESP_LOGE(TAG, "Factory app partition%s", not_bootable);
         break;
     case TEST_APP_INDEX:
-        ESP_LOGE(TAG, "Factory test app partition is not bootable");
+        ESP_LOGE(TAG, "Factory test app partition%s", not_bootable);
         break;
     default:
-        ESP_LOGE(TAG, "OTA app partition slot %d is not bootable", index);
+        ESP_LOGE(TAG, "OTA app partition slot %d%s", index, not_bootable);
         break;
     }
 }
@@ -367,6 +368,8 @@ static bool try_load_partition(const esp_partition_pos_t *partition, esp_image_m
     return false;
 }
 
+#define TRY_LOG_FORMAT "Trying partition index %d offs 0x%x size 0x%x"
+
 /* Load the app for booting. Start from partition 'start_index', if not bootable then work backwards to FACTORY_INDEX
  * (ie try any OTA slots in descending order and then the factory partition).
  *
@@ -382,29 +385,29 @@ static bool load_boot_image(const bootloader_state_t *bs, int start_index, esp_i
     esp_partition_pos_t part;
 
     /* work backwards from start_index, down to the factory app */
-    do {
-        ESP_LOGD(TAG, "Trying partition index %d...", index);
+    for(index = start_index; index >= FACTORY_INDEX; index--) {
         part = index_to_partition(bs, index);
-        ESP_LOGD(TAG, "part offs 0x%x size 0x%x", part.offset, part.size);
-        if (try_load_partition(&part, result)) {
-            return true;
+        if (part.size == 0) {
+            continue;
         }
-        if (part.size > 0) {
-            log_invalid_app_partition(index);
-        }
-        index--;
-    } while(index >= FACTORY_INDEX);
-
-    /* failing that work forwards from start_index, try valid OTA slots */
-    index = start_index + 1;
-    while (index < bs->app_count) {
-        ESP_LOGD(TAG, "Trying partition index %d...", index);
-        part = index_to_partition(bs, index);
+        ESP_LOGD(TAG, TRY_LOG_FORMAT, index, part.offset, part.size);
         if (try_load_partition(&part, result)) {
             return true;
         }
         log_invalid_app_partition(index);
-        index++;
+    }
+
+    /* failing that work forwards from start_index, try valid OTA slots */
+    for(index = start_index + 1; index < bs->app_count; index++) {
+        part = index_to_partition(bs, index);
+        if (part.size == 0) {
+            continue;
+        }
+        ESP_LOGD(TAG, TRY_LOG_FORMAT, index, part.offset, part.size);
+        if (try_load_partition(&part, result)) {
+            return true;
+        }
+        log_invalid_app_partition(index);
     }
 
     if (try_load_partition(&bs->test, result)) {
