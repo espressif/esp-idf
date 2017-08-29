@@ -197,7 +197,7 @@ BaseType_t xPortInIsrContext();
 #endif
 
 /* Multi-core: get current core ID */
-static inline uint32_t xPortGetCoreID() {
+static inline uint32_t IRAM_ATTR xPortGetCoreID() {
     int id;
     asm volatile(
         "rsr.prid %0\n"
