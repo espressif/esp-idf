@@ -4,7 +4,7 @@ Setup Windows Toolchain from Scratch
 
 Setting up the environment gives you some more control over the process, and also provides the information for advanced users to customize the install. The :doc:`pre-built environment <windows-setup>`, addressed to less experienced users, has been prepared by following these steps. 
 
-To quickly setup the toolchain in standard way, using prebuild environment, proceed to section :doc:`windows-setup`.
+To quickly setup the toolchain in standard way, using a prebuilt environment, proceed to section :doc:`windows-setup`.
 
 
 .. _configure-windows-toolchain-from-scratch:

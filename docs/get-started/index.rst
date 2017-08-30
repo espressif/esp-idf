@@ -63,21 +63,12 @@ If you have one of ESP32 development boards listed below, click on provided link
 If you have different board, move to sections below.
 
 
-.. _get-started-setup-toochain:
+.. _get-started-setup-toolchain:
 
 Setup Toolchain
 ===============
 
-Depending on your experience and preferences, you may follow standard installation process or customize your environment. Instructions immediately below are for standard installation. To set up the system your own way go to section :ref:`get-started-customized-setup`.
-
-
-.. _get-started-standard-setup:
-
-Standard Setup of Toolchain
----------------------------
-
-The quickest way to start development with ESP32 is by installing prebuild toolchain. Pick up your O/S below and follow provided instructions.
-
+The quickest way to start development with ESP32 is by installing a prebuilt toolchain. Pick up your OS below and follow provided instructions. 
 
 .. toctree::
     :hidden:
@@ -107,36 +98,11 @@ The quickest way to start development with ESP32 is by installing prebuild toolc
 
 .. note::
 
-    We are using ``~/esp`` directory to install prebuild toolchain, ESP-IDF and sample applications. You can use different directory, but need to adjust respective commands.
+    We are using ``~/esp`` directory to install the prebuilt toolchain, ESP-IDF and sample applications. You can use different directory, but need to adjust respective commands.
+
+Depending on your experience and preferences, instead of using a prebuilt toolchain, you may want to customize your environment. To set up the system your own way go to section :ref:`get-started-customized-setup`.
 
 Once you are done with setting up the toolchain then go to section :ref:`get-started-get-esp-idf`.
-
-
-.. highlight:: bash
-
-.. _get-started-customized-setup:
-
-Customized Setup of Toolchain
------------------------------
-
-Instead of downloading binary toolchain from Espressif website (:ref:`get-started-standard-setup` above) you may build the toolchain yourself.
-
-If you can't think of a reason why you need to build it yourself, then probably it's better to stick with the binary version. However, here are some of the reasons why you might want to compile it from source:
-
-- if you want to customize toolchain build configuration
-- if you want to use a different GCC version (such as 4.8.5)
-- if you want to hack gcc or newlib or libstdc++
-- if you are curious and/or have time to spare
-- if you don't trust binaries downloaded from the Internet
-
-In any case, here are the instructions to compile the toolchain yourself.
-
-.. toctree::
-    :maxdepth: 1
-
-    windows-setup-scratch
-    linux-setup-scratch
-    macos-setup-scratch
 
 
 .. _get-started-get-esp-idf:
@@ -144,7 +110,9 @@ In any case, here are the instructions to compile the toolchain yourself.
 Get ESP-IDF
 ===========
 
-Once you have the toolchain (that contains programs to compile and build the application) installed, you also need ESP32 specific API / libraries. They are provided by Espressif in `ESP-IDF repository <https://github.com/espressif/esp-idf>`_. To get it, open terminal, navigate to the directory you want to put ESP-IDF, and clone it using ``git clone`` command::
+.. highlight:: bash
+
+Besides the toolchain (that contains programs to compile and build the application), you also need ESP32 specific API / libraries. They are provided by Espressif in `ESP-IDF repository <https://github.com/espressif/esp-idf>`_. To get it, open terminal, navigate to the directory you want to put ESP-IDF, and clone it using ``git clone`` command::
 
     cd ~/esp
     git clone --recursive https://github.com/espressif/esp-idf.git
@@ -283,6 +251,7 @@ If there are no issues, at the end of build process, you should see messages des
 
 If you'd like to use the Eclipse IDE instead of running ``make``, check out the :doc:`Eclipse guide <eclipse-setup>`.
 
+
 .. _get-started-build-monitor:
 
 Monitor
@@ -324,4 +293,4 @@ Related Documents
     make-project
     eclipse-setup
     idf-monitor
-
+    toolchain-setup-scratch
