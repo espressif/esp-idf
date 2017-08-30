@@ -322,3 +322,50 @@ TEST_CASE("esp_timer for very short intervals", "[esp_timer]")
 
     vSemaphoreDelete(semaphore);
 }
+
+
+TEST_CASE("esp_timer_get_time call takes less than 1us", "[esp_timer]")
+{
+    uint64_t begin = esp_timer_get_time();
+    volatile uint64_t end;
+    const int iter_count = 10000;
+    for (int i = 0; i < iter_count; ++i) {
+        end = esp_timer_get_time();
+    }
+    int ns_per_call = (int) ((end - begin) * 1000 / iter_count);
+    printf("esp_timer_get_time: %dns per call\n", ns_per_call);
+    TEST_ASSERT(ns_per_call < 1000);
+}
+
+/* This test runs for about 10 minutes and is disabled in CI */
+TEST_CASE("esp_timer_get_time returns monotonic values", "[esp_timer][ignore]")
+{
+    void timer_test_task(void* arg) {
+        uint64_t last = esp_timer_get_time();
+
+        const int iter_count = 1000000000;
+        for (int i = 0; i < iter_count; ++i) {
+            uint64_t now = esp_timer_get_time();
+            if (now < last || now - last > 100) {
+                printf("core_id:%d now: %lld last:%lld\n", xPortGetCoreID(), now, last);
+                fflush(stdout);
+                abort();
+            }
+            last = now;
+        }
+
+        xSemaphoreGive((SemaphoreHandle_t) arg);
+        vTaskDelete(NULL);
+    }
+
+    SemaphoreHandle_t done_1 = xSemaphoreCreateBinary();
+    SemaphoreHandle_t done_2 = xSemaphoreCreateBinary();
+
+    xTaskCreatePinnedToCore(&timer_test_task, "t1", 4096, (void*) done_1, 6, NULL, 0);
+    xTaskCreatePinnedToCore(&timer_test_task, "t2", 4096, (void*) done_2, 6, NULL, 1);
+
+    TEST_ASSERT_TRUE( xSemaphoreTake(done_1, portMAX_DELAY) );
+    TEST_ASSERT_TRUE( xSemaphoreTake(done_2, portMAX_DELAY) );
+    vSemaphoreDelete(done_1);
+    vSemaphoreDelete(done_2);
+}
