@@ -31,7 +31,6 @@ typedef struct {
     int group;                 /*!< timer group */
     int idx;                   /*!< timer number */
     uint64_t counter_val;      /*!< timer counter value */
-    double time_sec;           /*!< calculated time from counter value */
 } timer_event_t;
 
 xQueueHandle timer_queue;
@@ -60,12 +59,13 @@ static void timer_example_evt_task(void *arg)
         printf("TG[%d] timer[%d] alarm evt\n", evt.group, evt.idx);
         printf("reg: ");
         print_u64(evt.counter_val);
-        printf("time: %.8f S\n", evt.time_sec);
+
+        double time = (double) evt.counter_val / (TIMER_BASE_CLK / TIMERG0.hw_timer[evt.idx].config.divider);
+        printf("time: %.8f S\n", time);
         /*Read timer value from task*/
         printf("======TASK TIME======\n");
         uint64_t timer_val;
         timer_get_counter_value(evt.group, evt.idx, &timer_val);
-        double time;
         timer_get_counter_time_sec(evt.group, evt.idx, &time);
         printf("TG[%d] timer[%d] alarm evt\n", evt.group, evt.idx);
         printf("reg: ");
@@ -92,14 +92,12 @@ void IRAM_ATTR timer_group0_isr(void *para)
         TIMERG0.int_clr_timers.t0 = 1;
         uint64_t timer_val = ((uint64_t) TIMERG0.hw_timer[timer_idx].cnt_high) << 32
             | TIMERG0.hw_timer[timer_idx].cnt_low;
-        double time = (double) timer_val / (TIMER_BASE_CLK / TIMERG0.hw_timer[timer_idx].config.divider);
 
         /*Post an event to out example task*/
         evt.type = TEST_WITHOUT_RELOAD;
         evt.group = 0;
         evt.idx = timer_idx;
         evt.counter_val = timer_val;
-        evt.time_sec = time;
         xQueueSendFromISR(timer_queue, &evt, NULL);
 
         /*For a timer that will not reload, we need to set the next alarm value each time. */
@@ -119,13 +117,11 @@ void IRAM_ATTR timer_group0_isr(void *para)
         TIMERG0.int_clr_timers.t1 = 1;
         uint64_t timer_val = ((uint64_t) TIMERG0.hw_timer[timer_idx].cnt_high) << 32
             | TIMERG0.hw_timer[timer_idx].cnt_low;
-        double time = (double) timer_val / (TIMER_BASE_CLK / TIMERG0.hw_timer[timer_idx].config.divider);
         /*Post an event to out example task*/
         evt.type = TEST_WITH_RELOAD;
         evt.group = 0;
         evt.idx = timer_idx;
         evt.counter_val = timer_val;
-        evt.time_sec = time;
         xQueueSendFromISR(timer_queue, &evt, NULL);
         /*For a auto-reload timer, we still need to set alarm_en bit if we want to enable alarm again.*/
         TIMERG0.hw_timer[timer_idx].config.alarm_en = 1;
