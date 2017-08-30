@@ -66,11 +66,11 @@ TEST_CASE("esp_timer produces correct delay", "[esp_timer]")
 {
     void timer_func(void* arg)
     {
-        uint64_t* p_end = (uint64_t*) arg;
+        int64_t* p_end = (int64_t*) arg;
         *p_end = ref_clock_get();
     }
 
-    uint64_t t_end;
+    int64_t t_end;
     esp_timer_handle_t timer1;
     esp_timer_create_args_t args = {
             .callback = &timer_func,
@@ -85,7 +85,7 @@ TEST_CASE("esp_timer produces correct delay", "[esp_timer]")
     ref_clock_init();
     for (size_t i = 0; i < delays_count; ++i) {
         t_end = 0;
-        uint64_t t_start = ref_clock_get();
+        int64_t t_start = ref_clock_get();
 
         TEST_ESP_OK(esp_timer_start_once(timer1, delays_ms[i] * 1000));
 
@@ -112,13 +112,13 @@ TEST_CASE("periodic ets_timer produces correct delays", "[esp_timer]")
         esp_timer_handle_t timer;
         size_t cur_interval;
         int intervals[NUM_INTERVALS];
-        uint64_t t_start;
+        int64_t t_start;
     } test_args_t;
 
     void timer_func(void* arg)
     {
         test_args_t* p_args = (test_args_t*) arg;
-        uint64_t t_end = ref_clock_get();
+        int64_t t_end = ref_clock_get();
         int32_t ms_diff = (t_end - p_args->t_start) / 1000;
         printf("timer #%d %dms\n", p_args->cur_interval, ms_diff);
         p_args->intervals[p_args->cur_interval++] = ms_diff;
@@ -175,7 +175,7 @@ TEST_CASE("multiple timers are ordered correctly", "[esp_timer]")
         test_common_t* common;
         bool pass;
         SemaphoreHandle_t done;
-        uint64_t t_start;
+        int64_t t_start;
     } test_args_t;
 
     void timer_func(void* arg)
@@ -214,7 +214,7 @@ TEST_CASE("multiple timers are ordered correctly", "[esp_timer]")
     SemaphoreHandle_t done = xSemaphoreCreateCounting(3, 0);
 
     ref_clock_init();
-    uint64_t now = ref_clock_get();
+    int64_t now = ref_clock_get();
 
     test_args_t args1 = {
             .timer_index = 1,
@@ -324,8 +324,8 @@ TEST_CASE("esp_timer for very short intervals", "[esp_timer]")
 
 TEST_CASE("esp_timer_get_time call takes less than 1us", "[esp_timer]")
 {
-    uint64_t begin = esp_timer_get_time();
-    volatile uint64_t end;
+    int64_t begin = esp_timer_get_time();
+    volatile int64_t end;
     const int iter_count = 10000;
     for (int i = 0; i < iter_count; ++i) {
         end = esp_timer_get_time();
@@ -345,9 +345,9 @@ TEST_CASE("esp_timer_get_time returns monotonic values", "[esp_timer][ignore]")
 
         const int iter_count = 1000000000;
         for (int i = 0; i < iter_count; ++i) {
-            uint64_t now = esp_timer_get_time();
-            uint64_t ref_now = ref_clock_get();
-            int64_t diff = (int64_t) (now - ref_now) - delta;
+            int64_t now = esp_timer_get_time();
+            int64_t ref_now = ref_clock_get();
+            int64_t diff = now - (ref_now + delta);
             /* Allow some difference due to rtos tick interrupting task between
              * getting 'now' and 'ref_now'.
              */
