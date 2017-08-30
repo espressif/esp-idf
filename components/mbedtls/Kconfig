@@ -31,26 +31,18 @@ config MBEDTLS_DEBUG
 	   at runtime in order to enable mbedTLS debug output via the ESP
 	   log mechanism.
 
-config MBEDTLS_UNSAFE_ACCELERATION
-   bool "Allow buggy hardware acceleration features"
-   depends on !FREERTOS_UNICORE
-   default n
-   help
-       A bug currently prevents dual cores & crypto hardware acceleration from being used together.
-
-       Enable this option to allow hardware acceleration anyhow (note that invalid results or crashes may occur.)
-
 config MBEDTLS_HARDWARE_AES
    bool "Enable hardware AES acceleration"
-   depends on MBEDTLS_UNSAFE_ACCELERATION || FREERTOS_UNICORE
    default y
    help
        Enable hardware accelerated AES encryption & decryption.
 
+       Note that if the ESP32 CPU is running at 240MHz, hardware AES does not
+       offer any speed boost over software AES.
+
 config MBEDTLS_HARDWARE_MPI
    bool "Enable hardware MPI (bignum) acceleration"
-   depends on MBEDTLS_UNSAFE_ACCELERATION || FREERTOS_UNICORE
-   default y
+   default n
    help
        Enable hardware accelerated multiple precision integer operations.
 
@@ -62,7 +54,7 @@ config MBEDTLS_HARDWARE_MPI
 config MBEDTLS_MPI_USE_INTERRUPT
     bool "Use interrupt for MPI operations"
     depends on MBEDTLS_HARDWARE_MPI
-    default y
+    default n
     help
         Use an interrupt to coordinate MPI operations.
 
@@ -71,16 +63,18 @@ config MBEDTLS_MPI_USE_INTERRUPT
 
 config MBEDTLS_HARDWARE_SHA
    bool "Enable hardware SHA acceleration"
-   depends on MBEDTLS_UNSAFE_ACCELERATION || FREERTOS_UNICORE
-   default y
+   default n
    help
        Enable hardware accelerated SHA1, SHA256, SHA384 & SHA512 in mbedTLS.
 
        Due to a hardware limitation, hardware acceleration is only
        guaranteed if SHA digests are calculated one at a time. If more
-       than one SHA digest is calculated at the same time, only will
+       than one SHA digest is calculated at the same time, one will
        be calculated fully in hardware and the rest will be calculated
-       (at least partially calculated) in software.
+       (at least partially calculated) in software. This happens automatically.
+
+       SHA hardware acceleration is faster than software in some situations but
+       slower in others. You should benchmark to find the best setting for you.
 
 config MBEDTLS_HAVE_TIME
    bool "Enable mbedtls time"
