@@ -131,7 +131,7 @@ void esp_task_wdt_feed() {
         TIMERG0.wdt_feed=1;
         TIMERG0.wdt_wprotect=0;
         //Reset fed_watchdog status
-        for (wdttask=wdt_task_list; wdttask->next!=NULL; wdttask=wdttask->next) wdttask->fed_watchdog=false;
+        for (wdttask=wdt_task_list; wdttask!=NULL; wdttask=wdttask->next) wdttask->fed_watchdog=false;
     }
     portEXIT_CRITICAL(&taskwdt_spinlock);
 }
