@@ -239,6 +239,7 @@ void start_cpu0_default(void)
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
 #endif
     esp_clk_init();
+    esp_perip_clk_init();
     intr_matrix_clear();
 #ifndef CONFIG_CONSOLE_UART_NONE
     uart_div_modify(CONFIG_CONSOLE_UART_NUM, (rtc_clk_apb_freq_get() << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
