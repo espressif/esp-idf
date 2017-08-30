@@ -20,7 +20,7 @@ struct timeval {
 };
 
 /* BSD time macros used by RTEMS code */
-#if defined (__rtems__) || defined (__CYGWIN__)
+#if defined (__rtems__) || defined (__CYGWIN__) || defined(__XTENSA__)
 
 /* Convenience macros for operations on timevals.
    NOTE: `timercmp' does not work for >= or <=.  */
