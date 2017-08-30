@@ -945,7 +945,7 @@ esp_err_t adc1_config_width(adc_bits_width_t width_bit)
     return ESP_OK;
 }
 
-int adc1_get_voltage(adc1_channel_t channel)
+int adc1_get_raw(adc1_channel_t channel)
 {
     uint16_t adc_value;
 
@@ -975,6 +975,11 @@ int adc1_get_voltage(adc1_channel_t channel)
     return adc_value;
 }
 
+int adc1_get_voltage(adc1_channel_t channel)    //Deprecated. Use adc1_get_raw() instead
+{
+    return adc1_get_raw(channel);
+}
+
 void adc1_ulp_enable(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
@@ -987,6 +992,43 @@ void adc1_ulp_enable(void)
     SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT1_REG, SENS_SAR_AMP_WAIT2, 0x1, SENS_SAR_AMP_WAIT2_S);
     SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT2_REG, SENS_SAR_AMP_WAIT3, 0x1, SENS_SAR_AMP_WAIT3_S);
     portEXIT_CRITICAL(&rtc_spinlock);
+}
+
+esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)
+{
+    int channel;
+    if(gpio == GPIO_NUM_25){
+        channel = 8;    //Channel 8 bit
+    }else if (gpio == GPIO_NUM_26){
+        channel = 9;    //Channel 9 bit
+    }else if (gpio == GPIO_NUM_27){
+        channel = 7;    //Channel 7 bit
+    }else{
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    //Configure RTC gpio
+    rtc_gpio_init(gpio);
+    rtc_gpio_output_disable(gpio);
+    rtc_gpio_input_disable(gpio);
+    rtc_gpio_pullup_dis(gpio);
+    rtc_gpio_pulldown_dis(gpio);
+
+    SET_PERI_REG_BITS(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_DBG_ATTEN, 0, RTC_CNTL_DBG_ATTEN_S);     //Check DBG effect outside sleep mode
+    //set dtest (MUX_SEL : 0 -> RTC; 1-> vdd_sar2)
+    SET_PERI_REG_BITS(RTC_CNTL_TEST_MUX_REG, RTC_CNTL_DTEST_RTC, 1, RTC_CNTL_DTEST_RTC_S);      //Config test mux to route v_ref to ADC2 Channels
+    //set ent
+    SET_PERI_REG_MASK(RTC_CNTL_TEST_MUX_REG, RTC_CNTL_ENT_RTC_M);
+    //set sar2_en_test
+    SET_PERI_REG_MASK(SENS_SAR_START_FORCE_REG, SENS_SAR2_EN_TEST_M);
+    //force fsm
+    SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT2_REG, SENS_FORCE_XPD_SAR, 3, SENS_FORCE_XPD_SAR_S);    //Select power source of ADC
+    //set sar2 en force
+    SET_PERI_REG_MASK(SENS_SAR_MEAS_START2_REG, SENS_SAR2_EN_PAD_FORCE_M);      //Pad bitmap controlled by SW
+    //set en_pad for channels 7,8,9 (bits 0x380)
+    SET_PERI_REG_BITS(SENS_SAR_MEAS_START2_REG, SENS_SAR2_EN_PAD, 1<<channel, SENS_SAR2_EN_PAD_S);
+
+    return ESP_OK;
 }
 
 /*---------------------------------------------------------------
@@ -1141,11 +1183,11 @@ static int hall_sensor_get_value()    //hall sensor without LNA
     SET_PERI_REG_MASK(RTC_IO_HALL_SENS_REG, RTC_IO_XPD_HALL);      // xpd hall
     SET_PERI_REG_MASK(SENS_SAR_TOUCH_CTRL1_REG, SENS_HALL_PHASE_FORCE_M);   // phase force
     CLEAR_PERI_REG_MASK(RTC_IO_HALL_SENS_REG, RTC_IO_HALL_PHASE);      // hall phase
-    Sens_Vp0 = adc1_get_voltage(ADC1_CHANNEL_0);
-    Sens_Vn0 = adc1_get_voltage(ADC1_CHANNEL_3);
+    Sens_Vp0 = adc1_get_raw(ADC1_CHANNEL_0);
+    Sens_Vn0 = adc1_get_raw(ADC1_CHANNEL_3);
     SET_PERI_REG_MASK(RTC_IO_HALL_SENS_REG, RTC_IO_HALL_PHASE);
-    Sens_Vp1 = adc1_get_voltage(ADC1_CHANNEL_0);
-    Sens_Vn1 = adc1_get_voltage(ADC1_CHANNEL_3);
+    Sens_Vp1 = adc1_get_raw(ADC1_CHANNEL_0);
+    Sens_Vn1 = adc1_get_raw(ADC1_CHANNEL_3);
     SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT2_REG, SENS_FORCE_XPD_SAR, 0, SENS_FORCE_XPD_SAR_S);
     CLEAR_PERI_REG_MASK(SENS_SAR_TOUCH_CTRL1_REG, SENS_XPD_HALL_FORCE);
     CLEAR_PERI_REG_MASK(SENS_SAR_TOUCH_CTRL1_REG, SENS_HALL_PHASE_FORCE);
