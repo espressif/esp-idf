@@ -616,7 +616,6 @@ static void uart_rx_intr_handler_default(void *param)
                 uart_reg->int_clr.rxfifo_tout = 1;
                 uart_reg->int_clr.rxfifo_full = 1;
                 UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
-                uart_event.type = UART_DATA;
                 uart_event.size = rx_fifo_len;
                 //If we fail to push data to ring buffer, we will have to stash the data, and send next time.
                 //Mainly for applications that uses flow control or small ring buffer.

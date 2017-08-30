@@ -327,7 +327,7 @@ uint64_t esp_deep_sleep_get_ext1_wakeup_status()
         if ((status & BIT(rtc_pin)) == 0) {
             continue;
         }
-        gpio_mask |= BIT(gpio);
+        gpio_mask |= 1ULL << gpio;
     }
     return gpio_mask;
 }

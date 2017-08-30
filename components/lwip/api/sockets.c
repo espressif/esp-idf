@@ -1501,6 +1501,7 @@ lwip_socket(int domain, int type, int protocol)
   i = alloc_socket(conn, 0);
 
   if (i == -1) {
+    LWIP_DEBUGF(SOCKETS_DEBUG, ("-1 / ENFILE (could not allocate socket)\n"));
     netconn_delete(conn);
     set_errno(ENFILE);
     return -1;

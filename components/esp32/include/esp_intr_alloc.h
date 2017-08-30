@@ -104,7 +104,7 @@ typedef intr_handle_data_t* intr_handle_t ;
 esp_err_t esp_intr_mark_shared(int intno, int cpu, bool is_in_iram);
 
 /**
- * @brief Reserve an interrupt to be used outside of this framewoek
+ * @brief Reserve an interrupt to be used outside of this framework
  * 
  * This will mark a certain interrupt on the specified CPU as
  * reserved, not to be allocated for any reason.
