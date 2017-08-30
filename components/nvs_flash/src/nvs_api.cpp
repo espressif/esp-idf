@@ -400,7 +400,10 @@ static esp_err_t nvs_get_str_or_blob(nvs_handle handle, nvs::ItemType type, cons
     } else if (*length < dataSize) {
         *length = dataSize;
         return ESP_ERR_NVS_INVALID_LENGTH;
+    } else if (*length > dataSize) {
+	*length = dataSize;
     }
+    
 
     return entry.mStoragePtr->readItem(entry.mNsIndex, type, key, out_value, dataSize);
 }
