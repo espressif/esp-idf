@@ -1755,6 +1755,7 @@ esp_err_t mdns_service_add(mdns_server_t * server, const char * service, const c
 
     item = (mdns_srv_item_t *)malloc(sizeof(mdns_srv_item_t));
     if (!item) {
+        free(s);
         return ESP_ERR_NO_MEM;
     }
 
