@@ -537,7 +537,7 @@ esp_err_t i2s_set_dac_mode(i2s_dac_mode_t dac_mode)
     I2S_CHECK((dac_mode < I2S_DAC_CHANNEL_MAX), "i2s dac mode error", ESP_ERR_INVALID_ARG);
     if(dac_mode == I2S_DAC_CHANNEL_DISABLE) {
         dac_output_disable(DAC_CHANNEL_1);
-        dac_output_disable(DAC_CHANNEL_1);
+        dac_output_disable(DAC_CHANNEL_2);
         dac_i2s_disable();
     } else {
         dac_i2s_enable();
