@@ -3,9 +3,11 @@
 #include <mutex>
 #include "unity.h"
 
-std::shared_ptr<int> global_sp;
-std::mutex           mtx;
-std::recursive_mutex recur_mtx;
+#if __GTHREADS && __GTHREADS_CXX0X
+
+static std::shared_ptr<int> global_sp;
+static std::mutex           mtx;
+static std::recursive_mutex recur_mtx;
 
 static void thread_do_nothing() {}
 
@@ -17,20 +19,20 @@ static void thread_main()
     while (i < 3) {
         int old_val, new_val;
 
-	    // mux test
-	    mtx.lock();
+        // mux test
+        mtx.lock();
         old_val = *global_sp;
-		std::this_thread::yield();
-	    (*global_sp)++;
+        std::this_thread::yield();
+        (*global_sp)++;
         std::this_thread::yield();
         new_val = *global_sp;
-	    mtx.unlock();
+        mtx.unlock();
         std::cout << "thread " << std::hex << std::this_thread::get_id() << ": " << i++ << " val= " << *global_sp << std::endl;
         TEST_ASSERT_TRUE(new_val == old_val + 1);
 
         // sleep_for test
         std::chrono::milliseconds dur(300);
-		std::this_thread::sleep_for(dur);
+        std::this_thread::sleep_for(dur);
 
         // recursive mux test
         recur_mtx.lock();
@@ -46,11 +48,11 @@ static void thread_main()
         TEST_ASSERT_TRUE(new_val == old_val + 1);
 
         // sleep_until test
-		using std::chrono::system_clock;
-  		std::time_t tt = system_clock::to_time_t(system_clock::now());
-	    struct std::tm *ptm = std::localtime(&tt);
-		ptm->tm_sec++;
-		std::this_thread::sleep_until(system_clock::from_time_t (mktime(ptm)));
+        using std::chrono::system_clock;
+        std::time_t tt = system_clock::to_time_t(system_clock::now());
+        struct std::tm *ptm = std::localtime(&tt);
+        ptm->tm_sec++;
+        std::this_thread::sleep_until(system_clock::from_time_t (mktime(ptm)));
     }
 }
 
@@ -69,11 +71,13 @@ TEST_CASE("pthread CXX", "[pthread]")
     std::thread t3(thread_main);
     std::thread t4(thread_main);
     if (t3.joinable()) {
-    	std::cout << "Join thread " << std::hex << t3.get_id() << std::endl;
-    	t3.join();
+        std::cout << "Join thread " << std::hex << t3.get_id() << std::endl;
+        t3.join();
     }
     if (t4.joinable()) {
-    	std::cout << "Join thread " << std::hex << t4.get_id() << std::endl;
-    	t4.join();
+        std::cout << "Join thread " << std::hex << t4.get_id() << std::endl;
+        t4.join();
     }
 }
+
+#endif
