@@ -169,7 +169,7 @@ esp_err_t uart_get_parity(uart_port_t uart_num, uart_parity_t* parity_mode)
 esp_err_t uart_set_baudrate(uart_port_t uart_num, uint32_t baud_rate)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
-    UART_CHECK((baud_rate < UART_BITRATE_MAX), "baud_rate error", ESP_FAIL);
+    UART_CHECK((baud_rate <= UART_BITRATE_MAX), "baud_rate error", ESP_FAIL);
     uint32_t clk_div = (((UART_CLK_FREQ) << 4) / baud_rate);
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
     UART[uart_num]->clk_div.div_int = clk_div >> 4;
@@ -439,6 +439,7 @@ esp_err_t uart_set_dtr(uart_port_t uart_num, int level)
 
 esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_config)
 {
+    esp_err_t r;
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     UART_CHECK((uart_config), "param null", ESP_FAIL);
     if(uart_num == UART_NUM_0) {
@@ -448,16 +449,18 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     } else if(uart_num == UART_NUM_2) {
         periph_module_enable(PERIPH_UART2_MODULE);
     }
-    uart_set_hw_flow_ctrl(uart_num, uart_config->flow_ctrl, uart_config->rx_flow_ctrl_thresh);
-    uart_set_baudrate(uart_num, uart_config->baud_rate);
+    r=uart_set_hw_flow_ctrl(uart_num, uart_config->flow_ctrl, uart_config->rx_flow_ctrl_thresh);
+    if (r!=ESP_OK) return r;
+    r=uart_set_baudrate(uart_num, uart_config->baud_rate);
+    if (r!=ESP_OK) return r;
 
     UART[uart_num]->conf0.val = (
         (uart_config->parity << UART_PARITY_S)
             | (uart_config->data_bits << UART_BIT_NUM_S)
             | ((uart_config->flow_ctrl & UART_HW_FLOWCTRL_CTS) ? UART_TX_FLOW_EN : 0x0)
             | UART_TICK_REF_ALWAYS_ON_M);
-    uart_set_stop_bits(uart_num, uart_config->stop_bits);
-    return ESP_OK;
+    r=uart_set_stop_bits(uart_num, uart_config->stop_bits);
+    return r;
 }
 
 esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_conf)
@@ -967,9 +970,12 @@ esp_err_t uart_flush(uart_port_t uart_num)
 
 esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_buffer_size, int queue_size, QueueHandle_t *uart_queue, int intr_alloc_flags)
 {
+    esp_err_t r;
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     UART_CHECK((rx_buffer_size > UART_FIFO_LEN), "uart rx buffer length error(>128)", ESP_FAIL);
     UART_CHECK((tx_buffer_size > UART_FIFO_LEN) || (tx_buffer_size == 0), "uart tx buffer length error(>128 or 0)", ESP_FAIL);
+    UART_CHECK((intr_alloc_flags & ESP_INTR_FLAG_IRAM) == 0, "ESP_INTR_FLAG_IRAM set in intr_alloc_flags", ESP_FAIL); /* uart_rx_intr_handler_default is not in IRAM */
+
     if(p_uart_obj[uart_num] == NULL) {
         p_uart_obj[uart_num] = (uart_obj_t*) malloc(sizeof(uart_obj_t));
         if(p_uart_obj[uart_num] == NULL) {
@@ -1017,9 +1023,8 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         return ESP_FAIL;
     }
 
-    assert((intr_alloc_flags & ESP_INTR_FLAG_IRAM) == 0); /* uart_rx_intr_handler_default is not in IRAM */
-
-    uart_isr_register(uart_num, uart_rx_intr_handler_default, p_uart_obj[uart_num], intr_alloc_flags, &p_uart_obj[uart_num]->intr_handle);
+    r=uart_isr_register(uart_num, uart_rx_intr_handler_default, p_uart_obj[uart_num], intr_alloc_flags, &p_uart_obj[uart_num]->intr_handle);
+    if (r!=ESP_OK) goto err;
     uart_intr_config_t uart_intr = {
         .intr_enable_mask = UART_RXFIFO_FULL_INT_ENA_M
                             | UART_RXFIFO_TOUT_INT_ENA_M
@@ -1031,8 +1036,13 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         .rx_timeout_thresh = UART_TOUT_THRESH_DEFAULT,
         .txfifo_empty_intr_thresh = UART_EMPTY_THRESH_DEFAULT
     };
-    uart_intr_config(uart_num, &uart_intr);
-    return ESP_OK;
+    r=uart_intr_config(uart_num, &uart_intr);
+    if (r!=ESP_OK) goto err;
+    return r;
+
+err:
+    uart_driver_delete(uart_num);
+    return r;
 }
 
 //Make sure no other tasks are still using UART before you call this function
