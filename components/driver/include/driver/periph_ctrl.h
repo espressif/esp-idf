@@ -44,6 +44,7 @@ typedef enum {
     PERIPH_SPI_MODULE,
     PERIPH_HSPI_MODULE,
     PERIPH_VSPI_MODULE,
+    PERIPH_SPI_DMA_MODULE,
 } periph_module_t;
 
 /**

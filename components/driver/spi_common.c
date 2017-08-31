@@ -150,8 +150,13 @@ static const spi_signal_conn_t io_signal[3] = {
     }
 };
 
+#define DMA_CHANNEL_ENABLED(dma_chan)    (BIT(dma_chan-1))
+
 //Periph 1 is 'claimed' by SPI flash code.
 static bool spi_periph_claimed[3] = {true, false, false};
+static uint8_t spi_dma_chan_enabled = 0;
+static portMUX_TYPE spi_dma_spinlock = portMUX_INITIALIZER_UNLOCKED;
+
 
 //Returns true if this peripheral is successfully claimed, false if otherwise.
 bool spicommon_periph_claim(spi_host_device_t host)
@@ -178,6 +183,39 @@ int spicommon_irqsource_for_host(spi_host_device_t host)
 spi_dev_t *spicommon_hw_for_host(spi_host_device_t host)
 {
     return io_signal[host].hw;
+}
+
+bool spicommon_dma_chan_claim (int dma_chan)
+{
+    bool ret = false;
+    assert( dma_chan == 1 || dma_chan == 2 );
+
+    portENTER_CRITICAL(&spi_dma_spinlock);
+    if ( !(spi_dma_chan_enabled & DMA_CHANNEL_ENABLED(dma_chan)) ) {
+        // get the channel only when it's not claimed yet.
+        spi_dma_chan_enabled |= DMA_CHANNEL_ENABLED(dma_chan);
+        ret = true;
+    }
+    periph_module_enable( PERIPH_SPI_DMA_MODULE );
+    portEXIT_CRITICAL(&spi_dma_spinlock);
+
+    return ret;
+}
+
+bool spicommon_dma_chan_free(int dma_chan)
+{
+    assert( dma_chan == 1 || dma_chan == 2 );
+    assert( spi_dma_chan_enabled & DMA_CHANNEL_ENABLED(dma_chan) );
+
+    portENTER_CRITICAL(&spi_dma_spinlock);
+    spi_dma_chan_enabled &= ~DMA_CHANNEL_ENABLED(dma_chan);
+    if ( spi_dma_chan_enabled == 0 ) {
+        //disable the DMA only when all the channels are freed.
+        periph_module_disable( PERIPH_SPI_DMA_MODULE );
+    }
+    portEXIT_CRITICAL(&spi_dma_spinlock);
+
+    return true;
 }
 
 /*
