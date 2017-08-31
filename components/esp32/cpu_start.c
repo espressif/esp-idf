@@ -94,6 +94,10 @@ extern volatile int port_xSchedulerRunning[2];
 
 static const char* TAG = "cpu_start";
 
+struct object { long placeholder[ 10 ]; };
+void __register_frame_info (const void *begin, struct object *ob);
+extern char __eh_frame[];
+
 /*
  * We arrive here after the bootloader finished loading the program from flash. The hardware is mostly uninitialized,
  * and the app CPU is in reset. We do have a stack, so we can do the initialization in C.
@@ -334,6 +338,9 @@ void start_cpu1_default(void)
 
 static void do_global_ctors(void)
 {
+    static struct object ob;
+    __register_frame_info( __eh_frame, &ob );
+
     void (**p)(void);
     for (p = &__init_array_end - 1; p >= &__init_array_start; --p) {
         (*p)();
