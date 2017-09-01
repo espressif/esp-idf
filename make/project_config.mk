@@ -69,9 +69,7 @@ endif
 # defconfig creates a default config, based on SDKCONFIG_DEFAULTS if present
 defconfig: $(KCONFIG_TOOL_DIR)/conf
 	$(summary) DEFCONFIG
-ifneq ("$(wildcard $(SDKCONFIG_DEFAULTS))","")
-	cat $(SDKCONFIG_DEFAULTS) >> $(SDKCONFIG)  # append defaults to sdkconfig, will override existing values
-endif
+	[ -f "$(SDKCONFIG_DEFAULTS)" ] && cat $(SDKCONFIG_DEFAULTS) >> $(SDKCONFIG) # append defaults to sdkconfig, will override existing values
 	$(call RunConf,conf --olddefconfig)
 
 # if neither defconfig or menuconfig are requested, use the GENCONFIG rule to
