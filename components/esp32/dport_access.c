@@ -184,7 +184,7 @@ void esp_dport_access_int_init(void)
     assert(res == pdTRUE);
 }
 
-void esp_dport_access_int_deinit(void)
+void esp_dport_access_int_pause(void)
 {
     portENTER_CRITICAL_ISR(&g_dport_mux);
     dport_core_state[0] = DPORT_CORE_STATE_IDLE;
@@ -193,3 +193,14 @@ void esp_dport_access_int_deinit(void)
 #endif
     portEXIT_CRITICAL_ISR(&g_dport_mux);
 }
+
+void esp_dport_access_int_resume(void)
+{
+    portENTER_CRITICAL_ISR(&g_dport_mux);
+    dport_core_state[0] = DPORT_CORE_STATE_RUNNING;
+#ifndef CONFIG_FREERTOS_UNICORE
+    dport_core_state[1] = DPORT_CORE_STATE_RUNNING;
+#endif
+    portEXIT_CRITICAL_ISR(&g_dport_mux);
+}
+

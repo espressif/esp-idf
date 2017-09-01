@@ -22,7 +22,7 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#include "esp_deep_sleep.h"
+#include "esp_sleep.h"
 
 #include "esp32/ulp.h"
 
@@ -120,7 +120,7 @@ TEST_CASE("ulp wakeup test", "[ulp][ignore]")
     size_t size = sizeof(program)/sizeof(ulp_insn_t);
     ulp_process_macros_and_load(0, program, &size);
     ulp_run(0);
-    esp_deep_sleep_enable_ulp_wakeup();
+    esp_sleep_enable_ulp_wakeup();
     esp_deep_sleep_start();
 }
 
@@ -263,7 +263,7 @@ TEST_CASE("ulp controls RTC_IO", "[ulp][ignore]")
     size_t size = sizeof(program)/sizeof(ulp_insn_t);
     ulp_process_macros_and_load(0, program, &size);
     ulp_run(0);
-    esp_deep_sleep_enable_ulp_wakeup();
+    esp_sleep_enable_ulp_wakeup();
     esp_deep_sleep_start();
 }
 
@@ -277,8 +277,8 @@ TEST_CASE("ulp power consumption in deep sleep", "[ulp][ignore]")
 
     ulp_run(0);
 
-    esp_deep_sleep_enable_ulp_wakeup();
-    esp_deep_sleep_enable_timer_wakeup(10 * 1000000);
+    esp_sleep_enable_ulp_wakeup();
+    esp_sleep_enable_timer_wakeup(10 * 1000000);
     esp_deep_sleep_start();
 }
 
@@ -377,8 +377,8 @@ TEST_CASE("ulp can use TSENS in deep sleep", "[ulp][ignore]")
     assert(offset >= size);
 
     TEST_ESP_OK(ulp_run(0));
-    esp_deep_sleep_enable_timer_wakeup(4000000);
-    esp_deep_sleep_enable_ulp_wakeup();
+    esp_sleep_enable_timer_wakeup(4000000);
+    esp_sleep_enable_ulp_wakeup();
     esp_deep_sleep_start();
 }
 
@@ -454,7 +454,7 @@ TEST_CASE("can use ADC in deep sleep", "[ulp][ignore]")
     assert(offset >= size);
 
     TEST_ESP_OK(ulp_run(0));
-    esp_deep_sleep_enable_timer_wakeup(4000000);
+    esp_sleep_enable_timer_wakeup(4000000);
     esp_deep_sleep_start();
 }
 
