@@ -2210,7 +2210,7 @@ extern void BTA_BleDisableAdvInstance(UINT8 inst_id);
 **
 *******************************************************************************/
 extern void BTA_DmBleUpdateConnectionParams(BD_ADDR bd_addr, UINT16 min_int,
-        UINT16 max_int, UINT16 latency, UINT16 timeout, tBTA_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb);
+        UINT16 max_int, UINT16 latency, UINT16 timeout);
 
 /*******************************************************************************
 **

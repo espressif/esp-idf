@@ -896,7 +896,12 @@ void l2c_process_timeout (TIMER_LIST_ENT *p_tle)
         break;
     case BTU_TTYPE_L2CAP_UPDA_CONN_PARAMS: {
         UINT8 status = HCI_ERR_HOST_TIMEOUT;
-        l2c_send_update_conn_params_cb((tL2C_LCB *)p_tle->param, status);
+        tL2C_LCB *p_lcb = (tL2C_LCB *)p_tle->param;
+        if (p_lcb){
+            p_lcb->conn_update_mask &= ~L2C_BLE_UPDATE_PENDING;
+            p_lcb->conn_update_mask &= ~L2C_BLE_UPDATE_PARAM_FULL;
+        }
+        l2c_send_update_conn_params_cb(p_lcb, status);
         break;
     }
     }

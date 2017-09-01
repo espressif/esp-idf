@@ -114,7 +114,6 @@ UINT8           conn_addr_type;         /* local device address type for this co
 BD_ADDR         active_remote_addr;     /* remote address used on this connection */
 UINT8           active_remote_addr_type;         /* local device address type for this connection */
 BD_FEATURES     peer_le_features;       /* Peer LE Used features mask for the device */
-tBTM_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb;
 tBTM_SET_PKT_DATA_LENGTH_CBACK *p_set_pkt_data_cback;
 tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS data_length_params;
 #endif
@@ -873,6 +872,12 @@ typedef struct {
 #endif
 } tBTM_CB;
 
+typedef struct{
+  //connection parameters update callback
+  tBTM_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb;
+}tBTM_CallbackFunc;
+
+extern tBTM_CallbackFunc conn_param_update_cb;
 /*
 #ifdef __cplusplus
 extern "C"

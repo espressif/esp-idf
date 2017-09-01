@@ -163,12 +163,12 @@ typedef UINT8   tBTM_BLE_SFP;
 
 /* default connection interval min */
 #ifndef BTM_BLE_CONN_INT_MIN_DEF
-#define BTM_BLE_CONN_INT_MIN_DEF     24      /* recommended min: 30ms  = 24 * 1.25 */
+#define BTM_BLE_CONN_INT_MIN_DEF     10      /* recommended min: 12.5 ms  = 10 * 1.25 */
 #endif
 
 /* default connection interval max */
 #ifndef BTM_BLE_CONN_INT_MAX_DEF
-#define BTM_BLE_CONN_INT_MAX_DEF     40      /* recommended max: 50 ms = 56 * 1.25 */
+#define BTM_BLE_CONN_INT_MAX_DEF     12      /* recommended max: 15 ms = 12 * 1.25 */
 #endif
 
 /* default slave latency */
@@ -860,6 +860,20 @@ tBTM_BLE_SCAN_SETUP_CBACK bta_ble_scan_setup_cb;
 extern "C" {
 #endif
 */
+
+/*******************************************************************************
+**
+** Function         BTM_BleRegiseterConnParamCallback
+**
+** Description      register connection parameters update callback func
+**
+** Parameters:      update_conn_param_cb
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTM_BleRegiseterConnParamCallback(tBTM_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb);
+
 /*******************************************************************************
 **
 ** Function         BTM_SecAddBleDevice
