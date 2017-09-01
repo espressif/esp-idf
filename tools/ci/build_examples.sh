@@ -112,7 +112,7 @@ build_example () {
         export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
 
         # build non-verbose first
-        local BUILDLOG=$(mktemp -t examplebuild.XXXX.log)
+        local BUILDLOG=${PWD}/examplebuild.${ID}.log
         (
             MAKEFLAGS= make clean defconfig &> >(tee -a "${BUILDLOG}") &&
             make all &> >(tee -a "${BUILDLOG}")
