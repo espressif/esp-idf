@@ -361,10 +361,10 @@ endef
 define GenerateComponentTargets
 .PHONY: component-$(2)-build component-$(2)-clean
 
-component-$(2)-build: check-submodules
+component-$(2)-build: check-submodules $(call prereq_if_explicit, component-$(2)-clean) | $(BUILD_DIR_BASE)/$(2)
 	$(call ComponentMake,$(1),$(2)) build
 
-component-$(2)-clean:
+component-$(2)-clean: | $(BUILD_DIR_BASE)/$(2) $(BUILD_DIR_BASE)/$(2)/component_project_vars.mk
 	$(call ComponentMake,$(1),$(2)) clean
 
 $(BUILD_DIR_BASE)/$(2):
@@ -406,7 +406,7 @@ size-components: $(APP_ELF)
 
 # NB: this ordering is deliberate (app-clean before config-clean),
 # so config remains valid during all component clean targets
-config-clean: app-clean
+config-clean: app-clean $(call prereq_if_explicit,bootloader-clean)
 clean: config-clean
 
 # phony target to check if any git submodule listed in COMPONENT_SUBMODULES are missing

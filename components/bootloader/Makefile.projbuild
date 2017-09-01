@@ -118,6 +118,6 @@ ifndef CONFIG_SECURE_BOOT_ENABLED
 all_binaries: $(BOOTLOADER_BIN)
 endif
 
-bootloader-clean:
+bootloader-clean: $(SDKCONFIG_MAKEFILE)
 	$(BOOTLOADER_MAKE) app-clean
 	rm -f $(SECURE_BOOTLOADER_KEY) $(BOOTLOADER_DIGEST_BIN)
