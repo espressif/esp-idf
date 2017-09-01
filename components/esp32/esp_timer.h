@@ -190,7 +190,7 @@ esp_err_t esp_timer_delete(esp_timer_handle_t timer);
  * @return number of microseconds since esp_timer_init was called (this normally
  *          happens early during application startup).
  */
-uint64_t esp_timer_get_time();
+int64_t esp_timer_get_time();
 
 /**
  * @brief Dump the list of timers to a stream

@@ -126,15 +126,35 @@ static inline bool IRAM_ATTR timer_overflow_happened()
 
 uint64_t IRAM_ATTR esp_timer_impl_get_time()
 {
-    portENTER_CRITICAL(&s_time_update_lock);
-    uint32_t timer_val = REG_READ(FRC_TIMER_COUNT_REG(1));
-    uint64_t result = s_time_base_us;
-    if (timer_overflow_happened()) {
-        result += s_timer_us_per_overflow;
-    }
-    uint32_t ticks_per_us = s_timer_ticks_per_us;
-    portEXIT_CRITICAL(&s_time_update_lock);
-    return result + timer_val / ticks_per_us;
+    uint32_t timer_val;
+    uint64_t time_base;
+    uint32_t ticks_per_us;
+    bool overflow;
+    uint64_t us_per_overflow;
+
+    do {
+        /* Read all values needed to calculate current time */
+        timer_val = REG_READ(FRC_TIMER_COUNT_REG(1));
+        time_base = s_time_base_us;
+        overflow = timer_overflow_happened();
+        ticks_per_us = s_timer_ticks_per_us;
+        us_per_overflow = s_timer_us_per_overflow;
+
+        /* Read them again and compare */
+        if (REG_READ(FRC_TIMER_COUNT_REG(1)) > timer_val &&
+                time_base == *((volatile uint64_t*) &s_time_base_us) &&
+                ticks_per_us == *((volatile uint32_t*) &s_timer_ticks_per_us) &&
+                overflow == timer_overflow_happened()) {
+            break;
+        }
+
+        /* If any value has changed (other than the counter increasing), read again */
+    } while(true);
+
+    uint64_t result = time_base
+                        + (overflow ? us_per_overflow : 0)
+                        + timer_val / ticks_per_us;
+    return result;
 }
 
 void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
