@@ -1,11 +1,16 @@
-/* BLE Security example_ble_security_gatts_demo example
-  2 
-  3    This example code is in the Public Domain (or CC0 licensed, at your option.)
-  4 
-  5    Unless required by applicable law or agreed to in writing, this
-  6    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-  7    CONDITIONS OF ANY KIND, either express or implied.
-  8 */
+// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -14,7 +19,6 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "bt.h"
-#include "bta_api.h"
 
 #include "esp_gap_ble_api.h"
 #include "esp_gatts_api.h"
@@ -33,7 +37,12 @@
 
 #define GATTS_DEMO_CHAR_VAL_LEN_MAX               0x40
 
-uint8_t heart_str[] ={0x11,0x22,0x33};
+#define ADV_CONFIG_FLAG                           (1 << 0)
+#define SCAN_RSP_CONFIG_FLAG                      (1 << 1)
+
+static uint8_t adv_config_done = 0;
+
+uint8_t heart_str[] = {0x11,0x22,0x33};
 
 uint16_t heart_rate_handle_table[HRS_IDX_NB];
 
@@ -43,7 +52,7 @@ esp_attr_value_t gatts_demo_char1_val =
   .attr_len     = sizeof(heart_str),
   .attr_value   = heart_str,
 };
-
+static uint8_t test_manufacturer[3]={'E', 'S', 'P'};
 
 static uint8_t sec_service_uuid[16] = {
     /* LSB <--------------------------------------------------------------------------------> MSB */
@@ -51,10 +60,9 @@ static uint8_t sec_service_uuid[16] = {
     0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80, 0x00, 0x10, 0x00, 0x00, 0x18, 0x0D, 0x00, 0x00,
 };
 
-
+// config adv data
 static esp_ble_adv_data_t heart_rate_adv_config = {
     .set_scan_rsp = false,
-    .include_name = true,
     .include_txpower = true,
     .min_interval = 0x100,
     .max_interval = 0x100,
@@ -67,12 +75,19 @@ static esp_ble_adv_data_t heart_rate_adv_config = {
     .p_service_uuid = sec_service_uuid,
     .flag = (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT),
 };
+// config scan response data
+static esp_ble_adv_data_t heart_rate_scan_rsp_config = {
+    .set_scan_rsp = true,
+    .include_name = true,
+    .manufacturer_len = sizeof(test_manufacturer),
+    .p_manufacturer_data = test_manufacturer,
+};
 
 static esp_ble_adv_params_t heart_rate_adv_params = {
     .adv_int_min        = 0x100,
     .adv_int_max        = 0x100,
     .adv_type           = ADV_TYPE_IND,
-    .own_addr_type      = BLE_ADDR_TYPE_PUBLIC,
+    .own_addr_type      = BLE_ADDR_TYPE_RANDOM,
     .channel_map        = ADV_CHNL_ALL,
     .adv_filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
 };
@@ -101,14 +116,8 @@ static struct gatts_profile_inst heart_rate_profile_tab[HEART_PROFILE_NUM] = {
         .gatts_cb = gatts_profile_event_handler,
         .gatts_if = ESP_GATT_IF_NONE,       /* Not get the gatt_if, so initial is ESP_GATT_IF_NONE */
     },
-    
+
 };
-
-/*
- * HTPT PROFILE ATTRIBUTES
- ****************************************************************************************
- */
-
 
 /*
  *  Heart Rate PROFILE ATTRIBUTES
@@ -229,14 +238,25 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
     ESP_LOGV(GATTS_TABLE_TAG, "GAP_EVT, event %d\n", event);
 
     switch (event) {
+    case ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT:
+        adv_config_done &= (~SCAN_RSP_CONFIG_FLAG);
+        if (adv_config_done == 0){
+            esp_ble_gap_start_advertising(&heart_rate_adv_params);
+        }
+        break;
     case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
-        esp_ble_gap_start_advertising(&heart_rate_adv_params);
+        adv_config_done &= (~ADV_CONFIG_FLAG);
+        if (adv_config_done == 0){
+            esp_ble_gap_start_advertising(&heart_rate_adv_params);
+        }
         break;
     case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
         //advertising start complete event to indicate advertising start successfully or failed
         if (param->adv_start_cmpl.status != ESP_BT_STATUS_SUCCESS) {
-            ESP_LOGE(GATTS_TABLE_TAG, "Advertising start failed\n");
+            ESP_LOGE(GATTS_TABLE_TAG, "advertising start failed, error status = %x", param->adv_start_cmpl.status);
+            break;
         }
+        ESP_LOGI(GATTS_TABLE_TAG, "advertising start success");
         break;
     case ESP_GAP_BLE_SEC_REQ_EVT:
         /* send the positive(true) security response to the peer device to accept the security request.
@@ -262,44 +282,61 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         break;
     }
     case ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT: {
-        ESP_LOGD(GATTS_TABLE_TAG, "ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT status = %d", param->remove_bond_dev_cmpl.status);
+        ESP_LOGI(GATTS_TABLE_TAG, "ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT status = %d", param->remove_bond_dev_cmpl.status);
         break;
     }
     case ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT: {
-        ESP_LOGD(GATTS_TABLE_TAG, "ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT status = %d", param->clear_bond_dev_cmpl.status);
+        ESP_LOGI(GATTS_TABLE_TAG, "ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT status = %d", param->clear_bond_dev_cmpl.status);
         break;
     }
     case ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT: {
-        ESP_LOGD(GATTS_TABLE_TAG, "ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT status = %d, num = %d", param->get_bond_dev_cmpl.status, param->get_bond_dev_cmpl.dev_num);
+        ESP_LOGI(GATTS_TABLE_TAG, "ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT status = %d, num = %d", param->get_bond_dev_cmpl.status, param->get_bond_dev_cmpl.dev_num);
         esp_ble_bond_dev_t *bond_dev = param->get_bond_dev_cmpl.bond_dev;
         for(int i = 0; i < param->get_bond_dev_cmpl.dev_num; i++) {
-            ESP_LOGD(GATTS_TABLE_TAG, "mask = %x", bond_dev[i].bond_key.key_mask);
+            ESP_LOGI(GATTS_TABLE_TAG, "mask = %x", bond_dev[i].bond_key.key_mask);
             esp_log_buffer_hex(GATTS_TABLE_TAG, (void *)bond_dev[i].bd_addr, sizeof(esp_bd_addr_t));
         }
         break;
     }
+    case ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT:
+        if (param->local_privacy_cmpl.status != ESP_BT_STATUS_SUCCESS){
+            ESP_LOGE(GATTS_TABLE_TAG, "config local privacy failed, error status = %x", param->local_privacy_cmpl.status);
+            break;
+        }
+
+        esp_err_t ret = esp_ble_gap_config_adv_data(&heart_rate_adv_config);
+        if (ret){
+            ESP_LOGE(GATTS_TABLE_TAG, "config adv data failed, error code = %x", ret);
+        }else{
+            adv_config_done |= ADV_CONFIG_FLAG;
+        }
+
+        ret = esp_ble_gap_config_adv_data(&heart_rate_scan_rsp_config);
+        if (ret){
+            ESP_LOGE(GATTS_TABLE_TAG, "config adv data failed, error code = %x", ret);
+        }else{
+            adv_config_done |= SCAN_RSP_CONFIG_FLAG;
+        }
+
+        break;
     default:
         break;
     }
 }
 
-static void gatts_profile_event_handler(esp_gatts_cb_event_t event, 
-                                        esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param) 
+static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
+                                        esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
 {
     ESP_LOGV(GATTS_TABLE_TAG, "event = %x\n",event);
     switch (event) {
         case ESP_GATTS_REG_EVT:
-            ESP_LOGD(GATTS_TABLE_TAG, "%s %d\n", __func__, __LINE__);
             esp_ble_gap_set_device_name(EXCAMPLE_DEVICE_NAME);
-            ESP_LOGD(GATTS_TABLE_TAG, "%s %d\n", __func__, __LINE__);
-            esp_ble_gap_config_adv_data(&heart_rate_adv_config);
-
-            ESP_LOGD(GATTS_TABLE_TAG, "%s %d\n", __func__, __LINE__);
-            esp_ble_gatts_create_attr_tab(heart_rate_gatt_db, gatts_if, 
+            //generate a resolvable random address
+            esp_ble_gap_config_local_privacy(true);
+            esp_ble_gatts_create_attr_tab(heart_rate_gatt_db, gatts_if,
                                       HRS_IDX_NB, HEART_RATE_SVC_INST_ID);
             break;
         case ESP_GATTS_READ_EVT:
-       
             break;
         case ESP_GATTS_WRITE_EVT: 
             break;
@@ -318,10 +355,12 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
         case ESP_GATTS_STOP_EVT:
             break;
         case ESP_GATTS_CONNECT_EVT:
+            ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_CONNECT_EVT");
             //start security connect with peer device when receive the connect event sent by the master.
             esp_ble_set_encryption(param->connect.remote_bda, ESP_BLE_SEC_ENCRYPT_MITM);
             break;
         case ESP_GATTS_DISCONNECT_EVT:
+            ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_DISCONNECT_EVT");
             ///start advertising again when missing the connect.
             esp_ble_gap_start_advertising(&heart_rate_adv_params);
             break;
@@ -336,13 +375,19 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
         case ESP_GATTS_CONGEST_EVT:
             break;
         case ESP_GATTS_CREAT_ATTR_TAB_EVT: {
-            ESP_LOGD(GATTS_TABLE_TAG, "The number handle =%x\n",param->add_attr_tab.num_handle);
-            if(param->add_attr_tab.num_handle == HRS_IDX_NB) {
-                memcpy(heart_rate_handle_table, param->add_attr_tab.handles, 
-                sizeof(heart_rate_handle_table));
-                esp_ble_gatts_start_service(heart_rate_handle_table[HRS_IDX_SVC]);
+            ESP_LOGI(GATTS_TABLE_TAG, "The number handle = %x",param->add_attr_tab.num_handle);
+            if (param->create.status == ESP_GATT_OK){
+                if(param->add_attr_tab.num_handle == HRS_IDX_NB) {
+                    memcpy(heart_rate_handle_table, param->add_attr_tab.handles,
+                    sizeof(heart_rate_handle_table));
+                    esp_ble_gatts_start_service(heart_rate_handle_table[HRS_IDX_SVC]);
+                }else{
+                    ESP_LOGE(GATTS_TABLE_TAG, "Create attribute table abnormally, num_handle (%d) doesn't equal to HRS_IDX_NB(%d)",
+                         param->add_attr_tab.num_handle, HRS_IDX_NB);
+                }
+            }else{
+                ESP_LOGE(GATTS_TABLE_TAG, " Create attribute table failed, error code = %x", param->create.status);
             }
-
         break;
     }
 
@@ -416,9 +461,21 @@ void app_main()
         return;
     }
 
-    esp_ble_gatts_register_callback(gatts_event_handler);
-    esp_ble_gap_register_callback(gap_event_handler);
-    esp_ble_gatts_app_register(ESP_HEART_RATE_APP_ID);
+    ret = esp_ble_gatts_register_callback(gatts_event_handler);
+    if (ret){
+        ESP_LOGE(GATTS_TABLE_TAG, "gatts register error, error code = %x", ret);
+        return;
+    }
+    ret = esp_ble_gap_register_callback(gap_event_handler);
+    if (ret){
+        ESP_LOGE(GATTS_TABLE_TAG, "gap register error, error code = %x", ret);
+        return;
+    }
+    ret = esp_ble_gatts_app_register(ESP_HEART_RATE_APP_ID);
+    if (ret){
+        ESP_LOGE(GATTS_TABLE_TAG, "gatts app register error, error code = %x", ret);
+        return;
+    }
 
     /* set the security iocap & auth_req & key size & init key response key parameters to the stack*/
     esp_ble_auth_req_t auth_req = ESP_LE_AUTH_BOND;     //bonding with peer device after authentication
@@ -429,9 +486,13 @@ void app_main()
     esp_ble_gap_set_security_param(ESP_BLE_SM_AUTHEN_REQ_MODE, &auth_req, sizeof(uint8_t));
     esp_ble_gap_set_security_param(ESP_BLE_SM_IOCAP_MODE, &iocap, sizeof(uint8_t));
     esp_ble_gap_set_security_param(ESP_BLE_SM_MAX_KEY_SIZE, &key_size, sizeof(uint8_t));
+    /* If your BLE device act as a Slave, the init_key means you hope which types of key of the master should distribut to you,
+    and the response key means which key you can distribut to the Master;
+    If your BLE device act as a master, the response key means you hope which types of key of the slave should distribut to you, 
+    and the init key means which key you can distribut to the slave. */
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_INIT_KEY, &init_key, sizeof(uint8_t));
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(uint8_t));
-    
+
 }
 
 
