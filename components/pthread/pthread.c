@@ -42,6 +42,7 @@ typedef struct {
 
 static SemaphoreHandle_t s_once_mux = NULL;
 static SemaphoreHandle_t s_threads_mux = NULL;
+static portMUX_TYPE s_mutex_init_lock = portMUX_INITIALIZER_UNLOCKED;
 
 static List_t s_threads_list;
 
@@ -356,7 +357,8 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
 
     TaskHandle_t cur_task = xTaskGetCurrentTaskHandle();
     // do not take mutex if OS is not running yet
-    if (!cur_task || xSemaphoreTake(s_once_mux, portMAX_DELAY) == pdTRUE)
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED ||
+            !cur_task || xSemaphoreTake(s_once_mux, portMAX_DELAY) == pdTRUE)
     {
         if (!once_control->init_executed) {
             ESP_LOGV(TAG, "%s: call init_routine %p", __FUNCTION__, once_control);
@@ -472,11 +474,27 @@ static int IRAM_ATTR pthread_mutex_lock_internal(esp_pthread_mutex_t *mux, TickT
     return 0;
 }
 
+static int pthread_mutex_init_if_static(pthread_mutex_t *mutex) {
+    int res = 0;
+    if ((intptr_t) *mutex == PTHREAD_MUTEX_INITIALIZER) {
+        portENTER_CRITICAL(&s_mutex_init_lock);
+        if ((intptr_t) *mutex == PTHREAD_MUTEX_INITIALIZER) {
+            res = pthread_mutex_init(mutex, NULL);
+        }
+        portEXIT_CRITICAL(&s_mutex_init_lock);
+    }
+    return res;
+}
+
 int IRAM_ATTR pthread_mutex_lock(pthread_mutex_t *mutex)
 {
     if (!mutex) {
         errno = EINVAL;
         return EINVAL;
+    }
+    int res = pthread_mutex_init_if_static(mutex);
+    if (res != 0) {
+        return res;
     }
     return pthread_mutex_lock_internal((esp_pthread_mutex_t *)*mutex, portMAX_DELAY);
 }
@@ -486,6 +504,10 @@ int IRAM_ATTR pthread_mutex_trylock(pthread_mutex_t *mutex)
     if (!mutex) {
         errno = EINVAL;
         return EINVAL;
+    }
+    int res = pthread_mutex_init_if_static(mutex);
+    if (res != 0) {
+        return res;
     }
     return pthread_mutex_lock_internal((esp_pthread_mutex_t *)*mutex, 0);
 }
