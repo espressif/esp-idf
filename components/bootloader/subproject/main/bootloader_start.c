@@ -262,8 +262,8 @@ static esp_partition_pos_t index_to_partition(const bootloader_state_t *bs, int 
         return bs->test;
     }
 
-    if (index >= 0 && index < MAX_OTA_SLOTS && index < bs->app_count) {
-        return bs->ota[index];
+    if (bs->app_count > 0) {
+        return bs->ota[index % bs->app_count];
     }
 
     esp_partition_pos_t invalid = { 0 };
