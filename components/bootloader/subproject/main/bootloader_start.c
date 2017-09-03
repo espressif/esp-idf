@@ -328,7 +328,7 @@ static int get_selected_boot_partition(const bootloader_state_t *bs)
             }
         } else  {
             if(ota_select_valid(&sa) && ota_select_valid(&sb)) {
-                ESP_LOGD(TAG, "Both OTA sequence valid, using OTA slot %d", MAX(sa.ota_seq, sb.ota_seq)-1);
+                ESP_LOGD(TAG, "Both OTA sequence valid, using OTA slot %d", (MAX(sa.ota_seq, sb.ota_seq)-1) % bs->app_count);
                 return MAX(sa.ota_seq, sb.ota_seq) - 1;
             } else if(ota_select_valid(&sa)) {
                 ESP_LOGD(TAG, "Only OTA sequence A is valid, using OTA slot %d", sa.ota_seq - 1);
