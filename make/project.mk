@@ -45,9 +45,17 @@ help:
 # dependency checks
 ifndef MAKE_RESTARTS
 ifeq ("$(filter 4.% 3.81 3.82,$(MAKE_VERSION))","")
-$(warning "esp-idf build system only supports GNU Make versions 3.81 or newer. You may see unexpected results with other Makes.")
+$(warning esp-idf build system only supports GNU Make versions 3.81 or newer. You may see unexpected results with other Makes.)
 endif
 endif
+
+# can't run 'clean' along with any non-clean targets
+ifneq ("$(filter clean% %clean,$(MAKECMDGOALS))" ,"")
+ifneq ("$(filter-out clean% %clean,$(MAKECMDGOALS))", "")
+$(error esp-idf build system doesn't support running 'clean' targets along with any others. Run 'make clean' and then run other targets separately.)
+endif
+endif
+
 
 # make IDF_PATH a "real" absolute path
 # * works around the case where a shell character is embedded in the environment variable value.
@@ -361,10 +369,10 @@ endef
 define GenerateComponentTargets
 .PHONY: component-$(2)-build component-$(2)-clean
 
-component-$(2)-build: check-submodules
+component-$(2)-build: check-submodules $(call prereq_if_explicit, component-$(2)-clean) | $(BUILD_DIR_BASE)/$(2)
 	$(call ComponentMake,$(1),$(2)) build
 
-component-$(2)-clean:
+component-$(2)-clean: | $(BUILD_DIR_BASE)/$(2) $(BUILD_DIR_BASE)/$(2)/component_project_vars.mk
 	$(call ComponentMake,$(1),$(2)) clean
 
 $(BUILD_DIR_BASE)/$(2):
@@ -404,10 +412,11 @@ size-files: $(APP_ELF)
 size-components: $(APP_ELF)
 	$(PYTHON) $(IDF_PATH)/tools/idf_size.py --archives $(APP_MAP)
 
-# NB: this ordering is deliberate (app-clean before config-clean),
-# so config remains valid during all component clean targets
-config-clean: app-clean
-clean: config-clean
+# NB: this ordering is deliberate (app-clean & bootloader-clean before
+# _config-clean), so config remains valid during all component clean
+# targets
+config-clean: app-clean bootloader-clean
+clean: app-clean bootloader-clean config-clean
 
 # phony target to check if any git submodule listed in COMPONENT_SUBMODULES are missing
 # or out of date, and exit if so. Components can add paths to this variable.

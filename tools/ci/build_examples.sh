@@ -5,7 +5,7 @@
 #
 # Runs as part of CI process.
 #
-# Assumes CWD is an out-of-tree build directory, and will copy examples
+# Assumes PWD is an out-of-tree build directory, and will copy examples
 # to individual subdirectories, one by one.
 #
 #
@@ -44,6 +44,8 @@ die() {
 
 [ -z ${IDF_PATH} ] && die "IDF_PATH is not set"
 
+echo "build_examples running in ${PWD}"
+
 # only 0 or 1 arguments
 [ $# -le 1 ] || die "Have to run as $(basename $0) [<JOB_NAME>]"
 
@@ -55,7 +57,7 @@ RESULT=0
 FAILED_EXAMPLES=""
 
 RESULT_WARNINGS=22  # magic number result code for "warnings found"
-LOG_WARNINGS=$(mktemp -t example_all.XXXX.log)
+LOG_WARNINGS=${PWD}/build_warnings.log
 
 if [ $# -eq 0 ]
 then
@@ -114,9 +116,10 @@ build_example () {
         # build non-verbose first
         local BUILDLOG=${PWD}/examplebuild.${ID}.log
         (
-            MAKEFLAGS= make clean defconfig &> >(tee -a "${BUILDLOG}") &&
-            make all &> >(tee -a "${BUILDLOG}")
-        ) || {
+            make MAKEFLAGS= clean &&
+            make MAKEFLAGS= defconfig &&
+            make all
+        ) &> >(tee -a "${BUILDLOG}") || {
             RESULT=$?; FAILED_EXAMPLES+=" ${EXAMPLE_NAME}"
             make MAKEFLAGS= V=1 clean defconfig && make V=1 # verbose output for errors
         }
