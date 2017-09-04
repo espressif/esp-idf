@@ -1,12 +1,4 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
+// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD // // Licensed under the Apache License, Version 2.0 (the "License"); // you may not use this file except in compliance with the License.  // You may obtain a copy of the License at //     http://www.apache.org/licenses/LICENSE-2.0 // // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
@@ -36,20 +28,11 @@
 #include "esp_gattc_api.h"
 #include "esp_gatt_defs.h"
 #include "esp_bt_main.h"
+#include "esp_ibeacon_api.h"
 
-
-/* Because current ESP IDF version doesn't support scan and adv simultaneously,
- * so iBeacon sender and receiver should not run simultaneously */
-#define IBEACON_SENDER      0
-#define IBEACON_RECEIVER    1
-#define IBEACON_MODE IBEACON_RECEIVER
 
 static const char* DEMO_TAG = "IBEACON_DEMO";
-
-/* Major and Minor part are stored in big endian mode in iBeacon packet,
- * need to use this macro to transfer while creating or processing
- * iBeacon data */
-#define ENDIAN_CHANGE_U16(x) ((((x)&0xFF00)>>8) + (((x)&0xFF)<<8))
+extern esp_ble_ibeacon_vendor_t vendor_config;
 
 ///Declare static functions
 static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
@@ -73,72 +56,6 @@ static esp_ble_adv_params_t ble_adv_params = {
     .adv_filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
 };
 #endif
-
-
-typedef struct {
-    uint8_t flags[3];
-    uint8_t length;
-    uint8_t type;
-    uint16_t company_id;
-    uint16_t beacon_type;
-}__attribute__((packed)) esp_ble_ibeacon_head_t;
-
-typedef struct {
-    uint8_t proximity_uuid[16];
-    uint16_t major;
-    uint16_t minor;
-    int8_t measured_power;
-}__attribute__((packed)) esp_ble_ibeacon_vendor_t;
-
-
-typedef struct {
-    esp_ble_ibeacon_head_t ibeacon_head;
-    esp_ble_ibeacon_vendor_t ibeacon_vendor;
-}__attribute__((packed)) esp_ble_ibeacon_t;
-
-const uint8_t uuid_zeros[ESP_UUID_LEN_128] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-
-/* For iBeacon packet format, please refer to Apple "Proximity Beacon Specification" doc */
-/* Constant part of iBeacon data */
-const esp_ble_ibeacon_head_t ibeacon_common_head = {
-    .flags = {0x02, 0x01, 0x06},
-    .length = 0x1A,
-    .type = 0xFF,
-    .company_id = 0x004C,
-    .beacon_type = 0x1502
-};
-
-/* Vendor part of iBeacon data*/
-esp_ble_ibeacon_vendor_t vendor_config = {
-    .proximity_uuid = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0XFF},
-    .major = ENDIAN_CHANGE_U16(0x0001), //Major=0x0001
-    .minor = ENDIAN_CHANGE_U16(0x0010), //Minor=0x0010
-    .measured_power = 0xC5
-};
-
-BOOLEAN esp_ble_is_ibeacon_packet (uint8_t *adv_data, uint8_t adv_data_len){
-    BOOLEAN result = FALSE;
-    false;
-
-    if ((adv_data != NULL) && (adv_data_len == 0x1E)){
-        if (!memcmp(adv_data, (uint8_t*)&ibeacon_common_head, sizeof(ibeacon_common_head))){
-            result = TRUE;
-        }
-    }
-
-    return result;
-}
-
-esp_err_t esp_ble_config_ibeacon_data (esp_ble_ibeacon_vendor_t *vendor_config, esp_ble_ibeacon_t *ibeacon_adv_data){
-    if ((vendor_config == NULL) || (ibeacon_adv_data == NULL) || (!memcmp(vendor_config->proximity_uuid, uuid_zeros, sizeof(uuid_zeros)))){
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    memcpy(&ibeacon_adv_data->ibeacon_head, &ibeacon_common_head, sizeof(esp_ble_ibeacon_head_t));
-    memcpy(&ibeacon_adv_data->ibeacon_vendor, vendor_config, sizeof(esp_ble_ibeacon_vendor_t));
-
-    return ESP_OK;
-}
 
 
 static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
@@ -181,8 +98,10 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
                 esp_log_buffer_hex("IBEACON_DEMO: Device address:", scan_result->scan_rst.bda, BD_ADDR_LEN );
                 esp_log_buffer_hex("IBEACON_DEMO: Proximity UUID:", ibeacon_data->ibeacon_vendor.proximity_uuid, ESP_UUID_LEN_128);
 
-                ESP_LOGI(DEMO_TAG, "Major: 0x%04x", ENDIAN_CHANGE_U16(ibeacon_data->ibeacon_vendor.major));
-                ESP_LOGI(DEMO_TAG, "Minor: 0x%04x", ENDIAN_CHANGE_U16(ibeacon_data->ibeacon_vendor.minor));
+                uint16_t major = ENDIAN_CHANGE_U16(ibeacon_data->ibeacon_vendor.major);
+                uint16_t minor = ENDIAN_CHANGE_U16(ibeacon_data->ibeacon_vendor.minor);
+                ESP_LOGI(DEMO_TAG, "Major: 0x%04x (%d)", major, major);
+                ESP_LOGI(DEMO_TAG, "Minor: 0x%04x (%d)", minor, minor);
                 ESP_LOGI(DEMO_TAG, "Measured power (RSSI at a 1m distance):%d dbm", ibeacon_data->ibeacon_vendor.measured_power);
                 ESP_LOGI(DEMO_TAG, "RSSI of packet:%d dbm", scan_result->scan_rst.rssi);
             }
