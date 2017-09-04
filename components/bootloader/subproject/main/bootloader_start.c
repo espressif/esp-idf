@@ -289,7 +289,8 @@ static void log_invalid_app_partition(int index)
 
 /* Return the index of the selected boot partition.
 
-   This is the preferred boot partition, as determined by the partition table & OTA data.
+   This is the preferred boot partition, as determined by the partition table &
+   any OTA sequence number found in OTA data.
 
    This partition will only be booted if it contains a valid app image, otherwise load_boot_image() will search
    for a valid partition using this selection as the starting point.
@@ -327,15 +328,27 @@ static int get_selected_boot_partition(const bootloader_state_t *bs)
                 return 0;
             }
         } else  {
+            bool ota_valid = false;
+            const char *ota_msg;
+            int ota_seq; // Raw OTA sequence number. May be more than # of OTA slots
             if(ota_select_valid(&sa) && ota_select_valid(&sb)) {
-                ESP_LOGD(TAG, "Both OTA sequence valid, using OTA slot %d", MAX(sa.ota_seq, sb.ota_seq)-1);
-                return MAX(sa.ota_seq, sb.ota_seq) - 1;
+                ota_valid = true;
+                ota_msg = "Both OTA values";
+                ota_seq = MAX(sa.ota_seq, sb.ota_seq) - 1;
             } else if(ota_select_valid(&sa)) {
-                ESP_LOGD(TAG, "Only OTA sequence A is valid, using OTA slot %d", sa.ota_seq - 1);
-                return sa.ota_seq - 1;
+                ota_valid = true;
+                ota_msg = "Only OTA sequence A is";
+                ota_seq = sa.ota_seq - 1;
             } else if(ota_select_valid(&sb)) {
-                ESP_LOGD(TAG, "Only OTA sequence B is valid, using OTA slot %d", sb.ota_seq - 1);
-                return sb.ota_seq - 1;
+                ota_valid = true;
+                ota_msg = "Only OTA sequence B is";
+                ota_seq = sb.ota_seq - 1;
+            }
+
+            if (ota_valid) {
+                int ota_slot = ota_seq % bs->app_count; // Actual OTA partition selection
+                ESP_LOGD(TAG, "%s valid. Mapping seq %d -> OTA slot %d", ota_msg, ota_seq, ota_slot);
+                return ota_slot;
             } else if (bs->factory.offset != 0) {
                 ESP_LOGE(TAG, "ota data partition invalid, falling back to factory");
                 return FACTORY_INDEX;
