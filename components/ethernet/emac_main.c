@@ -37,6 +37,8 @@
 #include "esp_eth.h"
 #include "esp_intr_alloc.h"
 
+#include "driver/periph_ctrl.h"
+
 #include "emac_common.h"
 #include "emac_desc.h"
 
@@ -1005,6 +1007,7 @@ esp_err_t esp_eth_init_internal(eth_config_t *config)
     emac_config.emac_phy_power_enable(true);
 
     //before set emac reg must enable clk
+    periph_module_enable(PERIPH_EMAC_MODULE);
     emac_enable_clk(true);
     REG_SET_FIELD(EMAC_EX_PHYINF_CONF_REG, EMAC_EX_PHY_INTF_SEL, EMAC_EX_PHY_INTF_RMII);
 
