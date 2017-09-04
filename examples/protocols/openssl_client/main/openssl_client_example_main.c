@@ -137,6 +137,7 @@ static void openssl_example_task(void *p)
         if (ret <= 0) {
             break;
         }
+        recv_buf[ret] = '\0';
         recv_bytes += ret;
         ESP_LOGI(TAG, "%s", recv_buf);
     } while (1);
