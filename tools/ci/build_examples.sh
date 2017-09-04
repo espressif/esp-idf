@@ -116,9 +116,10 @@ build_example () {
         # build non-verbose first
         local BUILDLOG=${PWD}/examplebuild.${ID}.log
         (
-            make MAKEFLAGS= clean defconfig &> >(tee -a "${BUILDLOG}") &&
-            make all &> >(tee -a "${BUILDLOG}")
-        ) || {
+            make MAKEFLAGS= clean &&
+            make MAKEFLAGS= defconfig &&
+            make all
+        ) &> >(tee -a "${BUILDLOG}") || {
             RESULT=$?; FAILED_EXAMPLES+=" ${EXAMPLE_NAME}"
             make MAKEFLAGS= V=1 clean defconfig && make V=1 # verbose output for errors
         }
