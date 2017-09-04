@@ -470,14 +470,21 @@ static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
     esp_gdbstub_panic_handler(frame);
 #else
 #if CONFIG_ESP32_ENABLE_COREDUMP
-    disableAllWdts();
+    static bool s_dumping_core;
+    if (s_dumping_core) {
+        panicPutStr("Re-entered core dump! Exception happened during core dump!\r\n");
+    } else {
+        disableAllWdts();
+        s_dumping_core = true;
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
-    esp_core_dump_to_flash(frame);
+        esp_core_dump_to_flash(frame);
 #endif
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_UART && !CONFIG_ESP32_PANIC_SILENT_REBOOT
-    esp_core_dump_to_uart(frame);
+        esp_core_dump_to_uart(frame);
 #endif
-    reconfigureAllWdts();
+        s_dumping_core = false;
+        reconfigureAllWdts();
+    }
 #endif /* CONFIG_ESP32_ENABLE_COREDUMP */
     esp_panic_wdt_stop();
 #if CONFIG_ESP32_PANIC_PRINT_REBOOT || CONFIG_ESP32_PANIC_SILENT_REBOOT
