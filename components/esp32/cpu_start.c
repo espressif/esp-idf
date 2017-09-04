@@ -63,6 +63,7 @@
 #include "esp_core_dump.h"
 #include "esp_app_trace.h"
 #include "esp_efuse.h"
+#include "esp_spiram.h"
 #include "esp_clk.h"
 #include "esp_timer.h"
 #include "trax.h"
@@ -147,6 +148,13 @@ void IRAM_ATTR call_start_cpu0()
         memset(&_rtc_bss_start, 0, (&_rtc_bss_end - &_rtc_bss_start) * sizeof(_rtc_bss_start));
     }
 
+#if CONFIG_SPIRAM_BOOT_INIT
+    if (esp_spiram_init() != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Failed to init external RAM!");
+        abort();
+    }
+#endif
+
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
 
 #if !CONFIG_FREERTOS_UNICORE
@@ -175,11 +183,23 @@ void IRAM_ATTR call_start_cpu0()
     DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
 #endif
 
+
+#if CONFIG_SPIRAM_MEMTEST
+    bool ext_ram_ok=esp_spiram_test();
+    if (!ext_ram_ok) {
+        ESP_EARLY_LOGE(TAG, "External RAM failed memory test!");
+        abort();
+    }
+#endif
+
     /* Initialize heap allocator. WARNING: This *needs* to happen *after* the app cpu has booted.
        If the heap allocator is initialized first, it will put free memory linked list items into
        memory also used by the ROM. Starting the app cpu will let its ROM initialize that memory,
        corrupting those linked lists. Initializing the allocator *after* the app cpu has booted
-       works around this problem. */
+       works around this problem.
+       With SPI RAM enabled, there's a second reason: half of the SPI RAM will be managed by the
+       app CPU, and when that is not up yet, the memory will be inaccessible and heap_caps_init may
+       fail initializing it properly. */
     heap_caps_init();
 
     ESP_EARLY_LOGI(TAG, "Pro cpu start user code");

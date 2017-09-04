@@ -27,9 +27,103 @@ config MEMMAP_SMP
         The ESP32 contains two cores. If you plan to only use one, you can disable this item
         to save some memory. (ToDo: Make this automatically depend on unicore support)
 
+config SPIRAM_SUPPORT
+    bool "Support for external, SPI-connected RAM"
+    default "n"
+    help
+        This enables support for an external SPI RAM chip, connected in parallel with the 
+        main SPI flash chip.
+
+menu "SPI RAM config"
+    depends on SPIRAM_SUPPORT
+
+config SPIRAM_BOOT_INIT
+    bool "Initialize SPI RAM when booting the ESP32"
+    default "y"
+    help
+        If this is enabled, the SPI RAM will be enabled during initial boot. Unless you
+        have specific requirements, you'll want to leave this enabled so memory allocated
+        during boot-up can also be placed in SPI RAM.
+
+choice SPIRAM_USE
+    prompt "SPI RAM access method"
+    default SPIRAM_USE_MEMMAP
+    help
+        The SPI RAM can be accessed in multiple methods: by just having it available as an unmanaged
+        memory region in the ESP32 memory map, by integrating it in the ESP32s heap as 'special' memory
+        needing heap_caps_malloc to allocate, or by fully integrating it making malloc() also able to
+        return SPI RAM pointers.
+
+config SPIRAM_USE_MEMMAP
+    bool "Integrate RAM into ESP32 memory map"
+config SPIRAM_USE_CAPS_ALLOC
+    bool "Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPISRAM)"
+    depends on TO_BE_DONE
+config SPIRAM_USE_MALLOC
+    bool "Make RAM allocatable using malloc as well"
+    depends on TO_BE_DONE
+endchoice
+
+choice SPIRAM_TYPE
+    prompt "Type of SPI RAM chip in use"
+    default SPIRAM_TYPE_ESPPSRAM32
+
+config SPIRAM_TYPE_ESPPSRAM32
+    bool "ESP-PSRAM32 or IS25WP032"
+endchoice
+
+config SPIRAM_SIZE
+    int
+    default 4194304 if SPIRAM_TYPE_ESPPSRAM32
+    default 0
+
+choice SPIRAM_SPEED
+    prompt "Set RAM clock speed"
+    default SPIRAM_CACHE_SPEED_40M
+    help
+        Select the speed for the SPI RAM chip.
+        If SPI RAM is enabled, we only support three combinations of SPI speed mode we supported now:
+
+        1. Flash SPI running at 40Mhz and RAM SPI running at 40Mhz
+        2. Flash SPI running at 80Mhz and RAM SPI running at 40Mhz
+        3. Flash SPI running at 80Mhz and RAM SPI running at 80Mhz
+
+           Note: If the third mode(80Mhz+80Mhz) is enabled, the VSPI port will be occupied by the system.
+                 Application code should never touch VSPI hardware in this case. The option to select
+                 80MHz will only be visible if the flash SPI speed is also 80MHz. (ESPTOOLPY_FLASHFREQ_80M is true)
+
+config SPIRAM_SPEED_40M
+    bool "40MHz clock speed"
+config SPIRAM_SPEED_80M
+    depends on ESPTOOLPY_FLASHFREQ_80M
+    bool "80MHz clock speed"
+endchoice
+
+config SPIRAM_MEMTEST
+    bool "Run memory test on SPI RAM initialization"
+    default "y"
+    help
+        Runs a rudimentary memory test on initialization. Aborts when memory test fails. Disable this for
+        slightly faster startop.
+
+config SPIRAM_CACHE_WORKAROUND
+    bool "Enable workaround for bug in SPI RAM cache for Rev1 ESP32s"
+    depends on SPIRAM_USE_MEMMAP || SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC
+    default "y"
+    help
+        Revision 1 of the ESP32 has a bug that can cause a write to PSRAM not to take place in some situations
+        when the cache line needs to be fetched from external RAM and an interrupt occurs. This enables a
+        fix in the compiler that makes sure the specific code that is vulnerable to this will not be emitted.
+        
+        This will also not use any bits of newlib that are located in ROM, opting for a version that is compiled
+        with the workaround and located in flash instead.
+
+
+endmenu
+
 config MEMMAP_TRACEMEM
-	bool
-	default "n"
+    bool
+    default "n"
 
 config MEMMAP_TRACEMEM_TWOBANKS
     bool
@@ -104,16 +198,6 @@ config ESP32_CORE_DUMP_LOG_LEVEL
     help
         Config core dump module logging level (0-5).
 
-# Not implemented and/or needs new silicon rev to work
-config MEMMAP_SPISRAM
-    bool "Use external SPI SRAM chip as main memory"
-    depends on ESP32_NEEDS_NEW_SILICON_REV
-    default "n"
-    help
-        The ESP32 can control an external SPI SRAM chip, adding the memory it contains to the
-        main memory map. Enable this if you have this hardware and want to use it in the same
-        way as on-chip RAM.
-        
 choice NUMBER_OF_UNIVERSAL_MAC_ADDRESS
     bool "Number of universally administered (by IEEE) MAC address"
     default FOUR_UNIVERSAL_MAC_ADDRESS
