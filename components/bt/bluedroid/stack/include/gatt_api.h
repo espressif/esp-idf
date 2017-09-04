@@ -943,7 +943,7 @@ tGATT_STATUS GATTS_GetAttributeValue(UINT16 attr_handle, UINT16 *length, UINT8 *
 ** Returns          GATT_SUCCESS if command started successfully.
 **
 *******************************************************************************/
-extern tGATT_STATUS GATTC_ConfigureMTU (UINT16 conn_id, UINT16  mtu);
+extern tGATT_STATUS GATTC_ConfigureMTU (UINT16 conn_id);
 
 /*******************************************************************************
 **

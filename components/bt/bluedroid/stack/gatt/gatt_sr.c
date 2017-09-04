@@ -941,13 +941,11 @@ static void gatts_process_mtu_req (tGATT_TCB *p_tcb, UINT16 len, UINT8 *p_data)
         /* mtu must be greater than default MTU which is 23/48 */
         if (mtu < GATT_DEF_BLE_MTU_SIZE) {
             p_tcb->payload_size = GATT_DEF_BLE_MTU_SIZE;
-        } else if (mtu > GATT_MAX_MTU_SIZE) {
-            p_tcb->payload_size = GATT_MAX_MTU_SIZE;
+        } else if (mtu > gatt_default.local_mtu) {
+            p_tcb->payload_size = gatt_default.local_mtu;
         } else {
             p_tcb->payload_size = mtu;
         }
-
-        GATT_TRACE_ERROR("MTU request PDU with MTU size %d\n", p_tcb->payload_size);
 
         l2cble_set_fixed_channel_tx_data_length(p_tcb->peer_bda, L2CAP_ATT_CID, p_tcb->payload_size);
 

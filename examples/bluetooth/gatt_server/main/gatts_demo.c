@@ -38,6 +38,7 @@
 #include "esp_bt_defs.h"
 #include "esp_bt_main.h"
 #include "esp_bt_main.h"
+#include "esp_gatt_common_api.h"
 
 #include "sdkconfig.h"
 
@@ -721,6 +722,10 @@ void app_main()
     if (ret){
         ESP_LOGE(GATTS_TAG, "gatts app register error, error code = %x", ret);
         return;
+    }
+    esp_err_t local_mtu_ret = esp_ble_gatt_set_local_mtu(500);
+    if (local_mtu_ret){
+        ESP_LOGE(GATTS_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
     }
 
     return;

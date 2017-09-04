@@ -901,7 +901,7 @@ void bta_gattc_cfg_mtu(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
     tBTA_GATT_STATUS    status;
 
     if (bta_gattc_enqueue(p_clcb, p_data)) {
-        status = GATTC_ConfigureMTU (p_clcb->bta_conn_id, p_data->api_mtu.mtu);
+        status = GATTC_ConfigureMTU (p_clcb->bta_conn_id);
 
         /* if failed, return callback here */
         if (status != GATT_SUCCESS && status != GATT_CMD_STARTED) {

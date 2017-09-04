@@ -68,7 +68,6 @@ typedef union {
     //BTC_GATTC_ACT_CFG_MTU,
     struct cfg_mtu_arg {
         uint16_t conn_id;
-        uint16_t mtu;
     } cfg_mtu;
     //BTC_GATTC_ACT_SEARCH_SERVICE,
     struct search_srvc_arg {

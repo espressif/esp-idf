@@ -53,7 +53,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_set_visibility,                  /* 3  BTA_DM_API_SET_VISIBILITY_EVT */
     bta_dm_acl_change,                      /* 8  BTA_DM_ACL_CHANGE_EVT */
     bta_dm_add_device,                      /* 9  BTA_DM_API_ADD_DEVICE_EVT */
-    bta_dm_close_acl,                       /* 10  BTA_DM_API_ADD_DEVICE_EVT */
+    bta_dm_close_acl,                       /* 10  BTA_DM_API_REMOVE_ACL_EVT */
 #if (SMP_INCLUDED == TRUE)
     /* security API events */
     bta_dm_bond,                            /* 11  BTA_DM_API_BOND_EVT */
