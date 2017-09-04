@@ -288,7 +288,6 @@ CXXFLAGS ?=
 EXTRA_CXXFLAGS ?=
 CXXFLAGS := $(strip \
 	-std=gnu++11 \
-	-fno-exceptions \
 	-fno-rtti \
 	$(OPTIMIZATION_FLAGS) $(DEBUG_FLAGS) \
 	$(COMMON_FLAGS) \
