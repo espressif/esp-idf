@@ -1,3 +1,23 @@
+// Copyright 2017 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// This module implements pthread API on top of FreeRTOS. API is implemented to the level allowing
+// libstdcxx threading framework to operate correctly. So not all original pthread routines are supported.
+// Moreover some implemened functions do not provide full functionality, e.g. pthread_create does not support
+// thread's attributes customization (prio, stack size and so on). So if you are not satisfied with default
+// behavior use native FreeRTOS API.
+//
 #include <errno.h>
 #include <pthread.h>
 #include <string.h>
@@ -36,7 +56,7 @@ typedef struct {
 typedef struct {
     ListItem_t          list_item;  ///< mutexes list node struct
     SemaphoreHandle_t   sem;        ///< Handle of the task waiting to join
-    int                 type;       ///< Handle of the task waiting to join
+    int                 type;       ///< Mutex type. Currently supported PTHREAD_MUTEX_NORMAL and PTHREAD_MUTEX_RECURSIVE
 } esp_pthread_mutex_t;
 
 
@@ -49,7 +69,7 @@ static List_t s_threads_list;
 
 static int IRAM_ATTR pthread_mutex_lock_internal(esp_pthread_mutex_t *mux, TickType_t tmo);
 
-int esp_pthread_init(void)
+esp_err_t __attribute__((constructor)) esp_pthread_init(void)
 {
     vListInitialise((List_t *)&s_threads_list);
     s_once_mux = xSemaphoreCreateMutex();
@@ -158,12 +178,12 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
 
     ESP_LOGV(TAG, "%s", __FUNCTION__);
     if (attr) {
-        assert(false && "pthread_create: attrs not supported!");
+        ESP_LOGE(TAG, "%s: attrs not supported!", __FUNCTION__);
+        return ENOSYS;
     }
     esp_pthread_task_arg_t *task_arg = malloc(sizeof(esp_pthread_task_arg_t));
     if (task_arg == NULL) {
         ESP_LOGE(TAG, "Failed to allocate task args!");
-        errno = ENOMEM;
         return ENOMEM;
     }
     memset(task_arg, 0, sizeof(esp_pthread_task_arg_t));
@@ -171,7 +191,6 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
     if (pthread == NULL) {
         ESP_LOGE(TAG, "Failed to allocate pthread data!");
         free(task_arg);
-        errno = ENOMEM;
         return ENOMEM;
     }
     memset(pthread, 0, sizeof(esp_pthread_t));
@@ -184,10 +203,8 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
         free(pthread);
         free(task_arg);
         if (res == errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY) {
-            errno = ENOMEM;
             return ENOMEM;
         } else {
-            errno = EAGAIN;
             return EAGAIN;
         }
     }
@@ -224,18 +241,18 @@ int pthread_join(pthread_t thread, void **retval)
     }
     TaskHandle_t handle = pthread_find_handle(thread);
     if (!handle) {
-        errno = ESRCH; // not found
+        // not found
         ret = ESRCH;
     } else if (pthread->join_task) {
-        errno = EINVAL; // already have waiting task to join
+        // already have waiting task to join
         ret = EINVAL;
     } else if (handle == xTaskGetCurrentTaskHandle()) {
-        errno = EDEADLK; // join to self not allowed
+        // join to self not allowed
         ret = EDEADLK;
     } else {
         esp_pthread_t *cur_pthread = pthread_find(xTaskGetCurrentTaskHandle());
         if (cur_pthread && cur_pthread->join_task == handle) {
-            errno = EDEADLK; // join to each other not allowed
+            // join to each other not allowed
             ret = EDEADLK;
         } else {
             if (pthread->state == PTHREAD_TASK_STATE_RUN) {
@@ -274,7 +291,6 @@ int pthread_detach(pthread_t thread)
     }
     TaskHandle_t handle = pthread_find_handle(thread);
     if (!handle) {
-        errno = ESRCH; // not found
         ret = ESRCH;
     } else {
         pthread->detached = true;
@@ -286,8 +302,8 @@ int pthread_detach(pthread_t thread)
 
 int pthread_cancel(pthread_t thread)
 {
-    assert(false && "pthread_cancel not supported!");
-    return -1;
+    ESP_LOGE(TAG, "%s: not supported!", __FUNCTION__);
+    return ENOSYS;
 }
 
 int sched_yield( void )
@@ -322,7 +338,8 @@ int pthread_key_create(pthread_key_t *key, void (*destructor)(void*))
     //TODO: Key destructors not suppoted!
     if (s_created) {
         // key API supports just one key necessary by libstdcxx threading implementation
-        assert(false && "pthread_key_create: multiple keys not supported!");
+        ESP_LOGE(TAG, "%s: multiple keys not supported!", __FUNCTION__);
+        return ENOSYS;
     }
     *key = 1;
     s_created = 1;
@@ -331,20 +348,20 @@ int pthread_key_create(pthread_key_t *key, void (*destructor)(void*))
 
 int pthread_key_delete(pthread_key_t key)
 {
-    assert(false && "pthread_key_delete not supported!");
-    return -1;
+    ESP_LOGE(TAG, "%s: not supported!", __FUNCTION__);
+    return ENOSYS;
 }
 
 void *pthread_getspecific(pthread_key_t key)
 {
-    assert(false && "pthread_getspecific not supported!");
+    ESP_LOGE(TAG, "%s: not supported!", __FUNCTION__);
     return NULL;
 }
 
 int pthread_setspecific(pthread_key_t key, const void *value)
 {
-    assert(false && "pthread_setspecific not supported!");
-    return -1;
+    ESP_LOGE(TAG, "%s: not supported!", __FUNCTION__);
+    return ENOSYS;
 }
 
 /***************** ONCE ******************/
@@ -392,18 +409,15 @@ int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr)
     int type = PTHREAD_MUTEX_NORMAL;
 
     if (!mutex) {
-        errno = EINVAL;
         return EINVAL;
     }
 
     if (attr) {
         if (!attr->is_initialized) {
-            errno = EINVAL;
             return EINVAL;
         }
         int res = mutexattr_check(attr);
         if (res) {
-            errno = res;
             return res;
         }
         type = attr->type;
@@ -411,7 +425,6 @@ int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr)
 
     esp_pthread_mutex_t *mux = (esp_pthread_mutex_t *)malloc(sizeof(esp_pthread_mutex_t));
     if (!mux) {
-        errno = ENOMEM;
         return ENOMEM;
     }
     mux->type = type;
@@ -423,7 +436,6 @@ int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr)
     }
     if (!mux->sem) {
         free(mux);
-        errno = EAGAIN;
         return EAGAIN;
     }
 
@@ -439,7 +451,6 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex)
     ESP_LOGV(TAG, "%s %p", __FUNCTION__, mutex);
 
     if (!mutex) {
-        errno = EINVAL;
         return EINVAL;
     }
     mux = (esp_pthread_mutex_t *)*mutex;
@@ -447,7 +458,6 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex)
     // check if mux is busy
     int res = pthread_mutex_lock_internal(mux, 0);
     if (res == EBUSY) {
-        errno = EBUSY;
         return EBUSY;
     }
 
@@ -461,12 +471,10 @@ static int IRAM_ATTR pthread_mutex_lock_internal(esp_pthread_mutex_t *mux, TickT
 {
     if (mux->type == PTHREAD_MUTEX_RECURSIVE) {
         if (xSemaphoreTakeRecursive(mux->sem, tmo) != pdTRUE) {
-            errno = EBUSY;
             return EBUSY;
         }
     } else {
         if (xSemaphoreTake(mux->sem, tmo) != pdTRUE) {
-            errno = EBUSY;
             return EBUSY;
         }
     }
@@ -489,7 +497,6 @@ static int pthread_mutex_init_if_static(pthread_mutex_t *mutex) {
 int IRAM_ATTR pthread_mutex_lock(pthread_mutex_t *mutex)
 {
     if (!mutex) {
-        errno = EINVAL;
         return EINVAL;
     }
     int res = pthread_mutex_init_if_static(mutex);
@@ -502,7 +509,6 @@ int IRAM_ATTR pthread_mutex_lock(pthread_mutex_t *mutex)
 int IRAM_ATTR pthread_mutex_trylock(pthread_mutex_t *mutex)
 {
     if (!mutex) {
-        errno = EINVAL;
         return EINVAL;
     }
     int res = pthread_mutex_init_if_static(mutex);
@@ -517,7 +523,6 @@ int IRAM_ATTR pthread_mutex_unlock(pthread_mutex_t *mutex)
     esp_pthread_mutex_t *mux;
 
     if (!mutex) {
-        errno = EINVAL;
         return EINVAL;
     }
     mux = (esp_pthread_mutex_t *)*mutex;
@@ -533,7 +538,6 @@ int IRAM_ATTR pthread_mutex_unlock(pthread_mutex_t *mutex)
 int pthread_mutexattr_init(pthread_mutexattr_t *attr)
 {
     if (!attr) {
-        errno = EINVAL;
         return EINVAL;
     }
     attr->type = PTHREAD_MUTEX_NORMAL;
@@ -544,7 +548,6 @@ int pthread_mutexattr_init(pthread_mutexattr_t *attr)
 int pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
 {
     if (!attr) {
-        errno = EINVAL;
         return EINVAL;
     }
     attr->is_initialized = 0;
@@ -553,21 +556,18 @@ int pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
 
 int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type)
 {
-    assert(false && "pthread_mutexattr_gettype not supported!");
-    return -1;
+    ESP_LOGE(TAG, "%s: not supported!", __FUNCTION__);
+    return ENOSYS;
 }
 
 int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
 {
     if (!attr) {
-        errno = EINVAL;
         return EINVAL;
     }
     pthread_mutexattr_t tmp_attr = {.type = type};
     int res = mutexattr_check(&tmp_attr);
-    if (res) {
-        errno = res;
-    } else {
+    if (!res) {
         attr->type = type;
     }
     return res;

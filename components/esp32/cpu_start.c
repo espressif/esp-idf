@@ -83,7 +83,7 @@ static bool app_cpu_started = false;
 static void do_global_ctors(void);
 static void main_task(void* args);
 extern void app_main(void);
-extern int esp_pthread_init(void);
+extern esp_err_t esp_pthread_init(void);
 
 extern int _bss_start;
 extern int _bss_end;
