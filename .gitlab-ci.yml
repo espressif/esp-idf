@@ -235,8 +235,11 @@ test_build_system:
     - build_test
   dependencies: []
   script:
-    - ./tools/ci/test_configure_ci_environment.sh
-    - ./tools/ci/test_build_system.sh
+    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
+    - rm -rf test_build_system
+    - mkdir test_build_system
+    - cd test_build_system
+    - ${IDF_PATH}/tools/ci/test_build_system.sh
 
 test_report:
   stage: test_report

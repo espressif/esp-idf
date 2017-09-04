@@ -3,11 +3,12 @@
 # Test the build system for basic consistency
 #
 # A bash script that tests some likely make failure scenarios in a row
-# Creates its own test build directory under TMP and cleans it up when done.
+#
+# Assumes PWD is an out-of-tree build directory, and will create a
+# subdirectory inside it to run build tests in.
 #
 # Environment variables:
 # IDF_PATH - must be set
-# TMP - can override /tmp location for build directory
 # ESP_IDF_TEMPLATE_GIT - Can override git clone source for template app. Otherwise github.
 # NOCLEANUP - Set to '1' if you want the script to leave its temporary directory when done, for post-mortem.
 #
@@ -26,7 +27,6 @@
 
 # Set up some variables
 #
-[ -z ${TMP} ] && TMP="/tmp"
 # override ESP_IDF_TEMPLATE_GIT to point to a local dir if you're testing and want fast iterations
 [ -z ${ESP_IDF_TEMPLATE_GIT} ] && ESP_IDF_TEMPLATE_GIT=https://github.com/espressif/esp-idf-template.git
 
@@ -205,7 +205,7 @@ function failure()
     FAILURES="${FAILURES}${STATUS} :: $1\n"
 }
 
-TESTDIR=${TMP}/build_system_tests_$$
+TESTDIR=${PWD}/build_system_tests_$$
 mkdir -p ${TESTDIR}
 # set NOCLEANUP=1 if you want to keep the test directory around
 # for post-mortem debugging

@@ -5,7 +5,7 @@
 #
 # Runs as part of CI process.
 #
-# Assumes CWD is an out-of-tree build directory, and will copy examples
+# Assumes PWD is an out-of-tree build directory, and will copy examples
 # to individual subdirectories, one by one.
 #
 #
