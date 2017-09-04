@@ -21,9 +21,9 @@ $(KCONFIG_TOOL_DIR)/mconf $(KCONFIG_TOOL_DIR)/conf:
 	$(MAKE) -C $(KCONFIG_TOOL_DIR)
 
 ifeq ("$(wildcard $(SDKCONFIG))","")
-ifeq ("$(filter defconfig, $(MAKECMDGOALS))","")
-# if no configuration file is present and defconfig is not a named
-# target, run defconfig then menuconfig to get the initial config
+ifeq ("$(filter defconfig clean% %clean, $(MAKECMDGOALS))","")
+# if no configuration file is present and defconfig or clean
+# is not a named target, run defconfig then menuconfig to get the initial config
 $(SDKCONFIG): menuconfig
 menuconfig: defconfig
 else
