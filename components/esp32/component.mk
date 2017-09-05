@@ -3,8 +3,9 @@
 #
 
 COMPONENT_SRCDIRS := . hwcrypto
+LIBS ?=
 ifndef CONFIG_NO_BLOBS
-LIBS := core rtc net80211 pp wpa smartconfig coexist wps wpa2 phy
+LIBS += core rtc net80211 pp wpa smartconfig coexist wps wpa2 phy
 endif
 
 #Linker scripts used to link the final application.
@@ -18,7 +19,7 @@ ifndef CONFIG_SPIRAM_CACHE_WORKAROUND
 LINKER_SCRIPTS += esp32.rom.spiram_incompatible_fns.ld
 endif
 
-ifeq ("$(CONFIG_NEWLIB_NANO_FORMAT)","y")
+ifdef CONFIG_NEWLIB_NANO_FORMAT
 LINKER_SCRIPTS += esp32.rom.nanofmt.ld
 endif
 

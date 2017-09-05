@@ -9,7 +9,9 @@ COMPONENT_ADD_INCLUDEDIRS := \
 	apps/ping
 
 ifdef CONFIG_PPP_SUPPORT
-LWIP_PPP_DIRS := netif/ppp/polarssl netif/ppp 
+LWIP_PPP_DIRS := netif/ppp/polarssl netif/ppp
+else
+LWIP_PPP_DIRS :=
 endif
 
 COMPONENT_SRCDIRS := \
