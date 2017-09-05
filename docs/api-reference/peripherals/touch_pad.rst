@@ -109,7 +109,6 @@ In next step configure how interrupts are triggered. They may be triggered below
 
 Finally configure and manage interrupt calls using the following functions:
 
-* :cpp:func:`touch_pad_isr_handler_register`
 * :cpp:func:`touch_pad_isr_register` / :cpp:func:`touch_pad_isr_deregister`
 * :cpp:func:`touch_pad_intr_enable` / :cpp:func:`touch_pad_intr_disable`
 
