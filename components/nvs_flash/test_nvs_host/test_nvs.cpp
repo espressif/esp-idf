@@ -1095,6 +1095,44 @@ TEST_CASE("recovery after failure to write data", "[nvs]")
     }
 }
 
+TEST_CASE("crc errors in item header are handled", "[nvs]")
+{
+    SpiFlashEmulator emu(3);
+    Storage storage;
+    // prepare some data
+    TEST_ESP_OK(storage.init(0, 3));
+    TEST_ESP_OK(storage.writeItem(0, "ns1", static_cast<uint8_t>(1)));
+    TEST_ESP_OK(storage.writeItem(1, "value1", static_cast<uint32_t>(1)));
+    TEST_ESP_OK(storage.writeItem(1, "value2", static_cast<uint32_t>(2)));
+    
+    // corrupt item header
+    uint32_t val = 0;
+    emu.write(32 * 3, &val, 4);
+    
+    // check that storage can recover
+    TEST_ESP_OK(storage.init(0, 3));
+    TEST_ESP_OK(storage.readItem(1, "value2", val));
+    CHECK(val == 2);
+    // check that the corrupted item is no longer present
+    TEST_ESP_ERR(ESP_ERR_NVS_NOT_FOUND, storage.readItem(1, "value1", val));
+    
+    // add more items to make the page full
+    for (size_t i = 0; i < Page::ENTRY_COUNT; ++i) {
+        char item_name[Item::MAX_KEY_LENGTH + 1];
+        snprintf(item_name, sizeof(item_name), "item_%ld", i);
+        TEST_ESP_OK(storage.writeItem(1, item_name, static_cast<uint32_t>(i)));
+    }
+
+    // corrupt another item on the full page
+    val = 0;
+    emu.write(32 * 4, &val, 4);
+    
+    // check that storage can recover
+    TEST_ESP_OK(storage.init(0, 3));
+    // check that the corrupted item is no longer present
+    TEST_ESP_ERR(ESP_ERR_NVS_NOT_FOUND, storage.readItem(1, "value2", val));
+}
+
 TEST_CASE("crc error in variable length item is handled", "[nvs]")
 {
     SpiFlashEmulator emu(3);
