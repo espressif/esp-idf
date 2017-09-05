@@ -12,6 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef __ESP_ADC_CAL_H__
+#define __ESP_ADC_CAL_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include "driver/adc.h"
 
@@ -139,3 +146,8 @@ uint32_t esp_adc_cal_raw_to_voltage(uint32_t adc,
  */
 uint32_t adc1_to_voltage(adc1_channel_t channel, const esp_adc_cal_characteristics_t *chars);
 
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __ESP_ADC_CAL_H__ */
