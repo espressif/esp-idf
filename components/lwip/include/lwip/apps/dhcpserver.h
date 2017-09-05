@@ -176,11 +176,6 @@ struct dhcps_pool{
 	u32_t lease_timer;
 };
 
-typedef struct _list_node{
-	void *pnode;
-	struct _list_node *pnext;
-}list_node;
-
 typedef u32_t dhcps_time_t;
 typedef u8_t dhcps_offer_t;
 
