@@ -151,11 +151,11 @@ COMPONENT_PATHS := $(foreach comp,$(COMPONENTS),$(firstword $(foreach cd,$(COMPO
 ifdef TESTS_ALL
 ifeq ($(TESTS_ALL),1)
 TEST_COMPONENTS_LIST := $(COMPONENTS)
-else
+else  # TESTS_ALL not empty and not 1
 # otherwise, use TEST_COMPONENTS
 TEST_COMPONENTS_LIST := $(TEST_COMPONENTS)
 endif
-else
+else  # TESTS_ALL unset
 TEST_COMPONENTS_LIST :=
 endif
 TEST_COMPONENT_PATHS := $(foreach comp,$(TEST_COMPONENTS_LIST),$(firstword $(foreach dir,$(COMPONENT_DIRS),$(wildcard $(dir)/$(comp)/test))))
@@ -171,6 +171,7 @@ TEST_COMPONENT_NAMES := $(foreach comp,$(TEST_COMPONENT_PATHS),$(lastword $(subs
 COMPONENT_INCLUDES :=
 COMPONENT_LDFLAGS :=
 COMPONENT_SUBMODULES :=
+COMPONENT_LIBRARIES :=
 
 # COMPONENT_PROJECT_VARS is the list of component_project_vars.mk generated makefiles
 # for each component.
@@ -194,9 +195,9 @@ export COMPONENT_INCLUDES
 include $(IDF_PATH)/make/common.mk
 
 all:
-ifneq ("$(CONFIG_SECURE_BOOT_ENABLED)","")
+ifdef CONFIG_SECURE_BOOT_ENABLED
 	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
-ifeq ("$(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)","")
+ifndef CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES
 	@echo "App built but not signed. Sign app & partition data before flashing, via espsecure.py:"
 	@echo "espsecure.py sign_data --keyfile KEYFILE $(APP_BIN)"
 	@echo "espsecure.py sign_data --keyfile KEYFILE $(PARTITION_TABLE_BIN)"
@@ -255,13 +256,13 @@ COMMON_FLAGS = \
 	-nostdlib
 
 # Optimization flags are set based on menuconfig choice
-ifneq ("$(CONFIG_OPTIMIZATION_LEVEL_RELEASE)","")
+ifdef CONFIG_OPTIMIZATION_LEVEL_RELEASE
 OPTIMIZATION_FLAGS = -Os
 else
 OPTIMIZATION_FLAGS = -Og
 endif
 
-ifeq ("$(CONFIG_OPTIMIZATION_ASSERTIONS_DISABLED)", "y")
+ifdef CONFIG_OPTIMIZATION_ASSERTIONS_DISABLED
 CPPFLAGS += -DNDEBUG
 endif
 

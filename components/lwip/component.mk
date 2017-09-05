@@ -8,8 +8,8 @@ COMPONENT_ADD_INCLUDEDIRS := \
 	include/lwip/posix \
 	apps/ping
 
-ifeq ("$(CONFIG_PPP_SUPPORT)","y")
-LWIP_PPP_DIRS := netif/ppp/polarssl netif/ppp 
+ifdef CONFIG_PPP_SUPPORT
+LWIP_PPP_DIRS := netif/ppp/polarssl netif/ppp
 else
 LWIP_PPP_DIRS :=
 endif

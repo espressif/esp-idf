@@ -4,7 +4,7 @@
 
 COMPONENT_SRCDIRS := . hwcrypto
 LIBS ?=
-ifneq ("$(CONFIG_NO_BLOBS)","y")
+ifndef CONFIG_NO_BLOBS
 LIBS += core rtc net80211 pp wpa smartconfig coexist wps wpa2 phy
 endif
 
@@ -19,11 +19,11 @@ ifndef CONFIG_SPIRAM_CACHE_WORKAROUND
 LINKER_SCRIPTS += esp32.rom.spiram_incompatible_fns.ld
 endif
 
-ifeq ("$(CONFIG_NEWLIB_NANO_FORMAT)","y")
+ifdef CONFIG_NEWLIB_NANO_FORMAT
 LINKER_SCRIPTS += esp32.rom.nanofmt.ld
 endif
 
-ifneq ("$(CONFIG_SPI_FLASH_ROM_DRIVER_PATCH)","y")
+ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
 LINKER_SCRIPTS += esp32.rom.spiflash.ld
 endif
 

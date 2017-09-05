@@ -1,7 +1,7 @@
 #
 # Component Makefile
 #
-ifneq ("$(CONFIG_BT_ENABLED)","")
+ifdef CONFIG_BT_ENABLED
 
 COMPONENT_SRCDIRS := .
 
@@ -20,7 +20,7 @@ COMPONENT_SUBMODULES += lib
 endif
 
 
-ifeq ("$(CONFIG_BLUEDROID_ENABLED)","y")
+ifdef CONFIG_BLUEDROID_ENABLED
 
 COMPONENT_ADD_INCLUDEDIRS +=	bluedroid/bta/include			\
 				bluedroid/bta/sys/include		\

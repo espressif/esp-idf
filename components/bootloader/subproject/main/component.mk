@@ -12,7 +12,7 @@ LINKER_SCRIPTS := \
 	$(IDF_PATH)/components/esp32/ld/esp32.peripherals.ld \
 	esp32.bootloader.rom.ld
 
-ifneq ("$(CONFIG_SPI_FLASH_ROM_DRIVER_PATCH)","y")
+ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
 LINKER_SCRIPTS += $(IDF_PATH)/components/esp32/ld/esp32.rom.spiflash.ld
 endif
 
