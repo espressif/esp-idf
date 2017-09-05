@@ -23,6 +23,7 @@
 #include "tcpip_adapter.h"
 
 #include "apps/dhcpserver.h"
+#include "apps/dhcpserver_options.h"
 
 #if ESP_DHCP
 
