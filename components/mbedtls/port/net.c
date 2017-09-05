@@ -102,19 +102,20 @@ int mbedtls_net_connect( mbedtls_net_context *ctx, const char *host, const char 
     /* Try the sockaddrs until a connection succeeds */
     ret = MBEDTLS_ERR_NET_UNKNOWN_HOST;
     for ( cur = addr_list; cur != NULL; cur = cur->ai_next ) {
-        ctx->fd = (int) socket( cur->ai_family, cur->ai_socktype,
-                                cur->ai_protocol );
-        if ( ctx->fd < 0 ) {
+        int fd = socket( cur->ai_family, cur->ai_socktype, cur->ai_protocol );
+
+        if ( fd < 0 ) {
             ret = MBEDTLS_ERR_NET_SOCKET_FAILED;
             continue;
         }
 
-        if ( connect( ctx->fd, cur->ai_addr, cur->ai_addrlen ) == 0 ) {
+        if ( connect( fd, cur->ai_addr, cur->ai_addrlen ) == 0 ) {
+            ctx->fd = fd; // connected!
             ret = 0;
             break;
         }
 
-        close( ctx->fd );
+        close( fd );
         ret = MBEDTLS_ERR_NET_CONNECT_FAILED;
     }
 
@@ -148,9 +149,8 @@ int mbedtls_net_bind( mbedtls_net_context *ctx, const char *bind_ip, const char 
     /* Try the sockaddrs until a binding succeeds */
     ret = MBEDTLS_ERR_NET_UNKNOWN_HOST;
     for ( cur = addr_list; cur != NULL; cur = cur->ai_next ) {
-        ctx->fd = (int) socket( cur->ai_family, cur->ai_socktype,
-                                cur->ai_protocol );
-        if ( ctx->fd < 0 ) {
+        int fd = socket( cur->ai_family, cur->ai_socktype, cur->ai_protocol );
+        if ( fd < 0 ) {
             ret = MBEDTLS_ERR_NET_SOCKET_FAILED;
             continue;
         }
@@ -158,9 +158,9 @@ int mbedtls_net_bind( mbedtls_net_context *ctx, const char *bind_ip, const char 
         /*SO_REUSEADDR option dafault is disable in source code(lwip)*/
 #if SO_REUSE
         int n = 1;
-        if ( setsockopt( ctx->fd, SOL_SOCKET, SO_REUSEADDR,
+        if ( setsockopt( fd, SOL_SOCKET, SO_REUSEADDR,
                          (const char *) &n, sizeof( n ) ) != 0 ) {
-            close( ctx->fd );
+            close( fd );
             ret = MBEDTLS_ERR_NET_SOCKET_FAILED;
             continue;
         }
@@ -169,22 +169,23 @@ int mbedtls_net_bind( mbedtls_net_context *ctx, const char *bind_ip, const char 
         struct sockaddr_in *serv_addr = NULL;
         serv_addr = (struct sockaddr_in *)cur->ai_addr;
         serv_addr->sin_addr.s_addr = htonl(INADDR_ANY); /* Any incoming interface */
-        if ( bind( ctx->fd, (struct sockaddr *)serv_addr, cur->ai_addrlen ) != 0 ) {
-            close( ctx->fd );
+        if ( bind( fd, (struct sockaddr *)serv_addr, cur->ai_addrlen ) != 0 ) {
+            close( fd );
             ret = MBEDTLS_ERR_NET_BIND_FAILED;
             continue;
         }
 
         /* Listen only makes sense for TCP */
         if ( proto == MBEDTLS_NET_PROTO_TCP ) {
-            if ( listen( ctx->fd, MBEDTLS_NET_LISTEN_BACKLOG ) != 0 ) {
-                close( ctx->fd );
+            if ( listen( fd, MBEDTLS_NET_LISTEN_BACKLOG ) != 0 ) {
+                close( fd );
                 ret = MBEDTLS_ERR_NET_LISTEN_FAILED;
                 continue;
             }
         }
 
         /* I we ever get there, it's a success */
+        ctx->fd = fd;
         ret = 0;
         break;
     }
