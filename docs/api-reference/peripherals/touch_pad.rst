@@ -21,6 +21,7 @@ Description of API is broken down into groups of functions to provide quick over
 - Taking measurements
 - Adjusting parameters of measurements
 - Filtering measurements
+- Touch detection methods
 - Setting up interrupts to report touch detection
 - Waking up from sleep mode on interrupt
 
@@ -51,7 +52,7 @@ The following two functions come handy to read raw or filtered measurements from
 * :cpp:func:`touch_pad_read`
 * :cpp:func:`touch_pad_read_filtered`
 
-They may be used to characterize particular touch pad design by checking the range of sensor readings when a pad is touched or released. This information is then used to establish the touch threshold. 
+They may be used to characterize particular touch pad design by checking the range of sensor readings when a pad is touched or released. This information can be then used to establish the touch threshold. 
 
 .. note::
 
@@ -87,15 +88,26 @@ The last chart "Output" represents the touch sensor reading, i.e. the count of p
 
 All functions are provided in pairs to 'set' specific parameter and to 'get' the current parameter's value, e.g. :cpp:func:`touch_pad_set_voltage` and :cpp:func:`touch_pad_get_voltage`.
 
+.. _touch_pad-api-filtering-of-measurements:
 
 Filtering of Measurements
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To avoid false touch detection you may filter noisy measurements. The filter should be started before first use by calling :cpp:func:`touch_pad_filter_start`.
+If measurements are noisy, you may filter them with provided API. The filter should be started before first use by calling :cpp:func:`touch_pad_filter_start`.
 
 The filter type is IIR (Infinite Impulse Response) and it has configurable period that can be set with function :cpp:func:`touch_pad_set_filter_period`.
 
 You can stop the filter with :cpp:func:`touch_pad_filter_stop`. If not required anymore, the filter may be deleted by invoking :cpp:func:`touch_pad_filter_delete`.
+
+
+Touch Detection
+^^^^^^^^^^^^^^^
+
+Touch detection is implemented in ESP32's hardware basing on user configured threshold and raw measurements executed by FSM. Use function :cpp:func:`touch_pad_get_status` to check what pads have been touched and :cpp:func:`touch_pad_clear_status` to clear the touch status information. 
+
+Hardware touch detection may be also wired to interrupts and this is described in next section. 
+
+If measurements are noisy and capacity changes small, then hardware touch detection may be not reliable. To resolve this issue, instead of using hardware detection / provided interrupts, implement measurement filtering and perform touch detection in your own application. See :example:`peripherals/touch_pad_interrupt` for sample implementation of both methods of touch detection.
 
 
 Touch Triggered Interrupts
@@ -105,7 +117,7 @@ Before enabling an interrupt on touch detection, user should establish touch det
 
 Once detection threshold is established, it may be set on initialization with :cpp:func:`touch_pad_config` or at the runtime with :cpp:func:`touch_pad_set_thresh`.
 
-In next step configure how interrupts are triggered. They may be triggered below or above threshold and this is set –with function :cpp:func:`touch_pad_set_trigger_mode`.
+In next step configure how interrupts are triggered. They may be triggered below or above threshold and this is set with function :cpp:func:`touch_pad_set_trigger_mode`.
 
 Finally configure and manage interrupt calls using the following functions:
 
@@ -113,6 +125,10 @@ Finally configure and manage interrupt calls using the following functions:
 * :cpp:func:`touch_pad_intr_enable` / :cpp:func:`touch_pad_intr_disable`
 
 When interrupts are operational, you can obtain information what particular pad triggered interrupt by invoking :cpp:func:`touch_pad_get_status` and clear pad status with :cpp:func:`touch_pad_clear_status`.
+
+.. note::
+
+    Interrupts on touch detection operate on raw / unfiltered measurements checked against user established threshold and are implemented in hardware. Enabling software filtering API (see :ref:`touch_pad-api-filtering-of-measurements`) does not affect this process.
 
 
 Wakeup from Sleep Mode
