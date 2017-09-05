@@ -32,6 +32,7 @@
 #include "alarm.h"
 #include "thread.h"
 #include "mutex.h"
+#include "fixed_queue.h"
 
 typedef struct {
     uint16_t opcode;
