@@ -276,10 +276,6 @@ $(foreach binfile,$(COMPONENT_EMBED_FILES), $(eval $(call GenerateEmbedTarget,$(
 
 $(foreach txtfile,$(COMPONENT_EMBED_TXTFILES), $(eval $(call GenerateEmbedTarget,$(txtfile),txt)))
 
-# generate targets to create binary embed directories
-$(foreach bindir,$(sort $(dir $(COMPONENT_EMBED_FILES))), $(eval $(call GenerateBuildDirTarget,$(bindir))))
-
-
 else   # COMPONENT_CONFIG_ONLY is set
 
 build:
