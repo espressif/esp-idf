@@ -28,6 +28,8 @@ we add more types of external RAM memory, this can be made into a more intellige
 #include "freertos/FreeRTOS.h"
 #include "freertos/xtensa_api.h"
 #include "soc/soc.h"
+#include "esp_heap_caps_init.h"
+#include "soc/soc_memory_layout.h"
 #include "soc/dport_reg.h"
 #include "rom/cache.h"
 
@@ -120,6 +122,12 @@ esp_err_t esp_spiram_init()
 }
 
 
+esp_err_t esp_spiram_add_to_heapalloc()
+{
+    //Add entire external RAM region to heap allocator. Heap allocator knows the capabilities of this type of memory, so there's
+    //no need to explicitly specify them.
+    return heap_caps_add_region((intptr_t)SOC_EXTRAM_DATA_LOW, (intptr_t)SOC_EXTRAM_DATA_LOW + CONFIG_SPIRAM_SIZE-1);
+}
 
 size_t esp_spiram_get_size()
 {

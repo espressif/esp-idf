@@ -25,6 +25,8 @@
 #include "freertos/task.h"
 #include "soc/soc_memory_layout.h"
 
+#include "heap_private.h"
+
 #define STACK_DEPTH CONFIG_HEAP_TRACING_STACK_DEPTH
 
 static portMUX_TYPE trace_mux = portMUX_INITIALIZER_UNLOCKED;
@@ -303,13 +305,25 @@ static IRAM_ATTR __attribute__((noinline)) void get_call_stack(void **callers)
 _Static_assert(STACK_DEPTH >= 0 && STACK_DEPTH <= 10, "CONFIG_HEAP_TRACING_STACK_DEPTH must be in range 0-10");
 
 
+typedef enum {
+    TRACE_MALLOC_CAPS,
+    TRACE_MALLOC_DEFAULT
+} trace_malloc_mode_t;
+
+
 void *__real_heap_caps_malloc(size_t size, uint32_t caps);
 
 /* trace any 'malloc' event */
-static IRAM_ATTR __attribute__((noinline)) void *trace_malloc(size_t size, uint32_t caps)
+static IRAM_ATTR __attribute__((noinline)) void *trace_malloc(size_t size, uint32_t caps, trace_malloc_mode_t mode)
 {
     uint32_t ccount = get_ccount();
-    void *p = __real_heap_caps_malloc(size, caps);
+    void *p;
+    if ( mode == TRACE_MALLOC_CAPS ) {
+        p = __real_heap_caps_malloc(size, caps);
+    } else { //TRACE_MALLOC_DEFAULT
+        p = heap_caps_malloc_default(size);
+    }
+
     if (tracing && p != NULL) {
         heap_trace_record_t rec = {
             .address = p,
@@ -338,7 +352,7 @@ static IRAM_ATTR __attribute__((noinline)) void trace_free(void *p)
 void * __real_heap_caps_realloc(void *p, size_t size, uint32_t caps);
 
 /* trace any 'realloc' event */
-static IRAM_ATTR __attribute__((noinline)) void *trace_realloc(void *p, size_t size, uint32_t caps)
+static IRAM_ATTR __attribute__((noinline)) void *trace_realloc(void *p, size_t size, uint32_t caps, trace_malloc_mode_t mode)
 {
     void *callers[STACK_DEPTH];
     uint32_t ccount = get_ccount();
@@ -346,7 +360,12 @@ static IRAM_ATTR __attribute__((noinline)) void *trace_realloc(void *p, size_t s
         get_call_stack(callers);
         record_free(p, callers);
     }
-    void *r = __real_heap_caps_realloc(p, size, caps);
+    void *r;
+    if (mode == TRACE_MALLOC_CAPS ) {
+        r = __real_heap_caps_realloc(p, size, caps);
+    } else { //TRACE_MALLOC_DEFAULT
+        r = heap_caps_realloc_default(p, size);
+    }
     if (tracing && r != NULL) {
         get_call_stack(callers);
         if (p != NULL) {
@@ -370,7 +389,7 @@ static IRAM_ATTR __attribute__((noinline)) void *trace_realloc(void *p, size_t s
 
 IRAM_ATTR void *__wrap_malloc(size_t size)
 {
-    return trace_malloc(size, MALLOC_CAP_8BIT);
+    return trace_malloc(size, 0, TRACE_MALLOC_DEFAULT);
 }
 
 IRAM_ATTR void __wrap_free(void *p)
@@ -380,13 +399,13 @@ IRAM_ATTR void __wrap_free(void *p)
 
 IRAM_ATTR void *__wrap_realloc(void *p, size_t size)
 {
-    return trace_realloc(p, size, MALLOC_CAP_8BIT);
+    return trace_realloc(p, size, 0, TRACE_MALLOC_DEFAULT);
 }
 
 IRAM_ATTR void *__wrap_calloc(size_t nmemb, size_t size)
 {
     size = size * nmemb;
-    void *result = trace_malloc(size, MALLOC_CAP_8BIT);
+    void *result = trace_malloc(size, 0, TRACE_MALLOC_DEFAULT);
     if (result != NULL) {
         memset(result, 0, size);
     }
@@ -395,12 +414,12 @@ IRAM_ATTR void *__wrap_calloc(size_t nmemb, size_t size)
 
 IRAM_ATTR void *__wrap_heap_caps_malloc(size_t size, uint32_t caps)
 {
-    return trace_malloc(size, caps);
+    return trace_malloc(size, caps, TRACE_MALLOC_CAPS);
 }
 
 IRAM_ATTR void __wrap_heap_caps_free(void *p) __attribute__((alias("__wrap_free")));
 
 IRAM_ATTR void *__wrap_heap_caps_realloc(void *p, size_t size, uint32_t caps)
 {
-    return trace_realloc(p, size, caps);
+    return trace_realloc(p, size, caps, TRACE_MALLOC_CAPS);
 }

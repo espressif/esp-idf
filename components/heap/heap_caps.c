@@ -133,6 +133,24 @@ IRAM_ATTR void *heap_caps_malloc( size_t size, uint32_t caps )
     return NULL;
 }
 
+/*
+ Default memory allocation implementation. Should return standard 8-bit memory. malloc() essentially resolves to this function.
+*/
+IRAM_ATTR void *heap_caps_malloc_default( size_t size )
+{
+    return heap_caps_malloc( size, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL );
+}
+
+/*
+ Same for realloc()
+ Note: keep the logic in here the same as in heap_caps_malloc_default (or merge the two as soon as this gets more complex...)
+ */
+IRAM_ATTR void *heap_caps_realloc_default( void *ptr, size_t size )
+{
+    return heap_caps_realloc( ptr, size, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL );
+}
+
+
 /* Find the heap which belongs to ptr, or return NULL if it's
    not in any heap.
 

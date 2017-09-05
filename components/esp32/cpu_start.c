@@ -255,6 +255,15 @@ void start_cpu0_default(void)
 {
     esp_err_t err;
     esp_setup_syscall_table();
+
+#if CONFIG_SPIRAM_BOOT_INIT && (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
+    esp_err_t r=esp_spiram_add_to_heapalloc();
+    if (r != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "External RAM could not be added to heap!");
+        abort();
+    }
+#endif
+
 //Enable trace memory and immediately start trace.
 #if CONFIG_ESP32_TRAX
 #if CONFIG_ESP32_TRAX_TWOBANKS
