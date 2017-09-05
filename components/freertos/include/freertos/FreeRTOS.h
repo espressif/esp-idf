@@ -978,13 +978,14 @@ typedef struct xSTATIC_QUEUE
 		uint8_t ucDummy9;
 	#endif
 
-    struct {
-	    volatile uint32_t ucDummy10;
-    #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-	    void *pvDummy8;
-	    UBaseType_t uxDummy11;
-    #endif
-    } sDummy12;
+	struct {
+		volatile uint32_t ucDummy10;
+		uint32_t ucDummy11;
+	#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
+		void *pvDummy8;
+		UBaseType_t uxDummy12;
+	#endif
+	} sDummy1;
 
 } StaticQueue_t;
 typedef StaticQueue_t StaticSemaphore_t;

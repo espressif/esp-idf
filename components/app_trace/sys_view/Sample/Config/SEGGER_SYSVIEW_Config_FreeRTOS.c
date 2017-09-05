@@ -115,7 +115,7 @@ static timer_group_t s_ts_timer_group;
 // everything is fine, so for multi-core env we have to wait on underlying lock forever
 #define SEGGER_LOCK_WAIT_TMO  ESP_APPTRACE_TMO_INFINITE
 
-static esp_apptrace_lock_t s_sys_view_lock = {.irq_stat = 0, .portmux = portMUX_INITIALIZER_UNLOCKED};
+static esp_apptrace_lock_t s_sys_view_lock = {.mux = portMUX_INITIALIZER_UNLOCKED, .int_state = 0};
 
 static const char * const s_isr_names[] = {
     [0] = "WIFI_MAC",

@@ -538,6 +538,12 @@ UT_001_06:
     - ESP32_IDF
     - UT_T1_SPIMODE
 
+UT_001_07:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
 IT_001_01:
   <<: *test_template
   tags:

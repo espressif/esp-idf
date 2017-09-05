@@ -59,8 +59,8 @@ static inline uint32_t esp_apptrace_tmo_remaining_us(esp_apptrace_tmo_t *tmo)
 
 /** Tracing module synchronization lock */
 typedef struct {
-    volatile unsigned int   irq_stat;   ///< local (on 1 CPU) IRQ state
-    portMUX_TYPE            portmux;    ///< mux for synchronization
+    portMUX_TYPE mux;
+    unsigned int_state;
 } esp_apptrace_lock_t;
 
 /**
@@ -70,8 +70,8 @@ typedef struct {
  */
 static inline void esp_apptrace_lock_init(esp_apptrace_lock_t *lock)
 {
-    lock->portmux.mux = portMUX_FREE_VAL;
-    lock->irq_stat = 0;
+    vPortCPUInitializeMutex(&lock->mux);
+    lock->int_state = 0;
 }
 
 /**
