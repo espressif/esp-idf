@@ -69,7 +69,7 @@ static List_t s_threads_list;
 
 static int IRAM_ATTR pthread_mutex_lock_internal(esp_pthread_mutex_t *mux, TickType_t tmo);
 
-esp_err_t __attribute__((constructor)) esp_pthread_init(void)
+esp_err_t esp_pthread_init(void)
 {
     vListInitialise((List_t *)&s_threads_list);
     s_once_mux = xSemaphoreCreateMutex();
