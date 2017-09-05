@@ -58,7 +58,7 @@ config SECURE_BOOT_ENABLED
 
         When enabling secure boot, JTAG and ROM BASIC Interpreter are permanently disabled by default.
 
-        Refer to http://esp-idf.readthedocs.io/en/latest/security/secure-boot.html before enabling.
+        Refer to https://esp-idf.readthedocs.io/en/latest/security/secure-boot.html before enabling.
 
 choice SECURE_BOOTLOADER_MODE
     bool "Secure bootloader mode"
@@ -122,7 +122,7 @@ config SECURE_BOOT_VERIFICATION_KEY
        PEM formatted private key using the espsecure.py
        extract_public_key command.
 
-       Refer to http://esp-idf.readthedocs.io/en/latest/security/secure-boot.html before enabling.
+       Refer to https://esp-idf.readthedocs.io/en/latest/security/secure-boot.html before enabling.
 
 config SECURE_BOOT_INSECURE
     bool "Allow potentially insecure options"
@@ -133,7 +133,7 @@ config SECURE_BOOT_INSECURE
 
        Only enable these options if you are very sure.
 
-       Refer to http://esp-idf.readthedocs.io/en/latest/security/secure-boot.html before enabling.
+       Refer to https://esp-idf.readthedocs.io/en/latest/security/secure-boot.html before enabling.
 
 config FLASH_ENCRYPTION_ENABLED
     bool "Enable flash encryption on boot (READ DOCS FIRST)"
@@ -144,7 +144,7 @@ config FLASH_ENCRYPTION_ENABLED
        Note: After first boot, the system will be permanently encrypted. Re-flashing an encrypted
        system is complicated and not always possible.
 
-       Read http://esp-idf.readthedocs.io/en/latest/security/flash-encryption.html before enabling.
+       Read https://esp-idf.readthedocs.io/en/latest/security/flash-encryption.html before enabling.
 
 config FLASH_ENCRYPTION_INSECURE
     bool "Allow potentially insecure options"

@@ -21,7 +21,7 @@ To develop applications for ESP32 you need:
 * **PC** loaded with either Windows, Linux or Mac operating system
 * **Toolchain** to build the **Application** for ESP32
 * **ESP-IDF** that essentially contains API for ESP32 and scripts to operate the **Toolchain**
-* A text editor to write programs (**Projects**) in C, e.g. `Eclipse <http://www.eclipse.org/>`_
+* A text editor to write programs (**Projects**) in C, e.g. `Eclipse <https://www.eclipse.org/>`_
 * The **ESP32** board itself and a **USB cable** to connect it to the **PC**
 
 .. figure:: ../_static/what-you-need.png

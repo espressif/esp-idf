@@ -57,7 +57,7 @@ The key software and hardware to perform debugging of ESP32 with OpenOCD over JT
 
 Under "Application Loading and Monitoring" there is another software and hardware to compile, build and flash application to ESP32, as well as to provide means to monitor diagnostic messages from ESP32.
 
-Debugging using JTAG and application loading / monitoring is integrated under the `Eclipse <http://www.eclipse.org/>`_ environment, to provide quick and easy transition from writing, compiling and loading the code to debugging, back to writing the code, and so on. All the software is available for Windows, Linux and MacOS platforms.
+Debugging using JTAG and application loading / monitoring is integrated under the `Eclipse <https://www.eclipse.org/>`_ environment, to provide quick and easy transition from writing, compiling and loading the code to debugging, back to writing the code, and so on. All the software is available for Windows, Linux and MacOS platforms.
 
 If the :doc:`ESP32 WROVER KIT <../../hw-reference/modules-and-boards>` is used, then connection from PC to ESP32 is done effectively with a single USB cable thanks to FT2232H chip installed on WROVER, which provides two USB channels, one for JTAG and the second for UART connection.
 
