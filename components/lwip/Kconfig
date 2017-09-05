@@ -93,6 +93,12 @@ config TCP_MSS
 
         Can be set lower to save RAM, the default value 1436 will give best throughput.
 
+config TCP_MSL
+    int "Maximum segment lifetime (MSL)"
+    default 60000
+    help
+        Set maximum segment lifetime in in milliseconds.
+
 config TCP_SND_BUF_DEFAULT
     int "Default send buffer size"
     default 5744  # 4 * default MSS
