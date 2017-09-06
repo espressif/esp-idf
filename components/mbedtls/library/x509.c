@@ -55,10 +55,13 @@
 #include <stdlib.h>
 #define mbedtls_free      free
 #define mbedtls_calloc    calloc
-#define mbedtls_time      time
-#define mbedtls_time_t    time_t
 #define mbedtls_printf    printf
 #define mbedtls_snprintf  snprintf
+#endif
+
+
+#if defined(MBEDTLS_HAVE_TIME)
+#include "mbedtls/platform_time.h"
 #endif
 
 #if defined(_WIN32) && !defined(EFIX64) && !defined(EFI32)
@@ -77,6 +80,7 @@
 #endif
 
 #define CHECK(code) if( ( ret = code ) != 0 ){ return( ret ); }
+#define CHECK_RANGE(min, max, val) if( val < min || val > max ){ return( ret ); }
 
 /*
  *  CertificateSerialNumber  ::=  INTEGER
@@ -476,14 +480,111 @@ int mbedtls_x509_get_name( unsigned char **p, const unsigned char *end,
     }
 }
 
-static int x509_parse_int(unsigned char **p, unsigned n, int *res){
+static int x509_parse_int( unsigned char **p, size_t n, int *res )
+{
     *res = 0;
-    for( ; n > 0; --n ){
-        if( ( **p < '0') || ( **p > '9' ) ) return MBEDTLS_ERR_X509_INVALID_DATE;
+
+    for( ; n > 0; --n )
+    {
+        if( ( **p < '0') || ( **p > '9' ) )
+            return ( MBEDTLS_ERR_X509_INVALID_DATE );
+
         *res *= 10;
-        *res += (*(*p)++ - '0');
+        *res += ( *(*p)++ - '0' );
     }
-    return 0;
+
+    return( 0 );
+}
+
+static int x509_date_is_valid(const mbedtls_x509_time *t)
+{
+    int ret = MBEDTLS_ERR_X509_INVALID_DATE;
+
+    CHECK_RANGE( 0, 9999, t->year );
+    CHECK_RANGE( 0, 23,   t->hour );
+    CHECK_RANGE( 0, 59,   t->min  );
+    CHECK_RANGE( 0, 59,   t->sec  );
+
+    switch( t->mon )
+    {
+        case 1: case 3: case 5: case 7: case 8: case 10: case 12:
+            CHECK_RANGE( 1, 31, t->day );
+            break;
+        case 4: case 6: case 9: case 11:
+            CHECK_RANGE( 1, 30, t->day );
+            break;
+        case 2:
+            CHECK_RANGE( 1, 28 + (t->year % 4 == 0), t->day );
+            break;
+        default:
+            return( ret );
+    }
+
+    return( 0 );
+}
+
+/*
+ * Parse an ASN1_UTC_TIME (yearlen=2) or ASN1_GENERALIZED_TIME (yearlen=4)
+ * field.
+ */
+static int x509_parse_time( unsigned char **p, size_t len, size_t yearlen,
+                            mbedtls_x509_time *tm )
+{
+    int ret;
+
+    /*
+     * Minimum length is 10 or 12 depending on yearlen
+     */
+    if ( len < yearlen + 8 )
+        return ( MBEDTLS_ERR_X509_INVALID_DATE );
+    len -= yearlen + 8;
+
+    /*
+     * Parse year, month, day, hour, minute
+     */
+    CHECK( x509_parse_int( p, yearlen, &tm->year ) );
+    if ( 2 == yearlen )
+    {
+        if ( tm->year < 50 )
+            tm->year += 100;
+
+        tm->year += 1900;
+    }
+
+    CHECK( x509_parse_int( p, 2, &tm->mon ) );
+    CHECK( x509_parse_int( p, 2, &tm->day ) );
+    CHECK( x509_parse_int( p, 2, &tm->hour ) );
+    CHECK( x509_parse_int( p, 2, &tm->min ) );
+
+    /*
+     * Parse seconds if present
+     */
+    if ( len >= 2 )
+    {
+        CHECK( x509_parse_int( p, 2, &tm->sec ) );
+        len -= 2;
+    }
+    else
+        return ( MBEDTLS_ERR_X509_INVALID_DATE );
+
+    /*
+     * Parse trailing 'Z' if present
+     */
+    if ( 1 == len && 'Z' == **p )
+    {
+        (*p)++;
+        len--;
+    }
+
+    /*
+     * We should have parsed all characters at this point
+     */
+    if ( 0 != len )
+        return ( MBEDTLS_ERR_X509_INVALID_DATE );
+
+    CHECK( x509_date_is_valid( tm ) );
+
+    return ( 0 );
 }
 
 /*
@@ -492,10 +593,10 @@ static int x509_parse_int(unsigned char **p, unsigned n, int *res){
  *       generalTime    GeneralizedTime }
  */
 int mbedtls_x509_get_time( unsigned char **p, const unsigned char *end,
-                   mbedtls_x509_time *time )
+                           mbedtls_x509_time *tm )
 {
     int ret;
-    size_t len;
+    size_t len, year_len;
     unsigned char tag;
 
     if( ( end - *p ) < 1 )
@@ -505,67 +606,38 @@ int mbedtls_x509_get_time( unsigned char **p, const unsigned char *end,
     tag = **p;
 
     if( tag == MBEDTLS_ASN1_UTC_TIME )
-    {
-        (*p)++;
-        ret = mbedtls_asn1_get_len( p, end, &len );
-
-        if( ret != 0 )
-            return( MBEDTLS_ERR_X509_INVALID_DATE + ret );
-
-        CHECK( x509_parse_int( p, 2, &time->year ) );
-        CHECK( x509_parse_int( p, 2, &time->mon ) );
-        CHECK( x509_parse_int( p, 2, &time->day ) );
-        CHECK( x509_parse_int( p, 2, &time->hour ) );
-        CHECK( x509_parse_int( p, 2, &time->min ) );
-        if( len > 10 )
-            CHECK( x509_parse_int( p, 2, &time->sec ) );
-        if( len > 12 && *(*p)++ != 'Z' )
-            return( MBEDTLS_ERR_X509_INVALID_DATE );
-
-        time->year +=  100 * ( time->year < 50 );
-        time->year += 1900;
-
-        return( 0 );
-    }
+        year_len = 2;
     else if( tag == MBEDTLS_ASN1_GENERALIZED_TIME )
-    {
-        (*p)++;
-        ret = mbedtls_asn1_get_len( p, end, &len );
-
-        if( ret != 0 )
-            return( MBEDTLS_ERR_X509_INVALID_DATE + ret );
-
-        CHECK( x509_parse_int( p, 4, &time->year ) );
-        CHECK( x509_parse_int( p, 2, &time->mon ) );
-        CHECK( x509_parse_int( p, 2, &time->day ) );
-        CHECK( x509_parse_int( p, 2, &time->hour ) );
-        CHECK( x509_parse_int( p, 2, &time->min ) );
-        if( len > 12 )
-            CHECK( x509_parse_int( p, 2, &time->sec ) );
-        if( len > 14 && *(*p)++ != 'Z' )
-            return( MBEDTLS_ERR_X509_INVALID_DATE );
-
-        return( 0 );
-    }
+        year_len = 4;
     else
         return( MBEDTLS_ERR_X509_INVALID_DATE +
                 MBEDTLS_ERR_ASN1_UNEXPECTED_TAG );
+
+    (*p)++;
+    ret = mbedtls_asn1_get_len( p, end, &len );
+
+    if( ret != 0 )
+        return( MBEDTLS_ERR_X509_INVALID_DATE + ret );
+
+    return x509_parse_time( p, len, year_len, tm );
 }
 
 int mbedtls_x509_get_sig( unsigned char **p, const unsigned char *end, mbedtls_x509_buf *sig )
 {
     int ret;
     size_t len;
+    int tag_type;
 
     if( ( end - *p ) < 1 )
         return( MBEDTLS_ERR_X509_INVALID_SIGNATURE +
                 MBEDTLS_ERR_ASN1_OUT_OF_DATA );
 
-    sig->tag = **p;
+    tag_type = **p;
 
     if( ( ret = mbedtls_asn1_get_bitstring_null( p, end, &len ) ) != 0 )
         return( MBEDTLS_ERR_X509_INVALID_SIGNATURE + ret );
 
+    sig->tag = tag_type;
     sig->len = len;
     sig->p = *p;
 
@@ -624,7 +696,7 @@ int mbedtls_x509_get_sig_alg( const mbedtls_x509_buf *sig_oid, const mbedtls_x50
 
 /*
  * X.509 Extensions (No parsing of extensions, pointer should
- * be either manually updated or extensions should be parsed!
+ * be either manually updated or extensions should be parsed!)
  */
 int mbedtls_x509_get_ext( unsigned char **p, const unsigned char *end,
                   mbedtls_x509_buf *ext, int tag )
@@ -963,7 +1035,7 @@ int mbedtls_x509_time_is_future( const mbedtls_x509_time *from )
  */
 int mbedtls_x509_self_test( int verbose )
 {
-#if defined(MBEDTLS_CERTS_C) && defined(MBEDTLS_SHA1_C)
+#if defined(MBEDTLS_CERTS_C) && defined(MBEDTLS_SHA256_C)
     int ret;
     uint32_t flags;
     mbedtls_x509_crt cacert;
