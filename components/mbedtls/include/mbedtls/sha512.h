@@ -101,6 +101,9 @@ void mbedtls_sha512_update( mbedtls_sha512_context *ctx, const unsigned char *in
  */
 void mbedtls_sha512_finish( mbedtls_sha512_context *ctx, unsigned char output[64] );
 
+/* Internal use */
+void mbedtls_sha512_process( mbedtls_sha512_context *ctx, const unsigned char data[128] );
+
 #ifdef __cplusplus
 }
 #endif
@@ -130,9 +133,6 @@ void mbedtls_sha512( const unsigned char *input, size_t ilen,
  * \return         0 if successful, or 1 if the test failed
  */
 int mbedtls_sha512_self_test( int verbose );
-
-/* Internal use */
-void mbedtls_sha512_process( mbedtls_sha512_context *ctx, const unsigned char data[128] );
 
 #ifdef __cplusplus
 }
