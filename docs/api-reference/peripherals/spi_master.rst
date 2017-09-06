@@ -66,6 +66,7 @@ In half duplex, the length of write phase and read phase are decided by ``trans_
 ``trans_conf.rx_length`` respectively. ** Note that a half duplex transaction with both a read and 
 write phase is not supported when using DMA. ** If such transaction is needed, you have to use one 
 of the alternative solutions:
+
   1. use full-duplex mode instead.
   2. disable the DMA by set the last parameter to 0 in bus initialization function just as belows:
      ``ret=spi_bus_initialize(VSPI_HOST, &buscfg, 0);``  
@@ -109,8 +110,10 @@ Transaction data
 Normally, data to be transferred to or from a device will be read from or written to a chunk of memory
 indicated by the ``rx_buffer`` and ``tx_buffer`` members of the transaction structure. 
 When DMA is enabled for transfers, these buffers are highly recommended to meet the requirements as belows:
+
   1. allocated in DMA-capable memory using ``pvPortMallocCaps(size, MALLOC_CAP_DMA)``;
   2. 32-bit aligned (start from the boundary and have length of multiples of 4 bytes).
+
 If these requirements are not satisfied, efficiency of the transaction will suffer due to the allocation and 
 memcpy of temporary buffers.
 

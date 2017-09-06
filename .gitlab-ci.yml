@@ -175,16 +175,31 @@ build_docs:
   tags:
     - build_docs
   artifacts:
+    when: always
     paths:
+      - docs/doxygen-warning-log.txt
+      - docs/sphinx-warning-log.txt
       - docs/_build/html
     expire_in: 1 mos
   script:
     - cd docs
     - doxygen
-    # If not building master branch, and there are Doxygen warnings, print them and bail out
-    - test -n $IS_PRIVATE && test $(cat doxygen-warning-log.txt | wc -l) -eq 0 || ( echo "Doxygen pass had some warnings:" && cat doxygen-warning-log.txt && false )
+    # If there are Doxygen warnings, print them and bail out
+    - test $(cat doxygen-warning-log.txt | wc -l) -eq 0 || ( echo "Doxygen pass had some warnings:" && cat doxygen-warning-log.txt && false )
     - make gh-linkcheck
     - make html
+    # If there are Sphinx warnings, print them and bail out
+    # Ignore warnings (sphinx-known-warnings.txt) already reported in:
+    # https://github.com/sphinx-doc/sphinx/issues/2683
+    # https://github.com/sphinx-doc/sphinx/issues/4041
+    # If a new warning has to be added, then it should be documented as above
+    # Note: this check is not clever enough to ignore the same warning
+    #       but reported for different line of documentation. 
+    #       If s warning stays the same and the line number has changed,
+    #       then update 'sphinx-known-warnings.txt' to reflect the new lines numbers.
+    - DIFF_FORMAT="--changed-group-format=%<%> --unchanged-group-format="
+    - LOG_DIFF=$(diff $DIFF_FORMAT sphinx-known-warnings.txt sphinx-warning-log.txt)
+    - test -z "$LOG_DIFF" || ( echo "Sphinx pass had some new warnings:" && echo "$LOG_DIFF" && false )
 
 test_nvs_on_host:
   stage: test
