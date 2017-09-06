@@ -56,6 +56,7 @@ TEST_CASE("Spiram cache flush on mmap", "[spiram][ignore]")
     void *mem[2];
     res[0]=0; res[1]=0;
 #if CONFIG_SPIRAM_USE_CAPS_ALLOC
+    printf("Allocating SPI RAM chunk...\n");
     mem[0]=heap_caps_malloc(TSTSZ, MALLOC_CAP_SPIRAM);
     mem[1]=heap_caps_malloc(TSTSZ, MALLOC_CAP_SPIRAM);
 #else
@@ -101,6 +102,7 @@ TEST_CASE("Spiram cache flush on write/read", "[spiram][ignore]")
     void *mem[2];
     res[0]=0; res[1]=0;
 #if CONFIG_SPIRAM_USE_CAPS_ALLOC
+    printf("Allocating SPI RAM chunk...\n");
     mem[0]=heap_caps_malloc(TSTSZ, MALLOC_CAP_SPIRAM);
     mem[1]=heap_caps_malloc(TSTSZ, MALLOC_CAP_SPIRAM);
 #else
@@ -175,3 +177,7 @@ IRAM_ATTR TEST_CASE("Spiram memcmp weirdness at 80MHz", "[spiram][ignore]") {
 
 
 #endif  //CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MEMMAP
+
+
+
+
