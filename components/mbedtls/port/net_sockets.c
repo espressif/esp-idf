@@ -39,7 +39,7 @@
 #define mbedtls_time_t    time_t
 #endif
 
-#include "mbedtls/net.h"
+#include "mbedtls/net_sockets.h"
 
 #include <string.h>
 #include <sys/types.h>
