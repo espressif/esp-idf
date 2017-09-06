@@ -147,17 +147,17 @@ export COMPONENTS
 # can use $(notdir x) to get the component name.
 COMPONENT_PATHS := $(foreach comp,$(COMPONENTS),$(firstword $(foreach cd,$(COMPONENT_DIRS),$(wildcard $(dir $(cd))$(comp) $(cd)/$(comp)))))
 
-# If TESTS_ALL set to 1, set TEST_COMPONENTS_LIST to all components
-ifdef TESTS_ALL
+TEST_COMPONENTS ?=
+TESTS_ALL ?=
+
+# If TESTS_ALL set to 1, set TEST_COMPONENTS_LIST to all components.
+# Otherwise, use the list supplied in TEST_COMPONENTS.
 ifeq ($(TESTS_ALL),1)
 TEST_COMPONENTS_LIST := $(COMPONENTS)
-else  # TESTS_ALL not empty and not 1
-# otherwise, use TEST_COMPONENTS
+else
 TEST_COMPONENTS_LIST := $(TEST_COMPONENTS)
 endif
-else  # TESTS_ALL unset
-TEST_COMPONENTS_LIST :=
-endif
+
 TEST_COMPONENT_PATHS := $(foreach comp,$(TEST_COMPONENTS_LIST),$(firstword $(foreach dir,$(COMPONENT_DIRS),$(wildcard $(dir)/$(comp)/test))))
 TEST_COMPONENT_NAMES := $(foreach comp,$(TEST_COMPONENT_PATHS),$(lastword $(subst /, ,$(dir $(comp))))_test)
 
