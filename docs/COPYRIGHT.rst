@@ -103,10 +103,10 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _Newlib: https://sourceware.org/newlib/
 .. _FreeRTOS: http://freertos.org/
 .. _esptool.py: https://github.com/espressif/esptool
-.. _LWIP: http://savannah.nongnu.org/projects/lwip/
+.. _LWIP: https://savannah.nongnu.org/projects/lwip/
 .. _TinyBasic: https://github.com/BleuLlama/TinyBasicPlus
 .. _miniz: https://code.google.com/archive/p/miniz/
-.. _wpa_supplicant: http://w1.fi/wpa_supplicant/
+.. _wpa_supplicant: https://w1.fi/wpa_supplicant/
 .. _FreeBSD net80211: https://github.com/freebsd/freebsd/tree/master/sys/net80211
 .. _TJpgDec: http://elm-chan.org/fsw/tjpgd/00index.html
 .. _JSMN: http://zserge.com/jsmn.html

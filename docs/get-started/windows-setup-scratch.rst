@@ -44,7 +44,7 @@ To add these mirrors, edit the following two MSYS2 mirrorlist files before runni
 
 Add these lines at the top of ``mirrorlist.mingw32``::
 
-  Server = http://mirrors.ustc.edu.cn/msys2/mingw/i686/
+  Server = https://mirrors.ustc.edu.cn/msys2/mingw/i686/
   Server = http://mirror.bit.edu.cn/msys2/REPOS/MINGW/i686
 
 Add these lines at the top of ``mirrorlist.msys``::

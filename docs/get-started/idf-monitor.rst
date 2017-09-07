@@ -114,4 +114,4 @@ Issues Observed on Windows
 .. _addr2line: https://sourceware.org/binutils/docs/binutils/addr2line.html
 .. _gdb: https://sourceware.org/gdb/download/onlinedocs/
 .. _pySerial: https://github.com/pyserial/pyserial
-.. _miniterm: http://pyserial.readthedocs.org/en/latest/tools.html#module-serial.tools.miniterm
+.. _miniterm: https://pyserial.readthedocs.org/en/latest/tools.html#module-serial.tools.miniterm
