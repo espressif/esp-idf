@@ -37,6 +37,7 @@
 #include <sys/time.h>
 #include <sys/fcntl.h>
 #include "esp_task.h"
+#include "esp_system.h"
 #include "sdkconfig.h"
 
 /* Enable all Espressif-only options */
@@ -65,7 +66,7 @@
  */
 #define SMEMCPY(dst,src,len)            memcpy(dst,src,len)
 
-#define LWIP_RAND       rand
+#define LWIP_RAND       esp_random
 
 /*
    ------------------------------------

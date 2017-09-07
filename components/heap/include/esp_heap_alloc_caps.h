@@ -27,7 +27,7 @@ void *pvPortMallocCaps(size_t xWantedSize, uint32_t caps) asm("heap_caps_malloc"
 /* Please use heap_caps_get_minimum_free_heap_size() instead of this function */
 size_t xPortGetMinimumEverFreeHeapSizeCaps( uint32_t caps ) asm("heap_caps_get_minimum_free_heap_size") __attribute__((deprecated));
 
-/* Please use heap_caps_get_free_heap_size() instead of this function */
+/* Please use heap_caps_get_free_size() instead of this function */
 size_t xPortGetFreeHeapSizeCaps( uint32_t caps ) asm("heap_caps_get_free_heap_size") __attribute__((deprecated));
 
 #ifdef __cplusplus

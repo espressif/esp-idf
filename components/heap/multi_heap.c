@@ -19,10 +19,42 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <multi_heap.h>
+#include "multi_heap_internal.h"
 
 /* Note: Keep platform-specific parts in this header, this source
    file should depend on libc only */
 #include "multi_heap_platform.h"
+
+/* Defines compile-time configuration macros */
+#include "multi_heap_config.h"
+
+#ifndef MULTI_HEAP_POISONING
+/* if no heap poisoning, public API aliases directly to these implementations */
+void *multi_heap_malloc(multi_heap_handle_t heap, size_t size)
+    __attribute__((alias("multi_heap_malloc_impl")));
+
+void multi_heap_free(multi_heap_handle_t heap, void *p)
+    __attribute__((alias("multi_heap_free_impl")));
+
+void *multi_heap_realloc(multi_heap_handle_t heap, void *p, size_t size)
+    __attribute__((alias("multi_heap_realloc_impl")));
+
+size_t multi_heap_get_allocated_size(multi_heap_handle_t heap, void *p)
+    __attribute__((alias("multi_heap_get_allocated_size_impl")));
+
+multi_heap_handle_t multi_heap_register(void *start, size_t size)
+    __attribute__((alias("multi_heap_register_impl")));
+
+void multi_get_heap_info(multi_heap_handle_t heap, multi_heap_info_t *info)
+    __attribute__((alias("multi_heap_get_info_impl")));
+
+size_t multi_heap_free_size(multi_heap_handle_t heap)
+    __attribute__((alias("multi_heap_free_size_impl")));
+
+size_t multi_heap_minimum_free_size(multi_heap_handle_t heap)
+    __attribute__((alias("multi_heap_minimum_free_size_impl")));
+
+#endif
 
 #define ALIGN(X) ((X) & ~(sizeof(void *)-1))
 #define ALIGN_UP(X) ALIGN((X)+sizeof(void *)-1)
@@ -194,6 +226,11 @@ static heap_block_t *merge_adjacent(heap_t *heap, heap_block_t *a, heap_block_t 
         heap->free_bytes += sizeof(a->header);
     }
 
+#ifdef MULTI_HEAP_POISONING_SLOW
+    /* b's former block header needs to be replaced with a fill pattern */
+    multi_heap_internal_poison_fill_region(b, sizeof(heap_block_t), free);
+#endif
+
     return a;
 }
 
@@ -235,16 +272,16 @@ static void split_if_necessary(heap_t *heap, heap_block_t *block, size_t size, h
     heap->free_bytes += block_data_size(new_block);
 }
 
-size_t multi_heap_get_allocated_size(multi_heap_handle_t heap, void *p)
+size_t multi_heap_get_allocated_size_impl(multi_heap_handle_t heap, void *p)
 {
     heap_block_t *pb = get_block(p);
-    
+
     assert_valid_block(heap, pb);
     assert(!is_free(pb));
     return block_data_size(pb);
 }
 
-multi_heap_handle_t multi_heap_register(void *start, size_t size)
+multi_heap_handle_t multi_heap_register_impl(void *start, size_t size)
 {
     heap_t *heap = (heap_t *)ALIGN_UP((intptr_t)start);
     uintptr_t end = ALIGN((uintptr_t)start + size);
@@ -285,7 +322,7 @@ void multi_heap_set_lock(multi_heap_handle_t heap, void *lock)
     heap->lock = lock;
 }
 
-void *multi_heap_malloc(multi_heap_handle_t heap, size_t size)
+void *multi_heap_malloc_impl(multi_heap_handle_t heap, size_t size)
 {
     heap_block_t *best_block = NULL;
     heap_block_t *prev_free = NULL;
@@ -336,7 +373,7 @@ void *multi_heap_malloc(multi_heap_handle_t heap, size_t size)
     return best_block->data;
 }
 
-void multi_heap_free(multi_heap_handle_t heap, void *p)
+void multi_heap_free_impl(multi_heap_handle_t heap, void *p)
 {
     heap_block_t *pb = get_block(p);
 
@@ -378,7 +415,7 @@ void multi_heap_free(multi_heap_handle_t heap, void *p)
 }
 
 
-void *multi_heap_realloc(multi_heap_handle_t heap, void *p, size_t size)
+void *multi_heap_realloc_impl(multi_heap_handle_t heap, void *p, size_t size)
 {
     heap_block_t *pb = get_block(p);
     void *result;
@@ -387,14 +424,16 @@ void *multi_heap_realloc(multi_heap_handle_t heap, void *p, size_t size)
     assert(heap != NULL);
 
     if (p == NULL) {
-        return multi_heap_malloc(heap, size);
+        return multi_heap_malloc_impl(heap, size);
     }
 
     assert_valid_block(heap, pb);
     assert(!is_free(pb) && "realloc arg should be allocated");
 
     if (size == 0) {
-        multi_heap_free(heap, p);
+        /* note: calling multi_free_impl() here as we've already been
+           through any poison-unwrapping */
+        multi_heap_free_impl(heap, p);
         return NULL;
     }
 
@@ -449,10 +488,13 @@ void *multi_heap_realloc(multi_heap_handle_t heap, void *p, size_t size)
 
     if (result == NULL) {
         // Need to allocate elsewhere and copy data over
-        result = multi_heap_malloc(heap, size);
+        //
+        // (Calling _impl versions here as we've already been through any
+        // unwrapping for heap poisoning features.)
+        result = multi_heap_malloc_impl(heap, size);
         if (result != NULL) {
             memcpy(result, pb->data, block_data_size(pb));
-            multi_heap_free(heap, pb->data);
+            multi_heap_free_impl(heap, pb->data);
         }
     }
 
@@ -511,10 +553,26 @@ bool multi_heap_check(multi_heap_handle_t heap, bool print_errors)
                 total_free_bytes += block_data_size(b);
             }
         }
-    }
+
+#ifdef MULTI_HEAP_POISONING
+        if (!is_last_block(b)) {
+            /* For slow heap poisoning, any block should contain correct poisoning patterns and/or fills */
+            bool poison_ok;
+            if (is_free(b) && b != heap->last_block) {
+                uint32_t block_len = (intptr_t)get_next_block(b) - (intptr_t)b - sizeof(heap_block_t);
+                poison_ok = multi_heap_internal_check_block_poisoning(&b[1], block_len, true, print_errors);
+            }
+            else {
+                poison_ok = multi_heap_internal_check_block_poisoning(b->data, block_data_size(b), false, print_errors);
+            }
+            valid = poison_ok && valid;
+        }
+#endif
+
+    } /* for(heap_block_t b = ... */
 
     if (prev != heap->last_block) {
-        FAIL_PRINT("CORRUPT HEAP: Ended at %p not %p\n", prev, heap->last_block);
+        FAIL_PRINT("CORRUPT HEAP: Last block %p not %p\n", prev, heap->last_block);
     }
     if (!is_free(heap->last_block)) {
         FAIL_PRINT("CORRUPT HEAP: Expected prev block %p to be free\n", heap->last_block);
@@ -547,7 +605,7 @@ void multi_heap_dump(multi_heap_handle_t heap)
     MULTI_HEAP_UNLOCK(heap->lock);
 }
 
-size_t multi_heap_free_size(multi_heap_handle_t heap)
+size_t multi_heap_free_size_impl(multi_heap_handle_t heap)
 {
     if (heap == NULL) {
         return 0;
@@ -555,7 +613,7 @@ size_t multi_heap_free_size(multi_heap_handle_t heap)
     return heap->free_bytes;
 }
 
-size_t multi_heap_minimum_free_size(multi_heap_handle_t heap)
+size_t multi_heap_minimum_free_size_impl(multi_heap_handle_t heap)
 {
     if (heap == NULL) {
         return 0;
@@ -563,7 +621,7 @@ size_t multi_heap_minimum_free_size(multi_heap_handle_t heap)
     return heap->minimum_free_bytes;
 }
 
-void multi_heap_get_info(multi_heap_handle_t heap, multi_heap_info_t *info)
+void multi_heap_get_info_impl(multi_heap_handle_t heap, multi_heap_info_t *info)
 {
     memset(info, 0, sizeof(multi_heap_info_t));
 

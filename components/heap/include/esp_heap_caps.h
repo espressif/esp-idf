@@ -38,7 +38,7 @@
  *
  * Equivalent semantics to libc malloc(), for capability-aware memory.
  *
- * In IDF, malloc(p) is equivalent to heaps_caps_malloc(p, MALLOC_CAP_8BIT);
+ * In IDF, ``malloc(p)`` is equivalent to ``heaps_caps_malloc(p, MALLOC_CAP_8BIT)``.
  *
  * @param size Size, in bytes, of the amount of memory to allocate
  * @param caps        Bitwise OR of MALLOC_CAP_* flags indicating the type
@@ -53,7 +53,7 @@ void *heap_caps_malloc(size_t size, uint32_t caps);
  *
  * Equivalent semantics to libc free(), for capability-aware memory.
  *
- *  In IDF, free(p) is equivalent to heap_caps_free(p).
+ *  In IDF, ``free(p)`` is equivalent to ``heap_caps_free(p)``.
  *
  * @param ptr Pointer to memory previously returned from heap_caps_malloc() or heap_caps_realloc(). Can be NULL.
  */
@@ -64,10 +64,10 @@ void heap_caps_free( void *ptr);
  *
  * Equivalent semantics to libc realloc(), for capability-aware memory.
  *
- * In IDF, realloc(p, s) is equivalent to heap_caps_realloc(p, s, MALLOC_CAP_8BIT).
+ * In IDF, ``realloc(p, s)`` is equivalent to ``heap_caps_realloc(p, s, MALLOC_CAP_8BIT)``.
  *
  * 'caps' parameter can be different to the capabilities that any original 'ptr' was allocated with. In this way,
- * realloc can be used to "move" a buffer if necessary to ensure it meets new set of capabilities.
+ * realloc can be used to "move" a buffer if necessary to ensure it meets a new set of capabilities.
  *
  * @param ptr Pointer to previously allocated memory, or NULL for a new allocation.
  * @param size Size of the new buffer requested, or 0 to free the buffer.
@@ -103,8 +103,8 @@ size_t heap_caps_get_free_size( uint32_t caps );
  * with the given capabilities.
  *
  * Note the result may be less than the global all-time minimum available heap of this kind, as "low water marks" are
- * tracked per-heap. Individual heaps may have reached their "low water marks" at different points in time. However
- * this result still gives a "worst case" indication for all-time free heap.
+ * tracked per-region. Individual regions' heaps may have reached their "low water marks" at different points in time. However
+ * this result still gives a "worst case" indication for all-time minimum free heap.
  *
  * @param caps        Bitwise OR of MALLOC_CAP_* flags indicating the type
  *                    of memory
@@ -116,7 +116,7 @@ size_t heap_caps_get_minimum_free_size( uint32_t caps );
 /**
  * @brief Get the largest free block of memory able to be allocated with the given capabilities.
  *
- * Returns the largest value of 's' for which heap_caps_malloc(s, caps) will succeed.
+ * Returns the largest value of ``s`` for which ``heap_caps_malloc(s, caps)`` will succeed.
  *
  * @param caps        Bitwise OR of MALLOC_CAP_* flags indicating the type
  *                    of memory
@@ -131,7 +131,7 @@ size_t heap_caps_get_largest_free_block( uint32_t caps );
  *
  * Calls multi_heap_info() on all heaps which share the given capabilities.  The information returned is an aggregate
  * across all matching heaps.  The meanings of fields are the same as defined for multi_heap_info_t, except that
- * minimum_free_bytes has the same caveats described in heap_caps_get_minimum_free_size().
+ * ``minimum_free_bytes`` has the same caveats described in heap_caps_get_minimum_free_size().
  *
  * @param info        Pointer to a structure which will be filled with relevant
  *                    heap metadata.
@@ -154,3 +154,19 @@ void heap_caps_get_info( multi_heap_info_t *info, uint32_t caps );
  */
 void heap_caps_print_heap_info( uint32_t caps );
 
+/**
+ * @brief Check integrity of all heaps with the given capabilities.
+ *
+ * Calls multi_heap_check() on all heaps which share the given capabilities. Optionally
+ * print errors if the heaps are corrupt.
+ *
+ * Call ``heap_caps_check_integrity(MALLOC_CAP_INVALID, print_errors)`` to check
+ * all regions' heaps.
+ *
+ * @param caps        Bitwise OR of MALLOC_CAP_* flags indicating the type
+ *                    of memory
+ * @param print_errors Print specific errors if heap corruption is found.
+ *
+ * @return True if all heaps are valid, False if at least one heap is corrupt.
+ */
+bool heap_caps_check_integrity(uint32_t caps, bool print_errors);

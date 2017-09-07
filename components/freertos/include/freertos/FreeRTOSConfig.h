@@ -231,12 +231,6 @@
 #define INCLUDE_pcTaskGetTaskName			1
 #define INCLUDE_xTaskGetIdleTaskHandle      1
 
-#if CONFIG_ENABLE_MEMORY_DEBUG
-#define configENABLE_MEMORY_DEBUG 1
-#else
-#define configENABLE_MEMORY_DEBUG 0
-#endif
-
 #define INCLUDE_xSemaphoreGetMutexHolder    1
 
 /* The priority at which the tick interrupt runs.  This should probably be

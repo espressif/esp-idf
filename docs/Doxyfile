@@ -109,6 +109,7 @@ INPUT = \
     ##
     ## Memory Allocation    #
     ../components/heap/include/esp_heap_caps.h \
+    ../components/heap/include/esp_heap_trace.h \
     ../components/heap/include/esp_heap_caps_init.h \
     ../components/heap/include/multi_heap.h \
     ## Interrupt Allocation

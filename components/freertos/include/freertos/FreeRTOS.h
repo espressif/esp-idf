@@ -189,11 +189,7 @@ extern "C" {
 #endif
 
 #ifndef INCLUDE_pcTaskGetTaskName
-#if ( configENABLE_MEMORY_DEBUG == 1)
 	#define INCLUDE_pcTaskGetTaskName 1
-#else
-	#define INCLUDE_pcTaskGetTaskName 0
-#endif
 #endif
 
 #ifndef configUSE_APPLICATION_TASK_TAG

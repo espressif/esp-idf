@@ -123,6 +123,7 @@ extern "C" {
 #endif
 
 #include "mpu_wrappers.h"
+#include "esp_system.h"
 
 /*
  * Setup the stack of a new task so it is ready to be placed under the
@@ -143,11 +144,10 @@ extern "C" {
  * non-FreeRTOS-specific code, and behave the same as
  * pvPortMalloc()/vPortFree().
  */
-void *pvPortMalloc( size_t xSize ) PRIVILEGED_FUNCTION;
-void vPortFree( void *pv ) PRIVILEGED_FUNCTION;
-void vPortInitialiseBlocks( void ) PRIVILEGED_FUNCTION;
-size_t xPortGetFreeHeapSize( void ) PRIVILEGED_FUNCTION;
-size_t xPortGetMinimumEverFreeHeapSize( void ) PRIVILEGED_FUNCTION;
+#define pvPortMalloc malloc
+#define vPortFree free
+#define xPortGetFreeHeapSize esp_get_free_heap_size
+#define xPortGetMinimumEverFreeHeapSize esp_get_minimum_free_heap_size
 
 /*
  * Setup the hardware ready for the scheduler to take control.  This generally
