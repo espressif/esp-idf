@@ -159,6 +159,8 @@ uint64_t ref_clock_get()
     uint32_t microseconds = PCNT.cnt_unit[REF_CLOCK_PCNT_UNIT].cnt_val;
     uint32_t milliseconds = s_milliseconds;
     if (PCNT.int_st.val & BIT(REF_CLOCK_PCNT_UNIT)) {
+        // refresh counter value, in case the overflow has happened after reading cnt_val
+        microseconds = PCNT.cnt_unit[REF_CLOCK_PCNT_UNIT].cnt_val;
         milliseconds += REF_CLOCK_PRESCALER_MS;
     }
     portEXIT_CRITICAL(&s_lock);
