@@ -50,11 +50,14 @@ typedef struct {
     uint8_t databytes; //No of data in data; bit 7 = delay after set; 0xFF = end of cmds.
 } lcd_init_cmd_t;
 
+typedef enum {
+    LCD_TYPE_ILI = 1,
+    LCD_TYPE_ST,
+    LCD_TYPE_MAX,
+} type_lcd_t;
+
 //Place data into DRAM. Constant data gets placed into DROM by default, which is not accessible by DMA.
-
-#ifdef CONFIG_LCD_TYPE_ST7789V
-
-DRAM_ATTR static const lcd_init_cmd_t lcd_init_cmds[]={
+DRAM_ATTR static const lcd_init_cmd_t st_init_cmds[]={
     {0x36, {(1<<5)|(1<<6)}, 1},
     {0x3A, {0x55}, 1},
     {0xB2, {0x0c, 0x0c, 0x00, 0x33, 0x33}, 5},
@@ -73,9 +76,7 @@ DRAM_ATTR static const lcd_init_cmd_t lcd_init_cmds[]={
     {0, {0}, 0xff}
 };
 
-#elif defined(CONFIG_LCD_TYPE_ILI9341)
-
-DRAM_ATTR static const lcd_init_cmd_t lcd_init_cmds[]={
+DRAM_ATTR static const lcd_init_cmd_t ili_init_cmds[]={
     {0xCF, {0x00, 0x83, 0X30}, 3},
     {0xED, {0x64, 0x03, 0X12, 0X81}, 4},
     {0xE8, {0x85, 0x01, 0x79}, 3},
@@ -102,9 +103,6 @@ DRAM_ATTR static const lcd_init_cmd_t lcd_init_cmds[]={
     {0x29, {0}, 0x80},
     {0, {0}, 0xff},
 };
-
-#endif
-
 
 //Send a command to the LCD. Uses spi_device_transmit, which waits until the transfer is complete.
 void lcd_cmd(spi_device_handle_t spi, const uint8_t cmd) 
@@ -141,10 +139,29 @@ void lcd_spi_pre_transfer_callback(spi_transaction_t *t)
     gpio_set_level(PIN_NUM_DC, dc);
 }
 
+uint32_t lcd_get_id(spi_device_handle_t spi) 
+{
+    //get_id cmd
+    lcd_cmd( spi, 0x04);
+
+    spi_transaction_t t;
+    memset(&t, 0, sizeof(t));
+    t.length=8*3;
+    t.flags = SPI_TRANS_USE_RXDATA;
+    t.user = (void*)1;
+
+    esp_err_t ret = spi_device_transmit(spi, &t);
+    assert( ret == ESP_OK );
+
+    return *(uint32_t*)t.rx_data;
+}
+
 //Initialize the display
 void lcd_init(spi_device_handle_t spi) 
 {
     int cmd=0;
+    const lcd_init_cmd_t* lcd_init_cmds;
+
     //Initialize non-SPI GPIOs
     gpio_set_direction(PIN_NUM_DC, GPIO_MODE_OUTPUT);
     gpio_set_direction(PIN_NUM_RST, GPIO_MODE_OUTPUT);
@@ -156,14 +173,40 @@ void lcd_init(spi_device_handle_t spi)
     gpio_set_level(PIN_NUM_RST, 1);
     vTaskDelay(100 / portTICK_RATE_MS);
 
-    //Send all the commands
+    //detect LCD type
+    uint32_t lcd_id = lcd_get_id(spi);
+    int lcd_detected_type = 0;
+    int lcd_type;
 
-#ifdef CONFIG_LCD_TYPE_ST7789V
-        printf("LCD ST7789V initialization.\n");
-#elif defined( CONFIG_LCD_TYPE_ILI9341)
-        printf("LCD ILI9341 initialization.\n");   
+    printf("LCD ID: %08X\n", lcd_id);
+    if ( lcd_id == 0 ) {
+        //zero, ili
+        lcd_detected_type = LCD_TYPE_ILI;
+        printf("ILI9341 detected...\n");   
+    } else {
+        // none-zero, ST
+        lcd_detected_type = LCD_TYPE_ST;
+        printf("ST7789V detected...\n");
+    }
+
+#ifdef CONFIG_LCD_TYPE_AUTO
+    lcd_type = lcd_detected_type;
+#elif defined( CONFIG_LCD_TYPE_ST7789V )
+    printf("kconfig: force CONFIG_LCD_TYPE_ST7789V.\n");
+    lcd_type = LCD_TYPE_ST;
+#elif defined( CONFIG_LCD_TYPE_ILI9341 )
+    printf("kconfig: force CONFIG_LCD_TYPE_ILI9341.\n");
+    lcd_type = LCD_TYPE_ILI;
 #endif   
+    if ( lcd_type == LCD_TYPE_ST ) {
+        printf("LCD ST7789V initialization.\n");
+        lcd_init_cmds = st_init_cmds;
+    } else {
+        printf("LCD ILI9341 initialization.\n");   
+        lcd_init_cmds = ili_init_cmds;
+    }
 
+    //Send all the commands
     while (lcd_init_cmds[cmd].databytes!=0xff) {
         lcd_cmd(spi, lcd_init_cmds[cmd].cmd);
         lcd_data(spi, lcd_init_cmds[cmd].data, lcd_init_cmds[cmd].databytes&0x1F);
@@ -278,7 +321,6 @@ static void display_pretty_colors(spi_device_handle_t spi)
     }
 }
 
-
 void app_main()
 {
     esp_err_t ret;
@@ -291,7 +333,7 @@ void app_main()
         .quadhd_io_num=-1
     };
     spi_device_interface_config_t devcfg={
-        .clock_speed_hz=10000000,               //Clock out at 10 MHz
+        .clock_speed_hz=10*1000*1000,               //Clock out at 10 MHz
         .mode=0,                                //SPI mode 0
         .spics_io_num=PIN_NUM_CS,               //CS pin
         .queue_size=7,                          //We want to be able to queue 7 transactions at a time
