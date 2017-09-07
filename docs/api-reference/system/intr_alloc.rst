@@ -83,6 +83,21 @@ It can also be useful to keep an interrupt handler in IRAM if it is called very 
 
 Refer to the :ref:`SPI flash API documentation <iram-safe-interrupt-handlers>` for more details.
 
+Multiple Handlers Sharing A Source
+----------------------------------
+
+Several handlers can be assigned to a same source, given that all handlers are allocated using the ``ESP_INTR_FLAG_SHARED`` flag.
+They'll be all allocated to the interrupt, which the source is attached to, and called sequentially when the source is active.
+The handlers can be disabled and freed individually. The source is attached to the interrupt (enabled), if one or more handlers are enabled, otherwise detached.
+A handler will never be called when disabled, while **its source may still be triggered** if any one of its handler enabled. 
+
+Sources attached to non-shared interrupt do not support this feature.
+
+Though the framework support this feature, you have to use it *very carefully*. There usually exist 2 ways to stop a interrupt from being triggered: *disable the sourse* or *mask peripheral interrupt status*.
+IDF only handles the enabling and disabling of the source itself, leaving status and mask bits to be handled by users. **Status bits should always be masked before the handler responsible for it is disabled,
+or the status should be handled in other enabled interrupt properly**. You may leave some status bits unhandled if you just disable one of all the handlers without mask the status bits, which causes the interrupt being triggered infinitely,
+and finally a system crash.
+
 API Reference
 -------------
 
