@@ -6,5 +6,6 @@ components/esptool_py/esptool                       @GENERAL_MIRROR_SERVER@/idf/
 components/libsodium/libsodium                      @GENERAL_MIRROR_SERVER@/idf/libsodium.git                       ALLOW_TO_SYNC_FROM_PUBLIC
 components/micro-ecc/micro-ecc                      @GENERAL_MIRROR_SERVER@/idf/micro-ecc.git                       ALLOW_TO_SYNC_FROM_PUBLIC
 components/nghttp/nghttp2                           @GENERAL_MIRROR_SERVER@/idf/nghttp2.git                         ALLOW_TO_SYNC_FROM_PUBLIC
+components/spiffs/spiffs                            @GENERAL_MIRROR_SERVER@/idf/spiffs.git                          ALLOW_TO_SYNC_FROM_PUBLIC
 third-party/mruby                                   @GENERAL_MIRROR_SERVER@/idf/mruby.git                           ALLOW_TO_SYNC_FROM_PUBLIC
 third-party/neverbleed                              @GENERAL_MIRROR_SERVER@/idf/neverbleed.git                      ALLOW_TO_SYNC_FROM_PUBLIC
