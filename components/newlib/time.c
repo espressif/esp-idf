@@ -216,6 +216,12 @@ int usleep(useconds_t us)
     return 0;
 }
 
+unsigned int sleep(unsigned int seconds)
+{
+    usleep(seconds*1000000UL);
+    return 0;
+}
+
 uint32_t system_get_time(void)
 {
 #if defined( WITH_FRC1 ) || defined( WITH_RTC )

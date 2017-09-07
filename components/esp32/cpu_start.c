@@ -83,6 +83,7 @@ static bool app_cpu_started = false;
 static void do_global_ctors(void);
 static void main_task(void* args);
 extern void app_main(void);
+extern esp_err_t esp_pthread_init(void);
 
 extern int _bss_start;
 extern int _bss_end;
@@ -252,6 +253,7 @@ static void intr_matrix_clear(void)
 
 void start_cpu0_default(void)
 {
+    esp_err_t err;
     esp_setup_syscall_table();
 //Enable trace memory and immediately start trace.
 #if CONFIG_ESP32_TRAX
@@ -290,7 +292,7 @@ void start_cpu0_default(void)
     esp_timer_init();
     esp_set_time_from_rtc();
 #if CONFIG_ESP32_APPTRACE_ENABLE
-    esp_err_t err = esp_apptrace_init();
+    err = esp_apptrace_init();
     if (err != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to init apptrace module on CPU0 (%d)!", err);
     }
@@ -298,6 +300,11 @@ void start_cpu0_default(void)
 #if CONFIG_SYSVIEW_ENABLE
     SEGGER_SYSVIEW_Conf();
 #endif
+    err = esp_pthread_init();
+    if (err != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Failed to init pthread module (%d)!", err);
+    }
+
     do_global_ctors();
 #if CONFIG_INT_WDT
     esp_int_wdt_init();
