@@ -748,21 +748,26 @@ esp_err_t rmt_write_items(rmt_channel_t channel, const rmt_item32_t* rmt_item, i
     return ESP_OK;
 }
 
-esp_err_t rmt_wait_tx_done(rmt_channel_t channel)
+esp_err_t rmt_wait_tx_done(rmt_channel_t channel, TickType_t wait_time)
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     RMT_CHECK(p_rmt_obj[channel] != NULL, RMT_DRIVER_ERROR_STR, ESP_FAIL);
-    xSemaphoreTake(p_rmt_obj[channel]->tx_sem, portMAX_DELAY);
-    xSemaphoreGive(p_rmt_obj[channel]->tx_sem);
-    return ESP_OK;
+    if(xSemaphoreTake(p_rmt_obj[channel]->tx_sem, wait_time) == pdTRUE) {
+        xSemaphoreGive(p_rmt_obj[channel]->tx_sem);
+        return ESP_OK;
+    }
+    else {
+        ESP_LOGE(RMT_TAG, "Timeout on wait_tx_done");
+        return ESP_ERR_TIMEOUT;
+    }
 }
 
-esp_err_t rmt_get_ringbuf_handler(rmt_channel_t channel, RingbufHandle_t* buf_handler)
+esp_err_t rmt_get_ringbuf_handle(rmt_channel_t channel, RingbufHandle_t* buf_handle)
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     RMT_CHECK(p_rmt_obj[channel] != NULL, RMT_DRIVER_ERROR_STR, ESP_FAIL);
-    RMT_CHECK(buf_handler != NULL, RMT_ADDR_ERROR_STR, ESP_ERR_INVALID_ARG);
-    *buf_handler = p_rmt_obj[channel]->rx_buf;
+    RMT_CHECK(buf_handle != NULL, RMT_ADDR_ERROR_STR, ESP_ERR_INVALID_ARG);
+    *buf_handle = p_rmt_obj[channel]->rx_buf;
     return ESP_OK;
 }
 
