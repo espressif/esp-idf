@@ -601,7 +601,7 @@ int uart_write_bytes_with_break(uart_port_t uart_num, const char* src, size_t si
 int uart_read_bytes(uart_port_t uart_num, uint8_t* buf, uint32_t length, TickType_t ticks_to_wait);
 
 /**
- * @brief UART ring buffer flush
+ * @brief UART ring buffer flush. This will discard all data in the UART RX buffer.
  *
  * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
