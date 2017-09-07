@@ -40,7 +40,7 @@
 
 #include "tcpip_adapter.h"
 
-#include "esp_heap_caps.h"
+#include "esp_heap_caps_init.h"
 #include "sdkconfig.h"
 #include "esp_system.h"
 #include "esp_spi_flash.h"

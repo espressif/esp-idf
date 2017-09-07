@@ -31,7 +31,13 @@ API Reference - Heap Allocation
 
 .. include:: /_build/inc/esp_heap_caps.inc
 
+API Reference - Initialisation
+------------------------------
+
+.. include:: /_build/inc/esp_heap_caps_init.inc
+
 API Reference - Heap Regions
 ----------------------------
 
 .. include:: /_build/inc/multi_heap.inc
+

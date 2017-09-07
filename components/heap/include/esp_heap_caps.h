@@ -33,25 +33,6 @@
 #define MALLOC_CAP_SPISRAM          (1<<10) ///< Memory must be in SPI SRAM
 #define MALLOC_CAP_INVALID          (1<<31) ///< Memory can't be used / list end marker
 
-
-/**
- * @brief Initialize the capability-aware heap allocator.
- *
- * This is called once in the IDF startup code. Do not call it
- * at other times.
- */
-void heap_caps_init();
-
-/**
- * @brief Enable heap(s) in memory regions where the startup stacks are located.
- *
- * On startup, the pro/app CPUs have a certain memory region they use as stack, so we
- * cannot do allocations in the regions these stack frames are. When FreeRTOS is
- * completely started, they do not use that memory anymore and heap(s) there can
- * be enabled.
- */
-void heap_caps_enable_nonos_stack_heaps();
-
 /**
  * @brief Allocate a chunk of memory which has the given capabilities
  *
