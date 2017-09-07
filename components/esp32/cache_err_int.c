@@ -29,6 +29,7 @@
 #include "esp_attr.h"
 #include "soc/dport_reg.h"
 #include "sdkconfig.h"
+#include "esp_dport_access.h"
 
 void esp_cache_err_int_init()
 {
@@ -72,6 +73,7 @@ void esp_cache_err_int_init()
 
 int IRAM_ATTR esp_cache_err_get_cpuid()
 {
+    esp_dport_access_int_pause();
     const uint32_t pro_mask =
             DPORT_PRO_CPU_DISABLED_CACHE_IA_DRAM1 |
             DPORT_PRO_CPU_DISABLED_CACHE_IA_DROM0 |
