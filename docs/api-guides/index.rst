@@ -9,6 +9,7 @@ API Guides
    Deep Sleep Wake Stubs <deep-sleep-stub>
    ESP32 Core Dump <core_dump>
    Flash Encryption <../security/flash-encryption>
+   FreeRTOS SMP Changes <freertos-smp>
    High Level Interrupts <hlinterrupts>
    JTAG Debugging <jtag-debugging/index>
    Partition Tables <partition-tables>
