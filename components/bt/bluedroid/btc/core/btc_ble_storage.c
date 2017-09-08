@@ -19,11 +19,14 @@
 #include "bdaddr.h"
 #include "btc_ble_storage.h"
 #include "bta_gatts_co.h"
+#include "btc_util.h"
 
 #if (SMP_INCLUDED == TRUE)
 
 btc_dm_pairing_cb_t pairing_cb;
 btc_dm_local_key_cb_t ble_local_key_cb;
+btc_bonded_devices_t bonded_devices;
+
 
 /*******************************************************************************
 **
@@ -47,18 +50,63 @@ bt_status_t btc_storage_load_bonded_ble_devices(void)
 
 bt_status_t btc_in_fetch_bonded_ble_devices(int add)
 {
-    btc_bonded_devices_t bonded_devices;
+    bt_status_t status = BT_STATUS_FAIL;
+    int device_type = 0;
     for (const btc_config_section_iter_t *iter = btc_config_section_begin(); iter != btc_config_section_end();
             iter = btc_config_section_next(iter)) {
         const char *name = btc_config_section_name(iter);
-        if (!string_is_bdaddr(name)) {
+        if (!string_is_bdaddr(name) ||
+            !btc_config_get_int(name, BTC_LE_DEV_TYPE, &device_type) ||
+            ((device_type & BT_DEVICE_TYPE_BLE) != BT_DEVICE_TYPE_BLE)) {
+            continue;
+        }
+        LOG_DEBUG("%s, name = %s", __func__, name);
+        if (btc_in_fetch_bonded_ble_device(name, add, &bonded_devices) != BT_STATUS_SUCCESS) {
+            LOG_DEBUG("Remote device:%s, no link key or ble key found", name);
+        } else {
+            status = BT_STATUS_SUCCESS;
+        }
+    }
+
+    return status;
+}
+
+bt_status_t btc_get_bonded_ble_devices_list(esp_ble_bond_dev_t *bond_dev)
+{
+    bt_bdaddr_t bd_addr;
+    int device_type = 0;
+    char buffer[sizeof(tBTM_LE_KEY_VALUE)] = {0};
+    for (const btc_config_section_iter_t *iter = btc_config_section_begin(); iter != btc_config_section_end();
+            iter = btc_config_section_next(iter)) {
+        const char *name = btc_config_section_name(iter);
+        if (!string_is_bdaddr(name) ||
+            !btc_config_get_int(name, BTC_LE_DEV_TYPE, &device_type) ||
+            ((device_type & BT_DEVICE_TYPE_BLE) != BT_DEVICE_TYPE_BLE)) {
             continue;
         }
 
-        if (!(btc_in_fetch_bonded_ble_device(name, add, &bonded_devices)) ) {
-            LOG_DEBUG("Remote device:%s, no link key or ble key found", name);
-            return BT_STATUS_FAIL;
+        string_to_bdaddr(name, &bd_addr);
+        memcpy(bond_dev->bd_addr, bd_addr.address, sizeof(bt_bdaddr_t));
+        //resolve the peer device long term key
+        if (btc_storage_get_ble_bonding_key(&bd_addr, BTM_LE_KEY_PENC, buffer, sizeof(tBTM_LE_PENC_KEYS))
+            == BT_STATUS_SUCCESS) {
+            bond_dev->bond_key.key_mask |= ESP_BLE_ENC_KEY_MASK;
+            memcpy(&bond_dev->bond_key.penc_key, buffer, sizeof(tBTM_LE_PENC_KEYS));
         }
+        //resolve the peer device csrk
+        if (btc_storage_get_ble_bonding_key(&bd_addr, BTM_LE_KEY_PCSRK, buffer, sizeof(tBTM_LE_PCSRK_KEYS))
+            == BT_STATUS_SUCCESS) {
+            bond_dev->bond_key.key_mask |= ESP_BLE_CSR_KEY_MASK;
+            memcpy(&bond_dev->bond_key.pcsrk_key, buffer, sizeof(tBTM_LE_PCSRK_KEYS));
+        }
+        //resolve the peer device irk
+        if (btc_storage_get_ble_bonding_key(&bd_addr, BTM_LE_KEY_PID, buffer, sizeof(tBTM_LE_PID_KEYS))
+            == BT_STATUS_SUCCESS) {
+            bond_dev->bond_key.key_mask |= ESP_BLE_ID_KEY_MASK;
+            memcpy(&bond_dev->bond_key.pid_key, buffer, sizeof(tBTM_LE_PID_KEYS));
+        }
+        //serch for the next bond device
+        bond_dev++;
     }
 
     return BT_STATUS_SUCCESS;
@@ -78,6 +126,10 @@ void btc_save_ble_bonding_keys(void)
     bt_bdaddr_t bd_addr;
 
     bdcpy(bd_addr.address, pairing_cb.bd_addr);
+    bdstr_t bdstr;
+    bdaddr_to_string(&bd_addr, bdstr, sizeof(bdstr));
+    btc_config_set_int(bdstr, BTC_LE_DEV_TYPE, BT_DEVICE_TYPE_BLE);
+    LOG_DEBUG("%s, penc = %d, pid = %d", __func__, pairing_cb.ble.is_penc_key_rcvd, pairing_cb.ble.is_pid_key_rcvd);
     if (pairing_cb.ble.is_penc_key_rcvd) {
         btc_storage_add_ble_bonding_key(&bd_addr,
                                         (char *) &pairing_cb.ble.penc_key,
@@ -131,7 +183,6 @@ static void btc_read_le_key(const uint8_t key_type, const size_t key_len, bt_bda
 
     char buffer[100];
     memset(buffer, 0, sizeof(buffer));
-
     if (btc_storage_get_ble_bonding_key(&bd_addr, key_type, buffer, key_len) == BT_STATUS_SUCCESS) {
         if (add_key) {
             BD_ADDR bta_bd_addr;
@@ -152,13 +203,12 @@ static void btc_read_le_key(const uint8_t key_type, const size_t key_len, bt_bda
     }
 }
 
-
 bt_status_t btc_storage_add_ble_bonding_key(bt_bdaddr_t *remote_bd_addr,
                                             char *key,
                                             uint8_t key_type,
                                             uint8_t key_length)
 {
-    char bdstr[6] = {0};
+    bdstr_t bdstr;
     bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
     const char* name;
     switch (key_type) {
@@ -205,7 +255,7 @@ bt_status_t btc_storage_get_ble_bonding_key(bt_bdaddr_t *remote_bd_addr,
                                             char *key_value,
                                             int key_length)
 {
-    char bdstr[6] = {0};
+    bdstr_t bdstr;
     bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
     const char* name;
     switch (key_type) {
@@ -235,6 +285,38 @@ bt_status_t btc_storage_get_ble_bonding_key(bt_bdaddr_t *remote_bd_addr,
 
 }
 
+bool btc_storage_compare_address_key_value(bt_bdaddr_t *remote_bd_addr,
+                                                   uint8_t key_type, void *key_value, int key_length)
+{
+    bdstr_t bdstr;
+    bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
+    char *key_type_str;
+    switch (key_type) {
+    case BTM_LE_KEY_PENC:
+        key_type_str = "LE_KEY_PENC";
+        break;
+    case BTM_LE_KEY_PID:
+        key_type_str = "LE_KEY_PID";
+        break;
+    case BTM_LE_KEY_PCSRK:
+        key_type_str = "LE_KEY_PCSRK";
+        break;
+    case BTM_LE_KEY_LENC:
+        key_type_str = "LE_KEY_LENC";
+        break;
+    case BTM_LE_KEY_LCSRK:
+        key_type_str = "LE_KEY_LCSRK";
+        break;
+    case BTM_LE_KEY_LID:
+        key_type_str =  "LE_KEY_LID";
+    default:
+        return false;
+    }
+
+    return btc_compare_address_key_value(bdstr, key_type_str, key_value, key_length);
+}
+
+
 /*******************************************************************************
 **
 ** Function         btc_storage_remove_ble_bonding_keys
@@ -247,10 +329,13 @@ bt_status_t btc_storage_get_ble_bonding_key(bt_bdaddr_t *remote_bd_addr,
 *******************************************************************************/
 bt_status_t btc_storage_remove_ble_bonding_keys(bt_bdaddr_t *remote_bd_addr)
 {
-    char bdstr[6] = {0};
+    bdstr_t bdstr;
     bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
     BTIF_TRACE_DEBUG(" %s in bd addr:%s",__FUNCTION__, bdstr);
     int ret = 1;
+    if (btc_config_exist(bdstr, BTC_LE_DEV_TYPE)) {
+        ret &= btc_config_remove(bdstr, BTC_LE_DEV_TYPE);
+    }
     if (btc_config_exist(bdstr, "LE_KEY_PENC")) {
         ret &= btc_config_remove(bdstr, "LE_KEY_PENC");
     }
@@ -266,8 +351,46 @@ bt_status_t btc_storage_remove_ble_bonding_keys(bt_bdaddr_t *remote_bd_addr)
     if (btc_config_exist(bdstr, "LE_KEY_LCSRK")) {
         ret &= btc_config_remove(bdstr, "LE_KEY_LCSRK");
     }
+    //remove the address information after delete the ble key.
+    ret = btc_config_remove_section(bdstr);
     btc_config_save();
     return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
+}
+
+bt_status_t btc_storage_clear_bond_devices(void)
+{
+    bt_bdaddr_t bd_addr;
+    int device_type = 0;
+    for (const btc_config_section_iter_t *iter = btc_config_section_begin(); iter != btc_config_section_end();
+            iter = btc_config_section_next(iter)) {
+        const char *name = btc_config_section_name(iter);
+        if (!string_is_bdaddr(name) &&
+            !btc_config_get_int(name, BTC_LE_DEV_TYPE, &device_type) &&
+            ((device_type & BT_DEVICE_TYPE_BLE) != BT_DEVICE_TYPE_BLE)) {
+            continue;
+        }
+
+        string_to_bdaddr(name, &bd_addr);
+        //remove the ble bonding keys from the config and then save the config to the flash
+        if (btc_storage_remove_ble_bonding_keys(&bd_addr) != BT_STATUS_SUCCESS) {
+            LOG_ERROR("%s, remove bonding key faild", __func__);
+            return BT_STATUS_FAIL;
+        }
+        // the bonded_devices Structure record the devices which has been added to the BTM layer global variable
+        for (int i = 0; i < bonded_devices.num_devices; i++) {
+            //if the address is equal to the record device address, remove it from the BTM layer global variable
+            if (!memcmp(bd_addr.address, bonded_devices.devices[i].address, sizeof(bt_bdaddr_t))) {
+                BD_ADDR bta_addr;
+                memcpy(bta_addr, bd_addr.address, sizeof(BD_ADDR));
+                if(BTA_DmRemoveDevice(bta_addr) != BTA_SUCCESS) {
+                    LOG_ERROR("%s, remove device faild", __func__);
+                    return BT_STATUS_FAIL;
+                }
+            }
+        }
+    }
+
+    return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************
@@ -382,7 +505,7 @@ bt_status_t btc_in_fetch_bonded_ble_device(const char *remote_bd_addr, int add,
     bool device_added = false;
     bool key_found = false;
 
-    if (!btc_config_get_int(remote_bd_addr, "AddrType", &device_type)) {
+    if (!btc_config_get_int(remote_bd_addr, BTC_LE_DEV_TYPE, &device_type)) {
         LOG_ERROR("%s, device_type = %x", __func__, device_type);
         return BT_STATUS_FAIL;
     }
@@ -413,6 +536,13 @@ bt_status_t btc_in_fetch_bonded_ble_device(const char *remote_bd_addr, int add,
     btc_read_le_key(BTM_LE_KEY_LCSRK, sizeof(tBTM_LE_LCSRK_KEYS),
                     bd_addr, addr_type, add, &device_added, &key_found);
 
+    // Fill in the bonded devices
+    if (device_added)
+    {
+        memcpy(&p_bonded_devices->devices[p_bonded_devices->num_devices++],
+               &bd_addr, sizeof(bt_bdaddr_t));
+    }
+
     if (key_found) {
         return BT_STATUS_SUCCESS;
     }
@@ -423,7 +553,7 @@ bt_status_t btc_in_fetch_bonded_ble_device(const char *remote_bd_addr, int add,
 bt_status_t btc_storage_set_remote_addr_type(bt_bdaddr_t *remote_bd_addr,
         uint8_t addr_type)
 {
-    char bdstr[6] = {0};
+    bdstr_t bdstr;
     bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bt_bdaddr_t));
     int ret = btc_config_set_int(bdstr, "AddrType", (int)addr_type);
     btc_config_save();
@@ -443,12 +573,30 @@ bt_status_t btc_storage_set_remote_addr_type(bt_bdaddr_t *remote_bd_addr,
 bt_status_t btc_storage_get_remote_addr_type(bt_bdaddr_t *remote_bd_addr,
                                              int*addr_type)
 {
-    char bdstr[6] = {0};
+    bdstr_t bdstr;
     bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
     int ret = btc_config_get_int(bdstr, "AddrType", addr_type);
     return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
+int btc_storage_get_num_ble_bond_devices(void)
+{
+    int num_dev = 0;
+    int device_type = 0;
+    for (const btc_config_section_iter_t *iter = btc_config_section_begin(); iter != btc_config_section_end();
+            iter = btc_config_section_next(iter)) {
+        const char *name = btc_config_section_name(iter);
+        if (!string_is_bdaddr(name) &&
+            !btc_config_get_int(name, BTC_LE_DEV_TYPE, &device_type) &&
+            device_type != BT_DEVICE_TYPE_BLE) {
+            continue;
+        }
+
+        num_dev++;
+    }
+
+    return num_dev;
+}
 
 void btc_dm_load_ble_local_keys(void)
 {

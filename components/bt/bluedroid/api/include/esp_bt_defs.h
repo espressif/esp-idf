@@ -22,6 +22,12 @@
 extern "C" {
 #endif
 
+#define ESP_BLUEDROID_STATUS_CHECK(status)           \
+    if (esp_bluedroid_get_status() != (status)) {    \
+        return ESP_ERR_INVALID_STATE;                \
+    }
+
+
 /* relate to BT_STATUS_xxx in bt_def.h */
 /// Status Return Value
 typedef enum {
@@ -107,6 +113,7 @@ typedef enum {
 #define ESP_BLE_CSR_KEY_MASK    (1 << 2)            /* relate to BTM_BLE_CSR_KEY_MASK in btm_api.h */
 /// Used to exchange the link key(this key just used in the BLE & BR/EDR coexist mode) in the init key & response key
 #define ESP_BLE_LINK_KEY_MASK   (1 << 3)            /* relate to BTM_BLE_LINK_KEY_MASK in btm_api.h */
+typedef uint8_t esp_ble_key_mask_t;            /* the key mask type */
 
 /// Minimum of the application id
 #define ESP_APP_ID_MIN  0x0000
