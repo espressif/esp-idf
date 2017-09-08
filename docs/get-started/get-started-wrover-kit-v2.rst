@@ -174,7 +174,7 @@ Related Documents
 
 * `ESP-WROVER-KIT V2 schematic`_ (PDF)
 * `ESP32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF)
-* `ESP-WROOM-32 Datasheet <http://www.espressif.com/sites/default/files/documentation/esp_wroom_32_datasheet_en.pdf>`_ (PDF)
+* `ESP-WROOM-32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp-wroom-32_datasheet_en.pdf>`_ (PDF)
 * `ESP32-WROVER Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wrover_datasheet_en.pdf>`_ (PDF)
 * :doc:`../api-guides/jtag-debugging/index`
 * :doc:`../hw-reference/modules-and-boards`

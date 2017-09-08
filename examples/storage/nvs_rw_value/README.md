@@ -8,6 +8,6 @@ Example also shows how to check if read / write operation was successful, or cer
 
 Check another example *storage/nvs_rw_blob*, that shows how to read and write variable length binary data (blob).
 
-Detailed functional description of NVS and API is provided in [documentation](http://esp-idf.readthedocs.io/en/latest/api/nvs_flash.html).
+Detailed functional description of NVS and API is provided in [documentation](https://esp-idf.readthedocs.io/en/latest/api-reference/nvs_flash.html).
 
 See the README.md file in the upper level 'examples' directory for more information about examples.

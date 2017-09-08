@@ -311,7 +311,7 @@ Optional arguments:
 System Behaviour Analysis with SEGGER SystemView
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Another useful IDF feature built on top of application tracing library is the system level tracing which produces traces compatible with SEGGER SystemView tool (see `SystemView <https://www.segger.com/systemview.html>`_). SEGGER SystemView is a real-time recording and visualization tool that allows to analyze runtime behavior of an application.
+Another useful IDF feature built on top of application tracing library is the system level tracing which produces traces compatible with SEGGER SystemView tool (see `SystemView <https://www.segger.com/products/development-tools/systemview/>`_). SEGGER SystemView is a real-time recording and visualization tool that allows to analyze runtime behavior of an application.
 
 .. note::
 
