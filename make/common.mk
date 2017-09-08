@@ -27,10 +27,10 @@ details := @echo
 else
 summary := @echo
 details := @true
-endif
 
 # disable echoing of commands, directory names
 MAKEFLAGS += --silent
+endif  # $(V)==1
 
 ifdef CONFIG_MAKE_WARN_UNDEFINED_VARIABLES
 MAKEFLAGS += --warn-undefined-variables
