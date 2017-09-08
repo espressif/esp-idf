@@ -101,11 +101,11 @@ typedef enum {
 
 typedef intr_handle_t touch_isr_handle_t;
 
-#define TOUCH_PAD_SLEEP_CYCLE_DEFAULT   (0x1000)  /*!<The timer frequency is RTC_SLOW_CLK( can be 150k or 32k depending on the options), max value is 0xffff */
-#define TOUCH_PAD_MEASURE_CYCLE_DEFAULT (0xffff)  /*!<The time frequency is 8Mhz, the max value is 0xffff */
-#define TOUCH_FSM_MODE_DEFAULT          (TOUCH_FSM_MODE_TIMER)
-#define TOUCH_TRIGGER_MODE_DEFAULT      (TOUCH_TRIGGER_BELOW)
-#define TOUCH_TRIGGER_SOURCE_DEFAULT    (TOUCH_TRIGGER_SOURCE_SET1)
+#define TOUCH_PAD_SLEEP_CYCLE_DEFAULT   (0x1000)  /*!<The timer frequency is RTC_SLOW_CLK (can be 150k or 32k depending on the options), max value is 0xffff */
+#define TOUCH_PAD_MEASURE_CYCLE_DEFAULT (0xffff)  /*!<The timer frequency is 8Mhz, the max value is 0xffff */
+#define TOUCH_FSM_MODE_DEFAULT          (TOUCH_FSM_MODE_TIMER)  /*!<The touch FSM my be started by the software or timer */
+#define TOUCH_TRIGGER_MODE_DEFAULT      (TOUCH_TRIGGER_BELOW)   /*!<Interrupts can be triggered if sensor value gets below or above threshold */
+#define TOUCH_TRIGGER_SOURCE_DEFAULT    (TOUCH_TRIGGER_SOURCE_SET1)  /*!<The wakeup trigger source can be SET1 or both SET1 and SET2 */
 #define TOUCH_PAD_BIT_MASK_MAX          (0x3ff)
 
 /**
@@ -128,9 +128,10 @@ esp_err_t touch_pad_deinit();
  * @brief Configure touch pad interrupt threshold.
  * @param touch_num touch pad index
  * @param threshold interrupt threshold,
- * @return    - ESP_OK Success
- *            - ESP_ERR_INVALID_ARG if argument wrong
- *            - ESP_FAIL if touch pad not initialized
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG if argument wrong
+ *     - ESP_FAIL if touch pad not initialized
  */
 esp_err_t touch_pad_config(touch_pad_t touch_num, uint16_t threshold);
 
@@ -143,9 +144,10 @@ esp_err_t touch_pad_config(touch_pad_t touch_num, uint16_t threshold);
  *
  * @param touch_num touch pad index
  * @param touch_value pointer to accept touch sensor value
- * @return   - ESP_OK Success
- *            - ESP_ERR_INVALID_ARG Touch pad error
- *            - ESP_FAIL Touch pad not initialized
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Touch pad error
+ *     - ESP_FAIL Touch pad not initialized
  */
 esp_err_t touch_pad_read(touch_pad_t touch_num, uint16_t * touch_value);
 
@@ -156,9 +158,10 @@ esp_err_t touch_pad_read(touch_pad_t touch_num, uint16_t * touch_value);
  *
  * @param touch_num touch pad index
  * @param touch_value pointer to accept touch sensor value
- * @return   - ESP_OK Success
- *            - ESP_ERR_INVALID_ARG Touch pad error
- *            - ESP_FAIL Touch pad not initialized
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Touch pad error
+ *     - ESP_FAIL Touch pad not initialized
  */
 esp_err_t touch_pad_read_filtered(touch_pad_t touch_num, uint16_t *touch_value);
 
@@ -460,7 +463,7 @@ esp_err_t touch_pad_get_filter_period(uint32_t* p_period_ms);
  *
  *      If filter is not initialized, this API will initialize the filter with given period.
  *      If filter is already initialized, this API will update the filter period.
- * @note This filter uses FreeRTOS timer, which is dipatched from a task with
+ * @note This filter uses FreeRTOS timer, which is dispatched from a task with
  *       priority 1 by default on CPU 0. So if some application task with higher priority
  *       takes a lot of CPU0 time, then the quality of data obtained from this filter will be affected.
  *       You can adjust FreeRTOS timer task priority in menuconfig.
