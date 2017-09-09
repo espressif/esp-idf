@@ -696,14 +696,12 @@ tcp_new_port(void)
 again:
 
 #if ESP_RANDOM_TCP_PORT
-	tcp_port = system_get_time();
-	if (tcp_port < 0)
-		tcp_port = LWIP_RAND() - tcp_port;
-	tcp_port %= TCP_LOCAL_PORT_RANGE_START;
+  tcp_port = abs(LWIP_RAND()) % (TCP_LOCAL_PORT_RANGE_END - TCP_LOCAL_PORT_RANGE_START);
+  tcp_port += TCP_LOCAL_PORT_RANGE_START;
 #else
-      if (tcp_port++ == TCP_LOCAL_PORT_RANGE_END) {
-            tcp_port = TCP_LOCAL_PORT_RANGE_START;
-      }
+  if (tcp_port++ == TCP_LOCAL_PORT_RANGE_END) {
+    tcp_port = TCP_LOCAL_PORT_RANGE_START;
+  }
 #endif
 
   /* Check all PCB lists. */

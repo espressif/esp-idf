@@ -20,6 +20,7 @@
 #include "freertos/semphr.h"
 #include "soc/sdmmc_reg.h"
 #include "soc/sdmmc_struct.h"
+#include "soc/soc_memory_layout.h"
 #include "driver/sdmmc_types.h"
 #include "driver/sdmmc_defs.h"
 #include "driver/sdmmc_host.h"
@@ -72,6 +73,7 @@ const uint32_t SDMMC_CMD_ERR_MASK =
 static sdmmc_desc_t s_dma_desc[SDMMC_DMA_DESC_CNT];
 static sdmmc_transfer_state_t s_cur_transfer = { 0 };
 static QueueHandle_t s_request_mutex;
+static bool s_is_app_cmd;   // This flag is set if the next command is an APP command
 
 static esp_err_t handle_idle_state_events();
 static sdmmc_hw_cmd_t make_hw_cmd(sdmmc_command_t* cmd);
@@ -87,6 +89,7 @@ esp_err_t sdmmc_host_transaction_handler_init()
     if (!s_request_mutex) {
         return ESP_ERR_NO_MEM;
     }
+    s_is_app_cmd = false;
     return ESP_OK;
 }
 
@@ -105,9 +108,16 @@ esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
     // convert cmdinfo to hardware register value
     sdmmc_hw_cmd_t hw_cmd = make_hw_cmd(cmdinfo);
     if (cmdinfo->data) {
-        // these constraints should be handled by upper layer
-        assert(cmdinfo->datalen >= 4);
-        assert(cmdinfo->blklen % 4 == 0);
+        if (cmdinfo->datalen < 4 || cmdinfo->blklen % 4 != 0) {
+            ESP_LOGD(TAG, "%s: invalid size: total=%d block=%d",
+                    __func__, cmdinfo->datalen, cmdinfo->blklen);
+            return ESP_ERR_INVALID_SIZE;
+        }
+        if ((intptr_t) cmdinfo->data % 4 != 0 ||
+                !esp_ptr_dma_capable(cmdinfo->data)) {
+            ESP_LOGD(TAG, "%s: buffer %p can not be used for DMA", __func__, cmdinfo->data);
+            return ESP_ERR_INVALID_ARG;
+        }
         // this clears "owned by IDMAC" bits
         memset(s_dma_desc, 0, sizeof(s_dma_desc));
         // initialize first descriptor
@@ -137,6 +147,7 @@ esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
             break;
         }
     }
+    s_is_app_cmd = (ret == ESP_OK && cmdinfo->opcode == MMC_APP_CMD);
     xSemaphoreGive(s_request_mutex);
     return ret;
 }
@@ -220,7 +231,7 @@ static sdmmc_hw_cmd_t make_hw_cmd(sdmmc_command_t* cmd)
     } else {
         res.wait_complete = 1;
     }
-    if (cmd->opcode == SD_APP_SET_BUS_WIDTH) {
+    if (s_is_app_cmd && cmd->opcode == SD_APP_SET_BUS_WIDTH) {
         res.send_auto_stop = 1;
         res.data_expected = 1;
     }
@@ -253,11 +264,8 @@ static void process_command_response(uint32_t status, sdmmc_command_t* cmd)
 {
     if (cmd->flags & SCF_RSP_PRESENT) {
         if (cmd->flags & SCF_RSP_136) {
-            cmd->response[3] = SDMMC.resp[0];
-            cmd->response[2] = SDMMC.resp[1];
-            cmd->response[1] = SDMMC.resp[2];
-            cmd->response[0] = SDMMC.resp[3];
-
+            /* Destination is 4-byte aligned, can memcopy from peripheral registers */
+            memcpy(cmd->response, (uint32_t*) SDMMC.resp, 4 * sizeof(uint32_t));
         } else {
             cmd->response[0] = SDMMC.resp[0];
             cmd->response[1] = 0;

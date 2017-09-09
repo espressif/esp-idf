@@ -228,3 +228,72 @@ TEST_CASE("Can allocate IRAM int only with an IRAM handler", "[esp32]")
     err = esp_intr_free(ih);
     TEST_ESP_OK(err);
 }
+
+
+#include "soc/spi_struct.h"
+typedef struct {
+    bool flag1;
+    bool flag2;
+    bool flag3;
+    bool flag4;
+} intr_alloc_test_ctx_t;
+
+void IRAM_ATTR int_handler1(void* arg)
+{
+    intr_alloc_test_ctx_t* ctx=(intr_alloc_test_ctx_t*)arg;
+    ets_printf("handler 1 called.\n");
+    if ( ctx->flag1 ) {
+        ctx->flag3 = true;
+    } else {
+        ctx->flag1 = true;
+    }
+    SPI2.slave.trans_done = 0;
+}
+
+void IRAM_ATTR int_handler2(void* arg)
+{
+    intr_alloc_test_ctx_t* ctx = (intr_alloc_test_ctx_t*)arg;
+    ets_printf("handler 2 called.\n");
+    if ( ctx->flag2 ) {
+        ctx->flag4 = true;
+    } else {
+        ctx->flag2 = true;
+    }
+}
+
+TEST_CASE("allocate 2 handlers for a same source and remove the later one","[esp32]")
+{
+    intr_alloc_test_ctx_t ctx = {false, false, false, false };
+    intr_handle_t handle1, handle2;
+
+    //enable spi
+    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI_CLK_EN );
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI_RST);
+
+    esp_err_t r;
+    r=esp_intr_alloc(ETS_SPI2_INTR_SOURCE, ESP_INTR_FLAG_SHARED, int_handler1, &ctx, &handle1);
+    TEST_ESP_OK(r);
+    //try an invalid assign first
+    r=esp_intr_alloc(ETS_SPI2_INTR_SOURCE, NULL, int_handler2, NULL, &handle2);
+    TEST_ASSERT_EQUAL_INT(r, ESP_ERR_NOT_FOUND );
+    //assign shared then
+    r=esp_intr_alloc(ETS_SPI2_INTR_SOURCE, ESP_INTR_FLAG_SHARED, int_handler2, &ctx, &handle2);
+    TEST_ESP_OK(r);
+    SPI2.slave.trans_inten = 1;
+    
+    printf("trigger first time.\n");
+    SPI2.slave.trans_done = 1;
+
+    vTaskDelay(100);
+    TEST_ASSERT( ctx.flag1 && ctx.flag2 );
+
+    printf("remove intr 1.\n");
+    r=esp_intr_free(handle2);
+
+    printf("trigger second time.\n");
+    SPI2.slave.trans_done = 1;
+
+    vTaskDelay(500);
+    TEST_ASSERT( ctx.flag3 && !ctx.flag4 );
+    printf("test passed.\n");
+}

@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Hardware crypto support Copyright 2017 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,10 +16,21 @@
 #define ESP_WPA2_H
 
 #include "esp_err.h"
+#include "esp_wifi_crypto_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+extern const wpa2_crypto_funcs_t g_wifi_default_wpa2_crypto_funcs;
+
+typedef struct {
+    const wpa2_crypto_funcs_t *crypto_funcs;
+}esp_wpa2_config_t;
+
+#define WPA2_CONFIG_INIT_DEFAULT() { \
+    .crypto_funcs = &g_wifi_default_wpa2_crypto_funcs \
+}
 
 /**
   * @brief  Enable wpa2 enterprise authentication.
@@ -31,7 +42,7 @@ extern "C" {
   *    - ESP_ERR_WIFI_OK: succeed.
   *    - ESP_ERR_WIFI_NO_MEM: fail(internal memory malloc fail)
   */
-esp_err_t esp_wifi_sta_wpa2_ent_enable(void);
+esp_err_t esp_wifi_sta_wpa2_ent_enable(const esp_wpa2_config_t *config);
 
 /**
   * @brief  Disable wpa2 enterprise authentication.

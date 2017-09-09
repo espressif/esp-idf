@@ -27,9 +27,8 @@
 #include <string.h>
 //#include <stdio.h>
 
-#include "gki.h"
 #include "bt_types.h"
-//#include "bt_utils.h"
+#include "allocator.h"
 #include "btu.h"
 #include "bt_defs.h"
 #include "l2cdefs.h"
@@ -247,7 +246,7 @@ static void process_service_search (tCONN_CB *p_ccb, UINT16 trans_num,
     }
 
     /* Get a buffer to use to build the response */
-    if ((p_buf = (BT_HDR *)GKI_getpoolbuf (SDP_POOL_ID)) == NULL) {
+    if ((p_buf = (BT_HDR *)osi_malloc(SDP_DATA_BUF_SIZE)) == NULL) {
         SDP_TRACE_ERROR ("SDP - no buf for search rsp\n");
         return;
     }
@@ -355,10 +354,10 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     if (*p_req) {
         /* Free and reallocate buffer */
         if (p_ccb->rsp_list) {
-            GKI_freebuf(p_ccb->rsp_list);
+            osi_free(p_ccb->rsp_list);
         }
 
-        p_ccb->rsp_list = (UINT8 *)GKI_getbuf(max_list_len);
+        p_ccb->rsp_list = (UINT8 *)osi_malloc(max_list_len);
         if (p_ccb->rsp_list == NULL) {
             SDP_TRACE_ERROR("%s No scratch buf for attr rsp\n", __func__);
             return;
@@ -385,18 +384,14 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
         p_rsp = &p_ccb->rsp_list[0];
         attr_seq.attr_entry[p_ccb->cont_info.next_attr_index].start = p_ccb->cont_info.next_attr_start_id;
     } else {
-        /* Get a scratch buffer to store response */
-        if (!p_ccb->rsp_list || (GKI_get_buf_size(p_ccb->rsp_list) < max_list_len)) {
-            /* Free and reallocate if the earlier allocated buffer is small */
-            if (p_ccb->rsp_list) {
-                GKI_freebuf (p_ccb->rsp_list);
-            }
+	    if (p_ccb->rsp_list) {
+            osi_free (p_ccb->rsp_list);
+        }
 
-            p_ccb->rsp_list = (UINT8 *)GKI_getbuf (max_list_len);
-            if (p_ccb->rsp_list == NULL) {
-                SDP_TRACE_ERROR ("SDP - no scratch buf for search rsp\n");
-                return;
-            }
+        p_ccb->rsp_list = (UINT8 *)osi_malloc (max_list_len);
+        if (p_ccb->rsp_list == NULL) {
+            SDP_TRACE_ERROR ("SDP - no scratch buf for search rsp\n");
+            return;
         }
 
         p_ccb->cont_offset = 0;
@@ -490,7 +485,7 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     }
 
     /* Get a buffer to use to build the response */
-    if ((p_buf = (BT_HDR *)GKI_getpoolbuf (SDP_POOL_ID)) == NULL) {
+    if ((p_buf = (BT_HDR *)osi_malloc(SDP_DATA_BUF_SIZE)) == NULL) {
         SDP_TRACE_ERROR ("SDP - no buf for search rsp\n");
         return;
     }
@@ -594,10 +589,10 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     if (*p_req) {
         /* Free and reallocate buffer */
         if (p_ccb->rsp_list) {
-            GKI_freebuf (p_ccb->rsp_list);
+            osi_free (p_ccb->rsp_list);
         }
 
-        p_ccb->rsp_list = (UINT8 *)GKI_getbuf (max_list_len);
+        p_ccb->rsp_list = (UINT8 *)osi_malloc (max_list_len);
         if (p_ccb->rsp_list == NULL) {
             SDP_TRACE_ERROR ("SDP - no scratch buf for search rsp\n");
             return;
@@ -625,17 +620,15 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
         attr_seq.attr_entry[p_ccb->cont_info.next_attr_index].start = p_ccb->cont_info.next_attr_start_id;
     } else {
         /* Get a scratch buffer to store response */
-        if (!p_ccb->rsp_list || (GKI_get_buf_size(p_ccb->rsp_list) < max_list_len)) {
-            /* Free and reallocate if the earlier allocated buffer is small */
-            if (p_ccb->rsp_list) {
-                GKI_freebuf (p_ccb->rsp_list);
-            }
+        /* Free and reallocate if the earlier allocated buffer is small */
+        if (p_ccb->rsp_list) {
+            osi_free (p_ccb->rsp_list);
+        }
 
-            p_ccb->rsp_list = (UINT8 *)GKI_getbuf (max_list_len);
-            if (p_ccb->rsp_list == NULL) {
-                SDP_TRACE_ERROR ("SDP - no scratch buf for search rsp\n");
-                return;
-            }
+        p_ccb->rsp_list = (UINT8 *)osi_malloc (max_list_len);
+        if (p_ccb->rsp_list == NULL) {
+            SDP_TRACE_ERROR ("SDP - no scratch buf for search rsp\n");
+            return;
         }
 
         p_ccb->cont_offset = 0;
@@ -796,7 +789,7 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     }
 
     /* Get a buffer to use to build the response */
-    if ((p_buf = (BT_HDR *)GKI_getpoolbuf (SDP_POOL_ID)) == NULL) {
+    if ((p_buf = (BT_HDR *)osi_malloc(SDP_DATA_BUF_SIZE)) == NULL) {
         SDP_TRACE_ERROR ("SDP - no buf for search rsp\n");
         return;
     }

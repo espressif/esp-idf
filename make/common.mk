@@ -19,6 +19,7 @@ endif
 #
 # if V=1, $(summary) does nothing and $(details) will echo extra details
 # if V is unset or not 1, $(summary) echoes a summary and $(details) does nothing
+VERBOSE ?=
 V ?= $(VERBOSE)
 ifeq ("$(V)","1")
 summary := @true
@@ -26,9 +27,13 @@ details := @echo
 else
 summary := @echo
 details := @true
+endif
 
 # disable echoing of commands, directory names
 MAKEFLAGS += --silent
+
+ifdef CONFIG_MAKE_WARN_UNDEFINED_VARIABLES
+MAKEFLAGS += --warn-undefined-variables
 endif
 
 # General make utilities

@@ -65,6 +65,7 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_wifi_types.h"
+#include "esp_wifi_crypto_types.h"
 #include "esp_event.h"
 
 #ifdef __cplusplus
@@ -96,6 +97,7 @@ extern "C" {
  */
 typedef struct {
     system_event_handler_t event_handler;          /**< WiFi event handler */
+    wpa_crypto_funcs_t     wpa_crypto_funcs;       /**< WiFi station crypto functions when connect */
     int                    static_rx_buf_num;      /**< WiFi static RX buffer number */
     int                    dynamic_rx_buf_num;     /**< WiFi dynamic RX buffer number */
     int                    tx_buf_type;            /**< WiFi TX buffer type */
@@ -138,11 +140,22 @@ typedef struct {
 #else
 #define WIFI_NANO_FORMAT_ENABLED  0
 #endif
- 
+
+extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
+
 #define WIFI_INIT_CONFIG_MAGIC    0x1F2F3F4F
-#ifdef CONFIG_WIFI_ENABLED
+
+#ifdef CONFIG_ESP32_WIFI_AMPDU_ENABLED
+#define WIFI_DEFAULT_TX_BA_WIN CONFIG_ESP32_WIFI_TX_BA_WIN
+#define WIFI_DEFAULT_RX_BA_WIN CONFIG_ESP32_WIFI_RX_BA_WIN
+#else
+#define WIFI_DEFAULT_TX_BA_WIN 0 /* unused if ampdu_enable == false */
+#define WIFI_DEFAULT_RX_BA_WIN 0
+#endif
+
 #define WIFI_INIT_CONFIG_DEFAULT() { \
     .event_handler = &esp_event_send, \
+    .wpa_crypto_funcs = g_wifi_default_wpa_crypto_funcs, \
     .static_rx_buf_num = CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM,\
     .dynamic_rx_buf_num = CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM,\
     .tx_buf_type = CONFIG_ESP32_WIFI_TX_BUFFER_TYPE,\
@@ -151,13 +164,10 @@ typedef struct {
     .ampdu_enable = WIFI_AMPDU_ENABLED,\
     .nvs_enable = WIFI_NVS_ENABLED,\
     .nano_enable = WIFI_NANO_FORMAT_ENABLED,\
-    .tx_ba_win = CONFIG_ESP32_WIFI_TX_BA_WIN,\
-    .rx_ba_win = CONFIG_ESP32_WIFI_RX_BA_WIN,\
+    .tx_ba_win = WIFI_DEFAULT_TX_BA_WIN,\
+    .rx_ba_win = WIFI_DEFAULT_RX_BA_WIN,\
     .magic = WIFI_INIT_CONFIG_MAGIC\
 };
-#else
-#define WIFI_INIT_CONFIG_DEFAULT() {0}; _Static_assert(0, "please enable wifi in menuconfig to use esp_wifi.h");
-#endif
 
 /**
   * @brief  Init WiFi

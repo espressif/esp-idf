@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,6 +37,8 @@
 #include "esp_eth.h"
 #include "esp_intr_alloc.h"
 
+#include "driver/periph_ctrl.h"
+
 #include "emac_common.h"
 #include "emac_desc.h"
 
@@ -54,8 +56,8 @@
 
 static struct emac_config_data emac_config;
 
-static uint8_t emac_dma_rx_chain_buf[32 * DMA_RX_BUF_NUM];
-static uint8_t emac_dma_tx_chain_buf[32 * DMA_TX_BUF_NUM];
+static uint8_t emac_dma_rx_chain_buf[sizeof(struct dma_extended_desc) * DMA_RX_BUF_NUM];
+static uint8_t emac_dma_tx_chain_buf[sizeof(struct dma_extended_desc) * DMA_TX_BUF_NUM];
 static uint8_t emac_dma_rx_buf[DMA_RX_BUF_SIZE * DMA_RX_BUF_NUM];
 static uint8_t emac_dma_tx_buf[DMA_TX_BUF_SIZE * DMA_TX_BUF_NUM];
 
@@ -115,6 +117,25 @@ static void emac_set_rx_base_reg(void)
     REG_WRITE(EMAC_DMARXBASEADDR_REG, (uint32_t)(emac_config.dma_erx));
 }
 
+/*
+* dirty_rx indicates the hardware has been fed with data packets and is the first node software needs to handle;
+*
+* cur_rx indicates the completion of software handling and is the last node hardware could use;
+*
+* cnt_rx is to count the numbers of packets handled by software, passed to protocol stack and not been freed.
+*
+* (1) Initializing the Linked List. Connect the numerable nodes to a circular linked list, appoint one of the nodes as the head node, mark* the dirty_rx and cur_rx into the node, and mount the node on the hardware base address. Initialize cnt_rx into 0.
+*
+* (2) When hardware receives packets, nodes of linked lists will be fed with data packets from the base address by turns, marks the node 
+* of linked lists as “HARDWARE UNUSABLE” and reports interrupts.
+*
+* (3) When the software receives the interrupts, it will handle the linked lists by turns from dirty_rx, send data packets to protocol 
+* stack. dirty_rx will deviate backwards by turns and cnt_rx will by turns ++.
+*
+* (4) After the protocol stack handles all the data and calls the free function, it will deviate backwards by turns from cur_rx, mark the * node of linked lists as “HARDWARE USABLE” and cnt_rx will by turns --.
+*
+* (5) Cycle from Step 2 to Step 4 without break and build up circular linked list handling.
+*/
 static void emac_reset_dma_chain(void)
 {
     emac_config.cnt_tx = 0;
@@ -450,16 +471,17 @@ static void emac_process_rx_unavail(void)
     while (emac_config.cnt_rx < DMA_RX_BUF_NUM) {
 
         emac_config.cnt_rx++;
-
-        //copy data to lwip
-        emac_config.emac_tcpip_input((void *)(emac_config.dma_erx[emac_config.dirty_rx].basic.desc2),
-                                     (((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
-
         if (emac_config.cnt_rx > DMA_RX_BUF_NUM) {
             ESP_LOGE(TAG, "emac rx unavail buf err !!\n");
         }
+        uint32_t tmp_dirty = emac_config.dirty_rx;
         emac_config.dirty_rx = (emac_config.dirty_rx + 1) % DMA_RX_BUF_NUM;
-    }
+ 
+        //copy data to lwip
+        emac_config.emac_tcpip_input((void *)(emac_config.dma_erx[tmp_dirty].basic.desc2),
+                                     (((emac_config.dma_erx[tmp_dirty].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
+
+   }
     emac_enable_rx_intr();
     emac_enable_rx_unavail_intr();
     xSemaphoreGiveRecursive( emac_rx_xMutex );
@@ -479,15 +501,16 @@ static void emac_process_rx(void)
 
         while (((uint32_t) & (emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) != cur_rx_desc) && emac_config.cnt_rx < DMA_RX_BUF_NUM ) {
             emac_config.cnt_rx++;
-
-            //copy data to lwip
-            emac_config.emac_tcpip_input((void *)(emac_config.dma_erx[emac_config.dirty_rx].basic.desc2),
-                                         (((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
-
             if (emac_config.cnt_rx > DMA_RX_BUF_NUM ) {
                 ESP_LOGE(TAG, "emac rx buf err!!\n");
             }
+            uint32_t tmp_dirty = emac_config.dirty_rx;
             emac_config.dirty_rx = (emac_config.dirty_rx + 1) % DMA_RX_BUF_NUM;
+
+
+            //copy data to lwip
+            emac_config.emac_tcpip_input((void *)(emac_config.dma_erx[tmp_dirty].basic.desc2),
+                                         (((emac_config.dma_erx[tmp_dirty].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
 
             cur_rx_desc = emac_read_rx_cur_reg();
         }
@@ -497,16 +520,17 @@ static void emac_process_rx(void)
                 while (emac_config.cnt_rx < DMA_RX_BUF_NUM) {
 
                     emac_config.cnt_rx++;
-                    //copy data to lwip
-                    emac_config.emac_tcpip_input((void *)(emac_config.dma_erx[emac_config.dirty_rx].basic.desc2),
-                                                 (((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
-
                     if (emac_config.cnt_rx > DMA_RX_BUF_NUM) {
                         ESP_LOGE(TAG, "emac rx buf err!!!\n");
                     }
-
+                    uint32_t tmp_dirty = emac_config.dirty_rx;
                     emac_config.dirty_rx = (emac_config.dirty_rx + 1) % DMA_RX_BUF_NUM;
-                }
+ 
+                    //copy data to lwip
+                    emac_config.emac_tcpip_input((void *)(emac_config.dma_erx[tmp_dirty].basic.desc2),
+                                                 (((emac_config.dma_erx[tmp_dirty].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
+
+               }
             }
         }
     }
@@ -957,12 +981,16 @@ esp_err_t IRAM_ATTR emac_post(emac_sig_t sig, emac_par_t par)
 
 esp_err_t esp_eth_init(eth_config_t *config)
 {
+     esp_event_set_default_eth_handlers();
+     return esp_eth_init_internal(config);
+}
+
+esp_err_t esp_eth_init_internal(eth_config_t *config)
+{
     esp_err_t ret = ESP_OK;
-#if !CONFIG_ETHERNET
-    ESP_LOGI(TAG, "eth driver init fail,please make menuconfig and enable ethernet .");
-    ret = ESP_FAIL;
-    goto _exit;
-#endif
+    if (emac_config.emac_status != EMAC_RUNTIME_NOT_INIT) {
+        goto _exit;
+    }
 
     emac_init_default_data();
 
@@ -979,6 +1007,7 @@ esp_err_t esp_eth_init(eth_config_t *config)
     emac_config.emac_phy_power_enable(true);
 
     //before set emac reg must enable clk
+    periph_module_enable(PERIPH_EMAC_MODULE);
     emac_enable_clk(true);
     REG_SET_FIELD(EMAC_EX_PHYINF_CONF_REG, EMAC_EX_PHY_INTF_SEL, EMAC_EX_PHY_INTF_RMII);
 

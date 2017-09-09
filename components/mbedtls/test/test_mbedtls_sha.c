@@ -13,13 +13,16 @@
 #include "freertos/semphr.h"
 #include "unity.h"
 #include "sdkconfig.h"
+#include "test_apb_dport_access.h"
 
 TEST_CASE("mbedtls SHA self-tests", "[mbedtls]")
 {
+    start_apb_access_loop();
     TEST_ASSERT_FALSE_MESSAGE(mbedtls_sha1_self_test(1), "SHA1 self-tests should pass.");
     TEST_ASSERT_FALSE_MESSAGE(mbedtls_sha256_self_test(1), "SHA256 self-tests should pass.");
     TEST_ASSERT_FALSE_MESSAGE(mbedtls_sha512_self_test(1), "SHA512 self-tests should pass.");
     TEST_ASSERT_FALSE_MESSAGE(mbedtls_sha512_self_test(1), "SHA512 self-tests should pass.");
+    verify_apb_access_loop();
 }
 
 static const unsigned char *one_hundred_as = (unsigned char *)
@@ -116,13 +119,15 @@ static void tskRunSHA256Test(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("mbedtls SHA multithreading", "[mbedtls][ignore]")
+#define SHA_TASK_STACK_SIZE (10*1024)
+
+TEST_CASE("mbedtls SHA multithreading", "[mbedtls]")
 {
     done_sem = xSemaphoreCreateCounting(4, 0);
-    xTaskCreate(tskRunSHA1Test, "SHA1Task1", 8192, NULL, 3, NULL);
-    xTaskCreate(tskRunSHA1Test, "SHA1Task2", 8192, NULL, 3, NULL);
-    xTaskCreate(tskRunSHA256Test, "SHA256Task1", 8192, NULL, 3, NULL);
-    xTaskCreate(tskRunSHA256Test, "SHA256Task2", 8192, NULL, 3, NULL);
+    xTaskCreate(tskRunSHA1Test, "SHA1Task1", SHA_TASK_STACK_SIZE, NULL, 3, NULL);
+    xTaskCreate(tskRunSHA1Test, "SHA1Task2", SHA_TASK_STACK_SIZE, NULL, 3, NULL);
+    xTaskCreate(tskRunSHA256Test, "SHA256Task1", SHA_TASK_STACK_SIZE, NULL, 3, NULL);
+    xTaskCreate(tskRunSHA256Test, "SHA256Task2", SHA_TASK_STACK_SIZE, NULL, 3, NULL);
 
     for(int i = 0; i < 4; i++) {
         if(!xSemaphoreTake(done_sem, 10000/portTICK_PERIOD_MS)) {
@@ -162,14 +167,10 @@ void tskRunSHASelftests(void *param)
 TEST_CASE("mbedtls SHA self-tests multithreaded", "[mbedtls]")
 {
     done_sem = xSemaphoreCreateCounting(2, 0);
-    xTaskCreate(tskRunSHASelftests, "SHASelftests1", 8192, NULL, 3, NULL);
-    xTaskCreate(tskRunSHASelftests, "SHASelftests2", 8192, NULL, 3, NULL);
+    xTaskCreate(tskRunSHASelftests, "SHASelftests1", SHA_TASK_STACK_SIZE, NULL, 3, NULL);
+    xTaskCreate(tskRunSHASelftests, "SHASelftests2", SHA_TASK_STACK_SIZE, NULL, 3, NULL);
 
-#ifdef CONFIG_MBEDTLS_HARDWARE_SHA
-    const int TIMEOUT_MS = 12000;
-#else
-    const int TIMEOUT_MS = 20000; // Soft-only SHA may need a little longer
-#endif
+    const int TIMEOUT_MS = 20000;
 
     for(int i = 0; i < 2; i++) {
         if(!xSemaphoreTake(done_sem, TIMEOUT_MS/portTICK_PERIOD_MS)) {

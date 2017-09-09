@@ -43,6 +43,8 @@ import serial
 import serial.tools.miniterm as miniterm
 import threading
 import ctypes
+import types
+from distutils.version import StrictVersion
 
 key_description = miniterm.key_description
 
@@ -157,13 +159,17 @@ class ConsoleReader(StoppableThread):
             self.console.cleanup()
 
     def _cancel(self):
-        if hasattr(self.console, "cancel"):
-            self.console.cancel()
-        elif os.name == 'posix':
-            # this is the way cancel() is implemented in pyserial 3.1 or newer,
-            # older pyserial doesn't have this method, hence this hack.
+        if os.name == 'posix':
+            # this is the way cancel() is implemented in pyserial 3.3 or newer,
+            # older pyserial (3.1+) has cancellation implemented via 'select',
+            # which does not work when console sends an escape sequence response
+            # 
+            # even older pyserial (<3.1) does not have this method
             #
             # on Windows there is a different (also hacky) fix, applied above.
+            #
+            # note that TIOCSTI is not implemented in WSL / bash-on-Windows.
+            # TODO: introduce some workaround to make it work there.
             import fcntl, termios
             fcntl.ioctl(self.console.fd, termios.TIOCSTI, b'\0')
 
@@ -221,6 +227,16 @@ class Monitor(object):
             self.console.output = ANSIColorConverter(self.console.output)
             self.console.byte_output = ANSIColorConverter(self.console.byte_output)
 
+        if StrictVersion(serial.VERSION) < StrictVersion('3.3.0'):
+            # Use Console.getkey implementation from 3.3.0 (to be in sync with the ConsoleReader._cancel patch above)
+            def getkey_patched(self):
+                c = self.enc_stdin.read(1)
+                if c == unichr(0x7f):
+                    c = unichr(8)    # map the BS key (which yields DEL) to backspace
+                return c
+            
+            self.console.getkey = types.MethodType(getkey_patched, self.console) 
+        
         self.serial = serial_instance
         self.console_reader = ConsoleReader(self.console, self.event_queue)
         self.serial_reader = SerialReader(self.serial, self.event_queue)
@@ -442,7 +458,7 @@ def main():
         choices=['CR', 'LF', 'CRLF'],
         type=lambda c: c.upper(),
         help="End of line to use when sending to the serial port",
-        default='CRLF')
+        default='CR')
 
     parser.add_argument(
         'elf_file', help='ELF file of application',

@@ -31,6 +31,7 @@
 #include "list.h"
 #include "alarm.h"
 #include "thread.h"
+#include "mutex.h"
 
 typedef struct {
     uint16_t opcode;
@@ -46,7 +47,7 @@ typedef struct {
     bool timer_is_set;
     osi_alarm_t *command_response_timer;
     list_t *commands_pending_response;
-    pthread_mutex_t commands_pending_response_lock;
+    osi_mutex_t commands_pending_response_lock;
 } command_waiting_response_t;
 
 typedef struct {
@@ -54,15 +55,12 @@ typedef struct {
     fixed_queue_t *command_queue;
     fixed_queue_t *packet_queue;
 
-    // The hand-off point for data going to a higher layer, set by the higher layer
-    fixed_queue_t *upwards_data_queue;
-
     command_waiting_response_t cmd_waiting_q;
 
     /*
       non_repeating_timer_t *command_response_timer;
       list_t *commands_pending_response;
-      pthread_mutex_t commands_pending_response_lock;
+      osi_mutex_t commands_pending_response_lock;
     */
 } hci_host_env_t;
 
@@ -135,20 +133,23 @@ void hci_shut_down(void)
 }
 
 
-void hci_host_task_post(task_post_t timeout)
+task_post_status_t hci_host_task_post(task_post_t timeout)
 {
     BtTaskEvt_t evt;
 
     if (hci_host_startup_flag == false) {
-        return;
+        return TASK_POST_FAIL;
     }
 
-    evt.sig = 0xff;
+    evt.sig = SIG_HCI_HOST_SEND_AVAILABLE;
     evt.par = 0;
 
     if (xQueueSend(xHciHostQueue, &evt, timeout) != pdTRUE) {
         LOG_ERROR("xHciHostQueue failed\n");
+        return TASK_POST_FAIL;
     }
+
+    return TASK_POST_SUCCESS;
 }
 
 static int hci_layer_init_env(void)
@@ -183,7 +184,7 @@ static int hci_layer_init_env(void)
         LOG_ERROR("%s unable to create list for commands pending response.", __func__);
         return -1;
     }
-    pthread_mutex_init(&cmd_wait_q->commands_pending_response_lock, NULL);
+    osi_mutex_new(&cmd_wait_q->commands_pending_response_lock);
     cmd_wait_q->command_response_timer = osi_alarm_new("cmd_rsp_to", command_timed_out, cmd_wait_q, COMMAND_PENDING_TIMEOUT);
     if (!cmd_wait_q->command_response_timer) {
         LOG_ERROR("%s unable to create command response timer.", __func__);
@@ -206,7 +207,7 @@ static void hci_layer_deinit_env(void)
 
     cmd_wait_q = &hci_host_env.cmd_waiting_q;
     list_free(cmd_wait_q->commands_pending_response);
-    pthread_mutex_destroy(&cmd_wait_q->commands_pending_response_lock);
+    osi_mutex_free(&cmd_wait_q->commands_pending_response_lock);
     osi_alarm_free(cmd_wait_q->command_response_timer);
     cmd_wait_q->command_response_timer = NULL;
 }
@@ -227,7 +228,7 @@ static void hci_host_thread_handler(void *arg)
     for (;;) {
         if (pdTRUE == xQueueReceive(xHciHostQueue, &e, (portTickType)portMAX_DELAY)) {
 
-            if (e.sig == 0xff) {
+            if (e.sig == SIG_HCI_HOST_SEND_AVAILABLE) {
                 if (esp_vhci_host_check_send_available()) {
                     /*Now Target only allowed one packet per TX*/
                     BT_HDR *pkt = packet_fragmenter->fragment_current_packet();
@@ -245,11 +246,6 @@ static void hci_host_thread_handler(void *arg)
             }
         }
     }
-}
-
-static void set_data_queue(fixed_queue_t *queue)
-{
-    hci_host_env.upwards_data_queue = queue;
 }
 
 static void transmit_command(
@@ -311,7 +307,7 @@ static void transmit_downward(uint16_t type, void *data)
     } else {
         fixed_queue_enqueue(hci_host_env.packet_queue, data);
     }
-    //ke_event_set(KE_EVENT_HCI_HOST_THREAD);
+
     hci_host_task_post(TASK_POST_BLOCKING);
 }
 
@@ -326,9 +322,9 @@ static void event_command_ready(fixed_queue_t *queue)
     hci_host_env.command_credits--;
 
     // Move it to the list of commands awaiting response
-    pthread_mutex_lock(&cmd_wait_q->commands_pending_response_lock);
+    osi_mutex_lock(&cmd_wait_q->commands_pending_response_lock, OSI_MUTEX_MAX_TIMEOUT);
     list_append(cmd_wait_q->commands_pending_response, wait_entry);
-    pthread_mutex_unlock(&cmd_wait_q->commands_pending_response_lock);
+    osi_mutex_unlock(&cmd_wait_q->commands_pending_response_lock);
 
     // Send it off
     packet_fragmenter->fragment_and_dispatch(wait_entry->command);
@@ -392,10 +388,10 @@ static void restart_comamnd_waiting_response_timer(
         cmd_wait_q->timer_is_set = false;
     }
 
-    pthread_mutex_lock(&cmd_wait_q->commands_pending_response_lock);
+    osi_mutex_lock(&cmd_wait_q->commands_pending_response_lock, OSI_MUTEX_MAX_TIMEOUT);
     wait_entry = (list_is_empty(cmd_wait_q->commands_pending_response) ?
                   NULL : list_front(cmd_wait_q->commands_pending_response));
-    pthread_mutex_unlock(&cmd_wait_q->commands_pending_response_lock);
+    osi_mutex_unlock(&cmd_wait_q->commands_pending_response_lock);
 
     if (wait_entry == NULL) {
         return;
@@ -414,10 +410,10 @@ static void command_timed_out(void *context)
     command_waiting_response_t *cmd_wait_q = (command_waiting_response_t *)context;
     waiting_command_t *wait_entry;
 
-    pthread_mutex_lock(&cmd_wait_q->commands_pending_response_lock);
+    osi_mutex_lock(&cmd_wait_q->commands_pending_response_lock, OSI_MUTEX_MAX_TIMEOUT);
     wait_entry = (list_is_empty(cmd_wait_q->commands_pending_response) ?
                   NULL : list_front(cmd_wait_q->commands_pending_response));
-    pthread_mutex_unlock(&cmd_wait_q->commands_pending_response_lock);
+    osi_mutex_unlock(&cmd_wait_q->commands_pending_response_lock);
 
     if (wait_entry == NULL) {
         LOG_ERROR("%s with no commands pending response", __func__);
@@ -495,7 +491,6 @@ intercepted:
             !fixed_queue_is_empty(hci_host_env.command_queue)) {
         hci_host_task_post(TASK_POST_BLOCKING);
     }
-    //ke_event_set(KE_EVENT_HCI_HOST_THREAD);
 
     if (wait_entry) {
         // If it has a callback, it's responsible for freeing the packet
@@ -521,13 +516,8 @@ intercepted:
 static void dispatch_reassembled(BT_HDR *packet)
 {
     // Events should already have been dispatched before this point
-
-    if (hci_host_env.upwards_data_queue) {
-        fixed_queue_enqueue(hci_host_env.upwards_data_queue, packet);
-        btu_task_post(SIG_BTU_WORK, TASK_POST_BLOCKING);
-        //Tell Up-layer received packet.
-    } else {
-        LOG_DEBUG("%s had no queue to place upwards data packet in. Dropping it on the floor.", __func__);
+    //Tell Up-layer received packet.
+    if (btu_task_post(SIG_BTU_HCI_MSG, packet, TASK_POST_BLOCKING) != TASK_POST_SUCCESS) {
         buffer_allocator->free(packet);
     }
 }
@@ -553,7 +543,7 @@ static serial_data_type_t event_to_data_type(uint16_t event)
 static waiting_command_t *get_waiting_command(command_opcode_t opcode)
 {
     command_waiting_response_t *cmd_wait_q = &hci_host_env.cmd_waiting_q;
-    pthread_mutex_lock(&cmd_wait_q->commands_pending_response_lock);
+    osi_mutex_lock(&cmd_wait_q->commands_pending_response_lock, OSI_MUTEX_MAX_TIMEOUT);
 
     for (const list_node_t *node = list_begin(cmd_wait_q->commands_pending_response);
             node != list_end(cmd_wait_q->commands_pending_response);
@@ -565,18 +555,17 @@ static waiting_command_t *get_waiting_command(command_opcode_t opcode)
 
         list_remove(cmd_wait_q->commands_pending_response, wait_entry);
 
-        pthread_mutex_unlock(&cmd_wait_q->commands_pending_response_lock);
+        osi_mutex_unlock(&cmd_wait_q->commands_pending_response_lock);
         return wait_entry;
     }
 
-    pthread_mutex_unlock(&cmd_wait_q->commands_pending_response_lock);
+    osi_mutex_unlock(&cmd_wait_q->commands_pending_response_lock);
     return NULL;
 }
 
 static void init_layer_interface()
 {
     if (!interface_created) {
-        interface.set_data_queue = set_data_queue;
         interface.transmit_command = transmit_command;
         interface.transmit_command_futured = transmit_command_futured;
         interface.transmit_downward = transmit_downward;

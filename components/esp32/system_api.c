@@ -24,6 +24,7 @@
 #include "rom/cache.h"
 #include "rom/uart.h"
 #include "soc/dport_reg.h"
+#include "soc/gpio_reg.h"
 #include "soc/efuse_reg.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
@@ -38,6 +39,9 @@
 static const char* TAG = "system_api";
 
 static uint8_t base_mac_addr[6] = { 0 };
+
+#define SHUTDOWN_HANDLERS_NO 2
+static shutdown_handler_t shutdown_handlers[SHUTDOWN_HANDLERS_NO];
 
 void system_init()
 {
@@ -227,23 +231,28 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
     return ESP_OK;
 }
 
-void esp_restart_noos() __attribute__ ((noreturn));
-
-/* Dummy function to be used instead of esp_wifi_stop if WiFi stack is not
- * linked in (even though CONFIG_WIFI_ENABLED is set).
- */
-esp_err_t wifi_stop_noop()
+esp_err_t esp_register_shutdown_handler(shutdown_handler_t handler)
 {
-    return ESP_OK;
+     int i;
+     for (i = 0; i < SHUTDOWN_HANDLERS_NO; i++) {
+	  if (shutdown_handlers[i] == NULL) {
+	       shutdown_handlers[i] = handler;
+	       return ESP_OK;
+	  }
+     }
+     return ESP_FAIL;
 }
 
-esp_err_t esp_wifi_stop(void) __attribute((weak, alias("wifi_stop_noop")));
+void esp_restart_noos() __attribute__ ((noreturn));
 
 void IRAM_ATTR esp_restart(void)
 {
-#ifdef CONFIG_WIFI_ENABLED
-    esp_wifi_stop();
-#endif
+     int i;
+     for (i = 0; i < SHUTDOWN_HANDLERS_NO; i++) {
+	  if (shutdown_handlers[i]) {
+	       shutdown_handlers[i]();
+	  }
+     }
 
     // Disable scheduler on this core.
     vTaskSuspendAll();
@@ -262,7 +271,7 @@ void IRAM_ATTR esp_restart_noos()
     esp_cpu_stall(other_core_id);
 
     // other core is now stalled, can access DPORT registers directly
-    esp_dport_access_int_deinit();
+    esp_dport_access_int_pause();
 
     // We need to disable TG0/TG1 watchdogs
     // First enable RTC watchdog for 1 second
@@ -289,6 +298,17 @@ void IRAM_ATTR esp_restart_noos()
     // Disable cache
     Cache_Read_Disable(0);
     Cache_Read_Disable(1);
+
+#ifdef CONFIG_SPIRAM_SUPPORT
+    //External SPI RAM reconfigures some GPIO functions in a way that is not entirely undone in the boot rom.
+    //Undo them manually so we reboot correctly.
+    WRITE_PERI_REG(GPIO_FUNC0_IN_SEL_CFG_REG, 0x30);
+    WRITE_PERI_REG(GPIO_FUNC1_IN_SEL_CFG_REG, 0x30);
+    WRITE_PERI_REG(GPIO_FUNC2_IN_SEL_CFG_REG, 0x30);
+    WRITE_PERI_REG(GPIO_FUNC3_IN_SEL_CFG_REG, 0x30);
+    WRITE_PERI_REG(GPIO_FUNC4_IN_SEL_CFG_REG, 0x30);
+    WRITE_PERI_REG(GPIO_FUNC5_IN_SEL_CFG_REG, 0x30);
+#endif
 
     // Flush any data left in UART FIFOs
     uart_tx_wait_idle(0);

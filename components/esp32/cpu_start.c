@@ -40,7 +40,7 @@
 
 #include "tcpip_adapter.h"
 
-#include "esp_heap_caps.h"
+#include "esp_heap_caps_init.h"
 #include "sdkconfig.h"
 #include "esp_system.h"
 #include "esp_spi_flash.h"
@@ -62,7 +62,10 @@
 #include "esp_panic.h"
 #include "esp_core_dump.h"
 #include "esp_app_trace.h"
+#include "esp_efuse.h"
+#include "esp_spiram.h"
 #include "esp_clk.h"
+#include "esp_timer.h"
 #include "trax.h"
 
 #define STRINGIFY(s) STRINGIFY2(s)
@@ -80,6 +83,7 @@ static bool app_cpu_started = false;
 static void do_global_ctors(void);
 static void main_task(void* args);
 extern void app_main(void);
+extern esp_err_t esp_pthread_init(void);
 
 extern int _bss_start;
 extern int _bss_end;
@@ -91,6 +95,10 @@ extern void (*__init_array_end)(void);
 extern volatile int port_xSchedulerRunning[2];
 
 static const char* TAG = "cpu_start";
+
+struct object { long placeholder[ 10 ]; };
+void __register_frame_info (const void *begin, struct object *ob);
+extern char __eh_frame[];
 
 /*
  * We arrive here after the bootloader finished loading the program from flash. The hardware is mostly uninitialized,
@@ -141,6 +149,13 @@ void IRAM_ATTR call_start_cpu0()
         memset(&_rtc_bss_start, 0, (&_rtc_bss_end - &_rtc_bss_start) * sizeof(_rtc_bss_start));
     }
 
+#if CONFIG_SPIRAM_BOOT_INIT
+    if (esp_spiram_init() != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Failed to init external RAM!");
+        abort();
+    }
+#endif
+
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
 
 #if !CONFIG_FREERTOS_UNICORE
@@ -169,11 +184,23 @@ void IRAM_ATTR call_start_cpu0()
     DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
 #endif
 
+
+#if CONFIG_SPIRAM_MEMTEST
+    bool ext_ram_ok=esp_spiram_test();
+    if (!ext_ram_ok) {
+        ESP_EARLY_LOGE(TAG, "External RAM failed memory test!");
+        abort();
+    }
+#endif
+
     /* Initialize heap allocator. WARNING: This *needs* to happen *after* the app cpu has booted.
        If the heap allocator is initialized first, it will put free memory linked list items into
        memory also used by the ROM. Starting the app cpu will let its ROM initialize that memory,
        corrupting those linked lists. Initializing the allocator *after* the app cpu has booted
-       works around this problem. */
+       works around this problem.
+       With SPI RAM enabled, there's a second reason: half of the SPI RAM will be managed by the
+       app CPU, and when that is not up yet, the memory will be inaccessible and heap_caps_init may
+       fail initializing it properly. */
     heap_caps_init();
 
     ESP_EARLY_LOGI(TAG, "Pro cpu start user code");
@@ -226,6 +253,7 @@ static void intr_matrix_clear(void)
 
 void start_cpu0_default(void)
 {
+    esp_err_t err;
     esp_setup_syscall_table();
 //Enable trace memory and immediately start trace.
 #if CONFIG_ESP32_TRAX
@@ -237,6 +265,7 @@ void start_cpu0_default(void)
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
 #endif
     esp_clk_init();
+    esp_perip_clk_init();
     intr_matrix_clear();
 #ifndef CONFIG_CONSOLE_UART_NONE
     uart_div_modify(CONFIG_CONSOLE_UART_NUM, (rtc_clk_apb_freq_get() << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
@@ -244,8 +273,10 @@ void start_cpu0_default(void)
 #if CONFIG_BROWNOUT_DET
     esp_brownout_init();
 #endif
+#if CONFIG_DISABLE_BASIC_ROM_CONSOLE
+    esp_efuse_disable_basic_rom_console();
+#endif
     rtc_gpio_force_hold_dis_all();
-    esp_setup_time_syscalls();
     esp_vfs_dev_uart_register();
     esp_reent_init(_GLOBAL_REENT);
 #ifndef CONFIG_CONSOLE_UART_NONE
@@ -258,8 +289,10 @@ void start_cpu0_default(void)
     _GLOBAL_REENT->_stdout = (FILE*) &__sf_fake_stdout;
     _GLOBAL_REENT->_stderr = (FILE*) &__sf_fake_stderr;
 #endif
+    esp_timer_init();
+    esp_set_time_from_rtc();
 #if CONFIG_ESP32_APPTRACE_ENABLE
-    esp_err_t err = esp_apptrace_init();
+    err = esp_apptrace_init();
     if (err != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to init apptrace module on CPU0 (%d)!", err);
     }
@@ -267,6 +300,11 @@ void start_cpu0_default(void)
 #if CONFIG_SYSVIEW_ENABLE
     SEGGER_SYSVIEW_Conf();
 #endif
+    err = esp_pthread_init();
+    if (err != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Failed to init pthread module (%d)!", err);
+    }
+
     do_global_ctors();
 #if CONFIG_INT_WDT
     esp_int_wdt_init();
@@ -327,6 +365,9 @@ void start_cpu1_default(void)
 
 static void do_global_ctors(void)
 {
+    static struct object ob;
+    __register_frame_info( __eh_frame, &ob );
+
     void (**p)(void);
     for (p = &__init_array_end - 1; p >= &__init_array_start; --p) {
         (*p)();

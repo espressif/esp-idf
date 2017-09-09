@@ -67,11 +67,15 @@
 #define SOC_RTC_IRAM_HIGH 0x400C2000
 #define SOC_RTC_DATA_LOW  0x50000000
 #define SOC_RTC_DATA_HIGH 0x50002000
+#define SOC_EXTRAM_DATA_LOW 0x3F800000
+#define SOC_EXTRAM_DATA_HIGH 0x3FC00000
+
 
 #define DR_REG_DPORT_BASE                       0x3ff00000
-#define DR_REG_DPORT_END                        0x3ff00FFC
+#define DR_REG_AES_BASE                         0x3ff01000
 #define DR_REG_RSA_BASE                         0x3ff02000
 #define DR_REG_SHA_BASE                         0x3ff03000
+#define DR_REG_DPORT_END                        0x3ff03FFC
 #define DR_REG_UART_BASE                        0x3ff40000
 #define DR_REG_SPI1_BASE                        0x3ff42000
 #define DR_REG_SPI0_BASE                        0x3ff43000
@@ -118,7 +122,7 @@
 #define DR_REG_UART2_BASE                       0x3ff6E000
 #define DR_REG_PWM2_BASE                        0x3ff6F000
 #define DR_REG_PWM3_BASE                        0x3ff70000
-#define PERIPHS_SPI_ENCRYPT_BASEADDR		DR_REG_SPI_ENCRYPT_BASE
+#define PERIPHS_SPI_ENCRYPT_BASEADDR            DR_REG_SPI_ENCRYPT_BASE
 
 //Registers Operation {{
 #define ETS_UNCACHED_ADDR(addr) (addr)
@@ -376,7 +380,7 @@
  *      7                       1               software                BT/BLE VHCI             BT/BLE VHCI
  *      8                       1               extern level            BT/BLE BB(RX/TX)        BT/BLE BB(RX/TX)
  *      9                       1               extern level
- *      10                      1               extern edge             Internal Timer
+ *      10                      1               extern edge
  *      11                      3               profiling
  *      12                      1               extern level
  *      13                      1               extern level
@@ -388,7 +392,7 @@
  *      19                      2               extern level
  *      20                      2               extern level
  *      21                      2               extern level
- *      22                      3               extern edge             FRC1 timer
+ *      22                      3               extern edge
  *      23                      3               extern level
  *      24                      4               extern level            TG1_WDT
  *      25                      4               extern level            CACHEERR

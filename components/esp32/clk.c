@@ -25,6 +25,8 @@
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
+#include "soc/dport_reg.h"
+#include "soc/i2s_reg.h"
 
 /* Number of cycles to wait from the 32k XTAL oscillator to consider it running.
  * Larger values increase startup delay. Smaller values may cause false positive
@@ -124,4 +126,90 @@ static void select_rtc_slow_clk(rtc_slow_freq_t slow_clk)
     }
     ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK calibration value: %d", cal_val);
     esp_clk_slowclk_cal_set(cal_val);
+}
+
+/* This function is not exposed as an API at this point.
+ * All peripheral clocks are default enabled after chip is powered on.
+ * This function disables some peripheral clocks when cpu starts.
+ * These peripheral clocks are enabled when the peripherals are initialized
+ * and disabled when they are de-initialized.
+ */
+void esp_perip_clk_init(void)
+{
+    uint32_t common_perip_clk, hwcrypto_perip_clk, wifi_bt_sdio_clk = 0;
+
+#if CONFIG_FREERTOS_UNICORE
+    RESET_REASON rst_reas[1];
+#else
+    RESET_REASON rst_reas[2];
+#endif
+
+    rst_reas[0] = rtc_get_reset_reason(0);
+
+#if !CONFIG_FREERTOS_UNICORE
+    rst_reas[1] = rtc_get_reset_reason(1);
+#endif
+
+    /* For reason that only reset CPU, do not disable the clocks
+     * that have been enabled before reset.
+     */
+    if ((rst_reas[0] >= TGWDT_CPU_RESET && rst_reas[0] <= RTCWDT_CPU_RESET)
+#if !CONFIG_FREERTOS_UNICORE
+        || (rst_reas[1] >= TGWDT_CPU_RESET && rst_reas[1] <= RTCWDT_CPU_RESET)
+#endif
+    ) {
+        common_perip_clk = ~DPORT_READ_PERI_REG(DPORT_PERIP_CLK_EN_REG);
+        hwcrypto_perip_clk = ~DPORT_READ_PERI_REG(DPORT_PERI_CLK_EN_REG);
+        wifi_bt_sdio_clk = ~DPORT_READ_PERI_REG(DPORT_WIFI_CLK_EN_REG);
+    }
+    else {
+        common_perip_clk = DPORT_WDG_CLK_EN |
+                              DPORT_I2S0_CLK_EN |
+                              DPORT_UART1_CLK_EN |
+                              DPORT_SPI_CLK_EN |
+                              DPORT_I2C_EXT0_CLK_EN |
+                              DPORT_UHCI0_CLK_EN |
+                              DPORT_RMT_CLK_EN |
+                              DPORT_PCNT_CLK_EN |
+                              DPORT_LEDC_CLK_EN |
+                              DPORT_UHCI1_CLK_EN |
+                              DPORT_TIMERGROUP1_CLK_EN |
+                              DPORT_SPI_CLK_EN_2 |
+                              DPORT_PWM0_CLK_EN |
+                              DPORT_I2C_EXT1_CLK_EN |
+                              DPORT_CAN_CLK_EN |
+                              DPORT_PWM1_CLK_EN |
+                              DPORT_I2S1_CLK_EN |
+                              DPORT_SPI_DMA_CLK_EN |
+                              DPORT_UART2_CLK_EN |
+                              DPORT_PWM2_CLK_EN |
+                              DPORT_PWM3_CLK_EN;
+        hwcrypto_perip_clk = DPORT_PERI_EN_AES |
+                                DPORT_PERI_EN_SHA |
+                                DPORT_PERI_EN_RSA |
+                                DPORT_PERI_EN_SECUREBOOT;
+        wifi_bt_sdio_clk = DPORT_WIFI_CLK_WIFI_EN |
+                              DPORT_WIFI_CLK_BT_EN_M |
+                              DPORT_WIFI_CLK_UNUSED_BIT5 |
+                              DPORT_WIFI_CLK_UNUSED_BIT12 |
+                              DPORT_WIFI_CLK_SDIOSLAVE_EN |
+                              DPORT_WIFI_CLK_SDIO_HOST_EN |
+                              DPORT_WIFI_CLK_EMAC_EN;
+    }
+    /* Change I2S clock to audio PLL first. Because if I2S uses 160MHz clock,
+     * the current is not reduced when disable I2S clock.
+     */
+    DPORT_SET_PERI_REG_MASK(I2S_CLKM_CONF_REG(0), I2S_CLKA_ENA);
+    DPORT_SET_PERI_REG_MASK(I2S_CLKM_CONF_REG(1), I2S_CLKA_ENA);
+
+    /* Disable some peripheral clocks. */
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, common_perip_clk);
+    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, common_perip_clk);
+
+    /* Disable hardware crypto clocks. */
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERI_CLK_EN_REG, hwcrypto_perip_clk);
+    DPORT_SET_PERI_REG_MASK(DPORT_PERI_RST_EN_REG, hwcrypto_perip_clk);
+
+    /* Disable WiFi/BT/SDIO clocks. */
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, wifi_bt_sdio_clk);
 }

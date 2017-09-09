@@ -84,6 +84,7 @@ SECTIONS
     *(.iram1 .iram1.*)
     *libfreertos.a:(.literal .text .literal.* .text.*)
     *libheap.a:multi_heap.o(.literal .text .literal.* .text.*)
+    *libheap.a:multi_heap_poisoning.o(.literal .text .literal.* .text.*)
     *libesp32.a:panic.o(.literal .text .literal.* .text.*)
     *libesp32.a:core_dump.o(.literal .text .literal.* .text.*)
     *libapp_trace.a:(.literal .text .literal.* .text.*)
@@ -93,6 +94,7 @@ SECTIONS
     *librtc.a:(.literal .text .literal.* .text.*)
     *libsoc.a:(.literal .text .literal.* .text.*)
     *libhal.a:(.literal .text .literal.* .text.*)
+    *libgcc.a:lib2funcs.o(.literal .text .literal.* .text.*)
     *libspi_flash.a:spi_flash_rom_patch.o(.literal .text .literal.* .text.*)
     _iram_text_end = ABSOLUTE(.);
   } > iram0_0_seg
@@ -116,6 +118,7 @@ SECTIONS
     *libphy.a:(.rodata .rodata.*)
     *libapp_trace.a:(.rodata .rodata.*)
     *libheap.a:multi_heap.o(.rodata .rodata.*)
+    *libheap.a:multi_heap_poisoning.o(.rodata .rodata.*)
     _data_end = ABSOLUTE(.);
     . = ALIGN(4);
   } >dram0_0_seg
@@ -154,11 +157,13 @@ SECTIONS
     *(.rodata1)
     __XT_EXCEPTION_TABLE_ = ABSOLUTE(.);
     *(.xt_except_table)
-    *(.gcc_except_table)
+    *(.gcc_except_table .gcc_except_table.*)
     *(.gnu.linkonce.e.*)
     *(.gnu.version_r)
-    *(.eh_frame)
     . = (. + 3) & ~ 3;
+    __eh_frame = ABSOLUTE(.);
+    KEEP(*(.eh_frame))
+    . = (. + 7) & ~ 3;
     /*  C++ constructor and destructor tables, properly ordered:  */
     __init_array_start = ABSOLUTE(.);
     KEEP (*crtbegin.o(.ctors))

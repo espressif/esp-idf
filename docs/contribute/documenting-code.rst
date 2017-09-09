@@ -7,7 +7,7 @@ The purpose of this description is to provide quick summary on documentation sty
 Introduction
 ------------
 
-When documenting code for this repository, please follow `Doxygen style <http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html#specialblock>`_. You are doing it by inserting special commands, for instance ``@param``, into standard comments blocks, for example: ::
+When documenting code for this repository, please follow `Doxygen style <https://www.stack.nl/~dimitri/doxygen/manual/docblocks.html#specialblock>`_. You are doing it by inserting special commands, for instance ``@param``, into standard comments blocks, for example: ::
 
     /**
      * @param ratio this is oxygen to air ratio
@@ -21,7 +21,7 @@ Typical comment block, that contains documentation of a function, looks like bel
     :align: center
     :alt: Sample inline code documentation
  
-Doxygen supports couple of formatting styles. It also gives you great flexibility on level of details to include in documentation. To get familiar with available features, please check data reach and very well organized `Doxygen Manual <http://www.stack.nl/~dimitri/doxygen/manual/index.html>`_.
+Doxygen supports couple of formatting styles. It also gives you great flexibility on level of details to include in documentation. To get familiar with available features, please check data reach and very well organized `Doxygen Manual <https://www.stack.nl/~dimitri/doxygen/manual/index.html>`_.
 
 
 Why we need it?
@@ -125,7 +125,7 @@ There is couple of tips, how you can make your documentation even better and mor
 5. Use markdown to make your documentation even more readable. You will add headers, links, tables and more. ::
 
     *
-    * [ESP32 Technical Reference](http://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf)
+    * [ESP32 Technical Reference](https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf)
     *
 
 .. note::
@@ -171,11 +171,61 @@ OK, but I am new to Sphinx!
 
 3. You will likely want to see how documentation builds and looks like before posting it on the GitHub. There are two options to do so:
 
-    * Install `Sphinx <http://www.sphinx-doc.org/>`_, `Breathe <https://breathe.readthedocs.io/>`_ and `Doxygen <http://www.stack.nl/~dimitri/doxygen/>`_ to build it locally. You would need a Linux machine for that.
+    * Install `Sphinx <http://www.sphinx-doc.org/>`_, `Breathe <https://breathe.readthedocs.io/>`_ and `Doxygen <https://www.stack.nl/~dimitri/doxygen/>`_ to build it locally, see chapter below.
    
     * Set up an account on `Read the Docs <https://readthedocs.org/>`_ and build documentation in the cloud. Read the Docs provides document building and hosting for free and their service works really quick and great.
 
 4. To preview documentation before building use `Sublime Text <https://www.sublimetext.com/>`_ editor together with `OmniMarkupPreviewer <https://github.com/timonwong/OmniMarkupPreviewer>`_ plugin. 
+
+
+Setup for building documentation locally
+----------------------------------------
+
+You can setup environment to build documentation locally on your PC by installing:
+
+1. Doxygen - https://www.stack.nl/~dimitri/doxygen/
+2. Sphinx - https://github.com/sphinx-doc/sphinx/#readme-for-sphinx
+3. Docment theme "sphinx_rtd_theme" - https://github.com/rtfd/sphinx_rtd_theme
+4. Breathe - https://github.com/michaeljones/breathe#breathe
+
+The package "sphinx_rtd_theme" is added to have the same "look and feel" of `ESP32 Programming Guide <https://esp-idf.readthedocs.io/en/latest/index.html>`_ documentation like on the "Read the Docs" hosting site.
+
+Installation of Doxygen is OS dependent:
+
+**Linux**
+
+::
+
+	sudo apt-get install doxygen
+
+**Windows** - install in MSYS2 console
+
+::
+
+	pacman -S doxygen
+
+**MacOS**
+
+::
+
+	brew install doxygen
+
+All remaining applications are `Python <https://www.python.org/>`_ packages and you can install them in one step as follows:
+
+::
+
+	cd ~/esp/esp-idf/docs
+	pip install -r requirements.txt
+
+.. note::
+
+	Installation steps assume that ESP-IDF is placed in ``~/esp/esp-idf`` directory, that is default location of ESP-IDF used in documentation.
+
+Now you should be ready to build documentation by invoking::
+
+	make html
+
+This may take couple of minutes. After completion, documentation will be placed in ``~/esp/esp-idf/docs/_buld/html`` folder. To see it, open ``index.html`` in a web browser.  
 
 
 Wrap up

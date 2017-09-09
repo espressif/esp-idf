@@ -9,7 +9,7 @@ This section provides collection of all tips and quirks referred to from various
 Breakpoints and watchpoints available
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The ESP32 supports 2 hardware breakpoints. It also supports two watchpoints, so two variables can be watched for change or read by the GDB command ``watch myVariable``. Note that menuconfig option "Component config > FreeRTOS > Set a debug watchpoint as a stack overflow check" use the 2nd watchpoint and will not provide expected results, if you also try to use it within OpenOCD / GDB. See menuconfig's help for detailed description.
+The ESP32 supports 2 hardware breakpoints. It also supports two watchpoints, so two variables can be watched for change or read by the GDB command ``watch myVariable``. Note that menuconfig option :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` uses the 2nd watchpoint and will not provide expected results, if you also try to use it within OpenOCD / GDB. See menuconfig's help for detailed description.
 
 
 .. _jtag-debugging-tip-where-breakpoints:
@@ -56,6 +56,19 @@ To handle this issue OpenOCD's board configuration file (e.g. ``boards\esp-wroom
 Check specification of ESP32 module connected to JTAG, what is the power supply voltage of SPI flash chip. Then set ``ESP32_FLASH_VOLTAGE`` accordingly. Most WROOM modules use 3.3V flash, while WROVER modules use 1.8V flash. 
 
 
+.. _jtag-debugging-tip-optimize-jtag-speed:
+
+Optimize JTAG speed
+^^^^^^^^^^^^^^^^^^^
+
+In order to achieve higher data rates and minimize number of dropped packets it is recommended to optimize setting of JTAG clock frequency, so it is at maximum and still provides stable operation of JTAG. To do so use the following tips.
+
+1.  The upper limit of JTAG clock frequency is 20 MHz if CPU runs at 80 MHz, or 26 MHz if CPU runs at 160 MHz or 240 MHz.
+2.  Depending on particular JTAG adapter and the length of connecting cables, you may need to reduce JTAG frequency below 20 / 26 MHz.
+3.  In particular reduce frequency, if you get DSR/DIR errors (and they do not relate to OpenOCD trying to read from a memory range without physical memory being present there).
+4.  ESP-WROVER-KIT operates stable at 20 / 26 MHz.
+
+
 .. _jtag-debugging-tip-debugger-startup-commands:
 
 What is the meaning of debugger's startup commands?
@@ -92,6 +105,8 @@ Adapter's clock speed
 ::
 
     adapter_khz 20000
+
+See :ref:`jtag-debugging-tip-optimize-jtag-speed` for guidance how to set this value.
 
 
 Single core debugging
@@ -167,7 +182,19 @@ The board can be reset by entering ``mon reset`` or ``mon reset halt`` into GDB.
 Do not use JTAG pins for something else
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Operation of JTAG may be disturbed, if some other h/w is connected to JTAG pins besides ESP32 module and JTAG adapter.
+Operation of JTAG may be disturbed, if some other h/w is connected to JTAG pins besides ESP32 module and JTAG adapter. ESP32 JTAG us using the following pins:
+
+    +---+----------------+-------------+
+    |   | ESP32 JTAG Pin | JTAG Signal |
+    +===+================+=============+
+    | 1 | MTDO / GPIO15  | TDO         |
+    +---+----------------+-------------+
+    | 2 | MTDI / GPIO12  | TDI         |
+    +---+----------------+-------------+
+    | 3 | MTCK / GPIO13  | TCK         |
+    +---+----------------+-------------+
+    | 4 | MTMS / GPIO14  | TMS         |
+    +---+----------------+-------------+
 
 JTAG communication will likely fail, if configuration of JTAG pins is changed by user application. If OpenOCD initializes correctly (detects the two Tensilica cores), but loses sync and spews out a lot of DTR/DIR errors when the program is ran, it is likely that the application reconfigures the JTAG pins to something else, or the user forgot to connect Vtar to a JTAG adapter that needed it. 
 
@@ -188,37 +215,44 @@ Below is an excerpt from series of errors reported by GDB after the application 
 Reporting issues with OpenOCD / GDB
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In case you encounter a problem with OpenOCD or GDB programs itself, open an issue in the OpenOCD issue tracker under https://github.com/espressif/openocd-esp32/issues. 
+In case you encounter a problem with OpenOCD or GDB programs itself and do not find a solution searching available resources on the web, open an issue in the OpenOCD issue tracker under https://github.com/espressif/openocd-esp32/issues. 
 
-Create a simple example that is representative to observed issue. Describe steps how to reproduce it. In such an example debugging should not be affected by non-deterministic behaviour introduced by the Wi-Fi stack, so problems will likely be easier to reproduce, if encountered once.
+1.  In issue report provide details of your configuration:
 
-Prepare logs from debugging session by adding additional parameters to start up commands.
+    a. JTAG adapter type.
+    b. Release of ESP-IDF used to compile and load application that is being debugged.
+    c. Details of OS used for debugging.
+    d. Is OS running natively on a PC or on a virtual machine?
+
+2.  Create a simple example that is representative to observed issue. Describe steps how to reproduce it. In such an example debugging should not be affected by non-deterministic behaviour introduced by the Wi-Fi stack, so problems will likely be easier to reproduce, if encountered once.
 
 .. highlight:: bash
 
-OpenOCD:
+3.  Prepare logs from debugging session by adding additional parameters to start up commands.
 
-    ::
+    OpenOCD:
 
-        bin/openocd -l openocd_log.txt -d 3 -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+        ::
 
-    Logging to a file this way will prevent information displayed on the terminal. This may be a good thing taken amount of information provided, when increased debug level ``-d 3`` is set. If you still like to see the log on the screen, then use another command instead:
+            bin/openocd -l openocd_log.txt -d 3 -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
 
-    ::
+        Logging to a file this way will prevent information displayed on the terminal. This may be a good thing taken amount of information provided, when increased debug level ``-d 3`` is set. If you still like to see the log on the screen, then use another command instead:
 
-        bin/openocd -d 3 -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg 2>&1 | tee openocd.log
+        ::
 
-    .. note::
+            bin/openocd -d 3 -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg 2>&1 | tee openocd.log
 
-        See :ref:`jtag-debugging-building-openocd` for slightly different command format, when running OpenOCD built from sources.
+        .. note::
 
-Debugger:
+            See :ref:`jtag-debugging-building-openocd` for slightly different command format, when running OpenOCD built from sources.
 
-    ::
+    Debugger:
 
-       xtensa-esp32-elf-gdb -ex "set remotelogfile gdb_log.txt" <all other options>
+        ::
 
-    Optionally add command ``remotelogfile gdb_log.txt`` to the ``gdbinit`` file.
+           xtensa-esp32-elf-gdb -ex "set remotelogfile gdb_log.txt" <all other options>
+
+        Optionally add command ``remotelogfile gdb_log.txt`` to the ``gdbinit`` file.
 
 
-Attach both ``openocd_log.txt`` and ``gdb_log.txt`` files to your issue report.
+4.  Attach both ``openocd_log.txt`` and ``gdb_log.txt`` files to your issue report.

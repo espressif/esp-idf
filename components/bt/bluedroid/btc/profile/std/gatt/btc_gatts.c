@@ -21,6 +21,7 @@
 #include "btc_gatts.h"
 #include "btc_gatt_util.h"
 #include "future.h"
+#include "allocator.h"
 #include "btc_main.h"
 #include "esp_gatts_api.h"
 
@@ -80,7 +81,7 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 
     switch (msg->act) {
     case BTC_GATTS_ACT_SEND_INDICATE: {
-        dst->send_ind.value = (uint8_t *)GKI_getbuf(src->send_ind.value_len);
+        dst->send_ind.value = (uint8_t *)osi_malloc(src->send_ind.value_len);
         if (dst->send_ind.value) {
             memcpy(dst->send_ind.value, src->send_ind.value, src->send_ind.value_len);
         } else {
@@ -90,7 +91,7 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     }
     case BTC_GATTS_ACT_SEND_RESPONSE: {
         if (src->send_rsp.rsp) {
-            dst->send_rsp.rsp = (esp_gatt_rsp_t *)GKI_getbuf(sizeof(esp_gatt_rsp_t));
+            dst->send_rsp.rsp = (esp_gatt_rsp_t *)osi_malloc(sizeof(esp_gatt_rsp_t));
             if (dst->send_rsp.rsp) {
                 memcpy(dst->send_rsp.rsp, src->send_rsp.rsp, sizeof(esp_gatt_rsp_t));
             } else {
@@ -102,7 +103,7 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     }
     case BTC_GATTS_ACT_ADD_CHAR:{
         if (src->add_char.char_val.attr_value != NULL){
-            dst->add_char.char_val.attr_value = (uint8_t *)GKI_getbuf(src->add_char.char_val.attr_len);
+            dst->add_char.char_val.attr_value = (uint8_t *)osi_malloc(src->add_char.char_val.attr_len);
             if(dst->add_char.char_val.attr_value != NULL){
                 memcpy(dst->add_char.char_val.attr_value, src->add_char.char_val.attr_value, 
                         src->add_char.char_val.attr_len);
@@ -114,7 +115,7 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     }
     case BTC_GATTS_ACT_ADD_CHAR_DESCR:{
         if(src->add_descr.descr_val.attr_value != NULL){
-            dst->add_descr.descr_val.attr_value = (uint8_t *)GKI_getbuf(src->add_descr.descr_val.attr_len);
+            dst->add_descr.descr_val.attr_value = (uint8_t *)osi_malloc(src->add_descr.descr_val.attr_len);
             if(dst->add_descr.descr_val.attr_value != NULL){
                 memcpy(dst->add_descr.descr_val.attr_value, src->add_descr.descr_val.attr_value,
                         src->add_descr.descr_val.attr_len);
@@ -127,7 +128,7 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     case BTC_GATTS_ACT_CREATE_ATTR_TAB:{
         uint8_t num_attr = src->create_attr_tab.max_nb_attr;
         if(src->create_attr_tab.gatts_attr_db != NULL){
-            dst->create_attr_tab.gatts_attr_db = (esp_gatts_attr_db_t *)GKI_getbuf(sizeof(esp_gatts_attr_db_t)*num_attr);
+            dst->create_attr_tab.gatts_attr_db = (esp_gatts_attr_db_t *)osi_malloc(sizeof(esp_gatts_attr_db_t)*num_attr);
             if(dst->create_attr_tab.gatts_attr_db != NULL){
                 memcpy(dst->create_attr_tab.gatts_attr_db, src->create_attr_tab.gatts_attr_db,
                         sizeof(esp_gatts_attr_db_t)*num_attr);
@@ -140,7 +141,7 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
    case BTC_GATTS_ACT_SET_ATTR_VALUE:{
         uint16_t len = src->set_attr_val.length;
         if(src->set_attr_val.value){
-            dst->set_attr_val.value = (uint8_t *)GKI_getbuf(len);
+            dst->set_attr_val.value = (uint8_t *)osi_malloc(len);
             if(dst->set_attr_val.value != NULL){
                 memcpy(dst->set_attr_val.value, src->set_attr_val.value, len);
             }else{
@@ -163,37 +164,37 @@ void btc_gatts_arg_deep_free(btc_msg_t *msg)
     switch (msg->act) {
     case BTC_GATTS_ACT_SEND_INDICATE: {
         if (arg->send_ind.value) {
-            GKI_freebuf(arg->send_ind.value);
+            osi_free(arg->send_ind.value);
         }
         break;
     }
     case BTC_GATTS_ACT_SEND_RESPONSE: {
         if (arg->send_rsp.rsp) {
-            GKI_freebuf(arg->send_rsp.rsp);
+            osi_free(arg->send_rsp.rsp);
         }
         break;
     }
     case BTC_GATTS_ACT_ADD_CHAR:{
         if (arg->add_char.char_val.attr_value != NULL) {
-            GKI_freebuf(arg->add_char.char_val.attr_value);
+            osi_free(arg->add_char.char_val.attr_value);
         }
         break;
     }
     case BTC_GATTS_ACT_ADD_CHAR_DESCR:{
         if (arg->add_descr.descr_val.attr_value != NULL){
-            GKI_freebuf(arg->add_descr.descr_val.attr_value);
+            osi_free(arg->add_descr.descr_val.attr_value);
         }
         break;
     }
     case BTC_GATTS_ACT_CREATE_ATTR_TAB:{
         if (arg->create_attr_tab.gatts_attr_db != NULL){
-            GKI_freebuf(arg->create_attr_tab.gatts_attr_db);
+            osi_free(arg->create_attr_tab.gatts_attr_db);
         }
         break;
     }
     case BTC_GATTS_ACT_SET_ATTR_VALUE:{
         if (arg->set_attr_val.value != NULL){
-            GKI_freebuf(arg->set_attr_val.value);
+            osi_free(arg->set_attr_val.value);
         }
     }
         break;
@@ -474,10 +475,10 @@ static esp_gatt_status_t btc_gatts_check_valid_attr_tab(esp_gatts_attr_db_t *gat
     return ESP_GATT_OK;
 }
 
-void btc_gatts_get_attr_value(uint16_t attr_handle, uint16_t *length, uint8_t **value)
+esp_gatt_status_t btc_gatts_get_attr_value(uint16_t attr_handle, uint16_t *length, uint8_t **value)
 {
     
-    BTA_GetAttributeValue(attr_handle, length, value);
+     return BTA_GetAttributeValue(attr_handle, length, value);
 }
 
 
@@ -501,7 +502,7 @@ static void btc_gatts_cb_param_copy_req(btc_msg_t *msg, void *p_dest, void *p_sr
     case BTA_GATTS_WRITE_EVT:
     case BTA_GATTS_EXEC_WRITE_EVT:
     case BTA_GATTS_MTU_EVT:
-        p_dest_data->req_data.p_data = GKI_getbuf(sizeof(tBTA_GATTS_REQ_DATA));
+        p_dest_data->req_data.p_data = osi_malloc(sizeof(tBTA_GATTS_REQ_DATA));
         if (p_dest_data->req_data.p_data != NULL) {
             memcpy(p_dest_data->req_data.p_data, p_src_data->req_data.p_data,
                    sizeof(tBTA_GATTS_REQ_DATA));
@@ -523,7 +524,7 @@ static void btc_gatts_cb_param_copy_free(btc_msg_t *msg, tBTA_GATTS *p_data)
     case BTA_GATTS_EXEC_WRITE_EVT:
     case BTA_GATTS_MTU_EVT:
         if (p_data && p_data->req_data.p_data) {
-            GKI_freebuf(p_data->req_data.p_data);
+            osi_free(p_data->req_data.p_data);
         }
         break;
     default:

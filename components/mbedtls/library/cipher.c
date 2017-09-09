@@ -45,6 +45,17 @@
 #include "mbedtls/ccm.h"
 #endif
 
+#if defined(MBEDTLS_CMAC_C)
+#include "mbedtls/cmac.h"
+#endif
+
+#if defined(MBEDTLS_PLATFORM_C)
+#include "mbedtls/platform.h"
+#else
+#define mbedtls_calloc calloc
+#define mbedtls_free   free
+#endif
+
 #if defined(MBEDTLS_ARC4_C) || defined(MBEDTLS_CIPHER_NULL_CIPHER)
 #define MBEDTLS_CIPHER_MODE_STREAM
 #endif
@@ -126,6 +137,14 @@ void mbedtls_cipher_free( mbedtls_cipher_context_t *ctx )
 {
     if( ctx == NULL )
         return;
+
+#if defined(MBEDTLS_CMAC_C)
+    if( ctx->cmac_ctx )
+    {
+       mbedtls_zeroize( ctx->cmac_ctx, sizeof( mbedtls_cmac_context_t ) );
+       mbedtls_free( ctx->cmac_ctx );
+    }
+#endif
 
     if( ctx->cipher_ctx )
         ctx->cipher_info->base->ctx_free_func( ctx->cipher_ctx );
@@ -307,9 +326,9 @@ int mbedtls_cipher_update( mbedtls_cipher_context_t *ctx, const unsigned char *i
          * If there is not enough data for a full block, cache it.
          */
         if( ( ctx->operation == MBEDTLS_DECRYPT &&
-                ilen + ctx->unprocessed_len <= block_size ) ||
+                ilen <= block_size - ctx->unprocessed_len ) ||
              ( ctx->operation == MBEDTLS_ENCRYPT &&
-                ilen + ctx->unprocessed_len < block_size ) )
+                ilen < block_size - ctx->unprocessed_len ) )
         {
             memcpy( &( ctx->unprocessed_data[ctx->unprocessed_len] ), input,
                     ilen );

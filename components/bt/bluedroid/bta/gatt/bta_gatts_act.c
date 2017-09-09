@@ -29,12 +29,12 @@
 #if defined(GATTS_INCLUDED) && (GATTS_INCLUDED == TRUE)
 
 #include "utl.h"
-#include "gki.h"
 #include "bta_sys.h"
 #include "bta_gatts_int.h"
 #include "bta_gatts_co.h"
 #include "btm_ble_api.h"
 #include <string.h>
+#include "allocator.h"
 
 static void bta_gatts_nv_save_cback(BOOLEAN is_saved, tGATTS_HNDL_RANGE *p_hndl_range);
 static BOOLEAN bta_gatts_nv_srv_chg_cback(tGATTS_SRV_CHG_CMD cmd, tGATTS_SRV_CHG_REQ *p_req,
@@ -213,7 +213,7 @@ void bta_gatts_register(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
                 status = BTA_GATT_NO_RESOURCES;
             } else {
                 if ((p_buf =
-                            (tBTA_GATTS_INT_START_IF *) GKI_getbuf(sizeof(tBTA_GATTS_INT_START_IF))) != NULL) {
+                            (tBTA_GATTS_INT_START_IF *) osi_malloc(sizeof(tBTA_GATTS_INT_START_IF))) != NULL) {
                     p_buf->hdr.event    = BTA_GATTS_INT_START_IF_EVT;
                     p_buf->server_if    = p_cb->rcb[first_unuse].gatt_if;
 
@@ -432,7 +432,7 @@ void bta_gatts_add_char(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_msg)
         cb_data.add_result.status = BTA_GATT_ERROR;
     }
     if((p_attr_val != NULL) && (p_attr_val->attr_val != NULL)){
-        GKI_freebuf(p_attr_val->attr_val);
+        osi_free(p_attr_val->attr_val);
     }
 
     if (p_rcb->p_cback) {
@@ -482,7 +482,7 @@ void bta_gatts_add_char_descr(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_
         cb_data.add_result.status = BTA_GATT_ERROR;
     }
     if((p_attr_val != NULL) && (p_attr_val->attr_val != NULL)){
-        GKI_freebuf(p_attr_val->attr_val);
+        osi_free(p_attr_val->attr_val);
     }
 
     if (p_rcb->p_cback) {
@@ -506,7 +506,7 @@ void bta_gatts_set_attr_value(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_
     UINT16          service_id = p_srvc_cb->service_id;
     tBTA_GATTS      cb_data;
     tBTA_GATT_STATUS gatts_status;
-    gatts_status = GATTS_SetAttributeValue(p_msg->api_add_char_descr.hdr.layer_specific,
+    gatts_status = GATTS_SetAttributeValue(p_msg->api_set_val.hdr.layer_specific,
                                            p_msg->api_set_val.length,
                                            p_msg->api_set_val.value);
 
@@ -515,14 +515,19 @@ void bta_gatts_set_attr_value(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_
     cb_data.attr_val.attr_id = p_msg->api_set_val.hdr.layer_specific;
     cb_data.attr_val.status = gatts_status;
 
+    if (p_msg->api_set_val.value  != NULL){
+        osi_free(p_msg->api_set_val.value);
+    }
+
     if (p_rcb->p_cback) {
         (*p_rcb->p_cback)(BTA_GATTS_SET_ATTR_VAL_EVT, &cb_data);
     }
 }
 
-void bta_gatts_get_attr_value(UINT16 attr_handle, UINT16 *length, UINT8 **value)
+tGATT_STATUS bta_gatts_get_attr_value(UINT16 attr_handle, UINT16 *length, UINT8 **value)
 {
-    GATTS_GetAttributeValue(attr_handle, length, value);
+
+   return GATTS_GetAttributeValue(attr_handle, length, value);
 }
 
 /*******************************************************************************

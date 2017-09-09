@@ -133,11 +133,11 @@ void *osi_malloc_func(size_t size)
 #ifdef CONFIG_BLUEDROID_MEM_DEBUG
     void *p;
 
-    p = calloc(1, size);
+    p = malloc(size);
     osi_mem_dbg_record(p, size, __func__, __LINE__);
     return p;
 #else
-    return calloc(1, size);
+    return malloc(size);
 #endif
 }
 

@@ -13,6 +13,11 @@
 // limitations under the License.
 #ifndef _SOC_I2C_STRUCT_H_
 #define _SOC_I2C_STRUCT_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef volatile struct {
     union {
         struct {
@@ -286,4 +291,9 @@ typedef volatile struct {
 } i2c_dev_t;
 extern i2c_dev_t I2C0;
 extern i2c_dev_t I2C1;
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif  /* _SOC_I2C_STRUCT_H_ */

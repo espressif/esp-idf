@@ -29,13 +29,14 @@
 
 #include <string.h>
 #include "utl.h"
-#include "gki.h"
 #include "bta_sys.h"
 #include "sdp_api.h"
 #include "sdpdefs.h"
 #include "bta_gattc_int.h"
 #include "btm_api.h"
 #include "btm_ble_api.h"
+#include "allocator.h"
+#include "l2c_api.h"
 
 #define LOG_TAG "bt_bta_gattc"
 // #include "osi/include/log.h"
@@ -129,7 +130,7 @@ static void bta_gattc_display_explore_record(tBTA_GATTC_ATTR_REC *p_rec, UINT8 n
 **
 ** Function         bta_gattc_alloc_cache_buf
 **
-** Description      Allocate a GKI buffer for database cache.
+** Description      Allocate a buffer for database cache.
 **
 ** Returns          status
 **
@@ -138,17 +139,16 @@ BT_HDR *bta_gattc_alloc_cache_buf(tBTA_GATTC_SERV *p_srvc_cb)
 {
     BT_HDR  *p_buf;
 
-    if ((p_buf = (BT_HDR *)GKI_getpoolbuf(GATT_DB_POOL_ID)) == NULL) {
-        APPL_TRACE_DEBUG("No resources: GKI buffer allocation failed.");
+    if ((p_buf = (BT_HDR *)osi_calloc(GATT_DB_BUF_SIZE)) == NULL) {
+        APPL_TRACE_DEBUG("No resources: buffer allocation failed.");
         utl_freebuf((void **)&p_srvc_cb->p_srvc_list);
         p_srvc_cb->free_byte = 0;
     } else {
-        memset(p_buf, 0, GKI_get_buf_size(p_buf));
         p_srvc_cb->p_free = (UINT8 *) p_buf;
-        p_srvc_cb->free_byte = GKI_get_buf_size(p_buf);
+        p_srvc_cb->free_byte = GATT_DB_BUF_SIZE;
 
         /* link into buffer queue */
-        GKI_enqueue(&p_srvc_cb->cache_buffer, p_buf);
+        fixed_queue_enqueue(p_srvc_cb->cache_buffer, p_buf);
     }
 #if BTA_GATT_DEBUG== TRUE
     APPL_TRACE_DEBUG("allocating new buffer: free byte = %d", p_srvc_cb->free_byte);
@@ -168,14 +168,14 @@ tBTA_GATT_STATUS bta_gattc_init_cache(tBTA_GATTC_SERV *p_srvc_cb)
 {
     tBTA_GATT_STATUS    status = BTA_GATT_OK;
 
-    while (!GKI_queue_is_empty(&p_srvc_cb->cache_buffer)) {
-        GKI_freebuf (GKI_dequeue (&p_srvc_cb->cache_buffer));
+    while (!fixed_queue_is_empty(p_srvc_cb->cache_buffer)) {
+        osi_free (fixed_queue_dequeue(p_srvc_cb->cache_buffer));
     }
 
     utl_freebuf((void **)&p_srvc_cb->p_srvc_list);
 
-    if ((p_srvc_cb->p_srvc_list = (tBTA_GATTC_ATTR_REC *)GKI_getbuf(BTA_GATTC_ATTR_LIST_SIZE)) == NULL) {
-        APPL_TRACE_DEBUG("No resources: GKI buffer allocation failed.");
+    if ((p_srvc_cb->p_srvc_list = (tBTA_GATTC_ATTR_REC *)osi_malloc(BTA_GATTC_ATTR_LIST_SIZE)) == NULL) {
+        APPL_TRACE_DEBUG("No resources: buffer allocation failed.");
         status = GATT_NO_RESOURCES;
     } else {
         p_srvc_cb->total_srvc = 0;
@@ -588,6 +588,13 @@ static void bta_gattc_explore_srvc(UINT16 conn_id, tBTA_GATTC_SERV *p_srvc_cb)
 #if (defined BTA_GATT_DEBUG && BTA_GATT_DEBUG == TRUE)
     bta_gattc_display_cache_server(p_srvc_cb->p_srvc_cache);
 #endif
+
+    //server discover end, update connection parameters
+#if BLE_INCLUDED == TRUE
+    if (p_clcb->transport == BTA_TRANSPORT_LE) {
+        L2CA_EnableUpdateBleConnParams(p_clcb->p_srcb->server_bda, TRUE);
+    }
+#endif
     /* save cache to NV */
     p_clcb->p_srcb->state = BTA_GATTC_SERV_SAVE;
     bta_gattc_co_cache_open(p_srvc_cb->server_bda, BTA_GATTC_CI_CACHE_OPEN_EVT,
@@ -843,7 +850,7 @@ void bta_gattc_sdp_callback (UINT16 sdp_status)
         APPL_TRACE_ERROR("GATT service discovery is done on unknown connection");
     }
 
-    GKI_freebuf(bta_gattc_cb.p_sdp_db);
+    osi_free(bta_gattc_cb.p_sdp_db);
     bta_gattc_cb.p_sdp_db  = NULL;
     bta_gattc_cb.sdp_conn_id = 0;
 }
@@ -871,7 +878,7 @@ static tBTA_GATT_STATUS bta_gattc_sdp_service_disc(UINT16 conn_id, tBTA_GATTC_SE
     uuid.len = LEN_UUID_16;
     uuid.uu.uuid16 = UUID_PROTOCOL_ATT;
 
-    if ((bta_gattc_cb.p_sdp_db = (tSDP_DISCOVERY_DB *)GKI_getbuf(BTA_GATT_SDP_DB_SIZE)) != NULL) {
+    if ((bta_gattc_cb.p_sdp_db = (tSDP_DISCOVERY_DB *)osi_malloc(BTA_GATT_SDP_DB_SIZE)) != NULL) {
         attr_list[0] = ATTR_ID_SERVICE_CLASS_ID_LIST;
         attr_list[1] = ATTR_ID_PROTOCOL_DESC_LIST;
 
@@ -880,7 +887,7 @@ static tBTA_GATT_STATUS bta_gattc_sdp_service_disc(UINT16 conn_id, tBTA_GATTC_SE
 
         if (!SDP_ServiceSearchAttributeRequest (p_server_cb->server_bda,
                                                 bta_gattc_cb.p_sdp_db, &bta_gattc_sdp_callback)) {
-            GKI_freebuf(bta_gattc_cb.p_sdp_db);
+            osi_free(bta_gattc_cb.p_sdp_db);
             bta_gattc_cb.p_sdp_db = NULL;
         } else {
             bta_gattc_cb.sdp_conn_id = conn_id;
@@ -1390,8 +1397,8 @@ void bta_gattc_rebuild_cache(tBTA_GATTC_SERV *p_srvc_cb, UINT16 num_attr,
     /* first attribute loading, initialize buffer */
     APPL_TRACE_ERROR("bta_gattc_rebuild_cache");
     if (attr_index == 0) {
-        while (!GKI_queue_is_empty(&p_srvc_cb->cache_buffer)) {
-            GKI_freebuf (GKI_dequeue (&p_srvc_cb->cache_buffer));
+        while (!fixed_queue_is_empty(p_srvc_cb->cache_buffer)) {
+            osi_free(fixed_queue_dequeue(p_srvc_cb->cache_buffer));
         }
 
         if (bta_gattc_alloc_cache_buf(p_srvc_cb) == NULL) {

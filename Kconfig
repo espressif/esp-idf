@@ -19,7 +19,19 @@ config PYTHON
     help
         The executable name/path that is used to run python. On some systems Python 2.x
         may need to be invoked as python2.
-endmenu
+
+config MAKE_WARN_UNDEFINED_VARIABLES
+    bool "'make' warns on undefined variables"
+    default "y"
+    help
+        Adds --warn-undefined-variables to MAKEFLAGS. This causes make to
+        print a warning any time an undefined variable is referenced.
+
+        This option helps find places where a variable reference is misspelled
+        or otherwise missing, but it can be unwanted if you have Makefiles which
+        depend on undefined variables expanding to an empty string.
+
+endmenu  # SDK tool configuration
 
 source "$COMPONENT_KCONFIGS_PROJBUILD"
 

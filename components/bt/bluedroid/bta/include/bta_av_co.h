@@ -304,7 +304,7 @@ extern void bta_av_co_video_stop(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type);
 **                  the audio codec
 **
 ** Returns          NULL if data is not ready.
-**                  Otherwise, a GKI buffer (BT_HDR*) containing the audio data.
+**                  Otherwise, a buffer (BT_HDR*) containing the audio data.
 **
 *******************************************************************************/
 extern void *bta_av_co_audio_src_data_path(tBTA_AV_CODEC codec_type,

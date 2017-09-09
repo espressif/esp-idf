@@ -142,7 +142,6 @@ esp_err_t esp_image_load(esp_image_load_mode_t mode, const esp_partition_pos_t *
  */
 esp_err_t esp_image_verify_bootloader(uint32_t *length);
 
-
 typedef struct {
     uint32_t drom_addr;
     uint32_t drom_load_addr;

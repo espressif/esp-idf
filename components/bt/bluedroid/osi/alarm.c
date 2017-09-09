@@ -29,6 +29,8 @@
 #include "rom/ets_sys.h"
 #include "btc_task.h"
 #include "btc_alarm.h"
+#include "mutex.h"
+#include "time.h"
 
 #define RTC_TIMER_TICKS_TO_MS(ticks)            (((ticks/625)<<1) + (ticks-(ticks/625)*625)/312)
 
@@ -74,7 +76,7 @@ void osi_alarm_init(void)
 {
     assert(alarm_mutex != NULL);
     
-    osi_mutex_lock(&alarm_mutex);
+    osi_mutex_lock(&alarm_mutex, OSI_MUTEX_MAX_TIMEOUT);
     if (alarm_state != ALARM_STATE_IDLE) {
         LOG_WARN("%s, invalid state %d\n", __func__, alarm_state);
         goto end;
@@ -90,7 +92,7 @@ void osi_alarm_deinit(void)
 {
     assert(alarm_mutex != NULL);
     
-    osi_mutex_lock(&alarm_mutex);
+    osi_mutex_lock(&alarm_mutex, OSI_MUTEX_MAX_TIMEOUT);
     if (alarm_state != ALARM_STATE_OPEN) {
         LOG_WARN("%s, invalid state %d\n", __func__, alarm_state);
         goto end;
@@ -147,7 +149,7 @@ osi_alarm_t *osi_alarm_new(char *alarm_name, osi_alarm_callback_t callback, void
 
     struct alarm_t *timer_id = NULL;
     
-    osi_mutex_lock(&alarm_mutex);
+    osi_mutex_lock(&alarm_mutex, OSI_MUTEX_MAX_TIMEOUT);
     if (alarm_state != ALARM_STATE_OPEN) {
         LOG_ERROR("%s, invalid state %d\n", __func__, alarm_state);
         timer_id = NULL;
@@ -203,7 +205,7 @@ int osi_alarm_free(osi_alarm_t *alarm)
     assert(alarm_mutex != NULL);
     
     int ret = 0;
-    osi_mutex_lock(&alarm_mutex);
+    osi_mutex_lock(&alarm_mutex, OSI_MUTEX_MAX_TIMEOUT);
     if (alarm_state != ALARM_STATE_OPEN) {
         LOG_ERROR("%s, invalid state %d\n", __func__, alarm_state);
         ret = -3;
@@ -222,7 +224,7 @@ int osi_alarm_set(osi_alarm_t *alarm, period_ms_t timeout)
     assert(alarm_mutex != NULL);
     
     int ret = 0;
-    osi_mutex_lock(&alarm_mutex);
+    osi_mutex_lock(&alarm_mutex, OSI_MUTEX_MAX_TIMEOUT);
     if (alarm_state != ALARM_STATE_OPEN) {
         LOG_ERROR("%s, invalid state %d\n", __func__, alarm_state);
         ret = -3;
@@ -256,7 +258,7 @@ end:
 int osi_alarm_cancel(osi_alarm_t *alarm)
 {
     int ret = 0;
-    osi_mutex_lock(&alarm_mutex);
+    osi_mutex_lock(&alarm_mutex, OSI_MUTEX_MAX_TIMEOUT);
     if (alarm_state != ALARM_STATE_OPEN) {
         LOG_ERROR("%s, invalid state %d\n", __func__, alarm_state);
         ret = -3;
@@ -309,3 +311,14 @@ period_ms_t osi_alarm_time_diff(period_ms_t t1, period_ms_t t2)
     }
     return (period_ms_t)diff;
 }
+
+uint32_t osi_time_get_os_boottime_ms(void)
+{
+    return RTC_TIMER_TICKS_TO_MS((alarm_current_tick()));
+}
+
+void osi_delay_ms(uint32_t ms)
+{
+    vTaskDelay(ms / portTICK_PERIOD_MS);
+}
+

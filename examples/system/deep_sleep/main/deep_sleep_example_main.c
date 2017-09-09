@@ -14,7 +14,7 @@
 #include <sys/time.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_deep_sleep.h"
+#include "esp_sleep.h"
 #include "esp_log.h"
 #include "esp32/ulp.h"
 #include "driver/touch_pad.h"
@@ -82,9 +82,9 @@ void app_main()
     gettimeofday(&now, NULL);
     int sleep_time_ms = (now.tv_sec - sleep_enter_time.tv_sec) * 1000 + (now.tv_usec - sleep_enter_time.tv_usec) / 1000;
 
-    switch (esp_deep_sleep_get_wakeup_cause()) {
-        case ESP_DEEP_SLEEP_WAKEUP_EXT1: {
-            uint64_t wakeup_pin_mask = esp_deep_sleep_get_ext1_wakeup_status();
+    switch (esp_sleep_get_wakeup_cause()) {
+        case ESP_SLEEP_WAKEUP_EXT1: {
+            uint64_t wakeup_pin_mask = esp_sleep_get_ext1_wakeup_status();
             if (wakeup_pin_mask != 0) {
                 int pin = __builtin_ffsll(wakeup_pin_mask) - 1;
                 printf("Wake up from GPIO %d\n", pin);
@@ -93,18 +93,18 @@ void app_main()
             }
             break;
         }
-        case ESP_DEEP_SLEEP_WAKEUP_TIMER: {
+        case ESP_SLEEP_WAKEUP_TIMER: {
             printf("Wake up from timer. Time spent in deep sleep: %dms\n", sleep_time_ms);
             break;
         }
 #ifdef CONFIG_ENABLE_TOUCH_WAKEUP
-        case ESP_DEEP_SLEEP_WAKEUP_TOUCHPAD: {
-            printf("Wake up from touch on pad %d\n", esp_deep_sleep_get_touchpad_wakeup_status());
+        case ESP_SLEEP_WAKEUP_TOUCHPAD: {
+            printf("Wake up from touch on pad %d\n", esp_sleep_get_touchpad_wakeup_status());
             break;
         }
 #endif // CONFIG_ENABLE_TOUCH_WAKEUP
 #ifdef CONFIG_ENABLE_ULP_TEMPERATURE_WAKEUP
-        case ESP_DEEP_SLEEP_WAKEUP_ULP: {
+        case ESP_SLEEP_WAKEUP_ULP: {
             printf("Wake up from ULP\n");
             int16_t diff_high = (int16_t) ulp_data_read(3);
             int16_t diff_low = (int16_t) ulp_data_read(4);
@@ -118,13 +118,13 @@ void app_main()
             break;
         }
 #endif // CONFIG_ENABLE_ULP_TEMPERATURE_WAKEUP
-        case ESP_DEEP_SLEEP_WAKEUP_UNDEFINED:
+        case ESP_SLEEP_WAKEUP_UNDEFINED:
         default:
             printf("Not a deep sleep reset\n");
     }
 
 #ifdef CONFIG_ENABLE_ULP_TEMPERATURE_WAKEUP
-    if (esp_deep_sleep_get_wakeup_cause() != ESP_DEEP_SLEEP_WAKEUP_UNDEFINED) {
+    if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_UNDEFINED) {
         printf("ULP did %d temperature measurements in %d ms\n", ulp_data_read(1), sleep_time_ms);
         printf("Initial T=%d, latest T=%d\n", ulp_data_read(0), ulp_data_read(2));
     }
@@ -134,7 +134,7 @@ void app_main()
 
     const int wakeup_time_sec = 20;
     printf("Enabling timer wakeup, %ds\n", wakeup_time_sec);
-    esp_deep_sleep_enable_timer_wakeup(wakeup_time_sec * 1000000);
+    esp_sleep_enable_timer_wakeup(wakeup_time_sec * 1000000);
 
     const int ext_wakeup_pin_1 = 25;
     const uint64_t ext_wakeup_pin_1_mask = 1ULL << ext_wakeup_pin_1;
@@ -142,19 +142,19 @@ void app_main()
     const uint64_t ext_wakeup_pin_2_mask = 1ULL << ext_wakeup_pin_2;
 
     printf("Enabling EXT1 wakeup on pins GPIO%d, GPIO%d\n", ext_wakeup_pin_1, ext_wakeup_pin_2);
-    esp_deep_sleep_enable_ext1_wakeup(ext_wakeup_pin_1_mask | ext_wakeup_pin_2_mask, ESP_EXT1_WAKEUP_ANY_HIGH);
+    esp_sleep_enable_ext1_wakeup(ext_wakeup_pin_1_mask | ext_wakeup_pin_2_mask, ESP_EXT1_WAKEUP_ANY_HIGH);
 
 #ifdef CONFIG_ENABLE_TOUCH_WAKEUP
     touch_pad_init();
     calibrate_touch_pad(TOUCH_PAD_NUM8);
     calibrate_touch_pad(TOUCH_PAD_NUM9);
     printf("Enabling touch pad wakeup\n");
-    esp_deep_sleep_enable_touchpad_wakeup();
+    esp_sleep_enable_touchpad_wakeup();
 #endif // CONFIG_ENABLE_TOUCH_WAKEUP
 
 #ifdef CONFIG_ENABLE_ULP_TEMPERATURE_WAKEUP
     printf("Enabling ULP wakeup\n");
-    esp_deep_sleep_enable_ulp_wakeup();
+    esp_sleep_enable_ulp_wakeup();
 #endif
 
     printf("Entering deep sleep\n");

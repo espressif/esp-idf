@@ -11,7 +11,7 @@ Connect the ESP32 board to the PC using the USB cable. If device driver does not
 
 Below are the links to Windows and MacOS drivers for ESP32 boards produced by Espressif:
 
-* ESP32 Core Board - `CP210x USB to UART Bridge VCP Drivers <http://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers>`_
+* ESP32 Core Board - `CP210x USB to UART Bridge VCP Drivers <https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers>`_
 
 * ESP32 WROVER KIT and ESP32 Demo Board - `FTDI Virtual COM Port Drivers <http://www.ftdichip.com/Drivers/D2XX.htm>`_
 
@@ -51,6 +51,16 @@ Linux ::
 MacOS ::
 
     ls /dev/cu.*
+
+
+Adding user to ``dialout`` on Linux
+-----------------------------------
+
+The currently logged user should have read and write access the serial port over USB. This is done by adding the user to ``dialout`` group with the following command::
+
+    sudo usermod -a -G dialout $USER
+
+Make sure you re-login to enable read and write permissions for the serial port. 
 
 
 Verify serial connection

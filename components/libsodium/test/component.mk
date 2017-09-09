@@ -32,7 +32,7 @@ ote:
 COMPONENT_OBJS += $(LS_TESTDIR)/$(1).o
 endef
 
-TEST_CASES := chacha20 aead_chacha20poly1305 box box2 ed25519_convert sign
+TEST_CASES := chacha20 aead_chacha20poly1305 box box2 ed25519_convert sign hash
 
 $(foreach case,$(TEST_CASES),$(eval $(call sodium_testcase,$(case))))
 

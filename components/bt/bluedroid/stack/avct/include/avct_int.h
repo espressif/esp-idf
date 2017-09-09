@@ -24,10 +24,10 @@
 #ifndef AVCT_INT_H
 #define AVCT_INT_H
 
-#include "gki.h"
 #include "avct_api.h"
 #include "avct_defs.h"
 #include "l2c_api.h"
+#include "fixed_queue.h"
 
 /*****************************************************************************
 ** constants
@@ -81,7 +81,7 @@ typedef struct {
     BT_HDR              *p_rx_msg;      /* Message being reassembled */
     UINT16              conflict_lcid;  /* L2CAP channel LCID */
     BD_ADDR             peer_addr;      /* BD address of peer */
-    BUFFER_Q            tx_q;           /* Transmit data buffer queue       */
+    fixed_queue_t       *tx_q;           /* Transmit data buffer queue       */
     BOOLEAN             cong;           /* TRUE, if congested */
 } tAVCT_LCB;
 

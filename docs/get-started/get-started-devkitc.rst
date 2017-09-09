@@ -8,14 +8,14 @@ What You Need
 -------------
 
 * 1 × ESP32-DevKitC board
-* 1 × USB A / mini USB B cable 
-* 1 × PC loaded with Windows, Linux or Mac O/S
+* 1 × USB A / micro USB B cable 
+* 1 × PC loaded with Windows, Linux or Mac OS
 
 
 Overview
 --------
 
-ESP32-DevKitC is a small-sized ESP32-based development board produced by `Espressif <http://espressif.com>`_. Most of the I/O pins are broken out to the pin headers on both sides for easy interfacing. Developers can connect these pins to peripherals as needed. Standard headers also make development easy and convenient when using a breadboard.
+ESP32-DevKitC is a small-sized ESP32-based development board produced by `Espressif <https://espressif.com>`_. Most of the I/O pins are broken out to the pin headers on both sides for easy interfacing. Developers can connect these pins to peripherals as needed. Standard headers also make development easy and convenient when using a breadboard.
 
 
 Functional Description
@@ -24,7 +24,7 @@ Functional Description
 The following list and figure below describe key components, interfaces and controls of ESP32-DevKitC board.
 
 ESP-WROOM-32
-    Standard `ESP-WROOM-32 <http://www.espressif.com/sites/default/files/documentation/esp_wroom_32_datasheet_en.pdf>`_ module soldered to the ESP32-DevKitC board.
+    Standard `ESP-WROOM-32 <https://www.espressif.com/sites/default/files/documentation/esp-wroom-32_datasheet_en.pdf>`_ module soldered to the ESP32-DevKitC board.
 EN
     Reset button: pressing this button resets the system.
 Boot
@@ -49,7 +49,7 @@ Before powering up the ESP32-DevKitC, please make sure that the board has been r
 
 To start development of applications, proceed to section :doc:`index`, that will walk you through the following steps:
 
-* :ref:`get-started-setup-toochain` in your PC to develop applications for ESP32 in C language
+* :ref:`get-started-setup-toolchain` in your PC to develop applications for ESP32 in C language
 * :ref:`get-started-connect` the module to the PC and verify if it is accessible
 * :ref:`get-started-build-flash` an example application to the ESP32
 * :ref:`get-started-build-monitor` instantly what the application is doing
@@ -58,6 +58,6 @@ To start development of applications, proceed to section :doc:`index`, that will
 Related Documents
 -----------------
 
-* `ESP32-DevKitC schematic <http://dl.espressif.com/dl/schematics/ESP32-Core-Board-V2_sch.pdf>`_ (PDF)
-* `ESP32 Datasheet <http://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF)
-* `ESP-WROOM-32 Datasheet <http://espressif.com/sites/default/files/documentation/esp-wroom-32_datasheet_en.pdf>`_ (PDF)
+* `ESP32-DevKitC schematic <https://dl.espressif.com/dl/schematics/ESP32-Core-Board-V2_sch.pdf>`_ (PDF)
+* `ESP32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF)
+* `ESP-WROOM-32 Datasheet <https://espressif.com/sites/default/files/documentation/esp-wroom-32_datasheet_en.pdf>`_ (PDF)

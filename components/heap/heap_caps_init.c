@@ -14,15 +14,20 @@
 #include "heap_private.h"
 #include <assert.h>
 #include <string.h>
-#include <esp_log.h>
-#include <multi_heap.h>
-#include <esp_heap_caps.h>
-#include <soc/soc_memory_layout.h>
+#include <sys/lock.h>
+
+#include "esp_log.h"
+#include "multi_heap.h"
+#include "esp_heap_caps_init.h"
+#include "soc/soc_memory_layout.h"
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 static const char *TAG = "heap_init";
 
-heap_t *registered_heaps;
-size_t num_registered_heaps;
+/* Linked-list of registered heaps */
+struct registered_heap_ll registered_heaps;
 
 static void register_heap(heap_t *region)
 {
@@ -34,10 +39,10 @@ static void register_heap(heap_t *region)
 
 void heap_caps_enable_nonos_stack_heaps()
 {
-    for (int i = 0; i < num_registered_heaps; i++) {
+    heap_t *heap;
+    SLIST_FOREACH(heap, &registered_heaps, next) {
         // Assume any not-yet-registered heap is
         // a nonos-stack heap
-        heap_t *heap = &registered_heaps[i];
         if (heap->heap == NULL) {
             register_heap(heap);
             if (heap->heap != NULL) {
@@ -125,10 +130,10 @@ void heap_caps_init()
     }
 
     /* Count the heaps left after merging */
-    num_registered_heaps = 0;
+    size_t num_heaps = 0;
     for (int i = 0; i < soc_memory_region_count; i++) {
         if (regions[i].type != -1) {
-            num_registered_heaps++;
+            num_heaps++;
         }
     }
 
@@ -136,7 +141,7 @@ void heap_caps_init()
 
        Once we have a heap to copy it to, we will copy it to a heap buffer.
     */
-    heap_t temp_heaps[num_registered_heaps];
+    heap_t temp_heaps[num_heaps];
     size_t heap_idx = 0;
 
     ESP_EARLY_LOGI(TAG, "Initializing. RAM available for dynamic allocation:");
@@ -148,47 +153,112 @@ void heap_caps_init()
             continue;
         }
         heap_idx++;
-        assert(heap_idx <= num_registered_heaps);
+        assert(heap_idx <= num_heaps);
 
-        heap->type = region->type;
+        memcpy(heap->caps, type->caps, sizeof(heap->caps));
         heap->start = region->start;
         heap->end = region->start + region->size;
-        memcpy(heap->caps, type->caps, sizeof(heap->caps));
         vPortCPUInitializeMutex(&heap->heap_mux);
-
-        ESP_EARLY_LOGI(TAG, "At %08X len %08X (%d KiB): %s",
-                       region->start, region->size, region->size / 1024, type->name);
-
         if (type->startup_stack) {
             /* Will be registered when OS scheduler starts */
             heap->heap = NULL;
         } else {
             register_heap(heap);
         }
+        SLIST_NEXT(heap, next) = NULL;
+
+        ESP_EARLY_LOGI(TAG, "At %08X len %08X (%d KiB): %s",
+                       region->start, region->size, region->size / 1024, type->name);
     }
 
-    assert(heap_idx == num_registered_heaps);
+    assert(heap_idx == num_heaps);
 
-    /* Allocate the permanent heap data that we'll use for runtime */
-    registered_heaps = NULL;
-    for (int i = 0; i < num_registered_heaps; i++) {
+    /* Allocate the permanent heap data that we'll use as a linked list at runtime.
+
+       Allocate this part of data contiguously, even though it's a linked list... */
+    assert(SLIST_EMPTY(&registered_heaps));
+
+    heap_t *heaps_array = NULL;
+    for (int i = 0; i < num_heaps; i++) {
         if (heap_caps_match(&temp_heaps[i], MALLOC_CAP_8BIT)) {
             /* use the first DRAM heap which can fit the data */
-            registered_heaps = multi_heap_malloc(temp_heaps[i].heap, sizeof(heap_t) * num_registered_heaps);
-            if (registered_heaps != NULL) {
+            heaps_array = multi_heap_malloc(temp_heaps[i].heap, sizeof(heap_t) * num_heaps);
+            if (heaps_array != NULL) {
                 break;
             }
         }
     }
-    assert(registered_heaps != NULL); /* if NULL, there's not enough free startup heap space */
+    assert(heaps_array != NULL); /* if NULL, there's not enough free startup heap space */
 
-    memcpy(registered_heaps, temp_heaps, sizeof(heap_t)*num_registered_heaps);
+    memcpy(heaps_array, temp_heaps, sizeof(heap_t)*num_heaps);
 
-    /* Now the heap_mux fields live on the heap, assign them */
-    for (int i = 0; i < num_registered_heaps; i++) {
-        if (registered_heaps[i].heap != NULL) {
-            multi_heap_set_lock(registered_heaps[i].heap, &registered_heaps[i].heap_mux);
+    /* Iterate the heaps and set their locks, also add them to the linked list. */
+    for (int i = 0; i < num_heaps; i++) {
+        if (heaps_array[i].heap != NULL) {
+            multi_heap_set_lock(heaps_array[i].heap, &heaps_array[i].heap_mux);
+        }
+        if (i == 0) {
+            SLIST_INSERT_HEAD(&registered_heaps, &heaps_array[0], next);
+        } else {
+            SLIST_INSERT_AFTER(&heaps_array[i-1], &heaps_array[i], next);
         }
     }
 }
 
+esp_err_t heap_caps_add_region(intptr_t start, intptr_t end)
+{
+    if (start == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    for (int i = 0; i < soc_memory_region_count; i++) {
+        const soc_memory_region_t *region = &soc_memory_regions[i];
+        if (region->start <= start && (region->start + region->size) > end) {
+            const uint32_t *caps = soc_memory_types[region->type].caps;
+            return heap_caps_add_region_with_caps(caps, start, end);
+        }
+    }
+
+    return ESP_ERR_NOT_FOUND;
+}
+
+esp_err_t heap_caps_add_region_with_caps(const uint32_t caps[], intptr_t start, intptr_t end)
+{
+    esp_err_t err = ESP_FAIL;
+    if (caps == NULL || start == 0 || end == 0 || end < start) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    heap_t *p_new = malloc(sizeof(heap_t));
+    if (p_new == NULL) {
+        err = ESP_ERR_NO_MEM;
+        goto done;
+    }
+    memcpy(p_new->caps, caps, sizeof(p_new->caps));
+    p_new->start = start;
+    p_new->end = end;
+    vPortCPUInitializeMutex(&p_new->heap_mux);
+    p_new->heap = multi_heap_register((void *)start, end - start);
+    SLIST_NEXT(p_new, next) = NULL;
+    if (p_new->heap == NULL) {
+        err = ESP_FAIL;
+        goto done;
+    }
+    multi_heap_set_lock(p_new->heap, &p_new->heap_mux);
+
+    /* (This insertion is atomic to registered_heaps, so
+       we don't need to worry about thread safety for readers,
+       only for writers. */
+    static _lock_t registered_heaps_write_lock;
+    _lock_acquire(&registered_heaps_write_lock);
+    SLIST_INSERT_HEAD(&registered_heaps, p_new, next);
+    _lock_release(&registered_heaps_write_lock);
+
+    err = ESP_OK;
+
+ done:
+    if (err != ESP_OK) {
+        free(p_new);
+    }
+    return err;
+}

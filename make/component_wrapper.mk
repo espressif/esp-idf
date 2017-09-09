@@ -63,6 +63,13 @@ define compile_only_if_not
 $(eval $(if $(1), $(call compile_exclude, $(2)), $(call compile_include, $(2))))
 endef
 
+COMPONENT_ADD_LINKER_DEPS ?=
+COMPONENT_DEPENDS ?=
+COMPONENT_EXTRA_CLEAN ?=
+COMPONENT_EXTRA_INCLUDES ?=
+COMPONENT_OBJEXCLUDE ?=
+COMPONENT_OBJINCLUDE ?=
+COMPONENT_SUBMODULES ?=
 
 ################################################################################
 # 2) Include the component.mk for the specific component (COMPONENT_MAKEFILE) to
@@ -105,6 +112,7 @@ COMPONENT_EMBED_OBJS ?= $(addsuffix .bin.o,$(notdir $(COMPONENT_EMBED_FILES))) $
 # variable with all the include dirs from all the components in random order. This
 # means we can accidentally grab a header from another component before grabbing our own.
 # To make sure that does not happen, re-order the includes so ours come first.
+COMPONENT_PRIV_INCLUDEDIRS ?=
 OWN_INCLUDES:=$(abspath $(addprefix $(COMPONENT_PATH)/,$(COMPONENT_PRIV_INCLUDEDIRS) $(COMPONENT_ADD_INCLUDEDIRS)))
 COMPONENT_INCLUDES := $(OWN_INCLUDES) $(filter-out $(OWN_INCLUDES),$(COMPONENT_INCLUDES))
 
@@ -139,7 +147,7 @@ endef
 # component-specific feature, please don't! What you want is a
 # Makefile.projbuild for your component (see docs/build-system.rst for
 # more.)
-component_project_vars.mk::
+component_project_vars.mk:
 	$(details) "Building component project variables list $(abspath $@)"
 	@echo '# Automatically generated build file. Do not edit.' > $@
 	@echo 'COMPONENT_INCLUDES += $(call MakeVariablePath,$(addprefix $(COMPONENT_PATH)/,$(COMPONENT_ADD_INCLUDEDIRS)))' >> $@
@@ -164,7 +172,7 @@ build: $(COMPONENT_LIBRARY)
 # Build the archive. We remove the archive first, otherwise ar will get confused if we update
 # an archive when multiple filenames have the same name (src1/test.o and src2/test.o)
 $(COMPONENT_LIBRARY): $(COMPONENT_OBJS) $(COMPONENT_EMBED_OBJS)
-	$(summary) AR $@
+	$(summary) AR $(patsubst $(PWD)/%,%,$(CURDIR))/$@
 	rm -f $@
 	$(AR) cru $@ $^
 endif
@@ -177,6 +185,8 @@ clean:
 	$(summary) RM $(CLEAN_FILES)
 	rm -f $(CLEAN_FILES)
 endif
+
+DEBUG_FLAGS ?= -ggdb
 
 # Include all dependency files already generated
 -include $(COMPONENT_OBJS:.o=.d)
@@ -198,17 +208,17 @@ define GenerateCompileTargets
 # $(1) - directory containing source files, relative to $(COMPONENT_PATH) - one of $(COMPONENT_SRCDIRS)
 #
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.c $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
-	$$(summary) CC $$@
+	$$(summary) CC $$(patsubst $$(PWD)/%,%,$$(CURDIR))/$$@
 	$$(CC) $$(CFLAGS) $$(CPPFLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
 	$(call AppendSourceToDependencies,$$<,$$@)
 
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.cpp $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
-	$$(summary) CXX $$@
+	$$(summary) CXX $$(patsubst $$(PWD)/%,%,$$(CURDIR))/$$@
 	$$(CXX) $$(CXXFLAGS) $$(CPPFLAGS) $$(addprefix -I,$$(COMPONENT_INCLUDES)) $$(addprefix -I,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
 	$(call AppendSourceToDependencies,$$<,$$@)
 
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.S $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
-	$$(summary) AS $$@
+	$$(summary) AS $$(patsubst $$(PWD)/%,%,$$(CURDIR))/$$@
 	$$(CC) $$(CPPFLAGS) $$(DEBUG_FLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
 	$(call AppendSourceToDependencies,$$<,$$@)
 
@@ -252,7 +262,7 @@ embed_txt/$$(notdir $(1)): $(call resolvepath,$(1),$(COMPONENT_PATH)) | embed_tx
 # messing about with the embed_X subdirectory then using 'cd' for objcopy is because the
 # full path passed to OBJCOPY makes it into the name of the symbols in the .o file
 $$(notdir $(1)).$(2).o: embed_$(2)/$$(notdir $(1))
-	$(summary) EMBED $$@
+	$(summary) EMBED $$(patsubst $$(PWD)/%,%,$$(CURDIR))/$$@
 	cd embed_$(2); $(OBJCOPY) $(OBJCOPY_EMBED_ARGS) $$(notdir $$<) ../$$@
 
 CLEAN_FILES += embed_$(2)/$$(notdir $(1))
@@ -265,10 +275,6 @@ embed_txt embed_bin:
 $(foreach binfile,$(COMPONENT_EMBED_FILES), $(eval $(call GenerateEmbedTarget,$(binfile),bin)))
 
 $(foreach txtfile,$(COMPONENT_EMBED_TXTFILES), $(eval $(call GenerateEmbedTarget,$(txtfile),txt)))
-
-# generate targets to create binary embed directories
-$(foreach bindir,$(sort $(dir $(COMPONENT_EMBED_FILES))), $(eval $(call GenerateBuildDirTarget,$(bindir))))
-
 
 else   # COMPONENT_CONFIG_ONLY is set
 

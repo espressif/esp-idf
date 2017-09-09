@@ -17,11 +17,11 @@
  ******************************************************************************/
 #include <string.h>
 #include "bt_target.h"
-#include "gki.h"
 #include "avrc_api.h"
 #include "avrc_defs.h"
 #include "avrc_int.h"
 #include "bt_utils.h"
+#include "allocator.h"
 
 #if (defined(AVRC_INCLUDED) && AVRC_INCLUDED == TRUE)
 
@@ -288,7 +288,12 @@ static tAVRC_STS avrc_bld_app_setting_text_rsp (tAVRC_GET_APP_ATTR_TXT_RSP *p_rs
     /* get the existing length, if any, and also the num attributes */
     p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
     p_data = p_len = p_start + 2; /* pdu + rsvd */
-    len_left = GKI_get_buf_size(p_pkt) - BT_HDR_SIZE - p_pkt->offset - p_pkt->len;
+
+    /*
+     * NOTE: The buffer is allocated within avrc_bld_init_rsp_buffer(), and is
+     * always of size BT_DEFAULT_BUFFER_SIZE.
+     */
+    len_left = BT_DEFAULT_BUFFER_SIZE - BT_HDR_SIZE - p_pkt->offset - p_pkt->len;
 
     BE_STREAM_TO_UINT16(len, p_data);
     p_count = p_data;
@@ -686,8 +691,8 @@ static tAVRC_STS avrc_bld_rejected_rsp( tAVRC_RSP *p_rsp, BT_HDR *p_pkt )
 *******************************************************************************/
 static BT_HDR *avrc_bld_init_rsp_buffer(tAVRC_RESPONSE *p_rsp)
 {
-    UINT16 offset = AVRC_MSG_PASS_THRU_OFFSET, chnl = AVCT_DATA_CTRL, len = AVRC_META_CMD_POOL_SIZE;
-    BT_HDR *p_pkt = NULL;
+    UINT16 offset = AVRC_MSG_PASS_THRU_OFFSET;
+    UINT16 chnl = AVCT_DATA_CTRL;
     UINT8  opcode = avrc_opcode_from_pdu(p_rsp->pdu);
 
     AVRC_TRACE_API("avrc_bld_init_rsp_buffer: pdu=%x, opcode=%x/%x", p_rsp->pdu, opcode,
@@ -705,14 +710,11 @@ static BT_HDR *avrc_bld_init_rsp_buffer(tAVRC_RESPONSE *p_rsp)
 
     case AVRC_OP_VENDOR:
         offset  = AVRC_MSG_VENDOR_OFFSET;
-        if (p_rsp->pdu == AVRC_PDU_GET_ELEMENT_ATTR) {
-            len     = AVRC_BROWSE_POOL_SIZE;
-        }
         break;
     }
 
     /* allocate and initialize the buffer */
-    p_pkt = (BT_HDR *)GKI_getbuf(len);
+    BT_HDR *p_pkt = (BT_HDR *)osi_malloc(BT_DEFAULT_BUFFER_SIZE);
     if (p_pkt) {
         UINT8 *p_data, *p_start;
 
@@ -846,7 +848,7 @@ tAVRC_STS AVRC_BldResponse( UINT8 handle, tAVRC_RESPONSE *p_rsp, BT_HDR **pp_pkt
     }
 
     if (alloc && (status != AVRC_STS_NO_ERROR) ) {
-        GKI_freebuf(p_pkt);
+        osi_free(p_pkt);
         *pp_pkt = NULL;
     }
     AVRC_TRACE_API("AVRC_BldResponse: returning %d", status);

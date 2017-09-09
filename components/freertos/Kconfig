@@ -94,10 +94,21 @@ config FREERTOS_WATCHPOINT_END_OF_STACK
         When this watchpoint is hit, gdb will stop with a SIGTRAP message. When no OCD is attached, esp-idf
         will panic on an unhandled debug exception.
 
+config FREERTOS_INTERRUPT_BACKTRACE
+    bool "Enable backtrace from interrupt to task context"
+    default y
+    help
+        If this option is enabled, interrupt stack frame will be modified to
+        point to the code of the interrupted task as its return address.
+        This helps the debugger (or the panic handler) show a backtrace from
+        the interrupt to the task which was interrupted. This also works for
+        nested interrupts: higer level interrupt stack can be traced back to the
+        lower level interrupt.
+        This option adds 4 instructions to the interrupt dispatching code.
+
 config FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
     int "Number of thread local storage pointers"
-    range 0 256 if !(WIFI_ENABLED || ETHERNET)
-    range 1 256 if WIFI_ENABLED || ETHERNET
+    range 1 256
     default 1
     help
         FreeRTOS has the ability to store per-thread pointers in the task
@@ -241,7 +252,7 @@ config ENABLE_STATIC_TASK_CLEAN_UP_HOOK
     help
         Enable this option to make FreeRTOS call the static task clean up hook when a task is deleted.
 
-        Bear in mind that if this option is enabled you will need to implement the following function:
+        Bear in mind that if this option is enabled you will need to implement the following function::
 
             void vPortCleanUpTCB ( void *pxTCB ) {
                 // place clean up code here

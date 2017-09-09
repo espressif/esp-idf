@@ -1026,9 +1026,12 @@ lwip_netconn_do_delconn(void *m)
   } else
 #endif /* LWIP_NETCONN_FULLDUPLEX */
   {
-    LWIP_ASSERT("blocking connect in progress",
-      (state != NETCONN_CONNECT) || IN_NONBLOCKING_CONNECT(msg->conn));
-    msg->err = ERR_OK;
+    if (!(state != NETCONN_CONNECT || IN_NONBLOCKING_CONNECT(msg->conn))) {
+      msg->err = ERR_INPROGRESS;
+      NETCONN_SET_SAFE_ERR(msg->conn, ERR_INPROGRESS);
+      LWIP_DEBUGF(API_MSG_DEBUG, ("netconn error:ERR_INPROGRESS\n"));
+      return;
+    }
     /* Drain and delete mboxes */
     netconn_drain(msg->conn);
 

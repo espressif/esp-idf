@@ -16,6 +16,11 @@
 */
 #include "sdkconfig.h"
 
+/* If BT is not built at all */
+#ifndef CONFIG_BT_RESERVE_DRAM
+#define CONFIG_BT_RESERVE_DRAM 0
+#endif
+
 MEMORY
 {
   /* All these values assume the flash cache is on, and have the blocks this uses subtracted from the length

@@ -2225,13 +2225,13 @@ test cases:
   auto test: 'Yes'
   category: Function
   test point 1: basic function
-  test point 2: BLE GATT client config mtu
-  summary: GATT client config different mtu size
+  test point 2: BLE GATT client set mtu
+  summary: GATT client set different mtu size
   steps: |
-    1. config mtu size 22
-    2. config mtu size 23
-    3. config mtu size 517
-    4. config mtu size 518
+    1. set mtu size 22
+    2. set mtu size 23
+    3. set mtu size 517
+    4. set mtu size 518
   expected result: |
     1. failed
     2. succeed
@@ -2248,15 +2248,141 @@ test cases:
   allow fail: ''
   cmd set:
   - ""
-  - - "SSC SSC1 gattc -C -m 22 "
+  - - "SSC SSC1 gattc -S -m 22 "
     - ["R SSC1 C +GATTC:ERROR"]
-  - - "SSC SSC1 gattc -C -m 23"
+  - - "SSC SSC1 gattc -S -m 23"
     - ["R SSC1 C +GATTC:OK"]
-  - - "SSC SSC1 gattc -C -m 517"
+  - - "SSC SSC1 gattc -S -m 517"
     - ["R SSC1 C +GATTC:OK"]
-  - - "SSC SSC1 gattc -C -m 518"
+  - - "SSC SSC1 gattc -S -m 518"
     - ["R SSC1 C +GATTC:ERROR"]
 - ID: BTSTK_GATT_26002
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT Server set mtu
+  summary: GATT Server set different mtu size
+  steps: |
+    1. set mtu size 22
+    2. set mtu size 23
+    3. set mtu size 517
+    4. set mtu size 518
+  expected result: |
+    1. failed
+    2. succeed
+    3. succeed
+    4. failed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC2 gatts -C -m 22 "
+    - ["R SSC2 C +GATTS:ERROR"]
+  - - "SSC SSC2 gatts -C -m 23"
+    - ["R SSC2 C +GATTS:OK"]
+  - - "SSC SSC2 gatts -C -m 517"
+    - ["R SSC2 C +GATTS:OK"]
+  - - "SSC SSC2 gatts -C -m 518"
+    - ["R SSC2 C +GATTS:ERROR"]
+- ID: BTSTK_GATT_26003
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client config mtu
+  summary: GATT client set mtu size 500 and client send req
+  steps: |
+    1. client set mtu size 500
+    2. client config mtu
+  expected result: |
+    1. succeed
+    2. succeed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -S -m 500 "
+    - ["R SSC1 C +GATTC:OK"]
+  - - "SSC SSC1 gattc -C"
+    - ["R SSC1 C +GATTC:OK","P SSC[1-2] C ConfigMTU,OK,500"]
+- ID: BTSTK_GATT_26004
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client config mtu
+  summary: GATT server set mtu size 365 and client send req
+  steps: |
+    1. server set mtu size 365
+    2. client config mtu
+  expected result: |
+    1. succeed
+    2. succeed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC2 gatts -C -m 365 "
+    - ["R SSC2 C +GATTS:OK"]
+  - - "SSC SSC1 gattc -C"
+    - ["R SSC1 C +GATTC:OK","P SSC[1-2] C ConfigMTU,OK,365"]
+- ID: BTSTK_GATT_26005
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client config mtu
+  summary: GATT client set mtu as 365 and server set mtu as 261
+  steps: |
+    1. client and server set different mtu size
+    2. client config mtu
+  expected result: |
+    1. succeed
+    2. succeed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -S -m 365 "
+    - ["R SSC1 C +GATTC:OK"]
+  - - "SSC SSC2 gatts -C -m 261 "
+    - ["R SSC2 C +GATTS:OK"]
+  - - "SSC SSC1 gattc -C"
+    - ["R SSC1 C +GATTC:OK","P SSC[1-2] C ConfigMTU,OK,261"]
+- ID: BTSTK_GATT_26006
   SDK: ESP32_IDF
   Test App: SSC_BLE
   auto test: 'Yes'
@@ -2265,7 +2391,7 @@ test cases:
   test point 2: BLE GATT client config mtu
   summary: GATT read write on mtu size 261
   steps: |
-    1. config mtu size 261
+    1. server and client set mtu size 261
     2. do read
     3. do write
   expected result: |
@@ -2285,7 +2411,11 @@ test cases:
   - ""
   - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
     - ["R SSC1 C +GATTC:Discover,OK"]
-  - - "SSC SSC1 gattc -C -m 261"
+  - - "SSC SSC1 gattc -S -m 261"
+    - ["R SSC1 C +GATTC:OK"]
+  - - "SSC SSC2 gatts -C -m 261"
+    - ["R SSC2 C +GATTS:OK"]
+  - - "SSC SSC1 gattc -C"
     - ["P SSC1 C +GATTC:OK", "P SSC[1-2] C ConfigMTU,OK,261"]
   - - "SSC SSC1 gattc -R -z char -p 0x10 -s 0xA000 -c 0xC101"
     - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C101,256"]
@@ -2293,16 +2423,16 @@ test cases:
     - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C109"]
   - - "SSC SSC1 gattc -W -z longChar -p 0x10 -s 0xA000 -c 0xC110 -l 512"
     - ["R SSC1 C +GATTC:Write,OK,0010,A000,C110", "P SSC2 C +GATTS:ReliableWrite,OK"]
-- ID: BTSTK_GATT_26003
+- ID: BTSTK_GATT_26007
   SDK: ESP32_IDF
   Test App: SSC_BLE
   auto test: 'Yes'
   category: Function
   test point 1: basic function
   test point 2: BLE GATT client config mtu
-  summary: GATT read write on mtu size 517
+  summary: GATT read write on mtu size 512
   steps: |
-    1. config mtu size 517
+    1. server and client set mtu size 261
     2. do read
     3. do write
   expected result: |
@@ -2322,13 +2452,17 @@ test cases:
   - ""
   - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
     - ["R SSC1 C +GATTC:Discover,OK"]
-  - - "SSC SSC1 gattc -C -m 517"
+  - - "SSC SSC2 gatts -C -m 517"
+    - ["R SSC2 C +GATTS:OK"]
+  - - "SSC SSC1 gattc -S -m 517"
+    - ["R SSC1 C +GATTC:OK"]
+  - - "SSC SSC1 gattc -C"
     - ["P SSC1 C +GATTC:OK", "P SSC[1-2] C ConfigMTU,OK,517"]
   - - "SSC SSC1 gattc -R -z char -p 0x10 -s 0xA000 -c 0xC101"
     - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C101,256"]
   - - "SSC SSC1 gattc -W -z char -p 0x10 -s 0xA000 -c 0xC109 -l 256"
     - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C109"]
-  - - "SSC SSC1 gattc -W -z char -p 0x10 -s 0xA000 -c 0xC109 -l 512"
+  - - "SSC SSC1 gattc -W -z char -p 0x10 -s 0xA000 -c 0xC109 -l 514"
     - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C109"]
 - ID: BTSTK_GATT_50001
   SDK: ESP32_IDF

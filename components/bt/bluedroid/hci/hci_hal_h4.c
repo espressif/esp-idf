@@ -163,23 +163,26 @@ static void hci_hal_h4_rx_handler(void *arg)
 
     for (;;) {
         if (pdTRUE == xQueueReceive(xHciH4Queue, &e, (portTickType)portMAX_DELAY)) {
-            if (e.sig == 0xff) {
+            if (e.sig == SIG_HCI_HAL_RECV_PACKET) {
                 fixed_queue_process(hci_hal_env.rx_q);
             }
         }
     }
 }
 
-void hci_hal_h4_task_post(task_post_t timeout)
+task_post_status_t hci_hal_h4_task_post(task_post_t timeout)
 {
     BtTaskEvt_t evt;
 
-    evt.sig = 0xff;
+    evt.sig = SIG_HCI_HAL_RECV_PACKET;
     evt.par = 0;
 
     if (xQueueSend(xHciH4Queue, &evt, timeout) != pdTRUE) {
         LOG_ERROR("xHciH4Queue failed\n");
+        return TASK_POST_SUCCESS;
     }
+
+    return TASK_POST_FAIL;
 }
 
 static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)

@@ -21,6 +21,7 @@
 
 #include "bt_target.h"
 #include "bt_trace.h"
+#include "allocator.h"
 #include "bt_types.h"
 #include "gatt_api.h"
 #include "bta_api.h"
@@ -144,7 +145,7 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
             tBTA_GATT_STATUS status = GATT_SUCCESS;
 
             if (blufi_env.prepare_buf == NULL) {
-                blufi_env.prepare_buf = GKI_getbuf(BLUFI_PREPAIR_BUF_MAX_SIZE);
+                blufi_env.prepare_buf = osi_malloc(BLUFI_PREPAIR_BUF_MAX_SIZE);
                 if (blufi_env.prepare_buf == NULL) {
                     LOG_ERROR("Blufi prep no mem\n");
                     status = GATT_NO_RESOURCES;
@@ -197,7 +198,7 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         }
 
         if (blufi_env.prepare_buf) {
-            GKI_freebuf(blufi_env.prepare_buf);
+            osi_free(blufi_env.prepare_buf);
             blufi_env.prepare_buf = NULL;
         }
 
@@ -399,7 +400,7 @@ static void btc_blufi_recv_handler(uint8_t *data, int len)
     if (BLUFI_FC_IS_FRAG(hdr->fc)) {
         if (blufi_env.offset == 0) {
             blufi_env.total_len = hdr->data[0] | (((uint16_t) hdr->data[1]) << 8);
-            blufi_env.aggr_buf = GKI_getbuf(blufi_env.total_len);
+            blufi_env.aggr_buf = osi_malloc(blufi_env.total_len);
             if (blufi_env.aggr_buf == NULL) {
                 LOG_ERROR("%s no mem, len %d\n", __func__, blufi_env.total_len);
                 return;
@@ -413,7 +414,7 @@ static void btc_blufi_recv_handler(uint8_t *data, int len)
 
             btc_blufi_protocol_handler(hdr->type, blufi_env.aggr_buf, blufi_env.total_len);
             blufi_env.offset = 0;
-            GKI_freebuf(blufi_env.aggr_buf);
+            osi_free(blufi_env.aggr_buf);
             blufi_env.aggr_buf = NULL;
         } else {
             btc_blufi_protocol_handler(hdr->type, hdr->data, hdr->data_len);
@@ -430,7 +431,7 @@ void btc_blufi_send_encap(uint8_t type, uint8_t *data, int total_data_len)
 
     while (remain_len > 0) {
         if (remain_len > blufi_env.frag_size) {
-            hdr = GKI_getbuf(sizeof(struct blufi_hdr) + 2 + blufi_env.frag_size + 2);
+            hdr = osi_malloc(sizeof(struct blufi_hdr) + 2 + blufi_env.frag_size + 2);
             if (hdr == NULL) {
                 LOG_ERROR("%s no mem\n", __func__);
                 return;
@@ -442,7 +443,7 @@ void btc_blufi_send_encap(uint8_t type, uint8_t *data, int total_data_len)
             memcpy(hdr->data + 2, &data[total_data_len - remain_len], blufi_env.frag_size); //copy first, easy for check sum
             hdr->fc |= BLUFI_FC_FRAG;
         } else {
-            hdr = GKI_getbuf(sizeof(struct blufi_hdr) + remain_len + 2);
+            hdr = osi_malloc(sizeof(struct blufi_hdr) + remain_len + 2);
             if (hdr == NULL) {
                 LOG_ERROR("%s no mem\n", __func__);
                 return;
@@ -478,7 +479,7 @@ void btc_blufi_send_encap(uint8_t type, uint8_t *data, int total_data_len)
                     hdr->fc |= BLUFI_FC_ENC;
                 } else {
                     LOG_ERROR("%s encrypt error %d\n", __func__, ret);
-                    GKI_freebuf(hdr);
+                    osi_free(hdr);
                     return;
                 }
             }
@@ -495,7 +496,7 @@ void btc_blufi_send_encap(uint8_t type, uint8_t *data, int total_data_len)
                  hdr->data_len + sizeof(struct blufi_hdr) + 2 :
                  hdr->data_len + sizeof(struct blufi_hdr)));
 
-        GKI_freebuf(hdr);
+        osi_free(hdr);
         hdr =  NULL;
     }
 }
@@ -508,7 +509,7 @@ static void btc_blufi_wifi_conn_report(uint8_t opmode, uint8_t sta_conn_state, u
     uint8_t *p;
 
     data_len = info_len + 3;
-    p = data = GKI_getbuf(data_len);
+    p = data = osi_malloc(data_len);
     if (data == NULL) {
         return;
     }
@@ -570,7 +571,7 @@ static void btc_blufi_wifi_conn_report(uint8_t opmode, uint8_t sta_conn_state, u
     }
 
     btc_blufi_send_encap(type, data, data_len);
-    GKI_freebuf(data);
+    osi_free(data);
 }
 
 static void btc_blufi_send_ack(uint8_t seq)
@@ -591,70 +592,70 @@ void btc_blufi_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 
     switch (msg->act) {
     case ESP_BLUFI_EVENT_RECV_STA_SSID:
-        dst->sta_ssid.ssid = GKI_getbuf(src->sta_ssid.ssid_len);
+        dst->sta_ssid.ssid = osi_malloc(src->sta_ssid.ssid_len);
         if (dst->sta_ssid.ssid == NULL) {
             LOG_ERROR("%s %d no mem\n", __func__, msg->act);
         }
         memcpy(dst->sta_ssid.ssid, src->sta_ssid.ssid, src->sta_ssid.ssid_len);
         break;
     case ESP_BLUFI_EVENT_RECV_STA_PASSWD:
-        dst->sta_passwd.passwd = GKI_getbuf(src->sta_passwd.passwd_len);
+        dst->sta_passwd.passwd = osi_malloc(src->sta_passwd.passwd_len);
         if (dst->sta_passwd.passwd == NULL) {
             LOG_ERROR("%s %d no mem\n", __func__, msg->act);
         }
         memcpy(dst->sta_passwd.passwd, src->sta_passwd.passwd, src->sta_passwd.passwd_len);
         break;
     case ESP_BLUFI_EVENT_RECV_SOFTAP_SSID:
-        dst->softap_ssid.ssid = GKI_getbuf(src->softap_ssid.ssid_len);
+        dst->softap_ssid.ssid = osi_malloc(src->softap_ssid.ssid_len);
         if (dst->softap_ssid.ssid == NULL) {
             LOG_ERROR("%s %d no mem\n", __func__, msg->act);
         }
         memcpy(dst->softap_ssid.ssid, src->softap_ssid.ssid, src->softap_ssid.ssid_len);
         break;
     case ESP_BLUFI_EVENT_RECV_SOFTAP_PASSWD:
-        dst->softap_passwd.passwd = GKI_getbuf(src->softap_passwd.passwd_len);
+        dst->softap_passwd.passwd = osi_malloc(src->softap_passwd.passwd_len);
         if (dst->softap_passwd.passwd == NULL) {
             LOG_ERROR("%s %d no mem\n", __func__, msg->act);
         }
         memcpy(dst->softap_passwd.passwd, src->softap_passwd.passwd, src->softap_passwd.passwd_len);
         break;
     case ESP_BLUFI_EVENT_RECV_USERNAME:
-        dst->username.name = GKI_getbuf(src->username.name_len);
+        dst->username.name = osi_malloc(src->username.name_len);
         if (dst->username.name == NULL) {
             LOG_ERROR("%s %d no mem\n", __func__, msg->act);
         }
         memcpy(dst->username.name, src->username.name, src->username.name_len);
         break;
     case ESP_BLUFI_EVENT_RECV_CA_CERT:
-        dst->ca.cert = GKI_getbuf(src->ca.cert_len);
+        dst->ca.cert = osi_malloc(src->ca.cert_len);
         if (dst->ca.cert == NULL) {
             LOG_ERROR("%s %d no mem\n", __func__, msg->act);
         }
         memcpy(dst->ca.cert, src->ca.cert, src->ca.cert_len);
         break;
     case ESP_BLUFI_EVENT_RECV_CLIENT_CERT:
-        dst->client_cert.cert = GKI_getbuf(src->client_cert.cert_len);
+        dst->client_cert.cert = osi_malloc(src->client_cert.cert_len);
         if (dst->client_cert.cert == NULL) {
             LOG_ERROR("%s %d no mem\n", __func__, msg->act);
         }
         memcpy(dst->client_cert.cert, src->client_cert.cert, src->client_cert.cert_len);
         break;
     case ESP_BLUFI_EVENT_RECV_SERVER_CERT:
-        dst->server_cert.cert = GKI_getbuf(src->server_cert.cert_len);
+        dst->server_cert.cert = osi_malloc(src->server_cert.cert_len);
         if (dst->server_cert.cert == NULL) {
             LOG_ERROR("%s %d no mem\n", __func__, msg->act);
         }
         memcpy(dst->server_cert.cert, src->server_cert.cert, src->server_cert.cert_len);
         break;
     case ESP_BLUFI_EVENT_RECV_CLIENT_PRIV_KEY:
-         dst->client_pkey.pkey = GKI_getbuf(src->client_pkey.pkey_len);
+         dst->client_pkey.pkey = osi_malloc(src->client_pkey.pkey_len);
         if (dst->client_pkey.pkey == NULL) {
             LOG_ERROR("%s %d no mem\n", __func__, msg->act);
         }
         memcpy(dst->client_pkey.pkey, src->client_pkey.pkey, src->client_pkey.pkey_len);
         break;
     case ESP_BLUFI_EVENT_RECV_SERVER_PRIV_KEY:
-         dst->server_pkey.pkey = GKI_getbuf(src->server_pkey.pkey_len);
+         dst->server_pkey.pkey = osi_malloc(src->server_pkey.pkey_len);
         if (dst->server_pkey.pkey == NULL) {
             LOG_ERROR("%s %d no mem\n", __func__, msg->act);
         }
@@ -671,34 +672,34 @@ void btc_blufi_cb_deep_free(btc_msg_t *msg)
 
     switch (msg->act) {
     case ESP_BLUFI_EVENT_RECV_STA_SSID:
-        GKI_freebuf(param->sta_ssid.ssid);
+        osi_free(param->sta_ssid.ssid);
         break;
     case ESP_BLUFI_EVENT_RECV_STA_PASSWD:
-        GKI_freebuf(param->sta_passwd.passwd);
+        osi_free(param->sta_passwd.passwd);
         break;
     case ESP_BLUFI_EVENT_RECV_SOFTAP_SSID:
-        GKI_freebuf(param->softap_ssid.ssid);
+        osi_free(param->softap_ssid.ssid);
         break;
     case ESP_BLUFI_EVENT_RECV_SOFTAP_PASSWD:
-        GKI_freebuf(param->softap_passwd.passwd);
+        osi_free(param->softap_passwd.passwd);
         break;
     case ESP_BLUFI_EVENT_RECV_USERNAME:
-        GKI_freebuf(param->username.name);
+        osi_free(param->username.name);
         break;
     case ESP_BLUFI_EVENT_RECV_CA_CERT:
-        GKI_freebuf(param->ca.cert);
+        osi_free(param->ca.cert);
         break;
     case ESP_BLUFI_EVENT_RECV_CLIENT_CERT:
-        GKI_freebuf(param->client_cert.cert);
+        osi_free(param->client_cert.cert);
         break;
     case ESP_BLUFI_EVENT_RECV_SERVER_CERT:
-        GKI_freebuf(param->server_cert.cert);
+        osi_free(param->server_cert.cert);
         break;
     case ESP_BLUFI_EVENT_RECV_CLIENT_PRIV_KEY:
-        GKI_freebuf(param->client_pkey.pkey);
+        osi_free(param->client_pkey.pkey);
         break;
     case ESP_BLUFI_EVENT_RECV_SERVER_PRIV_KEY:
-        GKI_freebuf(param->server_pkey.pkey);
+        osi_free(param->server_pkey.pkey);
         break;
     default:
         break;
@@ -807,7 +808,7 @@ void btc_blufi_call_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             return;
         }
 
-        dst->wifi_conn_report.extra_info = GKI_getbuf(sizeof(esp_blufi_extra_info_t));
+        dst->wifi_conn_report.extra_info = osi_malloc(sizeof(esp_blufi_extra_info_t));
         if (dst->wifi_conn_report.extra_info == NULL) {
             return;
         }
@@ -818,7 +819,7 @@ void btc_blufi_call_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             dst->wifi_conn_report.extra_info_len += (6 + 2);
         }
         if (src_info->sta_ssid) {
-            dst->wifi_conn_report.extra_info->sta_ssid = GKI_getbuf(src_info->sta_ssid_len);
+            dst->wifi_conn_report.extra_info->sta_ssid = osi_malloc(src_info->sta_ssid_len);
             if (dst->wifi_conn_report.extra_info->sta_ssid) {
                 memcpy(dst->wifi_conn_report.extra_info->sta_ssid, src_info->sta_ssid, src_info->sta_ssid_len);
                 dst->wifi_conn_report.extra_info->sta_ssid_len = src_info->sta_ssid_len;
@@ -826,7 +827,7 @@ void btc_blufi_call_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             }
         }
         if (src_info->sta_passwd) {
-            dst->wifi_conn_report.extra_info->sta_passwd = GKI_getbuf(src_info->sta_passwd_len);
+            dst->wifi_conn_report.extra_info->sta_passwd = osi_malloc(src_info->sta_passwd_len);
             if (dst->wifi_conn_report.extra_info->sta_passwd) {
                 memcpy(dst->wifi_conn_report.extra_info->sta_passwd, src_info->sta_passwd, src_info->sta_passwd_len);
                 dst->wifi_conn_report.extra_info->sta_passwd_len = src_info->sta_passwd_len;
@@ -834,7 +835,7 @@ void btc_blufi_call_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             }
         }
         if (src_info->softap_ssid) {
-            dst->wifi_conn_report.extra_info->softap_ssid = GKI_getbuf(src_info->softap_ssid_len);
+            dst->wifi_conn_report.extra_info->softap_ssid = osi_malloc(src_info->softap_ssid_len);
             if (dst->wifi_conn_report.extra_info->softap_ssid) {
                 memcpy(dst->wifi_conn_report.extra_info->softap_ssid, src_info->softap_ssid, src_info->softap_ssid_len);
                 dst->wifi_conn_report.extra_info->softap_ssid_len = src_info->softap_ssid_len;
@@ -842,7 +843,7 @@ void btc_blufi_call_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             }
         }
         if (src_info->softap_passwd) {
-            dst->wifi_conn_report.extra_info->softap_passwd = GKI_getbuf(src_info->softap_passwd_len);
+            dst->wifi_conn_report.extra_info->softap_passwd = osi_malloc(src_info->softap_passwd_len);
             if (dst->wifi_conn_report.extra_info->softap_passwd) {
                 memcpy(dst->wifi_conn_report.extra_info->softap_passwd, src_info->softap_passwd, src_info->softap_passwd_len);
                 dst->wifi_conn_report.extra_info->softap_passwd_len = src_info->softap_passwd_len;
@@ -883,18 +884,18 @@ void btc_blufi_call_deep_free(btc_msg_t *msg)
             return;
         }
         if (info->sta_ssid) {
-            GKI_freebuf(info->sta_ssid);
+            osi_free(info->sta_ssid);
         }
         if (info->sta_passwd) {
-            GKI_freebuf(info->sta_passwd);
+            osi_free(info->sta_passwd);
         }
         if (info->softap_ssid) {
-            GKI_freebuf(info->softap_ssid);
+            osi_free(info->softap_ssid);
         }
         if (info->softap_passwd) {
-            GKI_freebuf(info->softap_passwd);
+            osi_free(info->softap_passwd);
         }
-        GKI_freebuf(info);
+        osi_free(info);
         break;
     }
     default:

@@ -494,7 +494,7 @@ TEST_CASE("nvs api tests", "[nvs]")
     for (uint16_t i = NVS_FLASH_SECTOR; i <NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN; ++i) {
         spi_flash_erase_sector(i);
     }
-    TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
 
     TEST_ESP_ERR(nvs_open("namespace1", NVS_READONLY, &handle_1), ESP_ERR_NVS_NOT_FOUND);
 
@@ -535,7 +535,6 @@ TEST_CASE("nvs api tests", "[nvs]")
     CHECK(0 == strcmp(buf, str));
 }
 
-
 TEST_CASE("wifi test", "[nvs]")
 {
     SpiFlashEmulator emu(10);
@@ -545,7 +544,7 @@ TEST_CASE("wifi test", "[nvs]")
     const uint32_t NVS_FLASH_SECTOR = 5;
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
     emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
-    TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
     
     nvs_handle misc_handle;
     TEST_ESP_OK(nvs_open("nvs.net80211", NVS_READWRITE, &misc_handle));
@@ -687,7 +686,7 @@ TEST_CASE("can init storage from flash with random contents", "[nvs]")
     const uint32_t NVS_FLASH_SECTOR = 5;
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
     emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
-    TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
     
     TEST_ESP_OK(nvs_open("nvs.net80211", NVS_READWRITE, &handle));
     
@@ -708,7 +707,7 @@ TEST_CASE("nvs api tests, starting with random data in flash", "[nvs][.][long]")
         const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
         emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
         
-        TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+        TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
         
         nvs_handle handle_1;
         TEST_ESP_ERR(nvs_open("namespace1", NVS_READONLY, &handle_1), ESP_ERR_NVS_NOT_FOUND);
@@ -745,7 +744,7 @@ TEST_CASE("nvs api tests, starting with random data in flash", "[nvs][.][long]")
     }
 }
 
-extern "C" void nvs_dump();
+extern "C" void nvs_dump(const char *partName);
 
 class RandomTest {
     
@@ -944,7 +943,7 @@ TEST_CASE("monkey test", "[nvs][monkey]")
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
     emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
     
-    TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
     
     nvs_handle handle;
     TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle));
@@ -990,7 +989,7 @@ TEST_CASE("test recovery from sudden poweroff", "[.][long][nvs][recovery][monkey
         nvs_handle handle;
         size_t count = iter_count;
 
-        if (nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN) == ESP_OK) {
+        if (nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN) == ESP_OK) {
             if (nvs_open("namespace1", NVS_READWRITE, &handle) == ESP_OK) {
                 if(test.doRandomThings(handle, gen, count) != ESP_ERR_FLASH_OP_FAIL) {
                     nvs_close(handle);
@@ -1000,11 +999,11 @@ TEST_CASE("test recovery from sudden poweroff", "[.][long][nvs][recovery][monkey
             }
         }
         
-        TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+        TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
         TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle));
         auto res = test.doRandomThings(handle, gen, count);
         if (res != ESP_OK) {
-            nvs_dump();
+            nvs_dump(NVS_DEFAULT_PART_NAME);
             CHECK(0);
         }
         nvs_close(handle);
@@ -1018,7 +1017,7 @@ TEST_CASE("test for memory leaks in open/set", "[leaks]")
     const uint32_t NVS_FLASH_SECTOR = 6;
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
     emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
-    TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
     
     for (int i = 0; i < 100000; ++i) {
         nvs_handle light_handle = 0;
@@ -1096,6 +1095,44 @@ TEST_CASE("recovery after failure to write data", "[nvs]")
     }
 }
 
+TEST_CASE("crc errors in item header are handled", "[nvs]")
+{
+    SpiFlashEmulator emu(3);
+    Storage storage;
+    // prepare some data
+    TEST_ESP_OK(storage.init(0, 3));
+    TEST_ESP_OK(storage.writeItem(0, "ns1", static_cast<uint8_t>(1)));
+    TEST_ESP_OK(storage.writeItem(1, "value1", static_cast<uint32_t>(1)));
+    TEST_ESP_OK(storage.writeItem(1, "value2", static_cast<uint32_t>(2)));
+    
+    // corrupt item header
+    uint32_t val = 0;
+    emu.write(32 * 3, &val, 4);
+    
+    // check that storage can recover
+    TEST_ESP_OK(storage.init(0, 3));
+    TEST_ESP_OK(storage.readItem(1, "value2", val));
+    CHECK(val == 2);
+    // check that the corrupted item is no longer present
+    TEST_ESP_ERR(ESP_ERR_NVS_NOT_FOUND, storage.readItem(1, "value1", val));
+    
+    // add more items to make the page full
+    for (size_t i = 0; i < Page::ENTRY_COUNT; ++i) {
+        char item_name[Item::MAX_KEY_LENGTH + 1];
+        snprintf(item_name, sizeof(item_name), "item_%ld", i);
+        TEST_ESP_OK(storage.writeItem(1, item_name, static_cast<uint32_t>(i)));
+    }
+
+    // corrupt another item on the full page
+    val = 0;
+    emu.write(32 * 4, &val, 4);
+    
+    // check that storage can recover
+    TEST_ESP_OK(storage.init(0, 3));
+    // check that the corrupted item is no longer present
+    TEST_ESP_ERR(ESP_ERR_NVS_NOT_FOUND, storage.readItem(1, "value2", val));
+}
+
 TEST_CASE("crc error in variable length item is handled", "[nvs]")
 {
     SpiFlashEmulator emu(3);
@@ -1135,7 +1172,7 @@ TEST_CASE("crc error in variable length item is handled", "[nvs]")
 TEST_CASE("read/write failure (TW8406)", "[nvs]")
 {
     SpiFlashEmulator emu(3);
-    nvs_flash_init_custom(0, 3);
+    nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, 0, 3);
     for (int attempts = 0; attempts < 3; ++attempts) {
         int i = 0;
         nvs_handle light_handle = 0;
@@ -1169,7 +1206,7 @@ TEST_CASE("nvs_flash_init checks for an empty page", "[nvs]")
     const size_t blob_size = Page::BLOB_MAX_SIZE;
     uint8_t blob[blob_size] = {0};
     SpiFlashEmulator emu(5);
-    TEST_ESP_OK( nvs_flash_init_custom(0, 5) );
+    TEST_ESP_OK( nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, 0, 5) );
     nvs_handle handle;
     TEST_ESP_OK( nvs_open("test", NVS_READWRITE, &handle) );
     // Fill first page
@@ -1185,7 +1222,24 @@ TEST_CASE("nvs_flash_init checks for an empty page", "[nvs]")
     nvs_close(handle);
     // first two pages are now full, third one is writable, last two are empty
     // init should fail
-    TEST_ESP_ERR( nvs_flash_init_custom(0, 3), ESP_ERR_NVS_NO_FREE_PAGES );
+    TEST_ESP_ERR( nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, 0, 3), ESP_ERR_NVS_NO_FREE_PAGES );
+}
+
+TEST_CASE("multiple partitions access check", "[nvs]")
+{
+    SpiFlashEmulator emu(10);
+    TEST_ESP_OK( nvs_flash_init_custom("nvs1", 0, 5) );
+    TEST_ESP_OK( nvs_flash_init_custom("nvs2", 5, 5) );
+    nvs_handle handle1, handle2;
+    TEST_ESP_OK( nvs_open_from_partition("nvs1", "test", NVS_READWRITE, &handle1) );
+    TEST_ESP_OK( nvs_open_from_partition("nvs2", "test", NVS_READWRITE, &handle2) );
+    TEST_ESP_OK( nvs_set_i32(handle1, "foo", 0xdeadbeef));
+    TEST_ESP_OK( nvs_set_i32(handle2, "foo", 0xcafebabe));
+    int32_t v1, v2;
+    TEST_ESP_OK( nvs_get_i32(handle1, "foo", &v1));
+    TEST_ESP_OK( nvs_get_i32(handle2, "foo", &v2));
+    CHECK(v1 == 0xdeadbeef);
+    CHECK(v2 == 0xcafebabe);
 }
 
 TEST_CASE("dump all performance data", "[nvs]")

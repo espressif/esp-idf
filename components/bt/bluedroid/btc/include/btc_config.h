@@ -20,6 +20,8 @@
 
 #include "bt_types.h"
 
+#define BTC_LE_DEV_TYPE           "DevType"
+
 typedef struct btc_config_section_iter_t btc_config_section_iter_t;
 
 bool btc_config_init(void);
@@ -35,6 +37,7 @@ bool btc_config_set_str(const char *section, const char *key, const char *value)
 bool btc_config_get_bin(const char *section, const char *key, uint8_t *value, size_t *length);
 bool btc_config_set_bin(const char *section, const char *key, const uint8_t *value, size_t length);
 bool btc_config_remove(const char *section, const char *key);
+bool btc_config_remove_section(const char *section);
 
 size_t btc_config_get_bin_length(const char *section, const char *key);
 
@@ -49,7 +52,7 @@ int btc_config_clear(void);
 
 // TODO(zachoverflow): Eww...we need to move these out. These are peer specific, not config general.
 bool btc_get_address_type(const BD_ADDR bd_addr, int *p_addr_type);
-bool btc_compare_address_key_value(char *key_type, void *key_value, int key_length);
+bool btc_compare_address_key_value(const char *section, char *key_type, void *key_value, int key_length);
 bool btc_get_device_type(const BD_ADDR bd_addr, int *p_device_type);
 
 #endif

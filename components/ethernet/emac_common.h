@@ -101,15 +101,11 @@ struct emac_open_cmd {
 struct emac_close_cmd {
     int8_t err;
 };
-#if CONFIG_ETHERNET
+
 #define DMA_RX_BUF_NUM CONFIG_DMA_RX_BUF_NUM
 #define DMA_TX_BUF_NUM CONFIG_DMA_TX_BUF_NUM
 #define EMAC_TASK_PRIORITY CONFIG_EMAC_TASK_PRIORITY
-#else
-#define DMA_RX_BUF_NUM 1
-#define DMA_TX_BUF_NUM 1
-#define EMAC_TASK_PRIORITY 10
-#endif
+
 #define DMA_RX_BUF_SIZE 1600
 #define DMA_TX_BUF_SIZE 1600
 
