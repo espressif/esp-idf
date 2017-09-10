@@ -1524,6 +1524,15 @@ long SSL_get_timeout(const SSL *ssl);
 int SSL_get_verify_mode(const SSL *ssl);
 
 /**
+ * @brief get SSL verify parameters
+ *
+ * @param ssl - SSL point
+ *
+ * @return verify parameters
+ */
+X509_VERIFY_PARAM *SSL_get0_param(SSL *ssl);
+
+/**
  * @brief get SSL write only IO handle
  *
  * @param ssl - SSL point
