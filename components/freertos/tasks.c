@@ -2348,11 +2348,7 @@ TCB_t *pxTCB;
 
 #if ( INCLUDE_xTaskGetHandle == 1 )
 
-	/* This function takes a relatively long time to complete
-	   and should be #AVOID#ed at best.
-	   
-	   Executing this function will block both cores!
-	   
+	/* This function takes a relatively long time to complete.
 	   Once the handle of the requested task is obtained it
 	   would be wise to store locally for re-use. 	  		*/
 	   
@@ -2366,7 +2362,6 @@ TCB_t *pxTCB;
 		configASSERT( strlen( pcNameToQuery ) < configMAX_TASK_NAME_LEN );
 
 		taskENTER_CRITICAL(&xTaskQueueMutex);
-//		vTaskSuspendAll();
 		{
 			/* Search the ready lists. */
 			do
@@ -2413,7 +2408,6 @@ TCB_t *pxTCB;
 			}
 			#endif
 		}
-//		( void ) xTaskResumeAll();
 		taskEXIT_CRITICAL(&xTaskQueueMutex);
 
 		return ( TaskHandle_t ) pxTCB;
