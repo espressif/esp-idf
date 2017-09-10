@@ -1533,6 +1533,20 @@ int SSL_get_verify_mode(const SSL *ssl);
 X509_VERIFY_PARAM *SSL_get0_param(SSL *ssl);
 
 /**
+ * @brief set expected hostname the peer cert CN should have
+ *
+ * @param param - verify parameters from SSL_get0_param()
+ *
+ * @param name - the expected hostname
+ *
+ * @param namelen - the length of the hostname, or 0 if NUL terminated
+ *
+ * @return verify parameters
+ */
+int X509_VERIFY_PARAM_set1_host(X509_VERIFY_PARAM *param,
+                                const char *name, size_t namelen);
+
+/**
  * @brief get SSL write only IO handle
  *
  * @param ssl - SSL point

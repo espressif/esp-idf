@@ -669,3 +669,32 @@ long ssl_pm_get_verify_result(const SSL *ssl)
 
     return verify_result;
 }
+
+/**
+ * @brief set expected hostname on peer cert CN
+ */
+int X509_VERIFY_PARAM_set1_host(X509_VERIFY_PARAM *param,
+                                const char *name, size_t namelen)
+{
+    SSL *ssl = (SSL *)((char *)param - offsetof(SSL, param));
+    struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
+    char *name_cstr = NULL;
+
+    if (namelen) {
+        name_cstr = malloc(namelen + 1);
+        if (!name_cstr) {
+            return 0;
+        }
+        memcpy(name_cstr, name, namelen);
+        name_cstr[namelen] = '\0';
+        name = name_cstr;
+    }
+
+    mbedtls_ssl_set_hostname(&ssl_pm->ssl, name);
+
+    if (namelen) {
+        free(name_cstr);
+    }
+
+    return 1;
+}
