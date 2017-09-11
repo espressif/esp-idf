@@ -37,7 +37,7 @@ esp_err_t esp_ble_gatt_set_local_mtu (uint16_t mtu)
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if ((mtu < ESP_GATT_DEF_BLE_MTU_SIZE) || (mtu > ESP_GATT_MAX_MTU_SIZE)) {
-        return ESP_GATT_ILLEGAL_PARAMETER;
+        return ESP_ERR_INVALID_SIZE;
     }
 
     msg.sig = BTC_SIG_API_CALL;
