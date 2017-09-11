@@ -20,6 +20,7 @@ extern "C" {
 #include "esp_intr.h"
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
+#include "soc/touch_channel.h"
 
 typedef enum {
     TOUCH_PAD_NUM0 = 0, /*!< Touch pad channel 0 is GPIO4 */

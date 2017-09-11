@@ -158,3 +158,13 @@ API Reference
 
 .. include:: /_build/inc/touch_pad.inc
 
+GPIO Lookup Macros
+^^^^^^^^^^^^^^^^^^
+Some useful macros can be used to specified the GPIO number of a touchpad channel, or vice versa.
+e.g.
+
+1. ``TOUCH_PAD_NUM5_GPIO_NUM`` is the GPIO number of channel 5 (12);
+2. ``TOUCH_PAD_GPIO4_CHANNEL`` is the channel number of GPIO 4 (channel 0).
+
+.. include:: /_build/inc/touch_channel.inc
+

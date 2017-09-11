@@ -32,6 +32,7 @@ extern "C" {
 #include "freertos/queue.h"
 #include "freertos/ringbuf.h"
 #include <esp_types.h>
+#include "soc/uart_channel.h"
 
 #define UART_FIFO_LEN           (128)        /*!< Length of the hardware FIFO buffers */
 #define UART_INTR_MASK          0x1ff        /*!< mask of all UART interrupts */
