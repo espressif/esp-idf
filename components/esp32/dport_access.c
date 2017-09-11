@@ -194,6 +194,15 @@ void IRAM_ATTR esp_dport_access_int_pause(void)
     portEXIT_CRITICAL_ISR(&g_dport_mux);
 }
 
+//Used in panic code: the enter_critical stuff may be messed up so we just stop everything without checking the mux.
+void IRAM_ATTR esp_dport_access_int_abort(void)
+{
+    dport_core_state[0] = DPORT_CORE_STATE_IDLE;
+#ifndef CONFIG_FREERTOS_UNICORE
+    dport_core_state[1] = DPORT_CORE_STATE_IDLE;
+#endif
+}
+
 void IRAM_ATTR esp_dport_access_int_resume(void)
 {
     portENTER_CRITICAL_ISR(&g_dport_mux);
