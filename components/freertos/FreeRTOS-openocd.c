@@ -10,6 +10,7 @@
  */
 
 #include "FreeRTOS.h"
+#include "esp_attr.h"
 #include "sdkconfig.h"
 
 #ifdef __GNUC__
@@ -19,5 +20,5 @@
 #endif
 
 #ifdef CONFIG_ESP32_DEBUG_OCDAWARE
-const int USED uxTopUsedPriority = configMAX_PRIORITIES - 1;
+const int USED DRAM_ATTR uxTopUsedPriority = configMAX_PRIORITIES - 1;
 #endif
