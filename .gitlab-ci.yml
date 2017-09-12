@@ -113,19 +113,15 @@ build_esp_idf_tests:
   <<: *build_template
   artifacts:
     paths:
-      - tools/unit-test-app/build/*.bin
-      - tools/unit-test-app/build/*.elf
-      - tools/unit-test-app/build/*.map
-      - tools/unit-test-app/build/download.config
-      - tools/unit-test-app/build/bootloader/*.bin
+      - tools/unit-test-app/output
       - components/idf_test/unit_test/TestCaseAll.yml
       - components/idf_test/unit_test/CIConfigs/*.yml
     expire_in: 6 mos
   script:
     - cd tools/unit-test-app
-    - make TESTS_ALL=1
-    # cut last line in case make V=0/1 is set by default
-    - make print_flash_cmd | tail -n 1 > build/download.config
+    - make help # make sure kconfig tools are built in single process
+    - make ut-clean-all-configs
+    - make ut-build-all-configs TESTS_ALL=1
     - python tools/UnitTestParser.py
 
 .build_examples_template: &build_examples_template

@@ -35,6 +35,8 @@ docs/man/
 tools/unit-test-app/sdkconfig
 tools/unit-test-app/sdkconfig.old
 tools/unit-test-app/build
+tools/unit-test-app/builds
+tools/unit-test-app/output
 
 # AWS IoT Examples require device-specific certs/keys
 examples/protocols/aws_iot/*/main/certs/*.pem.*
