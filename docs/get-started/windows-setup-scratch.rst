@@ -72,7 +72,7 @@ Alternative Setup: Just download a toolchain
 
 If you already have an MSYS2 install or want to do things differently, you can download just the toolchain here:
 
-https://dl.espressif.com/dl/xtensa-esp32-elf-win32-1.22.0-70-gfa0bad1-5.2.0.tar.gz
+https://dl.espressif.com/dl/xtensa-esp32-elf-win32-1.22.0-70-gfa0bad1-5.2.0.zip
 
 .. note::
 
