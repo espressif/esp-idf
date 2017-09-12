@@ -91,6 +91,8 @@ INPUT = \
     ../components/spi_flash/include/esp_spi_flash.h \
     ../components/spi_flash/include/esp_partition.h \
     ../components/bootloader_support/include/esp_flash_encrypt.h \
+    ## SPIFFS
+    ../components/spiffs/include/esp_spiffs.h \
     ## SD/MMC Card Host
     ## NOTE: for three lines below header_file.inc is not used
     ../components/sdmmc/include/sdmmc_cmd.h \
