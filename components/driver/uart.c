@@ -29,6 +29,9 @@
 #include "driver/uart.h"
 #include "driver/gpio.h"
 
+#define XOFF (char)0x13
+#define XON (char)0x11
+
 static const char* UART_TAG = "uart";
 #define UART_CHECK(a, str, ret_val) \
     if (!(a)) { \
@@ -195,6 +198,22 @@ esp_err_t uart_set_line_inverse(uart_port_t uart_num, uint32_t inverse_mask)
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
     CLEAR_PERI_REG_MASK(UART_CONF0_REG(uart_num), UART_LINE_INV_MASK);
     SET_PERI_REG_MASK(UART_CONF0_REG(uart_num), inverse_mask);
+    UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
+    return ESP_OK;
+}
+
+esp_err_t uart_set_sw_flow_ctrl(uart_port_t uart_num, bool enable,  uint8_t rx_thresh_xon,  uint8_t rx_thresh_xoff)
+{
+    UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
+    UART_CHECK((rx_thresh_xon < UART_FIFO_LEN), "rx flow xon thresh error", ESP_FAIL);
+    UART_CHECK((rx_thresh_xoff < UART_FIFO_LEN), "rx flow xon thresh error", ESP_FAIL);
+    UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
+    UART[uart_num]->flow_conf.sw_flow_con_en = enable? 1:0;
+    UART[uart_num]->flow_conf.xonoff_del = enable?1:0;
+    UART[uart_num]->swfc_conf.xon_threshold =  rx_thresh_xon;
+    UART[uart_num]->swfc_conf.xoff_threshold =  rx_thresh_xoff;
+    UART[uart_num]->swfc_conf.xon_char = XON;
+    UART[uart_num]->swfc_conf.xoff_char = XOFF;
     UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
     return ESP_OK;
 }
