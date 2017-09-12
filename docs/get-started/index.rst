@@ -207,7 +207,7 @@ Here are couple of tips on navigation and use of ``menuconfig``:
 
 .. note::
 
-    Most ESP32 development boards have a 40MHz crystal installed. However, some boards use a 26MHz crystal. If your board uses a 26MHz crystal, or you get garbage output from serial port after code upload, adjust the :ref:`CONFIG_ESP32_XTAL_FREQ` option in menuconfig.
+    Most ESP32 development boards have a 40MHz crystal installed. However, some boards use a 26MHz crystal. If your board uses a 26MHz crystal, or you get garbage output from serial port after code upload, adjust the :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` option in menuconfig.
 
 .. _get-started-build-flash:
 

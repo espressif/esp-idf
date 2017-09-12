@@ -1,0 +1,9 @@
+_build/inc/esp_a2dp_api.inc:26: WARNING: Invalid definition: Expected identifier in nested name. [error at 21]
+  union esp_a2d_mcc_t::@1  esp_a2d_mcc_t::cie
+  ---------------------^
+_build/inc/esp_bt_defs.inc:11: WARNING: Invalid definition: Expected identifier in nested name. [error at 21]
+  union esp_bt_uuid_t::@0  esp_bt_uuid_t::uuid
+  ---------------------^
+/builds/idf/esp-idf/docs/api-reference/storage/sdmmc.rst:24: WARNING: cpp:typeOrConcept targets a member (sdmmc_host_t::slot).
+/builds/idf/esp-idf/docs/api-reference/storage/sdmmc.rst:24: WARNING: cpp:typeOrConcept targets a member (sdmmc_host_t::slot).
+/builds/idf/esp-idf/docs/api-reference/storage/sdmmc.rst:24: WARNING: cpp:typeOrConcept targets a member (sdmmc_host_t::slot).

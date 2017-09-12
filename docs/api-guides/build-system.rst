@@ -358,7 +358,7 @@ Warning On Undefined Variables
 
 By default, the build process will print a warning if an undefined variable is referenced (like ``$(DOES_NOT_EXIST)``). This can be useful to find errors in variable names.
 
-If you don't want this behaviour, it can be disabled by disabling :ref:`CONFIG_MAKE_WARN_UNDEFINED_VARIABLES`.
+If you don't want this behaviour, it can be disabled in menuconfig's top level menu under `SDK tool configuration`.
 
 Note that this option doesn't trigger a warning if ``ifdef`` or ``ifndef`` are used in Makefiles.
 
