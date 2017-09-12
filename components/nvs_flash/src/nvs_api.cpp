@@ -402,6 +402,7 @@ static esp_err_t nvs_get_str_or_blob(nvs_handle handle, nvs::ItemType type, cons
         return ESP_ERR_NVS_INVALID_LENGTH;
     }
 
+    *length = dataSize;
     return entry.mStoragePtr->readItem(entry.mNsIndex, type, key, out_value, dataSize);
 }
 
