@@ -78,6 +78,7 @@ typedef enum {
     ESP_BT_CONTROLLER_STATUS_IDLE = 0,
     ESP_BT_CONTROLLER_STATUS_INITED,
     ESP_BT_CONTROLLER_STATUS_ENABLED,
+    ESP_BT_CONTROLLER_STATUS_SHUTDOWN,
     ESP_BT_CONTROLLER_STATUS_NUM,
 } esp_bt_controller_status_t;
 
@@ -153,14 +154,18 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg);
  *
  * This function should be called only once, after any other BT functions are called.
  * This function is not whole completed, esp_bt_controller_init cannot called after this function.
+ * After call this function, it will release all the .bss/.data and .etc memory to heap dynamically.
+ * The release memory about 64K bytes (if CONFIG_BT_DRAM_RELEASE=y, it's about 36K bytes)
  * @return  ESP_OK - success, other - failed
  */
 esp_err_t esp_bt_controller_deinit(void);
 
 /**
- * @brief Enable BT controller
+ * @brief Enable BT controller.
+ *               By a knowned issue, if the function already set mode, it can not set another mode dynamically.
+ *               If want to change mode type, should call esp_bt_controller_disable, then call esp_bt_controller_enable.
  * @param mode : the mode(BLE/BT/BTDM) to enable.
- *               Now only support BTDM.
+ *               If CONFIG_BT_DRAM_RELEASE=y, the param mode should only be ESP_BT_MODE_BLE.
  * @return       ESP_OK - success, other - failed
  */
 esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode);
@@ -168,7 +173,8 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode);
 /**
  * @brief  Disable BT controller
  * @param mode : the mode(BLE/BT/BTDM) to disable.
- *               Now only support BTDM.
+ *               the mode should be equal to which esp_bt_controller_enable set.
+ *               If not, the function will give warning, then use the correct mode to do disable.
  * @return       ESP_OK - success, other - failed
  */
 esp_err_t esp_bt_controller_disable(esp_bt_mode_t mode);

@@ -232,7 +232,7 @@ void app_main()
         return;
     }
 
-    if (esp_bt_controller_enable(ESP_BT_MODE_BTDM) != ESP_OK) {
+    if (esp_bt_controller_enable(ESP_BT_MODE_BLE) != ESP_OK) {
         ESP_LOGI(tag, "Bluetooth controller enable failed");
         return;
     }

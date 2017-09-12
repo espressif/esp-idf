@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "esp_heap_caps_init.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -30,8 +31,12 @@
 #include "esp_attr.h"
 #include "esp_phy_init.h"
 #include "bt.h"
+#include "esp_err.h"
+#include "esp_log.h"
 
 #if CONFIG_BT_ENABLED
+
+#define BTDM_LOG_TAG                        "BTDM_INIT"
 
 #define BTDM_INIT_PERIOD                    (5000)    /* ms */
 
@@ -48,6 +53,7 @@ extern int btdm_controller_init(uint32_t config_mask, esp_bt_controller_config_t
 extern int btdm_controller_deinit(void);
 extern int btdm_controller_enable(esp_bt_mode_t mode);
 extern int btdm_controller_disable(esp_bt_mode_t mode);
+extern uint8_t btdm_controller_get_mode(void);
 extern void btdm_rf_bb_init(void);
 
 /* VHCI function interface */
@@ -315,6 +321,24 @@ static uint32_t btdm_config_mask_load(void)
     return mask;
 }
 
+static void btdm_controller_release_mem(void)
+{
+    uint32_t bt_mem_start, bt_mem_end;
+#if CONFIG_BT_DRAM_RELEASE
+    bt_mem_start = 0x3ffb0000; bt_mem_end = 0x3ffb3000; //Reserve BT data region
+    ESP_ERROR_CHECK( heap_caps_add_region((intptr_t)bt_mem_start, (intptr_t)bt_mem_end));
+    bt_mem_start = 0x3ffb8000; bt_mem_end = 0x3ffbbb28; //Reserve BT data region
+    ESP_ERROR_CHECK( heap_caps_add_region((intptr_t)bt_mem_start, (intptr_t)bt_mem_end));
+    bt_mem_start = 0x3ffbdb28; bt_mem_end = 0x3ffc0000; //Reserve BT data region
+    ESP_ERROR_CHECK( heap_caps_add_region((intptr_t)bt_mem_start, (intptr_t)bt_mem_end));
+#else
+    bt_mem_start = 0x3ffb0000; bt_mem_end = 0x3ffc0000; //Reserve BT hardware shared memory & BT data region
+    ESP_ERROR_CHECK( heap_caps_add_region((intptr_t)bt_mem_start, (intptr_t)bt_mem_end));
+#endif
+    bt_mem_start = 0x3ffae2a0; bt_mem_end = 0x3ffaff10; //Reserve ROM data region
+    ESP_ERROR_CHECK( heap_caps_add_region((intptr_t)bt_mem_start, (intptr_t)bt_mem_end));
+}
+
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 {
     BaseType_t ret;
@@ -356,7 +380,9 @@ esp_err_t esp_bt_controller_deinit(void)
         return ESP_ERR_NO_MEM;
     }
 
-    btdm_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
+    btdm_controller_release_mem();
+
+    btdm_controller_status = ESP_BT_CONTROLLER_STATUS_SHUTDOWN;
     return ESP_OK;
 }
 
@@ -367,8 +393,13 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
     if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_INITED) {
         return ESP_ERR_INVALID_STATE;
     }
-
-    if (mode != ESP_BT_MODE_BTDM) {
+#if CONFIG_BT_DRAM_RELEASE
+    if (mode != ESP_BT_MODE_BLE) {
+#else
+    if (mode != ESP_BT_MODE_BLE
+            && mode != ESP_BT_MODE_CLASSIC_BT
+            && mode != ESP_BT_MODE_BTDM) {
+#endif
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -397,8 +428,10 @@ esp_err_t esp_bt_controller_disable(esp_bt_mode_t mode)
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (mode != ESP_BT_MODE_BTDM) {
-        return ESP_ERR_INVALID_ARG;
+    if (mode != btdm_controller_get_mode()) {
+        ESP_LOGW(BTDM_LOG_TAG, "The input mode should be equal %d, but ignore error, use %d instead of %d\n",
+                btdm_controller_get_mode(), btdm_controller_get_mode(), mode);
+        mode = btdm_controller_get_mode();
     }
 
     ret = btdm_controller_disable(mode);
@@ -435,5 +468,4 @@ esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type)
     return (esp_power_level_t)ble_txpwr_get(power_type);
 }
 
-
-#endif
+#endif /*  CONFIG_BT_ENABLED */
