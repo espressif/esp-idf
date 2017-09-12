@@ -177,6 +177,11 @@ enum {
 typedef struct mbedtls_cipher_base_t mbedtls_cipher_base_t;
 
 /**
+ * CMAC context (opaque struct).
+ */
+typedef struct mbedtls_cmac_context_t mbedtls_cmac_context_t;
+
+/**
  * Cipher information. Allows cipher functions to be called in a generic way.
  */
 typedef struct {
@@ -241,6 +246,11 @@ typedef struct {
 
     /** Cipher-specific context */
     void *cipher_ctx;
+
+#if defined(MBEDTLS_CMAC_C)
+    /** CMAC Specific context */
+    mbedtls_cmac_context_t *cmac_ctx;
+#endif
 } mbedtls_cipher_context_t;
 
 /**

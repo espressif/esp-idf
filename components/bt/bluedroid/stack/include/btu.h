@@ -28,7 +28,7 @@
 #define BTU_H
 
 #include "bt_target.h"
-#include "gki.h"
+#include "bt_defs.h"
 
 // HACK(zachoverflow): temporary dark magic
 #define BTU_POST_TO_TASK_NO_GOOD_HORRIBLE_HACK 0x1700 // didn't look used in bt_types...here goes nothing

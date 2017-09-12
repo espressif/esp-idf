@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /*
- * Log library — implementation notes.
+ * Log library implementation notes.
  *
  * Log library stores all tags provided to esp_log_level_set as a linked
  * list. See uncached_tag_entry_t structure.
@@ -53,6 +53,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include "esp_log.h"
+#include "rom/queue.h"
 
 //print number of bytes per line for esp_log_buffer_char and esp_log_buffer_hex
 #define BYTES_PER_LINE 16
@@ -76,14 +77,13 @@ typedef struct {
 } cached_tag_entry_t;
 
 typedef struct uncached_tag_entry_{
-    struct uncached_tag_entry_* next;
+    SLIST_ENTRY(uncached_tag_entry_) entries; 
     uint8_t level;  // esp_log_level_t as uint8_t
     char tag[0];    // beginning of a zero-terminated string
 } uncached_tag_entry_t;
 
 static esp_log_level_t s_log_default_level = ESP_LOG_VERBOSE;
-static uncached_tag_entry_t* s_log_tags_head = NULL;
-static uncached_tag_entry_t* s_log_tags_tail = NULL;
+static SLIST_HEAD(log_tags_head , uncached_tag_entry_) s_log_tags = SLIST_HEAD_INITIALIZER(s_log_tags);
 static cached_tag_entry_t s_log_cache[TAG_CACHE_SIZE];
 static uint32_t s_log_cache_max_generation = 0;
 static uint32_t s_log_cache_entry_count = 0;
@@ -122,41 +122,53 @@ void esp_log_level_set(const char* tag, esp_log_level_t level)
         return;
     }
 
-    // allocate new linked list entry and append it to the endo of the list
-    size_t entry_size = offsetof(uncached_tag_entry_t, tag) + strlen(tag) + 1;
-    uncached_tag_entry_t* new_entry = (uncached_tag_entry_t*) malloc(entry_size);
-    if (!new_entry) {
-        xSemaphoreGive(s_log_mutex);
-        return;
+    //searching exist tag
+    uncached_tag_entry_t *it = NULL;
+    SLIST_FOREACH( it, &s_log_tags, entries ) {
+        if ( strcmp(it->tag, tag)==0 ) {
+            //one tag in the linked list match, update the level
+            it->level = level;
+            //quit with it != NULL
+            break;
+        }
     }
-    new_entry->next = NULL;
-    new_entry->level = (uint8_t) level;
-    strcpy(new_entry->tag, tag);
-    if (s_log_tags_tail) {
-        s_log_tags_tail->next = new_entry;
+    //no exist tag, append new one
+    if ( it == NULL ) {
+        // allocate new linked list entry and append it to the head of the list
+        size_t entry_size = offsetof(uncached_tag_entry_t, tag) + strlen(tag) + 1;
+        uncached_tag_entry_t* new_entry = (uncached_tag_entry_t*) malloc(entry_size);
+        if (!new_entry) {
+            xSemaphoreGive(s_log_mutex);
+            return;
+        }
+        new_entry->level = (uint8_t) level;
+        strcpy(new_entry->tag, tag);
+        SLIST_INSERT_HEAD( &s_log_tags, new_entry, entries );
     }
-    s_log_tags_tail = new_entry;
-    if (!s_log_tags_head) {
-        s_log_tags_head = new_entry;
+
+    //search in the cache and update it if exist         
+    for (int i = 0; i < s_log_cache_entry_count; ++i) {
+#ifdef LOG_BUILTIN_CHECKS
+        assert(i == 0 || s_log_cache[(i - 1) / 2].generation < s_log_cache[i].generation);
+#endif
+        if (s_log_cache[i].tag == tag) {
+            s_log_cache[i].level = level;
+            break;
+        }
     }
     xSemaphoreGive(s_log_mutex);
 }
 
 void clear_log_level_list()
 {
-    for (uncached_tag_entry_t* it = s_log_tags_head; it != NULL; ) {
-        uncached_tag_entry_t* next = it->next;
-        free(it);
-        it = next;
+    while( !SLIST_EMPTY(&s_log_tags)) {
+        SLIST_REMOVE_HEAD(&s_log_tags, entries );
     }
-    s_log_tags_tail = NULL;
-    s_log_tags_head = NULL;
     s_log_cache_entry_count = 0;
     s_log_cache_max_generation = 0;
 #ifdef LOG_BUILTIN_CHECKS
     s_log_cache_misses = 0;
 #endif
-
 }
 
 void IRAM_ATTR esp_log_write(esp_log_level_t level,
@@ -253,7 +265,8 @@ static inline bool get_uncached_log_level(const char* tag, esp_log_level_t* leve
 {
     // Walk the linked list of all tags and see if given tag is present in the list.
     // This is slow because tags are compared as strings.
-    for (uncached_tag_entry_t* it = s_log_tags_head; it != NULL; it = it->next) {
+    uncached_tag_entry_t *it;
+    SLIST_FOREACH( it, &s_log_tags, entries ) {
         if (strcmp(tag, it->tag) == 0) {
             *level = it->level;
             return true;

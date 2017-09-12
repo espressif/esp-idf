@@ -11,7 +11,7 @@ GDB. The document is structured as follows:
 :ref:`jtag-debugging-selecting-jtag-adapter`
     What are the criteria and options to select JTAG adapter hardware.
 :ref:`jtag-debugging-setup-openocd`
-    Procedure to install OpenOCD using prebuild software packages for :doc:`Windows <setup-openocd-windows>`, :doc:`Linux <setup-openocd-linux>` and :doc:`MacOS <setup-openocd-macos>` operating systems.
+    Procedure to install OpenOCD using prebuilt software packages for :doc:`Windows <setup-openocd-windows>`, :doc:`Linux <setup-openocd-linux>` and :doc:`MacOS <setup-openocd-macos>` operating systems.
 :ref:`jtag-debugging-configuring-esp32-target`
     Configuration of OpenOCD software and set up JTAG adapter hardware that will make together a debugging target.
 :ref:`jtag-debugging-launching-debugger`
@@ -57,7 +57,7 @@ The key software and hardware to perform debugging of ESP32 with OpenOCD over JT
 
 Under "Application Loading and Monitoring" there is another software and hardware to compile, build and flash application to ESP32, as well as to provide means to monitor diagnostic messages from ESP32.
 
-Debugging using JTAG and application loading / monitoring is integrated under the `Eclipse <http://www.eclipse.org/>`_ environment, to provide quick and easy transition from writing, compiling and loading the code to debugging, back to writing the code, and so on. All the software is available for Windows, Linux and MacOS platforms.
+Debugging using JTAG and application loading / monitoring is integrated under the `Eclipse <https://www.eclipse.org/>`_ environment, to provide quick and easy transition from writing, compiling and loading the code to debugging, back to writing the code, and so on. All the software is available for Windows, Linux and MacOS platforms.
 
 If the :doc:`ESP32 WROVER KIT <../../hw-reference/modules-and-boards>` is used, then connection from PC to ESP32 is done effectively with a single USB cable thanks to FT2232H chip installed on WROVER, which provides two USB channels, one for JTAG and the second for UART connection.
 
@@ -285,6 +285,7 @@ This section provides collection of links to all tips and quirks referred to fro
 * :ref:`jtag-debugging-tip-code-options`
 * :ref:`jtag-debugging-tip-freertos-support`
 * :ref:`jtag-debugging-tip-code-flash-voltage`
+* :ref:`jtag-debugging-tip-optimize-jtag-speed`
 * :ref:`jtag-debugging-tip-debugger-startup-commands`
 * :ref:`jtag-debugging-tip-openocd-configure-target`
 * :ref:`jtag-debugging-tip-reset-by-debugger`

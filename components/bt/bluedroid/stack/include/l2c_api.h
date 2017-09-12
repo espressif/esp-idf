@@ -306,10 +306,10 @@ typedef struct {
 typedef struct {
     UINT8       preferred_mode;
     UINT8       allowed_modes;
-    UINT8       user_rx_pool_id;
-    UINT8       user_tx_pool_id;
-    UINT8       fcr_rx_pool_id;
-    UINT8       fcr_tx_pool_id;
+    UINT16      user_rx_buf_size;
+    UINT16      user_tx_buf_size;
+    UINT16      fcr_rx_buf_size;
+    UINT16      fcr_tx_buf_size;
 
 } tL2CAP_ERTM_INFO;
 

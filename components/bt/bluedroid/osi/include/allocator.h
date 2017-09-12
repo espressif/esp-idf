@@ -20,7 +20,7 @@
 #define _ALLOCATOR_H_
 
 #include <stddef.h>
-//#include <stdlib.h>
+#include <stdlib.h>
 #include "sdkconfig.h"
 
 typedef void *(*alloc_fn)(size_t size);
@@ -52,7 +52,7 @@ void osi_mem_dbg_show(void);
 ({                                                      \
     void *p;                                            \
                                                         \
-    p = calloc(1, (size));                              \
+    p = malloc((size));                                 \
     osi_mem_dbg_record(p, size, __func__, __LINE__);    \
     (void *)p;                                          \
 })
@@ -67,14 +67,15 @@ void osi_mem_dbg_show(void);
 })
 
 #define osi_free(ptr)                                   \
-({                                                      \
-    osi_mem_dbg_clean(ptr, __func__, __LINE__);         \
-    free((ptr));                                        \
-})
+do {                                                    \
+    void *tmp_point = (void *)(ptr);                    \
+    osi_mem_dbg_clean(tmp_point, __func__, __LINE__);   \
+    free(tmp_point);                                    \
+} while (0)
 
 #else
 
-#define osi_malloc(size)                  calloc(1, (size))
+#define osi_malloc(size)                  malloc((size))
 #define osi_calloc(size)                  calloc(1, (size))
 #define osi_free(p)                       free((p))
 

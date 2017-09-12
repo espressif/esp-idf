@@ -18,7 +18,7 @@
 
 /* mbedtls include */
 #include "mbedtls/platform.h"
-#include "mbedtls/net.h"
+#include "mbedtls/net_sockets.h"
 #include "mbedtls/debug.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"

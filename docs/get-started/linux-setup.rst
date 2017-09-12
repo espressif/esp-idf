@@ -46,11 +46,11 @@ ESP32 toolchain for Linux is available for download from Espressif website:
 
     To use it, you will need to update your ``PATH`` environment variable in ``~/.profile`` file. To make ``xtensa-esp32-elf`` available for all terminal sessions, add the following line to your ``~/.profile`` file::
 
-        export PATH=$PATH:$HOME/esp/xtensa-esp32-elf/bin
+        export PATH="$PATH:$HOME/esp/xtensa-esp32-elf/bin"
 
     Alternatively, you may create an alias for the above command. This way you can get the toolchain only when you need it. To do this, add different line to your ``~/.profile`` file::
 
-        alias get_esp32="export PATH=$PATH:$HOME/esp/xtensa-esp32-elf/bin"
+        alias get_esp32='export PATH="$PATH:$HOME/esp/xtensa-esp32-elf/bin"'
 
     Then when you need the toolchain you can type ``get_esp32`` on the command line and the toolchain will be added to your ``PATH``.
 

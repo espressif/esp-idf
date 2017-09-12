@@ -131,8 +131,8 @@ static void spi_test(spi_device_handle_t handle, int num_bytes) {
     t.length=num_bytes*8;
     t.tx_buffer=sendbuf;
     t.rx_buffer=recvbuf;
-    t.address=0xA00000000000000FL;
-    t.command=0x55;
+    t.addr=0xA00000000000000FL;
+    t.cmd=0x55;
 
     printf("Transmitting %d bytes...\n", num_bytes);
     ret=spi_device_transmit(handle, &t);
@@ -317,6 +317,92 @@ TEST_CASE("SPI Master no response when switch from host1 (HSPI) to host2 (VSPI)"
 	assert(spi_device_transmit(spi, &transaction) == ESP_OK);
 	// test case success when see this.
 	printf("after second xmit\n");
+}
+
+IRAM_ATTR  static uint32_t data_iram[320];
+DRAM_ATTR  static uint32_t data_dram[320];
+//force to place in code area.
+static const uint32_t data_drom[320] = {0};
+
+#define PIN_NUM_MISO 25
+#define PIN_NUM_MOSI 23
+#define PIN_NUM_CLK  19
+#define PIN_NUM_CS   22
+
+#define PIN_NUM_DC   21
+#define PIN_NUM_RST  18
+#define PIN_NUM_BCKL 5
+
+TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
+{
+    uint32_t data_rxdram[320];
+
+    esp_err_t ret;
+    spi_device_handle_t spi;
+    spi_bus_config_t buscfg={
+        .miso_io_num=PIN_NUM_MISO,
+        .mosi_io_num=PIN_NUM_MOSI,
+        .sclk_io_num=PIN_NUM_CLK,
+        .quadwp_io_num=-1,
+        .quadhd_io_num=-1
+    };
+    spi_device_interface_config_t devcfg={
+        .clock_speed_hz=10000000,               //Clock out at 10 MHz
+        .mode=0,                                //SPI mode 0
+        .spics_io_num=PIN_NUM_CS,               //CS pin
+        .queue_size=7,                          //We want to be able to queue 7 transactions at a time
+        .pre_cb=NULL,  //Specify pre-transfer callback to handle D/C line
+    };
+    //Initialize the SPI bus
+    ret=spi_bus_initialize(HSPI_HOST, &buscfg, 1);
+    assert(ret==ESP_OK);
+    //Attach the LCD to the SPI bus
+    ret=spi_bus_add_device(HSPI_HOST, &devcfg, &spi);
+    assert(ret==ESP_OK);
 
 
+    static spi_transaction_t trans[6];
+    int x;
+
+    printf("iram: %p, dram: %p, drom: %p\n", data_iram, data_dram, data_drom);
+
+    memset(trans, 0, 6*sizeof(spi_transaction_t));
+
+    trans[0].length = 320*8,
+    trans[0].tx_buffer = data_iram;
+    trans[0].rx_buffer = data_rxdram;
+
+    trans[1].length = 320*8,
+    trans[1].tx_buffer = data_dram;
+    trans[1].rx_buffer = data_rxdram;
+
+    trans[2].length = 320*8,
+    trans[2].tx_buffer = data_drom;
+    trans[2].rx_buffer = data_rxdram;
+
+    trans[3].length = 320*8,
+    trans[3].tx_buffer = data_drom;
+    trans[3].rx_buffer = data_iram;
+
+    trans[4].length = 320*8,
+    trans[4].rxlength = 8*4;
+    trans[4].tx_buffer = data_drom;
+    trans[4].flags = SPI_TRANS_USE_RXDATA;
+    
+    trans[5].length = 8*4;
+    trans[5].flags = SPI_TRANS_USE_RXDATA | SPI_TRANS_USE_TXDATA;
+
+
+    //Queue all transactions.
+    for (x=0; x<6; x++) {
+        ret=spi_device_queue_trans(spi,&trans[x], portMAX_DELAY);
+        assert(ret==ESP_OK);
+    }
+
+    for (x=0; x<6; x++) {
+        spi_transaction_t* ptr;
+        ret=spi_device_get_trans_result(spi,&ptr, portMAX_DELAY);
+        assert(ret==ESP_OK);
+        assert(ptr = trans+x);
+    }
 }

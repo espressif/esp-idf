@@ -109,15 +109,6 @@ build_ssc:
     - git checkout ${CI_COMMIT_REF_NAME} || echo "Using SSC default branch..."
     - MAKEFLAGS= ./gen_misc_ng.sh
 
-build_at:
-  <<: *build_template
-  script:
-    - git clone $GITLAB_SSH_SERVER/application/esp-at.git
-    - cd esp-at
-    - git checkout ${CI_COMMIT_REF_NAME} || echo "Using esp-at default branch..."
-    - make defconfig
-    - make
-
 build_esp_idf_tests:
   <<: *build_template
   artifacts:
@@ -151,6 +142,7 @@ build_esp_idf_tests:
   script:
     # it's not possible to build 100% out-of-tree and have the "artifacts"
     # mechanism work, but this is the next best thing
+    - rm -rf build_examples
     - mkdir build_examples
     - cd build_examples
     # build some of examples
@@ -169,6 +161,12 @@ build_examples_03:
   <<: *build_examples_template
 
 build_examples_04:
+  <<: *build_examples_template
+
+build_examples_05:
+  <<: *build_examples_template
+
+build_examples_06:
   <<: *build_examples_template
 
 build_docs:
@@ -237,8 +235,11 @@ test_build_system:
     - build_test
   dependencies: []
   script:
-    - ./tools/ci/test_configure_ci_environment.sh
-    - ./tools/ci/test_build_system.sh
+    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
+    - rm -rf test_build_system
+    - mkdir test_build_system
+    - cd test_build_system
+    - ${IDF_PATH}/tools/ci/test_build_system.sh
 
 test_report:
   stage: test_report
@@ -520,6 +521,24 @@ UT_001_03:
     - UT_T1_1
 
 UT_001_04:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+UT_001_05:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_SDMODE
+
+UT_001_06:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_SPIMODE
+
+UT_001_07:
   <<: *unit_test_template
   tags:
     - ESP32_IDF

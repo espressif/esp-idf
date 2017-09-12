@@ -11,9 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
+#ifndef __BTC_BLE_STORAGE_H__
+#define __BTC_BLE_STORAGE_H__
 #include "bt_types.h"
 #include "bt_target.h"
+#include "esp_gap_ble_api.h"
 
 #if (SMP_INCLUDED == TRUE)
 #define BTC_LE_LOCAL_KEY_IR       (1<<0)
@@ -77,8 +79,11 @@ typedef struct
 
 extern btc_dm_pairing_cb_t pairing_cb;
 extern btc_dm_local_key_cb_t ble_local_key_cb;
+extern btc_bonded_devices_t bonded_devices;
 
 bt_status_t btc_storage_load_bonded_ble_devices(void);
+
+bt_status_t btc_get_bonded_ble_devices_list(esp_ble_bond_dev_t *bond_dev);
 
 bt_status_t btc_in_fetch_bonded_ble_devices(int add);
 
@@ -102,13 +107,15 @@ bt_status_t btc_storage_get_ble_bonding_key(bt_bdaddr_t *remote_bd_addr,
                                                                 char *key_value,
                                                                 int key_length);
 
-bool btc_storage_compare_address_key_value(uint8_t key_type, void *key_value, int key_length);
-
+bool btc_storage_compare_address_key_value(bt_bdaddr_t *remote_bd_addr,
+                                                   uint8_t key_type, void *key_value, int key_length);
 bt_status_t btc_storage_add_ble_local_key(char *key,
                                                                               uint8_t key_type,
                                                                               uint8_t key_length);
 
 bt_status_t btc_storage_remove_ble_bonding_keys(bt_bdaddr_t *remote_bd_addr);
+
+bt_status_t btc_storage_clear_bond_devices(void);
 
 bt_status_t btc_storage_remove_ble_local_keys(void);
 
@@ -119,6 +126,8 @@ bt_status_t btc_storage_get_ble_local_key(uint8_t key_type,
 bt_status_t btc_storage_get_remote_addr_type(bt_bdaddr_t *remote_bd_addr,
                                                                                      int *addr_type);
 
+int btc_storage_get_num_ble_bond_devices(void);
+
 bt_status_t btc_storage_set_remote_addr_type(bt_bdaddr_t *remote_bd_addr,
                                                                                      uint8_t addr_type);
 
@@ -127,3 +136,4 @@ void btc_dm_load_ble_local_keys(void);
 void btc_dm_get_ble_local_keys(tBTA_DM_BLE_LOCAL_KEY_MASK *p_key_mask, BT_OCTET16 er,
                                                             tBTA_BLE_LOCAL_ID_KEYS *p_id_keys);
 #endif  ///SMP_INCLUDED == TRUE
+#endif  ///__BTC_BLE_STORAGE_H__

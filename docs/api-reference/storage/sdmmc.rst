@@ -106,6 +106,11 @@ SD SPI driver is represented using an ``sdmmc_host_t`` structure initialized usi
 
 SD SPI driver APIs are very similar to SDMMC host APIs. As with the SDMMC host driver, only ``sdspi_host_init``, ``sdspi_host_init_slot``, and ``sdspi_host_deinit`` functions are normally used by the applications. Other functions are called by the protocol level driver via function pointers in ``sdmmc_host_t`` structure.
 
+.. note:
+	
+	SD over SPI does not support speeds above SDMMC_FREQ_DEFAULT due to a limitation of SPI driver.
+
+
 .. doxygenfunction:: sdspi_host_init
 
 .. doxygendefine:: SDSPI_HOST_DEFAULT

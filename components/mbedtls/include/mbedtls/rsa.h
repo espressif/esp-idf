@@ -99,7 +99,7 @@ typedef struct
     mbedtls_mpi Vf;                     /*!<  cached un-blinding value  */
 
     int padding;                /*!<  MBEDTLS_RSA_PKCS_V15 for 1.5 padding and
-                                      RSA_PKCS_v21 for OAEP/PSS         */
+                                      MBEDTLS_RSA_PKCS_v21 for OAEP/PSS         */
     int hash_id;                /*!<  Hash identifier of mbedtls_md_type_t as
                                       specified in the mbedtls_md.h header file
                                       for the EME-OAEP and EMSA-PSS
@@ -206,7 +206,7 @@ int mbedtls_rsa_check_pub_priv( const mbedtls_rsa_context *pub, const mbedtls_rs
  * \return         0 if successful, or an MBEDTLS_ERR_RSA_XXX error code
  *
  * \note           This function does NOT take care of message
- *                 padding. Also, be sure to set input[0] = 0 or assure that
+ *                 padding. Also, be sure to set input[0] = 0 or ensure that
  *                 input is smaller than N.
  *
  * \note           The input and output buffers must be large
@@ -329,9 +329,15 @@ int mbedtls_rsa_rsaes_oaep_encrypt( mbedtls_rsa_context *ctx,
  *
  * \return         0 if successful, or an MBEDTLS_ERR_RSA_XXX error code
  *
- * \note           The output buffer must be as large as the size
- *                 of ctx->N (eg. 128 bytes if RSA-1024 is used) otherwise
- *                 an error is thrown.
+ * \note           The output buffer length \c output_max_len should be
+ *                 as large as the size ctx->len of ctx->N (eg. 128 bytes
+ *                 if RSA-1024 is used) to be able to hold an arbitrary
+ *                 decrypted message. If it is not large enough to hold
+ *                 the decryption of the particular ciphertext provided, 
+ *                 the function will return MBEDTLS_ERR_RSA_OUTPUT_TOO_LARGE.
+ *
+ * \note           The input buffer must be as large as the size
+ *                 of ctx->N (eg. 128 bytes if RSA-1024 is used).
  */
 int mbedtls_rsa_pkcs1_decrypt( mbedtls_rsa_context *ctx,
                        int (*f_rng)(void *, unsigned char *, size_t),
@@ -355,9 +361,15 @@ int mbedtls_rsa_pkcs1_decrypt( mbedtls_rsa_context *ctx,
  *
  * \return         0 if successful, or an MBEDTLS_ERR_RSA_XXX error code
  *
- * \note           The output buffer must be as large as the size
- *                 of ctx->N (eg. 128 bytes if RSA-1024 is used) otherwise
- *                 an error is thrown.
+ * \note           The output buffer length \c output_max_len should be
+ *                 as large as the size ctx->len of ctx->N (eg. 128 bytes
+ *                 if RSA-1024 is used) to be able to hold an arbitrary
+ *                 decrypted message. If it is not large enough to hold
+ *                 the decryption of the particular ciphertext provided, 
+ *                 the function will return MBEDTLS_ERR_RSA_OUTPUT_TOO_LARGE.
+ *
+ * \note           The input buffer must be as large as the size
+ *                 of ctx->N (eg. 128 bytes if RSA-1024 is used).
  */
 int mbedtls_rsa_rsaes_pkcs1_v15_decrypt( mbedtls_rsa_context *ctx,
                                  int (*f_rng)(void *, unsigned char *, size_t),
@@ -383,9 +395,15 @@ int mbedtls_rsa_rsaes_pkcs1_v15_decrypt( mbedtls_rsa_context *ctx,
  *
  * \return         0 if successful, or an MBEDTLS_ERR_RSA_XXX error code
  *
- * \note           The output buffer must be as large as the size
- *                 of ctx->N (eg. 128 bytes if RSA-1024 is used) otherwise
- *                 an error is thrown.
+ * \note           The output buffer length \c output_max_len should be
+ *                 as large as the size ctx->len of ctx->N (eg. 128 bytes
+ *                 if RSA-1024 is used) to be able to hold an arbitrary
+ *                 decrypted message. If it is not large enough to hold
+ *                 the decryption of the particular ciphertext provided, 
+ *                 the function will return MBEDTLS_ERR_RSA_OUTPUT_TOO_LARGE.
+ *
+ * \note           The input buffer must be as large as the size 
+ *                 of ctx->N (eg. 128 bytes if RSA-1024 is used).
  */
 int mbedtls_rsa_rsaes_oaep_decrypt( mbedtls_rsa_context *ctx,
                             int (*f_rng)(void *, unsigned char *, size_t),

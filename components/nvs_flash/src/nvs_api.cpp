@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <vector>
 #include "nvs.hpp"
 #include "nvs_flash.h"
 #include "nvs_storage.hpp"
@@ -30,19 +31,22 @@ static const char* TAG = "nvs";
 
 class HandleEntry : public intrusive_list_node<HandleEntry>
 {
+    static uint32_t s_nvs_next_handle;
 public:
     HandleEntry() {}
 
-    HandleEntry(nvs_handle handle, bool readOnly, uint8_t nsIndex) :
-        mHandle(handle),
+    HandleEntry(bool readOnly, uint8_t nsIndex, nvs::Storage* StoragePtr) :
+        mHandle(++s_nvs_next_handle),  // Begin the handle value with 1
         mReadOnly(readOnly),
-        mNsIndex(nsIndex)
+        mNsIndex(nsIndex),
+        mStoragePtr(StoragePtr)
     {
     }
 
     nvs_handle mHandle;
     uint8_t mReadOnly;
     uint8_t mNsIndex;
+    nvs::Storage* mStoragePtr;
 };
 
 #ifdef ESP_PLATFORM
@@ -53,49 +57,90 @@ using namespace std;
 using namespace nvs;
 
 static intrusive_list<HandleEntry> s_nvs_handles;
-static uint32_t s_nvs_next_handle = 1;
-static nvs::Storage s_nvs_storage;
+uint32_t HandleEntry::s_nvs_next_handle;
+static intrusive_list<nvs::Storage> s_nvs_storage_list;
 
-extern "C" void nvs_dump()
+static nvs::Storage* lookup_storage_from_name(const char *name)
 {
-    Lock lock;
-    s_nvs_storage.debugDump();
+    auto it = find_if(begin(s_nvs_storage_list), end(s_nvs_storage_list), [=](Storage& e) -> bool {
+        return (strcmp(e.getPartName(), name) == 0);
+    });
+
+    if (it == end(s_nvs_storage_list)) {
+        return NULL;
+    }
+    return it;
 }
 
-extern "C" esp_err_t nvs_flash_init_custom(uint32_t baseSector, uint32_t sectorCount)
+extern "C" void nvs_dump(const char *partName)
 {
-    ESP_LOGD(TAG, "nvs_flash_init_custom start=%d count=%d", baseSector, sectorCount);
-    s_nvs_handles.clear();
-    return s_nvs_storage.init(baseSector, sectorCount);
+    Lock lock;
+    nvs::Storage* pStorage;
+
+    pStorage = lookup_storage_from_name(partName);
+    if (pStorage == NULL) {
+        return;
+    }
+
+    pStorage->debugDump();
+    return;
+}
+
+extern "C" esp_err_t nvs_flash_init_custom(const char *partName, uint32_t baseSector, uint32_t sectorCount)
+{
+    ESP_LOGD(TAG, "nvs_flash_init_custom partition=%s start=%d count=%d", partName, baseSector, sectorCount);
+    nvs::Storage* mStorage;
+
+    mStorage = lookup_storage_from_name(partName);
+    if (mStorage == NULL) {
+        mStorage = new nvs::Storage((const char *)partName);
+        s_nvs_storage_list.push_back(mStorage);
+    }
+
+    return mStorage->init(baseSector, sectorCount);
 }
 
 #ifdef ESP_PLATFORM
-extern "C" esp_err_t nvs_flash_init(void)
+extern "C" esp_err_t nvs_flash_init_partition(const char *part_name)
 {
     Lock::init();
     Lock lock;
-    if (s_nvs_storage.isValid()) {
+    nvs::Storage* mStorage;
+
+    mStorage = lookup_storage_from_name(NVS_DEFAULT_PART_NAME);
+    if (mStorage) {
         return ESP_OK;
     }
+
     const esp_partition_t* partition = esp_partition_find_first(
-            ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
+            ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, part_name);
     if (partition == NULL) {
         return ESP_ERR_NOT_FOUND;
     }
 
-    return nvs_flash_init_custom(partition->address / SPI_FLASH_SEC_SIZE,
+    return nvs_flash_init_custom(part_name, partition->address / SPI_FLASH_SEC_SIZE,
             partition->size / SPI_FLASH_SEC_SIZE);
 }
 
-extern "C" esp_err_t nvs_flash_erase()
+extern "C" esp_err_t nvs_flash_init(void)
+{
+    return nvs_flash_init_partition(NVS_DEFAULT_PART_NAME);
+}
+
+extern "C" esp_err_t nvs_flash_erase_partition(const char *part_name)
 {
     const esp_partition_t* partition = esp_partition_find_first(
-            ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
+            ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, part_name);
     if (partition == NULL) {
         return ESP_ERR_NOT_FOUND;
     }
 
     return esp_partition_erase_range(partition, 0, partition->size);
+}
+
+extern "C" esp_err_t nvs_flash_erase()
+{
+    return nvs_flash_erase_partition(NVS_DEFAULT_PART_NAME);
 }
 #endif
 
@@ -111,22 +156,38 @@ static esp_err_t nvs_find_ns_handle(nvs_handle handle, HandleEntry& entry)
     return ESP_OK;
 }
 
-extern "C" esp_err_t nvs_open(const char* name, nvs_open_mode open_mode, nvs_handle *out_handle)
+extern "C" esp_err_t nvs_open_from_partition(const char *part_name, const char* name, nvs_open_mode open_mode, nvs_handle *out_handle)
 {
     Lock lock;
     ESP_LOGD(TAG, "%s %s %d", __func__, name, open_mode);
     uint8_t nsIndex;
-    esp_err_t err = s_nvs_storage.createOrOpenNamespace(name, open_mode == NVS_READWRITE, nsIndex);
+    nvs::Storage* sHandle;
+
+    sHandle = lookup_storage_from_name(part_name);
+    if (sHandle == NULL) {
+        return ESP_ERR_NVS_PART_NOT_FOUND;
+    }
+
+    esp_err_t err = sHandle->createOrOpenNamespace(name, open_mode == NVS_READWRITE, nsIndex);
     if (err != ESP_OK) {
         return err;
     }
 
-    uint32_t handle = s_nvs_next_handle;
-    ++s_nvs_next_handle;
-    *out_handle = handle;
+    HandleEntry *handle_entry = new HandleEntry(open_mode==NVS_READONLY, nsIndex, sHandle);
+    s_nvs_handles.push_back(handle_entry);
 
-    s_nvs_handles.push_back(new HandleEntry(handle, open_mode==NVS_READONLY, nsIndex));
+    *out_handle = handle_entry->mHandle;
+
     return ESP_OK;
+}
+
+extern "C" esp_err_t nvs_open(const char* name, nvs_open_mode open_mode, nvs_handle *out_handle)
+{
+    if (s_nvs_storage_list.size() == 0) {
+        return ESP_ERR_NVS_NOT_INITIALIZED;
+    }
+
+    return nvs_open_from_partition(NVS_DEFAULT_PART_NAME, name, open_mode, out_handle);
 }
 
 extern "C" void nvs_close(nvs_handle handle)
@@ -155,7 +216,7 @@ extern "C" esp_err_t nvs_erase_key(nvs_handle handle, const char* key)
     if (entry.mReadOnly) {
         return ESP_ERR_NVS_READ_ONLY;
     }
-    return s_nvs_storage.eraseItem(entry.mNsIndex, key);
+    return entry.mStoragePtr->eraseItem(entry.mNsIndex, key);
 }
 
 extern "C" esp_err_t nvs_erase_all(nvs_handle handle)
@@ -170,7 +231,7 @@ extern "C" esp_err_t nvs_erase_all(nvs_handle handle)
     if (entry.mReadOnly) {
         return ESP_ERR_NVS_READ_ONLY;
     }
-    return s_nvs_storage.eraseNamespace(entry.mNsIndex);
+    return entry.mStoragePtr->eraseNamespace(entry.mNsIndex);
 }
 
 template<typename T>
@@ -186,7 +247,7 @@ static esp_err_t nvs_set(nvs_handle handle, const char* key, T value)
     if (entry.mReadOnly) {
         return ESP_ERR_NVS_READ_ONLY;
     }
-    return s_nvs_storage.writeItem(entry.mNsIndex, key, value);
+    return entry.mStoragePtr->writeItem(entry.mNsIndex, key, value);
 }
 
 extern "C" esp_err_t nvs_set_i8  (nvs_handle handle, const char* key, int8_t value)
@@ -246,7 +307,7 @@ extern "C" esp_err_t nvs_set_str(nvs_handle handle, const char* key, const char*
     if (err != ESP_OK) {
         return err;
     }
-    return s_nvs_storage.writeItem(entry.mNsIndex, nvs::ItemType::SZ, key, value, strlen(value) + 1);
+    return entry.mStoragePtr->writeItem(entry.mNsIndex, nvs::ItemType::SZ, key, value, strlen(value) + 1);
 }
 
 extern "C" esp_err_t nvs_set_blob(nvs_handle handle, const char* key, const void* value, size_t length)
@@ -258,7 +319,7 @@ extern "C" esp_err_t nvs_set_blob(nvs_handle handle, const char* key, const void
     if (err != ESP_OK) {
         return err;
     }
-    return s_nvs_storage.writeItem(entry.mNsIndex, nvs::ItemType::BLOB, key, value, length);
+    return entry.mStoragePtr->writeItem(entry.mNsIndex, nvs::ItemType::BLOB, key, value, length);
 }
 
 
@@ -272,7 +333,7 @@ static esp_err_t nvs_get(nvs_handle handle, const char* key, T* out_value)
     if (err != ESP_OK) {
         return err;
     }
-    return s_nvs_storage.readItem(entry.mNsIndex, key, *out_value);
+    return entry.mStoragePtr->readItem(entry.mNsIndex, key, *out_value);
 }
 
 extern "C" esp_err_t nvs_get_i8  (nvs_handle handle, const char* key, int8_t* out_value)
@@ -326,7 +387,7 @@ static esp_err_t nvs_get_str_or_blob(nvs_handle handle, nvs::ItemType type, cons
     }
 
     size_t dataSize;
-    err = s_nvs_storage.getItemDataSize(entry.mNsIndex, type, key, dataSize);
+    err = entry.mStoragePtr->getItemDataSize(entry.mNsIndex, type, key, dataSize);
     if (err != ESP_OK) {
         return err;
     }
@@ -341,7 +402,7 @@ static esp_err_t nvs_get_str_or_blob(nvs_handle handle, nvs::ItemType type, cons
         return ESP_ERR_NVS_INVALID_LENGTH;
     }
 
-    return s_nvs_storage.readItem(entry.mNsIndex, type, key, out_value, dataSize);
+    return entry.mStoragePtr->readItem(entry.mNsIndex, type, key, out_value, dataSize);
 }
 
 extern "C" esp_err_t nvs_get_str(nvs_handle handle, const char* key, char* out_value, size_t* length)

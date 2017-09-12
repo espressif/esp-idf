@@ -73,7 +73,7 @@ typedef struct {
 
 /* union of all data types */
 typedef union {
-    /* GKI event buffer header */
+    /* event buffer header */
     BT_HDR                                 hdr;
     tBTA_SDP_API_ENABLE                    enable;
     tBTA_SDP_API_SEARCH                    get_search;

@@ -24,6 +24,7 @@
 #include "rom/gpio.h"
 #include "driver/gpio.h"
 #include "driver/sdmmc_host.h"
+#include "driver/periph_ctrl.h"
 #include "sdmmc_private.h"
 
 #define SDMMC_EVENT_QUEUE_LENGTH 32
@@ -236,6 +237,8 @@ esp_err_t sdmmc_host_init()
         return ESP_ERR_INVALID_STATE;
     }
 
+    periph_module_enable(PERIPH_SDMMC_MODULE);
+
     // Enable clock to peripheral
     sdmmc_host_input_clk_enable();
 
@@ -367,6 +370,7 @@ esp_err_t sdmmc_host_deinit()
     s_event_queue = NULL;
     sdmmc_host_input_clk_disable();
     sdmmc_host_transaction_handler_deinit();
+    periph_module_disable(PERIPH_SDMMC_MODULE);
     return ESP_OK;
 }
 

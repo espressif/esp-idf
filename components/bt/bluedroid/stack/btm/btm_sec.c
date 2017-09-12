@@ -33,8 +33,8 @@
 #include "btu.h"
 #include "btm_int.h"
 #include "l2c_int.h"
-//#include "bt_utils.h"
-//#include "osi/include/log.h"
+#include "fixed_queue.h"
+#include "alarm.h"
 
 #if (BT_USE_TRACES == TRUE && BT_TRACE_VERBOSE == FALSE)
 /* needed for sprintf() */
@@ -2759,7 +2759,7 @@ void btm_create_conn_cancel_complete (UINT8 *p)
 void btm_sec_check_pending_reqs (void)
 {
     tBTM_SEC_QUEUE_ENTRY    *p_e;
-    BUFFER_Q                bq;
+    fixed_queue_t *bq;
 
     if (btm_cb.pairing_state == BTM_PAIR_STATE_IDLE) {
         /* First, resubmit L2CAP requests */
@@ -2773,9 +2773,9 @@ void btm_sec_check_pending_reqs (void)
         /* Now, re-submit anything in the mux queue */
         bq = btm_cb.sec_pending_q;
 
-        GKI_init_q (&btm_cb.sec_pending_q);
+        btm_cb.sec_pending_q = fixed_queue_new(SIZE_MAX);
 
-        while ((p_e = (tBTM_SEC_QUEUE_ENTRY *)GKI_dequeue (&bq)) != NULL) {
+        while ((p_e = (tBTM_SEC_QUEUE_ENTRY *)fixed_queue_try_dequeue(bq)) != NULL) {
             /* Check that the ACL is still up before starting security procedures */
             if (btm_bda_to_acl(p_e->bd_addr, p_e->transport) != NULL) {
                 if (p_e->psm != 0) {
@@ -2792,7 +2792,7 @@ void btm_sec_check_pending_reqs (void)
                 }
             }
 
-            GKI_freebuf (p_e);
+            osi_free (p_e);
         }
     }
 }
@@ -3787,11 +3787,13 @@ static void btm_sec_auth_collision (UINT16 handle)
     tBTM_SEC_DEV_REC *p_dev_rec;
 
     if (!btm_cb.collision_start_time) {
-        btm_cb.collision_start_time = GKI_get_os_tick_count();
+        btm_cb.collision_start_time = osi_time_get_os_boottime_ms();
     }
 
-    if ((GKI_get_os_tick_count() - btm_cb.collision_start_time) < btm_cb.max_collision_delay) {
-        if (handle == BTM_SEC_INVALID_HANDLE) {
+    if ((osi_time_get_os_boottime_ms() - btm_cb.collision_start_time) < btm_cb.max_collision_delay)
+    {
+        if (handle == BTM_SEC_INVALID_HANDLE)
+        {
             if ((p_dev_rec = btm_sec_find_dev_by_sec_state (BTM_SEC_STATE_AUTHENTICATING)) == NULL) {
                 p_dev_rec = btm_sec_find_dev_by_sec_state (BTM_SEC_STATE_ENCRYPTING);
             }
@@ -5759,7 +5761,7 @@ static BOOLEAN btm_sec_queue_mx_request (BD_ADDR bd_addr,  UINT16 psm,  BOOLEAN 
         UINT32 mx_proto_id, UINT32 mx_chan_id,
         tBTM_SEC_CALLBACK *p_callback, void *p_ref_data)
 {
-    tBTM_SEC_QUEUE_ENTRY *p_e = (tBTM_SEC_QUEUE_ENTRY *)GKI_getbuf (sizeof(tBTM_SEC_QUEUE_ENTRY));
+    tBTM_SEC_QUEUE_ENTRY *p_e = (tBTM_SEC_QUEUE_ENTRY *)osi_malloc (sizeof(tBTM_SEC_QUEUE_ENTRY));
 
     if (p_e) {
         p_e->psm            = psm;
@@ -5775,7 +5777,7 @@ static BOOLEAN btm_sec_queue_mx_request (BD_ADDR bd_addr,  UINT16 psm,  BOOLEAN 
         BTM_TRACE_EVENT ("%s() PSM: 0x%04x  Is_Orig: %u  mx_proto_id: %u  mx_chan_id: %u\n",
                          __func__, psm, is_orig, mx_proto_id, mx_chan_id);
 
-        GKI_enqueue (&btm_cb.sec_pending_q, p_e);
+    fixed_queue_enqueue(btm_cb.sec_pending_q, p_e);
 
         return (TRUE);
     }
@@ -5860,7 +5862,7 @@ static BOOLEAN btm_sec_queue_encrypt_request (BD_ADDR bd_addr, tBT_TRANSPORT tra
         tBTM_SEC_CALLBACK *p_callback, void *p_ref_data)
 {
     tBTM_SEC_QUEUE_ENTRY  *p_e;
-    p_e = (tBTM_SEC_QUEUE_ENTRY *)GKI_getbuf(sizeof(tBTM_SEC_QUEUE_ENTRY) + 1);
+    p_e = (tBTM_SEC_QUEUE_ENTRY *)osi_malloc(sizeof(tBTM_SEC_QUEUE_ENTRY) + 1);
 
     if (p_e) {
         p_e->psm  = 0;  /* if PSM 0, encryption request */
@@ -5869,7 +5871,7 @@ static BOOLEAN btm_sec_queue_encrypt_request (BD_ADDR bd_addr, tBT_TRANSPORT tra
         *(UINT8 *)p_e->p_ref_data = *(UINT8 *)(p_ref_data);
         p_e->transport  = transport;
         memcpy(p_e->bd_addr, bd_addr, BD_ADDR_LEN);
-        GKI_enqueue(&btm_cb.sec_pending_q, p_e);
+        fixed_queue_enqueue(btm_cb.sec_pending_q, p_e);
         return TRUE;
     }
 
@@ -5950,16 +5952,18 @@ static BOOLEAN btm_sec_is_serv_level0(UINT16 psm)
 static void btm_sec_check_pending_enc_req (tBTM_SEC_DEV_REC  *p_dev_rec, tBT_TRANSPORT transport,
         UINT8 encr_enable)
 {
-    tBTM_SEC_QUEUE_ENTRY    *p_e;
-    BUFFER_Q                *bq = &btm_cb.sec_pending_q;
-    UINT8                   res = encr_enable ? BTM_SUCCESS : BTM_ERR_PROCESSING;
+    if (fixed_queue_is_empty(btm_cb.sec_pending_q))
+        return;
 
-    p_e = (tBTM_SEC_QUEUE_ENTRY *)GKI_getfirst(bq);
+    UINT8 res = encr_enable ? BTM_SUCCESS : BTM_ERR_PROCESSING;
+    list_t *list = fixed_queue_get_list(btm_cb.sec_pending_q);
+    for (const list_node_t *node = list_begin(list); node != list_end(list); ) {
+        tBTM_SEC_QUEUE_ENTRY *p_e = (tBTM_SEC_QUEUE_ENTRY *)list_node(node);
+        node = list_next(node);
 
-    while (p_e != NULL) {
         if (memcmp(p_e->bd_addr, p_dev_rec->bd_addr, BD_ADDR_LEN) == 0 && p_e->psm == 0
 #if BLE_INCLUDED == TRUE
-                && p_e->transport == transport
+            && p_e->transport == transport
 #endif
            ) {
 #if BLE_INCLUDED == TRUE
@@ -5970,14 +5974,16 @@ static void btm_sec_check_pending_enc_req (tBTM_SEC_DEV_REC  *p_dev_rec, tBT_TRA
 #if BLE_INCLUDED == TRUE
                     || (sec_act == BTM_BLE_SEC_ENCRYPT || sec_act == BTM_BLE_SEC_ENCRYPT_NO_MITM)
                     || (sec_act == BTM_BLE_SEC_ENCRYPT_MITM && p_dev_rec->sec_flags
-                        & BTM_SEC_LE_AUTHENTICATED)
+                    & BTM_SEC_LE_AUTHENTICATED)
 #endif
                ) {
-                (*p_e->p_callback) (p_dev_rec->bd_addr, transport, p_e->p_ref_data, res);
-                GKI_remove_from_queue(bq, (void *)p_e);
+                if (p_e->p_callback) {
+                    (*p_e->p_callback) (p_dev_rec->bd_addr, transport, p_e->p_ref_data, res);
+                }
+				
+				fixed_queue_try_remove_from_queue(btm_cb.sec_pending_q, (void *)p_e);
             }
         }
-        p_e = (tBTM_SEC_QUEUE_ENTRY *) GKI_getnext ((void *)p_e);
     }
 }
 #endif  ///SMP_INCLUDED == TRUE

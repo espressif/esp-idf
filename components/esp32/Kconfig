@@ -27,9 +27,103 @@ config MEMMAP_SMP
         The ESP32 contains two cores. If you plan to only use one, you can disable this item
         to save some memory. (ToDo: Make this automatically depend on unicore support)
 
+config SPIRAM_SUPPORT
+    bool "Support for external, SPI-connected RAM"
+    default "n"
+    help
+        This enables support for an external SPI RAM chip, connected in parallel with the 
+        main SPI flash chip.
+
+menu "SPI RAM config"
+    depends on SPIRAM_SUPPORT
+
+config SPIRAM_BOOT_INIT
+    bool "Initialize SPI RAM when booting the ESP32"
+    default "y"
+    help
+        If this is enabled, the SPI RAM will be enabled during initial boot. Unless you
+        have specific requirements, you'll want to leave this enabled so memory allocated
+        during boot-up can also be placed in SPI RAM.
+
+choice SPIRAM_USE
+    prompt "SPI RAM access method"
+    default SPIRAM_USE_MEMMAP
+    help
+        The SPI RAM can be accessed in multiple methods: by just having it available as an unmanaged
+        memory region in the ESP32 memory map, by integrating it in the ESP32s heap as 'special' memory
+        needing heap_caps_malloc to allocate, or by fully integrating it making malloc() also able to
+        return SPI RAM pointers.
+
+config SPIRAM_USE_MEMMAP
+    bool "Integrate RAM into ESP32 memory map"
+config SPIRAM_USE_CAPS_ALLOC
+    bool "Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPISRAM)"
+    depends on TO_BE_DONE
+config SPIRAM_USE_MALLOC
+    bool "Make RAM allocatable using malloc as well"
+    depends on TO_BE_DONE
+endchoice
+
+choice SPIRAM_TYPE
+    prompt "Type of SPI RAM chip in use"
+    default SPIRAM_TYPE_ESPPSRAM32
+
+config SPIRAM_TYPE_ESPPSRAM32
+    bool "ESP-PSRAM32 or IS25WP032"
+endchoice
+
+config SPIRAM_SIZE
+    int
+    default 4194304 if SPIRAM_TYPE_ESPPSRAM32
+    default 0
+
+choice SPIRAM_SPEED
+    prompt "Set RAM clock speed"
+    default SPIRAM_CACHE_SPEED_40M
+    help
+        Select the speed for the SPI RAM chip.
+        If SPI RAM is enabled, we only support three combinations of SPI speed mode we supported now:
+
+        1. Flash SPI running at 40Mhz and RAM SPI running at 40Mhz
+        2. Flash SPI running at 80Mhz and RAM SPI running at 40Mhz
+        3. Flash SPI running at 80Mhz and RAM SPI running at 80Mhz
+
+           Note: If the third mode(80Mhz+80Mhz) is enabled, the VSPI port will be occupied by the system.
+                 Application code should never touch VSPI hardware in this case. The option to select
+                 80MHz will only be visible if the flash SPI speed is also 80MHz. (ESPTOOLPY_FLASHFREQ_80M is true)
+
+config SPIRAM_SPEED_40M
+    bool "40MHz clock speed"
+config SPIRAM_SPEED_80M
+    depends on ESPTOOLPY_FLASHFREQ_80M
+    bool "80MHz clock speed"
+endchoice
+
+config SPIRAM_MEMTEST
+    bool "Run memory test on SPI RAM initialization"
+    default "y"
+    help
+        Runs a rudimentary memory test on initialization. Aborts when memory test fails. Disable this for
+        slightly faster startop.
+
+config SPIRAM_CACHE_WORKAROUND
+    bool "Enable workaround for bug in SPI RAM cache for Rev1 ESP32s"
+    depends on SPIRAM_USE_MEMMAP || SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC
+    default "y"
+    help
+        Revision 1 of the ESP32 has a bug that can cause a write to PSRAM not to take place in some situations
+        when the cache line needs to be fetched from external RAM and an interrupt occurs. This enables a
+        fix in the compiler that makes sure the specific code that is vulnerable to this will not be emitted.
+        
+        This will also not use any bits of newlib that are located in ROM, opting for a version that is compiled
+        with the workaround and located in flash instead.
+
+
+endmenu
+
 config MEMMAP_TRACEMEM
-	bool
-	default "n"
+    bool
+    default "n"
 
 config MEMMAP_TRACEMEM_TWOBANKS
     bool
@@ -104,16 +198,6 @@ config ESP32_CORE_DUMP_LOG_LEVEL
     help
         Config core dump module logging level (0-5).
 
-# Not implemented and/or needs new silicon rev to work
-config MEMMAP_SPISRAM
-    bool "Use external SPI SRAM chip as main memory"
-    depends on ESP32_NEEDS_NEW_SILICON_REV
-    default "n"
-    help
-        The ESP32 can control an external SPI SRAM chip, adding the memory it contains to the
-        main memory map. Enable this if you have this hardware and want to use it in the same
-        way as on-chip RAM.
-        
 choice NUMBER_OF_UNIVERSAL_MAC_ADDRESS
     bool "Number of universally administered (by IEEE) MAC address"
     default FOUR_UNIVERSAL_MAC_ADDRESS
@@ -179,20 +263,67 @@ config IPC_TASK_STACK_SIZE
         It can be shrunk if you are sure that you do not use any custom
         IPC functionality.
 
-config NEWLIB_STDOUT_ADDCR
-    bool "Standard-out output adds carriage return before newline"
-    default y
+config TIMER_TASK_STACK_SIZE
+    int "High-resolution timer task stack size"
+    default 4096
+    range 2048 65536
     help
-        Most people are used to end their printf strings with a newline. If this
-        is sent as is to the serial port, most terminal programs will only move the
-        cursor one line down, not also move it to the beginning of the line. This
-        is usually done by an added CR character. Enabling this will make the
-        standard output code automatically add a CR character before a LF.
+        Configure the stack size of esp_timer/ets_timer task. This task is used
+        to dispatch callbacks of timers created using ets_timer and esp_timer
+        APIs. If you are seing stack overflow errors in timer task, increase
+        this value.
         
-        With this option enabled, C standard library functions which read from UART 
-        (like scanf) will convert "\r\n" character sequences back to "\n".
+        Note that this is not the same as FreeRTOS timer task. To configure
+        FreeRTOS timer task size, see "FreeRTOS timer task stack size" option
+        in "FreeRTOS" menu. 
+
+choice NEWLIB_STDOUT_LINE_ENDING
+    prompt "Line ending for UART output"
+    default NEWLIB_STDOUT_LINE_ENDING_CRLF
+    help
+        This option allows configuring the desired line endings sent to UART
+        when a newline ('\n', LF) appears on stdout.
+        Three options are possible:
+        
+        CRLF: whenever LF is encountered, prepend it with CR
+        
+        LF: no modification is applied, stdout is sent as is
+        
+        CR: each occurence of LF is replaced with CR
         
         This option doesn't affect behavior of the UART driver (drivers/uart.h).
+        
+config NEWLIB_STDOUT_LINE_ENDING_CRLF
+    bool "CRLF"
+config NEWLIB_STDOUT_LINE_ENDING_LF
+    bool "LF"
+config NEWLIB_STDOUT_LINE_ENDING_CR
+    bool "CR"
+endchoice
+
+choice NEWLIB_STDIN_LINE_ENDING
+    prompt "Line ending for UART input"
+    default NEWLIB_STDIN_LINE_ENDING_CR
+    help
+        This option allows configuring which input sequence on UART produces
+        a newline ('\n', LF) on stdin.
+        Three options are possible:
+        
+        CRLF: CRLF is converted to LF
+        
+        LF: no modification is applied, input is sent to stdin as is
+        
+        CR: each occurence of CR is replaced with LF
+        
+        This option doesn't affect behavior of the UART driver (drivers/uart.h).
+        
+config NEWLIB_STDIN_LINE_ENDING_CRLF
+    bool "CRLF"
+config NEWLIB_STDIN_LINE_ENDING_LF
+    bool "LF"
+config NEWLIB_STDIN_LINE_ENDING_CR
+    bool "CR"
+endchoice
 
 config NEWLIB_NANO_FORMAT
     bool "Enable 'nano' formatting options for printf/scanf family"
@@ -220,6 +351,7 @@ choice CONSOLE_UART
     default CONSOLE_UART_DEFAULT
     help
         Select whether to use UART for console output (through stdout and stderr).
+        
         - Default is to use UART0 on pins GPIO1(TX) and GPIO3(RX).
         - If "Custom" is selected, UART0 or UART1 can be chosen,
           and any pins can be selected.
@@ -282,21 +414,16 @@ config ULP_COPROC_ENABLED
         If this option is enabled, further coprocessor configuration will appear in the Components menu.
 
 config ULP_COPROC_RESERVE_MEM
-    int "RTC slow memory reserved for coprocessor"
-    default 512
-    range 32 8192
-    depends on ULP_COPROC_ENABLED
+    int
+    prompt "RTC slow memory reserved for coprocessor" if ULP_COPROC_ENABLED
+    default 512 if ULP_COPROC_ENABLED
+    range 32 8192 if ULP_COPROC_ENABLED
+    default 0 if !ULP_COPROC_ENABLED
+    range 0 0 if !ULP_COPROC_ENABLED
     help
         Bytes of memory to reserve for ULP coprocessor firmware & data.
 
         Data is reserved at the beginning of RTC slow memory.
-
-# Set CONFIG_ULP_COPROC_RESERVE_MEM to 0 if ULP is disabled
-config ULP_COPROC_RESERVE_MEM
-    int
-    default 0
-    depends on !ULP_COPROC_ENABLED
-
 
 choice ESP32_PANIC
     prompt "Panic handler behaviour"
@@ -509,6 +636,7 @@ config ESP32_RTC_CLK_CAL_CYCLES
         
         When this option is set to 0, clock calibration will not be performed at
         startup, and approximate clock frequencies will be assumed:
+
         - 150000 Hz if internal RC oscillator is used as clock source
         - 32768 Hz if the 32k crystal oscillator is used
 
@@ -532,11 +660,13 @@ config ESP32_DEEP_SLEEP_WAKEUP_DELAY
 
 choice ESP32_XTAL_FREQ_SEL
     prompt "Main XTAL frequency"
-    default ESP32_XTAL_FREQ_AUTO
+    default ESP32_XTAL_FREQ_40
     help
         ESP32 currently supports the following XTAL frequencies:
-            - 26 MHz
-            - 40 MHz
+
+        - 26 MHz
+        - 40 MHz
+
         Startup code can automatically estimate XTAL frequency. This feature
         uses the internal 8MHz oscillator as a reference. Because the internal
         oscillator frequency is temperature dependent, it is not recommended
@@ -558,17 +688,45 @@ config ESP32_XTAL_FREQ
     default 40 if ESP32_XTAL_FREQ_40
     default 26 if ESP32_XTAL_FREQ_26
 
-endmenu
-
-menuconfig WIFI_ENABLED
-    bool "WiFi"
-    default y
+config DISABLE_BASIC_ROM_CONSOLE
+    bool "Permanently disable BASIC ROM Console"
+    default n
     help
-       Select this option to enable WiFi stack and show the submenu with WiFi configuration choices.
+        If set, the first time the app boots it will disable the BASIC ROM Console
+        permanently (by burning an efuse).
+
+        Otherwise, the BASIC ROM Console starts on reset if no valid bootloader is
+        read from the flash.
+
+        (Enabling secure boot also disables the BASIC ROM Console by default.)
+
+config NO_BLOBS
+    bool "No Binary Blobs"
+    depends on !BT_ENABLED
+    default n
+    help
+       If enabled, this disables the linking of binary libraries in the application build. Note
+       that after enabling this Wi-Fi/Bluetooth will not work.
+
+config ESP_TIMER_PROFILING
+	bool "Enable esp_timer profiling features"
+	depends on MAKING_ESP_TIMER_A_PUBLIC_API
+	default n
+	help
+		If enabled, esp_timer_dump will dump information such as number of times
+		the timer was started, number of times the timer has triggered, and the
+		total time it took for the callback to run.
+		This option has some effect on timer performance and the amount of memory
+		used for timer storage, and should only be used for debugging/testing
+		purposes.
+
+endmenu  # ESP32-Specific
+
+menu Wi-Fi
 
 config SW_COEXIST_ENABLE
     bool "Software controls WiFi/Bluetooth coexistence"
-    depends on WIFI_ENABLED && BT_ENABLED
+    depends on BT_ENABLED
     default n
     help
         If enabled, WiFi & Bluetooth coexistence is controlled by software rather than hardware.
@@ -578,7 +736,6 @@ config SW_COEXIST_ENABLE
 
 config ESP32_WIFI_STATIC_RX_BUFFER_NUM
     int "Max number of WiFi static RX buffers"
-    depends on WIFI_ENABLED
     range 2 25
     default 10
     help
@@ -590,7 +747,6 @@ config ESP32_WIFI_STATIC_RX_BUFFER_NUM
 
 config ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
     int "Max number of WiFi dynamic RX buffers"
-    depends on WIFI_ENABLED
     range 0 128
     default 32
     help
@@ -606,7 +762,6 @@ config ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
 
 choice ESP32_WIFI_TX_BUFFER
     prompt "Type of WiFi TX buffers"
-    depends on WIFI_ENABLED
     default ESP32_WIFI_DYNAMIC_TX_BUFFER
     help
         Select type of WiFi tx buffers and show the submenu with the number of WiFi tx buffers choice. 
@@ -626,13 +781,11 @@ endchoice
 
 config ESP32_WIFI_TX_BUFFER_TYPE
     int
-    depends on WIFI_ENABLED
     default 0 if ESP32_WIFI_STATIC_TX_BUFFER
     default 1 if ESP32_WIFI_DYNAMIC_TX_BUFFER
 
 config ESP32_WIFI_STATIC_TX_BUFFER_NUM
     int "Max number of WiFi static TX buffers"
-    depends on WIFI_ENABLED 
     depends on ESP32_WIFI_STATIC_TX_BUFFER
     range 16 64
     default 32
@@ -646,7 +799,6 @@ config ESP32_WIFI_STATIC_TX_BUFFER_NUM
 
 config ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
     int "Max number of WiFi dynamic TX buffers"
-    depends on WIFI_ENABLED 
     depends on ESP32_WIFI_DYNAMIC_TX_BUFFER
     range 16 64
     default 32
@@ -659,7 +811,6 @@ config ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
 
 config ESP32_WIFI_AMPDU_ENABLED
     bool "WiFi AMPDU"
-    depends on WIFI_ENABLED
     default y
     help
         Select this option to enable AMPDU feature
@@ -689,21 +840,16 @@ config ESP32_WIFI_RX_BA_WIN
 
 config ESP32_WIFI_NVS_ENABLED
     bool "WiFi NVS flash"
-    depends on WIFI_ENABLED
     default y
     help
         Select this option to enable WiFi NVS flash
 
-config PHY_ENABLED
-	bool
-	default y if WIFI_ENABLED || BT_ENABLED
+endmenu  # Wi-Fi
 
 menu PHY
-	visible if PHY_ENABLED
-	
+
 config ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
     bool "Do phy calibration and store calibration data in NVS"
-    depends on PHY_ENABLED
     default y
     help
         If this option is enabled, NVS will be initialized and calibration data will be loaded from there.
@@ -714,7 +860,6 @@ config ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
 
 config ESP32_PHY_INIT_DATA_IN_PARTITION
     bool "Use a partition to store PHY init data"
-    depends on PHY_ENABLED
     default n
     help
         If enabled, PHY init data will be loaded from a partition.
@@ -733,15 +878,12 @@ config ESP32_PHY_MAX_WIFI_TX_POWER
     int "Max WiFi TX power (dBm)"
     range 0 20
     default 20
-    depends on PHY_ENABLED && WIFI_ENABLED
     help
         Set maximum transmit power for WiFi radio. Actual transmit power for high
         data rates may be lower than this setting.
 
 config ESP32_PHY_MAX_TX_POWER
 	int
-	depends on PHY_ENABLED
-	default 20 if !WIFI_ENABLED
-	default ESP32_PHY_MAX_WIFI_TX_POWER if WIFI_ENABLED
+	default ESP32_PHY_MAX_WIFI_TX_POWER
 
-endmenu
+endmenu  # PHY

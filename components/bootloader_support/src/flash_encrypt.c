@@ -139,6 +139,12 @@ static esp_err_t initialise_flash_encryption(void)
 #else
     ESP_LOGW(TAG, "Not disabling JTAG - SECURITY COMPROMISED");
 #endif
+#ifndef CONFIG_SECURE_BOOT_ALLOW_ROM_BASIC
+    ESP_LOGI(TAG, "Disable ROM BASIC interpreter fallback...");
+    new_wdata6 |= EFUSE_RD_CONSOLE_DEBUG_DISABLE;
+#else
+    ESP_LOGW(TAG, "Not disabling ROM BASIC fallback - SECURITY COMPROMISED");
+#endif
 
     if (new_wdata6 != 0) {
         REG_WRITE(EFUSE_BLK0_WDATA6_REG, new_wdata6);

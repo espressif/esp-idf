@@ -39,6 +39,11 @@
 #define MBEDTLS_ERR_AES_INVALID_KEY_LENGTH                -0x0020  /**< Invalid key length. */
 #define MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH              -0x0022  /**< Invalid data input length. */
 
+#if ( defined(__ARMCC_VERSION) || defined(_MSC_VER) ) && \
+    !defined(inline) && !defined(__cplusplus)
+#define inline __inline
+#endif
+
 #if !defined(MBEDTLS_AES_ALT)
 // Regular implementation
 //
@@ -253,10 +258,12 @@ int mbedtls_aes_crypt_ctr( mbedtls_aes_context *ctx,
  * \param ctx       AES context
  * \param input     Plaintext block
  * \param output    Output (ciphertext) block
+ *
+ * \return          0 if successful
  */
-void mbedtls_aes_encrypt( mbedtls_aes_context *ctx,
-                          const unsigned char input[16],
-                          unsigned char output[16] );
+int mbedtls_internal_aes_encrypt( mbedtls_aes_context *ctx,
+                                  const unsigned char input[16],
+                                  unsigned char output[16] );
 
 /**
  * \brief           Internal AES block decryption function
@@ -266,10 +273,49 @@ void mbedtls_aes_encrypt( mbedtls_aes_context *ctx,
  * \param ctx       AES context
  * \param input     Ciphertext block
  * \param output    Output (plaintext) block
+ *
+ * \return          0 if successful
  */
-void mbedtls_aes_decrypt( mbedtls_aes_context *ctx,
-                          const unsigned char input[16],
-                          unsigned char output[16] );
+int mbedtls_internal_aes_decrypt( mbedtls_aes_context *ctx,
+                                  const unsigned char input[16],
+                                  unsigned char output[16] );
+
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+#if defined(MBEDTLS_DEPRECATED_WARNING)
+#define MBEDTLS_DEPRECATED      __attribute__((deprecated))
+#else
+#define MBEDTLS_DEPRECATED
+#endif
+/**
+ * \brief           Deprecated internal AES block encryption function
+ *                  without return value.
+ *
+ * \deprecated      Superseded by mbedtls_aes_encrypt_ext() in 2.5.0
+ *
+ * \param ctx       AES context
+ * \param input     Plaintext block
+ * \param output    Output (ciphertext) block
+ */
+MBEDTLS_DEPRECATED void mbedtls_aes_encrypt( mbedtls_aes_context *ctx,
+                                             const unsigned char input[16],
+                                             unsigned char output[16] );
+
+/**
+ * \brief           Deprecated internal AES block decryption function
+ *                  without return value.
+ *
+ * \deprecated      Superseded by mbedtls_aes_decrypt_ext() in 2.5.0
+ *
+ * \param ctx       AES context
+ * \param input     Ciphertext block
+ * \param output    Output (plaintext) block
+ */
+MBEDTLS_DEPRECATED void mbedtls_aes_decrypt( mbedtls_aes_context *ctx,
+                                             const unsigned char input[16],
+                                             unsigned char output[16] );
+
+#undef MBEDTLS_DEPRECATED
+#endif /* !MBEDTLS_DEPRECATED_REMOVED */
 
 #ifdef __cplusplus
 }

@@ -16,5 +16,6 @@ API Guides
    ULP Coprocessor <ulp>
    Unit Testing <unit-tests>
    Application Level Tracing <app_trace>
+   Console Component <console>
    ROM debug console <romconsole>
    WiFi Driver <wifi>

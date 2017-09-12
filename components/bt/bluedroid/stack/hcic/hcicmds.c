@@ -24,8 +24,7 @@
  ******************************************************************************/
 
 #include "bt_target.h"
-//#include "btcore/include/counter.h"
-#include "gki.h"
+#include "allocator.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
 #include "hcidefs.h"
@@ -35,6 +34,8 @@
 #include <string.h>
 
 #include "btm_int.h"    /* Included for UIPC_* macro definitions */
+
+#define HCI_GET_CMD_BUF(paramlen)       ((BT_HDR *)osi_malloc(HCI_CMD_BUF_SIZE))
 
 BOOLEAN btsnd_hcic_inquiry(const LAP inq_lap, UINT8 duration, UINT8 response_cnt)
 {
@@ -1853,7 +1854,7 @@ BOOLEAN btsnd_hcic_write_pagescan_type (UINT8 type)
 }
 
 /* Must have room to store BT_HDR + max VSC length + callback pointer */
-#if (HCI_CMD_POOL_BUF_SIZE < 268)
+#if (HCI_CMD_BUF_SIZE < 268)
 #error "HCI_CMD_POOL_BUF_SIZE must be larger than 268"
 #endif
 

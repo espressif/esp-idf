@@ -48,6 +48,16 @@ void esp_efuse_burn_new_values(void);
  */
 void esp_efuse_reset(void);
 
+/* @brief Disable BASIC ROM Console via efuse
+ *
+ * By default, if booting from flash fails the ESP32 will boot a
+ * BASIC console in ROM.
+ *
+ * Call this function (from bootloader or app) to permanently
+ * disable the console on this chip.
+ */
+void esp_efuse_disable_basic_rom_console(void);
+
 #ifdef __cplusplus
 }
 #endif

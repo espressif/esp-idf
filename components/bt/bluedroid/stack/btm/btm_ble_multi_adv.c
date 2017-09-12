@@ -771,17 +771,17 @@ void btm_ble_multi_adv_init()
     btm_multi_adv_idx_q.rear = -1;
 
     if (btm_cb.cmn_ble_vsc_cb.adv_inst_max > 0) {
-        btm_multi_adv_cb.p_adv_inst = GKI_getbuf( sizeof(tBTM_BLE_MULTI_ADV_INST) *
+        btm_multi_adv_cb.p_adv_inst = osi_malloc( sizeof(tBTM_BLE_MULTI_ADV_INST) *
                                       (btm_cb.cmn_ble_vsc_cb.adv_inst_max));
         memset(btm_multi_adv_cb.p_adv_inst, 0, sizeof(tBTM_BLE_MULTI_ADV_INST) *
                (btm_cb.cmn_ble_vsc_cb.adv_inst_max));
 
-        btm_multi_adv_cb.op_q.p_sub_code = GKI_getbuf( sizeof(UINT8) *
+        btm_multi_adv_cb.op_q.p_sub_code = osi_malloc( sizeof(UINT8) *
                                            (btm_cb.cmn_ble_vsc_cb.adv_inst_max));
         memset(btm_multi_adv_cb.op_q.p_sub_code, 0,
                sizeof(UINT8) * (btm_cb.cmn_ble_vsc_cb.adv_inst_max));
 
-        btm_multi_adv_cb.op_q.p_inst_id = GKI_getbuf( sizeof(UINT8) *
+        btm_multi_adv_cb.op_q.p_inst_id = osi_malloc( sizeof(UINT8) *
                                           (btm_cb.cmn_ble_vsc_cb.adv_inst_max));
         memset(btm_multi_adv_cb.op_q.p_inst_id, 0,
                sizeof(UINT8) * (btm_cb.cmn_ble_vsc_cb.adv_inst_max));
@@ -809,15 +809,18 @@ void btm_ble_multi_adv_init()
 void btm_ble_multi_adv_cleanup(void)
 {
     if (btm_multi_adv_cb.p_adv_inst) {
-        GKI_freebuf(btm_multi_adv_cb.p_adv_inst);
+        osi_free(btm_multi_adv_cb.p_adv_inst);
+        btm_multi_adv_cb.p_adv_inst = NULL;
     }
 
     if (btm_multi_adv_cb.op_q.p_sub_code) {
-        GKI_freebuf(btm_multi_adv_cb.op_q.p_sub_code);
+        osi_free(btm_multi_adv_cb.op_q.p_sub_code);
+        btm_multi_adv_cb.op_q.p_sub_code = NULL;
     }
 
     if (btm_multi_adv_cb.op_q.p_inst_id) {
-        GKI_freebuf(btm_multi_adv_cb.op_q.p_inst_id);
+        osi_free(btm_multi_adv_cb.op_q.p_inst_id);
+        btm_multi_adv_cb.op_q.p_inst_id = NULL;
     }
 
 }

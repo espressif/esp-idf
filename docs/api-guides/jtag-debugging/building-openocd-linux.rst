@@ -7,14 +7,6 @@ The following instructions are alternative to downloading binary OpenOCD from Es
 
 .. highlight:: bash
 
-Install Git
-===========
-
-To be able to download OpenOCD sources from GitHub, install ``git`` package::
-
-    sudo apt-get install git
-
-
 Download Sources of OpenOCD
 ===========================
 

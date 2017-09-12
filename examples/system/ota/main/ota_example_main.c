@@ -190,9 +190,13 @@ static void ota_example_task(void *pvParameter)
     const esp_partition_t *configured = esp_ota_get_boot_partition();
     const esp_partition_t *running = esp_ota_get_running_partition();
 
-    assert(configured == running); /* fresh from reset, should be running from configured boot partition */
+    if (configured != running) {
+        ESP_LOGW(TAG, "Configured OTA boot partition at offset 0x%08x, but running from offset 0x%08x",
+                 configured->address, running->address);
+        ESP_LOGW(TAG, "(This can happen if either the OTA boot data or preferred boot image become corrupted somehow.)");
+    }
     ESP_LOGI(TAG, "Running partition type %d subtype %d (offset 0x%08x)",
-             configured->type, configured->subtype, configured->address);
+             running->type, running->subtype, running->address);
 
     /* Wait for the callback to set the CONNECTED_BIT in the
        event group.

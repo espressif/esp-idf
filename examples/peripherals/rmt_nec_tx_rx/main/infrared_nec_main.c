@@ -284,7 +284,7 @@ static void rmt_example_nec_rx_task()
     nec_rx_init();
     RingbufHandle_t rb = NULL;
     //get RMT RX ringbuffer
-    rmt_get_ringbuf_handler(channel, &rb);
+    rmt_get_ringbuf_handle(channel, &rb);
     rmt_rx_start(channel, 1);
     while(rb) {
         size_t rx_size = 0;
@@ -349,7 +349,7 @@ static void rmt_example_nec_tx_task()
         //To send data according to the waveform items.
         rmt_write_items(channel, item, item_num, true);
         //Wait until sending is done.
-        rmt_wait_tx_done(channel);
+        rmt_wait_tx_done(channel, portMAX_DELAY);
         //before we free the data, make sure sending is already done.
         free(item);
         vTaskDelay(2000 / portTICK_PERIOD_MS);

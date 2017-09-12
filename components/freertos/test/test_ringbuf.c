@@ -195,3 +195,26 @@ TEST_CASE("FreeRTOS ringbuffer test, w/ splitting items", "[freertos][ignore]")
     testRingbuffer(1);
 }
 
+
+TEST_CASE("FreeRTOS ringbuffer test, check if zero-length items are handled correctly", "[freertos]")
+{
+    rb = xRingbufferCreate(32, 0);
+    int r;
+    void *v;
+    size_t sz;
+    for (int x=0; x<128; x++) {
+        if (x!=127) {
+            //Send an item
+            r = xRingbufferSend(rb, NULL, 0, 10000 / portTICK_PERIOD_MS);
+            assert(r==pdTRUE);
+        }
+        if (x!=0) {
+            //Receive an item
+            v=xRingbufferReceive(rb, &sz, 10000 / portTICK_PERIOD_MS);
+            assert(sz==0);
+            vRingbufferReturnItem(rb, v); //actually not needed for NULL data...
+        }
+    }
+    vRingbufferDelete(rb);
+}
+

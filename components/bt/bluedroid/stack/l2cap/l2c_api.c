@@ -28,7 +28,6 @@
 #include <string.h>
 #include <stdio.h>
 #include "bt_trace.h"
-#include "gki.h"
 #include "bt_types.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
@@ -271,25 +270,23 @@ UINT16 L2CA_ErtmConnectReq (UINT16 psm, BD_ADDR p_bd_addr, tL2CAP_ERTM_INFO *p_e
         p_ccb->ertm_info  = *p_ertm_info;
 
         /* Replace default indicators with the actual default pool */
-        if (p_ccb->ertm_info.fcr_rx_pool_id == L2CAP_DEFAULT_ERM_POOL_ID) {
-            p_ccb->ertm_info.fcr_rx_pool_id = L2CAP_FCR_RX_POOL_ID;
-        }
+        if (p_ccb->ertm_info.fcr_rx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
+            p_ccb->ertm_info.fcr_rx_buf_size = L2CAP_FCR_RX_BUF_SIZE;
 
-        if (p_ccb->ertm_info.fcr_tx_pool_id == L2CAP_DEFAULT_ERM_POOL_ID) {
-            p_ccb->ertm_info.fcr_tx_pool_id = L2CAP_FCR_TX_POOL_ID;
-        }
+        if (p_ccb->ertm_info.fcr_tx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
+            p_ccb->ertm_info.fcr_tx_buf_size = L2CAP_FCR_TX_BUF_SIZE;
 
-        if (p_ccb->ertm_info.user_rx_pool_id == L2CAP_DEFAULT_ERM_POOL_ID) {
-            p_ccb->ertm_info.user_rx_pool_id = HCI_ACL_POOL_ID;
-        }
+        if (p_ccb->ertm_info.user_rx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
+            p_ccb->ertm_info.user_rx_buf_size = L2CAP_USER_RX_BUF_SIZE;
 
-        if (p_ccb->ertm_info.user_tx_pool_id == L2CAP_DEFAULT_ERM_POOL_ID) {
-            p_ccb->ertm_info.user_tx_pool_id = HCI_ACL_POOL_ID;
-        }
+        if (p_ccb->ertm_info.user_tx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
+            p_ccb->ertm_info.user_tx_buf_size = L2CAP_USER_TX_BUF_SIZE;
 
-        p_ccb->max_rx_mtu = GKI_get_pool_bufsize (p_ertm_info->user_rx_pool_id) -
-                            (L2CAP_MIN_OFFSET + L2CAP_SDU_LEN_OFFSET + L2CAP_FCS_LEN);
+        p_ccb->max_rx_mtu = p_ertm_info->user_rx_buf_size -
+            (L2CAP_MIN_OFFSET + L2CAP_SDU_LEN_OFFSET + L2CAP_FCS_LEN);
     }
+
+
 
     /* If link is up, start the L2CAP connection */
     if (p_lcb->link_state == LST_CONNECTED) {
@@ -419,23 +416,20 @@ BOOLEAN L2CA_ErtmConnectRsp (BD_ADDR p_bd_addr, UINT8 id, UINT16 lcid, UINT16 re
         p_ccb->ertm_info  = *p_ertm_info;
 
         /* Replace default indicators with the actual default pool */
-        if (p_ccb->ertm_info.fcr_rx_pool_id == L2CAP_DEFAULT_ERM_POOL_ID) {
-            p_ccb->ertm_info.fcr_rx_pool_id = L2CAP_FCR_RX_POOL_ID;
-        }
+        if (p_ccb->ertm_info.fcr_rx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
+            p_ccb->ertm_info.fcr_rx_buf_size = L2CAP_FCR_RX_BUF_SIZE;
 
-        if (p_ccb->ertm_info.fcr_tx_pool_id == L2CAP_DEFAULT_ERM_POOL_ID) {
-            p_ccb->ertm_info.fcr_tx_pool_id = L2CAP_FCR_TX_POOL_ID;
-        }
+        if (p_ccb->ertm_info.fcr_tx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
+            p_ccb->ertm_info.fcr_tx_buf_size = L2CAP_FCR_TX_BUF_SIZE;
 
-        if (p_ccb->ertm_info.user_rx_pool_id == L2CAP_DEFAULT_ERM_POOL_ID) {
-            p_ccb->ertm_info.user_rx_pool_id = HCI_ACL_POOL_ID;
-        }
+        if (p_ccb->ertm_info.user_rx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
+            p_ccb->ertm_info.user_rx_buf_size = L2CAP_USER_RX_BUF_SIZE;
 
-        if (p_ccb->ertm_info.user_tx_pool_id == L2CAP_DEFAULT_ERM_POOL_ID) {
-            p_ccb->ertm_info.user_tx_pool_id = HCI_ACL_POOL_ID;
-        }
+        if (p_ccb->ertm_info.user_tx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
+            p_ccb->ertm_info.user_tx_buf_size = L2CAP_USER_TX_BUF_SIZE;
 
-        p_ccb->max_rx_mtu = GKI_get_pool_bufsize (p_ertm_info->user_rx_pool_id) - (L2CAP_MIN_OFFSET + L2CAP_SDU_LEN_OFFSET + L2CAP_FCS_LEN);
+        p_ccb->max_rx_mtu = p_ertm_info->user_rx_buf_size -
+            (L2CAP_MIN_OFFSET + L2CAP_SDU_LEN_OFFSET + L2CAP_FCS_LEN);
     }
 
     if (result == L2CAP_CONN_OK) {
@@ -1467,14 +1461,14 @@ UINT16 L2CA_SendFixedChnlData (UINT16 fixed_cid, BD_ADDR rem_bda, BT_HDR *p_buf)
     if ( (fixed_cid < L2CAP_FIRST_FIXED_CHNL) || (fixed_cid > L2CAP_LAST_FIXED_CHNL)
             ||  (l2cb.fixed_reg[fixed_cid - L2CAP_FIRST_FIXED_CHNL].pL2CA_FixedData_Cb == NULL) ) {
         L2CAP_TRACE_ERROR ("L2CA_SendFixedChnlData()  Invalid CID: 0x%04x", fixed_cid);
-        GKI_freebuf (p_buf);
+        osi_free (p_buf);
         return (L2CAP_DW_FAILED);
     }
 
     // Fail if BT is not yet up
     if (!BTM_IsDeviceUp()) {
         L2CAP_TRACE_WARNING ("L2CA_SendFixedChnlData(0x%04x) - BTU not ready", fixed_cid);
-        GKI_freebuf (p_buf);
+        osi_free (p_buf);
         return (L2CAP_DW_FAILED);
     }
 
@@ -1483,7 +1477,7 @@ UINT16 L2CA_SendFixedChnlData (UINT16 fixed_cid, BD_ADDR rem_bda, BT_HDR *p_buf)
             /* if link is disconnecting, also report data sending failure */
             p_lcb->link_state == LST_DISCONNECTING) {
         L2CAP_TRACE_WARNING ("L2CA_SendFixedChnlData(0x%04x) - no LCB", fixed_cid);
-        GKI_freebuf (p_buf);
+        osi_free (p_buf);
         return (L2CAP_DW_FAILED);
     }
 
@@ -1499,7 +1493,7 @@ UINT16 L2CA_SendFixedChnlData (UINT16 fixed_cid, BD_ADDR rem_bda, BT_HDR *p_buf)
 
     if ((peer_channel_mask & (1 << fixed_cid)) == 0) {
         L2CAP_TRACE_WARNING ("L2CA_SendFixedChnlData() - peer does not support fixed chnl: 0x%04x", fixed_cid);
-        GKI_freebuf (p_buf);
+        osi_free (p_buf);
         return (L2CAP_DW_FAILED);
     }
 
@@ -1509,7 +1503,7 @@ UINT16 L2CA_SendFixedChnlData (UINT16 fixed_cid, BD_ADDR rem_bda, BT_HDR *p_buf)
     if (!p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL]) {
         if (!l2cu_initialize_fixed_ccb (p_lcb, fixed_cid, &l2cb.fixed_reg[fixed_cid - L2CAP_FIRST_FIXED_CHNL].fixed_chnl_opts)) {
             L2CAP_TRACE_WARNING ("L2CA_SendFixedChnlData() - no CCB for chnl: 0x%4x", fixed_cid);
-            GKI_freebuf (p_buf);
+            osi_free (p_buf);
             return (L2CAP_DW_FAILED);
         }
     }
@@ -1518,9 +1512,9 @@ UINT16 L2CA_SendFixedChnlData (UINT16 fixed_cid, BD_ADDR rem_bda, BT_HDR *p_buf)
     if (p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL]->cong_sent) {
         L2CAP_TRACE_ERROR ("L2CAP - CID: 0x%04x cannot send, already congested \
             xmit_hold_q.count: %u buff_quota: %u", fixed_cid,
-                           GKI_queue_length(&p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL]->xmit_hold_q),
-                           p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL]->buff_quota);
-        GKI_freebuf (p_buf);
+            fixed_queue_length(p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL]->xmit_hold_q),
+            p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL]->buff_quota);
+        osi_free(p_buf);
         return (L2CAP_DW_FAILED);
     }
 
@@ -1848,7 +1842,9 @@ UINT16 L2CA_FlushChannel (UINT16 lcid, UINT16 num_to_flush)
 
     if (num_to_flush != L2CAP_FLUSH_CHANS_GET) {
         L2CAP_TRACE_API ("L2CA_FlushChannel (FLUSH)  CID: 0x%04x  NumToFlush: %d  QC: %u  pFirst: %p",
-                         lcid, num_to_flush, GKI_queue_length(&p_ccb->xmit_hold_q), GKI_getfirst(&p_ccb->xmit_hold_q));
+                         lcid, num_to_flush,
+                         fixed_queue_length(p_ccb->xmit_hold_q),
+                         fixed_queue_try_peek_first(p_ccb->xmit_hold_q));
     } else {
         L2CAP_TRACE_API ("L2CA_FlushChannel (QUERY)  CID: 0x%04x", lcid);
     }
@@ -1881,16 +1877,16 @@ UINT16 L2CA_FlushChannel (UINT16 lcid, UINT16 num_to_flush)
                 num_flushed1++;
 
                 list_remove(p_lcb->link_xmit_data_q, p_buf);
-                GKI_freebuf(p_buf);
+                osi_free(p_buf);
             }
         }
     }
 
     /* If needed, flush buffers in the CCB xmit hold queue */
-    while ( (num_to_flush != 0) && (!GKI_queue_is_empty(&p_ccb->xmit_hold_q))) {
-        BT_HDR *p_buf = (BT_HDR *)GKI_dequeue (&p_ccb->xmit_hold_q);
+    while ( (num_to_flush != 0) && (!fixed_queue_is_empty(p_ccb->xmit_hold_q))) {
+        BT_HDR *p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->xmit_hold_q);
         if (p_buf) {
-            GKI_freebuf (p_buf);
+            osi_free (p_buf);
         }
         num_to_flush--;
         num_flushed2++;
@@ -1913,7 +1909,7 @@ UINT16 L2CA_FlushChannel (UINT16 lcid, UINT16 num_to_flush)
     }
 
     /* Add in the number in the CCB xmit queue */
-    num_left += GKI_queue_length(&p_ccb->xmit_hold_q);
+    num_left += fixed_queue_length(p_ccb->xmit_hold_q);
 
     /* Return the local number of buffers left for the CID */
     L2CAP_TRACE_DEBUG ("L2CA_FlushChannel()  flushed: %u + %u,  num_left: %u", num_flushed1, num_flushed2, num_left);

@@ -29,7 +29,6 @@
 
 #include "bt_types.h"
 #include "controller.h"
-#include "gki.h"
 #include "hcimsgs.h"
 #include "btu.h"
 #include "btm_api.h"

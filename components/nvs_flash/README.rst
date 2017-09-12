@@ -9,7 +9,7 @@ Non-volatile storage (NVS) library is designed to store key-value pairs in flash
 Underlying storage
 ^^^^^^^^^^^^^^^^^^
 
-Currently NVS uses a portion of main flash memory through ``spi_flash_{read|write|erase}`` APIs. The library uses the first partition with ``data`` type and ``nvs`` subtype.
+Currently NVS uses a portion of main flash memory through ``spi_flash_{read|write|erase}`` APIs. The library uses the all the partitions with ``data`` type and ``nvs`` subtype. The application can choose to use the partition with label ``nvs`` through ``nvs_open`` API or any of the other partition by specifying its name through ``nvs_open_from_part`` API.
 
 Future versions of this library may add other storage backends to keep data in another flash chip (SPI or I2C), RTC, FRAM, etc.
 
@@ -41,7 +41,8 @@ Data type check is also performed when reading a value. An error is returned if 
 Namespaces
 ^^^^^^^^^^
 
-To mitigate potential conflicts in key names between different components, NVS assigns each key-value pair to one of namespaces. Namespace names follow the same rules as key names, i.e. 15 character maximum length. Namespace name is specified in the ``nvs_open`` call. This call returns an opaque handle, which is used in subsequent calls to ``nvs_read_*``, ``nvs_write_*``, and ``nvs_commit`` functions. This way, handle is associated with a namespace, and key names will not collide with same names in other namespaces.
+To mitigate potential conflicts in key names between different components, NVS assigns each key-value pair to one of namespaces. Namespace names follow the same rules as key names, i.e. 15 character maximum length. Namespace name is specified in the ``nvs_open`` or ``nvs_open_from_part`` call. This call returns an opaque handle, which is used in subsequent calls to ``nvs_read_*``, ``nvs_write_*``, and ``nvs_commit`` functions. This way, handle is associated with a namespace, and key names will not collide with same names in other namespaces.
+Please note that the namespaces with same name in different NVS partitions are considered as separate namespaces.
 
 Security, tampering, and robustness
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

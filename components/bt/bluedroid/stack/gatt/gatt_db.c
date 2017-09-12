@@ -27,7 +27,7 @@
 #if BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE
 
 #include "bt_trace.h"
-//#include "bt_utils.h"
+#include "allocator.h"
 
 //#include <stdio.h>
 #include <string.h>
@@ -63,7 +63,9 @@ static BOOLEAN gatts_add_char_desc_value_check (tGATT_ATTR_VAL *attr_val, tGATTS
 BOOLEAN gatts_init_service_db (tGATT_SVC_DB *p_db, tBT_UUID *p_service,  BOOLEAN is_pri,
                                UINT16 s_hdl, UINT16 num_handle)
 {
-    GKI_init_q(&p_db->svc_buffer);
+    if (p_db->svc_buffer == NULL) { //in case already alloc
+        p_db->svc_buffer = fixed_queue_new(SIZE_MAX);
+    }
 
     if (!allocate_svc_db_buf(p_db)) {
         GATT_TRACE_ERROR("gatts_init_service_db failed, no resources\n");
@@ -509,7 +511,7 @@ UINT16 gatts_add_characteristic (tGATT_SVC_DB *p_db, tGATT_PERM perm,
             GATT_TRACE_DEBUG("attribute handle = %x\n", p_char_val->handle);
             p_char_val->p_value->attr_val.attr_len = attr_val->attr_len;
             p_char_val->p_value->attr_val.attr_max_len = attr_val->attr_max_len;
-            p_char_val->p_value->attr_val.attr_val = GKI_getbuf(attr_val->attr_max_len);
+            p_char_val->p_value->attr_val.attr_val = osi_malloc(attr_val->attr_max_len);
             if (p_char_val->p_value->attr_val.attr_val == NULL) {
                deallocate_attr_in_db(p_db, p_char_decl);
                deallocate_attr_in_db(p_db, p_char_val);
@@ -633,7 +635,7 @@ UINT16 gatts_add_char_descr (tGATT_SVC_DB *p_db, tGATT_PERM perm,
             p_char_dscptr->p_value->attr_val.attr_len = attr_val->attr_len;
             p_char_dscptr->p_value->attr_val.attr_max_len  = attr_val->attr_max_len;
             if (attr_val->attr_max_len != 0) {
-                p_char_dscptr->p_value->attr_val.attr_val = GKI_getbuf(attr_val->attr_max_len);
+                p_char_dscptr->p_value->attr_val.attr_val = osi_malloc(attr_val->attr_max_len);
                 if (p_char_dscptr->p_value->attr_val.attr_val == NULL) {
                     deallocate_attr_in_db(p_db, p_char_dscptr);
                     GATT_TRACE_WARNING("Warning in %s, line=%d, insufficient resource to allocate for descriptor value\n", __func__, __LINE__);
@@ -750,6 +752,14 @@ tGATT_STATUS gatts_get_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
     }
     if (p_db->p_attr_list == NULL) {
         GATT_TRACE_ERROR("gatts_get_attribute_value Fail:p_db->p_attr_list is NULL.\n");
+        return GATT_INVALID_PDU;
+    }
+    if (length == NULL){
+        GATT_TRACE_ERROR("gatts_get_attribute_value Fail:length is NULL.\n");
+        return GATT_INVALID_PDU;
+    }
+    if (value == NULL){
+        GATT_TRACE_ERROR("gatts_get_attribute_value Fail:value is NULL.\n");
         return GATT_INVALID_PDU;
     }
 
@@ -1327,16 +1337,15 @@ static BOOLEAN allocate_svc_db_buf(tGATT_SVC_DB *p_db)
 
     GATT_TRACE_DEBUG("allocate_svc_db_buf allocating extra buffer");
 
-    if ((p_buf = (BT_HDR *)GKI_getpoolbuf(GATT_DB_POOL_ID)) == NULL) {
+    if ((p_buf = (BT_HDR *)osi_calloc(GATT_DB_BUF_SIZE)) == NULL) {
         GATT_TRACE_ERROR("allocate_svc_db_buf failed, no resources");
         return FALSE;
     }
 
-    memset(p_buf, 0, GKI_get_buf_size(p_buf));
     p_db->p_free_mem    = (UINT8 *) p_buf;
-    p_db->mem_free      = GKI_get_buf_size(p_buf);
+    p_db->mem_free = GATT_DB_BUF_SIZE;
 
-    GKI_enqueue(&p_db->svc_buffer, p_buf);
+    fixed_queue_enqueue(p_db->svc_buffer, p_buf);
 
     return TRUE;
 

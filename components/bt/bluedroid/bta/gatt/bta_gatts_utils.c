@@ -28,7 +28,6 @@
 
 #include <string.h>
 #include "utl.h"
-#include "gki.h"
 #include "bta_sys.h"
 #include "bta_gatts_int.h"
 

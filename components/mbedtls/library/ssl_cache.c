@@ -37,8 +37,6 @@
 #include <stdlib.h>
 #define mbedtls_calloc    calloc
 #define mbedtls_free      free
-#define mbedtls_time      time
-#define mbedtls_time_t    time_t
 #endif
 
 #include "mbedtls/ssl_cache.h"
@@ -140,7 +138,7 @@ int mbedtls_ssl_cache_set( void *data, const mbedtls_ssl_session *session )
 {
     int ret = 1;
 #if defined(MBEDTLS_HAVE_TIME)
-    mbedtls_time_t t = time( NULL ), oldest = 0;
+    mbedtls_time_t t = mbedtls_time( NULL ), oldest = 0;
     mbedtls_ssl_cache_entry *old = NULL;
 #endif
     mbedtls_ssl_cache_context *cache = (mbedtls_ssl_cache_context *) data;

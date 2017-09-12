@@ -23,6 +23,7 @@
  ******************************************************************************/
 
 #include "bt_target.h"
+#include "allocator.h"
 
 #if SMP_INCLUDED == TRUE
 //    #include <stdio.h>
@@ -115,7 +116,7 @@ static void leftshift_onebit(UINT8 *input, UINT8 *output)
 static void cmac_aes_cleanup(void)
 {
     if (cmac_cb.text != NULL) {
-        GKI_freebuf(cmac_cb.text);
+        osi_free(cmac_cb.text);
     }
     memset(&cmac_cb, 0, sizeof(tCMAC_CB));
 }
@@ -292,7 +293,7 @@ BOOLEAN aes_cipher_msg_auth_code(BT_OCTET16 key, UINT8 *input, UINT16 length,
 
     SMP_TRACE_WARNING("AES128_CMAC started, allocate buffer size = %d", len);
     /* allocate a memory space of multiple of 16 bytes to hold text  */
-    if ((cmac_cb.text = (UINT8 *)GKI_getbuf(len)) != NULL) {
+    if ((cmac_cb.text = (UINT8 *)osi_malloc(len)) != NULL) {
         cmac_cb.round = n;
 
         memset(cmac_cb.text, 0, len);

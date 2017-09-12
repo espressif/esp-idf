@@ -35,6 +35,7 @@ typedef enum {
     SYSTEM_EVENT_STA_DISCONNECTED,         /**< ESP32 station disconnected from AP */
     SYSTEM_EVENT_STA_AUTHMODE_CHANGE,      /**< the auth mode of AP connected by ESP32 station changed */
     SYSTEM_EVENT_STA_GOT_IP,               /**< ESP32 station got IP from connected AP */
+    SYSTEM_EVENT_STA_LOST_IP,              /**< ESP32 station lost IP and the IP is reset to 0 */
     SYSTEM_EVENT_STA_WPS_ER_SUCCESS,       /**< ESP32 station wps succeeds in enrollee mode */
     SYSTEM_EVENT_STA_WPS_ER_FAILED,        /**< ESP32 station wps fails in enrollee mode */
     SYSTEM_EVENT_STA_WPS_ER_TIMEOUT,       /**< ESP32 station wps timeout in enrollee mode */
@@ -86,6 +87,7 @@ typedef struct {
 
 typedef struct {
     tcpip_adapter_ip_info_t ip_info;
+    bool ip_changed;
 } system_event_sta_got_ip_t;
 
 typedef struct {
@@ -116,7 +118,7 @@ typedef union {
     system_event_sta_disconnected_t            disconnected;       /**< ESP32 station disconnected to AP */
     system_event_sta_scan_done_t               scan_done;          /**< ESP32 station scan (APs) done */
     system_event_sta_authmode_change_t         auth_change;        /**< the auth mode of AP ESP32 station connected to changed */
-    system_event_sta_got_ip_t                  got_ip;             /**< ESP32 station got IP */
+    system_event_sta_got_ip_t                  got_ip;             /**< ESP32 station got IP, first time got IP or when IP is changed */
     system_event_sta_wps_er_pin_t              sta_er_pin;         /**< ESP32 station WPS enrollee mode PIN code received */
     system_event_sta_wps_fail_reason_t         sta_er_fail_reason;/**< ESP32 station WPS enrollee mode failed reason code received */
     system_event_ap_staconnected_t             sta_connected;      /**< a station connected to ESP32 soft-AP */
@@ -159,6 +161,17 @@ esp_err_t esp_event_send(system_event_t *event);
   */
 esp_err_t esp_event_process_default(system_event_t *event);
 
+/**
+  * @brief  Install default event handlers for Ethernet interface
+  *
+  */
+void esp_event_set_default_eth_handlers();
+
+/**
+  * @brief  Install default event handlers for Wi-Fi interfaces (station and AP)
+  *
+  */
+void esp_event_set_default_wifi_handlers();
 
 #ifdef __cplusplus
 }

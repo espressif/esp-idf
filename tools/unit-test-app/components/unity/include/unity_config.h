@@ -81,8 +81,8 @@ void unity_run_all_tests();
  */
 
 // shorthand to check esp_err_t return code
-#define TEST_ESP_OK(rc)	TEST_ASSERT_EQUAL_INT32(ESP_OK, rc)
-#define TEST_ESP_ERR(err, rc) TEST_ASSERT_EQUAL_INT32(err, rc)
+#define TEST_ESP_OK(rc)	TEST_ASSERT_EQUAL_HEX32(ESP_OK, rc)
+#define TEST_ESP_ERR(err, rc) TEST_ASSERT_EQUAL_HEX32(err, rc)
 
 
 #endif //UNITY_CONFIG_H

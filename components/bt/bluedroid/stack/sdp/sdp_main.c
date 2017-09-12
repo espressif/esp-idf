@@ -27,8 +27,7 @@
 //#include <stdio.h>
 
 #include "bt_target.h"
-//#include "bt_utils.h"
-#include "gki.h"
+#include "allocator.h"
 #include "l2cdefs.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
@@ -501,7 +500,7 @@ static void sdp_data_ind (UINT16 l2cap_cid, BT_HDR *p_msg)
         SDP_TRACE_WARNING ("SDP - Rcvd L2CAP data, unknown CID: 0x%x\n", l2cap_cid);
     }
 
-    GKI_freebuf (p_msg);
+    osi_free (p_msg);
 }
 
 

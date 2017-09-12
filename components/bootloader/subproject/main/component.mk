@@ -8,6 +8,7 @@
 LINKER_SCRIPTS := \
 	esp32.bootloader.ld \
 	$(IDF_PATH)/components/esp32/ld/esp32.rom.ld \
+	$(IDF_PATH)/components/esp32/ld/esp32.rom.spiram_incompatible_fns.ld \
 	$(IDF_PATH)/components/esp32/ld/esp32.peripherals.ld \
 	esp32.bootloader.rom.ld
 

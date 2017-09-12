@@ -152,7 +152,7 @@ Checking and setting memory
 
 To display or set contents of memory use "Memory" tab at the bottom of "Debug" perspective.
 
-With the "Memory" tab, we will read from and write to the memory location ``0x3FF44004`` labeled as ``GPIO_OUT_REG`` used to set and clear individual GPIO's. For more information please refer to `ESP32 Technical Reference Manual <http://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf>`__, chapter IO_MUX and GPIO Matrix.
+With the "Memory" tab, we will read from and write to the memory location ``0x3FF44004`` labeled as ``GPIO_OUT_REG`` used to set and clear individual GPIO's. For more information please refer to `ESP32 Technical Reference Manual <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf>`__, chapter IO_MUX and GPIO Matrix.
 
 Being in the same ``blink.c`` project as before, set two breakpoints right after ``gpio_set_level`` instruction. Click "Memory" tab and then "Add Memory Monitor" button. Enter ``0x3FF44004`` in provided dialog.
 
@@ -512,7 +512,7 @@ Checking and setting memory
 
 Displaying the contents of memory is done with command ``x``. With additional parameters you may vary the format and count of memory locations displayed. Run ``help x`` to see more details. Companion command to ``x`` is ``set`` that let you write values to the memory.
 
-We will demonstrate how ``x`` and ``set`` work by reading from and writing to the memory location ``0x3FF44004`` labeled as ``GPIO_OUT_REG`` used to set and clear individual GPIO's. For more information please refer to `ESP32 Technical Reference Manual <http://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf>`__, chapter IO_MUX and GPIO Matrix.
+We will demonstrate how ``x`` and ``set`` work by reading from and writing to the memory location ``0x3FF44004`` labeled as ``GPIO_OUT_REG`` used to set and clear individual GPIO's. For more information please refer to `ESP32 Technical Reference Manual <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf>`__, chapter IO_MUX and GPIO Matrix.
 
 Being in the same ``blink.c`` project as before, set two breakpoints right after ``gpio_set_level`` instruction. Enter two times ``c`` to get to the break point followed by ``x /1wx 0x3FF44004`` to display contents of ``GPIO_OUT_REG`` memory location::
 

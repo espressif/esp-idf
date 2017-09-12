@@ -446,7 +446,7 @@ sys_jiffies(void)
 u32_t
 sys_now(void)
 {
-  return xTaskGetTickCount();
+  return (xTaskGetTickCount()*portTICK_PERIOD_MS);
 }
 
 /*

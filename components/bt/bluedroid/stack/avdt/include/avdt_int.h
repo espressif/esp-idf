@@ -24,12 +24,12 @@
 #ifndef AVDT_INT_H
 #define AVDT_INT_H
 
-#include "gki.h"
 #include "avdt_api.h"
 #include "avdtc_api.h"
 #include "avdt_defs.h"
 #include "l2c_api.h"
 #include "btm_api.h"
+#include "fixed_queue.h"
 
 #if (AVRC_INCLUDED == TRUE)
 
@@ -425,8 +425,8 @@ typedef union {
 typedef struct {
     BD_ADDR             peer_addr;      /* BD address of peer */
     TIMER_LIST_ENT      timer_entry;    /* CCB timer list entry */
-    BUFFER_Q            cmd_q;          /* Queue for outgoing command messages */
-    BUFFER_Q            rsp_q;          /* Queue for outgoing response and reject messages */
+    fixed_queue_t       *cmd_q;          /* Queue for outgoing command messages */
+    fixed_queue_t       *rsp_q;          /* Queue for outgoing response and reject messages */
     tAVDT_CTRL_CBACK    *proc_cback;    /* Procedure callback function */
     tAVDT_CTRL_CBACK    *p_conn_cback;  /* Connection/disconnection callback function */
     void                *p_proc_data;   /* Pointer to data storage for procedure */
@@ -453,7 +453,7 @@ typedef struct {
     BT_HDR      *p_buf;
     UINT32      time_stamp;
 #if AVDT_MULTIPLEXING == TRUE
-    BUFFER_Q    frag_q;          /* Queue for outgoing media fragments. p_buf should be 0 */
+    fixed_queue_t    *frag_q;          /* Queue for outgoing media fragments. p_buf should be 0 */
     UINT8       *p_data;
     UINT32      data_len;
 #endif
@@ -500,7 +500,7 @@ typedef struct {
     BOOLEAN         cong;           /* Whether media transport channel is congested */
     UINT8           close_code;     /* Error code received in close response */
 #if AVDT_MULTIPLEXING == TRUE
-    BUFFER_Q        frag_q;         /* Queue for outgoing media fragments */
+    fixed_queue_t        *frag_q;         /* Queue for outgoing media fragments */
     UINT32          frag_off;       /* length of already received media fragments */
     UINT32          frag_org_len;   /* original length before fragmentation of receiving media packet */
     UINT8           *p_next_frag;   /* next fragment to send */
@@ -673,7 +673,7 @@ extern void avdt_scb_chk_snd_pkt(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data);
 extern void avdt_scb_clr_pkt(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data);
 extern void avdt_scb_tc_timer(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data);
 extern void avdt_scb_clr_vars(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data);
-extern void avdt_scb_queue_frags(tAVDT_SCB *p_scb, UINT8 **pp_data, UINT32 *p_data_len, BUFFER_Q *pq);
+extern void avdt_scb_queue_frags(tAVDT_SCB *p_scb, UINT8 **pp_data, UINT32 *p_data_len, fixed_queue_t *pq);
 
 /* msg function declarations */
 extern BOOLEAN avdt_msg_send(tAVDT_CCB *p_ccb, BT_HDR *p_msg);

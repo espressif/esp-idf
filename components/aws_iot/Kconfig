@@ -30,3 +30,56 @@ config AWS_IOT_MQTT_PORT
         If you need per-device port numbers for different regions, you can
         override the default port number in your app.
 
+
+config AWS_IOT_MQTT_TX_BUF_LEN
+    int "MQTT TX Buffer Length"
+    depends on AWS_IOT_SDK
+    default 512
+    range 32 65536
+    help
+        Maximum MQTT transmit buffer size. This is the maximum MQTT
+        message length (including protocol overhead) which can be sent.
+
+        Sending longer messages will fail.
+
+config AWS_IOT_MQTT_RX_BUF_LEN
+    int "MQTT RX Buffer Length"
+    depends on AWS_IOT_SDK
+    default 512
+    range 32 65536
+    help
+        Maximum MQTT receive buffer size. This is the maximum MQTT
+        message length (including protocol overhead) which can be
+        received.
+
+        Longer messages are dropped.
+
+
+
+config AWS_IOT_MQTT_NUM_SUBSCRIBE_HANDLERS
+    int "Maximum MQTT Topic Filters"
+    depends on AWS_IOT_SDK
+    default 5
+    range 1 100
+    help
+        Maximum number of concurrent MQTT topic filters.
+
+
+config AWS_IOT_MQTT_MIN_RECONNECT_WAIT_INTERVAL
+    int "Auto reconnect initial interval (ms)"
+    depends on AWS_IOT_SDK
+    default 1000
+    range 10 3600000
+    help
+        Initial delay before making first reconnect attempt, if the AWS IoT connection fails.
+        Client will perform exponential backoff, starting from this value.
+
+config AWS_IOT_MQTT_MAX_RECONNECT_WAIT_INTERVAL
+    int "Auto reconnect maximum interval (ms)"
+    depends on AWS_IOT_SDK
+    default 128000
+    range 10 3600000
+    help
+        Maximum delay between reconnection attempts. If the exponentially increased delay
+        interval reaches this value, the client will stop automatically attempting to reconnect.
+

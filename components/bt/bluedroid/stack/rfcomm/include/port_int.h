@@ -26,7 +26,6 @@
 #define PORT_INT_H
 
 #include "bt_target.h"
-#include "gki.h"
 #include "rfcdefs.h"
 #include "port_api.h"
 
@@ -52,7 +51,7 @@
 ** Define Port Data Transfere control block
 */
 typedef struct {
-    BUFFER_Q queue;         /* Queue of buffers waiting to be sent */
+    fixed_queue_t *queue;         /* Queue of buffers waiting to be sent */
     BOOLEAN  peer_fc;       /* TRUE if flow control is set based on peer's request */
     BOOLEAN  user_fc;       /* TRUE if flow control is set based on user's request  */
     UINT32   queue_size;    /* Number of data bytes in the queue */
@@ -88,7 +87,7 @@ typedef struct {
 */
 typedef struct {
     TIMER_LIST_ENT tle;       /* Timer list entry */
-    BUFFER_Q  cmd_q;          /* Queue for command messages on this mux */
+    fixed_queue_t  *cmd_q;          /* Queue for command messages on this mux */
     UINT8     port_inx[RFCOMM_MAX_DLCI + 1];  /* Array for quick access to  */
     /* tPORT based on dlci        */
     BD_ADDR   bd_addr;        /* BD ADDR of the peer if initiator */

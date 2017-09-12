@@ -49,6 +49,7 @@ TEST_CASE("Handle pending context switch while scheduler disabled", "[freertos]"
     isr_count = 0;
     isr_semaphore = xSemaphoreCreateMutex();
     TaskHandle_t counter_task;
+    intr_handle_t isr_handle = NULL;
 
     xTaskCreatePinnedToCore(counter_task_fn, "counter", 2048,
                             NULL, UNITY_FREERTOS_PRIORITY + 1,
@@ -69,7 +70,7 @@ TEST_CASE("Handle pending context switch while scheduler disabled", "[freertos]"
     timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0);
     timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, 1000);
     timer_enable_intr(TIMER_GROUP_0, TIMER_0);
-    timer_isr_register(TIMER_GROUP_0, TIMER_0, timer_group0_isr, NULL, 0, NULL);
+    timer_isr_register(TIMER_GROUP_0, TIMER_0, timer_group0_isr, NULL, 0, &isr_handle);
     timer_start(TIMER_GROUP_0, TIMER_0);
 
     vTaskDelay(5);
@@ -100,6 +101,9 @@ TEST_CASE("Handle pending context switch while scheduler disabled", "[freertos]"
 
         TEST_ASSERT_NOT_EQUAL(task_count, no_sched_task);
     }
+
+    esp_intr_free(isr_handle);
+    timer_disable_intr(TIMER_GROUP_0, TIMER_0);
 
     vTaskDelete(counter_task);
     vSemaphoreDelete(isr_semaphore);

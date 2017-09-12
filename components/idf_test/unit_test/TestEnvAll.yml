@@ -272,6 +272,10 @@ test environment:
     通过 TTLcable 连到PC', test script: EnvBase}
 - {PC OS: '', Special: N, Target Count: 1.0, script path: EnvBase.py, tag: UT_T1_1,
   test environment detail: Environment for running ESP32 unit tests, test script: EnvBase}
+- {PC OS: '', Special: N, Target Count: 1.0, script path: EnvBase.py, tag: UT_T1_SDMODE,
+  test environment detail: Environment for running sd card sd mode unit tests, test script: EnvBase}
+- {PC OS: '', Special: N, Target Count: 1.0, script path: EnvBase.py, tag: UT_T1_SPIMODE,
+  test environment detail: Environment for running sd card spi mode unit tests, test script: EnvBase}
 - {PC OS: linux, Special: Y, Target Count: 1.0, script path: EnvBase.py, tag: WebServer_T1_1,
   test environment detail: 'Web Server target connect with PC by UART.
 

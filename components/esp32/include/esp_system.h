@@ -18,7 +18,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
-#include "esp_deep_sleep.h"
+#include "esp_sleep.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,6 +48,15 @@ void system_init(void) __attribute__ ((deprecated));
   * This name will be removed in a future release.
   */
 void system_restore(void) __attribute__ ((deprecated));
+
+typedef void (*shutdown_handler_t)(void);
+/**
+  * @brief  Register shutdown handler
+  *
+  * This function allows you to register a handler that gets invoked before a
+  * systematic shutdown of the chip.
+  */
+esp_err_t esp_register_shutdown_handler(shutdown_handler_t handle);
 
 /**
   * @brief  Restart PRO and APP CPUs.

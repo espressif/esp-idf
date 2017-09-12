@@ -29,6 +29,8 @@
 #include "mbedtls/pk.h"
 #include "mbedtls/pk_internal.h"
 
+#include "mbedtls/bignum.h"
+
 #if defined(MBEDTLS_RSA_C)
 #include "mbedtls/rsa.h"
 #endif
@@ -38,6 +40,8 @@
 #if defined(MBEDTLS_ECDSA_C)
 #include "mbedtls/ecdsa.h"
 #endif
+
+#include <limits.h>
 
 /* Implementation that should never be optimized out by the compiler */
 static void mbedtls_zeroize( void *v, size_t n ) {
@@ -209,6 +213,11 @@ int mbedtls_pk_verify_ext( mbedtls_pk_type_t type, const void *options,
         int ret;
         const mbedtls_pk_rsassa_pss_options *pss_opts;
 
+#if defined(MBEDTLS_HAVE_INT64)
+        if( md_alg == MBEDTLS_MD_NONE && UINT_MAX < hash_len )
+            return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
+#endif /* MBEDTLS_HAVE_INT64 */
+
         if( options == NULL )
             return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
 
@@ -232,7 +241,7 @@ int mbedtls_pk_verify_ext( mbedtls_pk_type_t type, const void *options,
         return( 0 );
 #else
         return( MBEDTLS_ERR_PK_FEATURE_UNAVAILABLE );
-#endif
+#endif /* MBEDTLS_RSA_C && MBEDTLS_PKCS1_V21 */
     }
 
     /* General case: no options */

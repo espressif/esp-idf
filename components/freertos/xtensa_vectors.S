@@ -104,7 +104,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 .extern pxCurrentTCB
 
 /* Enable stack backtrace across exception/interrupt - see below */
-#define XT_DEBUG_BACKTRACE    0
+#ifdef CONFIG_FREERTOS_INTERRUPT_BACKTRACE
+#define XT_DEBUG_BACKTRACE    1
+#endif
 
 
 /*
@@ -195,7 +197,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
        It does take a few more instructions, so undef XT_DEBUG_BACKTRACE
        if you want to save the cycles.
     */
-    #if XT_DEBUG_BACKTRACE
+    #ifdef XT_DEBUG_BACKTRACE
     #ifndef __XTENSA_CALL0_ABI__
     rsr     a0, EPC_1 + \level - 1          /* return address */
     movi    a4, 0xC0000000                  /* constant with top 2 bits set (call size) */

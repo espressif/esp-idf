@@ -435,7 +435,7 @@ static i2s_dma_t *i2s_create_dma_queue(i2s_port_t i2s_num, int dma_buf_count, in
     dma->buf = (char **)malloc(sizeof(char*) * dma_buf_count);
     if (dma->buf == NULL) {
         ESP_LOGE(I2S_TAG, "Error malloc dma buffer pointer");
-
+        free(dma);
         return NULL;
     }
     memset(dma->buf, 0, sizeof(char*) * dma_buf_count);
@@ -537,7 +537,7 @@ esp_err_t i2s_set_dac_mode(i2s_dac_mode_t dac_mode)
     I2S_CHECK((dac_mode < I2S_DAC_CHANNEL_MAX), "i2s dac mode error", ESP_ERR_INVALID_ARG);
     if(dac_mode == I2S_DAC_CHANNEL_DISABLE) {
         dac_output_disable(DAC_CHANNEL_1);
-        dac_output_disable(DAC_CHANNEL_1);
+        dac_output_disable(DAC_CHANNEL_2);
         dac_i2s_disable();
     } else {
         dac_i2s_enable();

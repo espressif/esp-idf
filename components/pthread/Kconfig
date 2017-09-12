@@ -1,0 +1,16 @@
+menu "PThreads"
+
+config ESP32_PTHREAD_TASK_PRIO_DEFAULT
+    int "Default task priority"
+    range 0 255
+    default 5
+    help
+        Priority used to create new tasks with default pthread parameters.
+
+config ESP32_PTHREAD_TASK_STACK_SIZE_DEFAULT
+    int "Default task stack size"
+    default 2048
+    help
+        Stack size used to create new tasks with default pthread parameters.
+
+endmenu

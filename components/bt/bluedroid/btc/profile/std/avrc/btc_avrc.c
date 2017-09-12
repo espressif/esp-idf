@@ -24,13 +24,14 @@
 #include "bta_api.h"
 #include "bta_av_api.h"
 #include "avrc_defs.h"
-#include "gki.h"
 #include "btc_common.h"
 #include "btc_util.h"
 #include "btc_av.h"
 #include "btc_avrc.h"
 #include "btc_manage.h"
 #include "esp_avrc_api.h"
+#include "mutex.h"
+
 #if BTC_AV_INCLUDED
 
 /*****************************************************************************
@@ -86,7 +87,7 @@ typedef struct {
 } rc_transaction_t;
 
 typedef struct {
-    pthread_mutex_t lbllock;
+    osi_mutex_t lbllock;
     rc_transaction_t transaction[MAX_TRANSACTIONS_PER_SESSION];
 } rc_device_t;
 

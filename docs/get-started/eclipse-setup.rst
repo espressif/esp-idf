@@ -105,5 +105,5 @@ Related Documents
     eclipse-setup-windows
 
 
-.. _eclipse.org: http://www.eclipse.org/
+.. _eclipse.org: https://www.eclipse.org/
 

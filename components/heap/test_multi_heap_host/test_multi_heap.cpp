@@ -1,7 +1,10 @@
 #include "catch.hpp"
 #include "multi_heap.h"
 
+#include "../multi_heap_config.h"
+
 #include <string.h>
+#include <assert.h>
 
 /* Insurance against accidentally using libc heap functions in tests */
 #undef free
@@ -25,11 +28,7 @@ TEST_CASE("multi_heap simple allocations", "[multi_heap]")
     multi_heap_dump(heap);
     printf("*********************\n");
 
-    void *buf = multi_heap_malloc(heap, test_alloc_size);
-
-    printf("First malloc:\n");
-    multi_heap_dump(heap);
-    printf("*********************\n");
+    uint8_t *buf = (uint8_t *)multi_heap_malloc(heap, test_alloc_size);
 
     printf("small_heap %p buf %p\n", small_heap, buf);
     REQUIRE( buf != NULL );
@@ -50,7 +49,7 @@ TEST_CASE("multi_heap simple allocations", "[multi_heap]")
     printf("*********************\n");
 
     /* Now there should be space for another allocation */
-    buf = multi_heap_malloc(heap, test_alloc_size);
+    buf = (uint8_t *)multi_heap_malloc(heap, test_alloc_size);
     REQUIRE( buf != NULL );
     multi_heap_free(heap, buf);
 
@@ -60,15 +59,10 @@ TEST_CASE("multi_heap simple allocations", "[multi_heap]")
 
 TEST_CASE("multi_heap fragmentation", "[multi_heap]")
 {
-    uint8_t small_heap[200];
+    uint8_t small_heap[256];
     multi_heap_handle_t heap = multi_heap_register(small_heap, sizeof(small_heap));
 
-    /* allocate enough that we can't fit 6 alloc_size blocks in the heap (due to
-       per-allocation block overhead. This calculation works for 32-bit pointers,
-       probably needs tweaking for 64-bit. */
-    size_t alloc_size = ((multi_heap_free_size(heap)) / 6) & ~(sizeof(void *) - 1);
-
-    printf("alloc_size %zu\n", alloc_size);
+    const size_t alloc_size = 24;
 
     void *p[4];
     for (int i = 0; i < 4; i++) {
@@ -116,6 +110,8 @@ TEST_CASE("multi_heap many random allocations", "[multi_heap]")
     uint8_t big_heap[1024];
     const int NUM_POINTERS = 64;
 
+    printf("Running multi-allocation test...\n");
+
     void *p[NUM_POINTERS] = { 0 };
     size_t s[NUM_POINTERS] = { 0 };
     multi_heap_handle_t heap = multi_heap_register(big_heap, sizeof(big_heap));
@@ -139,16 +135,17 @@ TEST_CASE("multi_heap many random allocations", "[multi_heap]")
             */
             size_t new_size = rand() % 1024;
             void *new_p = multi_heap_realloc(heap, p[n], new_size);
+            printf("realloc %p -> %p (%zu -> %zu)\n", p[n], new_p, s[n], new_size);
+            multi_heap_check(heap, true);
             if (new_size == 0 || new_p != NULL) {
                 p[n] = new_p;
+                s[n] = new_size;
                 if (new_size > 0) {
                     REQUIRE( p[n] >= big_heap );
                     REQUIRE( p[n] < big_heap + sizeof(big_heap) );
+                    memset(p[n], n, new_size);
                 }
-                s[n] = new_size;
-                memset(p[n], n, s[n]);
             }
-            REQUIRE( multi_heap_check(heap, true) );
             continue;
         }
 
@@ -157,10 +154,11 @@ TEST_CASE("multi_heap many random allocations", "[multi_heap]")
                 /* Verify pre-existing contents of p[n] */
                 uint8_t compare[s[n]];
                 memset(compare, n, s[n]);
-                REQUIRE( memcmp(compare, p[n], s[n]) == 0 );
+                /*REQUIRE*/assert( memcmp(compare, p[n], s[n]) == 0 );
             }
-            //printf("free %zu bytes %p\n", s[n], p[n]);
+            REQUIRE( multi_heap_check(heap, true) );
             multi_heap_free(heap, p[n]);
+            printf("freed %p (%zu)\n", p[n], s[n]);
             if (!multi_heap_check(heap, true)) {
                 printf("FAILED iteration %d after freeing %p\n", i, p[n]);
                 multi_heap_dump(heap);
@@ -169,7 +167,9 @@ TEST_CASE("multi_heap many random allocations", "[multi_heap]")
         }
 
         s[n] = rand() % 1024;
+        REQUIRE( multi_heap_check(heap, true) );
         p[n] = multi_heap_malloc(heap, s[n]);
+        printf("malloc %p (%zu)\n", p[n], s[n]);
         if (p[n] != NULL) {
             REQUIRE( p[n] >= big_heap );
             REQUIRE( p[n] < big_heap + sizeof(big_heap) );
@@ -294,7 +294,7 @@ TEST_CASE("multi_heap minimum-size allocations", "[multi_heap]")
 TEST_CASE("multi_heap_realloc()", "[multi_heap]")
 {
     const uint32_t PATTERN = 0xABABDADA;
-    uint8_t small_heap[256];
+    uint8_t small_heap[300];
     multi_heap_handle_t heap = multi_heap_register(small_heap, sizeof(small_heap));
 
     uint32_t *a = (uint32_t *)multi_heap_malloc(heap, 64);
@@ -310,6 +310,10 @@ TEST_CASE("multi_heap_realloc()", "[multi_heap]")
     REQUIRE(  c  != NULL );
     REQUIRE( c > b ); /* 'a' moves, 'c' takes the block after 'b' */
     REQUIRE( *c == PATTERN );
+
+#ifndef MULTI_HEAP_POISONING_SLOW
+    // "Slow" poisoning implementation doesn't reallocate in place, so these
+    // test will fail...
 
     uint32_t *d = (uint32_t *)multi_heap_realloc(heap, c, 36);
     REQUIRE( multi_heap_check(heap, true) );
@@ -333,6 +337,7 @@ TEST_CASE("multi_heap_realloc()", "[multi_heap]")
     g = (uint32_t *)multi_heap_realloc(heap, e, 128);
     REQUIRE( multi_heap_check(heap, true) );
     REQUIRE( e == g ); /* 'g' extends 'e' in place, into the space formerly held by 'f' */
+#endif
 }
 
 TEST_CASE("corrupt heap block", "[multi_heap]")

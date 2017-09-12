@@ -43,16 +43,7 @@ config BOOTLOADER_SPI_WP_PIN
 
         The default value (GPIO 7) is correct for WP pin on ESP32-D2WD integrated flash.
 
-config BOOTLOADER_LTO
-       bool "Build bootloader with Link Time Optimisation"
-       default n
-       help
-           Setting this option enables gcc Link Time Optimisation for the bootloader build & link pass.
-
-           This gives a smaller bootloader binary (can be useful if secure boot & flash encryption & logging are all enabled), and can
-           give faster boot times, but it makes the bootloader harder to debug.
-
-endmenu  # Bootloader config
+endmenu  # Bootloader
 
 
 menu "Security features"
@@ -67,7 +58,7 @@ config SECURE_BOOT_ENABLED
 
         When enabling secure boot, JTAG and ROM BASIC Interpreter are permanently disabled by default.
 
-        Refer to http://esp-idf.readthedocs.io/en/latest/security/secure-boot.html before enabling.
+        Refer to https://esp-idf.readthedocs.io/en/latest/security/secure-boot.html before enabling.
 
 choice SECURE_BOOTLOADER_MODE
     bool "Secure bootloader mode"
@@ -131,7 +122,7 @@ config SECURE_BOOT_VERIFICATION_KEY
        PEM formatted private key using the espsecure.py
        extract_public_key command.
 
-       Refer to http://esp-idf.readthedocs.io/en/latest/security/secure-boot.html before enabling.
+       Refer to https://esp-idf.readthedocs.io/en/latest/security/secure-boot.html before enabling.
 
 config SECURE_BOOT_INSECURE
     bool "Allow potentially insecure options"
@@ -142,7 +133,7 @@ config SECURE_BOOT_INSECURE
 
        Only enable these options if you are very sure.
 
-       Refer to http://esp-idf.readthedocs.io/en/latest/security/secure-boot.html before enabling.
+       Refer to https://esp-idf.readthedocs.io/en/latest/security/secure-boot.html before enabling.
 
 config FLASH_ENCRYPTION_ENABLED
     bool "Enable flash encryption on boot (READ DOCS FIRST)"
@@ -153,7 +144,7 @@ config FLASH_ENCRYPTION_ENABLED
        Note: After first boot, the system will be permanently encrypted. Re-flashing an encrypted
        system is complicated and not always possible.
 
-       Read http://esp-idf.readthedocs.io/en/latest/security/flash-encryption.html before enabling.
+       Read https://esp-idf.readthedocs.io/en/latest/security/flash-encryption.html before enabling.
 
 config FLASH_ENCRYPTION_INSECURE
     bool "Allow potentially insecure options"
@@ -177,12 +168,17 @@ menu "Potentially insecure options"
 
 config SECURE_BOOT_ALLOW_ROM_BASIC
        bool "Leave ROM BASIC Interpreter available on reset"
-       depends on SECURE_BOOT_INSECURE
+       depends on SECURE_BOOT_INSECURE || FLASH_ENCRYPTION_INSECURE
        default N
        help
-          If not set (default), bootloader permanently disables ROM BASIC (on UART console) as a fallback if the bootloader image becomes invalid. This happens on first boot.
+          By default, the BASIC ROM Console starts on reset if no valid bootloader is
+          read from the flash.
 
-          Only set this option in testing environments.
+          When either flash encryption or secure boot are enabled, the default is to
+          disable this BASIC fallback mode permanently via efuse.
+
+          If this option is set, this efuse is not burned and the BASIC ROM Console may
+          remain accessible.  Only set this option in testing environments.
 
 config SECURE_BOOT_ALLOW_JTAG
        bool "Allow JTAG Debugging"
@@ -226,7 +222,7 @@ config FLASH_ENCRYPTION_UART_BOOTLOADER_ALLOW_CACHE
 config SECURE_BOOT_TEST_MODE
        bool "Secure boot test mode: don't permanently set any efuses"
        depends on SECURE_BOOT_INSECURE
-       default n
+       default N
        help
           If this option is set, all permanent secure boot changes (via Efuse) are disabled.
 

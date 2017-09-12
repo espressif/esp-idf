@@ -30,11 +30,11 @@
 
 #include "bdaddr.h"
 // #include "btif/include/btif_util.h"
-#include "gki.h"
 #include "utl.h"
 #include "bta_sys.h"
 #include "bta_gattc_int.h"
 #include "l2c_api.h"
+#include "allocator.h"
 
 #define LOG_TAG "bt_bta_gattc"
 /*****************************************************************************
@@ -401,8 +401,11 @@ tBTA_GATTC_SERV *bta_gattc_srcb_alloc(BD_ADDR bda)
     }
 
     if (p_tcb != NULL) {
-        while (!GKI_queue_is_empty(&p_tcb->cache_buffer)) {
-            GKI_freebuf (GKI_dequeue (&p_tcb->cache_buffer));
+        if (p_tcb->cache_buffer) {
+            while (!fixed_queue_is_empty(p_tcb->cache_buffer)) {
+                osi_free(fixed_queue_dequeue(p_tcb->cache_buffer));
+            }
+            fixed_queue_free(p_tcb->cache_buffer, NULL);
         }
 
         utl_freebuf((void **)&p_tcb->p_srvc_list);
@@ -410,6 +413,8 @@ tBTA_GATTC_SERV *bta_gattc_srcb_alloc(BD_ADDR bda)
 
         p_tcb->in_use = TRUE;
         bdcpy(p_tcb->server_bda, bda);
+
+        p_tcb->cache_buffer = fixed_queue_new(SIZE_MAX); //by Snake
     }
     return p_tcb;
 }

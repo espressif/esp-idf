@@ -22,8 +22,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "bt_trace.h"
-
-#include "osi_arch.h"
+#include "bt_target.h"
 
 #define UNUSED(x)                   (void)(x)
 
@@ -31,6 +30,20 @@
 #define SIZE_MAX                    254
 #endif
 /*Timer Related Defination*/
+
+//by Snake.T
+typedef void (TIMER_CBACK)(void *p_tle);
+typedef struct _tle {
+    struct _tle  *p_next;
+    struct _tle  *p_prev;
+    TIMER_CBACK  *p_cback;
+    INT32         ticks;
+    INT32         ticks_initial;
+    TIMER_PARAM_TYPE   param;
+    TIMER_PARAM_TYPE   data;
+    UINT16        event;
+    UINT8         in_use;
+} TIMER_LIST_ENT;
 
 #define alarm_timer_t               uint32_t
 #define alarm_timer_setfn(timer, cb, data)           \
@@ -43,23 +56,6 @@ do {                                                 \
 do {                                                 \
 } while (0)
 #define alarm_timer_now()             (0)
-
-
-/*Thread and locker related defination*/
-#define RTOS_SUPPORT
-#ifdef RTOS_SUPPORT
-#define pthread_mutex_t               osi_mutex_t
-#define pthread_mutex_init(mutex, a)  osi_mutex_new(mutex)
-#define pthread_mutex_destroy(mutex)  osi_mutex_free(mutex)
-#define pthread_mutex_lock            osi_mutex_lock
-#define pthread_mutex_unlock          osi_mutex_unlock
-#else
-#define pthread_mutex_t               uint8_t
-#define pthread_mutex_init(x1, x2)
-#define pthread_mutex_destroy(mutex)
-#define pthread_mutex_lock(mutex)
-#define pthread_mutex_unlock(mutex)
-#endif
 
 
 /*Bluetooth Address*/

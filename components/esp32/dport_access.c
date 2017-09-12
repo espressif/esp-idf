@@ -69,21 +69,23 @@ static BaseType_t oldInterruptLevel[2];
 void IRAM_ATTR esp_dport_access_stall_other_cpu_start(void)
 {
 #ifndef CONFIG_FREERTOS_UNICORE
-    int cpu_id = xPortGetCoreID();
-
     if (dport_core_state[0] == DPORT_CORE_STATE_IDLE
-            || dport_core_state[1] == DPORT_CORE_STATE_IDLE) {
+        || dport_core_state[1] == DPORT_CORE_STATE_IDLE) {
         return;
     }
+
+    BaseType_t intLvl = portENTER_CRITICAL_NESTED();
+
+    int cpu_id = xPortGetCoreID();
 
 #ifdef DPORT_ACCESS_BENCHMARK
     ccount_start[cpu_id] = XTHAL_GET_CCOUNT();
 #endif
-    BaseType_t intLvl=portENTER_CRITICAL_NESTED();
-    oldInterruptLevel[cpu_id]=intLvl;
 
     if (dport_access_ref[cpu_id] == 0) {
-        portENTER_CRITICAL_ISR(&g_dport_mux); 
+        portENTER_CRITICAL_ISR(&g_dport_mux);
+
+        oldInterruptLevel[cpu_id]=intLvl;
 
         dport_access_start[cpu_id] = 0;
         dport_access_end[cpu_id] = 0;
@@ -100,6 +102,11 @@ void IRAM_ATTR esp_dport_access_stall_other_cpu_start(void)
     }
 
     dport_access_ref[cpu_id]++;
+
+    if (dport_access_ref[cpu_id] > 1) {
+        /* Interrupts are already disabled by the parent, we're nested here. */
+        portEXIT_CRITICAL_NESTED(intLvl);
+    }
 #endif /* CONFIG_FREERTOS_UNICORE */
 }
 
@@ -124,9 +131,9 @@ void IRAM_ATTR esp_dport_access_stall_other_cpu_end(void)
         dport_access_end[cpu_id] = 1;
 
         portEXIT_CRITICAL_ISR(&g_dport_mux);
+
+        portEXIT_CRITICAL_NESTED(oldInterruptLevel[cpu_id]);
     }
-        
-    portEXIT_CRITICAL_NESTED(oldInterruptLevel[cpu_id]);
 
 #ifdef DPORT_ACCESS_BENCHMARK
     ccount_end[cpu_id] = XTHAL_GET_CCOUNT();
@@ -177,7 +184,7 @@ void esp_dport_access_int_init(void)
     assert(res == pdTRUE);
 }
 
-void esp_dport_access_int_deinit(void)
+void IRAM_ATTR esp_dport_access_int_pause(void)
 {
     portENTER_CRITICAL_ISR(&g_dport_mux);
     dport_core_state[0] = DPORT_CORE_STATE_IDLE;
@@ -186,3 +193,14 @@ void esp_dport_access_int_deinit(void)
 #endif
     portEXIT_CRITICAL_ISR(&g_dport_mux);
 }
+
+void IRAM_ATTR esp_dport_access_int_resume(void)
+{
+    portENTER_CRITICAL_ISR(&g_dport_mux);
+    dport_core_state[0] = DPORT_CORE_STATE_RUNNING;
+#ifndef CONFIG_FREERTOS_UNICORE
+    dport_core_state[1] = DPORT_CORE_STATE_RUNNING;
+#endif
+    portEXIT_CRITICAL_ISR(&g_dport_mux);
+}
+
