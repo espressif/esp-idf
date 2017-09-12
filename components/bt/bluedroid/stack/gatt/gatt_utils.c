@@ -2216,9 +2216,10 @@ void gatt_cleanup_upon_disc(BD_ADDR bda, UINT16 reason, tBT_TRANSPORT transport)
         gatt_free_pending_ind(p_tcb);
         gatt_free_pending_enc_queue(p_tcb);
         gatt_free_pending_prepare_write_queue(p_tcb);
+#if (GATTS_INCLUDED == TRUE)
         fixed_queue_free(p_tcb->sr_cmd.multi_rsp_q, osi_free_func);
         p_tcb->sr_cmd.multi_rsp_q = NULL;
-
+#endif  ///GATTS_INCLUDED == TRUE
         for (i = 0; i < GATT_MAX_APPS; i ++) {
             p_reg = &gatt_cb.cl_rcb[i];
             if (p_reg->in_use && p_reg->app_cb.p_conn_cb) {
