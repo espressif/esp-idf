@@ -23,6 +23,7 @@
 #include "tcpip_adapter.h"
 
 #include "apps/dhcpserver.h"
+#include "apps/dhcpserver_options.h"
 
 #if ESP_DHCP
 
@@ -70,6 +71,11 @@
 #define DHCPS_STATE_NAK 4
 #define DHCPS_STATE_IDLE 5
 #define DHCPS_STATE_RELEASE 6
+
+typedef struct _list_node {
+	void *pnode;
+	struct _list_node *pnext;
+} list_node;
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -135,7 +141,7 @@ void *dhcps_option_info(u8_t op_id, u32_t opt_len)
  *                pinsert -- the insert node of the list
  * Returns      : none
 *******************************************************************************/
-void node_insert_to_list(list_node **phead, list_node *pinsert)
+static void node_insert_to_list(list_node **phead, list_node *pinsert)
 {
     list_node *plist = NULL;
     struct dhcps_pool *pdhcps_pool = NULL;

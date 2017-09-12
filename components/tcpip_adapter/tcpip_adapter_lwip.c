@@ -33,6 +33,7 @@
 #include "netif/ethernetif.h"
 
 #include "apps/dhcpserver.h"
+#include "apps/dhcpserver_options.h"
 
 #include "esp_event.h"
 #include "esp_log.h"
