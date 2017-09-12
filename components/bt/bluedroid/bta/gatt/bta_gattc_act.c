@@ -861,9 +861,6 @@ void bta_gattc_set_discover_st(tBTA_GATTC_SERV *p_srcb)
     tBTA_GATTC_CB   *p_cb = &bta_gattc_cb;
     UINT8   i;
 
-#if BLE_INCLUDED == TRUE
-    L2CA_EnableUpdateBleConnParams(p_srcb->server_bda, FALSE);
-#endif
     for (i = 0; i < BTA_GATTC_CLCB_MAX; i ++) {
         if (p_cb->clcb[i].p_srcb == p_srcb) {
             p_cb->clcb[i].status = BTA_GATT_OK;
@@ -993,11 +990,6 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 
     APPL_TRACE_DEBUG("bta_gattc_disc_cmpl conn_id=%d", p_clcb->bta_conn_id);
 
-#if BLE_INCLUDED == TRUE
-    if (p_clcb->transport == BTA_TRANSPORT_LE) {
-        L2CA_EnableUpdateBleConnParams(p_clcb->p_srcb->server_bda, TRUE);
-    }
-#endif
     p_clcb->p_srcb->state = BTA_GATTC_SERV_IDLE;
     p_clcb->disc_active = FALSE;
 

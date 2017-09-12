@@ -126,7 +126,7 @@ typedef union {
         esp_bd_addr_t bd_addr;
     } remove_bond_device;
 } btc_ble_gap_args_t;
-
+void btc_gap_callback_init(void);
 void btc_gap_ble_call_handler(btc_msg_t *msg);
 void btc_gap_ble_cb_handler(btc_msg_t *msg);
 
