@@ -1,5 +1,5 @@
 ESP-NOW
-======
+=======
 
 Overview
 --------
@@ -18,10 +18,10 @@ ESP-NOW uses vendor-specific action frame to transmit ESP-NOW data. The format o
 
 ::
 
-----------------------------------------------------------------------------------------
-| MAC Header | Category Code | Organization Identifier | Vendor Specific Content | FCS |
-----------------------------------------------------------------------------------------
-                   1 byte              3 bytes                  7~255 bytes
+    ----------------------------------------------------------------------------------------
+    | MAC Header | Category Code | Organization Identifier | Vendor Specific Content | FCS |
+    ----------------------------------------------------------------------------------------
+                       1 byte              3 bytes                  7~255 bytes
 
 - Category Code: The Category field is set to the value(127) indicating the vendor-specific category.
 - Organization Identifier: The Organization Identifier contains a unique identifier(0x18fe34) which is the first three bytes 
@@ -32,10 +32,10 @@ ESP-NOW uses vendor-specific action frame to transmit ESP-NOW data. The format o
 
 ::
 
--------------------------------------------------------------------------------
-| Element ID | Length | Organization Identifier | Type | Version |    Body    |
--------------------------------------------------------------------------------
-    1 byte     1 byte            3 bytes         1 byte   1 byte   0~250 bytes
+    -------------------------------------------------------------------------------
+    | Element ID | Length | Organization Identifier | Type | Version |    Body    |
+    -------------------------------------------------------------------------------
+        1 byte     1 byte            3 bytes         1 byte   1 byte   0~250 bytes
     
 - Element ID: The Element ID field is set to the value(221) indicating the vendor-specific element.
 - Length: The length is the total length of Organization Identifier, Type, Version and Body.
