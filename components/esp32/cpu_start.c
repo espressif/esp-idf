@@ -347,6 +347,10 @@ void start_cpu0_default(void)
 #if !CONFIG_FREERTOS_UNICORE
 void start_cpu1_default(void)
 {
+    // Wait for FreeRTOS initialization to finish on PRO CPU
+    while (port_xSchedulerRunning[0] == 0) {
+        ;
+    }
 #if CONFIG_ESP32_TRAX_TWOBANKS
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
 #endif
@@ -356,10 +360,6 @@ void start_cpu1_default(void)
         ESP_EARLY_LOGE(TAG, "Failed to init apptrace module on CPU1 (%d)!", err);
     }
 #endif
-    // Wait for FreeRTOS initialization to finish on PRO CPU
-    while (port_xSchedulerRunning[0] == 0) {
-        ;
-    }
     //Take care putting stuff here: if asked, FreeRTOS will happily tell you the scheduler
     //has started, but it isn't active *on this CPU* yet.
     esp_cache_err_int_init();
