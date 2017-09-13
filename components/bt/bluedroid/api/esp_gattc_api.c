@@ -348,6 +348,9 @@ esp_err_t esp_ble_gattc_read_multiple(esp_gatt_if_t gattc_if,
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_READ_MULTIPLE_CHAR;
     arg.read_multiple.conn_id = BTC_GATT_CREATE_CONN_ID(gattc_if, conn_id);
+    arg.read_multiple.num_attr = read_multi->num_attr;
+    arg.read_multiple.auth_req = auth_req;
+
     if (read_multi->num_attr > 0) {
         memcpy(arg.read_multiple.handles, read_multi->handles, sizeof(uint16_t)*read_multi->num_attr);
     } else {
