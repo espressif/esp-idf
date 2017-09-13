@@ -35,12 +35,16 @@ pacman --noconfirm -Syu # This step may require the terminal to be closed and re
 
 pacman --noconfirm -S --needed gettext-devel gcc git make ncurses-devel flex bison gperf vim mingw-w64-i686-python2-pip unzip winpty
 
+# Workaround for errors when running "git submodule" commands
+# See https://github.com/Alexpux/MSYS2-packages/issues/735
+rm /mingw32/bin/envsubst.exe
+
 python -m pip install --upgrade pip
 
 pip install pyserial
 
 # Automatically download precompiled toolchain, unpack at /opt/xtensa-esp32-elf/
-TOOLCHAIN_ZIP=xtensa-esp32-elf-win32-1.22.0-61-gab8375a-5.2.0.zip
+TOOLCHAIN_ZIP=xtensa-esp32-elf-win32-1.22.0-70-gfa0bad1-5.2.0.zip
 echo "Downloading precompiled toolchain ${TOOLCHAIN_ZIP}..."
 cd ~
 curl -LO --retry 10 http://dl.espressif.com/dl/${TOOLCHAIN_ZIP}
