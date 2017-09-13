@@ -113,6 +113,19 @@ typedef enum {
 } adc_i2s_source_t;
 
 /**
+ * @brief Get the gpio number of a specific ADC1 channel.
+ * 
+ * @param channel Channel to get the gpio number
+ * 
+ * @param gpio_num output buffer to hold the gpio number
+ * 
+ * @return 
+ *   - ESP_OK if success
+ *   - ESP_ERR_INVALID_ARG if channal not valid 
+ */
+esp_err_t adc1_pad_get_io_num(adc1_channel_t channel, gpio_num_t *gpio_num);
+
+/**
  * @brief Configure ADC1 capture width, meanwhile enable output invert for ADC1.
  * The configuration is for all channels of ADC1
  * @param width_bit Bit capture width for ADC1
@@ -272,6 +285,19 @@ void adc1_ulp_enable();
  * @return The hall sensor reading.
  */
 int hall_sensor_read();
+
+/**
+ * @brief Get the gpio number of a specific ADC2 channel.
+ * 
+ * @param channel Channel to get the gpio number
+ * 
+ * @param gpio_num output buffer to hold the gpio number
+ * 
+ * @return 
+ *   - ESP_OK if success
+ *   - ESP_ERR_INVALID_ARG if channal not valid 
+ */
+esp_err_t adc2_pad_get_io_num(adc2_channel_t channel, gpio_num_t *gpio_num);
 
 /**
  *  @brief Output ADC2 reference voltage to gpio 25 or 26 or 27

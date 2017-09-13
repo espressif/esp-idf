@@ -905,9 +905,9 @@ esp_err_t touch_pad_filter_delete()
 /*---------------------------------------------------------------
                     ADC
 ---------------------------------------------------------------*/
-static esp_err_t adc1_pad_get_io_num(adc1_channel_t channel, gpio_num_t *gpio_num)
+esp_err_t adc1_pad_get_io_num(adc1_channel_t channel, gpio_num_t *gpio_num)
 {
-    RTC_MODULE_CHECK(channel < ADC1_CHANNEL_MAX, "ADC Channel Err", ESP_ERR_INVALID_ARG);
+    RTC_MODULE_CHECK(channel < ADC1_CHANNEL_MAX, "ADC1 Channel Err", ESP_ERR_INVALID_ARG);
 
     switch (channel) {
     case ADC1_CHANNEL_0:
@@ -1263,6 +1263,51 @@ void adc1_ulp_enable(void)
     portEXIT_CRITICAL(&rtc_spinlock);
 }
 
+/*---------------------------------------------------------------
+                    ADC2
+---------------------------------------------------------------*/
+esp_err_t adc2_pad_get_io_num(adc2_channel_t channel, gpio_num_t *gpio_num)
+{
+    RTC_MODULE_CHECK(channel < ADC2_CHANNEL_MAX, "ADC2 Channel Err", ESP_ERR_INVALID_ARG);
+
+    switch (channel) {
+    case ADC2_CHANNEL_0:
+        *gpio_num = ADC2_CHANNEL_0_GPIO_NUM;
+        break;
+    case ADC2_CHANNEL_1:
+        *gpio_num = ADC2_CHANNEL_1_GPIO_NUM;
+        break;
+    case ADC2_CHANNEL_2:
+        *gpio_num = ADC2_CHANNEL_2_GPIO_NUM;
+        break;
+    case ADC2_CHANNEL_3:
+        *gpio_num = ADC2_CHANNEL_3_GPIO_NUM;
+        break;
+    case ADC2_CHANNEL_4:
+        *gpio_num = ADC2_CHANNEL_4_GPIO_NUM;
+        break;
+    case ADC2_CHANNEL_5:
+        *gpio_num = ADC2_CHANNEL_5_GPIO_NUM;
+        break;
+    case ADC2_CHANNEL_6:
+        *gpio_num = ADC2_CHANNEL_6_GPIO_NUM;
+        break;
+    case ADC2_CHANNEL_7:
+        *gpio_num = ADC2_CHANNEL_7_GPIO_NUM;
+        break;
+    case ADC2_CHANNEL_8:
+        *gpio_num = ADC2_CHANNEL_8_GPIO_NUM;
+        break;
+    case ADC2_CHANNEL_9:
+        *gpio_num = ADC2_CHANNEL_9_GPIO_NUM;
+        break;
+    default:
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return ESP_OK;
+}
+
 esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)
 {
     int channel;
@@ -1303,7 +1348,7 @@ esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)
 /*---------------------------------------------------------------
                     DAC
 ---------------------------------------------------------------*/
-static esp_err_t dac_pad_get_io_num(dac_channel_t channel, gpio_num_t *gpio_num)
+esp_err_t dac_pad_get_io_num(dac_channel_t channel, gpio_num_t *gpio_num)
 {
     RTC_MODULE_CHECK((channel >= DAC_CHANNEL_1) && (channel < DAC_CHANNEL_MAX), DAC_ERR_STR_CHANNEL_ERROR, ESP_ERR_INVALID_ARG);
     RTC_MODULE_CHECK(gpio_num, "Param null", ESP_ERR_INVALID_ARG);
