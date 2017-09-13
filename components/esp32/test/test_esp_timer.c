@@ -103,7 +103,7 @@ TEST_CASE("esp_timer produces correct delay", "[esp_timer]")
     esp_timer_delete(timer1);
 }
 
-TEST_CASE("periodic ets_timer produces correct delays", "[esp_timer]")
+TEST_CASE("periodic esp_timer produces correct delays", "[esp_timer]")
 {
     // no, we can't make this a const size_t (§6.7.5.2)
 #define NUM_INTERVALS 16
