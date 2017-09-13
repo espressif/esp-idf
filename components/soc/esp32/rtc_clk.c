@@ -29,6 +29,7 @@
 #include "i2c_rtc_clk.h"
 #include "soc_log.h"
 #include "sdkconfig.h"
+#include "xtensa/core-macros.h"
 
 
 #define MHZ (1000000)
@@ -510,6 +511,8 @@ uint32_t rtc_clk_apb_freq_get()
 
 void rtc_clk_init(rtc_clk_config_t cfg)
 {
+    rtc_cpu_freq_t cpu_source_before = rtc_clk_cpu_freq_get();
+    
     /* If we get a TG WDT system reset while running at 240MHz,
      * DPORT_CPUPERIOD_SEL register will be reset to 0 resulting in 120MHz
      * APB and CPU frequencies after reset. This will cause issues with XTAL
@@ -569,6 +572,11 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     rtc_clk_apb_freq_update(xtal_freq * MHZ);
     /* Set CPU frequency */
     rtc_clk_cpu_freq_set(cfg.cpu_freq);
+    
+    /* Re-calculate the ccount to make time calculation correct. */    
+    uint32_t freq_before = rtc_clk_cpu_freq_value(cpu_source_before) / MHZ;
+    uint32_t freq_after = rtc_clk_cpu_freq_value(cfg.cpu_freq) / MHZ;
+    XTHAL_SET_CCOUNT( XTHAL_GET_CCOUNT() * freq_after / freq_before );
 
     /* Slow & fast clocks setup */
     if (cfg.slow_freq == RTC_SLOW_FREQ_32K_XTAL) {
