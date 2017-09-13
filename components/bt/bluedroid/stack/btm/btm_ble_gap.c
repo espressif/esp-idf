@@ -2988,21 +2988,18 @@ tBTM_STATUS btm_ble_start_scan(void)
     tBTM_BLE_INQ_CB *p_inq = &btm_cb.ble_ctr_cb.inq_var;
     tBTM_STATUS status = BTM_CMD_STARTED;
 
-    if (p_inq->adv_mode != BTM_BLE_ADV_DISABLE) {
+    /* start scan, disable duplicate filtering */
+    if (!btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_ENABLE, p_inq->scan_duplicate_filter)) {
         status = BTM_NO_RESOURCES;
     } else {
-        /* start scan, disable duplicate filtering */
-        if (!btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_ENABLE, p_inq->scan_duplicate_filter)) {
-            status = BTM_NO_RESOURCES;
+        btm_cb.ble_ctr_cb.inq_var.state = BTM_BLE_SCANNING;
+        if (p_inq->scan_type == BTM_BLE_SCAN_MODE_ACTI) {
+            btm_ble_set_topology_mask(BTM_BLE_STATE_ACTIVE_SCAN_BIT);
         } else {
-            btm_cb.ble_ctr_cb.inq_var.state = BTM_BLE_SCANNING;
-            if (p_inq->scan_type == BTM_BLE_SCAN_MODE_ACTI) {
-                btm_ble_set_topology_mask(BTM_BLE_STATE_ACTIVE_SCAN_BIT);
-            } else {
-                btm_ble_set_topology_mask(BTM_BLE_STATE_PASSIVE_SCAN_BIT);
-            }
+            btm_ble_set_topology_mask(BTM_BLE_STATE_PASSIVE_SCAN_BIT);
         }
     }
+
     return status;
 }
 
@@ -3019,18 +3016,17 @@ void btm_ble_stop_scan(void)
 {
     BTM_TRACE_EVENT ("btm_ble_stop_scan ");
 
-    if (btm_cb.ble_ctr_cb.inq_var.adv_mode == BTM_BLE_ADV_DISABLE) {
-        /* Clear the inquiry callback if set */
-        btm_cb.ble_ctr_cb.inq_var.scan_type = BTM_BLE_SCAN_MODE_NONE;
-        btm_cb.ble_ctr_cb.inq_var.state = BTM_BLE_STOP_SCAN;
-        /* stop discovery now */
-        btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_DISABLE, BTM_BLE_DUPLICATE_ENABLE);
+    /* Clear the inquiry callback if set */
+    btm_cb.ble_ctr_cb.inq_var.scan_type = BTM_BLE_SCAN_MODE_NONE;
+    btm_cb.ble_ctr_cb.inq_var.state = BTM_BLE_STOP_SCAN;
+    /* stop discovery now */
+    btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_DISABLE, BTM_BLE_DUPLICATE_ENABLE);
 
-        btm_update_scanner_filter_policy(SP_ADV_ALL);
+    btm_update_scanner_filter_policy(SP_ADV_ALL);
 
-        btm_cb.ble_ctr_cb.wl_state &= ~BTM_BLE_WL_SCAN;
-    }
+    btm_cb.ble_ctr_cb.wl_state &= ~BTM_BLE_WL_SCAN;
 }
+
 /*******************************************************************************
 **
 ** Function         btm_ble_stop_inquiry
@@ -3149,14 +3145,10 @@ static BOOLEAN btm_ble_adv_states_operation(BTM_TOPOLOGY_FUNC_PTR *p_handler, UI
 *******************************************************************************/
 tBTM_STATUS btm_ble_start_adv(void)
 {
-    tBTM_BLE_CB *p_ble_cb = & btm_cb.ble_ctr_cb;
     tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
     tBTM_STATUS     rt = BTM_NO_RESOURCES;
     BTM_TRACE_EVENT ("btm_ble_start_adv\n");
 
-    if (BTM_BLE_IS_OBS_ACTIVE(p_ble_cb->scan_activity)) {
-        return BTM_NO_RESOURCES;
-    }
 
     if (!btm_ble_adv_states_operation (btm_ble_topology_check, p_cb->evt_type)) {
         return BTM_WRONG_MODE;
@@ -3200,12 +3192,10 @@ tBTM_STATUS btm_ble_start_adv(void)
 *******************************************************************************/
 tBTM_STATUS btm_ble_stop_adv(void)
 {
-    tBTM_BLE_CB *p_ble_cb = & btm_cb.ble_ctr_cb;
     tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
     tBTM_STATUS rt = BTM_SUCCESS;
 
-    if (p_cb->adv_mode == BTM_BLE_ADV_ENABLE
-            && !BTM_BLE_IS_OBS_ACTIVE(p_ble_cb->scan_activity)) {
+    if (p_cb->adv_mode == BTM_BLE_ADV_ENABLE) {
         if (btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_DISABLE)) {
             p_cb->fast_adv_on = FALSE;
             p_cb->adv_mode = BTM_BLE_ADV_DISABLE;

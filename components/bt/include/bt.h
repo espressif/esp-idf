@@ -102,11 +102,10 @@ typedef enum {
     ESP_BLE_PWR_TYPE_CONN_HDL6  = 6,            /*!< For connection handle 6 */
     ESP_BLE_PWR_TYPE_CONN_HDL7  = 7,            /*!< For connection handle 7 */
     ESP_BLE_PWR_TYPE_CONN_HDL8  = 8,            /*!< For connection handle 8 */
-    ESP_BLE_PWR_TYPE_CONN_HDL9  = 9,            /*!< For connection handle 9 */
-    ESP_BLE_PWR_TYPE_ADV        = 10,           /*!< For advertising */
-    ESP_BLE_PWR_TYPE_SCAN       = 11,           /*!< For scan */
-    ESP_BLE_PWR_TYPE_DEFAULT    = 12,           /*!< For default, if not set other, it will use default value */
-    ESP_BLE_PWR_TYPE_NUM        = 13,           /*!< TYPE numbers */
+    ESP_BLE_PWR_TYPE_ADV        = 9,           /*!< For advertising */
+    ESP_BLE_PWR_TYPE_SCAN       = 10,           /*!< For scan */
+    ESP_BLE_PWR_TYPE_DEFAULT    = 11,           /*!< For default, if not set other, it will use default value */
+    ESP_BLE_PWR_TYPE_NUM        = 12,           /*!< TYPE numbers */
 } esp_ble_power_type_t;
 
 /**
