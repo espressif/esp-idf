@@ -24,6 +24,7 @@ import struct
 import array
 import errno
 import base64
+import binascii
 
 idf_path = os.getenv('IDF_PATH')
 if idf_path:
@@ -35,7 +36,7 @@ except ImportError:
     print("Esptool is not found! Set proper $IDF_PATH in environment.")
     sys.exit(2)
 
-__version__ = "0.2-dev"
+__version__ = "0.3-dev"
 
 if os.name == 'nt':
     CLOSE_FDS = False
@@ -690,12 +691,10 @@ class ESPCoreDumpFileLoader(ESPCoreDumpLoader):
 class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
     """Core dump flash loader class
     """
-    ESP32_COREDUMP_FLASH_MAGIC_START    = 0xE32C04ED
-    ESP32_COREDUMP_FLASH_MAGIC_END      = 0xE32C04ED
-    ESP32_COREDUMP_FLASH_MAGIC_FMT      = '<L'
-    ESP32_COREDUMP_FLASH_MAGIC_SZ       = struct.calcsize(ESP32_COREDUMP_FLASH_MAGIC_FMT)
-    ESP32_COREDUMP_FLASH_HDR_FMT        = '<4L'
-    ESP32_COREDUMP_FLASH_HDR_SZ         = struct.calcsize(ESP32_COREDUMP_FLASH_HDR_FMT)
+    ESP32_COREDUMP_FLASH_CRC_FMT    = '<L'
+    ESP32_COREDUMP_FLASH_CRC_SZ     = struct.calcsize(ESP32_COREDUMP_FLASH_CRC_FMT)
+    ESP32_COREDUMP_FLASH_LEN_FMT    = '<L'
+    ESP32_COREDUMP_FLASH_LEN_SZ     = struct.calcsize(ESP32_COREDUMP_FLASH_LEN_FMT)
 
     def __init__(self, off, tool_path=None, chip='esp32', port=None, baud=None):
         """Constructor for core dump flash loader
@@ -722,7 +721,7 @@ class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
             tool_args.extend(['-p', self.port])
         if self.baud:
             tool_args.extend(['-b', str(self.baud)])
-        tool_args.extend(['read_flash', str(off), str(self.ESP32_COREDUMP_FLASH_HDR_SZ), ''])
+        tool_args.extend(['read_flash', str(off), str(self.ESP32_COREDUMP_FLASH_LEN_SZ), ''])
 
         self.fcore_name = None
         try:
@@ -750,26 +749,20 @@ class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
     def _read_core_dump_length(self, f):
         """Reads core dump length
         """
-        data = f.read(4*4)
-        mag1,tot_len,task_num,tcbsz = struct.unpack_from(self.ESP32_COREDUMP_FLASH_HDR_FMT, data)
-        if mag1 != self.ESP32_COREDUMP_FLASH_MAGIC_START:
-            raise ESPCoreDumpLoaderError("Invalid start magic number!")
+        data = f.read(self.ESP32_COREDUMP_FLASH_LEN_SZ)
+        tot_len, = struct.unpack_from(self.ESP32_COREDUMP_FLASH_LEN_FMT, data)
         return tot_len
 
     def create_corefile(self, core_fname=None, rom_elf=None):
         """Checks flash coredump data integrity and creates ELF file
         """
-        data = self.read_data(0, self.ESP32_COREDUMP_FLASH_MAGIC_SZ)
-        mag1, = struct.unpack_from(self.ESP32_COREDUMP_FLASH_MAGIC_FMT, data)
-        if mag1 != self.ESP32_COREDUMP_FLASH_MAGIC_START:
-            raise ESPCoreDumpLoaderError("Invalid start marker %x" % mag1)
-
-        data = self.read_data(self.dump_sz-self.ESP32_COREDUMP_FLASH_MAGIC_SZ, self.ESP32_COREDUMP_FLASH_MAGIC_SZ)
-        mag2, = struct.unpack_from(self.ESP32_COREDUMP_FLASH_MAGIC_FMT, data)
-        if mag2 != self.ESP32_COREDUMP_FLASH_MAGIC_END:
-            raise ESPCoreDumpLoaderError("Invalid end marker %x" % mag2)
-        
-        return super(ESPCoreDumpFlashLoader, self).create_corefile(core_fname, off=self.ESP32_COREDUMP_FLASH_MAGIC_SZ, rom_elf=rom_elf)
+        data = self.read_data(self.dump_sz - self.ESP32_COREDUMP_FLASH_CRC_SZ, self.ESP32_COREDUMP_FLASH_CRC_SZ)
+        dump_crc, = struct.unpack_from(self.ESP32_COREDUMP_FLASH_CRC_FMT, data)
+        data = self.read_data(0, self.dump_sz - self.ESP32_COREDUMP_FLASH_CRC_SZ)
+        data_crc = binascii.crc32(data) & 0xffffffff
+        if dump_crc != data_crc:
+            raise ESPCoreDumpLoaderError("Invalid core dump CRC %x, should be %x" % (data_crc, dump_crc))        
+        return super(ESPCoreDumpFlashLoader, self).create_corefile(core_fname)
 
 
 class GDBMIOutRecordHandler(object):

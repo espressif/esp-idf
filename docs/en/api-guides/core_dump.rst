@@ -24,9 +24,7 @@ There are a number of core dump related configuration options which user can cho
 * Save core dump to flash
 * Print core dump to UART
 
-2. Logging level of core dump module (`Components -> ESP32-specific config -> Core dump module logging level`). Value is a number from 0 (no output) to 5 (most verbose).
-
-3. Delay before core dump will be printed to UART (`Components -> ESP32-specific config -> Core dump print to UART delay`). Value is in ms.
+2. Delay before core dump will be printed to UART (`Components -> ESP32-specific config -> Core dump print to UART delay`). Value is in ms.
 
 
 Save core dump to flash

@@ -306,13 +306,6 @@ config ESP32_CORE_DUMP_UART_DELAY
         Config delay (in ms) before printing core dump to UART.
         Delay can be interrupted by pressing Enter key.
 
-config ESP32_CORE_DUMP_LOG_LEVEL
-    int "Core dump module logging level"
-    depends on ESP32_ENABLE_COREDUMP
-    default 1
-    help
-        Config core dump module logging level (0-5).
-
 choice NUMBER_OF_UNIVERSAL_MAC_ADDRESS
     bool "Number of universally administered (by IEEE) MAC address"
     default FOUR_UNIVERSAL_MAC_ADDRESS
