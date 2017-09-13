@@ -138,6 +138,19 @@ static int tcpip_adapter_ipc_check(tcpip_adapter_api_msg_t *msg)
 #endif
 }
 
+static esp_err_t tcpip_adapter_update_default_netif(void)
+{
+    if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_STA])) {
+        netif_set_default(esp_netif[TCPIP_ADAPTER_IF_STA]);
+    } else if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_ETH])) {
+        netif_set_default(esp_netif[TCPIP_ADAPTER_IF_ETH]);
+    } else if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_AP])) {
+        netif_set_default(esp_netif[TCPIP_ADAPTER_IF_AP]);
+    }
+
+    return ESP_OK;
+}
+
 esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, tcpip_adapter_ip_info_t *ip_info)
 {
     netif_init_fn netif_init;
@@ -176,14 +189,7 @@ esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, tcpip_a
         }
     }
 
-    /* if ap is on, choose ap as default if */
-    if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_AP])) {
-        netif_set_default(esp_netif[TCPIP_ADAPTER_IF_AP]);
-    } else if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_STA])) {
-        netif_set_default(esp_netif[TCPIP_ADAPTER_IF_STA]);
-    } else if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_ETH])) {
-        netif_set_default(esp_netif[TCPIP_ADAPTER_IF_ETH]);
-    }
+    tcpip_adapter_update_default_netif();
 
     return ESP_OK;
 }
@@ -245,15 +251,7 @@ esp_err_t tcpip_adapter_stop(tcpip_adapter_if_t tcpip_if)
 
     netif_set_down(esp_netif[tcpip_if]);
     netif_remove(esp_netif[tcpip_if]);
-
-    /* in ap + sta mode, if stop ap, choose sta as default if */
-    if (tcpip_if == TCPIP_ADAPTER_IF_AP) {
-        if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_STA])) {
-            netif_set_default(esp_netif[TCPIP_ADAPTER_IF_STA]);
-        } else if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_ETH])) {
-            netif_set_default(esp_netif[TCPIP_ADAPTER_IF_ETH]);
-        }
-    }
+    tcpip_adapter_update_default_netif();
 
     return ESP_OK;
 }
@@ -278,13 +276,7 @@ esp_err_t tcpip_adapter_up(tcpip_adapter_if_t tcpip_if)
         netif_set_up(esp_netif[tcpip_if]);
     }
 
-    if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_AP])) {
-        netif_set_default(esp_netif[TCPIP_ADAPTER_IF_AP]);
-    } else if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_STA])) {
-        netif_set_default(esp_netif[TCPIP_ADAPTER_IF_STA]);
-    } else if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_ETH])) {
-        netif_set_default(esp_netif[TCPIP_ADAPTER_IF_ETH]);
-    }
+    tcpip_adapter_update_default_netif();
 
     return ESP_OK;
 }

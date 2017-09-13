@@ -172,12 +172,6 @@ ip4_route_src(const ip4_addr_t *dest, const ip4_addr_t *src)
 struct netif *
 ip4_route(const ip4_addr_t *dest)
 {
-#if ESP_LWIP
-  struct netif *non_default_netif = NULL;
-#if LWIP_HAVE_LOOPIF
-  struct netif *loop_default_netif = netif_find("lo0");
-#endif
-#endif
   struct netif *netif;
 
 #if LWIP_MULTICAST_TX_OPTIONS
@@ -201,23 +195,8 @@ ip4_route(const ip4_addr_t *dest)
         /* return netif on which to forward IP packet */
         return netif;
       }
-
-      if (netif != netif_default){
-#if LWIP_HAVE_LOOPIF
-          non_default_netif = (netif == loop_default_netif) ? NULL : netif;
-#else
-          non_default_netif = netif;
-#endif
-      }
     }
   }
-
-#if ESP_LWIP
-  if (non_default_netif && !ip4_addr_isbroadcast(dest, non_default_netif)){
-    return non_default_netif;
-  }
-#endif
-
 #if LWIP_NETIF_LOOPBACK && !LWIP_HAVE_LOOPIF
   /* loopif is disabled, looopback traffic is passed through any netif */
   if (ip4_addr_isloopback(dest)) {
