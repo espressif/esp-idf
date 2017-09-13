@@ -205,6 +205,9 @@ Here are couple of tips on navigation and use of ``menuconfig``:
 
     If you are **Arch Linux** user, navigate to ``SDK tool configuration`` and change the name of ``Python 2 interpreter`` from ``python`` to ``python2``.
 
+.. note::
+
+    Most ESP32 development boards have a 40MHz crystal installed. However, some boards use a 26MHz crystal. If your board uses a 26MHz crystal, or you get garbage output from serial port after code upload, adjust the :ref:`CONFIG_ESP32_XTAL_FREQ` option in menuconfig.
 
 .. _get-started-build-flash:
 

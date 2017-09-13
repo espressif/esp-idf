@@ -32,7 +32,10 @@ esp_err_t esp_vfs_fat_spiflash_mount(const char* base_path,
     const size_t workbuf_size = 4096;
     void *workbuf = NULL;
 
-    esp_partition_t *data_partition = (esp_partition_t *)esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_FAT, partition_label);
+    esp_partition_subtype_t subtype = partition_label ?
+            ESP_PARTITION_SUBTYPE_ANY : ESP_PARTITION_SUBTYPE_DATA_FAT;
+    const esp_partition_t *data_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
+                                                subtype, partition_label);
     if (data_partition == NULL) {
         ESP_LOGE(TAG, "Failed to find FATFS partition (type='data', subtype='fat', partition_label='%s'). Check the partition table.", partition_label);
         return ESP_ERR_NOT_FOUND;

@@ -44,6 +44,15 @@ API Reference
 
 .. include:: /_build/inc/adc.inc
 
+GPIO Lookup Macros
+^^^^^^^^^^^^^^^^^^
+Some useful macros can be used to specified the GPIO number of a ADC channel, or vice versa.
+e.g.
+
+1. ``ADC1_CHANNEL_0_GPIO_NUM`` is the GPIO number of ADC1 channel 0 (36);
+2. ``ADC1_GPIO32_CHANNEL`` is the ADC1 channel number of GPIO 32 (ADC1 channel 4).
+
+.. include:: /_build/inc/adc_channel.inc
 
 ADC Calibration
 ===============
