@@ -20,6 +20,7 @@
 #include "bt_trace.h"
 #include "btc_manage.h"
 #include "btc_gap_ble.h"
+#include "btc_ble_storage.h"
 
 
 esp_err_t esp_ble_gap_register_callback(esp_gap_ble_cb_t callback)
@@ -364,26 +365,32 @@ esp_err_t esp_ble_remove_bond_device(esp_bd_addr_t bd_addr)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_clear_bond_device_list(void)
+int esp_ble_get_bond_device_num(void)
 {
-    btc_msg_t msg;
-    msg.sig = BTC_SIG_API_CALL;
-    msg.pid = BTC_PID_GAP_BLE;
-    msg.act = BTC_GAP_BLE_CLEAR_BOND_DEV_EVT;
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    return (btc_transfer_context(&msg, NULL, 0, NULL)
-            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return btc_storage_get_num_ble_bond_devices();
 }
 
-esp_err_t esp_ble_get_bond_device_list(void)
+esp_err_t esp_ble_get_bond_device_list(int *dev_num, esp_ble_bond_dev_t *dev_list)
 {
-    btc_msg_t msg;
-    msg.sig = BTC_SIG_API_CALL;
-    msg.pid = BTC_PID_GAP_BLE;
-    msg.act = BTC_GAP_BLE_GET_BOND_DEV_EVT;
+    int ret;
+    int dev_num_total;
 
-    return (btc_transfer_context(&msg, NULL, 0, NULL)
-            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    if (dev_num == NULL || dev_list == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    dev_num_total = btc_storage_get_num_ble_bond_devices();
+    if (*dev_num > dev_num_total) {
+        *dev_num = dev_num_total;
+    }
+
+    ret = btc_storage_get_bonded_ble_devices_list(dev_list, *dev_num);
+
+    return (ret == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_gap_disconnect(esp_bd_addr_t remote_device)

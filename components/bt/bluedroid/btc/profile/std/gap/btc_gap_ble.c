@@ -26,6 +26,7 @@
 #include "esp_bt_defs.h"
 #include "esp_gap_ble_api.h"
 #include "btc_ble_storage.h"
+#include "btc_dm.h"
 
 static tBTA_BLE_ADV_DATA gl_bta_adv_data;
 static tBTA_BLE_ADV_DATA gl_bta_scan_rsp_data;
@@ -793,71 +794,6 @@ static void btc_ble_set_rand_addr (BD_ADDR rand_addr)
     }
 }
 
-#if (SMP_INCLUDED)
-static void btc_ble_remove_bond_device(esp_bt_status_t status)
-{
-    int ret;
-    esp_ble_gap_cb_param_t param;
-    btc_msg_t msg;
-    param.remove_bond_dev_cmpl.status = status;
-    msg.sig = BTC_SIG_API_CB;
-    msg.pid = BTC_PID_GAP_BLE;
-    msg.act = ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT;
-
-    ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_ble_gap_cb_param_t), NULL);
-
-    if (ret != BT_STATUS_SUCCESS) {
-        LOG_ERROR("%s btc_transfer_context failed", __func__);
-    }
-}
-
-static void btc_ble_clear_bond_device(void)
-{
-    int ret;
-    esp_ble_gap_cb_param_t param;
-    btc_msg_t msg;
-    ret = btc_storage_clear_bond_devices();
-    param.clear_bond_dev_cmpl.status = ret;
-    msg.sig = BTC_SIG_API_CB;
-    msg.pid = BTC_PID_GAP_BLE;
-    msg.act = ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT;
-
-    ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_ble_gap_cb_param_t), NULL);
-
-    if (ret != BT_STATUS_SUCCESS) {
-        LOG_ERROR("%s btc_transfer_context failed", __func__);
-    }
-
-}
-
-static void btc_ble_get_bond_device_list(void)
-{
-    int ret;
-    esp_ble_gap_cb_param_t param;
-    esp_ble_bond_dev_t *bond_dev;
-    btc_msg_t msg;
-    int num_dev = btc_storage_get_num_ble_bond_devices();
-    bond_dev = (esp_ble_bond_dev_t *)osi_malloc(sizeof(esp_ble_bond_dev_t)*num_dev);
-
-    param.get_bond_dev_cmpl.status = btc_get_bonded_ble_devices_list(bond_dev);
-    param.get_bond_dev_cmpl.dev_num = num_dev;
-    param.get_bond_dev_cmpl.bond_dev = bond_dev;
-    msg.sig = BTC_SIG_API_CB;
-    msg.pid = BTC_PID_GAP_BLE;
-    msg.act = ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT;
-
-    ret = btc_transfer_context(&msg, &param, sizeof(esp_ble_gap_cb_param_t), btc_gap_ble_cb_deep_copy);
-
-    if (ret != BT_STATUS_SUCCESS) {
-        LOG_ERROR("%s btc_transfer_context failed", __func__);
-    }
-    // release the buffer after used.
-    osi_free(bond_dev);
-}
-#endif /* #if (SMP_INCLUDED) */
-
 static void btc_ble_config_local_privacy(bool privacy_enable, tBTA_SET_LOCAL_PRIVACY_CBACK *set_local_privacy_cback)
 {
     BTA_DmBleConfigLocalPrivacy(privacy_enable, set_local_privacy_cback);
@@ -954,21 +890,6 @@ void btc_gap_ble_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 void btc_gap_ble_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 {
     switch (msg->act) {
-    case ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT: {
-        esp_ble_gap_cb_param_t *src = (esp_ble_gap_cb_param_t *)p_src;
-        esp_ble_gap_cb_param_t *dst = (esp_ble_gap_cb_param_t *)p_dest;
-        uint16_t length = 0;
-        if (src->get_bond_dev_cmpl.bond_dev) {
-            length = (src->get_bond_dev_cmpl.dev_num)*sizeof(esp_ble_bond_dev_t);
-            dst->get_bond_dev_cmpl.bond_dev = (esp_ble_bond_dev_t *)osi_malloc(length);
-            if (dst->get_bond_dev_cmpl.bond_dev != NULL) {
-                memcpy(dst->get_bond_dev_cmpl.bond_dev, src->get_bond_dev_cmpl.bond_dev, length);
-            } else {
-                LOG_ERROR("%s %d no mem", __func__, msg->act);
-            }
-        }
-        break;
-    }
     default:
        LOG_ERROR("%s, Unhandled deep copy %d\n", __func__, msg->act);
        break;
@@ -1018,13 +939,6 @@ void btc_gap_ble_cb_deep_free(btc_msg_t *msg)
 {
     LOG_DEBUG("%s", __func__);
     switch (msg->act) {
-        case ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT: {
-            esp_ble_bond_dev_t *bond_dev = ((esp_ble_gap_cb_param_t *)msg->arg)->get_bond_dev_cmpl.bond_dev;
-            if (bond_dev) {
-                osi_free(bond_dev);
-            }
-            break;
-        }
         default:
             LOG_DEBUG("Unhandled deep free %d", msg->act);
             break;
@@ -1158,24 +1072,10 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
     }
     case BTC_GAP_BLE_REMOVE_BOND_DEV_EVT: {
         BD_ADDR bd_addr;
-        bt_bdaddr_t bt_addr;
         memcpy(bd_addr, arg->remove_bond_device.bd_addr, sizeof(BD_ADDR));
-        memcpy(bt_addr.address, arg->remove_bond_device.bd_addr, sizeof(bt_bdaddr_t));
-        LOG_DEBUG("BTC_GAP_BLE_REMOVE_BOND_DEV_EVT");
-        if (btc_storage_remove_ble_bonding_keys(&bt_addr) == BT_STATUS_SUCCESS) {
-            BTA_DmRemoveDevice(bd_addr);
-        } else {
-            LOG_ERROR("remove device failed: the address[%x:%x:%x:%x:%x:%x] didn't in the bonding list", bd_addr[0], bd_addr[1], bd_addr[2], bd_addr[3], bd_addr[4], bd_addr[5]);
-            btc_ble_remove_bond_device(ESP_BT_STATUS_FAIL);
-        }
+        BTA_DmRemoveDevice(bd_addr);
         break;
     }
-    case BTC_GAP_BLE_CLEAR_BOND_DEV_EVT:
-        btc_ble_clear_bond_device();
-        break;
-    case BTC_GAP_BLE_GET_BOND_DEV_EVT:
-        btc_ble_get_bond_device_list();
-        break;
 #endif  ///SMP_INCLUDED == TRUE
     case BTC_GAP_BLE_DISCONNECT_EVT:
         btc_ble_disconnect(arg->disconnect.remote_device);

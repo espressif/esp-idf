@@ -95,8 +95,6 @@ typedef enum {
     ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT,                /*!< When set pkt lenght complete, the event comes */
     ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT,             /*!< When  Enable/disable privacy on the local device complete, the event comes */
     ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT,               /*!< When remove the bond device complete, the event comes */
-    ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT,                /*!< When clear the bond device clear complete, the event comes */
-    ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT,                  /*!< When get the bond device list complete, the event comes */
     ESP_GAP_BLE_EVT_MAX,
 } esp_gap_ble_cb_event_t;
 
@@ -577,20 +575,6 @@ typedef union {
         esp_bt_status_t status;                     /*!< Indicate the remove bond device operation success status */
         esp_bd_addr_t bd_addr;                      /*!< The device address which has been remove from the bond list */
     }remove_bond_dev_cmpl;                          /*!< Event parameter of ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT */
-    /**
-     * @brief ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT
-     */
-    struct ble_clear_bond_dev_cmpl_evt_param {
-        esp_bt_status_t status;                     /*!< Indicate the clear bond device operation success status */
-    }clear_bond_dev_cmpl;                           /*!< Event parameter of ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT */
-    /**
-     * @brief ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT
-     */
-    struct ble_get_bond_dev_cmpl_evt_param {
-        esp_bt_status_t status;                     /*!< Indicate the get bond device operation success status */
-        uint8_t dev_num;                            /*!< Indicate the get number device in the bond list */
-        esp_ble_bond_dev_t *bond_dev;               /*!< the pointer to the bond device Structure */
-    }get_bond_dev_cmpl;                             /*!< Event parameter of ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT */
 } esp_ble_gap_cb_param_t;
 
 /**
@@ -879,24 +863,30 @@ esp_err_t esp_ble_confirm_reply(esp_bd_addr_t bd_addr, bool accept);
 esp_err_t esp_ble_remove_bond_device(esp_bd_addr_t bd_addr);
 
 /**
-* @brief           Removes all of the device from the security database list of
-*                  peer device. It manages unpairing event while connected.
+* @brief           Get the device number from the security database list of peer device.
+*                  It will return the device bonded number immediately.
 *
-* @return            - ESP_OK : success
-*                       - other  : failed
+* @return          - >= 0 : bonded devices number.
+*                  - < 0  : failed
 *
 */
-esp_err_t esp_ble_clear_bond_device_list(void);
+int esp_ble_get_bond_device_num(void);
+
 
 /**
 * @brief           Get the device from the security database list of peer device.
-*                  It will return the device bonded information from the ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT event.
+*                  It will return the device bonded information immediately.
+* @param[inout]    dev_num: Indicate the dev_list array(buffer) size as input.
+*                           If dev_num is large enough, it means the actual number as output.
+*                           Suggest that dev_num value equal to esp_ble_get_bond_device_num().
 *
-* @return            - ESP_OK : success
-*                       - other  : failed
+* @param[out]      dev_list: an array(buffer) of `esp_ble_bond_dev_t` type. Use for storing the bonded devices address.
+*                            The dev_list should be allocated by who call this API. 
+* @return          - ESP_OK : success
+*                  - other  : failed
 *
 */
-esp_err_t esp_ble_get_bond_device_list(void);
+esp_err_t esp_ble_get_bond_device_list(int *dev_num, esp_ble_bond_dev_t *dev_list);
 
 /**
 * @brief           This function is to disconnect the physical connection of the peer device
