@@ -665,6 +665,12 @@
 #define L2CAP_CLIENT_INCLUDED FALSE
 #endif
 
+/* The maximum number of simultaneous applications that can register with LE L2CAP. */
+#ifndef BLE_MAX_L2CAP_CLIENTS
+#define BLE_MAX_L2CAP_CLIENTS           15
+#endif
+
+
 /* The maximum number of simultaneous links that L2CAP can support. Up to 7*/
 #ifndef MAX_ACL_CONNECTIONS
 #define MAX_L2CAP_LINKS             5

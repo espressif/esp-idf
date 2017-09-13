@@ -416,6 +416,15 @@ void btm_sco_chk_pend_rolechange (UINT16 hci_handle);
 ** Define structure for Security Service Record.
 ** A record exists for each service registered with the Security Manager
 */
+#define BTM_SEC_OUT_FLAGS   (BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT | BTM_SEC_OUT_AUTHORIZE)
+#define BTM_SEC_IN_FLAGS    (BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT | BTM_SEC_IN_AUTHORIZE)
+
+#define BTM_SEC_OUT_LEVEL4_FLAGS   (BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT | \
+                                        BTM_SEC_OUT_MITM | BTM_SEC_MODE4_LEVEL4)
+
+#define BTM_SEC_IN_LEVEL4_FLAGS    (BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT | \
+                                        BTM_SEC_IN_MITM | BTM_SEC_MODE4_LEVEL4)
+
 typedef struct {
     UINT32          mx_proto_id;        /* Service runs over this multiplexer protocol */
     UINT32          orig_mx_chan_id;    /* Channel on the multiplexer protocol    */
@@ -878,6 +887,15 @@ typedef struct{
 }tBTM_CallbackFunc;
 
 extern tBTM_CallbackFunc conn_param_update_cb;
+/* security action for L2CAP COC channels */
+#define BTM_SEC_OK                1
+#define BTM_SEC_ENCRYPT           2    /* encrypt the link with current key */
+#define BTM_SEC_ENCRYPT_NO_MITM   3    /* unauthenticated encryption or better */
+#define BTM_SEC_ENCRYPT_MITM      4    /* authenticated encryption */
+#define BTM_SEC_ENC_PENDING       5    /* wait for link encryption pending */
+
+typedef UINT8 tBTM_SEC_ACTION;
+
 /*
 #ifdef __cplusplus
 extern "C"
@@ -1082,6 +1100,10 @@ BOOLEAN btm_sec_is_a_bonded_dev (BD_ADDR bda);
 void btm_consolidate_dev(tBTM_SEC_DEV_REC *p_target_rec);
 BOOLEAN btm_sec_is_le_capable_dev (BD_ADDR bda);
 BOOLEAN btm_ble_init_pseudo_addr (tBTM_SEC_DEV_REC *p_dev_rec, BD_ADDR new_pseudo_addr);
+extern BOOLEAN btm_ble_start_sec_check(BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_originator,
+                            tBTM_SEC_CALLBACK *p_callback, void *p_ref_data);
+extern tBTM_SEC_SERV_REC *btm_sec_find_first_serv (CONNECTION_TYPE conn_type, UINT16 psm);
+
 #endif /* BLE_INCLUDED */
 
 tINQ_DB_ENT *btm_inq_db_new (BD_ADDR p_bda);
