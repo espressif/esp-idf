@@ -2273,18 +2273,147 @@ UBaseType_t uxTaskGetNumberOfTasks( void )
 }
 /*-----------------------------------------------------------*/
 
-#if ( INCLUDE_pcTaskGetTaskName == 1 )
-	char *pcTaskGetTaskName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
-	{
-	TCB_t *pxTCB;
+char *pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+{
+TCB_t *pxTCB;
 
-		/* If null is passed in here then the name of the calling task is being queried. */
-		pxTCB = prvGetTCBFromHandle( xTaskToQuery );
-		configASSERT( pxTCB );
-		return &( pxTCB->pcTaskName[ 0 ] );
+	/* If null is passed in here then the name of the calling task is being
+	queried. */
+	pxTCB = prvGetTCBFromHandle( xTaskToQuery );
+	configASSERT( pxTCB );
+	return &( pxTCB->pcTaskName[ 0 ] );
+}
+/*-----------------------------------------------------------*/
+
+#if ( INCLUDE_xTaskGetHandle == 1 )
+
+	static TCB_t *prvSearchForNameWithinSingleList( List_t *pxList, const char pcNameToQuery[] )
+	{
+	TCB_t *pxNextTCB, *pxFirstTCB, *pxReturn = NULL;
+	UBaseType_t x;
+	char cNextChar;
+
+		/* This function is called with the scheduler suspended. */
+
+		if( listCURRENT_LIST_LENGTH( pxList ) > ( UBaseType_t ) 0 )
+		{
+			listGET_OWNER_OF_NEXT_ENTRY( pxFirstTCB, pxList );
+
+			do
+			{
+				listGET_OWNER_OF_NEXT_ENTRY( pxNextTCB, pxList );
+
+				/* Check each character in the name looking for a match or
+				mismatch. */
+				for( x = ( UBaseType_t ) 0; x < ( UBaseType_t ) configMAX_TASK_NAME_LEN; x++ )
+				{
+					cNextChar = pxNextTCB->pcTaskName[ x ];
+
+					if( cNextChar != pcNameToQuery[ x ] )
+					{
+						/* Characters didn't match. */
+						break;
+					}
+					else if( cNextChar == 0x00 )
+					{
+						/* Both strings terminated, a match must have been
+						found. */
+						pxReturn = pxNextTCB;
+						break;
+					}
+					else
+					{
+						mtCOVERAGE_TEST_MARKER();
+					}
+				}
+
+				if( pxReturn != NULL )
+				{
+					/* The handle has been found. */
+					break;
+				}
+
+			} while( pxNextTCB != pxFirstTCB );
+		}
+		else
+		{
+			mtCOVERAGE_TEST_MARKER();
+		}
+
+		return pxReturn;
 	}
 
-#endif /* INCLUDE_pcTaskGetTaskName */
+#endif /* INCLUDE_xTaskGetHandle */
+/*-----------------------------------------------------------*/
+
+#if ( INCLUDE_xTaskGetHandle == 1 )
+
+	/* This function takes a relatively long time to complete.
+	   Once the handle of the requested task is obtained it
+	   would be wise to store locally for re-use. 	  		*/
+	   
+	TaskHandle_t xTaskGetHandle( const char *pcNameToQuery ) /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+	{
+	UBaseType_t uxQueue = configMAX_PRIORITIES;
+	TCB_t* pxTCB;
+
+		UNTESTED_FUNCTION();
+		/* Task names will be truncated to configMAX_TASK_NAME_LEN - 1 bytes. */
+		configASSERT( strlen( pcNameToQuery ) < configMAX_TASK_NAME_LEN );
+
+		taskENTER_CRITICAL(&xTaskQueueMutex);
+		{
+			/* Search the ready lists. */
+			do
+			{
+				uxQueue--;
+				pxTCB = prvSearchForNameWithinSingleList( ( List_t * ) &( pxReadyTasksLists[ uxQueue ] ), pcNameToQuery );
+
+				if( pxTCB != NULL )
+				{
+					/* Found the handle. */
+					break;
+				}
+
+			} while( uxQueue > ( UBaseType_t ) tskIDLE_PRIORITY ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
+
+			/* Search the delayed lists. */
+			if( pxTCB == NULL )
+			{
+				pxTCB = prvSearchForNameWithinSingleList( ( List_t * ) pxDelayedTaskList, pcNameToQuery );
+			}
+
+			if( pxTCB == NULL )
+			{
+				pxTCB = prvSearchForNameWithinSingleList( ( List_t * ) pxOverflowDelayedTaskList, pcNameToQuery );
+			}
+
+			#if ( INCLUDE_vTaskSuspend == 1 )
+			{
+				if( pxTCB == NULL )
+				{
+					/* Search the suspended list. */
+					pxTCB = prvSearchForNameWithinSingleList( &xSuspendedTaskList, pcNameToQuery );
+				}
+			}
+			#endif
+
+			#if( INCLUDE_vTaskDelete == 1 )
+			{
+				if( pxTCB == NULL )
+				{
+					/* Search the deleted list. */
+					pxTCB = prvSearchForNameWithinSingleList( &xTasksWaitingTermination, pcNameToQuery );
+				}
+			}
+			#endif
+		}
+		taskEXIT_CRITICAL(&xTaskQueueMutex);
+
+		return ( TaskHandle_t ) pxTCB;
+	}
+
+#endif /* INCLUDE_xTaskGetHandle */
 /*-----------------------------------------------------------*/
 
 #if ( configUSE_TRACE_FACILITY == 1 )

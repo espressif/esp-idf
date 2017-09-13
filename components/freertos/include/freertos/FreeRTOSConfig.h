@@ -228,8 +228,8 @@
 #define INCLUDE_vTaskDelayUntil				1
 #define INCLUDE_vTaskDelay					1
 #define INCLUDE_uxTaskGetStackHighWaterMark	1
-#define INCLUDE_pcTaskGetTaskName			1
 #define INCLUDE_xTaskGetIdleTaskHandle      1
+#define INCLUDE_xTaskGetHandle      		0
 
 #define INCLUDE_xSemaphoreGetMutexHolder    1
 
