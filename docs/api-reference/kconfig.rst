@@ -25,4 +25,13 @@ By convention, all option names are upper case with underscores. When Kconfig ge
 
 .. include:: /_build/inc/kconfig.inc
 
+Customisations
+==============
+
+Because IDF builds by default with :ref:`warn-undefined-variables`, when the Kconfig tool generates Makefiles (the ``auto.conf`` file) its behaviour has been customised. In normal Kconfig, a variable which is set to "no" is undefined. In IDF's version of Kconfig, this variable is defined in the Makefile but has an empty value.
+
+(Note that ``ifdef`` and ``ifndef`` can still be used in Makefiles, because they test if a variable is defined *and has a non-empty value*.)
+
+When generating header files for C & C++, the behaviour is not customised - so ``#ifdef`` can be used to test if a boolean config item is set or not.
+
 .. _Kconfig: https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt

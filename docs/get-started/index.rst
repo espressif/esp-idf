@@ -21,7 +21,7 @@ To develop applications for ESP32 you need:
 * **PC** loaded with either Windows, Linux or Mac operating system
 * **Toolchain** to build the **Application** for ESP32
 * **ESP-IDF** that essentially contains API for ESP32 and scripts to operate the **Toolchain**
-* A text editor to write programs (**Projects**) in C, e.g. `Eclipse <http://www.eclipse.org/>`_
+* A text editor to write programs (**Projects**) in C, e.g. `Eclipse <https://www.eclipse.org/>`_
 * The **ESP32** board itself and a **USB cable** to connect it to the **PC**
 
 .. figure:: ../_static/what-you-need.png
@@ -205,6 +205,9 @@ Here are couple of tips on navigation and use of ``menuconfig``:
 
     If you are **Arch Linux** user, navigate to ``SDK tool configuration`` and change the name of ``Python 2 interpreter`` from ``python`` to ``python2``.
 
+.. note::
+
+    Most ESP32 development boards have a 40MHz crystal installed. However, some boards use a 26MHz crystal. If your board uses a 26MHz crystal, or you get garbage output from serial port after code upload, adjust the :ref:`CONFIG_ESP32_XTAL_FREQ` option in menuconfig.
 
 .. _get-started-build-flash:
 

@@ -216,6 +216,12 @@ int usleep(useconds_t us)
     return 0;
 }
 
+unsigned int sleep(unsigned int seconds)
+{
+    usleep(seconds*1000000UL);
+    return 0;
+}
+
 uint32_t system_get_time(void)
 {
 #if defined( WITH_FRC1 ) || defined( WITH_RTC )
@@ -229,7 +235,11 @@ uint32_t system_get_current_time(void) __attribute__((alias("system_get_time")))
 
 uint32_t system_relative_time(uint32_t current_time)
 {
-    return system_get_time() - current_time;
+#if defined( WITH_FRC1 ) || defined( WITH_RTC )
+    return get_time_since_boot() - current_time;
+#else
+    return 0;
+#endif
 }
 
 uint64_t system_get_rtc_time(void)

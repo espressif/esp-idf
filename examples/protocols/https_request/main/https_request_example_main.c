@@ -39,7 +39,7 @@
 #include "lwip/dns.h"
 
 #include "mbedtls/platform.h"
-#include "mbedtls/net.h"
+#include "mbedtls/net_sockets.h"
 #include "mbedtls/esp_debug.h"
 #include "mbedtls/ssl.h"
 #include "mbedtls/entropy.h"

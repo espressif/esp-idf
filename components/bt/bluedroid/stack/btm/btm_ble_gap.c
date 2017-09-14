@@ -61,6 +61,7 @@ static tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
 static tBTM_BLE_CTRL_FEATURES_CBACK    *p_ctrl_le_feature_rd_cmpl_cback = NULL;
 #endif
 
+tBTM_CallbackFunc conn_param_update_cb;
 /*******************************************************************************
 **  Local functions
 *******************************************************************************/
@@ -220,6 +221,19 @@ const UINT8 btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX][2] = {
 /* check LE combo state supported */
 #define BTM_LE_STATES_SUPPORTED(x, y, z)      ((x)[(z)] & (y))
 
+/*******************************************************************************
+**
+** Function         BTM_BleRegiseterConnParamCallback
+**
+** Description      register connection parameters update callback func
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTM_BleRegiseterConnParamCallback(tBTM_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb)
+{
+    conn_param_update_cb.update_conn_param_cb = update_conn_param_cb;
+}
 
 /*******************************************************************************
 **

@@ -537,12 +537,17 @@ typedef struct {
 
 } tGATT_CB;
 
+typedef struct{
+    UINT16 local_mtu;
+} tGATT_DEFAULT;
 
 #define GATT_SIZE_OF_SRV_CHG_HNDL_RANGE 4
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+extern tGATT_DEFAULT gatt_default;
 
 /* Global GATT data */
 #if GATT_DYNAMIC_MEMORY == FALSE
@@ -741,4 +746,6 @@ extern void gatts_update_srv_list_elem(UINT8 i_sreg, UINT16 handle, BOOLEAN is_p
 extern tBT_UUID *gatts_get_service_uuid (tGATT_SVC_DB *p_db);
 
 extern void gatt_reset_bgdev_list(void);
+extern uint16_t gatt_get_local_mtu(void);
+extern void gatt_set_local_mtu(uint16_t mtu);
 #endif

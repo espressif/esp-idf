@@ -405,14 +405,24 @@ typedef struct t_l2c_linkcb {
 #define L2C_BLE_NEW_CONN_PARAM      0x2  /* new connection parameter to be set */
 #define L2C_BLE_UPDATE_PENDING      0x4  /* waiting for connection update finished */
 #define L2C_BLE_NOT_DEFAULT_PARAM   0x8  /* not using default connection parameters */
+#define L2C_BLE_UPDATE_PARAM_FULL   0x10 /* update connection parameters full, can not update */
     UINT8               conn_update_mask;
-
-    UINT16              min_interval; /* parameters as requested by peripheral */
-    UINT16              max_interval;
-    UINT16              conn_int;
-    UINT16              latency;
-    UINT16              timeout;
-
+    /* cache connection parameters that wait to update */
+    UINT16              waiting_update_conn_min_interval;
+    UINT16              waiting_update_conn_max_interval;
+    UINT16              waiting_update_conn_latency;
+    UINT16              waiting_update_conn_timeout;
+    /* cache parameters that is being updated */
+    UINT16              updating_conn_min_interval;
+    UINT16              updating_conn_max_interval;
+    bool                updating_param_flag;
+    /* current connection parameters that current connection is using */
+    UINT16              current_used_conn_interval;
+    UINT16              current_used_conn_latency;
+    UINT16              current_used_conn_timeout;
+    /* connection parameters update order:
+       waiting_update_conn_xx -> updating_conn_xx -> current_used_conn_xx
+    */
 #endif
 
 #if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE)
@@ -736,6 +746,7 @@ extern void l2cble_notify_le_connection (BD_ADDR bda);
 extern void l2c_ble_link_adjust_allocation (void);
 extern void l2cble_process_conn_update_evt (UINT16 handle, UINT8 status, UINT16 conn_interval,
                                                               UINT16 conn_latency, UINT16 conn_timeout);
+extern void l2cble_get_conn_param_format_err_from_contoller(UINT8 status, UINT16 handle);
 
 #if (defined BLE_LLT_INCLUDED) && (BLE_LLT_INCLUDED == TRUE)
 extern void l2cble_process_rc_param_request_evt(UINT16 handle, UINT16 int_min, UINT16 int_max,
@@ -748,6 +759,7 @@ extern void l2cble_set_fixed_channel_tx_data_length(BD_ADDR remote_bda, UINT16 f
 extern void l2c_send_update_conn_params_cb(tL2C_LCB *p_lcb, UINT8 status);
 extern void l2cble_process_data_length_change_event(UINT16 handle, UINT16 tx_data_len,
         UINT16 rx_data_len);
+extern UINT32 CalConnectParamTimeout(tL2C_LCB *p_lcb);
 
 #endif
 extern void l2cu_process_fixed_disc_cback (tL2C_LCB *p_lcb);

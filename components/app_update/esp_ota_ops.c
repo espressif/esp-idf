@@ -413,6 +413,34 @@ esp_err_t esp_ota_set_boot_partition(const esp_partition_t *partition)
     }
 }
 
+static const esp_partition_t *find_default_boot_partition(void)
+{
+    // This logic matches the logic of bootloader get_selected_boot_partition() & load_boot_image().
+
+    // Default to factory if present
+    const esp_partition_t *result = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
+    if (result != NULL) {
+        return result;
+    }
+
+    // Try first OTA slot if no factory partition
+    for (esp_partition_subtype_t s = ESP_PARTITION_SUBTYPE_APP_OTA_MIN; s != ESP_PARTITION_SUBTYPE_APP_OTA_MAX; s++) {
+        result = esp_partition_find_first(ESP_PARTITION_TYPE_APP, s, NULL);
+        if (result != NULL) {
+            return result;
+        }
+    }
+
+    // Test app slot if present
+    result = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_TEST, NULL);
+    if (result != NULL) {
+        return result;
+    }
+
+    ESP_LOGE(TAG, "invalid partition table, no app partitions");
+    return NULL;
+}
+
 const esp_partition_t *esp_ota_get_boot_partition(void)
 {
     esp_err_t ret;
@@ -443,8 +471,7 @@ const esp_partition_t *esp_ota_get_boot_partition(void)
 
     if (s_ota_select[0].ota_seq == 0xFFFFFFFF && s_ota_select[1].ota_seq == 0xFFFFFFFF) {
         ESP_LOGD(TAG, "finding factory app......");
-
-        return esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
+        return find_default_boot_partition();
     } else if (ota_select_valid(&s_ota_select[0]) && ota_select_valid(&s_ota_select[1])) {
         ESP_LOGD(TAG, "finding ota_%d app......", \
                  ESP_PARTITION_SUBTYPE_APP_OTA_MIN + ((OTA_MAX(s_ota_select[0].ota_seq, s_ota_select[1].ota_seq) - 1) % ota_app_count));
@@ -467,7 +494,7 @@ const esp_partition_t *esp_ota_get_boot_partition(void)
 
     } else {
         ESP_LOGE(TAG, "ota data invalid, no current app. Assuming factory");
-        return esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
+        return find_default_boot_partition();
     }
 }
 

@@ -7,6 +7,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "test_utils.h"
 
 TEST_CASE("esp_timer orders timers correctly", "[esp_timer]")
 {
@@ -65,15 +66,15 @@ TEST_CASE("esp_timer produces correct delay", "[esp_timer]")
 {
     void timer_func(void* arg)
     {
-        struct timeval* ptv = (struct timeval*) arg;
-        gettimeofday(ptv, NULL);
+        int64_t* p_end = (int64_t*) arg;
+        *p_end = ref_clock_get();
     }
 
-    volatile struct timeval tv_end = {0};
+    int64_t t_end;
     esp_timer_handle_t timer1;
     esp_timer_create_args_t args = {
             .callback = &timer_func,
-            .arg = (struct timeval*) &tv_end,
+            .arg = &t_end,
             .name = "timer1"
     };
     TEST_ESP_OK(esp_timer_create(&args, &timer1));
@@ -81,21 +82,21 @@ TEST_CASE("esp_timer produces correct delay", "[esp_timer]")
     const int delays_ms[] = {20, 100, 200, 250};
     const size_t delays_count = sizeof(delays_ms)/sizeof(delays_ms[0]);
 
+    ref_clock_init();
     for (size_t i = 0; i < delays_count; ++i) {
-        tv_end = (struct timeval) {0};
-        struct timeval tv_start;
-        gettimeofday(&tv_start, NULL);
+        t_end = 0;
+        int64_t t_start = ref_clock_get();
 
         TEST_ESP_OK(esp_timer_start_once(timer1, delays_ms[i] * 1000));
 
         vTaskDelay(delays_ms[i] * 2 / portTICK_PERIOD_MS);
-        TEST_ASSERT(tv_end.tv_sec != 0 || tv_end.tv_usec != 0);
-        int32_t ms_diff = (tv_end.tv_sec - tv_start.tv_sec) * 1000 +
-                (tv_end.tv_usec - tv_start.tv_usec) / 1000;
+        TEST_ASSERT(t_end != 0);
+        int32_t ms_diff = (t_end - t_start) / 1000;
         printf("%d %d\n", delays_ms[i], ms_diff);
 
         TEST_ASSERT_INT32_WITHIN(portTICK_PERIOD_MS, delays_ms[i], ms_diff);
     }
+    ref_clock_deinit();
 
     TEST_ESP_OK( esp_timer_dump(stdout) );
 
@@ -111,16 +112,14 @@ TEST_CASE("periodic ets_timer produces correct delays", "[esp_timer]")
         esp_timer_handle_t timer;
         size_t cur_interval;
         int intervals[NUM_INTERVALS];
-        struct timeval tv_start;
+        int64_t t_start;
     } test_args_t;
 
     void timer_func(void* arg)
     {
         test_args_t* p_args = (test_args_t*) arg;
-        struct timeval tv_now;
-        gettimeofday(&tv_now, NULL);
-        int32_t ms_diff = (tv_now.tv_sec - p_args->tv_start.tv_sec) * 1000 +
-                        (tv_now.tv_usec - p_args->tv_start.tv_usec) / 1000;
+        int64_t t_end = ref_clock_get();
+        int32_t ms_diff = (t_end - p_args->t_start) / 1000;
         printf("timer #%d %dms\n", p_args->cur_interval, ms_diff);
         p_args->intervals[p_args->cur_interval++] = ms_diff;
         // Deliberately make timer handler run longer.
@@ -141,9 +140,9 @@ TEST_CASE("periodic ets_timer produces correct delays", "[esp_timer]")
             .name = "timer1"
     };
     TEST_ESP_OK(esp_timer_create(&create_args, &timer1));
-
+    ref_clock_init();
     args.timer = timer1;
-    gettimeofday(&args.tv_start, NULL);
+    args.t_start = ref_clock_get();
     TEST_ESP_OK(esp_timer_start_periodic(timer1, delay_ms * 1000));
 
     vTaskDelay(delay_ms * (NUM_INTERVALS + 1));
@@ -152,7 +151,7 @@ TEST_CASE("periodic ets_timer produces correct delays", "[esp_timer]")
     for (size_t i = 0; i < NUM_INTERVALS; ++i) {
         TEST_ASSERT_INT32_WITHIN(portTICK_PERIOD_MS, (i + 1) * delay_ms, args.intervals[i]);
     }
-
+    ref_clock_deinit();
     TEST_ESP_OK( esp_timer_dump(stdout) );
 
     TEST_ESP_OK( esp_timer_delete(timer1) );
@@ -176,7 +175,7 @@ TEST_CASE("multiple timers are ordered correctly", "[esp_timer]")
         test_common_t* common;
         bool pass;
         SemaphoreHandle_t done;
-        struct timeval* tv_start;
+        int64_t t_start;
     } test_args_t;
 
     void timer_func(void* arg)
@@ -185,10 +184,7 @@ TEST_CASE("multiple timers are ordered correctly", "[esp_timer]")
         // check order
         size_t count = p_args->common->count;
         int expected_index = p_args->common->order[count];
-        struct timeval tv_timer;
-        gettimeofday(&tv_timer, NULL);
-        int ms_since_start = (tv_timer.tv_sec - p_args->tv_start->tv_sec) * 1000 +
-                (tv_timer.tv_usec - p_args->tv_start->tv_usec) / 1000;
+        int ms_since_start = (ref_clock_get() - p_args->t_start) / 1000;
         printf("Time %dms, at count %d, expected timer %d, got timer %d\n",
                 ms_since_start, count, expected_index, p_args->timer_index);
         if (expected_index != p_args->timer_index) {
@@ -217,8 +213,8 @@ TEST_CASE("multiple timers are ordered correctly", "[esp_timer]")
 
     SemaphoreHandle_t done = xSemaphoreCreateCounting(3, 0);
 
-    struct timeval tv_now;
-    gettimeofday(&tv_now, NULL);
+    ref_clock_init();
+    int64_t now = ref_clock_get();
 
     test_args_t args1 = {
             .timer_index = 1,
@@ -226,7 +222,7 @@ TEST_CASE("multiple timers are ordered correctly", "[esp_timer]")
             .common = &common,
             .pass = true,
             .done = done,
-            .tv_start = &tv_now
+            .t_start = now
     };
 
     test_args_t args2 = {
@@ -235,7 +231,7 @@ TEST_CASE("multiple timers are ordered correctly", "[esp_timer]")
             .common = &common,
             .pass = true,
             .done = done,
-            .tv_start = &tv_now
+            .t_start = now
     };
 
     test_args_t args3 = {
@@ -244,7 +240,7 @@ TEST_CASE("multiple timers are ordered correctly", "[esp_timer]")
             .common = &common,
             .pass = true,
             .done = done,
-            .tv_start = &tv_now
+            .t_start = now
     };
 
 
@@ -275,6 +271,8 @@ TEST_CASE("multiple timers are ordered correctly", "[esp_timer]")
     TEST_ASSERT_TRUE(args1.pass);
     TEST_ASSERT_TRUE(args2.pass);
     TEST_ASSERT_TRUE(args3.pass);
+
+    ref_clock_deinit();
 
     TEST_ESP_OK( esp_timer_dump(stdout) );
 
@@ -321,4 +319,54 @@ TEST_CASE("esp_timer for very short intervals", "[esp_timer]")
     }
 
     vSemaphoreDelete(semaphore);
+}
+
+
+TEST_CASE("esp_timer_get_time call takes less than 1us", "[esp_timer]")
+{
+    int64_t begin = esp_timer_get_time();
+    volatile int64_t end;
+    const int iter_count = 10000;
+    for (int i = 0; i < iter_count; ++i) {
+        end = esp_timer_get_time();
+    }
+    int ns_per_call = (int) ((end - begin) * 1000 / iter_count);
+    printf("esp_timer_get_time: %dns per call\n", ns_per_call);
+    TEST_ASSERT(ns_per_call < 1000);
+}
+
+/* This test runs for about 10 minutes and is disabled in CI.
+ * Such run time is needed to have FRC2 timer overflow a few times.
+ */
+TEST_CASE("esp_timer_get_time returns monotonic values", "[esp_timer][ignore]")
+{
+    void timer_test_task(void* arg) {
+        int64_t delta = esp_timer_get_time() - ref_clock_get();
+
+        const int iter_count = 1000000000;
+        for (int i = 0; i < iter_count; ++i) {
+            int64_t now = esp_timer_get_time();
+            int64_t ref_now = ref_clock_get();
+            int64_t diff = now - (ref_now + delta);
+            /* Allow some difference due to rtos tick interrupting task between
+             * getting 'now' and 'ref_now'.
+             */
+            TEST_ASSERT_INT32_WITHIN(100, 0, (int) diff);
+        }
+
+        xSemaphoreGive((SemaphoreHandle_t) arg);
+        vTaskDelete(NULL);
+    }
+    ref_clock_init();
+    SemaphoreHandle_t done_1 = xSemaphoreCreateBinary();
+    SemaphoreHandle_t done_2 = xSemaphoreCreateBinary();
+
+    xTaskCreatePinnedToCore(&timer_test_task, "t1", 4096, (void*) done_1, 6, NULL, 0);
+    xTaskCreatePinnedToCore(&timer_test_task, "t2", 4096, (void*) done_2, 6, NULL, 1);
+
+    TEST_ASSERT_TRUE( xSemaphoreTake(done_1, portMAX_DELAY) );
+    TEST_ASSERT_TRUE( xSemaphoreTake(done_2, portMAX_DELAY) );
+    vSemaphoreDelete(done_1);
+    vSemaphoreDelete(done_2);
+    ref_clock_deinit();
 }

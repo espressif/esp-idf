@@ -443,7 +443,7 @@ esp_err_t esp_timer_dump(FILE* stream)
     return ESP_OK;
 }
 
-uint64_t IRAM_ATTR esp_timer_get_time()
+int64_t IRAM_ATTR esp_timer_get_time()
 {
-    return esp_timer_impl_get_time();
+    return (int64_t) esp_timer_impl_get_time();
 }

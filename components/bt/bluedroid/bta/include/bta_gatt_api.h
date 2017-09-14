@@ -1157,12 +1157,12 @@ extern void BTA_GATTC_Broadcast(tBTA_GATTC_IF client_if, BOOLEAN start);
 **                  only once per connection.
 **
 ** Parameters       conn_id: connection ID.
-**                  mtu: desired MTU size to use.
+**
 **
 ** Returns          void
 **
 *******************************************************************************/
-extern void BTA_GATTC_ConfigureMTU (UINT16 conn_id, UINT16 mtu);
+extern void BTA_GATTC_ConfigureMTU (UINT16 conn_id);
 
 /*******************************************************************************
 **  BTA GATT Server API

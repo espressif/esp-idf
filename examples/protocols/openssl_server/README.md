@@ -16,6 +16,6 @@ IF you want to test the OpenSSL server demo:
 Note:
   The private key and certification at the example are not trusted by web browser, because they are not created by CA official, just by ourselves.
   You can alse create your own private key and ceritification by "openssl at ubuntu or others". 
-  We have the document of "ESP8266_SDKSSL_User_Manual_EN_v1.4.pdf" at "http://www.espressif.com/en/support/download/documents". By it you can gernerate the private key and certification with the fomate of ".pem"
+  We have the document of "ESP8266_SDKSSL_User_Manual_EN_v1.4.pdf" at "https://www.espressif.com/en/support/download/documents". By it you can gernerate the private key and certification with the fomate of ".pem"
 
 See the README.md file in the upper level 'examples' directory for more information about examples.

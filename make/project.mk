@@ -45,9 +45,18 @@ help:
 # dependency checks
 ifndef MAKE_RESTARTS
 ifeq ("$(filter 4.% 3.81 3.82,$(MAKE_VERSION))","")
-$(warning "esp-idf build system only supports GNU Make versions 3.81 or newer. You may see unexpected results with other Makes.")
+$(warning esp-idf build system only supports GNU Make versions 3.81 or newer. You may see unexpected results with other Makes.)
 endif
 endif
+
+# can't run 'clean' along with any non-clean targets
+ifneq ("$(filter clean% %clean,$(MAKECMDGOALS))" ,"")
+ifneq ("$(filter-out clean% %clean,$(MAKECMDGOALS))", "")
+$(error esp-idf build system doesn't support running 'clean' targets along with any others. Run 'make clean' and then run other targets separately.)
+endif
+endif
+
+OS ?=
 
 # make IDF_PATH a "real" absolute path
 # * works around the case where a shell character is embedded in the environment variable value.
@@ -105,6 +114,7 @@ export BUILD_DIR_BASE
 # or the directory contains subdirectories which are components.)
 # The project Makefile can override these component dirs, or add extras via EXTRA_COMPONENT_DIRS
 ifndef COMPONENT_DIRS
+EXTRA_COMPONENT_DIRS ?=
 COMPONENT_DIRS := $(PROJECT_PATH)/components $(EXTRA_COMPONENT_DIRS) $(IDF_PATH)/components $(PROJECT_PATH)/main
 endif
 export COMPONENT_DIRS
@@ -137,16 +147,19 @@ export COMPONENTS
 # can use $(notdir x) to get the component name.
 COMPONENT_PATHS := $(foreach comp,$(COMPONENTS),$(firstword $(foreach cd,$(COMPONENT_DIRS),$(wildcard $(dir $(cd))$(comp) $(cd)/$(comp)))))
 
-# If TESTS_ALL set to 1, set TEST_COMPONENTS_LIST to all components
+TEST_COMPONENTS ?=
+TESTS_ALL ?=
+
+# If TESTS_ALL set to 1, set TEST_COMPONENTS_LIST to all components.
+# Otherwise, use the list supplied in TEST_COMPONENTS.
 ifeq ($(TESTS_ALL),1)
 TEST_COMPONENTS_LIST := $(COMPONENTS)
 else
-# otherwise, use TEST_COMPONENTS
 TEST_COMPONENTS_LIST := $(TEST_COMPONENTS)
 endif
-TEST_COMPONENT_PATHS := $(foreach comp,$(TEST_COMPONENTS_LIST),$(firstword $(foreach dir,$(COMPONENT_DIRS),$(wildcard $(dir)/$(comp)/test))))
-TEST_COMPONENT_NAMES :=  $(foreach comp,$(TEST_COMPONENT_PATHS),$(lastword $(subst /, ,$(dir $(comp))))_test)
 
+TEST_COMPONENT_PATHS := $(foreach comp,$(TEST_COMPONENTS_LIST),$(firstword $(foreach dir,$(COMPONENT_DIRS),$(wildcard $(dir)/$(comp)/test))))
+TEST_COMPONENT_NAMES := $(foreach comp,$(TEST_COMPONENT_PATHS),$(lastword $(subst /, ,$(dir $(comp))))_test)
 
 # Initialise project-wide variables which can be added to by
 # each component.
@@ -158,6 +171,7 @@ TEST_COMPONENT_NAMES :=  $(foreach comp,$(TEST_COMPONENT_PATHS),$(lastword $(sub
 COMPONENT_INCLUDES :=
 COMPONENT_LDFLAGS :=
 COMPONENT_SUBMODULES :=
+COMPONENT_LIBRARIES :=
 
 # COMPONENT_PROJECT_VARS is the list of component_project_vars.mk generated makefiles
 # for each component.
@@ -198,6 +212,7 @@ endif
 IDF_VER := $(shell cd ${IDF_PATH} && git describe --always --tags --dirty)
 
 # Set default LDFLAGS
+EXTRA_LDFLAGS ?=
 LDFLAGS ?= -nostdlib \
 	-u call_user_start_cpu0	\
 	$(EXTRA_LDFLAGS) \
@@ -220,6 +235,8 @@ LDFLAGS ?= -nostdlib \
 
 # CPPFLAGS used by C preprocessor
 # If any flags are defined in application Makefile, add them at the end. 
+CPPFLAGS ?=
+EXTRA_CPPFLAGS ?=
 CPPFLAGS := -DESP_PLATFORM -D IDF_VER=\"$(IDF_VER)\" -MMD -MP $(CPPFLAGS) $(EXTRA_CPPFLAGS)
 
 # Warnings-related flags relevant both for C and C++
@@ -239,13 +256,13 @@ COMMON_FLAGS = \
 	-nostdlib
 
 # Optimization flags are set based on menuconfig choice
-ifneq ("$(CONFIG_OPTIMIZATION_LEVEL_RELEASE)","")
+ifdef CONFIG_OPTIMIZATION_LEVEL_RELEASE
 OPTIMIZATION_FLAGS = -Os
 else
 OPTIMIZATION_FLAGS = -Og
 endif
 
-ifeq ("$(CONFIG_OPTIMIZATION_ASSERTIONS_DISABLED)", "y")
+ifdef CONFIG_OPTIMIZATION_ASSERTIONS_DISABLED
 CPPFLAGS += -DNDEBUG
 endif
 
@@ -255,6 +272,8 @@ DEBUG_FLAGS ?= -ggdb
 
 # List of flags to pass to C compiler
 # If any flags are defined in application Makefile, add them at the end.
+CFLAGS ?=
+EXTRA_CFLAGS ?=
 CFLAGS := $(strip \
 	-std=gnu99 \
 	$(OPTIMIZATION_FLAGS) $(DEBUG_FLAGS) \
@@ -265,6 +284,8 @@ CFLAGS := $(strip \
 
 # List of flags to pass to C++ compiler
 # If any flags are defined in application Makefile, add them at the end.
+CXXFLAGS ?=
+EXTRA_CXXFLAGS ?=
 CXXFLAGS := $(strip \
 	-std=gnu++11 \
 	-fno-exceptions \
@@ -281,8 +302,16 @@ export CFLAGS CPPFLAGS CXXFLAGS
 HOSTCC := $(CC)
 HOSTLD := $(LD)
 HOSTAR := $(AR)
+ifdef OBJCOPY
 HOSTOBJCOPY := $(OBJCOPY)
+else
+HOSTOBJCOPY := objcopy
+endif
+ifdef SIZE
 HOSTSIZE := $(SIZE)
+else
+HOSTSIZE := size
+endif
 export HOSTCC HOSTLD HOSTAR HOSTOBJCOPY SIZE
 
 # Set target compiler. Defaults to whatever the user has
@@ -325,6 +354,7 @@ endif
 #
 # also depends on additional dependencies (linker scripts & binary libraries)
 # stored in COMPONENT_LINKER_DEPS, built via component.mk files' COMPONENT_ADD_LINKER_DEPS variable
+COMPONENT_LINKER_DEPS ?=
 $(APP_ELF): $(foreach libcomp,$(COMPONENT_LIBRARIES),$(BUILD_DIR_BASE)/$(libcomp)/lib$(libcomp).a) $(COMPONENT_LINKER_DEPS) $(COMPONENT_PROJECT_VARS)
 	$(summary) LD $(patsubst $(PWD)/%,%,$@)
 	$(CC) $(LDFLAGS) -o $@ -Wl,-Map=$(APP_MAP)
@@ -361,10 +391,10 @@ endef
 define GenerateComponentTargets
 .PHONY: component-$(2)-build component-$(2)-clean
 
-component-$(2)-build: check-submodules
+component-$(2)-build: check-submodules $(call prereq_if_explicit, component-$(2)-clean) | $(BUILD_DIR_BASE)/$(2)
 	$(call ComponentMake,$(1),$(2)) build
 
-component-$(2)-clean:
+component-$(2)-clean: | $(BUILD_DIR_BASE)/$(2) $(BUILD_DIR_BASE)/$(2)/component_project_vars.mk
 	$(call ComponentMake,$(1),$(2)) clean
 
 $(BUILD_DIR_BASE)/$(2):
@@ -404,10 +434,11 @@ size-files: $(APP_ELF)
 size-components: $(APP_ELF)
 	$(PYTHON) $(IDF_PATH)/tools/idf_size.py --archives $(APP_MAP)
 
-# NB: this ordering is deliberate (app-clean before config-clean),
-# so config remains valid during all component clean targets
-config-clean: app-clean
-clean: config-clean
+# NB: this ordering is deliberate (app-clean & bootloader-clean before
+# _config-clean), so config remains valid during all component clean
+# targets
+config-clean: app-clean bootloader-clean
+clean: app-clean bootloader-clean config-clean
 
 # phony target to check if any git submodule listed in COMPONENT_SUBMODULES are missing
 # or out of date, and exit if so. Components can add paths to this variable.
@@ -425,7 +456,7 @@ check-submodules: $(IDF_PATH)/$(1)/.git
 $(IDF_PATH)/$(1)/.git:
 	@echo "WARNING: Missing submodule $(1)..."
 	[ -e ${IDF_PATH}/.git ] || ( echo "ERROR: esp-idf must be cloned from git to work."; exit 1)
-	[ -x $(which git) ] || ( echo "ERROR: Need to run 'git submodule init $(1)' in esp-idf root directory."; exit 1)
+	[ -x $$(which git) ] || ( echo "ERROR: Need to run 'git submodule init $(1)' in esp-idf root directory."; exit 1)
 	@echo "Attempting 'git submodule update --init $(1)' in esp-idf root directory..."
 	cd ${IDF_PATH} && git submodule update --init $(1)
 

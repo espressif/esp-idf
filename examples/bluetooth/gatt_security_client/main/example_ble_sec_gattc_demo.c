@@ -35,6 +35,7 @@
 #include "esp_gattc_api.h"
 #include "esp_gatt_defs.h"
 #include "esp_bt_main.h"
+#include "esp_gatt_common_api.h"
 
 #define GATTC_TAG             "SEC_GATTC_DEMO"
 #define REMOTE_SERVICE_UUID   0x1809
@@ -164,7 +165,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         memcpy(gl_profile_tab[PROFILE_A_APP_ID].remote_bda, p_data->open.remote_bda, sizeof(esp_bd_addr_t));
         ESP_LOGI(GATTC_TAG, "REMOTE BDA:");
         esp_log_buffer_hex(GATTC_TAG, gl_profile_tab[PROFILE_A_APP_ID].remote_bda, sizeof(esp_bd_addr_t));
-        esp_err_t mtu_ret = esp_ble_gattc_config_mtu (gattc_if, conn_id, 200);
+        esp_err_t mtu_ret = esp_ble_gattc_send_mtu_req (gattc_if, conn_id);
         if (mtu_ret){
             ESP_LOGE(GATTC_TAG, "config MTU error, error code = %x", mtu_ret);
         }
@@ -454,6 +455,10 @@ void app_main()
     ret = esp_ble_gattc_app_register(PROFILE_A_APP_ID);
     if (ret){
         ESP_LOGE(GATTC_TAG, "%s gattc app register error, error code = %x\n", __func__, ret);
+    }
+    ret = esp_ble_gatt_set_local_mtu(200);
+    if (ret){
+        ESP_LOGE(GATTC_TAG, "set local  MTU failed, error code = %x", ret);
     }
 
 }

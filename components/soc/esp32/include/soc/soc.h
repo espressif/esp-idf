@@ -67,6 +67,9 @@
 #define SOC_RTC_IRAM_HIGH 0x400C2000
 #define SOC_RTC_DATA_LOW  0x50000000
 #define SOC_RTC_DATA_HIGH 0x50002000
+#define SOC_EXTRAM_DATA_LOW 0x3F800000
+#define SOC_EXTRAM_DATA_HIGH 0x3FC00000
+
 
 #define DR_REG_DPORT_BASE                       0x3ff00000
 #define DR_REG_AES_BASE                         0x3ff01000
@@ -119,7 +122,7 @@
 #define DR_REG_UART2_BASE                       0x3ff6E000
 #define DR_REG_PWM2_BASE                        0x3ff6F000
 #define DR_REG_PWM3_BASE                        0x3ff70000
-#define PERIPHS_SPI_ENCRYPT_BASEADDR		DR_REG_SPI_ENCRYPT_BASE
+#define PERIPHS_SPI_ENCRYPT_BASEADDR            DR_REG_SPI_ENCRYPT_BASE
 
 //Registers Operation {{
 #define ETS_UNCACHED_ADDR(addr) (addr)

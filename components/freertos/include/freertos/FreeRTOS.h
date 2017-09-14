@@ -189,11 +189,7 @@ extern "C" {
 #endif
 
 #ifndef INCLUDE_pcTaskGetTaskName
-#if ( configENABLE_MEMORY_DEBUG == 1)
 	#define INCLUDE_pcTaskGetTaskName 1
-#else
-	#define INCLUDE_pcTaskGetTaskName 0
-#endif
 #endif
 
 #ifndef configUSE_APPLICATION_TASK_TAG
@@ -978,13 +974,14 @@ typedef struct xSTATIC_QUEUE
 		uint8_t ucDummy9;
 	#endif
 
-    struct {
-	    volatile uint32_t ucDummy10;
-    #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-	    void *pvDummy8;
-	    UBaseType_t uxDummy11;
-    #endif
-    } sDummy12;
+	struct {
+		volatile uint32_t ucDummy10;
+		uint32_t ucDummy11;
+	#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
+		void *pvDummy8;
+		UBaseType_t uxDummy12;
+	#endif
+	} sDummy1;
 
 } StaticQueue_t;
 typedef StaticQueue_t StaticSemaphore_t;

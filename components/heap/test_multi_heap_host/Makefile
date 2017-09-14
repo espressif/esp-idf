@@ -3,6 +3,7 @@ all: $(TEST_PROGRAM)
 
 SOURCE_FILES = $(abspath \
     ../multi_heap.c \
+	../multi_heap_poisoning.c \
 	test_multi_heap.cpp \
 	main.cpp \
     )
@@ -12,7 +13,7 @@ INCLUDE_FLAGS = -I../include -I../../../tools/catch
 GCOV ?= gcov
 
 CPPFLAGS += $(INCLUDE_FLAGS) -D CONFIG_LOG_DEFAULT_LEVEL -g -fstack-protector-all -m32
-CFLAGS += -fprofile-arcs -ftest-coverage
+CFLAGS += -Wall -Werror -fprofile-arcs -ftest-coverage
 CXXFLAGS += -std=c++11 -Wall -Werror  -fprofile-arcs -ftest-coverage
 LDFLAGS += -lstdc++ -fprofile-arcs -ftest-coverage -m32
 

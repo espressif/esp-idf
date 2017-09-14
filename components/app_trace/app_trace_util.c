@@ -22,6 +22,7 @@
 
 // TODO: get actual clock from PLL config
 #define ESP_APPTRACE_CPUTICKS2US(_t_)       ((_t_)/(XT_CLOCK_FREQ/1000000))
+#define ESP_APPTRACE_US2CPUTICKS(_t_)       ((_t_)*(XT_CLOCK_FREQ/1000000))
 
 esp_err_t esp_apptrace_tmo_check(esp_apptrace_tmo_t *tmo)
 {
@@ -45,81 +46,38 @@ esp_err_t esp_apptrace_tmo_check(esp_apptrace_tmo_t *tmo)
 
 esp_err_t esp_apptrace_lock_take(esp_apptrace_lock_t *lock, esp_apptrace_tmo_t *tmo)
 {
-    uint32_t res;
-#if CONFIG_SYSVIEW_ENABLE
-    uint32_t recCnt;
-#endif
+    int res;
 
     while (1) {
-        res = (xPortGetCoreID() << portMUX_VAL_SHIFT) | portMUX_MAGIC_VAL;
-        // first disable IRQs on this CPU, this will prevent current task from been
-        // preempted by higher prio tasks, otherwise deadlock can happen:
-        // when lower prio task took mux and then preempted by higher prio one which also tries to
-        // get mux with INFINITE timeout
-        unsigned int irq_stat = portENTER_CRITICAL_NESTED();
-        // Now try to lock mux
-        uxPortCompareSet(&lock->portmux.mux, portMUX_FREE_VAL, &res);
-        if (res == portMUX_FREE_VAL) {
-            // do not enable IRQs, we will held them disabled until mux is unlocked
-            // we do not need to flush cache region for mux->irq_stat because it is used
-            // to hold and restore IRQ state only for CPU which took mux, other CPUs will not use this value
-            lock->irq_stat = irq_stat;
-            break;
+        // do not overwrite lock->int_state before we actually acquired the mux
+        unsigned int_state = portENTER_CRITICAL_NESTED();
+        // FIXME: if mux is busy it is not good idea to loop during the whole tmo with disabled IRQs.
+        // So we check mux state using zero tmo, restore IRQs and let others tasks/IRQs to run on this CPU
+        // while we are doing our own tmo check.
+        bool success = vPortCPUAcquireMutexTimeout(&lock->mux, 0);
+        if (success) {
+            lock->int_state = int_state;
+            return ESP_OK;
         }
-#if CONFIG_SYSVIEW_ENABLE
-        else if (((res & portMUX_VAL_MASK) >> portMUX_VAL_SHIFT) == xPortGetCoreID()) {
-            recCnt = (res & portMUX_CNT_MASK) >> portMUX_CNT_SHIFT;
-            recCnt++;
-            // ets_printf("Recursive lock: recCnt=%d\n", recCnt);
-            lock->portmux.mux = portMUX_MAGIC_VAL | (recCnt << portMUX_CNT_SHIFT) | (xPortGetCoreID() << portMUX_VAL_SHIFT);
+        portEXIT_CRITICAL_NESTED(int_state);
+        // we can be preempted from this place till the next call (above) to portENTER_CRITICAL_NESTED()
+        res = esp_apptrace_tmo_check(tmo);
+        if (res != ESP_OK) {
             break;
-        }
-#endif
-        // if mux is locked by other task/ISR enable IRQs and let other guys work
-        portEXIT_CRITICAL_NESTED(irq_stat);
-
-        int err = esp_apptrace_tmo_check(tmo);
-        if (err != ESP_OK) {
-            return err;
         }
     }
-
-    return ESP_OK;
+    return res;
 }
 
 esp_err_t esp_apptrace_lock_give(esp_apptrace_lock_t *lock)
 {
-    esp_err_t ret = ESP_OK;
-    uint32_t res = 0;
-    unsigned int irq_stat;
-#if CONFIG_SYSVIEW_ENABLE
-    uint32_t recCnt;
-#endif
-    res = portMUX_FREE_VAL;
-
-    // first of all save a copy of IRQ status for this locker because uxPortCompareSet will unlock mux and tasks/ISRs
-    // from other core can overwrite mux->irq_stat
-    irq_stat = lock->irq_stat;
-    uxPortCompareSet(&lock->portmux.mux, (xPortGetCoreID() << portMUX_VAL_SHIFT) | portMUX_MAGIC_VAL, &res);
-
-    if ( ((res & portMUX_VAL_MASK) >> portMUX_VAL_SHIFT) == xPortGetCoreID() ) {
-#if CONFIG_SYSVIEW_ENABLE
-        //Lock is valid, we can return safely. Just need to check if it's a recursive lock; if so we need to decrease the refcount.
-        if ( ((res & portMUX_CNT_MASK) >> portMUX_CNT_SHIFT) != 0) {
-            //We locked this, but the reccount isn't zero. Decrease refcount and continue.
-            recCnt = (res & portMUX_CNT_MASK) >> portMUX_CNT_SHIFT;
-            recCnt--;
-            lock->portmux.mux = portMUX_MAGIC_VAL | (recCnt << portMUX_CNT_SHIFT) | (xPortGetCoreID() << portMUX_VAL_SHIFT);
-        }
-#endif
-    } else if ( res == portMUX_FREE_VAL ) {
-        ret = ESP_FAIL; // should never get here
-    } else {
-        ret = ESP_FAIL;  // should never get here
-    }
-    // restore local interrupts
-    portEXIT_CRITICAL_NESTED(irq_stat);
-    return ret;
+    // save lock's irq state value for this CPU
+    unsigned int_state = lock->int_state;
+    // after call to the following func we can not be sure that lock->int_state
+    // is not overwritten by other CPU who has acquired the mux just after we released it. See esp_apptrace_lock_take().
+    vPortCPUReleaseMutex(&lock->mux);
+    portEXIT_CRITICAL_NESTED(int_state);
+    return ESP_OK;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -2,7 +2,7 @@
 
 This test code shows how to perform high speed logging by redirecting the log messages to a host instead of UART.
 
-For description of [logging to a host](http://esp-idf.readthedocs.io/en/latest/api-guides/app_trace.html#logging-to-host) please refer to **ESP32 Programming Guide**, section **Application Level Tracing library**. The following example provides practical implementation of this functionality.
+For description of [logging to a host](https://esp-idf.readthedocs.io/en/latest/api-guides/app_trace.html#logging-to-host) please refer to **ESP32 Programming Guide**, section **Application Level Tracing library**. The following example provides practical implementation of this functionality.
 
 
 ## Use Case
@@ -85,9 +85,9 @@ I (4329) example: Collected 5 samples in 20 ms.
 
 To run the example and retrieve the log from the host, do the following:
 
-1.  Connect JTAG interface to ESP32 board, power up both JTAG and ESP32. For details how to setup JTAG interface see [JTAG Debugging](http://esp-idf.readthedocs.io/en/latest/api-guides/jtag-debugging/index.html). 
+1.  Connect JTAG interface to ESP32 board, power up both JTAG and ESP32. For details how to setup JTAG interface see [JTAG Debugging](https://esp-idf.readthedocs.io/en/latest/api-guides/jtag-debugging/index.html). 
 
-2.  [Run OpenOCD](http://esp-idf.readthedocs.io/en/latest/api-guides/jtag-debugging/index.html#run-openocd). If you are using the [binary distribution of OpenOCD](http://esp-idf.readthedocs.io/en/latest/api-guides/jtag-debugging/index.html#jtag-debugging-setup-openocd) and one of versions of [ESP-WROVER-KIT](http://esp-idf.readthedocs.io/en/latest/hw-reference/modules-and-boards.html#esp32-wrover-kit-v1-esp32-devkitj-v1), respective command line will look as follows:
+2.  [Run OpenOCD](https://esp-idf.readthedocs.io/en/latest/api-guides/jtag-debugging/index.html#run-openocd). If you are using the [binary distribution of OpenOCD](https://esp-idf.readthedocs.io/en/latest/api-guides/jtag-debugging/index.html#jtag-debugging-setup-openocd) and one of versions of [ESP-WROVER-KIT](https://esp-idf.readthedocs.io/en/latest/hw-reference/modules-and-boards.html#esp32-wrover-kit-v1-esp32-devkitj-v1), respective command line will look as follows:
 
     ```
     cd ~/esp/openocd-esp32

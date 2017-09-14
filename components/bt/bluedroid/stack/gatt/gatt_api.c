@@ -791,7 +791,7 @@ tGATT_STATUS GATTS_GetAttributeValue(UINT16 attr_handle, UINT16 *length, UINT8 *
 ** Returns          GATT_SUCCESS if command started successfully.
 **
 *******************************************************************************/
-tGATT_STATUS GATTC_ConfigureMTU (UINT16 conn_id, UINT16 mtu)
+tGATT_STATUS GATTC_ConfigureMTU (UINT16 conn_id)
 {
     UINT8           ret = GATT_NO_RESOURCES;
     tGATT_IF        gatt_if = GATT_GET_GATT_IF(conn_id);
@@ -800,6 +800,7 @@ tGATT_STATUS GATTC_ConfigureMTU (UINT16 conn_id, UINT16 mtu)
     tGATT_REG       *p_reg = gatt_get_regcb(gatt_if);
 
     tGATT_CLCB    *p_clcb;
+    uint16_t  mtu = gatt_get_local_mtu();
 
     GATT_TRACE_API ("GATTC_ConfigureMTU conn_id=%d mtu=%d", conn_id, mtu );
 

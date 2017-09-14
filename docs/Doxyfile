@@ -10,7 +10,7 @@
 # Make sure that correct warnings are generated to flag issues with documented code
 #
 # For the complete list of configuration statements see:
-# http://www.stack.nl/~dimitri/doxygen/manual/config.html
+# https://www.stack.nl/~dimitri/doxygen/manual/config.html
 
 
 PROJECT_NAME = "ESP32 Programming Guide"
@@ -75,6 +75,11 @@ INPUT = \
     ../components/driver/include/driver/touch_pad.h \
     ../components/driver/include/driver/uart.h \
     ../components/esp_adc_cal/include/esp_adc_cal.h \
+    ../components/soc/esp32/include/soc/adc_channel.h \
+    ../components/soc/esp32/include/soc/dac_channel.h \
+    ../components/soc/esp32/include/soc/touch_channel.h \
+    ../components/soc/esp32/include/soc/uart_channel.h \
+    ../components/soc/esp32/include/soc/rtc_gpio_channel.h \
     ##
     ## Protocols - API Reference
     ##
@@ -86,6 +91,8 @@ INPUT = \
     ../components/spi_flash/include/esp_spi_flash.h \
     ../components/spi_flash/include/esp_partition.h \
     ../components/bootloader_support/include/esp_flash_encrypt.h \
+    ## SPIFFS
+    ../components/spiffs/include/esp_spiffs.h \
     ## SD/MMC Card Host
     ## NOTE: for three lines below header_file.inc is not used
     ../components/sdmmc/include/sdmmc_cmd.h \
@@ -109,6 +116,8 @@ INPUT = \
     ##
     ## Memory Allocation    #
     ../components/heap/include/esp_heap_caps.h \
+    ../components/heap/include/esp_heap_trace.h \
+    ../components/heap/include/esp_heap_caps_init.h \
     ../components/heap/include/multi_heap.h \
     ## Interrupt Allocation
     ../components/esp32/include/esp_intr_alloc.h \
