@@ -27,6 +27,10 @@ void esp_dport_access_int_init(void);
 void esp_dport_access_int_pause(void);
 void esp_dport_access_int_resume(void);
 
+//This routine does not stop the dport routines in any way that is recoverable. Please
+//only call in case of panic().
+void esp_dport_access_int_abort(void);
+
 #if defined(BOOTLOADER_BUILD) || defined(CONFIG_FREERTOS_UNICORE) || !defined(ESP_PLATFORM)
 #define DPORT_STALL_OTHER_CPU_START()
 #define DPORT_STALL_OTHER_CPU_END()
