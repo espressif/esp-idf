@@ -780,7 +780,7 @@ esp_err_t esp_ble_gap_config_adv_data_raw(uint8_t *raw_data, uint32_t raw_data_l
  */
 esp_err_t esp_ble_gap_config_scan_rsp_data_raw(uint8_t *raw_data, uint32_t raw_data_len);
 
-
+#if (SMP_INCLUDED == TRUE)
 /**
 * @brief             Set a GAP security parameter value. Overrides the default value.
 *
@@ -887,6 +887,8 @@ int esp_ble_get_bond_device_num(void);
 *
 */
 esp_err_t esp_ble_get_bond_device_list(int *dev_num, esp_ble_bond_dev_t *dev_list);
+
+#endif /* #if (SMP_INCLUDED == TRUE) */
 
 /**
 * @brief           This function is to disconnect the physical connection of the peer device

@@ -830,6 +830,7 @@ tBTM_STATUS BTM_SetBleDataLength(BD_ADDR bd_addr, UINT16 tx_pdu_length)
     }
 }
 
+#if (SMP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_ble_determine_security_act
@@ -919,7 +920,6 @@ tBTM_SEC_ACTION btm_ble_determine_security_act(BOOLEAN is_originator, BD_ADDR bd
     return BTM_SEC_OK;
 }
 
-
 /*******************************************************************************
 **
 ** Function         btm_ble_start_sec_check
@@ -1006,7 +1006,6 @@ BOOLEAN btm_ble_start_sec_check(BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_originat
 ** Returns          void
 **
 *******************************************************************************/
-#if (SMP_INCLUDED == TRUE)
 void btm_ble_rand_enc_complete (UINT8 *p, UINT16 op_code, tBTM_RAND_ENC_CB *p_enc_cplt_cback)
 {
     tBTM_RAND_ENC   params;

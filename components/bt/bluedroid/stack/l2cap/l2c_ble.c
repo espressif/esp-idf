@@ -1305,6 +1305,7 @@ void l2cble_send_peer_disc_req(tL2C_CCB *p_ccb)
     return;
 }
 
+#if (SMP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         l2cble_sec_comp
@@ -1437,5 +1438,5 @@ BOOLEAN l2ble_sec_access_req(BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_originator,
 
     return status;
 }
-
+#endif /* #if (SMP_INCLUDED == TRUE) */
 #endif /* (BLE_INCLUDED == TRUE) */
