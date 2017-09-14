@@ -36,6 +36,7 @@
 #include "esp_bt_main.h"
 #include "esp_system.h"
 #include "btc_main.h"
+#include "esp_gatt_common_api.h"
 
 #define GATTC_TAG                   "GATTC_SPP_DEMO"
 #define PROFILE_NUM                 1
@@ -727,7 +728,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         break;
     case ESP_GATTC_SEARCH_CMPL_EVT:
         ESP_LOGI(GATTC_TAG, "SEARCH_CMPL: conn_id = %x, status %d", spp_conn_id, p_data->search_cmpl.status);
-        esp_ble_gattc_config_mtu(gattc_if,spp_conn_id, 200);
+        esp_ble_gattc_send_mtu_req(gattc_if,spp_conn_id);
         break;
     case ESP_GATTC_GET_CHAR_EVT:
         if (p_data->get_char.status != ESP_GATT_OK) {
@@ -886,6 +887,11 @@ void ble_client_appRegister(void)
         return;
     }
     esp_ble_gattc_app_register(PROFILE_APP_ID);
+
+    esp_err_t local_mtu_ret = esp_ble_gatt_set_local_mtu(200);
+    if (local_mtu_ret){
+        ESP_LOGE(GATTC_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
+    }
 
     cmd_reg_queue = xQueueCreate(10, sizeof(uint32_t));
     xTaskCreate(spp_client_reg_task, "spp_client_reg_task", 2048, NULL, 10, NULL);
