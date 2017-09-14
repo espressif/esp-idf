@@ -68,7 +68,7 @@ static void wifi_power_save(void)
     wifi_config_t wifi_config = {
 	.sta = {
 	    .ssid = DEFAULT_SSID,
-	    .password = DEFAULT_PWD
+	    .password = DEFAULT_PWD,
 	},
     };
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));

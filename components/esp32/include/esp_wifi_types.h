@@ -133,6 +133,16 @@ typedef struct {
 } wifi_ap_record_t;
 
 typedef enum {
+    WIFI_FAST_SCAN = 0,                   /**< Do fast scan, scan will end after find SSID match AP */
+    WIFI_ALL_CHANNEL_SCAN,                /**< All channel scan, scan will end after scan all the channel */
+}wifi_scan_method_t;
+
+typedef enum {
+    WIFI_CONNECT_AP_BY_SIGNAL = 0,        /**< Sort match AP in scan list by RSSI */
+    WIFI_CONNECT_AP_BY_SECURITY,          /**< Sort match AP in scan list by security mode */
+}wifi_sort_method_t;
+
+typedef enum {
     WIFI_PS_NONE,    /**< No power save */
     WIFI_PS_MODEM,   /**< Modem power save */
 } wifi_ps_type_t;
@@ -161,9 +171,11 @@ typedef struct {
 typedef struct {
     uint8_t ssid[32];      /**< SSID of target AP*/
     uint8_t password[64];  /**< password of target AP*/
+    wifi_scan_method_t scan_method;    /**< do all channel scan or fast scan */
     bool bssid_set;        /**< whether set MAC address of target AP or not. Generally, station_config.bssid_set needs to be 0; and it needs to be 1 only when users need to check the MAC address of the AP.*/
     uint8_t bssid[6];     /**< MAC address of target AP*/
     uint8_t channel;       /**< channel of target AP. Set to 1~13 to scan starting from the specified channel before connecting to AP. If the channel of AP is unknown, set it to 0.*/
+    wifi_sort_method_t sort_method;    /**< sort the connect AP in the list by rssi or security mode */
 } wifi_sta_config_t;
 
 typedef union {
