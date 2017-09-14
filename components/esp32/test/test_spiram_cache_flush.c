@@ -56,12 +56,15 @@ TEST_CASE("Spiram cache flush on mmap", "[spiram][ignore]")
     void *mem[2];
     res[0]=0; res[1]=0;
 #if CONFIG_SPIRAM_USE_CAPS_ALLOC
-    mem[0]=pvPortMallocCaps(TSTSZ, MALLOC_CAP_SPIRAM);
-    mem[1]=pvPortMallocCaps(TSTSZ, MALLOC_CAP_SPIRAM);
+    printf("Allocating SPI RAM chunk...\n");
+    mem[0]=heap_caps_malloc(TSTSZ, MALLOC_CAP_SPIRAM);
+    mem[1]=heap_caps_malloc(TSTSZ, MALLOC_CAP_SPIRAM);
 #else
     mem[0]=(void*)0x3f800000;
     mem[1]=(void*)0x3f800000+TSTSZ;
 #endif
+    assert(mem[0]);
+    assert(mem[1]);
     TaskHandle_t th[2];
     err[0]=0; err[1]=0;
     printf("Creating tasks\n");
@@ -99,12 +102,15 @@ TEST_CASE("Spiram cache flush on write/read", "[spiram][ignore]")
     void *mem[2];
     res[0]=0; res[1]=0;
 #if CONFIG_SPIRAM_USE_CAPS_ALLOC
-    mem[0]=pvPortMallocCaps(TSTSZ, MALLOC_CAP_SPIRAM);
-    mem[1]=pvPortMallocCaps(TSTSZ, MALLOC_CAP_SPIRAM);
+    printf("Allocating SPI RAM chunk...\n");
+    mem[0]=heap_caps_malloc(TSTSZ, MALLOC_CAP_SPIRAM);
+    mem[1]=heap_caps_malloc(TSTSZ, MALLOC_CAP_SPIRAM);
 #else
     mem[0]=(void*)0x3f800000;
     mem[1]=(void*)0x3f800000+TSTSZ;
 #endif
+    assert(mem[0]);
+    assert(mem[1]);
     TaskHandle_t th[2];
     const esp_partition_t* part = get_test_data_partition();
     assert(part!=NULL);
@@ -138,4 +144,40 @@ TEST_CASE("Spiram cache flush on write/read", "[spiram][ignore]")
 #endif
 }
 
+IRAM_ATTR TEST_CASE("Spiram memcmp weirdness at 80MHz", "[spiram][ignore]") {
+    char *mem1=malloc(0x10000);
+#if CONFIG_SPIRAM_USE_CAPS_ALLOC
+    char *mem2=heap_caps_malloc(0x10000, MALLOC_CAP_SPIRAM);
+#else
+    char *mem2=(void*)0x3f800000;
+#endif
+
+#if !CONFIG_SPIRAM_SPEED_80M
+    printf("**** WARNING **** Spi memory isn't running at 80MHz, so this test is somewhat meaningless.\n");
+#endif
+
+    printf("RAM: Got %p and %p\n", mem1, mem2);
+    assert(mem1);
+    assert(mem2);
+    for (int i=0; i<0x10000; i++) mem1[i]=i^0xAAAAAAAA;
+    
+    for (int cycle=1; cycle<100; cycle++) {
+        memcpy(mem2, mem1, 0x10000);
+        if (memcmp(mem1, mem2, 0x10000)!=0) {
+            printf("Memcmp failed! Cycle %d\n", cycle);
+            for (int i=0; i<0x10000; i++) {
+                if (mem1[i]!=mem2[i]) {
+                    printf("Found real difference at index %d: 0x%x vs 0x%x\n", i, mem1[i], mem2[i]);
+                    break;
+                }
+            }
+        }
+    }
+}
+
+
 #endif  //CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MEMMAP
+
+
+
+

@@ -40,6 +40,12 @@ bool esp_spiram_test();
 
 
 /**
+ * @brief Add the initialized SPI RAM to the heap allocator.
+ */
+esp_err_t esp_spiram_add_to_heapalloc();
+
+
+/**
  * @brief Get the size of the attached SPI RAM chip selected in menuconfig
  *
  * @return Size in bytes, or 0 if no external RAM chip support compiled in.

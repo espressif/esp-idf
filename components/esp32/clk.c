@@ -174,7 +174,10 @@ void esp_perip_clk_init(void)
                               DPORT_LEDC_CLK_EN |
                               DPORT_UHCI1_CLK_EN |
                               DPORT_TIMERGROUP1_CLK_EN |
+//80MHz SPIRAM uses SPI2 as well; it's initialized before this is called. Do not disable the clock for that if this is enabled.
+#if !CONFIG_SPIRAM_SPEED_80M
                               DPORT_SPI_CLK_EN_2 |
+#endif
                               DPORT_PWM0_CLK_EN |
                               DPORT_I2C_EXT1_CLK_EN |
                               DPORT_CAN_CLK_EN |
@@ -196,6 +199,7 @@ void esp_perip_clk_init(void)
                               DPORT_WIFI_CLK_SDIO_HOST_EN |
                               DPORT_WIFI_CLK_EMAC_EN;
     }
+
     /* Change I2S clock to audio PLL first. Because if I2S uses 160MHz clock,
      * the current is not reduced when disable I2S clock.
      */

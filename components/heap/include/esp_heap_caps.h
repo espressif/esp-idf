@@ -30,7 +30,8 @@
 #define MALLOC_CAP_PID5             (1<<7)  ///< Memory must be mapped to PID5 memory space (PIDs are not currently used)
 #define MALLOC_CAP_PID6             (1<<8)  ///< Memory must be mapped to PID6 memory space (PIDs are not currently used)
 #define MALLOC_CAP_PID7             (1<<9)  ///< Memory must be mapped to PID7 memory space (PIDs are not currently used)
-#define MALLOC_CAP_SPISRAM          (1<<10) ///< Memory must be in SPI SRAM
+#define MALLOC_CAP_SPIRAM           (1<<10) ///< Memory must be in SPI RAM
+#define MALLOC_CAP_INTERNAL         (1<<11) ///< Memory must be internal; specifically it should not disappear when flash/spiram cache is switched off
 #define MALLOC_CAP_INVALID          (1<<31) ///< Memory can't be used / list end marker
 
 /**
@@ -47,6 +48,7 @@
  * @return A pointer to the memory allocated on success, NULL on failure
  */
 void *heap_caps_malloc(size_t size, uint32_t caps);
+
 
 /**
  * @brief Free memory previously allocated via heap_caps_malloc() or heap_caps_realloc().

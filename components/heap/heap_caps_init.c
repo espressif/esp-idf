@@ -180,7 +180,7 @@ void heap_caps_init()
 
     heap_t *heaps_array = NULL;
     for (int i = 0; i < num_heaps; i++) {
-        if (heap_caps_match(&temp_heaps[i], MALLOC_CAP_8BIT)) {
+        if (heap_caps_match(&temp_heaps[i], MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL)) {
             /* use the first DRAM heap which can fit the data */
             heaps_array = multi_heap_malloc(temp_heaps[i].heap, sizeof(heap_t) * num_heaps);
             if (heaps_array != NULL) {
