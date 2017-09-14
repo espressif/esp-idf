@@ -336,6 +336,8 @@ tGATT_STATUS gatts_db_read_attr_value_by_type (tGATT_TCB   *p_tcb,
 #if (defined(BLE_DELAY_REQUEST_ENC) && (BLE_DELAY_REQUEST_ENC == TRUE))
     UINT8       flag;
 #endif
+    BOOLEAN need_rsp;
+    BOOLEAN have_send_request = false;
 
     if (p_db && p_db->p_attr_list) {
         p_attr = (tGATT_ATTR16 *)p_db->p_attr_list;
@@ -361,14 +363,27 @@ tGATT_STATUS gatts_db_read_attr_value_by_type (tGATT_TCB   *p_tcb,
                 UINT16_TO_STREAM (p, p_attr->handle);
 
                 status = read_attr_value ((void *)p_attr, 0, &p, FALSE, (UINT16)(*p_len - 2), &len, sec_flag, key_size);
+                if (status == GATT_PENDING) {
 
-                if (status == GATT_PENDING || status == GATT_STACK_RSP) {
-                    BOOLEAN need_rsp = (status != GATT_STACK_RSP);
+
+                    need_rsp = TRUE;
                     status = gatts_send_app_read_request(p_tcb, op_code, p_attr->handle, 0, trans_id, need_rsp);
 
                     /* one callback at a time */
                     break;
-                } else if (status == GATT_SUCCESS) {
+                } else if (status == GATT_SUCCESS || status == GATT_STACK_RSP) {
+                    if (status == GATT_STACK_RSP){
+                        need_rsp = FALSE;
+                        status = gatts_send_app_read_request(p_tcb, op_code, p_attr->handle, 0, trans_id, need_rsp);
+                        if(status == GATT_BUSY)
+                            break;
+
+                        if (!have_send_request){
+                            have_send_request = true;
+                            trans_id = p_tcb->sr_cmd.trans_id;
+                        }
+                    }
+
                     if (p_rsp->offset == 0) {
                         p_rsp->offset = len + 2;
                     }
