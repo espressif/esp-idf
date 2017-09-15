@@ -43,34 +43,34 @@
  * - i2c master(ESP32) will read data from i2c slave(ESP32).
  */
 
-#define DATA_LENGTH          512  /*!<Data buffer length for test buffer*/
-#define RW_TEST_LENGTH       129  /*!<Data length for r/w test, any value from 0-DATA_LENGTH*/
-#define DELAY_TIME_BETWEEN_ITEMS_MS   1234 /*!< delay time between different test items */
+#define DATA_LENGTH                        512              /*!<Data buffer length for test buffer*/
+#define RW_TEST_LENGTH                     129              /*!<Data length for r/w test, any value from 0-DATA_LENGTH*/
+#define DELAY_TIME_BETWEEN_ITEMS_MS        1234             /*!< delay time between different test items */
 
-#define I2C_EXAMPLE_SLAVE_SCL_IO     26    /*!<gpio number for i2c slave clock  */
-#define I2C_EXAMPLE_SLAVE_SDA_IO     25    /*!<gpio number for i2c slave data */
-#define I2C_EXAMPLE_SLAVE_NUM I2C_NUM_0    /*!<I2C port number for slave dev */
-#define I2C_EXAMPLE_SLAVE_TX_BUF_LEN  (2*DATA_LENGTH) /*!<I2C slave tx buffer size */
-#define I2C_EXAMPLE_SLAVE_RX_BUF_LEN  (2*DATA_LENGTH) /*!<I2C slave rx buffer size */
+#define I2C_EXAMPLE_SLAVE_SCL_IO           26               /*!<gpio number for i2c slave clock  */
+#define I2C_EXAMPLE_SLAVE_SDA_IO           25               /*!<gpio number for i2c slave data */
+#define I2C_EXAMPLE_SLAVE_NUM              I2C_NUM_0        /*!<I2C port number for slave dev */
+#define I2C_EXAMPLE_SLAVE_TX_BUF_LEN       (2*DATA_LENGTH)  /*!<I2C slave tx buffer size */
+#define I2C_EXAMPLE_SLAVE_RX_BUF_LEN       (2*DATA_LENGTH)  /*!<I2C slave rx buffer size */
 
-#define I2C_EXAMPLE_MASTER_SCL_IO    19    /*!< gpio number for I2C master clock */
-#define I2C_EXAMPLE_MASTER_SDA_IO    18    /*!< gpio number for I2C master data  */
-#define I2C_EXAMPLE_MASTER_NUM I2C_NUM_1   /*!< I2C port number for master dev */
-#define I2C_EXAMPLE_MASTER_TX_BUF_DISABLE   0   /*!< I2C master do not need buffer */
-#define I2C_EXAMPLE_MASTER_RX_BUF_DISABLE   0   /*!< I2C master do not need buffer */
-#define I2C_EXAMPLE_MASTER_FREQ_HZ    100000     /*!< I2C master clock frequency */
+#define I2C_EXAMPLE_MASTER_SCL_IO          19               /*!< gpio number for I2C master clock */
+#define I2C_EXAMPLE_MASTER_SDA_IO          18               /*!< gpio number for I2C master data  */
+#define I2C_EXAMPLE_MASTER_NUM             I2C_NUM_1        /*!< I2C port number for master dev */
+#define I2C_EXAMPLE_MASTER_TX_BUF_DISABLE  0                /*!< I2C master do not need buffer */
+#define I2C_EXAMPLE_MASTER_RX_BUF_DISABLE  0                /*!< I2C master do not need buffer */
+#define I2C_EXAMPLE_MASTER_FREQ_HZ         100000           /*!< I2C master clock frequency */
 
-#define BH1750_SENSOR_ADDR  0x23    /*!< slave address for BH1750 sensor */
-#define BH1750_CMD_START    0x23    /*!< Command to set measure mode */
-#define ESP_SLAVE_ADDR 0x28         /*!< ESP32 slave address, you can set any 7bit value */
-#define WRITE_BIT  I2C_MASTER_WRITE /*!< I2C master write */
-#define READ_BIT   I2C_MASTER_READ  /*!< I2C master read */
-#define ACK_CHECK_EN   0x1     /*!< I2C master will check ack from slave*/
-#define ACK_CHECK_DIS  0x0     /*!< I2C master will not check ack from slave */
-#define ACK_VAL    0x0         /*!< I2C ack value */
-#define NACK_VAL   0x1         /*!< I2C nack value */
+#define BH1750_SENSOR_ADDR                 0x23             /*!< slave address for BH1750 sensor */
+#define BH1750_CMD_START                   0x23             /*!< Command to set measure mode */
+#define ESP_SLAVE_ADDR                     0x28             /*!< ESP32 slave address, you can set any 7bit value */
+#define WRITE_BIT                          I2C_MASTER_WRITE /*!< I2C master write */
+#define READ_BIT                           I2C_MASTER_READ  /*!< I2C master read */
+#define ACK_CHECK_EN                       0x1              /*!< I2C master will check ack from slave*/
+#define ACK_CHECK_DIS                      0x0              /*!< I2C master will not check ack from slave */
+#define ACK_VAL                            0x0              /*!< I2C ack value */
+#define NACK_VAL                           0x1              /*!< I2C nack value */
 
-xSemaphoreHandle print_mux;
+SemaphoreHandle_t print_mux = NULL;
 
 /**
  * @brief test code to read esp-i2c-slave
@@ -137,18 +137,18 @@ static esp_err_t i2c_example_master_write_slave(i2c_port_t i2c_num, uint8_t* dat
  */
 static esp_err_t i2c_example_master_sensor_test(i2c_port_t i2c_num, uint8_t* data_h, uint8_t* data_l)
 {
+    int ret;
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
     i2c_master_write_byte(cmd, BH1750_SENSOR_ADDR << 1 | WRITE_BIT, ACK_CHECK_EN);
     i2c_master_write_byte(cmd, BH1750_CMD_START, ACK_CHECK_EN);
     i2c_master_stop(cmd);
-    int ret = i2c_master_cmd_begin(i2c_num, cmd, 1000 / portTICK_RATE_MS);
+    ret = i2c_master_cmd_begin(i2c_num, cmd, 1000 / portTICK_RATE_MS);
     i2c_cmd_link_delete(cmd);
-    if (ret == ESP_FAIL) {
+    if (ret != ESP_OK) {
         return ret;
     }
     vTaskDelay(30 / portTICK_RATE_MS);
-
     cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
     i2c_master_write_byte(cmd, BH1750_SENSOR_ADDR << 1 | READ_BIT, ACK_CHECK_EN);
@@ -157,10 +157,7 @@ static esp_err_t i2c_example_master_sensor_test(i2c_port_t i2c_num, uint8_t* dat
     i2c_master_stop(cmd);
     ret = i2c_master_cmd_begin(i2c_num, cmd, 1000 / portTICK_RATE_MS);
     i2c_cmd_link_delete(cmd);
-    if (ret == ESP_FAIL) {
-        return ESP_FAIL;
-    }
-    return ESP_OK;
+    return ret;
 }
 
 /**
@@ -226,27 +223,30 @@ static void i2c_test_task(void* arg)
     uint8_t* data_wr = (uint8_t*) malloc(DATA_LENGTH);
     uint8_t* data_rd = (uint8_t*) malloc(DATA_LENGTH);
     uint8_t sensor_data_h, sensor_data_l;
-
+    int cnt = 0;
     while (1) {
+        printf("test cnt: %d\n", cnt++);
         ret = i2c_example_master_sensor_test( I2C_EXAMPLE_MASTER_NUM, &sensor_data_h, &sensor_data_l);
         xSemaphoreTake(print_mux, portMAX_DELAY);
-        printf("*******************\n");
-        printf("TASK[%d]  MASTER READ SENSOR( BH1750 )\n", task_idx);
-        printf("*******************\n");
-        if (ret == ESP_OK) {
+        if(ret == ESP_ERR_TIMEOUT) {
+            printf("I2C timeout\n");
+        } else if(ret == ESP_OK) {
+            printf("*******************\n");
+            printf("TASK[%d]  MASTER READ SENSOR( BH1750 )\n", task_idx);
+            printf("*******************\n");
             printf("data_h: %02x\n", sensor_data_h);
             printf("data_l: %02x\n", sensor_data_l);
-            printf("sensor val: %f\n", ( sensor_data_h << 8 | sensor_data_l ) / 1.2);
+            printf("sensor val: %f\n", (sensor_data_h << 8 | sensor_data_l) / 1.2);
         } else {
             printf("No ack, sensor not connected...skip...\n");
         }
         xSemaphoreGive(print_mux);
         vTaskDelay(( DELAY_TIME_BETWEEN_ITEMS_MS * ( task_idx + 1 ) ) / portTICK_RATE_MS);
-
         //---------------------------------------------------
         for (i = 0; i < DATA_LENGTH; i++) {
             data[i] = i;
         }
+        xSemaphoreTake(print_mux, portMAX_DELAY);
         size_t d_size = i2c_slave_write_buffer(I2C_EXAMPLE_SLAVE_NUM, data, RW_TEST_LENGTH, 1000 / portTICK_RATE_MS);
         if (d_size == 0) {
             printf("i2c slave tx buffer full\n");
@@ -254,13 +254,16 @@ static void i2c_test_task(void* arg)
         } else {
             ret = i2c_example_master_read_slave(I2C_EXAMPLE_MASTER_NUM, data_rd, RW_TEST_LENGTH);
         }
-        xSemaphoreTake(print_mux, portMAX_DELAY);
-        printf("*******************\n");
-        printf("TASK[%d]  MASTER READ FROM SLAVE\n", task_idx);
-        printf("*******************\n");
-        printf("====TASK[%d] Slave buffer data ====\n", task_idx);
-        disp_buf(data, d_size);
-        if (ret == ESP_OK) {
+
+        if (ret == ESP_ERR_TIMEOUT) {
+            printf("I2C timeout\n");
+            printf("*********\n");
+        } else if (ret == ESP_OK) {
+            printf("*******************\n");
+            printf("TASK[%d]  MASTER READ FROM SLAVE\n", task_idx);
+            printf("*******************\n");
+            printf("====TASK[%d] Slave buffer data ====\n", task_idx);
+            disp_buf(data, d_size);
             printf("====TASK[%d] Master read ====\n", task_idx);
             disp_buf(data_rd, d_size);
         } else {
@@ -273,18 +276,20 @@ static void i2c_test_task(void* arg)
         for (i = 0; i < DATA_LENGTH; i++) {
             data_wr[i] = i + 10;
         }
+        xSemaphoreTake(print_mux, portMAX_DELAY);
         //we need to fill the slave buffer so that master can read later
         ret = i2c_example_master_write_slave( I2C_EXAMPLE_MASTER_NUM, data_wr, RW_TEST_LENGTH);
         if (ret == ESP_OK) {
             size = i2c_slave_read_buffer( I2C_EXAMPLE_SLAVE_NUM, data, RW_TEST_LENGTH, 1000 / portTICK_RATE_MS);
         }
-        xSemaphoreTake(print_mux, portMAX_DELAY);
-        printf("*******************\n");
-        printf("TASK[%d]  MASTER WRITE TO SLAVE\n", task_idx);
-        printf("*******************\n");
-        printf("----TASK[%d] Master write ----\n", task_idx);
-        disp_buf(data_wr, RW_TEST_LENGTH);
-        if (ret == ESP_OK) {
+        if (ret == ESP_ERR_TIMEOUT) {
+            printf("I2C timeout\n");
+        } else if (ret == ESP_OK) {
+            printf("*******************\n");
+            printf("TASK[%d]  MASTER WRITE TO SLAVE\n", task_idx);
+            printf("*******************\n");
+            printf("----TASK[%d] Master write ----\n", task_idx);
+            disp_buf(data_wr, RW_TEST_LENGTH);
             printf("----TASK[%d] Slave read: [%d] bytes ----\n", task_idx, size);
             disp_buf(data, size);
         } else {
@@ -300,8 +305,8 @@ void app_main()
     print_mux = xSemaphoreCreateMutex();
     i2c_example_slave_init();
     i2c_example_master_init();
-
     xTaskCreate(i2c_test_task, "i2c_test_task_0", 1024 * 2, (void* ) 0, 10, NULL);
     xTaskCreate(i2c_test_task, "i2c_test_task_1", 1024 * 2, (void* ) 1, 10, NULL);
+
 }
 
