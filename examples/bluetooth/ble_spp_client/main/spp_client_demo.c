@@ -39,6 +39,7 @@
 #include "esp_gatt_common_api.h"
 
 #define GATTC_TAG                   "GATTC_SPP_DEMO"
+#ifdef SUPPORT_NEW_GATTC_API
 #define PROFILE_NUM                 1
 #define PROFILE_APP_ID              0
 #define BT_BD_ADDR_STR              "%02x:%02x:%02x:%02x:%02x:%02x"
@@ -954,6 +955,7 @@ static void spp_uart_init(void)
     uart_driver_install(UART_NUM_0, 4096, 8192, 10,&spp_uart_queue,0);
     xTaskCreate(uart_task, "uTask", 2048, (void*)UART_NUM_0, 8, NULL);
 }
+#endif
 
 void app_main()
 {
@@ -985,7 +987,9 @@ void app_main()
         return;
     }
 
+#ifdef SUPPORT_NEW_GATTC_API
     ble_client_appRegister();
     spp_uart_init();
+#endif
 }
 
