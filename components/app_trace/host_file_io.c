@@ -155,14 +155,14 @@ void *esp_apptrace_fopen(esp_apptrace_dest_t dest, const char *path, const char 
     }
 
     // now read the answer
-    uint8_t resp[sizeof(void *)];
-    ret = esp_apptrace_file_rsp_recv(dest, resp, sizeof(resp));
+    void *resp;
+    ret = esp_apptrace_file_rsp_recv(dest, (uint8_t *)&resp, sizeof(resp));
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to read response (%d)!", ret);
         return NULL;
     }
 
-    return *((void **)resp);
+    return resp;
 }
 
 static void esp_apptrace_fclose_args_prepare(uint8_t *buf, void *priv)
@@ -185,14 +185,14 @@ int esp_apptrace_fclose(esp_apptrace_dest_t dest, void *stream)
     }
 
     // now read the answer
-    uint8_t resp[sizeof(int)];
-    ret = esp_apptrace_file_rsp_recv(dest, resp, sizeof(resp));
+    int resp;
+    ret = esp_apptrace_file_rsp_recv(dest, (uint8_t *)&resp, sizeof(resp));
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to read response (%d)!", ret);
         return EOF;
     }
 
-    return *((int *)resp);
+    return resp;
 }
 
 static void esp_apptrace_fwrite_args_prepare(uint8_t *buf, void *priv)
@@ -218,14 +218,14 @@ size_t esp_apptrace_fwrite(esp_apptrace_dest_t dest, const void *ptr, size_t siz
     }
 
     // now read the answer
-    uint8_t resp[sizeof(size_t)];
-    ret = esp_apptrace_file_rsp_recv(dest, resp, sizeof(resp));
+    size_t resp;
+    ret = esp_apptrace_file_rsp_recv(dest, (uint8_t *)&resp, sizeof(resp));
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to read response (%d)!", ret);
         return 0;
     }
 
-    return *((size_t *)resp);
+    return resp;
 }
 
 static void esp_apptrace_fread_args_prepare(uint8_t *buf, void *priv)
@@ -250,20 +250,20 @@ size_t esp_apptrace_fread(esp_apptrace_dest_t dest, void *ptr, size_t size, size
     }
 
     // now read the answer
-    uint8_t resp[sizeof(size_t)];
-    ret = esp_apptrace_file_rsp_recv(dest, resp, sizeof(resp));
+    size_t resp;
+    ret = esp_apptrace_file_rsp_recv(dest, (uint8_t *)&resp, sizeof(resp));
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to read response (%d)!", ret);
         return 0;
     }
-    if (*((size_t *)resp) > 0) {
-        ret = esp_apptrace_file_rsp_recv(dest, ptr, *((size_t *)resp));
+    if (resp > 0) {
+        ret = esp_apptrace_file_rsp_recv(dest, ptr, resp);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to read file data (%d)!", ret);
             return 0;
         }
     }
-    return *((size_t *)resp);
+    return resp;
 }
 
 static void esp_apptrace_fseek_args_prepare(uint8_t *buf, void *priv)
@@ -288,14 +288,14 @@ int esp_apptrace_fseek(esp_apptrace_dest_t dest, void *stream, long offset, int 
     }
 
     // now read the answer
-    uint8_t resp[sizeof(int)];
-    ret = esp_apptrace_file_rsp_recv(dest, resp, sizeof(resp));
+    int resp;
+    ret = esp_apptrace_file_rsp_recv(dest, (uint8_t *)&resp, sizeof(resp));
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to read response (%d)!", ret);
         return -1;
     }
 
-    return *((int *)resp);
+    return resp;
 }
 
 static void esp_apptrace_ftell_args_prepare(uint8_t *buf, void *priv)
@@ -318,14 +318,14 @@ int esp_apptrace_ftell(esp_apptrace_dest_t dest, void *stream)
     }
 
     // now read the answer
-    uint8_t resp[sizeof(int)];
-    ret = esp_apptrace_file_rsp_recv(dest, resp, sizeof(resp));
+    int resp;
+    ret = esp_apptrace_file_rsp_recv(dest, (uint8_t *)&resp, sizeof(resp));
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to read response (%d)!", ret);
         return -1;
     }
 
-    return *((int *)resp);
+    return resp;
 }
 
 int esp_apptrace_fstop(esp_apptrace_dest_t dest)
