@@ -360,6 +360,8 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
         case ESP_GATTS_READ_EVT:
             break;
         case ESP_GATTS_WRITE_EVT: 
+            ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_WRITE_EVT, write value:");
+            esp_log_buffer_hex(GATTS_TABLE_TAG, param->write.value, param->write.len);
             break;
         case ESP_GATTS_EXEC_WRITE_EVT:
             break;
@@ -377,12 +379,12 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
             break;
         case ESP_GATTS_CONNECT_EVT:
             ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_CONNECT_EVT");
-            //start security connect with peer device when receive the connect event sent by the master.
+            /* start security connect with peer device when receive the connect event sent by the master */
             esp_ble_set_encryption(param->connect.remote_bda, ESP_BLE_SEC_ENCRYPT_MITM);
             break;
         case ESP_GATTS_DISCONNECT_EVT:
             ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_DISCONNECT_EVT");
-            ///start advertising again when missing the connect.
+            /* start advertising again when missing the connect */
             esp_ble_gap_start_advertising(&heart_rate_adv_params);
             break;
         case ESP_GATTS_OPEN_EVT:

@@ -74,10 +74,10 @@ void bta_gatt_convert_uuid16_to_uuid128(UINT8 uuid_128[LEN_UUID_128], UINT16 uui
 ** Returns          TRUE if two uuid match; FALSE otherwise.
 **
 *******************************************************************************/
-BOOLEAN bta_gattc_uuid_compare (tBT_UUID *p_src, tBT_UUID *p_tar, BOOLEAN is_precise)
+BOOLEAN bta_gattc_uuid_compare (const tBT_UUID *p_src, const tBT_UUID *p_tar, BOOLEAN is_precise)
 {
     UINT8  su[LEN_UUID_128], tu[LEN_UUID_128];
-    UINT8  *ps, *pt;
+    const UINT8  *ps, *pt;
 
     /* any of the UUID is unspecified */
     if (p_src == 0 || p_tar == 0) {
@@ -296,10 +296,16 @@ void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB *p_clcb)
             p_srcb->connected = FALSE;
             p_srcb->state = BTA_GATTC_SERV_IDLE;
             p_srcb->mtu = 0;
+
+            /* clean up cache */
+            if (p_srcb->p_srvc_cache) {
+                list_free(p_srcb->p_srvc_cache);
+                p_srcb->p_srvc_cache = NULL;
+            }
         }
-
-        utl_freebuf((void **)&p_clcb->p_q_cmd);
-
+        osi_free(p_clcb->p_q_cmd);
+        p_clcb->p_q_cmd = NULL;
+        //osi_free_and_reset((void **)&p_clcb->p_q_cmd);
         memset(p_clcb, 0, sizeof(tBTA_GATTC_CLCB));
     } else {
         APPL_TRACE_ERROR("bta_gattc_clcb_dealloc p_clcb=NULL");
@@ -396,25 +402,22 @@ tBTA_GATTC_SERV *bta_gattc_srcb_alloc(BD_ADDR bda)
     /* if not found, try to recycle one known device */
     if (!found && !p_recycle) {
         p_tcb = NULL;
-    } else if (!found && p_recycle) {
+	}
+    else if (!found && p_recycle) {
         p_tcb = p_recycle;
-    }
+	}
 
-    if (p_tcb != NULL) {
-        if (p_tcb->cache_buffer) {
-            while (!fixed_queue_is_empty(p_tcb->cache_buffer)) {
-                osi_free(fixed_queue_dequeue(p_tcb->cache_buffer));
-            }
-            fixed_queue_free(p_tcb->cache_buffer, NULL);
-        }
-
-        utl_freebuf((void **)&p_tcb->p_srvc_list);
+    if (p_tcb != NULL)
+    {
+        if (p_tcb->p_srvc_cache != NULL)
+            list_free(p_tcb->p_srvc_cache);
+        osi_free(p_tcb->p_srvc_list);
+        p_tcb->p_srvc_list = NULL;
+        //osi_free_and_reset((void **)&p_tcb->p_srvc_list);
         memset(p_tcb, 0 , sizeof(tBTA_GATTC_SERV));
 
         p_tcb->in_use = TRUE;
         bdcpy(p_tcb->server_bda, bda);
-
-        p_tcb->cache_buffer = fixed_queue_new(SIZE_MAX); //by Snake
     }
     return p_tcb;
 }
@@ -430,118 +433,15 @@ tBTA_GATTC_SERV *bta_gattc_srcb_alloc(BD_ADDR bda)
 BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 {
 
-    if (p_clcb->p_q_cmd == NULL) {
+    if (p_clcb->p_q_cmd == NULL)
+    {
         p_clcb->p_q_cmd = p_data;
-    } else {
-        APPL_TRACE_ERROR("already has a pending command!!");
-        /* skip the callback now. ----- need to send callback ? */
-    }
-    return (p_clcb->p_q_cmd != NULL) ? TRUE : FALSE;
-
-}
-
-/*******************************************************************************
-**
-** Function         bta_gattc_pack_attr_uuid
-**
-** Description      pack UUID into a stream.
-**
-** Returns
-**
-*******************************************************************************/
-void bta_gattc_pack_attr_uuid(tBTA_GATTC_CACHE_ATTR   *p_attr, tBT_UUID *p_uuid)
-{
-    UINT8 *pp = (UINT8 *)p_attr->p_uuid;
-
-    memset(p_uuid, 0, sizeof(tBT_UUID));
-
-    p_uuid->len = p_attr->uuid_len;
-
-    if (p_attr->uuid_len == LEN_UUID_16) {
-        STREAM_TO_UINT16(p_uuid->uu.uuid16, pp);
-    } else {
-        memcpy(p_uuid->uu.uuid128, pp, LEN_UUID_128);
-    }
-
-    return;
-}
-/*******************************************************************************
-**
-** Function         bta_gattc_cpygattid
-**
-** Description      copy two tBTA_GATT_ID value
-**
-** Returns
-**
-*******************************************************************************/
-void bta_gattc_cpygattid(tBTA_GATT_ID *p_des, tBTA_GATT_ID *p_src)
-{
-    memset ((void *)p_des, 0, sizeof(tBTA_GATT_ID));
-
-    p_des->inst_id = p_src->inst_id;
-
-    p_des->uuid.len = p_src->uuid.len;
-
-    if (p_des->uuid.len == LEN_UUID_16) {
-        p_des->uuid.uu.uuid16 = p_src->uuid.uu.uuid16;
-    } else if (p_des->uuid.len == LEN_UUID_128) {
-        memcpy(p_des->uuid.uu.uuid128, p_src->uuid.uu.uuid128, LEN_UUID_128);
-    }
-}
-/*******************************************************************************
-**
-** Function         bta_gattc_gattid_compare
-**
-** Description      compare two tBTA_GATT_ID type of pointer
-**
-** Returns
-**
-*******************************************************************************/
-BOOLEAN bta_gattc_gattid_compare(tBTA_GATT_ID *p_src, tBTA_GATT_ID *p_tar)
-{
-    if (p_src->inst_id == p_tar->inst_id &&
-            bta_gattc_uuid_compare (&p_src->uuid, &p_tar->uuid, TRUE )) {
         return TRUE;
-    } else {
-        return FALSE;
     }
 
-}
-/*******************************************************************************
-**
-** Function         bta_gattc_srvcid_compare
-**
-** Description      compare two tBTA_GATT_SRVC_ID type of pointer
-**
-** Returns
-**
-*******************************************************************************/
-BOOLEAN bta_gattc_srvcid_compare(tBTA_GATT_SRVC_ID *p_src, tBTA_GATT_SRVC_ID *p_tar)
-{
-    if (p_src->is_primary == p_tar->is_primary &&
-            bta_gattc_gattid_compare (&p_src->id, &p_tar->id)) {
-        return TRUE;
-    } else {
-        return FALSE;
-    }
-}
-/*******************************************************************************
-**
-** Function         bta_gattc_charid_compare
-**
-** Description      compare two tBTA_GATTC_CHAR_ID type of pointer
-**
-** Returns
-**
-*******************************************************************************/
-BOOLEAN bta_gattc_charid_compare(tBTA_GATTC_CHAR_ID *p_src, tBTA_GATTC_CHAR_ID *p_tar)
-{
-    if (bta_gattc_gattid_compare (&p_src->char_id, &p_tar->char_id) &&
-            bta_gattc_srvcid_compare (&p_src->srvc_id, &p_tar->srvc_id)) {
-        return TRUE;
-    } else {
-        return FALSE;
-    }
+    APPL_TRACE_ERROR ("%s: already has a pending command!!", __func__);
+    /* skip the callback now. ----- need to send callback ? */
+    return FALSE;
 }
 
 /*******************************************************************************
@@ -558,10 +458,12 @@ BOOLEAN bta_gattc_check_notif_registry(tBTA_GATTC_RCB  *p_clreg, tBTA_GATTC_SERV
 {
     UINT8           i;
 
-    for (i = 0 ; i < BTA_GATTC_NOTIF_REG_MAX; i ++) {
+    for (i = 0 ; i < BTA_GATTC_NOTIF_REG_MAX; i ++)
+    {
         if (p_clreg->notif_reg[i].in_use &&
-                bdcmp(p_clreg->notif_reg[i].remote_bda, p_srcb->server_bda) == 0 &&
-                bta_gattc_charid_compare (&p_clreg->notif_reg[i].char_id, &p_notify->char_id)) {
+            bdcmp(p_clreg->notif_reg[i].remote_bda, p_srcb->server_bda) == 0 &&
+            p_clreg->notif_reg[i].handle == p_notify->handle)
+        {
             APPL_TRACE_DEBUG("Notification registered!");
             return TRUE;
         }
@@ -573,26 +475,36 @@ BOOLEAN bta_gattc_check_notif_registry(tBTA_GATTC_RCB  *p_clreg, tBTA_GATTC_SERV
 **
 ** Function         bta_gattc_clear_notif_registration
 **
-** Description      clear up the notification registration information by BD_ADDR.
+** Description      Clear up the notification registration information by BD_ADDR.
+**                  Where handle is between start_handle and end_handle, and
+**                  start_handle and end_handle are boundaries of service
+**                  containing characteristic.
 **
 ** Returns          None.
 **
 *******************************************************************************/
-void bta_gattc_clear_notif_registration(UINT16 conn_id)
+void bta_gattc_clear_notif_registration(tBTA_GATTC_SERV *p_srcb, UINT16 conn_id,
+                                        UINT16 start_handle, UINT16 end_handle)
 {
     BD_ADDR             remote_bda;
     tBTA_GATTC_IF       gatt_if;
     tBTA_GATTC_RCB      *p_clrcb ;
     UINT8       i;
     tGATT_TRANSPORT     transport;
+    UINT16              handle = 0;
 
     if (GATT_GetConnectionInfor(conn_id, &gatt_if, remote_bda, &transport)) {
         if ((p_clrcb = bta_gattc_cl_get_regcb(gatt_if)) != NULL) {
             for (i = 0 ; i < BTA_GATTC_NOTIF_REG_MAX; i ++) {
                 if (p_clrcb->notif_reg[i].in_use &&
-                        !bdcmp(p_clrcb->notif_reg[i].remote_bda, remote_bda)) {
-                    memset(&p_clrcb->notif_reg[i], 0, sizeof(tBTA_GATTC_NOTIF_REG));
-                }
+                    !bdcmp(p_clrcb->notif_reg[i].remote_bda, remote_bda))
+
+                    /* It's enough to get service or characteristic handle, as
+                     * clear boundaries are always around service.
+                     */
+                    handle = p_clrcb->notif_reg[i].handle;
+                    if (handle >= start_handle && handle <= end_handle)
+                        memset(&p_clrcb->notif_reg[i], 0, sizeof(tBTA_GATTC_NOTIF_REG));
             }
         }
     } else {
@@ -601,50 +513,6 @@ void bta_gattc_clear_notif_registration(UINT16 conn_id)
     return;
 }
 
-/*******************************************************************************
-**
-** Function         bta_gattc_pack_cb_data
-**
-** Description      pack the data from read response into callback data structure.
-**
-** Returns
-**
-*******************************************************************************/
-tBTA_GATT_STATUS bta_gattc_pack_read_cb_data(tBTA_GATTC_SERV *p_srcb,
-        tBT_UUID *p_descr_uuid,
-        tGATT_VALUE *p_attr,
-        tBTA_GATT_READ_VAL *p_value)
-{
-    UINT8                   i = 0, *pp = p_attr->value;
-    tBT_UUID                uuid = {LEN_UUID_16, {GATT_UUID_CHAR_AGG_FORMAT}};
-    UINT16                  handle;
-    tBTA_GATT_STATUS        status = BTA_GATT_OK;
-
-    /* GATT_UUID_CHAR_AGG_FORMAT */
-    if (bta_gattc_uuid_compare (&uuid, p_descr_uuid, TRUE)) {
-        while (p_attr->len >= 2 && i < BTA_GATTC_MULTI_MAX) {
-            STREAM_TO_UINT16(handle, pp);
-
-            if (bta_gattc_handle2id(p_srcb,
-                                    handle,
-                                    &p_value->aggre_value.pre_format[i].char_id.srvc_id,
-                                    &p_value->aggre_value.pre_format[i].char_id.char_id,
-                                    &p_value->aggre_value.pre_format[i].descr_id) == FALSE) {
-                status = BTA_GATT_INTERNAL_ERROR;
-                APPL_TRACE_ERROR("can not map to GATT ID. handle = 0x%04x", handle);
-                break;
-            }
-            i ++;
-            p_attr->len -= 2;
-        }
-        p_value->aggre_value.num_pres_fmt = i;
-    } else {
-        /* all others, take as raw format */
-        p_value->unformat.len = p_attr->len;
-        p_value->unformat.p_value = p_attr->value;
-    }
-    return status;
-}
 /*******************************************************************************
 **
 ** Function         bta_gattc_mark_bg_conn
@@ -981,5 +849,44 @@ tBTA_GATTC_CLCB *bta_gattc_find_int_disconn_clcb(tBTA_GATTC_DATA *p_msg)
     }
     return p_clcb;
 }
+
+void bta_to_btif_uuid(bt_uuid_t *p_dest, tBT_UUID *p_src)
+{
+    int i = 0;
+
+    if (p_src->len == LEN_UUID_16 || p_src->len == LEN_UUID_32)
+    {
+        for(i=0; i != 16; ++i)
+            p_dest->uu[i] = base_uuid[i];
+    }
+
+    switch (p_src->len)
+    {
+        case 0:
+            break;
+
+        case LEN_UUID_16:
+            p_dest->uu[12] = p_src->uu.uuid16 & 0xff;
+            p_dest->uu[13] = (p_src->uu.uuid16 >> 8) & 0xff;
+            break;
+
+        case LEN_UUID_32:
+            p_dest->uu[12] = p_src->uu.uuid16 & 0xff;
+            p_dest->uu[13] = (p_src->uu.uuid16 >> 8) & 0xff;
+            p_dest->uu[14] = (p_src->uu.uuid32 >> 16) & 0xff;
+            p_dest->uu[15] = (p_src->uu.uuid32 >> 24) & 0xff;
+            break;
+
+        case LEN_UUID_128:
+            for(i=0; i != 16; ++i)
+                p_dest->uu[i] = p_src->uu.uuid128[i];
+            break;
+
+        default:
+            LOG_ERROR("%s: Unknown UUID length %d!", __FUNCTION__, p_src->len);
+            break;
+    }
+}
+
 
 #endif /* BTA_GATT_INCLUDED */
