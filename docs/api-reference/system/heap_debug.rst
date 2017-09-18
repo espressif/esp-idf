@@ -38,7 +38,9 @@ Assertions
 
 The heap implementation (``multi_heap.c``, etc.) includes a lot of assertions which will fail if the heap memory is corrupted. To detect heap corruption most effectively, ensure that assertions are enabled in ``make menuconfig`` under ``Compiler options``.
 
-It's also possible to manually check heap integrity by calling the ``heap_caps_check_integrity()`` function (see below). This function checks all of requested heap memory for integrity, and can be used even if assertions are disabled.
+If a heap integrity assertion fails, a line will be printed like ``CORRUPT HEAP: multi_heap.c:225 detected at 0x3ffbb71c``. The memory address which is printed is the address of the heap structure which has corrupt content.
+
+It's also possible to manually check heap integrity by calling the ``heap_caps_check_integrity()`` function (see below). This function checks all of requested heap memory for integrity, and can be used even if assertions are disabled. If the integrity check prints an error, it will contain the address(es) of corrupt heap structures.
 
 Configuration
 ^^^^^^^^^^^^^
@@ -81,7 +83,7 @@ Finding Heap Corruption
 
 Memory corruption can be one of the hardest classes of bugs to find and fix, as one area of memory can be corrupted from a totally different place. Some tips:
 
-- If you can find the address (in memory) which is being corrupted, you can set a watchpoint on this address via JTAG to have the CPU halt when it is written to.
+- Once you know the address (in memory) which is being corrupted, you can set a watchpoint on this address via JTAG to have the CPU halt when it is written to.
 - If you don't have JTAG, but you do know roughly when the corruption happens, then you can set a watchpoint in software. A fatal exception will occur when the watchpoint triggers. For example ``esp_set_watchpoint(0, (void *)addr, 4, ESP_WATCHPOINT_STORE``. Note that the watchpoint is set on the current running CPU only, so if you don't know which CPU is corrupting memory then you will need to call this function on both CPUs.
 - For buffer overflows, `heap tracing`_ in ``HEAP_TRACE_ALL`` mode lets you see which callers allocate the memory address(es) immediately before the address which is being corrupted. There is a strong chance this is the code which overflows the buffer.
 
