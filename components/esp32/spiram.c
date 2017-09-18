@@ -91,9 +91,7 @@ bool esp_spiram_test()
     }
 }
 
-
-
-esp_err_t esp_spiram_init()
+void IRAM_ATTR esp_spiram_init_cache()
 {
     //Enable external RAM in MMU
     cache_sram_mmu_set( 0, 0, SOC_EXTRAM_DATA_LOW, 0, 32, 128 );
@@ -102,7 +100,11 @@ esp_err_t esp_spiram_init()
     DPORT_CLEAR_PERI_REG_MASK(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MASK_DRAM1);
     cache_sram_mmu_set( 1, 0, SOC_EXTRAM_DATA_LOW, 0, 32, 128 );
 #endif
+}
 
+
+esp_err_t esp_spiram_init()
+{
     esp_err_t r;
     r = psram_enable(PSRAM_SPEED, PSRAM_MODE);
     if (r != ESP_OK) {
