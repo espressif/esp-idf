@@ -10,6 +10,7 @@
 #include "esp_log.h"
 #include "soc/cpu.h"
 #include "esp_heap_caps.h"
+#include "test_utils.h"
 
 #define unity_printf ets_printf
 
@@ -37,6 +38,7 @@ const size_t CRITICAL_LEAK_THRESHOLD = 4096;
 void setUp(void)
 {
     printf("%s", ""); /* sneakily lazy-allocate the reent structure for this test task */
+    get_test_data_partition();  /* allocate persistent partition table structures */
 
     before_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     before_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
