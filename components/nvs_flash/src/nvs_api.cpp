@@ -88,15 +88,22 @@ extern "C" void nvs_dump(const char *partName)
 extern "C" esp_err_t nvs_flash_init_custom(const char *partName, uint32_t baseSector, uint32_t sectorCount)
 {
     ESP_LOGD(TAG, "nvs_flash_init_custom partition=%s start=%d count=%d", partName, baseSector, sectorCount);
-    nvs::Storage* mStorage;
-
-    mStorage = lookup_storage_from_name(partName);
-    if (mStorage == NULL) {
-        mStorage = new nvs::Storage((const char *)partName);
-        s_nvs_storage_list.push_back(mStorage);
+    nvs::Storage* new_storage = NULL;
+    nvs::Storage* storage = lookup_storage_from_name(partName);
+    if (storage == NULL) {
+        new_storage = new nvs::Storage((const char *)partName);
+        storage = new_storage;
     }
 
-    return mStorage->init(baseSector, sectorCount);
+    esp_err_t err = storage->init(baseSector, sectorCount);
+    if (new_storage != NULL) {
+        if (err == ESP_OK) {
+            s_nvs_storage_list.push_back(new_storage);
+        } else {
+            delete new_storage;
+        }
+    }
+    return err;
 }
 
 #ifdef ESP_PLATFORM
