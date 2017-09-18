@@ -126,6 +126,42 @@ extern "C" esp_err_t nvs_flash_init(void)
     return nvs_flash_init_partition(NVS_DEFAULT_PART_NAME);
 }
 
+extern "C" esp_err_t nvs_flash_deinit_partition(const char* partition_name)
+{
+    Lock::init();
+    Lock lock;
+
+    nvs::Storage* storage = lookup_storage_from_name(partition_name);
+    if (!storage) {
+        return ESP_ERR_NVS_NOT_INITIALIZED;
+    }
+
+    /* Clean up handles related to the storage being deinitialized */
+    auto it = s_nvs_handles.begin();
+    auto next = it;
+    while(it != s_nvs_handles.end()) {
+        next++;
+        if (it->mStoragePtr == storage) {
+            ESP_LOGD(TAG, "Deleting handle %d (ns=%d) related to partition \"%s\" (missing call to nvs_close?)",
+                    it->mHandle, it->mNsIndex, partition_name);
+            s_nvs_handles.erase(it);
+            delete static_cast<HandleEntry*>(it);
+        }
+        it = next;
+    }
+
+    /* Finally delete the storage itself */
+    s_nvs_storage_list.erase(storage);
+    delete storage;
+
+    return ESP_OK;
+}
+
+extern "C" esp_err_t nvs_flash_deinit(void)
+{
+    return nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME);
+}
+
 extern "C" esp_err_t nvs_flash_erase_partition(const char *part_name)
 {
     const esp_partition_t* partition = esp_partition_find_first(
