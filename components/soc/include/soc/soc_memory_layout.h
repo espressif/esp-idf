@@ -70,3 +70,9 @@ inline static bool esp_ptr_executable(const void *p)
         || (ip >= SOC_IRAM_LOW && ip < SOC_IRAM_HIGH)
         || (ip >= SOC_RTC_IRAM_LOW && ip < SOC_RTC_IRAM_HIGH);
 }
+
+inline bool esp_ptr_byte_accesible(const void *p)
+{
+    //currently only support DRAM, add PSRAM region in the future
+    return (intptr_t)p >= SOC_BYTE_ACCESSIBLE_LOW && (intptr_t)p < SOC_BYTE_ACCESSIBLE_HIGH;
+}

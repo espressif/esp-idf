@@ -274,12 +274,12 @@
 //}}
 
 /* Overall memory map */
+#define SOC_DROM_LOW    0x3F400000
+#define SOC_DROM_HIGH   0x3F800000
 #define SOC_IROM_LOW    0x400D0000
 #define SOC_IROM_HIGH   0x40400000
 #define SOC_IRAM_LOW    0x40080000
 #define SOC_IRAM_HIGH   0x400A0000
-#define SOC_DROM_LOW    0x3F400000
-#define SOC_DROM_HIGH   0x3F800000
 #define SOC_RTC_IRAM_LOW  0x400C0000
 #define SOC_RTC_IRAM_HIGH 0x400C2000
 #define SOC_RTC_DATA_LOW  0x50000000
@@ -294,6 +294,10 @@
 // Region of memory accessible via DMA. See esp_ptr_dma_capable().
 #define SOC_DMA_LOW  0x3FFAE000
 #define SOC_DMA_HIGH 0x40000000
+
+// Region of memory that is byte-accessible. See esp_ptr_byte_accesible().
+#define SOC_BYTE_ACCESSIBLE_LOW     0x3FFAE000
+#define SOC_BYTE_ACCESSIBLE_HIGH    0x40000000
 
 //Interrupt hardware source table
 //This table is decided by hardware, don't touch this.
