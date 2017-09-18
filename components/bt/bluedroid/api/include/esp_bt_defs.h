@@ -66,8 +66,13 @@ typedef uint8_t esp_link_key[ESP_BT_OCTET16_LEN];      /* Link Key */
 /// Default GATT interface id
 #define ESP_DEFAULT_GATT_IF             0xff
 
-/// Default BLE connection param, if the value doesn't be overwritten
-#define ESP_BLE_CONN_PARAM_UNDEF        0xffff      /* use this value when a specific value not to be overwritten */
+#define ESP_BLE_CONN_INT_MIN                0x0006       /*!< relate to BTM_BLE_CONN_INT_MIN in btm_ble_api.h */
+#define ESP_BLE_CONN_INT_MAX                0x0C80       /*!< relate to BTM_BLE_CONN_INT_MAX in btm_ble_api.h */
+#define ESP_BLE_CONN_LATENCY_MAX            500          /*!< relate to ESP_BLE_CONN_LATENCY_MAX in btm_ble_api.h */
+#define ESP_BLE_CONN_SUP_TOUT_MIN           0x000A       /*!< relate to BTM_BLE_CONN_SUP_TOUT_MIN in btm_ble_api.h */
+#define ESP_BLE_CONN_SUP_TOUT_MAX           0x0C80       /*!< relate to ESP_BLE_CONN_SUP_TOUT_MAX in btm_ble_api.h */
+#define ESP_BLE_CONN_PARAM_UNDEF            0xffff       /* use this value when a specific value not to be overwritten */ /* relate to ESP_BLE_CONN_PARAM_UNDEF in btm_ble_api.h */
+#define ESP_BLE_SCAN_PARAM_UNDEF            0xffffffff   /* relate to ESP_BLE_SCAN_PARAM_UNDEF in btm_ble_api.h */
 
 /// Check the param is valid or not
 #define ESP_BLE_IS_VALID_PARAM(x, min, max)  (((x) >= (min) && (x) <= (max)) || ((x) == ESP_BLE_CONN_PARAM_UNDEF))

@@ -145,6 +145,15 @@ static esp_bt_status_t btc_btm_status_to_esp_status (uint8_t btm_status)
         case BTM_SUCCESS:
             esp_status = ESP_BT_STATUS_SUCCESS;
             break;
+        case BTM_BUSY:
+            esp_status = ESP_BT_STATUS_BUSY;
+            break;
+        case BTM_NO_RESOURCES:
+            esp_status = ESP_BT_STATUS_NOMEM;
+            break;
+        case BTM_ERR_PROCESSING:
+            esp_status = ESP_BT_STATUS_PENDING;
+            break;
         case BTM_PEER_LE_DATA_LEN_UNSUPPORTED:
             esp_status = ESP_BT_STATUS_PEER_LE_DATA_LEN_UNSUPPORTED;
             break;
@@ -700,6 +709,33 @@ static void btc_set_encryption_callback(BD_ADDR bd_addr, tBTA_TRANSPORT transpor
 }
 #endif  ///SMP_INCLUDED == TRUE
 
+static void btc_read_ble_rssi_cmpl_callback(void *p_data)
+{
+    tBTA_RSSI_RESULTS *result = (tBTA_RSSI_RESULTS *)p_data;
+    esp_ble_gap_cb_param_t param;
+    bt_status_t ret;
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT;
+    param.read_rssi_cmpl.rssi = result->rssi;
+    param.read_rssi_cmpl.status = btc_btm_status_to_esp_status(result->status);
+    memcpy(param.read_rssi_cmpl.remote_addr, result->rem_bda, sizeof(BD_ADDR));
+
+    ret = btc_transfer_context(&msg, &param,
+                               sizeof(esp_ble_gap_cb_param_t), NULL);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        LOG_ERROR("%s btc_transfer_context failed\n", __func__);
+    }
+}
+
+void btc_get_whitelist_size(uint16_t *length)
+{
+    BTM_BleGetWhiteListSize(length);
+    return;
+}
+
 static void btc_ble_start_scanning(uint32_t duration,
                                    tBTA_DM_SEARCH_CBACK *results_cb,
                                    tBTA_START_STOP_SCAN_CMPL_CBACK *start_scan_cb)
@@ -994,6 +1030,20 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
     case BTC_GAP_BLE_ACT_CONFIG_LOCAL_PRIVACY:
         btc_ble_config_local_privacy(arg->cfg_local_privacy.privacy_enable, btc_set_local_privacy_callback);
         break;    
+    case BTC_GAP_BLE_ACT_UPDATE_WHITE_LIST:
+        BTA_DmUpdateWhiteList(arg->update_white_list.add_remove, arg->update_white_list.remote_bda);
+        break;
+    case BTC_GAP_BLE_ACT_READ_RSSI:
+        BTA_DmBleReadRSSI(arg->read_rssi.remote_addr, btc_read_ble_rssi_cmpl_callback);
+        break;
+    case BTC_GAP_BLE_ACT_SET_CONN_PARAMS:
+        BTA_DmSetBlePrefConnParams(arg->set_conn_params.bd_addr, arg->set_conn_params.min_conn_int,
+                                                        arg->set_conn_params.max_conn_int, arg->set_conn_params.slave_latency,
+                                                        arg->set_conn_params.supervision_tout);
+        break;
+    case BTC_GAP_BLE_ACT_SET_DEV_NAME:
+        BTA_DmSetDeviceName(arg->set_dev_name.device_name);
+        break;
     case BTC_GAP_BLE_ACT_CFG_ADV_DATA_RAW:
         btc_ble_set_adv_data_raw(arg->cfg_adv_data_raw.raw_adv,
                                  arg->cfg_adv_data_raw.raw_adv_len,
