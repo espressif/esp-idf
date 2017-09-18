@@ -859,14 +859,7 @@ esp_err_t esp_ble_gap_config_scan_rsp_data_raw(uint8_t *raw_data, uint32_t raw_d
  *                  - other  : failed
  */
 esp_err_t esp_ble_gap_read_rssi(esp_bd_addr_t remote_addr);
-<<<<<<< HEAD
-    
-=======
 
-
-
-
->>>>>>> e14a214... squash the commit.
 #if (SMP_INCLUDED == TRUE)
 /**
 * @brief             Set a GAP security parameter value. Overrides the default value.
