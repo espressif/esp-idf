@@ -13,7 +13,7 @@ Toolchain Setup
 
 The quick setup is to download the Windows all-in-one toolchain & MSYS zip file from dl.espressif.com:
 
-https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain-20170330.zip
+https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain-20170918.zip
 
 Unzip the zip file to ``C:\`` (or some other location, but this guide assumes ``C:\``) and it will create an ``msys32`` directory with a pre-prepared environment.
 
