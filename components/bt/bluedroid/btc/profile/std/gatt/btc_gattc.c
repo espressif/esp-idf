@@ -554,6 +554,7 @@ esp_gatt_status_t btc_ble_gattc_get_db(uint16_t conn_id, uint16_t start_handle, 
         db[i].attribute_handle = get_db[i].id;
         db[i].start_handle = get_db[i].start_handle;
         db[i].end_handle = get_db[i].end_handle;
+        db[i].properties = get_db[i].properties;
         btc128_to_bta_uuid(&bta_uuid, get_db[i].uuid.uu);
         bta_to_btc_uuid(&db[i].uuid, &bta_uuid);
     }
