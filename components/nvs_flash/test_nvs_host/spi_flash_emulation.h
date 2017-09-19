@@ -148,10 +148,20 @@ public:
         fseek(f, 0, SEEK_END);
         off_t size = ftell(f);
         assert(size % SPI_FLASH_SEC_SIZE == 0);
-        mData.resize(size);
+        mData.resize(size / sizeof(uint32_t));
         fseek(f, 0, SEEK_SET);
         auto s = fread(mData.data(), SPI_FLASH_SEC_SIZE, size / SPI_FLASH_SEC_SIZE, f);
         assert(s == static_cast<size_t>(size / SPI_FLASH_SEC_SIZE));
+        fclose(f);
+    }
+    
+    void save(const char* filename)
+    {
+        FILE* f = fopen(filename, "wb");
+        auto n_sectors = mData.size() * sizeof(uint32_t) / SPI_FLASH_SEC_SIZE;
+        auto s = fwrite(mData.data(), SPI_FLASH_SEC_SIZE, n_sectors, f);
+        assert(s == n_sectors);
+        fclose(f);
     }
 
     void clearStats()
