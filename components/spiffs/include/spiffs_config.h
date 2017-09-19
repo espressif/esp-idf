@@ -24,27 +24,27 @@
 #define SPIFFS_TAG "SPIFFS"
 
 // Set generic spiffs debug output call.
-#if CONGIG_SPIFFS_DBG
+#if CONFIG_SPIFFS_DBG
 #define SPIFFS_DBG(...)             ESP_LOGD(SPIFFS_TAG, __VA_ARGS__)
 #else
 #define SPIFFS_DBG(...)
 #endif
-#if CONGIG_SPIFFS_API_DBG
+#if CONFIG_SPIFFS_API_DBG
 #define SPIFFS_API_DBG(...)         ESP_LOGD(SPIFFS_TAG, __VA_ARGS__)
 #else
 #define SPIFFS_API_DBG(...)
 #endif
-#if CONGIG_SPIFFS_DBG
+#if CONFIG_SPIFFS_DBG
 #define SPIFFS_GC_DBG(...)          ESP_LOGD(SPIFFS_TAG, __VA_ARGS__)
 #else
 #define SPIFFS_GC_DBG(...)
 #endif
-#if CONGIG_SPIFFS_CACHE_DBG
+#if CONFIG_SPIFFS_CACHE_DBG
 #define SPIFFS_CACHE_DBG(...)       ESP_LOGD(SPIFFS_TAG, __VA_ARGS__)
 #else
 #define SPIFFS_CACHE_DBG(...)
 #endif
-#if CONGIG_SPIFFS_CHECK_DBG
+#if CONFIG_SPIFFS_CHECK_DBG
 #define SPIFFS_CHECK_DBG(...)       ESP_LOGD(SPIFFS_TAG, __VA_ARGS__)
 #else
 #define SPIFFS_CHECK_DBG(...)
