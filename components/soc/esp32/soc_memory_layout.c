@@ -150,16 +150,10 @@ const soc_reserved_region_t soc_reserved_regions[] = {
     { 0x3ffe4000, 0x3ffe4350 }, //Reserve ROM APP data region
 
 #if CONFIG_BT_ENABLED
-#if CONFIG_BT_DRAM_RELEASE
-    { 0x3ffb0000, 0x3ffb3000 }, //Reserve BT data region
-    { 0x3ffb8000, 0x3ffbbb28 }, //Reserve BT data region
-    { 0x3ffbdb28, 0x3ffc0000 }, //Reserve BT data region
-#else
     { 0x3ffb0000, 0x3ffc0000 }, //Reserve BT hardware shared memory & BT data region
-#endif
     { 0x3ffae000, 0x3ffaff10 }, //Reserve ROM data region, inc region needed for BT ROM routines
 #else
-    { 0x3ffae000, 0x3ffae2a0 }, //Reserve ROM data region
+    { 0x3ffae000, 0x3ffae6e0 }, //Reserve ROM data region
 #endif
 
 #if CONFIG_MEMMAP_TRACEMEM
