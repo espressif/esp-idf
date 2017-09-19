@@ -83,7 +83,8 @@ static UINT16 bta_gattc_opcode_to_int_evt[] = {
     BTA_GATTC_API_READ_EVT,
     BTA_GATTC_API_WRITE_EVT,
     BTA_GATTC_API_EXEC_EVT,
-    BTA_GATTC_API_CFG_MTU_EVT
+    BTA_GATTC_API_CFG_MTU_EVT,
+    BTA_GATTC_API_READ_MULTI_EVT
 };
 
 #if (BT_TRACE_VERBOSE == TRUE)
@@ -1347,7 +1348,8 @@ void  bta_gattc_op_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
             APPL_TRACE_ERROR("No pending command");
             return;
         }
-        if (p_clcb->p_q_cmd->hdr.event != bta_gattc_opcode_to_int_evt[op - GATTC_OPTYPE_READ]) {
+        if (p_clcb->p_q_cmd->hdr.event != bta_gattc_opcode_to_int_evt[op - GATTC_OPTYPE_READ] ||
+            p_clcb->p_q_cmd->hdr.event != BTA_GATTC_API_READ_MULTI_EVT) {
             mapped_op = p_clcb->p_q_cmd->hdr.event - BTA_GATTC_API_READ_EVT + GATTC_OPTYPE_READ;
             if ( mapped_op > GATTC_OPTYPE_INDICATION) {
                 mapped_op = 0;

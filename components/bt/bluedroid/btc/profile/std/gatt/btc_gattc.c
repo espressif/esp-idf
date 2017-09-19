@@ -806,6 +806,11 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
         btc_gattc_cb_to_app(ESP_GATTC_READ_DESCR_EVT, gattc_if, &param);
         break;
     }
+    case BTA_GATTC_READ_MUTIPLE_EVT: {
+        set_read_value(&gattc_if, &param, &arg->read);
+        btc_gattc_cb_to_app(ESP_GATTC_READ_MUTIPLE_EVT, gattc_if, &param);
+        break;
+    }
     case BTA_GATTC_WRITE_DESCR_EVT: {
         tBTA_GATTC_WRITE *write = &arg->write;
 
