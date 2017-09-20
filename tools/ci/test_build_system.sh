@@ -165,6 +165,8 @@ function run_tests()
     take_build_snapshot
     touch sdkconfig
     make
+    # check the component_project_vars.mk file was rebuilt
+    assert_rebuilt esp32/component_project_vars.mk
     # pick one each of .c, .cpp, .S that #includes sdkconfig.h
     # and therefore should rebuild
     assert_rebuilt newlib/syscall_table.o
