@@ -18,6 +18,10 @@
 #include <stdbool.h>
 #include "esp_err.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Configuration structure for esp_vfs_spiffs_register
  */
@@ -90,5 +94,9 @@ esp_err_t esp_spiffs_format(const char* partition_label);
  *          - ESP_ERR_INVALID_STATE   if not mounted
  */
 esp_err_t esp_spiffs_info(const char* partition_label, size_t *total_bytes, size_t *used_bytes);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ESP_SPIFFS_H_ */
