@@ -805,14 +805,14 @@ static void btc_ble_set_rand_addr (BD_ADDR rand_addr)
         BD_ADDR invalid_rand_addr_a, invalid_rand_addr_b;
         memset(invalid_rand_addr_a, 0xff, sizeof(BD_ADDR));
         memset(invalid_rand_addr_b, 0x00, sizeof(BD_ADDR));
-        invalid_rand_addr_b[BD_ADDR_LEN - 1] = invalid_rand_addr_b[BD_ADDR_LEN - 1] | BT_STATIC_RAND_ADDR_MASK;
-        if((rand_addr[BD_ADDR_LEN - 1] & BT_STATIC_RAND_ADDR_MASK) == BT_STATIC_RAND_ADDR_MASK
+        invalid_rand_addr_b[0] = invalid_rand_addr_b[0] | BT_STATIC_RAND_ADDR_MASK;
+        if((rand_addr[0] & BT_STATIC_RAND_ADDR_MASK) == BT_STATIC_RAND_ADDR_MASK
             && memcmp(invalid_rand_addr_a, rand_addr, BD_ADDR_LEN) != 0
             && memcmp(invalid_rand_addr_b, rand_addr, BD_ADDR_LEN) != 0){
             BTA_DmSetRandAddress(rand_addr);
         } else {
             param.set_rand_addr_cmpl.status = ESP_BT_STATUS_INVALID_STATIC_RAND_ADDR;
-            LOG_ERROR("Invalid random address, the high bit should be 0b11, the random part shall not be to 1 or 0");
+            LOG_ERROR("Invalid random address, the high bit should be 0b11, all bits of the random part shall not be to 1 or 0");
         }
     } else {
         param.set_rand_addr_cmpl.status = ESP_BT_STATUS_INVALID_STATIC_RAND_ADDR;

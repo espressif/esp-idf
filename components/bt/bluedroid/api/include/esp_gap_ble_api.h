@@ -864,9 +864,9 @@ esp_err_t esp_ble_gap_read_rssi(esp_bd_addr_t remote_addr);
 /**
 * @brief             Set a GAP security parameter value. Overrides the default value.
 *
-* @param[in]       param_type :L the type of the param which to be set
+* @param[in]       param_type : the type of the param which to be set
 * @param[in]       value  : the param value
-* @param[out]     len : the length of the param value
+* @param[in]       len : the length of the param value
 *
 * @return            - ESP_OK : success
 *                       - other  : failed
