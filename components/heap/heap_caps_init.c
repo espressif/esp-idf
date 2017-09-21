@@ -213,7 +213,8 @@ esp_err_t heap_caps_add_region(intptr_t start, intptr_t end)
 
     for (int i = 0; i < soc_memory_region_count; i++) {
         const soc_memory_region_t *region = &soc_memory_regions[i];
-        if (region->start <= start && (region->start + region->size) > end) {
+        // Test requested start only as 'end' may be in a different region entry, assume 'end' has same caps
+        if (region->start <= start && (region->start + region->size) > start) {
             const uint32_t *caps = soc_memory_types[region->type].caps;
             return heap_caps_add_region_with_caps(caps, start, end);
         }

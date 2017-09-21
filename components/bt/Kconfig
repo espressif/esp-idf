@@ -31,15 +31,6 @@ config CLASSIC_BT_ENABLED
     help
         For now this option needs "SMP_ENABLE" to be set to yes
 
-config BT_DRAM_RELEASE
-    bool "Release DRAM from Classic BT controller"
-    depends on BT_ENABLED && (!BLUEDROID_ENABLED || (BLUEDROID_ENABLED && !CLASSIC_BT_ENABLED))
-    default n
-    help
-        This option should only be used when BLE only.
-        Enabling this option will release about 30K DRAM from Classic BT.
-        The released DRAM will be used as system heap memory.
-
 config GATTS_ENABLE
     bool "Include GATT server module(GATTS)"
     depends on BLUEDROID_ENABLED

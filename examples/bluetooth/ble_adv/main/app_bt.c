@@ -227,15 +227,34 @@ void app_main()
     ESP_ERROR_CHECK( ret );
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     
+    ret = esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
+    if (ret) {
+        ESP_LOGI(tag, "Bluetooth controller release classic bt memory failed");
+        return;
+    }
+
     if (esp_bt_controller_init(&bt_cfg) != ESP_OK) {
         ESP_LOGI(tag, "Bluetooth controller initialize failed");
         return;
     }
 
-    if (esp_bt_controller_enable(ESP_BT_MODE_BTDM) != ESP_OK) {
+    if (esp_bt_controller_enable(ESP_BT_MODE_BLE) != ESP_OK) {
         ESP_LOGI(tag, "Bluetooth controller enable failed");
         return;
     }
+
+    /*
+     * If call mem release here, also work. Input ESP_BT_MODE_CLASSIC_BT, the function will
+     * release the memory of classic bt mdoe.
+     * esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
+     *
+     */
+
+    /*
+     * If call mem release here, also work. Input ESP_BT_MODE_BTDM, the function will calculate
+     * that the BLE mode is already used, so it will release of only classic bt mode.
+     * esp_bt_controller_mem_release(ESP_BT_MODE_BTDM);
+     */
 
     xTaskCreatePinnedToCore(&bleAdvtTask, "bleAdvtTask", 2048, NULL, 5, NULL, 0);
 }
