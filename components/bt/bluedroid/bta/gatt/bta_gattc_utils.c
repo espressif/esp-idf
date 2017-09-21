@@ -230,6 +230,7 @@ tBTA_GATTC_CLCB *bta_gattc_clcb_alloc(tBTA_GATTC_IF client_if, BD_ADDR remote_bd
             bdcpy(p_clcb->bda, remote_bda);
 
             p_clcb->p_rcb = bta_gattc_cl_get_regcb(client_if);
+            p_clcb->p_cmd_list = list_new(osi_free_func);
 
             if ((p_clcb->p_srcb = bta_gattc_find_srcb(remote_bda)) == NULL) {
                 p_clcb->p_srcb      = bta_gattc_srcb_alloc(remote_bda);
@@ -437,10 +438,12 @@ BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
     {
         p_clcb->p_q_cmd = p_data;
         return TRUE;
+    } else if (p_clcb->p_cmd_list) {
+        //store the command to the command list.
+        list_append(p_clcb->p_cmd_list, (void *)p_data);
+        return FALSE;
     }
 
-    APPL_TRACE_ERROR ("%s: already has a pending command!!", __func__);
-    /* skip the callback now. ----- need to send callback ? */
     return FALSE;
 }
 

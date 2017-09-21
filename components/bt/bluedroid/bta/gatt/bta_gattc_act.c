@@ -1451,6 +1451,11 @@ void bta_gattc_q_cmd(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
     bta_gattc_enqueue(p_clcb, p_data);
 }
 
+void bta_gattc_pop_command_to_send(tBTA_GATTC_CLCB *p_clcb)
+{
+    tBTA_GATTC_DATA *p_data = 
+}
+
 /*******************************************************************************
 **
 ** Function         bta_gattc_fail
