@@ -24,8 +24,8 @@
 //an idle or tick hook.
 #define MAX_HOOKS 8
 
-static esp_freertos_idle_cb_t idle_cb[2][MAX_HOOKS]={0};
-static esp_freertos_tick_cb_t tick_cb[2][MAX_HOOKS]={0};
+static esp_freertos_idle_cb_t idle_cb[portNUM_PROCESSORS][MAX_HOOKS]={0};
+static esp_freertos_tick_cb_t tick_cb[portNUM_PROCESSORS][MAX_HOOKS]={0};
 
 void IRAM_ATTR esp_vApplicationTickHook() 
 {
