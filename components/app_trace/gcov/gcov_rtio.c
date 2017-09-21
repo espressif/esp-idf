@@ -49,6 +49,7 @@ void esp_gcov_dump()
     }
 
     if (s_gcov_exit) {
+        esp_apptrace_down_buffer_config(s_gcov_down_buf, sizeof(s_gcov_down_buf));
         s_gcov_exit();
     }
 
@@ -61,7 +62,6 @@ void esp_gcov_dump()
 int gcov_rtio_atexit(void (*function)(void))
 {
     s_gcov_exit = function;
-    esp_apptrace_down_buffer_config(s_gcov_down_buf, sizeof(s_gcov_down_buf));
     return 0;
 }
 

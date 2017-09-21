@@ -864,6 +864,8 @@ esp_err_t esp_apptrace_init()
 
     if (!s_trace_buf.inited) {
         memset(&s_trace_buf, 0, sizeof(s_trace_buf));
+        // disabled by default
+        esp_apptrace_rb_init(&s_trace_buf.rb_down, NULL, 0);
         res = esp_apptrace_lock_initialize(&s_trace_buf.lock);
         if (res != ESP_OK) {
             ESP_APPTRACE_LOGE("Failed to init log lock (%d)!", res);
@@ -883,9 +885,6 @@ esp_err_t esp_apptrace_init()
     // init TRAX on this CPU
     esp_apptrace_trax_init();
 #endif
-
-    // disabled by default
-    esp_apptrace_rb_init(&s_trace_buf.rb_down, NULL, 0);
 
     s_trace_buf.inited |= 1 << xPortGetCoreID(); // global and this CPU-specific data are inited
 
