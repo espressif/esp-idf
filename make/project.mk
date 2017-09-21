@@ -47,7 +47,14 @@ ifndef MAKE_RESTARTS
 ifeq ("$(filter 4.% 3.81 3.82,$(MAKE_VERSION))","")
 $(warning esp-idf build system only supports GNU Make versions 3.81 or newer. You may see unexpected results with other Makes.)
 endif
+
+ifdef MSYSTEM
+ifneq ("$(MSYSTEM)","MINGW32")
+$(warning esp-idf build system only supports MSYS2 in "MINGW32" mode. Consult the ESP-IDF documentation for details.)
 endif
+endif  # MSYSTEM
+
+endif  # MAKE_RESTARTS
 
 # can't run 'clean' along with any non-clean targets
 ifneq ("$(filter clean% %clean,$(MAKECMDGOALS))" ,"")
