@@ -37,7 +37,7 @@ pacman --noconfirm -S --needed gettext-devel gcc git make ncurses-devel flex bis
 
 # Workaround for errors when running "git submodule" commands
 # See https://github.com/Alexpux/MSYS2-packages/issues/735
-rm /mingw32/bin/envsubst.exe
+rm -f /mingw32/bin/envsubst.exe
 
 python -m pip install --upgrade pip
 
@@ -49,6 +49,7 @@ echo "Downloading precompiled toolchain ${TOOLCHAIN_ZIP}..."
 cd ~
 curl -LO --retry 10 http://dl.espressif.com/dl/${TOOLCHAIN_ZIP}
 cd /opt
+rm -rf /opt/xtensa-esp32-elf  # for upgrades
 unzip ~/${TOOLCHAIN_ZIP}
 rm ~/${TOOLCHAIN_ZIP}
 
@@ -58,8 +59,7 @@ cat > /etc/profile.d/esp32_toolchain.sh << EOF
 export PATH="\$PATH:/opt/xtensa-esp32-elf/bin"
 EOF
 
-# clean up pacman packages to save some disk space
-pacman --noconfirm -R unzip
+# clean up pacman package cache to save some disk space
 pacman --noconfirm -Scc
 
 cat << EOF
