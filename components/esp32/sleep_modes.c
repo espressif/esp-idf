@@ -197,7 +197,10 @@ static void rtc_wdt_disable()
  * Helper function which handles entry to and exit from light sleep
  * Placed into IRAM as flash may need some time to be powered on.
  */
-static esp_err_t IRAM_ATTR esp_light_sleep_inner(uint32_t pd_flags,
+static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
+        rtc_cpu_freq_t cpu_freq, uint32_t flash_enable_time_us) IRAM_ATTR __attribute__((noinline));
+
+static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
         rtc_cpu_freq_t cpu_freq, uint32_t flash_enable_time_us)
 {
     // Enter sleep
