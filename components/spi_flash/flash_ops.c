@@ -49,7 +49,7 @@ static spi_flash_counters_t s_flash_stats;
 #define COUNTER_STOP(counter)  \
     do{ \
         s_flash_stats.counter.count++; \
-        s_flash_stats.counter.time += (xthal_get_ccount() - ts_begin) / (XT_CLOCK_FREQ / 1000000); \
+        s_flash_stats.counter.time += (xthal_get_ccount() - ts_begin) / (esp_clk_cpu_freq() / 1000000); \
     } while(0)
 
 #define COUNTER_ADD_BYTES(counter, size) \

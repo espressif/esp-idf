@@ -8,6 +8,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include "esp_clk.h"
 #include "soc/cpu.h"
 #include "esp_heap_caps.h"
 #include "test_utils.h"
@@ -150,7 +151,7 @@ static void unity_run_single_test_by_index_parse(const char* filter, int index_m
         unity_run_single_test_by_index(test_index - 1);
         uint32_t end;
         RSR(CCOUNT, end);
-        uint32_t ms = (end - start) / (XT_CLOCK_FREQ / 1000);
+        uint32_t ms = (end - start) / (esp_clk_cpu_freq() / 1000);
         printf("Test ran in %dms\n", ms);
     }
 }

@@ -95,8 +95,20 @@
 #define configNUM_THREAD_LOCAL_STORAGE_POINTERS CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
 #define configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS 1
 
-/* TODO: config freq by menuconfig */
-#define XT_CLOCK_FREQ (CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ * 1000000)
+#ifndef __ASSEMBLER__
+
+/**
+ * This function is defined to provide a deprecation warning whenever
+ * XT_CLOCK_FREQ macro is used.
+ * Update the code to use esp_clk_cpu_freq function instead.
+ * @return current CPU clock frequency, in Hz
+ */
+int xt_clock_freq(void) __attribute__((deprecated));
+
+#define XT_CLOCK_FREQ   (xt_clock_freq())
+
+#endif // __ASSEMBLER__
+
 
 /* Required for configuration-dependent settings */
 #include "xtensa_config.h"

@@ -87,8 +87,6 @@ static void esp_apptrace_test_timer_init(int timer_group, int timer_idx, uint32_
 #define ESP_APPTRACE_TEST_WRITE_FROM_ISR(_b_, _s_)   esp_apptrace_write(ESP_APPTRACE_DEST_TRAX, _b_, _s_, 0UL)
 #define ESP_APPTRACE_TEST_WRITE_NOWAIT(_b_, _s_)     esp_apptrace_write(ESP_APPTRACE_DEST_TRAX, _b_, _s_, 0)
 
-#define ESP_APPTRACE_TEST_CPUTICKS2US(_t_)       ((_t_)/(XT_CLOCK_FREQ/1000000))
-
 typedef struct {
     uint8_t *buf;
     uint32_t buf_sz;

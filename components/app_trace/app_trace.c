@@ -203,8 +203,6 @@ const static char *TAG = "esp_apptrace";
 #define ESP_APPTRACE_LOGV( format, ... )  ESP_APPTRACE_LOG_LEV(V, ESP_LOG_VERBOSE, format, ##__VA_ARGS__)
 #define ESP_APPTRACE_LOGO( format, ... )  ESP_APPTRACE_LOG_LEV(E, ESP_LOG_NONE, format, ##__VA_ARGS__)
 
-#define ESP_APPTRACE_CPUTICKS2US(_t_)       ((_t_)/(XT_CLOCK_FREQ/1000000))
-
 // TODO: move these (and same definitions in trax.c to dport_reg.h)
 #define TRACEMEM_MUX_PROBLK0_APPBLK1            0
 #define TRACEMEM_MUX_BLK0_ONLY                  1
