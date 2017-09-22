@@ -80,6 +80,8 @@ Backwards compatibility libraries are available in AUR_ for native and lib32 con
 - https://aur.archlinux.org/packages/ncurses5-compat-libs/
 - https://aur.archlinux.org/packages/lib32-ncurses5-compat-libs/
 
+Before installing these packages you might need to add the author's public key to your keyring as described in the "Comments" section at the links above.
+
 Alternatively, use crosstool-NG to compile a gdb that links against ncurses 6.
 
 
