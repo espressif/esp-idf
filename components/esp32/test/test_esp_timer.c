@@ -374,3 +374,8 @@ TEST_CASE("esp_timer_get_time returns monotonic values", "[esp_timer][ignore]")
     vSemaphoreDelete(done_2);
     ref_clock_deinit();
 }
+
+TEST_CASE("Can dump esp_timer stats", "[esp_timer]")
+{
+    esp_timer_dump(stdout);
+}
