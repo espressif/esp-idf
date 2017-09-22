@@ -175,13 +175,19 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
   NOTE: For CALL0 ABI, a12-a15 have not yet been saved.
 
-  NOTE: This macro will use registers a0 and a2-a6. The arguments are:
+  NOTE: This macro will use registers a0 and a2-a7. The arguments are:
     level -- interrupt level
     mask  -- interrupt bitmask for this level
 --------------------------------------------------------------------------------
 */
 
     .macro  dispatch_c_isr    level  mask
+
+    #ifdef CONFIG_PM_TRACE
+    movi a6, 0 /* = ESP_PM_TRACE_IDLE */
+    getcoreid a7
+    call4 esp_pm_trace_exit
+    #endif // CONFIG_PM_TRACE
 
     /* Get mask of pending, enabled interrupts at this level into a2. */
 
