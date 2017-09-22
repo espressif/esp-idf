@@ -145,6 +145,15 @@ void esp_set_time_from_rtc()
 #endif // WITH_FRC1 && WITH_RTC
 }
 
+uint64_t esp_clk_rtc_time(void)
+{
+#ifdef WITH_RTC
+    return get_rtc_time_us();
+#else
+    return 0;
+#endif
+}
+
 clock_t IRAM_ATTR _times_r(struct _reent *r, struct tms *ptms)
 {
     clock_t t = xTaskGetTickCount() * (portTICK_PERIOD_MS * CLK_TCK / 1000);

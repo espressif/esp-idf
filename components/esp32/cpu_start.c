@@ -64,7 +64,7 @@
 #include "esp_app_trace.h"
 #include "esp_efuse.h"
 #include "esp_spiram.h"
-#include "esp_clk.h"
+#include "esp_clk_internal.h"
 #include "esp_timer.h"
 #include "trax.h"
 
