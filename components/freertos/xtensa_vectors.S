@@ -206,6 +206,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     #endif
     #endif
 
+    #ifdef CONFIG_PM_ENABLE
+    call4 esp_pm_impl_isr_hook
+    #endif
+
     #ifdef XT_INTEXC_HOOKS
     /* Call interrupt hook if present to (pre)handle interrupts. */
     movi    a4, _xt_intexc_hooks
