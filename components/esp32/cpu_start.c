@@ -262,6 +262,16 @@ void start_cpu0_default(void)
         ESP_EARLY_LOGE(TAG, "External RAM could not be added to heap!");
         abort();
     }
+#if CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL
+    r=esp_spiram_reserve_dma_pool(CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL);
+    if (r != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Could not reserve internal/DMA pool!");
+        abort();
+    }
+#endif
+#if CONFIG_SPIRAM_USE_MALLOC
+    heap_caps_malloc_extmem_enable(CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL);
+#endif
 #endif
 
 //Enable trace memory and immediately start trace.

@@ -295,9 +295,14 @@
 #define SOC_DMA_LOW  0x3FFAE000
 #define SOC_DMA_HIGH 0x40000000
 
-// Region of memory that is byte-accessible. See esp_ptr_byte_accesible().
+// Region of memory that is byte-accessible. See esp_ptr_byte_accessible().
 #define SOC_BYTE_ACCESSIBLE_LOW     0x3FFAE000
 #define SOC_BYTE_ACCESSIBLE_HIGH    0x40000000
+
+//Region of memory that is internal, as in on the same silicon die as the ESP32 CPUs (excluding RTC data region, that's checked separately.) See esp_ptr_internal().
+#define SOC_MEM_INTERNAL_LOW        0x3F400000
+#define SOC_MEM_INTERNAL_HIGH       0x400C2000
+
 
 //Interrupt hardware source table
 //This table is decided by hardware, don't touch this.

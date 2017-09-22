@@ -124,9 +124,22 @@ esp_err_t esp_spiram_init()
 
 esp_err_t esp_spiram_add_to_heapalloc()
 {
+    ESP_EARLY_LOGI(TAG, "Adding pool of %dK of external SPI memory to heap allocator", CONFIG_SPIRAM_SIZE/1024);
     //Add entire external RAM region to heap allocator. Heap allocator knows the capabilities of this type of memory, so there's
     //no need to explicitly specify them.
     return heap_caps_add_region((intptr_t)SOC_EXTRAM_DATA_LOW, (intptr_t)SOC_EXTRAM_DATA_LOW + CONFIG_SPIRAM_SIZE-1);
+}
+
+
+static uint8_t *dma_heap;
+
+esp_err_t esp_spiram_reserve_dma_pool(size_t size) {
+    if (size==0) return ESP_OK; //no-op
+    ESP_EARLY_LOGI(TAG, "Reserving pool of %dK of internal memory for DMA/internal allocations", size/1024);
+    dma_heap=heap_caps_malloc(size, MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
+    if (!dma_heap) return ESP_ERR_NO_MEM;
+    uint32_t caps[]={MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL, 0, MALLOC_CAP_8BIT|MALLOC_CAP_32BIT};
+    return heap_caps_add_region_with_caps(caps, dma_heap, dma_heap+size-1);
 }
 
 size_t esp_spiram_get_size()

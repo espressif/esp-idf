@@ -360,12 +360,12 @@ void system_restore(void)
 
 uint32_t esp_get_free_heap_size( void )
 {
-    return heap_caps_get_free_size( MALLOC_CAP_8BIT );
+    return heap_caps_get_free_size( MALLOC_CAP_DEFAULT );
 }
 
 uint32_t esp_get_minimum_free_heap_size( void )
 {
-    return heap_caps_get_minimum_free_size( MALLOC_CAP_8BIT );
+    return heap_caps_get_minimum_free_size( MALLOC_CAP_DEFAULT );
 }
 
 uint32_t system_get_free_heap_size(void) __attribute__((alias("esp_get_free_heap_size")));

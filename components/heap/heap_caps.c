@@ -133,12 +133,36 @@ IRAM_ATTR void *heap_caps_malloc( size_t size, uint32_t caps )
     return NULL;
 }
 
+
+#define MALLOC_DISABLE_EXTERNAL_ALLOCS -1
+//Dual-use: -1 (=MALLOC_DISABLE_EXTERNAL_ALLOCS) disables allocations in external memory, >=0 sets the limit for allocations preferring internal memory.
+static int malloc_alwaysinternal_limit=MALLOC_DISABLE_EXTERNAL_ALLOCS;
+
+void heap_caps_malloc_extmem_enable(size_t limit)
+{
+    malloc_alwaysinternal_limit=limit;
+}
+
 /*
  Default memory allocation implementation. Should return standard 8-bit memory. malloc() essentially resolves to this function.
 */
 IRAM_ATTR void *heap_caps_malloc_default( size_t size )
 {
-    return heap_caps_malloc( size, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL );
+    if (malloc_alwaysinternal_limit==MALLOC_DISABLE_EXTERNAL_ALLOCS) {
+        return heap_caps_malloc( size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
+    } else {
+        void *r;
+        if (size <= malloc_alwaysinternal_limit) {
+            r=heap_caps_malloc( size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL );
+        } else {
+            r=heap_caps_malloc( size, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM );
+        }
+        if (r==NULL) {
+            //try again while being less picky
+            r=heap_caps_malloc( size, MALLOC_CAP_DEFAULT );
+        }
+        return r;
+    }
 }
 
 /*
@@ -147,7 +171,21 @@ IRAM_ATTR void *heap_caps_malloc_default( size_t size )
  */
 IRAM_ATTR void *heap_caps_realloc_default( void *ptr, size_t size )
 {
-    return heap_caps_realloc( ptr, size, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL );
+    if (malloc_alwaysinternal_limit==MALLOC_DISABLE_EXTERNAL_ALLOCS) {
+        return heap_caps_realloc( ptr, size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL );
+    } else {
+        void *r;
+        if (size <= malloc_alwaysinternal_limit) {
+            r=heap_caps_realloc( ptr, size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL );
+        } else {
+            r=heap_caps_realloc( ptr, size, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM );
+        }
+        if (r==NULL && size>0) {
+            //We needed to allocate memory, but we didn't. Try again while being less picky.
+            r=heap_caps_realloc( ptr, size, MALLOC_CAP_DEFAULT );
+        }
+        return r;
+    }
 }
 
 
