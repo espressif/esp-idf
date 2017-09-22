@@ -309,6 +309,8 @@ esp_err_t tcpip_adapter_down(tcpip_adapter_if_t tcpip_if)
         tcpip_adapter_start_ip_lost_timer(tcpip_if);
     }
 
+    tcpip_adapter_update_default_netif();
+
     return ESP_OK;
 }
 

@@ -1074,7 +1074,7 @@ void dhcps_start(struct netif *netif, ip4_addr_t ip)
 
     client_address_plus.addr = dhcps_poll.start_ip.addr;
 
-    udp_bind(pcb_dhcps, IP_ADDR_ANY, DHCPS_SERVER_PORT);
+    udp_bind(pcb_dhcps, &netif->ip_addr, DHCPS_SERVER_PORT);
     udp_recv(pcb_dhcps, handle_dhcp, NULL);
 #if DHCPS_DEBUG
     DHCPS_LOG("dhcps:dhcps_start->udp_recv function Set a receive callback handle_dhcp for UDP_PCB pcb_dhcps\n");
