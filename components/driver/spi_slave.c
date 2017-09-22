@@ -68,12 +68,21 @@ static void IRAM_ATTR spi_intr(void *arg);
 
 esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, const spi_slave_interface_config_t *slave_config, int dma_chan)
 {
-    bool native, claimed;
+    bool native, spi_chan_claimed, dma_chan_claimed;
     //We only support HSPI/VSPI, period.
     SPI_CHECK(VALID_HOST(host), "invalid host", ESP_ERR_INVALID_ARG);
+    SPI_CHECK( dma_chan >= 0 && dma_chan <= 2, "invalid dma channel", ESP_ERR_INVALID_ARG );
 
-    claimed = spicommon_periph_claim(host);
-    SPI_CHECK(claimed, "host already in use", ESP_ERR_INVALID_STATE);
+    spi_chan_claimed=spicommon_periph_claim(host);
+    SPI_CHECK(spi_chan_claimed, "host already in use", ESP_ERR_INVALID_STATE);
+    
+    if ( dma_chan != 0 ) {
+        dma_chan_claimed=spicommon_dma_chan_claim(dma_chan);
+        if ( !dma_chan_claimed ) {
+            spicommon_periph_free( host );
+            SPI_CHECK(dma_chan_claimed, "dma channel already in use", ESP_ERR_INVALID_STATE);
+        }
+    }
 
     spihost[host] = malloc(sizeof(spi_slave_t));
     if (spihost[host] == NULL) goto nomem;
@@ -179,6 +188,7 @@ nomem:
     free(spihost[host]);
     spihost[host] = NULL;
     spicommon_periph_free(host);
+    spicommon_dma_chan_free(dma_chan);
     return ESP_ERR_NO_MEM;
 }
 
@@ -188,6 +198,9 @@ esp_err_t spi_slave_free(spi_host_device_t host)
     SPI_CHECK(spihost[host], "host not slave", ESP_ERR_INVALID_ARG);
     if (spihost[host]->trans_queue) vQueueDelete(spihost[host]->trans_queue);
     if (spihost[host]->ret_queue) vQueueDelete(spihost[host]->ret_queue);
+    if ( spihost[host]->dma_chan > 0 ) {
+        spicommon_dma_chan_free ( spihost[host]->dma_chan );
+    }
     free(spihost[host]->dmadesc_tx);
     free(spihost[host]->dmadesc_rx);
     free(spihost[host]);
