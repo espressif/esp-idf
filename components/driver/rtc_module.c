@@ -1258,7 +1258,7 @@ void adc1_ulp_enable(void)
     SENS.sar_meas_ctrl.amp_short_ref_fsm = 0;
     SENS.sar_meas_ctrl.amp_short_ref_gnd_fsm = 0;
     SENS.sar_meas_wait1.sar_amp_wait1 = 0x1;
-    SENS.sar_meas_wait1.sar_amp_wait2 = 1;
+    SENS.sar_meas_wait1.sar_amp_wait2 = 0x1;
     SENS.sar_meas_wait2.sar_amp_wait3 = 0x1;
     portEXIT_CRITICAL(&rtc_spinlock);
 }
@@ -1283,19 +1283,19 @@ esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)
     rtc_gpio_pullup_dis(gpio);
     rtc_gpio_pulldown_dis(gpio);
 
-    SET_PERI_REG_BITS(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_DBG_ATTEN, 0, RTC_CNTL_DBG_ATTEN_S);     //Check DBG effect outside sleep mode
+    RTCCNTL.bias_conf.dbg_atten = 0;     //Check DBG effect outside sleep mode
     //set dtest (MUX_SEL : 0 -> RTC; 1-> vdd_sar2)
-    SET_PERI_REG_BITS(RTC_CNTL_TEST_MUX_REG, RTC_CNTL_DTEST_RTC, 1, RTC_CNTL_DTEST_RTC_S);      //Config test mux to route v_ref to ADC2 Channels
+    RTCCNTL.test_mux.dtest_rtc = 1;      //Config test mux to route v_ref to ADC2 Channels
     //set ent
-    SET_PERI_REG_MASK(RTC_CNTL_TEST_MUX_REG, RTC_CNTL_ENT_RTC_M);
+    RTCCNTL.test_mux.ent_rtc = 1;
     //set sar2_en_test
-    SET_PERI_REG_MASK(SENS_SAR_START_FORCE_REG, SENS_SAR2_EN_TEST_M);
+    SENS.sar_start_force.sar2_en_test = 1;
     //force fsm
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT2_REG, SENS_FORCE_XPD_SAR, 3, SENS_FORCE_XPD_SAR_S);    //Select power source of ADC
+    SENS.sar_meas_wait2.force_xpd_sar = ADC_FORCE_ENABLE;    //Select power source of ADC
     //set sar2 en force
-    SET_PERI_REG_MASK(SENS_SAR_MEAS_START2_REG, SENS_SAR2_EN_PAD_FORCE_M);      //Pad bitmap controlled by SW
+    SENS.sar_meas_start2.sar2_en_pad_force = 1;      //Pad bitmap controlled by SW
     //set en_pad for channels 7,8,9 (bits 0x380)
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_START2_REG, SENS_SAR2_EN_PAD, 1<<channel, SENS_SAR2_EN_PAD_S);
+    SENS.sar_meas_start2.sar2_en_pad = 1<<channel;
 
     return ESP_OK;
 }
@@ -1448,18 +1448,19 @@ static int hall_sensor_get_value()    //hall sensor without LNA
     int hall_value;
 
     portENTER_CRITICAL(&rtc_spinlock);
-    SET_PERI_REG_MASK(SENS_SAR_TOUCH_CTRL1_REG, SENS_XPD_HALL_FORCE_M);     // hall sens force enable
-    SET_PERI_REG_MASK(RTC_IO_HALL_SENS_REG, RTC_IO_XPD_HALL);      // xpd hall
-    SET_PERI_REG_MASK(SENS_SAR_TOUCH_CTRL1_REG, SENS_HALL_PHASE_FORCE_M);   // phase force
-    CLEAR_PERI_REG_MASK(RTC_IO_HALL_SENS_REG, RTC_IO_HALL_PHASE);      // hall phase
+    SENS.sar_touch_ctrl1.xpd_hall_force = 1;     // hall sens force enable
+    RTCIO.hall_sens.xpd_hall = 1;      // xpd hall
+    SENS.sar_touch_ctrl1.hall_phase_force = 1;   // phase force
+
+    RTCIO.hall_sens.hall_phase = 0;      // hall phase
     Sens_Vp0 = adc1_get_raw(ADC1_CHANNEL_0);
     Sens_Vn0 = adc1_get_raw(ADC1_CHANNEL_3);
-    SET_PERI_REG_MASK(RTC_IO_HALL_SENS_REG, RTC_IO_HALL_PHASE);
+    RTCIO.hall_sens.hall_phase = 1;
     Sens_Vp1 = adc1_get_raw(ADC1_CHANNEL_0);
     Sens_Vn1 = adc1_get_raw(ADC1_CHANNEL_3);
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT2_REG, SENS_FORCE_XPD_SAR, 0, SENS_FORCE_XPD_SAR_S);
-    CLEAR_PERI_REG_MASK(SENS_SAR_TOUCH_CTRL1_REG, SENS_XPD_HALL_FORCE);
-    CLEAR_PERI_REG_MASK(SENS_SAR_TOUCH_CTRL1_REG, SENS_HALL_PHASE_FORCE);
+    SENS.sar_meas_wait2.force_xpd_sar = 0;
+    SENS.sar_touch_ctrl1.xpd_hall_force = 0;
+    SENS.sar_touch_ctrl1.hall_phase_force = 0;
     portEXIT_CRITICAL(&rtc_spinlock);
     hall_value = (Sens_Vp1 - Sens_Vp0) - (Sens_Vn1 - Sens_Vn0);
 
