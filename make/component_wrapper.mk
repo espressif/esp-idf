@@ -147,7 +147,11 @@ endef
 # component-specific feature, please don't! What you want is a
 # Makefile.projbuild for your component (see docs/build-system.rst for
 # more.)
-component_project_vars.mk:
+#
+# Note: The :: target here is not a mistake. This target should always be
+# executed, as dependencies are checked by the parent project-level make target.
+# See https://www.gnu.org/software/make/manual/make.html#index-_003a_003a-rules-_0028double_002dcolon_0029
+component_project_vars.mk::
 	$(details) "Building component project variables list $(abspath $@)"
 	@echo '# Automatically generated build file. Do not edit.' > $@
 	@echo 'COMPONENT_INCLUDES += $(call MakeVariablePath,$(addprefix $(COMPONENT_PATH)/,$(COMPONENT_ADD_INCLUDEDIRS)))' >> $@
