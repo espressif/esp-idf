@@ -36,6 +36,7 @@
 #include "esp_log.h"
 #include "esp_eth.h"
 #include "esp_intr_alloc.h"
+#include "esp_pm.h"
 
 #include "driver/periph_ctrl.h"
 
@@ -71,6 +72,9 @@ static SemaphoreHandle_t emac_rx_xMutex = NULL;
 static SemaphoreHandle_t emac_tx_xMutex = NULL;
 static const char *TAG = "emac";
 static bool pause_send = false;
+#ifdef CONFIG_PM_ENABLE
+static esp_pm_lock_handle_t s_pm_lock;
+#endif
 
 static esp_err_t emac_ioctl(emac_sig_t sig, emac_par_t par);
 esp_err_t emac_post(emac_sig_t sig, emac_par_t par);
@@ -804,13 +808,31 @@ esp_err_t esp_eth_enable(void)
         return open_cmd.err;
     }
 
+#ifdef CONFIG_PM_ENABLE
+    esp_err_t err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "ethernet", &s_pm_lock);
+    if (err != ESP_OK) {
+        return err;
+    }
+    esp_pm_lock_acquire(s_pm_lock);
+#endif //CONFIG_PM_ENABLE
+
     if (emac_config.emac_status != EMAC_RUNTIME_NOT_INIT) {
         if (emac_ioctl(SIG_EMAC_START, (emac_par_t)(&post_cmd)) != 0) {
             open_cmd.err = EMAC_CMD_FAIL;
+            goto cleanup;
         }
     } else {
         open_cmd.err = EMAC_CMD_FAIL;
+        goto cleanup;
     }
+    return EMAC_CMD_OK;
+
+cleanup:
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_release(s_pm_lock);
+    esp_pm_lock_delete(s_pm_lock);
+    s_pm_lock = NULL;
+#endif //CONFIG_PM_ENABLE
     return open_cmd.err;
 }
 
@@ -853,6 +875,12 @@ esp_err_t esp_eth_disable(void)
         close_cmd.err = EMAC_CMD_OK;
         return close_cmd.err;
     }
+
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_release(s_pm_lock);
+    esp_pm_lock_delete(s_pm_lock);
+    s_pm_lock = NULL;
+#endif // CONFIG_PM_ENABLE
 
     if (emac_config.emac_status == EMAC_RUNTIME_START) {
         if (emac_ioctl(SIG_EMAC_STOP, (emac_par_t)(&post_cmd)) != 0) {
