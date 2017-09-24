@@ -85,7 +85,7 @@ $(error If IDF_PATH is overriden on command line, it must be an absolute path wi
 endif
 
 ifneq ("$(IDF_PATH)","$(subst :,,$(IDF_PATH))")
-$(error IDF_PATH cannot contain colons. If overriding IDF_PATH on Windows, use Cygwin-style /c/dir instead of C:/dir)
+$(error IDF_PATH cannot contain colons. If overriding IDF_PATH on Windows, use Cygwin-style /cygdrive/c/dir instead of C:/dir)
 endif
 
 # disable built-in make rules, makes debugging saner
