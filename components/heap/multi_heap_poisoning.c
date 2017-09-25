@@ -92,7 +92,7 @@ static poison_head_t *verify_allocated_region(void *data, bool print_errors)
     /* check if the beginning of the data was overwritten */
     if (head->head_canary != HEAD_CANARY_PATTERN) {
         if (print_errors) {
-            printf("CORRUPT HEAP: Bad head at %p. Expected 0x%08x got 0x%08x\n", &head->head_canary,
+            MULTI_HEAP_STDERR_PRINTF("CORRUPT HEAP: Bad head at %p. Expected 0x%08x got 0x%08x\n", &head->head_canary,
                    HEAD_CANARY_PATTERN, head->head_canary);
         }
         return NULL;
@@ -142,7 +142,7 @@ static bool verify_fill_pattern(void *data, size_t size, bool print_errors, bool
         while (size >= 4) {
             if (*p != EXPECT_WORD) {
                 if (print_errors) {
-                    printf("Invalid data at %p. Expected 0x%08x got 0x%08x\n", p, EXPECT_WORD, *p);
+                    MULTI_HEAP_STDERR_PRINTF("CORRUPT HEAP: Invalid data at %p. Expected 0x%08x got 0x%08x\n", p, EXPECT_WORD, *p);
                 }
                 valid = false;
             }
@@ -159,7 +159,7 @@ static bool verify_fill_pattern(void *data, size_t size, bool print_errors, bool
     for (int i = 0; i < size; i++) {
         if (p[i] != (uint8_t)EXPECT_WORD) {
             if (print_errors) {
-                printf("Invalid data at %p. Expected 0x%02x got 0x%02x\n", p, (uint8_t)EXPECT_WORD, *p);
+                MULTI_HEAP_STDERR_PRINTF("CORRUPT HEAP: Invalid data at %p. Expected 0x%02x got 0x%02x\n", p, (uint8_t)EXPECT_WORD, *p);
             }
             valid = false;
         }
@@ -315,7 +315,7 @@ bool multi_heap_internal_check_block_poisoning(void *start, size_t size, bool is
             /* block can be bigger than alloc_size, for reasons of alignment & fragmentation,
                but block can never be smaller than head->alloc_size... */
             if (print_errors) {
-                printf("CORRUPT HEAP: Size at %p expected <=0x%08x got 0x%08x\n", &head->alloc_size,
+                MULTI_HEAP_STDERR_PRINTF("CORRUPT HEAP: Size at %p expected <=0x%08x got 0x%08x\n", &head->alloc_size,
                        size - POISON_OVERHEAD, head->alloc_size);
             }
             return false;

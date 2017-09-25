@@ -18,6 +18,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <rom/ets_sys.h>
+#include <assert.h>
 
 /* Because malloc/free can happen inside an ISR context,
    we need to use portmux spinlocks here not RTOS mutexes */
@@ -40,11 +41,36 @@
 #define MULTI_HEAP_PRINTF ets_printf
 #define MULTI_HEAP_STDERR_PRINTF(MSG, ...) ets_printf(MSG, __VA_ARGS__)
 
-#else
+inline static void multi_heap_assert(bool condition, const char *format, int line, intptr_t address)
+{
+    /* Can't use libc assert() here as it calls printf() which can cause another malloc() for a newlib lock.
+
+       Also, it's useful to be able to print the memory address where corruption was detected.
+    */
+#ifndef NDEBUG
+    if(!condition) {
+#ifndef CONFIG_OPTIMIZATION_ASSERTIONS_SILENT
+        ets_printf(format, line, address);
+#endif  // CONFIG_OPTIMIZATION_ASSERTIONS_SILENT
+        abort();
+    }
+#else // NDEBUG
+    (void) condition;
+#endif // NDEBUG
+}
+
+#define MULTI_HEAP_ASSERT(CONDITION, ADDRESS) \
+    multi_heap_assert((CONDITION), "CORRUPT HEAP: multi_heap.c:%d detected at 0x%08x\n", \
+                      __LINE__, (intptr_t)(ADDRESS))
+
+#else // ESP_PLATFORM
+
+#include <assert.h>
 
 #define MULTI_HEAP_PRINTF printf
 #define MULTI_HEAP_STDERR_PRINTF(MSG, ...) fprintf(stderr, MSG, __VA_ARGS__)
 #define MULTI_HEAP_LOCK(PLOCK)
 #define MULTI_HEAP_UNLOCK(PLOCK)
 
+#define MULTI_HEAP_ASSERT(CONDITION, ADDRESS) assert((CONDITION) && "Heap corrupt")
 #endif
