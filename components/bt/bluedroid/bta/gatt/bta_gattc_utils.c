@@ -306,6 +306,8 @@ void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB *p_clcb)
         }
         osi_free(p_clcb->p_q_cmd);
         p_clcb->p_q_cmd = NULL;
+        // don't forget to clear the command queue before dealloc the clcb.
+        list_clear(p_clcb->p_cmd_list);
         //osi_free_and_reset((void **)&p_clcb->p_q_cmd);
         memset(p_clcb, 0, sizeof(tBTA_GATTC_CLCB));
     } else {
@@ -434,13 +436,29 @@ tBTA_GATTC_SERV *bta_gattc_srcb_alloc(BD_ADDR bda)
 BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 {
 
-    if (p_clcb->p_q_cmd == NULL)
-    {
+    if (p_clcb->p_q_cmd == NULL) {
         p_clcb->p_q_cmd = p_data;
         return TRUE;
-    } else if (p_clcb->p_cmd_list) {
-        //store the command to the command list.
-        list_append(p_clcb->p_cmd_list, (void *)p_data);
+    } else if (p_data->hdr.event == BTA_GATTC_API_WRITE_EVT &&
+               p_data->api_write.write_type == BTA_GATTC_WRITE_PREPARE &&
+               p_data->api_write.handle == p_clcb->p_q_cmd->api_write.handle) {
+        APPL_TRACE_ERROR("There is a prepare write command still pending.");
+        tBTA_GATTC cb_data = {0};
+        cb_data.write.status = BTA_GATT_CONGESTED;
+        cb_data.write.handle = p_data->api_write.handle;
+        cb_data.write.conn_id = p_clcb->bta_conn_id;
+        /* write complete, callback */
+        ( *p_clcb->p_rcb->p_cback)(p_data->hdr.event, (tBTA_GATTC *)&cb_data);
+        return FALSE;
+    }
+    else if (p_clcb->p_cmd_list) {
+        void *cmd_data = osi_malloc(sizeof(tBTA_GATTC_DATA));
+        if (cmd_data) {
+            memset(cmd_data, 0, sizeof(tBTA_GATTC_DATA));
+            memcpy(cmd_data, p_data, sizeof(tBTA_GATTC_DATA));
+            //store the command to the command list.
+            list_append(p_clcb->p_cmd_list, cmd_data);
+        }
         return FALSE;
     }
 
