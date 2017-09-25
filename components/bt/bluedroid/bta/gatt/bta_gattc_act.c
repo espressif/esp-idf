@@ -916,6 +916,10 @@ void bta_gattc_cfg_mtu(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
             /* Dequeue the data, if it was enqueued */
             if (p_clcb->p_q_cmd == p_data) {
                 p_clcb->p_q_cmd = NULL;
+                /* Check if there has command pending in the command queue or not,
+                   if there has command pending in the command queue, sent it to the state machine to decision
+                   should be sent it to the remote device or not. */
+                   bta_gattc_pop_command_to_send(p_clcb);
             }
 
             bta_gattc_cmpl_sendmsg(p_clcb->bta_conn_id, GATTC_OPTYPE_CONFIG, status, NULL);
@@ -1012,7 +1016,6 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
     }
     if (p_clcb->p_srcb && p_clcb->p_srcb->p_srvc_list) {
         /* release pending attribute list buffer */
-        APPL_TRACE_DEBUG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++= %p", p_clcb->p_srcb->p_srvc_list);
         osi_free(p_clcb->p_srcb->p_srvc_list);
         p_clcb->p_srcb->p_srvc_list = NULL;
         //osi_free_and_reset((void **)&p_clcb->p_srcb->p_srvc_list);
@@ -1034,11 +1037,9 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
          * referenced by p_clcb->p_q_cmd
          */
         if (p_q_cmd != p_clcb->p_q_cmd) {
-            APPL_TRACE_DEBUG("====================================================================");
             osi_free(p_q_cmd);
             p_q_cmd = NULL;
         }
-            //osi_free_and_reset((void **)&p_q_cmd);
     }
 }
 /*******************************************************************************
@@ -1067,6 +1068,10 @@ void bta_gattc_read(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
             /* Dequeue the data, if it was enqueued */
             if (p_clcb->p_q_cmd == p_data) {
                 p_clcb->p_q_cmd = NULL;
+                /* Check if there has command pending in the command queue or not,
+                   if there has command pending in the command queue, sent it to the state machine to decision
+                   should be sent it to the remote device or not. */
+                bta_gattc_pop_command_to_send(p_clcb);
             }
 
             bta_gattc_cmpl_sendmsg(p_clcb->bta_conn_id, GATTC_OPTYPE_READ, status, NULL);
@@ -1102,6 +1107,10 @@ void bta_gattc_read_multi(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
             /* Dequeue the data, if it was enqueued */
             if (p_clcb->p_q_cmd == p_data) {
                 p_clcb->p_q_cmd = NULL;
+                /* Check if there has command pending in the command queue or not,
+                   if there has command pending in the command queue, sent it to the state machine to decision
+                   should be sent it to the remote device or not. */
+                   bta_gattc_pop_command_to_send(p_clcb);
             }
 
             bta_gattc_cmpl_sendmsg(p_clcb->bta_conn_id, GATTC_OPTYPE_READ, status, NULL);
@@ -1142,6 +1151,10 @@ void bta_gattc_write(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
         /* Dequeue the data, if it was enqueued */
         if (p_clcb->p_q_cmd == p_data) {
             p_clcb->p_q_cmd = NULL;
+            /* Check if there has command pending in the command queue or not,
+               if there has command pending in the command queue, sent it to the state machine to decision
+               should be sent it to the remote device or not. */
+            bta_gattc_pop_command_to_send(p_clcb);
         }
 
         bta_gattc_cmpl_sendmsg(p_clcb->bta_conn_id, GATTC_OPTYPE_WRITE, status, NULL);
@@ -1166,6 +1179,10 @@ void bta_gattc_execute(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
             /* Dequeue the data, if it was enqueued */
             if (p_clcb->p_q_cmd == p_data) {
                 p_clcb->p_q_cmd = NULL;
+                /* Check if there has command pending in the command queue or not,
+                   if there has command pending in the command queue, sent it to the state machine to decision
+                   should be sent it to the remote device or not. */
+                bta_gattc_pop_command_to_send(p_clcb);
             }
 
             bta_gattc_cmpl_sendmsg(p_clcb->bta_conn_id, GATTC_OPTYPE_EXE_WRITE, status, NULL);
@@ -1228,9 +1245,12 @@ void bta_gattc_read_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_OP_CMPL *p_data)
 
     event = p_clcb->p_q_cmd->api_read.cmpl_evt;
     cb_data.read.conn_id = p_clcb->bta_conn_id;
-    osi_free(p_clcb->p_q_cmd);
-    p_clcb->p_q_cmd = NULL;
-    //osi_free_and_reset((void **)&p_clcb->p_q_cmd);
+    //free the command data store in the queue.
+    bta_gattc_free_command_data(p_clcb);
+    /* Check if there has command pending in the command queue or not,
+       if there has command pending in the command queue, sent it to the state machine to decision
+       should be sent it to the remote device or not. */
+    bta_gattc_pop_command_to_send(p_clcb);
     /* read complete, callback */
     ( *p_clcb->p_rcb->p_cback)(event, (tBTA_GATTC *)&cb_data);
 
@@ -1261,9 +1281,12 @@ void bta_gattc_write_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_OP_CMPL *p_data)
 		} else {
         event = p_clcb->p_q_cmd->api_write.cmpl_evt;
 	}
-    osi_free(p_clcb->p_q_cmd);
-    p_clcb->p_q_cmd = NULL;
-    //osi_free_and_reset((void **)&p_clcb->p_q_cmd);
+    //free the command data store in the queue.
+    bta_gattc_free_command_data(p_clcb);
+    /* Check if there has command pending in the command queue or not,
+       if there has command pending in the command queue, sent it to the state machine to decision
+       should be sent it to the remote device or not. */
+    bta_gattc_pop_command_to_send(p_clcb);
     cb_data.write.conn_id = p_clcb->bta_conn_id;
     /* write complete, callback */
     ( *p_clcb->p_rcb->p_cback)(event, (tBTA_GATTC *)&cb_data);
@@ -1281,9 +1304,12 @@ void bta_gattc_write_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_OP_CMPL *p_data)
 void bta_gattc_exec_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_OP_CMPL *p_data)
 {
     tBTA_GATTC          cb_data;
-    osi_free(p_clcb->p_q_cmd);
-    p_clcb->p_q_cmd = NULL;
-    //osi_free_and_reset((void **)&p_clcb->p_q_cmd);
+    //free the command data store in the queue.
+    bta_gattc_free_command_data(p_clcb);
+    /* Check if there has command pending in the command queue or not,
+       if there has command pending in the command queue, sent it to the state machine to decision
+       should be sent it to the remote device or not. */
+    bta_gattc_pop_command_to_send(p_clcb);
     p_clcb->status      = BTA_GATT_OK;
 
     /* execute complete, callback */
@@ -1306,10 +1332,12 @@ void bta_gattc_exec_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_OP_CMPL *p_data)
 void bta_gattc_cfg_mtu_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_OP_CMPL *p_data)
 {
     tBTA_GATTC          cb_data;
-    osi_free(p_clcb->p_q_cmd);
-    p_clcb->p_q_cmd = NULL;
-    //osi_free_and_reset((void **)&p_clcb->p_q_cmd);
-
+    //free the command data store in the queue.
+    bta_gattc_free_command_data(p_clcb);
+    /* Check if there has command pending in the command queue or not,
+       if there has command pending in the command queue, sent it to the state machine to decision
+       should be sent it to the remote device or not. */
+    bta_gattc_pop_command_to_send(p_clcb);
 
     if (p_data->p_cmpl  &&  p_data->status == BTA_GATT_OK) {
         p_clcb->p_srcb->mtu  = p_data->p_cmpl->mtu;
@@ -1450,10 +1478,62 @@ void bta_gattc_q_cmd(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 {
     bta_gattc_enqueue(p_clcb, p_data);
 }
-
+/*******************************************************************************
+**
+** Function         bta_gattc_pop_command_to_send
+**
+** Description      dequeue a command into control block.
+**
+** Returns          None.
+**
+*******************************************************************************/
 void bta_gattc_pop_command_to_send(tBTA_GATTC_CLCB *p_clcb)
 {
-    tBTA_GATTC_DATA *p_data = 
+    if (!list_is_empty(p_clcb->p_cmd_list)) {
+        list_node_t *node = list_begin(p_clcb->p_cmd_list);
+        tBTA_GATTC_DATA *p_data = (tBTA_GATTC_DATA *)list_node(node);
+        if (p_data != NULL) {
+            /* execute pending operation of link block still present */
+            if (l2cu_find_lcb_by_bd_addr(p_clcb->p_srcb->server_bda, BT_TRANSPORT_LE) != NULL) {
+                // The data to be sent to the gattc state machine for processing
+                if(bta_gattc_sm_execute(p_clcb, p_data->hdr.event, p_data)) {
+                    list_remove(p_clcb->p_cmd_list, (void *)p_data);
+                }
+            }
+        }
+    }
+}
+/*******************************************************************************
+**
+** Function         bta_gattc_free_command_data
+**
+** Description      free the command data into control block.
+**
+** Returns          None.
+**
+*******************************************************************************/
+void bta_gattc_free_command_data(tBTA_GATTC_CLCB *p_clcb)
+{
+    //Check the list is empty or not.
+    if (!list_is_empty(p_clcb->p_cmd_list)) {
+        /* Traversal the command queue, check the p_q_cmd is point to the queue data or not, if the p_q_cmd point to the
+           command queue,should remove it from the list */
+        for (list_node_t *node = list_begin(p_clcb->p_cmd_list); node != list_end(p_clcb->p_cmd_list);
+             node = list_next(node)) {
+            tBTA_GATTC_DATA *p_data = (tBTA_GATTC_DATA *)list_node(node);
+            if (p_data == p_clcb->p_q_cmd) {
+                list_remove(p_clcb->p_cmd_list, (void *)p_data);
+                p_clcb->p_q_cmd = NULL;
+                return;
+            }
+        }
+
+        osi_free(p_clcb->p_q_cmd);
+        p_clcb->p_q_cmd = NULL;
+    } else {
+        osi_free(p_clcb->p_q_cmd);
+        p_clcb->p_q_cmd = NULL;
+    }
 }
 
 /*******************************************************************************
