@@ -26,7 +26,8 @@ extern "C" {
 #endif
 
 
-#define TIMER_BASE_CLK   (APB_CLK_FREQ)
+#define TIMER_BASE_CLK   (APB_CLK_FREQ)  /*!< Frequency of the clock on the input of the timer groups */
+
 /**
  * @brief Selects a Timer-Group out of 2 available groups
  */
@@ -90,15 +91,15 @@ typedef enum {
 } timer_autoreload_t;
 
 /**
- * @brief timer configure struct
+ * @brief Data structure with timer's configuration settings
  */
 typedef struct {
-    bool alarm_en; /*!< Timer alarm enable */
-    bool counter_en; /*!< Counter enable */
+    bool alarm_en;      /*!< Timer alarm enable */
+    bool counter_en;    /*!< Counter enable */
     timer_intr_mode_t intr_type; /*!< Interrupt mode */
     timer_count_dir_t counter_dir; /*!< Counter direction  */
-    bool auto_reload; /*!< Timer auto-reload */
-    uint16_t divider; /*!< Counter clock divider*/
+    bool auto_reload;   /*!< Timer auto-reload */
+    uint32_t divider;   /*!< Counter clock divider. The divider's range is from from 2 to 65536. */
 } timer_config_t;
 
 
@@ -202,13 +203,13 @@ esp_err_t timer_set_auto_reload(timer_group_t group_num, timer_idx_t timer_num, 
  *
  * @param group_num Timer group number, 0 for TIMERG0 or 1 for TIMERG1
  * @param timer_num Timer index, 0 for hw_timer[0] & 1 for hw_timer[1]
- * @param divider Timer clock divider value.
+ * @param divider Timer clock divider value. The divider's range is from from 2 to 65536.
  *
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t timer_set_divider(timer_group_t group_num, timer_idx_t timer_num, uint16_t divider);
+esp_err_t timer_set_divider(timer_group_t group_num, timer_idx_t timer_num, uint32_t divider);
 
 /**
  * @brief Set timer alarm value.
@@ -249,27 +250,23 @@ esp_err_t timer_get_alarm_value(timer_group_t group_num, timer_idx_t timer_num, 
  */
 esp_err_t timer_set_alarm(timer_group_t group_num, timer_idx_t timer_num, timer_alarm_t alarm_en);
 
-
 /**
- * @brief   register Timer interrupt handler, the handler is an ISR.
- *          The handler will be attached to the same CPU core that this function is running on.
+ * @brief Register Timer interrupt handler, the handler is an ISR.
+ *        The handler will be attached to the same CPU core that this function is running on.
  *
  * @param group_num Timer group number
  * @param timer_num Timer index of timer group
  * @param fn Interrupt handler function.
- *        @note
- *        In case the this is called with the INIRAM flag, code inside the handler function can 
- *        only call functions in IRAM, so it cannot call other timer APIs.
- *        Use direct register access to access timers from inside the ISR in this case.
- *
  * @param arg Parameter for handler function
- * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
- *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
- * @param  handle Pointer to return handle. If non-NULL, a handle for the interrupt will
- *            be returned here.
- * @return
- *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG Function pointer error.
+ * @param intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
+ *        ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
+ * @param handle Pointer to return handle. If non-NULL, a handle for the interrupt will
+ *        be returned here.
+ *
+ * @note If the intr_alloc_flags value ESP_INTR_FLAG_IRAM is set, 
+ *       the handler function must be declared with IRAM_ATTR attribute 
+ *       and can only call functions in IRAM or ROM. It cannot call other timer APIs. 
+ *       Use direct register access to configure timers from inside the ISR in this case.
  *
  * @return
  *     - ESP_OK Success
