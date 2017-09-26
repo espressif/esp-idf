@@ -284,6 +284,34 @@ Several lines below, after start up and diagnostic log, you should see "Hello wo
 
 To exit monitor use shortcut ``Ctrl+]``. To execute ``make flash`` and ``make monitor`` in one shoot type ``make flash monitor``. Check section :doc:`IDF Monitor <idf-monitor>` for handy shortcuts and more details on using this application.
 
+That's all what you need to get started with ESP32! 
+
+Now you are ready to try some other :idf:`examples`, or go right to developing your own applications.
+
+
+Updating ESP-IDF
+================
+
+After some time of using ESP-IDF, you may want to update it to take advantage of new features or bug fixes. The simplest way to do so is by deleting existing ``esp-idf`` folder and cloning it again, exactly as when doing initial installation described in sections :ref:`get-started-get-esp-idf`.
+
+Another solution is to update only what has changed. This method is useful if you have slow connection to the GiHub. To do the update run the following commands::
+
+    cd ~/esp/esp-idf
+    git pull
+    git submodule update --init --recursive
+
+The ``git pull`` command is fetching and merging changes from ESP-IDF repository on GitHub. Then ``git submodule update --init --recursive`` is updating existing submodules or getting a fresh copy of new ones. On GitHub the submodules are represented as links to other repositories and require this additional command to get them onto your PC.
+
+If you would like to use specific release of ESP-IDF, e.g. `v2.1`, run::
+
+    cd ~/esp
+    git clone https://github.com/espressif/esp-idf.git esp-idf-v2.1
+    cd esp-idf-v2.1/
+    git checkout v2.1
+    git submodule update --init --recursive
+
+After that remember to :doc:`add-idf_path-to-profile`, so the toolchain scripts know where to find the ESP-IDF in it's release specific location.
+
 
 Related Documents
 =================
