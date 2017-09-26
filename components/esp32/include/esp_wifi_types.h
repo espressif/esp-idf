@@ -61,7 +61,7 @@ typedef enum {
     WIFI_AUTH_MAX
 } wifi_auth_mode_t;
 
-enum {
+typedef enum {
     WIFI_REASON_UNSPECIFIED              = 1,
     WIFI_REASON_AUTH_EXPIRE              = 2,
     WIFI_REASON_AUTH_LEAVE               = 3,
@@ -91,7 +91,7 @@ enum {
     WIFI_REASON_AUTH_FAIL                = 202,
     WIFI_REASON_ASSOC_FAIL               = 203,
     WIFI_REASON_HANDSHAKE_TIMEOUT        = 204,
-};
+} wifi_err_reason_t;
 
 typedef enum {
     WIFI_SECOND_CHAN_NONE = 0,  /**< the channel width is HT20 */

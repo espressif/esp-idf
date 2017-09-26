@@ -22,4 +22,6 @@ API Reference
 -------------
 
 .. include:: /_build/inc/esp_wifi.inc
+.. include:: /_build/inc/esp_wifi_types.inc
+
 
