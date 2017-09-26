@@ -120,7 +120,7 @@ config LWIP_DHCP_DOES_ARP_CHECK
 
 menuconfig LWIP_AUTOIP
     bool "Enable IPV4 Link-Local Addressing (AUTOIP)"
-    default y
+    default n
     help
         Enabling this option allows the device to self-assign an address
         in the 169.256/16 range if none is assigned statically or via DHCP.
