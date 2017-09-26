@@ -153,6 +153,9 @@ int ssl_pm_new(SSL *ssl)
         mbedtls_ssl_conf_min_version(&ssl_pm->conf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_0);
     }
 
+    if (ssl->ctx->ssl_alpn.alpn_status == ALPN_ENABLE) {
+	 mbedtls_ssl_conf_alpn_protocols( &ssl_pm->conf, ssl->ctx->ssl_alpn.alpn_list );
+    }
     mbedtls_ssl_conf_rng(&ssl_pm->conf, mbedtls_ctr_drbg_random, &ssl_pm->ctr_drbg);
 
 #ifdef CONFIG_OPENSSL_LOWLEVEL_DEBUG
