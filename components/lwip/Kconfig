@@ -68,6 +68,36 @@ config LWIP_IP_REASSEMBLY
     help
         Enabling this option allows reassemblying incoming fragmented IP packets.
 
+config LWIP_STATS
+    bool "Enable LWIP statistics"
+    default n
+    help
+        Enabling this option allows LWIP statistics
+
+config LWIP_ETHARP_TRUST_IP_MAC
+    bool "Enable LWIP ARP trust"
+    default y
+    help
+        Enabling this option allows ARP table to be updated.
+
+        If this option is enabled, the incoming IP packets cause the ARP table to be
+        updated with the source MAC and IP addresses supplied in the packet.
+        You may want to disable this if you do not trust LAN peers to have the
+        correct addresses, or as a limited approach to attempt to handle
+        spoofing. If disabled, lwIP will need to make a new ARP request if
+        the peer is not already in the ARP table, adding a little latency.
+        The peer *is* in the ARP table if it requested our address before.
+        Also notice that this slows down input processing of every IP packet!
+ 
+
+config TCPIP_RECVMBOX_SIZE
+    int "TCPIP receive mail box size"
+    default 32
+    range 6 64
+    help
+        Set TCPIP receive mail box size. Generally bigger value means higher throughput
+        but more memory. The value should be bigger than UDP/TCP mail box size.
+
 menu "TCP"
 
 config TCP_MAXRTX
@@ -131,7 +161,7 @@ config TCP_WND_DEFAULT
 config TCP_RECVMBOX_SIZE
     int "Default TCP receive mail box size"
     default 6
-    range 6 32
+    range 6 64
     help
         Set TCP receive mail box size. Generally bigger value means higher throughput
         but more memory. The recommended value is: TCP_WND_DEFAULT/TCP_MSS + 2, e.g. if 
@@ -188,7 +218,7 @@ menu "UDP"
 config UDP_RECVMBOX_SIZE
     int "Default UDP receive mail box size"
     default 6
-    range 6 32
+    range 6 64
     help
         Set UDP receive mail box size. The recommended value is 6.
 
