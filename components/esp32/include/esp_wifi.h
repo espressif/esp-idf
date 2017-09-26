@@ -517,23 +517,34 @@ esp_err_t esp_wifi_set_channel(uint8_t primary, wifi_second_chan_t second);
 esp_err_t esp_wifi_get_channel(uint8_t *primary, wifi_second_chan_t *second);
 
 /**
-  * @brief     Set country code
-  *            The default value is WIFI_COUNTRY_CN
+  * @brief     configure country info
   *
-  * @param     country  country type
+  * @attention 1. The default country is {.cc="CN", .schan=1, .nchan=13, policy=WIFI_COUNTRY_POLICY_AUTO}
+  * @attention 2. When the country policy is WIFI_COUNTRY_POLICY_AUTO, use the country info of AP to which 
+  *               the station is connected. E.g. if the configured country info is {.cc="USA", .schan=1, .nchan=11}, 
+  *               the country info of the AP to which the station is connected is {.cc="JP", .schan=1, .nchan=14},
+  *               then our country info is {.cc="JP", .schan=1, .nchan=14}. If the station disconnected
+  *               from the AP, the country info back to {.cc="USA", .schan=1, .nchan=11} again.
+  * @attention 3. When the country policy is WIFI_COUNTRY_POLICY_MANUAL, always use the configured country info.
+  * @attention 4. When the country info is changed because of configuration or because the station connects to a different
+  *               external AP, the country IE in probe response/beacon of the soft-AP is changed also.
+  * @attention 5. The country configuration is not stored into flash
+  * @attention 6. This API doesn't validate the per-country rules, it's up to the user to fill in all fields according to 
+  *               local regulations.
+  *
+  * @param     country   the configured country info
   *
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
   *    - ESP_ERR_WIFI_ARG: invalid argument
-  *    - others: refer to error code in esp_err.h
   */
-esp_err_t esp_wifi_set_country(wifi_country_t country);
+esp_err_t esp_wifi_set_country(wifi_country_t *country);
 
 /**
-  * @brief     Get country code
+  * @brief     get the current country info
   *
-  * @param     country  store current country
+  * @param     country  country info
   *
   * @return
   *    - ESP_OK: succeed
@@ -541,6 +552,7 @@ esp_err_t esp_wifi_set_country(wifi_country_t country);
   *    - ESP_ERR_WIFI_ARG: invalid argument
   */
 esp_err_t esp_wifi_get_country(wifi_country_t *country);
+
 
 /**
   * @brief     Set MAC address of the ESP32 WiFi station or the soft-AP interface.

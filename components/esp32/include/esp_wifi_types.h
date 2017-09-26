@@ -40,11 +40,15 @@ typedef esp_interface_t wifi_interface_t;
 #define WIFI_IF_AP  ESP_IF_WIFI_AP
 
 typedef enum {
-    WIFI_COUNTRY_CN = 0, /**< country China, channel range [1, 14] */
-    WIFI_COUNTRY_JP,     /**< country Japan, channel range [1, 14] */
-    WIFI_COUNTRY_US,     /**< country USA, channel range [1, 11] */
-    WIFI_COUNTRY_EU,     /**< country Europe, channel range [1, 13] */
-    WIFI_COUNTRY_MAX
+    WIFI_COUNTRY_POLICY_AUTO,   /**< Country policy is auto, use the country info of AP to which the station is connected */
+    WIFI_COUNTRY_POLICY_MANUAL, /**< Country policy is manual, always use the configured country info */
+} wifi_country_policy_t;
+
+typedef struct {
+    char                  cc[3];   /**< country code string */
+    uint8_t               schan;   /**< start channel */
+    uint8_t               nchan;   /**< total channel number */
+    wifi_country_policy_t policy;  /**< country policy */
 } wifi_country_t;
 
 typedef enum {
