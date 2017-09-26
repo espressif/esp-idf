@@ -100,7 +100,7 @@ static void sc_ack_send_task(void *pvParameters)
                         if (ack->cb) {
                             ack->cb(SC_STATUS_LINK_OVER, remote_ip);
                         }
-                        close(send_sock);
+                        closesocket(send_sock);
                         free(ack);
                         vTaskDelete(NULL);
                     }
@@ -112,7 +112,7 @@ static void sc_ack_send_task(void *pvParameters)
                         continue;
                     }
                     ESP_LOGE(TAG, "send failed, errno %d", err);
-                    close(send_sock);
+                    closesocket(send_sock);
                     free(ack);
                     vTaskDelete(NULL);
                 }
