@@ -41,7 +41,7 @@
 #if (BLE_INCLUDED == TRUE)
 
 static void btm_suspend_wl_activity(tBTM_BLE_WL_STATE wl_state);
-static void btm_resume_wl_activity(tBTM_BLE_WL_STATE wl_state);
+static void btm_wl_update_to_controller(void);
 
 // Unfortunately (for now?) we have to maintain a copy of the device whitelist
 // on the host to determine if a device is pending to be connected or not. This
@@ -185,9 +185,10 @@ BOOLEAN btm_add_dev_to_controller (BOOLEAN to_add, BD_ADDR bd_addr)
     else {
         BTM_ReadDevInfo(bd_addr, &dev_type, &addr_type);
 
-        started = btsnd_hcic_ble_remove_from_white_list (addr_type, bd_addr);
         if (to_add) {
             started = btsnd_hcic_ble_add_white_list (addr_type, bd_addr);
+        }else{
+            started = btsnd_hcic_ble_remove_from_white_list (addr_type, bd_addr);
         }
     }
 
@@ -253,13 +254,17 @@ void btm_enq_wl_dev_operation(BOOLEAN to_add, BD_ADDR bd_addr)
 **                  the white list.
 **
 *******************************************************************************/
-BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr)
+BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBTM_ADD_WHITELIST_CBACK *add_wl_cb)
 {
     tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
 
     if (to_add && p_cb->white_list_avail_size == 0) {
         BTM_TRACE_DEBUG("%s Whitelist full, unable to add device", __func__);
         return FALSE;
+    }
+    if (add_wl_cb){
+        //save add whitelist complete callback
+        p_cb->add_wl_cb = add_wl_cb;
     }
 
     if (to_add) {
@@ -273,8 +278,8 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr)
     btm_suspend_wl_activity(p_cb->wl_state);
     /* save the bd_addr to the btm_cb env */
     btm_enq_wl_dev_operation(to_add, bd_addr);
-    /* save the ba_addr to the controller white list & start the auto connet */
-    btm_resume_wl_activity(p_cb->wl_state);
+    /* save the ba_addr to the controller white list */
+    btm_wl_update_to_controller();
     return TRUE;
 }
 
@@ -336,9 +341,16 @@ void btm_ble_white_list_init(UINT8 white_list_size)
 void btm_ble_add_2_white_list_complete(UINT8 status)
 {
     BTM_TRACE_EVENT("%s status=%d", __func__, status);
+    tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
     if (status == HCI_SUCCESS) {
         --btm_cb.ble_ctr_cb.white_list_avail_size;
     }
+    // add whitelist complete callback
+    if (p_cb->add_wl_cb)
+    {
+        (*p_cb->add_wl_cb)(status, BTM_WHITELIST_ADD);
+    }
+
 }
 
 /*******************************************************************************
@@ -350,10 +362,15 @@ void btm_ble_add_2_white_list_complete(UINT8 status)
 *******************************************************************************/
 void btm_ble_remove_from_white_list_complete(UINT8 *p, UINT16 evt_len)
 {
+    tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
     UNUSED(evt_len);
     BTM_TRACE_EVENT ("%s status=%d", __func__, *p);
     if (*p == HCI_SUCCESS) {
         ++btm_cb.ble_ctr_cb.white_list_avail_size;
+    }
+    if (p_cb->add_wl_cb)
+    {
+        (*p_cb->add_wl_cb)(*p, BTM_WHITELIST_REMOVE);
     }
 }
 
@@ -594,13 +611,31 @@ static void btm_suspend_wl_activity(tBTM_BLE_WL_STATE wl_state)
 ** Returns          none.
 **
 *******************************************************************************/
-static void btm_resume_wl_activity(tBTM_BLE_WL_STATE wl_state)
+void btm_resume_wl_activity(tBTM_BLE_WL_STATE wl_state)
 {
     btm_ble_resume_bg_conn();
-
     if (wl_state & BTM_BLE_WL_ADV) {
         btm_ble_start_adv();
     }
+
+}
+
+/*******************************************************************************
+**
+** Function         btm_wl_update_to_controller
+**
+** Description      This function is to update white list to controller
+**
+** Returns          none.
+**
+*******************************************************************************/
+static void btm_wl_update_to_controller(void)
+{
+    /* whitelist will be added in the btm_ble_resume_bg_conn(), we do not
+       support background connection now, so we nedd to use btm_execute_wl_dev_operation
+       to add whitelist directly ,if we support background connection in the future,
+       please delete btm_execute_wl_dev_operation(). */
+    btm_execute_wl_dev_operation();
 
 }
 /*******************************************************************************

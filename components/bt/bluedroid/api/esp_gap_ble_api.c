@@ -203,7 +203,9 @@ esp_err_t esp_ble_gap_update_whitelist(bool add_remove, esp_bd_addr_t remote_bda
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
-
+    if (!remote_bda){
+        return ESP_ERR_INVALID_SIZE;
+    }
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_ACT_UPDATE_WHITE_LIST;

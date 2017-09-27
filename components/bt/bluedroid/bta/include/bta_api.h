@@ -402,6 +402,8 @@ typedef void (tBTA_SET_ADV_DATA_CMPL_CBACK) (tBTA_STATUS status);
 
 typedef void (tBTA_START_ADV_CMPL_CBACK) (tBTA_STATUS status);
 
+typedef tBTM_ADD_WHITELIST_CBACK tBTA_ADD_WHITELIST_CBACK;
+
 typedef tBTM_SET_PKT_DATA_LENGTH_CBACK tBTA_SET_PKT_DATA_LENGTH_CBACK;
 
 typedef tBTM_SET_LOCAL_PRIVACY_CBACK tBTA_SET_LOCAL_PRIVACY_CBACK;
@@ -1410,7 +1412,7 @@ extern void BTA_DisableTestMode(void);
 *******************************************************************************/
 extern void BTA_DmSetDeviceName(char *p_name);
 
-extern void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr);
+extern void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBTA_ADD_WHITELIST_CBACK *add_wl_cb);
 
 extern void BTA_DmBleReadAdvTxPower(tBTA_CMPL_CB *cmpl_cb);
 
