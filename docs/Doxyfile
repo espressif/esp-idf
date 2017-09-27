@@ -26,7 +26,6 @@ INPUT = \
     ##
     ../components/esp32/include/esp_wifi.h \
     ../components/esp32/include/esp_wifi_types.h \
-    ../components/esp32/include/esp_wifi_crypto_types.h \
     ../components/esp32/include/esp_smartconfig.h \
     ../components/esp32/include/esp_now.h \
     ## Bluetooth - API Reference
