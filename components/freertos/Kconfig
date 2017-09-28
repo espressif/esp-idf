@@ -275,6 +275,23 @@ config TIMER_QUEUE_LENGTH
 
         For most uses the default value of 10 is OK.
 
+config FREERTOS_USE_TRACE_FACILITY
+    bool "Enable FreeRTOS trace facility"
+    default n
+    help
+        If enabled, configUSE_TRACE_FACILITY will be defined as 1 in FreeRTOS.
+        This will allow the usage of trace facility functions such as
+        uxTaskGetSystemState().
+
+config FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
+    bool "Enable FreeRTOS stats formatting functions"
+    depends on FREERTOS_USE_TRACE_FACILITY
+    default n
+    help
+        If enabled, configUSE_STATS_FORMATTING_FUNCTIONS will be defined as 1 in
+        FreeRTOS. This will allow the usage of stats formatting functions such 
+        as vTaskList().
+
 menuconfig FREERTOS_DEBUG_INTERNALS
     bool "Debug FreeRTOS internals"
     default n
