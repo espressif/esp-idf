@@ -154,9 +154,8 @@ TEST_CASE("Handle waking multiple tasks while scheduler suspended", "[freertos]"
     /* Suspend scheduler on this CPU */
     vTaskSuspendAll();
 
-    /* Give all the semaphores once. You might expect this will wake up tasks on the other
-       CPU (where the scheduler is not suspended) but it doesn't do this in the current implementation
-       - all tasks are added to xPendingReadyList and woken up later. See note in the freertos-smp docs.
+    /* Give all the semaphores once. This will wake tasks immediately on the other
+       CPU, but they are deferred here until the scheduler resumes.
      */
     for (int p = 0; p < portNUM_PROCESSORS; p++) {
         for (int t = 0; t < TASKS_PER_PROC; t++) {
@@ -164,20 +163,18 @@ TEST_CASE("Handle waking multiple tasks while scheduler suspended", "[freertos]"
         }
    }
 
-    ets_delay_us(2 * 1000); /* Can't vTaskDelay() while scheduler is suspended, but let other CPU do some things */
+    ets_delay_us(1000); /* Let the other CPU do some things */
 
     for (int p = 0; p < portNUM_PROCESSORS; p++) {
         for (int t = 0; t < TASKS_PER_PROC; t++) {
-            /* You might expect that this is '1' for the other CPU, but it's not (see comment above) */
-            ets_printf("Checking CPU %d task %d (expected 0 actual %d)\n", p, t, counters[p][t].counter);
-            TEST_ASSERT_EQUAL(0, counters[p][t].counter);
+            int expected = (p == UNITY_FREERTOS_CPU) ? 0 : 1; // Has run if it was on the other CPU
+            ets_printf("Checking CPU %d task %d (expected %d actual %d)\n", p, t, expected, counters[p][t].counter);
+            TEST_ASSERT_EQUAL(expected, counters[p][t].counter);
         }
     }
 
     /* Resume scheduler */
     xTaskResumeAll();
-
-    vTaskDelay(TASKS_PER_PROC * 2);
 
     /* Now the tasks on both CPUs should have been woken once and counted once. */
     for (int p = 0; p < portNUM_PROCESSORS; p++) {
