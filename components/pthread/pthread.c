@@ -72,7 +72,7 @@ static int IRAM_ATTR pthread_mutex_lock_internal(esp_pthread_mutex_t *mux, TickT
 esp_err_t esp_pthread_init(void)
 {
     vListInitialise((List_t *)&s_threads_list);
-    s_once_mux = xSemaphoreCreateMutex();
+    s_once_mux = xSemaphoreCreateRecursiveMutex();
     if (s_once_mux == NULL) {
         return ESP_ERR_NO_MEM;
     }
@@ -377,7 +377,9 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
     TaskHandle_t cur_task = xTaskGetCurrentTaskHandle();
     // do not take mutex if OS is not running yet
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED ||
-            !cur_task || xSemaphoreTake(s_once_mux, portMAX_DELAY) == pdTRUE)
+            // init_routine can call pthread_once for another objects, so use recursive mutex
+            // FIXME: behaviour is undefined if init_routine calls pthread_once for the same object in the current context
+            !cur_task || xSemaphoreTakeRecursive(s_once_mux, portMAX_DELAY) == pdTRUE)
     {
         if (!once_control->init_executed) {
             ESP_LOGV(TAG, "%s: call init_routine %p", __FUNCTION__, once_control);
@@ -385,7 +387,7 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
             once_control->init_executed = 1;
         }
         if (cur_task) {
-            xSemaphoreGive(s_once_mux);
+            xSemaphoreGiveRecursive(s_once_mux);
         }
     }
     else
