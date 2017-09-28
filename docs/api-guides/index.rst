@@ -20,3 +20,4 @@ API Guides
    Console Component <console>
    ROM debug console <romconsole>
    WiFi Driver <wifi>
+   External SPI-connected RAM <external-ram>

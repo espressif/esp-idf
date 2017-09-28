@@ -354,7 +354,7 @@ void esp_log_buffer_hex_internal(const char *tag, const void *buffer, uint16_t b
         } else {
             bytes_cur_line = buff_len;
         }
-        if ( !esp_ptr_byte_accesible(buffer) ) {
+        if ( !esp_ptr_byte_accessible(buffer) ) {
             //use memcpy to get around alignment issue
             memcpy( temp_buffer, buffer, (bytes_cur_line+3)/4*4 );
             ptr_line = temp_buffer;
@@ -386,7 +386,7 @@ void esp_log_buffer_char_internal(const char *tag, const void *buffer, uint16_t 
         } else {
             bytes_cur_line = buff_len;
         }
-        if ( !esp_ptr_byte_accesible(buffer) ) {
+        if ( !esp_ptr_byte_accessible(buffer) ) {
             //use memcpy to get around alignment issue
             memcpy( temp_buffer, buffer, (bytes_cur_line+3)/4*4 );
             ptr_line = temp_buffer;
@@ -421,7 +421,7 @@ void esp_log_buffer_hexdump_internal( const char *tag, const void *buffer, uint1
         } else {
             bytes_cur_line = buff_len;
         }
-        if ( !esp_ptr_byte_accesible(buffer) ) {
+        if ( !esp_ptr_byte_accessible(buffer) ) {
             //use memcpy to get around alignment issue
             memcpy( temp_buffer, buffer, (bytes_cur_line+3)/4*4 );
             ptr_line = temp_buffer;

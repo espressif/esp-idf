@@ -47,7 +47,7 @@ config SPIRAM_BOOT_INIT
 
 choice SPIRAM_USE
     prompt "SPI RAM access method"
-    default SPIRAM_USE_MEMMAP
+    default SPIRAM_USE_MALLOC
     help
         The SPI RAM can be accessed in multiple methods: by just having it available as an unmanaged
         memory region in the ESP32 memory map, by integrating it in the ESP32s heap as 'special' memory
@@ -59,8 +59,7 @@ config SPIRAM_USE_MEMMAP
 config SPIRAM_USE_CAPS_ALLOC
     bool "Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPIRAM)"
 config SPIRAM_USE_MALLOC
-    bool "Make RAM allocatable using malloc as well"
-    depends on TO_BE_DONE
+    bool "Make RAM allocatable using malloc() as well"
 endchoice
 
 choice SPIRAM_TYPE
@@ -117,6 +116,46 @@ config SPIRAM_CACHE_WORKAROUND
         This will also not use any bits of newlib that are located in ROM, opting for a version that is compiled
         with the workaround and located in flash instead.
 
+
+config SPIRAM_MALLOC_ALWAYSINTERNAL
+    int "Maximum malloc() size, in bytes, to always put in internal memory"
+    depends on SPIRAM_USE_MALLOC
+    default 16384
+    range 0 131072
+    help
+        If malloc() is capable of also allocating SPI-connected ram, its allocation strategy will prefer to allocate chunks less
+        than this size in internal memory, while allocations larger than this will be done from external RAM.
+        If allocation from the preferred region fails, an attempt is made to allocate from the non-preferred
+        region instead, so malloc() will not suddenly fail when either internal or external memory is full.
+
+config SPIRAM_MALLOC_RESERVE_INTERNAL
+    int "Reserve this amount of bytes for data that specifically needs to be in DMA or internal memory"
+    depends on SPIRAM_USE_MALLOC
+    default 32768
+    range 0 131072
+    help
+        Because the external/internal RAM allocation strategy is not always perfect, it sometimes may happen
+        that the internal memory is entirely filled up. This causes allocations that are specifically done in
+        internal memory, for example the stack for new tasks or memory to service DMA or have memory that's 
+        also available when SPI cache is down, to fail. This option reserves a pool specifically for requests 
+        like that; the memory in this pool is not given out when a normal malloc() is called.
+        
+        Set this to 0 to disable this feature.
+        
+        Note that because FreeRTOS stacks are forced to internal memory, they will also use this memory pool;
+        be sure to keep this in mind when adjusting this value.
+
+config SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+    bool "Allow external memory as an argument to xTaskCreateStatic"
+    default n
+    depends on SPIRAM_USE_MALLOC
+    help
+        Because some bits of the ESP32 code environment cannot be recompiled with the cache workaround, normally
+        tasks cannot be safely run with their stack residing in external memory; for this reason xTaskCreate and
+        friends always allocate stack in internal memory and xTaskCreateStatic will check if the memory passed
+        to it is in internal memory. If you have a task that needs a large amount of stack and does not call on
+        ROM code in any way (no direct calls, but also no Bluetooth/WiFi), you can try to disable this and use
+        xTaskCreateStatic to create the tasks stack in external memory.
 
 endmenu
 
@@ -776,6 +815,7 @@ config ESP32_WIFI_STATIC_TX_BUFFER
     bool "STATIC"
 config ESP32_WIFI_DYNAMIC_TX_BUFFER
     bool "DYNAMIC"
+    depends on !SPIRAM_USE_MALLOC
 endchoice
 
 config ESP32_WIFI_TX_BUFFER_TYPE

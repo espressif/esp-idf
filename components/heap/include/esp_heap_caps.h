@@ -32,6 +32,7 @@
 #define MALLOC_CAP_PID7             (1<<9)  ///< Memory must be mapped to PID7 memory space (PIDs are not currently used)
 #define MALLOC_CAP_SPIRAM           (1<<10) ///< Memory must be in SPI RAM
 #define MALLOC_CAP_INTERNAL         (1<<11) ///< Memory must be internal; specifically it should not disappear when flash/spiram cache is switched off
+#define MALLOC_CAP_DEFAULT          (1<<12) ///< Memory can be returned in a non-capability-specific memory allocation (e.g. malloc(), calloc()) call
 #define MALLOC_CAP_INVALID          (1<<31) ///< Memory can't be used / list end marker
 
 /**
@@ -172,3 +173,18 @@ void heap_caps_print_heap_info( uint32_t caps );
  * @return True if all heaps are valid, False if at least one heap is corrupt.
  */
 bool heap_caps_check_integrity(uint32_t caps, bool print_errors);
+
+
+
+/**
+ * @brief Enable malloc() in external memory and set limit below which 
+ *        malloc() attempts are placed in internal memory.
+ *
+ * When external memory is in use, the allocation strategy is to initially try to
+ * satisfy smaller allocation requests with internal memory and larger requests
+ * with external memory. This sets the limit between the two, as well as generally
+ * enabling allocation in external memory.
+ *
+ * @param limit       Limit, in bytes.
+ */
+void heap_caps_malloc_extmem_enable(size_t limit);

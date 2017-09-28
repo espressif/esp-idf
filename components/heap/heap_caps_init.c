@@ -230,6 +230,14 @@ esp_err_t heap_caps_add_region_with_caps(const uint32_t caps[], intptr_t start, 
         return ESP_ERR_INVALID_ARG;
     }
 
+    //Check if region overlaps the start and/or end of an existing region. If so, the
+    //region is invalid (or maybe added twice)
+    heap_t *heap;
+    SLIST_FOREACH(heap, &registered_heaps, next) {
+        if ( start <= heap->start &&  heap->start <=end ) return ESP_FAIL;
+        if ( start <= heap->end &&  heap->end <=end ) return ESP_FAIL;
+    }
+
     heap_t *p_new = malloc(sizeof(heap_t));
     if (p_new == NULL) {
         err = ESP_ERR_NO_MEM;
