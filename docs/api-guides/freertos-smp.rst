@@ -227,6 +227,14 @@ protection against simultaneous access. Consider using critical sections
 (disables interrupts) or semaphores (does not disable interrupts) instead when 
 protecting shared resources in ESP-IDF FreeRTOS.
 
+If the task running on the CPU with scheduler suspended calls a function (like
+``xSemaphoreGive``, ``xQueueSend``) that wakes another task, this task will not run
+until after ``vTaskResumeAll()`` is called. This is true even if the woken task is
+on the other CPU (where the scheduler is still running).
+
+In general, it's better to use other RTOS primitives like mutex semaphores to protect
+against data shared between tasks, rather than ``vTaskSuspendAll()``.
+
 .. _tick-interrupt-synchronicity:
 
 Tick Interrupt Synchronicity 

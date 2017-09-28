@@ -2177,7 +2177,6 @@ BaseType_t xAlreadyYielded = pdFALSE;
 					{
 						/* We can schedule the awoken task on this CPU. */
 						xYieldPending[xPortGetCoreID()] = pdTRUE;
-						break;
 					}
 					else
 					{
