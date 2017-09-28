@@ -1,9 +1,14 @@
 #include <iostream>
+#include <sstream>
 #include <thread>
 #include <mutex>
 #include "unity.h"
 
 #if __GTHREADS && __GTHREADS_CXX0X
+
+#define LOG_LOCAL_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+#include "esp_log.h"
+const static char *TAG = "pthread_test";
 
 static std::shared_ptr<int> global_sp;
 static std::mutex           mtx;
@@ -77,6 +82,22 @@ TEST_CASE("pthread CXX", "[pthread]")
     if (t4.joinable()) {
         std::cout << "Join thread " << std::hex << t4.get_id() << std::endl;
         t4.join();
+    }
+}
+
+static void task_test_sandbox(void *ignore) {
+    ESP_LOGI(TAG, "About to create a string stream");
+    std::stringstream ss;
+    ESP_LOGI(TAG, "About to write to string stream");
+    ss << "Hello World!";
+}
+
+TEST_CASE("pthread CXX 2", "[pthread]")
+{
+    std::thread t1(task_test_sandbox, (void *)NULL);
+    if (t1.joinable()) {
+        std::cout << "Join thread " << std::hex << t1.get_id() << std::endl;
+        t1.join();
     }
 }
 

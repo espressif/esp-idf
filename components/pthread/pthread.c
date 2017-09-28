@@ -232,6 +232,7 @@ int pthread_join(pthread_t thread, void **retval)
 {
     esp_pthread_t *pthread = (esp_pthread_t *)thread;
     int ret = 0;
+    bool wait = false;
 
     ESP_LOGV(TAG, "%s %p", __FUNCTION__, pthread);
 
@@ -257,6 +258,7 @@ int pthread_join(pthread_t thread, void **retval)
         } else {
             if (pthread->state == PTHREAD_TASK_STATE_RUN) {
                 pthread->join_task = xTaskGetCurrentTaskHandle();
+                wait = true;
             } else {
                 pthread_delete(pthread);
             }
@@ -264,7 +266,7 @@ int pthread_join(pthread_t thread, void **retval)
     }
     xSemaphoreGive(s_threads_mux);
 
-    if (ret == 0 && pthread->join_task) {
+    if (ret == 0 && wait) {
         xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
         if (xSemaphoreTake(s_threads_mux, portMAX_DELAY) != pdTRUE) {
             assert(false && "Failed to lock threads list!");
