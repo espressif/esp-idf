@@ -972,6 +972,12 @@ esp_err_t esp_ble_get_bond_device_list(int *dev_num, esp_ble_bond_dev_t *dev_lis
 
 /**
 * @brief           This function is to disconnect the physical connection of the peer device
+*                  gattc maybe have multiple virtual GATT server connections when multiple app_id registed.
+*                  esp_ble_gattc_close (esp_gatt_if_t gattc_if, uint16_t conn_id) only close one virtual GATT server connection.
+*                  if there exist other virtual GATT server connections, it does not disconnect the physical connection.
+*                  esp_ble_gap_disconnect(esp_bd_addr_t remote_device) disconnect the physical connection directly.
+*
+*
 *
 * @param[in]       remote_device : BD address of the peer device
 *

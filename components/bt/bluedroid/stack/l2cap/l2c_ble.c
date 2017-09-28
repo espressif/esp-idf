@@ -505,8 +505,8 @@ static BOOLEAN l2cble_start_conn_update (tL2C_LCB *p_lcb)
            up to what has been requested during connection establishement */
         if (p_lcb->conn_update_mask & L2C_BLE_NOT_DEFAULT_PARAM &&
                 /* current connection interval is greater than default min */
-                p_lcb->waiting_update_conn_min_interval > BTM_BLE_CONN_INT_MIN) {
-            /* use 7.5 ms as fast connection parameter, 0 slave latency */
+                p_lcb->current_used_conn_interval > BTM_BLE_CONN_INT_MAX_DEF) {
+            /* use 6 * 1.25 = 7.5 ms as fast connection parameter, 0 slave latency */
             min_conn_int = max_conn_int = BTM_BLE_CONN_INT_MIN;
             slave_latency = BTM_BLE_CONN_SLAVE_LATENCY_DEF;
             supervision_tout = BTM_BLE_CONN_TIMEOUT_DEF;
