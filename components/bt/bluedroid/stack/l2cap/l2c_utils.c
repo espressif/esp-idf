@@ -1633,13 +1633,16 @@ void l2cu_release_ccb (tL2C_CCB *p_ccb)
 
 
     fixed_queue_free(p_ccb->xmit_hold_q, osi_free_func);
+    p_ccb->xmit_hold_q = NULL;
 #if (CLASSIC_BT_INCLUDED == TRUE)
     fixed_queue_free(p_ccb->fcrb.srej_rcv_hold_q, osi_free_func);
     fixed_queue_free(p_ccb->fcrb.retrans_q, osi_free_func);
     fixed_queue_free(p_ccb->fcrb.waiting_for_ack_q, osi_free_func);
+    p_ccb->fcrb.srej_rcv_hold_q = NULL;
+    p_ccb->fcrb.retrans_q = NULL;
+    p_ccb->fcrb.waiting_for_ack_q = NULL;
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
-
-    p_ccb->xmit_hold_q = NULL;
+  
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
     l2c_fcr_cleanup (p_ccb);
