@@ -3039,7 +3039,7 @@ BaseType_t xTaskRemoveFromEventList( const List_t * const pxEventList )
 TCB_t *pxUnblockedTCB;
 BaseType_t xReturn;
 BaseType_t xTaskCanBeReady;
-UBaseType_t i;
+UBaseType_t i, uxTargetCPU;
 
 	/* THIS FUNCTION MUST BE CALLED FROM A CRITICAL SECTION.  It can also be
 	called from a critical section within an ISR. */
@@ -3067,6 +3067,7 @@ UBaseType_t i;
 	   the task is pinned to is running or because a scheduler is running on any CPU. */
 	xTaskCanBeReady = pdFALSE;
 	if ( pxUnblockedTCB->xCoreID == tskNO_AFFINITY ) {
+		uxTargetCPU = xPortGetCoreID();
 		for (i = 0; i < portNUM_PROCESSORS; i++) {
 			if ( uxSchedulerSuspended[ i ] == ( UBaseType_t ) pdFALSE ) {
 				xTaskCanBeReady = pdTRUE;
@@ -3074,7 +3075,9 @@ UBaseType_t i;
 			}
 		}
 	} else {
-		xTaskCanBeReady = uxSchedulerSuspended[ pxUnblockedTCB->xCoreID ] == ( UBaseType_t ) pdFALSE;
+		uxTargetCPU = pxUnblockedTCB->xCoreID;
+		xTaskCanBeReady = uxSchedulerSuspended[ uxTargetCPU ] == ( UBaseType_t ) pdFALSE;
+
 	}
 
 	if( xTaskCanBeReady )
@@ -3086,7 +3089,7 @@ UBaseType_t i;
 	{
 		/* The delayed and ready lists cannot be accessed, so hold this task
 		pending until the scheduler is resumed on this CPU. */
-		vListInsertEnd( &( xPendingReadyList[ xPortGetCoreID() ] ), &( pxUnblockedTCB->xEventListItem ) );
+		vListInsertEnd( &( xPendingReadyList[ uxTargetCPU ] ), &( pxUnblockedTCB->xEventListItem ) );
 	}
 
 	if ( tskCAN_RUN_HERE(pxUnblockedTCB->xCoreID) && pxUnblockedTCB->uxPriority >= pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )

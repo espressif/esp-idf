@@ -49,7 +49,7 @@ static void counter_task_fn(void *vp_config)
 
    In the FreeRTOS implementation, this exercises the xPendingReadyList for that core.
  */
-TEST_CASE("Handle pending context switch while scheduler disabled", "[freertos]")
+TEST_CASE("Scheduler disabled can handle a pending context switch on resume", "[freertos]")
 {
     isr_count = 0;
     isr_semaphore = xSemaphoreCreateMutex();
@@ -122,7 +122,7 @@ TEST_CASE("Handle pending context switch while scheduler disabled", "[freertos]"
    while scheduler is suspended, and should be started once the scheduler
    resumes.
 */
-TEST_CASE("Handle waking multiple tasks while scheduler suspended", "[freertos]")
+TEST_CASE("Scheduler disabled can wake multiple tasks on resume", "[freertos]")
 {
     #define TASKS_PER_PROC 4
     TaskHandle_t tasks[portNUM_PROCESSORS][TASKS_PER_PROC] = { 0 };
@@ -163,7 +163,7 @@ TEST_CASE("Handle waking multiple tasks while scheduler suspended", "[freertos]"
         }
    }
 
-    ets_delay_us(1000); /* Let the other CPU do some things */
+    ets_delay_us(200); /* Let the other CPU do some things */
 
     for (int p = 0; p < portNUM_PROCESSORS; p++) {
         for (int t = 0; t < TASKS_PER_PROC; t++) {
@@ -192,3 +192,58 @@ TEST_CASE("Handle waking multiple tasks while scheduler suspended", "[freertos]"
         }
     }
 }
+
+static volatile bool sched_suspended;
+static void suspend_scheduler_5ms_task_fn(void *ignore)
+{
+    vTaskSuspendAll();
+    sched_suspended = true;
+    for (int i = 0; i <5; i++) {
+        ets_delay_us(1000);
+    }
+    xTaskResumeAll();
+    sched_suspended = false;
+    vTaskDelete(NULL);
+}
+
+#ifndef CONFIG_FREERTOS_UNICORE
+/* If the scheduler is disabled on one CPU (A) with a task blocked on something, and a task
+   on B (where scheduler is running) wakes it, then the task on A should be woken on resume.
+*/
+TEST_CASE("Scheduler disabled on CPU B, tasks on A can wake", "[freertos]")
+{
+    TaskHandle_t counter_task;
+    SemaphoreHandle_t wake_sem = xSemaphoreCreateMutex();
+    xSemaphoreTake(wake_sem, 0);
+    counter_config_t count_config = {
+        .trigger_sem = wake_sem,
+        .counter = 0,
+    };
+    xTaskCreatePinnedToCore(counter_task_fn, "counter", 2048,
+                            &count_config, UNITY_FREERTOS_PRIORITY + 1,
+                            &counter_task, !UNITY_FREERTOS_CPU);
+
+    xTaskCreatePinnedToCore(suspend_scheduler_5ms_task_fn, "suspender", 2048,
+                            NULL, UNITY_FREERTOS_PRIORITY - 1,
+                            NULL, !UNITY_FREERTOS_CPU);
+
+    /* counter task is now blocked on other CPU, waiting for wake_sem, and we expect
+     that this CPU's scheduler will be suspended for 5ms shortly... */
+    while(!sched_suspended) { }
+
+    xSemaphoreGive(wake_sem);
+    ets_delay_us(1000);
+    // Bit of a race here if the other CPU resumes its scheduler, but 5ms is a long time... */
+    TEST_ASSERT(sched_suspended);
+    TEST_ASSERT_EQUAL(0, count_config.counter); // the other task hasn't woken yet, because scheduler is off
+    TEST_ASSERT(sched_suspended);
+
+    /* wait for the rest of the 5ms... */
+    while(sched_suspended) { }
+
+    ets_delay_us(100);
+    TEST_ASSERT_EQUAL(1, count_config.counter); // when scheduler resumes, counter task should immediately count
+
+    vTaskDelete(counter_task);
+}
+#endif
