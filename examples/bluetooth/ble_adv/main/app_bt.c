@@ -245,7 +245,7 @@ void app_main()
 
     /*
      * If call mem release here, also work. Input ESP_BT_MODE_CLASSIC_BT, the function will
-     * release the memory of classic bt mdoe.
+     * release the memory of classic bt mode.
      * esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
      *
      */
