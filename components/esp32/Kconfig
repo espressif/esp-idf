@@ -527,10 +527,11 @@ config INT_WDT_CHECK_CPU1
         Also detect if interrupts on CPU 1 are disabled for too long.
 
 config TASK_WDT
-    bool "Task watchdog"
+    bool "Initialize Task Watchdog on startup"
     default y
     help
         This watchdog timer can be used to make sure individual tasks are still running.
+        The Task Watchdog timer can be initialized at run time as well
 
 config TASK_WDT_PANIC
     bool "Invoke panic handler when Task Watchdog is triggered"
@@ -539,33 +540,46 @@ config TASK_WDT_PANIC
     help
         Normally, the Task Watchdog will only print out a warning if it detects it has not
         been fed. If this is enabled, it will invoke the panic handler instead, which
-        can then halt or reboot the chip.
+        can then halt or reboot the chip. This can also be configured at run time
+        by reinitializing the task watchdog.
 
 config TASK_WDT_TIMEOUT_S
-    int "Task watchdog timeout (seconds)"
+    int "Task watchdog timeout (ms)"
     depends on TASK_WDT
-    range 1 60
-    default 5
+    range 1 60000
+    default 5000
     help
-        Timeout for the task WDT, in seconds.
+        Timeout for the task WDT, in ms.
 
-config TASK_WDT_CHECK_IDLE_TASK
-    bool "Task watchdog watches CPU0 idle task"
+config TASK_WDT_CHECK_IDLE_TASK_CPU0
+    bool "Add CPU0 idle task to task watchdog on startup"
     depends on TASK_WDT
     default y
     help
-        With this turned on, the task WDT can detect if the idle task is not called within the task
-        watchdog timeout period. The idle task not being called usually is a symptom of another
+        With this turned on, the CPU0 idle task will be added to the task watchdog
+        on startup. Adding the idle task to the task watchdog allows for the detection
+        of CPU starvation. The idle task not being called is usually a symptom of another
         task hoarding the CPU. It is also a bad thing because FreeRTOS household tasks depend on the
-        idle task getting some runtime every now and then. Take Care: With this disabled, this
-        watchdog will trigger if no tasks register themselves within the timeout value.
+        idle task getting some runtime every now and then.
 
 config TASK_WDT_CHECK_IDLE_TASK_CPU1
-    bool "Task watchdog also watches CPU1 idle task"
-    depends on TASK_WDT_CHECK_IDLE_TASK && !FREERTOS_UNICORE
+    bool "Add CPU0 idle task to task watchdog on startup"
+    depends on TASK_WDT && !FREERTOS_UNICORE
     default y
     help
-        Also check the idle task that runs on CPU1.
+        With this turned on, the CPU1 idle task will also be added to the task watchdog
+        on startup.
+
+config TASK_WDT_LEGACY_BEHAVIOR
+    bool "Use legacy behavior for task watchdog"
+    depends on TASK_WDT
+    default n
+    help
+        Task wdt legacy behavior will add a task to the wdt list on its first
+        call to esp_task_wdt_feed(). Furthermore, tasks can only remove 
+        themselves from the wdt task list when calling esp_task_wdt_delete().
+        Therefore esp_task_wdt_delete() should be called with no parameters
+        when legacy behavior is enabled.
 
 #The brownout detector code is disabled (by making it depend on a nonexisting symbol) because the current revision of ESP32
 #silicon has a bug in the brown-out detector, rendering it unusable for resetting the CPU.
