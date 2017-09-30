@@ -22,7 +22,7 @@
 #include "bta_sys.h"
 #include "bta_dm_co.h"
 #include "bta_dm_ci.h"
-#include "btc_ble_storage.h"
+#include "btc_dm.h"
 #if (defined(BTIF_INCLUDED) && BTIF_INCLUDED == TRUE)
 #include "bt_utils.h"
 #if (BTM_OOB_INCLUDED == TRUE)
@@ -502,7 +502,7 @@ void bta_dm_co_ble_set_rsp_key_req(UINT8 rsp_key)
 void bta_dm_co_ble_set_max_key_size(UINT8 ble_key_size)
 {
 #if (SMP_INCLUDED == TRUE)
-    if(ble_key_size > 7 && ble_key_size >= 16) {
+    if(ble_key_size >= BTM_BLE_MIN_KEY_SIZE && ble_key_size <= BTM_BLE_MAX_KEY_SIZE) {
         bte_appl_cfg.ble_max_key_size = ble_key_size;
     } else {
         APPL_TRACE_ERROR("%s error:Invalid key size value, key_size =%d",__func__, ble_key_size);

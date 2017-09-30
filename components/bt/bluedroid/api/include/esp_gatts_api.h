@@ -514,11 +514,11 @@ esp_err_t esp_ble_gatts_set_attr_value(uint16_t attr_handle, uint16_t length, co
  * @param[out]  value:  Pointer to attribute value payload, the value cannot be modified by user
  *
  * @return
- *                  - ESP_OK : success
+ *                  - ESP_GATT_OK : success
  *                  - other  : failed
  *
  */
-esp_err_t esp_ble_gatts_get_attr_value(uint16_t attr_handle, uint16_t *length, const uint8_t **value);
+esp_gatt_status_t esp_ble_gatts_get_attr_value(uint16_t attr_handle, uint16_t *length, const uint8_t **value);
 
 
 /**

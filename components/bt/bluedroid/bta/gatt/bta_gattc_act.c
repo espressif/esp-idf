@@ -33,6 +33,7 @@
 #include "bta_gattc_int.h"
 #include "l2c_api.h"
 #include "l2c_int.h"
+#include "gatt_int.h"
 
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
 #include "bta_hh_int.h"
@@ -860,9 +861,6 @@ void bta_gattc_set_discover_st(tBTA_GATTC_SERV *p_srcb)
     tBTA_GATTC_CB   *p_cb = &bta_gattc_cb;
     UINT8   i;
 
-#if BLE_INCLUDED == TRUE
-    L2CA_EnableUpdateBleConnParams(p_srcb->server_bda, FALSE);
-#endif
     for (i = 0; i < BTA_GATTC_CLCB_MAX; i ++) {
         if (p_cb->clcb[i].p_srcb == p_srcb) {
             p_cb->clcb[i].status = BTA_GATT_OK;
@@ -992,11 +990,6 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 
     APPL_TRACE_DEBUG("bta_gattc_disc_cmpl conn_id=%d", p_clcb->bta_conn_id);
 
-#if BLE_INCLUDED == TRUE
-    if (p_clcb->transport == BTA_TRANSPORT_LE) {
-        L2CA_EnableUpdateBleConnParams(p_clcb->p_srcb->server_bda, TRUE);
-    }
-#endif
     p_clcb->p_srcb->state = BTA_GATTC_SERV_IDLE;
     p_clcb->disc_active = FALSE;
 
@@ -2410,7 +2403,12 @@ tBTA_GATTC_FIND_SERVICE_CB bta_gattc_register_service_change_notify(UINT16 conn_
         ccc_value.len = 2;
         ccc_value.value[0] = GATT_CLT_CONFIG_INDICATION;
         ccc_value.auth_req = GATT_AUTH_REQ_NONE;
-        write_status = GATTC_Write (conn_id, GATT_WRITE, &ccc_value);
+        if (gatt_is_clcb_allocated(conn_id)) {
+            APPL_TRACE_DEBUG("%s, GATTC_Write GATT_BUSY conn_id = %d", __func__, conn_id);
+            write_status = GATT_BUSY;
+        } else {
+            write_status = GATTC_Write (conn_id, GATT_WRITE, &ccc_value);
+        }
         if (write_status != GATT_SUCCESS) {
             start_find_ccc_timer = TRUE;
             result = SERVICE_CHANGE_WRITE_CCC_FAILED;

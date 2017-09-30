@@ -474,10 +474,10 @@ static esp_gatt_status_t btc_gatts_check_valid_attr_tab(esp_gatts_attr_db_t *gat
     return ESP_GATT_OK;
 }
 
-void btc_gatts_get_attr_value(uint16_t attr_handle, uint16_t *length, uint8_t **value)
+esp_gatt_status_t btc_gatts_get_attr_value(uint16_t attr_handle, uint16_t *length, uint8_t **value)
 {
     
-    BTA_GetAttributeValue(attr_handle, length, value);
+     return BTA_GetAttributeValue(attr_handle, length, value);
 }
 
 

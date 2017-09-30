@@ -61,6 +61,7 @@ static tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
 static tBTM_BLE_CTRL_FEATURES_CBACK    *p_ctrl_le_feature_rd_cmpl_cback = NULL;
 #endif
 
+tBTM_CallbackFunc conn_param_update_cb;
 /*******************************************************************************
 **  Local functions
 *******************************************************************************/
@@ -220,6 +221,19 @@ const UINT8 btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX][2] = {
 /* check LE combo state supported */
 #define BTM_LE_STATES_SUPPORTED(x, y, z)      ((x)[(z)] & (y))
 
+/*******************************************************************************
+**
+** Function         BTM_BleRegiseterConnParamCallback
+**
+** Description      register connection parameters update callback func
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTM_BleRegiseterConnParamCallback(tBTM_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb)
+{
+    conn_param_update_cb.update_conn_param_cb = update_conn_param_cb;
+}
 
 /*******************************************************************************
 **
@@ -640,10 +654,16 @@ void BTM_BleEnableMixedPrivacyMode(BOOLEAN mixed_on)
 ** Returns          BOOLEAN privacy mode set success; otherwise failed.
 **
 *******************************************************************************/
-BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode)
+BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode, tBTM_SET_LOCAL_PRIVACY_CBACK *set_local_privacy_cback)
 {
 #if BLE_PRIVACY_SPT == TRUE
     tBTM_BLE_CB  *p_cb = &btm_cb.ble_ctr_cb;
+    tBTM_LE_RANDOM_CB *random_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
+    if (random_cb){
+        random_cb->set_local_privacy_cback = set_local_privacy_cback;
+    }else{
+        BTM_TRACE_ERROR("%s,random_cb = NULL", __func__);
+    }
 
     BTM_TRACE_EVENT ("%s\n", __func__);
 
@@ -657,6 +677,10 @@ BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode)
     if (!privacy_mode) { /* if privacy disabled, always use public address */
         p_cb->addr_mgnt_cb.own_addr_type = BLE_ADDR_PUBLIC;
         p_cb->privacy_mode = BTM_PRIVACY_NONE;
+        if (random_cb && random_cb->set_local_privacy_cback){
+            (*random_cb->set_local_privacy_cback)(BTM_SET_PRIVACY_SUCCESS);
+            random_cb->set_local_privacy_cback = NULL;
+        }
     } else { /* privacy is turned on*/
         /* always set host random address, used when privacy 1.1 or priavcy 1.2 is disabled */
         p_cb->addr_mgnt_cb.own_addr_type = BLE_ADDR_RANDOM;

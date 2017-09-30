@@ -490,9 +490,9 @@ void BTA_SetAttributeValue(UINT16 attr_handle, UINT16 length, UINT8 *value)
 
 }
 
-void BTA_GetAttributeValue(UINT16 attr_handle, UINT16 *length, UINT8 **value)
+tBTA_GATT_STATUS BTA_GetAttributeValue(UINT16 attr_handle, UINT16 *length, UINT8 **value)
 {
-    bta_gatts_get_attr_value(attr_handle, length, value);
+    return bta_gatts_get_attr_value(attr_handle, length, value);
 }
 
 /*******************************************************************************

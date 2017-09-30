@@ -60,6 +60,10 @@ static void btm_gen_resolve_paddr_cmpl(tSMP_ENC *p)
         btsnd_hcic_ble_set_random_addr(p_cb->private_addr);
 
         p_cb->own_addr_type = BLE_ADDR_RANDOM;
+        if (p_cb->set_local_privacy_cback){
+            (*p_cb->set_local_privacy_cback)(BTM_SET_PRIVACY_SUCCESS);
+            p_cb->set_local_privacy_cback = NULL;
+        }
 
         /* start a periodical timer to refresh random addr */
         btu_stop_timer_oneshot(&p_cb->raddr_timer_ent);
@@ -73,6 +77,10 @@ static void btm_gen_resolve_paddr_cmpl(tSMP_ENC *p)
     } else {
         /* random address set failure */
         BTM_TRACE_DEBUG("set random address failed");
+        if (p_cb->set_local_privacy_cback){
+            (*p_cb->set_local_privacy_cback)(BTM_SET_PRIVACY_FAIL);
+            p_cb->set_local_privacy_cback = NULL;
+        }
     }
 }
 /*******************************************************************************

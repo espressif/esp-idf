@@ -506,7 +506,7 @@ void bta_gatts_set_attr_value(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_
     UINT16          service_id = p_srvc_cb->service_id;
     tBTA_GATTS      cb_data;
     tBTA_GATT_STATUS gatts_status;
-    gatts_status = GATTS_SetAttributeValue(p_msg->api_add_char_descr.hdr.layer_specific,
+    gatts_status = GATTS_SetAttributeValue(p_msg->api_set_val.hdr.layer_specific,
                                            p_msg->api_set_val.length,
                                            p_msg->api_set_val.value);
 
@@ -515,14 +515,19 @@ void bta_gatts_set_attr_value(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_
     cb_data.attr_val.attr_id = p_msg->api_set_val.hdr.layer_specific;
     cb_data.attr_val.status = gatts_status;
 
+    if (p_msg->api_set_val.value  != NULL){
+        GKI_freebuf(p_msg->api_set_val.value);
+    }
+
     if (p_rcb->p_cback) {
         (*p_rcb->p_cback)(BTA_GATTS_SET_ATTR_VAL_EVT, &cb_data);
     }
 }
 
-void bta_gatts_get_attr_value(UINT16 attr_handle, UINT16 *length, UINT8 **value)
+tGATT_STATUS bta_gatts_get_attr_value(UINT16 attr_handle, UINT16 *length, UINT8 **value)
 {
-    GATTS_GetAttributeValue(attr_handle, length, value);
+
+   return GATTS_GetAttributeValue(attr_handle, length, value);
 }
 
 /*******************************************************************************

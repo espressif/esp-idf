@@ -444,6 +444,7 @@ typedef struct {
 typedef struct {
     BT_HDR                  hdr;
     BOOLEAN                 privacy_enable;
+    tBTA_SET_LOCAL_PRIVACY_CBACK *set_local_privacy_cback;
 } tBTA_DM_API_LOCAL_PRIVACY;
 
 /* set scan parameter for BLE connections */
@@ -644,7 +645,6 @@ typedef struct {
     UINT16      max_int;
     UINT16      latency;
     UINT16      timeout;
-    tBTA_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb;
 } tBTA_DM_API_UPDATE_CONN_PARAM;
 
 #if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
