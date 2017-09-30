@@ -1506,9 +1506,11 @@ tL2C_CCB *l2cu_allocate_ccb (tL2C_LCB *p_lcb, UINT16 cid)
     p_ccb->tx_mps                    = L2CAP_FCR_TX_BUF_SIZE - 32;
 
     p_ccb->xmit_hold_q  = fixed_queue_new(SIZE_MAX);
+#if (CLASSIC_BT_INCLUDED == TRUE)
     p_ccb->fcrb.srej_rcv_hold_q = fixed_queue_new(SIZE_MAX);
     p_ccb->fcrb.retrans_q = fixed_queue_new(SIZE_MAX);
     p_ccb->fcrb.waiting_for_ack_q = fixed_queue_new(SIZE_MAX);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
     p_ccb->cong_sent    = FALSE;
     p_ccb->buff_quota   = 2;                /* This gets set after config */
@@ -1632,6 +1634,15 @@ void l2cu_release_ccb (tL2C_CCB *p_ccb)
 
     fixed_queue_free(p_ccb->xmit_hold_q, osi_free_func);
     p_ccb->xmit_hold_q = NULL;
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    fixed_queue_free(p_ccb->fcrb.srej_rcv_hold_q, osi_free_func);
+    fixed_queue_free(p_ccb->fcrb.retrans_q, osi_free_func);
+    fixed_queue_free(p_ccb->fcrb.waiting_for_ack_q, osi_free_func);
+    p_ccb->fcrb.srej_rcv_hold_q = NULL;
+    p_ccb->fcrb.retrans_q = NULL;
+    p_ccb->fcrb.waiting_for_ack_q = NULL;
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+  
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
     l2c_fcr_cleanup (p_ccb);
