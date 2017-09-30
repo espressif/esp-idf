@@ -181,6 +181,7 @@ typedef UINT8 tBTA_GATT_STATUS;
 #define BTA_GATTC_ADV_VSC_EVT           34 /* ADV VSC event */
 #define BTA_GATTC_CONNECT_EVT           35 /* GATTC CONNECT  event */
 #define BTA_GATTC_DISCONNECT_EVT        36 /* GATTC DISCONNECT  event */
+#define BTA_GATTC_READ_MUTIPLE_EVT      37 /* GATTC Read mutiple event */
 
 typedef UINT8 tBTA_GATTC_EVT;
 
