@@ -74,10 +74,12 @@ may decide to use DMA for transfers, so these buffers should be allocated in DMA
 
 The amount of data written to the buffers is limited by the ``length`` member of the transaction structure:
 the driver will never read/write more data than indicated there. The ``length`` cannot define the actual
-length of the SPI transaction; this is determined by the master as it drives the clock and CS lines. In
-case the length of the transmission is larger than the buffer length, only the start of the transmission
-will be sent and received. In case the transmission length is shorter than the buffer length, only data up 
-to the length of the buffer will be exchanged.
+length of the SPI transaction; this is determined by the master as it drives the clock and CS lines. The actual length
+transferred can be read from the ``trans_len`` member of the ``spi_slave_transaction_t`` structure after transaction.
+In case the length of the transmission is larger than the buffer length, only the start of the transmission
+will be sent and received, and the ``trans_len`` is set to ``length`` instead of the actual length. It's recommended to
+set ``length`` longer than the maximum length expected if the ``trans_len`` is required.  In case the transmission 
+length is shorter than the buffer length, only data up to the length of the buffer will be exchanged.
 
 Warning: Due to a design peculiarity in the ESP32, if the amount of bytes sent by the master or the length 
 of the transmission queues in the slave driver, in bytes, is not both larger than eight and dividable by 

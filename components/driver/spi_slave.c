@@ -289,12 +289,20 @@ static void IRAM_ATTR spi_intr(void *arg)
     if (!host->hw->slave.trans_done) return;
 
     if (host->cur_trans) {
+        //when data of cur_trans->length are all sent, the slv_rdata_bit
+        //will be the length sent-1 (i.e. cur_trans->length-1 ), otherwise 
+        //the length sent.
+        host->cur_trans->trans_len = host->hw->slv_rd_bit.slv_rdata_bit;
+        if ( host->cur_trans->trans_len == host->cur_trans->length - 1 ) {
+            host->cur_trans->trans_len++;
+        }
+
         if (host->dma_chan == 0 && host->cur_trans->rx_buffer) {
             //Copy result out
             uint32_t *data = host->cur_trans->rx_buffer;
-            for (int x = 0; x < host->cur_trans->length; x += 32) {
+            for (int x = 0; x < host->cur_trans->trans_len; x += 32) {
                 uint32_t word;
-                int len = host->cur_trans->length - x;
+                int len = host->cur_trans->trans_len - x;
                 if (len > 32) len = 32;
                 word = host->hw->data_buf[(x / 32)];
                 memcpy(&data[x / 32], &word, (len + 7) / 8);
