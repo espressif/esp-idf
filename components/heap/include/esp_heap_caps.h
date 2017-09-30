@@ -81,6 +81,21 @@ void heap_caps_free( void *ptr);
  */
 void *heap_caps_realloc( void *ptr, size_t size, int caps);
 
+/**
+ * @brief Allocate a chunk of memory which has the given capabilities. The initialized value in the memory is set to zero.
+ *
+ * Equivalent semantics to libc calloc(), for capability-aware memory.
+ *
+ * In IDF, ``calloc(p)`` is equivalent to ``heaps_caps_calloc(p, MALLOC_CAP_8BIT)``.
+ *
+ * @param n    Number of continuing chunks of memory to allocate
+ * @param size Size, in bytes, of a chunk of memory to allocate
+ * @param caps        Bitwise OR of MALLOC_CAP_* flags indicating the type
+ *                    of memory to be returned
+ *
+ * @return A pointer to the memory allocated on success, NULL on failure
+ */
+void *heap_caps_calloc(size_t n, size_t size, uint32_t caps);
 
 /**
  * @brief Get the total free size of all the regions that have the given capabilities
@@ -224,3 +239,40 @@ bool heap_caps_check_integrity_addr(intptr_t addr, bool print_errors);
  * @param limit       Limit, in bytes.
  */
 void heap_caps_malloc_extmem_enable(size_t limit);
+
+/**
+ * @brief Allocate a chunk of memory as preference in decreasing order.
+ *
+ * @attention The variable parameters are bitwise OR of MALLOC_CAP_* flags indicating the type of memory.
+ *            This API prefers to allocate memory with the first parameter. If failed, allocate memory with
+ *            the next parameter. It will try in this order until allocating a chunk of memory successfully
+ *            or fail to allocate memories with any of the parameters.
+ *
+ * @param size Size, in bytes, of the amount of memory to allocate
+ * @param num Number of variable paramters
+ *
+ * @return A pointer to the memory allocated on success, NULL on failure
+ */
+void *heap_caps_malloc_prefer( size_t size, size_t num, ... );
+
+/**
+ * @brief Allocate a chunk of memory as preference in decreasing order.
+ *
+ * @param ptr Pointer to previously allocated memory, or NULL for a new allocation.
+ * @param size Size of the new buffer requested, or 0 to free the buffer.
+ * @param num Number of variable paramters
+ *
+ * @return Pointer to a new buffer of size 'size', or NULL if allocation failed.
+ */
+void *heap_caps_realloc_prefer( void *ptr, size_t size, size_t num, ... );
+
+/**
+ * @brief Allocate a chunk of memory as preference in decreasing order.
+ *
+ * @param n    Number of continuing chunks of memory to allocate
+ * @param size Size, in bytes, of a chunk of memory to allocate
+ * @param num  Number of variable paramters
+ *
+ * @return A pointer to the memory allocated on success, NULL on failure
+ */
+void *heap_caps_calloc_prefer( size_t n, size_t size, size_t num, ... );

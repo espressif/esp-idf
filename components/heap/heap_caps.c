@@ -188,6 +188,60 @@ IRAM_ATTR void *heap_caps_realloc_default( void *ptr, size_t size )
     }
 }
 
+/*
+ Memory allocation as preference in decreasing order.
+ */
+IRAM_ATTR void *heap_caps_malloc_prefer( size_t size, size_t num, ... )
+{
+    va_list argp;
+    va_start( argp, num );
+    void *r = NULL;
+    while (num--) {
+        uint32_t caps = va_arg( argp, uint32_t );
+        r = heap_caps_malloc( size, caps );
+        if (r != NULL) {
+            break;
+        }
+    }
+    va_end( argp );
+    return r;
+}
+
+/*
+ Memory reallocation as preference in decreasing order.
+ */
+IRAM_ATTR void *heap_caps_realloc_prefer( void *ptr, size_t size, size_t num, ... )
+{
+    va_list argp;
+    va_start( argp, num );
+    void *r = NULL;
+    while (num--) {
+        uint32_t caps = va_arg( argp, uint32_t );
+        r = heap_caps_realloc( ptr, size, caps );
+        if (r != NULL || size == 0) {
+            break;
+        }
+    }
+    va_end( argp );
+    return r;
+}
+
+/*
+ Memory callocation as preference in decreasing order.
+ */
+IRAM_ATTR void *heap_caps_calloc_prefer( size_t n, size_t size, size_t num, ... )
+{
+    va_list argp;
+    va_start( argp, num );
+    void *r = NULL;
+    while (num--) {
+        uint32_t caps = va_arg( argp, uint32_t );
+        r = heap_caps_calloc( n, size, caps );
+        if (r != NULL) break;
+    }
+    va_end( argp );
+    return r;
+}
 
 /* Find the heap which belongs to ptr, or return NULL if it's
    not in any heap.
@@ -267,6 +321,16 @@ IRAM_ATTR void *heap_caps_realloc( void *ptr, size_t size, int caps)
         return new_p;
     }
     return NULL;
+}
+
+IRAM_ATTR void *heap_caps_calloc( size_t n, size_t size, uint32_t caps)
+{
+    void *r;
+    r = heap_caps_malloc(n*size, caps);
+    if (r != NULL) {
+        bzero(r, n*size);
+    }
+    return r;
 }
 
 size_t heap_caps_get_free_size( uint32_t caps )

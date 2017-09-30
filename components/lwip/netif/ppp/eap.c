@@ -1215,7 +1215,7 @@ name_of_pn_file()
 	}
 	file = _PATH_PSEUDONYM;
 	pl = strlen(user) + strlen(file) + 2;
-	path = malloc(pl);
+	path = mem_malloc(pl);
 	if (path == NULL)
 		return (NULL);
 	(void) slprintf(path, pl, "%s/%s", user, file);

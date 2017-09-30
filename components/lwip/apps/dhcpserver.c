@@ -800,13 +800,13 @@ static s16_t parse_msg(struct dhcps_msg *m, u16_t len)
             pdhcps_pool = NULL;
             pnode = NULL;
         } else {
-            pdhcps_pool = (struct dhcps_pool *)malloc(sizeof(struct dhcps_pool));
+            pdhcps_pool = (struct dhcps_pool *)mem_malloc(sizeof(struct dhcps_pool));
             memset(pdhcps_pool , 0x00 , sizeof(struct dhcps_pool));
 
             pdhcps_pool->ip.addr = client_address.addr;
             memcpy(pdhcps_pool->mac, m->chaddr, sizeof(pdhcps_pool->mac));
             pdhcps_pool->lease_timer = lease_timer;
-            pnode = (list_node *)malloc(sizeof(list_node));
+            pnode = (list_node *)mem_malloc(sizeof(list_node));
             memset(pnode , 0x00 , sizeof(list_node));
 
             pnode->pnode = pdhcps_pool;
@@ -905,7 +905,7 @@ static void handle_dhcp(void *arg,
         malloc_len = p->tot_len;
     }
 
-    pmsg_dhcps = (struct dhcps_msg *)malloc(malloc_len);
+    pmsg_dhcps = (struct dhcps_msg *)mem_malloc(malloc_len);
     if (NULL == pmsg_dhcps) {
         pbuf_free(p);
         return;
