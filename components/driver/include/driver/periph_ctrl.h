@@ -56,6 +56,7 @@ typedef enum {
  *
  * @param[in]  periph    :  Peripheral module name
  *
+ * Clock for the module will be ungated, and reset de-asserted.
  *
  * @return     NULL
  *
@@ -67,11 +68,27 @@ void periph_module_enable(periph_module_t periph);
  *
  * @param[in]  periph    :  Peripheral module name
  *
+ * Clock for the module will be gated, reset asserted.
  *
  * @return     NULL
  *
  */
 void periph_module_disable(periph_module_t periph);
+
+/**
+ * @brief      reset peripheral module
+ *
+ * @param[in]  periph    :  Peripheral module name
+ *
+ * Reset will asserted then de-assrted for the peripheral.
+ *
+ * Calling this function does not enable or disable the clock for the module.
+ *
+ * @return     NULL
+ *
+ */
+void periph_module_reset(periph_module_t periph);
+
 
 #ifdef __cplusplus
 }
