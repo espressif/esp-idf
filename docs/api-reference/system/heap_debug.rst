@@ -40,7 +40,7 @@ The heap implementation (``multi_heap.c``, etc.) includes a lot of assertions wh
 
 If a heap integrity assertion fails, a line will be printed like ``CORRUPT HEAP: multi_heap.c:225 detected at 0x3ffbb71c``. The memory address which is printed is the address of the heap structure which has corrupt content.
 
-It's also possible to manually check heap integrity by calling :cpp:func:`heap_caps_check_integrity` function. This function checks all of requested heap memory for integrity, and can be used even if assertions are disabled. If the integrity check prints an error, it will also contain the address(es) of corrupt heap structures.
+It's also possible to manually check heap integrity by calling :cpp:func:`heap_caps_check_integrity_all` or related functions. This function checks all of requested heap memory for integrity, and can be used even if assertions are disabled. If the integrity check prints an error, it will also contain the address(es) of corrupt heap structures.
 
 Finding Heap Corruption
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -49,7 +49,7 @@ Memory corruption can be one of the hardest classes of bugs to find and fix, as 
 
 - A crash with a ``CORRUPT HEAP:`` message will usually include a stack trace, but this stack trace is rarely useful. The crash is the symptom of memory corruption when the system realises the heap is corrupt, but usually the corruption happened elsewhere and earlier in time.
 - Increasing the Heap memory debugging `Configuration`_ level to "Light impact" or "Comprehensive" can give you a more accurate message with the first corrupt memory address.
-- Adding regular calls to :cpp:func:`heap_caps_check_integrity` in your code will help you pin down the exact time that the corruption happened. You can move these checks around to "close in on" the section of code that corrupted the heap.
+- Adding regular calls to :cpp:func:`heap_caps_check_integrity_all` or :cpp:func:`heap_caps_check_integrity_addr` in your code will help you pin down the exact time that the corruption happened. You can move these checks around to "close in on" the section of code that corrupted the heap.
 - Based on the memory address which is being corrupted, you can use :ref:`JTAG debugging <jtag-debugging-introduction>` to set a watchpoint on this address and have the CPU halt when it is written to.
 - If you don't have JTAG, but you do know roughly when the corruption happens, then you can set a watchpoint in software just beforehand via :cpp:func:`esp_set_watchpoint`. A fatal exception will occur when the watchpoint triggers. For example ``esp_set_watchpoint(0, (void *)addr, 4, ESP_WATCHPOINT_STORE``. Note that watchpoints are per-CPU and are set on the current running CPU only, so if you don't know which CPU is corrupting memory then you will need to call this function on both CPUs.
 - For buffer overflows, `heap tracing`_ in ``HEAP_TRACE_ALL`` mode lets you see which callers are allocating from heap. If you can find the function which allocates memory with an address immediately before the address which is corrupted, this will probably be the function which overflows the buffer.
@@ -75,7 +75,7 @@ At this level, heap memory is additionally "poisoned" with head and tail "canary
 
 "Basic" heap corruption checks can also detect most out of bounds writes, but this setting is more precise as even a single byte overrun will always be detected. With Basic heap checks, the number of overrun bytes before a failure is detected will depend on the properties of the heap.
 
-Similar to other heap checks, these "canary bytes" are checked via assertion whenever memory is freed and can also be checked manually via :cpp:func:`heap_caps_check_integrity`.
+Similar to other heap checks, these "canary bytes" are checked via assertion whenever memory is freed and can also be checked manually via :cpp:func:`heap_caps_check_integrity` or related functions.
 
 This level increases memory usage, each individual allocation will use 9 to 12 additional bytes of memory (depending on alignment).
 

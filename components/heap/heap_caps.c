@@ -359,3 +359,17 @@ bool heap_caps_check_integrity(uint32_t caps, bool print_errors)
 
     return valid;
 }
+
+bool heap_caps_check_integrity_all(bool print_errors)
+{
+    return heap_caps_check_integrity(MALLOC_CAP_INVALID, print_errors);
+}
+
+bool heap_caps_check_integrity_addr(intptr_t addr, bool print_errors)
+{
+    heap_t *heap = find_containing_heap((void *)addr);
+    if (heap == NULL) {
+        return false;
+    }
+    return multi_heap_check(heap->heap, print_errors);
+}
