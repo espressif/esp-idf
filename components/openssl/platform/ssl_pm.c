@@ -367,6 +367,13 @@ void ssl_pm_set_fd(SSL *ssl, int fd, int mode)
     ssl_pm->fd.fd = fd;
 }
 
+void ssl_pm_set_hostname(SSL *ssl, const char *hostname)
+{
+    struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
+
+    mbedtls_ssl_set_hostname(&ssl_pm->ssl, hostname);
+}
+
 int ssl_pm_get_fd(const SSL *ssl, int mode)
 {
     struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;

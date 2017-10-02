@@ -259,6 +259,8 @@ struct ssl_method_func_st {
 
     void (*ssl_set_fd)(SSL *ssl, int fd, int mode);
 
+    void (*ssl_set_hostname)(SSL *ssl, const char *hostname);
+
     int (*ssl_get_fd)(const SSL *ssl, int mode);
 
     void (*ssl_set_bufflen)(SSL *ssl, int len);

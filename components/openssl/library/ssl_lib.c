@@ -735,6 +735,19 @@ int SSL_set_wfd(SSL *ssl, int fd)
 }
 
 /**
+ * @brief SET TLS Hostname
+ */
+int SSL_set_tlsext_host_name(SSL* ssl, const char *hostname)
+{
+     SSL_ASSERT1(ssl);
+     SSL_ASSERT1(hostname);
+
+     SSL_METHOD_CALL(set_hostname, ssl, hostname);
+
+     return 1;
+}
+
+/**
  * @brief get SSL version
  */
 int SSL_version(const SSL *ssl)
@@ -1593,3 +1606,4 @@ int SSL_CTX_set_alpn_protos(SSL_CTX *ctx, const unsigned char *protos, unsigned 
      ctx->ssl_alpn.alpn_list[i] = NULL;
      return 0;
 }
+

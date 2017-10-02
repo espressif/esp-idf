@@ -146,6 +146,18 @@ int SSL_shutdown(SSL *ssl);
 int SSL_set_fd(SSL *ssl, int fd);
 
 /**
+ * @brief Set the hostname for SNI
+ *
+ * @param ssl - the SSL context point
+ * @param hostname  - pointer to the hostname
+ *
+ * @return result
+ *     1 : OK
+ *     0 : failed
+ */
+int SSL_set_tlsext_host_name(SSL* ssl, const char *hostname);
+
+/**
  * @brief These functions load the private key into the SSL_CTX or SSL object
  *
  * @param ctx  - the SSL context point
