@@ -433,6 +433,7 @@ sys_init(void)
     if (ERR_OK != sys_mutex_new(&g_lwip_protect_mutex)) {
         ESP_LOGE(TAG, "sys_init: failed to init lwip protect mutex\n");
     }
+    esp_vfs_lwip_sockets_register();
 }
 
 /*-----------------------------------------------------------------------------------*/
