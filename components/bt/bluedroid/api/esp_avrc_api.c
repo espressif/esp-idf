@@ -27,7 +27,7 @@ esp_err_t esp_avrc_ct_register_callback(esp_avrc_ct_cb_t callback)
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
-        
+
     if (callback == NULL) {
         return ESP_FAIL;
     }
@@ -43,7 +43,7 @@ esp_err_t esp_avrc_ct_init(void)
     }
 
     btc_msg_t msg;
-    
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_AVRC;
     msg.act = BTC_AVRC_CTRL_API_INIT_EVT;
@@ -60,13 +60,37 @@ esp_err_t esp_avrc_ct_deinit(void)
     }
 
     btc_msg_t msg;
-    
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_AVRC;
     msg.act = BTC_AVRC_CTRL_API_DEINIT_EVT;
 
     /* Switch to BTC context */
     bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL);
+    return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+}
+
+/* Request metadata from CT */
+esp_err_t esp_avrc_ct_send_metadata_cmd(uint8_t tl, uint32_t* attr_list, uint8_t attr_num)
+{
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_AVRC;
+    msg.act = BTC_AVRC_STATUS_API_SND_META_EVT;
+
+    btc_avrc_args_t arg;
+    memset(&arg, 0, sizeof(btc_avrc_args_t));
+
+    arg.md_cmd.tl = tl;
+    arg.md_cmd.attr_list = attr_list;
+    arg.md_cmd.attr_num = attr_num;
+
+    /* Switch to BTC context */
+    bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_avrc_args_t), NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -87,7 +111,7 @@ esp_err_t esp_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code, uint8_t
     arg.pt_cmd.tl = tl;
     arg.pt_cmd.key_code = key_code;
     arg.pt_cmd.key_state = key_state;
-    
+
     /* Switch to BTC context */
     bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_avrc_args_t), NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;

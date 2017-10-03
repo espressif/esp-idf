@@ -39,7 +39,8 @@ typedef enum {
 typedef enum {
     BTC_AVRC_CTRL_API_INIT_EVT = 0,
     BTC_AVRC_CTRL_API_DEINIT_EVT,
-    BTC_AVRC_CTRL_API_SND_PTCMD_EVT
+    BTC_AVRC_CTRL_API_SND_PTCMD_EVT,
+    BTC_AVRC_STATUS_API_SND_META_EVT
 } btc_avrc_act_t;
 
 typedef struct {
@@ -48,14 +49,16 @@ typedef struct {
     uint8_t key_state;
 } pt_cmd_t;
 
+typedef struct {
+  uint8_t tl;
+  uint32_t* attr_list;
+  uint8_t attr_num;
+} md_cmd_t;
+
 /* btc_avrc_args_t */
 typedef union {
-    // BTC_AVRC_CTRL_API_SND_PT_CMD_EVT
-    struct {
-        uint8_t tl;
-        uint8_t key_code;
-        uint8_t key_state;
-    } pt_cmd;
+  pt_cmd_t pt_cmd;
+  md_cmd_t md_cmd;
 } btc_avrc_args_t;
 
 /** BT-RC Controller callback structure. */

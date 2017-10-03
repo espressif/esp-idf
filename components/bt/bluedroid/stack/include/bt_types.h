@@ -276,6 +276,7 @@ typedef struct {
 /********************************************************************************
 ** Macros to get and put bytes to and from a stream (Big Endian format)
 */
+#define UINT64_TO_BE_STREAM(p, u64) {*(p)++ = (UINT8)((u64) >> 56); *(p)++ = (UINT8)((u64) >> 48); *(p)++ = (UINT8)((u64) >> 40); *(p)++ = (UINT8)((u64) >> 32); *(p)++ = (UINT8)((u64) >> 24);  *(p)++ = (UINT8)((u64) >> 16); *(p)++ = (UINT8)((u64) >> 8); *(p)++ = (UINT8)(u64); }
 #define UINT32_TO_BE_STREAM(p, u32) {*(p)++ = (UINT8)((u32) >> 24);  *(p)++ = (UINT8)((u32) >> 16); *(p)++ = (UINT8)((u32) >> 8); *(p)++ = (UINT8)(u32); }
 #define UINT24_TO_BE_STREAM(p, u24) {*(p)++ = (UINT8)((u24) >> 16); *(p)++ = (UINT8)((u24) >> 8); *(p)++ = (UINT8)(u24);}
 #define UINT16_TO_BE_STREAM(p, u16) {*(p)++ = (UINT8)((u16) >> 8); *(p)++ = (UINT8)(u16);}

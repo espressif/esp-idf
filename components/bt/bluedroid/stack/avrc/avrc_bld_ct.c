@@ -175,6 +175,41 @@ static BT_HDR *avrc_bld_init_cmd_buffer(tAVRC_COMMAND *p_cmd)
     return p_pkt;
 }
 
+ /*******************************************************************************
+ **
+ ** Function         avrc_bld_get_element_attr_cmd
+ **
+ ** Description      This function builds the Get Element Attribute command.
+ **
+ ** Returns          AVRC_STS_NO_ERROR, if the command is built successfully
+ **                  Otherwise, the error code.
+ **
+ *******************************************************************************/
+ static tAVRC_STS avrc_bld_get_element_attr_cmd (tAVRC_GET_ELEM_ATTRS_CMD *p_cmd, BT_HDR *p_pkt)
+ {
+    int i;
+    UINT8   *p_data, *p_start;
+
+    AVRC_TRACE_API("avrc_bld_get_element_attr_cmd num_attr: %d", p_cmd->num_attr);
+        /* get the existing length, if any, and also the num attributes */
+     p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
+     p_data = p_start + 2; /* pdu + rsvd */
+     /* add length */
+     UINT16_TO_BE_STREAM(p_data, 8 + 1 /* id + attr count */ + p_cmd->num_attr * sizeof(UINT32));
+     /* Identifier 0x0 (PLAYING) */
+     UINT64_TO_BE_STREAM(p_data, (UINT64)(0));
+     /* Attribute count */
+     UINT8_TO_BE_STREAM(p_data, p_cmd->num_attr);
+
+     for (i=0; i<p_cmd->num_attr; i++){
+         AVRC_TRACE_API("avrc_bld_get_element_attr_cmd attr_id: %d", p_cmd->attrs[i]);
+         UINT32_TO_BE_STREAM(p_data, p_cmd->attrs[i]);
+     }
+
+     p_pkt->len = (p_data - p_start);
+     return AVRC_STS_NO_ERROR;
+ }
+
 /*******************************************************************************
 **
 ** Function         AVRC_BldCommand
@@ -222,6 +257,10 @@ tAVRC_STS AVRC_BldCommand( tAVRC_COMMAND *p_cmd, BT_HDR **pp_pkt)
         status = avrc_bld_set_abs_volume_cmd(&p_cmd->volume, p_pkt);
         break;
 #endif
+
+    case AVRC_PDU_GET_ELEMENT_ATTR:         /* 0x20 */
+         status = avrc_bld_get_element_attr_cmd(&p_cmd->get_elem_attrs, p_pkt);
+         break;
 
     case AVRC_PDU_REGISTER_NOTIFICATION:      /* 0x31 */
 #if (AVRC_ADV_CTRL_INCLUDED == TRUE)

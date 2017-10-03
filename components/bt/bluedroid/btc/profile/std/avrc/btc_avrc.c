@@ -31,6 +31,7 @@
 #include "btc_manage.h"
 #include "esp_avrc_api.h"
 #include "mutex.h"
+#include "allocator.h"
 
 #if BTC_AV_INCLUDED
 
@@ -96,6 +97,7 @@ rc_device_t device;
 static void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open);
 static void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close);
 static void handle_rc_passthrough_rsp ( tBTA_AV_REMOTE_RSP *p_remote_rsp);
+static void handle_rc_metadata_rsp ( tBTA_AV_META_MSG *p_remote_rsp);
 
 /*****************************************************************************
 **  Static variables
@@ -251,6 +253,54 @@ static void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close)
 }
 
 /***************************************************************************
+ *  Function       handle_rc_metadata_rsp
+ *
+ *  - Argument:    tBTA_AV_META_MSG metadata command response
+ *
+ *  - Description: Vendor metadata response handler
+ *
+ ***************************************************************************/
+static void handle_rc_metadata_rsp ( tBTA_AV_META_MSG *p_remote_rsp){
+#if (AVRC_METADATA_INCLUDED == TRUE)
+      tAVRC_MSG* avrc_msg = p_remote_rsp->p_msg;
+      tAVRC_MSG_VENDOR* vendor_msg = &avrc_msg->vendor;
+
+      uint8_t attr_count = vendor_msg->p_vendor_data[4];
+      int attr_index = 5;
+      int attr_length = 0;
+
+      if(attr_count < 1) return;
+
+      esp_avrc_ct_cb_param_t param[attr_count];
+      uint8_t* text_data[attr_count];
+      memset(&param[0], 0, sizeof(esp_avrc_ct_cb_param_t) * attr_count);
+
+    for(int i = 0; i < attr_count; i++){
+      attr_length = (int) vendor_msg->p_vendor_data[7 + attr_index];
+      text_data[i] = (uint8_t*) osi_malloc(attr_length + 1);
+
+      memcpy(text_data[i], &vendor_msg->p_vendor_data[8 + attr_index], attr_length);
+      text_data[i][attr_length] = 0;
+
+      param[i].meta_rsp.attr_text = text_data[i];
+
+      param[i].meta_rsp.attr_id = vendor_msg->p_vendor_data[3 + attr_index] |
+        vendor_msg->p_vendor_data[2 + attr_index] << 8 | vendor_msg->p_vendor_data[1 + attr_index] << 16 |
+        vendor_msg->p_vendor_data[attr_index] << 24;
+
+      btc_avrc_ct_cb_to_app(ESP_AVRC_CT_METADATA_RSP_EVT, &param[i]);
+
+      attr_index += (int) vendor_msg->p_vendor_data[7 + attr_index] + 8;
+  }
+
+  for(int i = 0; i < attr_count; i++) osi_free(text_data[i]);
+
+#else
+    LOG_ERROR("%s AVRCP metadata is not enabled", __FUNCTION__);
+#endif
+}
+
+/***************************************************************************
  *  Function       handle_rc_passthrough_rsp
  *
  *  - Argument:    tBTA_AV_REMOTE_RSP passthrough command response
@@ -326,8 +376,12 @@ void btc_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data)
     }
     break;
 
+    case BTA_AV_META_MSG_EVT: {
+        handle_rc_metadata_rsp(&(p_data->meta_msg));
+    }
+    break;
+
     // below events are not handled for now
-    case BTA_AV_META_MSG_EVT:
     case BTA_AV_REMOTE_CMD_EVT:
     default:
         LOG_DEBUG("Unhandled RC event : 0x%x", event);
@@ -390,6 +444,49 @@ static void btc_avrc_ct_deinit(void)
     LOG_INFO("## %s ## completed", __FUNCTION__);
 }
 
+static bt_status_t btc_avrc_ct_send_metadata_cmd (uint8_t tl, uint32_t *p_attr_ids, uint8_t num_attribute)
+{
+    tAVRC_STS status = BT_STATUS_UNSUPPORTED;
+
+    if (tl >= 16 || num_attribute > ESP_AVRC_MD_ATTR_ID_PLAYING_TIME) {
+      return ESP_ERR_INVALID_ARG;
+    }
+
+#if (AVRC_METADATA_INCLUDED == TRUE)
+  CHECK_ESP_RC_CONNECTED;
+    int count  = 0;
+
+    tAVRC_COMMAND avrc_cmd = {0};
+    BT_HDR *p_msg = NULL;
+
+    avrc_cmd.get_elem_attrs.opcode = AVRC_OP_VENDOR;
+    avrc_cmd.get_elem_attrs.status = AVRC_STS_NO_ERROR;
+    avrc_cmd.get_elem_attrs.num_attr = num_attribute;
+    avrc_cmd.get_elem_attrs.pdu = AVRC_PDU_GET_ELEMENT_ATTR;
+
+    for (count = 0; count < num_attribute; count++){
+        avrc_cmd.get_elem_attrs.attrs[count] = p_attr_ids[count];
+    }
+
+    status = AVRC_BldCommand(&avrc_cmd, &p_msg);
+    if (status == AVRC_STS_NO_ERROR)
+    {
+      if (btc_rc_vb.rc_features & BTA_AV_FEAT_METADATA) {
+        BTA_AvMetaCmd(btc_rc_vb.rc_handle, tl, AVRC_CMD_STATUS, p_msg);
+        status = BT_STATUS_SUCCESS;
+      }else {
+          status = BT_STATUS_FAIL;
+          LOG_DEBUG("%s: feature not supported", __FUNCTION__);
+      }
+    }
+
+#else
+    LOG_DEBUG("%s: feature not enabled", __FUNCTION__);
+#endif
+
+    return status;
+}
+
 static bt_status_t btc_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code, uint8_t key_state)
 {
     tAVRC_STS status = BT_STATUS_UNSUPPORTED;
@@ -434,6 +531,10 @@ void btc_avrc_call_handler(btc_msg_t *msg)
     case BTC_AVRC_CTRL_API_SND_PTCMD_EVT: {
         btc_avrc_ct_send_passthrough_cmd(arg->pt_cmd.tl, arg->pt_cmd.key_code, arg->pt_cmd.key_state);
         // todo: callback to application
+        break;
+    }
+    case BTC_AVRC_STATUS_API_SND_META_EVT: {
+        btc_avrc_ct_send_metadata_cmd(arg->md_cmd.tl, arg->md_cmd.attr_list, arg->md_cmd.attr_num);
         break;
     }
     default:
