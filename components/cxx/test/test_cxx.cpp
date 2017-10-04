@@ -92,7 +92,6 @@ public:
         static SlowInit slowinit(taskId);
         ESP_LOGD(TAG, "obj=%d after static init, task=%d\n", obj, taskId);
         xSemaphoreGive(s_slow_init_sem);
-        vTaskDelay(10);
         vTaskDelete(NULL);
     }
 private:
@@ -133,6 +132,8 @@ TEST_CASE("static initialization guards work as expected", "[cxx]")
         TEST_ASSERT_TRUE(xSemaphoreTake(s_slow_init_sem, 500/portTICK_PERIOD_MS));
     }
     vSemaphoreDelete(s_slow_init_sem);
+
+    vTaskDelay(10); // Allow tasks to clean up, avoids race with leak detector
 }
 
 struct GlobalInitTest
