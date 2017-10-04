@@ -28,6 +28,8 @@
 #include "freertos/semphr.h"
 #include "freertos/list.h"
 
+#include "pthread_internal.h"
+
 #define LOG_LOCAL_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include "esp_log.h"
 const static char *TAG = "esp_pthread";
@@ -144,6 +146,10 @@ static void pthread_task_func(void *arg)
     task_arg->func(task_arg->arg);
     ESP_LOGV(TAG, "%s END %p", __FUNCTION__, task_arg->func);
     free(task_arg);
+
+    /* preemptively clean up thread local storage, rather than
+       waiting for the idle task to clean up the thread */
+    pthread_internal_local_storage_destructor_callback();
 
     if (xSemaphoreTake(s_threads_mux, portMAX_DELAY) != pdTRUE) {
         assert(false && "Failed to lock threads list!");
@@ -330,40 +336,6 @@ pthread_t pthread_self(void)
 int pthread_equal(pthread_t t1, pthread_t t2)
 {
     return t1 == t2 ? 1 : 0;
-}
-
-/***************** KEY ******************/
-int pthread_key_create(pthread_key_t *key, void (*destructor)(void*))
-{
-    static int s_created;
-
-    //TODO: Key destructors not suppoted!
-    if (s_created) {
-        // key API supports just one key necessary by libstdcxx threading implementation
-        ESP_LOGE(TAG, "%s: multiple keys not supported!", __FUNCTION__);
-        return ENOSYS;
-    }
-    *key = 1;
-    s_created = 1;
-    return 0;
-}
-
-int pthread_key_delete(pthread_key_t key)
-{
-    ESP_LOGE(TAG, "%s: not supported!", __FUNCTION__);
-    return ENOSYS;
-}
-
-void *pthread_getspecific(pthread_key_t key)
-{
-    ESP_LOGE(TAG, "%s: not supported!", __FUNCTION__);
-    return NULL;
-}
-
-int pthread_setspecific(pthread_key_t key, const void *value)
-{
-    ESP_LOGE(TAG, "%s: not supported!", __FUNCTION__);
-    return ENOSYS;
 }
 
 /***************** ONCE ******************/

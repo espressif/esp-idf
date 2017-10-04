@@ -340,6 +340,11 @@ defined to call ``vTaskSetThreadLocalStoragePointerAndDelCallback()`` with a
 ``NULL`` pointer as the deletion call back. This results in the selected Thread 
 Local Storage Pointer to have no deletion call back.
 
+In IDF the FreeRTOS thread local storage at index 0 is reserved and is used to implement
+the pthreads API thread local storage (pthread_getspecific() & pthread_setspecific()).
+Other indexes can be used for any purpose, provided
+:ref:`CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS` is set to a high enough value.
+
 For more details see :component_file:`freertos/include/freertos/task.h`
 
 .. _esp-idf-freertos-configuration:
