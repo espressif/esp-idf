@@ -10,6 +10,7 @@
 #include "esp_log.h"
 #include "soc/cpu.h"
 #include "esp_heap_caps.h"
+#include "esp_heap_trace.h"
 #include "test_utils.h"
 
 #define unity_printf ets_printf
@@ -37,11 +38,26 @@ const size_t CRITICAL_LEAK_THRESHOLD = 4096;
 /* setUp runs before every test */
 void setUp(void)
 {
+// If heap tracing is enabled in kconfig, leak trace the test
+#ifdef CONFIG_HEAP_TRACING
+    const size_t num_heap_records = 80;
+    static heap_trace_record_t *record_buffer;
+    if (!record_buffer) {
+        record_buffer = malloc(sizeof(heap_trace_record_t) * num_heap_records);
+        assert(record_buffer);
+        heap_trace_init_standalone(record_buffer, num_heap_records);
+    }
+#endif
+
     printf("%s", ""); /* sneakily lazy-allocate the reent structure for this test task */
     get_test_data_partition();  /* allocate persistent partition table structures */
 
     before_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     before_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
+
+#ifdef CONFIG_HEAP_TRACING
+    heap_trace_start(HEAP_TRACE_LEAKS);
+#endif
 }
 
 static void check_leak(size_t before_free, size_t after_free, const char *type)
@@ -76,6 +92,10 @@ void tearDown(void)
     TEST_ASSERT_MESSAGE( heap_caps_check_integrity(MALLOC_CAP_INVALID, true), "The test has corrupted the heap");
 
     /* check for leaks */
+#ifdef CONFIG_HEAP_TRACING
+    heap_trace_stop();
+    heap_trace_dump();
+#endif
     size_t after_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     size_t after_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
 
