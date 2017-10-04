@@ -188,6 +188,21 @@ TEST_CASE("before scheduler has started, static initializers work correctly", "[
     TEST_ASSERT_EQUAL(2, StaticInitTestBeforeScheduler::order);
 }
 
+TEST_CASE("c++ exceptions work", "[cxx]")
+{
+    int thrown_value;
+    try
+    {
+        throw 20;
+    }
+    catch (int e)
+    {
+        thrown_value = e;
+    }
+    TEST_ASSERT_EQUAL(20, thrown_value);
+    printf("OK?\n");
+}
+
 /* These test cases pull a lot of code from libstdc++ and are disabled for now
  */
 #if 0
