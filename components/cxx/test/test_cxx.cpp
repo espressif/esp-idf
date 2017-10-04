@@ -188,8 +188,12 @@ TEST_CASE("before scheduler has started, static initializers work correctly", "[
     TEST_ASSERT_EQUAL(2, StaticInitTestBeforeScheduler::order);
 }
 
+#ifdef CONFIG_CXX_EXCEPTIONS
+
 TEST_CASE("c++ exceptions work", "[cxx]")
 {
+    /* Note: This test currently trips the memory leak threshold
+       as libunwind allocates ~4KB of data on first exception. */
     int thrown_value;
     try
     {
@@ -202,6 +206,8 @@ TEST_CASE("c++ exceptions work", "[cxx]")
     TEST_ASSERT_EQUAL(20, thrown_value);
     printf("OK?\n");
 }
+
+#endif
 
 /* These test cases pull a lot of code from libstdc++ and are disabled for now
  */
