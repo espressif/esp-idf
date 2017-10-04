@@ -395,7 +395,7 @@ class Monitor(object):
     def lookup_pc_address(self, pc_addr):
         translation = subprocess.check_output(
             ["%saddr2line" % self.toolchain_prefix,
-             "-pfia", "-e", self.elf_file, pc_addr],
+             "-pfiaC", "-e", self.elf_file, pc_addr],
             cwd=".")
         if not "?? ??:0" in translation:
             yellow_print(translation)
