@@ -31,6 +31,15 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param);
 /* avrc event handler */
 static void bt_av_hdl_avrc_evt(uint16_t event, void *p_param);
 
+uint32_t attr_list[] = {
+  ESP_AVRC_MD_ATTR_ID_TITLE,
+  ESP_AVRC_MD_ATTR_ID_ARTIST,
+  ESP_AVRC_MD_ATTR_ID_ALBUM,
+  ESP_AVRC_MD_ATTR_ID_TRACK_NUM,
+  ESP_AVRC_MD_ATTR_ID_NUM_TRACKS,
+  ESP_AVRC_MD_ATTR_ID_GENRE,
+  ESP_AVRC_MD_ATTR_ID_PLAYING_TIME
+};
 
 static uint32_t m_pkt_cnt = 0;
 static esp_a2d_audio_state_t m_audio_state = ESP_A2D_AUDIO_STATE_STOPPED;
@@ -63,7 +72,8 @@ void bt_app_rc_ct_cb(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t *param
     switch (event) {
     case ESP_AVRC_CT_CONNECTION_STATE_EVT:
     case ESP_AVRC_CT_PASSTHROUGH_RSP_EVT:
-    case ESP_AVRC_CT_METADATA_RSP_EVT: {
+    case ESP_AVRC_CT_METADATA_RSP_EVT:
+    case ESP_AVRC_CT_CHANGE_NOTIFY_EVT: {
         bt_app_work_dispatch(bt_av_hdl_avrc_evt, event, param, sizeof(esp_avrc_ct_cb_param_t), NULL);
         break;
     }
@@ -107,6 +117,20 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
     }
 }
 
+static void bt_av_new_track(){
+  //Register notifications and request metadata
+  esp_avrc_ct_send_metadata_cmd(0, attr_list, 7);
+  esp_avrc_ct_send_register_notification_cmd(1, ESP_AVRC_RN_TRACK_CHANGE, 0);
+}
+
+void bt_av_notify_evt_handler(uint8_t event_id, uint32_t event_parameter){
+  switch(event_id){
+    case ESP_AVRC_RN_TRACK_CHANGE:
+      bt_av_new_track();
+      break;
+  }
+}
+
 static void bt_av_hdl_avrc_evt(uint16_t event, void *p_param)
 {
     ESP_LOGD(BT_AV_TAG, "%s evt %d", __func__, event);
@@ -116,10 +140,21 @@ static void bt_av_hdl_avrc_evt(uint16_t event, void *p_param)
         uint8_t *bda = rc->conn_stat.remote_bda;
         ESP_LOGI(BT_AV_TAG, "avrc conn_state evt: state %d, feature 0x%x, [%02x:%02x:%02x:%02x:%02x:%02x]",
                            rc->conn_stat.connected, rc->conn_stat.feat_mask, bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
+
+        if(rc->conn_stat.connected) bt_av_new_track();
         break;
     }
     case ESP_AVRC_CT_PASSTHROUGH_RSP_EVT: {
         ESP_LOGI(BT_AV_TAG, "avrc passthrough rsp: key_code 0x%x, key_state %d", rc->psth_rsp.key_code, rc->psth_rsp.key_state);
+        break;
+    }
+    case ESP_AVRC_CT_METADATA_RSP_EVT: {
+        ESP_LOGI(BT_AV_TAG, "avrc metadata rsp: attribute id 0x%x, %s", rc->meta_rsp.attr_id, rc->meta_rsp.attr_text);
+        break;
+    }
+    case ESP_AVRC_CT_CHANGE_NOTIFY_EVT: {
+        ESP_LOGI(BT_AV_TAG, "avrc event notification: %d, param: %d", rc->change_ntf.event_id, rc->change_ntf.event_parameter);
+        bt_av_notify_evt_handler(rc->change_ntf.event_id, rc->change_ntf.event_parameter);
         break;
     }
     default:
