@@ -98,7 +98,7 @@ static tAVRC_STS avrc_bld_set_abs_volume_cmd (tAVRC_SET_VOLUME_CMD *p_cmd, BT_HD
 **                  Otherwise, the error code.
 **
 *******************************************************************************/
-static tAVRC_STS avrc_bld_vol_change_notfn(BT_HDR *p_pkt)
+static tAVRC_STS avrc_bld_register_change_notfn(UINT8 event_id, UINT32 event_parameter, BT_HDR *p_pkt)
 {
     UINT8   *p_data, *p_start;
 
@@ -109,8 +109,8 @@ static tAVRC_STS avrc_bld_vol_change_notfn(BT_HDR *p_pkt)
     p_data = p_start + 2; /* pdu + rsvd */
     /* add fixed length 5 -*/
     UINT16_TO_BE_STREAM(p_data, 5);
-    UINT8_TO_BE_STREAM(p_data, AVRC_EVT_VOLUME_CHANGE);
-    UINT32_TO_BE_STREAM(p_data, 0);
+    UINT8_TO_BE_STREAM(p_data, event_id);
+    UINT32_TO_BE_STREAM(p_data, event_parameter);
     p_pkt->len = (p_data - p_start);
     return AVRC_STS_NO_ERROR;
 }
@@ -263,13 +263,8 @@ tAVRC_STS AVRC_BldCommand( tAVRC_COMMAND *p_cmd, BT_HDR **pp_pkt)
          break;
 
     case AVRC_PDU_REGISTER_NOTIFICATION:      /* 0x31 */
-#if (AVRC_ADV_CTRL_INCLUDED == TRUE)
-        if (AVRC_EVT_VOLUME_CHANGE == p_cmd->reg_notif.event_id) {
-            status = avrc_bld_vol_change_notfn(p_pkt);
-        }
-#endif
+        status = avrc_bld_register_change_notfn(p_cmd->reg_notif.event_id, p_cmd->reg_notif.param, p_pkt);
         break;
-
     }
 
     if (alloc && (status != AVRC_STS_NO_ERROR) ) {

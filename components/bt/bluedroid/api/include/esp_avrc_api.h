@@ -56,19 +56,35 @@ typedef enum {
     ESP_AVRC_CT_CONNECTION_STATE_EVT = 0,        /*!< connection state changed event */
     ESP_AVRC_CT_PASSTHROUGH_RSP_EVT = 1,         /*!< passthrough response event */
     ESP_AVRC_CT_METADATA_RSP_EVT = 2,            /*!< metadata response event */
+    ESP_AVRC_CT_PLAY_STATUS_RSP_EVT = 3,         /*!< play status response event */
+    ESP_AVRC_CT_CHANGE_NOTIFY_EVT = 4,           /*!< notification event */
     ESP_AVRC_CT_MAX_EVT
 } esp_avrc_ct_cb_event_t;
 
 //AVRC metadata attribute ids
 typedef enum {
-  ESP_AVRC_MD_ATTR_ID_TITLE = 0x00000001,        /*!< title of the playing track */
-  ESP_AVRC_MD_ATTR_ID_ARTIST = 0x00000002,       /*!< track artist */
-  ESP_AVRC_MD_ATTR_ID_ALBUM = 0x00000003,        /*!< album name */
-  ESP_AVRC_MD_ATTR_ID_TRACK_NUM = 0x00000004,    /*!< track position on the album */
-  ESP_AVRC_MD_ATTR_ID_NUM_TRACKS = 0x00000005,   /*!< number of tracks on the album */
-  ESP_AVRC_MD_ATTR_ID_GENRE = 0x00000006,        /*!< track genre */
-  ESP_AVRC_MD_ATTR_ID_PLAYING_TIME = 0x00000007  /*!< total album playing time in miliseconds */
+    ESP_AVRC_MD_ATTR_ID_TITLE = 0x1,        /*!< title of the playing track */
+    ESP_AVRC_MD_ATTR_ID_ARTIST = 0x2,       /*!< track artist */
+    ESP_AVRC_MD_ATTR_ID_ALBUM = 0x3,        /*!< album name */
+    ESP_AVRC_MD_ATTR_ID_TRACK_NUM = 0x4,    /*!< track position on the album */
+    ESP_AVRC_MD_ATTR_ID_NUM_TRACKS = 0x5,   /*!< number of tracks on the album */
+    ESP_AVRC_MD_ATTR_ID_GENRE = 0x6,        /*!< track genre */
+    ESP_AVRC_MD_ATTR_ID_PLAYING_TIME = 0x7, /*!< total album playing time in miliseconds */
+    ESP_AVRC_MD_MAX_ATTR
 } esp_avrc_md_attr_ids_t;
+
+//AVRC event notification ids
+typedef enum {
+    ESP_AVRC_RN_PLAY_STATUS_CHANGE = 0x01,
+    ESP_AVRC_RN_TRACK_CHANGE = 0x02,
+    ESP_AVRC_RN_TRACK_REACHED_END = 0x03,
+    ESP_AVRC_RN_TRACK_REACHED_START = 0x04,
+    ESP_AVRC_RN_PLAY_POS_CHANGED = 0x05,
+    ESP_AVRC_RN_BATTERY_STATUS_CHANGE = 0x06,
+    ESP_AVRC_RN_SYSTEM_STATUS_CHANGE = 0x07,
+    ESP_AVRC_RN_APP_SETTING_CHANGE = 0x08,
+    ESP_AVRC_RN_MAX_EVT
+}esp_avrc_rn_event_ids_t;
 
 /// AVRC controller callback parameters
 typedef union {
@@ -98,7 +114,10 @@ typedef union {
        uint8_t* attr_text;                      /*!< attribute itself */
      } meta_rsp;
 
-
+     struct avrc_ct_change_notify_param{
+       uint8_t event_id;
+       uint32_t event_parameter;
+     } change_ntf;
 
 } esp_avrc_ct_cb_param_t;
 
@@ -153,12 +172,28 @@ esp_err_t esp_avrc_ct_init(void);
  */
 esp_err_t esp_avrc_ct_deinit(void);
 
+
+/**
+ * @brief           Send register notification command to AVRCP target, This function should be called after
+ *                  ESP_AVRC_CT_CONNECTION_STATE_EVT is received and AVRCP connection is established
+ *
+ * @param[in]       tl : transaction label, 0 to 15, consecutive commands should use different values.
+ * @param[in]       event_id : id of events, e.g. ESP_AVRC_RN_PLAY_STATUS_CHANGE, ESP_AVRC_RN_TRACK_CHANGE, etc.
+ * @param[in]       event_parameter : special parameters, eg. playback interval for ESP_AVRC_RN_PLAY_POS_CHANGED
+ * @return
+ *                  - ESP_OK: success
+ *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL: others
+ */
+esp_err_t esp_avrc_ct_send_register_notification_cmd(uint8_t tl, uint8_t event_id, uint32_t event_parameter);
+
+
 /**
  * @brief           Send metadata command to AVRCP target, This function should be called after
  *                  ESP_AVRC_CT_CONNECTION_STATE_EVT is received and AVRCP connection is established
  *
  * @param[in]       tl : transaction label, 0 to 15, consecutive commands should use different values.
- * @param[in]       attr_list : list of attributes, e.g. ESP_AVRC_MD_ATTR_ID_TITLE, ESP_AVRC_MD_ATTR_ID_ARTIST, etc.
+ * @param[in]       attr_list : list of attributes, e.g. {ESP_AVRC_MD_ATTR_ID_TITLE, ESP_AVRC_MD_ATTR_ID_ARTIST}.
  * @param[in]       attr_num : number of attributes for request
  *
  * @return
@@ -167,6 +202,7 @@ esp_err_t esp_avrc_ct_deinit(void);
  *                  - ESP_FAIL: others
  */
 esp_err_t esp_avrc_ct_send_metadata_cmd(uint8_t tl, uint32_t* attr_list, uint8_t attr_num);
+
 
 /**
  * @brief           Send passthrough command to AVRCP target, This function should be called after
