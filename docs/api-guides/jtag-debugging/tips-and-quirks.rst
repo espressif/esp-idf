@@ -33,8 +33,12 @@ When stepping through the code with ``next`` command, GDB is internally setting 
 Support options for OpenOCD at compile time
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The ESP-IDF code has various support options for OpenOCD set at compile time: it can stop execution when the first thread is started and break the system if a panic or unhandled exception is thrown. First option is disabled and second enabled by default and both can be changed using the esp-idf configuration menu. Please see the :ref:`make menuconfig <get-started-configure>` menu for more details.
+ESP-IDF has some support options for OpenOCD debugging which can be set at compile time:
 
+* :ref:`CONFIG_ESP32_DEBUG_OCDAWARE` is enabled by default. If a panic or unhandled exception is thrown and a JTAG debugger is connected (ie openocd is running), ESP-IDF will break into the debugger.
+* :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` (disabled by default) sets watchpoint index 1 (the second of two) at the end of any task stack. This is the most accurate way to debug task stack overflows. Click the link for more details.
+
+Please see the :ref:`make menuconfig <get-started-configure>` menu for more details on setting compile-time options.
 
 .. _jtag-debugging-tip-freertos-support:
 

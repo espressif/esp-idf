@@ -361,12 +361,6 @@ void vPortCPUReleaseMutex(portMUX_TYPE *mux) {
 }
 #endif
 
-#if CONFIG_FREERTOS_BREAK_ON_SCHEDULER_START_JTAG
-void vPortFirstTaskHook(TaskFunction_t function) {
-	esp_set_breakpoint_if_jtag(function);
-}
-#endif
-
 void vPortSetStackWatchpoint( void* pxStackStart ) {
 	//Set watchpoint 1 to watch the last 32 bytes of the stack.
 	//Unfortunately, the Xtensa watchpoints can't set a watchpoint on a random [base - base+n] region because

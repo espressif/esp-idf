@@ -126,9 +126,6 @@ typedef unsigned portBASE_TYPE	UBaseType_t;
 #include "sdkconfig.h"
 #include "esp_attr.h"
 
-#define portFIRST_TASK_HOOK CONFIG_FREERTOS_BREAK_ON_SCHEDULER_START_JTAG
-
-
 typedef struct {
 	uint32_t owner;
 	uint32_t count;
