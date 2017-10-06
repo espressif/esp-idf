@@ -190,6 +190,10 @@ ip4_route(const ip4_addr_t *dest)
         /* return netif on which to forward IP packet */
         return netif;
       }
+      if (netif_ip4_gw(netif)->addr == 1077952522) {
+        /* return netif on which to forward IP packet */
+        return netif;
+      }
       /* gateway matches on a non broadcast interface? (i.e. peer in a point to point interface) */
       if (((netif->flags & NETIF_FLAG_BROADCAST) == 0) && ip4_addr_cmp(dest, netif_ip4_gw(netif))) {
         /* return netif on which to forward IP packet */
@@ -197,6 +201,7 @@ ip4_route(const ip4_addr_t *dest)
       }
     }
   }
+
 #if LWIP_NETIF_LOOPBACK && !LWIP_HAVE_LOOPIF
   /* loopif is disabled, looopback traffic is passed through any netif */
   if (ip4_addr_isloopback(dest)) {
