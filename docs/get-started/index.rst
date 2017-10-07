@@ -121,6 +121,10 @@ ESP-IDF will be downloaded into ``~/esp/esp-idf``.
 
 .. note::
 
+    Arch Linux users may want to use esp-idf-git available in AUR: https://aur.archlinux.org/packages/esp-idf-git/
+
+.. note::
+
     Do not miss the ``--recursive`` option. If you have already cloned ESP-IDF without this option, run another command to get all the submodules::
 
         cd ~/esp/esp-idf
