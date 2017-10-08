@@ -868,3 +868,17 @@ int wpa_auth_uses_mfp(struct wpa_state_machine *sm)
 {
 	return sm ? sm->mgmt_frame_prot : 0;
 }
+
+
+#ifdef CONFIG_OWE_SOFTAP
+u8 * wpa_auth_write_assoc_resp_owe(struct wpa_state_machine *sm,
+				   u8 *pos, size_t max_len)
+{
+	int res;
+
+	res = wpa_write_rsn_ie(&sm->wpa_auth->conf, pos, max_len, NULL);
+	if (res < 0)
+		return pos;
+	return pos + res;
+}
+#endif /* CONFIG_OWE_SOFTAP */

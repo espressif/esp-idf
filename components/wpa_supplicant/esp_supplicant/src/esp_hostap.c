@@ -385,7 +385,8 @@ u16 esp_send_assoc_resp(struct hostapd_data *hapd, const u8 *addr,
         send_len = esp_wifi_build_rsnxe(hapd, buf, ASSOC_RESP_LENGTH);
     }
 #ifdef CONFIG_OWE_SOFTAP
-#define OWE_DH_GROUP 19
+#define OWE_DH_GROUP   19
+#define OWE_DHIE_LEN   37
     if ((hapd->conf->wpa_key_mgmt & WPA_KEY_MGMT_OWE)) {
         struct wpabuf *pub;
         struct sta_info *sta = ap_get_sta(hapd, addr);
@@ -393,22 +394,35 @@ u16 esp_send_assoc_resp(struct hostapd_data *hapd, const u8 *addr,
             return WLAN_STATUS_UNSPECIFIED_FAILURE;
 	}
 
+        struct wpabuf *owe_buf = wpabuf_alloc(hapd->wpa_auth->wpa_ie_len);
+        if (!owe_buf) {
+            wpa_printf(MSG_ERROR, "Memory allocation failed for OWE IE");
+            return WLAN_STATUS_UNSPECIFIED_FAILURE;
+        }
+
+	u8 *pos, buf[128];
+	int res;
+	int owe_ie_len = 0;
+
+	pos = buf;
+
+        pos = wpa_auth_write_assoc_resp_owe(sta->wpa_sm, pos,
+                                          buf + sizeof(buf) - pos);
+
+        wpabuf_resize(&owe_buf, pos - buf);
+        wpabuf_put_data(owe_buf, buf, pos - buf);
+	owe_ie_len = pos - buf;
+
         pub = crypto_ecdh_get_pubkey(sta->owe_ecdh, 0);
         if (!pub) {
             res = WLAN_STATUS_UNSPECIFIED_FAILURE;
             return res;
         }
 
-        struct wpabuf *owe_buf = wpabuf_alloc(37);
-        if (!owe_buf) {
-            wpa_printf(MSG_ERROR, "Memory allocation failed for OWE IE");
-            return WLAN_STATUS_UNSPECIFIED_FAILURE;
-        }
-
 
         wpa_hexdump_buf(MSG_DEBUG, "Own public key", pub);
 
-       // wpabuf_resize(&owe_buf, OWE_DHIE_LEN);
+        wpabuf_resize(&owe_buf, OWE_DHIE_LEN);
         wpabuf_put_u8(owe_buf, WLAN_EID_EXTENSION);
         wpabuf_put_u8(owe_buf, 1 + 2 + wpabuf_len(pub));
         wpabuf_put_u8(owe_buf, WLAN_EID_EXT_OWE_DH_PARAM);
@@ -417,7 +431,7 @@ u16 esp_send_assoc_resp(struct hostapd_data *hapd, const u8 *addr,
         wpabuf_free(pub);
 
         wpa_hexdump_buf(MSG_DEBUG, "OWE: Buffer", owe_buf);
-	int owe_ie_len = wpabuf_len(owe_buf);
+	owe_ie_len = wpabuf_len(owe_buf);
 
 	esp_wifi_set_appie_internal(WIFI_APPIE_ASSOC_RESP, (uint8_t *)wpabuf_head(owe_buf), owe_ie_len, 0);
     }
@@ -527,7 +541,6 @@ bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, u8 *wpa_ie,
             }
         }
 #endif /* CONFIG_OWE_SOFTAP */
-
 
 send_resp:
             if (!rsnxe) {
