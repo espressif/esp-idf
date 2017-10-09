@@ -134,7 +134,7 @@ size_t multi_heap_free_size(multi_heap_handle_t heap);
 
 /** @brief Return the lifetime minimum free heap size
  *
- * Equivalent to the minimum_free_bytes member returned by multi_get_heap_info().
+ * Equivalent to the minimum_free_bytes member returned by multi_heap_get_info().
  *
  * Returns the lifetime "low water mark" of possible values returned from multi_free_heap_size(), for the specified
  * heap.
@@ -144,7 +144,7 @@ size_t multi_heap_free_size(multi_heap_handle_t heap);
  */
 size_t multi_heap_minimum_free_size(multi_heap_handle_t heap);
 
-/** @brief Structure to access heap metadata via multi_get_heap_info */
+/** @brief Structure to access heap metadata via multi_heap_get_info */
 typedef struct {
     size_t total_free_bytes;      ///<  Total free bytes in the heap. Equivalent to multi_free_heap_size().
     size_t total_allocated_bytes; ///<  Total bytes allocated to data in the heap.
