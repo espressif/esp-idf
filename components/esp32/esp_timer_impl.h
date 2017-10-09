@@ -52,6 +52,15 @@ void esp_timer_impl_deinit();
 void esp_timer_impl_set_alarm(uint64_t timestamp);
 
 /**
+ * @brief Notify esp_timer implementation that APB frequency has changed
+ *
+ * Called by the frequency switching code.
+ *
+ * @param apb_ticks_per_us new number of APB clock ticks per microsecond
+ */
+void esp_timer_impl_update_apb_freq(uint32_t apb_ticks_per_us);
+
+/**
  * @brief Get time, in microseconds, since esp_timer_impl_init was called
  * @return timestamp in microseconds
  */

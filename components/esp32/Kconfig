@@ -970,6 +970,19 @@ config PM_DFS_INIT_AUTO
 		If disabled, DFS will not be active until the application
 		configures it using esp_pm_configure function.
 
+config PM_USE_RTC_TIMER_REF
+	bool "Use RTC timer to prevent time drift (EXPERIMENTAL)"
+	depends on PM_ENABLE && (ESP32_TIME_SYSCALL_USE_RTC || ESP32_TIME_SYSCALL_USE_RTC_FRC1)
+	default n
+	help
+		When APB clock frequency changes, high-resolution timer (esp_timer)
+		scale and base value need to be adjusted. Each adjustment may cause
+		small error, and over time such small errors may cause time drift.
+		If this option is enabled, RTC timer will be used as a reference to
+		compensate for the drift.
+		It is recommended that this option is only used if 32k XTAL is selected
+		as RTC clock source.
+
 config PM_PROFILING
 	bool "Enable profiling counters for PM locks"
 	depends on PM_ENABLE
