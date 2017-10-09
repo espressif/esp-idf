@@ -1383,6 +1383,15 @@ BaseType_t xTaskCallApplicationTaskHook( TaskHandle_t xTask, void *pvParameter )
 TaskHandle_t xTaskGetIdleTaskHandle( void );
 
 /**
+ * xTaskGetIdleTaskHandleForCPU() is only available if
+ * INCLUDE_xTaskGetIdleTaskHandle is set to 1 in FreeRTOSConfig.h.
+ *
+ * Simply returns the idle task handle of a given cpu. It is not valid to call
+ * xTaskGetIdleTaskHandleForCPU() before the scheduler has been started.
+ */
+TaskHandle_t xTaskGetIdleTaskHandleForCPU( UBaseType_t cpuid );
+
+/**
  * configUSE_TRACE_FACILITY must be defined as 1 in FreeRTOSConfig.h for
  * uxTaskGetSystemState() to be available.
  *

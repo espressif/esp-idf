@@ -4,8 +4,13 @@ Watchdogs
 Overview
 --------
 
-Esp-idf has support for two types of watchdogs: a task watchdog as well as an interrupt watchdog. Both can be
-enabled using ``make menuconfig`` and selecting the appropriate options.
+The ESP-IDF has support for two types of watchdogs: The Interrupt Watchdog Timer
+and the Task Watchdog Timer (TWDT). The Interrupt Watchdog Timer and the TWDT
+can both be enabled using ``make menuconfig``, however the TWDT can also be
+enabled during runtime. The Interrupt Watchdog is responsible for detecting
+instances where FreeRTOS task switching is blocked for a prolonged period of
+time. The TWDT is responsible for detecting instances of tasks running without
+yielding for a prolonged period.
 
 Interrupt watchdog
 ^^^^^^^^^^^^^^^^^^
@@ -24,49 +29,75 @@ The interrupt watchdog is built around the hardware watchdog in timer group 1. I
 cannot execute the NMI handler that invokes the panic handler (e.g. because IRAM is overwritten by garbage),
 it will hard-reset the SOC.
 
-Task watchdog
-^^^^^^^^^^^^^
+Task Watchdog Timer
+^^^^^^^^^^^^^^^^^^^
 
-Any tasks can elect to be watched by the task watchdog. If such a task does not feed the watchdog within the time
-specified by the task watchdog timeout (which is configurable using ``make menuconfig``), the watchdog will
-print out a warning with information about which processes are running on the ESP32 CPUs and which processes
-failed to feed the watchdog.
+The Task Watchdog Timer (TWDT) is responsible for detecting instances of tasks 
+running for a prolonged period of time without yielding. This is a symptom of 
+CPU starvation and is usually caused by a higher priority task looping without
+yielding to a lower-priority task thus starving the lower priority task from
+CPU time. This can be an indicator of poorly written code that spinloops on a
+peripheral, or a task that is stuck in an infinite loop. 
 
-By default, the task watchdog watches the idle tasks. The usual cause of idle tasks not feeding the watchdog 
-is a higher-priority process looping without yielding to the lower-priority processes, and can be an indicator
-of badly-written code that spinloops on a peripheral or a task that is stuck in an infinite loop.
+By default the TWDT will watch the Idle Tasks of each CPU, however any task can 
+elect to be watched by the TWDT. Each watched task must 'reset' the TWDT
+periodically to indicate that they have been allocated CPU time. If a task does 
+not reset within the TWDT timeout period, a warning will be printed with 
+information about which tasks failed to reset the TWDT in time and which 
+tasks are currently running on the ESP32 CPUs and.
 
-Other task can elect to be watched by the task watchdog by calling ``esp_task_wdt_feed()``. Calling this routine
-for the first time will register the task to the task watchdog; calling it subsequent times will feed
-the watchdog. If a task does not want to be watched anymore (e.g. because it is finished and will call 
-``vTaskDelete()`` on itself), it needs to call ``esp_task_wdt_delete()``.
+The TWDT is built around the Hardware Watchdog Timer in Timer Group 0. The TWDT
+can be initialized by calling :cpp:func:`esp_task_wdt_init` which will configure
+the hardware timer. A task can then subscribe to the TWDT using 
+:cpp:func:`esp_task_wdt_add` in order to be watched. Each subscribed task must 
+periodically call :cpp:func:`esp_task_wdt_reset` to reset the TWDT. Failure by 
+any subscribed tasks to periodically call :cpp:func:`esp_task_wdt_reset`
+indicates that one or more tasks have been starved of CPU time or are stuck in a
+loop somewhere.
 
-The task watchdog is built around the hardware watchdog in timer group 0. If this watchdog for some reason
-cannot execute the interrupt handler that prints the task data (e.g. because IRAM is overwritten by garbage
-or interrupts are disabled entirely) it will hard-reset the SOC.
+A watched task can be unsubscribed from the TWDT using 
+:cpp:func:`esp_task_wdt_delete()`. A task that has been unsubscribed should no 
+longer call :cpp:func:`esp_task_wdt_reset`. Once all tasks have unsubscribed
+form the TWDT, the TWDT can be deinitialized by calling 
+:cpp:func:`esp_task_wdt_deinit()`.
+
+By default :ref:`CONFIG_TASK_WDT` in ``make menuconfig`` will be enabled causing
+the TWDT to be initialized automatically during startup. Likewise
+:ref:`CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU0` and 
+:ref:`CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU1` are also enabled by default causing
+the two Idle Tasks to be subscribed to the TWDT during startup.
 
 JTAG and watchdogs
 ^^^^^^^^^^^^^^^^^^
 
-While debugging using OpenOCD, if the CPUs are halted the watchdogs will keep running, eventually resetting the
-CPU. This makes it very hard to debug code; that is why the OpenOCD config will disable both watchdogs on startup.
-This does mean that you will not get any warnings or panics from either the task or interrupt watchdog when the ESP32
-is connected to OpenOCD via JTAG.
+While debugging using OpenOCD, the CPUs will be halted every time a breakpoint 
+is reached. However if the watchdog timers continue to run when a breakpoint is 
+encountered, they will eventually trigger a reset making it very difficult to 
+debug code. Therefore OpenOCD will disable the hardware timers of both the 
+interrupt and task watchdogs at every breakpoint. Moreover, OpenOCD will not 
+reenable them upon leaving the breakpoint. This means that interrupt watchdog
+and task watchdog functionality will essentially be disabled. No warnings or 
+panics from either watchdogs will be generated when the ESP32 is connected to 
+OpenOCD via JTAG.
 
-API Reference
--------------
 
-Header Files
-^^^^^^^^^^^^
+Interrupt Watchdog API Reference
+--------------------------------
+
+Header File
+^^^^^^^^^^^
 
   * :component_file:`esp32/include/esp_int_wdt.h`
-  * :component_file:`esp32/include/esp_task_wdt.h`
 
 
 Functions
 ---------
-
+ 
 .. doxygenfunction:: esp_int_wdt_init
-.. doxygenfunction:: esp_task_wdt_init
-.. doxygenfunction:: esp_task_wdt_feed
-.. doxygenfunction:: esp_task_wdt_delete
+
+Task Watchdog API Reference
+----------------------------
+
+A full example using the Task Watchdog is available in esp-idf: :example:`system/task_watchdog`
+
+.. include:: /_build/inc/esp_task_wdt.inc
