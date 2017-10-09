@@ -20,6 +20,13 @@
 #include "esp_wpa3_i.h"
 #include "esp_hostap.h"
 
+#ifdef CONFIG_OWE_SOFTAP
+#include "crypto/crypto.h"
+#include "ap/wpa_auth_i.h"
+#define OWE_DH_GRP19 19
+#define OWE_DHIE_LEN 37
+#endif
+
 #ifdef CONFIG_SAE
 
 static void sae_set_state(struct sta_info *sta, enum sae_state state,
@@ -775,14 +782,29 @@ u16 wpa_res_to_status_code(enum wpa_validate_result res)
 }
 
 #ifdef CONFIG_OWE_SOFTAP
-#include "ap/wpa_auth_i.h"
-#include "crypto/crypto.h"
-#define OWE_DH_GRP19 19
-#define OWE_DHIE_LEN 37
-uint16_t owe_process_assoc_req(struct sta_info *sta, const uint8_t *owe_dh,
-                                uint8_t owe_dh_len)
-{
 
+int wpa_auth_pmksa_add2(struct wpa_authenticator *wpa_auth, const u8 *addr,
+                        const u8 *pmk, size_t pmk_len, const u8 *pmkid,
+                        int session_timeout, int akmp, const u8 *dpp_pkhash)
+{
+    if (!wpa_auth || wpa_auth->conf.disable_pmksa_caching)
+        return -1;
+
+    struct rsn_pmksa_cache_entry *entry;
+
+    wpa_hexdump_key(MSG_DEBUG, "RSN: Cache PMK (3)", pmk, PMK_LEN);
+    entry = pmksa_cache_auth_add(wpa_auth->pmksa, pmk, pmk_len, pmkid,
+                             NULL, 0, wpa_auth->addr, addr, session_timeout,
+                             NULL, akmp);
+    if (!entry)
+        return -1;
+
+    return 0;
+}
+
+uint16_t owe_process_assoc_req(struct hostapd_data *hapd, struct sta_info *sta, const u8 *owe_dh,
+                                u8 owe_dh_len)
+{
     const u8 *addr[2];
     size_t len[2];
     struct wpabuf *hkey, *pub, *secret;
@@ -790,6 +812,11 @@ uint16_t owe_process_assoc_req(struct sta_info *sta, const uint8_t *owe_dh,
     u8 prk[SHA256_MAC_LEN];
     u8 pmkid[SHA256_MAC_LEN];
     int res;
+
+    if (wpa_auth_sta_get_pmksa(sta->wpa_sm)) {
+        wpa_printf(MSG_DEBUG, "OWE: Using PMKSA caching");
+        return WLAN_STATUS_SUCCESS;
+    }
 
     if (!owe_dh) {
         wpa_printf(MSG_ERROR, "OWE: Invalid DH data received");
@@ -801,11 +828,25 @@ uint16_t owe_process_assoc_req(struct sta_info *sta, const uint8_t *owe_dh,
     if (sta->owe_group != OWE_DH_GRP19)
         return WLAN_STATUS_FINITE_CYCLIC_GROUP_NOT_SUPPORTED;
 
-    crypto_ecdh_deinit(sta->owe_ecdh);
-    sta->owe_ecdh = crypto_ecdh_init(OWE_DH_GRP19);
-    if (!sta->owe_ecdh) {
-        wpa_printf(MSG_ERROR, "OWE: Error initializing ECDH for STA");
-        return WLAN_STATUS_UNSPECIFIED_FAILURE;
+    if (sta->owe_ecdh) {
+        /* This is a workaround for mac80211 behavior of retransmitting
+         * the Association Request frames multiple times if the link
+         * layer retries (i.e., seq# remains same) fail. The mac80211
+         * initiated retransmission will use a different seq# and as
+         * such, will go through duplicate detection. If we were to
+         * change our DH key for that attempt, there would be two
+         * different DH shared secrets and the STA would likely select
+         * the wrong one. */
+         wpa_printf(MSG_DEBUG,
+                    "OWE: Try to reuse own previous DH key since the STA tried to go through OWE association again");
+    } else {
+
+        crypto_ecdh_deinit(sta->owe_ecdh);
+        sta->owe_ecdh = crypto_ecdh_init(OWE_DH_GRP19);
+        if (!sta->owe_ecdh) {
+            wpa_printf(MSG_ERROR, "OWE: Error initializing ECDH for STA");
+            return WLAN_STATUS_UNSPECIFIED_FAILURE;
+        }
     }
 
     // Set up the DH shared secret
@@ -888,13 +929,27 @@ uint16_t owe_process_assoc_req(struct sta_info *sta, const uint8_t *owe_dh,
     wpa_hexdump_key(MSG_DEBUG, "OWE: PMK", sta->owe_pmk, PMK_LEN);
     wpa_hexdump(MSG_DEBUG, "OWE: PMKID", pmkid, PMKID_LEN);
 
+    sta->owe_pmk_len = SHA256_MAC_LEN;
+
+    // Add the PMK to the PMKSA cache
+    wpa_auth_pmksa_add2(hapd->wpa_auth, sta->addr, sta->owe_pmk, sta->owe_pmk_len, pmkid, 0, WPA_KEY_MGMT_OWE, NULL);
+
+    // Update the PMKID in the STA's WPA state machine
+    os_memcpy(sta->wpa_sm->pmkid, pmkid, PMKID_LEN);
+    sta->wpa_sm->pmkid_set = 1;
+
     return WLAN_STATUS_SUCCESS;
 }
 
 
 uint8_t *owe_build_assoc_resp_dhie(struct hostapd_data *hapd, const u8 *bssid, int *owe_ie_len)
 {
-    
+
+    if (!hapd || !hapd->wpa_auth || !hapd->wpa_auth->wpa_ie) {
+        wpa_printf(MSG_ERROR, "Invalid hapd or WPA auth data");
+        return NULL;
+    }
+
     struct wpabuf *pub;
     struct sta_info *sta = ap_get_sta(hapd, bssid);
     if (!sta) {
@@ -907,34 +962,39 @@ uint8_t *owe_build_assoc_resp_dhie(struct hostapd_data *hapd, const u8 *bssid, i
         return NULL;
     }
 
-    u8 *pos, buf[128];
+    // If PMKSA caching is used, write and return only RSN IE with PMKID
+    if (sta->wpa_sm && sta->wpa_sm->pmksa) {
+        u8 *pos, buf[128];
+        pos = buf;
 
-    pos = buf;
-
-    pos = wpa_auth_write_assoc_resp_owe(hapd, sta->wpa_sm, pos,
+	wpa_printf(MSG_DEBUG, "OWE: Using PMKSA caching for Assoc Resp");
+        pos = wpa_auth_write_assoc_resp_owe(hapd, sta->wpa_sm, pos,
                                       buf + sizeof(buf) - pos);
 
-    wpabuf_resize(&owe_buf, pos - buf);
-    wpabuf_put_data(owe_buf, buf, pos - buf);
-    *owe_ie_len = pos - buf;
-
-    pub = crypto_ecdh_get_pubkey(sta->owe_ecdh, 0);
-    if (!pub) {
-        return NULL;
+        wpabuf_resize(&owe_buf, pos - buf);
+        wpabuf_put_data(owe_buf, buf, pos - buf);
+        *owe_ie_len = pos - buf;
+	return (uint8_t *)wpabuf_head(owe_buf);
     }
 
+    if (sta->owe_ecdh) {
+        pub = crypto_ecdh_get_pubkey(sta->owe_ecdh, 0);
+        if (!pub) {
+            return NULL;
+        }
 
-    wpa_hexdump_buf(MSG_DEBUG, "Own public key", pub);
+        wpa_hexdump_buf(MSG_DEBUG, "Own public key", pub);
 
-    wpabuf_resize(&owe_buf, OWE_DHIE_LEN);
-    wpabuf_put_u8(owe_buf, WLAN_EID_EXTENSION);
-    wpabuf_put_u8(owe_buf, 1 + 2 + wpabuf_len(pub));
-    wpabuf_put_u8(owe_buf, WLAN_EID_EXT_OWE_DH_PARAM);
-    wpabuf_put_le16(owe_buf, IANA_SECP256R1);
-    wpabuf_put_buf(owe_buf, pub);
-    wpabuf_free(pub);
+        wpabuf_resize(&owe_buf, OWE_DHIE_LEN);
+        wpabuf_put_u8(owe_buf, WLAN_EID_EXTENSION);
+        wpabuf_put_u8(owe_buf, 1 + 2 + wpabuf_len(pub));
+        wpabuf_put_u8(owe_buf, WLAN_EID_EXT_OWE_DH_PARAM);
+        wpabuf_put_le16(owe_buf, IANA_SECP256R1);
+        wpabuf_put_buf(owe_buf, pub);
+        wpabuf_free(pub);
 
-    wpa_hexdump_buf(MSG_DEBUG, "OWE: Buffer", owe_buf);
+        wpa_hexdump_buf(MSG_DEBUG, "OWE: Buffer", owe_buf);
+    }
     *owe_ie_len = wpabuf_len(owe_buf);
 
     return (uint8_t *)wpabuf_head(owe_buf);

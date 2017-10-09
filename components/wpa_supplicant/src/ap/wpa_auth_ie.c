@@ -876,7 +876,8 @@ uint8_t *wpa_auth_write_assoc_resp_owe(struct hostapd_data *hapd, struct wpa_sta
 {
 	int res;
 
-	res = wpa_write_rsn_ie(&hapd->wpa_auth->conf, pos, max_len, NULL);
+	res = wpa_write_rsn_ie(&hapd->wpa_auth->conf, pos, max_len,
+			       sm->pmksa ? sm->pmksa->pmkid : NULL, hapd->wpa_auth->conf.group_mgmt_cipher);
 	if (res < 0)
 		return pos;
 	return pos + res;
