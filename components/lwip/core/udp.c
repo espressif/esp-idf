@@ -542,6 +542,19 @@ udp_sendto_chksum(struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *dst_ip,
 
   LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE, ("udp_send\n"));
 
+#if LWIP_IPV4 && LWIP_IPV6
+  /* Unwrap IPV4-mapped IPV6 addresses and convert to native IPV4 here */
+  if (IP_IS_V4MAPPEDV6(dst_ip)) {
+      ip_addr_t dest_ipv4;
+      ip_addr_ip4_from_mapped_ip6(&dest_ipv4, dst_ip);
+#if LWIP_CHECKSUM_ON_COPY && CHECKSUM_GEN_UP
+      return udp_sendto_chksum(pcb, p, &dest_ipv4, dst_port, have_chksum, chksum);
+#else
+      return udp_sendto(pcb, p, &dest_ipv4, dst_port);
+#endif /* LWIP_CHECKSUM_ON_COPY && CHECKSUM_GEN_UP */
+  }
+#endif /* LWIP_IPV4 && LWIP_IPV6 */
+
 #if LWIP_IPV6 || (LWIP_IPV4 && LWIP_MULTICAST_TX_OPTIONS)
   if (ip_addr_ismulticast(dst_ip_route)) {
 #if LWIP_IPV6

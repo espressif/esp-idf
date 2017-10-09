@@ -882,6 +882,11 @@ ip6_output_if_src(struct pbuf *p, const ip6_addr_t *src, const ip6_addr_t *dest,
       }
     }
   }
+#if LWIP_IPV6_MLD
+  if ((p->flags & PBUF_FLAG_MCASTLOOP) != 0) {
+    netif_loop_output(netif, p);
+  }
+#endif /* LWIP_IPV6_MLD */
 #endif /* ENABLE_LOOPBACK */
 #if LWIP_IPV6_FRAG
   /* don't fragment if interface has mtu set to 0 [loopif] */

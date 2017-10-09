@@ -262,6 +262,27 @@ struct linger {
  */
 #define IPV6_CHECKSUM       7  /* RFC3542: calculate and insert the ICMPv6 checksum for raw sockets. */
 #define IPV6_V6ONLY         27 /* RFC3493: boolean control to restrict AF_INET6 sockets to IPv6 communications only. */
+
+#if LWIP_IPV6_MLD
+/* Socket options for IPV6 multicast, uses the MLD interface to manage group memberships. RFC2133. */
+#define IPV6_MULTICAST_IF 0x300
+#define IPV6_MULTICAST_HOPS 0x301
+#define IPV6_MULTICAST_LOOP 0x302
+#define IPV6_ADD_MEMBERSHIP 0x303
+#define IPV6_DROP_MEMBERSHIP 0x304
+
+/* Structure used for IPV6_ADD/DROP_MEMBERSHIP */
+typedef struct ip6_mreq {
+    struct in6_addr ipv6mr_multiaddr; /* IPv6 multicast addr */
+    struct in6_addr ipv6mr_interface; /* local IP address of interface */
+} ip6_mreq;
+
+/* Commonly used synonyms for these options */
+#define IPV6_JOIN_GROUP IPV6_ADD_MEMBERSHIP
+#define IPV6_LEAVE_GROUP IPV6_DROP_MEMBERSHIP
+
+#endif /* LWIP_IPV6_MLD */
+
 #endif /* LWIP_IPV6 */
 
 #if LWIP_UDP && LWIP_UDPLITE

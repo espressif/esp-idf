@@ -173,6 +173,12 @@ void             udp_init       (void);
 #define udp_get_multicast_netif_addr(pcb)          ip_2_ip4(&(pcb)->multicast_ip)
 #define udp_set_multicast_ttl(pcb, value)      do { (pcb)->mcast_ttl = value; } while(0)
 #define udp_get_multicast_ttl(pcb)                 ((pcb)->mcast_ttl)
+
+#if LWIP_IPV6_MLD
+#define udp_set_multicast_netif_ip6addr(pcb, ip6addr) ip_addr_copy_from_ip6((pcb)->multicast_ip, *(ip6addr))
+#define udp_get_multicast_netif_ip6addr(pcb)          ip_2_ip6(&(pcb)->multicast_ip)
+#endif
+
 #endif /* LWIP_MULTICAST_TX_OPTIONS */
 
 #if UDP_DEBUG
