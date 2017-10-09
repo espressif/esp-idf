@@ -43,7 +43,7 @@ $(ULP_LD_SCRIPT): $(ULP_LD_TEMPLATE)
 # Link object files and generate map file
 $(ULP_ELF): $(ULP_OBJECTS) $(ULP_LD_SCRIPT)
 	$(summary) ULP_LD $(patsubst $(PWD)/%,%,$(CURDIR))/$@
-	$(ULP_LD) -o $@ -A elf32-esp32ulp -Map=$(ULP_MAP) -T $(ULP_LD_SCRIPT) $<
+	$(ULP_LD) -o $@ -A elf32-esp32ulp -Map=$(ULP_MAP) -T $(ULP_LD_SCRIPT) $(ULP_OBJECTS)
 
 # Dump the list of global symbols in a convenient format.
 $(ULP_SYM): $(ULP_ELF)
