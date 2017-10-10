@@ -467,12 +467,15 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         LOG_ERROR("BTA_DM_DEV_UNPAIRED_EVT");
         memcpy(bd_addr.address, p_data->link_down.bd_addr, sizeof(BD_ADDR));
         btm_set_bond_type_dev(p_data->link_down.bd_addr, BOND_TYPE_UNKNOWN);
-        //remove the bonded key in the config and nvs flash.
-        btc_storage_remove_ble_dev_type(&bd_addr, false);
-        btc_storage_remove_remote_addr_type(&bd_addr, false);
-        btc_storage_remove_ble_bonding_keys(&bd_addr);
+        param.remove_bond_dev_cmpl.status = ESP_BT_STATUS_FAIL;
+        
+        if (p_data->link_down.status == HCI_SUCCESS) {
+            //remove the bonded key in the config and nvs flash.
+            btc_storage_remove_ble_dev_type(&bd_addr, false);
+            btc_storage_remove_remote_addr_type(&bd_addr, false);
+            param.remove_bond_dev_cmpl.status = btc_storage_remove_ble_bonding_keys(&bd_addr);
+        }
         ble_msg.act = ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT;
-        param.remove_bond_dev_cmpl.status = (p_data->link_down.status == HCI_SUCCESS) ? ESP_BT_STATUS_SUCCESS : ESP_BT_STATUS_FAIL;
         memcpy(param.remove_bond_dev_cmpl.bd_addr, p_data->link_down.bd_addr, sizeof(BD_ADDR));
 #endif /* #if (SMP_INCLUDED == TRUE) */
         break;
