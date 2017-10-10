@@ -45,7 +45,7 @@ size_t multi_heap_get_allocated_size(multi_heap_handle_t heap, void *p)
 multi_heap_handle_t multi_heap_register(void *start, size_t size)
     __attribute__((alias("multi_heap_register_impl")));
 
-void multi_get_heap_info(multi_heap_handle_t heap, multi_heap_info_t *info)
+void multi_heap_get_info(multi_heap_handle_t heap, multi_heap_info_t *info)
     __attribute__((alias("multi_heap_get_info_impl")));
 
 size_t multi_heap_free_size(multi_heap_handle_t heap)
