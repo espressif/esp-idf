@@ -64,10 +64,9 @@ extern "C" {
  * This structure should be filled with pointers to corresponding
  * FS driver functions.
  *
- * If the FS implementation has an option to use certain offset for
- * all file descriptors, this value should be passed into fd_offset
- * field. Otherwise VFS component will translate all FDs to start
- * at zero offset.
+ * VFS component will translate all FDs so that the filesystem implementation
+ * sees them starting at zero. The caller sees a global FD which is prefixed
+ * with an pre-filesystem-implementation.
  *
  * Some FS implementations expect some state (e.g. pointer to some structure)
  * to be passed in as a first argument. For these implementations,
@@ -82,7 +81,6 @@ extern "C" {
  */
 typedef struct
 {
-    int fd_offset;  /*!< file descriptor offset, determined by the FS driver */
     int flags;      /*!< ESP_VFS_FLAG_CONTEXT_PTR or ESP_VFS_FLAG_DEFAULT, plus optionally ESP_VFS_FLAG_SHARED_FD_SPACE  */
     union {
         ssize_t (*write_p)(void* p, int fd, const void * data, size_t size);

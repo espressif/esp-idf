@@ -45,7 +45,6 @@ static int lwip_ioctl_r_wrapper(int fd, int cmd, va_list args);
 void esp_vfs_lwip_sockets_register()
 {
     esp_vfs_t vfs = {
-        .fd_offset = 0,
         .flags = ESP_VFS_FLAG_DEFAULT | ESP_VFS_FLAG_SHARED_FD_SPACE,
         .write = &lwip_write_r,
         .open = NULL,

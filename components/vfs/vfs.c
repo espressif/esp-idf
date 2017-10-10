@@ -140,9 +140,9 @@ static const vfs_entry_t* get_vfs_for_fd(int fd)
 static int translate_fd(const vfs_entry_t* vfs, int fd)
 {
     if (vfs->vfs.flags & ESP_VFS_FLAG_SHARED_FD_SPACE) {
-        return fd + vfs->vfs.fd_offset;
+        return fd;
     } else {
-        return (fd & VFS_FD_MASK) + vfs->vfs.fd_offset;
+        return fd & VFS_FD_MASK;
     }
 }
 
@@ -255,8 +255,7 @@ int esp_vfs_open(struct _reent *r, const char * path, int flags, int mode)
     if (ret < 0) {
         return ret;
     }
-    assert(ret >= vfs->vfs.fd_offset);
-    return ret - vfs->vfs.fd_offset + (vfs->offset << VFS_INDEX_S);
+    return ret + (vfs->offset << VFS_INDEX_S);
 }
 
 ssize_t esp_vfs_write(struct _reent *r, int fd, const void * data, size_t size)
