@@ -27,6 +27,29 @@ TEST_CASE("pthread local storage basics", "[pthread]")
     TEST_ASSERT_EQUAL(0, pthread_key_delete(key));
 }
 
+TEST_CASE("pthread local storage unique keys", "[pthread]")
+{
+    const int NUM_KEYS = 10;
+    pthread_key_t keys[NUM_KEYS];
+
+    for (int i = 0; i < NUM_KEYS; i++) {
+        TEST_ASSERT_EQUAL(0, pthread_key_create(&keys[i], NULL));
+        printf("New key %d = %d\n", i, keys[i]);
+    }
+
+    for (int i = 0; i < NUM_KEYS; i++) {
+        for (int j = 0; j < NUM_KEYS; j++) {
+            if (i != j) {
+                TEST_ASSERT_NOT_EQUAL(keys[i], keys[j]);
+            }
+        }
+    }
+
+    for (int i = 0; i < NUM_KEYS; i++) {
+        TEST_ASSERT_EQUAL(0, pthread_key_delete(keys[i]));
+    }
+}
+
 static void test_pthread_destructor(void *);
 static void *expected_destructor_ptr;
 static void *actual_destructor_ptr;
