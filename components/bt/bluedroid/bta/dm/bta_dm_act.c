@@ -646,8 +646,12 @@ void bta_dm_process_remove_device(BD_ADDR bd_addr)
     if (bta_dm_cb.p_sec_cback) {
         tBTA_DM_SEC sec_event;
         bdcpy(sec_event.link_down.bd_addr, bd_addr);
-        /* No connection, set status to success (acl disc code not valid) */
-        sec_event.link_down.status = HCI_SUCCESS;
+        if (btm_find_dev(bd_addr) != NULL) {
+            /* No connection, set status to success (acl disc code not valid) */
+            sec_event.link_down.status = HCI_SUCCESS;
+        } else {
+            sec_event.link_down.status = HCI_ERR_ILLEGAL_COMMAND;
+        }
         bta_dm_cb.p_sec_cback(BTA_DM_DEV_UNPAIRED_EVT, &sec_event);
     }
 }
