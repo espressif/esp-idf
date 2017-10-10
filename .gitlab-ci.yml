@@ -133,6 +133,7 @@ build_esp_idf_tests:
       - build_examples/*/*/*/build/*.bin
       - build_examples/*/*/*/build/*.elf
       - build_examples/*/*/*/build/*.map
+      - build_examples/*/*/*/build/download.config
       - build_examples/*/*/*/build/bootloader/*.bin
     expire_in: 1 week
   variables:
@@ -411,17 +412,19 @@ check_submodule_sync:
 assign_test:
   <<: *build_template
   stage: assign_test
-  dependencies:
-    - build_esp_idf_tests
-    - build_ssc
+  # gitlab ci do not support match job with RegEx or wildcard now in dependencies.
+  # we have a lot build example jobs. now we don't use dependencies, just download all artificats of build stage.
   variables:
     UT_BIN_PATH: "tools/unit-test-app/output"
     OUTPUT_BIN_PATH: "test_bins/ESP32_IDF"
+    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
+    EXAMPLE_CONFIG_OUTPUT_PATH: "$CI_PROJECT_DIR/examples/test_configs"
   artifacts:
     paths:
       - test_bins
       - components/idf_test/*/CIConfigs
       - components/idf_test/*/TC.sqlite
+      - $EXAMPLE_CONFIG_OUTPUT_PATH
     expire_in: 1 mos
   before_script: *add_gitlab_key_before
   script:
@@ -430,6 +433,8 @@ assign_test:
     # copy and rename folder name to "UT_config"
     - for CONFIG in $(ls $UT_BIN_PATH); do cp -r "$UT_BIN_PATH/$CONFIG" "$OUTPUT_BIN_PATH/UT_$CONFIG"; done
     - cp -r SSC/ssc_bin/* $OUTPUT_BIN_PATH
+    # assign example tests
+    - python $TEST_FW_PATH/CIAssignExampleTest.py $IDF_PATH/examples $IDF_PATH/.gitlab-ci.yml $EXAMPLE_CONFIG_OUTPUT_PATH
     # clone test script to assign tests
     - git clone $TEST_SCRIPT_REPOSITORY
     - cd auto_test_script
@@ -438,6 +443,34 @@ assign_test:
     - python CIAssignTestCases.py -t $IDF_PATH/components/idf_test/unit_test -c $IDF_PATH/.gitlab-ci.yml -b $IDF_PATH/test_bins
     # assgin integration test cases
     - python CIAssignTestCases.py -t $IDF_PATH/components/idf_test/integration_test -c $IDF_PATH/.gitlab-ci.yml -b $IDF_PATH/test_bins
+
+.example_test_template: &example_test_template
+  stage: test
+  when: on_success
+  only:
+    - master
+    - /^release\/v/
+    - /^v\d+\.\d+(\.\d+)?($|-)/
+    - triggers
+  # gitlab ci do not support match job with RegEx or wildcard now in dependencies.
+  # we have a lot build example jobs and the binaries them exceed the limitation of artifacts.
+  # we can't artifact them in one job. For example test jobs, download all artifacts from previous stages.
+  artifacts:
+    when: always
+    paths:
+      - $LOG_PATH
+    expire_in: 6 mos
+  variables:
+    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
+    TEST_CASE_PATH: "$CI_PROJECT_DIR/examples"
+    CONFIG_FILE: "$CI_PROJECT_DIR/examples/test_configs/$CI_JOB_NAME.yml"
+    LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
+  script:
+    # first test if config file exists, if not exist, exit 0
+    - test -e $CONFIG_FILE || exit 0
+    - cd $TEST_FW_PATH
+    # run test
+    - python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE
 
 .test_template: &test_template
   stage: test
@@ -508,6 +541,12 @@ nvs_compatible_test:
     - ./Tools/prepare_nvs_bin.sh
     # run test
     - python CIRunner.py -l "$LOG_PATH/$CI_JOB_NAME" -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH -m $MODULE_UPDATE_FILE
+
+example_test_001_01:
+  <<: *example_test_template
+  tags:
+    - ESP32
+    - Example_WIFI
 
 UT_001_01:
   <<: *unit_test_template

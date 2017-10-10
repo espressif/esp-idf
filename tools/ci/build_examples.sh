@@ -118,7 +118,8 @@ build_example () {
         (
             make MAKEFLAGS= clean &&
             make MAKEFLAGS= defconfig &&
-            make all
+            make all &&
+            make print_flash_cmd | tail -n 1 > build/download.config
         ) &> >(tee -a "${BUILDLOG}") || {
             RESULT=$?; FAILED_EXAMPLES+=" ${EXAMPLE_NAME}"
             make MAKEFLAGS= V=1 clean defconfig && make V=1 # verbose output for errors
