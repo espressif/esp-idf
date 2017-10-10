@@ -874,7 +874,7 @@ int uart_write_bytes_with_break(uart_port_t uart_num, const char* src, size_t si
 int uart_read_bytes(uart_port_t uart_num, uint8_t* buf, uint32_t length, TickType_t ticks_to_wait)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", (-1));
-    UART_CHECK((buf), "uart_num error", (-1));
+    UART_CHECK((buf), "uart data null", (-1));
     UART_CHECK((p_uart_obj[uart_num]), "uart driver error", (-1));
     uint8_t* data = NULL;
     size_t size;
