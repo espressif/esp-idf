@@ -148,7 +148,7 @@ void heap_caps_get_info( multi_heap_info_t *info, uint32_t caps );
 /**
  * @brief Print a summary of all memory with the given capabilities.
  *
- * Calls multi_heap_info() on all heaps which share the given capabilities, and
+ * Calls multi_heap_info on all heaps which share the given capabilities, and
  * prints a two-line summary for each, then a total summary.
  *
  * @param caps        Bitwise OR of MALLOC_CAP_* flags indicating the type
@@ -158,13 +158,28 @@ void heap_caps_get_info( multi_heap_info_t *info, uint32_t caps );
 void heap_caps_print_heap_info( uint32_t caps );
 
 /**
+ * @brief Check integrity of all heap memory in the system.
+ *
+ * Calls multi_heap_check on all heaps. Optionally print errors if heaps are corrupt.
+ *
+ * Calling this function is equivalent to calling heap_caps_check_integrity
+ * with the caps argument set to MALLOC_CAP_INVALID.
+ *
+ * @param print_errors Print specific errors if heap corruption is found.
+ *
+ * @return True if all heaps are valid, False if at least one heap is corrupt.
+ */
+bool heap_caps_check_integrity_all(bool print_errors);
+
+/**
  * @brief Check integrity of all heaps with the given capabilities.
  *
- * Calls multi_heap_check() on all heaps which share the given capabilities. Optionally
+ * Calls multi_heap_check on all heaps which share the given capabilities. Optionally
  * print errors if the heaps are corrupt.
  *
- * Call ``heap_caps_check_integrity(MALLOC_CAP_INVALID, print_errors)`` to check
- * all regions' heaps.
+ * See also heap_caps_check_integrity_all to check all heap memory
+ * in the system and heap_caps_check_integrity_addr to check memory
+ * around a single address.
  *
  * @param caps        Bitwise OR of MALLOC_CAP_* flags indicating the type
  *                    of memory
@@ -174,7 +189,28 @@ void heap_caps_print_heap_info( uint32_t caps );
  */
 bool heap_caps_check_integrity(uint32_t caps, bool print_errors);
 
-
+/**
+ * @brief Check integrity of heap memory around a given address.
+ *
+ * This function can be used to check the integrity of a single region of heap memory,
+ * which contains the given address.
+ *
+ * This can be useful if debugging heap integrity for corruption at a known address,
+ * as it has a lower overhead than checking all heap regions. Note that if the corrupt
+ * address moves around between runs (due to timing or other factors) then this approach
+ * won't work and you should call heap_caps_check_integrity or
+ * heap_caps_check_integrity_all instead.
+ *
+ * @note The entire heap region around the address is checked, not only the adjacent
+ * heap blocks.
+ *
+ * @param addr Address in memory. Check for corruption in region containing this address.
+ * @param print_errors Print specific errors if heap corruption is found.
+ *
+ * @return True if the heap containing the specified address is valid,
+ * False if at least one heap is corrupt or the address doesn't belong to a heap region.
+ */
+bool heap_caps_check_integrity_addr(intptr_t addr, bool print_errors);
 
 /**
  * @brief Enable malloc() in external memory and set limit below which 
