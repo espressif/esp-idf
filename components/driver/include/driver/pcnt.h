@@ -18,59 +18,76 @@
 extern "C" {
 #endif
 
-#define PCNT_PIN_NOT_USED     (-1)  /*!< Pin are not used */
+#define PCNT_PIN_NOT_USED     (-1)  /*!< When selected for a pin, this pin will not be used */
 
+/**
+ * @brief Selection of available modes that determine the counter's action depending on the state of the control signal's input GPIO
+ * @note  Configuration covers two actions, one for high, and one for low level on the control input
+ */
 typedef enum {
     PCNT_MODE_KEEP = 0,             /*!< Control mode: won't change counter mode*/
-    PCNT_MODE_REVERSE = 1,          /*!< Control mode: invert counter mode(increase -> decrease, decrease -> increase);*/
-    PCNT_MODE_DISABLE = 2,          /*!< Control mode: Inhibit counter(counter value will not change in this condition)*/
+    PCNT_MODE_REVERSE = 1,          /*!< Control mode: invert counter mode(increase -> decrease, decrease -> increase) */
+    PCNT_MODE_DISABLE = 2,          /*!< Control mode: Inhibit counter(counter value will not change in this condition) */
     PCNT_MODE_MAX
 } pcnt_ctrl_mode_t;
 
+/**
+ * @brief Selection of available modes that determine the counter's action on the edge of the pulse signal's input GPIO
+ * @note  Configuration covers two actions, one for positive, and one for negative edge on the pulse input
+ */
 typedef enum {
-    PCNT_COUNT_DIS = 0,            /*!< Counter mode: Inhibit counter(counter value will not change in this condition)*/
-    PCNT_COUNT_INC = 1,            /*!< Counter mode: Increase counter value*/
-    PCNT_COUNT_DEC = 2,            /*!< Counter mode: Decrease counter value*/
+    PCNT_COUNT_DIS = 0,            /*!< Counter mode: Inhibit counter(counter value will not change in this condition) */
+    PCNT_COUNT_INC = 1,            /*!< Counter mode: Increase counter value */
+    PCNT_COUNT_DEC = 2,            /*!< Counter mode: Decrease counter value */
     PCNT_COUNT_MAX
 } pcnt_count_mode_t;
 
+/**
+ * @brief Selection of all available PCNT units
+ */
 typedef enum {
-    PCNT_UNIT_0 = 0,                 /*!< PCNT unit0 */
-    PCNT_UNIT_1 = 1,                 /*!< PCNT unit1 */
-    PCNT_UNIT_2 = 2,                 /*!< PCNT unit2 */
-    PCNT_UNIT_3 = 3,                 /*!< PCNT unit3 */
-    PCNT_UNIT_4 = 4,                 /*!< PCNT unit4 */
-    PCNT_UNIT_5 = 5,                 /*!< PCNT unit5 */
-    PCNT_UNIT_6 = 6,                 /*!< PCNT unit6 */
-    PCNT_UNIT_7 = 7,                 /*!< PCNT unit7 */
+    PCNT_UNIT_0 = 0,                 /*!< PCNT unit 0 */
+    PCNT_UNIT_1 = 1,                 /*!< PCNT unit 1 */
+    PCNT_UNIT_2 = 2,                 /*!< PCNT unit 2 */
+    PCNT_UNIT_3 = 3,                 /*!< PCNT unit 3 */
+    PCNT_UNIT_4 = 4,                 /*!< PCNT unit 4 */
+    PCNT_UNIT_5 = 5,                 /*!< PCNT unit 5 */
+    PCNT_UNIT_6 = 6,                 /*!< PCNT unit 6 */
+    PCNT_UNIT_7 = 7,                 /*!< PCNT unit 7 */
     PCNT_UNIT_MAX,
 } pcnt_unit_t; 
 
+/**
+ * @brief Selection of channels available for a single PCNT unit
+ */
 typedef enum {
-    PCNT_CHANNEL_0 = 0x00,           /*!< PCNT channel0 */
-    PCNT_CHANNEL_1 = 0x01,           /*!< PCNT channel1 */
+    PCNT_CHANNEL_0 = 0x00,           /*!< PCNT channel 0 */
+    PCNT_CHANNEL_1 = 0x01,           /*!< PCNT channel 1 */
     PCNT_CHANNEL_MAX,
 } pcnt_channel_t;
 
+/**
+ * @brief Selection of counter's events the may trigger an interrupt
+ */
 typedef enum {
     PCNT_EVT_L_LIM = 0,             /*!< PCNT watch point event: Minimum counter value */
-    PCNT_EVT_H_LIM = 1,             /*!< PCNT watch point event: Maximum counter value*/
-    PCNT_EVT_THRES_0 = 2,            /*!< PCNT watch point event: threshold0 value event*/
-    PCNT_EVT_THRES_1 = 3,            /*!< PCNT watch point event: threshold1 value event*/
-    PCNT_EVT_ZERO = 4,              /*!< PCNT watch point event: counter value zero event*/
+    PCNT_EVT_H_LIM = 1,             /*!< PCNT watch point event: Maximum counter value */
+    PCNT_EVT_THRES_0 = 2,           /*!< PCNT watch point event: threshold0 value event */
+    PCNT_EVT_THRES_1 = 3,           /*!< PCNT watch point event: threshold1 value event */
+    PCNT_EVT_ZERO = 4,              /*!< PCNT watch point event: counter value zero event */
     PCNT_EVT_MAX
 } pcnt_evt_type_t;
 
 /**
- * @brief Pulse Counter configure struct
+ * @brief Pulse Counter configuration for a single channel
  */
 typedef struct {
-    int pulse_gpio_num;             /*!< Pulse input gpio_num, if you want to use gpio16, pulse_gpio_num = 16, a negative value will be ignored */
-    int ctrl_gpio_num;              /*!< Contol signal input gpio_num, a negative value will be ignored*/
-    pcnt_ctrl_mode_t lctrl_mode;    /*!< PCNT low control mode*/
-    pcnt_ctrl_mode_t hctrl_mode;    /*!< PCNT high control mode*/
-    pcnt_count_mode_t pos_mode;     /*!< PCNT positive edge count mode*/
-    pcnt_count_mode_t neg_mode;     /*!< PCNT negative edge count mode*/
+    int pulse_gpio_num;             /*!< Pulse input GPIO number, if you want to use GPIO16, enter pulse_gpio_num = 16, a negative value will be ignored */
+    int ctrl_gpio_num;              /*!< Control signal input GPIO number, a negative value will be ignored */
+    pcnt_ctrl_mode_t lctrl_mode;    /*!< PCNT low control mode */
+    pcnt_ctrl_mode_t hctrl_mode;    /*!< PCNT high control mode */
+    pcnt_count_mode_t pos_mode;     /*!< PCNT positive edge count mode */
+    pcnt_count_mode_t neg_mode;     /*!< PCNT negative edge count mode */
     int16_t counter_h_lim;          /*!< Maximum counter value */
     int16_t counter_l_lim;          /*!< Minimum counter value */
     pcnt_unit_t unit;               /*!< PCNT unit number */
@@ -150,7 +167,7 @@ esp_err_t pcnt_counter_clear(pcnt_unit_t pcnt_unit);
 esp_err_t pcnt_intr_enable(pcnt_unit_t pcnt_unit);
 
 /**
- * @brief Disable PCNT interrupt for PCNT uint
+ * @brief Disable PCNT interrupt for PCNT unit
  *
  * @param pcnt_unit PCNT unit number
  *
@@ -219,10 +236,10 @@ esp_err_t pcnt_get_event_value(pcnt_unit_t unit, pcnt_evt_type_t evt_type, int16
  *
  * @param fn Interrupt handler function.
  * @param arg Parameter for handler function
- * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
- *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
- * @param  handle Pointer to return handle. If non-NULL, a handle for the interrupt will
- *            be returned here.
+ * @param intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
+ *        ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
+ * @param handle Pointer to return handle. If non-NULL, a handle for the interrupt will
+ *        be returned here.
  *
  * @return
  *     - ESP_OK Success
@@ -236,11 +253,9 @@ esp_err_t pcnt_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags,
  * @param unit PCNT unit number
  * @param channel PCNT channel number
  * @param pulse_io Pulse signal input GPIO
- *        @note
- *        Set to PCNT_PIN_NOT_USED if unused.
  * @param ctrl_io Control signal input GPIO
- *        @note
- *        Set to PCNT_PIN_NOT_USED if unused.
+ *
+ * @note  Set the signal input to PCNT_PIN_NOT_USED if unused.
  *
  * @return
  *     - ESP_OK Success
@@ -329,8 +344,8 @@ esp_err_t pcnt_set_mode(pcnt_unit_t unit, pcnt_channel_t channel,
  *     .pulse_gpio_num = 4,         //set gpio4 as pulse input gpio
  *     .ctrl_gpio_num = 5,          //set gpio5 as control gpio
  *     .channel = PCNT_CHANNEL_0,         //use unit 0 channel 0
- *     .lctrl_mode = PCNT_MODE_REVERSE,   //when control signal is low ,reverse the primary counter mode(inc->dec/dec->inc)
- *     .hctrl_mode = PCNT_MODE_KEEP,      //when control signal is high,keep the primary counter mode
+ *     .lctrl_mode = PCNT_MODE_REVERSE,   //when control signal is low, reverse the primary counter mode(inc->dec/dec->inc)
+ *     .hctrl_mode = PCNT_MODE_KEEP,      //when control signal is high, keep the primary counter mode
  *     .pos_mode = PCNT_COUNT_INC,        //increment the counter
  *     .neg_mode = PCNT_COUNT_DIS,        //keep the counter value
  *     .counter_h_lim = 10,
