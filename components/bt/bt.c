@@ -467,7 +467,7 @@ esp_err_t esp_bt_controller_deinit(void)
         return ESP_ERR_NO_MEM;
     }
 
-    btdm_controller_status = ESP_BT_CONTROLLER_STATUS_SHUTDOWN;
+    btdm_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
     return ESP_OK;
 }
 
