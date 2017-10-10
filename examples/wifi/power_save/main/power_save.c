@@ -17,6 +17,7 @@
 #include "esp_wifi.h"
 #include "esp_log.h"
 #include "esp_event_loop.h"
+#include "esp_pm.h"
 #include "nvs_flash.h"
 
 /*set the ssid and password via "make menuconfig"*/
@@ -88,6 +89,18 @@ void app_main()
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK( ret );
+
+#if CONFIG_PM_ENABLE
+    // Configure dynamic frequency scaling: maximum frequency is set in sdkconfig,
+    // minimum frequency is XTAL.
+    rtc_cpu_freq_t max_freq;
+    rtc_clk_cpu_freq_from_mhz(CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ, &max_freq);
+    esp_pm_config_esp32_t pm_config = {
+            .max_cpu_freq = max_freq,
+            .min_cpu_freq = RTC_CPU_FREQ_XTAL
+    };
+    ESP_ERROR_CHECK( esp_pm_configure(&pm_config) );
+#endif // CONFIG_PM_ENABLE
 
     wifi_power_save();
 }
