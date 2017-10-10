@@ -80,12 +80,13 @@ DRESULT ff_disk_ioctl (BYTE pdrv, BYTE cmd, void* buff)
 DWORD get_fattime(void)
 {
     time_t t = time(NULL);
-    struct tm *tmr = gmtime(&t);
-    int year = tmr->tm_year < 80 ? 0 : tmr->tm_year - 80;
+    struct tm tmr;
+    localtime_r(&t, &tmr);
+    int year = tmr.tm_year < 80 ? 0 : tmr.tm_year - 80;
     return    ((DWORD)(year) << 25)
-            | ((DWORD)(tmr->tm_mon + 1) << 21)
-            | ((DWORD)tmr->tm_mday << 16)
-            | (WORD)(tmr->tm_hour << 11)
-            | (WORD)(tmr->tm_min << 5)
-            | (WORD)(tmr->tm_sec >> 1);
+            | ((DWORD)(tmr.tm_mon + 1) << 21)
+            | ((DWORD)tmr.tm_mday << 16)
+            | (WORD)(tmr.tm_hour << 11)
+            | (WORD)(tmr.tm_min << 5)
+            | (WORD)(tmr.tm_sec >> 1);
 }
