@@ -1413,7 +1413,7 @@ tBTM_STATUS btm_ble_set_encryption (BD_ADDR bd_addr, void *p_ref_data, UINT8 lin
 
     switch (sec_act) {
     case BTM_BLE_SEC_ENCRYPT:
-        if (link_role == BTM_ROLE_MASTER) {
+        if (link_role == BTM_ROLE_MASTER && (p_rec->ble.key_type & BTM_LE_KEY_PENC)) {
             /* start link layer encryption using the security info stored */
             cmd = btm_ble_start_encrypt(bd_addr, FALSE, NULL);
             break;
