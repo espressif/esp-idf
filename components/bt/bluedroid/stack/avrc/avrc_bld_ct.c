@@ -175,6 +175,35 @@ static BT_HDR *avrc_bld_init_cmd_buffer(tAVRC_COMMAND *p_cmd)
     return p_pkt;
 }
 
+/*******************************************************************************
+**
+** Function         avrc_bld_set_player_value_cmd
+**
+** Description      This function builds the Set Player Application Value command.
+**
+** Returns          AVRC_STS_NO_ERROR, if the command is built successfully
+**                  Otherwise, the error code.
+**
+*******************************************************************************/
+static tAVRC_STS avrc_bld_set_player_value_cmd(tAVRC_SET_APP_VALUE_CMD *p_cmd, BT_HDR *p_pkt)
+{
+   int i;
+   UINT8 *p_data, *p_start;
+
+    /* get the existing length, if any, and also the num attributes */
+    p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
+    p_data = p_start + 2; /* pdu + rsvd */
+    /* add length */
+    UINT16_TO_BE_STREAM(p_data, 3);
+    /* Number of attributes */
+    UINT8_TO_BE_STREAM(p_data, 1);
+    UINT8_TO_BE_STREAM(p_data, p_cmd->p_vals->attr_id);
+    UINT8_TO_BE_STREAM(p_data, p_cmd->p_vals->attr_val);
+
+    p_pkt->len = (p_data - p_start);
+    return AVRC_STS_NO_ERROR;
+}
+
  /*******************************************************************************
  **
  ** Function         avrc_bld_get_element_attr_cmd
@@ -257,6 +286,10 @@ tAVRC_STS AVRC_BldCommand( tAVRC_COMMAND *p_cmd, BT_HDR **pp_pkt)
         status = avrc_bld_set_abs_volume_cmd(&p_cmd->volume, p_pkt);
         break;
 #endif
+
+    case AVRC_PDU_SET_PLAYER_APP_VALUE:       /* 0x14 */
+         status = avrc_bld_set_player_value_cmd(&p_cmd->set_app_val, p_pkt);
+      break;
 
     case AVRC_PDU_GET_ELEMENT_ATTR:         /* 0x20 */
          status = avrc_bld_get_element_attr_cmd(&p_cmd->get_elem_attrs, p_pkt);

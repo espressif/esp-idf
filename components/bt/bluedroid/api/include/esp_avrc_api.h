@@ -63,28 +63,65 @@ typedef enum {
 
 //AVRC metadata attribute ids
 typedef enum {
-    ESP_AVRC_MD_ATTR_ID_TITLE = 0x1,        /*!< title of the playing track */
-    ESP_AVRC_MD_ATTR_ID_ARTIST = 0x2,       /*!< track artist */
-    ESP_AVRC_MD_ATTR_ID_ALBUM = 0x3,        /*!< album name */
-    ESP_AVRC_MD_ATTR_ID_TRACK_NUM = 0x4,    /*!< track position on the album */
-    ESP_AVRC_MD_ATTR_ID_NUM_TRACKS = 0x5,   /*!< number of tracks on the album */
-    ESP_AVRC_MD_ATTR_ID_GENRE = 0x6,        /*!< track genre */
-    ESP_AVRC_MD_ATTR_ID_PLAYING_TIME = 0x7, /*!< total album playing time in miliseconds */
+    ESP_AVRC_MD_ATTR_ID_TITLE = 0x1,              /*!< title of the playing track */
+    ESP_AVRC_MD_ATTR_ID_ARTIST = 0x2,             /*!< track artist */
+    ESP_AVRC_MD_ATTR_ID_ALBUM = 0x3,              /*!< album name */
+    ESP_AVRC_MD_ATTR_ID_TRACK_NUM = 0x4,          /*!< track position on the album */
+    ESP_AVRC_MD_ATTR_ID_NUM_TRACKS = 0x5,         /*!< number of tracks on the album */
+    ESP_AVRC_MD_ATTR_ID_GENRE = 0x6,              /*!< track genre */
+    ESP_AVRC_MD_ATTR_ID_PLAYING_TIME = 0x7,       /*!< total album playing time in miliseconds */
     ESP_AVRC_MD_MAX_ATTR
 } esp_avrc_md_attr_ids_t;
 
 //AVRC event notification ids
 typedef enum {
-    ESP_AVRC_RN_PLAY_STATUS_CHANGE = 0x01,
-    ESP_AVRC_RN_TRACK_CHANGE = 0x02,
-    ESP_AVRC_RN_TRACK_REACHED_END = 0x03,
-    ESP_AVRC_RN_TRACK_REACHED_START = 0x04,
-    ESP_AVRC_RN_PLAY_POS_CHANGED = 0x05,
-    ESP_AVRC_RN_BATTERY_STATUS_CHANGE = 0x06,
-    ESP_AVRC_RN_SYSTEM_STATUS_CHANGE = 0x07,
-    ESP_AVRC_RN_APP_SETTING_CHANGE = 0x08,
+    ESP_AVRC_RN_PLAY_STATUS_CHANGE = 0x01,        /*!< track status change, eg. from playing to paused */
+    ESP_AVRC_RN_TRACK_CHANGE = 0x02,              /*!< new track is loaded */
+    ESP_AVRC_RN_TRACK_REACHED_END = 0x03,         /*!< current track reached end */
+    ESP_AVRC_RN_TRACK_REACHED_START = 0x04,       /*!< current track reached start position */
+    ESP_AVRC_RN_PLAY_POS_CHANGED = 0x05,          /*!< track playing position changed */
+    ESP_AVRC_RN_BATTERY_STATUS_CHANGE = 0x06,     /*!< battery status changed */
+    ESP_AVRC_RN_SYSTEM_STATUS_CHANGE = 0x07,      /*!< system status changed */
+    ESP_AVRC_RN_APP_SETTING_CHANGE = 0x08,        /*!< application settings changed */
     ESP_AVRC_RN_MAX_EVT
 }esp_avrc_rn_event_ids_t;
+
+//AVRC player setting ids
+typedef enum {
+    ESP_AVRC_PS_EQUALIZER = 0x01,                 /*!< equalizer, on or off */
+    ESP_AVRC_PS_REPEAT_MODE = 0x02,               /*!< repeat mode */
+    ESP_AVRC_PS_SHUFFLE_MODE = 0x03,              /*!< shuffle mode */
+    ESP_AVRC_PS_SCAN_MODE = 0x04,                 /*!< scan mode on or off */
+    ESP_AVRC_PS_MAX_ATTR
+}esp_avrc_ps_attr_ids_t;
+
+//AVRC equalizer modes
+typedef enum {
+    ESP_AVRC_PS_EQUALIZER_OFF = 0x1,
+    ESP_AVRC_PS_EQUALIZER_ON = 0x2
+}esp_avrc_ps_eq_value_ids_t;
+
+//AVRC repeat modes
+typedef enum {
+    ESP_AVRC_PS_REPEAT_OFF = 0x1,
+    ESP_AVRC_PS_REPEAT_SINGLE = 0x2,
+    ESP_AVRC_PS_REPEAT_GROUP = 0x3
+}esp_avrc_ps_rpt_value_ids_t;
+
+
+//AVRC shuffle modes
+typedef enum {
+    ESP_AVRC_PS_SHUFFLE_OFF = 0x1,
+    ESP_AVRC_PS_SHUFFLE_ALL = 0x2,
+    ESP_AVRC_PS_SHUFFLE_GROUP = 0x3
+}esp_avrc_ps_shf_value_ids_t;
+
+//AVRC scan modes
+typedef enum {
+    ESP_AVRC_PS_SCAN_OFF = 0x1,
+    ESP_AVRC_PS_SCAN_ALL = 0x2,
+    ESP_AVRC_PS_SCAN_GROUP = 0x3
+}esp_avrc_ps_scn_value_ids_t;
 
 /// AVRC controller callback parameters
 typedef union {
@@ -172,6 +209,8 @@ esp_err_t esp_avrc_ct_init(void);
  */
 esp_err_t esp_avrc_ct_deinit(void);
 
+/* add description */
+esp_err_t esp_avrc_ct_send_set_player_value_cmd(uint8_t tl, uint8_t attr_id, uint8_t value_id);
 
 /**
  * @brief           Send register notification command to AVRCP target, This function should be called after
