@@ -14,4 +14,4 @@ API Guides
    Deep Sleep Wake Stubs <deep-sleep-stub>
    ULP Coprocessor <ulp>
    Unit Testing <unit-tests>
-   Driver <wifi>
+   WiFi Driver <wifi>

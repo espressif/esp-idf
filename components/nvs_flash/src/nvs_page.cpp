@@ -577,6 +577,17 @@ esp_err_t Page::mLoadEntryTable()
             }
 
             mHashList.insert(item, i);
+            
+            if (item.crc32 != item.calculateCrc32()) {
+                err = eraseEntryAndSpan(i);
+                if (err != ESP_OK) {
+                    mState = PageState::INVALID;
+                    return err;
+                }
+                continue;
+            }
+            
+            assert(item.span > 0);
 
             size_t span = item.span;
             i += span - 1;

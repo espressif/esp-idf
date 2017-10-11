@@ -35,6 +35,10 @@ pacman --noconfirm -Syu # This step may require the terminal to be closed and re
 
 pacman --noconfirm -S --needed gettext-devel gcc git make ncurses-devel flex bison gperf vim mingw-w64-i686-python2-pip unzip winpty
 
+# Workaround for errors when running "git submodule" commands
+# See https://github.com/Alexpux/MSYS2-packages/issues/735
+rm /mingw32/bin/envsubst.exe
+
 python -m pip install --upgrade pip
 
 pip install pyserial
