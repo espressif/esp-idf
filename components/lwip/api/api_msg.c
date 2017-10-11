@@ -1008,6 +1008,9 @@ lwip_netconn_do_delconn(void *m)
   enum netconn_state state = msg->conn->state;
   LWIP_ASSERT("netconn state error", /* this only happens for TCP netconns */
     (state == NETCONN_NONE) || (NETCONNTYPE_GROUP(msg->conn->type) == NETCONN_TCP));
+
+  msg->err = ERR_OK;
+
 #if LWIP_NETCONN_FULLDUPLEX
   /* In full duplex mode, blocking write/connect is aborted with ERR_CLSD */
   if (state != NETCONN_NONE) {
@@ -1022,6 +1025,7 @@ lwip_netconn_do_delconn(void *m)
       msg->conn->write_offset = 0;
       msg->conn->state = NETCONN_NONE;
       NETCONN_SET_SAFE_ERR(msg->conn, ERR_CLSD);
+      msg->err = ERR_INPROGRESS;
       sys_sem_signal(op_completed_sem);
     }
   }
