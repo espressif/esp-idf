@@ -59,6 +59,7 @@ If you have one of ESP32 development boards listed below, click on provided link
 
     ESP32 DevKitC <get-started-devkitc>
     ESP-WROVER-KIT <get-started-wrover-kit>
+    ESP32-PICO-KIT <get-started-pico-kit>
 
 If you have different board, move to sections below.
 
