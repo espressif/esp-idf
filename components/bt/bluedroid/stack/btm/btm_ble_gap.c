@@ -246,9 +246,9 @@ void BTM_BleRegiseterConnParamCallback(tBTM_UPDATE_CONN_PARAM_CBACK *update_conn
 ** Returns          void
 **
 *******************************************************************************/
-BOOLEAN BTM_BleUpdateAdvWhitelist(BOOLEAN add_remove, BD_ADDR remote_bda)
+BOOLEAN BTM_BleUpdateAdvWhitelist(BOOLEAN add_remove, BD_ADDR remote_bda, tBTM_ADD_WHITELIST_CBACK *add_wl_cb)
 {
-    return btm_update_dev_to_white_list(add_remove, remote_bda);
+    return btm_update_dev_to_white_list(add_remove, remote_bda, add_wl_cb);
 }
 
 /*******************************************************************************
@@ -962,7 +962,7 @@ void BTM_BleClearBgConnDev(void)
 BOOLEAN BTM_BleUpdateBgConnDev(BOOLEAN add_remove, BD_ADDR   remote_bda)
 {
     BTM_TRACE_EVENT("%s() add=%d", __func__, add_remove);
-    return btm_update_dev_to_white_list(add_remove, remote_bda);
+    return btm_update_dev_to_white_list(add_remove, remote_bda, NULL);
 }
 
 /*******************************************************************************
