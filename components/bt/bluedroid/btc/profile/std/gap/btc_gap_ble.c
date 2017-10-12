@@ -542,8 +542,8 @@ static void btc_ble_set_scan_params(esp_ble_scan_params_t *scan_params, tBLE_SCA
                                      scan_params->scan_interval,
                                      scan_params->scan_window,
                                      scan_params->scan_type,
-                                     scan_params->own_addr_type,
                                      scan_params->scan_filter_policy,
+                                     scan_params->own_addr_type,
                                      scan_param_setup_cback);
     } else {
 		btc_scan_params_callback(ESP_DEFAULT_GATT_IF, BTM_ILLEGAL_VALUE);
@@ -741,17 +741,17 @@ static void btc_ble_start_scanning(uint32_t duration,
                                    tBTA_START_STOP_SCAN_CMPL_CBACK *start_scan_cb)
 {
     if ((results_cb != NULL) && (start_scan_cb != NULL)) {
-        ///Start scan the device
-        BTA_DmBleObserve(true, duration, results_cb, start_scan_cb);
+        //Start scan the device
+        BTA_DmBleScan(true, duration, results_cb, start_scan_cb);
     } else {
-        LOG_ERROR("The scan duration or p_results_cb invalid\n");
+        LOG_ERROR("The start_scan_cb or results_cb invalid\n");
     }
 }
 
 static void btc_ble_stop_scanning(tBTA_START_STOP_SCAN_CMPL_CBACK *stop_scan_cb)
 {
     uint8_t duration = 0;
-    BTA_DmBleObserve(false, duration, NULL, stop_scan_cb);
+    BTA_DmBleScan(false, duration, NULL, stop_scan_cb);
 }
 
 

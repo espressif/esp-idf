@@ -2034,6 +2034,24 @@ extern void BTA_DmBleObserve(BOOLEAN start, UINT32 duration,
                              tBTA_DM_SEARCH_CBACK *p_results_cb,
                              tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_stop_scan_cb);
 
+/*******************************************************************************
+**
+** Function         BTA_DmBleScan
+**
+** Description      This procedure keep the device listening for advertising
+**                  events from a broadcast device.
+**
+** Parameters       start: start or stop observe.
+**                  duration : Duration of the scan. Continuous scan if 0 is passed
+**                  p_results_cb: Callback to be called with scan results
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_DmBleScan(BOOLEAN start, UINT32 duration,
+                             tBTA_DM_SEARCH_CBACK *p_results_cb,
+                             tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_stop_scan_cb);
+
 extern void BTA_DmBleStopAdvertising(void);
 
 extern void BTA_DmSetRandAddress(BD_ADDR rand_addr);
