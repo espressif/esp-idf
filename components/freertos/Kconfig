@@ -91,7 +91,7 @@ config FREERTOS_WATCHPOINT_END_OF_STACK
         This check only triggers if the stack overflow writes within 4 bytes of the end of the stack, rather than
         overshooting further, so it is worth combining this approach with one of the other stack overflow check methods.
 
-        When this watchpoint is hit, gdb will stop with a SIGTRAP message. When no OCD is attached, esp-idf
+        When this watchpoint is hit, gdb will stop with a SIGTRAP message. When no JTAG OCD is attached, esp-idf
         will panic on an unhandled debug exception.
 
 config FREERTOS_INTERRUPT_BACKTRACE
@@ -145,14 +145,6 @@ config FREERTOS_ASSERT_DISABLE
         FreeRTOS configASSERT() will not be compiled into the binary.
 
 endchoice
-
-config FREERTOS_BREAK_ON_SCHEDULER_START_JTAG
-    bool "Stop program on scheduler start when JTAG/OCD is detected"
-    depends on ESP32_DEBUG_OCDAWARE
-    default n
-    help
-        If JTAG/OCD is connected, stop execution when the scheduler is started and the first
-        task is executed.
 
 config FREERTOS_IDLE_TASK_STACKSIZE
     int "Idle Task stack size"
