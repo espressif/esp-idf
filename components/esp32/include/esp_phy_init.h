@@ -135,7 +135,9 @@ typedef struct {
 	uint8_t spur_freq_cfg_div_3;            /*!< spur_freq=spur_freq_cfg/spur_freq_cfg_div_3 */
 	uint8_t spur_freq_en_h_3;               /*!< the seventh bit for total enable */
 	uint8_t spur_freq_en_l_3;               /*!< each bit for 1 channel, and use [spur_freq_en_h, spur_freq_en_l] to select the spur's channel priority, */
-	uint8_t reserved[23];                   /*!< reserved for future expansion */
+ 	uint8_t force_freq_offset_enable;
+ 	uint8_t force_freq_offset_num;
+	uint8_t reserved[21];                   /*!< reserved for future expansion */
 } esp_phy_init_data_t;
 
 /**
