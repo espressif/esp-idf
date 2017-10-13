@@ -72,7 +72,11 @@ typedef UINT16 tBTA_GATTC_INT_EVT;
 
 /* max client application GATTC can support */
 #ifndef     BTA_GATTC_CL_MAX
-#define     BTA_GATTC_CL_MAX    3 // 32
+#if (GATT_MAX_PHY_CHANNEL > 3)
+    #define     BTA_GATTC_CL_MAX    GATT_MAX_PHY_CHANNEL
+#else
+    #define     BTA_GATTC_CL_MAX    3 // The origin value is 10
+#endif
 #endif
 
 /* max known devices GATTC can support */
