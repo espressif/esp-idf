@@ -58,7 +58,7 @@ extern "C" {
  *    - ESP_ERR_WIFI_NO_MEM: out of memory
  *    - others: refer to error code esp_err.h
  */
-esp_err_t esp_wifi_init_internal(wifi_init_config_t *config);
+esp_err_t esp_wifi_init_internal(const wifi_init_config_t *config);
 
 /**
   * @brief  get whether the wifi driver is allowed to transmit data or not

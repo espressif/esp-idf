@@ -181,14 +181,14 @@ extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
   *               which are set by WIFI_INIT_CONFIG_DEFAULT, please be notified that the field 'magic' of 
   *               wifi_init_config_t should always be WIFI_INIT_CONFIG_MAGIC!
   *
-  * @param  config provide WiFi init configuration
+  * @param  config pointer to WiFi init configuration structure; can point to a temporary variable.
   *
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NO_MEM: out of memory
   *    - others: refer to error code esp_err.h
   */
-esp_err_t esp_wifi_init(wifi_init_config_t *config);
+esp_err_t esp_wifi_init(const wifi_init_config_t *config);
 
 /**
   * @brief  Deinit WiFi
@@ -341,7 +341,7 @@ esp_err_t esp_wifi_deauth_sta(uint16_t aid);
   *    - ESP_ERR_WIFI_TIMEOUT: blocking scan is timeout
   *    - others: refer to error code in esp_err.h
   */
-esp_err_t esp_wifi_scan_start(wifi_scan_config_t *config, bool block);
+esp_err_t esp_wifi_scan_start(const wifi_scan_config_t *config, bool block);
 
 /**
   * @brief     Stop the scan in process
@@ -539,7 +539,7 @@ esp_err_t esp_wifi_get_channel(uint8_t *primary, wifi_second_chan_t *second);
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
   *    - ESP_ERR_WIFI_ARG: invalid argument
   */
-esp_err_t esp_wifi_set_country(wifi_country_t *country);
+esp_err_t esp_wifi_set_country(const wifi_country_t *country);
 
 /**
   * @brief     get the current country info
@@ -574,7 +574,7 @@ esp_err_t esp_wifi_get_country(wifi_country_t *country);
   *    - ESP_ERR_WIFI_MODE: WiFi mode is wrong
   *    - others: refer to error codes in esp_err.h
   */
-esp_err_t esp_wifi_set_mac(wifi_interface_t ifx, uint8_t mac[6]);
+esp_err_t esp_wifi_set_mac(wifi_interface_t ifx, const uint8_t mac[6]);
 
 /**
   * @brief     Get mac of specified interface
@@ -682,7 +682,7 @@ esp_err_t esp_wifi_get_promiscuous_filter(wifi_promiscuous_filter_t *filter);
   *    - ESP_ERR_WIFI_NVS: WiFi internal NVS error
   *    - others: refer to the erro code in esp_err.h
   */
-esp_err_t esp_wifi_set_config(wifi_interface_t ifx, wifi_config_t *conf);
+esp_err_t esp_wifi_set_config(wifi_interface_t ifx, const wifi_config_t *conf);
 
 /**
   * @brief     Get configuration of specified interface
