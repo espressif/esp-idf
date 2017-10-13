@@ -2841,7 +2841,7 @@ void vTaskSwitchContext( void )
 		//Exit critical region manually as well: release the mux now, interrupts will be re-enabled when we
 		//exit the function.
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-		vPortCPUReleaseMutex( &xTaskQueueMutex, function, line );
+		vPortCPUReleaseMutex( &xTaskQueueMutex, __FUNCTION__, __LINE__ );
 #else
 		vPortCPUReleaseMutex( &xTaskQueueMutex );
 #endif
