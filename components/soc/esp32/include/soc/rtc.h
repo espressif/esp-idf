@@ -316,6 +316,14 @@ rtc_cpu_freq_t rtc_clk_cpu_freq_get();
 uint32_t rtc_clk_cpu_freq_value(rtc_cpu_freq_t cpu_freq);
 
 /**
+ * @brief Get rtc_cpu_freq_t enum value for given CPU frequency
+ * @param cpu_freq_mhz  CPU frequency, one of 80, 160, 240, 2, and XTAL frequency
+ * @param[out] out_val output, rtc_cpu_freq_t value corresponding to the frequency
+ * @return true if the given frequency value matches one of enum values
+ */
+ bool rtc_clk_cpu_freq_from_mhz(int cpu_freq_mhz, rtc_cpu_freq_t* out_val);
+
+/**
  * @brief Store new APB frequency value into RTC_APB_FREQ_REG
  *
  * This function doesn't change any hardware clocks.

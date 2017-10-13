@@ -504,6 +504,24 @@ uint32_t rtc_clk_cpu_freq_value(rtc_cpu_freq_t cpu_freq)
     }
 }
 
+bool rtc_clk_cpu_freq_from_mhz(int mhz, rtc_cpu_freq_t* out_val)
+{
+    if (mhz == 240) {
+        *out_val = RTC_CPU_FREQ_240M;
+    } else if (mhz == 160) {
+        *out_val = RTC_CPU_FREQ_160M;
+    } else if (mhz == 80) {
+        *out_val = RTC_CPU_FREQ_80M;
+    } else if (mhz == (int) rtc_clk_xtal_freq_get()) {
+        *out_val = RTC_CPU_FREQ_XTAL;
+    } else if (mhz == 2) {
+        *out_val = RTC_CPU_FREQ_2M;
+    } else {
+        return false;
+    }
+    return true;
+}
+
 /* Values of RTC_XTAL_FREQ_REG and RTC_APB_FREQ_REG are stored as two copies in
  * lower and upper 16-bit halves. These are the routines to work with such a
  * representation.
