@@ -40,7 +40,7 @@ static void dbg_lwip_tcp_pcb_cnt_show(struct tcp_pcb *pcb)
     char *p;
     int i;
 
-    buf = malloc(512);
+    buf = mem_malloc(512);
     if (!buf) {
         return;
     }

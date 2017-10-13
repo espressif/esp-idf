@@ -54,11 +54,25 @@ typedef size_t mem_size_t;
 #ifndef mem_free
 #define mem_free free
 #endif
+/**
+ * lwip_malloc: if CONFIG_ALLOC_MEMORY_IN_SPIRAM_FIRST is enabled, Try to
+ * allocate memory for lwip in SPIRAM firstly. If failed, try to allocate
+ * internal memory then.
+ */
+#if CONFIG_WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
+#ifndef mem_malloc
+#define mem_malloc(size)    heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL)
+#endif
+#ifndef mem_calloc
+#define mem_calloc(n, size) heap_caps_calloc_prefer(n, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL)
+#endif
+#else
 #ifndef mem_malloc
 #define mem_malloc malloc
 #endif
 #ifndef mem_calloc
 #define mem_calloc calloc
+#endif
 #endif
 
 /* Since there is no C library allocation function to shrink memory without

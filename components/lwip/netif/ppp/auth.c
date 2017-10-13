@@ -509,7 +509,7 @@ set_noauth_addr(argv)
     int l = strlen(addr) + 1;
     struct wordlist *wp;
 
-    wp = (struct wordlist *) malloc(sizeof(struct wordlist) + l);
+    wp = (struct wordlist *) mem_malloc(sizeof(struct wordlist) + l);
     if (wp == NULL)
 	novm("allow-ip argument");
     wp->word = (char *) (wp + 1);
@@ -531,7 +531,7 @@ set_permitted_number(argv)
     int l = strlen(number) + 1;
     struct wordlist *wp;
 
-    wp = (struct wordlist *) malloc(sizeof(struct wordlist) + l);
+    wp = (struct wordlist *) mem_malloc(sizeof(struct wordlist) + l);
     if (wp == NULL)
 	novm("allow-number argument");
     wp->word = (char *) (wp + 1);
@@ -2048,7 +2048,7 @@ set_allowed_addrs(unit, addrs, opts)
     n = wordlist_count(addrs) + wordlist_count(noauth_addrs);
     if (n == 0)
 	return;
-    ip = (struct permitted_ip *) malloc((n + 1) * sizeof(struct permitted_ip));
+    ip = (struct permitted_ip *) mem_malloc((n + 1) * sizeof(struct permitted_ip));
     if (ip == 0)
 	return;
 
@@ -2417,7 +2417,7 @@ scan_authfile(f, client, server, secret, addrs, opts, filename, flags)
 	    if (!getword(f, word, &newline, filename) || newline)
 		break;
 	    ap = (struct wordlist *)
-		    malloc(sizeof(struct wordlist) + strlen(word) + 1);
+		    mem_malloc(sizeof(struct wordlist) + strlen(word) + 1);
 	    if (ap == NULL)
 		novm("authorized addresses");
 	    ap->word = (char *) (ap + 1);

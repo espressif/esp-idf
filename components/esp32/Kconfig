@@ -127,6 +127,13 @@ config SPIRAM_MALLOC_ALWAYSINTERNAL
         than this size in internal memory, while allocations larger than this will be done from external RAM.
         If allocation from the preferred region fails, an attempt is made to allocate from the non-preferred
         region instead, so malloc() will not suddenly fail when either internal or external memory is full.
+        
+config WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
+    bool "Try to allocate memories of WiFi and LWIP in SPIRAM firstly. If failed, allocate internal memory"
+    depends on SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC
+    default "n"
+    help
+        Try to allocate memories of WiFi and LWIP in SPIRAM firstly. If failed, try to allocate internal memory then.
 
 config SPIRAM_MALLOC_RESERVE_INTERNAL
     int "Reserve this amount of bytes for data that specifically needs to be in DMA or internal memory"
