@@ -68,7 +68,7 @@ esp_err_t esp_wifi_sta_wpa2_ent_disable(void);
   *    - ESP_ERR_WIFI_ARG: fail(len <= 0 or len >= 128)
   *    - ESP_ERR_WIFI_NO_MEM: fail(internal memory malloc fail)
   */
-esp_err_t esp_wifi_sta_wpa2_ent_set_identity(unsigned char *identity, int len);
+esp_err_t esp_wifi_sta_wpa2_ent_set_identity(const unsigned char *identity, int len);
 
 /**
   * @brief  Clear identity for PEAP/TTLS method.
@@ -88,7 +88,7 @@ void esp_wifi_sta_wpa2_ent_clear_identity(void);
   *    - ESP_ERR_WIFI_ARG: fail(len <= 0 or len >= 128)
   *    - ESP_ERR_WIFI_NO_MEM: fail(internal memory malloc fail)
   */
-esp_err_t esp_wifi_sta_wpa2_ent_set_username(unsigned char *username, int len);
+esp_err_t esp_wifi_sta_wpa2_ent_set_username(const unsigned char *username, int len);
 
 /**
   * @brief  Clear username for PEAP/TTLS method.
@@ -108,7 +108,7 @@ void esp_wifi_sta_wpa2_ent_clear_username(void);
   *    - ESP_ERR_WIFI_ARG: fail(len <= 0)
   *    - ESP_ERR_WIFI_NO_MEM: fail(internal memory malloc fail)
   */
-esp_err_t esp_wifi_sta_wpa2_ent_set_password(unsigned char *password, int len);
+esp_err_t esp_wifi_sta_wpa2_ent_set_password(const unsigned char *password, int len);
 
 /**
   * @brief  Clear password for PEAP/TTLS method..
@@ -130,7 +130,7 @@ void esp_wifi_sta_wpa2_ent_clear_password(void);
   *    - ESP_ERR_WIFI_NO_MEM: fail(internal memory malloc fail)
   */
 
-esp_err_t esp_wifi_sta_wpa2_ent_set_new_password(unsigned char *password, int len);
+esp_err_t esp_wifi_sta_wpa2_ent_set_new_password(const unsigned char *password, int len);
 
 /**
   * @brief  Clear new password for MSCHAPv2 method..
@@ -149,7 +149,7 @@ void esp_wifi_sta_wpa2_ent_clear_new_password(void);
   * @return
   *    - ESP_ERR_WIFI_OK: succeed
   */
-esp_err_t esp_wifi_sta_wpa2_ent_set_ca_cert(unsigned char *ca_cert, int len);
+esp_err_t esp_wifi_sta_wpa2_ent_set_ca_cert(const unsigned char *ca_cert, int len);
 
 /**
   * @brief  Clear CA certificate for PEAP/TTLS method.
@@ -172,7 +172,7 @@ void esp_wifi_sta_wpa2_ent_clear_ca_cert(void);
   * @return
   *    - ESP_ERR_WIFI_OK: succeed
   */
-esp_err_t esp_wifi_sta_wpa2_ent_set_cert_key(unsigned char *client_cert, int client_cert_len, unsigned char *private_key, int private_key_len, unsigned char *private_key_passwd, int private_key_passwd_len);
+esp_err_t esp_wifi_sta_wpa2_ent_set_cert_key(const unsigned char *client_cert, int client_cert_len, const unsigned char *private_key, int private_key_len, const unsigned char *private_key_passwd, int private_key_passwd_len);
 
 /**
   * @brief  Clear client certificate and key.
