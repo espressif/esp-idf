@@ -26,7 +26,7 @@
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
 #include "esp_clk.h"
-#include "../esp32/esp_timer.h"
+#include "esp_timer.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"

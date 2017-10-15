@@ -18,9 +18,6 @@
  * @file esp_timer.h
  * @brief microsecond-precision 64-bit timer API, replacement for ets_timer
  *
- * Not a public header yet. To be moved into include/ directory when it is made
- * public.
- *
  * esp_timer APIs allow components to receive callbacks when a hardware timer
  * reaches certain value. The timer provides microsecond accuracy and
  * up to 64 bit range. Note that while the timer itself provides microsecond
