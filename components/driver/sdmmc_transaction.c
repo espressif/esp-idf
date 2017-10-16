@@ -33,13 +33,6 @@
  */
 #define SDMMC_DMA_DESC_CNT  4
 
-/* Max delay value is mostly useful for cases when CD pin is not used, and
- * the card is removed. In this case, SDMMC peripheral may not always return
- * CMD_DONE / DATA_DONE interrupts after signaling the error. This delay works
- * as a safety net in such cases.
- */
-#define SDMMC_MAX_EVT_WAIT_DELAY_MS 1000
-
 static const char* TAG = "sdmmc_req";
 
 typedef enum {
@@ -206,7 +199,7 @@ static esp_err_t handle_idle_state_events()
 static esp_err_t handle_event(sdmmc_command_t* cmd, sdmmc_req_state_t* state)
 {
     sdmmc_event_t evt;
-    esp_err_t err = sdmmc_host_wait_for_event(SDMMC_MAX_EVT_WAIT_DELAY_MS / portTICK_PERIOD_MS, &evt);
+    esp_err_t err = sdmmc_host_wait_for_event(cmd->timeout_ms / portTICK_PERIOD_MS, &evt);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "sdmmc_host_wait_for_event returned 0x%x", err);
         if (err == ESP_ERR_TIMEOUT) {
