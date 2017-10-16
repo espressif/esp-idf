@@ -19,6 +19,7 @@
 #include "rom/gpio.h"
 #include "soc/dport_reg.h"
 #include "soc/io_mux_reg.h"
+#include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/gpio_reg.h"
 #include "soc/dport_reg.h"
@@ -1008,15 +1009,48 @@ esp_err_t esp_eth_init_internal(eth_config_t *config)
 
     //before set emac reg must enable clk
     periph_module_enable(PERIPH_EMAC_MODULE);
+
+    #ifdef CONFIG_PHY_CLK_INT
+        rtc_clk_apll_enable(1, 0, 0, 6, 2); // 50 MHz = 40MHz * (6 + 4) / (2 * (2 + 2) = 400MHz / 8
+        REG_SET_FIELD(EMAC_EX_CLKOUT_CONF_REG, EMAC_EX_CLK_OUT_H_DIV_NUM, 0);
+        REG_SET_FIELD(EMAC_EX_CLKOUT_CONF_REG, EMAC_EX_CLK_OUT_DIV_NUM, 0);
+
+        #ifdef CONFIG_PHY_CLKOUT_GPIO0
+            PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0_CLK_OUT1);
+            REG_WRITE(PIN_CTRL, 6);
+            ESP_LOGD(TAG, "EMAC clock output on GPIO0");
+        #endif
+
+        #ifdef CONFIG_PHY_CLKOUT_GPIO16
+            PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO16_U, FUNC_GPIO16_EMAC_CLK_OUT);
+            ESP_LOGD(TAG, "EMAC clock output on GPIO16");
+        #endif
+
+        #ifdef CONFIG_PHY_CLKOUT_GPIO17
+            PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO17_U, FUNC_GPIO17_EMAC_CLK_OUT_180);
+            ESP_LOGD(TAG, "EMAC clock output on GPIO17");
+        #endif
+    #endif
+
     emac_enable_clk(true);
     REG_SET_FIELD(EMAC_EX_PHYINF_CONF_REG, EMAC_EX_PHY_INTF_SEL, EMAC_EX_PHY_INTF_RMII);
-
     emac_dma_init();
-    if (emac_config.mac_mode == ETH_MODE_RMII) {
-        emac_set_clk_rmii();
-    } else {
-        emac_set_clk_mii();
-    }
+
+    #ifdef CONFIG_PHY_CLK_INT
+        REG_CLR_BIT(EMAC_EX_CLK_CTRL_REG,    EMAC_EX_EXT_OSC_EN);
+        REG_SET_BIT(EMAC_EX_CLK_CTRL_REG,    EMAC_EX_INT_OSC_EN);
+        REG_CLR_BIT(EMAC_EX_OSCCLK_CONF_REG, EMAC_EX_OSC_CLK_SEL);
+        ESP_LOGD(TAG, "Internal clock output 50MHz from APLL");
+    #else
+        REG_SET_BIT(EMAC_EX_CLK_CTRL_REG,    EMAC_EX_EXT_OSC_EN);
+        REG_CLR_BIT(EMAC_EX_CLK_CTRL_REG,    EMAC_EX_INT_OSC_EN);
+        REG_SET_BIT(EMAC_EX_OSCCLK_CONF_REG, EMAC_EX_OSC_CLK_SEL);
+        ESP_LOGD(TAG, "Externet clock input 50MHz on GPIO0");
+        if (emac_config.mac_mode == ETH_MODE_MII) {
+            REG_SET_BIT(EMAC_EX_CLK_CTRL_REG, EMAC_EX_MII_CLK_RX_EN);
+            REG_SET_BIT(EMAC_EX_CLK_CTRL_REG, EMAC_EX_MII_CLK_TX_EN);
+        }
+    #endif
 
     emac_config.emac_gpio_config();
 

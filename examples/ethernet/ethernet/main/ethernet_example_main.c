@@ -33,6 +33,10 @@
 #include "nvs_flash.h"
 #include "driver/gpio.h"
 
+#include "soc/emac_ex_reg.h"
+#include "driver/periph_ctrl.h"
+
+
 #ifdef CONFIG_PHY_LAN8720
 #include "eth_phy/phy_lan8720.h"
 #define DEFAULT_ETHERNET_PHY_CONFIG phy_lan8720_default_ethernet_config
