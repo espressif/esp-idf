@@ -118,6 +118,7 @@ const eth_config_t phy_lan8720_default_ethernet_config = {
     // for defaults.
     .phy_addr = 0,
     .mac_mode = ETH_MODE_RMII,
+    .clock_mode = ETH_CLOCK_GPIO0_IN,
     //Only FULLDUPLEX mode support flow ctrl now!
     .flow_ctrl_enable = true,
     .phy_init = phy_lan8720_init,

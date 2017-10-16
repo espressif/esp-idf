@@ -19,6 +19,7 @@
 #include "rom/gpio.h"
 #include "soc/dport_reg.h"
 #include "soc/io_mux_reg.h"
+#include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/gpio_reg.h"
 #include "soc/dport_reg.h"
@@ -130,10 +131,10 @@ static void emac_set_rx_base_reg(void)
 *
 * (1) Initializing the Linked List. Connect the numerable nodes to a circular linked list, appoint one of the nodes as the head node, mark* the dirty_rx and cur_rx into the node, and mount the node on the hardware base address. Initialize cnt_rx into 0.
 *
-* (2) When hardware receives packets, nodes of linked lists will be fed with data packets from the base address by turns, marks the node 
+* (2) When hardware receives packets, nodes of linked lists will be fed with data packets from the base address by turns, marks the node
 * of linked lists as “HARDWARE UNUSABLE” and reports interrupts.
 *
-* (3) When the software receives the interrupts, it will handle the linked lists by turns from dirty_rx, send data packets to protocol 
+* (3) When the software receives the interrupts, it will handle the linked lists by turns from dirty_rx, send data packets to protocol
 * stack. dirty_rx will deviate backwards by turns and cnt_rx will by turns ++.
 *
 * (4) After the protocol stack handles all the data and calls the free function, it will deviate backwards by turns from cur_rx, mark the * node of linked lists as “HARDWARE USABLE” and cnt_rx will by turns --.
@@ -252,6 +253,7 @@ static void emac_set_user_config_data(eth_config_t *config )
 {
     emac_config.phy_addr = config->phy_addr;
     emac_config.mac_mode = config->mac_mode;
+    emac_config.clock_mode = config->clock_mode;
     emac_config.phy_init = config->phy_init;
     emac_config.emac_tcpip_input = config->tcpip_input;
     emac_config.emac_gpio_config = config->gpio_config;
@@ -291,7 +293,12 @@ static esp_err_t emac_verify_args(void)
     }
 
     if (emac_config.mac_mode != ETH_MODE_RMII) {
-        ESP_LOGE(TAG, "mac mode err,now only support RMII");
+        ESP_LOGE(TAG, "mac mode err, currently only support for RMII");
+        ret = ESP_FAIL;
+    }
+
+    if (emac_config.clock_mode > ETH_CLOCK_GPIO17_OUT) {
+        ESP_LOGE(TAG, "emac clock mode err");
         ret = ESP_FAIL;
     }
 
@@ -480,7 +487,7 @@ static void emac_process_rx_unavail(void)
         }
         uint32_t tmp_dirty = emac_config.dirty_rx;
         emac_config.dirty_rx = (emac_config.dirty_rx + 1) % DMA_RX_BUF_NUM;
- 
+
         //copy data to lwip
         emac_config.emac_tcpip_input((void *)(emac_config.dma_erx[tmp_dirty].basic.desc2),
                                      (((emac_config.dma_erx[tmp_dirty].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
@@ -529,7 +536,7 @@ static void emac_process_rx(void)
                     }
                     uint32_t tmp_dirty = emac_config.dirty_rx;
                     emac_config.dirty_rx = (emac_config.dirty_rx + 1) % DMA_RX_BUF_NUM;
- 
+
                     //copy data to lwip
                     emac_config.emac_tcpip_input((void *)(emac_config.dma_erx[tmp_dirty].basic.desc2),
                                                  (((emac_config.dma_erx[tmp_dirty].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
@@ -1036,14 +1043,46 @@ esp_err_t esp_eth_init_internal(eth_config_t *config)
 
     //before set emac reg must enable clk
     periph_module_enable(PERIPH_EMAC_MODULE);
+
+    if (emac_config.clock_mode != ETH_CLOCK_GPIO0_IN) {
+        // 50 MHz = 40MHz * (6 + 4) / (2 * (2 + 2) = 400MHz / 8
+        rtc_clk_apll_enable(1, 0, 0, 6, 2);
+        // the next to values have to be set AFTER "periph_module_enable" is called
+        REG_SET_FIELD(EMAC_EX_CLKOUT_CONF_REG, EMAC_EX_CLK_OUT_H_DIV_NUM, 0);
+        REG_SET_FIELD(EMAC_EX_CLKOUT_CONF_REG, EMAC_EX_CLK_OUT_DIV_NUM, 0);
+
+        if (emac_config.clock_mode == ETH_CLOCK_GPIO0_OUT) {
+            PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0_CLK_OUT1);
+            REG_WRITE(PIN_CTRL, 6);
+            ESP_LOGD(TAG, "EMAC 50MHz clock output on GPIO0");
+        } else if (emac_config.clock_mode == ETH_CLOCK_GPIO16_OUT) {
+            PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO16_U, FUNC_GPIO16_EMAC_CLK_OUT);
+            ESP_LOGD(TAG, "EMAC 50MHz clock output on GPIO16");
+        } else if (emac_config.clock_mode == ETH_CLOCK_GPIO17_OUT) {
+            PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO17_U, FUNC_GPIO17_EMAC_CLK_OUT_180);
+            ESP_LOGD(TAG, "EMAC 50MHz inverted clock output on GPIO17");
+        }
+    }
+
     emac_enable_clk(true);
     REG_SET_FIELD(EMAC_EX_PHYINF_CONF_REG, EMAC_EX_PHY_INTF_SEL, EMAC_EX_PHY_INTF_RMII);
-
     emac_dma_init();
-    if (emac_config.mac_mode == ETH_MODE_RMII) {
-        emac_set_clk_rmii();
+
+    if (emac_config.clock_mode == ETH_CLOCK_GPIO0_IN) {
+        // external clock on GPIO0
+        REG_SET_BIT(EMAC_EX_CLK_CTRL_REG,    EMAC_EX_EXT_OSC_EN);
+        REG_CLR_BIT(EMAC_EX_CLK_CTRL_REG,    EMAC_EX_INT_OSC_EN);
+        REG_SET_BIT(EMAC_EX_OSCCLK_CONF_REG, EMAC_EX_OSC_CLK_SEL);
+        ESP_LOGD(TAG, "External clock input 50MHz on GPIO0");
+        if (emac_config.mac_mode == ETH_MODE_MII) {
+            REG_SET_BIT(EMAC_EX_CLK_CTRL_REG, EMAC_EX_MII_CLK_RX_EN);
+            REG_SET_BIT(EMAC_EX_CLK_CTRL_REG, EMAC_EX_MII_CLK_TX_EN);
+        }
     } else {
-        emac_set_clk_mii();
+        // internal clock by APLL
+        REG_CLR_BIT(EMAC_EX_CLK_CTRL_REG,    EMAC_EX_EXT_OSC_EN);
+        REG_SET_BIT(EMAC_EX_CLK_CTRL_REG,    EMAC_EX_INT_OSC_EN);
+        REG_CLR_BIT(EMAC_EX_OSCCLK_CONF_REG, EMAC_EX_OSC_CLK_SEL);
     }
 
     emac_config.emac_gpio_config();
@@ -1068,4 +1107,3 @@ esp_err_t esp_eth_init_internal(eth_config_t *config)
 _exit:
     return ret;
 }
-
