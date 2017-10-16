@@ -61,6 +61,7 @@ static esp_err_t system_event_eth_start_handle_default(system_event_t *event);
 static esp_err_t system_event_eth_stop_handle_default(system_event_t *event);
 static esp_err_t system_event_eth_connected_handle_default(system_event_t *event);
 static esp_err_t system_event_eth_disconnected_handle_default(system_event_t *event);
+static esp_err_t system_event_eth_got_ip_default(system_event_t *event);
 
 /* Default event handler functions
 
@@ -124,11 +125,21 @@ esp_err_t system_event_eth_disconnected_handle_default(system_event_t *event)
     return ESP_OK;
 }
 
+static esp_err_t system_event_eth_got_ip_default(system_event_t *event)
+{
+    ESP_LOGI(TAG, "eth ip: " IPSTR ", mask: " IPSTR ", gw: " IPSTR,
+           IP2STR(&event->event_info.got_ip.ip_info.ip),
+           IP2STR(&event->event_info.got_ip.ip_info.netmask),
+           IP2STR(&event->event_info.got_ip.ip_info.gw));
+
+    return ESP_OK;
+}
+
 static esp_err_t system_event_sta_got_ip_default(system_event_t *event)
 {
     WIFI_API_CALL_CHECK("esp_wifi_internal_set_sta_ip", esp_wifi_internal_set_sta_ip(), ESP_OK);
 
-    ESP_LOGI(TAG, "ip: " IPSTR ", mask: " IPSTR ", gw: " IPSTR,
+    ESP_LOGI(TAG, "sta ip: " IPSTR ", mask: " IPSTR ", gw: " IPSTR,
            IP2STR(&event->event_info.got_ip.ip_info.ip),
            IP2STR(&event->event_info.got_ip.ip_info.netmask),
            IP2STR(&event->event_info.got_ip.ip_info.gw));
@@ -414,4 +425,5 @@ void esp_event_set_default_eth_handlers()
      default_event_handlers[SYSTEM_EVENT_ETH_STOP]            = system_event_eth_stop_handle_default;
      default_event_handlers[SYSTEM_EVENT_ETH_CONNECTED]       = system_event_eth_connected_handle_default;
      default_event_handlers[SYSTEM_EVENT_ETH_DISCONNECTED]    = system_event_eth_disconnected_handle_default;
+     default_event_handlers[SYSTEM_EVENT_ETH_GOT_IP]          = system_event_eth_got_ip_default;
 }

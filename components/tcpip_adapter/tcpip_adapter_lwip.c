@@ -756,8 +756,13 @@ static void tcpip_adapter_dhcpc_cb(struct netif *netif)
             ip4_addr_set(&ip_info->gw, ip_2_ip4(&netif->gw));
 
             //notify event
-            evt.event_id = SYSTEM_EVENT_STA_GOT_IP;
-            evt.event_info.got_ip.ip_changed = false;
+            if (tcpip_if == TCPIP_ADAPTER_IF_ETH) {
+                evt.event_id = SYSTEM_EVENT_ETH_GOT_IP;
+                evt.event_info.got_ip.ip_changed = true;
+            } else {
+                evt.event_id = SYSTEM_EVENT_STA_GOT_IP;
+                evt.event_info.got_ip.ip_changed = false;
+            }
 
             if (memcmp(ip_info, ip_info_old, sizeof(tcpip_adapter_ip_info_t))) {
                 evt.event_info.got_ip.ip_changed = true;
