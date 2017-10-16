@@ -227,6 +227,9 @@ protection against simultaneous access. Consider using critical sections
 (disables interrupts) or semaphores (does not disable interrupts) instead when 
 protecting shared resources in ESP-IDF FreeRTOS.
 
+In general, it's better to use other RTOS primitives like mutex semaphores to protect
+against data shared between tasks, rather than ``vTaskSuspendAll()``.
+
 .. _tick-interrupt-synchronicity:
 
 Tick Interrupt Synchronicity 
