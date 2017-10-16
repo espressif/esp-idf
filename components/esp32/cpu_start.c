@@ -150,6 +150,7 @@ void IRAM_ATTR call_start_cpu0()
     }
 
 #if CONFIG_SPIRAM_BOOT_INIT
+    esp_spiram_init_cache();
     if (esp_spiram_init() != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to init external RAM!");
         abort();
