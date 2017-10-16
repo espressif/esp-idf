@@ -319,7 +319,7 @@ void vPortCPUAcquireMutex(portMUX_TYPE *mux, const char *fnName, int line) {
 	portEXIT_CRITICAL_NESTED(irqStatus);
 }
 
-bool vPortCPUAcquireMutexTimeout(portMUX_TYPE *mux, uint32_t timeout_cycles, const char *fnName, int line) {
+bool vPortCPUAcquireMutexTimeout(portMUX_TYPE *mux, int timeout_cycles, const char *fnName, int line) {
 	unsigned int irqStatus = portENTER_CRITICAL_NESTED();
 	bool result = vPortCPUAcquireMutexIntsDisabled(mux, timeout_cycles, fnName, line);
 	portEXIT_CRITICAL_NESTED(irqStatus);

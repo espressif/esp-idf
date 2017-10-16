@@ -203,7 +203,7 @@ void vPortCPUInitializeMutex(portMUX_TYPE *mux);
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 void vPortCPUAcquireMutex(portMUX_TYPE *mux, const char *function, int line);
 bool vPortCPUAcquireMutexTimeout(portMUX_TYPE *mux, int timeout_cycles, const char *function, int line);
-portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux, const char *function, int line);
+void vPortCPUReleaseMutex(portMUX_TYPE *mux, const char *function, int line);
 
 
 void vTaskEnterCritical( portMUX_TYPE *mux, const char *function, int line );

@@ -54,7 +54,11 @@ esp_err_t esp_apptrace_lock_take(esp_apptrace_lock_t *lock, esp_apptrace_tmo_t *
         // FIXME: if mux is busy it is not good idea to loop during the whole tmo with disabled IRQs.
         // So we check mux state using zero tmo, restore IRQs and let others tasks/IRQs to run on this CPU
         // while we are doing our own tmo check.
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
+        bool success = vPortCPUAcquireMutexTimeout(&lock->mux, 0, __FUNCTION__, __LINE__);
+#else
         bool success = vPortCPUAcquireMutexTimeout(&lock->mux, 0);
+#endif
         if (success) {
             lock->int_state = int_state;
             return ESP_OK;
@@ -75,7 +79,11 @@ esp_err_t esp_apptrace_lock_give(esp_apptrace_lock_t *lock)
     unsigned int_state = lock->int_state;
     // after call to the following func we can not be sure that lock->int_state
     // is not overwritten by other CPU who has acquired the mux just after we released it. See esp_apptrace_lock_take().
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
+    vPortCPUReleaseMutex(&lock->mux, __FUNCTION__, __LINE__);
+#else
     vPortCPUReleaseMutex(&lock->mux);
+#endif
     portEXIT_CRITICAL_NESTED(int_state);
     return ESP_OK;
 }
