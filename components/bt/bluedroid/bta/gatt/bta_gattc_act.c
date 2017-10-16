@@ -711,7 +711,6 @@ void bta_gattc_conncback(tBTA_GATTC_RCB *p_rcb, tBTA_GATTC_DATA *p_data)
 {
     if (p_rcb) {
         bta_gattc_send_connect_cback(p_rcb,
-                                     BTA_GATT_OK,
                                      p_data->int_conn.remote_bda,
                                      p_data->int_conn.hdr.layer_specific);
 
@@ -730,7 +729,7 @@ void bta_gattc_disconncback(tBTA_GATTC_RCB *p_rcb, tBTA_GATTC_DATA *p_data)
 {
     if (p_rcb) {
         bta_gattc_send_disconnect_cback(p_rcb,
-                                     BTA_GATT_OK,
+                                     p_data->int_conn.reason,
                                      p_data->int_conn.remote_bda,
                                      p_data->int_conn.hdr.layer_specific);
 
@@ -793,7 +792,7 @@ void bta_gattc_close(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
     if (p_data->hdr.event == BTA_GATTC_API_CLOSE_EVT) {
         cb_data.close.status = GATT_Disconnect(p_data->hdr.layer_specific);
     } else if (p_data->hdr.event == BTA_GATTC_INT_DISCONN_EVT) {
-        cb_data.close.status = p_data->int_conn.reason;
+        cb_data.close.status = BTA_GATT_OK;
         cb_data.close.reason = p_data->int_conn.reason;
     }
 
