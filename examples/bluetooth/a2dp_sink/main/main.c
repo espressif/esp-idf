@@ -31,6 +31,7 @@
 #include "esp_gap_bt_api.h"
 #include "esp_a2dp_api.h"
 #include "esp_avrc_api.h"
+#include "driver/i2s.h"
 
 /* event for handler "bt_av_hdl_stack_up */
 enum {
@@ -50,6 +51,37 @@ void app_main()
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK( ret );
+
+    i2s_config_t i2s_config = {
+#ifdef CONFIG_A2DP_SINK_OUTPUT_INTERNAL_DAC
+        .mode = I2S_MODE_DAC_BUILT_IN,
+#else
+        .mode = I2S_MODE_MASTER | I2S_MODE_TX,                                  // Only TX
+#endif
+        .sample_rate = 44100,
+        .bits_per_sample = 16,                                              
+        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,                           //2-channels
+        .communication_format = I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB,
+        .dma_buf_count = 6,
+        .dma_buf_len = 60,                                                      //
+        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1                                //Interrupt level 1
+    };
+
+
+    i2s_driver_install(0, &i2s_config, 0, NULL);
+#ifdef CONFIG_A2DP_SINK_OUTPUT_INTERNAL_DAC
+    i2s_set_pin(0, NULL);
+#else
+    i2s_pin_config_t pin_config = {
+        .bck_io_num = CONFIG_I2S_BCK_PIN,
+        .ws_io_num = CONFIG_I2S_LRCK_PIN,
+        .data_out_num = CONFIG_I2S_DATA_PIN,
+        .data_in_num = -1                                                       //Not used
+    };
+
+    i2s_set_pin(0, &pin_config);
+#endif
+
 
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
