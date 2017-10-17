@@ -77,6 +77,7 @@ lib_a-close.o
 lib_a-creat.o
 lib_a-environ.o
 lib_a-fclose.o
+lib_a-fcntlr.o
 lib_a-isalnum.o
 lib_a-isalpha.o
 lib_a-isascii.o
@@ -131,6 +132,7 @@ lib_a-strupr.o
 lib_a-stdio.o
 lib_a-syssbrk.o
 lib_a-sysclose.o
+lib_a-sysfcntl.o
 lib_a-sysopen.o
 creat.o
 lib_a-sysread.o

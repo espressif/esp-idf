@@ -3139,13 +3139,14 @@ static void lwip_socket_drop_registered_memberships(int s)
      (default initialization is to 0) */
   int sa = s + 1;
   int i;
+  struct lwip_sock *sock = get_socket(s);
 
-  LWIP_ASSERT("socket has no netconn", sockets[s].conn != NULL);
+  LWIP_ASSERT("socket has no netconn", sock->conn != NULL);
 
   for (i = 0; i < LWIP_SOCKET_MAX_MEMBERSHIPS; i++) {
     if (socket_multicast_memberships[i].sa == sa) {
       socket_multicast_memberships[i].sa = 0;
-      netconn_join_leave_group(sockets[s].conn,
+      netconn_join_leave_group(sock->conn,
                                &socket_multicast_memberships[i].multi_addr,
                                &socket_multicast_memberships[i].if_addr,
                                NETCONN_LEAVE);

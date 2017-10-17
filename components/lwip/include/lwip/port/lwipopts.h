@@ -34,6 +34,7 @@
 
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 #include <sys/time.h>
 #include <sys/fcntl.h>
 #include "esp_task.h"
@@ -686,6 +687,19 @@
  */
 #define ETHARP_TRUST_IP_MAC             CONFIG_LWIP_ETHARP_TRUST_IP_MAC
 
+
+/**
+ * POSIX I/O functions are mapped to LWIP via the VFS layer
+ * (see port/vfs_lwip.c)
+ */
+#define LWIP_POSIX_SOCKETS_IO_NAMES     0
+
+
+/**
+ * Socket offset is also determined via the VFS layer at
+ * filesystem registration time (see port/vfs_lwip.c)
+ */
+#define LWIP_SOCKET_OFFSET              lwip_socket_offset
 
 /* Enable all Espressif-only options */
 

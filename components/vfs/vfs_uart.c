@@ -263,7 +263,6 @@ static int uart_fcntl(int fd, int cmd, va_list args)
 void esp_vfs_dev_uart_register()
 {
     esp_vfs_t vfs = {
-        .fd_offset = 0,
         .flags = ESP_VFS_FLAG_DEFAULT,
         .write = &uart_write,
         .open = &uart_open,

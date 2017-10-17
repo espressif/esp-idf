@@ -22,7 +22,6 @@ To register an FS driver, application needs to define in instance of esp_vfs_t s
 ::
 
     esp_vfs_t myfs = {
-        .fd_offset = 0,
         .flags = ESP_VFS_FLAG_DEFAULT,
         .write = &myfs_write,
         .open = &myfs_open,
@@ -43,7 +42,7 @@ Case 1: API functions are declared without an extra context pointer (FS driver i
         .flags = ESP_VFS_FLAG_DEFAULT,
         .write = &myfs_write,
     // ... other members initialized
-    
+
     // When registering FS, context pointer (third argument) is NULL:
     ESP_ERROR_CHECK(esp_vfs_register("/data", &myfs, NULL));
 
@@ -55,7 +54,7 @@ Case 2: API functions are declared with an extra context pointer (FS driver supp
         .flags = ESP_VFS_FLAG_CONTEXT_PTR,
         .write_p = &myfs_write,
     // ... other members initialized
-    
+
     // When registering FS, pass the FS context pointer into the third argument
     // (hypothetical myfs_mount function is used for illustrative purposes)
     myfs_t* myfs_inst1 = myfs_mount(partition1->offset, partition1->size);
@@ -100,37 +99,34 @@ File descriptors
 
 It is suggested that filesystem drivers should use small positive integers as file descriptors. VFS component assumes that ``CONFIG_MAX_FD_BITS`` bits (12 by default) are sufficient to represent a file descriptor.
 
-If filesystem is configured with an option to offset all file descriptors by a constant value, such value should be passed to ``fd_offset`` field of ``esp_vfs_t`` structure. VFS component will then remove this offset when working with FDs of that specific FS, bringing them into the range of small positive integers.
+While file descriptors returned by VFS component to newlib library are rarely seen by the application, the following details may be useful for debugging purposes. File descriptors returned by VFS component are composed of two parts: FS driver ID, and the actual file descriptor. Because newlib stores file descriptors as 16-bit integers, VFS component is also limited by 16 bits to store both parts.
 
-While file descriptors returned by VFS component to newlib library are rarely seen by the application, the following details may be useful for debugging purposes. File descriptors returned by VFS component are composed of two parts: FS driver ID, and the actual file descriptor. Because newlib stores file descriptors as 16-bit integers, VFS component is also limited by 16 bits to store both parts. 
+Lower ``CONFIG_MAX_FD_BITS`` bits are used to store zero-based file descriptor. The per-filesystem FD obtained from the FS ``open`` call, and this result is stored in the lower bits of the FD. Higher bits are used to save the index of FS in the internal table of registered filesystems.
 
-Lower ``CONFIG_MAX_FD_BITS`` bits are used to store zero-based file descriptor. If FS driver has a non-zero ``fd_offset`` field, this ``fd_offset`` is subtracted FDs obtained from the FS ``open`` call, and the result is stored in the lower bits of the FD. Higher bits are used to save the index of FS in the internal table of registered filesystems.
-
-When VFS component receives a call from newlib which has a file descriptor, this file descriptor is translated back to the FS-specific file descriptor. First, higher bits of FD are used to identify the FS. Then ``fd_offset`` field of the FS is added to the lower ``CONFIG_MAX_FD_BITS`` bits of the fd, and resulting FD is passed to the FS driver.
+When VFS component receives a call from newlib which has a file descriptor, this file descriptor is translated back to the FS-specific file descriptor. First, higher bits of FD are used to identify the FS. Then only the lower ``CONFIG_MAX_FD_BITS`` bits of the fd are masked in, and resulting FD is passed to the FS driver.
 
 .. highlight:: none
 
 ::
 
        FD as seen by newlib                                    FD as seen by FS driver
-                                                  +-----+
-    +-------+---------------+                     |     |    +------------------------+
-    | FS id | Zero—based FD |     +---------------> sum +---->                        |
-    +---+---+------+--------+     |               |     |    +------------------------+
-        |          |              |               +--^--+
-        |          +--------------+                  |
-        |                                            |
-        |       +-------------+                      |
-        |       | Table of    |                      |
-        |       | registered  |                      |
-        |       | filesystems |                      |
-        |       +-------------+    +-------------+   |
-        +------->  entry      +----> esp_vfs_t   |   |
-        index   +-------------+    | structure   |   |
-                |             |    |             |   |
-                |             |    | + fd_offset +---+
-                +-------------+    |             |
-                                   +-------------+
+
+    +-------+---------------+                               +------------------------+
+    | FS id | Zero—based FD |     +-------------------------->                        |
+    +---+---+------+--------+     |                          +------------------------+
+        |          |              |
+        |          +--------------+
+        |
+        |       +-------------+
+        |       | Table of    |
+        |       | registered  |
+        |       | filesystems |
+        |       +-------------+    +-------------+
+        +------->  entry      +----> esp_vfs_t   |
+        index   +-------------+    | structure   |
+                |             |    |             |
+                |             |    |             |
+                +-------------+    +-------------+
 
 
 Standard IO streams (stdin, stdout, stderr)
@@ -170,4 +166,3 @@ Such a design has the following consequences:
 - It is possible to set ``stdin``, ``stdout``, and ``stderr`` for any given task without affecting other tasks, e.g. by doing ``stdin = fopen("/dev/uart/1", "r")``.
 - Closing default ``stdin``, ``stdout``, or ``stderr`` using ``fclose`` will close the ``FILE`` stream object — this will affect all other tasks.
 - To change the default ``stdin``, ``stdout``, ``stderr`` streams for new tasks, modify ``_GLOBAL_REENT->_stdin`` (``_stdout``, ``_stderr``) before creating the task.
-
