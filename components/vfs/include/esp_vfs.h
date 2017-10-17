@@ -162,6 +162,10 @@ typedef struct
         int (*ioctl_p)(void* ctx, int fd, int cmd, va_list args);
         int (*ioctl)(int fd, int cmd, va_list args);
     };
+    union {
+        int (*fsync_p)(void* ctx, int fd);
+        int (*fsync)(int fd);
+    };
 } esp_vfs_t;
 
 
