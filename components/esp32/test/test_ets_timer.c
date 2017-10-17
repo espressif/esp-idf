@@ -7,6 +7,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "esp_spi_flash.h"
 
 TEST_CASE("ets_timer produces correct delay", "[ets_timer]")
 {
@@ -191,4 +192,47 @@ TEST_CASE("multiple ETSTimers are ordered correctly", "[ets_timer]")
 
 
 #undef N
+}
+
+/* WiFi/BT coexistence will sometimes arm/disarm
+   timers from an ISR where flash may be disabled. */
+IRAM_ATTR TEST_CASE("ETSTimers arm & disarm run from IRAM", "[ets_timer]")
+{
+    void timer_func(void* arg)
+    {
+        volatile bool *b = (volatile bool *)arg;
+        *b = true;
+    }
+
+    volatile bool flag = false;
+    ETSTimer timer1;
+    const int INTERVAL = 5;
+
+    ets_timer_setfn(&timer1, &timer_func, (void *)&flag);
+
+    /* arm a disabled timer, then disarm a live timer */
+
+    g_flash_guard_default_ops.start(); // Disables flash cache
+
+    ets_timer_arm(&timer1, INTERVAL, false);
+    // redundant call is deliberate (test code path if already armed)
+    ets_timer_arm(&timer1, INTERVAL, false);
+    ets_timer_disarm(&timer1);
+
+    g_flash_guard_default_ops.end(); // Re-enables flash cache
+
+    TEST_ASSERT_FALSE(flag); // didn't expire yet
+
+    /* do the same thing but wait for the timer to expire */
+
+    g_flash_guard_default_ops.start();
+    ets_timer_arm(&timer1, INTERVAL, false);
+    g_flash_guard_default_ops.end();
+
+    vTaskDelay(2 * INTERVAL / portTICK_PERIOD_MS);
+    TEST_ASSERT_TRUE(flag);
+
+    g_flash_guard_default_ops.start();
+    ets_timer_disarm(&timer1);
+    g_flash_guard_default_ops.end();
 }

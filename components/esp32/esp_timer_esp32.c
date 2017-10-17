@@ -255,7 +255,7 @@ void esp_timer_impl_deinit()
 // FIXME: This value is safe for 80MHz APB frequency.
 // Should be modified to depend on clock frequency.
 
-uint64_t esp_timer_impl_get_min_period_us()
+uint64_t IRAM_ATTR esp_timer_impl_get_min_period_us()
 {
     return 50;
 }
