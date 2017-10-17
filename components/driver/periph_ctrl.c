@@ -46,10 +46,8 @@ void periph_module_disable(periph_module_t periph)
 void periph_module_reset(periph_module_t periph)
 {
     portENTER_CRITICAL(&periph_spinlock);
-    uint32_t rst_en = get_rst_en_mask(periph);
-    uint32_t mask = get_clk_en_mask(periph);
-    DPORT_SET_PERI_REG_MASK(rst_en, mask);
-    DPORT_CLEAR_PERI_REG_MASK(rst_en, mask);
+    DPORT_SET_PERI_REG_MASK(get_rst_en_reg(periph), get_rst_en_mask(periph));
+    DPORT_CLEAR_PERI_REG_MASK(get_rst_en_reg(periph), get_rst_en_mask(periph));
     portEXIT_CRITICAL(&periph_spinlock);
 }
 
