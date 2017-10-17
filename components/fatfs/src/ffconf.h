@@ -1,3 +1,4 @@
+#include <sys/param.h>
 #include "sdkconfig.h"
 /*---------------------------------------------------------------------------/
 /  FatFs - FAT file system module configuration file
@@ -177,9 +178,13 @@
 /  arbitrary physical drive and partition listed in the VolToPart[]. Also f_fdisk()
 /  funciton will be available. */
 
+/* SD card sector size */
+#define _SS_SDCARD      512
+/* wear_levelling library sector size */
+#define _SS_WL          CONFIG_WL_SECTOR_SIZE
 
-#define	_MIN_SS		512
-#define	_MAX_SS		4096
+#define	_MIN_SS		MIN(_SS_SDCARD, _SS_WL)
+#define	_MAX_SS		MAX(_SS_SDCARD, _SS_WL)
 /* These options configure the range of sector size to be supported. (512, 1024,
 /  2048 or 4096) Always set both 512 for most systems, all type of memory cards and
 /  harddisk. But a larger value may be required for on-board flash memory and some
@@ -211,7 +216,7 @@
 / System Configurations
 /---------------------------------------------------------------------------*/
 
-#define	_FS_TINY	0
+#define	_FS_TINY	(!CONFIG_FATFS_PER_FILE_CACHE)
 /* This option switches tiny buffer configuration. (0:Normal or 1:Tiny)
 /  At the tiny configuration, size of file object (FIL) is reduced _MAX_SS bytes.
 /  Instead of private sector buffer eliminated from the file object, common sector
@@ -238,7 +243,7 @@
 /  These options have no effect at read-only configuration (_FS_READONLY = 1). */
 
 
-#define	_FS_LOCK	0
+#define	_FS_LOCK	CONFIG_FATFS_FS_LOCK
 /* The option _FS_LOCK switches file lock function to control duplicated file open
 /  and illegal operation to open objects. This option must be 0 when _FS_READONLY
 /  is 1.
@@ -251,7 +256,7 @@
 
 
 #define _FS_REENTRANT	1
-#define _FS_TIMEOUT		1000
+#define _FS_TIMEOUT		(CONFIG_FATFS_TIMEOUT_MS / portTICK_PERIOD_MS)
 #define	_SYNC_t			SemaphoreHandle_t
 /* The option _FS_REENTRANT switches the re-entrancy (thread safe) of the FatFs
 /  module itself. Note that regardless of this option, file access to different
