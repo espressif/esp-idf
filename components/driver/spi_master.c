@@ -183,6 +183,7 @@ nomem:
     }
     free(spihost[host]);
     spicommon_periph_free(host);
+    spicommon_dma_chan_free(dma_chan);
     return ESP_ERR_NO_MEM;
 }
 
