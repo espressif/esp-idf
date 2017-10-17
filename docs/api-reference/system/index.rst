@@ -8,6 +8,7 @@ System API
    Heap Memory Debugging <heap_debug>
    Interrupt Allocation <intr_alloc>
    Watchdogs <wdts>
+   Hooks <hooks>
    Over The Air Updates (OTA) <ota>
    Sleep Modes <sleep_modes>
    Logging <log>
