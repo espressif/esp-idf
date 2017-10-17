@@ -29,48 +29,41 @@ config PHY_ADDRESS
         LAN8720 default 1 or 0
 
 
-choice PHY_CLK_SRC
-    prompt "EMAC Clock source"
-    default PHY_CLK_EXT
+choice PHY_CLOCK_MODE
+    prompt "EMAC clock mode"
+    default PHY_CLOCK_GPIO0_IN
     help
-        Select external (GPIO0) or internal (APLL) clock source
+        Select external (input on GPIO0) or internal (output on GPIO0, GPIO16 or GPIO17) clock
 
-config PHY_CLK_EXT
-    bool "External"
+
+config PHY_CLOCK_GPIO0_IN
+    bool "GPIO0 input"
     help
-        Select external 50MHz clock input from GPIO0"
+        Input of 50MHz refclock on GPIO0
 
-config PHY_CLK_INT
-    bool "Internal"
-    help
-        Select internal 50MHz clock using APPL output on GPIO0, GPIO16 or GPIO17"
-
-endchoice
-
-
-choice PHY_CLKOUT
-    depends on PHY_CLK_INT
-    prompt "EMAC CLKOUT output GPIO"
-    default CONFIG_PHY_CLKOUT_GPIO17
-    help
-        Select the PHY driver to use for the example.
-
-config PHY_CLKOUT_GPIO0
-    bool "GPIO0"
+config PHY_CLOCK_GPIO0_OUT
+    bool "GPIO0 output"
     help
         Output the internal 50MHz APLL clock on GPIO0
 
-config PHY_CLKOUT_GPIO16
-    bool "GPIO16"
+config PHY_CLOCK_GPIO16_OUT
+    bool "GPIO16 output"
     help
         Output the internal 50MHz APLL clock on GPIO16
 
-config PHY_CLKOUT_GPIO17
-    bool "GPIO17 (inverted)"
+config PHY_CLOCK_GPIO17_OUT
+    bool "GPIO17 output (inverted)"
     help
-        Output the internal 50MHz APLL clock on GPIO17 inverted signal (default)
+        Output the internal 50MHz APLL clock on GPIO17 (inverted signal)
 
 endchoice
+
+config PHY_CLOCK_MODE
+    int
+    default 0 if PHY_CLOCK_GPIO0_IN
+    default 1 if PHY_CLOCK_GPIO0_OUT
+    default 2 if PHY_CLOCK_GPIO16_OUT
+    default 3 if PHY_CLOCK_GPIO17_OUT
 
 
 config PHY_USE_POWER_PIN
