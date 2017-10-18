@@ -36,6 +36,8 @@
 
 #if RFC_DYNAMIC_MEMORY == FALSE
 tRFC_CB rfc_cb;
+#else
+tRFC_CB *rfc_cb_ptr;
 #endif
 
 /*******************************************************************************

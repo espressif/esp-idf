@@ -1731,6 +1731,9 @@ int PORT_Test (UINT16 handle, UINT8 *p_data, UINT16 len)
 *******************************************************************************/
 void RFCOMM_Init (void)
 {
+#if (RFC_DYNAMIC_MEMORY)
+    rfc_cb_ptr = (tRFC_CB *)osi_malloc(sizeof(tRFC_CB));
+#endif /* #if (RFC_DYNAMIC_MEMORY) */
     memset (&rfc_cb, 0, sizeof (tRFC_CB));  /* Init RFCOMM control block */
 
     rfc_cb.rfc.last_mux = MAX_BD_CONNECTIONS;

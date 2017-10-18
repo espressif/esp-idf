@@ -1164,3 +1164,9 @@ void btc_gap_callback_init(void)
     BTM_BleRegiseterConnParamCallback(btc_update_conn_param_callback);
 
 }
+
+void btc_gap_ble_deinit(void)
+{
+    btc_cleanup_adv_data(&gl_bta_adv_data);
+    btc_cleanup_adv_data(&gl_bta_scan_rsp_data);
+}

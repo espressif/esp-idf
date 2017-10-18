@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include "bta_gatts_int.h"
+#include "allocator.h"
 
 /* type for service building action functions */
 typedef void (*tBTA_GATTS_SRVC_ACT)(tBTA_GATTS_SRVC_CB *p_rcb, tBTA_GATTS_DATA *p_data);
@@ -46,6 +47,8 @@ const tBTA_GATTS_SRVC_ACT bta_gatts_srvc_build_act[] = {
 /* GATTS control block */
 #if BTA_DYNAMIC_MEMORY == FALSE
 tBTA_GATTS_CB  bta_gatts_cb;
+#else
+tBTA_GATTS_CB *bta_gatts_cb_ptr;
 #endif
 
 /*******************************************************************************
@@ -133,6 +136,14 @@ BOOLEAN bta_gatts_hdl_event(BT_HDR *p_msg)
 
 
     return (TRUE);
+}
+
+void bta_gatts_deinit(void)
+{
+    memset(&bta_gatts_cb, 0, sizeof(tBTA_GATTS_CB));
+#if BTA_DYNAMIC_MEMORY
+    FREE_AND_RESET(bta_gatts_cb_ptr);
+#endif /* #if BTA_DYNAMIC_MEMORY */
 }
 
 #endif /* GATTS_INCLUDED */

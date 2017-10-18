@@ -21,6 +21,10 @@
 #include "alarm.h"
 #include "btc_ble_storage.h"
 #include "bta_gatt_common.h"
+#include "btc_gap_ble.h"
+#include "bta_gattc_int.h"
+#include "bta_gatts_int.h"
+#include "bta_dm_int.h"
 
 static future_t *main_future[BTC_MAIN_FUTURE_NUM];
 
@@ -67,6 +71,14 @@ static void btc_init_bluetooth(void)
 
 static void btc_deinit_bluetooth(void)
 {
+    btc_gap_ble_deinit();
+    bta_dm_sm_deinit();
+#if (GATTC_INCLUDED)
+    bta_gattc_deinit();
+#endif /* #if (GATTC_INCLUDED) */
+#if (GATTS_INCLUDED)
+    bta_gatts_deinit();
+#endif /* #if (GATTS_INCLUDED) */
     bte_main_shutdown();
     btc_config_clean_up();
     osi_alarm_deinit();

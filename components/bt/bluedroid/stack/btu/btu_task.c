@@ -91,6 +91,8 @@ extern void BTE_InitStack(void);
 */
 #if BTU_DYNAMIC_MEMORY == FALSE
 tBTU_CB  btu_cb;
+#else
+tBTU_CB  *btu_cb_ptr;
 #endif
 
 extern hash_map_t *btu_general_alarm_hash_map;

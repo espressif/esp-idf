@@ -37,6 +37,8 @@
 
 #if BTA_DYNAMIC_MEMORY == FALSE
 tBTA_SDP_CB bta_sdp_cb;
+#else
+tBTA_SDP_CB *bta_sdp_cb_ptr;
 #endif
 
 /* state machine action enumeration list */
