@@ -114,11 +114,8 @@ config FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
         FreeRTOS has the ability to store per-thread pointers in the task
         control block. This controls the number of pointers available.
 
-        Value 0 turns off this functionality.
-
-        If using the LWIP TCP/IP stack (with WiFi or Ethernet), this value must be at least 1. See the
-        LWIP_THREAD_LOCAL_STORAGE_INDEX config item in LWIP configuration to determine which thread-local-storage
-        pointer is reserved for LWIP.
+        This value must be at least 1. Index 0 is reserved for use by the pthreads API
+        thread-local-storage. Other indexes can be used for any desired purpose.
 
 choice FREERTOS_ASSERT
     prompt "FreeRTOS assertions"

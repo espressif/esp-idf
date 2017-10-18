@@ -85,6 +85,8 @@ TEST_CASE("pthread C++", "[pthread]")
         std::cout << "Join thread " << std::hex << t4.get_id() << std::endl;
         t4.join();
     }
+
+    global_sp.reset(); // avoid reported leak
 }
 
 static void task_test_sandbox(void *arg)

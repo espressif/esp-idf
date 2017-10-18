@@ -303,6 +303,12 @@ CXXFLAGS := $(strip \
 	$(CXXFLAGS) \
 	$(EXTRA_CXXFLAGS))
 
+ifdef CONFIG_CXX_EXCEPTIONS
+CXXFLAGS += -fexceptions
+else
+CXXFLAGS += -fno-exceptions
+endif
+
 export CFLAGS CPPFLAGS CXXFLAGS
 
 # Set host compiler and binutils

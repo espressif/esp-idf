@@ -56,7 +56,7 @@ idf_monitor will augment the dump::
 
 Behind the scenes, the command idf_monitor runs to decode each address is::
 
-  xtensa-esp32-elf-addr2line -pfia -e build/PROJECT.elf ADDRESS
+  xtensa-esp32-elf-addr2line -pfiaC -e build/PROJECT.elf ADDRESS
 
 
 Launch GDB for GDBStub

@@ -92,7 +92,6 @@ public:
         static SlowInit slowinit(taskId);
         ESP_LOGD(TAG, "obj=%d after static init, task=%d\n", obj, taskId);
         xSemaphoreGive(s_slow_init_sem);
-        vTaskDelay(10);
         vTaskDelete(NULL);
     }
 private:
@@ -133,6 +132,8 @@ TEST_CASE("static initialization guards work as expected", "[cxx]")
         TEST_ASSERT_TRUE(xSemaphoreTake(s_slow_init_sem, 500/portTICK_PERIOD_MS));
     }
     vSemaphoreDelete(s_slow_init_sem);
+
+    vTaskDelay(10); // Allow tasks to clean up, avoids race with leak detector
 }
 
 struct GlobalInitTest
@@ -186,6 +187,27 @@ TEST_CASE("before scheduler has started, static initializers work correctly", "[
     TEST_ASSERT_EQUAL(1, g_static_init_test3.index);
     TEST_ASSERT_EQUAL(2, StaticInitTestBeforeScheduler::order);
 }
+
+#ifdef CONFIG_CXX_EXCEPTIONS
+
+TEST_CASE("c++ exceptions work", "[cxx]")
+{
+    /* Note: This test currently trips the memory leak threshold
+       as libunwind allocates ~4KB of data on first exception. */
+    int thrown_value;
+    try
+    {
+        throw 20;
+    }
+    catch (int e)
+    {
+        thrown_value = e;
+    }
+    TEST_ASSERT_EQUAL(20, thrown_value);
+    printf("OK?\n");
+}
+
+#endif
 
 /* These test cases pull a lot of code from libstdc++ and are disabled for now
  */

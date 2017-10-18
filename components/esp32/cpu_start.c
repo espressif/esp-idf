@@ -379,8 +379,10 @@ void start_cpu1_default(void)
 
 static void do_global_ctors(void)
 {
+#ifdef CONFIG_CXX_EXCEPTIONS
     static struct object ob;
     __register_frame_info( __eh_frame, &ob );
+#endif
 
     void (**p)(void);
     for (p = &__init_array_end - 1; p >= &__init_array_start; --p) {
