@@ -19,7 +19,9 @@ To obtain information about the state of the heap:
 - :cpp:func:`heap_caps_get_free_size` can also be used to return the current free memory for different memory capabilities.
 - :cpp:func:`heap_caps_get_largest_free_block` can be used to return the largest free block in the heap. This is the largest single allocation which is currently possible. Tracking this value and comparing to total free heap allows you to detect heap fragmentation.
 - :cpp:func:`xPortGetMinimumEverFreeHeapSize` and the related :cpp:func:`heap_caps_get_minimum_free_size` can be used to track the heap "low water mark" since boot.
-- :cpp:func:`heap_caps_get_info` returns a :cpp:class:`multi_heap_info_t` structure which contains the information from the above functions, plus some additional heap-specific data (number of allocations, etc.)
+- :cpp:func:`heap_caps_get_info` returns a :cpp:class:`multi_heap_info_t` structure which contains the information from the above functions, plus some additional heap-specific data (number of allocations, etc.).
+- :cpp:func:`heap_caps_print_heap_info` prints a summary to stdout of the information returned by :cpp:func:`heap_caps_get_info`.
+- :cpp:func:`heap_caps_dump` and :cpp:func:`heap_caps_dump_all` will output detailed information about the structure of each block in the heap. Note that this can be large amount of output.
 
 
 .. _heap-corruption:
@@ -52,7 +54,8 @@ Memory corruption can be one of the hardest classes of bugs to find and fix, as 
 - Adding regular calls to :cpp:func:`heap_caps_check_integrity_all` or :cpp:func:`heap_caps_check_integrity_addr` in your code will help you pin down the exact time that the corruption happened. You can move these checks around to "close in on" the section of code that corrupted the heap.
 - Based on the memory address which is being corrupted, you can use :ref:`JTAG debugging <jtag-debugging-introduction>` to set a watchpoint on this address and have the CPU halt when it is written to.
 - If you don't have JTAG, but you do know roughly when the corruption happens, then you can set a watchpoint in software just beforehand via :cpp:func:`esp_set_watchpoint`. A fatal exception will occur when the watchpoint triggers. For example ``esp_set_watchpoint(0, (void *)addr, 4, ESP_WATCHPOINT_STORE``. Note that watchpoints are per-CPU and are set on the current running CPU only, so if you don't know which CPU is corrupting memory then you will need to call this function on both CPUs.
-- For buffer overflows, `heap tracing`_ in ``HEAP_TRACE_ALL`` mode lets you see which callers are allocating which addresses from the heap. See `Heap Tracing To Find Heap Corruption` for more details.
+- For buffer overflows, `heap tracing`_ in ``HEAP_TRACE_ALL`` mode lets you see which callers are allocating which addresses from the heap. See `Heap Tracing To Find Heap Corruption` for more details. If you can find the function which allocates memory with an address immediately before the address which is corrupted, this will probably be the function which overflows the buffer.
+- Calling :cpp:func:`heap_caps_dump` or :cpp:func:`heap_caps_dump_all` can give an indication of what heap blocks are surrounding the corrupted region and may have overflowed/underflowed/etc.
 
 Configuration
 ^^^^^^^^^^^^^

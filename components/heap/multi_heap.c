@@ -623,13 +623,13 @@ void multi_heap_dump(multi_heap_handle_t heap)
     assert(heap != NULL);
 
     multi_heap_internal_lock(heap);
-    printf("Heap start %p end %p\nFirst free block %p\n", &heap->first_block, heap->last_block, heap->first_block.next_free);
+    MULTI_HEAP_STDERR_PRINTF("Heap start %p end %p\nFirst free block %p\n", &heap->first_block, heap->last_block, heap->first_block.next_free);
     for(heap_block_t *b = &heap->first_block; b != NULL; b = get_next_block(b)) {
-        printf("Block %p data size 0x%08zx bytes next block %p", b, block_data_size(b), get_next_block(b));
+        MULTI_HEAP_STDERR_PRINTF("Block %p data size 0x%08x bytes next block %p", b, block_data_size(b), get_next_block(b));
         if (is_free(b)) {
-            printf(" FREE. Next free %p\n", b->next_free);
+            MULTI_HEAP_STDERR_PRINTF(" FREE. Next free %p\n", b->next_free);
         } else {
-            printf("\n");
+            MULTI_HEAP_STDERR_PRINTF("%s", "\n"); /* C macros & optional __VA_ARGS__ */
         }
     }
     multi_heap_internal_unlock(heap);

@@ -79,7 +79,6 @@ Routine to allocate a bit of memory with certain capabilities. caps is a bitfiel
 IRAM_ATTR void *heap_caps_malloc( size_t size, uint32_t caps )
 {
     void *ret = NULL;
-    uint32_t remCaps;
 
     if (caps & MALLOC_CAP_EXEC) {
         //MALLOC_CAP_EXEC forces an alloc from IRAM. There is a region which has both this as well as the following
@@ -102,13 +101,7 @@ IRAM_ATTR void *heap_caps_malloc( size_t size, uint32_t caps )
             if ((heap->caps[prio] & caps) != 0) {
                 //Heap has at least one of the caps requested. If caps has other bits set that this prio
                 //doesn't cover, see if they're available in other prios.
-                remCaps = caps & (~heap->caps[prio]); //Remaining caps to be fulfilled
-                int j = prio + 1;
-                while (remCaps != 0 && j < SOC_MEMORY_TYPE_NO_PRIOS) {
-                    remCaps = remCaps & (~heap->caps[j]);
-                    j++;
-                }
-                if (remCaps == 0) {
+                if ((get_all_caps(heap) & caps) == caps) {
                     //This heap can satisfy all the requested capabilities. See if we can grab some memory using it.
                     if ((caps & MALLOC_CAP_EXEC) && heap->start >= SOC_DIRAM_DRAM_LOW && heap->start < SOC_DIRAM_DRAM_HIGH) {
                         //This is special, insofar that what we're going to get back is a DRAM address. If so,
@@ -436,4 +429,21 @@ bool heap_caps_check_integrity_addr(intptr_t addr, bool print_errors)
         return false;
     }
     return multi_heap_check(heap->heap, print_errors);
+}
+
+void heap_caps_dump(uint32_t caps)
+{
+    bool all_heaps = caps & MALLOC_CAP_INVALID;
+    heap_t *heap;
+    SLIST_FOREACH(heap, &registered_heaps, next) {
+        if (heap->heap != NULL
+            && (all_heaps || (get_all_caps(heap) & caps) == caps)) {
+            multi_heap_dump(heap->heap);
+        }
+    }
+}
+
+void heap_caps_dump_all()
+{
+    heap_caps_dump(MALLOC_CAP_INVALID);
 }
