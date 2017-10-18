@@ -121,6 +121,8 @@ build_esp_idf_tests:
     - cd tools/unit-test-app
     - make help # make sure kconfig tools are built in single process
     - make ut-clean-all-configs
+    - export EXTRA_CFLAGS="-Werror -Werror=deprecated-declarations"
+    - export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
     - make ut-build-all-configs TESTS_ALL=1
     - python tools/UnitTestParser.py
 
