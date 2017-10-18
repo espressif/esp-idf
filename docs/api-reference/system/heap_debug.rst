@@ -52,7 +52,7 @@ Memory corruption can be one of the hardest classes of bugs to find and fix, as 
 - Adding regular calls to :cpp:func:`heap_caps_check_integrity_all` or :cpp:func:`heap_caps_check_integrity_addr` in your code will help you pin down the exact time that the corruption happened. You can move these checks around to "close in on" the section of code that corrupted the heap.
 - Based on the memory address which is being corrupted, you can use :ref:`JTAG debugging <jtag-debugging-introduction>` to set a watchpoint on this address and have the CPU halt when it is written to.
 - If you don't have JTAG, but you do know roughly when the corruption happens, then you can set a watchpoint in software just beforehand via :cpp:func:`esp_set_watchpoint`. A fatal exception will occur when the watchpoint triggers. For example ``esp_set_watchpoint(0, (void *)addr, 4, ESP_WATCHPOINT_STORE``. Note that watchpoints are per-CPU and are set on the current running CPU only, so if you don't know which CPU is corrupting memory then you will need to call this function on both CPUs.
-- For buffer overflows, `heap tracing`_ in ``HEAP_TRACE_ALL`` mode lets you see which callers are allocating from heap. If you can find the function which allocates memory with an address immediately before the address which is corrupted, this will probably be the function which overflows the buffer.
+- For buffer overflows, `heap tracing`_ in ``HEAP_TRACE_ALL`` mode lets you see which callers are allocating which addresses from the heap. See `Heap Tracing To Find Heap Corruption` for more details.
 
 Configuration
 ^^^^^^^^^^^^^
@@ -68,29 +68,51 @@ This is the default level. No special heap corruption features are enabled, but 
 
 If assertions are enabled, an assertion will also trigger if a double-free occurs (the same memory is freed twice).
 
-Light impact
+Calling :cpp:func:`heap_caps_check_integrity` in Basic mode will check the integrity of all heap structures, and print errors if any appear to be corrupted.
+
+Light Impact
 ++++++++++++
 
-At this level, heap memory is additionally "poisoned" with head and tail "canary bytes" before and after each block which is allocated. If an application writes outside the bounds of the allocated buffer, the canary bytes will be corrupted and the integrity check will fail.
+At this level, heap memory is additionally "poisoned" with head and tail "canary bytes" before and after each block which is allocated. If an application writes outside the bounds of allocated buffers, the canary bytes will be corrupted and the integrity check will fail.
 
-"Basic" heap corruption checks can also detect most out of bounds writes, but this setting is more precise as even a single byte overrun will always be detected. With Basic heap checks, the number of overrun bytes before a failure is detected will depend on the properties of the heap.
+The head canary word is 0xABBA1234 (3412BAAB in byte order), and the tail canary word is 0xBAAD5678 (7856ADBA in byte order).
 
-Similar to other heap checks, these "canary bytes" are checked via assertion whenever memory is freed and can also be checked manually via :cpp:func:`heap_caps_check_integrity` or related functions.
+"Basic" heap corruption checks can also detect most out of bounds writes, but this setting is more precise as even a single byte overrun can be detected. With Basic heap checks, the number of overrun bytes before a failure is detected will depend on the properties of the heap.
 
-This level increases memory usage, each individual allocation will use 9 to 12 additional bytes of memory (depending on alignment).
+Enabling "Light Impact" checking increases memory usage, each individual allocation will use 9 to 12 additional bytes of memory (depending on alignment).
+
+Each time ``free()`` is called in Light Impact mode, the head and tail canary bytes of the buffer being freed are checked against the expected values.
+
+When :cpp:func:`heap_caps_check_integrity` is called, all allocated blocks of heap memory have their canary bytes checked against the expected values.
+
+In both cases, the check is that the first 4 bytes of an allocated block (before the buffer returned to the user) should be the word 0xABBA1234. Then the last 4 bytes of the allocated block (after the buffer returned to the user) should be the word 0xBAAD5678.
+
+Different values usually indicate buffer underrun or overrun, respectively.
+
 
 Comprehensive
 +++++++++++++
 
 This level incorporates the "light impact" detection features plus additional checks for uninitialised-access and use-after-free bugs. In this mode, all freshly allocated memory is filled with the pattern 0xCE, and all freed memory is filled with the pattern 0xFE.
 
-If an application crashes reading/writing an address related to 0xCECECECE when this setting is enabled, this indicates it has read uninitialized memory. The application should be changed to either use calloc() (which zeroes memory), or initialize the memory before using it. The value 0xCECECECE may also be seen in stack-allocated automatic variables, because in IDF most task stacks are originally allocated from the heap and in C stack memory is uninitialized by default.
+Enabling "Comprehensive" detection has a substantial runtime performance impact (as all memory needs to be set to the allocation patterns each time a malloc/free completes, and the memory also needs to be checked each time.) However it allows easier detection of memory corruption bugs which are much more subtle to find otherwise. It is recommended to only enable this mode when debugging, not in production.
 
-If an application crashes reading/writing an address related to 0xFEFEFEFE, this indicates it is reading heap memory after it has been freed (a "use after free bug".) The application should be changed to not access heap memory after it has been freed.
+Crashes in Comprehensive Mode
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If the IDF heap allocator fails because the pattern 0xFEFEFEFE was not found in freed memory then this indicates the app has a use-after-free bug where it is writing to memory which has already been freed.
+If an application crashes reading/writing an address related to 0xCECECECE in Comprehensive mode, this indicates it has read uninitialized memory. The application should be changed to either use calloc() (which zeroes memory), or initialize the memory before using it. The value 0xCECECECE may also be seen in stack-allocated automatic variables, because in IDF most task stacks are originally allocated from the heap and in C stack memory is uninitialized by default.
 
-Enabling "Comprehensive" detection has a substantial runtime performance impact (as all memory needs to be set to the allocation patterns each time a malloc/free completes, and the memory also needs to be checked each time.)
+If an application crashes and the exception register dump indicates that some addresses or values were 0xFEFEFEFE, this indicates it is reading heap memory after it has been freed (a "use after free bug".) The application should be changed to not access heap memory after it has been freed.
+
+If a call to malloc() or realloc() causes a crash because it expected to find the pattern 0xFEFEFEFE in free memory and a different pattern was found, then this indicates the app has a use-after-free bug where it is writing to memory which has already been freed.
+
+Manual Heap Checks in Comprehensive Mode
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Calls to :cpp:func:`heap_caps_check_integrity` may print errors relating to 0xFEFEFEFE, 0xABBA1234 or 0xBAAD5678. In each case the checker is expecting to find a given pattern, and will error out if this is not found:
+
+- For free heap blocks, the checker expects to find all bytes set to 0xFE. Any other values indicate a use-after-free bug where free memory has been incorrectly overwritten.
+- For allocated heap blocks, the behaviour is the same as for `Light Impact` mode. The canary bytes 0xABBA1234 and 0xBAAD5678 are checked at the head and tail of each allocated buffer, and any variation indicates a buffer overrun/underrun.
 
 .. _heap-tracing:
 
@@ -182,6 +204,17 @@ The depth of the call stack recorded for each trace entry can be configured in `
 Finally, the total number of 'leaked' bytes (bytes allocated but not freed while trace was running) is printed, and the total number of allocations this represents.
 
 A warning will be printed if the trace buffer was not large enough to hold all the allocations which happened. If you see this warning, consider either shortening the tracing period or increasing the number of records in the trace buffer.
+
+Heap Tracing To Find Heap Corruption
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When a region in heap is corrupted, it may be from some other part of the program which allocated memory at a nearby address.
+
+If you have some idea at what time the corruption occured, enabling heap tracing in ``HEAP_TRACE_ALL`` mode allows you to record all of the functions which allocated memory, and the addresses where they were corrupted.
+
+Using heap tracing in this way is very similar to memory leak detection as described above. For memory which is allocated and not freed, the output 
+
+Heap tracing can also be used to help track down heap corruption. By using 
 
 Performance Impact
 ^^^^^^^^^^^^^^^^^^

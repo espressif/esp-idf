@@ -91,6 +91,8 @@ multi_heap_handle_t multi_heap_register(void *start, size_t size);
  *
  * The lock argument is supplied to the MULTI_HEAP_LOCK() and MULTI_HEAP_UNLOCK() macros, defined in multi_heap_platform.h.
  *
+ * The lock in question must be recursive.
+ *
  * When the heap is first registered, the associated lock is NULL.
  *
  * @param heap Handle to a registered heap.
