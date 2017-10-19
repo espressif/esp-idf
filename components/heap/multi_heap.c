@@ -347,11 +347,21 @@ void *multi_heap_malloc_impl(multi_heap_handle_t heap, size_t size)
     size_t best_size = SIZE_MAX;
     size = ALIGN_UP(size);
 
-    if (size == 0 || heap == NULL || heap->free_bytes < size) {
+    if (size == 0 || heap == NULL) {
         return NULL;
     }
 
     multi_heap_internal_lock(heap);
+
+    /* Note: this check must be done while holding the lock as both
+       malloc & realloc may temporarily shrink the free_bytes value
+       before they split a large block. This can result in false negatives,
+       especially if the heap is unfragmented.
+    */
+    if (heap->free_bytes < size) {
+        MULTI_HEAP_UNLOCK(heap->lock);
+        return NULL;
+    }
 
     /* Find best free block to perform the allocation in */
     prev = &heap->first_block;
