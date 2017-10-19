@@ -40,6 +40,7 @@ void ssl_pm_set_fd(SSL *ssl, int fd, int mode);
 int ssl_pm_get_fd(const SSL *ssl, int mode);
 
 OSSL_HANDSHAKE_STATE ssl_pm_get_state(const SSL *ssl);
+int ssl_pm_set_hostname(const SSL* ssl, const char* hostname);
 
 void ssl_pm_set_bufflen(SSL *ssl, int len);
 

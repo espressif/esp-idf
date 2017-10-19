@@ -255,6 +255,8 @@ struct ssl_method_func_st {
     long (*ssl_get_verify_result)(const SSL *ssl);
 
     OSSL_HANDSHAKE_STATE (*ssl_get_state)(const SSL *ssl);
+
+    int (*ssl_set_hostname)(const SSL* ssl, const char* hostname);
 };
 
 struct x509_method_st {

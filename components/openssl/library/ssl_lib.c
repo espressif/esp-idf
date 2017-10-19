@@ -166,6 +166,15 @@ OSSL_HANDSHAKE_STATE SSL_get_state(const SSL *ssl)
 }
 
 /**
+ * @brief set hostname for SNI
+ */
+int SSL_set_tlsext_host_name(const SSL *ssl, const char *name) {
+    SSL_ASSERT1(ssl);
+
+    return SSL_METHOD_CALL(set_hostname, ssl, name);
+}
+
+/**
  * @brief create a SSL context
  */
 SSL_CTX* SSL_CTX_new(const SSL_METHOD *method)
