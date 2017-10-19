@@ -46,7 +46,7 @@ static esp_err_t sdmmc_send_cmd_send_op_cond(sdmmc_card_t* card, uint32_t ocr, u
 static esp_err_t sdmmc_send_cmd_read_ocr(sdmmc_card_t *card, uint32_t *ocrp);
 static esp_err_t sdmmc_send_cmd_send_cid(sdmmc_card_t *card, sdmmc_cid_t *out_cid);
 static esp_err_t sdmmc_decode_cid(sdmmc_response_t resp, sdmmc_cid_t* out_cid);
-static esp_err_t sddmc_send_cmd_all_send_cid(sdmmc_card_t* card, sdmmc_cid_t* out_cid);
+static esp_err_t sdmmc_send_cmd_all_send_cid(sdmmc_card_t* card, sdmmc_cid_t* out_cid);
 static esp_err_t sdmmc_send_cmd_set_relative_addr(sdmmc_card_t* card, uint16_t* out_rca);
 static esp_err_t sdmmc_send_cmd_set_blocklen(sdmmc_card_t* card, sdmmc_csd_t* csd);
 static esp_err_t sdmmc_send_cmd_switch_func(sdmmc_card_t* card,
@@ -148,7 +148,7 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
 
     /* Read and decode the contents of CID register */
     if (!is_spi) {
-        err = sddmc_send_cmd_all_send_cid(card, &card->cid);
+        err = sdmmc_send_cmd_all_send_cid(card, &card->cid);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "%s: all_send_cid returned 0x%x", __func__, err);
             return err;
@@ -489,7 +489,7 @@ esp_err_t sdmmc_decode_cid(sdmmc_response_t resp, sdmmc_cid_t* out_cid)
     return ESP_OK;
 }
 
-static esp_err_t sddmc_send_cmd_all_send_cid(sdmmc_card_t* card, sdmmc_cid_t* out_cid)
+static esp_err_t sdmmc_send_cmd_all_send_cid(sdmmc_card_t* card, sdmmc_cid_t* out_cid)
 {
     assert(out_cid);
     sdmmc_command_t cmd = {
