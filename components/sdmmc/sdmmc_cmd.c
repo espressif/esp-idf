@@ -743,17 +743,25 @@ static esp_err_t sdmmc_send_cmd_send_cid(sdmmc_card_t *card, sdmmc_cid_t *out_ci
 
 static esp_err_t sdmmc_send_cmd_set_relative_addr(sdmmc_card_t* card, uint16_t* out_rca)
 {
+    static uint16_t next_rca_mmc = 0;
     assert(out_rca);
     sdmmc_command_t cmd = {
             .opcode = SD_SEND_RELATIVE_ADDR,
             .flags = SCF_CMD_BCR | SCF_RSP_R6
     };
+    if (card->host.flags & SDMMC_HOST_MMC_CARD) {
+        // MMC cards expect you to set the RCA, so just keep a counter of them
+        next_rca_mmc++;
+        if (next_rca_mmc == 0) /* 0 means deselcted, so can't use that for an RCA */
+            next_rca_mmc++;
+        cmd.arg = MMC_ARG_RCA(next_rca_mmc);
+    }
 
     esp_err_t err = sdmmc_send_cmd(card, &cmd);
     if (err != ESP_OK) {
         return err;
     }
-    *out_rca = SD_R6_RCA(cmd.response);
+    *out_rca = (card->host.flags & SDMMC_HOST_MMC_CARD) ? next_rca_mmc : SD_R6_RCA(cmd.response);
     return ESP_OK;
 }
 
