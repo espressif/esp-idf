@@ -27,6 +27,8 @@
 #ifndef CRYPTO_H
 #define CRYPTO_H
 
+#include "common.h"
+
 /**
  * md4_vector - MD4 hash for data vector
  * @num_elem: Number of elements in the data vector

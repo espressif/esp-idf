@@ -38,6 +38,7 @@
 #include "phy_init_data.h"
 #include "coexist_internal.h"
 #include "driver/periph_ctrl.h"
+#include "esp_wifi_internal.h"
 
 
 static const char* TAG = "phy_init";
@@ -129,6 +130,11 @@ esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data, esp_phy_calibrat
 #endif
             }
 
+extern esp_err_t wifi_osi_funcs_register(wifi_osi_funcs_t *osi_funcs);
+            status = wifi_osi_funcs_register(&g_wifi_osi_funcs);
+            if(status != ESP_OK) {
+                return ESP_FAIL;
+            }
             coex_bt_high_prio();
         }
     }
