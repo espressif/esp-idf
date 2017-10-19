@@ -344,6 +344,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
 
     i2s_stop(i2s_num);
 
+
     uint32_t cur_mode = 0;
     if (p_i2s_obj[i2s_num]->channel_num != ch) {
         p_i2s_obj[i2s_num]->channel_num = (ch == 2) ? 2 : 1;
@@ -682,6 +683,11 @@ esp_err_t i2s_stop(i2s_port_t i2s_num)
     I2S[i2s_num]->lc_conf.in_rst = 0;
     I2S[i2s_num]->lc_conf.out_rst = 1;
     I2S[i2s_num]->lc_conf.out_rst = 0;
+
+    I2S[i2s_num]->conf.tx_reset = 1;
+    I2S[i2s_num]->conf.tx_reset = 0;
+    I2S[i2s_num]->conf.rx_reset = 1;
+    I2S[i2s_num]->conf.rx_reset = 0;
     I2S_EXIT_CRITICAL();
     return 0;
 }
