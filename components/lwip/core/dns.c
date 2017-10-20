@@ -363,18 +363,19 @@ dns_stricmp(const char* str1, const char* str2)
 #endif /* LWIP_DNS_STRICMP */
 
 /**
- * Initialize the resolver: set up the UDP pcb and configure the default server
- * (if DNS_SERVER_ADDRESS is set).
+ * Initialize the resolver: set up the UDP pcb and configure the fallback dns server
+ * (if FALLBACK_DNS_SERVER_ADDRESS is set).
  */
 void
 dns_init(void)
 {
-#ifdef DNS_SERVER_ADDRESS
+#ifdef FALLBACK_DNS_SERVER_ADDRESS
   /* initialize default DNS server address */
   ip_addr_t dnsserver;
-  DNS_SERVER_ADDRESS(&dnsserver);
-  dns_setserver(0, &dnsserver);
-#endif /* DNS_SERVER_ADDRESS */
+  FALLBACK_DNS_SERVER_ADDRESS(&dnsserver);
+  dnsserver.type = IPADDR_TYPE_V4;
+  dns_setserver(DNS_FALLBACK_SERVER_INDEX, &dnsserver);
+#endif /* FALLBACK_DNS_SERVER_ADDRESS */
 
   LWIP_ASSERT("sanity check SIZEOF_DNS_QUERY",
     sizeof(struct dns_query) == SIZEOF_DNS_QUERY);
@@ -422,6 +423,21 @@ dns_setserver(u8_t numdns, const ip_addr_t *dnsserver)
     }
   }
 }
+
+void 
+dns_clear_servers(bool keep_fallback)
+{
+  u8_t numdns = 0; 
+  
+  for (numdns = 0; numdns < DNS_MAX_SERVERS; numdns ++) {
+    if (keep_fallback && numdns == DNS_FALLBACK_SERVER_INDEX) {
+      continue;
+    }
+
+    dns_setserver(numdns, NULL);
+  }
+}
+
 
 /**
  * Obtain one of the currently configured DNS server.
@@ -730,11 +746,6 @@ dns_send(u8_t idx)
               (u16_t)(entry->server_idx), entry->name));
   LWIP_ASSERT("dns server out of array", entry->server_idx < DNS_MAX_SERVERS);
   if (ip_addr_isany_val(dns_servers[entry->server_idx])) {
-    /* DNS server not valid anymore, e.g. PPP netif has been shut down */
-    /* call specified callback function if provided */
-    dns_call_found(idx, NULL);
-    /* flush this entry */
-    entry->state = DNS_STATE_UNUSED;
     return ERR_OK;
   }
 
@@ -992,6 +1003,11 @@ dns_check_entry(u8_t i)
     case DNS_STATE_ASKING:
       if (--entry->tmr == 0) {
         if (++entry->retries == DNS_MAX_RETRIES) {
+          /* skip DNS servers with zero address */
+          while ((entry->server_idx + 1 < DNS_MAX_SERVERS) && ip_addr_isany_val(dns_servers[entry->server_idx + 1])) {
+            entry->server_idx++;
+          }
+
           if ((entry->server_idx + 1 < DNS_MAX_SERVERS) && !ip_addr_isany_val(dns_servers[entry->server_idx + 1])) {
             /* change of server */
             entry->server_idx++;
@@ -1417,6 +1433,17 @@ dns_gethostbyname(const char *hostname, ip_addr_t *addr, dns_found_callback foun
   return dns_gethostbyname_addrtype(hostname, addr, found, callback_arg, LWIP_DNS_ADDRTYPE_DEFAULT);
 }
 
+static bool dns_server_is_set (void)
+{
+  int i = 0;
+  for (i = 0;i < DNS_MAX_SERVERS; i++) {
+    if (!ip_addr_isany_val(dns_servers[i])) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /** Like dns_gethostbyname, but returned address type can be controlled:
  * @param dns_addrtype: - LWIP_DNS_ADDRTYPE_IPV4_IPV6: try to resolve IPv4 first, try IPv6 if IPv4 fails only
  *                      - LWIP_DNS_ADDRTYPE_IPV6_IPV4: try to resolve IPv6 first, try IPv4 if IPv6 fails only
@@ -1485,7 +1512,8 @@ dns_gethostbyname_addrtype(const char *hostname, ip_addr_t *addr, dns_found_call
 #endif /* LWIP_IPV4 && LWIP_IPV6 */
 
   /* prevent calling found callback if no server is set, return error instead */
-  if (ip_addr_isany_val(dns_servers[0])) {
+  
+  if (dns_server_is_set() == false) {
     return ERR_VAL;
   }
 
