@@ -37,7 +37,7 @@
    FDs that the user sees are the same FDs.
 */
 
-unsigned lwip_socket_offset;
+int lwip_socket_offset;
 
 static int lwip_fcntl_r_wrapper(int fd, int cmd, va_list args);
 static int lwip_ioctl_r_wrapper(int fd, int cmd, va_list args);
@@ -54,14 +54,14 @@ void esp_vfs_lwip_sockets_register()
         .fcntl = &lwip_fcntl_r_wrapper,
         .ioctl = &lwip_ioctl_r_wrapper,
     };
-    unsigned max_fd;
+    int max_fd;
 
     ESP_ERROR_CHECK(esp_vfs_register_socket_space(&vfs, NULL, &lwip_socket_offset, &max_fd));
 
     /* LWIP can't be allowed to create more sockets than fit in the per-VFS fd space. Currently this isn't configurable
      * but it's set much larger than CONFIG_LWIP_MAX_SOCKETS should ever be (max 2^12 FDs).
      */
-    assert(CONFIG_LWIP_MAX_SOCKETS <= max_fd - lwip_socket_offset);
+    assert(max_fd >= lwip_socket_offset && CONFIG_LWIP_MAX_SOCKETS <= max_fd - lwip_socket_offset);
 }
 
 static int lwip_fcntl_r_wrapper(int fd, int cmd, va_list args)
