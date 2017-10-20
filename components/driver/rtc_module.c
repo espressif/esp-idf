@@ -510,8 +510,16 @@ esp_err_t touch_pad_set_cnt_mode(touch_pad_t touch_num, touch_cnt_slope_t slope,
     portENTER_CRITICAL(&rtc_spinlock);
     //set tie opt value, high or low level seem no difference for counter
     RTCIO.touch_pad[touch_num].tie_opt = opt;
+
+    //workaround for touch pad DAC mismatch on tp8 and tp9
+    touch_pad_t touch_pad_wrap = touch_num;
+    if (touch_num == TOUCH_PAD_NUM9) {
+        touch_pad_wrap = TOUCH_PAD_NUM8;
+    } else if (touch_num == TOUCH_PAD_NUM8) {
+        touch_pad_wrap = TOUCH_PAD_NUM9;
+    }
     //touch sensor set slope for charging and discharging.
-    RTCIO.touch_pad[touch_num].dac = slope;
+    RTCIO.touch_pad[touch_pad_wrap].dac = slope;
     portEXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
@@ -521,7 +529,14 @@ esp_err_t touch_pad_get_cnt_mode(touch_pad_t touch_num, touch_cnt_slope_t *slope
     RTC_MODULE_CHECK((touch_num < TOUCH_PAD_MAX), "touch IO error", ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&rtc_spinlock);
     if (slope) {
-        *slope = RTCIO.touch_pad[touch_num].dac;
+        //workaround for touch pad DAC mismatch on tp8 and tp9
+        touch_pad_t touch_pad_wrap = touch_num;
+        if (touch_num == TOUCH_PAD_NUM9) {
+            touch_pad_wrap = TOUCH_PAD_NUM8;
+        } else if (touch_num == TOUCH_PAD_NUM8) {
+            touch_pad_wrap = TOUCH_PAD_NUM9;
+        }
+        *slope = RTCIO.touch_pad[touch_pad_wrap].dac;
     }
     if (opt) {
         *opt = RTCIO.touch_pad[touch_num].tie_opt;
