@@ -190,8 +190,19 @@
 #define configTOTAL_HEAP_SIZE			(&_heap_end - &_heap_start)//( ( size_t ) (64 * 1024) )
 
 #define configMAX_TASK_NAME_LEN			( CONFIG_FREERTOS_MAX_TASK_NAME_LEN )
-#define configUSE_TRACE_FACILITY		0		/* Used by vTaskList in main.c */
-#define configUSE_STATS_FORMATTING_FUNCTIONS	0	/* Used by vTaskList in main.c */
+
+#ifdef CONFIG_FREERTOS_USE_TRACE_FACILITY
+#define configUSE_TRACE_FACILITY        1       /* Used by uxTaskGetSystemState(), and other trace facility functions */
+#endif
+
+#ifdef CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
+#define configUSE_STATS_FORMATTING_FUNCTIONS    1   /* Used by vTaskList() */
+#endif
+
+#ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
+#define configGENERATE_RUN_TIME_STATS   1       /* Used by vTaskGetRunTimeStats() */
+#endif
+
 #define configUSE_TRACE_FACILITY_2      0		/* Provided by Xtensa port patch */
 #define configBENCHMARK					0		/* Provided by Xtensa port patch */
 #define configUSE_16_BIT_TICKS			0
