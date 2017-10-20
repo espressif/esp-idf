@@ -19,8 +19,9 @@ ifneq ("$(CONFIG_PARTITION_TABLE_FILENAME)","")
 
 ifndef PARTITION_TABLE_CSV_PATH
 # Path to partition CSV file is relative to project path for custom
-# partition CSV files, but relative to component dir otherwise.$
+# partition CSV files, but relative to component dir otherwise.
 PARTITION_TABLE_ROOT := $(call dequote,$(if $(CONFIG_PARTITION_TABLE_CUSTOM),$(PROJECT_PATH),$(COMPONENT_PATH)))
+quote := "
 PARTITION_TABLE_CSV_PATH := $(call dequote,$(abspath $(PARTITION_TABLE_ROOT)/$(subst $(quote),,$(CONFIG_PARTITION_TABLE_FILENAME))))
 endif
 

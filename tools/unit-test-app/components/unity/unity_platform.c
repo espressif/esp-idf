@@ -10,8 +10,11 @@
 #include "esp_log.h"
 #include "soc/cpu.h"
 #include "esp_heap_caps.h"
-#include "esp_heap_trace.h"
 #include "test_utils.h"
+
+#ifdef CONFIG_HEAP_TRACING
+#include "esp_heap_trace.h"
+#endif
 
 #define unity_printf ets_printf
 
