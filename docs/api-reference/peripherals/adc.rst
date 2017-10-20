@@ -32,8 +32,8 @@ Reading voltage on ADC1 channel 0 (GPIO 36)::
 
     ...
 
-        adc1_config_width(ADC_WIDTH_12Bit);
-        adc1_config_channel_atten(ADC1_CHANNEL_0,ADC_ATTEN_0db);
+        adc1_config_width(ADC_WIDTH_BIT_12);
+        adc1_config_channel_atten(ADC1_CHANNEL_0,ADC_ATTEN_DB_0);
         int val = adc1_get_raw(ADC1_CHANNEL_0);
 
 The input voltage in above example is from 0 to 1.1V (0 dB attenuation). The input range can be extended by setting higher attenuation, see :cpp:type:`adc_atten_t`.
@@ -44,7 +44,7 @@ Reading the internal hall effect sensor::
 
     ...
 
-        adc1_config_width(ADC_WIDTH_12Bit);
+        adc1_config_width(ADC_WIDTH_BIT_12);
         int val = hall_sensor_read();
 
 
@@ -81,7 +81,7 @@ Reading the ADC and obtaining a result in mV::
         
         // Calculate ADC characteristics i.e. gain and offset factors
         esp_adc_cal_characteristics_t characteristics;
-        esp_adc_cal_get_characteristics(V_REF, ADC_ATTEN_11db, ADC_WIDTH_12Bit, &characteristics);
+        esp_adc_cal_get_characteristics(V_REF, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, &characteristics);
         
         // Read ADC and obtain result in mV
         uint32_t voltage = adc1_to_voltage(ADC1_CHANNEL_6, &characteristics);

@@ -20,6 +20,8 @@
 #include "soc/sens_struct.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_cntl_struct.h"
+#include "soc/syscon_reg.h"
+#include "soc/syscon_struct.h"
 #include "rtc_io.h"
 #include "touch_pad.h"
 #include "adc.h"
@@ -40,6 +42,18 @@
 #include "rom/queue.h"
 
 
+#define ADC_FSM_RSTB_WAIT_DEFAULT     (8)
+#define ADC_FSM_START_WAIT_DEFAULT    (5)
+#define ADC_FSM_STANDBY_WAIT_DEFAULT  (100)
+#define ADC_FSM_TIME_KEEP             (-1)
+#define ADC_MAX_MEAS_NUM_DEFAULT      (255)
+#define ADC_MEAS_NUM_LIM_DEFAULT      (1)
+#define SAR_ADC_CLK_DIV_DEFUALT       (2)
+#define ADC_PATT_LEN_MAX              (16)
+#define TOUCH_PAD_FILTER_FACTOR_DEFAULT   (16)
+#define TOUCH_PAD_SHIFT_DEFAULT           (4)
+#define DAC_ERR_STR_CHANNEL_ERROR   "DAC channel error"
+
 static const char *RTC_MODULE_TAG = "RTC_MODULE";
 
 #define RTC_MODULE_CHECK(a, str, ret_val) if (!(a)) {                                \
@@ -52,16 +66,15 @@ static const char *RTC_MODULE_TAG = "RTC_MODULE";
         return (ret_val);                                                              \
 }
 
+#define ADC_CHECK_UNIT(unit) RTC_MODULE_CHECK(adc_unit < ADC_UNIT_2, "ADC unit error, only support ADC1 for now", ESP_ERR_INVALID_ARG)
+
 #define ADC1_CHECK_FUNCTION_RET(fun_ret) if(fun_ret!=ESP_OK){\
     ESP_LOGE(RTC_MODULE_TAG,"%s:%d\n",__FUNCTION__,__LINE__);\
     return ESP_FAIL;\
 }
 
-#define DAC_ERR_STR_CHANNEL_ERROR   "DAC channel error"
-
 portMUX_TYPE rtc_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static SemaphoreHandle_t rtc_touch_mux = NULL;
-
 
 typedef struct {
     TimerHandle_t timer;
@@ -71,6 +84,12 @@ typedef struct {
     bool enable;
 } touch_pad_filter_t;
 static touch_pad_filter_t *s_touch_pad_filter = NULL;
+
+typedef enum {
+    ADC_FORCE_FSM = 0x0,
+    ADC_FORCE_DISABLE = 0x2,
+    ADC_FORCE_ENABLE = 0x3,
+} adc_force_mode_t;
 
 //Reg,Mux,Fun,IE,Up,Down,Rtc_number
 const rtc_gpio_desc_t rtc_gpio_desc[GPIO_PIN_COUNT] = {
@@ -412,8 +431,6 @@ static esp_err_t touch_pad_get_io_num(touch_pad_t touch_num, gpio_num_t *gpio_nu
     return ESP_OK;
 }
 
-#define TOUCH_PAD_FILTER_FACTOR_DEFAULT   (16)
-#define TOUCH_PAD_SHIFT_DEFAULT           (4)
 static uint32_t _touch_filter_iir(uint32_t in_now, uint32_t out_last, uint32_t k)
 {
     if (k == 0) {
@@ -924,69 +941,304 @@ static esp_err_t adc1_pad_get_io_num(adc1_channel_t channel, gpio_num_t *gpio_nu
     return ESP_OK;
 }
 
-static esp_err_t adc1_pad_init(adc1_channel_t channel)
+static esp_err_t adc_set_fsm_time(int rst_wait, int start_wait, int standby_wait, int sample_cycle)
 {
-    gpio_num_t gpio_num = 0;
-    ADC1_CHECK_FUNCTION_RET(adc1_pad_get_io_num(channel, &gpio_num));
-    ADC1_CHECK_FUNCTION_RET(rtc_gpio_init(gpio_num));
-    ADC1_CHECK_FUNCTION_RET(rtc_gpio_output_disable(gpio_num));
-    ADC1_CHECK_FUNCTION_RET(rtc_gpio_input_disable(gpio_num));
-    ADC1_CHECK_FUNCTION_RET(gpio_set_pull_mode(gpio_num, GPIO_FLOATING));
+    portENTER_CRITICAL(&rtc_spinlock);
+    // Internal FSM reset wait time
+    if (rst_wait >= 0) {
+        SYSCON.saradc_fsm.rstb_wait = rst_wait;
+    }
+    // Internal FSM start wait time
+    if (start_wait >= 0) {
+        SYSCON.saradc_fsm.start_wait = start_wait;
+    }
+    // Internal FSM standby wait time
+    if (standby_wait >= 0) {
+        SYSCON.saradc_fsm.standby_wait = standby_wait;
+    }
+    // Internal FSM standby sample cycle
+    if (sample_cycle >= 0) {
+        SYSCON.saradc_fsm.sample_cycle = sample_cycle;
+    }
+    portEXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
+
+static esp_err_t adc_set_data_format(adc_i2s_encode_t mode)
+{
+    portENTER_CRITICAL(&rtc_spinlock);
+    //data format:
+    //0: ADC_ENCODE_12BIT  [15:12]-channel [11:0]-12 bits ADC data
+    //1: ADC_ENCODE_11BIT  [15]-1 [14:11]-channel [10:0]-11 bits ADC data, the resolution should not be larger than 11 bits in this case.
+    SYSCON.saradc_ctrl.data_sar_sel = mode;
+    portEXIT_CRITICAL(&rtc_spinlock);
+    return ESP_OK;
+}
+
+static esp_err_t adc_set_measure_limit(uint8_t meas_num, bool lim_en)
+{
+    portENTER_CRITICAL(&rtc_spinlock);
+    // Set max measure number
+    SYSCON.saradc_ctrl2.max_meas_num = meas_num;
+    // Enable max measure number limit
+    SYSCON.saradc_ctrl2.meas_num_limit = lim_en;
+    portEXIT_CRITICAL(&rtc_spinlock);
+    return ESP_OK;
+}
+
+static esp_err_t adc_set_work_mode(adc_unit_t adc_unit)
+{
+    portENTER_CRITICAL(&rtc_spinlock);
+    if (adc_unit == ADC_UNIT_1) {
+        // saradc mode sel : 0--single saradc;  1--double saradc;  2--alternative saradc
+        SYSCON.saradc_ctrl.work_mode = 0;
+        //ENABLE ADC  0: ADC1  1: ADC2, only work for single SAR mode
+        SYSCON.saradc_ctrl.sar_sel = 0;
+    } else if (adc_unit == ADC_UNIT_2) {
+        // saradc mode sel : 0--single saradc;  1--double saradc;  2--alternative saradc
+        SYSCON.saradc_ctrl.work_mode = 0;
+        //ENABLE ADC1  0: SAR1  1: SAR2  only work for single SAR mode
+        SYSCON.saradc_ctrl.sar_sel = 1;
+    } else if (adc_unit == ADC_UNIT_BOTH) {
+        // saradc mode sel : 0--single saradc;  1--double saradc;  2--alternative saradc
+        SYSCON.saradc_ctrl.work_mode = 1;
+    } else if (adc_unit == ADC_UNIT_ALTER) {
+        // saradc mode sel : 0--single saradc;  1--double saradc;  2--alternative saradc
+        SYSCON.saradc_ctrl.work_mode = 2;
+    }
+    portEXIT_CRITICAL(&rtc_spinlock);
+    return ESP_OK;
+}
+
+static esp_err_t adc_set_atten(adc_unit_t adc_unit, adc_channel_t channel, adc_atten_t atten)
+{
+    ADC_CHECK_UNIT(adc_unit);
+    if (adc_unit & ADC_UNIT_1) {
+        RTC_MODULE_CHECK((adc1_channel_t)channel < ADC1_CHANNEL_MAX, "ADC Channel Err", ESP_ERR_INVALID_ARG);
+    }
+    RTC_MODULE_CHECK(atten < ADC_ATTEN_MAX, "ADC Atten Err", ESP_ERR_INVALID_ARG);
+
+    portENTER_CRITICAL(&rtc_spinlock);
+    if (adc_unit & ADC_UNIT_1) {
+        //SAR1_atten
+        SET_PERI_REG_BITS(SENS_SAR_ATTEN1_REG, SENS_SAR1_ATTEN_VAL_MASK, atten, (channel * 2));
+    }
+    if (adc_unit & ADC_UNIT_2) {
+        //SAR2_atten
+        SET_PERI_REG_BITS(SENS_SAR_ATTEN2_REG, SENS_SAR2_ATTEN_VAL_MASK, atten, (channel * 2));
+    }
+    portEXIT_CRITICAL(&rtc_spinlock);
+    return ESP_OK;
+}
+
+void adc_power_on()
+{
+    portENTER_CRITICAL(&rtc_spinlock);
+    //Bit1  0:Fsm  1: SW mode
+    //Bit0  0:SW mode power down  1: SW mode power on
+    SENS.sar_meas_wait2.force_xpd_sar = ADC_FORCE_ENABLE;
+    portEXIT_CRITICAL(&rtc_spinlock);
+}
+
+void adc_power_off()
+{
+    portENTER_CRITICAL(&rtc_spinlock);
+    //Bit1  0:Fsm  1: SW mode
+    //Bit0  0:SW mode power down  1: SW mode power on
+    SENS.sar_meas_wait2.force_xpd_sar = ADC_FORCE_DISABLE;
+    portEXIT_CRITICAL(&rtc_spinlock);
+}
+
+esp_err_t adc_set_clk_div(uint8_t clk_div)
+{
+    portENTER_CRITICAL(&rtc_spinlock);
+    // ADC clock devided from APB clk, 80 / 2 = 40Mhz,
+    SYSCON.saradc_ctrl.sar_clk_div = clk_div;
+    portEXIT_CRITICAL(&rtc_spinlock);
+    return ESP_OK;
+}
+
+esp_err_t adc_set_i2s_data_source(adc_i2s_source_t src)
+{
+    RTC_MODULE_CHECK(src < ADC_I2S_DATA_SRC_MAX, "ADC i2s data source error", ESP_ERR_INVALID_ARG);
+    portENTER_CRITICAL(&rtc_spinlock);
+    // 1: I2S input data is from SAR ADC (for DMA)  0: I2S input data is from GPIO matrix
+    SYSCON.saradc_ctrl.data_to_i2s = src;
+    portEXIT_CRITICAL(&rtc_spinlock);
+    return ESP_OK;
+}
+
+esp_err_t adc_gpio_init(adc_unit_t adc_unit, adc_channel_t channel)
+{
+    ADC_CHECK_UNIT(adc_unit);
+    gpio_num_t gpio_num = 0;
+    if (adc_unit & ADC_UNIT_1) {
+        RTC_MODULE_CHECK((adc1_channel_t) channel < ADC1_CHANNEL_MAX, "ADC1 channel error", ESP_ERR_INVALID_ARG);
+        ADC1_CHECK_FUNCTION_RET(adc1_pad_get_io_num((adc1_channel_t) channel, &gpio_num));
+        ADC1_CHECK_FUNCTION_RET(rtc_gpio_init(gpio_num));
+        ADC1_CHECK_FUNCTION_RET(rtc_gpio_output_disable(gpio_num));
+        ADC1_CHECK_FUNCTION_RET(rtc_gpio_input_disable(gpio_num));
+        ADC1_CHECK_FUNCTION_RET(gpio_set_pull_mode(gpio_num, GPIO_FLOATING));
+    }
+    return ESP_OK;
+}
+
+esp_err_t adc_set_data_inv(adc_unit_t adc_unit, bool inv_en)
+{
+    portENTER_CRITICAL(&rtc_spinlock);
+    if (adc_unit & ADC_UNIT_1) {
+        // Enable ADC data invert
+        SENS.sar_read_ctrl.sar1_data_inv = inv_en;
+    }
+    if (adc_unit & ADC_UNIT_2) {
+        // Enable ADC data invert
+        SENS.sar_read_ctrl2.sar2_data_inv = inv_en;
+    }
+    portEXIT_CRITICAL(&rtc_spinlock);
+    return ESP_OK;
+}
+
+esp_err_t adc_set_data_width(adc_unit_t adc_unit, adc_bits_width_t bits)
+{
+    ADC_CHECK_UNIT(adc_unit);
+    RTC_MODULE_CHECK(bits < ADC_WIDTH_MAX, "ADC bit width error", ESP_ERR_INVALID_ARG);
+    portENTER_CRITICAL(&rtc_spinlock);
+    if (adc_unit & ADC_UNIT_1) {
+        SENS.sar_start_force.sar1_bit_width = bits;
+        SENS.sar_read_ctrl.sar1_sample_bit = bits;
+    }
+    if (adc_unit & ADC_UNIT_2) {
+        SENS.sar_start_force.sar2_bit_width = bits;
+        SENS.sar_read_ctrl2.sar2_sample_bit = bits;
+    }
+    portEXIT_CRITICAL(&rtc_spinlock);
+    return ESP_OK;
+}
+
+static esp_err_t adc_set_i2s_data_len(adc_unit_t adc_unit, int patt_len)
+{
+    ADC_CHECK_UNIT(adc_unit);
+    RTC_MODULE_CHECK((patt_len < ADC_PATT_LEN_MAX) && (patt_len > 0), "ADC pattern length error", ESP_ERR_INVALID_ARG);
+    portENTER_CRITICAL(&rtc_spinlock);
+    if(adc_unit & ADC_UNIT_1) {
+        SYSCON.saradc_ctrl.sar1_patt_len = patt_len - 1;
+    }
+    if(adc_unit & ADC_UNIT_2) {
+        SYSCON.saradc_ctrl.sar2_patt_len = patt_len - 1;
+    }
+    portEXIT_CRITICAL(&rtc_spinlock);
+    return ESP_OK;
+}
+
+static esp_err_t adc_set_i2s_data_pattern(adc_unit_t adc_unit, int seq_num, adc_channel_t channel, adc_bits_width_t bits, adc_atten_t atten)
+{
+    ADC_CHECK_UNIT(adc_unit);
+    if (adc_unit & ADC_UNIT_1) {
+        RTC_MODULE_CHECK((adc1_channel_t) channel < ADC1_CHANNEL_MAX, "ADC1 channel error", ESP_ERR_INVALID_ARG);
+    }
+    RTC_MODULE_CHECK(bits < ADC_WIDTH_MAX, "ADC bit width error", ESP_ERR_INVALID_ARG);
+    RTC_MODULE_CHECK(atten < ADC_ATTEN_MAX, "ADC Atten Err", ESP_ERR_INVALID_ARG);
+
+    portENTER_CRITICAL(&rtc_spinlock);
+    //Configure pattern table, each 8 bit defines one channel
+    //[7:4]-channel [3:2]-bit width [1:0]- attenuation
+    //BIT WIDTH: 3: 12BIT  2: 11BIT  1: 10BIT  0: 9BIT
+    //ATTEN: 3: ATTEN = 11dB 2: 6dB 1: 2.5dB 0: 0dB
+    uint8_t val = (channel << 4) | (bits << 2) | (atten << 0);
+    if (adc_unit & ADC_UNIT_1) {
+        SYSCON.saradc_sar1_patt_tab[seq_num / 4] &= (~(0xff << ((3 - (seq_num % 4)) * 8)));
+        SYSCON.saradc_sar1_patt_tab[seq_num / 4] |= (val << ((3 - (seq_num % 4)) * 8));
+    }
+    if (adc_unit & ADC_UNIT_2) {
+        SYSCON.saradc_sar2_patt_tab[seq_num / 4] &= (~(0xff << ((3 - (seq_num % 4)) * 8)));
+        SYSCON.saradc_sar2_patt_tab[seq_num / 4] |= (val << ((3 - (seq_num % 4)) * 8));
+    }
+    portEXIT_CRITICAL(&rtc_spinlock);
+    return ESP_OK;
+}
+
+esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
+{
+    ADC_CHECK_UNIT(adc_unit);
+    if (adc_unit & ADC_UNIT_1) {
+        RTC_MODULE_CHECK((adc1_channel_t) channel < ADC1_CHANNEL_MAX, "ADC1 channel error", ESP_ERR_INVALID_ARG);
+    }
+
+    uint8_t table_len = 1;
+    //POWER ON SAR
+    adc_power_on();
+    adc_gpio_init(adc_unit, channel);
+    adc_set_i2s_data_len(adc_unit, table_len);
+    adc_set_i2s_data_pattern(adc_unit, 0, channel, ADC_WIDTH_BIT_12, ADC_ATTEN_DB_11);
+    portENTER_CRITICAL(&rtc_spinlock);
+    if (adc_unit & ADC_UNIT_1) {
+        //switch SARADC into DIG channel
+        SENS.sar_read_ctrl.sar1_dig_force = 1;
+    }
+    if (adc_unit & ADC_UNIT_2) {
+        //switch SARADC into DIG channel
+        SENS.sar_read_ctrl2.sar2_dig_force = 1;
+        //1: SAR ADC2 is controlled by DIG ADC2 CTRL 0: SAR ADC2 is controlled by PWDET CTRL
+        SYSCON.saradc_ctrl.sar2_mux = 1;
+    }
+    portEXIT_CRITICAL(&rtc_spinlock);
+    adc_set_i2s_data_source(ADC_I2S_DATA_SRC_ADC);
+    adc_set_clk_div(SAR_ADC_CLK_DIV_DEFUALT);
+    // Set internal FSM wait time.
+    adc_set_fsm_time(ADC_FSM_RSTB_WAIT_DEFAULT, ADC_FSM_START_WAIT_DEFAULT, ADC_FSM_STANDBY_WAIT_DEFAULT,
+            ADC_FSM_TIME_KEEP);
+    adc_set_work_mode(adc_unit);
+    adc_set_data_format(ADC_ENCODE_12BIT);
+    adc_set_measure_limit(ADC_MAX_MEAS_NUM_DEFAULT, ADC_MEAS_NUM_LIM_DEFAULT);
+    //Invert The Level, Invert SAR ADC1 data
+    adc_set_data_inv(adc_unit, true);
+    return ESP_OK;
+ }
 
 esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
 {
     RTC_MODULE_CHECK(channel < ADC1_CHANNEL_MAX, "ADC Channel Err", ESP_ERR_INVALID_ARG);
-    RTC_MODULE_CHECK(atten <= ADC_ATTEN_11db, "ADC Atten Err", ESP_ERR_INVALID_ARG);
-    adc1_pad_init(channel);
-    portENTER_CRITICAL(&rtc_spinlock);
-    SET_PERI_REG_BITS(SENS_SAR_ATTEN1_REG, 3, atten, (channel * 2)); //SAR1_atten
-    portEXIT_CRITICAL(&rtc_spinlock);
-
+    RTC_MODULE_CHECK(atten < ADC_ATTEN_MAX, "ADC Atten Err", ESP_ERR_INVALID_ARG);
+    adc_gpio_init(ADC_UNIT_1, channel);
+    adc_set_atten(ADC_UNIT_1, channel, atten);
     return ESP_OK;
 }
 
 esp_err_t adc1_config_width(adc_bits_width_t width_bit)
 {
-    portENTER_CRITICAL(&rtc_spinlock);
-    SET_PERI_REG_BITS(SENS_SAR_START_FORCE_REG, SENS_SAR1_BIT_WIDTH_V, width_bit, SENS_SAR1_BIT_WIDTH_S);  //SAR2_BIT_WIDTH[1:0]=0x3, SAR1_BIT_WIDTH[1:0]=0x3
-    //Invert the adc value,the Output value is invert
-    SET_PERI_REG_MASK(SENS_SAR_READ_CTRL_REG, SENS_SAR1_DATA_INV);
-    //Set The adc sample width,invert adc value,must
-    SET_PERI_REG_BITS(SENS_SAR_READ_CTRL_REG, SENS_SAR1_SAMPLE_BIT_V, width_bit, SENS_SAR1_SAMPLE_BIT_S); //digital sar1_bit_width[1:0]=3
-    portEXIT_CRITICAL(&rtc_spinlock);
-
+    RTC_MODULE_CHECK(width_bit < ADC_WIDTH_MAX, "ADC bit width error", ESP_ERR_INVALID_ARG);
+    adc_set_data_width(ADC_UNIT_1, width_bit);
+    adc_set_data_inv(ADC_UNIT_1, true);
     return ESP_OK;
 }
 
 int adc1_get_raw(adc1_channel_t channel)
 {
     uint16_t adc_value;
-
     RTC_MODULE_CHECK(channel < ADC1_CHANNEL_MAX, "ADC Channel Err", ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&rtc_spinlock);
     //Adc Controler is Rtc module,not ulp coprocessor
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_START1_REG, 1, 1, SENS_MEAS1_START_FORCE_S); //force pad mux and force start
+    SENS.sar_meas_start1.meas1_start_force = 1;
     //Bit1=0:Fsm  Bit1=1(Bit0=0:PownDown Bit10=1:Powerup)
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT2_REG, SENS_FORCE_XPD_SAR, 0, SENS_FORCE_XPD_SAR_S); //force XPD_SAR=0, use XPD_FSM
+    SENS.sar_meas_wait2.force_xpd_sar = 0;
     //Disable Amp Bit1=0:Fsm  Bit1=1(Bit0=0:PownDown Bit10=1:Powerup)
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT2_REG, SENS_FORCE_XPD_AMP, 0x2, SENS_FORCE_XPD_AMP_S); //force XPD_AMP=0
+    SENS.sar_meas_wait2.force_xpd_amp = 0x2;
     //Open the ADC1 Data port Not ulp coprocessor
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_START1_REG, 1, 1, SENS_SAR1_EN_PAD_FORCE_S); //open the ADC1 data port
+    SENS.sar_meas_start1.sar1_en_pad_force = 1;
     //Select channel
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_START1_REG, SENS_SAR1_EN_PAD, (1 << channel), SENS_SAR1_EN_PAD_S); //pad enable
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_CTRL_REG, 0xfff, 0x0, SENS_AMP_RST_FB_FSM_S);  //[11:8]:short ref ground, [7:4]:short ref, [3:0]:rst fb
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT1_REG, SENS_SAR_AMP_WAIT1, 0x1, SENS_SAR_AMP_WAIT1_S);
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT1_REG, SENS_SAR_AMP_WAIT2, 0x1, SENS_SAR_AMP_WAIT2_S);
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT2_REG, SENS_SAR_AMP_WAIT3, 0x1, SENS_SAR_AMP_WAIT3_S);
-    while (GET_PERI_REG_BITS2(SENS_SAR_SLAVE_ADDR1_REG, 0x7, SENS_MEAS_STATUS_S) != 0); //wait det_fsm==0
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_START1_REG, 1, 0, SENS_MEAS1_START_SAR_S); //start force 0
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_START1_REG, 1, 1, SENS_MEAS1_START_SAR_S); //start force 1
-    while (GET_PERI_REG_MASK(SENS_SAR_MEAS_START1_REG, SENS_MEAS1_DONE_SAR) == 0) {}; //read done
-    adc_value = GET_PERI_REG_BITS2(SENS_SAR_MEAS_START1_REG, SENS_MEAS1_DATA_SAR, SENS_MEAS1_DATA_SAR_S);
+    SENS.sar_meas_start1.sar1_en_pad = (1 << channel);
+    SENS.sar_meas_ctrl.amp_rst_fb_fsm = 0;
+    SENS.sar_meas_ctrl.amp_short_ref_fsm = 0;
+    SENS.sar_meas_ctrl.amp_short_ref_gnd_fsm = 0;
+    SENS.sar_meas_wait1.sar_amp_wait1 = 1;
+    SENS.sar_meas_wait1.sar_amp_wait2 = 1;
+    SENS.sar_meas_wait2.sar_amp_wait3 = 1;
+    while (SENS.sar_slave_addr1.meas_status != 0);
+    SENS.sar_meas_start1.meas1_start_sar = 0;
+    SENS.sar_meas_start1.meas1_start_sar = 1;
+    while (SENS.sar_meas_start1.meas1_done_sar == 0);
+    adc_value = SENS.sar_meas_start1.meas1_data_sar;
     portEXIT_CRITICAL(&rtc_spinlock);
-
     return adc_value;
 }
 
@@ -998,14 +1250,16 @@ int adc1_get_voltage(adc1_channel_t channel)    //Deprecated. Use adc1_get_raw()
 void adc1_ulp_enable(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
-    CLEAR_PERI_REG_MASK(SENS_SAR_MEAS_START1_REG, SENS_MEAS1_START_FORCE);
-    CLEAR_PERI_REG_MASK(SENS_SAR_MEAS_START1_REG, SENS_SAR1_EN_PAD_FORCE_M);
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT2_REG, SENS_FORCE_XPD_AMP, 0x2, SENS_FORCE_XPD_AMP_S);
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT2_REG, SENS_FORCE_XPD_SAR, 0, SENS_FORCE_XPD_SAR_S);
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_CTRL_REG, 0xfff, 0x0, SENS_AMP_RST_FB_FSM_S);  //[11:8]:short ref ground, [7:4]:short ref, [3:0]:rst fb
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT1_REG, SENS_SAR_AMP_WAIT1, 0x1, SENS_SAR_AMP_WAIT1_S);
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT1_REG, SENS_SAR_AMP_WAIT2, 0x1, SENS_SAR_AMP_WAIT2_S);
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT2_REG, SENS_SAR_AMP_WAIT3, 0x1, SENS_SAR_AMP_WAIT3_S);
+    SENS.sar_meas_start1.meas1_start_force = 0;
+    SENS.sar_meas_start1.sar1_en_pad_force = 0;
+    SENS.sar_meas_wait2.force_xpd_amp = 0x2;
+    SENS.sar_meas_wait2.force_xpd_sar = 0;
+    SENS.sar_meas_ctrl.amp_rst_fb_fsm = 0;
+    SENS.sar_meas_ctrl.amp_short_ref_fsm = 0;
+    SENS.sar_meas_ctrl.amp_short_ref_gnd_fsm = 0;
+    SENS.sar_meas_wait1.sar_amp_wait1 = 0x1;
+    SENS.sar_meas_wait1.sar_amp_wait2 = 1;
+    SENS.sar_meas_wait2.sar_amp_wait3 = 0x1;
     portEXIT_CRITICAL(&rtc_spinlock);
 }
 
@@ -1214,10 +1468,10 @@ static int hall_sensor_get_value()    //hall sensor without LNA
 
 int hall_sensor_read()
 {
-    adc1_pad_init(ADC1_CHANNEL_0);
-    adc1_pad_init(ADC1_CHANNEL_3);
-    adc1_config_channel_atten(ADC1_CHANNEL_0, ADC_ATTEN_0db);
-    adc1_config_channel_atten(ADC1_CHANNEL_3, ADC_ATTEN_0db);
+    adc_gpio_init(ADC_UNIT_1, ADC1_CHANNEL_0);
+    adc_gpio_init(ADC_UNIT_1, ADC1_CHANNEL_3);
+    adc1_config_channel_atten(ADC1_CHANNEL_0, ADC_ATTEN_DB_0);
+    adc1_config_channel_atten(ADC1_CHANNEL_3, ADC_ATTEN_DB_0);
     return hall_sensor_get_value();
 }
 
