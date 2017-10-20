@@ -12,11 +12,13 @@ run tasks interchangeably between them.
 
 The ESP-IDF FreeRTOS is a modified version of vanilla FreeRTOS which supports 
 symmetric multiprocessing (SMP). ESP-IDF FreeRTOS is based on the Xtensa port 
-of FreeRTOS v8.2.0, however features such as static task creation and Thread 
-Local Storage Pointers have been backported from later versions of FreeRTOS. 
-This guide outlines the major differences between vanilla FreeRTOS and 
-ESP-IDF FreeRTOS. The API reference for vanilla FreeRTOS can be found 
-via http://www.freertos.org/a00106.html
+of FreeRTOS v8.2.0. This guide outlines the major differences between vanilla 
+FreeRTOS and ESP-IDF FreeRTOS. The API reference for vanilla FreeRTOS can be 
+found via http://www.freertos.org/a00106.html
+
+:ref:`backported-features`: Although ESP-IDF FreeRTOS is based on the Xtensa 
+port of FreeRTOS v8.2.0, a number of FreeRTOS v9.0.0 features have been backported
+to ESP-IDF.
 
 :ref:`tasks-and-task-creation`: Use ``xTaskCreatePinnedToCore()`` or 
 ``xTaskCreateStaticPinnedToCore()`` to create tasks in ESP-IDF FreeRTOS. The 
@@ -24,30 +26,30 @@ last parameter of the two functions is ``xCoreID``. This parameter specifies
 which core the task is pinned to. Acceptable values are ``0`` for **PRO_CPU**, 
 ``1`` for **APP_CPU**, or ``tskNO_AFFINITY`` which allows the task to run on
 both.
-        
+
 :ref:`round-robin-scheduling`: The ESP-IDF FreeRTOS scheduler will skip tasks when 
 implementing Round-Robin scheduling between multiple tasks in the Ready state 
 that are of the same priority. To avoid this behavior, ensure that those tasks either 
 enter a blocked state, or are distributed across a wider range of priorities.
-        
+
 :ref:`scheduler-suspension`: Suspending the scheduler in ESP-IDF FreeRTOS will only 
 affect the scheduler on the the calling core. In other words, calling 
 ``vTaskSuspendAll()`` on **PRO_CPU** will not prevent **APP_CPU** from scheduling, and
 vice versa. Use critical sections or semaphores instead for simultaneous
 access protection.
-    
+
 :ref:`tick-interrupt-synchronicity`: Tick interrupts of **PRO_CPU** and **APP_CPU** 
 are not synchronized. Do not expect to use ``vTaskDelay`` or 
 ``vTaskDelayUntil`` as an accurate method of synchronizing task execution 
 between the two cores. Use a counting semaphore instead as their context 
 switches are not tied to tick interrupts due to preemption.
-        
+
 :ref:`critical-sections`: In ESP-IDF FreeRTOS, critical sections are implemented using
 mutexes. Entering critical sections involve taking a mutex, then disabling the 
 scheduler and interrupts of the calling core. However the other core is left 
 unaffected. If the other core attemps to take same mutex, it will spin until
 the calling core has released the mutex by exiting the critical section.
-        
+
 :ref:`deletion-callbacks`: ESP-IDF FreeRTOS has 
 backported the Thread Local Storage Pointers feature. However they have the 
 extra feature of deletion callbacks. Deletion callbacks are used to
@@ -64,6 +66,61 @@ configured using ``make meunconfig`` such as running ESP-IDF in Unicore Mode,
 or configuring the number of Thread Local Storage Pointers each task will have.
 
 
+.. _backported-features:
+
+Backported Features
+-------------------
+
+The following features have been backported from FreeRTOS v9.0.0 to ESP-IDF.
+
+Static Alocation
+^^^^^^^^^^^^^^^^^
+
+This feature has been backported from FreeRTOS v9.0.0 to ESP-IDF. The 
+:ref:`CONFIG_SUPPORT_STATIC_ALLOCATION` option must be enabled in `menuconfig`
+in order for static allocation functions to be available. Once enabled, the 
+following functions can be called...
+
+ - ``xTaskCreateStatic()`` See :ref:`backporting-notes` below
+ - ``xQueueCreateStatic()``
+ - ``xSemaphoreCreateBinaryStatic()``
+ - ``xSemaphoreCreateCountingStatic()``
+ - ``xSemaphoreCreateMutexStatic()``
+ - ``xSemaphoreCreateRecursiveMutexStatic()``
+ - ``xTimerCreateStatic()``  See :ref:`backporting-notes` below
+ - ``xEventGroupCreateStatic()``
+
+Other Features
+^^^^^^^^^^^^^^
+
+ - ``vTaskSetThreadLocalStoragePointer()`` See :ref:`backporting-notes` below
+ - ``pvTaskGetThreadLocalStoragePointer()`` See :ref:`backporting-notes` below
+ - ``vTimerSetTimerID()``
+ - ``xTimerGetPeriod()``
+ - ``xTimerGetExpiryTime()``
+ - ``pcQueueGetName()``
+ - ``uxSemaphoreGetCount()``
+
+.. _backporting-notes:
+
+Backporting Notes
+^^^^^^^^^^^^^^^^^
+
+**1)** ``xTaskCreateStatic`` has been made SMP compatible in a similar 
+fashion to ``xTaskCreate`` (see :ref:`tasks-and-task-creation`). Therefore 
+``xTaskCreateStaticPinnedToCore()`` can also be called.
+
+**2)** Although vanilla FreeRTOS allows the Timer feature's daemon task to 
+be statically allocated, the daemon task is always dynamically allocated in 
+ESP-IDF. Therefore ``vApplicationGetTimerTaskMemory`` **does not** need to be 
+defined when using statically allocated timers in ESP-IDF FreeRTOS.
+
+**3)** The Thread Local Storage Pointer feature has been modified in ESP-IDF
+FreeRTOS to include Deletion Callbacks (see :ref:`deletion-callbacks`). Therefore
+the function ``vTaskSetThreadLocalStoragePointerAndDelCallback()`` can also be 
+called.
+
+
 .. _tasks-and-task-creation:
 
 Tasks and Task Creation
@@ -75,7 +132,7 @@ appending ``PinnedToCore`` to the names of the task creation functions in
 vanilla FreeRTOS. The vanilla FreeRTOS functions of ``xTaskCreate()``
 and ``xTaskCreateStatic()`` have led to the addition of 
 ``xTaskCreatePinnedToCore()`` and ``xTaskCreateStaticPinnedToCore()`` in 
-ESP-IDF FreeRTOS.
+ESP-IDF FreeRTOS (see :ref:`backported-features`).
 
 For more details see :component_file:`freertos/task.c`
 
@@ -234,6 +291,7 @@ protecting shared resources in ESP-IDF FreeRTOS.
 In general, it's better to use other RTOS primitives like mutex semaphores to protect
 against data shared between tasks, rather than ``vTaskSuspendAll()``.
 
+
 .. _tick-interrupt-synchronicity:
 
 Tick Interrupt Synchronicity 
@@ -265,6 +323,7 @@ the newly unblocked task.
 Therefore, task delays should **NOT** be used as a method of synchronization 
 between tasks in ESP-IDF FreeRTOS. Instead, consider using a counting semaphore 
 to unblock multiple tasks at the same time.
+
 
 .. _critical-sections:
 
@@ -315,6 +374,7 @@ called as they are all defined to call the same function. As long as the same
 mutex is provided upon entering and exiting, the type of call should not 
 matter.
 
+
 .. _deletion-callbacks:
 
 Thread Local Storage Pointers & Deletion Callbacks
@@ -350,6 +410,7 @@ Other indexes can be used for any purpose, provided
 :ref:`CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS` is set to a high enough value.
 
 For more details see :component_file:`freertos/include/freertos/task.h`
+
 
 .. _esp-idf-freertos-configuration:
 

@@ -137,7 +137,17 @@ typedef TickType_t EventBits_t;
  EventGroupHandle_t xEventGroupCreate( void );
  </pre>
  *
- * Create a new event group.  This function cannot be called from an interrupt.
+ * Create a new event group.
+ *
+ * Internally, within the FreeRTOS implementation, event groups use a [small]
+ * block of memory, in which the event group's structure is stored.  If an event
+ * groups is created using xEventGropuCreate() then the required memory is
+ * automatically dynamically allocated inside the xEventGroupCreate() function.
+ * (see http://www.freertos.org/a00111.html).  If an event group is created
+ * using xEventGropuCreateStatic() then the application writer must instead
+ * provide the memory that will get used by the event group.
+ * xEventGroupCreateStatic() therefore allows an event group to be created
+ * without using any dynamic memory allocation.
  *
  * Although event groups are not related to ticks, for internal implementation
  * reasons the number of bits available for use in an event group is dependent
@@ -173,7 +183,62 @@ typedef TickType_t EventBits_t;
  * \defgroup xEventGroupCreate xEventGroupCreate
  * \ingroup EventGroup
  */
-EventGroupHandle_t xEventGroupCreate( void ) PRIVILEGED_FUNCTION;
+#if( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
+	EventGroupHandle_t xEventGroupCreate( void ) PRIVILEGED_FUNCTION;
+#endif
+
+/**
+ * event_groups.h
+ *<pre>
+ EventGroupHandle_t xEventGroupCreateStatic( EventGroupHandle_t * pxEventGroupBuffer );
+ </pre>
+ *
+ * Create a new event group.
+ *
+ * Internally, within the FreeRTOS implementation, event groups use a [small]
+ * block of memory, in which the event group's structure is stored.  If an event
+ * groups is created using xEventGropuCreate() then the required memory is
+ * automatically dynamically allocated inside the xEventGroupCreate() function.
+ * (see http://www.freertos.org/a00111.html).  If an event group is created
+ * using xEventGropuCreateStatic() then the application writer must instead
+ * provide the memory that will get used by the event group.
+ * xEventGroupCreateStatic() therefore allows an event group to be created
+ * without using any dynamic memory allocation.
+ *
+ * Although event groups are not related to ticks, for internal implementation
+ * reasons the number of bits available for use in an event group is dependent
+ * on the configUSE_16_BIT_TICKS setting in FreeRTOSConfig.h.  If
+ * configUSE_16_BIT_TICKS is 1 then each event group contains 8 usable bits (bit
+ * 0 to bit 7).  If configUSE_16_BIT_TICKS is set to 0 then each event group has
+ * 24 usable bits (bit 0 to bit 23).  The EventBits_t type is used to store
+ * event bits within an event group.
+ *
+ * @param pxEventGroupBuffer pxEventGroupBuffer must point to a variable of type
+ * StaticEventGroup_t, which will be then be used to hold the event group's data
+ * structures, removing the need for the memory to be allocated dynamically.
+ *
+ * @return If the event group was created then a handle to the event group is
+ * returned.  If pxEventGroupBuffer was NULL then NULL is returned.
+ *
+ * Example usage:
+   <pre>
+	// StaticEventGroup_t is a publicly accessible structure that has the same
+	// size and alignment requirements as the real event group structure.  It is
+	// provided as a mechanism for applications to know the size of the event
+	// group (which is dependent on the architecture and configuration file
+	// settings) without breaking the strict data hiding policy by exposing the
+	// real event group internals.  This StaticEventGroup_t variable is passed
+	// into the xSemaphoreCreateEventGroupStatic() function and is used to store
+	// the event group's data structures
+	StaticEventGroup_t xEventGroupBuffer;
+
+	// Create the event group without dynamically allocating any memory.
+	xEventGroup = xEventGroupCreateStatic( &xEventGroupBuffer );
+   </pre>
+ */
+#if( configSUPPORT_STATIC_ALLOCATION == 1 )
+	EventGroupHandle_t xEventGroupCreateStatic( StaticEventGroup_t *pxEventGroupBuffer ) PRIVILEGED_FUNCTION;
+#endif
 
 /**
  * event_groups.h

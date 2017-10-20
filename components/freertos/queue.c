@@ -165,7 +165,7 @@ typedef struct QueueDefinition
 		uint8_t ucQueueType;
 	#endif
 
-	portMUX_TYPE mux;
+	portMUX_TYPE mux;		//Mutex required due to SMP
 
 } xQUEUE;
 
