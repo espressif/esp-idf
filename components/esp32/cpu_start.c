@@ -64,8 +64,10 @@
 #include "esp_app_trace.h"
 #include "esp_efuse.h"
 #include "esp_spiram.h"
-#include "esp_clk.h"
+#include "esp_clk_internal.h"
 #include "esp_timer.h"
+#include "esp_pm.h"
+#include "pm_impl.h"
 #include "trax.h"
 
 #define STRINGIFY(s) STRINGIFY2(s)
@@ -287,9 +289,18 @@ void start_cpu0_default(void)
     esp_clk_init();
     esp_perip_clk_init();
     intr_matrix_clear();
+
 #ifndef CONFIG_CONSOLE_UART_NONE
-    uart_div_modify(CONFIG_CONSOLE_UART_NUM, (rtc_clk_apb_freq_get() << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
-#endif
+#ifdef CONFIG_PM_ENABLE
+    const int uart_clk_freq = REF_CLK_FREQ;
+    /* When DFS is enabled, use REFTICK as UART clock source */
+    CLEAR_PERI_REG_MASK(UART_CONF0_REG(CONFIG_CONSOLE_UART_NUM), UART_TICK_REF_ALWAYS_ON);
+#else
+    const int uart_clk_freq = APB_CLK_FREQ;
+#endif // CONFIG_PM_DFS_ENABLE
+    uart_div_modify(CONFIG_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
+#endif // CONFIG_CONSOLE_UART_NONE
+
 #if CONFIG_BROWNOUT_DET
     esp_brownout_init();
 #endif
@@ -337,6 +348,18 @@ void start_cpu0_default(void)
     spi_flash_init();
     /* init default OS-aware flash access critical section */
     spi_flash_guard_set(&g_flash_guard_default_ops);
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_impl_init();
+#ifdef CONFIG_PM_DFS_INIT_AUTO
+    rtc_cpu_freq_t max_freq;
+    rtc_clk_cpu_freq_from_mhz(CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ, &max_freq);
+    esp_pm_config_esp32_t cfg = {
+            .max_cpu_freq = max_freq,
+            .min_cpu_freq = RTC_CPU_FREQ_XTAL
+    };
+    esp_pm_configure(&cfg);
+#endif //CONFIG_PM_DFS_INIT_AUTO
+#endif //CONFIG_PM_ENABLE
 
 #if CONFIG_ESP32_ENABLE_COREDUMP
     esp_core_dump_init();

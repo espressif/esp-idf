@@ -1,0 +1,6 @@
+# Use lower CPU frequency
+CONFIG_ESP32_DEFAULT_CPU_FREQ_80=y
+# Enable support for power management
+CONFIG_PM_ENABLE=y
+# Use RTC timer as reference
+CONFIG_PM_USE_RTC_TIMER_REF=y

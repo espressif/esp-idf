@@ -15,23 +15,24 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_app_trace_util.h"
+#include "esp_clk.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////// TIMEOUT /////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-// TODO: get actual clock from PLL config
-#define ESP_APPTRACE_CPUTICKS2US(_t_)       ((_t_)/(XT_CLOCK_FREQ/1000000))
-#define ESP_APPTRACE_US2CPUTICKS(_t_)       ((_t_)*(XT_CLOCK_FREQ/1000000))
+#define ESP_APPTRACE_CPUTICKS2US(_t_, _cpu_freq_)       ((_t_)/(_cpu_freq_/1000000))
+#define ESP_APPTRACE_US2CPUTICKS(_t_, _cpu_freq_)       ((_t_)*(_cpu_freq_/1000000))
 
 esp_err_t esp_apptrace_tmo_check(esp_apptrace_tmo_t *tmo)
 {
+    int cpu_freq = esp_clk_cpu_freq();
     if (tmo->tmo != ESP_APPTRACE_TMO_INFINITE) {
         unsigned cur = portGET_RUN_TIME_COUNTER_VALUE();
         if (tmo->start <= cur) {
-            tmo->elapsed = ESP_APPTRACE_CPUTICKS2US(cur - tmo->start);
+            tmo->elapsed = ESP_APPTRACE_CPUTICKS2US(cur - tmo->start, cpu_freq);
         } else {
-            tmo->elapsed = ESP_APPTRACE_CPUTICKS2US(0xFFFFFFFF - tmo->start + cur);
+            tmo->elapsed = ESP_APPTRACE_CPUTICKS2US(0xFFFFFFFF - tmo->start + cur, cpu_freq);
         }
         if (tmo->elapsed >= tmo->tmo) {
             return ESP_ERR_TIMEOUT;

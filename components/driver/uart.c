@@ -18,6 +18,7 @@
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp_err.h"
+#include "esp_clk.h"
 #include "malloc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -172,13 +173,25 @@ esp_err_t uart_get_parity(uart_port_t uart_num, uart_parity_t* parity_mode)
 esp_err_t uart_set_baudrate(uart_port_t uart_num, uint32_t baud_rate)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
-    UART_CHECK((baud_rate <= UART_BITRATE_MAX), "baud_rate error", ESP_FAIL);
-    uint32_t clk_div = (((UART_CLK_FREQ) << 4) / baud_rate);
+    esp_err_t ret = ESP_OK;
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
-    UART[uart_num]->clk_div.div_int = clk_div >> 4;
-    UART[uart_num]->clk_div.div_frag = clk_div & 0xf;
+    int uart_clk_freq;
+    if (UART[uart_num]->conf0.tick_ref_always_on == 0) {
+        /* this UART has been configured to use REF_TICK */
+        uart_clk_freq = REF_CLK_FREQ;
+    } else {
+        uart_clk_freq = esp_clk_apb_freq();
+    }
+    uint32_t clk_div = (((uart_clk_freq) << 4) / baud_rate);
+    if (clk_div < 16) {
+        /* baud rate is too high for this clock frequency */
+        ret = ESP_ERR_INVALID_ARG;
+    } else {
+        UART[uart_num]->clk_div.div_int = clk_div >> 4;
+        UART[uart_num]->clk_div.div_frag = clk_div & 0xf;
+    }
     UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t uart_get_baudrate(uart_port_t uart_num, uint32_t* baudrate)
@@ -468,17 +481,18 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     } else if(uart_num == UART_NUM_2) {
         periph_module_enable(PERIPH_UART2_MODULE);
     }
-    r=uart_set_hw_flow_ctrl(uart_num, uart_config->flow_ctrl, uart_config->rx_flow_ctrl_thresh);
-    if (r!=ESP_OK) return r;
-    r=uart_set_baudrate(uart_num, uart_config->baud_rate);
-    if (r!=ESP_OK) return r;
+    r = uart_set_hw_flow_ctrl(uart_num, uart_config->flow_ctrl, uart_config->rx_flow_ctrl_thresh);
+    if (r != ESP_OK) return r;
 
-    UART[uart_num]->conf0.val = (
-        (uart_config->parity << UART_PARITY_S)
-            | (uart_config->data_bits << UART_BIT_NUM_S)
-            | ((uart_config->flow_ctrl & UART_HW_FLOWCTRL_CTS) ? UART_TX_FLOW_EN : 0x0)
-            | UART_TICK_REF_ALWAYS_ON_M);
-    r=uart_set_stop_bits(uart_num, uart_config->stop_bits);
+    UART[uart_num]->conf0.val =
+          (uart_config->parity << UART_PARITY_S)
+        | (uart_config->data_bits << UART_BIT_NUM_S)
+        | ((uart_config->flow_ctrl & UART_HW_FLOWCTRL_CTS) ? UART_TX_FLOW_EN : 0x0)
+        | (uart_config->use_ref_tick ? 0 : UART_TICK_REF_ALWAYS_ON_M);
+
+    r = uart_set_baudrate(uart_num, uart_config->baud_rate);
+    if (r != ESP_OK) return r;
+    r = uart_set_stop_bits(uart_num, uart_config->stop_bits);
     return r;
 }
 

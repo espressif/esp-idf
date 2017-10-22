@@ -11,6 +11,7 @@ System API
    Hooks <hooks>
    Over The Air Updates (OTA) <ota>
    Sleep Modes <sleep_modes>
+   Power Management <power_management>
    Logging <log>
    Base MAC address <base_mac_address>
    Application Level Tracing <app_trace>
