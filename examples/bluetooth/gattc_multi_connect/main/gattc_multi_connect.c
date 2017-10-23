@@ -209,7 +209,7 @@ static void gattc_profile_a_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
                 ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_attr_count error");
             }
             if (count > 0) {
-                char_elem_result_a = (esp_gattc_char_elem_t *)malloc(sizeof(char_elem_result_a) * count);
+                char_elem_result_a = (esp_gattc_char_elem_t *)malloc(sizeof(esp_gattc_char_elem_t) * count);
                 if (!char_elem_result_a){
                     ESP_LOGE(GATTC_TAG, "gattc no mem");
                 }else {
@@ -255,7 +255,7 @@ static void gattc_profile_a_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
             ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_attr_count error");
         }
         if (count > 0){
-            descr_elem_result_a = malloc(sizeof(descr_elem_result_a) * count);
+            descr_elem_result_a = (esp_gattc_descr_elem_t *)malloc(sizeof(esp_gattc_descr_elem_t) * count);
             if (!descr_elem_result_a){
                 ESP_LOGE(GATTC_TAG, "malloc error, gattc no mem");
             }else{
@@ -410,7 +410,7 @@ static void gattc_profile_b_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
             }
 
             if (count > 0){
-                char_elem_result_b = (esp_gattc_char_elem_t *)malloc(sizeof(char_elem_result_b) * count);
+                char_elem_result_b = (esp_gattc_char_elem_t *)malloc(sizeof(esp_gattc_char_elem_t) * count);
                 if (!char_elem_result_b){
                     ESP_LOGE(GATTC_TAG, "gattc no mem");
                 }else{
@@ -457,7 +457,7 @@ static void gattc_profile_b_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
             ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_attr_count error");
         }
         if (count > 0){
-            descr_elem_result_b = malloc(sizeof(descr_elem_result_b) * count);
+            descr_elem_result_b = (esp_gattc_descr_elem_t *)malloc(sizeof(esp_gattc_descr_elem_t) * count);
             if (!descr_elem_result_b){
                 ESP_LOGE(GATTC_TAG, "malloc error, gattc no mem");
             }else{
@@ -609,7 +609,7 @@ static void gattc_profile_c_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
             }
 
             if (count > 0){
-                char_elem_result_c = (esp_gattc_char_elem_t *)malloc(sizeof(char_elem_result_c) * count);
+                char_elem_result_c = (esp_gattc_char_elem_t *)malloc(sizeof(esp_gattc_char_elem_t) * count);
                 if (!char_elem_result_c){
                     ESP_LOGE(GATTC_TAG, "gattc no mem");
                 }else{
@@ -655,7 +655,7 @@ static void gattc_profile_c_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
             ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_attr_count error");
         }
         if (count > 0){
-            descr_elem_result_c = malloc(sizeof(descr_elem_result_c) * count);
+            descr_elem_result_c = (esp_gattc_descr_elem_t *)malloc(sizeof(esp_gattc_descr_elem_t) * count);
             if (!descr_elem_result_c){
                 ESP_LOGE(GATTC_TAG, "malloc error, gattc no mem");
             }else{
