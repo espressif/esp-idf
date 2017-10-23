@@ -19,7 +19,7 @@ extern "C" {
 /* Internal declarations used to ingreate LWIP port layer
    to ESP-IDF VFS for POSIX I/O.
 */
-extern unsigned lwip_socket_offset;
+extern int lwip_socket_offset;
 
 void esp_vfs_lwip_sockets_register();
 
