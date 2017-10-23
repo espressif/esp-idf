@@ -16,6 +16,10 @@
 #include <string.h>
 #include <assert.h>
 #include <sys/errno.h>
+#include <sys/fcntl.h>
+#include <sys/ioctl.h>
+#include <sys/unistd.h>
+#include <dirent.h>
 #include "esp_vfs.h"
 #include "esp_log.h"
 
