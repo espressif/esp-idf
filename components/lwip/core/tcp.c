@@ -1353,8 +1353,6 @@ tcp_kill_state(enum tcp_state state)
   struct tcp_pcb *pcb, *inactive;
   u32_t inactivity;
 
-  LWIP_ASSERT("invalid state", (state == CLOSING) || (state == LAST_ACK));
-
   inactivity = 0;
   inactive = NULL;
   /* Go through the list of active pcbs and get the oldest pcb that is in state
