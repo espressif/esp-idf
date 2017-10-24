@@ -926,44 +926,8 @@ esp_err_t touch_pad_filter_delete()
 }
 
 /*---------------------------------------------------------------
-                    ADC
+                    ADC Common
 ---------------------------------------------------------------*/
-esp_err_t adc1_pad_get_io_num(adc1_channel_t channel, gpio_num_t *gpio_num)
-{
-    RTC_MODULE_CHECK(channel < ADC1_CHANNEL_MAX, "ADC1 Channel Err", ESP_ERR_INVALID_ARG);
-
-    switch (channel) {
-    case ADC1_CHANNEL_0:
-        *gpio_num = ADC1_CHANNEL_0_GPIO_NUM;
-        break;
-    case ADC1_CHANNEL_1:
-        *gpio_num = ADC1_CHANNEL_1_GPIO_NUM;
-        break;
-    case ADC1_CHANNEL_2:
-        *gpio_num = ADC1_CHANNEL_2_GPIO_NUM;
-        break;
-    case ADC1_CHANNEL_3:
-        *gpio_num = ADC1_CHANNEL_3_GPIO_NUM;
-        break;
-    case ADC1_CHANNEL_4:
-        *gpio_num = ADC1_CHANNEL_4_GPIO_NUM;
-        break;
-    case ADC1_CHANNEL_5:
-        *gpio_num = ADC1_CHANNEL_5_GPIO_NUM;
-        break;
-    case ADC1_CHANNEL_6:
-        *gpio_num = ADC1_CHANNEL_6_GPIO_NUM;
-        break;
-    case ADC1_CHANNEL_7:
-        *gpio_num = ADC1_CHANNEL_7_GPIO_NUM;
-        break;
-    default:
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    return ESP_OK;
-}
-
 static esp_err_t adc_set_fsm_time(int rst_wait, int start_wait, int standby_wait, int sample_cycle)
 {
     portENTER_CRITICAL(&rtc_spinlock);
@@ -1136,6 +1100,9 @@ esp_err_t adc_set_data_width(adc_unit_t adc_unit, adc_bits_width_t bits)
     return ESP_OK;
 }
 
+/*-------------------------------------------------------------------------------------
+ *                      ADC I2S
+ *------------------------------------------------------------------------------------*/
 static esp_err_t adc_set_i2s_data_len(adc_unit_t adc_unit, int patt_len)
 {
     ADC_CHECK_UNIT(adc_unit);
@@ -1215,6 +1182,45 @@ esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
     adc_set_data_inv(adc_unit, true);
     return ESP_OK;
  }
+
+/*-------------------------------------------------------------------------------------
+ *                      ADC1
+ *------------------------------------------------------------------------------------*/
+esp_err_t adc1_pad_get_io_num(adc1_channel_t channel, gpio_num_t *gpio_num)
+{
+    RTC_MODULE_CHECK(channel < ADC1_CHANNEL_MAX, "ADC1 Channel Err", ESP_ERR_INVALID_ARG);
+
+    switch (channel) {
+    case ADC1_CHANNEL_0:
+        *gpio_num = ADC1_CHANNEL_0_GPIO_NUM;
+        break;
+    case ADC1_CHANNEL_1:
+        *gpio_num = ADC1_CHANNEL_1_GPIO_NUM;
+        break;
+    case ADC1_CHANNEL_2:
+        *gpio_num = ADC1_CHANNEL_2_GPIO_NUM;
+        break;
+    case ADC1_CHANNEL_3:
+        *gpio_num = ADC1_CHANNEL_3_GPIO_NUM;
+        break;
+    case ADC1_CHANNEL_4:
+        *gpio_num = ADC1_CHANNEL_4_GPIO_NUM;
+        break;
+    case ADC1_CHANNEL_5:
+        *gpio_num = ADC1_CHANNEL_5_GPIO_NUM;
+        break;
+    case ADC1_CHANNEL_6:
+        *gpio_num = ADC1_CHANNEL_6_GPIO_NUM;
+        break;
+    case ADC1_CHANNEL_7:
+        *gpio_num = ADC1_CHANNEL_7_GPIO_NUM;
+        break;
+    default:
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return ESP_OK;
+}
 
 esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
 {
