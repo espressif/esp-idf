@@ -21,6 +21,31 @@ config SPI_FLASH_ROM_DRIVER_PATCH
         This option is needed to write to flash on ESP32-D2WD, and any configuration
         where external SPI flash is connected to non-default pins.
 
+choice SPI_FLASH_WRITING_DANGEROUS_REGIONS
+    bool  "Writing to dangerous flash regions"
+    default SPI_FLASH_WRITING_DANGEROUS_REGIONS_ABORTS
+    help
+        SPI flash APIs can optionally abort or return a failure code
+        if erasing or writing addresses that fall at the beginning
+        of flash (covering the bootloader and partition table) or that
+        overlap the app partition that contains the running app.
+
+        It is not recommended to ever write to these regions from an IDF app,
+        and this check prevents logic errors or corrupted firmware memory from
+        damaging these regions.
+
+        Note that this feature *does not* check calls to the esp_rom_xxx SPI flash
+        ROM functions. These functions should not be called directly from IDF
+        applications.
+
+config SPI_FLASH_WRITING_DANGEROUS_REGIONS_ABORTS
+     bool "Aborts"
+config SPI_FLASH_WRITING_DANGEROUS_REGIONS_FAILS
+     bool "Fails"
+config SPI_FLASH_WRITING_DANGEROUS_REGIONS_ALLOWED
+     bool "Allowed"
+endchoice
+
 endmenu
 
 
