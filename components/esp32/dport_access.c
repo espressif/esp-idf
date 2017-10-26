@@ -185,3 +185,12 @@ void esp_dport_access_int_deinit(void)
 #endif
     portEXIT_CRITICAL_ISR(&g_dport_mux);
 }
+
+
+void esp_dport_access_int_abort(void)
+{
+    dport_core_state[0] = DPORT_CORE_STATE_IDLE;
+#ifndef CONFIG_FREERTOS_UNICORE
+    dport_core_state[1] = DPORT_CORE_STATE_IDLE;
+#endif
+}
