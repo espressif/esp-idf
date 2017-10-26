@@ -34,8 +34,14 @@ The default behaviour is to just exit the interrupt or call the panic handler on
 _xt_debugexception:
     movi    a0,PANIC_RSN_DEBUGEXCEPTION
     wsr     a0,EXCCAUSE
+    /* _xt_panic assumes a level 1 exception. As we're
+       crashing anyhow, copy EPC & EXCSAVE from DEBUGLEVEL
+       to level 1. */
+    rsr     a0,(EPC + XCHAL_DEBUGLEVEL)
+    wsr     a0,EPC_1
+    rsr     a0,(EXCSAVE + XCHAL_DEBUGLEVEL)
+    wsr     a0,EXCSAVE_1
     call0   _xt_panic                       /* does not return */
-    rsr     a0, EXCSAVE+XCHAL_DEBUGLEVEL
     rfi     XCHAL_DEBUGLEVEL
 
 #endif /* Debug exception */
