@@ -43,6 +43,7 @@ static const char* UART_TAG = "uart";
 #define UART_EMPTY_THRESH_DEFAULT  (10)
 #define UART_FULL_THRESH_DEFAULT  (120)
 #define UART_TOUT_THRESH_DEFAULT   (10)
+#define UART_TX_IDLE_NUM_DEFAULT   (0)
 #define UART_ENTER_CRITICAL_ISR(mux)    portENTER_CRITICAL_ISR(mux)
 #define UART_EXIT_CRITICAL_ISR(mux)     portEXIT_CRITICAL_ISR(mux)
 #define UART_ENTER_CRITICAL(mux)    portENTER_CRITICAL(mux)
@@ -469,6 +470,17 @@ esp_err_t uart_set_dtr(uart_port_t uart_num, int level)
     return ESP_OK;
 }
 
+esp_err_t uart_set_tx_idle_num(uart_port_t uart_num, uint16_t idle_num)
+{
+    UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
+    UART_CHECK((idle_num <= UART_TX_IDLE_NUM_V), "uart idle num error", ESP_FAIL);
+
+    UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
+    UART[uart_num]->idle_conf.tx_idle_num = idle_num;
+    UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
+    return ESP_OK;
+}
+
 esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_config)
 {
     esp_err_t r;
@@ -491,6 +503,8 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
         | (uart_config->use_ref_tick ? 0 : UART_TICK_REF_ALWAYS_ON_M);
 
     r = uart_set_baudrate(uart_num, uart_config->baud_rate);
+    if (r != ESP_OK) return r;
+    r = uart_set_tx_idle_num(uart_num, UART_TX_IDLE_NUM_DEFAULT);
     if (r != ESP_OK) return r;
     r = uart_set_stop_bits(uart_num, uart_config->stop_bits);
     return r;
@@ -1125,5 +1139,13 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
 
     free(p_uart_obj[uart_num]);
     p_uart_obj[uart_num] = NULL;
+
+    if(uart_num == UART_NUM_0) {
+        periph_module_disable(PERIPH_UART0_MODULE);
+    } else if(uart_num == UART_NUM_1) {
+        periph_module_disable(PERIPH_UART1_MODULE);
+    } else if(uart_num == UART_NUM_2) {
+        periph_module_disable(PERIPH_UART2_MODULE);
+    }
     return ESP_OK;
 }

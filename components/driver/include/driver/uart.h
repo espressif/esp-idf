@@ -461,6 +461,19 @@ esp_err_t uart_set_rts(uart_port_t uart_num, int level);
 esp_err_t uart_set_dtr(uart_port_t uart_num, int level);
 
 /**
+ * @brief Set UART idle interval after tx FIFO is empty
+ *
+ * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param idle_num idle interval after tx FIFO is empty(unit: the time it takes to send one bit
+ *        under current baudrate)
+ *
+ * @return
+ *     - ESP_OK   Success
+ *     - ESP_FAIL Parameter error
+ */
+esp_err_t uart_set_tx_idle_num(uart_port_t uart_num, uint16_t idle_num);
+
+/**
 * @brief Set UART configuration parameters.
  *
  * @param uart_num    UART_NUM_0, UART_NUM_1 or UART_NUM_2
