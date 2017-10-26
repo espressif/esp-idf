@@ -1140,12 +1140,14 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
     free(p_uart_obj[uart_num]);
     p_uart_obj[uart_num] = NULL;
 
-    if(uart_num == UART_NUM_0) {
-        periph_module_disable(PERIPH_UART0_MODULE);
-    } else if(uart_num == UART_NUM_1) {
-        periph_module_disable(PERIPH_UART1_MODULE);
-    } else if(uart_num == UART_NUM_2) {
-        periph_module_disable(PERIPH_UART2_MODULE);
+    if (uart_num != CONFIG_CONSOLE_UART_NUM ) {
+       if(uart_num == UART_NUM_0) {
+           periph_module_disable(PERIPH_UART0_MODULE);
+       } else if(uart_num == UART_NUM_1) {
+           periph_module_disable(PERIPH_UART1_MODULE);
+       } else if(uart_num == UART_NUM_2) {
+           periph_module_disable(PERIPH_UART2_MODULE);
+       }
     }
     return ESP_OK;
 }
