@@ -72,9 +72,6 @@ static const char* TAG = "rtc_clk";
  * All values are in microseconds.
  * TODO: some of these are excessive, and should be reduced.
  */
-#define DELAY_CPU_FREQ_SWITCH_TO_XTAL_WITH_150K  20
-#define DELAY_CPU_FREQ_SWITCH_TO_XTAL_WITH_32K   160
-#define DELAY_CPU_FREQ_SWITCH_TO_PLL    20
 #define DELAY_PLL_DBIAS_RAISE           3
 #define DELAY_PLL_ENABLE_WITH_150K      80
 #define DELAY_PLL_ENABLE_WITH_32K       160
@@ -397,9 +394,12 @@ void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq)
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL, RTC_CNTL_SOC_CLK_SEL_XTL);
     REG_SET_FIELD(APB_CTRL_SYSCLK_CONF_REG, APB_CTRL_PRE_DIV_CNT, 0);
     ets_update_cpu_frequency(xtal_freq);
-    uint32_t delay_xtal_switch = (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_RTC) ?
-            DELAY_CPU_FREQ_SWITCH_TO_XTAL_WITH_150K : DELAY_CPU_FREQ_SWITCH_TO_XTAL_WITH_32K;
-    ets_delay_us(delay_xtal_switch);
+
+    /* Frequency switch is synchronized to SLOW_CLK cycle. Wait until the switch
+     * is complete before disabling the PLL.
+     */
+    rtc_clk_wait_for_slow_cycle();
+
     DPORT_REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 0);
     SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG,
             RTC_CNTL_BB_I2C_FORCE_PD | RTC_CNTL_BBPLL_FORCE_PD |
@@ -443,7 +443,7 @@ void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq)
             s_pll_freq = 480;
         }
         REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL, RTC_CNTL_SOC_CLK_SEL_PLL);
-        ets_delay_us(DELAY_CPU_FREQ_SWITCH_TO_PLL);
+        rtc_clk_wait_for_slow_cycle();
         rtc_clk_apb_freq_update(80 * MHZ);
     }
     s_cur_freq = cpu_freq;
