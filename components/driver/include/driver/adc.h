@@ -113,6 +113,19 @@ typedef enum {
 } adc_i2s_source_t;
 
 /**
+ * @brief Get the gpio number of a specific ADC1 channel.
+ * 
+ * @param channel Channel to get the gpio number
+ * 
+ * @param gpio_num output buffer to hold the gpio number
+ * 
+ * @return 
+ *   - ESP_OK if success
+ *   - ESP_ERR_INVALID_ARG if channal not valid 
+ */
+esp_err_t adc1_pad_get_io_num(adc1_channel_t channel, gpio_num_t *gpio_num);
+
+/**
  * @brief Configure ADC1 capture width, meanwhile enable output invert for ADC1.
  * The configuration is for all channels of ADC1
  * @param width_bit Bit capture width for ADC1
@@ -272,6 +285,70 @@ void adc1_ulp_enable();
  * @return The hall sensor reading.
  */
 int hall_sensor_read();
+
+/**
+ * @brief Get the gpio number of a specific ADC2 channel.
+ * 
+ * @param channel Channel to get the gpio number
+ * 
+ * @param gpio_num output buffer to hold the gpio number
+ * 
+ * @return 
+ *   - ESP_OK if success
+ *   - ESP_ERR_INVALID_ARG if channal not valid 
+ */
+esp_err_t adc2_pad_get_io_num(adc2_channel_t channel, gpio_num_t *gpio_num);
+
+/**
+ * @brief Configure the ADC2 channel, including setting attenuation.
+ *
+ * @note This function also configures the input GPIO pin mux to
+ * connect it to the ADC2 channel. It must be called before calling
+ * ``adc2_get_raw()`` for this channel.
+ *
+ * The default ADC full-scale voltage is 1.1V. To read higher voltages (up to the pin maximum voltage,
+ * usually 3.3V) requires setting >0dB signal attenuation for that ADC channel.
+ *
+ * When VDD_A is 3.3V:
+ *
+ * - 0dB attenuaton (ADC_ATTEN_0db) gives full-scale voltage 1.1V
+ * - 2.5dB attenuation (ADC_ATTEN_2_5db) gives full-scale voltage 1.5V
+ * - 6dB attenuation (ADC_ATTEN_6db) gives full-scale voltage 2.2V
+ * - 11dB attenuation (ADC_ATTEN_11db) gives full-scale voltage 3.9V (see note below)
+ *
+ * @note The full-scale voltage is the voltage corresponding to a maximum reading 
+ * (depending on ADC2 configured bit width, this value is: 4095 for 12-bits, 2047 
+ * for 11-bits, 1023 for 10-bits, 511 for 9 bits.)
+ *
+ * @note At 11dB attenuation the maximum voltage is limited by VDD_A, not the full scale voltage.
+ *
+ * @param channel ADC2 channel to configure
+ * @param atten  Attenuation level
+ *
+ * @return
+ *     - ESP_OK success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten);
+
+/**
+ * @brief Take an ADC2 reading on a single channel
+ *
+ * @note For a given channel, ``adc2_config_channel_atten()``
+ * must be called before the first time this function is called. If Wi-Fi is started via ``esp_wifi_start()``, this
+ * function will always fail with ``ESP_ERR_TIMEOUT``.
+ *
+ * @param  channel ADC2 channel to read
+ * 
+ * @param width_bit Bit capture width for ADC2
+ * 
+ * @param raw_out the variable to hold the output data.
+ *
+ * @return
+ *     - ESP_OK if success
+ *     - ESP_ERR_TIMEOUT the WIFI is started, using the ADC2
+ */
+esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int* raw_out);
 
 /**
  *  @brief Output ADC2 reference voltage to gpio 25 or 26 or 27

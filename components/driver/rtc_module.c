@@ -73,8 +73,31 @@ static const char *RTC_MODULE_TAG = "RTC_MODULE";
     return ESP_FAIL;\
 }
 
+#define ADC2_CHECK_FUNCTION_RET(fun_ret) do { if(fun_ret!=ESP_OK){\
+    ESP_LOGE(RTC_MODULE_TAG,"%s:%d\n",__FUNCTION__,__LINE__);\
+    return ESP_FAIL;\
+} }while (0)
+
 portMUX_TYPE rtc_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static SemaphoreHandle_t rtc_touch_mux = NULL;
+/*
+In ADC2, there're two locks used for different cases:
+1. lock shared with app and WIFI: 
+   when wifi using the ADC2, we assume it will never stop, 
+   so app checks the lock and returns immediately if failed.
+
+2. lock shared between tasks: 
+   when several tasks sharing the ADC2, we want to guarantee 
+   all the requests will be handled.
+   Since conversions are short (about 31us), app returns the lock very soon, 
+   we use a spinlock to stand there waiting to do conversions one by one.
+
+adc2_spinlock should be acquired first, then adc2_wifi_lock or rtc_spinlock.
+*/
+//prevent ADC2 being used by wifi and other tasks at the same time.
+static _lock_t adc2_wifi_lock = NULL;
+//prevent ADC2 being used by tasks (regardless of WIFI)
+portMUX_TYPE adc2_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 typedef struct {
     TimerHandle_t timer;
@@ -903,44 +926,8 @@ esp_err_t touch_pad_filter_delete()
 }
 
 /*---------------------------------------------------------------
-                    ADC
+                    ADC Common
 ---------------------------------------------------------------*/
-static esp_err_t adc1_pad_get_io_num(adc1_channel_t channel, gpio_num_t *gpio_num)
-{
-    RTC_MODULE_CHECK(channel < ADC1_CHANNEL_MAX, "ADC Channel Err", ESP_ERR_INVALID_ARG);
-
-    switch (channel) {
-    case ADC1_CHANNEL_0:
-        *gpio_num = ADC1_CHANNEL_0_GPIO_NUM;
-        break;
-    case ADC1_CHANNEL_1:
-        *gpio_num = ADC1_CHANNEL_1_GPIO_NUM;
-        break;
-    case ADC1_CHANNEL_2:
-        *gpio_num = ADC1_CHANNEL_2_GPIO_NUM;
-        break;
-    case ADC1_CHANNEL_3:
-        *gpio_num = ADC1_CHANNEL_3_GPIO_NUM;
-        break;
-    case ADC1_CHANNEL_4:
-        *gpio_num = ADC1_CHANNEL_4_GPIO_NUM;
-        break;
-    case ADC1_CHANNEL_5:
-        *gpio_num = ADC1_CHANNEL_5_GPIO_NUM;
-        break;
-    case ADC1_CHANNEL_6:
-        *gpio_num = ADC1_CHANNEL_6_GPIO_NUM;
-        break;
-    case ADC1_CHANNEL_7:
-        *gpio_num = ADC1_CHANNEL_7_GPIO_NUM;
-        break;
-    default:
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    return ESP_OK;
-}
-
 static esp_err_t adc_set_fsm_time(int rst_wait, int start_wait, int standby_wait, int sample_cycle)
 {
     portENTER_CRITICAL(&rtc_spinlock);
@@ -1034,9 +1021,7 @@ static esp_err_t adc_set_atten(adc_unit_t adc_unit, adc_channel_t channel, adc_a
 void adc_power_on()
 {
     portENTER_CRITICAL(&rtc_spinlock);
-    //Bit1  0:Fsm  1: SW mode
-    //Bit0  0:SW mode power down  1: SW mode power on
-    SENS.sar_meas_wait2.force_xpd_sar = ADC_FORCE_ENABLE;
+    SENS.sar_meas_wait2.force_xpd_sar = ADC_FORCE_FSM;
     portEXIT_CRITICAL(&rtc_spinlock);
 }
 
@@ -1115,6 +1100,9 @@ esp_err_t adc_set_data_width(adc_unit_t adc_unit, adc_bits_width_t bits)
     return ESP_OK;
 }
 
+/*-------------------------------------------------------------------------------------
+ *                      ADC I2S
+ *------------------------------------------------------------------------------------*/
 static esp_err_t adc_set_i2s_data_len(adc_unit_t adc_unit, int patt_len)
 {
     ADC_CHECK_UNIT(adc_unit);
@@ -1195,6 +1183,45 @@ esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
     return ESP_OK;
  }
 
+/*-------------------------------------------------------------------------------------
+ *                      ADC1
+ *------------------------------------------------------------------------------------*/
+esp_err_t adc1_pad_get_io_num(adc1_channel_t channel, gpio_num_t *gpio_num)
+{
+    RTC_MODULE_CHECK(channel < ADC1_CHANNEL_MAX, "ADC1 Channel Err", ESP_ERR_INVALID_ARG);
+
+    switch (channel) {
+    case ADC1_CHANNEL_0:
+        *gpio_num = ADC1_CHANNEL_0_GPIO_NUM;
+        break;
+    case ADC1_CHANNEL_1:
+        *gpio_num = ADC1_CHANNEL_1_GPIO_NUM;
+        break;
+    case ADC1_CHANNEL_2:
+        *gpio_num = ADC1_CHANNEL_2_GPIO_NUM;
+        break;
+    case ADC1_CHANNEL_3:
+        *gpio_num = ADC1_CHANNEL_3_GPIO_NUM;
+        break;
+    case ADC1_CHANNEL_4:
+        *gpio_num = ADC1_CHANNEL_4_GPIO_NUM;
+        break;
+    case ADC1_CHANNEL_5:
+        *gpio_num = ADC1_CHANNEL_5_GPIO_NUM;
+        break;
+    case ADC1_CHANNEL_6:
+        *gpio_num = ADC1_CHANNEL_6_GPIO_NUM;
+        break;
+    case ADC1_CHANNEL_7:
+        *gpio_num = ADC1_CHANNEL_7_GPIO_NUM;
+        break;
+    default:
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return ESP_OK;
+}
+
 esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
 {
     RTC_MODULE_CHECK(channel < ADC1_CHANNEL_MAX, "ADC Channel Err", ESP_ERR_INVALID_ARG);
@@ -1216,11 +1243,12 @@ int adc1_get_raw(adc1_channel_t channel)
 {
     uint16_t adc_value;
     RTC_MODULE_CHECK(channel < ADC1_CHANNEL_MAX, "ADC Channel Err", ESP_ERR_INVALID_ARG);
+
+    adc_power_on(); 
+
     portENTER_CRITICAL(&rtc_spinlock);
     //Adc Controler is Rtc module,not ulp coprocessor
     SENS.sar_meas_start1.meas1_start_force = 1;
-    //Bit1=0:Fsm  Bit1=1(Bit0=0:PownDown Bit10=1:Powerup)
-    SENS.sar_meas_wait2.force_xpd_sar = 0;
     //Disable Amp Bit1=0:Fsm  Bit1=1(Bit0=0:PownDown Bit10=1:Powerup)
     SENS.sar_meas_wait2.force_xpd_amp = 0x2;
     //Open the ADC1 Data port Not ulp coprocessor
@@ -1249,18 +1277,168 @@ int adc1_get_voltage(adc1_channel_t channel)    //Deprecated. Use adc1_get_raw()
 
 void adc1_ulp_enable(void)
 {
+    adc_power_on();
+
     portENTER_CRITICAL(&rtc_spinlock);
     SENS.sar_meas_start1.meas1_start_force = 0;
     SENS.sar_meas_start1.sar1_en_pad_force = 0;
     SENS.sar_meas_wait2.force_xpd_amp = 0x2;
-    SENS.sar_meas_wait2.force_xpd_sar = 0;
     SENS.sar_meas_ctrl.amp_rst_fb_fsm = 0;
     SENS.sar_meas_ctrl.amp_short_ref_fsm = 0;
     SENS.sar_meas_ctrl.amp_short_ref_gnd_fsm = 0;
     SENS.sar_meas_wait1.sar_amp_wait1 = 0x1;
-    SENS.sar_meas_wait1.sar_amp_wait2 = 1;
+    SENS.sar_meas_wait1.sar_amp_wait2 = 0x1;
     SENS.sar_meas_wait2.sar_amp_wait3 = 0x1;
     portEXIT_CRITICAL(&rtc_spinlock);
+}
+
+/*---------------------------------------------------------------
+                    ADC2
+---------------------------------------------------------------*/
+esp_err_t adc2_pad_get_io_num(adc2_channel_t channel, gpio_num_t *gpio_num)
+{
+    RTC_MODULE_CHECK(channel < ADC2_CHANNEL_MAX, "ADC2 Channel Err", ESP_ERR_INVALID_ARG);
+
+    switch (channel) {
+    case ADC2_CHANNEL_0:
+        *gpio_num = ADC2_CHANNEL_0_GPIO_NUM;
+        break;
+    case ADC2_CHANNEL_1:
+        *gpio_num = ADC2_CHANNEL_1_GPIO_NUM;
+        break;
+    case ADC2_CHANNEL_2:
+        *gpio_num = ADC2_CHANNEL_2_GPIO_NUM;
+        break;
+    case ADC2_CHANNEL_3:
+        *gpio_num = ADC2_CHANNEL_3_GPIO_NUM;
+        break;
+    case ADC2_CHANNEL_4:
+        *gpio_num = ADC2_CHANNEL_4_GPIO_NUM;
+        break;
+    case ADC2_CHANNEL_5:
+        *gpio_num = ADC2_CHANNEL_5_GPIO_NUM;
+        break;
+    case ADC2_CHANNEL_6:
+        *gpio_num = ADC2_CHANNEL_6_GPIO_NUM;
+        break;
+    case ADC2_CHANNEL_7:
+        *gpio_num = ADC2_CHANNEL_7_GPIO_NUM;
+        break;
+    case ADC2_CHANNEL_8:
+        *gpio_num = ADC2_CHANNEL_8_GPIO_NUM;
+        break;
+    case ADC2_CHANNEL_9:
+        *gpio_num = ADC2_CHANNEL_9_GPIO_NUM;
+        break;
+    default:
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t adc2_wifi_acquire()
+{
+    //lazy initialization
+    //for wifi, block until acquire the lock
+    _lock_acquire( &adc2_wifi_lock );
+    ESP_LOGD( RTC_MODULE_TAG, "Wi-Fi takes adc2 lock." );
+    return ESP_OK;
+}
+
+esp_err_t adc2_wifi_release()
+{
+    RTC_MODULE_CHECK((uint32_t*)adc2_wifi_lock != NULL, "wifi release called before acquire", ESP_ERR_INVALID_STATE );
+
+    _lock_release( &adc2_wifi_lock );
+    ESP_LOGD( RTC_MODULE_TAG, "Wi-Fi returns adc2 lock." );
+    return ESP_OK;
+}
+
+static esp_err_t adc2_pad_init(adc2_channel_t channel)
+{
+    gpio_num_t gpio_num = 0;
+    ADC2_CHECK_FUNCTION_RET(adc2_pad_get_io_num(channel, &gpio_num));
+    ADC2_CHECK_FUNCTION_RET(rtc_gpio_init(gpio_num));
+    ADC2_CHECK_FUNCTION_RET(rtc_gpio_output_disable(gpio_num));
+    ADC2_CHECK_FUNCTION_RET(rtc_gpio_input_disable(gpio_num));
+    ADC2_CHECK_FUNCTION_RET(gpio_set_pull_mode(gpio_num, GPIO_FLOATING));
+    return ESP_OK;
+}
+
+esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
+{
+    RTC_MODULE_CHECK(channel < ADC2_CHANNEL_MAX, "ADC2 Channel Err", ESP_ERR_INVALID_ARG);
+    RTC_MODULE_CHECK(atten <= ADC_ATTEN_11db, "ADC2 Atten Err", ESP_ERR_INVALID_ARG);
+
+    adc2_pad_init(channel);
+    portENTER_CRITICAL( &adc2_spinlock );
+
+    //lazy initialization
+    //avoid collision with other tasks
+    if ( _lock_try_acquire( &adc2_wifi_lock ) == -1 ) {
+        //try the lock, return if failed (wifi using).
+        portEXIT_CRITICAL( &adc2_spinlock );
+        return ESP_ERR_TIMEOUT;
+    }
+    SENS.sar_atten2 = ( SENS.sar_atten2 & ~(3<<(channel*2)) ) | ((atten&3) << (channel*2));
+    _lock_release( &adc2_wifi_lock );
+    
+    portEXIT_CRITICAL( &adc2_spinlock );
+    return ESP_OK;
+}
+
+static inline void adc2_config_width(adc_bits_width_t width_bit)
+{
+    portENTER_CRITICAL(&rtc_spinlock);
+    //sar_start_force shared with ADC1
+    SENS.sar_start_force.sar2_bit_width = width_bit;
+    portEXIT_CRITICAL(&rtc_spinlock);
+
+    //Invert the adc value,the Output value is invert
+    SENS.sar_read_ctrl2.sar2_data_inv = 1;
+    //Set The adc sample width,invert adc value,must digital sar2_bit_width[1:0]=3
+    SENS.sar_read_ctrl2.sar2_sample_bit = width_bit;
+    //Take the control from WIFI    
+    SENS.sar_read_ctrl2.sar2_pwdet_force = 0;
+}
+
+//registers in critical section with adc1:
+//SENS_SAR_START_FORCE_REG, 
+esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int* raw_out)
+{
+    uint16_t adc_value = 0;
+    RTC_MODULE_CHECK(channel < ADC2_CHANNEL_MAX, "ADC Channel Err", ESP_ERR_INVALID_ARG);
+
+    //in critical section with whole rtc module
+    adc_power_on();
+
+    //avoid collision with other tasks
+    portENTER_CRITICAL(&adc2_spinlock); 
+    //lazy initialization
+    //try the lock, return if failed (wifi using).
+    if ( _lock_try_acquire( &adc2_wifi_lock ) == -1 ) {
+        portEXIT_CRITICAL( &adc2_spinlock );
+        return ESP_ERR_TIMEOUT;
+    }
+    //in critical section with whole rtc module
+    adc2_config_width( width_bit );
+    
+    //Adc Controler is Rtc module,not ulp coprocessor
+    SENS.sar_meas_start2.meas2_start_force = 1; //force pad mux and force start
+    //Open the ADC2 Data port Not ulp coprocessor
+    SENS.sar_meas_start2.sar2_en_pad_force = 1; //open the ADC2 data port
+    //Select channel
+    SENS.sar_meas_start2.sar2_en_pad = 1 << channel; //pad enable
+    SENS.sar_meas_start2.meas2_start_sar = 0; //start force 0
+    SENS.sar_meas_start2.meas2_start_sar = 1; //start force 1
+    while (SENS.sar_meas_start2.meas2_done_sar == 0) {}; //read done
+    adc_value = SENS.sar_meas_start2.meas2_data_sar;
+    _lock_release( &adc2_wifi_lock );
+    portEXIT_CRITICAL(&adc2_spinlock);
+
+    *raw_out = (int)adc_value;
+    return ESP_OK;
 }
 
 esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)
@@ -1283,19 +1461,19 @@ esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)
     rtc_gpio_pullup_dis(gpio);
     rtc_gpio_pulldown_dis(gpio);
 
-    SET_PERI_REG_BITS(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_DBG_ATTEN, 0, RTC_CNTL_DBG_ATTEN_S);     //Check DBG effect outside sleep mode
+    RTCCNTL.bias_conf.dbg_atten = 0;     //Check DBG effect outside sleep mode
     //set dtest (MUX_SEL : 0 -> RTC; 1-> vdd_sar2)
-    SET_PERI_REG_BITS(RTC_CNTL_TEST_MUX_REG, RTC_CNTL_DTEST_RTC, 1, RTC_CNTL_DTEST_RTC_S);      //Config test mux to route v_ref to ADC2 Channels
+    RTCCNTL.test_mux.dtest_rtc = 1;      //Config test mux to route v_ref to ADC2 Channels
     //set ent
-    SET_PERI_REG_MASK(RTC_CNTL_TEST_MUX_REG, RTC_CNTL_ENT_RTC_M);
+    RTCCNTL.test_mux.ent_rtc = 1;
     //set sar2_en_test
-    SET_PERI_REG_MASK(SENS_SAR_START_FORCE_REG, SENS_SAR2_EN_TEST_M);
+    SENS.sar_start_force.sar2_en_test = 1;
     //force fsm
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT2_REG, SENS_FORCE_XPD_SAR, 3, SENS_FORCE_XPD_SAR_S);    //Select power source of ADC
+    SENS.sar_meas_wait2.force_xpd_sar = ADC_FORCE_ENABLE;    //Select power source of ADC
     //set sar2 en force
-    SET_PERI_REG_MASK(SENS_SAR_MEAS_START2_REG, SENS_SAR2_EN_PAD_FORCE_M);      //Pad bitmap controlled by SW
+    SENS.sar_meas_start2.sar2_en_pad_force = 1;      //Pad bitmap controlled by SW
     //set en_pad for channels 7,8,9 (bits 0x380)
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_START2_REG, SENS_SAR2_EN_PAD, 1<<channel, SENS_SAR2_EN_PAD_S);
+    SENS.sar_meas_start2.sar2_en_pad = 1<<channel;
 
     return ESP_OK;
 }
@@ -1303,7 +1481,7 @@ esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)
 /*---------------------------------------------------------------
                     DAC
 ---------------------------------------------------------------*/
-static esp_err_t dac_pad_get_io_num(dac_channel_t channel, gpio_num_t *gpio_num)
+esp_err_t dac_pad_get_io_num(dac_channel_t channel, gpio_num_t *gpio_num)
 {
     RTC_MODULE_CHECK((channel >= DAC_CHANNEL_1) && (channel < DAC_CHANNEL_MAX), DAC_ERR_STR_CHANNEL_ERROR, ESP_ERR_INVALID_ARG);
     RTC_MODULE_CHECK(gpio_num, "Param null", ESP_ERR_INVALID_ARG);
@@ -1446,20 +1624,23 @@ static int hall_sensor_get_value()    //hall sensor without LNA
     int Sens_Vp1;
     int Sens_Vn1;
     int hall_value;
+    
+    adc_power_on();
 
     portENTER_CRITICAL(&rtc_spinlock);
-    SET_PERI_REG_MASK(SENS_SAR_TOUCH_CTRL1_REG, SENS_XPD_HALL_FORCE_M);     // hall sens force enable
-    SET_PERI_REG_MASK(RTC_IO_HALL_SENS_REG, RTC_IO_XPD_HALL);      // xpd hall
-    SET_PERI_REG_MASK(SENS_SAR_TOUCH_CTRL1_REG, SENS_HALL_PHASE_FORCE_M);   // phase force
-    CLEAR_PERI_REG_MASK(RTC_IO_HALL_SENS_REG, RTC_IO_HALL_PHASE);      // hall phase
+    SENS.sar_touch_ctrl1.xpd_hall_force = 1;     // hall sens force enable
+    RTCIO.hall_sens.xpd_hall = 1;      // xpd hall
+    SENS.sar_touch_ctrl1.hall_phase_force = 1;   // phase force
+
+    RTCIO.hall_sens.hall_phase = 0;      // hall phase
     Sens_Vp0 = adc1_get_raw(ADC1_CHANNEL_0);
     Sens_Vn0 = adc1_get_raw(ADC1_CHANNEL_3);
-    SET_PERI_REG_MASK(RTC_IO_HALL_SENS_REG, RTC_IO_HALL_PHASE);
+    RTCIO.hall_sens.hall_phase = 1;
     Sens_Vp1 = adc1_get_raw(ADC1_CHANNEL_0);
     Sens_Vn1 = adc1_get_raw(ADC1_CHANNEL_3);
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT2_REG, SENS_FORCE_XPD_SAR, 0, SENS_FORCE_XPD_SAR_S);
-    CLEAR_PERI_REG_MASK(SENS_SAR_TOUCH_CTRL1_REG, SENS_XPD_HALL_FORCE);
-    CLEAR_PERI_REG_MASK(SENS_SAR_TOUCH_CTRL1_REG, SENS_HALL_PHASE_FORCE);
+
+    SENS.sar_touch_ctrl1.xpd_hall_force = 0;
+    SENS.sar_touch_ctrl1.hall_phase_force = 0;
     portEXIT_CRITICAL(&rtc_spinlock);
     hall_value = (Sens_Vp1 - Sens_Vp0) - (Sens_Vn1 - Sens_Vn0);
 
