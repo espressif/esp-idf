@@ -119,6 +119,8 @@ typedef struct {
 
 typedef intr_handle_t rmt_isr_handle_t;
 
+typedef void (*rmt_on_tx_end_t)(rmt_channel_t channel);
+
 /**
  * @brief Set RMT clock divider, channel clock is divided from source clock.
  *
@@ -701,6 +703,22 @@ esp_err_t rmt_wait_tx_done(rmt_channel_t channel, TickType_t wait_time);
  *     - ESP_OK Success
  */
 esp_err_t rmt_get_ringbuf_handle(rmt_channel_t channel, RingbufHandle_t* buf_handle);
+
+/**
+ * @brief Registers a handler that will be called when transmission ends.
+ *
+ *        Called by rmt_driver_isr_default in interrupt context.
+ *
+ *        When used, disables printing of debug message "RMT INTR : TX END"
+ *        at end of transmission.
+ * 
+ * @note Requires rmt_driver_install to install the default ISR handler.
+ *
+ * @param fn Function to be called from the default interrupt handler or NULL.
+ *
+ * @return the previous handler (or NULL if there was none)
+ */
+rmt_on_tx_end_t rmt_on_tx_end(rmt_on_tx_end_t fn);
 
 /***************************EXAMPLE**********************************
  *

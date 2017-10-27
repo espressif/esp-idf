@@ -75,6 +75,9 @@ typedef struct {
 
 rmt_obj_t* p_rmt_obj[RMT_CHANNEL_MAX] = {0};
 
+// Event called when transmission is ended
+static rmt_on_tx_end_t rmt_on_tx_end_handler = NULL;
+
 static void rmt_set_tx_wrap_en(rmt_channel_t channel, bool en)
 {
     portENTER_CRITICAL(&rmt_spinlock);
@@ -538,7 +541,8 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
                 switch(i % 3) {
                     //TX END
                     case 0:
-                        ESP_EARLY_LOGD(RMT_TAG, "RMT INTR : TX END");
+                        if(rmt_on_tx_end_handler == NULL)
+                            ESP_EARLY_LOGD(RMT_TAG, "RMT INTR : TX END");
                         xSemaphoreGiveFromISR(p_rmt->tx_sem, &HPTaskAwoken);
                         if(HPTaskAwoken == pdTRUE) {
                             portYIELD_FROM_ISR();
@@ -547,6 +551,8 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
                         p_rmt->tx_len_rem = 0;
                         p_rmt->tx_offset = 0;
                         p_rmt->tx_sub_len = 0;
+                        if(rmt_on_tx_end_handler != NULL)
+                            rmt_on_tx_end_handler(channel);
                         break;
                         //RX_END
                     case 1:
@@ -771,3 +777,9 @@ esp_err_t rmt_get_ringbuf_handle(rmt_channel_t channel, RingbufHandle_t* buf_han
     return ESP_OK;
 }
 
+rmt_on_tx_end_t rmt_on_tx_end(rmt_on_tx_end_t handler)
+{
+    rmt_on_tx_end_t previous = rmt_on_tx_end_handler;
+    rmt_on_tx_end_handler = handler;
+    return previous;
+}
