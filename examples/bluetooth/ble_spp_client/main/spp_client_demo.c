@@ -40,7 +40,8 @@
 #define PROFILE_APP_ID              0
 #define BT_BD_ADDR_STR              "%02x:%02x:%02x:%02x:%02x:%02x"
 #define BT_BD_ADDR_HEX(addr)        addr[0],addr[1],addr[2],addr[3],addr[4],addr[5]
-#define ESP_GATT_SPP_SERVICE_UUID            0xABF0
+#define ESP_GATT_SPP_SERVICE_UUID   0xABF0
+#define SCAN_ALL_THE_TIME           0
 //#define SUPPORT_HEARTBEAT
 //#define DEBUG_MODE
 
@@ -333,7 +334,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
     case ESP_GATTC_DISCONNECT_EVT:
         ESP_LOGI(GATTC_TAG, "disconnect , status = %d", p_data->disconnect.status);
         free_gattc_srv_db();
-        esp_ble_gap_start_scanning(0xffff);
+        esp_ble_gap_start_scanning(SCAN_ALL_THE_TIME);
         break;
     case ESP_GATTC_SEARCH_RES_EVT:
         ESP_LOGI(GATTC_TAG, "ESP_GATTC_SEARCH_RES_EVT: start_handle = %d, end_handle = %d, UUID:0x%04x",p_data->search_res.start_handle,p_data->search_res.end_handle,p_data->search_res.srvc_id.uuid.uuid.uuid16);
@@ -422,9 +423,39 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
             ESP_LOGE(GATTC_TAG,"%s:get db falied\n",__func__);
             break;
         }
+        if(count != SPP_IDX_NB){
+            ESP_LOGE(GATTC_TAG,"%s:get db count != SPP_IDX_NB, count = %d, SPP_IDX_NB = %d\n",__func__,count,SPP_IDX_NB);
+            break;
+        }
         for(int i = 0;i < SPP_IDX_NB;i++){
-            ESP_LOGI(GATTC_TAG,"attr_type=%d,attribute_handle=%d,start_handle=%d,end_handle=%d,properties=0x%x,uuid=0x%04x\n",\
-                    (db+i)->type,(db+i)->attribute_handle,(db+i)->start_handle,(db+i)->end_handle,(db+i)->properties,(db+i)->uuid.uuid.uuid16);
+            switch((db+i)->type){
+            case ESP_GATT_DB_PRIMARY_SERVICE:
+                ESP_LOGI(GATTC_TAG,"attr_type = PRIMARY_SERVICE,attribute_handle=%d,start_handle=%d,end_handle=%d,properties=0x%x,uuid=0x%04x\n",\
+                        (db+i)->attribute_handle,(db+i)->start_handle,(db+i)->end_handle,(db+i)->properties,(db+i)->uuid.uuid.uuid16);
+                break;
+            case ESP_GATT_DB_SECONDARY_SERVICE:
+                ESP_LOGI(GATTC_TAG,"attr_type = SECONDARY_SERVICE,attribute_handle=%d,start_handle=%d,end_handle=%d,properties=0x%x,uuid=0x%04x\n",\
+                        (db+i)->attribute_handle,(db+i)->start_handle,(db+i)->end_handle,(db+i)->properties,(db+i)->uuid.uuid.uuid16);
+                break;
+            case ESP_GATT_DB_CHARACTERISTIC:
+                ESP_LOGI(GATTC_TAG,"attr_type = CHARACTERISTIC,attribute_handle=%d,start_handle=%d,end_handle=%d,properties=0x%x,uuid=0x%04x\n",\
+                        (db+i)->attribute_handle,(db+i)->start_handle,(db+i)->end_handle,(db+i)->properties,(db+i)->uuid.uuid.uuid16);
+                break;
+            case ESP_GATT_DB_DESCRIPTOR:
+                ESP_LOGI(GATTC_TAG,"attr_type = DESCRIPTOR,attribute_handle=%d,start_handle=%d,end_handle=%d,properties=0x%x,uuid=0x%04x\n",\
+                        (db+i)->attribute_handle,(db+i)->start_handle,(db+i)->end_handle,(db+i)->properties,(db+i)->uuid.uuid.uuid16);
+                break;
+            case ESP_GATT_DB_INCLUDED_SERVICE:
+                ESP_LOGI(GATTC_TAG,"attr_type = INCLUDED_SERVICE,attribute_handle=%d,start_handle=%d,end_handle=%d,properties=0x%x,uuid=0x%04x\n",\
+                        (db+i)->attribute_handle,(db+i)->start_handle,(db+i)->end_handle,(db+i)->properties,(db+i)->uuid.uuid.uuid16);
+                break;
+            case ESP_GATT_DB_ALL:
+                ESP_LOGI(GATTC_TAG,"attr_type = ESP_GATT_DB_ALL,attribute_handle=%d,start_handle=%d,end_handle=%d,properties=0x%x,uuid=0x%04x\n",\
+                        (db+i)->attribute_handle,(db+i)->start_handle,(db+i)->end_handle,(db+i)->properties,(db+i)->uuid.uuid.uuid16);
+                break;
+            default:
+                break;
+            }
         }
         cmd = SPP_IDX_SPP_DATA_NTY_VAL;
         xQueueSend(cmd_reg_queue,&cmd,10/portTICK_PERIOD_MS);
@@ -468,7 +499,7 @@ void spp_heart_beat_task(void * arg)
         vTaskDelay(50 / portTICK_PERIOD_MS);
         if(xQueueReceive(cmd_heartbeat_queue, &cmd_id, portMAX_DELAY)) {
             while(1){
-                if(is_connect == true){
+                if((is_connect == true)&&((db+SPP_IDX_SPP_HEARTBEAT_VAL)->properties & (ESP_GATT_CHAR_PROP_BIT_WRITE_NR | ESP_GATT_CHAR_PROP_BIT_WRITE))){
                     esp_ble_gattc_write_char( spp_gattc_if,
                                               spp_conn_id,
                                               (db+SPP_IDX_SPP_HEARTBEAT_VAL)->attribute_handle,
@@ -528,7 +559,7 @@ void uart_task(void *pvParameters)
             switch (event.type) {
             //Event of UART receving data
             case UART_DATA:
-                if (event.size) {
+                if (event.size && (is_connect == true) && ((db+SPP_IDX_SPP_DATA_RECV_VAL)->properties & (ESP_GATT_CHAR_PROP_BIT_WRITE_NR | ESP_GATT_CHAR_PROP_BIT_WRITE))) {
                     uint8_t * temp = NULL;
                     temp = (uint8_t *)malloc(sizeof(uint8_t)*event.size);
                     if(temp == NULL){
