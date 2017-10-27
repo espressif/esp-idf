@@ -347,6 +347,7 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
     }
 
     TaskHandle_t cur_task = xTaskGetCurrentTaskHandle();
+    uint8_t do_execute = 0;
     // do not take mutex if OS is not running yet
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED ||
             // init_routine can call pthread_once for another objects, so use recursive mutex
@@ -354,12 +355,15 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
             !cur_task || xSemaphoreTakeRecursive(s_once_mux, portMAX_DELAY) == pdTRUE)
     {
         if (!once_control->init_executed) {
-            ESP_LOGV(TAG, "%s: call init_routine %p", __FUNCTION__, once_control);
-            init_routine();
+            do_execute = 1;
             once_control->init_executed = 1;
         }
         if (cur_task) {
             xSemaphoreGiveRecursive(s_once_mux);
+        }
+        if (do_execute) {
+            ESP_LOGV(TAG, "%s: call init_routine %p", __FUNCTION__, once_control);
+            init_routine();
         }
     }
     else
