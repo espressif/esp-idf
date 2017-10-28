@@ -51,7 +51,7 @@ esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data,
 
     _lock_acquire(&s_phy_rf_init_lock);
     if (s_phy_rf_init_count == 0) {
-        // Enable WiFi peripheral clock
+        // Enable WiFi/BT common peripheral clock
         periph_module_enable(PERIPH_WIFI_BT_COMMON_MODULE);
         ESP_LOGV(TAG, "register_chipv7_phy, init_data=%p, cal_data=%p, mode=%d",
                 init_data, calibration_data, mode);
@@ -76,7 +76,7 @@ esp_err_t esp_phy_rf_deinit(void)
     if (s_phy_rf_init_count == 1) {
         // Disable PHY and RF.
         phy_close_rf();
-        // Disable WiFi peripheral clock. Do not disable clock for hardware RNG
+        // Disable WiFi/BT common peripheral clock. Do not disable clock for hardware RNG
         periph_module_disable(PERIPH_WIFI_BT_COMMON_MODULE);
     } else {
 #if CONFIG_SW_COEXIST_ENABLE

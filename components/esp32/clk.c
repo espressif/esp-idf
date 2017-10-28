@@ -29,6 +29,7 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/i2s_reg.h"
+#include "driver/periph_ctrl.h"
 #include "xtensa/core-macros.h"
 
 /* Number of cycles to wait from the 32k XTAL oscillator to consider it running.
@@ -236,4 +237,7 @@ void esp_perip_clk_init(void)
 
     /* Disable WiFi/BT/SDIO clocks. */
     DPORT_CLEAR_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, wifi_bt_sdio_clk);
+
+    /* Enable RNG clock. */
+    periph_module_enable(PERIPH_RNG_MODULE);
 }
