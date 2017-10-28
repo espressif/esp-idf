@@ -497,10 +497,14 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
         return 0;
     }
     if (bits_x == 1) {
-        return mbedtls_mpi_copy(Z, Y);
+        ret = mbedtls_mpi_copy(Z, Y);
+        Z->s *= X->s;
+        return ret;
     }
     if (bits_y == 1) {
-        return mbedtls_mpi_copy(Z, X);
+        ret = mbedtls_mpi_copy(Z, X);
+        Z->s *= Y->s;
+        return ret;
     }
 
     words_mult = (words_x > words_y ? words_x : words_y);
