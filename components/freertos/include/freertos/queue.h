@@ -1106,7 +1106,7 @@ void vQueueDelete( QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
 	// Now the buffer is empty we can switch context if necessary.
 	if( xHigherPriorityTaskWoken )
 	{
-		taskYIELD ();
+		portYIELD_FROM_ISR ();
 	}
  }
  </pre>
@@ -1177,7 +1177,7 @@ void vQueueDelete( QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
 	// Now the buffer is empty we can switch context if necessary.
 	if( xHigherPriorityTaskWoken )
 	{
-		taskYIELD ();
+		portYIELD_FROM_ISR ();
 	}
  }
  </pre>
