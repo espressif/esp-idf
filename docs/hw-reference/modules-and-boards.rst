@@ -89,7 +89,7 @@ ESP32 Core Board V2 / ESP32 DevKitC
 
 Small and convenient development board with ESP-WROOM-32 module installed, break out pin headers and minimum additional components. Includes USB to serial programming interface, that also provides power supply for the board. Has press buttons to reset the board and put it in upload mode. 
 
-.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-core-board-v2.jpg
+.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-core-board-v2.png
     :align: center
     :alt: ESP32 Core Board V2 / ESP32 DevKitC board
     :width: 50%
