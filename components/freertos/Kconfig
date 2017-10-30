@@ -275,6 +275,16 @@ config TIMER_QUEUE_LENGTH
 
         For most uses the default value of 10 is OK.
 
+config FREERTOS_QUEUE_REGISTRY_SIZE
+    int "FreeRTOS queue registry size"
+    range 0 20
+    default 0
+    help
+        FreeRTOS uses the queue registry as a means for kernel aware debuggers to locate queues, semaphores,
+        and mutexes. The registry allows for a textual name to be associated with a queue for easy identification
+        within a debugging GUI. A value of 0 will disable queue registry functionality, and a value larger than 0
+        will specify the number of queues/semaphores/mutexes that the registry can hold.
+
 config FREERTOS_USE_TRACE_FACILITY
     bool "Enable FreeRTOS trace facility"
     default n
@@ -285,12 +295,62 @@ config FREERTOS_USE_TRACE_FACILITY
 
 config FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
     bool "Enable FreeRTOS stats formatting functions"
-    depends on FREERTOS_USE_TRACE_FACILITY
+    depends on FREERTOS_USE_TRACE_FACILITY || FREERTOS_GENERATE_RUN_TIME_STATS
     default n
     help
         If enabled, configUSE_STATS_FORMATTING_FUNCTIONS will be defined as 1 in
         FreeRTOS. This will allow the usage of stats formatting functions such 
         as vTaskList().
+
+config FREERTOS_GENERATE_RUN_TIME_STATS
+    bool "Enable FreeRTOS to collect run time stats"
+    default n
+    help
+        If enabled, configGENERATE_RUN_TIME_STATS will be defined as 1 in 
+        FreeRTOS. This will allow FreeRTOS to collect information regarding the 
+        usage of processor time amongst FreeRTOS tasks. Run time stats are 
+        generated using either the ESP Timer or the CPU Clock as the clock 
+        source (Note that run time stats are only valid until the clock source 
+        overflows). The function vTaskGetRunTimeStats() will also be available 
+        if FREERTOS_USE_STATS_FORMATTING_FUNCTIONS and 
+        FREERTOS_USE_TRACE_FACILITY are enabled. vTaskGetRunTimeStats() will 
+        display the run time of each task as a % of the total run time of all 
+        CPUs (task run time / no of CPUs) / (total run time / 100 )
+        
+        
+choice FREERTOS_RUN_TIME_STATS_CLK
+    prompt "Choose the clock source for run time stats"
+    depends on FREERTOS_GENERATE_RUN_TIME_STATS
+    default FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+    help
+        Choose the clock source for FreeRTOS run time stats. Options are CPU0's 
+        CPU Clock or the ESP Timer. Both clock sources are 32 bits. The CPU 
+        Clock can run at a higher frequency hence provide a finer resolution 
+        but will overflow much quicker. Note that run time stats are only valid 
+        until the clock source overflows.
+        
+config FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+    bool "Use ESP TIMER for run time stats"
+    help
+        ESP Timer will be used as the clock source for FreeRTOS run time stats. 
+        The ESP Timer runs at a frequency of 1MHz regardless of Dynamic
+        Frequency Scaling. Therefore the ESP Timer will overflow in 
+        approximately 4290 seconds.
+
+config FREERTOS_RUN_TIME_STATS_USING_CPU_CLK
+    bool "Use CPU Clock for run time stats"
+    help
+        CPU Clock will be used as the clock source for the generation of run
+        time stats. The CPU Clock has a frequency dependent on 
+        ESP32_DEFAULT_CPU_FREQ_MHZ and Dynamic Frequency Scaling (DFS).
+        Therefore the CPU Clock frequency can fluctuate between 80 to 240MHz. 
+        Run time stats generated using the CPU Clock represents the number of 
+        CPU cycles each task is allocated and DOES NOT reflect the amount of 
+        time each task runs for (as CPU clock frequency can change). If the CPU 
+        clock consistently runs at the maximum frequency of 240MHz, it will 
+        overflow in approximately 17 seconds.
+
+endchoice
 
 menuconfig FREERTOS_DEBUG_INTERNALS
     bool "Debug FreeRTOS internals"

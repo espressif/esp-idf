@@ -80,6 +80,7 @@ extern "C" {
 #include <xtensa/config/system.h>	/* required for XSHAL_CLIB */
 #include <xtensa/xtruntime.h>
 #include "esp_crosscore_int.h"
+#include "esp_timer.h"              /* required for FreeRTOS run time stats */
 
 
 #include <esp_heap_caps.h>
@@ -299,6 +300,15 @@ static inline void uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, u
 
 /* Fine resolution time */
 #define portGET_RUN_TIME_COUNTER_VALUE()  xthal_get_ccount()
+//ccount or esp_timer are initialized elsewhere
+#define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
+
+#ifdef CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+/* Coarse resolution time (us) */
+#define portALT_GET_RUN_TIME_COUNTER_VALUE(x)    x = (uint32_t)esp_timer_get_time()
+#endif
+
+
 
 /* Kernel utilities. */
 void vPortYield( void );
