@@ -30,6 +30,7 @@
 #include "esp_attr.h"
 #include "esp_spi_flash.h"
 #include "esp_log.h"
+#include "esp_clk.h"
 #include "cache_utils.h"
 
 /* bytes erased by SPIEraseBlock() ROM function */
@@ -49,7 +50,7 @@ static spi_flash_counters_t s_flash_stats;
 #define COUNTER_STOP(counter)  \
     do{ \
         s_flash_stats.counter.count++; \
-        s_flash_stats.counter.time += (xthal_get_ccount() - ts_begin) / (XT_CLOCK_FREQ / 1000000); \
+        s_flash_stats.counter.time += (xthal_get_ccount() - ts_begin) / (esp_clk_cpu_freq() / 1000000); \
     } while(0)
 
 #define COUNTER_ADD_BYTES(counter, size) \
@@ -230,9 +231,9 @@ esp_err_t IRAM_ATTR spi_flash_write(size_t dst, const void *srcv, size_t size)
         /* If src buffer is 4-byte aligned as well and is not in a region that requires cache access to be enabled, we
          * can write directly without buffering in RAM. */
 #ifdef ESP_PLATFORM
-        bool direct_write = ( (uintptr_t) srcc >= 0x3FFAE000
-                              && (uintptr_t) srcc < 0x40000000
-                              && ((uintptr_t) srcc + mid_off) % 4 == 0 );
+        bool direct_write = esp_ptr_internal(srcc)
+                && esp_ptr_byte_accessible(srcc)
+                && ((uintptr_t) srcc + mid_off) % 4 == 0;
 #else
         bool direct_write = true;
 #endif
@@ -395,18 +396,38 @@ esp_err_t IRAM_ATTR spi_flash_read(size_t src, void *dstv, size_t size)
     size_t pad_right_src = (src + pad_left_size + mid_size) & ~3U;
     size_t pad_right_off = (pad_right_src - src);
     size_t pad_right_size = (size - pad_right_off);
+
+#ifdef ESP_PLATFORM
+    bool direct_read = esp_ptr_internal(dstc)
+            && esp_ptr_byte_accessible(dstc)
+            && ((uintptr_t) dstc + dst_mid_off) % 4 == 0;
+#else
+    bool direct_read = true;
+#endif
     if (mid_size > 0) {
         uint32_t mid_remaining = mid_size;
         uint32_t mid_read = 0;
         while (mid_remaining > 0) {
             uint32_t read_size = MIN(mid_remaining, MAX_READ_CHUNK);
-            rc = esp_rom_spiflash_read(src + src_mid_off + mid_read, (uint32_t *) (dstc + dst_mid_off + mid_read), read_size);
+            uint32_t read_buf[8];
+            uint8_t *read_dst_final = dstc + dst_mid_off + mid_read;
+            uint8_t *read_dst = read_dst_final;
+            if (!direct_read) {
+                read_size = MIN(read_size, sizeof(read_buf));
+                read_dst = (uint8_t *) read_buf;
+            }
+            rc = esp_rom_spiflash_read(src + src_mid_off + mid_read,
+                    (uint32_t *) read_dst, read_size);
             if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
                 goto out;
             }
             mid_remaining -= read_size;
             mid_read += read_size;
-            if (mid_remaining > 0) {
+            if (!direct_read) {
+                spi_flash_guard_end();
+                memcpy(read_dst_final, read_buf, read_size);
+                spi_flash_guard_start();
+            } else if (mid_remaining > 0) {
                 /* Drop guard momentarily, allows other tasks to preempt */
                 spi_flash_guard_end();
                 spi_flash_guard_start();
@@ -419,7 +440,13 @@ esp_err_t IRAM_ATTR spi_flash_read(size_t src, void *dstv, size_t size)
          * Note that the shift can be left (src_mid_off < dst_mid_off) or right.
          */
         if (src_mid_off != dst_mid_off) {
+            if (!direct_read) {
+                spi_flash_guard_end();
+            }
             memmove(dstc + src_mid_off, dstc + dst_mid_off, mid_size);
+            if (!direct_read) {
+                spi_flash_guard_start();
+            }
         }
     }
     if (pad_left_size > 0) {
@@ -429,7 +456,13 @@ esp_err_t IRAM_ATTR spi_flash_read(size_t src, void *dstv, size_t size)
             goto out;
         }
         COUNTER_ADD_BYTES(read, 4);
+        if (!direct_read) {
+            spi_flash_guard_end();
+        }
         memcpy(dstc, ((uint8_t *) &t) + (4 - pad_left_size), pad_left_size);
+        if (!direct_read) {
+            spi_flash_guard_start();
+        }
     }
     if (pad_right_size > 0) {
         uint32_t t[2];
@@ -439,7 +472,13 @@ esp_err_t IRAM_ATTR spi_flash_read(size_t src, void *dstv, size_t size)
             goto out;
         }
         COUNTER_ADD_BYTES(read, read_size);
+        if (!direct_read) {
+            spi_flash_guard_end();
+        }
         memcpy(dstc + pad_right_off, t, pad_right_size);
+        if (!direct_read) {
+            spi_flash_guard_start();
+        }
     }
 out:
     spi_flash_guard_end();

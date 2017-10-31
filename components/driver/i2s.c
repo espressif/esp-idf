@@ -344,6 +344,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
 
     i2s_stop(i2s_num);
 
+
     uint32_t cur_mode = 0;
     if (p_i2s_obj[i2s_num]->channel_num != ch) {
         p_i2s_obj[i2s_num]->channel_num = (ch == 2) ? 2 : 1;
@@ -418,7 +419,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
     }
 
     double mclk;
-    if (p_i2s_obj[i2s_num]->mode & I2S_MODE_DAC_BUILT_IN) {
+    if (p_i2s_obj[i2s_num]->mode & (I2S_MODE_DAC_BUILT_IN | I2S_MODE_ADC_BUILT_IN)) {
         //DAC uses bclk as sample clock, not WS. WS can be something arbitrary.
         //Rate as given to this function is the intended sample rate;
         //According to the TRM, WS clk equals to the sample rate, and bclk is double the speed of WS
@@ -682,6 +683,11 @@ esp_err_t i2s_stop(i2s_port_t i2s_num)
     I2S[i2s_num]->lc_conf.in_rst = 0;
     I2S[i2s_num]->lc_conf.out_rst = 1;
     I2S[i2s_num]->lc_conf.out_rst = 0;
+
+    I2S[i2s_num]->conf.tx_reset = 1;
+    I2S[i2s_num]->conf.tx_reset = 0;
+    I2S[i2s_num]->conf.rx_reset = 1;
+    I2S[i2s_num]->conf.rx_reset = 0;
     I2S_EXIT_CRITICAL();
     return 0;
 }
@@ -706,6 +712,13 @@ esp_err_t i2s_set_dac_mode(i2s_dac_mode_t dac_mode)
         dac_output_enable(DAC_CHANNEL_2);
     }
     return ESP_OK;
+}
+
+esp_err_t i2s_set_adc_mode(adc_unit_t adc_unit, adc1_channel_t adc_channel)
+{
+    I2S_CHECK((adc_unit < ADC_UNIT_2), "i2s ADC unit error, only support ADC1 for now", ESP_ERR_INVALID_ARG);
+    // For now, we only support SAR ADC1.
+    return adc_i2s_mode_init(adc_unit, adc_channel);
 }
 
 esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin)
@@ -823,10 +836,14 @@ esp_err_t i2s_set_sample_rates(i2s_port_t i2s_num, uint32_t rate)
     I2S_CHECK((p_i2s_obj[i2s_num]->bytes_per_sample > 0), "bits_per_sample not set", ESP_ERR_INVALID_ARG);
     return i2s_set_clk(i2s_num, rate, p_i2s_obj[i2s_num]->bits_per_sample, p_i2s_obj[i2s_num]->channel_num);
 }
+
 static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_config)
 {
     I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
     I2S_CHECK((i2s_config), "param null", ESP_ERR_INVALID_ARG);
+    I2S_CHECK(!((i2s_config->mode & I2S_MODE_ADC_BUILT_IN) && (i2s_num != I2S_NUM_0)), "I2S ADC built-in only support on I2S0", ESP_ERR_INVALID_ARG);
+    I2S_CHECK(!((i2s_config->mode & I2S_MODE_DAC_BUILT_IN) && (i2s_num != I2S_NUM_0)), "I2S DAC built-in only support on I2S0", ESP_ERR_INVALID_ARG);
+    I2S_CHECK(!((i2s_config->mode & I2S_MODE_PDM) && (i2s_num != I2S_NUM_0)), "I2S DAC PDM only support on I2S0", ESP_ERR_INVALID_ARG);
 
     if (i2s_num == I2S_NUM_1) {
         periph_module_enable(PERIPH_I2S1_MODULE);
@@ -834,22 +851,26 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
         periph_module_enable(PERIPH_I2S0_MODULE);
     }
 
+    if(i2s_config->mode & I2S_MODE_ADC_BUILT_IN) {
+        //in ADC built-in mode, we need to call i2s_set_adc_mode to
+        //initialize the specific ADC channel.
+        //in the current stage, we only support ADC1 and single channel mode.
+        //In default data mode, the ADC data is in 12-bit resolution mode.
+        adc_power_on();
+    }
     // configure I2S data port interface.
     i2s_reset_fifo(i2s_num);
-
     //reset i2s
     I2S[i2s_num]->conf.tx_reset = 1;
     I2S[i2s_num]->conf.tx_reset = 0;
     I2S[i2s_num]->conf.rx_reset = 1;
     I2S[i2s_num]->conf.rx_reset = 0;
 
-
     //reset dma
     I2S[i2s_num]->lc_conf.in_rst = 1;
     I2S[i2s_num]->lc_conf.in_rst = 0;
     I2S[i2s_num]->lc_conf.out_rst = 1;
     I2S[i2s_num]->lc_conf.out_rst = 0;
-
 
     //Enable and configure DMA
     I2S[i2s_num]->lc_conf.check_owner = 0;
@@ -860,7 +881,6 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
     I2S[i2s_num]->lc_conf.out_no_restart_clr = 0;
     I2S[i2s_num]->lc_conf.indscr_burst_en = 0;
     I2S[i2s_num]->lc_conf.out_eof_mode = 1;
-
 
     I2S[i2s_num]->conf2.lcd_en = 0;
     I2S[i2s_num]->conf2.camera_en = 0;
@@ -905,9 +925,10 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
         }
     }
 
-    if (i2s_config->mode & I2S_MODE_DAC_BUILT_IN) {
+    if (i2s_config->mode & (I2S_MODE_DAC_BUILT_IN | I2S_MODE_ADC_BUILT_IN)) {
         I2S[i2s_num]->conf2.lcd_en = 1;
         I2S[i2s_num]->conf.tx_right_first = 1;
+        I2S[i2s_num]->conf2.camera_en = 0;
     }
 
     if (i2s_config->mode & I2S_MODE_PDM) {
@@ -1029,7 +1050,12 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
             return err;
         }
         i2s_stop(i2s_num);
-        i2s_param_config(i2s_num, i2s_config);
+        err = i2s_param_config(i2s_num, i2s_config);
+        if (err != ESP_OK) {
+            i2s_driver_uninstall(i2s_num);
+            ESP_LOGE(I2S_TAG, "I2S param configure error");
+            return err;
+        }
 
         if (i2s_queue) {
             p_i2s_obj[i2s_num]->i2s_queue = xQueueCreate(queue_size, sizeof(i2s_event_t));

@@ -26,6 +26,7 @@
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp_err.h"
+#include "esp_pm.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
@@ -60,6 +61,9 @@ typedef struct {
     QueueHandle_t trans_queue;
     QueueHandle_t ret_queue;
     int dma_chan;
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_handle_t pm_lock;
+#endif
 } spi_slave_t;
 
 static spi_slave_t *spihost[3];
@@ -106,6 +110,15 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
         //We're limited to non-DMA transfers: the SPI work registers can hold 64 bytes at most.
         spihost[host]->max_transfer_sz = 16 * 4;
     }
+#ifdef CONFIG_PM_ENABLE
+    esp_err_t err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "spi_slave",
+            &spihost[host]->pm_lock);
+    if (err != ESP_OK) {
+        goto nomem;
+    }
+    // Lock APB frequency while SPI slave driver is in use
+    esp_pm_lock_acquire(spihost[host]->pm_lock);
+#endif //CONFIG_PM_ENABLE
 
     //Create queues
     spihost[host]->trans_queue = xQueueCreate(slave_config->queue_size, sizeof(spi_slave_transaction_t *));
@@ -184,6 +197,12 @@ nomem:
         if (spihost[host]->ret_queue) vQueueDelete(spihost[host]->ret_queue);
         free(spihost[host]->dmadesc_tx);
         free(spihost[host]->dmadesc_rx);
+#ifdef CONFIG_PM_ENABLE
+        if (spihost[host]->pm_lock) {
+            esp_pm_lock_release(spihost[host]->pm_lock);
+            esp_pm_lock_delete(spihost[host]->pm_lock);
+        }
+#endif
     }
     free(spihost[host]);
     spihost[host] = NULL;
@@ -203,6 +222,10 @@ esp_err_t spi_slave_free(spi_host_device_t host)
     }
     free(spihost[host]->dmadesc_tx);
     free(spihost[host]->dmadesc_rx);
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_release(spihost[host]->pm_lock);
+    esp_pm_lock_delete(spihost[host]->pm_lock);
+#endif //CONFIG_PM_ENABLE
     free(spihost[host]);
     spihost[host] = NULL;
     spicommon_periph_free(host);

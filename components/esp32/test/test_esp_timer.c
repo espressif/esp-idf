@@ -3,7 +3,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include "unity.h"
-#include "../esp_timer.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -103,7 +103,7 @@ TEST_CASE("esp_timer produces correct delay", "[esp_timer]")
     esp_timer_delete(timer1);
 }
 
-TEST_CASE("periodic ets_timer produces correct delays", "[esp_timer]")
+TEST_CASE("periodic esp_timer produces correct delays", "[esp_timer]")
 {
     // no, we can't make this a const size_t (§6.7.5.2)
 #define NUM_INTERVALS 16
@@ -113,6 +113,7 @@ TEST_CASE("periodic ets_timer produces correct delays", "[esp_timer]")
         size_t cur_interval;
         int intervals[NUM_INTERVALS];
         int64_t t_start;
+        SemaphoreHandle_t done;
     } test_args_t;
 
     void timer_func(void* arg)
@@ -128,6 +129,7 @@ TEST_CASE("periodic ets_timer produces correct delays", "[esp_timer]")
         if (p_args->cur_interval == NUM_INTERVALS) {
             printf("done\n");
             TEST_ESP_OK(esp_timer_stop(p_args->timer));
+            xSemaphoreGive(p_args->done);
         }
     }
 
@@ -137,15 +139,16 @@ TEST_CASE("periodic ets_timer produces correct delays", "[esp_timer]")
     esp_timer_create_args_t create_args = {
             .callback = &timer_func,
             .arg = &args,
-            .name = "timer1"
+            .name = "timer1",
     };
     TEST_ESP_OK(esp_timer_create(&create_args, &timer1));
     ref_clock_init();
     args.timer = timer1;
     args.t_start = ref_clock_get();
+    args.done = xSemaphoreCreateBinary();
     TEST_ESP_OK(esp_timer_start_periodic(timer1, delay_ms * 1000));
 
-    vTaskDelay(delay_ms * (NUM_INTERVALS + 1));
+    TEST_ASSERT(xSemaphoreTake(args.done, delay_ms * NUM_INTERVALS * 2));
 
     TEST_ASSERT_EQUAL_UINT32(NUM_INTERVALS, args.cur_interval);
     for (size_t i = 0; i < NUM_INTERVALS; ++i) {
@@ -155,6 +158,7 @@ TEST_CASE("periodic ets_timer produces correct delays", "[esp_timer]")
     TEST_ESP_OK( esp_timer_dump(stdout) );
 
     TEST_ESP_OK( esp_timer_delete(timer1) );
+    vSemaphoreDelete(args.done);
 #undef NUM_INTERVALS
 }
 
@@ -369,4 +373,9 @@ TEST_CASE("esp_timer_get_time returns monotonic values", "[esp_timer][ignore]")
     vSemaphoreDelete(done_1);
     vSemaphoreDelete(done_2);
     ref_clock_deinit();
+}
+
+TEST_CASE("Can dump esp_timer stats", "[esp_timer]")
+{
+    esp_timer_dump(stdout);
 }

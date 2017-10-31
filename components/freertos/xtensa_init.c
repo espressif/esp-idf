@@ -34,31 +34,21 @@ that are implemented in C.
 #endif
 
 #include    "xtensa_rtos.h"
+#include    "esp_clk.h"
 
 #ifdef XT_RTOS_TIMER_INT
 
 unsigned _xt_tick_divisor = 0;  /* cached number of cycles per tick */
 
-/*
-Compute and initialize at run-time the tick divisor (the number of 
-processor clock cycles in an RTOS tick, used to set the tick timer).
-Called when the processor clock frequency is not known at compile-time.
-*/
 void _xt_tick_divisor_init(void)
 {
-#ifdef XT_CLOCK_FREQ
+    _xt_tick_divisor = esp_clk_cpu_freq() / XT_TICK_PER_SEC;
+}
 
-    _xt_tick_divisor = (XT_CLOCK_FREQ / XT_TICK_PER_SEC);
-
-#else
-
-    #ifdef XT_BOARD
-    _xt_tick_divisor = xtbsp_clock_freq_hz() / XT_TICK_PER_SEC;
-    #else
-    #error "No way to obtain processor clock frequency"
-    #endif  /* XT_BOARD */
-
-#endif /* XT_CLOCK_FREQ */
+/* Deprecated, to be removed */
+int xt_clock_freq(void)
+{
+    return esp_clk_cpu_freq();
 }
 
 #endif /* XT_RTOS_TIMER_INT */

@@ -106,7 +106,8 @@ typedef struct {
     uart_parity_t parity;               /*!< UART parity mode*/
     uart_stop_bits_t stop_bits;         /*!< UART stop bits*/
     uart_hw_flowcontrol_t flow_ctrl;    /*!< UART HW flow control mode (cts/rts)*/
-    uint8_t rx_flow_ctrl_thresh ;       /*!< UART HW RTS threshold*/
+    uint8_t rx_flow_ctrl_thresh;        /*!< UART HW RTS threshold*/
+    bool use_ref_tick;                  /*!< Set to true if UART should be clocked from REF_TICK */
 } uart_config_t;
 
 /**
@@ -458,6 +459,19 @@ esp_err_t uart_set_rts(uart_port_t uart_num, int level);
  *     - ESP_FAIL Parameter error
  */
 esp_err_t uart_set_dtr(uart_port_t uart_num, int level);
+
+/**
+ * @brief Set UART idle interval after tx FIFO is empty
+ *
+ * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param idle_num idle interval after tx FIFO is empty(unit: the time it takes to send one bit
+ *        under current baudrate)
+ *
+ * @return
+ *     - ESP_OK   Success
+ *     - ESP_FAIL Parameter error
+ */
+esp_err_t uart_set_tx_idle_num(uart_port_t uart_num, uint16_t idle_num);
 
 /**
 * @brief Set UART configuration parameters.

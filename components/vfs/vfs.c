@@ -16,6 +16,10 @@
 #include <string.h>
 #include <assert.h>
 #include <sys/errno.h>
+#include <sys/fcntl.h>
+#include <sys/ioctl.h>
+#include <sys/unistd.h>
+#include <dirent.h>
 #include "esp_vfs.h"
 #include "esp_log.h"
 
@@ -54,7 +58,7 @@ typedef struct vfs_entry_ {
 static vfs_entry_t* s_vfs[VFS_MAX_COUNT] = { 0 };
 static size_t s_vfs_count = 0;
 
-static esp_err_t esp_vfs_register_common(const char* base_path, size_t len, const esp_vfs_t* vfs, void* ctx, unsigned *p_minimum_fd, unsigned *p_maximum_fd)
+static esp_err_t esp_vfs_register_common(const char* base_path, size_t len, const esp_vfs_t* vfs, void* ctx, int *p_minimum_fd, int *p_maximum_fd)
 {
     if (len != LEN_PATH_PREFIX_IGNORED) {
         if ((len != 0 && len < 2) || (len > ESP_VFS_PATH_MAX)) {
@@ -107,7 +111,7 @@ esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ct
     return esp_vfs_register_common(base_path, strlen(base_path), vfs, ctx, NULL, NULL);
 }
 
-esp_err_t esp_vfs_register_socket_space(const esp_vfs_t *vfs, void *ctx, unsigned *p_min_fd, unsigned *p_max_fd)
+esp_err_t esp_vfs_register_socket_space(const esp_vfs_t *vfs, void *ctx, int *p_min_fd, int *p_max_fd)
 {
     return esp_vfs_register_common("", LEN_PATH_PREFIX_IGNORED, vfs, ctx, p_min_fd, p_max_fd);
 }

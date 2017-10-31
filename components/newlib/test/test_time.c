@@ -11,6 +11,8 @@
 #include "sdkconfig.h"
 
 
+#if portNUM_PROCESSORS == 2
+
 // https://github.com/espressif/arduino-esp32/issues/120
 TEST_CASE("Reading RTC registers on APP CPU doesn't affect clock", "[newlib]")
 {
@@ -48,3 +50,4 @@ TEST_CASE("Reading RTC registers on APP CPU doesn't affect clock", "[newlib]")
     TEST_ASSERT_TRUE(xSemaphoreTake(done, 5000 / portTICK_RATE_MS));
 }
 
+#endif // portNUM_PROCESSORS == 2

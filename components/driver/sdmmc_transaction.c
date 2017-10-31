@@ -15,6 +15,7 @@
 #include <string.h>
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_pm.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
@@ -67,6 +68,9 @@ static sdmmc_desc_t s_dma_desc[SDMMC_DMA_DESC_CNT];
 static sdmmc_transfer_state_t s_cur_transfer = { 0 };
 static QueueHandle_t s_request_mutex;
 static bool s_is_app_cmd;   // This flag is set if the next command is an APP command
+#ifdef CONFIG_PM_ENABLE
+static esp_pm_lock_handle_t s_pm_lock;
+#endif
 
 static esp_err_t handle_idle_state_events();
 static sdmmc_hw_cmd_t make_hw_cmd(sdmmc_command_t* cmd);
@@ -83,12 +87,24 @@ esp_err_t sdmmc_host_transaction_handler_init()
         return ESP_ERR_NO_MEM;
     }
     s_is_app_cmd = false;
+#ifdef CONFIG_PM_ENABLE
+    esp_err_t err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "sdmmc", &s_pm_lock);
+    if (err != ESP_OK) {
+        vSemaphoreDelete(s_request_mutex);
+        s_request_mutex = NULL;
+        return err;
+    }
+#endif
     return ESP_OK;
 }
 
 void sdmmc_host_transaction_handler_deinit()
 {
     assert(s_request_mutex);
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_delete(s_pm_lock);
+    s_pm_lock = NULL;
+#endif
     vSemaphoreDelete(s_request_mutex);
     s_request_mutex = NULL;
 }
@@ -96,6 +112,9 @@ void sdmmc_host_transaction_handler_deinit()
 esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
 {
     xSemaphoreTake(s_request_mutex, portMAX_DELAY);
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_acquire(s_pm_lock);
+#endif
     // dispose of any events which happened asynchronously
     handle_idle_state_events();
     // convert cmdinfo to hardware register value
@@ -141,6 +160,9 @@ esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
         }
     }
     s_is_app_cmd = (ret == ESP_OK && cmdinfo->opcode == MMC_APP_CMD);
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_release(s_pm_lock);
+#endif
     xSemaphoreGive(s_request_mutex);
     return ret;
 }

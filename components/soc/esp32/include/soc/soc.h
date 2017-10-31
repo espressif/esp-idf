@@ -266,6 +266,7 @@
 #define  CPU_CLK_FREQ_ROM                            APB_CLK_FREQ_ROM
 #define  CPU_CLK_FREQ                                APB_CLK_FREQ
 #define  APB_CLK_FREQ                                ( 80*1000000 )       //unit: Hz
+#define  REF_CLK_FREQ                                ( 1000000 )
 #define  UART_CLK_FREQ                               APB_CLK_FREQ
 #define  WDT_CLK_FREQ                                APB_CLK_FREQ
 #define  TIMER_CLK_FREQ                              (80000000>>4) //80MHz divided by 16
@@ -296,11 +297,12 @@
 #define SOC_DMA_HIGH 0x40000000
 
 // Region of memory that is byte-accessible. See esp_ptr_byte_accessible().
-#define SOC_BYTE_ACCESSIBLE_LOW     0x3FFAE000
+#define SOC_BYTE_ACCESSIBLE_LOW     0x3FF90000
 #define SOC_BYTE_ACCESSIBLE_HIGH    0x40000000
 
-//Region of memory that is internal, as in on the same silicon die as the ESP32 CPUs (excluding RTC data region, that's checked separately.) See esp_ptr_internal().
-#define SOC_MEM_INTERNAL_LOW        0x3F400000
+//Region of memory that is internal, as in on the same silicon die as the ESP32 CPUs
+//(excluding RTC data region, that's checked separately.) See esp_ptr_internal().
+#define SOC_MEM_INTERNAL_LOW        0x3FF90000
 #define SOC_MEM_INTERNAL_HIGH       0x400C2000
 
 

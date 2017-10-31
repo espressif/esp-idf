@@ -101,8 +101,8 @@ static bool hal_open(const hci_hal_callbacks_t *upper_callbacks)
 
     hci_hal_env_init(HCI_HAL_SERIAL_BUFFER_SIZE, SIZE_MAX);
 
-    xHciH4Queue = xQueueCreate(HCI_H4_QUEUE_NUM, sizeof(BtTaskEvt_t));
-    xTaskCreatePinnedToCore(hci_hal_h4_rx_handler, HCI_H4_TASK_NAME, HCI_H4_TASK_STACK_SIZE, NULL, HCI_H4_TASK_PRIO, &xHciH4TaskHandle, 0);
+    xHciH4Queue = xQueueCreate(HCI_H4_QUEUE_LEN, sizeof(BtTaskEvt_t));
+    xTaskCreatePinnedToCore(hci_hal_h4_rx_handler, HCI_H4_TASK_NAME, HCI_H4_TASK_STACK_SIZE, NULL, HCI_H4_TASK_PRIO, &xHciH4TaskHandle, HCI_H4_TASK_PINNED_TO_CORE);
 
     //register vhci host cb
     esp_vhci_host_register_callback(&vhci_host_cb);

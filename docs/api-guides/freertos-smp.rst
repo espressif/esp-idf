@@ -55,6 +55,10 @@ automatically free memory used by Thread Local Storage Pointers during the task
 deletion. Call ``vTaskSetThreadLocalStoragePointerAndDelCallback()``
 to set Thread Local Storage Pointers and deletion callbacks.
 
+:ref:`FreeRTOS Hooks<hooks_api_reference>`: Vanilla FreeRTOS Hooks were not designed for SMP.
+ESP-IDF provides its own Idle and Tick Hooks in addition to the Vanilla FreeRTOS
+hooks. For full details, see the ESP-IDF Hooks API Reference.
+
 :ref:`esp-idf-freertos-configuration`: Several aspects of ESP-IDF FreeRTOS can be 
 configured using ``make meunconfig`` such as running ESP-IDF in Unicore Mode,
 or configuring the number of Thread Local Storage Pointers each task will have.

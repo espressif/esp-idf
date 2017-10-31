@@ -50,7 +50,7 @@ TEST_CASE("Test for per-task non-reentrant tasks", "[freertos]")
     error = 0;
     xTaskCreatePinnedToCore(tskTestRand, "tsk1", 2048, (void *)100, 3, NULL, 0);
     xTaskCreatePinnedToCore(tskTestRand, "tsk2", 2048, (void *)200, 3, NULL, 0);
-    xTaskCreatePinnedToCore(tskTestRand, "tsk3", 2048, (void *)300, 3, NULL, 1);
+    xTaskCreatePinnedToCore(tskTestRand, "tsk3", 2048, (void *)300, 3, NULL, portNUM_PROCESSORS - 1);
     xTaskCreatePinnedToCore(tskTestRand, "tsk4", 2048, (void *)400, 3, NULL, 0);
     while (done != 4) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);

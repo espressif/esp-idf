@@ -205,7 +205,7 @@ esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ct
  * @return  ESP_OK if successful, ESP_ERR_NO_MEM if too many VFSes are
  *          registered.
  */
-esp_err_t esp_vfs_register_socket_space(const esp_vfs_t *vfs, void *ctx, unsigned *p_min_fd, unsigned *p_max_fd);
+esp_err_t esp_vfs_register_socket_space(const esp_vfs_t *vfs, void *ctx, int *p_min_fd, int *p_max_fd);
 
 /**
  * Unregister a virtual filesystem for given path prefix

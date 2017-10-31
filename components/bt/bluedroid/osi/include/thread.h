@@ -57,26 +57,39 @@ typedef enum {
     SIG_BTU_NUM,
 } SIG_BTU_t;
 
+#define TASK_PINNED_TO_CORE             (CONFIG_BLUEDROID_PINNED_TO_CORE < portNUM_PROCESSORS ? CONFIG_BLUEDROID_PINNED_TO_CORE : tskNO_AFFINITY)
+
+#define HCI_HOST_TASK_PINNED_TO_CORE    (TASK_PINNED_TO_CORE)
 #define HCI_HOST_TASK_STACK_SIZE        (2048 + BT_TASK_EXTRA_STACK_SIZE)
 #define HCI_HOST_TASK_PRIO              (configMAX_PRIORITIES - 3)
 #define HCI_HOST_TASK_NAME              "hciHostT"
-#define HCI_HOST_QUEUE_NUM              40
+#define HCI_HOST_QUEUE_LEN              40
 
+#define HCI_H4_TASK_PINNED_TO_CORE      (TASK_PINNED_TO_CORE)
 #define HCI_H4_TASK_STACK_SIZE          (2048 + BT_TASK_EXTRA_STACK_SIZE)
 #define HCI_H4_TASK_PRIO                (configMAX_PRIORITIES - 4)
 #define HCI_H4_TASK_NAME                "hciH4T"
-#define HCI_H4_QUEUE_NUM                60
+#define HCI_H4_QUEUE_LEN                60
 
+#define BTU_TASK_PINNED_TO_CORE         (TASK_PINNED_TO_CORE)
 #define BTU_TASK_STACK_SIZE             (4096 + BT_TASK_EXTRA_STACK_SIZE)
 #define BTU_TASK_PRIO                   (configMAX_PRIORITIES - 5)
 #define BTU_TASK_NAME                   "btuT"
-#define BTU_QUEUE_NUM                   50
+#define BTU_QUEUE_LEN                   50
 
+#define BTC_TASK_PINNED_TO_CORE         (TASK_PINNED_TO_CORE)
 #define BTC_TASK_STACK_SIZE             (CONFIG_BTC_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE)	//by menuconfig
 #define BTC_TASK_NAME                   "btcT"
 #define BTC_TASK_PRIO                   (configMAX_PRIORITIES - 6)
-#define BTC_TASK_QUEUE_NUM              60
+#define BTC_TASK_QUEUE_LEN              60
 
+#define BTC_MEDIA_TASK_PINNED_TO_CORE   (TASK_PINNED_TO_CORE)
+#define BTC_MEDIA_TASK_STACK_SIZE       (CONFIG_BTC_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE)
+#define BTC_MEDIA_TASK_NAME             "BtcMediaT"
+#define BTC_MEDIA_TASK_PRIO             (configMAX_PRIORITIES - 3)
+#define BTC_MEDIA_DATA_QUEUE_LEN        (1)
+#define BTC_MEDIA_CTRL_QUEUE_LEN        (5)
+#define BTC_MEDIA_TASK_QUEUE_SET_LEN    (BTC_MEDIA_DATA_QUEUE_LEN + BTC_MEDIA_CTRL_QUEUE_LEN)
 
 #define TASK_POST_NON_BLOCKING          (0)
 #define TASK_POST_BLOCKING              (portMAX_DELAY)

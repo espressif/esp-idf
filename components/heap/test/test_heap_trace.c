@@ -8,12 +8,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "esp_heap_trace.h"
 #include "sdkconfig.h"
 #include "unity.h"
 
 #ifdef CONFIG_HEAP_TRACING
 // only compile in heap tracing tests if tracing is enabled
+
+#include "esp_heap_trace.h"
 
 TEST_CASE("heap trace leak check", "[heap]")
 {

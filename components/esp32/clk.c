@@ -15,10 +15,12 @@
 #include <stdint.h>
 #include <sys/cdefs.h>
 #include <sys/time.h>
+#include <sys/param.h>
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_clk.h"
+#include "esp_clk_internal.h"
 #include "rom/ets_sys.h"
 #include "rom/uart.h"
 #include "rom/rtc.h"
@@ -40,14 +42,13 @@
 
 static void select_rtc_slow_clk(rtc_slow_freq_t slow_clk);
 
+// g_ticks_us defined in ROMs for PRO and APP CPU
+extern uint32_t g_ticks_per_us_pro;
+extern uint32_t g_ticks_per_us_app;
+
 static const char* TAG = "clk";
-/*
- * This function is not exposed as an API at this point,
- * because FreeRTOS doesn't yet support dynamic changing of
- * CPU frequency. Also we need to implement hooks for
- * components which want to be notified of CPU frequency
- * changes.
- */
+
+
 void esp_clk_init(void)
 {
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
@@ -90,10 +91,19 @@ void esp_clk_init(void)
     XTHAL_SET_CCOUNT( XTHAL_GET_CCOUNT() * freq_after / freq_before );
 }
 
+int IRAM_ATTR esp_clk_cpu_freq(void)
+{
+    return g_ticks_per_us_pro * 1000000;
+}
+
+int IRAM_ATTR esp_clk_apb_freq(void)
+{
+    return MIN(g_ticks_per_us_pro, 80) * 1000000;
+}
+
 void IRAM_ATTR ets_update_cpu_frequency(uint32_t ticks_per_us)
 {
-    extern uint32_t g_ticks_per_us_pro;  // g_ticks_us defined in ROM for PRO CPU
-    extern uint32_t g_ticks_per_us_app;  // same defined for APP CPU
+    /* Update scale factors used by ets_delay_us */
     g_ticks_per_us_pro = ticks_per_us;
     g_ticks_per_us_app = ticks_per_us;
 }

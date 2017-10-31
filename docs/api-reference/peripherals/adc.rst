@@ -6,16 +6,28 @@ Overview
 
 ESP32 integrates two 12-bit SAR (`Successive Approximation Register <https://en.wikipedia.org/wiki/Successive_approximation_ADC>`_) ADCs (Analog to Digital Converters) and supports measurements on 18 channels (analog enabled pins). Some of these pins can be used to build a programmable gain amplifier which is used for the measurement of small analog signals.
 
-The ADC driver API currently supports ADC1 (9 channels, attached to GPIOs 32 - 39).
+The ADC driver API supports ADC1 (9 channels, attached to GPIOs 32 - 39), and ADC2 (10 channels, attached to GPIOs 0, 2, 4, 12 - 15 and 25 - 27).
+However, there're some restrictions for the application to use ADC2:
 
-API to support ADC2 is not available yet in ESP-IDF. The reason is that ADC2 is also used by Wi-Fi driver, and the application can only use ADC2 when Wi-Fi driver is not using it (and is not about to use it). This coordination mechanism is work in progress at the moment.
+1. The application can use ADC2 only when Wi-Fi driver is not started, since the ADC is also used by the Wi-Fi driver, which has higher priority.
+2. Some of the ADC2 pins are used as strapping pins (GPIO 0, 2, 15), so they cannot be used freely. For examples, for official Develop Kits:
+
+  - `ESP32 Core Board V2 / ESP32 DevKitC <http://esp-idf.readthedocs.io/en/latest/hw-reference/modules-and-boards.html#esp32-core-board-v2-esp32-devkitc>`_: GPIO 0 cannot be used due to external auto program circuits.
+  - `ESP-WROVER-KIT V3 <http://esp-idf.readthedocs.io/en/latest/hw-reference/modules-and-boards.html#esp-wrover-kit-v3>`_: GPIO 0, 2, 4 and 15 cannot be used due to external connections for different purposes.
 
 Configuration and Reading ADC
 -----------------------------
 
-Taking an ADC reading involves configuring the ADC with the desired precision and attenuation by calling functions :cpp:func:`adc1_config_width` and :cpp:func:`adc1_config_channel_atten`. Configuration is done per channel, see :cpp:type:`adc1_channel_t`, set as a parameter of above functions.
+The ADC should be configured before reading is taken.
 
-Then it is possible to read ADC conversion result with :cpp:func:`adc1_get_raw`.
+ - For ADC1, configure desired precision and attenuation by calling functions :cpp:func:`adc1_config_width` and :cpp:func:`adc1_config_channel_atten`. 
+ - For ADC2, configure the attenuation by :cpp:func:`adc2_config_channel_atten`. The reading width of ADC2 is configured every time you take the reading.
+ 
+Attenuation configuration is done per channel, see :cpp:type:`adc1_channel_t` and :cpp:type:`adc2_channel_t`, set as a parameter of above functions.
+
+Then it is possible to read ADC conversion result with :cpp:func:`adc1_get_raw` and :cpp:func:`adc2_get_raw`. Reading width of ADC2 should be set as a parameter of :cpp:func:`adc2_get_raw` instead of in the configuration functions.
+
+.. note:: Since the ADC2 is shared with the WIFI module, which has higher priority, reading operation of :cpp:func:`adc2_get_raw` will fail between :cpp:func:`esp_wifi_start()` and :cpp:func:`esp_wifi_stop()`. Use the return code to see whether the reading is successful.
 
 It is also possible to read the internal hall effect sensor via ADC1 by calling dedicated function :cpp:func:`hall_sensor_read`. Note that even the hall sensor is internal to ESP32, reading from it uses channels 0 and 3 of ADC1 (GPIO 36 and 39). Do not connect anything else to these pins and do not change their configuration. Otherwise it may affect the measurement of low value signal from the sesnor.
 
@@ -32,11 +44,31 @@ Reading voltage on ADC1 channel 0 (GPIO 36)::
 
     ...
 
-        adc1_config_width(ADC_WIDTH_12Bit);
-        adc1_config_channel_atten(ADC1_CHANNEL_0,ADC_ATTEN_0db);
+        adc1_config_width(ADC_WIDTH_BIT_12);
+        adc1_config_channel_atten(ADC1_CHANNEL_0,ADC_ATTEN_DB_0);
         int val = adc1_get_raw(ADC1_CHANNEL_0);
 
 The input voltage in above example is from 0 to 1.1V (0 dB attenuation). The input range can be extended by setting higher attenuation, see :cpp:type:`adc_atten_t`.
+An example using the ADC driver including calibration (discussed below) is available in esp-idf: :example:`peripherals/adc`
+
+Reading voltage on ADC2 channel 7 (GPIO 27)::
+
+    #include <driver/adc.h>
+
+    ...
+        
+        int read_raw;
+        adc2_config_channel_atten( ADC2_CHANNEL_7, ADC_ATTEN_0db );
+
+        esp_err_t r = adc2_get_raw( ADC2_CHANNEL_7, ADC_WIDTH_12Bit, &read_raw);
+        if ( r == ESP_OK ) {
+            printf("%d\n", read_raw );
+        } else if ( r == ESP_ERR_TIMEOUT ) {
+            printf("ADC2 used by Wi-Fi.\n");
+        }
+
+The reading may fail due to collision with Wi-Fi, should check it.
+An example using the ADC2 driver to read the output of DAC is available in esp-idf: :example:`peripherals/adc2`
 
 Reading the internal hall effect sensor::
 
@@ -44,14 +76,12 @@ Reading the internal hall effect sensor::
 
     ...
 
-        adc1_config_width(ADC_WIDTH_12Bit);
+        adc1_config_width(ADC_WIDTH_BIT_12);
         int val = hall_sensor_read();
 
 
 
 The value read in both these examples is 12 bits wide (range 0-4095).
-
-An example of using the ADC driver including calibration (discussed below) is available in esp-idf: :example:`peripherals/adc`
 
 .. _adc-api-adc-calibration:
 
@@ -81,7 +111,7 @@ Reading the ADC and obtaining a result in mV::
         
         // Calculate ADC characteristics i.e. gain and offset factors
         esp_adc_cal_characteristics_t characteristics;
-        esp_adc_cal_get_characteristics(V_REF, ADC_ATTEN_11db, ADC_WIDTH_12Bit, &characteristics);
+        esp_adc_cal_get_characteristics(V_REF, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, &characteristics);
         
         // Read ADC and obtain result in mV
         uint32_t voltage = adc1_to_voltage(ADC1_CHANNEL_6, &characteristics);

@@ -37,6 +37,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <sys/fcntl.h>
+#include <sys/ioctl.h>
 #include "esp_task.h"
 #include "esp_system.h"
 #include "sdkconfig.h"
@@ -271,6 +272,9 @@
  * transport.
  */
 #define LWIP_DNS                        1
+
+#define DNS_MAX_SERVERS                 3
+#define DNS_FALLBACK_SERVER_INDEX        (DNS_MAX_SERVERS - 1)
 
 /*
    ---------------------------------

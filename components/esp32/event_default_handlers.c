@@ -341,7 +341,7 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
                    MAC2STR(ap_probereqrecved->mac));
         break;
     }
-    case SYSTEM_EVENT_AP_STA_GOT_IP6: {
+    case SYSTEM_EVENT_GOT_IP6: {
         ip6_addr_t *addr = &event->event_info.got_ip6.ip6_info.ip;
         ESP_LOGD(TAG, "SYSTEM_EVENT_AP_STA_GOT_IP6 address %04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x",
                  IP6_ADDR_BLOCK1(addr),
