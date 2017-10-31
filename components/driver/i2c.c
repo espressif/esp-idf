@@ -1132,7 +1132,7 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
     // Wait event bits
     EventBits_t uxBits;
     while (1) {
-        TickType_t wait_time = xTaskGetTickCounter();
+        TickType_t wait_time = xTaskGetTickCount();
         if(wait_time-ticks_start>ticks_to_wait){// out of time
             wait_time = I2C_CMD_ALIVE_INTERVAL;
         }
