@@ -48,6 +48,7 @@ extern "C" {
 #define ESP_ERR_ESPNOW_NOT_FOUND    (ESP_ERR_ESPNOW_BASE + 4) /*!< ESPNOW peer is not found */
 #define ESP_ERR_ESPNOW_INTERNAL     (ESP_ERR_ESPNOW_BASE + 5) /*!< Internal error */
 #define ESP_ERR_ESPNOW_EXIST        (ESP_ERR_ESPNOW_BASE + 6) /*!< ESPNOW peer has existed */
+#define ESP_ERR_ESPNOW_IF           (ESP_ERR_ESPNOW_BASE + 7) /*!< Interface error */
 
 #define ESP_NOW_ETH_ALEN             6         /*!< Length of ESPNOW peer MAC address */
 #define ESP_NOW_KEY_LEN              16        /*!< Length of ESPNOW peer local master key */
@@ -191,6 +192,7 @@ esp_err_t esp_now_unregister_send_cb(void);
   *          - ESP_ERR_ESPNOW_INTERNAL : internal error
   *          - ESP_ERR_ESPNOW_NO_MEM : out of memory
   *          - ESP_ERR_ESPNOW_NOT_FOUND : peer is not found
+  *          - ESP_ERR_ESPNOW_IF : current WiFi interface doesn't match that of peer
   */
 esp_err_t esp_now_send(const uint8_t *peer_addr, const uint8_t *data, size_t len);
 
