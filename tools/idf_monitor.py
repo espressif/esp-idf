@@ -134,6 +134,14 @@ class ConsoleReader(StoppableThread):
         super(ConsoleReader, self).__init__()
         self.console = console
         self.event_queue = event_queue
+        self.posix_is_wsl = False
+        if os.name == 'posix':
+            try:
+                with open('/proc/version', 'r') as pv:
+                    if 'microsoft' in pv.read().lower():
+                        self.posix_is_wsl = True
+            except:
+                pass
 
     def run(self):
         self.console.setup()
@@ -150,6 +158,19 @@ class ConsoleReader(StoppableThread):
                             time.sleep(0.1)
                         if not self.alive:
                             break
+                    elif self.posix_is_wsl:
+                        # similar for WSL
+                        import fcntl
+                        import termios
+                        import array
+                        avail = array.array('I', [0])
+                        while self.alive:
+                            fcntl.ioctl(self.console.fd, termios.TIOCINQ, avail, True)
+                            if avail[0] > 0:
+                                break
+                            time.sleep(0.1)
+                        if not self.alive:
+                            break
                     c = self.console.getkey()
                 except KeyboardInterrupt:
                     c = '\x03'
@@ -159,7 +180,7 @@ class ConsoleReader(StoppableThread):
             self.console.cleanup()
 
     def _cancel(self):
-        if os.name == 'posix':
+        if os.name == 'posix' and not self.posix_is_wsl:
             # this is the way cancel() is implemented in pyserial 3.3 or newer,
             # older pyserial (3.1+) has cancellation implemented via 'select',
             # which does not work when console sends an escape sequence response
@@ -169,7 +190,6 @@ class ConsoleReader(StoppableThread):
             # on Windows there is a different (also hacky) fix, applied above.
             #
             # note that TIOCSTI is not implemented in WSL / bash-on-Windows.
-            # TODO: introduce some workaround to make it work there.
             import fcntl, termios
             fcntl.ioctl(self.console.fd, termios.TIOCSTI, b'\0')
 
