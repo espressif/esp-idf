@@ -49,6 +49,8 @@ typedef enum {
     PERIPH_SDIO_SLAVE_MODULE,
     PERIPH_CAN_MODULE,
     PERIPH_EMAC_MODULE,
+    PERIPH_BT_MODULE,
+    PERIPH_WIFI_BT_COMMON_MODULE,
 } periph_module_t;
 
 /**
