@@ -184,11 +184,11 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
         server_if=param->connect.server_if;
         conn_id=param->connect.conn_id;
         esp_ble_gap_stop_advertising();
-        blufi_security_deinit();
         blufi_security_init();
         break;
     case ESP_BLUFI_EVENT_BLE_DISCONNECT:
         BLUFI_INFO("BLUFI ble disconnect\n");
+        blufi_security_deinit();
         esp_ble_gap_start_advertising(&example_adv_params);
         break;
     case ESP_BLUFI_EVENT_SET_WIFI_OPMODE:
