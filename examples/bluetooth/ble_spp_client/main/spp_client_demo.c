@@ -698,21 +698,17 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         esp_ble_gap_set_scan_params(&ble_scan_params);
         break;
     case ESP_GATTC_CONNECT_EVT:
-        if(p_data->connect.status != ESP_GATT_OK){
-            ESP_LOGI(GATTC_TAG, "connect fail, status = %d", p_data->connect.status);
-            break;
-        }
         spp_gattc_if = gattc_if;
         is_connect = true;
         spp_conn_id = p_data->connect.conn_id;
         memcpy(gl_profile_tab[PROFILE_APP_ID].remote_bda, p_data->connect.remote_bda, sizeof(esp_bd_addr_t));
-        ESP_LOGI(GATTC_TAG, "ESP_GATTC_CONNECT_EVT: conn_id=%d, gatt_if = %d, status =%d", spp_conn_id, gattc_if, p_data->connect.status);
+        ESP_LOGI(GATTC_TAG, "ESP_GATTC_CONNECT_EVT: conn_id=%d, gatt_if = %d", spp_conn_id, gattc_if);
         ESP_LOGI(GATTC_TAG, "REMOTE BDA:");
         esp_log_buffer_hex(GATTC_TAG, gl_profile_tab[PROFILE_APP_ID].remote_bda, sizeof(esp_bd_addr_t));
         esp_ble_gattc_search_service(gattc_if, spp_conn_id, NULL);
         break;
     case ESP_GATTC_DISCONNECT_EVT:
-        ESP_LOGI(GATTC_TAG, "disconnect , status = %d", p_data->disconnect.status);
+        ESP_LOGI(GATTC_TAG, "disconnect");
         free_gattc_srv_db();
         esp_ble_gap_start_scanning(0xffff);
         break;

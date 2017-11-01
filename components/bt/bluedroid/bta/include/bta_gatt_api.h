@@ -367,14 +367,13 @@ typedef struct {
 } tBTA_GATTC_ENC_CMPL_CB;
 
 typedef struct {
-    tBTA_GATT_STATUS    status;
     UINT16              conn_id;
     tBTA_GATTC_IF       client_if;
     BD_ADDR             remote_bda;
 } tBTA_GATTC_CONNECT;
 
 typedef struct {
-    tBTA_GATT_STATUS    status;
+    tGATT_DISCONN_REASON reason;
     UINT16              conn_id;
     tBTA_GATTC_IF       client_if;
     BD_ADDR             remote_bda;
