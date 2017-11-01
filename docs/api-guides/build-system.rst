@@ -592,14 +592,7 @@ To override the name of this file, set the ``SDKCONFIG_DEFAULTS`` environment va
 Save flash arguments
 --------------------
 
-There're some scenarios that we want to flash the target board without IDF. For this case we want to save the built binaries, esptool.py and esptool write_flash arguments. It's simple to write a script to save binaries and esptool.py. For flash arguments, we can add the following code to application project makefile::
-
-    print_flash_cmd:
-        echo $(ESPTOOL_WRITE_FLASH_OPTIONS) $(ESPTOOL_ALL_FLASH_ARGS) | sed -e 's:'$(PWD)/build/'::g'
-
-the original ESPTOOL_ALL_FLASH_ARGS are absolute file name. Usually we want to save relative file name so we can move the bin folder to somewhere else. For this case we can use ``sed`` to convert to relative file name, like what we did in the example above.
-
-When running ``make print_flash_cmd``, it will print the flash arguments::
+There're some scenarios that we want to flash the target board without IDF. For this case we want to save the built binaries, esptool.py and esptool write_flash arguments. It's simple to write a script to save binaries and esptool.py. We can use command ``make print_flash_cmd``, it will print the flash arguments::
 
     --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 bootloader/bootloader.bin 0x10000 example_app.bin 0x8000 partition_table_unit_test_app.bin
 
