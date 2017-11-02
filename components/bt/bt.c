@@ -36,6 +36,7 @@
 #include "esp_log.h"
 #include "esp_pm.h"
 #include "esp_ipc.h"
+#include "driver/periph_ctrl.h"
 
 #if CONFIG_BT_ENABLED
 
@@ -482,6 +483,8 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     btdm_controller_mem_init();
 
+    periph_module_enable(PERIPH_BT_MODULE);
+
     btdm_cfg_mask = btdm_config_mask_load();
 
     ret = btdm_controller_init(btdm_cfg_mask, cfg);
@@ -506,6 +509,8 @@ esp_err_t esp_bt_controller_deinit(void)
     if (btdm_controller_deinit() != 0) {
         return ESP_ERR_NO_MEM;
     }
+
+    periph_module_disable(PERIPH_BT_MODULE);
 
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
 
