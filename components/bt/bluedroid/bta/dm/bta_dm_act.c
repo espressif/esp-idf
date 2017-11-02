@@ -4101,6 +4101,8 @@ void bta_dm_set_encryption (tBTA_DM_MSG *p_data)
                 == BTM_CMD_STARTED) {
             bta_dm_cb.device_list.peer_device[i].p_encrypt_cback = p_data->set_encryption.p_callback;
         }
+    }else{
+        APPL_TRACE_ERROR("%s, not find peer_bdaddr or peer_bdaddr connection state error", __func__);
     }
 }
 #endif  ///SMP_INCLUDED == TRUE
