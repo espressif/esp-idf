@@ -138,7 +138,9 @@ Application Examples
 
 Configure UART settings and install UART driver to read/write using UART1 interface: :example:`peripherals/uart_echo`.
 
-Demonstration how report report various communication events and how to use patern detection interrupts: :example:`peripherals/uart_events`.
+Demonstration of how to report various communication events and how to use patern detection interrupts: :example:`peripherals/uart_events`.
+
+Transmitting and receiveing with the same UART in two separate FreeRTOS tasks: :example:`peripherals/uart_async_rxtxtasks`.
 
 
 API Reference
