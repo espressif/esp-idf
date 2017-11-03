@@ -96,7 +96,7 @@ The simplest way to use the partition table is to `make menuconfig` and choose o
 
 In both cases the factory app is flashed at offset 0x10000. If you `make partition_table` then it will print a summary of the partition table.
 
-For more details about partition tables and how to create custom variations, view the `docs/partition-tables.rst` file.
+For more details about partition tables and how to create custom variations, view the [`docs/api-guides/partition-tables.rst`](docs/api-guides/partition-tables.rst) file.
 
 ## Erasing Flash
 
