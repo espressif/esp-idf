@@ -62,7 +62,6 @@ typedef struct {
 } esp_pthread_mutex_t;
 
 
-static SemaphoreHandle_t s_once_mux = NULL;
 static SemaphoreHandle_t s_threads_mux = NULL;
 static portMUX_TYPE s_mutex_init_lock = portMUX_INITIALIZER_UNLOCKED;
 
@@ -74,13 +73,8 @@ static int IRAM_ATTR pthread_mutex_lock_internal(esp_pthread_mutex_t *mux, TickT
 esp_err_t esp_pthread_init(void)
 {
     vListInitialise((List_t *)&s_threads_list);
-    s_once_mux = xSemaphoreCreateRecursiveMutex();
-    if (s_once_mux == NULL) {
-        return ESP_ERR_NO_MEM;
-    }
     s_threads_mux = xSemaphoreCreateMutex();
     if (s_threads_mux == NULL) {
-        vSemaphoreDelete(s_once_mux);
         return ESP_ERR_NO_MEM;
     }
     return ESP_OK;
@@ -346,30 +340,18 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
         return EINVAL;
     }
 
-    TaskHandle_t cur_task = xTaskGetCurrentTaskHandle();
-    uint8_t do_execute = 0;
-    // do not take mutex if OS is not running yet
-    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED ||
-            // init_routine can call pthread_once for another objects, so use recursive mutex
-            // FIXME: behaviour is undefined if init_routine calls pthread_once for the same object in the current context
-            !cur_task || xSemaphoreTakeRecursive(s_once_mux, portMAX_DELAY) == pdTRUE)
-    {
-        if (!once_control->init_executed) {
-            do_execute = 1;
-            once_control->init_executed = 1;
-        }
-        if (cur_task) {
-            xSemaphoreGiveRecursive(s_once_mux);
-        }
-        if (do_execute) {
-            ESP_LOGV(TAG, "%s: call init_routine %p", __FUNCTION__, once_control);
-            init_routine();
-        }
+    // Check if once_control belongs to internal DRAM for uxPortCompare to succeed
+    if (!esp_ptr_internal(once_control)) {
+        ESP_LOGE(TAG, "%s: once_control should belong to internal DRAM region!", __FUNCTION__);
+        return EINVAL;
     }
-    else
-    {
-        ESP_LOGE(TAG, "%s: Failed to lock!", __FUNCTION__);
-        return EBUSY;
+
+    uint32_t res = 1;
+    uxPortCompareSet((uint32_t *) &once_control->init_executed, 0, &res);
+    // Check if compare and set was successful
+    if (res == 0) {
+        ESP_LOGV(TAG, "%s: call init_routine %p", __FUNCTION__, once_control);
+        init_routine();
     }
 
     return 0;
