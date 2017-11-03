@@ -45,6 +45,6 @@ Wrote updated pulse count to NVS:   405
 Entering deep sleep
 ```
 
-Note that in one case the pulse count captured by the ULP program is 6, even though the `edge_count_to_wake_up` variable is set to 10 by the main program. This shows that the ULP program keeps track of pulses while the main CPUs are starting up, so when pulses are sent rapidly it is possible to register more pulses between wake up and entry into app_main. 
+Note that in one case the pulse count captured by the ULP program is 6, even though the `edge_count_to_wake_up` variable is set to 10 by the main program. This shows that the ULP program keeps track of pulses while the main CPUs are starting up, so when pulses are sent rapidly it is possible to register more pulses between wake up and entry into app_main.
 
- 
+With the default configuration (20ms ULP wakeup period), average current consumption in deep sleep mode is 16uA.
