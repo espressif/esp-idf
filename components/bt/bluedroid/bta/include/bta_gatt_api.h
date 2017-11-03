@@ -522,6 +522,8 @@ typedef struct {
     UINT32              trans_id;
     UINT16              conn_id;
     tBTA_GATTS_REQ_DATA *p_data;
+    UINT16  data_len;
+    UINT8   *value;
 } tBTA_GATTS_REQ;
 
 typedef struct {

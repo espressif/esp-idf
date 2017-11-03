@@ -527,6 +527,11 @@ static void btc_gatts_cb_param_copy_free(btc_msg_t *msg, tBTA_GATTS *p_data)
             osi_free(p_data->req_data.p_data);
         }
         break;
+    case BTA_GATTS_CONF_EVT:
+        if (p_data && p_data->req_data.value){
+            osi_free(p_data->req_data.value);
+        }
+        break;
     default:
         break;
     }
@@ -787,6 +792,12 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         param.conf.conn_id = BTC_GATT_GET_CONN_ID(p_data->req_data.conn_id);
         param.conf.status = p_data->req_data.status;
 
+        if (p_data->req_data.status != ESP_GATT_OK && p_data->req_data.value){
+            param.conf.len = p_data->req_data.data_len;
+            param.conf.value = p_data->req_data.value;
+        }else{
+            param.conf.len = 0;
+        }
         btc_gatts_cb_to_app(ESP_GATTS_CONF_EVT, gatts_if, &param);
         break;
     case BTA_GATTS_CREATE_EVT:
