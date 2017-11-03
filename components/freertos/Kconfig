@@ -91,7 +91,7 @@ config FREERTOS_WATCHPOINT_END_OF_STACK
         This check only triggers if the stack overflow writes within 4 bytes of the end of the stack, rather than
         overshooting further, so it is worth combining this approach with one of the other stack overflow check methods.
 
-        When this watchpoint is hit, gdb will stop with a SIGTRAP message. When no OCD is attached, esp-idf
+        When this watchpoint is hit, gdb will stop with a SIGTRAP message. When no JTAG OCD is attached, esp-idf
         will panic on an unhandled debug exception.
 
 config FREERTOS_INTERRUPT_BACKTRACE
@@ -114,11 +114,8 @@ config FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
         FreeRTOS has the ability to store per-thread pointers in the task
         control block. This controls the number of pointers available.
 
-        Value 0 turns off this functionality.
-
-        If using the LWIP TCP/IP stack (with WiFi or Ethernet), this value must be at least 1. See the
-        LWIP_THREAD_LOCAL_STORAGE_INDEX config item in LWIP configuration to determine which thread-local-storage
-        pointer is reserved for LWIP.
+        This value must be at least 1. Index 0 is reserved for use by the pthreads API
+        thread-local-storage. Other indexes can be used for any desired purpose.
 
 choice FREERTOS_ASSERT
     prompt "FreeRTOS assertions"
@@ -145,20 +142,6 @@ config FREERTOS_ASSERT_DISABLE
         FreeRTOS configASSERT() will not be compiled into the binary.
 
 endchoice
-
-config FREERTOS_BREAK_ON_SCHEDULER_START_JTAG
-    bool "Stop program on scheduler start when JTAG/OCD is detected"
-    depends on ESP32_DEBUG_OCDAWARE
-    default n
-    help
-        If JTAG/OCD is connected, stop execution when the scheduler is started and the first
-        task is executed.
-
-menuconfig ENABLE_MEMORY_DEBUG
-    bool "Enable heap memory debug"
-    default n
-    help
-        Enable this option to show malloc heap block and memory crash detect
 
 config FREERTOS_IDLE_TASK_STACKSIZE
     int "Idle Task stack size"
@@ -291,6 +274,23 @@ config TIMER_QUEUE_LENGTH
         implementation, and cannot be accessed directly.
 
         For most uses the default value of 10 is OK.
+
+config FREERTOS_USE_TRACE_FACILITY
+    bool "Enable FreeRTOS trace facility"
+    default n
+    help
+        If enabled, configUSE_TRACE_FACILITY will be defined as 1 in FreeRTOS.
+        This will allow the usage of trace facility functions such as
+        uxTaskGetSystemState().
+
+config FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
+    bool "Enable FreeRTOS stats formatting functions"
+    depends on FREERTOS_USE_TRACE_FACILITY
+    default n
+    help
+        If enabled, configUSE_STATS_FORMATTING_FUNCTIONS will be defined as 1 in
+        FreeRTOS. This will allow the usage of stats formatting functions such 
+        as vTaskList().
 
 menuconfig FREERTOS_DEBUG_INTERNALS
     bool "Debug FreeRTOS internals"

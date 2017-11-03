@@ -1,0 +1,55 @@
+menu "Example Configuration"
+
+choice WIFI_MODE
+    prompt "WiFi mode"
+    default STATION_MODE
+    help
+        WiFi mode(station or softap).
+    
+config STATION_MODE
+    bool "Station"
+config SOFTAP_MODE
+    bool "Softap"
+endchoice
+      
+config ESPNOW_PMK
+    string "ESPNOW primary master key"
+    default "pmk1234567890123"
+    help
+        ESPNOW primary master for the example to use. The length of ESPNOW primary master must be 16 bytes.
+
+config ESPNOW_LMK
+    string "ESPNOW local master key"
+    default "lmk1234567890123"
+    help
+        ESPNOW local master for the example to use. The length of ESPNOW local master must be 16 bytes.
+        
+config ESPNOW_CHANNEL
+    int "Channel"
+    default 1
+    range 1 13
+    help
+        The channel on which sending and receiving ESPNOW data.
+
+config ESPNOW_SEND_COUNT
+    int "Send count"
+    default 100
+    range 1 65535
+    help
+        Total count of unicast ESPNOW data to be sent.
+        
+config ESPNOW_SEND_DELAY
+    int "Send delay"
+    default 1000
+    range 0 65535
+    help
+        Delay between sending two ESPNOW data, unit: ms.
+        
+config ESPNOW_SEND_LEN
+    int "Send len"
+    range 10 250
+    default 200
+    help
+        Length of ESPNOW data to be sent, unit: byte.
+
+endmenu

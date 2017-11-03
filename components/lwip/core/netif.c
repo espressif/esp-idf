@@ -369,6 +369,14 @@ netif_remove(struct netif *netif)
     netif_set_down(netif);
   }
 
+#if LWIP_DHCP
+  /* netif not under DHCP control by default */
+  if (netif->dhcp) {
+      free(netif->dhcp);
+      netif->dhcp = NULL;
+  }
+#endif /* LWIP_DHCP */
+
   mib2_remove_ip4(netif);
 
   /* this netif is default? */

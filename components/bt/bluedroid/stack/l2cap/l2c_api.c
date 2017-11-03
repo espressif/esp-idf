@@ -1293,6 +1293,309 @@ UINT8 L2CA_GetChnlFcrMode (UINT16 lcid)
 
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
 
+/*******************************************************************************
+**
+** Function         L2CA_RegisterLECoc
+**
+** Description      Other layers call this function to register for L2CAP
+**                  Connection Oriented Channel.
+**
+** Returns          PSM to use or zero if error. Typically, the PSM returned
+**                  is the same as was passed in, but for an outgoing-only
+**                  connection to a dynamic PSM, a "virtual" PSM is returned
+**                  and should be used in the calls to L2CA_ConnectLECocReq()
+**                  and L2CA_DeregisterLECoc()
+**
+*******************************************************************************/
+UINT16 L2CA_RegisterLECoc(UINT16 psm, tL2CAP_APPL_INFO *p_cb_info)
+{
+    L2CAP_TRACE_API("%s called for LE PSM: 0x%04x", __func__, psm);
+
+    /* Verify that the required callback info has been filled in
+    **      Note:  Connection callbacks are required but not checked
+    **             for here because it is possible to be only a client
+    **             or only a server.
+    */
+    if ((!p_cb_info->pL2CA_DataInd_Cb)
+     || (!p_cb_info->pL2CA_DisconnectInd_Cb))
+    {
+        L2CAP_TRACE_ERROR("%s No cb registering BLE PSM: 0x%04x", __func__, psm);
+        return 0;
+    }
+
+    /* Verify PSM is valid */
+    if (!L2C_IS_VALID_LE_PSM(psm))
+    {
+        L2CAP_TRACE_ERROR("%s Invalid BLE PSM value, PSM: 0x%04x", __func__, psm);
+        return 0;
+    }
+
+    tL2C_RCB    *p_rcb;
+    UINT16      vpsm = psm;
+
+    /* Check if this is a registration for an outgoing-only connection to */
+    /* a dynamic PSM. If so, allocate a "virtual" PSM for the app to use. */
+    if ((psm >= 0x0080) && (p_cb_info->pL2CA_ConnectInd_Cb == NULL))
+    {
+        for (vpsm = 0x0080; vpsm < 0x0100; vpsm++)
+        {
+            p_rcb = l2cu_find_ble_rcb_by_psm(vpsm);
+            if (p_rcb == NULL)
+                break;
+        }
+
+        L2CAP_TRACE_API("%s Real PSM: 0x%04x  Virtual PSM: 0x%04x", __func__, psm, vpsm);
+    }
+
+    /* If registration block already there, just overwrite it */
+    p_rcb = l2cu_find_ble_rcb_by_psm(vpsm);
+    if (p_rcb == NULL)
+    {
+        p_rcb = l2cu_allocate_ble_rcb(vpsm);
+        if (p_rcb == NULL)
+        {
+            L2CAP_TRACE_WARNING("%s No BLE RCB available, PSM: 0x%04x  vPSM: 0x%04x",
+                  __func__, psm, vpsm);
+            return 0;
+        }
+    }
+
+    p_rcb->api      = *p_cb_info;
+    p_rcb->real_psm = psm;
+
+    return vpsm;
+}
+
+/*******************************************************************************
+**
+** Function         L2CA_DeregisterLECoc
+**
+** Description      Other layers call this function to de-register for L2CAP
+**                  Connection Oriented Channel.
+**
+** Returns          void
+**
+*******************************************************************************/
+void L2CA_DeregisterLECoc(UINT16 psm)
+{
+    L2CAP_TRACE_API("%s called for PSM: 0x%04x", __func__, psm);
+
+    tL2C_RCB *p_rcb = l2cu_find_ble_rcb_by_psm(psm);
+    if (p_rcb == NULL)
+    {
+        L2CAP_TRACE_WARNING("%s PSM: 0x%04x not found for deregistration", __func__, psm);
+        return;
+    }
+
+    tL2C_LCB *p_lcb = &l2cb.lcb_pool[0];
+    for (int i = 0; i < MAX_L2CAP_LINKS; i++, p_lcb++)
+    {
+        if (!p_lcb->in_use || p_lcb->transport != BT_TRANSPORT_LE)
+            continue;
+
+        tL2C_CCB *p_ccb = p_lcb->ccb_queue.p_first_ccb;
+        if ((p_ccb == NULL) || (p_lcb->link_state == LST_DISCONNECTING))
+            continue;
+
+        if (p_ccb->in_use &&
+           (p_ccb->chnl_state == CST_W4_L2CAP_DISCONNECT_RSP ||
+            p_ccb->chnl_state == CST_W4_L2CA_DISCONNECT_RSP))
+            continue;
+
+        if (p_ccb->p_rcb == p_rcb)
+            l2c_csm_execute(p_ccb, L2CEVT_L2CA_DISCONNECT_REQ, NULL);
+    }
+
+    l2cu_release_rcb (p_rcb);
+}
+
+/*******************************************************************************
+**
+** Function         L2CA_ConnectLECocReq
+**
+** Description      Higher layers call this function to create an L2CAP connection.
+**                  Note that the connection is not established at this time, but
+**                  connection establishment gets started. The callback function
+**                  will be invoked when connection establishes or fails.
+**
+**  Parameters:     PSM: L2CAP PSM for the connection
+**                  BD address of the peer
+**                  Local Coc configurations
+
+** Returns          the CID of the connection, or 0 if it failed to start
+**
+*******************************************************************************/
+UINT16 L2CA_ConnectLECocReq(UINT16 psm, BD_ADDR p_bd_addr, tL2CAP_LE_CFG_INFO *p_cfg)
+{
+    L2CAP_TRACE_API("%s PSM: 0x%04x BDA: %02x:%02x:%02x:%02x:%02x:%02x", __func__, psm,
+        p_bd_addr[0], p_bd_addr[1], p_bd_addr[2], p_bd_addr[3], p_bd_addr[4], p_bd_addr[5]);
+
+    /* Fail if we have not established communications with the controller */
+    if (!BTM_IsDeviceUp())
+    {
+        L2CAP_TRACE_WARNING("%s BTU not ready", __func__);
+        return 0;
+    }
+
+    /* Fail if the PSM is not registered */
+    tL2C_RCB *p_rcb = l2cu_find_ble_rcb_by_psm(psm);
+    if (p_rcb == NULL)
+    {
+        L2CAP_TRACE_WARNING("%s No BLE RCB, PSM: 0x%04x", __func__, psm);
+        return 0;
+    }
+
+    /* First, see if we already have a le link to the remote */
+    tL2C_LCB *p_lcb = l2cu_find_lcb_by_bd_addr(p_bd_addr, BT_TRANSPORT_LE);
+    if (p_lcb == NULL)
+    {
+        /* No link. Get an LCB and start link establishment */
+        p_lcb = l2cu_allocate_lcb(p_bd_addr, FALSE, BT_TRANSPORT_LE);
+        if ((p_lcb == NULL)
+             /* currently use BR/EDR for ERTM mode l2cap connection */
+         || (l2cu_create_conn(p_lcb, BT_TRANSPORT_LE) == FALSE) )
+        {
+            L2CAP_TRACE_WARNING("%s conn not started for PSM: 0x%04x  p_lcb: 0x%p",
+                __func__, psm, p_lcb);
+            return 0;
+        }
+    }
+
+    /* Allocate a channel control block */
+    tL2C_CCB *p_ccb = l2cu_allocate_ccb(p_lcb, 0);
+    if (p_ccb == NULL)
+    {
+        L2CAP_TRACE_WARNING("%s no CCB, PSM: 0x%04x", __func__, psm);
+        return 0;
+    }
+
+    /* Save registration info */
+    p_ccb->p_rcb = p_rcb;
+
+    /* Save the configuration */
+    if (p_cfg)
+        memcpy(&p_ccb->local_conn_cfg, p_cfg, sizeof(tL2CAP_LE_CFG_INFO));
+
+    /* If link is up, start the L2CAP connection */
+    if (p_lcb->link_state == LST_CONNECTED)
+    {
+        if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE)
+        {
+            L2CAP_TRACE_DEBUG("%s LE Link is up", __func__);
+            l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONNECT_REQ, NULL);
+        }
+    }
+
+    /* If link is disconnecting, save link info to retry after disconnect
+     * Possible Race condition when a reconnect occurs
+     * on the channel during a disconnect of link. This
+     * ccb will be automatically retried after link disconnect
+     * arrives
+     */
+    else if (p_lcb->link_state == LST_DISCONNECTING)
+    {
+        L2CAP_TRACE_DEBUG("%s link disconnecting: RETRY LATER", __func__);
+
+        /* Save ccb so it can be started after disconnect is finished */
+        p_lcb->p_pending_ccb = p_ccb;
+    }
+
+    L2CAP_TRACE_API("%s(psm: 0x%04x) returned CID: 0x%04x", __func__, psm, p_ccb->local_cid);
+
+    /* Return the local CID as our handle */
+    return p_ccb->local_cid;
+}
+
+/*******************************************************************************
+**
+** Function         L2CA_ConnectLECocRsp
+**
+** Description      Higher layers call this function to accept an incoming
+**                  L2CAP COC connection, for which they had gotten an connect
+**                  indication callback.
+**
+** Returns          TRUE for success, FALSE for failure
+**
+*******************************************************************************/
+BOOLEAN L2CA_ConnectLECocRsp (BD_ADDR p_bd_addr, UINT8 id, UINT16 lcid, UINT16 result,
+                             UINT16 status, tL2CAP_LE_CFG_INFO *p_cfg)
+{
+    L2CAP_TRACE_API("%s CID: 0x%04x Result: %d Status: %d BDA: %02x:%02x:%02x:%02x:%02x:%02x",
+        __func__, lcid, result, status,
+        p_bd_addr[0], p_bd_addr[1], p_bd_addr[2], p_bd_addr[3], p_bd_addr[4], p_bd_addr[5]);
+
+
+    /* First, find the link control block */
+    tL2C_LCB *p_lcb = l2cu_find_lcb_by_bd_addr(p_bd_addr, BT_TRANSPORT_LE);
+    if (p_lcb == NULL)
+    {
+        /* No link. Get an LCB and start link establishment */
+        L2CAP_TRACE_WARNING("%s no LCB", __func__);
+        return FALSE;
+    }
+
+    /* Now, find the channel control block */
+    tL2C_CCB *p_ccb = l2cu_find_ccb_by_cid(p_lcb, lcid);
+    if (p_ccb == NULL)
+    {
+        L2CAP_TRACE_WARNING("%s no CCB", __func__);
+        return FALSE;
+    }
+
+    /* The IDs must match */
+    if (p_ccb->remote_id != id)
+    {
+        L2CAP_TRACE_WARNING("%s bad id. Expected: %d  Got: %d", __func__, p_ccb->remote_id, id);
+        return FALSE;
+    }
+
+    if (p_cfg)
+        memcpy(&p_ccb->local_conn_cfg, p_cfg, sizeof(tL2CAP_LE_CFG_INFO));
+
+    if (result == L2CAP_CONN_OK)
+        l2c_csm_execute (p_ccb, L2CEVT_L2CA_CONNECT_RSP, NULL);
+    else
+    {
+        tL2C_CONN_INFO conn_info;
+        memcpy(conn_info.bd_addr, p_bd_addr, BD_ADDR_LEN);
+        conn_info.l2cap_result = result;
+        conn_info.l2cap_status = status;
+        l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONNECT_RSP_NEG, &conn_info);
+    }
+
+    return TRUE;
+}
+
+/*******************************************************************************
+**
+**  Function         L2CA_GetPeerLECocConfig
+**
+**  Description      Get a peers configuration for LE Connection Oriented Channel.
+**
+**  Parameters:      local channel id
+**                   Pointers to peers configuration storage area
+**
+**  Return value:    TRUE if peer is connected
+**
+*******************************************************************************/
+BOOLEAN L2CA_GetPeerLECocConfig (UINT16 lcid, tL2CAP_LE_CFG_INFO* peer_cfg)
+{
+    L2CAP_TRACE_API ("%s CID: 0x%04x", __func__, lcid);
+
+    tL2C_CCB *p_ccb = l2cu_find_ccb_by_cid(NULL, lcid);
+    if (p_ccb == NULL)
+    {
+        L2CAP_TRACE_ERROR("%s No CCB for CID:0x%04x", __func__, lcid);
+        return FALSE;
+    }
+
+    if (peer_cfg != NULL)
+        memcpy(peer_cfg, &p_ccb->peer_conn_cfg, sizeof(tL2CAP_LE_CFG_INFO));
+
+    return TRUE;
+}
+
+
 
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
 /*******************************************************************************

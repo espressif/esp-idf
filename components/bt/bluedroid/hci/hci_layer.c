@@ -32,6 +32,7 @@
 #include "alarm.h"
 #include "thread.h"
 #include "mutex.h"
+#include "fixed_queue.h"
 
 typedef struct {
     uint16_t opcode;
@@ -106,8 +107,8 @@ int hci_start_up(void)
         goto error;
     }
 
-    xHciHostQueue = xQueueCreate(HCI_HOST_QUEUE_NUM, sizeof(BtTaskEvt_t));
-    xTaskCreatePinnedToCore(hci_host_thread_handler, HCI_HOST_TASK_NAME, HCI_HOST_TASK_STACK_SIZE, NULL, HCI_HOST_TASK_PRIO, &xHciHostTaskHandle, 0);
+    xHciHostQueue = xQueueCreate(HCI_HOST_QUEUE_LEN, sizeof(BtTaskEvt_t));
+    xTaskCreatePinnedToCore(hci_host_thread_handler, HCI_HOST_TASK_NAME, HCI_HOST_TASK_STACK_SIZE, NULL, HCI_HOST_TASK_PRIO, &xHciHostTaskHandle, HCI_HOST_TASK_PINNED_TO_CORE);
 
     packet_fragmenter->init(&packet_fragmenter_callbacks);
     hal->open(&hal_callbacks);
@@ -362,8 +363,16 @@ static void fragmenter_transmit_finished(BT_HDR *packet, bool all_fragments_sent
         // This is kind of a weird case, since we're dispatching a partially sent packet
         // up to a higher layer.
         // TODO(zachoverflow): rework upper layer so this isn't necessary.
-        buffer_allocator->free(packet);
-        //dispatch_reassembled(packet);
+        //buffer_allocator->free(packet);
+
+        /* dispatch_reassembled(packet) will send the packet back to the higher layer
+           when controller buffer is not enough. hci will send the remain packet back
+           to the l2cap layer and saved in the Link Queue (p_lcb->link_xmit_data_q).
+           The l2cap layer will resend the packet to lower layer when controller buffer
+           can be used.
+        */
+
+        dispatch_reassembled(packet);
         //data_dispatcher_dispatch(interface.event_dispatcher, packet->event & MSG_EVT_MASK, packet);
     }
 }

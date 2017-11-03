@@ -94,9 +94,6 @@ typedef enum {
 
 static psram_cache_mode_t s_psram_mode = PSRAM_CACHE_MAX;
 
-//For now, we only use F40M + S40M, and we don't have to go through gpio matrix
-#define ENABLE_GPIO_MATRIX_SPI   1
-
 /* dummy_len_plus values defined in ROM for SPI flash configuration */
 extern uint8_t g_rom_spiflash_dummy_len_plus[];
 
@@ -528,9 +525,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
     }
     CLEAR_PERI_REG_MASK(SPI_USER_REG(PSRAM_SPI_1), SPI_CS_SETUP_M);
 
-#if ENABLE_GPIO_MATRIX_SPI
     psram_gpio_config(mode);
-#endif
     WRITE_PERI_REG(GPIO_ENABLE_W1TS_REG, BIT(PSRAM_CS_IO)| BIT(PSRAM_CLK_IO));
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[PSRAM_CS_IO], 2);
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[PSRAM_CLK_IO], 2);

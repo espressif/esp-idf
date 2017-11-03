@@ -5,7 +5,7 @@
 COMPONENT_SRCDIRS := . hwcrypto
 LIBS ?=
 ifndef CONFIG_NO_BLOBS
-LIBS += core rtc net80211 pp wpa smartconfig coexist wps wpa2 phy
+LIBS += core rtc net80211 pp wpa smartconfig coexist wps wpa2 espnow phy
 endif
 
 #Linker scripts used to link the final application.
@@ -40,7 +40,7 @@ COMPONENT_ADD_LDFLAGS += $(COMPONENT_PATH)/libhal.a \
 
 #The cache workaround also needs a c++ standard library recompiled with the workaround.
 ifdef CONFIG_SPIRAM_CACHE_WORKAROUND
-COMPONENT_ADD_LDFLAGS += $(COMPONENT_PATH)/libstdcc++-cache-workaround.a
+COMPONENT_ADD_LDFLAGS += $(COMPONENT_PATH)/libstdc++-psram-workaround.a
 endif
 
 ALL_LIB_FILES := $(patsubst %,$(COMPONENT_PATH)/lib/lib%.a,$(LIBS))

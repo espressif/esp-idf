@@ -79,7 +79,6 @@ Routine to allocate a bit of memory with certain capabilities. caps is a bitfiel
 IRAM_ATTR void *heap_caps_malloc( size_t size, uint32_t caps )
 {
     void *ret = NULL;
-    uint32_t remCaps;
 
     if (caps & MALLOC_CAP_EXEC) {
         //MALLOC_CAP_EXEC forces an alloc from IRAM. There is a region which has both this as well as the following
@@ -102,13 +101,7 @@ IRAM_ATTR void *heap_caps_malloc( size_t size, uint32_t caps )
             if ((heap->caps[prio] & caps) != 0) {
                 //Heap has at least one of the caps requested. If caps has other bits set that this prio
                 //doesn't cover, see if they're available in other prios.
-                remCaps = caps & (~heap->caps[prio]); //Remaining caps to be fulfilled
-                int j = prio + 1;
-                while (remCaps != 0 && j < SOC_MEMORY_TYPE_NO_PRIOS) {
-                    remCaps = remCaps & (~heap->caps[j]);
-                    j++;
-                }
-                if (remCaps == 0) {
+                if ((get_all_caps(heap) & caps) == caps) {
                     //This heap can satisfy all the requested capabilities. See if we can grab some memory using it.
                     if ((caps & MALLOC_CAP_EXEC) && heap->start >= SOC_DIRAM_DRAM_LOW && heap->start < SOC_DIRAM_DRAM_HIGH) {
                         //This is special, insofar that what we're going to get back is a DRAM address. If so,
@@ -131,6 +124,116 @@ IRAM_ATTR void *heap_caps_malloc( size_t size, uint32_t caps )
     }
     //Nothing usable found.
     return NULL;
+}
+
+
+#define MALLOC_DISABLE_EXTERNAL_ALLOCS -1
+//Dual-use: -1 (=MALLOC_DISABLE_EXTERNAL_ALLOCS) disables allocations in external memory, >=0 sets the limit for allocations preferring internal memory.
+static int malloc_alwaysinternal_limit=MALLOC_DISABLE_EXTERNAL_ALLOCS;
+
+void heap_caps_malloc_extmem_enable(size_t limit)
+{
+    malloc_alwaysinternal_limit=limit;
+}
+
+/*
+ Default memory allocation implementation. Should return standard 8-bit memory. malloc() essentially resolves to this function.
+*/
+IRAM_ATTR void *heap_caps_malloc_default( size_t size )
+{
+    if (malloc_alwaysinternal_limit==MALLOC_DISABLE_EXTERNAL_ALLOCS) {
+        return heap_caps_malloc( size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
+    } else {
+        void *r;
+        if (size <= malloc_alwaysinternal_limit) {
+            r=heap_caps_malloc( size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL );
+        } else {
+            r=heap_caps_malloc( size, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM );
+        }
+        if (r==NULL) {
+            //try again while being less picky
+            r=heap_caps_malloc( size, MALLOC_CAP_DEFAULT );
+        }
+        return r;
+    }
+}
+
+/*
+ Same for realloc()
+ Note: keep the logic in here the same as in heap_caps_malloc_default (or merge the two as soon as this gets more complex...)
+ */
+IRAM_ATTR void *heap_caps_realloc_default( void *ptr, size_t size )
+{
+    if (malloc_alwaysinternal_limit==MALLOC_DISABLE_EXTERNAL_ALLOCS) {
+        return heap_caps_realloc( ptr, size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL );
+    } else {
+        void *r;
+        if (size <= malloc_alwaysinternal_limit) {
+            r=heap_caps_realloc( ptr, size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL );
+        } else {
+            r=heap_caps_realloc( ptr, size, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM );
+        }
+        if (r==NULL && size>0) {
+            //We needed to allocate memory, but we didn't. Try again while being less picky.
+            r=heap_caps_realloc( ptr, size, MALLOC_CAP_DEFAULT );
+        }
+        return r;
+    }
+}
+
+/*
+ Memory allocation as preference in decreasing order.
+ */
+IRAM_ATTR void *heap_caps_malloc_prefer( size_t size, size_t num, ... )
+{
+    va_list argp;
+    va_start( argp, num );
+    void *r = NULL;
+    while (num--) {
+        uint32_t caps = va_arg( argp, uint32_t );
+        r = heap_caps_malloc( size, caps );
+        if (r != NULL) {
+            break;
+        }
+    }
+    va_end( argp );
+    return r;
+}
+
+/*
+ Memory reallocation as preference in decreasing order.
+ */
+IRAM_ATTR void *heap_caps_realloc_prefer( void *ptr, size_t size, size_t num, ... )
+{
+    va_list argp;
+    va_start( argp, num );
+    void *r = NULL;
+    while (num--) {
+        uint32_t caps = va_arg( argp, uint32_t );
+        r = heap_caps_realloc( ptr, size, caps );
+        if (r != NULL || size == 0) {
+            break;
+        }
+    }
+    va_end( argp );
+    return r;
+}
+
+/*
+ Memory callocation as preference in decreasing order.
+ */
+IRAM_ATTR void *heap_caps_calloc_prefer( size_t n, size_t size, size_t num, ... )
+{
+    va_list argp;
+    va_start( argp, num );
+    void *r = NULL;
+    while (num--) {
+        uint32_t caps = va_arg( argp, uint32_t );
+        r = heap_caps_calloc( n, size, caps );
+        if (r != NULL) break;
+    }
+    va_end( argp );
+    return r;
 }
 
 /* Find the heap which belongs to ptr, or return NULL if it's
@@ -211,6 +314,16 @@ IRAM_ATTR void *heap_caps_realloc( void *ptr, size_t size, int caps)
         return new_p;
     }
     return NULL;
+}
+
+IRAM_ATTR void *heap_caps_calloc( size_t n, size_t size, uint32_t caps)
+{
+    void *r;
+    r = heap_caps_malloc(n*size, caps);
+    if (r != NULL) {
+        bzero(r, n*size);
+    }
+    return r;
 }
 
 size_t heap_caps_get_free_size( uint32_t caps )
@@ -302,4 +415,35 @@ bool heap_caps_check_integrity(uint32_t caps, bool print_errors)
     }
 
     return valid;
+}
+
+bool heap_caps_check_integrity_all(bool print_errors)
+{
+    return heap_caps_check_integrity(MALLOC_CAP_INVALID, print_errors);
+}
+
+bool heap_caps_check_integrity_addr(intptr_t addr, bool print_errors)
+{
+    heap_t *heap = find_containing_heap((void *)addr);
+    if (heap == NULL) {
+        return false;
+    }
+    return multi_heap_check(heap->heap, print_errors);
+}
+
+void heap_caps_dump(uint32_t caps)
+{
+    bool all_heaps = caps & MALLOC_CAP_INVALID;
+    heap_t *heap;
+    SLIST_FOREACH(heap, &registered_heaps, next) {
+        if (heap->heap != NULL
+            && (all_heaps || (get_all_caps(heap) & caps) == caps)) {
+            multi_heap_dump(heap->heap);
+        }
+    }
+}
+
+void heap_caps_dump_all()
+{
+    heap_caps_dump(MALLOC_CAP_INVALID);
 }

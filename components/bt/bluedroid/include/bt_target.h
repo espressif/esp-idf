@@ -665,6 +665,12 @@
 #define L2CAP_CLIENT_INCLUDED FALSE
 #endif
 
+/* The maximum number of simultaneous applications that can register with LE L2CAP. */
+#ifndef BLE_MAX_L2CAP_CLIENTS
+#define BLE_MAX_L2CAP_CLIENTS           15
+#endif
+
+
 /* The maximum number of simultaneous links that L2CAP can support. Up to 7*/
 #ifndef MAX_ACL_CONNECTIONS
 #define MAX_L2CAP_LINKS             5
@@ -675,11 +681,15 @@
 /* The maximum number of simultaneous channels that L2CAP can support. Up to 16*/
 #ifndef MAX_L2CAP_CHANNELS
 #if (CLASSIC_BT_INCLUDED == TRUE)
-#define MAX_L2CAP_CHANNELS          8
+#define MAX_L2CAP_CHANNELS          16
 #else
+#if (SMP_INCLUDED == FALSE)
 #define MAX_L2CAP_CHANNELS          MAX_ACL_CONNECTIONS  //This is used in the BLE client when start connected with the peer device
+#else
+#define MAX_L2CAP_CHANNELS          (MAX_ACL_CONNECTIONS * 2)  //This is used in the BLE client when start connected with the peer device and in SMP
+#endif   ///SMP_INCLUDED == FALSE
 #endif   ///CLASSIC_BT_INCLUDED == TRUE
-#endif
+#endif   ///MAX_L2CAP_CHANNELS
 
 /* The maximum number of simultaneous applications that can register with L2CAP. */
 #ifndef MAX_L2CAP_CLIENTS

@@ -233,6 +233,35 @@ static char *esp_key_type_to_str(esp_ble_key_type_t key_type)
    return key_str;
 }
 
+static void show_bonded_devices(void)
+{
+    int dev_num = esp_ble_get_bond_device_num();
+
+    esp_ble_bond_dev_t *dev_list = (esp_ble_bond_dev_t *)malloc(sizeof(esp_ble_bond_dev_t) * dev_num);
+    esp_ble_get_bond_device_list(&dev_num, dev_list);
+    ESP_LOGI(GATTS_TABLE_TAG, "Bonded devices number : %d\n", dev_num);
+
+    ESP_LOGI(GATTS_TABLE_TAG, "Bonded devices list : %d\n", dev_num);
+    for (int i = 0; i < dev_num; i++) {
+        esp_log_buffer_hex(GATTS_TABLE_TAG, (void *)dev_list[i].bd_addr, sizeof(esp_bd_addr_t));
+    }
+
+    free(dev_list);
+}
+
+static void __attribute__((unused)) remove_all_bonded_devices(void)
+{
+    int dev_num = esp_ble_get_bond_device_num();
+
+    esp_ble_bond_dev_t *dev_list = (esp_ble_bond_dev_t *)malloc(sizeof(esp_ble_bond_dev_t) * dev_num);
+    esp_ble_get_bond_device_list(&dev_num, dev_list);
+    for (int i = 0; i < dev_num; i++) {
+        esp_ble_remove_bond_device(dev_list[i].bd_addr);
+    }
+
+    free(dev_list);
+}
+
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
     ESP_LOGV(GATTS_TABLE_TAG, "GAP_EVT, event %d\n", event);
@@ -279,23 +308,15 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                 (bd_addr[4] << 8) + bd_addr[5]);
         ESP_LOGI(GATTS_TABLE_TAG, "address type = %d", param->ble_security.auth_cmpl.addr_type);
         ESP_LOGI(GATTS_TABLE_TAG, "pair status = %s",param->ble_security.auth_cmpl.success ? "success" : "fail");
+        show_bonded_devices();
         break;
     }
     case ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT: {
-        ESP_LOGI(GATTS_TABLE_TAG, "ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT status = %d", param->remove_bond_dev_cmpl.status);
-        break;
-    }
-    case ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT: {
-        ESP_LOGI(GATTS_TABLE_TAG, "ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT status = %d", param->clear_bond_dev_cmpl.status);
-        break;
-    }
-    case ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT: {
-        ESP_LOGI(GATTS_TABLE_TAG, "ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT status = %d, num = %d", param->get_bond_dev_cmpl.status, param->get_bond_dev_cmpl.dev_num);
-        esp_ble_bond_dev_t *bond_dev = param->get_bond_dev_cmpl.bond_dev;
-        for(int i = 0; i < param->get_bond_dev_cmpl.dev_num; i++) {
-            ESP_LOGI(GATTS_TABLE_TAG, "mask = %x", bond_dev[i].bond_key.key_mask);
-            esp_log_buffer_hex(GATTS_TABLE_TAG, (void *)bond_dev[i].bd_addr, sizeof(esp_bd_addr_t));
-        }
+        ESP_LOGD(GATTS_TABLE_TAG, "ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT status = %d", param->remove_bond_dev_cmpl.status);
+        ESP_LOGI(GATTS_TABLE_TAG, "ESP_GAP_BLE_REMOVE_BOND_DEV");
+        ESP_LOGI(GATTS_TABLE_TAG, "-----ESP_GAP_BLE_REMOVE_BOND_DEV----");
+        esp_log_buffer_hex(GATTS_TABLE_TAG, (void *)param->remove_bond_dev_cmpl.bd_addr, sizeof(esp_bd_addr_t));
+        ESP_LOGI(GATTS_TABLE_TAG, "------------------------------------");
         break;
     }
     case ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT:
@@ -339,6 +360,8 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
         case ESP_GATTS_READ_EVT:
             break;
         case ESP_GATTS_WRITE_EVT: 
+            ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_WRITE_EVT, write value:");
+            esp_log_buffer_hex(GATTS_TABLE_TAG, param->write.value, param->write.len);
             break;
         case ESP_GATTS_EXEC_WRITE_EVT:
             break;
@@ -356,12 +379,12 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
             break;
         case ESP_GATTS_CONNECT_EVT:
             ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_CONNECT_EVT");
-            //start security connect with peer device when receive the connect event sent by the master.
+            /* start security connect with peer device when receive the connect event sent by the master */
             esp_ble_set_encryption(param->connect.remote_bda, ESP_BLE_SEC_ENCRYPT_MITM);
             break;
         case ESP_GATTS_DISCONNECT_EVT:
             ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_DISCONNECT_EVT");
-            ///start advertising again when missing the connect.
+            /* start advertising again when missing the connect */
             esp_ble_gap_start_advertising(&heart_rate_adv_params);
             break;
         case ESP_GATTS_OPEN_EVT:
@@ -493,6 +516,12 @@ void app_main()
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_INIT_KEY, &init_key, sizeof(uint8_t));
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(uint8_t));
 
+    /* Just show how to clear all the bonded devices 
+     * Delay 30s, clear all the bonded devices
+     * 
+     * vTaskDelay(30000 / portTICK_PERIOD_MS);
+     * remove_all_bonded_devices();
+     */
 }
 
 

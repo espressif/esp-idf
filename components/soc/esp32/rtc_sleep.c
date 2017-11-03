@@ -195,7 +195,7 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
                 RTC_CNTL_RFRX_PBUS_PU | RTC_CNTL_TXRF_I2C_PU);
     } else {
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_DG_WRAP_PD_EN);
-        SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_FORCE_NOSLEEP);
+        REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_DBG_ATTEN, 0);
     }
 
     if (cfg.vddsdio_pd_en) {

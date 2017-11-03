@@ -92,7 +92,7 @@ static poison_head_t *verify_allocated_region(void *data, bool print_errors)
     /* check if the beginning of the data was overwritten */
     if (head->head_canary != HEAD_CANARY_PATTERN) {
         if (print_errors) {
-            printf("CORRUPT HEAP: Bad head at %p. Expected 0x%08x got 0x%08x\n", &head->head_canary,
+            MULTI_HEAP_STDERR_PRINTF("CORRUPT HEAP: Bad head at %p. Expected 0x%08x got 0x%08x\n", &head->head_canary,
                    HEAD_CANARY_PATTERN, head->head_canary);
         }
         return NULL;
@@ -142,7 +142,7 @@ static bool verify_fill_pattern(void *data, size_t size, bool print_errors, bool
         while (size >= 4) {
             if (*p != EXPECT_WORD) {
                 if (print_errors) {
-                    printf("Invalid data at %p. Expected 0x%08x got 0x%08x\n", p, EXPECT_WORD, *p);
+                    MULTI_HEAP_STDERR_PRINTF("CORRUPT HEAP: Invalid data at %p. Expected 0x%08x got 0x%08x\n", p, EXPECT_WORD, *p);
                 }
                 valid = false;
             }
@@ -159,7 +159,7 @@ static bool verify_fill_pattern(void *data, size_t size, bool print_errors, bool
     for (int i = 0; i < size; i++) {
         if (p[i] != (uint8_t)EXPECT_WORD) {
             if (print_errors) {
-                printf("Invalid data at %p. Expected 0x%02x got 0x%02x\n", p, (uint8_t)EXPECT_WORD, *p);
+                MULTI_HEAP_STDERR_PRINTF("CORRUPT HEAP: Invalid data at %p. Expected 0x%02x got 0x%02x\n", p, (uint8_t)EXPECT_WORD, *p);
             }
             valid = false;
         }
@@ -173,16 +173,18 @@ static bool verify_fill_pattern(void *data, size_t size, bool print_errors, bool
 
 void *multi_heap_malloc(multi_heap_handle_t heap, size_t size)
 {
+    multi_heap_internal_lock(heap);
     poison_head_t *head = multi_heap_malloc_impl(heap, size + POISON_OVERHEAD);
-    if (head == NULL) {
-        return NULL;
-    }
-    uint8_t *data = poison_allocated_region(head, size);
+    uint8_t *data = NULL;
+    if (head != NULL) {
+        data = poison_allocated_region(head, size);
 #ifdef SLOW
-    /* check everything we got back is FREE_FILL_PATTERN & swap for MALLOC_FILL_PATTERN */
-    assert( verify_fill_pattern(data, size, true, true, true) );
+        /* check everything we got back is FREE_FILL_PATTERN & swap for MALLOC_FILL_PATTERN */
+        assert( verify_fill_pattern(data, size, true, true, true) );
 #endif
+    }
 
+    multi_heap_internal_unlock(heap);
     return data;
 }
 
@@ -191,6 +193,8 @@ void multi_heap_free(multi_heap_handle_t heap, void *p)
     if (p == NULL) {
         return;
     }
+    multi_heap_internal_lock(heap);
+
     poison_head_t *head = verify_allocated_region(p, true);
     assert(head != NULL);
 
@@ -200,11 +204,15 @@ void multi_heap_free(multi_heap_handle_t heap, void *p)
            head->alloc_size + POISON_OVERHEAD);
     #endif
     multi_heap_free_impl(heap, head);
+
+    multi_heap_internal_unlock(heap);
 }
 
 void *multi_heap_realloc(multi_heap_handle_t heap, void *p, size_t size)
 {
     poison_head_t *head = NULL;
+    poison_head_t *new_head;
+    void *result = NULL;
 
     if (p == NULL) {
         return multi_heap_malloc(heap, size);
@@ -218,14 +226,18 @@ void *multi_heap_realloc(multi_heap_handle_t heap, void *p, size_t size)
     head = verify_allocated_region(p, true);
     assert(head != NULL);
 
+    multi_heap_internal_lock(heap);
+
 #ifndef SLOW
-    poison_head_t *new_head = multi_heap_realloc_impl(heap, head, size + POISON_OVERHEAD);
-    if (new_head == NULL) { // new allocation failed, everything stays as-is
-        return NULL;
+    new_head = multi_heap_realloc_impl(heap, head, size + POISON_OVERHEAD);
+    if (new_head != NULL) {
+        /* For "fast" poisoning, we only overwrite the head/tail of the new block so it's safe
+           to poison, so no problem doing this even if realloc resized in place.
+        */
+        result = poison_allocated_region(new_head, size);
     }
-    return poison_allocated_region(new_head, size);
 #else // SLOW
-    /* When slow poisoning is enabled, it becomes very fiddly to try and correctly fill memory when reallocing in place
+    /* When slow poisoning is enabled, it becomes very fiddly to try and correctly fill memory when resizing in place
        (where the buffer may be moved (including to an overlapping address with the old buffer), grown, or shrunk in
        place.)
 
@@ -233,15 +245,17 @@ void *multi_heap_realloc(multi_heap_handle_t heap, void *p, size_t size)
     */
     size_t orig_alloc_size = head->alloc_size;
 
-    poison_head_t *new_head = multi_heap_malloc_impl(heap, size + POISON_OVERHEAD);
-    if (new_head == NULL) {
-        return NULL;
+    new_head = multi_heap_malloc_impl(heap, size + POISON_OVERHEAD);
+    if (new_head != NULL) {
+        result = poison_allocated_region(new_head, size);
+        memcpy(result, p, MIN(size, orig_alloc_size));
+        multi_heap_free(heap, p);
     }
-    void *new_data = poison_allocated_region(new_head, size);
-    memcpy(new_data, p, MIN(size, orig_alloc_size));
-    multi_heap_free(heap, p);
-    return new_data;
 #endif
+
+    multi_heap_internal_unlock(heap);
+
+    return result;
 }
 
 size_t multi_heap_get_allocated_size(multi_heap_handle_t heap, void *p)
@@ -315,7 +329,7 @@ bool multi_heap_internal_check_block_poisoning(void *start, size_t size, bool is
             /* block can be bigger than alloc_size, for reasons of alignment & fragmentation,
                but block can never be smaller than head->alloc_size... */
             if (print_errors) {
-                printf("CORRUPT HEAP: Size at %p expected <=0x%08x got 0x%08x\n", &head->alloc_size,
+                MULTI_HEAP_STDERR_PRINTF("CORRUPT HEAP: Size at %p expected <=0x%08x got 0x%08x\n", &head->alloc_size,
                        size - POISON_OVERHEAD, head->alloc_size);
             }
             return false;

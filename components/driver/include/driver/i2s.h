@@ -26,6 +26,7 @@
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
 #include "driver/periph_ctrl.h"
+#include "driver/adc.h"
 #include "freertos/semphr.h"
 
 #ifdef __cplusplus
@@ -118,9 +119,11 @@ typedef enum {
     I2S_MODE_TX = 4,
     I2S_MODE_RX = 8,
     I2S_MODE_DAC_BUILT_IN = 16,       /*!< Output I2S data to built-in DAC, no matter the data format is 16bit or 32 bit, the DAC module will only take the 8bits from MSB*/
-    //I2S_MODE_ADC_BUILT_IN = 32,     /*!< Currently not supported yet, will be added for the next version*/
+    I2S_MODE_ADC_BUILT_IN = 32,       /*!< Input I2S data from built-in ADC, each data can be 12-bit width at most*/
     I2S_MODE_PDM = 64,
 } i2s_mode_t;
+
+
 
 /**
  * @brief I2S configuration parameters for i2s_param_config function
@@ -135,6 +138,7 @@ typedef struct {
     int                     intr_alloc_flags;       /*!< Flags used to allocate the interrupt. One or multiple (ORred) ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info */
     int                     dma_buf_count;          /*!< I2S DMA Buffer Count */
     int                     dma_buf_len;            /*!< I2S DMA Buffer Length */
+    int                     use_apll;               /*!< I2S using APLL as main I2S clock, enable it to get accurate clock */
 } i2s_config_t;
 
 /**
@@ -401,6 +405,17 @@ esp_err_t i2s_zero_dma_buffer(i2s_port_t i2s_num);
  *     - ESP_FAIL Parameter error
  */
 esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t bits, i2s_channel_t ch);
+
+/**
+ * @brief Set built-in ADC mode for I2S DMA, this function will initialize ADC pad,
+ *        and set ADC parameters.
+ * @param adc_unit  SAR ADC unit index
+ * @param adc_channel ADC channel index
+ * @return
+ *     - ESP_OK   Success
+ *     - ESP_FAIL Parameter error
+ */
+esp_err_t i2s_set_adc_mode(adc_unit_t adc_unit, adc1_channel_t adc_channel);
 
 #ifdef __cplusplus
 }

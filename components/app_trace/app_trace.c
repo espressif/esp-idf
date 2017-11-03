@@ -203,8 +203,6 @@ const static char *TAG = "esp_apptrace";
 #define ESP_APPTRACE_LOGV( format, ... )  ESP_APPTRACE_LOG_LEV(V, ESP_LOG_VERBOSE, format, ##__VA_ARGS__)
 #define ESP_APPTRACE_LOGO( format, ... )  ESP_APPTRACE_LOG_LEV(E, ESP_LOG_NONE, format, ##__VA_ARGS__)
 
-#define ESP_APPTRACE_CPUTICKS2US(_t_)       ((_t_)/(XT_CLOCK_FREQ/1000000))
-
 // TODO: move these (and same definitions in trax.c to dport_reg.h)
 #define TRACEMEM_MUX_PROBLK0_APPBLK1            0
 #define TRACEMEM_MUX_BLK0_ONLY                  1
@@ -253,6 +251,10 @@ static volatile uint8_t *s_trax_blocks[] = {
 #else
 #define ESP_APPTRACE_USR_DATA_LEN_MAX           (ESP_APPTRACE_TRAX_BLOCK_SIZE - sizeof(esp_tracedata_hdr_t))
 #endif
+
+#define ESP_APPTRACE_HW_TRAX                    0
+#define ESP_APPTRACE_HW_MAX                     1
+#define ESP_APPTRACE_HW(_i_)                    (&s_trace_hw[_i_])
 
 /** Trace data header. Every user data chunk is prepended with this header.
  * User allocates block with esp_apptrace_buffer_get and then fills it with data,
@@ -326,8 +328,33 @@ static esp_apptrace_buffer_t    s_trace_buf;
 static esp_apptrace_lock_t s_log_lock = {.irq_stat = 0, .portmux = portMUX_INITIALIZER_UNLOCKED};
 #endif
 
+typedef struct {
+    uint8_t *(*get_up_buffer)(uint32_t, esp_apptrace_tmo_t *);
+    esp_err_t (*put_up_buffer)(uint8_t *, esp_apptrace_tmo_t *);
+    esp_err_t (*flush_up_buffer)(uint32_t, esp_apptrace_tmo_t *);
+    uint8_t *(*get_down_buffer)(uint32_t *, esp_apptrace_tmo_t *);
+    esp_err_t (*put_down_buffer)(uint8_t *, esp_apptrace_tmo_t *);
+    bool (*host_is_connected)(void);
+} esp_apptrace_hw_t;
+
 static uint32_t esp_apptrace_trax_down_buffer_write_nolock(uint8_t *data, uint32_t size);
 static esp_err_t esp_apptrace_trax_flush(uint32_t min_sz, esp_apptrace_tmo_t *tmo);
+static uint8_t *esp_apptrace_trax_get_buffer(uint32_t size, esp_apptrace_tmo_t *tmo);
+static esp_err_t esp_apptrace_trax_put_buffer(uint8_t *ptr, esp_apptrace_tmo_t *tmo);
+static bool esp_apptrace_trax_host_is_connected(void);
+static uint8_t *esp_apptrace_trax_down_buffer_get(uint32_t *size, esp_apptrace_tmo_t *tmo);
+static esp_err_t esp_apptrace_trax_down_buffer_put(uint8_t *ptr, esp_apptrace_tmo_t *tmo);
+
+static esp_apptrace_hw_t s_trace_hw[ESP_APPTRACE_HW_MAX] = {
+    {
+        .get_up_buffer = esp_apptrace_trax_get_buffer,
+        .put_up_buffer = esp_apptrace_trax_put_buffer,
+        .flush_up_buffer = esp_apptrace_trax_flush,
+        .get_down_buffer = esp_apptrace_trax_down_buffer_get,
+        .put_down_buffer = esp_apptrace_trax_down_buffer_put,
+        .host_is_connected = esp_apptrace_trax_host_is_connected
+    }
+};
 
 static inline int esp_apptrace_log_lock()
 {
@@ -586,7 +613,7 @@ static uint8_t *esp_apptrace_trax_down_buffer_get(uint32_t *size, esp_apptrace_t
     return ptr;
 }
 
-static inline esp_err_t esp_apptrace_trax_down_buffer_put(uint8_t *ptr, esp_apptrace_tmo_t *tmo)
+static esp_err_t esp_apptrace_trax_down_buffer_put(uint8_t *ptr, esp_apptrace_tmo_t *tmo)
 {
     /* nothing todo */
     return ESP_OK;
@@ -597,8 +624,8 @@ static uint32_t esp_apptrace_trax_down_buffer_write_nolock(uint8_t *data, uint32
     uint32_t total_sz = 0;
 
     while (total_sz < size) {
-        // ESP_APPTRACE_LOGE("esp_apptrace_trax_down_buffer_write_nolock WRS %d-%d-%d %d", s_trace_buf.rb_down.wr, s_trace_buf.rb_down.rd,
-        //     s_trace_buf.rb_down.cur_size, size);
+        ESP_APPTRACE_LOGD("esp_apptrace_trax_down_buffer_write_nolock WRS %d-%d-%d %d", s_trace_buf.rb_down.wr, s_trace_buf.rb_down.rd,
+            s_trace_buf.rb_down.cur_size, size);
         uint32_t wr_sz = esp_apptrace_rb_write_size_get(&s_trace_buf.rb_down);
         if (wr_sz == 0) {
             break;
@@ -607,15 +634,15 @@ static uint32_t esp_apptrace_trax_down_buffer_write_nolock(uint8_t *data, uint32
         if (wr_sz > size - total_sz) {
             wr_sz = size - total_sz;
         }
-        // ESP_APPTRACE_LOGE("esp_apptrace_trax_down_buffer_write_nolock wr %d", wr_sz);
+        ESP_APPTRACE_LOGD("esp_apptrace_trax_down_buffer_write_nolock wr %d", wr_sz);
         uint8_t *ptr = esp_apptrace_rb_produce(&s_trace_buf.rb_down, wr_sz);
         if (!ptr) {
             assert(false && "Failed to produce bytes to down buffer!");
         }
-        // ESP_APPTRACE_LOGE("esp_apptrace_trax_down_buffer_write_nolock wr %d to 0x%x from 0x%x", wr_sz, ptr, data + total_sz + wr_sz);
+        ESP_APPTRACE_LOGD("esp_apptrace_trax_down_buffer_write_nolock wr %d to 0x%x from 0x%x", wr_sz, ptr, data + total_sz + wr_sz);
         memcpy(ptr, data + total_sz, wr_sz);
         total_sz += wr_sz;
-        // ESP_APPTRACE_LOGE("esp_apptrace_trax_down_buffer_write_nolock wr %d/%d", wr_sz, total_sz);
+        ESP_APPTRACE_LOGD("esp_apptrace_trax_down_buffer_write_nolock wr %d/%d", wr_sz, total_sz);
     }
     return total_sz;
 }
@@ -795,6 +822,11 @@ static esp_err_t esp_apptrace_trax_flush(uint32_t min_sz, esp_apptrace_tmo_t *tm
     return res;
 }
 
+static bool esp_apptrace_trax_host_is_connected(void)
+{
+    return eri_read(ESP_APPTRACE_TRAX_CTRL_REG) & ESP_APPTRACE_TRAX_HOST_CONNECT ? true : false;
+}
+
 static esp_err_t esp_apptrace_trax_dest_init()
 {
     for (int i = 0; i < ESP_APPTRACE_TRAX_BLOCKS_NUM; i++) {
@@ -830,6 +862,8 @@ esp_err_t esp_apptrace_init()
 
     if (!s_trace_buf.inited) {
         memset(&s_trace_buf, 0, sizeof(s_trace_buf));
+        // disabled by default
+        esp_apptrace_rb_init(&s_trace_buf.rb_down, NULL, 0);
         res = esp_apptrace_lock_initialize(&s_trace_buf.lock);
         if (res != ESP_OK) {
             ESP_APPTRACE_LOGE("Failed to init log lock (%d)!", res);
@@ -850,9 +884,6 @@ esp_err_t esp_apptrace_init()
     esp_apptrace_trax_init();
 #endif
 
-    // disabled by default
-    esp_apptrace_rb_init(&s_trace_buf.rb_down, NULL, 0);
-
     s_trace_buf.inited |= 1 << xPortGetCoreID(); // global and this CPU-specific data are inited
 
     return ESP_OK;
@@ -867,14 +898,11 @@ esp_err_t esp_apptrace_read(esp_apptrace_dest_t dest, void *buf, uint32_t *size,
 {
     int res = ESP_OK;
     esp_apptrace_tmo_t tmo;
-    //TODO: use ptr to HW transport iface struct
-    uint8_t *(*apptrace_get_down_buffer)(uint32_t *, esp_apptrace_tmo_t *);
-    esp_err_t (*apptrace_put_down_buffer)(uint8_t *, esp_apptrace_tmo_t *);
+    esp_apptrace_hw_t *hw = NULL;
 
     if (dest == ESP_APPTRACE_DEST_TRAX) {
 #if CONFIG_ESP32_APPTRACE_DEST_TRAX
-        apptrace_get_down_buffer = esp_apptrace_trax_down_buffer_get;
-        apptrace_put_down_buffer = esp_apptrace_trax_down_buffer_put;
+        hw = ESP_APPTRACE_HW(ESP_APPTRACE_HW_TRAX);
 #else
         ESP_APPTRACE_LOGE("Application tracing via TRAX is disabled in menuconfig!");
         return ESP_ERR_NOT_SUPPORTED;
@@ -888,12 +916,14 @@ esp_err_t esp_apptrace_read(esp_apptrace_dest_t dest, void *buf, uint32_t *size,
     esp_apptrace_tmo_init(&tmo, user_tmo);
     uint32_t act_sz = *size;
     *size = 0;
-    uint8_t * ptr = apptrace_get_down_buffer(&act_sz, &tmo);
+    uint8_t * ptr = hw->get_down_buffer(&act_sz, &tmo);
     if (ptr && act_sz > 0) {
         ESP_APPTRACE_LOGD("Read %d bytes from host", act_sz);
         memcpy(buf, ptr, act_sz);
-        res = apptrace_put_down_buffer(ptr, &tmo);
+        res = hw->put_down_buffer(ptr, &tmo);
         *size = act_sz;
+    } else {
+        res = ESP_ERR_TIMEOUT;
     }
 
     return res;
@@ -902,12 +932,11 @@ esp_err_t esp_apptrace_read(esp_apptrace_dest_t dest, void *buf, uint32_t *size,
 uint8_t *esp_apptrace_down_buffer_get(esp_apptrace_dest_t dest, uint32_t *size, uint32_t user_tmo)
 {
     esp_apptrace_tmo_t tmo;
-    //TODO: use ptr to HW transport iface struct
-    uint8_t *(*apptrace_get_down_buffer)(uint32_t *, esp_apptrace_tmo_t *);
+    esp_apptrace_hw_t *hw = NULL;
 
     if (dest == ESP_APPTRACE_DEST_TRAX) {
 #if CONFIG_ESP32_APPTRACE_DEST_TRAX
-        apptrace_get_down_buffer = esp_apptrace_trax_down_buffer_get;
+        hw = ESP_APPTRACE_HW(ESP_APPTRACE_HW_TRAX);
 #else
         ESP_APPTRACE_LOGE("Application tracing via TRAX is disabled in menuconfig!");
         return NULL;
@@ -919,18 +948,17 @@ uint8_t *esp_apptrace_down_buffer_get(esp_apptrace_dest_t dest, uint32_t *size, 
 
     // ESP_APPTRACE_LOGE("esp_apptrace_down_buffer_get %d", *size);
     esp_apptrace_tmo_init(&tmo, user_tmo);
-    return apptrace_get_down_buffer(size, &tmo);
+    return hw->get_down_buffer(size, &tmo);
 }
 
 esp_err_t esp_apptrace_down_buffer_put(esp_apptrace_dest_t dest, uint8_t *ptr, uint32_t user_tmo)
 {
     esp_apptrace_tmo_t tmo;
-    //TODO: use ptr to HW transport iface struct
-    esp_err_t (*apptrace_put_down_buffer)(uint8_t *, esp_apptrace_tmo_t *);
+    esp_apptrace_hw_t *hw = NULL;
 
     if (dest == ESP_APPTRACE_DEST_TRAX) {
 #if CONFIG_ESP32_APPTRACE_DEST_TRAX
-        apptrace_put_down_buffer = esp_apptrace_trax_down_buffer_put;
+        hw = ESP_APPTRACE_HW(ESP_APPTRACE_HW_TRAX);
 #else
         ESP_APPTRACE_LOGE("Application tracing via TRAX is disabled in menuconfig!");
         return ESP_ERR_NOT_SUPPORTED;
@@ -941,21 +969,18 @@ esp_err_t esp_apptrace_down_buffer_put(esp_apptrace_dest_t dest, uint8_t *ptr, u
     }
 
     esp_apptrace_tmo_init(&tmo, user_tmo);
-    return apptrace_put_down_buffer(ptr, &tmo);
+    return hw->put_down_buffer(ptr, &tmo);
 }
 
 esp_err_t esp_apptrace_write(esp_apptrace_dest_t dest, const void *data, uint32_t size, uint32_t user_tmo)
 {
     uint8_t *ptr = NULL;
     esp_apptrace_tmo_t tmo;
-    //TODO: use ptr to HW transport iface struct
-    uint8_t *(*apptrace_get_buffer)(uint32_t, esp_apptrace_tmo_t *);
-    esp_err_t (*apptrace_put_buffer)(uint8_t *, esp_apptrace_tmo_t *);
+    esp_apptrace_hw_t *hw = NULL;
 
     if (dest == ESP_APPTRACE_DEST_TRAX) {
 #if CONFIG_ESP32_APPTRACE_DEST_TRAX
-        apptrace_get_buffer = esp_apptrace_trax_get_buffer;
-        apptrace_put_buffer = esp_apptrace_trax_put_buffer;
+        hw = ESP_APPTRACE_HW(ESP_APPTRACE_HW_TRAX);
 #else
         ESP_APPTRACE_LOGE("Application tracing via TRAX is disabled in menuconfig!");
         return ESP_ERR_NOT_SUPPORTED;
@@ -966,7 +991,7 @@ esp_err_t esp_apptrace_write(esp_apptrace_dest_t dest, const void *data, uint32_
     }
 
     esp_apptrace_tmo_init(&tmo, user_tmo);
-    ptr = apptrace_get_buffer(size, &tmo);
+    ptr = hw->get_up_buffer(size, &tmo);
     if (ptr == NULL) {
         return ESP_ERR_NO_MEM;
     }
@@ -976,7 +1001,7 @@ esp_err_t esp_apptrace_write(esp_apptrace_dest_t dest, const void *data, uint32_
     memcpy(ptr, data, size);
 
     // now indicate that this buffer is ready to be sent off to host
-    return apptrace_put_buffer(ptr, &tmo);
+    return hw->put_up_buffer(ptr, &tmo);
 }
 
 int esp_apptrace_vprintf_to(esp_apptrace_dest_t dest, uint32_t user_tmo, const char *fmt, va_list ap)
@@ -984,14 +1009,11 @@ int esp_apptrace_vprintf_to(esp_apptrace_dest_t dest, uint32_t user_tmo, const c
     uint16_t nargs = 0;
     uint8_t *pout, *p = (uint8_t *)fmt;
     esp_apptrace_tmo_t tmo;
-    //TODO: use ptr to HW transport iface struct
-    uint8_t *(*apptrace_get_buffer)(uint32_t, esp_apptrace_tmo_t *);
-    esp_err_t (*apptrace_put_buffer)(uint8_t *, esp_apptrace_tmo_t *);
+    esp_apptrace_hw_t *hw = NULL;
 
     if (dest == ESP_APPTRACE_DEST_TRAX) {
 #if CONFIG_ESP32_APPTRACE_DEST_TRAX
-        apptrace_get_buffer = esp_apptrace_trax_get_buffer;
-        apptrace_put_buffer = esp_apptrace_trax_put_buffer;
+        hw = ESP_APPTRACE_HW(ESP_APPTRACE_HW_TRAX);
 #else
         ESP_APPTRACE_LOGE("Application tracing via TRAX is disabled in menuconfig!");
         return ESP_ERR_NOT_SUPPORTED;
@@ -1014,7 +1036,7 @@ int esp_apptrace_vprintf_to(esp_apptrace_dest_t dest, uint32_t user_tmo, const c
         ESP_APPTRACE_LOGE("Failed to store all printf args!");
     }
 
-    pout = apptrace_get_buffer(1 + sizeof(char *) + nargs * sizeof(uint32_t), &tmo);
+    pout = hw->get_up_buffer(1 + sizeof(char *) + nargs * sizeof(uint32_t), &tmo);
     if (pout == NULL) {
         ESP_APPTRACE_LOGE("Failed to get buffer!");
         return -1;
@@ -1031,7 +1053,7 @@ int esp_apptrace_vprintf_to(esp_apptrace_dest_t dest, uint32_t user_tmo, const c
         ESP_APPTRACE_LOGD("arg %x", arg);
     }
 
-    int ret = apptrace_put_buffer(p, &tmo);
+    int ret = hw->put_up_buffer(p, &tmo);
     if (ret != ESP_OK) {
         ESP_APPTRACE_LOGE("Failed to put printf buf (%d)!", ret);
         return -1;
@@ -1048,12 +1070,11 @@ int esp_apptrace_vprintf(const char *fmt, va_list ap)
 uint8_t *esp_apptrace_buffer_get(esp_apptrace_dest_t dest, uint32_t size, uint32_t user_tmo)
 {
     esp_apptrace_tmo_t tmo;
-    //TODO: use ptr to HW transport iface struct
-    uint8_t *(*apptrace_get_buffer)(uint32_t, esp_apptrace_tmo_t *);
+    esp_apptrace_hw_t *hw = NULL;
 
     if (dest == ESP_APPTRACE_DEST_TRAX) {
 #if CONFIG_ESP32_APPTRACE_DEST_TRAX
-        apptrace_get_buffer = esp_apptrace_trax_get_buffer;
+        hw = ESP_APPTRACE_HW(ESP_APPTRACE_HW_TRAX);
 #else
         ESP_APPTRACE_LOGE("Application tracing via TRAX is disabled in menuconfig!");
         return NULL;
@@ -1064,18 +1085,17 @@ uint8_t *esp_apptrace_buffer_get(esp_apptrace_dest_t dest, uint32_t size, uint32
     }
 
     esp_apptrace_tmo_init(&tmo, user_tmo);
-    return apptrace_get_buffer(size, &tmo);
+    return hw->get_up_buffer(size, &tmo);
 }
 
 esp_err_t esp_apptrace_buffer_put(esp_apptrace_dest_t dest, uint8_t *ptr, uint32_t user_tmo)
 {
     esp_apptrace_tmo_t tmo;
-    //TODO: use ptr to HW transport iface struct
-    esp_err_t (*apptrace_put_buffer)(uint8_t *, esp_apptrace_tmo_t *);
+    esp_apptrace_hw_t *hw = NULL;
 
     if (dest == ESP_APPTRACE_DEST_TRAX) {
 #if CONFIG_ESP32_APPTRACE_DEST_TRAX
-        apptrace_put_buffer = esp_apptrace_trax_put_buffer;
+        hw = ESP_APPTRACE_HW(ESP_APPTRACE_HW_TRAX);
 #else
         ESP_APPTRACE_LOGE("Application tracing via TRAX is disabled in menuconfig!");
         return ESP_ERR_NOT_SUPPORTED;
@@ -1086,18 +1106,17 @@ esp_err_t esp_apptrace_buffer_put(esp_apptrace_dest_t dest, uint8_t *ptr, uint32
     }
 
     esp_apptrace_tmo_init(&tmo, user_tmo);
-    return apptrace_put_buffer(ptr, &tmo);
+    return hw->put_up_buffer(ptr, &tmo);
 }
 
 esp_err_t esp_apptrace_flush_nolock(esp_apptrace_dest_t dest, uint32_t min_sz, uint32_t usr_tmo)
 {
     esp_apptrace_tmo_t tmo;
-    //TODO: use ptr to HW transport iface struct
-    esp_err_t (*apptrace_flush)(uint32_t, esp_apptrace_tmo_t *);
+    esp_apptrace_hw_t *hw = NULL;
 
     if (dest == ESP_APPTRACE_DEST_TRAX) {
 #if CONFIG_ESP32_APPTRACE_DEST_TRAX
-        apptrace_flush = esp_apptrace_trax_flush;
+        hw = ESP_APPTRACE_HW(ESP_APPTRACE_HW_TRAX);
 #else
         ESP_APPTRACE_LOGE("Application tracing via TRAX is disabled in menuconfig!");
         return ESP_ERR_NOT_SUPPORTED;
@@ -1108,7 +1127,7 @@ esp_err_t esp_apptrace_flush_nolock(esp_apptrace_dest_t dest, uint32_t min_sz, u
     }
 
     esp_apptrace_tmo_init(&tmo, usr_tmo);
-    return apptrace_flush(min_sz, &tmo);
+    return hw->flush_up_buffer(min_sz, &tmo);
 }
 
 esp_err_t esp_apptrace_flush(esp_apptrace_dest_t dest, uint32_t usr_tmo)
@@ -1134,4 +1153,23 @@ esp_err_t esp_apptrace_flush(esp_apptrace_dest_t dest, uint32_t usr_tmo)
 
     return res;
 }
+
+bool esp_apptrace_host_is_connected(esp_apptrace_dest_t dest)
+{
+    esp_apptrace_hw_t *hw = NULL;
+
+    if (dest == ESP_APPTRACE_DEST_TRAX) {
+#if CONFIG_ESP32_APPTRACE_DEST_TRAX
+        hw = ESP_APPTRACE_HW(ESP_APPTRACE_HW_TRAX);
+#else
+        ESP_APPTRACE_LOGE("Application tracing via TRAX is disabled in menuconfig!");
+        return ESP_ERR_NOT_SUPPORTED;
+#endif
+    } else {
+        ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    return hw->host_is_connected();
+}
+
 #endif

@@ -15,23 +15,24 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_app_trace_util.h"
+#include "esp_clk.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////// TIMEOUT /////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-// TODO: get actual clock from PLL config
-#define ESP_APPTRACE_CPUTICKS2US(_t_)       ((_t_)/(XT_CLOCK_FREQ/1000000))
-#define ESP_APPTRACE_US2CPUTICKS(_t_)       ((_t_)*(XT_CLOCK_FREQ/1000000))
+#define ESP_APPTRACE_CPUTICKS2US(_t_, _cpu_freq_)       ((_t_)/(_cpu_freq_/1000000))
+#define ESP_APPTRACE_US2CPUTICKS(_t_, _cpu_freq_)       ((_t_)*(_cpu_freq_/1000000))
 
 esp_err_t esp_apptrace_tmo_check(esp_apptrace_tmo_t *tmo)
 {
+    int cpu_freq = esp_clk_cpu_freq();
     if (tmo->tmo != ESP_APPTRACE_TMO_INFINITE) {
         unsigned cur = portGET_RUN_TIME_COUNTER_VALUE();
         if (tmo->start <= cur) {
-            tmo->elapsed = ESP_APPTRACE_CPUTICKS2US(cur - tmo->start);
+            tmo->elapsed = ESP_APPTRACE_CPUTICKS2US(cur - tmo->start, cpu_freq);
         } else {
-            tmo->elapsed = ESP_APPTRACE_CPUTICKS2US(0xFFFFFFFF - tmo->start + cur);
+            tmo->elapsed = ESP_APPTRACE_CPUTICKS2US(0xFFFFFFFF - tmo->start + cur, cpu_freq);
         }
         if (tmo->elapsed >= tmo->tmo) {
             return ESP_ERR_TIMEOUT;
@@ -54,7 +55,11 @@ esp_err_t esp_apptrace_lock_take(esp_apptrace_lock_t *lock, esp_apptrace_tmo_t *
         // FIXME: if mux is busy it is not good idea to loop during the whole tmo with disabled IRQs.
         // So we check mux state using zero tmo, restore IRQs and let others tasks/IRQs to run on this CPU
         // while we are doing our own tmo check.
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
+        bool success = vPortCPUAcquireMutexTimeout(&lock->mux, 0, __FUNCTION__, __LINE__);
+#else
         bool success = vPortCPUAcquireMutexTimeout(&lock->mux, 0);
+#endif
         if (success) {
             lock->int_state = int_state;
             return ESP_OK;
@@ -75,7 +80,11 @@ esp_err_t esp_apptrace_lock_give(esp_apptrace_lock_t *lock)
     unsigned int_state = lock->int_state;
     // after call to the following func we can not be sure that lock->int_state
     // is not overwritten by other CPU who has acquired the mux just after we released it. See esp_apptrace_lock_take().
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
+    vPortCPUReleaseMutex(&lock->mux, __FUNCTION__, __LINE__);
+#else
     vPortCPUReleaseMutex(&lock->mux);
+#endif
     portEXIT_CRITICAL_NESTED(int_state);
     return ESP_OK;
 }

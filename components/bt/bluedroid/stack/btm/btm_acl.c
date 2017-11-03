@@ -1906,9 +1906,11 @@ tBTM_STATUS BTM_ReadRSSI (BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb)
     BTM_TRACE_API ("BTM_ReadRSSI: RemBdAddr: %02x%02x%02x%02x%02x%02x\n",
                    remote_bda[0], remote_bda[1], remote_bda[2],
                    remote_bda[3], remote_bda[4], remote_bda[5]);
-
+    tBTM_RSSI_RESULTS result;
     /* If someone already waiting on the version, do not allow another */
     if (btm_cb.devcb.p_rssi_cmpl_cb) {
+        result.status = BTM_BUSY;
+        (*p_cb)(&result);
         return (BTM_BUSY);
     }
 
@@ -1929,6 +1931,8 @@ tBTM_STATUS BTM_ReadRSSI (BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb)
         if (!btsnd_hcic_read_rssi (p->hci_handle)) {
             btm_cb.devcb.p_rssi_cmpl_cb = NULL;
             btu_stop_timer (&btm_cb.devcb.rssi_timer);
+            result.status = BTM_NO_RESOURCES;
+            (*p_cb)(&result);
             return (BTM_NO_RESOURCES);
         } else {
             return (BTM_CMD_STARTED);
@@ -2038,6 +2042,43 @@ tBTM_STATUS BTM_ReadTxPower (BD_ADDR remote_bda, tBT_TRANSPORT transport, tBTM_C
     /* If here, no BD Addr found */
     return (BTM_UNKNOWN_ADDR);
 }
+tBTM_STATUS BTM_BleReadAdvTxPower(tBTM_CMPL_CB *p_cb)
+{
+    BOOLEAN ret;
+    tBTM_TX_POWER_RESULTS result;
+    /* If someone already waiting on the version, do not allow another */
+    if (btm_cb.devcb.p_tx_power_cmpl_cb) {
+        result.status = BTM_BUSY;
+        (*p_cb)(&result);
+        return (BTM_BUSY);
+    }
+
+    btm_cb.devcb.p_tx_power_cmpl_cb = p_cb;
+    btu_start_timer (&btm_cb.devcb.tx_power_timer, BTU_TTYPE_BTM_ACL,
+                         BTM_DEV_REPLY_TIMEOUT);
+    ret = btsnd_hcic_ble_read_adv_chnl_tx_power();
+
+    if(!ret) {
+        btm_cb.devcb.p_tx_power_cmpl_cb = NULL;
+        btu_stop_timer (&btm_cb.devcb.tx_power_timer);
+        result.status = BTM_NO_RESOURCES;
+        (*p_cb)(&result);
+        return (BTM_NO_RESOURCES);
+    } else {
+        return BTM_CMD_STARTED;
+    }
+}
+
+void BTM_BleGetWhiteListSize(uint16_t *length)
+{
+    tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
+    if (p_cb->white_list_avail_size == 0) {
+        BTM_TRACE_ERROR("%s Whitelist full.", __func__);
+    }
+    *length = p_cb->white_list_avail_size;
+    return;
+}
+
 /*******************************************************************************
 **
 ** Function         btm_read_tx_power_complete

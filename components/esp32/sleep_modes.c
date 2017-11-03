@@ -197,7 +197,10 @@ static void rtc_wdt_disable()
  * Helper function which handles entry to and exit from light sleep
  * Placed into IRAM as flash may need some time to be powered on.
  */
-static esp_err_t IRAM_ATTR esp_light_sleep_inner(uint32_t pd_flags,
+static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
+        rtc_cpu_freq_t cpu_freq, uint32_t flash_enable_time_us) IRAM_ATTR __attribute__((noinline));
+
+static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
         rtc_cpu_freq_t cpu_freq, uint32_t flash_enable_time_us)
 {
     // Enter sleep
@@ -228,16 +231,19 @@ esp_err_t esp_light_sleep_start()
     // Decide which power domains can be powered down
     uint32_t pd_flags = get_power_down_flags();
 
-    // Decide if flash needs to be powered down;
-    // If it needs to be powered down, adjust sleep time
+    // Decide if VDD_SDIO needs to be powered down;
+    // If it needs to be powered down, adjust sleep time.
     const uint32_t flash_enable_time_us = VDD_SDIO_POWERUP_TO_FLASH_READ_US
                                           + CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY;
 
+    // Don't power down VDD_SDIO if pSRAM is used.
+#ifndef CONFIG_SPIRAM_SUPPORT
     if (s_config.sleep_duration > FLASH_PD_MIN_SLEEP_TIME_US &&
-        s_config.sleep_duration > flash_enable_time_us) {
+            s_config.sleep_duration > flash_enable_time_us) {
         pd_flags |= RTC_SLEEP_PD_VDDSDIO;
         s_config.sleep_duration -= flash_enable_time_us;
     }
+#endif //CONFIG_SPIRAM_SUPPORT
 
     // Safety net: enable WDT in case exit from light sleep fails
     rtc_wdt_enable(1000);

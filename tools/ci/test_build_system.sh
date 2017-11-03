@@ -134,13 +134,13 @@ function run_tests()
 
     print_status "Can still clean build if all text files are CRLFs"
     make clean || failure "Unexpected failure to make clean"
-    find . -exec unix2dos {} \; # CRLFify template dir
+    find . -path .git -prune -exec unix2dos {} \; # CRLFify template dir
     # make a copy of esp-idf and CRLFify it
     CRLF_ESPIDF=${TESTDIR}/esp-idf-crlf
     mkdir -p ${CRLF_ESPIDF}
     cp -r ${IDF_PATH}/* ${CRLF_ESPIDF}
     # don't CRLFify executable files, as Linux will fail to execute them
-    find ${CRLF_ESPIDF} -type f ! -perm 755 -exec unix2dos {} \;
+    find ${CRLF_ESPIDF} -name .git -prune -name build -prune -type f ! -perm 755 -exec unix2dos {} \;
     make IDF_PATH=${CRLF_ESPIDF} || failure "Failed to build with CRLFs in source"
     # do the same checks we do for the clean build
     assert_built ${APP_BINS} ${BOOTLOADER_BINS} partitions_singleapp.bin
@@ -165,6 +165,8 @@ function run_tests()
     take_build_snapshot
     touch sdkconfig
     make
+    # check the component_project_vars.mk file was rebuilt
+    assert_rebuilt esp32/component_project_vars.mk
     # pick one each of .c, .cpp, .S that #includes sdkconfig.h
     # and therefore should rebuild
     assert_rebuilt newlib/syscall_table.o

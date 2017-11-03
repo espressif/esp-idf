@@ -505,8 +505,8 @@ static BOOLEAN l2cble_start_conn_update (tL2C_LCB *p_lcb)
            up to what has been requested during connection establishement */
         if (p_lcb->conn_update_mask & L2C_BLE_NOT_DEFAULT_PARAM &&
                 /* current connection interval is greater than default min */
-                p_lcb->waiting_update_conn_min_interval > BTM_BLE_CONN_INT_MIN) {
-            /* use 7.5 ms as fast connection parameter, 0 slave latency */
+                p_lcb->current_used_conn_interval > BTM_BLE_CONN_INT_MAX_DEF) {
+            /* use 6 * 1.25 = 7.5 ms as fast connection parameter, 0 slave latency */
             min_conn_int = max_conn_int = BTM_BLE_CONN_INT_MIN;
             slave_latency = BTM_BLE_CONN_SLAVE_LATENCY_DEF;
             supervision_tout = BTM_BLE_CONN_TIMEOUT_DEF;
@@ -1203,4 +1203,240 @@ UINT32 CalConnectParamTimeout(tL2C_LCB *p_lcb)
     return timeout;
 }
 
+/*******************************************************************************
+**
+** Function         l2cble_credit_based_conn_req
+**
+** Description      This function sends LE Credit Based Connection Request for
+**                  LE connection oriented channels.
+**
+** Returns          void
+**
+*******************************************************************************/
+void l2cble_credit_based_conn_req (tL2C_CCB *p_ccb)
+{
+    if (!p_ccb)
+        return;
+
+    if (p_ccb->p_lcb && p_ccb->p_lcb->transport != BT_TRANSPORT_LE)
+    {
+        L2CAP_TRACE_WARNING ("LE link doesn't exist");
+        return;
+    }
+
+    l2cu_send_peer_ble_credit_based_conn_req (p_ccb);
+    return;
+}
+
+/*******************************************************************************
+**
+** Function         l2cble_credit_based_conn_res
+**
+** Description      This function sends LE Credit Based Connection Response for
+**                  LE connection oriented channels.
+**
+** Returns          void
+**
+*******************************************************************************/
+void l2cble_credit_based_conn_res (tL2C_CCB *p_ccb, UINT16 result)
+{
+    if (!p_ccb)
+        return;
+
+    if (p_ccb->p_lcb && p_ccb->p_lcb->transport != BT_TRANSPORT_LE)
+    {
+        L2CAP_TRACE_WARNING ("LE link doesn't exist");
+        return;
+    }
+
+    l2cu_send_peer_ble_credit_based_conn_res (p_ccb, result);
+    return;
+}
+
+/*******************************************************************************
+**
+** Function         l2cble_send_flow_control_credit
+**
+** Description      This function sends flow control credits for
+**                  LE connection oriented channels.
+**
+** Returns          void
+**
+*******************************************************************************/
+void l2cble_send_flow_control_credit(tL2C_CCB *p_ccb, UINT16 credit_value)
+{
+    if (!p_ccb)
+        return;
+
+    if (p_ccb->p_lcb && p_ccb->p_lcb->transport != BT_TRANSPORT_LE)
+    {
+        L2CAP_TRACE_WARNING ("LE link doesn't exist");
+        return;
+    }
+
+    l2cu_send_peer_ble_flow_control_credit(p_ccb, credit_value);
+    return;
+
+}
+
+/*******************************************************************************
+**
+** Function         l2cble_send_peer_disc_req
+**
+** Description      This function sends disconnect request
+**                  to the peer LE device
+**
+** Returns          void
+**
+*******************************************************************************/
+void l2cble_send_peer_disc_req(tL2C_CCB *p_ccb)
+{
+    L2CAP_TRACE_DEBUG ("%s",__func__);
+    if (!p_ccb)
+        return;
+
+    if (p_ccb->p_lcb && p_ccb->p_lcb->transport != BT_TRANSPORT_LE)
+    {
+        L2CAP_TRACE_WARNING ("LE link doesn't exist");
+        return;
+    }
+
+    l2cu_send_peer_ble_credit_based_disconn_req(p_ccb);
+    return;
+}
+
+#if (SMP_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         l2cble_sec_comp
+**
+** Description      This function is called when security procedure for an LE COC
+**                  link is done
+**
+** Returns          void
+**
+*******************************************************************************/
+void  l2cble_sec_comp(BD_ADDR p_bda, tBT_TRANSPORT transport, void *p_ref_data, UINT8 status)
+{
+    tL2C_LCB *p_lcb = l2cu_find_lcb_by_bd_addr(p_bda, BT_TRANSPORT_LE);
+    tL2CAP_SEC_DATA *p_buf = NULL;
+    UINT8 sec_flag;
+    UINT8 sec_act;
+
+    if (!p_lcb)
+    {
+        L2CAP_TRACE_WARNING ("%s security complete for unknown device", __func__);
+        return;
+    }
+
+    sec_act = p_lcb->sec_act;
+    p_lcb->sec_act = 0;
+
+    if (!fixed_queue_is_empty(p_lcb->le_sec_pending_q))
+    {
+        p_buf = (tL2CAP_SEC_DATA*) fixed_queue_dequeue(p_lcb->le_sec_pending_q);
+        if (!p_buf)
+        {
+            L2CAP_TRACE_WARNING ("%s Security complete for request not initiated from L2CAP",
+                    __func__);
+            return;
+        }
+
+        if (status != BTM_SUCCESS)
+        {
+            (*(p_buf->p_callback))(p_bda, BT_TRANSPORT_LE, p_buf->p_ref_data, status);
+        }
+        else
+        {
+            if (sec_act == BTM_SEC_ENCRYPT_MITM)
+            {
+                BTM_GetSecurityFlagsByTransport(p_bda, &sec_flag, transport);
+                if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED)
+                    (*(p_buf->p_callback))(p_bda, BT_TRANSPORT_LE, p_buf->p_ref_data, status);
+                else
+                {
+                    L2CAP_TRACE_DEBUG ("%s MITM Protection Not present", __func__);
+                    (*(p_buf->p_callback))(p_bda, BT_TRANSPORT_LE, p_buf->p_ref_data,
+                            BTM_FAILED_ON_SECURITY);
+                }
+            }
+            else
+            {
+                L2CAP_TRACE_DEBUG ("%s MITM Protection not required sec_act = %d",
+                        __func__, p_lcb->sec_act);
+
+                (*(p_buf->p_callback))(p_bda, BT_TRANSPORT_LE, p_buf->p_ref_data, status);
+            }
+        }
+    }
+    else
+    {
+        L2CAP_TRACE_WARNING ("%s Security complete for request not initiated from L2CAP", __func__);
+        return;
+    }
+    osi_free(p_buf);
+
+    while (!fixed_queue_is_empty(p_lcb->le_sec_pending_q))
+    {
+        p_buf = (tL2CAP_SEC_DATA*) fixed_queue_dequeue(p_lcb->le_sec_pending_q);
+
+        if (status != BTM_SUCCESS)
+            (*(p_buf->p_callback))(p_bda, BT_TRANSPORT_LE, p_buf->p_ref_data, status);
+        else
+            l2ble_sec_access_req(p_bda, p_buf->psm, p_buf->is_originator,
+                    p_buf->p_callback, p_buf->p_ref_data);
+
+       osi_free(p_buf);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         l2ble_sec_access_req
+**
+** Description      This function is called by LE COC link to meet the
+**                  security requirement for the link
+**
+** Returns          TRUE - security procedures are started
+**                  FALSE - failure
+**
+*******************************************************************************/
+BOOLEAN l2ble_sec_access_req(BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_originator, tL2CAP_SEC_CBACK *p_callback, void *p_ref_data)
+{
+    L2CAP_TRACE_DEBUG ("%s", __func__);
+    BOOLEAN status;
+    tL2C_LCB *p_lcb = NULL;
+
+    if (!p_callback)
+    {
+        L2CAP_TRACE_ERROR("%s No callback function", __func__);
+        return FALSE;
+    }
+
+    p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_LE);
+
+    if (!p_lcb)
+    {
+        L2CAP_TRACE_ERROR ("%s Security check for unknown device", __func__);
+        p_callback(bd_addr, BT_TRANSPORT_LE, p_ref_data, BTM_UNKNOWN_ADDR);
+        return FALSE;
+    }
+
+    tL2CAP_SEC_DATA *p_buf = (tL2CAP_SEC_DATA*) osi_malloc((UINT16)sizeof(tL2CAP_SEC_DATA));
+    if (!p_buf)
+    {
+        p_callback(bd_addr, BT_TRANSPORT_LE, p_ref_data, BTM_NO_RESOURCES);
+        return FALSE;
+    }
+
+    p_buf->psm = psm;
+    p_buf->is_originator = is_originator;
+    p_buf->p_callback = p_callback;
+    p_buf->p_ref_data = p_ref_data;
+    fixed_queue_enqueue(p_lcb->le_sec_pending_q, p_buf);
+    status = btm_ble_start_sec_check(bd_addr, psm, is_originator, &l2cble_sec_comp, p_ref_data);
+
+    return status;
+}
+#endif /* #if (SMP_INCLUDED == TRUE) */
 #endif /* (BLE_INCLUDED == TRUE) */

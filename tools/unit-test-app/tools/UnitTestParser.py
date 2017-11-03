@@ -14,7 +14,6 @@ TEST_CASE_PATTERN = {
     "SDK": "ESP32_IDF",
     "level": "Unit",
     "execution time": 0,
-    "Test App": "UT",
     "auto test": "Yes",
     "category": "Function",
     "test point 1": "basic function",
@@ -36,20 +35,31 @@ class Parser(object):
     TAG_PATTERN = re.compile("([^=]+)(=)?(.+)?")
     DESCRIPTION_PATTERN = re.compile("\[([^]\[]+)\]")
 
+    # file path (relative to idf path)
+    TAG_DEF_FILE = os.path.join("tools", "unit-test-app", "tools", "TagDefinition.yml")
+    MODULE_DEF_FILE = os.path.join("tools", "unit-test-app", "tools", "ModuleDefinition.yml")
+    MODULE_ARTIFACT_FILE = os.path.join("components", "idf_test", "ModuleDefinition.yml")
+    TEST_CASE_FILE = os.path.join("components", "idf_test", "unit_test", "TestCaseAll.yml")
+    UT_BIN_FOLDER = os.path.join("tools", "unit-test-app", "builds")
+    ELF_FILE = "unit-test-app.elf"
+    APP_NAME_PREFIX = "UT_"
+
     def __init__(self, idf_path=os.getenv("IDF_PATH")):
         self.test_env_tags = {}
         self.unit_jobs = {}
         self.file_name_cache = {}
         self.idf_path = idf_path
-        self.tag_def = yaml.load(open(os.path.join(idf_path, "tools", "unit-test-app", "tools",
-                                                   "TagDefinition.yml"), "r"))
-        self.module_map = yaml.load(open(os.path.join(idf_path, "tools", "unit-test-app", "tools",
-                                                      "ModuleDefinition.yml"), "r"))
+        self.tag_def = yaml.load(open(os.path.join(idf_path, self.TAG_DEF_FILE), "r"))
+        self.module_map = yaml.load(open(os.path.join(idf_path, self.MODULE_DEF_FILE), "r"))
+        # used to check if duplicated test case names
+        self.test_case_names = set()
+        self.parsing_errors = []
 
-    def parse_test_cases_from_elf(self, elf_file):
+    def parse_test_cases_from_elf(self, elf_file, app_name):
         """
-        parse test cases from elf and save test cases to unit test folder
+        parse test cases from elf and save test cases need to be executed to unit test folder
         :param elf_file: elf file path
+        :param app_name: built unit test app name
         """
         subprocess.check_output('xtensa-esp32-elf-objdump -t {} | grep \ test_desc > case_address.tmp'.format(elf_file),
                                 shell=True)
@@ -71,25 +81,37 @@ class Parser(object):
                 desc = table.get_string("any", desc_addr)
                 file_name = table.get_string("any", file_name_addr)
 
-                tc = self.parse_one_test_case(name, desc, file_name)
+                tc = self.parse_one_test_case(name, desc, file_name, app_name)
+
+                # check if duplicated case names
+                # we need to use it to select case,
+                # if duplicated IDs, Unity could select incorrect case to run
+                # and we need to check all cases no matter if it's going te be executed by CI
+                # also add app_name here, we allow same case for different apps
+                if (tc["summary"] + app_name) in self.test_case_names:
+                    self.parsing_errors.append("duplicated test case ID: " + tc["summary"])
+                else:
+                    self.test_case_names.add(tc["summary"] + app_name)
+
                 if tc["CI ready"] == "Yes":
                     # update test env list and the cases of same env list
                     if tc["test environment"] in self.test_env_tags:
                         self.test_env_tags[tc["test environment"]].append(tc["ID"])
                     else:
                         self.test_env_tags.update({tc["test environment"]: [tc["ID"]]})
-                test_cases.append(tc)
+                    # only add cases need to be executed
+                    test_cases.append(tc)
 
         os.remove("section_table.tmp")
         os.remove("case_address.tmp")
 
-        self.dump_test_cases(test_cases)
+        return test_cases
 
     def parse_case_properities(self, tags_raw):
         """
         parse test case tags (properities) with the following rules:
             * first tag is always group of test cases, it's mandatory
-            * the rest tags should be [type=value]. 
+            * the rest tags should be [type=value].
                 * if the type have default value, then [type] equal to [type=default_value].
                 * if the type don't don't exist, then equal to [type=omitted_value]
             default_value and omitted_value are defined in TagDefinition.yml
@@ -123,21 +145,22 @@ class Parser(object):
                 pass
         return p
 
-    def parse_one_test_case(self, name, description, file_name):
+    def parse_one_test_case(self, name, description, file_name, app_name):
         """
         parse one test case
         :param name: test case name (summary)
         :param description: test case description (tag string)
         :param file_name: the file defines this test case
+        :param app_name: built unit test app name
         :return: parsed test case
         """
         prop = self.parse_case_properities(description)
-        
+
         idf_path = os.getenv("IDF_PATH")
-        
+
         # use relative file path to IDF_PATH, to make sure file path is consist
         relative_file_path = os.path.relpath(file_name, idf_path)
-        
+
         file_name_hash = int(hashlib.sha256(relative_file_path).hexdigest(), base=16) % 1000
 
         if file_name_hash in self.file_name_cache:
@@ -149,8 +172,10 @@ class Parser(object):
                                        self.module_map[prop["module"]]['sub module abbr'],
                                        file_name_hash,
                                        self.file_name_cache[file_name_hash])
+
         test_case = deepcopy(TEST_CASE_PATTERN)
-        test_case.update({"module": self.module_map[prop["module"]]['module'],
+        test_case.update({"Test App": self.APP_NAME_PREFIX + app_name,
+                          "module": self.module_map[prop["module"]]['module'],
                           "CI ready": "No" if prop["ignore"] == "Yes" else "Yes",
                           "cmd set": ["IDFUnitTest/UnitTest", [name]],
                           "ID": tc_id,
@@ -166,14 +191,27 @@ class Parser(object):
         dump parsed test cases to YAML file for test bench input
         :param test_cases: parsed test cases
         """
-        with open(os.path.join(self.idf_path, "components", "idf_test", "unit_test", "TestCaseAll.yml"), "wb+") as f:
+        with open(os.path.join(self.idf_path, self.TEST_CASE_FILE), "wb+") as f:
             yaml.dump({"test cases": test_cases}, f, allow_unicode=True, default_flow_style=False)
 
     def copy_module_def_file(self):
         """ copy module def file to artifact path """
-        src = os.path.join(self.idf_path, "tools", "unit-test-app", "tools", "ModuleDefinition.yml")
-        dst = os.path.join(self.idf_path, "components", "idf_test")
+        src = os.path.join(self.idf_path, self.MODULE_DEF_FILE)
+        dst = os.path.join(self.idf_path, self.MODULE_ARTIFACT_FILE)
         shutil.copy(src, dst)
+
+    def parse_test_cases(self):
+        """ parse test cases from multiple built unit test apps """
+        test_cases = []
+
+        test_app_folder = os.path.join(self.idf_path, self.UT_BIN_FOLDER)
+        test_apps = os.listdir(test_app_folder)
+        for app in test_apps:
+            elf_file = os.path.join(test_app_folder, app, self.ELF_FILE)
+            if os.path.exists(elf_file):
+                test_cases.extend(self.parse_test_cases_from_elf(elf_file, app))
+
+        self.dump_test_cases(test_cases)
 
 
 def test_parser():
@@ -210,12 +248,16 @@ def main():
     test_parser()
 
     idf_path = os.getenv("IDF_PATH")
-    elf_path = os.path.join(idf_path, "tools", "unit-test-app", "build", "unit-test-app.elf")
 
     parser = Parser(idf_path)
-    parser.parse_test_cases_from_elf(elf_path)
+    parser.parse_test_cases()
     parser.copy_module_def_file()
+    if len(parser.parsing_errors) > 0:
+        for error in parser.parsing_errors:
+            print error
+        exit(-1)
 
 
 if __name__ == '__main__':
     main()
+

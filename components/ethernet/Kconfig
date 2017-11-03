@@ -11,7 +11,7 @@ config DMA_RX_BUF_NUM
         If enable flow ctrl, the num must be above 9 .
 
 config DMA_TX_BUF_NUM
-    int "Number of DMA RX buffers"
+    int "Number of DMA TX buffers"
     range 3 20
     default 10
     help

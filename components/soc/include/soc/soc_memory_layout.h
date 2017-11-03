@@ -17,6 +17,8 @@
 #include <stdbool.h>
 
 #include "soc/soc.h"
+#include "sdkconfig.h"
+#include "esp_attr.h"
 
 #define SOC_MEMORY_TYPE_NO_PRIOS 3
 
@@ -58,15 +60,32 @@ typedef struct
 extern const soc_reserved_region_t soc_reserved_regions[];
 extern const size_t soc_reserved_region_count;
 
-inline static bool esp_ptr_dma_capable(const void *p)
+inline static bool IRAM_ATTR esp_ptr_dma_capable(const void *p)
 {
     return (intptr_t)p >= SOC_DMA_LOW && (intptr_t)p < SOC_DMA_HIGH;
 }
 
-inline static bool esp_ptr_executable(const void *p)
+inline static bool IRAM_ATTR esp_ptr_executable(const void *p)
 {
     intptr_t ip = (intptr_t) p;
     return (ip >= SOC_IROM_LOW && ip < SOC_IROM_HIGH)
         || (ip >= SOC_IRAM_LOW && ip < SOC_IRAM_HIGH)
         || (ip >= SOC_RTC_IRAM_LOW && ip < SOC_RTC_IRAM_HIGH);
+}
+
+inline static bool IRAM_ATTR esp_ptr_byte_accessible(const void *p)
+{
+    bool r;
+    r = ((intptr_t)p >= SOC_BYTE_ACCESSIBLE_LOW && (intptr_t)p < SOC_BYTE_ACCESSIBLE_HIGH);
+#if CONFIG_SPIRAM_SUPPORT
+    r |= ((intptr_t)p >= SOC_EXTRAM_DATA_LOW && (intptr_t)p < SOC_EXTRAM_DATA_HIGH);
+#endif
+    return r;
+}
+
+inline static bool IRAM_ATTR esp_ptr_internal(const void *p) {
+    bool r;
+    r = ((intptr_t)p >= SOC_MEM_INTERNAL_LOW && (intptr_t)p < SOC_MEM_INTERNAL_HIGH);
+    r |= ((intptr_t)p >= SOC_RTC_DATA_LOW && (intptr_t)p < SOC_RTC_DATA_HIGH);
+    return r;
 }

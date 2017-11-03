@@ -29,3 +29,7 @@
 [submodule "components/libsodium/libsodium"]
 	path = components/libsodium/libsodium
 	url = https://github.com/jedisct1/libsodium.git
+
+[submodule "components/spiffs/spiffs"]
+	path = components/spiffs/spiffs
+	url = https://github.com/pellepl/spiffs.git

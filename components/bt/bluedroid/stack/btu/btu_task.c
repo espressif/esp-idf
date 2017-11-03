@@ -385,6 +385,7 @@ static void btu_general_alarm_process(TIMER_LIST_ENT *p_tle)
     case BTU_TTYPE_BLE_GAP_LIM_DISC:
     case BTU_TTYPE_BLE_RANDOM_ADDR:
     case BTU_TTYPE_BLE_GAP_FAST_ADV:
+    case BTU_TTYPE_BLE_SCAN:
     case BTU_TTYPE_BLE_OBSERVE:
         btm_ble_timeout(p_tle);
         break;

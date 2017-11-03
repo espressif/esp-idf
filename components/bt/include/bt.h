@@ -102,11 +102,10 @@ typedef enum {
     ESP_BLE_PWR_TYPE_CONN_HDL6  = 6,            /*!< For connection handle 6 */
     ESP_BLE_PWR_TYPE_CONN_HDL7  = 7,            /*!< For connection handle 7 */
     ESP_BLE_PWR_TYPE_CONN_HDL8  = 8,            /*!< For connection handle 8 */
-    ESP_BLE_PWR_TYPE_CONN_HDL9  = 9,            /*!< For connection handle 9 */
-    ESP_BLE_PWR_TYPE_ADV        = 10,           /*!< For advertising */
-    ESP_BLE_PWR_TYPE_SCAN       = 11,           /*!< For scan */
-    ESP_BLE_PWR_TYPE_DEFAULT    = 12,           /*!< For default, if not set other, it will use default value */
-    ESP_BLE_PWR_TYPE_NUM        = 13,           /*!< TYPE numbers */
+    ESP_BLE_PWR_TYPE_ADV        = 9,           /*!< For advertising */
+    ESP_BLE_PWR_TYPE_SCAN       = 10,           /*!< For scan */
+    ESP_BLE_PWR_TYPE_DEFAULT    = 11,           /*!< For default, if not set other, it will use default value */
+    ESP_BLE_PWR_TYPE_NUM        = 12,           /*!< TYPE numbers */
 } esp_ble_power_type_t;
 
 /**
@@ -159,20 +158,20 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg);
 esp_err_t esp_bt_controller_deinit(void);
 
 /**
- * @brief Enable BT controller
+ * @brief Enable BT controller.
+ *               Due to a known issue, you cannot call esp_bt_controller_enable() a second time
+ *               to change the controller mode dynamically. To change controller mode, call
+ *               esp_bt_controller_disable() and then call esp_bt_controller_enable() with the new mode.
  * @param mode : the mode(BLE/BT/BTDM) to enable.
- *               Now only support BTDM.
  * @return       ESP_OK - success, other - failed
  */
 esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode);
 
 /**
  * @brief  Disable BT controller
- * @param mode : the mode(BLE/BT/BTDM) to disable.
- *               Now only support BTDM.
  * @return       ESP_OK - success, other - failed
  */
-esp_err_t esp_bt_controller_disable(esp_bt_mode_t mode);
+esp_err_t esp_bt_controller_disable(void);
 
 /**
  * @brief  Get BT controller is initialised/de-initialised/enabled/disabled
@@ -207,6 +206,36 @@ void esp_vhci_host_send_packet(uint8_t *data, uint16_t len);
  * @param callback esp_vhci_host_callback type variable
  */
 void esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callback);
+
+/** @brief esp_bt_controller_mem_release
+ * release the memory by mode, if never use the bluetooth mode
+ * it can release the .bbs, .data and other section to heap.
+ * The total size is about 70k bytes.
+ *
+ * If esp_bt_controller_enable(mode) has already been called, calling
+ * esp_bt_controller_mem_release(ESP_BT_MODE_BTDM) will automatically
+ * release all memory which is not needed for the currently enabled
+ * Bluetooth controller mode.
+ *
+ * For example, calling esp_bt_controller_enable(ESP_BT_MODE_BLE) then
+ * esp_bt_controller_mem_release(ESP_BT_MODE_BTDM) will enable BLE modes
+ * and release memory only used by BT Classic. Also, call esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT)
+ * is the same.
+ *
+ * Note that once BT controller memory is released, the process cannot be reversed.
+ * If your firmware will later upgrade the Bluetooth controller mode (BLE -> BT Classic or disabled -> enabled)
+ * then do not call this function.
+ *
+ * If user never use bluetooth controller, could call esp_bt_controller_mem_release(ESP_BT_MODE_BTDM)
+ * before esp_bt_controller_init or after esp_bt_controller_deinit.
+ *
+ * For example, user only use bluetooth to config SSID and PASSWORD of WIFI, after config, will never use bluetooth.
+ * Then, could call esp_bt_controller_mem_release(ESP_BT_MODE_BTDM) after esp_bt_controller_deinit.
+ *
+ * @param mode : the mode want to release memory
+ * @return ESP_OK - success, other - failed
+ */
+esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode);
 
 #ifdef __cplusplus
 }

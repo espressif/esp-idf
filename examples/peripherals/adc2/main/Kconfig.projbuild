@@ -1,0 +1,61 @@
+menu "Example Configuration"
+
+choice ADC2_EXAMPLE_CHANNEL
+    bool "ADC2 Channel Num"
+    default ADC2_EXAMPLE_CHANNEL_7
+    help
+        The channel of ADC2 used in this example.
+
+config ADC2_EXAMPLE_CHANNEL_0
+   bool "ADC2 Channel 0 (GPIO 4)"
+config ADC2_EXAMPLE_CHANNEL_1
+   bool "ADC2 Channel 1 (GPIO 0)"
+config ADC2_EXAMPLE_CHANNEL_2
+   bool "ADC2 Channel 2 (GPIO 2)"
+config ADC2_EXAMPLE_CHANNEL_3
+   bool "ADC2 Channel 3 (GPIO 15)"
+config ADC2_EXAMPLE_CHANNEL_4
+   bool "ADC2 Channel 4 (GPIO 13)"
+config ADC2_EXAMPLE_CHANNEL_5
+   bool "ADC2 Channel 5 (GPIO 12)"
+config ADC2_EXAMPLE_CHANNEL_6
+   bool "ADC2 Channel 6 (GPIO 14)"
+config ADC2_EXAMPLE_CHANNEL_7
+   bool "ADC2 Channel 7 (GPIO 27)"
+config ADC2_EXAMPLE_CHANNEL_8
+   bool "ADC2 Channel 8 (GPIO 25)"
+config ADC2_EXAMPLE_CHANNEL_9
+   bool "ADC2 Channel 9 (GPIO 26)"
+endchoice
+
+config ADC2_EXAMPLE_CHANNEL
+    int 
+    default 0 if ADC2_EXAMPLE_CHANNEL_0
+    default 1 if ADC2_EXAMPLE_CHANNEL_1
+    default 2 if ADC2_EXAMPLE_CHANNEL_2
+    default 3 if ADC2_EXAMPLE_CHANNEL_3
+    default 4 if ADC2_EXAMPLE_CHANNEL_4
+    default 5 if ADC2_EXAMPLE_CHANNEL_5
+    default 6 if ADC2_EXAMPLE_CHANNEL_6
+    default 7 if ADC2_EXAMPLE_CHANNEL_7
+    default 8 if ADC2_EXAMPLE_CHANNEL_8
+    default 9 if ADC2_EXAMPLE_CHANNEL_9
+
+choice DAC_EXAMPLE_CHANNEL
+    bool "DAC Channel Num"
+    default DAC_EXAMPLE_CHANNEL_1
+    help
+        The channel of DAC used in this example.
+
+config DAC_EXAMPLE_CHANNEL_1
+   bool "DAC Channel 1 (GPIO25)"
+config DAC_EXAMPLE_CHANNEL_2
+   bool "DAC Channel 2 (GPIO26)"
+endchoice
+
+config DAC_EXAMPLE_CHANNEL
+    int 
+    default 1 if DAC_EXAMPLE_CHANNEL_1
+    default 2 if DAC_EXAMPLE_CHANNEL_2
+
+endmenu

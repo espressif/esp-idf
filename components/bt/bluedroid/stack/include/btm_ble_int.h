@@ -86,13 +86,15 @@ typedef UINT8   tBTM_BLE_SEC_REQ_ACT;
 #define BTM_BLE_IS_RESOLVE_BDA(x)           ((x[0] & BLE_RESOLVE_ADDR_MASK) == BLE_RESOLVE_ADDR_MSB)
 
 /* LE scan activity bit mask, continue with LE inquiry bits */
-#define BTM_LE_SELECT_CONN_ACTIVE      0x40     /* selection connection is in progress */
-#define BTM_LE_OBSERVE_ACTIVE          0x80     /* observe is in progress */
+#define BTM_LE_SELECT_CONN_ACTIVE      0x0040     /* selection connection is in progress */
+#define BTM_LE_OBSERVE_ACTIVE          0x0080     /* observe is in progress */
+#define BTM_LE_DISCOVER_ACTIVE         0x0100     /* scan is in progress */
 
 /* BLE scan activity mask checking */
 #define BTM_BLE_IS_SCAN_ACTIVE(x)   ((x) & BTM_BLE_SCAN_ACTIVE_MASK)
 #define BTM_BLE_IS_INQ_ACTIVE(x)   ((x) & BTM_BLE_INQUIRY_MASK)
 #define BTM_BLE_IS_OBS_ACTIVE(x)   ((x) & BTM_LE_OBSERVE_ACTIVE)
+#define BTM_BLE_IS_DISCO_ACTIVE(x)   ((x) & BTM_LE_DISCOVER_ACTIVE)
 #define BTM_BLE_IS_SEL_CONN_ACTIVE(x)   ((x) & BTM_LE_SELECT_CONN_ACTIVE)
 
 /* BLE ADDR type ID bit */
@@ -136,6 +138,7 @@ typedef struct {
 typedef struct {
     UINT16 discoverable_mode;
     UINT16 connectable_mode;
+    BOOLEAN scan_params_set;
     UINT32 scan_window;
     UINT32 scan_interval;
     UINT8 scan_type; /* current scan type: active or passive */
@@ -294,7 +297,7 @@ typedef void (tBTM_DATA_LENGTH_CHANGE_CBACK) (UINT16 max_tx_length, UINT16 max_r
 /* Define BLE Device Management control structure
 */
 typedef struct {
-    UINT8 scan_activity;         /* LE scan activity mask */
+    UINT16 scan_activity;         /* LE scan activity mask */
 
     /*****************************************************
     **      BLE Inquiry
@@ -306,6 +309,11 @@ typedef struct {
     tBTM_CMPL_CB *p_obs_cmpl_cb;
     TIMER_LIST_ENT obs_timer_ent;
 
+    /* scan callback and timer */
+    tBTM_INQ_RESULTS_CB *p_scan_results_cb;
+    tBTM_CMPL_CB *p_scan_cmpl_cb;
+    TIMER_LIST_ENT scan_timer_ent;
+
     /* background connection procedure cb value */
     tBTM_BLE_CONN_TYPE bg_conn_type;
     UINT32 scan_int;
@@ -314,6 +322,7 @@ typedef struct {
 
     /* white list information */
     UINT8 white_list_avail_size;
+    tBTM_ADD_WHITELIST_CBACK *add_wl_cb;
     tBTM_BLE_WL_STATE wl_state;
 
     fixed_queue_t *conn_pending_q;
@@ -357,7 +366,6 @@ tBTM_STATUS btm_ble_start_inquiry (UINT8 mode, UINT8   duration);
 void btm_ble_stop_scan(void);
 void btm_clear_all_pending_le_entry(void);
 
-void btm_ble_stop_scan();
 BOOLEAN btm_ble_send_extended_scan_params(UINT8 scan_type, UINT32 scan_int,
         UINT32 scan_win, UINT8 addr_type_own,
         UINT8 scan_filter_policy);
@@ -405,7 +413,7 @@ void btm_ble_update_sec_key_size(BD_ADDR bd_addr, UINT8 enc_key_size);
 UINT8 btm_ble_read_sec_key_size(BD_ADDR bd_addr);
 
 /* white list function */
-BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr);
+BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBTM_ADD_WHITELIST_CBACK *add_wl_cb);
 void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy);
 void btm_update_adv_filter_policy(tBTM_BLE_AFP adv_policy);
 void btm_ble_clear_white_list (void);

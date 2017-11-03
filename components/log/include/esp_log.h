@@ -95,6 +95,62 @@ uint32_t esp_log_early_timestamp(void);
  */
 void esp_log_write(esp_log_level_t level, const char* tag, const char* format, ...) __attribute__ ((format (printf, 3, 4)));
 
+#include "esp_log_internal.h"
+
+/**
+ * @brief Log a buffer of hex bytes at specified level, seprated into 16 bytes each line.
+ *
+ * @param  tag      description tag
+ *
+ * @param  buffer   Pointer to the buffer array
+ *
+ * @param  buff_len length of buffer in bytes
+ *
+ * @param level     level of the log
+ *
+ */
+#define ESP_LOG_BUFFER_HEX_LEVEL( tag, buffer, buff_len, level ) do {\
+        if ( LOG_LOCAL_LEVEL >= level ) esp_log_buffer_hex_internal( tag, buffer, buff_len, level ); } while(0)
+
+/**
+ * @brief Log a buffer of characters at specified level, seprated into 16 bytes each line. Buffer should contain only printable characters.
+ *
+ * @param  tag      description tag
+ *
+ * @param  buffer   Pointer to the buffer array
+ *
+ * @param  buff_len length of buffer in bytes
+ *
+ * @param level     level of the log
+ *
+ */
+#define ESP_LOG_BUFFER_CHAR_LEVEL( tag, buffer, buff_len, level ) do {\
+    if ( LOG_LOCAL_LEVEL >= level ) esp_log_buffer_char_internal( tag, buffer, buff_len, level ); } while(0)
+
+/**
+ * @brief Dump a buffer to the log at specified level.
+ * 
+ * The dump log shows just like the one below:
+ * 
+ *      W (195) log_example: 0x3ffb4280   45 53 50 33 32 20 69 73  20 67 72 65 61 74 2c 20  |ESP32 is great, |
+ *      W (195) log_example: 0x3ffb4290   77 6f 72 6b 69 6e 67 20  61 6c 6f 6e 67 20 77 69  |working along wi|
+ *      W (205) log_example: 0x3ffb42a0   74 68 20 74 68 65 20 49  44 46 2e 00              |th the IDF..|
+ *      
+ * It is highly recommend to use terminals with over 102 text width.
+ * 
+ * @param tag description tag
+ * 
+ * @param buffer Pointer to the buffer array
+ * 
+ * @param buff_len length of buffer in bytes
+ * 
+ * @param level level of the log
+ */
+#define ESP_LOG_BUFFER_HEXDUMP( tag, buffer, buff_len, level ) do {\
+    if ( LOG_LOCAL_LEVEL >= level ) esp_log_buffer_hexdump_internal( tag, buffer, buff_len, level); } while(0)
+
+
+#if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO)
 /**
  * @brief Log a buffer of hex bytes at Info level
  *
@@ -104,8 +160,10 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
  *
  * @param  buff_len length of buffer in bytes
  *
+ * @see ``esp_log_buffer_hex_level``
+ *
  */
-void esp_log_buffer_hex(const char *tag, const void *buffer, uint16_t buff_len);
+#define ESP_LOG_BUFFER_HEX(tag, buffer, buff_len)   ESP_LOG_BUFFER_HEX_LEVEL( tag, buffer, buff_len, ESP_LOG_INFO )
 
 /**
  * @brief Log a buffer of characters at Info level. Buffer should contain only printable characters.
@@ -116,8 +174,20 @@ void esp_log_buffer_hex(const char *tag, const void *buffer, uint16_t buff_len);
  *
  * @param  buff_len length of buffer in bytes
  *
+ * @see ``esp_log_buffer_char_level``
+ *
  */
-void esp_log_buffer_char(const char *tag, const void *buffer, uint16_t buff_len);
+#define ESP_LOG_BUFFER_CHAR(tag, buffer, buff_len)   ESP_LOG_BUFFER_CHAR_LEVEL( tag, buffer, buff_len, ESP_LOG_INFO )
+
+#else
+#define ESP_LOG_BUFFER_HEX(tag, buffer, buff_len)   {}
+#define ESP_LOG_BUFFER_CHAR(tag, buffer, buff_len)  {}
+#endif
+
+//to be back compatible
+#define esp_log_buffer_hex      ESP_LOG_BUFFER_HEX
+#define esp_log_buffer_char     ESP_LOG_BUFFER_CHAR
+
 
 #if CONFIG_LOG_COLORS
 #define LOG_COLOR_BLACK   "30"
@@ -189,6 +259,32 @@ void esp_log_buffer_char(const char *tag, const void *buffer, uint16_t buff_len)
 /// macro to output logs at ``ESP_LOG_VERBOSE`` level.  @see ``ESP_LOGE``
 #define ESP_LOGV( tag, format, ... )  ESP_EARLY_LOGV(tag, format, ##__VA_ARGS__)
 #endif  // BOOTLOADER_BUILD
+
+/** runtime macro to output logs at a speicfied level. 
+ * 
+ * @param tag tag of the log, which can be used to change the log level by ``esp_log_level_set`` at runtime.
+ *
+ * @param level level of the output log.
+ *
+ * @param format format of the output log. see ``printf``
+ *
+ * @param ... variables to be replaced into the log. see ``printf``
+ *
+ * @see ``printf``
+ */
+#define ESP_LOG_LEVEL(level, tag, format, ...) do {\
+                if (level==ESP_LOG_ERROR )          { esp_log_write(ESP_LOG_ERROR,      tag, LOG_FORMAT(E, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }\
+                else if (level==ESP_LOG_WARN )      { esp_log_write(ESP_LOG_WARN,       tag, LOG_FORMAT(W, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }\
+                else if (level==ESP_LOG_DEBUG )     { esp_log_write(ESP_LOG_DEBUG,      tag, LOG_FORMAT(D, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }\
+                else if (level==ESP_LOG_VERBOSE )   { esp_log_write(ESP_LOG_VERBOSE,    tag, LOG_FORMAT(V, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }\
+                else                                { esp_log_write(ESP_LOG_INFO,       tag, LOG_FORMAT(I, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }}while(0)
+
+/** runtime macro to output logs at a speicfied level. Also check the level with ``LOG_LOCAL_LEVEL``.
+ * 
+ * @see ``printf``, ``ESP_LOG_LEVEL``
+ */
+#define ESP_LOG_LEVEL_LOCAL(level, tag, format, ...) do {\
+                if ( LOG_LOCAL_LEVEL >= level ) ESP_LOG_LEVEL(level, tag, format, ##__VA_ARGS__); } while(0);
 
 #ifdef __cplusplus
 }

@@ -157,7 +157,7 @@ TEST_CASE("spi flash functions can run along with IRAM interrupts", "[spi_flash]
     timer_enable_intr(TIMER_GROUP_0, TIMER_0);
     timer_start(TIMER_GROUP_0, TIMER_0);
 
-    xTaskCreatePinnedToCore(read_task, "r", 2048, &read_arg, 3, NULL, 1);
+    xTaskCreatePinnedToCore(read_task, "r", 2048, &read_arg, 3, NULL, portNUM_PROCESSORS - 1);
     xSemaphoreTake(read_arg.done, portMAX_DELAY);
 
     timer_pause(TIMER_GROUP_0, TIMER_0);

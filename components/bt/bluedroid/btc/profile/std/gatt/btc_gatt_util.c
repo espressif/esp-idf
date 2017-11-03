@@ -174,41 +174,27 @@ uint16_t get_uuid16(tBT_UUID *p_uuid)
         return (UINT16) p_uuid->uu.uuid32;
     }
 }
+
 uint16_t set_read_value(uint8_t *gattc_if, esp_ble_gattc_cb_param_t *p_dest, tBTA_GATTC_READ *p_src)
 {
-    uint16_t descr_type = 0;
     uint16_t len = 0;
 
     p_dest->read.status = p_src->status;
     p_dest->read.conn_id = BTC_GATT_GET_CONN_ID(p_src->conn_id);
     *gattc_if = BTC_GATT_GET_GATT_IF(p_src->conn_id);
-    bta_to_btc_srvc_id(&p_dest->read.srvc_id, &p_src->srvc_id);
-    bta_to_btc_gatt_id(&p_dest->read.char_id, &p_src->char_id);
-    bta_to_btc_gatt_id(&p_dest->read.descr_id, &p_src->descr_type);
+    p_dest->read.status = p_src->status;
+    p_dest->read.handle = p_src->handle;
 
-    descr_type = get_uuid16(&p_src->descr_type.uuid);
-
-    switch (descr_type) {
-    case GATT_UUID_CHAR_AGG_FORMAT:
-        /* not supported */
-        p_dest->read.value_type = GATTC_READ_VALUE_TYPE_AGG_FORMAT;
-        p_dest->read.value_len = 0;
-        break;
-
-    default:
-        if (( p_src->status == BTA_GATT_OK ) && (p_src->p_value != NULL)) {
-            LOG_INFO("%s unformat.len = %d ", __FUNCTION__, p_src->p_value->unformat.len);
-            p_dest->read.value_len = p_src->p_value->unformat.len;
-            if ( p_src->p_value->unformat.len > 0  && p_src->p_value->unformat.p_value != NULL ) {
-                p_dest->read.value = p_src->p_value->unformat.p_value;
-            }
-            len += p_src->p_value->unformat.len;
-        } else {
-            p_dest->read.value_len = 0;
+    if (( p_src->status == BTA_GATT_OK ) && (p_src->p_value != NULL))
+    {
+        LOG_DEBUG("%s len = %d ", __func__, p_src->p_value->len);
+        p_dest->read.value_len = p_src->p_value->len;
+        if ( p_src->p_value->len > 0  && p_src->p_value->p_value != NULL ) {
+            p_dest->read.value = p_src->p_value->p_value;
         }
-
-        p_dest->read.value_type = GATTC_READ_VALUE_TYPE_VALUE;
-        break;
+        len += p_src->p_value->len;
+    } else {
+        p_dest->read.value_len = 0;
     }
 
     return len;

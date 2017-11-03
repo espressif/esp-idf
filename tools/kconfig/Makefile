@@ -173,9 +173,12 @@ gconf-objs	:= gconf.o zconf.tab.o
 
 hostprogs-y := conf nconf mconf kxgettext qconf gconf
 
-clean-files	:= qconf.moc .tmp_qtcheck .tmp_gtkcheck *.d
+all-objs := $(conf-objs) $(mconf-objs) $(lxdialog)
+all-deps := $(all-objs:.o=.d)
+
+clean-files	:= qconf.moc .tmp_qtcheck .tmp_gtkcheck
 clean-files	+= zconf.tab.c zconf.lex.c zconf.hash.c gconf.glade.h
-clean-files += $(conf-objs) $(mconf-objs) conf mconf $(lxdialog)
+clean-files += $(all-objs) $(all-deps) conf mconf
 
 # Check that we have the required ncurses stuff installed for lxdialog (menuconfig)
 PHONY += dochecklxdialog
@@ -307,8 +310,8 @@ zconf.hash.c: zconf.gperf
 zconf.tab.c: zconf.y
 	bison -t -l -p zconf -o zconf.tab.c zconf.y
 
-clean: 
+clean:
 	rm -f $(clean-files)
 
--include $(wildcard *.d)
--include $(wildcard lxdialog/*.d)
+-include $(all-deps)
+

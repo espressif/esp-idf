@@ -36,7 +36,9 @@ esp_err_t esp_bt_dev_set_device_name(const char *name)
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
-    
+    if (!name){
+        return ESP_ERR_INVALID_ARG;
+    }
     if (strlen(name) > ESP_DEV_DEVICE_NAME_MAX) {
         return ESP_ERR_INVALID_ARG;
     }

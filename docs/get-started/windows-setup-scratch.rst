@@ -28,11 +28,17 @@ This process involves installing MSYS2_, then installing the MSYS2_ and Python p
 
 * The ``windows_install_prerequisites.sh`` script will download and install packages for ESP-IDF support, and the ESP32 toolchain.
 
-* During the initial update step, MSYS may update itself into a state where it can no longer operate. You may see errors like the following::
+
+Troubleshooting
+~~~~~~~~~~~~~~~
+
+* While the install script runs, MSYS may update itself into a state where it can no longer operate. You may see errors like the following::
 
      *** fatal error - cygheap base mismatch detected - 0x612E5408/0x612E4408. This problem is probably due to using incompatible versions of the cygwin DLL.
 
   If you see errors like this, close the terminal window entirely (terminating the processes running there) and then re-open a new terminal. Re-run ``windows_install_prerequisites.sh`` (tip: use the up arrow key to see the last run command). The update process will resume after this step.
+
+* MSYS2 is a "rolling" distribution so running the installer script may install newer packages than what is used in the prebuilt environments. If you see any errors that appear to be related to installing MSYS2 packages, please check the `MSYS2-packages issues list`_ for known issues. If you don't see any relevant issues, please `raise an IDF issue`_.
 
 
 MSYS2 Mirrors in China
@@ -72,7 +78,7 @@ Alternative Setup: Just download a toolchain
 
 If you already have an MSYS2 install or want to do things differently, you can download just the toolchain here:
 
-https://dl.espressif.com/dl/xtensa-esp32-elf-win32-1.22.0-61-gab8375a-5.2.0.zip
+https://dl.espressif.com/dl/xtensa-esp32-elf-win32-1.22.0-73-ge28a011-5.2.0.zip
 
 .. note::
 
@@ -88,5 +94,22 @@ Next Steps
 
 To carry on with development environment setup, proceed to section :ref:`get-started-get-esp-idf`.
 
+.. _updating-existing-windows-environment:
+
+Updating The Environment
+========================
+
+When IDF is updated, sometimes new toolchains are required or new system requirements are added to the Windows MSYS2 environment.
+
+Rather than setting up a new environment, you can update an existing Windows environment & toolchain:
+
+- Update IDF to the new version you want to use.
+- Run the ``tools/windows/windows_install_prerequisites.sh`` script inside IDF. This will install any new software packages that weren't previously installed, and download and replace the toolchain with the latest version.
+
+The script to update MSYS2 may also fail with the same errors mentioned under Troubleshooting_.
+
+If you need to support multiple IDF versions concurrently, you can have different independent MSYS2 environments in different directories. Alternatively you can download multiple toolchains and unzip these to different directories, then use the PATH environment variable to set which one is the default.
 
 .. _MSYS2: https://msys2.github.io/
+.. _MSYS2-packages issues list: https://github.com/Alexpux/MSYS2-packages/issues/
+.. _raise an IDF issue: https://github.com/espressif/esp-idf/issues/new

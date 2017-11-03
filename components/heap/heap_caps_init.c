@@ -180,7 +180,7 @@ void heap_caps_init()
 
     heap_t *heaps_array = NULL;
     for (int i = 0; i < num_heaps; i++) {
-        if (heap_caps_match(&temp_heaps[i], MALLOC_CAP_8BIT)) {
+        if (heap_caps_match(&temp_heaps[i], MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL)) {
             /* use the first DRAM heap which can fit the data */
             heaps_array = multi_heap_malloc(temp_heaps[i].heap, sizeof(heap_t) * num_heaps);
             if (heaps_array != NULL) {
@@ -213,7 +213,8 @@ esp_err_t heap_caps_add_region(intptr_t start, intptr_t end)
 
     for (int i = 0; i < soc_memory_region_count; i++) {
         const soc_memory_region_t *region = &soc_memory_regions[i];
-        if (region->start <= start && (region->start + region->size) > end) {
+        // Test requested start only as 'end' may be in a different region entry, assume 'end' has same caps
+        if (region->start <= start && (region->start + region->size) > start) {
             const uint32_t *caps = soc_memory_types[region->type].caps;
             return heap_caps_add_region_with_caps(caps, start, end);
         }
@@ -227,6 +228,14 @@ esp_err_t heap_caps_add_region_with_caps(const uint32_t caps[], intptr_t start, 
     esp_err_t err = ESP_FAIL;
     if (caps == NULL || start == 0 || end == 0 || end < start) {
         return ESP_ERR_INVALID_ARG;
+    }
+
+    //Check if region overlaps the start and/or end of an existing region. If so, the
+    //region is invalid (or maybe added twice)
+    heap_t *heap;
+    SLIST_FOREACH(heap, &registered_heaps, next) {
+        if ( start <= heap->start &&  heap->start <=end ) return ESP_FAIL;
+        if ( start <= heap->end &&  heap->end <=end ) return ESP_FAIL;
     }
 
     heap_t *p_new = malloc(sizeof(heap_t));

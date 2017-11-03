@@ -753,7 +753,6 @@ static void clock_configure(void)
         cpu_freq = RTC_CPU_FREQ_240M;
     }
 
-    uart_tx_wait_idle(0);
     rtc_clk_config_t clk_cfg = RTC_CLK_CONFIG_DEFAULT();
     clk_cfg.xtal_freq = CONFIG_ESP32_XTAL_FREQ;
     clk_cfg.cpu_freq = cpu_freq;

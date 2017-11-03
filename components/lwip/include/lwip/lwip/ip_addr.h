@@ -69,6 +69,10 @@ extern const ip_addr_t ip_addr_any_type;
 
 #define IP_IS_V6_VAL(ipaddr)          (IP_GET_TYPE(&ipaddr) == IPADDR_TYPE_V6)
 #define IP_IS_V6(ipaddr)              (((ipaddr) != NULL) && IP_IS_V6_VAL(*(ipaddr)))
+
+#define IP_V6_EQ_PART(ipaddr, WORD, VAL) (ip_2_ip6(ipaddr)->addr[WORD] == htonl(VAL))
+#define IP_IS_V4MAPPEDV6(ipaddr) (IP_IS_V6(ipaddr) && IP_V6_EQ_PART(ipaddr, 0, 0) && IP_V6_EQ_PART(ipaddr, 1, 0) && IP_V6_EQ_PART(ipaddr, 2, 0x0000FFFF))
+
 #define IP_SET_TYPE_VAL(ipaddr, iptype) do { (ipaddr).type = (iptype); }while(0)
 #define IP_SET_TYPE(ipaddr, iptype)     do { if((ipaddr) != NULL) { IP_SET_TYPE_VAL(*(ipaddr), iptype); }}while(0)
 #define IP_GET_TYPE(ipaddr)           ((ipaddr)->type)
@@ -155,6 +159,27 @@ extern const ip_addr_t ip_addr_any_type;
 #define ipaddr_ntoa_r(addr, buf, buflen)   (((addr) == NULL) ? "NULL" : \
   ((IP_IS_V6(addr)) ? ip6addr_ntoa_r(ip_2_ip6(addr), buf, buflen) : ip4addr_ntoa_r(ip_2_ip4(addr), buf, buflen)))
 int ipaddr_aton(const char *cp, ip_addr_t *addr);
+
+/* Map an IPv4 ip_addr into an IPV6 ip_addr, using format
+   defined in RFC4291 2.5.5.2.
+
+   Safe to call when dest==src.
+*/
+#define ip_addr_make_ip4_mapped_ip6(dest, src) do {       \
+        u32_t tmp = ip_2_ip4(src)->addr;                    \
+        IP_ADDR6((dest), 0x0, 0x0, htonl(0x0000FFFF), tmp); \
+    } while(0)
+
+/* Convert an IPv4 mapped V6 address to an IPV4 address.
+
+   Check IP_IS_V4MAPPEDV6(src) before using this.
+
+   Safe to call when dest == src.
+*/
+#define ip_addr_ip4_from_mapped_ip6(dest, src) do {     \
+        ip_2_ip4(dest)->addr = ip_2_ip6(src)->addr[3];  \
+        IP_SET_TYPE(dest, IPADDR_TYPE_V4);         \
+    } while(0)
 
 #else /* LWIP_IPV4 && LWIP_IPV6 */
 

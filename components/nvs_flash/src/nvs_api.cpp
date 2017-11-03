@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <vector>
 #include "nvs.hpp"
 #include "nvs_flash.h"
 #include "nvs_storage.hpp"
@@ -89,15 +88,22 @@ extern "C" void nvs_dump(const char *partName)
 extern "C" esp_err_t nvs_flash_init_custom(const char *partName, uint32_t baseSector, uint32_t sectorCount)
 {
     ESP_LOGD(TAG, "nvs_flash_init_custom partition=%s start=%d count=%d", partName, baseSector, sectorCount);
-    nvs::Storage* mStorage;
-
-    mStorage = lookup_storage_from_name(partName);
-    if (mStorage == NULL) {
-        mStorage = new nvs::Storage((const char *)partName);
-        s_nvs_storage_list.push_back(mStorage);
+    nvs::Storage* new_storage = NULL;
+    nvs::Storage* storage = lookup_storage_from_name(partName);
+    if (storage == NULL) {
+        new_storage = new nvs::Storage((const char *)partName);
+        storage = new_storage;
     }
 
-    return mStorage->init(baseSector, sectorCount);
+    esp_err_t err = storage->init(baseSector, sectorCount);
+    if (new_storage != NULL) {
+        if (err == ESP_OK) {
+            s_nvs_storage_list.push_back(new_storage);
+        } else {
+            delete new_storage;
+        }
+    }
+    return err;
 }
 
 #ifdef ESP_PLATFORM
@@ -107,7 +113,7 @@ extern "C" esp_err_t nvs_flash_init_partition(const char *part_name)
     Lock lock;
     nvs::Storage* mStorage;
 
-    mStorage = lookup_storage_from_name(NVS_DEFAULT_PART_NAME);
+    mStorage = lookup_storage_from_name(part_name);
     if (mStorage) {
         return ESP_OK;
     }
@@ -125,6 +131,42 @@ extern "C" esp_err_t nvs_flash_init_partition(const char *part_name)
 extern "C" esp_err_t nvs_flash_init(void)
 {
     return nvs_flash_init_partition(NVS_DEFAULT_PART_NAME);
+}
+
+extern "C" esp_err_t nvs_flash_deinit_partition(const char* partition_name)
+{
+    Lock::init();
+    Lock lock;
+
+    nvs::Storage* storage = lookup_storage_from_name(partition_name);
+    if (!storage) {
+        return ESP_ERR_NVS_NOT_INITIALIZED;
+    }
+
+    /* Clean up handles related to the storage being deinitialized */
+    auto it = s_nvs_handles.begin();
+    auto next = it;
+    while(it != s_nvs_handles.end()) {
+        next++;
+        if (it->mStoragePtr == storage) {
+            ESP_LOGD(TAG, "Deleting handle %d (ns=%d) related to partition \"%s\" (missing call to nvs_close?)",
+                    it->mHandle, it->mNsIndex, partition_name);
+            s_nvs_handles.erase(it);
+            delete static_cast<HandleEntry*>(it);
+        }
+        it = next;
+    }
+
+    /* Finally delete the storage itself */
+    s_nvs_storage_list.erase(storage);
+    delete storage;
+
+    return ESP_OK;
+}
+
+extern "C" esp_err_t nvs_flash_deinit(void)
+{
+    return nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME);
 }
 
 extern "C" esp_err_t nvs_flash_erase_partition(const char *part_name)
@@ -402,6 +444,7 @@ static esp_err_t nvs_get_str_or_blob(nvs_handle handle, nvs::ItemType type, cons
         return ESP_ERR_NVS_INVALID_LENGTH;
     }
 
+    *length = dataSize;
     return entry.mStoragePtr->readItem(entry.mNsIndex, type, key, out_value, dataSize);
 }
 
