@@ -73,6 +73,8 @@ static void set_cache_and_start_app(uint32_t drom_addr,
     uint32_t irom_size,
     uint32_t entry_addr);
 static void update_flash_config(const esp_image_header_t* pfhdr);
+static void vddsdio_configure();
+static void flash_gpio_configure();
 static void clock_configure(void);
 static void uart_console_configure(void);
 static void wdt_reset_check(void);
@@ -443,6 +445,8 @@ static bool load_boot_image(const bootloader_state_t *bs, int start_index, esp_i
 
 void bootloader_main()
 {
+    vddsdio_configure();
+    flash_gpio_configure();
     clock_configure();
     uart_console_configure();
     wdt_reset_check();
@@ -736,6 +740,105 @@ static void print_flash_info(const esp_image_header_t* phdr)
 #endif
 }
 
+
+static void vddsdio_configure()
+{
+#if CONFIG_BOOTLOADER_VDDSDIO_BOOST
+    rtc_vddsdio_config_t cfg = rtc_vddsdio_get_config();
+    if (cfg.tieh == 0) {    // 1.8V is used
+        cfg.drefh = 3;
+        cfg.drefm = 3;
+        cfg.drefl = 3;
+        cfg.force = 1;
+        cfg.enable = 1;
+        rtc_vddsdio_set_config(cfg);
+        ets_delay_us(10); // wait for regulator to become stable
+    }
+#endif // CONFIG_BOOTLOADER_VDDSDIO_BOOST
+}
+
+
+#define FLASH_CLK_IO      6
+#define FLASH_CS_IO       11
+#define FLASH_SPIQ_IO     7
+#define FLASH_SPID_IO     8
+#define FLASH_SPIWP_IO    10
+#define FLASH_SPIHD_IO    9
+#define FLASH_IO_MATRIX_DUMMY_40M   1
+#define FLASH_IO_MATRIX_DUMMY_80M   2
+static void IRAM_ATTR flash_gpio_configure()
+{
+    int spi_cache_dummy = 0;
+    int drv = 2;
+#if CONFIG_FLASHMODE_QIO
+    spi_cache_dummy = SPI0_R_QIO_DUMMY_CYCLELEN;   //qio 3
+#elif CONFIG_FLASHMODE_QOUT
+    spi_cache_dummy = SPI0_R_FAST_DUMMY_CYCLELEN;  //qout 7
+#elif CONFIG_FLASHMODE_DIO
+    spi_cache_dummy = SPI0_R_DIO_DUMMY_CYCLELEN;   //dio 3
+#elif CONFIG_FLASHMODE_DOUT
+    spi_cache_dummy = SPI0_R_FAST_DUMMY_CYCLELEN;  //dout 7
+#endif
+    /* dummy_len_plus values defined in ROM for SPI flash configuration */
+    extern uint8_t g_rom_spiflash_dummy_len_plus[];
+#if CONFIG_ESPTOOLPY_FLASHFREQ_40M
+    g_rom_spiflash_dummy_len_plus[0] = FLASH_IO_MATRIX_DUMMY_40M;
+    g_rom_spiflash_dummy_len_plus[1] = FLASH_IO_MATRIX_DUMMY_40M;
+    SET_PERI_REG_BITS(SPI_USER1_REG(0), SPI_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + FLASH_IO_MATRIX_DUMMY_40M, SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_80M
+    g_rom_spiflash_dummy_len_plus[0] = FLASH_IO_MATRIX_DUMMY_80M;
+    g_rom_spiflash_dummy_len_plus[1] = FLASH_IO_MATRIX_DUMMY_80M;
+    SET_PERI_REG_BITS(SPI_USER1_REG(0), SPI_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + FLASH_IO_MATRIX_DUMMY_80M, SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
+    drv = 3;
+#endif
+
+    uint32_t chip_ver = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_PKG);
+    uint32_t pkg_ver = chip_ver & 0x7;
+
+    if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5) {
+        // For ESP32D2WD the SPI pins are already configured
+        ESP_LOGI(TAG, "Detected ESP32D2WD");
+        //flash clock signal should come from IO MUX.
+        PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
+        SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, drv, FUN_DRV_S);
+    } else if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2) {
+        // For ESP32PICOD2 the SPI pins are already configured
+        ESP_LOGI(TAG, "Detected ESP32PICOD2");
+        //flash clock signal should come from IO MUX.
+        PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
+        SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, drv, FUN_DRV_S);
+    } else if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4) {
+        // For ESP32PICOD4 the SPI pins are already configured
+        ESP_LOGI(TAG, "Detected ESP32PICOD4");
+        //flash clock signal should come from IO MUX.
+        PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
+        SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, drv, FUN_DRV_S);
+    } else {
+        ESP_LOGI(TAG, "Detected ESP32");
+        const uint32_t spiconfig = ets_efuse_get_spiconfig();
+        if (spiconfig == EFUSE_SPICONFIG_SPI_DEFAULTS) {
+            gpio_matrix_out(FLASH_CS_IO, SPICS0_OUT_IDX, 0, 0);
+            gpio_matrix_out(FLASH_SPIQ_IO, SPIQ_OUT_IDX, 0, 0);
+            gpio_matrix_in(FLASH_SPIQ_IO, SPIQ_IN_IDX, 0);
+            gpio_matrix_out(FLASH_SPID_IO, SPID_OUT_IDX, 0, 0);
+            gpio_matrix_in(FLASH_SPID_IO, SPID_IN_IDX, 0);
+            gpio_matrix_out(FLASH_SPIWP_IO, SPIWP_OUT_IDX, 0, 0);
+            gpio_matrix_in(FLASH_SPIWP_IO, SPIWP_IN_IDX, 0);
+            gpio_matrix_out(FLASH_SPIHD_IO, SPIHD_OUT_IDX, 0, 0);
+            gpio_matrix_in(FLASH_SPIHD_IO, SPIHD_IN_IDX, 0);
+            //select pin function gpio
+            PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA0_U, PIN_FUNC_GPIO);
+            PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA1_U, PIN_FUNC_GPIO);
+            PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA2_U, PIN_FUNC_GPIO);
+            PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA3_U, PIN_FUNC_GPIO);
+            PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_CMD_U, PIN_FUNC_GPIO);
+            // flash clock signal should come from IO MUX.
+            // set drive ability for clock
+            PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
+            SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, drv, FUN_DRV_S);
+        }
+    }
+}
 
 static void clock_configure(void)
 {
