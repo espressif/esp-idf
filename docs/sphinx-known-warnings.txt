@@ -8,7 +8,7 @@
 #
 
 #
-# Sphinx known issue https://github.com/sphinx-doc/sphinx/issues/2683\
+# Sphinx known issue https://github.com/sphinx-doc/sphinx/issues/2683
 #
 _build/inc/esp_a2dp_api.inc:line: WARNING: Invalid definition: Expected identifier in nested name. [error at 21]
   union esp_a2d_mcc_t::@1  esp_a2d_mcc_t::cie
@@ -16,10 +16,3 @@ _build/inc/esp_a2dp_api.inc:line: WARNING: Invalid definition: Expected identifi
 _build/inc/esp_bt_defs.inc:line: WARNING: Invalid definition: Expected identifier in nested name. [error at 21]
   union esp_bt_uuid_t::@0  esp_bt_uuid_t::uuid
   ---------------------^
-
-#
-# Sphinx known issue https://github.com/sphinx-doc/sphinx/issues/4041
-#
-${IDF_PATH}/docs/api-reference/storage/sdmmc.rst:line: WARNING: cpp:typeOrConcept targets a member (sdmmc_host_t::slot).
-${IDF_PATH}/docs/api-reference/storage/sdmmc.rst:line: WARNING: cpp:typeOrConcept targets a member (sdmmc_host_t::slot).
-${IDF_PATH}/docs/api-reference/storage/sdmmc.rst:line: WARNING: cpp:typeOrConcept targets a member (sdmmc_host_t::slot).
