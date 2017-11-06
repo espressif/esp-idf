@@ -85,7 +85,7 @@ extern uint32_t _data_end_btdm_rom;
 do{\
     esp_err_t __err = (api_call);\
     if ((ret) != __err) {\
-        BT_DEBUG("%s %d %s ret=%d\n", __FUNCTION__, __LINE__, (info), __err);\
+        BT_DEBUG("%s %d %s ret=0x%X\n", __FUNCTION__, __LINE__, (info), __err);\
         return __err;\
     }\
 } while(0)
