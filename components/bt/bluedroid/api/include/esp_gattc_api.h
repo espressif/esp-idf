@@ -201,7 +201,6 @@ typedef union {
      * @brief ESP_GATTC_CONNECT_EVT
      */
     struct gattc_connect_evt_param {
-        esp_gatt_status_t status;       /*!< Operation status */
         uint16_t conn_id;               /*!< Connection id */
         esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address */
     } connect;                          /*!< Gatt client callback param of ESP_GATTC_CONNECT_EVT */
@@ -210,7 +209,7 @@ typedef union {
      * @brief ESP_GATTC_DISCONNECT_EVT
      */
     struct gattc_disconnect_evt_param {
-        esp_gatt_status_t status;       /*!< Operation status */
+        esp_gatt_conn_reason_t reason;  /*!< disconnection reason */
         uint16_t conn_id;               /*!< Connection id */
         esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address */
     } disconnect;                       /*!< Gatt client callback param of ESP_GATTC_DISCONNECT_EVT */

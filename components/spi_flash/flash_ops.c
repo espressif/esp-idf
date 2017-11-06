@@ -31,6 +31,8 @@
 #include "esp_spi_flash.h"
 #include "esp_log.h"
 #include "esp_clk.h"
+#include "esp_flash_partitions.h"
+#include "esp_ota_ops.h"
 #include "cache_utils.h"
 
 /* bytes erased by SPIEraseBlock() ROM function */
@@ -82,6 +84,45 @@ const DRAM_ATTR spi_flash_guard_funcs_t g_flash_guard_no_os_ops = {
 };
 
 static const spi_flash_guard_funcs_t *s_flash_guard_ops;
+
+#ifdef CONFIG_SPI_FLASH_WRITING_DANGEROUS_REGIONS_ABORTS
+#define UNSAFE_WRITE_ADDRESS abort()
+#else
+#define UNSAFE_WRITE_ADDRESS return false
+#endif
+
+
+/* CHECK_WRITE_ADDRESS macro to fail writes which land in the
+   bootloader, partition table, or running application region.
+*/
+#if CONFIG_SPI_FLASH_WRITING_DANGEROUS_REGIONS_ALLOWED
+#define CHECK_WRITE_ADDRESS(ADDR, SIZE)
+#else /* FAILS or ABORTS */
+#define CHECK_WRITE_ADDRESS(ADDR, SIZE) do {                            \
+        if (!is_safe_write_address(ADDR, SIZE)) {                       \
+            return ESP_ERR_INVALID_ARG;                                 \
+        }                                                               \
+    } while(0)
+#endif // CONFIG_SPI_FLASH_WRITING_DANGEROUS_REGIONS_ALLOWED
+
+static __attribute__((unused)) bool is_safe_write_address(size_t addr, size_t size)
+{
+    bool result = true;
+    if (addr <= ESP_PARTITION_TABLE_OFFSET + ESP_PARTITION_TABLE_MAX_LEN) {
+        UNSAFE_WRITE_ADDRESS;
+    }
+
+    const esp_partition_t *p = esp_ota_get_running_partition();
+    if (addr >= p->address && addr < p->address + p->size) {
+        UNSAFE_WRITE_ADDRESS;
+    }
+    if (addr < p->address && addr + size > p->address) {
+        UNSAFE_WRITE_ADDRESS;
+    }
+
+    return result;
+}
+
 
 void spi_flash_init()
 {
@@ -146,11 +187,13 @@ static esp_rom_spiflash_result_t IRAM_ATTR spi_flash_unlock()
 
 esp_err_t IRAM_ATTR spi_flash_erase_sector(size_t sec)
 {
+    CHECK_WRITE_ADDRESS(sec * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE);
     return spi_flash_erase_range(sec * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE);
 }
 
 esp_err_t IRAM_ATTR spi_flash_erase_range(uint32_t start_addr, uint32_t size)
 {
+    CHECK_WRITE_ADDRESS(start_addr, size);
     if (start_addr % SPI_FLASH_SEC_SIZE != 0) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -187,6 +230,7 @@ esp_err_t IRAM_ATTR spi_flash_erase_range(uint32_t start_addr, uint32_t size)
 
 esp_err_t IRAM_ATTR spi_flash_write(size_t dst, const void *srcv, size_t size)
 {
+    CHECK_WRITE_ADDRESS(dst, size);
     // Out of bound writes are checked in ROM code, but we can give better
     // error code here
     if (dst + size > g_rom_flashchip.chip_size) {
@@ -281,6 +325,7 @@ out:
 
 esp_err_t IRAM_ATTR spi_flash_write_encrypted(size_t dest_addr, const void *src, size_t size)
 {
+    CHECK_WRITE_ADDRESS(dest_addr, size);
     const uint8_t *ssrc = (const uint8_t *)src;
     if ((dest_addr % 16) != 0) {
         return ESP_ERR_INVALID_ARG;

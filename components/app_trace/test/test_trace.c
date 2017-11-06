@@ -67,7 +67,7 @@ static void esp_apptrace_test_timer_init(int timer_group, int timer_idx, uint32_
     config.alarm_en = 1;
     config.auto_reload = 1;
     config.counter_dir = TIMER_COUNT_UP;
-    config.divider = 1;
+    config.divider = 2;     //Range is 2 to 65536
     config.intr_type = TIMER_INTR_LEVEL;
     config.counter_en = TIMER_PAUSE;
     /*Configure timer*/
@@ -403,7 +403,7 @@ static void esp_apptrace_test_ts_init(int timer_group, int timer_idx)
     config.alarm_en = 0;
     config.auto_reload = 0;
     config.counter_dir = TIMER_COUNT_UP;
-    config.divider = 1;
+    config.divider = 2;     //Range is 2 to 65536
     config.counter_en = 0;
     /*Configure timer*/
     timer_init(timer_group, timer_idx, &config);
@@ -420,7 +420,7 @@ static void esp_apptrace_test_ts_cleanup()
     config.alarm_en = 0;
     config.auto_reload = 0;
     config.counter_dir = TIMER_COUNT_UP;
-    config.divider = 1;
+    config.divider = 2;     //Range is 2 to 65536
     config.counter_en = 0;
     /*Configure timer*/
     timer_init(s_ts_timer_group, s_ts_timer_idx, &config);

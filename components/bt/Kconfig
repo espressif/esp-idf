@@ -1,14 +1,96 @@
-menuconfig BT_ENABLED
+menu Bluetooth
+
+
+config BT_ENABLED
     bool "Bluetooth"
     help
         Select this option to enable Bluetooth and show the submenu with Bluetooth configuration choices.
 
-menuconfig BLUEDROID_ENABLED
-	bool "Bluedroid Bluetooth stack enabled"
+choice BTDM_CONTROLLER_PINNED_TO_CORE_CHOICE
+    prompt "The cpu core which bluetooth controller run"
+    depends on BT_ENABLED && !FREERTOS_UNICORE
+    help
+        Specify the cpu core to run bluetooth controller.
+        Can not specify no-affinity.
+
+config BTDM_CONTROLLER_PINNED_TO_CORE_0
+    bool "Core 0 (PRO CPU)"
+config BTDM_CONTROLLER_PINNED_TO_CORE_1
+    bool "Core 1 (APP CPU)"
+    depends on !FREERTOS_UNICORE
+endchoice
+
+config BTDM_CONTROLLER_PINNED_TO_CORE
+    int
+    default 0 if BTDM_CONTROLLER_PINNED_TO_CORE_0
+    default 1 if BTDM_CONTROLLER_PINNED_TO_CORE_1
+    default 0
+
+choice BTDM_CONTROLLER_HCI_MODE_CHOICE
+    prompt "HCI mode"
     depends on BT_ENABLED
-	default y
-	help
-		This enables the default Bluedroid Bluetooth stack
+    help
+        Speicify HCI mode as VHCI or UART(H4)
+
+config BTDM_CONTROLLER_HCI_MODE_VHCI
+    bool "VHCI"
+    help 
+        Normal option. Mostly, choose this VHCI when bluetooth host run on ESP32, too.
+
+config BTDM_CONTROLLER_HCI_MODE_UART_H4
+    bool "UART(H4)"
+    help
+        If use external bluetooth host which run on other hardware and use UART as the HCI interface,
+        choose this option.
+endchoice
+
+menu "HCI UART(H4) Options"
+    visible if BTDM_CONTROLLER_HCI_MODE_UART_H4
+
+config BT_HCI_UART_NO
+    int "UART Number for HCI"
+    depends on BTDM_CONTROLLER_HCI_MODE_UART_H4
+    range 1 2
+    default 1
+    help
+        Uart number for HCI. The available uart is UART1 and UART2.
+
+config BT_HCI_UART_BAUDRATE
+    int "UART Baudrate for HCI"
+    depends on BTDM_CONTROLLER_HCI_MODE_UART_H4
+    range 115200 921600
+    default 921600
+    help
+        UART Baudrate for HCI. Please use standard baudrate.
+endmenu
+
+menuconfig BLUEDROID_ENABLED
+    bool "Bluedroid Enable"
+    depends on BTDM_CONTROLLER_HCI_MODE_VHCI
+    default y
+    help
+        This enables the default Bluedroid Bluetooth stack
+
+choice BLUEDROID_PINNED_TO_CORE_CHOICE
+    prompt "The cpu core which Bluedroid run"
+    depends on BLUEDROID_ENABLED && !FREERTOS_UNICORE
+    help
+        Which the cpu core to run Bluedroid. Can choose core0 and core1.
+        Can not specify no-affinity.
+
+config BLUEDROID_PINNED_TO_CORE_0
+    bool "Core 0 (PRO CPU)"
+config BLUEDROID_PINNED_TO_CORE_1
+    bool "Core 1 (APP CPU)"
+    depends on !FREERTOS_UNICORE
+endchoice
+
+config BLUEDROID_PINNED_TO_CORE
+    int
+    depends on BLUEDROID_ENABLED
+    default 0 if BLUEDROID_PINNED_TO_CORE_0
+    default 1 if BLUEDROID_PINNED_TO_CORE_1
+    default 0
 
 config BTC_TASK_STACK_SIZE
     int "Bluetooth event (callback to application) task stack size"
@@ -67,44 +149,6 @@ config BT_ACL_CONNECTIONS
     help 
         Maximum BT/BLE connection count
 
-#disable now for app cpu due to a known issue
-config BTDM_CONTROLLER_RUN_APP_CPU
-    bool "Run controller on APP CPU"
-    depends on BT_ENABLED && !FREERTOS_UNICORE && 0
-    default n
-    help
-        Run controller on APP CPU.
-
-config BTDM_CONTROLLER_RUN_CPU
-    int
-    depends on BT_ENABLED
-    default 1 if BTDM_CONTROLLER_RUN_APP_CPU
-    default 0
-
-menuconfig BT_HCI_UART
-    bool "HCI use UART as IO"
-    depends on BT_ENABLED && !BLUEDROID_ENABLED
-    default n
-    help
-        Default HCI use VHCI, if this option choose, HCI will use UART(0/1/2) as IO.
-        Besides, it can set uart number and uart baudrate.
-
-config BT_HCI_UART_NO
-    int "UART Number for HCI"
-    depends on BT_HCI_UART
-    range 1 2
-    default 1
-    help
-        Uart number for HCI.
-
-config BT_HCI_UART_BAUDRATE
-    int "UART Baudrate for HCI"
-    depends on BT_HCI_UART
-    range 115200 921600
-    default 921600
-    help
-        UART Baudrate for HCI. Please use standard baudrate.
-
 config SMP_ENABLE
    bool
    depends on BLUEDROID_ENABLED
@@ -115,3 +159,5 @@ config BT_RESERVE_DRAM
     hex
     default 0x10000 if BT_ENABLED
     default 0
+
+endmenu

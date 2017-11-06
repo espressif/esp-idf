@@ -401,6 +401,15 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period);
 uint64_t rtc_time_get();
 
 /**
+ * @brief Busy loop until next RTC_SLOW_CLK cycle
+ *
+ * This function returns not earlier than the next RTC_SLOW_CLK clock cycle.
+ * In some cases (e.g. when RTC_SLOW_CLK cycle is very close), it may return
+ * one RTC_SLOW_CLK cycle later.
+ */
+void rtc_clk_wait_for_slow_cycle();
+
+/**
  * @brief sleep configuration for rtc_sleep_init function
  */
 typedef struct {
@@ -553,6 +562,36 @@ typedef struct {
  * @param cfg configuration options as rtc_config_t
  */
 void rtc_init(rtc_config_t cfg);
+
+/**
+ * Structure describing vddsdio configuration
+ */
+typedef struct {
+    uint32_t force : 1;     //!< If 1, use configuration from RTC registers; if 0, use EFUSE/bootstrapping pins.
+    uint32_t enable : 1;    //!< Enable VDDSDIO regulator
+    uint32_t tieh  : 1;     //!< Select VDDSDIO voltage: 1 — 1.8V, 0 — 3.3V
+    uint32_t drefh : 2;     //!< Tuning parameter for VDDSDIO regulator
+    uint32_t drefm : 2;     //!< Tuning parameter for VDDSDIO regulator
+    uint32_t drefl : 2;     //!< Tuning parameter for VDDSDIO regulator
+} rtc_vddsdio_config_t;
+
+/**
+ * Get current VDDSDIO configuration
+ * If VDDSDIO configuration is overridden by RTC, get values from RTC
+ * Otherwise, if VDDSDIO is configured by EFUSE, get values from EFUSE
+ * Otherwise, use default values and the level of MTDI bootstrapping pin.
+ * @return currently used VDDSDIO configuration
+ */
+rtc_vddsdio_config_t rtc_vddsdio_get_config();
+
+/**
+ * Set new VDDSDIO configuration using RTC registers.
+ * If config.force == 1, this overrides configuration done using bootstrapping
+ * pins and EFUSE.
+ *
+ * @param config new VDDSDIO configuration
+ */
+void rtc_vddsdio_set_config(rtc_vddsdio_config_t config);
 
 
 #ifdef __cplusplus

@@ -119,6 +119,8 @@ typedef union {
     struct gatts_conf_evt_param {
         esp_gatt_status_t status;       /*!< Operation status */
         uint16_t conn_id;               /*!< Connection id */
+        uint16_t len;                   /*!< The indication or notification value length, len is valid when send notification or indication failed */
+        uint8_t *value;                 /*!< The indication or notification value , value is valid when send notification or indication failed */
     } conf;                             /*!< Gatt server callback param of ESP_GATTS_CONF_EVT (confirm) */
 
     /**
@@ -193,7 +195,6 @@ typedef union {
     struct gatts_connect_evt_param {
         uint16_t conn_id;               /*!< Connection id */
         esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address */
-        bool is_connected;              /*!< Indicate it is connected or not */
     } connect;                          /*!< Gatt server callback param of ESP_GATTS_CONNECT_EVT */
 
     /**
@@ -202,7 +203,7 @@ typedef union {
     struct gatts_disconnect_evt_param {
         uint16_t conn_id;               /*!< Connection id */
         esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address */
-        bool is_connected;              /*!< Indicate it is connected or not */
+        esp_gatt_conn_reason_t reason;  /*!< Indicate the reason of disconnection */
     } disconnect;                       /*!< Gatt server callback param of ESP_GATTS_DISCONNECT_EVT */
 
     /**

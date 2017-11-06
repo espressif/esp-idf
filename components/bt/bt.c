@@ -24,6 +24,7 @@
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
 #include "freertos/portmacro.h"
+#include "xtensa/core-macros.h"
 #include "esp_types.h"
 #include "esp_system.h"
 #include "esp_task.h"
@@ -34,6 +35,8 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_pm.h"
+#include "esp_ipc.h"
+#include "driver/periph_ctrl.h"
 
 #if CONFIG_BT_ENABLED
 
@@ -135,6 +138,7 @@ struct osi_funcs_t {
     int32_t (* _task_create)(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id);
     void (* _task_delete)(void *task_handle);
     bool (* _is_in_isr)(void);
+    int (* _cause_sw_intr_to_core)(int core_id, int intr_no);
     void *(* _malloc)(uint32_t size);
     void (* _free)(void *p);
     int32_t (* _read_efuse_mac)(uint8_t mac[6]);
@@ -274,6 +278,26 @@ static bool IRAM_ATTR is_in_isr_wrapper(void)
     return (bool)xPortInIsrContext();
 }
 
+static void IRAM_ATTR cause_sw_intr(void *arg)
+{
+    /* just convert void * to int, because the width is the same */
+    uint32_t intr_no = (uint32_t)arg;
+    XTHAL_SET_INTSET((1<<intr_no));
+}
+
+static int IRAM_ATTR cause_sw_intr_to_core_wrapper(int core_id, int intr_no)
+{
+    esp_err_t err = ESP_OK;
+
+    if (xPortGetCoreID() == core_id) {
+        cause_sw_intr((void *)intr_no);
+    } else {
+        err = esp_ipc_call(core_id, cause_sw_intr, (void *)intr_no);
+    }
+
+    return err;
+}
+
 static int32_t IRAM_ATTR read_mac_wrapper(uint8_t mac[6])
 {
     return esp_read_mac(mac, ESP_MAC_BT);
@@ -315,6 +339,7 @@ static struct osi_funcs_t osi_funcs = {
     ._task_create = task_create_wrapper,
     ._task_delete = task_delete_wrapper,
     ._is_in_isr = is_in_isr_wrapper,
+    ._cause_sw_intr_to_core = cause_sw_intr_to_core_wrapper,
     ._malloc = malloc,
     ._free = free,
     ._read_efuse_mac = read_mac_wrapper,
@@ -345,10 +370,10 @@ static uint32_t btdm_config_mask_load(void)
         mask |= BTDM_CFG_BT_DATA_RELEASE;
     }
 
-#ifdef CONFIG_BT_HCI_UART
+#if CONFIG_BTDM_CONTROLLER_HCI_MODE_UART_H4
     mask |= BTDM_CFG_HCI_UART;
 #endif
-#ifdef CONFIG_BTDM_CONTROLLER_RUN_APP_CPU
+#if CONFIG_BTDM_CONTROLLER_PINNED_TO_CORE == 1
     mask |= BTDM_CFG_CONTROLLER_RUN_APP_CPU;
 #endif
     return mask;
@@ -458,6 +483,8 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     btdm_controller_mem_init();
 
+    periph_module_enable(PERIPH_BT_MODULE);
+
     btdm_cfg_mask = btdm_config_mask_load();
 
     ret = btdm_controller_init(btdm_cfg_mask, cfg);
@@ -482,6 +509,8 @@ esp_err_t esp_bt_controller_deinit(void)
     if (btdm_controller_deinit() != 0) {
         return ESP_ERR_NO_MEM;
     }
+
+    periph_module_disable(PERIPH_BT_MODULE);
 
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
 

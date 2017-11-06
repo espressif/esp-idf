@@ -91,6 +91,8 @@ extern "C" {
 #define ESP_ERR_WIFI_PASSWORD    (ESP_ERR_WIFI_BASE + 11)  /*!< Password is invalid */
 #define ESP_ERR_WIFI_TIMEOUT     (ESP_ERR_WIFI_BASE + 12)  /*!< Timeout error */
 #define ESP_ERR_WIFI_WAKE_FAIL   (ESP_ERR_WIFI_BASE + 13)  /*!< WiFi is in sleep state(RF closed) and wakeup fail */
+#define ESP_ERR_WIFI_WOULD_BLOCK (ESP_ERR_WIFI_BASE + 14)  /*!< The caller would block */
+#define ESP_ERR_WIFI_NOT_CONNECT (ESP_ERR_WIFI_BASE + 15)  /*!< Station still in disconnect status */
 
 /**
  * @brief WiFi stack configuration parameters passed to esp_wifi_init call.
@@ -392,7 +394,8 @@ esp_err_t esp_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_re
   *
   * @return
   *    - ESP_OK: succeed
-  *    - others: fail
+  *    - ESP_ERR_WIFI_CONN: The station interface don't initialized
+  *    - ESP_ERR_WIFI_NOT_CONNECT: The station is in disconnect status 
   */
 esp_err_t esp_wifi_sta_get_ap_info(wifi_ap_record_t *ap_info);
 

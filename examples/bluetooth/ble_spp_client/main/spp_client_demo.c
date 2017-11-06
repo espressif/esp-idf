@@ -332,7 +332,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         esp_ble_gattc_search_service(spp_gattc_if, spp_conn_id, &spp_service_uuid);
         break;
     case ESP_GATTC_DISCONNECT_EVT:
-        ESP_LOGI(GATTC_TAG, "disconnect , status = %d", p_data->disconnect.status);
+        ESP_LOGI(GATTC_TAG, "disconnect");
         free_gattc_srv_db();
         esp_ble_gap_start_scanning(SCAN_ALL_THE_TIME);
         break;
@@ -639,4 +639,3 @@ void app_main()
     ble_client_appRegister();
     spp_uart_init();
 }
-

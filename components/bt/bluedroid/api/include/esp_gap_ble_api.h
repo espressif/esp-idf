@@ -179,10 +179,20 @@ typedef enum {
 
 /* relate to BTA_DM_BLE_SEC_xxx in bta_api.h */
 typedef enum {
-    ESP_BLE_SEC_NONE = 0,               /* relate to BTA_DM_BLE_SEC_NONE in bta_api.h */
-    ESP_BLE_SEC_ENCRYPT,                /* relate to BTA_DM_BLE_SEC_ENCRYPT in bta_api.h */
-    ESP_BLE_SEC_ENCRYPT_NO_MITM,        /* relate to BTA_DM_BLE_SEC_ENCRYPT_NO_MITM in bta_api.h */
-    ESP_BLE_SEC_ENCRYPT_MITM,           /* relate to BTA_DM_BLE_SEC_ENCRYPT_MITM in bta_api.h */
+    ESP_BLE_SEC_ENCRYPT = 1,            /* relate to BTA_DM_BLE_SEC_ENCRYPT in bta_api.h. If the device has already
+                                           bonded, the stack will used LTK to encrypt with the remote device directly.
+                                           Else if the device hasn't bonded, the stack will used the default authentication request
+                                           used the esp_ble_gap_set_security_param function set by the user. */
+    ESP_BLE_SEC_ENCRYPT_NO_MITM,        /* relate to BTA_DM_BLE_SEC_ENCRYPT_NO_MITM in bta_api.h. If the device has already
+                                           bonded, the stack will check the LTK Whether the authentication request has been met, if met, used the LTK
+                                           to encrypt with the remote device directly, else Re-pair with the remote device.
+                                           Else if the device hasn't bonded, the stack will used NO MITM authentication request in the current link instead of
+                                           used the authreq in the esp_ble_gap_set_security_param function set by the user. */
+    ESP_BLE_SEC_ENCRYPT_MITM,           /* relate to BTA_DM_BLE_SEC_ENCRYPT_MITM in bta_api.h. If the device has already
+                                           bonded, the stack will check the LTK Whether the authentication request has been met, if met, used the LTK
+                                           to encrypt with the remote device directly, else Re-pair with the remote device.
+                                           Else if the device hasn't bonded, the stack will used MITM authentication request in the current link instead of
+                                           used the authreq in the esp_ble_gap_set_security_param function set by the user. */
 }esp_ble_sec_act_t;
 
 typedef enum {

@@ -313,7 +313,10 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         gl_profile_tab[PROFILE_A_APP_ID].service_id.id.uuid.len = ESP_UUID_LEN_16;
         gl_profile_tab[PROFILE_A_APP_ID].service_id.id.uuid.uuid.uuid16 = GATTS_SERVICE_UUID_TEST_A;
 
-        esp_ble_gap_set_device_name(TEST_DEVICE_NAME);
+        esp_err_t set_dev_name_ret = esp_ble_gap_set_device_name(TEST_DEVICE_NAME);
+        if (set_dev_name_ret){
+            ESP_LOGE(GATTS_TAG, "set device name failed, error code = %x", set_dev_name_ret);
+        }
 #ifdef CONFIG_SET_RAW_ADV_DATA
         esp_err_t raw_adv_ret = esp_ble_gap_config_adv_data_raw(raw_adv_data, sizeof(raw_adv_data));
         if (raw_adv_ret){
@@ -408,7 +411,6 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     case ESP_GATTS_MTU_EVT:
         ESP_LOGI(GATTS_TAG, "ESP_GATTS_MTU_EVT, MTU %d", param->mtu.mtu);
         break;
-    case ESP_GATTS_CONF_EVT:
     case ESP_GATTS_UNREG_EVT:
         break;
     case ESP_GATTS_CREATE_EVT:
@@ -475,11 +477,10 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         conn_params.max_int = 0x20;    // max_int = 0x20*1.25ms = 40ms
         conn_params.min_int = 0x10;    // min_int = 0x10*1.25ms = 20ms
         conn_params.timeout = 400;    // timeout = 400*10ms = 4000ms
-        ESP_LOGI(GATTS_TAG, "ESP_GATTS_CONNECT_EVT, conn_id %d, remote %02x:%02x:%02x:%02x:%02x:%02x:, is_conn %d",
+        ESP_LOGI(GATTS_TAG, "ESP_GATTS_CONNECT_EVT, conn_id %d, remote %02x:%02x:%02x:%02x:%02x:%02x:",
                  param->connect.conn_id,
                  param->connect.remote_bda[0], param->connect.remote_bda[1], param->connect.remote_bda[2],
-                 param->connect.remote_bda[3], param->connect.remote_bda[4], param->connect.remote_bda[5],
-                 param->connect.is_connected);
+                 param->connect.remote_bda[3], param->connect.remote_bda[4], param->connect.remote_bda[5]);
         gl_profile_tab[PROFILE_A_APP_ID].conn_id = param->connect.conn_id;
         //start sent the update connection parameters to the peer device.
         esp_ble_gap_update_conn_params(&conn_params);
@@ -488,6 +489,12 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     case ESP_GATTS_DISCONNECT_EVT:
         ESP_LOGI(GATTS_TAG, "ESP_GATTS_DISCONNECT_EVT");
         esp_ble_gap_start_advertising(&adv_params);
+        break;
+    case ESP_GATTS_CONF_EVT:
+        ESP_LOGI(GATTS_TAG, "ESP_GATTS_CONF_EVT, status %d", param->conf.status);
+        if (param->conf.status != ESP_GATT_OK){
+            esp_log_buffer_hex(GATTS_TAG, param->conf.value, param->conf.len);
+        }
         break;
     case ESP_GATTS_OPEN_EVT:
     case ESP_GATTS_CANCEL_OPEN_EVT:
@@ -575,7 +582,6 @@ static void gatts_profile_b_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     case ESP_GATTS_MTU_EVT:
         ESP_LOGI(GATTS_TAG, "ESP_GATTS_MTU_EVT, MTU %d", param->mtu.mtu);
         break;
-    case ESP_GATTS_CONF_EVT:
     case ESP_GATTS_UNREG_EVT:
         break;
     case ESP_GATTS_CREATE_EVT:
@@ -621,13 +627,18 @@ static void gatts_profile_b_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     case ESP_GATTS_STOP_EVT:
         break;
     case ESP_GATTS_CONNECT_EVT:
-        ESP_LOGI(GATTS_TAG, "CONNECT_EVT, conn_id %d, remote %02x:%02x:%02x:%02x:%02x:%02x:, is_conn %d",
+        ESP_LOGI(GATTS_TAG, "CONNECT_EVT, conn_id %d, remote %02x:%02x:%02x:%02x:%02x:%02x:",
                  param->connect.conn_id,
                  param->connect.remote_bda[0], param->connect.remote_bda[1], param->connect.remote_bda[2],
-                 param->connect.remote_bda[3], param->connect.remote_bda[4], param->connect.remote_bda[5],
-                 param->connect.is_connected);
+                 param->connect.remote_bda[3], param->connect.remote_bda[4], param->connect.remote_bda[5]);
         gl_profile_tab[PROFILE_B_APP_ID].conn_id = param->connect.conn_id;
         break;
+    case ESP_GATTS_CONF_EVT:
+        ESP_LOGI(GATTS_TAG, "ESP_GATTS_CONF_EVT status %d", param->conf.status);
+        if (param->conf.status != ESP_GATT_OK){
+            esp_log_buffer_hex(GATTS_TAG, param->conf.value, param->conf.len);
+        }
+    break;
     case ESP_GATTS_DISCONNECT_EVT:
     case ESP_GATTS_OPEN_EVT:
     case ESP_GATTS_CANCEL_OPEN_EVT:

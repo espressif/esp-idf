@@ -72,9 +72,6 @@ static const char* TAG = "rtc_clk";
  * All values are in microseconds.
  * TODO: some of these are excessive, and should be reduced.
  */
-#define DELAY_CPU_FREQ_SWITCH_TO_XTAL_WITH_150K  20
-#define DELAY_CPU_FREQ_SWITCH_TO_XTAL_WITH_32K   160
-#define DELAY_CPU_FREQ_SWITCH_TO_PLL    20
 #define DELAY_PLL_DBIAS_RAISE           3
 #define DELAY_PLL_ENABLE_WITH_150K      80
 #define DELAY_PLL_ENABLE_WITH_32K       160
@@ -397,9 +394,12 @@ void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq)
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL, RTC_CNTL_SOC_CLK_SEL_XTL);
     REG_SET_FIELD(APB_CTRL_SYSCLK_CONF_REG, APB_CTRL_PRE_DIV_CNT, 0);
     ets_update_cpu_frequency(xtal_freq);
-    uint32_t delay_xtal_switch = (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_RTC) ?
-            DELAY_CPU_FREQ_SWITCH_TO_XTAL_WITH_150K : DELAY_CPU_FREQ_SWITCH_TO_XTAL_WITH_32K;
-    ets_delay_us(delay_xtal_switch);
+
+    /* Frequency switch is synchronized to SLOW_CLK cycle. Wait until the switch
+     * is complete before disabling the PLL.
+     */
+    rtc_clk_wait_for_slow_cycle();
+
     DPORT_REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 0);
     SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG,
             RTC_CNTL_BB_I2C_FORCE_PD | RTC_CNTL_BBPLL_FORCE_PD |
@@ -443,7 +443,7 @@ void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq)
             s_pll_freq = 480;
         }
         REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL, RTC_CNTL_SOC_CLK_SEL_PLL);
-        ets_delay_us(DELAY_CPU_FREQ_SWITCH_TO_PLL);
+        rtc_clk_wait_for_slow_cycle();
         rtc_clk_apb_freq_update(80 * MHZ);
     }
     s_cur_freq = cpu_freq;
@@ -558,6 +558,13 @@ void rtc_clk_xtal_freq_update(rtc_xtal_freq_t xtal_freq)
 
 static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate()
 {
+    /* Enable 8M/256 clock if needed */
+    const bool clk_8m_enabled = rtc_clk_8m_enabled();
+    const bool clk_8md256_enabled = rtc_clk_8md256_enabled();
+    if (!clk_8md256_enabled) {
+        rtc_clk_8m_enable(true, true);
+    }
+
     uint64_t cal_val = rtc_clk_cal_ratio(RTC_CAL_8MD256, XTAL_FREQ_EST_CYCLES);
     /* cal_val contains period of 8M/256 clock in XTAL clock cycles
      * (shifted by RTC_CLK_CAL_FRACT bits).
@@ -581,6 +588,8 @@ static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate()
             SOC_LOGW(TAG, "Bogus XTAL frequency: %d MHz", freq_mhz);
             return RTC_XTAL_FREQ_AUTO;
     }
+    /* Restore 8M and 8md256 clocks to original state */
+    rtc_clk_8m_enable(clk_8m_enabled, clk_8md256_enabled);
 }
 
 void rtc_clk_apb_freq_update(uint32_t apb_freq)
@@ -634,7 +643,6 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_APLL_M | I2C_BBPLL_M);
 
     /* Estimate XTAL frequency */
-    rtc_xtal_freq_t est_xtal_freq = rtc_clk_xtal_freq_estimate();
     rtc_xtal_freq_t xtal_freq = cfg.xtal_freq;
     if (xtal_freq == RTC_XTAL_FREQ_AUTO) {
         if (clk_val_is_valid(READ_PERI_REG(RTC_XTAL_FREQ_REG))) {
@@ -642,7 +650,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
             xtal_freq = rtc_clk_xtal_freq_get();
         } else {
             /* Not set yet, estimate XTAL frequency based on RTC_FAST_CLK */
-            xtal_freq = est_xtal_freq;
+            xtal_freq = rtc_clk_xtal_freq_estimate();
             if (xtal_freq == RTC_XTAL_FREQ_AUTO) {
                 SOC_LOGW(TAG, "Can't estimate XTAL frequency, assuming 26MHz");
                 xtal_freq = RTC_XTAL_FREQ_26M;
@@ -653,8 +661,11 @@ void rtc_clk_init(rtc_clk_config_t cfg)
          * frequency is different. If autodetection failed, worst case we get a
          * bit of garbage output.
          */
-        SOC_LOGW(TAG, "Possibly invalid CONFIG_ESP32_XTAL_FREQ setting (%dMHz). Detected %d MHz.",
-                xtal_freq, est_xtal_freq);
+        rtc_xtal_freq_t est_xtal_freq = rtc_clk_xtal_freq_estimate();
+        if (est_xtal_freq != xtal_freq) {
+            SOC_LOGW(TAG, "Possibly invalid CONFIG_ESP32_XTAL_FREQ setting (%dMHz). Detected %d MHz.",
+                    xtal_freq, est_xtal_freq);
+        }
     }
     uart_tx_wait_idle(0);
     rtc_clk_xtal_freq_update(xtal_freq);

@@ -44,6 +44,12 @@ void IRAM_ATTR esp_cpu_unstall(int cpu_id)
     }
 }
 
+void IRAM_ATTR esp_cpu_reset(int cpu_id)
+{
+    SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG,
+            cpu_id == 0 ? RTC_CNTL_SW_PROCPU_RST_M : RTC_CNTL_SW_APPCPU_RST_M);
+}
+
 bool IRAM_ATTR esp_cpu_in_ocd_debug_mode()
 {
 #if CONFIG_ESP32_DEBUG_OCDAWARE

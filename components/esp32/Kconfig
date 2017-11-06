@@ -842,7 +842,7 @@ config ESP32_WIFI_STATIC_TX_BUFFER_NUM
     int "Max number of WiFi static TX buffers"
     depends on ESP32_WIFI_STATIC_TX_BUFFER
     range 6 64
-    default 32
+    default 16
     help
         Set the number of WiFi static TX buffers. Each buffer takes approximately 1.6KB of RAM.
         The static RX buffers are allocated when esp_wifi_init() is called, they are not released
@@ -856,7 +856,7 @@ config ESP32_WIFI_STATIC_TX_BUFFER_NUM
 config ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
     int "Max number of WiFi dynamic TX buffers"
     depends on ESP32_WIFI_DYNAMIC_TX_BUFFER
-    range 16 64
+    range 16 128
     default 32
     help
         Set the number of WiFi dynamic TX buffers. The size of each dynamic TX buffer is not fixed,
