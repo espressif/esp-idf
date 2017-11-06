@@ -42,8 +42,6 @@
 #define BT_BD_ADDR_HEX(addr)        addr[0],addr[1],addr[2],addr[3],addr[4],addr[5]
 #define ESP_GATT_SPP_SERVICE_UUID   0xABF0
 #define SCAN_ALL_THE_TIME           0
-//#define SUPPORT_HEARTBEAT
-//#define DEBUG_MODE
 
 struct gattc_profile_inst {
     esp_gattc_cb_t gattc_cb;
@@ -121,7 +119,7 @@ static xQueueHandle cmd_heartbeat_queue = NULL;
 #endif
 
 static esp_bt_uuid_t spp_service_uuid = {
-    .len = ESP_UUID_LEN_16,
+    .len  = ESP_UUID_LEN_16,
     .uuid = {.uuid16 = ESP_GATT_SPP_SERVICE_UUID,},
 };
 
@@ -130,12 +128,12 @@ static void notify_event_handler(esp_ble_gattc_cb_param_t * p_data)
     uint8_t handle = 0;
 
     if(p_data->notify.is_notify == true){
-        ESP_LOGI(GATTC_TAG,"+NOTIFY:handle = %d,length = %d ",p_data->notify.handle,p_data->notify.value_len);
+        ESP_LOGI(GATTC_TAG,"+NOTIFY:handle = %d,length = %d ", p_data->notify.handle, p_data->notify.value_len);
     }else{
-        ESP_LOGI(GATTC_TAG,"+INDICATE:handle = %d,length = %d ",p_data->notify.handle,p_data->notify.value_len);
+        ESP_LOGI(GATTC_TAG,"+INDICATE:handle = %d,length = %d ", p_data->notify.handle, p_data->notify.value_len);
     }
     handle = p_data->notify.handle;
-    if(handle == ((db+SPP_IDX_SPP_DATA_NTY_VAL)->attribute_handle)){
+    if(handle == db[SPP_IDX_SPP_DATA_NTY_VAL].attribute_handle){
 #ifdef SPP_DEBUG_MODE
         esp_log_buffer_char(GATTC_TAG, (char *)p_data->notify.value, p_data->notify.value_len);
 #else
@@ -192,7 +190,6 @@ static void notify_event_handler(esp_ble_gattc_cb_param_t * p_data)
 
 static void free_gattc_srv_db(void)
 {
-    db = NULL;
     is_connect = false;
     spp_gattc_if = 0xff;
     spp_conn_id = 0;
@@ -205,6 +202,7 @@ static void free_gattc_srv_db(void)
     notify_value_count = 0;
     if(db){
         free(db);
+        db = NULL;
     }
 }
 
@@ -250,7 +248,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
         case ESP_GAP_SEARCH_INQ_RES_EVT:
             esp_log_buffer_hex(GATTC_TAG, scan_result->scan_rst.bda, 6);
             ESP_LOGI(GATTC_TAG, "Searched Adv Data Len %d, Scan Response Len %d", scan_result->scan_rst.adv_data_len, scan_result->scan_rst.scan_rsp_len);
-            adv_name = esp_ble_resolve_adv_data(scan_result->scan_rst.ble_adv,ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
+            adv_name = esp_ble_resolve_adv_data(scan_result->scan_rst.ble_adv, ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
             ESP_LOGI(GATTC_TAG, "Searched Device Name Len %d", adv_name_len);
             esp_log_buffer_char(GATTC_TAG, adv_name, adv_name_len);
             ESP_LOGI(GATTC_TAG, "\n");
@@ -289,7 +287,7 @@ static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
         if (param->reg.status == ESP_GATT_OK) {
             gl_profile_tab[param->reg.app_id].gattc_if = gattc_if;
         } else {
-            ESP_LOGI(GATTC_TAG, "Reg app failed, app_id %04x, status %d",param->reg.app_id,param->reg.status);
+            ESP_LOGI(GATTC_TAG, "Reg app failed, app_id %04x, status %d", param->reg.app_id, param->reg.status);
             return;
         }
     }
@@ -318,11 +316,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         esp_ble_gap_set_scan_params(&ble_scan_params);
         break;
     case ESP_GATTC_CONNECT_EVT:
-        if(p_data->connect.status != ESP_GATT_OK){
-            ESP_LOGE(GATTC_TAG, "connect fail, status = %d", p_data->connect.status);
-            break;
-        }
-        ESP_LOGI(GATTC_TAG, "ESP_GATTC_CONNECT_EVT: conn_id=%d, gatt_if = %d, status =%d", spp_conn_id, gattc_if, p_data->connect.status);
+        ESP_LOGI(GATTC_TAG, "ESP_GATTC_CONNECT_EVT: conn_id=%d, gatt_if = %d", spp_conn_id, gattc_if);
         ESP_LOGI(GATTC_TAG, "REMOTE BDA:");
         esp_log_buffer_hex(GATTC_TAG, gl_profile_tab[PROFILE_APP_ID].remote_bda, sizeof(esp_bd_addr_t));
         spp_gattc_if = gattc_if;
@@ -343,12 +337,12 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         break;
     case ESP_GATTC_SEARCH_CMPL_EVT:
         ESP_LOGI(GATTC_TAG, "SEARCH_CMPL: conn_id = %x, status %d", spp_conn_id, p_data->search_cmpl.status);
-        esp_ble_gattc_send_mtu_req(gattc_if,spp_conn_id);
+        esp_ble_gattc_send_mtu_req(gattc_if, spp_conn_id);
         break;
     case ESP_GATTC_REG_FOR_NOTIFY_EVT: {
-        ESP_LOGI(GATTC_TAG,"Index = %d,status = %d,handle = %d\n",cmd,p_data->reg_for_notify.status,p_data->reg_for_notify.handle);
+        ESP_LOGI(GATTC_TAG,"Index = %d,status = %d,handle = %d\n",cmd, p_data->reg_for_notify.status, p_data->reg_for_notify.handle);
         if(p_data->reg_for_notify.status != ESP_GATT_OK){
-            ESP_LOGE(GATTC_TAG, "ESP_GATTC_REG_FOR_NOTIFY_EVT, status = %d", p_data->connect.status);
+            ESP_LOGE(GATTC_TAG, "ESP_GATTC_REG_FOR_NOTIFY_EVT, status = %d", p_data->reg_for_notify.status);
             break;
         }
         uint16_t notify_en = 1;
@@ -371,7 +365,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         ESP_LOGI(GATTC_TAG,"ESP_GATTC_READ_CHAR_EVT\n");
         break;
     case ESP_GATTC_WRITE_CHAR_EVT:
-        ESP_LOGI(GATTC_TAG,"ESP_GATTC_WRITE_CHAR_EVT:status = %d,handle = %d",param->write.status,param->write.handle);
+        ESP_LOGI(GATTC_TAG,"ESP_GATTC_WRITE_CHAR_EVT:status = %d,handle = %d", param->write.status, param->write.handle);
         if(param->write.status != ESP_GATT_OK){
             ESP_LOGE(GATTC_TAG, "ESP_GATTC_WRITE_CHAR_EVT, error status = %d", p_data->write.status);
             break;
@@ -382,7 +376,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
     case ESP_GATTC_EXEC_EVT:
         break;
     case ESP_GATTC_WRITE_DESCR_EVT:
-        ESP_LOGI(GATTC_TAG,"ESP_GATTC_WRITE_DESCR_EVT: status =%d,handle = %d \n",p_data->write.status,p_data->write.handle);
+        ESP_LOGI(GATTC_TAG,"ESP_GATTC_WRITE_DESCR_EVT: status =%d,handle = %d \n", p_data->write.status, p_data->write.handle);
         if(p_data->write.status != ESP_GATT_OK){
             ESP_LOGE(GATTC_TAG, "ESP_GATTC_WRITE_DESCR_EVT, error status = %d", p_data->write.status);
             break;
@@ -390,17 +384,17 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         switch(cmd){
         case SPP_IDX_SPP_DATA_NTY_VAL:
             cmd = SPP_IDX_SPP_STATUS_VAL;
-            xQueueSend(cmd_reg_queue,&cmd,10/portTICK_PERIOD_MS);
+            xQueueSend(cmd_reg_queue, &cmd,10/portTICK_PERIOD_MS);
             break;
         case SPP_IDX_SPP_STATUS_VAL:
 #ifdef SUPPORT_HEARTBEAT
             cmd = SPP_IDX_SPP_HEARTBEAT_VAL;
-            xQueueSend(cmd_reg_queue,&cmd,10/portTICK_PERIOD_MS);
+            xQueueSend(cmd_reg_queue, &cmd, 10/portTICK_PERIOD_MS);
 #endif
             break;
 #ifdef SUPPORT_HEARTBEAT
         case SPP_IDX_SPP_HEARTBEAT_VAL:
-            xQueueSend(cmd_heartbeat_queue,&cmd,10/portTICK_PERIOD_MS);
+            xQueueSend(cmd_heartbeat_queue, &cmd, 10/portTICK_PERIOD_MS);
             break;
 #endif
         default:
@@ -419,7 +413,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
             ESP_LOGE(GATTC_TAG,"%s:malloc db falied\n",__func__);
             break;
         }
-        if(esp_ble_gattc_get_db(spp_gattc_if, spp_conn_id, spp_srv_start_handle, spp_srv_end_handle,db, &count) != ESP_GATT_OK){
+        if(esp_ble_gattc_get_db(spp_gattc_if, spp_conn_id, spp_srv_start_handle, spp_srv_end_handle, db, &count) != ESP_GATT_OK){
             ESP_LOGE(GATTC_TAG,"%s:get db falied\n",__func__);
             break;
         }
@@ -431,34 +425,34 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
             switch((db+i)->type){
             case ESP_GATT_DB_PRIMARY_SERVICE:
                 ESP_LOGI(GATTC_TAG,"attr_type = PRIMARY_SERVICE,attribute_handle=%d,start_handle=%d,end_handle=%d,properties=0x%x,uuid=0x%04x\n",\
-                        (db+i)->attribute_handle,(db+i)->start_handle,(db+i)->end_handle,(db+i)->properties,(db+i)->uuid.uuid.uuid16);
+                        (db+i)->attribute_handle, (db+i)->start_handle, (db+i)->end_handle, (db+i)->properties, (db+i)->uuid.uuid.uuid16);
                 break;
             case ESP_GATT_DB_SECONDARY_SERVICE:
                 ESP_LOGI(GATTC_TAG,"attr_type = SECONDARY_SERVICE,attribute_handle=%d,start_handle=%d,end_handle=%d,properties=0x%x,uuid=0x%04x\n",\
-                        (db+i)->attribute_handle,(db+i)->start_handle,(db+i)->end_handle,(db+i)->properties,(db+i)->uuid.uuid.uuid16);
+                        (db+i)->attribute_handle, (db+i)->start_handle, (db+i)->end_handle, (db+i)->properties, (db+i)->uuid.uuid.uuid16);
                 break;
             case ESP_GATT_DB_CHARACTERISTIC:
                 ESP_LOGI(GATTC_TAG,"attr_type = CHARACTERISTIC,attribute_handle=%d,start_handle=%d,end_handle=%d,properties=0x%x,uuid=0x%04x\n",\
-                        (db+i)->attribute_handle,(db+i)->start_handle,(db+i)->end_handle,(db+i)->properties,(db+i)->uuid.uuid.uuid16);
+                        (db+i)->attribute_handle, (db+i)->start_handle, (db+i)->end_handle, (db+i)->properties, (db+i)->uuid.uuid.uuid16);
                 break;
             case ESP_GATT_DB_DESCRIPTOR:
                 ESP_LOGI(GATTC_TAG,"attr_type = DESCRIPTOR,attribute_handle=%d,start_handle=%d,end_handle=%d,properties=0x%x,uuid=0x%04x\n",\
-                        (db+i)->attribute_handle,(db+i)->start_handle,(db+i)->end_handle,(db+i)->properties,(db+i)->uuid.uuid.uuid16);
+                        (db+i)->attribute_handle, (db+i)->start_handle, (db+i)->end_handle, (db+i)->properties, (db+i)->uuid.uuid.uuid16);
                 break;
             case ESP_GATT_DB_INCLUDED_SERVICE:
                 ESP_LOGI(GATTC_TAG,"attr_type = INCLUDED_SERVICE,attribute_handle=%d,start_handle=%d,end_handle=%d,properties=0x%x,uuid=0x%04x\n",\
-                        (db+i)->attribute_handle,(db+i)->start_handle,(db+i)->end_handle,(db+i)->properties,(db+i)->uuid.uuid.uuid16);
+                        (db+i)->attribute_handle, (db+i)->start_handle, (db+i)->end_handle, (db+i)->properties, (db+i)->uuid.uuid.uuid16);
                 break;
             case ESP_GATT_DB_ALL:
                 ESP_LOGI(GATTC_TAG,"attr_type = ESP_GATT_DB_ALL,attribute_handle=%d,start_handle=%d,end_handle=%d,properties=0x%x,uuid=0x%04x\n",\
-                        (db+i)->attribute_handle,(db+i)->start_handle,(db+i)->end_handle,(db+i)->properties,(db+i)->uuid.uuid.uuid16);
+                        (db+i)->attribute_handle, (db+i)->start_handle, (db+i)->end_handle, (db+i)->properties, (db+i)->uuid.uuid.uuid16);
                 break;
             default:
                 break;
             }
         }
         cmd = SPP_IDX_SPP_DATA_NTY_VAL;
-        xQueueSend(cmd_reg_queue,&cmd,10/portTICK_PERIOD_MS);
+        xQueueSend(cmd_reg_queue, &cmd, 10/portTICK_PERIOD_MS);
         break;
     case ESP_GATTC_SRVC_CHG_EVT:
         break;
@@ -474,16 +468,16 @@ void spp_client_reg_task(void* arg)
         vTaskDelay(100 / portTICK_PERIOD_MS);
         if(xQueueReceive(cmd_reg_queue, &cmd_id, portMAX_DELAY)) {
             if(cmd_id == SPP_IDX_SPP_DATA_NTY_VAL){
-                ESP_LOGI(GATTC_TAG,"Index = %d,UUID = 0x%04x, handle = %d \n",cmd_id,(db+SPP_IDX_SPP_DATA_NTY_VAL)->uuid.uuid.uuid16,(db+SPP_IDX_SPP_DATA_NTY_VAL)->attribute_handle);
-                esp_ble_gattc_register_for_notify(spp_gattc_if, gl_profile_tab[PROFILE_APP_ID].remote_bda ,(db+SPP_IDX_SPP_DATA_NTY_VAL)->attribute_handle);
+                ESP_LOGI(GATTC_TAG,"Index = %d,UUID = 0x%04x, handle = %d \n", cmd_id, (db+SPP_IDX_SPP_DATA_NTY_VAL)->uuid.uuid.uuid16, (db+SPP_IDX_SPP_DATA_NTY_VAL)->attribute_handle);
+                esp_ble_gattc_register_for_notify(spp_gattc_if, gl_profile_tab[PROFILE_APP_ID].remote_bda, (db+SPP_IDX_SPP_DATA_NTY_VAL)->attribute_handle);
             }else if(cmd_id == SPP_IDX_SPP_STATUS_VAL){
-                ESP_LOGI(GATTC_TAG,"Index = %d,UUID = 0x%04x, handle = %d \n",cmd_id,(db+SPP_IDX_SPP_STATUS_VAL)->uuid.uuid.uuid16,(db+SPP_IDX_SPP_STATUS_VAL)->attribute_handle);
-                esp_ble_gattc_register_for_notify(spp_gattc_if, gl_profile_tab[PROFILE_APP_ID].remote_bda ,(db+SPP_IDX_SPP_STATUS_VAL)->attribute_handle);
+                ESP_LOGI(GATTC_TAG,"Index = %d,UUID = 0x%04x, handle = %d \n", cmd_id, (db+SPP_IDX_SPP_STATUS_VAL)->uuid.uuid.uuid16, (db+SPP_IDX_SPP_STATUS_VAL)->attribute_handle);
+                esp_ble_gattc_register_for_notify(spp_gattc_if, gl_profile_tab[PROFILE_APP_ID].remote_bda, (db+SPP_IDX_SPP_STATUS_VAL)->attribute_handle);
             }
 #ifdef SUPPORT_HEARTBEAT
             else if(cmd_id == SPP_IDX_SPP_HEARTBEAT_VAL){
-                ESP_LOGI(GATTC_TAG,"Index = %d,UUID = 0x%04x, handle = %d \n",cmd_id,(db+SPP_IDX_SPP_HEARTBEAT_VAL)->uuid.uuid.uuid16,(db+SPP_IDX_SPP_HEARTBEAT_VAL)->attribute_handle);
-                esp_ble_gattc_register_for_notify(spp_gattc_if, gl_profile_tab[PROFILE_APP_ID].remote_bda ,(db+SPP_IDX_SPP_HEARTBEAT_VAL)->attribute_handle);
+                ESP_LOGI(GATTC_TAG,"Index = %d,UUID = 0x%04x, handle = %d \n", cmd_id, (db+SPP_IDX_SPP_HEARTBEAT_VAL)->uuid.uuid.uuid16, (db+SPP_IDX_SPP_HEARTBEAT_VAL)->attribute_handle);
+                esp_ble_gattc_register_for_notify(spp_gattc_if, gl_profile_tab[PROFILE_APP_ID].remote_bda, (db+SPP_IDX_SPP_HEARTBEAT_VAL)->attribute_handle);
             }
 #endif
         }
@@ -563,10 +557,10 @@ void uart_task(void *pvParameters)
                     uint8_t * temp = NULL;
                     temp = (uint8_t *)malloc(sizeof(uint8_t)*event.size);
                     if(temp == NULL){
-                        ESP_LOGE(GATTC_TAG, "malloc failed,%s L#%d\n",__func__,__LINE__);
+                        ESP_LOGE(GATTC_TAG, "malloc failed,%s L#%d\n", __func__, __LINE__);
                         break;
                     }
-                    memset(temp,0x0,event.size);
+                    memset(temp, 0x0, event.size);
                     uart_read_bytes(UART_NUM_0,temp,event.size,portMAX_DELAY);
                     esp_ble_gattc_write_char( spp_gattc_if,
                                               spp_conn_id,
@@ -602,13 +596,16 @@ static void spp_uart_init(void)
     //Set UART pins
     uart_set_pin(UART_NUM_0, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
     //Install UART driver, and get the queue.
-    uart_driver_install(UART_NUM_0, 4096, 8192, 10,&spp_uart_queue,0);
+    uart_driver_install(UART_NUM_0, 4096, 8192, 10, &spp_uart_queue, 0);
     xTaskCreate(uart_task, "uTask", 2048, (void*)UART_NUM_0, 8, NULL);
 }
 
 void app_main()
 {
     esp_err_t ret;
+
+    ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
+
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
 
     nvs_flash_init();
