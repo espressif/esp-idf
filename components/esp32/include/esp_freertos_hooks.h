@@ -89,6 +89,13 @@ esp_err_t esp_register_freertos_tick_hook_for_cpu(esp_freertos_tick_cb_t new_tic
   */
 esp_err_t esp_register_freertos_tick_hook(esp_freertos_tick_cb_t new_tick_cb);
 
+/**
+  * @brief  Unregister an idle callback from the idle hook of the specified core
+  *
+  * @param[in]  old_idle_cb     Callback to be unregistered
+  * @param[in]  cpuid           id of the core
+  */
+void esp_deregister_freertos_idle_hook_for_cpu(esp_freertos_idle_cb_t old_idle_cb, UBaseType_t cpuid);
 
 /**
   * @brief  Unregister an idle callback. If the idle callback is registered to
@@ -99,6 +106,13 @@ esp_err_t esp_register_freertos_tick_hook(esp_freertos_tick_cb_t new_tick_cb);
   */
 void esp_deregister_freertos_idle_hook(esp_freertos_idle_cb_t old_idle_cb);
 
+/**
+  * @brief  Unregister a tick callback from the tick hook of the specified core
+  *
+  * @param[in]  old_tick_cb     Callback to be unregistered
+  * @param[in]  cpuid           id of the core
+  */
+void esp_deregister_freertos_tick_hook_for_cpu(esp_freertos_tick_cb_t old_tick_cb, UBaseType_t cpuid);
 
 /**
   * @brief  Unregister a tick callback. If the tick callback is registered to the

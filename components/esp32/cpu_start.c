@@ -336,9 +336,6 @@ void start_cpu0_default(void)
 #if CONFIG_INT_WDT
     esp_int_wdt_init();
 #endif
-#if CONFIG_TASK_WDT
-    esp_task_wdt_init();
-#endif
     esp_cache_err_int_init();
     esp_crosscore_int_init();
     esp_ipc_init();
@@ -426,6 +423,29 @@ static void main_task(void* args)
 #endif
     //Enable allocation in region where the startup stacks were located.
     heap_caps_enable_nonos_stack_heaps();
+
+    //Initialize task wdt if configured to do so
+#ifdef CONFIG_TASK_WDT_PANIC
+    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_TASK_WDT_TIMEOUT_S, true))
+#elif CONFIG_TASK_WDT
+    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_TASK_WDT_TIMEOUT_S, false))
+#endif
+
+    //Add IDLE 0 to task wdt
+#ifdef CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU0
+    TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
+    if(idle_0 != NULL){
+        ESP_ERROR_CHECK(esp_task_wdt_add(idle_0))
+    }
+#endif
+    //Add IDLE 1 to task wdt
+#ifdef CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU1
+    TaskHandle_t idle_1 = xTaskGetIdleTaskHandleForCPU(1);
+    if(idle_1 != NULL){
+        ESP_ERROR_CHECK(esp_task_wdt_add(idle_1))
+    }
+#endif
+
     app_main();
     vTaskDelete(NULL);
 }

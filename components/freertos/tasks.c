@@ -2367,6 +2367,18 @@ UBaseType_t uxTaskGetNumberOfTasks( void )
 		return xIdleTaskHandle[ xPortGetCoreID() ];
 	}
 
+	TaskHandle_t xTaskGetIdleTaskHandleForCPU( UBaseType_t cpuid )
+	{
+	    TaskHandle_t xReturn = NULL;
+	    /* If xTaskGetIdleTaskHandleForCPU() is called before the scheduler has been
+        started, then xIdleTaskHandle will be NULL. */
+	    if (cpuid < portNUM_PROCESSORS) {
+	        configASSERT( ( xIdleTaskHandle[ cpuid ] != NULL ) );
+	        xReturn = xIdleTaskHandle[ cpuid ];
+	    }
+	    return xReturn;
+	}
+
 #endif /* INCLUDE_xTaskGetIdleTaskHandle */
 /*----------------------------------------------------------*/
 
