@@ -308,16 +308,14 @@ void IRAM_ATTR esp_restart_noos()
     Cache_Read_Disable(0);
     Cache_Read_Disable(1);
 
-#ifdef CONFIG_SPIRAM_SUPPORT
-    //External SPI RAM reconfigures some GPIO functions in a way that is not entirely undone in the boot rom.
-    //Undo them manually so we reboot correctly.
+    // 2nd stage bootloader reconfigures SPI flash signals.
+    // Reset them to the defaults expected by ROM.
     WRITE_PERI_REG(GPIO_FUNC0_IN_SEL_CFG_REG, 0x30);
     WRITE_PERI_REG(GPIO_FUNC1_IN_SEL_CFG_REG, 0x30);
     WRITE_PERI_REG(GPIO_FUNC2_IN_SEL_CFG_REG, 0x30);
     WRITE_PERI_REG(GPIO_FUNC3_IN_SEL_CFG_REG, 0x30);
     WRITE_PERI_REG(GPIO_FUNC4_IN_SEL_CFG_REG, 0x30);
     WRITE_PERI_REG(GPIO_FUNC5_IN_SEL_CFG_REG, 0x30);
-#endif
 
     // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
     DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, 
