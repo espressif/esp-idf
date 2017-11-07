@@ -716,6 +716,62 @@ UT_003_08:
     - UT_T1_1
     - UT_single_core
 
+UT_004_01:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_psram
+
+UT_004_02:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_psram
+
+UT_004_03:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_psram
+
+UT_004_04:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_psram
+
+UT_004_05:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_SDMODE
+    - UT_psram
+
+UT_004_06:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_SPIMODE
+    - UT_psram
+
+UT_004_07:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_psram
+
+UT_004_08:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_psram
+
 IT_001_01:
   <<: *test_template
   tags:
