@@ -1294,7 +1294,6 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 	TickType_t xTimeToWake;
 	BaseType_t xAlreadyYielded=pdFALSE, xShouldDelay = pdFALSE;
 
-		UNTESTED_FUNCTION();
 		configASSERT( pxPreviousWakeTime );
 		configASSERT( ( xTimeIncrement > 0U ) );
 		configASSERT( uxSchedulerSuspended[ xPortGetCoreID() ] == 0 );
@@ -1457,18 +1456,17 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 /*-----------------------------------------------------------*/
 
 #if ( INCLUDE_eTaskGetState == 1 )
-/* ToDo: Make this multicore-compatible. */
 	eTaskState eTaskGetState( TaskHandle_t xTask )
 	{
 	eTaskState eReturn;
 	List_t *pxStateList;
 	const TCB_t * const pxTCB = ( TCB_t * ) xTask;
-        TCB_t * curTCB = xTaskGetCurrentTaskHandle();
+		TCB_t * curTCBcurCore = xTaskGetCurrentTaskHandle();
+		TCB_t * curTCBothrCore = xTaskGetCurrentTaskHandleForCPU(!xPortGetCoreID());    //Returns NULL if Unicore
 
-		UNTESTED_FUNCTION();
 		configASSERT( pxTCB );
 
-		if( pxTCB == curTCB )
+		if( pxTCB == curTCBcurCore || pxTCB == curTCBothrCore )
 		{
 			/* The task calling this function is querying its own state. */
 			eReturn = eRunning;
@@ -4526,7 +4524,6 @@ TickType_t uxReturn;
 	TickType_t xTimeToWake;
 	uint32_t ulReturn;
 
-		UNTESTED_FUNCTION();
 		taskENTER_CRITICAL(&xTaskQueueMutex);
 		{
 			/* Only block if the notification count is not already non-zero. */
@@ -4849,7 +4846,6 @@ TickType_t uxReturn;
 	eNotifyValue eOriginalNotifyState;
 	BaseType_t xReturn = pdPASS;
 
-		UNTESTED_FUNCTION();
 		configASSERT( xTaskToNotify );
 
 		pxTCB = ( TCB_t * ) xTaskToNotify;
@@ -4947,7 +4943,6 @@ TickType_t uxReturn;
 	TCB_t * pxTCB;
 	eNotifyValue eOriginalNotifyState;
 
-		UNTESTED_FUNCTION();
 		configASSERT( xTaskToNotify );
 
 
