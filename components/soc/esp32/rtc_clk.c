@@ -84,6 +84,20 @@ static const char* TAG = "rtc_clk";
  */
 #define XTAL_FREQ_EST_CYCLES            10
 
+/* Core voltage needs to be increased in two cases:
+ * 1. running at 240 MHz
+ * 2. running with 80MHz Flash frequency
+ */
+#ifdef CONFIG_ESPTOOLPY_FLASHFREQ_80M
+#define DIG_DBIAS_80M_160M  RTC_CNTL_DBIAS_1V25
+#else
+#define DIG_DBIAS_80M_160M  RTC_CNTL_DBIAS_1V10
+#endif
+#define DIG_DBIAS_240M      RTC_CNTL_DBIAS_1V25
+#define DIG_DBIAS_XTAL      RTC_CNTL_DBIAS_1V10
+#define DIG_DBIAS_2M        RTC_CNTL_DBIAS_1V00
+
+
 static rtc_cpu_freq_t s_cur_freq = RTC_CPU_FREQ_XTAL;
 static int s_pll_freq = 0;
 
@@ -231,6 +245,8 @@ void rtc_clk_bbpll_set(rtc_xtal_freq_t xtal_freq, rtc_cpu_freq_t cpu_freq)
     uint8_t bw;
 
     if (cpu_freq != RTC_CPU_FREQ_240M) {
+        /* Raise the voltage, if needed */
+        REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_80M_160M);
         /* Configure 320M PLL */
         switch (xtal_freq) {
             case RTC_XTAL_FREQ_40M:
@@ -270,7 +286,7 @@ void rtc_clk_bbpll_set(rtc_xtal_freq_t xtal_freq, rtc_cpu_freq_t cpu_freq)
         I2C_WRITEREG_RTC(I2C_BBPLL, I2C_BBPLL_BBADC_DSMP, BBPLL_BBADC_DSMP_VAL_320M);
     } else {
         /* Raise the voltage */
-        REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, RTC_CNTL_DBIAS_1V25);
+        REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_240M);
         ets_delay_us(DELAY_PLL_DBIAS_RAISE);
         /* Configure 480M PLL */
         switch (xtal_freq) {
@@ -329,7 +345,7 @@ static void rtc_clk_cpu_freq_to_xtal()
 {
     rtc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
     ets_update_cpu_frequency(xtal_freq);
-    REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, RTC_CNTL_DBIAS_1V10);
+    REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_XTAL);
     REG_SET_FIELD(APB_CTRL_SYSCLK_CONF_REG, APB_CTRL_PRE_DIV_CNT, 0);
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL, RTC_CNTL_SOC_CLK_SEL_XTL);
     DPORT_REG_WRITE(DPORT_CPU_PER_CONF_REG, 0); // clear DPORT_CPUPERIOD_SEL
@@ -356,13 +372,15 @@ static void rtc_clk_cpu_freq_to_pll(rtc_cpu_freq_t cpu_freq)
     }
 
     if (cpu_freq == RTC_CPU_FREQ_80M) {
+        REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_80M_160M);
         DPORT_REG_WRITE(DPORT_CPU_PER_CONF_REG, 0);
         freq = 80;
     } else if (cpu_freq == RTC_CPU_FREQ_160M) {
+        REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_80M_160M);
         DPORT_REG_WRITE(DPORT_CPU_PER_CONF_REG, 1);
         freq = 160;
     } else if (cpu_freq == RTC_CPU_FREQ_240M) {
-        REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, RTC_CNTL_DBIAS_1V25);
+        REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_240M);
         DPORT_REG_WRITE(DPORT_CPU_PER_CONF_REG, 2);
         freq = 240;
     }
@@ -390,7 +408,7 @@ void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq)
 {
     rtc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
     /* Switch CPU to XTAL frequency first */
-    REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, RTC_CNTL_DBIAS_1V10);
+    REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_XTAL);
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL, RTC_CNTL_SOC_CLK_SEL_XTL);
     REG_SET_FIELD(APB_CTRL_SYSCLK_CONF_REG, APB_CTRL_PRE_DIV_CNT, 0);
     ets_update_cpu_frequency(xtal_freq);
@@ -422,7 +440,7 @@ void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq)
         ets_update_cpu_frequency(2);
         rtc_clk_apb_freq_update(2 * MHZ);
         /* lower the voltage */
-        REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, RTC_CNTL_DBIAS_1V00);
+        REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_2M);
     } else {
         /* use PLL as clock source */
         CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG,
