@@ -25,45 +25,12 @@ import xunitgen
 import Env
 import DUT
 import App
+import Utility
 
 
 XUNIT_FILE_NAME = "XUNIT_RESULT.xml"
 XUNIT_RECEIVER = xunitgen.EventReceiver()
 XUNIT_DEFAULT_TEST_SUITE = "test-suite"
-
-
-_COLOR_CODES = {
-    "white": '\033[0m',
-    "red":  '\033[31m',
-    "green": '\033[32m',
-    "orange": '\033[33m',
-    "blue": '\033[34m',
-    "purple": '\033[35m',
-    "W": '\033[0m',
-    "R":  '\033[31m',
-    "G": '\033[32m',
-    "O": '\033[33m',
-    "B": '\033[34m',
-    "P": '\033[35m'
-}
-
-
-def console_log(data, color="white"):
-    """
-    log data to console.
-    (if not flush console log, Gitlab-CI won't update logs during job execution)
-
-    :param data: data content
-    :param color: color
-    """
-    if color not in _COLOR_CODES:
-        color = "white"
-    color_codes = _COLOR_CODES[color]
-    print(color_codes + data)
-    if color not in ["white", "W"]:
-        # reset color to white for later logs
-        print(_COLOR_CODES["white"] + "\r")
-    sys.stdout.flush()
 
 
 class DefaultEnvConfig(object):
@@ -187,7 +154,7 @@ def test_method(**kwargs):
                                       XUNIT_FILE_NAME)
             XUNIT_RECEIVER.begin_case(test_func.__name__, time.time(), test_func_file_name)
             try:
-                console_log("starting running test: " + test_func.__name__, color="green")
+                Utility.console_log("starting running test: " + test_func.__name__, color="green")
                 # execute test function
                 test_func(env_inst, extra_data)
                 # if finish without exception, test result is True
@@ -208,9 +175,9 @@ def test_method(**kwargs):
                                        XUNIT_DEFAULT_TEST_SUITE))
 
             if result:
-                console_log("Test Succeed: " + test_func.__name__, color="green")
+                Utility.console_log("Test Succeed: " + test_func.__name__, color="green")
             else:
-                console_log(("Test Fail: " + test_func.__name__), color="red")
+                Utility.console_log(("Test Fail: " + test_func.__name__), color="red")
             TestResult.set_result(result, test_func.__name__)
             return result
 

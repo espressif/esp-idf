@@ -47,6 +47,8 @@ import functools
 import serial
 from serial.tools import list_ports
 
+import Utility
+
 if sys.version_info[0] == 2:
     import Queue as _queue
 else:
@@ -72,6 +74,17 @@ def _expect_lock(func):
     return handler
 
 
+def _decode_data(data):
+    """ for python3, if the data is bytes, then decode it to string """
+    if isinstance(data, bytes):
+        # convert bytes to string
+        try:
+            data = data.decode("utf-8", "ignore")
+        except UnicodeDecodeError:
+            data = data.decode("iso8859-1", )
+    return data
+
+
 class _DataCache(_queue.Queue):
     """
     Data cache based on Queue. Allow users to process data cache based on bytes instead of Queue."
@@ -94,13 +107,7 @@ class _DataCache(_queue.Queue):
 
         try:
             data = self.get(timeout=timeout)
-            if isinstance(data, bytes):
-                # convert bytes to string
-                try:
-                    data = data.decode("utf-8", "ignore")
-                except UnicodeDecodeError:
-                    data = data.decode("iso8859-1",)
-            self.data_cache += data
+            self.data_cache += _decode_data(data)
         except _queue.Empty:
             # don't do anything when on update for cache
             pass
@@ -122,18 +129,48 @@ class _DataCache(_queue.Queue):
 
 class _RecvThread(threading.Thread):
 
+    PERFORMANCE_PATTERN = re.compile(r"\[Performance]\[(\w+)]: ([^\r\n]+)\r?\n")
+
     def __init__(self, read, data_cache):
         super(_RecvThread, self).__init__()
         self.exit_event = threading.Event()
         self.setDaemon(True)
         self.read = read
         self.data_cache = data_cache
+        # cache the last line of recv data for collecting performance
+        self._line_cache = str()
+
+    def collect_performance(self, data):
+        """ collect performance """
+        if data:
+            decoded_data = _decode_data(data)
+
+            matches = self.PERFORMANCE_PATTERN.findall(self._line_cache + decoded_data)
+            for match in matches:
+                Utility.console_log("[Performance][{}]: {}".format(match[0], match[1]),
+                                    color="orange")
+
+            # cache incomplete line to later process
+            lines = decoded_data.splitlines(True)
+            last_line = lines[-1]
+
+            if last_line[-1] != "\n":
+                if len(lines) == 1:
+                    # only one line and the line is not finished, then append this to cache
+                    self._line_cache += lines[-1]
+                else:
+                    # more than one line and not finished, replace line cache
+                    self._line_cache = lines[-1]
+            else:
+                # line finishes, flush cache
+                self._line_cache = str()
 
     def run(self):
         while not self.exit_event.isSet():
             data = self.read(1000)
             if data:
                 self.data_cache.put(data)
+                self.collect_performance(data)
 
     def exit(self):
         self.exit_event.set()
@@ -522,11 +559,7 @@ class SerialDUT(BaseDUT):
         timestamp = time.time()
         timestamp = "{}:{}".format(time.strftime("%m-%d %H:%M:%S", time.localtime(timestamp)),
                                    str(timestamp % 1)[2:5])
-        try:
-            formatted_data = "[{}]:\r\n{}\r\n".format(timestamp, data.decode("utf-8", "ignore"))
-        except UnicodeDecodeError:
-            # if utf-8 fail, use iso-8859-1 (single char codec with range 0-255)
-            formatted_data = "[{}]:\r\n{}\r\n".format(timestamp, data.decode("iso8859-1",))
+        formatted_data = "[{}]:\r\n{}\r\n".format(timestamp, _decode_data(data))
         return formatted_data
 
     def _port_open(self):
