@@ -291,6 +291,14 @@ void IRAM_ATTR esp_restart_noos()
     uart_tx_wait_idle(0);
     uart_tx_wait_idle(1);
     uart_tx_wait_idle(2);
+    // 2nd stage bootloader reconfigures SPI flash signals.
+    // Reset them to the defaults expected by ROM.
+    WRITE_PERI_REG(GPIO_FUNC0_IN_SEL_CFG_REG, 0x30);
+    WRITE_PERI_REG(GPIO_FUNC1_IN_SEL_CFG_REG, 0x30);
+    WRITE_PERI_REG(GPIO_FUNC2_IN_SEL_CFG_REG, 0x30);
+    WRITE_PERI_REG(GPIO_FUNC3_IN_SEL_CFG_REG, 0x30);
+    WRITE_PERI_REG(GPIO_FUNC4_IN_SEL_CFG_REG, 0x30);
+    WRITE_PERI_REG(GPIO_FUNC5_IN_SEL_CFG_REG, 0x30);
 
     // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
     DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, 
@@ -364,8 +372,10 @@ static void get_chip_info_esp32(esp_chip_info_t* out_info)
     if ((reg & EFUSE_RD_CHIP_VER_DIS_BT_M) == 0) {
         out_info->features |= CHIP_FEATURE_BT | CHIP_FEATURE_BLE;
     }
-    if (((reg & EFUSE_RD_CHIP_VER_PKG_M) >> EFUSE_RD_CHIP_VER_PKG_S) ==
-            EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5) {
+    int package = (reg & EFUSE_RD_CHIP_VER_PKG_M) >> EFUSE_RD_CHIP_VER_PKG_S;
+    if (package == EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5 ||
+        package == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2 ||
+        package == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4) {
         out_info->features |= CHIP_FEATURE_EMB_FLASH;
     }
 }

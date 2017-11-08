@@ -163,7 +163,7 @@ static void enable_qio_mode(read_status_fn_t read_status_fn,
         // spiconfig specifies a custom efuse pin configuration. This config defines all pins -except- WP.
         //
         // For now, in this situation we only support Quad I/O mode for ESP32-D2WD where WP pin is known.
-        uint32_t chip_ver = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_RESERVE);
+        uint32_t chip_ver = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_PKG);
         uint32_t pkg_ver = chip_ver & 0x7;
         const uint32_t PKG_VER_ESP32_D2WD = 2; // TODO: use chip detection API once available
         if (pkg_ver != PKG_VER_ESP32_D2WD) {
