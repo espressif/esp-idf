@@ -1472,6 +1472,9 @@ static void bta_gattc_pop_command_to_send(tBTA_GATTC_CLCB *p_clcb)
         if (p_data != NULL) {
             /* execute pending operation of link block still present */
             if (l2cu_find_lcb_by_bd_addr(p_clcb->p_srcb->server_bda, BT_TRANSPORT_LE) != NULL) {
+                if (p_data->hdr.event == BTA_GATTC_API_WRITE_EVT) {
+                    APPL_TRACE_ERROR("%s(), p_data = %d", __func__, p_data->api_write.p_value[0]);
+                }
                 // The data to be sent to the gattc state machine for processing
                 if(bta_gattc_sm_execute(p_clcb, p_data->hdr.event, p_data)) {
                     list_remove(p_clcb->p_cmd_list, (void *)p_data);
@@ -1491,6 +1494,7 @@ static void bta_gattc_pop_command_to_send(tBTA_GATTC_CLCB *p_clcb)
 *******************************************************************************/
 void bta_gattc_free_command_data(tBTA_GATTC_CLCB *p_clcb)
 {
+    assert(p_clcb->p_cmd_list);
     //Check the list is empty or not.
     if (!list_is_empty(p_clcb->p_cmd_list)) {
         /* Traversal the command queue, check the p_q_cmd is point to the queue data or not, if the p_q_cmd point to the

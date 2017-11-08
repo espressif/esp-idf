@@ -48,6 +48,8 @@ static const UINT8  base_uuid[LEN_UUID_128] = {0xFB, 0x34, 0x9B, 0x5F, 0x80, 0x0
 
 static const BD_ADDR dummy_bda = {0, 0, 0, 0, 0, 0};
 
+#define GATTC_COMMAND_QUEUE_SIZE_MAX    30
+
 /*******************************************************************************
 **
 ** Function         bta_gatt_convert_uuid16_to_uuid128
@@ -452,13 +454,28 @@ BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
         return FALSE;
     }
     else if (p_clcb->p_cmd_list) {
-        void *cmd_data = osi_malloc(sizeof(tBTA_GATTC_DATA));
-        if (cmd_data) {
+		UINT16 len = 0;
+		tBTA_GATTC_DATA *cmd_data = NULL;
+		if (list_length(p_clcb->p_cmd_list) >= GATTC_COMMAND_QUEUE_SIZE_MAX) {
+            //APPL_TRACE_ERROR("%s(), the gattc command queue is full." __func__);
+			return FALSE;
+		}
+
+		if (p_data->hdr.event == BTA_GATTC_API_WRITE_EVT) {
+            len = p_data->api_write.len;
+			cmd_data = (tBTA_GATTC_DATA *)osi_malloc(sizeof(tBTA_GATTC_DATA) + len);
+
+			cmd_data->api_write.p_value = (UINT8 *)(cmd_data + 1);
+			memcpy(cmd_data, p_data, sizeof(tBTA_GATTC_DATA));
+			memcpy(cmd_data->api_write.p_value, p_data->api_write.p_value, len);
+		} else {
+		    cmd_data = (tBTA_GATTC_DATA *)osi_malloc(sizeof(tBTA_GATTC_DATA));
             memset(cmd_data, 0, sizeof(tBTA_GATTC_DATA));
             memcpy(cmd_data, p_data, sizeof(tBTA_GATTC_DATA));
-            //store the command to the command list.
-            list_append(p_clcb->p_cmd_list, cmd_data);
         }
+
+        //store the command to the command list.
+        list_append(p_clcb->p_cmd_list, (void *)cmd_data);
         return FALSE;
     }
 
