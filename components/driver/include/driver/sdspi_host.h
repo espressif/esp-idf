@@ -43,6 +43,7 @@ extern "C" {
     .set_card_clk = &sdspi_host_set_card_clk, \
     .do_transaction = &sdspi_host_do_transaction, \
     .deinit = &sdspi_host_deinit, \
+    .command_timeout_ms = 0, \
 }
 
 /**
