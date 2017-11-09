@@ -39,7 +39,7 @@ struct test_desc_t
 
 void unity_testcase_register(struct test_desc_t* desc);
 
-void unity_run_menu();
+void unity_run_menu() __attribute__((noreturn));
 
 void unity_run_tests_with_filter(const char* filter);
 
