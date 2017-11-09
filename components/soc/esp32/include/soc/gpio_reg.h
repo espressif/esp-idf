@@ -129,8 +129,7 @@
 
 #define GPIO_STRAP_REG          (DR_REG_GPIO_BASE + 0x0038)
 /* GPIO_STRAPPING : RO ;bitpos:[15:0] ;default:  ; */
-/*description: GPIO strapping results: {2'd0  boot_sel_dig[7:1]  vsdio_boot_sel
-  boot_sel_chip[5:0]}.   Boot_sel_dig[7:1]: {U0RXD  SD_CLK  SD_CMD  SD_DATA0  SD_DATA1  SD_DATA2  SD_DATA3}.  vsdio_boot_sel: MTDI. boot_sel_chip[5:0]: {GPIO0  U0TXD  GPIO2  GPIO4  MTDO  GPIO5}*/
+/*description: {10'b0, MTDI, GPIO0, GPIO2, GPIO4, MTDO, GPIO5} */
 #define GPIO_STRAPPING  0x0000FFFF
 #define GPIO_STRAPPING_M  ((GPIO_STRAPPING_V)<<(GPIO_STRAPPING_S))
 #define GPIO_STRAPPING_V  0xFFFF
