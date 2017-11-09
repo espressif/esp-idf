@@ -461,17 +461,23 @@ BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 			return FALSE;
 		}
 
-		if (p_data->hdr.event == BTA_GATTC_API_WRITE_EVT) {
+        if (p_data->hdr.event == BTA_GATTC_API_WRITE_EVT) {
             len = p_data->api_write.len;
-			cmd_data = (tBTA_GATTC_DATA *)osi_malloc(sizeof(tBTA_GATTC_DATA) + len);
-
-			cmd_data->api_write.p_value = (UINT8 *)(cmd_data + 1);
-			memcpy(cmd_data, p_data, sizeof(tBTA_GATTC_DATA));
-			memcpy(cmd_data->api_write.p_value, p_data->api_write.p_value, len);
-		} else {
-		    cmd_data = (tBTA_GATTC_DATA *)osi_malloc(sizeof(tBTA_GATTC_DATA));
-            memset(cmd_data, 0, sizeof(tBTA_GATTC_DATA));
-            memcpy(cmd_data, p_data, sizeof(tBTA_GATTC_DATA));
+            if ((cmd_data = (tBTA_GATTC_DATA *)osi_malloc(sizeof(tBTA_GATTC_DATA) + len)) != NULL) {
+                memset(cmd_data, 0, sizeof(tBTA_GATTC_DATA) + len);
+			    memcpy(cmd_data, p_data, sizeof(tBTA_GATTC_DATA));
+                cmd_data->api_write.p_value = (UINT8 *)(cmd_data + 1);
+			    memcpy(cmd_data->api_write.p_value, p_data->api_write.p_value, len);
+            } else {
+                APPL_TRACE_ERROR("%s(), alloc fail, no memery.", __func__);
+            }
+        } else {
+            if ((cmd_data = (tBTA_GATTC_DATA *)osi_malloc(sizeof(tBTA_GATTC_DATA))) != NULL) {
+                memset(cmd_data, 0, sizeof(tBTA_GATTC_DATA));
+                memcpy(cmd_data, p_data, sizeof(tBTA_GATTC_DATA));
+            } else {
+                APPL_TRACE_ERROR("%s(), alloc fail, no memery.", __func__);
+            }
         }
 
         //store the command to the command list.
