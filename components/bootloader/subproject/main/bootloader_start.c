@@ -842,6 +842,13 @@ static void IRAM_ATTR flash_gpio_configure()
 
 static void clock_configure(void)
 {
+    // ROM bootloader may have put a lot of text into UART0 FIFO.
+    // Wait for it to be printed.
+    // This is not needed on power on reset, when ROM bootloader is running at
+    // 40 MHz. But in case of TG WDT reset, CPU may still be running at >80 MHZ,
+    // and will be done with the bootloader much earlier than UART FIFO is empty.
+    uart_tx_wait_idle(0);
+
     /* Set CPU to 80MHz. Keep other clocks unmodified. */
     rtc_cpu_freq_t cpu_freq = RTC_CPU_FREQ_80M;
 
@@ -885,8 +892,7 @@ static void uart_console_configure(void)
     uartAttach();
     ets_install_uart_printf();
 
-    // ROM bootloader may have put a lot of text into UART0 FIFO.
-    // Wait for it to be printed.
+    // Wait for UART FIFO to be empty.
     uart_tx_wait_idle(0);
 
 #if CONFIG_CONSOLE_UART_CUSTOM
