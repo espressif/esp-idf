@@ -23,6 +23,7 @@ void esp_dport_access_stall_other_cpu_start(void);
 void esp_dport_access_stall_other_cpu_end(void);
 void esp_dport_access_int_init(void);
 void esp_dport_access_int_deinit(void);
+void esp_dport_access_int_abort(void);
 
 #if defined(BOOTLOADER_BUILD) || defined(CONFIG_FREERTOS_UNICORE) || !defined(ESP_PLATFORM)
 #define DPORT_STALL_OTHER_CPU_START()

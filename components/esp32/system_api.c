@@ -256,21 +256,30 @@ void IRAM_ATTR esp_restart(void)
 */
 void IRAM_ATTR esp_restart_noos()
 {
-    const uint32_t core_id = xPortGetCoreID();
-    const uint32_t other_core_id = core_id == 0 ? 1 : 0;
-    esp_cpu_stall(other_core_id);
+    // Disable interrupts
+    xt_ints_off(0xFFFFFFFF);
 
-    // other core is now stalled, can access DPORT registers directly
-    esp_dport_access_int_deinit();
-
-    // We need to disable TG0/TG1 watchdogs
-    // First enable RTC watchdog to be on the safe side
+    // Enable RTC watchdog for 1 second
     REG_WRITE(RTC_CNTL_WDTWPROTECT_REG, RTC_CNTL_WDT_WKEY_VALUE);
     REG_WRITE(RTC_CNTL_WDTCONFIG0_REG,
             RTC_CNTL_WDT_FLASHBOOT_MOD_EN_M |
+            (RTC_WDT_STG_SEL_RESET_SYSTEM << RTC_CNTL_WDT_STG0_S) |
+            (RTC_WDT_STG_SEL_RESET_RTC << RTC_CNTL_WDT_STG1_S) |
             (1 << RTC_CNTL_WDT_SYS_RESET_LENGTH_S) |
             (1 << RTC_CNTL_WDT_CPU_RESET_LENGTH_S) );
     REG_WRITE(RTC_CNTL_WDTCONFIG1_REG, 128000);
+
+    // Reset and stall the other CPU.
+    // CPU must be reset before stalling, in case it was running a s32c1i
+    // instruction. This would cause memory pool to be locked by arbiter
+    // to the stalled CPU, preventing current CPU from accessing this pool.
+    const uint32_t core_id = xPortGetCoreID();
+    const uint32_t other_core_id = (core_id == 0) ? 1 : 0;
+    esp_cpu_reset(other_core_id);
+    esp_cpu_stall(other_core_id);
+
+    // Other core is now stalled, can access DPORT registers directly
+    esp_dport_access_int_abort();
 
     // Disable TG0/TG1 watchdogs
     TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
@@ -280,8 +289,6 @@ void IRAM_ATTR esp_restart_noos()
     TIMERG1.wdt_config0.en = 0;
     TIMERG1.wdt_wprotect=0;
 
-    // Disable all interrupts
-    xt_ints_off(0xFFFFFFFF);
 
     // Disable cache
     Cache_Read_Disable(0);
@@ -322,14 +329,14 @@ void IRAM_ATTR esp_restart_noos()
     // Reset CPUs
     if (core_id == 0) {
         // Running on PRO CPU: APP CPU is stalled. Can reset both CPUs.
-        SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG,
-                RTC_CNTL_SW_PROCPU_RST_M | RTC_CNTL_SW_APPCPU_RST_M);
+        esp_cpu_reset(1);
+        esp_cpu_reset(0);
     } else {
         // Running on APP CPU: need to reset PRO CPU and unstall it,
         // then reset APP CPU
-        SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_PROCPU_RST_M);
+        esp_cpu_reset(0);
         esp_cpu_unstall(0);
-        SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_APPCPU_RST_M);
+        esp_cpu_reset(1);
     }
     while(true) {
         ;
