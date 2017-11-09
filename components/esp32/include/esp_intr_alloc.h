@@ -248,8 +248,8 @@ int esp_intr_get_intno(intr_handle_t handle);
 esp_err_t esp_intr_disable(intr_handle_t handle);
 
 /**
- * @brief Ensable the interrupt associated with the handle
- * 
+ * @brief Enable the interrupt associated with the handle
+ *
  * @note For local interrupts (ESP_INTERNAL_* sources), this function has to be called on the
  *       CPU the interrupt is allocated on. Other interrupts have no such restriction.
  *
@@ -260,6 +260,19 @@ esp_err_t esp_intr_disable(intr_handle_t handle);
  */
 esp_err_t esp_intr_enable(intr_handle_t handle);
 
+/**
+ * @brief Set the "in IRAM" status of the handler.
+ *
+ * @note Does not work on shared interrupts.
+ *
+ * @param handle The handle, as obtained by esp_intr_alloc or esp_intr_alloc_intrstatus
+ * @param is_in_iram Whether the handler associated with this handle resides in IRAM.
+ *                   Handlers residing in IRAM can be called when cache is disabled.
+ *
+ * @return ESP_ERR_INVALID_ARG if the combination of arguments is invalid.
+ *         ESP_OK otherwise
+ */
+esp_err_t esp_intr_set_in_iram(intr_handle_t handle, bool is_in_iram);
 
 /**
  * @brief Disable interrupts that aren't specifically marked as running from IRAM
