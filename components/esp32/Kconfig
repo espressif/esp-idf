@@ -822,12 +822,40 @@ menu Wi-Fi
 config SW_COEXIST_ENABLE
     bool "Software controls WiFi/Bluetooth coexistence"
     depends on BT_ENABLED
-    default n
+    default y
     help
         If enabled, WiFi & Bluetooth coexistence is controlled by software rather than hardware.
         Recommended for heavy traffic scenarios. Both coexistence configuration options are
         automatically managed, no user intervention is required.
 
+choice SW_COEXIST_PREFERENCE
+    prompt "WiFi/Bluetooth coexistence performance preference"
+    depends on SW_COEXIST_ENABLE
+    default SW_COEXIST_PREFERENCE_BALANCE
+    help
+        Choose Bluetooth/WiFi/Balance for different preference.
+        If choose WiFi, it will make WiFi performance better. Such, keep WiFi Audio more smooth.
+        If choose Bluetooth, it will make Bluetooth performance better. Such, keep Bluetooth(A2DP) Audio more smooth.
+        If choose Balance, the performance of WiFi and bluetooth will be balance. It's default.
+        Except config preference in menuconfig, you can also call esp_coex_preference_set() dynamically.
+
+config SW_COEXIST_PREFERENCE_WIFI
+    bool "WiFi"
+
+config SW_COEXIST_PREFERENCE_BT
+    bool "Bluetooth(include BR/EDR and BLE)"
+
+config SW_COEXIST_PREFERENCE_BALANCE
+    bool "Balance"
+
+endchoice
+
+config SW_COEXIST_PREFERENCE_VALUE
+    int
+    depends on SW_COEXIST_ENABLE
+    default 0 if SW_COEXIST_PREFERENCE_WIFI
+    default 1 if SW_COEXIST_PREFERENCE_BT
+    default 2 if SW_COEXIST_PREFERENCE_BALANCE
 
 config ESP32_WIFI_STATIC_RX_BUFFER_NUM
     int "Max number of WiFi static RX buffers"
@@ -919,27 +947,33 @@ config ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
 
 config ESP32_WIFI_AMPDU_TX_ENABLED
     bool "WiFi AMPDU TX"
+    default y if SW_COEXIST_ENABLE
     default y
     help
         Select this option to enable AMPDU TX feature
+        Suggest enable it when SW_COEXIST_ENABLE is defined.
 
 
 config ESP32_WIFI_TX_BA_WIN
     int "WiFi AMPDU TX BA window size"
     depends on ESP32_WIFI_AMPDU_TX_ENABLED
     range 2 32
+    default 2 if SW_COEXIST_ENABLE
     default 6
     help
         Set the size of WiFi Block Ack TX window. Generally a bigger value means higher throughput but
         more memory. Most of time we should NOT change the default value unless special reason, e.g. 
         test the maximum UDP TX throughput with iperf etc. For iperf test in shieldbox, the recommended
-        value is 9~12.
+        value is 9~12. If SW_COEXIST_ENABLE is defined, suggest value is 2.
 
 config ESP32_WIFI_AMPDU_RX_ENABLED
     bool "WiFi AMPDU RX"
+    depends on !SW_COEXIST_ENABLE
+    default y
     default y
     help
         Select this option to enable AMPDU RX feature
+        Suggest disable this option when SW_COEXIST_ENABLE is enabled. It can improve WiFi RX performance normally.
 
 config ESP32_WIFI_RX_BA_WIN
     int "WiFi AMPDU RX BA window size"

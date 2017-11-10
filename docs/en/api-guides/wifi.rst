@@ -1201,9 +1201,11 @@ By default, all Wi-Fi management frames are processed by the Wi-Fi driver, and t
 
 ESP32 Wi-Fi Power-saving Mode
 -----------------------------------
-Currently, ESP32 Wi-Fi supports the Modem-sleep mode which refers to WMM (Wi-Fi Multi Media) power-saving mode in the IEEE 802.11 protocol. If the Modem-sleep mode is enabled and the Wi-Fi enters a sleep state, then, RF, PHY and BB are turned off in order to reduce power consumption. Modem-sleep mode works in Station-only mode and the station must be connected to the AP first.
+Currently, ESP32 Wi-Fi supports the Modem-sleep mode which refers to the legacy power-saving mode in the IEEE 802.11 protocol. Modem-sleep mode works in Station-only mode and the station must connect to the AP first. If the Modem-sleep mode is enabled, station will switch between active and doze state periodically. In doze state, RF, PHY and BB are turned off in order to reduce power consumption. Station can keep connection with AP in modem-sleep mode.
 
-Call esp_wifi_set_ps(WIFI_PS_MODEM) to enable Modem-sleep mode after calling esp_wifi_init(). About 10 seconds after the station connects to the AP, Modem-sleep will start. When the station disconnects from the AP, Modem-sleep will stop.
+Modem-sleep mode includes minimum and maximum power save modes. In minimum power save mode, station wakes up every DTIM to receive beacon. Broadcast data will not be lost because it is transmitted after DTIM. However, it can not save much more power if DTIM is short for DTIM is determined by AP. In maximum power save mode, station wakes up every listen interval to receive beacon. Broadcast data may be lost because station may be in doze state at DTIM time. If listen interval is longer, more power is saved but broadcast data is more easy to lose. Listen interval can be configured by calling API esp_wifi_set_config() before connecting to AP.
+
+Call esp_wifi_set_ps(WIFI_PS_MIN_MODEM) to enable Modem-sleep minimum power save mode or esp_wifi_set_ps(WIFI_PS_MAX_MODEM) to enable Modem-sleep maximum power save mode after calling esp_wifi_init(). When station connects to AP, Modem-sleep will start. When station disconnects from AP, Modem-sleep will stop.
 
 ESP32 Wi-Fi Connect Crypto
 -----------------------------------
