@@ -129,14 +129,14 @@ static __attribute__((noreturn)) inline void invoke_abort()
     SEGGER_RTT_ESP32_FlushNoLock(CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #else
     esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH,
-                            APPTRACE_ONPANIC_HOST_FLUSH_TMO);
+                              APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #endif
 #endif
-    while(1) {
+    while (1) {
         if (esp_cpu_in_ocd_debug_mode()) {
             __asm__ ("break 0,0");
         }
-        *((int*) 0) = 0;
+        *((int *) 0) = 0;
     }
 }
 
@@ -221,13 +221,17 @@ void panicHandler(XtExcFrame *frame)
         int debugRsn;
         asm("rsr.debugcause %0":"=r"(debugRsn));
         panicPutStr("Debug exception reason: ");
-        if (debugRsn&XCHAL_DEBUGCAUSE_ICOUNT_MASK) panicPutStr("SingleStep ");
-        if (debugRsn&XCHAL_DEBUGCAUSE_IBREAK_MASK) panicPutStr("HwBreakpoint ");
-        if (debugRsn&XCHAL_DEBUGCAUSE_DBREAK_MASK) {
+        if (debugRsn & XCHAL_DEBUGCAUSE_ICOUNT_MASK) {
+            panicPutStr("SingleStep ");
+        }
+        if (debugRsn & XCHAL_DEBUGCAUSE_IBREAK_MASK) {
+            panicPutStr("HwBreakpoint ");
+        }
+        if (debugRsn & XCHAL_DEBUGCAUSE_DBREAK_MASK) {
             //Unlike what the ISA manual says, this core seemingly distinguishes from a DBREAK
             //reason caused by watchdog 0 and one caused by watchdog 1 by setting bit 8 of the
             //debugcause if the cause is watchdog 1 and clearing it if it's watchdog 0.
-            if (debugRsn&(1<<8)) {
+            if (debugRsn & (1 << 8)) {
 #if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
                 const char *name = pcTaskGetTaskName(xTaskGetCurrentTaskHandleForCPU(core_id));
                 panicPutStr("Stack canary watchpoint triggered (");
@@ -239,10 +243,16 @@ void panicHandler(XtExcFrame *frame)
             } else {
                 panicPutStr("Watchpoint 0 triggered ");
             }
-                }
-        if (debugRsn&XCHAL_DEBUGCAUSE_BREAK_MASK) panicPutStr("BREAK instr ");
-        if (debugRsn&XCHAL_DEBUGCAUSE_BREAKN_MASK) panicPutStr("BREAKN instr ");
-        if (debugRsn&XCHAL_DEBUGCAUSE_DEBUGINT_MASK) panicPutStr("DebugIntr ");
+        }
+        if (debugRsn & XCHAL_DEBUGCAUSE_BREAK_MASK) {
+            panicPutStr("BREAK instr ");
+        }
+        if (debugRsn & XCHAL_DEBUGCAUSE_BREAKN_MASK) {
+            panicPutStr("BREAKN instr ");
+        }
+        if (debugRsn & XCHAL_DEBUGCAUSE_DEBUGINT_MASK) {
+            panicPutStr("DebugIntr ");
+        }
         panicPutStr("\r\n");
     }
 
@@ -252,7 +262,7 @@ void panicHandler(XtExcFrame *frame)
         SEGGER_RTT_ESP32_FlushNoLock(CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #else
         esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH,
-                                APPTRACE_ONPANIC_HOST_FLUSH_TMO);
+                                  APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #endif
 #endif
         setFirstBreakpoint(frame->pc);
@@ -266,15 +276,16 @@ void xt_unhandled_exception(XtExcFrame *frame)
     haltOtherCore();
     esp_dport_access_int_abort();
     if (!abort_called) {
-        panicPutStr("Guru Meditation Error of type ");
+        panicPutStr("Guru Meditation Error: Core ");
+        panicPutDec(xPortGetCoreID());
+        panicPutStr(" panic'ed (");
         int exccause = frame->exccause;
         if (exccause < NUM_EDESCS) {
             panicPutStr(edesc[exccause]);
         } else {
             panicPutStr("Unknown");
         }
-        panicPutStr(" occurred on core ");
-        panicPutDec(xPortGetCoreID());
+        panicPutStr(")\r\n");
         if (esp_cpu_in_ocd_debug_mode()) {
             panicPutStr(" at pc=");
             panicPutHex(frame->pc);
@@ -284,7 +295,7 @@ void xt_unhandled_exception(XtExcFrame *frame)
             SEGGER_RTT_ESP32_FlushNoLock(CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #else
             esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH,
-                                    APPTRACE_ONPANIC_HOST_FLUSH_TMO);
+                                      APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #endif
 #endif
             //Stick a hardware breakpoint on the address the handler returns to. This way, the OCD debugger
@@ -458,7 +469,7 @@ static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
     SEGGER_RTT_ESP32_FlushNoLock(CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #else
     esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH,
-                            APPTRACE_ONPANIC_HOST_FLUSH_TMO);
+                              APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #endif
     reconfigureAllWdts();
 #endif
@@ -515,28 +526,36 @@ void esp_set_breakpoint_if_jtag(void *fn)
 esp_err_t esp_set_watchpoint(int no, void *adr, int size, int flags)
 {
     int x;
-    if (no<0 || no>1) return ESP_ERR_INVALID_ARG;
-    if (flags&(~0xC0000000)) return ESP_ERR_INVALID_ARG;
-    int dbreakc=0x3F;
-    //We support watching 2^n byte values, from 1 to 64. Calculate the mask for that.
-    for (x=0; x<7; x++) {
-        if (size==(1<<x)) break;
-        dbreakc<<=1;
+    if (no < 0 || no > 1) {
+        return ESP_ERR_INVALID_ARG;
     }
-    if (x==7) return ESP_ERR_INVALID_ARG;
+    if (flags & (~0xC0000000)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    int dbreakc = 0x3F;
+    //We support watching 2^n byte values, from 1 to 64. Calculate the mask for that.
+    for (x = 0; x < 7; x++) {
+        if (size == (1 << x)) {
+            break;
+        }
+        dbreakc <<= 1;
+    }
+    if (x == 7) {
+        return ESP_ERR_INVALID_ARG;
+    }
     //Mask mask and add in flags.
-    dbreakc=(dbreakc&0x3f)|flags;
+    dbreakc = (dbreakc & 0x3f) | flags;
 
-    if (no==0) {
+    if (no == 0) {
         asm volatile(
             "wsr.dbreaka0 %0\n" \
             "wsr.dbreakc0 %1\n" \
-            ::"r"(adr),"r"(dbreakc));
+            ::"r"(adr), "r"(dbreakc));
     } else {
         asm volatile(
             "wsr.dbreaka1 %0\n" \
             "wsr.dbreakc1 %1\n" \
-            ::"r"(adr),"r"(dbreakc));
+            ::"r"(adr), "r"(dbreakc));
     }
     return ESP_OK;
 }
@@ -544,8 +563,8 @@ esp_err_t esp_set_watchpoint(int no, void *adr, int size, int flags)
 void esp_clear_watchpoint(int no)
 {
     //Setting a dbreakc register to 0 makes it trigger on neither load nor store, effectively disabling it.
-    int dbreakc=0;
-    if (no==0) {
+    int dbreakc = 0;
+    if (no == 0) {
         asm volatile(
             "wsr.dbreakc0 %0\n" \
             ::"r"(dbreakc));
