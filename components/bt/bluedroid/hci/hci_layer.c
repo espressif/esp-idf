@@ -40,7 +40,6 @@ typedef struct {
     command_complete_cb complete_callback;
     command_status_cb status_callback;
     void *context;
-    uint32_t sent_time;
     BT_HDR *command;
 } waiting_command_t;
 
@@ -90,9 +89,7 @@ static void hci_layer_deinit_env(void);
 static void hci_host_thread_handler(void *arg);
 static void event_command_ready(fixed_queue_t *queue);
 static void event_packet_ready(fixed_queue_t *queue);
-static void restart_comamnd_waiting_response_timer(
-    command_waiting_response_t *cmd_wait_q,
-    bool tigger_by_sending_command);
+static void restart_command_waiting_response_timer(command_waiting_response_t *cmd_wait_q);
 static void command_timed_out(void *context);
 static void hal_says_packet_ready(BT_HDR *packet);
 static bool filter_incoming_event(BT_HDR *packet);
@@ -330,8 +327,7 @@ static void event_command_ready(fixed_queue_t *queue)
     // Send it off
     packet_fragmenter->fragment_and_dispatch(wait_entry->command);
 
-    wait_entry->sent_time = osi_alarm_now();
-    restart_comamnd_waiting_response_timer(cmd_wait_q, true);
+    restart_command_waiting_response_timer(cmd_wait_q);
 }
 
 static void event_packet_ready(fixed_queue_t *queue)
@@ -377,41 +373,18 @@ static void fragmenter_transmit_finished(BT_HDR *packet, bool all_fragments_sent
     }
 }
 
-static void restart_comamnd_waiting_response_timer(
-    command_waiting_response_t *cmd_wait_q,
-    bool tigger_by_sending_command)
+static void restart_command_waiting_response_timer(command_waiting_response_t *cmd_wait_q)
 {
-    uint32_t timeout;
-    waiting_command_t *wait_entry;
-    if (!cmd_wait_q) {
-        return;
-    }
-
+    osi_mutex_lock(&cmd_wait_q->commands_pending_response_lock, OSI_MUTEX_MAX_TIMEOUT);
     if (cmd_wait_q->timer_is_set) {
-        if (tigger_by_sending_command) {
-            return;
-        }
-
-        //Cancel Previous command timeout timer setted when sending command
         osi_alarm_cancel(cmd_wait_q->command_response_timer);
         cmd_wait_q->timer_is_set = false;
     }
-
-    osi_mutex_lock(&cmd_wait_q->commands_pending_response_lock, OSI_MUTEX_MAX_TIMEOUT);
-    wait_entry = (list_is_empty(cmd_wait_q->commands_pending_response) ?
-                  NULL : list_front(cmd_wait_q->commands_pending_response));
-    osi_mutex_unlock(&cmd_wait_q->commands_pending_response_lock);
-
-    if (wait_entry == NULL) {
-        return;
+    if (!list_is_empty(cmd_wait_q->commands_pending_response)) {
+        osi_alarm_set(cmd_wait_q->command_response_timer, COMMAND_PENDING_TIMEOUT);
+        cmd_wait_q->timer_is_set = true;
     }
-
-    timeout = osi_alarm_time_diff(osi_alarm_now(), wait_entry->sent_time);
-    timeout = osi_alarm_time_diff(COMMAND_PENDING_TIMEOUT, timeout);
-    timeout = (timeout <= COMMAND_PENDING_TIMEOUT) ? timeout : COMMAND_PENDING_TIMEOUT;
-
-    cmd_wait_q->timer_is_set = true;
-    osi_alarm_set(cmd_wait_q->command_response_timer, timeout);
+    osi_mutex_unlock(&cmd_wait_q->commands_pending_response_lock);
 }
 
 static void command_timed_out(void *context)
@@ -493,7 +466,7 @@ static bool filter_incoming_event(BT_HDR *packet)
 
     return false;
 intercepted:
-    restart_comamnd_waiting_response_timer(&hci_host_env.cmd_waiting_q, false);
+    restart_command_waiting_response_timer(&hci_host_env.cmd_waiting_q);
 
     /*Tell HCI Host Task to continue TX Pending commands*/
     if (hci_host_env.command_credits &&
