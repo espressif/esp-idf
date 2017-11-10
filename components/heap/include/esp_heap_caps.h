@@ -17,6 +17,10 @@
 #include <stdlib.h>
 #include "multi_heap.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Flags to indicate the capabilities of the various memory systems
  */
@@ -306,3 +310,6 @@ void heap_caps_dump(uint32_t caps);
  */
 void heap_caps_dump_all();
 
+#ifdef __cplusplus
+}
+#endif
