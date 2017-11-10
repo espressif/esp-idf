@@ -98,8 +98,8 @@ build_template_app:
     - make all V=1
     # Check if there are any stray printf/ets_printf references in WiFi libs
     - cd ../components/esp32/lib
-    - test $(xtensa-esp32-elf-nm *.a | grep -w printf | wc -l) -eq 0
-    - test $(xtensa-esp32-elf-nm *.a | grep -w ets_printf | wc -l) -eq 0
+    - test $(ls *.a|awk '{if ($1 != "libcoexist.a") print $1}' | xargs xtensa-esp32-elf-nm | grep -w printf | wc -l) -eq 0
+    - test $(ls *.a|awk '{if ($1 != "libcoexist.a") print $1}' | xargs xtensa-esp32-elf-nm | grep -w ets_printf | wc -l) -eq 0
 
 
 .build_template: &build_template
