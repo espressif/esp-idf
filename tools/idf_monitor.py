@@ -292,6 +292,8 @@ class Monitor(object):
                 self.serial.write(codecs.encode(key))
             except serial.SerialException:
                 pass # this shouldn't happen, but sometimes port has closed in serial thread
+            except UnicodeEncodeError:
+                pass # this can happen if a non-ascii character was passed, ignoring
 
     def handle_serial_input(self, data):
         # this may need to be made more efficient, as it pushes out a byte

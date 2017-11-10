@@ -555,9 +555,9 @@ static const uint8_t * _mdns_read_fqdn(const uint8_t * packet, const uint8_t * s
             return NULL;
         }
         uint8_t len = start[index++];
-        if ((len & 0xC0) == 0) {
-            if (len > 64) {
-                //length can not be more than 64
+        if (len < 0xC0) {
+            if (len > 63) {
+                //length can not be more than 63
                 return NULL;
             }
             uint8_t i;

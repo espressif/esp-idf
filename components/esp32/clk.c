@@ -186,7 +186,15 @@ void esp_perip_clk_init(void)
     else {
         common_perip_clk = DPORT_WDG_CLK_EN |
                               DPORT_I2S0_CLK_EN |
+#if CONFIG_CONSOLE_UART_NUM != 0
+                              DPORT_UART0_CLK_EN |
+#endif
+#if CONFIG_CONSOLE_UART_NUM != 1
                               DPORT_UART1_CLK_EN |
+#endif
+#if CONFIG_CONSOLE_UART_NUM != 2
+                              DPORT_UART2_CLK_EN |
+#endif
                               DPORT_SPI_CLK_EN |
                               DPORT_I2C_EXT0_CLK_EN |
                               DPORT_UHCI0_CLK_EN |
@@ -205,7 +213,6 @@ void esp_perip_clk_init(void)
                               DPORT_PWM1_CLK_EN |
                               DPORT_I2S1_CLK_EN |
                               DPORT_SPI_DMA_CLK_EN |
-                              DPORT_UART2_CLK_EN |
                               DPORT_PWM2_CLK_EN |
                               DPORT_PWM3_CLK_EN;
         hwcrypto_perip_clk = DPORT_PERI_EN_AES |
