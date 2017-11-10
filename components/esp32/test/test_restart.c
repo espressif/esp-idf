@@ -14,6 +14,7 @@ static void restart_task(void *arg)
     esp_restart();
 }
 
+#ifndef CONFIG_FREERTOS_UNICORE
 TEST_CASE("restart from APP CPU", "[restart][reset=SW_CPU_RESET]")
 {
     xTaskCreatePinnedToCore(&restart_task, "restart", 2048, NULL, 5, NULL, 1);
@@ -21,4 +22,4 @@ TEST_CASE("restart from APP CPU", "[restart][reset=SW_CPU_RESET]")
         ;
     }
 }
-
+#endif
