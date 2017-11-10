@@ -46,11 +46,13 @@ TEST_CASE("wake up from light sleep using timer", "[deepsleep]")
     TEST_ASSERT_INT32_WITHIN(500, 2000, (int) dt);
 }
 
+#ifndef CONFIG_FREERTOS_UNICORE
 TEST_CASE("enter deep sleep on APP CPU and wake up using timer", "[deepsleep][reset=DEEPSLEEP_RESET]")
 {
     esp_sleep_enable_timer_wakeup(2000000);
     do_deep_sleep_from_app_cpu();
 }
+#endif
 
 
 TEST_CASE("wake up using ext0 (13 high)", "[deepsleep][ignore]")
