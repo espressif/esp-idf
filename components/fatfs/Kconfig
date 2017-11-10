@@ -105,4 +105,19 @@ config FATFS_MAX_LFN
    help
       Maximum long filename length. Can be reduced to save RAM.
 
+choice FATFS_TINY
+   prompt "Use per-file caches"
+   default FATFS_TINY_NO
+   help
+      By default, FatFs keeps a 4096-byte (sector size) cache per open file to
+      reduce reads and writes to the underlying media. Disabling this forces
+      FatFs to use a single, common cache across all open files, which conserves
+      heap but will cause more wear on the media.
+
+config FATFS_TINY_NO
+   bool "Yes - heap penality is 4096 * max_files"
+config FATFS_TINY_YES
+   bool "No - slower, and more wear on the Flash"
+endchoice
+
 endmenu
