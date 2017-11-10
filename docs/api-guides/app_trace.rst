@@ -9,9 +9,9 @@ IDF provides useful feature for program behaviour analysis: application level tr
 
 Developers can use this library to send application specific state of execution to the host and receive commands or other type of info in the opposite direction at runtime. The main use cases of this library are:
 
-1. Collecting application specific data. See `Application Specific Tracing`_.
-2. Lightweight logging to the host. See `Logging to Host`_.
-3. System behaviour analysis. See `System Behaviour Analysis with SEGGER SystemView`_.
+1. Collecting application specific data, see :ref:`app_trace-application-specific-tracing`
+2. Lightweight logging to the host, see :ref:`app_trace-logging-to-host`
+3. System behaviour analysis, see :ref:`app_trace-system-behaviour-analysis-with-segger-systemview`
 
 Tracing components when working over JTAG interface are shown in the figure below.
 
@@ -56,6 +56,7 @@ How to use this library
 
 This library provides API for transferring arbitrary data between host and ESP32. When enabled in menuconfig target application tracing module is initialized automatically at the system startup, so all what the user needs to do is to call corresponding API to send, receive or flush the data.
 
+.. _app_trace-application-specific-tracing:
 
 Application Specific Tracing
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -307,6 +308,7 @@ Optional arguments:
 ``--no-errors``, ``-n``
     Do not print errors
 
+.. _app_trace-system-behaviour-analysis-with-segger-systemview:
 
 System Behaviour Analysis with SEGGER SystemView
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

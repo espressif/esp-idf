@@ -523,11 +523,12 @@ esp_err_t esp_wifi_get_channel(uint8_t *primary, wifi_second_chan_t *second);
   * @brief     configure country info
   *
   * @attention 1. The default country is {.cc="CN", .schan=1, .nchan=13, policy=WIFI_COUNTRY_POLICY_AUTO}
-  * @attention 2. When the country policy is WIFI_COUNTRY_POLICY_AUTO, use the country info of AP to which 
-  *               the station is connected. E.g. if the configured country info is {.cc="USA", .schan=1, .nchan=11}, 
-  *               the country info of the AP to which the station is connected is {.cc="JP", .schan=1, .nchan=14},
-  *               then our country info is {.cc="JP", .schan=1, .nchan=14}. If the station disconnected
-  *               from the AP, the country info back to {.cc="USA", .schan=1, .nchan=11} again.
+  * @attention 2. When the country policy is WIFI_COUNTRY_POLICY_AUTO, the country info of the AP to which
+  *               the station is connected is used. E.g. if the configured country info is {.cc="USA", .schan=1, .nchan=11}
+  *               and the country info of the AP to which the station is connected is {.cc="JP", .schan=1, .nchan=14}
+  *               then the country info that will be used is {.cc="JP", .schan=1, .nchan=14}. If the station disconnected
+  *               from the AP the country info is set back back to the country info of the station automatically,
+  *               {.cc="USA", .schan=1, .nchan=11} in the example.
   * @attention 3. When the country policy is WIFI_COUNTRY_POLICY_MANUAL, always use the configured country info.
   * @attention 4. When the country info is changed because of configuration or because the station connects to a different
   *               external AP, the country IE in probe response/beacon of the soft-AP is changed also.

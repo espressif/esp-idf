@@ -89,7 +89,7 @@ This example "myProject" contains the following elements:
 - "build" directory is where build output is created. After the make process is run, this directory will contain interim object files and libraries as well as final binary output files. This directory is usually not added to source control or distributed with the project source code.
 
 Component directories contain a component makefile - ``component.mk``. This may contain variable definitions
-to control the build process of the component, and its integration into the overall project. See `Component Makefiles` for more details.
+to control the build process of the component, and its integration into the overall project. See `Component Makefiles`_ for more details.
 
 Each component may also include a ``Kconfig`` file defining the `component configuration` options that can be set via the project configuration. Some components may also include ``Kconfig.projbuild`` and ``Makefile.projbuild`` files, which are special files for `overriding parts of the project`.
 
@@ -160,7 +160,7 @@ The minimal ``component.mk`` file is an empty file(!). If the file is empty, the
 - A sub-directory "include" will be added to the global include search path for all other components.
 - The component library will be linked into the project app.
 
-See `example component makefiles` for more complete component makefile examples.
+See `example component makefiles`_ for more complete component makefile examples.
 
 Note that there is a difference between an empty ``component.mk`` file (which invokes default component build behaviour) and no ``component.mk`` file (which means no default component build behaviour will occur.) It is possible for a component to have no `component.mk` file, if it only contains other files which influence the project configuration or build process.
 
@@ -247,10 +247,10 @@ The following variables can be set inside ``component.mk`` to control the build 
 - ``COMPONENT_EXTRA_CLEAN``: Paths, relative to the component build
   directory, of any files that are generated using custom make rules
   in the component.mk file and which need to be removed as part of
-  ``make clean``. See `Source Code Generation` for an example.
+  ``make clean``. See `Source Code Generation`_ for an example.
 - ``COMPONENT_OWNBUILDTARGET`` & ``COMPONENT_OWNCLEANTARGET``: These
   targets allow you to fully override the default build behaviour for
-  the component. See `Fully Overriding The Component Makefile` for
+  the component. See `Fully Overriding The Component Makefile`_ for
   more details.
 - ``COMPONENT_CONFIG_ONLY``: If set, this flag indicates that the component
   produces no built output at all (ie ``COMPONENT_LIBRARY`` is not built),
@@ -289,7 +289,7 @@ These settings are found under the "Component Settings" menu when menuconfig is 
 
 To create a component KConfig file, it is easiest to start with one of the KConfig files distributed with esp-idf.
 
-For an example, see `Adding conditional configuration`.
+For an example, see `Adding conditional configuration`_.
 
 Preprocessor Definitions
 ------------------------
@@ -310,7 +310,7 @@ Top Level: Project Makefile
 - The project makefile includes ``$(IDF_PATH)/make/project.mk`` which contains the project-level Make logic.
 - ``project.mk`` fills in default project-level make variables and includes make variables from the project configuration. If the generated makefile containing project configuration is out of date, then it is regenerated (via targets in ``project_config.mk``) and then the make process restarts from the top.
 - ``project.mk`` builds a list of components to build, based on the default component directories or a custom list of components set in `optional project variables`.
-- Each component can set some `optional project-wide component variables`. These are included via generated makefiles named ``component_project_vars.mk`` - there is one per component. These generated makefiles are included into ``project.mk``. If any are missing or out of date, they are regenerated (via a recursive make call to the component makefile) and then the make process restarts from the top.
+- Each component can set some `optional project-wide component variables`_. These are included via generated makefiles named ``component_project_vars.mk`` - there is one per component. These generated makefiles are included into ``project.mk``. If any are missing or out of date, they are regenerated (via a recursive make call to the component makefile) and then the make process restarts from the top.
 - `Makefile.projbuild` files from components are included into the make process, to add extra targets or configuration. 
 - By default, the project makefile also generates top-level build & clean targets for each component and sets up `app` and `clean` targets to invoke all of these sub-targets.
 - In order to compile each component, a recursive make is performed for the component makefile.
@@ -378,7 +378,7 @@ project (not just for its own source files) then you can set
 
 ``Makefile.projbuild`` files are used heavily inside esp-idf, for defining project-wide build features such as ``esptool.py`` command line arguments and the ``bootloader`` "special app".
 
-Note that ``Makefile.projbuild`` isn't necessary for the most common component uses - such as adding include directories to the project, or LDFLAGS to the final linking step. These values can be customised via the ``component.mk`` file itself. See `Optional Project-Wide Component Variables` for details.
+Note that ``Makefile.projbuild`` isn't necessary for the most common component uses - such as adding include directories to the project, or LDFLAGS to the final linking step. These values can be customised via the ``component.mk`` file itself. See `Optional Project-Wide Component Variables`_ for details.
 
 Take care when setting variables or targets in this file. As the values are included into the top-level project makefile pass, they can influence or break functionality across all components!
 
@@ -399,7 +399,7 @@ Example Component Makefiles
 ---------------------------
 
 Because the build environment tries to set reasonable defaults that will work most
-of the time, component.mk can be very small or even empty (see `Minimal Component Makefile`). However, overriding `component variables` is usually required for some functionality.
+of the time, component.mk can be very small or even empty (see `Minimal Component Makefile`_). However, overriding `component variables` is usually required for some functionality.
 
 Here are some more advanced examples of ``component.mk`` makefiles:
 
