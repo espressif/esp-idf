@@ -23,6 +23,12 @@ def test_examples_protocol_https_request(env, extra_data):
       3. send http request
     """
     dut1 = env.get_dut("https_request", "examples/protocols/https_request")
+    # check and log bin size
+    binary_file = os.path.join(dut1.app.binary_path, "https-request.bin")
+    bin_size = os.path.getsize(binary_file)
+    IDF.log_performance("https_request_bin_size", "{}KB".format(bin_size//1024))
+    IDF.check_performance("https_request_bin_size", bin_size//1024)
+    # start test
     dut1.start_app()
     dut1.expect("Connecting to www.howsmyssl.com:443", timeout=30)
     dut1.expect("Performing the SSL/TLS handshake")
