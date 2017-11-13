@@ -47,6 +47,7 @@ queue and re-enabling the interrupt will trigger the interrupt again, which can 
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp_err.h"
+#include "esp_pm.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
@@ -84,6 +85,9 @@ typedef struct {
     bool no_gpio_matrix;
     int dma_chan;
     int max_transfer_sz;
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_handle_t pm_lock;
+#endif
 } spi_host_t;
 
 struct spi_device_t {
@@ -129,6 +133,13 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
     spihost[host]=malloc(sizeof(spi_host_t));
     if (spihost[host]==NULL) goto nomem;
     memset(spihost[host], 0, sizeof(spi_host_t));
+#ifdef CONFIG_PM_ENABLE
+    esp_err_t err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "spi_master",
+            &spihost[host]->pm_lock);
+    if (err != ESP_OK) {
+        goto nomem;
+    }
+#endif //CONFIG_PM_ENABLE
     
     spicommon_bus_initialize_io(host, bus_config, dma_chan, SPICOMMON_BUSFLAG_MASTER|SPICOMMON_BUSFLAG_QUAD, &native);
     spihost[host]->no_gpio_matrix=native;
@@ -180,9 +191,15 @@ nomem:
     if (spihost[host]) {
         free(spihost[host]->dmadesc_tx);
         free(spihost[host]->dmadesc_rx);
+#ifdef CONFIG_PM_ENABLE
+        if (spihost[host]->pm_lock) {
+            esp_pm_lock_delete(spihost[host]->pm_lock);
+        }
+#endif
     }
     free(spihost[host]);
     spicommon_periph_free(host);
+    spicommon_dma_chan_free(dma_chan);
     return ESP_ERR_NO_MEM;
 }
 
@@ -198,6 +215,9 @@ esp_err_t spi_bus_free(spi_host_device_t host)
     if ( spihost[host]->dma_chan > 0 ) {
         spicommon_dma_chan_free ( spihost[host]->dma_chan );
     }
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_delete(spihost[host]->pm_lock);
+#endif
     spihost[host]->hw->slave.trans_inten=0;
     spihost[host]->hw->slave.trans_done=0;
     esp_intr_free(spihost[host]->intr);
@@ -411,6 +431,10 @@ static void IRAM_ATTR spi_intr(void *arg)
     if (i==NO_CS) {
         //No packet waiting. Disable interrupt.
         esp_intr_disable(host->intr);
+#ifdef CONFIG_PM_ENABLE
+        //Release APB frequency lock
+        esp_pm_lock_release(host->pm_lock);
+#endif
     } else {
         host->hw->slave.trans_done=0; //clear int bit
         //We have a transaction. Send it.
@@ -648,6 +672,9 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
         // else use the original buffer (forced-conversion) or assign to NULL
         trans_buf.buffer_to_send = (uint32_t*)txdata;
     }
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_acquire(handle->host->pm_lock);
+#endif
 
     r=xQueueSend(handle->trans_queue, (void*)&trans_buf, ticks_to_wait);
     if (!r) return ESP_ERR_TIMEOUT;

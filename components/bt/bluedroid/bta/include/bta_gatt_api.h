@@ -181,6 +181,7 @@ typedef UINT8 tBTA_GATT_STATUS;
 #define BTA_GATTC_ADV_VSC_EVT           34 /* ADV VSC event */
 #define BTA_GATTC_CONNECT_EVT           35 /* GATTC CONNECT  event */
 #define BTA_GATTC_DISCONNECT_EVT        36 /* GATTC DISCONNECT  event */
+#define BTA_GATTC_READ_MUTIPLE_EVT      37 /* GATTC Read mutiple event */
 
 typedef UINT8 tBTA_GATTC_EVT;
 
@@ -366,14 +367,13 @@ typedef struct {
 } tBTA_GATTC_ENC_CMPL_CB;
 
 typedef struct {
-    tBTA_GATT_STATUS    status;
     UINT16              conn_id;
     tBTA_GATTC_IF       client_if;
     BD_ADDR             remote_bda;
 } tBTA_GATTC_CONNECT;
 
 typedef struct {
-    tBTA_GATT_STATUS    status;
+    tGATT_DISCONN_REASON reason;
     UINT16              conn_id;
     tBTA_GATTC_IF       client_if;
     BD_ADDR             remote_bda;
@@ -522,6 +522,8 @@ typedef struct {
     UINT32              trans_id;
     UINT16              conn_id;
     tBTA_GATTS_REQ_DATA *p_data;
+    UINT16  data_len;
+    UINT8   *value;
 } tBTA_GATTS_REQ;
 
 typedef struct {

@@ -402,6 +402,8 @@ typedef void (tBTA_SET_ADV_DATA_CMPL_CBACK) (tBTA_STATUS status);
 
 typedef void (tBTA_START_ADV_CMPL_CBACK) (tBTA_STATUS status);
 
+typedef tBTM_ADD_WHITELIST_CBACK tBTA_ADD_WHITELIST_CBACK;
+
 typedef tBTM_SET_PKT_DATA_LENGTH_CBACK tBTA_SET_PKT_DATA_LENGTH_CBACK;
 
 typedef tBTM_SET_LOCAL_PRIVACY_CBACK tBTA_SET_LOCAL_PRIVACY_CBACK;
@@ -1410,7 +1412,7 @@ extern void BTA_DisableTestMode(void);
 *******************************************************************************/
 extern void BTA_DmSetDeviceName(char *p_name);
 
-extern void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr);
+extern void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBTA_ADD_WHITELIST_CBACK *add_wl_cb);
 
 extern void BTA_DmBleReadAdvTxPower(tBTA_CMPL_CB *cmpl_cb);
 
@@ -2031,6 +2033,24 @@ extern void BTA_DmSetEncryption(BD_ADDR bd_addr, tBTA_TRANSPORT transport,
 **
 *******************************************************************************/
 extern void BTA_DmBleObserve(BOOLEAN start, UINT32 duration,
+                             tBTA_DM_SEARCH_CBACK *p_results_cb,
+                             tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_stop_scan_cb);
+
+/*******************************************************************************
+**
+** Function         BTA_DmBleScan
+**
+** Description      This procedure keep the device listening for advertising
+**                  events from a broadcast device.
+**
+** Parameters       start: start or stop observe.
+**                  duration : Duration of the scan. Continuous scan if 0 is passed
+**                  p_results_cb: Callback to be called with scan results
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_DmBleScan(BOOLEAN start, UINT32 duration,
                              tBTA_DM_SEARCH_CBACK *p_results_cb,
                              tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_stop_scan_cb);
 

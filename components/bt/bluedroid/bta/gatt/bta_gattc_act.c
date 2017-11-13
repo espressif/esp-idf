@@ -84,7 +84,8 @@ static UINT16 bta_gattc_opcode_to_int_evt[] = {
     BTA_GATTC_API_READ_EVT,
     BTA_GATTC_API_WRITE_EVT,
     BTA_GATTC_API_EXEC_EVT,
-    BTA_GATTC_API_CFG_MTU_EVT
+    BTA_GATTC_API_CFG_MTU_EVT,
+    BTA_GATTC_API_READ_MULTI_EVT
 };
 
 #if (BT_TRACE_VERBOSE == TRUE)
@@ -711,7 +712,6 @@ void bta_gattc_conncback(tBTA_GATTC_RCB *p_rcb, tBTA_GATTC_DATA *p_data)
 {
     if (p_rcb) {
         bta_gattc_send_connect_cback(p_rcb,
-                                     BTA_GATT_OK,
                                      p_data->int_conn.remote_bda,
                                      p_data->int_conn.hdr.layer_specific);
 
@@ -730,7 +730,7 @@ void bta_gattc_disconncback(tBTA_GATTC_RCB *p_rcb, tBTA_GATTC_DATA *p_data)
 {
     if (p_rcb) {
         bta_gattc_send_disconnect_cback(p_rcb,
-                                     BTA_GATT_OK,
+                                     p_data->int_conn.reason,
                                      p_data->int_conn.remote_bda,
                                      p_data->int_conn.hdr.layer_specific);
 
@@ -793,7 +793,7 @@ void bta_gattc_close(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
     if (p_data->hdr.event == BTA_GATTC_API_CLOSE_EVT) {
         cb_data.close.status = GATT_Disconnect(p_data->hdr.layer_specific);
     } else if (p_data->hdr.event == BTA_GATTC_INT_DISCONN_EVT) {
-        cb_data.close.status = p_data->int_conn.reason;
+        cb_data.close.status = BTA_GATT_OK;
         cb_data.close.reason = p_data->int_conn.reason;
     }
 
@@ -1228,8 +1228,12 @@ void bta_gattc_read_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_OP_CMPL *p_data)
     } else {
         cb_data.read.handle = p_clcb->p_q_cmd->api_read.handle;
     }
-
-    event = p_clcb->p_q_cmd->api_read.cmpl_evt;
+    
+    if (p_clcb->p_q_cmd->hdr.event != BTA_GATTC_API_READ_MULTI_EVT) {
+        event = p_clcb->p_q_cmd->api_read.cmpl_evt;
+    } else {
+        event = p_clcb->p_q_cmd->api_read_multi.cmpl_evt;
+    }
     cb_data.read.conn_id = p_clcb->bta_conn_id;
     //free the command data store in the queue.
     bta_gattc_free_command_data(p_clcb);
@@ -1350,20 +1354,22 @@ void  bta_gattc_op_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
             return;
         }
         if (p_clcb->p_q_cmd->hdr.event != bta_gattc_opcode_to_int_evt[op - GATTC_OPTYPE_READ]) {
-            mapped_op = p_clcb->p_q_cmd->hdr.event - BTA_GATTC_API_READ_EVT + GATTC_OPTYPE_READ;
-            if ( mapped_op > GATTC_OPTYPE_INDICATION) {
-                mapped_op = 0;
-            }
+            if (p_clcb->p_q_cmd->hdr.event != BTA_GATTC_API_READ_MULTI_EVT) {
+                mapped_op = p_clcb->p_q_cmd->hdr.event - BTA_GATTC_API_READ_EVT + GATTC_OPTYPE_READ;
+                if ( mapped_op > GATTC_OPTYPE_INDICATION) {
+                    mapped_op = 0;
+                }
 
 #if (BT_TRACE_VERBOSE == TRUE)
-            APPL_TRACE_ERROR("expect op:(%s :0x%04x), receive unexpected operation (%s).",
-                             bta_gattc_op_code_name[mapped_op] , p_clcb->p_q_cmd->hdr.event,
-                             bta_gattc_op_code_name[op]);
+                APPL_TRACE_ERROR("expect op:(%s :0x%04x), receive unexpected operation (%s).",
+                                 bta_gattc_op_code_name[mapped_op] , p_clcb->p_q_cmd->hdr.event,
+                                 bta_gattc_op_code_name[op]);
 #else
-            APPL_TRACE_ERROR("expect op:(%u :0x%04x), receive unexpected operation (%u).",
-                             mapped_op , p_clcb->p_q_cmd->hdr.event, op);
+                APPL_TRACE_ERROR("expect op:(%u :0x%04x), receive unexpected operation (%u).",
+                                 mapped_op , p_clcb->p_q_cmd->hdr.event, op);
 #endif
-            return;
+                return;
+            }
         }
 
         /* discard responses if service change indication is received before operation completed */

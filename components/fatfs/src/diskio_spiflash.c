@@ -77,10 +77,10 @@ DRESULT ff_wl_ioctl (BYTE pdrv, BYTE cmd, void *buff)
     case CTRL_SYNC:
         return RES_OK;
     case GET_SECTOR_COUNT:
-        *((uint32_t *) buff) = wl_size(wl_handle) / wl_sector_size(wl_handle);
+        *((DWORD *) buff) = wl_size(wl_handle) / wl_sector_size(wl_handle);
         return RES_OK;
     case GET_SECTOR_SIZE:
-        *((uint32_t *) buff) = wl_sector_size(wl_handle);
+        *((WORD *) buff) = wl_sector_size(wl_handle);
         return RES_OK;
     case GET_BLOCK_SIZE:
         return RES_ERROR;

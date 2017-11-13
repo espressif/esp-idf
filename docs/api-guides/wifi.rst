@@ -20,6 +20,7 @@ ESP32 Wi-Fi Feature List
 - Up to 20 MBit/sec TCP throughput and 30 MBit/sec UDP throughput over the air
 - Supports Sniffer
 - Support set fast_crypto algorithm and normal algorithm switch which used in wifi connect
+- Support both fast scan and all channel scan feature
 
 How To Write a Wi-Fi Application
 ----------------------------------

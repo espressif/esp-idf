@@ -64,8 +64,10 @@
 #include "esp_app_trace.h"
 #include "esp_efuse.h"
 #include "esp_spiram.h"
-#include "esp_clk.h"
+#include "esp_clk_internal.h"
 #include "esp_timer.h"
+#include "esp_pm.h"
+#include "pm_impl.h"
 #include "trax.h"
 
 #define STRINGIFY(s) STRINGIFY2(s)
@@ -150,6 +152,7 @@ void IRAM_ATTR call_start_cpu0()
     }
 
 #if CONFIG_SPIRAM_BOOT_INIT
+    esp_spiram_init_cache();
     if (esp_spiram_init() != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to init external RAM!");
         abort();
@@ -286,9 +289,18 @@ void start_cpu0_default(void)
     esp_clk_init();
     esp_perip_clk_init();
     intr_matrix_clear();
+
 #ifndef CONFIG_CONSOLE_UART_NONE
-    uart_div_modify(CONFIG_CONSOLE_UART_NUM, (rtc_clk_apb_freq_get() << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
-#endif
+#ifdef CONFIG_PM_ENABLE
+    const int uart_clk_freq = REF_CLK_FREQ;
+    /* When DFS is enabled, use REFTICK as UART clock source */
+    CLEAR_PERI_REG_MASK(UART_CONF0_REG(CONFIG_CONSOLE_UART_NUM), UART_TICK_REF_ALWAYS_ON);
+#else
+    const int uart_clk_freq = APB_CLK_FREQ;
+#endif // CONFIG_PM_DFS_ENABLE
+    uart_div_modify(CONFIG_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
+#endif // CONFIG_CONSOLE_UART_NONE
+
 #if CONFIG_BROWNOUT_DET
     esp_brownout_init();
 #endif
@@ -324,6 +336,9 @@ void start_cpu0_default(void)
 #if CONFIG_INT_WDT
     esp_int_wdt_init();
 #endif
+#if CONFIG_TASK_WDT
+    esp_task_wdt_init();
+#endif
     esp_cache_err_int_init();
     esp_crosscore_int_init();
     esp_ipc_init();
@@ -333,6 +348,18 @@ void start_cpu0_default(void)
     spi_flash_init();
     /* init default OS-aware flash access critical section */
     spi_flash_guard_set(&g_flash_guard_default_ops);
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_impl_init();
+#ifdef CONFIG_PM_DFS_INIT_AUTO
+    rtc_cpu_freq_t max_freq;
+    rtc_clk_cpu_freq_from_mhz(CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ, &max_freq);
+    esp_pm_config_esp32_t cfg = {
+            .max_cpu_freq = max_freq,
+            .min_cpu_freq = RTC_CPU_FREQ_XTAL
+    };
+    esp_pm_configure(&cfg);
+#endif //CONFIG_PM_DFS_INIT_AUTO
+#endif //CONFIG_PM_ENABLE
 
 #if CONFIG_ESP32_ENABLE_COREDUMP
     esp_core_dump_init();
@@ -375,8 +402,10 @@ void start_cpu1_default(void)
 
 static void do_global_ctors(void)
 {
+#ifdef CONFIG_CXX_EXCEPTIONS
     static struct object ob;
     __register_frame_info( __eh_frame, &ob );
+#endif
 
     void (**p)(void);
     for (p = &__init_array_end - 1; p >= &__init_array_start; --p) {
@@ -397,30 +426,6 @@ static void main_task(void* args)
 #endif
     //Enable allocation in region where the startup stacks were located.
     heap_caps_enable_nonos_stack_heaps();
-
-    //Initialize task wdt
-#ifdef CONFIG_TASK_WDT
-#ifdef CONFIG_TASK_WDT_PANIC
-    esp_task_wdt_init(CONFIG_TASK_WDT_TIMEOUT_S, true);
-#else
-    esp_task_wdt_init(CONFIG_TASK_WDT_TIMEOUT_S, false);
-#endif
-#endif
-    //Add IDLE 0 to task wdt
-#ifdef CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU0
-    TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
-    if(idle_0 != NULL){
-        esp_task_wdt_add(idle_0);
-    }
-#endif
-    //Add IDLE 1 to task wdt
-#ifdef CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU1
-    TaskHandle_t idle_1 = xTaskGetIdleTaskHandleForCPU(1);
-    if(idle_1 != NULL){
-        esp_task_wdt_add(idle_1);
-    }
-#endif
-
     app_main();
     vTaskDelete(NULL);
 }

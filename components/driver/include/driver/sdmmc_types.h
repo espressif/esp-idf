@@ -102,6 +102,7 @@ typedef struct {
 #define SCF_RSP_R6       (SCF_RSP_PRESENT|SCF_RSP_CRC|SCF_RSP_IDX)
 #define SCF_RSP_R7       (SCF_RSP_PRESENT|SCF_RSP_CRC|SCF_RSP_IDX)
         esp_err_t error;            /*!< error returned from transfer */
+        int timeout_ms;             /*!< response timeout, in milliseconds */
 } sdmmc_command_t;
 
 /**
@@ -127,6 +128,7 @@ typedef struct {
     esp_err_t (*set_card_clk)(int slot, uint32_t freq_khz); /*!< host function to set card clock frequency */
     esp_err_t (*do_transaction)(int slot, sdmmc_command_t* cmdinfo);    /*!< host function to do a transaction */
     esp_err_t (*deinit)(void);  /*!< host function to deinitialize the driver */
+    int command_timeout_ms;     /*!< timeout, in milliseconds, of a single command. Set to 0 to use the default value. */
 } sdmmc_host_t;
 
 /**

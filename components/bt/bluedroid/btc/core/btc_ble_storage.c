@@ -184,29 +184,29 @@ bt_status_t btc_storage_get_ble_bonding_key(bt_bdaddr_t *remote_bd_addr,
 *******************************************************************************/
 static bt_status_t _btc_storage_remove_ble_bonding_keys(bt_bdaddr_t *remote_bd_addr)
 {
-    int ret = 1;
+    int ret = 0;
     bdstr_t bdstr;
     bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
 
     BTIF_TRACE_DEBUG(" %s in bd addr:%s",__FUNCTION__, bdstr);
 
     if (btc_config_exist(bdstr, BTC_BLE_STORAGE_ADDR_TYPE_STR)) {
-        ret &= btc_config_remove(bdstr, BTC_BLE_STORAGE_ADDR_TYPE_STR);
+        ret |= btc_config_remove(bdstr, BTC_BLE_STORAGE_ADDR_TYPE_STR);
     }
     if (btc_config_exist(bdstr, BTC_BLE_STORAGE_LE_KEY_PENC_STR)) {
-        ret &= btc_config_remove(bdstr, BTC_BLE_STORAGE_LE_KEY_PENC_STR);
+        ret |= btc_config_remove(bdstr, BTC_BLE_STORAGE_LE_KEY_PENC_STR);
     }
     if (btc_config_exist(bdstr, BTC_BLE_STORAGE_LE_KEY_PID_STR)) {
-        ret &= btc_config_remove(bdstr, BTC_BLE_STORAGE_LE_KEY_PID_STR);
+        ret |= btc_config_remove(bdstr, BTC_BLE_STORAGE_LE_KEY_PID_STR);
     }
     if (btc_config_exist(bdstr, BTC_BLE_STORAGE_LE_KEY_PCSRK_STR)) {
-        ret &= btc_config_remove(bdstr, BTC_BLE_STORAGE_LE_KEY_PCSRK_STR);
+        ret |= btc_config_remove(bdstr, BTC_BLE_STORAGE_LE_KEY_PCSRK_STR);
     }
     if (btc_config_exist(bdstr, BTC_BLE_STORAGE_LE_KEY_LENC_STR)) {
-        ret &= btc_config_remove(bdstr, BTC_BLE_STORAGE_LE_KEY_LENC_STR);
+        ret |= btc_config_remove(bdstr, BTC_BLE_STORAGE_LE_KEY_LENC_STR);
     }
     if (btc_config_exist(bdstr, BTC_BLE_STORAGE_LE_KEY_LCSRK_STR)) {
-        ret &= btc_config_remove(bdstr, BTC_BLE_STORAGE_LE_KEY_LCSRK_STR);
+        ret |= btc_config_remove(bdstr, BTC_BLE_STORAGE_LE_KEY_LCSRK_STR);
     }
     //here don't remove section, because config_save will check it
     _btc_storage_save();

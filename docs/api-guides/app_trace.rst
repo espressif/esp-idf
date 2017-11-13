@@ -242,7 +242,7 @@ Command usage examples:
 
 		esp32 apptrace start file://trace.log 0 2048 -1 1 0
 
-	There is an option to configure target to halt after reset on start of scheduler. To do so, go to menuconfig and enable option *Stop program on scheduler start when JTAG/OCD is detected* under *Component config > FreeRTOS*. 
+	To configure tracing immediately after reset use the openocd ``reset halt`` command.
 
 
 .. _app_trace-logging-to-host:

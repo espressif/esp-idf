@@ -84,6 +84,7 @@ static const u32_t magic_cookie  = 0x63538263;
 static struct udp_pcb *pcb_dhcps = NULL;
 static ip4_addr_t  broadcast_dhcps;
 static ip4_addr_t server_address;
+static ip4_addr_t dns_server = {0};
 static ip4_addr_t client_address;        //added
 static ip4_addr_t client_address_plus;
 
@@ -91,8 +92,9 @@ static list_node *plist = NULL;
 static bool renew = false;
 
 static dhcps_lease_t dhcps_poll;
-static dhcps_offer_t dhcps_offer = 0xFF;
 static dhcps_time_t dhcps_lease_time = DHCPS_LEASE_TIME_DEF;  //minute
+static dhcps_offer_t dhcps_offer = 0xFF;
+static dhcps_offer_t dhcps_dns = 0xFF;
 
 /******************************************************************************
  * FunctionName : dhcps_option_info
@@ -127,11 +129,65 @@ void *dhcps_option_info(u8_t op_id, u32_t opt_len)
 
             break;
 
+        case DOMAIN_NAME_SERVER:
+            if (opt_len == sizeof(dhcps_offer_t)) {
+                option_arg = &dhcps_dns;
+            }
+
+            break;
+
         default:
             break;
     }
 
     return option_arg;
+}
+
+/******************************************************************************
+ * FunctionName : dhcps_set_option_info
+ * Description  : set the DHCP message option info
+ * Parameters   : op_id -- DHCP message option id
+ *                opt_info -- DHCP message option info
+ *                opt_len -- DHCP message option length
+ * Returns      : none
+*******************************************************************************/
+void dhcps_set_option_info(u8_t op_id, void *opt_info, u32_t opt_len)
+{
+    if (opt_info == NULL) {
+        return;
+    }
+    switch (op_id) {
+        case IP_ADDRESS_LEASE_TIME:
+            if (opt_len == sizeof(dhcps_time_t)) {
+                dhcps_lease_time = *(dhcps_time_t *)opt_info;
+            }
+
+            break;
+
+        case REQUESTED_IP_ADDRESS:
+            if (opt_len == sizeof(dhcps_lease_t)) {
+                dhcps_poll = *(dhcps_lease_t *)opt_info;
+            }
+
+            break;
+
+        case ROUTER_SOLICITATION_ADDRESS:
+            if (opt_len == sizeof(dhcps_offer_t)) {
+                dhcps_offer = *(dhcps_offer_t *)opt_info;
+            }
+
+            break;
+
+        case DOMAIN_NAME_SERVER:
+            if (opt_len == sizeof(dhcps_offer_t)) {
+                dhcps_dns = *(dhcps_offer_t *)opt_info;
+            }
+            break;
+
+        default:
+            break;
+    }
+    return;
 }
 
 /******************************************************************************
@@ -284,14 +340,19 @@ static u8_t *add_offer_options(u8_t *optptr)
         }
     }
 
-#ifdef USE_DNS
     *optptr++ = DHCP_OPTION_DNS_SERVER;
     *optptr++ = 4;
-    *optptr++ = ip4_addr1(&ipadd);
-    *optptr++ = ip4_addr2(&ipadd);
-    *optptr++ = ip4_addr3(&ipadd);
-    *optptr++ = ip4_addr4(&ipadd);
-#endif
+    if (dhcps_dns_enabled(dhcps_dns)) {
+        *optptr++ = ip4_addr1(&dns_server);
+        *optptr++ = ip4_addr2(&dns_server);
+        *optptr++ = ip4_addr3(&dns_server);
+        *optptr++ = ip4_addr4(&dns_server);
+    }else {
+        *optptr++ = ip4_addr1(&ipadd);
+        *optptr++ = ip4_addr2(&ipadd);
+        *optptr++ = ip4_addr3(&ipadd);
+        *optptr++ = ip4_addr4(&ipadd);
+    }
 
 #ifdef CLASS_B_NET
     *optptr++ = DHCP_OPTION_BROADCAST_ADDRESS;
@@ -800,13 +861,13 @@ static s16_t parse_msg(struct dhcps_msg *m, u16_t len)
             pdhcps_pool = NULL;
             pnode = NULL;
         } else {
-            pdhcps_pool = (struct dhcps_pool *)malloc(sizeof(struct dhcps_pool));
+            pdhcps_pool = (struct dhcps_pool *)mem_malloc(sizeof(struct dhcps_pool));
             memset(pdhcps_pool , 0x00 , sizeof(struct dhcps_pool));
 
             pdhcps_pool->ip.addr = client_address.addr;
             memcpy(pdhcps_pool->mac, m->chaddr, sizeof(pdhcps_pool->mac));
             pdhcps_pool->lease_timer = lease_timer;
-            pnode = (list_node *)malloc(sizeof(list_node));
+            pnode = (list_node *)mem_malloc(sizeof(list_node));
             memset(pnode , 0x00 , sizeof(list_node));
 
             pnode->pnode = pdhcps_pool;
@@ -905,7 +966,7 @@ static void handle_dhcp(void *arg,
         malloc_len = p->tot_len;
     }
 
-    pmsg_dhcps = (struct dhcps_msg *)malloc(malloc_len);
+    pmsg_dhcps = (struct dhcps_msg *)mem_malloc(malloc_len);
     if (NULL == pmsg_dhcps) {
         pbuf_free(p);
         return;
@@ -1215,6 +1276,34 @@ bool dhcp_search_ip_on_mac(u8_t *mac, ip4_addr_t *ip)
     }
 
     return ret;
+}
+
+/******************************************************************************
+ * FunctionName : dhcps_dns_setserver
+ * Description  : set DNS server address for dhcpserver
+ * Parameters   : dnsserver -- The DNS server address
+ * Returns      : none
+*******************************************************************************/
+void
+dhcps_dns_setserver(const ip_addr_t *dnsserver)
+{
+    if (dnsserver != NULL) {
+        dns_server = *(ip_2_ip4(dnsserver));
+    } else {
+        dns_server = *(ip_2_ip4(IP_ADDR_ANY));
+    } 
+}
+
+/******************************************************************************
+ * FunctionName : dhcps_dns_getserver
+ * Description  : get DNS server address for dhcpserver
+ * Parameters   : none
+ * Returns      : ip4_addr_t
+*******************************************************************************/
+ip4_addr_t 
+dhcps_dns_getserver()
+{
+    return dns_server;
 }
 #endif
 

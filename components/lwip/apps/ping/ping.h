@@ -43,7 +43,11 @@ extern "C" {
 #endif
 
 
-void ping_init(void);
+int ping_init(void);
+
+#ifdef ESP_PING
+void ping_deinit(void);
+#endif
 
 #if !PING_USE_SOCKETS
 void ping_send_now(void);

@@ -266,15 +266,10 @@ void IRAM_ATTR esp_restart(void)
 */
 void IRAM_ATTR esp_restart_noos()
 {
-    const uint32_t core_id = xPortGetCoreID();
-    const uint32_t other_core_id = core_id == 0 ? 1 : 0;
-    esp_cpu_stall(other_core_id);
+    // Disable interrupts
+    xt_ints_off(0xFFFFFFFF);
 
-    // other core is now stalled, can access DPORT registers directly
-    esp_dport_access_int_pause();
-
-    // We need to disable TG0/TG1 watchdogs
-    // First enable RTC watchdog for 1 second
+    // Enable RTC watchdog for 1 second
     REG_WRITE(RTC_CNTL_WDTWPROTECT_REG, RTC_CNTL_WDT_WKEY_VALUE);
     REG_WRITE(RTC_CNTL_WDTCONFIG0_REG,
             RTC_CNTL_WDT_FLASHBOOT_MOD_EN_M |
@@ -284,6 +279,18 @@ void IRAM_ATTR esp_restart_noos()
             (1 << RTC_CNTL_WDT_CPU_RESET_LENGTH_S) );
     REG_WRITE(RTC_CNTL_WDTCONFIG1_REG, rtc_clk_slow_freq_get_hz() * 1);
 
+    // Reset and stall the other CPU.
+    // CPU must be reset before stalling, in case it was running a s32c1i
+    // instruction. This would cause memory pool to be locked by arbiter
+    // to the stalled CPU, preventing current CPU from accessing this pool.
+    const uint32_t core_id = xPortGetCoreID();
+    const uint32_t other_core_id = (core_id == 0) ? 1 : 0;
+    esp_cpu_reset(other_core_id);
+    esp_cpu_stall(other_core_id);
+
+    // Other core is now stalled, can access DPORT registers directly
+    esp_dport_access_int_abort();
+
     // Disable TG0/TG1 watchdogs
     TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
     TIMERG0.wdt_config0.en = 0;
@@ -292,8 +299,10 @@ void IRAM_ATTR esp_restart_noos()
     TIMERG1.wdt_config0.en = 0;
     TIMERG1.wdt_wprotect=0;
 
-    // Disable all interrupts
-    xt_ints_off(0xFFFFFFFF);
+    // Flush any data left in UART FIFOs
+    uart_tx_wait_idle(0);
+    uart_tx_wait_idle(1);
+    uart_tx_wait_idle(2);
 
     // Disable cache
     Cache_Read_Disable(0);
@@ -309,11 +318,6 @@ void IRAM_ATTR esp_restart_noos()
     WRITE_PERI_REG(GPIO_FUNC4_IN_SEL_CFG_REG, 0x30);
     WRITE_PERI_REG(GPIO_FUNC5_IN_SEL_CFG_REG, 0x30);
 #endif
-
-    // Flush any data left in UART FIFOs
-    uart_tx_wait_idle(0);
-    uart_tx_wait_idle(1);
-    uart_tx_wait_idle(2);
 
     // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
     DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, 
@@ -337,14 +341,14 @@ void IRAM_ATTR esp_restart_noos()
     // Reset CPUs
     if (core_id == 0) {
         // Running on PRO CPU: APP CPU is stalled. Can reset both CPUs.
-        SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG,
-                RTC_CNTL_SW_PROCPU_RST_M | RTC_CNTL_SW_APPCPU_RST_M);
+        esp_cpu_reset(1);
+        esp_cpu_reset(0);
     } else {
         // Running on APP CPU: need to reset PRO CPU and unstall it,
         // then reset APP CPU
-        SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_PROCPU_RST_M);
+        esp_cpu_reset(0);
         esp_cpu_unstall(0);
-        SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_APPCPU_RST_M);
+        esp_cpu_reset(1);
     }
     while(true) {
         ;
@@ -397,8 +401,10 @@ static void get_chip_info_esp32(esp_chip_info_t* out_info)
     if ((reg & EFUSE_RD_CHIP_VER_DIS_BT_M) == 0) {
         out_info->features |= CHIP_FEATURE_BT | CHIP_FEATURE_BLE;
     }
-    if (((reg & EFUSE_RD_CHIP_VER_PKG_M) >> EFUSE_RD_CHIP_VER_PKG_S) ==
-            EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5) {
+    int package = (reg & EFUSE_RD_CHIP_VER_PKG_M) >> EFUSE_RD_CHIP_VER_PKG_S;
+    if (package == EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5 ||
+        package == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2 ||
+        package == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4) {
         out_info->features |= CHIP_FEATURE_EMB_FLASH;
     }
 }

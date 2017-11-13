@@ -34,8 +34,10 @@
 
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 #include <sys/time.h>
 #include <sys/fcntl.h>
+#include <sys/ioctl.h>
 #include "esp_task.h"
 #include "esp_system.h"
 #include "sdkconfig.h"
@@ -221,10 +223,7 @@
    ---------- AUTOIP options ----------
    ------------------------------------
 */
-#if CONFIG_MDNS
- /**
-  * LWIP_AUTOIP==1: Enable AUTOIP module.
-  */
+#ifdef CONFIG_LWIP_AUTOIP
 #define LWIP_AUTOIP                     1
 
 /**
@@ -240,8 +239,13 @@
 * be prepared to handle a changing IP address when DHCP overrides
 * AutoIP.
 */
-#define LWIP_DHCP_AUTOIP_COOP_TRIES     2
-#endif
+#define LWIP_DHCP_AUTOIP_COOP_TRIES     CONFIG_LWIP_AUTOIP_TRIES
+
+#define LWIP_AUTOIP_MAX_CONFLICTS CONFIG_LWIP_AUTOIP_MAX_CONFLICTS
+
+#define LWIP_AUTOIP_RATE_LIMIT_INTERVAL CONFIG_LWIP_AUTOIP_RATE_LIMIT_INTERVAL
+
+#endif /* CONFIG_LWIP_AUTOIP */
 
 /*
    ----------------------------------
@@ -268,6 +272,9 @@
  * transport.
  */
 #define LWIP_DNS                        1
+
+#define DNS_MAX_SERVERS                 3
+#define DNS_FALLBACK_SERVER_INDEX        (DNS_MAX_SERVERS - 1)
 
 /*
    ---------------------------------
@@ -367,7 +374,7 @@
    ---------- LOOPIF options ----------
    ------------------------------------
 */
-#if CONFIG_MDNS
+#ifdef CONFIG_LWIP_NETIF_LOOPBACK
 /**
  * LWIP_NETIF_LOOPBACK==1: Support sending packets with a destination IP
  * address equal to the netif IP address, looping them back up the stack.
@@ -378,7 +385,7 @@
  * LWIP_LOOPBACK_MAX_PBUFS: Maximum number of pbufs on queue for loopback
  * sending for each netif (0 = disabled)
  */
-#define LWIP_LOOPBACK_MAX_PBUFS         8
+#define LWIP_LOOPBACK_MAX_PBUFS         CONFIG_LWIP_LOOPBACK_MAX_PBUFS
 #endif
 
 /*
@@ -506,14 +513,12 @@
  */
 #define SO_REUSE                        CONFIG_LWIP_SO_REUSE
 
-#if CONFIG_MDNS
 /**
  * SO_REUSE_RXTOALL==1: Pass a copy of incoming broadcast/multicast packets
  * to all local matches if SO_REUSEADDR is turned on.
  * WARNING: Adds a memcpy for every packet if passing to more than one pcb!
  */
-#define SO_REUSE_RXTOALL                1
-#endif
+#define SO_REUSE_RXTOALL                CONFIG_LWIP_SO_REUSE_RXTOALL
 
 /*
    ----------------------------------------
@@ -687,6 +692,19 @@
 #define ETHARP_TRUST_IP_MAC             CONFIG_LWIP_ETHARP_TRUST_IP_MAC
 
 
+/**
+ * POSIX I/O functions are mapped to LWIP via the VFS layer
+ * (see port/vfs_lwip.c)
+ */
+#define LWIP_POSIX_SOCKETS_IO_NAMES     0
+
+
+/**
+ * Socket offset is also determined via the VFS layer at
+ * filesystem registration time (see port/vfs_lwip.c)
+ */
+#define LWIP_SOCKET_OFFSET              lwip_socket_offset
+
 /* Enable all Espressif-only options */
 
 #define ESP_LWIP                        1
@@ -707,6 +725,7 @@
 #define ESP_STATS_TCP                   0
 #define ESP_DHCP_TIMER                  1
 #define ESP_LWIP_LOGI(...)              ESP_LOGI("lwip", __VA_ARGS__)
+#define ESP_PING                        1
 
 #define TCP_WND_DEFAULT                 CONFIG_TCP_WND_DEFAULT
 #define TCP_SND_BUF_DEFAULT             CONFIG_TCP_SND_BUF_DEFAULT

@@ -28,6 +28,8 @@
 #include "freertos/semphr.h"
 #include "freertos/list.h"
 
+#include "pthread_internal.h"
+
 #define LOG_LOCAL_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include "esp_log.h"
 const static char *TAG = "esp_pthread";
@@ -72,7 +74,7 @@ static int IRAM_ATTR pthread_mutex_lock_internal(esp_pthread_mutex_t *mux, TickT
 esp_err_t esp_pthread_init(void)
 {
     vListInitialise((List_t *)&s_threads_list);
-    s_once_mux = xSemaphoreCreateMutex();
+    s_once_mux = xSemaphoreCreateRecursiveMutex();
     if (s_once_mux == NULL) {
         return ESP_ERR_NO_MEM;
     }
@@ -144,6 +146,10 @@ static void pthread_task_func(void *arg)
     task_arg->func(task_arg->arg);
     ESP_LOGV(TAG, "%s END %p", __FUNCTION__, task_arg->func);
     free(task_arg);
+
+    /* preemptively clean up thread local storage, rather than
+       waiting for the idle task to clean up the thread */
+    pthread_internal_local_storage_destructor_callback();
 
     if (xSemaphoreTake(s_threads_mux, portMAX_DELAY) != pdTRUE) {
         assert(false && "Failed to lock threads list!");
@@ -232,6 +238,7 @@ int pthread_join(pthread_t thread, void **retval)
 {
     esp_pthread_t *pthread = (esp_pthread_t *)thread;
     int ret = 0;
+    bool wait = false;
 
     ESP_LOGV(TAG, "%s %p", __FUNCTION__, pthread);
 
@@ -257,6 +264,7 @@ int pthread_join(pthread_t thread, void **retval)
         } else {
             if (pthread->state == PTHREAD_TASK_STATE_RUN) {
                 pthread->join_task = xTaskGetCurrentTaskHandle();
+                wait = true;
             } else {
                 pthread_delete(pthread);
             }
@@ -264,7 +272,7 @@ int pthread_join(pthread_t thread, void **retval)
     }
     xSemaphoreGive(s_threads_mux);
 
-    if (ret == 0 && pthread->join_task) {
+    if (ret == 0 && wait) {
         xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
         if (xSemaphoreTake(s_threads_mux, portMAX_DELAY) != pdTRUE) {
             assert(false && "Failed to lock threads list!");
@@ -330,40 +338,6 @@ int pthread_equal(pthread_t t1, pthread_t t2)
     return t1 == t2 ? 1 : 0;
 }
 
-/***************** KEY ******************/
-int pthread_key_create(pthread_key_t *key, void (*destructor)(void*))
-{
-    static int s_created;
-
-    //TODO: Key destructors not suppoted!
-    if (s_created) {
-        // key API supports just one key necessary by libstdcxx threading implementation
-        ESP_LOGE(TAG, "%s: multiple keys not supported!", __FUNCTION__);
-        return ENOSYS;
-    }
-    *key = 1;
-    s_created = 1;
-    return 0;
-}
-
-int pthread_key_delete(pthread_key_t key)
-{
-    ESP_LOGE(TAG, "%s: not supported!", __FUNCTION__);
-    return ENOSYS;
-}
-
-void *pthread_getspecific(pthread_key_t key)
-{
-    ESP_LOGE(TAG, "%s: not supported!", __FUNCTION__);
-    return NULL;
-}
-
-int pthread_setspecific(pthread_key_t key, const void *value)
-{
-    ESP_LOGE(TAG, "%s: not supported!", __FUNCTION__);
-    return ENOSYS;
-}
-
 /***************** ONCE ******************/
 int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
 {
@@ -373,17 +347,23 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
     }
 
     TaskHandle_t cur_task = xTaskGetCurrentTaskHandle();
+    uint8_t do_execute = 0;
     // do not take mutex if OS is not running yet
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED ||
-            !cur_task || xSemaphoreTake(s_once_mux, portMAX_DELAY) == pdTRUE)
+            // init_routine can call pthread_once for another objects, so use recursive mutex
+            // FIXME: behaviour is undefined if init_routine calls pthread_once for the same object in the current context
+            !cur_task || xSemaphoreTakeRecursive(s_once_mux, portMAX_DELAY) == pdTRUE)
     {
         if (!once_control->init_executed) {
-            ESP_LOGV(TAG, "%s: call init_routine %p", __FUNCTION__, once_control);
-            init_routine();
+            do_execute = 1;
             once_control->init_executed = 1;
         }
         if (cur_task) {
-            xSemaphoreGive(s_once_mux);
+            xSemaphoreGiveRecursive(s_once_mux);
+        }
+        if (do_execute) {
+            ESP_LOGV(TAG, "%s: call init_routine %p", __FUNCTION__, once_control);
+            init_routine();
         }
     }
     else

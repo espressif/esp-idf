@@ -146,6 +146,11 @@ typedef struct {
     UINT16              supervision_tout;
 }tBTM_LE_UPDATE_CONN_PRAMS;
 
+typedef enum{
+    BTM_WHITELIST_REMOVE     = 0X00,
+    BTM_WHITELIST_ADD        = 0X01,
+}tBTM_WL_OPERATION;
+
 
 typedef void (tBTM_DEV_STATUS_CB) (tBTM_DEV_STATUS status);
 
@@ -176,6 +181,8 @@ typedef UINT8 (tBTM_FILTER_CB) (BD_ADDR bd_addr, DEV_CLASS dc);
 typedef void (tBTM_UPDATE_CONN_PARAM_CBACK) (UINT8 status, BD_ADDR bd_addr, tBTM_LE_UPDATE_CONN_PRAMS *update_conn_params);
 
 typedef void (tBTM_SET_PKT_DATA_LENGTH_CBACK) (UINT8 status, tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS *data_length_params);
+
+typedef void (tBTM_ADD_WHITELIST_CBACK) (UINT8 status, tBTM_WL_OPERATION wl_opration);
 
 typedef void (tBTM_SET_LOCAL_PRIVACY_CBACK) (UINT8 status);
 
@@ -234,7 +241,7 @@ typedef void (tBTM_SET_LOCAL_PRIVACY_CBACK) (UINT8 status);
 
 /* inquiry activity mask */
 #define BTM_BR_INQ_ACTIVE_MASK        (BTM_GENERAL_INQUIRY_ACTIVE|BTM_LIMITED_INQUIRY_ACTIVE|BTM_PERIODIC_INQUIRY_ACTIVE) /* BR/EDR inquiry activity mask */
-#define BTM_BLE_SCAN_ACTIVE_MASK      0xF0     /* LE scan activity mask */
+#define BTM_BLE_SCAN_ACTIVE_MASK      0x01F0     /* LE scan activity mask */
 #define BTM_BLE_INQ_ACTIVE_MASK       (BTM_LE_GENERAL_INQUIRY_ACTIVE|BTM_LE_LIMITED_INQUIRY_ACTIVE) /* LE inquiry activity mask*/
 #define BTM_INQUIRY_ACTIVE_MASK       (BTM_BR_INQ_ACTIVE_MASK | BTM_BLE_INQ_ACTIVE_MASK) /* inquiry activity mask */
 

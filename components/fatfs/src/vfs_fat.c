@@ -52,6 +52,7 @@ static int vfs_fat_open(void* ctx, const char * path, int flags, int mode);
 static int vfs_fat_close(void* ctx, int fd);
 static int vfs_fat_fstat(void* ctx, int fd, struct stat * st);
 static int vfs_fat_stat(void* ctx, const char * path, struct stat * st);
+static int vfs_fat_fsync(void* ctx, int fd);
 static int vfs_fat_link(void* ctx, const char* n1, const char* n2);
 static int vfs_fat_unlink(void* ctx, const char *path);
 static int vfs_fat_rename(void* ctx, const char *src, const char *dst);
@@ -109,6 +110,7 @@ esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive, siz
         .close_p = &vfs_fat_close,
         .fstat_p = &vfs_fat_fstat,
         .stat_p = &vfs_fat_stat,
+        .fsync_p = &vfs_fat_fsync,
         .link_p = &vfs_fat_link,
         .unlink_p = &vfs_fat_unlink,
         .rename_p = &vfs_fat_rename,
@@ -320,6 +322,22 @@ static ssize_t vfs_fat_read(void* ctx, int fd, void * dst, size_t size)
         }
     }
     return read;
+}
+
+static int vfs_fat_fsync(void* ctx, int fd)
+{
+    vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
+    _lock_acquire(&fat_ctx->lock);
+    FIL* file = &fat_ctx->files[fd];
+    FRESULT res = f_sync(file);
+    int rc = 0;
+    if (res != FR_OK) {
+        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+        errno = fresult_to_errno(res);
+        rc = -1;
+    }
+    _lock_release(&fat_ctx->lock);
+    return rc;
 }
 
 static int vfs_fat_close(void* ctx, int fd)

@@ -35,8 +35,20 @@ void esp_crosscore_int_init();
  * This is used internally by FreeRTOS in multicore mode
  * and should not be called by the user.
  *
- * @param coreID Core that should do the yielding
+ * @param core_id Core that should do the yielding
  */
-void esp_crosscore_int_send_yield(int coreId);
+void esp_crosscore_int_send_yield(int core_id);
+
+
+/**
+ * Send an interrupt to a CPU indicating it should update its
+ * CCOMPARE1 value due to a frequency switch.
+ *
+ * This is used internally when dynamic frequency switching is
+ * enabled, and should not be called from application code.
+ *
+ * @param core_id Core that should update its CCOMPARE1 value
+ */
+void esp_crosscore_int_send_freq_switch(int core_id);
 
 #endif

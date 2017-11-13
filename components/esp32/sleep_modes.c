@@ -198,13 +198,21 @@ static void rtc_wdt_disable()
  * Placed into IRAM as flash may need some time to be powered on.
  */
 static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
-        rtc_cpu_freq_t cpu_freq, uint32_t flash_enable_time_us) IRAM_ATTR __attribute__((noinline));
+        rtc_cpu_freq_t cpu_freq, uint32_t flash_enable_time_us,
+        rtc_vddsdio_config_t vddsdio_config) IRAM_ATTR __attribute__((noinline));
 
 static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
-        rtc_cpu_freq_t cpu_freq, uint32_t flash_enable_time_us)
+        rtc_cpu_freq_t cpu_freq, uint32_t flash_enable_time_us,
+        rtc_vddsdio_config_t vddsdio_config)
 {
     // Enter sleep
     esp_err_t err = esp_sleep_start(pd_flags);
+
+    // If VDDSDIO regulator was controlled by RTC registers before sleep,
+    // restore the configuration.
+    if (vddsdio_config.force) {
+        rtc_vddsdio_set_config(vddsdio_config);
+    }
 
     // Restore CPU frequency
     rtc_clk_cpu_freq_set(cpu_freq);
@@ -231,16 +239,20 @@ esp_err_t esp_light_sleep_start()
     // Decide which power domains can be powered down
     uint32_t pd_flags = get_power_down_flags();
 
-    // Decide if flash needs to be powered down;
-    // If it needs to be powered down, adjust sleep time
+    // Decide if VDD_SDIO needs to be powered down;
+    // If it needs to be powered down, adjust sleep time.
     const uint32_t flash_enable_time_us = VDD_SDIO_POWERUP_TO_FLASH_READ_US
                                           + CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY;
 
+    // Don't power down VDD_SDIO if pSRAM is used.
+#ifndef CONFIG_SPIRAM_SUPPORT
     if (s_config.sleep_duration > FLASH_PD_MIN_SLEEP_TIME_US &&
-        s_config.sleep_duration > flash_enable_time_us) {
+            s_config.sleep_duration > flash_enable_time_us) {
         pd_flags |= RTC_SLEEP_PD_VDDSDIO;
         s_config.sleep_duration -= flash_enable_time_us;
     }
+#endif //CONFIG_SPIRAM_SUPPORT
+    rtc_vddsdio_config_t vddsdio_config = rtc_vddsdio_get_config();
 
     // Safety net: enable WDT in case exit from light sleep fails
     rtc_wdt_enable(1000);
@@ -249,7 +261,8 @@ esp_err_t esp_light_sleep_start()
     rtc_cpu_freq_t cpu_freq = rtc_clk_cpu_freq_get();
 
     // Enter sleep, then wait for flash to be ready on wakeup
-    esp_err_t err = esp_light_sleep_inner(pd_flags, cpu_freq, flash_enable_time_us);
+    esp_err_t err = esp_light_sleep_inner(pd_flags, cpu_freq,
+            flash_enable_time_us, vddsdio_config);
 
     // At this point, if FRC1 is used for timekeeping, time will be lagging behind.
     // This will update the microsecond count based on RTC timer.

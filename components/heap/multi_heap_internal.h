@@ -38,3 +38,10 @@ bool multi_heap_internal_check_block_poisoning(void *start, size_t size, bool is
    Called when merging blocks, to overwrite the old block header.
 */
 void multi_heap_internal_poison_fill_region(void *start, size_t size, bool is_free);
+
+/* Allow heap poisoning to lock/unlock the heap to avoid race conditions
+   if multi_heap_check() is running concurrently.
+*/
+void multi_heap_internal_lock(multi_heap_handle_t heap);
+
+void multi_heap_internal_unlock(multi_heap_handle_t heap);

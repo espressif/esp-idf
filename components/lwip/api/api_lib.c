@@ -75,10 +75,11 @@ static err_t netconn_close_shutdown(struct netconn *conn, u8_t how);
 static err_t
 tcpip_apimsg(struct api_msg *apimsg)
 {
-#ifdef LWIP_DEBUG
+#if LWIP_DEBUG
   /* catch functions that don't set err */
   apimsg->msg.err = ERR_VAL;
 #endif
+
 #if LWIP_NETCONN_SEM_PER_THREAD
   apimsg->msg.op_completed_sem = LWIP_NETCONN_THREAD_SEM_GET();
   LWIP_ASSERT("netconn semaphore not initialized",

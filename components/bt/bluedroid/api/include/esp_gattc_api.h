@@ -63,6 +63,7 @@ typedef enum {
     ESP_GATTC_UNREG_FOR_NOTIFY_EVT    = 39,       /*!< When unregister for notification of a service completes, the event comes */
     ESP_GATTC_CONNECT_EVT             = 40,       /*!< When the ble physical connection is set up, the event comes */
     ESP_GATTC_DISCONNECT_EVT          = 41,       /*!< When the ble physical connection disconnected, the event comes */
+    ESP_GATTC_READ_MUTIPLE_EVT        = 42,       /*!< When the ble characteristic or descriptor mutiple complete, the event comes */
 } esp_gattc_cb_event_t;
 
 
@@ -200,7 +201,6 @@ typedef union {
      * @brief ESP_GATTC_CONNECT_EVT
      */
     struct gattc_connect_evt_param {
-        esp_gatt_status_t status;       /*!< Operation status */
         uint16_t conn_id;               /*!< Connection id */
         esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address */
     } connect;                          /*!< Gatt client callback param of ESP_GATTC_CONNECT_EVT */
@@ -209,7 +209,7 @@ typedef union {
      * @brief ESP_GATTC_DISCONNECT_EVT
      */
     struct gattc_disconnect_evt_param {
-        esp_gatt_status_t status;       /*!< Operation status */
+        esp_gatt_conn_reason_t reason;  /*!< disconnection reason */
         uint16_t conn_id;               /*!< Connection id */
         esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address */
     } disconnect;                       /*!< Gatt client callback param of ESP_GATTC_DISCONNECT_EVT */

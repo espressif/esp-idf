@@ -162,6 +162,11 @@ typedef enum {
     WIFI_CONNECT_AP_BY_SECURITY,          /**< Sort match AP in scan list by security mode */
 }wifi_sort_method_t;
 
+typedef struct {
+    int8_t              rssi;                      /**< The minimum rssi to accept in the fast scan mode */
+    wifi_auth_mode_t    authmode;                  /**< The weakest authmode to accept in the fast scan mode */
+}wifi_fast_scan_threshold_t;
+
 typedef enum {
     WIFI_PS_NONE,    /**< No power save */
     WIFI_PS_MODEM,   /**< Modem power save */
@@ -196,6 +201,7 @@ typedef struct {
     uint8_t bssid[6];     /**< MAC address of target AP*/
     uint8_t channel;       /**< channel of target AP. Set to 1~13 to scan starting from the specified channel before connecting to AP. If the channel of AP is unknown, set it to 0.*/
     wifi_sort_method_t sort_method;    /**< sort the connect AP in the list by rssi or security mode */
+    wifi_fast_scan_threshold_t  threshold;     /**< When scan_method is set to WIFI_FAST_SCAN, only APs which have an auth mode that is more secure than the selected auth mode and a signal stronger than the minimum RSSI will be used. */
 } wifi_sta_config_t;
 
 typedef union {

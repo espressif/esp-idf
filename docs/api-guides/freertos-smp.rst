@@ -55,6 +55,10 @@ automatically free memory used by Thread Local Storage Pointers during the task
 deletion. Call ``vTaskSetThreadLocalStoragePointerAndDelCallback()``
 to set Thread Local Storage Pointers and deletion callbacks.
 
+:ref:`FreeRTOS Hooks<hooks_api_reference>`: Vanilla FreeRTOS Hooks were not designed for SMP.
+ESP-IDF provides its own Idle and Tick Hooks in addition to the Vanilla FreeRTOS
+hooks. For full details, see the ESP-IDF Hooks API Reference.
+
 :ref:`esp-idf-freertos-configuration`: Several aspects of ESP-IDF FreeRTOS can be 
 configured using ``make meunconfig`` such as running ESP-IDF in Unicore Mode,
 or configuring the number of Thread Local Storage Pointers each task will have.
@@ -227,6 +231,9 @@ protection against simultaneous access. Consider using critical sections
 (disables interrupts) or semaphores (does not disable interrupts) instead when 
 protecting shared resources in ESP-IDF FreeRTOS.
 
+In general, it's better to use other RTOS primitives like mutex semaphores to protect
+against data shared between tasks, rather than ``vTaskSuspendAll()``.
+
 .. _tick-interrupt-synchronicity:
 
 Tick Interrupt Synchronicity 
@@ -336,6 +343,11 @@ to the deletion call back as an extra parameter of type
 defined to call ``vTaskSetThreadLocalStoragePointerAndDelCallback()`` with a
 ``NULL`` pointer as the deletion call back. This results in the selected Thread 
 Local Storage Pointer to have no deletion call back.
+
+In IDF the FreeRTOS thread local storage at index 0 is reserved and is used to implement
+the pthreads API thread local storage (pthread_getspecific() & pthread_setspecific()).
+Other indexes can be used for any purpose, provided
+:ref:`CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS` is set to a high enough value.
 
 For more details see :component_file:`freertos/include/freertos/task.h`
 

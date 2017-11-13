@@ -38,6 +38,7 @@ help:
 	@echo "make app - Build just the app"
 	@echo "make app-flash - Flash just the app"
 	@echo "make app-clean - Clean just the app"
+	@echo "make print_flash_cmd - Print the arguments for esptool when flash"
 	@echo ""
 	@echo "See also 'make bootloader', 'make bootloader-flash', 'make bootloader-clean', "
 	@echo "'make partition_table', etc, etc."
@@ -47,7 +48,14 @@ ifndef MAKE_RESTARTS
 ifeq ("$(filter 4.% 3.81 3.82,$(MAKE_VERSION))","")
 $(warning esp-idf build system only supports GNU Make versions 3.81 or newer. You may see unexpected results with other Makes.)
 endif
+
+ifdef MSYSTEM
+ifneq ("$(MSYSTEM)","MINGW32")
+$(warning esp-idf build system only supports MSYS2 in "MINGW32" mode. Consult the ESP-IDF documentation for details.)
 endif
+endif  # MSYSTEM
+
+endif  # MAKE_RESTARTS
 
 # can't run 'clean' along with any non-clean targets
 ifneq ("$(filter clean% %clean,$(MAKECMDGOALS))" ,"")
@@ -60,7 +68,7 @@ OS ?=
 
 # make IDF_PATH a "real" absolute path
 # * works around the case where a shell character is embedded in the environment variable value.
-# * changes Windows-style C:/blah/ paths to MSYS/Cygwin style /c/blah
+# * changes Windows-style C:/blah/ paths to MSYS style /c/blah
 ifeq ("$(OS)","Windows_NT")
 # On Windows MSYS2, make wildcard function returns empty string for paths of form /xyz
 # where /xyz is a directory inside the MSYS root - so we don't use it.
@@ -85,7 +93,7 @@ $(error If IDF_PATH is overriden on command line, it must be an absolute path wi
 endif
 
 ifneq ("$(IDF_PATH)","$(subst :,,$(IDF_PATH))")
-$(error IDF_PATH cannot contain colons. If overriding IDF_PATH on Windows, use Cygwin-style /c/dir instead of C:/dir)
+$(error IDF_PATH cannot contain colons. If overriding IDF_PATH on Windows, use MSYS Unix-style /c/dir instead of C:/dir)
 endif
 
 # disable built-in make rules, makes debugging saner
@@ -296,6 +304,12 @@ CXXFLAGS := $(strip \
 	$(CXXFLAGS) \
 	$(EXTRA_CXXFLAGS))
 
+ifdef CONFIG_CXX_EXCEPTIONS
+CXXFLAGS += -fexceptions
+else
+CXXFLAGS += -fno-exceptions
+endif
+
 export CFLAGS CPPFLAGS CXXFLAGS
 
 # Set host compiler and binutils
@@ -482,6 +496,10 @@ list-components:
 	$(info $(call dequote,$(SEPARATOR)))
 	$(info COMPONENT_PATHS (paths to all components):)
 	$(foreach cp,$(COMPONENT_PATHS),$(info $(cp)))
+
+# print flash command, so users can dump this to config files and download somewhere without idf
+print_flash_cmd:
+	echo $(ESPTOOL_WRITE_FLASH_OPTIONS) $(ESPTOOL_ALL_FLASH_ARGS) | sed -e 's:'$(PWD)/build/'::g'
 
 # Check toolchain version using the output of xtensa-esp32-elf-gcc --version command.
 # The output normally looks as follows

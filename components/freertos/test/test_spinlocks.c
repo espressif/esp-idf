@@ -62,6 +62,8 @@ TEST_CASE("portMUX recursive locks (no contention)", "[freertos]")
     BENCHMARK_END("no contention recursive");
 }
 
+#if portNUM_PROCESSORS == 2
+
 static volatile int shared_value;
 static portMUX_TYPE shared_mux;
 static xSemaphoreHandle done_sem;
@@ -130,4 +132,5 @@ TEST_CASE("portMUX high contention", "[freertos]")
     TEST_ASSERT_EQUAL_INT(REPEAT_OPS * TOTAL_TASKS, shared_value);
 }
 
+#endif // portNUM_PROCESSORS == 2
 

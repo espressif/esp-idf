@@ -442,9 +442,7 @@ void bta_dm_co_ble_io_req(BD_ADDR bd_addr,  tBTA_IO_CAP *p_io_cap,
 
     /* *p_auth_req by default is FALSE for devices with NoInputNoOutput; TRUE for other devices. */
 
-    if (bte_appl_cfg.ble_auth_req) {
-        *p_auth_req = bte_appl_cfg.ble_auth_req | (bte_appl_cfg.ble_auth_req & 0x04) | ((*p_auth_req) & 0x04);
-    }
+    *p_auth_req = bte_appl_cfg.ble_auth_req | (bte_appl_cfg.ble_auth_req & BTA_LE_AUTH_REQ_MITM) | ((*p_auth_req) & BTA_LE_AUTH_REQ_MITM);
 
     if (bte_appl_cfg.ble_io_cap <= 4) {
         *p_io_cap = bte_appl_cfg.ble_io_cap;

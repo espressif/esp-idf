@@ -7,7 +7,7 @@ This user guide shows how to get started with ESP32-DevKitC development board.
 What You Need
 -------------
 
-* 1 × ESP32-DevKitC board
+* 1 × :ref:`ESP32-DevKitC board <get-started-esp32-devkitc-board-front>`
 * 1 × USB A / micro USB B cable 
 * 1 × PC loaded with Windows, Linux or Mac OS
 
@@ -34,12 +34,28 @@ USB
 I/O
     Most of the pins on the ESP-WROOM-32 are broken out to the pin headers on the board. Users can program ESP32 to enable multiple functions such as PWM,ADC, DAC, I2C, I2S, SPI, etc.
 
+.. _get-started-esp32-devkitc-board-front:
+
 .. figure:: ../_static/esp32-devkitc-functional-overview.png
     :align: center
     :alt: ESP32-DevKitC board layout
     :figclass: align-center
 
     ESP32-DevKitC board layout
+
+
+Power Supply Options
+--------------------
+
+There following options are available to provide power supply to the ESP32-PICO-KIT V4:
+
+1. Micro USB port, this is default power supply connection
+2. 5V / GND header pins
+3. 3V3 / GND header pins
+
+.. warning::
+
+    Above options are mutually exclusive, i.e. the power supply may be provided using only one of the above options. Attempt to power the board using more than one connection at a time may damage the board and/or the power supply source.
 
 
 Start Application Development

@@ -128,7 +128,8 @@ static void btc_gattc_copy_req_data(btc_msg_t *msg, void *p_dest, void *p_src)
     // Allocate buffer for request data if necessary
     switch (msg->act) {
         case BTA_GATTC_READ_DESCR_EVT:
-        case BTA_GATTC_READ_CHAR_EVT: {
+        case BTA_GATTC_READ_CHAR_EVT: 
+        case BTA_GATTC_READ_MUTIPLE_EVT: {
             if (p_src_data->read.p_value && p_src_data->read.p_value->p_value) {
                 p_dest_data->read.p_value = (tBTA_GATT_UNFMT  *)osi_malloc(sizeof(tBTA_GATT_UNFMT) + p_src_data->read.p_value->len);
                 p_dest_data->read.p_value->p_value = (uint8_t *)(p_dest_data->read.p_value + 1);
@@ -151,7 +152,8 @@ static void btc_gattc_free_req_data(btc_msg_t *msg)
     tBTA_GATTC *arg = (tBTA_GATTC *)(msg->arg);
     switch (msg->act) {
         case BTA_GATTC_READ_DESCR_EVT:
-        case BTA_GATTC_READ_CHAR_EVT: {
+        case BTA_GATTC_READ_CHAR_EVT: 
+        case BTA_GATTC_READ_MUTIPLE_EVT: {
             if (arg->read.p_value) {
                 osi_free(arg->read.p_value);
             }
@@ -554,6 +556,7 @@ esp_gatt_status_t btc_ble_gattc_get_db(uint16_t conn_id, uint16_t start_handle, 
         db[i].attribute_handle = get_db[i].id;
         db[i].start_handle = get_db[i].start_handle;
         db[i].end_handle = get_db[i].end_handle;
+        db[i].properties = get_db[i].properties;
         btc128_to_bta_uuid(&bta_uuid, get_db[i].uuid.uu);
         bta_to_btc_uuid(&db[i].uuid, &bta_uuid);
     }
@@ -806,6 +809,11 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
         btc_gattc_cb_to_app(ESP_GATTC_READ_DESCR_EVT, gattc_if, &param);
         break;
     }
+    case BTA_GATTC_READ_MUTIPLE_EVT: {
+        set_read_value(&gattc_if, &param, &arg->read);
+        btc_gattc_cb_to_app(ESP_GATTC_READ_MUTIPLE_EVT, gattc_if, &param);
+        break;
+    }
     case BTA_GATTC_WRITE_DESCR_EVT: {
         tBTA_GATTC_WRITE *write = &arg->write;
 
@@ -850,7 +858,6 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
         tBTA_GATTC_CONNECT *connect = &arg->connect;
 
         gattc_if = connect->client_if;
-        param.connect.status = connect->status;
         param.connect.conn_id = BTC_GATT_GET_CONN_ID(connect->conn_id);
         memcpy(param.connect.remote_bda, connect->remote_bda, sizeof(esp_bd_addr_t));
         btc_gattc_cb_to_app(ESP_GATTC_CONNECT_EVT, gattc_if, &param);
@@ -871,7 +878,7 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
         tBTA_GATTC_DISCONNECT *disconnect = &arg->disconnect;
 
         gattc_if = disconnect->client_if;
-        param.disconnect.status = disconnect->status;
+        param.disconnect.reason = disconnect->reason;
         param.disconnect.conn_id = BTC_GATT_GET_CONN_ID(disconnect->conn_id);
         memcpy(param.disconnect.remote_bda, disconnect->remote_bda, sizeof(esp_bd_addr_t));
         btc_gattc_cb_to_app(ESP_GATTC_DISCONNECT_EVT, gattc_if, &param);

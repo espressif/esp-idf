@@ -97,6 +97,7 @@ typedef enum {
     ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT,                /*!< When clear the bond device clear complete, the event comes */
     ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT,                  /*!< When get the bond device list complete, the event comes */
     ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT,                     /*!< When read the rssi complete, the event comes */
+    ESP_GAP_BLE_ADD_WHITELIST_COMPLETE_EVT,                 /*!< When add or remove whitelist complete, the event comes */
     ESP_GAP_BLE_EVT_MAX,
 } esp_gap_ble_cb_event_t;
 
@@ -178,10 +179,20 @@ typedef enum {
 
 /* relate to BTA_DM_BLE_SEC_xxx in bta_api.h */
 typedef enum {
-    ESP_BLE_SEC_NONE = 0,               /* relate to BTA_DM_BLE_SEC_NONE in bta_api.h */
-    ESP_BLE_SEC_ENCRYPT,                /* relate to BTA_DM_BLE_SEC_ENCRYPT in bta_api.h */
-    ESP_BLE_SEC_ENCRYPT_NO_MITM,        /* relate to BTA_DM_BLE_SEC_ENCRYPT_NO_MITM in bta_api.h */
-    ESP_BLE_SEC_ENCRYPT_MITM,           /* relate to BTA_DM_BLE_SEC_ENCRYPT_MITM in bta_api.h */
+    ESP_BLE_SEC_ENCRYPT = 1,            /* relate to BTA_DM_BLE_SEC_ENCRYPT in bta_api.h. If the device has already
+                                           bonded, the stack will used LTK to encrypt with the remote device directly.
+                                           Else if the device hasn't bonded, the stack will used the default authentication request
+                                           used the esp_ble_gap_set_security_param function set by the user. */
+    ESP_BLE_SEC_ENCRYPT_NO_MITM,        /* relate to BTA_DM_BLE_SEC_ENCRYPT_NO_MITM in bta_api.h. If the device has already
+                                           bonded, the stack will check the LTK Whether the authentication request has been met, if met, used the LTK
+                                           to encrypt with the remote device directly, else Re-pair with the remote device.
+                                           Else if the device hasn't bonded, the stack will used NO MITM authentication request in the current link instead of
+                                           used the authreq in the esp_ble_gap_set_security_param function set by the user. */
+    ESP_BLE_SEC_ENCRYPT_MITM,           /* relate to BTA_DM_BLE_SEC_ENCRYPT_MITM in bta_api.h. If the device has already
+                                           bonded, the stack will check the LTK Whether the authentication request has been met, if met, used the LTK
+                                           to encrypt with the remote device directly, else Re-pair with the remote device.
+                                           Else if the device hasn't bonded, the stack will used MITM authentication request in the current link instead of
+                                           used the authreq in the esp_ble_gap_set_security_param function set by the user. */
 }esp_ble_sec_act_t;
 
 typedef enum {
@@ -462,6 +473,10 @@ typedef enum {
     ESP_BLE_EVT_SCAN_RSP         = 0x04,        /*!< Scan Response (SCAN_RSP) */
 } esp_ble_evt_type_t;
 
+typedef enum{
+    ESP_BLE_WHITELIST_REMOVE     = 0X00,    /*!< remove mac from whitelist */
+    ESP_BLE_WHITELIST_ADD        = 0X01,    /*!< add address to whitelist */
+}esp_ble_wl_opration;
 /**
  * @brief Gap callback parameters union
  */
@@ -600,6 +615,13 @@ typedef union {
                                                          if the RSSI cannot be read, the RSSI metric shall be set to 127. */
         esp_bd_addr_t remote_addr;                  /*!< The remote device address */
     } read_rssi_cmpl;                               /*!< Event parameter of ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_ADD_WHITELIST_COMPLETE_EVT
+     */
+    struct ble_add_whitelist_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate the add or remove whitelist operation success status */
+        esp_ble_wl_opration wl_opration;            /*!< The value is ESP_BLE_WHITELIST_ADD if add address to whitelist operation success, ESP_BLE_WHITELIST_REMOVE if remove address from the whitelist operation success */
+    } add_whitelist_cmpl;                           /*!< Event parameter of ESP_GAP_BLE_ADD_WHITELIST_COMPLETE_EVT */
 } esp_ble_gap_cb_param_t;
 
 /**
@@ -864,9 +886,9 @@ esp_err_t esp_ble_gap_read_rssi(esp_bd_addr_t remote_addr);
 /**
 * @brief             Set a GAP security parameter value. Overrides the default value.
 *
-* @param[in]       param_type :L the type of the param which to be set
+* @param[in]       param_type : the type of the param which to be set
 * @param[in]       value  : the param value
-* @param[out]     len : the length of the param value
+* @param[in]       len : the length of the param value
 *
 * @return            - ESP_OK : success
 *                       - other  : failed
@@ -972,6 +994,12 @@ esp_err_t esp_ble_get_bond_device_list(int *dev_num, esp_ble_bond_dev_t *dev_lis
 
 /**
 * @brief           This function is to disconnect the physical connection of the peer device
+*                  gattc maybe have multiple virtual GATT server connections when multiple app_id registed.
+*                  esp_ble_gattc_close (esp_gatt_if_t gattc_if, uint16_t conn_id) only close one virtual GATT server connection.
+*                  if there exist other virtual GATT server connections, it does not disconnect the physical connection.
+*                  esp_ble_gap_disconnect(esp_bd_addr_t remote_device) disconnect the physical connection directly.
+*
+*
 *
 * @param[in]       remote_device : BD address of the peer device
 *

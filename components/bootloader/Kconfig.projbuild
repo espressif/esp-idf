@@ -43,6 +43,16 @@ config BOOTLOADER_SPI_WP_PIN
 
         The default value (GPIO 7) is correct for WP pin on ESP32-D2WD integrated flash.
 
+config BOOTLOADER_VDDSDIO_BOOST
+    bool "Increase VDDSDIO LDO voltage to 1.9V"
+    default y
+    help
+        If this option is enabled, and VDDSDIO LDO is set to 1.8V (using EFUSE
+        or MTDI bootstrapping pin), bootloader will change LDO settings to
+        output 1.9V instead. This helps prevent flash chip from browning out
+        during flash programming operations.
+        For 3.3V flash, this option has no effect.
+
 endmenu  # Bootloader
 
 

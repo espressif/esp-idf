@@ -525,7 +525,7 @@ void bta_dm_set_dev_name (tBTA_DM_MSG *p_data)
 
 void bta_dm_update_white_list(tBTA_DM_MSG *p_data)
 {
-    BTM_BleUpdateAdvWhitelist(p_data->white_list.add_remove, p_data->white_list.remote_addr);
+    BTM_BleUpdateAdvWhitelist(p_data->white_list.add_remove, p_data->white_list.remote_addr, p_data->white_list.add_wl_cb);
 }
 
 void bta_dm_ble_read_adv_tx_power(tBTA_DM_MSG *p_data)
@@ -646,7 +646,6 @@ void bta_dm_process_remove_device(BD_ADDR bd_addr)
     if (bta_dm_cb.p_sec_cback) {
         tBTA_DM_SEC sec_event;
         bdcpy(sec_event.link_down.bd_addr, bd_addr);
-        /* No connection, set status to success (acl disc code not valid) */
         sec_event.link_down.status = HCI_SUCCESS;
         bta_dm_cb.p_sec_cback(BTA_DM_DEV_UNPAIRED_EVT, &sec_event);
     }
@@ -4659,6 +4658,47 @@ void bta_dm_ble_observe (tBTA_DM_MSG *p_data)
         }
     }
 }
+
+/*******************************************************************************
+**
+** Function         bta_dm_ble_scan
+**
+** Description      This function set the preferred connection scan parameters.
+**
+** Parameters:
+**
+*******************************************************************************/
+void bta_dm_ble_scan (tBTA_DM_MSG *p_data)
+{
+    tBTM_STATUS status;
+    if (p_data->ble_scan.start) {
+        /*Save the  callback to be called when a scan results are available */
+        bta_dm_search_cb.p_scan_cback = p_data->ble_scan.p_cback;
+
+        if ((status = BTM_BleScan(TRUE, p_data->ble_scan.duration,
+                                     bta_dm_observe_results_cb, bta_dm_observe_cmpl_cb)) != BTM_CMD_STARTED) {
+            APPL_TRACE_WARNING(" %s start scan failed. status=0x%x\n", __FUNCTION__, status);
+        }
+
+        if (p_data->ble_scan.p_start_scan_cback) {
+            status = (status == BTM_CMD_STARTED ? BTA_SUCCESS : BTA_FAILURE);
+            p_data->ble_scan.p_start_scan_cback(status);
+        }
+    } else {
+        bta_dm_search_cb.p_scan_cback = NULL;
+        status = BTM_BleScan(FALSE, 0, NULL, NULL);
+
+        if (status != BTM_CMD_STARTED){
+            APPL_TRACE_WARNING(" %s stop scan failed, status=0x%x\n", __FUNCTION__, status);
+        }
+
+        if (p_data->ble_scan.p_stop_scan_cback) {
+            status = (status == BTM_CMD_STARTED ? BTA_SUCCESS : BTA_FAILURE);
+            p_data->ble_scan.p_stop_scan_cback(status);
+        }
+    }
+}
+
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_set_adv_params

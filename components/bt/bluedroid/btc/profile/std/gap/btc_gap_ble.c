@@ -542,8 +542,8 @@ static void btc_ble_set_scan_params(esp_ble_scan_params_t *scan_params, tBLE_SCA
                                      scan_params->scan_interval,
                                      scan_params->scan_window,
                                      scan_params->scan_type,
-                                     scan_params->own_addr_type,
                                      scan_params->scan_filter_policy,
+                                     scan_params->own_addr_type,
                                      scan_param_setup_cback);
     } else {
 		btc_scan_params_callback(ESP_DEFAULT_GATT_IF, BTM_ILLEGAL_VALUE);
@@ -681,6 +681,24 @@ static void btc_set_pkt_length_callback(UINT8 status, tBTM_LE_SET_PKT_DATA_LENGT
     }
 }
 
+static void btc_add_whitelist_complete_callback(UINT8 status, tBTM_WL_OPERATION wl_opration)
+{
+    esp_ble_gap_cb_param_t param;
+    bt_status_t ret;
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = ESP_GAP_BLE_ADD_WHITELIST_COMPLETE_EVT;
+    param.add_whitelist_cmpl.status = btc_hci_to_esp_status(status);
+    param.add_whitelist_cmpl.wl_opration = wl_opration;
+    ret = btc_transfer_context(&msg, &param,
+                               sizeof(esp_ble_gap_cb_param_t), NULL);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        LOG_ERROR("%s btc_transfer_context failed\n", __func__);
+    }
+}
+
 static void btc_set_local_privacy_callback(UINT8 status)
 {
     esp_ble_gap_cb_param_t param;
@@ -741,17 +759,17 @@ static void btc_ble_start_scanning(uint32_t duration,
                                    tBTA_START_STOP_SCAN_CMPL_CBACK *start_scan_cb)
 {
     if ((results_cb != NULL) && (start_scan_cb != NULL)) {
-        ///Start scan the device
-        BTA_DmBleObserve(true, duration, results_cb, start_scan_cb);
+        //Start scan the device
+        BTA_DmBleScan(true, duration, results_cb, start_scan_cb);
     } else {
-        LOG_ERROR("The scan duration or p_results_cb invalid\n");
+        LOG_ERROR("The start_scan_cb or results_cb invalid\n");
     }
 }
 
 static void btc_ble_stop_scanning(tBTA_START_STOP_SCAN_CMPL_CBACK *stop_scan_cb)
 {
     uint8_t duration = 0;
-    BTA_DmBleObserve(false, duration, NULL, stop_scan_cb);
+    BTA_DmBleScan(false, duration, NULL, stop_scan_cb);
 }
 
 
@@ -805,14 +823,14 @@ static void btc_ble_set_rand_addr (BD_ADDR rand_addr)
         BD_ADDR invalid_rand_addr_a, invalid_rand_addr_b;
         memset(invalid_rand_addr_a, 0xff, sizeof(BD_ADDR));
         memset(invalid_rand_addr_b, 0x00, sizeof(BD_ADDR));
-        invalid_rand_addr_b[BD_ADDR_LEN - 1] = invalid_rand_addr_b[BD_ADDR_LEN - 1] | BT_STATIC_RAND_ADDR_MASK;
-        if((rand_addr[BD_ADDR_LEN - 1] & BT_STATIC_RAND_ADDR_MASK) == BT_STATIC_RAND_ADDR_MASK
+        invalid_rand_addr_b[0] = invalid_rand_addr_b[0] | BT_STATIC_RAND_ADDR_MASK;
+        if((rand_addr[0] & BT_STATIC_RAND_ADDR_MASK) == BT_STATIC_RAND_ADDR_MASK
             && memcmp(invalid_rand_addr_a, rand_addr, BD_ADDR_LEN) != 0
             && memcmp(invalid_rand_addr_b, rand_addr, BD_ADDR_LEN) != 0){
             BTA_DmSetRandAddress(rand_addr);
         } else {
             param.set_rand_addr_cmpl.status = ESP_BT_STATUS_INVALID_STATIC_RAND_ADDR;
-            LOG_ERROR("Invalid random address, the high bit should be 0b11, the random part shall not be to 1 or 0");
+            LOG_ERROR("Invalid random address, the high bit should be 0b11, all bits of the random part shall not be to 1 or 0");
         }
     } else {
         param.set_rand_addr_cmpl.status = ESP_BT_STATUS_INVALID_STATIC_RAND_ADDR;
@@ -1031,7 +1049,7 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
         btc_ble_config_local_privacy(arg->cfg_local_privacy.privacy_enable, btc_set_local_privacy_callback);
         break;    
     case BTC_GAP_BLE_ACT_UPDATE_WHITE_LIST:
-        BTA_DmUpdateWhiteList(arg->update_white_list.add_remove, arg->update_white_list.remote_bda);
+        BTA_DmUpdateWhiteList(arg->update_white_list.add_remove, arg->update_white_list.remote_bda, btc_add_whitelist_complete_callback);
         break;
     case BTC_GAP_BLE_ACT_READ_RSSI:
         BTA_DmBleReadRSSI(arg->read_rssi.remote_addr, btc_read_ble_rssi_cmpl_callback);

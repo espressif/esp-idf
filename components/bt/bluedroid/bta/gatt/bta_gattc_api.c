@@ -545,7 +545,7 @@ void BTA_GATTC_ReadMultiple(UINT16 conn_id, tBTA_GATTC_MULTI *p_read_multi,
         p_buf->hdr.layer_specific = conn_id;
         p_buf->auth_req = auth_req;
         p_buf->num_attr = p_read_multi->num_attr;
-
+        p_buf->cmpl_evt = BTA_GATTC_READ_MUTIPLE_EVT;
         if (p_buf->num_attr > 0) {
             memcpy(p_buf->handles, p_read_multi->handles, sizeof(UINT16) * p_read_multi->num_attr);
 	    }

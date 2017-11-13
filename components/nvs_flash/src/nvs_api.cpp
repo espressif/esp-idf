@@ -113,7 +113,7 @@ extern "C" esp_err_t nvs_flash_init_partition(const char *part_name)
     Lock lock;
     nvs::Storage* mStorage;
 
-    mStorage = lookup_storage_from_name(NVS_DEFAULT_PART_NAME);
+    mStorage = lookup_storage_from_name(part_name);
     if (mStorage) {
         return ESP_OK;
     }

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Wrapper to run make and preprocess any paths in the output from MSYS/Cygwin paths
+# Wrapper to run make and preprocess any paths in the output from MSYS Unix-style paths
 # to Windows paths, for Eclipse
 from __future__ import print_function, division
 import sys, subprocess, os.path, re

@@ -183,12 +183,13 @@ void BTA_DmSetDeviceName(char *p_name)
 
 }
 
-void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr)
+void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBTA_ADD_WHITELIST_CBACK *add_wl_cb)
 {
     tBTA_DM_API_UPDATE_WHITE_LIST *p_msg;
     if ((p_msg = (tBTA_DM_API_UPDATE_WHITE_LIST *)osi_malloc(sizeof(tBTA_DM_API_UPDATE_WHITE_LIST))) != NULL) {
         p_msg->hdr.event = BTA_DM_API_UPDATE_WHITE_LIST_EVT;
         p_msg->add_remove = add_remove;
+        p_msg->add_wl_cb = add_wl_cb;
         memcpy(p_msg->remote_addr, remote_addr, sizeof(BD_ADDR));
 
         bta_sys_sendmsg(p_msg);
@@ -2195,6 +2196,47 @@ extern void BTA_DmBleObserve(BOOLEAN start, UINT32 duration,
         memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_OBSERVE));
 
         p_msg->hdr.event = BTA_DM_API_BLE_OBSERVE_EVT;
+        p_msg->start = start;
+        p_msg->duration = duration;
+        p_msg->p_cback = p_results_cb;
+        if (start){
+            p_msg->p_start_scan_cback = p_start_stop_scan_cb;
+        }
+        else {
+            p_msg->p_stop_scan_cback = p_start_stop_scan_cb;
+        }
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         BTA_DmBleScan
+**
+** Description      This procedure keep the device listening for advertising
+**                  events from a broadcast device.
+**
+** Parameters       start: start or stop scan.
+**
+** Returns          void
+
+**
+** Returns          void.
+**
+*******************************************************************************/
+extern void BTA_DmBleScan(BOOLEAN start, UINT32 duration,
+                             tBTA_DM_SEARCH_CBACK *p_results_cb,
+                             tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_stop_scan_cb)
+{
+    tBTA_DM_API_BLE_SCAN   *p_msg;
+
+    APPL_TRACE_API("BTA_DmBleScan:start = %d ", start);
+
+    if ((p_msg = (tBTA_DM_API_BLE_SCAN *) osi_malloc(sizeof(tBTA_DM_API_BLE_SCAN))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_SCAN));
+
+        p_msg->hdr.event = BTA_DM_API_BLE_SCAN_EVT;
         p_msg->start = start;
         p_msg->duration = duration;
         p_msg->p_cback = p_results_cb;

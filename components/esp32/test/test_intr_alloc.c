@@ -274,7 +274,7 @@ TEST_CASE("allocate 2 handlers for a same source and remove the later one","[esp
     r=esp_intr_alloc(ETS_SPI2_INTR_SOURCE, ESP_INTR_FLAG_SHARED, int_handler1, &ctx, &handle1);
     TEST_ESP_OK(r);
     //try an invalid assign first
-    r=esp_intr_alloc(ETS_SPI2_INTR_SOURCE, NULL, int_handler2, NULL, &handle2);
+    r=esp_intr_alloc(ETS_SPI2_INTR_SOURCE, 0, int_handler2, NULL, &handle2);
     TEST_ASSERT_EQUAL_INT(r, ESP_ERR_NOT_FOUND );
     //assign shared then
     r=esp_intr_alloc(ETS_SPI2_INTR_SOURCE, ESP_INTR_FLAG_SHARED, int_handler2, &ctx, &handle2);

@@ -277,6 +277,25 @@ rtc_fast_freq_t rtc_clk_fast_freq_get();
 void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq);
 
 /**
+ * @brief Switch CPU frequency
+ *
+ * This is a faster version of rtc_clk_cpu_freq_set, which can handle some of
+ * the frequency switch paths (XTAL -> PLL, PLL -> XTAL).
+ * When switching from PLL to XTAL, PLL is not disabled (unlike rtc_clk_cpu_freq_set).
+ * When switching back from XTAL to PLL, only the same PLL can be used.
+ * Therefore it is not possible to switch 240 -> XTAL -> (80 or 160) using this
+ * function.
+ *
+ * For unsupported cases, this function falls back to rtc_clk_cpu_freq_set.
+ *
+ * Unlike rtc_clk_cpu_freq_set, this function relies on static data, so it is
+ * less safe to use it e.g. from a panic handler (when memory might be corrupted).
+ *
+ * @param cpu_freq  new CPU frequency
+ */
+void rtc_clk_cpu_freq_set_fast(rtc_cpu_freq_t cpu_freq);
+
+/**
  * @brief Get the currently selected CPU frequency
  *
  * Although CPU can be clocked by APLL and RTC 8M sources, such support is not
@@ -295,6 +314,14 @@ rtc_cpu_freq_t rtc_clk_cpu_freq_get();
  * @return CPU frequency, in HZ
  */
 uint32_t rtc_clk_cpu_freq_value(rtc_cpu_freq_t cpu_freq);
+
+/**
+ * @brief Get rtc_cpu_freq_t enum value for given CPU frequency
+ * @param cpu_freq_mhz  CPU frequency, one of 80, 160, 240, 2, and XTAL frequency
+ * @param[out] out_val output, rtc_cpu_freq_t value corresponding to the frequency
+ * @return true if the given frequency value matches one of enum values
+ */
+ bool rtc_clk_cpu_freq_from_mhz(int cpu_freq_mhz, rtc_cpu_freq_t* out_val);
 
 /**
  * @brief Store new APB frequency value into RTC_APB_FREQ_REG
@@ -372,6 +399,15 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period);
  * @return current value of RTC counter
  */
 uint64_t rtc_time_get();
+
+/**
+ * @brief Busy loop until next RTC_SLOW_CLK cycle
+ *
+ * This function returns not earlier than the next RTC_SLOW_CLK clock cycle.
+ * In some cases (e.g. when RTC_SLOW_CLK cycle is very close), it may return
+ * one RTC_SLOW_CLK cycle later.
+ */
+void rtc_clk_wait_for_slow_cycle();
 
 /**
  * @brief sleep configuration for rtc_sleep_init function
@@ -526,6 +562,36 @@ typedef struct {
  * @param cfg configuration options as rtc_config_t
  */
 void rtc_init(rtc_config_t cfg);
+
+/**
+ * Structure describing vddsdio configuration
+ */
+typedef struct {
+    uint32_t force : 1;     //!< If 1, use configuration from RTC registers; if 0, use EFUSE/bootstrapping pins.
+    uint32_t enable : 1;    //!< Enable VDDSDIO regulator
+    uint32_t tieh  : 1;     //!< Select VDDSDIO voltage: 1 — 1.8V, 0 — 3.3V
+    uint32_t drefh : 2;     //!< Tuning parameter for VDDSDIO regulator
+    uint32_t drefm : 2;     //!< Tuning parameter for VDDSDIO regulator
+    uint32_t drefl : 2;     //!< Tuning parameter for VDDSDIO regulator
+} rtc_vddsdio_config_t;
+
+/**
+ * Get current VDDSDIO configuration
+ * If VDDSDIO configuration is overridden by RTC, get values from RTC
+ * Otherwise, if VDDSDIO is configured by EFUSE, get values from EFUSE
+ * Otherwise, use default values and the level of MTDI bootstrapping pin.
+ * @return currently used VDDSDIO configuration
+ */
+rtc_vddsdio_config_t rtc_vddsdio_get_config();
+
+/**
+ * Set new VDDSDIO configuration using RTC registers.
+ * If config.force == 1, this overrides configuration done using bootstrapping
+ * pins and EFUSE.
+ *
+ * @param config new VDDSDIO configuration
+ */
+void rtc_vddsdio_set_config(rtc_vddsdio_config_t config);
 
 
 #ifdef __cplusplus

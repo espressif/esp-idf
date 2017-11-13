@@ -90,22 +90,28 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         blufi_sec->dh_param_len = ((data[1]<<8)|data[2]);
         if (blufi_sec->dh_param) {
             free(blufi_sec->dh_param);
+            blufi_sec->dh_param = NULL;
         }
         blufi_sec->dh_param = (uint8_t *)malloc(blufi_sec->dh_param_len);
         if (blufi_sec->dh_param == NULL) {
+            BLUFI_ERROR("%s, malloc failed\n", __func__);
             return;
         }
         break;
-    case SEC_TYPE_DH_PARAM_DATA:
-
+    case SEC_TYPE_DH_PARAM_DATA:{
+        if (blufi_sec->dh_param == NULL) {
+            BLUFI_ERROR("%s, blufi_sec->dh_param == NULL\n", __func__);
+            return;
+        }
+        uint8_t *param = blufi_sec->dh_param;
         memcpy(blufi_sec->dh_param, &data[1], blufi_sec->dh_param_len);
-
-        ret = mbedtls_dhm_read_params(&blufi_sec->dhm, &blufi_sec->dh_param, &blufi_sec->dh_param[blufi_sec->dh_param_len]);
+        ret = mbedtls_dhm_read_params(&blufi_sec->dhm, &param, &param[blufi_sec->dh_param_len]);
         if (ret) {
             BLUFI_ERROR("%s read param failed %d\n", __func__, ret);
             return;
         }
-
+        free(blufi_sec->dh_param);
+        blufi_sec->dh_param = NULL;
         ret = mbedtls_dhm_make_public(&blufi_sec->dhm, (int) mbedtls_mpi_size( &blufi_sec->dhm.P ), blufi_sec->self_public_key, blufi_sec->dhm.len, myrand, NULL);
         if (ret) {
             BLUFI_ERROR("%s make public failed %d\n", __func__, ret);
@@ -126,6 +132,8 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         *output_data = &blufi_sec->self_public_key[0];
         *output_len = blufi_sec->dhm.len;
         *need_free = false;
+
+    }
         break;
     case SEC_TYPE_DH_P:
         break;
@@ -194,6 +202,13 @@ esp_err_t blufi_security_init(void)
 
 void blufi_security_deinit(void)
 {
+    if (blufi_sec == NULL) {
+        return;
+    }
+    if (blufi_sec->dh_param){
+        free(blufi_sec->dh_param);
+        blufi_sec->dh_param = NULL;
+    }
     mbedtls_dhm_free(&blufi_sec->dhm);
     mbedtls_aes_free(&blufi_sec->aes);
 

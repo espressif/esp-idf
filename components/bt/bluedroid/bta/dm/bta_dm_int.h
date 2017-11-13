@@ -97,6 +97,7 @@ enum {
     support the scan filter setting for the APP******/
     BTA_DM_API_BLE_SCAN_FIL_PARAM_EVT,
     BTA_DM_API_BLE_OBSERVE_EVT,
+    BTA_DM_API_BLE_SCAN_EVT,
     BTA_DM_API_UPDATE_CONN_PARAM_EVT,
     /*******This event added by Yulong at 2016/9/9 to
     support the random address setting for the APP******/
@@ -183,6 +184,7 @@ typedef struct {
     BT_HDR    hdr;
     BOOLEAN   add_remove;
     BD_ADDR   remote_addr;
+    tBTA_ADD_WHITELIST_CBACK *add_wl_cb;
 }tBTA_DM_API_UPDATE_WHITE_LIST;
 
 typedef struct {
@@ -506,6 +508,17 @@ typedef struct {
     tBTA_START_STOP_ADV_CMPL_CBACK  *p_stop_adv_cback;
 } tBTA_DM_API_BLE_OBSERVE;
 
+/* Data type for start/stop scan */
+typedef struct {
+    BT_HDR                  hdr;
+    BOOLEAN                 start;
+    UINT32                  duration;
+    tBTA_DM_SEARCH_CBACK    *p_cback;
+    tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_scan_cback;
+    tBTA_START_STOP_SCAN_CMPL_CBACK *p_stop_scan_cback;
+    tBTA_START_STOP_ADV_CMPL_CBACK  *p_stop_adv_cback;
+} tBTA_DM_API_BLE_SCAN;
+
 typedef struct {
     BT_HDR      hdr;
     BD_ADDR     remote_bda;
@@ -758,6 +771,7 @@ typedef union {
     tBTA_DM_API_BLE_SCAN_PARAMS         ble_set_scan_params;
     tBTA_DM_API_BLE_SCAN_FILTER_PARAMS  ble_set_scan_fil_params;
     tBTA_DM_API_BLE_OBSERVE             ble_observe;
+    tBTA_DM_API_BLE_SCAN                ble_scan;
     tBTA_DM_API_ENABLE_PRIVACY          ble_remote_privacy;
     tBTA_DM_API_LOCAL_PRIVACY           ble_local_privacy;
     tBTA_DM_API_BLE_ADV_PARAMS          ble_set_adv_params;
@@ -1158,6 +1172,7 @@ extern void bta_dm_ble_set_conn_scan_params (tBTA_DM_MSG *p_data);
 extern void bta_dm_close_gatt_conn(tBTA_DM_MSG *p_data);
 #endif /* ((defined BTA_GATT_INCLUDED) &&  (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE) && (GATTC_INCLUDED == TRUE) */
 extern void bta_dm_ble_observe (tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_scan (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_update_conn_params (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_disconnect (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_rand_address(tBTA_DM_MSG *p_data);

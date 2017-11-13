@@ -93,7 +93,19 @@ config OPTIMIZATION_ASSERTIONS_DISABLED
 
 endchoice # assertions
 
-endmenu # Optimization level
+config CXX_EXCEPTIONS
+   bool "Enable C++ exceptions"
+   default n
+   help
+       Enabling this option compiles all IDF C++ files with exception support enabled.
+
+       Disabling this option disables C++ exception support in all compiled files, and any libstdc++ code which throws
+       an exception will abort instead.
+
+       Enabling this option currently adds an additional 20KB of heap overhead, and 4KB of additional heap is allocated
+       the first time an exception is thrown in user code.
+
+endmenu # Compiler Options
 
 menu "Component config"
 source "$COMPONENT_KCONFIGS"

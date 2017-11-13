@@ -187,6 +187,7 @@ tBTA_GATT_STATUS bta_gattc_init_cache(tBTA_GATTC_SERV *p_srvc_cb)
         p_srvc_cb->cur_srvc_idx = 0;
         p_srvc_cb->cur_char_idx = 0;
         p_srvc_cb->next_avail_idx = 0;
+        p_srvc_cb->total_attr = 0;
     }
 
     return BTA_GATT_OK;
