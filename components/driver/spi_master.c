@@ -489,13 +489,9 @@ static void IRAM_ATTR spi_intr(void *arg)
                 host->hw->ctrl2.miso_delay_mode=nodelay?0:2;
             }
 
-            //Configure bit sizes, load addr and command
+            //configure dummy bits
             host->hw->user.usr_dummy=(dev->cfg.dummy_bits+extra_dummy)?1:0;
-            host->hw->user.usr_addr=(dev->cfg.address_bits)?1:0;
-            host->hw->user.usr_command=(dev->cfg.command_bits)?1:0;
-            host->hw->user1.usr_addr_bitlen=dev->cfg.address_bits-1;
             host->hw->user1.usr_dummy_cyclelen=dev->cfg.dummy_bits+extra_dummy-1;
-            host->hw->user2.usr_command_bitlen=dev->cfg.command_bits-1;
             //Configure misc stuff
             host->hw->user.doutdin=(dev->cfg.flags & SPI_DEVICE_HALFDUPLEX)?0:1;
             host->hw->user.sio=(dev->cfg.flags & SPI_DEVICE_3WIRE)?1:0;
@@ -587,17 +583,36 @@ static void IRAM_ATTR spi_intr(void *arg)
             host->hw->miso_dlen.usr_miso_dbitlen=trans->length-1;
         }
 
+        //Configure bit sizes, load addr and command
+        int cmdlen;
+        if ( trans->flags & SPI_TRANS_VARIABLE_CMD ) {
+            cmdlen = ((spi_transaction_ext_t*)trans)->command_bits;
+        } else {
+            cmdlen = dev->cfg.command_bits;
+        }
+        int addrlen;
+        if ( trans->flags & SPI_TRANS_VARIABLE_ADDR ) {
+            addrlen = ((spi_transaction_ext_t*)trans)->address_bits;
+        } else {
+            addrlen = dev->cfg.address_bits;
+        }
+        host->hw->user1.usr_addr_bitlen=addrlen-1;
+        host->hw->user2.usr_command_bitlen=cmdlen-1;
+        host->hw->user.usr_addr=addrlen?1:0;
+        host->hw->user.usr_command=cmdlen?1:0;
+
         // output command will be sent from bit 7 to 0 of command_value, and then bit 15 to 8 of the same register field.
-        uint16_t command = trans->cmd << (16-dev->cfg.command_bits);    //shift to MSB
+        uint16_t command = trans->cmd << (16-cmdlen);    //shift to MSB
         host->hw->user2.usr_command_value = (command>>8)|(command<<8);  //swap the first and second byte
         // shift the address to MSB of addr (and maybe slv_wr_status) register. 
         // output address will be sent from MSB to LSB of addr register, then comes the MSB to LSB of slv_wr_status register. 
-        if (dev->cfg.address_bits>32) {
-            host->hw->addr = trans->addr >> (dev->cfg.address_bits - 32);
-            host->hw->slv_wr_status = trans->addr << (64 - dev->cfg.address_bits);
+        if (addrlen>32) {
+            host->hw->addr = trans->addr >> (addrlen- 32);
+            host->hw->slv_wr_status = trans->addr << (64 - addrlen);
         } else {
-            host->hw->addr = trans->addr << (32 - dev->cfg.address_bits);
+            host->hw->addr = trans->addr << (32 - addrlen);
         }
+
         host->hw->user.usr_mosi=( (!(dev->cfg.flags & SPI_DEVICE_HALFDUPLEX) && trans_buf->buffer_to_rcv) || trans_buf->buffer_to_send)?1:0;
         host->hw->user.usr_miso=(trans_buf->buffer_to_rcv)?1:0;
 
@@ -645,6 +660,7 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
     }
     if ( trans_buf.buffer_to_rcv && handle->host->dma_chan && (!esp_ptr_dma_capable( trans_buf.buffer_to_rcv ) || ((int)trans_buf.buffer_to_rcv%4!=0)) ) {
         //if rxbuf in the desc not DMA-capable, malloc a new one. The rx buffer need to be length of multiples of 32 bits to avoid heap corruption.
+        ESP_LOGV( SPI_TAG, "Allocate RX buffer for DMA" );
         trans_buf.buffer_to_rcv = heap_caps_malloc((trans_desc->rxlength+31)/8, MALLOC_CAP_DMA);
         if ( trans_buf.buffer_to_rcv==NULL ) return ESP_ERR_NO_MEM;
     }
@@ -659,6 +675,7 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
     }
     if ( txdata && handle->host->dma_chan && !esp_ptr_dma_capable( txdata )) {
         //if txbuf in the desc not DMA-capable, malloc a new one
+        ESP_LOGV( SPI_TAG, "Allocate TX buffer for DMA" );
         trans_buf.buffer_to_send = heap_caps_malloc((trans_desc->length+7)/8, MALLOC_CAP_DMA);
         if ( trans_buf.buffer_to_send==NULL ) {
             // free malloc-ed buffer (if needed) before return.
