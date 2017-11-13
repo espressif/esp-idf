@@ -308,11 +308,11 @@ endmenu # UDP
 
 config TCPIP_TASK_STACK_SIZE
     int "TCP/IP Task Stack Size"
-    default 2560
+    default 2048
     # for high log levels, tcpip_adapter API calls can end up
     # a few calls deep and logging there can trigger a stack overflow
-    range 2560 65536 if LOG_DEFAULT_LEVEL < 4 || NEWLIB_NANO_FORMAT
-    range 3072 65536 if LOG_DEFAULT_LEVEL >= 4 && !NEWLIB_NANO_FORMAT
+    range 2048 65536 if LOG_DEFAULT_LEVEL < 4
+    range 2560 65536 if LOG_DEFAULT_LEVEL >= 4
     help
        Configure TCP/IP task stack size, used by LWIP to process multi-threaded TCP/IP operations.
        Setting this stack too small will result in stack overflow crashes.
