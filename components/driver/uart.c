@@ -268,15 +268,13 @@ esp_err_t uart_get_hw_flow_ctrl(uart_port_t uart_num, uart_hw_flowcontrol_t* flo
     return ESP_OK;
 }
 
-static esp_err_t uart_reset_fifo(uart_port_t uart_num)
+static esp_err_t uart_reset_rx_fifo(uart_port_t uart_num)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
-    UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
-    UART[uart_num]->conf0.rxfifo_rst = 1;
-    UART[uart_num]->conf0.rxfifo_rst = 0;
-    UART[uart_num]->conf0.txfifo_rst = 1;
-    UART[uart_num]->conf0.txfifo_rst = 0;
-    UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
+    // Read all data from the FIFO
+    while (UART[uart_num]->status.rxfifo_cnt) {
+        READ_PERI_REG(UART_FIFO_REG(uart_num));
+    }
     return ESP_OK;
 }
 
@@ -695,8 +693,11 @@ static void uart_rx_intr_handler_default(void *param)
             }
         } else if(uart_intr_status & UART_RXFIFO_OVF_INT_ST_M) {
             UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
-            uart_reg->conf0.rxfifo_rst = 1;
-            uart_reg->conf0.rxfifo_rst = 0;
+            // Read all data from the FIFO
+            rx_fifo_len = uart_reg->status.rxfifo_cnt;
+            for (int i = 0; i < rx_fifo_len; i++) {
+                READ_PERI_REG(UART_FIFO_REG(uart_num));
+            }
             uart_reg->int_clr.rxfifo_ovf = 1;
             UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
             uart_event.type = UART_FIFO_OVF;
@@ -1009,7 +1010,7 @@ esp_err_t uart_flush(uart_port_t uart_num)
     p_uart->rx_ptr = NULL;
     p_uart->rx_cur_remain = 0;
     p_uart->rx_head_ptr = NULL;
-    uart_reset_fifo(uart_num);
+    uart_reset_rx_fifo(uart_num);
     uart_enable_rx_intr(p_uart_obj[uart_num]->uart_num);
     xSemaphoreGive(p_uart->rx_mux);
     return ESP_OK;
