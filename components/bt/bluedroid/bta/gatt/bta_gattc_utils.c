@@ -426,6 +426,25 @@ tBTA_GATTC_SERV *bta_gattc_srcb_alloc(BD_ADDR bda)
     }
     return p_tcb;
 }
+
+static void bta_gattc_remove_prepare_write_in_queue(tBTA_GATTC_CLCB *p_clcb)
+{
+    assert(p_clcb != NULL);
+
+    for(list_node_t *sn = list_begin(p_clcb->p_cmd_list);
+        sn != list_end(p_clcb->p_cmd_list); sn = list_next(sn)) {
+
+        tBTA_GATTC_DATA *cmd_data = (tBTA_GATTC_DATA *)list_node(sn);
+        if (cmd_data != NULL && ((cmd_data->hdr.event == BTA_GATTC_API_WRITE_EVT &&
+            cmd_data->api_write.write_type == BTA_GATTC_WRITE_PREPARE) ||
+            cmd_data->hdr.event == BTA_GATTC_API_EXEC_EVT)) {
+            // remove the prepare write command in the command queue
+            list_remove(p_clcb->p_cmd_list, (void *)cmd_data);
+        }
+    }
+
+    return;
+}
 /*******************************************************************************
 **
 ** Function         bta_gattc_enqueue
@@ -444,7 +463,7 @@ BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
     } else if (p_data->hdr.event == BTA_GATTC_API_WRITE_EVT &&
                p_data->api_write.write_type == BTA_GATTC_WRITE_PREPARE &&
                p_data->api_write.handle == p_clcb->p_q_cmd->api_write.handle) {
-        APPL_TRACE_ERROR("There is a prepare write command still pending.");
+        bta_gattc_remove_prepare_write_in_queue (p_clcb);
         tBTA_GATTC cb_data = {0};
         cb_data.write.status = BTA_GATT_CONGESTED;
         cb_data.write.handle = p_data->api_write.handle;
@@ -454,12 +473,12 @@ BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
         return FALSE;
     }
     else if (p_clcb->p_cmd_list) {
-		UINT16 len = 0;
-		tBTA_GATTC_DATA *cmd_data = NULL;
-		if (list_length(p_clcb->p_cmd_list) >= GATTC_COMMAND_QUEUE_SIZE_MAX) {
-            //APPL_TRACE_ERROR("%s(), the gattc command queue is full." __func__);
-			return FALSE;
-		}
+        UINT16 len = 0;
+        tBTA_GATTC_DATA *cmd_data = NULL;
+        if (list_length(p_clcb->p_cmd_list) >= GATTC_COMMAND_QUEUE_SIZE_MAX) {
+            APPL_TRACE_ERROR("%s(), the gattc command queue is full.", __func__);
+            return FALSE;
+        }
 
         if (p_data->hdr.event == BTA_GATTC_API_WRITE_EVT) {
             len = p_data->api_write.len;
@@ -469,14 +488,16 @@ BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
                 cmd_data->api_write.p_value = (UINT8 *)(cmd_data + 1);
 			    memcpy(cmd_data->api_write.p_value, p_data->api_write.p_value, len);
             } else {
-                APPL_TRACE_ERROR("%s(), alloc fail, no memery.", __func__);
+                APPL_TRACE_ERROR("%s(), line = %d, alloc fail, no memery.", __func__, __LINE__);
+                return FALSE;
             }
         } else {
             if ((cmd_data = (tBTA_GATTC_DATA *)osi_malloc(sizeof(tBTA_GATTC_DATA))) != NULL) {
                 memset(cmd_data, 0, sizeof(tBTA_GATTC_DATA));
                 memcpy(cmd_data, p_data, sizeof(tBTA_GATTC_DATA));
             } else {
-                APPL_TRACE_ERROR("%s(), alloc fail, no memery.", __func__);
+                APPL_TRACE_ERROR("%s(), line = %d, alloc fail, no memery.", __func__, __LINE__);
+                return FALSE;
             }
         }
 
