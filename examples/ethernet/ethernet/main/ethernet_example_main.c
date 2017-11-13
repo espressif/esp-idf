@@ -33,6 +33,10 @@
 #include "nvs_flash.h"
 #include "driver/gpio.h"
 
+#include "soc/emac_ex_reg.h"
+#include "driver/periph_ctrl.h"
+
+
 #ifdef CONFIG_PHY_LAN8720
 #include "eth_phy/phy_lan8720.h"
 #define DEFAULT_ETHERNET_PHY_CONFIG phy_lan8720_default_ethernet_config
@@ -129,6 +133,7 @@ void app_main()
     config.phy_addr = CONFIG_PHY_ADDRESS;
     config.gpio_config = eth_gpio_config_rmii;
     config.tcpip_input = tcpip_adapter_eth_input;
+    config.clock_mode = CONFIG_PHY_CLOCK_MODE;
 
 #ifdef CONFIG_PHY_USE_POWER_PIN
     /* Replace the default 'power enable' function with an example-specific
