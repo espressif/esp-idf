@@ -68,6 +68,12 @@ static void init_ulp_program()
     rtc_gpio_pullup_dis(gpio_num);
     rtc_gpio_hold_en(gpio_num);
 
+    /* Disable pullup on GPIO15, in case it is connected to ground to suppress
+     * boot messages.
+     */
+    rtc_gpio_pullup_dis(GPIO_NUM_15);
+    rtc_gpio_hold_en(GPIO_NUM_15);
+
     /* Set ULP wake up period to T = 20ms (3095 cycles of RTC_SLOW_CLK clock).
      * Minimum pulse width has to be T * (ulp_debounce_counter + 1) = 80ms.
      */

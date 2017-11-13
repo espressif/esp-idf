@@ -71,8 +71,14 @@ static void init_ulp_program()
     ulp_low_thr = 1500;
     ulp_high_thr = 2000;
 
-    /* Set ULP wake up period to 100ms */
-    ulp_set_wakeup_period(0, 100000);
+    /* Set ULP wake up period to 20ms */
+    ulp_set_wakeup_period(0, 20000);
+
+    /* Disable pullup on GPIO15, in case it is connected to ground to suppress
+     * boot messages.
+     */
+    rtc_gpio_pullup_dis(GPIO_NUM_15);
+    rtc_gpio_hold_en(GPIO_NUM_15);
 }
 
 static void start_ulp_program()
