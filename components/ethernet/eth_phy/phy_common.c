@@ -41,8 +41,10 @@ void phy_rmii_configure_data_interface_pins(void)
 void phy_rmii_smi_configure_pins(uint8_t mdc_gpio, uint8_t mdio_gpio)
 {
     gpio_matrix_out(mdc_gpio, EMAC_MDC_O_IDX, 0, 0);
+    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[mdc_gpio], PIN_FUNC_GPIO);
     gpio_matrix_out(mdio_gpio, EMAC_MDO_O_IDX, 0, 0);
     gpio_matrix_in(mdio_gpio, EMAC_MDI_I_IDX, 0);
+    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[mdio_gpio], PIN_FUNC_GPIO);
 }
 
 void phy_mii_enable_flow_ctrl(void)
