@@ -1255,7 +1255,7 @@ void gatt_start_ind_ack_timer(tGATT_TCB *p_tcb)
     p_tcb->ind_ack_timer_ent.param  = (TIMER_PARAM_TYPE)p_tcb;
     /* start notification cache timer */
     btu_start_timer (&p_tcb->ind_ack_timer_ent, BTU_TTYPE_ATT_WAIT_FOR_IND_ACK,
-                     GATT_WAIT_FOR_RSP_TOUT);
+                     GATT_WAIT_FOR_IND_ACK_TOUT);
 
 }
 /*******************************************************************************
