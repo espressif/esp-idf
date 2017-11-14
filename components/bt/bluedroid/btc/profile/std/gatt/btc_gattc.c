@@ -917,6 +917,15 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
         btc_gattc_cb_to_app(ESP_GATTC_SRVC_CHG_EVT, ESP_GATT_IF_NONE, &param);
         break;
     }
+    case BTA_GATTC_QUEUE_FULL_EVT: {
+        tBTA_GATTC_QUEUE_FULL *queue_full = &arg->queue_full;
+        gattc_if = BTC_GATT_GET_GATT_IF(queue_full->conn_id);
+        param.queue_full.conn_id = BTC_GATT_GET_CONN_ID(queue_full->conn_id);
+        param.queue_full.status = arg->status;
+        param.queue_full.is_full = queue_full->is_full;
+        btc_gattc_cb_to_app(ESP_GATTC_QUEUE_FULL_EVT, gattc_if, &param);
+        break;
+    }
     default:
         LOG_DEBUG("%s: Unhandled event (%d)!", __FUNCTION__, msg->act);
         break;

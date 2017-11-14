@@ -427,7 +427,7 @@ tBTA_GATTC_SERV *bta_gattc_srcb_alloc(BD_ADDR bda)
     return p_tcb;
 }
 
-static void bta_gattc_remove_prepare_write_in_queue(tBTA_GATTC_CLCB *p_clcb)
+static BOOLEAN bta_gattc_has_prepare_command_in_queue(tBTA_GATTC_CLCB *p_clcb)
 {
     assert(p_clcb != NULL);
 
@@ -438,12 +438,11 @@ static void bta_gattc_remove_prepare_write_in_queue(tBTA_GATTC_CLCB *p_clcb)
         if (cmd_data != NULL && ((cmd_data->hdr.event == BTA_GATTC_API_WRITE_EVT &&
             cmd_data->api_write.write_type == BTA_GATTC_WRITE_PREPARE) ||
             cmd_data->hdr.event == BTA_GATTC_API_EXEC_EVT)) {
-            // remove the prepare write command in the command queue
-            list_remove(p_clcb->p_cmd_list, (void *)cmd_data);
+            return TRUE;
         }
     }
 
-    return;
+    return FALSE;
 }
 /*******************************************************************************
 **
@@ -456,27 +455,38 @@ static void bta_gattc_remove_prepare_write_in_queue(tBTA_GATTC_CLCB *p_clcb)
 *******************************************************************************/
 BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 {
+    tBTA_GATTC cb_data = {0};
 
     if (p_clcb->p_q_cmd == NULL) {
         p_clcb->p_q_cmd = p_data;
         return TRUE;
     } else if (p_data->hdr.event == BTA_GATTC_API_WRITE_EVT &&
                p_data->api_write.write_type == BTA_GATTC_WRITE_PREPARE &&
-               p_data->api_write.handle == p_clcb->p_q_cmd->api_write.handle) {
-        bta_gattc_remove_prepare_write_in_queue (p_clcb);
-        tBTA_GATTC cb_data = {0};
+               p_data->api_write.handle == p_clcb->p_q_cmd->api_write.handle &&
+               bta_gattc_has_prepare_command_in_queue(p_clcb)) {
         cb_data.write.status = BTA_GATT_CONGESTED;
         cb_data.write.handle = p_data->api_write.handle;
         cb_data.write.conn_id = p_clcb->bta_conn_id;
         /* write complete, callback */
-        ( *p_clcb->p_rcb->p_cback)(p_data->hdr.event, (tBTA_GATTC *)&cb_data);
+        if (p_clcb->p_rcb->p_cback != NULL) {
+            ( *p_clcb->p_rcb->p_cback)(BTA_GATTC_PREP_WRITE_EVT, (tBTA_GATTC *)&cb_data);
+        }
         return FALSE;
     }
     else if (p_clcb->p_cmd_list) {
         UINT16 len = 0;
         tBTA_GATTC_DATA *cmd_data = NULL;
+
         if (list_length(p_clcb->p_cmd_list) >= GATTC_COMMAND_QUEUE_SIZE_MAX) {
+
             APPL_TRACE_ERROR("%s(), the gattc command queue is full.", __func__);
+            cb_data.status = GATT_BUSY;
+            cb_data.queue_full.conn_id = p_clcb->bta_conn_id;
+            cb_data.queue_full.is_full = TRUE;
+            p_clcb->is_full = TRUE;
+            if (p_clcb->p_rcb->p_cback != NULL) {
+                ( *p_clcb->p_rcb->p_cback)(BTA_GATTC_QUEUE_FULL_EVT, (tBTA_GATTC *)&cb_data);
+            }
             return FALSE;
         }
 

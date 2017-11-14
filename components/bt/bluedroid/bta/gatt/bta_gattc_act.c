@@ -1478,12 +1478,20 @@ static void bta_gattc_pop_command_to_send(tBTA_GATTC_CLCB *p_clcb)
         if (p_data != NULL) {
             /* execute pending operation of link block still present */
             if (l2cu_find_lcb_by_bd_addr(p_clcb->p_srcb->server_bda, BT_TRANSPORT_LE) != NULL) {
-                if (p_data->hdr.event == BTA_GATTC_API_WRITE_EVT) {
-                    APPL_TRACE_ERROR("%s(), p_data = %d", __func__, p_data->api_write.p_value[0]);
-                }
                 // The data to be sent to the gattc state machine for processing
                 if(bta_gattc_sm_execute(p_clcb, p_data->hdr.event, p_data)) {
                     list_remove(p_clcb->p_cmd_list, (void *)p_data);
+                }
+
+                if (p_clcb->is_full) {
+                    tBTA_GATTC cb_data = {0};
+                    p_clcb->is_full = FALSE;
+                    cb_data.status = GATT_SUCCESS;
+                    cb_data.queue_full.conn_id = p_clcb->bta_conn_id;
+                    cb_data.queue_full.is_full = FALSE;
+                    if (p_clcb->p_rcb->p_cback != NULL) {
+                        ( *p_clcb->p_rcb->p_cback)(BTA_GATTC_QUEUE_FULL_EVT, (tBTA_GATTC *)&cb_data);
+                    }
                 }
             }
         }
