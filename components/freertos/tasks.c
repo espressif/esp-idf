@@ -309,7 +309,7 @@ PRIVILEGED_DATA static portMUX_TYPE xTickCountMutex = portMUX_INITIALIZER_UNLOCK
 
 #if ( configGENERATE_RUN_TIME_STATS == 1 )
 
-	PRIVILEGED_DATA static uint32_t ulTaskSwitchedInTime = 0UL;	/*< Holds the value of a timer/counter the last time a task was switched in. */
+	PRIVILEGED_DATA static uint32_t ulTaskSwitchedInTime[portNUM_PROCESSORS] = {0U};	/*< Holds the value of a timer/counter the last time a task was switched in on a particular core. */
 	PRIVILEGED_DATA static uint32_t ulTotalRunTime = 0UL;		/*< Holds the total amount of execution time as defined by the run time counter clock. */
 
 #endif
@@ -2729,16 +2729,16 @@ void vTaskSwitchContext( void )
 				against suspect run time stat counter implementations - which
 				are provided by the application, not the kernel. */
 				taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
-				if( ulTotalRunTime > ulTaskSwitchedInTime )
+				if( ulTotalRunTime > ulTaskSwitchedInTime[ xPortGetCoreID() ] )
 				{
-					pxCurrentTCB[ xPortGetCoreID() ]->ulRunTimeCounter += ( ulTotalRunTime - ulTaskSwitchedInTime );
+					pxCurrentTCB[ xPortGetCoreID() ]->ulRunTimeCounter += ( ulTotalRunTime - ulTaskSwitchedInTime[ xPortGetCoreID() ] );
 				}
 				else
 				{
 					mtCOVERAGE_TEST_MARKER();
 				}
 				taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
-				ulTaskSwitchedInTime = ulTotalRunTime;
+				ulTaskSwitchedInTime[ xPortGetCoreID() ] = ulTotalRunTime;
 		}
 		#endif /* configGENERATE_RUN_TIME_STATS */
 
@@ -4372,7 +4372,6 @@ For ESP32 FreeRTOS, vTaskExitCritical implements both portEXIT_CRITICAL and port
 	volatile UBaseType_t uxArraySize, x;
 	uint32_t ulTotalTime, ulStatsAsPercentage;
 
-		UNTESTED_FUNCTION();
 		#if( configUSE_TRACE_FACILITY != 1 )
 		{
 			#error configUSE_TRACE_FACILITY must also be set to 1 in FreeRTOSConfig.h to use vTaskGetRunTimeStats().
@@ -4433,7 +4432,8 @@ For ESP32 FreeRTOS, vTaskExitCritical implements both portEXIT_CRITICAL and port
 					/* What percentage of the total run time has the task used?
 					This will always be rounded down to the nearest integer.
 					ulTotalRunTimeDiv100 has already been divided by 100. */
-					ulStatsAsPercentage = pxTaskStatusArray[ x ].ulRunTimeCounter / ulTotalTime;
+				    /* Also need to consider total run time of all */
+					ulStatsAsPercentage = (pxTaskStatusArray[ x ].ulRunTimeCounter/portNUM_PROCESSORS)/ ulTotalTime;
 
 					/* Write the task name to the string, padding with
 					spaces so it can be printed in tabular form more

@@ -1628,6 +1628,23 @@ BaseType_t xQueueGiveMutexRecursive( QueueHandle_t pxMutex ) PRIVILEGED_FUNCTION
 #endif
 
 /*
+ * @note This function has been back ported from FreeRTOS v9.0.0
+ *
+ * The queue registry is provided as a means for kernel aware debuggers to
+ * locate queues, semaphores and mutexes.  Call pcQueueGetName() to look
+ * up and return the name of a queue in the queue registry from the queue's
+ * handle.
+ *
+ * @param xQueue The handle of the queue the name of which will be returned.
+ * @return If the queue is in the registry then a pointer to the name of the
+ * queue is returned.  If the queue is not in the registry then NULL is
+ * returned.
+ */
+#if( configQUEUE_REGISTRY_SIZE > 0 )
+    const char *pcQueueGetName( QueueHandle_t xQueue ) PRIVILEGED_FUNCTION; /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+#endif
+
+/*
  * Generic version of the function used to creaet a queue using dynamic memory
  * allocation.  This is called by other functions and macros that create other
  * RTOS objects that use the queue structure as their base.
