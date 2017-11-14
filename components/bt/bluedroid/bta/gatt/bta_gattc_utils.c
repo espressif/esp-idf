@@ -460,13 +460,16 @@ BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
     if (p_clcb->p_q_cmd == NULL) {
         p_clcb->p_q_cmd = p_data;
         return TRUE;
-    } else if (p_data->hdr.event == BTA_GATTC_API_WRITE_EVT &&
-               p_data->api_write.write_type == BTA_GATTC_WRITE_PREPARE &&
-               p_data->api_write.handle == p_clcb->p_q_cmd->api_write.handle &&
-               bta_gattc_has_prepare_command_in_queue(p_clcb)) {
+    } else if ((p_data->hdr.event == BTA_GATTC_API_WRITE_EVT &&
+               p_data->api_write.write_type == BTA_GATTC_WRITE_PREPARE) &&
+               ((p_clcb->p_q_cmd->hdr.event == BTA_GATTC_API_WRITE_EVT &&
+               p_clcb->p_q_cmd->api_write.write_type == BTA_GATTC_WRITE_PREPARE) ||
+               bta_gattc_has_prepare_command_in_queue(p_clcb))) {
+        APPL_TRACE_DEBUG("%s(), prepare offset = %d", __func__, p_data->api_write.offset);
         cb_data.write.status = BTA_GATT_CONGESTED;
         cb_data.write.handle = p_data->api_write.handle;
         cb_data.write.conn_id = p_clcb->bta_conn_id;
+        cb_data.write.offset = p_data->api_write.offset;
         /* write complete, callback */
         if (p_clcb->p_rcb->p_cback != NULL) {
             ( *p_clcb->p_rcb->p_cback)(BTA_GATTC_PREP_WRITE_EVT, (tBTA_GATTC *)&cb_data);

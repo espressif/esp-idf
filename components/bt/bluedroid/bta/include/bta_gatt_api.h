@@ -299,6 +299,7 @@ typedef struct {
     UINT16              conn_id;
     tBTA_GATT_STATUS    status;
     UINT16              handle;
+    UINT16              offset;
 }tBTA_GATTC_WRITE;
 
 typedef struct {

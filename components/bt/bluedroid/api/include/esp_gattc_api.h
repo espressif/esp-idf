@@ -146,6 +146,7 @@ typedef union {
         esp_gatt_status_t status;       /*!< Operation status */
         uint16_t conn_id;               /*!< Connection id */
         uint16_t handle;                /*!< The Characteristic or descriptor handle */
+        uint16_t offset;                /*!< The prepare write offset, this value is valid only when prepare write */
     } write;                            /*!< Gatt client callback param of ESP_GATTC_WRITE_DESCR_EVT */
 
     /**

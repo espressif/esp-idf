@@ -770,6 +770,7 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
         param.write.conn_id = BTC_GATT_GET_CONN_ID(write->conn_id);
         param.write.status = write->status;
         param.write.handle = write->handle;
+        param.write.offset = write->offset;
         btc_gattc_cb_to_app(ret_evt, gattc_if, &param);
         break;
     }
