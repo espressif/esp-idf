@@ -2,8 +2,8 @@
 /* Integer type definitions for FatFs module */
 /*-------------------------------------------*/
 
-#ifndef _FF_INTEGER
-#define _FF_INTEGER
+#ifndef FF_INTEGER
+#define FF_INTEGER
 
 #ifdef _WIN32	/* FatFs development platform */
 
@@ -30,7 +30,7 @@ typedef unsigned short	WCHAR;
 typedef long			LONG;
 typedef unsigned long	DWORD;
 
-/* This type MUST be 64-bit (Remove this for C89 compatibility) */
+/* This type MUST be 64-bit (Remove this for ANSI C (C89) compatibility) */
 typedef unsigned long long QWORD;
 
 #endif

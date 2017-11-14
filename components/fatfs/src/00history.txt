@@ -212,7 +212,7 @@ R0.10a (January 15, 2014)
 R0.10b (May 19, 2014)
 
   Fixed a hard error in the disk I/O layer can collapse the directory entry.
-  Fixed LFN entry is not deleted on delete/rename an object with lossy converted SFN. (appeared at R0.07)
+  Fixed LFN entry is not deleted when delete/rename an object with lossy converted SFN. (appeared at R0.07)
 
 
 
@@ -268,7 +268,7 @@ R0.12a (July 10, 2016)
 
 R0.12b (September 04, 2016)
 
-  Improved f_rename() to be able to rename objects with the same name but case.
+  Made f_rename() be able to rename objects with the same name but case.
   Fixed an error in the case conversion teble of code page 866. (ff.c)
   Fixed writing data is truncated at the file offset 4GiB on the exFAT volume. (appeared at R0.12)
   Fixed creating a file in the root directory of exFAT volume can fail. (appeared at R0.12)
@@ -276,4 +276,39 @@ R0.12b (September 04, 2016)
   Fixed wrong object name can be returned when read directory at Unicode cfg. (appeared at R0.12)
   Fixed large file allocation/removing on the exFAT volume collapses allocation bitmap. (appeared at R0.12)
   Fixed some internal errors in f_expand() and f_lseek(). (appeared at R0.12)
+
+
+
+R0.12c (March 04, 2017)
+
+  Improved write throughput at the fragmented file on the exFAT volume.
+  Made memory usage for exFAT be able to be reduced as decreasing _MAX_LFN.
+  Fixed successive f_getfree() can return wrong count on the FAT12/16 volume. (appeared at R0.12)
+  Fixed configuration option _VOLUMES cannot be set 10. (appeared at R0.10c)
+
+
+
+R0.13 (May 21, 2017)
+
+  Changed heading character of configuration keywords "_" to "FF_".
+  Removed ASCII-only configuration, FF_CODE_PAGE = 1. Use FF_CODE_PAGE = 437 instead.
+  Added f_setcp(), run-time code page configuration. (FF_CODE_PAGE = 0)
+  Improved cluster allocation time on stretch a deep buried cluster chain.
+  Improved processing time of f_mkdir() with large cluster size by using FF_USE_LFN = 3.
+  Improved NoFatChain flag of the fragmented file to be set after it is truncated and got contiguous.
+  Fixed archive attribute is left not set when a file on the exFAT volume is renamed. (appeared at R0.12)
+  Fixed exFAT FAT entry can be collapsed when write or lseek operation to the existing file is done. (appeared at R0.12c)
+  Fixed creating a file can fail when a new cluster allocation to the exFAT directory occures. (appeared at R0.12c)
+
+
+
+R0.13a (October 14, 2017)
+
+  Added support for UTF-8 encoding on the API. (FF_LFN_UNICODE = 2)
+  Added options for file name output buffer. (FF_LFN_BUF, FF_SFN_BUF).
+  Added dynamic memory allocation option for working buffer of f_mkfs() and f_fdisk().
+  Fixed f_fdisk() and f_mkfs() create the partition table with wrong CHS parameters. (appeared at R0.09)
+  Fixed f_unlink() can cause lost clusters at fragmented file on the exFAT volume. (appeared at R0.12c)
+  Fixed f_setlabel() rejects some valid characters for exFAT volume. (appeared at R0.12)
+
 
