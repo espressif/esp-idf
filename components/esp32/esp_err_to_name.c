@@ -10,6 +10,9 @@
 #if __has_include("esp_err.h")
 #include "esp_err.h"
 #endif
+#if __has_include("esp_http_client.h")
+#include "esp_http_client.h"
+#endif
 #if __has_include("esp_image_format.h")
 #include "esp_image_format.h"
 #endif
@@ -397,6 +400,26 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   endif
 #   ifdef      ESP_ERR_PING_NO_MEM
     ERR_TBL_IT(ESP_ERR_PING_NO_MEM),                        /* 24578 0x6002 */
+#   endif
+    // components/esp_http_client/include/esp_http_client.h
+#   ifdef      ESP_ERR_HTTP_BASE
+    ERR_TBL_IT(ESP_ERR_HTTP_BASE),                          /* 28672 0x7000 Starting number of HTTP error codes */
+#   endif
+#   ifdef      ESP_ERR_HTTP_MAX_REDIRECT
+    ERR_TBL_IT(ESP_ERR_HTTP_MAX_REDIRECT),                  /* 28673 0x7001 The error exceeds the number of HTTP redirects */
+#   endif
+#   ifdef      ESP_ERR_HTTP_CONNECT
+    ERR_TBL_IT(ESP_ERR_HTTP_CONNECT),                       /* 28674 0x7002 Error open the HTTP connection */
+#   endif
+#   ifdef      ESP_ERR_HTTP_WRITE_DATA
+    ERR_TBL_IT(ESP_ERR_HTTP_WRITE_DATA),                    /* 28675 0x7003 Error write HTTP data */
+#   endif
+#   ifdef      ESP_ERR_HTTP_FETCH_HEADER
+    ERR_TBL_IT(ESP_ERR_HTTP_FETCH_HEADER),                  /* 28676 0x7004 Error read HTTP header from server */
+#   endif
+#   ifdef      ESP_ERR_HTTP_INVALID_TRANSPORT
+    ERR_TBL_IT(ESP_ERR_HTTP_INVALID_TRANSPORT),             /* 28677 0x7005 There are no transport support for the input
+                                                                            scheme */
 #   endif
     // components/spi_flash/include/esp_spi_flash.h
 #   ifdef      ESP_ERR_FLASH_BASE
