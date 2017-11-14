@@ -721,6 +721,7 @@ tcp_process(struct tcp_pcb *pcb)
   /* Do different things depending on the TCP state. */
   switch (pcb->state) {
   case SYN_SENT:
+    if (pcb->unacked) {
     LWIP_DEBUGF(TCP_INPUT_DEBUG, ("SYN-SENT: ackno %"U32_F" pcb->snd_nxt %"U32_F" unacked %"U32_F"\n", ackno,
      pcb->snd_nxt, ntohl(pcb->unacked->tcphdr->seqno)));
     /* received SYN ACK with expected sequence number? */
@@ -752,6 +753,7 @@ tcp_process(struct tcp_pcb *pcb)
       rseg = pcb->unacked;
       pcb->unacked = rseg->next;
       tcp_seg_free(rseg);
+      }
 
       /* If there's nothing left to acknowledge, stop the retransmit
          timer, otherwise reset it to start again */
