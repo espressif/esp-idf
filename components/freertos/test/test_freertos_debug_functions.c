@@ -18,7 +18,7 @@
 #define NO_OF_QUEUES_TOTAL    (NO_OF_QUEUES_PER_CORE * portNUM_PROCESSORS)
 #define QUEUE_NAME_MAX_LENGTH    10
 
-static SemaphoreHandle_t start_sem = NULL;
+static SemaphoreHandle_t start_sem[portNUM_PROCESSORS];
 static SemaphoreHandle_t done_sem = NULL;
 static char *names[NO_OF_QUEUES_TOTAL];
 static QueueHandle_t handles[NO_OF_QUEUES_TOTAL];
@@ -34,7 +34,7 @@ void test_queue_registry_task(void *arg)
         sprintf(names[i + offset], "Queue%d%d", core, i);
     }
 
-    xSemaphoreTake(start_sem, portMAX_DELAY);   //Wait for start vQueueAddToRegistry()
+    xSemaphoreTake(start_sem[core], portMAX_DELAY);   //Wait for start vQueueAddToRegistry()
     for(int i = 0; i < NO_OF_QUEUES_PER_CORE; i++){
         vQueueAddToRegistry(handles[i + offset] , names[i + offset]);   //Register queues to queue registry
     }
@@ -42,7 +42,7 @@ void test_queue_registry_task(void *arg)
 
     vTaskDelay(1);
 
-    xSemaphoreTake(start_sem, portMAX_DELAY);   //Wait to start vQueueUnregisterQueue()
+    xSemaphoreTake(start_sem[core], portMAX_DELAY);   //Wait to start vQueueUnregisterQueue()
     for(int i = 0; i < NO_OF_QUEUES_PER_CORE; i++){
         vQueueDelete(handles[i + offset]);  //Internally calls vQueueUnregisterQueue
     }
@@ -53,16 +53,16 @@ void test_queue_registry_task(void *arg)
 
 TEST_CASE("Test FreeRTOS Queue Registry", "[freertos]")
 {
-    //Create synchronization semaphores
-    start_sem = xSemaphoreCreateCounting(portNUM_PROCESSORS, 0);
+    //Create synchronization semaphores and tasks to test queue registry
     done_sem = xSemaphoreCreateCounting(portNUM_PROCESSORS, 0);
-    for(int i = 0; i < portNUM_PROCESSORS; i++){    //Create tasks to test queue registry
+    for(int i = 0; i < portNUM_PROCESSORS; i++){
+        start_sem[i] = xSemaphoreCreateBinary();
         xTaskCreatePinnedToCore(test_queue_registry_task, "testing task", 4096, NULL, UNITY_FREERTOS_PRIORITY+1, NULL, i);
     }
 
     portDISABLE_INTERRUPTS();
     for(int i = 0; i < portNUM_PROCESSORS; i++){
-        xSemaphoreGive(start_sem);  //Trigger start
+        xSemaphoreGive(start_sem[i]);  //Trigger start
     }
     portENABLE_INTERRUPTS();
     for(int i = 0; i < portNUM_PROCESSORS; i++){
@@ -75,7 +75,7 @@ TEST_CASE("Test FreeRTOS Queue Registry", "[freertos]")
 
     portDISABLE_INTERRUPTS();
     for(int i = 0; i < portNUM_PROCESSORS; i++){
-        xSemaphoreGive(start_sem);  //Trigger start
+        xSemaphoreGive(start_sem[i]);  //Trigger start
     }
     portENABLE_INTERRUPTS();
     for(int i = 0; i < portNUM_PROCESSORS; i++){
@@ -92,8 +92,10 @@ TEST_CASE("Test FreeRTOS Queue Registry", "[freertos]")
         free(names[i]);
         names[i] = NULL;
     }
-    vSemaphoreDelete(start_sem);
-    start_sem = NULL;
+    for(int i = 0; i < portNUM_PROCESSORS; i++){
+        vSemaphoreDelete(start_sem[i]);
+        start_sem[i] = NULL;
+    }
     vSemaphoreDelete(done_sem);
     done_sem = NULL;
 }
