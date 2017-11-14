@@ -48,9 +48,9 @@
 static err_t
 pppapi_do_ppp_set_default(struct tcpip_api_call *m)
 {
-  struct pppapi_msg_msg *msg = (struct pppapi_msg_msg *)m;
-  
-  ppp_set_default(msg->ppp);
+  struct pppapi_msg *msg = (struct pppapi_msg *)m;
+
+  ppp_set_default(msg->msg.ppp);
   return ERR_OK;
 }
 
