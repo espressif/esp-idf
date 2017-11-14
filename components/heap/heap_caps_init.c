@@ -226,16 +226,37 @@ esp_err_t heap_caps_add_region(intptr_t start, intptr_t end)
 esp_err_t heap_caps_add_region_with_caps(const uint32_t caps[], intptr_t start, intptr_t end)
 {
     esp_err_t err = ESP_FAIL;
-    if (caps == NULL || start == 0 || end == 0 || end < start) {
+    if (caps == NULL || start == 0 || end == 0 || end <= start) {
         return ESP_ERR_INVALID_ARG;
     }
 
     //Check if region overlaps the start and/or end of an existing region. If so, the
     //region is invalid (or maybe added twice)
+    /*
+     *  assume that in on region, start must be less than end (cannot equal to) !!
+     *  Specially, the 4th scenario can be allowed. For example, allocate memory from heap,
+     *  then change the capability and call this function to create a new region for special
+     *  application.
+     *  In the following chart, 'start = start' and 'end = end' is contained in 3rd scenario.
+     *  This all equal scenario is incorrect because the same region cannot be add twice. For example,
+     *  add the .bss memory to region twice, if not do the check, it will cause exception.
+     *
+     *  the existing heap region                                  s(tart)                e(nd)
+     *                                                            |----------------------|
+     *  1.add region  [Correct]   (s1<s && e1<=s)           |-----|
+     *  2.add region  [Incorrect] (s2<=s && s<e2<=e)        |---------------|
+     *  3.add region  [Incorrect] (s3<=s && e<e3)           |-------------------------------------|
+     *  4 add region  [Correct]   (s<s4<e && s<e4<=e)                  |-------|
+     *  5.add region  [Incorrect] (s<s5<e && e<e5)                     |----------------------------|
+     *  6.add region  [Correct]   (e<=s6 && e<e6)                                        |----|
+     */
+
     heap_t *heap;
     SLIST_FOREACH(heap, &registered_heaps, next) {
-        if ( start <= heap->start &&  heap->start <=end ) return ESP_FAIL;
-        if ( start <= heap->end &&  heap->end <=end ) return ESP_FAIL;
+        if ((start <= heap->start && end > heap->start)
+                || (start < heap->end && end > heap->end)) {
+            return ESP_FAIL;
+        }
     }
 
     heap_t *p_new = malloc(sizeof(heap_t));
