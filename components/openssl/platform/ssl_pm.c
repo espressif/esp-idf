@@ -429,6 +429,12 @@ OSSL_HANDSHAKE_STATE ssl_pm_get_state(const SSL *ssl)
     return state;
 }
 
+int ssl_pm_set_hostname(const SSL* ssl, const char* hostname) {
+    struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
+
+    return mbedtls_ssl_set_hostname(&ssl_pm->ssl, hostname);
+}
+
 int x509_pm_show_info(X509 *x)
 {
     int ret;

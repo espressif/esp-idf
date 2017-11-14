@@ -31,7 +31,8 @@
                     set_fd, get_fd, \
                     set_bufflen, \
                     get_verify_result, \
-                    get_state) \
+                    get_state, \
+                    set_hostname) \
         static const SSL_METHOD_FUNC func_name LOCAL_ATRR = { \
                 new, \
                 free, \
@@ -45,7 +46,8 @@
                 get_fd, \
                 set_bufflen, \
                 get_verify_result, \
-                get_state \
+                get_state, \
+                set_hostname \
         };
 
 #define IMPLEMENT_TLS_METHOD(ver, mode, fun, func_name) \
