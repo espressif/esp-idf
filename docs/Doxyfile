@@ -91,6 +91,7 @@ INPUT = \
     ../../components/esp-tls/esp_tls.h \
     ## mDNS    
     ../../components/mdns/include/mdns.h \
+    ../../components/esp_http_client/include/esp_http_client.h \
     ##
     ## Storage - API Reference
     ##
