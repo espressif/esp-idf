@@ -344,6 +344,22 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
         }
         ESP_LOGI(GATTC_TAG, "Scan start success");
         break;
+    case ESP_GAP_BLE_PASSKEY_REQ_EVT:                           /* passkey request event */
+        //esp_ble_passkey_reply(gl_profile_tab[PROFILE_A_APP_ID].remote_bda, true, 0x00);
+        ESP_LOGI(GATTC_TAG, "ESP_GAP_BLE_PASSKEY_REQ_EVT");
+        break;
+    case ESP_GAP_BLE_OOB_REQ_EVT:                                /* OOB request event */
+        ESP_LOGI(GATTC_TAG, "ESP_GAP_BLE_OOB_REQ_EVT");
+        break;
+    case ESP_GAP_BLE_LOCAL_IR_EVT:                               /* BLE local IR event */
+        ESP_LOGI(GATTC_TAG, "ESP_GAP_BLE_LOCAL_IR_EVT");
+        break;
+    case ESP_GAP_BLE_LOCAL_ER_EVT:                               /* BLE local ER event */
+        ESP_LOGI(GATTC_TAG, "ESP_GAP_BLE_LOCAL_ER_EVT");
+        break;
+    case ESP_GAP_BLE_NC_REQ_EVT:
+        ESP_LOGI(GATTC_TAG, "ESP_GAP_BLE_NC_REQ_EVT");
+        break;
     case ESP_GAP_BLE_SEC_REQ_EVT:
         /* send the positive(true) security response to the peer device to accept the security request.
         If not accept the security request, should sent the security response with negative(false) accept value*/
@@ -495,10 +511,27 @@ void app_main()
     if (ret){
         ESP_LOGE(GATTC_TAG, "%s gattc app register error, error code = %x\n", __func__, ret);
     }
+
     ret = esp_ble_gatt_set_local_mtu(200);
     if (ret){
         ESP_LOGE(GATTC_TAG, "set local  MTU failed, error code = %x", ret);
     }
+
+    /* set the security iocap & auth_req & key size & init key response key parameters to the stack*/
+    esp_ble_auth_req_t auth_req = ESP_LE_AUTH_BOND;     //bonding with peer device after authentication
+    esp_ble_io_cap_t iocap = ESP_IO_CAP_NONE;           //set the IO capability to No output No input
+    uint8_t key_size = 16;      //the key size should be 7~16 bytes
+    uint8_t init_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
+    uint8_t rsp_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
+    esp_ble_gap_set_security_param(ESP_BLE_SM_AUTHEN_REQ_MODE, &auth_req, sizeof(uint8_t));
+    esp_ble_gap_set_security_param(ESP_BLE_SM_IOCAP_MODE, &iocap, sizeof(uint8_t));
+    esp_ble_gap_set_security_param(ESP_BLE_SM_MAX_KEY_SIZE, &key_size, sizeof(uint8_t));
+    /* If your BLE device act as a Slave, the init_key means you hope which types of key of the master should distribut to you,
+    and the response key means which key you can distribut to the Master;
+    If your BLE device act as a master, the response key means you hope which types of key of the slave should distribut to you, 
+    and the init key means which key you can distribut to the slave. */
+    esp_ble_gap_set_security_param(ESP_BLE_SM_SET_INIT_KEY, &init_key, sizeof(uint8_t));
+    esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(uint8_t));
 
 }
 

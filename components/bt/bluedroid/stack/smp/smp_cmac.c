@@ -186,7 +186,7 @@ static void cmac_prepare_last_block (BT_OCTET16 k1, BT_OCTET16 k2)
     /* last block is a complete block set flag to 1 */
     flag = ((cmac_cb.len % BT_OCTET16_LEN) == 0 && cmac_cb.len != 0)  ? TRUE : FALSE;
 
-    SMP_TRACE_WARNING("flag = %d round = %d", flag, cmac_cb.round);
+    SMP_TRACE_DEBUG("flag = %d round = %d", flag, cmac_cb.round);
 
     if ( flag ) {
         /* last block is complete block */
@@ -291,7 +291,7 @@ BOOLEAN aes_cipher_msg_auth_code(BT_OCTET16 key, UINT8 *input, UINT16 length,
     }
     len = n * BT_OCTET16_LEN;
 
-    SMP_TRACE_WARNING("AES128_CMAC started, allocate buffer size = %d", len);
+    SMP_TRACE_DEBUG("AES128_CMAC started, allocate buffer size = %d", len);
     /* allocate a memory space of multiple of 16 bytes to hold text  */
     if ((cmac_cb.text = (UINT8 *)osi_malloc(len)) != NULL) {
         cmac_cb.round = n;
