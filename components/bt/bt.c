@@ -37,6 +37,7 @@
 #include "esp_pm.h"
 #include "esp_ipc.h"
 #include "driver/periph_ctrl.h"
+#include "soc/soc_memory_layout.h"
 
 #if CONFIG_BT_ENABLED
 
@@ -397,6 +398,7 @@ esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
 {
     bool update = true;
     intptr_t mem_start, mem_end;
+    const uint32_t *dram_caps = soc_memory_types[SOC_MEMORY_TYPE_DRAM].caps;
 
     //get the mode which can be released, skip the mode which is running
     mode &= ~btdm_controller_get_mode();
@@ -434,14 +436,14 @@ esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
                     && mem_end == btdm_dram_available_region[i+1].start) {
                 continue;
             } else {
-                ESP_LOGD(BTDM_LOG_TAG, "Release DRAM [0x%08x] - [0x%08x]\n", mem_start, mem_end);
-                ESP_ERROR_CHECK( heap_caps_add_region(mem_start, mem_end));
+                ESP_LOGD(BTDM_LOG_TAG, "Release DRAM [0x%08x] - [0x%08x]", mem_start, mem_end);
+                ESP_ERROR_CHECK(heap_caps_add_region_with_caps(dram_caps, mem_start, mem_end));
                 update = true;
             }
         } else {
             mem_end = btdm_dram_available_region[i].end;
-            ESP_LOGD(BTDM_LOG_TAG, "Release DRAM [0x%08x] - [0x%08x]\n", mem_start, mem_end);
-            ESP_ERROR_CHECK( heap_caps_add_region(mem_start, mem_end));
+            ESP_LOGD(BTDM_LOG_TAG, "Release DRAM [0x%08x] - [0x%08x]", mem_start, mem_end);
+            ESP_ERROR_CHECK(heap_caps_add_region_with_caps(dram_caps, mem_start, mem_end));
             update = true;
         }
     }

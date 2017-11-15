@@ -20,6 +20,7 @@
 #include "sdkconfig.h"
 #include "esp_attr.h"
 
+#define SOC_MEMORY_TYPE_DRAM 0
 #define SOC_MEMORY_TYPE_NO_PRIOS 3
 
 /* Type descriptor holds a description for a particular type of memory on a particular SoC.
