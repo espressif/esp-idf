@@ -262,7 +262,7 @@ esp_err_t esp_ble_gap_config_scan_rsp_data_raw(uint8_t *raw_data, uint32_t raw_d
 
 }
 
-
+#if (SMP_INCLUDED)
 esp_err_t esp_ble_gap_set_security_param(esp_ble_sm_param_t param_type,
         void *value, uint8_t len)
 {
@@ -392,6 +392,7 @@ esp_err_t esp_ble_get_bond_device_list(int *dev_num, esp_ble_bond_dev_t *dev_lis
 
     return (ret == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+#endif /* #if (SMP_INCLUDED) */
 
 esp_err_t esp_ble_gap_disconnect(esp_bd_addr_t remote_device)
 {
