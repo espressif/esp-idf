@@ -641,11 +641,11 @@ esp_err_t esp_wifi_set_promiscuous(bool en);
 esp_err_t esp_wifi_get_promiscuous(bool *en);
 
 /**
-  * @brief     Enable the promiscuous filter.
+  * @brief Enable the promiscuous mode packet type filter.
   *
-  * @attention 1. The default filter is to filter all packets except WIFI_PKT_MISC
+  * @note The default filter is to filter all packets except WIFI_PKT_MISC
   *
-  * @param     filter the packet type filtered by promisucous
+  * @param filter the packet type filtered in promiscuous mode.
   *
   * @return
   *    - ESP_OK: succeed
@@ -673,7 +673,7 @@ esp_err_t esp_wifi_get_promiscuous_filter(wifi_promiscuous_filter_t *filter);
   * @attention 3. ESP32 is limited to only one channel, so when in the soft-AP+station mode, the soft-AP will adjust its channel automatically to be the same as
   *               the channel of the ESP32 station.
   *
-  * @param     ifx  interface
+  * @param     interface  interface
   * @param     conf  station or soft-AP configuration
   *
   * @return
@@ -686,12 +686,12 @@ esp_err_t esp_wifi_get_promiscuous_filter(wifi_promiscuous_filter_t *filter);
   *    - ESP_ERR_WIFI_NVS: WiFi internal NVS error
   *    - others: refer to the erro code in esp_err.h
   */
-esp_err_t esp_wifi_set_config(wifi_interface_t ifx, const wifi_config_t *conf);
+esp_err_t esp_wifi_set_config(wifi_interface_t interface, wifi_config_t *conf);
 
 /**
   * @brief     Get configuration of specified interface
   *
-  * @param     ifx  interface
+  * @param     interface  interface
   * @param[out]  conf  station or soft-AP configuration
   *
   * @return
@@ -700,7 +700,7 @@ esp_err_t esp_wifi_set_config(wifi_interface_t ifx, const wifi_config_t *conf);
   *    - ESP_ERR_WIFI_ARG: invalid argument
   *    - ESP_ERR_WIFI_IF: invalid interface
   */
-esp_err_t esp_wifi_get_config(wifi_interface_t ifx, wifi_config_t *conf);
+esp_err_t esp_wifi_get_config(wifi_interface_t interface, wifi_config_t *conf);
 
 /**
   * @brief     Get STAs associated with soft-AP

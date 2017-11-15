@@ -16,15 +16,21 @@
 #ifndef __ESP_WIFI_CRYPTO_TYPES_H__
 #define __ESP_WIFI_CRYPTO_TYPES_H__
 
+/* This is an internal API header for configuring the implementation used for WiFi cryptographic
+   operations.
+
+   During normal operation, you don't need to use any of these types or functions in this header.
+   See esp_wifi.h & esp_wifi_types.h instead.
+*/
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /*
- * This enumation is about alorigthm will be set when do crypt hash 
- * operation.When do wpa2 connecting, after invoke crypto_hash_xxx of
- * fast_crypto_hash_xxx API, it will do relation crypt operation according
- * to the enumation.
+ * Enumeration for hash operations.
+ * When WPA2 is connecting, this enum is used to
+ * request a hash algorithm via crypto_hash_xxx functions.
  */
 typedef enum {
     ESP_CRYPTO_HASH_ALG_MD5, ESP_CRYPTO_HASH_ALG_SHA1,
@@ -33,10 +39,9 @@ typedef enum {
 }esp_crypto_hash_alg_t;
 
 /*
- * This enumation is about alorigthm will be set when do crypt cipher 
- * operation.When do wpa2 connecting, after invoke crypto_cipher_xxx of
- * fast_crypto_cipher_xxx API, it will do relation crypt operation according
- * to the enumation.
+ * Enumeration for block cipher operations.
+ * When WPA2 is connecting, this enum is used to request a block
+ * cipher algorithm via crypto_cipher_xxx functions.
  */
 typedef enum {
     ESP_CRYPTO_CIPHER_NULL, ESP_CRYPTO_CIPHER_ALG_AES, ESP_CRYPTO_CIPHER_ALG_3DES,
@@ -293,7 +298,7 @@ typedef struct {
     esp_crypto_cipher_deinit_t crypto_cipher_deinit;          /**< function used to free context when use TLSV1 */
     esp_sha256_vector_t sha256_vector;                        /**< function used to do X.509v3 certificate parsing and processing */
     esp_crypto_mod_exp_t crypto_mod_exp;                      /**< function used to do key exchange when use TLSV1 */
-}wpa2_crypto_funcs_t;
+} wpa2_crypto_funcs_t;
 
 #ifdef __cplusplus
 }
