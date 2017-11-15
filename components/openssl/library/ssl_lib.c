@@ -224,6 +224,10 @@ void SSL_CTX_free(SSL_CTX* ctx)
 
     X509_free(ctx->client_CA);
 
+    if (ctx->ssl_alpn.alpn_string) {
+	 ssl_mem_free((void *)ctx->ssl_alpn.alpn_string);
+    }
+
     ssl_mem_free(ctx);
 }
 
@@ -728,6 +732,19 @@ int SSL_set_wfd(SSL *ssl, int fd)
     SSL_METHOD_CALL(set_fd, ssl, fd, 0);
 
     return 1;
+}
+
+/**
+ * @brief SET TLS Hostname
+ */
+int SSL_set_tlsext_host_name(SSL* ssl, const char *hostname)
+{
+     SSL_ASSERT1(ssl);
+     SSL_ASSERT1(hostname);
+
+     SSL_METHOD_CALL(set_hostname, ssl, hostname);
+
+     return 1;
 }
 
 /**
@@ -1554,3 +1571,39 @@ void SSL_set_verify(SSL *ssl, int mode, int (*verify_callback)(int, X509_STORE_C
     ssl->verify_mode = mode;
     ssl->verify_callback = verify_callback;
 }
+
+/**
+ * @brief set the ALPN protocols in the preferred order. SSL APIs require the
+ * protocols in a <length><value><length2><value2> format. mbedtls doesn't need
+ * that though. We sanitize that here itself. So convert from:
+ * "\x02h2\x06spdy/1" to { {"h2"}, {"spdy/1}, {NULL}}
+ */
+int SSL_CTX_set_alpn_protos(SSL_CTX *ctx, const unsigned char *protos, unsigned protos_len)
+{
+     ctx->ssl_alpn.alpn_string = ssl_mem_zalloc(protos_len + 1);
+     if (! ctx->ssl_alpn.alpn_string) {
+	  return 1;
+     }
+     ctx->ssl_alpn.alpn_status = ALPN_ENABLE;
+     memcpy(ctx->ssl_alpn.alpn_string, protos, protos_len);
+
+     char *ptr = ctx->ssl_alpn.alpn_string;
+     int i;
+     /* Only running to 1 less than the actual size */
+     for (i = 0; i < ALPN_LIST_MAX - 1; i++) {
+	  char len = *ptr;
+	  *ptr = '\0'; // Overwrite the length to act as previous element's string terminator
+	  ptr++;
+	  protos_len--;
+	  ctx->ssl_alpn.alpn_list[i] = ptr;
+	  ptr += len;
+	  protos_len -= len;
+	  if (! protos_len) {
+	       i++;
+	       break;
+	  }
+     }
+     ctx->ssl_alpn.alpn_list[i] = NULL;
+     return 0;
+}
+

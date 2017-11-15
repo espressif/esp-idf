@@ -22,7 +22,7 @@ IMPLEMENT_TLS_METHOD_FUNC(TLS_method_func,
         ssl_pm_new, ssl_pm_free,
         ssl_pm_handshake, ssl_pm_shutdown, ssl_pm_clear,
         ssl_pm_read, ssl_pm_send, ssl_pm_pending,
-        ssl_pm_set_fd, ssl_pm_get_fd,
+        ssl_pm_set_fd, ssl_pm_set_hostname, ssl_pm_get_fd,
         ssl_pm_set_bufflen,
         ssl_pm_get_verify_result,
         ssl_pm_get_state);
