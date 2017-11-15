@@ -159,7 +159,7 @@ component_project_vars.mk::
 	@echo 'COMPONENT_LINKER_DEPS += $(call MakeVariablePath,$(call resolvepath,$(COMPONENT_ADD_LINKER_DEPS),$(COMPONENT_PATH)))' >> $@
 	@echo 'COMPONENT_SUBMODULES += $(call MakeVariablePath,$(addprefix $(COMPONENT_PATH)/,$(COMPONENT_SUBMODULES)))' >> $@
 	@echo 'COMPONENT_LIBRARIES += $(COMPONENT_NAME)' >> $@
-	@echo '$(COMPONENT_NAME)-build: $(addsuffix -build,$(COMPONENT_DEPENDS))' >> $@
+	@echo 'component-$(COMPONENT_NAME)-build: $(addprefix component-,$(addsuffix -build,$(COMPONENT_DEPENDS)))' >> $@
 
 ################################################################################
 # 5) Where COMPONENT_OWNBUILDTARGET / COMPONENT_OWNCLEANTARGET
