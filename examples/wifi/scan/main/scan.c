@@ -8,13 +8,18 @@
 */
 
 /*
-   this example shows how to use all channel scan or fast scan to connect
-   In the fast scan mode, scan will end after find matched AP, in this mode, you
-   can set the threshold of auth mode and signal, the filter will ignore the AP
-   whose auth mode and rssi below the threshold.
-   In the all channel scan, scan will end after scan all the channel, and will
-   the best AP to connect, you can sort by signal or auth mode, auth mode is follow
-   the rule WPA2>WPA>WEP.
+    This example shows how to use the All Channel Scan or Fast Scan to connect
+    to a Wi-Fi network.
+
+    In the Fast Scan mode, the scan will stop as soon as the first network matching
+    the SSID is found. In this mode, an application can set threshold for the
+    authentication mode and the Signal strength. Networks that do not meet the
+    threshold requirements will be ignored.
+
+    In the All Channel Scan mode, the scan will end only after all the channels
+    are scanned, and connection will start with the best network. The networks
+    can be sorted based on Authentication Mode or Signal Strength. The priority
+    for the Authentication mode is:  WPA2 > WPA > WEP > Open
 */
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
@@ -23,7 +28,7 @@
 #include "esp_event_loop.h"
 #include "nvs_flash.h"
 
-/*set the ssid and password via "make menuconfig"*/
+/*Set the SSID and Password via "make menuconfig"*/
 #define DEFAULT_SSID CONFIG_WIFI_SSID
 #define DEFAULT_PWD CONFIG_WIFI_PASSWORD
 
@@ -72,7 +77,7 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
             break;
         case SYSTEM_EVENT_STA_GOT_IP:
             ESP_LOGI(TAG, "SYSTEM_EVENT_STA_GOT_IP");
-            ESP_LOGI(TAG, "got ip:%s\n",
+            ESP_LOGI(TAG, "Got IP: %s\n",
                      ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
             break;
         case SYSTEM_EVENT_STA_DISCONNECTED:
@@ -85,7 +90,7 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
     return ESP_OK;
 }
 
-/*init wifi as sta and set scan method*/
+/* Initialize Wi-Fi as sta and set scan method */
 static void wifi_scan(void)
 {
     tcpip_adapter_init();
