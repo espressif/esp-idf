@@ -310,7 +310,8 @@ typedef struct {
     tBTA_GATTC_RCB      *p_rcb;         /* pointer to the registration CB */
     tBTA_GATTC_SERV     *p_srcb;    /* server cache CB */
     tBTA_GATTC_DATA     *p_q_cmd;   /* command in queue waiting for execution */
-
+    list_t              *p_cmd_list; /* The list to store the command to be sent */
+    BOOLEAN             is_full;     /* The gattc command queue is full or not */
 #define BTA_GATTC_NO_SCHEDULE       0
 #define BTA_GATTC_DISC_WAITING      0x01
 #define BTA_GATTC_REQ_WAITING       0x10
@@ -425,6 +426,7 @@ extern void bta_gattc_read(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
 extern void bta_gattc_write(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
 extern void bta_gattc_op_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
 extern void bta_gattc_q_cmd(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
+extern void bta_gattc_free_command_data(tBTA_GATTC_CLCB *p_clcb);
 extern void bta_gattc_search(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
 extern void bta_gattc_fail(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
 extern void bta_gattc_confirm(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);

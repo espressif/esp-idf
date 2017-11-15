@@ -64,6 +64,7 @@ typedef enum {
     ESP_GATTC_CONNECT_EVT             = 40,       /*!< When the ble physical connection is set up, the event comes */
     ESP_GATTC_DISCONNECT_EVT          = 41,       /*!< When the ble physical connection disconnected, the event comes */
     ESP_GATTC_READ_MUTIPLE_EVT        = 42,       /*!< When the ble characteristic or descriptor mutiple complete, the event comes */
+    ESP_GATTC_QUEUE_FULL_EVT          = 43,       /*!< When the gattc command queue full, the event comes */
 } esp_gattc_cb_event_t;
 
 
@@ -145,6 +146,7 @@ typedef union {
         esp_gatt_status_t status;       /*!< Operation status */
         uint16_t conn_id;               /*!< Connection id */
         uint16_t handle;                /*!< The Characteristic or descriptor handle */
+        uint16_t offset;                /*!< The prepare write offset, this value is valid only when prepare write */
     } write;                            /*!< Gatt client callback param of ESP_GATTC_WRITE_DESCR_EVT */
 
     /**
@@ -213,6 +215,15 @@ typedef union {
         uint16_t conn_id;               /*!< Connection id */
         esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address */
     } disconnect;                       /*!< Gatt client callback param of ESP_GATTC_DISCONNECT_EVT */
+
+    /**
+     * @brief ESP_GATTC_QUEUE_FULL_EVT
+     */
+    struct gattc_queue_full_evt_param {
+        esp_gatt_status_t status;      /*!< Operation status */
+        uint16_t conn_id;              /*!< Connection id */
+        bool     is_full;              /*!< The gattc command queue is full or not */
+    } queue_full;                      /*!< Gatt client callback param of ESP_GATTC_QUEUE_FULL_EVT */
 
 } esp_ble_gattc_cb_param_t;             /*!< GATT client callback parameter union type */
 

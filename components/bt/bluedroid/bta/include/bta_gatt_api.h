@@ -182,6 +182,7 @@ typedef UINT8 tBTA_GATT_STATUS;
 #define BTA_GATTC_CONNECT_EVT           35 /* GATTC CONNECT  event */
 #define BTA_GATTC_DISCONNECT_EVT        36 /* GATTC DISCONNECT  event */
 #define BTA_GATTC_READ_MUTIPLE_EVT      37 /* GATTC Read mutiple event */
+#define BTA_GATTC_QUEUE_FULL_EVT        38 /* GATTC queue full event */
 
 typedef UINT8 tBTA_GATTC_EVT;
 
@@ -298,6 +299,7 @@ typedef struct {
     UINT16              conn_id;
     tBTA_GATT_STATUS    status;
     UINT16              handle;
+    UINT16              offset;
 }tBTA_GATTC_WRITE;
 
 typedef struct {
@@ -355,6 +357,12 @@ typedef struct {
 } tBTA_GATTC_CONGEST;
 
 typedef struct {
+    tBTA_GATT_STATUS status;
+    UINT16 conn_id;
+    BOOLEAN is_full;
+} tBTA_GATTC_QUEUE_FULL;
+
+typedef struct {
     tBTA_GATT_STATUS        status;
     tBTA_GATTC_IF           client_if;
     UINT16                  conn_id;
@@ -399,6 +407,7 @@ typedef union {
     BD_ADDR                 remote_bda;     /* service change event */
     tBTA_GATTC_CFG_MTU      cfg_mtu;        /* configure MTU operation */
     tBTA_GATTC_CONGEST      congest;
+    tBTA_GATTC_QUEUE_FULL   queue_full;
 } tBTA_GATTC;
 
 /* GATTC enable callback function */
