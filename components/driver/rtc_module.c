@@ -398,6 +398,21 @@ void rtc_gpio_force_hold_dis_all()
 /*---------------------------------------------------------------
                     Touch Pad
 ---------------------------------------------------------------*/
+//Some register bits of touch sensor 8 and 9 are mismatched, we need to swap the bits.
+#define BITSWAP(data, n, m)   (((data >> n) &  0x1)  == ((data >> m) & 0x1) ? (data) : ((data) ^ ((0x1 <<n) | (0x1 << m))))
+#define TOUCH_BITS_SWAP(v)  BITSWAP(v, TOUCH_PAD_NUM8, TOUCH_PAD_NUM9)
+
+//Some registers of touch sensor 8 and 9 are mismatched, we need to swap register index
+inline static touch_pad_t touch_pad_num_wrap(touch_pad_t touch_num)
+{
+    if (touch_num == TOUCH_PAD_NUM8) {
+        return TOUCH_PAD_NUM9;
+    } else if (touch_num == TOUCH_PAD_NUM9) {
+        return TOUCH_PAD_NUM8;
+    }
+    return touch_num;
+}
+
 esp_err_t touch_pad_isr_handler_register(void (*fn)(void *), void *arg, int no_use, intr_handle_t *handle_no_use)
 {
     RTC_MODULE_CHECK(fn, "Touch_Pad ISR null", ESP_ERR_INVALID_ARG);
@@ -547,19 +562,11 @@ esp_err_t touch_pad_set_cnt_mode(touch_pad_t touch_num, touch_cnt_slope_t slope,
 {
     RTC_MODULE_CHECK((slope < TOUCH_PAD_SLOPE_MAX), "touch slope error", ESP_ERR_INVALID_ARG);
     RTC_MODULE_CHECK((opt < TOUCH_PAD_TIE_OPT_MAX), "touch opt error", ESP_ERR_INVALID_ARG);
+    
+    touch_pad_t touch_pad_wrap = touch_pad_num_wrap(touch_num);
     portENTER_CRITICAL(&rtc_spinlock);
-    //set tie opt value, high or low level seem no difference for counter
-    RTCIO.touch_pad[touch_num].tie_opt = opt;
-
-    //workaround for touch pad DAC mismatch on tp8 and tp9
-    touch_pad_t touch_pad_wrap = touch_num;
-    if (touch_num == TOUCH_PAD_NUM9) {
-        touch_pad_wrap = TOUCH_PAD_NUM8;
-    } else if (touch_num == TOUCH_PAD_NUM8) {
-        touch_pad_wrap = TOUCH_PAD_NUM9;
-    }
-    //touch sensor set slope for charging and discharging.
-    RTCIO.touch_pad[touch_pad_wrap].dac = slope;
+    RTCIO.touch_pad[touch_pad_wrap].tie_opt = opt;
+    RTCIO.touch_pad[touch_num].dac = slope;
     portEXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
@@ -567,19 +574,14 @@ esp_err_t touch_pad_set_cnt_mode(touch_pad_t touch_num, touch_cnt_slope_t slope,
 esp_err_t touch_pad_get_cnt_mode(touch_pad_t touch_num, touch_cnt_slope_t *slope, touch_tie_opt_t *opt)
 {
     RTC_MODULE_CHECK((touch_num < TOUCH_PAD_MAX), "touch IO error", ESP_ERR_INVALID_ARG);
+    
+    touch_pad_t touch_pad_wrap = touch_pad_num_wrap(touch_num);
     portENTER_CRITICAL(&rtc_spinlock);
-    if (slope) {
-        //workaround for touch pad DAC mismatch on tp8 and tp9
-        touch_pad_t touch_pad_wrap = touch_num;
-        if (touch_num == TOUCH_PAD_NUM9) {
-            touch_pad_wrap = TOUCH_PAD_NUM8;
-        } else if (touch_num == TOUCH_PAD_NUM8) {
-            touch_pad_wrap = TOUCH_PAD_NUM9;
-        }
-        *slope = RTCIO.touch_pad[touch_pad_wrap].dac;
+    if(opt) {
+        *opt = RTCIO.touch_pad[touch_pad_wrap].tie_opt;
     }
-    if (opt) {
-        *opt = RTCIO.touch_pad[touch_num].tie_opt;
+    if(slope) {
+        *slope = RTCIO.touch_pad[touch_num].dac;
     }
     portEXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
@@ -628,12 +630,12 @@ esp_err_t touch_pad_sw_start()
 esp_err_t touch_pad_set_thresh(touch_pad_t touch_num, uint16_t threshold)
 {
     RTC_MODULE_CHECK((touch_num < TOUCH_PAD_MAX), "touch IO error", ESP_ERR_INVALID_ARG);
+    touch_pad_t tp_wrap = touch_pad_num_wrap(touch_num);
     portENTER_CRITICAL(&rtc_spinlock);
-    if (touch_num & 0x1) {
-        SENS.touch_thresh[touch_num / 2].l_thresh = threshold;
+    if (tp_wrap & 0x1) {
+        SENS.touch_thresh[tp_wrap / 2].l_thresh = threshold;
     } else {
-        SENS.touch_thresh[touch_num / 2].h_thresh = threshold;
-
+        SENS.touch_thresh[tp_wrap / 2].h_thresh = threshold;
     }
     portEXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
@@ -642,10 +644,11 @@ esp_err_t touch_pad_set_thresh(touch_pad_t touch_num, uint16_t threshold)
 esp_err_t touch_pad_get_thresh(touch_pad_t touch_num, uint16_t *threshold)
 {
     RTC_MODULE_CHECK((touch_num < TOUCH_PAD_MAX), "touch IO error", ESP_ERR_INVALID_ARG);
+    touch_pad_t tp_wrap = touch_pad_num_wrap(touch_num);
     if (threshold) {
-        *threshold = (touch_num & 0x1 )? \
-                SENS.touch_thresh[touch_num / 2].l_thresh : \
-                SENS.touch_thresh[touch_num / 2].h_thresh;
+        *threshold = (tp_wrap & 0x1 )? \
+                SENS.touch_thresh[tp_wrap / 2].l_thresh : \
+                SENS.touch_thresh[tp_wrap / 2].h_thresh;
     }
     return ESP_OK;
 }
@@ -691,10 +694,11 @@ esp_err_t touch_pad_set_group_mask(uint16_t set1_mask, uint16_t set2_mask, uint1
     RTC_MODULE_CHECK((en_mask <= TOUCH_PAD_BIT_MASK_MAX), "touch work_en bitmask error", ESP_ERR_INVALID_ARG);
 
     portENTER_CRITICAL(&rtc_spinlock);
-    SENS.sar_touch_enable.touch_pad_outen1 |= set1_mask;
-    SENS.sar_touch_enable.touch_pad_outen2 |= set2_mask;
-    SENS.sar_touch_enable.touch_pad_worken |= en_mask;
+    SENS.sar_touch_enable.touch_pad_outen1 |= TOUCH_BITS_SWAP(set1_mask);
+    SENS.sar_touch_enable.touch_pad_outen2 |= TOUCH_BITS_SWAP(set2_mask);
+    SENS.sar_touch_enable.touch_pad_worken |= TOUCH_BITS_SWAP(en_mask);
     portEXIT_CRITICAL(&rtc_spinlock);
+
     return ESP_OK;
 }
 
@@ -702,15 +706,16 @@ esp_err_t touch_pad_get_group_mask(uint16_t *set1_mask, uint16_t *set2_mask, uin
 {
     portENTER_CRITICAL(&rtc_spinlock);
     if (set1_mask) {
-        *set1_mask = SENS.sar_touch_enable.touch_pad_outen1;
+        *set1_mask = TOUCH_BITS_SWAP(SENS.sar_touch_enable.touch_pad_outen1);
     }
     if (set2_mask) {
-        *set2_mask = SENS.sar_touch_enable.touch_pad_outen2;
+        *set2_mask = TOUCH_BITS_SWAP(SENS.sar_touch_enable.touch_pad_outen2);
     }
     if (en_mask) {
-        *en_mask = SENS.sar_touch_enable.touch_pad_worken;
+        *en_mask = TOUCH_BITS_SWAP(SENS.sar_touch_enable.touch_pad_worken);
     }
     portEXIT_CRITICAL(&rtc_spinlock);
+
     return ESP_OK;
 }
 
@@ -721,16 +726,17 @@ esp_err_t touch_pad_clear_group_mask(uint16_t set1_mask, uint16_t set2_mask, uin
     RTC_MODULE_CHECK((en_mask <= TOUCH_PAD_BIT_MASK_MAX), "touch work_en bitmask error", ESP_ERR_INVALID_ARG);
 
     portENTER_CRITICAL(&rtc_spinlock);
-    SENS.sar_touch_enable.touch_pad_outen1 &= (~set1_mask);
-    SENS.sar_touch_enable.touch_pad_outen2 &= (~set2_mask);
-    SENS.sar_touch_enable.touch_pad_worken &= (~en_mask);
+    SENS.sar_touch_enable.touch_pad_outen1 &= TOUCH_BITS_SWAP(~set1_mask);
+    SENS.sar_touch_enable.touch_pad_outen2 &= TOUCH_BITS_SWAP(~set2_mask);
+    SENS.sar_touch_enable.touch_pad_worken &= TOUCH_BITS_SWAP(~en_mask);
     portEXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
 
 uint32_t IRAM_ATTR touch_pad_get_status()
 {
-    return SENS.sar_touch_ctrl2.touch_meas_en;
+    uint32_t status = SENS.sar_touch_ctrl2.touch_meas_en;
+    return TOUCH_BITS_SWAP(status);
 }
 
 esp_err_t IRAM_ATTR touch_pad_clear_status()
@@ -804,11 +810,13 @@ esp_err_t touch_pad_read(touch_pad_t touch_num, uint16_t *touch_value)
     RTC_MODULE_CHECK(touch_num < TOUCH_PAD_MAX, "Touch_Pad Num Err", ESP_ERR_INVALID_ARG);
     RTC_MODULE_CHECK(touch_value != NULL, "touch_value", ESP_ERR_INVALID_ARG);
     RTC_MODULE_CHECK(rtc_touch_mux != NULL, "Touch pad not initialized", ESP_FAIL);
+
+    touch_pad_t tp_wrap = touch_pad_num_wrap(touch_num);
     xSemaphoreTake(rtc_touch_mux, portMAX_DELAY);
     while (SENS.sar_touch_ctrl2.touch_meas_done == 0) {};
-    *touch_value = (touch_num & 0x1) ? \
-                        SENS.touch_meas[touch_num / 2].l_val: \
-                        SENS.touch_meas[touch_num / 2].h_val;
+    *touch_value = (tp_wrap & 0x1) ? \
+                        SENS.touch_meas[tp_wrap / 2].l_val: \
+                        SENS.touch_meas[tp_wrap / 2].h_val;
     xSemaphoreGive(rtc_touch_mux);
     return ESP_OK;
 }
@@ -819,7 +827,6 @@ IRAM_ATTR esp_err_t touch_pad_read_filtered(touch_pad_t touch_num, uint16_t *tou
     RTC_MODULE_CHECK(touch_num < TOUCH_PAD_MAX, "Touch_Pad Num Err", ESP_ERR_INVALID_ARG);
     RTC_MODULE_CHECK(touch_value != NULL, "touch_value", ESP_ERR_INVALID_ARG);
     RTC_MODULE_CHECK(s_touch_pad_filter != NULL, "Touch pad filter not initialized", ESP_ERR_INVALID_STATE);
-
     *touch_value = (s_touch_pad_filter->filtered_val[touch_num] >> TOUCH_PAD_SHIFT_DEFAULT);
     return ESP_OK;
 }
