@@ -481,6 +481,10 @@ static void emac_process_rx_unavail(void)
 
     while (emac_config.cnt_rx < DMA_RX_BUF_NUM) {
 
+        if (emac_config.dma_erx[emac_config.dirty_rx].basic.desc0 == EMAC_DESC_RX_OWN) {
+            break;
+        }
+
         emac_config.cnt_rx++;
         if (emac_config.cnt_rx > DMA_RX_BUF_NUM) {
             ESP_LOGE(TAG, "emac rx unavail buf err !!\n");
@@ -529,6 +533,10 @@ static void emac_process_rx(void)
         if (emac_config.cnt_rx < DMA_RX_BUF_NUM) {
             if ((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0 & EMAC_DESC_RX_OWN) == 0) {
                 while (emac_config.cnt_rx < DMA_RX_BUF_NUM) {
+
+                    if (emac_config.dma_erx[emac_config.dirty_rx].basic.desc0 == EMAC_DESC_RX_OWN) {
+                        break;
+                    }
 
                     emac_config.cnt_rx++;
                     if (emac_config.cnt_rx > DMA_RX_BUF_NUM) {
