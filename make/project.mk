@@ -264,6 +264,19 @@ COMMON_FLAGS = \
 	-mlongcalls \
 	-nostdlib
 
+ifndef IS_BOOTLOADER_BUILD
+# stack protection (only one option can be selected in menuconfig)
+ifdef CONFIG_STACK_CHECK_NORM
+COMMON_FLAGS += -fstack-protector
+endif
+ifdef CONFIG_STACK_CHECK_STRONG
+COMMON_FLAGS += -fstack-protector-strong
+endif
+ifdef CONFIG_STACK_CHECK_ALL
+COMMON_FLAGS += -fstack-protector-all
+endif
+endif
+
 # Optimization flags are set based on menuconfig choice
 ifdef CONFIG_OPTIMIZATION_LEVEL_RELEASE
 OPTIMIZATION_FLAGS = -Os

@@ -10,6 +10,10 @@ PROJECT_NAME := bootloader
 
 COMPONENTS := esptool_py bootloader_support log spi_flash micro-ecc soc main
 
+# Clear C and CXX from top level project
+CFLAGS =
+CXXFLAGS =
+
 #We cannot include the esp32 component directly but we need its includes.
 CFLAGS += -I $(IDF_PATH)/components/esp32/include
 
