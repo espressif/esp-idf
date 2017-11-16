@@ -17,6 +17,10 @@
 #include <stdint.h>
 #include <esp_err.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if !defined(CONFIG_HEAP_TRACING) && !defined(HEAP_TRACE_SRCFILE)
 #warning "esp_heap_trace.h is included but heap tracing is disabled in menuconfig, functions are no-ops"
 #endif
@@ -134,3 +138,7 @@ esp_err_t heap_trace_get(size_t index, heap_trace_record_t *record);
  *
  */
 void heap_trace_dump(void);
+
+#ifdef __cplusplus
+}
+#endif
