@@ -43,7 +43,6 @@
 #define LOG_TAG "bt_bta_gattc"
 // #include "osi/include/log.h"
 
-static void bta_gattc_cache_write(BD_ADDR server_bda, UINT16 num_attr, tBTA_GATTC_NV_ATTR *attr);
 static void bta_gattc_char_dscpt_disc_cmpl(UINT16 conn_id, tBTA_GATTC_SERV *p_srvc_cb);
 extern void bta_to_btif_uuid(bt_uuid_t *p_dest, tBT_UUID *p_src);
 static size_t bta_gattc_get_db_size_with_type(list_t *services,
@@ -1967,7 +1966,7 @@ void bta_gattc_cache_save(tBTA_GATTC_SERV *p_srvc_cb, UINT16 conn_id)
         }
     }
 
-    bta_gattc_cache_write(p_srvc_cb->server_bda, db_size, nv_attr);
+    /* TODO: Gattc cache write/read need to be added in IDF 3.1*/
     osi_free(nv_attr);
 }
 
@@ -2034,52 +2033,6 @@ done:
 #endif
     bool success = false;
     return success;
-}
-
-/*******************************************************************************
-**
-** Function         bta_gattc_cache_write
-**
-** Description      This callout function is executed by GATT when a server cache
-**                  is available to save.
-**
-** Parameter        server_bda: server bd address of this cache belongs to
-**                  num_attr: number of attribute to be save.
-**                  attr: pointer to the list of attributes to save.
-** Returns
-**
-*******************************************************************************/
-static void bta_gattc_cache_write(BD_ADDR server_bda, UINT16 num_attr,
-                           tBTA_GATTC_NV_ATTR *attr)
-{
-    char fname[255] = {0};
-    bta_gattc_generate_cache_file_name(fname, server_bda);
-    FILE *fd = fopen(fname, "wb");
-    if (!fd) {
-        APPL_TRACE_ERROR("%s: can't open GATT cache file for writing: %s", __func__, fname);
-        return;
-    }
-
-    UINT16 cache_ver = GATT_CACHE_VERSION;
-    if (fwrite(&cache_ver, sizeof(UINT16), 1, fd) != 1) {
-        APPL_TRACE_DEBUG("%s: can't write GATT cache version: %s", __func__, fname);
-        fclose(fd);
-        return;
-    }
-
-    if (fwrite(&num_attr, sizeof(UINT16), 1, fd) != 1) {
-        APPL_TRACE_DEBUG("%s: can't write GATT cache attribute count: %s", __func__, fname);
-        fclose(fd);
-        return;
-    }
-
-    if (fwrite(attr, sizeof(tBTA_GATTC_NV_ATTR), num_attr, fd) != num_attr) {
-        APPL_TRACE_DEBUG("%s: can't write GATT cache attributes: %s", __func__, fname);
-        fclose(fd);
-        return;
-    }
-
-    fclose(fd);
 }
 
 /*******************************************************************************
