@@ -460,6 +460,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     case BTA_DM_SP_KEY_NOTIF_EVT:
         break;
     case BTA_DM_DEV_UNPAIRED_EVT: {
+#if (SMP_INCLUDED)
         bt_bdaddr_t bd_addr;
         rsp_app = true;
         LOG_ERROR("BTA_DM_DEV_UNPAIRED_EVT");
@@ -472,6 +473,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         ble_msg.act = ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT;
         param.remove_bond_dev_cmpl.status = (p_data->link_down.status == HCI_SUCCESS) ? ESP_BT_STATUS_SUCCESS : ESP_BT_STATUS_FAIL;
         memcpy(param.remove_bond_dev_cmpl.bd_addr, p_data->link_down.bd_addr, sizeof(BD_ADDR));
+#endif /* #if (SMP_INCLUDED) */
         break;
     }
     case BTA_DM_BUSY_LEVEL_EVT:
