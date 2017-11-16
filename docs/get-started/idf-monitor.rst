@@ -89,6 +89,14 @@ Quick Reset
 The keyboard shortcut ``Ctrl-T Ctrl-R`` will reset the target board via the RTS line (if it is connected.)
 
 
+Toggle Output Display
+=====================
+
+Sometimes you may want to stop new output printed to screen, to see the log before. The keyboard shortcut ``Ctrl-T Ctrl-Y`` will
+toggle the display (discard all serial data when the display is off) so that you can stop to see the log, and revert
+again quickly without quitting the monitor.
+
+
 Simple Monitor
 ==============
 
