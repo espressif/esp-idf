@@ -1967,7 +1967,8 @@ void bta_gattc_cache_save(tBTA_GATTC_SERV *p_srvc_cb, UINT16 conn_id)
         }
     }
 
-    bta_gattc_cache_write(p_srvc_cb->server_bda, db_size, nv_attr);
+    /* Gattc cache write/read will be supported in IDF 3.1, so comment it temporarily*/
+    //bta_gattc_cache_write(p_srvc_cb->server_bda, db_size, nv_attr);
     osi_free(nv_attr);
 }
 
