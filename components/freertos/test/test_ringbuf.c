@@ -149,11 +149,16 @@ static void uartRxDeinit()
     esp_intr_free(s_intr_handle);
 }
 
-static void testRingbuffer(int type)
+static void testRingbuffer(int type, bool arbitrary)
 {
     TaskHandle_t th[2];
     int i;
-    rb = xRingbufferCreate(32 * 3, type);
+    /* Arbitrary Length means buffer length which is not a multiple of 4 */
+    if (arbitrary) {
+        rb = xRingbufferCreate(31 * 3, type);
+    } else {
+        rb = xRingbufferCreate(32 * 3, type);
+    }
 
     testtype = TST_MOSTLYFILLED;
 
@@ -179,12 +184,22 @@ static void testRingbuffer(int type)
 // TODO: split this thing into separate orthogonal tests
 TEST_CASE("FreeRTOS ringbuffer test, no splitting items", "[freertos]")
 {
-    testRingbuffer(0);
+    testRingbuffer(0, false);
 }
 
 TEST_CASE("FreeRTOS ringbuffer test, w/ splitting items", "[freertos]")
 {
-    testRingbuffer(1);
+    testRingbuffer(1, false);
+}
+
+TEST_CASE("FreeRTOS ringbuffer test, no splitting items, arbitrary length buffer", "[freertos]")
+{
+    testRingbuffer(0, true);
+}
+
+TEST_CASE("FreeRTOS ringbuffer test, w/ splitting items, arbitrary length buffer", "[freertos]")
+{
+    testRingbuffer(1, true);
 }
 
 
