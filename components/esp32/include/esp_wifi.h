@@ -105,7 +105,8 @@ typedef struct {
     int                    tx_buf_type;            /**< WiFi TX buffer type */
     int                    static_tx_buf_num;      /**< WiFi static TX buffer number */
     int                    dynamic_tx_buf_num;     /**< WiFi dynamic TX buffer number */
-    int                    ampdu_enable;           /**< WiFi AMPDU feature enable flag */
+    int                    ampdu_rx_enable;        /**< WiFi AMPDU RX feature enable flag */
+    int                    ampdu_tx_enable;        /**< WiFi AMPDU TX feature enable flag */
     int                    nvs_enable;             /**< WiFi NVS flash enable flag */
     int                    nano_enable;            /**< Nano option for printf/scan family enable flag */
     int                    tx_ba_win;              /**< WiFi Block Ack TX window size */
@@ -125,10 +126,16 @@ typedef struct {
 #define WIFI_DYNAMIC_TX_BUFFER_NUM 0
 #endif
 
-#if CONFIG_ESP32_WIFI_AMPDU_ENABLED
-#define WIFI_AMPDU_ENABLED        1
+#if CONFIG_ESP32_WIFI_AMPDU_RX_ENABLED
+#define WIFI_AMPDU_RX_ENABLED        1
 #else
-#define WIFI_AMPDU_ENABLED        0
+#define WIFI_AMPDU_RX_ENABLED        0
+#endif
+
+#if CONFIG_ESP32_WIFI_AMPDU_TX_ENABLED
+#define WIFI_AMPDU_TX_ENABLED        1
+#else
+#define WIFI_AMPDU_TX_ENABLED        0
 #endif
 
 #if CONFIG_ESP32_WIFI_NVS_ENABLED
@@ -147,12 +154,16 @@ extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
 
 #define WIFI_INIT_CONFIG_MAGIC    0x1F2F3F4F
 
-#ifdef CONFIG_ESP32_WIFI_AMPDU_ENABLED
+#ifdef CONFIG_ESP32_WIFI_AMPDU_TX_ENABLED
 #define WIFI_DEFAULT_TX_BA_WIN CONFIG_ESP32_WIFI_TX_BA_WIN
+#else
+#define WIFI_DEFAULT_TX_BA_WIN 0 /* unused if ampdu_tx_enable == false */
+#endif
+
+#ifdef CONFIG_ESP32_WIFI_AMPDU_RX_ENABLED
 #define WIFI_DEFAULT_RX_BA_WIN CONFIG_ESP32_WIFI_RX_BA_WIN
 #else
-#define WIFI_DEFAULT_TX_BA_WIN 0 /* unused if ampdu_enable == false */
-#define WIFI_DEFAULT_RX_BA_WIN 0
+#define WIFI_DEFAULT_RX_BA_WIN 0 /* unused if ampdu_rx_enable == false */
 #endif
 
 #define WIFI_INIT_CONFIG_DEFAULT() { \
@@ -163,7 +174,8 @@ extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
     .tx_buf_type = CONFIG_ESP32_WIFI_TX_BUFFER_TYPE,\
     .static_tx_buf_num = WIFI_STATIC_TX_BUFFER_NUM,\
     .dynamic_tx_buf_num = WIFI_DYNAMIC_TX_BUFFER_NUM,\
-    .ampdu_enable = WIFI_AMPDU_ENABLED,\
+    .ampdu_rx_enable = WIFI_AMPDU_RX_ENABLED,\
+    .ampdu_tx_enable = WIFI_AMPDU_TX_ENABLED,\
     .nvs_enable = WIFI_NVS_ENABLED,\
     .nano_enable = WIFI_NANO_FORMAT_ENABLED,\
     .tx_ba_win = WIFI_DEFAULT_TX_BA_WIN,\
