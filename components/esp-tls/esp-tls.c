@@ -47,6 +47,16 @@ static struct addrinfo *resolve_host_name(const char *host, size_t hostlen, int 
     return res;
 }
 
+static ssize_t tcp_read(struct esp_tls *tls, char *data, size_t datalen)
+{
+    return recv(tls->sockfd, data, datalen, 0);
+}
+
+static ssize_t tls_read(struct esp_tls *tls, char *data, size_t datalen)
+{
+    return SSL_read(tls->ssl, data, datalen);
+}
+
 static int esp_tcp_connect(const char *host, int hostlen, int port)
 {
     struct addrinfo *res = resolve_host_name(host, hostlen, port);
@@ -125,6 +135,16 @@ void esp_tls_conn_delete(struct esp_tls *tls)
     free(tls);
 };
 
+static ssize_t tcp_write(struct esp_tls *tls, const char *data, size_t datalen)
+{
+    return send(tls->sockfd, data, datalen, 0);
+}
+
+static ssize_t tls_write(struct esp_tls *tls, const char *data, size_t datalen)
+{
+    return SSL_write(tls->ssl, data, datalen);
+}
+
 struct esp_tls *esp_tls_conn_new(const char *hostname, int hostlen, int port, bool is_tls)
 {
     int sockfd = esp_tcp_connect(hostname, hostlen, port);
@@ -138,12 +158,16 @@ struct esp_tls *esp_tls_conn_new(const char *hostname, int hostlen, int port, bo
         return NULL;
     }
     tls->sockfd = sockfd;
+    tls->read = tcp_read;
+    tls->write = tcp_write;
 
     if (is_tls) {
         if (create_ssl_handle(tls) != 0) {
             esp_tls_conn_delete(tls);
             return NULL;
         }
+	tls->read = tls_read;
+	tls->write = tls_write;
     }
     return tls;
 }
