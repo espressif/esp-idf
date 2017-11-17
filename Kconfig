@@ -93,7 +93,7 @@ config OPTIMIZATION_ASSERTIONS_DISABLED
 
 endchoice # assertions
 
-config CXX_EXCEPTIONS
+menuconfig CXX_EXCEPTIONS
    bool "Enable C++ exceptions"
    default n
    help
@@ -102,8 +102,16 @@ config CXX_EXCEPTIONS
        Disabling this option disables C++ exception support in all compiled files, and any libstdc++ code which throws
        an exception will abort instead.
 
-       Enabling this option currently adds an additional 20KB of heap overhead, and 4KB of additional heap is allocated
-       the first time an exception is thrown in user code.
+       Enabling this option currently adds an additional ~500 bytes of heap overhead
+       when an exception is thrown in user code for the first time.
+
+config CXX_EXCEPTIONS_EMG_POOL_SIZE
+    int "Emergency Pool Size"
+    default 0
+    depends on CXX_EXCEPTIONS
+    help
+       Size (in bytes) of the emergency memory pool for C++ exceptions. This pool will be used to allocate
+       memory for thrown exceptions when there is not enough memory on the heap.
 
 endmenu # Compiler Options
 
