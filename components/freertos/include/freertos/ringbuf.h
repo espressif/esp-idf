@@ -36,6 +36,8 @@ maximum size is (buffer_size/2)-8 bytes. The bytebuf can fill the entire buffer 
 no overhead.
 */
 
+#include <freertos/queue.h>
+
 //An opaque handle for a ringbuff object.
 typedef void * RingbufHandle_t;
 
@@ -110,6 +112,8 @@ BaseType_t xRingbufferSendFromISR(RingbufHandle_t ringbuf, void *data, size_t da
 /**
  * @brief  Retrieve an item from the ring buffer
  *
+ * @note A call to vRingbufferReturnItem() is required after this to free up the data received.
+ *
  * @param  ringbuf - Ring buffer to retrieve the item from
  * @param  item_size - Pointer to a variable to which the size of the retrieved item will be written.
  * @param  xTicksToWait - Ticks to wait for items in the ringbuffer.
@@ -123,6 +127,8 @@ void *xRingbufferReceive(RingbufHandle_t ringbuf, size_t *item_size, TickType_t 
 /**
  * @brief  Retrieve an item from the ring buffer from an ISR
  *
+ * @note A call to vRingbufferReturnItemFromISR() is required after this to free up the data received
+ *
  * @param  ringbuf - Ring buffer to retrieve the item from
  * @param  item_size - Pointer to a variable to which the size of the retrieved item will be written.
  *
@@ -135,6 +141,8 @@ void *xRingbufferReceiveFromISR(RingbufHandle_t ringbuf, size_t *item_size);
 /**
  * @brief  Retrieve bytes from a ByteBuf type of ring buffer, specifying the maximum amount of bytes
  * to return
+
+ * @note A call to vRingbufferReturnItem() is required after this to free up the data received.
  *
  * @param  ringbuf - Ring buffer to retrieve the item from
  * @param  item_size - Pointer to a variable to which the size of the retrieved item will be written.
@@ -149,6 +157,8 @@ void *xRingbufferReceiveUpTo(RingbufHandle_t ringbuf, size_t *item_size, TickTyp
 /**
  * @brief  Retrieve bytes from a ByteBuf type of ring buffer, specifying the maximum amount of bytes
  * to return. Call this from an ISR.
+ *
+ * @note A call to vRingbufferReturnItemFromISR() is required after this to free up the data received
  *
  * @param  ringbuf - Ring buffer to retrieve the item from
  * @param  item_size - Pointer to a variable to which the size of the retrieved item will be written.
