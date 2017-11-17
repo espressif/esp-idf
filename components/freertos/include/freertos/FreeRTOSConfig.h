@@ -253,6 +253,7 @@ int xt_clock_freq(void) __attribute__((deprecated));
 #define INCLUDE_uxTaskGetStackHighWaterMark	1
 #define INCLUDE_pcTaskGetTaskName			1
 #define INCLUDE_xTaskGetIdleTaskHandle      1
+#define INCLUDE_pxTaskGetStackStart			1
 
 #define INCLUDE_xSemaphoreGetMutexHolder    1
 
