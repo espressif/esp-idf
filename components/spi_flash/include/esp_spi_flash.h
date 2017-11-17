@@ -324,6 +324,15 @@ typedef struct {
  */
 void spi_flash_guard_set(const spi_flash_guard_funcs_t* funcs);
 
+
+/**
+ * @brief Get the guard functions used for flash access
+ *
+ * @return The guard functions that were set via spi_flash_guard_set(). These functions
+ * can be called if implementing custom low-level SPI flash operations.
+ */
+const spi_flash_guard_funcs_t *spi_flash_guard_get();
+
 /**
  * @brief Default OS-aware flash access guard functions
  */

@@ -214,7 +214,7 @@ void spi_flash_op_unlock()
 
 void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
 {
-    spi_flash_op_lockspi_flash_op_lock();
+    spi_flash_op_lock();
     esp_intr_noniram_disable();
     spi_flash_disable_cache(0, &s_flash_op_cache_state[0]);
 }
