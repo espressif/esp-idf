@@ -3814,14 +3814,17 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
 /*-----------------------------------------------------------*/
 
 #if (INCLUDE_pxTaskGetStackStart == 1)
-   uint8_t* pxTaskGetStackStart( TaskHandle_t xTask)
-   {
-   TCB_t *pxTCB;
-   UBaseType_t uxReturn;
 
-       pxTCB = prvGetTCBFromHandle( xTask );
-       return ( uint8_t * ) pxTCB->pxStack;
-   }
+	uint8_t* pxTaskGetStackStart( TaskHandle_t xTask)
+	{
+		TCB_t *pxTCB;
+		uint8_t* uxReturn;
+
+		pxTCB = prvGetTCBFromHandle( xTask );
+		uxReturn = (uint8_t*)pxTCB->pxStack;
+
+		return uxReturn;
+	}
 
 #endif /* INCLUDE_pxTaskGetStackStart */
 /*-----------------------------------------------------------*/
