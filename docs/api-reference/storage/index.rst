@@ -10,6 +10,7 @@ Storage API
    Virtual Filesystem <vfs>
    FAT Filesystem <fatfs>
    Wear Levelling <wear-levelling>
+   SPIFFS Filesystem <spiffs>
 
 
 Example code for this API section is provided in :example:`storage` directory of ESP-IDF examples.

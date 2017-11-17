@@ -26,7 +26,7 @@
 #include "hcimsgs.h"
 #include "btu.h"
 #include "btm_int.h"
-//#include "bt_utils.h"
+#include "allocator.h"
 #include "hcidefs.h"
 #include "btm_ble_api.h"
 #include "controller.h"
@@ -1248,7 +1248,7 @@ void btm_ble_adv_filter_init(void)
 
     if (cmn_ble_vsc_cb.max_filter > 0) {
         btm_ble_adv_filt_cb.p_addr_filter_count =
-            (tBTM_BLE_PF_COUNT *) GKI_getbuf( sizeof(tBTM_BLE_PF_COUNT) * cmn_ble_vsc_cb.max_filter);
+            (tBTM_BLE_PF_COUNT *) osi_malloc( sizeof(tBTM_BLE_PF_COUNT) * cmn_ble_vsc_cb.max_filter);
     }
 }
 
@@ -1266,7 +1266,8 @@ void btm_ble_adv_filter_init(void)
 void btm_ble_adv_filter_cleanup(void)
 {
     if (btm_ble_adv_filt_cb.p_addr_filter_count) {
-        GKI_freebuf (btm_ble_adv_filt_cb.p_addr_filter_count);
+        osi_free(btm_ble_adv_filt_cb.p_addr_filter_count);
+        btm_ble_adv_filt_cb.p_addr_filter_count = NULL;
     }
 }
 

@@ -55,11 +55,11 @@ typedef struct {
     wl_handle_t handle;
 } read_write_test_arg_t;
 
-#define READ_WRITE_TEST_ARG_INIT(offset_, seed_, handle_) \
+#define READ_WRITE_TEST_ARG_INIT(offset_, seed_, handle_, count_) \
         { \
             .offset = offset_, \
             .seed = seed_, \
-            .word_count = 1024, \
+            .word_count = count_, \
             .write = true, \
             .done = xSemaphoreCreateBinary(), \
             .handle = handle_ \
@@ -103,14 +103,16 @@ TEST_CASE("multiple tasks can access wl handle simultaneously", "[wear_levelling
     TEST_ESP_OK(wl_mount(partition, &handle));
 
     size_t sector_size = wl_sector_size(handle);
-    TEST_ESP_OK(wl_erase_range(handle, 0, sector_size * 4));
-    read_write_test_arg_t args1 = READ_WRITE_TEST_ARG_INIT(0, 1, handle);
-    read_write_test_arg_t args2 = READ_WRITE_TEST_ARG_INIT(sector_size, 2, handle);
+    TEST_ESP_OK(wl_erase_range(handle, 0, sector_size * 8));
+    read_write_test_arg_t args1 = READ_WRITE_TEST_ARG_INIT(0, 1, handle, sector_size/sizeof(uint32_t));
+    read_write_test_arg_t args2 = READ_WRITE_TEST_ARG_INIT(sector_size, 2, handle, sector_size/sizeof(uint32_t));
     const size_t stack_size = 4096;
 
     printf("writing 1 and 2\n");
-    xTaskCreatePinnedToCore(&read_write_task, "rw1", stack_size, &args1, 3, NULL, 0);
-    xTaskCreatePinnedToCore(&read_write_task, "rw2", stack_size, &args2, 3, NULL, 1);
+    const int cpuid_0 = 0;
+    const int cpuid_1 = portNUM_PROCESSORS - 1;
+    xTaskCreatePinnedToCore(&read_write_task, "rw1", stack_size, &args1, 3, NULL, cpuid_0);
+    xTaskCreatePinnedToCore(&read_write_task, "rw2", stack_size, &args2, 3, NULL, cpuid_1);
 
     xSemaphoreTake(args1.done, portMAX_DELAY);
     printf("f1 done\n");
@@ -121,14 +123,14 @@ TEST_CASE("multiple tasks can access wl handle simultaneously", "[wear_levelling
 
     args1.write = false;
     args2.write = false;
-    read_write_test_arg_t args3 = READ_WRITE_TEST_ARG_INIT(2 * sector_size, 3, handle);
-    read_write_test_arg_t args4 = READ_WRITE_TEST_ARG_INIT(3 * sector_size, 4, handle);
+    read_write_test_arg_t args3 = READ_WRITE_TEST_ARG_INIT(2 * sector_size, 3, handle, sector_size/sizeof(uint32_t));
+    read_write_test_arg_t args4 = READ_WRITE_TEST_ARG_INIT(3 * sector_size, 4, handle, sector_size/sizeof(uint32_t));
 
     printf("reading 1 and 2, writing 3 and 4\n");
-    xTaskCreatePinnedToCore(&read_write_task, "rw3", stack_size, &args3, 3, NULL, 1);
-    xTaskCreatePinnedToCore(&read_write_task, "rw4", stack_size, &args4, 3, NULL, 0);
-    xTaskCreatePinnedToCore(&read_write_task, "rw1", stack_size, &args1, 3, NULL, 0);
-    xTaskCreatePinnedToCore(&read_write_task, "rw2", stack_size, &args2, 3, NULL, 1);
+    xTaskCreatePinnedToCore(&read_write_task, "rw3", stack_size, &args3, 3, NULL, cpuid_1);
+    xTaskCreatePinnedToCore(&read_write_task, "rw4", stack_size, &args4, 3, NULL, cpuid_0);
+    xTaskCreatePinnedToCore(&read_write_task, "rw1", stack_size, &args1, 3, NULL, cpuid_0);
+    xTaskCreatePinnedToCore(&read_write_task, "rw2", stack_size, &args2, 3, NULL, cpuid_1);
 
     xSemaphoreTake(args1.done, portMAX_DELAY);
     printf("f1 done\n");

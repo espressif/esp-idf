@@ -73,7 +73,7 @@ TEST_CASE("Can write, read, mmap partition", "[partition][ignore]")
     const uint32_t *mmap_data;
     spi_flash_mmap_handle_t mmap_handle;
     size_t begin = 3000;
-    size_t size = 12000;
+    size_t size = 64000; //chosen so size is smaller than 64K but the mmap straddles 2 MMU blocks
     TEST_ASSERT_EQUAL(ESP_OK, esp_partition_mmap(p, begin, size, SPI_FLASH_MMAP_DATA,
                       (const void **)&mmap_data, &mmap_handle));
     srand(0);

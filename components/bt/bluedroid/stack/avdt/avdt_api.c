@@ -32,6 +32,7 @@
 #include "l2c_api.h"
 #include "btm_api.h"
 #include "btu.h"
+#include "allocator.h"
 
 #if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE)
 
@@ -892,9 +893,6 @@ UINT16 AVDT_WriteReqOpt(UINT8 handle, BT_HDR *p_pkt, UINT32 time_stamp, UINT8 m_
         evt.apiwrite.time_stamp = time_stamp;
         evt.apiwrite.m_pt = m_pt;
         evt.apiwrite.opt = opt;
-#if AVDT_MULTIPLEXING == TRUE
-        GKI_init_q (&evt.apiwrite.frag_q);
-#endif
         avdt_scb_event(p_scb, AVDT_SCB_API_WRITE_REQ_EVT, &evt);
     }
 
@@ -1068,88 +1066,7 @@ UINT16 AVDT_GetSignalChannel(UINT8 handle, BD_ADDR bd_addr)
     return (lcid);
 }
 
-#if AVDT_MULTIPLEXING == TRUE
-/*******************************************************************************
-**
-** Function         AVDT_WriteDataReq
-**
-** Description      Send a media packet to the peer device.  The stream must
-**                  be started before this function is called.  Also, this
-**                  function can only be called if the stream is a SRC.
-**
-**                  When AVDTP has sent the media packet and is ready for the
-**                  next packet, an AVDT_WRITE_CFM_EVT is sent to the
-**                  application via the control callback.  The application must
-**                  wait for the AVDT_WRITE_CFM_EVT before it makes the next
-**                  call to AVDT_WriteDataReq().  If the applications calls
-**                  AVDT_WriteDataReq() before it receives the event the packet
-**                  will not be sent.  The application may make its first call
-**                  to AVDT_WriteDataReq() after it receives an
-**                  AVDT_START_CFM_EVT or AVDT_START_IND_EVT.
-**
-** Returns          AVDT_SUCCESS if successful, otherwise error.
-**
-*******************************************************************************/
-extern UINT16 AVDT_WriteDataReq(UINT8 handle, UINT8 *p_data, UINT32 data_len,
-                                UINT32 time_stamp, UINT8 m_pt, UINT8 marker)
-{
 
-    tAVDT_SCB       *p_scb;
-    tAVDT_SCB_EVT   evt;
-    UINT16          result = AVDT_SUCCESS;
-
-    do {
-        /* check length of media frame */
-        if (data_len > AVDT_MAX_MEDIA_SIZE) {
-            result = AVDT_BAD_PARAMS;
-            break;
-        }
-        /* map handle to scb */
-        if ((p_scb = avdt_scb_by_hdl(handle)) == NULL) {
-            result = AVDT_BAD_HANDLE;
-            break;
-        }
-        AVDT_TRACE_WARNING("mux_tsid_media:%d\n", p_scb->curr_cfg.mux_tsid_media);
-
-        if (p_scb->p_pkt != NULL
-                || p_scb->p_ccb == NULL
-                || !GKI_queue_is_empty(&p_scb->frag_q)
-                || p_scb->frag_off != 0
-                || p_scb->curr_cfg.mux_tsid_media == 0) {
-            result = AVDT_ERR_BAD_STATE;
-            AVDT_TRACE_WARNING("p_scb->p_pkt=%p, p_scb->p_ccb=%p, IsQueueEmpty=%x, p_scb->frag_off=%x\n",
-                               p_scb->p_pkt, p_scb->p_ccb, GKI_queue_is_empty(&p_scb->frag_q), p_scb->frag_off);
-            break;
-        }
-        evt.apiwrite.p_buf = 0; /* it will indicate using of fragments queue frag_q */
-        /* create queue of media fragments */
-        GKI_init_q (&evt.apiwrite.frag_q);
-
-        /* compose fragments from media payload and put fragments into gueue */
-        avdt_scb_queue_frags(p_scb, &p_data, &data_len, &evt.apiwrite.frag_q);
-
-        if (GKI_queue_is_empty(&evt.apiwrite.frag_q)) {
-            AVDT_TRACE_WARNING("AVDT_WriteDataReq out of GKI buffers");
-            result = AVDT_ERR_RESOURCE;
-            break;
-        }
-        evt.apiwrite.data_len = data_len;
-        evt.apiwrite.p_data = p_data;
-
-        /* process the fragments queue */
-        evt.apiwrite.time_stamp = time_stamp;
-        evt.apiwrite.m_pt = m_pt | (marker << 7);
-        avdt_scb_event(p_scb, AVDT_SCB_API_WRITE_REQ_EVT, &evt);
-    } while (0);
-
-#if (BT_USE_TRACES == TRUE)
-    if (result != AVDT_SUCCESS) {
-        AVDT_TRACE_WARNING("*** AVDT_WriteDataReq failed result=%d\n", result);
-    }
-#endif
-    return result;
-}
-#endif
 
 #if AVDT_MULTIPLEXING == TRUE
 /*******************************************************************************
@@ -1228,7 +1145,7 @@ UINT16 AVDT_SendReport(UINT8 handle, AVDT_REPORT_TYPE type,
         /* build SR - assume fit in one packet */
         p_tbl = avdt_ad_tc_tbl_by_type(AVDT_CHAN_REPORT, p_scb->p_ccb, p_scb);
         if ((p_tbl->state == AVDT_AD_ST_OPEN) &&
-                (p_pkt = (BT_HDR *)GKI_getbuf(p_tbl->peer_mtu)) != NULL) {
+                (p_pkt = (BT_HDR *)osi_malloc(p_tbl->peer_mtu)) != NULL) {
             p_pkt->offset = L2CAP_MIN_OFFSET;
             p = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
 #if AVDT_MULTIPLEXING == TRUE

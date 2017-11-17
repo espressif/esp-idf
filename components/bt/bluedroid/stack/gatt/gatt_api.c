@@ -26,8 +26,7 @@
 
 #if defined(BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE)
 
-#include "gki.h"
-//#include <stdio.h>
+#include "allocator.h"
 #include <string.h>
 #include "gatt_api.h"
 #include "gatt_int.h"
@@ -235,7 +234,7 @@ UINT16 GATTS_CreateService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid,
         }
 
         if (p_buf) {
-            GKI_freebuf (GKI_remove_from_queue (&gatt_cb.pending_new_srv_start_q, p_buf));
+            osi_free(fixed_queue_try_remove_from_queue(gatt_cb.pending_new_srv_start_q, p_buf));
         }
         return (0);
     }
@@ -397,7 +396,7 @@ BOOLEAN GATTS_DeleteService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid, UINT16 svc_
                                          &p_list->asgn_range.svc_uuid,
                                          p_list->asgn_range.svc_inst)) != NULL) {
         GATT_TRACE_DEBUG ("Delete a new service changed item - the service has not yet started");
-        GKI_freebuf (GKI_remove_from_queue (&gatt_cb.pending_new_srv_start_q, p_buf));
+        osi_free(fixed_queue_try_remove_from_queue(gatt_cb.pending_new_srv_start_q, p_buf));
     } else {
         gatt_proc_srv_chg();
     }
@@ -512,7 +511,7 @@ tGATT_STATUS GATTS_StartService (tGATT_IF gatt_if, UINT16 service_handle,
         gatt_proc_srv_chg();
         /* remove the new service element after the srv changed processing is completed*/
 
-        GKI_freebuf (GKI_remove_from_queue (&gatt_cb.pending_new_srv_start_q, p_buf));
+        osi_free(fixed_queue_try_remove_from_queue(gatt_cb.pending_new_srv_start_q, p_buf));
     }
     return GATT_SUCCESS;
 }
@@ -568,7 +567,6 @@ tGATT_STATUS GATTS_HandleValueIndication (UINT16 conn_id,  UINT16 attr_handle, U
 
     tGATT_VALUE      indication;
     BT_HDR          *p_msg;
-    tGATT_VALUE     *p_buf;
     tGATT_IF         gatt_if = GATT_GET_GATT_IF(conn_id);
     UINT8           tcb_idx = GATT_GET_TCB_IDX(conn_id);
     tGATT_REG       *p_reg = gatt_get_regcb(gatt_if);
@@ -592,12 +590,16 @@ tGATT_STATUS GATTS_HandleValueIndication (UINT16 conn_id,  UINT16 attr_handle, U
     indication.auth_req = GATT_AUTH_REQ_NONE;
 
     if (GATT_HANDLE_IS_VALID(p_tcb->indicate_handle)) {
+        /* TODO: need to further check whether deleting pending queue here cause reducing transport performance */
+        /*
         GATT_TRACE_DEBUG ("Add a pending indication");
         if ((p_buf = gatt_add_pending_ind(p_tcb, &indication)) != NULL) {
             cmd_status = GATT_SUCCESS;
         } else {
             cmd_status = GATT_NO_RESOURCES;
         }
+        */
+        return GATT_BUSY;
     } else {
 
         if ( (p_msg = attp_build_sr_msg (p_tcb, GATT_HANDLE_VALUE_IND, (tGATT_SR_MSG *)&indication)) != NULL) {
@@ -724,7 +726,9 @@ tGATT_STATUS GATTS_SetAttributeValue(UINT16 attr_handle, UINT16 length, UINT8 *v
 
     GATT_TRACE_DEBUG("GATTS_SetAttributeValue: attr_handle: %u  length: %u \n",
                     attr_handle, length);
-
+    if (length <= 0){
+        return GATT_INVALID_ATTR_LEN;
+    }
     if ((p_decl = gatt_find_hdl_buffer_by_attr_handle(attr_handle)) == NULL) {
         GATT_TRACE_DEBUG("Service not created\n"); 
         return GATT_INVALID_HANDLE;
@@ -792,7 +796,7 @@ tGATT_STATUS GATTS_GetAttributeValue(UINT16 attr_handle, UINT16 *length, UINT8 *
 ** Returns          GATT_SUCCESS if command started successfully.
 **
 *******************************************************************************/
-tGATT_STATUS GATTC_ConfigureMTU (UINT16 conn_id, UINT16 mtu)
+tGATT_STATUS GATTC_ConfigureMTU (UINT16 conn_id)
 {
     UINT8           ret = GATT_NO_RESOURCES;
     tGATT_IF        gatt_if = GATT_GET_GATT_IF(conn_id);
@@ -801,6 +805,7 @@ tGATT_STATUS GATTC_ConfigureMTU (UINT16 conn_id, UINT16 mtu)
     tGATT_REG       *p_reg = gatt_get_regcb(gatt_if);
 
     tGATT_CLCB    *p_clcb;
+    uint16_t  mtu = gatt_get_local_mtu();
 
     GATT_TRACE_API ("GATTC_ConfigureMTU conn_id=%d mtu=%d", conn_id, mtu );
 
@@ -943,7 +948,7 @@ tGATT_STATUS GATTC_Read (UINT16 conn_id, tGATT_READ_TYPE type, tGATT_READ_PARAM 
         case GATT_READ_MULTIPLE:
             p_clcb->s_handle = 0;
             /* copy multiple handles in CB */
-            p_read_multi = (tGATT_READ_MULTI *)GKI_getbuf(sizeof(tGATT_READ_MULTI));
+            p_read_multi = (tGATT_READ_MULTI *)osi_malloc(sizeof(tGATT_READ_MULTI));
             p_clcb->p_attr_buf = (UINT8 *)p_read_multi;
             memcpy (p_read_multi, &p_read->read_multiple, sizeof(tGATT_READ_MULTI));
         case GATT_READ_BY_HANDLE:
@@ -1010,7 +1015,7 @@ tGATT_STATUS GATTC_Write (UINT16 conn_id, tGATT_WRITE_TYPE type, tGATT_VALUE *p_
         p_clcb->op_subtype = type;
         p_clcb->auth_req = p_write->auth_req;
 
-        if (( p_clcb->p_attr_buf = (UINT8 *)GKI_getbuf((UINT16)sizeof(tGATT_VALUE))) != NULL) {
+        if (( p_clcb->p_attr_buf = (UINT8 *)osi_malloc((UINT16)sizeof(tGATT_VALUE))) != NULL) {
             memcpy(p_clcb->p_attr_buf, (void *)p_write, sizeof(tGATT_VALUE));
 
             p =  (tGATT_VALUE *)p_clcb->p_attr_buf;

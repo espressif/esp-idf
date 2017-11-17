@@ -1,20 +1,19 @@
-#
-# Bootloader component
+# Bootloader component (top-level project parts)
 #
 # The bootloader is not a real component that gets linked into the project.
-# Instead it is an entire standalone project ( in src/) that gets built in 
-# the upper projects build directory. This Makefile.projbuild provides the 
-# glue to  build the bootloader project from the original project. It 
-# basically runs Make in the src/ directory but it needs to zero some variables
-# the ESP-IDF project.mk makefile exports first, to not let them interfere.
+# Instead it is an entire standalone project (in subproject/) that gets
+# built in the upper project's build directory. This Makefile.projbuild provides
+# the glue to build the bootloader project from the original project. It
+# basically runs Make in the subproject/ directory but it needs to
+# zero some variables the ESP-IDF project.mk makefile exports first, to not
+# let them interfere.
 #
-ifndef IS_BOOTLOADER_BUILD
-
 BOOTLOADER_COMPONENT_PATH := $(COMPONENT_PATH)
 BOOTLOADER_BUILD_DIR=$(abspath $(BUILD_DIR_BASE)/bootloader)
 BOOTLOADER_BIN=$(BOOTLOADER_BUILD_DIR)/bootloader.bin
 
 # signing key path is resolved relative to the project directory
+CONFIG_SECURE_BOOT_SIGNING_KEY ?=
 SECURE_BOOT_SIGNING_KEY=$(abspath $(call dequote,$(CONFIG_SECURE_BOOT_SIGNING_KEY)))
 export SECURE_BOOT_SIGNING_KEY  # used by bootloader_support component
 
@@ -22,15 +21,28 @@ export SECURE_BOOT_SIGNING_KEY  # used by bootloader_support component
 BOOTLOADER_OFFSET := 0x1000
 
 # Custom recursive make for bootloader sub-project
-BOOTLOADER_MAKE=+$(MAKE) -C $(BOOTLOADER_COMPONENT_PATH)/src \
-	V=$(V) BUILD_DIR_BASE=$(BOOTLOADER_BUILD_DIR) TEST_COMPONENTS= TESTS_ALL=
+#
+# NB: Some variables are cleared in the environment, not
+# overriden, because they need to be re-defined in the child
+# project.
+BOOTLOADER_MAKE= +\
+	PROJECT_PATH= \
+	COMPONENT_DIRS= \
+	$(MAKE) -C $(BOOTLOADER_COMPONENT_PATH)/subproject \
+	V=$(V) \
+	BUILD_DIR_BASE=$(BOOTLOADER_BUILD_DIR) \
+	TEST_COMPONENTS= \
+	TESTS_ALL=
 
-.PHONY: bootloader-clean bootloader-flash bootloader $(BOOTLOADER_BIN)
+.PHONY: bootloader-clean bootloader-flash bootloader-list-components bootloader $(BOOTLOADER_BIN)
 
 $(BOOTLOADER_BIN): $(SDKCONFIG_MAKEFILE)
 	$(BOOTLOADER_MAKE) $@
 
 clean: bootloader-clean
+
+bootloader-list-components:
+	$(BOOTLOADER_MAKE) list-components
 
 ifndef CONFIG_SECURE_BOOT_ENABLED
 # If secure boot disabled, bootloader flashing is integrated
@@ -96,7 +108,7 @@ $(BOOTLOADER_DIGEST_BIN): $(BOOTLOADER_BIN) $(SECURE_BOOTLOADER_KEY)
 	@echo "DIGEST $(notdir $@)"
 	$(Q) $(ESPSECUREPY) digest_secure_bootloader -k $(SECURE_BOOTLOADER_KEY) -o $@ $<
 
-else
+else # CONFIG_SECURE_BOOT_ENABLED && !CONFIG_SECURE_BOOTLOADER_REFLASHABLE && !CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH
 bootloader:
 	@echo "Invalid bootloader target: bad sdkconfig?"
 	@exit 1
@@ -107,14 +119,6 @@ ifndef CONFIG_SECURE_BOOT_ENABLED
 all_binaries: $(BOOTLOADER_BIN)
 endif
 
-bootloader-clean:
+bootloader-clean: $(SDKCONFIG_MAKEFILE)
 	$(BOOTLOADER_MAKE) app-clean
 	rm -f $(SECURE_BOOTLOADER_KEY) $(BOOTLOADER_DIGEST_BIN)
-
-$(BOOTLOADER_BUILD_DIR):
-	mkdir -p $@
-
-else
-CFLAGS += -D BOOTLOADER_BUILD=1 -I $(IDF_PATH)/components/esp32/include
-
-endif

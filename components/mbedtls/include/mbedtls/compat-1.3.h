@@ -207,9 +207,6 @@
 #if defined MBEDTLS_ERROR_C
 #define POLARSSL_ERROR_C MBEDTLS_ERROR_C
 #endif
-#if defined MBEDTLS_ERROR_STRERROR_BC
-#define POLARSSL_ERROR_STRERROR_BC MBEDTLS_ERROR_STRERROR_BC
-#endif
 #if defined MBEDTLS_ERROR_STRERROR_DUMMY
 #define POLARSSL_ERROR_STRERROR_DUMMY MBEDTLS_ERROR_STRERROR_DUMMY
 #endif
@@ -318,9 +315,6 @@
 #if defined MBEDTLS_MEMORY_BUFFER_ALLOC_C
 #define POLARSSL_MEMORY_BUFFER_ALLOC_C MBEDTLS_MEMORY_BUFFER_ALLOC_C
 #endif
-#if defined MBEDTLS_MEMORY_C
-#define POLARSSL_MEMORY_C MBEDTLS_MEMORY_C
-#endif
 #if defined MBEDTLS_MEMORY_DEBUG
 #define POLARSSL_MEMORY_DEBUG MBEDTLS_MEMORY_DEBUG
 #endif
@@ -344,9 +338,6 @@
 #endif
 #if defined MBEDTLS_PADLOCK_C
 #define POLARSSL_PADLOCK_C MBEDTLS_PADLOCK_C
-#endif
-#if defined MBEDTLS_PBKDF2_C
-#define POLARSSL_PBKDF2_C MBEDTLS_PBKDF2_C
 #endif
 #if defined MBEDTLS_PEM_PARSE_C
 #define POLARSSL_PEM_PARSE_C MBEDTLS_PEM_PARSE_C
@@ -429,9 +420,6 @@
 #if defined MBEDTLS_PLATFORM_STD_FREE
 #define POLARSSL_PLATFORM_STD_FREE MBEDTLS_PLATFORM_STD_FREE
 #endif
-#if defined MBEDTLS_PLATFORM_STD_MALLOC
-#define POLARSSL_PLATFORM_STD_MALLOC MBEDTLS_PLATFORM_STD_MALLOC
-#endif
 #if defined MBEDTLS_PLATFORM_STD_MEM_HDR
 #define POLARSSL_PLATFORM_STD_MEM_HDR MBEDTLS_PLATFORM_STD_MEM_HDR
 #endif
@@ -492,12 +480,6 @@
 #if defined MBEDTLS_SHA512_PROCESS_ALT
 #define POLARSSL_SHA512_PROCESS_ALT MBEDTLS_SHA512_PROCESS_ALT
 #endif
-#if defined MBEDTLS_SSL_AEAD_RANDOM_IV
-#define POLARSSL_SSL_AEAD_RANDOM_IV MBEDTLS_SSL_AEAD_RANDOM_IV
-#endif
-#if defined MBEDTLS_SSL_ALERT_MESSAGES
-#define POLARSSL_SSL_ALERT_MESSAGES MBEDTLS_SSL_ALERT_MESSAGES
-#endif
 #if defined MBEDTLS_SSL_ALL_ALERT_MESSAGES
 #define POLARSSL_SSL_ALL_ALERT_MESSAGES MBEDTLS_SSL_ALL_ALERT_MESSAGES
 #endif
@@ -521,9 +503,6 @@
 #endif
 #if defined MBEDTLS_SSL_DEBUG_ALL
 #define POLARSSL_SSL_DEBUG_ALL MBEDTLS_SSL_DEBUG_ALL
-#endif
-#if defined MBEDTLS_SSL_DISABLE_RENEGOTIATION
-#define POLARSSL_SSL_DISABLE_RENEGOTIATION MBEDTLS_SSL_DISABLE_RENEGOTIATION
 #endif
 #if defined MBEDTLS_SSL_DTLS_ANTI_REPLAY
 #define POLARSSL_SSL_DTLS_ANTI_REPLAY MBEDTLS_SSL_DTLS_ANTI_REPLAY
@@ -752,7 +731,6 @@
 #define KU_KEY_ENCIPHERMENT MBEDTLS_X509_KU_KEY_ENCIPHERMENT
 #define KU_NON_REPUDIATION MBEDTLS_X509_KU_NON_REPUDIATION
 #define LN_2_DIV_LN_10_SCALE100 MBEDTLS_LN_2_DIV_LN_10_SCALE100
-#define MD_CONTEXT_T_INIT MBEDTLS_MD_CONTEXT_T_INIT
 #define MEMORY_VERIFY_ALLOC MBEDTLS_MEMORY_VERIFY_ALLOC
 #define MEMORY_VERIFY_ALWAYS MBEDTLS_MEMORY_VERIFY_ALWAYS
 #define MEMORY_VERIFY_FREE MBEDTLS_MEMORY_VERIFY_FREE
@@ -1017,19 +995,13 @@
 #define POLARSSL_CONFIG_H MBEDTLS_CONFIG_H
 #define POLARSSL_CTR_DRBG_H MBEDTLS_CTR_DRBG_H
 #define POLARSSL_DEBUG_H MBEDTLS_DEBUG_H
-#define POLARSSL_DEBUG_LOG_FULL MBEDTLS_DEBUG_LOG_FULL
-#define POLARSSL_DEBUG_LOG_RAW MBEDTLS_DEBUG_LOG_RAW
 #define POLARSSL_DECRYPT MBEDTLS_DECRYPT
 #define POLARSSL_DES_H MBEDTLS_DES_H
 #define POLARSSL_DHM_H MBEDTLS_DHM_H
-#define POLARSSL_DHM_RFC2409_MODP_1024_G MBEDTLS_DHM_RFC2409_MODP_1024_G
-#define POLARSSL_DHM_RFC2409_MODP_1024_P MBEDTLS_DHM_RFC2409_MODP_1024_P
 #define POLARSSL_DHM_RFC3526_MODP_2048_G MBEDTLS_DHM_RFC3526_MODP_2048_G
 #define POLARSSL_DHM_RFC3526_MODP_2048_P MBEDTLS_DHM_RFC3526_MODP_2048_P
 #define POLARSSL_DHM_RFC3526_MODP_3072_G MBEDTLS_DHM_RFC3526_MODP_3072_G
 #define POLARSSL_DHM_RFC3526_MODP_3072_P MBEDTLS_DHM_RFC3526_MODP_3072_P
-#define POLARSSL_DHM_RFC5114_MODP_1024_G MBEDTLS_DHM_RFC5114_MODP_1024_G
-#define POLARSSL_DHM_RFC5114_MODP_1024_P MBEDTLS_DHM_RFC5114_MODP_1024_P
 #define POLARSSL_DHM_RFC5114_MODP_2048_G MBEDTLS_DHM_RFC5114_MODP_2048_G
 #define POLARSSL_DHM_RFC5114_MODP_2048_P MBEDTLS_DHM_RFC5114_MODP_2048_P
 #define POLARSSL_ECDH_H MBEDTLS_ECDH_H
@@ -1117,9 +1089,6 @@
 #define POLARSSL_ERR_HMAC_DRBG_FILE_IO_ERROR MBEDTLS_ERR_HMAC_DRBG_FILE_IO_ERROR
 #define POLARSSL_ERR_HMAC_DRBG_INPUT_TOO_BIG MBEDTLS_ERR_HMAC_DRBG_INPUT_TOO_BIG
 #define POLARSSL_ERR_HMAC_DRBG_REQUEST_TOO_BIG MBEDTLS_ERR_HMAC_DRBG_REQUEST_TOO_BIG
-#define POLARSSL_ERR_MD2_FILE_IO_ERROR MBEDTLS_ERR_MD2_FILE_IO_ERROR
-#define POLARSSL_ERR_MD4_FILE_IO_ERROR MBEDTLS_ERR_MD4_FILE_IO_ERROR
-#define POLARSSL_ERR_MD5_FILE_IO_ERROR MBEDTLS_ERR_MD5_FILE_IO_ERROR
 #define POLARSSL_ERR_MD_ALLOC_FAILED MBEDTLS_ERR_MD_ALLOC_FAILED
 #define POLARSSL_ERR_MD_BAD_INPUT_DATA MBEDTLS_ERR_MD_BAD_INPUT_DATA
 #define POLARSSL_ERR_MD_FEATURE_UNAVAILABLE MBEDTLS_ERR_MD_FEATURE_UNAVAILABLE
@@ -1147,7 +1116,6 @@
 #define POLARSSL_ERR_OID_BUF_TOO_SMALL MBEDTLS_ERR_OID_BUF_TOO_SMALL
 #define POLARSSL_ERR_OID_NOT_FOUND MBEDTLS_ERR_OID_NOT_FOUND
 #define POLARSSL_ERR_PADLOCK_DATA_MISALIGNED MBEDTLS_ERR_PADLOCK_DATA_MISALIGNED
-#define POLARSSL_ERR_PBKDF2_BAD_INPUT_DATA MBEDTLS_ERR_PBKDF2_BAD_INPUT_DATA
 #define POLARSSL_ERR_PEM_BAD_INPUT_DATA MBEDTLS_ERR_PEM_BAD_INPUT_DATA
 #define POLARSSL_ERR_PEM_FEATURE_UNAVAILABLE MBEDTLS_ERR_PEM_FEATURE_UNAVAILABLE
 #define POLARSSL_ERR_PEM_INVALID_DATA MBEDTLS_ERR_PEM_INVALID_DATA
@@ -1179,7 +1147,6 @@
 #define POLARSSL_ERR_PK_TYPE_MISMATCH MBEDTLS_ERR_PK_TYPE_MISMATCH
 #define POLARSSL_ERR_PK_UNKNOWN_NAMED_CURVE MBEDTLS_ERR_PK_UNKNOWN_NAMED_CURVE
 #define POLARSSL_ERR_PK_UNKNOWN_PK_ALG MBEDTLS_ERR_PK_UNKNOWN_PK_ALG
-#define POLARSSL_ERR_RIPEMD160_FILE_IO_ERROR MBEDTLS_ERR_RIPEMD160_FILE_IO_ERROR
 #define POLARSSL_ERR_RSA_BAD_INPUT_DATA MBEDTLS_ERR_RSA_BAD_INPUT_DATA
 #define POLARSSL_ERR_RSA_INVALID_PADDING MBEDTLS_ERR_RSA_INVALID_PADDING
 #define POLARSSL_ERR_RSA_KEY_CHECK_FAILED MBEDTLS_ERR_RSA_KEY_CHECK_FAILED
@@ -1189,9 +1156,6 @@
 #define POLARSSL_ERR_RSA_PUBLIC_FAILED MBEDTLS_ERR_RSA_PUBLIC_FAILED
 #define POLARSSL_ERR_RSA_RNG_FAILED MBEDTLS_ERR_RSA_RNG_FAILED
 #define POLARSSL_ERR_RSA_VERIFY_FAILED MBEDTLS_ERR_RSA_VERIFY_FAILED
-#define POLARSSL_ERR_SHA1_FILE_IO_ERROR MBEDTLS_ERR_SHA1_FILE_IO_ERROR
-#define POLARSSL_ERR_SHA256_FILE_IO_ERROR MBEDTLS_ERR_SHA256_FILE_IO_ERROR
-#define POLARSSL_ERR_SHA512_FILE_IO_ERROR MBEDTLS_ERR_SHA512_FILE_IO_ERROR
 #define POLARSSL_ERR_SSL_BAD_HS_CERTIFICATE MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE
 #define POLARSSL_ERR_SSL_BAD_HS_CERTIFICATE_REQUEST MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE_REQUEST
 #define POLARSSL_ERR_SSL_BAD_HS_CERTIFICATE_VERIFY MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE_VERIFY
@@ -1305,7 +1269,6 @@
 #define POLARSSL_MD_SHA512 MBEDTLS_MD_SHA512
 #define POLARSSL_MD_WRAP_H MBEDTLS_MD_WRAP_H
 #define POLARSSL_MEMORY_BUFFER_ALLOC_H MBEDTLS_MEMORY_BUFFER_ALLOC_H
-#define POLARSSL_MEMORY_H MBEDTLS_MEMORY_H
 #define POLARSSL_MODE_CBC MBEDTLS_MODE_CBC
 #define POLARSSL_MODE_CCM MBEDTLS_MODE_CCM
 #define POLARSSL_MODE_CFB MBEDTLS_MODE_CFB
@@ -1319,7 +1282,7 @@
 #define POLARSSL_MPI_MAX_BITS_SCALE100 MBEDTLS_MPI_MAX_BITS_SCALE100
 #define POLARSSL_MPI_MAX_LIMBS MBEDTLS_MPI_MAX_LIMBS
 #define POLARSSL_MPI_RW_BUFFER_SIZE MBEDTLS_MPI_RW_BUFFER_SIZE
-#define POLARSSL_NET_H MBEDTLS_NET_H
+#define POLARSSL_NET_H MBEDTLS_NET_SOCKETS_H
 #define POLARSSL_NET_LISTEN_BACKLOG MBEDTLS_NET_LISTEN_BACKLOG
 #define POLARSSL_OID_H MBEDTLS_OID_H
 #define POLARSSL_OPERATION_NONE MBEDTLS_OPERATION_NONE
@@ -1329,7 +1292,6 @@
 #define POLARSSL_PADDING_ZEROS MBEDTLS_PADDING_ZEROS
 #define POLARSSL_PADDING_ZEROS_AND_LEN MBEDTLS_PADDING_ZEROS_AND_LEN
 #define POLARSSL_PADLOCK_H MBEDTLS_PADLOCK_H
-#define POLARSSL_PBKDF2_H MBEDTLS_PBKDF2_H
 #define POLARSSL_PEM_H MBEDTLS_PEM_H
 #define POLARSSL_PKCS11_H MBEDTLS_PKCS11_H
 #define POLARSSL_PKCS12_H MBEDTLS_PKCS12_H
@@ -1712,7 +1674,6 @@
 #define TLS_RSA_WITH_NULL_SHA256 MBEDTLS_TLS_RSA_WITH_NULL_SHA256
 #define TLS_RSA_WITH_RC4_128_MD5 MBEDTLS_TLS_RSA_WITH_RC4_128_MD5
 #define TLS_RSA_WITH_RC4_128_SHA MBEDTLS_TLS_RSA_WITH_RC4_128_SHA
-#define UL64 MBEDTLS_UL64
 #define X509_CRT_VERSION_1 MBEDTLS_X509_CRT_VERSION_1
 #define X509_CRT_VERSION_2 MBEDTLS_X509_CRT_VERSION_2
 #define X509_CRT_VERSION_3 MBEDTLS_X509_CRT_VERSION_3
@@ -1736,7 +1697,6 @@
 #define _ssl_key_cert mbedtls_ssl_key_cert
 #define _ssl_premaster_secret mbedtls_ssl_premaster_secret
 #define _ssl_session mbedtls_ssl_session
-#define _ssl_ticket_keys mbedtls_ssl_ticket_keys
 #define _ssl_transform mbedtls_ssl_transform
 #define _x509_crl mbedtls_x509_crl
 #define _x509_crl_entry mbedtls_x509_crl_entry
@@ -1836,7 +1796,6 @@
 #define cipher_definitions mbedtls_cipher_definitions
 #define cipher_finish mbedtls_cipher_finish
 #define cipher_free mbedtls_cipher_free
-#define cipher_free_ctx mbedtls_cipher_free_ctx
 #define cipher_get_block_size mbedtls_cipher_get_block_size
 #define cipher_get_cipher_mode mbedtls_cipher_get_cipher_mode
 #define cipher_get_iv_size mbedtls_cipher_get_iv_size
@@ -1855,7 +1814,6 @@
 #define cipher_mode_t mbedtls_cipher_mode_t
 #define cipher_padding_t mbedtls_cipher_padding_t
 #define cipher_reset mbedtls_cipher_reset
-#define cipher_self_test mbedtls_cipher_self_test
 #define cipher_set_iv mbedtls_cipher_set_iv
 #define cipher_set_padding_mode mbedtls_cipher_set_padding_mode
 #define cipher_setkey mbedtls_cipher_setkey
@@ -1866,7 +1824,6 @@
 #define ctr_drbg_context mbedtls_ctr_drbg_context
 #define ctr_drbg_free mbedtls_ctr_drbg_free
 #define ctr_drbg_init mbedtls_ctr_drbg_init
-#define ctr_drbg_init_entropy_len mbedtls_ctr_drbg_init_entropy_len
 #define ctr_drbg_random mbedtls_ctr_drbg_random
 #define ctr_drbg_random_with_add mbedtls_ctr_drbg_random_with_add
 #define ctr_drbg_reseed mbedtls_ctr_drbg_reseed
@@ -1877,14 +1834,12 @@
 #define ctr_drbg_update mbedtls_ctr_drbg_update
 #define ctr_drbg_update_seed_file mbedtls_ctr_drbg_update_seed_file
 #define ctr_drbg_write_seed_file mbedtls_ctr_drbg_write_seed_file
-#define debug_fmt mbedtls_debug_fmt
 #define debug_print_buf mbedtls_debug_print_buf
 #define debug_print_crt mbedtls_debug_print_crt
 #define debug_print_ecp mbedtls_debug_print_ecp
 #define debug_print_mpi mbedtls_debug_print_mpi
 #define debug_print_msg mbedtls_debug_print_msg
 #define debug_print_ret mbedtls_debug_print_ret
-#define debug_set_log_mode mbedtls_debug_set_log_mode
 #define debug_set_threshold mbedtls_debug_set_threshold
 #define des3_context mbedtls_des3_context
 #define des3_crypt_cbc mbedtls_des3_crypt_cbc
@@ -1928,7 +1883,6 @@
 #define ecdh_make_public mbedtls_ecdh_make_public
 #define ecdh_read_params mbedtls_ecdh_read_params
 #define ecdh_read_public mbedtls_ecdh_read_public
-#define ecdh_self_test mbedtls_ecdh_self_test
 #define ecdh_side mbedtls_ecdh_side
 #define ecdsa_context mbedtls_ecdsa_context
 #define ecdsa_free mbedtls_ecdsa_free
@@ -1937,7 +1891,6 @@
 #define ecdsa_info mbedtls_ecdsa_info
 #define ecdsa_init mbedtls_ecdsa_init
 #define ecdsa_read_signature mbedtls_ecdsa_read_signature
-#define ecdsa_self_test mbedtls_ecdsa_self_test
 #define ecdsa_sign mbedtls_ecdsa_sign
 #define ecdsa_sign_det mbedtls_ecdsa_sign_det
 #define ecdsa_verify mbedtls_ecdsa_verify
@@ -1945,7 +1898,6 @@
 #define ecdsa_write_signature_det mbedtls_ecdsa_write_signature_det
 #define eckey_info mbedtls_eckey_info
 #define eckeydh_info mbedtls_eckeydh_info
-#define ecp_add mbedtls_ecp_add
 #define ecp_check_privkey mbedtls_ecp_check_privkey
 #define ecp_check_pub_priv mbedtls_ecp_check_pub_priv
 #define ecp_check_pubkey mbedtls_ecp_check_pubkey
@@ -1962,7 +1914,6 @@
 #define ecp_group_free mbedtls_ecp_group_free
 #define ecp_group_id mbedtls_ecp_group_id
 #define ecp_group_init mbedtls_ecp_group_init
-#define ecp_group_read_string mbedtls_ecp_group_read_string
 #define ecp_grp_id_list mbedtls_ecp_grp_id_list
 #define ecp_is_zero mbedtls_ecp_is_zero
 #define ecp_keypair mbedtls_ecp_keypair
@@ -1977,7 +1928,6 @@
 #define ecp_point_write_binary mbedtls_ecp_point_write_binary
 #define ecp_self_test mbedtls_ecp_self_test
 #define ecp_set_zero mbedtls_ecp_set_zero
-#define ecp_sub mbedtls_ecp_sub
 #define ecp_tls_read_group mbedtls_ecp_tls_read_group
 #define ecp_tls_read_point mbedtls_ecp_tls_read_point
 #define ecp_tls_write_group mbedtls_ecp_tls_write_group
@@ -2015,7 +1965,6 @@
 #define hmac_drbg_context mbedtls_hmac_drbg_context
 #define hmac_drbg_free mbedtls_hmac_drbg_free
 #define hmac_drbg_init mbedtls_hmac_drbg_init
-#define hmac_drbg_init_buf mbedtls_hmac_drbg_init_buf
 #define hmac_drbg_random mbedtls_hmac_drbg_random
 #define hmac_drbg_random_with_add mbedtls_hmac_drbg_random_with_add
 #define hmac_drbg_reseed mbedtls_hmac_drbg_reseed
@@ -2031,14 +1980,8 @@
 #define md mbedtls_md
 #define md2 mbedtls_md2
 #define md2_context mbedtls_md2_context
-#define md2_file mbedtls_md2_file
 #define md2_finish mbedtls_md2_finish
 #define md2_free mbedtls_md2_free
-#define md2_hmac mbedtls_md2_hmac
-#define md2_hmac_finish mbedtls_md2_hmac_finish
-#define md2_hmac_reset mbedtls_md2_hmac_reset
-#define md2_hmac_starts mbedtls_md2_hmac_starts
-#define md2_hmac_update mbedtls_md2_hmac_update
 #define md2_info mbedtls_md2_info
 #define md2_init mbedtls_md2_init
 #define md2_process mbedtls_md2_process
@@ -2047,14 +1990,8 @@
 #define md2_update mbedtls_md2_update
 #define md4 mbedtls_md4
 #define md4_context mbedtls_md4_context
-#define md4_file mbedtls_md4_file
 #define md4_finish mbedtls_md4_finish
 #define md4_free mbedtls_md4_free
-#define md4_hmac mbedtls_md4_hmac
-#define md4_hmac_finish mbedtls_md4_hmac_finish
-#define md4_hmac_reset mbedtls_md4_hmac_reset
-#define md4_hmac_starts mbedtls_md4_hmac_starts
-#define md4_hmac_update mbedtls_md4_hmac_update
 #define md4_info mbedtls_md4_info
 #define md4_init mbedtls_md4_init
 #define md4_process mbedtls_md4_process
@@ -2063,14 +2000,8 @@
 #define md4_update mbedtls_md4_update
 #define md5 mbedtls_md5
 #define md5_context mbedtls_md5_context
-#define md5_file mbedtls_md5_file
 #define md5_finish mbedtls_md5_finish
 #define md5_free mbedtls_md5_free
-#define md5_hmac mbedtls_md5_hmac
-#define md5_hmac_finish mbedtls_md5_hmac_finish
-#define md5_hmac_reset mbedtls_md5_hmac_reset
-#define md5_hmac_starts mbedtls_md5_hmac_starts
-#define md5_hmac_update mbedtls_md5_hmac_update
 #define md5_info mbedtls_md5_info
 #define md5_init mbedtls_md5_init
 #define md5_process mbedtls_md5_process
@@ -2081,7 +2012,6 @@
 #define md_file mbedtls_md_file
 #define md_finish mbedtls_md_finish
 #define md_free mbedtls_md_free
-#define md_free_ctx mbedtls_md_free_ctx
 #define md_get_name mbedtls_md_get_name
 #define md_get_size mbedtls_md_get_size
 #define md_get_type mbedtls_md_get_type
@@ -2109,7 +2039,6 @@
 #define memory_buffer_alloc_status mbedtls_memory_buffer_alloc_status
 #define memory_buffer_alloc_verify mbedtls_memory_buffer_alloc_verify
 #define memory_buffer_set_verify mbedtls_memory_buffer_set_verify
-#define memory_set_own mbedtls_memory_set_own
 #define mpi mbedtls_mpi
 #define mpi_add_abs mbedtls_mpi_add_abs
 #define mpi_add_int mbedtls_mpi_add_int
@@ -2185,8 +2114,6 @@
 #define padlock_supports mbedtls_padlock_has_support
 #define padlock_xcryptcbc mbedtls_padlock_xcryptcbc
 #define padlock_xcryptecb mbedtls_padlock_xcryptecb
-#define pbkdf2_hmac mbedtls_pbkdf2_hmac
-#define pbkdf2_self_test mbedtls_pbkdf2_self_test
 #define pem_context mbedtls_pem_context
 #define pem_free mbedtls_pem_free
 #define pem_init mbedtls_pem_init
@@ -2246,13 +2173,11 @@
 #define platform_entropy_poll mbedtls_platform_entropy_poll
 #define platform_set_exit mbedtls_platform_set_exit
 #define platform_set_fprintf mbedtls_platform_set_fprintf
-#define platform_set_malloc_free mbedtls_platform_set_malloc_free
 #define platform_set_printf mbedtls_platform_set_printf
 #define platform_set_snprintf mbedtls_platform_set_snprintf
 #define polarssl_exit mbedtls_exit
 #define polarssl_fprintf mbedtls_fprintf
 #define polarssl_free mbedtls_free
-#define polarssl_malloc mbedtls_malloc
 #define polarssl_mutex_free mbedtls_mutex_free
 #define polarssl_mutex_init mbedtls_mutex_init
 #define polarssl_mutex_lock mbedtls_mutex_lock
@@ -2262,14 +2187,8 @@
 #define polarssl_strerror mbedtls_strerror
 #define ripemd160 mbedtls_ripemd160
 #define ripemd160_context mbedtls_ripemd160_context
-#define ripemd160_file mbedtls_ripemd160_file
 #define ripemd160_finish mbedtls_ripemd160_finish
 #define ripemd160_free mbedtls_ripemd160_free
-#define ripemd160_hmac mbedtls_ripemd160_hmac
-#define ripemd160_hmac_finish mbedtls_ripemd160_hmac_finish
-#define ripemd160_hmac_reset mbedtls_ripemd160_hmac_reset
-#define ripemd160_hmac_starts mbedtls_ripemd160_hmac_starts
-#define ripemd160_hmac_update mbedtls_ripemd160_hmac_update
 #define ripemd160_info mbedtls_ripemd160_info
 #define ripemd160_init mbedtls_ripemd160_init
 #define ripemd160_process mbedtls_ripemd160_process
@@ -2283,12 +2202,10 @@
 #define rsa_check_pubkey mbedtls_rsa_check_pubkey
 #define rsa_context mbedtls_rsa_context
 #define rsa_copy mbedtls_rsa_copy
-#define rsa_decrypt_func mbedtls_rsa_decrypt_func
 #define rsa_free mbedtls_rsa_free
 #define rsa_gen_key mbedtls_rsa_gen_key
 #define rsa_info mbedtls_rsa_info
 #define rsa_init mbedtls_rsa_init
-#define rsa_key_len_func mbedtls_rsa_key_len_func
 #define rsa_pkcs1_decrypt mbedtls_rsa_pkcs1_decrypt
 #define rsa_pkcs1_encrypt mbedtls_rsa_pkcs1_encrypt
 #define rsa_pkcs1_sign mbedtls_rsa_pkcs1_sign
@@ -2306,19 +2223,12 @@
 #define rsa_rsassa_pss_verify_ext mbedtls_rsa_rsassa_pss_verify_ext
 #define rsa_self_test mbedtls_rsa_self_test
 #define rsa_set_padding mbedtls_rsa_set_padding
-#define rsa_sign_func mbedtls_rsa_sign_func
 #define safer_memcmp mbedtls_ssl_safer_memcmp
 #define set_alarm mbedtls_set_alarm
 #define sha1 mbedtls_sha1
 #define sha1_context mbedtls_sha1_context
-#define sha1_file mbedtls_sha1_file
 #define sha1_finish mbedtls_sha1_finish
 #define sha1_free mbedtls_sha1_free
-#define sha1_hmac mbedtls_sha1_hmac
-#define sha1_hmac_finish mbedtls_sha1_hmac_finish
-#define sha1_hmac_reset mbedtls_sha1_hmac_reset
-#define sha1_hmac_starts mbedtls_sha1_hmac_starts
-#define sha1_hmac_update mbedtls_sha1_hmac_update
 #define sha1_info mbedtls_sha1_info
 #define sha1_init mbedtls_sha1_init
 #define sha1_process mbedtls_sha1_process
@@ -2328,14 +2238,8 @@
 #define sha224_info mbedtls_sha224_info
 #define sha256 mbedtls_sha256
 #define sha256_context mbedtls_sha256_context
-#define sha256_file mbedtls_sha256_file
 #define sha256_finish mbedtls_sha256_finish
 #define sha256_free mbedtls_sha256_free
-#define sha256_hmac mbedtls_sha256_hmac
-#define sha256_hmac_finish mbedtls_sha256_hmac_finish
-#define sha256_hmac_reset mbedtls_sha256_hmac_reset
-#define sha256_hmac_starts mbedtls_sha256_hmac_starts
-#define sha256_hmac_update mbedtls_sha256_hmac_update
 #define sha256_info mbedtls_sha256_info
 #define sha256_init mbedtls_sha256_init
 #define sha256_process mbedtls_sha256_process
@@ -2345,14 +2249,8 @@
 #define sha384_info mbedtls_sha384_info
 #define sha512 mbedtls_sha512
 #define sha512_context mbedtls_sha512_context
-#define sha512_file mbedtls_sha512_file
 #define sha512_finish mbedtls_sha512_finish
 #define sha512_free mbedtls_sha512_free
-#define sha512_hmac mbedtls_sha512_hmac
-#define sha512_hmac_finish mbedtls_sha512_hmac_finish
-#define sha512_hmac_reset mbedtls_sha512_hmac_reset
-#define sha512_hmac_starts mbedtls_sha512_hmac_starts
-#define sha512_hmac_update mbedtls_sha512_hmac_update
 #define sha512_info mbedtls_sha512_info
 #define sha512_init mbedtls_sha512_init
 #define sha512_process mbedtls_sha512_process
@@ -2385,7 +2283,6 @@
 #define ssl_cookie_setup mbedtls_ssl_cookie_setup
 #define ssl_cookie_write mbedtls_ssl_cookie_write
 #define ssl_cookie_write_t mbedtls_ssl_cookie_write_t
-#define ssl_curve_is_acceptable mbedtls_ssl_curve_is_acceptable
 #define ssl_derive_keys mbedtls_ssl_derive_keys
 #define ssl_dtls_replay_check mbedtls_ssl_dtls_replay_check
 #define ssl_dtls_replay_update mbedtls_ssl_dtls_replay_update
@@ -2453,7 +2350,6 @@
 #define ssl_set_arc4_support mbedtls_ssl_conf_arc4_support
 #define ssl_set_authmode mbedtls_ssl_conf_authmode
 #define ssl_set_bio mbedtls_ssl_set_bio
-#define ssl_set_bio mbedtls_ssl_set_bio_timeout
 #define ssl_set_ca_chain mbedtls_ssl_conf_ca_chain
 #define ssl_set_cbc_record_splitting mbedtls_ssl_conf_cbc_record_splitting
 #define ssl_set_ciphersuites mbedtls_ssl_conf_ciphersuites
@@ -2476,8 +2372,6 @@
 #define ssl_set_max_version mbedtls_ssl_conf_max_version
 #define ssl_set_min_version mbedtls_ssl_conf_min_version
 #define ssl_set_own_cert mbedtls_ssl_conf_own_cert
-#define ssl_set_own_cert_alt mbedtls_ssl_set_own_cert_alt
-#define ssl_set_own_cert_rsa mbedtls_ssl_set_own_cert_rsa
 #define ssl_set_psk mbedtls_ssl_conf_psk
 #define ssl_set_psk_cb mbedtls_ssl_conf_psk_cb
 #define ssl_set_renegotiation mbedtls_ssl_conf_renegotiation
@@ -2486,7 +2380,6 @@
 #define ssl_set_rng mbedtls_ssl_conf_rng
 #define ssl_set_session mbedtls_ssl_set_session
 #define ssl_set_session_cache mbedtls_ssl_conf_session_cache
-#define ssl_set_session_ticket_lifetime mbedtls_ssl_conf_session_ticket_lifetime
 #define ssl_set_session_tickets mbedtls_ssl_conf_session_tickets
 #define ssl_set_sni mbedtls_ssl_conf_sni
 #define ssl_set_transport mbedtls_ssl_conf_transport
@@ -2494,7 +2387,6 @@
 #define ssl_set_verify mbedtls_ssl_conf_verify
 #define ssl_sig_from_pk mbedtls_ssl_sig_from_pk
 #define ssl_states mbedtls_ssl_states
-#define ssl_ticket_keys mbedtls_ssl_ticket_keys
 #define ssl_transform mbedtls_ssl_transform
 #define ssl_transform_free mbedtls_ssl_transform_free
 #define ssl_write mbedtls_ssl_write
@@ -2523,7 +2415,6 @@
 #define test_cli_key mbedtls_test_cli_key
 #define test_cli_key_ec mbedtls_test_cli_key_ec
 #define test_cli_key_rsa mbedtls_test_cli_key_rsa
-#define test_dhm_params mbedtls_test_dhm_params
 #define test_srv_crt mbedtls_test_srv_crt
 #define test_srv_crt_ec mbedtls_test_srv_crt_ec
 #define test_srv_crt_rsa mbedtls_test_srv_crt_rsa
@@ -2578,8 +2469,6 @@
 #define x509_get_time mbedtls_x509_get_time
 #define x509_key_size_helper mbedtls_x509_key_size_helper
 #define x509_name mbedtls_x509_name
-#define x509_oid_get_description mbedtls_x509_oid_get_description
-#define x509_oid_get_numeric_string mbedtls_x509_oid_get_numeric_string
 #define x509_self_test mbedtls_x509_self_test
 #define x509_sequence mbedtls_x509_sequence
 #define x509_serial_gets mbedtls_x509_serial_gets

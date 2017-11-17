@@ -20,19 +20,26 @@
 #include "freertos/semphr.h"
 #include "unity.h"
 #include "sdkconfig.h"
+#include "test_apb_dport_access.h"
 
 TEST_CASE("mbedtls AES self-tests", "[aes]")
 {
+    start_apb_access_loop();
     TEST_ASSERT_FALSE_MESSAGE(mbedtls_aes_self_test(1), "AES self-tests should pass.");
+    verify_apb_access_loop();
 }
 
 TEST_CASE("mbedtls MPI self-tests", "[bignum]")
 {
+    start_apb_access_loop();
     TEST_ASSERT_FALSE_MESSAGE(mbedtls_mpi_self_test(1), "MPI self-tests should pass.");
+    verify_apb_access_loop();
 }
 
 TEST_CASE("mbedtls RSA self-tests", "[bignum]")
 {
+    start_apb_access_loop();
     TEST_ASSERT_FALSE_MESSAGE(mbedtls_rsa_self_test(1), "RSA self-tests should pass.");
+    verify_apb_access_loop();
 }
 

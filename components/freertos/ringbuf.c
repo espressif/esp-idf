@@ -337,7 +337,7 @@ static void returnItemToRingbufDefault(ringbuf_t *rb, void *item) {
     uint8_t *data=(uint8_t*)item;
     configASSERT(((int)rb->free_ptr&3)==0);
     configASSERT(data >= rb->data);
-    configASSERT(data < rb->data+rb->size);
+    configASSERT(data <= rb->data+rb->size);
     //Grab the buffer entry that preceeds the buffer
     buf_entry_hdr_t *hdr=(buf_entry_hdr_t*)(data-sizeof(buf_entry_hdr_t));
     configASSERT(hdr->len < rb->size);

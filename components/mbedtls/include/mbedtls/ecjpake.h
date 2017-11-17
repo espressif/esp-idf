@@ -116,7 +116,7 @@ int mbedtls_ecjpake_setup( mbedtls_ecjpake_context *ctx,
                            const unsigned char *secret,
                            size_t len );
 
-/*
+/**
  * \brief           Check if a context is ready for use
  *
  * \param ctx       Context to check

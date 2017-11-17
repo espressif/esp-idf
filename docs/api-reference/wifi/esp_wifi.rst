@@ -1,12 +1,18 @@
 Wi-Fi
 =====
 
-Overview
---------
+Introduction
+------------
 
-`Instructions`_
+The WiFi libraries provide support for configuring and monitoring the ESP32 WiFi networking functionality. This includes configuration for:
 
-.. _Instructions: ../template.html
+- Station mode (aka STA mode or WiFi client mode). ESP32 connects to an access point.
+- AP mode (aka Soft-AP mode or Access Point mode). Stations connect to the ESP32.
+- Combined AP-STA mode (ESP32 is concurrently an access point and a station connected to another access point).
+
+- Various security modes for the above (WPA, WPA2, WEP, etc.)
+- Scanning for access points (active & passive scanning).
+- Promiscuous mode monitoring of IEEE802.11 WiFi packets.
 
 Application Examples
 --------------------
@@ -22,4 +28,6 @@ API Reference
 -------------
 
 .. include:: /_build/inc/esp_wifi.inc
+.. include:: /_build/inc/esp_wifi_types.inc
+
 

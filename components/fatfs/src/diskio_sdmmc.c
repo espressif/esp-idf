@@ -64,10 +64,10 @@ DRESULT ff_sdmmc_ioctl (BYTE pdrv, BYTE cmd, void* buff)
         case CTRL_SYNC:
             return RES_OK;
         case GET_SECTOR_COUNT:
-            *((uint32_t*) buff) = card->csd.capacity;
+            *((DWORD*) buff) = card->csd.capacity;
             return RES_OK;
         case GET_SECTOR_SIZE:
-            *((uint32_t*) buff) = card->csd.sector_size;
+            *((WORD*) buff) = card->csd.sector_size;
             return RES_OK;
         case GET_BLOCK_SIZE:
             return RES_ERROR;

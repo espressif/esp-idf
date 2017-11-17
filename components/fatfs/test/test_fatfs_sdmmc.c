@@ -130,6 +130,13 @@ TEST_CASE("(SD) can create and remove directories", "[fatfs][ignore]")
     test_teardown();
 }
 
+TEST_CASE("(SD) can opendir root directory of FS", "[fatfs][ignore]")
+{
+    test_setup();
+    test_fatfs_can_opendir("/sdcard");
+    test_teardown();
+}
+
 TEST_CASE("(SD) opendir, readdir, rewinddir, seekdir work as expected", "[fatfs][ignore]")
 {
     test_setup();

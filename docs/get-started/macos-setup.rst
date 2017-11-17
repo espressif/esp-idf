@@ -19,13 +19,13 @@ Toolchain Setup
 
 ESP32 toolchain for macOS is available for download from Espressif website:
 
-https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-61-gab8375a-5.2.0.tar.gz
+https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-73-ge28a011-5.2.0.tar.gz
 
 Download this file, then extract it in ``~/esp`` directory::
 
     mkdir -p ~/esp
     cd ~/esp
-    tar -xzf ~/Downloads/xtensa-esp32-elf-osx-1.22.0-61-gab8375a-5.2.0.tar.gz
+    tar -xzf ~/Downloads/xtensa-esp32-elf-osx-1.22.0-73-ge28a011-5.2.0.tar.gz
 
 .. _setup-macos-toolchain-add-it-to-path:
 

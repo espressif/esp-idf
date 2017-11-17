@@ -68,13 +68,8 @@ extern "C" {
 #define ANNOUNCE_NUM             2   /*          (number of announcement packets)       */
 #define ANNOUNCE_INTERVAL        2   /* seconds  (time between announcement packets)    */
 #define ANNOUNCE_WAIT            2   /* seconds  (delay before announcing)              */
-#if CONFIG_MDNS
-#define MAX_CONFLICTS            9   /*          (max conflicts before rate limiting)   */
-#define RATE_LIMIT_INTERVAL      20  /* seconds  (delay between successive attempts)    */
-#else
-#define MAX_CONFLICTS            10  /*          (max conflicts before rate limiting)   */
-#define RATE_LIMIT_INTERVAL      60  /* seconds  (delay between successive attempts)    */
-#endif
+#define MAX_CONFLICTS            LWIP_AUTOIP_MAX_CONFLICTS   /*          (max conflicts before rate limiting)   */
+#define RATE_LIMIT_INTERVAL      LWIP_AUTOIP_RATE_LIMIT_INTERVAL  /* seconds  (delay between successive attempts)    */
 #define DEFEND_INTERVAL          10  /* seconds  (min. wait between defensive ARPs)     */
 
 /* AutoIP client states */

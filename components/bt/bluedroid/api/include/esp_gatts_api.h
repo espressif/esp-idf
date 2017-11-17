@@ -119,6 +119,8 @@ typedef union {
     struct gatts_conf_evt_param {
         esp_gatt_status_t status;       /*!< Operation status */
         uint16_t conn_id;               /*!< Connection id */
+        uint16_t len;                   /*!< The indication or notification value length, len is valid when send notification or indication failed */
+        uint8_t *value;                 /*!< The indication or notification value , value is valid when send notification or indication failed */
     } conf;                             /*!< Gatt server callback param of ESP_GATTS_CONF_EVT (confirm) */
 
     /**
@@ -193,7 +195,6 @@ typedef union {
     struct gatts_connect_evt_param {
         uint16_t conn_id;               /*!< Connection id */
         esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address */
-        bool is_connected;              /*!< Indicate it is connected or not */
     } connect;                          /*!< Gatt server callback param of ESP_GATTS_CONNECT_EVT */
 
     /**
@@ -202,18 +203,31 @@ typedef union {
     struct gatts_disconnect_evt_param {
         uint16_t conn_id;               /*!< Connection id */
         esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address */
-        bool is_connected;              /*!< Indicate it is connected or not */
+        esp_gatt_conn_reason_t reason;  /*!< Indicate the reason of disconnection */
     } disconnect;                       /*!< Gatt server callback param of ESP_GATTS_DISCONNECT_EVT */
 
     /**
      * @brief ESP_GATTS_OPEN_EVT
      */
+    struct gatts_open_evt_param {
+        esp_gatt_status_t status;       /*!< Operation status */
+    } open;                             /*!< Gatt server callback param of ESP_GATTS_OPEN_EVT */
+
     /**
      * @brief ESP_GATTS_CANCEL_OPEN_EVT
      */
+    struct gatts_cancel_open_evt_param {
+        esp_gatt_status_t status;       /*!< Operation status */
+    } cancel_open;                      /*!< Gatt server callback param of ESP_GATTS_CANCEL_OPEN_EVT */
+
     /**
      * @brief ESP_GATTS_CLOSE_EVT
      */
+    struct gatts_close_evt_param {
+        esp_gatt_status_t status;       /*!< Operation status */
+        uint16_t conn_id;               /*!< Connection id */
+    } close;                            /*!< Gatt server callback param of ESP_GATTS_CLOSE_EVT */
+
     /**
      * @brief ESP_GATTS_LISTEN_EVT
      */
@@ -501,11 +515,11 @@ esp_err_t esp_ble_gatts_set_attr_value(uint16_t attr_handle, uint16_t length, co
  * @param[out]  value:  Pointer to attribute value payload, the value cannot be modified by user
  *
  * @return
- *                  - ESP_OK : success
+ *                  - ESP_GATT_OK : success
  *                  - other  : failed
  *
  */
-esp_err_t esp_ble_gatts_get_attr_value(uint16_t attr_handle, uint16_t *length, const uint8_t **value);
+esp_gatt_status_t esp_ble_gatts_get_attr_value(uint16_t attr_handle, uint16_t *length, const uint8_t **value);
 
 
 /**

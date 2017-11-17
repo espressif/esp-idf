@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "esp_efuse.h"
+#include "esp_log.h"
 
 #define EFUSE_CONF_WRITE 0x5A5A /* efuse_pgm_op_ena, force no rd/wr disable */
 #define EFUSE_CONF_READ 0x5AA5 /* efuse_read_op_ena, release force */
 
 #define EFUSE_CMD_PGM 0x02
 #define EFUSE_CMD_READ 0x01
+
+static const char *TAG = "efuse";
 
 void esp_efuse_burn_new_values(void)
 {
@@ -43,5 +46,15 @@ void esp_efuse_reset(void)
       for (uint32_t r = block_start[i]; r <= block_end[i]; r+= 4) {
         REG_WRITE(r, 0);
       }
+    }
+}
+
+void esp_efuse_disable_basic_rom_console(void)
+{
+    if ((REG_READ(EFUSE_BLK0_RDATA6_REG) & EFUSE_RD_CONSOLE_DEBUG_DISABLE) == 0) {
+        ESP_EARLY_LOGI(TAG, "Disable BASIC ROM Console fallback via efuse...");
+        esp_efuse_reset();
+        REG_WRITE(EFUSE_BLK0_WDATA6_REG, EFUSE_RD_CONSOLE_DEBUG_DISABLE);
+        esp_efuse_burn_new_values();
     }
 }

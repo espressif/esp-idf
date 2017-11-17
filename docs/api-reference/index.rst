@@ -12,4 +12,5 @@ API Reference
    Protocols <protocols/index>
    Storage <storage/index>
    System <system/index>
+   Configuration Options <kconfig>
 

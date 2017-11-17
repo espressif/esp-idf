@@ -46,7 +46,9 @@ TEST_CASE("xPortInIsrContext test", "[freertos]")
 {
     xTaskCreatePinnedToCore(testthread, "tst" , 4096, NULL, 3, NULL, 0);
     vTaskDelay(150 / portTICK_PERIOD_MS);
+#if portNUM_PROCESSORS == 2
     xTaskCreatePinnedToCore(testthread, "tst" , 4096, NULL, 3, NULL, 1);
     vTaskDelay(150 / portTICK_PERIOD_MS);
+#endif
 }
 

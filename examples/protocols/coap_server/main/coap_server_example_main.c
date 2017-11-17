@@ -120,7 +120,7 @@ static void coap_example_thread(void *p)
                     FD_CLR( ctx->sockfd, &readfds);
                     FD_SET( ctx->sockfd, &readfds);
 
-                    int result = select( FD_SETSIZE, &readfds, 0, 0, &tv );
+                    int result = select( ctx->sockfd+1, &readfds, 0, 0, &tv );
                     if (result > 0){
                         if (FD_ISSET( ctx->sockfd, &readfds ))
                             coap_read(ctx);

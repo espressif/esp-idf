@@ -2969,3 +2969,229 @@ initial condition:
   script path: InitCondBase.py
   tag: UTINIT1
   test script: InitCondBase
+- tag: BLE_DEINIT1
+  initial condition detail: 1 DUT which BLE is not enabled
+  script path: InitCondBase.py
+  test script: InitCondBase
+  check cmd set:
+  - ''
+  - - SSC SSC1 bt -Q
+    - ['R SSC1 C +BT:status,DEINIT']
+  restore cmd set:
+  - ''
+  - - SSC SSC1 bt -D -z disable
+    - ['R SSC1 C +BT:']
+  - - SSC SSC1 bt -D -z deinit
+    - ['R SSC1 C +BT:']
+  - - SSC SSC1 bt -Q
+    - ['R SSC1 C +BT:status,DEINIT']
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - ['R SSC1 C !!!ready!!!']
+  - - SSC SSC1 bt -D -z stop
+    - ['R SSC1 C +BT:OK']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 ram
+    - ['R SSC1 A <heap_size>:(\d+)']
+- tag: BLE_INIT1
+  initial condition detail: 1 DUT which BLE is enabled, no active connection
+  script path: InitCondBase.py
+  test script: InitCondBase
+  check cmd set:
+  - ''
+  - - SSC SSC1 bt -Q
+    - ['R SSC1 C +BT:status,ENABLE']
+  - - SSC SSC1 ble -R
+    - ['R SSC1 C +BLE:']
+  - - SSC SSC1 bleconn -Q
+    - ['R SSC1 C +BLECONN:ConnCount,0']
+  restore cmd set:
+  - ''
+  - - SSC SSC1 bt -D -z init
+    - ['R SSC1 C +BT:']
+  - - SSC SSC1 bt -D -z enable
+    - ['R SSC1 C +BT:']
+  - - SSC SSC1 ble -R
+    - ['R SSC1 C +BLE:']
+  - - SSC SSC1 bleconn -D -z all
+    - ['R SSC1 C +BLECONN:']
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - ['R SSC1 C !!!ready!!!']
+  - - SSC SSC1 bt -D -z init
+    - ['R SSC1 C +BT:']
+  - - SSC SSC1 bt -D -z enable
+    - ['R SSC1 C +BT:']
+  - - SSC SSC1 ble -R
+    - ['R SSC1 C +BLE:']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 bleconn -D -z all
+    - ['R SSC1 C +BLECONN:']
+  - - SSC SSC1 gatts -S -z delete
+    - ['R SSC1 C +GATTS:']
+  - - SSC SSC1 ram
+    - ['R SSC1 A <heap_size>:(\d+)']
+- tag: BLE_INIT2
+  initial condition detail: 2 DUT which BLE is enabled, no active connection, DUT2 start adv
+  script path: InitCondBase.py
+  test script: InitCondBase
+  check cmd set:
+  - ''
+  - - "SSC SSC[1-2] bt -Q"
+    - ['R SSC[1-2] C +BT:status,ENABLE']
+  restore cmd set:
+  - ''
+  - - "SSC SSC[1-2] bt -D -z init"
+    - ['R SSC[1-2] C +BT:']
+  - - "SSC SSC[1-2] bt -D -z enable"
+    - ['R SSC[1-2] C +BT:']
+  force restore cmd set:
+  - ''
+  - - "SSC SSC[1-2] reboot"
+    - ['R SSC[1-2] C !!!ready!!!']
+  - - "SSC SSC[1-2] bt -D -z init"
+    - ['R SSC[1-2] C +BT:']
+  - - "SSC SSC[1-2] bt -D -z enable"
+    - ['R SSC[1-2] C +BT:']
+  restore post cmd set:
+  - ''
+  - - "SSC SSC[1-2] ble -R"
+    - ['R SSC[1-2] C +BLE:']
+  - - "SSC SSC[1-2] bleconn -D -z all"
+    - ['R SSC[1-2] C +BLECONN:']
+  - - "SSC SSC[1-2] gatts -S -z delete"
+    - ['R SSC[1-2] C +GATTS:']
+  - - "SSC SSC[1-2] bleadv -D -z stop"
+    - ['R SSC[1-2] C +BLEADV:OK']
+  - - "SSC SSC2 bleadv -L -c 0 -t 3"
+    - ['R SSC2 C +BLEADV:SetAdv,OK']
+  - - "SSC SSC2 bleadv -D -z start"
+    - ['R SSC2 C +BLEADV:OK']
+  - - SSC SSC1 ram
+    - ['R SSC1 A <heap_size>:(\d+)']
+- check cmd set:
+  - ''
+  - - ASSERT
+    - ['']
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1-2] reboot
+    - ['R SSC[1-2] C !!!ready!!!']
+  - - SSC SSC[1-2] ble -R
+    - ['R SSC[1-2] C +BLE:']
+  - - SSC SSC[1-2] bleconn -D -z all
+    - ['R SSC[1-2] C +BLECONN:']
+  - - SSC SSC[1-2] gatts -S -z delete
+    - ['R SSC[1-2] C +GATTS:']
+  - - SSC SSC[1-2] bleadv -D -z stop
+    - ['R SSC[1-2] C +BLEADV:OK']
+  - - SSC SSC2 bleadv -L -c 0 -t 3
+    - ['R SSC2 C +BLEADV:SetAdv,OK']
+  - - SSC SSC2 bleadv -D -z start
+    - ['R SSC2 C +BLEADV:OK']
+  - - SSC SSC2 gatts -S -z load -p 0xA0
+    - ['R SSC2 C +GATTS:StartService,OK,A000']
+  - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
+    - ['R SSC1 C +BLE:GattcConnect,OK']
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - ['R SSC1 C +GATTC:OK']
+  initial condition detail: 2 DUT which BLE is enabled, DUT1 connected with DUT2,
+    DUT2 created GATT service 0xA000
+  restore cmd set:
+  - ''
+  - - SSC SSC[1-2] bt -D -z init
+    - ['R SSC[1-2] C +BT:']
+  - - SSC SSC[1-2] bt -D -z enable
+    - ['R SSC[1-2] C +BT:']
+  - - SSC SSC[1-2] ble -R
+    - ['R SSC[1-2] C +BLE:']
+  - - SSC SSC[1-2] bleconn -D -z all
+    - ['R SSC[1-2] C +BLECONN:']
+  - - SSC SSC[1-2] gatts -S -z delete
+    - ['R SSC[1-2] C +GATTS:']
+  - - SSC SSC[1-2] bleadv -D -z stop
+    - ['R SSC[1-2] C +BLEADV:OK']
+  - - SSC SSC2 bleadv -L -c 0 -t 3
+    - ['R SSC2 C +BLEADV:SetAdv,OK']
+  - - SSC SSC2 bleadv -D -z start
+    - ['R SSC2 C +BLEADV:OK']
+  - - SSC SSC2 gatts -S -z load -p 0xA0
+    - ['R SSC2 C +GATTS:StartService,OK,A000']
+  - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
+    - ['R SSC1 C +BLE:GattcConnect,OK']
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - ['R SSC1 C +GATTC:OK']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 ram
+    - ['R SSC1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  tag: BLE_CONN2
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ASSERT
+    - ['']
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1-2] reboot
+    - ['R SSC[1-2] C !!!ready!!!']
+  - - SSC SSC[1-2] bt -D -z start
+    - ['R SSC[1-2] C +BT:']
+  - - SSC SSC[1-2] bt -D -z enable
+    - ['R SSC[1-2] C +BT:']
+  - - SSC SSC[1-2] ble -R
+    - ['R SSC[1-2] C +BLE:']
+  - - SSC SSC[1-2] bleconn -D -z all
+    - ['R SSC[1-2] C +BLECONN:']
+  - - SSC SSC[1-2] gatts -S -z delete
+    - ['R SSC[1-2] C +GATTS:']
+  - - SSC SSC[1-2] bleadv -D -z stop
+    - ['R SSC[1-2] C +BLEADV:OK']
+  - - SSC SSC2 bleadv -L -c 0 -t 3
+    - ['R SSC2 C +BLEADV:SetAdv,OK']
+  - - SSC SSC2 bleadv -D -z start
+    - ['R SSC2 C +BLEADV:OK']
+  - - SSC SSC2 gatts -S -z load -p 0xA2
+    - ['R SSC2 C +GATTS:StartService,OK,A002']
+  - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
+    - ['R SSC1 C +BLE:GattcConnect,OK']
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - ['R SSC1 C +GATTC:OK']
+  initial condition detail: 2 DUT which BLE is enabled, DUT1 connected with DUT2,
+    DUT2 created GATT service 0xA002
+  restore cmd set:
+  - ''
+  - - SSC SSC[1-2] bt -D -z init
+    - ['R SSC[1-2] C +BT:']
+  - - SSC SSC[1-2] bt -D -z enable
+    - ['R SSC[1-2] C +BT:']
+  - - SSC SSC[1-2] ble -R
+    - ['R SSC[1-2] C +BLE:']
+  - - SSC SSC[1-2] bleconn -D -z all
+    - ['R SSC[1-2] C +BLECONN:']
+  - - SSC SSC[1-2] gatts -S -z delete
+    - ['R SSC[1-2] C +GATTS:']
+  - - SSC SSC[1-2] bleadv -D -z stop
+    - ['R SSC[1-2] C +BLEADV:OK']
+  - - SSC SSC2 bleadv -L -c 0 -t 3
+    - ['R SSC2 C +BLEADV:SetAdv,OK']
+  - - SSC SSC2 bleadv -D -z start
+    - ['R SSC2 C +BLEADV:OK']
+  - - SSC SSC2 gatts -S -z load -p 0xA2
+    - ['R SSC2 C +GATTS:StartService,OK,A002']
+  - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
+    - ['R SSC1 C +BLE:GattcConnect,OK']
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - ['R SSC1 C +GATTC:OK']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 ram
+    - ['R SSC1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  tag: BLE_CONN3
+  test script: InitCondBase

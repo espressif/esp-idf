@@ -9,7 +9,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "esp_deep_sleep.h"
+#include "esp_sleep.h"
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "soc/rtc_cntl_reg.h"
@@ -36,8 +36,8 @@ static void start_ulp_program();
 
 void app_main()
 {
-    esp_deep_sleep_wakeup_cause_t cause = esp_deep_sleep_get_wakeup_cause();
-    if (cause != ESP_DEEP_SLEEP_WAKEUP_ULP) {
+    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
+    if (cause != ESP_SLEEP_WAKEUP_ULP) {
         printf("Not ULP wakeup\n");
         init_ulp_program();
     } else {
@@ -50,7 +50,7 @@ void app_main()
     }
     printf("Entering deep sleep\n\n");
     start_ulp_program();
-    ESP_ERROR_CHECK( esp_deep_sleep_enable_ulp_wakeup() );
+    ESP_ERROR_CHECK( esp_sleep_enable_ulp_wakeup() );
     esp_deep_sleep_start();
 }
 
@@ -63,16 +63,22 @@ static void init_ulp_program()
     /* Configure ADC channel */
     /* Note: when changing channel here, also change 'adc_channel' constant
        in adc.S */
-    adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_11db);
-    adc1_config_width(ADC_WIDTH_12Bit);
+    adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_11);
+    adc1_config_width(ADC_WIDTH_BIT_12);
     adc1_ulp_enable();
 
     /* Set low and high thresholds, approx. 1.35V - 1.75V*/
     ulp_low_thr = 1500;
     ulp_high_thr = 2000;
 
-    /* Set ULP wake up period to 100ms */
-    ulp_set_wakeup_period(0, 100000);
+    /* Set ULP wake up period to 20ms */
+    ulp_set_wakeup_period(0, 20000);
+
+    /* Disable pullup on GPIO15, in case it is connected to ground to suppress
+     * boot messages.
+     */
+    rtc_gpio_pullup_dis(GPIO_NUM_15);
+    rtc_gpio_hold_en(GPIO_NUM_15);
 }
 
 static void start_ulp_program()

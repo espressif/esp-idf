@@ -57,7 +57,7 @@
 #include "lwip/inet.h"
 #endif /* PING_USE_SOCKETS */
 
-#ifdef ESP_LWIP
+#ifdef ESP_PING
 #include "esp_ping.h"
 #include "lwip/ip_addr.h"
 #endif
@@ -65,7 +65,7 @@
  * PING_DEBUG: Enable debugging for PING.
  */
 #ifndef PING_DEBUG
-#define PING_DEBUG     LWIP_DBG_ON
+#define PING_DEBUG     LWIP_DBG_OFF
 #endif
 
 /** ping target - should be an "ip4_addr_t" */
@@ -100,10 +100,17 @@
 
 /* ping variables */
 static u16_t ping_seq_num;
-static u32_t ping_time;
+static struct timeval ping_time;
+#if ESP_PING
+static sys_sem_t ping_sem = NULL;
+static bool ping_init_flag = false;
+#endif
 #if !PING_USE_SOCKETS
 static struct raw_pcb *ping_pcb;
 #endif /* PING_USE_SOCKETS */
+
+#define PING_TIME_DIFF_MS(_end, _start)  ((uint32_t)(((_end).tv_sec - (_start).tv_sec) * 1000 + (_end.tv_usec - _start.tv_usec)/1000))
+#define PING_TIME_DIFF_SEC(_end, _start) ((uint32_t)((_end).tv_sec - (_start).tv_sec))
 
 /** Prepare a echo ICMP request */
 static void
@@ -166,6 +173,7 @@ ping_recv(int s)
   struct ip_hdr *iphdr;
   struct icmp_echo_hdr *iecho;
   int fromlen = sizeof(from);
+  struct timeval now;
 
   while((len = lwip_recvfrom(s, buf, sizeof(buf), 0, (struct sockaddr*)&from, (socklen_t*)&fromlen)) > 0) {
     if (len >= (int)(sizeof(struct ip_hdr)+sizeof(struct icmp_echo_hdr))) {
@@ -175,16 +183,18 @@ ping_recv(int s)
       } else {
         ip4_addr_t fromaddr;
         inet_addr_to_ipaddr(&fromaddr, &from.sin_addr);
-        LWIP_DEBUGF( PING_DEBUG, ("ping: recv "));
-        ip4_addr_debug_print(PING_DEBUG, &fromaddr);
-        LWIP_DEBUGF( PING_DEBUG, (" %"U32_F" ms\n", (sys_now() - ping_time)));
-
         iphdr = (struct ip_hdr *)buf;
         iecho = (struct icmp_echo_hdr *)(buf + (IPH_HL(iphdr) * 4));
+ 
+        LWIP_DEBUGF( PING_DEBUG, ("ping: recv seq=%d ", lwip_ntohs(iecho->seqno)));
+        ip4_addr_debug_print(PING_DEBUG, &fromaddr);
+        gettimeofday(&now, NULL);
+        LWIP_DEBUGF( PING_DEBUG, (" %"U32_F" ms\n", PING_TIME_DIFF_MS(now, ping_time)));
+
         if ((iecho->id == PING_ID) && (iecho->seqno == lwip_htons(ping_seq_num))) {
           /* do some ping result processing */
-#ifdef ESP_LWIP
-          esp_ping_result((ICMPH_TYPE(iecho) == ICMP_ER), len, (sys_now() - ping_time));
+#ifdef ESP_PING
+          esp_ping_result((ICMPH_TYPE(iecho) == ICMP_ER), len, PING_TIME_DIFF_MS(now, ping_time));
 #else
           PING_RESULT((ICMPH_TYPE(iecho) == ICMP_ER));
 #endif
@@ -197,13 +207,14 @@ ping_recv(int s)
     fromlen = sizeof(from);
   }
 
+  gettimeofday(&now, NULL);
   if (len == 0) {
-    LWIP_DEBUGF( PING_DEBUG, ("ping: recv - %"U32_F" ms - timeout\n", (sys_now()-ping_time)));
+    LWIP_DEBUGF( PING_DEBUG, ("ping: recv - %"U32_F" ms - timeout\n", PING_TIME_DIFF_MS(now, ping_time)));
   }
 
   /* do some ping result processing */
-#ifdef ESP_LWIP
-  esp_ping_result(0, len, (sys_now()-ping_time));
+#ifdef ESP_PING
+  esp_ping_result(0, len, PING_TIME_DIFF_MS(now, ping_time));
 #else
   PING_RESULT(0);
 #endif
@@ -212,16 +223,35 @@ ping_recv(int s)
 static void
 ping_thread(void *arg)
 {
-  int s;
-  int ret;
+  uint32_t ping_timeout = PING_RCV_TIMEO;
+  uint32_t ping_delay = PING_DELAY;
   ip_addr_t ping_target;
+  int ret;
+  int s;
+
+#ifdef ESP_PING
+  uint32_t ping_count_cur = 0;
+  uint32_t ping_count_max = 3;
+  ip4_addr_t ipaddr;
+  int lev;
+
+  esp_ping_get_target(PING_TARGET_IP_ADDRESS_COUNT, &ping_count_max, sizeof(ping_count_max));
+  esp_ping_get_target(PING_TARGET_RCV_TIMEO, &ping_timeout, sizeof(ping_timeout));
+  esp_ping_get_target(PING_TARGET_DELAY_TIME, &ping_delay, sizeof(ping_delay));
+  esp_ping_get_target(PING_TARGET_IP_ADDRESS, &ipaddr.addr, sizeof(uint32_t));
+  ip_addr_copy_from_ip4(ping_target, ipaddr);
+#else
+  ip_addr_copy_from_ip4(ping_target, PING_TARGET);
+#endif
+
 #if LWIP_SO_SNDRCVTIMEO_NONSTANDARD
-  int timeout = PING_RCV_TIMEO;
+  int timeout = ping_timeout;
 #else
   struct timeval timeout;
-  timeout.tv_sec = PING_RCV_TIMEO/1000;
-  timeout.tv_usec = (PING_RCV_TIMEO%1000)*1000;
+  timeout.tv_sec = ping_timeout/1000;
+  timeout.tv_usec = (ping_timeout%1000)*1000;
 #endif
+
   LWIP_UNUSED_ARG(arg);
 
   if ((s = lwip_socket(AF_INET, SOCK_RAW, IP_PROTO_ICMP)) < 0) {
@@ -233,28 +263,53 @@ ping_thread(void *arg)
   LWIP_UNUSED_ARG(ret);
 
   while (1) {
-#ifdef ESP_LWIP
-    ip4_addr_t ipaddr;
-    esp_ping_get_target(PING_TARGET_IP_ADDRESS, &ipaddr.addr, sizeof(uint32_t));
-    ip_addr_copy_from_ip4(ping_target, ipaddr);
-#else
-    ip_addr_copy_from_ip4(ping_target, PING_TARGET);
-#endif
+#ifdef ESP_PING
+    if (ping_count_cur++ >= ping_count_max) {
+      goto _exit;
+    }
 
+    if (ping_init_flag == false) {
+      goto _exit;
+    }
+#endif    
     if (ping_send(s, &ping_target) == ERR_OK) {
-      LWIP_DEBUGF( PING_DEBUG, ("ping: send "));
+      LWIP_DEBUGF( PING_DEBUG, ("ping: send seq=%d ", ping_seq_num));
       ip_addr_debug_print(PING_DEBUG, &ping_target);
       LWIP_DEBUGF( PING_DEBUG, ("\n"));
 
-      ping_time = sys_now();
+      gettimeofday(&ping_time, NULL);
       ping_recv(s);
     } else {
       LWIP_DEBUGF( PING_DEBUG, ("ping: send "));
       ip_addr_debug_print(PING_DEBUG, &ping_target);
       LWIP_DEBUGF( PING_DEBUG, (" - error\n"));
     }
-    sys_msleep(PING_DELAY);
+    sys_msleep(ping_delay);
   }
+
+#ifdef ESP_PING
+_exit:
+  lwip_close(s);
+
+  esp_ping_result(PING_RES_FINISH, 0, 0);
+  SYS_ARCH_PROTECT(lev);
+  if (ping_init_flag) { /* Ping closed by this thread */
+    LWIP_DEBUGF( PING_DEBUG, ("ping: closed by self "));
+    if (ping_sem) {
+      sys_sem_free(&ping_sem);
+    }
+    ping_sem = NULL;
+    ping_init_flag = false;
+    SYS_ARCH_UNPROTECT(lev);
+  } else { /* Ping closed by task calls ping_deinit */
+    LWIP_DEBUGF( PING_DEBUG, ("ping: closed by other"));
+    SYS_ARCH_UNPROTECT(lev);
+    if (ping_sem) {
+      sys_sem_signal(&ping_sem);
+    }
+  }
+  vTaskDelete(NULL);
+#endif
 }
 
 #else /* PING_USE_SOCKETS */
@@ -264,6 +319,8 @@ static u8_t
 ping_recv(void *arg, struct raw_pcb *pcb, struct pbuf *p, const ip_addr_t *addr)
 {
   struct icmp_echo_hdr *iecho;
+  struct timeval now;
+
   LWIP_UNUSED_ARG(arg);
   LWIP_UNUSED_ARG(pcb);
   LWIP_UNUSED_ARG(addr);
@@ -276,7 +333,8 @@ ping_recv(void *arg, struct raw_pcb *pcb, struct pbuf *p, const ip_addr_t *addr)
     if ((iecho->id == PING_ID) && (iecho->seqno == lwip_htons(ping_seq_num))) {
       LWIP_DEBUGF( PING_DEBUG, ("ping: recv "));
       ip_addr_debug_print(PING_DEBUG, addr);
-      LWIP_DEBUGF( PING_DEBUG, (" %"U32_F" ms\n", (sys_now()-ping_time)));
+      gettimeofday(&now, NULL);
+      LWIP_DEBUGF( PING_DEBUG, (" %"U32_F" ms\n", PING_TIME_DIFF_MS(now, ping_time)));
 
       /* do some ping result processing */
       PING_RESULT(1);
@@ -312,7 +370,7 @@ ping_send(struct raw_pcb *raw, ip_addr_t *addr)
     ping_prepare_echo(iecho, (u16_t)ping_size);
 
     raw_sendto(raw, p, addr);
-    ping_time = sys_now();
+    ping_time = system_get_time();
   }
   pbuf_free(p);
 }
@@ -327,7 +385,6 @@ ping_timeout(void *arg)
 
   ip_addr_copy_from_ip4(ping_target, PING_TARGET);
   ping_send(pcb, &ping_target);
-
   sys_timeout(PING_DELAY, ping_timeout, pcb);
 }
 
@@ -353,14 +410,54 @@ ping_send_now(void)
 
 #endif /* PING_USE_SOCKETS */
 
-void
+int
 ping_init(void)
 {
+  int ret;
+  int lev;
+
+  SYS_ARCH_PROTECT(lev);
+  if (ping_init_flag) {
+    SYS_ARCH_UNPROTECT(lev);
+    /* Currently we only support one ping, call ping_deinit to kill the running ping before start new ping */
+    return ERR_INPROGRESS;
+  }
+  ret = sys_sem_new(&ping_sem, 0);
+  if (ERR_OK != ret) {
+    SYS_ARCH_UNPROTECT(lev);
+    return ERR_MEM;
+  }
+  ping_init_flag = true;
+  SYS_ARCH_UNPROTECT(lev);
 #if PING_USE_SOCKETS
   sys_thread_new("ping_thread", ping_thread, NULL, DEFAULT_THREAD_STACKSIZE, DEFAULT_THREAD_PRIO);
 #else /* PING_USE_SOCKETS */
   ping_raw_init();
 #endif /* PING_USE_SOCKETS */
+  return ERR_OK;
+}
+
+void
+ping_deinit(void)
+{
+  int lev;
+
+  SYS_ARCH_PROTECT(lev);
+  if (ping_init_flag == false) {
+    SYS_ARCH_UNPROTECT(lev);
+    return;
+  }
+
+  ping_init_flag = false;
+  SYS_ARCH_UNPROTECT(lev);
+  if (ping_sem) {
+    sys_sem_wait(&ping_sem);
+
+    SYS_ARCH_PROTECT(lev);
+    sys_sem_free(&ping_sem);
+    ping_sem = NULL;
+    SYS_ARCH_UNPROTECT(lev);
+  }
 }
 
 #endif /* LWIP_IPV4 && LWIP_RAW */

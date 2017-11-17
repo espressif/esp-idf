@@ -16,7 +16,6 @@
 #include "btc_task.h"
 #include "bt_trace.h"
 #include "thread.h"
-#include "gki.h"
 #include "esp_bt_defs.h"
 #include "esp_gatt_defs.h"
 

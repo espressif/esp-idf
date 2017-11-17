@@ -30,7 +30,6 @@
 
 #include "bta_hh_api.h"
 #include "bta_hh_int.h"
-#include "gki.h"
 
 /*****************************************************************************
 ** Constants and types
@@ -308,7 +307,7 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB *p_cb, UINT16 event, tBTA_HH_DATA *p_data)
                 cback_event = (p_data->api_sndcmd.t_type - BTA_HH_FST_BTE_TRANS_EVT) +
                               BTA_HH_FST_TRANS_CB_EVT;
                 if (p_data->api_sndcmd.p_data != NULL) {
-                    GKI_freebuf(p_data->api_sndcmd.p_data);
+                    osi_free(p_data->api_sndcmd.p_data);
                 }
                 if (p_data->api_sndcmd.t_type == HID_TRANS_SET_PROTOCOL ||
                         p_data->api_sndcmd.t_type == HID_TRANS_SET_REPORT ||
@@ -341,7 +340,7 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB *p_cb, UINT16 event, tBTA_HH_DATA *p_data)
                 APPL_TRACE_ERROR("wrong device handle: [%d]", p_data->hdr.layer_specific);
                 /* Free the callback buffer now */
                 if (p_data != NULL && p_data->hid_cback.p_data != NULL) {
-                    GKI_freebuf(p_data->hid_cback.p_data);
+                    osi_free(p_data->hid_cback.p_data);
                     p_data->hid_cback.p_data = NULL;
                 }
                 break;

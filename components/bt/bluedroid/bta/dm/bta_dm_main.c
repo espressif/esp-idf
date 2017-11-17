@@ -53,7 +53,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_set_visibility,                  /* 3  BTA_DM_API_SET_VISIBILITY_EVT */
     bta_dm_acl_change,                      /* 8  BTA_DM_ACL_CHANGE_EVT */
     bta_dm_add_device,                      /* 9  BTA_DM_API_ADD_DEVICE_EVT */
-    bta_dm_close_acl,                       /* 10  BTA_DM_API_ADD_DEVICE_EVT */
+    bta_dm_close_acl,                       /* 10  BTA_DM_API_REMOVE_ACL_EVT */
 #if (SMP_INCLUDED == TRUE)
     /* security API events */
     bta_dm_bond,                            /* 11  BTA_DM_API_BOND_EVT */
@@ -91,6 +91,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_set_scan_params,             /* BTA_DM_API_BLE_SCAN_PARAM_EVT */
     bta_dm_ble_set_scan_fil_params,         /* BTA_DM_API_BLE_SCAN_FIL_PARAM_EVT */
     bta_dm_ble_observe,                     /* BTA_DM_API_BLE_OBSERVE_EVT*/
+    bta_dm_ble_scan,                        /* BTA_DM_API_BLE_SCAN_EVT */
     bta_dm_ble_update_conn_params,          /* BTA_DM_API_UPDATE_CONN_PARAM_EVT */
     /* This handler function added by
        Yulong at 2016/9/9 to support the
@@ -131,6 +132,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_read_scan_reports,           /* BTA_DM_API_BLE_READ_SCAN_REPORTS_EVT */
     bta_dm_ble_track_advertiser,            /* BTA_DM_API_BLE_TRACK_ADVERTISER_EVT */
     bta_dm_ble_get_energy_info,             /* BTA_DM_API_BLE_ENERGY_INFO_EVT */
+    bta_dm_ble_disconnect,                  /* BTA_DM_API_BLE_DISCONNECT_EVT */
 #endif
 
     bta_dm_enable_test_mode,                /*  BTA_DM_API_ENABLE_TEST_MODE_EVT     */
@@ -139,6 +141,9 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 
     bta_dm_remove_all_acl,                  /* BTA_DM_API_REMOVE_ALL_ACL_EVT */
     bta_dm_remove_device,                   /* BTA_DM_API_REMOVE_DEVICE_EVT */
+    bta_dm_update_white_list,               /* BTA_DM_API_UPDATE_WHITE_LIST_EVT */
+    bta_dm_ble_read_adv_tx_power,           /* BTA_DM_API_BLE_READ_ADV_TX_POWER_EVT */
+    bta_dm_ble_read_rssi,                   /* BTA_DM_API_BLE_READ_RSSI_EVT */
 };
 
 
@@ -175,9 +180,9 @@ enum {
 #if (SDP_INCLUDED == TRUE)
     BTA_DM_API_DI_DISCOVER,             /* 17 bta_dm_di_disc */
 #endif  ///SDP_INCLUDED == TRUE
-#if BLE_INCLUDED == TRUE
+#if BLE_INCLUDED == TRUE && SDP_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE && GATTC_INCLUDED == TRUE
     BTA_DM_CLOSE_GATT_CONN,             /* 18 bta_dm_close_gatt_conn */
-#endif
+#endif /* BLE_INCLUDED == TRUE && SDP_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE && GATTC_INCLUDED == TRUE */
     BTA_DM_SEARCH_NUM_ACTIONS           /* 19 */
 };
 
@@ -215,7 +220,7 @@ const tBTA_DM_ACTION bta_dm_search_action[] = {
 #if (SDP_INCLUDED == TRUE)
     bta_dm_di_disc                      /* 17 BTA_DM_API_DI_DISCOVER */
 #endif  ///SDP_INCLUDED == TRUE
-#if BLE_INCLUDED == TRUE && SDP_INCLUDED == TRUE
+#if BLE_INCLUDED == TRUE && SDP_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE && GATTC_INCLUDED == TRUE
     , bta_dm_close_gatt_conn
 #endif
 };
@@ -247,7 +252,8 @@ const UINT8 bta_dm_search_idle_st_table[][BTA_DM_SEARCH_NUM_COLS] = {
 #if (SDP_INCLUDED == TRUE)
     /* API_DI_DISCOVER_EVT */   {BTA_DM_API_DI_DISCOVER,           BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE},
 #endif  ///SDP_INCLUDED == TRUE
-#if BLE_INCLUDED == TRUE
+#if BLE_INCLUDED == TRUE && SDP_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE && GATTC_INCLUDED == TRUE
+    // #if BLE_INCLUDED == TRUE
     /* DISC_CLOSE_TOUT_EVT */   {BTA_DM_CLOSE_GATT_CONN,           BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
 #endif
 };
@@ -265,7 +271,8 @@ const UINT8 bta_dm_search_search_active_st_table[][BTA_DM_SEARCH_NUM_COLS] = {
     /* SEARCH_CMPL_EVT */       {BTA_DM_SEARCH_CMPL,               BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
     /* DISCV_RES_EVT */         {BTA_DM_SEARCH_RESULT,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE},
     /* API_DI_DISCOVER_EVT */   {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE}
-#if BLE_INCLUDED == TRUE
+#if BLE_INCLUDED == TRUE && SDP_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE && GATTC_INCLUDED == TRUE
+    // #if BLE_INCLUDED == TRUE
     /* DISC_CLOSE_TOUT_EVT */   , {BTA_DM_CLOSE_GATT_CONN,          BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE}
 #endif
 

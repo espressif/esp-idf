@@ -21,7 +21,7 @@ Compile the Toolchain from Source
 
   - Install either MacPorts_ or homebrew_ package manager. MacPorts needs a full XCode installation, while homebrew only needs XCode command line tools.
     
-    .. _homebrew: http://brew.sh/
+    .. _homebrew: https://brew.sh/
     .. _MacPorts: https://www.macports.org/install.php
 
   - with MacPorts::

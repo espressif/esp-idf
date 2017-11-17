@@ -30,9 +30,9 @@
 #include "avdt_api.h"
 #include "avdtc_api.h"
 #include "avdt_int.h"
-#include "gki.h"
 #include "btu.h"
 #include "btm_api.h"
+#include "allocator.h"
 
 #if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE)
 
@@ -57,19 +57,19 @@ static void avdt_ccb_clear_ccb(tAVDT_CCB *p_ccb)
 
     /* free message being fragmented */
     if (p_ccb->p_curr_msg != NULL) {
-        GKI_freebuf(p_ccb->p_curr_msg);
+        osi_free(p_ccb->p_curr_msg);
         p_ccb->p_curr_msg = NULL;
     }
 
     /* free message being reassembled */
     if (p_ccb->p_rx_msg != NULL) {
-        GKI_freebuf(p_ccb->p_rx_msg);
+        osi_free(p_ccb->p_rx_msg);
         p_ccb->p_rx_msg = NULL;
     }
 
     /* clear out response queue */
-    while ((p_buf = (BT_HDR *) GKI_dequeue(&p_ccb->rsp_q)) != NULL) {
-        GKI_freebuf(p_buf);
+    while ((p_buf = (BT_HDR *) fixed_queue_try_dequeue(p_ccb->rsp_q)) != NULL) {
+        osi_free(p_buf);
     }
 }
 
@@ -659,7 +659,7 @@ void avdt_ccb_clear_cmds(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data)
         avdt_ccb_cmd_fail(p_ccb, (tAVDT_CCB_EVT *) &err_code);
 
         /* set up next message */
-        p_ccb->p_curr_cmd = (BT_HDR *) GKI_dequeue(&p_ccb->cmd_q);
+        p_ccb->p_curr_cmd = (BT_HDR *) fixed_queue_try_dequeue(p_ccb->cmd_q);
 
     } while (p_ccb->p_curr_cmd != NULL);
 
@@ -708,7 +708,7 @@ void avdt_ccb_cmd_fail(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data)
             }
         }
 
-        GKI_freebuf(p_ccb->p_curr_cmd);
+        osi_free(p_ccb->p_curr_cmd);
         p_ccb->p_curr_cmd = NULL;
     }
 }
@@ -729,7 +729,7 @@ void avdt_ccb_free_cmd(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data)
     UNUSED(p_data);
 
     if (p_ccb->p_curr_cmd != NULL) {
-        GKI_freebuf(p_ccb->p_curr_cmd);
+        osi_free(p_ccb->p_curr_cmd);
         p_ccb->p_curr_cmd = NULL;
     }
 }
@@ -780,7 +780,7 @@ void avdt_ccb_ret_cmd(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data)
         /* if command pending and we're not congested and not sending a fragment */
         if ((!p_ccb->cong) && (p_ccb->p_curr_msg == NULL) && (p_ccb->p_curr_cmd != NULL)) {
             /* make copy of message in p_curr_cmd and send it */
-            if ((p_msg = (BT_HDR *) GKI_getpoolbuf(AVDT_CMD_POOL_ID)) != NULL) {
+            if ((p_msg = (BT_HDR *) osi_malloc(AVDT_CMD_BUF_SIZE)) != NULL) {
                 memcpy(p_msg, p_ccb->p_curr_cmd,
                        (sizeof(BT_HDR) + p_ccb->p_curr_cmd->offset + p_ccb->p_curr_cmd->len));
                 avdt_msg_send(p_ccb, p_msg);
@@ -812,9 +812,9 @@ void avdt_ccb_snd_cmd(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data)
     ** not congested, not sending fragment, not waiting for response
     */
     if ((!p_ccb->cong) && (p_ccb->p_curr_msg == NULL) && (p_ccb->p_curr_cmd == NULL)) {
-        if ((p_msg = (BT_HDR *) GKI_dequeue(&p_ccb->cmd_q)) != NULL) {
+        if ((p_msg = (BT_HDR *) fixed_queue_try_dequeue(p_ccb->cmd_q)) != NULL) {
             /* make a copy of buffer in p_curr_cmd */
-            if ((p_ccb->p_curr_cmd = (BT_HDR *) GKI_getpoolbuf(AVDT_CMD_POOL_ID)) != NULL) {
+            if ((p_ccb->p_curr_cmd = (BT_HDR *) osi_malloc(AVDT_CMD_BUF_SIZE)) != NULL) {
                 memcpy(p_ccb->p_curr_cmd, p_msg, (sizeof(BT_HDR) + p_msg->offset + p_msg->len));
 
                 avdt_msg_send(p_ccb, p_msg);
@@ -845,8 +845,8 @@ void avdt_ccb_snd_msg(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data)
             avdt_msg_send(p_ccb, NULL);
         }
         /* do we have responses to send?  send them */
-        else if (!GKI_queue_is_empty(&p_ccb->rsp_q)) {
-            while ((p_msg = (BT_HDR *) GKI_dequeue(&p_ccb->rsp_q)) != NULL) {
+        else if (!fixed_queue_is_empty(p_ccb->rsp_q)) {
+            while ((p_msg = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->rsp_q)) != NULL) {
                 if (avdt_msg_send(p_ccb, p_msg) == TRUE) {
                     /* break out if congested */
                     break;

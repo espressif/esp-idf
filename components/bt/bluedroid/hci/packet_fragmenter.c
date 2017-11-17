@@ -26,7 +26,7 @@
 
 #include "hash_map.h"
 #include "hash_functions.h"
-
+#include "bt_trace.h"
 
 
 #define APPLY_CONTINUATION_FLAG(handle) (((handle) & 0xCFFF) | 0x1000)
@@ -91,12 +91,11 @@ static void fragment_and_dispatch(BT_HDR *packet)
 
     max_packet_size = max_data_size + HCI_ACL_PREAMBLE_SIZE;
     remaining_length = packet->len;
-
     STREAM_TO_UINT16(continuation_handle, stream);
     continuation_handle = APPLY_CONTINUATION_FLAG(continuation_handle);
     if (remaining_length > max_packet_size) {
         current_fragment_packet = packet;
-        UINT16_TO_STREAM(stream, max_packet_size);
+        UINT16_TO_STREAM(stream, max_data_size);
         packet->len = max_packet_size;
         callbacks->fragmented(packet, false);
         packet->offset += max_data_size;
@@ -107,12 +106,18 @@ static void fragment_and_dispatch(BT_HDR *packet)
         stream = packet->data + packet->offset;
         UINT16_TO_STREAM(stream, continuation_handle);
         UINT16_TO_STREAM(stream, remaining_length - HCI_ACL_PREAMBLE_SIZE);
-
         // Apparently L2CAP can set layer_specific to a max number of segments to transmit
         if (packet->layer_specific) {
             packet->layer_specific--;
             if (packet->layer_specific == 0) {
                 packet->event = MSG_HC_TO_STACK_L2C_SEG_XMIT;
+
+                /* The remain packet will send back to the l2cap layer when controller buffer is not enough
+                   current_fragment_packet must be NULL, otherwise hci_host_thread_handler() will
+                   connitue handle the remain packet. then the remain packet will be freed.
+                */
+
+                current_fragment_packet = NULL;
                 callbacks->transmit_finished(packet, false);
                 return;
             }

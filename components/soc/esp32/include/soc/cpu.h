@@ -86,6 +86,13 @@ void esp_cpu_stall(int cpu_id);
 void esp_cpu_unstall(int cpu_id);
 
 /**
+ * @brief Reset CPU using RTC controller
+ * @param cpu_id ID of the CPU to reset (0 = PRO, 1 = APP)
+ */
+void esp_cpu_reset(int cpu_id);
+
+
+/**
  * @brief Returns true if a JTAG debugger is attached to CPU
  * OCD (on chip debug) port.
  *

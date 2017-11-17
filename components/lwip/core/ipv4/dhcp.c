@@ -270,6 +270,15 @@ dhcp_handle_nak(struct netif *netif)
     (void*)netif, netif->name[0], netif->name[1], (u16_t)netif->num));
   /* remove IP address from interface (must no longer be used, as per RFC2131) */
   netif_set_addr(netif, IP4_ADDR_ANY, IP4_ADDR_ANY, IP4_ADDR_ANY);
+
+  if (dhcp->cb != NULL) {
+#ifdef ESP_LWIP
+    dhcp->cb(netif);
+#else
+    dhcp->cb();
+#endif
+  }
+
   /* Change to a defined state */
   dhcp_set_state(dhcp, DHCP_STATE_BACKING_OFF);
   /* We can immediately restart discovery */
@@ -683,6 +692,9 @@ dhcp_handle_ack(struct netif *netif)
   /* DNS servers */
   for (n = 0; (n < DNS_MAX_SERVERS) && dhcp_option_given(dhcp, DHCP_OPTION_IDX_DNS_SERVER + n); n++) {
     ip_addr_t dns_addr;
+    if (n == DNS_FALLBACK_SERVER_INDEX) {
+        continue;
+    }
     ip_addr_set_ip4_u32(&dns_addr, htonl(dhcp_get_option_value(dhcp, DHCP_OPTION_IDX_DNS_SERVER + n)));
     dns_setserver(n, &dns_addr);
   }
@@ -1412,6 +1424,14 @@ dhcp_release(struct netif *netif)
   }
   /* remove IP address from interface (prevents routing from selecting this interface) */
   netif_set_addr(netif, IP4_ADDR_ANY, IP4_ADDR_ANY, IP4_ADDR_ANY);
+
+  if (dhcp->cb != NULL) {
+#ifdef ESP_LWIP
+    dhcp->cb(netif);
+#else
+    dhcp->cb();
+#endif
+  }
 
   return result;
 }

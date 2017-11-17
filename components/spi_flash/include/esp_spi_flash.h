@@ -177,6 +177,29 @@ esp_err_t spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_memory_t m
                          const void** out_ptr, spi_flash_mmap_handle_t* out_handle);
 
 /**
+ * @brief Map sequences of pages of flash memory into data or instruction address space
+ *
+ * This function allocates sufficient number of 64k MMU pages and configures
+ * them to map the indicated pages of flash memory contiguously into data address 
+ * space or into instruction address space. In this respect, it works in a similar
+ * way as spi_flash_mmap but it allows mapping a (maybe non-contiguous) set of pages
+ * into a contiguous region of memory.
+ *
+ * @param pages An array of numbers indicating the 64K pages in flash to be mapped
+ *              contiguously into memory. These indicate the indexes of the 64K pages,
+ *              not the byte-size addresses as used in other functions.
+ * @param pagecount  Size of the pages array
+ * @param memory  Memory space where the region should be mapped
+ * @param out_ptr  Output, pointer to the mapped memory region
+ * @param out_handle  Output, handle which should be used for spi_flash_munmap call
+ *
+ * @return  ESP_OK on success, ESP_ERR_NO_MEM if pages can not be allocated
+ */
+esp_err_t spi_flash_mmap_pages(int *pages, size_t pagecount, spi_flash_mmap_memory_t memory,
+                         const void** out_ptr, spi_flash_mmap_handle_t* out_handle);
+
+
+/**
  * @brief Release region previously obtained using spi_flash_mmap
  *
  * @note Calling this function will not necessarily unmap memory region.

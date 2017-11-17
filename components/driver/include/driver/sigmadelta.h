@@ -27,14 +27,14 @@ extern "C" {
  * @brief Sigma-delta channel list
  */
 typedef enum{
-    SIGMADELTA_CHANNEL_0 = 0,         /*!< Sigma-delta channel0 */
-    SIGMADELTA_CHANNEL_1 = 1,         /*!< Sigma-delta channel1 */
-    SIGMADELTA_CHANNEL_2 = 2,         /*!< Sigma-delta channel2 */
-    SIGMADELTA_CHANNEL_3 = 3,         /*!< Sigma-delta channel3 */
-    SIGMADELTA_CHANNEL_4 = 4,         /*!< Sigma-delta channel4 */
-    SIGMADELTA_CHANNEL_5 = 5,         /*!< Sigma-delta channel5 */
-    SIGMADELTA_CHANNEL_6 = 6,         /*!< Sigma-delta channel6 */
-    SIGMADELTA_CHANNEL_7 = 7,         /*!< Sigma-delta channel7 */
+    SIGMADELTA_CHANNEL_0 = 0,         /*!< Sigma-delta channel 0 */
+    SIGMADELTA_CHANNEL_1 = 1,         /*!< Sigma-delta channel 1 */
+    SIGMADELTA_CHANNEL_2 = 2,         /*!< Sigma-delta channel 2 */
+    SIGMADELTA_CHANNEL_3 = 3,         /*!< Sigma-delta channel 3 */
+    SIGMADELTA_CHANNEL_4 = 4,         /*!< Sigma-delta channel 4 */
+    SIGMADELTA_CHANNEL_5 = 5,         /*!< Sigma-delta channel 5 */
+    SIGMADELTA_CHANNEL_6 = 6,         /*!< Sigma-delta channel 6 */
+    SIGMADELTA_CHANNEL_7 = 7,         /*!< Sigma-delta channel 7 */
     SIGMADELTA_CHANNEL_MAX,
 } sigmadelta_channel_t;
 
@@ -64,7 +64,8 @@ esp_err_t sigmadelta_config(const sigmadelta_config_t *config);
  *
  *        This function is used to set Sigma-delta channel duty,
  *        If you add a capacitor between the output pin and ground,
- *        the average output voltage Vdc = VDDIO / 256 * duty + VDDIO/2, VDDIO is power supply voltage.
+ *        the average output voltage will be Vdc = VDDIO / 256 * duty + VDDIO/2,
+ *        where VDDIO is the power supply voltage.
  *
  * @param channel Sigma-delta channel number
  * @param duty Sigma-delta duty of one channel, the value ranges from -128 to 127, recommended range is -90 ~ 90.

@@ -1,6 +1,6 @@
 menu "Partition Table"
 
-choice
+choice PARTITION_TABLE_TYPE
     prompt "Partition Table"
     default PARTITION_TABLE_SINGLE_APP
     help

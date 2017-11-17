@@ -120,6 +120,10 @@ mbedtls_x509_crt_profile;
 #define MBEDTLS_X509_RFC5280_MAX_SERIAL_LEN 32
 #define MBEDTLS_X509_RFC5280_UTC_TIME_LEN   15
 
+#if !defined( MBEDTLS_X509_MAX_FILE_PATH_LEN )
+#define MBEDTLS_X509_MAX_FILE_PATH_LEN 512
+#endif
+
 /**
  * Container for writing a certificate (CRT)
  */
@@ -263,7 +267,13 @@ int mbedtls_x509_crt_verify_info( char *buf, size_t size, const char *prefix,
  *
  *                 All flags left after returning from the callback
  *                 are also returned to the application. The function should
- *                 return 0 for anything but a fatal error.
+ *                 return 0 for anything (including invalid certificates)
+ *                 other than fatal error, as a non-zero return code
+ *                 immediately aborts the verification process. For fatal
+ *                 errors, a specific error code should be used (different
+ *                 from MBEDTLS_ERR_X509_CERT_VERIFY_FAILED which should not
+ *                 be returned at this point), or MBEDTLS_ERR_X509_FATAL_ERROR
+ *                 can be used if no better code is available.
  *
  * \note           In case verification failed, the results can be displayed
  *                 using \c mbedtls_x509_crt_verify_info()
@@ -285,12 +295,13 @@ int mbedtls_x509_crt_verify_info( char *buf, size_t size, const char *prefix,
  * \param f_vrfy   verification function
  * \param p_vrfy   verification parameter
  *
- * \return         0 if successful or MBEDTLS_ERR_X509_CERT_VERIFY_FAILED
- *                 in which case *flags will have one or more
- *                 MBEDTLS_X509_BADCERT_XXX or MBEDTLS_X509_BADCRL_XXX flags
- *                 set,
- *                 or another error in case of a fatal error encountered
- *                 during the verification process.
+ * \return         0 (and flags set to 0) if the chain was verified and valid,
+ *                 MBEDTLS_ERR_X509_CERT_VERIFY_FAILED if the chain was verified
+ *                 but found to be invalid, in which case *flags will have one
+ *                 or more MBEDTLS_X509_BADCERT_XXX or MBEDTLS_X509_BADCRL_XXX
+ *                 flags set, or another error (and flags set to 0xffffffff)
+ *                 in case of a fatal error encountered during the
+ *                 verification process.
  */
 int mbedtls_x509_crt_verify( mbedtls_x509_crt *crt,
                      mbedtls_x509_crt *trust_ca,

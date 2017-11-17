@@ -40,10 +40,11 @@ static void threading_mutex_init_pthread( mbedtls_threading_mutex_t *mutex )
 
 static void threading_mutex_free_pthread( mbedtls_threading_mutex_t *mutex )
 {
-    if( mutex == NULL )
+    if( mutex == NULL || !mutex->is_valid )
         return;
 
     (void) pthread_mutex_destroy( &mutex->mutex );
+    mutex->is_valid = 0;
 }
 
 static int threading_mutex_lock_pthread( mbedtls_threading_mutex_t *mutex )

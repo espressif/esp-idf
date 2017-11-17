@@ -24,7 +24,6 @@
  ******************************************************************************/
 #include <string.h>
 #include "bt_target.h"
-#include "gki.h"
 #include "rfcdefs.h"
 #include "btm_api.h"
 #include "btm_int.h"
@@ -121,7 +120,7 @@ void rfc_port_sm_state_closed (tPORT *p_port, UINT16 event, void *p_data)
         return;
 
     case RFC_EVENT_DATA:
-        GKI_freebuf (p_data);
+        osi_free (p_data);
         break;
 
     case RFC_EVENT_SABME:
@@ -143,7 +142,7 @@ void rfc_port_sm_state_closed (tPORT *p_port, UINT16 event, void *p_data)
         return;
 
     case RFC_EVENT_UIH:
-        GKI_freebuf (p_data);
+        osi_free (p_data);
         rfc_send_dm (p_port->rfc.p_mcb, p_port->dlci, FALSE);
         return;
 
@@ -191,7 +190,7 @@ void rfc_port_sm_sabme_wait_ua (tPORT *p_port, UINT16 event, void *p_data)
         return;
 
     case RFC_EVENT_DATA:
-        GKI_freebuf (p_data);
+        osi_free (p_data);
         break;
 
     case RFC_EVENT_UA:
@@ -218,7 +217,7 @@ void rfc_port_sm_sabme_wait_ua (tPORT *p_port, UINT16 event, void *p_data)
         return;
 
     case RFC_EVENT_UIH:
-        GKI_freebuf (p_data);
+        osi_free (p_data);
         return;
 
     case RFC_EVENT_TIMEOUT:
@@ -271,7 +270,7 @@ void rfc_port_sm_term_wait_sec_check (tPORT *p_port, UINT16 event, void *p_data)
 
     case RFC_EVENT_DATA:
         RFCOMM_TRACE_ERROR ("Port error state Term Wait Sec event Data");
-        GKI_freebuf (p_data);
+        osi_free (p_data);
         return;
 
     case RFC_EVENT_SABME:
@@ -287,7 +286,7 @@ void rfc_port_sm_term_wait_sec_check (tPORT *p_port, UINT16 event, void *p_data)
         return;
 
     case RFC_EVENT_UIH:
-        GKI_freebuf (p_data);
+        osi_free (p_data);
         return;
 
     case RFC_EVENT_ESTABLISH_RSP:
@@ -343,11 +342,11 @@ void rfc_port_sm_orig_wait_sec_check (tPORT *p_port, UINT16 event, void *p_data)
 
     case RFC_EVENT_DATA:
         RFCOMM_TRACE_ERROR ("Port error state Orig Wait Sec event Data");
-        GKI_freebuf (p_data);
+        osi_free (p_data);
         return;
 
     case RFC_EVENT_UIH:
-        GKI_freebuf (p_data);
+        osi_free (p_data);
         return;
     }
     RFCOMM_TRACE_WARNING ("Port state orig_wait_sec_check Event ignored %d", event);
@@ -414,7 +413,7 @@ void rfc_port_sm_opened (tPORT *p_port, UINT16 event, void *p_data)
     case RFC_EVENT_DISC:
         p_port->rfc.state = RFC_STATE_CLOSED;
         rfc_send_ua (p_port->rfc.p_mcb, p_port->dlci);
-        if (!GKI_queue_is_empty(&p_port->rx.queue)) {
+        if (! fixed_queue_is_empty(p_port->rx.queue)) {
             /* give a chance to upper stack to close port properly */
             RFCOMM_TRACE_DEBUG("port queue is not empty");
             rfc_port_timer_start (p_port, RFC_DISC_TIMEOUT);
@@ -459,7 +458,7 @@ void rfc_port_sm_disc_wait_ua (tPORT *p_port, UINT16 event, void *p_data)
         return;
 
     case RFC_EVENT_DATA:
-        GKI_freebuf (p_data);
+        osi_free (p_data);
         return;
 
     case RFC_EVENT_UA:
@@ -479,7 +478,7 @@ void rfc_port_sm_disc_wait_ua (tPORT *p_port, UINT16 event, void *p_data)
         return;
 
     case RFC_EVENT_UIH:
-        GKI_freebuf (p_data);
+        osi_free (p_data);
         rfc_send_dm (p_port->rfc.p_mcb, p_port->dlci, FALSE);
         return;
 
@@ -784,7 +783,7 @@ void rfc_process_test_rsp (tRFC_MCB *p_mcb, BT_HDR *p_buf)
 {
     UNUSED(p_mcb);
 
-    GKI_freebuf (p_buf);
+    osi_free (p_buf);
 }
 
 

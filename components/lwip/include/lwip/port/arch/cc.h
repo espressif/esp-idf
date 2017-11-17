@@ -36,6 +36,8 @@
 
 #include <stdint.h>
 #include <errno.h>
+#include <assert.h>
+#include <stdio.h>
 
 #include "arch/sys_arch.h"
 
@@ -67,10 +69,26 @@ typedef int sys_prot_t;
 #include <stdio.h>
 
 #define LWIP_PLATFORM_DIAG(x)   do {printf x;} while(0)
-#define LWIP_PLATFORM_ASSERT(x) do {printf(x); sys_arch_assert(__FILE__, __LINE__);} while(0)
+// __assert_func is the assertion failure handler from newlib, defined in assert.h
+#define LWIP_PLATFORM_ASSERT(message) __assert_func(__FILE__, __LINE__, __ASSERT_FUNC, message)
 
-//#define LWIP_DEBUG
+#ifdef NDEBUG
 #define LWIP_NOASSERT
-//#define LWIP_ERROR
+#else // Assertions enabled
+
+// If assertions are on, the default LWIP_ERROR handler behaviour is to
+// abort w/ an assertion failure. Don't do this, instead just print the error (if LWIP_DEBUG is set)
+// and run the handler (same as the LWIP_ERROR behaviour if LWIP_NOASSERT is set).
+#ifdef LWIP_DEBUG
+#define LWIP_ERROR(message, expression, handler) do { if (!(expression)) { \
+  puts(message); handler;}} while(0)
+#else
+// If LWIP_DEBUG is not set, return the error silently (default LWIP behaviour, also.)
+#define LWIP_ERROR(message, expression, handler) do { if (!(expression)) { \
+  handler;}} while(0)
+#endif // LWIP_DEBUG
+
+#endif /* NDEBUG */
+
 
 #endif /* __ARCH_CC_H__ */

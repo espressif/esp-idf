@@ -54,7 +54,7 @@ inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t len)
 }
 
 #ifdef BTTRC_DUMP_BUFFER
-#define BTTRC_DUMP_BUFFER(_prefix, _data, _len) trc_dump_buffer(_data, _len)
+#define BTTRC_DUMP_BUFFER(_prefix, _data, _len) trc_dump_buffer(_prefix, _data, _len)
 #else
 #define BTTRC_DUMP_BUFFER(_prefix, _data, _len)
 #endif

@@ -33,6 +33,7 @@
 #include "l2cdefs.h"
 #include "btm_api.h"
 #include "btm_int.h"
+#include "allocator.h"
 
 #if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE)
 
@@ -486,7 +487,7 @@ void avdt_l2c_data_ind_cback(UINT16 lcid, BT_HDR *p_buf)
     if ((p_tbl = avdt_ad_tc_tbl_by_lcid(lcid)) != NULL) {
         avdt_ad_tc_data_ind(p_tbl, p_buf);
     } else { /* prevent buffer leak */
-        GKI_freebuf(p_buf);
+        osi_free(p_buf);
     }
 }
 

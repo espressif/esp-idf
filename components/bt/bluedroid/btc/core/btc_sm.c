@@ -25,7 +25,6 @@
 #include "allocator.h"
 #include "btc_common.h"
 #include "btc_sm.h"
-#include "gki.h"
 
 #if BTC_SM_INCLUDED
 /*****************************************************************************

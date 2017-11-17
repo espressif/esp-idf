@@ -95,8 +95,20 @@
 #define configNUM_THREAD_LOCAL_STORAGE_POINTERS CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
 #define configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS 1
 
-/* TODO: config freq by menuconfig */
-#define XT_CLOCK_FREQ (CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ * 1000000)
+#ifndef __ASSEMBLER__
+
+/**
+ * This function is defined to provide a deprecation warning whenever
+ * XT_CLOCK_FREQ macro is used.
+ * Update the code to use esp_clk_cpu_freq function instead.
+ * @return current CPU clock frequency, in Hz
+ */
+int xt_clock_freq(void) __attribute__((deprecated));
+
+#define XT_CLOCK_FREQ   (xt_clock_freq())
+
+#endif // __ASSEMBLER__
+
 
 /* Required for configuration-dependent settings */
 #include "xtensa_config.h"
@@ -163,14 +175,16 @@
 #define configMAX_PRIORITIES			( 25 )
 #endif
 
-/* Minimal stack size. This may need to be increased for your application */
-/* NOTE: The FreeRTOS demos may not work reliably with stack size < 4KB.  */
-/* The Xtensa-specific examples should be fine with XT_STACK_MIN_SIZE.    */
-#if !(defined XT_STACK_MIN_SIZE)
-#error XT_STACK_MIN_SIZE not defined, did you include xtensa_config.h ?
+#ifndef CONFIG_ESP32_APPTRACE_ENABLE
+#define configMINIMAL_STACK_SIZE		768
+#else
+/* apptrace module requires at least 2KB of stack per task */
+#define configMINIMAL_STACK_SIZE		2048
 #endif
 
-#define configMINIMAL_STACK_SIZE		(XT_STACK_MIN_SIZE > 1024 ? XT_STACK_MIN_SIZE : 1024)
+#ifndef configIDLE_TASK_STACK_SIZE
+#define configIDLE_TASK_STACK_SIZE CONFIG_FREERTOS_IDLE_TASK_STACKSIZE
+#endif
 
 /* The Xtensa port uses a separate interrupt stack. Adjust the stack size */
 /* to suit the needs of your specific application.                        */
@@ -188,13 +202,24 @@
 #define configTOTAL_HEAP_SIZE			(&_heap_end - &_heap_start)//( ( size_t ) (64 * 1024) )
 
 #define configMAX_TASK_NAME_LEN			( CONFIG_FREERTOS_MAX_TASK_NAME_LEN )
-#define configUSE_TRACE_FACILITY		0		/* Used by vTaskList in main.c */
-#define configUSE_STATS_FORMATTING_FUNCTIONS	0	/* Used by vTaskList in main.c */
+
+#ifdef CONFIG_FREERTOS_USE_TRACE_FACILITY
+#define configUSE_TRACE_FACILITY        1       /* Used by uxTaskGetSystemState(), and other trace facility functions */
+#endif
+
+#ifdef CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
+#define configUSE_STATS_FORMATTING_FUNCTIONS    1   /* Used by vTaskList() */
+#endif
+
+#ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
+#define configGENERATE_RUN_TIME_STATS   1       /* Used by vTaskGetRunTimeStats() */
+#endif
+
 #define configUSE_TRACE_FACILITY_2      0		/* Provided by Xtensa port patch */
 #define configBENCHMARK					0		/* Provided by Xtensa port patch */
 #define configUSE_16_BIT_TICKS			0
 #define configIDLE_SHOULD_YIELD			0
-#define configQUEUE_REGISTRY_SIZE		0
+#define configQUEUE_REGISTRY_SIZE		CONFIG_FREERTOS_QUEUE_REGISTRY_SIZE
 
 #define configUSE_MUTEXES				1
 #define configUSE_RECURSIVE_MUTEXES		1
@@ -227,12 +252,7 @@
 #define INCLUDE_vTaskDelay					1
 #define INCLUDE_uxTaskGetStackHighWaterMark	1
 #define INCLUDE_pcTaskGetTaskName			1
-
-#if CONFIG_ENABLE_MEMORY_DEBUG
-#define configENABLE_MEMORY_DEBUG 1
-#else
-#define configENABLE_MEMORY_DEBUG 0
-#endif
+#define INCLUDE_xTaskGetIdleTaskHandle      1
 
 #define INCLUDE_xSemaphoreGetMutexHolder    1
 
@@ -272,10 +292,14 @@ extern void vPortCleanUpTCB ( void *pxTCB );
 #define configXT_BOARD                      1   /* Board mode */
 #define configXT_SIMULATOR					0
 
-#if CONFIG_ESP32_ENABLE_COREDUMP
 #define configENABLE_TASK_SNAPSHOT			1
-#endif
 
+#if CONFIG_SYSVIEW_ENABLE
+#ifndef __ASSEMBLER__
+#include "SEGGER_SYSVIEW_FreeRTOS.h"
+#undef INLINE // to avoid redefinition
+#endif /* def __ASSEMBLER__ */
+#endif
 
 #endif /* FREERTOS_CONFIG_H */
 

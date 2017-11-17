@@ -3,7 +3,7 @@
  * Based on mbedTLS FIPS-197 compliant version.
  *
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
- *  Additions Copyright (C) 2016, Espressif Systems (Shanghai) PTE Ltd
+ *  Additions Copyright (C) 2016-2017, Espressif Systems (Shanghai) PTE Ltd
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -26,35 +26,60 @@
  *  http://csrc.nist.gov/publications/fips/fips197/fips-197.pdf
  */
 #include <string.h>
+#include "mbedtls/aes.h"
 #include "hwcrypto/aes.h"
-#include "rom/aes.h"
 #include "soc/dport_reg.h"
+#include "soc/hwcrypto_reg.h"
 #include <sys/lock.h>
 
-static _lock_t aes_lock;
+#include <freertos/FreeRTOS.h>
+
+#include "soc/cpu.h"
+#include <stdio.h>
+
+
+/* AES uses a spinlock mux not a lock as the underlying block operation
+   only takes 208 cycles (to write key & compute block), +600 cycles
+   for DPORT protection but +3400 cycles again if you use a full sized lock.
+
+   For CBC, CFB, etc. this may mean that interrupts are disabled for a longer
+   period of time for bigger lengths. However at the moment this has to happen
+   anyway due to DPORT protection...
+*/
+static portMUX_TYPE aes_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 void esp_aes_acquire_hardware( void )
 {
     /* newlib locks lazy initialize on ESP-IDF */
-    _lock_acquire(&aes_lock);
-    /* Enable AES hardware */
-    DPORT_REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_AES);
-    /* Clear reset on digital signature & secure boot units,
-       otherwise AES unit is held in reset also. */
-    DPORT_REG_CLR_BIT(DPORT_PERI_RST_EN_REG,
-                DPORT_PERI_EN_AES
-                | DPORT_PERI_EN_DIGITAL_SIGNATURE
-                | DPORT_PERI_EN_SECUREBOOT);
+    portENTER_CRITICAL(&aes_spinlock);
+
+    DPORT_STALL_OTHER_CPU_START();
+    {
+        /* Enable AES hardware */
+        _DPORT_REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_AES);
+        /* Clear reset on digital signature & secure boot units,
+           otherwise AES unit is held in reset also. */
+        _DPORT_REG_CLR_BIT(DPORT_PERI_RST_EN_REG,
+                           DPORT_PERI_EN_AES
+                           | DPORT_PERI_EN_DIGITAL_SIGNATURE
+                           | DPORT_PERI_EN_SECUREBOOT);
+    }
+    DPORT_STALL_OTHER_CPU_END();
 }
 
 void esp_aes_release_hardware( void )
 {
-    /* Disable AES hardware */
-    DPORT_REG_SET_BIT(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_AES);
-    /* Don't return other units to reset, as this pulls
-       reset on RSA & SHA units, respectively. */
-    DPORT_REG_CLR_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_AES);
-    _lock_release(&aes_lock);
+    DPORT_STALL_OTHER_CPU_START();
+    {
+        /* Disable AES hardware */
+        _DPORT_REG_SET_BIT(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_AES);
+        /* Don't return other units to reset, as this pulls
+           reset on RSA & SHA units, respectively. */
+        _DPORT_REG_CLR_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_AES);
+    }
+    DPORT_STALL_OTHER_CPU_END();
+
+    portEXIT_CRITICAL(&aes_spinlock);
 }
 
 void esp_aes_init( esp_aes_context *ctx )
@@ -71,55 +96,18 @@ void esp_aes_free( esp_aes_context *ctx )
     bzero( ctx, sizeof( esp_aes_context ) );
 }
 
-/* Translate number of bits to an AES_BITS enum */
-static int keybits_to_aesbits(unsigned int keybits)
-{
-    switch (keybits) {
-    case 128:
-        return AES128;
-    case 192:
-        return AES192;
-        break;
-    case 256:
-        return AES256;
-    default:
-        return ( ERR_ESP_AES_INVALID_KEY_LENGTH );
-    }
-}
-
 /*
- * AES key schedule (encryption)
+ * AES key schedule (same for encryption or decryption, as hardware handles schedule)
  *
  */
-int esp_aes_setkey_enc( esp_aes_context *ctx, const unsigned char *key,
-                        unsigned int keybits )
+int esp_aes_setkey( esp_aes_context *ctx, const unsigned char *key,
+                    unsigned int keybits )
 {
-    uint16_t keybytes = keybits / 8;
-    int aesbits = keybits_to_aesbits(keybits);
-    if (aesbits < 0) {
-        return aesbits;
+    if (keybits != 128 && keybits != 192 && keybits != 256) {
+        return MBEDTLS_ERR_AES_INVALID_KEY_LENGTH;
     }
-    ctx->enc.aesbits = aesbits;
-    bzero(ctx->enc.key, sizeof(ctx->enc.key));
-    memcpy(ctx->enc.key, key, keybytes);
-    return 0;
-}
-
-/*
- * AES key schedule (decryption)
- *
- */
-int esp_aes_setkey_dec( esp_aes_context *ctx, const unsigned char *key,
-                        unsigned int keybits )
-{
-    uint16_t keybytes = keybits / 8;
-    int aesbits = keybits_to_aesbits(keybits);
-    if (aesbits < 0) {
-        return aesbits;
-    }
-    ctx->dec.aesbits = aesbits;
-    bzero(ctx->dec.key, sizeof(ctx->dec.key));
-    memcpy(ctx->dec.key, key, keybytes);
+    ctx->key_bytes = keybits / 8;
+    memcpy(ctx->key, key, ctx->key_bytes);
     return 0;
 }
 
@@ -127,16 +115,41 @@ int esp_aes_setkey_dec( esp_aes_context *ctx, const unsigned char *key,
  * Helper function to copy key from esp_aes_context buffer
  * to hardware key registers.
  *
- * Only call when protected by esp_aes_acquire_hardware().
+ * Call only while holding esp_aes_acquire_hardware().
  */
-static inline int esp_aes_setkey_hardware( esp_aes_context *ctx, int mode)
+static inline void esp_aes_setkey_hardware( esp_aes_context *ctx, int mode)
 {
-    if ( mode == ESP_AES_ENCRYPT ) {
-        ets_aes_setkey_enc(ctx->enc.key, ctx->enc.aesbits);
-    } else {
-        ets_aes_setkey_dec(ctx->dec.key, ctx->dec.aesbits);
+    const uint32_t MODE_DECRYPT_BIT = 4;
+    unsigned mode_reg_base = (mode == ESP_AES_ENCRYPT) ? 0 : MODE_DECRYPT_BIT;
+
+    memcpy((uint32_t *)AES_KEY_BASE, ctx->key, ctx->key_bytes);
+    DPORT_REG_WRITE(AES_MODE_REG, mode_reg_base + ((ctx->key_bytes / 8) - 2));
+}
+
+/* Run a single 16 byte block of AES, using the hardware engine.
+ *
+ * Call only while holding esp_aes_acquire_hardware().
+ */
+static inline void esp_aes_block(const void *input, void *output)
+{
+    const uint32_t *input_words = (const uint32_t *)input;
+    uint32_t *output_words = (uint32_t *)output;
+    uint32_t *mem_block = (uint32_t *)AES_TEXT_BASE;
+
+    for(int i = 0; i < 4; i++) {
+        mem_block[i] = input_words[i];
     }
-    return 0;
+
+    DPORT_REG_WRITE(AES_START_REG, 1);
+
+    DPORT_STALL_OTHER_CPU_START();
+    {
+        while (_DPORT_REG_READ(AES_IDLE_REG) != 1) { }
+        for (int i = 0; i < 4; i++) {
+            output_words[i] = mem_block[i];
+        }
+    }
+    DPORT_STALL_OTHER_CPU_END();
 }
 
 /*
@@ -148,7 +161,7 @@ void esp_aes_encrypt( esp_aes_context *ctx,
 {
     esp_aes_acquire_hardware();
     esp_aes_setkey_hardware(ctx, ESP_AES_ENCRYPT);
-    ets_aes_crypt(input, output);
+    esp_aes_block(input, output);
     esp_aes_release_hardware();
 }
 
@@ -162,7 +175,7 @@ void esp_aes_decrypt( esp_aes_context *ctx,
 {
     esp_aes_acquire_hardware();
     esp_aes_setkey_hardware(ctx, ESP_AES_DECRYPT);
-    ets_aes_crypt(input, output);
+    esp_aes_block(input, output);
     esp_aes_release_hardware();
 }
 
@@ -177,8 +190,9 @@ int esp_aes_crypt_ecb( esp_aes_context *ctx,
 {
     esp_aes_acquire_hardware();
     esp_aes_setkey_hardware(ctx, mode);
-    ets_aes_crypt(input, output);
+    esp_aes_block(input, output);
     esp_aes_release_hardware();
+
     return 0;
 }
 
@@ -194,6 +208,9 @@ int esp_aes_crypt_cbc( esp_aes_context *ctx,
                        unsigned char *output )
 {
     int i;
+    uint32_t *output_words = (uint32_t *)output;
+    const uint32_t *input_words = (const uint32_t *)input;
+    uint32_t *iv_words = (uint32_t *)iv;
     unsigned char temp[16];
 
     if ( length % 16 ) {
@@ -201,34 +218,36 @@ int esp_aes_crypt_cbc( esp_aes_context *ctx,
     }
 
     esp_aes_acquire_hardware();
+
     esp_aes_setkey_hardware(ctx, mode);
 
     if ( mode == ESP_AES_DECRYPT ) {
         while ( length > 0 ) {
-            memcpy( temp, input, 16 );
-            ets_aes_crypt(input, output);
+            memcpy(temp, input_words, 16);
+            esp_aes_block(input_words, output_words);
 
-            for ( i = 0; i < 16; i++ ) {
-                output[i] = (unsigned char)( output[i] ^ iv[i] );
+            for ( i = 0; i < 4; i++ ) {
+                output_words[i] = output_words[i] ^ iv_words[i];
             }
 
-            memcpy( iv, temp, 16 );
+            memcpy( iv_words, temp, 16 );
 
-            input  += 16;
-            output += 16;
+            input_words += 4;
+            output_words += 4;
             length -= 16;
         }
-    } else {
+    } else { // ESP_AES_ENCRYPT
         while ( length > 0 ) {
-            for ( i = 0; i < 16; i++ ) {
-                output[i] = (unsigned char)( input[i] ^ iv[i] );
+
+            for ( i = 0; i < 4; i++ ) {
+                output_words[i] = input_words[i] ^ iv_words[i];
             }
 
-            ets_aes_crypt(output, output);
-            memcpy( iv, output, 16 );
+            esp_aes_block(output_words, output_words);
+            memcpy( iv_words, output_words, 16 );
 
-            input  += 16;
-            output += 16;
+            input_words  += 4;
+            output_words += 4;
             length -= 16;
         }
     }
@@ -253,12 +272,13 @@ int esp_aes_crypt_cfb128( esp_aes_context *ctx,
     size_t n = *iv_off;
 
     esp_aes_acquire_hardware();
+
     esp_aes_setkey_hardware(ctx, ESP_AES_ENCRYPT);
 
     if ( mode == ESP_AES_DECRYPT ) {
         while ( length-- ) {
             if ( n == 0 ) {
-                ets_aes_crypt(iv, iv );
+                esp_aes_block(iv, iv );
             }
 
             c = *input++;
@@ -270,7 +290,7 @@ int esp_aes_crypt_cfb128( esp_aes_context *ctx,
     } else {
         while ( length-- ) {
             if ( n == 0 ) {
-                ets_aes_crypt(iv, iv );
+                esp_aes_block(iv, iv );
             }
 
             iv[n] = *output++ = (unsigned char)( iv[n] ^ *input++ );
@@ -300,11 +320,12 @@ int esp_aes_crypt_cfb8( esp_aes_context *ctx,
     unsigned char ov[17];
 
     esp_aes_acquire_hardware();
+
     esp_aes_setkey_hardware(ctx, ESP_AES_ENCRYPT);
 
     while ( length-- ) {
         memcpy( ov, iv, 16 );
-        ets_aes_crypt(iv, iv);
+        esp_aes_block(iv, iv);
 
         if ( mode == ESP_AES_DECRYPT ) {
             ov[16] = *input;
@@ -339,11 +360,12 @@ int esp_aes_crypt_ctr( esp_aes_context *ctx,
     size_t n = *nc_off;
 
     esp_aes_acquire_hardware();
+
     esp_aes_setkey_hardware(ctx, ESP_AES_ENCRYPT);
 
     while ( length-- ) {
         if ( n == 0 ) {
-            ets_aes_crypt(nonce_counter, stream_block);
+            esp_aes_block(nonce_counter, stream_block);
 
             for ( i = 16; i > 0; i-- )
                 if ( ++nonce_counter[i - 1] != 0 ) {

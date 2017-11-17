@@ -122,6 +122,7 @@ const eth_config_t phy_tlk110_default_ethernet_config = {
     // is used if all pins are unconnected.
     .phy_addr = 0x1,
     .mac_mode = ETH_MODE_RMII,
+    .clock_mode = ETH_CLOCK_GPIO0_IN,
     //Only FULLDUPLEX mode support flow ctrl now!
     .flow_ctrl_enable = true,
     .phy_init = phy_tlk110_init,

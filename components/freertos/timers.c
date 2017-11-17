@@ -780,9 +780,9 @@ static void prvCheckForValidListAndQueue( void )
 	/* Check that the list from which active timers are referenced, and the
 	queue used to communicate with the timer service, have been
 	initialised. */
-	
+
 	/* Erm, yes, this is a problem. We can't lock until the lock is initialized, and we can't initialize the lock
-	   atomically because we don't have a lock yet... I'm pretty sure doubly-initializing a lock on 2 cpus 
+	   atomically because we don't have a lock yet... I'm pretty sure doubly-initializing a lock on 2 cpus
 	   is no problem in the current implementation, but this is not a nice way to solve things. ToDo - improve. */
 
 	if( xTimerQueue == NULL ) vPortCPUInitializeMutex( &xTimerMux );

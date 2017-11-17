@@ -1,0 +1,139 @@
+menu "SPIFFS Configuration"
+
+config SPIFFS_MAX_PARTITIONS
+    int "Maximum Number of Partitions"
+    default 3
+    range 1 10
+    help
+        Define maximum number of partitions 
+        that can be mounted.
+
+menu "SPIFFS Cache Configuration"
+config SPIFFS_CACHE
+    bool "Enable SPIFFS Cache"
+    default "y"
+    help
+        Enables/disable memory read 
+        caching of nucleus file system 
+        operations.
+
+config SPIFFS_CACHE_WR
+    bool "Enable SPIFFS Write Caching"
+    default "y"
+    depends on SPIFFS_CACHE
+    help
+        Enables memory write caching for 
+        file descriptors in hydrogen.
+
+config SPIFFS_CACHE_STATS
+    bool "Enable SPIFFS Cache Statistics"
+    default "n"
+    depends on SPIFFS_CACHE
+    help
+        Enable/disable statistics on caching. 
+        Debug/test purpose only.
+
+endmenu
+
+config SPIFFS_PAGE_CHECK
+    bool "Enable SPIFFS Page Check"
+    default "y"
+    help
+        Always check header of each 
+        accessed page to ensure consistent state.
+        If enabled it will increase number 
+        of reads, will increase flash.
+
+config SPIFFS_GC_MAX_RUNS
+    int "Set Maximum GC Runs"
+    default 10
+    range 1 255
+    help
+        Define maximum number of gc runs to 
+        perform to reach desired free pages.
+
+config SPIFFS_GC_STATS
+    bool "Enable SPIFFS GC Statistics"
+    default "n"
+    help
+        Enable/disable statistics on gc. 
+        Debug/test purpose only.
+
+config SPIFFS_OBJ_NAME_LEN
+    int "Set SPIFFS Maximum Name Length"
+    default 32
+    range 1 256
+    help
+        Object name maximum length. Note that this length 
+        include the zero-termination character, 
+        meaning maximum string of characters can at most be 
+        SPIFFS_OBJ_NAME_LEN - 1.
+
+config SPIFFS_USE_MAGIC
+    bool "Enable SPIFFS Filesystem Magic"
+    default "y"
+    help
+        Enable this to have an identifiable spiffs filesystem. 
+        This will look for a magic in all sectors 
+        to determine if this is a valid spiffs system 
+        or not on mount point.
+
+config SPIFFS_USE_MAGIC_LENGTH
+    bool "Enable SPIFFS Filesystem Length Magic"
+    default "y"
+    depends on SPIFFS_USE_MAGIC
+    help
+        If this option is enabled, the magic will also be dependent 
+        on the length of the filesystem. For example, a filesystem 
+        configured and formatted for 4 megabytes will not be accepted 
+        for mounting with a configuration defining the filesystem as 2 megabytes.
+
+menu "Debug Configuration"
+
+config SPIFFS_DBG
+    bool "Enable general SPIFFS debug"
+    default "n"
+    help
+        Enabling this option will print 
+        general debug mesages to the console
+
+config SPIFFS_API_DBG
+    bool "Enable SPIFFS API debug"
+    default "n"
+    help
+        Enabling this option will print 
+        API debug mesages to the console
+
+config SPIFFS_GC_DBG
+    bool "Enable SPIFFS Garbage Cleaner debug"
+    default "n"
+    help
+        Enabling this option will print 
+        GC debug mesages to the console
+
+config SPIFFS_CACHE_DBG
+    bool "Enable SPIFFS Cache debug"
+    default "n"
+    depends on SPIFFS_CACHE
+    help
+        Enabling this option will print 
+        Cache debug mesages to the console
+
+config SPIFFS_CHECK_DBG
+    bool "Enable SPIFFS Filesystem Check debug"
+    default "n"
+    help
+        Enabling this option will print 
+        Filesystem Check debug mesages 
+        to the console
+
+config SPIFFS_TEST_VISUALISATION
+    bool "Enable SPIFFS Filesystem Visualization"
+    default "n"
+    help
+        Enable this option to enable SPIFFS_vis function 
+        in the api.
+
+endmenu
+
+endmenu

@@ -30,7 +30,6 @@
 //#include <stdlib.h>
 #include <string.h>
 
-#include "gki.h"
 #include "bt_types.h"
 #include "hcimsgs.h"
 #include "btu.h"
@@ -47,7 +46,6 @@
 
 // TODO(zachoverflow): remove this horrible hack
 #include "btu.h"
-extern fixed_queue_t *btu_hci_msg_queue;
 
 extern void btm_process_cancel_complete(UINT8 status, UINT8 mode);
 extern void btm_ble_test_command_complete(UINT8 *p);
@@ -126,6 +124,7 @@ static void btu_ble_ll_conn_complete_evt (UINT8 *p, UINT16 evt_len);
 static void btu_ble_process_adv_pkt (UINT8 *p);
 static void btu_ble_read_remote_feat_evt (UINT8 *p);
 static void btu_ble_ll_conn_param_upd_evt (UINT8 *p, UINT16 evt_len);
+static void btu_ble_ll_get_conn_param_format_err_from_contoller (UINT8 status, UINT16 handle);
 #if (SMP_INCLUDED == TRUE)
 static void btu_ble_proc_ltk_req (UINT8 *p);
 static void btu_hcif_encryption_key_refresh_cmpl_evt (UINT8 *p);
@@ -992,7 +991,7 @@ static void btu_hcif_command_complete_evt_on_task(BT_HDR *event)
         hack->response->len - 5, // 3 for the command complete headers, 2 for the event headers
         hack->context);
 
-    GKI_freebuf(hack->response);
+    osi_free(hack->response);
     osi_free(event);
 }
 
@@ -1009,9 +1008,7 @@ static void btu_hcif_command_complete_evt(BT_HDR *response, void *context)
 
     event->event = BTU_POST_TO_TASK_NO_GOOD_HORRIBLE_HACK;
 
-    fixed_queue_enqueue(btu_hci_msg_queue, event);
-    // ke_event_set(KE_EVENT_BTU_TASK_THREAD);
-    btu_task_post(SIG_BTU_WORK);
+    btu_task_post(SIG_BTU_HCI_MSG, event, TASK_POST_BLOCKING);
 }
 
 
@@ -1130,6 +1127,13 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
             case HCI_BLE_CREATE_LL_CONN:
                 btm_ble_create_ll_conn_complete(status);
                 break;
+            case HCI_BLE_UPD_LL_CONN_PARAMS:
+                if (p_cmd != NULL){
+                    p_cmd++;
+                    STREAM_TO_UINT16 (handle, p_cmd);
+                    btu_ble_ll_get_conn_param_format_err_from_contoller(status, handle);
+                }
+                break;
 #endif
 
 #if BTM_SCO_INCLUDED == TRUE
@@ -1193,7 +1197,7 @@ static void btu_hcif_command_status_evt_on_task(BT_HDR *event)
         stream,
         hack->context);
 
-    GKI_freebuf(hack->command);
+    osi_free(hack->command);
     osi_free(event);
 }
 
@@ -1209,9 +1213,7 @@ static void btu_hcif_command_status_evt(uint8_t status, BT_HDR *command, void *c
 
     event->event = BTU_POST_TO_TASK_NO_GOOD_HORRIBLE_HACK;
 
-    fixed_queue_enqueue(btu_hci_msg_queue, event);
-    //ke_event_set(KE_EVENT_BTU_TASK_THREAD);
-    btu_task_post(SIG_BTU_WORK);
+    btu_task_post(SIG_BTU_HCI_MSG, event, TASK_POST_BLOCKING);
 }
 
 /*******************************************************************************
@@ -1747,11 +1749,23 @@ static void btu_ble_ll_conn_param_upd_evt (UINT8 *p, UINT16 evt_len)
     /* We can enable the update request if the result is a success. */
     /* extract the HCI handle first */
     UINT8   status;
-    UINT16  handle;
-
+    UINT16  handle, conn_interval, conn_latency, conn_timeout;
     STREAM_TO_UINT8  (status, p);
     STREAM_TO_UINT16 (handle, p);
-    l2cble_process_conn_update_evt(handle, status);
+    STREAM_TO_UINT16 (conn_interval, p);
+    STREAM_TO_UINT16 (conn_latency, p);
+    STREAM_TO_UINT16 (conn_timeout, p);
+
+    l2cble_process_conn_update_evt(handle, status, conn_interval,
+                                   conn_latency, conn_timeout);
+}
+
+static void btu_ble_ll_get_conn_param_format_err_from_contoller (UINT8 status, UINT16 handle)
+{
+    /* host send illegal connection parameters format, controller would send
+       back HCI_ERR_ILLEGAL_PARAMETER_FMT */
+    l2cble_get_conn_param_format_err_from_contoller(status, handle);
+
 }
 
 static void btu_ble_read_remote_feat_evt (UINT8 *p)

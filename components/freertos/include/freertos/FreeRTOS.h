@@ -189,11 +189,7 @@ extern "C" {
 #endif
 
 #ifndef INCLUDE_pcTaskGetTaskName
-#if ( configENABLE_MEMORY_DEBUG == 1)
 	#define INCLUDE_pcTaskGetTaskName 1
-#else
-	#define INCLUDE_pcTaskGetTaskName 0
-#endif
 #endif
 
 #ifndef configUSE_APPLICATION_TASK_TAG
@@ -202,6 +198,10 @@ extern "C" {
 
 #ifndef INCLUDE_uxTaskGetStackHighWaterMark
 	#define INCLUDE_uxTaskGetStackHighWaterMark 0
+#endif
+
+#ifndef INCLUDE_pxTaskGetStackStart
+	#define INCLUDE_pxTaskGetStackStart 0
 #endif
 
 #ifndef INCLUDE_eTaskGetState
@@ -404,6 +404,22 @@ extern "C" {
 
 #ifndef traceMOVED_TASK_TO_READY_STATE
 	#define traceMOVED_TASK_TO_READY_STATE( pxTCB )
+#endif
+
+#ifndef traceREADDED_TASK_TO_READY_STATE
+	#define traceREADDED_TASK_TO_READY_STATE( pxTCB )	traceMOVED_TASK_TO_READY_STATE( pxTCB )
+#endif
+
+#ifndef traceMOVED_TASK_TO_DELAYED_LIST
+	#define traceMOVED_TASK_TO_DELAYED_LIST()
+#endif
+
+#ifndef traceMOVED_TASK_TO_OVERFLOW_DELAYED_LIST
+	#define traceMOVED_TASK_TO_OVERFLOW_DELAYED_LIST()
+#endif
+
+#ifndef traceMOVED_TASK_TO_SUSPENDED_LIST
+	#define traceMOVED_TASK_TO_SUSPENDED_LIST( pxTCB )
 #endif
 
 #ifndef traceQUEUE_CREATE
@@ -616,6 +632,22 @@ extern "C" {
 
 #ifndef traceQUEUE_REGISTRY_ADD
 	#define traceQUEUE_REGISTRY_ADD(xQueue, pcQueueName)
+#endif
+
+#ifndef traceTASK_NOTIFY_GIVE_FROM_ISR
+ 	#define traceTASK_NOTIFY_GIVE_FROM_ISR()
+ #endif
+ 
+#ifndef traceISR_EXIT_TO_SCHEDULER
+	#define traceISR_EXIT_TO_SCHEDULER()
+#endif
+
+#ifndef traceISR_EXIT
+	#define traceISR_EXIT()
+#endif
+
+#ifndef traceISR_ENTER
+	#define traceISR_ENTER(_n_)
 #endif
 
 #ifndef configGENERATE_RUN_TIME_STATS
@@ -942,13 +974,14 @@ typedef struct xSTATIC_QUEUE
 		uint8_t ucDummy9;
 	#endif
 
-    struct {
-	    volatile uint32_t ucDummy10;
-    #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-	    void *pvDummy8;
-	    UBaseType_t uxDummy11;
-    #endif
-    } sDummy12;
+	struct {
+		volatile uint32_t ucDummy10;
+		uint32_t ucDummy11;
+	#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
+		void *pvDummy8;
+		UBaseType_t uxDummy12;
+	#endif
+	} sDummy1;
 
 } StaticQueue_t;
 typedef StaticQueue_t StaticSemaphore_t;

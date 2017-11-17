@@ -21,7 +21,6 @@
  ******************************************************************************/
 
 #include "bt_target.h"
-#include "gki.h"
 #include "bta_api.h"
 #include "bta_sdp_api.h"
 

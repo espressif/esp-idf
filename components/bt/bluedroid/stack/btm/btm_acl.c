@@ -39,7 +39,6 @@
 #include "bt_types.h"
 #include "bt_target.h"
 #include "controller.h"
-#include "gki.h"
 #include "hcimsgs.h"
 #include "btu.h"
 #include "btm_api.h"
@@ -136,6 +135,31 @@ UINT8 btm_handle_to_acl_index (UINT16 hci_handle)
     return (xx);
 }
 
+/*******************************************************************************
+**
+** Function         btm_handle_to_acl
+**
+** Description      This function returns the FIRST acl_db entry for the passed hci_handle.
+**
+** Returns          Returns pointer to the ACL DB for the requested BDA if found.
+**                  NULL if not found.
+**
+*******************************************************************************/
+tACL_CONN *btm_handle_to_acl (UINT16 hci_handle)
+{
+    tACL_CONN   *p = &btm_cb.acl_db[0];
+    UINT8       xx;
+    BTM_TRACE_DEBUG ("btm_handle_to_acl_index\n");
+    for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p++) {
+        if ((p->in_use) && (p->hci_handle == hci_handle)) {
+            return(p);
+        }
+    }
+
+    /* If here, no BD Addr found */
+    return ((tACL_CONN *)NULL);
+}
+
 #if BLE_PRIVACY_SPT == TRUE
 /*******************************************************************************
 **
@@ -230,7 +254,10 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
             p->link_role         = link_role;
             p->link_up_issued    = FALSE;
             memcpy (p->remote_addr, bda, BD_ADDR_LEN);
-
+            /* Set the default version of the peer device to version4.0 before exchange the version with it.
+               If the peer device act as a master and don't exchange the version with us, then it can only use the
+               legacy connect instead of secure connection in the pairing step. */
+            p->lmp_version = HCI_PROTO_VERSION_4_0;
 #if BLE_INCLUDED == TRUE
             p->transport = transport;
 #if BLE_PRIVACY_SPT == TRUE
@@ -308,11 +335,7 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
                     btsnd_hcic_ble_read_remote_feat(p->hci_handle);
                 } else if (HCI_LE_SLAVE_INIT_FEAT_EXC_SUPPORTED(controller_get_interface()->get_features_ble()->as_array)
                          && link_role == HCI_ROLE_SLAVE) {
-                     /* In the original Bluedroid version, slave need to send LL_SLAVE_FEATURE_REQ(call btsnd_hcic_ble_read_remote_feat)
-                      * to remote device if it has not received ll_feature_req.
-                      * Delete it to resolve Android 7.0 incompatible problem. But it may cause that slave
-                      * can't get remote device's feature if it doesn't receive ll_feature_req.*/
-                    l2cble_notify_le_connection(bda);
+                    btsnd_hcic_ble_read_remote_feat(p->hci_handle);
                 } else {
                     btm_establish_continue(p);
                 }
@@ -1883,9 +1906,11 @@ tBTM_STATUS BTM_ReadRSSI (BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb)
     BTM_TRACE_API ("BTM_ReadRSSI: RemBdAddr: %02x%02x%02x%02x%02x%02x\n",
                    remote_bda[0], remote_bda[1], remote_bda[2],
                    remote_bda[3], remote_bda[4], remote_bda[5]);
-
+    tBTM_RSSI_RESULTS result;
     /* If someone already waiting on the version, do not allow another */
     if (btm_cb.devcb.p_rssi_cmpl_cb) {
+        result.status = BTM_BUSY;
+        (*p_cb)(&result);
         return (BTM_BUSY);
     }
 
@@ -1906,6 +1931,8 @@ tBTM_STATUS BTM_ReadRSSI (BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb)
         if (!btsnd_hcic_read_rssi (p->hci_handle)) {
             btm_cb.devcb.p_rssi_cmpl_cb = NULL;
             btu_stop_timer (&btm_cb.devcb.rssi_timer);
+            result.status = BTM_NO_RESOURCES;
+            (*p_cb)(&result);
             return (BTM_NO_RESOURCES);
         } else {
             return (BTM_CMD_STARTED);
@@ -2015,6 +2042,43 @@ tBTM_STATUS BTM_ReadTxPower (BD_ADDR remote_bda, tBT_TRANSPORT transport, tBTM_C
     /* If here, no BD Addr found */
     return (BTM_UNKNOWN_ADDR);
 }
+tBTM_STATUS BTM_BleReadAdvTxPower(tBTM_CMPL_CB *p_cb)
+{
+    BOOLEAN ret;
+    tBTM_TX_POWER_RESULTS result;
+    /* If someone already waiting on the version, do not allow another */
+    if (btm_cb.devcb.p_tx_power_cmpl_cb) {
+        result.status = BTM_BUSY;
+        (*p_cb)(&result);
+        return (BTM_BUSY);
+    }
+
+    btm_cb.devcb.p_tx_power_cmpl_cb = p_cb;
+    btu_start_timer (&btm_cb.devcb.tx_power_timer, BTU_TTYPE_BTM_ACL,
+                         BTM_DEV_REPLY_TIMEOUT);
+    ret = btsnd_hcic_ble_read_adv_chnl_tx_power();
+
+    if(!ret) {
+        btm_cb.devcb.p_tx_power_cmpl_cb = NULL;
+        btu_stop_timer (&btm_cb.devcb.tx_power_timer);
+        result.status = BTM_NO_RESOURCES;
+        (*p_cb)(&result);
+        return (BTM_NO_RESOURCES);
+    } else {
+        return BTM_CMD_STARTED;
+    }
+}
+
+void BTM_BleGetWhiteListSize(uint16_t *length)
+{
+    tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
+    if (p_cb->white_list_avail_size == 0) {
+        BTM_TRACE_ERROR("%s Whitelist full.", __func__);
+    }
+    *length = p_cb->white_list_avail_size;
+    return;
+}
+
 /*******************************************************************************
 **
 ** Function         btm_read_tx_power_complete
@@ -2301,7 +2365,7 @@ void btm_acl_resubmit_page (void)
     BD_ADDR bda;
     BTM_TRACE_DEBUG ("btm_acl_resubmit_page\n");
     /* If there were other page request schedule can start the next one */
-    if ((p_buf = (BT_HDR *)GKI_dequeue (&btm_cb.page_queue)) != NULL) {
+    if ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(btm_cb.page_queue)) != NULL) {
         /* skip 3 (2 bytes opcode and 1 byte len) to get to the bd_addr
          * for both create_conn and rmt_name */
         pp = (UINT8 *)(p_buf + 1) + p_buf->offset + 3;
@@ -2332,8 +2396,8 @@ void  btm_acl_reset_paging (void)
     BT_HDR *p;
     BTM_TRACE_DEBUG ("btm_acl_reset_paging\n");
     /* If we sent reset we are definitely not paging any more */
-    while ((p = (BT_HDR *)GKI_dequeue(&btm_cb.page_queue)) != NULL) {
-        GKI_freebuf (p);
+    while ((p = (BT_HDR *)fixed_queue_try_dequeue(btm_cb.page_queue)) != NULL) {
+        osi_free (p);
     }
 
     btm_cb.paging = FALSE;
@@ -2356,7 +2420,7 @@ void  btm_acl_paging (BT_HDR *p, BD_ADDR bda)
                      (bda[0] << 16) + (bda[1] << 8) + bda[2], (bda[3] << 16) + (bda[4] << 8) + bda[5]);
     if (btm_cb.discing) {
         btm_cb.paging = TRUE;
-        GKI_enqueue (&btm_cb.page_queue, p);
+        fixed_queue_enqueue(btm_cb.page_queue, p);
     } else {
         if (!BTM_ACL_IS_CONNECTED (bda)) {
             BTM_TRACE_DEBUG ("connecting_bda: %06x%06x\n",
@@ -2366,7 +2430,7 @@ void  btm_acl_paging (BT_HDR *p, BD_ADDR bda)
                              btm_cb.connecting_bda[5]);
             if (btm_cb.paging &&
                     memcmp (bda, btm_cb.connecting_bda, BD_ADDR_LEN) != 0) {
-                GKI_enqueue (&btm_cb.page_queue, p);
+                fixed_queue_enqueue(btm_cb.page_queue, p);
             } else {
                 p_dev_rec = btm_find_or_alloc_dev (bda);
                 memcpy (btm_cb.connecting_bda, p_dev_rec->bd_addr,   BD_ADDR_LEN);

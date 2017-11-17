@@ -13,6 +13,11 @@
 // limitations under the License.
 #ifndef _SOC_RMT_STRUCT_H_
 #define _SOC_RMT_STRUCT_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef volatile struct {
     uint32_t data_ch[8];                                /*The R/W ram address for channel0-7 by apb fifo access.*/
     struct{
@@ -258,5 +263,9 @@ typedef volatile struct {
     } chan[8];
 } rmt_mem_t;
 extern rmt_mem_t RMTMEM;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* _SOC_RMT_STRUCT_H_ */

@@ -139,7 +139,7 @@ static void coap_example_task(void *p)
                     FD_ZERO(&readfds);
                     FD_CLR( ctx->sockfd, &readfds );
                     FD_SET( ctx->sockfd, &readfds );
-                    result = select( FD_SETSIZE, &readfds, 0, 0, &tv );
+                    result = select( ctx->sockfd+1, &readfds, 0, 0, &tv );
                     if (result > 0) {
                         if (FD_ISSET( ctx->sockfd, &readfds ))
                             coap_read(ctx);

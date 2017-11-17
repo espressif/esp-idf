@@ -27,7 +27,10 @@
 #include "soc/mcpwm_struct.h"
 
 #define INITIAL_DUTY 10.0   //initial duty cycle is 10.0%
-#define MCPWM_GPIO_INIT 0    //select which function to use to initialize gpio signals
+#define MCPWM_GPIO_INIT 0   //select which function to use to initialize gpio signals
+
+#define GPIO_HALL_TEST_SIGNAL 0     //Make this 1 to enable generation of hall sensors test signal on GPIO13, 12, 14
+#define CHANGE_DUTY_CONTINUOUSLY 0  //Make this 1 to change duty continuously
 
 #define CAP_SIG_NUM 3   //three capture signals from HALL-A, HALL-B, HALL-C
 #define CAP0_INT_EN BIT(27)  //Capture 0 interrupt bit
@@ -94,6 +97,7 @@ static void mcpwm_example_gpio_initialize()
     gpio_pulldown_en(GPIO_CAP2_IN);    //Enable pull down on CAP2   signal
 }
 
+#if GPIO_HALL_TEST_SIGNAL
 /**
  * @brief Set gpio 13, 12, 14  as our test signal of hall sensors, that generates high-low waveform continuously
  *        Attach this pins to GPIO 27, 26, 25 respectively for capture unit
@@ -123,6 +127,7 @@ static void gpio_test_signal(void *arg)
         vTaskDelay(1);
     }
 }
+#endif
 
 /**
  * @brief When interrupt occurs, we receive the counter value and display the time between two rising edge
@@ -181,6 +186,7 @@ static void IRAM_ATTR isr_handler()
     MCPWM[MCPWM_UNIT_0]->int_clr.val = mcpwm_intr_status;
 }
 
+#if CHANGE_DUTY_CONTINUOUSLY
 static void change_duty(void *arg)
 {
     int j;
@@ -197,6 +203,7 @@ static void change_duty(void *arg)
         }
     }
 }
+#endif
 
 /**
  * @brief Configure whole MCPWM module for bldc motor control
@@ -304,9 +311,13 @@ static void mcpwm_example_bldc_control(void *arg)
 void app_main()
 {
     printf("Testing MCPWM BLDC Control...\n");
-    //xTaskCreate(change_duty, "change_duty", 2048, NULL, 2, NULL); //uncomment to change duty continuously
+#if CHANGE_DUTY_CONTINUOUSLY
+    xTaskCreate(change_duty, "change_duty", 2048, NULL, 2, NULL);
+#endif
     cap_queue = xQueueCreate(1, sizeof(capture)); //comment if you don't want to use capture module
-    //xTaskCreate(gpio_test_signal, "gpio_test_signal", 2048, NULL, 2, NULL);
+#if GPIO_HALL_TEST_SIGNAL
+    xTaskCreate(gpio_test_signal, "gpio_test_signal", 2048, NULL, 2, NULL);
+#endif
     xTaskCreate(disp_captured_signal, "mcpwm_config", 4096, NULL, 2, NULL);  //comment if you don't want to use capture module
     xTaskCreate(mcpwm_example_bldc_control, "mcpwm_example_bldc_control", 4096, NULL, 2, NULL);
 }

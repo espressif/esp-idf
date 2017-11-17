@@ -67,7 +67,7 @@ static bool secure_boot_generate(uint32_t image_len){
     }
 
     /* generate digest from image contents */
-    image = bootloader_mmap(0x1000, image_len);
+    image = bootloader_mmap(ESP_BOOTLOADER_OFFSET, image_len);
     if (!image) {
         ESP_LOGE(TAG, "bootloader_mmap(0x1000, 0x%x) failed", image_len);
         return false;
@@ -111,7 +111,7 @@ esp_err_t esp_secure_boot_permanently_enable(void) {
         return ESP_OK;
     }
 
-    err = esp_image_basic_verify(0x1000, true, &image_len);
+    err = esp_image_verify_bootloader(&image_len);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "bootloader image appears invalid! error %d", err);
         return err;

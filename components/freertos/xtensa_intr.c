@@ -138,6 +138,21 @@ xt_handler xt_set_interrupt_handler(int n, xt_handler f, void * arg)
     return ((old == &xt_unhandled_interrupt) ? 0 : old);
 }
 
+#if CONFIG_SYSVIEW_ENABLE
+void * xt_get_interrupt_handler_arg(int n)
+{
+    xt_handler_table_entry * entry;
+
+    if( n < 0 || n >= XCHAL_NUM_INTERRUPTS )
+        return 0;       /* invalid interrupt number */
+
+    /* Convert exception number to _xt_exception_table name */
+    n = n * portNUM_PROCESSORS + xPortGetCoreID();
+
+    entry = _xt_interrupt_table + n;
+    return entry->arg;
+}
+#endif
 
 #endif /* XCHAL_HAVE_INTERRUPTS */
 

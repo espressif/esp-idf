@@ -75,10 +75,11 @@ static err_t netconn_close_shutdown(struct netconn *conn, u8_t how);
 static err_t
 tcpip_apimsg(struct api_msg *apimsg)
 {
-#ifdef LWIP_DEBUG
+#if LWIP_DEBUG
   /* catch functions that don't set err */
   apimsg->msg.err = ERR_VAL;
 #endif
+
 #if LWIP_NETCONN_SEM_PER_THREAD
   apimsg->msg.op_completed_sem = LWIP_NETCONN_THREAD_SEM_GET();
   LWIP_ASSERT("netconn semaphore not initialized",
@@ -484,8 +485,6 @@ netconn_recv_data(struct netconn *conn, void **new_buf)
     /* If we are closed, we indicate that we no longer wish to use the socket */
     if (buf == NULL) {
       API_EVENT(conn, NETCONN_EVT_RCVMINUS, 0);
-      /* RX side is closed, so deallocate the recvmbox */
-      netconn_close_shutdown(conn, NETCONN_SHUT_RD);
       /* Don' store ERR_CLSD as conn->err since we are only half-closed */
       return ERR_CLSD;
     }

@@ -28,6 +28,10 @@ Additional third party copyrighted code is included under the following licenses
 
 * `JSMN`_ JSON Parser (components/jsmn) Copyright (c) 2010 Serge A. Zaitsev and licensed under the MIT license.
 
+* `argtable3`_ arugment parsing library Copyright (C) 1998-2001,2003-2011,2013 Stewart Heitmann and licensed under 3-clause BSD license.
+
+* `linenoise`_ line editing library Copyright (c) 2010-2014, Salvatore Sanfilippo <antirez at gmail dot com>, Copyright (c) 2010-2013, Pieter Noordhuis <pcnoordhuis at gmail dot com>, licensed under 2-clause BSD license.
+
 Where source code headers specify Copyright & License information, this information takes precedence over the summaries made here.
 
 ROM Source Code Copyrights
@@ -99,10 +103,13 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _Newlib: https://sourceware.org/newlib/
 .. _FreeRTOS: http://freertos.org/
 .. _esptool.py: https://github.com/espressif/esptool
-.. _LWIP: http://savannah.nongnu.org/projects/lwip/
+.. _LWIP: https://savannah.nongnu.org/projects/lwip/
 .. _TinyBasic: https://github.com/BleuLlama/TinyBasicPlus
 .. _miniz: https://code.google.com/archive/p/miniz/
-.. _wpa_supplicant: http://w1.fi/wpa_supplicant/
+.. _wpa_supplicant: https://w1.fi/wpa_supplicant/
 .. _FreeBSD net80211: https://github.com/freebsd/freebsd/tree/master/sys/net80211
 .. _TJpgDec: http://elm-chan.org/fsw/tjpgd/00index.html
 .. _JSMN: http://zserge.com/jsmn.html
+.. _argtable3: https://github.com/argtable/argtable3
+.. _linenoise: https://github.com/antirez/linenoise
+

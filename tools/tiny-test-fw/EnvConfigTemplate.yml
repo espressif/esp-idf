@@ -1,0 +1,6 @@
+.external_ap: &external_ap
+  ap_ssid: "myssid"
+  ap_password: "mypassword"
+
+Examples_WIFI:
+  <<: external_ap

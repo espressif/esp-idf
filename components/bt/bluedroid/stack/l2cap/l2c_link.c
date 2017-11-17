@@ -30,7 +30,6 @@
 
 #include "controller.h"
 //#include "btcore/include/counter.h"
-#include "gki.h"
 #include "bt_types.h"
 //#include "bt_utils.h"
 #include "hcimsgs.h"
@@ -421,7 +420,7 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
                 while (!list_is_empty(p_lcb->link_xmit_data_q)) {
                     p_buf = list_front(p_lcb->link_xmit_data_q);
                     list_remove(p_lcb->link_xmit_data_q, p_buf);
-                    GKI_freebuf(p_buf);
+                    osi_free(p_buf);
                 }
             } else
 #endif
@@ -795,90 +794,26 @@ void l2c_link_adjust_allocation (void)
 *******************************************************************************/
 void l2c_link_adjust_chnl_allocation (void)
 {
-    tL2C_CCB    *p_ccb;
     UINT8       xx;
 
-    UINT16      weighted_chnls[GKI_NUM_TOTAL_BUF_POOLS];
-    UINT16      quota_per_weighted_chnls[GKI_NUM_TOTAL_BUF_POOLS];
-    UINT16      reserved_buff[GKI_NUM_TOTAL_BUF_POOLS];
 
     L2CAP_TRACE_DEBUG ("l2c_link_adjust_chnl_allocation");
 
-    /* initialize variables */
-    for (xx = 0; xx < GKI_NUM_TOTAL_BUF_POOLS; xx++ ) {
-        weighted_chnls[xx] = 0;
-        reserved_buff[xx] = 0;
-    }
-
-    /* add up all of tx and rx data rate requirement */
-    /* channel required higher data rate will get more buffer quota */
-    for (xx = 0; xx < MAX_L2CAP_CHANNELS; xx++) {
-        p_ccb = l2cb.ccb_pool + xx;
-
-        if (!p_ccb->in_use) {
-            continue;
-        }
-
-        if (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE) {
-            weighted_chnls[p_ccb->ertm_info.user_tx_pool_id] += p_ccb->tx_data_rate;
-            weighted_chnls[p_ccb->ertm_info.user_rx_pool_id] += p_ccb->rx_data_rate;
-
-            if (p_ccb->ertm_info.fcr_tx_pool_id == HCI_ACL_POOL_ID) {
-                /* reserve buffers only for wait_for_ack_q to maximize throughput */
-                /* retrans_q will work based on buffer status */
-                reserved_buff[HCI_ACL_POOL_ID] += p_ccb->peer_cfg.fcr.tx_win_sz;
-            }
-
-            if (p_ccb->ertm_info.fcr_rx_pool_id == HCI_ACL_POOL_ID) {
-                /* reserve buffers for srej_rcv_hold_q */
-                reserved_buff[HCI_ACL_POOL_ID] += p_ccb->peer_cfg.fcr.tx_win_sz;
-            }
-        } else {
-            /* low data rate is 1, medium is 2, high is 3 and no traffic is 0 */
-            weighted_chnls[HCI_ACL_POOL_ID] += p_ccb->tx_data_rate + p_ccb->rx_data_rate;
-        }
-    }
-
-
-    /* get unit quota per pool */
-    for (xx = 0; xx < GKI_NUM_TOTAL_BUF_POOLS; xx++ ) {
-        if ( weighted_chnls[xx] > 0 ) {
-            if (GKI_poolcount(xx) > reserved_buff[xx]) {
-                quota_per_weighted_chnls[xx] = ((GKI_poolcount(xx) - reserved_buff[xx]) / weighted_chnls[xx]) + 1;
-            } else {
-                quota_per_weighted_chnls[xx] = 1;
-            }
-
-            L2CAP_TRACE_DEBUG ("POOL ID:%d, GKI_poolcount = %d, reserved_buff = %d, weighted_chnls = %d, quota_per_weighted_chnls = %d",
-                               xx, GKI_poolcount(xx), reserved_buff[xx], weighted_chnls[xx], quota_per_weighted_chnls[xx] );
-        } else {
-            quota_per_weighted_chnls[xx] = 0;
-        }
-    }
-
-
     /* assign buffer quota to each channel based on its data rate requirement */
-    for (xx = 0; xx < MAX_L2CAP_CHANNELS; xx++) {
-        p_ccb = l2cb.ccb_pool + xx;
+    for (xx = 0; xx < MAX_L2CAP_CHANNELS; xx++)
+    {
+        tL2C_CCB *p_ccb = l2cb.ccb_pool + xx;
 
         if (!p_ccb->in_use) {
             continue;
-        }
+		}
 
-        if (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE) {
-            p_ccb->buff_quota = quota_per_weighted_chnls[p_ccb->ertm_info.user_tx_pool_id] * p_ccb->tx_data_rate;
-
-            L2CAP_TRACE_EVENT ("CID:0x%04x FCR Mode:%u UserTxPool:%u Priority:%u TxDataRate:%u Quota:%u",
-                               p_ccb->local_cid, p_ccb->peer_cfg.fcr.mode, p_ccb->ertm_info.user_tx_pool_id,
-                               p_ccb->ccb_priority, p_ccb->tx_data_rate, p_ccb->buff_quota);
-
-        } else {
-            p_ccb->buff_quota = quota_per_weighted_chnls[HCI_ACL_POOL_ID] * p_ccb->tx_data_rate;
-
-            L2CAP_TRACE_EVENT ("CID:0x%04x Priority:%u TxDataRate:%u Quota:%u",
-                               p_ccb->local_cid,
-                               p_ccb->ccb_priority, p_ccb->tx_data_rate, p_ccb->buff_quota);
-        }
+        tL2CAP_CHNL_DATA_RATE data_rate = p_ccb->tx_data_rate + p_ccb->rx_data_rate;
+        p_ccb->buff_quota = L2CAP_CBB_DEFAULT_DATA_RATE_BUFF_QUOTA * data_rate;
+        L2CAP_TRACE_EVENT("CID:0x%04x FCR Mode:%u Priority:%u TxDataRate:%u RxDataRate:%u Quota:%u",
+                          p_ccb->local_cid, p_ccb->peer_cfg.fcr.mode,
+                          p_ccb->ccb_priority, p_ccb->tx_data_rate,
+                          p_ccb->rx_data_rate, p_ccb->buff_quota);
 
         /* quota may be change so check congestion */
         l2cu_check_channel_congestion (p_ccb);
@@ -1005,7 +940,7 @@ BOOLEAN l2c_link_check_power_mode (tL2C_LCB *p_lcb)
      */
     if (list_is_empty(p_lcb->link_xmit_data_q)) {
         for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; p_ccb = p_ccb->p_next_ccb) {
-            if (!GKI_queue_is_empty(&p_ccb->xmit_hold_q)) {
+            if (!fixed_queue_is_empty(p_ccb->xmit_hold_q)) {
                 need_to_active = TRUE;
                 break;
             }
@@ -1488,7 +1423,7 @@ void l2c_link_segments_xmitted (BT_HDR *p_msg)
     /* Find the LCB based on the handle */
     if ((p_lcb = l2cu_find_lcb_by_handle (handle)) == NULL) {
         L2CAP_TRACE_WARNING ("L2CAP - rcvd segment complete, unknown handle: %d\n", handle);
-        GKI_freebuf (p_msg);
+        osi_free (p_msg);
         return;
     }
 
@@ -1501,6 +1436,6 @@ void l2c_link_segments_xmitted (BT_HDR *p_msg)
 
         l2c_link_check_send_pkts (p_lcb, NULL, NULL);
     } else {
-        GKI_freebuf (p_msg);
+        osi_free (p_msg);
     }
 }

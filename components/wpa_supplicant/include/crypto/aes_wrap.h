@@ -44,5 +44,10 @@ int __must_check aes_128_cbc_encrypt(const u8 *key, const u8 *iv, u8 *data,
 				     size_t data_len);
 int __must_check aes_128_cbc_decrypt(const u8 *key, const u8 *iv, u8 *data,
 				     size_t data_len);
-
+int __must_check fast_aes_wrap(const uint8_t *kek, int n, const uint8_t *plain, uint8_t *cipher);
+int __must_check fast_aes_unwrap(const uint8_t *kek, int n, const uint8_t *cipher, uint8_t *plain);
+int __must_check fast_aes_128_cbc_encrypt(const uint8_t *key, const uint8_t *iv, uint8_t *data,
+				          size_t data_len);
+int __must_check fast_aes_128_cbc_decrypt(const uint8_t *key, const uint8_t *iv, uint8_t *data,
+				          size_t data_len);
 #endif /* AES_WRAP_H */

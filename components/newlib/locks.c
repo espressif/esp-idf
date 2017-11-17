@@ -41,14 +41,16 @@
 
 static portMUX_TYPE lock_init_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
-/* Initialise the given lock by allocating a new mutex semaphore
+/* Initialize the given lock by allocating a new mutex semaphore
    as the _lock_t value.
+
+   Called by _lock_init*, also called by _lock_acquire* to lazily initialize locks that might have
+   been initialised (to zero only) before the RTOS scheduler started.
 */
 static void IRAM_ATTR lock_init_generic(_lock_t *lock, uint8_t mutex_type) {
     portENTER_CRITICAL(&lock_init_spinlock);
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
         /* nothing to do until the scheduler is running */
-        *lock = 0; /* ensure lock is zeroed out, in case it's an automatic variable */
         portEXIT_CRITICAL(&lock_init_spinlock);
         return;
     }
@@ -84,10 +86,12 @@ static void IRAM_ATTR lock_init_generic(_lock_t *lock, uint8_t mutex_type) {
 }
 
 void IRAM_ATTR _lock_init(_lock_t *lock) {
+    *lock = 0; // In case lock's memory is uninitialized
     lock_init_generic(lock, queueQUEUE_TYPE_MUTEX);
 }
 
 void IRAM_ATTR _lock_init_recursive(_lock_t *lock) {
+    *lock = 0; // In case lock's memory is uninitialized
     lock_init_generic(lock, queueQUEUE_TYPE_RECURSIVE_MUTEX);
 }
 
@@ -96,6 +100,10 @@ void IRAM_ATTR _lock_init_recursive(_lock_t *lock) {
    Note that FreeRTOS doesn't account for deleting mutexes while they
    are held, and neither do we... so take care not to delete newlib
    locks while they may be held by other tasks!
+
+   Also, deleting a lock in this way will cause it to be lazily
+   re-initialised if it is used again. Caller has to avoid doing
+   this!
 */
 void IRAM_ATTR _lock_close(_lock_t *lock) {
     portENTER_CRITICAL(&lock_init_spinlock);

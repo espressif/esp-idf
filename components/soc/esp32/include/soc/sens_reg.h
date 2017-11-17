@@ -96,12 +96,18 @@
 #define SENS_FORCE_XPD_SAR_M  ((SENS_FORCE_XPD_SAR_V)<<(SENS_FORCE_XPD_SAR_S))
 #define SENS_FORCE_XPD_SAR_V  0x3
 #define SENS_FORCE_XPD_SAR_S  18
+#define SENS_FORCE_XPD_SAR_FSM 0 // Use FSM to control power down
+#define SENS_FORCE_XPD_SAR_PD  2 // Force power down
+#define SENS_FORCE_XPD_SAR_PU  3 // Force power up
 /* SENS_FORCE_XPD_AMP : R/W ;bitpos:[17:16] ;default: 2'd0 ; */
 /*description: */
 #define SENS_FORCE_XPD_AMP  0x00000003
 #define SENS_FORCE_XPD_AMP_M  ((SENS_FORCE_XPD_AMP_V)<<(SENS_FORCE_XPD_AMP_S))
 #define SENS_FORCE_XPD_AMP_V  0x3
 #define SENS_FORCE_XPD_AMP_S  16
+#define SENS_FORCE_XPD_AMP_FSM 0 // Use FSM to control power down
+#define SENS_FORCE_XPD_AMP_PD  2 // Force power down
+#define SENS_FORCE_XPD_AMP_PU  3 // Force power up
 /* SENS_SAR_AMP_WAIT3 : R/W ;bitpos:[15:0] ;default: 16'd10 ; */
 /*description: */
 #define SENS_SAR_AMP_WAIT3  0x0000FFFF
@@ -297,6 +303,8 @@
 #define SENS_SAR1_ATTEN_M  ((SENS_SAR1_ATTEN_V)<<(SENS_SAR1_ATTEN_S))
 #define SENS_SAR1_ATTEN_V  0xFFFFFFFF
 #define SENS_SAR1_ATTEN_S  0
+#define SENS_SAR1_ATTEN_VAL_MASK   0x3
+#define SENS_SAR2_ATTEN_VAL_MASK   0x3
 
 #define SENS_SAR_ATTEN2_REG          (DR_REG_SENS_BASE + 0x0038)
 /* SENS_SAR2_ATTEN : R/W ;bitpos:[31:0] ;default: 32'hffffffff ; */
@@ -956,24 +964,36 @@
 #define SENS_AMP_SHORT_REF_GND_FORCE_M  ((SENS_AMP_SHORT_REF_GND_FORCE_V)<<(SENS_AMP_SHORT_REF_GND_FORCE_S))
 #define SENS_AMP_SHORT_REF_GND_FORCE_V  0x3
 #define SENS_AMP_SHORT_REF_GND_FORCE_S  17
+#define SENS_AMP_SHORT_REF_GND_FORCE_FSM 0 // Use FSM to control power down
+#define SENS_AMP_SHORT_REF_GND_FORCE_PD  2 // Force power down
+#define SENS_AMP_SHORT_REF_GND_FORCE_PU  3 // Force power up
 /* SENS_AMP_SHORT_REF_FORCE : R/W ;bitpos:[16:15] ;default: 2'b0 ; */
 /*description: */
 #define SENS_AMP_SHORT_REF_FORCE  0x00000003
 #define SENS_AMP_SHORT_REF_FORCE_M  ((SENS_AMP_SHORT_REF_FORCE_V)<<(SENS_AMP_SHORT_REF_FORCE_S))
 #define SENS_AMP_SHORT_REF_FORCE_V  0x3
 #define SENS_AMP_SHORT_REF_FORCE_S  15
+#define SENS_AMP_SHORT_REF_FORCE_FSM 0 // Use FSM to control power down
+#define SENS_AMP_SHORT_REF_FORCE_PD  2 // Force power down
+#define SENS_AMP_SHORT_REF_FORCE_PU  3 // Force power up
 /* SENS_AMP_RST_FB_FORCE : R/W ;bitpos:[14:13] ;default: 2'b0 ; */
 /*description: */
 #define SENS_AMP_RST_FB_FORCE  0x00000003
 #define SENS_AMP_RST_FB_FORCE_M  ((SENS_AMP_RST_FB_FORCE_V)<<(SENS_AMP_RST_FB_FORCE_S))
 #define SENS_AMP_RST_FB_FORCE_V  0x3
 #define SENS_AMP_RST_FB_FORCE_S  13
+#define SENS_AMP_RST_FB_FORCE_FSM 0 // Use FSM to control power down
+#define SENS_AMP_RST_FB_FORCE_PD  2 // Force power down
+#define SENS_AMP_RST_FB_FORCE_PU  3 // Force power up
 /* SENS_SAR2_RSTB_FORCE : R/W ;bitpos:[12:11] ;default: 2'b0 ; */
 /*description: */
 #define SENS_SAR2_RSTB_FORCE  0x00000003
 #define SENS_SAR2_RSTB_FORCE_M  ((SENS_SAR2_RSTB_FORCE_V)<<(SENS_SAR2_RSTB_FORCE_S))
 #define SENS_SAR2_RSTB_FORCE_V  0x3
 #define SENS_SAR2_RSTB_FORCE_S  11
+#define SENS_SAR2_RSTB_FORCE_FSM 0 // Use FSM to control power down
+#define SENS_SAR2_RSTB_FORCE_PD  2 // Force power down
+#define SENS_SAR2_RSTB_FORCE_PU  3 // Force power up
 /* SENS_SAR_RSTB_FSM_IDLE : R/W ;bitpos:[10] ;default: 1'b0 ; */
 /*description: */
 #define SENS_SAR_RSTB_FSM_IDLE  (BIT(10))

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /*
- * Log library — implementation notes.
+ * Log library implementation notes.
  *
  * Log library stores all tags provided to esp_log_level_set as a linked
  * list. See uncached_tag_entry_t structure.
@@ -52,8 +52,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <ctype.h>
+
 #include "esp_log.h"
 
+#include "rom/queue.h"
+#include "soc/soc_memory_layout.h"
+
+//print number of bytes per line for esp_log_buffer_char and esp_log_buffer_hex
+#define BYTES_PER_LINE 16
 
 #ifndef BOOTLOADER_BUILD
 
@@ -74,14 +81,13 @@ typedef struct {
 } cached_tag_entry_t;
 
 typedef struct uncached_tag_entry_{
-    struct uncached_tag_entry_* next;
+    SLIST_ENTRY(uncached_tag_entry_) entries; 
     uint8_t level;  // esp_log_level_t as uint8_t
     char tag[0];    // beginning of a zero-terminated string
 } uncached_tag_entry_t;
 
 static esp_log_level_t s_log_default_level = ESP_LOG_VERBOSE;
-static uncached_tag_entry_t* s_log_tags_head = NULL;
-static uncached_tag_entry_t* s_log_tags_tail = NULL;
+static SLIST_HEAD(log_tags_head , uncached_tag_entry_) s_log_tags = SLIST_HEAD_INITIALIZER(s_log_tags);
 static cached_tag_entry_t s_log_cache[TAG_CACHE_SIZE];
 static uint32_t s_log_cache_max_generation = 0;
 static uint32_t s_log_cache_entry_count = 0;
@@ -120,41 +126,53 @@ void esp_log_level_set(const char* tag, esp_log_level_t level)
         return;
     }
 
-    // allocate new linked list entry and append it to the endo of the list
-    size_t entry_size = offsetof(uncached_tag_entry_t, tag) + strlen(tag) + 1;
-    uncached_tag_entry_t* new_entry = (uncached_tag_entry_t*) malloc(entry_size);
-    if (!new_entry) {
-        xSemaphoreGive(s_log_mutex);
-        return;
+    //searching exist tag
+    uncached_tag_entry_t *it = NULL;
+    SLIST_FOREACH( it, &s_log_tags, entries ) {
+        if ( strcmp(it->tag, tag)==0 ) {
+            //one tag in the linked list match, update the level
+            it->level = level;
+            //quit with it != NULL
+            break;
+        }
     }
-    new_entry->next = NULL;
-    new_entry->level = (uint8_t) level;
-    strcpy(new_entry->tag, tag);
-    if (s_log_tags_tail) {
-        s_log_tags_tail->next = new_entry;
+    //no exist tag, append new one
+    if ( it == NULL ) {
+        // allocate new linked list entry and append it to the head of the list
+        size_t entry_size = offsetof(uncached_tag_entry_t, tag) + strlen(tag) + 1;
+        uncached_tag_entry_t* new_entry = (uncached_tag_entry_t*) malloc(entry_size);
+        if (!new_entry) {
+            xSemaphoreGive(s_log_mutex);
+            return;
+        }
+        new_entry->level = (uint8_t) level;
+        strcpy(new_entry->tag, tag);
+        SLIST_INSERT_HEAD( &s_log_tags, new_entry, entries );
     }
-    s_log_tags_tail = new_entry;
-    if (!s_log_tags_head) {
-        s_log_tags_head = new_entry;
+
+    //search in the cache and update it if exist         
+    for (int i = 0; i < s_log_cache_entry_count; ++i) {
+#ifdef LOG_BUILTIN_CHECKS
+        assert(i == 0 || s_log_cache[(i - 1) / 2].generation < s_log_cache[i].generation);
+#endif
+        if (s_log_cache[i].tag == tag) {
+            s_log_cache[i].level = level;
+            break;
+        }
     }
     xSemaphoreGive(s_log_mutex);
 }
 
 void clear_log_level_list()
 {
-    for (uncached_tag_entry_t* it = s_log_tags_head; it != NULL; ) {
-        uncached_tag_entry_t* next = it->next;
-        free(it);
-        it = next;
+    while( !SLIST_EMPTY(&s_log_tags)) {
+        SLIST_REMOVE_HEAD(&s_log_tags, entries );
     }
-    s_log_tags_tail = NULL;
-    s_log_tags_head = NULL;
     s_log_cache_entry_count = 0;
     s_log_cache_max_generation = 0;
 #ifdef LOG_BUILTIN_CHECKS
     s_log_cache_misses = 0;
 #endif
-
 }
 
 void IRAM_ATTR esp_log_write(esp_log_level_t level,
@@ -251,7 +269,8 @@ static inline bool get_uncached_log_level(const char* tag, esp_log_level_t* leve
 {
     // Walk the linked list of all tags and see if given tag is present in the list.
     // This is slow because tags are compared as strings.
-    for (uncached_tag_entry_t* it = s_log_tags_head; it != NULL; it = it->next) {
+    uncached_tag_entry_t *it;
+    SLIST_FOREACH( it, &s_log_tags, entries ) {
         if (strcmp(tag, it->tag) == 0) {
             *level = it->level;
             return true;
@@ -291,10 +310,13 @@ static inline void heap_swap(int i, int j)
 #define ATTR
 #endif // BOOTLOADER_BUILD
 
+//the variable defined in ROM is the cpu frequency in MHz.
+//as a workaround before the interface for this variable
+extern uint32_t g_ticks_per_us_pro;
 
 uint32_t ATTR esp_log_early_timestamp()
 {
-    return xthal_get_ccount() / (CPU_CLK_FREQ_ROM / 1000);
+    return xthal_get_ccount() / (g_ticks_per_us_pro * 1000);
 }
 
 #ifndef BOOTLOADER_BUILD
@@ -305,7 +327,7 @@ uint32_t IRAM_ATTR esp_log_timestamp()
         return esp_log_early_timestamp();
     }
     static uint32_t base = 0;
-    if (base == 0) {
+    if (base == 0 && xPortGetCoreID() == 0) {
         base = esp_log_early_timestamp();
     }
     return base + xTaskGetTickCount() * (1000 / configTICK_RATE_HZ);
@@ -316,3 +338,121 @@ uint32_t IRAM_ATTR esp_log_timestamp()
 uint32_t esp_log_timestamp() __attribute__((alias("esp_log_early_timestamp")));
 
 #endif //BOOTLOADER_BUILD
+
+void esp_log_buffer_hex_internal(const char *tag, const void *buffer, uint16_t buff_len,
+                        esp_log_level_t log_level)
+{
+    if ( buff_len == 0 ) return;
+    char temp_buffer[BYTES_PER_LINE+3];   //for not-byte-accessible memory
+    char hex_buffer[3*BYTES_PER_LINE+1];
+    const char *ptr_line;
+    int bytes_cur_line;
+
+    do {
+        if ( buff_len > BYTES_PER_LINE ) {
+            bytes_cur_line = BYTES_PER_LINE;
+        } else {
+            bytes_cur_line = buff_len;
+        }
+        if ( !esp_ptr_byte_accessible(buffer) ) {
+            //use memcpy to get around alignment issue
+            memcpy( temp_buffer, buffer, (bytes_cur_line+3)/4*4 );
+            ptr_line = temp_buffer;
+        } else {
+            ptr_line = buffer;
+        }
+
+        for( int i = 0; i < bytes_cur_line; i ++ ) {
+            sprintf( hex_buffer + 3*i, "%02x ", ptr_line[i] );
+        }
+        ESP_LOG_LEVEL( log_level, tag, "%s", hex_buffer );
+        buffer += bytes_cur_line;
+        buff_len -= bytes_cur_line;
+    } while( buff_len );
+}
+
+void esp_log_buffer_char_internal(const char *tag, const void *buffer, uint16_t buff_len,
+                            esp_log_level_t log_level)
+{
+    if ( buff_len == 0 ) return;
+    char temp_buffer[BYTES_PER_LINE+3];   //for not-byte-accessible memory
+    char char_buffer[BYTES_PER_LINE+1];
+    const char *ptr_line;
+    int bytes_cur_line;
+
+    do {
+        if ( buff_len > BYTES_PER_LINE ) {
+            bytes_cur_line = BYTES_PER_LINE;
+        } else {
+            bytes_cur_line = buff_len;
+        }
+        if ( !esp_ptr_byte_accessible(buffer) ) {
+            //use memcpy to get around alignment issue
+            memcpy( temp_buffer, buffer, (bytes_cur_line+3)/4*4 );
+            ptr_line = temp_buffer;
+        } else {
+            ptr_line = buffer;
+        }
+
+        for( int i = 0; i < bytes_cur_line; i ++ ) {
+            sprintf( char_buffer + i, "%c", ptr_line[i] );
+        }
+        ESP_LOG_LEVEL( log_level, tag, "%s", char_buffer );
+        buffer += bytes_cur_line;
+        buff_len -= bytes_cur_line;
+    } while( buff_len );
+}
+
+void esp_log_buffer_hexdump_internal( const char *tag, const void *buffer, uint16_t buff_len, esp_log_level_t log_level)
+{
+
+    if ( buff_len == 0 ) return;
+    char temp_buffer[BYTES_PER_LINE+3];   //for not-byte-accessible memory
+    const char *ptr_line;
+    //format: field[length]
+    // ADDR[10]+" "+DATA_HEX[8*3]+" "+DATA_HEX[8*3]+"  |"+DATA_CHAR[8]+"|"
+    char hd_buffer[10+2+BYTES_PER_LINE*3+3+BYTES_PER_LINE+1+1];
+    char *ptr_hd;
+    int bytes_cur_line;
+
+    do {
+        if ( buff_len > BYTES_PER_LINE ) {
+            bytes_cur_line = BYTES_PER_LINE;
+        } else {
+            bytes_cur_line = buff_len;
+        }
+        if ( !esp_ptr_byte_accessible(buffer) ) {
+            //use memcpy to get around alignment issue
+            memcpy( temp_buffer, buffer, (bytes_cur_line+3)/4*4 );
+            ptr_line = temp_buffer;
+        } else {
+            ptr_line = buffer;
+        }
+        ptr_hd = hd_buffer;
+        
+        ptr_hd += sprintf( ptr_hd, "%p ", buffer );
+        for( int i = 0; i < BYTES_PER_LINE; i ++ ) {
+            if ( (i&7)==0 ) {
+                ptr_hd += sprintf( ptr_hd, " " );
+            }
+            if ( i < bytes_cur_line ) {
+                ptr_hd += sprintf( ptr_hd, " %02x", ptr_line[i] );
+            } else {
+                ptr_hd += sprintf( ptr_hd, "   " );
+            }
+        }
+        ptr_hd += sprintf( ptr_hd, "  |" );
+        for( int i = 0; i < bytes_cur_line; i ++ ) {
+            if ( isprint((int)ptr_line[i]) ) {
+                ptr_hd += sprintf( ptr_hd, "%c", ptr_line[i] );
+            } else {
+                ptr_hd += sprintf( ptr_hd, "." );
+            }
+        }
+        ptr_hd += sprintf( ptr_hd, "|" );
+
+        ESP_LOG_LEVEL( log_level, tag, "%s", hd_buffer );
+        buffer += bytes_cur_line;
+        buff_len -= bytes_cur_line;
+    } while( buff_len );
+}

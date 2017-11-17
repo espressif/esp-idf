@@ -22,10 +22,10 @@
 #include "bt_trace.h"
 #include "controller.h"
 #include "alarm.h"
-#include "fixed_queue.h"
 #include "hash_map.h"
 #include "hash_functions.h"
 #include "thread.h"
+#include "mutex.h"
 
 #include "l2c_int.h"
 #include "dyn_mem.h"
@@ -44,30 +44,16 @@
 #endif
 #endif
 
-// extern fixed_queue_t *btif_msg_queue;
-
-// Communication queue from bta thread to bt_workqueue.
-fixed_queue_t *btu_bta_msg_queue;
-
-// Communication queue from hci thread to bt_workqueue.
-extern fixed_queue_t *btu_hci_msg_queue;
-
-// General timer queue.
-fixed_queue_t *btu_general_alarm_queue;
 hash_map_t *btu_general_alarm_hash_map;
-pthread_mutex_t btu_general_alarm_lock;
+osi_mutex_t btu_general_alarm_lock;
 static const size_t BTU_GENERAL_ALARM_HASH_MAP_SIZE = 34;
 
-// Oneshot timer queue.
-fixed_queue_t *btu_oneshot_alarm_queue;
 hash_map_t *btu_oneshot_alarm_hash_map;
-pthread_mutex_t btu_oneshot_alarm_lock;
+osi_mutex_t btu_oneshot_alarm_lock;
 static const size_t BTU_ONESHOT_ALARM_HASH_MAP_SIZE = 34;
 
-// l2cap timer queue.
-fixed_queue_t *btu_l2cap_alarm_queue;
 hash_map_t *btu_l2cap_alarm_hash_map;
-pthread_mutex_t btu_l2cap_alarm_lock;
+osi_mutex_t btu_l2cap_alarm_lock;
 static const size_t BTU_L2CAP_ALARM_HASH_MAP_SIZE = 34;
 
 //thread_t *bt_workqueue_thread;
@@ -136,7 +122,9 @@ void btu_free_core(void)
 #if (defined(GATTS_INCLUDED) && GATTS_INCLUDED == true)
     gatt_free();
 #endif
+    btm_ble_free();
 #endif
+    btm_free();
 }
 
 /*****************************************************************************
@@ -156,23 +144,13 @@ void BTU_StartUp(void)
     memset (&btu_cb, 0, sizeof (tBTU_CB));
     btu_cb.trace_level = HCI_INITIAL_TRACE_LEVEL;
 
-    btu_bta_msg_queue = fixed_queue_new(SIZE_MAX);
-    if (btu_bta_msg_queue == NULL) {
-        goto error_exit;
-    }
-
     btu_general_alarm_hash_map = hash_map_new(BTU_GENERAL_ALARM_HASH_MAP_SIZE,
                                  hash_function_pointer, NULL, (data_free_fn)osi_alarm_free, NULL);
     if (btu_general_alarm_hash_map == NULL) {
         goto error_exit;
     }
 
-    pthread_mutex_init(&btu_general_alarm_lock, NULL);
-
-    btu_general_alarm_queue = fixed_queue_new(SIZE_MAX);
-    if (btu_general_alarm_queue == NULL) {
-        goto error_exit;
-    }
+    osi_mutex_new(&btu_general_alarm_lock);
 
     btu_oneshot_alarm_hash_map = hash_map_new(BTU_ONESHOT_ALARM_HASH_MAP_SIZE,
                                  hash_function_pointer, NULL, (data_free_fn)osi_alarm_free, NULL);
@@ -180,12 +158,7 @@ void BTU_StartUp(void)
         goto error_exit;
     }
 
-    pthread_mutex_init(&btu_oneshot_alarm_lock, NULL);
-
-    btu_oneshot_alarm_queue = fixed_queue_new(SIZE_MAX);
-    if (btu_oneshot_alarm_queue == NULL) {
-        goto error_exit;
-    }
+    osi_mutex_new(&btu_oneshot_alarm_lock);
 
     btu_l2cap_alarm_hash_map = hash_map_new(BTU_L2CAP_ALARM_HASH_MAP_SIZE,
                                             hash_function_pointer, NULL, (data_free_fn)osi_alarm_free, NULL);
@@ -193,20 +166,13 @@ void BTU_StartUp(void)
         goto error_exit;
     }
 
-    pthread_mutex_init(&btu_l2cap_alarm_lock, NULL);
+    osi_mutex_new(&btu_l2cap_alarm_lock);
 
-    btu_l2cap_alarm_queue = fixed_queue_new(SIZE_MAX);
-    if (btu_l2cap_alarm_queue == NULL) {
-        goto error_exit;
-    }
+    xBtuQueue = xQueueCreate(BTU_QUEUE_LEN, sizeof(BtTaskEvt_t));
+    xTaskCreatePinnedToCore(btu_task_thread_handler, BTU_TASK_NAME, BTU_TASK_STACK_SIZE, NULL, BTU_TASK_PRIO, &xBtuTaskHandle, BTU_TASK_PINNED_TO_CORE);
 
-    xBtuQueue = xQueueCreate(BTU_QUEUE_NUM, sizeof(BtTaskEvt_t));
-    xTaskCreatePinnedToCore(btu_task_thread_handler, BTU_TASK_NAME, BTU_TASK_STACK_SIZE, NULL, BTU_TASK_PRIO, &xBtuTaskHandle, 0);
-    btu_task_post(SIG_BTU_START_UP);
-    /*
-        // Continue startup on bt workqueue thread.
-        thread_post(bt_workqueue_thread, btu_task_start_up, NULL);
-    */
+    btu_task_post(SIG_BTU_START_UP, NULL, TASK_POST_BLOCKING);
+
     return;
 
 error_exit:;
@@ -218,36 +184,24 @@ void BTU_ShutDown(void)
 {
     btu_task_shut_down();
 
-    fixed_queue_free(btu_bta_msg_queue, NULL);
-
     hash_map_free(btu_general_alarm_hash_map);
-    pthread_mutex_destroy(&btu_general_alarm_lock);
-    fixed_queue_free(btu_general_alarm_queue, NULL);
+    osi_mutex_free(&btu_general_alarm_lock);
 
     hash_map_free(btu_oneshot_alarm_hash_map);
-    pthread_mutex_destroy(&btu_oneshot_alarm_lock);
-    fixed_queue_free(btu_oneshot_alarm_queue, NULL);
+    osi_mutex_free(&btu_oneshot_alarm_lock);
 
     hash_map_free(btu_l2cap_alarm_hash_map);
-    pthread_mutex_destroy(&btu_l2cap_alarm_lock);
-    fixed_queue_free(btu_l2cap_alarm_queue, NULL);
+    osi_mutex_free(&btu_l2cap_alarm_lock);
 
-    //thread_free(bt_workqueue_thread);
     vTaskDelete(xBtuTaskHandle);
     vQueueDelete(xBtuQueue);
 
-    btu_bta_msg_queue = NULL;
-
     btu_general_alarm_hash_map = NULL;
-    btu_general_alarm_queue = NULL;
 
     btu_oneshot_alarm_hash_map = NULL;
-    btu_oneshot_alarm_queue = NULL;
 
     btu_l2cap_alarm_hash_map = NULL;
-    btu_l2cap_alarm_queue = NULL;
 
-//  bt_workqueue_thread = NULL;
     xBtuTaskHandle = NULL;
     xBtuQueue = 0;
 }
@@ -269,21 +223,3 @@ UINT16 BTU_BleAclPktSize(void)
     return 0;
 #endif
 }
-/*******************************************************************************
-**
-** Function         btu_uipc_rx_cback
-**
-** Description
-**
-**
-** Returns          void
-**
-*******************************************************************************/
-/*
-void btu_uipc_rx_cback(BT_HDR *p_msg) {
-  assert(p_msg != NULL);
-  BT_TRACE(TRACE_LAYER_BTM, TRACE_TYPE_DEBUG, "btu_uipc_rx_cback event 0x%x,"
-      " len %d, offset %d", p_msg->event, p_msg->len, p_msg->offset);
-  fixed_queue_enqueue(btu_hci_msg_queue, p_msg);
-}
-*/

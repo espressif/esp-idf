@@ -31,9 +31,14 @@ extern "C" {
 typedef struct _ping_found {
     uint32_t resp_time;
     uint32_t timeout_count;
+    uint32_t send_count;
+    uint32_t recv_count;
+    uint32_t err_count;
     uint32_t bytes;
     uint32_t total_bytes;
     uint32_t total_time;
+    uint32_t min_time;
+    uint32_t max_time;
     int8_t  ping_err;
 } esp_ping_found;
 
@@ -43,8 +48,15 @@ typedef enum {
     PING_TARGET_RCV_TIMEO           = 52,   /**< receive timeout */
     PING_TARGET_DELAY_TIME          = 53,   /**< delay time */
     PING_TARGET_ID                  = 54,   /**< identifier */
-    PING_TARGET_RES_FN              = 55
+    PING_TARGET_RES_FN              = 55,   /**< ping result callback function */
+    PING_TARGET_RES_RESET           = 56    /**< ping result statistic reset */
 } ping_target_id_t;
+
+typedef enum {
+    PING_RES_TIMEOUT = 0,
+    PING_RES_OK      = 1, 
+    PING_RES_FINISH  = 2,
+} ping_res_t;
 
 typedef void (* esp_ping_found_fn)(ping_target_id_t found_id, esp_ping_found *found_val);
 

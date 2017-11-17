@@ -40,11 +40,16 @@ typedef esp_interface_t wifi_interface_t;
 #define WIFI_IF_AP  ESP_IF_WIFI_AP
 
 typedef enum {
-    WIFI_COUNTRY_CN = 0, /**< country China, channel range [1, 14] */
-    WIFI_COUNTRY_JP,     /**< country Japan, channel range [1, 14] */
-    WIFI_COUNTRY_US,     /**< country USA, channel range [1, 11] */
-    WIFI_COUNTRY_EU,     /**< country Europe, channel range [1, 13] */
-    WIFI_COUNTRY_MAX
+    WIFI_COUNTRY_POLICY_AUTO,   /**< Country policy is auto, use the country info of AP to which the station is connected */
+    WIFI_COUNTRY_POLICY_MANUAL, /**< Country policy is manual, always use the configured country info */
+} wifi_country_policy_t;
+
+/** @brief Structure describing WiFi country-based regional restrictions. */
+typedef struct {
+    char                  cc[3];   /**< country code string */
+    uint8_t               schan;   /**< start channel */
+    uint8_t               nchan;   /**< total channel number */
+    wifi_country_policy_t policy;  /**< country policy */
 } wifi_country_t;
 
 typedef enum {
@@ -57,7 +62,7 @@ typedef enum {
     WIFI_AUTH_MAX
 } wifi_auth_mode_t;
 
-enum {
+typedef enum {
     WIFI_REASON_UNSPECIFIED              = 1,
     WIFI_REASON_AUTH_EXPIRE              = 2,
     WIFI_REASON_AUTH_LEAVE               = 3,
@@ -87,7 +92,7 @@ enum {
     WIFI_REASON_AUTH_FAIL                = 202,
     WIFI_REASON_ASSOC_FAIL               = 203,
     WIFI_REASON_HANDSHAKE_TIMEOUT        = 204,
-};
+} wifi_err_reason_t;
 
 typedef enum {
     WIFI_SECOND_CHAN_NONE = 0,  /**< the channel width is HT20 */
@@ -100,18 +105,21 @@ typedef enum {
     WIFI_SCAN_TYPE_PASSIVE,     /**< passive scan */
 } wifi_scan_type_t;
 
+/** @brief Range of active scan times per channel */
 typedef struct {
     uint32_t min;  /**< minimum active scan time per channel, units: millisecond */
     uint32_t max;  /**< maximum active scan time per channel, units: millisecond, values above 1500ms may
                                           cause station to disconnect from AP and are not recommended.  */
 } wifi_active_scan_time_t;
 
+/** @brief Aggregate of active & passive scan time per channel */
 typedef union {
-    wifi_active_scan_time_t active;  /**< active scan time per channel */
+    wifi_active_scan_time_t active;  /**< active scan time per channel, units: millisecond. */
     uint32_t passive;                /**< passive scan time per channel, units: millisecond, values above 1500ms may
                                           cause station to disconnect from AP and are not recommended. */
 } wifi_scan_time_t;
 
+/** @brief Parameters for an SSID scan. */
 typedef struct {
     uint8_t *ssid;               /**< SSID of AP */
     uint8_t *bssid;              /**< MAC address of AP */
@@ -121,6 +129,17 @@ typedef struct {
     wifi_scan_time_t scan_time;  /**< scan time per channel */
 } wifi_scan_config_t;
 
+typedef enum {
+    WIFI_CIPHER_TYPE_NONE = 0,   /**< the cipher type is none */
+    WIFI_CIPHER_TYPE_WEP40,      /**< the cipher type is WEP40 */
+    WIFI_CIPHER_TYPE_WEP104,     /**< the cipher type is WEP104 */
+    WIFI_CIPHER_TYPE_TKIP,       /**< the cipher type is TKIP */
+    WIFI_CIPHER_TYPE_CCMP,       /**< the cipher type is CCMP */
+    WIFI_CIPHER_TYPE_TKIP_CCMP,  /**< the cipher type is TKIP and CCMP */
+    WIFI_CIPHER_TYPE_UNKNOWN,    /**< the cipher type is unknown */
+} wifi_cipher_type_t;
+
+/** @brief Description of an WiFi AP */
 typedef struct {
     uint8_t bssid[6];                     /**< MAC address of AP */
     uint8_t ssid[33];                     /**< SSID of AP */
@@ -128,9 +147,31 @@ typedef struct {
     wifi_second_chan_t second;            /**< second channel of AP */
     int8_t  rssi;                         /**< signal strength of AP */
     wifi_auth_mode_t authmode;            /**< authmode of AP */
-    uint32_t low_rate_enable:1;           /**< bit: 0 flag to identify if low rate is enabled or not */
-    uint32_t reserved:31;                 /**< bit: 1..31 reserved */
+    wifi_cipher_type_t pairwise_cipher;   /**< pairwise cipher of AP */
+    wifi_cipher_type_t group_cipher;      /**< group cipher of AP */
+    uint32_t phy_11b:1;                   /**< bit: 0 flag to identify if 11b mode is enabled or not */
+    uint32_t phy_11g:1;                   /**< bit: 1 flag to identify if 11g mode is enabled or not */
+    uint32_t phy_11n:1;                   /**< bit: 2 flag to identify if 11n mode is enabled or not */
+    uint32_t phy_lr:1;                    /**< bit: 3 flag to identify if low rate is enabled or not */
+    uint32_t wps:1;                       /**< bit: 4 flag to identify if WPS is supported or not */
+    uint32_t reserved:27;                 /**< bit: 5..31 reserved */
 } wifi_ap_record_t;
+
+typedef enum {
+    WIFI_FAST_SCAN = 0,                   /**< Do fast scan, scan will end after find SSID match AP */
+    WIFI_ALL_CHANNEL_SCAN,                /**< All channel scan, scan will end after scan all the channel */
+}wifi_scan_method_t;
+
+typedef enum {
+    WIFI_CONNECT_AP_BY_SIGNAL = 0,        /**< Sort match AP in scan list by RSSI */
+    WIFI_CONNECT_AP_BY_SECURITY,          /**< Sort match AP in scan list by security mode */
+}wifi_sort_method_t;
+
+/** @brief Structure describing parameters for a WiFi fast scan */
+typedef struct {
+    int8_t              rssi;             /**< The minimum rssi to accept in the fast scan mode */
+    wifi_auth_mode_t    authmode;         /**< The weakest authmode to accept in the fast scan mode */
+}wifi_fast_scan_threshold_t;
 
 typedef enum {
     WIFI_PS_NONE,    /**< No power save */
@@ -147,6 +188,7 @@ typedef enum {
     WIFI_BW_HT40,     /* Bandwidth is HT40 */
 } wifi_bandwidth_t;
 
+/** @brief Soft-AP configuration settings for the ESP32 */
 typedef struct {
     uint8_t ssid[32];           /**< SSID of ESP32 soft-AP */
     uint8_t password[64];       /**< Password of ESP32 soft-AP */
@@ -158,28 +200,40 @@ typedef struct {
     uint16_t beacon_interval;   /**< Beacon interval, 100 ~ 60000 ms, default 100 ms */
 } wifi_ap_config_t;
 
+/** @brief STA configuration settings for the ESP32 */
 typedef struct {
     uint8_t ssid[32];      /**< SSID of target AP*/
     uint8_t password[64];  /**< password of target AP*/
+    wifi_scan_method_t scan_method;    /**< do all channel scan or fast scan */
     bool bssid_set;        /**< whether set MAC address of target AP or not. Generally, station_config.bssid_set needs to be 0; and it needs to be 1 only when users need to check the MAC address of the AP.*/
     uint8_t bssid[6];     /**< MAC address of target AP*/
     uint8_t channel;       /**< channel of target AP. Set to 1~13 to scan starting from the specified channel before connecting to AP. If the channel of AP is unknown, set it to 0.*/
+    wifi_sort_method_t sort_method;    /**< sort the connect AP in the list by rssi or security mode */
+    wifi_fast_scan_threshold_t  threshold;     /**< When scan_method is set to WIFI_FAST_SCAN, only APs which have an auth mode that is more secure than the selected auth mode and a signal stronger than the minimum RSSI will be used. */
 } wifi_sta_config_t;
 
+/** @brief Configuration data for ESP32 AP or STA.
+ *
+ * The usage of this union (for ap or sta configuration) is determined by the accompanying
+ * interface argument passed to esp_wifi_set_config() or esp_wifi_get_config()
+ *
+ */
 typedef union {
     wifi_ap_config_t  ap;  /**< configuration of AP */
     wifi_sta_config_t sta; /**< configuration of STA */
 } wifi_config_t;
 
+/** @brief Description of STA associated with AP */
 typedef struct {
-    uint8_t mac[6];  /**< mac address of sta that associated with ESP32 soft-AP */
+    uint8_t mac[6];  /**< mac address */
 } wifi_sta_info_t;
 
 #define ESP_WIFI_MAX_CONN_NUM  (10)       /**< max number of stations which can connect to ESP32 soft-AP */
 
+/** @brief List of stations associated with the ESP32 Soft-AP */
 typedef struct {
     wifi_sta_info_t sta[ESP_WIFI_MAX_CONN_NUM]; /**< station list */
-    int       num; /**< number of station that associated with ESP32 soft-AP */
+    int       num; /**< number of stations in the list (other entries are invalid) */
 } wifi_sta_list_t;
 
 typedef enum {
@@ -188,8 +242,9 @@ typedef enum {
 } wifi_storage_t;
 
 /**
-  * @brief     Vendor IE type
+  * @brief     Vendor Information Element type
   *
+  * Determines the frame type that the IE will be associated with.
   */
 typedef enum {
     WIFI_VND_IE_TYPE_BEACON,
@@ -200,14 +255,31 @@ typedef enum {
 } wifi_vendor_ie_type_t;
 
 /**
-  * @brief     Vendor IE index
+  * @brief     Vendor Information Element index
   *
+  * Each IE type can have up to two associated vendor ID elements.
   */
 typedef enum {
     WIFI_VND_IE_ID_0,
     WIFI_VND_IE_ID_1,
 } wifi_vendor_ie_id_t;
 
+#define WIFI_VENDOR_IE_ELEMENT_ID 0xDD
+
+/**
+ * @brief Vendor Information Element header
+ *
+ * The first bytes of the Information Element will match this header. Payload follows.
+ */
+typedef struct {
+    uint8_t element_id;      /**< Should be set to WIFI_VENDOR_IE_ELEMENT_ID (0xDD) */
+    uint8_t length;          /**< Length of all bytes in the element data following this field. Minimum 4. */
+    uint8_t vendor_oui[3];   /**< Vendor identifier (OUI). */
+    uint8_t vendor_oui_type; /**< Vendor-specific OUI type. */
+    uint8_t payload[0];      /**< Payload. Length is equal to value in 'length' field, minus 4. */
+} vendor_ie_data_t;
+
+/** @brief Received packet radio metadata header, this is the common header at the beginning of all promiscuous mode RX callback buffers */
 typedef struct {
     signed rssi:8;            /**< signal intensity of packet */
     unsigned rate:5;          /**< data rate */
@@ -222,7 +294,7 @@ typedef struct {
     unsigned :1;              /**< reserve */
     unsigned aggregation:1;   /**< Aggregation */
     unsigned stbc:2;          /**< STBC */
-    unsigned fec_coding:1;    /**< if is 11n packet, shows if is LDPC packet or not */
+    unsigned fec_coding:1;    /**< Flag is set for 11n packets which are LDPC */
     unsigned sgi:1;           /**< SGI */
     unsigned noise_floor:8;   /**< noise floor */
     unsigned ampdu_cnt:8;     /**< ampdu cnt */
@@ -231,26 +303,42 @@ typedef struct {
     unsigned timestamp:32;    /**< timestamp */
     unsigned :32;             /**< reserve */
     unsigned :32;             /**< reserve */
-    unsigned sig_len:12;      /**< It is really lenth of packet */
+    unsigned sig_len:12;      /**< length of packet */
     unsigned :12;             /**< reserve */
     unsigned rx_state:8;      /**< rx state */
 } wifi_pkt_rx_ctrl_t;
 
+/** @brief Payload passed to 'buf' parameter of promiscuous mode RX callback.
+ */
 typedef struct {
-    wifi_pkt_rx_ctrl_t rx_ctrl;
-    uint8_t payload[0];       /**< ieee80211 packet buff, The length of payload is described by sig_len */
+    wifi_pkt_rx_ctrl_t rx_ctrl; /**< metadata header */
+    uint8_t payload[0];       /**< Data or management payload. Length of payload is described by rx_ctrl.sig_len. Type of content determined by packet type argument of callback. */
 } wifi_promiscuous_pkt_t;
 
 /**
-  * @brief     Promiscuous frame type
+  * @brief Promiscuous frame type
+  *
+  * Passed to promiscuous mode RX callback to indicate the type of parameter in the buffer.
   *
   */
 typedef enum {
-    WIFI_PKT_CTRL,  /**< control type, receive packet buf is wifi_promiscuous_pkt_t */
-    WIFI_PKT_MGMT,  /**< management type, receive packet buf is wifi_promiscuous_pkt_t */
-    WIFI_PKT_DATA,  /**< data type, receive packet buf is wifi_promiscuous_pkt_t */
-    WIFI_PKT_MISC,  /**< other type, receive packet buf is wifi_promiscuous_pkt_t */
+    WIFI_PKT_MGMT,  /**< Management frame, indicates 'buf' argument is wifi_promiscuous_pkt_t */
+    WIFI_PKT_DATA,  /**< Data frame, indiciates 'buf' argument is wifi_promiscuous_pkt_t */
+    WIFI_PKT_MISC,  /**< Other type, such as MIMO etc. 'buf' argument is wifi_promiscuous_pkt_t but the payload is zero length. */
 } wifi_promiscuous_pkt_type_t;
+
+
+#define WIFI_PROMIS_FILTER_MASK_ALL         (0xFFFFFFFF)  /**< filter all packets */
+#define WIFI_PROMIS_FILTER_MASK_MGMT        (1)           /**< filter the packets with type of WIFI_PKT_MGMT */
+#define WIFI_PROMIS_FILTER_MASK_DATA        (1<<1)        /**< filter the packets with type of WIFI_PKT_DATA */
+#define WIFI_PROMIS_FILTER_MASK_MISC        (1<<2)        /**< filter the packets with type of WIFI_PKT_MISC */
+#define WIFI_PROMIS_FILTER_MASK_DATA_MPDU   (1<<3)        /**< filter the MPDU which is a kind of WIFI_PKT_DATA */
+#define WIFI_PROMIS_FILTER_MASK_DATA_AMPDU  (1<<4)        /**< filter the AMPDU which is a kind of WIFI_PKT_DATA */
+
+/** @brief Mask for filtering different packet types in promiscuous mode. */
+typedef struct {
+    uint32_t filter_mask; /**< OR of one or more filter values WIFI_PROMIS_FILTER_* */
+} wifi_promiscuous_filter_t;
 
 #ifdef __cplusplus
 }

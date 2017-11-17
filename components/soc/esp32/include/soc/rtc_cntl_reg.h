@@ -1718,6 +1718,7 @@
 #define RTC_WDT_STG_SEL_INT             1
 #define RTC_WDT_STG_SEL_RESET_CPU       2
 #define RTC_WDT_STG_SEL_RESET_SYSTEM    3
+#define RTC_WDT_STG_SEL_RESET_RTC       4
 
 #define RTC_CNTL_WDTCONFIG1_REG          (DR_REG_RTCCNTL_BASE + 0x90)
 /* RTC_CNTL_WDT_STG0_HOLD : R/W ;bitpos:[31:0] ;default: 32'd128000 ; */

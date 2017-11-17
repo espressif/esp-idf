@@ -67,11 +67,15 @@
 #define SOC_RTC_IRAM_HIGH 0x400C2000
 #define SOC_RTC_DATA_LOW  0x50000000
 #define SOC_RTC_DATA_HIGH 0x50002000
+#define SOC_EXTRAM_DATA_LOW 0x3F800000
+#define SOC_EXTRAM_DATA_HIGH 0x3FC00000
+
 
 #define DR_REG_DPORT_BASE                       0x3ff00000
-#define DR_REG_DPORT_END                        0x3ff00FFC
+#define DR_REG_AES_BASE                         0x3ff01000
 #define DR_REG_RSA_BASE                         0x3ff02000
 #define DR_REG_SHA_BASE                         0x3ff03000
+#define DR_REG_DPORT_END                        0x3ff03FFC
 #define DR_REG_UART_BASE                        0x3ff40000
 #define DR_REG_SPI1_BASE                        0x3ff42000
 #define DR_REG_SPI0_BASE                        0x3ff43000
@@ -118,7 +122,7 @@
 #define DR_REG_UART2_BASE                       0x3ff6E000
 #define DR_REG_PWM2_BASE                        0x3ff6F000
 #define DR_REG_PWM3_BASE                        0x3ff70000
-#define PERIPHS_SPI_ENCRYPT_BASEADDR		DR_REG_SPI_ENCRYPT_BASE
+#define PERIPHS_SPI_ENCRYPT_BASEADDR            DR_REG_SPI_ENCRYPT_BASE
 
 //Registers Operation {{
 #define ETS_UNCACHED_ADDR(addr) (addr)
@@ -142,14 +146,14 @@
 
 //write value to register
 #define REG_WRITE(_r, _v) ({                                                                                           \
-            ASSERT_IF_DPORT_REG(_r, REG_WRITE);                                                                        \
+            ASSERT_IF_DPORT_REG((_r), REG_WRITE);                                                                      \
             (*(volatile uint32_t *)(_r)) = (_v);                                                                       \
         })
 
 //read value from register
 #define REG_READ(_r) ({                                                                                                \
             ASSERT_IF_DPORT_REG((_r), REG_READ);                                                                       \
-            (*(volatile uint32_t *)_r);                                                                                \
+            (*(volatile uint32_t *)(_r));                                                                              \
         })
 
 //get bit or get bits from register
@@ -262,12 +266,45 @@
 #define  CPU_CLK_FREQ_ROM                            APB_CLK_FREQ_ROM
 #define  CPU_CLK_FREQ                                APB_CLK_FREQ
 #define  APB_CLK_FREQ                                ( 80*1000000 )       //unit: Hz
+#define  REF_CLK_FREQ                                ( 1000000 )
 #define  UART_CLK_FREQ                               APB_CLK_FREQ
 #define  WDT_CLK_FREQ                                APB_CLK_FREQ
 #define  TIMER_CLK_FREQ                              (80000000>>4) //80MHz divided by 16
 #define  SPI_CLK_DIV                                 4
 #define  TICKS_PER_US_ROM                            26              // CPU is 80MHz
 //}}
+
+/* Overall memory map */
+#define SOC_DROM_LOW    0x3F400000
+#define SOC_DROM_HIGH   0x3F800000
+#define SOC_IROM_LOW    0x400D0000
+#define SOC_IROM_HIGH   0x40400000
+#define SOC_IRAM_LOW    0x40080000
+#define SOC_IRAM_HIGH   0x400A0000
+#define SOC_RTC_IRAM_LOW  0x400C0000
+#define SOC_RTC_IRAM_HIGH 0x400C2000
+#define SOC_RTC_DATA_LOW  0x50000000
+#define SOC_RTC_DATA_HIGH 0x50002000
+
+//First and last words of the D/IRAM region, for both the DRAM address as well as the IRAM alias.
+#define SOC_DIRAM_IRAM_LOW    0x400A0000
+#define SOC_DIRAM_IRAM_HIGH   0x400BFFFC
+#define SOC_DIRAM_DRAM_LOW    0x3FFE0000
+#define SOC_DIRAM_DRAM_HIGH   0x3FFFFFFC
+
+// Region of memory accessible via DMA. See esp_ptr_dma_capable().
+#define SOC_DMA_LOW  0x3FFAE000
+#define SOC_DMA_HIGH 0x40000000
+
+// Region of memory that is byte-accessible. See esp_ptr_byte_accessible().
+#define SOC_BYTE_ACCESSIBLE_LOW     0x3FF90000
+#define SOC_BYTE_ACCESSIBLE_HIGH    0x40000000
+
+//Region of memory that is internal, as in on the same silicon die as the ESP32 CPUs
+//(excluding RTC data region, that's checked separately.) See esp_ptr_internal().
+#define SOC_MEM_INTERNAL_LOW        0x3FF90000
+#define SOC_MEM_INTERNAL_HIGH       0x400C2000
+
 
 //Interrupt hardware source table
 //This table is decided by hardware, don't touch this.
@@ -354,7 +391,7 @@
  *      7                       1               software                BT/BLE VHCI             BT/BLE VHCI
  *      8                       1               extern level            BT/BLE BB(RX/TX)        BT/BLE BB(RX/TX)
  *      9                       1               extern level
- *      10                      1               extern edge             Internal Timer
+ *      10                      1               extern edge
  *      11                      3               profiling
  *      12                      1               extern level
  *      13                      1               extern level
@@ -366,16 +403,16 @@
  *      19                      2               extern level
  *      20                      2               extern level
  *      21                      2               extern level
- *      22                      3               extern edge             FRC1 timer
+ *      22                      3               extern edge
  *      23                      3               extern level
  *      24                      4               extern level            TG1_WDT
  *      25                      4               extern level            CACHEERR
- *      26                      5               extern level            Reserved                Reserved
+ *      26                      5               extern level
  *      27                      3               extern level            Reserved                Reserved
- *      28                      4               extern edge             
+ *      28                      4               extern edge             DPORT ACCESS            DPORT ACCESS
  *      29                      3               software                Reserved                Reserved
  *      30                      4               extern edge             Reserved                Reserved
- *      31                      5               extern level            DPORT ACCESS            DPORT ACCESS
+ *      31                      5               extern level
  *************************************************************************************************************
  */
 
@@ -387,7 +424,7 @@
 #define ETS_FRC1_INUM                           22
 #define ETS_T1_WDT_INUM                         24
 #define ETS_CACHEERR_INUM                       25
-#define ETS_DPORT_INUM                          31
+#define ETS_DPORT_INUM                          28
 
 //CPU0 Interrupt number used in ROM, should be cancelled in SDK
 #define ETS_SLC_INUM                            1
@@ -395,5 +432,7 @@
 #define ETS_UART1_INUM                          5
 //Other interrupt number should be managed by the user
 
+//Invalid interrupt for number interrupt matrix
+#define ETS_INVALID_INUM                        6
 
 #endif /* _ESP32_SOC_H_ */

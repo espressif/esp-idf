@@ -74,11 +74,30 @@ bool spicommon_periph_claim(spi_host_device_t host);
 /**
  * @brief Return the SPI peripheral so another driver can claim it.
  *
- * @param host Peripheral to claim
+ * @param host Peripheral to return
  * @return True if peripheral is returned successfully; false if peripheral was free to claim already.
  */
 bool spicommon_periph_free(spi_host_device_t host);
 
+/**
+ * @brief Try to claim a SPI DMA channel
+ * 
+ *  Call this if your driver wants to use SPI with a DMA channnel.
+ * 
+ * @param dma_chan channel to claim
+ * 
+ * @return True if success; false otherwise.
+ */
+bool spicommon_dma_chan_claim(int dma_chan);
+
+/**
+ * @brief Return the SPI DMA channel so other driver can claim it, or just to power down DMA.
+ * 
+ * @param dma_chan channel to return
+ * 
+ * @return True if success; false otherwise.
+ */
+bool spicommon_dma_chan_free(int dma_chan);
 
 #define SPICOMMON_BUSFLAG_SLAVE  0          ///< Initialize I/O in slave mode
 #define SPICOMMON_BUSFLAG_MASTER (1<<0)     ///< Initialize I/O in master mode
@@ -169,9 +188,6 @@ spi_dev_t *spicommon_hw_for_host(spi_host_device_t host);
  * @return The hosts IRQ source
  */
 int spicommon_irqsource_for_host(spi_host_device_t host);
-
-
-
 
 /**
  * Callback, to be called when a DMA engine reset is completed

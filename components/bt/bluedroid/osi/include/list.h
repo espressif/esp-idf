@@ -10,7 +10,7 @@ struct list_t;
 typedef struct list_t list_t;
 
 typedef void (*list_free_cb)(void *data);
-typedef bool (*list_iter_cb)(void *data);
+typedef bool (*list_iter_cb)(void *data, void *context);
 
 // Returns a new, empty list. Returns NULL if not enough memory could be allocated
 // for the list structure. The returned list must be freed with |list_free|. The
@@ -22,7 +22,6 @@ list_t *list_new(list_free_cb callback);
 
 
 list_node_t *list_free_node(list_t *list, list_node_t *node);
-//list_node_t *list_free_node(list_t *list, list_node_t *node);
 // Frees the list. This function accepts NULL as an argument, in which case it
 // behaves like a no-op.
 void list_free(list_t *list);
@@ -44,7 +43,8 @@ void *list_front(const list_t *list);
 
 // Returns the last element in the list without removing it. |list| may not
 // be NULL or empty.
-//void *list_back(const list_t *list);
+void *list_back(const list_t *list);
+list_node_t *list_back_node(const list_t *list);
 
 // Inserts |data| after |prev_node| in |list|. |data|, |list|, and |prev_node|
 // may not be NULL. This function does not make a copy of |data| so the pointer
@@ -84,7 +84,7 @@ void list_clear(list_t *list);
 // list inside the callback. If an element is added before the node being visited,
 // there will be no callback for the newly-inserted node. Neither |list| nor
 // |callback| may be NULL.
-void list_foreach(const list_t *list, list_iter_cb callback);
+list_node_t *list_foreach(const list_t *list, list_iter_cb callback, void *context);
 
 // Returns an iterator to the first element in |list|. |list| may not be NULL.
 // The returned iterator is valid as long as it does not equal the value returned

@@ -23,7 +23,6 @@
  ******************************************************************************/
 #include <string.h>
 #include "bt_target.h"
-#include "gki.h"
 #include "avrc_api.h"
 #include "avrc_int.h"
 

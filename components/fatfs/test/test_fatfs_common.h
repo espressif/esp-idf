@@ -53,6 +53,8 @@ void test_fatfs_concurrent(const char* filename_prefix);
 
 void test_fatfs_mkdir_rmdir(const char* filename_prefix);
 
+void test_fatfs_can_opendir(const char* path);
+
 void test_fatfs_opendir_readdir_rewinddir(const char* dir_prefix);
 
 void test_fatfs_rw_speed(const char* filename, void* buf, size_t buf_size, size_t file_size, bool write);

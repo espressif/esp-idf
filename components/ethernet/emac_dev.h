@@ -40,8 +40,6 @@ struct dma_extended_desc {
 };
 
 void emac_enable_clk(bool enable);
-void emac_set_clk_rmii(void);
-void emac_set_clk_mii(void);
 void emac_reset(void);
 void emac_set_gpio_pin_rmii(void);
 void emac_set_gpio_pin_mii(void);
@@ -113,4 +111,3 @@ void inline emac_send_pause_zero_frame_enable(void)
 #endif
 
 #endif
-

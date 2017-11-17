@@ -43,16 +43,6 @@ static uint32_t servo_per_degree_init(uint32_t degree_of_rotation)
 }
 
 /**
- * @brief directly set servo motor to a particular angle
- */
-static void servo_set_angle(uint32_t angle_of_rotation)
-{
-    uint32_t angle_t;
-    angle_t = servo_per_degree_init(angle_of_rotation);
-    mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, angle_t);
-}
-
-/**
  * @brief Configure MCPWM module
  */
 void mcpwm_example_servo_control(void *arg)

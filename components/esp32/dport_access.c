@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <sdkconfig.h>
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_intr.h"
@@ -40,6 +41,7 @@
 
 #include "xtensa/core-macros.h"
 
+#ifndef CONFIG_FREERTOS_UNICORE
 static portMUX_TYPE g_dport_mux = portMUX_INITIALIZER_UNLOCKED;
 
 #define DPORT_CORE_STATE_IDLE        0
@@ -60,25 +62,31 @@ static uint32_t ccount_margin[portNUM_PROCESSORS][DPORT_ACCESS_BENCHMARK_STORE_N
 static uint32_t ccount_margin_cnt;
 #endif
 
+
+static BaseType_t oldInterruptLevel[2];
+#endif // CONFIG_FREERTOS_UNICORE
+
 /* stall other cpu that this cpu is pending to access dport register start */
 void IRAM_ATTR esp_dport_access_stall_other_cpu_start(void)
 {
 #ifndef CONFIG_FREERTOS_UNICORE
-    int cpu_id = xPortGetCoreID();
-
     if (dport_core_state[0] == DPORT_CORE_STATE_IDLE
-            || dport_core_state[1] == DPORT_CORE_STATE_IDLE) {
+        || dport_core_state[1] == DPORT_CORE_STATE_IDLE) {
         return;
     }
+
+    BaseType_t intLvl = portENTER_CRITICAL_NESTED();
+
+    int cpu_id = xPortGetCoreID();
 
 #ifdef DPORT_ACCESS_BENCHMARK
     ccount_start[cpu_id] = XTHAL_GET_CCOUNT();
 #endif
 
-    portDISABLE_INTERRUPTS();
-
     if (dport_access_ref[cpu_id] == 0) {
-        portENTER_CRITICAL_ISR(&g_dport_mux); 
+        portENTER_CRITICAL_ISR(&g_dport_mux);
+
+        oldInterruptLevel[cpu_id]=intLvl;
 
         dport_access_start[cpu_id] = 0;
         dport_access_end[cpu_id] = 0;
@@ -95,6 +103,11 @@ void IRAM_ATTR esp_dport_access_stall_other_cpu_start(void)
     }
 
     dport_access_ref[cpu_id]++;
+
+    if (dport_access_ref[cpu_id] > 1) {
+        /* Interrupts are already disabled by the parent, we're nested here. */
+        portEXIT_CRITICAL_NESTED(intLvl);
+    }
 #endif /* CONFIG_FREERTOS_UNICORE */
 }
 
@@ -119,9 +132,9 @@ void IRAM_ATTR esp_dport_access_stall_other_cpu_end(void)
         dport_access_end[cpu_id] = 1;
 
         portEXIT_CRITICAL_ISR(&g_dport_mux);
+
+        portEXIT_CRITICAL_NESTED(oldInterruptLevel[cpu_id]);
     }
-        
-    portENABLE_INTERRUPTS();
 
 #ifdef DPORT_ACCESS_BENCHMARK
     ccount_end[cpu_id] = XTHAL_GET_CCOUNT();
@@ -141,16 +154,20 @@ void IRAM_ATTR esp_dport_access_stall_other_cpu_end_wrap(void)
     DPORT_STALL_OTHER_CPU_END();
 }
 
-static void dport_access_init_core0(void *arg)
+#ifndef CONFIG_FREERTOS_UNICORE
+static void dport_access_init_core(void *arg)
 {
-    int core_id = xPortGetCoreID();
+    int core_id = 0;
+    uint32_t intr_source = ETS_FROM_CPU_INTR2_SOURCE;
 
-    assert(core_id == 0);
 
-    vPortCPUInitializeMutex(&g_dport_mux);
+    core_id = xPortGetCoreID();
+    if (core_id == 1) {
+        intr_source = ETS_FROM_CPU_INTR3_SOURCE;
+    }
 
     ESP_INTR_DISABLE(ETS_DPORT_INUM);
-    intr_matrix_set(core_id, ETS_FROM_CPU_INTR2_SOURCE, ETS_DPORT_INUM);
+    intr_matrix_set(core_id, intr_source, ETS_DPORT_INUM);
     ESP_INTR_ENABLE(ETS_DPORT_INUM);
 
     dport_access_ref[core_id] = 0;
@@ -160,32 +177,43 @@ static void dport_access_init_core0(void *arg)
 
     vTaskDelete(NULL);
 }
+#endif
 
-static void dport_access_init_core1(void *arg)
-{
-    int core_id = xPortGetCoreID();
-
-    assert(core_id == 1);
-
-    ESP_INTR_DISABLE(ETS_DPORT_INUM);
-    intr_matrix_set(core_id, ETS_FROM_CPU_INTR3_SOURCE, ETS_DPORT_INUM);
-    ESP_INTR_ENABLE(ETS_DPORT_INUM);
-
-    dport_access_ref[core_id] = 0;
-    dport_access_start[core_id] = 0;
-    dport_access_end[core_id] = 0;
-    dport_core_state[core_id] = DPORT_CORE_STATE_RUNNING;
-
-    vTaskDelete(NULL);
-}
-
-
-/*  This initialise should be really effective after vTaskStartScheduler */
+/*  Defer initialisation until after scheduler is running */
 void esp_dport_access_int_init(void)
 {
-    if (xPortGetCoreID() == 0) {
-        xTaskCreatePinnedToCore(&dport_access_init_core0, "dport0", 512, NULL, 5, NULL, 0);
-    } else {
-        xTaskCreatePinnedToCore(&dport_access_init_core1, "dport1", 512, NULL, 5, NULL, 1);
-    }
+#ifndef CONFIG_FREERTOS_UNICORE
+    portBASE_TYPE res = xTaskCreatePinnedToCore(&dport_access_init_core, "dport", configMINIMAL_STACK_SIZE, NULL, 5, NULL, xPortGetCoreID());
+    assert(res == pdTRUE);
+#endif
 }
+
+void IRAM_ATTR esp_dport_access_int_pause(void)
+{
+#ifndef CONFIG_FREERTOS_UNICORE
+    portENTER_CRITICAL_ISR(&g_dport_mux);
+    dport_core_state[0] = DPORT_CORE_STATE_IDLE;
+    dport_core_state[1] = DPORT_CORE_STATE_IDLE;
+    portEXIT_CRITICAL_ISR(&g_dport_mux);
+#endif
+}
+
+//Used in panic code: the enter_critical stuff may be messed up so we just stop everything without checking the mux.
+void IRAM_ATTR esp_dport_access_int_abort(void)
+{
+#ifndef CONFIG_FREERTOS_UNICORE
+    dport_core_state[0] = DPORT_CORE_STATE_IDLE;
+    dport_core_state[1] = DPORT_CORE_STATE_IDLE;
+#endif
+}
+
+void IRAM_ATTR esp_dport_access_int_resume(void)
+{
+#ifndef CONFIG_FREERTOS_UNICORE
+    portENTER_CRITICAL_ISR(&g_dport_mux);
+    dport_core_state[0] = DPORT_CORE_STATE_RUNNING;
+    dport_core_state[1] = DPORT_CORE_STATE_RUNNING;
+    portEXIT_CRITICAL_ISR(&g_dport_mux);
+#endif
+}
+

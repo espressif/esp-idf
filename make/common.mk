@@ -19,6 +19,7 @@ endif
 #
 # if V=1, $(summary) does nothing and $(details) will echo extra details
 # if V is unset or not 1, $(summary) echoes a summary and $(details) does nothing
+VERBOSE ?=
 V ?= $(VERBOSE)
 ifeq ("$(V)","1")
 summary := @true
@@ -29,6 +30,10 @@ details := @true
 
 # disable echoing of commands, directory names
 MAKEFLAGS += --silent
+endif  # $(V)==1
+
+ifdef CONFIG_MAKE_WARN_UNDEFINED_VARIABLES
+MAKEFLAGS += --warn-undefined-variables
 endif
 
 # General make utilities
@@ -72,4 +77,12 @@ endef
 # example $(call prereq_if_explicit,erase_flash)
 define prereq_if_explicit
 $(filter $(1),$(MAKECMDGOALS))
+endef
+
+# macro to kill duplicate items in a list without messing up the sort order of the list.
+# Will only keep the unique items; if there are non-unique items in the list, it will remove
+# the later recurring ones so only the first one remains.
+# Copied from http://stackoverflow.com/questions/16144115/makefile-remove-duplicate-words-without-sorting
+define uniq
+$(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
 endef

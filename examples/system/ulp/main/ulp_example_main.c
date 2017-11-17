@@ -8,7 +8,7 @@
 */
 
 #include <stdio.h>
-#include "esp_deep_sleep.h"
+#include "esp_sleep.h"
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "soc/rtc_cntl_reg.h"
@@ -26,8 +26,8 @@ static void update_pulse_count();
 
 void app_main()
 {
-    esp_deep_sleep_wakeup_cause_t cause = esp_deep_sleep_get_wakeup_cause();
-    if (cause != ESP_DEEP_SLEEP_WAKEUP_ULP) {
+    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
+    if (cause != ESP_SLEEP_WAKEUP_ULP) {
         printf("Not ULP wakeup, initializing ULP\n");
         init_ulp_program();
     } else {
@@ -36,7 +36,7 @@ void app_main()
     }
 
     printf("Entering deep sleep\n\n");
-    ESP_ERROR_CHECK( esp_deep_sleep_enable_ulp_wakeup() );
+    ESP_ERROR_CHECK( esp_sleep_enable_ulp_wakeup() );
     esp_deep_sleep_start();
 }
 
@@ -67,6 +67,12 @@ static void init_ulp_program()
     rtc_gpio_pulldown_dis(gpio_num);
     rtc_gpio_pullup_dis(gpio_num);
     rtc_gpio_hold_en(gpio_num);
+
+    /* Disable pullup on GPIO15, in case it is connected to ground to suppress
+     * boot messages.
+     */
+    rtc_gpio_pullup_dis(GPIO_NUM_15);
+    rtc_gpio_hold_en(GPIO_NUM_15);
 
     /* Set ULP wake up period to T = 20ms (3095 cycles of RTC_SLOW_CLK clock).
      * Minimum pulse width has to be T * (ulp_debounce_counter + 1) = 80ms.

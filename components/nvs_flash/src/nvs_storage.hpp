@@ -27,7 +27,7 @@
 namespace nvs
 {
 
-class Storage
+class Storage : public intrusive_list_node<Storage>
 {
     enum class StorageState : uint32_t {
         INVALID,
@@ -44,6 +44,8 @@ class Storage
 
 public:
     ~Storage();
+
+    Storage(const char *pName = NVS_DEFAULT_PART_NAME) : mPartitionName(pName) { };
 
     esp_err_t init(uint32_t baseSector, uint32_t sectorCount);
 
@@ -78,6 +80,11 @@ public:
     
     esp_err_t eraseNamespace(uint8_t nsIndex);
 
+    const char *getPartName() const
+    {
+        return mPartitionName;
+    }
+
     void debugDump();
     
     void debugCheck();
@@ -95,6 +102,7 @@ protected:
     esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, Page* &page, Item& item);
 
 protected:
+    const char *mPartitionName;
     size_t mPageCount;
     PageManager mPageManager;
     TNamespaces mNamespaces;

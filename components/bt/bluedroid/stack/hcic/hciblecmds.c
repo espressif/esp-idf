@@ -24,7 +24,7 @@
  ******************************************************************************/
 
 #include "bt_target.h"
-#include "gki.h"
+#include "allocator.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
 #include "hcidefs.h"
@@ -32,6 +32,8 @@
 
 #include <stddef.h>
 #include <string.h>
+
+#define HCI_GET_CMD_BUF(paramlen)       ((BT_HDR *)osi_malloc(HCI_CMD_BUF_SIZE))
 
 #if (defined BLE_INCLUDED) && (BLE_INCLUDED == TRUE)
 

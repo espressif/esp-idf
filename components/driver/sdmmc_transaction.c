@@ -15,11 +15,13 @@
 #include <string.h>
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_pm.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "soc/sdmmc_reg.h"
 #include "soc/sdmmc_struct.h"
+#include "soc/soc_memory_layout.h"
 #include "driver/sdmmc_types.h"
 #include "driver/sdmmc_defs.h"
 #include "driver/sdmmc_host.h"
@@ -31,13 +33,6 @@
  * of SD memory cards (most data transfers are multiples of 512 bytes).
  */
 #define SDMMC_DMA_DESC_CNT  4
-
-/* Max delay value is mostly useful for cases when CD pin is not used, and
- * the card is removed. In this case, SDMMC peripheral may not always return
- * CMD_DONE / DATA_DONE interrupts after signaling the error. This delay works
- * as a safety net in such cases.
- */
-#define SDMMC_MAX_EVT_WAIT_DELAY_MS 1000
 
 static const char* TAG = "sdmmc_req";
 
@@ -72,6 +67,10 @@ const uint32_t SDMMC_CMD_ERR_MASK =
 static sdmmc_desc_t s_dma_desc[SDMMC_DMA_DESC_CNT];
 static sdmmc_transfer_state_t s_cur_transfer = { 0 };
 static QueueHandle_t s_request_mutex;
+static bool s_is_app_cmd;   // This flag is set if the next command is an APP command
+#ifdef CONFIG_PM_ENABLE
+static esp_pm_lock_handle_t s_pm_lock;
+#endif
 
 static esp_err_t handle_idle_state_events();
 static sdmmc_hw_cmd_t make_hw_cmd(sdmmc_command_t* cmd);
@@ -87,12 +86,25 @@ esp_err_t sdmmc_host_transaction_handler_init()
     if (!s_request_mutex) {
         return ESP_ERR_NO_MEM;
     }
+    s_is_app_cmd = false;
+#ifdef CONFIG_PM_ENABLE
+    esp_err_t err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "sdmmc", &s_pm_lock);
+    if (err != ESP_OK) {
+        vSemaphoreDelete(s_request_mutex);
+        s_request_mutex = NULL;
+        return err;
+    }
+#endif
     return ESP_OK;
 }
 
 void sdmmc_host_transaction_handler_deinit()
 {
     assert(s_request_mutex);
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_delete(s_pm_lock);
+    s_pm_lock = NULL;
+#endif
     vSemaphoreDelete(s_request_mutex);
     s_request_mutex = NULL;
 }
@@ -100,14 +112,24 @@ void sdmmc_host_transaction_handler_deinit()
 esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
 {
     xSemaphoreTake(s_request_mutex, portMAX_DELAY);
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_acquire(s_pm_lock);
+#endif
     // dispose of any events which happened asynchronously
     handle_idle_state_events();
     // convert cmdinfo to hardware register value
     sdmmc_hw_cmd_t hw_cmd = make_hw_cmd(cmdinfo);
     if (cmdinfo->data) {
-        // these constraints should be handled by upper layer
-        assert(cmdinfo->datalen >= 4);
-        assert(cmdinfo->blklen % 4 == 0);
+        if (cmdinfo->datalen < 4 || cmdinfo->blklen % 4 != 0) {
+            ESP_LOGD(TAG, "%s: invalid size: total=%d block=%d",
+                    __func__, cmdinfo->datalen, cmdinfo->blklen);
+            return ESP_ERR_INVALID_SIZE;
+        }
+        if ((intptr_t) cmdinfo->data % 4 != 0 ||
+                !esp_ptr_dma_capable(cmdinfo->data)) {
+            ESP_LOGD(TAG, "%s: buffer %p can not be used for DMA", __func__, cmdinfo->data);
+            return ESP_ERR_INVALID_ARG;
+        }
         // this clears "owned by IDMAC" bits
         memset(s_dma_desc, 0, sizeof(s_dma_desc));
         // initialize first descriptor
@@ -137,6 +159,10 @@ esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
             break;
         }
     }
+    s_is_app_cmd = (ret == ESP_OK && cmdinfo->opcode == MMC_APP_CMD);
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_release(s_pm_lock);
+#endif
     xSemaphoreGive(s_request_mutex);
     return ret;
 }
@@ -195,7 +221,7 @@ static esp_err_t handle_idle_state_events()
 static esp_err_t handle_event(sdmmc_command_t* cmd, sdmmc_req_state_t* state)
 {
     sdmmc_event_t evt;
-    esp_err_t err = sdmmc_host_wait_for_event(SDMMC_MAX_EVT_WAIT_DELAY_MS / portTICK_PERIOD_MS, &evt);
+    esp_err_t err = sdmmc_host_wait_for_event(cmd->timeout_ms / portTICK_PERIOD_MS, &evt);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "sdmmc_host_wait_for_event returned 0x%x", err);
         if (err == ESP_ERR_TIMEOUT) {
@@ -215,10 +241,12 @@ static sdmmc_hw_cmd_t make_hw_cmd(sdmmc_command_t* cmd)
     res.cmd_index = cmd->opcode;
     if (cmd->opcode == MMC_STOP_TRANSMISSION) {
         res.stop_abort_cmd = 1;
+    } else if (cmd->opcode == MMC_GO_IDLE_STATE) {
+        res.send_init = 1;
     } else {
         res.wait_complete = 1;
     }
-    if (cmd->opcode == SD_APP_SET_BUS_WIDTH) {
+    if (s_is_app_cmd && cmd->opcode == SD_APP_SET_BUS_WIDTH) {
         res.send_auto_stop = 1;
         res.data_expected = 1;
     }
@@ -251,11 +279,8 @@ static void process_command_response(uint32_t status, sdmmc_command_t* cmd)
 {
     if (cmd->flags & SCF_RSP_PRESENT) {
         if (cmd->flags & SCF_RSP_136) {
-            cmd->response[3] = SDMMC.resp[0];
-            cmd->response[2] = SDMMC.resp[1];
-            cmd->response[1] = SDMMC.resp[2];
-            cmd->response[0] = SDMMC.resp[3];
-
+            /* Destination is 4-byte aligned, can memcopy from peripheral registers */
+            memcpy(cmd->response, (uint32_t*) SDMMC.resp, 4 * sizeof(uint32_t));
         } else {
             cmd->response[0] = SDMMC.resp[0];
             cmd->response[1] = 0;

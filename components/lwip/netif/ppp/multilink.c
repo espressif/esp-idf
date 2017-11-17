@@ -170,7 +170,7 @@ mp_join_bundle()
 		l += 3 * ho->endpoint.length + 8;
 	if (bundle_name)
 		l += 3 * strlen(bundle_name) + 2;
-	bundle_id = malloc(l);
+	bundle_id = mem_malloc(l);
 	if (bundle_id == 0)
 		novm("bundle identifier");
 
@@ -186,7 +186,7 @@ mp_join_bundle()
 
 	/* Make the key for the list of links belonging to the bundle */
 	l = p - bundle_id;
-	blinks_id = malloc(l + 7);
+	blinks_id = mem_malloc(l + 7);
 	if (blinks_id == NULL)
 		novm("bundle links key");
 	slprintf(blinks_id, l + 7, "BUNDLE_LINKS=%s", bundle_id + 7);
@@ -322,7 +322,7 @@ static void make_bundle_links(int append)
 				return;
 			}
 			l = rec.dsize + strlen(entry);
-			p = malloc(l);
+			p = mem_malloc(l);
 			if (p == NULL)
 				novm("bundle link list");
 			slprintf(p, l, "%s%s", rec.dptr, entry);

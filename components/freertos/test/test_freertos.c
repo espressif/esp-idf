@@ -164,7 +164,7 @@ static void uartRxInit(xQueueHandle q)
 {
     uint32_t reg_val;
 
-    PIN_PULLUP_DIS(PERIPHS_IO_MUX_U0TXD_U);
+    gpio_pullup_dis(1);
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD_U0RXD);
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD_U0TXD);
 

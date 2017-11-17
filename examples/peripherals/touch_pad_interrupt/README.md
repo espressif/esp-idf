@@ -4,7 +4,7 @@ Demonstrates how to set up ESP32's capacitive touch pad peripheral to trigger in
 
 Application has been developed and tested using [ESP32 Demo Board V2](https://dl.espressif.com/dl/schematics/ESP32-Demo-Board-V2_sch.pdf) that has ten capacitive sensor pads T0 to T9 exposed.
 
-![alt text](http://dl.espressif.com/dl/schematics/pictures/esp32-demo-board-v2.jpg "ESP32 Demo Board V2")
+![alt text](https://dl.espressif.com/dl/schematics/pictures/esp32-demo-board-v2.jpg "ESP32 Demo Board V2")
 
 The following output is shown when a pad is touched:
 

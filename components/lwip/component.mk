@@ -9,13 +9,15 @@ COMPONENT_ADD_INCLUDEDIRS := \
 	apps/ping
 
 ifdef CONFIG_PPP_SUPPORT
-LWIP_PPP_DIRS := netif/ppp/polarssl netif/ppp 
+LWIP_PPP_DIRS := netif/ppp/polarssl netif/ppp
+else
+LWIP_PPP_DIRS :=
 endif
 
 COMPONENT_SRCDIRS := \
 	api \
-	apps/sntp apps/ping apps \
-	core/ipv4 core/ipv6 core \
+	apps apps/sntp apps/ping \
+	core core/ipv4 core/ipv6 \
 	$(LWIP_PPP_DIRS) netif \
 	port/freertos port/netif port/debug port
 

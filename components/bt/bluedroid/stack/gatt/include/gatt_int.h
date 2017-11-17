@@ -20,12 +20,11 @@
 #define  GATT_INT_H
 
 #include "bt_target.h"
-
-
 #include "bt_trace.h"
 #include "gatt_api.h"
 #include "btm_ble_api.h"
 #include "btu.h"
+#include "fixed_queue.h"
 
 #include <string.h>
 
@@ -81,6 +80,7 @@ typedef UINT8 tGATT_SEC_ACTION;
 #define GATT_WAIT_FOR_RSP_TOUT       30
 #define GATT_WAIT_FOR_DISC_RSP_TOUT  5
 #define GATT_REQ_RETRY_LIMIT         2
+#define GATT_WAIT_FOR_IND_ACK_TOUT   5
 
 /* characteristic descriptor type */
 #define GATT_DESCR_EXT_DSCPTOR   1    /* Characteristic Extended Properties */
@@ -222,7 +222,7 @@ typedef struct {
 typedef struct {
     void            *p_attr_list;       /* pointer to the first attribute, either tGATT_ATTR16 or tGATT_ATTR128 */
     UINT8           *p_free_mem;        /* Pointer to free memory       */
-    BUFFER_Q        svc_buffer;         /* buffer queue used for service database */
+    fixed_queue_t   *svc_buffer;         /* buffer queue used for service database */
     UINT32          mem_free;           /* Memory still available       */
     UINT16          end_handle;         /* Last handle number           */
     UINT16          next_handle;        /* Next usable handle value     */
@@ -285,7 +285,7 @@ typedef struct {
     BT_HDR          *p_rsp_msg;
     UINT32           trans_id;
     tGATT_READ_MULTI multi_req;
-    BUFFER_Q         multi_rsp_q;
+    fixed_queue_t    *multi_rsp_q;
     UINT16           handle;
     UINT8            op_code;
     UINT8            status;
@@ -357,7 +357,7 @@ typedef struct{
 typedef struct{
     //only store prepare write packets which need
     //to be responded by stack (not by application)
-    BUFFER_Q queue;
+    fixed_queue_t *queue;
 
     //store the total number of prepare write packets
     //including that should be responded by stack or by application
@@ -369,7 +369,7 @@ typedef struct{
 }tGATT_PREPARE_WRITE_RECORD;
 
 typedef struct {
-    BUFFER_Q        pending_enc_clcb;   /* pending encryption channel q */
+    fixed_queue_t    *pending_enc_clcb;   /* pending encryption channel q */
     tGATT_SEC_ACTION sec_act;
     BD_ADDR         peer_bda;
     tBT_TRANSPORT   transport;
@@ -389,7 +389,7 @@ typedef struct {
     tGATT_SR_CMD    sr_cmd;
 #endif  ///GATTS_INCLUDED == TRUE
     UINT16          indicate_handle;
-    BUFFER_Q        pending_ind_q;
+    fixed_queue_t   *pending_ind_q;
 
     TIMER_LIST_ENT  conf_timer_ent;     /* peer confirm to indication timer */
 
@@ -498,7 +498,7 @@ typedef struct {
 
 typedef struct {
     tGATT_TCB           tcb[GATT_MAX_PHY_CHANNEL];
-    BUFFER_Q            sign_op_queue;
+    fixed_queue_t       *sign_op_queue;
 
     tGATT_SR_REG        sr_reg[GATT_MAX_SR_PROFILES];
     UINT16              next_handle;    /* next available handle */
@@ -510,8 +510,8 @@ typedef struct {
     tGATT_SRV_LIST_INFO srv_list_info;
     tGATT_SRV_LIST_ELEM srv_list[GATT_MAX_SR_PROFILES];
 #endif  ///GATTS_INCLUDED == TRUE
-    BUFFER_Q            srv_chg_clt_q;   /* service change clients queue */
-    BUFFER_Q            pending_new_srv_start_q; /* pending new service start queue */
+    fixed_queue_t       *srv_chg_clt_q;   /* service change clients queue */
+    fixed_queue_t       *pending_new_srv_start_q; /* pending new service start queue */
     tGATT_REG           cl_rcb[GATT_MAX_APPS];
     tGATT_CLCB          clcb[GATT_CL_MAX_LCB];  /* connection link control block*/
     tGATT_SCCB          sccb[GATT_MAX_SCCB];    /* sign complete callback function GATT_MAX_SCCB <= GATT_CL_MAX_LCB */
@@ -538,12 +538,17 @@ typedef struct {
 
 } tGATT_CB;
 
+typedef struct{
+    UINT16 local_mtu;
+} tGATT_DEFAULT;
 
 #define GATT_SIZE_OF_SRV_CHG_HNDL_RANGE 4
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+extern tGATT_DEFAULT gatt_default;
 
 /* Global GATT data */
 #if GATT_DYNAMIC_MEMORY == FALSE
@@ -742,4 +747,6 @@ extern void gatts_update_srv_list_elem(UINT8 i_sreg, UINT16 handle, BOOLEAN is_p
 extern tBT_UUID *gatts_get_service_uuid (tGATT_SVC_DB *p_db);
 
 extern void gatt_reset_bgdev_list(void);
+extern uint16_t gatt_get_local_mtu(void);
+extern void gatt_set_local_mtu(uint16_t mtu);
 #endif

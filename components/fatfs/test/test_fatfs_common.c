@@ -227,6 +227,31 @@ void test_fatfs_mkdir_rmdir(const char* filename_prefix)
     TEST_ASSERT_EQUAL(0, rmdir(name_dir2));
 }
 
+void test_fatfs_can_opendir(const char* path)
+{
+    char name_dir_file[64];
+    const char * file_name = "test_opd.txt";
+    snprintf(name_dir_file, sizeof(name_dir_file), "%s/%s", path, file_name);
+    unlink(name_dir_file);
+    test_fatfs_create_file_with_text(name_dir_file, "test_opendir\n");
+    DIR* dir = opendir(path);
+    TEST_ASSERT_NOT_NULL(dir);
+    bool found = false;
+    while (true) {
+        struct dirent* de = readdir(dir);
+        if (!de) {
+            break;
+        }
+        if (strcasecmp(de->d_name, file_name) == 0) {
+            found = true;
+            break;
+        }
+    }
+    TEST_ASSERT_TRUE(found);
+    TEST_ASSERT_EQUAL(0, closedir(dir));
+    unlink(name_dir_file);
+}
+
 void test_fatfs_opendir_readdir_rewinddir(const char* dir_prefix)
 {
     char name_dir_inner_file[64];
@@ -379,8 +404,10 @@ void test_fatfs_concurrent(const char* filename_prefix)
 
     printf("writing f1 and f2\n");
 
-    xTaskCreatePinnedToCore(&read_write_task, "rw1", 2048, &args1, 3, NULL, 0);
-    xTaskCreatePinnedToCore(&read_write_task, "rw2", 2048, &args2, 3, NULL, 1);
+    const int cpuid_0 = 0;
+    const int cpuid_1 = portNUM_PROCESSORS - 1;
+    xTaskCreatePinnedToCore(&read_write_task, "rw1", 2048, &args1, 3, NULL, cpuid_0);
+    xTaskCreatePinnedToCore(&read_write_task, "rw2", 2048, &args2, 3, NULL, cpuid_1);
 
     xSemaphoreTake(args1.done, portMAX_DELAY);
     printf("f1 done\n");
@@ -396,10 +423,10 @@ void test_fatfs_concurrent(const char* filename_prefix)
 
     printf("reading f1 and f2, writing f3 and f4\n");
 
-    xTaskCreatePinnedToCore(&read_write_task, "rw3", 2048, &args3, 3, NULL, 1);
-    xTaskCreatePinnedToCore(&read_write_task, "rw4", 2048, &args4, 3, NULL, 0);
-    xTaskCreatePinnedToCore(&read_write_task, "rw1", 2048, &args1, 3, NULL, 0);
-    xTaskCreatePinnedToCore(&read_write_task, "rw2", 2048, &args2, 3, NULL, 1);
+    xTaskCreatePinnedToCore(&read_write_task, "rw3", 2048, &args3, 3, NULL, cpuid_1);
+    xTaskCreatePinnedToCore(&read_write_task, "rw4", 2048, &args4, 3, NULL, cpuid_0);
+    xTaskCreatePinnedToCore(&read_write_task, "rw1", 2048, &args1, 3, NULL, cpuid_0);
+    xTaskCreatePinnedToCore(&read_write_task, "rw2", 2048, &args2, 3, NULL, cpuid_1);
 
     xSemaphoreTake(args1.done, portMAX_DELAY);
     printf("f1 done\n");

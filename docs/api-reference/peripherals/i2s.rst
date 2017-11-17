@@ -10,6 +10,8 @@ The I2S peripheral supports DMA meaning it can stream sample data without requir
 
 I2S output can also be routed directly to the Digital/Analog Converter output channels (GPIO 25 & GPIO 26) to produce analog output directly, rather than via an external I2S codec.
 
+.. note:: For high accuracy clock applications, APLL clock source can be used with `.use_apll = 1` and ESP32 will automatic caculate APLL parameter. 
+
 Application Example
 -------------------
 
@@ -34,7 +36,9 @@ Short example of I2S configuration:
          .communication_format = I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB,
          .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1, // high interrupt priority
          .dma_buf_count = 8,
-         .dma_buf_len = 64
+         .dma_buf_len = 64,
+         .use_apll = 0,
+         .apll_param = I2S_APLL_NONE
     };
 
     static const i2s_pin_config_t pin_config = {

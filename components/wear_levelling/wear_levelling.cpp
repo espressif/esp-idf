@@ -17,7 +17,10 @@
 #include <sys/lock.h>
 #include "wear_levelling.h"
 #include "WL_Config.h"
+#include "WL_Ext_Cfg.h"
 #include "WL_Flash.h"
+#include "WL_Ext_Perf.h"
+#include "WL_Ext_Safe.h"
 #include "SPI_Flash.h"
 #include "Partition.h"
 
@@ -79,7 +82,7 @@ esp_err_t wl_mount(const esp_partition_t *partition, wl_handle_t *out_handle)
         goto out;
     }
 
-    wl_config_t cfg;
+    wl_ext_cfg_t cfg;
     cfg.full_mem_size = partition->size;
     cfg.start_addr = WL_DEFAULT_START_ADDR;
     cfg.version = WL_CURRENT_VERSION;
@@ -88,6 +91,8 @@ esp_err_t wl_mount(const esp_partition_t *partition, wl_handle_t *out_handle)
     cfg.updaterate = WL_DEFAULT_UPDATERATE;
     cfg.temp_buff_size = WL_DEFAULT_TEMP_BUFF_SIZE;
     cfg.wr_size = WL_DEFAULT_WRITE_SIZE;
+    // FAT sector size by default will be 512
+    cfg.fat_sector_size = CONFIG_WL_SECTOR_SIZE;
 
     // Allocate memory for a Partition object, and then initialize the object
     // using placement new operator. This way we can recover from out of
@@ -101,13 +106,37 @@ esp_err_t wl_mount(const esp_partition_t *partition, wl_handle_t *out_handle)
     part = new (part_ptr) Partition(partition);
 
     // Same for WL_Flash: allocate memory, use placement new
+#if CONFIG_WL_SECTOR_SIZE == 512
+#if CONFIG_WL_SECTOR_MODE == 1
+    wl_flash_ptr = malloc(sizeof(WL_Ext_Safe));
+
+    if (wl_flash_ptr == NULL) {
+        result = ESP_ERR_NO_MEM;
+        ESP_LOGE(TAG, "%s: can't allocate WL_Ext_Safe", __func__);
+        goto out;
+    }
+    wl_flash = new (wl_flash_ptr) WL_Ext_Safe();
+#else
+    wl_flash_ptr = malloc(sizeof(WL_Ext_Perf));
+
+    if (wl_flash_ptr == NULL) {
+        result = ESP_ERR_NO_MEM;
+        ESP_LOGE(TAG, "%s: can't allocate WL_Ext_Perf", __func__);
+        goto out;
+    }
+    wl_flash = new (wl_flash_ptr) WL_Ext_Perf();
+#endif // CONFIG_WL_SECTOR_MODE
+#endif // CONFIG_WL_SECTOR_SIZE
+#if CONFIG_WL_SECTOR_SIZE == 4096
     wl_flash_ptr = malloc(sizeof(WL_Flash));
+
     if (wl_flash_ptr == NULL) {
         result = ESP_ERR_NO_MEM;
         ESP_LOGE(TAG, "%s: can't allocate WL_Flash", __func__);
         goto out;
     }
     wl_flash = new (wl_flash_ptr) WL_Flash();
+#endif // CONFIG_WL_SECTOR_SIZE
 
     result = wl_flash->config(&cfg, part);
     if (ESP_OK != result) {

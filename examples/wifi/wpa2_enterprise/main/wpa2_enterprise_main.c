@@ -100,6 +100,7 @@ static void initialise_wifi(void)
     unsigned int ca_pem_bytes = ca_pem_end - ca_pem_start;
     unsigned int client_crt_bytes = client_crt_end - client_crt_start;
     unsigned int client_key_bytes = client_key_end - client_key_start;
+    esp_wpa2_config_t config = WPA2_CONFIG_INIT_DEFAULT();
 
     tcpip_adapter_init();
     wifi_event_group = xEventGroupCreate();
@@ -123,7 +124,8 @@ static void initialise_wifi(void)
         ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_set_username((uint8_t *)EXAMPLE_EAP_USERNAME, strlen(EXAMPLE_EAP_USERNAME)) );
         ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_set_password((uint8_t *)EXAMPLE_EAP_PASSWORD, strlen(EXAMPLE_EAP_PASSWORD)) );
     }
-    ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_enable() );
+   
+    ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_enable(&config) );
     ESP_ERROR_CHECK( esp_wifi_start() );
 }
 

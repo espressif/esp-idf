@@ -21,7 +21,7 @@ To use this functionality, make sure "Timers used for gettimeofday function" opt
 
 ## Working with time
 
-To get current time, [`gettimeofday`](http://man7.org/linux/man-pages/man2/gettimeofday.2.html) function may be used. Additionally the following [standard C library functions](http://en.cppreference.com/w/cpp/header/ctime) can be used to obtain time and manipulate it:
+To get current time, [`gettimeofday`](http://man7.org/linux/man-pages/man2/gettimeofday.2.html) function may be used. Additionally the following [standard C library functions](https://en.cppreference.com/w/cpp/header/ctime) can be used to obtain time and manipulate it:
 
 	gettimeofday
 	time

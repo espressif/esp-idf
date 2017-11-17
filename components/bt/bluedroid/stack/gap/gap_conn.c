@@ -24,6 +24,9 @@
 #include "l2cdefs.h"
 #include "l2c_int.h"
 #include <string.h>
+#include "mutex.h"
+#include "allocator.h"
+
 #if GAP_CONN_INCLUDED == TRUE
 #include "btm_int.h"
 
@@ -199,10 +202,10 @@ UINT16 GAP_ConnOpen (char *p_serv_name, UINT8 service_id, BOOLEAN is_server,
     if ( p_ccb->cfg.fcr_present ) {
         if (ertm_info == NULL) {
             p_ccb->ertm_info.preferred_mode = p_ccb->cfg.fcr.mode;
-            p_ccb->ertm_info.user_rx_pool_id = GAP_DATA_POOL_ID;
-            p_ccb->ertm_info.user_tx_pool_id = GAP_DATA_POOL_ID;
-            p_ccb->ertm_info.fcr_rx_pool_id = L2CAP_DEFAULT_ERM_POOL_ID;
-            p_ccb->ertm_info.fcr_tx_pool_id = L2CAP_DEFAULT_ERM_POOL_ID;
+            p_ccb->ertm_info.user_rx_buf_size = GAP_DATA_BUF_SIZE;
+            p_ccb->ertm_info.user_tx_buf_size = GAP_DATA_BUF_SIZE;
+            p_ccb->ertm_info.fcr_rx_buf_size = L2CAP_INVALID_ERM_BUF_SIZE;
+            p_ccb->ertm_info.fcr_tx_buf_size = L2CAP_INVALID_ERM_BUF_SIZE;
         } else {
             p_ccb->ertm_info = *ertm_info;
         }
@@ -296,7 +299,6 @@ UINT16 GAP_ConnClose (UINT16 gap_handle)
 UINT16 GAP_ConnReadData (UINT16 gap_handle, UINT8 *p_data, UINT16 max_len, UINT16 *p_len)
 {
     tGAP_CCB    *p_ccb = gap_find_ccb_by_handle (gap_handle);
-    BT_HDR     *p_buf;
     UINT16      copy_len;
 
     if (!p_ccb) {
@@ -305,15 +307,19 @@ UINT16 GAP_ConnReadData (UINT16 gap_handle, UINT8 *p_data, UINT16 max_len, UINT1
 
     *p_len = 0;
 
-    p_buf = (BT_HDR *)GKI_getfirst (&p_ccb->rx_queue);
-    if (!p_buf) {
+    if (fixed_queue_is_empty(p_ccb->rx_queue)) {
         return (GAP_NO_DATA_AVAIL);
-    }
+	}
 
-    GKI_disable();
+    osi_mutex_global_lock();
 
-    while (max_len && p_buf) {
-        copy_len = (p_buf->len > max_len) ? max_len : p_buf->len;
+    while (max_len) {
+        BT_HDR *p_buf = fixed_queue_try_peek_first(p_ccb->rx_queue);
+        if (p_buf == NULL) {
+            break;
+		}
+
+        copy_len = (p_buf->len > max_len)?max_len:p_buf->len;
         max_len -= copy_len;
         *p_len  += copy_len;
         if (p_data) {
@@ -325,17 +331,13 @@ UINT16 GAP_ConnReadData (UINT16 gap_handle, UINT8 *p_data, UINT16 max_len, UINT1
             p_buf->offset += copy_len;
             p_buf->len    -= copy_len;
             break;
-        } else {
-            if (max_len) {
-                p_buf = (BT_HDR *)GKI_getnext (p_buf);
-            }
-            GKI_freebuf (GKI_dequeue (&p_ccb->rx_queue));
         }
+        osi_free(fixed_queue_try_dequeue(p_ccb->rx_queue));
     }
 
     p_ccb->rx_queue_size -= *p_len;
 
-    GKI_enable();
+    osi_mutex_global_unlock();
 
     GAP_TRACE_EVENT ("GAP_ConnReadData - rx_queue_size left=%d, *p_len=%d",
                      p_ccb->rx_queue_size, *p_len);
@@ -402,7 +404,7 @@ UINT16 GAP_ConnBTRead (UINT16 gap_handle, BT_HDR **pp_buf)
         return (GAP_ERR_BAD_HANDLE);
     }
 
-    p_buf = (BT_HDR *)GKI_dequeue (&p_ccb->rx_queue);
+    p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->rx_queue);
 
     if (p_buf) {
         *pp_buf = p_buf;
@@ -435,21 +437,21 @@ UINT16 GAP_ConnBTWrite (UINT16 gap_handle, BT_HDR *p_buf)
     tGAP_CCB    *p_ccb = gap_find_ccb_by_handle (gap_handle);
 
     if (!p_ccb) {
-        GKI_freebuf (p_buf);
+        osi_free (p_buf);
         return (GAP_ERR_BAD_HANDLE);
     }
 
     if (p_ccb->con_state != GAP_CCB_STATE_CONNECTED) {
-        GKI_freebuf (p_buf);
+        osi_free (p_buf);
         return (GAP_ERR_BAD_STATE);
     }
 
     if (p_buf->offset < L2CAP_MIN_OFFSET) {
-        GKI_freebuf (p_buf);
+        osi_free (p_buf);
         return (GAP_ERR_BUF_OFFSET);
     }
 
-    GKI_enqueue (&p_ccb->tx_queue, p_buf);
+    fixed_queue_enqueue(p_ccb->tx_queue, p_buf);
 
     if (p_ccb->is_congested) {
         return (BT_PASS);
@@ -459,7 +461,7 @@ UINT16 GAP_ConnBTWrite (UINT16 gap_handle, BT_HDR *p_buf)
 #if (GAP_CONN_POST_EVT_INCLUDED == TRUE)
     gap_send_event (gap_handle);
 #else
-    while ((p_buf = (BT_HDR *)GKI_dequeue (&p_ccb->tx_queue)) != NULL) {
+    while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->tx_queue)) != NULL) {
         UINT8 status = L2CA_DATA_WRITE (p_ccb->connection_id, p_buf);
 
         if (status == L2CAP_DW_CONGESTED) {
@@ -509,11 +511,11 @@ UINT16 GAP_ConnWriteData (UINT16 gap_handle, UINT8 *p_data, UINT16 max_len, UINT
 
     while (max_len) {
         if (p_ccb->cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) {
-            if ((p_buf = (BT_HDR *)GKI_getpoolbuf (p_ccb->ertm_info.user_tx_pool_id)) == NULL) {
+            if ((p_buf = (BT_HDR *)osi_malloc(L2CAP_FCR_ERTM_BUF_SIZE)) == NULL) {
                 return (GAP_ERR_CONGESTED);
             }
         } else {
-            if ((p_buf = (BT_HDR *)GKI_getpoolbuf (GAP_DATA_POOL_ID)) == NULL) {
+            if ((p_buf = (BT_HDR *)osi_malloc(GAP_DATA_BUF_SIZE)) == NULL) {
                 return (GAP_ERR_CONGESTED);
             }
         }
@@ -530,7 +532,7 @@ UINT16 GAP_ConnWriteData (UINT16 gap_handle, UINT8 *p_data, UINT16 max_len, UINT
 
         GAP_TRACE_EVENT ("GAP_WriteData %d bytes", p_buf->len);
 
-        GKI_enqueue (&p_ccb->tx_queue, p_buf);
+        fixed_queue_enqueue(p_ccb->tx_queue, p_buf);
     }
 
     if (p_ccb->is_congested) {
@@ -541,7 +543,8 @@ UINT16 GAP_ConnWriteData (UINT16 gap_handle, UINT8 *p_data, UINT16 max_len, UINT
 #if (GAP_CONN_POST_EVT_INCLUDED == TRUE)
     gap_send_event (gap_handle);
 #else
-    while ((p_buf = (BT_HDR *)GKI_dequeue (&p_ccb->tx_queue)) != NULL) {
+    while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->tx_queue)) != NULL)
+    {
         UINT8 status = L2CA_DATA_WRITE (p_ccb->connection_id, p_buf);
 
         if (status == L2CAP_DW_CONGESTED) {
@@ -554,7 +557,6 @@ UINT16 GAP_ConnWriteData (UINT16 gap_handle, UINT8 *p_data, UINT16 max_len, UINT
 #endif
     return (BT_PASS);
 }
-
 
 /*******************************************************************************
 **
@@ -874,7 +876,7 @@ static void gap_config_ind (UINT16 l2cap_cid, tL2CAP_CFG_INFO *p_cfg)
     /* Remember the remote MTU size */
 
     if (p_ccb->cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) {
-        local_mtu_size = GKI_get_pool_bufsize (p_ccb->ertm_info.user_tx_pool_id)
+        local_mtu_size = p_ccb->ertm_info.user_tx_buf_size
                          - sizeof(BT_HDR) - L2CAP_MIN_OFFSET;
     } else {
         local_mtu_size = L2CAP_MTU_SIZE;
@@ -982,12 +984,12 @@ static void gap_data_ind (UINT16 l2cap_cid, BT_HDR *p_msg)
 
     /* Find CCB based on CID */
     if ((p_ccb = gap_find_ccb_by_cid (l2cap_cid)) == NULL) {
-        GKI_freebuf (p_msg);
+        osi_free (p_msg);
         return;
     }
 
     if (p_ccb->con_state == GAP_CCB_STATE_CONNECTED) {
-        GKI_enqueue (&p_ccb->rx_queue, p_msg);
+        fixed_queue_enqueue(p_ccb->rx_queue, p_msg);
 
         p_ccb->rx_queue_size += p_msg->len;
         /*
@@ -997,7 +999,7 @@ static void gap_data_ind (UINT16 l2cap_cid, BT_HDR *p_msg)
 
         p_ccb->p_callback (p_ccb->gap_handle, GAP_EVT_CONN_DATA_AVAIL);
     } else {
-        GKI_freebuf (p_msg);
+        osi_free (p_msg);
     }
 }
 
@@ -1031,7 +1033,7 @@ static void gap_congestion_ind (UINT16 lcid, BOOLEAN is_congested)
     p_ccb->p_callback (p_ccb->gap_handle, event);
 
     if (!is_congested) {
-        while ((p_buf = (BT_HDR *)GKI_dequeue (&p_ccb->tx_queue)) != NULL) {
+        while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->tx_queue)) != NULL) {
             status = L2CA_DATA_WRITE (p_ccb->connection_id, p_buf);
 
             if (status == L2CAP_DW_CONGESTED) {
@@ -1118,6 +1120,8 @@ static tGAP_CCB *gap_allocate_ccb (void)
     for (xx = 0, p_ccb = gap_cb.conn.ccb_pool; xx < GAP_MAX_CONNECTIONS; xx++, p_ccb++) {
         if (p_ccb->con_state == GAP_CCB_STATE_IDLE) {
             memset (p_ccb, 0, sizeof (tGAP_CCB));
+            p_ccb->tx_queue = fixed_queue_new(SIZE_MAX);
+            p_ccb->rx_queue = fixed_queue_new(SIZE_MAX);
 
             p_ccb->gap_handle   = xx;
             p_ccb->rem_mtu_size = L2CAP_MTU_SIZE;
@@ -1149,13 +1153,17 @@ static void gap_release_ccb (tGAP_CCB *p_ccb)
     /* Drop any buffers we may be holding */
     p_ccb->rx_queue_size = 0;
 
-    while (p_ccb->rx_queue._p_first) {
-        GKI_freebuf (GKI_dequeue (&p_ccb->rx_queue));
-    }
+    while (!fixed_queue_is_empty(p_ccb->rx_queue)) {
+        osi_free(fixed_queue_try_dequeue(p_ccb->rx_queue));
+	}
+    fixed_queue_free(p_ccb->rx_queue, NULL);
+    p_ccb->rx_queue = NULL;
 
-    while (p_ccb->tx_queue._p_first) {
-        GKI_freebuf (GKI_dequeue (&p_ccb->tx_queue));
-    }
+    while (!fixed_queue_is_empty(p_ccb->tx_queue)) {
+        osi_free(fixed_queue_try_dequeue(p_ccb->tx_queue));
+	}
+    fixed_queue_free(p_ccb->tx_queue, NULL);
+    p_ccb->tx_queue = NULL;
 
     p_ccb->con_state = GAP_CCB_STATE_IDLE;
 
@@ -1187,7 +1195,7 @@ void gap_send_event (UINT16 gap_handle)
 {
     BT_HDR  *p_msg;
 
-    if ((p_msg = (BT_HDR *)GKI_getbuf(BT_HDR_SIZE)) != NULL) {
+    if ((p_msg = (BT_HDR *)osi_malloc(BT_HDR_SIZE)) != NULL) {
         p_msg->event  = BT_EVT_TO_GAP_MSG;
         p_msg->len    = 0;
         p_msg->offset = 0;
@@ -1199,46 +1207,5 @@ void gap_send_event (UINT16 gap_handle)
     }
 }
 
-/*******************************************************************************
-**
-** Function     gap_proc_btu_event
-**
-** Description  Event handler for BT_EVT_TO_GAP_MSG event from BTU task
-**
-** Returns      None
-**
-*******************************************************************************/
-void gap_proc_btu_event(BT_HDR *p_msg)
-{
-    tGAP_CCB   *p_ccb = gap_find_ccb_by_handle (p_msg->layer_specific);
-    UINT8       status;
-    BT_HDR     *p_buf;
-
-    if (!p_ccb) {
-        return;
-    }
-
-    if (p_ccb->con_state != GAP_CCB_STATE_CONNECTED) {
-        return;
-    }
-
-    if (p_ccb->is_congested) {
-        return;
-    }
-
-    /* Send the buffer through L2CAP */
-
-    while ((p_buf = (BT_HDR *)GKI_dequeue (&p_ccb->tx_queue)) != NULL) {
-        status = L2CA_DATA_WRITE (p_ccb->connection_id, p_buf);
-
-        if (status == L2CAP_DW_CONGESTED) {
-            p_ccb->is_congested = TRUE;
-            break;
-        } else if (status != L2CAP_DW_SUCCESS) {
-            break;
-        }
-    }
-
-}
 #endif /* (GAP_CONN_POST_EVT_INCLUDED == TRUE) */
 #endif  /* GAP_CONN_INCLUDED */

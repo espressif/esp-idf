@@ -43,6 +43,8 @@
 //#include "osi/include/log.h"
 
 #if SMP_INCLUDED == TRUE
+// The temp variable to pass parameter between functions when in the connected event comeback.
+static BOOLEAN temp_enhanced = FALSE;
 extern BOOLEAN aes_cipher_msg_auth_code(BT_OCTET16 key, UINT8 *input, UINT16 length,
                                         UINT16 tlen, UINT8 *p_signature);
 extern void smp_link_encrypted(BD_ADDR bda, UINT8 encr_enable);
@@ -178,7 +180,11 @@ BOOLEAN BTM_SecAddBleKey (BD_ADDR bd_addr, tBTM_LE_KEY_VALUE *p_le_key, tBTM_LE_
 
 #if (BLE_PRIVACY_SPT == TRUE)
     if (key_type == BTM_LE_KEY_PID || key_type == BTM_LE_KEY_LID) {
-        btm_ble_resolving_list_load_dev (p_dev_rec);
+        /* It will cause that scanner doesn't send scan request to advertiser
+         * which has sent IRK to us and we have stored the IRK in controller.
+         * It is a design problem of hardware. The temporal solution is not to 
+         * send the key to the controller and then resolve the random address in host. */
+        //btm_ble_resolving_list_load_dev (p_dev_rec);
     }
 #endif
 
@@ -540,7 +546,7 @@ void BTM_BleSetPrefConnParams (BD_ADDR bd_addr,
                                UINT16 min_conn_int, UINT16 max_conn_int,
                                UINT16 slave_latency, UINT16 supervision_tout)
 {
-    tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev (bd_addr);
+    tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_or_alloc_dev (bd_addr);
 
     BTM_TRACE_API ("BTM_BleSetPrefConnParams min: %u  max: %u  latency: %u  \
                     tout: %u",
@@ -802,12 +808,12 @@ tBTM_STATUS BTM_SetBleDataLength(BD_ADDR bd_addr, UINT16 tx_pdu_length)
 
     if (!controller_get_interface()->supports_ble_packet_extension()) {
         BTM_TRACE_ERROR("%s failed, request not supported", __FUNCTION__);
-        return BTM_ILLEGAL_VALUE;
+        return BTM_CONTROL_LE_DATA_LEN_UNSUPPORTED;
     }
 
     if (!HCI_LE_DATA_LEN_EXT_SUPPORTED(p_acl->peer_le_features)) {
-        BTM_TRACE_ERROR("%s failed, peer does not support request", __FUNCTION__);
-        return BTM_ILLEGAL_VALUE;
+        BTM_TRACE_DEBUG("%s failed, peer does not support request", __FUNCTION__);
+        return BTM_PEER_LE_DATA_LEN_UNSUPPORTED;
     }
 
     if (p_acl != NULL) {
@@ -828,6 +834,171 @@ tBTM_STATUS BTM_SetBleDataLength(BD_ADDR bd_addr, UINT16 tx_pdu_length)
     }
 }
 
+#if (SMP_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         btm_ble_determine_security_act
+**
+** Description      This function checks the security of current LE link
+**                  and returns the appropriate action that needs to be
+**                  taken to achieve the required security.
+**
+** Parameter        is_originator - True if outgoing connection
+**                  bdaddr: remote device address
+**                  security_required: Security required for the service.
+**
+** Returns          The appropriate security action required.
+**
+*******************************************************************************/
+tBTM_SEC_ACTION btm_ble_determine_security_act(BOOLEAN is_originator, BD_ADDR bdaddr, UINT16 security_required)
+{
+    tBTM_LE_AUTH_REQ auth_req = 0x00;
+
+    if (is_originator)
+    {
+        if ((security_required & BTM_SEC_OUT_FLAGS) == 0 &&
+                (security_required & BTM_SEC_OUT_MITM) == 0)
+        {
+            BTM_TRACE_DEBUG ("%s No security required for outgoing connection", __func__);
+            return BTM_SEC_OK;
+        }
+
+        if (security_required & BTM_SEC_OUT_MITM)
+            auth_req |= BTM_LE_AUTH_REQ_MITM;
+    }
+    else
+    {
+        if ((security_required & BTM_SEC_IN_FLAGS) == 0&& (security_required & BTM_SEC_IN_MITM) == 0)
+        {
+            BTM_TRACE_DEBUG ("%s No security required for incoming connection", __func__);
+            return BTM_SEC_OK;
+        }
+
+        if (security_required & BTM_SEC_IN_MITM)
+            auth_req |= BTM_LE_AUTH_REQ_MITM;
+    }
+
+    tBTM_BLE_SEC_REQ_ACT ble_sec_act;
+    btm_ble_link_sec_check(bdaddr, auth_req, &ble_sec_act);
+
+    BTM_TRACE_DEBUG ("%s ble_sec_act %d", __func__ , ble_sec_act);
+
+    if (ble_sec_act == BTM_BLE_SEC_REQ_ACT_DISCARD)
+        return BTM_SEC_ENC_PENDING;
+
+    if (ble_sec_act == BTM_BLE_SEC_REQ_ACT_NONE)
+        return BTM_SEC_OK;
+
+    UINT8 sec_flag = 0;
+    BTM_GetSecurityFlagsByTransport(bdaddr, &sec_flag, BT_TRANSPORT_LE);
+
+    BOOLEAN is_link_encrypted = FALSE;
+    BOOLEAN is_key_mitm = FALSE;
+    if (sec_flag & (BTM_SEC_FLAG_ENCRYPTED| BTM_SEC_FLAG_LKEY_KNOWN))
+    {
+        if (sec_flag & BTM_SEC_FLAG_ENCRYPTED)
+            is_link_encrypted = TRUE;
+
+        if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED)
+            is_key_mitm = TRUE;
+    }
+
+    if (auth_req & BTM_LE_AUTH_REQ_MITM)
+    {
+        if (!is_key_mitm)
+        {
+            return BTM_SEC_ENCRYPT_MITM;
+        } else {
+            if (is_link_encrypted)
+                return BTM_SEC_OK;
+            else
+                return BTM_SEC_ENCRYPT;
+        }
+    } else {
+        if (is_link_encrypted)
+            return BTM_SEC_OK;
+        else
+            return BTM_SEC_ENCRYPT_NO_MITM;
+    }
+
+    return BTM_SEC_OK;
+}
+
+/*******************************************************************************
+**
+** Function         btm_ble_start_sec_check
+**
+** Description      This function is to check and set the security required for
+**                  LE link for LE COC.
+**
+** Parameter        bdaddr: remote device address.
+**                  psm : PSM of the LE COC sevice.
+**                  is_originator: TRUE if outgoing connection.
+**                  p_callback : Pointer to the callback function.
+**                  p_ref_data : Pointer to be returned along with the callback.
+**
+** Returns          TRUE if link already meets the required security; otherwise FALSE.
+**
+*******************************************************************************/
+BOOLEAN btm_ble_start_sec_check(BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_originator,
+                            tBTM_SEC_CALLBACK *p_callback, void *p_ref_data)
+{
+    /* Find the service record for the PSM */
+    tBTM_SEC_SERV_REC *p_serv_rec = btm_sec_find_first_serv (is_originator, psm);
+
+    /* If there is no application registered with this PSM do not allow connection */
+    if (!p_serv_rec)
+    {
+        BTM_TRACE_WARNING ("%s PSM: %d no application registerd", __func__, psm);
+        (*p_callback) (bd_addr, BT_TRANSPORT_LE, p_ref_data, BTM_MODE_UNSUPPORTED);
+        return FALSE;
+    }
+
+    tBTM_SEC_ACTION sec_act = btm_ble_determine_security_act(is_originator,
+                                  bd_addr, p_serv_rec->security_flags);
+
+    tBTM_BLE_SEC_ACT ble_sec_act = BTM_BLE_SEC_NONE;
+    BOOLEAN status = FALSE;
+
+    switch (sec_act)
+    {
+        case BTM_SEC_OK:
+            BTM_TRACE_DEBUG ("%s Security met", __func__);
+            p_callback(bd_addr, BT_TRANSPORT_LE, p_ref_data, BTM_SUCCESS);
+            status = TRUE;
+            break;
+
+        case BTM_SEC_ENCRYPT:
+            BTM_TRACE_DEBUG ("%s Encryption needs to be done", __func__);
+            ble_sec_act = BTM_BLE_SEC_ENCRYPT;
+            break;
+
+        case BTM_SEC_ENCRYPT_MITM:
+            BTM_TRACE_DEBUG ("%s Pairing with MITM needs to be done", __func__);
+            ble_sec_act = BTM_BLE_SEC_ENCRYPT_MITM;
+            break;
+
+        case BTM_SEC_ENCRYPT_NO_MITM:
+            BTM_TRACE_DEBUG ("%s Pairing with No MITM needs to be done", __func__);
+            ble_sec_act = BTM_BLE_SEC_ENCRYPT_NO_MITM;
+            break;
+
+        case BTM_SEC_ENC_PENDING:
+            BTM_TRACE_DEBUG ("%s Ecryption pending", __func__);
+            break;
+    }
+
+    if (ble_sec_act == BTM_BLE_SEC_NONE)
+        return status;
+
+    tL2C_LCB *p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_LE);
+    p_lcb->sec_act = sec_act;
+    BTM_SetEncryption(bd_addr, BT_TRANSPORT_LE, p_callback, p_ref_data);
+
+    return FALSE;
+}
+
+
 /*******************************************************************************
 **
 ** Function         btm_ble_rand_enc_complete
@@ -839,7 +1010,6 @@ tBTM_STATUS BTM_SetBleDataLength(BD_ADDR bd_addr, UINT16 tx_pdu_length)
 ** Returns          void
 **
 *******************************************************************************/
-#if (SMP_INCLUDED == TRUE)
 void btm_ble_rand_enc_complete (UINT8 *p, UINT16 op_code, tBTM_RAND_ENC_CB *p_enc_cplt_cback)
 {
     tBTM_RAND_ENC   params;
@@ -1247,7 +1417,7 @@ tBTM_STATUS btm_ble_set_encryption (BD_ADDR bd_addr, void *p_ref_data, UINT8 lin
 
     switch (sec_act) {
     case BTM_BLE_SEC_ENCRYPT:
-        if (link_role == BTM_ROLE_MASTER) {
+        if (link_role == BTM_ROLE_MASTER && (p_rec->ble.key_type & BTM_LE_KEY_PENC)) {
             /* start link layer encryption using the security info stored */
             cmd = btm_ble_start_encrypt(bd_addr, FALSE, NULL);
             break;
@@ -1256,7 +1426,7 @@ tBTM_STATUS btm_ble_set_encryption (BD_ADDR bd_addr, void *p_ref_data, UINT8 lin
        sec_request to request the master to encrypt the link */
     case BTM_BLE_SEC_ENCRYPT_NO_MITM:
     case BTM_BLE_SEC_ENCRYPT_MITM:
-        if (link_role == BTM_ROLE_MASTER) {
+        if ((link_role == BTM_ROLE_MASTER) && (sec_act != BTM_BLE_SEC_ENCRYPT)) {
             auth_req = (sec_act == BTM_BLE_SEC_ENCRYPT_NO_MITM)
                        ? SMP_AUTH_GEN_BOND : (SMP_AUTH_GEN_BOND | SMP_AUTH_YN_BIT);
             btm_ble_link_sec_check (bd_addr, auth_req, &sec_req_act);
@@ -1442,7 +1612,7 @@ void btm_ble_ltk_request_reply(BD_ADDR bda,  BOOLEAN use_stk, BT_OCTET16 stk)
     p_cb->enc_handle = p_rec->ble_hci_handle;
     p_cb->key_size = p_rec->ble.keys.key_size;
 
-    BTM_TRACE_ERROR("key size = %d", p_rec->ble.keys.key_size);
+    BTM_TRACE_DEBUG("key size = %d", p_rec->ble.keys.key_size);
     if (use_stk) {
         btsnd_hcic_ble_ltk_req_reply(btm_cb.enc_handle, stk);
     } else { /* calculate LTK using peer device  */
@@ -1581,7 +1751,7 @@ static void btm_ble_resolve_random_addr_on_conn_cmpl(void *p_rec, void *p_data)
     tBTM_SEC_DEV_REC    *match_rec = (tBTM_SEC_DEV_REC *) p_rec;
     UINT8       role, bda_type;
     UINT16      handle;
-    BD_ADDR     bda;
+    BD_ADDR     bda, local_rpa, peer_rpa;
     UINT16      conn_interval, conn_latency, conn_timeout;
     BOOLEAN     match = FALSE;
 
@@ -1590,16 +1760,21 @@ static void btm_ble_resolve_random_addr_on_conn_cmpl(void *p_rec, void *p_data)
     STREAM_TO_UINT8    (role, p);
     STREAM_TO_UINT8    (bda_type, p);
     STREAM_TO_BDADDR   (bda, p);
+    // if the enhanced is true, means the connection is enhanced connect,
+    // so the packet should include the local Resolvable Private Address and Peer Resolvable Private Address
+    if(temp_enhanced) {
+        STREAM_TO_BDADDR(local_rpa, p);
+        STREAM_TO_BDADDR(peer_rpa, p);
+    }
     STREAM_TO_UINT16   (conn_interval, p);
     STREAM_TO_UINT16   (conn_latency, p);
     STREAM_TO_UINT16   (conn_timeout, p);
 
     handle = HCID_GET_HANDLE (handle);
-
     BTM_TRACE_EVENT ("%s\n", __func__);
 
     if (match_rec) {
-        LOG_INFO("%s matched and resolved random address", __func__);
+        BTM_TRACE_DEBUG("%s matched and resolved random address", __func__);
         match = TRUE;
         match_rec->ble.active_addr_type = BTM_BLE_ADDR_RRA;
         memcpy(match_rec->ble.cur_rand_addr, bda, BD_ADDR_LEN);
@@ -1610,7 +1785,7 @@ static void btm_ble_resolve_random_addr_on_conn_cmpl(void *p_rec, void *p_data)
             memcpy(bda, match_rec->bd_addr, BD_ADDR_LEN);
         }
     } else {
-        LOG_INFO("%s unable to match and resolve random address", __func__);
+        BTM_TRACE_DEBUG("%s unable to match and resolve random address", __func__);
     }
 
     btm_ble_connected(bda, handle, HCI_ENCRYPT_MODE_DISABLED, role, bda_type, match);
@@ -1714,7 +1889,6 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
     UINT16      conn_interval, conn_latency, conn_timeout;
     BOOLEAN     match = FALSE;
     UNUSED(evt_len);
-
     STREAM_TO_UINT8   (status, p);
     STREAM_TO_UINT16   (handle, p);
     STREAM_TO_UINT8    (role, p);
@@ -1734,7 +1908,11 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
         /* possiblly receive connection complete with resolvable random on
            slave role while the device has been paired */
         if (!match && role == HCI_ROLE_SLAVE && BTM_BLE_IS_RESOLVE_BDA(bda)) {
+            // save the enhanced value to used in btm_ble_resolve_random_addr_on_conn_cmpl func.
+            temp_enhanced = enhanced;
             btm_ble_resolve_random_addr(bda, btm_ble_resolve_random_addr_on_conn_cmpl, p_data);
+            // set back the temp enhanced to default after used.
+            temp_enhanced = FALSE;
         } else
 #endif
         {
@@ -1888,7 +2066,11 @@ UINT8 btm_proc_smp_cback(tSMP_EVT event, BD_ADDR bd_addr, tSMP_EVT_DATA *p_data)
                     p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
                     /* add all bonded device into resolving list if IRK is available*/
-                    btm_ble_resolving_list_load_dev(p_dev_rec);
+                    /* It will cause that scanner doesn't send scan request to advertiser
+                     * which has sent IRK to us and we have stored the IRK in controller.
+                     * It is a design problem of hardware. The temporal solution is not to 
+                     * send the key to the controller and then resolve the random address in host. */
+                    //btm_ble_resolving_list_load_dev(p_dev_rec);
 #endif
                 }
 
@@ -1941,7 +2123,7 @@ BOOLEAN BTM_BleDataSignature (BD_ADDR bd_addr, UINT8 *p_text, UINT16 len,
     } else {
         UINT8 *p_mac = (UINT8 *)signature;
         UINT8 *p_buf, *pp;
-        if ((p_buf = (UINT8 *)GKI_getbuf((UINT16)(len + 4))) != NULL) {
+        if ((p_buf = (UINT8 *)osi_malloc((UINT16)(len + 4))) != NULL) {
             BTM_TRACE_DEBUG("%s-Start to generate Local CSRK", __func__);
             pp = p_buf;
             /* prepare plain text */
@@ -1963,7 +2145,7 @@ BOOLEAN BTM_BleDataSignature (BD_ADDR bd_addr, UINT8 *p_text, UINT16 len,
                             *p_mac, *(p_mac + 1), *(p_mac + 2), *(p_mac + 3));
             BTM_TRACE_DEBUG("p_mac[4] = 0x%02x p_mac[5] = 0x%02x p_mac[6] = 0x%02x p_mac[7] = 0x%02x",
                             *(p_mac + 4), *(p_mac + 5), *(p_mac + 6), *(p_mac + 7));
-            GKI_freebuf(p_buf);
+            osi_free(p_buf);
         }
     }
     return ret;

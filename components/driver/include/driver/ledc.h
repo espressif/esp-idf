@@ -26,6 +26,7 @@ extern "C" {
 
 #define LEDC_APB_CLK_HZ (APB_CLK_FREQ)
 #define LEDC_REF_CLK_HZ (1*1000000)
+#define LEDC_ERR_DUTY   (0xFFFFFFFF)
 
 typedef enum {
     LEDC_HIGH_SPEED_MODE = 0, /*!< LEDC high speed speed_mode */
@@ -206,10 +207,10 @@ esp_err_t ledc_set_duty(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t
  * @param channel LEDC channel(0-7), select from ledc_channel_t
  *
  * @return
- *     - (-1) parameter error
+ *     - LEDC_ERR_DUTY if parameter error
  *     - Others Current LEDC duty
  */
-int ledc_get_duty(ledc_mode_t speed_mode, ledc_channel_t channel);
+uint32_t ledc_get_duty(ledc_mode_t speed_mode, ledc_channel_t channel);
 
 /**
  * @brief LEDC set gradient
@@ -329,7 +330,7 @@ esp_err_t ledc_bind_channel_timer(ledc_mode_t speed_mode, uint32_t channel, uint
  *     - ESP_ERR_INVALID_STATE Fade function not installed.
  *     - ESP_FAIL Fade function init error
  */
-esp_err_t ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t channel, int target_duty, int scale, int cycle_num);
+esp_err_t ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t target_duty, int scale, int cycle_num);
 
 /**
  * @brief Set LEDC fade function, with a limited time. Should call ledc_fade_func_install() before calling this function.
@@ -346,7 +347,7 @@ esp_err_t ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t channel
  *     - ESP_ERR_INVALID_STATE Fade function not installed.
  *     - ESP_FAIL Fade function init error
  */
-esp_err_t ledc_set_fade_with_time(ledc_mode_t speed_mode, ledc_channel_t channel, int target_duty, int max_fade_time_ms);
+esp_err_t ledc_set_fade_with_time(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t target_duty, int max_fade_time_ms);
 
 /**
  * @brief Install ledc fade function. This function will occupy interrupt of LEDC module.

@@ -34,7 +34,6 @@
 #include "bta_api.h"
 #include "btc_media.h"
 #include "bta_av_api.h"
-#include "gki.h"
 #include "btu.h"
 #include "bt_utils.h"
 #include "btc_common.h"

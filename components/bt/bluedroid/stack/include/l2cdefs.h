@@ -41,6 +41,10 @@
 
 #define L2CAP_CMD_BLE_UPDATE_REQ            0x12
 #define L2CAP_CMD_BLE_UPDATE_RSP            0x13
+#define L2CAP_CMD_BLE_CREDIT_BASED_CONN_REQ 0x14
+#define L2CAP_CMD_BLE_CREDIT_BASED_CONN_RES 0x15
+#define L2CAP_CMD_BLE_FLOW_CTRL_CREDIT      0x16
+
 
 
 /* Define some packet and header lengths
@@ -69,6 +73,11 @@
 
 #define L2CAP_CMD_BLE_UPD_REQ_LEN   8       /* Min and max interval, latency, tout  */
 #define L2CAP_CMD_BLE_UPD_RSP_LEN   2       /* Result                               */
+
+#define L2CAP_CMD_BLE_CREDIT_BASED_CONN_REQ_LEN 10 /* LE_PSM, SCID, MTU, MPS, Init Credit */
+#define L2CAP_CMD_BLE_CREDIT_BASED_CONN_RES_LEN 10 /* DCID, MTU, MPS, Init credit, Result */
+#define L2CAP_CMD_BLE_FLOW_CTRL_CREDIT_LEN      4  /* CID, Credit */
+
 
 
 /* Define the packet boundary flags
@@ -258,8 +267,9 @@
 #define L2CAP_BLE_EXTFEA_MASK 0
 #endif
 
-/* Define a value that tells L2CAP to use the default HCI ACL buffer pool */
-#define L2CAP_DEFAULT_ERM_POOL_ID       0xFF
+/* Define a value that tells L2CAP to use the default HCI ACL buffer size */
+#define L2CAP_INVALID_ERM_BUF_SIZE      0
+
 /* Define a value that tells L2CAP to use the default MPS */
 #define L2CAP_DEFAULT_ERM_MPS           0x0000
 
@@ -273,7 +283,8 @@
 /* To optimize this, it must be a multiplum of the L2CAP PDU length AND match the 3DH5 air
  * including the l2cap headers in each packet - to match the latter - the -5 is added
  */
-#define L2CAP_MAX_SDU_LENGTH     (GKI_BUF4_SIZE - (L2CAP_MIN_OFFSET + L2CAP_MAX_HEADER_FCS) -5)
+#define L2CAP_MAX_SDU_LENGTH     (8080 + 26 - (L2CAP_MIN_OFFSET + 6))
+#define L2CAP_MAX_BUF_SIZE       (10240 + 24)
 
 /* Part of L2CAP_MIN_OFFSET that is not part of L2CAP
 */

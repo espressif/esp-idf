@@ -1,15 +1,17 @@
 #include <stdio.h>
 #include "unity.h"
 #include "rom/ets_sys.h"
+#include "rom/uart.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_io_reg.h"
 #include "soc/sens_reg.h"
 #include "soc/io_mux_reg.h"
 #include "driver/rtc_io.h"
-
+#include "test_utils.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 
 
 #define CALIBRATE_ONE(cali_clk) calibrate_one(cali_clk, #cali_clk)
@@ -89,3 +91,35 @@ TEST_CASE("Output 8M XTAL clock to GPIO25", "[rtc_clk][ignore]")
     SET_PERI_REG_MASK(RTC_IO_RTC_DEBUG_SEL_REG, RTC_IO_DEBUG_12M_NO_GATING);
     pull_out_clk(RTC_IO_DEBUG_SEL0_8M);
 }
+
+static void test_clock_switching(void (*switch_func)(rtc_cpu_freq_t))
+{
+    uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
+
+    const int test_duration_sec = 10;
+    ref_clock_init();
+    uint64_t t_start = ref_clock_get();
+
+    rtc_cpu_freq_t cur_freq = rtc_clk_cpu_freq_get();
+    int count = 0;
+    while (ref_clock_get() - t_start < test_duration_sec * 1000000) {
+        switch_func(RTC_CPU_FREQ_XTAL);
+        switch_func(cur_freq);
+        ++count;
+    }
+    uint64_t t_end = ref_clock_get();
+    printf("Switch count: %d. Average time to switch PLL -> XTAL -> PLL: %d us\n", count, (int) ((t_end - t_start) / count));
+    ref_clock_deinit();
+}
+
+TEST_CASE("Test switching between PLL and XTAL", "[rtc_clk]")
+{
+    test_clock_switching(rtc_clk_cpu_freq_set);
+}
+
+TEST_CASE("Test fast switching between PLL and XTAL", "[rtc_clk]")
+{
+    test_clock_switching(rtc_clk_cpu_freq_set_fast);
+}
+
+

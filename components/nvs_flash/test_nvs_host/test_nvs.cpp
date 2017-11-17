@@ -231,6 +231,34 @@ TEST_CASE("different key names are distinguished even if the pointer is the same
     }
 }
 
+TEST_CASE("Page validates key size", "[nvs]")
+{
+    SpiFlashEmulator emu(4);
+    Page page;
+    TEST_ESP_OK(page.load(0));
+    // 16-character key fails
+    TEST_ESP_ERR(page.writeItem(1, "0123456789123456", 1), ESP_ERR_NVS_KEY_TOO_LONG);
+    // 15-character key is okay
+    TEST_ESP_OK(page.writeItem(1, "012345678912345", 1));
+}
+
+TEST_CASE("Page validates blob size", "[nvs]")
+{
+    SpiFlashEmulator emu(4);
+    Page page;
+    TEST_ESP_OK(page.load(0));
+
+    char buf[2048] = { 0 };
+    // There are two potential errors here:
+    // - not enough space in the page (because one value has been written already)
+    // - value is too long
+    // Check that the second one is actually returned.
+    TEST_ESP_ERR(page.writeItem(1, ItemType::BLOB, "2", buf, Page::ENTRY_COUNT * Page::ENTRY_SIZE), ESP_ERR_NVS_VALUE_TOO_LONG);
+    // Should fail as well
+    TEST_ESP_ERR(page.writeItem(1, ItemType::BLOB, "2", buf, Page::BLOB_MAX_SIZE + 1), ESP_ERR_NVS_VALUE_TOO_LONG);
+    TEST_ESP_OK(page.writeItem(1, ItemType::BLOB, "2", buf, Page::BLOB_MAX_SIZE));
+}
+
 TEST_CASE("can init PageManager in empty flash", "[nvs]")
 {
     SpiFlashEmulator emu(4);
@@ -327,17 +355,19 @@ TEST_CASE("storage can find items on second page if first is not fully written a
     Storage storage;
     CHECK(storage.init(0, 3) == ESP_OK);
     int bar = 0;
-    uint8_t bigdata[100 * 32] = {0};
+    uint8_t bigdata[Page::BLOB_MAX_SIZE] = {0};
     // write one big chunk of data
-    ESP_ERROR_CHECK(storage.writeItem(0, ItemType::BLOB, "first", bigdata, sizeof(bigdata)));
+    ESP_ERROR_CHECK(storage.writeItem(0, ItemType::BLOB, "1", bigdata, sizeof(bigdata)));
+    // write another big chunk of data
+    ESP_ERROR_CHECK(storage.writeItem(0, ItemType::BLOB, "2", bigdata, sizeof(bigdata)));
     
-    // write second one; it will not fit into the first page
-    ESP_ERROR_CHECK(storage.writeItem(0, ItemType::BLOB, "second", bigdata, sizeof(bigdata)));
+    // write third one; it will not fit into the first page
+    ESP_ERROR_CHECK(storage.writeItem(0, ItemType::BLOB, "3", bigdata, sizeof(bigdata)));
     
     size_t size;
-    ESP_ERROR_CHECK(storage.getItemDataSize(0, ItemType::BLOB, "first", size));
+    ESP_ERROR_CHECK(storage.getItemDataSize(0, ItemType::BLOB, "1", size));
     CHECK(size == sizeof(bigdata));
-    ESP_ERROR_CHECK(storage.getItemDataSize(0, ItemType::BLOB, "second", size));
+    ESP_ERROR_CHECK(storage.getItemDataSize(0, ItemType::BLOB, "3", size));
     CHECK(size == sizeof(bigdata));
 }
 
@@ -464,7 +494,7 @@ TEST_CASE("nvs api tests", "[nvs]")
     for (uint16_t i = NVS_FLASH_SECTOR; i <NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN; ++i) {
         spi_flash_erase_sector(i);
     }
-    TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
 
     TEST_ESP_ERR(nvs_open("namespace1", NVS_READONLY, &handle_1), ESP_ERR_NVS_NOT_FOUND);
 
@@ -492,11 +522,22 @@ TEST_CASE("nvs api tests", "[nvs]")
     char buf[strlen(str) + 1];
     size_t buf_len = sizeof(buf);
 
+    size_t buf_len_needed;
+    TEST_ESP_OK(nvs_get_str(handle_2, "key", NULL, &buf_len_needed));
+    CHECK(buf_len_needed == buf_len);
+    
+    size_t buf_len_short = buf_len - 1;
+    TEST_ESP_ERR(ESP_ERR_NVS_INVALID_LENGTH, nvs_get_str(handle_2, "key", buf, &buf_len_short));
+    CHECK(buf_len_short == buf_len);
+    
+    size_t buf_len_long = buf_len + 1;
+    TEST_ESP_OK(nvs_get_str(handle_2, "key", buf, &buf_len_long));
+    CHECK(buf_len_long == buf_len);
+
     TEST_ESP_OK(nvs_get_str(handle_2, "key", buf, &buf_len));
 
     CHECK(0 == strcmp(buf, str));
 }
-
 
 TEST_CASE("wifi test", "[nvs]")
 {
@@ -507,7 +548,7 @@ TEST_CASE("wifi test", "[nvs]")
     const uint32_t NVS_FLASH_SECTOR = 5;
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
     emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
-    TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
     
     nvs_handle misc_handle;
     TEST_ESP_OK(nvs_open("nvs.net80211", NVS_READWRITE, &misc_handle));
@@ -649,7 +690,7 @@ TEST_CASE("can init storage from flash with random contents", "[nvs]")
     const uint32_t NVS_FLASH_SECTOR = 5;
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
     emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
-    TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
     
     TEST_ESP_OK(nvs_open("nvs.net80211", NVS_READWRITE, &handle));
     
@@ -670,7 +711,7 @@ TEST_CASE("nvs api tests, starting with random data in flash", "[nvs][.][long]")
         const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
         emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
         
-        TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+        TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
         
         nvs_handle handle_1;
         TEST_ESP_ERR(nvs_open("namespace1", NVS_READONLY, &handle_1), ESP_ERR_NVS_NOT_FOUND);
@@ -707,7 +748,7 @@ TEST_CASE("nvs api tests, starting with random data in flash", "[nvs][.][long]")
     }
 }
 
-extern "C" void nvs_dump();
+extern "C" void nvs_dump(const char *partName);
 
 class RandomTest {
     
@@ -906,7 +947,7 @@ TEST_CASE("monkey test", "[nvs][monkey]")
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
     emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
     
-    TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
     
     nvs_handle handle;
     TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle));
@@ -952,7 +993,7 @@ TEST_CASE("test recovery from sudden poweroff", "[.][long][nvs][recovery][monkey
         nvs_handle handle;
         size_t count = iter_count;
 
-        if (nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN) == ESP_OK) {
+        if (nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN) == ESP_OK) {
             if (nvs_open("namespace1", NVS_READWRITE, &handle) == ESP_OK) {
                 if(test.doRandomThings(handle, gen, count) != ESP_ERR_FLASH_OP_FAIL) {
                     nvs_close(handle);
@@ -962,11 +1003,11 @@ TEST_CASE("test recovery from sudden poweroff", "[.][long][nvs][recovery][monkey
             }
         }
         
-        TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+        TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
         TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle));
         auto res = test.doRandomThings(handle, gen, count);
         if (res != ESP_OK) {
-            nvs_dump();
+            nvs_dump(NVS_DEFAULT_PART_NAME);
             CHECK(0);
         }
         nvs_close(handle);
@@ -980,7 +1021,7 @@ TEST_CASE("test for memory leaks in open/set", "[leaks]")
     const uint32_t NVS_FLASH_SECTOR = 6;
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
     emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
-    TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
     
     for (int i = 0; i < 100000; ++i) {
         nvs_handle light_handle = 0;
@@ -1058,6 +1099,44 @@ TEST_CASE("recovery after failure to write data", "[nvs]")
     }
 }
 
+TEST_CASE("crc errors in item header are handled", "[nvs]")
+{
+    SpiFlashEmulator emu(3);
+    Storage storage;
+    // prepare some data
+    TEST_ESP_OK(storage.init(0, 3));
+    TEST_ESP_OK(storage.writeItem(0, "ns1", static_cast<uint8_t>(1)));
+    TEST_ESP_OK(storage.writeItem(1, "value1", static_cast<uint32_t>(1)));
+    TEST_ESP_OK(storage.writeItem(1, "value2", static_cast<uint32_t>(2)));
+    
+    // corrupt item header
+    uint32_t val = 0;
+    emu.write(32 * 3, &val, 4);
+    
+    // check that storage can recover
+    TEST_ESP_OK(storage.init(0, 3));
+    TEST_ESP_OK(storage.readItem(1, "value2", val));
+    CHECK(val == 2);
+    // check that the corrupted item is no longer present
+    TEST_ESP_ERR(ESP_ERR_NVS_NOT_FOUND, storage.readItem(1, "value1", val));
+    
+    // add more items to make the page full
+    for (size_t i = 0; i < Page::ENTRY_COUNT; ++i) {
+        char item_name[Item::MAX_KEY_LENGTH + 1];
+        snprintf(item_name, sizeof(item_name), "item_%ld", i);
+        TEST_ESP_OK(storage.writeItem(1, item_name, static_cast<uint32_t>(i)));
+    }
+
+    // corrupt another item on the full page
+    val = 0;
+    emu.write(32 * 4, &val, 4);
+    
+    // check that storage can recover
+    TEST_ESP_OK(storage.init(0, 3));
+    // check that the corrupted item is no longer present
+    TEST_ESP_ERR(ESP_ERR_NVS_NOT_FOUND, storage.readItem(1, "value2", val));
+}
+
 TEST_CASE("crc error in variable length item is handled", "[nvs]")
 {
     SpiFlashEmulator emu(3);
@@ -1097,7 +1176,7 @@ TEST_CASE("crc error in variable length item is handled", "[nvs]")
 TEST_CASE("read/write failure (TW8406)", "[nvs]")
 {
     SpiFlashEmulator emu(3);
-    nvs_flash_init_custom(0, 3);
+    nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, 0, 3);
     for (int attempts = 0; attempts < 3; ++attempts) {
         int i = 0;
         nvs_handle light_handle = 0;
@@ -1128,20 +1207,43 @@ TEST_CASE("read/write failure (TW8406)", "[nvs]")
 
 TEST_CASE("nvs_flash_init checks for an empty page", "[nvs]")
 {
-    const size_t blob_size = 2048; // big enough so that only one can fit into a page
+    const size_t blob_size = Page::BLOB_MAX_SIZE;
     uint8_t blob[blob_size] = {0};
     SpiFlashEmulator emu(5);
-    TEST_ESP_OK( nvs_flash_init_custom(0, 5) );
+    TEST_ESP_OK( nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, 0, 5) );
     nvs_handle handle;
     TEST_ESP_OK( nvs_open("test", NVS_READWRITE, &handle) );
-    TEST_ESP_OK( nvs_set_blob(handle, "1", blob, blob_size) );
-    TEST_ESP_OK( nvs_set_blob(handle, "2", blob, blob_size) );
-    TEST_ESP_OK( nvs_set_blob(handle, "3", blob, blob_size) );
+    // Fill first page
+    TEST_ESP_OK( nvs_set_blob(handle, "1a", blob, blob_size) );
+    TEST_ESP_OK( nvs_set_blob(handle, "1b", blob, blob_size) );
+    // Fill second page
+    TEST_ESP_OK( nvs_set_blob(handle, "2a", blob, blob_size) );
+    TEST_ESP_OK( nvs_set_blob(handle, "2b", blob, blob_size) );
+    // Fill third page
+    TEST_ESP_OK( nvs_set_blob(handle, "3a", blob, blob_size) );
+    TEST_ESP_OK( nvs_set_blob(handle, "3b", blob, blob_size) );
     TEST_ESP_OK( nvs_commit(handle) );
     nvs_close(handle);
     // first two pages are now full, third one is writable, last two are empty
     // init should fail
-    TEST_ESP_ERR( nvs_flash_init_custom(0, 3), ESP_ERR_NVS_NO_FREE_PAGES );
+    TEST_ESP_ERR( nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, 0, 3), ESP_ERR_NVS_NO_FREE_PAGES );
+}
+
+TEST_CASE("multiple partitions access check", "[nvs]")
+{
+    SpiFlashEmulator emu(10);
+    TEST_ESP_OK( nvs_flash_init_custom("nvs1", 0, 5) );
+    TEST_ESP_OK( nvs_flash_init_custom("nvs2", 5, 5) );
+    nvs_handle handle1, handle2;
+    TEST_ESP_OK( nvs_open_from_partition("nvs1", "test", NVS_READWRITE, &handle1) );
+    TEST_ESP_OK( nvs_open_from_partition("nvs2", "test", NVS_READWRITE, &handle2) );
+    TEST_ESP_OK( nvs_set_i32(handle1, "foo", 0xdeadbeef));
+    TEST_ESP_OK( nvs_set_i32(handle2, "foo", 0xcafebabe));
+    int32_t v1, v2;
+    TEST_ESP_OK( nvs_get_i32(handle1, "foo", &v1));
+    TEST_ESP_OK( nvs_get_i32(handle2, "foo", &v2));
+    CHECK(v1 == 0xdeadbeef);
+    CHECK(v2 == 0xcafebabe);
 }
 
 TEST_CASE("dump all performance data", "[nvs]")

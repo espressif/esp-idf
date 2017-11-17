@@ -23,6 +23,7 @@
  ******************************************************************************/
 
 #include "bt_target.h"
+#include "allocator.h"
 
 #if BLE_INCLUDED == TRUE
 
@@ -48,7 +49,7 @@ BT_HDR *attp_build_mtu_cmd(UINT8 op_code, UINT16 rx_mtu)
     BT_HDR      *p_buf = NULL;
     UINT8       *p;
 
-    if ((p_buf = (BT_HDR *)GKI_getbuf(sizeof(BT_HDR) + GATT_HDR_SIZE + L2CAP_MIN_OFFSET)) != NULL) {
+    if ((p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR) + GATT_HDR_SIZE + L2CAP_MIN_OFFSET)) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
         UINT8_TO_STREAM (p, op_code);
@@ -73,7 +74,7 @@ BT_HDR *attp_build_exec_write_cmd (UINT8 op_code, UINT8 flag)
     BT_HDR      *p_buf = NULL;
     UINT8       *p;
 
-    if ((p_buf = (BT_HDR *)GKI_getpoolbuf(GATT_BUF_POOL_ID)) != NULL) {
+    if ((p_buf = (BT_HDR *)osi_malloc(GATT_DATA_BUF_SIZE)) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
         p_buf->offset = L2CAP_MIN_OFFSET;
@@ -106,7 +107,7 @@ BT_HDR *attp_build_err_cmd(UINT8 cmd_code, UINT16 err_handle, UINT8 reason)
     BT_HDR      *p_buf = NULL;
     UINT8       *p;
 
-    if ((p_buf = (BT_HDR *)GKI_getbuf(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + 5)) != NULL) {
+    if ((p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + 5)) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
         UINT8_TO_STREAM (p, GATT_RSP_ERROR);
@@ -134,7 +135,7 @@ BT_HDR *attp_build_browse_cmd(UINT8 op_code, UINT16 s_hdl, UINT16 e_hdl, tBT_UUI
     BT_HDR      *p_buf = NULL;
     UINT8       *p;
 
-    if ((p_buf = (BT_HDR *)GKI_getbuf(sizeof(BT_HDR) + 8 + L2CAP_MIN_OFFSET)) != NULL) {
+    if ((p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR) + 8 + L2CAP_MIN_OFFSET)) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
         /* Describe the built message location and size */
         p_buf->offset = L2CAP_MIN_OFFSET;
@@ -163,7 +164,7 @@ BT_HDR *attp_build_read_by_type_value_cmd (UINT16 payload_size, tGATT_FIND_TYPE_
     UINT8       *p;
     UINT16      len = p_value_type->value_len;
 
-    if ((p_buf = (BT_HDR *)GKI_getbuf((UINT16)(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET))) != NULL) {
+    if ((p_buf = (BT_HDR *)osi_malloc((UINT16)(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET))) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
         p_buf->offset = L2CAP_MIN_OFFSET;
@@ -199,7 +200,7 @@ BT_HDR *attp_build_read_multi_cmd(UINT16 payload_size, UINT16 num_handle, UINT16
     BT_HDR      *p_buf = NULL;
     UINT8       *p, i = 0;
 
-    if ((p_buf = (BT_HDR *)GKI_getbuf((UINT16)(sizeof(BT_HDR) + num_handle * 2 + 1 + L2CAP_MIN_OFFSET))) != NULL) {
+    if ((p_buf = (BT_HDR *)osi_malloc((UINT16)(sizeof(BT_HDR) + num_handle * 2 + 1 + L2CAP_MIN_OFFSET))) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
         p_buf->offset = L2CAP_MIN_OFFSET;
@@ -229,7 +230,7 @@ BT_HDR *attp_build_handle_cmd(UINT8 op_code, UINT16 handle, UINT16 offset)
     BT_HDR      *p_buf = NULL;
     UINT8       *p;
 
-    if ((p_buf = (BT_HDR *)GKI_getbuf(sizeof(BT_HDR) + 5 + L2CAP_MIN_OFFSET)) != NULL) {
+    if ((p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR) + 5 + L2CAP_MIN_OFFSET)) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
         p_buf->offset = L2CAP_MIN_OFFSET;
@@ -263,7 +264,7 @@ BT_HDR *attp_build_opcode_cmd(UINT8 op_code)
     BT_HDR      *p_buf = NULL;
     UINT8       *p;
 
-    if ((p_buf = (BT_HDR *)GKI_getbuf(sizeof(BT_HDR) + 1 + L2CAP_MIN_OFFSET)) != NULL) {
+    if ((p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR) + 1 + L2CAP_MIN_OFFSET)) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
         p_buf->offset = L2CAP_MIN_OFFSET;
 
@@ -288,7 +289,7 @@ BT_HDR *attp_build_value_cmd (UINT16 payload_size, UINT8 op_code, UINT16 handle,
     BT_HDR      *p_buf = NULL;
     UINT8       *p, *pp, pair_len, *p_pair_len;
 
-    if ((p_buf = (BT_HDR *)GKI_getbuf((UINT16)(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET))) != NULL) {
+    if ((p_buf = (BT_HDR *)osi_malloc((UINT16)(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET))) != NULL) {
         p = pp = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
         UINT8_TO_STREAM (p, op_code);

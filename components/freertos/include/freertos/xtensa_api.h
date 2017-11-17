@@ -117,6 +117,14 @@ static inline void xt_set_intclear(unsigned int arg)
     xthal_set_intclear(arg);
 }
 
+/*
+-------------------------------------------------------------------------------
+  Call this function to get handler's argument for the specified interrupt.
+ 
+    n        - Interrupt number.
+-------------------------------------------------------------------------------
+*/
+extern void * xt_get_interrupt_handler_arg(int n);
 
 #endif /* __XTENSA_API_H__ */
 

@@ -655,7 +655,7 @@ tBTM_STATUS BTM_VendorSpecificCommand(UINT16 opcode, UINT8 param_len,
                      opcode, param_len);
 
     /* Allocate a buffer to hold HCI command plus the callback function */
-    if ((p_buf = GKI_getbuf((UINT16)(sizeof(BT_HDR) + sizeof (tBTM_CMPL_CB *) +
+    if ((p_buf = osi_malloc((UINT16)(sizeof(BT_HDR) + sizeof (tBTM_CMPL_CB *) +
                                      param_len + HCIC_PREAMBLE_SIZE))) != NULL) {
         /* Send the HCI command (opcode will be OR'd with HCI_GRP_VENDOR_SPECIFIC) */
         btsnd_hcic_vendor_spec_cmd (p_buf, opcode, param_len, p_param_buf, (void *)p_cb);

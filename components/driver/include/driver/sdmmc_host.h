@@ -42,6 +42,7 @@ extern "C" {
     .set_card_clk = &sdmmc_host_set_card_clk, \
     .do_transaction = &sdmmc_host_do_transaction, \
     .deinit = &sdmmc_host_deinit, \
+    .command_timeout_ms = 0, \
 }
 
 /**
@@ -142,6 +143,8 @@ esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz);
  *       can call sdmmc_host_do_transaction as long as other sdmmc_host_*
  *       functions are not called.
  *
+ * @attention Data buffer passed in cmdinfo->data must be in DMA capable memory
+ *
  * @param slot  slot number (SDMMC_HOST_SLOT_0 or SDMMC_HOST_SLOT_1)
  * @param cmdinfo   pointer to structure describing command and data to transfer
  * @return
@@ -149,6 +152,8 @@ esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz);
  *      - ESP_ERR_TIMEOUT if response or data transfer has timed out
  *      - ESP_ERR_INVALID_CRC if response or data transfer CRC check has failed
  *      - ESP_ERR_INVALID_RESPONSE if the card has sent an invalid response
+ *      - ESP_ERR_INVALID_SIZE if the size of data transfer is not valid in SD protocol
+ *      - ESP_ERR_INVALID_ARG if the data buffer is not in DMA capable memory
  */
 esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo);
 

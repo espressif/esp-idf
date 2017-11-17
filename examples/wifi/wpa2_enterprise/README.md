@@ -9,7 +9,8 @@ This example shows how ESP32 connects to AP with wpa2 enterprise encryption. Exa
 5. Enable wpa2 enterprise.
 6. Connect to AP.
 
-*Note:* certificate currently is generated when compiling the example and then stored in flash.
+*Note:* 1. certificate currently is generated when compiling the example and then stored in flash.
+        2. The expiration date of the certificates is 2027/06/05.
 
 ## The file wpa2_ca.pem, wpa2_ca.key, wpa2_server.pem, wpa2_server.crt and wpa2_server.key can be used to configure AP with
    wpa2 enterprise encryption. The steps how to generate new certificates and keys using openssl is as follows:

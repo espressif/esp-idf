@@ -67,7 +67,11 @@ enum {
     BTM_SUCCESS_NO_SECURITY,            /* 17 security passed, no security set  */
     BTM_FAILED_ON_SECURITY,             /* 18 security failed                   */
     BTM_REPEATED_ATTEMPTS,              /* 19 repeated attempts for LE security requests */
-    BTM_MODE4_LEVEL4_NOT_SUPPORTED      /* 20 Secure Connections Only Mode can't be supported */
+    BTM_MODE4_LEVEL4_NOT_SUPPORTED,     /* 20 Secure Connections Only Mode can't be supported */
+    BTM_PEER_LE_DATA_LEN_UNSUPPORTED,   /* 21 peer setting data length is unsupported*/
+    BTM_CONTROL_LE_DATA_LEN_UNSUPPORTED,/* 22 controller setting data length is unsupported*/
+    BTM_SET_PRIVACY_SUCCESS,            /* 23 enable/disable local privacy success */
+    BTM_SET_PRIVACY_FAIL,               /* 24 enable/disable local privacy failed*/
 };
 
 typedef uint8_t tBTM_STATUS;
@@ -129,6 +133,24 @@ enum {
 
 typedef UINT8 tBTM_DEV_STATUS;
 
+typedef struct {
+    UINT16 rx_len;
+    UINT16 tx_len;
+}tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS;
+
+typedef struct {
+    UINT16              min_conn_int;
+    UINT16              max_conn_int;
+    UINT16              conn_int;
+    UINT16              slave_latency;
+    UINT16              supervision_tout;
+}tBTM_LE_UPDATE_CONN_PRAMS;
+
+typedef enum{
+    BTM_WHITELIST_REMOVE     = 0X00,
+    BTM_WHITELIST_ADD        = 0X01,
+}tBTM_WL_OPERATION;
+
 
 typedef void (tBTM_DEV_STATUS_CB) (tBTM_DEV_STATUS status);
 
@@ -155,6 +177,15 @@ typedef void (tBTM_VSC_CMPL_CB) (tBTM_VSC_CMPL *p1);
 ** If the app returns none zero, the connection or inquiry result will be dropped.
 */
 typedef UINT8 (tBTM_FILTER_CB) (BD_ADDR bd_addr, DEV_CLASS dc);
+
+typedef void (tBTM_UPDATE_CONN_PARAM_CBACK) (UINT8 status, BD_ADDR bd_addr, tBTM_LE_UPDATE_CONN_PRAMS *update_conn_params);
+
+typedef void (tBTM_SET_PKT_DATA_LENGTH_CBACK) (UINT8 status, tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS *data_length_params);
+
+typedef void (tBTM_ADD_WHITELIST_CBACK) (UINT8 status, tBTM_WL_OPERATION wl_opration);
+
+typedef void (tBTM_SET_LOCAL_PRIVACY_CBACK) (UINT8 status);
+
 
 /*****************************************************************************
 **  DEVICE DISCOVERY - Inquiry, Remote Name, Discovery, Class of Device
@@ -210,7 +241,7 @@ typedef UINT8 (tBTM_FILTER_CB) (BD_ADDR bd_addr, DEV_CLASS dc);
 
 /* inquiry activity mask */
 #define BTM_BR_INQ_ACTIVE_MASK        (BTM_GENERAL_INQUIRY_ACTIVE|BTM_LIMITED_INQUIRY_ACTIVE|BTM_PERIODIC_INQUIRY_ACTIVE) /* BR/EDR inquiry activity mask */
-#define BTM_BLE_SCAN_ACTIVE_MASK      0xF0     /* LE scan activity mask */
+#define BTM_BLE_SCAN_ACTIVE_MASK      0x01F0     /* LE scan activity mask */
 #define BTM_BLE_INQ_ACTIVE_MASK       (BTM_LE_GENERAL_INQUIRY_ACTIVE|BTM_LE_LIMITED_INQUIRY_ACTIVE) /* LE inquiry activity mask*/
 #define BTM_INQUIRY_ACTIVE_MASK       (BTM_BR_INQ_ACTIVE_MASK | BTM_BLE_INQ_ACTIVE_MASK) /* inquiry activity mask */
 
@@ -1350,6 +1381,7 @@ enum {
 };
 typedef UINT8 tBTM_SP_EVT;
 
+/* relate to ESP_IO_CAP_xxx in esp_gap_ble_api.h */
 #define BTM_IO_CAP_OUT      0   /* DisplayOnly */
 #define BTM_IO_CAP_IO       1   /* DisplayYesNo */
 #define BTM_IO_CAP_IN       2   /* KeyboardOnly */
@@ -1391,6 +1423,7 @@ typedef UINT8 tBTM_IO_CAP;
 #define BTM_BLE_INITIATOR_KEY_SIZE 15
 #define BTM_BLE_RESPONDER_KEY_SIZE 15
 #define BTM_BLE_MAX_KEY_SIZE       16
+#define BTM_BLE_MIN_KEY_SIZE       7
 
 typedef UINT8 tBTM_AUTH_REQ;
 
@@ -1531,6 +1564,7 @@ typedef void (tBTM_BOND_CANCEL_CMPL_CALLBACK) (tBTM_STATUS result);
 
 /* LE related event and data structure
 */
+/* relate to ESP_LE_KEY_xxx in esp_gap_ble_api.h */
 #if (SMP_INCLUDED == TRUE)
 #define BTM_LE_IO_REQ_EVT       SMP_IO_CAP_REQ_EVT     /* received IO_CAPABILITY_REQUEST event */
 #define BTM_LE_SEC_REQUEST_EVT  SMP_SEC_REQUEST_EVT    /* security request event */
@@ -1562,6 +1596,8 @@ typedef UINT8 tBTM_LE_EVT;
 #define BTM_LE_KEY_LCSRK     (SMP_SEC_KEY_TYPE_CSRK << 4) /* local CSRK has been deliver to peer */
 #endif  ///BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
 typedef UINT8 tBTM_LE_KEY_TYPE;
+
+/* relate to ESP_LE_AUTH_xxx in esp_gap_ble_api.h */
 #if (SMP_INCLUDED == TRUE)
 #define BTM_LE_AUTH_REQ_NO_BOND SMP_AUTH_NO_BOND   /* 0 */
 #define BTM_LE_AUTH_REQ_BOND    SMP_AUTH_GEN_BOND  /* 1 << 0 */
@@ -2803,6 +2839,11 @@ tBTM_STATUS BTM_ReadRSSI (BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb);
 //extern
 tBTM_STATUS BTM_ReadTxPower (BD_ADDR remote_bda,
                              tBT_TRANSPORT transport, tBTM_CMPL_CB *p_cb);
+
+tBTM_STATUS BTM_BleReadAdvTxPower(tBTM_CMPL_CB *p_cb);
+
+void BTM_BleGetWhiteListSize(uint16_t *length);
+
 
 /*******************************************************************************
 **

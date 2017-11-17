@@ -29,6 +29,8 @@ print "Calling Doxygen to generate latest XML files"
 call('doxygen')
 # Generate 'api_name.inc' files using the XML files by Doxygen
 os.system("python gen-dxd.py")
+# Generate 'kconfig.inc' file from components' Kconfig files
+os.system("python gen-kconfig-doc.py > _build/inc/kconfig.inc")
 
 # http://stackoverflow.com/questions/12772927/specifying-an-online-image-in-sphinx-restructuredtext-format
 # 
@@ -42,7 +44,23 @@ suppress_warnings = ['image.nonlocal_uri']
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['breathe', 'link-roles']
+extensions = ['breathe',
+              'link-roles',
+              'sphinxcontrib.blockdiag',
+              'sphinxcontrib.seqdiag',
+              'sphinxcontrib.actdiag',
+              'sphinxcontrib.nwdiag',
+              'sphinxcontrib.rackdiag',
+              'sphinxcontrib.packetdiag'
+             ]
+
+# Set up font for blockdiag, nwdiag, rackdiag and packetdiag
+blockdiag_fontpath = '_static/DejaVuSans.ttf'
+seqdiag_fontpath = '_static/DejaVuSans.ttf'
+actdiag_fontpath = '_static/DejaVuSans.ttf'
+nwdiag_fontpath = '_static/DejaVuSans.ttf'
+rackdiag_fontpath = '_static/DejaVuSans.ttf'
+packetdiag_fontpath = '_static/DejaVuSans.ttf'
 
 # Breathe extension variables
 breathe_projects = { "esp32-idf": "xml/" }

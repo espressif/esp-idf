@@ -315,7 +315,7 @@ esp_err_t esp_partition_mmap(const esp_partition_t* partition, uint32_t offset, 
     // offset within 64kB block
     size_t region_offset = phys_addr & 0xffff;
     size_t mmap_addr = phys_addr & 0xffff0000;
-    esp_err_t rc = spi_flash_mmap(mmap_addr, size, memory, out_ptr, out_handle);
+    esp_err_t rc = spi_flash_mmap(mmap_addr, size+region_offset, memory, out_ptr, out_handle);
     // adjust returned pointer to point to the correct offset
     if (rc == ESP_OK) {
         *out_ptr = (void*) (((ptrdiff_t) *out_ptr) + region_offset);

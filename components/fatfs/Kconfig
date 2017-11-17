@@ -105,4 +105,49 @@ config FATFS_MAX_LFN
    help
       Maximum long filename length. Can be reduced to save RAM.
 
+config FATFS_FS_LOCK
+   int "Number of simultaneously open files protected by lock function"
+   default 0
+   range 0 65535
+   help
+      This option sets the FATFS configuration value _FS_LOCK.
+      The option _FS_LOCK switches file lock function to control duplicated file open
+      and illegal operation to open objects.
+       
+      * 0: Disable file lock function. To avoid volume corruption, application
+           should avoid illegal open, remove and rename to the open objects.
+       
+      * >0: Enable file lock function. The value defines how many files/sub-directories
+           can be opened simultaneously under file lock control.
+           
+      Note that the file lock control is independent of re-entrancy.
+
+config FATFS_TIMEOUT_MS
+   int "Timeout for acquiring a file lock, ms"
+   default 10000
+   help
+      This option sets FATFS configuration value _FS_TIMEOUT, scaled to milliseconds.
+      Sets the number of milliseconds FATFS will wait to acquire a mutex when
+      operating on an open file. For example, if one task is performing a lenghty
+      operation, another task will wait for the first task to release the lock,
+      and time out after amount of time set by this option.
+      
+
+config FATFS_PER_FILE_CACHE
+   bool "Use separate cache for each file"
+   default y
+   help
+      This option affects FATFS configuration value _FS_TINY.
+      
+      If this option is set, _FS_TINY is 0, and each open file has its own cache,
+      size of the cache is equal to the _MAX_SS variable (512 or 4096 bytes).
+      This option uses more RAM if more than 1 file is open, but needs less reads
+      and writes to the storage for some operations.
+      
+      If this option is not set, _FS_TINY is 1, and single cache is used for
+      all open files, size is also equal to _MAX_SS variable. This reduces the
+      amount of heap used when multiple files are open, but increases the number
+      of read and write operations which FATFS needs to make.
+      
+
 endmenu

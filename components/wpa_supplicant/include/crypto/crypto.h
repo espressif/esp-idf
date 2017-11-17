@@ -101,6 +101,17 @@ int sha256_vector(size_t num_elem, const u8 *addr[], const size_t *len,
 		  u8 *mac);
 
 /**
+ * fast_sha256_vector - fast SHA256 hash for data vector
+ * @num_elem: Number of elements in the data vector
+ * @addr: Pointers to the data areas
+ * @len: Lengths of the data blocks
+ * @mac: Buffer for the hash
+ * Returns: 0 on success, -1 on failure
+ */
+int fast_sha256_vector(size_t num_elem, const uint8_t *addr[], const size_t *len,
+		       uint8_t *mac);
+
+/**
  * des_encrypt - Encrypt one block with DES
  * @clear: 8 octets (in)
  * @key: 7 octets (in) (no parity bits included)
@@ -159,7 +170,6 @@ enum crypto_hash_alg {
         CRYPTO_HASH_ALG_SHA256, CRYPTO_HASH_ALG_HMAC_SHA256
 };
 
-
 struct crypto_hash;
 
 /**
@@ -178,6 +188,21 @@ struct crypto_hash * crypto_hash_init(enum crypto_hash_alg alg, const u8 *key,
 				      size_t key_len);
 
 /**
+ * fast_crypto_hash_init - Initialize hash/HMAC function
+ * @alg: Hash algorithm
+ * @key: Key for keyed hash (e.g., HMAC) or %NULL if not needed
+ * @key_len: Length of the key in bytes
+ * Returns: Pointer to hash context to use with other hash functions or %NULL
+ * on failure
+ *
+ * This function is only used with internal TLSv1 implementation
+ * (CONFIG_TLS=internal). If that is not used, the crypto wrapper does not need
+ * to implement this.
+ */
+struct crypto_hash * fast_crypto_hash_init(enum crypto_hash_alg alg, const uint8_t *key,
+				                size_t key_len);
+
+/**
  * crypto_hash_update - Add data to hash calculation
  * @ctx: Context pointer from crypto_hash_init()
  * @data: Data buffer to add
@@ -188,6 +213,18 @@ struct crypto_hash * crypto_hash_init(enum crypto_hash_alg alg, const u8 *key,
  * to implement this.
  */
 void crypto_hash_update(struct crypto_hash *ctx, const u8 *data, size_t len);
+
+/**
+ * fast_crypto_hash_update - Add data to hash calculation
+ * @ctx: Context pointer from crypto_hash_init()
+ * @data: Data buffer to add
+ * @len: Length of the buffer
+ *
+ * This function is only used with internal TLSv1 implementation
+ * (CONFIG_TLS=internal). If that is not used, the crypto wrapper does not need
+ * to implement this.
+ */
+void fast_crypto_hash_update(struct crypto_hash *ctx, const uint8_t *data, size_t len);
 
 /**
  * crypto_hash_finish - Complete hash calculation
@@ -207,6 +244,25 @@ void crypto_hash_update(struct crypto_hash *ctx, const u8 *data, size_t len);
  * to implement this.
  */
 int crypto_hash_finish(struct crypto_hash *ctx, u8 *hash, size_t *len);
+
+/**
+ * fast_crypto_hash_finish - Complete hash calculation
+ * @ctx: Context pointer from crypto_hash_init()
+ * @hash: Buffer for hash value or %NULL if caller is just freeing the hash
+ * context
+ * @len: Pointer to length of the buffer or %NULL if caller is just freeing the
+ * hash context; on return, this is set to the actual length of the hash value
+ * Returns: 0 on success, -1 if buffer is too small (len set to needed length),
+ * or -2 on other failures (including failed crypto_hash_update() operations)
+ *
+ * This function calculates the hash value and frees the context buffer that
+ * was used for hash calculation.
+ *
+ * This function is only used with internal TLSv1 implementation
+ * (CONFIG_TLS=internal). If that is not used, the crypto wrapper does not need
+ * to implement this.
+ */
+int fast_crypto_hash_finish(struct crypto_hash *ctx, uint8_t *hash, size_t *len);
 
 
 enum crypto_cipher_alg {
@@ -234,6 +290,22 @@ struct crypto_cipher * crypto_cipher_init(enum crypto_cipher_alg alg,
 					  size_t key_len);
 
 /**
+ * fast_crypto_cipher_init - Initialize block/stream cipher function
+ * @alg: Cipher algorithm
+ * @iv: Initialization vector for block ciphers or %NULL for stream ciphers
+ * @key: Cipher key
+ * @key_len: Length of key in bytes
+ * Returns: Pointer to cipher context to use with other cipher functions or
+ * %NULL on failure
+ *
+ * This function is only used with internal TLSv1 implementation
+ * (CONFIG_TLS=internal). If that is not used, the crypto wrapper does not need
+ * to implement this.
+ */
+struct crypto_cipher * fast_crypto_cipher_init(enum crypto_cipher_alg alg,
+					            const uint8_t *iv, const uint8_t *key,
+					            size_t key_len);
+/**
  * crypto_cipher_encrypt - Cipher encrypt
  * @ctx: Context pointer from crypto_cipher_init()
  * @plain: Plaintext to cipher
@@ -247,6 +319,21 @@ struct crypto_cipher * crypto_cipher_init(enum crypto_cipher_alg alg,
  */
 int __must_check crypto_cipher_encrypt(struct crypto_cipher *ctx,
 				       const u8 *plain, u8 *crypt, size_t len);
+
+/**
+ * fast_crypto_cipher_encrypt - Cipher encrypt
+ * @ctx: Context pointer from crypto_cipher_init()
+ * @plain: Plaintext to cipher
+ * @crypt: Resulting ciphertext
+ * @len: Length of the plaintext
+ * Returns: 0 on success, -1 on failure
+ *
+ * This function is only used with internal TLSv1 implementation
+ * (CONFIG_TLS=internal). If that is not used, the crypto wrapper does not need
+ * to implement this.
+ */
+int __must_check fast_crypto_cipher_encrypt(struct crypto_cipher *ctx,
+				            const uint8_t *plain, uint8_t *crypt, size_t len);
 
 /**
  * crypto_cipher_decrypt - Cipher decrypt
@@ -264,6 +351,21 @@ int __must_check crypto_cipher_decrypt(struct crypto_cipher *ctx,
 				       const u8 *crypt, u8 *plain, size_t len);
 
 /**
+ * fast_crypto_cipher_decrypt - Cipher decrypt
+ * @ctx: Context pointer from crypto_cipher_init()
+ * @crypt: Ciphertext to decrypt
+ * @plain: Resulting plaintext
+ * @len: Length of the cipher text
+ * Returns: 0 on success, -1 on failure
+ *
+ * This function is only used with internal TLSv1 implementation
+ * (CONFIG_TLS=internal). If that is not used, the crypto wrapper does not need
+ * to implement this.
+ */
+int __must_check fast_crypto_cipher_decrypt(struct crypto_cipher *ctx,
+				            const uint8_t *crypt, uint8_t *plain, size_t len);
+
+/**
  * crypto_cipher_decrypt - Free cipher context
  * @ctx: Context pointer from crypto_cipher_init()
  *
@@ -273,6 +375,15 @@ int __must_check crypto_cipher_decrypt(struct crypto_cipher *ctx,
  */
 void crypto_cipher_deinit(struct crypto_cipher *ctx);
 
+/**
+ * fast_crypto_cipher_decrypt - Free cipher context
+ * @ctx: Context pointer from crypto_cipher_init()
+ *
+ * This function is only used with internal TLSv1 implementation
+ * (CONFIG_TLS=internal). If that is not used, the crypto wrapper does not need
+ * to implement this.
+ */
+void fast_crypto_cipher_deinit(struct crypto_cipher *ctx);
 
 struct crypto_public_key;
 struct crypto_private_key;
@@ -451,6 +562,31 @@ int __must_check crypto_mod_exp(const u8 *base, size_t base_len,
 				const u8 *power, size_t power_len,
 				const u8 *modulus, size_t modulus_len,
 				u8 *result, size_t *result_len);
+
+/**
+ * fast_crypto_mod_exp - Modular exponentiation of large integers
+ * @base: Base integer (big endian byte array)
+ * @base_len: Length of base integer in bytes
+ * @power: Power integer (big endian byte array)
+ * @power_len: Length of power integer in bytes
+ * @modulus: Modulus integer (big endian byte array)
+ * @modulus_len: Length of modulus integer in bytes
+ * @result: Buffer for the result
+ * @result_len: Result length (max buffer size on input, real len on output)
+ * Returns: 0 on success, -1 on failure
+ *
+ * This function calculates result = base ^ power mod modulus. modules_len is
+ * used as the maximum size of modulus buffer. It is set to the used size on
+ * success.
+ *
+ * This function is only used with internal TLSv1 implementation
+ * (CONFIG_TLS=internal). If that is not used, the crypto wrapper does not need
+ * to implement this.
+ */
+int __must_check fast_crypto_mod_exp(const uint8_t *base, size_t base_len,
+				     const uint8_t *power, size_t power_len,
+				     const uint8_t *modulus, size_t modulus_len,
+				     uint8_t *result, size_t *result_len);
 
 /**
  * rc4_skip - XOR RC4 stream to given data with skip-stream-start

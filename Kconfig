@@ -19,33 +19,94 @@ config PYTHON
     help
         The executable name/path that is used to run python. On some systems Python 2.x
         may need to be invoked as python2.
-endmenu
+
+config MAKE_WARN_UNDEFINED_VARIABLES
+    bool "'make' warns on undefined variables"
+    default "y"
+    help
+        Adds --warn-undefined-variables to MAKEFLAGS. This causes make to
+        print a warning any time an undefined variable is referenced.
+
+        This option helps find places where a variable reference is misspelled
+        or otherwise missing, but it can be unwanted if you have Makefiles which
+        depend on undefined variables expanding to an empty string.
+
+endmenu  # SDK tool configuration
 
 source "$COMPONENT_KCONFIGS_PROJBUILD"
 
-choice OPTIMIZATION_LEVEL
-    prompt "Optimization level"
+menu "Compiler options"
+
+choice OPTIMIZATION_COMPILER
+    prompt "Optimization Level"
     default OPTIMIZATION_LEVEL_DEBUG
     help
-        This option sets optimization level.
-        
-        - for "Release" setting, -Os flag is added to CFLAGS,
-         and -DNDEBUG flag is added to CPPFLAGS.
-         
+        This option sets compiler optimization level (gcc -O argument).
+
+        - for "Release" setting, -Os flag is added to CFLAGS.
         - for "Debug" setting, -Og flag is added to CFLAGS.
-        
-        To override any of these settings, set CFLAGS and/or CPPFLAGS
-        in project makefile, before including $(IDF_PATH)/make/project.mk.
-        
+
+        "Release" with -Os produces smaller & faster compiled code but it
+        may be harder to correlated code addresses to source files when debugging.
+
+        To add custom optimization settings, set CFLAGS and/or CPPFLAGS
+        in project makefile, before including $(IDF_PATH)/make/project.mk. Note that
+        custom optimization levels may be unsupported.
+
 config OPTIMIZATION_LEVEL_DEBUG
-    bool "Debug"
+    bool "Debug (-Og)"
 config OPTIMIZATION_LEVEL_RELEASE
-    bool "Release"
+    bool "Release (-Os)"
 endchoice
+
+choice OPTIMIZATION_ASSERTION_LEVEL
+    prompt "Assertion level"
+    default OPTIMIZATION_ASSERTIONS_ENABLED
+    help
+        Assertions can be:
+        - Enabled. Failure will print verbose assertion details. This is the default.
+
+        - Set to "silent" to save code size (failed assertions will abort() but user
+          needs to use the aborting address to find the line number with the failed assertion.)
+
+        - Disabled entirely (not recommended for most configurations.) -DNDEBUG is added
+          to CPPFLAGS in this case.
+
+config OPTIMIZATION_ASSERTIONS_ENABLED
+    prompt "Enabled"
+    bool
+    help
+        Enable assertions. Assertion content and line number will be printed on failure.
+
+config OPTIMIZATION_ASSERTIONS_SILENT
+    prompt "Silent (saves code size)"
+    bool
+    help
+        Enable silent assertions. Failed assertions will abort(), user needs to
+        use the aborting address to find the line number with the failed assertion.
+
+config OPTIMIZATION_ASSERTIONS_DISABLED
+    prompt "Disabled (sets -DNDEBUG)"
+    bool
+    help
+        If assertions are disabled, -DNDEBUG is added to CPPFLAGS.
+
+endchoice # assertions
+
+config CXX_EXCEPTIONS
+   bool "Enable C++ exceptions"
+   default n
+   help
+       Enabling this option compiles all IDF C++ files with exception support enabled.
+
+       Disabling this option disables C++ exception support in all compiled files, and any libstdc++ code which throws
+       an exception will abort instead.
+
+       Enabling this option currently adds an additional 20KB of heap overhead, and 4KB of additional heap is allocated
+       the first time an exception is thrown in user code.
+
+endmenu # Compiler Options
 
 menu "Component config"
 source "$COMPONENT_KCONFIGS"
 endmenu
-
-
-

@@ -77,6 +77,9 @@ extern "C" {
 
 /**@}*/
 
+// This is used to provide SystemView with positive IRQ IDs, otherwise sheduler events are not shown properly
+#define ETS_INTERNAL_INTR_SOURCE_OFF		(-ETS_INTERNAL_PROFILING_INTR_SOURCE)
+
 typedef void (*intr_handler_t)(void *arg); 
 
 
@@ -101,7 +104,7 @@ typedef intr_handle_data_t* intr_handle_t ;
 esp_err_t esp_intr_mark_shared(int intno, int cpu, bool is_in_iram);
 
 /**
- * @brief Reserve an interrupt to be used outside of this framewoek
+ * @brief Reserve an interrupt to be used outside of this framework
  * 
  * This will mark a certain interrupt on the specified CPU as
  * reserved, not to be allocated for any reason.
@@ -194,6 +197,11 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
  * Use an interrupt handle to disable the interrupt and release the resources
  * associated with it.
  *
+ * @note 
+ * When the handler shares its source with other handlers, the interrupt status 
+ * bits it's responsible for should be managed properly before freeing it. see 
+ * ``esp_intr_disable`` for more details.
+ *
  * @param handle The handle, as obtained by esp_intr_alloc or esp_intr_alloc_intrstatus
  *
  * @return ESP_ERR_INVALID_ARG if handle is invalid, or esp_intr_free runs on another core than
@@ -221,12 +229,16 @@ int esp_intr_get_cpu(intr_handle_t handle);
  */
 int esp_intr_get_intno(intr_handle_t handle);
 
-
 /**
  * @brief Disable the interrupt associated with the handle
  * 
- * @note For local interrupts (ESP_INTERNAL_* sources), this function has to be called on the
- *       CPU the interrupt is allocated on. Other interrupts have no such restriction.
+ * @note 
+ * 1. For local interrupts (ESP_INTERNAL_* sources), this function has to be called on the
+ * CPU the interrupt is allocated on. Other interrupts have no such restriction.
+ * 2. When several handlers sharing a same interrupt source, interrupt status bits, which are 
+ * handled in the handler to be disabled, should be masked before the disabling, or handled
+ * in other enabled interrupts properly. Miss of interrupt status handling will cause infinite 
+ * interrupt calls and finally system crash.
  *
  * @param handle The handle, as obtained by esp_intr_alloc or esp_intr_alloc_intrstatus
  *

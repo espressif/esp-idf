@@ -21,7 +21,6 @@
 
 #include "bt_types.h"
 #include "allocator.h"
-#include "fixed_queue.h"
 #include "osi.h"
 #include "future.h"
 ///// LEGACY DEFINITIONS /////
@@ -76,9 +75,6 @@ typedef struct hci_t {
 
     // Do the postload sequence (call after the rest of the BT stack initializes).
     void (*do_postload)(void);
-
-    // Set the queue to receive ACL data in
-    void (*set_data_queue)(fixed_queue_t *queue);
 
     // Send a command through the HCI layer
     void (*transmit_command)(

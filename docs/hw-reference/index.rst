@@ -1,13 +1,14 @@
-******************
-Hardware Reference
-******************
+************************
+ESP32 Hardware Reference
+************************
 
 .. toctree::
+   :maxdepth: 2
 
-   Technical Reference Manual (PDF) <http://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf>
-   Pin List and Functions (PDF) <http://espressif.com/sites/default/files/documentation/esp32_chip_pin_list_en.pdf>
-   Chip Pinout (PDF) <http://espressif.com/sites/default/files/documentation/esp32_pinout_v1_0.pdf>
-   ESP32 Hardware Design Guidelines (PDF) <http://espressif.com/sites/default/files/documentation/esp32_hardware_design_guidelines_en.pdf>
-   Silicon Errata (PDF) <http://espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_en.pdf>
+   Technical Reference Manual (PDF) <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf>
+   Datasheet (PDF) <https://espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>
+   Hardware Design Guidelines (PDF) <https://espressif.com/sites/default/files/documentation/esp32_hardware_design_guidelines_en.pdf>
+   Silicon Errata (PDF) <https://espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_en.pdf>
    Modules and Boards <modules-and-boards>
-
+   Previous Versions of Modules and Boards <modules-and-boards-previous>
+   Espressif Products Ordering Information (PDF) <http://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>

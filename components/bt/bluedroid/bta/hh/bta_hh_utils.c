@@ -201,7 +201,7 @@ void bta_hh_add_device_to_list(tBTA_HH_DEV_CB *p_cb, UINT8 handle,
 
         if (p_dscp_info->dl_len &&
                 (p_cb->dscp_info.descriptor.dsc_list =
-                     (UINT8 *)GKI_getbuf(p_dscp_info->dl_len)) != NULL) {
+                     (UINT8 *)osi_malloc(p_dscp_info->dl_len)) != NULL) {
             p_cb->dscp_info.descriptor.dl_len = p_dscp_info->dl_len;
             memcpy(p_cb->dscp_info.descriptor.dsc_list, p_dscp_info->dsc_list,
                    p_dscp_info->dl_len);

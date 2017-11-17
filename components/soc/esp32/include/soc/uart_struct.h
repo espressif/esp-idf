@@ -13,6 +13,11 @@
 // limitations under the License.
 #ifndef _SOC_UART_STRUCT_H_
 #define _SOC_UART_STRUCT_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef volatile struct {
     union {
         struct {
@@ -362,4 +367,9 @@ typedef volatile struct {
 extern uart_dev_t UART0;
 extern uart_dev_t UART1;
 extern uart_dev_t UART2;
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif  /* _SOC_UART_STRUCT_H_ */

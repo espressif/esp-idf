@@ -15,8 +15,10 @@
 #ifndef __ESP_WPS_H__
 #define __ESP_WPS_H__
 
+#include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
+#include "esp_wifi_crypto_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,6 +54,18 @@ typedef enum wps_type {
     WPS_TYPE_MAX,
 } wps_type_t;
 
+extern const wps_crypto_funcs_t g_wifi_default_wps_crypto_funcs;
+
+typedef struct {
+    wps_type_t wps_type;
+    const wps_crypto_funcs_t *crypto_funcs;
+}esp_wps_config_t;
+
+#define WPS_CONFIG_INIT_DEFAULT(type) { \
+    .wps_type = type, \
+    .crypto_funcs = &g_wifi_default_wps_crypto_funcs, \
+}
+
 /**
   * @brief     Enable Wi-Fi WPS function.
   *
@@ -65,7 +79,7 @@ typedef enum wps_type {
   *          - ESP_ERR_WIFI_WPS_MODE : wifi is not in station mode or sniffer mode is on
   *          - ESP_ERR_WIFI_FAIL : wps initialization fails
   */
-esp_err_t esp_wifi_wps_enable(wps_type_t wps_type);
+esp_err_t esp_wifi_wps_enable(const esp_wps_config_t *config);
 
 /**
   * @brief  Disable Wi-Fi WPS function and release resource it taken.

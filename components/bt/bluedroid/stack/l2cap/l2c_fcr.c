@@ -28,7 +28,6 @@
 #include <string.h>
 #include "bt_trace.h"
 #include "bt_types.h"
-#include "gki.h"
 #include "hcimsgs.h"
 #include "l2c_api.h"
 #include "l2c_int.h"
@@ -36,6 +35,7 @@
 #include "btm_api.h"
 #include "btm_int.h"
 #include "btu.h"
+#include "allocator.h"
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
 
@@ -218,28 +218,27 @@ void l2c_fcr_cleanup (tL2C_CCB *p_ccb)
     l2c_fcr_stop_timer (p_ccb);
 
     if (p_fcrb->p_rx_sdu) {
-        GKI_freebuf (p_fcrb->p_rx_sdu);
+        osi_free(p_fcrb->p_rx_sdu);
+        p_fcrb->p_rx_sdu = NULL;
     }
 
-    while (!GKI_queue_is_empty(&p_fcrb->waiting_for_ack_q)) {
-        GKI_freebuf (GKI_dequeue (&p_fcrb->waiting_for_ack_q));
-    }
 
-    while (!GKI_queue_is_empty(&p_fcrb->srej_rcv_hold_q)) {
-        GKI_freebuf (GKI_dequeue (&p_fcrb->srej_rcv_hold_q));
-    }
+    fixed_queue_free(p_fcrb->waiting_for_ack_q, osi_free_func);
+    p_fcrb->waiting_for_ack_q = NULL;
 
-    while (!GKI_queue_is_empty(&p_fcrb->retrans_q)) {
-        GKI_freebuf (GKI_dequeue (&p_fcrb->retrans_q));
-    }
+    fixed_queue_free(p_fcrb->srej_rcv_hold_q, osi_free_func);
+    p_fcrb->srej_rcv_hold_q = NULL;
 
+    fixed_queue_free(p_fcrb->retrans_q, osi_free_func);
+    p_fcrb->retrans_q = NULL;
+	
     btu_stop_quick_timer (&p_fcrb->ack_timer);
     btu_stop_quick_timer (&p_ccb->fcrb.mon_retrans_timer);
 
 #if (L2CAP_ERTM_STATS == TRUE)
     if ( (p_ccb->local_cid >= L2CAP_BASE_APPL_CID) && (p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) ) {
-        UINT32  dur = GKI_get_os_tick_count() - p_ccb->fcrb.connect_tick_count;
-        char    *p_str = (char *)GKI_getbuf(120);
+        UINT32  dur = osi_time_get_os_boottime_ms() - p_ccb->fcrb.connect_tick_count;
+        char    *p_str = (char *)osi_malloc(120);
         UINT16  i;
         UINT32  throughput_avg, ack_delay_avg, ack_q_count_avg;
 
@@ -298,7 +297,7 @@ void l2c_fcr_cleanup (tL2C_CCB *p_ccb)
                      "throughput_avg: %8u (kbytes/sec), ack_delay_avg: %8u ms, ack_q_count_avg: %8u",
                      throughput_avg, ack_delay_avg, ack_q_count_avg );
 
-            GKI_freebuf(p_str);
+            osi_free(p_str);
         }
 
         BT_TRACE(TRACE_CTRL_GENERAL | TRACE_LAYER_GKI | TRACE_ORG_GKI , TRACE_TYPE_GENERIC,
@@ -319,40 +318,28 @@ void l2c_fcr_cleanup (tL2C_CCB *p_ccb)
 ** Returns          pointer to new buffer
 **
 *******************************************************************************/
-BT_HDR *l2c_fcr_clone_buf (BT_HDR *p_buf, UINT16 new_offset, UINT16 no_of_bytes, UINT8 pool)
+BT_HDR *l2c_fcr_clone_buf (BT_HDR *p_buf, UINT16 new_offset, UINT16 no_of_bytes)
 {
     assert(p_buf != NULL);
-    BT_HDR *p_buf2;
+    /*
+     * NOTE: We allocate extra L2CAP_FCS_LEN octets, in case we need to put
+     * the FCS (Frame Check Sequence) at the end of the buffer.
+     */
+    uint16_t buf_size = no_of_bytes + sizeof(BT_HDR) + new_offset + L2CAP_FCS_LEN;
+#if (L2CAP_ERTM_STATS == TRUE)
+    /*
+     * NOTE: If L2CAP_ERTM_STATS is enabled, we need 4 extra octets at the
+     * end for a timestamp at the end of an I-frame.
+     */
+    buf_size += sizeof(uint32_t);
+#endif
+    BT_HDR *p_buf2 = (BT_HDR *)osi_malloc(buf_size);
 
-    /* If using the common pool, should be at least 10% free. */
-    if ( (pool == HCI_ACL_POOL_ID) && (GKI_poolutilization (pool) > 90) ) {
-        L2CAP_TRACE_ERROR ("L2CAP - failed to clone buffer on HCI_ACL_POOL_ID Utilization: %u", GKI_poolutilization(pool));
-        return (NULL);
-    }
-
-    if ((p_buf2 = (BT_HDR *)GKI_getpoolbuf(pool)) != NULL) {
-        UINT16    pool_buf_size = GKI_get_pool_bufsize (pool);
-
-        /* Make sure buffer fits into buffer pool */
-        if ((no_of_bytes + sizeof(BT_HDR) + new_offset) > pool_buf_size) {
-            L2CAP_TRACE_ERROR("##### l2c_fcr_clone_buf (NumBytes %d) -> Exceeds poolsize %d [bytes %d + BT_HDR %d + offset %d]",
-                              (no_of_bytes + sizeof(BT_HDR) + new_offset),
-                              pool_buf_size, no_of_bytes, sizeof(BT_HDR),
-                              new_offset);
-
-            GKI_freebuf(p_buf2);
-            return (NULL);
-        }
-
-        p_buf2->offset = new_offset;
-        p_buf2->len    = no_of_bytes;
-
-        memcpy (((UINT8 *)(p_buf2 + 1)) + p_buf2->offset,
-                ((UINT8 *)(p_buf + 1))  + p_buf->offset,
-                no_of_bytes);
-    } else {
-        L2CAP_TRACE_ERROR ("L2CAP - failed to clone buffer, Pool: %u  Count: %u", pool,  GKI_poolfreecount(pool));
-    }
+    p_buf2->offset = new_offset;
+    p_buf2->len = no_of_bytes;
+    memcpy(((UINT8 *)(p_buf2 + 1)) + p_buf2->offset,
+           ((UINT8 *)(p_buf + 1))  + p_buf->offset,
+           no_of_bytes);
 
     return (p_buf2);
 }
@@ -372,9 +359,9 @@ BOOLEAN l2c_fcr_is_flow_controlled (tL2C_CCB *p_ccb)
     if (p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) {
         /* Check if remote side flowed us off or the transmit window is full */
         if ( (p_ccb->fcrb.remote_busy == TRUE)
-                ||  (GKI_queue_length(&p_ccb->fcrb.waiting_for_ack_q) >= p_ccb->peer_cfg.fcr.tx_win_sz) ) {
+         ||  (fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q) >= p_ccb->peer_cfg.fcr.tx_win_sz) ) {
 #if (L2CAP_ERTM_STATS == TRUE)
-            if (!GKI_queue_is_empty(&p_ccb->xmit_hold_q)) {
+            if (!fixed_queue_is_empty(p_ccb->xmit_hold_q)) {
                 p_ccb->fcrb.xmit_window_closed++;
 
                 if ((p_ccb->p_lcb->sent_not_acked < 2) && (l2cb.controller_xmit_window > 0)) {
@@ -523,7 +510,7 @@ void l2c_fcr_send_S_frame (tL2C_CCB *p_ccb, UINT16 function_code, UINT16 pf_bit)
     ctrl_word |= (p_ccb->fcrb.next_seq_expected << L2CAP_FCR_REQ_SEQ_BITS_SHIFT);
     ctrl_word |= pf_bit;
 
-    if ((p_buf = (BT_HDR *)GKI_getpoolbuf (L2CAP_CMD_POOL_ID)) != NULL) {
+    if ((p_buf = (BT_HDR *)osi_malloc(L2CAP_CMD_BUF_SIZE)) != NULL) {
         p_buf->offset = HCI_DATA_PREAMBLE_SIZE;
         p_buf->len    = L2CAP_PKT_OVERHEAD + L2CAP_FCR_OVERHEAD;
 
@@ -610,7 +597,7 @@ void l2c_fcr_proc_pdu (tL2C_CCB *p_ccb, BT_HDR *p_buf)
 
     if (p_buf->len < min_pdu_len) {
         L2CAP_TRACE_WARNING ("Rx L2CAP PDU: CID: 0x%04x  Len too short: %u", p_ccb->local_cid, p_buf->len);
-        GKI_freebuf (p_buf);
+        osi_free (p_buf);
         return;
     }
 
@@ -652,8 +639,11 @@ void l2c_fcr_proc_pdu (tL2C_CCB *p_ccb, BT_HDR *p_buf)
     }
 
     L2CAP_TRACE_EVENT ("      eRTM Rx Nxt_tx_seq %u, Lst_rx_ack %u, Nxt_seq_exp %u, Lst_ack_snt %u, wt_q.cnt %u, tries %u",
-                       p_ccb->fcrb.next_tx_seq, p_ccb->fcrb.last_rx_ack, p_ccb->fcrb.next_seq_expected,
-                       p_ccb->fcrb.last_ack_sent, GKI_queue_length(&p_ccb->fcrb.waiting_for_ack_q), p_ccb->fcrb.num_tries);
+                       p_ccb->fcrb.next_tx_seq, p_ccb->fcrb.last_rx_ack,
+                       p_ccb->fcrb.next_seq_expected,
+                       p_ccb->fcrb.last_ack_sent,
+                       fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q),
+                       p_ccb->fcrb.num_tries);
 
 #endif /* BT_TRACE_VERBOSE */
 
@@ -667,7 +657,7 @@ void l2c_fcr_proc_pdu (tL2C_CCB *p_ccb, BT_HDR *p_buf)
 
         if (l2c_fcr_rx_get_fcs(p_buf) != fcs) {
             L2CAP_TRACE_WARNING ("Rx L2CAP PDU: CID: 0x%04x  BAD FCS", p_ccb->local_cid);
-            GKI_freebuf(p_buf);
+            osi_free(p_buf);
             return;
         }
     }
@@ -699,7 +689,7 @@ void l2c_fcr_proc_pdu (tL2C_CCB *p_ccb, BT_HDR *p_buf)
                 /* then it speeds up recovery significantly if we poll him back soon after his poll. */
                 btu_start_quick_timer (&p_ccb->fcrb.mon_retrans_timer, BTU_TTYPE_L2CAP_CHNL, QUICK_TIMER_TICKS_PER_SEC);
             }
-            GKI_freebuf (p_buf);
+            osi_free (p_buf);
             return;
         }
 
@@ -710,7 +700,7 @@ void l2c_fcr_proc_pdu (tL2C_CCB *p_ccb, BT_HDR *p_buf)
             ctrl_word &= ~L2CAP_FCR_P_BIT;
         }
 
-        if (GKI_queue_is_empty(&p_ccb->fcrb.waiting_for_ack_q)) {
+        if (fixed_queue_is_empty(p_ccb->fcrb.waiting_for_ack_q)) {
             p_ccb->fcrb.num_tries = 0;
         }
 
@@ -722,7 +712,7 @@ void l2c_fcr_proc_pdu (tL2C_CCB *p_ccb, BT_HDR *p_buf)
 
     /* Process receive sequence number */
     if (!process_reqseq (p_ccb, ctrl_word)) {
-        GKI_freebuf (p_buf);
+        osi_free (p_buf);
         return;
     }
 
@@ -739,12 +729,12 @@ void l2c_fcr_proc_pdu (tL2C_CCB *p_ccb, BT_HDR *p_buf)
     }
 
     /* If we have some buffers held while doing SREJ, and SREJ has cleared, process them now */
-    if ( (!p_ccb->fcrb.local_busy) && (!p_ccb->fcrb.srej_sent) && (!GKI_queue_is_empty(&p_ccb->fcrb.srej_rcv_hold_q))) {
-        BUFFER_Q temp_q = p_ccb->fcrb.srej_rcv_hold_q;
+    if ( (!p_ccb->fcrb.local_busy) && (!p_ccb->fcrb.srej_sent) &&
+         (!fixed_queue_is_empty(p_ccb->fcrb.srej_rcv_hold_q))) {
+        fixed_queue_t *temp_q = p_ccb->fcrb.srej_rcv_hold_q;
+        p_ccb->fcrb.srej_rcv_hold_q = fixed_queue_new(SIZE_MAX);
 
-        GKI_init_q (&p_ccb->fcrb.srej_rcv_hold_q);
-
-        while ((p_buf = (BT_HDR *)GKI_dequeue (&temp_q)) != NULL) {
+        while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(temp_q)) != NULL) {
             if (p_ccb->in_use && (p_ccb->chnl_state == CST_OPEN)) {
                 /* Get the control word */
                 p = ((UINT8 *)(p_buf + 1)) + p_buf->offset - L2CAP_FCR_OVERHEAD;
@@ -758,7 +748,7 @@ void l2c_fcr_proc_pdu (tL2C_CCB *p_ccb, BT_HDR *p_buf)
                 /* Process the SREJ held I-frame, but do not send an RR for each individual frame */
                 process_i_frame (p_ccb, p_buf, ctrl_word, TRUE);
             } else {
-                GKI_freebuf (p_buf);
+                osi_free (p_buf);
             }
 
             /* If more frames were lost during SREJ, send a REJ */
@@ -769,6 +759,7 @@ void l2c_fcr_proc_pdu (tL2C_CCB *p_ccb, BT_HDR *p_buf)
                 l2c_fcr_send_S_frame (p_ccb, L2CAP_FCR_SUP_REJ, 0);
             }
         }
+        fixed_queue_free(temp_q, NULL);
 
         /* Now, if needed, send one RR for the whole held queue */
         if ( (!p_ccb->fcrb.local_busy) && (!p_ccb->fcrb.rej_sent) && (!p_ccb->fcrb.srej_sent)
@@ -782,7 +773,8 @@ void l2c_fcr_proc_pdu (tL2C_CCB *p_ccb, BT_HDR *p_buf)
     }
 
     /* If a window has opened, check if we can send any more packets */
-    if ( (!GKI_queue_is_empty(&p_ccb->fcrb.retrans_q) || !GKI_queue_is_empty(&p_ccb->xmit_hold_q))
+    if ( (!fixed_queue_is_empty(p_ccb->fcrb.retrans_q) ||
+          !fixed_queue_is_empty(p_ccb->xmit_hold_q))
             && (p_ccb->fcrb.wait_ack == FALSE)
             && (l2c_fcr_is_flow_controlled (p_ccb) == FALSE) ) {
         l2c_link_check_send_pkts (p_ccb->p_lcb, NULL, NULL);
@@ -802,8 +794,10 @@ void l2c_fcr_proc_tout (tL2C_CCB *p_ccb)
 {
     assert(p_ccb != NULL);
     L2CAP_TRACE_DEBUG ("l2c_fcr_proc_tout:  CID: 0x%04x  num_tries: %u (max: %u)  wait_ack: %u  ack_q_count: %u",
-                       p_ccb->local_cid, p_ccb->fcrb.num_tries, p_ccb->peer_cfg.fcr.max_transmit,
-                       p_ccb->fcrb.wait_ack, GKI_queue_length(&p_ccb->fcrb.waiting_for_ack_q));
+                       p_ccb->local_cid, p_ccb->fcrb.num_tries,
+                       p_ccb->peer_cfg.fcr.max_transmit,
+                       p_ccb->fcrb.wait_ack,
+                       fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q));
 
 #if (L2CAP_ERTM_STATS == TRUE)
     p_ccb->fcrb.retrans_touts++;
@@ -874,9 +868,9 @@ static BOOLEAN process_reqseq (tL2C_CCB *p_ccb, UINT16 ctrl_word)
             &&  ((ctrl_word & L2CAP_FCR_SUP_BITS) == (L2CAP_FCR_SUP_SREJ << L2CAP_FCR_SUP_SHIFT))
             &&  ((ctrl_word & L2CAP_FCR_P_BIT) == 0) ) {
         /* If anything still waiting for ack, restart the timer if it was stopped */
-        if (!GKI_queue_is_empty(&p_fcrb->waiting_for_ack_q)) {
-            l2c_fcr_start_timer (p_ccb);
-        }
+        if (!fixed_queue_is_empty(p_fcrb->waiting_for_ack_q)) {
+            l2c_fcr_start_timer(p_ccb);
+		}
 
         return (TRUE);
     }
@@ -887,10 +881,11 @@ static BOOLEAN process_reqseq (tL2C_CCB *p_ccb, UINT16 ctrl_word)
     num_bufs_acked = (req_seq - p_fcrb->last_rx_ack) & L2CAP_FCR_SEQ_MODULO;
 
     /* Verify the request sequence is in range before proceeding */
-    if (num_bufs_acked > GKI_queue_length(&p_fcrb->waiting_for_ack_q)) {
+    if (num_bufs_acked > fixed_queue_length(p_fcrb->waiting_for_ack_q)) {
         /* The channel is closed if ReqSeq is not in range */
         L2CAP_TRACE_WARNING ("L2CAP eRTM Frame BAD Req_Seq - ctrl_word: 0x%04x  req_seq 0x%02x  last_rx_ack: 0x%02x  QCount: %u",
-                             ctrl_word, req_seq, p_fcrb->last_rx_ack, GKI_queue_length(&p_fcrb->waiting_for_ack_q));
+                             ctrl_word, req_seq, p_fcrb->last_rx_ack,
+                             fixed_queue_length(p_fcrb->waiting_for_ack_q));
 
         l2cu_disconnect_chnl (p_ccb);
         return (FALSE);
@@ -908,13 +903,13 @@ static BOOLEAN process_reqseq (tL2C_CCB *p_ccb, UINT16 ctrl_word)
 #endif
 
         for (xx = 0; xx < num_bufs_acked; xx++) {
-            ls = ((BT_HDR *)(GKI_getfirst(&p_fcrb->waiting_for_ack_q)))->layer_specific & L2CAP_FCR_SAR_BITS;
+            BT_HDR *p_tmp = (BT_HDR *)fixed_queue_try_dequeue(p_fcrb->waiting_for_ack_q);
+            ls = p_tmp->layer_specific & L2CAP_FCR_SAR_BITS;
 
             if ( (ls == L2CAP_FCR_UNSEG_SDU) || (ls == L2CAP_FCR_END_SDU) ) {
                 full_sdus_xmitted++;
             }
-
-            GKI_freebuf (GKI_dequeue (&p_fcrb->waiting_for_ack_q));
+            osi_free(p_tmp);
         }
 
         /* If we are still in a wait_ack state, do not mess with the timer */
@@ -925,7 +920,8 @@ static BOOLEAN process_reqseq (tL2C_CCB *p_ccb, UINT16 ctrl_word)
         /* Check if we need to call the "packet_sent" callback */
         if ( (p_ccb->p_rcb) && (p_ccb->p_rcb->api.pL2CA_TxComplete_Cb) && (full_sdus_xmitted) ) {
             /* Special case for eRTM, if all packets sent, send 0xFFFF */
-            if (GKI_queue_is_empty(&p_fcrb->waiting_for_ack_q) && (GKI_queue_is_empty(&p_ccb->xmit_hold_q))) {
+            if (fixed_queue_is_empty(p_fcrb->waiting_for_ack_q) &&
+                fixed_queue_is_empty(p_ccb->xmit_hold_q)) {
                 full_sdus_xmitted = 0xFFFF;
             }
 
@@ -934,7 +930,7 @@ static BOOLEAN process_reqseq (tL2C_CCB *p_ccb, UINT16 ctrl_word)
     }
 
     /* If anything still waiting for ack, restart the timer if it was stopped */
-    if (!GKI_queue_is_empty(&p_fcrb->waiting_for_ack_q)) {
+    if (!fixed_queue_is_empty(p_fcrb->waiting_for_ack_q)) {
         l2c_fcr_start_timer (p_ccb);
     }
 
@@ -1019,7 +1015,7 @@ static void process_s_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_word)
         L2CAP_TRACE_DEBUG ("process_s_frame hit_max_retries");
     }
 
-    GKI_freebuf (p_buf);
+    osi_free (p_buf);
 }
 
 
@@ -1043,7 +1039,7 @@ static void process_i_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_word, B
     /* If we were doing checkpoint recovery, first retransmit all unacked I-frames */
     if (ctrl_word & L2CAP_FCR_F_BIT) {
         if (!retransmit_i_frames (p_ccb, L2C_FCR_RETX_ALL_PKTS)) {
-            GKI_freebuf(p_buf);
+            osi_free(p_buf);
             return;
         }
     }
@@ -1060,17 +1056,7 @@ static void process_i_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_word, B
     if ( (tx_seq != p_fcrb->next_seq_expected) && (p_fcrb->local_busy) ) {
         L2CAP_TRACE_WARNING ("Dropping bad I-Frame since we flowed off, tx_seq:%u", tx_seq);
         l2c_fcr_send_S_frame (p_ccb, L2CAP_FCR_SUP_RNR, 0);
-        GKI_freebuf(p_buf);
-        return;
-    }
-
-    /* If there are no free buffers in the user Rx queue, drop the  */
-    /* received buffer now before we update any sequence numbers    */
-    if (GKI_poolfreecount (p_ccb->ertm_info.user_rx_pool_id) == 0) {
-        L2CAP_TRACE_WARNING ("L2CAP CID: 0x%04x  Dropping I-Frame seq: %u  User RX Pool: %u  (Size: %u)  has no free buffers!!",
-                             p_ccb->local_cid, tx_seq, p_ccb->ertm_info.user_rx_pool_id,
-                             GKI_poolcount (p_ccb->ertm_info.user_rx_pool_id));
-        GKI_freebuf(p_buf);
+        osi_free(p_buf);
         return;
     }
 
@@ -1082,28 +1068,29 @@ static void process_i_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_word, B
         if (num_lost >= p_ccb->our_cfg.fcr.tx_win_sz) {
             /* Duplicate - simply drop it */
             L2CAP_TRACE_WARNING ("process_i_frame() Dropping Duplicate Frame tx_seq:%u  ExpectedTxSeq %u", tx_seq, p_fcrb->next_seq_expected);
-            GKI_freebuf(p_buf);
+            osi_free(p_buf);
         } else {
             L2CAP_TRACE_WARNING ("process_i_frame() CID: 0x%04x  Lost: %u  tx_seq:%u  ExpTxSeq %u  Rej: %u  SRej: %u",
                                  p_ccb->local_cid, num_lost, tx_seq, p_fcrb->next_seq_expected, p_fcrb->rej_sent, p_fcrb->srej_sent);
 
             if (p_fcrb->srej_sent) {
                 /* If SREJ sent, save the frame for later processing as long as it is in sequence */
-                next_srej = (((BT_HDR *)GKI_getlast(&p_fcrb->srej_rcv_hold_q))->layer_specific + 1) & L2CAP_FCR_SEQ_MODULO;
+                next_srej = (((BT_HDR *)fixed_queue_try_peek_last(p_fcrb->srej_rcv_hold_q))->layer_specific + 1) & L2CAP_FCR_SEQ_MODULO;
 
-                if ( (tx_seq == next_srej) && (GKI_queue_length(&p_fcrb->srej_rcv_hold_q) < p_ccb->our_cfg.fcr.tx_win_sz) ) {
+                if ( (tx_seq == next_srej) && (fixed_queue_length(p_fcrb->srej_rcv_hold_q) < p_ccb->our_cfg.fcr.tx_win_sz) ) {
                     /* If user gave us a pool for held rx buffers, use that */
-                    if (p_ccb->ertm_info.fcr_rx_pool_id != HCI_ACL_POOL_ID) {
+                    /* TODO: Could that happen? Get rid of this code. */
+                    if (p_ccb->ertm_info.fcr_rx_buf_size != L2CAP_FCR_RX_BUF_SIZE) {
                         BT_HDR *p_buf2;
 
                         /* Adjust offset and len so that control word is copied */
                         p_buf->offset -= L2CAP_FCR_OVERHEAD;
                         p_buf->len    += L2CAP_FCR_OVERHEAD;
 
-                        p_buf2 = l2c_fcr_clone_buf (p_buf, p_buf->offset, p_buf->len, p_ccb->ertm_info.fcr_rx_pool_id);
+                        p_buf2 = l2c_fcr_clone_buf (p_buf, p_buf->offset, p_buf->len);
 
                         if (p_buf2) {
-                            GKI_freebuf (p_buf);
+                            osi_free (p_buf);
                             p_buf = p_buf2;
                         }
                         p_buf->offset += L2CAP_FCR_OVERHEAD;
@@ -1113,36 +1100,36 @@ static void process_i_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_word, B
                                        num_lost, tx_seq, p_fcrb->next_seq_expected, p_fcrb->rej_sent);
 
                     p_buf->layer_specific = tx_seq;
-                    GKI_enqueue (&p_fcrb->srej_rcv_hold_q, p_buf);
+                    fixed_queue_enqueue(p_fcrb->srej_rcv_hold_q, p_buf);
                 } else {
                     L2CAP_TRACE_WARNING ("process_i_frame() CID: 0x%04x  frame dropped in Srej Sent next_srej:%u  hold_q.count:%u  win_sz:%u",
-                                         p_ccb->local_cid, next_srej, GKI_queue_length(&p_fcrb->srej_rcv_hold_q), p_ccb->our_cfg.fcr.tx_win_sz);
+                                         p_ccb->local_cid, next_srej, fixed_queue_length(p_fcrb->srej_rcv_hold_q), p_ccb->our_cfg.fcr.tx_win_sz);
 
                     p_fcrb->rej_after_srej = TRUE;
-                    GKI_freebuf (p_buf);
+                    osi_free (p_buf);
                 }
             } else if (p_fcrb->rej_sent) {
                 L2CAP_TRACE_WARNING ("process_i_frame() CID: 0x%04x  Lost: %u  tx_seq:%u  ExpTxSeq %u  Rej: 1  SRej: %u",
                                      p_ccb->local_cid, num_lost, tx_seq, p_fcrb->next_seq_expected, p_fcrb->srej_sent);
 
                 /* If REJ sent, just drop the frame */
-                GKI_freebuf (p_buf);
+                osi_free (p_buf);
             } else {
                 L2CAP_TRACE_DEBUG ("process_i_frame() CID: 0x%04x  tx_seq:%u  ExpTxSeq %u  Rej: %u",
                                    p_ccb->local_cid, tx_seq, p_fcrb->next_seq_expected, p_fcrb->rej_sent);
 
                 /* If only one lost, we will send SREJ, otherwise we will send REJ */
                 if (num_lost > 1) {
-                    GKI_freebuf (p_buf);
+                    osi_free (p_buf);
                     p_fcrb->rej_sent = TRUE;
                     l2c_fcr_send_S_frame (p_ccb, L2CAP_FCR_SUP_REJ, 0);
                 } else {
-                    if (!GKI_queue_is_empty(&p_fcrb->srej_rcv_hold_q)) {
+                    if (!fixed_queue_is_empty(p_fcrb->srej_rcv_hold_q)) {
                         L2CAP_TRACE_ERROR ("process_i_frame() CID: 0x%04x  sending SREJ tx_seq:%d hold_q.count:%u",
-                                           p_ccb->local_cid, tx_seq, GKI_queue_length(&p_fcrb->srej_rcv_hold_q));
+                                             p_ccb->local_cid, tx_seq, fixed_queue_length(p_fcrb->srej_rcv_hold_q));
                     }
                     p_buf->layer_specific = tx_seq;
-                    GKI_enqueue (&p_fcrb->srej_rcv_hold_q, p_buf);
+                    fixed_queue_enqueue(p_fcrb->srej_rcv_hold_q, p_buf);
                     p_fcrb->srej_sent = TRUE;
                     l2c_fcr_send_S_frame (p_ccb, L2CAP_FCR_SUP_SREJ, 0);
                 }
@@ -1182,8 +1169,9 @@ static void process_i_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_word, B
                 btu_start_quick_timer (&p_ccb->fcrb.ack_timer, BTU_TTYPE_L2CAP_FCR_ACK,
                                        (L2CAP_FCR_ACK_TOUT * QUICK_TIMER_TICKS_PER_SEC) / 1000);
             }
-        } else if ( ((GKI_queue_is_empty(&p_ccb->xmit_hold_q)) || (l2c_fcr_is_flow_controlled (p_ccb)))
-                    &&  (GKI_queue_is_empty(&p_ccb->fcrb.srej_rcv_hold_q))) {
+        } else if ((fixed_queue_is_empty(p_ccb->xmit_hold_q) ||
+                  l2c_fcr_is_flow_controlled(p_ccb))
+                 && fixed_queue_is_empty(p_ccb->fcrb.srej_rcv_hold_q)) {
             if (p_fcrb->local_busy) {
                 l2c_fcr_send_S_frame (p_ccb, L2CAP_FCR_SUP_RNR, 0);
             } else {
@@ -1223,7 +1211,7 @@ static void process_stream_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf)
 
         if (l2c_fcr_rx_get_fcs(p_buf) != fcs) {
             L2CAP_TRACE_WARNING ("Rx L2CAP PDU: CID: 0x%04x  BAD FCS", p_ccb->local_cid);
-            GKI_freebuf(p_buf);
+            osi_free(p_buf);
             return;
         }
     }
@@ -1239,7 +1227,7 @@ static void process_stream_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf)
     /* Make sure it is an I-frame */
     if (ctrl_word & L2CAP_FCR_S_FRAME_BIT) {
         L2CAP_TRACE_WARNING ("Rx L2CAP PDU: CID: 0x%04x  BAD S-frame in streaming mode  ctrl_word: 0x%04x", p_ccb->local_cid, ctrl_word);
-        GKI_freebuf (p_buf);
+        osi_free (p_buf);
         return;
     }
 
@@ -1262,7 +1250,7 @@ static void process_stream_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf)
 
         /* Lost one or more packets, so flush the SAR queue */
         if (p_ccb->fcrb.p_rx_sdu != NULL) {
-            GKI_freebuf (p_ccb->fcrb.p_rx_sdu);
+            osi_free(p_ccb->fcrb.p_rx_sdu);
             p_ccb->fcrb.p_rx_sdu = NULL;
         }
     }
@@ -1272,7 +1260,7 @@ static void process_stream_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf)
     if (!do_sar_reassembly (p_ccb, p_buf, ctrl_word)) {
         /* Some sort of SAR error, so flush the SAR queue */
         if (p_ccb->fcrb.p_rx_sdu != NULL) {
-            GKI_freebuf (p_ccb->fcrb.p_rx_sdu);
+            osi_free(p_ccb->fcrb.p_rx_sdu);
             p_ccb->fcrb.p_rx_sdu = NULL;
         }
     }
@@ -1331,8 +1319,8 @@ static BOOLEAN do_sar_reassembly (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_wo
             if (p_fcrb->rx_sdu_len > p_ccb->max_rx_mtu) {
                 L2CAP_TRACE_WARNING ("SAR - SDU len: %u  larger than MTU: %u", p_fcrb->rx_sdu_len, p_fcrb->rx_sdu_len);
                 packet_ok = FALSE;
-            } else if ((p_fcrb->p_rx_sdu = (BT_HDR *)GKI_getpoolbuf (p_ccb->ertm_info.user_rx_pool_id)) == NULL) {
-                L2CAP_TRACE_ERROR ("SAR - no buffer for SDU start user_rx_pool_id:%d", p_ccb->ertm_info.user_rx_pool_id);
+            } else if ((p_fcrb->p_rx_sdu = (BT_HDR *)osi_malloc(L2CAP_MAX_BUF_SIZE)) == NULL) {
+                L2CAP_TRACE_ERROR ("SAR - no buffer for SDU start user_rx_buf_size:%d", p_ccb->ertm_info.user_rx_buf_size);
                 packet_ok = FALSE;
             } else {
                 p_fcrb->p_rx_sdu->offset = 4; /* this is the minimal offset required by OBX to process incoming packets */
@@ -1354,7 +1342,7 @@ static BOOLEAN do_sar_reassembly (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_wo
 
                 p_fcrb->p_rx_sdu->len += p_buf->len;
 
-                GKI_freebuf (p_buf);
+                osi_free (p_buf);
                 p_buf = NULL;
 
                 if (sar_type == L2CAP_FCR_END_SDU) {
@@ -1366,7 +1354,7 @@ static BOOLEAN do_sar_reassembly (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_wo
     }
 
     if (packet_ok == FALSE) {
-        GKI_freebuf (p_buf);
+        osi_free (p_buf);
     } else if (p_buf != NULL) {
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
         if (p_ccb->local_cid < L2CAP_BASE_APPL_CID &&
@@ -1396,43 +1384,54 @@ static BOOLEAN retransmit_i_frames (tL2C_CCB *p_ccb, UINT8 tx_seq)
 {
     assert(p_ccb != NULL);
 
-    BT_HDR      *p_buf, *p_buf2;
+    BT_HDR      *p_buf = NULL;
     UINT8       *p;
     UINT8       buf_seq;
     UINT16      ctrl_word;
 
-    if ( (GKI_getfirst(&p_ccb->fcrb.waiting_for_ack_q))
+    if ( (!fixed_queue_is_empty(p_ccb->fcrb.waiting_for_ack_q))
             &&  (p_ccb->peer_cfg.fcr.max_transmit != 0)
             &&  (p_ccb->fcrb.num_tries >= p_ccb->peer_cfg.fcr.max_transmit) ) {
         L2CAP_TRACE_EVENT ("Max Tries Exceeded:  (last_acq: %d  CID: 0x%04x  num_tries: %u (max: %u) ack_q_count: %u",
                            p_ccb->fcrb.last_rx_ack, p_ccb->local_cid, p_ccb->fcrb.num_tries, p_ccb->peer_cfg.fcr.max_transmit,
-                           GKI_queue_length(&p_ccb->fcrb.waiting_for_ack_q));
+                fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q));
 
         l2cu_disconnect_chnl (p_ccb);
         return (FALSE);
     }
 
     /* tx_seq indicates whether to retransmit a specific sequence or all (if == L2C_FCR_RETX_ALL_PKTS) */
+    list_t *list_ack = NULL;
+    const list_node_t *node_ack = NULL;
+    if (! fixed_queue_is_empty(p_ccb->fcrb.waiting_for_ack_q)) {
+        list_ack = fixed_queue_get_list(p_ccb->fcrb.waiting_for_ack_q);
+        node_ack = list_begin(list_ack);
+    }
     if (tx_seq != L2C_FCR_RETX_ALL_PKTS) {
         /* If sending only one, the sequence number tells us which one. Look for it.
         */
-        for (p_buf = (BT_HDR *)GKI_getfirst(&p_ccb->fcrb.waiting_for_ack_q); p_buf; p_buf = (BT_HDR *)GKI_getnext (p_buf)) {
-            /* Get the old control word */
-            p = ((UINT8 *) (p_buf + 1)) + p_buf->offset + L2CAP_PKT_OVERHEAD;
+        if (list_ack != NULL) {
+            for ( ; node_ack != list_end(list_ack); node_ack = list_next(node_ack)) {
+                p_buf = (BT_HDR *)list_node(node_ack);
+                /* Get the old control word */
+                p = ((UINT8 *) (p_buf+1)) + p_buf->offset + L2CAP_PKT_OVERHEAD;
 
-            STREAM_TO_UINT16 (ctrl_word, p);
+                STREAM_TO_UINT16 (ctrl_word, p);
 
-            buf_seq = (ctrl_word & L2CAP_FCR_TX_SEQ_BITS) >> L2CAP_FCR_TX_SEQ_BITS_SHIFT;
+                buf_seq = (ctrl_word & L2CAP_FCR_TX_SEQ_BITS) >> L2CAP_FCR_TX_SEQ_BITS_SHIFT;
 
-            L2CAP_TRACE_DEBUG ("retransmit_i_frames()   cur seq: %u  looking for: %u", buf_seq, tx_seq);
+                L2CAP_TRACE_DEBUG ("retransmit_i_frames()   cur seq: %u  looking for: %u", buf_seq, tx_seq);
 
-            if (tx_seq == buf_seq) {
-                break;
+                if (tx_seq == buf_seq) {
+                    break;
+				}
             }
         }
 
         if (!p_buf) {
-            L2CAP_TRACE_ERROR ("retransmit_i_frames() UNKNOWN seq: %u  q_count: %u", tx_seq, GKI_queue_length(&p_ccb->fcrb.waiting_for_ack_q));
+            L2CAP_TRACE_ERROR ("retransmit_i_frames() UNKNOWN seq: %u  q_count: %u",
+                               tx_seq,
+                               fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q));
             return (TRUE);
         }
     } else {
@@ -1446,37 +1445,44 @@ static BOOLEAN retransmit_i_frames (tL2C_CCB *p_ccb, UINT8 tx_seq)
             /* Do not flush other CIDs or partial segments */
             if ((p_buf->layer_specific == 0) && (p_buf->event == p_ccb->local_cid)) {
                 list_remove(p_ccb->p_lcb->link_xmit_data_q, p_buf);
-                GKI_freebuf(p_buf);
+                osi_free(p_buf);
             }
         }
 
         /* Also flush our retransmission queue */
-        while (!GKI_queue_is_empty(&p_ccb->fcrb.retrans_q)) {
-            GKI_freebuf (GKI_dequeue (&p_ccb->fcrb.retrans_q));
-        }
+        while (!fixed_queue_is_empty(p_ccb->fcrb.retrans_q)) {
+            osi_free(fixed_queue_try_dequeue(p_ccb->fcrb.retrans_q));
+		}
 
-        p_buf = (BT_HDR *)GKI_getfirst(&p_ccb->fcrb.waiting_for_ack_q);
+        if (list_ack != NULL) {
+            node_ack = list_begin(list_ack);
+		}
     }
 
-    while (p_buf != NULL) {
-        p_buf2 = l2c_fcr_clone_buf (p_buf, p_buf->offset, p_buf->len, p_ccb->ertm_info.fcr_tx_pool_id);
+    if (list_ack != NULL) {
+        while (node_ack != list_end(list_ack))
+        {
+            p_buf = (BT_HDR *)list_node(node_ack);
+            node_ack = list_next(node_ack);
 
-        if (p_buf2) {
-            p_buf2->layer_specific = p_buf->layer_specific;
+            BT_HDR *p_buf2 = l2c_fcr_clone_buf(p_buf, p_buf->offset, p_buf->len);
+            if (p_buf2)
+            {
+                p_buf2->layer_specific = p_buf->layer_specific;
 
-            GKI_enqueue (&p_ccb->fcrb.retrans_q, p_buf2);
-        }
+                fixed_queue_enqueue(p_ccb->fcrb.retrans_q, p_buf2);
+            }
 
-        if ( (tx_seq != L2C_FCR_RETX_ALL_PKTS) || (p_buf2 == NULL) ) {
-            break;
-        } else {
-            p_buf = (BT_HDR *)GKI_getnext (p_buf);
+            if ( (tx_seq != L2C_FCR_RETX_ALL_PKTS) || (p_buf2 == NULL) ) {
+                break;
+			}
         }
     }
 
     l2c_link_check_send_pkts (p_ccb->p_lcb, NULL, NULL);
 
-    if (GKI_queue_length(&p_ccb->fcrb.waiting_for_ack_q)) {
+    if (fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q))
+    {
         p_ccb->fcrb.num_tries++;
         l2c_fcr_start_timer (p_ccb);
     }
@@ -1508,9 +1514,8 @@ BT_HDR *l2c_fcr_get_next_xmit_sdu_seg (tL2C_CCB *p_ccb, UINT16 max_packet_length
 
     /* If there is anything in the retransmit queue, that goes first
     */
-    if (GKI_getfirst(&p_ccb->fcrb.retrans_q)) {
-        p_buf = (BT_HDR *)GKI_dequeue (&p_ccb->fcrb.retrans_q);
-
+    p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->fcrb.retrans_q);
+    if (p_buf != NULL) {
         /* Update Rx Seq and FCS if we acked some packets while this one was queued */
         prepare_I_frame (p_ccb, p_buf, TRUE);
 
@@ -1531,7 +1536,7 @@ BT_HDR *l2c_fcr_get_next_xmit_sdu_seg (tL2C_CCB *p_ccb, UINT16 max_packet_length
         max_pdu = max_packet_length - L2CAP_MAX_HEADER_FCS;
     }
 
-    p_buf = (BT_HDR *)GKI_getfirst(&p_ccb->xmit_hold_q);
+    p_buf = (BT_HDR *)fixed_queue_try_peek_first(p_ccb->xmit_hold_q);
 
     /* If there is more data than the MPS, it requires segmentation */
     if (p_buf->len > max_pdu) {
@@ -1545,7 +1550,7 @@ BT_HDR *l2c_fcr_get_next_xmit_sdu_seg (tL2C_CCB *p_ccb, UINT16 max_packet_length
 
         /* Get a new buffer and copy the data that can be sent in a PDU */
         p_xmit = l2c_fcr_clone_buf (p_buf, L2CAP_MIN_OFFSET + L2CAP_SDU_LEN_OFFSET,
-                                    max_pdu, p_ccb->ertm_info.fcr_tx_pool_id);
+                                    max_pdu);
 
         if (p_xmit != NULL) {
             p_buf->event  = p_ccb->local_cid;
@@ -1557,11 +1562,11 @@ BT_HDR *l2c_fcr_get_next_xmit_sdu_seg (tL2C_CCB *p_ccb, UINT16 max_packet_length
             /* copy PBF setting */
             p_xmit->layer_specific = p_buf->layer_specific;
         } else { /* Should never happen if the application has configured buffers correctly */
-            L2CAP_TRACE_ERROR ("L2CAP - cannot get buffer, for segmentation, pool: %u", p_ccb->ertm_info.fcr_tx_pool_id);
+            L2CAP_TRACE_ERROR ("L2CAP - cannot get buffer for segmentation, max_pdu: %u", max_pdu);
             return (NULL);
         }
     } else { /* Use the original buffer if no segmentation, or the last segment */
-        p_xmit = (BT_HDR *)GKI_dequeue (&p_ccb->xmit_hold_q);
+        p_xmit = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->xmit_hold_q);
 
         if (p_xmit->event != 0) {
             last_seg = TRUE;
@@ -1610,11 +1615,11 @@ BT_HDR *l2c_fcr_get_next_xmit_sdu_seg (tL2C_CCB *p_ccb, UINT16 max_packet_length
     prepare_I_frame (p_ccb, p_xmit, FALSE);
 
     if (p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) {
-        BT_HDR *p_wack = l2c_fcr_clone_buf (p_xmit, HCI_DATA_PREAMBLE_SIZE, p_xmit->len, p_ccb->ertm_info.fcr_tx_pool_id);
+        BT_HDR *p_wack = l2c_fcr_clone_buf (p_xmit, HCI_DATA_PREAMBLE_SIZE, p_xmit->len);
 
         if (!p_wack) {
-            L2CAP_TRACE_ERROR ("L2CAP - no buffer for xmit cloning, CID: 0x%04x  Pool: %u  Count: %u",
-                               p_ccb->local_cid, p_ccb->ertm_info.fcr_tx_pool_id,  GKI_poolfreecount(p_ccb->ertm_info.fcr_tx_pool_id));
+            L2CAP_TRACE_ERROR("L2CAP - no buffer for xmit cloning, CID: 0x%04x  Length: %u",
+                              p_ccb->local_cid, p_xmit->len);
 
             /* We will not save the FCS in case we reconfigure and change options */
             if (p_ccb->bypass_fcs != L2CAP_BYPASS_FCS) {
@@ -1622,13 +1627,13 @@ BT_HDR *l2c_fcr_get_next_xmit_sdu_seg (tL2C_CCB *p_ccb, UINT16 max_packet_length
             }
 
             /* Pretend we sent it and it got lost */
-            GKI_enqueue (&p_ccb->fcrb.waiting_for_ack_q, p_xmit);
+            fixed_queue_enqueue(p_ccb->fcrb.waiting_for_ack_q, p_xmit);
             return (NULL);
         } else {
 #if (L2CAP_ERTM_STATS == TRUE)
             /* set timestamp at the end of tx I-frame to get acking delay */
             p = ((UINT8 *) (p_wack + 1)) + p_wack->offset + p_wack->len;
-            UINT32_TO_STREAM (p, GKI_get_os_tick_count());
+            UINT32_TO_STREAM (p, osi_time_get_os_boottime_ms());
 #endif
             /* We will not save the FCS in case we reconfigure and change options */
             if (p_ccb->bypass_fcs != L2CAP_BYPASS_FCS) {
@@ -1636,7 +1641,7 @@ BT_HDR *l2c_fcr_get_next_xmit_sdu_seg (tL2C_CCB *p_ccb, UINT16 max_packet_length
             }
 
             p_wack->layer_specific = p_xmit->layer_specific;
-            GKI_enqueue (&p_ccb->fcrb.waiting_for_ack_q, p_wack);
+            fixed_queue_enqueue(p_ccb->fcrb.waiting_for_ack_q, p_wack);
         }
 
 #if (L2CAP_ERTM_STATS == TRUE)
@@ -2047,7 +2052,7 @@ UINT8 l2c_fcr_process_peer_cfg_req(tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
                 }
             }
 
-            max_retrans_size = GKI_get_pool_bufsize (p_ccb->ertm_info.fcr_tx_pool_id) - sizeof(BT_HDR)
+            max_retrans_size = p_ccb->ertm_info.fcr_tx_buf_size - sizeof(BT_HDR)
                                - L2CAP_MIN_OFFSET - L2CAP_SDU_LEN_OFFSET - L2CAP_FCS_LEN;
 
             /* Ensure the MPS is not bigger than the MTU */
@@ -2113,42 +2118,48 @@ static void l2c_fcr_collect_ack_delay (tL2C_CCB *p_ccb, UINT8 num_bufs_acked)
     index = p_ccb->fcrb.ack_delay_avg_index;
 
     /* update sum, max and min of waiting for ack queue size */
-    p_ccb->fcrb.ack_q_count_avg[index] += p_ccb->fcrb.waiting_for_ack_q.count;
+    p_ccb->fcrb.ack_q_count_avg[index] +=
+        fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q);
 
-    if ( p_ccb->fcrb.waiting_for_ack_q.count > p_ccb->fcrb.ack_q_count_max[index] ) {
-        p_ccb->fcrb.ack_q_count_max[index] = p_ccb->fcrb.waiting_for_ack_q.count;
-    }
+    if (fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q) > p_ccb->fcrb.ack_q_count_max[index]) {
+        p_ccb->fcrb.ack_q_count_max[index] = fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q);
+	}
 
-    if ( p_ccb->fcrb.waiting_for_ack_q.count < p_ccb->fcrb.ack_q_count_min[index] ) {
-        p_ccb->fcrb.ack_q_count_min[index] = p_ccb->fcrb.waiting_for_ack_q.count;
-    }
+    if (fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q) < p_ccb->fcrb.ack_q_count_min[index]) {
+        p_ccb->fcrb.ack_q_count_min[index] = fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q);
+	}
 
     /* update sum, max and min of round trip delay of acking */
-    p_buf = (BT_HDR *)(p_ccb->fcrb.waiting_for_ack_q.p_first);
-    for (xx = 0; (xx < num_bufs_acked) && (p_buf); xx++) {
-        /* adding up length of acked I-frames to get throughput */
-        p_ccb->fcrb.throughput[index] += p_buf->len - 8;
+    list_t *list = NULL;
+    if (! fixed_queue_is_empty(p_ccb->fcrb.waiting_for_ack_q))
+        list = fixed_queue_get_list(p_ccb->fcrb.waiting_for_ack_q);
+    if (list != NULL) {
+        for (const list_node_t *node = list_begin(list), xx = 0;
+             (node != list_end(list)) && (xx < num_bufs_acked);
+             node = list_next(node), xx++) {
+            p_buf = list_node(node);
+            /* adding up length of acked I-frames to get throughput */
+            p_ccb->fcrb.throughput[index] += p_buf->len - 8;
 
-        if ( xx == num_bufs_acked - 1 ) {
-            /* get timestamp from tx I-frame that receiver is acking */
-            p = ((UINT8 *) (p_buf + 1)) + p_buf->offset + p_buf->len;
-            if (p_ccb->bypass_fcs != L2CAP_BYPASS_FCS) {
-                p += L2CAP_FCS_LEN;
-            }
+            if ( xx == num_bufs_acked - 1 ) {
+                /* get timestamp from tx I-frame that receiver is acking */
+                p = ((UINT8 *) (p_buf+1)) + p_buf->offset + p_buf->len;
+                if (p_ccb->bypass_fcs != L2CAP_BYPASS_FCS) {
+                    p += L2CAP_FCS_LEN;
+                }
 
-            STREAM_TO_UINT32 (timestamp, p);
-            delay = GKI_get_os_tick_count() - timestamp;
+                STREAM_TO_UINT32(timestamp, p);
+                delay = osi_time_get_os_boottime_ms() - timestamp;
 
-            p_ccb->fcrb.ack_delay_avg[index] += delay;
-            if ( delay > p_ccb->fcrb.ack_delay_max[index] ) {
-                p_ccb->fcrb.ack_delay_max[index] = delay;
-            }
-            if ( delay < p_ccb->fcrb.ack_delay_min[index] ) {
-                p_ccb->fcrb.ack_delay_min[index] = delay;
-            }
+                p_ccb->fcrb.ack_delay_avg[index] += delay;
+                if ( delay > p_ccb->fcrb.ack_delay_max[index] ) {
+                    p_ccb->fcrb.ack_delay_max[index] = delay;
+                }
+                if ( delay < p_ccb->fcrb.ack_delay_min[index] ) {
+                    p_ccb->fcrb.ack_delay_min[index] = delay;
+                }
+			}
         }
-
-        p_buf = GKI_getnext(p_buf);
     }
 
     p_ccb->fcrb.ack_delay_avg_count++;
@@ -2161,7 +2172,7 @@ static void l2c_fcr_collect_ack_delay (tL2C_CCB *p_ccb, UINT8 num_bufs_acked)
         p_ccb->fcrb.ack_delay_avg[index] /= L2CAP_ERTM_STATS_AVG_NUM_SAMPLES;
 
         /* calculate throughput */
-        timestamp = GKI_get_os_tick_count();
+        timestamp = osi_time_get_os_boottime_ms();
         if (timestamp - p_ccb->fcrb.throughput_start > 0 ) {
             p_ccb->fcrb.throughput[index] /= (timestamp - p_ccb->fcrb.throughput_start);
         }

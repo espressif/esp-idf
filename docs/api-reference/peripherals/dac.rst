@@ -30,3 +30,12 @@ API Reference
 
 .. include:: /_build/inc/dac.inc
 
+GPIO Lookup Macros
+^^^^^^^^^^^^^^^^^^
+Some useful macros can be used to specified the GPIO number of a DAC channel, or vice versa.
+e.g.
+
+1. ``DAC_CHANNEL_1_GPIO_NUM`` is the GPIO number of channel 1 (25);
+2. ``DAC_GPIO26_CHANNEL`` is the channel number of GPIO 26 (channel 2).
+
+.. include:: /_build/inc/dac_channel.inc

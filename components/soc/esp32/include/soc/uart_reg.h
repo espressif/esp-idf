@@ -17,8 +17,8 @@
 
 #include "soc.h"
 
-#define REG_UART_BASE( i )  (DR_REG_UART_BASE + (i) * 0x10000 + ( i > 1 ? 0xe000 : 0 ) )
-#define REG_UART_AHB_BASE(i)  (0x60000000 + (i) * 0x10000 + ( i > 1 ? 0xe000 : 0 ) )
+#define REG_UART_BASE( i )  (DR_REG_UART_BASE + (i) * 0x10000 + ( (i) > 1 ? 0xe000 : 0 ) )
+#define REG_UART_AHB_BASE(i)  (0x60000000 + (i) * 0x10000 + ( (i) > 1 ? 0xe000 : 0 ) )
 #define UART_FIFO_AHB_REG(i)  (REG_UART_AHB_BASE(i) + 0x0)
 #define UART_FIFO_REG(i)          (REG_UART_BASE(i) + 0x0)
 

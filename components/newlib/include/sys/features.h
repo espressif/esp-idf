@@ -210,6 +210,12 @@ extern "C" {
 
 #endif /* __CYGWIN__ */
 
+/* ESP-IDF-specific: enable pthreads support */
+#ifdef __XTENSA__
+#define _POSIX_THREADS                          1
+#define _UNIX98_THREAD_MUTEX_ATTRIBUTES         1
+#endif
+
 /* Per the permission given in POSIX.1-2008 section 2.2.1, define
  * _POSIX_C_SOURCE if _XOPEN_SOURCE is defined and _POSIX_C_SOURCE is not.
  * (_XOPEN_SOURCE indicates that XSI extensions are desired by an application.)

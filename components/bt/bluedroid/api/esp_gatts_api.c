@@ -23,12 +23,13 @@
 #if (GATTS_INCLUDED == TRUE)
 #define COPY_TO_GATTS_ARGS(_gatt_args, _arg, _arg_type) memcpy(_gatt_args, _arg, sizeof(_arg_type))
 
+static esp_err_t esp_ble_gatts_add_char_desc_param_check(esp_attr_value_t *char_val, esp_attr_control_t *control);
+
 
 esp_err_t esp_ble_gatts_register_callback(esp_gatts_cb_t callback)
 {
-    if (esp_bluedroid_get_status() == ESP_BLUEDROID_STATUS_UNINITIALIZED) {
-        return ESP_ERR_INVALID_STATE;
-    }
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
     return (btc_profile_cb_set(BTC_PID_GATTS, callback) == 0 ? ESP_OK : ESP_FAIL);
 }
 
@@ -37,9 +38,7 @@ esp_err_t esp_ble_gatts_app_register(uint16_t app_id)
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
-    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
-        return ESP_ERR_INVALID_STATE;
-    }
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
     
     //if (app_id < ESP_APP_ID_MIN || app_id > ESP_APP_ID_MAX) {
     if (app_id > ESP_APP_ID_MAX) {
@@ -60,9 +59,7 @@ esp_err_t esp_ble_gatts_app_unregister(esp_gatt_if_t gatts_if)
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
-    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
-        return ESP_ERR_INVALID_STATE;
-    }
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
     
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
@@ -78,9 +75,7 @@ esp_err_t esp_ble_gatts_create_service(esp_gatt_if_t gatts_if,
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
-    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
-        return ESP_ERR_INVALID_STATE;
-    }
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
     
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
@@ -100,6 +95,8 @@ esp_err_t esp_ble_gatts_create_attr_tab(const esp_gatts_attr_db_t *gatts_attr_db
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
     msg.act = BTC_GATTS_ACT_CREATE_ATTR_TAB;
@@ -118,9 +115,7 @@ esp_err_t esp_ble_gatts_add_included_service(uint16_t service_handle, uint16_t i
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
-    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
-        return ESP_ERR_INVALID_STATE;
-    }
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
     
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
@@ -138,30 +133,14 @@ esp_err_t esp_ble_gatts_add_char(uint16_t service_handle,  esp_bt_uuid_t  *char_
 {
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
+    esp_err_t status;
 
-    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
-        return ESP_ERR_INVALID_STATE;
-    }
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     /* parameter validation check */
-    if ((control != NULL) && (control->auto_rsp == GATT_STACK_RSP)){
-        if (char_val == NULL){
-            LOG_ERROR("Error in %s, line=%d, for stack respond attribute, char_val should not be NULL here\n",\
-                            __func__, __LINE__);
-            return ESP_ERR_INVALID_ARG;
-        } else if (char_val->attr_max_len == 0){
-            LOG_ERROR("Error in %s, line=%d, for stack respond attribute,  attribute max length should not be 0\n",\
-                            __func__, __LINE__);
-            return ESP_ERR_INVALID_ARG;
-        }
-    }
-
-    if (char_val != NULL){
-        if (char_val->attr_len > char_val->attr_max_len){
-            LOG_ERROR("Error in %s, line=%d,attribute actual length (%d)  should not be larger than max length (%d)\n",\
-                            __func__, __LINE__, char_val->attr_len, char_val->attr_max_len);
-            return ESP_ERR_INVALID_ARG;
-        }
+    status = esp_ble_gatts_add_char_desc_param_check(char_val, control);
+    if (status != ESP_OK){
+        return status;
     }
 
     memset(&arg, 0, sizeof(btc_ble_gatts_args_t));
@@ -193,33 +172,15 @@ esp_err_t esp_ble_gatts_add_char_descr (uint16_t service_handle,
 {
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
+    esp_err_t status;
 
-    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
-        return ESP_ERR_INVALID_STATE;
-    }
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     /* parameter validation check */
-    if ((control != NULL) && (control->auto_rsp == GATT_STACK_RSP)){
-        if (char_descr_val == NULL){
-            LOG_ERROR("Error in %s, line=%d, for stack respond attribute, char_descr_val should not be NULL here\n",\
-                            __func__, __LINE__);
-            return ESP_ERR_INVALID_ARG;
-        }
-        else if (char_descr_val->attr_max_len == 0){
-            LOG_ERROR("Error in %s, line=%d, for stack respond attribute,  attribute max length should not be 0\n",\
-                            __func__, __LINE__);
-            return ESP_ERR_INVALID_ARG;
-        }
+    status = esp_ble_gatts_add_char_desc_param_check(char_descr_val, control);
+    if (status != ESP_OK){
+        return status;
     }
-
-    if (char_descr_val != NULL){
-        if (char_descr_val->attr_len > char_descr_val->attr_max_len){
-            LOG_ERROR("Error in %s, line=%d,attribute actual length (%d) should not be larger than max length (%d)\n",\
-                            __func__, __LINE__, char_descr_val->attr_len, char_descr_val->attr_max_len);
-            return ESP_ERR_INVALID_ARG;
-        }
-    }
-
     
     memset(&arg, 0, sizeof(btc_ble_gatts_args_t));
     msg.sig = BTC_SIG_API_CALL;
@@ -247,9 +208,7 @@ esp_err_t esp_ble_gatts_delete_service(uint16_t service_handle)
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
-    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
-        return ESP_ERR_INVALID_STATE;
-    }
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
     
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
@@ -264,9 +223,7 @@ esp_err_t esp_ble_gatts_start_service(uint16_t service_handle)
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
-    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
-        return ESP_ERR_INVALID_STATE;
-    }
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
     
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
@@ -281,9 +238,7 @@ esp_err_t esp_ble_gatts_stop_service(uint16_t service_handle)
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
-    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
-        return ESP_ERR_INVALID_STATE;
-    }
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
     
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
@@ -300,9 +255,7 @@ esp_err_t esp_ble_gatts_send_indicate(esp_gatt_if_t gatts_if, uint16_t conn_id, 
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
-    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
-        return ESP_ERR_INVALID_STATE;
-    }
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
     
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
@@ -323,9 +276,7 @@ esp_err_t esp_ble_gatts_send_response(esp_gatt_if_t gatts_if, uint16_t conn_id, 
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
-    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
-        return ESP_ERR_INVALID_STATE;
-    }
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
     
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
@@ -344,6 +295,8 @@ esp_err_t esp_ble_gatts_set_attr_value(uint16_t attr_handle, uint16_t length, co
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
     msg.act = BTC_GATTS_ACT_SET_ATTR_VALUE;
@@ -355,13 +308,15 @@ esp_err_t esp_ble_gatts_set_attr_value(uint16_t attr_handle, uint16_t length, co
                                  btc_gatts_arg_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_gatts_get_attr_value(uint16_t attr_handle, uint16_t *length, const uint8_t **value)
+esp_gatt_status_t esp_ble_gatts_get_attr_value(uint16_t attr_handle, uint16_t *length, const uint8_t **value)
 {
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
     if (attr_handle == ESP_GATT_ILLEGAL_HANDLE) {
-        return ESP_FAIL;
+        return ESP_GATT_INVALID_HANDLE;
     }
-    btc_gatts_get_attr_value(attr_handle, length, (uint8_t **)value);
-    return ESP_OK;
+
+    return btc_gatts_get_attr_value(attr_handle, length, (uint8_t **)value);
 }
 
 esp_err_t esp_ble_gatts_open(esp_gatt_if_t gatts_if, esp_bd_addr_t remote_bda, bool is_direct)
@@ -369,9 +324,7 @@ esp_err_t esp_ble_gatts_open(esp_gatt_if_t gatts_if, esp_bd_addr_t remote_bda, b
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
-    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
-        return ESP_ERR_INVALID_STATE;
-    }
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
     
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
@@ -389,9 +342,7 @@ esp_err_t esp_ble_gatts_close(esp_gatt_if_t gatts_if, uint16_t conn_id)
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
-    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
-        return ESP_ERR_INVALID_STATE;
-    }
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
     
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
@@ -400,6 +351,30 @@ esp_err_t esp_ble_gatts_close(esp_gatt_if_t gatts_if, uint16_t conn_id)
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+
+static esp_err_t esp_ble_gatts_add_char_desc_param_check(esp_attr_value_t *char_val, esp_attr_control_t *control)
+{
+    if ((control != NULL) && ((control->auto_rsp != ESP_GATT_AUTO_RSP) && (control->auto_rsp != ESP_GATT_RSP_BY_APP))){
+            LOG_ERROR("Error in %s, line=%d, control->auto_rsp should be set to ESP_GATT_AUTO_RSP or ESP_GATT_RSP_BY_APP\n",\
+                            __func__, __LINE__);
+            return ESP_ERR_INVALID_ARG;
+    }
+
+    if ((control != NULL) && (control->auto_rsp == ESP_GATT_AUTO_RSP)){
+        if (char_val == NULL){
+            LOG_ERROR("Error in %s, line=%d, for stack respond attribute, char_val should not be NULL here\n",\
+                            __func__, __LINE__);
+            return ESP_ERR_INVALID_ARG;
+        } else if (char_val->attr_max_len == 0){
+            LOG_ERROR("Error in %s, line=%d, for stack respond attribute,  attribute max length should not be 0\n",\
+                            __func__, __LINE__);
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+
+    return ESP_OK;
 }
 
 #endif  ///GATTS_INCLUDED

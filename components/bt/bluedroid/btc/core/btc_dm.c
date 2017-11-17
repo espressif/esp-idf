@@ -23,7 +23,10 @@
 #include "btc_storage.h"
 #include "btc_ble_storage.h"
 #include "esp_gap_ble_api.h"
+#include "btm_int.h"
 #include "bta_api.h"
+#include "bta_gatt_api.h"
+#include "allocator.h"
 
 
 /******************************************************************************
@@ -35,6 +38,11 @@
 **  Static variables
 ******************************************************************************/
 static tBTA_SERVICE_MASK btc_enabled_services = 0;
+#if (SMP_INCLUDED == TRUE)
+static btc_dm_pairing_cb_t pairing_cb;
+static btc_dm_local_key_cb_t ble_local_key_cb;
+#endif
+
 /******************************************************************************
 **  Static functions
 ******************************************************************************/
@@ -114,19 +122,138 @@ static void btc_disable_bluetooth_evt(void)
 }
 
 #if (SMP_INCLUDED == TRUE)
+void btc_dm_load_ble_local_keys(void)
+{
+    memset(&ble_local_key_cb, 0, sizeof(btc_dm_local_key_cb_t));
+
+    if (btc_storage_get_ble_local_key(BTC_LE_LOCAL_KEY_ER,(char*)&ble_local_key_cb.er[0],
+                                      BT_OCTET16_LEN)== BT_STATUS_SUCCESS) {
+        ble_local_key_cb.is_er_rcvd = TRUE;
+        LOG_DEBUG("%s BLE ER key loaded",__func__ );
+    }
+
+    if ((btc_storage_get_ble_local_key(BTC_LE_LOCAL_KEY_IR,(char*)&ble_local_key_cb.id_keys.ir[0],
+                                       BT_OCTET16_LEN)== BT_STATUS_SUCCESS )&&
+            (btc_storage_get_ble_local_key(BTC_LE_LOCAL_KEY_IRK, (char*)&ble_local_key_cb.id_keys.irk[0],
+                                           BT_OCTET16_LEN)== BT_STATUS_SUCCESS)&&
+            (btc_storage_get_ble_local_key(BTC_LE_LOCAL_KEY_DHK,(char*)&ble_local_key_cb.id_keys.dhk[0],
+                                           BT_OCTET16_LEN)== BT_STATUS_SUCCESS)) {
+        ble_local_key_cb.is_id_keys_rcvd = TRUE;
+        LOG_DEBUG("%s BLE ID keys loaded", __func__);
+    }
+
+}
+void btc_dm_get_ble_local_keys(tBTA_DM_BLE_LOCAL_KEY_MASK *p_key_mask, BT_OCTET16 er,
+                               tBTA_BLE_LOCAL_ID_KEYS *p_id_keys)
+{
+    if (ble_local_key_cb.is_er_rcvd ) {
+        memcpy(&er[0], &ble_local_key_cb.er[0], sizeof(BT_OCTET16));
+        *p_key_mask |= BTA_BLE_LOCAL_KEY_TYPE_ER;
+    }
+
+    if (ble_local_key_cb.is_id_keys_rcvd) {
+        memcpy(&p_id_keys->ir[0], &ble_local_key_cb.id_keys.ir[0], sizeof(BT_OCTET16));
+        memcpy(&p_id_keys->irk[0],  &ble_local_key_cb.id_keys.irk[0], sizeof(BT_OCTET16));
+        memcpy(&p_id_keys->dhk[0],  &ble_local_key_cb.id_keys.dhk[0], sizeof(BT_OCTET16));
+        *p_key_mask |= BTA_BLE_LOCAL_KEY_TYPE_ID;
+    }
+    LOG_DEBUG("%s  *p_key_mask=0x%02x",__func__,   *p_key_mask);
+}
+
+
+static void btc_dm_remove_ble_bonding_keys(void)
+{
+    bt_bdaddr_t bd_addr;
+    LOG_DEBUG("%s\n",__func__);
+
+    bdcpy(bd_addr.address, pairing_cb.bd_addr);
+
+    btc_storage_remove_remote_addr_type(&bd_addr, false);
+    btc_storage_remove_ble_dev_type(&bd_addr, false);
+    btc_storage_remove_ble_bonding_keys(&bd_addr);
+}
+
+static void btc_dm_save_ble_bonding_keys(void)
+{
+    bt_bdaddr_t bd_addr;
+
+    bdcpy(bd_addr.address, pairing_cb.bd_addr);
+
+    btc_storage_set_ble_dev_type(&bd_addr, false);
+    LOG_DEBUG("%s, penc = %d, pid = %d", __func__, pairing_cb.ble.is_penc_key_rcvd, pairing_cb.ble.is_pid_key_rcvd);
+    if (pairing_cb.ble.is_penc_key_rcvd) {
+        btc_storage_add_ble_bonding_key(&bd_addr,
+                                        (char *) &pairing_cb.ble.penc_key,
+                                        BTM_LE_KEY_PENC,
+                                        sizeof(tBTM_LE_PENC_KEYS));
+    }
+
+    if (pairing_cb.ble.is_pid_key_rcvd) {
+        btc_storage_add_ble_bonding_key(&bd_addr,
+                                        (char *) &pairing_cb.ble.pid_key,
+                                        BTM_LE_KEY_PID,
+                                        sizeof(tBTM_LE_PID_KEYS));
+    }
+
+
+    if (pairing_cb.ble.is_pcsrk_key_rcvd) {
+        btc_storage_add_ble_bonding_key(&bd_addr,
+                                        (char *) &pairing_cb.ble.pcsrk_key,
+                                        BTM_LE_KEY_PCSRK,
+                                        sizeof(tBTM_LE_PCSRK_KEYS));
+    }
+
+
+    if (pairing_cb.ble.is_lenc_key_rcvd) {
+        btc_storage_add_ble_bonding_key(&bd_addr,
+                                        (char *) &pairing_cb.ble.lenc_key,
+                                        BTM_LE_KEY_LENC,
+                                        sizeof(tBTM_LE_LENC_KEYS));
+    }
+
+    if (pairing_cb.ble.is_lcsrk_key_rcvd) {
+        btc_storage_add_ble_bonding_key(&bd_addr,
+                                        (char *) &pairing_cb.ble.lcsrk_key,
+                                        BTM_LE_KEY_LCSRK,
+                                        sizeof(tBTM_LE_LCSRK_KEYS));
+    }
+
+    if (pairing_cb.ble.is_lidk_key_rcvd) {
+        btc_storage_add_ble_bonding_key(&bd_addr,
+                                        NULL,
+                                        BTM_LE_KEY_LID,
+                                        0);
+    }
+}
+
 static void btc_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
 {
     /* Save link key, if not temporary */
+    LOG_DEBUG("%s, status = %d", __func__, p_auth_cmpl->success);
     bt_status_t status = BT_STATUS_FAIL;
+    int addr_type;
+    bt_bdaddr_t bdaddr;
+    bdcpy(bdaddr.address, p_auth_cmpl->bd_addr);
+    bdcpy(pairing_cb.bd_addr, p_auth_cmpl->bd_addr);
+
     if (p_auth_cmpl->success) {
         status = BT_STATUS_SUCCESS;
-        int addr_type;
-        bdcpy(pairing_cb.bd_addr, p_auth_cmpl->bd_addr);
-        if (btc_storage_get_remote_addr_type((bt_bdaddr_t *)pairing_cb.bd_addr, &addr_type) != BT_STATUS_SUCCESS) {
-            btc_storage_set_remote_addr_type((bt_bdaddr_t *)pairing_cb.bd_addr, p_auth_cmpl->addr_type);
+        LOG_DEBUG ("%s, -  p_auth_cmpl->bd_addr: %08x%04x", __func__,
+                             (p_auth_cmpl->bd_addr[0] << 24) + (p_auth_cmpl->bd_addr[1] << 16) + (p_auth_cmpl->bd_addr[2] << 8) + p_auth_cmpl->bd_addr[3],
+                             (p_auth_cmpl->bd_addr[4] << 8) + p_auth_cmpl->bd_addr[5]);
+        LOG_DEBUG ("%s, -  pairing_cb.bd_addr: %08x%04x", __func__,
+                             (pairing_cb.bd_addr[0] << 24) + (pairing_cb.bd_addr[1] << 16) + (pairing_cb.bd_addr[2] << 8) + pairing_cb.bd_addr[3],
+                             (pairing_cb.bd_addr[4] << 8) + pairing_cb.bd_addr[5]);
+         if (btc_storage_get_remote_addr_type(&bdaddr, &addr_type) != BT_STATUS_SUCCESS) {
+            btc_storage_set_remote_addr_type(&bdaddr, p_auth_cmpl->addr_type, true);
         }
-
-        btc_save_ble_bonding_keys();
+        /* check the irk has been save in the flash or not, if the irk has already save, means that the peer device has bonding
+           before. */
+        if(pairing_cb.ble.is_pid_key_rcvd) {
+            btc_storage_compare_address_key_value(&bdaddr, BTM_LE_KEY_PID,
+                                                  (void *)&pairing_cb.ble.pid_key, sizeof(tBTM_LE_PID_KEYS));
+        }
+        btc_dm_save_ble_bonding_keys();
     } else {
         /*Map the HCI fail reason  to  bt status  */
         switch (p_auth_cmpl->fail_reason) {
@@ -307,8 +434,8 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         btc_clear_services_mask();
         btc_storage_load_bonded_devices();
 #if (SMP_INCLUDED == TRUE)
-        //load the ble local key whitch has been store in the flash
-        btc_dm_load_ble_local_keys();
+        //load the bonding device to the btm layer
+        btc_storage_load_bonded_ble_devices();
 #endif  ///SMP_INCLUDED == TRUE
         btc_enable_bluetooth_evt(p_data->enable.status);
         break;
@@ -332,18 +459,45 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     case BTA_DM_BOND_CANCEL_CMPL_EVT:
     case BTA_DM_SP_CFM_REQ_EVT:
     case BTA_DM_SP_KEY_NOTIF_EVT:
-
-    case BTA_DM_DEV_UNPAIRED_EVT:
+        break;
+    case BTA_DM_DEV_UNPAIRED_EVT: {
+#if (SMP_INCLUDED == TRUE)
+        bt_bdaddr_t bd_addr;
+        rsp_app = true;
+        LOG_ERROR("BTA_DM_DEV_UNPAIRED_EVT");
+        memcpy(bd_addr.address, p_data->link_down.bd_addr, sizeof(BD_ADDR));
+        btm_set_bond_type_dev(p_data->link_down.bd_addr, BOND_TYPE_UNKNOWN);
+        param.remove_bond_dev_cmpl.status = ESP_BT_STATUS_FAIL;
+        
+        if (p_data->link_down.status == HCI_SUCCESS) {
+            //remove the bonded key in the config and nvs flash.
+            btc_storage_remove_ble_dev_type(&bd_addr, false);
+            btc_storage_remove_remote_addr_type(&bd_addr, false);
+            param.remove_bond_dev_cmpl.status = btc_storage_remove_ble_bonding_keys(&bd_addr);
+        }
+        ble_msg.act = ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT;
+        memcpy(param.remove_bond_dev_cmpl.bd_addr, p_data->link_down.bd_addr, sizeof(BD_ADDR));
+#endif /* #if (SMP_INCLUDED == TRUE) */
+        break;
+    }
     case BTA_DM_BUSY_LEVEL_EVT:
     case BTA_DM_LINK_UP_EVT:
     case BTA_DM_LINK_DOWN_EVT:
     case BTA_DM_HW_ERROR_EVT:
-
+        LOG_DEBUG( "btc_dm_sec_cback : unhandled event (%d)\n", msg->act );
+        break;
 #if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE) && (SMP_INCLUDED == TRUE))
     case BTA_DM_BLE_AUTH_CMPL_EVT: {
         rsp_app = true;
         ble_msg.act = ESP_GAP_BLE_AUTH_CMPL_EVT;
-        memcpy(&param.ble_security.auth_cmpl, &p_data->auth_cmpl, sizeof(esp_ble_auth_cmpl_t));
+        param.ble_security.auth_cmpl.addr_type = p_data->auth_cmpl.addr_type;
+        param.ble_security.auth_cmpl.dev_type = p_data->auth_cmpl.dev_type;
+        param.ble_security.auth_cmpl.key_type = p_data->auth_cmpl.key_type;
+        param.ble_security.auth_cmpl.fail_reason = p_data->auth_cmpl.fail_reason;
+        param.ble_security.auth_cmpl.success = p_data->auth_cmpl.success ? true : false;
+        param.ble_security.auth_cmpl.key_present = p_data->auth_cmpl.key_present;
+        memcpy(param.ble_security.auth_cmpl.bd_addr, p_data->auth_cmpl.bd_addr, sizeof(BD_ADDR));
+        memcpy(param.ble_security.auth_cmpl.key, p_data->auth_cmpl.key, sizeof(LINK_KEY));
         btc_dm_ble_auth_cmpl_evt(&p_data->auth_cmpl);
         break;
     }
@@ -484,9 +638,10 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     case BTA_DM_SP_RMT_OOB_EVT:
     case BTA_DM_SP_KEYPRESS_EVT:
     case BTA_DM_ROLE_CHG_EVT:
-
+        LOG_DEBUG( "btc_dm_sec_cback : unhandled event (%d)\n", msg->act );
+        break;
     default:
-        LOG_WARN( "btc_dm_sec_cback : unhandled event (%d)\n", msg->act );
+        LOG_DEBUG( "btc_dm_sec_cback : unhandled event (%d)\n", msg->act );
         break;
     }
 

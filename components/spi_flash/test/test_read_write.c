@@ -27,6 +27,7 @@
 #include "../cache_utils.h"
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
+#include "esp_heap_caps.h"
 
 /* Base offset in flash for tests. */
 static size_t start;
@@ -217,3 +218,51 @@ TEST_CASE("Test spi_flash_write", "[spi_flash]")
     ESP_ERROR_CHECK(spi_flash_write(start, (char *) 0x40078000, 16));
     ESP_ERROR_CHECK(spi_flash_write(start, (char *) 0x40080000, 16));
 }
+
+#ifdef CONFIG_SPIRAM_SUPPORT
+
+TEST_CASE("spi_flash_read can read into buffer in external RAM", "[spi_flash]")
+{
+    uint8_t* buf_ext = (uint8_t*) heap_caps_malloc(SPI_FLASH_SEC_SIZE, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(buf_ext);
+
+    uint8_t* buf_int = (uint8_t*) heap_caps_malloc(SPI_FLASH_SEC_SIZE, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(buf_int);
+
+    TEST_ESP_OK(spi_flash_read(0x1000, buf_int, SPI_FLASH_SEC_SIZE));
+    TEST_ESP_OK(spi_flash_read(0x1000, buf_ext, SPI_FLASH_SEC_SIZE));
+
+    TEST_ASSERT_EQUAL(0, memcmp(buf_ext, buf_int, SPI_FLASH_SEC_SIZE));
+    free(buf_ext);
+    free(buf_int);
+}
+
+TEST_CASE("spi_flash_write can write from external RAM buffer", "[spi_flash]")
+{
+    uint32_t* buf_ext = (uint32_t*) heap_caps_malloc(SPI_FLASH_SEC_SIZE, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(buf_ext);
+
+    srand(0);
+    for (size_t i = 0; i < SPI_FLASH_SEC_SIZE / sizeof(uint32_t); i++)
+    {
+        uint32_t val = rand();
+        buf_ext[i] = val;
+    }
+
+    uint8_t* buf_int = (uint8_t*) heap_caps_malloc(SPI_FLASH_SEC_SIZE, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(buf_int);
+
+    /* Write to flash from buf_ext */
+    const esp_partition_t *part = get_test_data_partition();
+    TEST_ESP_OK(spi_flash_erase_range(part->address, SPI_FLASH_SEC_SIZE));
+    TEST_ESP_OK(spi_flash_write(part->address, buf_ext, SPI_FLASH_SEC_SIZE));
+
+    /* Read back to buf_int and compare */
+    TEST_ESP_OK(spi_flash_read(part->address, buf_int, SPI_FLASH_SEC_SIZE));
+    TEST_ASSERT_EQUAL(0, memcmp(buf_ext, buf_int, SPI_FLASH_SEC_SIZE));
+
+    free(buf_ext);
+    free(buf_int);
+}
+
+#endif // CONFIG_SPIRAM_SUPPORT

@@ -1,0 +1,40 @@
+menu "Heap memory debugging"
+
+choice HEAP_CORRUPTION_DETECTION
+    prompt "Heap corruption detection"
+    default HEAP_POISONING_DISABLED
+    help
+        Enable heap poisoning features to detect heap corruption caused by out-of-bounds access to heap memory.
+
+        See the "Heap Memory Debugging" page of the IDF documentation
+        for a description of each level of heap corruption detection.
+
+config HEAP_POISONING_DISABLED
+    bool "Basic (no poisoning)"
+config HEAP_POISONING_LIGHT
+    bool "Light impact"
+config HEAP_POISONING_COMPREHENSIVE
+    bool "Comprehensive"
+endchoice
+
+config HEAP_TRACING
+    bool "Enable heap tracing"
+    help
+        Enables the heap tracing API defined in esp_heap_trace.h.
+
+        This function causes a moderate increase in IRAM code side and a minor increase in heap function
+        (malloc/free/realloc) CPU overhead, even when the tracing feature is not used. So it's best to keep it disabled
+        unless tracing is being used.
+
+config HEAP_TRACING_STACK_DEPTH
+    int "Heap tracing stack depth"
+    range 0 10
+    default 2
+    depends on HEAP_TRACING
+    help
+        Number of stack frames to save when tracing heap operation callers.
+
+        More stack frames uses more memory in the heap trace buffer (and slows down allocation), but
+        can provide useful information.
+
+endmenu

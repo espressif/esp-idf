@@ -378,6 +378,9 @@ May be called when a thread terminates or completes but does not delete
 the co-proc save area, to avoid the exception handler having to save the 
 thread's co-proc state before another thread can use it (optimization).
 
+Needs to be called on the processor the thread was running on. Unpinned threads
+won't have an entry here because they get pinned as soon they use a coprocessor.
+
 Entry Conditions:
     A2  = Pointer to base of co-processor state save area.
 

@@ -18,18 +18,20 @@ This example demonstrates how to use an SD card with ESP32. Example does the fol
 
 To run this example, ESP32 development board needs to be connected to SD card as follows:
 
-ESP32 pin     | SD card pin | Notes
---------------|-------------|------------
-GPIO14 (MTMS) | CLK         | 10k pullup
-GPIO15 (MTDO) | CMD         | 10k pullup
-GPIO2         | D0          | 10k pullup, pull low to go into download mode
-GPIO4         | D1          | 10k pullup; not used in 1-line mode
-GPIO12 (MTDI) | D2          | otherwise 10k pullup (see note below!); not used in 1-line mode
-GPIO13 (MTCK) | D3          | 10k pullup needed at card side, even in 1-line mode
-N/C           | CD          |
-N/C           | WP          |
+ESP32 pin     | SD card pin | SPI pin | Notes
+--------------|-------------|---------|------------
+GPIO14 (MTMS) | CLK         | SCK     | 10k pullup in SD mode
+GPIO15 (MTDO) | CMD         | MOSI    | 10k pullup, both in SD and SPI modes
+GPIO2         | D0          | MISO    | 10k pullup in SD mode, pull low to go into download mode (see note below!)
+GPIO4         | D1          | N/C     | not used in 1-line SD mode; 10k pullup in 4-line SD mode
+GPIO12 (MTDI) | D2          | N/C     | not used in 1-line SD mode; 10k pullup in 4-line SD mode (see note below!)
+GPIO13 (MTCK) | D3          | CS      | not used in 1-line SD mode, but card's D3 pin must have a 10k pullup
+N/C           | CD          |         | optional, not used in the example
+N/C           | WP          |         | optional, not used in the example
 
 This example doesn't utilize card detect (CD) and write protect (WP) signals from SD card slot.
+
+With the given pinout for SPI mode, same connections between the SD card and ESP32 can be used to test both SD and SPI modes, provided that the appropriate pullups are in place. In SPI mode, pins can be customized. See the initialization of ``sdspi_slot_config_t`` structure in the example code.
 
 ### Note about GPIO2
 
@@ -63,9 +65,12 @@ By default, example code uses the following initializer for SDMMC host periphera
 sdmmc_host_t host = SDMMC_HOST_DEFAULT();
 ```
 
-Among other things, this sets `host.flags` to `SDMMC_HOST_FLAG_4BIT`, which means that SD/MMC driver will switch to 4-line mode when initializing the card (initial communication always happens in 1-line mode). If some of D1, D2, D3 pins are not connected to the card, set `host.flags` to `SDMMC_HOST_FLAG_1BIT` — then the SD/MMC driver will not attempt to switch to 4-line mode.
-Note that even if D3 line is not connected to the ESP32, it still has to be pulled up at card side, otherwise the card will go into SPI protocol mode.
+Among other things, this sets `host.flags` to `SDMMC_HOST_FLAG_4BIT`, which means that SD/MMC driver will switch to 4-line mode when initializing the card (initial communication always happens in 1-line mode). If some of the card's D1, D2, D3 pins are not connected to the ESP32, set `host.flags` to `SDMMC_HOST_FLAG_1BIT` — then the SD/MMC driver will not attempt to switch to 4-line mode.
+Note that even if card's D3 line is not connected to the ESP32, it still has to be pulled up, otherwise the card will go into SPI protocol mode.
 
+## SPI mode
+
+By default, the example uses SDMMC Host peripheral to access SD card. To use SPI peripheral instead, uncomment ``#define USE_SPI_MODE`` in the example code.
 
 ## Example output
 

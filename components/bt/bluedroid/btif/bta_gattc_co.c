@@ -20,7 +20,6 @@
 #include <unistd.h>
 #endif /* BT_SUPPORT_NVM */
 
-#include "gki.h"
 #include "bta_gattc_co.h"
 #include "bta_gattc_ci.h"
 // #include "btif_util.h"

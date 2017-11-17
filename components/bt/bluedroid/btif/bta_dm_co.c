@@ -22,7 +22,7 @@
 #include "bta_sys.h"
 #include "bta_dm_co.h"
 #include "bta_dm_ci.h"
-#include "btc_ble_storage.h"
+#include "btc_dm.h"
 #if (defined(BTIF_INCLUDED) && BTIF_INCLUDED == TRUE)
 #include "bt_utils.h"
 #if (BTM_OOB_INCLUDED == TRUE)
@@ -326,7 +326,7 @@ void bta_dm_sco_co_in_data(BT_HDR  *p_buf)
     if (btui_cfg.sco_use_mic) {
         btui_sco_codec_inqdata (p_buf);
     } else {
-        GKI_freebuf(p_buf);
+        osi_free(p_buf);
     }
 }
 
@@ -403,7 +403,6 @@ void bta_dm_co_ble_load_local_keys(tBTA_DM_BLE_LOCAL_KEY_MASK *p_key_mask, BT_OC
 #endif  ///defined(BTIF_INCLUDED) && BTIF_INCLUDED == TRUE
 #if (SMP_INCLUDED == TRUE)
     btc_dm_get_ble_local_keys( p_key_mask, er, p_id_keys);
-    BTIF_TRACE_DEBUG("bta_dm_co_ble_load_local_keys: func not ported\n");
 #endif  ///SMP_INCLUDED == TRUE
 }
 
@@ -443,9 +442,7 @@ void bta_dm_co_ble_io_req(BD_ADDR bd_addr,  tBTA_IO_CAP *p_io_cap,
 
     /* *p_auth_req by default is FALSE for devices with NoInputNoOutput; TRUE for other devices. */
 
-    if (bte_appl_cfg.ble_auth_req) {
-        *p_auth_req = bte_appl_cfg.ble_auth_req | (bte_appl_cfg.ble_auth_req & 0x04) | ((*p_auth_req) & 0x04);
-    }
+    *p_auth_req = bte_appl_cfg.ble_auth_req | (bte_appl_cfg.ble_auth_req & BTA_LE_AUTH_REQ_MITM) | ((*p_auth_req) & BTA_LE_AUTH_REQ_MITM);
 
     if (bte_appl_cfg.ble_io_cap <= 4) {
         *p_io_cap = bte_appl_cfg.ble_io_cap;
@@ -502,7 +499,7 @@ void bta_dm_co_ble_set_rsp_key_req(UINT8 rsp_key)
 void bta_dm_co_ble_set_max_key_size(UINT8 ble_key_size)
 {
 #if (SMP_INCLUDED == TRUE)
-    if(ble_key_size > 7 && ble_key_size >= 16) {
+    if(ble_key_size >= BTM_BLE_MIN_KEY_SIZE && ble_key_size <= BTM_BLE_MAX_KEY_SIZE) {
         bte_appl_cfg.ble_max_key_size = ble_key_size;
     } else {
         APPL_TRACE_ERROR("%s error:Invalid key size value, key_size =%d",__func__, ble_key_size);

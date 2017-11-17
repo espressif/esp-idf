@@ -333,6 +333,7 @@ struct netif {
 
 #if ESP_LWIP
   void (*l2_buffer_free_notify)(void *user_buf); /* Allows LWIP to notify driver when a L2-supplied pbuf can be freed */
+  ip_addr_t last_ip_addr; /* Store last non-zero ip address */
 #endif
 };
 
@@ -385,7 +386,7 @@ void netif_set_gw(struct netif *netif, const ip4_addr_t *gw);
 void netif_set_up(struct netif *netif);
 void netif_set_down(struct netif *netif);
 /** Ask if an interface is up */
-#define netif_is_up(netif) (((netif)->flags & NETIF_FLAG_UP) ? (u8_t)1 : (u8_t)0)
+#define netif_is_up(netif) ( ((netif) && ((netif)->flags & NETIF_FLAG_UP)) ? (u8_t)1 : (u8_t)0)
 
 #if LWIP_NETIF_STATUS_CALLBACK
 void netif_set_status_callback(struct netif *netif, netif_status_callback_fn status_callback);

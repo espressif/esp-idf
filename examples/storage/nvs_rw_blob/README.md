@@ -9,6 +9,6 @@ Example also shows how to implement diagnostics if read / write operation was su
 
 If not done already, consider checking simpler example *storage/nvs_rw_value*, that has been used as a starting point for preparing this one. 
 
-Detailed functional description of NVS and API is provided in [documentation](http://esp-idf.readthedocs.io/en/latest/api/nvs_flash.html).
+Detailed functional description of NVS and API is provided in [documentation](https://esp-idf.readthedocs.io/en/latest/api-reference/nvs_flash.html).
 
 See the README.md file in the upper level 'examples' directory for more information about examples.

@@ -46,13 +46,14 @@ extern "C" {
 extern EventGroupHandle_t tcp_event_group;
 #define WIFI_CONNECTED_BIT BIT0
 
-extern int total_data;
+extern int  g_total_data;
+extern bool g_rxtx_need_restart;
 
 #if EXAMPLE_ESP_TCP_PERF_TX && EXAMPLE_ESP_TCP_DELAY_INFO
-extern int total_pack;
-extern int send_success;
-extern int send_fail;
-extern int delay_classify[5];
+extern int g_total_pack;
+extern int g_send_success;
+extern int g_send_fail;
+extern int g_delay_classify[5];
 #endif/*EXAMPLE_ESP_TCP_PERF_TX && EXAMPLE_ESP_TCP_DELAY_INFO*/
 
 
@@ -78,7 +79,7 @@ void close_socket();
 int get_socket_error_code(int socket);
 
 //show socket error code. return: error code
-int show_socket_error_reason(int socket);
+int show_socket_error_reason(const char* str, int socket);
 
 //check working socket
 int check_working_socket();

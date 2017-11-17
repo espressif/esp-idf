@@ -28,33 +28,37 @@ ESP32 toolchain for Linux is available for download from Espressif website:
 
 - for 64-bit Linux:
 
-  https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-61-gab8375a-5.2.0.tar.gz
+  https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-73-ge28a011-5.2.0.tar.gz
 
 - for 32-bit Linux:
 
-  https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-61-gab8375a-5.2.0.tar.gz
+  https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-73-ge28a011-5.2.0.tar.gz
 
 1.  Download this file, then extract it in ``~/esp`` directory::
 
         mkdir -p ~/esp
         cd ~/esp
-        tar -xzf ~/Downloads/xtensa-esp32-elf-linux64-1.22.0-61-gab8375a-5.2.0.tar.gz
+        tar -xzf ~/Downloads/xtensa-esp32-elf-linux64-1.22.0-73-ge28a011-5.2.0.tar.gz
 
 .. _setup-linux-toolchain-add-it-to-path:
 
 2.  The toolchain will be extracted into ``~/esp/xtensa-esp32-elf/`` directory.
 
-    To use it, you will need to update your ``PATH`` environment variable in ``~/.bash_profile`` file. To make ``xtensa-esp32-elf`` available for all terminal sessions, add the following line to your ``~/.bash_profile`` file::
+    To use it, you will need to update your ``PATH`` environment variable in ``~/.profile`` file. To make ``xtensa-esp32-elf`` available for all terminal sessions, add the following line to your ``~/.profile`` file::
 
-        export PATH=$PATH:$HOME/esp/xtensa-esp32-elf/bin
+        export PATH="$PATH:$HOME/esp/xtensa-esp32-elf/bin"
 
-    Alternatively, you may create an alias for the above command. This way you can get the toolchain only when you need it. To do this, add different line to your ``~/.bash_profile`` file::
+    Alternatively, you may create an alias for the above command. This way you can get the toolchain only when you need it. To do this, add different line to your ``~/.profile`` file::
 
-        alias get_esp32="export PATH=$PATH:$HOME/esp/xtensa-esp32-elf/bin"
+        alias get_esp32='export PATH="$PATH:$HOME/esp/xtensa-esp32-elf/bin"'
 
     Then when you need the toolchain you can type ``get_esp32`` on the command line and the toolchain will be added to your ``PATH``.
 
-3.  Finally, run the following command to verify if ``PATH`` is correctly set::
+    .. note::
+
+        If you have ``/bin/bash`` set as login shell, and both ``.bash_profile`` and ``.profile`` exist, then update ``.bash_profile`` instead.
+
+3.  Log off and log in back to make the ``.profile`` changes effective. Run the following command to verify if ``PATH`` is correctly set::
 
         printenv PATH
 
@@ -75,6 +79,8 @@ Backwards compatibility libraries are available in AUR_ for native and lib32 con
 
 - https://aur.archlinux.org/packages/ncurses5-compat-libs/
 - https://aur.archlinux.org/packages/lib32-ncurses5-compat-libs/
+
+Before installing these packages you might need to add the author's public key to your keyring as described in the "Comments" section at the links above.
 
 Alternatively, use crosstool-NG to compile a gdb that links against ncurses 6.
 

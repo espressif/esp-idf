@@ -28,7 +28,7 @@
                     new, free, \
                     handshake, shutdown, clear, \
                     read, send, pending, \
-                    set_fd, get_fd, \
+                    set_fd, set_hostname, get_fd,	\
                     set_bufflen, \
                     get_verify_result, \
                     get_state) \
@@ -42,6 +42,7 @@
                 send, \
                 pending, \
                 set_fd, \
+		set_hostname, \
                 get_fd, \
                 set_bufflen, \
                 get_verify_result, \

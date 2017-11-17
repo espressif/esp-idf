@@ -16,17 +16,20 @@
  *
  ******************************************************************************/
 #include "buffer_allocator.h"
-#include "gki.h"
+#include "allocator.h"
 
-// TODO(zachoverflow): move the assertion into GKI_getbuf in the future
+// TODO(zachoverflow): move the assertion into osi_malloc in the future
 static void *buffer_alloc(size_t size)
 {
-    return GKI_getbuf((uint16_t)size);
+    return osi_malloc(size);
 }
-
+static void buffer_free(void *p)
+{
+    osi_free(p);
+}
 static const allocator_t interface = {
     buffer_alloc,
-    GKI_freebuf
+    buffer_free
 };
 
 const allocator_t *buffer_allocator_get_interface()

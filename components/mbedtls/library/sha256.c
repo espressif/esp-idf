@@ -41,7 +41,10 @@
 #include "mbedtls/platform.h"
 #else
 #include <stdio.h>
+#include <stdlib.h>
 #define mbedtls_printf printf
+#define mbedtls_calloc    calloc
+#define mbedtls_free       free
 #endif /* MBEDTLS_PLATFORM_C */
 #endif /* MBEDTLS_SELF_TEST */
 
@@ -389,9 +392,18 @@ static const unsigned char sha256_test_sum[6][32] =
 int mbedtls_sha256_self_test( int verbose )
 {
     int i, j, k, buflen, ret = 0;
-    unsigned char buf[1024];
+    unsigned char *buf;
     unsigned char sha256sum[32];
     mbedtls_sha256_context ctx;
+
+    buf = mbedtls_calloc( 1024, sizeof(unsigned char) );
+    if( NULL == buf )
+    {
+        if( verbose != 0 )
+            mbedtls_printf( "Buffer allocation failed\n" );
+
+        return( 1 );
+    }
 
     mbedtls_sha256_init( &ctx );
 
@@ -436,6 +448,7 @@ int mbedtls_sha256_self_test( int verbose )
 
 exit:
     mbedtls_sha256_free( &ctx );
+    mbedtls_free( buf );
 
     return( ret );
 }

@@ -137,6 +137,7 @@ static void openssl_example_task(void *p)
         if (ret <= 0) {
             break;
         }
+        recv_buf[ret] = '\0';
         recv_bytes += ret;
         ESP_LOGI(TAG, "%s", recv_buf);
     } while (1);
@@ -168,7 +169,7 @@ static void openssl_example_client_init(void)
                       OPENSSL_EXAMPLE_TASK_NAME,
                       OPENSSL_EXAMPLE_TASK_STACK_WORDS,
                       NULL,
-                      OPENSSL_EXAMPLE_TASK_PRORIOTY,
+                      OPENSSL_EXAMPLE_TASK_PRIORITY,
                       &openssl_handle);
 
     if (ret != pdPASS)  {

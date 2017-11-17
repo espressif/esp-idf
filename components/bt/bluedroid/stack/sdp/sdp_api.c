@@ -28,7 +28,6 @@
 
 #include "bt_target.h"
 //#include "bt_utils.h"
-#include "gki.h"
 #include "l2cdefs.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"

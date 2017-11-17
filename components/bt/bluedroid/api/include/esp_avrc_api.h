@@ -136,7 +136,7 @@ esp_err_t esp_avrc_ct_deinit(void);
  * @param[in]       tl : transaction label, 0 to 15, consecutive commands should use different values.
  * @param[in]       key_code : passthrough command code, e.g. ESP_AVRC_PT_CMD_PLAY, ESP_AVRC_PT_CMD_STOP, etc.
  * @param[in]       key_state : passthrough command key state, ESP_AVRC_PT_CMD_STATE_PRESSED or
- *                  ESP_AVRC_PT_CMD_STATE_PRESSED
+ *                  ESP_AVRC_PT_CMD_STATE_RELEASED
  *
  * @return          
  *                  - ESP_OK: success

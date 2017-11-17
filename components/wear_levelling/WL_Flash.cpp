@@ -431,7 +431,7 @@ esp_err_t WL_Flash::write(size_t dest_addr, const void *src, size_t size)
     uint32_t count = (size - 1) / this->cfg.page_size;
     for (size_t i = 0; i < count; i++) {
         size_t virt_addr = this->calcAddr(dest_addr + i * this->cfg.page_size);
-        result = this->flash_drv->write(this->cfg.start_addr + virt_addr, &((uint8_t *)src)[i * this->cfg.page_size], size);
+        result = this->flash_drv->write(this->cfg.start_addr + virt_addr, &((uint8_t *)src)[i * this->cfg.page_size], this->cfg.page_size);
         WL_RESULT_CHECK(result);
     }
     size_t virt_addr_last = this->calcAddr(dest_addr + count * this->cfg.page_size);
@@ -450,7 +450,7 @@ esp_err_t WL_Flash::read(size_t src_addr, void *dest, size_t size)
     uint32_t count = (size - 1) / this->cfg.page_size;
     for (size_t i = 0; i < count; i++) {
         size_t virt_addr = this->calcAddr(src_addr + i * this->cfg.page_size);
-        result = this->flash_drv->read(this->cfg.start_addr + virt_addr, &((uint8_t *)dest)[i * this->cfg.page_size], size);
+        result = this->flash_drv->read(this->cfg.start_addr + virt_addr, &((uint8_t *)dest)[i * this->cfg.page_size], this->cfg.page_size);
         WL_RESULT_CHECK(result);
     }
     size_t virt_addr_last = this->calcAddr(src_addr + count * this->cfg.page_size);

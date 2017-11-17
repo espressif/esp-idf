@@ -53,6 +53,7 @@ enum {
 struct emac_config_data {
     eth_phy_base_t phy_addr;
     eth_mode_t mac_mode;
+    eth_clock_mode_t clock_mode;
     struct dma_extended_desc *dma_etx;
     uint32_t cur_tx;
     uint32_t dirty_tx;
@@ -101,15 +102,11 @@ struct emac_open_cmd {
 struct emac_close_cmd {
     int8_t err;
 };
-#if CONFIG_ETHERNET
+
 #define DMA_RX_BUF_NUM CONFIG_DMA_RX_BUF_NUM
 #define DMA_TX_BUF_NUM CONFIG_DMA_TX_BUF_NUM
 #define EMAC_TASK_PRIORITY CONFIG_EMAC_TASK_PRIORITY
-#else
-#define DMA_RX_BUF_NUM 1
-#define DMA_TX_BUF_NUM 1
-#define EMAC_TASK_PRIORITY 10
-#endif
+
 #define DMA_RX_BUF_SIZE 1600
 #define DMA_TX_BUF_SIZE 1600
 

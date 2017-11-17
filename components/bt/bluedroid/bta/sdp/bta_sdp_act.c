@@ -29,7 +29,6 @@
 #include "bt_target.h"
 #include "allocator.h"
 #include "bt_types.h"
-#include "gki.h"
 #include "utl.h"
 #include "bta_sys.h"
 #include "bta_api.h"

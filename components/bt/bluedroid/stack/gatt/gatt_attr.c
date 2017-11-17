@@ -253,7 +253,6 @@ static void gatt_connect_cback (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn_id,
         p_clcb->conn_id = conn_id;
     }
     
-    p_clcb->ccc_stage = GATT_SVC_CHANGED_CONNECTING;
 
     if (!p_clcb->connected) {
         /* wait for connection */
@@ -264,10 +263,6 @@ static void gatt_connect_cback (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn_id,
         p_clcb->conn_id = conn_id;
         p_clcb->connected = TRUE;
 
-        if (p_clcb->ccc_stage == GATT_SVC_CHANGED_CONNECTING) {
-            p_clcb->ccc_stage ++;
-            gatt_cl_start_config_ccc(p_clcb);
-        }
     } else {
         gatt_profile_clcb_dealloc(p_clcb);
     }

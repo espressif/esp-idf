@@ -18,6 +18,7 @@
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
 #include "driver/sdmmc_host.h"
+#include "driver/sdspi_host.h"
 #include "sdmmc_cmd.h"
 #include "diskio.h"
 
@@ -28,8 +29,8 @@ static char * s_base_path = NULL;
 
 esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
     const sdmmc_host_t* host_config,
-    const sdmmc_slot_config_t* slot_config,
-    const esp_vfs_fat_sdmmc_mount_config_t* mount_config,
+    const void* slot_config,
+    const esp_vfs_fat_mount_config_t* mount_config,
     sdmmc_card_t** out_card)
 {
     const size_t workbuf_size = 4096;
@@ -52,19 +53,29 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
         ESP_LOGD(TAG, "could not copy base_path");
         return ESP_ERR_NO_MEM;
     }
-
-    // enable SDMMC
-    sdmmc_host_init();
-
-    // enable card slot
-    esp_err_t err = sdmmc_host_init_slot(host_config->slot, slot_config);
-    if (err != ESP_OK) {
-        return err;
-    }
-
+    esp_err_t err = ESP_OK;
     s_card = malloc(sizeof(sdmmc_card_t));
     if (s_card == NULL) {
         err = ESP_ERR_NO_MEM;
+        goto fail;
+    }
+
+    err = (*host_config->init)();
+    if (err != ESP_OK) {
+        ESP_LOGD(TAG, "host init returned rc=0x%x", err);
+        goto fail;
+    }
+
+    // configure SD slot
+    if (host_config->flags == SDMMC_HOST_FLAG_SPI) {
+        err = sdspi_host_init_slot(host_config->slot,
+                (const sdspi_slot_config_t*) slot_config);
+    } else {
+        err = sdmmc_host_init_slot(host_config->slot,
+                (const sdmmc_slot_config_t*) slot_config);
+    }
+    if (err != ESP_OK) {
+        ESP_LOGD(TAG, "slot_config returned rc=0x%x", err);
         goto fail;
     }
 

@@ -40,7 +40,7 @@ static const char* NEC_TAG = "NEC";
 #endif
 
 #define RMT_TX_CHANNEL    1     /*!< RMT channel for transmitter */
-#define RMT_TX_GPIO_NUM  16     /*!< GPIO number for transmitter signal */
+#define RMT_TX_GPIO_NUM  18     /*!< GPIO number for transmitter signal */
 #define RMT_RX_CHANNEL    0     /*!< RMT channel for receiver */
 #define RMT_RX_GPIO_NUM  19     /*!< GPIO number for receiver */
 #define RMT_CLK_DIV      100    /*!< RMT counter clock divider */
@@ -284,7 +284,7 @@ static void rmt_example_nec_rx_task()
     nec_rx_init();
     RingbufHandle_t rb = NULL;
     //get RMT RX ringbuffer
-    rmt_get_ringbuf_handler(channel, &rb);
+    rmt_get_ringbuf_handle(channel, &rb);
     rmt_rx_start(channel, 1);
     while(rb) {
         size_t rx_size = 0;
@@ -349,7 +349,7 @@ static void rmt_example_nec_tx_task()
         //To send data according to the waveform items.
         rmt_write_items(channel, item, item_num, true);
         //Wait until sending is done.
-        rmt_wait_tx_done(channel);
+        rmt_wait_tx_done(channel, portMAX_DELAY);
         //before we free the data, make sure sending is already done.
         free(item);
         vTaskDelay(2000 / portTICK_PERIOD_MS);

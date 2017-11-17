@@ -81,6 +81,9 @@ typedef struct x509_method_st X509_METHOD;
 struct pkey_method_st;
 typedef struct pkey_method_st PKEY_METHOD;
 
+struct ssl_alpn_st;
+typedef struct ssl_alpn_st SSL_ALPN;
+
 struct stack_st {
 
     char **data;
@@ -144,6 +147,16 @@ struct X509_VERIFY_PARAM_st {
 
 };
 
+typedef enum { ALPN_INIT, ALPN_ENABLE, ALPN_DISABLE, ALPN_ERROR } ALPN_STATUS;
+struct ssl_alpn_st {
+     ALPN_STATUS alpn_status;
+     /* This is dynamically allocated */
+     char *alpn_string;
+     /* This only points to the members in the string */
+#define ALPN_LIST_MAX 10
+     const char *alpn_list[ALPN_LIST_MAX];
+};
+
 struct ssl_ctx_st
 {
     int version;
@@ -152,9 +165,7 @@ struct ssl_ctx_st
 
     unsigned long options;
 
-    #if 0
-        struct alpn_protocols alpn_protocol;
-    #endif
+    SSL_ALPN ssl_alpn;
 
     const SSL_METHOD *method;
 
@@ -248,6 +259,8 @@ struct ssl_method_func_st {
 
     void (*ssl_set_fd)(SSL *ssl, int fd, int mode);
 
+    void (*ssl_set_hostname)(SSL *ssl, const char *hostname);
+
     int (*ssl_get_fd)(const SSL *ssl, int mode);
 
     void (*ssl_set_bufflen)(SSL *ssl, int len);
@@ -276,6 +289,7 @@ struct pkey_method_st {
 
     int (*pkey_load)(EVP_PKEY *pkey, const unsigned char *buf, int len);
 };
+
 
 typedef int (*next_proto_cb)(SSL *ssl, unsigned char **out,
                              unsigned char *outlen, const unsigned char *in,

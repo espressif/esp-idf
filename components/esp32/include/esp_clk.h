@@ -18,22 +18,10 @@
  * @file esp_clk.h
  *
  * This file contains declarations of clock related functions.
- * These functions are used in ESP-IDF components, but should not be considered
- * to be part of public API.
  */
 
 /**
- * @brief Initialize clock-related settings
- *
- * Called from cpu_start.c, not intended to be called from other places.
- * This function configures the CPU clock, RTC slow and fast clocks, and
- * performs RTC slow clock calibration.
- */
-void esp_clk_init(void);
-
-
-/**
- * @brief Get the cached calibration value of RTC slow clock
+ * @brief Get the calibration value of RTC slow clock
  *
  * The value is in the same format as returned by rtc_clk_cal (microseconds,
  * in Q13.19 fixed-point format).
@@ -42,3 +30,46 @@ void esp_clk_init(void);
  */
 uint32_t esp_clk_slowclk_cal_get();
 
+/**
+ * @brief Update the calibration value of RTC slow clock
+ *
+ * The value has to be in the same format as returned by rtc_clk_cal (microseconds,
+ * in Q13.19 fixed-point format).
+ * This value is used by timekeeping functions (such as gettimeofday) to
+ * calculate current time based on RTC counter value.
+ * @param value calibration value obtained using rtc_clk_cal
+ */
+void esp_clk_slowclk_cal_set(uint32_t value);
+
+/**
+ * @brief Return current CPU clock frequency
+ * When frequency switching is performed, this frequency may change.
+ * However it is guaranteed that the frequency never changes with a critical
+ * section.
+ *
+ * @return CPU clock frequency, in Hz
+ */
+int esp_clk_cpu_freq(void);
+
+/**
+ * @brief Return current APB clock frequency
+ *
+ * When frequency switching is performed, this frequency may change.
+ * However it is guaranteed that the frequency never changes with a critical
+ * section.
+ *
+ * @return APB clock frequency, in Hz
+ */
+int esp_clk_apb_freq(void);
+
+
+/**
+ * @brief Read value of RTC counter, converting it to microseconds
+ * @attention The value returned by this function may change abruptly when
+ * calibration value of RTC counter is updated via esp_clk_slowclk_cal_set
+ * function. This should not happen unless application calls esp_clk_slowclk_cal_set.
+ * In ESP-IDF, esp_clk_slowclk_cal_set is only called in startup code.
+ *
+ * @return Value or RTC counter, expressed in microseconds
+ */
+uint64_t esp_clk_rtc_time();

@@ -677,11 +677,15 @@ esp_err_t rmt_write_items(rmt_channel_t channel, const rmt_item32_t* rmt_item, i
  *
  * @param channel RMT channel (0 - 7)
  *
+ * @param wait_time Maximum time to wait for transmission to be complete 
+ *
  * @return
+ *     - ESP_OK RMT Tx done successfully
+ *     - ESP_ERR_TIMEOUT Crossed the 'wait_time' given
  *     - ESP_ERR_INVALID_ARG Parameter error
- *     - ESP_OK Success
+ *     - ESP_FAIL Driver not installed
  */
-esp_err_t rmt_wait_tx_done(rmt_channel_t channel);
+esp_err_t rmt_wait_tx_done(rmt_channel_t channel, TickType_t wait_time);
 
 /**
  * @brief Get ringbuffer from UART.
@@ -690,13 +694,13 @@ esp_err_t rmt_wait_tx_done(rmt_channel_t channel);
  *
  * @param channel RMT channel (0 - 7)
  *
- * @param buf_handler Pointer to buffer handler to accept RX ringbuffer handler.
+ * @param buf_handle Pointer to buffer handler to accept RX ringbuffer handler.
  *
  * @return
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_OK Success
  */
-esp_err_t rmt_get_ringbuf_handler(rmt_channel_t channel, RingbufHandle_t* buf_handler);
+esp_err_t rmt_get_ringbuf_handle(rmt_channel_t channel, RingbufHandle_t* buf_handle);
 
 /***************************EXAMPLE**********************************
  *

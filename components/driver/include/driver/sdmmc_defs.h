@@ -30,6 +30,7 @@
 #define MMC_SELECT_CARD                 7       /* R1 */
 #define MMC_SEND_EXT_CSD                8       /* R1 */
 #define MMC_SEND_CSD                    9       /* R2 */
+#define MMC_SEND_CID                    10      /* R1 */
 #define MMC_STOP_TRANSMISSION           12      /* R1B */
 #define MMC_SEND_STATUS                 13      /* R1 */
 #define MMC_SET_BLOCKLEN                16      /* R1 */
@@ -44,9 +45,12 @@
 #define SD_SEND_RELATIVE_ADDR           3       /* R6 */
 #define SD_SEND_SWITCH_FUNC             6       /* R1 */
 #define SD_SEND_IF_COND                 8       /* R7 */
+#define SD_READ_OCR                     58      /* R3 */
+#define SD_CRC_ON_OFF                   59      /* R1 */
 
 /* SD application commands */                   /* response type */
 #define SD_APP_SET_BUS_WIDTH            6       /* R1 */
+#define SD_APP_SD_STATUS                13      /* R2 */
 #define SD_APP_OP_COND                  41      /* R3 */
 #define SD_APP_SEND_SCR                 51      /* R1 */
 
@@ -76,15 +80,25 @@
 #define SD_OCR_SDHC_CAP                 (1<<30)
 #define SD_OCR_VOL_MASK                 0xFF8000 /* bits 23:15 */
 
-/* R1 response type bits */
+/* SD mode R1 response type bits */
 #define MMC_R1_READY_FOR_DATA           (1<<8)  /* ready for next transfer */
 #define MMC_R1_APP_CMD                  (1<<5)  /* app. commands supported */
+
+/* SPI mode R1 response type bits */
+#define SD_SPI_R1_IDLE_STATE            (1<<0)
+#define SD_SPI_R1_CMD_CRC_ERR           (1<<3)
 
 /* 48-bit response decoding (32 bits w/o CRC) */
 #define MMC_R1(resp)                    ((resp)[0])
 #define MMC_R3(resp)                    ((resp)[0])
 #define SD_R6(resp)                     ((resp)[0])
 #define MMC_R1_CURRENT_STATE(resp)      (((resp)[0] >> 9) & 0xf)
+
+/* SPI mode response decoding */
+#define SD_SPI_R1(resp)                 ((resp)[0] & 0xff)
+#define SD_SPI_R2(resp)                 ((resp)[0] & 0xffff)
+#define SD_SPI_R3(resp)                 ((resp)[0])
+#define SD_SPI_R7(resp)                 ((resp)[0])
 
 /* RCA argument and response */
 #define MMC_ARG_RCA(rca)                ((rca) << 16)
@@ -280,23 +294,67 @@
 #define SCR_CMD_SUPPORT_CMD20(scr)      MMC_RSP_BITS((scr), 32, 1)
 #define SCR_RESERVED2(scr)              MMC_RSP_BITS((scr), 0, 32)
 
-/* Status of Switch Function */
-#define SFUNC_STATUS_GROUP(status, group) \
-        (__bitfield((uint32_t *)(status), 400 + (group - 1) * 16, 16))
+/* Max supply current in SWITCH_FUNC response (in mA) */
+#define SD_SFUNC_I_MAX(status) (MMC_RSP_BITS((uint32_t *)(status), 496, 16))
 
-#define SD_ACCESS_MODE_SDR12    0
-#define SD_ACCESS_MODE_SDR25    1
-#define SD_ACCESS_MODE_SDR50    2
-#define SD_ACCESS_MODE_SDR104   3
-#define SD_ACCESS_MODE_DDR50    4
+/* Supported flags in SWITCH_FUNC response */
+#define SD_SFUNC_SUPPORTED(status, group) \
+        (MMC_RSP_BITS((uint32_t *)(status), 400 + (group - 1) * 16, 16))
 
+/* Selected function in SWITCH_FUNC response */
+#define SD_SFUNC_SELECTED(status, group) \
+        (MMC_RSP_BITS((uint32_t *)(status), 376 + (group - 1) * 4, 4))
+
+/* Busy flags in SWITCH_FUNC response */
+#define SD_SFUNC_BUSY(status, group) \
+        (MMC_RSP_BITS((uint32_t *)(status), 272 + (group - 1) * 16, 16))
+
+/* Version of SWITCH_FUNC response */
+#define SD_SFUNC_VER(status)    (MMC_RSP_BITS((uint32_t *)(status), 368, 8))
+
+#define SD_SFUNC_GROUP_MAX      6
+#define SD_SFUNC_FUNC_MAX       15
+
+#define SD_ACCESS_MODE          1       /* Function group 1, Access Mode */
+
+#define SD_ACCESS_MODE_SDR12    0       /* 25 MHz clock */
+#define SD_ACCESS_MODE_SDR25    1       /* 50 MHz clock */
+#define SD_ACCESS_MODE_SDR50    2       /* UHS-I, 100 MHz clock */
+#define SD_ACCESS_MODE_SDR104   3       /* UHS-I, 208 MHz clock */
+#define SD_ACCESS_MODE_DDR50    4       /* UHS-I, 50 MHz clock, DDR */
+
+/**
+ * @brief Extract up to 32 sequential bits from an array of 32-bit words
+ *
+ * Bits within the word are numbered in the increasing order from LSB to MSB.
+ *
+ * As an example, consider 2 32-bit words:
+ *
+ * 0x01234567 0x89abcdef
+ *
+ * On a little-endian system, the bytes are stored in memory as follows:
+ *
+ * 67 45 23 01 ef cd ab 89
+ *
+ * MMC_RSP_BITS will extact bits as follows:
+ *
+ * start=0  len=4   -> result=0x00000007
+ * start=0  len=12  -> result=0x00000567
+ * start=28 len=8   -> result=0x000000f0
+ * start=59 len=5   -> result=0x00000011
+ *
+ * @param src array of words to extract bits from
+ * @param start index of the first bit to extract
+ * @param len number of bits to extract, 1 to 32
+ * @return 32-bit word where requested bits start from LSB
+ */
 static inline uint32_t MMC_RSP_BITS(uint32_t *src, int start, int len)
 {
     uint32_t mask = (len % 32 == 0) ? UINT_MAX : UINT_MAX >> (32 - (len % 32));
-    size_t word = 3 - start / 32;
+    size_t word = start / 32;
     size_t shift = start % 32;
     uint32_t right = src[word] >> shift;
-    uint32_t left = (len + shift <= 32) ? 0 : src[word - 1] << ((32 - shift) % 32);
+    uint32_t left = (len + shift <= 32) ? 0 : src[word + 1] << ((32 - shift) % 32);
     return (left | right) & mask;
 }
 

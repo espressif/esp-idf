@@ -96,8 +96,16 @@ esp_err_t pcnt_set_pin(pcnt_unit_t unit, pcnt_channel_t channel, int pulse_io, i
     PCNT_CHECK(channel < PCNT_CHANNEL_MAX, PCNT_CHANNEL_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK(GPIO_IS_VALID_GPIO(pulse_io) || pulse_io < 0, PCNT_GPIO_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK(GPIO_IS_VALID_GPIO(ctrl_io) || ctrl_io < 0, PCNT_GPIO_ERR_STR, ESP_ERR_INVALID_ARG);
-    int input_sig_index = (channel == 0 ? PCNT_SIG_CH0_IN0_IDX + 4 * unit : PCNT_SIG_CH1_IN0_IDX + 4 * unit);
-    int ctrl_sig_index = (channel == 0 ? PCNT_CTRL_CH0_IN0_IDX + 4 * unit : PCNT_CTRL_CH1_IN0_IDX + 4 * unit);
+    
+    int sig_base  = (channel == 0) ? PCNT_SIG_CH0_IN0_IDX  : PCNT_SIG_CH1_IN0_IDX;
+    int ctrl_base = (channel == 0) ? PCNT_CTRL_CH0_IN0_IDX : PCNT_CTRL_CH1_IN0_IDX;
+    if (unit > 4) {  
+        sig_base  += 12; // GPIO matrix assignments have a gap between units 4 & 5  
+        ctrl_base += 12;
+    }
+    int input_sig_index = sig_base  + (4 * unit);
+    int ctrl_sig_index  = ctrl_base + (4 * unit);
+
     if(pulse_io >= 0) {
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pulse_io], PIN_FUNC_GPIO);
         gpio_set_direction(pulse_io, GPIO_MODE_INPUT);
@@ -143,7 +151,9 @@ esp_err_t pcnt_counter_clear(pcnt_unit_t pcnt_unit)
 {
     PCNT_CHECK(pcnt_unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_ENTER_CRITICAL(&pcnt_spinlock);
-    PCNT.ctrl.val &= (~(BIT(PCNT_PLUS_CNT_RST_U0_S + (pcnt_unit * 2))));
+    uint32_t reset_bit = BIT(PCNT_PLUS_CNT_RST_U0_S + (pcnt_unit * 2));
+    PCNT.ctrl.val |= reset_bit;
+    PCNT.ctrl.val &= ~reset_bit;
     PCNT_EXIT_CRITICAL(&pcnt_spinlock);
     return ESP_OK;
 }

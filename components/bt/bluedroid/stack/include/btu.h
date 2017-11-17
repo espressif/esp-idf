@@ -28,7 +28,7 @@
 #define BTU_H
 
 #include "bt_target.h"
-#include "gki.h"
+#include "bt_defs.h"
 
 // HACK(zachoverflow): temporary dark magic
 #define BTU_POST_TO_TASK_NO_GOOD_HORRIBLE_HACK 0x1700 // didn't look used in bt_types...here goes nothing
@@ -143,6 +143,8 @@ typedef void (*tBTU_EVENT_CALLBACK)(BT_HDR *p_hdr);
 /* eL2CAP Info Request and other proto cmds timer */
 #define BTU_TTYPE_L2CAP_FCR_ACK     78
 #define BTU_TTYPE_L2CAP_INFO        79
+/* L2CAP update connection parameters timer */
+#define BTU_TTYPE_L2CAP_UPDA_CONN_PARAMS            80
 
 #define BTU_TTYPE_MCA_CCB_RSP                       98
 
@@ -158,8 +160,9 @@ typedef void (*tBTU_EVENT_CALLBACK)(BT_HDR *p_hdr);
 #define BTU_TTYPE_BLE_GAP_FAST_ADV                  106
 #define BTU_TTYPE_BLE_OBSERVE                       107
 
-
 #define BTU_TTYPE_UCD_TO                            108
+#define BTU_TTYPE_BLE_SCAN                          109
+
 
 /* This is the inquiry response information held by BTU, and available
 ** to applications.

@@ -352,13 +352,13 @@ int mbedtls_x509_crl_parse_der( mbedtls_x509_crl *chain,
         return( ret );
     }
 
-    crl->version++;
-
-    if( crl->version > 2 )
+    if( crl->version < 0 || crl->version > 1 )
     {
         mbedtls_x509_crl_free( crl );
         return( MBEDTLS_ERR_X509_UNKNOWN_VERSION );
     }
+
+    crl->version++;
 
     if( ( ret = mbedtls_x509_get_sig_alg( &crl->sig_oid, &sig_params1,
                                   &crl->sig_md, &crl->sig_pk,
@@ -525,16 +525,17 @@ int mbedtls_x509_crl_parse( mbedtls_x509_crl *chain, const unsigned char *buf, s
             if( ( ret = mbedtls_x509_crl_parse_der( chain,
                                             pem.buf, pem.buflen ) ) != 0 )
             {
+                mbedtls_pem_free( &pem );
                 return( ret );
             }
-
-            mbedtls_pem_free( &pem );
         }
-        else if( ret != MBEDTLS_ERR_PEM_NO_HEADER_FOOTER_PRESENT )
+        else if( is_pem )
         {
             mbedtls_pem_free( &pem );
             return( ret );
         }
+
+        mbedtls_pem_free( &pem );
     }
     /* In the PEM case, buflen is 1 at the end, for the terminated NULL byte.
      * And a valid CRL cannot be less than 1 byte anyway. */

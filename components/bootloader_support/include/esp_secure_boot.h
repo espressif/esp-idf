@@ -11,12 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef __ESP32_SECUREBOOT_H
-#define __ESP32_SECUREBOOT_H
+#pragma once
 
 #include <stdbool.h>
 #include <esp_err.h>
 #include "soc/efuse_reg.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Support functions for secure boot features.
 
@@ -74,11 +77,21 @@ esp_err_t esp_secure_boot_permanently_enable(void);
  */
 esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length);
 
+/** @brief Verify the secure boot signature block (deterministic ECDSA w/ SHA256) based on the SHA256 hash of some data.
+ *
+ * Similar to esp_secure_boot_verify_signature(), but can be used when the digest is precalculated.
+ * @param sig_block Pointer to signature block data
+ * @param image_digest Pointer to 32 byte buffer holding SHA-256 hash.
+ *
+ */
+
 /** @brief Secure boot verification block, on-flash data format. */
 typedef struct {
     uint32_t version;
     uint8_t signature[64];
 } esp_secure_boot_sig_block_t;
+
+esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest);
 
 #define FLASH_OFFS_SECURE_BOOT_IV_DIGEST 0
 
@@ -88,4 +101,7 @@ typedef struct {
     uint8_t digest[64];
 } esp_secure_boot_iv_digest_t;
 
+
+#ifdef __cplusplus
+}
 #endif

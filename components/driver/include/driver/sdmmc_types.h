@@ -61,6 +61,13 @@ typedef struct {
 typedef uint32_t sdmmc_response_t[4];
 
 /**
+ * SD SWITCH_FUNC response buffer
+ */
+typedef struct {
+    uint32_t data[512 / 8 / sizeof(uint32_t)];  /*!< response data */
+} sdmmc_switch_func_rsp_t;
+
+/**
  * SD/MMC command information
  */
 typedef struct {
@@ -95,6 +102,7 @@ typedef struct {
 #define SCF_RSP_R6       (SCF_RSP_PRESENT|SCF_RSP_CRC|SCF_RSP_IDX)
 #define SCF_RSP_R7       (SCF_RSP_PRESENT|SCF_RSP_CRC|SCF_RSP_IDX)
         esp_err_t error;            /*!< error returned from transfer */
+        int timeout_ms;             /*!< response timeout, in milliseconds */
 } sdmmc_command_t;
 
 /**
@@ -113,13 +121,14 @@ typedef struct {
     int max_freq_khz;           /*!< max frequency supported by the host */
 #define SDMMC_FREQ_DEFAULT      20000       /*!< SD/MMC Default speed (limited by clock divider) */
 #define SDMMC_FREQ_HIGHSPEED    40000       /*!< SD High speed (limited by clock divider) */
-#define SDMMC_FREQ_PROBING      4000        /*!< SD/MMC probing speed */
+#define SDMMC_FREQ_PROBING      400         /*!< SD/MMC probing speed */
     float io_voltage;           /*!< I/O voltage used by the controller (voltage switching is not supported) */
     esp_err_t (*init)(void);    /*!< Host function to initialize the driver */
     esp_err_t (*set_bus_width)(int slot, size_t width);    /*!< host function to set bus width */
     esp_err_t (*set_card_clk)(int slot, uint32_t freq_khz); /*!< host function to set card clock frequency */
     esp_err_t (*do_transaction)(int slot, sdmmc_command_t* cmdinfo);    /*!< host function to do a transaction */
     esp_err_t (*deinit)(void);  /*!< host function to deinitialize the driver */
+    int command_timeout_ms;     /*!< timeout, in milliseconds, of a single command. Set to 0 to use the default value. */
 } sdmmc_host_t;
 
 /**

@@ -18,7 +18,7 @@
 
 /* mbedtls include */
 #include "mbedtls/platform.h"
-#include "mbedtls/net.h"
+#include "mbedtls/net_sockets.h"
 #include "mbedtls/debug.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
@@ -153,6 +153,9 @@ int ssl_pm_new(SSL *ssl)
         mbedtls_ssl_conf_min_version(&ssl_pm->conf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_0);
     }
 
+    if (ssl->ctx->ssl_alpn.alpn_status == ALPN_ENABLE) {
+	 mbedtls_ssl_conf_alpn_protocols( &ssl_pm->conf, ssl->ctx->ssl_alpn.alpn_list );
+    }
     mbedtls_ssl_conf_rng(&ssl_pm->conf, mbedtls_ctr_drbg_random, &ssl_pm->ctr_drbg);
 
 #ifdef CONFIG_OPENSSL_LOWLEVEL_DEBUG
@@ -362,6 +365,13 @@ void ssl_pm_set_fd(SSL *ssl, int fd, int mode)
     struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
 
     ssl_pm->fd.fd = fd;
+}
+
+void ssl_pm_set_hostname(SSL *ssl, const char *hostname)
+{
+    struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
+
+    mbedtls_ssl_set_hostname(&ssl_pm->ssl, hostname);
 }
 
 int ssl_pm_get_fd(const SSL *ssl, int mode)

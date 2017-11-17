@@ -89,7 +89,7 @@ demand_conf()
     if (framemax < PPP_MRU) */
 	framemax = PPP_MRU;
     framemax += PPP_HDRLEN + PPP_FCSLEN;
-    frame = malloc(framemax);
+    frame = mem_malloc(framemax);
     if (frame == NULL)
 	novm("demand frame");
     framelen = 0;
@@ -296,7 +296,7 @@ loop_frame(frame, len)
     if (!active_packet(frame, len))
 	return 0;
 
-    pkt = (struct packet *) malloc(sizeof(struct packet) + len);
+    pkt = (struct packet *) mem_malloc(sizeof(struct packet) + len);
     if (pkt != NULL) {
 	pkt->length = len;
 	pkt->next = NULL;

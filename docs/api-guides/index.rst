@@ -6,12 +6,18 @@ API Guides
 
    General Notes <general-notes>
    Build System <build-system>
-   Debugging <openocd>
-   ESP32 Core Dump <core_dump>
-   Partition Tables <partition-tables>
-   Flash Encryption <../security/flash-encryption>
-   Secure Boot <../security/secure-boot>
    Deep Sleep Wake Stubs <deep-sleep-stub>
+   ESP32 Core Dump <core_dump>
+   Flash Encryption <../security/flash-encryption>
+   FreeRTOS SMP Changes <freertos-smp>
+   High Level Interrupts <hlinterrupts>
+   JTAG Debugging <jtag-debugging/index>
+   Partition Tables <partition-tables>
+   Secure Boot <../security/secure-boot>
    ULP Coprocessor <ulp>
    Unit Testing <unit-tests>
-
+   Application Level Tracing <app_trace>
+   Console Component <console>
+   ROM debug console <romconsole>
+   WiFi Driver <wifi>
+   External SPI-connected RAM <external-ram>

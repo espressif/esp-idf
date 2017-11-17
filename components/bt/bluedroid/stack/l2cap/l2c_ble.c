@@ -33,7 +33,7 @@
 #include "controller.h"
 
 #if (BLE_INCLUDED == TRUE)
-static void l2cble_start_conn_update (tL2C_LCB *p_lcb);
+static BOOLEAN l2cble_start_conn_update (tL2C_LCB *p_lcb);
 
 /*******************************************************************************
 **
@@ -117,13 +117,31 @@ BOOLEAN L2CA_UpdateBleConnParams (BD_ADDR rem_bda, UINT16 min_int, UINT16 max_in
         return (FALSE);
     }
 
-    p_lcb->min_interval = min_int;
-    p_lcb->max_interval = max_int;
-    p_lcb->latency = latency;
-    p_lcb->timeout = timeout;
+    if (p_lcb->conn_update_mask & L2C_BLE_UPDATE_PARAM_FULL){
+        UINT8 status = HCI_ERR_ILLEGAL_COMMAND;
+        L2CAP_TRACE_ERROR("There are two connection parameter requests that are being updated, please try later ");
+        if (conn_param_update_cb.update_conn_param_cb != NULL) {
+            tBTM_LE_UPDATE_CONN_PRAMS update_param;
+            update_param.max_conn_int = max_int;
+            update_param.min_conn_int = min_int;
+            update_param.conn_int = p_lcb->current_used_conn_interval;
+            update_param.slave_latency = p_lcb->current_used_conn_latency;
+            update_param.supervision_tout = p_lcb->current_used_conn_timeout;
+            (conn_param_update_cb.update_conn_param_cb)(status, p_lcb->remote_bd_addr, &update_param);
+        }
+        return (FALSE);
+    }
+
+    p_lcb->waiting_update_conn_min_interval = min_int;
+    p_lcb->waiting_update_conn_max_interval = max_int;
+    p_lcb->waiting_update_conn_latency = latency;
+    p_lcb->waiting_update_conn_timeout = timeout;
     p_lcb->conn_update_mask |= L2C_BLE_NEW_CONN_PARAM;
 
-    l2cble_start_conn_update(p_lcb);
+    if(l2cble_start_conn_update(p_lcb) == TRUE) {
+        UINT32 time = CalConnectParamTimeout(p_lcb);
+        btu_start_timer(&p_lcb->upda_con_timer, BTU_TTYPE_L2CAP_UPDA_CONN_PARAMS, time);
+    }
 
     return (TRUE);
 }
@@ -165,13 +183,20 @@ BOOLEAN L2CA_EnableUpdateBleConnParams (BD_ADDR rem_bda, BOOLEAN enable)
         return (FALSE);
     }
 
+    if (p_lcb->current_used_conn_interval <= BTM_BLE_CONN_INT_MAX_DEF && (p_lcb->conn_update_mask & L2C_BLE_CONN_UPDATE_DISABLE) == 0){
+        return (FALSE);
+    }
+
     if (enable) {
         p_lcb->conn_update_mask &= ~L2C_BLE_CONN_UPDATE_DISABLE;
     } else {
         p_lcb->conn_update_mask |= L2C_BLE_CONN_UPDATE_DISABLE;
     }
 
-    l2cble_start_conn_update(p_lcb);
+    if (l2cble_start_conn_update(p_lcb) == TRUE) {
+        UINT32 time = CalConnectParamTimeout(p_lcb);
+        btu_start_timer(&p_lcb->upda_con_timer, BTU_TTYPE_L2CAP_UPDA_CONN_PARAMS, time);
+    }
 
     return (TRUE);
 }
@@ -300,10 +325,11 @@ void l2cble_scanner_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE type,
     p_lcb->transport  = BT_TRANSPORT_LE;
 
     /* update link parameter, set slave link as non-spec default upon link up */
-    p_lcb->min_interval =  p_lcb->max_interval = conn_interval;
-    p_lcb->timeout      =  conn_timeout;
-    p_lcb->latency      =  conn_latency;
+    p_lcb->waiting_update_conn_min_interval = p_lcb->waiting_update_conn_max_interval = p_lcb->current_used_conn_interval = conn_interval;
+    p_lcb->waiting_update_conn_timeout = p_lcb->current_used_conn_timeout = conn_timeout;
+    p_lcb->waiting_update_conn_latency = p_lcb->current_used_conn_latency = conn_latency;
     p_lcb->conn_update_mask = L2C_BLE_NOT_DEFAULT_PARAM;
+    p_lcb->updating_param_flag = false;
 
     /* If there are any preferred connection parameters, set them now */
     if ( (p_dev_rec->conn_params.min_conn_int     >= BTM_BLE_CONN_INT_MIN ) &&
@@ -322,10 +348,10 @@ void l2cble_scanner_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE type,
                            handle, p_dev_rec->conn_params.min_conn_int, p_dev_rec->conn_params.max_conn_int,
                            p_dev_rec->conn_params.slave_latency, p_dev_rec->conn_params.supervision_tout);
 
-        p_lcb->min_interval = p_dev_rec->conn_params.min_conn_int;
-        p_lcb->max_interval = p_dev_rec->conn_params.max_conn_int;
-        p_lcb->timeout      = p_dev_rec->conn_params.supervision_tout;
-        p_lcb->latency      = p_dev_rec->conn_params.slave_latency;
+        p_lcb->waiting_update_conn_min_interval = p_dev_rec->conn_params.min_conn_int;
+        p_lcb->waiting_update_conn_max_interval = p_dev_rec->conn_params.max_conn_int;
+        p_lcb->waiting_update_conn_timeout      = p_dev_rec->conn_params.supervision_tout;
+        p_lcb->waiting_update_conn_latency      = p_dev_rec->conn_params.slave_latency;
 
         btsnd_hcic_ble_upd_ll_conn_params (handle,
                                            p_dev_rec->conn_params.min_conn_int,
@@ -399,10 +425,11 @@ void l2cble_advertiser_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE typ
     p_lcb->transport  = BT_TRANSPORT_LE;
 
     /* update link parameter, set slave link as non-spec default upon link up */
-    p_lcb->min_interval = p_lcb->max_interval = conn_interval;
-    p_lcb->timeout      =  conn_timeout;
-    p_lcb->latency      =  conn_latency;
+    p_lcb->waiting_update_conn_min_interval = p_lcb->waiting_update_conn_max_interval = p_lcb->current_used_conn_interval = conn_interval;
+    p_lcb->waiting_update_conn_timeout      =  p_lcb->current_used_conn_timeout = conn_timeout;
+    p_lcb->waiting_update_conn_latency      =  p_lcb->current_used_conn_latency = conn_latency;
     p_lcb->conn_update_mask = L2C_BLE_NOT_DEFAULT_PARAM;
+    p_lcb->updating_param_flag = false;
 
     /* Tell BTM Acl management about the link */
     p_dev_rec = btm_find_or_alloc_dev (bda);
@@ -456,16 +483,20 @@ void l2cble_conn_comp(UINT16 handle, UINT8 role, BD_ADDR bda, tBLE_ADDR_TYPE typ
 **
 **  Parameters:     lcb : l2cap link control block
 **
-**  Return value:   none
+**  Return value:   true if successfully sending the request to peer device, else false.
 **
 *******************************************************************************/
-static void l2cble_start_conn_update (tL2C_LCB *p_lcb)
+static BOOLEAN l2cble_start_conn_update (tL2C_LCB *p_lcb)
 {
     UINT16 min_conn_int, max_conn_int, slave_latency, supervision_tout;
+#if (defined BLE_LLT_INCLUDED) && (BLE_LLT_INCLUDED == TRUE) && (BLE_SLAVE_UPD_CONN_PARAMS == TRUE)
     tACL_CONN *p_acl_cb = btm_bda_to_acl(p_lcb->remote_bd_addr, BT_TRANSPORT_LE);
+#endif    /* defined BLE_LLT_INCLUDED) && (BLE_LLT_INCLUDED == TRUE) && (BLE_SLAVE_UPD_CONN_PARAMS == TRUE */
 
     if (p_lcb->conn_update_mask & L2C_BLE_UPDATE_PENDING) {
-        return;
+        L2CAP_TRACE_WARNING("%s, the last connection update command still pending.", __func__);
+        p_lcb->conn_update_mask |= L2C_BLE_UPDATE_PARAM_FULL;
+        return FALSE;
     }
 
     if (p_lcb->conn_update_mask & L2C_BLE_CONN_UPDATE_DISABLE) {
@@ -474,47 +505,65 @@ static void l2cble_start_conn_update (tL2C_LCB *p_lcb)
            up to what has been requested during connection establishement */
         if (p_lcb->conn_update_mask & L2C_BLE_NOT_DEFAULT_PARAM &&
                 /* current connection interval is greater than default min */
-                p_lcb->min_interval > BTM_BLE_CONN_INT_MIN) {
-            /* use 7.5 ms as fast connection parameter, 0 slave latency */
+                p_lcb->current_used_conn_interval > BTM_BLE_CONN_INT_MAX_DEF) {
+            /* use 6 * 1.25 = 7.5 ms as fast connection parameter, 0 slave latency */
             min_conn_int = max_conn_int = BTM_BLE_CONN_INT_MIN;
             slave_latency = BTM_BLE_CONN_SLAVE_LATENCY_DEF;
             supervision_tout = BTM_BLE_CONN_TIMEOUT_DEF;
 
             /* if both side 4.1, or we are master device, send HCI command */
             if (p_lcb->link_role == HCI_ROLE_MASTER
-#if (defined BLE_LLT_INCLUDED) && (BLE_LLT_INCLUDED == TRUE)
+#if (defined BLE_LLT_INCLUDED) && (BLE_LLT_INCLUDED == TRUE) && (BLE_SLAVE_UPD_CONN_PARAMS == TRUE)
                     || (HCI_LE_CONN_PARAM_REQ_SUPPORTED(controller_get_interface()->get_features_ble()->as_array) &&
                         HCI_LE_CONN_PARAM_REQ_SUPPORTED(p_acl_cb->peer_le_features))
 #endif
                ) {
                 btsnd_hcic_ble_upd_ll_conn_params(p_lcb->handle, min_conn_int, max_conn_int,
                                                   slave_latency, supervision_tout, 0, 0);
-                p_lcb->conn_update_mask |= L2C_BLE_UPDATE_PENDING;
             } else {
                 l2cu_send_peer_ble_par_req (p_lcb, min_conn_int, max_conn_int, slave_latency, supervision_tout);
             }
+
+            //cache save
+            p_lcb->updating_conn_min_interval = min_conn_int;
+            p_lcb->updating_conn_max_interval = max_conn_int;
+            p_lcb->updating_param_flag = true;
+
+            p_lcb->conn_update_mask |= L2C_BLE_UPDATE_PENDING;
             p_lcb->conn_update_mask &= ~L2C_BLE_NOT_DEFAULT_PARAM;
             p_lcb->conn_update_mask |=  L2C_BLE_NEW_CONN_PARAM;
+            return TRUE;
+        }else {
+            return FALSE;
         }
     } else {
         /* application allows to do update, if we were delaying one do it now */
         if (p_lcb->conn_update_mask & L2C_BLE_NEW_CONN_PARAM) {
             /* if both side 4.1, or we are master device, send HCI command */
             if (p_lcb->link_role == HCI_ROLE_MASTER
-#if (defined BLE_LLT_INCLUDED) && (BLE_LLT_INCLUDED == TRUE)
+#if (defined BLE_LLT_INCLUDED) && (BLE_LLT_INCLUDED == TRUE) && (BLE_SLAVE_UPD_CONN_PARAMS == TRUE)
                     || (HCI_LE_CONN_PARAM_REQ_SUPPORTED(controller_get_interface()->get_features_ble()->as_array) &&
                         HCI_LE_CONN_PARAM_REQ_SUPPORTED(p_acl_cb->peer_le_features))
 #endif
                ) {
-                btsnd_hcic_ble_upd_ll_conn_params(p_lcb->handle, p_lcb->min_interval,
-                                                  p_lcb->max_interval, p_lcb->latency, p_lcb->timeout, 0, 0);
-                p_lcb->conn_update_mask |= L2C_BLE_UPDATE_PENDING;
+                btsnd_hcic_ble_upd_ll_conn_params(p_lcb->handle, p_lcb->waiting_update_conn_min_interval,
+                                                  p_lcb->waiting_update_conn_max_interval, p_lcb->waiting_update_conn_latency, p_lcb->waiting_update_conn_timeout, 0, 0);
             } else {
-                l2cu_send_peer_ble_par_req (p_lcb, p_lcb->min_interval, p_lcb->max_interval,
-                                            p_lcb->latency, p_lcb->timeout);
+                l2cu_send_peer_ble_par_req (p_lcb, p_lcb->waiting_update_conn_min_interval, p_lcb->waiting_update_conn_max_interval,
+                                            p_lcb->waiting_update_conn_latency, p_lcb->waiting_update_conn_timeout);
             }
+
+            //cache save
+            p_lcb->updating_conn_min_interval = p_lcb->waiting_update_conn_min_interval;
+            p_lcb->updating_conn_max_interval = p_lcb->waiting_update_conn_max_interval;
+            p_lcb->updating_param_flag = true;
+
+            p_lcb->conn_update_mask |= L2C_BLE_UPDATE_PENDING;
             p_lcb->conn_update_mask &= ~L2C_BLE_NEW_CONN_PARAM;
             p_lcb->conn_update_mask |= L2C_BLE_NOT_DEFAULT_PARAM;
+            return TRUE;
+        } else {
+            return FALSE;
         }
     }
 }
@@ -529,11 +578,10 @@ static void l2cble_start_conn_update (tL2C_LCB *p_lcb)
 ** Returns          void
 **
 *******************************************************************************/
-void l2cble_process_conn_update_evt (UINT16 handle, UINT8 status)
+void l2cble_process_conn_update_evt (UINT16 handle, UINT8 status, UINT16 conn_interval,
+                                                       UINT16 conn_latency, UINT16 conn_timeout)
 {
     tL2C_LCB *p_lcb;
-
-    L2CAP_TRACE_DEBUG("l2cble_process_conn_update_evt");
 
     /* See if we have a link control block for the remote device */
     p_lcb = l2cu_find_lcb_by_handle(handle);
@@ -541,17 +589,71 @@ void l2cble_process_conn_update_evt (UINT16 handle, UINT8 status)
         L2CAP_TRACE_WARNING("l2cble_process_conn_update_evt: Invalid handle: %d", handle);
         return;
     }
-
-    p_lcb->conn_update_mask &= ~L2C_BLE_UPDATE_PENDING;
-
-    if (status != HCI_SUCCESS) {
+    if (status == HCI_SUCCESS){
+        p_lcb->current_used_conn_interval = conn_interval;
+        p_lcb->current_used_conn_latency = conn_latency;
+        p_lcb->current_used_conn_timeout = conn_timeout;
+    }else{
         L2CAP_TRACE_WARNING("l2cble_process_conn_update_evt: Error status: %d", status);
     }
 
-    l2cble_start_conn_update(p_lcb);
+    p_lcb->conn_update_mask &= ~L2C_BLE_UPDATE_PENDING;
+    p_lcb->conn_update_mask &= ~L2C_BLE_UPDATE_PARAM_FULL;
+
+    btu_stop_timer(&p_lcb->upda_con_timer);
+
+    if (conn_param_update_cb.update_conn_param_cb != NULL) {
+        l2c_send_update_conn_params_cb(p_lcb, status);
+    }
+
+    if (l2cble_start_conn_update(p_lcb) == TRUE) {
+        UINT32 time = CalConnectParamTimeout(p_lcb);
+        btu_start_timer(&p_lcb->upda_con_timer, BTU_TTYPE_L2CAP_UPDA_CONN_PARAMS, time);
+    }
+
+    btu_stop_timer (&p_lcb->timer_entry);
 
     L2CAP_TRACE_DEBUG("l2cble_process_conn_update_evt: conn_update_mask=%d", p_lcb->conn_update_mask);
 }
+
+/*******************************************************************************
+**
+** Function         l2cble_get_conn_param_format_err_from_contoller
+**
+** Description      This function is called when host get illegal connection paramrters
+**                  format status from controller
+**
+** Returns          void
+**
+*******************************************************************************/
+void l2cble_get_conn_param_format_err_from_contoller (UINT8 status, UINT16 handle)
+{
+    tL2C_LCB *p_lcb;
+
+    /* See if we have a link control block for the remote device */
+    p_lcb = l2cu_find_lcb_by_handle(handle);
+    if (!p_lcb) {
+        L2CAP_TRACE_ERROR("%s: Invalid handle: %d", __FUNCTION__, handle);
+        return;
+    }
+
+    p_lcb->conn_update_mask &= ~L2C_BLE_UPDATE_PENDING;
+
+    btu_stop_timer (&p_lcb->upda_con_timer);
+
+    if (conn_param_update_cb.update_conn_param_cb != NULL) {
+        l2c_send_update_conn_params_cb(p_lcb, status);
+    }
+    if ((p_lcb->conn_update_mask & L2C_BLE_UPDATE_PARAM_FULL) != 0){
+        p_lcb->conn_update_mask &= ~L2C_BLE_UPDATE_PARAM_FULL;
+        if (l2cble_start_conn_update(p_lcb) == TRUE) {
+            UINT32 time = CalConnectParamTimeout(p_lcb);
+            btu_start_timer(&p_lcb->upda_con_timer, BTU_TTYPE_L2CAP_UPDA_CONN_PARAMS, time);
+        }
+    }
+
+}
+
 /*******************************************************************************
 **
 ** Function         l2cble_process_sig_cmd
@@ -599,38 +701,53 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         STREAM_TO_UINT16 (timeout, p);  /* 0x000A - 0x0C80 */
         /* If we are a master, the slave wants to update the parameters */
         if (p_lcb->link_role == HCI_ROLE_MASTER) {
-            if (min_interval < BTM_BLE_CONN_INT_MIN_LIMIT) {
-                min_interval = BTM_BLE_CONN_INT_MIN_LIMIT;
-            }
-
             if (min_interval < BTM_BLE_CONN_INT_MIN || min_interval > BTM_BLE_CONN_INT_MAX ||
                     max_interval < BTM_BLE_CONN_INT_MIN || max_interval > BTM_BLE_CONN_INT_MAX ||
                     latency  > BTM_BLE_CONN_LATENCY_MAX ||
-                    /*(timeout >= max_interval && latency > (timeout * 10/(max_interval * 1.25) - 1)) ||*/
                     timeout < BTM_BLE_CONN_SUP_TOUT_MIN || timeout > BTM_BLE_CONN_SUP_TOUT_MAX ||
+                    /* The supervision_timeout parameter defines the link supervision timeout for the connection.
+                       The supervision_timeout in milliseconds shall be large than (1 + latency) * max_interval * 2,
+                       where max_interval is given in milliseconds. (See [Vol 6] Part B, Section 4.5.2).
+                       supervision_timeout (mult of 10ms); conn_interval (mult of 1.25ms)
+                       (max_interval * 1.25 * 2) replaced by ((max_interval * 5) >> 1).
+                    */
+                    ((timeout * 10) < ((1 + latency) *((max_interval * 5) >> 1))) ||
                     max_interval < min_interval) {
                 l2cu_send_peer_ble_par_rsp (p_lcb, L2CAP_CFG_UNACCEPTABLE_PARAMS, id);
+
+                L2CAP_TRACE_ERROR("slave connection parameters update failed, the parameters are out of range");
+
             } else {
 
                 l2cu_send_peer_ble_par_rsp (p_lcb, L2CAP_CFG_OK, id);
-
-                p_lcb->min_interval = min_interval;
-                p_lcb->max_interval = max_interval;
-                p_lcb->latency = latency;
-                p_lcb->timeout = timeout;
+                p_lcb->waiting_update_conn_min_interval = min_interval;
+                p_lcb->waiting_update_conn_max_interval = max_interval;
+                p_lcb->waiting_update_conn_latency = latency;
+                p_lcb->waiting_update_conn_timeout = timeout;
                 p_lcb->conn_update_mask |= L2C_BLE_NEW_CONN_PARAM;
 
-                l2cble_start_conn_update(p_lcb);
+                if (l2cble_start_conn_update(p_lcb) == TRUE) {
+                    UINT32 time = CalConnectParamTimeout(p_lcb);
+                    btu_start_timer(&p_lcb->upda_con_timer, BTU_TTYPE_L2CAP_UPDA_CONN_PARAMS, time);
+                }
             }
         } else {
             l2cu_send_peer_cmd_reject (p_lcb, L2CAP_CMD_REJ_NOT_UNDERSTOOD, id, 0, 0);
         }
         break;
 
-    case L2CAP_CMD_BLE_UPDATE_RSP:
-        p += 2;
+    case L2CAP_CMD_BLE_UPDATE_RSP: {
+        UINT16 result = 0;
+        STREAM_TO_UINT16(result, p); //result = 0 connection param accepted, result = 1 connection param rejected.
+        UINT8 status = (result == 0) ? HCI_SUCCESS : HCI_ERR_PARAM_OUT_OF_RANGE;
+        if (status != HCI_SUCCESS) {
+            btu_stop_timer(&p_lcb->upda_con_timer);
+            p_lcb->conn_update_mask &= ~L2C_BLE_UPDATE_PENDING;
+            p_lcb->conn_update_mask &= ~L2C_BLE_UPDATE_PARAM_FULL;
+            l2c_send_update_conn_params_cb(p_lcb, status);
+        }
         break;
-
+    }
     default:
         L2CAP_TRACE_WARNING ("L2CAP - LE - unknown cmd code: %d", cmd_code);
         l2cu_send_peer_cmd_reject (p_lcb, L2CAP_CMD_REJ_NOT_UNDERSTOOD, id, 0, 0);
@@ -903,13 +1020,10 @@ void l2cble_process_rc_param_request_evt(UINT16 handle, UINT16 int_min, UINT16 i
     tL2C_LCB    *p_lcb = l2cu_find_lcb_by_handle (handle);
 
     if (p_lcb != NULL) {
-        p_lcb->min_interval = int_min;
-        p_lcb->max_interval = int_max;
-        p_lcb->latency = latency;
-        p_lcb->timeout = timeout;
 
         /* if update is enabled, always accept connection parameter update */
         if ((p_lcb->conn_update_mask & L2C_BLE_CONN_UPDATE_DISABLE) == 0) {
+            p_lcb->conn_update_mask |= L2C_BLE_UPDATE_PENDING;
             btsnd_hcic_ble_rc_param_req_reply(handle, int_min, int_max, latency, timeout, 0, 0);
         } else {
             L2CAP_TRACE_EVENT ("L2CAP - LE - update currently disabled");
@@ -986,7 +1100,14 @@ void l2cble_process_data_length_change_event(UINT16 handle, UINT16 tx_data_len, 
         p_lcb->tx_data_len = tx_data_len;
     }
 
-    /* ignore rx_data len for now */
+    tACL_CONN *p_acl = btm_handle_to_acl(handle);
+    if (p_acl != NULL && p_acl->p_set_pkt_data_cback){
+       tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS data_length_params;
+       data_length_params.rx_len = tx_data_len;
+       data_length_params.tx_len = rx_data_len;
+       p_acl->data_length_params = data_length_params;
+       (*p_acl->p_set_pkt_data_cback)(BTM_SUCCESS, &data_length_params);
+    }
 }
 
 /*******************************************************************************
@@ -1026,4 +1147,296 @@ void l2cble_set_fixed_channel_tx_data_length(BD_ADDR remote_bda, UINT16 fix_cid,
     l2cble_update_data_length(p_lcb);
 }
 
+
+/*******************************************************************************
+**
+** Function         l2c_send_update_conn_params_cb
+**
+** Description      This function send the update connection parameter callback to the uplayer.
+**
+** Returns          void
+**
+*******************************************************************************/
+void l2c_send_update_conn_params_cb(tL2C_LCB *p_lcb, UINT8 status)
+{
+    if(conn_param_update_cb.update_conn_param_cb != NULL){
+        tBTM_LE_UPDATE_CONN_PRAMS update_param;
+        //if myself update the connection parameters
+        if (p_lcb->updating_param_flag){
+            update_param.max_conn_int = p_lcb->updating_conn_max_interval;
+            update_param.min_conn_int = p_lcb->updating_conn_min_interval;
+            p_lcb->updating_param_flag = false;
+        }else{
+            // remote device update the connection parameters
+            update_param.max_conn_int = update_param.min_conn_int = 0;
+        }
+        // current connection parameters
+        update_param.conn_int = p_lcb->current_used_conn_interval;
+        update_param.slave_latency = p_lcb->current_used_conn_latency;
+        update_param.supervision_tout = p_lcb->current_used_conn_timeout;
+
+        (conn_param_update_cb.update_conn_param_cb)(status, p_lcb->remote_bd_addr, &update_param);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         CalConnectParamTimeout
+**
+** Description      This function is called to calculate the connection parameter timeout.
+**
+** Returns          timeout
+**
+*******************************************************************************/
+UINT32 CalConnectParamTimeout(tL2C_LCB *p_lcb)
+{
+    UINT32 timeout = 6;
+    if (p_lcb != NULL){
+        //1.25 * conn_int *(1+ latency) *32
+        timeout = (40 * ( 1 + p_lcb->current_used_conn_latency) * p_lcb->current_used_conn_interval + 500) / 1000;
+        if (timeout < 1){
+            timeout = 1;
+        }else if (timeout > 120){
+            timeout = 120;
+        }
+    }
+    return timeout;
+}
+
+/*******************************************************************************
+**
+** Function         l2cble_credit_based_conn_req
+**
+** Description      This function sends LE Credit Based Connection Request for
+**                  LE connection oriented channels.
+**
+** Returns          void
+**
+*******************************************************************************/
+void l2cble_credit_based_conn_req (tL2C_CCB *p_ccb)
+{
+    if (!p_ccb)
+        return;
+
+    if (p_ccb->p_lcb && p_ccb->p_lcb->transport != BT_TRANSPORT_LE)
+    {
+        L2CAP_TRACE_WARNING ("LE link doesn't exist");
+        return;
+    }
+
+    l2cu_send_peer_ble_credit_based_conn_req (p_ccb);
+    return;
+}
+
+/*******************************************************************************
+**
+** Function         l2cble_credit_based_conn_res
+**
+** Description      This function sends LE Credit Based Connection Response for
+**                  LE connection oriented channels.
+**
+** Returns          void
+**
+*******************************************************************************/
+void l2cble_credit_based_conn_res (tL2C_CCB *p_ccb, UINT16 result)
+{
+    if (!p_ccb)
+        return;
+
+    if (p_ccb->p_lcb && p_ccb->p_lcb->transport != BT_TRANSPORT_LE)
+    {
+        L2CAP_TRACE_WARNING ("LE link doesn't exist");
+        return;
+    }
+
+    l2cu_send_peer_ble_credit_based_conn_res (p_ccb, result);
+    return;
+}
+
+/*******************************************************************************
+**
+** Function         l2cble_send_flow_control_credit
+**
+** Description      This function sends flow control credits for
+**                  LE connection oriented channels.
+**
+** Returns          void
+**
+*******************************************************************************/
+void l2cble_send_flow_control_credit(tL2C_CCB *p_ccb, UINT16 credit_value)
+{
+    if (!p_ccb)
+        return;
+
+    if (p_ccb->p_lcb && p_ccb->p_lcb->transport != BT_TRANSPORT_LE)
+    {
+        L2CAP_TRACE_WARNING ("LE link doesn't exist");
+        return;
+    }
+
+    l2cu_send_peer_ble_flow_control_credit(p_ccb, credit_value);
+    return;
+
+}
+
+/*******************************************************************************
+**
+** Function         l2cble_send_peer_disc_req
+**
+** Description      This function sends disconnect request
+**                  to the peer LE device
+**
+** Returns          void
+**
+*******************************************************************************/
+void l2cble_send_peer_disc_req(tL2C_CCB *p_ccb)
+{
+    L2CAP_TRACE_DEBUG ("%s",__func__);
+    if (!p_ccb)
+        return;
+
+    if (p_ccb->p_lcb && p_ccb->p_lcb->transport != BT_TRANSPORT_LE)
+    {
+        L2CAP_TRACE_WARNING ("LE link doesn't exist");
+        return;
+    }
+
+    l2cu_send_peer_ble_credit_based_disconn_req(p_ccb);
+    return;
+}
+
+#if (SMP_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         l2cble_sec_comp
+**
+** Description      This function is called when security procedure for an LE COC
+**                  link is done
+**
+** Returns          void
+**
+*******************************************************************************/
+void  l2cble_sec_comp(BD_ADDR p_bda, tBT_TRANSPORT transport, void *p_ref_data, UINT8 status)
+{
+    tL2C_LCB *p_lcb = l2cu_find_lcb_by_bd_addr(p_bda, BT_TRANSPORT_LE);
+    tL2CAP_SEC_DATA *p_buf = NULL;
+    UINT8 sec_flag;
+    UINT8 sec_act;
+
+    if (!p_lcb)
+    {
+        L2CAP_TRACE_WARNING ("%s security complete for unknown device", __func__);
+        return;
+    }
+
+    sec_act = p_lcb->sec_act;
+    p_lcb->sec_act = 0;
+
+    if (!fixed_queue_is_empty(p_lcb->le_sec_pending_q))
+    {
+        p_buf = (tL2CAP_SEC_DATA*) fixed_queue_dequeue(p_lcb->le_sec_pending_q);
+        if (!p_buf)
+        {
+            L2CAP_TRACE_WARNING ("%s Security complete for request not initiated from L2CAP",
+                    __func__);
+            return;
+        }
+
+        if (status != BTM_SUCCESS)
+        {
+            (*(p_buf->p_callback))(p_bda, BT_TRANSPORT_LE, p_buf->p_ref_data, status);
+        }
+        else
+        {
+            if (sec_act == BTM_SEC_ENCRYPT_MITM)
+            {
+                BTM_GetSecurityFlagsByTransport(p_bda, &sec_flag, transport);
+                if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED)
+                    (*(p_buf->p_callback))(p_bda, BT_TRANSPORT_LE, p_buf->p_ref_data, status);
+                else
+                {
+                    L2CAP_TRACE_DEBUG ("%s MITM Protection Not present", __func__);
+                    (*(p_buf->p_callback))(p_bda, BT_TRANSPORT_LE, p_buf->p_ref_data,
+                            BTM_FAILED_ON_SECURITY);
+                }
+            }
+            else
+            {
+                L2CAP_TRACE_DEBUG ("%s MITM Protection not required sec_act = %d",
+                        __func__, p_lcb->sec_act);
+
+                (*(p_buf->p_callback))(p_bda, BT_TRANSPORT_LE, p_buf->p_ref_data, status);
+            }
+        }
+    }
+    else
+    {
+        L2CAP_TRACE_WARNING ("%s Security complete for request not initiated from L2CAP", __func__);
+        return;
+    }
+    osi_free(p_buf);
+
+    while (!fixed_queue_is_empty(p_lcb->le_sec_pending_q))
+    {
+        p_buf = (tL2CAP_SEC_DATA*) fixed_queue_dequeue(p_lcb->le_sec_pending_q);
+
+        if (status != BTM_SUCCESS)
+            (*(p_buf->p_callback))(p_bda, BT_TRANSPORT_LE, p_buf->p_ref_data, status);
+        else
+            l2ble_sec_access_req(p_bda, p_buf->psm, p_buf->is_originator,
+                    p_buf->p_callback, p_buf->p_ref_data);
+
+       osi_free(p_buf);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         l2ble_sec_access_req
+**
+** Description      This function is called by LE COC link to meet the
+**                  security requirement for the link
+**
+** Returns          TRUE - security procedures are started
+**                  FALSE - failure
+**
+*******************************************************************************/
+BOOLEAN l2ble_sec_access_req(BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_originator, tL2CAP_SEC_CBACK *p_callback, void *p_ref_data)
+{
+    L2CAP_TRACE_DEBUG ("%s", __func__);
+    BOOLEAN status;
+    tL2C_LCB *p_lcb = NULL;
+
+    if (!p_callback)
+    {
+        L2CAP_TRACE_ERROR("%s No callback function", __func__);
+        return FALSE;
+    }
+
+    p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_LE);
+
+    if (!p_lcb)
+    {
+        L2CAP_TRACE_ERROR ("%s Security check for unknown device", __func__);
+        p_callback(bd_addr, BT_TRANSPORT_LE, p_ref_data, BTM_UNKNOWN_ADDR);
+        return FALSE;
+    }
+
+    tL2CAP_SEC_DATA *p_buf = (tL2CAP_SEC_DATA*) osi_malloc((UINT16)sizeof(tL2CAP_SEC_DATA));
+    if (!p_buf)
+    {
+        p_callback(bd_addr, BT_TRANSPORT_LE, p_ref_data, BTM_NO_RESOURCES);
+        return FALSE;
+    }
+
+    p_buf->psm = psm;
+    p_buf->is_originator = is_originator;
+    p_buf->p_callback = p_callback;
+    p_buf->p_ref_data = p_ref_data;
+    fixed_queue_enqueue(p_lcb->le_sec_pending_q, p_buf);
+    status = btm_ble_start_sec_check(bd_addr, psm, is_originator, &l2cble_sec_comp, p_ref_data);
+
+    return status;
+}
+#endif /* #if (SMP_INCLUDED == TRUE) */
 #endif /* (BLE_INCLUDED == TRUE) */

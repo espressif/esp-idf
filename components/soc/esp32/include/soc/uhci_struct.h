@@ -13,6 +13,11 @@
 // limitations under the License.
 #ifndef _SOC_UHCI_STRUCT_H_
 #define _SOC_UHCI_STRUCT_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef volatile struct {
     union {
         struct {
@@ -334,4 +339,9 @@ typedef volatile struct {
 } uhci_dev_t;
 extern uhci_dev_t UHCI0;
 extern uhci_dev_t UHCI1;
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif  /* _SOC_UHCI_STRUCT_H_ */

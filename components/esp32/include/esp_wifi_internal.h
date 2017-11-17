@@ -41,6 +41,26 @@ extern "C" {
 #endif
 
 /**
+ * @brief Initialize Wi-Fi Driver
+ *     Alloc resource for WiFi driver, such as WiFi control structure, RX/TX buffer,
+ *     WiFi NVS structure among others.
+ *
+ * For the most part, you need not call this function directly. It gets called
+ * from esp_wifi_init().
+ *
+ * This function may be called, if you only need to initialize the Wi-Fi driver
+ * without having to use the network stack on top.
+ *
+ * @param  config provide WiFi init configuration
+ *
+ * @return
+ *    - ESP_OK: succeed
+ *    - ESP_ERR_WIFI_NO_MEM: out of memory
+ *    - others: refer to error code esp_err.h
+ */
+esp_err_t esp_wifi_init_internal(const wifi_init_config_t *config);
+
+/**
   * @brief  get whether the wifi driver is allowed to transmit data or not
   *
   * @return
@@ -100,6 +120,41 @@ esp_err_t esp_wifi_internal_reg_rxcb(wifi_interface_t ifx, wifi_rxcb_t fn);
   *     - others : fail
   */
 esp_err_t esp_wifi_internal_set_sta_ip(void);
+
+/**
+  * @brief     Allocate a chunk of memory for WiFi driver
+  *
+  * @attention This API is not used for DMA memory allocation.
+  *
+  * @param     size_t size : Size, in bytes, of the amount of memory to allocate
+  *
+  * @return    A pointer to the memory allocated on success, NULL on failure
+  */
+void *wifi_malloc( size_t size );
+
+/**
+  * @brief     Reallocate a chunk of memory for WiFi driver
+  *
+  * @attention This API is not used for DMA memory allocation.
+  *
+  * @param     void * ptr  : Pointer to previously allocated memory, or NULL for a new allocation.
+  * @param     size_t size : Size, in bytes, of the amount of memory to allocate
+  *
+  * @return    A pointer to the memory allocated on success, NULL on failure
+  */
+void *wifi_realloc( void *ptr, size_t size );
+
+/**
+  * @brief     Callocate memory for WiFi driver
+  *
+  * @attention This API is not used for DMA memory allocation.
+  *
+  * @param     size_t n    : Number of continuing chunks of memory to allocate
+  * @param     size_t size : Size, in bytes, of the amount of memory to allocate
+  *
+  * @return    A pointer to the memory allocated on success, NULL on failure
+  */
+void *wifi_calloc( size_t n, size_t size );
 
 #ifdef __cplusplus
 }

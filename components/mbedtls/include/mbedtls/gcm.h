@@ -190,8 +190,8 @@ int mbedtls_gcm_update( mbedtls_gcm_context *ctx,
  *                  16 bytes.
  *
  * \param ctx       GCM context
- * \param tag       buffer for holding the tag (may be NULL if tag_len is 0)
- * \param tag_len   length of the tag to generate
+ * \param tag       buffer for holding the tag
+ * \param tag_len   length of the tag to generate (must be at least 4)
  *
  * \return          0 if successful or MBEDTLS_ERR_GCM_BAD_INPUT
  */

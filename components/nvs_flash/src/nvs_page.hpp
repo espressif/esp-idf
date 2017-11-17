@@ -45,6 +45,8 @@ public:
     static const size_t ENTRY_SIZE  = 32;
     static const size_t ENTRY_COUNT = 126;
     static const uint32_t INVALID_ENTRY = 0xffffffff;
+    
+    static const size_t BLOB_MAX_SIZE = ENTRY_SIZE * (ENTRY_COUNT / 2 - 1);
 
     static const uint8_t NS_INDEX = 0;
     static const uint8_t NS_ANY = 255;

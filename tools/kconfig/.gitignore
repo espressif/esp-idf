@@ -2,6 +2,7 @@
 # Generated files
 #
 config*
+*.d
 *.lex.c
 *.tab.c
 *.tab.h

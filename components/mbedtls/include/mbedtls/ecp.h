@@ -37,6 +37,15 @@
 #define MBEDTLS_ERR_ECP_INVALID_KEY                       -0x4C80  /**< Invalid private or public key. */
 #define MBEDTLS_ERR_ECP_SIG_LEN_MISMATCH                  -0x4C00  /**< Signature is valid but shorter than the user-supplied length. */
 
+#if !defined(MBEDTLS_ECP_ALT)
+/*
+ * default mbed TLS elliptic curve arithmetic implementation
+ *
+ * (in case MBEDTLS_ECP_ALT is defined then the developer has to provide an
+ * alternative implementation for the whole module and it will replace this
+ * one.)
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -452,7 +461,7 @@ int mbedtls_ecp_tls_write_point( const mbedtls_ecp_group *grp, const mbedtls_ecp
  * \brief           Set a group using well-known domain parameters
  *
  * \param grp       Destination group
- * \param index     Index in the list of well-known domain parameters
+ * \param id        Index in the list of well-known domain parameters
  *
  * \return          0 if successful,
  *                  MBEDTLS_ERR_MPI_XXX if initialization failed
@@ -461,7 +470,7 @@ int mbedtls_ecp_tls_write_point( const mbedtls_ecp_group *grp, const mbedtls_ecp
  * \note            Index should be a value of RFC 4492's enum NamedCurve,
  *                  usually in the form of a MBEDTLS_ECP_DP_XXX macro.
  */
-int mbedtls_ecp_group_load( mbedtls_ecp_group *grp, mbedtls_ecp_group_id index );
+int mbedtls_ecp_group_load( mbedtls_ecp_group *grp, mbedtls_ecp_group_id id );
 
 /**
  * \brief           Set a group from a TLS ECParameters record
@@ -654,16 +663,22 @@ int mbedtls_ecp_gen_key( mbedtls_ecp_group_id grp_id, mbedtls_ecp_keypair *key,
 int mbedtls_ecp_check_pub_priv( const mbedtls_ecp_keypair *pub, const mbedtls_ecp_keypair *prv );
 
 #if defined(MBEDTLS_SELF_TEST)
+
 /**
  * \brief          Checkup routine
  *
  * \return         0 if successful, or 1 if a test failed
  */
 int mbedtls_ecp_self_test( int verbose );
-#endif
+
+#endif /* MBEDTLS_SELF_TEST */
 
 #ifdef __cplusplus
 }
 #endif
+
+#else  /* MBEDTLS_ECP_ALT */
+#include "ecp_alt.h"
+#endif /* MBEDTLS_ECP_ALT */
 
 #endif /* ecp.h */

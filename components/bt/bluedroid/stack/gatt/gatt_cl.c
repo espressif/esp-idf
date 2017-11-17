@@ -27,8 +27,7 @@
 #if BLE_INCLUDED == TRUE && GATTC_INCLUDED == TRUE
 
 #include <string.h>
-//#include "bt_utils.h"
-#include "gki.h"
+#include "allocator.h"
 #include "gatt_int.h"
 #include "l2c_int.h"
 
@@ -554,6 +553,9 @@ void gatt_process_error_rsp(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 op_code,
                 (opcode == GATT_REQ_PREPARE_WRITE) &&
                 (p_attr) &&
                 (handle == p_attr->handle)  ) {
+            if (reason == GATT_SUCCESS){
+               reason = GATT_ERROR;
+            }
             p_clcb->status = reason;
             gatt_send_queue_write_cancel(p_tcb, p_clcb, GATT_PREP_WRITE_CANCEL);
         } else if ((p_clcb->operation == GATTC_OPTYPE_READ) &&
@@ -809,7 +811,7 @@ void gatt_process_read_by_type_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 
             if ( p_clcb->counter == (p_clcb->p_tcb->payload_size - 4)) {
                 p_clcb->op_subtype = GATT_READ_BY_HANDLE;
                 if (!p_clcb->p_attr_buf) {
-                    p_clcb->p_attr_buf = (UINT8 *)GKI_getbuf(GATT_MAX_ATTR_LEN);
+                    p_clcb->p_attr_buf = (UINT8 *)osi_malloc(GATT_MAX_ATTR_LEN);
                 }
                 if (p_clcb->p_attr_buf && p_clcb->counter <= GATT_MAX_ATTR_LEN) {
                     memcpy(p_clcb->p_attr_buf, p, p_clcb->counter);
@@ -896,7 +898,7 @@ void gatt_process_read_rsp(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb,  UINT8 op_code,
 
             /* allocate GKI buffer holding up long attribute value  */
             if (!p_clcb->p_attr_buf) {
-                p_clcb->p_attr_buf = (UINT8 *)GKI_getbuf(GATT_MAX_ATTR_LEN);
+                p_clcb->p_attr_buf = (UINT8 *)osi_malloc(GATT_MAX_ATTR_LEN);
             }
 
             /* copy attrobute value into cb buffer  */

@@ -53,6 +53,7 @@ typedef struct {
  */
 struct spi_slave_transaction_t {
     size_t length;                  ///< Total data length, in bits
+    size_t trans_len;               ///< Transaction data length, in bits
     const void *tx_buffer;          ///< Pointer to transmit buffer, or NULL for no MOSI phase
     void *rx_buffer;                ///< Pointer to receive buffer, or NULL for no MISO phase
     void *user;                     ///< User-defined variable. Can be used to store eg transaction ID.

@@ -20,8 +20,10 @@
 #define _FIXED_QUEUE_H_
 
 #include <stdbool.h>
+#include "list.h"
 
 struct fixed_queue_t;
+
 typedef struct fixed_queue_t fixed_queue_t;
 //typedef struct reactor_t reactor_t;
 
@@ -38,9 +40,13 @@ fixed_queue_t *fixed_queue_new(size_t capacity);
 // blocked on it) results in undefined behaviour.
 void fixed_queue_free(fixed_queue_t *queue, fixed_queue_free_cb free_cb);
 
-// Returns a value indicating whether the given |queue| is empty. |queue| may
-// not be NULL.
+// Returns a value indicating whether the given |queue| is empty. If |queue|
+// is NULL, the return value is true.
 bool fixed_queue_is_empty(fixed_queue_t *queue);
+
+// Returns the length of the |queue|. If |queue| is NULL, the return value
+// is 0.
+size_t fixed_queue_length(fixed_queue_t *queue);
 
 // Returns the maximum number of elements this queue may hold. |queue| may
 // not be NULL.
@@ -66,12 +72,33 @@ bool fixed_queue_try_enqueue(fixed_queue_t *queue, void *data);
 // the caller. If the queue is empty, this function returns NULL immediately.
 // Otherwise, the next element in the queue is returned. |queue| may not be
 // NULL.
-//void *fixed_queue_try_dequeue(fixed_queue_t *queue);
+void *fixed_queue_try_dequeue(fixed_queue_t *queue);
 
 // Returns the first element from |queue|, if present, without dequeuing it.
-// This function will never block the caller. Returns NULL if there are no elements
-// in the queue. |queue| may not be NULL.
-//void *fixed_queue_try_peek(fixed_queue_t *queue);
+// This function will never block the caller. Returns NULL if there are no
+// elements in the queue or |queue| is NULL.
+void *fixed_queue_try_peek_first(fixed_queue_t *queue);
+
+// Returns the last element from |queue|, if present, without dequeuing it.
+// This function will never block the caller. Returns NULL if there are no
+// elements in the queue or |queue| is NULL.
+void *fixed_queue_try_peek_last(fixed_queue_t *queue);
+
+// Tries to remove a |data| element from the middle of the |queue|. This
+// function will never block the caller. If the queue is empty or NULL, this
+// function returns NULL immediately. |data| may not be NULL. If the |data|
+// element is found in the queue, a pointer to the removed data is returned,
+// otherwise NULL.
+void *fixed_queue_try_remove_from_queue(fixed_queue_t *queue, void *data);
+
+// Returns the iterateable list with all entries in the |queue|. This function
+// will never block the caller. |queue| may not be NULL.
+//
+// NOTE: The return result of this function is not thread safe: the list could
+// be modified by another thread, and the result would be unpredictable.
+// TODO: The usage of this function should be refactored, and the function
+// itself should be removed.
+list_t *fixed_queue_get_list(fixed_queue_t *queue);
 
 // This function returns a valid file descriptor. Callers may perform one
 // operation on the fd: select(2). If |select| indicates that the file
@@ -98,5 +125,7 @@ void fixed_queue_register_dequeue(fixed_queue_t *queue, fixed_queue_cb ready_cb)
 void fixed_queue_unregister_dequeue(fixed_queue_t *queue);
 
 void fixed_queue_process(fixed_queue_t *queue);
+
+list_t *fixed_queue_get_list(fixed_queue_t *queue);
 
 #endif

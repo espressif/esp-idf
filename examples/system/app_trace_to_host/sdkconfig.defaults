@@ -1,0 +1,5 @@
+# Enable application tracing by default
+CONFIG_ESP32_APPTRACE_DEST_TRAX=y
+CONFIG_ESP32_APPTRACE_ENABLE=y
+# Disable WiFi stack by default
+CONFIG_WIFI_ENABLED=n

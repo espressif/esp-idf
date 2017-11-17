@@ -24,9 +24,9 @@
 // #include <assert.h>
 #include "bt_target.h"
 #include <string.h>
-#include "gki.h"
 #include "avrc_api.h"
 #include "avrc_int.h"
+#include "allocator.h"
 
 #if (defined(AVRC_INCLUDED) && AVRC_INCLUDED == TRUE)
 
@@ -54,11 +54,11 @@ static BT_HDR   *avrc_vendor_msg(tAVRC_MSG_VENDOR *p_msg)
     assert(p_msg != NULL);
 
 #if AVRC_METADATA_INCLUDED == TRUE
-    assert(AVRC_META_CMD_POOL_SIZE > (AVRC_MIN_CMD_LEN + p_msg->vendor_len));
-    if ((p_cmd = (BT_HDR *) GKI_getpoolbuf(AVRC_META_CMD_POOL_ID)) != NULL)
+    assert(AVRC_META_CMD_BUF_SIZE > (AVRC_MIN_CMD_LEN + p_msg->vendor_len));
+    if ((p_cmd = (BT_HDR *) osi_malloc(AVRC_META_CMD_BUF_SIZE)) != NULL)
 #else
-    assert(AVRC_CMD_POOL_SIZE > (AVRC_MIN_CMD_LEN + p_msg->vendor_len));
-    if ((p_cmd = (BT_HDR *) GKI_getpoolbuf(AVRC_CMD_POOL_ID)) != NULL)
+    assert(AVRC_CMD_BUF_SIZE > (AVRC_MIN_CMD_LEN + p_msg->vendor_len));
+    if ((p_cmd = (BT_HDR *) osi_malloc(AVRC_CMD_BUF_SIZE)) != NULL)
 #endif
     {
         p_cmd->offset   = AVCT_MSG_OFFSET;
@@ -102,7 +102,7 @@ UINT16 AVRC_UnitCmd(UINT8 handle, UINT8 label)
     BT_HDR  *p_cmd;
     UINT8   *p_data;
 
-    if ((p_cmd = (BT_HDR *) GKI_getpoolbuf(AVRC_CMD_POOL_ID)) != NULL) {
+    if ((p_cmd = (BT_HDR *) osi_malloc(AVRC_CMD_BUF_SIZE)) != NULL) {
         p_cmd->offset   = AVCT_MSG_OFFSET;
         p_data          = (UINT8 *)(p_cmd + 1) + p_cmd->offset;
         *p_data++       = AVRC_CMD_STATUS;
@@ -146,7 +146,7 @@ UINT16 AVRC_SubCmd(UINT8 handle, UINT8 label, UINT8 page)
     BT_HDR  *p_cmd;
     UINT8   *p_data;
 
-    if ((p_cmd = (BT_HDR *) GKI_getpoolbuf(AVRC_CMD_POOL_ID)) != NULL) {
+    if ((p_cmd = (BT_HDR *) osi_malloc(AVRC_CMD_BUF_SIZE)) != NULL) {
         p_cmd->offset   = AVCT_MSG_OFFSET;
         p_data          = (UINT8 *)(p_cmd + 1) + p_cmd->offset;
         *p_data++       = AVRC_CMD_STATUS;

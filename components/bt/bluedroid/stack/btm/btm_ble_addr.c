@@ -60,6 +60,10 @@ static void btm_gen_resolve_paddr_cmpl(tSMP_ENC *p)
         btsnd_hcic_ble_set_random_addr(p_cb->private_addr);
 
         p_cb->own_addr_type = BLE_ADDR_RANDOM;
+        if (p_cb->set_local_privacy_cback){
+            (*p_cb->set_local_privacy_cback)(BTM_SET_PRIVACY_SUCCESS);
+            p_cb->set_local_privacy_cback = NULL;
+        }
 
         /* start a periodical timer to refresh random addr */
         btu_stop_timer_oneshot(&p_cb->raddr_timer_ent);
@@ -73,6 +77,10 @@ static void btm_gen_resolve_paddr_cmpl(tSMP_ENC *p)
     } else {
         /* random address set failure */
         BTM_TRACE_DEBUG("set random address failed");
+        if (p_cb->set_local_privacy_cback){
+            (*p_cb->set_local_privacy_cback)(BTM_SET_PRIVACY_FAIL);
+            p_cb->set_local_privacy_cback = NULL;
+        }
     }
 }
 /*******************************************************************************
@@ -494,7 +502,7 @@ BOOLEAN btm_random_pseudo_to_identity_addr(BD_ADDR random_pseudo, UINT8 *p_stati
         if (p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {
             * p_static_addr_type = p_dev_rec->ble.static_addr_type;
             memcpy(random_pseudo, p_dev_rec->ble.static_addr, BD_ADDR_LEN);
-            if (controller_get_interface()->supports_ble_privacy()) {
+            if (controller_get_interface()->supports_ble_privacy() && p_dev_rec->ble.ble_addr_type != BLE_ADDR_PUBLIC) {
                 *p_static_addr_type |= BLE_ADDR_TYPE_ID_BIT;
             }
             return TRUE;

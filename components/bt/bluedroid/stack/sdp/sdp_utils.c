@@ -24,12 +24,11 @@
 
 #include <stdlib.h>
 #include <string.h>
-//#include <netinet/in.h>
-//#include <stdio.h>
+
+#include "allocator.h"
 
 #include "bt_defs.h"
 
-#include "gki.h"
 #include "bt_types.h"
 
 #include "l2cdefs.h"
@@ -157,7 +156,7 @@ void sdpu_release_ccb (tCONN_CB *p_ccb)
     if (p_ccb->rsp_list) {
         SDP_TRACE_DEBUG("releasing SDP rsp_list\n");
 
-        GKI_freebuf(p_ccb->rsp_list);
+        osi_free(p_ccb->rsp_list);
         p_ccb->rsp_list = NULL;
     }
 }
@@ -312,7 +311,7 @@ void sdpu_build_n_send_error (tCONN_CB *p_ccb, UINT16 trans_num, UINT16 error_co
                        error_code, p_ccb->connection_id);
 
     /* Get a buffer to use to build and send the packet to L2CAP */
-    if ((p_buf = (BT_HDR *)GKI_getpoolbuf (SDP_POOL_ID)) == NULL) {
+    if ((p_buf = (BT_HDR *)osi_malloc(SDP_DATA_BUF_SIZE)) == NULL) {
         SDP_TRACE_ERROR ("SDP - no buf for err msg\n");
         return;
     }
@@ -981,7 +980,7 @@ UINT8 *sdpu_build_partial_attrib_entry (UINT8 *p_out, tSDP_ATTRIBUTE *p_attr, UI
     size_t  len_to_copy;
     UINT16  attr_len;
 
-    if ((p_attr_buff = (UINT8 *) GKI_getbuf(sizeof(UINT8) * SDP_MAX_ATTR_LEN )) == NULL) {
+    if ((p_attr_buff = (UINT8 *) osi_malloc(sizeof(UINT8) * SDP_MAX_ATTR_LEN )) == NULL) {
         SDP_TRACE_ERROR("sdpu_build_partial_attrib_entry cannot get a buffer!\n");
         return NULL;
     }
@@ -997,7 +996,7 @@ UINT8 *sdpu_build_partial_attrib_entry (UINT8 *p_out, tSDP_ATTRIBUTE *p_attr, UI
     p_out = &p_out[len_to_copy];
     *offset += len_to_copy;
 
-    GKI_freebuf(p_attr_buff);
+    osi_free(p_attr_buff);
     return p_out;
 }
 

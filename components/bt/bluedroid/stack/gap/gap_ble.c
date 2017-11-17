@@ -20,6 +20,7 @@
 #if (defined BLE_INCLUDED && BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
 
 #include "bt_defs.h"
+#include "allocator.h"
 #include <string.h>
 #include "gap_int.h"
 #include "gap_api.h"
@@ -144,13 +145,13 @@ void gap_ble_dealloc_clcb(tGAP_CLCB *p_clcb)
 {
     tGAP_BLE_REQ    *p_q;
 
-    while ((p_q = (tGAP_BLE_REQ *)GKI_dequeue(&p_clcb->pending_req_q)) != NULL) {
+    while ((p_q = (tGAP_BLE_REQ *)fixed_queue_try_dequeue(p_clcb->pending_req_q)) != NULL) {
         /* send callback to all pending requests if being removed*/
         if (p_q->p_cback != NULL) {
             (*p_q->p_cback)(FALSE, p_clcb->bda, 0, NULL);
         }
 
-        GKI_freebuf (p_q);
+        osi_free (p_q);
     }
 
     memset(p_clcb, 0, sizeof(tGAP_CLCB));
@@ -167,12 +168,12 @@ void gap_ble_dealloc_clcb(tGAP_CLCB *p_clcb)
 *******************************************************************************/
 BOOLEAN gap_ble_enqueue_request (tGAP_CLCB *p_clcb, UINT16 uuid, tGAP_BLE_CMPL_CBACK *p_cback)
 {
-    tGAP_BLE_REQ  *p_q = (tGAP_BLE_REQ *)GKI_getbuf(sizeof(tGAP_BLE_REQ));
+    tGAP_BLE_REQ  *p_q = (tGAP_BLE_REQ *)osi_malloc(sizeof(tGAP_BLE_REQ));
 
     if (p_q != NULL) {
         p_q->p_cback = p_cback;
         p_q->uuid = uuid;
-        GKI_enqueue(&p_clcb->pending_req_q, p_q);
+        fixed_queue_enqueue(p_clcb->pending_req_q, p_q);
         return TRUE;
     }
 
@@ -189,12 +190,12 @@ BOOLEAN gap_ble_enqueue_request (tGAP_CLCB *p_clcb, UINT16 uuid, tGAP_BLE_CMPL_C
 *******************************************************************************/
 BOOLEAN gap_ble_dequeue_request (tGAP_CLCB *p_clcb, UINT16 *p_uuid, tGAP_BLE_CMPL_CBACK **p_cback)
 {
-    tGAP_BLE_REQ *p_q = (tGAP_BLE_REQ *)GKI_dequeue(&p_clcb->pending_req_q);;
+    tGAP_BLE_REQ *p_q = (tGAP_BLE_REQ *)fixed_queue_try_dequeue(p_clcb->pending_req_q);;
 
     if (p_q != NULL) {
         *p_cback    = p_q->p_cback;
         *p_uuid     = p_q->uuid;
-        GKI_freebuf((void *)p_q);
+        osi_free((void *)p_q);
         return TRUE;
     }
 
