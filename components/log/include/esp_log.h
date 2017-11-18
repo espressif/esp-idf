@@ -62,6 +62,17 @@ void esp_log_level_set(const char* tag, esp_log_level_t level);
 void esp_log_set_vprintf(vprintf_like_t func);
 
 /**
+ * @brief Get function used to current output log handler
+ *
+ * This function can be used to obtain current log handler before redirect 
+ * log output to other destination, with later time return output to the 
+ * previous destination.
+ *
+ * @return func Function used for output.
+ */
+vprintf_like_t esp_log_get_vprintf(void);
+
+/**
  * @brief Function which returns timestamp to be used in log output
  *
  * This function is used in expansion of ESP_LOGx macros.
