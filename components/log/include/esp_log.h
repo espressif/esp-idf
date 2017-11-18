@@ -55,11 +55,14 @@ void esp_log_level_set(const char* tag, esp_log_level_t level);
  * @brief Set function used to output log entries
  *
  * By default, log output goes to UART0. This function can be used to redirect log
- * output to some other destination, such as file or network.
+ * output to some other destination, such as file or network. Returns the original
+ * log handler, which may be necessary to return output to the previous destination.
  *
- * @param func Function used for output. Must have same signature as vprintf.
+ * @param func new Function used for output. Must have same signature as vprintf.
+ *
+ * @return func old Function used for output.
  */
-void esp_log_set_vprintf(vprintf_like_t func);
+vprintf_like_t esp_log_set_vprintf(vprintf_like_t func);
 
 /**
  * @brief Function which returns timestamp to be used in log output
