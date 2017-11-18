@@ -111,6 +111,11 @@ void esp_log_set_vprintf(vprintf_like_t func)
     s_log_print_func = func;
 }
 
+vprintf_like_t esp_log_get_vprintf(void)
+{
+    return s_log_print_func;
+}
+
 void esp_log_level_set(const char* tag, esp_log_level_t level)
 {
     if (!s_log_mutex) {
