@@ -94,6 +94,21 @@ void vRingbufferDelete(RingbufHandle_t ringbuf);
  */
 size_t xRingbufferGetMaxItemSize(RingbufHandle_t ringbuf);
 
+/**
+ * @brief Get current free size available in the buffer
+ *
+ * This gives the real time free space available in the ring buffer. So basically,
+ * this will be the maximum size of the entry that can be sent into the buffer.
+ *
+ * @note This API is not thread safe. So, if multiple threads are accessing the same
+ * ring buffer, it is the application's responsibility to ensure atomic access to this
+ * API and the subsequent Send
+ *
+ * @param ringbuf - Ring buffer to query
+ *
+ * @return Current free size, in bytes,  available for an entry
+ */
+size_t xRingbufferGetCurFreeSize(RingbufHandle_t ringbuf);
 
 /**
  * @brief  Insert an item into the ring buffer
