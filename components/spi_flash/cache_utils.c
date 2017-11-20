@@ -47,18 +47,18 @@ static volatile int s_flash_op_cpu = -1;
 
 void spi_flash_init_lock()
 {
-    s_flash_op_mutex = xSemaphoreCreateMutex();
+    s_flash_op_mutex = xSemaphoreCreateRecursiveMutex();
     assert(s_flash_op_mutex != NULL);
 }
 
 void spi_flash_op_lock()
 {
-    xSemaphoreTake(s_flash_op_mutex, portMAX_DELAY);
+    xSemaphoreTakeRecursive(s_flash_op_mutex, portMAX_DELAY);
 }
 
 void spi_flash_op_unlock()
 {
-    xSemaphoreGive(s_flash_op_mutex);
+    xSemaphoreGiveRecursive(s_flash_op_mutex);
 }
 /*
  If you're going to modify this, keep in mind that while the flash caches of the pro and app

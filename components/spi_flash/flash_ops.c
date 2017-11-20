@@ -137,6 +137,11 @@ void IRAM_ATTR spi_flash_guard_set(const spi_flash_guard_funcs_t *funcs)
     s_flash_guard_ops = funcs;
 }
 
+const spi_flash_guard_funcs_t *IRAM_ATTR spi_flash_guard_get()
+{
+    return s_flash_guard_ops;
+}
+
 size_t IRAM_ATTR spi_flash_get_chip_size()
 {
     return g_rom_flashchip.chip_size;

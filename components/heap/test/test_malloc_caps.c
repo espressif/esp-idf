@@ -105,7 +105,7 @@ TEST_CASE("heap_caps metadata test", "[heap]")
 */
 static IRAM_ATTR __attribute__((noinline)) bool iram_malloc_test()
 {
-    g_flash_guard_default_ops.start(); // Disables flash cache
+    spi_flash_guard_get()->start(); // Disables flash cache
 
     bool result = true;
     void *x = heap_caps_malloc(64, MALLOC_CAP_32BIT);
@@ -114,7 +114,7 @@ static IRAM_ATTR __attribute__((noinline)) bool iram_malloc_test()
     result = result && (y != NULL);
     heap_caps_free(y);
 
-    g_flash_guard_default_ops.end(); // Re-enables flash cache
+    spi_flash_guard_get()->end(); // Re-enables flash cache
 
     return result;
 }
