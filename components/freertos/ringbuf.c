@@ -32,6 +32,7 @@ typedef enum {
 typedef enum {
     iflag_free = 1,             //Buffer is not read and given back by application, free to overwrite
     iflag_dummydata = 2,        //Data from here to end of ringbuffer is dummy. Restart reading at start of ringbuffer.
+    iflag_wrap = 4,             //Valid for RINGBUF_TYPE_ALLOWSPLIT, indicating that rest of the data is wrapped around
 } itemflag_t;
 
 
@@ -203,6 +204,9 @@ static BaseType_t copyItemToRingbufAllowSplit(ringbuf_t *rb, uint8_t *buffer, si
             if (buffer_size == 0) {
                 rb->write_ptr=rb->data;
                 return pdTRUE;
+            } else {
+                /* Indicate the wrapping */
+                hdr->flags|=iflag_wrap;
             }
         } else {
             //Huh, only the header fit. Mark as dummy so the receive function doesn't receive
@@ -359,6 +363,7 @@ static void returnItemToRingbufDefault(ringbuf_t *rb, void *item) {
     configASSERT((hdr->flags & iflag_dummydata)==0);
     configASSERT((hdr->flags & iflag_free)==0);
     //Mark the buffer as free.
+    hdr->flags&=~iflag_wrap;
     hdr->flags|=iflag_free;
 
     //Do a cleanup pass.
@@ -552,6 +557,15 @@ size_t xRingbufferGetMaxItemSize(RingbufHandle_t ringbuf)
     configASSERT(rb);
     return rb->maxItemSize;
 }
+
+bool xRingbufferIsNextItemWrapped(RingbufHandle_t ringbuf)
+{
+    ringbuf_t *rb=(ringbuf_t *)ringbuf;
+    configASSERT(rb);
+    buf_entry_hdr_t *hdr=(buf_entry_hdr_t *)rb->read_ptr;
+    return hdr->flags & iflag_wrap;
+}
+
 
 BaseType_t xRingbufferSend(RingbufHandle_t ringbuf, void *data, size_t dataSize, TickType_t ticks_to_wait)
 {
