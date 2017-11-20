@@ -222,6 +222,7 @@ esp_err_t spi_slave_free(spi_host_device_t host)
     }
     free(spihost[host]->dmadesc_tx);
     free(spihost[host]->dmadesc_rx);
+    esp_intr_free(spihost[host]->intr);
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_release(spihost[host]->pm_lock);
     esp_pm_lock_delete(spihost[host]->pm_lock);
@@ -229,7 +230,6 @@ esp_err_t spi_slave_free(spi_host_device_t host)
     free(spihost[host]);
     spihost[host] = NULL;
     spicommon_periph_free(host);
-    spihost[host] = NULL;
     return ESP_OK;
 }
 

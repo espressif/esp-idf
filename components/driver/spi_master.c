@@ -270,7 +270,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host, spi_device_interface_config
     memcpy(&dev->cfg, dev_config, sizeof(spi_device_interface_config_t));
 
     //Set CS pin, CS options
-    if (dev_config->spics_io_num > 0) {
+    if (dev_config->spics_io_num >= 0) {
         gpio_set_direction(dev_config->spics_io_num, GPIO_MODE_OUTPUT);
         spicommon_cs_initialize(host, dev_config->spics_io_num, freecs, spihost[host]->no_gpio_matrix == false);
     }
@@ -627,6 +627,7 @@ static void IRAM_ATTR spi_intr(void *arg)
 
 esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *trans_desc,  TickType_t ticks_to_wait)
 {
+    esp_err_t ret = ESP_OK;
     BaseType_t r;
     SPI_CHECK(handle!=NULL, "invalid dev handle", ESP_ERR_INVALID_ARG);
     //check transmission length 
@@ -662,7 +663,10 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
         //if rxbuf in the desc not DMA-capable, malloc a new one. The rx buffer need to be length of multiples of 32 bits to avoid heap corruption.
         ESP_LOGV( SPI_TAG, "Allocate RX buffer for DMA" );
         trans_buf.buffer_to_rcv = heap_caps_malloc((trans_desc->rxlength+31)/8, MALLOC_CAP_DMA);
-        if ( trans_buf.buffer_to_rcv==NULL ) return ESP_ERR_NO_MEM;
+        if ( trans_buf.buffer_to_rcv==NULL ) {
+            ret = ESP_ERR_NO_MEM;
+            goto clean_up;
+        }
     }
     
     const uint32_t *txdata;
@@ -678,25 +682,40 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
         ESP_LOGV( SPI_TAG, "Allocate TX buffer for DMA" );
         trans_buf.buffer_to_send = heap_caps_malloc((trans_desc->length+7)/8, MALLOC_CAP_DMA);
         if ( trans_buf.buffer_to_send==NULL ) {
-            // free malloc-ed buffer (if needed) before return.
-            if ( (void*)trans_buf.buffer_to_rcv != trans_desc->rx_buffer && (void*)trans_buf.buffer_to_rcv != &trans_desc->rx_data[0] ) {
-                free( trans_buf.buffer_to_rcv );
-            }   
-            return ESP_ERR_NO_MEM;
+            ret = ESP_ERR_NO_MEM;
+            goto clean_up;
         }
         memcpy( trans_buf.buffer_to_send, txdata, (trans_desc->length+7)/8 );
     } else { 
         // else use the original buffer (forced-conversion) or assign to NULL
         trans_buf.buffer_to_send = (uint32_t*)txdata;
     }
+    
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_acquire(handle->host->pm_lock);
 #endif
-
     r=xQueueSend(handle->trans_queue, (void*)&trans_buf, ticks_to_wait);
-    if (!r) return ESP_ERR_TIMEOUT;
+    if (!r) {
+        ret = ESP_ERR_TIMEOUT;
+#ifdef CONFIG_PM_ENABLE
+        //Release APB frequency lock
+        esp_pm_lock_release(handle->host->pm_lock);
+#endif
+        goto clean_up;
+    }
     esp_intr_enable(handle->host->intr);
     return ESP_OK;
+
+clean_up:
+    // free malloc-ed buffer (if needed) before return.
+    if ( (void*)trans_buf.buffer_to_rcv != trans_desc->rx_buffer && (void*)trans_buf.buffer_to_rcv != &trans_desc->rx_data[0] ) {
+        free( trans_buf.buffer_to_rcv );
+    }   
+    if ( (void*)trans_buf.buffer_to_send!= trans_desc->tx_buffer && (void*)trans_buf.buffer_to_send != &trans_desc->tx_data[0] ) {
+        free( trans_buf.buffer_to_send );
+    }   
+    assert( ret != ESP_OK );
+    return ret;
 }
 
 esp_err_t spi_device_get_trans_result(spi_device_handle_t handle, spi_transaction_t **trans_desc, TickType_t ticks_to_wait)
