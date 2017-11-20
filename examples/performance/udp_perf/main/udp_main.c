@@ -36,6 +36,7 @@ step3:
 #include "freertos/event_groups.h"
 #include "esp_log.h"
 #include "esp_err.h"
+#include "nvs_flash.h"
 
 #include "udp_perf.h"
 
@@ -102,6 +103,13 @@ static void udp_conn(void *pvParameters)
 
 void app_main(void)
 {
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( ret );
+
 #if EXAMPLE_ESP_WIFI_MODE_AP
     ESP_LOGI(TAG, "EXAMPLE_ESP_WIFI_MODE_AP");
     wifi_init_softap();

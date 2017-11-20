@@ -182,8 +182,10 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle);
  * @param trans_desc Description of transaction to execute
  * @param ticks_to_wait Ticks to wait until there's room in the queue; use portMAX_DELAY to
  *                      never time out.
- * @return 
+ * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
+ *         - ESP_ERR_TIMEOUT       if there was no room in the queue before ticks_to_wait expired
+ *         - ESP_ERR_NO_MEM        if allocating DMA-capable temporary buffer failed
  *         - ESP_OK                on success
  */
 esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *trans_desc, TickType_t ticks_to_wait);
@@ -205,6 +207,7 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
                         out.
  * @return 
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
+ *         - ESP_ERR_TIMEOUT       if there was no completed transaction before ticks_to_wait expired
  *         - ESP_OK                on success
  */
 esp_err_t spi_device_get_trans_result(spi_device_handle_t handle, spi_transaction_t **trans_desc, TickType_t ticks_to_wait);
