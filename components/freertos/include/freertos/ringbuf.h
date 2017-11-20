@@ -111,6 +111,23 @@ size_t xRingbufferGetMaxItemSize(RingbufHandle_t ringbuf);
 size_t xRingbufferGetCurFreeSize(RingbufHandle_t ringbuf);
 
 /**
+ * @brief Check if the next item is wrapped
+ *
+ * This API tells if the next item that is available for a Receive is wrapped
+ * or not. This is valid only if the ring buffer type is RINGBUF_TYPE_ALLOWSPLIT
+ *
+ * @note This API is not thread safe. So, if multiple threads are accessing the same
+ * ring buffer, it is the application's responsibility to ensure atomic access to this
+ * API and the subsequent Receive
+ *
+ * @param ringbuf - Ring buffer to query
+ *
+ * @return true if the next item is wrapped around
+ * @return false if the next item is not wrapped
+ */
+bool xRingbufferIsNextItemWrapped(RingbufHandle_t ringbuf);
+
+/**
  * @brief  Insert an item into the ring buffer
  *
  * @param  ringbuf  Ring buffer to insert the item into
