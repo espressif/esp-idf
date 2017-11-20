@@ -53,6 +53,7 @@ struct  ringbuf_t {
     BaseType_t (*copyItemToRingbufImpl)(ringbuf_t *rb, uint8_t *buffer, size_t buffer_size);
     uint8_t *(*getItemFromRingbufImpl)(ringbuf_t *rb, size_t *length, int wanted_length);
     void (*returnItemToRingbufImpl)(ringbuf_t *rb, void *item);
+    size_t (*getFreeSizeImpl)(ringbuf_t *rb);
 };
 
 
@@ -81,7 +82,6 @@ static int ringbufferFreeMem(ringbuf_t *rb)
     //where read_ptr == free_ptr, messing up the next calculation.
     return free_size-1;
 }
-
 
 //Copies a single item to the ring buffer; refuses to split items. Assumes there is space in the ringbuffer and
 //the ringbuffer is locked. Increases write_ptr to the next item. Returns pdTRUE on
@@ -415,6 +415,67 @@ void xRingbufferPrintInfo(RingbufHandle_t ringbuf)
 }
 
 
+size_t xRingbufferGetCurFreeSize(RingbufHandle_t ringbuf)
+{
+    ringbuf_t *rb=(ringbuf_t *)ringbuf;
+    configASSERT(rb);
+    configASSERT(rb->getFreeSizeImpl);
+    int free_size = rb->getFreeSizeImpl(rb);
+    //Reserve one byte. If we do not do this and the entire buffer is filled, we get a situation
+    //where read_ptr == free_ptr, messing up the next calculation.
+    return free_size - 1;
+}
+
+static size_t getCurFreeSizeByteBuf(ringbuf_t *rb)
+{
+    //Return whatever space is available depending on relative positions of
+    //the free pointer and write pointer. There is no overhead of headers in
+    //this mode
+    int free_size = rb->free_ptr-rb->write_ptr;
+    if (free_size <= 0)
+        free_size += rb->size;
+    return free_size;
+}
+
+static size_t getCurFreeSizeAllowSplit(ringbuf_t *rb)
+{
+    int free_size;
+    //If Both, the write and free pointer are at the start. Hence, the entire buffer
+    //is available (minus the space for the header)
+    if (rb->write_ptr == rb->free_ptr && rb->write_ptr == rb->data) {
+        free_size = rb->size - sizeof(buf_entry_hdr_t);
+    } else if (rb->write_ptr < rb->free_ptr) {
+        //Else if the free pointer is beyond the write pointer, only the space between
+        //them would be available (minus the space for the header)
+        free_size = rb->free_ptr - rb->write_ptr - sizeof(buf_entry_hdr_t);
+    } else {
+        //Else the data can wrap around and 2 headers will be required
+        free_size = rb->free_ptr - rb->write_ptr + rb->size - (2 * sizeof(buf_entry_hdr_t));
+    }
+    return free_size;
+}
+
+static size_t getCurFreeSizeNoSplit(ringbuf_t *rb)
+{
+    int free_size;
+    //If the free pointer is beyond the write pointer, only the space between
+    //them would be available
+    if (rb->write_ptr < rb->free_ptr) {
+        free_size = rb->free_ptr - rb->write_ptr;
+    } else {
+        //Else check which one is bigger amongst the below 2
+        //1) Space from the write pointer to the end of buffer
+        int size1 = rb->data + rb->size - rb->write_ptr;
+        //2) Space from the start of buffer to the free pointer
+        int size2 = rb->free_ptr - rb->data;
+        //And then select the larger of the two
+        free_size = size1 > size2 ? size1 : size2;
+    }
+    //In any case, a single header will be used, so subtracting the space that
+    //would be required for it
+    return free_size - sizeof(buf_entry_hdr_t);
+}
+
 
 RingbufHandle_t xRingbufferCreate(size_t buf_length, ringbuf_type_t type)
 {
@@ -437,6 +498,7 @@ RingbufHandle_t xRingbufferCreate(size_t buf_length, ringbuf_type_t type)
         rb->returnItemToRingbufImpl=returnItemToRingbufDefault;
         //Calculate max item size. Worst case, we need to split an item into two, which means two headers of overhead.
         rb->maxItemSize=rb->size-(sizeof(buf_entry_hdr_t)*2)-4;
+        rb->getFreeSizeImpl=getCurFreeSizeAllowSplit;
     } else if (type==RINGBUF_TYPE_BYTEBUF) {
         rb->flags|=flag_bytebuf;
         rb->copyItemToRingbufImpl=copyItemToRingbufByteBuf;
@@ -444,6 +506,7 @@ RingbufHandle_t xRingbufferCreate(size_t buf_length, ringbuf_type_t type)
         rb->returnItemToRingbufImpl=returnItemToRingbufBytebuf;
         //Calculate max item size. We have no headers and can split anywhere -> size is total size minus one.
         rb->maxItemSize=rb->size-1;
+        rb->getFreeSizeImpl=getCurFreeSizeByteBuf;
     } else if (type==RINGBUF_TYPE_NOSPLIT) {
         rb->copyItemToRingbufImpl=copyItemToRingbufNoSplit;
         rb->getItemFromRingbufImpl=getItemFromRingbufDefault;
@@ -453,6 +516,7 @@ RingbufHandle_t xRingbufferCreate(size_t buf_length, ringbuf_type_t type)
         //(item_data-4) bytes of buffer, then we only have (size-(item_data-4) bytes left to fill
         //with the real item. (item size being header+data)
         rb->maxItemSize=(rb->size/2)-sizeof(buf_entry_hdr_t)-4;
+        rb->getFreeSizeImpl=getCurFreeSizeNoSplit;
     } else {
         configASSERT(0);
     }
