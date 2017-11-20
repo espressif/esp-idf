@@ -73,10 +73,7 @@ ESP32 toolchain for Linux is available for download from Espressif website:
 Permission issues /dev/ttyUSB0
 ------------------------------
 
-With some Linux distributions you may get the ``Failed to open port /dev/ttyUSB0`` error message when flashing the ESP32.  This can be solved by adding the current user to the ``dialout`` group, such as running the following command::
-
-        sudo adduser $USER dialout
-
+With some Linux distributions you may get the ``Failed to open port /dev/ttyUSB0`` error message when flashing the ESP32. :ref:`This can be solved by adding the current user to the dialout group<linux-dialout-group>`.
 
 
 Arch Linux Users
