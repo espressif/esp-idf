@@ -65,39 +65,39 @@ static int vfs_fat_closedir(void* ctx, DIR* pdir);
 static int vfs_fat_mkdir(void* ctx, const char* name, mode_t mode);
 static int vfs_fat_rmdir(void* ctx, const char* name);
 
-static vfs_fat_ctx_t* s_fat_ctxs[_VOLUMES] = { NULL, NULL };
+static vfs_fat_ctx_t* s_fat_ctxs[FF_VOLUMES] = { NULL, NULL };
 //backwards-compatibility with esp_vfs_fat_unregister()
 static vfs_fat_ctx_t* s_fat_ctx = NULL;
 
 static size_t find_context_index_by_path(const char* base_path)
 {
-    for(size_t i=0; i<_VOLUMES; i++) {
+    for(size_t i=0; i<FF_VOLUMES; i++) {
         if (s_fat_ctxs[i] && !strcmp(s_fat_ctxs[i]->base_path, base_path)) {
             return i;
         }
     }
-    return _VOLUMES;
+    return FF_VOLUMES;
 }
 
 static size_t find_unused_context_index()
 {
-    for(size_t i=0; i<_VOLUMES; i++) {
+    for(size_t i=0; i<FF_VOLUMES; i++) {
         if (!s_fat_ctxs[i]) {
             return i;
         }
     }
-    return _VOLUMES;
+    return FF_VOLUMES;
 }
 
 esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive, size_t max_files, FATFS** out_fs)
 {
     size_t ctx = find_context_index_by_path(base_path);
-    if (ctx < _VOLUMES) {
+    if (ctx < FF_VOLUMES) {
         return ESP_ERR_INVALID_STATE;
     }
 
     ctx = find_unused_context_index();
-    if (ctx == _VOLUMES) {
+    if (ctx == FF_VOLUMES) {
         return ESP_ERR_NO_MEM;
     }
 
@@ -152,7 +152,7 @@ esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive, siz
 esp_err_t esp_vfs_fat_unregister_path(const char* base_path)
 {
     size_t ctx = find_context_index_by_path(base_path);
-    if (ctx == _VOLUMES) {
+    if (ctx == FF_VOLUMES) {
         return ESP_ERR_INVALID_STATE;
     }
     vfs_fat_ctx_t* fat_ctx = s_fat_ctxs[ctx];

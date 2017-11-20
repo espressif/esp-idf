@@ -2,13 +2,16 @@ menu "FAT Filesystem support"
 
 choice FATFS_CHOOSE_CODEPAGE
    prompt "OEM Code Page"
-   default FATFS_CODEPAGE_ASCII
+   default FATFS_CODEPAGE_437
    help
-      OEM code page used for file name encodings. Required to
-      be set to a non-ASCII value to use Long Filenames.
+      OEM code page used for file name encodings.
+      
+      If "Dynamic" is selected, code page can be chosen at runtime using
+      f_setcp function. Note that choosing this option will increase
+      application size by ~480kB.
 
-config FATFS_CODEPAGE_ASCII
-   bool "ASCII (CP1, no long filenames)"
+config FATFS_CODEPAGE_DYNAMIC
+   bool "Dynamic (all code pages supported)"
 config FATFS_CODEPAGE_437
    bool "US (CP437)"
 config FATFS_CODEPAGE_720
@@ -56,7 +59,7 @@ endchoice
 
 config FATFS_CODEPAGE
    int
-   default 1 if FATFS_CODEPAGE_ASCII
+   default 0 if FATFS_CODEPAGE_DYNAMIC
    default 437 if FATFS_CODEPAGE_437
    default 720 if FATFS_CODEPAGE_720
    default 737 if FATFS_CODEPAGE_737
@@ -78,12 +81,11 @@ config FATFS_CODEPAGE
    default 936 if FATFS_CODEPAGE_936
    default 949 if FATFS_CODEPAGE_949
    default 950 if FATFS_CODEPAGE_950
-   default 1
+   default 437
 
 choice FATFS_LONG_FILENAMES
    prompt "Long filename support"
    default FATFS_LFN_NONE
-   depends on !FATFS_CODEPAGE_ASCII
    help
       Support long filenames in FAT. Long filename data increases
       memory usage. FATFS can be configured to store the buffer for

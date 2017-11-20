@@ -15,9 +15,9 @@
 #include "ffconf.h"
 #include "ff.h"
 
-static ff_diskio_impl_t * s_impls[_VOLUMES] = { NULL };
+static ff_diskio_impl_t * s_impls[FF_VOLUMES] = { NULL };
 
-#if _MULTI_PARTITION		/* Multiple partition configuration */
+#if FF_MULTI_PARTITION		/* Multiple partition configuration */
 PARTITION VolToPart[] = {
     {0, 0},    /* Logical drive 0 ==> Physical drive 0, auto detection */
     {1, 0}     /* Logical drive 1 ==> Physical drive 1, auto detection */
@@ -27,7 +27,7 @@ PARTITION VolToPart[] = {
 esp_err_t ff_diskio_get_drive(BYTE* out_pdrv)
 {
     BYTE i;
-    for(i=0; i<_VOLUMES; i++) {
+    for(i=0; i<FF_VOLUMES; i++) {
         if (!s_impls[i]) {
             *out_pdrv = i;
             return ESP_OK;
@@ -38,7 +38,7 @@ esp_err_t ff_diskio_get_drive(BYTE* out_pdrv)
 
 void ff_diskio_register(BYTE pdrv, const ff_diskio_impl_t* discio_impl)
 {
-    assert(pdrv < _VOLUMES);
+    assert(pdrv < FF_VOLUMES);
 
     if (s_impls[pdrv]) {
         ff_diskio_impl_t* im = s_impls[pdrv];

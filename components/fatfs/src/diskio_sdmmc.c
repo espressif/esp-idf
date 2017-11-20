@@ -18,7 +18,7 @@
 #include "sdmmc_cmd.h"
 #include "esp_log.h"
 
-static sdmmc_card_t* s_cards[_VOLUMES] = { NULL };
+static sdmmc_card_t* s_cards[FF_VOLUMES] = { NULL };
 
 static const char* TAG = "diskio_sdmmc";
 
