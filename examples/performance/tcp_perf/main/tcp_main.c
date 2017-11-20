@@ -124,7 +124,13 @@ static void tcp_conn(void *pvParameters)
 
 void app_main(void)
 {
-    nvs_flash_init();
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( ret );
+
 #if EXAMPLE_ESP_WIFI_MODE_AP
     ESP_LOGI(TAG, "EXAMPLE_ESP_WIFI_MODE_AP");
     wifi_init_softap();
