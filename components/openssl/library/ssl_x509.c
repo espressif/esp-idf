@@ -118,6 +118,37 @@ failed1:
 }
 
 /**
+ * @brief return SSL X509 verify parameters
+ */
+
+X509_VERIFY_PARAM *SSL_get0_param(SSL *ssl)
+{
+    return &ssl->param;
+}
+
+/**
+ * @brief set X509 host verification flags
+ */
+
+int X509_VERIFY_PARAM_set_hostflags(X509_VERIFY_PARAM *param,
+                    unsigned long flags)
+{
+    /* flags not supported yet */
+    return 0;
+}
+
+/**
+ * @brief clear X509 host verification flags
+ */
+
+int X509_VERIFY_PARAM_clear_hostflags(X509_VERIFY_PARAM *param,
+                      unsigned long flags)
+{
+    /* flags not supported yet */
+    return 0;
+}
+
+/**
  * @brief set SSL context client CA certification
  */
 int SSL_CTX_add_client_CA(SSL_CTX *ctx, X509 *x)

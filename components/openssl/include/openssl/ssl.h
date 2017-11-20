@@ -26,6 +26,14 @@
 {
 */
 
+#define SSL_CB_ALERT 0x4000
+
+#define X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT		(1 << 0)
+#define X509_CHECK_FLAG_NO_WILDCARDS			(1 << 1)
+#define X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS		(1 << 2)
+#define X509_CHECK_FLAG_MULTI_LABEL_WILDCARDS		(1 << 3)
+#define X509_CHECK_FLAG_SINGLE_LABEL_SUBDOMAINS		(1 << 4)
+
 /**
  * @brief create a SSL context
  *
@@ -1522,6 +1530,53 @@ long SSL_get_timeout(const SSL *ssl);
  * @return verifying mode
  */
 int SSL_get_verify_mode(const SSL *ssl);
+
+/**
+ * @brief get SSL verify parameters
+ *
+ * @param ssl - SSL point
+ *
+ * @return verify parameters
+ */
+X509_VERIFY_PARAM *SSL_get0_param(SSL *ssl);
+
+/**
+ * @brief set expected hostname the peer cert CN should have
+ *
+ * @param param - verify parameters from SSL_get0_param()
+ *
+ * @param name - the expected hostname
+ *
+ * @param namelen - the length of the hostname, or 0 if NUL terminated
+ *
+ * @return verify parameters
+ */
+int X509_VERIFY_PARAM_set1_host(X509_VERIFY_PARAM *param,
+                                const char *name, size_t namelen);
+
+/**
+ * @brief set parameters for X509 host verify action
+ *
+ * @param param -verify parameters from SSL_get0_param()
+ *
+ * @param flags - bitfield of X509_CHECK_FLAG_... parameters to set
+ *
+ * @return 1 for success, 0 for failure
+ */
+int X509_VERIFY_PARAM_set_hostflags(X509_VERIFY_PARAM *param,
+                    unsigned long flags);
+
+/**
+ * @brief clear parameters for X509 host verify action
+ *
+ * @param param -verify parameters from SSL_get0_param()
+ *
+ * @param flags - bitfield of X509_CHECK_FLAG_... parameters to clear
+ *
+ * @return 1 for success, 0 for failure
+ */
+int X509_VERIFY_PARAM_clear_hostflags(X509_VERIFY_PARAM *param,
+                      unsigned long flags);
 
 /**
  * @brief get SSL write only IO handle
