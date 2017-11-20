@@ -72,7 +72,6 @@
 #define MCU_SEL_M (MCU_SEL_V << MCU_SEL_S)
 #define MCU_SEL_V 0x7
 #define MCU_SEL_S 12
-#define MCU_SEL_V 0x7
 
 #define PIN_INPUT_ENABLE(PIN_NAME)               SET_PERI_REG_MASK(PIN_NAME,FUN_IE)
 #define PIN_INPUT_DISABLE(PIN_NAME)              CLEAR_PERI_REG_MASK(PIN_NAME,FUN_IE)
