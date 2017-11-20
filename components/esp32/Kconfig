@@ -594,26 +594,28 @@ choice BROWNOUT_DET_LVL_SEL
     depends on BROWNOUT_DET
     default BROWNOUT_DET_LVL_SEL_25
     help
-        The brownout detector will reset the chip when the supply voltage is below this level.
+        The brownout detector will reset the chip when the supply voltage is approximately
+        below this level. Note that there may be some variation of brownout voltage level
+        between each ESP32 chip.
 
 #The voltage levels here are estimates, more work needs to be done to figure out the exact voltages
 #of the brownout threshold levels.
 config BROWNOUT_DET_LVL_SEL_0
-    bool "2.1V"
+    bool "2.43V +/- 0.05"
 config BROWNOUT_DET_LVL_SEL_1
-    bool "2.2V"
+    bool "2.48V +/- 0.05"
 config BROWNOUT_DET_LVL_SEL_2
-    bool "2.3V"
+    bool "2.58V +/- 0.05"
 config BROWNOUT_DET_LVL_SEL_3
-    bool "2.4V"
+    bool "2.62V +/- 0.05"
 config BROWNOUT_DET_LVL_SEL_4
-    bool "2.5V"
+    bool "2.67V +/- 0.05"
 config BROWNOUT_DET_LVL_SEL_5
-    bool "2.6V"
+    bool "2.70V +/- 0.05"
 config BROWNOUT_DET_LVL_SEL_6
-    bool "2.7V"
+    bool "2.77V +/- 0.05"
 config BROWNOUT_DET_LVL_SEL_7
-    bool "2.8V"
+    bool "2.80V +/- 0.05"
 endchoice
 
 config BROWNOUT_DET_LVL
