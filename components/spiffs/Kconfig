@@ -88,6 +88,25 @@ config SPIFFS_USE_MAGIC_LENGTH
         configured and formatted for 4 megabytes will not be accepted 
         for mounting with a configuration defining the filesystem as 2 megabytes.
 
+config SPIFFS_META_LENGTH
+    int "Size of per-file metadata field"
+    default 4
+    help
+        This option sets the number of extra bytes stored in the file header.
+        These bytes can be used in an application-specific manner.
+        Set this to at least 4 bytes to enable support for saving file
+        modification time.
+
+config SPIFFS_USE_MTIME
+    bool "Save file modification time"
+    default "y"
+    depends on SPIFFS_META_LENGTH >= 4
+    help
+        If enabled, then the first 4 bytes of per-file metadata will be used
+        to store file modification time (mtime), accessible through
+        stat/fstat functions.
+        Modification time is updated when the file is opened.
+
 menu "Debug Configuration"
 
 config SPIFFS_DBG
