@@ -9,6 +9,7 @@
 #include "freertos/semphr.h"
 #include "test_utils.h"
 
+
 TEST_CASE("esp_timer orders timers correctly", "[esp_timer]")
 {
     void dummy_cb(void* arg)
@@ -335,8 +336,7 @@ TEST_CASE("esp_timer_get_time call takes less than 1us", "[esp_timer]")
         end = esp_timer_get_time();
     }
     int ns_per_call = (int) ((end - begin) * 1000 / iter_count);
-    printf("esp_timer_get_time: %dns per call\n", ns_per_call);
-    TEST_ASSERT(ns_per_call < 1000);
+    TEST_PERFORMANCE_LESS_THAN(ESP_TIMER_GET_TIME_PER_CALL, "%dns", ns_per_call);
 }
 
 /* This test runs for about 10 minutes and is disabled in CI.

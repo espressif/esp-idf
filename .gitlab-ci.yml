@@ -26,8 +26,16 @@ variables:
 # IDF environment
 
   IDF_PATH: "$CI_PROJECT_DIR"
+  APPLY_BOT_FILTER_SCRIPT: "$CI_PROJECT_DIR/tools/ci/apply_bot_filter.py"
+  CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
+
+# before each job, we need to check if this job is filtered by bot stage/job filter
+.apply_bot_filter: &apply_bot_filter
+  python $APPLY_BOT_FILTER_SCRIPT || exit 0
 
 before_script:
+  # apply bot filter in before script
+  - *apply_bot_filter
   # add gitlab ssh key
   - mkdir -p ~/.ssh
   - chmod 700 ~/.ssh
@@ -46,11 +54,15 @@ before_script:
 
 .do_nothing_before:
   before_script: &do_nothing_before
+    # apply bot filter in before script
+    - *apply_bot_filter
     - echo "Not setting up GitLab key, not fetching submodules"
     - source tools/ci/configure_ci_environment.sh
 
 .add_gitlab_key_before:
   before_script: &add_gitlab_key_before
+    # apply bot filter in before script
+    - *apply_bot_filter
     - echo "Not fetching submodules"
     - source tools/ci/configure_ci_environment.sh
     # add gitlab ssh key
@@ -75,7 +87,7 @@ build_template_app:
     # Try to use the same branch name for esp-idf-template that we're
     # using on esp-idf. If it doesn't exist then just stick to the default
     # branch
-    - git checkout ${CI_COMMIT_REF_NAME} || echo "Using esp-idf-template default branch..."
+    - python $CHECKOUT_REF_SCRIPT esp-idf-template
     # Test debug build (default)
     - make all V=1
     # Now test release build
@@ -106,7 +118,7 @@ build_ssc:
   script:
     - git clone $SSC_REPOSITORY
     - cd SSC
-    - git checkout ${CI_COMMIT_REF_NAME} || echo "Using SSC default branch..."
+    - python $CHECKOUT_REF_SCRIPT SSC
     - MAKEFLAGS= ./gen_misc_ng.sh
 
 build_esp_idf_tests:
@@ -281,6 +293,7 @@ test_report:
     # clone test bench
     - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
     - cd auto_test_script
+    - python $CHECKOUT_REF_SCRIPT auto_test_script
     # generate report
     - TEST_RESULT=Pass
     - python CITestReport.py -l $LOG_PATH -t $TEST_CASE_FILE_PATH -p $REPORT_PATH -r $RESULT_PATH -a $ARTIFACTS_PATH -m $MODULE_UPDATE_FILE || TEST_RESULT=Fail
@@ -438,7 +451,7 @@ assign_test:
     # clone test script to assign tests
     - git clone $TEST_SCRIPT_REPOSITORY
     - cd auto_test_script
-    - git checkout ${CI_COMMIT_REF_NAME} || echo "Using default branch..."
+    - python $CHECKOUT_REF_SCRIPT auto_test_script
     # assign unit test cases
     - python CIAssignTestCases.py -t $IDF_PATH/components/idf_test/unit_test -c $IDF_PATH/.gitlab-ci.yml -b $IDF_PATH/test_bins
     # assgin integration test cases
@@ -500,10 +513,12 @@ assign_test:
     - test -e $CONFIG_FILE || exit 0
     # clone local test env configs
     - git clone $TEST_ENV_CONFIG_REPOSITORY
+    - cd ci-test-runner-configs
+    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs
     # clone test bench
     - git clone $TEST_SCRIPT_REPOSITORY
     - cd auto_test_script
-    - git checkout ${CI_COMMIT_REF_NAME} || echo "Using default branch..."
+    - python $CHECKOUT_REF_SCRIPT auto_test_script
     # run test
     - python CIRunner.py -l "$LOG_PATH/$CI_JOB_NAME" -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH -m $MODULE_UPDATE_FILE
 
@@ -533,6 +548,8 @@ nvs_compatible_test:
   script:
     # clone local test env configs
     - git clone $TEST_ENV_CONFIG_REPOSITORY
+    - cd ci-test-runner-configs
+    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs
     # clone test bench
     - git clone $TEST_SCRIPT_REPOSITORY
     - cd auto_test_script
