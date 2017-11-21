@@ -74,10 +74,12 @@ void std::__throw_future_error(int) __attribute__((alias("__cxx_fatal_exception_
 */
 
 extern "C" void __cxa_allocate_exception(void) __attribute__((alias("__cxx_fatal_exception")));
+extern "C" void __cxa_allocate_dependent_exception(void) __attribute__((alias("__cxx_fatal_exception")));
 extern "C" void __cxa_begin_catch(void) __attribute__((alias("__cxx_fatal_exception")));
 extern "C" void __cxa_end_catch(void) __attribute__((alias("__cxx_fatal_exception")));
 extern "C" void __cxa_get_exception_ptr(void) __attribute__((alias("__cxx_fatal_exception")));
 extern "C" void __cxa_free_exception(void) __attribute__((alias("__cxx_fatal_exception")));
+extern "C" void __cxa_free_dependent_exception(void) __attribute__((alias("__cxx_fatal_exception")));
 extern "C" void __cxa_rethrow(void) __attribute__((alias("__cxx_fatal_exception")));
 extern "C" void __cxa_throw(void) __attribute__((alias("__cxx_fatal_exception")));
 extern "C" void __cxa_call_terminate(void) __attribute__((alias("__cxx_fatal_exception")));
