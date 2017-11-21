@@ -65,6 +65,8 @@ static DRAM_ATTR i2c_dev_t* const I2C[I2C_NUM_MAX] = { &I2C0, &I2C1 };
 #define I2C_SCL_IO_ERR_STR             "scl gpio number error"
 #define I2C_CMD_LINK_INIT_ERR_STR      "i2c command link error"
 #define I2C_GPIO_PULLUP_ERR_STR        "this i2c pin does not support internal pull-up"
+#define I2C_ACK_TYPE_ERR_STR           "i2c ack type error"
+#define I2C_DATA_LEN_ERR_STR           "i2c data read length error"
 #define I2C_FIFO_FULL_THRESH_VAL       (28)
 #define I2C_FIFO_EMPTY_THRESH_VAL      (5)
 #define I2C_IO_INIT_LEVEL              (1)
@@ -958,11 +960,8 @@ esp_err_t i2c_master_write_byte(i2c_cmd_handle_t cmd_handle, uint8_t data, bool 
     return i2c_cmd_link_append(cmd_handle, &cmd);
 }
 
-esp_err_t i2c_master_read(i2c_cmd_handle_t cmd_handle, uint8_t* data, size_t data_len, int ack)
+static esp_err_t i2c_master_read_static(i2c_cmd_handle_t cmd_handle, uint8_t* data, size_t data_len, i2c_ack_type_t ack)
 {
-    I2C_CHECK((data != NULL), I2C_ADDR_ERROR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
-
     int len_tmp;
     int data_offset = 0;
     esp_err_t ret;
@@ -985,18 +984,42 @@ esp_err_t i2c_master_read(i2c_cmd_handle_t cmd_handle, uint8_t* data, size_t dat
     return ESP_OK;
 }
 
-esp_err_t i2c_master_read_byte(i2c_cmd_handle_t cmd_handle, uint8_t* data, int ack)
+esp_err_t i2c_master_read_byte(i2c_cmd_handle_t cmd_handle, uint8_t* data, i2c_ack_type_t ack)
 {
     I2C_CHECK((data != NULL), I2C_ADDR_ERROR_STR, ESP_ERR_INVALID_ARG);
     I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
+    I2C_CHECK(ack < I2C_MASTER_ACK_MAX, I2C_ACK_TYPE_ERR_STR, ESP_ERR_INVALID_ARG);
+
     i2c_cmd_t cmd;
     cmd.ack_en = 0;
     cmd.ack_exp = 0;
-    cmd.ack_val = ack & 0x1;
+    cmd.ack_val = ((ack == I2C_MASTER_LAST_NACK) ? I2C_MASTER_NACK : (ack & 0x1));
     cmd.byte_num = 1;
     cmd.op_code = I2C_CMD_READ;
     cmd.data = data;
     return i2c_cmd_link_append(cmd_handle, &cmd);
+}
+
+esp_err_t i2c_master_read(i2c_cmd_handle_t cmd_handle, uint8_t* data, size_t data_len, i2c_ack_type_t ack)
+{
+    I2C_CHECK((data != NULL), I2C_ADDR_ERROR_STR, ESP_ERR_INVALID_ARG);
+    I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
+    I2C_CHECK(ack < I2C_MASTER_ACK_MAX, I2C_ACK_TYPE_ERR_STR, ESP_ERR_INVALID_ARG);
+    I2C_CHECK(data_len < 1, I2C_DATA_LEN_ERR_STR, ESP_ERR_INVALID_ARG);
+
+    if(ack != I2C_MASTER_LAST_NACK) {
+        return i2c_master_read_static(cmd_handle, data, data_len, ack);
+    } else {
+        if(data_len == 1) {
+            return i2c_master_read_byte(cmd_handle, data, I2C_MASTER_NACK);    
+        } else {
+            esp_err_t ret;
+            if((ret =  i2c_master_read_static(cmd_handle, data, data_len - 1, I2C_MASTER_ACK)) != ESP_OK) {
+                return ret;
+            }
+            return i2c_master_read_byte(cmd_handle, data + data_len - 1, I2C_MASTER_NACK);
+        }
+    }   
 }
 
 static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num)
