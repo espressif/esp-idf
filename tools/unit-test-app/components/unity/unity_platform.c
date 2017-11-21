@@ -257,9 +257,22 @@ static int print_test_menu(void)
     return test_counter;
 }
 
+static int get_test_count(void)
+{
+    int test_counter = 0;
+    for (const struct test_desc_t* test = s_unity_tests_first;
+         test != NULL;
+         test = test->next)
+    {
+        ++test_counter;
+    }
+    return test_counter;
+}
+
 void unity_run_menu()
 {
-    int test_count = print_test_menu();
+    unity_printf("\n\nPress ENTER to see the list of tests.\n");
+    int test_count = get_test_count();
     while (true)
     {
         char cmdline[256] = { 0 };

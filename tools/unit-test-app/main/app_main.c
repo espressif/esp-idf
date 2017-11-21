@@ -6,9 +6,8 @@
 
 void unityTask(void *pvParameters)
 {
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-    unity_run_menu();
-    while(1);
+    vTaskDelay(30); /* Delay a bit to let the main task be deleted */
+    unity_run_menu(); /* Doesn't return */
 }
 
 void app_main()

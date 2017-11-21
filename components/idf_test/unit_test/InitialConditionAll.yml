@@ -2936,28 +2936,16 @@ initial condition:
 - check cmd set:
   - ''
   - - FREBOOT UT1
-    - ['']
-  - - DELAY 3
-    - ['']
-  - - UT UT1 -
-    - [R UT1 C Tests C Failures C Ignored]
+    - ['R UT1 C Press%20ENTER%20to%20see%20the%20list%20of%20tests']
   force restore cmd set:
   - ''
   - - FREBOOT UT1
-    - ['']
-  - - DELAY 3
-    - ['']
-  - - UT UT1 -
-    - [R UT1 C Tests C Failures C Ignored]
+    - ['R UT1 C Press%20ENTER%20to%20see%20the%20list%20of%20tests']
   initial condition detail: At UT menu page
   restore cmd set:
   - ''
   - - FREBOOT UT1
-    - ['']
-  - - DELAY 3
-    - ['']
-  - - UT UT1 -
-    - [R UT1 C Tests C Failures C Ignored]
+    - ['R UT1 C Press%20ENTER%20to%20see%20the%20list%20of%20tests']
   restore post cmd set:
   - ''
   - - DELAY 0.1
