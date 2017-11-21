@@ -225,7 +225,9 @@ netif_add(struct netif *netif,
 
 #if LWIP_AUTOIP
   /* netif not under AutoIP control by default */
-  netif->autoip = NULL;
+  if (netif->autoip) {
+      netif->autoip->restart = true;
+  }
 #endif /* LWIP_AUTOIP */
 #if LWIP_IPV6_AUTOCONFIG
 

@@ -1097,7 +1097,7 @@ int mbedtls_mpi_sub_int( mbedtls_mpi *X, const mbedtls_mpi *A, mbedtls_mpi_sint 
     return( mbedtls_mpi_sub_mpi( X, A, &_B ) );
 }
 
-#if !defined(MBEDTLS_MPI_MUL_MPI_ALT) || !defined(MBEDTLS_MPI_EXP_MOD_ALT)
+//#if !defined(MBEDTLS_MPI_MUL_MPI_ALT) || !defined(MBEDTLS_MPI_EXP_MOD_ALT)
 
 /*
  * Helper for mbedtls_mpi multiplication
@@ -1172,7 +1172,7 @@ void mpi_mul_hlp( size_t i, mbedtls_mpi_uint *s, mbedtls_mpi_uint *d, mbedtls_mp
     while( c != 0 );
 }
 
-#endif
+//#endif
 
 #if !defined(MBEDTLS_MPI_MUL_MPI_ALT)
 /*
@@ -1536,7 +1536,7 @@ int mbedtls_mpi_mod_int( mbedtls_mpi_uint *r, const mbedtls_mpi *A, mbedtls_mpi_
     return( 0 );
 }
 
-#if !defined(MBEDTLS_MPI_EXP_MOD_ALT)
+//#if !defined(MBEDTLS_MPI_EXP_MOD_ALT)
 
 /*
  * Fast Montgomery initialization (thanks to Tom St Denis)
@@ -1615,8 +1615,54 @@ static int mpi_montred( mbedtls_mpi *A, const mbedtls_mpi *N, mbedtls_mpi_uint m
 /*
  * Sliding-window exponentiation: X = A^E mod N  (HAC 14.85)
  */
+extern int mbedtls_mpi_exp_mod_hw( mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi* Y, const mbedtls_mpi* M, mbedtls_mpi* _Rinv );
+
+static inline size_t hardware_words_needed(const mbedtls_mpi *mpi)
+{
+    size_t res = 1;
+    for(size_t i = 0; i < mpi->n; i++) {
+        if( mpi->p[i] != 0 ) {
+            res = i + 1;
+        }
+    }
+    res = (res + 0xF) & ~0xF;
+    return res;
+}
+
 int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *E, const mbedtls_mpi *N, mbedtls_mpi *_RR )
 {
+#ifdef MBEDTLS_MPI_EXP_MOD_ALT
+    size_t z_words = hardware_words_needed(X);
+    size_t x_words = hardware_words_needed(A);
+    size_t y_words = hardware_words_needed(E);
+    size_t m_words = hardware_words_needed(N);
+    size_t num_words;
+
+    mbedtls_mpi Rinv_new; /* used if _Rinv == NULL */
+    mbedtls_mpi *Rinv;    /* points to _Rinv (if not NULL) othwerwise &RR_new */
+    mbedtls_mpi_uint Mprime;
+
+    /* "all numbers must be the same length", so choose longest number
+       as cardinal length of operation...
+    */
+    num_words = z_words;
+    if (x_words > num_words) {
+        num_words = x_words;
+    }
+    if (y_words > num_words) {
+        num_words = y_words;
+    }
+    if (m_words > num_words) {
+        num_words = m_words;
+    }
+
+    if (num_words * 32 <= 4096) {
+        return mbedtls_mpi_exp_mod_hw(X, A, E, N, _RR);
+    }
+#endif
+
+    ESP_LOGW("mbed", "running SW exp_mod");
+
     int ret;
     size_t wbits, wsize, one = 1;
     size_t i, j, nblimbs;
@@ -1819,7 +1865,7 @@ cleanup:
 
     return( ret );
 }
-#endif
+//#endif
 
 /*
  * Greatest common divisor: G = gcd(A, B)  (HAC 14.54)

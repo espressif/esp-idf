@@ -345,7 +345,7 @@ int esp_mpi_mul_mpi_mod(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi 
     return ret;
 }
 
-#if defined(MBEDTLS_MPI_EXP_MOD_ALT)
+//#if defined(MBEDTLS_MPI_EXP_MOD_ALT)
 
 /*
  * Sliding-window exponentiation: Z = X^Y mod M  (HAC 14.85)
@@ -355,8 +355,10 @@ int esp_mpi_mul_mpi_mod(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi 
  * (See RSA Accelerator section in Technical Reference for more about Mprime, Rinv)
  *
  */
-int mbedtls_mpi_exp_mod( mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi* Y, const mbedtls_mpi* M, mbedtls_mpi* _Rinv )
+int mbedtls_mpi_exp_mod_hw( mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi* Y, const mbedtls_mpi* M, mbedtls_mpi* _Rinv )
 {
+    ESP_LOGW("mbed", "running HW exp_mod");
+
     int ret = 0;
     size_t z_words = hardware_words_needed(Z);
     size_t x_words = hardware_words_needed(X);
@@ -383,6 +385,7 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi
     }
 
     if (num_words * 32 > 4096) {
+        ESP_LOGE("esp_bignum", "num words too large, %d", num_words);
         return MBEDTLS_ERR_MPI_NOT_ACCEPTABLE;
     }
 
@@ -429,7 +432,7 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi
     return ret;
 }
 
-#endif /* MBEDTLS_MPI_EXP_MOD_ALT */
+//#endif /* MBEDTLS_MPI_EXP_MOD_ALT */
 
 /* Second & final step of a modular multiply - load second multiplication
  * factor Y, run the multiply, read back the result into Z.

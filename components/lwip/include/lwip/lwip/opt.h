@@ -898,7 +898,7 @@
 #endif
 
 /** LWIP_DNS_SECURE: controls the security level of the DNS implementation
- * Use all DNS security features by default.
+ * Use all DNS security features by default.x
  * This is overridable but should only be needed by very small targets
  * or when using against non standard DNS servers. */
 #ifndef LWIP_DNS_SECURE
@@ -2886,7 +2886,7 @@
  * TCP_INPUT_DEBUG: Enable debugging in tcp_in.c for incoming debug.
  */
 #ifndef TCP_INPUT_DEBUG
-#define TCP_INPUT_DEBUG                 LWIP_DBG_OFF
+#define TCP_INPUT_DEBUG                 LWIP_DBG_ON
 #endif
 
 /**
@@ -2922,7 +2922,7 @@
  * TCP_OUTPUT_DEBUG: Enable debugging in tcp_out.c output functions.
  */
 #ifndef TCP_OUTPUT_DEBUG
-#define TCP_OUTPUT_DEBUG                LWIP_DBG_OFF
+#define TCP_OUTPUT_DEBUG                LWIP_DBG_ON
 #endif
 
 /**

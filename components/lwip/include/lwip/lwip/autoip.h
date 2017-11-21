@@ -70,7 +70,7 @@ extern "C" {
 #define ANNOUNCE_WAIT            2   /* seconds  (delay before announcing)              */
 #if CONFIG_MDNS
 #define MAX_CONFLICTS            9   /*          (max conflicts before rate limiting)   */
-#define RATE_LIMIT_INTERVAL      20  /* seconds  (delay between successive attempts)    */
+#define RATE_LIMIT_INTERVAL      10  /* seconds  (delay between successive attempts)    */
 #else
 #define MAX_CONFLICTS            10  /*          (max conflicts before rate limiting)   */
 #define RATE_LIMIT_INTERVAL      60  /* seconds  (delay between successive attempts)    */
@@ -91,6 +91,8 @@ struct autoip
   u16_t ttw;                /* ticks to wait, tick is AUTOIP_TMR_INTERVAL long */
   u8_t lastconflict;        /* ticks until a conflict can be solved by defending */
   u8_t tried_llipaddr;      /* total number of probed/used Link Local IP-Addresses */
+  bool restart;
+  u16_t re_ttw;
 };
 
 

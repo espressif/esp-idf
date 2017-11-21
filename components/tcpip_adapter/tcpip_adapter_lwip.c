@@ -176,7 +176,11 @@ esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, tcpip_a
     }
 
     /* if ap is on, choose ap as default if */
-    if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_AP])) {
+#if LWIP_AUTOIP
+    if (esp_netif[TCPIP_ADAPTER_IF_AP] && netif_is_up(esp_netif[TCPIP_ADAPTER_IF_AP])) {
+#else
+    if (esp_netif[TCPIP_ADAPTER_IF_AP]) {
+#endif
         netif_set_default(esp_netif[TCPIP_ADAPTER_IF_AP]);
     } else if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_STA])) {
         netif_set_default(esp_netif[TCPIP_ADAPTER_IF_STA]);
@@ -972,6 +976,21 @@ esp_interface_t tcpip_adapter_get_esp_if(void *dev)
     }
 
     return ESP_IF_MAX;
+}
+
+esp_err_t tcpip_adapter_get_netif(tcpip_adapter_if_t tcpip_if, struct netif ** netif)
+{
+    if (tcpip_if >= TCPIP_ADAPTER_IF_MAX) {
+        return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
+    }
+
+    *netif = esp_netif[tcpip_if];
+
+    if (*netif == NULL) {
+        return ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY;
+    }
+
+    return ESP_OK;
 }
 
 esp_err_t tcpip_adapter_get_sta_list(wifi_sta_list_t *wifi_sta_list, tcpip_adapter_sta_list_t *tcpip_sta_list)

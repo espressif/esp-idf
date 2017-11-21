@@ -39,6 +39,7 @@
 #include "esp_task.h"
 #include "esp_system.h"
 #include "sdkconfig.h"
+#define CONFIG_MDNS 1
 
 /* Enable all Espressif-only options */
 
@@ -116,7 +117,7 @@
  * MEMP_NUM_TCP_PCB: the number of simulatenously active TCP connections.
  * (requires the LWIP_TCP option)
  */
-#define MEMP_NUM_TCP_PCB                16
+#define MEMP_NUM_TCP_PCB                CONFIG_LWIP_MAX_SOCKETS
 
 /**
  * MEMP_NUM_TCP_PCB_LISTEN: the number of listening TCP connections.

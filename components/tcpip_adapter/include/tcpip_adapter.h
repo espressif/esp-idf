@@ -543,6 +543,8 @@ esp_err_t tcpip_adapter_set_hostname(tcpip_adapter_if_t tcpip_if, const char *ho
  */
 esp_err_t tcpip_adapter_get_hostname(tcpip_adapter_if_t tcpip_if, const char **hostname);
 
+esp_err_t tcpip_adapter_get_netif(tcpip_adapter_if_t tcpip_if, struct netif ** netif);
+
 #ifdef __cplusplus
 }
 #endif
