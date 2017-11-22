@@ -298,6 +298,11 @@ void vPortAssertIfInISR()
  * For kernel use: Initialize a per-CPU mux. Mux will be initialized unlocked.
  */
 void vPortCPUInitializeMutex(portMUX_TYPE *mux) {
+#if defined(CONFIG_SPIRAM_SUPPORT)
+    // Check if mux belongs to internal memory (DRAM), prerequisite for atomic operations
+    configASSERT(esp_ptr_internal((const void *) mux));
+#endif
+
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 	ets_printf("Initializing mux %p\n", mux);
 	mux->lastLockedFn="(never locked)";
