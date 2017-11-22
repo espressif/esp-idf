@@ -245,7 +245,7 @@ esp_err_t gpio_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull)
 esp_err_t gpio_set_direction(gpio_num_t gpio_num, gpio_mode_t mode)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
-    if (gpio_num >= 34 && (mode & (GPIO_MODE_DEF_OUTPUT))) {
+    if (gpio_num >= 34 && (mode & GPIO_MODE_DEF_OUTPUT)) {
         ESP_LOGE(GPIO_TAG, "io_num=%d can only be input", gpio_num);
         return ESP_ERR_INVALID_ARG;
     }
