@@ -1,6 +1,14 @@
 #ifndef FREERTOS_RINGBUF_H
 #define FREERTOS_RINGBUF_H
 
+#ifndef INC_FREERTOS_H
+	#error "include FreeRTOS.h" must appear in source files before "include ringbuf.h"
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
 Header definitions for a FreeRTOS ringbuffer object
 
@@ -242,5 +250,9 @@ BaseType_t xRingbufferRemoveFromQueueSetWrite(RingbufHandle_t ringbuf, QueueSetH
  */
 void xRingbufferPrintInfo(RingbufHandle_t ringbuf);
 
-
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* FREERTOS_RINGBUF_H */
+
