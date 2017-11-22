@@ -106,9 +106,18 @@ static inline void heap_swap(int i, int j);
 static inline bool should_output(esp_log_level_t level_for_message, esp_log_level_t level_for_tag);
 static inline void clear_log_level_list();
 
-void esp_log_set_vprintf(vprintf_like_t func)
+vprintf_like_t esp_log_set_vprintf(vprintf_like_t func)
 {
+    if (!s_log_mutex) {
+        s_log_mutex = xSemaphoreCreateMutex();
+    }
+    xSemaphoreTake(s_log_mutex, portMAX_DELAY);
+
+    vprintf_like_t orig_func = s_log_print_func;
     s_log_print_func = func;
+
+    xSemaphoreGive(s_log_mutex);
+    return orig_func;
 }
 
 void esp_log_level_set(const char* tag, esp_log_level_t level)
