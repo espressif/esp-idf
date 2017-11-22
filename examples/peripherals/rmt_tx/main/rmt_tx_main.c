@@ -15,53 +15,38 @@ static const char *RMT_TX_TAG = "RMT Tx";
 
 #define RMT_TX_CHANNEL RMT_CHANNEL_0
 #define RMT_TX_GPIO 18
-#define RMT_MESSAGE_LENGTH 12
-
-rmt_item32_t items[RMT_MESSAGE_LENGTH];
 
 /*
- * Prepare a table with a message in the Morse code
+ * Prepare a raw table with a message in the Morse code
  *
  * The message is "ESP" : . ... .--.
  *
- * The table structure:
+ * The table structure represents the RMT item structure:
  * {duration, level, duration, level}
  *
  */
-uint32_t message[RMT_MESSAGE_LENGTH][4] = {
+rmt_item32_t items[] = {
     // E : dot
-    {32767, 1, 32767, 0}, // dot
+    {{{ 32767, 1, 32767, 0 }}}, // dot
     //
-    {32767, 0, 32767, 0}, // SPACE
+    {{{ 32767, 0, 32767, 0 }}}, // SPACE
     // S : dot, dot, dot
-    {32767, 1, 32767, 0}, // dot
-    {32767, 1, 32767, 0}, // dot
-    {32767, 1, 32767, 0}, // dot
+    {{{ 32767, 1, 32767, 0 }}}, // dot
+    {{{ 32767, 1, 32767, 0 }}}, // dot
+    {{{ 32767, 1, 32767, 0 }}}, // dot
     //
-    {32767, 0, 32767, 0}, // SPACE
+    {{{ 32767, 0, 32767, 0 }}}, // SPACE
     // P : dot, dash, dash, dot
-    {32767, 1, 32767, 0}, // dot
-    {32767, 1, 32767, 1},
-    {32767, 1, 32767, 0}, // dash
-    {32767, 1, 32767, 1},
-    {32767, 1, 32767, 0}, // dash
-    {32767, 1, 32767, 0}  // dot
+    {{{ 32767, 1, 32767, 0 }}}, // dot
+    {{{ 32767, 1, 32767, 1 }}},
+    {{{ 32767, 1, 32767, 0 }}}, // dash
+    {{{ 32767, 1, 32767, 1 }}},
+    {{{ 32767, 1, 32767, 0 }}}, // dash
+    {{{ 32767, 1, 32767, 0 }}}, // dot
+
+    // RMT end marker
+    {{{ 0, 1, 0, 0 }}}
 };
-
-
-/*
- * Populate the RMT items array
- * with a previously prepared message
- */
-static void populate_rmt_items(void)
-{
-    for (int i = 0; i < RMT_MESSAGE_LENGTH; i++) {
-        items[i].duration0 = message[i][0];
-        items[i].level0    = message[i][1];
-        items[i].duration1 = message[i][2];
-        items[i].level1    = message[i][3];
-    }
-}
 
 
 /*
@@ -95,25 +80,16 @@ static void rmt_tx_int()
 }
 
 
-/*
- * Transmit all the items in a loop
- */
-static void rmt_tx_task(void *ignore)
-{
-    while (1) {
-        ESP_ERROR_CHECK(rmt_write_items(RMT_TX_CHANNEL, items, RMT_MESSAGE_LENGTH, 1));
-        ESP_LOGI(RMT_TX_TAG, "Transmission complete");
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
-    }
-}
-
-
 void app_main(void *ignore)
 {
     ESP_LOGI(RMT_TX_TAG, "Configuring transmitter");
     rmt_tx_int();
-    populate_rmt_items();
+    int number_of_items = sizeof(items) / sizeof(items[0]);
 
-    ESP_LOGI(RMT_TX_TAG, "Spinning out transmit task");
-    xTaskCreatePinnedToCore(&rmt_tx_task, "rmt_tx_task", 4 * 1024, NULL, 5, NULL, 0);
+    while (1) {
+        ESP_ERROR_CHECK(rmt_write_items(RMT_TX_CHANNEL, items, number_of_items, true));
+        ESP_LOGI(RMT_TX_TAG, "Transmission complete");
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
+    }
+    vTaskDelete(NULL);
 }

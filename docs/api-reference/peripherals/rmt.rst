@@ -72,7 +72,30 @@ Now, depending on how the channel is configured, we are ready to either `Transmi
 Transmit Data
 -------------
 
-Before being able to transmit some RMT pulses, we need to define the pulse pattern. The minimum pattern recognized by the RMT controller, later called an 'item', is provided in a structure :cpp:type:`rmt_item32_t`, see :component_file:`soc/esp32/include/soc/rmt_struct.h`. Each 'item' consists of two pairs of two values. The first value in a pair describes the signal duration in ticks, the second provides the signal level (high or low). For example how to define and populate items see an example application :example:`peripherals/rmt_tx`.
+Before being able to transmit some RMT pulses, we need to define the pulse pattern. The minimum pattern recognized by the RMT controller, later called an 'item', is provided in a structure :cpp:type:`rmt_item32_t`, see :component_file:`soc/esp32/include/soc/rmt_struct.h`. Each item consists of two pairs of two values. The first value in a pair describes the signal duration in ticks and is 15 bits long, the second provides the signal level (high or low) and is contained in a single bit. A block of couple of items and the structure of an item is presented below.
+
+.. packetdiag::
+    :caption: Structure of RMT items (L - signal level)
+    :align: center
+
+    packetdiag rmt_items {
+        colwidth = 32  
+        node_width = 10
+        node_height = 24
+        default_fontsize = 12
+
+        0-14: Period (15)
+        15: L
+        16-30: Period (15)
+        31: L
+        32-95: ... [colheight=2]
+        96-110: Period (15)
+        111: L
+        112-126: Period (15)
+        127: L
+    }
+
+For a simple example how to define a block of items see :example:`peripherals/rmt_tx`.
 
 The items are provided to the RMT controller by calling function :cpp:func:`rmt_write_items`. This function also automatically triggers start of transmission. It may be called to wait for transmission completion or exit just after transmission start. In such case you can wait for the transmission end by calling :cpp:func:`rmt_wait_tx_done`. This function does not limit the number of data items to transmit. It is using an interrupt to successively copy the new data chunks to RMT's internal memory as previously provided data are sent out.
 
