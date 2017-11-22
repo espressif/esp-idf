@@ -97,11 +97,11 @@ config LWIP_ETHARP_TRUST_IP_MAC
         Also notice that this slows down input processing of every IP packet!
 
 config TCPIP_RECVMBOX_SIZE
-    int "TCPIP receive mail box size"
+    int "TCPIP task receive mail box size"
     default 32
     range 6 64
     help
-        Set TCPIP receive mail box size. Generally bigger value means higher throughput
+        Set TCPIP task receive mail box size. Generally bigger value means higher throughput
         but more memory. The value should be bigger than UDP/TCP mail box size.
 
 config LWIP_DHCP_DOES_ARP_CHECK
@@ -171,6 +171,33 @@ config LWIP_LOOPBACK_MAX_PBUFS
          to be dropped, but will avoid filling memory with queued packet data.
 
 menu "TCP"
+
+config LWIP_MAX_ACTIVE_TCP
+    int "Maximum active TCP Connections"
+    range 1 1024
+    default 16
+    help
+        The maximum number of simultaneously active TCP
+        connections. The practical maximum limit is
+        determined by available heap memory at runtime.
+
+        Changing this value by itself does not substantially
+        change the memory usage of LWIP, except for preventing
+        new TCP connections after the limit is reached.
+
+config LWIP_MAX_LISTENING_TCP
+    int "Maximum listening TCP Connections"
+    range 1 1024
+    default 16
+    help
+        The maximum number of simultaneously listening TCP
+        connections. The practical maximum limit is
+        determined by available heap memory at runtime.
+
+        Changing this value by itself does not substantially
+        change the memory usage of LWIP, except for preventing
+        new listening TCP connections after the limit is reached.
+
 
 config TCP_MAXRTX
     int "Maximum number of retransmissions of data segments"
@@ -287,6 +314,16 @@ endmenu # TCP
 
 menu "UDP"
 
+config LWIP_MAX_UDP_PCBS
+    int "Maximum active UDP control blocks"
+    range 1 1024
+    default 16
+    help
+        The maximum number of active UDP "connections" (ie
+        UDP sockets sending/receiving data).
+        The practical maximum limit is determined by available
+        heap memory at runtime.
+
 config UDP_RECVMBOX_SIZE
     int "Default UDP receive mail box size"
     default 6
@@ -371,5 +408,18 @@ config LWIP_BROADCAST_PING
    default n
 
 endmenu # ICMP
+
+menu "LWIP RAW API"
+
+config LWIP_MAX_RAW_PCBS
+    int "Maximum LWIP RAW PCBs"
+    range 1 1024
+    default 16
+    help
+        The maximum number of simultaneously active LWIP
+        RAW protocol control blocks. The practical maximum
+        limit is determined by available heap memory at runtime.
+
+endmenu  # LWIP RAW API
 
 endmenu
