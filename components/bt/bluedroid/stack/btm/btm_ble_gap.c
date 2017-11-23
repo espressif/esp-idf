@@ -3054,9 +3054,9 @@ static void btm_ble_recover_scan_params(void)
     if (p_inq->scan_params_set) {
         /// set back the scan params to the controller after stop the scan
         btsnd_hcic_ble_set_scan_params(p_inq->scan_type, p_inq->scan_interval,
-									   p_inq->scan_window,
-									   btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type,
-									   p_inq->sfp);
+                                       p_inq->scan_window,
+                                       btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type,
+                                       p_inq->sfp);
     } else {
         /// set the default value if the scan params not set yet
         btm_update_scanner_filter_policy(SP_ADV_ALL);
