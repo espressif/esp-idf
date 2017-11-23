@@ -874,16 +874,16 @@ config ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
         can deliver frames faster than WiFi layer can transmit. In these cases, we may run out of TX
         buffers.
 
-config ESP32_WIFI_AMPDU_ENABLED
-    bool "WiFi AMPDU"
+config ESP32_WIFI_AMPDU_TX_ENABLED
+    bool "WiFi AMPDU TX"
     default y
     help
-        Select this option to enable AMPDU feature
+        Select this option to enable AMPDU TX feature
 
 
 config ESP32_WIFI_TX_BA_WIN
     int "WiFi AMPDU TX BA window size"
-    depends on ESP32_WIFI_AMPDU_ENABLED
+    depends on ESP32_WIFI_AMPDU_TX_ENABLED
     range 2 32
     default 6
     help
@@ -892,9 +892,15 @@ config ESP32_WIFI_TX_BA_WIN
         test the maximum UDP TX throughput with iperf etc. For iperf test in shieldbox, the recommended
         value is 9~12.
 
+config ESP32_WIFI_AMPDU_RX_ENABLED
+    bool "WiFi AMPDU RX"
+    default y
+    help
+        Select this option to enable AMPDU RX feature
+
 config ESP32_WIFI_RX_BA_WIN
     int "WiFi AMPDU RX BA window size"
-    depends on ESP32_WIFI_AMPDU_ENABLED
+    depends on ESP32_WIFI_AMPDU_RX_ENABLED
     range 2 32
     default 6
     help
