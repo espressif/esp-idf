@@ -3192,7 +3192,7 @@ static void btm_ble_stop_discover(void)
 {
     tBTM_BLE_CB *p_ble_cb = & btm_cb.ble_ctr_cb;
     tBTM_CMPL_CB *p_scan_cb = p_ble_cb->p_scan_cmpl_cb;
-
+    tBTM_BLE_INQ_CB *p_inq = &btm_cb.ble_ctr_cb.inq_var;
     btu_stop_timer (&p_ble_cb->scan_timer_ent);
 
     p_ble_cb->scan_activity &= ~BTM_LE_DISCOVER_ACTIVE;
@@ -3206,6 +3206,19 @@ static void btm_ble_stop_discover(void)
         btm_cb.ble_ctr_cb.inq_var.state = BTM_BLE_STOP_SCAN;
         /* stop discovery now */
         btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_DISABLE, BTM_BLE_DUPLICATE_ENABLE);
+
+        if (p_inq->scan_params_set) {
+            /// set back the scan params to the controller after stop the scan
+            btsnd_hcic_ble_set_scan_params(p_inq->scan_type, p_inq->scan_interval,
+                                           p_inq->scan_window,
+                                           btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type,
+                                           p_inq->sfp);
+        } else {
+            /// set the default value if the scan params not set yet
+            btm_update_scanner_filter_policy(SP_ADV_ALL);
+
+            btm_cb.ble_ctr_cb.wl_state &= ~BTM_BLE_WL_SCAN;
+        }
     }
 
     if (p_scan_cb) {
