@@ -6,7 +6,7 @@
 
 void unityTask(void *pvParameters)
 {
-    vTaskDelay(30); /* Delay a bit to let the main task be deleted */
+    vTaskDelay(2); /* Delay a bit to let the main task be deleted */
     unity_run_menu(); /* Doesn't return */
 }
 
