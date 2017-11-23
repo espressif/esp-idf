@@ -541,6 +541,12 @@ err:
     return NULL;
 }
 
+RingbufHandle_t xRingbufferCreateNoSplit(size_t item_size, size_t num_item)
+{
+    size_t aligned_size = (item_size+3)&~3;
+    return xRingbufferCreate((aligned_size + sizeof(buf_entry_hdr_t)) * num_item, RINGBUF_TYPE_NOSPLIT);
+}
+
 void vRingbufferDelete(RingbufHandle_t ringbuf) {
     ringbuf_t *rb=(ringbuf_t *)ringbuf;
     if (rb) {

@@ -78,6 +78,19 @@ typedef enum {
 RingbufHandle_t xRingbufferCreate(size_t buf_length, ringbuf_type_t type);
 
 /**
+ * @brief Create a ring buffer of type RINGBUF_TYPE_NOSPLIT for a fixed item_size
+ *
+ * This API is similar to xRingbufferCreate(), but it will internally allocate
+ * additional space for the headers.
+ *
+ * @param item_size Size of each item to be put into the ring buffer
+ * @param num_item Maximum number of items the buffer needs to hold simultaneously
+ *
+ * @return A RingbufHandle_t handle to the created ringbuffer, or NULL in case of error.
+ */
+RingbufHandle_t xRingbufferCreateNoSplit(size_t item_size, size_t num_item);
+
+/**
  * @brief  Delete a ring buffer
  *
  * @param  ringbuf  Ring buffer to delete
