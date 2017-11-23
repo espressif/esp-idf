@@ -19,7 +19,7 @@ static const char *TAG = "esp-tls";
 #define ESP_LOGE(TAG, ...) printf(__VA_ARGS__);
 #endif
 
-static struct addrinfo *resolve_host_name(const char *host, size_t hostlen, int port)
+static struct addrinfo *resolve_host_name(const char *host, size_t hostlen)
 {
     struct addrinfo hints;
     memset(&hints, 0, sizeof(hints));
@@ -33,12 +33,9 @@ static struct addrinfo *resolve_host_name(const char *host, size_t hostlen, int 
     strncpy(use_host, host, hostlen);
     use_host[hostlen] = '\0';
 
-    char service[6];
-    snprintf(service, sizeof(service), "%d", port);
-
-    ESP_LOGD(TAG, "port is :%s: host:%s: strlen %zu\n", service, use_host, hostlen);
+    ESP_LOGD(TAG, "host:%s: strlen %zu\n", use_host, hostlen);
     struct addrinfo *res;
-    if (getaddrinfo(use_host, service, &hints, &res)) {
+    if (getaddrinfo(use_host, NULL, &hints, &res)) {
         ESP_LOGE(TAG, "couldn't get hostname for :%s:\n", use_host);
         free(use_host);
         return NULL;
@@ -59,7 +56,7 @@ static ssize_t tls_read(struct esp_tls *tls, char *data, size_t datalen)
 
 static int esp_tcp_connect(const char *host, int hostlen, int port)
 {
-    struct addrinfo *res = resolve_host_name(host, hostlen, port);
+    struct addrinfo *res = resolve_host_name(host, hostlen);
     if (!res) {
         return -1;
     }
@@ -68,9 +65,24 @@ static int esp_tcp_connect(const char *host, int hostlen, int port)
     if (ret < 0) {
         goto err_freeaddr;
     }
-
     int fd = ret;
-    ret = connect(fd, res->ai_addr, res->ai_addrlen);
+
+    void *addr_ptr;
+    if (res->ai_family == AF_INET) {
+	struct sockaddr_in *p = res->ai_addr;
+	p->sin_port = htons(port);
+	addr_ptr = p;
+    } else if (res->ai_family == AF_INET6) {
+	struct sockaddr_in6 *p = res->ai_addr;
+	p->sin6_port = htons(port);
+	p->sin6_family = AF_INET6;
+	addr_ptr = p;
+    } else {
+	/* Unsupported Protocol Family */
+	goto err_freesocket;
+    }
+
+    ret = connect(fd, addr_ptr, res->ai_addrlen);
     if (ret < 0) {
         goto err_freesocket;
     }
