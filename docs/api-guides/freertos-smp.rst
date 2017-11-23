@@ -50,12 +50,25 @@ scheduler and interrupts of the calling core. However the other core is left
 unaffected. If the other core attemps to take same mutex, it will spin until
 the calling core has released the mutex by exiting the critical section.
 
-:ref:`deletion-callbacks`: ESP-IDF FreeRTOS has 
-backported the Thread Local Storage Pointers feature. However they have the 
-extra feature of deletion callbacks. Deletion callbacks are used to
-automatically free memory used by Thread Local Storage Pointers during the task
-deletion. Call ``vTaskSetThreadLocalStoragePointerAndDelCallback()``
-to set Thread Local Storage Pointers and deletion callbacks.
+:ref:`floating-points`: The ESP32 supports hardware acceleration of single
+precision floating point arithmetic (`float`). However the use of hardware
+acceleration leads to some behavioral restrictions in ESP-IDF FreeRTOS.
+Therefore, tasks that utilize `float` will automatically be pinned to a core if 
+not done so already. Furthermore, `float` cannot be used in interrupt service 
+routines.
+
+:ref:`task-deletion`: Task deletion behavior has been backported from FreeRTOS 
+v9.0.0 and modified to be SMP compatible. Task memory will be freed immediately 
+when `vTaskDelete()` is called to delete a task that is not currently running 
+and not pinned to the other core. Otherwise, freeing of task memory will still 
+be delegated to the Idle Task.
+
+:ref:`deletion-callbacks`: ESP-IDF FreeRTOS has backported the Thread Local 
+Storage Pointers (TLSP) feature. However the extra feature of Deletion Callbacks has been
+added. Deletion callbacks are called automatically during task deletion and are
+used to free memory pointed to by TLSP. Call 
+``vTaskSetThreadLocalStoragePointerAndDelCallback()`` to set TLSP and Deletion
+Callbacks.
 
 :ref:`FreeRTOS Hooks<hooks_api_reference>`: Vanilla FreeRTOS Hooks were not designed for SMP.
 ESP-IDF provides its own Idle and Tick Hooks in addition to the Vanilla FreeRTOS
@@ -375,39 +388,83 @@ mutex is provided upon entering and exiting, the type of call should not
 matter.
 
 
+.. _floating-points:
+
+Floating Point Aritmetic
+------------------------
+
+The ESP32 supports hardware acceleration of single precision floating point
+arithmetic (`float`) via Floating Point Units (FPU, also known as coprocessors) 
+attached to each core. The use of the FPUs imposes some behavioral restrictions 
+on ESP-IDF FreeRTOS.
+
+ESP-IDF FreeRTOS implements Lazy Context Switching for FPUs. In other words,
+the state of a core's FPU registers are not immediately saved when a context 
+switch occurs. Therefore, tasks that utilize `float` must be pinned to a
+particular core upon creation. If not, ESP-IDF FreeRTOS will automatically pin
+the task in question to whichever core the task was running on upon the task's 
+first use of `float`. Likewise due to Lazy Context Switching, interrupt service 
+routines must also not use `float`.
+
+ESP32 does not support hardware acceleration for double precision floating point
+arithmetic (`double`). Instead `double` is implemented via software hence the 
+behavioral restrictions with regards to `float` do not apply to `double`. Note
+that due to the lack of hardware acceleration, `double` operations may consume
+significantly larger amount of CPU time in comparison to `float`.
+
+
+.. _task-deletion:
+
+Task Deletion
+-------------
+
+FreeRTOS task deletion prior to v9.0.0 delegated the freeing of task memory 
+entirely to the Idle Task. Currently, the freeing of task memory will occur
+immediately (within `vTaskDelete()`) if the task being deleted is not currently 
+running or is not pinned to the other core (with respect to the core 
+`vTaskDelete()` is called on). TLSP deletion callbacks will also run immediately
+if the same conditions are met.
+
+However, calling `vTaskDelete()` to delete a task that is either currently 
+running or pinned to the other core will still result in the freeing of memory 
+being delegated to the Idle Task.
+
+
 .. _deletion-callbacks:
 
 Thread Local Storage Pointers & Deletion Callbacks
 --------------------------------------------------
 
-Thread Local Storage Pointers are pointers stored directly in the TCB which 
-allows each task to have a pointer to a data structure containing that is 
-specific to that task. However vanilla FreeRTOS provides no functionality to 
-free the memory pointed to by the Thread Local Storage Pointers. Therefore if 
-the memory pointed to by the Thread Local Storage Pointers is not explicitly 
-freed by the user before a task is deleted, memory leak will occur.
+Thread Local Storage Pointers (TLSP) are pointers stored directly in the TCB. 
+TLSP allow each task to have its own unique set of pointers to data structures. 
+However task deletion behavior in vanilla FreeRTOS does not automatically 
+free the memory pointed to by TLSP. Therefore if the memory pointed to by
+TLSP is not explicitly freed by the user before task deletion, memory leak will 
+occur.
 
-ESP-IDF FreeRTOS provides the added feature of deletion callbacks. These 
-deletion callbacks are used to automatically free the memory pointed to by the 
-Thread Local Storage Pointers when a task is deleted. Each Thread Local Storage 
-Pointer can have its own call back, and these call backs are called when the 
-Idle tasks cleans up a deleted tasks.
+ESP-IDF FreeRTOS provides the added feature of Deletion Callbacks. Deletion 
+Callbacks are called automatically during task deletion to free memory pointed
+to by TLSP. Each TLSP can have its own Deletion Callback. Note that due to the
+to :ref:`task-deletion` behavior, there can be instances where Deletion 
+Callbacks are called in the context of the Idle Tasks. Therefore Deletion
+Callbacks **should never attempt to block** and critical sections should be kept
+as short as possible to minimize priority inversion.
 
-Vanilla FreeRTOS sets a Thread Local Storage Pointers using 
-``vTaskSetThreadLocalStoragePointer()`` whereas ESP-IDF FreeRTOS sets a Thread 
-Local Storage Pointers and Deletion Callbacks using 
-``vTaskSetThreadLocalStoragePointerAndDelCallback()`` which accepts a pointer 
-to the deletion call back as an extra parameter of type 
-```TlsDeleteCallbackFunction_t``. Calling the vanilla FreeRTOS API 
-``vTaskSetThreadLocalStoragePointer()`` is still valid however it is internally
-defined to call ``vTaskSetThreadLocalStoragePointerAndDelCallback()`` with a
-``NULL`` pointer as the deletion call back. This results in the selected Thread 
-Local Storage Pointer to have no deletion call back.
+Deletion callbacks are of type
+``void (*TlsDeleteCallbackFunction_t)( int, void * )`` where the first parameter
+is the index number of the associated TLSP, and the second parameter is the 
+TLSP itself.
 
-In IDF the FreeRTOS thread local storage at index 0 is reserved and is used to implement
-the pthreads API thread local storage (pthread_getspecific() & pthread_setspecific()).
-Other indexes can be used for any purpose, provided
-:ref:`CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS` is set to a high enough value.
+Deletion callbacks are set alongside TLSP by calling 
+``vTaskSetThreadLocalStoragePointerAndDelCallback()``. Calling the vanilla 
+FreeRTOS function ``vTaskSetThreadLocalStoragePointer()`` will simply set the
+TLSP's associated Deletion Callback to `NULL` meaning that no callback will be
+called for that TLSP during task deletion. If a deletion callback is `NULL`,
+users should manually free the memory pointed to by the associated TLSP before 
+task deletion in order to avoid memory leak.
+
+:ref:`CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS` in menuconfig can be used
+to configure the number TLSP and Deletion Callbacks a TCB will have.
 
 For more details see :component_file:`freertos/include/freertos/task.h`
 
