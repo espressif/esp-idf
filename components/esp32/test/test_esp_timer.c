@@ -10,6 +10,10 @@
 #include "freertos/semphr.h"
 #include "test_utils.h"
 
+#ifdef CONFIG_ESP_TIMER_PROFILING
+#define WITH_PROFILING 1
+#endif
+
 
 TEST_CASE("esp_timer orders timers correctly", "[esp_timer]")
 {
