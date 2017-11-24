@@ -722,55 +722,55 @@ tcp_process(struct tcp_pcb *pcb)
   switch (pcb->state) {
   case SYN_SENT:
     if (pcb->unacked) {
-    LWIP_DEBUGF(TCP_INPUT_DEBUG, ("SYN-SENT: ackno %"U32_F" pcb->snd_nxt %"U32_F" unacked %"U32_F"\n", ackno,
-     pcb->snd_nxt, ntohl(pcb->unacked->tcphdr->seqno)));
-    /* received SYN ACK with expected sequence number? */
-    if ((flags & TCP_ACK) && (flags & TCP_SYN)
+      LWIP_DEBUGF(TCP_INPUT_DEBUG, ("SYN-SENT: ackno %"U32_F" pcb->snd_nxt %"U32_F" unacked %"U32_F"\n", ackno,
+        pcb->snd_nxt, ntohl(pcb->unacked->tcphdr->seqno)));
+      /* received SYN ACK with expected sequence number? */
+      if ((flags & TCP_ACK) && (flags & TCP_SYN)
         && ackno == ntohl(pcb->unacked->tcphdr->seqno) + 1) {
-      pcb->snd_buf++;
-      pcb->rcv_nxt = seqno + 1;
-      pcb->rcv_ann_right_edge = pcb->rcv_nxt;
-      pcb->lastack = ackno;
-      pcb->snd_wnd = SND_WND_SCALE(pcb, tcphdr->wnd);
-      pcb->snd_wnd_max = pcb->snd_wnd;
-      pcb->snd_wl1 = seqno - 1; /* initialise to seqno - 1 to force window update */
-      pcb->state = ESTABLISHED;
+        pcb->snd_buf++;
+        pcb->rcv_nxt = seqno + 1;
+        pcb->rcv_ann_right_edge = pcb->rcv_nxt;
+        pcb->lastack = ackno;
+        pcb->snd_wnd = SND_WND_SCALE(pcb, tcphdr->wnd);
+        pcb->snd_wnd_max = pcb->snd_wnd;
+        pcb->snd_wl1 = seqno - 1; /* initialise to seqno - 1 to force window update */
+        pcb->state = ESTABLISHED;
 
 #if TCP_CALCULATE_EFF_SEND_MSS
-      pcb->mss = tcp_eff_send_mss(pcb->mss, &pcb->local_ip, &pcb->remote_ip);
-#endif /* TCP_CALCULATE_EFF_SEND_MSS */
+        pcb->mss = tcp_eff_send_mss(pcb->mss, &pcb->local_ip, &pcb->remote_ip);
+#endif  /* TCP_CALCULATE_EFF_SEND_MSS */
 
-      /* Set ssthresh again after changing 'mss' and 'snd_wnd' */
-      pcb->ssthresh = LWIP_TCP_INITIAL_SSTHRESH(pcb);
+        /* Set ssthresh again after changing 'mss' and 'snd_wnd' */
+        pcb->ssthresh = LWIP_TCP_INITIAL_SSTHRESH(pcb);
 
-      pcb->cwnd = LWIP_TCP_CALC_INITIAL_CWND(pcb->mss);
-      LWIP_DEBUGF(TCP_CWND_DEBUG, ("tcp_process (SENT): cwnd %"TCPWNDSIZE_F
-                                   " ssthresh %"TCPWNDSIZE_F"\n",
-                                   pcb->cwnd, pcb->ssthresh));
-      LWIP_ASSERT("pcb->snd_queuelen > 0", (pcb->snd_queuelen > 0));
-      --pcb->snd_queuelen;
-      LWIP_DEBUGF(TCP_QLEN_DEBUG, ("tcp_process: SYN-SENT --queuelen %"TCPWNDSIZE_F"\n", (tcpwnd_size_t)pcb->snd_queuelen));
-      rseg = pcb->unacked;
-      pcb->unacked = rseg->next;
-      tcp_seg_free(rseg);
+        pcb->cwnd = LWIP_TCP_CALC_INITIAL_CWND(pcb->mss);
+        LWIP_DEBUGF(TCP_CWND_DEBUG, ("tcp_process (SENT): cwnd %"TCPWNDSIZE_F
+                                     " ssthresh %"TCPWNDSIZE_F"\n",
+                                     pcb->cwnd, pcb->ssthresh));
+        LWIP_ASSERT("pcb->snd_queuelen > 0", (pcb->snd_queuelen > 0));
+        --pcb->snd_queuelen;
+        LWIP_DEBUGF(TCP_QLEN_DEBUG, ("tcp_process: SYN-SENT --queuelen %"TCPWNDSIZE_F"\n", (tcpwnd_size_t)pcb->snd_queuelen));
+        rseg = pcb->unacked;
+        pcb->unacked = rseg->next;
+        tcp_seg_free(rseg);
+
+        /* If there's nothing left to acknowledge, stop the retransmit
+           timer, otherwise reset it to start again */
+        if (pcb->unacked == NULL) {
+          pcb->rtime = -1;
+        } else {
+          pcb->rtime = 0;
+          pcb->nrtx = 0;
+        }
+
+        /* Call the user specified function to call when successfully
+         * connected. */
+        TCP_EVENT_CONNECTED(pcb, ERR_OK, err);
+        if (err == ERR_ABRT) {
+          return ERR_ABRT;
+        }
+        tcp_ack_now(pcb);
       }
-
-      /* If there's nothing left to acknowledge, stop the retransmit
-         timer, otherwise reset it to start again */
-      if (pcb->unacked == NULL) {
-        pcb->rtime = -1;
-      } else {
-        pcb->rtime = 0;
-        pcb->nrtx = 0;
-      }
-
-      /* Call the user specified function to call when successfully
-       * connected. */
-      TCP_EVENT_CONNECTED(pcb, ERR_OK, err);
-      if (err == ERR_ABRT) {
-        return ERR_ABRT;
-      }
-      tcp_ack_now(pcb);
     }
     /* received ACK? possibly a half-open connection */
     else if (flags & TCP_ACK) {
