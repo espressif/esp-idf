@@ -569,7 +569,7 @@ static const uint8_t * _mdns_read_fqdn(const uint8_t * packet, const uint8_t * s
                     && (strcmp(buf, MDNS_DEFAULT_DOMAIN) != 0)
                     && (strcmp(buf, "ip6") != 0)
                     && (strcmp(buf, "in-addr") != 0)) {
-                strlcat(name->host, '.', sizeof(name->host));
+                strlcat(name->host, ".", sizeof(name->host));
                 strlcat(name->host, buf, sizeof(name->host));
             } else if (strcmp(buf, MDNS_SUB_STR) == 0) {
                 name->sub = 1;
