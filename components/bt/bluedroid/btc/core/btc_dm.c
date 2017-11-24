@@ -28,6 +28,9 @@
 #include "bta_gatt_api.h"
 #include "allocator.h"
 
+#if (BTC_GAP_BT_INCLUDED == TRUE)
+#include "btc_gap_bt.h"
+#endif /* BTC_GAP_BT_INCLUDED == TRUE */
 
 /******************************************************************************
 **  Constants & Macros
@@ -481,6 +484,14 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         break;
     }
     case BTA_DM_BUSY_LEVEL_EVT:
+#if (BTC_GAP_BT_INCLUDED == TRUE)
+        {
+        if (p_data->busy_level.level_flags & BTM_BL_INQUIRY_PAGING_MASK) {
+            btc_gap_bt_busy_level_updated(p_data->busy_level.level_flags);
+        }
+        break;
+        }
+#endif /* BTC_GAP_BT_INCLUDED  == TRUE */
     case BTA_DM_LINK_UP_EVT:
     case BTA_DM_LINK_DOWN_EVT:
     case BTA_DM_HW_ERROR_EVT:
