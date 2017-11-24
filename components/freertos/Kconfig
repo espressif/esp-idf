@@ -209,7 +209,7 @@ config SUPPORT_STATIC_ALLOCATION
         memory being allocated dynamically:
 
             - Tasks
-            - Software Timers
+            - Software Timers (Daemon task is still dynamic. See documentation)
             - Queues
             - Event Groups
             - Binary Semaphores
