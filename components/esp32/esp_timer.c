@@ -75,12 +75,14 @@ static LIST_HEAD(esp_timer_list, esp_timer) s_timers =
 // all the timers
 static LIST_HEAD(esp_inactive_timer_list, esp_timer) s_inactive_timers =
         LIST_HEAD_INITIALIZER(s_timers);
+// used to keep track of the timer when executing the callback
+static esp_timer_handle_t s_timer_in_callback;
 #endif
 // task used to dispatch timer callbacks
 static TaskHandle_t s_timer_task;
 // counting semaphore used to notify the timer task from ISR
 static SemaphoreHandle_t s_timer_semaphore;
-// lock protecting s_timers and s_inactive_timers
+// lock protecting s_timers, s_inactive_timers, s_timer_in_callback
 static portMUX_TYPE s_timer_lock = portMUX_INITIALIZER_UNLOCKED;
 
 
@@ -149,6 +151,9 @@ esp_err_t esp_timer_delete(esp_timer_handle_t timer)
         return ESP_ERR_INVALID_STATE;
     }
 #if WITH_PROFILING
+    if (timer == s_timer_in_callback) {
+        s_timer_in_callback = NULL;
+    }
     timer_remove_inactive(timer);
 #endif
     if (timer == NULL) {
@@ -266,14 +271,21 @@ static void timer_process_alarm(esp_timer_dispatch_t dispatch_method)
         }
 #if WITH_PROFILING
         uint64_t callback_start = now;
+        s_timer_in_callback = it;
 #endif
         timer_list_unlock();
         (*it->callback)(it->arg);
         timer_list_lock();
         now = esp_timer_impl_get_time();
 #if WITH_PROFILING
-        it->times_triggered++;
-        it->total_callback_run_time += now - callback_start;
+        /* The callback might have deleted the timer.
+         * If this happens, esp_timer_delete will set s_timer_in_callback
+         * to NULL.
+         */
+        if (s_timer_in_callback) {
+            s_timer_in_callback->times_triggered++;
+            s_timer_in_callback->total_callback_run_time += now - callback_start;
+        }
 #endif
         it = LIST_FIRST(&s_timers);
     }
