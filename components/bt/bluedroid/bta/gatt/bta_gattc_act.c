@@ -1637,7 +1637,10 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, BD_ADDR bda, UINT16 conn_id,
     else if ((transport == BT_TRANSPORT_LE) && (connected == FALSE) && (p_conn != NULL)){
             p_conn->service_change_ccc_written = FALSE;
             if (p_conn->ccc_timer_used == TRUE){
-                osi_free((void *)p_conn->service_change_ccc_timer.param);
+                if (p_conn->service_change_ccc_timer.param != 0) {
+                    osi_free((void *)p_conn->service_change_ccc_timer.param);
+                    p_conn->service_change_ccc_timer.param = (TIMER_PARAM_TYPE)0;
+                }
                 bta_sys_stop_timer(&(p_conn->service_change_ccc_timer));
                 p_conn->ccc_timer_used = FALSE;
             }
@@ -2350,6 +2353,7 @@ static void bta_gattc_wait4_service_change_ccc_cback (TIMER_LIST_ENT *p_tle)
     if (p_conn == NULL){
         APPL_TRACE_ERROR("p_conn is NULL in %s\n", __func__);
         osi_free(p_timer_param);
+        p_tle->param = (TIMER_PARAM_TYPE)0;
         return;
     }
 
@@ -2381,6 +2385,7 @@ static void bta_gattc_wait4_service_change_ccc_cback (TIMER_LIST_ENT *p_tle)
     }
 
     osi_free(p_timer_param);
+    p_tle->param = (TIMER_PARAM_TYPE)0;
 }
 
 #endif
