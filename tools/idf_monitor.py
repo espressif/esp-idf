@@ -135,9 +135,8 @@ class ConsoleReader(StoppableThread):
         super(ConsoleReader, self).__init__()
         self.console = console
         self.event_queue = event_queue
+        self.running_on_wsl = running_on_wsl
         self.tid = None
-        self.pthread_self = None
-        self.pthread_kill = None
         if running_on_wsl:
             libpthread = ctypes.CDLL("libpthread.so.0")
             self.pthread_self = libpthread.pthread_self
@@ -152,7 +151,7 @@ class ConsoleReader(StoppableThread):
         pass
 
     def run(self):
-        if self.pthread_self != None:
+        if self.running_on_wsl:
             self.tid = self.pthread_self()
         self.console.setup()
         try:
@@ -183,8 +182,8 @@ class ConsoleReader(StoppableThread):
             self.console.cleanup()
 
     def _cancel(self):
-        if self.pthread_kill != None:
-            if self.tid != None:
+        if self.running_on_wsl:
+            if self.tid is not None:
                 self.pthread_kill(self.tid, signal.SIGRTMIN)
         elif os.name == 'posix':
             # this is the way cancel() is implemented in pyserial 3.3 or newer,
@@ -247,15 +246,15 @@ class Monitor(object):
     """
     def __init__(self, serial_instance, elf_file, make="make", toolchain_prefix=DEFAULT_TOOLCHAIN_PREFIX, eol="CRLF"):
         super(Monitor, self).__init__()
-        posix_is_wsl = False
+        running_on_wsl = False
         if os.name == 'posix':
             try:
                 with open('/proc/version', 'r') as pv:
                     if 'microsoft' in pv.read().lower():
-                        posix_is_wsl = True
+                        running_on_wsl = True
             except:
                 pass
-        if posix_is_wsl:
+        if running_on_wsl:
             # re-open stdin unbuffered to make reading interruptible
             import io
             enc = sys.stdin.encoding
@@ -279,7 +278,7 @@ class Monitor(object):
             self.console.getkey = types.MethodType(getkey_patched, self.console) 
         
         self.serial = serial_instance
-        self.console_reader = ConsoleReader(self.console, self.event_queue, posix_is_wsl)
+        self.console_reader = ConsoleReader(self.console, self.event_queue, running_on_wsl)
         self.serial_reader = SerialReader(self.serial, self.event_queue)
         self.elf_file = elf_file
         self.make = make
