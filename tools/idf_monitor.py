@@ -175,6 +175,8 @@ class ConsoleReader(StoppableThread):
                     if not self.alive:
                         # expected during _cancel when killed
                         break
+                    else:
+                        raise
                 if c is not None:
                     self.event_queue.put((TAG_KEY, c), False)
         finally:
