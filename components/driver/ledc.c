@@ -52,6 +52,8 @@ static ledc_isr_handle_t s_ledc_fade_isr_handle = NULL;
 #define LEDC_MODE_ERR_STR  "LEDC mode error"
 #define LEDC_TIMER_ERR_STR "LEDC timer error"
 #define LEDC_CHANNEL_ERR_STR  "LEDC channel error"
+#define LEDC_SCALE_ERR_STR "LEDC scale error"
+#define LEDC_CYCLE_ERR_STR "LEDC cycle num error"
 #define LEDC_GPIO_OUT_ERR_STR  "LEDC GPIO output number error"
 #define LEDC_FADE_DIR_ERR_STR   "LEDC fade direction error"
 #define LEDC_FADE_SERVICE_ERR_STR   "LEDC fade service not installed"
@@ -533,6 +535,8 @@ esp_err_t ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t channel
     LEDC_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, LEDC_MODE_ERR_STR, ESP_ERR_INVALID_ARG);
     LEDC_CHECK(channel < LEDC_CHANNEL_MAX, LEDC_CHANNEL_ERR_STR, ESP_ERR_INVALID_ARG);
     LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK , LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
+    LEDC_CHECK(scale > 0, LEDC_SCALE_ERR_STR, ESP_ERR_INVALID_ARG);
+    LEDC_CHECK(cycle_num > 0, LEDC_CYCLE_ERR_STR, ESP_ERR_INVALID_ARG);
 
     int timer_sel = LEDC.channel_group[speed_mode].channel[channel].conf0.timer_sel;
     uint32_t max_duty = (1 << (LEDC.timer_group[speed_mode].timer[timer_sel].conf.bit_num)) - 1;
