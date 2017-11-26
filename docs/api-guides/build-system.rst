@@ -156,7 +156,7 @@ Minimal Component Makefile
 
 The minimal ``component.mk`` file is an empty file(!). If the file is empty, the default component behaviour is set:
 
-- All source files in the same directory as the makefile (``*.c``, ``*.cpp``, ``*.S``) will be compiled into the component library
+- All source files in the same directory as the makefile (``*.c``, ``*.cpp``, ``*.cc``, ``*.S``) will be compiled into the component library
 - A sub-directory "include" will be added to the global include search path for all other components.
 - The component library will be linked into the project app.
 
