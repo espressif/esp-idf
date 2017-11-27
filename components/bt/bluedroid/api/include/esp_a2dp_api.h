@@ -84,7 +84,7 @@ typedef union {
         esp_bd_addr_t remote_bda;              /*!< remote bluetooth device address */
         esp_a2d_disc_rsn_t disc_rsn;           /*!< reason of disconnection for "DISCONNECTED" */
     } conn_stat;                               /*!< A2DP connection status */
-
+    
     /**
      * @brief ESP_A2D_AUDIO_STATE_EVT
      */
@@ -92,7 +92,7 @@ typedef union {
         esp_a2d_audio_state_t state;           /*!< one of the values from esp_a2d_audio_state_t */
         esp_bd_addr_t remote_bda;              /*!< remote bluetooth device address */
     } audio_stat;                              /*!< audio stream playing state */
-
+    
     /**
      * @brief ESP_A2D_AUDIO_CFG_EVT
      */
@@ -117,16 +117,14 @@ typedef void (* esp_a2d_cb_t)(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *para
  *
  * @param[in]       len : size(in bytes) in buf
  *
- * @param[in]       sample_rate : sample rate, eg 44100
- *
  */
-typedef void (* esp_a2d_data_cb_t)(const uint8_t *buf, uint32_t len, uint32_t sample_rate);
+typedef void (* esp_a2d_data_cb_t)(const uint8_t *buf, uint32_t len);
 
 
 /**
  * @brief           Register application callback function to A2DP module. This function should be called
  *                  only after esp_bluedroid_enable() completes successfully
- *
+ *                  
  * @param[in]       callback: A2DP sink event callback function
  *
  * @return
@@ -140,9 +138,9 @@ esp_err_t esp_a2d_register_callback(esp_a2d_cb_t callback);
 
 /**
  * @brief           Register A2DP sink data output function; For now the output is PCM data stream decoded
- *                  from SBC format. This function should be called only after esp_bluedroid_enable()
+ *                  from SBC format. This function should be called only after esp_bluedroid_enable() 
  *                  completes successfully
- *
+ *                  
  * @param[in]       callback: A2DP data callback function
  *
  * @return
@@ -159,7 +157,7 @@ esp_err_t esp_a2d_register_data_callback(esp_a2d_data_cb_t callback);
  * @brief           Initialize the bluetooth A2DP sink module. This function should be called
  *                  after esp_bluedroid_enable() completes successfully
  *
- * @return
+ * @return          
  *                  - ESP_OK: if the initialization request is sent successfully
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
@@ -170,10 +168,10 @@ esp_err_t esp_a2d_sink_init(void);
 
 /**
  *
- * @brief           De-initialize for A2DP sink module. This function
+ * @brief           De-initialize for A2DP sink module. This function 
  *                  should be called only after esp_bluedroid_enable() completes successfully
  *
- * @return
+ * @return          
  *                  - ESP_OK: success
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
@@ -188,7 +186,7 @@ esp_err_t esp_a2d_sink_deinit(void);
  *
  * @param[in]       remote_bda: remote bluetooth device address
  *
- * @return
+ * @return          
  *                  - ESP_OK: connect request is sent to lower layer
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
@@ -202,7 +200,7 @@ esp_err_t esp_a2d_sink_connect(esp_bd_addr_t remote_bda);
  * @brief           Disconnect the remote bluetooth device
  *
  * @param[in]       remote_bda: remote bluetooth device address
- * @return
+ * @return          
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others

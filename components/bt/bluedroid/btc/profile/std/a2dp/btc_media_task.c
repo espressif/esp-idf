@@ -179,11 +179,11 @@ void btc_a2dp_sink_reg_data_cb(esp_a2d_data_cb_t callback)
     bt_av_sink_data_callback = callback;
 }
 
-static inline void btc_a2d_data_cb_to_app(const uint8_t *data, uint32_t len, uint32_t sample_rate)
+static inline void btc_a2d_data_cb_to_app(const uint8_t *data, uint32_t len)
 {
     // todo: critical section protection
     if (bt_av_sink_data_callback) {
-        bt_av_sink_data_callback(data, len, sample_rate);
+        bt_av_sink_data_callback(data, len);
     }
 }
 
@@ -656,7 +656,7 @@ static void btc_media_task_handle_inc_media(tBT_SBC_HDR *p_msg)
         p_msg->len = sbc_frame_len + 1;
     }
 
-    btc_a2d_data_cb_to_app((uint8_t *)pcmData, (2 * sizeof(pcmData) - availPcmBytes), btc_media_cb.sample_rate);
+    btc_a2d_data_cb_to_app((uint8_t *)pcmData, (2 * sizeof(pcmData) - availPcmBytes));
 }
 
 /*******************************************************************************
