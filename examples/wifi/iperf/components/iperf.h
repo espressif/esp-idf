@@ -34,7 +34,7 @@ extern "C" {
 #define IPERF_UDP_TX_LEN     (1472)
 #define IPERF_UDP_RX_LEN     (32<<10)
 #define IPERF_TCP_TX_LEN     (32<<10)
-#define IPERF_TCP_RX_LEN     (64<<10)
+#define IPERF_TCP_RX_LEN     (32<<10)
 
 #define IPERF_MAX_DELAY      64
 
