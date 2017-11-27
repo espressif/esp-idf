@@ -264,7 +264,7 @@ static inline unsigned portENTER_CRITICAL_NESTED() {
 
 //xTaskCreateStatic uses these functions to check incoming memory.
 #define portVALID_TCB_MEM(ptr) (esp_ptr_internal(ptr) && esp_ptr_byte_accessible(ptr))
-#ifndef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+#ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
 #define portVALID_STACK_MEM(ptr) esp_ptr_byte_accessible(ptr)
 #else
 #define portVALID_STACK_MEM(ptr) (esp_ptr_internal(ptr) && esp_ptr_byte_accessible(ptr))
