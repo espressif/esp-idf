@@ -83,6 +83,22 @@ MATCH_PCADDR = re.compile(r'0x4[0-9a-f]{7}', re.IGNORECASE)
 
 DEFAULT_TOOLCHAIN_PREFIX = "xtensa-esp32-elf-"
 
+RUNNING_ON_WSL = False
+if os.name == 'posix':
+    try:
+        with open('/proc/version', 'r') as pv:
+            if 'microsoft' in pv.read().lower():
+                RUNNING_ON_WSL = True
+    except:
+        pass
+
+if RUNNING_ON_WSL:
+    # re-open stdin unbuffered to make 'select for one char at a time' reliable
+    import io
+    enc = sys.stdin.encoding
+    sys.stdin = io.open(sys.stdin.fileno(), mode='rb', buffering=0, closefd = False)
+    sys.stdin.encoding = enc
+
 class StoppableThread(object):
     """
     Provide a Thread-like class which can be 'cancelled' via a subclass-provided
@@ -134,10 +150,14 @@ class ConsoleReader(StoppableThread):
         super(ConsoleReader, self).__init__()
         self.console = console
         self.event_queue = event_queue
+        if RUNNING_ON_WSL:
+            self.cancelfd = [None, None]
 
     def run(self):
         self.console.setup()
         try:
+            if RUNNING_ON_WSL:
+                self.cancelfd = os.pipe()
             while self.alive:
                 try:
                     if os.name == 'nt':
@@ -150,26 +170,43 @@ class ConsoleReader(StoppableThread):
                             time.sleep(0.1)
                         if not self.alive:
                             break
+                    elif RUNNING_ON_WSL:
+                        import select
+                        r, w, x = select.select([sys.stdin, self.cancelfd[0]], [], [])
+                        if self.cancelfd[0] in r:
+                            os.read(self.cancelfd[0], 1)
+                            break
+                        # assume stdin is readable!
                     c = self.console.getkey()
                 except KeyboardInterrupt:
                     c = '\x03'
                 if c is not None:
                     self.event_queue.put((TAG_KEY, c), False)
         finally:
+            if RUNNING_ON_WSL:
+                if self.cancelfd[0] is not None:
+                  os.close(self.cancelfd[0])
+                  os.close(self.cancelfd[1])
+                  self.cancelfd = [None, None];
             self.console.cleanup()
 
     def _cancel(self):
-        if os.name == 'posix':
+        if RUNNING_ON_WSL:
+            # note that TIOCSTI is not implemented in WSL / bash-on-Windows.
+            if self.cancelfd[1] is not None:
+                # unblock select()
+                os.write(self.cancelfd[1], "C")
+        elif os.name == 'posix':
             # this is the way cancel() is implemented in pyserial 3.3 or newer,
             # older pyserial (3.1+) has cancellation implemented via 'select',
             # which does not work when console sends an escape sequence response
+            # (but see the RUNNING_ON_WSL workaround above: select seems to work
+            # well with unbuffered stdin!)
             # 
             # even older pyserial (<3.1) does not have this method
             #
             # on Windows there is a different (also hacky) fix, applied above.
             #
-            # note that TIOCSTI is not implemented in WSL / bash-on-Windows.
-            # TODO: introduce some workaround to make it work there.
             import fcntl, termios
             fcntl.ioctl(self.console.fd, termios.TIOCSTI, b'\0')
 
