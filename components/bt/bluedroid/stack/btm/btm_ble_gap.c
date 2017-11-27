@@ -467,20 +467,6 @@ tBTM_STATUS BTM_BleScan(BOOLEAN start, UINT32 duration,
             /* enable resolving list */
             btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_SCAN);
 #endif
-            // if not set scan params, set defalult scan params
-            if (!p_inq->scan_params_set)
-            {
-                /* allow config of scan type */
-                p_inq->scan_type = BTM_BLE_SCAN_MODE_ACTI;
-                p_inq->scan_interval = BTM_BLE_GAP_DISC_SCAN_INT;
-                p_inq->scan_window = BTM_BLE_GAP_DISC_SCAN_WIN;
-                p_inq->sfp = BTM_BLE_DEFAULT_SFP;
-                p_inq->scan_params_set = TRUE;
-                btsnd_hcic_ble_set_scan_params(p_inq->scan_type, p_inq->scan_interval,
-                                               p_inq->scan_window,
-                                               btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type,
-                                               p_inq->sfp);
-            }
             p_inq->scan_duplicate_filter = BTM_BLE_DUPLICATE_DISABLE;
             status = btm_ble_start_scan();
         }
@@ -3061,6 +3047,25 @@ static void btm_ble_process_adv_pkt_cont(BD_ADDR bda, UINT8 addr_type, UINT8 evt
     }
 }
 
+static void btm_ble_recover_scan_params(void)
+{
+    tBTM_BLE_INQ_CB *p_inq = &btm_cb.ble_ctr_cb.inq_var;
+
+    if (p_inq->scan_params_set) {
+        /// set back the scan params to the controller after stop the scan
+        btsnd_hcic_ble_set_scan_params(p_inq->scan_type, p_inq->scan_interval,
+                                       p_inq->scan_window,
+                                       btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type,
+                                       p_inq->sfp);
+    } else {
+        /// set the default value if the scan params not set yet
+        btm_update_scanner_filter_policy(SP_ADV_ALL);
+
+        btm_cb.ble_ctr_cb.wl_state &= ~BTM_BLE_WL_SCAN;
+    }
+
+}
+
 /*******************************************************************************
 **
 ** Function         btm_ble_start_scan
@@ -3074,7 +3079,8 @@ tBTM_STATUS btm_ble_start_scan(void)
 {
     tBTM_BLE_INQ_CB *p_inq = &btm_cb.ble_ctr_cb.inq_var;
     tBTM_STATUS status = BTM_CMD_STARTED;
-
+    // recoverly the scan parameters to the controller before start scan
+    btm_ble_recover_scan_params();
     /* start scan, disable duplicate filtering */
     if (!btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_ENABLE, p_inq->scan_duplicate_filter)) {
         status = BTM_NO_RESOURCES;
@@ -3192,7 +3198,6 @@ static void btm_ble_stop_discover(void)
 {
     tBTM_BLE_CB *p_ble_cb = & btm_cb.ble_ctr_cb;
     tBTM_CMPL_CB *p_scan_cb = p_ble_cb->p_scan_cmpl_cb;
-
     btu_stop_timer (&p_ble_cb->scan_timer_ent);
 
     p_ble_cb->scan_activity &= ~BTM_LE_DISCOVER_ACTIVE;
@@ -3206,6 +3211,8 @@ static void btm_ble_stop_discover(void)
         btm_cb.ble_ctr_cb.inq_var.state = BTM_BLE_STOP_SCAN;
         /* stop discovery now */
         btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_DISABLE, BTM_BLE_DUPLICATE_ENABLE);
+        // recoverly the scan parameters to the controller after stop scan
+        btm_ble_recover_scan_params();
     }
 
     if (p_scan_cb) {
