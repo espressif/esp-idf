@@ -475,11 +475,7 @@ static bt_status_t btc_avrc_ct_send_set_player_value_cmd(uint8_t tl, uint8_t att
 {
     tAVRC_STS status = BT_STATUS_UNSUPPORTED;
 
-    if (tl >= 16 || attr_id > ESP_AVRC_PS_MAX_ATTR - 1) {
-      return ESP_ERR_INVALID_ARG;
-    }
-
-  #if (AVRC_METADATA_INCLUDED == TRUE)
+#if (AVRC_METADATA_INCLUDED == TRUE)
   CHECK_ESP_RC_CONNECTED;
 
     tAVRC_COMMAND avrc_cmd = {0};
@@ -507,9 +503,9 @@ static bt_status_t btc_avrc_ct_send_set_player_value_cmd(uint8_t tl, uint8_t att
       }
     }
 
-  #else
+#else
     LOG_DEBUG("%s: feature not enabled", __FUNCTION__);
-  #endif
+#endif
 
     return status;
 }
@@ -518,11 +514,7 @@ static bt_status_t btc_avrc_ct_send_register_notification_cmd(uint8_t tl, uint8_
 {
     tAVRC_STS status = BT_STATUS_UNSUPPORTED;
 
-    if (tl >= 16 || event_id > ESP_AVRC_RN_MAX_EVT - 1) {
-      return ESP_ERR_INVALID_ARG;
-    }
-
-  #if (AVRC_METADATA_INCLUDED == TRUE)
+#if (AVRC_METADATA_INCLUDED == TRUE)
   CHECK_ESP_RC_CONNECTED;
 
     tAVRC_COMMAND avrc_cmd = {0};
@@ -546,9 +538,9 @@ static bt_status_t btc_avrc_ct_send_register_notification_cmd(uint8_t tl, uint8_
       }
     }
 
-  #else
+#else
     LOG_DEBUG("%s: feature not enabled", __FUNCTION__);
-  #endif
+#endif
 
     return status;
 }
@@ -599,10 +591,7 @@ static bt_status_t btc_avrc_ct_send_metadata_cmd (uint8_t tl, uint8_t attr_mask)
 static bt_status_t btc_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code, uint8_t key_state)
 {
     tAVRC_STS status = BT_STATUS_UNSUPPORTED;
-    if (tl >= 16 ||
-            key_state > ESP_AVRC_PT_CMD_STATE_RELEASED) {
-        return ESP_ERR_INVALID_ARG;
-    }
+
 #if (AVRC_CTLR_INCLUDED == TRUE)
     CHECK_ESP_RC_CONNECTED;
     LOG_DEBUG("%s: key-code: %d, key-state: %d", __FUNCTION__,
