@@ -62,7 +62,7 @@ class Parser(object):
         :param elf_file: elf file path
         :param app_name: built unit test app name
         """
-        subprocess.check_output('xtensa-esp32-elf-objdump -t {} | grep \ test_desc > case_address.tmp'.format(elf_file),
+        subprocess.check_output('xtensa-esp32-elf-objdump -t {} | grep test_desc > case_address.tmp'.format(elf_file),
                                 shell=True)
         subprocess.check_output('xtensa-esp32-elf-objdump -s {} > section_table.tmp'.format(elf_file), shell=True)
 
