@@ -117,7 +117,7 @@ esp_err_t esp_avrc_ct_send_register_notification_cmd(uint8_t tl, uint8_t event_i
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_avrc_ct_send_metadata_cmd(uint8_t tl, uint32_t* attr_list, uint8_t attr_num)
+esp_err_t esp_avrc_ct_send_metadata_cmd(uint8_t tl, uint8_t attr_mask)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
@@ -132,8 +132,7 @@ esp_err_t esp_avrc_ct_send_metadata_cmd(uint8_t tl, uint32_t* attr_list, uint8_t
     memset(&arg, 0, sizeof(btc_avrc_args_t));
 
     arg.md_cmd.tl = tl;
-    arg.md_cmd.attr_list = attr_list;
-    arg.md_cmd.attr_num = attr_num;
+    arg.md_cmd.attr_mask = attr_mask;
 
     /* Switch to BTC context */
     bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_avrc_args_t), NULL);

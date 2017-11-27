@@ -61,17 +61,16 @@ typedef enum {
     ESP_AVRC_CT_MAX_EVT
 } esp_avrc_ct_cb_event_t;
 
-//AVRC metadata attribute ids
+//AVRC metadata attribute mask
 typedef enum {
-    ESP_AVRC_MD_ATTR_ID_TITLE = 0x1,              /*!< title of the playing track */
-    ESP_AVRC_MD_ATTR_ID_ARTIST = 0x2,             /*!< track artist */
-    ESP_AVRC_MD_ATTR_ID_ALBUM = 0x3,              /*!< album name */
-    ESP_AVRC_MD_ATTR_ID_TRACK_NUM = 0x4,          /*!< track position on the album */
-    ESP_AVRC_MD_ATTR_ID_NUM_TRACKS = 0x5,         /*!< number of tracks on the album */
-    ESP_AVRC_MD_ATTR_ID_GENRE = 0x6,              /*!< track genre */
-    ESP_AVRC_MD_ATTR_ID_PLAYING_TIME = 0x7,       /*!< total album playing time in miliseconds */
-    ESP_AVRC_MD_MAX_ATTR
-} esp_avrc_md_attr_ids_t;
+    ESP_AVRC_MD_ATTR_TITLE = 0x1,                 /*!< title of the playing track */
+    ESP_AVRC_MD_ATTR_ARTIST = 0x2,                /*!< track artist */
+    ESP_AVRC_MD_ATTR_ALBUM = 0x4,                 /*!< album name */
+    ESP_AVRC_MD_ATTR_TRACK_NUM = 0x8,             /*!< track position on the album */
+    ESP_AVRC_MD_ATTR_NUM_TRACKS = 0x10,           /*!< number of tracks on the album */
+    ESP_AVRC_MD_ATTR_GENRE = 0x20,                /*!< track genre */
+    ESP_AVRC_MD_ATTR_PLAYING_TIME = 0x40          /*!< total album playing time in miliseconds */
+} esp_avrc_md_attr_mask_t;
 
 //AVRC event notification ids
 typedef enum {
@@ -232,15 +231,14 @@ esp_err_t esp_avrc_ct_send_register_notification_cmd(uint8_t tl, uint8_t event_i
  *                  ESP_AVRC_CT_CONNECTION_STATE_EVT is received and AVRCP connection is established
  *
  * @param[in]       tl : transaction label, 0 to 15, consecutive commands should use different values.
- * @param[in]       attr_list : list of attributes, e.g. {ESP_AVRC_MD_ATTR_ID_TITLE, ESP_AVRC_MD_ATTR_ID_ARTIST}.
- * @param[in]       attr_num : number of attributes for request
+ * @param[in]       attr_mask : mask of attributes, e.g. ESP_AVRC_MD_ATTR_ID_TITLE | ESP_AVRC_MD_ATTR_ID_ARTIST.
  *
  * @return
  *                  - ESP_OK: success
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  */
-esp_err_t esp_avrc_ct_send_metadata_cmd(uint8_t tl, uint32_t* attr_list, uint8_t attr_num);
+esp_err_t esp_avrc_ct_send_metadata_cmd(uint8_t tl, uint8_t attr_mask);
 
 
 /**

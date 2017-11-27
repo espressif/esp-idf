@@ -54,8 +54,7 @@ typedef struct {
 
 typedef struct {
     uint8_t tl;
-    uint32_t* attr_list;
-    uint8_t attr_num;
+    uint8_t attr_mask;
 } md_cmd_t;
 
 typedef struct {

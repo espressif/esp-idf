@@ -553,29 +553,29 @@ static bt_status_t btc_avrc_ct_send_register_notification_cmd(uint8_t tl, uint8_
     return status;
 }
 
-static bt_status_t btc_avrc_ct_send_metadata_cmd (uint8_t tl, uint32_t *p_attr_ids, uint8_t num_attribute)
+static bt_status_t btc_avrc_ct_send_metadata_cmd (uint8_t tl, uint8_t attr_mask)
 {
     tAVRC_STS status = BT_STATUS_UNSUPPORTED;
 
-    if (tl >= 16 || num_attribute > ESP_AVRC_MD_MAX_ATTR - 1) {
-      return ESP_ERR_INVALID_ARG;
-    }
-
 #if (AVRC_METADATA_INCLUDED == TRUE)
   CHECK_ESP_RC_CONNECTED;
-    int count  = 0;
+    uint32_t index = 0;
 
     tAVRC_COMMAND avrc_cmd = {0};
     BT_HDR *p_msg = NULL;
 
     avrc_cmd.get_elem_attrs.opcode = AVRC_OP_VENDOR;
     avrc_cmd.get_elem_attrs.status = AVRC_STS_NO_ERROR;
-    avrc_cmd.get_elem_attrs.num_attr = num_attribute;
     avrc_cmd.get_elem_attrs.pdu = AVRC_PDU_GET_ELEMENT_ATTR;
 
-    for (count = 0; count < num_attribute; count++){
-        avrc_cmd.get_elem_attrs.attrs[count] = p_attr_ids[count];
+    for (int count = 0; count < AVRC_MAX_ELEM_ATTR_SIZE; count++){
+        if((attr_mask & (1 << count)) > 0){
+          index++;
+          avrc_cmd.get_elem_attrs.attrs[count] = index;
+        }
     }
+
+    avrc_cmd.get_elem_attrs.num_attr = index;
 
     status = AVRC_BldCommand(&avrc_cmd, &p_msg);
     if (status == AVRC_STS_NO_ERROR)
@@ -643,7 +643,7 @@ void btc_avrc_call_handler(btc_msg_t *msg)
         break;
     }
     case BTC_AVRC_STATUS_API_SND_META_EVT: {
-        btc_avrc_ct_send_metadata_cmd(arg->md_cmd.tl, arg->md_cmd.attr_list, arg->md_cmd.attr_num);
+        btc_avrc_ct_send_metadata_cmd(arg->md_cmd.tl, arg->md_cmd.attr_mask);
         break;
     }
     case BTC_AVRC_NOTIFY_API_SND_REG_NOTIFY_EVT: {

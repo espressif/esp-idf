@@ -31,16 +31,6 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param);
 /* avrc event handler */
 static void bt_av_hdl_avrc_evt(uint16_t event, void *p_param);
 
-uint32_t attr_list[] = {
-  ESP_AVRC_MD_ATTR_ID_TITLE,
-  ESP_AVRC_MD_ATTR_ID_ARTIST,
-  ESP_AVRC_MD_ATTR_ID_ALBUM,
-  ESP_AVRC_MD_ATTR_ID_TRACK_NUM,
-  ESP_AVRC_MD_ATTR_ID_NUM_TRACKS,
-  ESP_AVRC_MD_ATTR_ID_GENRE,
-  ESP_AVRC_MD_ATTR_ID_PLAYING_TIME
-};
-
 static uint32_t m_pkt_cnt = 0;
 static esp_a2d_audio_state_t m_audio_state = ESP_A2D_AUDIO_STATE_STOPPED;
 
@@ -119,7 +109,7 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
 
 static void bt_av_new_track(){
   //Register notifications and request metadata
-  esp_avrc_ct_send_metadata_cmd(0, attr_list, 7);
+  esp_avrc_ct_send_metadata_cmd(0, ESP_AVRC_MD_ATTR_TITLE | ESP_AVRC_MD_ATTR_ARTIST);
   esp_avrc_ct_send_register_notification_cmd(1, ESP_AVRC_RN_TRACK_CHANGE, 0);
 }
 
