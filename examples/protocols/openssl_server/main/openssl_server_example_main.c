@@ -53,7 +53,7 @@ static void openssl_example_task(void *p)
     SSL_CTX *ctx;
     SSL *ssl;
 
-    int socket, new_socket;
+    int sockfd, new_sockfd;
     socklen_t addr_len;
     struct sockaddr_in sock_addr;
 
@@ -99,8 +99,8 @@ static void openssl_example_task(void *p)
     ESP_LOGI(TAG, "OK");
 
     ESP_LOGI(TAG, "SSL server create socket ......");
-    socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (socket < 0) {
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
         ESP_LOGI(TAG, "failed");
         goto failed2;
     }
@@ -111,7 +111,7 @@ static void openssl_example_task(void *p)
     sock_addr.sin_family = AF_INET;
     sock_addr.sin_addr.s_addr = 0;
     sock_addr.sin_port = htons(OPENSSL_EXAMPLE_LOCAL_TCP_PORT);
-    ret = bind(socket, (struct sockaddr*)&sock_addr, sizeof(sock_addr));
+    ret = bind(sockfd, (struct sockaddr*)&sock_addr, sizeof(sock_addr));
     if (ret) {
         ESP_LOGI(TAG, "failed");
         goto failed3;
@@ -119,7 +119,7 @@ static void openssl_example_task(void *p)
     ESP_LOGI(TAG, "OK");
 
     ESP_LOGI(TAG, "SSL server socket listen ......");
-    ret = listen(socket, 32);
+    ret = listen(sockfd, 32);
     if (ret) {
         ESP_LOGI(TAG, "failed");
         goto failed3;
@@ -136,14 +136,14 @@ reconnect:
     ESP_LOGI(TAG, "OK");
 
     ESP_LOGI(TAG, "SSL server socket accept client ......");
-    new_socket = accept(socket, (struct sockaddr *)&sock_addr, &addr_len);
-    if (new_socket < 0) {
+    new_sockfd = accept(sockfd, (struct sockaddr *)&sock_addr, &addr_len);
+    if (new_sockfd < 0) {
         ESP_LOGI(TAG, "failed" );
         goto failed4;
     }
     ESP_LOGI(TAG, "OK");
 
-    SSL_set_fd(ssl, new_socket);
+    SSL_set_fd(ssl, new_sockfd);
 
     ESP_LOGI(TAG, "SSL server accept client ......");
     ret = SSL_accept(ssl);
@@ -177,15 +177,15 @@ reconnect:
     
     SSL_shutdown(ssl);
 failed5:
-    close(new_socket);
-    new_socket = -1;
+    close(new_sockfd);
+    new_sockfd = -1;
 failed4:
     SSL_free(ssl);
     ssl = NULL;
     goto reconnect;
 failed3:
-    close(socket);
-    socket = -1;
+    close(sockfd);
+    sockfd = -1;
 failed2:
     SSL_CTX_free(ctx);
     ctx = NULL;

@@ -40,7 +40,7 @@ static void openssl_example_task(void *p)
     int ret;
     SSL_CTX *ctx;
     SSL *ssl;
-    int socket;
+    int sockfd;
     struct sockaddr_in sock_addr;
     struct hostent *hp;
     struct ip4_addr *ip4_addr;
@@ -73,8 +73,8 @@ static void openssl_example_task(void *p)
     ESP_LOGI(TAG, "OK");
 
     ESP_LOGI(TAG, "create socket ......");
-    socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (socket < 0) {
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
         ESP_LOGI(TAG, "failed");
         goto failed2;
     }
@@ -85,7 +85,7 @@ static void openssl_example_task(void *p)
     sock_addr.sin_family = AF_INET;
     sock_addr.sin_addr.s_addr = 0;
     sock_addr.sin_port = htons(OPENSSL_EXAMPLE_LOCAL_TCP_PORT);
-    ret = bind(socket, (struct sockaddr*)&sock_addr, sizeof(sock_addr));
+    ret = bind(sockfd, (struct sockaddr*)&sock_addr, sizeof(sock_addr));
     if (ret) {
         ESP_LOGI(TAG, "failed");
         goto failed3;
@@ -97,7 +97,7 @@ static void openssl_example_task(void *p)
     sock_addr.sin_family = AF_INET;
     sock_addr.sin_addr.s_addr = ip4_addr->addr;
     sock_addr.sin_port = htons(OPENSSL_EXAMPLE_TARGET_TCP_PORT);
-    ret = connect(socket, (struct sockaddr*)&sock_addr, sizeof(sock_addr));
+    ret = connect(sockfd, (struct sockaddr*)&sock_addr, sizeof(sock_addr));
     if (ret) {
         ESP_LOGI(TAG, "failed");
         goto failed3;
@@ -112,7 +112,7 @@ static void openssl_example_task(void *p)
     }
     ESP_LOGI(TAG, "OK");
 
-    SSL_set_fd(ssl, socket);
+    SSL_set_fd(ssl, sockfd);
 
     ESP_LOGI(TAG, "SSL connected to %s port %d ......",
         OPENSSL_EXAMPLE_TARGET_NAME, OPENSSL_EXAMPLE_TARGET_TCP_PORT);
@@ -150,8 +150,8 @@ failed4:
     SSL_free(ssl);
     ssl = NULL;
 failed3:
-    close(socket);
-    socket = -1;
+    close(sockfd);
+    sockfd = -1;
 failed2:
     SSL_CTX_free(ctx);
     ctx = NULL;
