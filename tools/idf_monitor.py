@@ -97,7 +97,10 @@ if RUNNING_ON_WSL:
     import io
     enc = sys.stdin.encoding
     sys.stdin = io.open(sys.stdin.fileno(), mode='rb', buffering=0, closefd = False)
-    sys.stdin.encoding = enc
+    if sys.version_info >= (3, 0):
+        sys.stdin = codecs.getreader(enc)(sys.stdin)
+    else:
+        sys.stdin.encoding = enc
 
 class StoppableThread(object):
     """
@@ -195,7 +198,7 @@ class ConsoleReader(StoppableThread):
             # note that TIOCSTI is not implemented in WSL / bash-on-Windows.
             if self.cancelfd[1] is not None:
                 # unblock select()
-                os.write(self.cancelfd[1], "C")
+                os.write(self.cancelfd[1], b'C')
         elif os.name == 'posix':
             # this is the way cancel() is implemented in pyserial 3.3 or newer,
             # older pyserial (3.1+) has cancellation implemented via 'select',
