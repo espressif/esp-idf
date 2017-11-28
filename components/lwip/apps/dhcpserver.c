@@ -94,7 +94,7 @@ static bool renew = false;
 static dhcps_lease_t dhcps_poll;
 static dhcps_time_t dhcps_lease_time = DHCPS_LEASE_TIME_DEF;  //minute
 static dhcps_offer_t dhcps_offer = 0xFF;
-static dhcps_offer_t dhcps_dns = 0xFF;
+static dhcps_offer_t dhcps_dns = 0x00;
 
 /******************************************************************************
  * FunctionName : dhcps_option_info
