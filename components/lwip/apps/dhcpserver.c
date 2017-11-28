@@ -63,7 +63,7 @@
 #define DHCPS_DEBUG          0
 #define DHCPS_LOG printf
 
-#define MAX_STATION_NUM      8
+#define MAX_STATION_NUM CONFIG_LWIP_DHCPS_MAX_STATION_NUM
 
 #define DHCPS_STATE_OFFER 1
 #define DHCPS_STATE_DECLINE 2
@@ -311,10 +311,10 @@ static u8_t *add_offer_options(u8_t *optptr)
 
     *optptr++ = DHCP_OPTION_LEASE_TIME;
     *optptr++ = 4;
-    *optptr++ = ((dhcps_lease_time * 60) >> 24) & 0xFF;
-    *optptr++ = ((dhcps_lease_time * 60) >> 16) & 0xFF;
-    *optptr++ = ((dhcps_lease_time * 60) >> 8) & 0xFF;
-    *optptr++ = ((dhcps_lease_time * 60) >> 0) & 0xFF;
+    *optptr++ = ((dhcps_lease_time * DHCPS_LEASE_UNIT) >> 24) & 0xFF;
+    *optptr++ = ((dhcps_lease_time * DHCPS_LEASE_UNIT) >> 16) & 0xFF;
+    *optptr++ = ((dhcps_lease_time * DHCPS_LEASE_UNIT) >> 8) & 0xFF;
+    *optptr++ = ((dhcps_lease_time * DHCPS_LEASE_UNIT) >> 0) & 0xFF;
 
     *optptr++ = DHCP_OPTION_SERVER_ID;
     *optptr++ = 4;
@@ -800,8 +800,8 @@ static u8_t parse_options(u8_t *optptr, s16_t len)
 *******************************************************************************/
 static s16_t parse_msg(struct dhcps_msg *m, u16_t len)
 {
-    u32_t lease_timer = (dhcps_lease_time * 60)/DHCPS_COARSE_TIMER_SECS;
-    
+    u32_t lease_timer = (dhcps_lease_time * DHCPS_LEASE_UNIT)/DHCPS_COARSE_TIMER_SECS;
+
     if (memcmp((char *)m->options, &magic_cookie, sizeof(magic_cookie)) == 0) {
 #if DHCPS_DEBUG
         DHCPS_LOG("dhcps: len = %d\n", len);

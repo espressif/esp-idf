@@ -111,6 +111,28 @@ config LWIP_DHCP_DOES_ARP_CHECK
         Enabling this option performs a check (via ARP request) if the offered IP address
         is not already in use by another host on the network.
 
+menu "DHCP server"
+
+config LWIP_DHCPS_LEASE_UNIT
+    int "Multiplier for lease time, in seconds"
+    range 1 3600
+    default 60
+    help
+        The DHCP server is calculating lease time multiplying the sent 
+        and received times by this number of seconds per unit. 
+        The default is 60, that equals one minute.
+
+config LWIP_DHCPS_MAX_STATION_NUM
+    int "Maximum number of stations"
+    range 1 64
+    default 8
+    help
+        The maximum number of DHCP clients that are connected to the server.
+        After this number is exceeded, DHCP server removes of the oldest device
+        from it's address pool, without notification.
+
+endmenu # DHCPS
+
 menuconfig LWIP_AUTOIP
     bool "Enable IPV4 Link-Local Addressing (AUTOIP)"
     default n
