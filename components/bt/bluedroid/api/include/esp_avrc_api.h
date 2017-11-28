@@ -146,8 +146,9 @@ typedef union {
      * @brief ESP_AVRC_CT_METADATA_RSP_EVT
      */
      struct avrc_ct_meta_rsp_param {
-       uint32_t attr_id;                        /*!< id of metadata attribute */
+       uint8_t attr_id;                         /*!< id of metadata attribute */
        uint8_t* attr_text;                      /*!< attribute itself */
+       int attr_length;                         /*!< attribute character length */
      } meta_rsp;
 
      struct avrc_ct_change_notify_param{

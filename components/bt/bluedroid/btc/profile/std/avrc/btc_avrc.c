@@ -92,12 +92,6 @@ typedef struct {
     rc_transaction_t transaction[MAX_TRANSACTIONS_PER_SESSION];
 } rc_device_t;
 
-#if (AVRC_METADATA_INCLUDED == TRUE)
-  //Needed because event queues send pointers to data and not data itself
-  //so we need a fixed buffer for storing metadata, otherwise garbage data is received
-  uint8_t meta_text_buffer[7][128];
-#endif
-
 rc_device_t device;
 
 static void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open);
@@ -262,6 +256,7 @@ static void handle_rc_attributes_rsp ( tAVRC_MSG_VENDOR* vendor_msg){
     uint8_t attr_count = vendor_msg->p_vendor_data[4];
     int attr_index = 5;
     int attr_length = 0;
+    uint32_t attr_id = 0;
 
     //Check if there are any attributes
     if(attr_count < 1) return;
@@ -272,15 +267,16 @@ static void handle_rc_attributes_rsp ( tAVRC_MSG_VENDOR* vendor_msg){
   for(int i = 0; i < attr_count; i++){
     attr_length = (int) vendor_msg->p_vendor_data[7 + attr_index] | vendor_msg->p_vendor_data[6 + attr_index] << 8;
 
-    //Copy text to buffer, null terminate it
-    memcpy(meta_text_buffer[i], &vendor_msg->p_vendor_data[8 + attr_index], 0x7F & attr_length);
-    meta_text_buffer[i][0x7F & attr_length] = 0;
+    //Received attribute text is not null terminated, so it's useful to know it's length
+    param[i].meta_rsp.attr_length = attr_length;
+    param[i].meta_rsp.attr_text = &vendor_msg->p_vendor_data[8 + attr_index];
 
-    param[i].meta_rsp.attr_text = meta_text_buffer[i];
-
-    param[i].meta_rsp.attr_id = vendor_msg->p_vendor_data[3 + attr_index] |
+    attr_id = vendor_msg->p_vendor_data[3 + attr_index] |
       vendor_msg->p_vendor_data[2 + attr_index] << 8 | vendor_msg->p_vendor_data[1 + attr_index] << 16 |
       vendor_msg->p_vendor_data[attr_index] << 24;
+
+    //Convert to mask id
+    param[i].meta_rsp.attr_id = (1 << (attr_id - 1));
 
     btc_avrc_ct_cb_to_app(ESP_AVRC_CT_METADATA_RSP_EVT, &param[i]);
 
@@ -562,8 +558,8 @@ static bt_status_t btc_avrc_ct_send_metadata_cmd (uint8_t tl, uint8_t attr_mask)
 
     for (int count = 0; count < AVRC_MAX_ELEM_ATTR_SIZE; count++){
         if((attr_mask & (1 << count)) > 0){
+          avrc_cmd.get_elem_attrs.attrs[index] = count + 1;
           index++;
-          avrc_cmd.get_elem_attrs.attrs[count] = index;
         }
     }
 
