@@ -83,7 +83,7 @@ typedef enum {
     ESP_AVRC_RN_SYSTEM_STATUS_CHANGE = 0x07,      /*!< system status changed */
     ESP_AVRC_RN_APP_SETTING_CHANGE = 0x08,        /*!< application settings changed */
     ESP_AVRC_RN_MAX_EVT
-}esp_avrc_rn_event_ids_t;
+} esp_avrc_rn_event_ids_t;
 
 //AVRC player setting ids
 typedef enum {
@@ -92,20 +92,20 @@ typedef enum {
     ESP_AVRC_PS_SHUFFLE_MODE = 0x03,              /*!< shuffle mode */
     ESP_AVRC_PS_SCAN_MODE = 0x04,                 /*!< scan mode on or off */
     ESP_AVRC_PS_MAX_ATTR
-}esp_avrc_ps_attr_ids_t;
+} esp_avrc_ps_attr_ids_t;
 
 //AVRC equalizer modes
 typedef enum {
     ESP_AVRC_PS_EQUALIZER_OFF = 0x1,
     ESP_AVRC_PS_EQUALIZER_ON = 0x2
-}esp_avrc_ps_eq_value_ids_t;
+} esp_avrc_ps_eq_value_ids_t;
 
 //AVRC repeat modes
 typedef enum {
     ESP_AVRC_PS_REPEAT_OFF = 0x1,
     ESP_AVRC_PS_REPEAT_SINGLE = 0x2,
     ESP_AVRC_PS_REPEAT_GROUP = 0x3
-}esp_avrc_ps_rpt_value_ids_t;
+} esp_avrc_ps_rpt_value_ids_t;
 
 
 //AVRC shuffle modes
@@ -113,14 +113,14 @@ typedef enum {
     ESP_AVRC_PS_SHUFFLE_OFF = 0x1,
     ESP_AVRC_PS_SHUFFLE_ALL = 0x2,
     ESP_AVRC_PS_SHUFFLE_GROUP = 0x3
-}esp_avrc_ps_shf_value_ids_t;
+} esp_avrc_ps_shf_value_ids_t;
 
 //AVRC scan modes
 typedef enum {
     ESP_AVRC_PS_SCAN_OFF = 0x1,
     ESP_AVRC_PS_SCAN_ALL = 0x2,
     ESP_AVRC_PS_SCAN_GROUP = 0x3
-}esp_avrc_ps_scn_value_ids_t;
+} esp_avrc_ps_scn_value_ids_t;
 
 /// AVRC controller callback parameters
 typedef union {
@@ -145,16 +145,16 @@ typedef union {
     /**
      * @brief ESP_AVRC_CT_METADATA_RSP_EVT
      */
-     struct avrc_ct_meta_rsp_param {
-       uint8_t attr_id;                         /*!< id of metadata attribute */
-       uint8_t* attr_text;                      /*!< attribute itself */
-       int attr_length;                         /*!< attribute character length */
-     } meta_rsp;
+    struct avrc_ct_meta_rsp_param {
+        uint8_t attr_id;                         /*!< id of metadata attribute */
+        uint8_t *attr_text;                      /*!< attribute itself */
+        int attr_length;                         /*!< attribute character length */
+    } meta_rsp;
 
-     struct avrc_ct_change_notify_param{
-       uint8_t event_id;
-       uint32_t event_parameter;
-     } change_ntf;
+    struct avrc_ct_change_notify_param {
+        uint8_t event_id;
+        uint32_t event_parameter;
+    } change_ntf;
 
 } esp_avrc_ct_cb_param_t;
 

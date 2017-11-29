@@ -57,13 +57,14 @@ void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len)
     }
 }
 
-void bt_app_alloc_meta_buffer(esp_avrc_ct_cb_param_t *param){
-  esp_avrc_ct_cb_param_t *rc = (esp_avrc_ct_cb_param_t *)(param);
-  uint8_t* attr_text = (uint8_t*) malloc (rc->meta_rsp.attr_length + 1);
-  memcpy(attr_text, rc->meta_rsp.attr_text, rc->meta_rsp.attr_length);
-  attr_text[rc->meta_rsp.attr_length] = 0;
+void bt_app_alloc_meta_buffer(esp_avrc_ct_cb_param_t *param)
+{
+    esp_avrc_ct_cb_param_t *rc = (esp_avrc_ct_cb_param_t *)(param);
+    uint8_t *attr_text = (uint8_t *) malloc (rc->meta_rsp.attr_length + 1);
+    memcpy(attr_text, rc->meta_rsp.attr_text, rc->meta_rsp.attr_length);
+    attr_text[rc->meta_rsp.attr_length] = 0;
 
-  rc->meta_rsp.attr_text = attr_text;
+    rc->meta_rsp.attr_text = attr_text;
 }
 
 void bt_app_rc_ct_cb(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t *param)
@@ -117,18 +118,20 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
     }
 }
 
-static void bt_av_new_track(){
-  //Register notifications and request metadata
-  esp_avrc_ct_send_metadata_cmd(0, ESP_AVRC_MD_ATTR_TITLE | ESP_AVRC_MD_ATTR_ARTIST | ESP_AVRC_MD_ATTR_ALBUM | ESP_AVRC_MD_ATTR_GENRE);
-  esp_avrc_ct_send_register_notification_cmd(1, ESP_AVRC_RN_TRACK_CHANGE, 0);
+static void bt_av_new_track()
+{
+    //Register notifications and request metadata
+    esp_avrc_ct_send_metadata_cmd(0, ESP_AVRC_MD_ATTR_TITLE | ESP_AVRC_MD_ATTR_ARTIST | ESP_AVRC_MD_ATTR_ALBUM | ESP_AVRC_MD_ATTR_GENRE);
+    esp_avrc_ct_send_register_notification_cmd(1, ESP_AVRC_RN_TRACK_CHANGE, 0);
 }
 
-void bt_av_notify_evt_handler(uint8_t event_id, uint32_t event_parameter){
-  switch(event_id){
+void bt_av_notify_evt_handler(uint8_t event_id, uint32_t event_parameter)
+{
+    switch (event_id) {
     case ESP_AVRC_RN_TRACK_CHANGE:
-      bt_av_new_track();
-      break;
-  }
+        bt_av_new_track();
+        break;
+    }
 }
 
 static void bt_av_hdl_avrc_evt(uint16_t event, void *p_param)
@@ -139,9 +142,11 @@ static void bt_av_hdl_avrc_evt(uint16_t event, void *p_param)
     case ESP_AVRC_CT_CONNECTION_STATE_EVT: {
         uint8_t *bda = rc->conn_stat.remote_bda;
         ESP_LOGI(BT_AV_TAG, "avrc conn_state evt: state %d, feature 0x%x, [%02x:%02x:%02x:%02x:%02x:%02x]",
-                           rc->conn_stat.connected, rc->conn_stat.feat_mask, bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
+                 rc->conn_stat.connected, rc->conn_stat.feat_mask, bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
 
-        if(rc->conn_stat.connected) bt_av_new_track();
+        if (rc->conn_stat.connected) {
+            bt_av_new_track();
+        }
         break;
     }
     case ESP_AVRC_CT_PASSTHROUGH_RSP_EVT: {
