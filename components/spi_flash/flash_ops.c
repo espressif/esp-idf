@@ -260,6 +260,21 @@ static IRAM_ATTR esp_rom_spiflash_result_t spi_flash_write_inner(uint32_t target
             break;
         }
 
+#ifdef CONFIG_SPI_FLASH_WARN_SETTING_ZERO_TO_ONE
+        for (int r = 0; r < read_len; r += sizeof(uint32_t)) {
+            int r_w = r / sizeof(uint32_t); // index in words (r is index in bytes)
+
+            uint32_t write = src_addr[i_w + r_w];
+            uint32_t before = before_buf[r_w];
+            if ((before & write) != write) {
+                spi_flash_guard_end();
+                ESP_LOGW(TAG, "Write at offset 0x%x requests 0x%08x but will write 0x%08x -> 0x%08x",
+                         target + i + r, write, before, before & write);
+                spi_flash_guard_start();
+            }
+        }
+#endif
+
         res = esp_rom_spiflash_write(target + i, &src_addr[i_w], read_len);
         if (res != ESP_ROM_SPIFLASH_RESULT_OK) {
             break;
