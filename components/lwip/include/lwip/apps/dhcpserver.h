@@ -14,6 +14,7 @@
 #ifndef __DHCPS_H__
 #define __DHCPS_H__
 
+#include "sdkconfig.h"
 #include "lwip/ip_addr.h"
 
 typedef struct dhcps_state{
@@ -50,7 +51,8 @@ enum dhcps_offer_option{
 
 #define DHCPS_COARSE_TIMER_SECS  1
 #define DHCPS_MAX_LEASE 0x64
-#define DHCPS_LEASE_TIME_DEF	(120)
+#define DHCPS_LEASE_TIME_DEF (120)
+#define DHCPS_LEASE_UNIT CONFIG_LWIP_DHCPS_LEASE_UNIT
 
 struct dhcps_pool{
 	ip4_addr_t ip;
