@@ -187,8 +187,7 @@ static BT_HDR *avrc_bld_init_cmd_buffer(tAVRC_COMMAND *p_cmd)
 *******************************************************************************/
 static tAVRC_STS avrc_bld_set_player_value_cmd(tAVRC_SET_APP_VALUE_CMD *p_cmd, BT_HDR *p_pkt)
 {
-   int i;
-   UINT8 *p_data, *p_start;
+    UINT8 *p_data, *p_start;
 
     /* get the existing length, if any, and also the num attributes */
     p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
