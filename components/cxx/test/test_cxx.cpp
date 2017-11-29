@@ -105,30 +105,35 @@ template<> int SlowInit<2>::mInitBy = -1;
 template<> int SlowInit<2>::mInitCount = 0;
 
 template<int obj>
-static void start_slow_init_task(int id, int affinity)
+static int start_slow_init_task(int id, int affinity)
 {
-    xTaskCreatePinnedToCore(&SlowInit<obj>::task, "slow_init", 2048,
-            reinterpret_cast<void*>(id), 3, NULL, affinity);
+    return xTaskCreatePinnedToCore(&SlowInit<obj>::task, "slow_init", 2048,
+            reinterpret_cast<void*>(id), 3, NULL, affinity) ? 1 : 0;
 }
 
 TEST_CASE("static initialization guards work as expected", "[cxx]")
 {
     s_slow_init_sem = xSemaphoreCreateCounting(10, 0);
     TEST_ASSERT_NOT_NULL(s_slow_init_sem);
+    int task_count = 0;
     // four tasks competing for static initialization of one object
-    start_slow_init_task<1>(0, PRO_CPU_NUM);
-    start_slow_init_task<1>(1, APP_CPU_NUM);
-    start_slow_init_task<1>(2, PRO_CPU_NUM);
-    start_slow_init_task<1>(3, tskNO_AFFINITY);
+    task_count += start_slow_init_task<1>(0, PRO_CPU_NUM);
+#if portNUM_PROCESSORS == 2
+    task_count += start_slow_init_task<1>(1, APP_CPU_NUM);
+#endif
+    task_count += start_slow_init_task<1>(2, PRO_CPU_NUM);
+    task_count += start_slow_init_task<1>(3, tskNO_AFFINITY);
 
     // four tasks competing for static initialization of another object
-    start_slow_init_task<2>(0, PRO_CPU_NUM);
-    start_slow_init_task<2>(1, APP_CPU_NUM);
-    start_slow_init_task<2>(2, PRO_CPU_NUM);
-    start_slow_init_task<2>(3, tskNO_AFFINITY);
+    task_count += start_slow_init_task<2>(0, PRO_CPU_NUM);
+#if portNUM_PROCESSORS == 2
+    task_count += start_slow_init_task<2>(1, APP_CPU_NUM);
+#endif
+    task_count += start_slow_init_task<2>(2, PRO_CPU_NUM);
+    task_count += start_slow_init_task<2>(3, tskNO_AFFINITY);
 
     // All tasks should
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < task_count; ++i) {
         TEST_ASSERT_TRUE(xSemaphoreTake(s_slow_init_sem, 500/portTICK_PERIOD_MS));
     }
     vSemaphoreDelete(s_slow_init_sem);
