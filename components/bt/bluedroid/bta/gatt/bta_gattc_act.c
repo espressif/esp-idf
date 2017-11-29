@@ -2172,7 +2172,7 @@ void bta_gattc_broadcast(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg)
     UNUSED(p_cb);
 
     cb_data.reg_oper.client_if = p_msg->api_listen.client_if;
-    cb_data.reg_oper.status = BTM_BleBroadcast(p_msg->api_listen.start);
+    cb_data.reg_oper.status = BTM_BleBroadcast(p_msg->api_listen.start, NULL);
 
     if (p_clreg && p_clreg->p_cback) {
         (*p_clreg->p_cback)(BTA_GATTC_LISTEN_EVT, &cb_data);
@@ -2361,6 +2361,7 @@ static void bta_gattc_wait4_service_change_ccc_cback (TIMER_LIST_ENT *p_tle)
     p_tle->param = (TIMER_PARAM_TYPE)0;
     if (p_timer_param == NULL){
         APPL_TRACE_ERROR("p_timer_param is NULL in %s\n", __func__);
+        osi_mutex_unlock(&write_ccc_mutex);
         return;
     }
 
@@ -2368,6 +2369,7 @@ static void bta_gattc_wait4_service_change_ccc_cback (TIMER_LIST_ENT *p_tle)
     if (p_conn == NULL){
         APPL_TRACE_ERROR("p_conn is NULL in %s\n", __func__);
         osi_free(p_timer_param);
+        osi_mutex_unlock(&write_ccc_mutex);
         return;
     }
 
