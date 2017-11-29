@@ -4,10 +4,15 @@
 #include <sys/time.h>
 #include "unity.h"
 #include "esp_timer.h"
+#include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "test_utils.h"
+
+#ifdef CONFIG_ESP_TIMER_PROFILING
+#define WITH_PROFILING 1
+#endif
 
 
 TEST_CASE("esp_timer orders timers correctly", "[esp_timer]")
@@ -378,4 +383,38 @@ TEST_CASE("esp_timer_get_time returns monotonic values", "[esp_timer][ignore]")
 TEST_CASE("Can dump esp_timer stats", "[esp_timer]")
 {
     esp_timer_dump(stdout);
+}
+
+TEST_CASE("Can delete timer from callback", "[esp_timer]")
+{
+    typedef struct {
+        SemaphoreHandle_t notify_from_timer_cb;
+        esp_timer_handle_t timer;
+    } test_arg_t;
+
+    void timer_func(void* varg)
+    {
+        test_arg_t arg = *(test_arg_t*) varg;
+        esp_timer_delete(arg.timer);
+        printf("Timer %p is deleted\n", arg.timer);
+        xSemaphoreGive(arg.notify_from_timer_cb);
+    }
+
+    test_arg_t args = {
+            .notify_from_timer_cb = xSemaphoreCreateBinary(),
+    };
+
+    esp_timer_create_args_t timer_args = {
+            .callback = &timer_func,
+            .arg = &args,
+            .name = "self_deleter"
+    };
+    esp_timer_create(&timer_args, &args.timer);
+    esp_timer_start_once(args.timer, 10000);
+
+    TEST_ASSERT_TRUE(xSemaphoreTake(args.notify_from_timer_cb, 1000 / portTICK_PERIOD_MS));
+    printf("Checking heap at %p\n", args.timer);
+    TEST_ASSERT_TRUE(heap_caps_check_integrity_addr((intptr_t) args.timer, true));
+
+    vSemaphoreDelete(args.notify_from_timer_cb);
 }

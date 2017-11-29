@@ -151,7 +151,9 @@ INPUT = \
     ../components/app_trace/include/esp_app_trace.h \
     ### Power management
     ../components/esp32/include/esp_pm.h \
-    ../components/esp32/include/esp32/pm.h
+    ../components/esp32/include/esp32/pm.h \
+    ### esp_timer, High Resolution Timer
+    ../components/esp32/include/esp_timer.h
 
 
 ## Get warnings for functions that have no documentation for their parameters or return value

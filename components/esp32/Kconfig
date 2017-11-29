@@ -762,7 +762,6 @@ config NO_BLOBS
 
 config ESP_TIMER_PROFILING
 	bool "Enable esp_timer profiling features"
-	depends on MAKING_ESP_TIMER_A_PUBLIC_API
 	default n
 	help
 		If enabled, esp_timer_dump will dump information such as number of times
