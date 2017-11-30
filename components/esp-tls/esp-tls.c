@@ -67,11 +67,11 @@ static int esp_tcp_connect(const char *host, int hostlen, int port)
 
     void *addr_ptr;
     if (res->ai_family == AF_INET) {
-	struct sockaddr_in *p = (struct sockaddr_in*)res->ai_addr;
+	struct sockaddr_in *p = (struct sockaddr_in *)res->ai_addr;
 	p->sin_port = htons(port);
 	addr_ptr = p;
     } else if (res->ai_family == AF_INET6) {
-	struct sockaddr_in6 *p = (struct sockaddr_in6*) res->ai_addr;
+	struct sockaddr_in6 *p = (struct sockaddr_in6 *)res->ai_addr;
 	p->sin6_port = htons(port);
 	p->sin6_family = AF_INET6;
 	addr_ptr = p;
