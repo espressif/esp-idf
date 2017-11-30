@@ -2358,6 +2358,7 @@ static void bta_gattc_wait4_service_change_ccc_cback (TIMER_LIST_ENT *p_tle)
     osi_mutex_lock(&write_ccc_mutex, OSI_MUTEX_MAX_TIMEOUT);
 
     tBTA_GATTC_WAIT_CCC_TIMER *p_timer_param = (tBTA_GATTC_WAIT_CCC_TIMER*) p_tle->param;
+    p_tle->param = (TIMER_PARAM_TYPE)0;
     if (p_timer_param == NULL){
         APPL_TRACE_ERROR("p_timer_param is NULL in %s\n", __func__);
         return;
@@ -2367,7 +2368,6 @@ static void bta_gattc_wait4_service_change_ccc_cback (TIMER_LIST_ENT *p_tle)
     if (p_conn == NULL){
         APPL_TRACE_ERROR("p_conn is NULL in %s\n", __func__);
         osi_free(p_timer_param);
-        p_tle->param = (TIMER_PARAM_TYPE)0;
         return;
     }
 
@@ -2399,7 +2399,6 @@ static void bta_gattc_wait4_service_change_ccc_cback (TIMER_LIST_ENT *p_tle)
     }
 
     osi_free(p_timer_param);
-    p_tle->param = (TIMER_PARAM_TYPE)0;
     osi_mutex_unlock(&write_ccc_mutex);
 }
 
