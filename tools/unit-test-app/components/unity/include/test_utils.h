@@ -36,8 +36,48 @@ void ref_clock_init();
  */
 void ref_clock_deinit();
 
+
 /**
  * @brief Get reference clock timestamp
  * @return number of microseconds since the reference clock was initialized
  */
 uint64_t ref_clock_get();
+
+/**
+ * @brief wait for signals.
+ *
+ * for multiple devices test cases, DUT might need to wait for other DUTs before continue testing.
+ * As all DUTs are independent, need user (or test script) interaction to make test synchronized.
+ *
+ * Here we provide signal functions for this.
+ * For example, we're testing GPIO, DUT1 has one pin connect to with DUT2.
+ * DUT2 will output high level and then DUT1 will read input.
+ * DUT1 should call `unity_wait_for_signal("output high level");` before it reads input.
+ * DUT2 should call `unity_send_signal("output high level");` after it finished setting output high level.
+ * According to the console logs:
+ *
+ * DUT1 console:
+ *
+ * ```
+ *     Waiting for signal: [output high level]!
+ *     Please press "Enter" key to once any board send this signal.
+ * ```
+ *
+ * DUT2 console:
+ *
+ * ```
+ *     Send signal: [output high level]!
+ * ```
+ *
+ * Then we press Enter key on DUT1's console, DUT1 starts to read input and then test success.
+ *
+ * @param signal_name signal name which DUT expected to wait before proceed testing
+ */
+void unity_wait_for_signal(const char* signal_name);
+
+/**
+ * @brief DUT send signal.
+ *
+ * @param signal_name signal name which DUT send once it finished preparing.
+ */
+void unity_send_signal(const char* signal_name);
