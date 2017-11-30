@@ -107,6 +107,23 @@ config FATFS_MAX_LFN
    help
       Maximum long filename length. Can be reduced to save RAM.
 
+choice FATFS_API_ENCODING
+    prompt "API character encoding"
+    depends on !FATFS_LFN_NONE
+    default FATFS_API_ENCODING_ANSI_OEM
+    help
+        Choose encoding for character and string arguments/returns when using 
+        FATFS APIs. The encoding of arguments will usually depend on text 
+        editor settings.
+
+config FATFS_API_ENCODING_ANSI_OEM
+    bool "API uses ANSI/OEM encoding"
+config FATFS_API_ENCODING_UTF_16
+    bool "API uses UTF-16 encoding"
+config FATFS_API_ENCODING_UTF_8
+    bool "API uses UTF-8 encoding"
+endchoice
+
 config FATFS_FS_LOCK
    int "Number of simultaneously open files protected by lock function"
    default 0

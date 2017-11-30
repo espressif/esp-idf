@@ -50,6 +50,7 @@ static void test_teardown(void)
 }
 
 static const char* test_filename = "/sdcard/hello.txt";
+static const char* test_filename_utf_8 = "/sdcard/测试文件.txt";
 
 TEST_CASE("Mount fails cleanly without card inserted", "[fatfs][ignore]")
 {
@@ -239,3 +240,25 @@ TEST_CASE("(SD) mount two FAT partitions, SDMMC and WL, at the same time", "[fat
     fclose(f);
     TEST_ESP_OK(esp_vfs_fat_spiflash_unmount("/spiflash", wl_handle));
 }
+
+/*
+ * In FatFs menuconfig, set CONFIG_FATFS_API_ENCODING to UTF-8 and set the
+ * Codepage to CP936 (Simplified Chinese) in order to run the following tests.
+ * Ensure that the text editor is UTF-8 compatible when compiling these tests.
+ */
+#if defined(CONFIG_FATFS_API_ENCODING_UTF_8) && (CONFIG_FATFS_CODEPAGE == 936)
+TEST_CASE("(SD) can read file using UTF-8 encoded strings", "[fatfs][ignore]")
+{
+    test_setup();
+    test_fatfs_create_file_with_text(test_filename_utf_8, fatfs_test_hello_str_utf);
+    test_fatfs_read_file_utf_8(test_filename_utf_8);
+    test_teardown();
+}
+
+TEST_CASE("(SD) opendir, readdir, rewinddir, seekdir work as expected using UTF-8 encoded strings", "[fatfs][ignore]")
+{
+    test_setup();
+    test_fatfs_opendir_readdir_rewinddir_utf_8("/sdcard/目录");
+    test_teardown();
+}
+#endif

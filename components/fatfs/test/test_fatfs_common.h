@@ -32,12 +32,15 @@
 
 
 const char* fatfs_test_hello_str;
+const char* fatfs_test_hello_str_utf;
 
 void test_fatfs_create_file_with_text(const char* name, const char* text);
 
 void test_fatfs_overwrite_append(const char* filename);
 
 void test_fatfs_read_file(const char* filename);
+
+void test_fatfs_read_file_utf_8(const char* filename);
 
 void test_fatfs_open_max_files(const char* filename_prefix, size_t files_count);
 
@@ -56,5 +59,7 @@ void test_fatfs_mkdir_rmdir(const char* filename_prefix);
 void test_fatfs_can_opendir(const char* path);
 
 void test_fatfs_opendir_readdir_rewinddir(const char* dir_prefix);
+
+void test_fatfs_opendir_readdir_rewinddir_utf_8(const char* dir_prefix);
 
 void test_fatfs_rw_speed(const char* filename, void* buf, size_t buf_size, size_t file_size, bool write);
