@@ -56,6 +56,7 @@ CTRL_H = '\x08'
 CTRL_R = '\x12'
 CTRL_T = '\x14'
 CTRL_Y = '\x19'
+CTRL_P = '\x10'
 CTRL_RBRACKET = '\x1d'  # Ctrl+]
 
 # ANSI terminal codes
@@ -330,6 +331,16 @@ class Monitor(object):
             self.run_make("app-flash")
         elif c == CTRL_Y:  # Toggle output display
             self.output_toggle()
+        elif c == CTRL_P:
+            yellow_print("Pause app (enter bootloader mode), press Ctrl-T Ctrl-R to restart")
+            # to fast trigger pause without press menu key
+            self.serial.setDTR(False)  # IO0=HIGH
+            self.serial.setRTS(True)   # EN=LOW, chip in reset
+            time.sleep(1.3) # timeouts taken from esptool.py, includes esp32r0 workaround. defaults: 0.1
+            self.serial.setDTR(True)   # IO0=LOW
+            self.serial.setRTS(False)  # EN=HIGH, chip out of reset
+            time.sleep(0.45) # timeouts taken from esptool.py, includes esp32r0 workaround. defaults: 0.05
+            self.serial.setDTR(False)  # IO0=HIGH, done
         else:
             red_print('--- unknown menu character {} --'.format(key_description(c)))
 
@@ -347,6 +358,7 @@ class Monitor(object):
 ---    {make:7} Run 'make flash' to build & flash
 ---    {appmake:7} Run 'make app-flash to build & flash app
 ---    {output:7} Toggle output display
+---    {pause:7} Reset target into bootloader to pause app via RTS line
 """.format(version=__version__,
            exit=key_description(self.exit_key),
            menu=key_description(self.menu_key),
@@ -354,6 +366,7 @@ class Monitor(object):
            make=key_description(CTRL_F),
            appmake=key_description(CTRL_A),
            output=key_description(CTRL_Y),
+           pause=key_description(CTRL_P),
            )
 
     def __enter__(self):
