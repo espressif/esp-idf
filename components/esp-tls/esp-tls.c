@@ -26,12 +26,10 @@ static struct addrinfo *resolve_host_name(const char *host, size_t hostlen)
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
 
-    char *use_host = (char *)calloc(1, hostlen  + 1);
+    char *use_host = strndup(host, hostlen);
     if (!use_host) {
         return NULL;
     }
-    strncpy(use_host, host, hostlen);
-    use_host[hostlen] = '\0';
 
     ESP_LOGD(TAG, "host:%s: strlen %zu\n", use_host, hostlen);
     struct addrinfo *res;
