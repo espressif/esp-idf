@@ -95,7 +95,7 @@ err_freeaddr:
     return -1;
 }
 
-static int create_ssl_handle(struct esp_tls *tls)
+static int create_ssl_handle(struct esp_tls *tls, const char *hostname, size_t hostlen, struct esp_tls_cfg *cfg)
 {
     int ret;
 
@@ -108,11 +108,22 @@ static int create_ssl_handle(struct esp_tls *tls)
     SSL_CTX_set_mode(ssl_ctx, SSL_MODE_AUTO_RETRY);
     SSL_CTX_set_mode(ssl_ctx, SSL_MODE_RELEASE_BUFFERS);
 #endif
+    if (cfg->alpn_protos) {
+	SSL_CTX_set_alpn_protos(ssl_ctx, cfg->alpn_protos, strlen((char *)cfg->alpn_protos));
+    }
     SSL *ssl = SSL_new(ssl_ctx);
     if (!ssl) {
         SSL_CTX_free(ssl_ctx);
         return -1;
     }
+
+    char *use_host = strndup(hostname, hostlen);
+    if (!use_host) {
+	SSL_CTX_free(ssl_ctx);
+	return -1;
+    }
+    SSL_set_tlsext_host_name(ssl, use_host);
+    free(use_host);
 
     SSL_set_fd(ssl, tls->sockfd);
     ret = SSL_connect(ssl);
@@ -155,7 +166,7 @@ static ssize_t tls_write(struct esp_tls *tls, const char *data, size_t datalen)
     return SSL_write(tls->ssl, data, datalen);
 }
 
-struct esp_tls *esp_tls_conn_new(const char *hostname, int hostlen, int port, bool is_tls)
+struct esp_tls *esp_tls_conn_new(const char *hostname, int hostlen, int port, struct esp_tls_cfg *cfg)
 {
     int sockfd = esp_tcp_connect(hostname, hostlen, port);
     if (sockfd < 0) {
@@ -171,8 +182,8 @@ struct esp_tls *esp_tls_conn_new(const char *hostname, int hostlen, int port, bo
     tls->read = tcp_read;
     tls->write = tcp_write;
 
-    if (is_tls) {
-        if (create_ssl_handle(tls) != 0) {
+    if (cfg) {
+        if (create_ssl_handle(tls, hostname, hostlen, cfg) != 0) {
             esp_tls_conn_delete(tls);
             return NULL;
         }
