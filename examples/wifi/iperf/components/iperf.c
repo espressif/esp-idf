@@ -20,7 +20,7 @@ typedef struct {
     uint32_t total_len;
     uint32_t buffer_len;
     uint8_t  *buffer;
-    uint32_t socket;
+    uint32_t sockfd;
 } iperf_ctrl_t;
 
 typedef struct {
@@ -53,13 +53,13 @@ inline static bool iperf_is_tcp_server(void)
     return ((s_iperf_ctrl.cfg.flag & IPERF_FLAG_SERVER) && (s_iperf_ctrl.cfg.flag & IPERF_FLAG_TCP));
 }
 
-int iperf_get_socket_error_code(int socket)
+int iperf_get_socket_error_code(int sockfd)
 {
     uint32_t optlen = sizeof(int);
     int result;
     int err;
 
-    err = getsockopt(socket, SOL_SOCKET, SO_ERROR, &result, &optlen);
+    err = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &result, &optlen);
     if (err == -1) {
         ESP_LOGE(TAG, "getsockopt failed: ret=%d", err);
         return -1;
@@ -68,9 +68,9 @@ int iperf_get_socket_error_code(int socket)
     return result;
 }
 
-int iperf_show_socket_error_reason(const char *str, int socket)
+int iperf_show_socket_error_reason(const char *str, int sockfd)
 {
-    int err = iperf_get_socket_error_code(socket);
+    int err = iperf_get_socket_error_code(sockfd);
 
     if (err != 0) {
         ESP_LOGW(TAG, "%s error, error code: %d, reason: %s", str, err, strerror(err));
@@ -129,7 +129,7 @@ esp_err_t iperf_run_tcp_server(void)
     uint8_t *buffer;
     int listen_socket;
     struct timeval t;
-    int socket;
+    int sockfd;
     int opt;
 
     listen_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -161,8 +161,8 @@ esp_err_t iperf_run_tcp_server(void)
     while (!s_iperf_ctrl.finish) {
 
         /*TODO need to change to non-block mode */
-        socket = accept(listen_socket, (struct sockaddr*)&remote_addr, &addr_len);
-        if (socket < 0) {
+        sockfd = accept(listen_socket, (struct sockaddr*)&remote_addr, &addr_len);
+        if (sockfd < 0) {
             iperf_show_socket_error_reason("tcp server listen", listen_socket);
             close(listen_socket);
             return ESP_FAIL;
@@ -170,11 +170,11 @@ esp_err_t iperf_run_tcp_server(void)
             printf("accept: %s,%d\n", inet_ntoa(remote_addr.sin_addr), htons(remote_addr.sin_port));
 
             t.tv_sec = IPERF_SOCKET_RX_TIMEOUT;
-            setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &t, sizeof(t));
+            setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &t, sizeof(t));
         }
 
         while (!s_iperf_ctrl.finish) {
-            actual_recv = recv(socket, buffer, want_recv, 0);
+            actual_recv = recv(sockfd, buffer, want_recv, 0);
             if (actual_recv < 0) {
                 iperf_show_socket_error_reason("tcp server recv", listen_socket);
                 break;
@@ -183,7 +183,7 @@ esp_err_t iperf_run_tcp_server(void)
             }
         }
 
-        close(socket);
+        close(sockfd);
     }
 
     s_iperf_ctrl.finish = true;
@@ -199,22 +199,22 @@ esp_err_t iperf_run_udp_server(void)
     struct timeval t;
     int want_recv = 0;
     uint8_t *buffer;
-    int socket;
+    int sockfd;
     int opt;
 
-    socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (socket < 0) {
-        iperf_show_socket_error_reason("udp server create", socket);
+    sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (sockfd < 0) {
+        iperf_show_socket_error_reason("udp server create", sockfd);
         return ESP_FAIL;
     }
 
-    setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
     addr.sin_family = AF_INET;
     addr.sin_port = htons(s_iperf_ctrl.cfg.sport);
     addr.sin_addr.s_addr = s_iperf_ctrl.cfg.sip;
-    if (bind(socket, (struct sockaddr*)&addr, sizeof(addr)) != 0) {
-        iperf_show_socket_error_reason("udp server bind", socket);
+    if (bind(sockfd, (struct sockaddr*)&addr, sizeof(addr)) != 0) {
+        iperf_show_socket_error_reason("udp server bind", sockfd);
         return ESP_FAIL;
     }
 
@@ -229,19 +229,19 @@ esp_err_t iperf_run_udp_server(void)
     ESP_LOGI(TAG, "want recv=%d", want_recv);
 
     t.tv_sec = IPERF_SOCKET_RX_TIMEOUT;
-    setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &t, sizeof(t));
+    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &t, sizeof(t));
 
     while (!s_iperf_ctrl.finish) {
-        actual_recv = recvfrom(socket, buffer, want_recv, 0, (struct sockaddr *)&addr, &addr_len);
+        actual_recv = recvfrom(sockfd, buffer, want_recv, 0, (struct sockaddr *)&addr, &addr_len);
         if (actual_recv < 0) {
-            iperf_show_socket_error_reason("udp server recv", socket);
+            iperf_show_socket_error_reason("udp server recv", sockfd);
         } else {
             s_iperf_ctrl.total_len += actual_recv;
         }
     }
 
     s_iperf_ctrl.finish = true;
-    close(socket);
+    close(sockfd);
     return ESP_OK;
 }
 
@@ -254,24 +254,24 @@ esp_err_t iperf_run_udp_client(void)
     uint32_t delay = 1;
     int want_send = 0;
     uint8_t *buffer;
-    int socket;
+    int sockfd;
     int opt;
     int err;
     int id;
 
-    socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (socket < 0) {
-        iperf_show_socket_error_reason("udp server create", socket);
+    sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (sockfd < 0) {
+        iperf_show_socket_error_reason("udp server create", sockfd);
         return ESP_FAIL;
     }
 
-    setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
     addr.sin_family = AF_INET;
     addr.sin_port = 0;
     addr.sin_addr.s_addr = s_iperf_ctrl.cfg.sip;
-    if (bind(socket, (struct sockaddr*)&addr, sizeof(addr)) != 0) {
-        iperf_show_socket_error_reason("udp server bind", socket);
+    if (bind(sockfd, (struct sockaddr*)&addr, sizeof(addr)) != 0) {
+        iperf_show_socket_error_reason("udp server bind", sockfd);
         return ESP_FAIL;
     }
 
@@ -293,10 +293,10 @@ esp_err_t iperf_run_udp_client(void)
         }
 
         retry = false;
-        actual_send = sendto(socket, buffer, want_send, 0, (struct sockaddr *)&addr, sizeof(addr));
+        actual_send = sendto(sockfd, buffer, want_send, 0, (struct sockaddr *)&addr, sizeof(addr));
 
         if (actual_send != want_send) {
-            err = iperf_get_socket_error_code(socket);
+            err = iperf_get_socket_error_code(sockfd);
             if (err == ENOMEM) {
                 vTaskDelay(delay);
                 if (delay < IPERF_MAX_DELAY) {
@@ -314,7 +314,7 @@ esp_err_t iperf_run_udp_client(void)
     }
 
     s_iperf_ctrl.finish = true;
-    close(socket);
+    close(sockfd);
     return ESP_OK;
 }
 
@@ -325,22 +325,22 @@ esp_err_t iperf_run_tcp_client(void)
     int actual_send = 0;
     int want_send = 0;
     uint8_t *buffer;
-    int socket;
+    int sockfd;
     int opt;
 
-    socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (socket < 0) {
-        iperf_show_socket_error_reason("tcp client create", socket);
+    sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (sockfd < 0) {
+        iperf_show_socket_error_reason("tcp client create", sockfd);
         return ESP_FAIL;
     }
 
-    setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
     addr.sin_family = AF_INET;
     addr.sin_port = 0;
     addr.sin_addr.s_addr = s_iperf_ctrl.cfg.sip;
-    if (bind(socket, (struct sockaddr*)&addr, sizeof(addr)) != 0) {
-        iperf_show_socket_error_reason("tcp client bind", socket);
+    if (bind(sockfd, (struct sockaddr*)&addr, sizeof(addr)) != 0) {
+        iperf_show_socket_error_reason("tcp client bind", sockfd);
         return ESP_FAIL;
     }
 
@@ -348,8 +348,8 @@ esp_err_t iperf_run_tcp_client(void)
     addr.sin_family = AF_INET;
     addr.sin_port = htons(s_iperf_ctrl.cfg.dport);
     addr.sin_addr.s_addr = s_iperf_ctrl.cfg.dip;
-    if (connect(socket, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-        iperf_show_socket_error_reason("tcp client connect", socket);
+    if (connect(sockfd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+        iperf_show_socket_error_reason("tcp client connect", sockfd);
         return ESP_FAIL;
     }
 
@@ -357,7 +357,7 @@ esp_err_t iperf_run_tcp_client(void)
     buffer = s_iperf_ctrl.buffer;
     want_send = s_iperf_ctrl.buffer_len;
     while (!s_iperf_ctrl.finish) {
-        actual_send = send(socket, buffer, want_send, 0);
+        actual_send = send(sockfd, buffer, want_send, 0);
         if (actual_send <= 0) {
             vTaskDelay(1);
         } else {
@@ -365,7 +365,7 @@ esp_err_t iperf_run_tcp_client(void)
         }
     }
 
-    close(socket);
+    close(sockfd);
     return ESP_OK;
 }
 

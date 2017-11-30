@@ -558,62 +558,110 @@ int lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptse
 int lwip_ioctl_r(int s, long cmd, void *argp);
 int lwip_fcntl_r(int s, int cmd, int val);
 
-#define accept(s,addr,addrlen)                    lwip_accept_r(s,addr,addrlen)
-#define bind(s,name,namelen)                      lwip_bind_r(s,name,namelen)
-#define shutdown(s,how)                           lwip_shutdown_r(s,how)
-#define getpeername(s,name,namelen)               lwip_getpeername_r(s,name,namelen)
-#define getsockname(s,name,namelen)               lwip_getsockname_r(s,name,namelen)
-#define setsockopt(s,level,optname,opval,optlen)  lwip_setsockopt_r(s,level,optname,opval,optlen)
-#define getsockopt(s,level,optname,opval,optlen)  lwip_getsockopt_r(s,level,optname,opval,optlen)
-#define closesocket(s)                            lwip_close_r(s)
-#define connect(s,name,namelen)                   lwip_connect_r(s,name,namelen)
-#define listen(s,backlog)                         lwip_listen_r(s,backlog)
-#define recv(s,mem,len,flags)                     lwip_recv_r(s,mem,len,flags)
-#define recvfrom(s,mem,len,flags,from,fromlen)    lwip_recvfrom_r(s,mem,len,flags,from,fromlen)
-#define send(s,dataptr,size,flags)                lwip_send_r(s,dataptr,size,flags)
-#define sendmsg(s,message,flags)                  lwip_sendmsg_r(s,message,flags)
-#define sendto(s,dataptr,size,flags,to,tolen)     lwip_sendto_r(s,dataptr,size,flags,to,tolen)
-#define socket(domain,type,protocol)              lwip_socket(domain,type,protocol)
-#define select(maxfdp1,readset,writeset,exceptset,timeout)     lwip_select(maxfdp1,readset,writeset,exceptset,timeout)
-#define ioctlsocket(s,cmd,argp)                   lwip_ioctl_r(s,cmd,argp)
+static inline int accept(int s,struct sockaddr *addr,socklen_t *addrlen)
+{ return lwip_accept_r(s,addr,addrlen); }
+static inline int bind(int s,const struct sockaddr *name, socklen_t namelen)
+{ return lwip_bind_r(s,name,namelen); }
+static inline int shutdown(int s,int how)
+{ return lwip_shutdown_r(s,how); }
+static inline int getpeername(int s,struct sockaddr *name,socklen_t *namelen)
+{ return lwip_getpeername_r(s,name,namelen); }
+static inline int getsockname(int s,struct sockaddr *name,socklen_t *namelen)
+{ return lwip_getsockname_r(s,name,namelen); }
+static inline int setsockopt(int s,int level,int optname,const void *opval,socklen_t optlen)
+{ return lwip_setsockopt_r(s,level,optname,opval,optlen); }
+static inline int getsockopt(int s,int level,int optname,void *opval,socklen_t *optlen)
+{ return lwip_getsockopt_r(s,level,optname,opval,optlen); }
+static inline int closesocket(int s)
+{ return lwip_close_r(s); }
+static inline int connect(int s,const struct sockaddr *name,socklen_t namelen)
+{ return lwip_connect_r(s,name,namelen); }
+static inline int listen(int s,int backlog)
+{ return lwip_listen_r(s,backlog); }
+static inline int recv(int s,void *mem,size_t len,int flags)
+{ return lwip_recv_r(s,mem,len,flags); }
+static inline int recvfrom(int s,void *mem,size_t len,int flags,struct sockaddr *from,socklen_t *fromlen)
+{ return lwip_recvfrom_r(s,mem,len,flags,from,fromlen); }
+static inline int send(int s,const void *dataptr,size_t size,int flags)
+{ return lwip_send_r(s,dataptr,size,flags); }
+static inline int sendmsg(int s,const struct msghdr *message,int flags)
+{ return lwip_sendmsg_r(s,message,flags); }
+static inline int sendto(int s,const void *dataptr,size_t size,int flags,const struct sockaddr *to,socklen_t tolen)
+{ return lwip_sendto_r(s,dataptr,size,flags,to,tolen); }
+static inline int socket(int domain,int type,int protocol)
+{ return lwip_socket(domain,type,protocol); }
+static inline int select(int maxfdp1,fd_set *readset,fd_set *writeset,fd_set *exceptset,struct timeval *timeout)
+{ return lwip_select(maxfdp1,readset,writeset,exceptset,timeout); }
+static inline int ioctlsocket(int s,long cmd,void *argp)
+{ return lwip_ioctl_r(s,cmd,argp); }
 
 #if LWIP_POSIX_SOCKETS_IO_NAMES
-#define read(s,mem,len)                           lwip_read_r(s,mem,len)
-#define write(s,dataptr,len)                      lwip_write_r(s,dataptr,len)
-#define writev(s,iov,iovcnt)                      lwip_writev_r(s,iov,iovcnt)
-#define close(s)                                  lwip_close_r(s)
-#define fcntl(s,cmd,val)                          lwip_fcntl_r(s,cmd,val)
-#define ioctl(s,cmd,argp)                         lwip_ioctl_r(s,cmd,argp)
-#endif /* LWIP_POSIX_SOCKETS_IO_NAMES */
+static inline int read(int s,void *mem,size_t len)
+{ return lwip_read_r(s,mem,len); }
+static inline int write(int s,const void *dataptr,size_t len)
+{ return lwip_write_r(s,dataptr,len); }
+static inline int writev(int s,const struct iovec *iov,int iovcnt)
+{ return lwip_writev_r(s,iov,iovcnt); }
+static inline int close(int s)
+{ return lwip_close_r(s); }
+static inline int fcntl(int s,int cmd,int val)
+{ return lwip_fcntl_r(s,cmd,val); }
+static inline int ioctl(int s,long cmd,void *argp)
+{ return lwip_ioctl_r(s,cmd,argp); }
+#endif /* { RETURN LWIP_POSIX_SOCKETS_IO_NAMES */
 
 #else
 
-#define accept(s,addr,addrlen)                    lwip_accept(s,addr,addrlen)
-#define bind(s,name,namelen)                      lwip_bind(s,name,namelen)
-#define shutdown(s,how)                           lwip_shutdown(s,how)
-#define getpeername(s,name,namelen)               lwip_getpeername(s,name,namelen)
-#define getsockname(s,name,namelen)               lwip_getsockname(s,name,namelen)
-#define setsockopt(s,level,optname,opval,optlen)  lwip_setsockopt(s,level,optname,opval,optlen)
-#define getsockopt(s,level,optname,opval,optlen)  lwip_getsockopt(s,level,optname,opval,optlen)
-#define closesocket(s)                            lwip_close(s)
-#define connect(s,name,namelen)                   lwip_connect(s,name,namelen)
-#define listen(s,backlog)                         lwip_listen(s,backlog)
-#define recv(s,mem,len,flags)                     lwip_recv(s,mem,len,flags)
-#define recvfrom(s,mem,len,flags,from,fromlen)    lwip_recvfrom(s,mem,len,flags,from,fromlen)
-#define send(s,dataptr,size,flags)                lwip_send(s,dataptr,size,flags)
-#define sendmsg(s,message,flags)                  lwip_sendmsg(s,message,flags)
-#define sendto(s,dataptr,size,flags,to,tolen)     lwip_sendto(s,dataptr,size,flags,to,tolen)
-#define socket(domain,type,protocol)              lwip_socket(domain,type,protocol)
-#define select(maxfdp1,readset,writeset,exceptset,timeout)     lwip_select(maxfdp1,readset,writeset,exceptset,timeout)
-#define ioctlsocket(s,cmd,argp)                   lwip_ioctl(s,cmd,argp)
+static inline int accept(int s,struct sockaddr *addr,socklen_t *addrlen)
+{ return lwip_accept(s,addr,addrlen); }
+static inline int bind(int s,const struct sockaddr *name,socklen_t namelen)
+{ return lwip_bind(s,name,namelen); }
+static inline int shutdown(int s,int how)
+{ return lwip_shutdown(s,how); }
+static inline int getpeername(int s,struct sockaddr *name,socklen_t *namelen)
+{ return lwip_getpeername(s,name,namelen); }
+static inline int getsockname(int s,struct sockaddr *name,socklen_t *namelen)
+{ return lwip_getsockname(s,name,namelen); }
+static inline int setsockopt(int s,int level,int optname,const void *opval,socklen_t optlen)
+{ return lwip_setsockopt(s,level,optname,opval,optlen); }
+static inline int getsockopt(int s,int level,int optname,void *opval,socklen_t *optlen)
+{ return lwip_getsockopt(s,level,optname,opval,optlen); }
+static inline int closesocket(int s)
+{ return lwip_close(s); }
+static inline int connect(int s,const struct sockaddr *name,socklen_t namelen)
+{ return lwip_connect(s,name,namelen); }
+static inline int listen(int s,int backlog)
+{ return lwip_listen(s,backlog); }
+static inline int recv(int s,void *mem,size_t len,int flags)
+{ return lwip_recv(s,mem,len,flags); }
+static inline int recvfrom(int s,void *mem,size_t len,int flags,struct sockaddr *from,socklen_t *fromlen)
+{ return lwip_recvfrom(s,mem,len,flags,from,fromlen); }
+static inline int send(int s,const void *dataptr,size_t size,int flags)
+{ return lwip_send(s,dataptr,size,flags); }
+static inline int sendmsg(int s,const struct msghdr *message,int flags)
+{ return lwip_sendmsg(s,message,flags); }
+static inline int sendto(int s,const void *dataptr,size_t size,int flags,const struct sockaddr *to,socklen_t tolen)
+{ return lwip_sendto(s,dataptr,size,flags,to,tolen); }
+static inline int socket(int domain,int type,int protocol)
+{ return lwip_socket(domain,type,protocol); }
+static inline int select(int maxfdp1,fd_set t*readset,fd_set *writeset,fd_set *exceptset,struct timeval *timeout)
+{ return lwip_select(maxfdp1,readset,writeset,exceptset,timeout); }
+static inline int ioctlsocket(int s,long cmd,void *argp)
+{ return lwip_ioctl(s,cmd,argp); }
 
 #if LWIP_POSIX_SOCKETS_IO_NAMES
-#define read(s,mem,len)                           lwip_read(s,mem,len)
-#define write(s,dataptr,len)                      lwip_write(s,dataptr,len)
-#define writev(s,iov,iovcnt)                      lwip_writev(s,iov,iovcnt)
-#define close(s)                                  lwip_close(s)
-#define fcntl(s,cmd,val)                          lwip_fcntl(s,cmd,val)
-#define ioctl(s,cmd,argp)                         lwip_ioctl(s,cmd,argp)
+static inline int read(int s,void *mem,size_t len)
+{ return lwip_read(s,mem,len); }
+static inline int write(int s,const void *dataptr,size_t len)
+{ return lwip_write(s,dataptr,len); }
+static inline int writev(int s,const struct iovec *iov,int iovcnt)
+{ return lwip_writev(s,iov,iovcnt); }
+static inline int close(int s)
+{ return lwip_close(s); }
+static inline int fcntl(int s,long cmd,void *val)
+{ return lwip_fcntl(s,cmd,val); }
+static inline int ioctl(int s,int cmd,int argp)
+{ return lwip_ioctl(s,cmd,argp); }
 #endif /* LWIP_POSIX_SOCKETS_IO_NAMES */
 #endif /* ESP_THREAD_SAFE */
 
