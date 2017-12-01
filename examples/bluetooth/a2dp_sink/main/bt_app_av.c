@@ -26,6 +26,10 @@
 #include "esp_a2dp_api.h"
 #include "esp_avrc_api.h"
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "driver/i2s.h"
+
 /* a2dp event handler */
 static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param);
 /* avrc event handler */
@@ -53,6 +57,7 @@ void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
 
 void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len)
 {
+    i2s_write_bytes(0, (const char *)data, len, portMAX_DELAY);
     if (++m_pkt_cnt % 100 == 0) {
         ESP_LOGE(BT_AV_TAG, "audio data pkt cnt %u", m_pkt_cnt);
     }
@@ -96,7 +101,23 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
         ESP_LOGI(BT_AV_TAG, "a2dp audio_cfg_cb , codec type %d", a2d->audio_cfg.mcc.type);
         // for now only SBC stream is supported
         if (a2d->audio_cfg.mcc.type == ESP_A2D_MCT_SBC) {
-            ESP_LOGI(BT_AV_TAG, "audio player configured");
+            int sample_rate = 16000;
+            char oct0 = a2d->audio_cfg.mcc.cie.sbc[0];
+            if (oct0 & (0x01 << 6)) {
+                sample_rate = 32000;
+            } else if (oct0 & (0x01 << 5)) {
+                sample_rate = 44100;
+            } else if (oct0 & (0x01 << 4)) {
+                sample_rate = 48000;
+            }
+            i2s_set_clk(0, sample_rate, 16, 2);
+        
+            ESP_LOGI(BT_AV_TAG, "configure audio player %x-%x-%x-%x\n",
+                     a2d->audio_cfg.mcc.cie.sbc[0],
+                     a2d->audio_cfg.mcc.cie.sbc[1],
+                     a2d->audio_cfg.mcc.cie.sbc[2],
+                     a2d->audio_cfg.mcc.cie.sbc[3]);
+            ESP_LOGI(BT_AV_TAG, "audio player configured, samplerate=%d", sample_rate);
         }
         break;
     }
