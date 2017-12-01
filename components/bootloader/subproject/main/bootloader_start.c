@@ -745,12 +745,11 @@ static void vddsdio_configure()
 {
 #if CONFIG_BOOTLOADER_VDDSDIO_BOOST
     rtc_vddsdio_config_t cfg = rtc_vddsdio_get_config();
-    if (cfg.tieh == 0) {    // 1.8V is used
+    if (cfg.enable == 1 && cfg.tieh == 0) {    // VDDSDIO regulator is enabled @ 1.8V
         cfg.drefh = 3;
         cfg.drefm = 3;
         cfg.drefl = 3;
         cfg.force = 1;
-        cfg.enable = 1;
         rtc_vddsdio_set_config(cfg);
         ets_delay_us(10); // wait for regulator to become stable
     }
