@@ -33,7 +33,7 @@
 #include "soc/timer_group_reg.h"
 #include "esp_log.h"
 #include "driver/timer.h"
-
+#include "driver/periph_ctrl.h"
 #include "esp_task_wdt.h"
 
 //Assertion macro where, if 'cond' is false, will exit the critical section and return 'ret'
@@ -183,6 +183,7 @@ esp_err_t esp_task_wdt_init(uint32_t timeout, bool panic)
         ESP_ERROR_CHECK(esp_intr_alloc(ETS_TG0_WDT_LEVEL_INTR_SOURCE, 0, task_wdt_isr, NULL, &twdt_config->intr_handle))
 
         //Configure hardware timer
+        periph_module_enable(PERIPH_TIMG0_MODULE);
         TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;               //Disable write protection
         TIMERG0.wdt_config0.sys_reset_length=7;                 //3.2uS
         TIMERG0.wdt_config0.cpu_reset_length=7;                 //3.2uS

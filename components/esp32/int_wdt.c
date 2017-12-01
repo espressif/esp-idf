@@ -29,7 +29,7 @@
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
 #include "driver/timer.h"
-
+#include "driver/periph_ctrl.h"
 #include "esp_int_wdt.h"
 
 #if CONFIG_INT_WDT
@@ -71,6 +71,7 @@ static void IRAM_ATTR tick_hook(void) {
 
 
 void esp_int_wdt_init() {
+    periph_module_enable(PERIPH_TIMG1_MODULE);
     TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
     TIMERG1.wdt_config0.sys_reset_length=7;                 //3.2uS
     TIMERG1.wdt_config0.cpu_reset_length=7;                 //3.2uS
