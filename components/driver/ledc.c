@@ -76,15 +76,15 @@ static IRAM_ATTR void ledc_ls_channel_update(ledc_mode_t speed_mode, ledc_channe
     }
 }
 
-esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t div_num, uint32_t bit_num,
+esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t clock_divider, uint32_t duty_resolution,
         ledc_clk_src_t clk_src)
 {
     LEDC_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, LEDC_MODE_ERR_STR, ESP_ERR_INVALID_ARG);
     LEDC_CHECK(timer_sel <= LEDC_TIMER_3, LEDC_TIMER_ERR_STR, ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&ledc_spinlock);
-    LEDC.timer_group[speed_mode].timer[timer_sel].conf.div_num = div_num;
+    LEDC.timer_group[speed_mode].timer[timer_sel].conf.clock_divider = clock_divider;
     LEDC.timer_group[speed_mode].timer[timer_sel].conf.tick_sel = clk_src;
-    LEDC.timer_group[speed_mode].timer[timer_sel].conf.bit_num = bit_num;
+    LEDC.timer_group[speed_mode].timer[timer_sel].conf.duty_resolution = duty_resolution;
     ledc_ls_timer_update(speed_mode, timer_sel);
     portEXIT_CRITICAL(&ledc_spinlock);
     return ESP_OK;
@@ -185,13 +185,13 @@ esp_err_t ledc_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags,
 esp_err_t ledc_timer_config(const ledc_timer_config_t* timer_conf)
 {
     int freq_hz = timer_conf->freq_hz;
-    int bit_num = timer_conf->bit_num;
+    int duty_resolution = timer_conf->duty_resolution;
     int timer_num = timer_conf->timer_num;
     int speed_mode = timer_conf->speed_mode;
     LEDC_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, LEDC_MODE_ERR_STR, ESP_ERR_INVALID_ARG);
     periph_module_enable(PERIPH_LEDC_MODULE);
-    if (freq_hz == 0 || bit_num == 0 || bit_num > LEDC_TIMER_15_BIT) {
-        ESP_LOGE(LEDC_TAG, "freq_hz=%u bit_num=%u", freq_hz, bit_num);
+    if (freq_hz == 0 || duty_resolution == 0 || duty_resolution > LEDC_TIMER_15_BIT) {
+        ESP_LOGE(LEDC_TAG, "freq_hz=%u duty_resolution=%u", freq_hz, duty_resolution);
         return ESP_ERR_INVALID_ARG;
     }
     if (timer_num > LEDC_TIMER_3) {
@@ -199,14 +199,14 @@ esp_err_t ledc_timer_config(const ledc_timer_config_t* timer_conf)
         return ESP_ERR_INVALID_ARG;
     }
     esp_err_t ret = ESP_OK;
-    uint32_t precision = ( 0x1 << bit_num );  // 2**depth
+    uint32_t precision = ( 0x1 << duty_resolution );  // 2**depth
     // Try calculating divisor based on LEDC_APB_CLK
     ledc_clk_src_t timer_clk_src = LEDC_APB_CLK;
     // div_param is a Q10.8 fixed point value
     uint64_t div_param = ( (uint64_t) LEDC_APB_CLK_HZ << 8 ) / freq_hz / precision;
     if (div_param < 256) {
         // divisor is too low
-        ESP_LOGE(LEDC_TAG, "requested frequency and bit depth can not be achieved, try reducing freq_hz or bit_num. div_param=%d",
+        ESP_LOGE(LEDC_TAG, "requested frequency and duty resolution can not be achieved, try reducing freq_hz or duty_resolution. div_param=%d",
             (uint32_t ) div_param);
         ret = ESP_FAIL;
     }
@@ -215,7 +215,7 @@ esp_err_t ledc_timer_config(const ledc_timer_config_t* timer_conf)
         timer_clk_src = LEDC_REF_TICK;
         div_param = ((uint64_t) LEDC_REF_CLK_HZ << 8) / freq_hz / precision;
         if (div_param < 256 || div_param > LEDC_DIV_NUM_HSTIMER0_V) {
-            ESP_LOGE(LEDC_TAG, "requested frequency and bit depth can not be achieved, try increasing freq_hz or bit_num. div_param=%d",
+            ESP_LOGE(LEDC_TAG, "requested frequency and duty resolution can not be achieved, try increasing freq_hz or duty_resolution. div_param=%d",
                 (uint32_t ) div_param);
             ret = ESP_FAIL;
         }
@@ -226,7 +226,7 @@ esp_err_t ledc_timer_config(const ledc_timer_config_t* timer_conf)
         }
     }
     // set timer parameters
-    ledc_timer_set(speed_mode, timer_num, div_param, bit_num, timer_clk_src);
+    ledc_timer_set(speed_mode, timer_num, div_param, duty_resolution, timer_clk_src);
     // reset timer
     ledc_timer_rst(speed_mode, timer_num);
     return ret;
@@ -263,7 +263,7 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t* ledc_conf)
     esp_err_t ret = ESP_OK;
     /*set channel parameters*/
     /*   channel parameters decide how the waveform looks like in one period*/
-    /*   set channel duty, duty range is (0 ~ ((2 ** bit_num) - 1))*/
+    /*   set channel duty, duty range is (0 ~ ((2 ** duty_resolution) - 1))*/
     ledc_set_duty(speed_mode, ledc_channel, duty);
     /*update duty settings*/
     ledc_update_duty(speed_mode, ledc_channel);
@@ -366,20 +366,20 @@ esp_err_t ledc_set_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num, uint32_t
     LEDC_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, LEDC_MODE_ERR_STR, ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&ledc_spinlock);
     esp_err_t ret = ESP_OK;
-    uint32_t div_num = 0;
-    uint32_t bit_num = LEDC.timer_group[speed_mode].timer[timer_num].conf.bit_num;
+    uint32_t clock_divider = 0;
+    uint32_t duty_resolution = LEDC.timer_group[speed_mode].timer[timer_num].conf.duty_resolution;
     uint32_t timer_source_clk = LEDC.timer_group[speed_mode].timer[timer_num].conf.tick_sel;
-    uint32_t precision = (0x1 << bit_num);
+    uint32_t precision = (0x1 << duty_resolution);
     if (timer_source_clk == LEDC_APB_CLK) {
-        div_num = ((uint64_t) LEDC_APB_CLK_HZ << 8) / freq_hz / precision;
+        clock_divider = ((uint64_t) LEDC_APB_CLK_HZ << 8) / freq_hz / precision;
     } else {
-        div_num = ((uint64_t) LEDC_REF_CLK_HZ << 8) / freq_hz / precision;
+        clock_divider = ((uint64_t) LEDC_REF_CLK_HZ << 8) / freq_hz / precision;
     }
-    if (div_num <= 256 || div_num > LEDC_DIV_NUM_HSTIMER0) {
-        ESP_LOGE(LEDC_TAG, "div param err,div_param=%u", div_num);
+    if (clock_divider <= 256 || clock_divider > LEDC_DIV_NUM_HSTIMER0) {
+        ESP_LOGE(LEDC_TAG, "div param err,div_param=%u", clock_divider);
         ret = ESP_FAIL;
     }
-    LEDC.timer_group[speed_mode].timer[timer_num].conf.div_num = div_num;
+    LEDC.timer_group[speed_mode].timer[timer_num].conf.clock_divider = clock_divider;
     portEXIT_CRITICAL(&ledc_spinlock);
     return ret;
 }
@@ -390,13 +390,13 @@ uint32_t ledc_get_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num)
     portENTER_CRITICAL(&ledc_spinlock);
     uint32_t freq = 0;
     uint32_t timer_source_clk = LEDC.timer_group[speed_mode].timer[timer_num].conf.tick_sel;
-    uint32_t bit_num = LEDC.timer_group[speed_mode].timer[timer_num].conf.bit_num;
-    uint32_t div_num = LEDC.timer_group[speed_mode].timer[timer_num].conf.div_num;
-    uint32_t precision = (0x1 << bit_num);
+    uint32_t duty_resolution = LEDC.timer_group[speed_mode].timer[timer_num].conf.duty_resolution;
+    uint32_t clock_divider = LEDC.timer_group[speed_mode].timer[timer_num].conf.clock_divider;
+    uint32_t precision = (0x1 << duty_resolution);
     if (timer_source_clk == LEDC_APB_CLK) {
-        freq = ((uint64_t) LEDC_APB_CLK_HZ << 8) / precision / div_num;
+        freq = ((uint64_t) LEDC_APB_CLK_HZ << 8) / precision / clock_divider;
     } else {
-        freq = ((uint64_t) LEDC_REF_CLK_HZ << 8) / precision / div_num;
+        freq = ((uint64_t) LEDC_REF_CLK_HZ << 8) / precision / clock_divider;
     }
     portEXIT_CRITICAL(&ledc_spinlock);
     return freq;
@@ -506,7 +506,7 @@ esp_err_t ledc_set_fade_with_time(ledc_mode_t speed_mode, ledc_channel_t channel
     LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK , LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
 
     int timer_sel = LEDC.channel_group[speed_mode].channel[channel].conf0.timer_sel;
-    uint32_t max_duty = (1 << (LEDC.timer_group[speed_mode].timer[timer_sel].conf.bit_num)) - 1;
+    uint32_t max_duty = (1 << (LEDC.timer_group[speed_mode].timer[timer_sel].conf.duty_resolution)) - 1;
     LEDC_CHECK(target_duty <= max_duty, LEDC_FADE_TARGET_ERR_STR, ESP_ERR_INVALID_ARG);
     uint32_t freq = ledc_get_freq(speed_mode, timer_sel);
     uint32_t duty_cur = LEDC.channel_group[speed_mode].channel[channel].duty_rd.duty_read >> LEDC_DUTY_DECIMAL_BIT_NUM;
@@ -539,7 +539,7 @@ esp_err_t ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t channel
     LEDC_CHECK(cycle_num > 0, LEDC_CYCLE_ERR_STR, ESP_ERR_INVALID_ARG);
 
     int timer_sel = LEDC.channel_group[speed_mode].channel[channel].conf0.timer_sel;
-    uint32_t max_duty = (1 << (LEDC.timer_group[speed_mode].timer[timer_sel].conf.bit_num)) - 1;
+    uint32_t max_duty = (1 << (LEDC.timer_group[speed_mode].timer[timer_sel].conf.duty_resolution)) - 1;
     LEDC_CHECK(target_duty <= max_duty, LEDC_FADE_TARGET_ERR_STR, ESP_ERR_INVALID_ARG);
     //disable the interrupt, so the operation will not mess up
     ledc_enable_intr_type(speed_mode, channel, LEDC_INTR_DISABLE);
@@ -583,8 +583,8 @@ esp_err_t ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t channel
         s_ledc_fade_rec[speed_mode][channel]->cycle_num,
         s_ledc_fade_rec[speed_mode][channel]->scale
         );
-    int bit_num_ch0 = (speed_mode == LEDC_HIGH_SPEED_MODE) ? LEDC_DUTY_CHNG_END_HSCH0_INT_ENA_S : LEDC_DUTY_CHNG_END_LSCH0_INT_ENA_S;
-    LEDC.int_clr.val |= BIT(bit_num_ch0 + channel);
+    int duty_resolution_ch0 = (speed_mode == LEDC_HIGH_SPEED_MODE) ? LEDC_DUTY_CHNG_END_HSCH0_INT_ENA_S : LEDC_DUTY_CHNG_END_LSCH0_INT_ENA_S;
+    LEDC.int_clr.val |= BIT(duty_resolution_ch0 + channel);
     ledc_enable_intr_type(speed_mode, channel, LEDC_INTR_FADE_END);
     return ESP_OK;
 }

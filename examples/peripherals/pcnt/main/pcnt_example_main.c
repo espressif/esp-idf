@@ -96,10 +96,10 @@ static void ledc_init(void)
 {
     // Prepare and then apply the LEDC PWM timer configuration
     ledc_timer_config_t ledc_timer;
-    ledc_timer.speed_mode = LEDC_HIGH_SPEED_MODE;
-    ledc_timer.timer_num  = LEDC_TIMER_1;
-    ledc_timer.bit_num    = LEDC_TIMER_10_BIT;
-    ledc_timer.freq_hz    = 1;  // set output frequency at 1 Hz
+    ledc_timer.speed_mode       = LEDC_HIGH_SPEED_MODE;
+    ledc_timer.timer_num        = LEDC_TIMER_1;
+    ledc_timer.duty_resolution  = LEDC_TIMER_10_BIT;
+    ledc_timer.freq_hz          = 1;  // set output frequency at 1 Hz
     ledc_timer_config(&ledc_timer);
 
     // Prepare and then apply the LEDC PWM channel configuration

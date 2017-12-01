@@ -69,13 +69,13 @@ typedef volatile struct {
         struct {
             union {
                 struct {
-                    uint32_t bit_num:  5;                 /*This register controls the range of the counter in high speed timer. the counter range is [0 2**reg_hstimer0_lim] the max bit width for counter is 20.*/
-                    uint32_t div_num:   18;               /*This register is used to configure parameter for divider in high speed timer the least significant eight bits represent the decimal part.*/
-                    uint32_t pause:      1;               /*This bit is used to pause the counter in high speed timer*/
-                    uint32_t rst:        1;               /*This bit is used to reset high speed timer the counter will be 0 after reset.*/
-                    uint32_t tick_sel:   1;               /*This bit is used to choose apb_clk or ref_tick for high speed timer. 1'b1:apb_clk  0:ref_tick*/
+                    uint32_t duty_resolution:  5;         /*This register controls resolution of PWN duty by defining the bith width of timer's counter. The max bit width of the counter is 20.*/
+                    uint32_t clock_divider:   18;         /*This register is used to configure the divider of clock at the entry of timer. The least significant eight bits represent the decimal part.*/
+                    uint32_t pause:            1;         /*This bit is used to pause the counter in high speed timer*/
+                    uint32_t rst:              1;         /*This bit is used to reset high speed timer the counter will be 0 after reset.*/
+                    uint32_t tick_sel:         1;         /*This bit is used to choose apb_clk or ref_tick for high speed timer. 1'b1:apb_clk  0:ref_tick*/
                     uint32_t low_speed_update: 1;         /*This bit is only useful for low speed timer channels, reserved for high speed timers*/
-                    uint32_t reserved26: 5;
+                    uint32_t reserved26:       5;
                 };
                 uint32_t val;
             } conf;
