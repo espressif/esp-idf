@@ -1,5 +1,5 @@
 BinPath: 
-    path: test_bins/ESP32_IDF/SSC_BLE
+    path: SSC/ssc_bin/ESP32_IDF/SSC_BLE
     test app: SSC_BLE
 
 DUT: [SSC1]
