@@ -232,8 +232,9 @@ tBTA_GATTC_CLCB *bta_gattc_clcb_alloc(tBTA_GATTC_IF client_if, BD_ADDR remote_bd
             bdcpy(p_clcb->bda, remote_bda);
 
             p_clcb->p_rcb = bta_gattc_cl_get_regcb(client_if);
-            p_clcb->p_cmd_list = list_new(osi_free_func);
-
+            if (p_clcb->p_cmd_list == NULL) {
+                p_clcb->p_cmd_list = list_new(osi_free_func);
+            }
             if ((p_clcb->p_srcb = bta_gattc_find_srcb(remote_bda)) == NULL) {
                 p_clcb->p_srcb      = bta_gattc_srcb_alloc(remote_bda);
             }
@@ -310,6 +311,8 @@ void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB *p_clcb)
         p_clcb->p_q_cmd = NULL;
         // don't forget to clear the command queue before dealloc the clcb.
         list_clear(p_clcb->p_cmd_list);
+        osi_free((void *)p_clcb->p_cmd_list);
+        p_clcb->p_cmd_list = NULL;
         //osi_free_and_reset((void **)&p_clcb->p_q_cmd);
         memset(p_clcb, 0, sizeof(tBTA_GATTC_CLCB));
     } else {
