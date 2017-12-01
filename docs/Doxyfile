@@ -153,7 +153,17 @@ INPUT = \
     ../components/esp32/include/esp_pm.h \
     ../components/esp32/include/esp32/pm.h \
     ### esp_timer, High Resolution Timer
-    ../components/esp32/include/esp_timer.h
+    ../components/esp32/include/esp_timer.h \
+    ###
+    ### FreeRTOS
+    ###
+    ../components/freertos/include/freertos/task.h \
+    ../components/freertos/include/freertos/queue.h \
+    ../components/freertos/include/freertos/semphr.h \
+    ../components/freertos/include/freertos/timers.h \
+    ../components/freertos/include/freertos/event_groups.h \
+    ../components/freertos/include/freertos/ringbuf.h
+
 
 
 ## Get warnings for functions that have no documentation for their parameters or return value
@@ -165,7 +175,16 @@ WARN_NO_PARAMDOC = YES
 ENABLE_PREPROCESSING   = YES
 MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = YES
-PREDEFINED             = __attribute__(x)=
+PREDEFINED             = \
+    __attribute__(x)= \
+    IRAM_ATTR= \
+    configSUPPORT_DYNAMIC_ALLOCATION=1 \
+    configSUPPORT_STATIC_ALLOCATION=1 \
+    configQUEUE_REGISTRY_SIZE=1 \
+    configUSE_RECURSIVE_MUTEXES=1 \
+    configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS=1 \
+    configNUM_THREAD_LOCAL_STORAGE_POINTERS=1 \
+    configUSE_APPLICATION_TASK_TAG=1
 
 ## Do not complain about not having dot
 ##
