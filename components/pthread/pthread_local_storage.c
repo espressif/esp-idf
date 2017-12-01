@@ -42,7 +42,7 @@ typedef struct key_entry_t_ {
 // List of all keys created with pthread_key_create()
 SLIST_HEAD(key_list_t, key_entry_t_) s_keys = SLIST_HEAD_INITIALIZER(s_keys);
 
-static _lock_t s_keys_lock;
+static portMUX_TYPE s_keys_lock = portMUX_INITIALIZER_UNLOCKED;
 
 // List of all value entries associated with a thread via pthread_setspecific()
 typedef struct value_entry_t_ {
@@ -62,7 +62,7 @@ int pthread_key_create(pthread_key_t *key, pthread_destructor_t destructor)
         return ENOMEM;
     }
 
-    _lock_acquire_recursive(&s_keys_lock);
+    portENTER_CRITICAL(&s_keys_lock);
 
     const key_entry_t *head = SLIST_FIRST(&s_keys);
     new_key->key = (head == NULL) ? 1 : (head->key + 1);
@@ -71,27 +71,27 @@ int pthread_key_create(pthread_key_t *key, pthread_destructor_t destructor)
 
     SLIST_INSERT_HEAD(&s_keys, new_key, next);
 
-    _lock_release_recursive(&s_keys_lock);
+    portEXIT_CRITICAL(&s_keys_lock);
     return 0;
 }
 
 static key_entry_t *find_key(pthread_key_t key)
 {
-    _lock_acquire_recursive(&s_keys_lock);
+    portENTER_CRITICAL(&s_keys_lock);
     key_entry_t *result = NULL;;
     SLIST_FOREACH(result, &s_keys, next) {
         if(result->key == key) {
             break;
         }
     }
-    _lock_release_recursive(&s_keys_lock);
+    portEXIT_CRITICAL(&s_keys_lock);
     return result;
 }
 
 int pthread_key_delete(pthread_key_t key)
 {
 
-    _lock_acquire_recursive(&s_keys_lock);
+    portENTER_CRITICAL(&s_keys_lock);
 
     /* Ideally, we would also walk all tasks' thread local storage value_list here
        and delete any values associated with this key. We do not do this...
@@ -103,7 +103,7 @@ int pthread_key_delete(pthread_key_t key)
         free(entry);
     }
 
-    _lock_release_recursive(&s_keys_lock);
+    portEXIT_CRITICAL(&s_keys_lock);
 
     return 0;
 }
