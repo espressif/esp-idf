@@ -34,6 +34,7 @@
 #include "l2c_int.h"
 #include "gatt_int.h"
 #include "allocator.h"
+#include "mutex.h"
 
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
 #include "bta_hh_int.h"
@@ -46,6 +47,8 @@
 // #include "osi/include/log.h"
 
 #if GATTC_INCLUDED == TRUE && BLE_INCLUDED == TRUE
+
+static osi_mutex_t write_ccc_mutex;
 
 /*****************************************************************************
 **  Constants
@@ -125,6 +128,8 @@ static void bta_gattc_enable(tBTA_GATTC_CB *p_cb)
         /* initialize control block */
         memset(&bta_gattc_cb, 0, sizeof(tBTA_GATTC_CB));
         p_cb->state = BTA_GATTC_STATE_ENABLED;
+        // Create a write ccc mutex when the gatt client enable
+        osi_mutex_new(&write_ccc_mutex);
     } else {
         APPL_TRACE_DEBUG("GATTC is arelady enabled");
     }
@@ -151,6 +156,8 @@ void bta_gattc_disable(tBTA_GATTC_CB *p_cb)
         APPL_TRACE_ERROR("not enabled or disable in pogress");
         return;
     }
+    // Free the write ccc mutex when the gatt client disable
+    osi_mutex_free(&write_ccc_mutex);
 
     for (i = 0; i < BTA_GATTC_CL_MAX; i ++) {
         if (p_cb->cl_rcb[i].in_use) {
@@ -1637,9 +1644,16 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, BD_ADDR bda, UINT16 conn_id,
     else if ((transport == BT_TRANSPORT_LE) && (connected == FALSE) && (p_conn != NULL)){
             p_conn->service_change_ccc_written = FALSE;
             if (p_conn->ccc_timer_used == TRUE){
-                osi_free((void *)p_conn->service_change_ccc_timer.param);
+                assert(write_ccc_mutex != NULL);
+                osi_mutex_lock(&write_ccc_mutex, OSI_MUTEX_MAX_TIMEOUT);
+
+                if (p_conn->service_change_ccc_timer.param != 0) {
+                    osi_free((void *)p_conn->service_change_ccc_timer.param);
+                    p_conn->service_change_ccc_timer.param = (TIMER_PARAM_TYPE)0;
+                }
                 bta_sys_stop_timer(&(p_conn->service_change_ccc_timer));
                 p_conn->ccc_timer_used = FALSE;
+                osi_mutex_unlock(&write_ccc_mutex);
             }
     }
 
@@ -2340,7 +2354,11 @@ static void bta_gattc_wait4_service_change_ccc_cback (TIMER_LIST_ENT *p_tle)
     BOOLEAN start_ccc_timer = FALSE;
     UINT32 new_timeout;
 
+    assert(write_ccc_mutex != NULL);
+    osi_mutex_lock(&write_ccc_mutex, OSI_MUTEX_MAX_TIMEOUT);
+
     tBTA_GATTC_WAIT_CCC_TIMER *p_timer_param = (tBTA_GATTC_WAIT_CCC_TIMER*) p_tle->param;
+    p_tle->param = (TIMER_PARAM_TYPE)0;
     if (p_timer_param == NULL){
         APPL_TRACE_ERROR("p_timer_param is NULL in %s\n", __func__);
         return;
@@ -2381,6 +2399,7 @@ static void bta_gattc_wait4_service_change_ccc_cback (TIMER_LIST_ENT *p_tle)
     }
 
     osi_free(p_timer_param);
+    osi_mutex_unlock(&write_ccc_mutex);
 }
 
 #endif
