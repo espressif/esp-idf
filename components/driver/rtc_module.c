@@ -286,7 +286,7 @@ esp_err_t rtc_gpio_set_direction(gpio_num_t gpio_num, rtc_gpio_mode_t mode)
         rtc_gpio_output_enable(gpio_num);
         rtc_gpio_input_disable(gpio_num);
         break;
-    case RTC_GPIO_MODE_INPUT_OUTUT:
+    case RTC_GPIO_MODE_INPUT_OUTPUT:
         rtc_gpio_output_enable(gpio_num);
         rtc_gpio_input_enable(gpio_num);
         break;

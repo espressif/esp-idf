@@ -47,9 +47,9 @@ typedef struct {
 } rtc_gpio_desc_t;
 
 typedef enum {
-    RTC_GPIO_MODE_INPUT_ONLY , /*!< Pad output */
-    RTC_GPIO_MODE_OUTPUT_ONLY, /*!< Pad input */
-    RTC_GPIO_MODE_INPUT_OUTUT, /*!< Pad pull output + input */
+    RTC_GPIO_MODE_INPUT_ONLY , /*!< Pad input */
+    RTC_GPIO_MODE_OUTPUT_ONLY, /*!< Pad output */
+    RTC_GPIO_MODE_INPUT_OUTPUT, /*!< Pad pull input + output */
     RTC_GPIO_MODE_DISABLED,    /*!< Pad (output + input) disable */
 } rtc_gpio_mode_t;
 
