@@ -98,7 +98,7 @@ static tAVRC_STS avrc_bld_set_abs_volume_cmd (tAVRC_SET_VOLUME_CMD *p_cmd, BT_HD
 **                  Otherwise, the error code.
 **
 *******************************************************************************/
-static tAVRC_STS avrc_bld_vol_change_notfn(BT_HDR *p_pkt)
+static tAVRC_STS avrc_bld_register_change_notfn(UINT8 event_id, UINT32 event_parameter, BT_HDR *p_pkt)
 {
     UINT8   *p_data, *p_start;
 
@@ -109,8 +109,8 @@ static tAVRC_STS avrc_bld_vol_change_notfn(BT_HDR *p_pkt)
     p_data = p_start + 2; /* pdu + rsvd */
     /* add fixed length 5 -*/
     UINT16_TO_BE_STREAM(p_data, 5);
-    UINT8_TO_BE_STREAM(p_data, AVRC_EVT_VOLUME_CHANGE);
-    UINT32_TO_BE_STREAM(p_data, 0);
+    UINT8_TO_BE_STREAM(p_data, event_id);
+    UINT32_TO_BE_STREAM(p_data, event_parameter);
     p_pkt->len = (p_data - p_start);
     return AVRC_STS_NO_ERROR;
 }
@@ -132,8 +132,7 @@ static BT_HDR *avrc_bld_init_cmd_buffer(tAVRC_COMMAND *p_cmd)
     AVRC_TRACE_API("avrc_bld_init_cmd_buffer: pdu=%x, opcode=%x", p_cmd->pdu, opcode);
 
     UINT16 offset = 0;
-    switch (opcode)
-    {
+    switch (opcode) {
     case AVRC_OP_PASS_THRU:
         offset  = AVRC_MSG_PASS_THRU_OFFSET;
         break;
@@ -148,7 +147,7 @@ static BT_HDR *avrc_bld_init_cmd_buffer(tAVRC_COMMAND *p_cmd)
     if (p_pkt) {
         UINT8 *p_data, *p_start;
 
-    p_pkt->layer_specific = AVCT_DATA_CTRL;
+        p_pkt->layer_specific = AVCT_DATA_CTRL;
         p_pkt->event    = opcode;
         p_pkt->offset   = offset;
         p_data = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
@@ -173,6 +172,69 @@ static BT_HDR *avrc_bld_init_cmd_buffer(tAVRC_COMMAND *p_cmd)
     }
     p_cmd->cmd.opcode = opcode;
     return p_pkt;
+}
+
+/*******************************************************************************
+**
+** Function         avrc_bld_set_player_value_cmd
+**
+** Description      This function builds the Set Player Application Value command.
+**
+** Returns          AVRC_STS_NO_ERROR, if the command is built successfully
+**                  Otherwise, the error code.
+**
+*******************************************************************************/
+static tAVRC_STS avrc_bld_set_player_value_cmd(tAVRC_SET_APP_VALUE_CMD *p_cmd, BT_HDR *p_pkt)
+{
+    UINT8 *p_data, *p_start;
+
+    /* get the existing length, if any, and also the num attributes */
+    p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
+    p_data = p_start + 2; /* pdu + rsvd */
+    /* add length */
+    UINT16_TO_BE_STREAM(p_data, 3);
+    /* Number of attributes */
+    UINT8_TO_BE_STREAM(p_data, 1);
+    UINT8_TO_BE_STREAM(p_data, p_cmd->p_vals->attr_id);
+    UINT8_TO_BE_STREAM(p_data, p_cmd->p_vals->attr_val);
+
+    p_pkt->len = (p_data - p_start);
+    return AVRC_STS_NO_ERROR;
+}
+
+/*******************************************************************************
+**
+** Function         avrc_bld_get_element_attr_cmd
+**
+** Description      This function builds the Get Element Attribute command.
+**
+** Returns          AVRC_STS_NO_ERROR, if the command is built successfully
+**                  Otherwise, the error code.
+**
+*******************************************************************************/
+static tAVRC_STS avrc_bld_get_element_attr_cmd (tAVRC_GET_ELEM_ATTRS_CMD *p_cmd, BT_HDR *p_pkt)
+{
+    int i;
+    UINT8   *p_data, *p_start;
+
+    AVRC_TRACE_API("avrc_bld_get_element_attr_cmd num_attr: %d", p_cmd->num_attr);
+    /* get the existing length, if any, and also the num attributes */
+    p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
+    p_data = p_start + 2; /* pdu + rsvd */
+    /* add length */
+    UINT16_TO_BE_STREAM(p_data, 8 + 1 /* id + attr count */ + p_cmd->num_attr * sizeof(UINT32));
+    /* Identifier 0x0 (PLAYING) */
+    UINT64_TO_BE_STREAM(p_data, (UINT64)(0));
+    /* Attribute count */
+    UINT8_TO_BE_STREAM(p_data, p_cmd->num_attr);
+
+    for (i = 0; i < p_cmd->num_attr; i++) {
+        AVRC_TRACE_API("avrc_bld_get_element_attr_cmd attr_id: %d", p_cmd->attrs[i]);
+        UINT32_TO_BE_STREAM(p_data, p_cmd->attrs[i]);
+    }
+
+    p_pkt->len = (p_data - p_start);
+    return AVRC_STS_NO_ERROR;
 }
 
 /*******************************************************************************
@@ -223,14 +285,17 @@ tAVRC_STS AVRC_BldCommand( tAVRC_COMMAND *p_cmd, BT_HDR **pp_pkt)
         break;
 #endif
 
-    case AVRC_PDU_REGISTER_NOTIFICATION:      /* 0x31 */
-#if (AVRC_ADV_CTRL_INCLUDED == TRUE)
-        if (AVRC_EVT_VOLUME_CHANGE == p_cmd->reg_notif.event_id) {
-            status = avrc_bld_vol_change_notfn(p_pkt);
-        }
-#endif
+    case AVRC_PDU_SET_PLAYER_APP_VALUE:       /* 0x14 */
+        status = avrc_bld_set_player_value_cmd(&p_cmd->set_app_val, p_pkt);
         break;
 
+    case AVRC_PDU_GET_ELEMENT_ATTR:         /* 0x20 */
+        status = avrc_bld_get_element_attr_cmd(&p_cmd->get_elem_attrs, p_pkt);
+        break;
+
+    case AVRC_PDU_REGISTER_NOTIFICATION:      /* 0x31 */
+        status = avrc_bld_register_change_notfn(p_cmd->reg_notif.event_id, p_cmd->reg_notif.param, p_pkt);
+        break;
     }
 
     if (alloc && (status != AVRC_STS_NO_ERROR) ) {
