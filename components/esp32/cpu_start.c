@@ -73,13 +73,20 @@
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
 
+#define CPU_STARTUP_STACK_SIZE 2048
+
 void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default"))) __attribute__((noreturn));
 void start_cpu0_default(void) IRAM_ATTR __attribute__((noreturn));
+static uint32_t *cpu0_startup_stack;
 #if !CONFIG_FREERTOS_UNICORE
 static void IRAM_ATTR call_start_cpu1() __attribute__((noreturn));
 void start_cpu1(void) __attribute__((weak, alias("start_cpu1_default"))) __attribute__((noreturn));
 void start_cpu1_default(void) IRAM_ATTR __attribute__((noreturn));
-static bool app_cpu_started = false;
+
+/* This variable is used to coordinate startup between PRO and APP CPUs. */
+enum app_cpu_phase { APP_CPU_START, APP_CPU_STARTED, APP_CPU_HEAP_OK, APP_CPU_STACK_OK };
+static volatile enum app_cpu_phase app_cpu_phase = APP_CPU_START;
+static uint32_t *cpu1_startup_stack;
 #endif //!CONFIG_FREERTOS_UNICORE
 
 static void do_global_ctors(void);
@@ -101,6 +108,10 @@ static const char* TAG = "cpu_start";
 struct object { long placeholder[ 10 ]; };
 void __register_frame_info (const void *begin, struct object *ob);
 extern char __eh_frame[];
+
+/* In switch_stack.S */
+void switch_stack_and_jump(void *stack, uint32_t size, void (*target)(void))
+    __attribute__((noreturn));
 
 /*
  * We arrive here after the bootloader finished loading the program from flash. The hardware is mostly uninitialized,
@@ -179,9 +190,7 @@ void IRAM_ATTR call_start_cpu0()
     }
     ets_set_appcpu_boot_addr((uint32_t)call_start_cpu1);
 
-    while (!app_cpu_started) {
-        ets_delay_us(100);
-    }
+    while (app_cpu_phase != APP_CPU_STARTED);
 #else
     ESP_EARLY_LOGI(TAG, "Single core mode");
     DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
@@ -206,8 +215,13 @@ void IRAM_ATTR call_start_cpu0()
        fail initializing it properly. */
     heap_caps_init();
 
-    ESP_EARLY_LOGI(TAG, "Pro cpu start user code");
-    start_cpu0();
+#if !CONFIG_FREERTOS_UNICORE
+    app_cpu_phase = APP_CPU_HEAP_OK;
+#endif
+
+    cpu0_startup_stack = (uint32_t *) heap_caps_malloc(CPU_STARTUP_STACK_SIZE, MALLOC_CAP_8BIT);
+    ESP_EARLY_LOGD(TAG, "%s cpu start user code, stack at %p", "PRO", cpu0_startup_stack);
+    switch_stack_and_jump(cpu0_startup_stack, CPU_STARTUP_STACK_SIZE, start_cpu0);
 }
 
 #if !CONFIG_FREERTOS_UNICORE
@@ -237,9 +251,14 @@ void IRAM_ATTR call_start_cpu1()
 #endif
 
     wdt_reset_cpu1_info_enable();
-    ESP_EARLY_LOGI(TAG, "App cpu up.");
-    app_cpu_started = 1;
-    start_cpu1();
+
+    app_cpu_phase = APP_CPU_STARTED;
+
+    while (app_cpu_phase != APP_CPU_HEAP_OK);
+
+    cpu1_startup_stack = (uint32_t *) heap_caps_malloc(CPU_STARTUP_STACK_SIZE, MALLOC_CAP_8BIT);
+    ESP_EARLY_LOGD(TAG, "%s cpu start user code, stack at %p", "APP", cpu1_startup_stack);
+    switch_stack_and_jump(cpu1_startup_stack, CPU_STARTUP_STACK_SIZE, start_cpu1);
 }
 #endif //!CONFIG_FREERTOS_UNICORE
 
@@ -276,6 +295,12 @@ void start_cpu0_default(void)
     heap_caps_malloc_extmem_enable(CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL);
 #endif
 #endif
+
+    // Enable allocation in region where the startup stacks were located.
+#if !CONFIG_FREERTOS_UNICORE
+    while (app_cpu_phase != APP_CPU_STACK_OK);
+#endif
+    heap_caps_enable_nonos_stack_heaps();
 
 //Enable trace memory and immediately start trace.
 #if CONFIG_ESP32_TRAX
@@ -366,14 +391,18 @@ void start_cpu0_default(void)
                                                 ESP_TASK_MAIN_STACK, NULL,
                                                 ESP_TASK_MAIN_PRIO, NULL, 0);
     assert(res == pdTRUE);
-    ESP_LOGI(TAG, "Starting scheduler on PRO CPU.");
+    ESP_LOGI(TAG, "Starting scheduler on %s CPU.", "PRO");
     vTaskStartScheduler();
+    ESP_LOGE(TAG, "Failed to start %s CPU scheduler!", "PRO");
     abort(); /* Only get to here if not enough free heap to start scheduler */
 }
 
 #if !CONFIG_FREERTOS_UNICORE
 void start_cpu1_default(void)
 {
+    // Signal to PRO CPU that we're running with a new stack now.
+    app_cpu_phase = APP_CPU_STACK_OK;
+
     // Wait for FreeRTOS initialization to finish on PRO CPU
     while (port_xSchedulerRunning[0] == 0) {
         ;
@@ -391,8 +420,9 @@ void start_cpu1_default(void)
     esp_crosscore_int_init();
     esp_dport_access_int_init();
 
-    ESP_EARLY_LOGI(TAG, "Starting scheduler on APP CPU.");
+    ESP_LOGI(TAG, "Starting scheduler on %s CPU.", "APP");
     xPortStartScheduler();
+    ESP_LOGE(TAG, "Failed to start %s CPU scheduler!", "APP");
     abort(); /* Only get to here if FreeRTOS somehow very broken */
 }
 #endif //!CONFIG_FREERTOS_UNICORE
@@ -422,15 +452,16 @@ static void main_task(void* args)
     // Now that the application is about to start, disable boot watchdogs
     REG_CLR_BIT(TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN_S);
     REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN);
+
+    heap_caps_free(cpu0_startup_stack);
+
 #if !CONFIG_FREERTOS_UNICORE
     // Wait for FreeRTOS initialization to finish on APP CPU, before replacing its startup stack
     while (port_xSchedulerRunning[1] == 0) {
         ;
     }
+    heap_caps_free(cpu1_startup_stack);
 #endif
-    //Enable allocation in region where the startup stacks were located.
-    heap_caps_enable_nonos_stack_heaps();
-
     //Initialize task wdt if configured to do so
 #ifdef CONFIG_TASK_WDT_PANIC
     ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_TASK_WDT_TIMEOUT_S, true))
@@ -453,6 +484,7 @@ static void main_task(void* args)
     }
 #endif
 
+    ESP_LOGI(TAG, "Entering app_main");
     app_main();
     vTaskDelete(NULL);
 }
