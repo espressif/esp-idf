@@ -13,7 +13,7 @@
 
 
 
-TEST_CASE("Int wdt test", "[esp32][ignore]")
+TEST_CASE("Int wdt test", "[esp32][reset=Interrupt wdt timeout on CPU0,SW_CPU_RESET]")
 {
     portENTER_CRITICAL_NESTED();
     while(1);
