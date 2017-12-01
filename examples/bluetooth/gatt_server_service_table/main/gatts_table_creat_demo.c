@@ -31,14 +31,14 @@
 
 #define GATTS_TABLE_TAG "GATTS_TABLE_DEMO"
 
-#define HEART_PROFILE_NUM 			    1
-#define HEART_PROFILE_APP_IDX 			0
-#define ESP_HEART_RATE_APP_ID			0x55
+#define HEART_PROFILE_NUM               1
+#define HEART_PROFILE_APP_IDX           0
+#define ESP_HEART_RATE_APP_ID           0x55
 #define SAMPLE_DEVICE_NAME              "ESP_HEART_RATE"
 #define SAMPLE_MANUFACTURER_DATA_LEN    17
-#define HEART_RATE_SVC_INST_ID	    	0
+#define HEART_RATE_SVC_INST_ID          0
 
-#define GATTS_DEMO_CHAR_VAL_LEN_MAX		0x40
+#define GATTS_DEMO_CHAR_VAL_LEN_MAX     0x40
 
 uint8_t char1_str[] ={0x11,0x22,0x33};
 
@@ -46,9 +46,9 @@ uint16_t heart_rate_handle_table[HRS_IDX_NB];
 
 esp_attr_value_t gatts_demo_char1_val = 
 {
-	.attr_max_len = GATTS_DEMO_CHAR_VAL_LEN_MAX,
-	.attr_len		= sizeof(char1_str),
-	.attr_value     = char1_str,
+    .attr_max_len = GATTS_DEMO_CHAR_VAL_LEN_MAX,
+    .attr_len     = sizeof(char1_str),
+    .attr_value   = char1_str,
 };
 
 
@@ -102,7 +102,7 @@ struct gatts_profile_inst {
 };
 
 static void gatts_profile_event_handler(esp_gatts_cb_event_t event, 
-					esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
+                    esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 
 /* One gatt-based profile one app_id and one gatts_if, this array will store the gatts_if returned by ESP_GATTS_REG_EVT */
 static struct gatts_profile_inst heart_rate_profile_tab[HEART_PROFILE_NUM] = {
@@ -111,6 +111,60 @@ static struct gatts_profile_inst heart_rate_profile_tab[HEART_PROFILE_NUM] = {
         .gatts_if = ESP_GATT_IF_NONE,       /* Not get the gatt_if, so initial is ESP_GATT_IF_NONE */
     },
     
+};
+
+#define ESP_GAP_BLE_NB  ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT+1
+static char *esp_gap_ble_cb_event_labels[ESP_GAP_BLE_NB] = {
+    [ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT]          = "ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT",
+    [ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT]     = "ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT",
+    [ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT]        = "ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT",
+    [ESP_GAP_BLE_SCAN_RESULT_EVT]                    = "ESP_GAP_BLE_SCAN_RESULT_EVT",
+    [ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT]      = "ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT",
+    [ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT] = "ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT",
+    [ESP_GAP_BLE_ADV_START_COMPLETE_EVT]             = "ESP_GAP_BLE_ADV_START_COMPLETE_EVT",
+    [ESP_GAP_BLE_SCAN_START_COMPLETE_EVT]            = "ESP_GAP_BLE_SCAN_START_COMPLETE_EVT",
+    [ESP_GAP_BLE_AUTH_CMPL_EVT]                      = "ESP_GAP_BLE_AUTH_CMPL_EVT",
+    [ESP_GAP_BLE_KEY_EVT]                            = "ESP_GAP_BLE_KEY_EVT",
+    [ESP_GAP_BLE_SEC_REQ_EVT]                        = "ESP_GAP_BLE_SEC_REQ_EVT",
+    [ESP_GAP_BLE_PASSKEY_NOTIF_EVT]                  = "ESP_GAP_BLE_PASSKEY_NOTIF_EVT",
+    [ESP_GAP_BLE_PASSKEY_REQ_EVT]                    = "ESP_GAP_BLE_PASSKEY_REQ_EVT",
+    [ESP_GAP_BLE_OOB_REQ_EVT]                        = "ESP_GAP_BLE_OOB_REQ_EVT",
+    [ESP_GAP_BLE_LOCAL_IR_EVT]                       = "ESP_GAP_BLE_LOCAL_IR_EVT",
+    [ESP_GAP_BLE_LOCAL_ER_EVT]                       = "ESP_GAP_BLE_LOCAL_ER_EVT",
+    [ESP_GAP_BLE_NC_REQ_EVT]                         = "ESP_GAP_BLE_NC_REQ_EVT",
+    [ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT]              = "ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT",
+    [ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT]             = "ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT",
+    [ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT]           = "ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT",
+    [ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT]             = "ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT",
+    [ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT]        = "ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT"
+};
+
+#define ESP_GATTS_NB  ESP_GATTS_SET_ATTR_VAL_EVT+1
+static char *esp_gatts_cb_event_labels[ESP_GATTS_NB+1] = {
+    [ESP_GATTS_REG_EVT]                = "ESP_GATTS_REG_EVT",
+    [ESP_GATTS_READ_EVT]               = "ESP_GATTS_READ_EVT",
+    [ESP_GATTS_WRITE_EVT]              = "ESP_GATTS_WRITE_EVT",
+    [ESP_GATTS_EXEC_WRITE_EVT]         = "ESP_GATTS_EXEC_WRITE_EVT",
+    [ESP_GATTS_MTU_EVT]                = "ESP_GATTS_MTU_EVT",
+    [ESP_GATTS_CONF_EVT]               = "ESP_GATTS_CONF_EVT",
+    [ESP_GATTS_UNREG_EVT]              = "ESP_GATTS_UNREG_EVT",
+    [ESP_GATTS_CREATE_EVT]             = "ESP_GATTS_CREATE_EVT",
+    [ESP_GATTS_ADD_INCL_SRVC_EVT]      = "ESP_GATTS_ADD_INCL_SRVC_EVT",
+    [ESP_GATTS_ADD_CHAR_EVT]           = "ESP_GATTS_ADD_CHAR_EVT",
+    [ESP_GATTS_ADD_CHAR_DESCR_EVT]     = "ESP_GATTS_ADD_CHAR_DESCR_EVT",
+    [ESP_GATTS_DELETE_EVT]             = "ESP_GATTS_DELETE_EVT",
+    [ESP_GATTS_START_EVT]              = "ESP_GATTS_START_EVT",
+    [ESP_GATTS_STOP_EVT]               = "ESP_GATTS_STOP_EVT",
+    [ESP_GATTS_CONNECT_EVT]            = "ESP_GATTS_CONNECT_EVT",
+    [ESP_GATTS_DISCONNECT_EVT]         = "ESP_GATTS_DISCONNECT_EVT",
+    [ESP_GATTS_OPEN_EVT]               = "ESP_GATTS_OPEN_EVT",
+    [ESP_GATTS_CANCEL_OPEN_EVT]        = "ESP_GATTS_CANCEL_OPEN_EVT",
+    [ESP_GATTS_CLOSE_EVT]              = "ESP_GATTS_CLOSE_EVT",
+    [ESP_GATTS_LISTEN_EVT]             = "ESP_GATTS_LISTEN_EVT",
+    [ESP_GATTS_CONGEST_EVT]            = "ESP_GATTS_CONGEST_EVT",
+    [ESP_GATTS_RESPONSE_EVT]           = "ESP_GATTS_RESPONSE_EVT",
+    [ESP_GATTS_CREAT_ATTR_TAB_EVT]     = "ESP_GATTS_CREAT_ATTR_TAB_EVT",
+    [ESP_GATTS_SET_ATTR_VAL_EVT]       = "ESP_GATTS_SET_ATTR_VAL_EVT"
 };
 
 /*
@@ -137,7 +191,7 @@ static const uint8_t char_prop_read_write = ESP_GATT_CHAR_PROP_BIT_WRITE|ESP_GAT
 
 /// Heart Rate Sensor Service - Heart Rate Measurement Characteristic, notify
 static const uint16_t heart_rate_meas_uuid = ESP_GATT_HEART_RATE_MEAS;
-static const uint8_t heart_measurement_ccc[2] ={ 0x00, 0x00};
+static const uint8_t heart_measurement_ccc[2] = { 0x00, 0x00};
 
 
 /// Heart Rate Sensor Service -Body Sensor Location characteristic, read
@@ -153,32 +207,32 @@ static const uint8_t heart_ctrl_point[1] = {0x00};
 static const esp_gatts_attr_db_t heart_rate_gatt_db[HRS_IDX_NB] =
 {
     // Heart Rate Service Declaration
-    [HRS_IDX_SVC]                      	=  
+    [HRS_IDX_SVC]                      =  
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&primary_service_uuid, ESP_GATT_PERM_READ,
       sizeof(uint16_t), sizeof(heart_rate_svc), (uint8_t *)&heart_rate_svc}},
 
     // Heart Rate Measurement Characteristic Declaration
-    [HRS_IDX_HR_MEAS_CHAR]            = 
+    [HRS_IDX_HR_MEAS_CHAR]             = 
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ,
       CHAR_DECLARATION_SIZE,CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_notify}},
       
     // Heart Rate Measurement Characteristic Value
-    [HRS_IDX_HR_MEAS_VAL]             	=   
+    [HRS_IDX_HR_MEAS_VAL]              =   
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&heart_rate_meas_uuid, ESP_GATT_PERM_READ,
       HRPS_HT_MEAS_MAX_LEN,0, NULL}},
 
     // Heart Rate Measurement Characteristic - Client Characteristic Configuration Descriptor
-    [HRS_IDX_HR_MEAS_NTF_CFG]     	=    
+    [HRS_IDX_HR_MEAS_NTF_CFG]          =    
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid, ESP_GATT_PERM_READ|ESP_GATT_PERM_WRITE,
       sizeof(uint16_t),sizeof(heart_measurement_ccc), (uint8_t *)heart_measurement_ccc}},
 
     // Body Sensor Location Characteristic Declaration
-    [HRS_IDX_BOBY_SENSOR_LOC_CHAR]  = 
+    [HRS_IDX_BOBY_SENSOR_LOC_CHAR]     = 
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ,
       CHAR_DECLARATION_SIZE,CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
 
     // Body Sensor Location Characteristic Value
-    [HRS_IDX_BOBY_SENSOR_LOC_VAL]   = 
+    [HRS_IDX_BOBY_SENSOR_LOC_VAL]      = 
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&body_sensor_location_uuid, ESP_GATT_PERM_READ,
       sizeof(uint8_t), sizeof(body_sensor_loc_val), (uint8_t *)body_sensor_loc_val}},
 
@@ -186,9 +240,9 @@ static const esp_gatts_attr_db_t heart_rate_gatt_db[HRS_IDX_NB] =
     [HRS_IDX_HR_CTNL_PT_CHAR]          = 
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ,
       CHAR_DECLARATION_SIZE,CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_write}},
-                                         			
+      
     // Heart Rate Control Point Characteristic Value
-    [HRS_IDX_HR_CTNL_PT_VAL]             = 
+    [HRS_IDX_HR_CTNL_PT_VAL]           = 
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&heart_rate_ctrl_point, ESP_GATT_PERM_WRITE|ESP_GATT_PERM_READ,
       sizeof(uint8_t), sizeof(heart_ctrl_point), (uint8_t *)heart_ctrl_point}},  
 };
@@ -197,17 +251,22 @@ static const esp_gatts_attr_db_t heart_rate_gatt_db[HRS_IDX_NB] =
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
-    ESP_LOGE(GATTS_TABLE_TAG, "GAP_EVT, event %d\n", event);
+    ESP_LOGI(GATTS_TABLE_TAG, "GAP_EVT = %d [%s]", event,
+             esp_gap_ble_cb_event_labels[event]);
 
     switch (event) {
     case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
         esp_ble_gap_start_advertising(&heart_rate_adv_params);
         break;
+    case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT:
+        break;
     case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
         //advertising start complete event to indicate advertising start successfully or failed
         if (param->adv_start_cmpl.status != ESP_BT_STATUS_SUCCESS) {
-            ESP_LOGE(GATTS_TABLE_TAG, "Advertising start failed\n");
+            ESP_LOGE(GATTS_TABLE_TAG, "Advertising start failed");
         }
+        break;
+    case ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT:
         break;
     default:
         break;
@@ -215,92 +274,91 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
 }
 
 static void gatts_profile_event_handler(esp_gatts_cb_event_t event, 
-										   esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param) 
+                                           esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param) 
 {
-    ESP_LOGE(GATTS_TABLE_TAG, "event = %x\n",event);
+    ESP_LOGI(GATTS_TABLE_TAG, "GATTS_EVT(profile) = %d [%s]", event,
+             esp_gatts_cb_event_labels[event]);
     switch (event) {
-    	case ESP_GATTS_REG_EVT:
-		ESP_LOGI(GATTS_TABLE_TAG, "%s %d\n", __func__, __LINE__);
-        	esp_ble_gap_set_device_name(SAMPLE_DEVICE_NAME);
-        	ESP_LOGI(GATTS_TABLE_TAG, "%s %d\n", __func__, __LINE__);
-       	esp_ble_gap_config_adv_data(&heart_rate_adv_config);
+        case ESP_GATTS_REG_EVT:
+            ESP_LOGI(GATTS_TABLE_TAG, "%s %d", __func__, __LINE__);
+            esp_ble_gap_set_device_name(SAMPLE_DEVICE_NAME);
+            ESP_LOGI(GATTS_TABLE_TAG, "%s %d", __func__, __LINE__);
+            esp_ble_gap_config_adv_data(&heart_rate_adv_config);
 
-        	ESP_LOGI(GATTS_TABLE_TAG, "%s %d\n", __func__, __LINE__);
-		esp_ble_gatts_create_attr_tab(heart_rate_gatt_db, gatts_if, 
-								HRS_IDX_NB, HEART_RATE_SVC_INST_ID);
-       	break;
-    	case ESP_GATTS_READ_EVT:
-       
-       	 break;
-    	case ESP_GATTS_WRITE_EVT: 
-      	 	break;
-    	case ESP_GATTS_EXEC_WRITE_EVT:
-		break;
-    	case ESP_GATTS_MTU_EVT:
-		break;
-   	 case ESP_GATTS_CONF_EVT:
-		break;
-    	case ESP_GATTS_UNREG_EVT:
-        	break;
-    	case ESP_GATTS_DELETE_EVT:
-        	break;
-    	case ESP_GATTS_START_EVT:
-        	break;
-    	case ESP_GATTS_STOP_EVT:
-        	break;
-    	case ESP_GATTS_CONNECT_EVT:
-        	break;
-    	case ESP_GATTS_DISCONNECT_EVT:
-		break;
-    	case ESP_GATTS_OPEN_EVT:
-		break;
-    	case ESP_GATTS_CANCEL_OPEN_EVT:
-		break;
-    	case ESP_GATTS_CLOSE_EVT:
-		break;
-    	case ESP_GATTS_LISTEN_EVT:
-		break;
-    	case ESP_GATTS_CONGEST_EVT:
-		break;
-    case ESP_GATTS_CREAT_ATTR_TAB_EVT:{
-        ESP_LOGI(GATTS_TABLE_TAG, "The number handle =%x\n",param->add_attr_tab.num_handle);
-        if (param->add_attr_tab.status != ESP_GATT_OK){
-            ESP_LOGE(GATTS_TABLE_TAG, "Create attribute table failed, error code=0x%x", param->add_attr_tab.status);
-        }
-        else if (param->add_attr_tab.num_handle != HRS_IDX_NB){
-            ESP_LOGE(GATTS_TABLE_TAG, "Create attribute table abnormally, num_handle (%d) \
-                    doesn't equal to HRS_IDX_NB(%d)", param->add_attr_tab.num_handle, HRS_IDX_NB);
-        }
-        else {
-            memcpy(heart_rate_handle_table, param->add_attr_tab.handles, sizeof(heart_rate_handle_table));
-            esp_ble_gatts_start_service(heart_rate_handle_table[HRS_IDX_SVC]);
-        }
-        break;
-                                      }
-
-    default:
-        break;
+            ESP_LOGI(GATTS_TABLE_TAG, "%s %d", __func__, __LINE__);
+            esp_ble_gatts_create_attr_tab(heart_rate_gatt_db, gatts_if, 
+                                    HRS_IDX_NB, HEART_RATE_SVC_INST_ID);
+            break;
+        case ESP_GATTS_READ_EVT:
+            break;
+        case ESP_GATTS_WRITE_EVT: 
+            break;
+        case ESP_GATTS_EXEC_WRITE_EVT:
+            break;
+        case ESP_GATTS_MTU_EVT:
+            break;
+        case ESP_GATTS_CONF_EVT:
+            break;
+        case ESP_GATTS_UNREG_EVT:
+            break;
+        case ESP_GATTS_DELETE_EVT:
+            break;
+        case ESP_GATTS_START_EVT:
+            break;
+        case ESP_GATTS_STOP_EVT:
+            break;
+        case ESP_GATTS_CONNECT_EVT:
+            break;
+        case ESP_GATTS_DISCONNECT_EVT:
+            // start advertising again after disconnect
+            esp_ble_gap_start_advertising(&heart_rate_adv_params);
+            break;
+        case ESP_GATTS_OPEN_EVT:
+            break;
+        case ESP_GATTS_CANCEL_OPEN_EVT:
+            break;
+        case ESP_GATTS_CLOSE_EVT:
+            break;
+        case ESP_GATTS_LISTEN_EVT:
+            break;
+        case ESP_GATTS_CONGEST_EVT:
+            break;
+        case ESP_GATTS_CREAT_ATTR_TAB_EVT:
+            ESP_LOGI(GATTS_TABLE_TAG, "The number handle = %d", param->add_attr_tab.num_handle);
+            if (param->add_attr_tab.status != ESP_GATT_OK){
+                ESP_LOGE(GATTS_TABLE_TAG, "Create attribute table failed, error code=0x%x", param->add_attr_tab.status);
+            } else if (param->add_attr_tab.num_handle != HRS_IDX_NB){
+                ESP_LOGE(GATTS_TABLE_TAG, "Create attribute table abnormally, num_handle (%d) \
+                        doesn't equal to HRS_IDX_NB(%d)", param->add_attr_tab.num_handle, HRS_IDX_NB);
+            } else {
+                memcpy(heart_rate_handle_table, param->add_attr_tab.handles, sizeof(heart_rate_handle_table));
+                esp_ble_gatts_start_service(heart_rate_handle_table[HRS_IDX_SVC]);
+            }
+            break;
+        default:
+            break;
     }
 }
 
 
 static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, 
-									esp_ble_gatts_cb_param_t *param)
+                                    esp_ble_gatts_cb_param_t *param)
 {
-    ESP_LOGI(GATTS_TABLE_TAG, "EVT %d, gatts if %d\n", event, gatts_if);
+    ESP_LOGI(GATTS_TABLE_TAG, "GATTS_EVT = %d [%s], gatts if %d", event,
+             esp_gatts_cb_event_labels[event], gatts_if);
 
     /* If event is register event, store the gatts_if for each profile */
     if (event == ESP_GATTS_REG_EVT) {
         if (param->reg.status == ESP_GATT_OK) {
             heart_rate_profile_tab[HEART_PROFILE_APP_IDX].gatts_if = gatts_if;
         } else {
-            ESP_LOGI(GATTS_TABLE_TAG, "Reg app failed, app_id %04x, status %d\n",
+            ESP_LOGI(GATTS_TABLE_TAG, "Reg app failed, app_id %04x, status %d",
                     param->reg.app_id, 
                     param->reg.status);
             return;
         }
     }
-	
+
     do {
         int idx;
         for (idx = 0; idx < HEART_PROFILE_NUM; idx++) {
@@ -329,25 +387,25 @@ void app_main()
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     ret = esp_bt_controller_init(&bt_cfg);
     if (ret) {
-        ESP_LOGE(GATTS_TABLE_TAG, "%s enable controller failed\n", __func__);
+        ESP_LOGE(GATTS_TABLE_TAG, "%s enable controller failed", __func__);
         return;
     }
 
     ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
     if (ret) {
-        ESP_LOGE(GATTS_TABLE_TAG, "%s enable controller failed\n", __func__);
+        ESP_LOGE(GATTS_TABLE_TAG, "%s enable controller failed", __func__);
         return;
     }
 
-    ESP_LOGI(GATTS_TABLE_TAG, "%s init bluetooth\n", __func__);
+    ESP_LOGI(GATTS_TABLE_TAG, "%s init bluetooth", __func__);
     ret = esp_bluedroid_init();
     if (ret) {
-        ESP_LOGE(GATTS_TABLE_TAG, "%s init bluetooth failed\n", __func__);
+        ESP_LOGE(GATTS_TABLE_TAG, "%s init bluetooth failed", __func__);
         return;
     }
     ret = esp_bluedroid_enable();
     if (ret) {
-        ESP_LOGE(GATTS_TABLE_TAG, "%s enable bluetooth failed\n", __func__);
+        ESP_LOGE(GATTS_TABLE_TAG, "%s enable bluetooth failed", __func__);
         return;
     }
 
