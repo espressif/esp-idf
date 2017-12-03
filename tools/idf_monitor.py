@@ -45,6 +45,7 @@ import threading
 import ctypes
 import types
 from distutils.version import StrictVersion
+import signal
 
 key_description = miniterm.key_description
 
@@ -130,12 +131,28 @@ class ConsoleReader(StoppableThread):
     """ Read input keys from the console and push them to the queue,
     until stopped.
     """
-    def __init__(self, console, event_queue):
+    def __init__(self, console, event_queue, running_on_wsl=False):
         super(ConsoleReader, self).__init__()
         self.console = console
         self.event_queue = event_queue
+        self.running_on_wsl = running_on_wsl
+        self.tid = None
+        if running_on_wsl:
+            libpthread = ctypes.CDLL("libpthread.so.0")
+            self.pthread_self = libpthread.pthread_self
+            self.pthread_self.argtypes = [ ]
+            self.pthread_self.restype = ctypes.c_void_p
+            self.pthread_kill = libpthread.pthread_kill
+            self.pthread_kill.argtypes = [ ctypes.c_void_p, ctypes.c_int ]
+            self.pthread_kill.restype = ctypes.c_int
+            signal.signal(signal.SIGRTMIN, self._handler)
+
+    def _handler(self, signum, frame):
+        pass
 
     def run(self):
+        if self.running_on_wsl:
+            self.tid = self.pthread_self()
         self.console.setup()
         try:
             while self.alive:
@@ -153,13 +170,22 @@ class ConsoleReader(StoppableThread):
                     c = self.console.getkey()
                 except KeyboardInterrupt:
                     c = '\x03'
+                except IOError:
+                    if not self.alive:
+                        # expected during _cancel when killed
+                        break
+                    else:
+                        raise
                 if c is not None:
                     self.event_queue.put((TAG_KEY, c), False)
         finally:
             self.console.cleanup()
 
     def _cancel(self):
-        if os.name == 'posix':
+        if self.running_on_wsl:
+            if self.tid is not None:
+                self.pthread_kill(self.tid, signal.SIGRTMIN)
+        elif os.name == 'posix':
             # this is the way cancel() is implemented in pyserial 3.3 or newer,
             # older pyserial (3.1+) has cancellation implemented via 'select',
             # which does not work when console sends an escape sequence response
@@ -168,8 +194,8 @@ class ConsoleReader(StoppableThread):
             #
             # on Windows there is a different (also hacky) fix, applied above.
             #
-            # note that TIOCSTI is not implemented in WSL / bash-on-Windows.
-            # TODO: introduce some workaround to make it work there.
+            # Note that TIOCSTI is not implemented in WSL / bash-on-Windows,
+            # see pthread_kill() above instead.
             import fcntl, termios
             fcntl.ioctl(self.console.fd, termios.TIOCSTI, b'\0')
 
@@ -220,6 +246,20 @@ class Monitor(object):
     """
     def __init__(self, serial_instance, elf_file, make="make", toolchain_prefix=DEFAULT_TOOLCHAIN_PREFIX, eol="CRLF"):
         super(Monitor, self).__init__()
+        running_on_wsl = False
+        if os.name == 'posix':
+            try:
+                with open('/proc/version', 'r') as pv:
+                    if 'microsoft' in pv.read().lower():
+                        running_on_wsl = True
+            except:
+                pass
+        if running_on_wsl:
+            # re-open stdin unbuffered to make reading interruptible
+            import io
+            enc = sys.stdin.encoding
+            sys.stdin = io.open(sys.stdin.fileno(), mode='rb', buffering=0, closefd = False)
+            sys.stdin.encoding = enc
         self.event_queue = queue.Queue()
         self.console = miniterm.Console()
         if os.name == 'nt':
@@ -238,7 +278,7 @@ class Monitor(object):
             self.console.getkey = types.MethodType(getkey_patched, self.console) 
         
         self.serial = serial_instance
-        self.console_reader = ConsoleReader(self.console, self.event_queue)
+        self.console_reader = ConsoleReader(self.console, self.event_queue, running_on_wsl)
         self.serial_reader = SerialReader(self.serial, self.event_queue)
         self.elf_file = elf_file
         self.make = make
