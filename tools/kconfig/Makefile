@@ -23,6 +23,22 @@ CFLAGS :=
 CPPFLAGS :=
 LDFLAGS :=
 
+# Workaround for a bug on Windows if the mingw32 host compilers
+# are installed in addition to the MSYS ones. The kconfig tools
+# need to be compiled using the MSYS compiler.
+#
+# See https://github.com/espressif/esp-idf/issues/1296
+ifdef MSYSTEM
+ifeq ("$(MSYSTEM)", "MINGW32")
+ifeq ("$(CC)", "cc")
+CC := /usr/bin/gcc
+endif
+ifeq ("$(LD)", "ld")
+LD := /usr/bin/ld
+endif
+endif # MING32
+endif # MSYSTEM
+
 default: mconf conf
 
 xconfig: qconf
