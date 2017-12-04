@@ -136,6 +136,15 @@ netconn_new_with_proto_and_callback(enum netconn_type t, u8_t proto, netconn_cal
   return conn;
 }
 
+static inline bool is_created_by_socket(struct netconn *conn)
+{
+#if LWIP_SOCKET
+  if (conn && (conn->socket != -1)) {
+    return true;
+  }
+#endif
+  return false;
+}
 /**
  * Close a netconn 'connection' and free its resources.
  * UDP and RAW connection are completely closed, TCP pcbs might still be in a waitstate
@@ -174,7 +183,12 @@ netconn_delete(struct netconn *conn)
     return err;
   }
 
-#if !ESP_THREAD_SAFE
+#if ESP_THREAD_SAFE
+  if (is_created_by_socket(conn) == false) {
+    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("netconn_delete - free conn\n"));
+    netconn_free(conn);
+  }
+#else
   LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("netconn_delete - free conn\n"));
   netconn_free(conn);
 #endif
