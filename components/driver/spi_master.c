@@ -61,42 +61,6 @@ queue and re-enabling the interrupt will trigger the interrupt again, which can 
 #include "driver/periph_ctrl.h"
 #include "esp_heap_caps.h"
 
-typedef struct spi_device_t spi_device_t;
-
-#define NO_CS 3     //Number of CS pins per SPI host
-
-
-/// struct to hold private transaction data (like tx and rx buffer for DMA).
-typedef struct {        
-    spi_transaction_t   *trans; 
-    uint32_t *buffer_to_send;   //equals to tx_data, if SPI_TRANS_USE_RXDATA is applied; otherwise if original buffer wasn't in DMA-capable memory, this gets the address of a temporary buffer that is;
-                                //otherwise sets to the original buffer or NULL if no buffer is assigned.
-    uint32_t *buffer_to_rcv;    // similar to buffer_to_send
-} spi_trans_priv;
-
-typedef struct {
-    spi_device_t *device[NO_CS];
-    intr_handle_t intr;
-    spi_dev_t *hw;
-    spi_trans_priv cur_trans_buf;
-    int cur_cs;
-    lldesc_t *dmadesc_tx;
-    lldesc_t *dmadesc_rx;
-    bool no_gpio_matrix;
-    int dma_chan;
-    int max_transfer_sz;
-#ifdef CONFIG_PM_ENABLE
-    esp_pm_lock_handle_t pm_lock;
-#endif
-} spi_host_t;
-
-struct spi_device_t {
-    QueueHandle_t trans_queue;
-    QueueHandle_t ret_queue;
-    spi_device_interface_config_t cfg;
-    spi_host_t *host;
-};
-
 static spi_host_t *spihost[3];
 
 
@@ -325,7 +289,7 @@ static int spi_freq_for_pre_n(int fapb, int pre, int n) {
  * Set the SPI clock to a certain frequency. Returns the effective frequency set, which may be slightly
  * different from the requested frequency.
  */
-static int spi_set_clock(spi_dev_t *hw, int fapb, int hz, int duty_cycle) {
+int spi_set_clock(spi_dev_t *hw, int fapb, int hz, int duty_cycle) {
     int pre, n, h, l, eff_clk;
 
     //In hw, n, h and l are 1-64, pre is 1-8K. Value written to register is one lower than used value.
