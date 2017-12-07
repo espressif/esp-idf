@@ -127,10 +127,6 @@ ESP-IDF will be downloaded into ``~/esp/esp-idf``.
         cd ~/esp/esp-idf
         git submodule update --init
 
-.. note::
-
-    While cloning submodules on **Windows** platform, the ``git clone`` command may print some output starting ``': not a valid identifier...``. This is a `known issue <https://github.com/espressif/esp-idf/issues/11>`_ but the git clone still succeeds without any problems.
-
 
 .. _get-started-setup-path:
 
@@ -206,9 +202,6 @@ Here are couple of tips on navigation and use of ``menuconfig``:
 
     If you are **Arch Linux** user, navigate to ``SDK tool configuration`` and change the name of ``Python 2 interpreter`` from ``python`` to ``python2``.
 
-.. note::
-
-    Most ESP32 development boards have a 40MHz crystal installed. However, some boards use a 26MHz crystal. If your board uses a 26MHz crystal, or you get garbage output from serial port after code upload, adjust the :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` option in menuconfig.
 
 .. _get-started-build-flash:
 
@@ -283,7 +276,18 @@ Several lines below, after start up and diagnostic log, you should see "Hello wo
     Restarting in 8 seconds...
     Restarting in 7 seconds...
 
-To exit monitor use shortcut ``Ctrl+]``. To execute ``make flash`` and ``make monitor`` in one shoot type ``make flash monitor``. Check section :doc:`IDF Monitor <idf-monitor>` for handy shortcuts and more details on using this application.
+To exit the monitor use shortcut ``Ctrl+]``. 
+
+.. note::
+
+    If instead of the messages above, you see a random garbage similar to::
+
+        e���)(Xn@�y.!��(�PW+)��Hn9a؅/9�!�t5��P�~�k��e�ea�5�jA
+        ~zY��Y(1�,1�� e���)(Xn@�y.!Dr�zY(�jpi�|�+z5Ymvp
+
+    or monitor fails shortly after upload, your board is likely using 26MHz crystal, while the ESP-IDF assumes default of 40MHz. Exit the monitor, go back to the :ref:`menuconfig <get-started-configure>`, change :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` to 26MHz, then :ref:`build and flash <get-started-build-flash>` the application again.
+
+To execute ``make flash`` and ``make monitor`` in one go, type ``make flash monitor``. Check section :doc:`IDF Monitor <idf-monitor>` for handy shortcuts and more details on using this application.
 
 That's all what you need to get started with ESP32! 
 
