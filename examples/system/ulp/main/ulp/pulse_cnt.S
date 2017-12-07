@@ -130,6 +130,11 @@ edge_detected:
 
 	.global wake_up
 wake_up:
+	/* Check if the system can be woken up */
+	READ_RTC_FIELD(RTC_CNTL_LOW_POWER_ST_REG, RTC_CNTL_RDY_FOR_WAKEUP)
+	and r0, r0, 1
+	jump wake_up, eq
+
 	/* Wake up the SoC, end program */
 	wake
 	halt
