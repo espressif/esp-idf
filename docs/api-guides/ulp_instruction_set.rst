@@ -573,11 +573,17 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
 
   - If the SoC is not in deep sleep mode, and ULP interrupt bit (RTC_CNTL_ULP_CP_INT_ENA) is set in RTC_CNTL_INT_ENA_REG register, RTC interrupt will be triggered.
 
+  Note that before using WAKE instruction, ULP program may needs to wait until RTC controller is ready to wake up the main CPU. This is indicated using RTC_CNTL_RDY_FOR_WAKEUP bit of RTC_CNTL_LOW_POWER_ST_REG register. If WAKE instruction is executed while RTC_CNTL_RDY_FOR_WAKEUP is zero, it has no effect (wake up does not occur).
+
 **Examples**::
 
-  1:        WAKE                      // Trigger wake up
-            REG_WR 0x006, 24, 24, 0   // Stop ULP timer (clear RTC_CNTL_ULP_CP_SLP_TIMER_EN)
-            HALT                      // Stop the ULP program
+  1: is_rdy_for_wakeup:                   // Read RTC_CNTL_RDY_FOR_WAKEUP bit
+            READ_RTC_FIELD(RTC_CNTL_LOW_POWER_ST_REG, RTC_CNTL_RDY_FOR_WAKEUP)
+            AND r0, r0, 1
+            JUMP is_rdy_for_wakeup, eq    // Retry until the bit is set
+            WAKE                          // Trigger wake up
+            REG_WR 0x006, 24, 24, 0       // Stop ULP timer (clear RTC_CNTL_ULP_CP_SLP_TIMER_EN)
+            HALT                          // Stop the ULP program
             // After these instructions, SoC will wake up,
             // and ULP will not run again until started by the main program.
 
