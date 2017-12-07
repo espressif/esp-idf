@@ -667,6 +667,45 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
 
    1:        ADC      R1, 0, 1      // Measure value using ADC1 pad 2 and store result into R1
 
+**I2C_RD** - read single byte from I2C slave
+----------------------------------------------
+
+**Syntax**
+  - **I2C_RD**   *Sub_addr, High, Low, Slave_sel*
+
+**Operands**
+  - *Sub_addr* – Address within the I2C slave to read.
+  - *High*, *Low* — Define range of bits to read. Bits outside of [High, Low] range are masked.
+  - *Slave_sel*  -  Index of I2C slave address to use.
+
+**Description**
+  ``I2C_RD`` instruction reads one byte from I2C slave with index ``Slave_sel``. Slave address (in 7-bit format) has to be set in advance into `SENS_I2C_SLAVE_ADDRx` register field, where ``x == Slave_sel``.
+  8 bits of read result is stored into `R0` register.
+
+**Examples**::
+
+   1:        I2C_RD      0x10, 7, 0, 0      // Read byte from sub-address 0x10 of slave with address set in SENS_I2C_SLAVE_ADDR0
+
+
+**I2C_WR** - write single byte to I2C slave
+----------------------------------------------
+
+**Syntax**
+  - **I2C_WR**   *Sub_addr, Value, High, Low, Slave_sel*
+
+**Operands**
+  - *Sub_addr* – Address within the I2C slave to write.
+  - *Value* – 8-bit value to be written.
+  - *High*, *Low* — Define range of bits to write. Bits outside of [High, Low] range are masked.
+  - *Slave_sel*  -  Index of I2C slave address to use.
+
+**Description**
+  ``I2C_WR`` instruction writes one byte to I2C slave with index ``Slave_sel``. Slave address (in 7-bit format) has to be set in advance into `SENS_I2C_SLAVE_ADDRx` register field, where ``x == Slave_sel``.
+
+**Examples**::
+
+   1:        I2C_WR      0x20, 0x33, 7, 0, 1      // Write byte 0x33 to sub-address 0x20 of slave with address set in SENS_I2C_SLAVE_ADDR1.
+
 
 **REG_RD** – read from peripheral register
 ------------------------------------------
