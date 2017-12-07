@@ -373,11 +373,11 @@ static IRAM_ATTR __attribute__((noinline)) void *trace_realloc(void *p, size_t s
             record_free(p, callers);
         }
         heap_trace_record_t rec = {
-            .address = p,
+            .address = r,
             .ccount = ccount,
             .size = size,
         };
-        memcpy(rec.alloced_by, callers, sizeof(heap_trace_record_t) * STACK_DEPTH);
+        memcpy(rec.alloced_by, callers, sizeof(void *) * STACK_DEPTH);
         record_allocation(&rec);
     }
     return r;
