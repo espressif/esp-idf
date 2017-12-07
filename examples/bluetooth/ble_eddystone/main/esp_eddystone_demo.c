@@ -23,7 +23,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "bt.h"
+#include "esp_bt.h"
 #include "nvs_flash.h"
 #include "esp_log.h"
 #include "esp_bt_defs.h"

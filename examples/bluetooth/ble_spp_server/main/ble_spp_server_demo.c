@@ -19,7 +19,7 @@
 #include "esp_system.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
-#include "bt.h"
+#include "esp_bt.h"
 #include "driver/uart.h"
 #include "string.h"
 
