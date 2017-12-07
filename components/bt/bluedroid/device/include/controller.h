@@ -69,6 +69,7 @@ typedef struct controller_t {
     uint16_t (*get_acl_packet_size_ble)(void);
 
     uint16_t (*get_ble_default_data_packet_length)(void);
+    uint16_t (*get_ble_default_data_packet_txtime)(void);
 
     // Get the number of acl packets the controller can buffer.
     uint16_t (*get_acl_buffer_count_classic)(void);
