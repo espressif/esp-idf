@@ -183,12 +183,13 @@ static void parse_ble_read_resolving_list_size_response(
 
 static void parse_ble_read_suggested_default_data_length_response(
     BT_HDR *response,
-    uint16_t *ble_default_packet_length_ptr)
+    uint16_t *ble_default_packet_length_ptr,
+    uint16_t *ble_default_packet_txtime_ptr)
 {
 
     uint8_t *stream = read_command_complete_header(response, HCI_BLE_READ_DEFAULT_DATA_LENGTH, 2 /* bytes after */);
-    STREAM_TO_UINT8(*ble_default_packet_length_ptr, stream);
-
+    STREAM_TO_UINT16(*ble_default_packet_length_ptr, stream);
+    STREAM_TO_UINT16(*ble_default_packet_txtime_ptr, stream);
     buffer_allocator->free(response);
 }
 
