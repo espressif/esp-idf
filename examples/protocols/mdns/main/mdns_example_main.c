@@ -16,6 +16,9 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "mdns.h"
+#include "driver/gpio.h"
+#include <sys/socket.h>
+#include <netdb.h>
 
 /* The examples use simple WiFi configuration that you can set via
    'make menuconfig'.
@@ -35,9 +38,11 @@ static EventGroupHandle_t wifi_event_group;
 /* The event group allows multiple bits for each event,
    but we only care about one event - are we connected
    to the AP with an IP? */
-const int CONNECTED_BIT = BIT0;
+const int IP4_CONNECTED_BIT = BIT0;
+const int IP6_CONNECTED_BIT = BIT1;
 
 static const char *TAG = "mdns-test";
+static bool auto_reconnect = true;
 
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
@@ -50,17 +55,23 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
         tcpip_adapter_create_ip6_linklocal(TCPIP_ADAPTER_IF_STA);
         break;
     case SYSTEM_EVENT_STA_GOT_IP:
-        xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
+        xEventGroupSetBits(wifi_event_group, IP4_CONNECTED_BIT);
+        break;
+    case SYSTEM_EVENT_AP_STA_GOT_IP6:
+        xEventGroupSetBits(wifi_event_group, IP6_CONNECTED_BIT);
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
         /* This is a workaround as ESP32 WiFi libs don't currently
            auto-reassociate. */
-        esp_wifi_connect();
-        xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
+        if (auto_reconnect) {
+            esp_wifi_connect();
+        }
+        xEventGroupClearBits(wifi_event_group, IP4_CONNECTED_BIT | IP6_CONNECTED_BIT);
         break;
     default:
         break;
     }
+    mdns_handle_system_event(ctx, event);
     return ESP_OK;
 }
 
@@ -84,101 +95,150 @@ static void initialise_wifi(void)
     ESP_ERROR_CHECK( esp_wifi_start() );
 }
 
-static void query_mdns_service(mdns_server_t * mdns, const char * service, const char * proto)
+static void initialise_mdns(void)
 {
-    if(!mdns) {
+    //initialize mDNS
+    ESP_ERROR_CHECK( mdns_init() );
+    //set mDNS hostname (required if you want to advertise services)
+    ESP_ERROR_CHECK( mdns_hostname_set(EXAMPLE_MDNS_HOSTNAME) );
+    //set default mDNS instance name
+    ESP_ERROR_CHECK( mdns_instance_name_set(EXAMPLE_MDNS_INSTANCE) );
+
+    //structure with TXT records
+    mdns_txt_item_t serviceTxtData[3] = {
+        {"board","esp32"},
+        {"u","user"},
+        {"p","password"}
+    };
+
+    //initialize service
+    ESP_ERROR_CHECK( mdns_service_add("ESP32-WebServer", "_http", "_tcp", 80, serviceTxtData, 3) );
+    //add another TXT item
+    ESP_ERROR_CHECK( mdns_service_txt_item_set("_http", "_tcp", "path", "/foobar") );
+    //change TXT item value
+    ESP_ERROR_CHECK( mdns_service_txt_item_set("_http", "_tcp", "u", "admin") );
+}
+
+static const char * if_str[] = {"STA", "AP", "ETH", "MAX"};
+static const char * ip_protocol_str[] = {"V4", "V6", "MAX"};
+
+static void mdns_print_results(mdns_result_t * results){
+    mdns_result_t * r = results;
+    mdns_ip_addr_t * a = NULL;
+    int i = 1, t;
+    while(r){
+        printf("%d: Interface: %s, Type: %s\n", i++, if_str[r->tcpip_if], ip_protocol_str[r->ip_protocol]);
+        if(r->instance_name){
+            printf("  PTR : %s\n", r->instance_name);
+        }
+        if(r->hostname){
+            printf("  SRV : %s.local:%u\n", r->hostname, r->port);
+        }
+        if(r->txt_count){
+            printf("  TXT : [%u] ", r->txt_count);
+            for(t=0; t<r->txt_count; t++){
+                printf("%s=%s; ", r->txt[t].key, r->txt[t].value);
+            }
+            printf("\n");
+        }
+        a = r->addr;
+        while(a){
+            if(a->addr.type == MDNS_IP_PROTOCOL_V6){
+                printf("  AAAA: " IPV6STR "\n", IPV62STR(a->addr.u_addr.ip6));
+            } else {
+                printf("  A   : " IPSTR "\n", IP2STR(&(a->addr.u_addr.ip4)));
+            }
+            a = a->next;
+        }
+        r = r->next;
+    }
+
+}
+
+static void query_mdns_service(const char * service_name, const char * proto)
+{
+    ESP_LOGI(TAG, "Query PTR: %s.%s.local", service_name, proto);
+
+    mdns_result_t * results = NULL;
+    esp_err_t err = mdns_query_ptr(service_name, proto, 3000, 20,  &results);
+    if(err){
+        ESP_LOGE(TAG, "Query Failed");
         return;
     }
-    uint32_t res;
-    if (!proto) {
-        ESP_LOGI(TAG, "Host Lookup: %s", service);
-        res = mdns_query(mdns, service, 0, 1000);
-        if (res) {
-            size_t i;
-            for(i=0; i<res; i++) {
-                const mdns_result_t * r = mdns_result_get(mdns, i);
-                if (r) {
-                    ESP_LOGI(TAG, "  %u: " IPSTR " " IPV6STR, i+1, 
-                        IP2STR(&r->addr), IPV62STR(r->addrv6));
-                }
-            }
-            mdns_result_free(mdns);
-        } else {
-            ESP_LOGI(TAG, "  Not Found");
-        }
-    } else {
-        ESP_LOGI(TAG, "Service Lookup: %s.%s ", service, proto);
-        res = mdns_query(mdns, service, proto, 1000);
-        if (res) {
-            size_t i;
-            for(i=0; i<res; i++) {
-                const mdns_result_t * r = mdns_result_get(mdns, i);
-                if (r) {
-                    ESP_LOGI(TAG, "  %u: %s \"%s\" " IPSTR " " IPV6STR " %u %s", i+1, 
-                        (r->host)?r->host:"", (r->instance)?r->instance:"", 
-                        IP2STR(&r->addr), IPV62STR(r->addrv6),
-                        r->port, (r->txt)?r->txt:"");
-                }
-            }
-            mdns_result_free(mdns);
-        }
+    if(!results){
+        ESP_LOGW(TAG, "No results found!");
+        return;
     }
+
+    mdns_print_results(results);
+    mdns_query_results_free(results);
+}
+
+static void query_mdns_host(const char * host_name)
+{
+    ESP_LOGI(TAG, "Query A: %s.local", host_name);
+
+    struct ip4_addr addr;
+    addr.addr = 0;
+
+    esp_err_t err = mdns_query_a(host_name, 2000,  &addr);
+    if(err){
+        if(err == ESP_ERR_NOT_FOUND){
+            ESP_LOGW(TAG, "Host was not found!");
+            return;
+        }
+        ESP_LOGE(TAG, "Query Failed");
+        return;
+    }
+
+    ESP_LOGI(TAG, IPSTR, IP2STR(&addr));
+}
+
+static void initialise_button(void)
+{
+    gpio_config_t io_conf;
+    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+    io_conf.pin_bit_mask = 1;
+    io_conf.mode = GPIO_MODE_INPUT;
+    io_conf.pull_up_en = 1;
+    io_conf.pull_down_en = 0;
+    gpio_config(&io_conf);
+}
+
+static void check_button(void)
+{
+    static bool old_level = true;
+    bool new_level = gpio_get_level(GPIO_NUM_0);
+    if (!new_level && old_level) {
+        query_mdns_host("esp32");
+        query_mdns_service("_arduino", "_tcp");
+        query_mdns_service("_http", "_tcp");
+        query_mdns_service("_printer", "_tcp");
+        query_mdns_service("_ipp", "_tcp");
+        query_mdns_service("_afpovertcp", "_tcp");
+        query_mdns_service("_smb", "_tcp");
+        query_mdns_service("_ftp", "_tcp");
+        query_mdns_service("_nfs", "_tcp");
+    }
+    old_level = new_level;
 }
 
 static void mdns_example_task(void *pvParameters)
 {
-    mdns_server_t * mdns = NULL;
+    /* Wait for the callback to set the CONNECTED_BIT in the event group. */
+    xEventGroupWaitBits(wifi_event_group, IP4_CONNECTED_BIT | IP6_CONNECTED_BIT,
+                     false, true, portMAX_DELAY);
     while(1) {
-        /* Wait for the callback to set the CONNECTED_BIT in the
-           event group.
-        */
-        xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,
-                            false, true, portMAX_DELAY);
-        ESP_LOGI(TAG, "Connected to AP");
-
-        if (!mdns) {
-            esp_err_t err = mdns_init(TCPIP_ADAPTER_IF_STA, &mdns);
-            if (err) {
-                ESP_LOGE(TAG, "Failed starting MDNS: %u", err);
-                continue;
-            }
-
-            ESP_ERROR_CHECK( mdns_set_hostname(mdns, EXAMPLE_MDNS_HOSTNAME) );
-            ESP_ERROR_CHECK( mdns_set_instance(mdns, EXAMPLE_MDNS_INSTANCE) );
-
-            const char * arduTxtData[4] = {
-                "board=esp32",
-                "tcp_check=no",
-                "ssh_upload=no",
-                "auth_upload=no"
-            };
-
-            ESP_ERROR_CHECK( mdns_service_add(mdns, "_arduino", "_tcp", 3232) );
-            ESP_ERROR_CHECK( mdns_service_txt_set(mdns, "_arduino", "_tcp", 4, arduTxtData) );
-            ESP_ERROR_CHECK( mdns_service_add(mdns, "_http", "_tcp", 80) );
-            ESP_ERROR_CHECK( mdns_service_instance_set(mdns, "_http", "_tcp", "ESP32 WebServer") );
-            ESP_ERROR_CHECK( mdns_service_add(mdns, "_smb", "_tcp", 445) );
-        } else {
-            query_mdns_service(mdns, "esp32", NULL);
-            query_mdns_service(mdns, "_arduino", "_tcp");
-            query_mdns_service(mdns, "_http", "_tcp");
-            query_mdns_service(mdns, "_printer", "_tcp");
-            query_mdns_service(mdns, "_ipp", "_tcp");
-            query_mdns_service(mdns, "_afpovertcp", "_tcp");
-            query_mdns_service(mdns, "_smb", "_tcp");
-            query_mdns_service(mdns, "_ftp", "_tcp");
-            query_mdns_service(mdns, "_nfs", "_tcp");
-        }
-
-        ESP_LOGI(TAG, "Restarting in 10 seconds!");
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
-        ESP_LOGI(TAG, "Starting again!");
+        check_button();
+        vTaskDelay(50 / portTICK_PERIOD_MS);
     }
 }
 
 void app_main()
 {
     ESP_ERROR_CHECK( nvs_flash_init() );
+    initialise_mdns();
     initialise_wifi();
+    initialise_button();
     xTaskCreate(&mdns_example_task, "mdns_example_task", 2048, NULL, 5, NULL);
 }
