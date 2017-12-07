@@ -36,6 +36,7 @@ queue and re-enabling the interrupt will trigger the interrupt again, which can 
 #include <string.h>
 #include "driver/spi_common.h"
 #include "driver/spi_master.h"
+#include "driver/spi_master_internal.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/spi_reg.h"
 #include "soc/dport_reg.h"
