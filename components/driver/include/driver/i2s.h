@@ -293,6 +293,8 @@ int i2s_write_bytes(i2s_port_t i2s_num, const char *src, size_t size, TickType_t
  *
  * Format of the data in source buffer is determined by the I2S
  * configuration (see i2s_config_t).
+ * @note If the built-in ADC mode is enabled, we should call i2s_adc_start and i2s_adc_stop around the whole reading process,
+ *       to prevent the data getting corrupted.
  *
  * @return  Number of bytes read, or ESP_FAIL (-1) for parameter error. If a timeout occurred, bytes read will be less than total size.
  */
@@ -416,6 +418,31 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
  *     - ESP_FAIL Parameter error
  */
 esp_err_t i2s_set_adc_mode(adc_unit_t adc_unit, adc1_channel_t adc_channel);
+
+/**
+ * @brief Start to use I2S built-in ADC mode
+ * @note This function would acquire the lock of ADC to prevent the data getting corrupted
+ *       during the I2S peripheral is being used to do fully continuous ADC sampling.
+ *
+ * @param i2s_num i2s port index
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_INVALID_STATE driver state error
+ *     - ESP_FAIL Internal driver error
+ */
+esp_err_t i2s_adc_enable(i2s_port_t i2s_num);
+
+/**
+ * @brief Stop to use I2S built-in ADC mode
+ * @param i2s_num i2s port index
+ * @note This function would release the lock of ADC so that other tasks can use ADC.
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_INVALID_STATE driver state error
+ */
+esp_err_t i2s_adc_disable(i2s_port_t i2s_num);
 
 #ifdef __cplusplus
 }

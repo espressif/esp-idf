@@ -96,6 +96,7 @@
 #define SENS_FORCE_XPD_SAR_M  ((SENS_FORCE_XPD_SAR_V)<<(SENS_FORCE_XPD_SAR_S))
 #define SENS_FORCE_XPD_SAR_V  0x3
 #define SENS_FORCE_XPD_SAR_S  18
+#define SENS_FORCE_XPD_SAR_SW_M (BIT1)
 #define SENS_FORCE_XPD_SAR_FSM 0 // Use FSM to control power down
 #define SENS_FORCE_XPD_SAR_PD  2 // Force power down
 #define SENS_FORCE_XPD_SAR_PU  3 // Force power up

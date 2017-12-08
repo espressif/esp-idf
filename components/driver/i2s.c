@@ -31,6 +31,7 @@
 #include "driver/i2s.h"
 #include "driver/rtc_io.h"
 #include "driver/dac.h"
+#include "adc1_i2s_private.h"
 
 #include "esp_intr.h"
 #include "esp_err.h"
@@ -83,12 +84,14 @@ typedef struct {
     int bits_per_sample;        /*!< Bits per sample*/
     i2s_mode_t mode;            /*!< I2S Working mode*/
     int use_apll;                /*!< I2S use APLL clock */
+    uint32_t sample_rate;              /*!< I2S sample rate */
 } i2s_obj_t;
 
 static i2s_obj_t *p_i2s_obj[I2S_NUM_MAX] = {0};
 static i2s_dev_t* I2S[I2S_NUM_MAX] = {&I2S0, &I2S1};
 static portMUX_TYPE i2s_spinlock[I2S_NUM_MAX] = {portMUX_INITIALIZER_UNLOCKED, portMUX_INITIALIZER_UNLOCKED};
-
+static int _i2s_adc_unit = -1;
+static int _i2s_adc_channel = -1;
 /**
  * @brief Pre define APLL parameters, save compute time
  *        | bits_per_sample | rate | sdm0 | sdm1 | sdm2 | odir
@@ -321,12 +324,11 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
         return ESP_ERR_INVALID_ARG;
     }
 
-
     if (p_i2s_obj[i2s_num] == NULL) {
         ESP_LOGE(I2S_TAG, "Not initialized yet");
         return ESP_FAIL;
     }
-
+    p_i2s_obj[i2s_num]->sample_rate = rate;
     double clkmdiv = (double)I2S_BASE_CLK / (rate * factor);
 
     if (clkmdiv > 256) {
@@ -645,6 +647,18 @@ esp_err_t i2s_start(i2s_port_t i2s_num)
 {
     //start DMA link
     I2S_ENTER_CRITICAL();
+    i2s_reset_fifo(i2s_num);
+    //reset dma
+    I2S[i2s_num]->lc_conf.in_rst = 1;
+    I2S[i2s_num]->lc_conf.in_rst = 0;
+    I2S[i2s_num]->lc_conf.out_rst = 1;
+    I2S[i2s_num]->lc_conf.out_rst = 0;
+
+    I2S[i2s_num]->conf.tx_reset = 1;
+    I2S[i2s_num]->conf.tx_reset = 0;
+    I2S[i2s_num]->conf.rx_reset = 1;
+    I2S[i2s_num]->conf.rx_reset = 0;
+
     esp_intr_disable(p_i2s_obj[i2s_num]->i2s_isr_handle);
     I2S[i2s_num]->int_clr.val = 0xFFFFFFFF;
     if (p_i2s_obj[i2s_num]->mode & I2S_MODE_TX) {
@@ -677,17 +691,6 @@ esp_err_t i2s_stop(i2s_port_t i2s_num)
         i2s_disable_rx_intr(i2s_num);
     }
     I2S[i2s_num]->int_clr.val = I2S[i2s_num]->int_st.val; //clear pending interrupt
-    i2s_reset_fifo(i2s_num);
-    //reset dma
-    I2S[i2s_num]->lc_conf.in_rst = 1;
-    I2S[i2s_num]->lc_conf.in_rst = 0;
-    I2S[i2s_num]->lc_conf.out_rst = 1;
-    I2S[i2s_num]->lc_conf.out_rst = 0;
-
-    I2S[i2s_num]->conf.tx_reset = 1;
-    I2S[i2s_num]->conf.tx_reset = 0;
-    I2S[i2s_num]->conf.rx_reset = 1;
-    I2S[i2s_num]->conf.rx_reset = 0;
     I2S_EXIT_CRITICAL();
     return 0;
 }
@@ -714,10 +717,18 @@ esp_err_t i2s_set_dac_mode(i2s_dac_mode_t dac_mode)
     return ESP_OK;
 }
 
+static esp_err_t _i2s_adc_mode_recover()
+{
+    I2S_CHECK(((_i2s_adc_unit != -1) && (_i2s_adc_channel != -1)), "i2s ADC recover error, not initialized...", ESP_ERR_INVALID_ARG);
+    return adc_i2s_mode_init(_i2s_adc_unit, _i2s_adc_channel);
+}
+
 esp_err_t i2s_set_adc_mode(adc_unit_t adc_unit, adc1_channel_t adc_channel)
 {
     I2S_CHECK((adc_unit < ADC_UNIT_2), "i2s ADC unit error, only support ADC1 for now", ESP_ERR_INVALID_ARG);
     // For now, we only support SAR ADC1.
+    _i2s_adc_unit = adc_unit;
+    _i2s_adc_channel = adc_channel;
     return adc_i2s_mode_init(adc_unit, adc_channel);
 }
 
@@ -856,7 +867,7 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
         //initialize the specific ADC channel.
         //in the current stage, we only support ADC1 and single channel mode.
         //In default data mode, the ADC data is in 12-bit resolution mode.
-        adc_power_on();
+        adc_power_always_on();
     }
     // configure I2S data port interface.
     i2s_reset_fifo(i2s_num);
@@ -1142,6 +1153,27 @@ int i2s_write_bytes(i2s_port_t i2s_num, const char *src, size_t size, TickType_t
     }
     xSemaphoreGive(p_i2s_obj[i2s_num]->tx->mux);
     return bytes_writen;
+}
+
+esp_err_t i2s_adc_enable(i2s_port_t i2s_num)
+{
+    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
+    I2S_CHECK((p_i2s_obj[i2s_num] != NULL), "Not initialized yet", ESP_ERR_INVALID_STATE);
+    I2S_CHECK((p_i2s_obj[i2s_num]->mode & I2S_MODE_ADC_BUILT_IN), "i2s built-in adc not enabled", ESP_ERR_INVALID_STATE);
+
+    adc1_i2s_mode_acquire();
+    _i2s_adc_mode_recover();
+    return i2s_set_clk(i2s_num, p_i2s_obj[i2s_num]->sample_rate, p_i2s_obj[i2s_num]->bits_per_sample, p_i2s_obj[i2s_num]->channel_num);
+}
+
+esp_err_t i2s_adc_disable(i2s_port_t i2s_num)
+{
+    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
+    I2S_CHECK((p_i2s_obj[i2s_num] != NULL), "Not initialized yet", ESP_ERR_INVALID_STATE);
+    I2S_CHECK((p_i2s_obj[i2s_num]->mode & I2S_MODE_ADC_BUILT_IN), "i2s built-in adc not enabled", ESP_ERR_INVALID_STATE);
+
+    adc1_lock_release();
+    return ESP_OK;
 }
 
 int i2s_read_bytes(i2s_port_t i2s_num, char* dest, size_t size, TickType_t ticks_to_wait)
