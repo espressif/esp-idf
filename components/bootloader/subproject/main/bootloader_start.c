@@ -796,24 +796,20 @@ static void IRAM_ATTR flash_gpio_configure()
 
     if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5) {
         // For ESP32D2WD the SPI pins are already configured
-        ESP_LOGI(TAG, "Detected ESP32D2WD");
-        //flash clock signal should come from IO MUX.
+        // flash clock signal should come from IO MUX.
         PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
         SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, drv, FUN_DRV_S);
     } else if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2) {
         // For ESP32PICOD2 the SPI pins are already configured
-        ESP_LOGI(TAG, "Detected ESP32PICOD2");
-        //flash clock signal should come from IO MUX.
+        // flash clock signal should come from IO MUX.
         PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
         SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, drv, FUN_DRV_S);
     } else if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4) {
         // For ESP32PICOD4 the SPI pins are already configured
-        ESP_LOGI(TAG, "Detected ESP32PICOD4");
-        //flash clock signal should come from IO MUX.
+        // flash clock signal should come from IO MUX.
         PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
         SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, drv, FUN_DRV_S);
     } else {
-        ESP_LOGI(TAG, "Detected ESP32");
         const uint32_t spiconfig = ets_efuse_get_spiconfig();
         if (spiconfig == EFUSE_SPICONFIG_SPI_DEFAULTS) {
             gpio_matrix_out(FLASH_CS_IO, SPICS0_OUT_IDX, 0, 0);
