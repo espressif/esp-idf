@@ -100,7 +100,7 @@ TEST_CASE("(WL) can lseek", "[fatfs][wear_levelling]")
 TEST_CASE("(WL) stat returns correct values", "[fatfs][wear_levelling]")
 {
     test_setup();
-    test_fatfs_stat("/spiflash/stat.txt");
+    test_fatfs_stat("/spiflash/stat.txt", "/spiflash");
     test_teardown();
 }
 

@@ -392,8 +392,23 @@ static int vfs_fat_fstat(void* ctx, int fd, struct stat * st)
     return 0;
 }
 
+static inline mode_t get_stat_mode(bool is_dir)
+{
+    return S_IRWXU | S_IRWXG | S_IRWXO |
+            ((is_dir) ? S_IFDIR : S_IFREG);
+}
+
 static int vfs_fat_stat(void* ctx, const char * path, struct stat * st)
 {
+    if (strcmp(path, "/") == 0) {
+        /* FatFS f_stat function does not work for the drive root.
+         * Just pretend that this is a directory.
+         */
+        memset(st, 0, sizeof(*st));
+        st->st_mode = get_stat_mode(true);
+        return 0;
+    }
+
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
     _lock_acquire(&fat_ctx->lock);
     prepend_drive_to_path(fat_ctx, &path, NULL);
@@ -405,9 +420,10 @@ static int vfs_fat_stat(void* ctx, const char * path, struct stat * st)
         errno = fresult_to_errno(res);
         return -1;
     }
+
+    memset(st, 0, sizeof(*st));
     st->st_size = info.fsize;
-    st->st_mode = S_IRWXU | S_IRWXG | S_IRWXO |
-            ((info.fattrib & AM_DIR) ? S_IFDIR : S_IFREG);
+    st->st_mode = get_stat_mode((info.fattrib & AM_DIR) != 0);
     struct tm tm;
     uint16_t fdate = info.fdate;
     tm.tm_mday = fdate & 0x1f;
