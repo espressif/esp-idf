@@ -23,7 +23,7 @@
 #include "esp_system.h"
 #include "esp_log.h"
 
-#include "bt.h"
+#include "esp_bt.h"
 #include "bt_app_core.h"
 #include "bt_app_av.h"
 #include "esp_bt_main.h"
