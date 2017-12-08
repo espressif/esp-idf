@@ -36,7 +36,7 @@ static uint8_t sdspi_msg_crc7(sdspi_hw_cmd_t* hw_cmd)
     return sdspi_crc7((const uint8_t *)hw_cmd, bytes_to_crc);
 }
 
-void make_hw_cmd(uint32_t opcode, uint32_t arg, sdspi_hw_cmd_t *hw_cmd)
+void make_hw_cmd(uint32_t opcode, uint32_t arg, int timeout_ms, sdspi_hw_cmd_t *hw_cmd)
 {
     hw_cmd->start_bit = 0;
     hw_cmd->transmission_bit = 1;
@@ -48,6 +48,7 @@ void make_hw_cmd(uint32_t opcode, uint32_t arg, sdspi_hw_cmd_t *hw_cmd)
     uint32_t arg_s = __builtin_bswap32(arg);
     memcpy(hw_cmd->arguments, &arg_s, sizeof(arg_s));
     hw_cmd->crc7 = sdspi_msg_crc7(hw_cmd);
+    hw_cmd->timeout_ms = timeout_ms;
 }
 
 esp_err_t sdspi_host_do_transaction(int slot, sdmmc_command_t *cmdinfo)
@@ -55,7 +56,7 @@ esp_err_t sdspi_host_do_transaction(int slot, sdmmc_command_t *cmdinfo)
     _lock_acquire(&s_lock);
     // Convert the command to wire format
     sdspi_hw_cmd_t hw_cmd;
-    make_hw_cmd(cmdinfo->opcode, cmdinfo->arg, &hw_cmd);
+    make_hw_cmd(cmdinfo->opcode, cmdinfo->arg, cmdinfo->timeout_ms, &hw_cmd);
 
     // Flags indicate which of the transfer types should be used
     int flags = 0;
