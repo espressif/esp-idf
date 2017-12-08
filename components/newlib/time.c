@@ -74,13 +74,15 @@ static uint64_t get_rtc_time_us()
 // when RTC is used to persist time, two RTC_STORE registers are used to store boot time
 #elif defined(WITH_FRC1)
 static uint64_t s_boot_time;
-#endif
+#endif // WITH_RTC
 
 #if defined(WITH_RTC) || defined(WITH_FRC1)
 static _lock_t s_boot_time_lock;
 #endif
 
-#ifdef WITH_RTC
+// Offset between FRC timer and the RTC.
+// Initialized after reset or light sleep.
+#if defined(WITH_RTC) && defined(WITH_FRC1)
 uint64_t s_microseconds_offset;
 #endif
 
@@ -171,10 +173,14 @@ static uint64_t get_time_since_boot()
 {
     uint64_t microseconds = 0;
 #ifdef WITH_FRC1
+#ifdef WITH_RTC
     microseconds = s_microseconds_offset + esp_timer_get_time();
+#else
+    microseconds = esp_timer_get_time();
+#endif // WITH_RTC
 #elif defined(WITH_RTC)
     microseconds = get_rtc_time_us();
-#endif
+#endif // WITH_FRC1
     return microseconds;
 }
 #endif // defined( WITH_FRC1 ) || defined( WITH_RTC )
