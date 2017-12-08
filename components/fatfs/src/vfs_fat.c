@@ -43,6 +43,25 @@ typedef struct {
     struct dirent cur_dirent;
 } vfs_fat_dir_t;
 
+/* Date and time storage formats in FAT */
+typedef union {
+    struct {
+        uint16_t mday : 5;  /* Day of month, 1 - 31 */
+        uint16_t mon : 4;   /* Month, 1 - 12 */
+        uint16_t year : 7;  /* Year, counting from 1980. E.g. 37 for 2017 */
+    };
+    uint16_t as_int;
+} fat_date_t;
+
+typedef union {
+    struct {
+        uint16_t sec : 5;   /* Seconds divided by 2. E.g. 21 for 42 seconds */
+        uint16_t min : 6;   /* Minutes, 0 - 59 */
+        uint16_t hour : 5;  /* Hour, 0 - 23 */
+    };
+    uint16_t as_int;
+} fat_time_t;
+
 static const char* TAG = "vfs_fat";
 
 static ssize_t vfs_fat_write(void* p, int fd, const void * data, size_t size);
@@ -424,19 +443,16 @@ static int vfs_fat_stat(void* ctx, const char * path, struct stat * st)
     memset(st, 0, sizeof(*st));
     st->st_size = info.fsize;
     st->st_mode = get_stat_mode((info.fattrib & AM_DIR) != 0);
-    struct tm tm;
-    uint16_t fdate = info.fdate;
-    tm.tm_mday = fdate & 0x1f;
-    fdate >>= 5;
-    tm.tm_mon = (fdate & 0xf) - 1;
-    fdate >>=4;
-    tm.tm_year = fdate + 80;
-    uint16_t ftime = info.ftime;
-    tm.tm_sec = (ftime & 0x1f) * 2;
-    ftime >>= 5;
-    tm.tm_min = (ftime & 0x3f);
-    ftime >>= 6;
-    tm.tm_hour = (ftime & 0x1f);
+    fat_date_t fdate = { .as_int = info.fdate };
+    fat_time_t ftime = { .as_int = info.ftime };
+    struct tm tm = {
+        .tm_mday = fdate.mday,
+        .tm_mon = fdate.mon - 1,    /* unlike tm_mday, tm_mon is zero-based */
+        .tm_year = fdate.year + 80,
+        .tm_sec = ftime.sec * 2,
+        .tm_min = ftime.min,
+        .tm_hour = ftime.hour
+    };
     st->st_mtime = mktime(&tm);
     return 0;
 }
