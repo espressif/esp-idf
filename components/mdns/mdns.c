@@ -323,8 +323,8 @@ void mdns_debug_packet(const uint8_t * data, size_t len);
 #define PCB_STATE_IS_ANNOUNCING(s) (s->state > PCB_PROBE_3 && s->state < PCB_RUNNING)
 #define PCB_STATE_IS_RUNNING(s) (s->state == PCB_RUNNING)
 
-#define MDNS_MUTEX_LOCK()       //xSemaphoreTake(_mdns_server->lock, portMAX_DELAY)
-#define MDNS_MUTEX_UNLOCK()     //xSemaphoreGive(_mdns_server->lock)
+#define MDNS_MUTEX_LOCK()       xSemaphoreTake(_mdns_server->lock, portMAX_DELAY)
+#define MDNS_MUTEX_UNLOCK()     xSemaphoreGive(_mdns_server->lock)
 
 #define MDNS_SEARCH_LOCK()      xSemaphoreTake(_mdns_server->search.lock, portMAX_DELAY)
 #define MDNS_SEARCH_UNLOCK()    xSemaphoreGive(_mdns_server->search.lock)
@@ -427,8 +427,12 @@ static char * _mdns_mangle_name(char * name)
  *
  * @return the service item if found or NULL on error
  */
+#include "esp_log.h"
 static mdns_srv_item_t * _mdns_get_service_item(const char * service, const char * proto)
 {
+//    ESP_LOGW("_mdns_get_service_item", "service: %s", service);
+//    ESP_LOGW("_mdns_get_service_item", "proto: %s", proto);
+
     mdns_srv_item_t * s = _mdns_server->services;
     while (s) {
         if (!strcasecmp(s->service->service, service) && !strcasecmp(s->service->proto, proto)) {
@@ -898,7 +902,7 @@ static inline uint8_t _mdns_append_string(uint8_t * packet, uint16_t * index, co
     *index += len;
     return len + 1;
 }
-
+#include "esp_log.h"
 /**
  * @brief  appends FQDN to a packet, incrementing the index
  *
@@ -913,6 +917,18 @@ static uint16_t _mdns_append_fqdn(uint8_t * packet, uint16_t * index, const char
 {
     if (!count) {
         return _mdns_append_u8(packet, index, 0);
+    }
+    /// NOTE: Added this for loop to get some logginh information abourt th
+    for(int i = 0; i < count; i++){
+        if(strings != NULL) {
+            if(strings[i] != NULL) {
+                //ESP_LOGW("_mdns_append_fqdn", "cnt=%d i=%d %s", count, i, strings[i]);
+            } else {
+                //ESP_LOGE("_mdns_append_fqdn", "cnt=%d i=%d Value NULL", count, i);
+            }
+        } else {
+            //ESP_LOGE("_mdns_append_fqdn", "cnt=%d Strings NULL", count);
+        }
     }
     mdns_name_t name;
     static char buf[MDNS_NAME_BUF_LEN];
@@ -2262,6 +2278,7 @@ static mdns_service_t * _mdns_create_service(const char * service, const char * 
     return s;
 }
 
+
 /**
  * @brief  free service memory
  *
@@ -2272,6 +2289,7 @@ static void _mdns_free_service(mdns_service_t * service)
     if (!service) {
         return;
     }
+
     free((char *)service->instance);
     free((char *)service->service);
     free((char *)service->proto);
@@ -3340,6 +3358,31 @@ static void _mdns_free_action(mdns_action_t * action)
     free(action);
 }
 
+void clean_tx_queue(const char* service, const char* proto) {
+    if(!_mdns_server || !_mdns_server->tx_queue){
+        return;
+    }
+    mdns_tx_packet_t *last = NULL;
+    mdns_tx_packet_t *current = _mdns_server->tx_queue;
+    do {
+        if(current->answers && current->answers->service && current->answers->service->service){
+            if((strcmp(current->answers->service->service->service, service) == 0) && (strcmp(current->answers->service->service->proto, proto) == 0)){
+                if ( last ){
+                    last->next = current->next;
+                    current = current->next;
+                } else {
+                    _mdns_server->tx_queue = current->next;
+                    current = _mdns_server->tx_queue;
+                }
+            } else {
+                current = current->next;
+            }
+        } else {
+            current = current->next;
+        }
+    } while (current != NULL);
+}
+
 static void _mdns_execute_action(mdns_action_t * action)
 {
     mdns_srv_item_t * a = NULL;
@@ -3451,6 +3494,7 @@ static void _mdns_execute_action(mdns_action_t * action)
         if (_mdns_server->services == action->data.srv_del.service) {
             _mdns_server->services = a->next;
             _mdns_send_bye(&a, 1, false);
+            clean_tx_queue(a->service->service, a->service->proto);
             _mdns_free_service(a->service);
             free(a);
         } else {
@@ -3461,6 +3505,7 @@ static void _mdns_execute_action(mdns_action_t * action)
                 mdns_srv_item_t * b = a;
                 a->next = a->next->next;
                 _mdns_send_bye(&b, 1, false);
+                clean_tx_queue(b->service->service, b->service->proto);
                 _mdns_free_service(b->service);
                 free(b);
             }
