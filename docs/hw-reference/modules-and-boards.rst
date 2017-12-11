@@ -16,7 +16,7 @@ For details please refer to documentation below, provided together with descript
 WROOM and WROVER Modules
 ========================
 
-A family of small modules that contain ESP32 chip on board together with some key components including a crystal oscillator and an antenna matching circuit. This makes it easier to provide an ESP32 based solution ready to integrate into final products. Such modules can be also used for evaluation after adding a few extra components like a programming interface, boot strapping resistors and break out headers. The key characteristics of modules are summarized in the following table. Some additinal details are covered in the following chapters.
+A family of small modules that contain ESP32 chip on board together with some key components including a crystal oscillator and an antenna matching circuit. This makes it easier to provide an ESP32 based solution ready to integrate into final products. Such modules can be also used for evaluation after adding a few extra components like a programming interface, bootstrapping resistors and break out headers. The key characteristics of these modules are summarized in the following table. Some additional details are covered in the following chapters.
 
 ===============  ============  =====  ====  ====  ====  ====  ====
 --               Key Components                   Dimensions [mm]
@@ -140,7 +140,7 @@ Previous Versions
 ESP32 Core Board V2 / ESP32 DevKitC
 ===================================
 
-Small and convenient development board with :ref:`esp-modules-and-boards-esp-wroom-32` module installed, break out pin headers and minimum additional components. Includes USB to serial programming interface, that also provides power supply for the board. Has press buttons to reset the board and put it in upload mode. 
+Small and convenient development board with :ref:`esp-modules-and-boards-esp-wroom-32` module installed, break out pin headers and minimum additional components. Includes USB to serial programming interface, that also provides power supply for the board. Has pushbuttons to reset the board and put it in upload mode. 
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-core-board-v2.png
     :align: center
