@@ -154,7 +154,11 @@ int ssl_pm_new(SSL *ssl)
     }
 
     if (ssl->ctx->ssl_alpn.alpn_status == ALPN_ENABLE) {
-	 mbedtls_ssl_conf_alpn_protocols( &ssl_pm->conf, ssl->ctx->ssl_alpn.alpn_list );
+#ifdef MBEDTLS_SSL_ALPN
+        mbedtls_ssl_conf_alpn_protocols( &ssl_pm->conf, ssl->ctx->ssl_alpn.alpn_list );
+#else
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "CONFIG_MBEDTLS_SSL_ALPN must be enabled to use ALPN", -1);
+#endif // MBEDTLS_SSL_ALPN
     }
     mbedtls_ssl_conf_rng(&ssl_pm->conf, mbedtls_ctr_drbg_random, &ssl_pm->ctr_drbg);
 
