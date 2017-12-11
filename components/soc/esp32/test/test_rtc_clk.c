@@ -112,6 +112,15 @@ static void test_clock_switching(void (*switch_func)(rtc_cpu_freq_t))
     ref_clock_deinit();
 }
 
+TEST_CASE("Calculate 8M clock frequency", "[rtc_clk]")
+{
+    // calibrate 8M/256 clock against XTAL, get 8M/256 clock period
+    uint32_t rtc_8md256_period = rtc_clk_cal(RTC_CAL_8MD256, 100);
+    uint32_t rtc_fast_freq_hz = 1000000ULL * (1 << RTC_CLK_CAL_FRACT) * 256 / rtc_8md256_period;
+    printf("RTC_FAST_CLK=%d Hz\n", rtc_fast_freq_hz);
+    TEST_ASSERT_INT32_WITHIN(500000, RTC_FAST_CLK_FREQ_APPROX, rtc_fast_freq_hz);
+}
+
 TEST_CASE("Test switching between PLL and XTAL", "[rtc_clk]")
 {
     test_clock_switching(rtc_clk_cpu_freq_set);
