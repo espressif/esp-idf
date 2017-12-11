@@ -523,6 +523,29 @@ void bta_dm_set_dev_name (tBTA_DM_MSG *p_data)
     bta_dm_set_eir ((char *)p_data->set_name.name);
 }
 
+void bta_dm_update_white_list(tBTA_DM_MSG *p_data)
+{
+    BTM_BleUpdateAdvWhitelist(p_data->white_list.add_remove, p_data->white_list.remote_addr, p_data->white_list.add_wl_cb);
+}
+
+void bta_dm_ble_read_adv_tx_power(tBTA_DM_MSG *p_data)
+{
+    if (p_data->read_tx_power.read_tx_power_cb != NULL) {
+        BTM_BleReadAdvTxPower(p_data->read_tx_power.read_tx_power_cb);
+    } else {
+        APPL_TRACE_ERROR("%s(), the callback function cann't be NULL.", __func__);
+    }
+}
+
+void bta_dm_ble_read_rssi(tBTA_DM_MSG *p_data)
+{
+    if (p_data->rssi.read_rssi_cb != NULL) {
+        BTM_ReadRSSI(p_data->rssi.remote_addr, p_data->rssi.read_rssi_cb);
+    } else {
+        APPL_TRACE_ERROR("%s(), the callback function cann't be NULL.", __func__);
+    }
+}
+
 /*******************************************************************************
 **
 ** Function         bta_dm_set_visibility
@@ -623,7 +646,6 @@ void bta_dm_process_remove_device(BD_ADDR bd_addr)
     if (bta_dm_cb.p_sec_cback) {
         tBTA_DM_SEC sec_event;
         bdcpy(sec_event.link_down.bd_addr, bd_addr);
-        /* No connection, set status to success (acl disc code not valid) */
         sec_event.link_down.status = HCI_SUCCESS;
         bta_dm_cb.p_sec_cback(BTA_DM_DEV_UNPAIRED_EVT, &sec_event);
     }
@@ -4079,6 +4101,8 @@ void bta_dm_set_encryption (tBTA_DM_MSG *p_data)
                 == BTM_CMD_STARTED) {
             bta_dm_cb.device_list.peer_device[i].p_encrypt_cback = p_data->set_encryption.p_callback;
         }
+    }else{
+        APPL_TRACE_ERROR("%s, not find peer_bdaddr or peer_bdaddr connection state error", __func__);
     }
 }
 #endif  ///SMP_INCLUDED == TRUE
@@ -4636,6 +4660,47 @@ void bta_dm_ble_observe (tBTA_DM_MSG *p_data)
         }
     }
 }
+
+/*******************************************************************************
+**
+** Function         bta_dm_ble_scan
+**
+** Description      This function set the preferred connection scan parameters.
+**
+** Parameters:
+**
+*******************************************************************************/
+void bta_dm_ble_scan (tBTA_DM_MSG *p_data)
+{
+    tBTM_STATUS status;
+    if (p_data->ble_scan.start) {
+        /*Save the  callback to be called when a scan results are available */
+        bta_dm_search_cb.p_scan_cback = p_data->ble_scan.p_cback;
+
+        if ((status = BTM_BleScan(TRUE, p_data->ble_scan.duration,
+                                     bta_dm_observe_results_cb, bta_dm_observe_cmpl_cb)) != BTM_CMD_STARTED) {
+            APPL_TRACE_WARNING(" %s start scan failed. status=0x%x\n", __FUNCTION__, status);
+        }
+
+        if (p_data->ble_scan.p_start_scan_cback) {
+            status = (status == BTM_CMD_STARTED ? BTA_SUCCESS : BTA_FAILURE);
+            p_data->ble_scan.p_start_scan_cback(status);
+        }
+    } else {
+        bta_dm_search_cb.p_scan_cback = NULL;
+        status = BTM_BleScan(FALSE, 0, NULL, NULL);
+
+        if (status != BTM_CMD_STARTED){
+            APPL_TRACE_WARNING(" %s stop scan failed, status=0x%x\n", __FUNCTION__, status);
+        }
+
+        if (p_data->ble_scan.p_stop_scan_cback) {
+            status = (status == BTM_CMD_STARTED ? BTA_SUCCESS : BTA_FAILURE);
+            p_data->ble_scan.p_stop_scan_cback(status);
+        }
+    }
+}
+
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_set_adv_params
@@ -5608,7 +5673,7 @@ static void bta_dm_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
         break;
 
     case BTA_GATTC_SEARCH_RES_EVT:
-        bta_dm_gatt_disc_result(p_data->srvc_res.service_uuid.id);
+        bta_dm_gatt_disc_result(p_data->srvc_res.service_uuid);
         break;
 
     case BTA_GATTC_SEARCH_CMPL_EVT:

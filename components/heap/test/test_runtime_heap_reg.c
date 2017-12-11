@@ -21,7 +21,7 @@ TEST_CASE("Allocate new heap at runtime", "[heap][ignore]")
     uint32_t after_free = esp_get_free_heap_size();
     printf("Before %u after %u\n", before_free, after_free);
     /* allow for some 'heap overhead' from accounting structures */
-    TEST_ASSERT(after_free > before_free + BUF_SZ - HEAP_OVERHEAD_MAX);
+    TEST_ASSERT(after_free >= before_free + BUF_SZ - HEAP_OVERHEAD_MAX);
 }
 
 /* NOTE: This is not a well-formed unit test, it leaks memory and
@@ -45,3 +45,24 @@ TEST_CASE("Allocate new heap with new capability", "[heap][ignore]")
     TEST_ASSERT_NOT_NULL( heap_caps_malloc(ALLOC_SZ, MALLOC_CAP_INVENTED) );
 }
 
+/* NOTE: This is not a well-formed unit test.
+ * If run twice without a reset, it will failed.
+ */
+
+TEST_CASE("Add .bss memory to heap region runtime", "[heap][ignore]")
+{
+#define BUF_SZ 1000
+#define HEAP_OVERHEAD_MAX 200
+    static uint8_t s_buffer[BUF_SZ];
+
+    printf("s_buffer start %08x end %08x\n", (intptr_t)s_buffer, (intptr_t)s_buffer + BUF_SZ);
+    uint32_t before_free = esp_get_free_heap_size();
+    TEST_ESP_OK( heap_caps_add_region((intptr_t)s_buffer, (intptr_t)s_buffer + BUF_SZ) );
+    uint32_t after_free = esp_get_free_heap_size();
+    printf("Before %u after %u\n", before_free, after_free);
+    /* allow for some 'heap overhead' from accounting structures */
+    TEST_ASSERT(after_free >= before_free + BUF_SZ - HEAP_OVERHEAD_MAX);
+
+    /* Twice add must be failed */
+    TEST_ASSERT( (heap_caps_add_region((intptr_t)s_buffer, (intptr_t)s_buffer + BUF_SZ) != ESP_OK) );
+}

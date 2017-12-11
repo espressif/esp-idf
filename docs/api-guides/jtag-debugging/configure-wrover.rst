@@ -7,7 +7,7 @@ All versions of ESP32 WROVER KIT boards have JTAG functionality build in. Puttin
 Configure Hardware
 ^^^^^^^^^^^^^^^^^^
 
-1.  Enable on-board JTAG functionality by setting JP8 according to :doc:`../../get-started/get-started-wrover-kit`, section :ref:`esp-wrover-kit-setup-options`. 
+1.  Enable on-board JTAG functionality by setting JP8 according to :doc:`../../get-started/get-started-wrover-kit`, section :ref:`get-started-esp-wrover-kit-setup-options`. 
 
 2.  Verify if ESP32 pins used for JTAG communication are not connected to some other h/w that may disturb JTAG operation:
 

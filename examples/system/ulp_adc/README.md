@@ -6,11 +6,19 @@ ULP program periodically measures the input voltage on GPIO34. The voltage is co
 
 By default, thresholds are set to 1.35V and 1.75V, approximately.
 
-Average current drawn by the ESP32 in this example with the default configuration (10Hz measurement period, 4x averaging) is 80 uA.
+GPIO15 is connected to ground to supress output from ROM bootloader.
+
+Average current drawn by the ESP32 in this example (with the default 4x averaging) depending on the measurement frequency is as follows:
+
+Measurement frequency, Hz | Average current, uA
+--------------------------|---------------------
+  10                      | 8.5
+  50                      | 20
+ 100                      | 37
 
 ## Example output
 
-Below is the output from this example. GPIO15 is pulled down to ground to supress output from ROM bootloader.
+Below is the output from this example.
 
 ```
 Not ULP wakeup

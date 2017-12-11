@@ -1,17 +1,30 @@
-# LEDC(LED control) Example
+# LEDC (LED PWM Controller) Example
 
-###This example shows:
+This example shows how to control intensity of LEDs using ESP32's on-board hardware LED PWM Controller module.
 
- * init LEDC module:
- 
-     a.	You need to set the timer of LEDC first, this decide the frequency and resolution of PWM.
-     
-     b.	You need to set the LEDC channel you want to use, and bind the channel with one of the timers.
-     
- * You can install a default fade function, then you can use fade APIs.
- 
- * You can also set a target duty directly without fading.
- 
- * This example use GPIO18/19/4/5 as LEDC ouput, and it will change the duty repeatedly.
+## Functionality
 
- * GPIO18/19 are from high speed channel group. GPIO4/5 are from low speed channel group.
+Operations performed by example:
+
+* Configuration of two timers (one high speed and the other low speed) that will be clocking four LEDC channels.
+
+* Configuration of four channels of LEDC module, two channels will operate in high speed mode and two in low speed mode. Each channel will drive one GPIO / LED.
+
+* Initialization of fade service to fade / gradually change intensity of LEDs.
+
+* Operation of channels in a loop by cycling through four steps that will drive LEDs as follows:
+
+  1. Fade up / increase intensity
+  2. Fade down / decrease intensity (down to zero)
+  3. Set steady intensity
+  4. Set intensity to zero
+
+## Hardware Setup
+
+Connect four LEDs to the following LEDC channels / individual GPIOs:
+
+  * Channel 0 - GPIO18
+  * Channel 1 - GPIO19
+  * Channel 2 - GPIO4
+  * Channel 3 - GPIO5
+

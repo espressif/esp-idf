@@ -101,8 +101,8 @@ int adc1_sample_and_show(int sampling_period)
 void test_task(void *arg)
 {
     ESP_LOGI(TAG, "Enabling ADC1 on channel 6 / GPIO34.");
-    adc1_config_width(ADC_WIDTH_12Bit);
-    adc1_config_channel_atten(ADC1_TEST_CHANNEL, ADC_ATTEN_11db);
+    adc1_config_width(ADC_WIDTH_BIT_12);
+    adc1_config_channel_atten(ADC1_TEST_CHANNEL, ADC_ATTEN_DB_11);
 
     ESP_LOGI(TAG, "Enabling CW generator on DAC channel 1 / GPIO25.");
     enable_cosine_generator();

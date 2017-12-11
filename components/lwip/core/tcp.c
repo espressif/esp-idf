@@ -405,6 +405,7 @@ tcp_abandon(struct tcp_pcb *pcb, int reset)
 #if TCP_QUEUE_OOSEQ
     if (pcb->ooseq != NULL) {
       tcp_segs_free(pcb->ooseq);
+      pcb->ooseq = NULL;
     }
 #endif /* TCP_QUEUE_OOSEQ */
     if (send_rst) {
@@ -1248,9 +1249,7 @@ tcp_seg_free(struct tcp_seg *seg)
   if (seg != NULL) {
     if (seg->p != NULL) {
       pbuf_free(seg->p);
-#if TCP_DEBUG
       seg->p = NULL;
-#endif /* TCP_DEBUG */
     }
     memp_free(MEMP_TCP_SEG, seg);
   }
@@ -1352,8 +1351,6 @@ tcp_kill_state(enum tcp_state state)
 {
   struct tcp_pcb *pcb, *inactive;
   u32_t inactivity;
-
-  LWIP_ASSERT("invalid state", (state == CLOSING) || (state == LAST_ACK));
 
   inactivity = 0;
   inactive = NULL;

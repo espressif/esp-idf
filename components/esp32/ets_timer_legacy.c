@@ -43,7 +43,7 @@
 #define TIMER_INITIALIZED_FIELD(p_ets_timer) ((p_ets_timer)->timer_expire)
 #define TIMER_INITIALIZED_VAL 0x12121212
 
-static bool timer_initialized(ETSTimer *ptimer)
+static IRAM_ATTR bool timer_initialized(ETSTimer *ptimer)
 {
     return TIMER_INITIALIZED_FIELD(ptimer) == TIMER_INITIALIZED_VAL;
 }
@@ -68,7 +68,7 @@ void ets_timer_setfn(ETSTimer *ptimer, ETSTimerFunc *pfunction, void *parg)
 }
 
 
-void ets_timer_arm_us(ETSTimer *ptimer, uint32_t time_us, bool repeat_flag)
+void IRAM_ATTR ets_timer_arm_us(ETSTimer *ptimer, uint32_t time_us, bool repeat_flag)
 {
     assert(timer_initialized(ptimer));
     esp_timer_stop(ESP_TIMER(ptimer));  // no error check
@@ -79,7 +79,7 @@ void ets_timer_arm_us(ETSTimer *ptimer, uint32_t time_us, bool repeat_flag)
     }
 }
 
-void ets_timer_arm(ETSTimer *ptimer, uint32_t time_ms, bool repeat_flag)
+void IRAM_ATTR ets_timer_arm(ETSTimer *ptimer, uint32_t time_ms, bool repeat_flag)
 {
     uint64_t time_us = 1000LL * (uint64_t) time_ms;
     assert(timer_initialized(ptimer));
@@ -100,7 +100,7 @@ void ets_timer_done(ETSTimer *ptimer)
     }
 }
 
-void ets_timer_disarm(ETSTimer *ptimer)
+void IRAM_ATTR ets_timer_disarm(ETSTimer *ptimer)
 {
     if (timer_initialized(ptimer)) {
         esp_timer_stop(ESP_TIMER(ptimer));

@@ -52,8 +52,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <ctype.h>
+
 #include "esp_log.h"
+
 #include "rom/queue.h"
+#include "soc/soc_memory_layout.h"
 
 //print number of bytes per line for esp_log_buffer_char and esp_log_buffer_hex
 #define BYTES_PER_LINE 16
@@ -102,9 +106,18 @@ static inline void heap_swap(int i, int j);
 static inline bool should_output(esp_log_level_t level_for_message, esp_log_level_t level_for_tag);
 static inline void clear_log_level_list();
 
-void esp_log_set_vprintf(vprintf_like_t func)
+vprintf_like_t esp_log_set_vprintf(vprintf_like_t func)
 {
+    if (!s_log_mutex) {
+        s_log_mutex = xSemaphoreCreateMutex();
+    }
+    xSemaphoreTake(s_log_mutex, portMAX_DELAY);
+
+    vprintf_like_t orig_func = s_log_print_func;
     s_log_print_func = func;
+
+    xSemaphoreGive(s_log_mutex);
+    return orig_func;
 }
 
 void esp_log_level_set(const char* tag, esp_log_level_t level)
@@ -306,10 +319,13 @@ static inline void heap_swap(int i, int j)
 #define ATTR
 #endif // BOOTLOADER_BUILD
 
+//the variable defined in ROM is the cpu frequency in MHz.
+//as a workaround before the interface for this variable
+extern uint32_t g_ticks_per_us_pro;
 
 uint32_t ATTR esp_log_early_timestamp()
 {
-    return xthal_get_ccount() / (CPU_CLK_FREQ_ROM / 1000);
+    return xthal_get_ccount() / (g_ticks_per_us_pro * 1000);
 }
 
 #ifndef BOOTLOADER_BUILD
@@ -320,7 +336,7 @@ uint32_t IRAM_ATTR esp_log_timestamp()
         return esp_log_early_timestamp();
     }
     static uint32_t base = 0;
-    if (base == 0) {
+    if (base == 0 && xPortGetCoreID() == 0) {
         base = esp_log_early_timestamp();
     }
     return base + xTaskGetTickCount() * (1000 / configTICK_RATE_HZ);
@@ -332,32 +348,120 @@ uint32_t esp_log_timestamp() __attribute__((alias("esp_log_early_timestamp")));
 
 #endif //BOOTLOADER_BUILD
 
-void esp_log_buffer_hex(const char *tag, const void *buffer, uint16_t buff_len)
+void esp_log_buffer_hex_internal(const char *tag, const void *buffer, uint16_t buff_len,
+                        esp_log_level_t log_level)
 {
-    const char *as_bytes = (const char *)buffer;
-    char temp_buffer[3*BYTES_PER_LINE + 1]= {0};
-    int line_len = 0;
-    for (int i = 0; i < buff_len; i++) {
-        line_len += sprintf(temp_buffer+line_len, "%02x ", as_bytes[i]);
-        if (((i + 1) % BYTES_PER_LINE == 0) || (i == buff_len - 1)) {
-            ESP_LOGI(tag, "%s", temp_buffer);
-            line_len = 0;
-            temp_buffer[0] = 0;
+    if ( buff_len == 0 ) return;
+    char temp_buffer[BYTES_PER_LINE+3];   //for not-byte-accessible memory
+    char hex_buffer[3*BYTES_PER_LINE+1];
+    const char *ptr_line;
+    int bytes_cur_line;
+
+    do {
+        if ( buff_len > BYTES_PER_LINE ) {
+            bytes_cur_line = BYTES_PER_LINE;
+        } else {
+            bytes_cur_line = buff_len;
         }
-    }
+        if ( !esp_ptr_byte_accessible(buffer) ) {
+            //use memcpy to get around alignment issue
+            memcpy( temp_buffer, buffer, (bytes_cur_line+3)/4*4 );
+            ptr_line = temp_buffer;
+        } else {
+            ptr_line = buffer;
+        }
+
+        for( int i = 0; i < bytes_cur_line; i ++ ) {
+            sprintf( hex_buffer + 3*i, "%02x ", ptr_line[i] );
+        }
+        ESP_LOG_LEVEL( log_level, tag, "%s", hex_buffer );
+        buffer += bytes_cur_line;
+        buff_len -= bytes_cur_line;
+    } while( buff_len );
 }
 
-void esp_log_buffer_char(const char *tag, const void *buffer, uint16_t buff_len)
+void esp_log_buffer_char_internal(const char *tag, const void *buffer, uint16_t buff_len,
+                            esp_log_level_t log_level)
 {
-    const char *as_bytes = (const char *)buffer;
-    char temp_buffer[BYTES_PER_LINE + 1] = {0};
-    int line_len = 0;
-    for (int i = 0; i < buff_len; i++) {
-        line_len += sprintf(temp_buffer+line_len, "%c", as_bytes[i]);
-        if (((i + 1) % BYTES_PER_LINE == 0) || (i == buff_len - 1)) {
-            ESP_LOGI(tag, "%s", temp_buffer);
-            line_len = 0;
-            temp_buffer[0] = 0;
+    if ( buff_len == 0 ) return;
+    char temp_buffer[BYTES_PER_LINE+3];   //for not-byte-accessible memory
+    char char_buffer[BYTES_PER_LINE+1];
+    const char *ptr_line;
+    int bytes_cur_line;
+
+    do {
+        if ( buff_len > BYTES_PER_LINE ) {
+            bytes_cur_line = BYTES_PER_LINE;
+        } else {
+            bytes_cur_line = buff_len;
         }
-    }
+        if ( !esp_ptr_byte_accessible(buffer) ) {
+            //use memcpy to get around alignment issue
+            memcpy( temp_buffer, buffer, (bytes_cur_line+3)/4*4 );
+            ptr_line = temp_buffer;
+        } else {
+            ptr_line = buffer;
+        }
+
+        for( int i = 0; i < bytes_cur_line; i ++ ) {
+            sprintf( char_buffer + i, "%c", ptr_line[i] );
+        }
+        ESP_LOG_LEVEL( log_level, tag, "%s", char_buffer );
+        buffer += bytes_cur_line;
+        buff_len -= bytes_cur_line;
+    } while( buff_len );
+}
+
+void esp_log_buffer_hexdump_internal( const char *tag, const void *buffer, uint16_t buff_len, esp_log_level_t log_level)
+{
+
+    if ( buff_len == 0 ) return;
+    char temp_buffer[BYTES_PER_LINE+3];   //for not-byte-accessible memory
+    const char *ptr_line;
+    //format: field[length]
+    // ADDR[10]+" "+DATA_HEX[8*3]+" "+DATA_HEX[8*3]+"  |"+DATA_CHAR[8]+"|"
+    char hd_buffer[10+2+BYTES_PER_LINE*3+3+BYTES_PER_LINE+1+1];
+    char *ptr_hd;
+    int bytes_cur_line;
+
+    do {
+        if ( buff_len > BYTES_PER_LINE ) {
+            bytes_cur_line = BYTES_PER_LINE;
+        } else {
+            bytes_cur_line = buff_len;
+        }
+        if ( !esp_ptr_byte_accessible(buffer) ) {
+            //use memcpy to get around alignment issue
+            memcpy( temp_buffer, buffer, (bytes_cur_line+3)/4*4 );
+            ptr_line = temp_buffer;
+        } else {
+            ptr_line = buffer;
+        }
+        ptr_hd = hd_buffer;
+        
+        ptr_hd += sprintf( ptr_hd, "%p ", buffer );
+        for( int i = 0; i < BYTES_PER_LINE; i ++ ) {
+            if ( (i&7)==0 ) {
+                ptr_hd += sprintf( ptr_hd, " " );
+            }
+            if ( i < bytes_cur_line ) {
+                ptr_hd += sprintf( ptr_hd, " %02x", ptr_line[i] );
+            } else {
+                ptr_hd += sprintf( ptr_hd, "   " );
+            }
+        }
+        ptr_hd += sprintf( ptr_hd, "  |" );
+        for( int i = 0; i < bytes_cur_line; i ++ ) {
+            if ( isprint((int)ptr_line[i]) ) {
+                ptr_hd += sprintf( ptr_hd, "%c", ptr_line[i] );
+            } else {
+                ptr_hd += sprintf( ptr_hd, "." );
+            }
+        }
+        ptr_hd += sprintf( ptr_hd, "|" );
+
+        ESP_LOG_LEVEL( log_level, tag, "%s", hd_buffer );
+        buffer += bytes_cur_line;
+        buff_len -= bytes_cur_line;
+    } while( buff_len );
 }

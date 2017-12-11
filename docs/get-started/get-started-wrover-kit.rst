@@ -1,15 +1,15 @@
 ESP-WROVER-KIT V3 Getting Started Guide
 =======================================
 
-This user guide shows how to get started with ESP-WROVER-KIT V3 development board including description of its functionality and configuration options. You can find out what version you have in section :ref:`esp-modules-and-boards-esp-wrover-kit`.
+This user guide shows how to get started with ESP-WROVER-KIT V3 development board including description of its functionality and configuration options. For description of other versions of the ESP-WROVER-KIT check :doc:`../hw-reference/index`.
 
-If you like to start using this board right now, go directly to section :ref:`esp-wrover-kit-start-development`.
+If you like to start using this board right now, go directly to section :ref:`get-started-esp-wrover-kit-start-development`.
 
 
 What You Need
 -------------
 
-* 1 × ESP-WROVER-KIT V3 board
+* 1 × :ref:`ESP-WROVER-KIT V3 board <get-started-esp-wrover-kit-board-front>`
 * 1 x Micro USB 2.0 Cable, Type A to Micro B
 * 1 × PC loaded with Windows, Linux or Mac OS
 
@@ -70,7 +70,7 @@ Boot
 USB
     USB interface. It functions as the power supply for the board and the communication interface between PC and ESP32 module.
 Power Select
-    Power supply selection interface: the ESP-WROVER-KIT can be powered through the USB interface or the 5V Input interface. The user can select the power supply with a jumper. More details can be found in section :ref:`esp-wrover-kit-setup-options`, jumper header JP7.
+    Power supply selection interface: the ESP-WROVER-KIT can be powered through the USB interface or the 5V Input interface. The user can select the power supply with a jumper. More details can be found in section :ref:`get-started-esp-wrover-kit-setup-options`, jumper header JP7.
 Power Key
     Power on/off button: toggling to the right powers the board on; toggling to the left powers the board off.
 5V Input
@@ -82,11 +82,13 @@ Camera
 RGB
     Red, green and blue (RGB) light emitting diodes (LEDs), which may be controlled by pulse width modulation (PWM).
 I/O
-    All the pins on the ESP32 module are led out to the pin headers on the ESPWROVER-KIT. Users can program ESP32 to enable multiple functions such as PWM, ADC, DAC, I2C, I2S, SPI, etc.
+    All the pins on the ESP32 module are led out to the pin headers on the ESP-WROVER-KIT. Users can program ESP32 to enable multiple functions such as PWM, ADC, DAC, I2C, I2S, SPI, etc.
 Micro SD Card
     Micro SD card slot for data storage.
 LCD
-    ESP-WROVER-KIT supports mounting and interfacing a 3.2” SPI (standard 4-wire Serial Peripheral Interface) LCD, as shown on figure :ref:`esp-wrover-kit-board-back`.
+    ESP-WROVER-KIT supports mounting and interfacing a 3.2” SPI (standard 4-wire Serial Peripheral Interface) LCD, as shown on figure :ref:`get-started-esp-wrover-kit-board-back`.
+
+.. _get-started-esp-wrover-kit-board-front:
 
 .. figure:: ../_static/esp32-wrover-kit-layout-front.jpg
     :align: center
@@ -95,7 +97,7 @@ LCD
 
     ESP-WROVER-KIT board layout - front
 
-.. _esp-wrover-kit-board-back:
+.. _get-started-esp-wrover-kit-board-back:
 
 .. figure:: ../_static/esp32-wrover-kit-layout-back.jpg
     :align: center
@@ -105,7 +107,7 @@ LCD
     ESP-WROVER-KIT board layout - back
 
 
-.. _esp-wrover-kit-setup-options:
+.. _get-started-esp-wrover-kit-setup-options:
 
 Setup Options
 ^^^^^^^^^^^^^
@@ -116,7 +118,7 @@ There are five jumper headers available to set up the board functionality. Typic
 | Header | Jumper Setting   | Description of Functionality                     |
 +--------+------------------+--------------------------------------------------+
 |  JP7   | |jp7-ext_5v|     | Power ESP-WROVER-KIT board from an external      |
-|        |                  | power supply                                     |
+|        |                  | | power supply                                   |
 +--------+------------------+--------------------------------------------------+
 |  JP7   | |jp7-usb_5v|     | Power ESP-WROVER-KIT board from an USB port      |
 +--------+------------------+--------------------------------------------------+
@@ -135,59 +137,115 @@ Allocation of ESP32 Pins
 Several pins / terminals of ESP32 module are allocated to the on board hardware. Some of them, like GPIO0 or GPIO2, have multiple functions. If certain hardware is not installed, e.g. nothing is plugged in to the Camera / JP4 header, then selected GPIOs may be used for other purposes.
 
 
+Main I/O Connector / JP1
+""""""""""""""""""""""""
+
+The JP1 connector is shown in two columns in the middle under "I/O" headers. The two columns "Shared With" outside, describe where else on the board certain GPIO is used. 
+
++----------------------+------+------+----------------------+
+|          Shared With | I/O  | I/O  | Shared With          |
++======================+======+======+======================+
+|                      | 3.3V | GND  |                      |
++----------------------+------+------+----------------------+
+|              NC/XTAL | IO32 | IO33 | NC/XTAL              |
++----------------------+------+------+----------------------+
+|        JTAG, MicroSD | IO12 | IO13 | JTAG, MicroSD        |
++----------------------+------+------+----------------------+
+|        JTAG, MicroSD | IO14 | IO27 | Camera               |
++----------------------+------+------+----------------------+
+|               Camera | IO26 | IO25 | Camera, LCD          |
++----------------------+------+------+----------------------+
+|               Camera | IO35 | IO34 | Camera               |
++----------------------+------+------+----------------------+
+|               Camera | IO39 | IO36 | Camera               |
++----------------------+------+------+----------------------+
+|                 JTAG | EN   | IO23 | Camera, LCD          |
++----------------------+------+------+----------------------+
+|          Camera, LCD | IO22 | IO21 | Camera, LCD, MicroSD |
++----------------------+------+------+----------------------+
+|          Camera, LCD | IO19 | IO18 | Camera, LCD          |
++----------------------+------+------+----------------------+
+|          Camera, LCD | IO5  | IO17 | PSRAM                |
++----------------------+------+------+----------------------+
+|                PSRAM | IO16 | IO4  | LED, Camera, MicroSD |
++----------------------+------+------+----------------------+
+|            LED, Boot | IO0  | IO2  | LED, Camera, MicroSD |
++----------------------+------+------+----------------------+
+|        JTAG, MicroSD | IO15 | 5V   |                      |
++----------------------+------+------+----------------------+
+
+Legend:
+
+* NC/XTAL - :ref:`32.768 kHz Oscillator <get-started-esp-wrover-kit-xtal>`
+* JTAG - :ref:`JTAG / JP8 <get-started-esp-wrover-jtag-header>`
+* Boot - Boot button / SW2
+* Camera - :ref:`Camera / JP4 <get-started-esp-wrover-camera-header>`
+* LED - :ref:`RGB LED <get-started-esp-wrover-rgb-led-connections>`
+* MicroSD - :ref:`MicroSD Card / J4 <get-started-esp-wrover-microsd-card-slot>`
+* LCD - :ref:`LCD / U5 <get-started-esp-wrover-lcd-connector>`
+* PSRAM - ESP32-WROVER's PSRAM, if ESP32-WROVER is installed
+
+
+.. _get-started-esp-wrover-kit-xtal:
+
 32.768 kHz Oscillator
 """""""""""""""""""""
 
-+---+---------------+
-|   | ESP32 Pin     |
-+===+===============+
-| 1 | GPIO32        |
-+---+---------------+
-| 2 | GPIO33        |
-+---+---------------+
++---+-----------+
+|   | ESP32 Pin |
++===+===========+
+| 1 | GPIO32    |
++---+-----------+
+| 2 | GPIO33    |
++---+-----------+
 
 .. note::
 
     As GPIO32 and GPIO33 are connected to the oscillator, to maintain signal integrity, they are not connected to JP1 I/O expansion connector. This allocation may be changed from oscillator to JP1 by desoldering 0R resistors from positions R11 / R23 and installing them in positions R12 / R24.
 
 
+.. _get-started-esp-wrover-spi-flash-header:
+
 SPI Flash / JP13
 """"""""""""""""
 
-+---+---------------+
-|   | ESP32 Pin     |
-+===+===============+
-| 1 | CLK / GPIO6   |
-+---+---------------+
-| 2 | SD0 / GPIO7   |
-+---+---------------+
-| 3 | SD1 / GPIO8   |
-+---+---------------+
-| 4 | SD2 / GPIO9   |
-+---+---------------+
-| 5 | SD3 / GPIO10  |
-+---+---------------+
-| 6 | CMD / GPIO11  |
-+---+---------------+
++---+--------------+
+|   | ESP32 Pin    |
++===+==============+
+| 1 | CLK / GPIO6  |
++---+--------------+
+| 2 | SD0 / GPIO7  |
++---+--------------+
+| 3 | SD1 / GPIO8  |
++---+--------------+
+| 4 | SD2 / GPIO9  |
++---+--------------+
+| 5 | SD3 / GPIO10 |
++---+--------------+
+| 6 | CMD / GPIO11 |
++---+--------------+
 
+.. _get-started-esp-wrover-jtag-header:
 
 JTAG / JP8
 """"""""""
 
-+---+---------------+----------------+
-|   | ESP32 Pin     | JTAG Signal    |
-+===+===============+================+
-| 1 | CHIP_PU       | TRST_N         |
-+---+---------------+----------------+
-| 2 | MTDO / GPIO15 | TDO            |
-+---+---------------+----------------+
-| 3 | MTDI / GPIO12 | TDI            |
-+---+---------------+----------------+
-| 4 | MTCK / GPIO13 | TCK            |
-+---+---------------+----------------+
-| 5 | MTMS / GPIO14 | TMS            |
-+---+---------------+----------------+
++---+---------------+-------------+
+|   | ESP32 Pin     | JTAG Signal |
++===+===============+=============+
+| 1 | EN            | TRST_N      |
++---+---------------+-------------+
+| 2 | MTDO / GPIO15 | TDO         |
++---+---------------+-------------+
+| 3 | MTDI / GPIO12 | TDI         |
++---+---------------+-------------+
+| 4 | MTCK / GPIO13 | TCK         |
++---+---------------+-------------+
+| 5 | MTMS / GPIO14 | TMS         |
++---+---------------+-------------+
 
+
+.. _get-started-esp-wrover-camera-header:
 
 Camera / JP4
 """"""""""""
@@ -227,19 +285,23 @@ Camera / JP4
 +----+--------------+----------------------+
 
 
+.. _get-started-esp-wrover-rgb-led-connections:
+
 RGB LED
 """""""
 
-+---+---------------+----------------+
-|   | ESP32 Pin     | RGB LED        |
-+===+===============+================+
-| 1 | GPIO0         | Red            |
-+---+---------------+----------------+
-| 2 | GPIO2         | Blue           |
-+---+---------------+----------------+
-| 3 | GPIO4         | Green          |
-+---+---------------+----------------+
++---+-----------+---------+
+|   | ESP32 Pin | RGB LED |
++===+===========+=========+
+| 1 | GPIO0     | Red     |
++---+-----------+---------+
+| 2 | GPIO2     | Blue    |
++---+-----------+---------+
+| 3 | GPIO4     | Green   |
++---+-----------+---------+
 
+
+.. _get-started-esp-wrover-microsd-card-slot:
 
 MicroSD Card / J4
 """""""""""""""""
@@ -263,30 +325,31 @@ MicroSD Card / J4
 +---+---------------+----------------+
 
 
+.. _get-started-esp-wrover-lcd-connector:
 
 LCD / U5
 """"""""
 
-+---+---------------+----------------+
-|   | ESP32 Pin     | LCD Signal     |
-+===+===============+================+
-| 1 | GPIO18        | RESET          |
-+---+---------------+----------------+
-| 2 | GPIO19        | SCL            |
-+---+---------------+----------------+
-| 3 | GPIO21        | D/C            |
-+---+---------------+----------------+
-| 4 | GPIO22        | CS             |
-+---+---------------+----------------+
-| 5 | GPIO23        | SDA            |
-+---+---------------+----------------+
-| 6 | GPIO25        | SDO            |
-+---+---------------+----------------+
-| 7 | GPIO5         | Backlight      |
-+---+---------------+----------------+
++---+-----------+------------+
+|   | ESP32 Pin | LCD Signal |
++===+===========+============+
+| 1 | GPIO18    | RESET      |
++---+-----------+------------+
+| 2 | GPIO19    | SCL        |
++---+-----------+------------+
+| 3 | GPIO21    | D/C        |
++---+-----------+------------+
+| 4 | GPIO22    | CS         |
++---+-----------+------------+
+| 5 | GPIO23    | SDA        |
++---+-----------+------------+
+| 6 | GPIO25    | SDO        |
++---+-----------+------------+
+| 7 | GPIO5     | Backlight  |
++---+-----------+------------+
 
 
-.. _esp-wrover-kit-start-development:
+.. _get-started-esp-wrover-kit-start-development:
 
 Start Application Development
 -----------------------------
@@ -328,7 +391,7 @@ Related Documents
 * `ESP32-WROVER Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wrover_datasheet_en.pdf>`_ (PDF)
 * `ESP-WROOM-32 Datasheet <https://espressif.com/sites/default/files/documentation/esp-wroom-32_datasheet_en.pdf>`_ (PDF)
 * :doc:`../api-guides/jtag-debugging/index`
-* :doc:`../hw-reference/modules-and-boards`
+* :doc:`../hw-reference/index`
 
 
 .. |jp1-sd_io2| image:: ../_static/wrover-jp1-sd_io2.png

@@ -64,8 +64,10 @@
 #include "esp_app_trace.h"
 #include "esp_efuse.h"
 #include "esp_spiram.h"
-#include "esp_clk.h"
+#include "esp_clk_internal.h"
 #include "esp_timer.h"
+#include "esp_pm.h"
+#include "pm_impl.h"
 #include "trax.h"
 
 #define STRINGIFY(s) STRINGIFY2(s)
@@ -150,6 +152,7 @@ void IRAM_ATTR call_start_cpu0()
     }
 
 #if CONFIG_SPIRAM_BOOT_INIT
+    esp_spiram_init_cache();
     if (esp_spiram_init() != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to init external RAM!");
         abort();
@@ -255,6 +258,25 @@ void start_cpu0_default(void)
 {
     esp_err_t err;
     esp_setup_syscall_table();
+
+#if CONFIG_SPIRAM_BOOT_INIT && (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
+    esp_err_t r=esp_spiram_add_to_heapalloc();
+    if (r != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "External RAM could not be added to heap!");
+        abort();
+    }
+#if CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL
+    r=esp_spiram_reserve_dma_pool(CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL);
+    if (r != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Could not reserve internal/DMA pool!");
+        abort();
+    }
+#endif
+#if CONFIG_SPIRAM_USE_MALLOC
+    heap_caps_malloc_extmem_enable(CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL);
+#endif
+#endif
+
 //Enable trace memory and immediately start trace.
 #if CONFIG_ESP32_TRAX
 #if CONFIG_ESP32_TRAX_TWOBANKS
@@ -267,9 +289,18 @@ void start_cpu0_default(void)
     esp_clk_init();
     esp_perip_clk_init();
     intr_matrix_clear();
+
 #ifndef CONFIG_CONSOLE_UART_NONE
-    uart_div_modify(CONFIG_CONSOLE_UART_NUM, (rtc_clk_apb_freq_get() << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
-#endif
+#ifdef CONFIG_PM_ENABLE
+    const int uart_clk_freq = REF_CLK_FREQ;
+    /* When DFS is enabled, use REFTICK as UART clock source */
+    CLEAR_PERI_REG_MASK(UART_CONF0_REG(CONFIG_CONSOLE_UART_NUM), UART_TICK_REF_ALWAYS_ON);
+#else
+    const int uart_clk_freq = APB_CLK_FREQ;
+#endif // CONFIG_PM_DFS_ENABLE
+    uart_div_modify(CONFIG_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
+#endif // CONFIG_CONSOLE_UART_NONE
+
 #if CONFIG_BROWNOUT_DET
     esp_brownout_init();
 #endif
@@ -293,24 +324,17 @@ void start_cpu0_default(void)
     esp_set_time_from_rtc();
 #if CONFIG_ESP32_APPTRACE_ENABLE
     err = esp_apptrace_init();
-    if (err != ESP_OK) {
-        ESP_EARLY_LOGE(TAG, "Failed to init apptrace module on CPU0 (%d)!", err);
-    }
+    assert(err == ESP_OK && "Failed to init apptrace module on PRO CPU!");
 #endif
 #if CONFIG_SYSVIEW_ENABLE
     SEGGER_SYSVIEW_Conf();
 #endif
     err = esp_pthread_init();
-    if (err != ESP_OK) {
-        ESP_EARLY_LOGE(TAG, "Failed to init pthread module (%d)!", err);
-    }
+    assert(err == ESP_OK && "Failed to init pthread module!");
 
     do_global_ctors();
 #if CONFIG_INT_WDT
     esp_int_wdt_init();
-#endif
-#if CONFIG_TASK_WDT
-    esp_task_wdt_init();
 #endif
     esp_cache_err_int_init();
     esp_crosscore_int_init();
@@ -321,6 +345,18 @@ void start_cpu0_default(void)
     spi_flash_init();
     /* init default OS-aware flash access critical section */
     spi_flash_guard_set(&g_flash_guard_default_ops);
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_impl_init();
+#ifdef CONFIG_PM_DFS_INIT_AUTO
+    rtc_cpu_freq_t max_freq;
+    rtc_clk_cpu_freq_from_mhz(CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ, &max_freq);
+    esp_pm_config_esp32_t cfg = {
+            .max_cpu_freq = max_freq,
+            .min_cpu_freq = RTC_CPU_FREQ_XTAL
+    };
+    esp_pm_configure(&cfg);
+#endif //CONFIG_PM_DFS_INIT_AUTO
+#endif //CONFIG_PM_ENABLE
 
 #if CONFIG_ESP32_ENABLE_COREDUMP
     esp_core_dump_init();
@@ -338,19 +374,17 @@ void start_cpu0_default(void)
 #if !CONFIG_FREERTOS_UNICORE
 void start_cpu1_default(void)
 {
+    // Wait for FreeRTOS initialization to finish on PRO CPU
+    while (port_xSchedulerRunning[0] == 0) {
+        ;
+    }
 #if CONFIG_ESP32_TRAX_TWOBANKS
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
 #endif
 #if CONFIG_ESP32_APPTRACE_ENABLE
     esp_err_t err = esp_apptrace_init();
-    if (err != ESP_OK) {
-        ESP_EARLY_LOGE(TAG, "Failed to init apptrace module on CPU1 (%d)!", err);
-    }
+    assert(err == ESP_OK && "Failed to init apptrace module on APP CPU!");
 #endif
-    // Wait for FreeRTOS initialization to finish on PRO CPU
-    while (port_xSchedulerRunning[0] == 0) {
-        ;
-    }
     //Take care putting stuff here: if asked, FreeRTOS will happily tell you the scheduler
     //has started, but it isn't active *on this CPU* yet.
     esp_cache_err_int_init();
@@ -363,10 +397,19 @@ void start_cpu1_default(void)
 }
 #endif //!CONFIG_FREERTOS_UNICORE
 
+#ifdef CONFIG_CXX_EXCEPTIONS
+size_t __cxx_eh_arena_size_get()
+{
+    return CONFIG_CXX_EXCEPTIONS_EMG_POOL_SIZE;
+}
+#endif
+
 static void do_global_ctors(void)
 {
+#ifdef CONFIG_CXX_EXCEPTIONS
     static struct object ob;
     __register_frame_info( __eh_frame, &ob );
+#endif
 
     void (**p)(void);
     for (p = &__init_array_end - 1; p >= &__init_array_start; --p) {
@@ -387,6 +430,29 @@ static void main_task(void* args)
 #endif
     //Enable allocation in region where the startup stacks were located.
     heap_caps_enable_nonos_stack_heaps();
+
+    //Initialize task wdt if configured to do so
+#ifdef CONFIG_TASK_WDT_PANIC
+    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_TASK_WDT_TIMEOUT_S, true))
+#elif CONFIG_TASK_WDT
+    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_TASK_WDT_TIMEOUT_S, false))
+#endif
+
+    //Add IDLE 0 to task wdt
+#ifdef CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU0
+    TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
+    if(idle_0 != NULL){
+        ESP_ERROR_CHECK(esp_task_wdt_add(idle_0))
+    }
+#endif
+    //Add IDLE 1 to task wdt
+#ifdef CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU1
+    TaskHandle_t idle_1 = xTaskGetIdleTaskHandleForCPU(1);
+    if(idle_1 != NULL){
+        ESP_ERROR_CHECK(esp_task_wdt_add(idle_1))
+    }
+#endif
+
     app_main();
     vTaskDelete(NULL);
 }

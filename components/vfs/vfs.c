@@ -16,6 +16,10 @@
 #include <string.h>
 #include <assert.h>
 #include <sys/errno.h>
+#include <sys/fcntl.h>
+#include <sys/ioctl.h>
+#include <sys/unistd.h>
+#include <dirent.h>
 #include "esp_vfs.h"
 #include "esp_log.h"
 
@@ -41,6 +45,8 @@
 #define VFS_INDEX_MASK  (VFS_MAX_COUNT << CONFIG_MAX_FD_BITS)
 #define VFS_INDEX_S     CONFIG_MAX_FD_BITS
 
+#define LEN_PATH_PREFIX_IGNORED SIZE_MAX /* special length value for VFS which is never recognised by open() */
+
 typedef struct vfs_entry_ {
     esp_vfs_t vfs;          // contains pointers to VFS functions
     char path_prefix[ESP_VFS_PATH_MAX]; // path prefix mapped to this VFS
@@ -52,14 +58,15 @@ typedef struct vfs_entry_ {
 static vfs_entry_t* s_vfs[VFS_MAX_COUNT] = { 0 };
 static size_t s_vfs_count = 0;
 
-esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ctx)
+static esp_err_t esp_vfs_register_common(const char* base_path, size_t len, const esp_vfs_t* vfs, void* ctx, int *p_minimum_fd, int *p_maximum_fd)
 {
-    size_t len = strlen(base_path);
-    if ((len != 0 && len < 2)|| len > ESP_VFS_PATH_MAX) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if ((len > 0 && base_path[0] != '/') || base_path[len - 1] == '/') {
-        return ESP_ERR_INVALID_ARG;
+    if (len != LEN_PATH_PREFIX_IGNORED) {
+        if ((len != 0 && len < 2) || (len > ESP_VFS_PATH_MAX)) {
+            return ESP_ERR_INVALID_ARG;
+        }
+        if ((len > 0 && base_path[0] != '/') || base_path[len - 1] == '/') {
+            return ESP_ERR_INVALID_ARG;
+        }
     }
     vfs_entry_t *entry = (vfs_entry_t*) malloc(sizeof(vfs_entry_t));
     if (entry == NULL) {
@@ -79,12 +86,34 @@ esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ct
         ++s_vfs_count;
     }
     s_vfs[index] = entry;
-    strcpy(entry->path_prefix, base_path); // we have already verified argument length
+    if (len != LEN_PATH_PREFIX_IGNORED) {
+        strcpy(entry->path_prefix, base_path); // we have already verified argument length
+    } else {
+        bzero(entry->path_prefix, sizeof(entry->path_prefix));
+    }
     memcpy(&entry->vfs, vfs, sizeof(esp_vfs_t));
     entry->path_prefix_len = len;
     entry->ctx = ctx;
     entry->offset = index;
+
+    if (p_minimum_fd != NULL) {
+        *p_minimum_fd = index << VFS_INDEX_S;
+    }
+    if (p_maximum_fd != NULL) {
+        *p_maximum_fd = (index + 1) << VFS_INDEX_S;
+    }
+
     return ESP_OK;
+}
+
+esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ctx)
+{
+    return esp_vfs_register_common(base_path, strlen(base_path), vfs, ctx, NULL, NULL);
+}
+
+esp_err_t esp_vfs_register_socket_space(const esp_vfs_t *vfs, void *ctx, int *p_min_fd, int *p_max_fd)
+{
+    return esp_vfs_register_common("", LEN_PATH_PREFIX_IGNORED, vfs, ctx, p_min_fd, p_max_fd);
 }
 
 esp_err_t esp_vfs_unregister(const char* base_path)
@@ -114,7 +143,11 @@ static const vfs_entry_t* get_vfs_for_fd(int fd)
 
 static int translate_fd(const vfs_entry_t* vfs, int fd)
 {
-    return (fd & VFS_FD_MASK) + vfs->vfs.fd_offset;
+    if (vfs->vfs.flags & ESP_VFS_FLAG_SHARED_FD_SPACE) {
+        return fd;
+    } else {
+        return fd & VFS_FD_MASK;
+    }
 }
 
 static const char* translate_path(const vfs_entry_t* vfs, const char* src_path)
@@ -134,7 +167,7 @@ static const vfs_entry_t* get_vfs_for_path(const char* path)
     size_t len = strlen(path);
     for (size_t i = 0; i < s_vfs_count; ++i) {
         const vfs_entry_t* vfs = s_vfs[i];
-        if (!vfs) {
+        if (!vfs || vfs->path_prefix_len == LEN_PATH_PREFIX_IGNORED) {
             continue;
         }
         // match path prefix
@@ -226,8 +259,7 @@ int esp_vfs_open(struct _reent *r, const char * path, int flags, int mode)
     if (ret < 0) {
         return ret;
     }
-    assert(ret >= vfs->vfs.fd_offset);
-    return ret - vfs->vfs.fd_offset + (vfs->offset << VFS_INDEX_S);
+    return ret + (vfs->offset << VFS_INDEX_S);
 }
 
 ssize_t esp_vfs_write(struct _reent *r, int fd, const void * data, size_t size)
@@ -487,5 +519,36 @@ int fcntl(int fd, int cmd, ...)
     va_start(args, cmd);
     CHECK_AND_CALL(ret, r, vfs, fcntl, local_fd, cmd, args);
     va_end(args);
+    return ret;
+}
+
+int ioctl(int fd, int cmd, ...)
+{
+    const vfs_entry_t* vfs = get_vfs_for_fd(fd);
+    struct _reent* r = __getreent();
+    if (vfs == NULL) {
+        __errno_r(r) = EBADF;
+        return -1;
+    }
+    int local_fd = translate_fd(vfs, fd);
+    int ret;
+    va_list args;
+    va_start(args, cmd);
+    CHECK_AND_CALL(ret, r, vfs, ioctl, local_fd, cmd, args);
+    va_end(args);
+    return ret;
+}
+
+int fsync(int fd)
+{
+    const vfs_entry_t* vfs = get_vfs_for_fd(fd);
+    struct _reent* r = __getreent();
+    if (vfs == NULL) {
+        __errno_r(r) = EBADF;
+        return -1;
+    }
+    int local_fd = translate_fd(vfs, fd);
+    int ret;
+    CHECK_AND_CALL(ret, r, vfs, fsync, local_fd);
     return ret;
 }

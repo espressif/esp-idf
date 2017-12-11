@@ -222,7 +222,7 @@ static void process_service_search (tCONN_CB *p_ccb, UINT16 trans_num,
         }
         BE_STREAM_TO_UINT16 (cont_offset, p_req);
 
-        if (cont_offset != p_ccb->cont_offset) {
+        if (cont_offset != p_ccb->cont_offset || num_rsp_handles < cont_offset) {
             sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_CONT_STATE,
                                      SDP_TEXT_BAD_CONT_INX);
             return;

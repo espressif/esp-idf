@@ -351,8 +351,10 @@ esp_err_t rmt_set_tx_thr_intr_en(rmt_channel_t channel, bool en, uint16_t evt_th
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     if(en) {
-        RMT_CHECK(evt_thresh < 256, "RMT EVT THRESH ERR", ESP_ERR_INVALID_ARG);
+        RMT_CHECK(evt_thresh <= 256, "RMT EVT THRESH ERR", ESP_ERR_INVALID_ARG);
+        portENTER_CRITICAL(&rmt_spinlock);
         RMT.tx_lim_ch[channel].limit = evt_thresh;
+        portEXIT_CRITICAL(&rmt_spinlock);
         rmt_set_tx_wrap_en(channel, true);
         rmt_set_intr_enable_mask(BIT(channel + 24));
     } else {
@@ -424,8 +426,6 @@ esp_err_t rmt_config(const rmt_config_t* rmt_param)
         /*Set idle level */
         RMT.conf_ch[channel].conf1.idle_out_en = rmt_param->tx_config.idle_output_en;
         RMT.conf_ch[channel].conf1.idle_out_lv = idle_level;
-        portEXIT_CRITICAL(&rmt_spinlock);
-
         /*Set carrier*/
         RMT.conf_ch[channel].conf0.carrier_en = carrier_en;
         if (carrier_en) {
@@ -441,6 +441,8 @@ esp_err_t rmt_config(const rmt_config_t* rmt_param)
             RMT.carrier_duty_ch[channel].high = 0;
             RMT.carrier_duty_ch[channel].low = 0;
         }
+        portEXIT_CRITICAL(&rmt_spinlock);
+
         ESP_LOGD(RMT_TAG, "Rmt Tx Channel %u|Gpio %u|Sclk_Hz %u|Div %u|Carrier_Hz %u|Duty %u",
                  channel, gpio_num, rmt_source_clk_hz, clk_div, carrier_freq_hz, carrier_duty_percent);
 

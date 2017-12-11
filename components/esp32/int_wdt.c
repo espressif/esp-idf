@@ -29,7 +29,7 @@
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
 #include "driver/timer.h"
-
+#include "driver/periph_ctrl.h"
 #include "esp_int_wdt.h"
 
 #if CONFIG_INT_WDT
@@ -71,6 +71,7 @@ static void IRAM_ATTR tick_hook(void) {
 
 
 void esp_int_wdt_init() {
+    periph_module_enable(PERIPH_TIMG1_MODULE);
     TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
     TIMERG1.wdt_config0.sys_reset_length=7;                 //3.2uS
     TIMERG1.wdt_config0.cpu_reset_length=7;                 //3.2uS
@@ -87,7 +88,10 @@ void esp_int_wdt_init() {
     TIMERG1.wdt_wprotect=0;
     TIMERG1.int_clr_timers.wdt=1;
     timer_group_intr_enable(TIMER_GROUP_1, TIMG_WDT_INT_ENA_M);
-    esp_register_freertos_tick_hook(tick_hook);
+    esp_register_freertos_tick_hook_for_cpu(tick_hook, 0);
+#ifndef CONFIG_FREERTOS_UNICORE
+    esp_register_freertos_tick_hook_for_cpu(tick_hook, 1);
+#endif
     ESP_INTR_DISABLE(WDT_INT_NUM);
     intr_matrix_set(xPortGetCoreID(), ETS_TG1_WDT_LEVEL_INTR_SOURCE, WDT_INT_NUM);
     //We do not register a handler for the interrupt because it is interrupt level 4 which

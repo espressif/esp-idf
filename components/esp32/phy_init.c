@@ -35,6 +35,7 @@
 #include "phy.h"
 #include "phy_init_data.h"
 #include "esp_coexist.h"
+#include "driver/periph_ctrl.h"
 
 static const char* TAG = "phy_init";
 
@@ -50,8 +51,8 @@ esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data,
 
     _lock_acquire(&s_phy_rf_init_lock);
     if (s_phy_rf_init_count == 0) {
-        // Enable WiFi peripheral clock
-        DPORT_SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, DPORT_WIFI_CLK_WIFI_EN | DPORT_WIFI_CLK_RNG_EN);
+        // Enable WiFi/BT common peripheral clock
+        periph_module_enable(PERIPH_WIFI_BT_COMMON_MODULE);
         ESP_LOGV(TAG, "register_chipv7_phy, init_data=%p, cal_data=%p, mode=%d",
                 init_data, calibration_data, mode);
         phy_set_wifi_mode_only(0);
@@ -75,8 +76,8 @@ esp_err_t esp_phy_rf_deinit(void)
     if (s_phy_rf_init_count == 1) {
         // Disable PHY and RF.
         phy_close_rf();
-        // Disable WiFi peripheral clock. Do not disable clock for hardware RNG
-        DPORT_CLEAR_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, DPORT_WIFI_CLK_WIFI_EN);
+        // Disable WiFi/BT common peripheral clock. Do not disable clock for hardware RNG
+        periph_module_disable(PERIPH_WIFI_BT_COMMON_MODULE);
     } else {
 #if CONFIG_SW_COEXIST_ENABLE
         coex_deinit();

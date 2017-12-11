@@ -6,3 +6,6 @@ ignore:
 test_env:
   default: "UT_T1_1"
   omitted: "UT_T1_1"
+reset:
+  default: "POWERON_RESET"
+  omitted: " "

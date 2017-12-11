@@ -47,6 +47,7 @@ queue and re-enabling the interrupt will trigger the interrupt again, which can 
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp_err.h"
+#include "esp_pm.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
@@ -84,6 +85,9 @@ typedef struct {
     bool no_gpio_matrix;
     int dma_chan;
     int max_transfer_sz;
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_handle_t pm_lock;
+#endif
 } spi_host_t;
 
 struct spi_device_t {
@@ -129,6 +133,13 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
     spihost[host]=malloc(sizeof(spi_host_t));
     if (spihost[host]==NULL) goto nomem;
     memset(spihost[host], 0, sizeof(spi_host_t));
+#ifdef CONFIG_PM_ENABLE
+    esp_err_t err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "spi_master",
+            &spihost[host]->pm_lock);
+    if (err != ESP_OK) {
+        goto nomem;
+    }
+#endif //CONFIG_PM_ENABLE
     
     spicommon_bus_initialize_io(host, bus_config, dma_chan, SPICOMMON_BUSFLAG_MASTER|SPICOMMON_BUSFLAG_QUAD, &native);
     spihost[host]->no_gpio_matrix=native;
@@ -180,9 +191,15 @@ nomem:
     if (spihost[host]) {
         free(spihost[host]->dmadesc_tx);
         free(spihost[host]->dmadesc_rx);
+#ifdef CONFIG_PM_ENABLE
+        if (spihost[host]->pm_lock) {
+            esp_pm_lock_delete(spihost[host]->pm_lock);
+        }
+#endif
     }
     free(spihost[host]);
     spicommon_periph_free(host);
+    spicommon_dma_chan_free(dma_chan);
     return ESP_ERR_NO_MEM;
 }
 
@@ -198,6 +215,9 @@ esp_err_t spi_bus_free(spi_host_device_t host)
     if ( spihost[host]->dma_chan > 0 ) {
         spicommon_dma_chan_free ( spihost[host]->dma_chan );
     }
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_delete(spihost[host]->pm_lock);
+#endif
     spihost[host]->hw->slave.trans_inten=0;
     spihost[host]->hw->slave.trans_done=0;
     esp_intr_free(spihost[host]->intr);
@@ -250,7 +270,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host, spi_device_interface_config
     memcpy(&dev->cfg, dev_config, sizeof(spi_device_interface_config_t));
 
     //Set CS pin, CS options
-    if (dev_config->spics_io_num > 0) {
+    if (dev_config->spics_io_num >= 0) {
         gpio_set_direction(dev_config->spics_io_num, GPIO_MODE_OUTPUT);
         spicommon_cs_initialize(host, dev_config->spics_io_num, freecs, spihost[host]->no_gpio_matrix == false);
     }
@@ -411,6 +431,10 @@ static void IRAM_ATTR spi_intr(void *arg)
     if (i==NO_CS) {
         //No packet waiting. Disable interrupt.
         esp_intr_disable(host->intr);
+#ifdef CONFIG_PM_ENABLE
+        //Release APB frequency lock
+        esp_pm_lock_release(host->pm_lock);
+#endif
     } else {
         host->hw->slave.trans_done=0; //clear int bit
         //We have a transaction. Send it.
@@ -465,13 +489,9 @@ static void IRAM_ATTR spi_intr(void *arg)
                 host->hw->ctrl2.miso_delay_mode=nodelay?0:2;
             }
 
-            //Configure bit sizes, load addr and command
+            //configure dummy bits
             host->hw->user.usr_dummy=(dev->cfg.dummy_bits+extra_dummy)?1:0;
-            host->hw->user.usr_addr=(dev->cfg.address_bits)?1:0;
-            host->hw->user.usr_command=(dev->cfg.command_bits)?1:0;
-            host->hw->user1.usr_addr_bitlen=dev->cfg.address_bits-1;
             host->hw->user1.usr_dummy_cyclelen=dev->cfg.dummy_bits+extra_dummy-1;
-            host->hw->user2.usr_command_bitlen=dev->cfg.command_bits-1;
             //Configure misc stuff
             host->hw->user.doutdin=(dev->cfg.flags & SPI_DEVICE_HALFDUPLEX)?0:1;
             host->hw->user.sio=(dev->cfg.flags & SPI_DEVICE_3WIRE)?1:0;
@@ -563,17 +583,36 @@ static void IRAM_ATTR spi_intr(void *arg)
             host->hw->miso_dlen.usr_miso_dbitlen=trans->length-1;
         }
 
+        //Configure bit sizes, load addr and command
+        int cmdlen;
+        if ( trans->flags & SPI_TRANS_VARIABLE_CMD ) {
+            cmdlen = ((spi_transaction_ext_t*)trans)->command_bits;
+        } else {
+            cmdlen = dev->cfg.command_bits;
+        }
+        int addrlen;
+        if ( trans->flags & SPI_TRANS_VARIABLE_ADDR ) {
+            addrlen = ((spi_transaction_ext_t*)trans)->address_bits;
+        } else {
+            addrlen = dev->cfg.address_bits;
+        }
+        host->hw->user1.usr_addr_bitlen=addrlen-1;
+        host->hw->user2.usr_command_bitlen=cmdlen-1;
+        host->hw->user.usr_addr=addrlen?1:0;
+        host->hw->user.usr_command=cmdlen?1:0;
+
         // output command will be sent from bit 7 to 0 of command_value, and then bit 15 to 8 of the same register field.
-        uint16_t command = trans->cmd << (16-dev->cfg.command_bits);    //shift to MSB
+        uint16_t command = trans->cmd << (16-cmdlen);    //shift to MSB
         host->hw->user2.usr_command_value = (command>>8)|(command<<8);  //swap the first and second byte
         // shift the address to MSB of addr (and maybe slv_wr_status) register. 
         // output address will be sent from MSB to LSB of addr register, then comes the MSB to LSB of slv_wr_status register. 
-        if (dev->cfg.address_bits>32) {
-            host->hw->addr = trans->addr >> (dev->cfg.address_bits - 32);
-            host->hw->slv_wr_status = trans->addr << (64 - dev->cfg.address_bits);
+        if (addrlen>32) {
+            host->hw->addr = trans->addr >> (addrlen- 32);
+            host->hw->slv_wr_status = trans->addr << (64 - addrlen);
         } else {
-            host->hw->addr = trans->addr << (32 - dev->cfg.address_bits);
+            host->hw->addr = trans->addr << (32 - addrlen);
         }
+
         host->hw->user.usr_mosi=( (!(dev->cfg.flags & SPI_DEVICE_HALFDUPLEX) && trans_buf->buffer_to_rcv) || trans_buf->buffer_to_send)?1:0;
         host->hw->user.usr_miso=(trans_buf->buffer_to_rcv)?1:0;
 
@@ -588,6 +627,7 @@ static void IRAM_ATTR spi_intr(void *arg)
 
 esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *trans_desc,  TickType_t ticks_to_wait)
 {
+    esp_err_t ret = ESP_OK;
     BaseType_t r;
     SPI_CHECK(handle!=NULL, "invalid dev handle", ESP_ERR_INVALID_ARG);
     //check transmission length 
@@ -620,9 +660,13 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
         trans_buf.buffer_to_rcv = trans_desc->rx_buffer;
     }
     if ( trans_buf.buffer_to_rcv && handle->host->dma_chan && (!esp_ptr_dma_capable( trans_buf.buffer_to_rcv ) || ((int)trans_buf.buffer_to_rcv%4!=0)) ) {
-        //if rxbuf in the desc not DMA-capable, malloc a new one
-        trans_buf.buffer_to_rcv = heap_caps_malloc((trans_desc->rxlength+7)/8, MALLOC_CAP_DMA);
-        if ( trans_buf.buffer_to_rcv==NULL ) return ESP_ERR_NO_MEM;
+        //if rxbuf in the desc not DMA-capable, malloc a new one. The rx buffer need to be length of multiples of 32 bits to avoid heap corruption.
+        ESP_LOGV( SPI_TAG, "Allocate RX buffer for DMA" );
+        trans_buf.buffer_to_rcv = heap_caps_malloc((trans_desc->rxlength+31)/8, MALLOC_CAP_DMA);
+        if ( trans_buf.buffer_to_rcv==NULL ) {
+            ret = ESP_ERR_NO_MEM;
+            goto clean_up;
+        }
     }
     
     const uint32_t *txdata;
@@ -635,24 +679,43 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
     }
     if ( txdata && handle->host->dma_chan && !esp_ptr_dma_capable( txdata )) {
         //if txbuf in the desc not DMA-capable, malloc a new one
+        ESP_LOGV( SPI_TAG, "Allocate TX buffer for DMA" );
         trans_buf.buffer_to_send = heap_caps_malloc((trans_desc->length+7)/8, MALLOC_CAP_DMA);
         if ( trans_buf.buffer_to_send==NULL ) {
-            // free malloc-ed buffer (if needed) before return.
-            if ( (void*)trans_buf.buffer_to_rcv != trans_desc->rx_buffer && (void*)trans_buf.buffer_to_rcv != &trans_desc->rx_data[0] ) {
-                free( trans_buf.buffer_to_rcv );
-            }   
-            return ESP_ERR_NO_MEM;
+            ret = ESP_ERR_NO_MEM;
+            goto clean_up;
         }
         memcpy( trans_buf.buffer_to_send, txdata, (trans_desc->length+7)/8 );
     } else { 
         // else use the original buffer (forced-conversion) or assign to NULL
         trans_buf.buffer_to_send = (uint32_t*)txdata;
     }
-
+    
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_acquire(handle->host->pm_lock);
+#endif
     r=xQueueSend(handle->trans_queue, (void*)&trans_buf, ticks_to_wait);
-    if (!r) return ESP_ERR_TIMEOUT;
+    if (!r) {
+        ret = ESP_ERR_TIMEOUT;
+#ifdef CONFIG_PM_ENABLE
+        //Release APB frequency lock
+        esp_pm_lock_release(handle->host->pm_lock);
+#endif
+        goto clean_up;
+    }
     esp_intr_enable(handle->host->intr);
     return ESP_OK;
+
+clean_up:
+    // free malloc-ed buffer (if needed) before return.
+    if ( (void*)trans_buf.buffer_to_rcv != trans_desc->rx_buffer && (void*)trans_buf.buffer_to_rcv != &trans_desc->rx_data[0] ) {
+        free( trans_buf.buffer_to_rcv );
+    }   
+    if ( (void*)trans_buf.buffer_to_send!= trans_desc->tx_buffer && (void*)trans_buf.buffer_to_send != &trans_desc->tx_data[0] ) {
+        free( trans_buf.buffer_to_send );
+    }   
+    assert( ret != ESP_OK );
+    return ret;
 }
 
 esp_err_t spi_device_get_trans_result(spi_device_handle_t handle, spi_transaction_t **trans_desc, TickType_t ticks_to_wait)

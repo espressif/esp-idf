@@ -1,7 +1,7 @@
 ESP-WROVER-KIT V2 Getting Started Guide
 =======================================
 
-This user guide shows how to get started with ESP-WROVER-KIT V2 development board including description of its functionality and configuration options. You can find out what version you have in section :ref:`esp-modules-and-boards-esp-wrover-kit`.
+This user guide shows how to get started with ESP-WROVER-KIT V2 development board including description of its functionality and configuration options. For description of other versions of the ESP-WROVER-KIT check :doc:`../hw-reference/index`.
 
 If you like to start using this board right now, go directly to section :ref:`esp-wrover-kit-v2-start-development`.
 
@@ -177,8 +177,7 @@ Related Documents
 * `ESP-WROOM-32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp-wroom-32_datasheet_en.pdf>`_ (PDF)
 * `ESP32-WROVER Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wrover_datasheet_en.pdf>`_ (PDF)
 * :doc:`../api-guides/jtag-debugging/index`
-* :doc:`../hw-reference/modules-and-boards`
-
+* :doc:`../hw-reference/index`
 
 
 .. |jp1-sd_io2| image:: ../_static/wrover-jp1-sd_io2.png

@@ -28,6 +28,13 @@ typedef enum {
     ETH_MODE_MII,
 } eth_mode_t;
 
+typedef enum  {
+    ETH_CLOCK_GPIO0_IN   = 0,
+    ETH_CLOCK_GPIO0_OUT  = 1,
+    ETH_CLOCK_GPIO16_OUT = 2,
+    ETH_CLOCK_GPIO17_OUT = 3
+} eth_clock_mode_t;
+
 typedef enum {
     ETH_SPEED_MODE_10M = 0,
     ETH_SPEED_MODE_100M,
@@ -90,8 +97,9 @@ typedef void (*eth_phy_power_enable_func)(bool enable);
 typedef struct {
     eth_phy_base_t  phy_addr;                   /*!< phy base addr (0~31) */
     eth_mode_t mac_mode;                        /*!< mac mode only support RMII now */
-    eth_tcpip_input_func tcpip_input;            /*!< tcpip input func  */
-    eth_phy_func phy_init;                       /*!< phy init func  */
+    eth_clock_mode_t clock_mode;                /*!< external/internal clock mode selecton */
+    eth_tcpip_input_func tcpip_input;           /*!< tcpip input func  */
+    eth_phy_func phy_init;                      /*!< phy init func  */
     eth_phy_check_link_func phy_check_link;     /*!< phy check link func  */
     eth_phy_check_init_func phy_check_init;     /*!< phy check init func  */
     eth_phy_get_speed_mode_func phy_get_speed_mode;     /*!< phy check init func  */
@@ -247,4 +255,3 @@ void esp_eth_free_rx_buf(void *buf);
 #endif
 
 #endif
-

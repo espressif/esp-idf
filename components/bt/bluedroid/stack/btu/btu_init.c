@@ -168,8 +168,8 @@ void BTU_StartUp(void)
 
     osi_mutex_new(&btu_l2cap_alarm_lock);
 
-    xBtuQueue = xQueueCreate(BTU_QUEUE_NUM, sizeof(BtTaskEvt_t));
-    xTaskCreatePinnedToCore(btu_task_thread_handler, BTU_TASK_NAME, BTU_TASK_STACK_SIZE, NULL, BTU_TASK_PRIO, &xBtuTaskHandle, 0);
+    xBtuQueue = xQueueCreate(BTU_QUEUE_LEN, sizeof(BtTaskEvt_t));
+    xTaskCreatePinnedToCore(btu_task_thread_handler, BTU_TASK_NAME, BTU_TASK_STACK_SIZE, NULL, BTU_TASK_PRIO, &xBtuTaskHandle, BTU_TASK_PINNED_TO_CORE);
 
     btu_task_post(SIG_BTU_START_UP, NULL, TASK_POST_BLOCKING);
 

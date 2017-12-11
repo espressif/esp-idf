@@ -1,0 +1,18 @@
+# File contains known/allowed Sphinx warnings.
+#
+# Build will fail if sphinx-warning-log.txt contains any lines
+# which are not in this file. Lines are pre-sanitized by
+# check_doc_warnings.sh to remove formatting, paths, line numbers.
+#
+# Warnings in this file must be in the same overall order as the log file.
+#
+
+#
+# Sphinx known issue https://github.com/sphinx-doc/sphinx/issues/2683
+#
+_build/inc/esp_a2dp_api.inc:line: WARNING: Invalid definition: Expected identifier in nested name. [error at 21]
+  union esp_a2d_mcc_t::@1  esp_a2d_mcc_t::cie
+  ---------------------^
+_build/inc/esp_bt_defs.inc:line: WARNING: Invalid definition: Expected identifier in nested name. [error at 21]
+  union esp_bt_uuid_t::@0  esp_bt_uuid_t::uuid
+  ---------------------^

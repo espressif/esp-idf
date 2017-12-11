@@ -107,6 +107,8 @@ esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd);
  * @param[out] cmd_ret return code from the command (set if command was run)
  * @return
  *      - ESP_OK, if command was run
+ *      - ESP_ERR_INVALID_ARG, if the command line is empty, or only contained
+ *        whitespace
  *      - ESP_ERR_NOT_FOUND, if command with given name wasn't registered
  *      - ESP_ERR_INVALID_STATE, if esp_console_init wasn't called
  */

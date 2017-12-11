@@ -180,7 +180,7 @@ TEST_CASE("context switch saves FP registers", "[fp]")
     state.fail = 0;
     xTaskCreatePinnedToCore(tskTestFP, "tsk1", 2048, &state, 3, NULL, 0);
     xTaskCreatePinnedToCore(tskTestFP, "tsk2", 2048, &state, 3, NULL, 0);
-    xTaskCreatePinnedToCore(tskTestFP, "tsk3", 2048, &state, 3, NULL, 1);
+    xTaskCreatePinnedToCore(tskTestFP, "tsk3", 2048, &state, 3, NULL, portNUM_PROCESSORS - 1);
     xTaskCreatePinnedToCore(tskTestFP, "tsk4", 2048, &state, 3, NULL, 0);
     while (state.done != 4) {
         vTaskDelay(100 / portTICK_PERIOD_MS);

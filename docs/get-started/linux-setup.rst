@@ -28,17 +28,17 @@ ESP32 toolchain for Linux is available for download from Espressif website:
 
 - for 64-bit Linux:
 
-  https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-61-gab8375a-5.2.0.tar.gz
+  https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-75-gbaf03c2-5.2.0.tar.gz
 
 - for 32-bit Linux:
 
-  https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-61-gab8375a-5.2.0.tar.gz
+  https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-75-gbaf03c2-5.2.0.tar.gz
 
 1.  Download this file, then extract it in ``~/esp`` directory::
 
         mkdir -p ~/esp
         cd ~/esp
-        tar -xzf ~/Downloads/xtensa-esp32-elf-linux64-1.22.0-61-gab8375a-5.2.0.tar.gz
+        tar -xzf ~/Downloads/xtensa-esp32-elf-linux64-1.22.0-75-gbaf03c2-5.2.0.tar.gz
 
 .. _setup-linux-toolchain-add-it-to-path:
 
@@ -70,6 +70,12 @@ ESP32 toolchain for Linux is available for download from Espressif website:
     Instead of ``/home/user-name`` there should be a home path specific to your installation.
 
 
+Permission issues /dev/ttyUSB0
+------------------------------
+
+With some Linux distributions you may get the ``Failed to open port /dev/ttyUSB0`` error message when flashing the ESP32. :ref:`This can be solved by adding the current user to the dialout group<linux-dialout-group>`.
+
+
 Arch Linux Users
 ----------------
 
@@ -79,6 +85,8 @@ Backwards compatibility libraries are available in AUR_ for native and lib32 con
 
 - https://aur.archlinux.org/packages/ncurses5-compat-libs/
 - https://aur.archlinux.org/packages/lib32-ncurses5-compat-libs/
+
+Before installing these packages you might need to add the author's public key to your keyring as described in the "Comments" section at the links above.
 
 Alternatively, use crosstool-NG to compile a gdb that links against ncurses 6.
 

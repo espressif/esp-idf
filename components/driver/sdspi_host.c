@@ -172,10 +172,11 @@ static void release_bus(int slot)
 /// Clock out 80 cycles (10 bytes) before GO_IDLE command
 static void go_idle_clockout(int slot)
 {
-    uint8_t data[10];
+    //actually we need 10, declare 12 to meet requirement of RXDMA
+    uint8_t data[12];
     memset(data, 0xff, sizeof(data));
     spi_transaction_t t = {
-        .length = sizeof(data) * 8,
+        .length = 10*8,
         .tx_buffer = data,
         .rx_buffer = data,
     };
@@ -428,22 +429,21 @@ static esp_err_t start_command_default(int slot, int flags, sdspi_hw_cmd_t *cmd)
 static esp_err_t poll_busy(int slot, spi_transaction_t* t)
 {
     uint8_t t_rx;
-    uint8_t rd_data;
     *t = (spi_transaction_t) {
         .tx_buffer = &t_rx,
-        .rx_buffer = &rd_data,
+        .flags = SPI_TRANS_USE_RXDATA,  //data stored in rx_data
         .length = 8,
     };
     esp_err_t ret;
 
     for (int i = 0; i < SDSPI_RETRY_COUNT; i++) {
         t_rx = SDSPI_MOSI_IDLE_VAL;
-        rd_data = 0;
+        t->rx_data[0] = 0;
         ret = spi_device_transmit(spi_handle(slot), t);
         if (ret != ESP_OK) {
             return ret;
         }
-        if (rd_data != 0) {
+        if (t->rx_data[0] != 0) {
             if (i < SDSPI_RETRY_COUNT - 2) {
                 i = SDSPI_RETRY_COUNT - 2;
             }
@@ -456,28 +456,27 @@ static esp_err_t poll_busy(int slot, spi_transaction_t* t)
 static esp_err_t poll_response_token(int slot, spi_transaction_t* t)
 {
     uint8_t t_rx;
-    uint8_t rd_data;
     *t = (spi_transaction_t) {
         .tx_buffer = &t_rx,
-        .rx_buffer = &rd_data,
+        .flags = SPI_TRANS_USE_RXDATA,
         .length = 8,
     };
     esp_err_t ret;
 
     for (int retry = 0; retry < SDSPI_RETRY_COUNT; retry++) {
         t_rx = SDSPI_MOSI_IDLE_VAL;
-        rd_data = 0;
+        t->rx_data[0] = 0;
         ret = spi_device_transmit(spi_handle(slot), t);
         if (ret != ESP_OK) {
             return ret;
         }
-        if ((rd_data & TOKEN_RSP_MASK) == TOKEN_RSP_OK) {
+        if ((t->rx_data[0] & TOKEN_RSP_MASK) == TOKEN_RSP_OK) {
             break;
         }
-        if ((rd_data & TOKEN_RSP_MASK) == TOKEN_RSP_CRC_ERR) {
+        if ((t->rx_data[0] & TOKEN_RSP_MASK) == TOKEN_RSP_CRC_ERR) {
             return ESP_ERR_INVALID_CRC;
         }
-        if ((rd_data & TOKEN_RSP_MASK) == TOKEN_RSP_WRITE_ERR) {
+        if ((t->rx_data[0] & TOKEN_RSP_MASK) == TOKEN_RSP_WRITE_ERR) {
             return ESP_ERR_INVALID_RESPONSE;
         }
         if (retry == SDSPI_RETRY_COUNT - 1) {

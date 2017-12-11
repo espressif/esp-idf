@@ -115,6 +115,23 @@ ip4_set_default_multicast_netif(struct netif* default_multicast_netif)
 #endif /* LWIP_MULTICAST_TX_OPTIONS */
 
 #ifdef LWIP_HOOK_IP4_ROUTE_SRC
+bool ip4_netif_exist(const ip4_addr_t *src, const ip4_addr_t *dest)
+{
+  struct netif *netif = NULL;
+  
+  for (netif = netif_list; netif != NULL; netif = netif->next) {
+    /* is the netif up, does it have a link and a valid address? */
+    if (netif_is_up(netif) && netif_is_link_up(netif) && !ip4_addr_isany_val(*netif_ip4_addr(netif))) {
+      /* source netif and dest netif match? */
+      if (ip4_addr_netcmp(src, netif_ip4_addr(netif), netif_ip4_netmask(netif)) || ip4_addr_netcmp(dest, netif_ip4_addr(netif), netif_ip4_netmask(netif))) {
+        /* return false when both netif don't match */
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
 /**
  * Source based IPv4 routing hook function. This function works only
  * when destination IP is broadcast IP.
@@ -122,24 +139,23 @@ ip4_set_default_multicast_netif(struct netif* default_multicast_netif)
 struct netif *
 ip4_route_src_hook(const ip4_addr_t *dest, const ip4_addr_t *src)
 {
-    struct netif *netif = NULL;
+  struct netif *netif = NULL;
 
-    /* destination IP is broadcast IP? */
-    if ((src != NULL) && (dest->addr == IPADDR_BROADCAST)) {
-      /* iterate through netifs */
-      for (netif = netif_list; netif != NULL; netif = netif->next) {
-        /* is the netif up, does it have a link and a valid address? */
-        if (netif_is_up(netif) && netif_is_link_up(netif) && !ip4_addr_isany_val(*netif_ip4_addr(netif))) {
-          /* source IP matches? */
-          if (ip4_addr_cmp(src, netif_ip4_addr(netif))) {
-            /* return netif on which to forward IP packet */
-            return netif;
-          }
+  /* destination IP is broadcast IP? */
+  if ((src != NULL) && (dest->addr == IPADDR_BROADCAST)) {
+    /* iterate through netifs */
+    for (netif = netif_list; netif != NULL; netif = netif->next) {
+      /* is the netif up, does it have a link and a valid address? */
+      if (netif_is_up(netif) && netif_is_link_up(netif) && !ip4_addr_isany_val(*netif_ip4_addr(netif))) {
+        /* source IP matches? */
+        if (ip4_addr_cmp(src, netif_ip4_addr(netif))) {
+          /* return netif on which to forward IP packet */
+          return netif;
         }
       }
     }
-
-    return netif;
+  }
+  return netif;
 }
 
 /**
@@ -150,12 +166,16 @@ struct netif *
 ip4_route_src(const ip4_addr_t *dest, const ip4_addr_t *src)
 {
   if (src != NULL) {
+    if (!ip4_addr_isany(src) && (ip4_netif_exist(src,dest) == false)) {
+      return NULL;
+    }
     /* when src==NULL, the hook is called from ip4_route(dest) */
     struct netif *netif = LWIP_HOOK_IP4_ROUTE_SRC(dest, src);
     if (netif != NULL) {
       return netif;
     }
   }
+
   return ip4_route(dest);
 }
 #endif /* LWIP_HOOK_IP4_ROUTE_SRC */
@@ -172,12 +192,6 @@ ip4_route_src(const ip4_addr_t *dest, const ip4_addr_t *src)
 struct netif *
 ip4_route(const ip4_addr_t *dest)
 {
-#if ESP_LWIP
-  struct netif *non_default_netif = NULL;
-#if LWIP_HAVE_LOOPIF
-  struct netif *loop_default_netif = netif_find("lo0");
-#endif
-#endif
   struct netif *netif;
 
 #if LWIP_MULTICAST_TX_OPTIONS
@@ -201,23 +215,8 @@ ip4_route(const ip4_addr_t *dest)
         /* return netif on which to forward IP packet */
         return netif;
       }
-
-      if (netif != netif_default){
-#if LWIP_HAVE_LOOPIF
-          non_default_netif = (netif == loop_default_netif) ? NULL : netif;
-#else
-          non_default_netif = netif;
-#endif
-      }
     }
   }
-
-#if ESP_LWIP
-  if (non_default_netif && !ip4_addr_isbroadcast(dest, non_default_netif)){
-    return non_default_netif;
-  }
-#endif
-
 #if LWIP_NETIF_LOOPBACK && !LWIP_HAVE_LOOPIF
   /* loopif is disabled, looopback traffic is passed through any netif */
   if (ip4_addr_isloopback(dest)) {

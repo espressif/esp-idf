@@ -112,10 +112,6 @@ enum {
 /* 5 frames is equivalent to 6.89*5*2.9 ~= 100 ms @ 44.1 khz, 20 ms mediatick */
 #define MAX_OUTPUT_A2DP_FRAME_QUEUE_SZ         (5)
 
-#define MEDIA_DATA_Q_LEN                       (1)
-#define MEDIA_CTRL_Q_LEN                       (5)
-#define COMBINED_MEDIA_Q_LEN                   (MEDIA_DATA_Q_LEN + MEDIA_CTRL_Q_LEN)
-
 typedef struct {
     UINT16 num_frames_to_be_processed;
     UINT16 len;
@@ -276,13 +272,13 @@ bool btc_a2dp_start_media_task(void)
 
     APPL_TRACE_EVENT("## A2DP START MEDIA THREAD ##");
 
-    xBtcMediaQueueSet = xQueueCreateSet(COMBINED_MEDIA_Q_LEN);
+    xBtcMediaQueueSet = xQueueCreateSet(BTC_MEDIA_TASK_QUEUE_SET_LEN);
     configASSERT(xBtcMediaQueueSet);
-    xBtcMediaDataQueue = xQueueCreate(MEDIA_DATA_Q_LEN, sizeof(void *));
+    xBtcMediaDataQueue = xQueueCreate(BTC_MEDIA_DATA_QUEUE_LEN, sizeof(void *));
     configASSERT(xBtcMediaDataQueue);
     xQueueAddToSet(xBtcMediaDataQueue, xBtcMediaQueueSet);
 
-    xBtcMediaCtrlQueue = xQueueCreate(MEDIA_CTRL_Q_LEN, sizeof(void *));
+    xBtcMediaCtrlQueue = xQueueCreate(BTC_MEDIA_CTRL_QUEUE_LEN, sizeof(void *));
     configASSERT(xBtcMediaCtrlQueue);
     xQueueAddToSet(xBtcMediaCtrlQueue, xBtcMediaQueueSet);
 

@@ -48,9 +48,9 @@
 static err_t
 pppapi_do_ppp_set_default(struct tcpip_api_call *m)
 {
-  struct pppapi_msg_msg *msg = (struct pppapi_msg_msg *)m;
+  struct pppapi_msg *msg = (struct pppapi_msg *)m;
   
-  ppp_set_default(msg->ppp);
+  ppp_set_default(msg->msg.ppp);
   return ERR_OK;
 }
 
@@ -103,8 +103,8 @@ pppapi_set_auth(ppp_pcb *pcb, u8_t authtype, const char *user, const char *passw
 static err_t
 pppapi_do_ppp_set_notify_phase_callback(struct tcpip_api_call *m)
 {
-  struct pppapi_msg_msg *msg = (struct pppapi_msg_msg *)m;
-  ppp_set_notify_phase_callback(msg->ppp, msg->msg.setnotifyphasecb.notify_phase_cb);
+  struct pppapi_msg *msg = (struct pppapi_msg *)m;
+  ppp_set_notify_phase_callback(msg->msg.ppp, msg->msg.msg.setnotifyphasecb.notify_phase_cb);
   return ERR_OK;
 }
 
@@ -164,11 +164,11 @@ pppapi_pppos_create(struct netif *pppif, pppos_output_cb_fn output_cb,
 static err_t
 pppapi_do_pppoe_create(struct tcpip_api_call *m)
 {
-  struct pppapi_msg_msg *msg = (struct pppapi_msg_msg *)m;
+  struct pppapi_msg *msg = (struct pppapi_msg *)m;
 
-  msg->ppp = pppoe_create(msg->msg.ethernetcreate.pppif, msg->msg.ethernetcreate.ethif,
-    msg->msg.ethernetcreate.service_name, msg->msg.ethernetcreate.concentrator_name,
-    msg->msg.ethernetcreate.link_status_cb, msg->msg.ethernetcreate.ctx_cb);
+  msg->msg.ppp = pppoe_create(msg->msg.msg.ethernetcreate.pppif, msg->msg.msg.ethernetcreate.ethif,
+    msg->msg.msg.ethernetcreate.service_name, msg->msg.msg.ethernetcreate.concentrator_name,
+    msg->msg.msg.ethernetcreate.link_status_cb, msg->msg.msg.ethernetcreate.ctx_cb);
   return ERR_OK;
 }
 
@@ -201,17 +201,17 @@ pppapi_pppoe_create(struct netif *pppif, struct netif *ethif, const char *servic
 static err_t
 pppapi_do_pppol2tp_create(struct tcpip_api_call *m)
 {
-  struct pppapi_msg_msg *msg = (struct pppapi_msg_msg *)m;
+  struct pppapi_msg *msg = (struct pppapi_msg *)m;
 
-  msg->ppp = pppol2tp_create(msg->msg.l2tpcreate.pppif,
-    msg->msg.l2tpcreate.netif, msg->msg.l2tpcreate.ipaddr, msg->msg.l2tpcreate.port,
+  msg->msg.ppp = pppol2tp_create(msg->msg.msg.l2tpcreate.pppif,
+    msg->msg.msg.l2tpcreate.netif, msg->msg.msg.l2tpcreate.ipaddr, msg->msg.msg.l2tpcreate.port,
 #if PPPOL2TP_AUTH_SUPPORT
-    msg->msg.l2tpcreate.secret,
-    msg->msg.l2tpcreate.secret_len,
+    msg->msg.msg.l2tpcreate.secret,
+    msg->msg.msg.l2tpcreate.secret_len,
 #else /* PPPOL2TP_AUTH_SUPPORT */
     NULL,
 #endif /* PPPOL2TP_AUTH_SUPPORT */
-    msg->msg.l2tpcreate.link_status_cb, msg->msg.l2tpcreate.ctx_cb);
+    msg->msg.msg.l2tpcreate.link_status_cb, msg->msg.msg.l2tpcreate.ctx_cb);
   return ERR_OK;
 }
 
@@ -325,9 +325,9 @@ pppapi_close(ppp_pcb *pcb, u8_t nocarrier)
 static err_t
 pppapi_do_ppp_free(struct tcpip_api_call *m)
 {
-  struct pppapi_msg_msg *msg = (struct pppapi_msg_msg *)m;
+  struct pppapi_msg *msg = (struct pppapi_msg *)m;
 
-  return ppp_free(msg->ppp);
+  return ppp_free(msg->msg.ppp);
 }
 
 /**

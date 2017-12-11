@@ -41,7 +41,7 @@ void app_main()
         // Read
         printf("Reading restart counter from NVS ... ");
         int32_t restart_counter = 0; // value will default to 0, if not set yet in NVS
-        err = nvs_get_i32(my_handle, "restart_conter", &restart_counter);
+        err = nvs_get_i32(my_handle, "restart_counter", &restart_counter);
         switch (err) {
             case ESP_OK:
                 printf("Done\n");
@@ -57,7 +57,7 @@ void app_main()
         // Write
         printf("Updating restart counter in NVS ... ");
         restart_counter++;
-        err = nvs_set_i32(my_handle, "restart_conter", restart_counter);
+        err = nvs_set_i32(my_handle, "restart_counter", restart_counter);
         printf((err != ESP_OK) ? "Failed!\n" : "Done\n");
 
         // Commit written value.

@@ -5,6 +5,7 @@
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 #include "freertos/event_groups.h"
+#include "driver/timer.h"
 #include "unity.h"
 
 #define BIT_CALL (1 << 0)
@@ -117,3 +118,85 @@ TEST_CASE("FreeRTOS Event Group Sync", "[freertos]")
     vEventGroupDelete(eg);
 }
 
+/*-----------------Test case for event group trace facilities-----------------*/
+#ifdef CONFIG_FREERTOS_USE_TRACE_FACILITY
+/*
+ * Test event group Trace Facility functions such as
+ * xEventGroupClearBitsFromISR(), xEventGroupSetBitsFromISR()
+ */
+
+//Use a timer to trigger an ISr
+#define TIMER_DIVIDER   10000
+#define TIMER_COUNT     1000
+#define TIMER_NUMBER    0
+#define SET_BITS    0xAA
+#define CLEAR_BITS  0x55
+
+static bool event_grp_cleared = false;
+
+static void IRAM_ATTR event_group_isr()
+{
+    TIMERG0.int_clr_timers.t0 = 1;
+    TIMERG0.hw_timer[xPortGetCoreID()].config.alarm_en = 1;
+    if(!event_grp_cleared){
+        xEventGroupClearBitsFromISR(eg, CLEAR_BITS);
+        event_grp_cleared = true;
+    }else{
+        xEventGroupSetBitsFromISR(eg, SET_BITS, NULL);
+        timer_pause(TIMER_GROUP_0, TIMER_NUMBER);
+    }
+}
+
+
+static void test_event_group_trace_facility(void* arg)
+{
+    //Setup timer for ISR
+    int timer_group = TIMER_GROUP_0;
+    int timer_idx = TIMER_NUMBER;
+    timer_config_t config;
+    config.alarm_en = 1;
+    config.auto_reload = 1;
+    config.counter_dir = TIMER_COUNT_UP;
+    config.divider = TIMER_DIVIDER;
+    config.intr_type = TIMER_INTR_LEVEL;
+    config.counter_en = TIMER_PAUSE;
+    timer_init(timer_group, timer_idx, &config);    //Configure timer
+    timer_pause(timer_group, timer_idx);    //Stop timer counter
+    timer_set_counter_value(timer_group, timer_idx, 0x00000000ULL); //Load counter value
+    timer_set_alarm_value(timer_group, timer_idx, TIMER_COUNT); //Set alarm value
+    timer_enable_intr(timer_group, timer_idx);  //Enable timer interrupt
+    timer_set_auto_reload(timer_group, timer_idx, 1);   //Auto Reload
+    timer_isr_register(timer_group, timer_idx, event_group_isr, NULL, ESP_INTR_FLAG_IRAM, NULL);    //Set ISR handler
+
+    //Start timer to trigger isr
+    timer_start(TIMER_GROUP_0, TIMER_NUMBER);
+    TEST_ASSERT(xEventGroupWaitBits(eg, SET_BITS, pdFALSE, pdTRUE, portMAX_DELAY));
+    //Check clear was successful
+    TEST_ASSERT((xEventGroupGetBits(eg) & CLEAR_BITS) == 0);
+
+    //Give semaphore to signal done
+    xSemaphoreGive(done_sem);
+    vTaskDelete(NULL);
+
+}
+
+TEST_CASE("FreeRTOS Event Group ISR", "[freertos]")
+{
+
+    done_sem = xSemaphoreCreateBinary();
+    eg = xEventGroupCreate();
+    xEventGroupSetBits(eg, CLEAR_BITS);     //Set bits to be cleared by ISR
+
+    xTaskCreatePinnedToCore(test_event_group_trace_facility, "Testing Task", 4096, NULL, configMAX_PRIORITIES - 1, NULL, 0);
+
+    //Wait until task and isr have finished testing
+    xSemaphoreTake(done_sem, portMAX_DELAY);
+    //Clean up
+    vSemaphoreDelete(done_sem);
+    vEventGroupDelete(eg);
+
+    vTaskDelay(10);     //Give time for idle task to clear up delted tasks
+
+}
+
+#endif      //CONFIG_FREERTOS_USE_TRACE_FACILITY

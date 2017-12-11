@@ -23,9 +23,18 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_heap_caps.h"
 
+
+/*
+ These contain the business logic for the malloc() and realloc() implementation. Because of heap tracing
+ wrapping reasons, we do not want these to be a public api, however, so they're not defined publicly.
+*/
+extern void *heap_caps_malloc_default( size_t size );
+extern void *heap_caps_realloc_default( void *ptr, size_t size );
+
+
 void* IRAM_ATTR _malloc_r(struct _reent *r, size_t size)
 {
-    return heap_caps_malloc( size, MALLOC_CAP_8BIT );
+    return heap_caps_malloc_default( size );
 }
 
 void IRAM_ATTR _free_r(struct _reent *r, void* ptr)
@@ -35,12 +44,12 @@ void IRAM_ATTR _free_r(struct _reent *r, void* ptr)
 
 void* IRAM_ATTR _realloc_r(struct _reent *r, void* ptr, size_t size)
 {
-    return heap_caps_realloc( ptr, size, MALLOC_CAP_8BIT );
+    return heap_caps_realloc_default( ptr, size );
 }
 
 void* IRAM_ATTR _calloc_r(struct _reent *r, size_t count, size_t size)
 {
-    void* result = heap_caps_malloc(count * size, MALLOC_CAP_8BIT);
+    void* result = heap_caps_malloc_default(count * size);
     if (result) {
         bzero(result, count * size);
     }

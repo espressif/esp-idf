@@ -80,6 +80,7 @@ typedef UINT8 tGATT_SEC_ACTION;
 #define GATT_WAIT_FOR_RSP_TOUT       30
 #define GATT_WAIT_FOR_DISC_RSP_TOUT  5
 #define GATT_REQ_RETRY_LIMIT         2
+#define GATT_WAIT_FOR_IND_ACK_TOUT   5
 
 /* characteristic descriptor type */
 #define GATT_DESCR_EXT_DSCPTOR   1    /* Characteristic Extended Properties */

@@ -16,7 +16,7 @@
 #include "esp_bt_main.h"
 #include "btc_task.h"
 #include "btc_main.h"
-#include "bt.h"
+#include "esp_bt.h"
 #include "future.h"
 #include "allocator.h"
 

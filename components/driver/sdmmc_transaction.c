@@ -15,6 +15,7 @@
 #include <string.h>
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_pm.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
@@ -32,13 +33,6 @@
  * of SD memory cards (most data transfers are multiples of 512 bytes).
  */
 #define SDMMC_DMA_DESC_CNT  4
-
-/* Max delay value is mostly useful for cases when CD pin is not used, and
- * the card is removed. In this case, SDMMC peripheral may not always return
- * CMD_DONE / DATA_DONE interrupts after signaling the error. This delay works
- * as a safety net in such cases.
- */
-#define SDMMC_MAX_EVT_WAIT_DELAY_MS 1000
 
 static const char* TAG = "sdmmc_req";
 
@@ -74,6 +68,9 @@ static sdmmc_desc_t s_dma_desc[SDMMC_DMA_DESC_CNT];
 static sdmmc_transfer_state_t s_cur_transfer = { 0 };
 static QueueHandle_t s_request_mutex;
 static bool s_is_app_cmd;   // This flag is set if the next command is an APP command
+#ifdef CONFIG_PM_ENABLE
+static esp_pm_lock_handle_t s_pm_lock;
+#endif
 
 static esp_err_t handle_idle_state_events();
 static sdmmc_hw_cmd_t make_hw_cmd(sdmmc_command_t* cmd);
@@ -90,12 +87,24 @@ esp_err_t sdmmc_host_transaction_handler_init()
         return ESP_ERR_NO_MEM;
     }
     s_is_app_cmd = false;
+#ifdef CONFIG_PM_ENABLE
+    esp_err_t err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "sdmmc", &s_pm_lock);
+    if (err != ESP_OK) {
+        vSemaphoreDelete(s_request_mutex);
+        s_request_mutex = NULL;
+        return err;
+    }
+#endif
     return ESP_OK;
 }
 
 void sdmmc_host_transaction_handler_deinit()
 {
     assert(s_request_mutex);
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_delete(s_pm_lock);
+    s_pm_lock = NULL;
+#endif
     vSemaphoreDelete(s_request_mutex);
     s_request_mutex = NULL;
 }
@@ -103,6 +112,9 @@ void sdmmc_host_transaction_handler_deinit()
 esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
 {
     xSemaphoreTake(s_request_mutex, portMAX_DELAY);
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_acquire(s_pm_lock);
+#endif
     // dispose of any events which happened asynchronously
     handle_idle_state_events();
     // convert cmdinfo to hardware register value
@@ -148,6 +160,9 @@ esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
         }
     }
     s_is_app_cmd = (ret == ESP_OK && cmdinfo->opcode == MMC_APP_CMD);
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_release(s_pm_lock);
+#endif
     xSemaphoreGive(s_request_mutex);
     return ret;
 }
@@ -206,7 +221,7 @@ static esp_err_t handle_idle_state_events()
 static esp_err_t handle_event(sdmmc_command_t* cmd, sdmmc_req_state_t* state)
 {
     sdmmc_event_t evt;
-    esp_err_t err = sdmmc_host_wait_for_event(SDMMC_MAX_EVT_WAIT_DELAY_MS / portTICK_PERIOD_MS, &evt);
+    esp_err_t err = sdmmc_host_wait_for_event(cmd->timeout_ms / portTICK_PERIOD_MS, &evt);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "sdmmc_host_wait_for_event returned 0x%x", err);
         if (err == ESP_ERR_TIMEOUT) {

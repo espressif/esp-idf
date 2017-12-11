@@ -17,6 +17,10 @@
 #include "esp_heap_caps.h"
 #include "soc/soc_memory_layout.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Initialize the capability-aware heap allocator.
  *
@@ -73,11 +77,15 @@ esp_err_t heap_caps_add_region(intptr_t start, intptr_t end);
  * @param start Start address of new region.
  * @param end End address of new region.
  *
- * @return ESP_OK on success, ESP_ERR_INVALID_ARG if a parameter is invalid, ESP_ERR_NO_MEM if no
- * memory to register new heap.
+ * @return 
+ *         - ESP_OK on success
+ *         - ESP_ERR_INVALID_ARG if a parameter is invalid
+ *         - ESP_ERR_NO_MEM if no memory to register new heap.
+ *         - ESP_FAIL if region overlaps the start and/or end of an existing region
  */
 esp_err_t heap_caps_add_region_with_caps(const uint32_t caps[], intptr_t start, intptr_t end);
 
 
-
-
+#ifdef __cplusplus
+}
+#endif

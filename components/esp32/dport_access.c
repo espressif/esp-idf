@@ -41,6 +41,7 @@
 
 #include "xtensa/core-macros.h"
 
+#ifndef CONFIG_FREERTOS_UNICORE
 static portMUX_TYPE g_dport_mux = portMUX_INITIALIZER_UNLOCKED;
 
 #define DPORT_CORE_STATE_IDLE        0
@@ -61,9 +62,9 @@ static uint32_t ccount_margin[portNUM_PROCESSORS][DPORT_ACCESS_BENCHMARK_STORE_N
 static uint32_t ccount_margin_cnt;
 #endif
 
-#ifndef CONFIG_FREERTOS_UNICORE
+
 static BaseType_t oldInterruptLevel[2];
-#endif
+#endif // CONFIG_FREERTOS_UNICORE
 
 /* stall other cpu that this cpu is pending to access dport register start */
 void IRAM_ATTR esp_dport_access_stall_other_cpu_start(void)
@@ -153,17 +154,17 @@ void IRAM_ATTR esp_dport_access_stall_other_cpu_end_wrap(void)
     DPORT_STALL_OTHER_CPU_END();
 }
 
+#ifndef CONFIG_FREERTOS_UNICORE
 static void dport_access_init_core(void *arg)
 {
     int core_id = 0;
     uint32_t intr_source = ETS_FROM_CPU_INTR2_SOURCE;
 
-#ifndef CONFIG_FREERTOS_UNICORE
+
     core_id = xPortGetCoreID();
     if (core_id == 1) {
         intr_source = ETS_FROM_CPU_INTR3_SOURCE;
     }
-#endif
 
     ESP_INTR_DISABLE(ETS_DPORT_INUM);
     intr_matrix_set(core_id, intr_source, ETS_DPORT_INUM);
@@ -176,31 +177,43 @@ static void dport_access_init_core(void *arg)
 
     vTaskDelete(NULL);
 }
+#endif
 
 /*  Defer initialisation until after scheduler is running */
 void esp_dport_access_int_init(void)
 {
+#ifndef CONFIG_FREERTOS_UNICORE
     portBASE_TYPE res = xTaskCreatePinnedToCore(&dport_access_init_core, "dport", configMINIMAL_STACK_SIZE, NULL, 5, NULL, xPortGetCoreID());
     assert(res == pdTRUE);
+#endif
 }
 
 void IRAM_ATTR esp_dport_access_int_pause(void)
 {
+#ifndef CONFIG_FREERTOS_UNICORE
     portENTER_CRITICAL_ISR(&g_dport_mux);
     dport_core_state[0] = DPORT_CORE_STATE_IDLE;
+    dport_core_state[1] = DPORT_CORE_STATE_IDLE;
+    portEXIT_CRITICAL_ISR(&g_dport_mux);
+#endif
+}
+
+//Used in panic code: the enter_critical stuff may be messed up so we just stop everything without checking the mux.
+void IRAM_ATTR esp_dport_access_int_abort(void)
+{
 #ifndef CONFIG_FREERTOS_UNICORE
+    dport_core_state[0] = DPORT_CORE_STATE_IDLE;
     dport_core_state[1] = DPORT_CORE_STATE_IDLE;
 #endif
-    portEXIT_CRITICAL_ISR(&g_dport_mux);
 }
 
 void IRAM_ATTR esp_dport_access_int_resume(void)
 {
+#ifndef CONFIG_FREERTOS_UNICORE
     portENTER_CRITICAL_ISR(&g_dport_mux);
     dport_core_state[0] = DPORT_CORE_STATE_RUNNING;
-#ifndef CONFIG_FREERTOS_UNICORE
     dport_core_state[1] = DPORT_CORE_STATE_RUNNING;
-#endif
     portEXIT_CRITICAL_ISR(&g_dport_mux);
+#endif
 }
 

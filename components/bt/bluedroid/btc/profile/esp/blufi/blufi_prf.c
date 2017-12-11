@@ -808,7 +808,7 @@ void btc_blufi_call_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             return;
         }
 
-        dst->wifi_conn_report.extra_info = osi_malloc(sizeof(esp_blufi_extra_info_t));
+        dst->wifi_conn_report.extra_info = osi_calloc(sizeof(esp_blufi_extra_info_t));
         if (dst->wifi_conn_report.extra_info == NULL) {
             return;
         }

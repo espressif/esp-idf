@@ -25,9 +25,10 @@ COMPONENT_OBJS := test_sodium.o
 # Run each test case from test_sodium.c as CASENAME_xmain().
 
 define sodium_testcase
-# this generates 'warning "main" redefined' warnings at
-# runtime. Only solution involves patching libsodium's cmptest.h
+# This would generate 'warning "main" redefined' warnings at runtime, which are
+# silenced here. Only other solution involves patching libsodium's cmptest.h.
 $(LS_TESTDIR)/$(1).o: CFLAGS+=-Dxmain=$(1)_xmain -Dmain=$(1)_main
+$(LS_TESTDIR)/$(1).o: CPPFLAGS+=-Wp,-w
 ote:
 COMPONENT_OBJS += $(LS_TESTDIR)/$(1).o
 endef

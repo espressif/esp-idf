@@ -692,6 +692,9 @@ dhcp_handle_ack(struct netif *netif)
   /* DNS servers */
   for (n = 0; (n < DNS_MAX_SERVERS) && dhcp_option_given(dhcp, DHCP_OPTION_IDX_DNS_SERVER + n); n++) {
     ip_addr_t dns_addr;
+    if (n == DNS_FALLBACK_SERVER_INDEX) {
+        continue;
+    }
     ip_addr_set_ip4_u32(&dns_addr, htonl(dhcp_get_option_value(dhcp, DHCP_OPTION_IDX_DNS_SERVER + n)));
     dns_setserver(n, &dns_addr);
   }

@@ -80,7 +80,11 @@ extern "C" {
 #include <xtensa/config/system.h>	/* required for XSHAL_CLIB */
 #include <xtensa/xtruntime.h>
 #include "esp_crosscore_int.h"
+#include "esp_timer.h"              /* required for FreeRTOS run time stats */
 
+
+#include <esp_heap_caps.h>
+#include "soc/soc_memory_layout.h"
 
 //#include "xtensa_context.h"
 
@@ -123,11 +127,20 @@ typedef unsigned portBASE_TYPE	UBaseType_t;
 #include "sdkconfig.h"
 #include "esp_attr.h"
 
-#define portFIRST_TASK_HOOK CONFIG_FREERTOS_BREAK_ON_SCHEDULER_START_JTAG
-
-
+/* "mux" data structure (spinlock) */
 typedef struct {
+	/* owner field values:
+	 * 0                - Uninitialized (invalid)
+	 * portMUX_FREE_VAL - Mux is free, can be locked by either CPU
+	 * CORE_ID_PRO / CORE_ID_APP - Mux is locked to the particular core
+	 *
+	 * Any value other than portMUX_FREE_VAL, CORE_ID_PRO, CORE_ID_APP indicates corruption
+	 */
 	uint32_t owner;
+	/* count field:
+	 * If mux is unlocked, count should be zero.
+	 * If mux is locked, count is non-zero & represents the number of recursive locks on the mux.
+	 */
 	uint32_t count;
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 	const char *lastLockedFn;
@@ -135,22 +148,13 @@ typedef struct {
 #endif
 } portMUX_TYPE;
 
- /*
-  * Kernel mux values can be:
-  * 0 - Uninitialized
-  * (0-portNUM_PROCESSORS)|(recCnt<<8)|0xB33F0000 - taken by core (val), recurse count is (recCnt)
-  * 0xB33FFFFF - free
-  *
-  * The magic number in the top 16 bits is there so we can detect uninitialized and corrupted muxes.
-  */
-
 #define portMUX_FREE_VAL		0xB33FFFFF
 
 /* Special constants for vPortCPUAcquireMutexTimeout() */
 #define portMUX_NO_TIMEOUT      (-1)  /* When passed for 'timeout_cycles', spin forever if necessary */
 #define portMUX_TRY_LOCK        0     /* Try to acquire the spinlock a single time only */
 
-//Keep this in sync with the portMUX_TYPE struct definition please.
+// Keep this in sync with the portMUX_TYPE struct definition please.
 #ifndef CONFIG_FREERTOS_PORTMUX_DEBUG
 #define portMUX_INITIALIZER_UNLOCKED {					\
 		.owner = portMUX_FREE_VAL,						\
@@ -165,10 +169,6 @@ typedef struct {
 	}
 #endif
 
-/* Critical section management. NW-TODO: replace XTOS_SET_INTLEVEL with more efficient version, if any? */
-// These cannot be nested. They should be used with a lot of care and cannot be called from interrupt level.
-#define portDISABLE_INTERRUPTS()      do { XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL); portbenchmarkINTERRUPT_DISABLE(); } while (0)
-#define portENABLE_INTERRUPTS()       do { portbenchmarkINTERRUPT_RESTORE(0); XTOS_SET_INTLEVEL(0); } while (0)
 
 #define portASSERT_IF_IN_ISR()        vPortAssertIfInISR()
 void vPortAssertIfInISR();
@@ -176,9 +176,11 @@ void vPortAssertIfInISR();
 #define portCRITICAL_NESTING_IN_TCB 1
 
 /*
-Modifications to portENTER_CRITICAL:
+Modifications to portENTER_CRITICAL.
 
-The original portENTER_CRITICAL only disabled the ISRs. This is enough for single-CPU operation: by 
+For an introduction, see "Critical Sections & Disabling Interrupts" in docs/api-guides/freertos-smp.rst
+
+The original portENTER_CRITICAL only disabled the ISRs. This is enough for single-CPU operation: by
 disabling the interrupts, there is no task switch so no other tasks can meddle in the data, and because
 interrupts are disabled, ISRs can't corrupt data structures either.
 
@@ -192,7 +194,7 @@ CPU from meddling with the data, it does not stop interrupts on the other cores 
 data. For this, we also use a spinlock in the routines called by the ISR, but these spinlocks
 do not disable the interrupts (because they already are).
 
-This all assumes that interrupts are either entirely disabled or enabled. Interrupr priority levels
+This all assumes that interrupts are either entirely disabled or enabled. Interrupt priority levels
 will break this scheme.
 
 Remark: For the ESP32, portENTER_CRITICAL and portENTER_CRITICAL_ISR both alias vTaskEnterCritical, meaning
@@ -203,7 +205,7 @@ void vPortCPUInitializeMutex(portMUX_TYPE *mux);
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 void vPortCPUAcquireMutex(portMUX_TYPE *mux, const char *function, int line);
 bool vPortCPUAcquireMutexTimeout(portMUX_TYPE *mux, int timeout_cycles, const char *function, int line);
-portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux, const char *function, int line);
+void vPortCPUReleaseMutex(portMUX_TYPE *mux, const char *function, int line);
 
 
 void vTaskEnterCritical( portMUX_TYPE *mux, const char *function, int line );
@@ -234,26 +236,48 @@ void vPortCPUReleaseMutex(portMUX_TYPE *mux);
 #define portEXIT_CRITICAL_ISR(mux)     vTaskExitCritical(mux)
 #endif
 
-// Cleaner and preferred solution allows nested interrupts disabling and restoring via local registers or stack.
+// Critical section management. NW-TODO: replace XTOS_SET_INTLEVEL with more efficient version, if any?
+// These cannot be nested. They should be used with a lot of care and cannot be called from interrupt level.
+//
+// Only applies to one CPU. See notes above & below for reasons not to use these.
+#define portDISABLE_INTERRUPTS()      do { XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL); portbenchmarkINTERRUPT_DISABLE(); } while (0)
+#define portENABLE_INTERRUPTS()       do { portbenchmarkINTERRUPT_RESTORE(0); XTOS_SET_INTLEVEL(0); } while (0)
+
+// Cleaner solution allows nested interrupts disabling and restoring via local registers or stack.
 // They can be called from interrupts too.
-// WARNING: This ONLY disables interrupt on the current CPU, meaning they cannot be used as a replacement for the vTaskExitCritical spinlock
-// on a multicore system. Only use if disabling interrupts on the current CPU only is indeed what you want.
-static inline unsigned portENTER_CRITICAL_NESTED() { unsigned state = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL); portbenchmarkINTERRUPT_DISABLE(); return state; }
+// WARNING: Only applies to current CPU. See notes above.
+static inline unsigned portENTER_CRITICAL_NESTED() {
+	unsigned state = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);
+	portbenchmarkINTERRUPT_DISABLE();
+	return state;
+}
 #define portEXIT_CRITICAL_NESTED(state)   do { portbenchmarkINTERRUPT_RESTORE(state); XTOS_RESTORE_JUST_INTLEVEL(state); } while (0)
 
 // These FreeRTOS versions are similar to the nested versions above
 #define portSET_INTERRUPT_MASK_FROM_ISR()            portENTER_CRITICAL_NESTED()
 #define portCLEAR_INTERRUPT_MASK_FROM_ISR(state)     portEXIT_CRITICAL_NESTED(state)
 
+//Because the ROM routines don't necessarily handle a stack in external RAM correctly, we force
+//the stack memory to always be internal.
+#define pvPortMallocTcbMem(size) heap_caps_malloc(size, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT)
+#define pvPortMallocStackMem(size)  heap_caps_malloc(size, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT)
+
+//xTaskCreateStatic uses these functions to check incoming memory.
+#define portVALID_TCB_MEM(ptr) (esp_ptr_internal(ptr) && esp_ptr_byte_accessible(ptr))
+#ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+#define portVALID_STACK_MEM(ptr) esp_ptr_byte_accessible(ptr)
+#else
+#define portVALID_STACK_MEM(ptr) (esp_ptr_internal(ptr) && esp_ptr_byte_accessible(ptr))
+#endif
 
 /*
  * Wrapper for the Xtensa compare-and-set instruction. This subroutine will atomically compare
- * *mux to compare, and if it's the same, will set *mux to set. It will return the old value
- * of *addr in *set.
+ * *addr to 'compare'. If *addr == compare, *addr is set to *set. *set is updated with the previous
+ * value of *addr (either 'compare' or some other value.)
  *
  * Warning: From the ISA docs: in some (unspecified) cases, the s32c1i instruction may return the
  * *bitwise inverse* of the old mem if the mem wasn't written. This doesn't seem to happen on the
- * ESP32, though. (Would show up directly if it did because the magic wouldn't match.)
+ * ESP32 (portMUX assertions would fail).
  */
 static inline void uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set) {
     __asm__ __volatile__ (
@@ -276,6 +300,15 @@ static inline void uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, u
 
 /* Fine resolution time */
 #define portGET_RUN_TIME_COUNTER_VALUE()  xthal_get_ccount()
+//ccount or esp_timer are initialized elsewhere
+#define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
+
+#ifdef CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+/* Coarse resolution time (us) */
+#define portALT_GET_RUN_TIME_COUNTER_VALUE(x)    x = (uint32_t)esp_timer_get_time()
+#endif
+
+
 
 /* Kernel utilities. */
 void vPortYield( void );

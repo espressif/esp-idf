@@ -5,7 +5,7 @@ This test code shows how to configure ADC1 and read the voltage connected to GPI
  
 ### ADC1 functions:
 
-ADC1_CHANNEL_6: GPIO34, voltage range [0V..3.1V], the data range [0..4095]
+ADC1_CHANNEL_6: GPIO34, voltage range [0V..1.1V], the data range [0..4095]
 
  
 ### Test:

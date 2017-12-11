@@ -1066,9 +1066,12 @@ tcp_output(struct tcp_pcb *pcb)
 
 #if TCP_OVERSIZE_DBGCHECK
     seg->oversize_left = 0;
+    if (seg->next == NULL) {
+      pcb->unsent_oversize = 0;
+    }
 #endif /* TCP_OVERSIZE_DBGCHECK */
     err = tcp_output_segment(seg, pcb);
-    if ((err != ERR_OK) && (err != ERR_RTE)) {
+    if (err != ERR_OK) {
       /* segment could not be sent, for whatever reason */
       pcb->flags |= TF_NAGLEMEMERR;
       return err;

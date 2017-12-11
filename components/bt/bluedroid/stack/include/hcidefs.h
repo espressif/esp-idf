@@ -1469,7 +1469,8 @@ typedef struct {
 
 #define HCI_FEATURE_SWITCH_MASK         0x20
 #define HCI_FEATURE_SWITCH_OFF          0
-#define HCI_SWITCH_SUPPORTED(x)         ((x)[HCI_FEATURE_SWITCH_OFF] & HCI_FEATURE_SWITCH_MASK)
+// temporarily disable ROLE_SWITCH since there is an issue to be fixed
+#define HCI_SWITCH_SUPPORTED(x)         (0 & ((x)[HCI_FEATURE_SWITCH_OFF] & HCI_FEATURE_SWITCH_MASK))
 
 #define HCI_FEATURE_HOLD_MODE_MASK      0x40
 #define HCI_FEATURE_HOLD_MODE_OFF       0

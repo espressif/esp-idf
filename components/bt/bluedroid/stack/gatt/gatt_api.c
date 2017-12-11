@@ -567,7 +567,6 @@ tGATT_STATUS GATTS_HandleValueIndication (UINT16 conn_id,  UINT16 attr_handle, U
 
     tGATT_VALUE      indication;
     BT_HDR          *p_msg;
-    tGATT_VALUE     *p_buf;
     tGATT_IF         gatt_if = GATT_GET_GATT_IF(conn_id);
     UINT8           tcb_idx = GATT_GET_TCB_IDX(conn_id);
     tGATT_REG       *p_reg = gatt_get_regcb(gatt_if);
@@ -591,12 +590,16 @@ tGATT_STATUS GATTS_HandleValueIndication (UINT16 conn_id,  UINT16 attr_handle, U
     indication.auth_req = GATT_AUTH_REQ_NONE;
 
     if (GATT_HANDLE_IS_VALID(p_tcb->indicate_handle)) {
+        /* TODO: need to further check whether deleting pending queue here cause reducing transport performance */
+        /*
         GATT_TRACE_DEBUG ("Add a pending indication");
         if ((p_buf = gatt_add_pending_ind(p_tcb, &indication)) != NULL) {
             cmd_status = GATT_SUCCESS;
         } else {
             cmd_status = GATT_NO_RESOURCES;
         }
+        */
+        return GATT_BUSY;
     } else {
 
         if ( (p_msg = attp_build_sr_msg (p_tcb, GATT_HANDLE_VALUE_IND, (tGATT_SR_MSG *)&indication)) != NULL) {
@@ -723,7 +726,9 @@ tGATT_STATUS GATTS_SetAttributeValue(UINT16 attr_handle, UINT16 length, UINT8 *v
 
     GATT_TRACE_DEBUG("GATTS_SetAttributeValue: attr_handle: %u  length: %u \n",
                     attr_handle, length);
-
+    if (length <= 0){
+        return GATT_INVALID_ATTR_LEN;
+    }
     if ((p_decl = gatt_find_hdl_buffer_by_attr_handle(attr_handle)) == NULL) {
         GATT_TRACE_DEBUG("Service not created\n"); 
         return GATT_INVALID_HANDLE;

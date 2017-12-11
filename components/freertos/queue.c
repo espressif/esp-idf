@@ -165,7 +165,7 @@ typedef struct QueueDefinition
 		uint8_t ucQueueType;
 	#endif
 
-	portMUX_TYPE mux;
+	portMUX_TYPE mux;		//Mutex required due to SMP
 
 } xQUEUE;
 
@@ -204,6 +204,9 @@ _Static_assert(sizeof(StaticQueue_t) == sizeof(Queue_t), "StaticQueue_t != Queue
 	The pcQueueName member of a structure being NULL is indicative of the
 	array position being vacant. */
 	QueueRegistryItem_t xQueueRegistry[ configQUEUE_REGISTRY_SIZE ];
+
+	//Need to add queue registry mutex to protect against simultaneous access
+	static portMUX_TYPE queue_registry_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 #endif /* configQUEUE_REGISTRY_SIZE */
 
@@ -2316,7 +2319,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 	{
 	UBaseType_t ux;
 
-		UNTESTED_FUNCTION();
+		portENTER_CRITICAL(&queue_registry_spinlock);
 		/* See if there is an empty space in the registry.  A NULL name denotes
 		a free slot. */
 		for( ux = ( UBaseType_t ) 0U; ux < ( UBaseType_t ) configQUEUE_REGISTRY_SIZE; ux++ )
@@ -2335,6 +2338,38 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 				mtCOVERAGE_TEST_MARKER();
 			}
 		}
+		portEXIT_CRITICAL(&queue_registry_spinlock);
+	}
+
+#endif /* configQUEUE_REGISTRY_SIZE */
+/*-----------------------------------------------------------*/
+
+#if ( configQUEUE_REGISTRY_SIZE > 0 )
+
+	//This function is backported from FreeRTOS v9.0.0
+	const char *pcQueueGetName( QueueHandle_t xQueue ) /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+	{
+	UBaseType_t ux;
+	const char *pcReturn = NULL; /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+
+		portENTER_CRITICAL(&queue_registry_spinlock);
+		/* Note there is nothing here to protect against another task adding or
+		removing entries from the registry while it is being searched. */
+		for( ux = ( UBaseType_t ) 0U; ux < ( UBaseType_t ) configQUEUE_REGISTRY_SIZE; ux++ )
+		{
+		    if( xQueueRegistry[ ux ].xHandle == xQueue )
+			{
+				pcReturn = xQueueRegistry[ ux ].pcQueueName;
+				break;
+			}
+			else
+			{
+				mtCOVERAGE_TEST_MARKER();
+			}
+		}
+		portEXIT_CRITICAL(&queue_registry_spinlock);
+
+		return pcReturn;
 	}
 
 #endif /* configQUEUE_REGISTRY_SIZE */
@@ -2346,6 +2381,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 	{
 	UBaseType_t ux;
 
+		portENTER_CRITICAL(&queue_registry_spinlock);
 		/* See if the handle of the queue being unregistered in actually in the
 		registry. */
 		for( ux = ( UBaseType_t ) 0U; ux < ( UBaseType_t ) configQUEUE_REGISTRY_SIZE; ux++ )
@@ -2361,6 +2397,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 				mtCOVERAGE_TEST_MARKER();
 			}
 		}
+		portEXIT_CRITICAL(&queue_registry_spinlock);
 
 	} /*lint !e818 xQueue could not be pointer to const because it is a typedef. */
 

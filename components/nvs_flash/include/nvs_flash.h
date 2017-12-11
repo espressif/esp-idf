@@ -24,7 +24,7 @@ extern "C" {
  * @brief Initialize the default NVS partition.
  *
  * This API initialises the default NVS partition. The default NVS partition
- * is the one that is labelled "nvs" in the partition table.
+ * is the one that is labeled "nvs" in the partition table.
  *
  * @return
  *      - ESP_OK if storage was successfully initialized.
@@ -38,7 +38,7 @@ esp_err_t nvs_flash_init(void);
 /**
  * @brief Initialize NVS flash storage for the specified partition.
  *
- * @param[in]  partition_name    Name (label) of the partition. Note that internally a reference to
+ * @param[in]  partition_label   Label of the partition. Note that internally a reference to
  *                               passed value is kept and it should be accessible for future operations
  *
  * @return
@@ -48,7 +48,30 @@ esp_err_t nvs_flash_init(void);
  *      - ESP_ERR_NOT_FOUND if specified partition is not found in the partition table
  *      - one of the error codes from the underlying flash storage driver
  */
-esp_err_t nvs_flash_init_partition(const char *partition_name);
+esp_err_t nvs_flash_init_partition(const char *partition_label);
+
+/**
+ * @brief Deinitialize NVS storage for the default NVS partition
+ *
+ * Default NVS partition is the partition with "nvs" label in the partition table.
+ *
+ * @return
+ *      - ESP_OK on success (storage was deinitialized)
+ *      - ESP_ERR_NVS_NOT_INITIALIZED if the storage was not initialized prior to this call
+ */
+esp_err_t nvs_flash_deinit(void);
+
+/**
+ * @brief Deinitialize NVS storage for the given NVS partition
+ *
+ * @param[in]  partition_label   Label of the partition
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NVS_NOT_INITIALIZED if the storage for given partition was not
+ *        initialized prior to this call
+ */
+esp_err_t nvs_flash_deinit_partition(const char* partition_label);
 
 /**
  * @brief Erase the default NVS partition

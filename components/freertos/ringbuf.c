@@ -190,8 +190,20 @@ static BaseType_t copyItemToRingbufAllowSplit(ringbuf_t *rb, uint8_t *buffer, si
             memcpy(rb->write_ptr, buffer, rem_len);
             //Update vars so the code later on will write the rest of the data.
             buffer+=rem_len;
-            rbuffer_size-=rem_len;
             buffer_size-=rem_len;
+            //Re-adjust the rbuffer value to be 4 byte aligned
+            rbuffer_size=(buffer_size+3)&~3;
+            //It is possible that we are here because we checked for 4byte aligned
+            //size, but actual data was smaller.
+            //Eg. For buffer_size = 34, rbuffer_size will be 36. Suppose we had only
+            //42 bytes of memory available, the top level check will fail, as it will
+            //check for availability of 36 + 8 = 44 bytes.
+            //However, the 42 bytes available memory is sufficient for 34 + 8 bytes data
+            //and so, we can return after writing the data. Hence, this check
+            if (buffer_size == 0) {
+                rb->write_ptr=rb->data;
+                return pdTRUE;
+            }
         } else {
             //Huh, only the header fit. Mark as dummy so the receive function doesn't receive
             //an useless zero-byte packet.
@@ -286,7 +298,10 @@ static uint8_t *getItemFromRingbufDefault(ringbuf_t *rb, size_t *length, int wan
     //...and move the read pointer past the data.
     rb->read_ptr+=sizeof(buf_entry_hdr_t)+((hdr->len+3)&~3);
     //The buffer will wrap around if we don't have room for a header anymore.
-    if ((rb->data + rb->size) - rb->read_ptr < sizeof(buf_entry_hdr_t)) {
+    //Integer typecasting is used because the first operand can result into a -ve
+    //value for cases wherein the ringbuffer size is not a multiple of 4, but the
+    //implementation logic aligns read_ptr to 4-byte boundary
+    if ((int)((rb->data + rb->size) - rb->read_ptr) < (int)sizeof(buf_entry_hdr_t)) {
         rb->read_ptr=rb->data;
     }
     return ret;
@@ -355,12 +370,20 @@ static void returnItemToRingbufDefault(ringbuf_t *rb, void *item) {
             rb->free_ptr=rb->data;
         } else {
             //Skip past item
+            rb->free_ptr+=sizeof(buf_entry_hdr_t);
+            //Check if the free_ptr overshoots the buffer.
+            //Checking this before aligning free_ptr since it is possible that alignment
+            //will cause pointer to overshoot, if the ringbuf size is not a multiple of 4
+            configASSERT(rb->free_ptr+hdr->len<=rb->data+rb->size);
+            //Align free_ptr to 4 byte boundary. Overshoot condition will result in wrap around below
             size_t len=(hdr->len+3)&~3;
-            rb->free_ptr+=len+sizeof(buf_entry_hdr_t);
-            configASSERT(rb->free_ptr<=rb->data+rb->size);
+            rb->free_ptr+=len;
         }
         //The buffer will wrap around if we don't have room for a header anymore.
-        if ((rb->data+rb->size)-rb->free_ptr < sizeof(buf_entry_hdr_t)) {
+        //Integer typecasting is used because the first operand can result into a -ve
+        //value for cases wherein the ringbuffer size is not a multiple of 4, but the
+        //implementation logic aligns free_ptr to 4-byte boundary
+        if ((int)((rb->data+rb->size)-rb->free_ptr) < (int)sizeof(buf_entry_hdr_t)) {
             rb->free_ptr=rb->data;
         }
         //The free_ptr can not exceed read_ptr, otherwise write_ptr might overwrite read_ptr.

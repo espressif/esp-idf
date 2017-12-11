@@ -20,7 +20,7 @@ class Base
 {
 public:
     virtual ~Base() {}
-    virtual void foo() = 0; 
+    virtual void foo() = 0;
 };
 
 class Derived : public Base
@@ -92,7 +92,6 @@ public:
         static SlowInit slowinit(taskId);
         ESP_LOGD(TAG, "obj=%d after static init, task=%d\n", obj, taskId);
         xSemaphoreGive(s_slow_init_sem);
-        vTaskDelay(10);
         vTaskDelete(NULL);
     }
 private:
@@ -133,6 +132,8 @@ TEST_CASE("static initialization guards work as expected", "[cxx]")
         TEST_ASSERT_TRUE(xSemaphoreTake(s_slow_init_sem, 500/portTICK_PERIOD_MS));
     }
     vSemaphoreDelete(s_slow_init_sem);
+
+    vTaskDelay(10); // Allow tasks to clean up, avoids race with leak detector
 }
 
 struct GlobalInitTest
@@ -186,6 +187,86 @@ TEST_CASE("before scheduler has started, static initializers work correctly", "[
     TEST_ASSERT_EQUAL(1, g_static_init_test3.index);
     TEST_ASSERT_EQUAL(2, StaticInitTestBeforeScheduler::order);
 }
+
+#ifdef CONFIG_CXX_EXCEPTIONS
+
+TEST_CASE("c++ exceptions work", "[cxx]")
+{
+    /* Note: When first exception (in system) is thrown this test produces memory leaks report (~500 bytes):
+       - 392 bytes (can vary) as libunwind allocates memory to keep stack frames info to handle exceptions.
+         This info is kept until global destructors are called by __do_global_dtors_aux()
+       - 8 bytes are allocated by __cxa_get_globals() to keep __cxa_eh_globals
+       - 16 bytes are allocated by pthread_setspecific() which is called by __cxa_get_globals() to init TLS var for __cxa_eh_globals
+       - 88 bytes are allocated by pthread_setspecific() to init internal lock
+       */
+    int thrown_value;
+    try
+    {
+        throw 20;
+    }
+    catch (int e)
+    {
+        thrown_value = e;
+    }
+    TEST_ASSERT_EQUAL(20, thrown_value);
+    printf("OK?\n");
+}
+
+TEST_CASE("c++ exceptions emergency pool", "[cxx] [ignore]")
+{
+    /* Note: When first exception (in system) is thrown this test produces memory leaks report (~500 bytes):
+       - 392 bytes (can vary) as libunwind allocates memory to keep stack frames info to handle exceptions.
+         This info is kept until global destructors are called by __do_global_dtors_aux()
+       - 8 bytes are allocated by __cxa_get_globals() to keep __cxa_eh_globals
+       - 16 bytes are allocated by pthread_setspecific() which is called by __cxa_get_globals() to init TLS var for __cxa_eh_globals
+       - 88 bytes are allocated by pthread_setspecific() to init internal lock
+       */
+    void **p, **pprev = NULL;
+    int thrown_value = 0;
+    // throw first exception to ensure that all initial allocations are made
+    try
+    {
+        throw 33;
+    }
+    catch (int e)
+    {
+        thrown_value = e;
+    }
+    TEST_ASSERT_EQUAL(33, thrown_value);
+    // consume all dynamic memory
+    while ((p = (void **)malloc(sizeof(void *)))) {
+        if (pprev) {
+            *p = pprev;
+        } else {
+            *p = NULL;
+        }
+        pprev = p;
+    }
+    try
+    {
+        throw 20;
+    }
+    catch (int e)
+    {
+        thrown_value = e;
+        printf("Got exception %d\n", thrown_value);
+    }
+#if CONFIG_CXX_EXCEPTIONS_EMG_POOL_SIZE > 0
+    // free all memory
+    while (pprev) {
+        p = (void **)(*pprev);
+        free(pprev);
+        pprev = p;
+    }
+    TEST_ASSERT_EQUAL(20, thrown_value);
+#else
+    // if emergency pool is disabled we should never get here,
+    // expect abort() due to lack of memory for new exception
+    TEST_ASSERT_TRUE(0 == 1);
+#endif
+}
+
+#endif
 
 /* These test cases pull a lot of code from libstdc++ and are disabled for now
  */

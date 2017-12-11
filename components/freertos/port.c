@@ -298,6 +298,11 @@ void vPortAssertIfInISR()
  * For kernel use: Initialize a per-CPU mux. Mux will be initialized unlocked.
  */
 void vPortCPUInitializeMutex(portMUX_TYPE *mux) {
+#if defined(CONFIG_SPIRAM_SUPPORT)
+    // Check if mux belongs to internal memory (DRAM), prerequisite for atomic operations
+    configASSERT(esp_ptr_internal((const void *) mux));
+#endif
+
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 	ets_printf("Initializing mux %p\n", mux);
 	mux->lastLockedFn="(never locked)";
@@ -319,7 +324,7 @@ void vPortCPUAcquireMutex(portMUX_TYPE *mux, const char *fnName, int line) {
 	portEXIT_CRITICAL_NESTED(irqStatus);
 }
 
-bool vPortCPUAcquireMutexTimeout(portMUX_TYPE *mux, uint32_t timeout_cycles, const char *fnName, int line) {
+bool vPortCPUAcquireMutexTimeout(portMUX_TYPE *mux, int timeout_cycles, const char *fnName, int line) {
 	unsigned int irqStatus = portENTER_CRITICAL_NESTED();
 	bool result = vPortCPUAcquireMutexIntsDisabled(mux, timeout_cycles, fnName, line);
 	portEXIT_CRITICAL_NESTED(irqStatus);
@@ -358,12 +363,6 @@ void vPortCPUReleaseMutex(portMUX_TYPE *mux) {
 	unsigned int irqStatus = portENTER_CRITICAL_NESTED();
 	vPortCPUReleaseMutexIntsDisabled(mux);
 	portEXIT_CRITICAL_NESTED(irqStatus);
-}
-#endif
-
-#if CONFIG_FREERTOS_BREAK_ON_SCHEDULER_START_JTAG
-void vPortFirstTaskHook(TaskFunction_t function) {
-	esp_set_breakpoint_if_jtag(function);
 }
 #endif
 

@@ -289,11 +289,15 @@ typedef void (*spi_flash_op_unlock_func_t)(void);
  *      is invoked before the call to one of ROM function above.
  *   - 'end' function should restore state of flash cache and non-IRAM interrupts and
  *      is invoked after the call to one of ROM function above.
+ *    These two functions are not recursive.
  * 2) Functions which synchronizes access to internal data used by flash API.
  *    This functions are mostly intended to synchronize access to flash API internal data
  *    in multithreaded environment and use OS primitives:
  *   - 'op_lock' locks access to flash API internal data.
  *   - 'op_unlock' unlocks access to flash API internal data.
+ *   These two functions are recursive and can be used around the outside of multiple calls to
+ *   'start' & 'end', in order to create atomic multi-part flash operations.
+ *
  * Different versions of the guarding functions should be used depending on the context of
  * execution (with or without functional OS). In normal conditions when flash API is called
  * from task the functions use OS primitives. When there is no OS at all or when
@@ -304,10 +308,10 @@ typedef void (*spi_flash_op_unlock_func_t)(void);
  *       For example structure can be placed in DRAM and functions in IRAM sections.
  */
 typedef struct {
-    spi_flash_guard_start_func_t    start;      /**< critical section start func */
-    spi_flash_guard_end_func_t      end;        /**< critical section end func */
-    spi_flash_op_lock_func_t        op_lock;    /**< flash access API lock func */
-    spi_flash_op_unlock_func_t      op_unlock;  /**< flash access API unlock func */
+    spi_flash_guard_start_func_t    start;      /**< critical section start function. */
+    spi_flash_guard_end_func_t      end;        /**< critical section end function. */
+    spi_flash_op_lock_func_t        op_lock;    /**< flash access API lock function.*/
+    spi_flash_op_unlock_func_t      op_unlock;  /**< flash access API unlock function.*/
 } spi_flash_guard_funcs_t;
 
 /**
@@ -319,6 +323,15 @@ typedef struct {
  * @param funcs pointer to structure holding flash access guard functions.
  */
 void spi_flash_guard_set(const spi_flash_guard_funcs_t* funcs);
+
+
+/**
+ * @brief Get the guard functions used for flash access
+ *
+ * @return The guard functions that were set via spi_flash_guard_set(). These functions
+ * can be called if implementing custom low-level SPI flash operations.
+ */
+const spi_flash_guard_funcs_t *spi_flash_guard_get();
 
 /**
  * @brief Default OS-aware flash access guard functions

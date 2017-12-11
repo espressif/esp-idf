@@ -17,29 +17,37 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "esp_heap_caps_init.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
 #include "freertos/portmacro.h"
+#include "xtensa/core-macros.h"
 #include "esp_types.h"
 #include "esp_system.h"
 #include "esp_task.h"
 #include "esp_intr.h"
 #include "esp_attr.h"
 #include "esp_phy_init.h"
-#include "bt.h"
+#include "esp_bt.h"
+#include "esp_err.h"
+#include "esp_log.h"
+#include "esp_pm.h"
+#include "esp_ipc.h"
+#include "driver/periph_ctrl.h"
 
 #if CONFIG_BT_ENABLED
+
+#define BTDM_LOG_TAG                        "BTDM_INIT"
 
 #define BTDM_INIT_PERIOD                    (5000)    /* ms */
 
 /* Bluetooth system and controller config */
-#define BTDM_CFG_BT_EM_RELEASE              (1<<0)
-#define BTDM_CFG_BT_DATA_RELEASE            (1<<1)
-#define BTDM_CFG_HCI_UART                   (1<<2)
-#define BTDM_CFG_CONTROLLER_RUN_APP_CPU     (1<<3)
+#define BTDM_CFG_BT_DATA_RELEASE            (1<<0)
+#define BTDM_CFG_HCI_UART                   (1<<1)
+#define BTDM_CFG_CONTROLLER_RUN_APP_CPU     (1<<2)
 /* Other reserved for future */
 
 /* not for user call, so don't put to include file */
@@ -48,6 +56,7 @@ extern int btdm_controller_init(uint32_t config_mask, esp_bt_controller_config_t
 extern int btdm_controller_deinit(void);
 extern int btdm_controller_enable(esp_bt_mode_t mode);
 extern int btdm_controller_disable(esp_bt_mode_t mode);
+extern uint8_t btdm_controller_get_mode(void);
 extern void btdm_rf_bb_init(void);
 
 /* VHCI function interface */
@@ -63,6 +72,13 @@ extern void API_vhci_host_register_callback(const vhci_host_callback_t *callback
 extern int ble_txpwr_set(int power_type, int power_level);
 extern int ble_txpwr_get(int power_type);
 
+extern char _bss_start_btdm;
+extern char _bss_end_btdm;
+extern char _data_start_btdm;
+extern char _data_end_btdm;
+extern uint32_t _data_start_btdm_rom;
+extern uint32_t _data_end_btdm_rom;
+
 #define BT_DEBUG(...)
 #define BT_API_CALL_CHECK(info, api_call, ret) \
 do{\
@@ -74,6 +90,27 @@ do{\
 } while(0)
 
 #define OSI_FUNCS_TIME_BLOCKING  0xffffffff
+
+typedef struct {
+    esp_bt_mode_t mode;
+    intptr_t start;
+    intptr_t end;
+} btdm_dram_available_region_t;
+
+/* the mode column will be modifid by release function to indicate the available region */
+static btdm_dram_available_region_t btdm_dram_available_region[] = {
+    //following is .data 
+    {ESP_BT_MODE_BTDM,          0x3ffae6e0, 0x3ffaff10},
+    //following is memory which HW will use
+    {ESP_BT_MODE_BTDM,          0x3ffb0000, 0x3ffb09a8},
+    {ESP_BT_MODE_BLE,           0x3ffb09a8, 0x3ffb1ddc},
+    {ESP_BT_MODE_BTDM,          0x3ffb1ddc, 0x3ffb2730},
+    {ESP_BT_MODE_CLASSIC_BT,    0x3ffb2730, 0x3ffb8000},
+    //following is .bss
+    {ESP_BT_MODE_BTDM,          0x3ffb8000, 0x3ffbbb28},
+    {ESP_BT_MODE_CLASSIC_BT,    0x3ffbbb28, 0x3ffbdb28},
+    {ESP_BT_MODE_BTDM,          0x3ffbdb28, 0x3ffc0000},
+};
 
 struct osi_funcs_t {
     xt_handler (*_set_isr)(int n, xt_handler f, void *arg);
@@ -101,6 +138,7 @@ struct osi_funcs_t {
     int32_t (* _task_create)(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id);
     void (* _task_delete)(void *task_handle);
     bool (* _is_in_isr)(void);
+    int (* _cause_sw_intr_to_core)(int core_id, int intr_no);
     void *(* _malloc)(uint32_t size);
     void (* _free)(void *p);
     int32_t (* _read_efuse_mac)(uint8_t mac[6]);
@@ -113,6 +151,10 @@ static bool btdm_bb_init_flag = false;
 static esp_bt_controller_status_t btdm_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
 
 static portMUX_TYPE global_int_mux = portMUX_INITIALIZER_UNLOCKED;
+
+#ifdef CONFIG_PM_ENABLE
+static esp_pm_lock_handle_t s_pm_lock;
+#endif
 
 static void IRAM_ATTR interrupt_disable(void)
 {
@@ -236,6 +278,26 @@ static bool IRAM_ATTR is_in_isr_wrapper(void)
     return (bool)xPortInIsrContext();
 }
 
+static void IRAM_ATTR cause_sw_intr(void *arg)
+{
+    /* just convert void * to int, because the width is the same */
+    uint32_t intr_no = (uint32_t)arg;
+    XTHAL_SET_INTSET((1<<intr_no));
+}
+
+static int IRAM_ATTR cause_sw_intr_to_core_wrapper(int core_id, int intr_no)
+{
+    esp_err_t err = ESP_OK;
+
+    if (xPortGetCoreID() == core_id) {
+        cause_sw_intr((void *)intr_no);
+    } else {
+        err = esp_ipc_call(core_id, cause_sw_intr, (void *)intr_no);
+    }
+
+    return err;
+}
+
 static int32_t IRAM_ATTR read_mac_wrapper(uint8_t mac[6])
 {
     return esp_read_mac(mac, ESP_MAC_BT);
@@ -277,6 +339,7 @@ static struct osi_funcs_t osi_funcs = {
     ._task_create = task_create_wrapper,
     ._task_delete = task_delete_wrapper,
     ._is_in_isr = is_in_isr_wrapper,
+    ._cause_sw_intr_to_core = cause_sw_intr_to_core_wrapper,
     ._malloc = malloc,
     ._free = free,
     ._read_efuse_mac = read_mac_wrapper,
@@ -303,16 +366,87 @@ static uint32_t btdm_config_mask_load(void)
 {
     uint32_t mask = 0x0;
 
-#ifdef CONFIG_BT_DRAM_RELEASE
-    mask |= (BTDM_CFG_BT_EM_RELEASE | BTDM_CFG_BT_DATA_RELEASE);
-#endif
-#ifdef CONFIG_BT_HCI_UART
+    if (btdm_dram_available_region[0].mode == ESP_BT_MODE_BLE) {
+        mask |= BTDM_CFG_BT_DATA_RELEASE;
+    }
+
+#if CONFIG_BTDM_CONTROLLER_HCI_MODE_UART_H4
     mask |= BTDM_CFG_HCI_UART;
 #endif
-#ifdef CONFIG_BTDM_CONTROLLER_RUN_APP_CPU
+#if CONFIG_BTDM_CONTROLLER_PINNED_TO_CORE == 1
     mask |= BTDM_CFG_CONTROLLER_RUN_APP_CPU;
 #endif
     return mask;
+}
+
+static void btdm_controller_mem_init(void)
+{
+    /* initialise .bss, .data and .etc section */
+    memcpy(&_data_start_btdm, (void *)_data_start_btdm_rom, &_data_end_btdm - &_data_start_btdm);
+    ESP_LOGD(BTDM_LOG_TAG, ".data initialise [0x%08x] <== [0x%08x]\n", (uint32_t)&_data_start_btdm, _data_start_btdm_rom);
+
+    for (int i = 1; i < sizeof(btdm_dram_available_region)/sizeof(btdm_dram_available_region_t); i++) {
+        if (btdm_dram_available_region[i].mode != ESP_BT_MODE_IDLE) {
+            memset((void *)btdm_dram_available_region[i].start, 0x0, btdm_dram_available_region[i].end - btdm_dram_available_region[i].start);
+            ESP_LOGD(BTDM_LOG_TAG, ".bss initialise [0x%08x] - [0x%08x]\n", btdm_dram_available_region[i].start, btdm_dram_available_region[i].end);
+        }
+    }
+}
+
+esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
+{
+    bool update = true;
+    intptr_t mem_start, mem_end;
+
+    //get the mode which can be released, skip the mode which is running
+    mode &= ~btdm_controller_get_mode();
+    if (mode == 0x0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    //already relesed
+    if (!(mode & btdm_dram_available_region[0].mode)) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    for (int i = 0; i < sizeof(btdm_dram_available_region)/sizeof(btdm_dram_available_region_t); i++) {
+        //skip the share mode, idle mode and other mode
+        if (btdm_dram_available_region[i].mode == ESP_BT_MODE_IDLE
+                || (mode & btdm_dram_available_region[i].mode) != btdm_dram_available_region[i].mode) {
+            //clear the bit of the mode which will be released
+            btdm_dram_available_region[i].mode &= ~mode;
+            continue;
+        } else {
+            //clear the bit of the mode which will be released
+            btdm_dram_available_region[i].mode &= ~mode;
+        }
+
+        if (update) {
+            mem_start = btdm_dram_available_region[i].start;
+            mem_end = btdm_dram_available_region[i].end;
+            update = false;
+        }
+
+        if (i < sizeof(btdm_dram_available_region)/sizeof(btdm_dram_available_region_t) - 1) {
+            mem_end = btdm_dram_available_region[i].end;
+            if (btdm_dram_available_region[i+1].mode != ESP_BT_MODE_IDLE
+                    && (mode & btdm_dram_available_region[i+1].mode) == btdm_dram_available_region[i+1].mode
+                    && mem_end == btdm_dram_available_region[i+1].start) {
+                continue;
+            } else {
+                ESP_LOGD(BTDM_LOG_TAG, "Release DRAM [0x%08x] - [0x%08x]\n", mem_start, mem_end);
+                ESP_ERROR_CHECK( heap_caps_add_region(mem_start, mem_end));
+                update = true;
+            }
+        } else {
+            mem_end = btdm_dram_available_region[i].end;
+            ESP_LOGD(BTDM_LOG_TAG, "Release DRAM [0x%08x] - [0x%08x]\n", mem_start, mem_end);
+            ESP_ERROR_CHECK( heap_caps_add_region(mem_start, mem_end));
+            update = true;
+        }
+    }
+
+    return ESP_OK;
 }
 
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
@@ -321,6 +455,11 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     uint32_t btdm_cfg_mask = 0;
 
     if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    //if all the bt available memory was already released, cannot initialize bluetooth controller
+    if (btdm_dram_available_region[0].mode == ESP_BT_MODE_IDLE) {
         return ESP_ERR_INVALID_STATE;
     }
 
@@ -333,12 +472,27 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         return ESP_ERR_INVALID_ARG;
     }
 
+#ifdef CONFIG_PM_ENABLE
+    esp_err_t err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "bt", &s_pm_lock);
+    if (err != ESP_OK) {
+        return err;
+    }
+#endif
+
     btdm_osi_funcs_register(&osi_funcs);
+
+    btdm_controller_mem_init();
+
+    periph_module_enable(PERIPH_BT_MODULE);
 
     btdm_cfg_mask = btdm_config_mask_load();
 
     ret = btdm_controller_init(btdm_cfg_mask, cfg);
     if (ret) {
+#ifdef CONFIG_PM_ENABLE
+        esp_pm_lock_delete(s_pm_lock);
+        s_pm_lock = NULL;
+#endif
         return ESP_ERR_NO_MEM;
     }
 
@@ -356,7 +510,15 @@ esp_err_t esp_bt_controller_deinit(void)
         return ESP_ERR_NO_MEM;
     }
 
+    periph_module_disable(PERIPH_BT_MODULE);
+
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
+
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_delete(s_pm_lock);
+    s_pm_lock = NULL;
+#endif
+
     return ESP_OK;
 }
 
@@ -368,9 +530,14 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (mode != ESP_BT_MODE_BTDM) {
+    //check the mode is available mode
+    if (mode & ~btdm_dram_available_region[0].mode) {
         return ESP_ERR_INVALID_ARG;
     }
+
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_acquire(s_pm_lock);
+#endif
 
     esp_phy_load_cal_and_init();
 
@@ -389,7 +556,7 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
     return ESP_OK;
 }
 
-esp_err_t esp_bt_controller_disable(esp_bt_mode_t mode)
+esp_err_t esp_bt_controller_disable(void)
 {
     int ret;
 
@@ -397,11 +564,7 @@ esp_err_t esp_bt_controller_disable(esp_bt_mode_t mode)
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (mode != ESP_BT_MODE_BTDM) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    ret = btdm_controller_disable(mode);
+    ret = btdm_controller_disable(btdm_controller_get_mode());
     if (ret < 0) {
         return ESP_ERR_INVALID_STATE;
     }
@@ -410,6 +573,10 @@ esp_err_t esp_bt_controller_disable(esp_bt_mode_t mode)
         esp_phy_rf_deinit();
         btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
     }
+
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_release(s_pm_lock);
+#endif
 
     return ESP_OK;
 }
@@ -435,5 +602,4 @@ esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type)
     return (esp_power_level_t)ble_txpwr_get(power_type);
 }
 
-
-#endif
+#endif /*  CONFIG_BT_ENABLED */

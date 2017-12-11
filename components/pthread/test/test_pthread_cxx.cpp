@@ -1,9 +1,16 @@
 #include <iostream>
+#include <sstream>
 #include <thread>
 #include <mutex>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "unity.h"
 
 #if __GTHREADS && __GTHREADS_CXX0X
+
+#define LOG_LOCAL_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+#include "esp_log.h"
+const static char *TAG = "pthread_test";
 
 static std::shared_ptr<int> global_sp;
 static std::mutex           mtx;
@@ -15,6 +22,7 @@ static void thread_main()
 {
     int i = 0;
     std::cout << "thread_main CXX " << std::hex <<  std::this_thread::get_id() << std::endl;
+    std::chrono::milliseconds dur = std::chrono::milliseconds(300);
 
     while (i < 3) {
         int old_val, new_val;
@@ -31,7 +39,6 @@ static void thread_main()
         TEST_ASSERT_TRUE(new_val == old_val + 1);
 
         // sleep_for test
-        std::chrono::milliseconds dur(300);
         std::this_thread::sleep_for(dur);
 
         // recursive mux test
@@ -52,11 +59,11 @@ static void thread_main()
         std::time_t tt = system_clock::to_time_t(system_clock::now());
         struct std::tm *ptm = std::localtime(&tt);
         ptm->tm_sec++;
-        std::this_thread::sleep_until(system_clock::from_time_t (mktime(ptm)));
+        std::this_thread::sleep_until(system_clock::from_time_t(mktime(ptm)));
     }
 }
 
-TEST_CASE("pthread CXX", "[pthread]")
+TEST_CASE("pthread C++", "[pthread]")
 {
     global_sp.reset(new int(1));
 
@@ -77,6 +84,48 @@ TEST_CASE("pthread CXX", "[pthread]")
     if (t4.joinable()) {
         std::cout << "Join thread " << std::hex << t4.get_id() << std::endl;
         t4.join();
+    }
+
+    global_sp.reset(); // avoid reported leak
+}
+
+static void task_test_sandbox()
+{
+    std::stringstream ss;
+
+    ESP_LOGI(TAG, "About to create a string stream");
+    ESP_LOGI(TAG, "About to write to string stream");
+    ss << "Hello World!";
+    ESP_LOGI(TAG, "About to extract from stringstream");
+    ESP_LOGI(TAG, "Text: %s", ss.str().c_str());
+}
+
+static void task_test_sandbox_c(void *arg)
+{
+    bool *running = (bool *)arg;
+
+    // wrap thread func to ensure that all C++ stack objects are cleaned up by their destructors
+    task_test_sandbox();
+
+    ESP_LOGI(TAG, "Task stk_wm = %d", uxTaskGetStackHighWaterMark(NULL));
+    if (running) {
+        *running = false;
+        vTaskDelete(NULL);
+    }
+}
+
+TEST_CASE("pthread mix C/C++", "[pthread]")
+{
+    bool c_running = true;
+
+    std::thread t1(task_test_sandbox);
+    xTaskCreatePinnedToCore((TaskFunction_t)&task_test_sandbox_c, "task_test_sandbox", 3072, &c_running, 5, NULL, 0);
+    while (c_running) {
+        vTaskDelay(1);
+    }
+    if (t1.joinable()) {
+        std::cout << "Join thread " << std::hex << t1.get_id() << std::endl;
+        t1.join();
     }
 }
 

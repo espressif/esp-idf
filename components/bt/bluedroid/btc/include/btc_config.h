@@ -20,8 +20,6 @@
 
 #include "bt_types.h"
 
-#define BTC_LE_DEV_TYPE           "DevType"
-
 typedef struct btc_config_section_iter_t btc_config_section_iter_t;
 
 bool btc_config_init(void);
@@ -46,7 +44,6 @@ const btc_config_section_iter_t *btc_config_section_end(void);
 const btc_config_section_iter_t *btc_config_section_next(const btc_config_section_iter_t *section);
 const char *btc_config_section_name(const btc_config_section_iter_t *section);
 
-void btc_config_save(void);
 void btc_config_flush(void);
 int btc_config_clear(void);
 
@@ -54,5 +51,8 @@ int btc_config_clear(void);
 bool btc_get_address_type(const BD_ADDR bd_addr, int *p_addr_type);
 bool btc_compare_address_key_value(const char *section, char *key_type, void *key_value, int key_length);
 bool btc_get_device_type(const BD_ADDR bd_addr, int *p_device_type);
+
+void btc_config_lock(void);
+void btc_config_unlock(void);
 
 #endif

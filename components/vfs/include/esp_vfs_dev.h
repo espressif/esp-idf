@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __ESP_VFS_DEV_H__
-#define __ESP_VFS_DEV_H__
+#pragma once
 
 #include "esp_vfs.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Line ending settings
@@ -81,4 +84,6 @@ void esp_vfs_dev_uart_use_nonblocking(int uart_num);
  */
 void esp_vfs_dev_uart_use_driver(int uart_num);
 
-#endif //__ESP_VFS_DEV_H__
+#ifdef __cplusplus
+}
+#endif

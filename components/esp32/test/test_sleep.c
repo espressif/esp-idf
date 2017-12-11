@@ -5,12 +5,12 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-TEST_CASE("esp_deepsleep works", "[deepsleep][ignore]")
+TEST_CASE("esp_deepsleep works", "[deepsleep][reset=DEEPSLEEP_RESET]")
 {
     esp_deep_sleep(2000000);
 }
 
-static void deep_sleep_task(void* arg)
+static void deep_sleep_task(void *arg)
 {
     esp_deep_sleep_start();
 }
@@ -21,16 +21,18 @@ static void do_deep_sleep_from_app_cpu()
 
     // keep running some non-IRAM code
     vTaskSuspendAll();
-    while(true) {
+
+    while (true) {
         ;
     }
 }
 
-TEST_CASE("wake up from deep sleep using timer", "[deepsleep][ignore]")
+TEST_CASE("wake up using timer", "[deepsleep][reset=DEEPSLEEP_RESET]")
 {
     esp_sleep_enable_timer_wakeup(2000000);
     esp_deep_sleep_start();
 }
+
 
 TEST_CASE("wake up from light sleep using timer", "[deepsleep]")
 {
@@ -40,15 +42,17 @@ TEST_CASE("wake up from light sleep using timer", "[deepsleep]")
     esp_light_sleep_start();
     gettimeofday(&tv_stop, NULL);
     float dt = (tv_stop.tv_sec - tv_start.tv_sec) * 1e3f +
-            (tv_stop.tv_usec - tv_start.tv_usec) * 1e-3f;
+               (tv_stop.tv_usec - tv_start.tv_usec) * 1e-3f;
     TEST_ASSERT_INT32_WITHIN(500, 2000, (int) dt);
 }
 
-TEST_CASE("enter deep sleep on APP CPU and wake up using timer", "[deepsleep][ignore]")
+#ifndef CONFIG_FREERTOS_UNICORE
+TEST_CASE("enter deep sleep on APP CPU and wake up using timer", "[deepsleep][reset=DEEPSLEEP_RESET]")
 {
     esp_sleep_enable_timer_wakeup(2000000);
     do_deep_sleep_from_app_cpu();
 }
+#endif
 
 
 TEST_CASE("wake up using ext0 (13 high)", "[deepsleep][ignore]")

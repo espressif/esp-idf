@@ -29,6 +29,19 @@ typedef enum {
     DAC_CHANNEL_MAX,
 } dac_channel_t;
 
+/**
+ * @brief Get the gpio number of a specific DAC channel.
+ * 
+ * @param channel Channel to get the gpio number
+ * 
+ * @param gpio_num output buffer to hold the gpio number
+ * 
+ * @return 
+ *   - ESP_OK if success
+ *   - ESP_ERR_INVALID_ARG if channal not valid 
+ */
+esp_err_t dac_pad_get_io_num(dac_channel_t channel, gpio_num_t *gpio_num);
+
 /** @cond */
 /**
   * @brief  Set DAC output voltage.

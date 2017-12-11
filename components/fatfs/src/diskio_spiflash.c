@@ -22,7 +22,7 @@
 
 static const char* TAG = "ff_diskio_spiflash";
 
-wl_handle_t ff_wl_handles[_VOLUMES] = {
+wl_handle_t ff_wl_handles[FF_VOLUMES] = {
         WL_INVALID_HANDLE,
         WL_INVALID_HANDLE,
 };
@@ -77,10 +77,10 @@ DRESULT ff_wl_ioctl (BYTE pdrv, BYTE cmd, void *buff)
     case CTRL_SYNC:
         return RES_OK;
     case GET_SECTOR_COUNT:
-        *((uint32_t *) buff) = wl_size(wl_handle) / wl_sector_size(wl_handle);
+        *((DWORD *) buff) = wl_size(wl_handle) / wl_sector_size(wl_handle);
         return RES_OK;
     case GET_SECTOR_SIZE:
-        *((uint32_t *) buff) = wl_sector_size(wl_handle);
+        *((WORD *) buff) = wl_sector_size(wl_handle);
         return RES_OK;
     case GET_BLOCK_SIZE:
         return RES_ERROR;
@@ -91,7 +91,7 @@ DRESULT ff_wl_ioctl (BYTE pdrv, BYTE cmd, void *buff)
 
 esp_err_t ff_diskio_register_wl_partition(BYTE pdrv, wl_handle_t flash_handle)
 {
-    if (pdrv >= _VOLUMES) {
+    if (pdrv >= FF_VOLUMES) {
         return ESP_ERR_INVALID_ARG;
     }
     static const ff_diskio_impl_t wl_impl = {
@@ -108,7 +108,7 @@ esp_err_t ff_diskio_register_wl_partition(BYTE pdrv, wl_handle_t flash_handle)
 
 BYTE ff_diskio_get_pdrv_wl(wl_handle_t flash_handle)
 {
-    for (int i = 0; i < _VOLUMES; i++) {
+    for (int i = 0; i < FF_VOLUMES; i++) {
         if (flash_handle == ff_wl_handles[i]) {
             return i;
         }

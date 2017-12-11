@@ -53,6 +53,7 @@ enum {
 struct emac_config_data {
     eth_phy_base_t phy_addr;
     eth_mode_t mac_mode;
+    eth_clock_mode_t clock_mode;
     struct dma_extended_desc *dma_etx;
     uint32_t cur_tx;
     uint32_t dirty_tx;

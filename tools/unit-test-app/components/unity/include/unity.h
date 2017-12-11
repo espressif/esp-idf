@@ -16,6 +16,9 @@ extern "C"
 #define UNITY_INCLUDE_CONFIG_H
 #include "unity_internals.h"
 
+/* include performance pass standards header file */
+#include "idf_performance.h"
+
 void setUp(void);
 void tearDown(void);
 
@@ -284,6 +287,20 @@ void tearDown(void);
 #define TEST_ASSERT_DOUBLE_IS_NOT_NEG_INF_MESSAGE(actual, message)                                 UNITY_TEST_ASSERT_DOUBLE_IS_NOT_NEG_INF((actual), __LINE__, (message))
 #define TEST_ASSERT_DOUBLE_IS_NOT_NAN_MESSAGE(actual, message)                                     UNITY_TEST_ASSERT_DOUBLE_IS_NOT_NAN((actual), __LINE__, (message))
 #define TEST_ASSERT_DOUBLE_IS_NOT_DETERMINATE_MESSAGE(actual, message)                             UNITY_TEST_ASSERT_DOUBLE_IS_NOT_DETERMINATE((actual), __LINE__, (message))
+
+/* For performance check with unity test on IDF */
+/* These macros should only be used with ESP-IDF.
+ * To use performance check, we need to first define pass standard in idf_performance.h.
+ */
+#define TEST_PERFORMANCE_LESS_THAN(name, value_fmt, value)  do { \
+    printf("[Performance]["#name"]: "value_fmt"\n", value); \
+    TEST_ASSERT(value < IDF_PERFORMANCE_MAX_##name); \
+} while(0)
+
+#define TEST_PERFORMANCE_GREATER_THAN(name, value_fmt, value)  do { \
+    printf("[Performance]["#name"]: "value_fmt"\n", value); \
+    TEST_ASSERT(value > IDF_PERFORMANCE_MIN_##name); \
+} while(0)
 
 /* end of UNITY_FRAMEWORK_H */
 #ifdef __cplusplus

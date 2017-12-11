@@ -17,6 +17,8 @@
 #include "soc/io_mux_reg.h"
 #include "soc/cpu.h"
 
+#include "idf_performance.h"
+
 #define REPEAT_OPS 10000
 
 static uint32_t start, end;
@@ -42,6 +44,12 @@ TEST_CASE("portMUX spinlocks (no contention)", "[freertos]")
         portEXIT_CRITICAL(&mux);
     }
     BENCHMARK_END("no contention lock");
+
+#ifdef CONFIG_FREERTOS_UNICORE
+    TEST_PERFORMANCE_LESS_THAN(FREERTOS_SPINLOCK_CYCLES_PER_OP_UNICORE, "%d cycles/op", ((end - start)/REPEAT_OPS));
+#else
+    TEST_PERFORMANCE_LESS_THAN(FREERTOS_SPINLOCK_CYCLES_PER_OP, "%d cycles/op", ((end - start)/REPEAT_OPS));
+#endif
 }
 
 TEST_CASE("portMUX recursive locks (no contention)", "[freertos]")
@@ -61,6 +69,8 @@ TEST_CASE("portMUX recursive locks (no contention)", "[freertos]")
     }
     BENCHMARK_END("no contention recursive");
 }
+
+#if portNUM_PROCESSORS == 2
 
 static volatile int shared_value;
 static portMUX_TYPE shared_mux;
@@ -130,4 +140,5 @@ TEST_CASE("portMUX high contention", "[freertos]")
     TEST_ASSERT_EQUAL_INT(REPEAT_OPS * TOTAL_TASKS, shared_value);
 }
 
+#endif // portNUM_PROCESSORS == 2
 

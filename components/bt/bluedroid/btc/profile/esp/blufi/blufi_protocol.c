@@ -33,7 +33,7 @@
 
 #include "blufi_int.h"
 
-#include "esp_wifi.h"
+//#include "esp_wifi.h"
 
 #if (GATTS_INCLUDED == TRUE)
 extern tBLUFI_ENV blufi_env;

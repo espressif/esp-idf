@@ -71,7 +71,7 @@ typedef struct {
                                 for uint32 arithmetic */
     uint32_t offset;        /**<Offset in mV used to correct LUT Voltages to current v_ref */
     uint32_t ideal_offset;  /**<Offset in mV at the ideal reference voltage */
-    adc_bits_width_t bit_width;     /**<Bit width of ADC e.g. ADC_WIDTH_12Bit */
+    adc_bits_width_t bit_width;     /**<Bit width of ADC e.g. ADC_WIDTH_BIT_12 */
     const esp_adc_cal_lookup_table_t *table;    /**<Pointer to LUT */
 } esp_adc_cal_characteristics_t;
 

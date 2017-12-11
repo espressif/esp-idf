@@ -111,6 +111,13 @@ static void fragment_and_dispatch(BT_HDR *packet)
             packet->layer_specific--;
             if (packet->layer_specific == 0) {
                 packet->event = MSG_HC_TO_STACK_L2C_SEG_XMIT;
+
+                /* The remain packet will send back to the l2cap layer when controller buffer is not enough
+                   current_fragment_packet must be NULL, otherwise hci_host_thread_handler() will
+                   connitue handle the remain packet. then the remain packet will be freed.
+                */
+
+                current_fragment_packet = NULL;
                 callbacks->transmit_finished(packet, false);
                 return;
             }

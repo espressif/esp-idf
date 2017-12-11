@@ -14,10 +14,10 @@ issues.
 However, in order to fully make use of all of the memory types and their characteristics, esp-idf also has a
 capabilities-based heap memory allocator. If you want to have memory with certain properties (for example, DMA-capable
 memory, or executable memory), you can create an OR-mask of the required capabilities and pass that to
-``heap_caps_malloc()``. For instance, the standard ``malloc()`` implementation internally allocates memory via
+:cpp:func:`heap_caps_malloc`. For instance, the standard ``malloc()`` implementation internally allocates memory via
 ``heap_caps_malloc(size, MALLOC_CAP_8BIT)`` in order to get data memory that is byte-addressable.
 
-Because malloc uses this allocation system as well, memory allocated using ``heap_caps_malloc()`` can be freed by calling
+Because malloc uses this allocation system as well, memory allocated using :cpp:func:`heap_caps_malloc` can be freed by calling
 the standard ``free()`` function.
 
 The "soc" component contains a list of memory regions for the chip, along with the type of each memory (aka its tag) and the associated capabilities for that memory type. On startup, a separate heap is initialised for each contiguous memory region. The capabilities-based allocator chooses the best heap for each allocation, based on the requested capabilities.
@@ -74,4 +74,3 @@ API Reference - Multi Heap API
 (Note: The multi heap API is used internally by the heap capabilities allocator. Most IDF programs will never need to call this API directly.)
 
 .. include:: /_build/inc/multi_heap.inc
-

@@ -861,7 +861,7 @@ tGATTS_SRV_CHG *gatt_is_bda_in_the_srv_chg_clt_list (BD_ADDR bda)
     list_t *list = fixed_queue_get_list(gatt_cb.srv_chg_clt_q);
     for (const list_node_t *node = list_begin(list); node != list_end(list);
          node = list_next(node)) {
-        tGATTS_SRV_CHG *p_buf = (tGATTS_SRV_CHG *)list_node(node);
+        p_buf = (tGATTS_SRV_CHG *)list_node(node);
         if (!memcmp( bda, p_buf->bda, BD_ADDR_LEN)) {
             GATT_TRACE_DEBUG("bda is in the srv chg clt list");
             break;
@@ -1255,7 +1255,7 @@ void gatt_start_ind_ack_timer(tGATT_TCB *p_tcb)
     p_tcb->ind_ack_timer_ent.param  = (TIMER_PARAM_TYPE)p_tcb;
     /* start notification cache timer */
     btu_start_timer (&p_tcb->ind_ack_timer_ent, BTU_TTYPE_ATT_WAIT_FOR_IND_ACK,
-                     GATT_WAIT_FOR_RSP_TOUT);
+                     GATT_WAIT_FOR_IND_ACK_TOUT);
 
 }
 /*******************************************************************************
@@ -2216,9 +2216,10 @@ void gatt_cleanup_upon_disc(BD_ADDR bda, UINT16 reason, tBT_TRANSPORT transport)
         gatt_free_pending_ind(p_tcb);
         gatt_free_pending_enc_queue(p_tcb);
         gatt_free_pending_prepare_write_queue(p_tcb);
+#if (GATTS_INCLUDED)
         fixed_queue_free(p_tcb->sr_cmd.multi_rsp_q, osi_free_func);
         p_tcb->sr_cmd.multi_rsp_q = NULL;
-
+#endif /* #if (GATTS_INCLUDED) */
         for (i = 0; i < GATT_MAX_APPS; i ++) {
             p_reg = &gatt_cb.cl_rcb[i];
             if (p_reg->in_use && p_reg->app_cb.p_conn_cb) {
@@ -2415,7 +2416,7 @@ BOOLEAN gatt_add_bg_dev_list(tGATT_REG *p_reg,  BD_ADDR bd_addr, BOOLEAN is_init
                     p_dev->listen_gif[i] = gatt_if;
 
                     if (i == 0) {
-                        ret = BTM_BleUpdateAdvWhitelist(TRUE, bd_addr);
+                        ret = BTM_BleUpdateAdvWhitelist(TRUE, bd_addr, NULL);
                     } else {
                         ret = TRUE;
                     }
@@ -2555,7 +2556,7 @@ BOOLEAN gatt_remove_bg_dev_from_list(tGATT_REG *p_reg, BD_ADDR bd_addr, BOOLEAN 
                 }
 
                 if (p_dev->listen_gif[0] == 0) {
-                    ret = BTM_BleUpdateAdvWhitelist(FALSE, p_dev->remote_bda);
+                    ret = BTM_BleUpdateAdvWhitelist(FALSE, p_dev->remote_bda, NULL);
                 } else {
                     ret = TRUE;
                 }
@@ -2616,7 +2617,7 @@ void gatt_deregister_bgdev_list(tGATT_IF gatt_if)
                     }
 
                     if (p_dev_list->listen_gif[0] == 0) {
-                        BTM_BleUpdateAdvWhitelist(FALSE, p_dev_list->remote_bda);
+                        BTM_BleUpdateAdvWhitelist(FALSE, p_dev_list->remote_bda, NULL);
                     }
                 }
             }

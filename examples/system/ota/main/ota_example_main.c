@@ -40,7 +40,6 @@ static char text[BUFFSIZE + 1] = { 0 };
 static int binary_file_length = 0;
 /*socket id*/
 static int socket_id = -1;
-static char http_request[64] = {0};
 
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 static EventGroupHandle_t wifi_event_group;
@@ -137,7 +136,6 @@ static bool read_past_http_header(char text[], int total_len, esp_ota_handle_t u
 static bool connect_to_http_server()
 {
     ESP_LOGI(TAG, "Server IP: %s Server Port:%s", EXAMPLE_SERVER_IP, EXAMPLE_SERVER_PORT);
-    sprintf(http_request, "GET %s HTTP/1.1\r\nHost: %s:%s \r\n\r\n", EXAMPLE_FILENAME, EXAMPLE_SERVER_IP, EXAMPLE_SERVER_PORT);
 
     int  http_connect_flag = -1;
     struct sockaddr_in sock_info;
@@ -213,10 +211,22 @@ static void ota_example_task(void *pvParameter)
         task_fatal_error();
     }
 
-    int res = -1;
     /*send GET request to http server*/
-    res = send(socket_id, http_request, strlen(http_request), 0);
-    if (res == -1) {
+    const char *GET_FORMAT =
+        "GET %s HTTP/1.0\r\n"
+        "Host: %s:%s\r\n"
+        "User-Agent: esp-idf/1.0 esp32\r\n\r\n";
+
+    char *http_request = NULL;
+    int get_len = asprintf(&http_request, GET_FORMAT, EXAMPLE_FILENAME, EXAMPLE_SERVER_IP, EXAMPLE_SERVER_PORT);
+    if (get_len < 0) {
+        ESP_LOGE(TAG, "Failed to allocate memory for GET request buffer");
+        task_fatal_error();
+    }
+    int res = send(socket_id, http_request, get_len, 0);
+    free(http_request);
+
+    if (res < 0) {
         ESP_LOGE(TAG, "Send GET request to server failed");
         task_fatal_error();
     } else {

@@ -89,13 +89,14 @@ SECTIONS
     *libesp32.a:core_dump.o(.literal .text .literal.* .text.*)
     *libapp_trace.a:(.literal .text .literal.* .text.*)
     *libxtensa-debug-module.a:eri.o(.literal .text .literal.* .text.*)
-    *libesp32.a:app_trace.o(.literal .text .literal.* .text.*)
     *libphy.a:(.literal .text .literal.* .text.*)
     *librtc.a:(.literal .text .literal.* .text.*)
     *libsoc.a:(.literal .text .literal.* .text.*)
     *libhal.a:(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.o(.literal .text .literal.* .text.*)
     *libspi_flash.a:spi_flash_rom_patch.o(.literal .text .literal.* .text.*)
+    *libgcov.a:(.literal .text .literal.* .text.*)
+    INCLUDE esp32.spiram.rom-functions-iram.ld
     _iram_text_end = ABSOLUTE(.);
   } > iram0_0_seg
 
@@ -116,9 +117,12 @@ SECTIONS
     *(.dram1 .dram1.*)
     *libesp32.a:panic.o(.rodata .rodata.*)
     *libphy.a:(.rodata .rodata.*)
+    *libsoc.a:rtc_clk.o(.rodata .rodata.*)
     *libapp_trace.a:(.rodata .rodata.*)
+    *libgcov.a:(.rodata .rodata.*)
     *libheap.a:multi_heap.o(.rodata .rodata.*)
     *libheap.a:multi_heap_poisoning.o(.rodata .rodata.*)
+    INCLUDE esp32.spiram.rom-functions-dram.ld
     _data_end = ABSOLUTE(.);
     . = ALIGN(4);
   } >dram0_0_seg

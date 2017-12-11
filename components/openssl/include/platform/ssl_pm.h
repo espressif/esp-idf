@@ -39,6 +39,8 @@ int ssl_pm_pending(const SSL *ssl);
 void ssl_pm_set_fd(SSL *ssl, int fd, int mode);
 int ssl_pm_get_fd(const SSL *ssl, int mode);
 
+void ssl_pm_set_hostname(SSL *ssl, const char *hostname);
+
 OSSL_HANDSHAKE_STATE ssl_pm_get_state(const SSL *ssl);
 
 void ssl_pm_set_bufflen(SSL *ssl, int len);

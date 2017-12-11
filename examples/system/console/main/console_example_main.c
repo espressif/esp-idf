@@ -153,6 +153,8 @@ void app_main()
         esp_err_t err = esp_console_run(line, &ret);
         if (err == ESP_ERR_NOT_FOUND) {
             printf("Unrecognized command\n");
+        } else if (err == ESP_ERR_INVALID_ARG) {
+            // command was empty
         } else if (err == ESP_OK && ret != ESP_OK) {
             printf("Command returned non-zero error code: 0x%x\n", ret);
         } else if (err != ESP_OK) {

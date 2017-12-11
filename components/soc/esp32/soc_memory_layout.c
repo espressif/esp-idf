@@ -31,7 +31,7 @@ Each type contains an array of prioritised capabilities; types with later entrie
 ones can't fulfill the memory request.
 
 The prioritised capabilities work roughly like this:
-- For a normal malloc (MALLOC_CAP_8BIT), give away the DRAM-only memory first, then pass off any dual-use IRAM regions,
+- For a normal malloc (MALLOC_CAP_DEFAULT), give away the DRAM-only memory first, then pass off any dual-use IRAM regions,
   finally eat into the application memory.
 - For a malloc where 32-bit-aligned-only access is okay, first allocate IRAM, then DRAM, finally application IRAM.
 - Application mallocs (PIDx) will allocate IRAM first, if possible, then DRAM.
@@ -40,28 +40,28 @@ The prioritised capabilities work roughly like this:
 */
 const soc_memory_type_desc_t soc_memory_types[] = {
     //Type 0: Plain ole D-port RAM
-    { "DRAM", { MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT, 0 }, false, false},
+    { "DRAM", { MALLOC_CAP_8BIT|MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL|MALLOC_CAP_DMA|MALLOC_CAP_32BIT, 0 }, false, false},
     //Type 1: Plain ole D-port RAM which has an alias on the I-port
     //(This DRAM is also the region used by ROM during startup)
-    { "D/IRAM", { 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_EXEC }, true, true},
+    { "D/IRAM", { 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL|MALLOC_CAP_DEFAULT, MALLOC_CAP_32BIT|MALLOC_CAP_EXEC }, true, true},
     //Type 2: IRAM
-    { "IRAM", { MALLOC_CAP_EXEC|MALLOC_CAP_32BIT, 0, 0 }, false, false},
+    { "IRAM", { MALLOC_CAP_EXEC|MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL, 0, 0 }, false, false},
     //Type 3-8: PID 2-7 IRAM
-    { "PID2IRAM", { MALLOC_CAP_PID2, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
-    { "PID3IRAM", { MALLOC_CAP_PID3, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
-    { "PID4IRAM", { MALLOC_CAP_PID4, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
-    { "PID5IRAM", { MALLOC_CAP_PID5, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
-    { "PID6IRAM", { MALLOC_CAP_PID6, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
-    { "PID7IRAM", { MALLOC_CAP_PID7, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
+    { "PID2IRAM", { MALLOC_CAP_PID2|MALLOC_CAP_INTERNAL, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
+    { "PID3IRAM", { MALLOC_CAP_PID3|MALLOC_CAP_INTERNAL, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
+    { "PID4IRAM", { MALLOC_CAP_PID4|MALLOC_CAP_INTERNAL, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
+    { "PID5IRAM", { MALLOC_CAP_PID5|MALLOC_CAP_INTERNAL, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
+    { "PID6IRAM", { MALLOC_CAP_PID6|MALLOC_CAP_INTERNAL, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
+    { "PID7IRAM", { MALLOC_CAP_PID7|MALLOC_CAP_INTERNAL, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
     //Type 9-14: PID 2-7 DRAM
-    { "PID2DRAM", { MALLOC_CAP_PID2, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false, false},
-    { "PID3DRAM", { MALLOC_CAP_PID3, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false, false},
-    { "PID4DRAM", { MALLOC_CAP_PID4, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false, false},
-    { "PID5DRAM", { MALLOC_CAP_PID5, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false, false},
-    { "PID6DRAM", { MALLOC_CAP_PID6, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false, false},
-    { "PID7DRAM", { MALLOC_CAP_PID7, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false, false},
+    { "PID2DRAM", { MALLOC_CAP_PID2|MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_DEFAULT }, false, false},
+    { "PID3DRAM", { MALLOC_CAP_PID3|MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_DEFAULT }, false, false},
+    { "PID4DRAM", { MALLOC_CAP_PID4|MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_DEFAULT }, false, false},
+    { "PID5DRAM", { MALLOC_CAP_PID5|MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_DEFAULT }, false, false},
+    { "PID6DRAM", { MALLOC_CAP_PID6|MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_DEFAULT }, false, false},
+    { "PID7DRAM", { MALLOC_CAP_PID7|MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_DEFAULT }, false, false},
     //Type 15: SPI SRAM data
-    { "SPISRAM", { MALLOC_CAP_SPISRAM, 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}, false, false},
+    { "SPIRAM", { MALLOC_CAP_SPIRAM|MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}, false, false},
 };
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types)/sizeof(soc_memory_type_desc_t);
@@ -73,7 +73,7 @@ Because of requirements in the coalescing code which merges adjacent regions, th
 from low to high start address.
 */
 const soc_memory_region_t soc_memory_regions[] = {
-    { 0x3F800000, 0x20000, 15, 0}, //SPI SRAM, if available
+    { 0x3F800000, 0x400000, 15, 0}, //SPI SRAM, if available
     { 0x3FFAE000, 0x2000, 0, 0}, //pool 16 <- used for rom code
     { 0x3FFB0000, 0x8000, 0, 0}, //pool 15 <- if BT is enabled, used as BT HW shared memory
     { 0x3FFB8000, 0x8000, 0, 0}, //pool 14 <- if BT is enabled, used data memory for BT ROM functions.
@@ -150,16 +150,10 @@ const soc_reserved_region_t soc_reserved_regions[] = {
     { 0x3ffe4000, 0x3ffe4350 }, //Reserve ROM APP data region
 
 #if CONFIG_BT_ENABLED
-#if CONFIG_BT_DRAM_RELEASE
-    { 0x3ffb0000, 0x3ffb3000 }, //Reserve BT data region
-    { 0x3ffb8000, 0x3ffbbb28 }, //Reserve BT data region
-    { 0x3ffbdb28, 0x3ffc0000 }, //Reserve BT data region
-#else
     { 0x3ffb0000, 0x3ffc0000 }, //Reserve BT hardware shared memory & BT data region
-#endif
     { 0x3ffae000, 0x3ffaff10 }, //Reserve ROM data region, inc region needed for BT ROM routines
 #else
-    { 0x3ffae000, 0x3ffae2a0 }, //Reserve ROM data region
+    { 0x3ffae000, 0x3ffae6e0 }, //Reserve ROM data region
 #endif
 
 #if CONFIG_MEMMAP_TRACEMEM
@@ -170,9 +164,7 @@ const soc_reserved_region_t soc_reserved_regions[] = {
 #endif
 #endif
 
-#if 1 // SPI ram not supported yet
-    { 0x3f800000, 0x3f820000 }, //SPI SRAM not installed
-#endif
+    { 0x3f800000, 0x3fC00000 }, //SPI RAM gets added later if needed, in spiram.c; reserve it for now
 };
 
 const size_t soc_reserved_region_count = sizeof(soc_reserved_regions)/sizeof(soc_reserved_region_t);

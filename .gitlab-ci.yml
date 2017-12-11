@@ -26,8 +26,16 @@ variables:
 # IDF environment
 
   IDF_PATH: "$CI_PROJECT_DIR"
+  APPLY_BOT_FILTER_SCRIPT: "$CI_PROJECT_DIR/tools/ci/apply_bot_filter.py"
+  CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
+
+# before each job, we need to check if this job is filtered by bot stage/job filter
+.apply_bot_filter: &apply_bot_filter
+  python $APPLY_BOT_FILTER_SCRIPT || exit 0
 
 before_script:
+  # apply bot filter in before script
+  - *apply_bot_filter
   # add gitlab ssh key
   - mkdir -p ~/.ssh
   - chmod 700 ~/.ssh
@@ -46,11 +54,15 @@ before_script:
 
 .do_nothing_before:
   before_script: &do_nothing_before
+    # apply bot filter in before script
+    - *apply_bot_filter
     - echo "Not setting up GitLab key, not fetching submodules"
     - source tools/ci/configure_ci_environment.sh
 
 .add_gitlab_key_before:
   before_script: &add_gitlab_key_before
+    # apply bot filter in before script
+    - *apply_bot_filter
     - echo "Not fetching submodules"
     - source tools/ci/configure_ci_environment.sh
     # add gitlab ssh key
@@ -75,7 +87,7 @@ build_template_app:
     # Try to use the same branch name for esp-idf-template that we're
     # using on esp-idf. If it doesn't exist then just stick to the default
     # branch
-    - git checkout ${CI_COMMIT_REF_NAME} || echo "Using esp-idf-template default branch..."
+    - python $CHECKOUT_REF_SCRIPT esp-idf-template
     # Test debug build (default)
     - make all V=1
     # Now test release build
@@ -106,26 +118,24 @@ build_ssc:
   script:
     - git clone $SSC_REPOSITORY
     - cd SSC
-    - git checkout ${CI_COMMIT_REF_NAME} || echo "Using SSC default branch..."
+    - python $CHECKOUT_REF_SCRIPT SSC
     - MAKEFLAGS= ./gen_misc_ng.sh
 
 build_esp_idf_tests:
   <<: *build_template
   artifacts:
     paths:
-      - tools/unit-test-app/build/*.bin
-      - tools/unit-test-app/build/*.elf
-      - tools/unit-test-app/build/*.map
-      - tools/unit-test-app/build/download.config
-      - tools/unit-test-app/build/bootloader/*.bin
+      - tools/unit-test-app/output
       - components/idf_test/unit_test/TestCaseAll.yml
       - components/idf_test/unit_test/CIConfigs/*.yml
     expire_in: 6 mos
   script:
     - cd tools/unit-test-app
-    - make TESTS_ALL=1
-    # cut last line in case make V=0/1 is set by default
-    - make print_flash_cmd | tail -n 1 > build/download.config
+    - make help # make sure kconfig tools are built in single process
+    - make ut-clean-all-configs
+    - export EXTRA_CFLAGS="-Werror -Werror=deprecated-declarations"
+    - export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
+    - make ut-build-all-configs TESTS_ALL=1
     - python tools/UnitTestParser.py
 
 .build_examples_template: &build_examples_template
@@ -135,6 +145,7 @@ build_esp_idf_tests:
       - build_examples/*/*/*/build/*.bin
       - build_examples/*/*/*/build/*.elf
       - build_examples/*/*/*/build/*.map
+      - build_examples/*/*/*/build/download.config
       - build_examples/*/*/*/build/bootloader/*.bin
     expire_in: 1 week
   variables:
@@ -169,22 +180,31 @@ build_examples_05:
 build_examples_06:
   <<: *build_examples_template
 
+build_examples_07:
+  <<: *build_examples_template
+
+
 build_docs:
   stage: build
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
     - build_docs
   artifacts:
+    when: always
     paths:
+      - docs/doxygen-warning-log.txt
+      - docs/sphinx-warning-log.txt
+      - docs/sphinx-warning-log-sanitized.txt
       - docs/_build/html
     expire_in: 1 mos
   script:
     - cd docs
     - doxygen
-    # If not building master branch, and there are Doxygen warnings, print them and bail out
-    - test -n $IS_PRIVATE && test $(cat doxygen-warning-log.txt | wc -l) -eq 0 || ( echo "Doxygen pass had some warnings:" && cat doxygen-warning-log.txt && false )
+    # If there are Doxygen warnings, print them and bail out
+    - test $(cat doxygen-warning-log.txt | wc -l) -eq 0 || ( echo "Doxygen pass had some warnings:" && cat doxygen-warning-log.txt && false )
     - make gh-linkcheck
     - make html
+    - ./check_doc_warnings.sh
 
 test_nvs_on_host:
   stage: test
@@ -277,6 +297,7 @@ test_report:
     # clone test bench
     - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
     - cd auto_test_script
+    - python $CHECKOUT_REF_SCRIPT auto_test_script
     # generate report
     - TEST_RESULT=Pass
     - python CITestReport.py -l $LOG_PATH -t $TEST_CASE_FILE_PATH -p $REPORT_PATH -r $RESULT_PATH -a $ARTIFACTS_PATH -m $MODULE_UPDATE_FILE || TEST_RESULT=Fail
@@ -408,29 +429,65 @@ check_submodule_sync:
 assign_test:
   <<: *build_template
   stage: assign_test
-  dependencies:
-    - build_esp_idf_tests
-    - build_ssc
+  # gitlab ci do not support match job with RegEx or wildcard now in dependencies.
+  # we have a lot build example jobs. now we don't use dependencies, just download all artificats of build stage.
+  variables:
+    UT_BIN_PATH: "tools/unit-test-app/output"
+    OUTPUT_BIN_PATH: "test_bins/ESP32_IDF"
+    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
+    EXAMPLE_CONFIG_OUTPUT_PATH: "$CI_PROJECT_DIR/examples/test_configs"
   artifacts:
     paths:
       - test_bins
       - components/idf_test/*/CIConfigs
       - components/idf_test/*/TC.sqlite
+      - $EXAMPLE_CONFIG_OUTPUT_PATH
     expire_in: 1 mos
   before_script: *add_gitlab_key_before
   script:
     # first move test bins together: test_bins/CHIP_SDK/TestApp/bin_files
-    - mkdir -p test_bins/ESP32_IDF/UT
-    - cp -r tools/unit-test-app/build/* test_bins/ESP32_IDF/UT
-    - cp -r SSC/ssc_bin/* test_bins/ESP32_IDF
+    - mkdir -p $OUTPUT_BIN_PATH
+    # copy and rename folder name to "UT_config"
+    - for CONFIG in $(ls $UT_BIN_PATH); do cp -r "$UT_BIN_PATH/$CONFIG" "$OUTPUT_BIN_PATH/UT_$CONFIG"; done
+    - cp -r SSC/ssc_bin/* $OUTPUT_BIN_PATH
+    # assign example tests
+    - python $TEST_FW_PATH/CIAssignExampleTest.py $IDF_PATH/examples $IDF_PATH/.gitlab-ci.yml $EXAMPLE_CONFIG_OUTPUT_PATH
     # clone test script to assign tests
     - git clone $TEST_SCRIPT_REPOSITORY
     - cd auto_test_script
-    - git checkout ${CI_COMMIT_REF_NAME} || echo "Using default branch..."
+    - python $CHECKOUT_REF_SCRIPT auto_test_script
     # assign unit test cases
     - python CIAssignTestCases.py -t $IDF_PATH/components/idf_test/unit_test -c $IDF_PATH/.gitlab-ci.yml -b $IDF_PATH/test_bins
     # assgin integration test cases
     - python CIAssignTestCases.py -t $IDF_PATH/components/idf_test/integration_test -c $IDF_PATH/.gitlab-ci.yml -b $IDF_PATH/test_bins
+
+.example_test_template: &example_test_template
+  stage: test
+  when: on_success
+  only:
+    - master
+    - /^release\/v/
+    - /^v\d+\.\d+(\.\d+)?($|-)/
+    - triggers
+  # gitlab ci do not support match job with RegEx or wildcard now in dependencies.
+  # we have a lot build example jobs and the binaries them exceed the limitation of artifacts.
+  # we can't artifact them in one job. For example test jobs, download all artifacts from previous stages.
+  artifacts:
+    when: always
+    paths:
+      - $LOG_PATH
+    expire_in: 6 mos
+  variables:
+    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
+    TEST_CASE_PATH: "$CI_PROJECT_DIR/examples"
+    CONFIG_FILE: "$CI_PROJECT_DIR/examples/test_configs/$CI_JOB_NAME.yml"
+    LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
+  script:
+    # first test if config file exists, if not exist, exit 0
+    - test -e $CONFIG_FILE || exit 0
+    - cd $TEST_FW_PATH
+    # run test
+    - python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE
 
 .test_template: &test_template
   stage: test
@@ -460,10 +517,12 @@ assign_test:
     - test -e $CONFIG_FILE || exit 0
     # clone local test env configs
     - git clone $TEST_ENV_CONFIG_REPOSITORY
+    - cd ci-test-runner-configs
+    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs
     # clone test bench
     - git clone $TEST_SCRIPT_REPOSITORY
     - cd auto_test_script
-    - git checkout ${CI_COMMIT_REF_NAME} || echo "Using default branch..."
+    - python $CHECKOUT_REF_SCRIPT auto_test_script
     # run test
     - python CIRunner.py -l "$LOG_PATH/$CI_JOB_NAME" -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH -m $MODULE_UPDATE_FILE
 
@@ -493,6 +552,8 @@ nvs_compatible_test:
   script:
     # clone local test env configs
     - git clone $TEST_ENV_CONFIG_REPOSITORY
+    - cd ci-test-runner-configs
+    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs
     # clone test bench
     - git clone $TEST_SCRIPT_REPOSITORY
     - cd auto_test_script
@@ -502,47 +563,256 @@ nvs_compatible_test:
     # run test
     - python CIRunner.py -l "$LOG_PATH/$CI_JOB_NAME" -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH -m $MODULE_UPDATE_FILE
 
+example_test_001_01:
+  <<: *example_test_template
+  tags:
+    - ESP32
+    - Example_WIFI
+
 UT_001_01:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_1
+    - UT_default
 
 UT_001_02:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_1
+    - UT_default
 
 UT_001_03:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_1
+    - UT_default
 
 UT_001_04:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_1
+    - UT_default
 
 UT_001_05:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_SDMODE
+    - UT_default
 
 UT_001_06:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_SPIMODE
+    - UT_default
 
 UT_001_07:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_1
+    - UT_default
+
+UT_001_08:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_default
+
+UT_001_09:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_default
+
+UT_002_01:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_release
+
+UT_002_02:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_release
+
+UT_002_03:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_release
+
+UT_002_04:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_release
+
+UT_002_05:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_SDMODE
+    - UT_release
+
+UT_002_06:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_SPIMODE
+    - UT_release
+
+UT_002_07:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_release
+
+UT_002_08:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_release
+
+UT_002_09:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_release
+
+UT_003_01:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_single_core
+
+UT_003_02:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_single_core
+
+UT_003_03:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_single_core
+
+UT_003_04:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_single_core
+
+UT_003_05:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_SDMODE
+    - UT_single_core
+
+UT_003_06:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_SPIMODE
+    - UT_single_core
+
+UT_003_07:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_single_core
+
+UT_003_08:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_single_core
+
+UT_004_01:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_psram
+
+UT_004_02:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_psram
+
+UT_004_03:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_psram
+
+UT_004_04:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_psram
+
+UT_004_05:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_SDMODE
+    - UT_psram
+
+UT_004_06:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_SPIMODE
+    - UT_psram
+
+UT_004_07:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_psram
+
+UT_004_08:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_psram
+
+UT_004_09:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_psram
 
 IT_001_01:
   <<: *test_template

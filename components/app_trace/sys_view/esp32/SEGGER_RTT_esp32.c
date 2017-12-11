@@ -26,16 +26,6 @@ const static char *TAG = "segger_rtt";
 
 #define SYSVIEW_EVENTS_BUF_SZ         255U
 
-#if SYSVIEW_RTT_MAX_DATA_RATE > 0
-#include "SEGGER_SYSVIEW_Conf.h"
-#if CONFIG_FREERTOS_UNICORE == 0
-#include "driver/timer.h"
-#define SYSVIEW_TIMESTAMP_FREQ  (TIMER_BASE_CLK/2)
-#else
-#define SYSVIEW_TIMESTAMP_FREQ  (XT_CLOCK_FREQ)
-#endif
-#endif
-
 // size of down channel data buf
 #define SYSVIEW_DOWN_BUF_SIZE   32
 #define SEGGER_HOST_WAIT_TMO    500 //us

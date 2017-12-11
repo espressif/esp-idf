@@ -63,13 +63,13 @@ config SYSVIEW_ENABLE
     help
         Enables supporrt for SEGGER SystemView tracing functionality.
 
-if !FREERTOS_UNICORE
 choice SYSVIEW_TS_SOURCE
     prompt "ESP32 timer to use as SystemView timestamp source"
     depends on SYSVIEW_ENABLE
     default SYSVIEW_TS_SOURCE_TIMER_00
     help
-        SystemView needs one source for timestamps when tracing events from both cores.
+        SystemView needs to use a hardware timer as the source of timestamps
+        when tracing 
         This option selects HW timer for it.
 
 config SYSVIEW_TS_SOURCE_TIMER_00
@@ -93,7 +93,6 @@ config SYSVIEW_TS_SOURCE_TIMER_11
         Select this to use timer 1 of group 1
 
 endchoice
-endif #FREERTOS_UNICORE
 
 config SYSVIEW_EVT_OVERFLOW_ENABLE
     bool "Trace Buffer Overflow Event"

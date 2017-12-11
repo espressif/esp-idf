@@ -692,6 +692,15 @@ void bta_gatts_indicate_handle (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
             cb_data.req_data.status = status;
             cb_data.req_data.conn_id = p_msg->api_indicate.hdr.layer_specific;
 
+            cb_data.req_data.value =(uint8_t *)osi_malloc(p_msg->api_indicate.len);
+            if (cb_data.req_data.value != NULL){
+                memset(cb_data.req_data.value, 0, p_msg->api_indicate.len);
+                cb_data.req_data.data_len = p_msg->api_indicate.len;
+                memcpy(cb_data.req_data.value, p_msg->api_indicate.value, p_msg->api_indicate.len);
+            }else{
+                cb_data.req_data.data_len = 0;
+                APPL_TRACE_ERROR("%s, malloc failed", __func__);
+            }
             (*p_rcb->p_cback)(BTA_GATTS_CONF_EVT, &cb_data);
         }
     } else {

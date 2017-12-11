@@ -61,6 +61,7 @@ static esp_err_t system_event_eth_start_handle_default(system_event_t *event);
 static esp_err_t system_event_eth_stop_handle_default(system_event_t *event);
 static esp_err_t system_event_eth_connected_handle_default(system_event_t *event);
 static esp_err_t system_event_eth_disconnected_handle_default(system_event_t *event);
+static esp_err_t system_event_eth_got_ip_default(system_event_t *event);
 
 /* Default event handler functions
 
@@ -124,11 +125,21 @@ esp_err_t system_event_eth_disconnected_handle_default(system_event_t *event)
     return ESP_OK;
 }
 
+static esp_err_t system_event_eth_got_ip_default(system_event_t *event)
+{
+    ESP_LOGI(TAG, "eth ip: " IPSTR ", mask: " IPSTR ", gw: " IPSTR,
+           IP2STR(&event->event_info.got_ip.ip_info.ip),
+           IP2STR(&event->event_info.got_ip.ip_info.netmask),
+           IP2STR(&event->event_info.got_ip.ip_info.gw));
+
+    return ESP_OK;
+}
+
 static esp_err_t system_event_sta_got_ip_default(system_event_t *event)
 {
     WIFI_API_CALL_CHECK("esp_wifi_internal_set_sta_ip", esp_wifi_internal_set_sta_ip(), ESP_OK);
 
-    ESP_LOGI(TAG, "ip: " IPSTR ", mask: " IPSTR ", gw: " IPSTR,
+    ESP_LOGI(TAG, "sta ip: " IPSTR ", mask: " IPSTR ", gw: " IPSTR,
            IP2STR(&event->event_info.got_ip.ip_info.ip),
            IP2STR(&event->event_info.got_ip.ip_info.netmask),
            IP2STR(&event->event_info.got_ip.ip_info.gw));
@@ -330,7 +341,7 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
                    MAC2STR(ap_probereqrecved->mac));
         break;
     }
-    case SYSTEM_EVENT_AP_STA_GOT_IP6: {
+    case SYSTEM_EVENT_GOT_IP6: {
         ip6_addr_t *addr = &event->event_info.got_ip6.ip6_info.ip;
         ESP_LOGD(TAG, "SYSTEM_EVENT_AP_STA_GOT_IP6 address %04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x",
                  IP6_ADDR_BLOCK1(addr),
@@ -414,4 +425,5 @@ void esp_event_set_default_eth_handlers()
      default_event_handlers[SYSTEM_EVENT_ETH_STOP]            = system_event_eth_stop_handle_default;
      default_event_handlers[SYSTEM_EVENT_ETH_CONNECTED]       = system_event_eth_connected_handle_default;
      default_event_handlers[SYSTEM_EVENT_ETH_DISCONNECTED]    = system_event_eth_disconnected_handle_default;
+     default_event_handlers[SYSTEM_EVENT_ETH_GOT_IP]          = system_event_eth_got_ip_default;
 }

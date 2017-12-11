@@ -140,7 +140,7 @@ static void test_resume_task_from_isr(int target_core)
         .alarm_en = 1,
         .auto_reload = 0,
         .counter_dir = TIMER_COUNT_UP,
-        .divider = 1,
+        .divider = 2,       //Range is 2 to 65536
         .intr_type = TIMER_INTR_LEVEL,
         .counter_en = TIMER_PAUSE,
     };

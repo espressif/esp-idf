@@ -41,6 +41,7 @@
 #include "driver/gpio.h"
 #include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
+#include "driver/periph_ctrl.h"
 
 /* Select which RMT and PCNT channels, and GPIO to use */
 #define REF_CLOCK_RMT_CHANNEL   7
@@ -64,8 +65,7 @@ void ref_clock_init()
 
 
     // Initialize RMT
-    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_RMT_CLK_EN);
-    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_RMT_RST);
+    periph_module_enable(PERIPH_RMT_MODULE);
     RMT.apb_conf.fifo_mask = 1;
     rmt_item32_t data = {
             .duration0 = 1,
@@ -101,8 +101,7 @@ void ref_clock_init()
     }
 
     // Initialize PCNT
-    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_PCNT_CLK_EN);
-    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_PCNT_RST);
+    periph_module_enable(PERIPH_PCNT_MODULE);
 
     PCNT.conf_unit[REF_CLOCK_PCNT_UNIT].conf0.ch0_hctrl_mode = 0;
     PCNT.conf_unit[REF_CLOCK_PCNT_UNIT].conf0.ch0_lctrl_mode = 0;
@@ -147,13 +146,11 @@ void ref_clock_deinit()
     // Disable RMT
     RMT.conf_ch[REF_CLOCK_RMT_CHANNEL].conf1.tx_start = 0;
     RMT.conf_ch[REF_CLOCK_RMT_CHANNEL].conf0.clk_en = 0;
-    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_RMT_CLK_EN);
-    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_RMT_RST);
+    periph_module_disable(PERIPH_RMT_MODULE);
 
     // Disable PCNT
     PCNT.ctrl.val |= ~(BIT(REF_CLOCK_PCNT_UNIT * 2 + 1));
-    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_PCNT_CLK_EN);
-    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_PCNT_RST);
+    periph_module_disable(PERIPH_PCNT_MODULE);
 }
 
 uint64_t ref_clock_get()
@@ -162,6 +159,8 @@ uint64_t ref_clock_get()
     uint32_t microseconds = PCNT.cnt_unit[REF_CLOCK_PCNT_UNIT].cnt_val;
     uint32_t milliseconds = s_milliseconds;
     if (PCNT.int_st.val & BIT(REF_CLOCK_PCNT_UNIT)) {
+        // refresh counter value, in case the overflow has happened after reading cnt_val
+        microseconds = PCNT.cnt_unit[REF_CLOCK_PCNT_UNIT].cnt_val;
         milliseconds += REF_CLOCK_PRESCALER_MS;
     }
     portEXIT_CRITICAL(&s_lock);

@@ -21,7 +21,6 @@
 
 #include "bt_types.h"
 #include "allocator.h"
-#include "fixed_queue.h"
 #include "osi.h"
 #include "future.h"
 ///// LEGACY DEFINITIONS /////

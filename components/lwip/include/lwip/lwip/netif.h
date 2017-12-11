@@ -333,6 +333,7 @@ struct netif {
 
 #if ESP_LWIP
   void (*l2_buffer_free_notify)(void *user_buf); /* Allows LWIP to notify driver when a L2-supplied pbuf can be freed */
+  ip_addr_t last_ip_addr; /* Store last non-zero ip address */
 #endif
 };
 

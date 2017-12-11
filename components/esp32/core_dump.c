@@ -23,6 +23,7 @@
 
 #include "esp_panic.h"
 #include "esp_partition.h"
+#include "esp_clk.h"
 
 #if CONFIG_ESP32_ENABLE_COREDUMP
 #define LOG_LOCAL_LEVEL CONFIG_ESP32_CORE_DUMP_LOG_LEVEL
@@ -522,10 +523,11 @@ void esp_core_dump_to_uart(XtExcFrame *frame)
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD_U0TXD);
 
     ESP_COREDUMP_LOGI("Press Enter to print core dump to UART...");
-    tm_end = xthal_get_ccount() / (XT_CLOCK_FREQ / 1000) + CONFIG_ESP32_CORE_DUMP_UART_DELAY;
+    const int cpu_ticks_per_ms = esp_clk_cpu_freq() / 1000;
+    tm_end = xthal_get_ccount() / cpu_ticks_per_ms + CONFIG_ESP32_CORE_DUMP_UART_DELAY;
     ch = esp_core_dump_uart_get_char();
     while (!(ch == '\n' || ch == '\r')) {
-        tm_cur = xthal_get_ccount() / (XT_CLOCK_FREQ / 1000);
+        tm_cur = xthal_get_ccount() / cpu_ticks_per_ms;
         if (tm_cur >= tm_end)
             break;
         ch = esp_core_dump_uart_get_char();

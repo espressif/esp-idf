@@ -70,6 +70,7 @@ Revision: $Rev: 3734 $
 #include "esp_app_trace.h"
 #include "esp_app_trace_util.h"
 #include "esp_intr_alloc.h"
+#include "esp_clk.h"
 
 extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 
@@ -85,14 +86,12 @@ extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 // The target device name
 #define SYSVIEW_DEVICE_NAME     "ESP32"
 
+// Timer group timer divisor
+#define SYSVIEW_TIMER_DIV       2
 // Frequency of the timestamp.
-#if CONFIG_FREERTOS_UNICORE == 0
-#define SYSVIEW_TIMESTAMP_FREQ  (TIMER_BASE_CLK/2)
-#else
-#define SYSVIEW_TIMESTAMP_FREQ  (XT_CLOCK_FREQ)
-#endif
+#define SYSVIEW_TIMESTAMP_FREQ  (esp_clk_apb_freq() / SYSVIEW_TIMER_DIV)
 // System Frequency.
-#define SYSVIEW_CPU_FREQ        (XT_CLOCK_FREQ)
+#define SYSVIEW_CPU_FREQ        (esp_clk_cpu_freq())
 
 // The lowest RAM address used for IDs (pointers)
 #define SYSVIEW_RAM_BASE        (0x3F400000)
@@ -104,10 +103,8 @@ extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
     #define SYSTICK_INTR_ID (ETS_INTERNAL_TIMER1_INTR_SOURCE+ETS_INTERNAL_INTR_SOURCE_OFF)
 #endif
 
-#if CONFIG_FREERTOS_UNICORE == 0
 static timer_idx_t s_ts_timer_idx;
 static timer_group_t s_ts_timer_group;
-#endif
 
 // SystemView is single core specific: it implies that SEGGER_SYSVIEW_LOCK()
 // disables IRQs (disables rescheduling globaly). So we can not use finite timeouts for locks and return error
@@ -214,7 +211,6 @@ static void _cbSendSystemDesc(void) {
 *
 **********************************************************************
 */
-#if CONFIG_FREERTOS_UNICORE == 0
 static void SEGGER_SYSVIEW_TS_Init()
 {
     timer_config_t config;
@@ -238,7 +234,7 @@ static void SEGGER_SYSVIEW_TS_Init()
     config.alarm_en = 0;
     config.auto_reload = 0;
     config.counter_dir = TIMER_COUNT_UP;
-    config.divider = 2;
+    config.divider = SYSVIEW_TIMER_DIV;
     config.counter_en = 0;
     /*Configure timer*/
     timer_init(s_ts_timer_group, s_ts_timer_idx, &config);
@@ -247,14 +243,11 @@ static void SEGGER_SYSVIEW_TS_Init()
     /*Enable timer interrupt*/
     timer_start(s_ts_timer_group, s_ts_timer_idx);
 }
-#endif
 
 void SEGGER_SYSVIEW_Conf(void) {
     U32 disable_evts = 0;
 
-#if CONFIG_FREERTOS_UNICORE == 0
     SEGGER_SYSVIEW_TS_Init();
-#endif
     SEGGER_SYSVIEW_Init(SYSVIEW_TIMESTAMP_FREQ, SYSVIEW_CPU_FREQ,
                         &SYSVIEW_X_OS_TraceAPI, _cbSendSystemDesc);
     SEGGER_SYSVIEW_SetRAMBase(SYSVIEW_RAM_BASE);

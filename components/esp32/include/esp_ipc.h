@@ -20,11 +20,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+/** @cond */
 typedef void (*esp_ipc_func_t)(void* arg);
-
-/**
- * @brief Inter-processor call APIs
+/** @endcond */
+/*
+ * Inter-processor call APIs
  *
  * FreeRTOS provides several APIs which can be used to communicate between
  * different tasks, including tasks running on different CPUs.
@@ -34,8 +34,9 @@ typedef void (*esp_ipc_func_t)(void* arg);
  */
 
 
-/**
- * @brief Initialize inter-processor call module.
+/*
+ * Initialize inter-processor call module. This function is called automatically
+ * on CPU start and should not be called from the application.
  *
  * This function start two tasks, one on each CPU. These tasks are started
  * with high priority. These tasks are normally inactive, waiting until one of
@@ -43,51 +44,59 @@ typedef void (*esp_ipc_func_t)(void* arg);
  * woken up to execute the callback provided to esp_ipc_call_nonblocking or
  * esp_ipc_call_blocking.
  */
+/** @cond */
 void esp_ipc_init();
-
+/** @endcond */
 
 /**
- * @brief Execute function on the given CPU
+ * @brief Execute a function on the given CPU
  *
- * This will wake a high-priority task on CPU indicated by cpu_id argument,
- * and run func(arg) in the context of that task.
- * This function returns as soon as the high-priority task is woken up.
- * If another IPC call is already being executed, this function will also wait
- * for it to complete.
+ * Run a given function on a particular CPU. The given function must accept a
+ * void* argument and return void. The given function is run in the context of
+ * the IPC task of the CPU specified by the cpu_id parameter. The calling task
+ * will be blocked until the IPC task begins executing the given function. If
+ * another IPC call is ongoing, the calling task will block until the other IPC
+ * call completes. The stack size allocated for the IPC task can be configured
+ * in the "Inter-Processor Call (IPC) task stack size" setting in menuconfig.
+ * Increase this setting if the given function requires more stack than default.
  *
- * In single-core mode, returns ESP_ERR_INVALID_ARG for cpu_id 1.
+ * @note In single-core mode, returns ESP_ERR_INVALID_ARG for cpu_id 1.
  *
- * For complex functions, you may need to increase the stack size of the "IPC task"
- * which runs the function must be sufficient. See the "Inter-Processor Call (IPC)
- * task stack size" setting in menuconfig.
+ * @param[in]   cpu_id  CPU where the given function should be executed (0 or 1)
+ * @param[in]   func    Pointer to a function of type void func(void* arg) to be executed
+ * @param[in]   arg     Arbitrary argument of type void* to be passed into the function
  *
- * @param cpu_id CPU where function should be executed (0 or 1)
- * @param func pointer to a function which should be executed
- * @param arg arbitrary argument to be passed into function
- *
- * @return ESP_ERR_INVALID_ARG if cpu_id is invalid
- *         ESP_ERR_INVALID_STATE if FreeRTOS scheduler is not running
- *         ESP_OK otherwise
+ * @return
+ *      - ESP_ERR_INVALID_ARG if cpu_id is invalid
+ *      - ESP_ERR_INVALID_STATE if the FreeRTOS scheduler is not running
+ *      - ESP_OK otherwise
  */
 esp_err_t esp_ipc_call(uint32_t cpu_id, esp_ipc_func_t func, void* arg);
 
 
 /**
- * @brief Execute function on the given CPU and wait for it to finish
+ * @brief Execute a function on the given CPU and blocks until it completes
  *
- * This will wake a high-priority task on CPU indicated by cpu_id argument,
- * and run func(arg) in the context of that task.
- * This function waits for func to return.
+ * Run a given function on a particular CPU. The given function must accept a
+ * void* argument and return void. The given function is run in the context of
+ * the IPC task of the CPU specified by the cpu_id parameter. The calling task
+ * will be blocked until the IPC task completes execution of the given function.
+ * If another IPC call is ongoing, the calling task will block until the other
+ * IPC call completes. The stack size allocated for the IPC task can be
+ * configured in the "Inter-Processor Call (IPC) task stack size" setting in
+ * menuconfig. Increase this setting if the given function requires more stack
+ * than default.
  *
- * In single-core mode, returns ESP_ERR_INVALID_ARG for cpu_id 1.
+ * @note    In single-core mode, returns ESP_ERR_INVALID_ARG for cpu_id 1.
  *
- * @param cpu_id CPU where function should be executed (0 or 1)
- * @param func pointer to a function which should be executed
- * @param arg arbitrary argument to be passed into function
+ * @param[in]   cpu_id  CPU where the given function should be executed (0 or 1)
+ * @param[in]   func    Pointer to a function of type void func(void* arg) to be executed
+ * @param[in]   arg     Arbitrary argument of type void* to be passed into the function
  *
- * @return ESP_ERR_INVALID_ARG if cpu_id is invalid
- *         ESP_ERR_INVALID_STATE if FreeRTOS scheduler is not running
- *         ESP_OK otherwise
+ * @return
+ *      - ESP_ERR_INVALID_ARG if cpu_id is invalid
+ *      - ESP_ERR_INVALID_STATE if the FreeRTOS scheduler is not running
+ *      - ESP_OK otherwise
  */
 esp_err_t esp_ipc_call_blocking(uint32_t cpu_id, esp_ipc_func_t func, void* arg);
 

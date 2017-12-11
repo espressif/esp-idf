@@ -92,7 +92,7 @@ config FREERTOS_WATCHPOINT_END_OF_STACK
         This check only triggers if the stack overflow writes within 4 bytes of the end of the stack, rather than
         overshooting further, so it is worth combining this approach with one of the other stack overflow check methods.
 
-        When this watchpoint is hit, gdb will stop with a SIGTRAP message. When no OCD is attached, esp-idf
+        When this watchpoint is hit, gdb will stop with a SIGTRAP message. When no JTAG OCD is attached, esp-idf
         will panic on an unhandled debug exception.
 
 config FREERTOS_INTERRUPT_BACKTRACE
@@ -115,11 +115,8 @@ config FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
         FreeRTOS has the ability to store per-thread pointers in the task
         control block. This controls the number of pointers available.
 
-        Value 0 turns off this functionality.
-
-        If using the LWIP TCP/IP stack (with WiFi or Ethernet), this value must be at least 1. See the
-        LWIP_THREAD_LOCAL_STORAGE_INDEX config item in LWIP configuration to determine which thread-local-storage
-        pointer is reserved for LWIP.
+        This value must be at least 1. Index 0 is reserved for use by the pthreads API
+        thread-local-storage. Other indexes can be used for any desired purpose.
 
 choice FREERTOS_ASSERT
     prompt "FreeRTOS assertions"
@@ -146,20 +143,6 @@ config FREERTOS_ASSERT_DISABLE
         FreeRTOS configASSERT() will not be compiled into the binary.
 
 endchoice
-
-config FREERTOS_BREAK_ON_SCHEDULER_START_JTAG
-    bool "Stop program on scheduler start when JTAG/OCD is detected"
-    depends on ESP32_DEBUG_OCDAWARE
-    default n
-    help
-        If JTAG/OCD is connected, stop execution when the scheduler is started and the first
-        task is executed.
-
-menuconfig ENABLE_MEMORY_DEBUG
-    bool "Enable heap memory debug"
-    default n
-    help
-        Enable this option to show malloc heap block and memory crash detect
 
 config FREERTOS_IDLE_TASK_STACKSIZE
     int "Idle Task stack size"
@@ -227,7 +210,7 @@ config SUPPORT_STATIC_ALLOCATION
         memory being allocated dynamically:
 
             - Tasks
-            - Software Timers
+            - Software Timers (Daemon task is still dynamic. See documentation)
             - Queues
             - Event Groups
             - Binary Semaphores
@@ -292,6 +275,83 @@ config TIMER_QUEUE_LENGTH
         implementation, and cannot be accessed directly.
 
         For most uses the default value of 10 is OK.
+
+config FREERTOS_QUEUE_REGISTRY_SIZE
+    int "FreeRTOS queue registry size"
+    range 0 20
+    default 0
+    help
+        FreeRTOS uses the queue registry as a means for kernel aware debuggers to locate queues, semaphores,
+        and mutexes. The registry allows for a textual name to be associated with a queue for easy identification
+        within a debugging GUI. A value of 0 will disable queue registry functionality, and a value larger than 0
+        will specify the number of queues/semaphores/mutexes that the registry can hold.
+
+config FREERTOS_USE_TRACE_FACILITY
+    bool "Enable FreeRTOS trace facility"
+    default n
+    help
+        If enabled, configUSE_TRACE_FACILITY will be defined as 1 in FreeRTOS.
+        This will allow the usage of trace facility functions such as
+        uxTaskGetSystemState().
+
+config FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
+    bool "Enable FreeRTOS stats formatting functions"
+    depends on FREERTOS_USE_TRACE_FACILITY || FREERTOS_GENERATE_RUN_TIME_STATS
+    default n
+    help
+        If enabled, configUSE_STATS_FORMATTING_FUNCTIONS will be defined as 1 in
+        FreeRTOS. This will allow the usage of stats formatting functions such 
+        as vTaskList().
+
+config FREERTOS_GENERATE_RUN_TIME_STATS
+    bool "Enable FreeRTOS to collect run time stats"
+    default n
+    help
+        If enabled, configGENERATE_RUN_TIME_STATS will be defined as 1 in 
+        FreeRTOS. This will allow FreeRTOS to collect information regarding the 
+        usage of processor time amongst FreeRTOS tasks. Run time stats are 
+        generated using either the ESP Timer or the CPU Clock as the clock 
+        source (Note that run time stats are only valid until the clock source 
+        overflows). The function vTaskGetRunTimeStats() will also be available 
+        if FREERTOS_USE_STATS_FORMATTING_FUNCTIONS and 
+        FREERTOS_USE_TRACE_FACILITY are enabled. vTaskGetRunTimeStats() will 
+        display the run time of each task as a % of the total run time of all 
+        CPUs (task run time / no of CPUs) / (total run time / 100 )
+        
+        
+choice FREERTOS_RUN_TIME_STATS_CLK
+    prompt "Choose the clock source for run time stats"
+    depends on FREERTOS_GENERATE_RUN_TIME_STATS
+    default FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+    help
+        Choose the clock source for FreeRTOS run time stats. Options are CPU0's 
+        CPU Clock or the ESP Timer. Both clock sources are 32 bits. The CPU 
+        Clock can run at a higher frequency hence provide a finer resolution 
+        but will overflow much quicker. Note that run time stats are only valid 
+        until the clock source overflows.
+        
+config FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+    bool "Use ESP TIMER for run time stats"
+    help
+        ESP Timer will be used as the clock source for FreeRTOS run time stats. 
+        The ESP Timer runs at a frequency of 1MHz regardless of Dynamic
+        Frequency Scaling. Therefore the ESP Timer will overflow in 
+        approximately 4290 seconds.
+
+config FREERTOS_RUN_TIME_STATS_USING_CPU_CLK
+    bool "Use CPU Clock for run time stats"
+    help
+        CPU Clock will be used as the clock source for the generation of run
+        time stats. The CPU Clock has a frequency dependent on 
+        ESP32_DEFAULT_CPU_FREQ_MHZ and Dynamic Frequency Scaling (DFS).
+        Therefore the CPU Clock frequency can fluctuate between 80 to 240MHz. 
+        Run time stats generated using the CPU Clock represents the number of 
+        CPU cycles each task is allocated and DOES NOT reflect the amount of 
+        time each task runs for (as CPU clock frequency can change). If the CPU 
+        clock consistently runs at the maximum frequency of 240MHz, it will 
+        overflow in approximately 17 seconds.
+
+endchoice
 
 menuconfig FREERTOS_DEBUG_INTERNALS
     bool "Debug FreeRTOS internals"

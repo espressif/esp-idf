@@ -48,6 +48,16 @@ extern SLIST_HEAD(registered_heap_ll, heap_t_) registered_heaps;
 
 bool heap_caps_match(const heap_t *heap, uint32_t caps);
 
+
+/*
+ Because we don't want to add _another_ known allocation method to the stack of functions to trace wrt memory tracing,
+ these are declared private. The newlib malloc()/realloc() implementation also calls these, so they are declared 
+ separately in newlib/syscalls.c.
+*/
+void *heap_caps_realloc_default(void *p, size_t size);
+void *heap_caps_malloc_default(size_t size);
+
+
 #ifdef __cplusplus
 }
 #endif

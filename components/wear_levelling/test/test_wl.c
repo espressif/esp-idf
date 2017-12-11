@@ -109,8 +109,10 @@ TEST_CASE("multiple tasks can access wl handle simultaneously", "[wear_levelling
     const size_t stack_size = 4096;
 
     printf("writing 1 and 2\n");
-    xTaskCreatePinnedToCore(&read_write_task, "rw1", stack_size, &args1, 3, NULL, 0);
-    xTaskCreatePinnedToCore(&read_write_task, "rw2", stack_size, &args2, 3, NULL, 1);
+    const int cpuid_0 = 0;
+    const int cpuid_1 = portNUM_PROCESSORS - 1;
+    xTaskCreatePinnedToCore(&read_write_task, "rw1", stack_size, &args1, 3, NULL, cpuid_0);
+    xTaskCreatePinnedToCore(&read_write_task, "rw2", stack_size, &args2, 3, NULL, cpuid_1);
 
     xSemaphoreTake(args1.done, portMAX_DELAY);
     printf("f1 done\n");
@@ -125,10 +127,10 @@ TEST_CASE("multiple tasks can access wl handle simultaneously", "[wear_levelling
     read_write_test_arg_t args4 = READ_WRITE_TEST_ARG_INIT(3 * sector_size, 4, handle, sector_size/sizeof(uint32_t));
 
     printf("reading 1 and 2, writing 3 and 4\n");
-    xTaskCreatePinnedToCore(&read_write_task, "rw3", stack_size, &args3, 3, NULL, 1);
-    xTaskCreatePinnedToCore(&read_write_task, "rw4", stack_size, &args4, 3, NULL, 0);
-    xTaskCreatePinnedToCore(&read_write_task, "rw1", stack_size, &args1, 3, NULL, 0);
-    xTaskCreatePinnedToCore(&read_write_task, "rw2", stack_size, &args2, 3, NULL, 1);
+    xTaskCreatePinnedToCore(&read_write_task, "rw3", stack_size, &args3, 3, NULL, cpuid_1);
+    xTaskCreatePinnedToCore(&read_write_task, "rw4", stack_size, &args4, 3, NULL, cpuid_0);
+    xTaskCreatePinnedToCore(&read_write_task, "rw1", stack_size, &args1, 3, NULL, cpuid_0);
+    xTaskCreatePinnedToCore(&read_write_task, "rw2", stack_size, &args2, 3, NULL, cpuid_1);
 
     xSemaphoreTake(args1.done, portMAX_DELAY);
     printf("f1 done\n");

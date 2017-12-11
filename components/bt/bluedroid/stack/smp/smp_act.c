@@ -1221,25 +1221,16 @@ void smp_decide_association_model(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     switch (p_cb->selected_association_model) {
     case SMP_MODEL_ENCRYPTION_ONLY:  /* TK = 0, go calculate Confirm */
-        if (p_cb->role == HCI_ROLE_MASTER &&
-                ((p_cb->peer_auth_req & SMP_AUTH_YN_BIT) != 0) &&
-                ((p_cb->loc_auth_req & SMP_AUTH_YN_BIT) == 0)) {
-            SMP_TRACE_ERROR ("IO capability does not meet authentication requirement\n");
-            failure = SMP_PAIR_AUTH_FAIL;
-            p = (tSMP_INT_DATA *)&failure;
-            int_evt = SMP_AUTH_CMPL_EVT;
-        } else {
-            p_cb->sec_level = SMP_SEC_UNAUTHENTICATE;
-            SMP_TRACE_EVENT ("p_cb->sec_level =%d (SMP_SEC_UNAUTHENTICATE) \n", p_cb->sec_level );
+        p_cb->sec_level = SMP_SEC_UNAUTHENTICATE;
+        SMP_TRACE_EVENT ("p_cb->sec_level =%d (SMP_SEC_UNAUTHENTICATE) \n", p_cb->sec_level );
 
-            key.key_type = SMP_KEY_TYPE_TK;
-            key.p_data = p_cb->tk;
-            p = (tSMP_INT_DATA *)&key;
+        key.key_type = SMP_KEY_TYPE_TK;
+        key.p_data = p_cb->tk;
+        p = (tSMP_INT_DATA *)&key;
 
-            memset(p_cb->tk, 0, BT_OCTET16_LEN);
-            /* TK, ready  */
-            int_evt = SMP_KEY_READY_EVT;
-        }
+        memset(p_cb->tk, 0, BT_OCTET16_LEN);
+        /* TK, ready  */
+        int_evt = SMP_KEY_READY_EVT;
         break;
 
     case SMP_MODEL_PASSKEY:

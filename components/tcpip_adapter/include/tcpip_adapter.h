@@ -113,6 +113,19 @@ typedef enum {
     TCPIP_ADAPTER_IF_MAX
 } tcpip_adapter_if_t;
 
+/*type of DNS server*/
+typedef enum {
+    TCPIP_ADAPTER_DNS_MAIN= 0,       /**DNS main server address*/
+    TCPIP_ADAPTER_DNS_BACKUP,        /**DNS backup server address,for STA only,support soft-AP in future*/
+    TCPIP_ADAPTER_DNS_FALLBACK,      /**DNS fallback server address,for STA only*/
+    TCPIP_ADAPTER_DNS_MAX            /**Max DNS */
+} tcpip_adapter_dns_type_t;
+
+/*info of DNS server*/
+typedef struct {
+    ip_addr_t ip;
+} tcpip_adapter_dns_info_t;
+
 /* status of DHCP client or DHCP server */
 typedef enum {
     TCPIP_ADAPTER_DHCP_INIT = 0,    /**< DHCP client/server in initial state */
@@ -130,6 +143,7 @@ typedef enum{
 } tcpip_adapter_option_mode_t;
 
 typedef enum{
+    TCPIP_ADAPTER_DOMAIN_NAME_SERVER            = 6,    /**< domain name server */
     TCPIP_ADAPTER_ROUTER_SOLICITATION_ADDRESS   = 32,   /**< solicitation router address */
     TCPIP_ADAPTER_REQUESTED_IP_ADDRESS          = 50,   /**< request IP address pool */
     TCPIP_ADAPTER_IP_ADDRESS_LEASE_TIME         = 51,   /**< request IP address lease time */
@@ -145,14 +159,19 @@ typedef struct tcpip_adapter_api_msg_s {
     tcpip_adapter_if_t tcpip_if;
     tcpip_adapter_ip_info_t *ip_info;
     uint8_t *mac;
-    const char *hostname;
+    void    *data;
 } tcpip_adapter_api_msg_t;
+
+typedef struct tcpip_adapter_dns_param_s {
+    tcpip_adapter_dns_type_t dns_type;
+    tcpip_adapter_dns_info_t *dns_info;
+} tcpip_adapter_dns_param_t;
 
 #define TCPIP_ADAPTER_TRHEAD_SAFE 1
 #define TCPIP_ADAPTER_IPC_LOCAL   0 
 #define TCPIP_ADAPTER_IPC_REMOTE  1
 
-#define TCPIP_ADAPTER_IPC_CALL(_if, _mac, _ip, _hostname, _fn) do {\
+#define TCPIP_ADAPTER_IPC_CALL(_if, _mac, _ip, _data, _fn) do {\
     tcpip_adapter_api_msg_t msg;\
     if (tcpip_inited == false) {\
         ESP_LOGE(TAG, "tcpip_adapter is not initialized!");\
@@ -160,9 +179,9 @@ typedef struct tcpip_adapter_api_msg_s {
     }\
     memset(&msg, 0, sizeof(msg));\
     msg.tcpip_if = (_if);\
-    msg.mac      = (_mac);\
-    msg.ip_info  = (_ip);\
-    msg.hostname = (_hostname);\
+    msg.mac      = (uint8_t*)(_mac);\
+    msg.ip_info  = (tcpip_adapter_ip_info_t*)(_ip);\
+    msg.data     = (void*)(_data);\
     msg.api_fn   = (_fn);\
     if (TCPIP_ADAPTER_IPC_REMOTE == tcpip_adapter_ipc_check(&msg)) {\
         ESP_LOGD(TAG, "check: remote, if=%d fn=%p\n", (_if), (_fn));\
@@ -291,6 +310,47 @@ esp_err_t tcpip_adapter_get_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_i
  *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
  */
 esp_err_t tcpip_adapter_set_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_ip_info_t *ip_info);
+
+/**
+ * @brief  Set DNS Server's information
+ *
+ * There has an DNS Server information copy in adapter library, set DNS Server for appointed interface and type.
+ *
+ * 1.In station mode, if dhcp client is enabled, then only the fallback DNS server can be set(TCPIP_ADAPTER_DNS_FALLBACK).
+ *   Fallback DNS server is only used if no DNS servers are set via DHCP.
+ *   If dhcp client is disabled, then need to set main/backup dns server(TCPIP_ADAPTER_DNS_MAIN, TCPIP_ADAPTER_DNS_BACKUP).
+ * 
+ * 2.In soft-AP mode, the DNS Server's main dns server offered to the station is the IP address of soft-AP, 
+ *   if the application don't want to use the IP address of soft-AP, they can set the main dns server.
+ *
+ * This function is mainly used for setting static or Fallback DNS Server.
+ *
+ * @param[in]  tcpip_if: the interface which we want to set DNS Server information
+ * @param[in]  type: the type of DNS Server,including TCPIP_ADAPTER_DNS_MAIN, TCPIP_ADAPTER_DNS_BACKUP, TCPIP_ADAPTER_DNS_FALLBACK
+ * @param[in]  dns:  the DNS Server address to be set
+ * 
+ * @return 
+ *      - ESP_OK on success
+ *      - ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS invalid params
+ */
+esp_err_t tcpip_adapter_set_dns_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_dns_type_t type, tcpip_adapter_dns_info_t *dns);
+
+/**
+ * @brief  Get DNS Server's information
+ *
+ * When set the DNS Server information successfully, can get the DNS Server's information via the appointed tcpip_if and type 
+ *
+ * This function is mainly used for getting DNS Server information.
+ *
+ * @param[in]  tcpip_if: the interface which we want to get DNS Server information
+ * @param[in]  type: the type of DNS Server,including TCPIP_ADAPTER_DNS_MAIN, TCPIP_ADAPTER_DNS_BACKUP, TCPIP_ADAPTER_DNS_FALLBACK
+ * @param[in]  dns:  the DNS Server address to be get
+ * 
+ * @return 
+ *      - ESP_OK on success
+ *      - ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS invalid params
+ */
+esp_err_t tcpip_adapter_get_dns_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_dns_type_t type, tcpip_adapter_dns_info_t *dns);
 
 /**
  * @brief  Get interface's old IP information

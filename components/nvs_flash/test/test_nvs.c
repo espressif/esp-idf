@@ -59,5 +59,9 @@ TEST_CASE("various nvs tests", "[nvs]")
     TEST_ASSERT_EQUAL_INT32(0, strcmp(buf, str));
 
     nvs_close(handle_1);
+
+    // check that deinit does not leak memory if some handles are still open
+    nvs_flash_deinit();
+
     nvs_close(handle_2);
 }

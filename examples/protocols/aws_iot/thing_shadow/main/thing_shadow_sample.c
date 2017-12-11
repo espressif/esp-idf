@@ -37,6 +37,9 @@
 #include "esp_vfs_fat.h"
 #include "driver/sdmmc_host.h"
 
+#include "nvs.h"
+#include "nvs_flash.h"
+
 #include "aws_iot_config.h"
 #include "aws_iot_log.h"
 #include "aws_iot_version.h"
@@ -362,6 +365,13 @@ static void initialise_wifi(void)
 
 void app_main()
 {
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( err );
+
     initialise_wifi();
     /* Temporarily pin task to core, due to FPU uncertainty */
     xTaskCreatePinnedToCore(&aws_iot_task, "aws_iot_task", 16384+1024, NULL, 5, NULL, 1);

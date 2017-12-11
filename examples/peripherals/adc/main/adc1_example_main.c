@@ -28,9 +28,9 @@ void app_main(void)
 #ifndef V_REF_TO_GPIO
     //Init ADC and Characteristics
     esp_adc_cal_characteristics_t characteristics;
-    adc1_config_width(ADC_WIDTH_12Bit);
-    adc1_config_channel_atten(ADC1_TEST_CHANNEL, ADC_ATTEN_0db);
-    esp_adc_cal_get_characteristics(V_REF, ADC_ATTEN_0db, ADC_WIDTH_12Bit, &characteristics);
+    adc1_config_width(ADC_WIDTH_BIT_12);
+    adc1_config_channel_atten(ADC1_TEST_CHANNEL, ADC_ATTEN_DB_0);
+    esp_adc_cal_get_characteristics(V_REF, ADC_ATTEN_DB_0, ADC_WIDTH_BIT_12, &characteristics);
     uint32_t voltage;
     while(1){
         voltage = adc1_to_voltage(ADC1_TEST_CHANNEL, &characteristics);

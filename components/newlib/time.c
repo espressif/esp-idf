@@ -26,7 +26,7 @@
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
 #include "esp_clk.h"
-#include "../esp32/esp_timer.h"
+#include "esp_timer.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
@@ -143,6 +143,15 @@ void esp_set_time_from_rtc()
     // initialize time from RTC clock
     s_microseconds_offset = get_rtc_time_us() - esp_timer_get_time();
 #endif // WITH_FRC1 && WITH_RTC
+}
+
+uint64_t esp_clk_rtc_time(void)
+{
+#ifdef WITH_RTC
+    return get_rtc_time_us();
+#else
+    return 0;
+#endif
 }
 
 clock_t IRAM_ATTR _times_r(struct _reent *r, struct tms *ptms)

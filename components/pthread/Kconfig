@@ -9,7 +9,7 @@ config ESP32_PTHREAD_TASK_PRIO_DEFAULT
 
 config ESP32_PTHREAD_TASK_STACK_SIZE_DEFAULT
     int "Default task stack size"
-    default 2048
+    default 3072
     help
         Stack size used to create new tasks with default pthread parameters.
 

@@ -77,10 +77,11 @@ void esp_ipc_init()
 {
     s_ipc_mutex = xSemaphoreCreateMutex();
     s_ipc_ack = xSemaphoreCreateBinary();
-    const char* task_names[2] = {"ipc0", "ipc1"};
+    char task_name[8];
     for (int i = 0; i < portNUM_PROCESSORS; ++i) {
+        sprintf(task_name,"ipc%d",i);
         s_ipc_sem[i] = xSemaphoreCreateBinary();
-        portBASE_TYPE res = xTaskCreatePinnedToCore(ipc_task, task_names[i], CONFIG_IPC_TASK_STACK_SIZE, (void*) i,
+        portBASE_TYPE res = xTaskCreatePinnedToCore(ipc_task, task_name, CONFIG_IPC_TASK_STACK_SIZE, (void*) i,
                                                     configMAX_PRIORITIES - 1, &s_ipc_tasks[i], i);
         assert(res == pdTRUE);
     }

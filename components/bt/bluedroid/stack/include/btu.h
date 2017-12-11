@@ -160,9 +160,8 @@ typedef void (*tBTU_EVENT_CALLBACK)(BT_HDR *p_hdr);
 #define BTU_TTYPE_BLE_GAP_FAST_ADV                  106
 #define BTU_TTYPE_BLE_OBSERVE                       107
 
-
 #define BTU_TTYPE_UCD_TO                            108
-
+#define BTU_TTYPE_BLE_SCAN                          109
 
 
 /* This is the inquiry response information held by BTU, and available

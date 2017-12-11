@@ -91,6 +91,8 @@ extern "C" {
 #define ESP_ERR_WIFI_PASSWORD    (ESP_ERR_WIFI_BASE + 11)  /*!< Password is invalid */
 #define ESP_ERR_WIFI_TIMEOUT     (ESP_ERR_WIFI_BASE + 12)  /*!< Timeout error */
 #define ESP_ERR_WIFI_WAKE_FAIL   (ESP_ERR_WIFI_BASE + 13)  /*!< WiFi is in sleep state(RF closed) and wakeup fail */
+#define ESP_ERR_WIFI_WOULD_BLOCK (ESP_ERR_WIFI_BASE + 14)  /*!< The caller would block */
+#define ESP_ERR_WIFI_NOT_CONNECT (ESP_ERR_WIFI_BASE + 15)  /*!< Station still in disconnect status */
 
 /**
  * @brief WiFi stack configuration parameters passed to esp_wifi_init call.
@@ -103,7 +105,8 @@ typedef struct {
     int                    tx_buf_type;            /**< WiFi TX buffer type */
     int                    static_tx_buf_num;      /**< WiFi static TX buffer number */
     int                    dynamic_tx_buf_num;     /**< WiFi dynamic TX buffer number */
-    int                    ampdu_enable;           /**< WiFi AMPDU feature enable flag */
+    int                    ampdu_rx_enable;        /**< WiFi AMPDU RX feature enable flag */
+    int                    ampdu_tx_enable;        /**< WiFi AMPDU TX feature enable flag */
     int                    nvs_enable;             /**< WiFi NVS flash enable flag */
     int                    nano_enable;            /**< Nano option for printf/scan family enable flag */
     int                    tx_ba_win;              /**< WiFi Block Ack TX window size */
@@ -123,10 +126,16 @@ typedef struct {
 #define WIFI_DYNAMIC_TX_BUFFER_NUM 0
 #endif
 
-#if CONFIG_ESP32_WIFI_AMPDU_ENABLED
-#define WIFI_AMPDU_ENABLED        1
+#if CONFIG_ESP32_WIFI_AMPDU_RX_ENABLED
+#define WIFI_AMPDU_RX_ENABLED        1
 #else
-#define WIFI_AMPDU_ENABLED        0
+#define WIFI_AMPDU_RX_ENABLED        0
+#endif
+
+#if CONFIG_ESP32_WIFI_AMPDU_TX_ENABLED
+#define WIFI_AMPDU_TX_ENABLED        1
+#else
+#define WIFI_AMPDU_TX_ENABLED        0
 #endif
 
 #if CONFIG_ESP32_WIFI_NVS_ENABLED
@@ -145,12 +154,16 @@ extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
 
 #define WIFI_INIT_CONFIG_MAGIC    0x1F2F3F4F
 
-#ifdef CONFIG_ESP32_WIFI_AMPDU_ENABLED
+#ifdef CONFIG_ESP32_WIFI_AMPDU_TX_ENABLED
 #define WIFI_DEFAULT_TX_BA_WIN CONFIG_ESP32_WIFI_TX_BA_WIN
+#else
+#define WIFI_DEFAULT_TX_BA_WIN 0 /* unused if ampdu_tx_enable == false */
+#endif
+
+#ifdef CONFIG_ESP32_WIFI_AMPDU_RX_ENABLED
 #define WIFI_DEFAULT_RX_BA_WIN CONFIG_ESP32_WIFI_RX_BA_WIN
 #else
-#define WIFI_DEFAULT_TX_BA_WIN 0 /* unused if ampdu_enable == false */
-#define WIFI_DEFAULT_RX_BA_WIN 0
+#define WIFI_DEFAULT_RX_BA_WIN 0 /* unused if ampdu_rx_enable == false */
 #endif
 
 #define WIFI_INIT_CONFIG_DEFAULT() { \
@@ -161,7 +174,8 @@ extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
     .tx_buf_type = CONFIG_ESP32_WIFI_TX_BUFFER_TYPE,\
     .static_tx_buf_num = WIFI_STATIC_TX_BUFFER_NUM,\
     .dynamic_tx_buf_num = WIFI_DYNAMIC_TX_BUFFER_NUM,\
-    .ampdu_enable = WIFI_AMPDU_ENABLED,\
+    .ampdu_rx_enable = WIFI_AMPDU_RX_ENABLED,\
+    .ampdu_tx_enable = WIFI_AMPDU_TX_ENABLED,\
     .nvs_enable = WIFI_NVS_ENABLED,\
     .nano_enable = WIFI_NANO_FORMAT_ENABLED,\
     .tx_ba_win = WIFI_DEFAULT_TX_BA_WIN,\
@@ -181,14 +195,14 @@ extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
   *               which are set by WIFI_INIT_CONFIG_DEFAULT, please be notified that the field 'magic' of 
   *               wifi_init_config_t should always be WIFI_INIT_CONFIG_MAGIC!
   *
-  * @param  config provide WiFi init configuration
+  * @param  config pointer to WiFi init configuration structure; can point to a temporary variable.
   *
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NO_MEM: out of memory
   *    - others: refer to error code esp_err.h
   */
-esp_err_t esp_wifi_init(wifi_init_config_t *config);
+esp_err_t esp_wifi_init(const wifi_init_config_t *config);
 
 /**
   * @brief  Deinit WiFi
@@ -341,7 +355,7 @@ esp_err_t esp_wifi_deauth_sta(uint16_t aid);
   *    - ESP_ERR_WIFI_TIMEOUT: blocking scan is timeout
   *    - others: refer to error code in esp_err.h
   */
-esp_err_t esp_wifi_scan_start(wifi_scan_config_t *config, bool block);
+esp_err_t esp_wifi_scan_start(const wifi_scan_config_t *config, bool block);
 
 /**
   * @brief     Stop the scan in process
@@ -392,7 +406,8 @@ esp_err_t esp_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_re
   *
   * @return
   *    - ESP_OK: succeed
-  *    - others: fail
+  *    - ESP_ERR_WIFI_CONN: The station interface don't initialized
+  *    - ESP_ERR_WIFI_NOT_CONNECT: The station is in disconnect status 
   */
 esp_err_t esp_wifi_sta_get_ap_info(wifi_ap_record_t *ap_info);
 
@@ -517,23 +532,35 @@ esp_err_t esp_wifi_set_channel(uint8_t primary, wifi_second_chan_t second);
 esp_err_t esp_wifi_get_channel(uint8_t *primary, wifi_second_chan_t *second);
 
 /**
-  * @brief     Set country code
-  *            The default value is WIFI_COUNTRY_CN
+  * @brief     configure country info
   *
-  * @param     country  country type
+  * @attention 1. The default country is {.cc="CN", .schan=1, .nchan=13, policy=WIFI_COUNTRY_POLICY_AUTO}
+  * @attention 2. When the country policy is WIFI_COUNTRY_POLICY_AUTO, the country info of the AP to which
+  *               the station is connected is used. E.g. if the configured country info is {.cc="USA", .schan=1, .nchan=11}
+  *               and the country info of the AP to which the station is connected is {.cc="JP", .schan=1, .nchan=14}
+  *               then the country info that will be used is {.cc="JP", .schan=1, .nchan=14}. If the station disconnected
+  *               from the AP the country info is set back back to the country info of the station automatically,
+  *               {.cc="USA", .schan=1, .nchan=11} in the example.
+  * @attention 3. When the country policy is WIFI_COUNTRY_POLICY_MANUAL, always use the configured country info.
+  * @attention 4. When the country info is changed because of configuration or because the station connects to a different
+  *               external AP, the country IE in probe response/beacon of the soft-AP is changed also.
+  * @attention 5. The country configuration is not stored into flash
+  * @attention 6. This API doesn't validate the per-country rules, it's up to the user to fill in all fields according to 
+  *               local regulations.
+  *
+  * @param     country   the configured country info
   *
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
   *    - ESP_ERR_WIFI_ARG: invalid argument
-  *    - others: refer to error code in esp_err.h
   */
-esp_err_t esp_wifi_set_country(wifi_country_t country);
+esp_err_t esp_wifi_set_country(const wifi_country_t *country);
 
 /**
-  * @brief     Get country code
+  * @brief     get the current country info
   *
-  * @param     country  store current country
+  * @param     country  country info
   *
   * @return
   *    - ESP_OK: succeed
@@ -541,6 +568,7 @@ esp_err_t esp_wifi_set_country(wifi_country_t country);
   *    - ESP_ERR_WIFI_ARG: invalid argument
   */
 esp_err_t esp_wifi_get_country(wifi_country_t *country);
+
 
 /**
   * @brief     Set MAC address of the ESP32 WiFi station or the soft-AP interface.
@@ -562,7 +590,7 @@ esp_err_t esp_wifi_get_country(wifi_country_t *country);
   *    - ESP_ERR_WIFI_MODE: WiFi mode is wrong
   *    - others: refer to error codes in esp_err.h
   */
-esp_err_t esp_wifi_set_mac(wifi_interface_t ifx, uint8_t mac[6]);
+esp_err_t esp_wifi_set_mac(wifi_interface_t ifx, const uint8_t mac[6]);
 
 /**
   * @brief     Get mac of specified interface
@@ -625,11 +653,11 @@ esp_err_t esp_wifi_set_promiscuous(bool en);
 esp_err_t esp_wifi_get_promiscuous(bool *en);
 
 /**
-  * @brief     Enable the promiscuous filter.
+  * @brief Enable the promiscuous mode packet type filter.
   *
-  * @attention 1. The default filter is to filter all packets except WIFI_PKT_MISC
+  * @note The default filter is to filter all packets except WIFI_PKT_MISC
   *
-  * @param     filter the packet type filtered by promisucous
+  * @param filter the packet type filtered in promiscuous mode.
   *
   * @return
   *    - ESP_OK: succeed
@@ -657,7 +685,7 @@ esp_err_t esp_wifi_get_promiscuous_filter(wifi_promiscuous_filter_t *filter);
   * @attention 3. ESP32 is limited to only one channel, so when in the soft-AP+station mode, the soft-AP will adjust its channel automatically to be the same as
   *               the channel of the ESP32 station.
   *
-  * @param     ifx  interface
+  * @param     interface  interface
   * @param     conf  station or soft-AP configuration
   *
   * @return
@@ -670,12 +698,12 @@ esp_err_t esp_wifi_get_promiscuous_filter(wifi_promiscuous_filter_t *filter);
   *    - ESP_ERR_WIFI_NVS: WiFi internal NVS error
   *    - others: refer to the erro code in esp_err.h
   */
-esp_err_t esp_wifi_set_config(wifi_interface_t ifx, wifi_config_t *conf);
+esp_err_t esp_wifi_set_config(wifi_interface_t interface, wifi_config_t *conf);
 
 /**
   * @brief     Get configuration of specified interface
   *
-  * @param     ifx  interface
+  * @param     interface  interface
   * @param[out]  conf  station or soft-AP configuration
   *
   * @return
@@ -684,7 +712,7 @@ esp_err_t esp_wifi_set_config(wifi_interface_t ifx, wifi_config_t *conf);
   *    - ESP_ERR_WIFI_ARG: invalid argument
   *    - ESP_ERR_WIFI_IF: invalid interface
   */
-esp_err_t esp_wifi_get_config(wifi_interface_t ifx, wifi_config_t *conf);
+esp_err_t esp_wifi_get_config(wifi_interface_t interface, wifi_config_t *conf);
 
 /**
   * @brief     Get STAs associated with soft-AP

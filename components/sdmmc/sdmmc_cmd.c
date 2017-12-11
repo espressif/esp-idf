@@ -28,6 +28,14 @@
 
 #define SDMMC_GO_IDLE_DELAY_MS      20
 
+/* These delay values are mostly useful for cases when CD pin is not used, and
+ * the card is removed. In this case, SDMMC peripheral may not always return
+ * CMD_DONE / DATA_DONE interrupts after signaling the error. These timeouts work
+ * as a safety net in such cases.
+ */
+#define SDMMC_DEFAULT_CMD_TIMEOUT_MS  1000   // Max timeout of ordinary commands
+#define SDMMC_WRITE_CMD_TIMEOUT_MS    5000   // Max timeout of write commands
+
 static const char* TAG = "sdmmc_cmd";
 
 static esp_err_t sdmmc_send_cmd(sdmmc_card_t* card, sdmmc_command_t* cmd);
@@ -344,9 +352,15 @@ void sdmmc_card_print_info(FILE* stream, const sdmmc_card_t* card)
 
 static esp_err_t sdmmc_send_cmd(sdmmc_card_t* card, sdmmc_command_t* cmd)
 {
+    if (card->host.command_timeout_ms != 0) {
+        cmd->timeout_ms = card->host.command_timeout_ms;
+    } else if (cmd->timeout_ms == 0) {
+        cmd->timeout_ms = SDMMC_DEFAULT_CMD_TIMEOUT_MS;
+    }
+
     int slot = card->host.slot;
-    ESP_LOGV(TAG, "sending cmd slot=%d op=%d arg=%x flags=%x data=%p blklen=%d datalen=%d",
-            slot, cmd->opcode, cmd->arg, cmd->flags, cmd->data, cmd->blklen, cmd->datalen);
+    ESP_LOGV(TAG, "sending cmd slot=%d op=%d arg=%x flags=%x data=%p blklen=%d datalen=%d timeout=%d",
+            slot, cmd->opcode, cmd->arg, cmd->flags, cmd->data, cmd->blklen, cmd->datalen, cmd->timeout_ms);
     esp_err_t err = (*card->host.do_transaction)(slot, cmd);
     if (err != 0) {
         ESP_LOGD(TAG, "sdmmc_req_run returned 0x%x", err);
@@ -758,7 +772,8 @@ static esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
             .flags = SCF_CMD_ADTC | SCF_RSP_R1,
             .blklen = block_size,
             .data = (void*) src,
-            .datalen = block_count * block_size
+            .datalen = block_count * block_size,
+            .timeout_ms = SDMMC_WRITE_CMD_TIMEOUT_MS
     };
     if (block_count == 1) {
         cmd.opcode = MMC_WRITE_BLOCK_SINGLE;

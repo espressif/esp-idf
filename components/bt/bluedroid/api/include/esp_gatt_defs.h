@@ -27,6 +27,7 @@ extern "C" {
 #define ESP_GATT_ILLEGAL_HANDLE             0
 /// GATT attribute max handle
 #define ESP_GATT_ATTR_HANDLE_MAX            100
+#define ESP_GATT_MAX_READ_MULTI_HANDLES     10           /* Max attributes to read in one request */
 
 
 /**@{
@@ -294,12 +295,12 @@ typedef uint8_t esp_gatt_char_prop_t;
  */
  typedef struct
  {   
-     uint16_t uuid_length;              /*!< UUID length */  
-     uint8_t  *uuid_p;                  /*!< UUID value */  
-     uint16_t perm;                     /*!< Attribute permission */        
-     uint16_t max_length;               /*!< Maximum length of the element*/    
-     uint16_t length;                   /*!< Current length of the element*/    
-     uint8_t  *value;                   /*!< Element value array*/  
+     uint16_t uuid_length;              /*!< UUID length */
+     uint8_t  *uuid_p;                  /*!< UUID value */
+     uint16_t perm;                     /*!< Attribute permission */
+     uint16_t max_length;               /*!< Maximum length of the element*/
+     uint16_t length;                   /*!< Current length of the element*/
+     uint8_t  *value;                   /*!< Element value array*/
  } esp_attr_desc_t;
 
 
@@ -313,8 +314,8 @@ typedef struct
     /**
      * @brief if auto_rsp set to ESP_GATT_RSP_BY_APP, means the response of Write/Read operation will by replied by application.
               if auto_rsp set to ESP_GATT_AUTO_RSP, means the response of Write/Read operation will be replied by GATT stack automatically.
-     */  
-    uint8_t auto_rsp;                   
+     */
+    uint8_t auto_rsp;
 } esp_attr_control_t;
 
 
@@ -323,8 +324,8 @@ typedef struct
  */
 typedef struct
 {
-    esp_attr_control_t      attr_control;       /*!< The attribute control type*/
-    esp_attr_desc_t         att_desc;           /*!< The attribute type*/
+    esp_attr_control_t      attr_control;                   /*!< The attribute control type */
+    esp_attr_desc_t         att_desc;                       /*!< The attribute type */
 } esp_gatts_attr_db_t;
 
 
@@ -333,9 +334,9 @@ typedef struct
   */
 typedef struct
 {
-    uint16_t attr_max_len;                      /*!<  attribute max value length */     
-    uint16_t attr_len;                          /*!<  attribute current value length */ 
-    uint8_t  *attr_value;                       /*!<  the pointer to attribute value */
+    uint16_t attr_max_len;                                  /*!<  attribute max value length */
+    uint16_t attr_len;                                      /*!<  attribute current value length */
+    uint8_t  *attr_value;                                   /*!<  the pointer to attribute value */
 } esp_attr_value_t;
 
 
@@ -344,22 +345,19 @@ typedef struct
   */
 typedef struct 
 {
-    uint16_t start_hdl;                             /*!< Gatt  start handle value of included service */
-    uint16_t end_hdl;                               /*!< Gatt  end handle value of included service */
-    uint16_t uuid;                                  /*!< Gatt  attribute value UUID of included service */
-} esp_gatts_incl_svc_desc_t;                        /*!< Gatt  include service entry element */
+    uint16_t start_hdl;                                     /*!< Gatt  start handle value of included service */
+    uint16_t end_hdl;                                       /*!< Gatt  end handle value of included service */
+    uint16_t uuid;                                          /*!< Gatt  attribute value UUID of included service */
+} esp_gatts_incl_svc_desc_t;                                /*!< Gatt include service entry element */
 
 /**
   * @brief Gatt  include 128 bit service entry element
   */
 typedef struct 
 {
-    uint16_t start_hdl;                             /*!< Gatt  start handle value of included 128 bit service */
-    uint16_t end_hdl;                               /*!< Gatt  end handle value of included 128 bit service */
-} esp_gatts_incl128_svc_desc_t;                     /*!< Gatt  include 128 bit service entry element */
-
-
-
+    uint16_t start_hdl;                                     /*!< Gatt  start handle value of included 128 bit service */
+    uint16_t end_hdl;                                       /*!< Gatt  end handle value of included 128 bit service */
+} esp_gatts_incl128_svc_desc_t;                             /*!< Gatt  include 128 bit service entry element */
 
 /// Gatt attribute value 
 typedef struct {
@@ -387,6 +385,75 @@ typedef enum {
 #define ESP_GATT_IF_NONE    0xff                            /*!< If callback report gattc_if/gatts_if as this macro, means this event is not correspond to any app */
 
 typedef uint8_t    esp_gatt_if_t;                           /*!< Gatt interface type, different application on GATT client use different gatt_if */
+
+/**
+  * @brief the type of attribute element
+  */
+typedef enum {
+    ESP_GATT_DB_PRIMARY_SERVICE,                            /*!< Gattc primary service attribute type in the cache */
+    ESP_GATT_DB_SECONDARY_SERVICE,                          /*!< Gattc secondary service attribute type in the cache */
+    ESP_GATT_DB_CHARACTERISTIC,                             /*!< Gattc characteristic attribute type in the cache */
+    ESP_GATT_DB_DESCRIPTOR,                                 /*!< Gattc characteristic descriptor attribute type in the cache */
+    ESP_GATT_DB_INCLUDED_SERVICE,                           /*!< Gattc include service attribute type in the cache */
+    ESP_GATT_DB_ALL,                                        /*!< Gattc all the attribute (primary service & secondary service & include service & char & descriptor) type in the cache */
+} esp_gatt_db_attr_type_t;                                  /*!< Gattc attribute type element */
+
+/**
+  * @brief read multiple attribute
+  */
+typedef struct {
+    uint8_t  num_attr;                                      /*!< The number of the attribute */
+    uint16_t handles[ESP_GATT_MAX_READ_MULTI_HANDLES];      /*!< The handles list */
+} esp_gattc_multi_t;                                        /*!< The gattc multiple read element */
+
+/**
+  * @brief data base attribute element
+  */
+typedef struct {
+    esp_gatt_db_attr_type_t     type;                       /*!< The attribute type */
+    uint16_t                    attribute_handle;           /*!< The attribute handle, it's valid for all of the type */
+    uint16_t                    start_handle;               /*!< The service start handle, it's valid only when the type = ESP_GATT_DB_PRIMARY_SERVICE or ESP_GATT_DB_SECONDARY_SERVICE */
+    uint16_t                    end_handle;                 /*!< The service end handle, it's valid only when the type = ESP_GATT_DB_PRIMARY_SERVICE or ESP_GATT_DB_SECONDARY_SERVICE */
+    esp_gatt_char_prop_t        properties;                 /*!< The characteristic properties, it's valid only when the type = ESP_GATT_DB_CHARACTERISTIC */
+    esp_bt_uuid_t               uuid;                       /*!< The attribute uuid, it's valid for all of the type */
+} esp_gattc_db_elem_t;                                      /*!< The gattc service data base element in the cache */
+
+/**
+  * @brief service element
+  */
+typedef struct { 
+    bool                        is_primary;                 /*!< The service flag, ture if the service is primary service, else is secondly service */
+    uint16_t                    start_handle;               /*!< The start handle of the service */
+    uint16_t                    end_handle;                 /*!< The end handle of the service */
+    esp_bt_uuid_t               uuid;                       /*!< The uuid of the service */
+} esp_gattc_service_elem_t;                                 /*!< The gattc service element */
+
+/**
+  * @brief characteristic element
+  */
+typedef struct {
+    uint16_t                    char_handle;                /*!< The characteristic handle */
+    esp_gatt_char_prop_t        properties;                 /*!< The characteristic properties */
+    esp_bt_uuid_t               uuid;                       /*!< The characteristic uuid */
+} esp_gattc_char_elem_t;                                    /*!< The gattc characteristic element */
+
+/**
+  * @brief descriptor element
+  */
+typedef struct {
+    uint16_t                   handle;                      /*!< The characteristic descriptor handle */
+    esp_bt_uuid_t              uuid;                        /*!< The characteristic descriptor uuid */
+} esp_gattc_descr_elem_t;                                   /*!< The gattc descriptor type element */
+
+/**
+  * @brief include service element
+  */
+typedef struct {
+    uint16_t                   handle;                      /*!< The include service current attribute handle */
+    uint16_t                   incl_srvc_s_handle;          /*!< The start hanlde of the service which has been included */
+    esp_bt_uuid_t              uuid;                        /*!< The include service uuid */
+} esp_gattc_incl_svc_elem_t;                                /*!< The gattc inclue service element */
+
 
 #ifdef __cplusplus
 }

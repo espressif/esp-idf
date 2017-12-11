@@ -315,7 +315,7 @@ STRUCT_END(XtSolFrame)
 /*
  Macro to get the current core ID. Only uses the reg given as an argument.
  Reading PRID on the ESP32 gives us 0xCDCD on the PRO processor (0)
- and 0xABAB on the APP CPU (1). We distinguish between the two by simply checking
+ and 0xABAB on the APP CPU (1). We can distinguish between the two by checking
  bit 13: it's 1 on the APP and 0 on the PRO processor.
 */
 #ifdef __ASSEMBLER__

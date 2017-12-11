@@ -115,9 +115,11 @@ extern "C" {
 #define GPIO_PRO_CPU_NMI_INTR_ENA  (BIT(3))
 #define GPIO_SDIO_EXT_INTR_ENA     (BIT(4))
 
+#define GPIO_MODE_DEF_DISABLE         (0)
 #define GPIO_MODE_DEF_INPUT           (BIT0)
 #define GPIO_MODE_DEF_OUTPUT          (BIT1)
 #define GPIO_MODE_DEF_OD              (BIT2)
+
 
 #define GPIO_PIN_COUNT              40
 /** @endcond */
@@ -184,6 +186,7 @@ typedef enum {
 } gpio_int_type_t;
 
 typedef enum {
+    GPIO_MODE_DISABLE = GPIO_MODE_DEF_DISABLE,                                        /*!< GPIO mode : disable input and output             */
     GPIO_MODE_INPUT = GPIO_MODE_DEF_INPUT,                                                         /*!< GPIO mode : input only                           */
     GPIO_MODE_OUTPUT = GPIO_MODE_DEF_OUTPUT,                                                       /*!< GPIO mode : output only mode                     */
     GPIO_MODE_OUTPUT_OD = ((GPIO_MODE_DEF_OUTPUT)|(GPIO_MODE_DEF_OD)),                             /*!< GPIO mode : output only with open-drain mode     */

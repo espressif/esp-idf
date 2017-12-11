@@ -78,7 +78,7 @@ uint32_t esp_adc_cal_raw_to_voltage(uint32_t adc,
                                     const esp_adc_cal_characteristics_t *chars)
 {
     //Scale ADC to 12 bit width (0 to 4095)
-    adc <<= (ADC_WIDTH_12Bit - chars->bit_width);
+    adc <<= (ADC_WIDTH_BIT_12 - chars->bit_width);
     uint32_t i = (adc >> chars->table->bit_shift);  //find index for lut voltages
     //Refernce LUT to obtain voltage using index
     uint32_t voltage = esp_adc_cal_interpolate_round(chars->table->voltage[i],

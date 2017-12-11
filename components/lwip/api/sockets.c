@@ -46,6 +46,7 @@
 #include "lwip/api.h"
 #include "lwip/sys.h"
 #include "lwip/igmp.h"
+#include "lwip/mld6.h"
 #include "lwip/inet.h"
 #include "lwip/tcp.h"
 #include "lwip/raw.h"
@@ -364,21 +365,21 @@ union sockaddr_aligned {
 #define LWIP_SOCKET_MAX_MEMBERSHIPS NUM_SOCKETS
 #endif
 
-/* This is to keep track of IP_ADD_MEMBERSHIP calls to drop the membership when
-   a socket is closed */
+/* This is to keep track of IP_ADD_MEMBERSHIP/IPV6_ADD_MEMBERSHIP calls to drop
+   the membership when a socket is closed */
 struct lwip_socket_multicast_pair {
   /** the socket (+1 to not require initialization) */
   int sa;
   /** the interface address */
-  ip4_addr_t if_addr;
+  ip_addr_t if_addr;
   /** the group address */
-  ip4_addr_t multi_addr;
+  ip_addr_t multi_addr;
 };
 
-struct lwip_socket_multicast_pair socket_ipv4_multicast_memberships[LWIP_SOCKET_MAX_MEMBERSHIPS];
+struct lwip_socket_multicast_pair socket_multicast_memberships[LWIP_SOCKET_MAX_MEMBERSHIPS];
 
-static int  lwip_socket_register_membership(int s, const ip4_addr_t *if_addr, const ip4_addr_t *multi_addr);
-static void lwip_socket_unregister_membership(int s, const ip4_addr_t *if_addr, const ip4_addr_t *multi_addr);
+static int  lwip_socket_register_membership(int s, const ip_addr_t *if_addr, const ip_addr_t *multi_addr);
+static void lwip_socket_unregister_membership(int s, const ip_addr_t *if_addr, const ip_addr_t *multi_addr);
 static void lwip_socket_drop_registered_memberships(int s);
 #endif /* LWIP_IGMP */
 
@@ -852,7 +853,7 @@ lwip_close(int s)
     LWIP_ASSERT("lwip_close: sock->lastdata == NULL", sock->lastdata == NULL);
   }
 
-#if LWIP_IGMP
+#if (LWIP_IGMP) || (LWIP_IPV6_MLD && LWIP_MULTICAST_TX_OPTIONS)
   /* drop all possibly joined IGMP memberships */
   lwip_socket_drop_registered_memberships(s);
 #endif /* LWIP_IGMP */
@@ -2372,10 +2373,6 @@ lwip_getsockopt_impl(int s, int level, int optname, void *optval, socklen_t *opt
     switch (optname) {
     case IPV6_V6ONLY:
       LWIP_SOCKOPT_CHECK_OPTLEN_CONN(sock, *optlen, int);
-      /* @todo: this does not work for datagram sockets, yet */
-      if (NETCONNTYPE_GROUP(netconn_type(sock->conn)) != NETCONN_TCP) {
-        return ENOPROTOOPT;
-      }
       *(int*)optval = (netconn_get_ipv6only(sock->conn) ? 1 : 0);
       LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_getsockopt(%d, IPPROTO_IPV6, IPV6_V6ONLY) = %d\n",
                   s, *(int *)optval));
@@ -2387,6 +2384,38 @@ lwip_getsockopt_impl(int s, int level, int optname, void *optval, socklen_t *opt
       break;
     }  /* switch (optname) */
     break;
+#if  LWIP_IPV6_MLD && LWIP_MULTICAST_TX_OPTIONS  /* Multicast options, similar to LWIP_IGMP options for IPV4 */
+    case IPV6_MULTICAST_IF: /* NB: like IP_MULTICAST_IF, this returns an IP not an index */
+      LWIP_SOCKOPT_CHECK_OPTLEN_CONN_PCB(sock, *optlen, struct in6_addr);
+      if (NETCONNTYPE_GROUP(netconn_type(sock->conn)) != NETCONN_UDP) {
+        return ENOPROTOOPT;
+      }
+      inet6_addr_from_ip6addr((struct in6_addr*)optval,
+                              udp_get_multicast_netif_ip6addr(sock->conn->pcb.udp));
+      LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_getsockopt(%d, IPPROTO_IPV6, IPV6_MULTICAST_IF) = 0x%"X32_F"\n",
+                                  s, *(u32_t *)optval));
+      break;
+    case IPV6_MULTICAST_HOPS:
+      LWIP_SOCKOPT_CHECK_OPTLEN_CONN_PCB(sock, *optlen, u8_t);
+      if (NETCONNTYPE_GROUP(netconn_type(sock->conn)) != NETCONN_UDP) {
+        return ENOPROTOOPT;
+      }
+      *(u8_t*)optval = sock->conn->pcb.udp->mcast_ttl;
+      LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_getsockopt(%d, IPPROTO_IPV6, IP_MULTICAST_LOOP) = %d\n",
+                                  s, *(int *)optval));
+      break;
+    case IPV6_MULTICAST_LOOP:
+      LWIP_SOCKOPT_CHECK_OPTLEN_CONN_PCB(sock, *optlen, u8_t);
+      if ((sock->conn->pcb.udp->flags & UDP_FLAGS_MULTICAST_LOOP) != 0) {
+        *(u8_t*)optval = 1;
+      } else {
+        *(u8_t*)optval = 0;
+      }
+      LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_getsockopt(%d, IPPROTO_IPV6, IP_MULTICAST_LOOP) = %d\n",
+                                  s, *(int *)optval));
+      break;
+
+#endif /* LWIP_IPV6_MLD && LWIP_MULTICAST_TX_OPTIONS */
 #endif /* LWIP_IPV6 */
 
 #if LWIP_UDP && LWIP_UDPLITE
@@ -2685,21 +2714,21 @@ lwip_setsockopt_impl(int s, int level, int optname, const void *optval, socklen_
         /* @todo: assign membership to this socket so that it is dropped when state the socket */
         err_t igmp_err;
         const struct ip_mreq *imr = (const struct ip_mreq *)optval;
-        ip4_addr_t if_addr;
-        ip4_addr_t multi_addr;
+        ip_addr_t if_addr;
+        ip_addr_t multi_addr;
         LWIP_SOCKOPT_CHECK_OPTLEN_CONN_PCB_TYPE(sock, optlen, struct ip_mreq, NETCONN_UDP);
-        inet_addr_to_ipaddr(&if_addr, &imr->imr_interface);
-        inet_addr_to_ipaddr(&multi_addr, &imr->imr_multiaddr);
+        inet_addr_to_ipaddr(ip_2_ip4(&if_addr), &imr->imr_interface);
+        inet_addr_to_ipaddr(ip_2_ip4(&multi_addr), &imr->imr_multiaddr);
         if (optname == IP_ADD_MEMBERSHIP) {
           if (!lwip_socket_register_membership(s, &if_addr, &multi_addr)) {
             /* cannot track membership (out of memory) */
             err = ENOMEM;
             igmp_err = ERR_OK;
           } else {
-            igmp_err = igmp_joingroup(&if_addr, &multi_addr);
+            igmp_err = igmp_joingroup(ip_2_ip4(&if_addr), ip_2_ip4(&multi_addr));
           }
         } else {
-          igmp_err = igmp_leavegroup(&if_addr, &multi_addr);
+          igmp_err = igmp_leavegroup(ip_2_ip4(&if_addr), ip_2_ip4(&multi_addr));
           lwip_socket_unregister_membership(s, &if_addr, &multi_addr);
         }
         if (igmp_err != ERR_OK) {
@@ -2778,12 +2807,7 @@ lwip_setsockopt_impl(int s, int level, int optname, const void *optval, socklen_
   case IPPROTO_IPV6:
     switch (optname) {
     case IPV6_V6ONLY:
-      /* @todo: this does not work for datagram sockets, yet */ 
-#if CONFIG_MDNS
-      //LWIP_SOCKOPT_CHECK_OPTLEN_CONN_PCB_TYPE(sock, optlen, int, NETCONN_TCP);
-#else
-      LWIP_SOCKOPT_CHECK_OPTLEN_CONN_PCB_TYPE(sock, optlen, int, NETCONN_TCP);
-#endif
+      LWIP_SOCKOPT_CHECK_OPTLEN_CONN(sock, optlen, int);
       if (*(const int*)optval) {
         netconn_set_ipv6only(sock->conn, 1);
       } else {
@@ -2792,6 +2816,55 @@ lwip_setsockopt_impl(int s, int level, int optname, const void *optval, socklen_
       LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_setsockopt(%d, IPPROTO_IPV6, IPV6_V6ONLY, ..) -> %d\n",
                   s, (netconn_get_ipv6only(sock->conn) ? 1 : 0)));
       break;
+#if LWIP_IPV6_MLD && LWIP_MULTICAST_TX_OPTIONS  /* Multicast options, similar to LWIP_IGMP options for IPV4 */
+    case IPV6_MULTICAST_IF: /* NB: like IP_MULTICAST_IF, this takes an IP not an index */
+      {
+        ip6_addr_t if_addr;
+        LWIP_SOCKOPT_CHECK_OPTLEN_CONN_PCB_TYPE(sock, optlen, struct in6_addr, NETCONN_UDP);
+        inet6_addr_to_ip6addr(&if_addr, (const struct in6_addr*)optval);
+        udp_set_multicast_netif_ip6addr(sock->conn->pcb.udp, &if_addr);
+      }
+      break;
+    case IPV6_MULTICAST_HOPS:
+      LWIP_SOCKOPT_CHECK_OPTLEN_CONN_PCB_TYPE(sock, optlen, u8_t, NETCONN_UDP);
+      sock->conn->pcb.udp->mcast_ttl = (u8_t)(*(const u8_t*)optval);
+      break;
+    case IPV6_MULTICAST_LOOP:
+      LWIP_SOCKOPT_CHECK_OPTLEN_CONN_PCB_TYPE(sock, optlen, u8_t, NETCONN_UDP);
+      if (*(const u8_t*)optval) {
+        udp_setflags(sock->conn->pcb.udp, udp_flags(sock->conn->pcb.udp) | UDP_FLAGS_MULTICAST_LOOP);
+      } else {
+        udp_setflags(sock->conn->pcb.udp, udp_flags(sock->conn->pcb.udp) & ~UDP_FLAGS_MULTICAST_LOOP);
+      }
+      break;
+    case IPV6_ADD_MEMBERSHIP:
+    case IPV6_DROP_MEMBERSHIP:
+      {
+        err_t mld_err;
+        const struct ip6_mreq *imr = (const struct ip6_mreq *)optval;
+        ip_addr_t if_addr;
+        ip_addr_t multi_addr;
+        LWIP_SOCKOPT_CHECK_OPTLEN_CONN_PCB_TYPE(sock, optlen, struct ip6_mreq, NETCONN_UDP);
+        inet6_addr_to_ip6addr(ip_2_ip6(&if_addr), &imr->ipv6mr_interface);
+        inet6_addr_to_ip6addr(ip_2_ip6(&multi_addr), &imr->ipv6mr_multiaddr);
+        if (optname == IPV6_ADD_MEMBERSHIP) {
+          if (!lwip_socket_register_membership(s, &if_addr, &multi_addr)) {
+            /* cannot track membership (out of memory) */
+            err = ENOMEM;
+            mld_err = ERR_OK;
+          } else {
+            mld_err = mld6_joingroup(ip_2_ip6(&if_addr), ip_2_ip6(&multi_addr));
+          }
+        } else {
+          mld_err = mld6_leavegroup(ip_2_ip6(&if_addr), ip_2_ip6(&multi_addr));
+          lwip_socket_unregister_membership(s, &if_addr, &multi_addr);
+        }
+        if (mld_err != ERR_OK) {
+          err = EADDRNOTAVAIL;
+        }
+      }
+    break;
+#endif /* LWIP_IPV6_MLD && LWIP_MULTICAST_TX_OPTIONS */
     default:
       LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_setsockopt(%d, IPPROTO_IPV6, UNIMPL: optname=0x%x, ..)\n",
                   s, optname));
@@ -3005,15 +3078,15 @@ lwip_fcntl(int s, int cmd, int val)
   return ret;
 }
 
-#if LWIP_IGMP
-/** Register a new IGMP membership. On socket close, the membership is dropped automatically.
+#if LWIP_IGMP || (LWIP_IPV6_MLD && LWIP_MULTICAST_TX_OPTIONS)
+/** Register a new multicast group membership. On socket close, the membership is dropped automatically.
  *
  * ATTENTION: this function is called from tcpip_thread (or under CORE_LOCK).
  *
  * @return 1 on success, 0 on failure
  */
 static int
-lwip_socket_register_membership(int s, const ip4_addr_t *if_addr, const ip4_addr_t *multi_addr)
+lwip_socket_register_membership(int s, const ip_addr_t *if_addr, const ip_addr_t *multi_addr)
 {
   /* s+1 is stored in the array to prevent having to initialize the array
      (default initialization is to 0) */
@@ -3021,10 +3094,10 @@ lwip_socket_register_membership(int s, const ip4_addr_t *if_addr, const ip4_addr
   int i;
 
   for (i = 0; i < LWIP_SOCKET_MAX_MEMBERSHIPS; i++) {
-    if (socket_ipv4_multicast_memberships[i].sa == 0) {
-      socket_ipv4_multicast_memberships[i].sa = sa;
-      ip4_addr_copy(socket_ipv4_multicast_memberships[i].if_addr, *if_addr);
-      ip4_addr_copy(socket_ipv4_multicast_memberships[i].multi_addr, *multi_addr);
+    if (socket_multicast_memberships[i].sa == 0) {
+      socket_multicast_memberships[i].sa = sa;
+      ip_addr_copy(socket_multicast_memberships[i].if_addr, *if_addr);
+      ip_addr_copy(socket_multicast_memberships[i].multi_addr, *multi_addr);
       return 1;
     }
   }
@@ -3037,7 +3110,7 @@ lwip_socket_register_membership(int s, const ip4_addr_t *if_addr, const ip4_addr
  * ATTENTION: this function is called from tcpip_thread (or under CORE_LOCK).
  */
 static void
-lwip_socket_unregister_membership(int s, const ip4_addr_t *if_addr, const ip4_addr_t *multi_addr)
+lwip_socket_unregister_membership(int s, const ip_addr_t *if_addr, const ip_addr_t *multi_addr)
 {
   /* s+1 is stored in the array to prevent having to initialize the array
      (default initialization is to 0) */
@@ -3045,12 +3118,12 @@ lwip_socket_unregister_membership(int s, const ip4_addr_t *if_addr, const ip4_ad
   int i;
 
   for (i = 0; i < LWIP_SOCKET_MAX_MEMBERSHIPS; i++) {
-    if ((socket_ipv4_multicast_memberships[i].sa == sa) &&
-        ip4_addr_cmp(&socket_ipv4_multicast_memberships[i].if_addr, if_addr) &&
-        ip4_addr_cmp(&socket_ipv4_multicast_memberships[i].multi_addr, multi_addr)) {
-      socket_ipv4_multicast_memberships[i].sa = 0;
-      ip4_addr_set_zero(&socket_ipv4_multicast_memberships[i].if_addr);
-      ip4_addr_set_zero(&socket_ipv4_multicast_memberships[i].multi_addr);
+    if ((socket_multicast_memberships[i].sa == sa) &&
+        ip_addr_cmp(&socket_multicast_memberships[i].if_addr, if_addr) &&
+        ip_addr_cmp(&socket_multicast_memberships[i].multi_addr, multi_addr)) {
+      socket_multicast_memberships[i].sa = 0;
+      ip_addr_set_zero(&socket_multicast_memberships[i].if_addr);
+      ip_addr_set_zero(&socket_multicast_memberships[i].multi_addr);
       return;
     }
   }
@@ -3066,23 +3139,23 @@ static void lwip_socket_drop_registered_memberships(int s)
      (default initialization is to 0) */
   int sa = s + 1;
   int i;
+  struct lwip_sock *sock = get_socket(s);
 
-  LWIP_ASSERT("socket has no netconn", sockets[s].conn != NULL);
+  LWIP_ASSERT("socket has no netconn", sock->conn != NULL);
 
   for (i = 0; i < LWIP_SOCKET_MAX_MEMBERSHIPS; i++) {
-    if (socket_ipv4_multicast_memberships[i].sa == sa) {
-      ip_addr_t multi_addr, if_addr;
-      ip_addr_copy_from_ip4(multi_addr, socket_ipv4_multicast_memberships[i].multi_addr);
-      ip_addr_copy_from_ip4(if_addr, socket_ipv4_multicast_memberships[i].if_addr);
-      socket_ipv4_multicast_memberships[i].sa = 0;
-      ip4_addr_set_zero(&socket_ipv4_multicast_memberships[i].if_addr);
-      ip4_addr_set_zero(&socket_ipv4_multicast_memberships[i].multi_addr);
-
-      netconn_join_leave_group(sockets[s].conn, &multi_addr, &if_addr, NETCONN_LEAVE);
+    if (socket_multicast_memberships[i].sa == sa) {
+      socket_multicast_memberships[i].sa = 0;
+      netconn_join_leave_group(sock->conn,
+                               &socket_multicast_memberships[i].multi_addr,
+                               &socket_multicast_memberships[i].if_addr,
+                               NETCONN_LEAVE);
+      ip_addr_set_zero(&socket_multicast_memberships[i].if_addr);
+      ip_addr_set_zero(&socket_multicast_memberships[i].multi_addr);
     }
   }
 }
-#endif /* LWIP_IGMP */
+#endif /* LWIP_IGMP || (LWIP_IPV6_MLD && LWIP_MULTICAST_TX_OPTIONS) */
 
 #if ESP_THREAD_SAFE
 

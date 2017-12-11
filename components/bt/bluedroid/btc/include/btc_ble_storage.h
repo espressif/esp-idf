@@ -23,52 +23,25 @@
 #define BTC_LE_LOCAL_KEY_DHK      (1<<2)
 #define BTC_LE_LOCAL_KEY_ER       (1<<3)
 
+#define BTC_BLE_STORAGE_DEV_TYPE_STR                "DevType"
+#define BTC_BLE_STORAGE_ADDR_TYPE_STR               "AddrType"
+#define BTC_BLE_STORAGE_LINK_KEY_STR                "LinkKey"
+#define BTC_BLE_STORAGE_LE_KEY_PENC_STR             "LE_KEY_PENC"
+#define BTC_BLE_STORAGE_LE_KEY_PID_STR              "LE_KEY_PID"
+#define BTC_BLE_STORAGE_LE_KEY_PCSRK_STR            "LE_KEY_PCSRK"
+#define BTC_BLE_STORAGE_LE_KEY_LENC_STR             "LE_KEY_LENC"
+#define BTC_BLE_STORAGE_LE_KEY_LID_STR              "LE_KEY_LID"
+#define BTC_BLE_STORAGE_LE_KEY_LCSRK_STR            "LE_KEY_LCSRK"
+
+#define BTC_BLE_STORAGE_LOCAL_ADAPTER_STR           "Adapter"
+#define BTC_BLE_STORAGE_LE_LOCAL_KEY_IR_STR         "LE_LOCAL_KEY_IR"
+#define BTC_BLE_STORAGE_LE_LOCAL_KEY_IRK_STR        "LE_LOCAL_KEY_IRK"
+#define BTC_BLE_STORAGE_LE_LOCAL_KEY_DHK_STR        "LE_LOCAL_KEY_DHK"
+#define BTC_BLE_STORAGE_LE_LOCAL_KEY_ER_STR         "LE_LOCAL_KEY_ER"
+
 /************************************************************************************
 **  Local type definitions
 ************************************************************************************/
-typedef struct
-{
-    uint32_t num_devices;
-    bt_bdaddr_t devices[BTM_SEC_MAX_DEVICE_RECORDS];
-} btc_bonded_devices_t;
-
-typedef struct
-{
-    bool                   is_penc_key_rcvd;
-    tBTM_LE_PENC_KEYS         penc_key;       /* received peer encryption key */
-    bool                   is_pcsrk_key_rcvd;
-    tBTM_LE_PCSRK_KEYS        pcsrk_key;       /* received peer device SRK */
-    bool                   is_pid_key_rcvd;
-    tBTM_LE_PID_KEYS          pid_key;        /* peer device ID key */
-    bool                   is_lenc_key_rcvd;
-    tBTM_LE_LENC_KEYS         lenc_key;       /* local encryption reproduction keys LTK = = d1(ER,DIV,0)*/
-    bool                   is_lcsrk_key_rcvd;
-    tBTM_LE_LCSRK_KEYS        lcsrk_key;      /* local device CSRK = d1(ER,DIV,1)*/
-    bool                   is_lidk_key_rcvd;   /* local identity key received */
-} btc_dm_ble_cb_t;
-
-typedef struct
-{
-    bt_bdaddr_t static_bdaddr;
-    BD_ADDR bd_addr;
-    btc_dm_ble_cb_t ble;
-} btc_dm_pairing_cb_t;
-
-typedef struct
-{
-    uint8_t       ir[BT_OCTET16_LEN];
-    uint8_t       irk[BT_OCTET16_LEN];
-    uint8_t       dhk[BT_OCTET16_LEN];
-}btc_dm_local_key_id_t;
-
-typedef struct
-{
-    bool                 is_er_rcvd;
-    uint8_t             er[BT_OCTET16_LEN];
-    bool                 is_id_keys_rcvd;
-    btc_dm_local_key_id_t  id_keys;  /* ID kyes */
-}btc_dm_local_key_cb_t;
-
 typedef struct
 {
     BT_OCTET16 sp_c;
@@ -77,63 +50,37 @@ typedef struct
 } btc_dm_oob_cb_t;
 
 
-extern btc_dm_pairing_cb_t pairing_cb;
-extern btc_dm_local_key_cb_t ble_local_key_cb;
-extern btc_bonded_devices_t bonded_devices;
+void btc_storage_save(void);
 
-bt_status_t btc_storage_load_bonded_ble_devices(void);
+bt_status_t btc_storage_add_ble_bonding_key( bt_bdaddr_t *remote_bd_addr, char *key, uint8_t key_type, uint8_t key_length);
 
-bt_status_t btc_get_bonded_ble_devices_list(esp_ble_bond_dev_t *bond_dev);
-
-bt_status_t btc_in_fetch_bonded_ble_devices(int add);
-
-void btc_dm_remove_ble_bonding_keys(void);
-
-bt_status_t btc_storage_add_ble_bonding_key( bt_bdaddr_t *remote_bd_addr,
-                                                                                      char *key,
-                                                                                      uint8_t key_type,
-                                                                                      uint8_t key_length);
-
-bool btc_compare_le_key_value(const uint8_t key_type, const size_t key_len, const tBTA_LE_KEY_VALUE *key_vaule,
-                    bt_bdaddr_t bd_addr);
-
-void btc_save_ble_bonding_keys(void);
-
-bt_status_t btc_in_fetch_bonded_ble_device(const char *remote_bd_addr, int add, 
-                                           btc_bonded_devices_t *p_bonded_devices);
-
-bt_status_t btc_storage_get_ble_bonding_key(bt_bdaddr_t *remote_bd_addr,
-                                                                uint8_t key_type,
-                                                                char *key_value,
-                                                                int key_length);
-
-bool btc_storage_compare_address_key_value(bt_bdaddr_t *remote_bd_addr,
-                                                   uint8_t key_type, void *key_value, int key_length);
-bt_status_t btc_storage_add_ble_local_key(char *key,
-                                                                              uint8_t key_type,
-                                                                              uint8_t key_length);
+bt_status_t btc_storage_get_ble_bonding_key(bt_bdaddr_t *remote_bd_addr, uint8_t key_type, char *key_value, int key_length);
 
 bt_status_t btc_storage_remove_ble_bonding_keys(bt_bdaddr_t *remote_bd_addr);
 
-bt_status_t btc_storage_clear_bond_devices(void);
+bool btc_storage_compare_address_key_value(bt_bdaddr_t *remote_bd_addr, uint8_t key_type, void *key_value, int key_length);
+
+bt_status_t btc_storage_add_ble_local_key(char *key, uint8_t key_type, uint8_t key_length);
 
 bt_status_t btc_storage_remove_ble_local_keys(void);
 
-bt_status_t btc_storage_get_ble_local_key(uint8_t key_type,
-                                                                             char *key_value,
-                                                                             int key_len);
+bt_status_t btc_storage_get_ble_local_key(uint8_t key_type, char *key_value, int key_len);
 
-bt_status_t btc_storage_get_remote_addr_type(bt_bdaddr_t *remote_bd_addr,
-                                                                                     int *addr_type);
+bt_status_t btc_storage_get_remote_addr_type(bt_bdaddr_t *remote_bd_addr, int *addr_type);
+
+bt_status_t btc_storage_set_remote_addr_type(bt_bdaddr_t *remote_bd_addr, uint8_t addr_type, bool flush);
+
+bt_status_t btc_storage_remove_remote_addr_type(bt_bdaddr_t *remote_bd_addr, bool flush);
+
+bt_status_t btc_storage_set_ble_dev_type(bt_bdaddr_t *bd_addr, bool flush);
+
+bt_status_t btc_storage_remove_ble_dev_type(bt_bdaddr_t *remote_bd_addr, bool flush);
+
+bt_status_t btc_storage_load_bonded_ble_devices(void);
+
+bt_status_t btc_storage_get_bonded_ble_devices_list(esp_ble_bond_dev_t *bond_dev, int dev_num);
 
 int btc_storage_get_num_ble_bond_devices(void);
 
-bt_status_t btc_storage_set_remote_addr_type(bt_bdaddr_t *remote_bd_addr,
-                                                                                     uint8_t addr_type);
-
-void btc_dm_load_ble_local_keys(void);
-
-void btc_dm_get_ble_local_keys(tBTA_DM_BLE_LOCAL_KEY_MASK *p_key_mask, BT_OCTET16 er,
-                                                            tBTA_BLE_LOCAL_ID_KEYS *p_id_keys);
 #endif  ///SMP_INCLUDED == TRUE
 #endif  ///__BTC_BLE_STORAGE_H__

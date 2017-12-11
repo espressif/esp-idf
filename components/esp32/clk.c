@@ -15,10 +15,12 @@
 #include <stdint.h>
 #include <sys/cdefs.h>
 #include <sys/time.h>
+#include <sys/param.h>
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_clk.h"
+#include "esp_clk_internal.h"
 #include "rom/ets_sys.h"
 #include "rom/uart.h"
 #include "rom/rtc.h"
@@ -27,6 +29,8 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/i2s_reg.h"
+#include "driver/periph_ctrl.h"
+#include "xtensa/core-macros.h"
 
 /* Number of cycles to wait from the 32k XTAL oscillator to consider it running.
  * Larger values increase startup delay. Smaller values may cause false positive
@@ -35,16 +39,17 @@
 #define XTAL_32K_DETECT_CYCLES  32
 #define SLOW_CLK_CAL_CYCLES     CONFIG_ESP32_RTC_CLK_CAL_CYCLES
 
+#define MHZ (1000000)
+
 static void select_rtc_slow_clk(rtc_slow_freq_t slow_clk);
 
+// g_ticks_us defined in ROMs for PRO and APP CPU
+extern uint32_t g_ticks_per_us_pro;
+extern uint32_t g_ticks_per_us_app;
+
 static const char* TAG = "clk";
-/*
- * This function is not exposed as an API at this point,
- * because FreeRTOS doesn't yet support dynamic changing of
- * CPU frequency. Also we need to implement hooks for
- * components which want to be notified of CPU frequency
- * changes.
- */
+
+
 void esp_clk_init(void)
 {
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
@@ -77,13 +82,29 @@ void esp_clk_init(void)
     // Wait for UART TX to finish, otherwise some UART output will be lost
     // when switching APB frequency
     uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
+    
+    uint32_t freq_before = rtc_clk_cpu_freq_value(rtc_clk_cpu_freq_get()) / MHZ ;
+    
     rtc_clk_cpu_freq_set(freq);
+
+    // Re calculate the ccount to make time calculation correct. 
+    uint32_t freq_after = CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ;
+    XTHAL_SET_CCOUNT( XTHAL_GET_CCOUNT() * freq_after / freq_before );
+}
+
+int IRAM_ATTR esp_clk_cpu_freq(void)
+{
+    return g_ticks_per_us_pro * 1000000;
+}
+
+int IRAM_ATTR esp_clk_apb_freq(void)
+{
+    return MIN(g_ticks_per_us_pro, 80) * 1000000;
 }
 
 void IRAM_ATTR ets_update_cpu_frequency(uint32_t ticks_per_us)
 {
-    extern uint32_t g_ticks_per_us_pro;  // g_ticks_us defined in ROM for PRO CPU
-    extern uint32_t g_ticks_per_us_app;  // same defined for APP CPU
+    /* Update scale factors used by ets_delay_us */
     g_ticks_per_us_pro = ticks_per_us;
     g_ticks_per_us_app = ticks_per_us;
 }
@@ -165,7 +186,15 @@ void esp_perip_clk_init(void)
     else {
         common_perip_clk = DPORT_WDG_CLK_EN |
                               DPORT_I2S0_CLK_EN |
+#if CONFIG_CONSOLE_UART_NUM != 0
+                              DPORT_UART0_CLK_EN |
+#endif
+#if CONFIG_CONSOLE_UART_NUM != 1
                               DPORT_UART1_CLK_EN |
+#endif
+#if CONFIG_CONSOLE_UART_NUM != 2
+                              DPORT_UART2_CLK_EN |
+#endif
                               DPORT_SPI_CLK_EN |
                               DPORT_I2C_EXT0_CLK_EN |
                               DPORT_UHCI0_CLK_EN |
@@ -174,14 +203,16 @@ void esp_perip_clk_init(void)
                               DPORT_LEDC_CLK_EN |
                               DPORT_UHCI1_CLK_EN |
                               DPORT_TIMERGROUP1_CLK_EN |
+//80MHz SPIRAM uses SPI2 as well; it's initialized before this is called. Do not disable the clock for that if this is enabled.
+#if !CONFIG_SPIRAM_SPEED_80M
                               DPORT_SPI_CLK_EN_2 |
+#endif
                               DPORT_PWM0_CLK_EN |
                               DPORT_I2C_EXT1_CLK_EN |
                               DPORT_CAN_CLK_EN |
                               DPORT_PWM1_CLK_EN |
                               DPORT_I2S1_CLK_EN |
                               DPORT_SPI_DMA_CLK_EN |
-                              DPORT_UART2_CLK_EN |
                               DPORT_PWM2_CLK_EN |
                               DPORT_PWM3_CLK_EN;
         hwcrypto_perip_clk = DPORT_PERI_EN_AES |
@@ -196,6 +227,7 @@ void esp_perip_clk_init(void)
                               DPORT_WIFI_CLK_SDIO_HOST_EN |
                               DPORT_WIFI_CLK_EMAC_EN;
     }
+
     /* Change I2S clock to audio PLL first. Because if I2S uses 160MHz clock,
      * the current is not reduced when disable I2S clock.
      */
@@ -212,4 +244,7 @@ void esp_perip_clk_init(void)
 
     /* Disable WiFi/BT/SDIO clocks. */
     DPORT_CLEAR_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, wifi_bt_sdio_clk);
+
+    /* Enable RNG clock. */
+    periph_module_enable(PERIPH_RNG_MODULE);
 }

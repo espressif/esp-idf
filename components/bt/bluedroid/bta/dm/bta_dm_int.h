@@ -97,6 +97,7 @@ enum {
     support the scan filter setting for the APP******/
     BTA_DM_API_BLE_SCAN_FIL_PARAM_EVT,
     BTA_DM_API_BLE_OBSERVE_EVT,
+    BTA_DM_API_BLE_SCAN_EVT,
     BTA_DM_API_UPDATE_CONN_PARAM_EVT,
     /*******This event added by Yulong at 2016/9/9 to
     support the random address setting for the APP******/
@@ -145,6 +146,9 @@ enum {
     BTA_DM_API_EXECUTE_CBACK_EVT,
     BTA_DM_API_REMOVE_ALL_ACL_EVT,
     BTA_DM_API_REMOVE_DEVICE_EVT,
+    BTA_DM_API_UPDATE_WHITE_LIST_EVT,
+    BTA_DM_API_BLE_READ_ADV_TX_POWER_EVT,
+    BTA_DM_API_BLE_READ_RSSI_EVT,
     BTA_DM_MAX_EVT
 };
 
@@ -161,8 +165,7 @@ enum {
     BTA_DM_SEARCH_CMPL_EVT,
     BTA_DM_DISCOVERY_RESULT_EVT,
     BTA_DM_API_DI_DISCOVER_EVT,
-    BTA_DM_DISC_CLOSE_TOUT_EVT
-
+    BTA_DM_DISC_CLOSE_TOUT_EVT,
 };
 
 /* data type for BTA_DM_API_ENABLE_EVT */
@@ -176,6 +179,24 @@ typedef struct {
     BT_HDR              hdr;
     BD_NAME             name; /* max 248 bytes name, plus must be Null terminated */
 } tBTA_DM_API_SET_NAME;
+
+typedef struct {
+    BT_HDR    hdr;
+    BOOLEAN   add_remove;
+    BD_ADDR   remote_addr;
+    tBTA_ADD_WHITELIST_CBACK *add_wl_cb;
+}tBTA_DM_API_UPDATE_WHITE_LIST;
+
+typedef struct {
+    BT_HDR       hdr;
+    tBTA_CMPL_CB *read_tx_power_cb;
+}tBTA_DM_API_READ_ADV_TX_POWER;
+
+typedef struct {
+    BT_HDR        hdr;
+    BD_ADDR       remote_addr;
+    tBTA_CMPL_CB  *read_rssi_cb;
+}tBTA_DM_API_READ_RSSI;
 
 /* data type for BTA_DM_API_SET_VISIBILITY_EVT */
 typedef struct {
@@ -487,6 +508,17 @@ typedef struct {
     tBTA_START_STOP_ADV_CMPL_CBACK  *p_stop_adv_cback;
 } tBTA_DM_API_BLE_OBSERVE;
 
+/* Data type for start/stop scan */
+typedef struct {
+    BT_HDR                  hdr;
+    BOOLEAN                 start;
+    UINT32                  duration;
+    tBTA_DM_SEARCH_CBACK    *p_cback;
+    tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_scan_cback;
+    tBTA_START_STOP_SCAN_CMPL_CBACK *p_stop_scan_cback;
+    tBTA_START_STOP_ADV_CMPL_CBACK  *p_stop_adv_cback;
+} tBTA_DM_API_BLE_SCAN;
+
 typedef struct {
     BT_HDR      hdr;
     BD_ADDR     remote_bda;
@@ -684,6 +716,9 @@ typedef union {
 
     tBTA_DM_API_SET_NAME set_name;
 
+    tBTA_DM_API_UPDATE_WHITE_LIST white_list;
+    tBTA_DM_API_READ_ADV_TX_POWER read_tx_power;
+    tBTA_DM_API_READ_RSSI rssi;
     tBTA_DM_API_SET_VISIBILITY set_visibility;
 
     tBTA_DM_API_ADD_DEVICE  add_dev;
@@ -736,6 +771,7 @@ typedef union {
     tBTA_DM_API_BLE_SCAN_PARAMS         ble_set_scan_params;
     tBTA_DM_API_BLE_SCAN_FILTER_PARAMS  ble_set_scan_fil_params;
     tBTA_DM_API_BLE_OBSERVE             ble_observe;
+    tBTA_DM_API_BLE_SCAN                ble_scan;
     tBTA_DM_API_ENABLE_PRIVACY          ble_remote_privacy;
     tBTA_DM_API_LOCAL_PRIVACY           ble_local_privacy;
     tBTA_DM_API_BLE_ADV_PARAMS          ble_set_adv_params;
@@ -1101,6 +1137,9 @@ extern void bta_dm_search_sm_disable( void );
 extern void bta_dm_enable (tBTA_DM_MSG *p_data);
 extern void bta_dm_disable (tBTA_DM_MSG *p_data);
 extern void bta_dm_set_dev_name (tBTA_DM_MSG *p_data);
+extern void bta_dm_update_white_list(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_read_adv_tx_power(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_read_rssi(tBTA_DM_MSG *p_data);
 extern void bta_dm_set_visibility (tBTA_DM_MSG *p_data);
 
 extern void bta_dm_set_scan_config(tBTA_DM_MSG *p_data);
@@ -1133,6 +1172,7 @@ extern void bta_dm_ble_set_conn_scan_params (tBTA_DM_MSG *p_data);
 extern void bta_dm_close_gatt_conn(tBTA_DM_MSG *p_data);
 #endif /* ((defined BTA_GATT_INCLUDED) &&  (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE) && (GATTC_INCLUDED == TRUE) */
 extern void bta_dm_ble_observe (tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_scan (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_update_conn_params (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_disconnect (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_rand_address(tBTA_DM_MSG *p_data);

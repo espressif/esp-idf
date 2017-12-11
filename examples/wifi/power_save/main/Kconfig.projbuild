@@ -14,7 +14,7 @@ config WIFI_PASSWORD
 
 choice POWER_SAVE_MODE
     prompt "power save mode"
-    default POWER_SAVE_NONE
+    default POWER_SAVE_MODEM
     help
 	Power save mode for the esp32 to use.
 
