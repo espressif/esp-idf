@@ -128,6 +128,7 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
             goto fail;
         }
         free(workbuf);
+        workbuf = NULL;
         ESP_LOGW(TAG, "mounting again");
         res = f_mount(fs, drv, 0);
         if (res != FR_OK) {
