@@ -60,7 +60,7 @@ void app_main()
      * that will be used by LED Controller
      */
     ledc_timer_config_t ledc_timer = {
-        .duty_resolution = LEDC_TIMER_13_BIT, // resolution of PWM duty
+        .bit_num = LEDC_TIMER_13_BIT, // resolution of PWM duty
         .freq_hz = 5000,                      // frequency of PWM signal
         .speed_mode = LEDC_HS_MODE,           // timer mode
         .timer_num = LEDC_HS_TIMER            // timer index
