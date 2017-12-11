@@ -389,6 +389,9 @@ static int vfs_fat_fstat(void* ctx, int fd, struct stat * st)
     FIL* file = &fat_ctx->files[fd];
     st->st_size = f_size(file);
     st->st_mode = S_IRWXU | S_IRWXG | S_IRWXO | S_IFREG;
+    st->st_mtime = 0;
+    st->st_atime = 0;
+    st->st_ctime = 0;
     return 0;
 }
 
@@ -422,6 +425,8 @@ static int vfs_fat_stat(void* ctx, const char * path, struct stat * st)
     ftime >>= 6;
     tm.tm_hour = (ftime & 0x1f);
     st->st_mtime = mktime(&tm);
+    st->st_atime = 0;
+    st->st_ctime = 0;
     return 0;
 }
 

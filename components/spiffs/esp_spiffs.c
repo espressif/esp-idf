@@ -513,6 +513,16 @@ static int vfs_spiffs_open(void* ctx, const char * path, int flags, int mode)
         SPIFFS_clearerr(efs->fs);
         return -1;
     }
+#if SPIFFS_OBJ_META_LEN > 0
+    if (!(spiffs_mode_conv(flags) & SPIFFS_O_RDONLY))
+        {
+            time_t t = time(NULL);
+            struct tm tmr;
+            localtime_r(&t, &tmr);
+            time_t meta = mktime(&tmr);
+            SPIFFS_fupdate_meta(efs->fs, fd, &meta);
+        }
+#endif
     return fd;
 }
 
@@ -578,6 +588,9 @@ static int vfs_spiffs_fstat(void* ctx, int fd, struct stat * st)
     }
     st->st_size = s.size;
     st->st_mode = S_IRWXU | S_IRWXG | S_IRWXO | S_IFREG;
+    st->st_mtime = 0;
+    st->st_atime = 0;
+    st->st_ctime = 0;
     return res;
 }
 
@@ -597,6 +610,15 @@ static int vfs_spiffs_stat(void* ctx, const char * path, struct stat * st)
     st->st_size = s.size;
     st->st_mode = S_IRWXU | S_IRWXG | S_IRWXO;
     st->st_mode |= (s.type == SPIFFS_TYPE_DIR)?S_IFDIR:S_IFREG;
+#if SPIFFS_OBJ_META_LEN > 0
+    time_t t =0;
+    memcpy(&t, s.meta, sizeof(time_t));
+    st->st_mtime = t;
+#else
+    st->st_mtime = 0;
+#endif
+    st->st_atime = 0;
+    st->st_ctime = 0;
     return res;
 }
 
