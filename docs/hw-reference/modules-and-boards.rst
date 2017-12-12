@@ -32,6 +32,7 @@ ESP32-WROVER-I   ESP32-D0WDQ6  4MB    4MB   U.FL  31.4  18    3.5
 
 * MIFA - Meandered Inverted-F Antenna 
 * U.FL - U.FL / IPEX antenna connector
+* `ESP32 Chip Datasheet <https://espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`__ (PDF)
 
 
 .. _esp-modules-and-boards-esp-wroom-32:
