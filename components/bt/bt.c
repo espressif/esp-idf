@@ -398,10 +398,8 @@ esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
     bool update = true;
     intptr_t mem_start, mem_end;
 
-    //get the mode which can be released, skip the mode which is running
-    mode &= ~btdm_controller_get_mode();
-    if (mode == 0x0) {
-        return ESP_ERR_INVALID_ARG;
+    if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
+        return ESP_ERR_INVALID_STATE;
     }
 
     //already relesed
