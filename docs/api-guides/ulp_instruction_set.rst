@@ -62,14 +62,32 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
           ST R2, R1, 0      // write value of R2 into the third array element,
                             // i.e. array[2]
 
+Note about instruction execution time
+-------------------------------------
+
+ULP coprocessor is clocked from RTC_FAST_CLK, which is normally derived from the internal 8MHz oscillator. Applications which need to know exact ULP clock frequency can calibrate it against the main XTAL clock::
+
+    #include "soc/rtc.h"
+
+    // calibrate 8M/256 clock against XTAL, get 8M/256 clock period
+    uint32_t rtc_8md256_period = rtc_clk_cal(RTC_CAL_8MD256, 100);
+    uint32_t rtc_fast_freq_hz = 1000000ULL * (1 << RTC_CLK_CAL_FRACT) * 256 / rtc_8md256_period;
+
+ULP coprocessor needs 2 clock cycle to fetch each instuction (fetching is not pipelined), plus certain number of cycles to execute, depending on the instruction. See description of each instruction for details on the execution time.
+
+Note that when accessing RTC memories and RTC registers, ULP coprocessor has lower priority than the main CPUs. This means that ULP coprocessor execution may be suspended while the main CPUs access same memory region as the ULP.
+
+
 **NOP** - no operation
 ----------------------
 
-**Syntax:**
+**Syntax**
   **NOP**
-**Operands:**
+**Operands**
   None
-**Description:**
+**Cycles**
+  2 (fetch) + 1 (execute)
+**Description**
   No operation is performed. Only the PC is incremented.
 
 **Example**::
@@ -80,20 +98,22 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
 **ADD** - Add to register
 -------------------------
 
-**Syntax:**
+**Syntax**
     **ADD**      *Rdst, Rsrc1, Rsrc2*
 
     **ADD**      *Rdst, Rsrc1, imm*
 
 
-**Operands:**
+**Operands**
   - *Rdst* - Register R[0..3]
   - *Rsrc1* - Register R[0..3]
   - *Rsrc2* - Register R[0..3]
   - *Imm* - 16-bit signed value
 
+**Cycles**
+  2 (fetch) + 2 (execute)
 
-**Description:**
+**Description**
   The instruction adds source register to another source register or to a 16-bit signed value and stores result to the destination register.
 
 **Examples**::
@@ -115,21 +135,24 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
 **SUB** - Subtract from register
 --------------------------------
 
-**Syntax:**
+**Syntax**
   **SUB** *Rdst, Rsrc1, Rsrc2*
 
   **SUB** *Rdst, Rsrc1, imm*
 
-**Operands:**
+**Operands**
   - *Rdst*  - Register R[0..3]
   - *Rsrc1* - Register R[0..3]
   - *Rsrc2* - Register R[0..3]
   - *Imm*   - 16-bit signed value
 
-**Description:**
+**Cycles**
+  2 (fetch) + 2 (execute)
+
+**Description**
   The instruction subtracts the source register from another source register or subtracts 16-bit signed value from a source register, and stores result to the destination register.
 
-**Examples:**::
+**Examples**::
 
   1:         SUB R1, R2, R3             //R1 = R2 - R3
   
@@ -146,21 +169,24 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
 **AND** - Logical AND of two operands
 -------------------------------------
 
-**Syntax:**
+**Syntax**
     **AND** *Rdst, Rsrc1, Rsrc2*
 
     **AND** *Rdst, Rsrc1, imm*
 
-**Operands:**
+**Operands**
   - *Rdst* - Register R[0..3]
   - *Rsrc1* - Register R[0..3]
   - *Rsrc2* - Register R[0..3]
   - *Imm* - 16-bit signed value
 
-**Description:**
+**Cycles**
+  2 (fetch) + 2 (execute)
+
+**Description**
   The instruction does logical AND of a source register and another source register or 16-bit signed value and stores result to the destination register.
 
-**Example**::
+**Examples**::
 
   1:        AND R1, R2, R3          //R1 = R2 & R3
 
@@ -183,12 +209,14 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
  
   **OR** *Rdst, Rsrc1, imm*
 
-
 **Operands**
   - *Rdst* - Register R[0..3]
   - *Rsrc1* - Register R[0..3]
   - *Rsrc2* - Register R[0..3]
   - *Imm* - 16-bit signed value
+
+**Cycles**
+  2 (fetch) + 2 (execute)
  
 **Description**
   The instruction does logical OR of a source register and another source register or 16-bit signed value and stores result to the destination register.
@@ -223,6 +251,9 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
   - *Rsrc2* - Register R[0..3]
   - *Imm* - 16-bit signed value
  
+**Cycles**
+  2 (fetch) + 2 (execute)
+
 **Description**
    The instruction does logical shift to left of source register to number of bits from another source register or 16-bit signed value and store result to the destination register.
 
@@ -255,6 +286,9 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
   *Rsrc2* - Register R[0..3]
   *Imm* - 16-bit signed value
 
+**Cycles**
+  2 (fetch) + 2 (execute)
+
 **Description**
   The instruction does logical shift to right of source register to number of bits from another source register or 16-bit signed value and store result to the destination register.
 
@@ -285,6 +319,9 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
   - *Rdst* – Register R[0..3]
   - *Rsrc* – Register R[0..3]
   - *Imm*  – 16-bit signed value
+
+**Cycles**
+  2 (fetch) + 2 (execute)
 
 **Description**
    The instruction move to destination register value from source register or 16-bit signed value.
@@ -317,6 +354,9 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
   - *Rsrc* – Register R[0..3], holds the 16-bit value to store
   - *Rdst* – Register R[0..3], address of the destination, in 32-bit words
   - *Offset* – 10-bit signed value, offset in bytes
+
+**Cycles**
+  2 (fetch) + 4 (execute)
 
 **Description**
   The instruction stores the 16-bit value of Rsrc to the lower half-word of memory with address Rdst+offset. The upper half-word is written with the current program counter (PC), expressed in words, shifted left by 5 bits::
@@ -351,6 +391,9 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
    *Rsrc* – Register R[0..3], holds address of destination, in 32-bit words
    
    *Offset* – 10-bit signed value, offset in bytes
+
+**Cycles**
+  2 (fetch) + 4 (execute)
 
 **Description**
    The instruction loads lower 16-bit half-word from memory with address Rsrc+offset into the destination register Rdst::
@@ -395,6 +438,8 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
      - EQ – jump if last ALU operation result was zero
      - OV – jump if last ALU has set overflow flag
 
+**Cycles**
+  2 (fetch) + 2 (execute)
 
 **Description**
   The instruction makes jump to the specified address. Jump can be either unconditional or based on an ALU flag.
@@ -432,6 +477,9 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
 
       - *LT* (less than) – jump if value in R0 < threshold
 
+**Cycles**
+  2 (fetch) + 2 (execute)
+
 **Description**
    The instruction makes a jump to a relative address if condition is true. Condition is the result of comparison of R0 register value and the threshold value.
 
@@ -461,6 +509,9 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
        - *LT* (less than) –  jump if value in stage_cnt < threshold
        - *GT* (greater than) –  jump if value in stage_cnt > threshold
 
+**Cycles**
+  2 (fetch) + 2 (execute)
+
 **Description**
     The instruction makes a jump to a relative address if condition is true. Condition is the result of comparison of count register value and threshold value.
 
@@ -487,6 +538,9 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
 **Description**
    The instruction sets the stage count register to 0
 
+**Cycles**
+  2 (fetch) + 2 (execute)
+
 **Examples**::
 
    1:       STAGE_RST      // Reset stage count register
@@ -501,6 +555,9 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
 
 **Operands**
    - *Value* – 8 bits value
+
+**Cycles**
+  2 (fetch) + 2 (execute)
 
 **Description**
    The instruction increments stage count register by given value.
@@ -525,6 +582,9 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
 **Operands**
    - *Value* – 8 bits value
 
+**Cycles**
+  2 (fetch) + 2 (execute)
+
 **Description**
    The instruction decrements stage count register by given value.
 
@@ -548,23 +608,30 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
 
 **Operands**
   No operands
+
+**Cycles**
+  2 (fetch) + 2 (execute)
+
 **Description**
-   The instruction halt the processor to the power down mode
+   The instruction halts the ULP coprocessor and restarts ULP wakeup timer, if it is enabled.
 
 **Examples**::
 
-  1:       HALT      // Move chip to powerdown
+  1:       HALT      // Halt the coprocessor
 
 
 
-**WAKE** – wakeup the chip
---------------------------
+**WAKE** – Wake up the chip
+---------------------------
 
 **Syntax**
    **WAKE**
 
 **Operands**
   No operands
+
+**Cycles**
+  2 (fetch) + 2 (execute)
 
 **Description**
   The instruction sends an interrupt from ULP to RTC controller.
@@ -573,11 +640,17 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
 
   - If the SoC is not in deep sleep mode, and ULP interrupt bit (RTC_CNTL_ULP_CP_INT_ENA) is set in RTC_CNTL_INT_ENA_REG register, RTC interrupt will be triggered.
 
+  Note that before using WAKE instruction, ULP program may needs to wait until RTC controller is ready to wake up the main CPU. This is indicated using RTC_CNTL_RDY_FOR_WAKEUP bit of RTC_CNTL_LOW_POWER_ST_REG register. If WAKE instruction is executed while RTC_CNTL_RDY_FOR_WAKEUP is zero, it has no effect (wake up does not occur).
+
 **Examples**::
 
-  1:        WAKE                      // Trigger wake up
-            REG_WR 0x006, 24, 24, 0   // Stop ULP timer (clear RTC_CNTL_ULP_CP_SLP_TIMER_EN)
-            HALT                      // Stop the ULP program
+  1: is_rdy_for_wakeup:                   // Read RTC_CNTL_RDY_FOR_WAKEUP bit
+            READ_RTC_FIELD(RTC_CNTL_LOW_POWER_ST_REG, RTC_CNTL_RDY_FOR_WAKEUP)
+            AND r0, r0, 1
+            JUMP is_rdy_for_wakeup, eq    // Retry until the bit is set
+            WAKE                          // Trigger wake up
+            REG_WR 0x006, 24, 24, 0       // Stop ULP timer (clear RTC_CNTL_ULP_CP_SLP_TIMER_EN)
+            HALT                          // Stop the ULP program
             // After these instructions, SoC will wake up,
             // and ULP will not run again until started by the main program.
 
@@ -591,6 +664,9 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
 
 **Operands**
    - *sleep_reg* – 0..4, selects one of ``SENS_ULP_CP_SLEEP_CYCx_REG`` registers.
+
+**Cycles**
+  2 (fetch) + 2 (execute)
 
 **Description**
    The instruction selects which of the ``SENS_ULP_CP_SLEEP_CYCx_REG`` (x = 0..4) register values is to be used by the ULP wakeup timer as wakeup period. By default, the value from ``SENS_ULP_CP_SLEEP_CYC0_REG`` is used.
@@ -611,6 +687,9 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
 
 **Operands**
    - *Cycles* – number of cycles for wait
+
+**Cycles**
+  2 (fetch) + *Cycles* (execute)
 
 **Description**
    The instruction delays for given number of cycles.
@@ -635,6 +714,8 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
   - *Rdst* – Destination Register R[0..3], result will be stored to this register
   - *Wait_Delay* – number of cycles used to perform the measurement
 
+**Cycles**
+  2 (fetch) + *Wait_Delay* + 3 * TSENS_CLK
 
 **Description**
    The instruction performs measurement using TSENS and stores the result into a general purpose register.
@@ -660,12 +741,60 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
   - *Sar_sel* – Select ADC: 0 = SARADC1, 1 = SARADC2
   - *Mux*  -  selected PAD, SARADC Pad[Mux+1] is enabled
 
+**Cycles**
+  2 (fetch) + 21 + max(1, SAR_AMP_WAIT1) + max(1, SAR_AMP_WAIT2) + max(1, SAR_AMP_WAIT3) + SARx_SAMPLE_CYCLE + SARx_SAMPLE_BIT
+
 **Description**
   The instruction makes measurements from ADC.
 
 **Examples**::
 
    1:        ADC      R1, 0, 1      // Measure value using ADC1 pad 2 and store result into R1
+
+**I2C_RD** - read single byte from I2C slave
+----------------------------------------------
+
+**Syntax**
+  - **I2C_RD**   *Sub_addr, High, Low, Slave_sel*
+
+**Operands**
+  - *Sub_addr* – Address within the I2C slave to read.
+  - *High*, *Low* — Define range of bits to read. Bits outside of [High, Low] range are masked.
+  - *Slave_sel*  -  Index of I2C slave address to use.
+
+**Cycles**
+  2 (fetch) + I2C communication time
+
+**Description**
+  ``I2C_RD`` instruction reads one byte from I2C slave with index ``Slave_sel``. Slave address (in 7-bit format) has to be set in advance into `SENS_I2C_SLAVE_ADDRx` register field, where ``x == Slave_sel``.
+  8 bits of read result is stored into `R0` register.
+
+**Examples**::
+
+   1:        I2C_RD      0x10, 7, 0, 0      // Read byte from sub-address 0x10 of slave with address set in SENS_I2C_SLAVE_ADDR0
+
+
+**I2C_WR** - write single byte to I2C slave
+----------------------------------------------
+
+**Syntax**
+  - **I2C_WR**   *Sub_addr, Value, High, Low, Slave_sel*
+
+**Operands**
+  - *Sub_addr* – Address within the I2C slave to write.
+  - *Value* – 8-bit value to be written.
+  - *High*, *Low* — Define range of bits to write. Bits outside of [High, Low] range are masked.
+  - *Slave_sel*  -  Index of I2C slave address to use.
+
+**Cycles**
+  2 (fetch) + I2C communication time
+
+**Description**
+  ``I2C_WR`` instruction writes one byte to I2C slave with index ``Slave_sel``. Slave address (in 7-bit format) has to be set in advance into `SENS_I2C_SLAVE_ADDRx` register field, where ``x == Slave_sel``.
+
+**Examples**::
+
+   1:        I2C_WR      0x20, 0x33, 7, 0, 1      // Write byte 0x33 to sub-address 0x20 of slave with address set in SENS_I2C_SLAVE_ADDR1.
 
 
 **REG_RD** – read from peripheral register
@@ -678,6 +807,9 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
   - *Addr* – register address, in 32-bit words
   - *High* – High part of R0
   - *Low* – Low part of R0
+
+**Cycles**
+  2 (fetch) + 6 (execute)
 
 **Description**
    The instruction reads up to 16 bits from a peripheral register into a general purpose register: ``R0 = REG[Addr][High:Low]``.
@@ -703,6 +835,9 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
   - *High* – High part of R0
   - *Low* – Low part of R0
   - *Data* – value to write, 8 bits
+
+**Cycles**
+  2 (fetch) + 10 (execute)
 
 **Description**
    The instruction writes up to 8 bits from a general purpose register into a peripheral register. ``REG[Addr][High:Low] = data``

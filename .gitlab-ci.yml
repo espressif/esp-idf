@@ -751,6 +751,13 @@ UT_003_08:
     - UT_T1_1
     - UT_single_core
 
+UT_003_09:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_single_core
+
 UT_004_01:
   <<: *unit_test_template
   tags:

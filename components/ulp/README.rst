@@ -18,6 +18,10 @@ In addition to the existing binutils port for the ESP32 ULP coprocessor, it is p
 
 The ``program`` array is an array of ``ulp_insn_t``, i.e. ULP coprocessor instructions. Each ``I_XXX`` preprocessor define translates into a single 32-bit instruction. Arguments of these preprocessor defines can be register numbers (``R0 — R3``) and literal constants. See `ULP coprocessor instruction defines`_ section for descriptions of instructions and arguments they take.
 
+.. note::
+
+    Because some of the instruction macros expand to inline function calls, defining such array in global scope will cause the compiler to produce an "initializer element is not constant" error. To fix this error, move the definition of instructions array into local scope.
+
 Load and store instructions use addresses expressed in 32-bit words. Address 0 corresponds to the first word of ``RTC_SLOW_MEM`` (which is address 0x50000000 as seen by the main CPUs).
 
 To generate branch instructions, special ``M_`` preprocessor defines are used. ``M_LABEL`` define can be used to define a branch target. Label identifier is a 16-bit integer. ``M_Bxxx`` defines can be used to generate branch instructions with target set to a particular label. 

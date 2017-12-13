@@ -99,10 +99,13 @@ typedef struct {
  * @brief Configuration parameters of LEDC Timer timer for ledc_timer_config function
  */
 typedef struct {
-    ledc_mode_t speed_mode;            /*!< LEDC speed speed_mode, high-speed mode or low-speed mode */
-    ledc_timer_bit_t duty_resolution;  /*!< LEDC channel duty resolution */
-    ledc_timer_t  timer_num;           /*!< The timer source of channel (0 - 3) */
-    uint32_t freq_hz;                  /*!< LEDC timer frequency (Hz) */
+    ledc_mode_t speed_mode;                /*!< LEDC speed speed_mode, high-speed mode or low-speed mode */
+    union {
+        ledc_timer_bit_t duty_resolution;  /*!< LEDC channel duty resolution */
+        ledc_timer_bit_t bit_num __attribute__((deprecated)); /*!< Deprecated in ESP-IDF 3.0. This is an alias to 'duty_resolution' for backward compatibility with ESP-IDF 2.1 */
+    };
+    ledc_timer_t  timer_num;               /*!< The timer source of channel (0 - 3) */
+    uint32_t freq_hz;                      /*!< LEDC timer frequency (Hz) */
 } ledc_timer_config_t;
 
 typedef intr_handle_t ledc_isr_handle_t;

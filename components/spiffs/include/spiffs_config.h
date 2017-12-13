@@ -158,7 +158,7 @@ extern void spiffs_api_unlock(struct spiffs_t *fs);
 // This is derived from following:
 // logical_page_size - (SPIFFS_OBJ_NAME_LEN + sizeof(spiffs_page_header) +
 // spiffs_object_ix_header fields + at least some LUT entries)
-#define SPIFFS_OBJ_META_LEN             (0)
+#define SPIFFS_OBJ_META_LEN             (CONFIG_SPIFFS_META_LENGTH)
 
 // Size of buffer allocated on stack used when copying data.
 // Lower value generates more read/writes. No meaning having it bigger

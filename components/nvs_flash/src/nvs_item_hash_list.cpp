@@ -62,7 +62,7 @@ void HashList::insert(const Item& item, size_t index)
 
 void HashList::erase(size_t index)
 {
-    for (auto it = std::begin(mBlockList); it != std::end(mBlockList);) {
+    for (auto it = mBlockList.begin(); it != mBlockList.end();) {
         bool haveEntries = false;
         for (size_t i = 0; i < it->mCount; ++i) {
             if (it->mNodes[i].mIndex == index) {
@@ -88,7 +88,7 @@ void HashList::erase(size_t index)
 size_t HashList::find(size_t start, const Item& item)
 {
     const uint32_t hash_24 = item.calculateCrc32WithoutValue() & 0xffffff;
-    for (auto it = std::begin(mBlockList); it != std::end(mBlockList); ++it) {
+    for (auto it = mBlockList.begin(); it != mBlockList.end(); ++it) {
         for (size_t index = 0; index < it->mCount; ++index) {
             HashListNode& e = it->mNodes[index];
             if (e.mIndex >= start &&

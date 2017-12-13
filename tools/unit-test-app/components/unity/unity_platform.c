@@ -145,12 +145,57 @@ void unity_testcase_register(struct test_desc_t* desc)
     }
 }
 
+/* print the multiple devices case name and its sub-menu
+ * e.g:
+ * (1) spi master/slave case
+ *       (1)master case
+ *       (2)slave case
+ * */
+static void print_multiple_devices_test_menu(const struct test_desc_t* test_ms)
+ {
+    unity_printf("%s\n", test_ms->name);
+    for (int i = 0; i < test_ms->test_fn_count; i++)
+    {
+        unity_printf("\t(%d)\t\"%s\"\n", i+1, test_ms->test_fn_name[i]);
+    }
+ }
+
+void multiple_devices_option(const struct test_desc_t* test_ms)
+{
+    int selection;
+    char cmdline[256] = {0};
+
+    print_multiple_devices_test_menu(test_ms);
+    while(strlen(cmdline) == 0)
+    {
+        /* Flush anything already in the RX buffer */
+        while(uart_rx_one_char((uint8_t *) cmdline) == OK) {
+
+        }
+        UartRxString((uint8_t*) cmdline, sizeof(cmdline) - 1);
+        if(strlen(cmdline) == 0) {
+            /* if input was newline, print a new menu */
+            print_multiple_devices_test_menu(test_ms);
+        }
+    }
+    selection = atoi((const char *) cmdline) - 1;
+    if(selection >= 0 && selection < test_ms->test_fn_count) {
+        UnityDefaultTestRun(test_ms->fn[selection], test_ms->name, test_ms->line);
+    } else {
+        printf("Invalid selection, your should input number 1-%d!", test_ms->test_fn_count);
+    }
+}
+
 static void unity_run_single_test(const struct test_desc_t* test)
 {
     printf("Running %s...\n", test->name);
     Unity.TestFile = test->file;
     Unity.CurrentDetail1 = test->desc;
-    UnityDefaultTestRun(test->fn, test->name, test->line);
+    if(test->test_fn_count == 1) {
+        UnityDefaultTestRun(test->fn[0], test->name, test->line);
+    } else {
+        multiple_devices_option(test);
+    }
 }
 
 static void unity_run_single_test_by_index(int index)
@@ -158,6 +203,7 @@ static void unity_run_single_test_by_index(int index)
     const struct test_desc_t* test;
     for (test = s_unity_tests_first; test != NULL && index != 0; test = test->next, --index)
     {
+
     }
     if (test != NULL)
     {
@@ -201,7 +247,7 @@ static void unity_run_single_test_by_name(const char* filter)
         {
             unity_run_single_test(test);
         }
-    }    
+    }
 }
 
 void unity_run_all_tests()
@@ -253,8 +299,15 @@ static int print_test_menu(void)
          test = test->next, ++test_counter)
     {
         unity_printf("(%d)\t\"%s\" %s\n", test_counter + 1, test->name, test->desc);
-    }
-    return test_counter;
+        if(test->test_fn_count > 1)
+        {
+            for (int i = 0; i < test->test_fn_count; i++)
+            {
+                unity_printf("\t(%d)\t\"%s\"\n", i+1, test->test_fn_name[i]);
+            }
+         }
+     }
+     return test_counter;
 }
 
 static int get_test_count(void)

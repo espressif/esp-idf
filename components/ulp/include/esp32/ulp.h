@@ -266,9 +266,9 @@ _Static_assert(sizeof(ulp_insn_t) == 4, "ULP coprocessor instruction size should
  * Delay (nop) for a given number of cycles
  */
 #define I_DELAY(cycles_) { .delay = {\
-    .opcode = OPCODE_DELAY, \
+    .cycles = cycles_, \
     .unused = 0, \
-    .cycles = cycles_ } }
+    .opcode = OPCODE_DELAY } }
 
 /**
  * Halt the coprocessor.

@@ -16,7 +16,7 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "bt.h"
+#include "esp_bt.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
 

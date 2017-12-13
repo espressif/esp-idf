@@ -23,7 +23,7 @@
 #include "controller.h"
 #include "nvs_flash.h"
 
-#include "bt.h"
+#include "esp_bt.h"
 #include "esp_gap_ble_api.h"
 #include "esp_gattc_api.h"
 #include "esp_gatt_defs.h"

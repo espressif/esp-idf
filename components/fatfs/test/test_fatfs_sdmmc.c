@@ -105,7 +105,7 @@ TEST_CASE("(SD) can lseek", "[fatfs][sdcard][ignore]")
 TEST_CASE("(SD) stat returns correct values", "[fatfs][ignore]")
 {
     test_setup();
-    test_fatfs_stat("/sdcard/stat.txt");
+    test_fatfs_stat("/sdcard/stat.txt", "/sdcard");
     test_teardown();
 }
 

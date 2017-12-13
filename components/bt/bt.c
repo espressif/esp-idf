@@ -31,7 +31,7 @@
 #include "esp_intr.h"
 #include "esp_attr.h"
 #include "esp_phy_init.h"
-#include "bt.h"
+#include "esp_bt.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_pm.h"

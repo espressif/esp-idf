@@ -25,7 +25,7 @@
 #include "hci_internals.h"
 #include "hci_layer.h"
 #include "thread.h"
-#include "bt.h"
+#include "esp_bt.h"
 
 #define HCI_HAL_SERIAL_BUFFER_SIZE 1026
 #define HCI_BLE_EVENT 0x3e

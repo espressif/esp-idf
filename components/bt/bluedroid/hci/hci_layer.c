@@ -16,7 +16,7 @@
  *
  ******************************************************************************/
 #include <string.h>
-#include "bt.h"
+#include "esp_bt.h"
 #include "bt_defs.h"
 #include "bt_trace.h"
 #include "hcidefs.h"
