@@ -20,7 +20,7 @@ is a combination of SPI port and CS pin, plus some information about the specifi
 (timing, command/address length etc)
 
 The essence of the interface to a device is a set of queues; one per device. The idea is that to send something to a SPI
-device, you allocate a transaction descriptor. It contains some information about the transfer like the lenghth, address,
+device, you allocate a transaction descriptor. It contains some information about the transfer like the length, address,
 command etc, plus pointers to transmit and receive buffer. The address of this block gets pushed into the transmit queue. 
 The SPI driver does its magic, and sends and retrieves the data eventually. The data gets written to the receive buffers, 
 if needed the transaction descriptor is modified to indicate returned parameters and the entire thing goes into the return
@@ -200,12 +200,19 @@ esp_err_t spi_bus_free(spi_host_device_t host)
 */
 esp_err_t spi_bus_add_device(spi_host_device_t host, spi_device_interface_config_t *dev_config, spi_device_handle_t *handle)
 {
-    int freecs;
+    int freecs, freehwcs=NO_HWCS;
     int apbclk=APB_CLK_FREQ;
     SPI_CHECK(host>=SPI_HOST && host<=VSPI_HOST, "invalid host", ESP_ERR_INVALID_ARG);
     SPI_CHECK(spihost[host]!=NULL, "host not initialized", ESP_ERR_INVALID_STATE);
     SPI_CHECK(dev_config->spics_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(dev_config->spics_io_num), "spics pin invalid", ESP_ERR_INVALID_ARG);
     SPI_CHECK(dev_config->clock_speed_hz > 0, "invalid sclk speed", ESP_ERR_INVALID_ARG);
+    if (dev_config->spics_io_num >= 0) {
+		// 3 hardware handled CS are available per host, check if there is a free one
+		for (freecs=0; freecs<NO_CS; freecs++) {
+			if ((spihost[host]->device[freecs]) && (spihost[host]->device[freecs]->cfg.spics_io_num >=0)) freehwcs--;
+			SPI_CHECK(freehwcs>0, "no free hw cs pins for host", ESP_ERR_NOT_FOUND);
+		}
+    }
     for (freecs=0; freecs<NO_CS; freecs++) {
         //See if this slot is free; reserve if it is by putting a dummy pointer in the slot. We use an atomic compare&swap to make this thread-safe.
         if (__sync_bool_compare_and_swap(&spihost[host]->device[freecs], NULL, (spi_device_t *)1)) break;
@@ -466,7 +473,8 @@ static void IRAM_ATTR spi_intr(void *arg)
             host->hw->ctrl2.hold_time=dev->cfg.cs_ena_posttrans-1;
             host->hw->user.cs_hold=(dev->cfg.cs_ena_posttrans)?1:0;
 
-            //Configure CS pin
+            //Configure CS pin, if external cs is used, disable it
+            if (dev->cfg.spics_io_num < 0) i= -1;
             host->hw->pin.cs0_dis=(i==0)?0:1;
             host->hw->pin.cs1_dis=(i==1)?0:1;
             host->hw->pin.cs2_dis=(i==2)?0:1;

@@ -26,7 +26,8 @@ extern "C"
 
 typedef struct spi_device_t spi_device_t;
 
-#define NO_CS 3     //Number of CS pins per SPI host
+#define NO_CS 6     //Number of CS pins per SPI host including software handled
+#define NO_HWCS 3   //Number of hardware handled CS pins per SPI host
 
 
 /// struct to hold private transaction data (like tx and rx buffer for DMA).
