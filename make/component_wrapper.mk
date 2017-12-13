@@ -73,10 +73,35 @@ COMPONENT_SUBMODULES ?=
 
 ################################################################################
 # 2) Include the component.mk for the specific component (COMPONENT_MAKEFILE) to
-#     override variables & optionally define custom targets.
+#     override variables & optionally define custom targets. Also include global
+#     component makefiles.
 ################################################################################
 
+
+# Include any Makefile.componentbuild file letting components add
+# configuration at the global component level
+
+# Save component_path; we pass it to the called Makefile.componentbuild
+# as COMPILING_COMPONENT_PATH, and we use it to restore the current 
+# COMPONENT_PATH later.
+COMPILING_COMPONENT_PATH := $(COMPONENT_PATH)
+
+define includeCompBuildMakefile
+$(if $(V),$(info including $(1)/Makefile.componentbuild...))
+COMPONENT_PATH := $(1)
+include $(1)/Makefile.componentbuild
+endef
+$(foreach componentpath,$(COMPONENT_PATHS), \
+	$(if $(wildcard $(componentpath)/Makefile.componentbuild), \
+		$(eval $(call includeCompBuildMakefile,$(componentpath)))))
+
+#Restore COMPONENT_PATH to what it was
+COMPONENT_PATH := $(COMPILING_COMPONENT_PATH)
+
+
+# Include component.mk for this component.
 include $(COMPONENT_MAKEFILE)
+
 
 ################################################################################
 # 3) Set variables that depend on values that may changed by component.mk

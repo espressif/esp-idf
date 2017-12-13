@@ -321,6 +321,7 @@ Second Level: Component Makefiles
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Each call to a component makefile goes via the ``$(IDF_PATH)/make/component_wrapper.mk`` wrapper makefile.
+- This component wrapper includes all component ``Makefile.componentbuild`` files, making any recipes, variables etc in these files available to every component.
 - The ``component_wrapper.mk`` is called with the current directory set to the component build directory, and the ``COMPONENT_MAKEFILE`` variable is set to the absolute path to ``component.mk``.
 - ``component_wrapper.mk`` sets default values for all `component variables`, then includes the `component.mk` file which can override or modify these.
 - If ``COMPONENT_OWNBUILDTARGET`` and ``COMPONENT_OWNCLEANTARGET`` are not defined, default build and clean targets are created for the component's source files and the prerequisite ``COMPONENT_LIBRARY`` static library file.
@@ -389,6 +390,15 @@ This is an equivalent to ``Makefile.projbuild`` for `component configuration` KC
 configuration options at the top-level of menuconfig, rather than inside the "Component Configuration" sub-menu, then these can be defined in the KConfig.projbuild file alongside the ``component.mk`` file.
 
 Take care when adding configuration values in this file, as they will be included across the entire project configuration. Where possible, it's generally better to create a KConfig file for `component configuration`.
+
+
+Makefile.componentbuild
+^^^^^^^^^^^^^^^^^^^^^^^
+
+For components that e.g. include tools to generate source files from other files, it is necessary to be able to add recipes, macros or variable definitions
+into the component build process of every components. This is done by having a ``Makefile.componentbuild`` in a component directory. This file gets included
+in ``component_wrapper.mk``, before the ``component.mk`` of the component is included. As with the Makefile.projbuild, take care with these files: as they're
+included in each component build, a ``Makefile.componentbuild`` error may only show up when compiling an entirely different component.
 
 Configuration-Only Components
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
