@@ -1830,7 +1830,16 @@
 #define RTC_CNTL_SCRATCH7_V  0xFFFFFFFF
 #define RTC_CNTL_SCRATCH7_S  0
 
-#define RTC_CNTL_DIAG0_REG          (DR_REG_RTCCNTL_BASE + 0xc0)
+#define RTC_CNTL_LOW_POWER_ST_REG          (DR_REG_RTCCNTL_BASE + 0xc0)
+/* RTC_CNTL_RDY_FOR_WAKEUP : R/0; bitpos:[19]; default: 0 */
+/*description: 1 if RTC controller is ready to execute WAKE instruction, 0 otherwise */
+#define RTC_CNTL_RDY_FOR_WAKEUP  (BIT(19))
+#define RTC_CNTL_RDY_FOR_WAKEUP_M  (BIT(19))
+#define RTC_CNTL_RDY_FOR_WAKEUP_V  0x1
+#define RTC_CNTL_RDY_FOR_WAKEUP_S  19
+
+/* Compatibility definition */
+#define RTC_CNTL_DIAG0_REG RTC_CNTL_LOW_POWER_ST_REG
 /* RTC_CNTL_LOW_POWER_DIAG0 : RO ;bitpos:[31:0] ;default: 0 ; */
 /*description: */
 #define RTC_CNTL_LOW_POWER_DIAG0  0xFFFFFFFF
