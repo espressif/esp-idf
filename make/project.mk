@@ -154,6 +154,7 @@ export COMPONENTS
 # NOTE: These paths must be generated WITHOUT a trailing / so we
 # can use $(notdir x) to get the component name.
 COMPONENT_PATHS := $(foreach comp,$(COMPONENTS),$(firstword $(foreach cd,$(COMPONENT_DIRS),$(wildcard $(dir $(cd))$(comp) $(cd)/$(comp)))))
+export COMPONENT_PATHS
 
 TEST_COMPONENTS ?=
 TESTS_ALL ?=
