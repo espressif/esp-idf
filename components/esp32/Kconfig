@@ -776,6 +776,22 @@ config ESP_TIMER_PROFILING
 		used for timer storage, and should only be used for debugging/testing
 		purposes.
 
+config COMPATIBLE_PRE_V2_1_BOOTLOADERS
+    bool "App compatible with bootloaders before IDF v2.1"
+    default n
+    help
+        Bootloaders before IDF v2.1 did less initialisation of the
+        system clock. This setting needs to be enabled to build an app
+        which can be booted by these older bootloaders.
+
+        If this setting is enabled, the app can be booted by any bootloader
+        from IDF v1.0 up to the current version.
+
+        If this setting is disabled, the app can only be booted by bootloaders
+        from IDF v2.1 or newer.
+
+        Enabling this setting adds approximately 1KB to the app's IRAM usage.
+
 endmenu  # ESP32-Specific
 
 menu Wi-Fi
