@@ -25,8 +25,6 @@
 #include "esp_system.h"
 #endif
 
-const char *TAG = "boot_rng";
-
 void bootloader_fill_random(void *buffer, size_t length)
 {
     uint8_t *buffer_bytes = (uint8_t *)buffer;
