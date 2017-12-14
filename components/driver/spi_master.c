@@ -62,6 +62,7 @@ queue and re-enabling the interrupt will trigger the interrupt again, which can 
 #include "esp_heap_caps.h"
 
 typedef struct spi_device_t spi_device_t;
+typedef typeof(SPI1.clock) spi_clock_reg_t;
 
 #define NO_CS 3     //Number of CS pins per SPI host
 
@@ -90,10 +91,16 @@ typedef struct {
 #endif
 } spi_host_t;
 
+typedef struct {
+    spi_clock_reg_t reg;
+    int eff_clk;
+} clock_config_t;
+
 struct spi_device_t {
     QueueHandle_t trans_queue;
     QueueHandle_t ret_queue;
     spi_device_interface_config_t cfg;
+    clock_config_t clk_cfg;
     spi_host_t *host;
 };
 
@@ -268,6 +275,8 @@ esp_err_t spi_bus_add_device(spi_host_device_t host, spi_device_interface_config
 
     //We want to save a copy of the dev config in the dev struct.
     memcpy(&dev->cfg, dev_config, sizeof(spi_device_interface_config_t));
+    // TODO: if we have to change the apb clock among transactions, re-calculate this each time the apb clock lock is acquired.
+    dev->clk_cfg.eff_clk = spi_cal_clock(apbclk, dev_config->clock_speed_hz, dev_config->duty_cycle_pos, (uint32_t*)&dev->clk_cfg.reg);
 
     //Set CS pin, CS options
     if (dev_config->spics_io_num >= 0) {
@@ -285,6 +294,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host, spi_device_interface_config
         spihost[host]->hw->pin.master_cs_pol &= (1<<freecs);
     }
     *handle=dev;
+    ESP_LOGD(SPI_TAG, "SPI%d: New device added to CS%d, effective clock: %dkHz", host, freecs, dev->clk_cfg.eff_clk/1000);
     return ESP_OK;
 
 nomem:
@@ -321,21 +331,19 @@ static int spi_freq_for_pre_n(int fapb, int pre, int n) {
     return (fapb / (pre * n));
 }
 
-/*
- * Set the SPI clock to a certain frequency. Returns the effective frequency set, which may be slightly
- * different from the requested frequency.
- */
-static int spi_set_clock(spi_dev_t *hw, int fapb, int hz, int duty_cycle) {
-    int pre, n, h, l, eff_clk;
+int spi_cal_clock(int fapb, int hz, int duty_cycle, uint32_t *reg_o)
+{
+    spi_clock_reg_t reg;
+    int eff_clk;
 
     //In hw, n, h and l are 1-64, pre is 1-8K. Value written to register is one lower than used value.
     if (hz>((fapb/4)*3)) {
         //Using Fapb directly will give us the best result here.
-        hw->clock.clkcnt_l=0;
-        hw->clock.clkcnt_h=0;
-        hw->clock.clkcnt_n=0;
-        hw->clock.clkdiv_pre=0;
-        hw->clock.clk_equ_sysclk=1;
+        reg.clkcnt_l=0;
+        reg.clkcnt_h=0;
+        reg.clkcnt_n=0;
+        reg.clkdiv_pre=0;
+        reg.clk_equ_sysclk=1;
         eff_clk=fapb;
     } else {
         //For best duty cycle resolution, we want n to be as close to 32 as possible, but
@@ -343,6 +351,7 @@ static int spi_set_clock(spi_dev_t *hw, int fapb, int hz, int duty_cycle) {
         //To do this, we bruteforce n and calculate the best pre to go along with that.
         //If there's a choice between pre/n combos that give the same result, use the one
         //with the higher n.
+        int pre, n, h, l;
         int bestn=-1;
         int bestpre=-1;
         int besterr=0;
@@ -367,16 +376,23 @@ static int spi_set_clock(spi_dev_t *hw, int fapb, int hz, int duty_cycle) {
         h=(duty_cycle*n+127)/256;
         if (h<=0) h=1;
 
-        hw->clock.clk_equ_sysclk=0;
-        hw->clock.clkcnt_n=n-1;
-        hw->clock.clkdiv_pre=pre-1;
-        hw->clock.clkcnt_h=h-1;
-        hw->clock.clkcnt_l=l-1;
+        reg.clk_equ_sysclk=0;
+        reg.clkcnt_n=n-1;
+        reg.clkdiv_pre=pre-1;
+        reg.clkcnt_h=h-1;
+        reg.clkcnt_l=l-1;
         eff_clk=spi_freq_for_pre_n(fapb, pre, n);
     }
+    if ( reg_o != NULL ) *reg_o = reg.val;
     return eff_clk;
 }
 
+/*
+ * Set the spi clock according to pre-calculated register value.
+ */
+static inline void spi_set_clock(spi_dev_t *hw, spi_clock_reg_t reg) {
+    hw->clock.val = reg.val;
+}
 
 //This is run in interrupt context and apart from initialization and destruction, this is the only code
 //touching the host (=spihost[x]) variable. The rest of the data arrives in queues. That is why there are
@@ -446,10 +462,9 @@ static void IRAM_ATTR spi_intr(void *arg)
         
         //Reconfigure according to device settings, but only if we change CSses.
         if (i!=prevCs) {
-            //Assumes a hardcoded 80MHz Fapb for now. ToDo: figure out something better once we have
-            //clock scaling working.
             int apbclk=APB_CLK_FREQ;
-            int effclk=spi_set_clock(host->hw, apbclk, dev->cfg.clock_speed_hz, dev->cfg.duty_cycle_pos);
+            int effclk=dev->clk_cfg.eff_clk;
+            spi_set_clock(host->hw, dev->clk_cfg.reg);
             //Configure bit order
             host->hw->ctrl.rd_bit_order=(dev->cfg.flags & SPI_DEVICE_RXBIT_LSBFIRST)?1:0;
             host->hw->ctrl.wr_bit_order=(dev->cfg.flags & SPI_DEVICE_TXBIT_LSBFIRST)?1:0;

@@ -228,6 +228,17 @@ esp_err_t spi_device_get_trans_result(spi_device_handle_t handle, spi_transactio
  */
 esp_err_t spi_device_transmit(spi_device_handle_t handle, spi_transaction_t *trans_desc);
 
+/**
+ * @brief Calculate the working frequency that is most close to desired frequency, and also the register value.
+ *
+ * @param fapb The frequency of apb clock, should be ``APB_CLK_FREQ``.
+ * @param hz Desired working frequency
+ * @param duty_cycle Duty cycle of the spi clock
+ * @param reg_o Output of value to be set in clock register, or NULL if not needed.
+ * @return Actual working frequency that most fit.
+ */
+int spi_cal_clock(int fapb, int hz, int duty_cycle, uint32_t* reg_o);
+
 
 #ifdef __cplusplus
 }
