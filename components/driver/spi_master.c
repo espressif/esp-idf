@@ -81,6 +81,7 @@ typedef struct {
     spi_dev_t *hw;
     spi_trans_priv cur_trans_buf;
     int cur_cs;
+    int prev_cs;
     lldesc_t *dmadesc_tx;
     lldesc_t *dmadesc_rx;
     bool no_gpio_matrix;
@@ -167,6 +168,7 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
     spihost[host]->hw=spicommon_hw_for_host(host);
 
     spihost[host]->cur_cs = NO_CS;
+    spihost[host]->prev_cs = NO_CS;
 
     //Reset DMA
     spihost[host]->hw->dma_conf.val|=SPI_OUT_RST|SPI_IN_RST|SPI_AHBM_RST|SPI_AHBM_FIFO_RST;
@@ -321,7 +323,10 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
     vQueueDelete(handle->ret_queue);
     //Remove device from list of csses and free memory
     for (x=0; x<NO_CS; x++) {
-        if (handle->host->device[x] == handle) handle->host->device[x]=NULL;
+        if (handle->host->device[x] == handle){
+            handle->host->device[x]=NULL;
+            if ( x == handle->host->prev_cs ) handle->host->prev_cs = NO_CS;
+        }
     }
     free(handle);
     return ESP_OK;
@@ -400,7 +405,6 @@ static inline void spi_set_clock(spi_dev_t *hw, spi_clock_reg_t reg) {
 static void IRAM_ATTR spi_intr(void *arg)
 {
     int i;
-    int prevCs=-1;
     BaseType_t r;
     BaseType_t do_yield=pdFALSE;
     spi_trans_priv *trans_buf=NULL;
@@ -428,7 +432,6 @@ static void IRAM_ATTR spi_intr(void *arg)
         if (host->device[host->cur_cs]->cfg.post_cb) host->device[host->cur_cs]->cfg.post_cb(cur_trans);
         //Return transaction descriptor.
         xQueueSendFromISR(host->device[host->cur_cs]->ret_queue, &host->cur_trans_buf, &do_yield); 
-        prevCs=host->cur_cs;
         host->cur_cs = NO_CS;
     }
     //Tell common code DMA workaround that our DMA channel is idle. If needed, the code will do a DMA reset.
@@ -461,7 +464,7 @@ static void IRAM_ATTR spi_intr(void *arg)
         assert(host->hw->cmd.usr == 0);
         
         //Reconfigure according to device settings, but only if we change CSses.
-        if (i!=prevCs) {
+        if (i!=host->prev_cs) {
             int apbclk=APB_CLK_FREQ;
             int effclk=dev->clk_cfg.eff_clk;
             spi_set_clock(host->hw, dev->clk_cfg.reg);
@@ -521,6 +524,7 @@ static void IRAM_ATTR spi_intr(void *arg)
             host->hw->pin.cs1_dis=(i==1)?0:1;
             host->hw->pin.cs2_dis=(i==2)?0:1;
         }
+        host->prev_cs = i;
         //Reset SPI peripheral
         host->hw->dma_conf.val |= SPI_OUT_RST|SPI_IN_RST|SPI_AHBM_RST|SPI_AHBM_FIFO_RST;
         host->hw->dma_out_link.start=0;
