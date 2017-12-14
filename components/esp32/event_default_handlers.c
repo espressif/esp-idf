@@ -35,7 +35,7 @@
 #include "tcpip_adapter.h"
 #include "esp_log.h"
 
-const char* TAG = "event";
+static const char* TAG = "event";
 
 #define WIFI_API_CALL_CHECK(info, api_call, ret) \
 do{\
