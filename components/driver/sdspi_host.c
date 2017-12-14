@@ -25,12 +25,12 @@
 #include "driver/sdspi_host.h"
 #include "sdspi_private.h"
 #include "sdspi_crc.h"
+#include "esp_timer.h"
+
 
 /// Max number of transactions in flight (used in start_command_write_blocks)
 #define SDSPI_TRANSACTION_COUNT 4
 #define SDSPI_MOSI_IDLE_VAL     0xff    //!< Data value which causes MOSI to stay high
-/// FIXME: this has to be replaced with a timeout expressed in ms, rather in retries
-#define SDSPI_RETRY_COUNT       1000
 #define GPIO_UNUSED 0xff                //!< Flag indicating that CD/WP is unused
 /// Size of the buffer returned by get_block_buf
 #define SDSPI_BLOCK_BUF_SIZE    (SDSPI_MAX_DATA_LEN + 4)
@@ -426,7 +426,7 @@ static esp_err_t start_command_default(int slot, int flags, sdspi_hw_cmd_t *cmd)
 }
 
 // Wait until MISO goes high
-static esp_err_t poll_busy(int slot, spi_transaction_t* t)
+static esp_err_t poll_busy(int slot, spi_transaction_t* t, int timeout_ms)
 {
     uint8_t t_rx;
     *t = (spi_transaction_t) {
@@ -436,7 +436,9 @@ static esp_err_t poll_busy(int slot, spi_transaction_t* t)
     };
     esp_err_t ret;
 
-    for (int i = 0; i < SDSPI_RETRY_COUNT; i++) {
+    uint64_t t_end = esp_timer_get_time() + timeout_ms * 1000;
+    int nonzero_count = 0;
+    do {
         t_rx = SDSPI_MOSI_IDLE_VAL;
         t->rx_data[0] = 0;
         ret = spi_device_transmit(spi_handle(slot), t);
@@ -444,16 +446,17 @@ static esp_err_t poll_busy(int slot, spi_transaction_t* t)
             return ret;
         }
         if (t->rx_data[0] != 0) {
-            if (i < SDSPI_RETRY_COUNT - 2) {
-                i = SDSPI_RETRY_COUNT - 2;
+            if (++nonzero_count == 2) {
+                return ESP_OK;
             }
         }
-    }
-    return ESP_OK;
+    } while(esp_timer_get_time() < t_end);
+    ESP_LOGD(TAG, "%s: timeout", __func__);
+    return ESP_ERR_TIMEOUT;
 }
 
 // Wait for response token
-static esp_err_t poll_response_token(int slot, spi_transaction_t* t)
+static esp_err_t poll_response_token(int slot, spi_transaction_t* t, int timeout_ms)
 {
     uint8_t t_rx;
     *t = (spi_transaction_t) {
@@ -462,8 +465,8 @@ static esp_err_t poll_response_token(int slot, spi_transaction_t* t)
         .length = 8,
     };
     esp_err_t ret;
-
-    for (int retry = 0; retry < SDSPI_RETRY_COUNT; retry++) {
+    uint64_t t_end = esp_timer_get_time() + timeout_ms * 1000;
+    do {
         t_rx = SDSPI_MOSI_IDLE_VAL;
         t->rx_data[0] = 0;
         ret = spi_device_transmit(spi_handle(slot), t);
@@ -471,7 +474,7 @@ static esp_err_t poll_response_token(int slot, spi_transaction_t* t)
             return ret;
         }
         if ((t->rx_data[0] & TOKEN_RSP_MASK) == TOKEN_RSP_OK) {
-            break;
+            return ESP_OK;
         }
         if ((t->rx_data[0] & TOKEN_RSP_MASK) == TOKEN_RSP_CRC_ERR) {
             return ESP_ERR_INVALID_CRC;
@@ -479,19 +482,17 @@ static esp_err_t poll_response_token(int slot, spi_transaction_t* t)
         if ((t->rx_data[0] & TOKEN_RSP_MASK) == TOKEN_RSP_WRITE_ERR) {
             return ESP_ERR_INVALID_RESPONSE;
         }
-        if (retry == SDSPI_RETRY_COUNT - 1) {
-            return ESP_ERR_TIMEOUT;
-        }
-    }
+    } while (esp_timer_get_time() < t_end);
 
-    return ESP_OK;
+    ESP_LOGD(TAG, "%s: timeout", __func__);
+    return ESP_ERR_TIMEOUT;
 }
 
 // Wait for data token, reading 8 bytes at a time.
 // If the token is found, write all subsequent bytes to extra_ptr,
 // and store the number of bytes written to extra_size.
 static esp_err_t poll_data_token(int slot, spi_transaction_t* t,
-        uint8_t* extra_ptr, size_t* extra_size)
+        uint8_t* extra_ptr, size_t* extra_size, int timeout_ms)
 {
     uint8_t t_rx[8];
     *t = (spi_transaction_t) {
@@ -500,7 +501,8 @@ static esp_err_t poll_data_token(int slot, spi_transaction_t* t,
         .length = sizeof(t_rx) * 8,
     };
     esp_err_t ret;
-    for (int retry = 0; retry < SDSPI_RETRY_COUNT; retry++) {
+    uint64_t t_end = esp_timer_get_time() + timeout_ms * 1000;
+    do {
         memset(t_rx, SDSPI_MOSI_IDLE_VAL, sizeof(t_rx));
         ret = spi_device_transmit(spi_handle(slot), t);
         if (ret != ESP_OK) {
@@ -522,13 +524,11 @@ static esp_err_t poll_data_token(int slot, spi_transaction_t* t,
             }
         }
         if (found) {
-            break;
+            return ESP_OK;
         }
-        if (retry == SDSPI_RETRY_COUNT - 1) {
-            return ESP_ERR_TIMEOUT;
-        }
-    }
-    return ESP_OK;
+    } while (esp_timer_get_time() < t_end);
+    ESP_LOGD(TAG, "%s: timeout", __func__);
+    return ESP_ERR_TIMEOUT;
 }
 
 
@@ -608,11 +608,14 @@ static esp_err_t start_command_read_blocks(int slot, sdspi_hw_cmd_t *cmd,
         if (need_poll) {
             // Wait for data to be ready
             spi_transaction_t* t_poll = get_transaction(slot);
-            poll_data_token(slot, t_poll, cmd_u8 + SDSPI_CMD_R1_SIZE, &extra_data_size);
+            ret = poll_data_token(slot, t_poll, cmd_u8 + SDSPI_CMD_R1_SIZE, &extra_data_size, cmd->timeout_ms);
+            release_transaction(slot);
+            if (ret != ESP_OK) {
+                return ret;
+            }
             if (extra_data_size) {
                 extra_data_ptr = cmd_u8 + SDSPI_CMD_R1_SIZE;
             }
-            release_transaction(slot);
         }
 
         // Arrange RX buffer
@@ -674,14 +677,17 @@ static esp_err_t start_command_read_blocks(int slot, sdspi_hw_cmd_t *cmd,
         // To end multi block transfer, send stop command and wait for the
         // card to process it
         sdspi_hw_cmd_t stop_cmd;
-        make_hw_cmd(MMC_STOP_TRANSMISSION, 0, &stop_cmd);
+        make_hw_cmd(MMC_STOP_TRANSMISSION, 0, cmd->timeout_ms, &stop_cmd);
         ret = start_command_default(slot, SDSPI_CMD_FLAG_RSP_R1, &stop_cmd);
         if (ret != ESP_OK) {
             return ret;
         }
         spi_transaction_t* t_poll = get_transaction(slot);
-        ret = poll_busy(slot, t_poll);
+        ret = poll_busy(slot, t_poll, cmd->timeout_ms);
         release_transaction(slot);
+        if (ret != ESP_OK) {
+            return ret;
+        }
     }
     return ESP_OK;
 }
@@ -768,7 +774,7 @@ static esp_err_t start_command_write_blocks(int slot, sdspi_hw_cmd_t *cmd,
 
         // Poll for response
         spi_transaction_t* t_poll = get_transaction(slot);
-        ret = poll_response_token(slot, t_poll);
+        ret = poll_response_token(slot, t_poll, cmd->timeout_ms);
         release_transaction(slot);
         if (ret != ESP_OK) {
             return ret;
@@ -776,7 +782,7 @@ static esp_err_t start_command_write_blocks(int slot, sdspi_hw_cmd_t *cmd,
 
         // Wait for the card to finish writing data
         t_poll = get_transaction(slot);
-        ret = poll_busy(slot, t_poll);
+        ret = poll_busy(slot, t_poll, cmd->timeout_ms);
         release_transaction(slot);
         if (ret != ESP_OK) {
             return ret;
@@ -803,7 +809,7 @@ static esp_err_t start_command_write_blocks(int slot, sdspi_hw_cmd_t *cmd,
         wait_for_transactions(slot);
 
         spi_transaction_t* t_poll = get_transaction(slot);
-        ret = poll_busy(slot, t_poll);
+        ret = poll_busy(slot, t_poll, cmd->timeout_ms);
         release_transaction(slot);
         if (ret != ESP_OK) {
             return ret;

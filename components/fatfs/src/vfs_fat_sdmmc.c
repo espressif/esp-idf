@@ -128,6 +128,7 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
             goto fail;
         }
         free(workbuf);
+        workbuf = NULL;
         ESP_LOGW(TAG, "mounting again");
         res = f_mount(fs, drv, 0);
         if (res != FR_OK) {
@@ -139,7 +140,7 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
     return ESP_OK;
 
 fail:
-    sdmmc_host_deinit();
+    host_config->deinit();
     free(workbuf);
     if (fs) {
         f_mount(NULL, drv, 0);
@@ -160,10 +161,11 @@ esp_err_t esp_vfs_fat_sdmmc_unmount()
     char drv[3] = {(char)('0' + s_pdrv), ':', 0};
     f_mount(0, drv, 0);
     // release SD driver
+    esp_err_t (*host_deinit)() = s_card->host.deinit;
     ff_diskio_unregister(s_pdrv);
     free(s_card);
     s_card = NULL;
-    sdmmc_host_deinit();
+    (*host_deinit)();
     esp_err_t err = esp_vfs_fat_unregister_path(s_base_path);
     free(s_base_path);
     s_base_path = NULL;
