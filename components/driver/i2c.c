@@ -23,7 +23,6 @@
 #include "freertos/xtensa_api.h"
 #include "freertos/task.h"
 #include "freertos/ringbuf.h"
-#include "freertos/event_groups.h"
 #include "soc/dport_reg.h"
 #include "soc/i2c_struct.h"
 #include "soc/i2c_reg.h"
@@ -70,8 +69,9 @@ static DRAM_ATTR i2c_dev_t* const I2C[I2C_NUM_MAX] = { &I2C0, &I2C1 };
 #define I2C_FIFO_EMPTY_THRESH_VAL      (5)
 #define I2C_IO_INIT_LEVEL              (1)
 #define I2C_CMD_ALIVE_INTERVAL_TICK    (1000 / portTICK_PERIOD_MS)
-#define I2C_CMD_EVT_ALIVE              (BIT0)
-#define I2C_CMD_EVT_DONE               (BIT1)
+#define I2C_CMD_EVT_ALIVE              (0)
+#define I2C_CMD_EVT_DONE               (1)
+#define I2C_EVT_QUEUE_LEN              (1)
 #define I2C_SLAVE_TIMEOUT_DEFAULT      (32000)     /* I2C slave timeout value, APB clock cycle number */
 #define I2C_SLAVE_SDA_SAMPLE_DEFAULT   (10)        /* I2C slave sample time after scl positive edge default value */
 #define I2C_SLAVE_SDA_HOLD_DEFAULT     (10)        /* I2C slave hold time after scl negative edge default value */
@@ -108,6 +108,10 @@ typedef enum {
 } i2c_status_t;
 
 typedef struct {
+    int type;
+} i2c_cmd_evt_t;
+
+typedef struct {
     int i2c_num;                     /*!< I2C port number */
     int mode;                        /*!< I2C mode, master or slave */
     intr_handle_t intr_handle;       /*!< I2C interrupt handle*/
@@ -117,7 +121,7 @@ typedef struct {
     uint8_t data_buf[I2C_FIFO_LEN];  /*!< a buffer to store i2c fifo data */
 
     i2c_cmd_desc_t cmd_link;         /*!< I2C command link */
-    EventGroupHandle_t cmd_evt;      /*!< I2C command event bits */
+    QueueHandle_t cmd_evt_queue;     /*!< I2C command event queue */
     xSemaphoreHandle cmd_mux;        /*!< semaphore to lock command process */
     size_t tx_fifo_remain;           /*!< tx fifo remain length, for master mode */
     size_t rx_fifo_remain;           /*!< rx fifo remain length, for master mode */
@@ -199,8 +203,8 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
         } else {
             //semaphore to sync sending process, because we only have 32 bytes for hardware fifo.
             p_i2c->cmd_mux = xSemaphoreCreateMutex();
-            p_i2c->cmd_evt = xEventGroupCreate();
-            if (p_i2c->cmd_mux == NULL || p_i2c->cmd_evt == NULL) {
+            p_i2c->cmd_evt_queue = xQueueCreate(I2C_EVT_QUEUE_LEN, sizeof(i2c_cmd_evt_t));
+            if (p_i2c->cmd_mux == NULL || p_i2c->cmd_evt_queue == NULL) {
                 ESP_LOGE(I2C_TAG, I2C_SEM_ERR_STR);
                 goto err;
             }
@@ -243,9 +247,9 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
             p_i2c_obj[i2c_num]->tx_ring_buf = NULL;
             p_i2c_obj[i2c_num]->tx_buf_length = 0;
         }
-        if (p_i2c_obj[i2c_num]->cmd_evt) {
-            vEventGroupDelete(p_i2c_obj[i2c_num]->cmd_evt);
-            p_i2c_obj[i2c_num]->cmd_evt = NULL;
+        if (p_i2c_obj[i2c_num]->cmd_evt_queue) {
+            vQueueDelete(p_i2c_obj[i2c_num]->cmd_evt_queue);
+            p_i2c_obj[i2c_num]->cmd_evt_queue = NULL;
         }
         if (p_i2c_obj[i2c_num]->cmd_mux) {
             vSemaphoreDelete(p_i2c_obj[i2c_num]->cmd_mux);
@@ -296,9 +300,9 @@ esp_err_t i2c_driver_delete(i2c_port_t i2c_num)
         xSemaphoreTake(p_i2c->cmd_mux, portMAX_DELAY);
         vSemaphoreDelete(p_i2c->cmd_mux);
     }
-    if (p_i2c_obj[i2c_num]->cmd_evt) {
-        vEventGroupDelete(p_i2c_obj[i2c_num]->cmd_evt);
-        p_i2c_obj[i2c_num]->cmd_evt = NULL;
+    if (p_i2c_obj[i2c_num]->cmd_evt_queue) {
+        vQueueDelete(p_i2c_obj[i2c_num]->cmd_evt_queue);
+        p_i2c_obj[i2c_num]->cmd_evt_queue = NULL;
     }
     if (p_i2c->slv_rx_mux) {
         vSemaphoreDelete(p_i2c->slv_rx_mux);
@@ -437,7 +441,9 @@ static void IRAM_ATTR i2c_isr_handler_default(void* arg)
         }
     }
     if (p_i2c->mode == I2C_MODE_MASTER) {
-        xEventGroupSetBitsFromISR(p_i2c->cmd_evt, I2C_CMD_EVT_ALIVE, &HPTaskAwoken);
+        i2c_cmd_evt_t evt;
+        evt.type = I2C_CMD_EVT_ALIVE;
+        xQueueSendFromISR(p_i2c->cmd_evt_queue, &evt, &HPTaskAwoken);
         if (HPTaskAwoken == pdTRUE) {
             portYIELD_FROM_ISR();
         }
@@ -990,7 +996,7 @@ static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num)
 {
     i2c_obj_t* p_i2c = p_i2c_obj[i2c_num];
     portBASE_TYPE HPTaskAwoken = pdFALSE;
-
+    i2c_cmd_evt_t evt;
     //This should never happen
     if (p_i2c->mode == I2C_MODE_SLAVE) {
         return;
@@ -1005,7 +1011,8 @@ static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num)
             I2C[i2c_num]->int_clr.time_out = 1;
             I2C[i2c_num]->int_ena.val = 0;
         }
-        xEventGroupSetBitsFromISR(p_i2c->cmd_evt, I2C_CMD_EVT_DONE, &HPTaskAwoken);
+        evt.type = I2C_CMD_EVT_DONE;
+        xQueueOverwriteFromISR(p_i2c->cmd_evt_queue, &evt, &HPTaskAwoken);
         if (HPTaskAwoken == pdTRUE) {
             portYIELD_FROM_ISR();
         }
@@ -1024,7 +1031,8 @@ static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num)
     }
     if (p_i2c->cmd_link.head == NULL) {
         p_i2c->cmd_link.cur = NULL;
-        xEventGroupSetBitsFromISR(p_i2c->cmd_evt, I2C_CMD_EVT_DONE, &HPTaskAwoken);
+        evt.type = I2C_CMD_EVT_DONE;
+        xQueueOverwriteFromISR(p_i2c->cmd_evt_queue, &evt, &HPTaskAwoken);
         if (HPTaskAwoken == pdTRUE) {
             portYIELD_FROM_ISR();
         }
@@ -1108,7 +1116,7 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
     if (res == pdFALSE) {
         return ESP_ERR_TIMEOUT;
     }
-    xEventGroupClearBits(p_i2c->cmd_evt, I2C_CMD_EVT_DONE | I2C_CMD_EVT_ALIVE);
+    xQueueReset(p_i2c->cmd_evt_queue);
     if (p_i2c->status == I2C_STATUS_TIMEOUT
         || I2C[i2c_num]->status_reg.bus_busy == 1) {
         i2c_hw_fsm_reset(i2c_num);
@@ -1137,16 +1145,15 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
         ticks_to_wait = ticks_end - xTaskGetTickCount();
     }
     // Wait event bits
-    EventBits_t uxBits;
+    i2c_cmd_evt_t evt;
     while (1) {
         TickType_t wait_time = (ticks_to_wait < (I2C_CMD_ALIVE_INTERVAL_TICK) ? ticks_to_wait : (I2C_CMD_ALIVE_INTERVAL_TICK));
         // In master mode, since we don't have an interrupt to detective bus error or FSM state, what we do here is to make
         // sure the interrupt mechanism for master mode is still working.
         // If the command sending is not finished and there is no interrupt any more, the bus is probably dead caused by external noise.
-        uxBits = xEventGroupWaitBits(p_i2c->cmd_evt, I2C_CMD_EVT_ALIVE | I2C_CMD_EVT_DONE, false, false, wait_time);
-        if (uxBits) {
-            if (uxBits & I2C_CMD_EVT_DONE) {
-                xEventGroupClearBits(p_i2c->cmd_evt, I2C_CMD_EVT_DONE);
+        portBASE_TYPE evt_res = xQueueReceive(p_i2c->cmd_evt_queue, &evt, wait_time);
+        if (evt_res == pdTRUE) {
+            if (evt.type == I2C_CMD_EVT_DONE) {
                 if (p_i2c->status == I2C_STATUS_TIMEOUT) {
                     // If the I2C slave are powered off or the SDA/SCL are connected to ground, for example,
                     // I2C hw FSM would get stuck in wrong state, we have to reset the I2C module in this case.
@@ -1159,8 +1166,7 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
                 }
                 break;
             }
-            if (uxBits & I2C_CMD_EVT_ALIVE) {
-                xEventGroupClearBits(p_i2c->cmd_evt, I2C_CMD_EVT_ALIVE);
+            if (evt.type == I2C_CMD_EVT_ALIVE) {
             }
         } else {
             ret = ESP_ERR_TIMEOUT;
