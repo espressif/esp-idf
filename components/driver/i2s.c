@@ -249,10 +249,10 @@ static esp_err_t i2s_apll_calculate(int rate, int bits_per_sample, int *sdm0, in
     i = 0;
     while (apll_predefine[i][0]) {
         if (apll_predefine[i][0] == bits_per_sample && apll_predefine[i][1] == rate) {
-            *sdm0 = apll_predefine[i][1];
-            *sdm1 = apll_predefine[i][2];
-            *sdm2 = apll_predefine[i][3];
-            *odir = apll_predefine[i][4];
+            *sdm0 = apll_predefine[i][2];
+            *sdm1 = apll_predefine[i][3];
+            *sdm2 = apll_predefine[i][4];
+            *odir = apll_predefine[i][5];
             return ESP_OK;
         }
         i++;
