@@ -52,7 +52,7 @@ static DRAM_ATTR i2c_dev_t* const I2C[I2C_NUM_MAX] = { &I2C0, &I2C1 };
 #define I2C_TIMEING_VAL_ERR_STR        "i2c timing value error"
 #define I2C_ADDR_ERROR_STR             "i2c null address error"
 #define I2C_DRIVER_NOT_INSTALL_ERR_STR "i2c driver not installed"
-#define I2C_SLAVE_BUFFER_LEN_ERR_STR   "i2c buffer size too short for slave mode"
+#define I2C_SLAVE_BUFFER_LEN_ERR_STR   "i2c buffer size too small for slave mode"
 #define I2C_EVT_QUEUE_ERR_STR          "i2c evt queue error"
 #define I2C_SEM_ERR_STR                "i2c semaphore error"
 #define I2C_BUF_ERR_STR                "i2c ringbuffer error"
@@ -64,7 +64,7 @@ static DRAM_ATTR i2c_dev_t* const I2C[I2C_NUM_MAX] = { &I2C0, &I2C1 };
 #define I2C_SDA_IO_ERR_STR             "sda gpio number error"
 #define I2C_SCL_IO_ERR_STR             "scl gpio number error"
 #define I2C_CMD_LINK_INIT_ERR_STR      "i2c command link error"
-#define I2C_GPIO_PULLUP_ERR_STR        "this i2c pin do not support internal pull-up"
+#define I2C_GPIO_PULLUP_ERR_STR        "this i2c pin does not support internal pull-up"
 #define I2C_FIFO_FULL_THRESH_VAL       (28)
 #define I2C_FIFO_EMPTY_THRESH_VAL      (5)
 #define I2C_IO_INIT_LEVEL              (1)
@@ -179,7 +179,7 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
                 }
                 p_i2c->rx_buf_length = slv_rx_buf_len;
             } else {
-                p_i2c->tx_ring_buf = NULL;
+                p_i2c->rx_ring_buf = NULL;
                 p_i2c->rx_buf_length = 0;
             }
             if (slv_tx_buf_len > 0) {
@@ -195,7 +195,7 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
             }
             p_i2c->slv_rx_mux = xSemaphoreCreateMutex();
             p_i2c->slv_tx_mux = xSemaphoreCreateMutex();
-            if (p_i2c->slv_rx_mux == NULL || p_i2c->slv_rx_mux == NULL) {
+            if (p_i2c->slv_rx_mux == NULL || p_i2c->slv_tx_mux == NULL) {
                 ESP_LOGE(I2C_TAG, I2C_SEM_ERR_STR);
                 goto err;
             }
@@ -262,6 +262,7 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
         }
     }
     free(p_i2c_obj[i2c_num]);
+    p_i2c_obj[i2c_num] = NULL;
     return ESP_FAIL;
 }
 
@@ -657,8 +658,10 @@ esp_err_t i2c_set_start_timing(i2c_port_t i2c_num, int setup_time, int hold_time
     I2C_CHECK((hold_time <= I2C_SCL_START_HOLD_TIME_V) && (hold_time > 0), I2C_TIMEING_VAL_ERR_STR, ESP_ERR_INVALID_ARG);
     I2C_CHECK((setup_time <= I2C_SCL_RSTART_SETUP_TIME_V) && (setup_time > 0), I2C_TIMEING_VAL_ERR_STR, ESP_ERR_INVALID_ARG);
 
+    I2C_ENTER_CRITICAL(&i2c_spinlock[i2c_num]);
     I2C[i2c_num]->scl_start_hold.time = hold_time;
     I2C[i2c_num]->scl_rstart_setup.time = setup_time;
+    I2C_EXIT_CRITICAL(&i2c_spinlock[i2c_num]);
     return ESP_OK;
 }
 
@@ -682,8 +685,10 @@ esp_err_t i2c_set_stop_timing(i2c_port_t i2c_num, int setup_time, int hold_time)
     I2C_CHECK((setup_time <= I2C_SCL_STOP_SETUP_TIME_V) && (setup_time > 0), I2C_TIMEING_VAL_ERR_STR, ESP_ERR_INVALID_ARG);
     I2C_CHECK((hold_time <= I2C_SCL_STOP_HOLD_TIME_V) && (hold_time > 0), I2C_TIMEING_VAL_ERR_STR, ESP_ERR_INVALID_ARG);
 
+    I2C_ENTER_CRITICAL(&i2c_spinlock[i2c_num]);
     I2C[i2c_num]->scl_stop_hold.time = hold_time;
     I2C[i2c_num]->scl_stop_setup.time = setup_time;
+    I2C_EXIT_CRITICAL(&i2c_spinlock[i2c_num]);
     return ESP_OK;
 }
 
@@ -707,8 +712,10 @@ esp_err_t i2c_set_data_timing(i2c_port_t i2c_num, int sample_time, int hold_time
     I2C_CHECK((sample_time <= I2C_SDA_SAMPLE_TIME_V) && (sample_time > 0), I2C_TIMEING_VAL_ERR_STR, ESP_ERR_INVALID_ARG);
     I2C_CHECK((hold_time <= I2C_SDA_HOLD_TIME_V) && (hold_time > 0), I2C_TIMEING_VAL_ERR_STR, ESP_ERR_INVALID_ARG);
 
+    I2C_ENTER_CRITICAL(&i2c_spinlock[i2c_num]);
     I2C[i2c_num]->sda_hold.time = hold_time;
     I2C[i2c_num]->sda_sample.time = sample_time;
+    I2C_EXIT_CRITICAL(&i2c_spinlock[i2c_num]);
     return ESP_OK;
 }
 
@@ -729,7 +736,7 @@ esp_err_t i2c_get_data_timing(i2c_port_t i2c_num, int* sample_time, int* hold_ti
 esp_err_t i2c_set_timeout(i2c_port_t i2c_num, int timeout)
 {
     I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK((timeout <= I2C_SDA_SAMPLE_TIME_V) && (timeout > 0), I2C_TIMEING_VAL_ERR_STR, ESP_ERR_INVALID_ARG);
+    I2C_CHECK((timeout <= I2C_TIME_OUT_REG_V) && (timeout > 0), I2C_TIMEING_VAL_ERR_STR, ESP_ERR_INVALID_ARG);
 
     I2C_ENTER_CRITICAL(&i2c_spinlock[i2c_num]);
     I2C[i2c_num]->timeout.tout = timeout;
@@ -1111,7 +1118,7 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
 
     esp_err_t ret = ESP_FAIL;
     i2c_obj_t* p_i2c = p_i2c_obj[i2c_num];
-    portTickType ticks_end = xTaskGetTickCount() + ticks_to_wait;
+    portTickType ticks_start = xTaskGetTickCount();
     portBASE_TYPE res = xSemaphoreTake(p_i2c->cmd_mux, ticks_to_wait);
     if (res == pdFALSE) {
         return ESP_ERR_TIMEOUT;
@@ -1137,17 +1144,19 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
 
     //start send commands, at most 32 bytes one time, isr handler will process the remaining commands.
     i2c_master_cmd_begin_static(i2c_num);
-    if (ticks_to_wait == portMAX_DELAY) {
 
-    } else if (ticks_to_wait == 0) {
-
-    } else {
-        ticks_to_wait = ticks_end - xTaskGetTickCount();
-    }
     // Wait event bits
     i2c_cmd_evt_t evt;
     while (1) {
-        TickType_t wait_time = (ticks_to_wait < (I2C_CMD_ALIVE_INTERVAL_TICK) ? ticks_to_wait : (I2C_CMD_ALIVE_INTERVAL_TICK));
+        TickType_t wait_time = xTaskGetTickCount();
+        if (wait_time - ticks_start > ticks_to_wait) { // out of time
+            wait_time = I2C_CMD_ALIVE_INTERVAL_TICK;
+        } else {
+            wait_time = ticks_to_wait - (wait_time - ticks_start);
+            if (wait_time < I2C_CMD_ALIVE_INTERVAL_TICK) {
+                wait_time = I2C_CMD_ALIVE_INTERVAL_TICK;
+            }
+        }
         // In master mode, since we don't have an interrupt to detective bus error or FSM state, what we do here is to make
         // sure the interrupt mechanism for master mode is still working.
         // If the command sending is not finished and there is no interrupt any more, the bus is probably dead caused by external noise.
@@ -1174,12 +1183,6 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
             // I2C hw FSM would get stuck in wrong state, we have to reset the I2C module in this case.
             i2c_hw_fsm_reset(i2c_num);
             break;
-        }
-        if (ticks_to_wait == portMAX_DELAY) {
-
-        } else {
-            TickType_t now = xTaskGetTickCount();
-            ticks_to_wait = ticks_end > now ? (ticks_end - now) : 0;
         }
     }
     p_i2c->status = I2C_STATUS_DONE;
@@ -1258,6 +1261,3 @@ int i2c_slave_read_buffer(i2c_port_t i2c_num, uint8_t* data, size_t max_size, Ti
     xSemaphoreGive(p_i2c->slv_rx_mux);
     return cnt;
 }
-
-
-
