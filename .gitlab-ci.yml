@@ -988,6 +988,31 @@ UT_005_02:
     - UT_T1_SPIMODE
     - psram
 
+UT_006_01:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_GPIO
+
+UT_006_02:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_GPIO
+
+UT_006_03:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_GPIO
+
+UT_006_04:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_GPIO
+    - psram
+
 IT_001_01:
   <<: *test_template
   tags:
