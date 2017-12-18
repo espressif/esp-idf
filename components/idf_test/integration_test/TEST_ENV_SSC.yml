@@ -1,0 +1,240 @@
+.TEST_ENV: &TEST_ENV
+  PC OS: ''
+  Special: N
+  test script: EnvBase
+
+test environment:
+- tag: SSC_T1_1
+  <<: *TEST_ENV
+  Target Count: 1
+  test environment detail: |-
+    PC has 2 wired NIC connected to AP.
+    PC has 1 WiFi NIC.
+    1 SSC target connect with PC by UART.
+- tag: SSC_T1_2
+  <<: *TEST_ENV
+  Target Count: 1
+  test environment detail: |-
+    Able to access WAN after connect to AP.
+    1 SSC target connect with PC by UART.
+- tag: SSC_T1_3
+  <<: *TEST_ENV
+  Target Count: 1
+  test environment detail: PC has one BT adapter (dongle). 1 SSC target connect with
+    PC by UART.
+- tag: SSC_T1_8089
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 1
+  test environment detail: |-
+    PC has 1 wired NIC connected to AP.
+    1 8089 tablet able to run iperf test placed near SSC1.
+    1 SSC target connect with PC by UART.
+- tag: SSC_T1_ADC
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 1
+  test environment detail: |-
+    PC has 1 wired NIC connected to AP.
+    Analog input connect to SSC1 TOUT.
+    Multimeter connect to input, able to measure input voltage.
+    1 SSC target connect with PC by UART.
+- tag: SSC_T1_AMSDU
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 1
+  test environment detail: |-
+    1 SSC target connect PC by UART.
+    PC 无线网卡和 SSC target 均连接到天猫魔盒AP.
+- tag: SSC_T1_APC
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 1
+  test environment detail: |-
+    PC has 1 wired NIC connected to AP.
+    PC has 1 wired NIC connected to APC (static IP within the same subnet with APC).
+    APC control AP power supply.
+    PC has 1 WiFi NIC.
+    1 SSC target connect with PC by UART.
+- tag: SSC_T1_Enterprise
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 1
+  test environment detail: "AP use WPA2-Etherprise is placed near SSC1. \n1 SSC target
+    connect with PC by UART."
+- tag: SSC_T1_IOT1
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 1
+  test environment detail: |-
+    PC has 1 WiFi NIC.
+    1 SSC target connect with PC by UART.
+    AP todo IOT test are placed near SSC1.
+- tag: SSC_T1_InitData
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 2
+  test environment detail: |-
+    2 SSC target connect with PC by UART.
+    SSC1 use 40M crystal oscillator.
+    SSC2 use normal 26M crystal oscillator.
+    SSC2 GPIO connect to SSC1 power control pin.
+- tag: SSC_T1_SCANSPECIFIED
+  <<: *TEST_ENV
+  Special: N
+  Target Count: 1
+  test environment detail: 1 SSC target connect with PC by UART. All APs power on.
+- tag: SSC_T1_ShieldBox
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 1
+  test environment detail: |-
+    refer to figure.
+    All APs and APC should be set to the same IP subnet.
+    PC wired NIC should set static IP address within the same subnet with AP.
+    Must use onboard wired NIC.
+- tag: SSC_T1_Sleep1
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 1
+  test environment detail: |-
+    AP support DTIM placed with AT target.
+    SSC target connect with Raspberry Pi by UART.
+    Multimeter connect with Raspberry Pi via GPIB.
+    Series multimeter between GND and VCC of SSC1.
+    SSC1's light sleep wakeup pin and wakeup indication connect with Raspberry Pi's GPIO.
+    SSC1's XPD connect with RSTB.
+- tag: SSC_T1_Sleep2
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 1
+  test environment detail: |-
+    AP support DTIM placed with AT target.
+    SSC target connect with Raspberry Pi by UART.
+    Multimeter connect with Raspberry Pi via GPIB.
+    Series multimeter between GND and VCC of SSC1.
+    SSC1's RSTB pin connect with Raspberry Pi's GPIO.
+- tag: SSC_T1_Sleep3
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 1
+  test environment detail: |-
+    AP support DTIM placed with AT target.
+    SSC target connect with Raspberry Pi by UART.
+    Multimeter connect with Raspberry Pi via GPIB.
+    Series multimeter between GND and VCC of SSC1.
+- tag: SSC_T1_Sniffer
+  <<: *TEST_ENV
+  Target Count: 1
+  test environment detail: |-
+    PC has 1 wired NIC connected to AP. PC has 1 WiFi NIC.
+    1 SSC target connect with PC by UART.
+- tag: SSC_T1_TempBox
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 1
+  test environment detail: |-
+    1 SSC target connect with PC by UART.
+    Put SSC target to temperature box.
+- tag: SSC_T1_VDD33
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 1
+  test environment detail: |-
+    1 SSC target connect with PC by UART.
+    Multimeter connect to VDD33, able to measure voltage.
+- tag: SSC_T1_WEP
+  <<: *TEST_ENV
+  Target Count: 1
+  test environment detail: |-
+    1 SSC target connect with PC by UART.
+    One WEP share key AP placed near SSC1.
+- tag: SSC_T2_1
+  <<: *TEST_ENV
+  Target Count: 2
+  test environment detail: |-
+    PC has 1 wired NIC connected to AP.
+    PC has 1 WiFi NIC.
+    2 SSC target connect with PC by UART.
+- tag: SSC_T2_JAP
+  <<: *TEST_ENV
+  Target Count: 2
+  test environment detail: |-
+    PC has 1 wired NIC connected to APC.
+    APC control the power supply of multiple APs.
+    2 SSC target connect with PC by UART.
+- tag: SSC_T2_PhyMode
+  <<: *TEST_ENV
+  PC OS: 'linux'
+  Target Count: 2
+  test environment detail: |-
+    2 SSC target connect with PC by UART.
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+    Put 4 APs near SSC targets.
+- tag: SSC_T2_ShieldBox
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 2
+  test environment detail: |-
+    2 SSC target connect with PC by UART.
+    Put them to Shield box.
+- tag: SSC_T2_ShieldBox2
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 1
+  test environment detail: |
+    refer to figure.
+    2 SSC target connect with PC by UART. Put target board to different Shield boxes.
+    2 shield boxes are connected with programmable attenuator.
+- tag: SSC_T2_Sniffer
+  <<: *TEST_ENV
+  PC OS: 'linux'
+  Special: N
+  Target Count: 2
+  test environment detail: |-
+    PC has 1 wired NIC connected to AP.
+    PC has 1 WiFi NIC.
+    2 SSC target connect with PC by UART.
+- tag: SSC_T2_TempBox
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 1
+  test environment detail: |
+    refer to figure.
+    2 SSC target connect with PC by UART. Put 1 target board to temperature box.
+- tag: SSC_T3_1
+  <<: *TEST_ENV
+  Special: N
+  Target Count: 1
+  test environment detail: |-
+    PC has 1 wired NIC connected to AP.
+    PC has 1 WiFi NIC.
+    3 SSC target connect with PC by UART.
+- tag: SSC_T3_PhyMode
+  <<: *TEST_ENV
+  PC OS: 'linux'
+  Target Count: 3
+  test environment detail: |-
+    3 SSC target connect with PC by UART.
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+    Set 4 AP with (HT20, channel1), (HT20, channel2), (HT40, channel1), (HT40, channel2).
+    Put 4 APs near SSC targets.
+- tag: SSC_T5_1
+  <<: *TEST_ENV
+  Target Count: 5
+  test environment detail: 5 SSC target connect with PC by UART.
+- tag: SSC_T5_IOT1
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 5
+  test environment detail: |-
+    5 SSC targets connect with PC by UART.
+    some Android smart phone are placed near SSC targets.
+- tag: SSC_T6_1
+  <<: *TEST_ENV
+  Target Count: 1
+  test environment detail: |-
+    PC has 1 wired NIC connected to AP.
+    PC has 1 WiFi NIC.
+    6 SSC target connect with PC by UART.

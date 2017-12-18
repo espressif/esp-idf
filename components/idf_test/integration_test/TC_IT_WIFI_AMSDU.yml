@@ -1,0 +1,29 @@
+test cases:
+- CI ready: 'Yes'
+  ID: WIFI_AMSDU_5001
+  SDK: ESP32_IDF
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stress
+  cmd set:
+  - TCPStress/TCPAMSDUsendrecv
+  - - delay_config = [0, 0.01, 0.1, 0.5, 1]
+    - - dummy
+  - - send_count = 1000
+    - - ''
+  - - test_time = 300
+    - - ''
+  execution time: 12.0
+  expected result: 1. do not disconnect
+  initial condition: STAM2
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1. PC and SSC1 connected to 天猫魔盒,do TCP pkts send/recv for a long time.
+    2.Loop executing step 1
+  sub module: A-MSDU
+  summary: test AMSDU send/rev
+  test environment: SSC_T1_AMSDU
+  test point 1: function + stress
+  test point 2: AMSDU send recv
+  version: v2 (2016-11-15)
