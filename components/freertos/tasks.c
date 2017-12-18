@@ -3643,10 +3643,15 @@ static void prvCheckTasksWaitingTermination( void )
 					/* We only want to kill tasks that ran on this core because e.g. _xt_coproc_release needs to
 					be called on the core the process is pinned on, if any */
 					ListItem_t *target = listGET_HEAD_ENTRY(&xTasksWaitingTermination);
-					for( ; target != listGET_END_MARKER(&xTasksWaitingTermination); target = listGET_NEXT(target) ){
-						int coreid = (( TCB_t * )listGET_LIST_ITEM_OWNER(target))->xCoreID;
-						if(coreid == core || coreid == tskNO_AFFINITY){		//Find first item not pinned to other core
-							pxTCB = ( TCB_t * )listGET_LIST_ITEM_OWNER(target);
+					for( ; target != listGET_END_MARKER(&xTasksWaitingTermination); target = listGET_NEXT(target) ){	//Walk the list
+						TCB_t *tgt_tcb = ( TCB_t * )listGET_LIST_ITEM_OWNER(target);
+						int affinity = tgt_tcb->xCoreID;
+						//Self deleting tasks are added to Termination List before they switch context. Ensure they aren't still currently running
+						if( pxCurrentTCB[core] == tgt_tcb || (portNUM_PROCESSORS > 1 && pxCurrentTCB[!core] == tgt_tcb) ){
+							continue;	//Can't free memory of task that is still running
+						}
+						if(affinity == core || affinity == tskNO_AFFINITY){		//Find first item not pinned to other core
+							pxTCB = tgt_tcb;
 							break;
 						}
 					}
