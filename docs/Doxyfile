@@ -64,6 +64,7 @@ INPUT = \
     ## Peripherals - API Reference
     ##
     ../../components/driver/include/driver/adc.h \
+    ../../components/driver/include/driver/can.h \
     ../../components/driver/include/driver/dac.h \
     ../../components/driver/include/driver/gpio.h \
     ../../components/driver/include/driver/rtc_io.h \
