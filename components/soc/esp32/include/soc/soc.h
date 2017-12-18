@@ -120,6 +120,7 @@
 #define DR_REG_I2C1_EXT_BASE                    0x3ff67000
 #define DR_REG_SDMMC_BASE                       0x3ff68000
 #define DR_REG_EMAC_BASE                        0x3ff69000
+#define DR_REG_CAN_BASE                         0x3ff6B000
 #define DR_REG_PWM1_BASE                        0x3ff6C000
 #define DR_REG_I2S1_BASE                        0x3ff6D000
 #define DR_REG_UART2_BASE                       0x3ff6E000
