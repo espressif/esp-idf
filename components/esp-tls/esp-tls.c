@@ -49,7 +49,15 @@ static ssize_t tcp_read(struct esp_tls *tls, char *data, size_t datalen)
 
 static ssize_t tls_read(struct esp_tls *tls, char *data, size_t datalen)
 {
-    return SSL_read(tls->ssl, data, datalen);
+    ssize_t ret = SSL_read(tls->ssl, data, datalen);
+    if (ret < 0) {
+	int err = SSL_get_error(tls->ssl, ret);
+	if (err != SSL_ERROR_WANT_WRITE && err != SSL_ERROR_WANT_READ) {
+	    ESP_LOGE(TAG, "read error :%d:\n", ret);
+	}
+	return -err;
+    }
+    return ret;
 }
 
 static int esp_tcp_connect(const char *host, int hostlen, int port)
@@ -163,7 +171,15 @@ static ssize_t tcp_write(struct esp_tls *tls, const char *data, size_t datalen)
 
 static ssize_t tls_write(struct esp_tls *tls, const char *data, size_t datalen)
 {
-    return SSL_write(tls->ssl, data, datalen);
+    ssize_t ret = SSL_write(tls->ssl, data, datalen);
+    if (ret < 0) {
+	int err = SSL_get_error(tls->ssl, ret);
+	if (err != SSL_ERROR_WANT_WRITE && err != SSL_ERROR_WANT_READ) {
+	    ESP_LOGE(TAG, "write error :%d:\n", ret);
+	}
+	return -err;
+    }
+    return ret;
 }
 
 struct esp_tls *esp_tls_conn_new(const char *hostname, int hostlen, int port, struct esp_tls_cfg *cfg)
