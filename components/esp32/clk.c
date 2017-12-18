@@ -27,10 +27,10 @@
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
-#include "soc/dport_reg.h"
 #include "soc/i2s_reg.h"
 #include "driver/periph_ctrl.h"
 #include "xtensa/core-macros.h"
+#include "bootloader_clock.h"
 
 /* Number of cycles to wait from the 32k XTAL oscillator to consider it running.
  * Larger values increase startup delay. Smaller values may cause false positive
@@ -54,6 +54,22 @@ void esp_clk_init(void)
 {
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
     rtc_init(cfg);
+
+#ifdef CONFIG_COMPATIBLE_PRE_V2_1_BOOTLOADERS
+    /* Check the bootloader set the XTAL frequency.
+
+       Bootloaders pre-v2.1 don't do this.
+    */
+    rtc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
+    if (xtal_freq == RTC_XTAL_FREQ_AUTO) {
+        ESP_EARLY_LOGW(TAG, "RTC domain not initialised by bootloader");
+        bootloader_clock_configure();
+    }
+#else
+    /* If this assertion fails, either upgrade the bootloader or enable CONFIG_COMPATIBLE_PRE_V2_1_BOOTLOADERS */
+    assert(rtc_clk_xtal_freq_get() != RTC_XTAL_FREQ_AUTO);
+#endif
+
     rtc_clk_fast_freq_set(RTC_FAST_FREQ_8M);
 
 #ifdef CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
