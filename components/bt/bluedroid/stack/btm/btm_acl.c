@@ -906,6 +906,11 @@ void btm_read_remote_version_complete (UINT8 *p)
             }
 #if BLE_INCLUDED == TRUE
             if (p_acl_cb->transport == BT_TRANSPORT_LE) {
+                if (HCI_LE_DATA_LEN_EXT_SUPPORTED(p_acl_cb->peer_le_features)) {
+                    uint16_t data_length = controller_get_interface()->get_ble_default_data_packet_length();
+                    uint16_t data_txtime = controller_get_interface()->get_ble_default_data_packet_txtime();
+                    btsnd_hcic_ble_set_data_length(p_acl_cb->hci_handle, data_length, data_txtime);
+                }
                 l2cble_notify_le_connection (p_acl_cb->remote_addr);
             }
 #endif

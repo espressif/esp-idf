@@ -988,8 +988,10 @@ void gatt_process_mtu_rsp(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT16 len, UINT
             p_tcb->payload_size = mtu;
         }
     }
-
-    l2cble_set_fixed_channel_tx_data_length(p_tcb->peer_bda, L2CAP_ATT_CID, p_tcb->payload_size);
+    /* host will set packet data length to 251 automatically if remote device support set packet data length,
+       so l2cble_set_fixed_channel_tx_data_length() is not necessary.
+       l2cble_set_fixed_channel_tx_data_length(p_tcb->peer_bda, L2CAP_ATT_CID, p_tcb->payload_size);
+    */
     gatt_end_operation(p_clcb, status, NULL);
 }
 /*******************************************************************************

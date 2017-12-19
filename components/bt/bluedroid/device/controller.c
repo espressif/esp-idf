@@ -66,6 +66,7 @@ static uint8_t ble_resolving_list_max_size;
 static uint8_t ble_supported_states[BLE_SUPPORTED_STATES_SIZE];
 static bt_device_features_t features_ble;
 static uint16_t ble_suggested_default_data_length;
+static uint16_t ble_suggested_default_data_txtime;
 
 static bool readable;
 static bool ble_supported;
@@ -228,7 +229,8 @@ static void start_up(void)
             response = AWAIT_COMMAND(packet_factory->make_ble_read_suggested_default_data_length());
             packet_parser->parse_ble_read_suggested_default_data_length_response(
                 response,
-                &ble_suggested_default_data_length);
+                &ble_suggested_default_data_length,
+                &ble_suggested_default_data_txtime);
         }
 
         // Set the ble event mask next
@@ -404,6 +406,13 @@ static uint16_t get_ble_suggested_default_data_length(void)
     return ble_suggested_default_data_length;
 }
 
+static uint16_t get_ble_suggested_default_data_txtime(void)
+{
+    assert(readable);
+    assert(ble_supported);
+    return ble_suggested_default_data_txtime;
+}
+
 static uint16_t get_acl_buffer_count_classic(void)
 {
     assert(readable);
@@ -472,6 +481,7 @@ static const controller_t interface = {
     get_acl_packet_size_classic,
     get_acl_packet_size_ble,
     get_ble_suggested_default_data_length,
+    get_ble_suggested_default_data_txtime,
 
     get_acl_buffer_count_classic,
     get_acl_buffer_count_ble,
