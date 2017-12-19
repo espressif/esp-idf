@@ -18,7 +18,7 @@
 #include <string.h>
 
 
-///Attributes State Machine
+/* Attributes State Machine */
 enum
 {
     IDX_SVC,
