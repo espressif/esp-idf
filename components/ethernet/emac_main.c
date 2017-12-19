@@ -90,6 +90,16 @@ void esp_eth_get_mac(uint8_t mac[6])
     memcpy(mac, &(emac_config.macaddr[0]), 6);
 }
 
+esp_err_t esp_eth_set_mac(const uint8_t mac[6])
+{
+    if((mac[0] & 0x01) == 0) {
+        memcpy(&(emac_config.macaddr[0]),mac, 6);
+        return ESP_OK;
+    } else {
+        return ESP_ERR_INVALID_MAC;
+    }
+}
+
 static void emac_setup_tx_desc(struct dma_extended_desc *tx_desc , uint32_t size)
 {
     tx_desc->basic.desc1 = size & 0xfff;
@@ -350,16 +360,6 @@ static esp_err_t emac_verify_args(void)
     return ret;
 }
 
-//TODO for mac filter
-void emac_set_mac_addr(void)
-{
-}
-
-//TODO
-void emac_check_mac_addr(void)
-{
-}
-
 static void emac_process_tx(void)
 {
     uint32_t cur_tx_desc = emac_read_tx_cur_reg();
@@ -414,7 +414,7 @@ static uint32_t IRAM_ATTR emac_get_rxbuf_count_in_intr(void)
     uint32_t cur_rx_desc = emac_read_rx_cur_reg();
     struct dma_extended_desc *cur_desc = (struct dma_extended_desc *)cur_rx_desc;
 
-    while (cur_desc->basic.desc0 == EMAC_DESC_RX_OWN) {
+    while (cur_desc->basic.desc0 == EMAC_DESC_RX_OWN && cnt < DMA_RX_BUF_NUM) {
         cnt++;
         cur_desc = (struct dma_extended_desc *)cur_desc->basic.desc3;
     }
@@ -769,11 +769,7 @@ static void emac_start(void *param)
     emac_enable_clk(true);
 
     emac_reset();
-    emac_macaddr_init();
 
-    emac_check_mac_addr();
-
-    emac_set_mac_addr();
     emac_set_macaddr_reg();
 
     emac_set_tx_base_reg();
@@ -1097,6 +1093,7 @@ esp_err_t esp_eth_init_internal(eth_config_t *config)
 
     ESP_LOGI(TAG, "mac version %04xa", emac_read_mac_version());
     emac_hw_init();
+    emac_macaddr_init();
 
     //watchdog  TODO
 
