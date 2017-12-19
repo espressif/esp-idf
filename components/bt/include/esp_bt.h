@@ -212,19 +212,17 @@ void esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callback);
  * it can release the .bbs, .data and other section to heap.
  * The total size is about 70k bytes.
  *
- * If esp_bt_controller_enable(mode) has already been called, calling
- * esp_bt_controller_mem_release(ESP_BT_MODE_BTDM) will automatically
- * release all memory which is not needed for the currently enabled
- * Bluetooth controller mode.
+ * esp_bt_controller_mem_release(mode) should be called only before esp_bt_controller_init()
+ * or after esp_bt_controller_deinit().
  *
- * For example, calling esp_bt_controller_enable(ESP_BT_MODE_BLE) then
- * esp_bt_controller_mem_release(ESP_BT_MODE_BTDM) will enable BLE modes
- * and release memory only used by BT Classic. Also, call esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT)
- * is the same.
+ * Note that once BT controller memory is released, the process cannot be reversed. It means you can not use the bluetooth
+ * mode which you have released by this function.
  *
- * Note that once BT controller memory is released, the process cannot be reversed.
  * If your firmware will later upgrade the Bluetooth controller mode (BLE -> BT Classic or disabled -> enabled)
  * then do not call this function.
+ *
+ * If the app calls esp_bt_controller_enable(ESP_BT_MODE_BLE) to use BLE only then it is safe to call
+ * esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT) at initialisation time to free unused BT Classic memory.
  *
  * If user never use bluetooth controller, could call esp_bt_controller_mem_release(ESP_BT_MODE_BTDM)
  * before esp_bt_controller_init or after esp_bt_controller_deinit.

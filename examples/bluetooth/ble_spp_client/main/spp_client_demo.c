@@ -956,6 +956,9 @@ static void spp_uart_init(void)
 void app_main()
 {
     esp_err_t ret;
+
+    ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
+
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
 
     nvs_flash_init();
@@ -965,7 +968,7 @@ void app_main()
         return;
     }
 
-    ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
+    ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
     if (ret) {
         ESP_LOGE(GATTC_TAG, "%s enable controller failed\n", __func__);
         return;
