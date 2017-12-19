@@ -89,3 +89,8 @@ inline static bool IRAM_ATTR esp_ptr_internal(const void *p) {
     r |= ((intptr_t)p >= SOC_RTC_DATA_LOW && (intptr_t)p < SOC_RTC_DATA_HIGH);
     return r;
 }
+
+
+inline static bool IRAM_ATTR esp_ptr_external_ram(const void *p) {
+    return ((intptr_t)p >= SOC_EXTRAM_DATA_LOW && (intptr_t)p < SOC_EXTRAM_DATA_HIGH);
+}
