@@ -113,6 +113,13 @@ static uint32_t s_timer_us_per_overflow;
 // will not increment s_time_base_us if this flag is set.
 static bool s_mask_overflow;
 
+//The timer_overflow_happened read alarm register to tell if overflow happened.
+//However, there is a monent that overflow happens, and before ISR function called
+//alarm register is set to another value, then you call timer_overflow_happened, 
+//it will return false.
+//So we store the overflow value when new alarm is to be set. 
+static bool s_overflow_happened;
+
 #ifdef CONFIG_PM_DFS_USE_RTC_TIMER_REF
 // If DFS is enabled, upon the first frequency change this value is set to the
 // difference between esp_timer value and RTC timer value. On every subsequent
@@ -125,12 +132,19 @@ static uint64_t s_rtc_time_diff = 0;
 // registers.
 portMUX_TYPE s_time_update_lock = portMUX_INITIALIZER_UNLOCKED;
 
+#define TIMER_BEFORE(a, b) ((int)((uint32_t)(a) - (uint32_t)(b)) < 0)
+
 // Check if timer overflow has happened (but was not handled by ISR yet)
 static inline bool IRAM_ATTR timer_overflow_happened()
 {
+    if (s_overflow_happened) {
+        return true;
+    }
+ 
     return (REG_READ(FRC_TIMER_CTRL_REG(1)) & FRC_TIMER_INT_STATUS) != 0 &&
-            REG_READ(FRC_TIMER_ALARM_REG(1)) == ALARM_OVERFLOW_VAL &&
-            !s_mask_overflow;
+            ((REG_READ(FRC_TIMER_ALARM_REG(1)) == ALARM_OVERFLOW_VAL && !s_mask_overflow) || 
+            (TIMER_BEFORE(REG_READ(FRC_TIMER_ALARM_REG(1)), ALARM_OVERFLOW_VAL) &&
+            TIMER_BEFORE(ALARM_OVERFLOW_VAL, REG_READ(FRC_TIMER_COUNT_REG(1)))));
 }
 
 uint64_t IRAM_ATTR esp_timer_impl_get_time()
@@ -173,25 +187,35 @@ void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
     uint64_t time_after_timebase_us = timestamp - s_time_base_us;
     // Adjust current time if overflow has happened
     bool overflow = timer_overflow_happened();
+    uint64_t cur_count = REG_READ(FRC_TIMER_COUNT_REG(1));
+    uint32_t offset = s_timer_ticks_per_us;
+
+    //If overflow is going to happen in 1us, let's wait until it happens,
+    //else we think it will not happen before new alarm set.
+    //And we should wait current timer count less than ALARM_OVERFLOW_VAL,
+    //maybe equals to 0.
+    if (cur_count + offset >= ALARM_OVERFLOW_VAL) {
+        do {
+            overflow = timer_overflow_happened();
+            cur_count = REG_READ(FRC_TIMER_COUNT_REG(1));
+        } while(!overflow || cur_count >= ALARM_OVERFLOW_VAL);
+    }
+
     if (overflow) {
         assert(time_after_timebase_us > s_timer_us_per_overflow);
         time_after_timebase_us -= s_timer_us_per_overflow;
+        s_overflow_happened = true;
     }
     // Calculate desired timer compare value (may exceed 2^32-1)
     uint64_t compare_val = time_after_timebase_us * s_timer_ticks_per_us;
     uint32_t alarm_reg_val = ALARM_OVERFLOW_VAL;
     // Use calculated alarm value if it is less than 2^32-1
     if (compare_val < ALARM_OVERFLOW_VAL) {
-        uint64_t cur_count = REG_READ(FRC_TIMER_COUNT_REG(1));
         // If we by the time we update ALARM_REG, COUNT_REG value is higher,
         // interrupt will not happen for another 2^32 timer ticks, so need to
         // check if alarm value is too close in the future (e.g. <1 us away).
-        uint32_t offset = s_timer_ticks_per_us;
         if (compare_val < cur_count + offset) {
             compare_val = cur_count + offset;
-            if (compare_val > UINT32_MAX) {
-                compare_val = ALARM_OVERFLOW_VAL;
-            }
         }
         alarm_reg_val = (uint32_t) compare_val;
     }
@@ -205,6 +229,7 @@ static void IRAM_ATTR timer_alarm_isr(void *arg)
     // Timekeeping: adjust s_time_base_us if counter has passed ALARM_OVERFLOW_VAL
     if (timer_overflow_happened()) {
         s_time_base_us += s_timer_us_per_overflow;
+        s_overflow_happened = false;
     }
     s_mask_overflow = false;
     // Clear interrupt status
