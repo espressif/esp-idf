@@ -75,6 +75,9 @@ typedef struct {
 
 rmt_obj_t* p_rmt_obj[RMT_CHANNEL_MAX] = {0};
 
+// Event called when transmission is ended
+static rmt_tx_end_t rmt_tx_end_callback = NULL;
+
 static void rmt_set_tx_wrap_en(rmt_channel_t channel, bool en)
 {
     portENTER_CRITICAL(&rmt_spinlock);
@@ -540,7 +543,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
                 switch(i % 3) {
                     //TX END
                     case 0:
-                        ESP_EARLY_LOGD(RMT_TAG, "RMT INTR : TX END");
+                        ESP_EARLY_LOGV(RMT_TAG, "RMT INTR : TX END");
                         xSemaphoreGiveFromISR(p_rmt->tx_sem, &HPTaskAwoken);
                         if(HPTaskAwoken == pdTRUE) {
                             portYIELD_FROM_ISR();
@@ -549,10 +552,13 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
                         p_rmt->tx_len_rem = 0;
                         p_rmt->tx_offset = 0;
                         p_rmt->tx_sub_len = 0;
+                        if(rmt_tx_end_callback != NULL) {
+                            rmt_tx_end_callback(channel);
+                        }
                         break;
                         //RX_END
                     case 1:
-                        ESP_EARLY_LOGD(RMT_TAG, "RMT INTR : RX END");
+                        ESP_EARLY_LOGV(RMT_TAG, "RMT INTR : RX END");
                         RMT.conf_ch[channel].conf1.rx_en = 0;
                         int item_len = rmt_get_mem_len(channel);
                         //change memory owner to protect data.
@@ -773,3 +779,9 @@ esp_err_t rmt_get_ringbuf_handle(rmt_channel_t channel, RingbufHandle_t* buf_han
     return ESP_OK;
 }
 
+rmt_tx_end_t rmt_register_tx_end_callback(rmt_tx_end_t handler)
+{
+    rmt_tx_end_t previous = rmt_tx_end_callback;
+    rmt_tx_end_callback = handler;
+    return previous;
+}
