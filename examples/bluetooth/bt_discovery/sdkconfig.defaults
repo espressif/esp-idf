@@ -1,0 +1,5 @@
+# Override some defaults so BT stack is enabled and
+# Classic BT is enabled and BT_DRAM_RELEASE is disabled
+CONFIG_BT_ENABLED=y
+CONFIG_CLASSIC_BT_ENABLED=y
+

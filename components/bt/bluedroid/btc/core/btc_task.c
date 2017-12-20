@@ -14,6 +14,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include "bt_target.h"
 #include "btc_task.h"
 #include "bt_trace.h"
 #include "thread.h"
@@ -29,7 +30,9 @@
 #include "btc_alarm.h"
 #include "bta_gatt_api.h"
 #if CONFIG_CLASSIC_BT_ENABLED
+#if (BTC_GAP_BT_INCLUDED == TRUE)
 #include "btc_gap_bt.h"
+#endif /* BTC_GAP_BT_INCLUDED == TRUE */
 #include "btc_profile_queue.h"
 #include "btc_av.h"
 #include "btc_avrc.h"
@@ -57,7 +60,9 @@ static btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_DM_SEC]    = {NULL,                        btc_dm_sec_cb_handler   },
     [BTC_PID_ALARM]     = {btc_alarm_handler,           NULL                    },
 #if CONFIG_CLASSIC_BT_ENABLED
+#if (BTC_GAP_BT_INCLUDED == TRUE)
     [BTC_PID_GAP_BT]    = {btc_gap_bt_call_handler,     NULL                    },
+#endif /* (BTC_GAP_BT_INCLUDED == TRUE) */
     [BTC_PID_PRF_QUE]   = {btc_profile_queue_handler,   NULL                    },
     [BTC_PID_A2DP]      = {btc_a2dp_call_handler,       btc_a2dp_cb_handler     },
     [BTC_PID_AVRC]      = {btc_avrc_call_handler,       NULL                    },

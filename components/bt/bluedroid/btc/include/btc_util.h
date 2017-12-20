@@ -18,6 +18,7 @@
 #include <stdbool.h>
 #include "bt_types.h"
 #include "bt_defs.h"
+#include "esp_bt_defs.h"
 
 /*******************************************************************************
 **  Constants & Macros
@@ -39,9 +40,6 @@ const char *dump_rc_pdu(UINT8 pdu);
 
 UINT32 devclass2uint(DEV_CLASS dev_class);
 void uint2devclass(UINT32 dev, DEV_CLASS dev_class);
-void uuid16_to_uuid128(uint16_t uuid16, bt_uuid_t *uuid128);
-
-void uuid_to_string_legacy(bt_uuid_t *p_uuid, char *str);
-void string_to_uuid(char *str, bt_uuid_t *p_uuid);
+void uuid128_be_to_esp_uuid(esp_bt_uuid_t *u, uint8_t* uuid128);
 
 #endif /*  __BTC_UTIL_H__ */

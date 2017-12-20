@@ -129,6 +129,7 @@ UINT32 devclass2uint(DEV_CLASS dev_class)
     }
     return cod;
 }
+
 void uint2devclass(UINT32 cod, DEV_CLASS dev_class)
 {
     dev_class[2] = (UINT8)cod;
@@ -136,61 +137,26 @@ void uint2devclass(UINT32 cod, DEV_CLASS dev_class)
     dev_class[0] = (UINT8)(cod >> 16);
 }
 
-static const UINT8  sdp_base_uuid[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00,
-                                       0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB
-                                      };
+static const UINT8  base_uuid_be[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00,
+                                      0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB};
 
-void uuid16_to_uuid128(uint16_t uuid16, bt_uuid_t *uuid128)
+void uuid128_be_to_esp_uuid(esp_bt_uuid_t *u, uint8_t* uuid128)
 {
-    uint16_t uuid16_bo;
-    memset(uuid128, 0, sizeof(bt_uuid_t));
+    if (memcmp(base_uuid_be+4, uuid128 + 4, 12) != 0) {
+        u->len = ESP_UUID_LEN_128;
+        uint8_t *p_i = uuid128 + ESP_UUID_LEN_128 - 1;
+        uint8_t *p_o = u->uuid.uuid128;
+        uint8_t *p_end = p_o + ESP_UUID_LEN_128;
+        for (; p_o != p_end; *p_o++ = *p_i--)
+            ;
+    } else if (uuid128[0] == 0 && uuid128[1] == 0) {
+        u->len = 2;
+        u->uuid.uuid16 = (uuid128[2] << 8) + uuid128[3];
+    } else {
+        u->len = 4;
+        u->uuid.uuid32 = (uuid128[2] << 8) + uuid128[3];
+        u->uuid.uuid32 += (uuid128[0] << 24) + (uuid128[1] << 16);
+    }
 
-    memcpy(uuid128->uu, sdp_base_uuid, MAX_UUID_SIZE);
-    uuid16_bo = ntohs(uuid16);
-    memcpy(uuid128->uu + 2, &uuid16_bo, sizeof(uint16_t));
-}
-
-void string_to_uuid(char *str, bt_uuid_t *p_uuid)
-{
-    uint32_t uuid0, uuid4;
-    uint16_t uuid1, uuid2, uuid3, uuid5;
-
-    sscanf(str, "%08x-%04hx-%04hx-%04hx-%08x%04hx",
-           &uuid0, &uuid1, &uuid2, &uuid3, &uuid4, &uuid5);
-
-    uuid0 = htonl(uuid0);
-    uuid1 = htons(uuid1);
-    uuid2 = htons(uuid2);
-    uuid3 = htons(uuid3);
-    uuid4 = htonl(uuid4);
-    uuid5 = htons(uuid5);
-
-    memcpy(&(p_uuid->uu[0]), &uuid0, 4);
-    memcpy(&(p_uuid->uu[4]), &uuid1, 2);
-    memcpy(&(p_uuid->uu[6]), &uuid2, 2);
-    memcpy(&(p_uuid->uu[8]), &uuid3, 2);
-    memcpy(&(p_uuid->uu[10]), &uuid4, 4);
-    memcpy(&(p_uuid->uu[14]), &uuid5, 2);
-
-    return;
-
-}
-
-void uuid_to_string_legacy(bt_uuid_t *p_uuid, char *str)
-{
-    uint32_t uuid0, uuid4;
-    uint16_t uuid1, uuid2, uuid3, uuid5;
-
-    memcpy(&uuid0, &(p_uuid->uu[0]), 4);
-    memcpy(&uuid1, &(p_uuid->uu[4]), 2);
-    memcpy(&uuid2, &(p_uuid->uu[6]), 2);
-    memcpy(&uuid3, &(p_uuid->uu[8]), 2);
-    memcpy(&uuid4, &(p_uuid->uu[10]), 4);
-    memcpy(&uuid5, &(p_uuid->uu[14]), 2);
-
-    sprintf((char *)str, "%.8x-%.4x-%.4x-%.4x-%.8x%.4x",
-            ntohl(uuid0), ntohs(uuid1),
-            ntohs(uuid2), ntohs(uuid3),
-            ntohl(uuid4), ntohs(uuid5));
     return;
 }

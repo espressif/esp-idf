@@ -1560,11 +1560,9 @@ void bta_dm_sdp_result (tBTA_DM_MSG *p_data)
             || (p_data->sdp_event.sdp_result == SDP_DB_FULL)) {
         APPL_TRACE_DEBUG("sdp_result::0x%x", p_data->sdp_event.sdp_result);
         do {
-
             p_sdp_rec = NULL;
             if ( bta_dm_search_cb.service_index == (BTA_USER_SERVICE_ID + 1) ) {
                 p_sdp_rec = SDP_FindServiceUUIDInDb(bta_dm_search_cb.p_sdp_db, &bta_dm_search_cb.uuid, p_sdp_rec);
-
                 if (p_sdp_rec && SDP_FindProtocolListElemInRec(p_sdp_rec, UUID_PROTOCOL_RFCOMM, &pe)) {
                     bta_dm_search_cb.peer_scn = (UINT8) pe.params[0];
                     scn_found = TRUE;
@@ -1580,7 +1578,6 @@ void bta_dm_sdp_result (tBTA_DM_MSG *p_data)
                     p_uuid +=  (bta_dm_search_cb.num_uuid - bta_dm_search_cb.uuid_to_search);
                     /* only support 16 bits UUID for now */
                     service = p_uuid->uu.uuid16;
-
                 }
                 /* all GATT based services */
                 do {
@@ -1613,7 +1610,7 @@ void bta_dm_sdp_result (tBTA_DM_MSG *p_data)
                 if (((p_data->sdp_event.sdp_result == SDP_DB_FULL) &&
                         bta_dm_search_cb.services != BTA_ALL_SERVICE_MASK) ||
                         (p_sdp_rec != NULL)) {
-                    if (service != UUID_SERVCLASS_PNP_INFORMATION) {
+                    if (service != UUID_SERVCLASS_PNP_INFORMATION && service != 0) {
                         UINT16 tmp_svc = 0xFFFF;
                         bta_dm_search_cb.services_found |=
                             (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(bta_dm_search_cb.service_index - 1));
@@ -1640,11 +1637,8 @@ void bta_dm_sdp_result (tBTA_DM_MSG *p_data)
             } else { /* regular one service per search or PNP search */
                 break;
             }
-
         } while (bta_dm_search_cb.service_index <= BTA_MAX_SERVICE_ID);
 
-//        osi_free(bta_dm_search_cb.p_sdp_db);
-//        bta_dm_search_cb.p_sdp_db = NULL;
         APPL_TRACE_DEBUG("%s services_found = %04x", __FUNCTION__,
                          bta_dm_search_cb.services_found);
 
@@ -2054,13 +2048,13 @@ static void bta_dm_find_services ( BD_ADDR bd_addr)
     memset (&uuid, 0, sizeof(tSDP_UUID));
 
     while (bta_dm_search_cb.service_index < BTA_MAX_SERVICE_ID) {
-        if ( bta_dm_search_cb.services_to_search
-                & (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(bta_dm_search_cb.service_index))) {
+        tBTA_SERVICE_MASK this_service_mask = (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(bta_dm_search_cb.service_index));
+        if ( bta_dm_search_cb.services_to_search & this_service_mask) {
             if ((bta_dm_search_cb.p_sdp_db = (tSDP_DISCOVERY_DB *)osi_malloc(BTA_DM_SDP_DB_SIZE)) != NULL) {
                 APPL_TRACE_DEBUG("bta_dm_search_cb.services = %04x***********", bta_dm_search_cb.services);
                 /* try to search all services by search based on L2CAP UUID */
                 if (bta_dm_search_cb.services == BTA_ALL_SERVICE_MASK ) {
-                    LOG_INFO("%s services_to_search=%08x", __func__, bta_dm_search_cb.services_to_search);
+                    APPL_TRACE_DEBUG("%s services_to_search=%08x", __func__, bta_dm_search_cb.services_to_search);
                     if (bta_dm_search_cb.services_to_search & BTA_RES_SERVICE_MASK) {
                         uuid.uu.uuid16 = bta_service_id_to_uuid_lkup_tbl[0];
                         bta_dm_search_cb.services_to_search &= ~BTA_RES_SERVICE_MASK;
@@ -2071,7 +2065,7 @@ static void bta_dm_find_services ( BD_ADDR bd_addr)
                 } else {
 #if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE
                     /* for LE only profile */
-                    if (bta_dm_search_cb.service_index == BTA_BLE_SERVICE_ID) {
+                    if (this_service_mask == BTA_BLE_SERVICE_MASK) {
                         if (bta_dm_search_cb.uuid_to_search > 0 && bta_dm_search_cb.p_srvc_uuid) {
                             memcpy(&uuid,
                                    (const void *)(bta_dm_search_cb.p_srvc_uuid + \
@@ -2102,11 +2096,11 @@ static void bta_dm_find_services ( BD_ADDR bd_addr)
                     uuid.len = LEN_UUID_16;
                 }
 
-                if (bta_dm_search_cb.service_index == BTA_USER_SERVICE_ID) {
+                if (this_service_mask == BTA_USER_SERVICE_MASK) {
                     memcpy(&uuid, &bta_dm_search_cb.uuid, sizeof(tSDP_UUID));
                 }
 
-                LOG_INFO("%s search UUID = %04x", __func__, uuid.uu.uuid16);
+                APPL_TRACE_DEBUG("%s search UUID = %04x", __func__, uuid.uu.uuid16);
                 SDP_InitDiscoveryDb (bta_dm_search_cb.p_sdp_db, BTA_DM_SDP_DB_SIZE, 1, &uuid, 0, NULL);
 
                 memset(g_disc_raw_data_buf, 0, sizeof(g_disc_raw_data_buf));
@@ -2123,9 +2117,9 @@ static void bta_dm_find_services ( BD_ADDR bd_addr)
 
                 } else {
 #if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE
-                    if ((bta_dm_search_cb.service_index == BTA_BLE_SERVICE_ID &&
+                    if ((this_service_mask == BTA_BLE_SERVICE_MASK &&
                             bta_dm_search_cb.uuid_to_search == 0) ||
-                            bta_dm_search_cb.service_index != BTA_BLE_SERVICE_ID)
+                            this_service_mask != BTA_BLE_SERVICE_MASK)
 #endif
                         bta_dm_search_cb.service_index++;
                     return;
