@@ -34,6 +34,7 @@
 #include "soc/efuse_reg.h"
 #include "driver/gpio.h"
 #include "driver/spi_common.h"
+#include "driver/periph_ctrl.h"
 
 #if CONFIG_SPIRAM_SUPPORT
 
@@ -492,6 +493,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
          Application code should never touch VSPI hardware in this case.  We try to stop applications
          from doing this using the drivers by claiming the port for ourselves*/
     if (mode == PSRAM_CACHE_F80M_S80M) {
+        periph_module_enable(PERIPH_VSPI_MODULE);
         bool r=spicommon_periph_claim(VSPI_HOST);
         if (!r) {
             return ESP_ERR_INVALID_STATE;
@@ -502,12 +504,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
     assert(mode < PSRAM_CACHE_MAX && "we don't support any other mode for now.");
     s_psram_mode = mode;
 
-    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI_CLK_EN);
-    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI_RST);
-    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI_CLK_EN_1);
-    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI_RST_1);
-    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI_CLK_EN_2);
-    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI_RST_2);
+    periph_module_enable(PERIPH_SPI_MODULE);
 
     WRITE_PERI_REG(SPI_EXT3_REG(0), 0x1);
     CLEAR_PERI_REG_MASK(SPI_USER_REG(PSRAM_SPI_1), SPI_USR_PREP_HOLD_M);
@@ -519,6 +516,8 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
             gpio_matrix_out(PSRAM_CS_IO, SPICS1_OUT_IDX, 0, 0);
             gpio_matrix_out(PSRAM_CLK_IO, VSPICLK_OUT_IDX, 0, 0);
             //use spi3 clock,but use spi1 data/cs wires
+            //We get a solid 80MHz clock from SPI3 by setting it up, starting a transaction, waiting until it 
+            //is in progress, then cutting the clock (but not the reset!) to that peripheral.
             WRITE_PERI_REG(SPI_ADDR_REG(PSRAM_SPI_3), 32 << 24);
             WRITE_PERI_REG(SPI_CLOCK_REG(PSRAM_SPI_3), SPI_CLK_EQU_SYSCLK_M);   //SET 80M AND CLEAR OTHERS
             SET_PERI_REG_MASK(SPI_CMD_REG(PSRAM_SPI_3), SPI_FLASH_READ_M);
@@ -526,7 +525,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
             while (1) {
                 spi_status = READ_PERI_REG(SPI_EXT2_REG(PSRAM_SPI_3));
                 if (spi_status != 0 && spi_status != 1) {
-                    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, BIT(PSRAM_CS_IO));   //DPORT_SPI_CLK_EN
+                    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI_CLK_EN_2);
                     break;
                 }
             }
