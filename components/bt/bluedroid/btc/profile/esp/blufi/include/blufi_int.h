@@ -114,6 +114,7 @@ typedef struct blufi_frag_hdr blufi_frag_hdr_t;
 #define BLUFI_TYPE_DATA_SUBTYPE_WIFI_REP                0x0f
 #define BLUFI_TYPE_DATA_SUBTYPE_REPLY_VERSION           0x10
 #define BLUFI_TYPE_DATA_SUBTYPE_WIFI_LIST               0x11
+#define BLUFI_TYPE_DATA_SUBTYPE_ERROR_INFO              0x12
 #define BLUFI_TYPE_IS_CTRL(type)        (BLUFI_GET_TYPE((type)) == BLUFI_TYPE_CTRL)
 #define BLUFI_TYPE_IS_DATA(type)        (BLUFI_GET_TYPE((type)) == BLUFI_TYPE_DATA)
 
@@ -142,6 +143,7 @@ typedef struct blufi_frag_hdr blufi_frag_hdr_t;
 #define BLUFI_TYPE_IS_DATA_SERVER_CERT(type)         (BLUFI_TYPE_IS_DATA((type)) && BLUFI_GET_SUBTYPE((type)) == BLUFI_TYPE_DATA_SUBTYPE_SERVER_CERT)
 #define BLUFI_TYPE_IS_DATA_CLIENT_PRIV_KEY(type)     (BLUFI_TYPE_IS_DATA((type)) && BLUFI_GET_SUBTYPE((type)) == BLUFI_TYPE_DATA_SUBTYPE_CLIENT_PRIV_KEY)
 #define BLUFI_TYPE_IS_DATA_SERVER_PRIV_KEY(type)     (BLUFI_TYPE_IS_DATA((type)) && BLUFI_GET_SUBTYPE((type)) == BLUFI_TYPE_DATA_SUBTYPE_SERVER_PRIV_KEY)
+#define BLUFI_TYPE_IS_DATA_ERROR_INFO(type)          (BLUFI_TYPE_IS_DATA((type)) && BLUFI_GET_SUBTYPE((type)) == BLUFI_TYPE_DATA_SUBTYPE_ERROR_INFO)
 
 // packet frame control
 #define BLUFI_FC_ENC_MASK       0x01

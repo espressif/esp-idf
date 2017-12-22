@@ -69,6 +69,8 @@ static int myrand( void *rng_state, unsigned char *output, size_t len )
     return( 0 );
 }
 
+extern void btc_blufi_report_error(esp_blufi_error_state_t state);
+
 void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_data, int *output_len, bool *need_free)
 {
     int ret;
@@ -76,6 +78,7 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
 
     if (blufi_sec == NULL) {
         BLUFI_ERROR("BLUFI Security is not initialized");
+        btc_blufi_report_error(ESP_BLUFI_INIT_SECURITY_ERROR);
         return;
     }
 
@@ -88,6 +91,7 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         }
         blufi_sec->dh_param = (uint8_t *)malloc(blufi_sec->dh_param_len);
         if (blufi_sec->dh_param == NULL) {
+            btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
             BLUFI_ERROR("%s, malloc failed\n", __func__);
             return;
         }
@@ -95,6 +99,7 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
     case SEC_TYPE_DH_PARAM_DATA:{
         if (blufi_sec->dh_param == NULL) {
             BLUFI_ERROR("%s, blufi_sec->dh_param == NULL\n", __func__);
+            btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
             return;
         }
         uint8_t *param = blufi_sec->dh_param;
@@ -102,6 +107,7 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         ret = mbedtls_dhm_read_params(&blufi_sec->dhm, &param, &param[blufi_sec->dh_param_len]);
         if (ret) {
             BLUFI_ERROR("%s read param failed %d\n", __func__, ret);
+            btc_blufi_report_error(ESP_BLUFI_READ_PARAM_ERROR);
             return;
         }
         free(blufi_sec->dh_param);
@@ -109,6 +115,7 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         ret = mbedtls_dhm_make_public(&blufi_sec->dhm, (int) mbedtls_mpi_size( &blufi_sec->dhm.P ), blufi_sec->self_public_key, blufi_sec->dhm.len, myrand, NULL);
         if (ret) {
             BLUFI_ERROR("%s make public failed %d\n", __func__, ret);
+            btc_blufi_report_error(ESP_BLUFI_MAKE_PUBLIC_ERROR);
             return;
         }
 

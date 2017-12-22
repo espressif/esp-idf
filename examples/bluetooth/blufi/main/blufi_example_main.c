@@ -229,6 +229,10 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
         BLUFI_INFO("BLUFI requset wifi disconnect from AP\n");
         esp_wifi_disconnect();
         break;
+    case ESP_BLUFI_EVENT_REPORT_ERROR:
+        BLUFI_ERROR("BLUFI report error, error code %d\n", param->report_error.state);
+        esp_blufi_send_error_info(param->report_error.state);
+        break;
     case ESP_BLUFI_EVENT_GET_WIFI_STATUS: {
         wifi_mode_t mode;
         esp_blufi_extra_info_t info;
@@ -397,9 +401,17 @@ void app_main()
 
     BLUFI_INFO("BLUFI VERSION %04x\n", esp_blufi_get_version());
 
-    blufi_security_init();
-    esp_ble_gap_register_callback(example_gap_event_handler);
+    ret = esp_ble_gap_register_callback(example_gap_event_handler);
+    if(ret){
+        BLUFI_ERROR("%s gap register failed, error code = %x\n", __func__, ret);
+        return;
+    }
 
-    esp_blufi_register_callbacks(&example_callbacks);
+    ret = esp_blufi_register_callbacks(&example_callbacks);
+    if(ret){
+        BLUFI_ERROR("%s blufi register failed, error code = %x\n", __func__, ret);
+        return;
+    }
+
     esp_blufi_profile_init();
 }
