@@ -247,12 +247,6 @@ static void btc_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
          if (btc_storage_get_remote_addr_type(&bdaddr, &addr_type) != BT_STATUS_SUCCESS) {
             btc_storage_set_remote_addr_type(&bdaddr, p_auth_cmpl->addr_type, true);
         }
-        /* check the irk has been save in the flash or not, if the irk has already save, means that the peer device has bonding
-           before. */
-        if(pairing_cb.ble.is_pid_key_rcvd) {
-            btc_storage_compare_address_key_value(&bdaddr, BTM_LE_KEY_PID,
-                                                  (void *)&pairing_cb.ble.pid_key, sizeof(tBTM_LE_PID_KEYS));
-        }
         btc_dm_save_ble_bonding_keys();
     } else {
         /*Map the HCI fail reason  to  bt status  */
