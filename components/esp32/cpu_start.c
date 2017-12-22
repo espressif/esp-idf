@@ -136,13 +136,6 @@ void IRAM_ATTR call_start_cpu0()
         esp_panic_wdt_stop();
     }
 
-    // Temporary workaround for an ugly crash, until we allow > 192KB of static DRAM
-    if ((intptr_t)&_bss_end > 0x3FFE0000) {
-        // Can't use assert() or logging here because there's no .bss
-        ets_printf("ERROR: Static .bss section extends past 0x3FFE0000. IDF cannot boot.\n");
-        abort();
-    }
-
     //Clear BSS. Please do not attempt to do any complex stuff (like early logging) before this.
     memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
 

@@ -45,9 +45,13 @@ MEMORY
 
      Enabling Bluetooth & Trace Memory features in menuconfig will decrease
      the amount of RAM available.
+
+     Note: Length of this section *should* be 0x50000, and this extra DRAM is available
+     in heap at runtime. However due to static ROM memory usage at this 176KB mark, the
+     additional static memory temporarily cannot be used.
   */
   dram0_0_seg (RW) :                 org = 0x3FFB0000 + CONFIG_BT_RESERVE_DRAM,
-                                     len = 0x50000 - CONFIG_TRACEMEM_RESERVE_DRAM - CONFIG_BT_RESERVE_DRAM
+                                     len = 0x2c200 - CONFIG_BT_RESERVE_DRAM
 
   /* Flash mapped constant data */
   drom0_0_seg (R) :                  org = 0x3F400018, len = 0x400000-0x18
