@@ -125,7 +125,7 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
 
         /* initialize A2DP sink */
         esp_a2d_register_callback(&bt_app_a2d_cb);
-        esp_a2d_register_data_callback(bt_app_a2d_data_cb);
+        esp_a2d_sink_register_data_callback(bt_app_a2d_data_cb);
         esp_a2d_sink_init();
 
         /* initialize AVRCP controller */

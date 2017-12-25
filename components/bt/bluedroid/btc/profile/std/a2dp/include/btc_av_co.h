@@ -15,7 +15,7 @@
 #ifndef __BTC_AV_CO_H__
 #define __BTC_AV_CO_H__
 
-#include "btc_media.h"
+#include "btc_a2dp.h"
 
 #if (BTA_AV_INCLUDED == TRUE)
 /*******************************************************************************
@@ -93,7 +93,7 @@ void bta_av_co_audio_codec_reset(void);
  ** Returns          TRUE if all opened devices support this codec, FALSE otherwise
  **
  *******************************************************************************/
-BOOLEAN bta_av_co_audio_codec_supported(tBTC_STATUS *p_status);
+BOOLEAN bta_av_co_audio_codec_supported(tBTC_AV_STATUS *p_status);
 
 /*******************************************************************************
  **
@@ -106,7 +106,7 @@ BOOLEAN bta_av_co_audio_codec_supported(tBTC_STATUS *p_status);
  ** Returns          TRUE if successful, FALSE otherwise
  **
  *******************************************************************************/
-BOOLEAN bta_av_co_audio_set_codec(const tBTC_AV_MEDIA_FEEDINGS *p_feeding, tBTC_STATUS *p_status);
+BOOLEAN bta_av_co_audio_set_codec(const tBTC_AV_MEDIA_FEEDINGS *p_feeding, tBTC_AV_STATUS *p_status);
 
 /*******************************************************************************
  **

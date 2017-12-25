@@ -27,6 +27,7 @@
 #include "sbc_encoder.h"
 #include "sbc_enc_func_declare.h"
 /*#include <math.h>*/
+#if (defined(SBC_ENC_INCLUDED) && SBC_ENC_INCLUDED == TRUE)
 
 #if (SBC_IS_64_MULT_IN_WINDOW_ACCU == TRUE)
 #define WIND_4_SUBBANDS_0_1 (SINT32)0x01659F45  /* gas32CoeffFor4SBs[8] = -gas32CoeffFor4SBs[32] = 0x01659F45 */

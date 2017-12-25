@@ -26,7 +26,7 @@
 #include <string.h>
 #include "bt_types.h"
 #include "bt_target.h"
-#include "bt_utils.h"
+#include "bt_defs.h"
 #include "avct_api.h"
 #include "avct_int.h"
 #include "allocator.h"

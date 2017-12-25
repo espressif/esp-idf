@@ -47,6 +47,7 @@ static int alarm_state;
 static struct alarm_t alarm_cbs[ALARM_CBS_NUM];
 
 static osi_alarm_err_t alarm_free(osi_alarm_t *alarm);
+static osi_alarm_err_t alarm_set(osi_alarm_t *alarm, period_ms_t timeout, bool is_periodic);
 
 int osi_alarm_create_mux(void)
 {
@@ -207,7 +208,7 @@ end:
     return;
 }
 
-osi_alarm_err_t osi_alarm_set(osi_alarm_t *alarm, period_ms_t timeout)
+static osi_alarm_err_t alarm_set(osi_alarm_t *alarm, period_ms_t timeout, bool is_periodic)
 {
     assert(alarm_mutex != NULL);
     
@@ -226,17 +227,32 @@ osi_alarm_err_t osi_alarm_set(osi_alarm_t *alarm, period_ms_t timeout)
     }
 
     int64_t timeout_us = 1000 * (int64_t)timeout;
-    esp_err_t stat = esp_timer_start_once(alarm->alarm_hdl, (uint64_t)timeout_us);
+    esp_err_t stat;
+    if (is_periodic) {
+        stat = esp_timer_start_periodic(alarm->alarm_hdl, (uint64_t)timeout_us);
+    } else {
+        stat = esp_timer_start_once(alarm->alarm_hdl, (uint64_t)timeout_us);
+    }
     if (stat != ESP_OK) {
         LOG_ERROR("%s failed to start timer, err 0x%x\n", __func__, stat);
         ret = OSI_ALARM_ERR_FAIL;
         goto end;
     }
-    alarm->deadline_us = timeout_us + esp_timer_get_time();
+    alarm->deadline_us = is_periodic ? 0 : (timeout_us + esp_timer_get_time());
     
 end:
     osi_mutex_unlock(&alarm_mutex);
     return ret;
+}
+
+osi_alarm_err_t osi_alarm_set(osi_alarm_t *alarm, period_ms_t timeout)
+{
+    return alarm_set(alarm, timeout, false);
+}
+
+osi_alarm_err_t osi_alarm_set_periodic(osi_alarm_t *alarm, period_ms_t period)
+{
+    return alarm_set(alarm, period, true);
 }
 
 osi_alarm_err_t osi_alarm_cancel(osi_alarm_t *alarm)

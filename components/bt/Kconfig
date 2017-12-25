@@ -113,19 +113,29 @@ config CLASSIC_BT_ENABLED
     help
         For now this option needs "SMP_ENABLE" to be set to yes
 
-config A2DP_SNK_ENABLED
-    bool "A2DP(SINK)"
+config A2DP_ENABLE
+    bool "A2DP"
     depends on CLASSIC_BT_ENABLED
     default n
     help
-        This option is used to enable/disable Advanced Audio Distribution Profile(Sink)
+        Advanced Audio Distrubution Profile
     
+choice A2DP_ROLE
+    prompt "A2DP ROLE config"
+    depends on A2DP_ENABLE
+
+config A2DP_SINK_ENABLE
+    bool "SINK"
+config A2DP_SRC_ENABLE
+    bool "SOURCE"
+endchoice
+
 config BT_SPP_ENABLED
-    bool "SPP Profile"
+    bool "SPP"
     depends on CLASSIC_BT_ENABLED
     default n
     help
-        This enables the SPP Profile
+        This enables the Serial Port Profile
 
 config GATTS_ENABLE
     bool "Include GATT server module(GATTS)"

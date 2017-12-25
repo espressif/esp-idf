@@ -14,45 +14,23 @@
 
 /*******************************************************************************
  *
- *  Filename:      btc_media.h
- *
- *  Description:   This is the audio module for the BTC system.
+ *  Filename:      btc_a2dp_source.h
  *
  *******************************************************************************/
 
-#ifndef __BTC_MEDIA_H__
-#define __BTC_MEDIA_H__
+#ifndef __BTC_A2DP_SOURCE_H__
+#define __BTC_A2DP_SOURCE_H__
 
 #include <stdbool.h>
+#include "bt_target.h"
 #include "bta_api.h"
 #include "btc_av_api.h"
+#include "esp_a2dp_api.h"
 
-#if (BTA_AV_INCLUDED == TRUE)
-
-/*******************************************************************************
- **  Constants
- *******************************************************************************/
-#define BTC_SUCCESS                         (0)
-/**
- * AV (Audio Video source) Errors
- */
-#define BTC_ERROR_SRV_AV_NOT_ENABLED        700     /* AV is not enabled */
-#define BTC_ERROR_SRV_AV_FEEDING_NOT_SUPPORTED 701  /* Requested Feeding not supported */
-#define BTC_ERROR_SRV_AV_BUSY               702     /* Another operation ongoing */
-#define BTC_ERROR_SRV_AV_NOT_OPENED         703     /* No AV link opened */
-#define BTC_ERROR_SRV_AV_NOT_STARTED        704     /* AV is not started */
-#define BTC_ERROR_SRV_AV_CP_NOT_SUPPORTED   705     /* Content protection is not supported by all headsets */
-
-/* Transcoding definition for TxTranscoding and RxTranscoding */
-#define BTC_MEDIA_TRSCD_OFF             0
-#define BTC_MEDIA_TRSCD_PCM_2_SBC       1  /* Tx */
-
-
+#if BTC_AV_SRC_INCLUDED
 /*******************************************************************************
  **  Data types
  *******************************************************************************/
-
-typedef int tBTC_STATUS;
 
 /* tBTC_MEDIA_INIT_AUDIO msg structure */
 typedef struct {
@@ -65,7 +43,6 @@ typedef struct {
     UINT16 MtuSize; /* peer mtu size */
 } tBTC_MEDIA_INIT_AUDIO;
 
-#if (BTA_AV_INCLUDED == TRUE)
 /* tBTC_MEDIA_UPDATE_AUDIO msg structure */
 typedef struct {
     BT_HDR hdr;
@@ -81,187 +58,187 @@ typedef struct {
     tBTC_AV_MEDIA_FEEDINGS feeding;
 } tBTC_MEDIA_INIT_AUDIO_FEEDING;
 
-typedef struct {
-    BT_HDR hdr;
-    UINT8 codec_info[AVDT_CODEC_SIZE];
-} tBTC_MEDIA_SINK_CFG_UPDATE;
-#endif
-
 /*******************************************************************************
  **  Public functions
  *******************************************************************************/
 
 /*******************************************************************************
  **
- ** Function         btc_av_task
+ ** Function         btc_a2dp_source_startup
  **
- ** Description
+ ** Description      Initialize and startup the A2DP source module. This function
+ **                  should be called by the BTC AV state machine prior to using
+ **                  the module
  **
- ** Returns          void
+ ** Returns          TRUE is success
  **
  *******************************************************************************/
-extern void btc_media_task(void);
+bool btc_a2dp_source_startup(void);
 
 /*******************************************************************************
  **
- ** Function         btc_media_task_enc_init_req
+ ** Function         btc_a2dp_source_shutdown
+ **
+ ** Description      Shutdown and cleanup the A2DP source module.
+ **
+ *******************************************************************************/
+void btc_a2dp_source_shutdown(void);
+
+/*******************************************************************************
+ **
+ ** Function         btc_a2dp_source_enc_init_req
  **
  ** Description      Request to initialize the media task encoder
  **
  ** Returns          TRUE is success
  **
  *******************************************************************************/
-extern BOOLEAN btc_media_task_enc_init_req(tBTC_MEDIA_INIT_AUDIO *p_msg);
+BOOLEAN btc_a2dp_source_enc_init_req(tBTC_MEDIA_INIT_AUDIO *p_msg);
 
 /*******************************************************************************
  **
- ** Function         btc_media_task_enc_update_req
+ ** Function         btc_a2dp_source_enc_udpate_req
  **
  ** Description      Request to update the media task encoder
  **
  ** Returns          TRUE is success
  **
  *******************************************************************************/
-#if (BTA_AV_INCLUDED == TRUE)
-extern BOOLEAN btc_media_task_enc_update_req(tBTC_MEDIA_UPDATE_AUDIO *p_msg);
-#endif
+BOOLEAN btc_a2dp_source_enc_update_req(tBTC_MEDIA_UPDATE_AUDIO *p_msg);
+
 
 /*******************************************************************************
  **
- ** Function         btc_media_task_start_aa_req
+ ** Function         btc_a2dp_source_start_audio_req
  **
  ** Description      Request to start audio encoding task
  **
  ** Returns          TRUE is success
  **
  *******************************************************************************/
-extern BOOLEAN btc_media_task_start_aa_req(void);
+BOOLEAN btc_a2dp_source_start_audio_req(void);
 
 /*******************************************************************************
  **
- ** Function         btc_media_task_stop_aa_req
+ ** Function         btc_a2dp_source_stop_audio_req
  **
  ** Description      Request to stop audio encoding task
  **
  ** Returns          TRUE is success
  **
  *******************************************************************************/
-extern BOOLEAN btc_media_task_stop_aa_req(void);
+BOOLEAN btc_a2dp_source_stop_audio_req(void);
 
 /*******************************************************************************
  **
- ** Function         btc_media_task_aa_rx_flush_req
- **
- ** Description      Request to flush audio decoding pipe
- **
- ** Returns          TRUE is success
- **
- *******************************************************************************/
-extern BOOLEAN btc_media_task_aa_rx_flush_req(void);
-/*******************************************************************************
- **
- ** Function         btc_media_task_aa_tx_flush_req
+ ** Function         btc_a2dp_source_tx_flush_req
  **
  ** Description      Request to flush audio encoding pipe
  **
  ** Returns          TRUE is success
  **
  *******************************************************************************/
-extern BOOLEAN btc_media_task_aa_tx_flush_req(void);
+BOOLEAN btc_a2dp_source_tx_flush_req(void);
 
 /*******************************************************************************
  **
- ** Function         btc_media_aa_readbuf
+ ** Function         btc_a2dp_source_audio_readbuf
  **
  ** Description      Read an audio buffer from the BTC media TX queue
  **
  ** Returns          pointer on a aa buffer ready to send
  **
  *******************************************************************************/
-extern BT_HDR *btc_media_aa_readbuf(void);
+BT_HDR *btc_a2dp_source_audio_readbuf(void);
 
 /*******************************************************************************
  **
- ** Function         btc_media_sink_enque_buf
- **
- ** Description      This function is called by the av_co to fill A2DP Sink Queue
- **
- **
- ** Returns          size of the queue
- *******************************************************************************/
-UINT8 btc_media_sink_enque_buf(BT_HDR *p_buf);
-
-
-
-/*******************************************************************************
- **
- ** Function         btc_media_aa_writebuf
- **
- ** Description      Enqueue a Advance Audio media buffer to be processed by btc media task.
- **
- ** Returns          TRUE is success
- **
- *******************************************************************************/
-extern void btc_media_aa_writebuf(BT_HDR *pBuf, UINT32 timestamp, UINT16 seq_num);
-
-/*******************************************************************************
- **
- ** Function         btc_media_av_writebuf
- **
- ** Description      Enqueue a video media buffer to be processed by btc media task.
- **
- ** Returns          TRUE is success
- **
- *******************************************************************************/
-extern BOOLEAN btc_media_av_writebuf(UINT8 *p_media, UINT32 media_len,
-                                     UINT32 timestamp, UINT16 seq_num);
-
-#if (BTA_AV_INCLUDED == TRUE)
-/*******************************************************************************
- **
- ** Function         btc_media_task_audio_feeding_init_req
+ ** Function         btc_a2dp_source_audio_feeding_init_req
  **
  ** Description      Request to initialize audio feeding
  **
- ** Returns          TRUE is success
+ ** Returns          TRUE if success
  **
  *******************************************************************************/
 
-extern BOOLEAN btc_media_task_audio_feeding_init_req(tBTC_MEDIA_INIT_AUDIO_FEEDING *p_msg);
-#endif
+BOOLEAN btc_a2dp_source_audio_feeding_init_req(tBTC_MEDIA_INIT_AUDIO_FEEDING *p_msg);
 
 /*******************************************************************************
  **
- ** Function         dump_codec_info
+ ** Function         btc_a2dp_source_is_streaming
  **
- ** Description      Decode and display codec_info (for debug)
- **
- ** Returns          void
+ ** Description      Check whether A2DP source is in streaming state
  **
  *******************************************************************************/
-extern void dump_codec_info(unsigned char *p_codec);
+bool btc_a2dp_source_is_streaming(void);
 
-/**
- * Local adaptation helper functions between btc and media task
- */
+/*******************************************************************************
+ **
+ ** Function         btc_a2dp_source_is_task_shutting_down
+ **
+ ** Description      Check whether A2DP source media task is shutting down
+ **
+ *******************************************************************************/
+bool btc_a2dp_source_is_task_shutting_down(void);
 
-bool btc_a2dp_start_media_task(void);
-void btc_a2dp_stop_media_task(void);
 
-void btc_a2dp_on_init(void);
-void btc_a2dp_setup_codec(void);
-void btc_a2dp_on_idle(void);
-BOOLEAN btc_a2dp_on_started(tBTA_AV_START *p_av, BOOLEAN pending_start);
-void btc_a2dp_on_stop_req(void);
-void btc_a2dp_on_stopped(tBTA_AV_SUSPEND *p_av);
-void btc_a2dp_on_suspend(void);
-void btc_a2dp_on_suspended(tBTA_AV_SUSPEND *p_av);
-void btc_a2dp_set_rx_flush(BOOLEAN enable);
-void btc_media_check_iop_exceptions(UINT8 *peer_bda);
-void btc_reset_decoder(UINT8 *p_av);
+/*******************************************************************************
+ **
+ ** Function         btc_a2dp_source_on_idle
+ **
+ ** Description      Request 'idle' request from BTC AV state machine during
+ **                  initialization
+ **
+ *******************************************************************************/
+void btc_a2dp_source_on_idle(void);
 
-int btc_a2dp_get_track_frequency(UINT8 frequency);
-int btc_a2dp_get_track_channel_count(UINT8 channeltype);
-void btc_a2dp_set_peer_sep(UINT8 sep);
-#endif  ///BTA_AV_INCLUDED == TRUE
-#endif
+/*******************************************************************************
+ **
+ ** Function         btc_a2dp_source_on_stopped
+ **
+ ** Description      Process 'stop' request from the BTC AV state machine to stop
+ **                  A2DP streaming
+ **
+ *******************************************************************************/
+void btc_a2dp_source_on_stopped(tBTA_AV_SUSPEND *p_av);
+
+/*******************************************************************************
+ **
+ ** Function         btc_a2dp_source_on_suspended
+ **
+ ** Description      Process 'suspend' request from the BTC AV state machine to stop
+ **                  A2DP streaming
+ **
+ *******************************************************************************/
+void btc_a2dp_source_on_suspended(tBTA_AV_SUSPEND *p_av);
+
+/*******************************************************************************
+ **
+ ** Function         btc_a2dp_source_setup_codec
+ **
+ ** Description      initialize the encoder parameters
+ **
+ *******************************************************************************/
+void btc_a2dp_source_setup_codec(void);
+
+/*******************************************************************************
+ **
+ ** Function         btc_a2dp_source_set_tx_flush
+ **
+ ** Description      enable/disable discarding of transmitted frames
+ **
+ *******************************************************************************/
+void btc_a2dp_source_set_tx_flush(BOOLEAN enable);
+
+/*******************************************************************************
+ **
+ ** Function         btc_a2dp_source_encoder_update
+ **
+ ** Description      update changed SBC encoder parameters
+ **
+ *******************************************************************************/
+void btc_a2dp_source_encoder_update(void);
+
+#endif /* #if BTC_AV_SRC_INCLUDED */
+
+#endif /* __BTC_A2DP_SOURCE_H__ */

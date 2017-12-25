@@ -29,7 +29,7 @@
 #include <string.h>
 #include "bt_types.h"
 #include "bt_target.h"
-#include "bt_utils.h"
+#include "bt_defs.h"
 #include "avdt_api.h"
 #include "avdtc_api.h"
 #include "avdt_int.h"

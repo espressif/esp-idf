@@ -28,7 +28,7 @@
 #include "a2d_sbc.h"
 #include "bta_av_sbc.h"
 #include "utl.h"
-#include "bt_utils.h"
+#include "bt_defs.h"
 
 #if defined(BTA_AV_INCLUDED) && (BTA_AV_INCLUDED == TRUE)
 
