@@ -22,6 +22,7 @@
 #include "btc_main.h"
 #include "future.h"
 #include "btc_gatts.h"
+#include "btc_gatt_util.h"
 
 esp_err_t esp_blufi_register_callbacks(esp_blufi_callbacks_t *callbacks)
 {
@@ -57,6 +58,23 @@ esp_err_t esp_blufi_send_wifi_conn_report(wifi_mode_t opmode, esp_blufi_sta_conn
     return (btc_transfer_context(&msg, &arg, sizeof(btc_blufi_args_t), btc_blufi_call_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+esp_err_t esp_blufi_send_wifi_list(uint16_t apCount, esp_blufi_ap_record_t *list)
+{
+    btc_msg_t msg;
+    btc_blufi_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_BLUFI;
+    msg.act = BTC_BLUFI_ACT_SEND_WIFI_LIST;
+    arg.wifi_list.apCount = apCount;
+    arg.wifi_list.list = list;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_blufi_args_t), btc_blufi_call_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
 
 esp_err_t esp_blufi_profile_init(void)
 {
@@ -103,7 +121,7 @@ esp_err_t esp_blufi_close(esp_gatt_if_t gatts_if, uint16_t conn_id)
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
     msg.act = BTC_GATTS_ACT_CLOSE;
-    arg.close.conn_id = conn_id;
+    arg.close.conn_id = BTC_GATT_CREATE_CONN_ID(gatts_if, conn_id);
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }

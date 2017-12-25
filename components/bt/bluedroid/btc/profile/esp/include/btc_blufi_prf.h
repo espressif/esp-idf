@@ -23,6 +23,7 @@ typedef enum {
     BTC_BLUFI_ACT_INIT = 0,
     BTC_BLUFI_ACT_DEINIT,
     BTC_BLUFI_ACT_SEND_CFG_REPORT,
+    BTC_BLUFI_ACT_SEND_WIFI_LIST,
 } btc_blufi_act_t;
 
 typedef union {
@@ -33,6 +34,13 @@ typedef union {
         esp_blufi_extra_info_t *extra_info;
         int extra_info_len;
     } wifi_conn_report;
+    /*
+        BTC_BLUFI_ACT_SEND_WIFI_LIST
+    */
+    struct blufi_wifi_list {
+        uint16_t apCount;
+        esp_blufi_ap_record_t *list;
+    } wifi_list;
 } btc_blufi_args_t;
 
 void btc_blufi_cb_handler(btc_msg_t *msg);
