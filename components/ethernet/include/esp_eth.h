@@ -45,6 +45,11 @@ typedef enum {
     ETH_MODE_FULLDUPLEX,
 } eth_duplex_mode_t;
 
+#define ETH_DMA_RX_BUF_NUM CONFIG_DMA_RX_BUF_NUM
+#define ETH_DMA_TX_BUF_NUM CONFIG_DMA_TX_BUF_NUM
+#define ETH_DMA_RX_BUF_SIZE 1600
+#define ETH_DMA_TX_BUF_SIZE 1600
+
 typedef enum {
     PHY0 = 0,
     PHY1,
@@ -108,6 +113,8 @@ typedef struct {
     bool flow_ctrl_enable;                      /*!< flag of flow ctrl enable */
     eth_phy_get_partner_pause_enable_func  phy_get_partner_pause_enable; /*!< get partner pause enable */
     eth_phy_power_enable_func  phy_power_enable;  /*!< enable or disable phy power */
+    uint8_t *dma_rx_buf;                        /*!< DMA-capable buffer of size ETH_DMA_RX_BUF_SIZE * ETH_DMA_RX_BUF_NUM, may be NULL */
+    uint8_t *dma_tx_buf;                        /*!< DMA-capable buffer of size ETH_DMA_TX_BUF_SIZE * ETH_DMA_TX_BUF_NUM, may be NULL */
 
 } eth_config_t;
 
