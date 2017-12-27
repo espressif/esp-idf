@@ -2078,7 +2078,7 @@ void BTM_BleGetWhiteListSize(uint16_t *length)
 {
     tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
     if (p_cb->white_list_avail_size == 0) {
-        BTM_TRACE_ERROR("%s Whitelist full.", __func__);
+        BTM_TRACE_DEBUG("%s Whitelist full.", __func__);
     }
     *length = p_cb->white_list_avail_size;
     return;

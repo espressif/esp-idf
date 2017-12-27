@@ -259,7 +259,10 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBTM_ADD_W
     tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
 
     if (to_add && p_cb->white_list_avail_size == 0) {
-        BTM_TRACE_DEBUG("%s Whitelist full, unable to add device", __func__);
+        BTM_TRACE_ERROR("%s Whitelist full, unable to add device", __func__);
+        if (add_wl_cb){
+            add_wl_cb(HCI_ERR_MEMORY_FULL,to_add);
+        }
         return FALSE;
     }
     if (add_wl_cb){
