@@ -155,6 +155,7 @@ The following roles are provided:
 
 A check is added to the CI build script, which searches RST files for presence of hard-coded links (identified by tree/master, blob/master, or raw/master part of the URL). This check can be run manually: ``cd docs`` and then ``make gh-linkcheck``.
 
+.. _add-illustrations:
 
 Add Illustrations
 -----------------
@@ -172,7 +173,7 @@ The following types of diagrams are supported:
 
 With this suite of tools it is possible to generate beautiful diagram images from simple text format (similar to graphviz’s DOT format). The diagram elements are laid out automatically. The diagram code is then converted into ".png" graphics and integrated "behind the scenes" into **Sphinx** documents. 
 
-For the diagram preparation you can use an on-line `interactive shell <http://interactive.blockdiag.com/?compression=deflate&src=eJxlUMFOwzAMvecrrO3aITYQQirlAIIzEseJQ5q4TUSIq8TVGIh_J2m7jbKc7Ge_5_dSO1Lv2soWvoVYgieNoMh7VGzJR9FJtugZ7lYQ0UcKEbYNOY36rRQHZHUPT68vV5tceGLbWCUzPfeaFFMoBZzecVc56vWwJFnWMmJ59CCZg617xpOFbTSyw0pmvT_HJ7hxtFNGBr6wvuu5SCkchcrZ1vAeXZomznh5YgTqfcpR02cBO6vZVDeXBRjMjKEcFRbLh8f18-Z2UUBDnqP9wmp9ncRmSSfND2ldGo2h_zse407g0Mxc1q7HzJ3-4jzYYTJjtQH3iSV-fgFzx50J>`_ that instantly shows the rendered image. 
+For the diagram preparation you can use an on-line `interactive shell`_ that instantly shows the rendered image. 
 
 Below are couple of diagram examples:
 
@@ -185,7 +186,7 @@ Try them out by modifying the source code and see the diagram instantly renderin
 
 .. note::
 
-    There may be slight differences in rendering of font used by the interactive shell compared to the font used in the esp-idf documentation.
+    There may be slight differences in rendering of font used by the `interactive shell`_ compared to the font used in the esp-idf documentation.
 
 
 Put it all together
@@ -207,7 +208,7 @@ OK, but I am new to Sphinx!
    
     * Set up an account on `Read the Docs <https://readthedocs.org/>`_ and build documentation in the cloud. Read the Docs provides document building and hosting for free and their service works really quick and great.
 
-4. To preview documentation before building use `Sublime Text <https://www.sublimetext.com/>`_ editor together with `OmniMarkupPreviewer <https://github.com/timonwong/OmniMarkupPreviewer>`_ plugin. 
+4. To preview documentation before building, use `Sublime Text <https://www.sublimetext.com/>`_ editor together with `OmniMarkupPreviewer <https://github.com/timonwong/OmniMarkupPreviewer>`_ plugin. 
 
 
 Setup for building documentation locally
@@ -245,6 +246,28 @@ Installation of Doxygen is OS dependent:
 
 	brew install doxygen
 
+.. note::
+
+    If you are installing on Windows system (Linux and MacOS users should skip this note), **before** going further, execute two extra steps below. These steps are required for the :ref:`blockdiag <add-illustrations>` to install:
+
+    1.  Update all the system packages:
+
+        ::
+
+            $ pacman -Syu
+
+        This process will likely require restarting of the MSYS2 MINGW32 console and repeating above commands, until update is complete.
+
+    2.  Install *pillow*, that is one of dependences of the *blockdiag*:
+
+        ::
+
+            $ pacman -S mingw32/mingw-w64-i686-python2-pillow
+
+        Check the log on the screen that ``mingw-w64-i686-python2-pillow-4.3.0-1`` is installed. Previous versions of *pillow* will not work.
+
+    A downside of Windows installation is that fonts of the `blockdiag pictures <add-illustrations>` do not render correctly, you will see some random characters instead. Until this issue is fixed, you can use the `interactive shell`_ to see how the complete picture looks like.
+
 All remaining applications are `Python <https://www.python.org/>`_ packages and you can install them in one step as follows:
 
 ::
@@ -279,3 +302,6 @@ Related Documents
 
 
 .. _espressif/esp-idf: https://github.com/espressif/esp-idf/
+
+.. _interactive shell: http://interactive.blockdiag.com/?compression=deflate&src=eJxlUMFOwzAMvecrrO3aITYQQirlAIIzEseJQ5q4TUSIq8TVGIh_J2m7jbKc7Ge_5_dSO1Lv2soWvoVYgieNoMh7VGzJR9FJtugZ7lYQ0UcKEbYNOY36rRQHZHUPT68vV5tceGLbWCUzPfeaFFMoBZzecVc56vWwJFnWMmJ59CCZg617xpOFbTSyw0pmvT_HJ7hxtFNGBr6wvuu5SCkchcrZ1vAeXZomznh5YgTqfcpR02cBO6vZVDeXBRjMjKEcFRbLh8f18-Z2UUBDnqP9wmp9ncRmSSfND2ldGo2h_zse407g0Mxc1q7HzJ3-4jzYYTJjtQH3iSV-fgFzx50J
+
