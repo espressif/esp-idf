@@ -436,6 +436,9 @@ static void config_parse(nvs_handle fp, config_t *config)
     esp_err_t err;
     size_t length = CONFIG_FILE_MAX_SIZE;
     err = nvs_get_blob(fp, CONFIG_KEY, buf, &length);
+    if (err == ESP_ERR_NVS_NOT_FOUND) {
+        goto error;
+    }
     if (err != ESP_OK) {
         err_code |= 0x02;
         goto error;
