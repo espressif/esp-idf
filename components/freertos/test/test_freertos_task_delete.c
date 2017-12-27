@@ -17,12 +17,15 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_heap_caps.h"
+#include "rom/ets_sys.h"
 
 #include "unity.h"
 
 #define NO_OF_TSKS  3
 #define DELAY_TICKS 2
 #define HEAP_CAPS   (MALLOC_CAP_INTERNAL|MALLOC_CAP_DEFAULT)
+
+#define DELAY_US_ITERATIONS	1000
 
 
 static void tsk_self_del(void *param)
@@ -33,6 +36,13 @@ static void tsk_self_del(void *param)
 static void tsk_extern_del(void *param)
 {
     vTaskDelay(portMAX_DELAY);  //Await external deletion
+}
+
+static void tsk_self_del_us_delay(void *param)
+{
+    uint32_t delay = (uint32_t)param;
+    ets_delay_us(delay);
+    vTaskDelete(NULL);
 }
 
 TEST_CASE("FreeRTOS Delete Tasks", "[freertos]")
@@ -62,5 +72,12 @@ TEST_CASE("FreeRTOS Delete Tasks", "[freertos]")
         vTaskDelete(handles[j]);
     }
     TEST_ASSERT_EQUAL(before_heap, heap_caps_get_free_size(HEAP_CAPS));
+
+/* Test self deleting no affinity task is not removed by idle task of other core before context switch */
+    for(int i = 0; i < DELAY_US_ITERATIONS; i+= 10){
+        vTaskDelay(1);                          //Sync to next tick interrupt
+        xTaskCreatePinnedToCore(tsk_self_del_us_delay, "delay", 1024, (void *)i, UNITY_FREERTOS_PRIORITY - 1, NULL, tskNO_AFFINITY);
+        ets_delay_us(10);                       //Busy wait to ensure no affinity task runs on opposite core
+    }
 
 }
