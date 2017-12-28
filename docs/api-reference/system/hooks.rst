@@ -1,7 +1,7 @@
 .. _hooks_api_reference:
 
-ESP-IDF FreeRTOS Hooks
-======================
+FreeRTOS Hooks
+==============
 
 Overview
 --------

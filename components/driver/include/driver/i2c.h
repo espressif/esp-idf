@@ -69,6 +69,13 @@ typedef enum {
     I2C_ADDR_BIT_MAX,
 } i2c_addr_mode_t;
 
+typedef enum {
+    I2C_MASTER_ACK = 0x0,        /*!< I2C ack for each byte read */
+    I2C_MASTER_NACK = 0x1,       /*!< I2C nack for each byte read */
+    I2C_MASTER_LAST_NACK = 0x2,   /*!< I2C nack for the last byte*/
+    I2C_MASTER_ACK_MAX,
+} i2c_ack_type_t;
+
 /**
  * @brief I2C initialization parameters
  */
@@ -288,7 +295,7 @@ esp_err_t i2c_master_write(i2c_cmd_handle_t cmd_handle, uint8_t* data, size_t da
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t i2c_master_read_byte(i2c_cmd_handle_t cmd_handle, uint8_t* data, int ack);
+esp_err_t i2c_master_read_byte(i2c_cmd_handle_t cmd_handle, uint8_t* data, i2c_ack_type_t ack);
 
 /**
  * @brief Queue command for I2C master to read data from I2C bus
@@ -305,7 +312,7 @@ esp_err_t i2c_master_read_byte(i2c_cmd_handle_t cmd_handle, uint8_t* data, int a
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t i2c_master_read(i2c_cmd_handle_t cmd_handle, uint8_t* data, size_t data_len, int ack);
+esp_err_t i2c_master_read(i2c_cmd_handle_t cmd_handle, uint8_t* data, size_t data_len, i2c_ack_type_t ack);
 
 /**
  * @brief Queue command for I2C master to generate a stop signal

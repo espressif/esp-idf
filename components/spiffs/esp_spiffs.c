@@ -33,6 +33,10 @@
 
 static const char * TAG = "SPIFFS";
 
+#ifdef CONFIG_SPIFFS_USE_MTIME
+_Static_assert(CONFIG_SPIFFS_META_LENGTH >= sizeof(time_t),
+        "SPIFFS_META_LENGTH size should be >= sizeof(time_t)");
+#endif //CONFIG_SPIFFS_USE_MTIME
 /**
  * @brief SPIFFS definition structure
  */
@@ -80,6 +84,8 @@ static long vfs_spiffs_telldir(void* ctx, DIR* pdir);
 static void vfs_spiffs_seekdir(void* ctx, DIR* pdir, long offset);
 static int vfs_spiffs_mkdir(void* ctx, const char* name, mode_t mode);
 static int vfs_spiffs_rmdir(void* ctx, const char* name);
+static void vfs_spiffs_update_mtime(spiffs *fs, spiffs_file f);
+static time_t vfs_spiffs_get_mtime(const spiffs_stat* s);
 
 static esp_spiffs_t * _efs[CONFIG_SPIFFS_MAX_PARTITIONS];
 
@@ -507,11 +513,15 @@ static int vfs_spiffs_open(void* ctx, const char * path, int flags, int mode)
 {
     assert(path);
     esp_spiffs_t * efs = (esp_spiffs_t *)ctx;
-    int fd = SPIFFS_open(efs->fs, path, spiffs_mode_conv(flags), mode);
+    int spiffs_flags = spiffs_mode_conv(flags);
+    int fd = SPIFFS_open(efs->fs, path, spiffs_flags, mode);
     if (fd < 0) {
         errno = spiffs_res_to_errno(SPIFFS_errno(efs->fs));
         SPIFFS_clearerr(efs->fs);
         return -1;
+    }
+    if (!(spiffs_flags & SPIFFS_RDONLY)) {
+        vfs_spiffs_update_mtime(efs->fs, fd);
     }
     return fd;
 }
@@ -562,7 +572,6 @@ static off_t vfs_spiffs_lseek(void* ctx, int fd, off_t offset, int mode)
         return -1;
     }
     return res;
-
 }
 
 static int vfs_spiffs_fstat(void* ctx, int fd, struct stat * st)
@@ -578,6 +587,9 @@ static int vfs_spiffs_fstat(void* ctx, int fd, struct stat * st)
     }
     st->st_size = s.size;
     st->st_mode = S_IRWXU | S_IRWXG | S_IRWXO | S_IFREG;
+    st->st_mtime = vfs_spiffs_get_mtime(&s);
+    st->st_atime = 0;
+    st->st_ctime = 0;
     return res;
 }
 
@@ -597,6 +609,9 @@ static int vfs_spiffs_stat(void* ctx, const char * path, struct stat * st)
     st->st_size = s.size;
     st->st_mode = S_IRWXU | S_IRWXG | S_IRWXO;
     st->st_mode |= (s.type == SPIFFS_TYPE_DIR)?S_IFDIR:S_IFREG;
+    st->st_mtime = vfs_spiffs_get_mtime(&s);
+    st->st_atime = 0;
+    st->st_ctime = 0;
     return res;
 }
 
@@ -763,4 +778,32 @@ static int vfs_spiffs_link(void* ctx, const char* n1, const char* n2)
 {
     errno = ENOTSUP;
     return -1;
+}
+
+static void vfs_spiffs_update_mtime(spiffs *fs, spiffs_file fd)
+{
+#ifdef CONFIG_SPIFFS_USE_MTIME
+    time_t t = time(NULL);
+    spiffs_stat s;
+    int ret = SPIFFS_OK;
+    if (CONFIG_SPIFFS_META_LENGTH > sizeof(t)) {
+        ret = SPIFFS_fstat(fs, fd, &s);
+    }
+    if (ret == SPIFFS_OK) {
+        memcpy(s.meta, &t, sizeof(t));
+        ret = SPIFFS_fupdate_meta(fs, fd, s.meta);
+    }
+    if (ret != SPIFFS_OK) {
+        ESP_LOGW(TAG, "Failed to update mtime (%d)", ret);
+    }
+#endif //CONFIG_SPIFFS_USE_MTIME
+}
+
+static time_t vfs_spiffs_get_mtime(const spiffs_stat* s)
+{
+    time_t t = 0;
+#ifdef CONFIG_SPIFFS_USE_MTIME
+    memcpy(&t, s->meta, sizeof(t));
+#endif
+    return t;
 }

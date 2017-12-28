@@ -42,7 +42,7 @@
 #endif
 
 #if defined( CONFIG_ESP32_TIME_SYSCALL_USE_FRC1 ) || defined( CONFIG_ESP32_TIME_SYSCALL_USE_RTC_FRC1 )
-#define WITH_FRC1 1
+#define WITH_FRC 1
 #endif
 
 #ifdef WITH_RTC
@@ -72,19 +72,21 @@ static uint64_t get_rtc_time_us()
 // s_boot_time: time from Epoch to the first boot time
 #ifdef WITH_RTC
 // when RTC is used to persist time, two RTC_STORE registers are used to store boot time
-#elif defined(WITH_FRC1)
+#elif defined(WITH_FRC)
 static uint64_t s_boot_time;
-#endif
+#endif // WITH_RTC
 
-#if defined(WITH_RTC) || defined(WITH_FRC1)
+#if defined(WITH_RTC) || defined(WITH_FRC)
 static _lock_t s_boot_time_lock;
 #endif
 
-#ifdef WITH_RTC
+// Offset between FRC timer and the RTC.
+// Initialized after reset or light sleep.
+#if defined(WITH_RTC) && defined(WITH_FRC)
 uint64_t s_microseconds_offset;
 #endif
 
-#if defined(WITH_RTC) || defined(WITH_FRC1)
+#if defined(WITH_RTC) || defined(WITH_FRC)
 static void set_boot_time(uint64_t time_us)
 {
     _lock_acquire(&s_boot_time_lock);
@@ -109,7 +111,7 @@ static uint64_t get_boot_time()
     _lock_release(&s_boot_time_lock);
     return result;
 }
-#endif //defined(WITH_RTC) || defined(WITH_FRC1)
+#endif //defined(WITH_RTC) || defined(WITH_FRC)
 
 
 void esp_clk_slowclk_cal_set(uint32_t new_cal)
@@ -139,10 +141,10 @@ uint32_t esp_clk_slowclk_cal_get()
 
 void esp_set_time_from_rtc()
 {
-#if defined( WITH_FRC1 ) && defined( WITH_RTC )
+#if defined( WITH_FRC ) && defined( WITH_RTC )
     // initialize time from RTC clock
     s_microseconds_offset = get_rtc_time_us() - esp_timer_get_time();
-#endif // WITH_FRC1 && WITH_RTC
+#endif // WITH_FRC && WITH_RTC
 }
 
 uint64_t esp_clk_rtc_time(void)
@@ -166,23 +168,27 @@ clock_t IRAM_ATTR _times_r(struct _reent *r, struct tms *ptms)
     return (clock_t) tv.tv_sec;
 }
 
-#if defined( WITH_FRC1 ) || defined( WITH_RTC )
+#if defined( WITH_FRC ) || defined( WITH_RTC )
 static uint64_t get_time_since_boot()
 {
     uint64_t microseconds = 0;
-#ifdef WITH_FRC1
+#ifdef WITH_FRC
+#ifdef WITH_RTC
     microseconds = s_microseconds_offset + esp_timer_get_time();
+#else
+    microseconds = esp_timer_get_time();
+#endif // WITH_RTC
 #elif defined(WITH_RTC)
     microseconds = get_rtc_time_us();
-#endif
+#endif // WITH_FRC
     return microseconds;
 }
-#endif // defined( WITH_FRC1 ) || defined( WITH_RTC )
+#endif // defined( WITH_FRC ) || defined( WITH_RTC )
 
 int IRAM_ATTR _gettimeofday_r(struct _reent *r, struct timeval *tv, void *tz)
 {
     (void) tz;
-#if defined( WITH_FRC1 ) || defined( WITH_RTC )
+#if defined( WITH_FRC ) || defined( WITH_RTC )
     if (tv) {
         uint64_t microseconds = get_boot_time() + get_time_since_boot();
         tv->tv_sec = microseconds / 1000000;
@@ -192,13 +198,13 @@ int IRAM_ATTR _gettimeofday_r(struct _reent *r, struct timeval *tv, void *tz)
 #else
     __errno_r(r) = ENOSYS;
     return -1;
-#endif // defined( WITH_FRC1 ) || defined( WITH_RTC )
+#endif // defined( WITH_FRC ) || defined( WITH_RTC )
 }
 
 int settimeofday(const struct timeval *tv, const struct timezone *tz)
 {
     (void) tz;
-#if defined( WITH_FRC1 ) || defined( WITH_RTC )
+#if defined( WITH_FRC ) || defined( WITH_RTC )
     if (tv) {
         uint64_t now = ((uint64_t) tv->tv_sec) * 1000000LL + tv->tv_usec;
         uint64_t since_boot = get_time_since_boot();
@@ -233,7 +239,7 @@ unsigned int sleep(unsigned int seconds)
 
 uint32_t system_get_time(void)
 {
-#if defined( WITH_FRC1 ) || defined( WITH_RTC )
+#if defined( WITH_FRC ) || defined( WITH_RTC )
     return get_time_since_boot();
 #else
     return 0;
@@ -244,7 +250,7 @@ uint32_t system_get_current_time(void) __attribute__((alias("system_get_time")))
 
 uint32_t system_relative_time(uint32_t current_time)
 {
-#if defined( WITH_FRC1 ) || defined( WITH_RTC )
+#if defined( WITH_FRC ) || defined( WITH_RTC )
     return get_time_since_boot() - current_time;
 #else
     return 0;

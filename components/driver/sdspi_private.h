@@ -73,6 +73,8 @@ typedef struct {
     uint8_t r1;
     /// Up to 16 bytes of response. Luckily, this is aligned on 4 byte boundary.
     uint32_t response[4];
+    /// response timeout, in milliseconds
+    int timeout_ms;
 } sdspi_hw_cmd_t;
 
 #define SDSPI_CMD_NORESP_SIZE   6   //!< Size of the command without any response
@@ -90,7 +92,7 @@ typedef struct {
 
 #define SDSPI_MAX_DATA_LEN      512     //!< Max size of single block transfer
 
-void make_hw_cmd(uint32_t opcode, uint32_t arg, sdspi_hw_cmd_t *hw_cmd);
+void make_hw_cmd(uint32_t opcode, uint32_t arg, int timeout_ms, sdspi_hw_cmd_t *hw_cmd);
 
 esp_err_t sdspi_host_start_command(int slot, sdspi_hw_cmd_t *cmd,
                                    void *data, uint32_t data_size, int flags);

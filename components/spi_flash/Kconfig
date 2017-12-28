@@ -1,5 +1,36 @@
 menu "SPI Flash driver"
 
+config SPI_FLASH_VERIFY_WRITE
+    bool "Verify SPI flash writes"
+    default n
+    help
+        If this option is enabled, any time SPI flash is written then the data will be read
+        back and verified. This can catch hardware problems with SPI flash, or flash which
+        was not erased before verification.
+
+config SPI_FLASH_LOG_FAILED_WRITE
+    bool "Log errors if verification fails"
+    depends on SPI_FLASH_VERIFY_WRITE
+    default n
+    help
+        If this option is enabled, if SPI flash write verification fails then a log error line
+        will be written with the address, expected & actual values. This can be useful when
+        debugging hardware SPI flash problems.
+
+config SPI_FLASH_WARN_SETTING_ZERO_TO_ONE
+    bool "Log warning if writing zero bits to ones"
+    depends on SPI_FLASH_VERIFY_WRITE
+    default n
+    help
+        If this option is enabled, any SPI flash write which tries to set zero bits in the flash to
+        ones will log a warning. Such writes will not result in the requested data appearing identically
+        in flash once written, as SPI NOR flash can only set bits to one when an entire sector is erased.
+        After erasing, individual bits can only be written from one to zero.
+
+        Note that some software (such as SPIFFS) which is aware of SPI NOR flash may write one bits as an
+        optimisation, relying on the data in flash becoming a bitwise AND of the new data and any existing data.
+        Such software will log spurious warnings if this option is enabled.
+
 config SPI_FLASH_ENABLE_COUNTERS
     bool "Enable operation counters"
     default 0

@@ -631,6 +631,10 @@ config BROWNOUT_DET_LVL
     default 7 if BROWNOUT_DET_LVL_SEL_7
 
 
+# Note about the use of "FRC1" name: currently FRC1 timer is not used for
+# high resolution timekeeping anymore. Instead the esp_timer API, implemented
+# using FRC2 timer, is used.
+# FRC1 name in the option name is kept for compatibility.
 choice ESP32_TIME_SYSCALL
     prompt "Timers used for gettimeofday function"
     default ESP32_TIME_SYSCALL_USE_RTC_FRC1
@@ -638,12 +642,12 @@ choice ESP32_TIME_SYSCALL
         This setting defines which hardware timers are used to
         implement 'gettimeofday' and 'time' functions in C library.
 
-        - If only FRC1 timer is used, gettimeofday will provide time at
-          microsecond resolution. Time will not be preserved when going
-          into deep sleep mode.
-        - If both FRC1 and RTC timers are used, timekeeping will
+        - If both high-resolution and RTC timers are used, timekeeping will
           continue in deep sleep. Time will be reported at 1 microsecond
-          resolution.
+          resolution. This is the default, and the recommended option.
+        - If only high-resolution timer is used, gettimeofday will
+          provide time at microsecond resolution. 
+          Time will not be preserved when going into deep sleep mode.
         - If only RTC timer is used, timekeeping will continue in
           deep sleep, but time will be measured at 6.(6) microsecond
           resolution. Also the gettimeofday function itself may take
@@ -653,12 +657,12 @@ choice ESP32_TIME_SYSCALL
         - When RTC is used for timekeeping, two RTC_STORE registers are
           used to keep time in deep sleep mode.
 
+config ESP32_TIME_SYSCALL_USE_RTC_FRC1
+    bool "RTC and high-resolution timer"
 config ESP32_TIME_SYSCALL_USE_RTC
     bool "RTC"
-config ESP32_TIME_SYSCALL_USE_RTC_FRC1
-    bool "RTC and FRC1"
 config ESP32_TIME_SYSCALL_USE_FRC1
-    bool "FRC1"
+    bool "High-resolution timer"
 config ESP32_TIME_SYSCALL_USE_NONE
     bool "None"
 endchoice
@@ -771,6 +775,22 @@ config ESP_TIMER_PROFILING
 		This option has some effect on timer performance and the amount of memory
 		used for timer storage, and should only be used for debugging/testing
 		purposes.
+
+config COMPATIBLE_PRE_V2_1_BOOTLOADERS
+    bool "App compatible with bootloaders before IDF v2.1"
+    default n
+    help
+        Bootloaders before IDF v2.1 did less initialisation of the
+        system clock. This setting needs to be enabled to build an app
+        which can be booted by these older bootloaders.
+
+        If this setting is enabled, the app can be booted by any bootloader
+        from IDF v1.0 up to the current version.
+
+        If this setting is disabled, the app can only be booted by bootloaders
+        from IDF v2.1 or newer.
+
+        Enabling this setting adds approximately 1KB to the app's IRAM usage.
 
 endmenu  # ESP32-Specific
 

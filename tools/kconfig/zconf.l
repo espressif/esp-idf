@@ -1,5 +1,5 @@
 %option nostdinit noyywrap never-interactive full ecs
-%option 8bit nodefault perf-report perf-report
+%option 8bit perf-report perf-report
 %option noinput
 %x COMMAND HELP STRING PARAM
 %{

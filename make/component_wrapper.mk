@@ -73,10 +73,35 @@ COMPONENT_SUBMODULES ?=
 
 ################################################################################
 # 2) Include the component.mk for the specific component (COMPONENT_MAKEFILE) to
-#     override variables & optionally define custom targets.
+#     override variables & optionally define custom targets. Also include global
+#     component makefiles.
 ################################################################################
 
+
+# Include any Makefile.componentbuild file letting components add
+# configuration at the global component level
+
+# Save component_path; we pass it to the called Makefile.componentbuild
+# as COMPILING_COMPONENT_PATH, and we use it to restore the current 
+# COMPONENT_PATH later.
+COMPILING_COMPONENT_PATH := $(COMPONENT_PATH)
+
+define includeCompBuildMakefile
+$(if $(V),$(info including $(1)/Makefile.componentbuild...))
+COMPONENT_PATH := $(1)
+include $(1)/Makefile.componentbuild
+endef
+$(foreach componentpath,$(COMPONENT_PATHS), \
+	$(if $(wildcard $(componentpath)/Makefile.componentbuild), \
+		$(eval $(call includeCompBuildMakefile,$(componentpath)))))
+
+#Restore COMPONENT_PATH to what it was
+COMPONENT_PATH := $(COMPILING_COMPONENT_PATH)
+
+
+# Include component.mk for this component.
 include $(COMPONENT_MAKEFILE)
+
 
 ################################################################################
 # 3) Set variables that depend on values that may changed by component.mk
@@ -85,11 +110,12 @@ include $(COMPONENT_MAKEFILE)
 ifndef COMPONENT_CONFIG_ONLY  # Skip steps 3-5 if COMPONENT_CONFIG_ONLY is set
 
 # Object files which need to be linked into the library
-# By default we take all .c, .cpp & .S files in COMPONENT_SRCDIRS.
+# By default we take all .c, .cpp, .cc & .S files in COMPONENT_SRCDIRS.
 ifndef COMPONENT_OBJS
 # Find all source files in all COMPONENT_SRCDIRS
 COMPONENT_OBJS := $(foreach compsrcdir,$(COMPONENT_SRCDIRS),$(patsubst %.c,%.o,$(wildcard $(COMPONENT_PATH)/$(compsrcdir)/*.c)))
 COMPONENT_OBJS += $(foreach compsrcdir,$(COMPONENT_SRCDIRS),$(patsubst %.cpp,%.o,$(wildcard $(COMPONENT_PATH)/$(compsrcdir)/*.cpp)))
+COMPONENT_OBJS += $(foreach compsrcdir,$(COMPONENT_SRCDIRS),$(patsubst %.cc,%.o,$(wildcard $(COMPONENT_PATH)/$(compsrcdir)/*.cc)))
 COMPONENT_OBJS += $(foreach compsrcdir,$(COMPONENT_SRCDIRS),$(patsubst %.S,%.o,$(wildcard $(COMPONENT_PATH)/$(compsrcdir)/*.S)))
 # Make relative by removing COMPONENT_PATH from all found object paths
 COMPONENT_OBJS := $(patsubst $(COMPONENT_PATH)/%,%,$(COMPONENT_OBJS))
@@ -217,6 +243,11 @@ $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.c $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) 
 	$(call AppendSourceToDependencies,$$<,$$@)
 
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.cpp $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
+	$$(summary) CXX $$(patsubst $$(PWD)/%,%,$$(CURDIR))/$$@
+	$$(CXX) $$(CXXFLAGS) $$(CPPFLAGS) $$(addprefix -I,$$(COMPONENT_INCLUDES)) $$(addprefix -I,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
+	$(call AppendSourceToDependencies,$$<,$$@)
+
+$(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.cc $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
 	$$(summary) CXX $$(patsubst $$(PWD)/%,%,$$(CURDIR))/$$@
 	$$(CXX) $$(CXXFLAGS) $$(CPPFLAGS) $$(addprefix -I,$$(COMPONENT_INCLUDES)) $$(addprefix -I,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
 	$(call AppendSourceToDependencies,$$<,$$@)
