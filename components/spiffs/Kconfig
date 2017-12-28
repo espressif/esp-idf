@@ -5,7 +5,7 @@ config SPIFFS_MAX_PARTITIONS
     default 3
     range 1 10
     help
-        Define maximum number of partitions 
+        Define maximum number of partitions
         that can be mounted.
 
 menu "SPIFFS Cache Configuration"
@@ -13,8 +13,8 @@ config SPIFFS_CACHE
     bool "Enable SPIFFS Cache"
     default "y"
     help
-        Enables/disable memory read 
-        caching of nucleus file system 
+        Enables/disable memory read
+        caching of nucleus file system
         operations.
 
 config SPIFFS_CACHE_WR
@@ -22,7 +22,7 @@ config SPIFFS_CACHE_WR
     default "y"
     depends on SPIFFS_CACHE
     help
-        Enables memory write caching for 
+        Enables memory write caching for
         file descriptors in hydrogen.
 
 config SPIFFS_CACHE_STATS
@@ -30,7 +30,7 @@ config SPIFFS_CACHE_STATS
     default "n"
     depends on SPIFFS_CACHE
     help
-        Enable/disable statistics on caching. 
+        Enable/disable statistics on caching.
         Debug/test purpose only.
 
 endmenu
@@ -39,9 +39,9 @@ config SPIFFS_PAGE_CHECK
     bool "Enable SPIFFS Page Check"
     default "y"
     help
-        Always check header of each 
+        Always check header of each
         accessed page to ensure consistent state.
-        If enabled it will increase number 
+        If enabled it will increase number
         of reads, will increase flash.
 
 config SPIFFS_GC_MAX_RUNS
@@ -49,14 +49,14 @@ config SPIFFS_GC_MAX_RUNS
     default 10
     range 1 255
     help
-        Define maximum number of gc runs to 
+        Define maximum number of gc runs to
         perform to reach desired free pages.
 
 config SPIFFS_GC_STATS
     bool "Enable SPIFFS GC Statistics"
     default "n"
     help
-        Enable/disable statistics on gc. 
+        Enable/disable statistics on gc.
         Debug/test purpose only.
 
 config SPIFFS_OBJ_NAME_LEN
@@ -64,18 +64,18 @@ config SPIFFS_OBJ_NAME_LEN
     default 32
     range 1 256
     help
-        Object name maximum length. Note that this length 
-        include the zero-termination character, 
-        meaning maximum string of characters can at most be 
+        Object name maximum length. Note that this length
+        include the zero-termination character,
+        meaning maximum string of characters can at most be
         SPIFFS_OBJ_NAME_LEN - 1.
 
 config SPIFFS_USE_MAGIC
     bool "Enable SPIFFS Filesystem Magic"
     default "y"
     help
-        Enable this to have an identifiable spiffs filesystem. 
-        This will look for a magic in all sectors 
-        to determine if this is a valid spiffs system 
+        Enable this to have an identifiable spiffs filesystem.
+        This will look for a magic in all sectors
+        to determine if this is a valid spiffs system
         or not on mount point.
 
 config SPIFFS_USE_MAGIC_LENGTH
@@ -83,29 +83,43 @@ config SPIFFS_USE_MAGIC_LENGTH
     default "y"
     depends on SPIFFS_USE_MAGIC
     help
-        If this option is enabled, the magic will also be dependent 
-        on the length of the filesystem. For example, a filesystem 
-        configured and formatted for 4 megabytes will not be accepted 
+        If this option is enabled, the magic will also be dependent
+        on the length of the filesystem. For example, a filesystem
+        configured and formatted for 4 megabytes will not be accepted
         for mounting with a configuration defining the filesystem as 2 megabytes.
 
 config SPIFFS_META_LENGTH
     int "Size of per-file metadata field"
-    default 4
+    default 5
+    range 0 64
     help
         This option sets the number of extra bytes stored in the file header.
         These bytes can be used in an application-specific manner.
         Set this to at least 4 bytes to enable support for saving file
         modification time.
+        Set this to at least 5 bytes to also enable directory support
+        Set this to at least 1 byte to only enable directory support
 
 config SPIFFS_USE_MTIME
     bool "Save file modification time"
     default "y"
-    depends on SPIFFS_META_LENGTH >= 4
+    depends on (!SPIFFS_USE_DIR && SPIFFS_META_LENGTH >= 4) || (SPIFFS_USE_DIR && SPIFFS_META_LENGTH >= 5)
     help
         If enabled, then the first 4 bytes of per-file metadata will be used
         to store file modification time (mtime), accessible through
         stat/fstat functions.
         Modification time is updated when the file is opened.
+
+config SPIFFS_USE_DIR
+    bool "Enable directories"
+    default "y"
+    depends on SPIFFS_META_LENGTH >= 1
+    help
+        If enabled, directory support will be enabled in spiffs.
+        Directory create/remove functions will be accessible through
+        mkdir/rmdir functions.
+        One additional byte of per-file metadata will be used
+        to store file the file type (regular file/directory)
 
 menu "Debug Configuration"
 
@@ -113,21 +127,21 @@ config SPIFFS_DBG
     bool "Enable general SPIFFS debug"
     default "n"
     help
-        Enabling this option will print 
+        Enabling this option will print
         general debug mesages to the console
 
 config SPIFFS_API_DBG
     bool "Enable SPIFFS API debug"
     default "n"
     help
-        Enabling this option will print 
+        Enabling this option will print
         API debug mesages to the console
 
 config SPIFFS_GC_DBG
     bool "Enable SPIFFS Garbage Cleaner debug"
     default "n"
     help
-        Enabling this option will print 
+        Enabling this option will print
         GC debug mesages to the console
 
 config SPIFFS_CACHE_DBG
@@ -135,22 +149,22 @@ config SPIFFS_CACHE_DBG
     default "n"
     depends on SPIFFS_CACHE
     help
-        Enabling this option will print 
+        Enabling this option will print
         Cache debug mesages to the console
 
 config SPIFFS_CHECK_DBG
     bool "Enable SPIFFS Filesystem Check debug"
     default "n"
     help
-        Enabling this option will print 
-        Filesystem Check debug mesages 
+        Enabling this option will print
+        Filesystem Check debug mesages
         to the console
 
 config SPIFFS_TEST_VISUALISATION
     bool "Enable SPIFFS Filesystem Visualization"
     default "n"
     help
-        Enable this option to enable SPIFFS_vis function 
+        Enable this option to enable SPIFFS_vis function
         in the api.
 
 endmenu
