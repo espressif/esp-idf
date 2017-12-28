@@ -246,6 +246,11 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
     }
 
     *is_native = native;
+    if ( native ) {
+        ESP_LOGD(SPI_TAG, "SPI%d use native pins.", host );
+    } else {
+        ESP_LOGD(SPI_TAG, "SPI%d use gpio matrix.", host );
+    }
 
     if (native) {
         //All SPI native pin selections resolve to 1, so we put that here instead of trying to figure
