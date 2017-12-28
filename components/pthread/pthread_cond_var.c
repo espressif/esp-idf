@@ -46,8 +46,6 @@ typedef struct esp_pthread_cond {
 
 int pthread_cond_signal(pthread_cond_t *cv)
 {
-    ESP_LOGV(TAG, "%s %p", __FUNCTION__, cv);
-
     if (cv == NULL || *cv == (pthread_cond_t) 0) {
         return EINVAL;
     }
@@ -67,8 +65,6 @@ int pthread_cond_signal(pthread_cond_t *cv)
 
 int pthread_cond_broadcast(pthread_cond_t *cv)
 {
-    ESP_LOGV(TAG, "%s %p", __FUNCTION__, cv);
-
     if (cv == NULL || *cv == (pthread_cond_t) 0) {
         return EINVAL;
     }
@@ -87,8 +83,6 @@ int pthread_cond_broadcast(pthread_cond_t *cv)
 
 int pthread_cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut)
 {
-    ESP_LOGV(TAG, "%s %p %p", __FUNCTION__, cv, mut);
-
     return pthread_cond_timedwait(cv, mut, NULL);
 }
 
@@ -96,8 +90,6 @@ int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *mut, const struc
 {
     int ret;
     TickType_t timeout_ticks;
-
-    ESP_LOGV(TAG, "%s %p %p %p", __FUNCTION__, cv, mut, to);
 
     if (cv == NULL || *cv == (pthread_cond_t) 0) {
         return EINVAL;
@@ -166,8 +158,6 @@ int pthread_cond_init(pthread_cond_t *cv, const pthread_condattr_t *att)
 {
     (void) att; /* Unused argument as of now */
 
-    ESP_LOGV(TAG, "%s %p %p", __FUNCTION__, cv, att);
-
     if (cv == NULL) {
         return EINVAL;
     }
@@ -188,7 +178,6 @@ int pthread_cond_destroy(pthread_cond_t *cv)
 {
     int ret = 0;
 
-    ESP_LOGV(TAG, "%s %p", __FUNCTION__, cv);
     if (cv == NULL || *cv == (pthread_cond_t) 0) {
         return EINVAL;
     }
