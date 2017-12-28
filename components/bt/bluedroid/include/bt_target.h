@@ -647,7 +647,8 @@
 
 /* 4.1/4.2 secure connections feature */
 #ifndef SC_MODE_INCLUDED
-#define SC_MODE_INCLUDED                TRUE
+// Disable AES-CCM (BT 4.1) for BT Classic to workaround controller AES issue. E0 encryption (BT 4.0) will be used.
+#define SC_MODE_INCLUDED                FALSE
 #endif
 
 /* Used for conformance testing ONLY */
