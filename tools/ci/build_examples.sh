@@ -43,6 +43,7 @@ die() {
 }
 
 [ -z ${IDF_PATH} ] && die "IDF_PATH is not set"
+[ -z ${LOG_PATH} ] && die "LOG_PATH is not set"
 
 echo "build_examples running in ${PWD}"
 
@@ -53,11 +54,11 @@ export BATCH_BUILD=1
 export V=0 # only build verbose if there's an error
 
 shopt -s lastpipe # Workaround for Bash to use variables in loops (http://mywiki.wooledge.org/BashFAQ/024)
+
 RESULT=0
 FAILED_EXAMPLES=""
-
-RESULT_WARNINGS=22  # magic number result code for "warnings found"
-LOG_WARNINGS=${PWD}/build_warnings.log
+RESULT_ISSUES=22  # magic number result code for issues found
+LOG_SUSPECTED=${LOG_PATH}/common_log.txt
 
 if [ $# -eq 0 ]
 then
@@ -114,26 +115,18 @@ build_example () {
         export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
 
         # build non-verbose first
-        local BUILDLOG=${PWD}/examplebuild.${ID}.log
+        local BUILDLOG=${LOG_PATH}/ex_${ID}_log.txt
         (
-            make MAKEFLAGS= clean &&
-            make MAKEFLAGS= defconfig &&
+            make clean &&
+            make defconfig &&
             make all &&
             make print_flash_cmd | tail -n 1 > build/download.config
         ) &> >(tee -a "${BUILDLOG}") || {
             RESULT=$?; FAILED_EXAMPLES+=" ${EXAMPLE_NAME}"
-            make MAKEFLAGS= V=1 clean defconfig && make V=1 # verbose output for errors
         }
     popd
 
-    if grep ": warning:" "${BUILDLOG}" 2>&1 >> "${LOG_WARNINGS}"; then
-        [ $RESULT -eq 0 ] && RESULT=$RESULT_WARNINGS
-        FAILED_EXAMPLES+=" ${EXAMPLE_NAME} (warnings)"
-    fi
-
-    grep -i error "${BUILDLOG}" 2>&1 >> "${LOG_WARNINGS}" || :
-
-    rm -f "${BUILDLOG}"
+    grep -i "error\|warning" "${BUILDLOG}" 2>&1 >> "${LOG_SUSPECTED}" || :
 }
 
 EXAMPLE_NUM=0
@@ -155,15 +148,17 @@ done
 
 # show warnings
 echo -e "\nFound issues:"
-# pattern is: not 'error.o' and not '-Werror'
-grep -v "error.o\|\-Werror" -- "${LOG_WARNINGS}" || echo -e "\tNone"
-rm -f "${LOG_WARNINGS}"
 
-if [ $RESULT -eq $RESULT_WARNINGS ]; then
-    echo "Build would have passed, except for warnings."
-fi
+#       Ignore the next messages:
+# "error.o" or "-Werror" in compiler's command line
+# "reassigning to symbol" or "changes choice state" in sdkconfig
+sort -u "${LOG_SUSPECTED}" | \
+grep -v "library/error.o\|\ -Werror\|reassigning to symbol\|changes choice state" \
+    && RESULT=$RESULT_ISSUES \
+    || echo -e "\tNone"
 
-[ $RESULT -eq 0 ] || echo "Failed examples: $FAILED_EXAMPLES"
+[ -z ${FAILED_EXAMPLES} ] || echo -e "\nThere are errors in the next examples: $FAILED_EXAMPLES"
+[ $RESULT -eq 0 ] || echo -e "\nFix all warnings and errors above to pass the test!"
 
 echo -e "\nReturn code = $RESULT"
 
