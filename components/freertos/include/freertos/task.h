@@ -2073,6 +2073,22 @@ void vTaskNotifyGiveFromISR( TaskHandle_t xTaskToNotify, BaseType_t *pxHigherPri
  */
 uint32_t ulTaskNotifyTake( BaseType_t xClearCountOnExit, TickType_t xTicksToWait );
 
+/**
+ * task. h
+ * <PRE>BaseType_t xTaskNotifyStateClear( TaskHandle_t xTask );</pre>
+ *
+ * If the notification state of the task referenced by the handle xTask is
+ * eNotified, then set the task's notification state to eNotWaitingNotification.
+ * The task's notification value is not altered.  Set xTask to NULL to clear the
+ * notification state of the calling task.
+ *
+ * @return pdTRUE if the task's notification state was set to
+ * eNotWaitingNotification, otherwise pdFALSE.
+ * \defgroup xTaskNotifyStateClear xTaskNotifyStateClear
+ * \ingroup TaskNotifications
+ */
+BaseType_t xTaskNotifyStateClear( TaskHandle_t xTask );
+
 /*-----------------------------------------------------------
  * SCHEDULER INTERNALS AVAILABLE FOR PORTING PURPOSES
  *----------------------------------------------------------*/

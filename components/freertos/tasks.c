@@ -3680,6 +3680,36 @@ static void prvCheckTasksWaitingTermination( void )
 	#endif /* vTaskDelete */
 }
 /*-----------------------------------------------------------*/
+#if( configUSE_TASK_NOTIFICATIONS == 1 )
+
+	BaseType_t xTaskNotifyStateClear( TaskHandle_t xTask )
+	{
+	TCB_t *pxTCB;
+	BaseType_t xReturn;
+
+		/* If null is passed in here then it is the calling task that is having
+		its notification state cleared. */
+		pxTCB = prvGetTCBFromHandle( xTask );
+
+		taskENTER_CRITICAL(&xTaskQueueMutex);
+		{
+			if( pxTCB->eNotifyState == eNotified )
+			{
+				pxTCB->eNotifyState = eNotWaitingNotification;
+				xReturn = pdPASS;
+			}
+			else
+			{
+				xReturn = pdFAIL;
+			}
+		}
+		taskEXIT_CRITICAL(&xTaskQueueMutex);
+
+		return xReturn;
+	}
+
+#endif /* configUSE_TASK_NOTIFICATIONS */
+/*-----------------------------------------------------------*/ 
 
 //This should be called with the taskqueuemutex grabbed. -JD
 static void prvAddCurrentTaskToDelayedList( const BaseType_t xCoreID, const TickType_t xTimeToWake )
