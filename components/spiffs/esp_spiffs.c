@@ -83,7 +83,7 @@ typedef struct {
 #ifdef CONFIG_SPIFFS_USE_DIR
     uint8_t type;   /*!< file type */
 #endif
-} vfs_spiffs_meta_t;
+} __attribute__((packed, aligned(1))) vfs_spiffs_meta_t;
 #endif
 
 static int vfs_spiffs_open(void* ctx, const char * path, int flags, int mode);
@@ -545,7 +545,7 @@ static int vfs_spiffs_open(void* ctx, const char * path, int flags, int mode)
     spiffs_stat s;
     int ret = SPIFFS_fstat(efs->fs, fd, &s);
     if (ret == SPIFFS_OK) {
-        vfs_spiffs_meta_t * meta = &s.meta;
+        vfs_spiffs_meta_t * meta = (vfs_spiffs_meta_t *)&s.meta;
         if (meta->type == SPIFFS_TYPE_DIR) {
             // It is directory, cannot be opened
             errno = EISDIR;
@@ -625,7 +625,7 @@ static int vfs_spiffs_fstat(void* ctx, int fd, struct stat * st)
     }
     st->st_size = s.size;
 #ifdef CONFIG_SPIFFS_USE_DIR
-    vfs_spiffs_meta_t * meta = &s.meta;
+    vfs_spiffs_meta_t * meta = (vfs_spiffs_meta_t *)&s.meta;
     if (meta->type == SPIFFS_TYPE_DIR) st->st_mode = S_IFDIR;
     else st->st_mode = S_IRWXU | S_IRWXG | S_IRWXO | S_IFREG;
 #else
@@ -652,7 +652,7 @@ static int vfs_spiffs_stat(void* ctx, const char * path, struct stat * st)
 
     st->st_size = s.size;
 #ifdef CONFIG_SPIFFS_USE_DIR
-    vfs_spiffs_meta_t * meta = &s.meta;
+    vfs_spiffs_meta_t * meta = (vfs_spiffs_meta_t *)&s.meta;
     if (meta->type == SPIFFS_TYPE_DIR) st->st_mode = S_IFDIR;
     else st->st_mode = S_IRWXU | S_IRWXG | S_IRWXO | S_IFREG;
 #else
@@ -691,7 +691,7 @@ static int vfs_spiffs_unlink(void* ctx, const char *path)
         SPIFFS_clearerr(efs->fs);
         return -1;
     }
-    vfs_spiffs_meta_t * meta = &s.meta;
+    vfs_spiffs_meta_t * meta = (vfs_spiffs_meta_t *)&s.meta;
     if (meta->type == SPIFFS_TYPE_DIR) {
         // Directory cannot be unliked (removed)
         errno = EISDIR;
@@ -822,7 +822,7 @@ static int vfs_spiffs_readdir_r(void* ctx, DIR* pdir, struct dirent* entry,
     }
     entry->d_ino = 0;
 #ifdef CONFIG_SPIFFS_USE_DIR
-    vfs_spiffs_meta_t * meta = &s.meta;
+    vfs_spiffs_meta_t * meta = (vfs_spiffs_meta_t *)&s.meta;
     if (meta->type == SPIFFS_TYPE_DIR) entry->d_type = DT_DIR;
     else entry->d_type = out.type;
 #else
@@ -915,7 +915,7 @@ static int vfs_spiffs_rmdir(void* ctx, const char* name)
         return 0;
     }
 
-    vfs_spiffs_meta_t * meta = &s.meta;
+    vfs_spiffs_meta_t * meta = (vfs_spiffs_meta_t *)&s.meta;
     if (meta->type != SPIFFS_TYPE_DIR) {
         // not a directory
         errno = ENOTDIR;
