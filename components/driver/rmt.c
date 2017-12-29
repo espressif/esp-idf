@@ -540,7 +540,6 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
                 switch(i % 3) {
                     //TX END
                     case 0:
-                        ESP_EARLY_LOGD(RMT_TAG, "RMT INTR : TX END");
                         xSemaphoreGiveFromISR(p_rmt->tx_sem, &HPTaskAwoken);
                         if(HPTaskAwoken == pdTRUE) {
                             portYIELD_FROM_ISR();
@@ -552,7 +551,6 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
                         break;
                         //RX_END
                     case 1:
-                        ESP_EARLY_LOGD(RMT_TAG, "RMT INTR : RX END");
                         RMT.conf_ch[channel].conf1.rx_en = 0;
                         int item_len = rmt_get_mem_len(channel);
                         //change memory owner to protect data.
@@ -590,7 +588,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
                 channel = i - 24;
                 rmt_obj_t* p_rmt = p_rmt_obj[channel];
                 RMT.int_clr.val = BIT(i);
-                ESP_EARLY_LOGD(RMT_TAG, "RMT CH[%d]: EVT INTR", channel);
+
                 if(p_rmt->tx_data == NULL) {
                     //skip
                 } else {
