@@ -638,6 +638,58 @@ extern "C" {
  	#define traceTASK_NOTIFY_GIVE_FROM_ISR()
  #endif
  
+ #ifndef traceSTREAM_BUFFER_CREATE_FAILED 
+#define traceSTREAM_BUFFER_CREATE_FAILED( xIsMessageBuffer ) 
+#endif 
+ 
+#ifndef traceSTREAM_BUFFER_CREATE_STATIC_FAILED 
+	#define traceSTREAM_BUFFER_CREATE_STATIC_FAILED( xReturn, xIsMessageBuffer ) 
+#endif 
+ 
+#ifndef traceSTREAM_BUFFER_CREATE 
+	#define traceSTREAM_BUFFER_CREATE( pxStreamBuffer, xIsMessageBuffer ) 
+#endif 
+ 
+#ifndef traceSTREAM_BUFFER_DELETE 
+	#define traceSTREAM_BUFFER_DELETE( xStreamBuffer ) 
+#endif 
+ 
+#ifndef traceSTREAM_BUFFER_RESET 
+	#define traceSTREAM_BUFFER_RESET( xStreamBuffer ) 
+#endif 
+ 
+#ifndef traceBLOCKING_ON_STREAM_BUFFER_SEND 
+	#define traceBLOCKING_ON_STREAM_BUFFER_SEND( xStreamBuffer ) 
+#endif 
+ 
+#ifndef traceSTREAM_BUFFER_SEND 
+	#define traceSTREAM_BUFFER_SEND( xStreamBuffer, xBytesSent ) 
+#endif 
+ 
+#ifndef traceSTREAM_BUFFER_SEND_FAILED 
+	#define traceSTREAM_BUFFER_SEND_FAILED( xStreamBuffer ) 
+#endif 
+ 
+#ifndef traceSTREAM_BUFFER_SEND_FROM_ISR 
+	#define traceSTREAM_BUFFER_SEND_FROM_ISR( xStreamBuffer, xBytesSent ) 
+#endif 
+ 
+#ifndef traceBLOCKING_ON_STREAM_BUFFER_RECEIVE 
+	#define traceBLOCKING_ON_STREAM_BUFFER_RECEIVE( xStreamBuffer ) 
+#endif 
+ 
+#ifndef traceSTREAM_BUFFER_RECEIVE 
+	#define traceSTREAM_BUFFER_RECEIVE( xStreamBuffer, xReceivedLength ) 
+#endif 
+ 
+#ifndef traceSTREAM_BUFFER_RECEIVE_FAILED 
+	#define traceSTREAM_BUFFER_RECEIVE_FAILED( xStreamBuffer ) 
+#endif 
+ 
+#ifndef traceSTREAM_BUFFER_RECEIVE_FROM_ISR 
+	#define traceSTREAM_BUFFER_RECEIVE_FROM_ISR( xStreamBuffer, xReceivedLength ) 
+#endif
+ 
 #ifndef traceISR_EXIT_TO_SCHEDULER
 	#define traceISR_EXIT_TO_SCHEDULER()
 #endif
@@ -807,6 +859,32 @@ extern "C" {
 V8 if desired. */
 #ifndef configENABLE_BACKWARD_COMPATIBILITY
 	#define configENABLE_BACKWARD_COMPATIBILITY 1
+#endif
+
+#ifndef configPRINTF 
+	/* configPRINTF() was not defined, so define it away to nothing.  To use 
+	configPRINTF() then define it as follows (where MyPrintFunction() is 
+	provided by the application writer): 
+	 
+	void MyPrintFunction(const char *pcFormat, ... ); 
+	#define configPRINTF( X )   MyPrintFunction X 
+	 
+	Then call like a standard printf() function, but placing brackets around 
+	all parameters so they are passed as a single parameter.  For example: 
+	configPRINTF( ("Value = %d", MyVariable) ); */ 
+	#define configPRINTF( X ) 
+#endif 
+ 
+#ifndef configMAX 
+	/* The application writer has not provided their own MAX macro, so define 
+	the following generic implementation. */ 
+	#define configMAX( a, b ) ( ( ( a ) > ( b ) ) ? ( a ) : ( b ) ) 
+#endif 
+ 
+#ifndef configMIN 
+	/* The application writer has not provided their own MAX macro, so define 
+	the following generic implementation. */ 
+	#define configMIN( a, b ) ( ( ( a ) < ( b ) ) ? ( a ) : ( b ) ) 
 #endif
 
 #if configENABLE_BACKWARD_COMPATIBILITY == 1
@@ -1040,6 +1118,33 @@ typedef struct xSTATIC_TIMER
 	#endif
 
 } StaticTimer_t;
+
+/*
+* In line with software engineering best practice, especially when supplying a
+* library that is likely to change in future versions, FreeRTOS implements a
+* strict data hiding policy.  This means the stream buffer structure used
+* internally by FreeRTOS is not accessible to application code.  However, if
+* the application writer wants to statically allocate the memory required to
+* create a stream buffer then the size of the stream buffer object needs to be
+* know.  The StaticStreamBuffer_t structure below is provided for this purpose.
+* Its size and alignment requirements are guaranteed to match those of the
+* genuine structure, no matter which architecture is being used, and no matter
+* how the values in FreeRTOSConfig.h are set.  Its contents are somewhat
+* obfuscated in the hope users will recognise that it would be unwise to make
+* direct use of the structure members.
+*/
+typedef struct xSTATIC_STREAM_BUFFER
+{
+	size_t uxDummy1[ 4 ];
+	void * pvDummy2[ 3 ];
+	uint8_t ucDummy3;
+	#if ( configUSE_TRACE_FACILITY == 1 )
+		UBaseType_t uxDummy4;
+	#endif
+} StaticStreamBuffer_t;
+
+/* Message buffers are built on stream buffers. */
+typedef StaticStreamBuffer_t StaticMessageBuffer_t;
 
 #ifdef __cplusplus
 }
