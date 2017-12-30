@@ -799,15 +799,21 @@ static int vfs_spiffs_readdir_r(void* ctx, DIR* pdir, struct dirent* entry,
 #endif
     size_t plen = strlen(dir->path);
     if (plen > 1) {
-#ifdef CONFIG_SPIFFS_USE_DIR
         // on subdirectory
+#ifdef CONFIG_SPIFFS_USE_DIR
         if ((strncasecmp((const char *)out.name, dir->path, plen)) || (strncasecmp(dir->path, (const char *)out.name, plen) || out.name[plen] != '/' || !out.name[plen+1])) {
-#else
-        if (strncasecmp(dir->path, (const char *)out.name, plen) || out.name[plen] != '/' || !out.name[plen+1]) {
-#endif
             return vfs_spiffs_readdir_r(ctx, pdir, entry, out_dirent);
         }
         item_name += plen + 1;
+        if ((strlen(item_name) > 2) && (strchr(item_name+1, '/'))) {
+            return vfs_spiffs_readdir_r(ctx, pdir, entry, out_dirent);
+        }
+#else
+        if (strncasecmp(dir->path, (const char *)out.name, plen) || out.name[plen] != '/' || !out.name[plen+1]) {
+            return vfs_spiffs_readdir_r(ctx, pdir, entry, out_dirent);
+        }
+        item_name += plen + 1;
+#endif
     }
     else {
         // on root
