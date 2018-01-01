@@ -141,15 +141,18 @@ build_esp_idf_tests:
 .build_examples_template: &build_examples_template
   <<: *build_template
   artifacts:
+    when: always
     paths:
       - build_examples/*/*/*/build/*.bin
       - build_examples/*/*/*/build/*.elf
       - build_examples/*/*/*/build/*.map
       - build_examples/*/*/*/build/download.config
       - build_examples/*/*/*/build/bootloader/*.bin
+      - $LOG_PATH
     expire_in: 1 week
   variables:
     IDF_CI_BUILD: "1"
+    LOG_PATH: "$CI_PROJECT_DIR/log_examples"
   script:
     # it's not possible to build 100% out-of-tree and have the "artifacts"
     # mechanism work, but this is the next best thing
@@ -157,6 +160,7 @@ build_esp_idf_tests:
     - mkdir build_examples
     - cd build_examples
     # build some of examples
+    - mkdir -p ${LOG_PATH}
     - ${IDF_PATH}/tools/ci/build_examples.sh "${CI_JOB_NAME}"
 
 build_examples_00:
