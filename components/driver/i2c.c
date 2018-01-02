@@ -1005,7 +1005,7 @@ esp_err_t i2c_master_read(i2c_cmd_handle_t cmd_handle, uint8_t* data, size_t dat
     I2C_CHECK((data != NULL), I2C_ADDR_ERROR_STR, ESP_ERR_INVALID_ARG);
     I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
     I2C_CHECK(ack < I2C_MASTER_ACK_MAX, I2C_ACK_TYPE_ERR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK(data_len < 1, I2C_DATA_LEN_ERR_STR, ESP_ERR_INVALID_ARG);
+    I2C_CHECK(data_len > 0, I2C_DATA_LEN_ERR_STR, ESP_ERR_INVALID_ARG);
 
     if(ack != I2C_MASTER_LAST_NACK) {
         return i2c_master_read_static(cmd_handle, data, data_len, ack);
