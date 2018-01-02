@@ -110,7 +110,7 @@ No.     Name               Type    Function
 ======  =================  ======  ======================================================
 1       FLASH_SD1 (FSD1)   I/O     | GPIO8, SD_DATA1, SPID, HS1_DATA1 :ref:`(1) <get-started-pico-kit-v4-pin-notes>` , U2CTS
 2       FLASH_SD3 (FSD3)   I/O     | GPIO7, SD_DATA0, SPIQ, HS1_DATA0 :ref:`(1) <get-started-pico-kit-v4-pin-notes>` , U2RTS
-3       FLASH_CLK (FCLK)   I/O     | GPIO11, SD_CMD, SPICS0, HS1_CMD :ref:`(1) <get-started-pico-kit-v4-pin-notes>` , U1RTS
+3       FLASH_CLK (FCLK)   I/O     | GPIO6, SD_CLK, SPICLK, HS1_CLK :ref:`(1) <get-started-pico-kit-v4-pin-notes>` , U1CTS 
 4       IO21               I/O     | GPIO21, VSPIHD, EMAC_TX_EN
 5       IO22               I/O     | GPIO22, VSPIWP, U0RTS, EMAC_TXD1
 6       IO19               I/O     | GPIO19, VSPIQ, U0CTS, EMAC_TXD0
@@ -139,7 +139,7 @@ No.     Name               Type    Function
 ======  =================  ======  ======================================================
 1       FLASH_CS (FCS)     I/O     | GPIO16, HS1_DATA4 :ref:`(1) <get-started-pico-kit-v4-pin-notes>` , U2RXD, EMAC_CLK_OUT
 2       FLASH_SD0 (FSD0)   I/O     | GPIO17, HS1_DATA5 :ref:`(1) <get-started-pico-kit-v4-pin-notes>` , U2TXD, EMAC_CLK_OUT_180
-3       FLASH_SD2 (FSD2)   I/O     | GPIO6, SD_CLK, SPICLK, HS1_CLK :ref:`(1) <get-started-pico-kit-v4-pin-notes>` , U1CTS 
+3       FLASH_SD2 (FSD2)   I/O     | GPIO11, SD_CMD, SPICS0, HS1_CMD :ref:`(1) <get-started-pico-kit-v4-pin-notes>` , U1RTS
 4       SENSOR_VP (FSVP)   I       | GPIO36, ADC1_CH0, ADC_PRE_AMP :ref:`(2a) <get-started-pico-kit-v4-pin-notes>` , RTC_GPIO0
 5       SENSOR_VN (FSVN)   I       | GPIO39, ADC1_CH3, ADC_PRE_AMP :ref:`(2b) <get-started-pico-kit-v4-pin-notes>` , RTC_GPIO3
 6       IO25               I/O     | GPIO25, DAC_1, ADC2_CH8, RTC_GPIO6, EMAC_RXD0
