@@ -37,9 +37,7 @@ With the given pinout for SPI mode, same connections between the SD card and ESP
 
 GPIO2 pin is used as a bootstrapping pin, and should be low to enter UART download mode. One way to do this is to connect GPIO0 and GPIO2 using a jumper, and then the auto-reset circuit on most development boards will pull GPIO2 low along with GPIO0, when entering download mode.
 
-- Some boards have pulldown and/or LED on GPIO2. Pulldown will interfere with D0 signals and must be removed.
-
-    * DOIT ESP32 DEVKIT V1 - 10kOhm pulldown for GPIO2 is located just above RX2 pin. SMD marking on part should be "103". Blue LED doesn't seem to pose problem even for SDMMC_FREQ_HIGHSPEED. You will still need to disconnect 10kOhm pullup on SD in order to flash board. Leaving a pin disconnected/floating usually works.  
+- Some boards have pulldown and/or LED on GPIO2. LED is usually ok, but pulldown will interfere with D0 signals and must be removed. Check the schematic of your development board for anything connected to GPIO2. 
 
 ### Note about GPIO12
 
