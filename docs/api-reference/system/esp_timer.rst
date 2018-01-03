@@ -6,7 +6,7 @@ Overview
 
 Although FreeRTOS provides software timers, these timers have a few limitations:
 
-- Mmaximum resolution is equal to RTOS tick period
+- Maximum resolution is equal to RTOS tick period
 - Timer callbacks are dispatched from a low-priority task
 
 Hardware timers are free from both of the limitations, but often they are less convenient to use. For example, application components may need timer events to fire at certain times in the future, but the hardware timer only contains one "compare" value used for interrupt generation. This means that some facility needs to be built on top of the hardware timer to manage the list of pending events can dispatch the callbacks for these events as corresponding hardware interrupts happen.
