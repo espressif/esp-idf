@@ -6,4 +6,4 @@ Run the gatt_server demo, the client demo will automatically connect to the gatt
 Client demo will enable gatt_server's notify after connection. Then the two devices will exchange
 data.
 
-
+Please check the [tutorial](tutorial/gatt_client_example_walkthrough.md) for more information about this example.
