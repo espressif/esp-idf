@@ -1105,11 +1105,24 @@
 
 #define UART_MEM_RX_STATUS_REG(i)          (REG_UART_BASE(i) + 0x60)
 /* UART_MEM_RX_STATUS : RO ;bitpos:[23:0] ;default: 24'h0 ; */
-/*description: */
+/*description: This register stores the current uart rx mem read address
+  and rx mem write address */
 #define UART_MEM_RX_STATUS  0x00FFFFFF
 #define UART_MEM_RX_STATUS_M  ((UART_MEM_RX_STATUS_V)<<(UART_MEM_RX_STATUS_S))
 #define UART_MEM_RX_STATUS_V  0xFFFFFF
 #define UART_MEM_RX_STATUS_S  0
+/* UART_MEM_RX_RD_ADDR : RO ;bitpos:[12:2] ;default: 11'h0 ; */
+/*description: This register stores the rx mem read address */
+#define UART_MEM_RX_RD_ADDR  0x000007FF
+#define UART_MEM_RX_RD_ADDR_M ((UART_MEM_RX_RD_ADDR_V)<<(UART_MEM_RX_RD_ADDR_S))
+#define UART_MEM_RX_RD_ADDR_V (0x7FF)
+#define UART_MEM_RX_RD_ADDR_S (2)
+/* UART_MEM_RX_WR_ADDR : RO ;bitpos:[23:13] ;default: 11'h0 ; */
+/*description: This register stores the rx mem write address */
+#define UART_MEM_RX_WR_ADDR   0x000007FF
+#define UART_MEM_RX_WR_ADDR_M ((UART_MEM_RX_WR_ADDR_V)<<(UART_MEM_RX_WR_ADDR_S))
+#define UART_MEM_RX_WR_ADDR_V (0x7FF)
+#define UART_MEM_RX_WR_ADDR_S (13)
 
 #define UART_MEM_CNT_STATUS_REG(i)          (REG_UART_BASE(i) + 0x64)
 /* UART_TX_MEM_CNT : RO ;bitpos:[5:3] ;default: 3'b0 ; */
