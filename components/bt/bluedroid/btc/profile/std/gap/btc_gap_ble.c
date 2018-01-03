@@ -688,9 +688,9 @@ static void btc_add_whitelist_complete_callback(UINT8 status, tBTM_WL_OPERATION 
     btc_msg_t msg;
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_GAP_BLE;
-    msg.act = ESP_GAP_BLE_ADD_WHITELIST_COMPLETE_EVT;
-    param.add_whitelist_cmpl.status = btc_hci_to_esp_status(status);
-    param.add_whitelist_cmpl.wl_opration = wl_opration;
+    msg.act = ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT;
+    param.update_whitelist_cmpl.status = btc_hci_to_esp_status(status);
+    param.update_whitelist_cmpl.wl_opration = wl_opration;
     ret = btc_transfer_context(&msg, &param,
                                sizeof(esp_ble_gap_cb_param_t), NULL);
 
@@ -1047,7 +1047,7 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
     }
     case BTC_GAP_BLE_ACT_CONFIG_LOCAL_PRIVACY:
         btc_ble_config_local_privacy(arg->cfg_local_privacy.privacy_enable, btc_set_local_privacy_callback);
-        break;    
+        break;
     case BTC_GAP_BLE_ACT_UPDATE_WHITE_LIST:
         BTA_DmUpdateWhiteList(arg->update_white_list.add_remove, arg->update_white_list.remote_bda, btc_add_whitelist_complete_callback);
         break;
@@ -1113,12 +1113,12 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
                 STREAM_TO_UINT8(key_size, arg->set_security_param.value);
                 bta_dm_co_ble_set_max_key_size(key_size);
                 break;
-            }        
+            }
             default:
                 break;
         }
         break;
-    }        
+    }
     case BTC_GAP_BLE_SECURITY_RSP_EVT: {
         BD_ADDR bd_addr;
         tBTA_DM_BLE_SEC_GRANT res = arg->sec_rsp.accept ? BTA_DM_SEC_GRANTED : BTA_DM_SEC_PAIR_NOT_SPT;
