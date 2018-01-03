@@ -8,3 +8,4 @@ One is use the esp_gatts_create_service or esp_ble_gatts_add_char and etc.
 The other way is use esp_ble_gatts_create_attr_tab.
 The important things: the two ways cannot use in the same service, but can use in different service.
 
+Please check the [tutorial](tutorial/GATT_Server_Service_Table_Example_Walkthrough.md) for more information about this example.
