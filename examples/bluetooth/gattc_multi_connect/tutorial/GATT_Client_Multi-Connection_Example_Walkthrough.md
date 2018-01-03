@@ -10,7 +10,7 @@ Four ESP32 devices are needed in order to demonstrate this example, among which:
 * one would be employed as a GATT Client flashed with the ``gattc_multi_connect`` demo, and,
 * the rest run as GATT servers flashed with the ``gatt_server`` demo of the ESP-IDF Bluetooth examples folder.
 
-![Multi-Connection GATT Client Flowchart](image/Multi-connection GATT Client Flowchart.pdf)
+![Multi-Connection GATT Client Flowchart](image/Multi-connection GATT Client Flowchart.png)
 
 ## Includes
 The multi-connection example’s main source file is ``gattc_multi_connect.c``. For details, see Section **Includes** in **GATT Client Example Walkthrough**.
@@ -39,7 +39,7 @@ Application Profiles are a way to group functionality. They are designed so that
 #define PROFILE_B_APP_ID 1
 #define PROFILE_C_APP_ID 2
 ```
-![ESP32 GATT Multi-Connect Client Application Profiles](image/ESP32 GATT Multi-connect Client Application Profiles.pdf)
+![ESP32 GATT Multi-Connect Client Application Profiles](image/ESP32 GATT Multi-connect Client Application Profiles.png)
 
 The ``esp_ble_gattc_app_register()`` function is used to register each Application Profile to the BLE stack. The registration operation generates a GATT interface that is returned as a parameter in a registration event. In addition, each Application Profile is also defined by a structure that can be used to keep the state of the application and update its parameters when new data is propagated by the stack.
 
