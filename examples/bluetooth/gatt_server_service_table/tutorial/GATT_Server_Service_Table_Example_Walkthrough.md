@@ -3,11 +3,13 @@
 ## Introduction
 
 This document presents a walkthrough of the GATT Server Service Table example code for the ESP32. This example implements a Bluetooth Low Energy (BLE) Generic Attribute (GATT) Server using a table-like data structure to define the server services and characteristics such as the one shown in Fig. 1. Therefore, it demonstrates a practical way to define the server functionality in one place instead of adding services and characteristics one by one. 
+
 This example implements the *Heart Rate Profile* as defined by the [Traditional Profile Specifications](https://www.bluetooth.com/specifications/profiles-overview).
 
-![Table-like data structure representing the Heart Rate Service](image/Table-like data structure representing the Heart Rate Service.pdf)
+![Table-like data structure representing the Heart Rate Service](image/Table-like data structure representing the Heart Rate Service.png)
 
 ## Includes
+
 Let’s start by taking a look at the included headers in the ``gatts_table_creat_demo.c`` file:
 
 ```
@@ -35,6 +37,7 @@ These includes are required for the *FreeRTOS* and underlaying system components
 * ``esp_gatts_api.h``: implements GATT Server configuration such as creating services and characteristics.
 
 ## Service Table
+
 The header file ``gatts_table_creat_demo.h`` is where an enumeration of the services and characteristics is created:
 
 ```
@@ -68,6 +71,7 @@ The enumeration elements are set up in the same order as the Heart Rate Profile 
 * HRS_IDX_NB: Number of table elements.
 
 ## Main Entry Point
+
 The entry point to this example is the ``app_main()`` function:
 
 ```
@@ -156,6 +160,7 @@ esp_ble_gatts_app_register(ESP_HEART_RATE_APP_ID);
 ```
 
 ## Setting GAP Parameters
+
 The register application event is the first one that is triggered during the lifetime of the program. This example uses this event to configure advertising parameters upon registration in the profile event handler. The functions used to achieve this are:
 
 * ``esp_ble_gap_set_device_name()``: used to set the advertised device name.
@@ -222,6 +227,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
 ```
 
 ## GAP Event Handler
+
 Once the advertising data have been set, the ``ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT`` is triggered and managed by the GAP event handler. Moreover, an ``ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT`` is triggered as well if the scan response is also set. Once the configuration of the advertising and scan response data has been set, the handler can use any of these events to start advertising, which is done using the ``esp_ble_gap_start_advertising()`` function:
 
 ```
@@ -304,6 +310,7 @@ If the advertising started successfully, an ``ESP_GAP_BLE_ADV_START_COMPLETE_EVT
 ```
 
 ## GATT Event Handlers
+
 When an Application Profile is registered, an ``ESP_GATTS_REG_EVT`` event is triggered. The parameters of the ``ESP_GATTS_REG_EVT`` are:
 
 * esp_gatt_status_t status;	/*!< Operation status */
