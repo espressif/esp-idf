@@ -940,13 +940,18 @@ endmenu  # Wi-Fi
 menu PHY
 
 config ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
-    bool "Do phy calibration and store calibration data in NVS"
+    bool "Store phy calibration data in NVS"
     default y
     help
         If this option is enabled, NVS will be initialized and calibration data will be loaded from there.
         PHY calibration will be skipped on deep sleep wakeup. If calibration data is not found, full calibration
-        will be performed and stored in NVS. In all other cases, only partial calibration will be performed. 
+        will be performed and stored in NVS. Normally, only partial calibration will be performed. 
+        If this option is disabled, full calibration will be performed.
 
+        If it's easy that your board calibrate bad data, choose 'n'.
+        Two cases for example, you should choose 'n':
+        1.If your board is easy to be booted up with antenna disconnected.
+        2.Because of your board design, each time when you do calibration, the result are too unstable.
         If unsure, choose 'y'.
 
 config ESP32_PHY_INIT_DATA_IN_PARTITION
