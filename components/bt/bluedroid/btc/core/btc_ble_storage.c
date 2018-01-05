@@ -23,8 +23,13 @@
 
 #if (SMP_INCLUDED == TRUE)
 
+//the maximum nubmer of bonded devices
+#define BONED_DEVICES_MAX_COUNT (BTM_SEC_MAX_DEVICE_RECORDS)
+
 static void _btc_storage_save(void)
 {
+    uint16_t addr_section_count = 0;
+    const btc_config_section_iter_t *need_remove_iter = NULL;
     const btc_config_section_iter_t *iter = btc_config_section_begin();
 
     while (iter != btc_config_section_end()) {
@@ -48,10 +53,25 @@ static void _btc_storage_save(void)
             btc_config_remove_section(section);
             continue;
         }
-
+        if(addr_section_count == BONED_DEVICES_MAX_COUNT) {
+            need_remove_iter = iter;
+        }
+        addr_section_count ++;
         iter = btc_config_section_next(iter);
     }
-
+    /*exceeded the maximum nubmer of bonded devices, delete them */
+    if (need_remove_iter) {
+        while(need_remove_iter != btc_config_section_end()) {
+            const char *need_remove_section = btc_config_section_name(need_remove_iter);
+            if (!string_is_bdaddr(need_remove_section)) {
+                need_remove_iter = btc_config_section_next(need_remove_iter);
+                continue;
+            }
+            need_remove_iter = btc_config_section_next(need_remove_iter);
+            BTIF_TRACE_WARNING("exceeded the maximum nubmer of bonded devices, delete the last device info : %s", need_remove_section);
+            btc_config_remove_section(need_remove_section);
+        }
+    }
     btc_config_flush();
 }
 
