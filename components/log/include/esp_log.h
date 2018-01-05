@@ -100,6 +100,14 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
 
 #include "esp_log_internal.h"
 
+#ifndef LOG_LOCAL_LEVEL
+#ifndef BOOTLOADER_BUILD
+#define LOG_LOCAL_LEVEL  CONFIG_LOG_DEFAULT_LEVEL
+#else
+#define LOG_LOCAL_LEVEL  CONFIG_LOG_BOOTLOADER_LEVEL
+#endif
+#endif
+
 /**
  * @brief Log a buffer of hex bytes at specified level, seprated into 16 bytes each line.
  *
@@ -218,14 +226,6 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
 #endif //CONFIG_LOG_COLORS
 
 #define LOG_FORMAT(letter, format)  LOG_COLOR_ ## letter #letter " (%d) %s: " format LOG_RESET_COLOR "\n"
-
-#ifndef LOG_LOCAL_LEVEL
-#ifndef BOOTLOADER_BUILD
-#define LOG_LOCAL_LEVEL  ((esp_log_level_t) CONFIG_LOG_DEFAULT_LEVEL)
-#else
-#define LOG_LOCAL_LEVEL  ((esp_log_level_t) CONFIG_LOG_BOOTLOADER_LEVEL)
-#endif
-#endif
 
 /// macro to output logs in startup code, before heap allocator and syscalls have been initialized. log at ``ESP_LOG_ERROR`` level. @see ``printf``,``ESP_LOGE``
 #define ESP_EARLY_LOGE( tag, format, ... )  if (LOG_LOCAL_LEVEL >= ESP_LOG_ERROR)   { ets_printf(LOG_FORMAT(E, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
