@@ -32,7 +32,10 @@
 #include "rfc_int.h"
 #include "l2c_api.h"
 #include "sdp_api.h"
+#include "allocator.h"
+#include "mutex.h"
 
+#if (defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)
 /* duration of break in 200ms units */
 #define PORT_BREAK_DURATION     1
 
@@ -366,7 +369,7 @@ int PORT_SetDataCallback (UINT16 port_handle, tPORT_DATA_CALLBACK *p_port_cb)
 {
     tPORT  *p_port;
 
-    RFCOMM_TRACE_API ("PORT_SetDataCallback() handle:%d cb 0x%x", port_handle, p_port_cb);
+    // RFCOMM_TRACE_API ("PORT_SetDataCallback() handle:%d cb 0x%x", port_handle, p_port_cb);
 
     /* Check if handle is valid to avoid crashing */
     if ((port_handle == 0) || (port_handle > MAX_RFC_PORTS)) {
@@ -400,7 +403,7 @@ int PORT_SetDataCOCallback (UINT16 port_handle, tPORT_DATA_CO_CALLBACK *p_port_c
 {
     tPORT  *p_port;
 
-    RFCOMM_TRACE_API ("PORT_SetDataCOCallback() handle:%d cb 0x%x", port_handle, p_port_cb);
+    // RFCOMM_TRACE_API ("PORT_SetDataCOCallback() handle:%d cb 0x%x", port_handle, p_port_cb);
 
     /* Check if handle is valid to avoid crashing */
     if ((port_handle == 0) || (port_handle > MAX_RFC_PORTS)) {
@@ -1173,8 +1176,7 @@ int PORT_ReadData (UINT16 handle, char *p_data, UINT16 max_len, UINT16 *p_len)
         return (PORT_LINE_ERR);
     }
 
-    if (fixed_queue_is_empty(p_port->rx.queue))
-    if (!p_buf) {
+    if (fixed_queue_is_empty(p_port->rx.queue)){
         return (PORT_SUCCESS);
     }
 
@@ -1317,7 +1319,7 @@ static int port_write (tPORT *p_port, BT_HDR *p_buf)
             || ((p_port->port_ctrl & (PORT_CTRL_REQ_SENT | PORT_CTRL_IND_RECEIVED)) !=
                 (PORT_CTRL_REQ_SENT | PORT_CTRL_IND_RECEIVED))) {
         if ((p_port->tx.queue_size  > PORT_TX_CRITICAL_WM)
-         || (fixed_queue_length(p_port->tx.queue) > PORT_TX_BUF_CRITICAL_WM))
+         || (fixed_queue_length(p_port->tx.queue) > PORT_TX_BUF_CRITICAL_WM)){
             RFCOMM_TRACE_WARNING ("PORT_Write: Queue size: %d",
                                   p_port->tx.queue_size);
 
@@ -1421,7 +1423,7 @@ int PORT_Write (UINT16 handle, BT_HDR *p_buf)
 **                  p_len      - Byte count returned
 **
 *******************************************************************************/
-int PORT_WriteDataCO (UINT16 handle, int *p_len)
+int PORT_WriteDataCO (UINT16 handle, int *p_len, int len, UINT8 *p_data)
 {
 
     tPORT      *p_port;
@@ -1449,12 +1451,7 @@ int PORT_WriteDataCO (UINT16 handle, int *p_len)
         return (PORT_UNKNOWN_ERROR);
     }
     int available = 0;
-    //if(ioctl(fd, FIONREAD, &available) < 0)
-    if (p_port->p_data_co_callback(handle, (UINT8 *)&available, sizeof(available),
-                                   DATA_CO_CALLBACK_TYPE_OUTGOING_SIZE) == FALSE) {
-        RFCOMM_TRACE_ERROR("p_data_co_callback DATA_CO_CALLBACK_TYPE_INCOMING_SIZE failed, available:%d", available);
-        return (PORT_UNKNOWN_ERROR);
-    }
+    available = len;
     if (available == 0) {
         return PORT_SUCCESS;
     }
@@ -1469,16 +1466,7 @@ int PORT_WriteDataCO (UINT16 handle, int *p_len)
     if (((p_buf = (BT_HDR *)fixed_queue_try_peek_last(p_port->tx.queue)) != NULL)
             && (((int)p_buf->len + available) <= (int)p_port->peer_mtu)
             && (((int)p_buf->len + available) <= (int)length)) {
-        //if(recv(fd, (UINT8 *)(p_buf + 1) + p_buf->offset + p_buf->len, available, 0) != available)
-        if (p_port->p_data_co_callback(handle, (UINT8 *)(p_buf + 1) + p_buf->offset + p_buf->len,
-                                       available, DATA_CO_CALLBACK_TYPE_OUTGOING) == FALSE)
-
-        {
-            RFCOMM_TRACE_ERROR("p_data_co_callback DATA_CO_CALLBACK_TYPE_OUTGOING failed, available:%d", available);
-            osi_mutex_global_unlock();
-            return (PORT_UNKNOWN_ERROR);
-        }
-        //memcpy ((UINT8 *)(p_buf + 1) + p_buf->offset + p_buf->len, p_data, max_len);
+        memcpy ((UINT8 *)(p_buf + 1) + p_buf->offset + p_buf->len, p_data, available);
         p_port->tx.queue_size += (UINT16)available;
 
         *p_len = available;
@@ -1524,14 +1512,7 @@ int PORT_WriteDataCO (UINT16 handle, int *p_len)
         p_buf->len = length;
         p_buf->event          = BT_EVT_TO_BTU_SP_DATA;
 
-        //memcpy ((UINT8 *)(p_buf + 1) + p_buf->offset, p_data, length);
-        //if(recv(fd, (UINT8 *)(p_buf + 1) + p_buf->offset, (int)length, 0) != (int)length)
-        if (p_port->p_data_co_callback(handle, (UINT8 *)(p_buf + 1) + p_buf->offset, length,
-                                       DATA_CO_CALLBACK_TYPE_OUTGOING) == FALSE) {
-            RFCOMM_TRACE_ERROR("p_data_co_callback DATA_CO_CALLBACK_TYPE_OUTGOING failed, length:%d", length);
-            return (PORT_UNKNOWN_ERROR);
-        }
-
+        memcpy ((UINT8 *)(p_buf + 1) + p_buf->offset, p_data, length);
 
         RFCOMM_TRACE_EVENT ("PORT_WriteData %d bytes", length);
 
@@ -1610,14 +1591,14 @@ int PORT_WriteData (UINT16 handle, char *p_data, UINT16 max_len, UINT16 *p_len)
     }
 
     /* Length for each buffer is the smaller of GKI buffer, peer MTU, or max_len */
-    length = RFCOMM_DATA_POOL_BUF_SIZE -
+    length = RFCOMM_DATA_BUF_SIZE -
              (UINT16)(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + RFCOMM_DATA_OVERHEAD);
 
     /* If there are buffers scheduled for transmission check if requested */
     /* data fits into the end of the queue */
     osi_mutex_global_lock();
 
-    if (((p_buf = (BT_HDR *)fixed_queue_try_peek_last(p_port->tx.queue)) != NULL) {
+    if (((p_buf = (BT_HDR *)fixed_queue_try_peek_last(p_port->tx.queue)) != NULL)
             && ((p_buf->len + max_len) <= p_port->peer_mtu)
             && ((p_buf->len + max_len) <= length)) {
         memcpy ((UINT8 *)(p_buf + 1) + p_buf->offset + p_buf->len, p_data, max_len);
@@ -1800,3 +1781,5 @@ const char *PORT_GetResultString (const uint8_t result_code)
 
     return result_code_strings[result_code];
 }
+
+#endif ///(defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)

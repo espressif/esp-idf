@@ -28,6 +28,8 @@
 #include "bt_target.h"
 #include "rfcdefs.h"
 #include "port_api.h"
+#include "fixed_queue.h"
+#include "bt_defs.h"
 
 /* Local events passed when application event is sent from the api to PORT */
 /* ???*/

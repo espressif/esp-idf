@@ -31,6 +31,10 @@
 #include "l2c_api.h"
 #include "rfc_int.h"
 #include "bt_defs.h"
+#include "allocator.h"
+#include "mutex.h"
+#include "bt_target.h"
+#if (defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)
 
 #define L2CAP_SUCCESS   0
 #define L2CAP_ERROR     1
@@ -572,7 +576,7 @@ static void rfc_mx_send_config_req (tRFC_MCB *p_mcb)
 *******************************************************************************/
 static void rfc_mx_conf_cnf (tRFC_MCB *p_mcb, tL2CAP_CFG_INFO *p_cfg)
 {
-    RFCOMM_TRACE_EVENT ("rfc_mx_conf_cnf p_cfg:%08x res:%d ", p_cfg, (p_cfg) ? p_cfg->result : 0);
+    // RFCOMM_TRACE_EVENT ("rfc_mx_conf_cnf p_cfg:%08x res:%d ", p_cfg, (p_cfg) ? p_cfg->result : 0);
 
     if (p_cfg->result != L2CAP_CFG_OK) {
         if (p_mcb->is_initiator) {
@@ -639,3 +643,5 @@ static void rfc_mx_conf_ind (tRFC_MCB *p_mcb, tL2CAP_CFG_INFO *p_cfg)
         }
     }
 }
+
+#endif ///(defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)

@@ -598,7 +598,7 @@ extern int PORT_WriteData (UINT16 handle, char *p_data, UINT16 max_len,
 ** Parameters:      handle     - Handle returned in the RFCOMM_CreateConnection
 **
 *******************************************************************************/
-extern int PORT_WriteDataCO (UINT16 handle, int *p_len);
+extern int PORT_WriteDataCO (UINT16 handle, int *p_len, int len, UINT8 *p_data);
 
 /*******************************************************************************
 **

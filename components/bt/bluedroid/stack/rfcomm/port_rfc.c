@@ -32,7 +32,9 @@
 #include "port_int.h"
 #include "rfc_int.h"
 #include "bt_defs.h"
-
+#include "mutex.h"
+#include "allocator.h"
+#if (defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)
 /*
 ** Local function definitions
 */
@@ -1090,3 +1092,6 @@ void port_get_credits (tPORT *p_port, UINT8 k)
         p_port->tx.peer_fc = TRUE;
     }
 }
+
+
+#endif ///(defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)
