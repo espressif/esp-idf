@@ -109,7 +109,7 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
 #endif
 
 /**
- * @brief Log a buffer of hex bytes at specified level, seprated into 16 bytes each line.
+ * @brief Log a buffer of hex bytes at specified level, separated into 16 bytes each line.
  *
  * @param  tag      description tag
  *
@@ -124,7 +124,7 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
         if ( LOG_LOCAL_LEVEL >= level ) esp_log_buffer_hex_internal( tag, buffer, buff_len, level ); } while(0)
 
 /**
- * @brief Log a buffer of characters at specified level, seprated into 16 bytes each line. Buffer should contain only printable characters.
+ * @brief Log a buffer of characters at specified level, separated into 16 bytes each line. Buffer should contain only printable characters.
  *
  * @param  tag      description tag
  *
@@ -263,7 +263,7 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
 #define ESP_LOGV( tag, format, ... )  ESP_EARLY_LOGV(tag, format, ##__VA_ARGS__)
 #endif  // BOOTLOADER_BUILD
 
-/** runtime macro to output logs at a speicfied level. 
+/** runtime macro to output logs at a specified level.
  * 
  * @param tag tag of the log, which can be used to change the log level by ``esp_log_level_set`` at runtime.
  *
@@ -282,7 +282,7 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
                 else if (level==ESP_LOG_VERBOSE )   { esp_log_write(ESP_LOG_VERBOSE,    tag, LOG_FORMAT(V, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }\
                 else                                { esp_log_write(ESP_LOG_INFO,       tag, LOG_FORMAT(I, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }}while(0)
 
-/** runtime macro to output logs at a speicfied level. Also check the level with ``LOG_LOCAL_LEVEL``.
+/** runtime macro to output logs at a specified level. Also check the level with ``LOG_LOCAL_LEVEL``.
  * 
  * @see ``printf``, ``ESP_LOG_LEVEL``
  */
