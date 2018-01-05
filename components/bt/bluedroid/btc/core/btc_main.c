@@ -57,8 +57,8 @@ static void btc_init_bluetooth(void)
     osi_alarm_create_mux();
     osi_alarm_init();
     bte_main_boot_entry(btc_init_callback);
-    btc_config_init();
 #if (SMP_INCLUDED)
+    btc_config_init();
     //load the ble local key whitch has been store in the flash
     btc_dm_load_ble_local_keys();
 #endif /* #if (SMP_INCLUDED) */
@@ -68,7 +68,9 @@ static void btc_init_bluetooth(void)
 static void btc_deinit_bluetooth(void)
 {
     bte_main_shutdown();
+#if (SMP_INCLUDED)
     btc_config_clean_up();
+#endif
     osi_alarm_deinit();
     osi_alarm_delete_mux();
     future_ready(*btc_main_get_future_p(BTC_MAIN_DEINIT_FUTURE), FUTURE_SUCCESS);
