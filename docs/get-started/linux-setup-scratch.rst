@@ -36,9 +36,9 @@ Compile the Toolchain from Source
 
         sudo apt-get install gawk gperf grep gettext python python-dev automake bison flex texinfo help2man libtool libtool-bin
 
-  - Debian::
+  - Debian 9::
 
-        TODO
+        sudo apt-get install gawk gperf grep gettext libncurses-dev python python-dev automake bison flex texinfo help2man libtool libtool-bin
 
   - Arch::
 
