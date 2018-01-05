@@ -44,6 +44,7 @@ die() {
 
 [ -z ${IDF_PATH} ] && die "IDF_PATH is not set"
 [ -z ${LOG_PATH} ] && die "LOG_PATH is not set"
+[ -d ${LOG_PATH} ] || mkdir -p ${LOG_PATH}
 
 echo "build_examples running in ${PWD}"
 
@@ -59,6 +60,7 @@ RESULT=0
 FAILED_EXAMPLES=""
 RESULT_ISSUES=22  # magic number result code for issues found
 LOG_SUSPECTED=${LOG_PATH}/common_log.txt
+touch ${LOG_SUSPECTED}
 
 if [ $# -eq 0 ]
 then
@@ -116,14 +118,17 @@ build_example () {
 
         # build non-verbose first
         local BUILDLOG=${LOG_PATH}/ex_${ID}_log.txt
-        (
-            make clean &&
-            make defconfig &&
-            make all &&
-            make print_flash_cmd | tail -n 1 > build/download.config
-        ) &> >(tee -a "${BUILDLOG}") || {
-            RESULT=$?; FAILED_EXAMPLES+=" ${EXAMPLE_NAME}"
+        touch ${BUILDLOG}
+
+        make clean >>${BUILDLOG} 2>&1 &&
+        make defconfig >>${BUILDLOG} 2>&1 &&
+        make all >>${BUILDLOG} 2>&1 &&
+        ( make print_flash_cmd | tail -n 1 >build/download.config ) >>${BUILDLOG} 2>&1 ||
+        {
+            RESULT=$?; FAILED_EXAMPLES+=" ${EXAMPLE_NAME}" ;
         }
+
+        cat ${BUILDLOG}
     popd
 
     grep -i "error\|warning" "${BUILDLOG}" 2>&1 >> "${LOG_SUSPECTED}" || :
