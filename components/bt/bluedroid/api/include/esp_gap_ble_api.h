@@ -97,9 +97,11 @@ typedef enum {
     ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT,                /*!< When clear the bond device clear complete, the event comes */
     ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT,                  /*!< When get the bond device list complete, the event comes */
     ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT,                     /*!< When read the rssi complete, the event comes */
-    ESP_GAP_BLE_ADD_WHITELIST_COMPLETE_EVT,                 /*!< When add or remove whitelist complete, the event comes */
+    ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT,              /*!< When add or remove whitelist complete, the event comes */
     ESP_GAP_BLE_EVT_MAX,
 } esp_gap_ble_cb_event_t;
+/// This is the old name, just for backwards compatibility
+#define ESP_GAP_BLE_ADD_WHITELIST_COMPLETE_EVT ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT
 
 /// Advertising data maximum length
 #define ESP_BLE_ADV_DATA_LEN_MAX               31
@@ -239,7 +241,7 @@ typedef struct {
     uint8_t                 flag;                   /*!< Advertising flag of discovery mode, see BLE_ADV_DATA_FLAG detail */
 } esp_ble_adv_data_t;
 
-/// Ble scan type 
+/// Ble scan type
 typedef enum {
     BLE_SCAN_TYPE_PASSIVE   =   0x0,            /*!< Passive scan */
     BLE_SCAN_TYPE_ACTIVE    =   0x1,            /*!< Active scan */
@@ -249,7 +251,7 @@ typedef enum {
 typedef enum {
     BLE_SCAN_FILTER_ALLOW_ALL           = 0x0,  /*!< Accept all :
                                                   1. advertisement packets except directed advertising packets not addressed to this device (default). */
-    BLE_SCAN_FILTER_ALLOW_ONLY_WLST     = 0x1,  /*!< Accept only : 
+    BLE_SCAN_FILTER_ALLOW_ONLY_WLST     = 0x1,  /*!< Accept only :
                                                   1. advertisement packets from devices where the advertiser’s address is in the White list.
                                                   2. Directed advertising packets which are not addressed for this device shall be ignored. */
     BLE_SCAN_FILTER_ALLOW_UND_RPA_DIR   = 0x2,  /*!< Accept all :
@@ -312,7 +314,7 @@ typedef struct
 } esp_ble_penc_keys_t;                 /*!< The key type*/
 
 /**
-* @brief  BLE CSRK keys 
+* @brief  BLE CSRK keys
 */
 typedef struct
 {
@@ -322,7 +324,7 @@ typedef struct
 } esp_ble_pcsrk_keys_t;               /*!< The pcsrk key type */
 
 /**
-* @brief  BLE pid keys 
+* @brief  BLE pid keys
 */
 typedef struct
 {
@@ -354,7 +356,7 @@ typedef struct
 } esp_ble_lcsrk_keys;                       /*!< The csrk key type */
 
 /**
-* @brief  Structure associated with ESP_KEY_NOTIF_EVT 
+* @brief  Structure associated with ESP_KEY_NOTIF_EVT
 */
 typedef struct
 {
@@ -476,7 +478,7 @@ typedef enum {
 typedef enum{
     ESP_BLE_WHITELIST_REMOVE     = 0X00,    /*!< remove mac from whitelist */
     ESP_BLE_WHITELIST_ADD        = 0X01,    /*!< add address to whitelist */
-}esp_ble_wl_opration;
+}esp_ble_wl_opration_t;
 /**
  * @brief Gap callback parameters union
  */
@@ -486,7 +488,7 @@ typedef union {
      */
     struct ble_adv_data_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate the set advertising data operation success status */
-    } adv_data_cmpl;                                /*!< Event parameter of ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT */ 
+    } adv_data_cmpl;                                /*!< Event parameter of ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT
      */
@@ -520,7 +522,7 @@ typedef union {
      */
     struct ble_adv_data_raw_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate the set raw advertising data operation success status */
-    } adv_data_raw_cmpl;                            /*!< Event parameter of ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT */ 
+    } adv_data_raw_cmpl;                            /*!< Event parameter of ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT
      */
@@ -616,12 +618,12 @@ typedef union {
         esp_bd_addr_t remote_addr;                  /*!< The remote device address */
     } read_rssi_cmpl;                               /*!< Event parameter of ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT */
     /**
-     * @brief ESP_GAP_BLE_ADD_WHITELIST_COMPLETE_EVT
+     * @brief ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT
      */
-    struct ble_add_whitelist_cmpl_evt_param {
+    struct ble_update_whitelist_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate the add or remove whitelist operation success status */
-        esp_ble_wl_opration wl_opration;            /*!< The value is ESP_BLE_WHITELIST_ADD if add address to whitelist operation success, ESP_BLE_WHITELIST_REMOVE if remove address from the whitelist operation success */
-    } add_whitelist_cmpl;                           /*!< Event parameter of ESP_GAP_BLE_ADD_WHITELIST_COMPLETE_EVT */
+        esp_ble_wl_opration_t wl_opration;          /*!< The value is ESP_BLE_WHITELIST_ADD if add address to whitelist operation success, ESP_BLE_WHITELIST_REMOVE if remove address from the whitelist operation success */
+    } update_whitelist_cmpl;                        /*!< Event parameter of ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT */
 } esp_ble_gap_cb_param_t;
 
 /**
@@ -983,7 +985,7 @@ int esp_ble_get_bond_device_num(void);
 *                           Suggest that dev_num value equal to esp_ble_get_bond_device_num().
 *
 * @param[out]      dev_list: an array(buffer) of `esp_ble_bond_dev_t` type. Use for storing the bonded devices address.
-*                            The dev_list should be allocated by who call this API. 
+*                            The dev_list should be allocated by who call this API.
 * @return          - ESP_OK : success
 *                  - other  : failed
 *
