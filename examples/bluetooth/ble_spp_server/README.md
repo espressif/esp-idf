@@ -1,5 +1,3 @@
-ESP-IDF GATT SERVER SPP demo
-===============================================
+## ESP-IDF GATT SERVER SPP demo
 
-This is the demo for user to realization BLE Serial Port Profile.
-
+For description of this application please refer to [ESP-IDF GATT CLIENT SPP demo](../ble_spp_client/README.md)
