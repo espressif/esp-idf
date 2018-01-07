@@ -128,6 +128,7 @@ The following 3rd party lib is required:
     * pyserial
     * pyyaml
     * xunitgen
+    * netifaces
 
 To build document, we need to install ``Sphinx`` and ``sphinx-rtd-theme`` (you may replace this with your own theme).
 
