@@ -1629,6 +1629,7 @@ static inline size_t hardware_words_needed(const mbedtls_mpi *mpi)
     return res;
 }
 
+int __USE_HW_EXP_MOD__ = 0;
 int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *E, const mbedtls_mpi *N, mbedtls_mpi *_RR )
 {
 #ifdef MBEDTLS_MPI_EXP_MOD_ALT
@@ -1661,7 +1662,11 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi
     }
 #endif
 
-    ESP_LOGW("mbed", "running SW exp_mod");
+    if (__USE_HW_EXP_MOD__) {
+        return mbedtls_mpi_exp_mod_hw(X, A, E, N, _RR);
+    }
+
+//    ESP_LOGW("mbed", "running SW exp_mod");
 
     int ret;
     size_t wbits, wsize, one = 1;

@@ -3281,11 +3281,10 @@ void _mdns_handle_system_event(system_event_id_t event)
         break;
     case SYSTEM_EVENT_STA_GOT_IP:
         //we should detect if this is an IP change
-        ESP_LOGW("mdns", "STA_GOT_IP START");
+
         _mdns_enable_pcb(TCPIP_ADAPTER_IF_STA, PCB_TYPE_V4);
         _mdns_announce_pcb(TCPIP_ADAPTER_IF_STA, PCB_TYPE_V6, NULL, 0, true);
         _mdns_enable_pcb(TCPIP_ADAPTER_IF_STA, PCB_TYPE_V6);
-            ESP_LOGW("mdns", "STA_GOT_IP END");
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
         _mdns_disable_pcb(TCPIP_ADAPTER_IF_STA, PCB_TYPE_V4);
@@ -3297,14 +3296,12 @@ void _mdns_handle_system_event(system_event_id_t event)
     case SYSTEM_EVENT_AP_STOP:
         _mdns_disable_pcb(TCPIP_ADAPTER_IF_AP, PCB_TYPE_V4);
         _mdns_disable_pcb(TCPIP_ADAPTER_IF_AP, PCB_TYPE_V6);
-            ESP_LOGW("mdns", "AP STOP");
         break;
     case SYSTEM_EVENT_AP_STA_GOT_IP6:
         _mdns_enable_pcb(TCPIP_ADAPTER_IF_AP, PCB_TYPE_V6);
         //announce IP on v4, but we need to figure out which one changed
         //_mdns_announce_pcb(TCPIP_ADAPTER_IF_STA, PCB_TYPE_V4, NULL, 0, true);
         //_mdns_announce_pcb(TCPIP_ADAPTER_IF_AP, PCB_TYPE_V4, NULL, 0, true);
-            ESP_LOGW("mdns", "STA_GOT_IPV6");
         break;
     case SYSTEM_EVENT_ETH_CONNECTED:
         if (!tcpip_adapter_dhcpc_get_status(TCPIP_ADAPTER_IF_ETH, &dcst)) {
@@ -3494,18 +3491,23 @@ static void _mdns_execute_action(mdns_action_t * action)
         if (_mdns_server->services == action->data.srv_del.service) {
             _mdns_server->services = a->next;
             _mdns_send_bye(&a, 1, false);
-            clean_tx_queue(a->service->service, a->service->proto);
-            _mdns_free_service(a->service);
-            free(a);
+            //clean_tx_queue(a->service->service, a->service->proto);
+            ESP_LOGW("ACTION_SERVICE_DEL1","Removing %s", a->service->service);
+            if(strcmp(a->service->service, "_mfi-config") != 0) {
+                _mdns_free_service(a->service);
+                free(a);
+            }
+            ESP_LOGW("ACTION_SERVICE_DEL1","Removed");
         } else {
             while (a->next && a->next != action->data.srv_del.service) {
                 a = a->next;
             }
             if (a->next == action->data.srv_del.service) {
-                mdns_srv_item_t * b = a;
+                mdns_srv_item_t * b = a->next;
                 a->next = a->next->next;
                 _mdns_send_bye(&b, 1, false);
-                clean_tx_queue(b->service->service, b->service->proto);
+                //clean_tx_queue(b->service->service, b->service->proto);
+                ESP_LOGW("ACTION_SERVICE_DEL2","Removing %s", b->service->service);
                 _mdns_free_service(b->service);
                 free(b);
             }
@@ -3986,6 +3988,7 @@ esp_err_t mdns_service_remove(const char * service, const char * proto)
     if (!s) {
         return ESP_ERR_NOT_FOUND;
     }
+    ESP_LOGW("mdns_service_remove", "%s", s->service->service);
 
     mdns_action_t * action = (mdns_action_t *)malloc(sizeof(mdns_action_t));
     if (!action) {

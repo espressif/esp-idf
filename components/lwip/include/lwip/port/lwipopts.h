@@ -43,6 +43,7 @@
 #include "sdkconfig.h"
 
 /* Enable all Espressif-only options */
+#define  CONFIG_MDNS 1
 
 /*
    -----------------------------------------------

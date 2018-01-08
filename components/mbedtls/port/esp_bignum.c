@@ -357,7 +357,7 @@ int esp_mpi_mul_mpi_mod(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi 
  */
 int mbedtls_mpi_exp_mod_hw( mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi* Y, const mbedtls_mpi* M, mbedtls_mpi* _Rinv )
 {
-    ESP_LOGW("mbed", "running HW exp_mod");
+//    ESP_LOGW("mbed", "running HW exp_mod");
 
     int ret = 0;
     size_t z_words = hardware_words_needed(Z);

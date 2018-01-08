@@ -188,7 +188,7 @@ esp_err_t esp_task_wdt_init(uint32_t timeout, bool panic)
         TIMERG0.wdt_config0.sys_reset_length=7;                 //3.2uS
         TIMERG0.wdt_config0.cpu_reset_length=7;                 //3.2uS
         TIMERG0.wdt_config0.level_int_en=1;
-        TIMERG0.wdt_config0.stg0=TIMG_WDT_STG_SEL_INT;          //1st stage timeout: interrupt
+        TIMERG0.wdt_config0.stg0=TIMG_WDT_STG_SEL_RESET_SYSTEM/*TIMG_WDT_STG_SEL_INT*/;          //1st stage timeout: interrupt
         TIMERG0.wdt_config0.stg1=TIMG_WDT_STG_SEL_RESET_SYSTEM; //2nd stage timeout: reset system
         TIMERG0.wdt_config1.clk_prescale=80*500;                //Prescaler: wdt counts in ticks of 0.5mS
         TIMERG0.wdt_config2=twdt_config->timeout*2000;      //Set timeout before interrupt
