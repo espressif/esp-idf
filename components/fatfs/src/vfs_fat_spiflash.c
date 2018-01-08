@@ -79,6 +79,10 @@ esp_err_t esp_vfs_fat_spiflash_mount(const char* base_path,
             goto fail;
         }
         workbuf = malloc(workbuf_size);
+        if (workbuf == NULL) {
+            result = ESP_ERR_NO_MEM;
+            goto fail;
+        }
         size_t alloc_unit_size = esp_vfs_fat_get_allocation_unit_size(
                 CONFIG_WL_SECTOR_SIZE,
                 mount_config->allocation_unit_size);

@@ -113,8 +113,12 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
             goto fail;
         }
         ESP_LOGW(TAG, "partitioning card");
-        DWORD plist[] = {100, 0, 0, 0};
         workbuf = malloc(workbuf_size);
+        if (workbuf == NULL) {
+            err = ESP_ERR_NO_MEM;
+            goto fail;
+        }
+        DWORD plist[] = {100, 0, 0, 0};
         res = f_fdisk(s_pdrv, plist, workbuf);
         if (res != FR_OK) {
             err = ESP_FAIL;
