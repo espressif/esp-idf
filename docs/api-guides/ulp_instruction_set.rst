@@ -814,7 +814,7 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
 **Description**
    The instruction reads up to 16 bits from a peripheral register into a general purpose register: ``R0 = REG[Addr][High:Low]``.
 
-   This instruction can access registers in RTC_CNTL, RTC_IO, and SENS peripherals. Address of the the register, as seen from the ULP,
+   This instruction can access registers in RTC_CNTL, RTC_IO, SENS, and RTC_I2C peripherals. Address of the the register, as seen from the ULP,
    can be calculated from the address of the same register on the DPORT bus as follows::
 
     addr_ulp = (addr_dport - DR_REG_RTCCNTL_BASE) / 4
@@ -842,7 +842,7 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
 **Description**
    The instruction writes up to 8 bits from a general purpose register into a peripheral register. ``REG[Addr][High:Low] = data``
 
-   This instruction can access registers in RTC_CNTL, RTC_IO, and SENS peripherals. Address of the the register, as seen from the ULP,
+   This instruction can access registers in RTC_CNTL, RTC_IO, SENS, and RTC_I2C peripherals. Address of the the register, as seen from the ULP,
    can be calculated from the address of the same register on the DPORT bus as follows::
 
     addr_ulp = (addr_dport - DR_REG_RTCCNTL_BASE) / 4
@@ -857,7 +857,7 @@ Convenience macros for peripheral registers access
 ULP source files are passed through C preprocessor before the assembler. This allows certain macros to be used to facilitate access to peripheral registers.
 
 Some existing macros are defined in ``soc/soc_ulp.h`` header file. These macros allow access to the fields of peripheral registers by their names.
-Peripheral registers names which can be used with these macros are the ones defined in ``soc/rtc_cntl_reg.h``, ``soc/rtc_io_reg.h``, and ``soc/sens_reg.h``.
+Peripheral registers names which can be used with these macros are the ones defined in ``soc/rtc_cntl_reg.h``, ``soc/rtc_io_reg.h``, ``soc/sens_reg.h``, and ``soc_rtc_i2c_reg.h``.
 
 READ_RTC_REG(rtc_reg, low_bit, bit_width)
   Read up to 16 bits from rtc_reg[low_bit + bit_width - 1 : low_bit] into R0. For example::

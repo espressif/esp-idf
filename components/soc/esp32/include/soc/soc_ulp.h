@@ -26,7 +26,7 @@
 #define MASK_TO_WIDTH_HELPER32(m, i) (MASK_TO_WIDTH_HELPER16(m, i) + MASK_TO_WIDTH_HELPER16(m, i + 16))
 
 // Peripheral register access macros, build around REG_RD and REG_WR instructions.
-// Registers defined in rtc_cntl_reg.h, rtc_io_reg.h, and sens_reg.h are usable with these macros.
+// Registers defined in rtc_cntl_reg.h, rtc_io_reg.h, sens_reg.h, and rtc_i2c_reg.h are usable with these macros.
 
 // Read from rtc_reg[low_bit + bit_width - 1 : low_bit] into R0, bit_width <= 16
 #define READ_RTC_REG(rtc_reg, low_bit, bit_width) \
