@@ -122,6 +122,10 @@ class AssignTest(object):
     """
     # subclass need to rewrite CI test job pattern, to filter all test jobs
     CI_TEST_JOB_PATTERN = re.compile(r"^test_.+")
+    # by default we only run function in CI, as other tests could take long time
+    DEFAULT_FILTER = {
+        "category": "function",
+    }
 
     def __init__(self, test_case_path, ci_config_file, case_group=Group):
         self.test_case_path = test_case_path
@@ -140,15 +144,17 @@ class AssignTest(object):
                 job_list.append(GitlabCIJob.Job(ci_config[job_name], job_name))
         return job_list
 
-    @staticmethod
-    def _search_cases(test_case_path, case_filter=None):
+    def _search_cases(self, test_case_path, case_filter=None):
         """
         :param test_case_path: path contains test case folder
-        :param case_filter: filter for test cases
+        :param case_filter: filter for test cases. the filter to use is default filter updated with case_filter param.
         :return: filtered test case list
         """
+        _case_filter = self.DEFAULT_FILTER.copy()
+        if case_filter:
+            _case_filter.update(case_filter)
         test_methods = SearchCases.Search.search_test_cases(test_case_path)
-        return CaseConfig.filter_test_cases(test_methods, case_filter if case_filter else dict())
+        return CaseConfig.filter_test_cases(test_methods, _case_filter)
 
     def _group_cases(self):
         """

@@ -106,6 +106,7 @@ get_passed_cases = TestResult.get_passed_cases
 MANDATORY_INFO = {
     "execution_time": 1,
     "env_tag": "default",
+    "category": "function",
 }
 
 
