@@ -120,30 +120,11 @@ static inline void btc_avrc_ct_cb_to_app(esp_avrc_ct_cb_event_t event, esp_avrc_
 
 static void handle_rc_features(void)
 {
-    btrc_remote_features_t rc_features = BTRC_FEAT_NONE;
-    bt_bdaddr_t rc_addr;
-    bdcpy(rc_addr.address, btc_rc_vb.rc_addr);
-
-    // TODO(eisenbach): If devices need to be blacklisted for absolute
-    // volume, it should be added to device/include/interop_database.h
-    // For now, everything goes... If blacklisting is necessary, exclude
-    // the following bit here:
-    //    btc_rc_vb.rc_features &= ~BTA_AV_FEAT_ADV_CTRL;
-
-    if (btc_rc_vb.rc_features & BTA_AV_FEAT_BROWSE) {
-        rc_features |= BTRC_FEAT_BROWSE;
-    }
-
-    if ( (btc_rc_vb.rc_features & BTA_AV_FEAT_ADV_CTRL) &&
-            (btc_rc_vb.rc_features & BTA_AV_FEAT_RCTG)) {
-        rc_features |= BTRC_FEAT_ABSOLUTE_VOLUME;
-    }
-
-    if (btc_rc_vb.rc_features & BTA_AV_FEAT_METADATA) {
-        rc_features |= BTRC_FEAT_METADATA;
-    }
-
-    LOG_DEBUG("%s: rc_features=0x%x", __FUNCTION__, rc_features);
+    esp_avrc_ct_cb_param_t param;
+    memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
+    param.rmt_feats.feat_mask = btc_rc_vb.rc_features;
+    memcpy(param.rmt_feats.remote_bda, btc_rc_vb.rc_addr, sizeof(esp_bd_addr_t));
+    btc_avrc_ct_cb_to_app(ESP_AVRC_CT_REMOTE_FEATURES_EVT, &param);
 }
 
 
@@ -158,9 +139,7 @@ static void handle_rc_features(void)
 static void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open)
 {
     LOG_DEBUG("%s: rc_handle: %d", __FUNCTION__, p_rc_open->rc_handle);
-#if (AVRC_CTLR_INCLUDED == TRUE)
     bt_bdaddr_t rc_addr;
-#endif
 
     if (p_rc_open->status == BTA_AV_SUCCESS) {
         //check if already some RC is connected
@@ -182,22 +161,18 @@ static void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open)
         btc_rc_vb.rc_connected = TRUE;
         btc_rc_vb.rc_handle = p_rc_open->rc_handle;
 
+        bdcpy(rc_addr.address, btc_rc_vb.rc_addr);
+
+        esp_avrc_ct_cb_param_t param;
+        memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
+        param.conn_stat.connected = true;
+        memcpy(param.conn_stat.remote_bda, &rc_addr, sizeof(esp_bd_addr_t));
+        btc_avrc_ct_cb_to_app(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
+        
         /* on locally initiated connection we will get remote features as part of connect */
-        if (btc_rc_vb.rc_features != 0) {
+        if (p_rc_open->sdp_disc_done == TRUE) {
             handle_rc_features();
         }
-#if (AVRC_CTLR_INCLUDED == TRUE)
-        bdcpy(rc_addr.address, btc_rc_vb.rc_addr);
-        /* report connection state if device is AVRCP target */
-        if (btc_rc_vb.rc_features & BTA_AV_FEAT_RCTG) {
-            esp_avrc_ct_cb_param_t param;
-            memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
-            param.conn_stat.connected = true;
-            param.conn_stat.feat_mask = btc_rc_vb.rc_features;
-            memcpy(param.conn_stat.remote_bda, &rc_addr, sizeof(esp_bd_addr_t));
-            btc_avrc_ct_cb_to_app(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
-        }
-#endif
     } else {
         LOG_ERROR("%s Connect failed with error code: %d",
                   __FUNCTION__, p_rc_open->status);
@@ -215,10 +190,8 @@ static void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open)
  ***************************************************************************/
 static void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close)
 {
-#if (AVRC_CTLR_INCLUDED == TRUE)
     bt_bdaddr_t rc_addr;
-    tBTA_AV_FEAT features;
-#endif
+
     LOG_DEBUG("%s: rc_handle: %d", __FUNCTION__, p_rc_close->rc_handle);
     if ((p_rc_close->rc_handle != btc_rc_vb.rc_handle)
             && (bdcmp(btc_rc_vb.rc_addr, p_rc_close->peer_addr))) {
@@ -230,26 +203,21 @@ static void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close)
     btc_rc_vb.rc_connected = FALSE;
     memset(btc_rc_vb.rc_addr, 0, sizeof(BD_ADDR));
     memset(btc_rc_vb.rc_notif, 0, sizeof(btc_rc_vb.rc_notif));
-#if (AVRC_CTLR_INCLUDED == TRUE)
-    features = btc_rc_vb.rc_features;
-#endif
+
     btc_rc_vb.rc_features = 0;
     btc_rc_vb.rc_vol_label = MAX_LABEL;
     btc_rc_vb.rc_volume = MAX_VOLUME;
-#if (AVRC_CTLR_INCLUDED == TRUE)
+
     bdcpy(rc_addr.address, btc_rc_vb.rc_addr);
-#endif
+
     memset(btc_rc_vb.rc_addr, 0, sizeof(BD_ADDR));
-#if (AVRC_CTLR_INCLUDED == TRUE)
-    /* report connection state if device is AVRCP target */
-    if (features & BTA_AV_FEAT_RCTG) {
-        esp_avrc_ct_cb_param_t param;
-        memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
-        param.conn_stat.connected = false;
-        memcpy(param.conn_stat.remote_bda, &rc_addr, sizeof(esp_bd_addr_t));
-        btc_avrc_ct_cb_to_app(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
-    }
-#endif
+
+    /* report connection state */
+    esp_avrc_ct_cb_param_t param;
+    memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
+    param.conn_stat.connected = false;
+    memcpy(param.conn_stat.remote_bda, &rc_addr, sizeof(esp_bd_addr_t));
+    btc_avrc_ct_cb_to_app(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
 }
 
 static void handle_rc_attributes_rsp ( tAVRC_MSG_VENDOR *vendor_msg)

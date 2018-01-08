@@ -58,10 +58,10 @@ typedef enum {
     ESP_AVRC_CT_METADATA_RSP_EVT = 2,            /*!< metadata response event */
     ESP_AVRC_CT_PLAY_STATUS_RSP_EVT = 3,         /*!< play status response event */
     ESP_AVRC_CT_CHANGE_NOTIFY_EVT = 4,           /*!< notification event */
-    ESP_AVRC_CT_MAX_EVT
+    ESP_AVRC_CT_REMOTE_FEATURES_EVT = 5,         /*!< feature of remote device indication event */
 } esp_avrc_ct_cb_event_t;
 
-//AVRC metadata attribute mask
+/// AVRC metadata attribute mask
 typedef enum {
     ESP_AVRC_MD_ATTR_TITLE = 0x1,                 /*!< title of the playing track */
     ESP_AVRC_MD_ATTR_ARTIST = 0x2,                /*!< track artist */
@@ -72,7 +72,7 @@ typedef enum {
     ESP_AVRC_MD_ATTR_PLAYING_TIME = 0x40          /*!< total album playing time in miliseconds */
 } esp_avrc_md_attr_mask_t;
 
-//AVRC event notification ids
+/// AVRC event notification ids
 typedef enum {
     ESP_AVRC_RN_PLAY_STATUS_CHANGE = 0x01,        /*!< track status change, eg. from playing to paused */
     ESP_AVRC_RN_TRACK_CHANGE = 0x02,              /*!< new track is loaded */
@@ -85,7 +85,7 @@ typedef enum {
     ESP_AVRC_RN_MAX_EVT
 } esp_avrc_rn_event_ids_t;
 
-//AVRC player setting ids
+/// AVRC player setting ids
 typedef enum {
     ESP_AVRC_PS_EQUALIZER = 0x01,                 /*!< equalizer, on or off */
     ESP_AVRC_PS_REPEAT_MODE = 0x02,               /*!< repeat mode */
@@ -94,32 +94,32 @@ typedef enum {
     ESP_AVRC_PS_MAX_ATTR
 } esp_avrc_ps_attr_ids_t;
 
-//AVRC equalizer modes
+/// AVRC equalizer modes
 typedef enum {
-    ESP_AVRC_PS_EQUALIZER_OFF = 0x1,
-    ESP_AVRC_PS_EQUALIZER_ON = 0x2
+    ESP_AVRC_PS_EQUALIZER_OFF = 0x1,              /*!< equalizer OFF */
+    ESP_AVRC_PS_EQUALIZER_ON = 0x2                /*!< equalizer ON */
 } esp_avrc_ps_eq_value_ids_t;
 
-//AVRC repeat modes
+/// AVRC repeat modes
 typedef enum {
-    ESP_AVRC_PS_REPEAT_OFF = 0x1,
-    ESP_AVRC_PS_REPEAT_SINGLE = 0x2,
-    ESP_AVRC_PS_REPEAT_GROUP = 0x3
+    ESP_AVRC_PS_REPEAT_OFF = 0x1,                 /*!< repeat mode off */
+    ESP_AVRC_PS_REPEAT_SINGLE = 0x2,              /*!< single track repeat */
+    ESP_AVRC_PS_REPEAT_GROUP = 0x3                /*!< group repeat */
 } esp_avrc_ps_rpt_value_ids_t;
 
 
-//AVRC shuffle modes
+/// AVRC shuffle modes
 typedef enum {
-    ESP_AVRC_PS_SHUFFLE_OFF = 0x1,
-    ESP_AVRC_PS_SHUFFLE_ALL = 0x2,
-    ESP_AVRC_PS_SHUFFLE_GROUP = 0x3
+    ESP_AVRC_PS_SHUFFLE_OFF = 0x1,                /*<! shuffle off */
+    ESP_AVRC_PS_SHUFFLE_ALL = 0x2,                /*<! all trackes shuffle */
+    ESP_AVRC_PS_SHUFFLE_GROUP = 0x3               /*<! group shuffle */
 } esp_avrc_ps_shf_value_ids_t;
 
-//AVRC scan modes
+/// AVRC scan modes
 typedef enum {
-    ESP_AVRC_PS_SCAN_OFF = 0x1,
-    ESP_AVRC_PS_SCAN_ALL = 0x2,
-    ESP_AVRC_PS_SCAN_GROUP = 0x3
+    ESP_AVRC_PS_SCAN_OFF = 0x1,                   /*!< scan off */
+    ESP_AVRC_PS_SCAN_ALL = 0x2,                   /*!< all tracks scan */
+    ESP_AVRC_PS_SCAN_GROUP = 0x3                  /*!< group scan */
 } esp_avrc_ps_scn_value_ids_t;
 
 /// AVRC controller callback parameters
@@ -129,7 +129,6 @@ typedef union {
      */
     struct avrc_ct_conn_stat_param {
         bool connected;                          /*!< whether AVRC connection is set up */
-        uint32_t feat_mask;                      /*!< AVRC feature mask of remote device */
         esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
     } conn_stat;                                 /*!< AVRC connection status */
 
@@ -159,6 +158,14 @@ typedef union {
         uint32_t event_parameter;                /*!< event notification parameter */
     } change_ntf;                                /*!< notifications */
 
+    /**
+     * @brief ESP_AVRC_CT_REMOTE_FEATURES_EVT
+     */
+    struct avrc_ct_rmt_feats_param {
+        uint32_t feat_mask;                      /*!< AVRC feature mask of remote device */
+        esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
+    } rmt_feats;                                 /*!< AVRC features discovered from remote SDP server */
+    
 } esp_avrc_ct_cb_param_t;
 
 
@@ -212,7 +219,19 @@ esp_err_t esp_avrc_ct_init(void);
  */
 esp_err_t esp_avrc_ct_deinit(void);
 
-/* add description */
+/**
+ *
+ * @brief           Send player application settings command to AVRCP target. This function should be called
+ *                  after ESP_AVRC_CT_CONNECTION_STATE_EVT is received and AVRCP connection is established.
+ *
+ * @param[in]       tl : transaction label, 0 to 15, consecutive commands should use different values.
+ * @param[in]       attr_id : player application setting attribute IDs from one of esp_avrc_ps_attr_ids_t
+ * @param[in]       value_id : attribute value defined for the specific player application setting attribute
+ * @return
+ *                  - ESP_OK: success
+ *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL: others
+ */
 esp_err_t esp_avrc_ct_send_set_player_value_cmd(uint8_t tl, uint8_t attr_id, uint8_t value_id);
 
 /**

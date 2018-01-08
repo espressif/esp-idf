@@ -79,7 +79,8 @@ void bt_app_rc_ct_cb(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t *param
         bt_app_alloc_meta_buffer(param);
     case ESP_AVRC_CT_CONNECTION_STATE_EVT:
     case ESP_AVRC_CT_PASSTHROUGH_RSP_EVT:
-    case ESP_AVRC_CT_CHANGE_NOTIFY_EVT: {
+    case ESP_AVRC_CT_CHANGE_NOTIFY_EVT:
+    case ESP_AVRC_CT_REMOTE_FEATURES_EVT: {
         bt_app_work_dispatch(bt_av_hdl_avrc_evt, event, param, sizeof(esp_avrc_ct_cb_param_t), NULL);
         break;
     }
@@ -162,8 +163,8 @@ static void bt_av_hdl_avrc_evt(uint16_t event, void *p_param)
     switch (event) {
     case ESP_AVRC_CT_CONNECTION_STATE_EVT: {
         uint8_t *bda = rc->conn_stat.remote_bda;
-        ESP_LOGI(BT_AV_TAG, "avrc conn_state evt: state %d, feature 0x%x, [%02x:%02x:%02x:%02x:%02x:%02x]",
-                 rc->conn_stat.connected, rc->conn_stat.feat_mask, bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
+        ESP_LOGI(BT_AV_TAG, "avrc conn_state evt: state %d, [%02x:%02x:%02x:%02x:%02x:%02x]",
+                 rc->conn_stat.connected, bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
 
         if (rc->conn_stat.connected) {
             bt_av_new_track();
@@ -182,6 +183,10 @@ static void bt_av_hdl_avrc_evt(uint16_t event, void *p_param)
     case ESP_AVRC_CT_CHANGE_NOTIFY_EVT: {
         ESP_LOGI(BT_AV_TAG, "avrc event notification: %d, param: %d", rc->change_ntf.event_id, rc->change_ntf.event_parameter);
         bt_av_notify_evt_handler(rc->change_ntf.event_id, rc->change_ntf.event_parameter);
+        break;
+    }
+    case ESP_AVRC_CT_REMOTE_FEATURES_EVT: {
+        ESP_LOGI(BT_AV_TAG, "avrc remote features %x", rc->rmt_feats.feat_mask);
         break;
     }
     default:
