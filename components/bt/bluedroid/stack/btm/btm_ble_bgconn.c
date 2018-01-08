@@ -69,7 +69,7 @@ static void background_connections_lazy_init()
     }
 }
 
-static void background_connection_add(bt_bdaddr_t *address)
+static BOOLEAN background_connection_add(bt_bdaddr_t *address)
 {
     assert(address);
     background_connections_lazy_init();
@@ -78,14 +78,17 @@ static void background_connection_add(bt_bdaddr_t *address)
         connection = osi_calloc(sizeof(background_connection_t));
         connection->address = *address;
         hash_map_set(background_connections, &(connection->address), connection);
+        return TRUE;
     }
+    return FALSE;
 }
 
-static void background_connection_remove(bt_bdaddr_t *address)
+static BOOLEAN background_connection_remove(bt_bdaddr_t *address)
 {
     if (address && background_connections) {
-        hash_map_erase(background_connections, address);
+        return hash_map_erase(background_connections, address);
     }
+    return FALSE;
 }
 
 static void background_connections_clear()
@@ -265,17 +268,30 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBTM_ADD_W
         }
         return FALSE;
     }
-    if (add_wl_cb){
-        //save add whitelist complete callback
-        p_cb->add_wl_cb = add_wl_cb;
-    }
 
     if (to_add) {
         /* added the bd_addr to the connection hash map queue */
-        background_connection_add((bt_bdaddr_t *)bd_addr);
+        if(!background_connection_add((bt_bdaddr_t *)bd_addr)) {
+            /* if the bd_addr already exist in whitelist, just callback return TRUE */
+            if (add_wl_cb){
+                add_wl_cb(HCI_SUCCESS,to_add);
+            }
+            return TRUE;
+        }
     } else {
         /* remove the bd_addr to the connection hash map queue */
-        background_connection_remove((bt_bdaddr_t *)bd_addr);
+        if(!background_connection_remove((bt_bdaddr_t *)bd_addr)){
+            /* if the bd_addr don't exist in whitelist, just callback return TRUE */
+            if (add_wl_cb){
+                add_wl_cb(HCI_SUCCESS,to_add);
+            }
+            return TRUE;
+        }
+    }
+
+    if (add_wl_cb){
+        //save add whitelist complete callback
+        p_cb->add_wl_cb = add_wl_cb;
     }
     /* stop the auto connect */
     btm_suspend_wl_activity(p_cb->wl_state);
