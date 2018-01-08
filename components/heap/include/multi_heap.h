@@ -27,7 +27,7 @@ extern "C" {
 #endif
 
 /** @brief Opaque handle to a registered heap */
-typedef struct multi_heap_info *multi_heap_handle_t;
+typedef struct multi_heap_metadata *multi_heap_handle_t;
 
 /** @brief malloc() a buffer in a given heap
  *

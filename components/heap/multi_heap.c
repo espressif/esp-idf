@@ -59,44 +59,6 @@ size_t multi_heap_minimum_free_size(multi_heap_handle_t heap)
 #define ALIGN(X) ((X) & ~(sizeof(void *)-1))
 #define ALIGN_UP(X) ALIGN((X)+sizeof(void *)-1)
 
-struct heap_block;
-
-/* Block in the heap
-
-   Heap implementation uses two single linked lists, a block list (all blocks) and a free list (free blocks).
-
-   'header' holds a pointer to the next block (used or free) ORed with a free flag (the LSB of the pointer.) is_free() and get_next_block() utility functions allow typed access to these values.
-
-   'next_free' is valid if the block is free and is a pointer to the next block in the free list.
-*/
-typedef struct heap_block {
-    intptr_t header;                  /* Encodes next block in heap (used or unused) and also free/used flag */
-    union {
-        uint8_t data[1];              /* First byte of data, valid if block is used. Actual size of data is 'block_data_size(block)' */
-        struct heap_block *next_free; /* Pointer to next free block, valid if block is free */
-    };
-} heap_block_t;
-
-/* These masks apply to the 'header' field of heap_block_t */
-#define BLOCK_FREE_FLAG 0x1  /* If set, this block is free & next_free pointer is valid */
-#define NEXT_BLOCK_MASK (~3) /* AND header with this mask to get pointer to next block (free or used) */
-
-/* Metadata header for the heap, stored at the beginning of heap space.
-
-   'first_block' is a "fake" first block, minimum length, used to provide a pointer to the first used & free block in
-   the heap. This block is never allocated or merged into an adjacent block.
-
-   'last_block' is a pointer to a final free block of length 0, which is added at the end of the heap when it is
-   registered. This block is also never allocated or merged into an adjacent block.
- */
-typedef struct multi_heap_info {
-    void *lock;
-    size_t free_bytes;
-    size_t minimum_free_bytes;
-    heap_block_t *last_block;
-    heap_block_t first_block; /* initial 'free block', never allocated */
-} heap_t;
-
 /* Given a pointer to the 'data' field of a block (ie the previous malloc/realloc result), return a pointer to the
    containing block.
 */
@@ -142,11 +104,11 @@ static inline size_t block_data_size(const heap_block_t *block)
 }
 
 /* Check a block is valid for this heap. Used to verify parameters. */
-static void assert_valid_block(const heap_t *heap, const heap_block_t *block)
+static void assert_valid_block(const heap_metadata_t *heap, const heap_block_t *block)
 {
     MULTI_HEAP_ASSERT(block >= &heap->first_block && block <= heap->last_block,
                       block); // block not in heap
-    if (heap < (const heap_t *)heap->last_block) {
+    if (heap < (const heap_metadata_t *)heap->last_block) {
         const heap_block_t *next = get_next_block(block);
         MULTI_HEAP_ASSERT(next >= &heap->first_block && next <= heap->last_block, block); // Next block not in heap
         if (is_free(block)) {
@@ -165,7 +127,7 @@ static void assert_valid_block(const heap_t *heap, const heap_block_t *block)
 
    Result will never be NULL, but it may be the header block heap->first_block.
 */
-static heap_block_t *get_prev_free_block(heap_t *heap, const heap_block_t *block)
+static heap_block_t *get_prev_free_block(heap_metadata_t *heap, const heap_block_t *block)
 {
     assert(block != &heap->first_block); /* can't look for a block before first_block */
 
@@ -190,7 +152,7 @@ static heap_block_t *get_prev_free_block(heap_t *heap, const heap_block_t *block
    This operation may fail if block 'a' is the first block or 'b' is the last block,
    the caller should check block_data_size() to know if anything happened here or not.
 */
-static heap_block_t *merge_adjacent(heap_t *heap, heap_block_t *a, heap_block_t *b)
+static heap_block_t *merge_adjacent(heap_metadata_t *heap, heap_block_t *a, heap_block_t *b)
 {
     assert(a < b);
 
@@ -248,7 +210,7 @@ static heap_block_t *merge_adjacent(heap_t *heap, heap_block_t *a, heap_block_t 
    'prev_free_block' is the free block before 'block', if already known. Can be NULL if not yet known.
    (This is a performance optimisation to avoid walking the freelist twice when possible.)
 */
-static void split_if_necessary(heap_t *heap, heap_block_t *block, size_t size, heap_block_t *prev_free_block)
+static void split_if_necessary(heap_metadata_t *heap, heap_block_t *block, size_t size, heap_block_t *prev_free_block)
 {
     MULTI_HEAP_ASSERT(!is_free(block), block); // split block shouldn't be free
     MULTI_HEAP_ASSERT(size <= block_data_size(block), block); // size should be valid
@@ -290,16 +252,16 @@ size_t multi_heap_get_allocated_size_impl(multi_heap_handle_t heap, void *p)
 
 multi_heap_handle_t multi_heap_register_impl(void *start, size_t size)
 {
-    heap_t *heap = (heap_t *)ALIGN_UP((intptr_t)start);
+    heap_metadata_t *heap = (heap_metadata_t *)ALIGN_UP((intptr_t)start);
     uintptr_t end = ALIGN((uintptr_t)start + size);
-    if (end - (uintptr_t)start < sizeof(heap_t) + 2*sizeof(heap_block_t)) {
+    if (end - (uintptr_t)start < sizeof(heap_metadata_t) + 2*sizeof(heap_block_t)) {
         return NULL; /* 'size' is too small to fit a heap here */
     }
     heap->lock = NULL;
     heap->last_block = (heap_block_t *)(end - sizeof(heap_block_t));
 
     /* first 'real' (allocatable) free block goes after the heap structure */
-    heap_block_t *first_free_block = (heap_block_t *)((intptr_t)start + sizeof(heap_t));
+    heap_block_t *first_free_block = (heap_block_t *)((intptr_t)start + sizeof(heap_metadata_t));
     first_free_block->header = (intptr_t)heap->last_block | BLOCK_FREE_FLAG;
     first_free_block->next_free = heap->last_block;
 
@@ -314,11 +276,11 @@ multi_heap_handle_t multi_heap_register_impl(void *start, size_t size)
 
     /* free bytes is:
        - total bytes in heap
-       - minus heap_t header at top (includes heap->first_block)
+       - minus heap_metadata_t header at top (includes heap->first_block)
        - minus header of first_free_block
        - minus whole block at heap->last_block
     */
-    heap->free_bytes = ALIGN(size) - sizeof(heap_t) - sizeof(first_free_block->header) - sizeof(heap_block_t);
+    heap->free_bytes = ALIGN(size) - sizeof(heap_metadata_t) - sizeof(first_free_block->header) - sizeof(heap_block_t);
     heap->minimum_free_bytes = heap->free_bytes;
 
     return heap;
