@@ -691,9 +691,9 @@ static void btc_add_whitelist_complete_callback(UINT8 status, tBTM_WL_OPERATION 
     btc_msg_t msg;
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_GAP_BLE;
-    msg.act = ESP_GAP_BLE_ADD_WHITELIST_COMPLETE_EVT;
-    param.add_whitelist_cmpl.status = btc_hci_to_esp_status(status);
-    param.add_whitelist_cmpl.wl_opration = wl_opration;
+    msg.act = ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT;
+    param.update_whitelist_cmpl.status = btc_hci_to_esp_status(status);
+    param.update_whitelist_cmpl.wl_opration = wl_opration;
     ret = btc_transfer_context(&msg, &param,
                                sizeof(esp_ble_gap_cb_param_t), NULL);
 
