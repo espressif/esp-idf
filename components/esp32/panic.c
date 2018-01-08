@@ -165,6 +165,7 @@ static const char *edesc[] = {
 #define NUM_EDESCS (sizeof(edesc) / sizeof(char *))
 
 static void commonErrorHandler(XtExcFrame *frame);
+static inline void disableAllWdts();
 
 //The fact that we've panic'ed probably means the other CPU is now running wild, possibly
 //messing up the serial output, so we stall it here.
@@ -257,6 +258,11 @@ void panicHandler(XtExcFrame *frame)
     }
 
     if (esp_cpu_in_ocd_debug_mode()) {
+        disableAllWdts();
+        if (frame->exccause == PANIC_RSN_INTWDT_CPU0 ||
+            frame->exccause == PANIC_RSN_INTWDT_CPU1) {
+            TIMERG1.int_clr_timers.wdt = 1;
+        }
 #if CONFIG_ESP32_APPTRACE_ENABLE
 #if CONFIG_SYSVIEW_ENABLE
         SEGGER_RTT_ESP32_FlushNoLock(CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
