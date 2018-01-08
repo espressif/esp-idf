@@ -239,22 +239,22 @@ define GenerateCompileTargets
 #
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.c $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
 	$$(summary) CC $$(patsubst $$(PWD)/%,%,$$(CURDIR))/$$@
-	$$(CC) $$(CFLAGS) $$(CPPFLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
+	$$(CC) $$(CFLAGS) $$(CPPFLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I $(1) -c $$< -o $$@
 	$(call AppendSourceToDependencies,$$<,$$@)
 
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.cpp $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
 	$$(summary) CXX $$(patsubst $$(PWD)/%,%,$$(CURDIR))/$$@
-	$$(CXX) $$(CXXFLAGS) $$(CPPFLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
+	$$(CXX) $$(CXXFLAGS) $$(CPPFLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I $(1) -c $$< -o $$@
 	$(call AppendSourceToDependencies,$$<,$$@)
 
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.cc $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
 	$$(summary) CXX $$(patsubst $$(PWD)/%,%,$$(CURDIR))/$$@
-	$$(CXX) $$(CXXFLAGS) $$(CPPFLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
+	$$(CXX) $$(CXXFLAGS) $$(CPPFLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I $(1) -c $$< -o $$@
 	$(call AppendSourceToDependencies,$$<,$$@)
 
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.S $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
 	$$(summary) AS $$(patsubst $$(PWD)/%,%,$$(CURDIR))/$$@
-	$$(CC) $$(CPPFLAGS) $$(DEBUG_FLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
+	$$(CC) $$(CPPFLAGS) $$(DEBUG_FLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I $(1) -c $$< -o $$@
 	$(call AppendSourceToDependencies,$$<,$$@)
 
 # CWD is build dir, create the build subdirectory if it doesn't exist
