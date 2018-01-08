@@ -551,7 +551,7 @@ static void btc_gatts_inter_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
     if(btc_creat_tab_env.is_tab_creat_svc && btc_creat_tab_env.complete_future) {
         switch(event) {
             case BTA_GATTS_CREATE_EVT: {
-                //save the service handle to the btc module after used 
+                //save the service handle to the btc module after used
                 //the attribute table method to creat a service
                 bta_to_btc_uuid(&btc_creat_tab_env.svc_uuid, &p_data->create.uuid);
                 uint8_t index = btc_creat_tab_env.handle_idx;

@@ -46,7 +46,15 @@
 #include "btc_hf_client.h"
 #endif  /* #if BTC_HF_CLIENT_INCLUDED */
 #endif /* #if CONFIG_CLASSIC_BT_ENABLED */
-
+#if CONFIG_BT_MESH
+#include "btc_ble_mesh_prov.h"
+#include "btc_ble_mesh_health.h"
+#include "btc_ble_mesh_config_client.h"
+#include "btc_ble_mesh_generic_client.h"
+#include "btc_ble_mesh_light_client.h"
+#include "btc_ble_mesh_sensor_client.h"
+#include "btc_ble_mesh_time_scene_client.h"
+#endif /* CONFIG_BT_MESH */
 
 static xTaskHandle  xBtcTaskHandle = NULL;
 static xQueueHandle xBtcQueue = 0;
@@ -87,6 +95,18 @@ static btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_HF_CLIENT]   = {btc_hf_client_call_handler,  btc_hf_client_cb_handler},
 #endif  /* #if BTC_HF_CLIENT_INCLUDED */
 #endif /* #if CONFIG_CLASSIC_BT_ENABLED */
+
+#if CONFIG_BT_MESH
+    [BTC_PID_PROV]            = {btc_mesh_prov_call_handler, btc_mesh_prov_cb_handler},
+    [BTC_PID_MODEL]           = {btc_mesh_model_call_handler, btc_mesh_model_cb_handler},
+    [BTC_PID_HEALTH_CLIENT]   = {btc_mesh_health_client_call_handler, btc_mesh_health_client_cb_handler},
+    [BTC_PID_HEALTH_SERVER]   = {btc_mesh_health_server_call_handler, btc_mesh_health_server_cb_handler},
+    [BTC_PID_CFG_CLIENT]      = {btc_mesh_cfg_client_call_handler, btc_mesh_cfg_client_cb_handler},
+    [BTC_PID_GENERIC_CLIENT]  = {btc_mesh_generic_client_call_handler, btc_mesh_generic_client_cb_handler},
+    [BTC_PID_LIGHT_CLIENT]    = {btc_mesh_light_client_call_handler, btc_mesh_light_client_cb_handler},
+    [BTC_PID_SENSOR_CLIENT]   = {btc_mesh_sensor_client_call_handler, btc_mesh_sensor_client_cb_handler},
+    [BTC_PID_TIME_SCENE_CLIENT] = {btc_mesh_time_scene_client_call_handler, btc_mesh_time_scene_client_cb_handler},
+#endif /* #if CONFIG_BT_MESH */
 };
 
 /*****************************************************************************

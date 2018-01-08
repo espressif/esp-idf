@@ -662,6 +662,7 @@ void btsnd_hcic_vendor_spec_cmd (void *buffer, UINT16 opcode,
 #define HCIC_PARAM_SIZE_BLE_ENCRYPT             32
 #define HCIC_PARAM_SIZE_BLE_RAND                0
 #define HCIC_PARAM_SIZE_WRITE_LE_HOST_SUPPORTED 2
+#define HCIC_PARAM_SIZE_READ_LOCAL_P256_PUBLIC_KEY 0
 
 #define HCIC_BLE_RAND_DI_SIZE                   8
 #define HCIC_BLE_ENCRYT_KEY_SIZE                16
@@ -705,6 +706,8 @@ BOOLEAN btsnd_hcic_ble_set_adv_data (UINT8 data_len, UINT8 *p_data);
 BOOLEAN btsnd_hcic_ble_set_scan_rsp_data (UINT8 data_len, UINT8 *p_scan_rsp);
 
 BOOLEAN btsnd_hcic_ble_set_adv_enable (UINT8 adv_enable);
+
+BOOLEAN btsnd_hcic_ble_read_local_p256_public_key (void);
 
 BOOLEAN btsnd_hcic_ble_set_scan_params (UINT8 scan_type,
                                         UINT16 scan_int, UINT16 scan_win,

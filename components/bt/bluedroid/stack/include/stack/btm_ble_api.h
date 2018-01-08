@@ -959,6 +959,21 @@ tBTM_STATUS BTM_BleSetAdvParamsStartAdv(UINT16 adv_int_min, UINT16 adv_int_max, 
                                         tBLE_ADDR_TYPE own_bda_type, tBLE_BD_ADDR *p_dir_bda,
                                         tBTM_BLE_ADV_CHNL_MAP chnl_map, tBTM_BLE_AFP afp, tBTM_START_ADV_CMPL_CBACK *adv_cb);
 
+/*******************************************************************************
+**
+** Function         BTM_BleSetAdvParamsStartAdvCheck
+**
+** Description      This function is called to check if adv can be started successfully
+**
+** Parameters:       None.
+**
+** Returns          void
+**
+*******************************************************************************/
+tBTM_STATUS BTM_BleSetAdvParamsStartAdvCheck(UINT16 adv_int_min, UINT16 adv_int_max, UINT8 adv_type,
+                                        tBLE_ADDR_TYPE own_bda_type, tBLE_BD_ADDR *p_dir_bda,
+                                        tBTM_BLE_ADV_CHNL_MAP chnl_map, tBTM_BLE_AFP afp, tBTM_START_ADV_CMPL_CBACK *adv_cb);
+
 
 /*******************************************************************************
 **
@@ -1639,6 +1654,19 @@ BOOLEAN BTM_ReadConnectedTransportAddress(BD_ADDR remote_bda,
 *******************************************************************************/
 //extern
 tBTM_STATUS BTM_BleBroadcast(BOOLEAN start, tBTM_START_STOP_ADV_CMPL_CBACK *p_stop_adv_cback);
+
+/*******************************************************************************
+**
+** Function         BTM_BleBroadcastCheck
+**
+** Description      This function is to check if adv can be stopped successfully
+**
+** Parameters       start: start or stop broadcasting.
+**
+** Returns          status.
+**
+*******************************************************************************/
+tBTM_STATUS BTM_BleBroadcastCheck(BOOLEAN start, tBTM_START_STOP_ADV_CMPL_CBACK  *p_stop_adv_cback);
 
 /*******************************************************************************
 **

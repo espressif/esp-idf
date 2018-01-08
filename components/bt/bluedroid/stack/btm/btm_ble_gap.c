@@ -529,13 +529,17 @@ tBTM_STATUS BTM_BleBroadcast(BOOLEAN start, tBTM_START_STOP_ADV_CMPL_CBACK  *p_s
         evt_type = p_cb->scan_rsp ? BTM_BLE_CONNECT_EVT : BTM_BLE_NON_CONNECT_EVT;
     }
 #endif
+    /**TODO: Currently we don't need adv stop completed cb, so we comment
+     * following code to avoid that one function called will block another one*/
     // if adv state is BTM_BLE_ADV_PENDING, return immediately
+#if 0
     if (p_cb->state == BTM_BLE_ADV_PENDING) {
         if (p_stop_adv_cback) {
             (*p_stop_adv_cback)(HCI_ERR_ILLEGAL_COMMAND);
         }
         return BTM_BUSY;
     }
+#endif
     if (start && p_cb->adv_mode == BTM_BLE_ADV_DISABLE) {
         /* update adv params */
         if (!btsnd_hcic_ble_write_adv_params ((UINT16)(p_cb->adv_interval_min ? p_cb->adv_interval_min :
@@ -575,6 +579,31 @@ tBTM_STATUS BTM_BleBroadcast(BOOLEAN start, tBTM_START_STOP_ADV_CMPL_CBACK  *p_s
     }
     return status;
 }
+
+/*******************************************************************************
+**
+** Function         BTM_BleBroadcastCheck
+**
+** Description      This function is to check if adv can be stopped successfully
+**
+** Parameters       start: start or stop broadcasting.
+**
+** Returns          status.
+**
+*******************************************************************************/
+tBTM_STATUS BTM_BleBroadcastCheck(BOOLEAN start, tBTM_START_STOP_ADV_CMPL_CBACK  *p_stop_adv_cback)
+{
+    tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
+    tBTM_STATUS status = BTM_SUCCESS;
+
+    if (p_cb->state == BTM_BLE_ADV_PENDING) {
+        return BTM_BUSY;
+    }
+
+    return status;
+
+}
+
 
 #if BLE_VND_INCLUDED == TRUE
 /*******************************************************************************
@@ -1275,13 +1304,17 @@ tBTM_STATUS BTM_BleSetAdvParamsStartAdv(UINT16 adv_int_min, UINT16 adv_int_max, 
     }
 
     BTM_TRACE_EVENT ("update params for an active adv\n");
+    /**TODO: Currently we don't need adv start completed cb, so we comment
+     * following code to avoid that one function called will block another one*/
     // if adv state is BTM_BLE_ADV_PENDING, return immediately
+#if 0
     if (p_cb->state == BTM_BLE_ADV_PENDING) {
         if (p_cb->p_adv_cb) {
             (*p_cb->p_adv_cb)(HCI_ERR_ILLEGAL_COMMAND);
         }
         return BTM_BUSY;
     }
+#endif
     /* host will stop adv first and then  start adv again if adv has already started
        it will get callback twice.
     */
@@ -1304,6 +1337,30 @@ tBTM_STATUS BTM_BleSetAdvParamsStartAdv(UINT16 adv_int_min, UINT16 adv_int_max, 
                                      p_cb->afp);
 
     return btm_ble_start_adv();
+}
+
+/*******************************************************************************
+**
+** Function         BTM_BleSetAdvParamsStartAdvCheck
+**
+** Description      This function is called to check if adv can be started successfully
+**
+** Parameters:       None.
+**
+** Returns          void
+**
+*******************************************************************************/
+tBTM_STATUS BTM_BleSetAdvParamsStartAdvCheck(UINT16 adv_int_min, UINT16 adv_int_max, UINT8 adv_type,
+                                        tBLE_ADDR_TYPE own_bda_type, tBLE_BD_ADDR *p_dir_bda,
+                                        tBTM_BLE_ADV_CHNL_MAP chnl_map, tBTM_BLE_AFP afp, tBTM_START_ADV_CMPL_CBACK *adv_cb)
+{
+    tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
+    tBTM_STATUS status = BTM_SUCCESS;
+    if (p_cb->state == BTM_BLE_ADV_PENDING) {
+        return BTM_BUSY;
+    }
+
+    return status;
 }
 
 

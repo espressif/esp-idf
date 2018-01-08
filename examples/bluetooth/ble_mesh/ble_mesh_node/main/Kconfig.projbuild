@@ -1,0 +1,30 @@
+
+menu "Example Configuration"
+
+choice ESP32_BOARD
+    prompt "Board selection for BLE Mesh"
+    default ESP_WROOM_32_BOARD
+    help
+        Select this option to choose the board for BLE Mesh. The default is ESP32-WROOM-32
+
+config ESP_WROOM_32_BOARD
+    bool "ESP32-WROOM-32"
+
+config ESP_WROVER_BOARD
+    bool "ESP32-WROVER"
+
+endchoice
+
+config HCI_5_0_VERSION
+    bool "This option facilitates sending with 20ms non-connectable interval even if the controller is not HCI 5.0"
+	default y
+    help
+         It is a temporary solution and needs further modifications
+
+config PATCH_FOR_SILICONLAB_APP_1_1_0
+    bool "This option fixes the bug of Silicon Lab Android App 1.1.0 when reconnection will cause the sequence number to recount from 0"
+	default y
+    help
+         It is an ad hoc solution and needs further modifications
+
+endmenu

@@ -46,7 +46,7 @@ typedef struct packet_fragmenter_t {
     // Release all resources associated with the fragmenter.
     void (*cleanup)(void);
 
-    // CHeck if Current fragmenter is ongoing
+    // Check if Current fragmenter is ongoing
     BT_HDR *(*fragment_current_packet)(void);
 
     // Fragments |packet| if necessary and hands off everything to the fragmented callback.

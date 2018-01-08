@@ -227,6 +227,27 @@ BOOLEAN btsnd_hcic_ble_set_adv_enable (UINT8 adv_enable)
     btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID,  p);
     return (TRUE);
 }
+
+BOOLEAN btsnd_hcic_ble_read_local_p256_public_key (void)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    if ((p = HCI_GET_CMD_BUF(HCIC_PARAM_SIZE_READ_LOCAL_P256_PUBLIC_KEY)) == NULL) {
+        return (FALSE);
+    }
+
+    pp = (UINT8 *)(p + 1);
+
+    p->len    = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_READ_LOCAL_P256_PUBLIC_KEY;
+    p->offset = 0;
+
+    UINT16_TO_STREAM (pp, HCI_BLE_READ_LOCAL_P256_PUBLIC_KEY);
+    UINT8_TO_STREAM  (pp, HCIC_PARAM_SIZE_READ_LOCAL_P256_PUBLIC_KEY);
+
+    btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID,  p);
+    return (TRUE);
+}
 BOOLEAN btsnd_hcic_ble_set_scan_params (UINT8 scan_type,
                                         UINT16 scan_int, UINT16 scan_win,
                                         UINT8 addr_type_own, UINT8 scan_filter_policy)

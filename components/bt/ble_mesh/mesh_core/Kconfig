@@ -1,0 +1,459 @@
+# Kconfig - Bluetooth Mesh configuration options
+
+#
+# Copyright (c) 2017 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig BT_MESH
+	bool "Bluetooth Mesh support"
+	select TINYCRYPT
+	select TINYCRYPT_AES
+	select TINYCRYPT_AES_CMAC
+	help
+	  This option enables Bluetooth Mesh support. The specific
+	  features that are available may depend on other features
+	  that have been enabled in the stack, such as GATT support.
+
+if BT_MESH
+
+# Virtual option enabled whenever Generic Provisioning layer is needed
+config BT_MESH_PROV
+	bool
+
+config BT_MESH_PB_ADV
+	bool "Provisioning support using the advertising bearer (PB-ADV)"
+	select BT_MESH_PROV
+	default y
+	help
+	  Enable this option to allow the device to be provisioned over
+	  the advertising bearer.
+
+if BT_CONN
+
+# Virtual option enabled whenever any Proxy protocol is needed
+config BT_MESH_PROXY
+	bool
+
+config BT_MESH_PB_GATT
+	bool "Provisioning support using GATT (PB-GATT)"
+	select BT_MESH_PROXY
+	select BT_MESH_PROV
+	help
+	  Enable this option to allow the device to be provisioned over
+	  GATT.
+
+config BT_MESH_GATT_PROXY
+	bool "GATT Proxy Service"
+	select BT_MESH_PROXY
+	help
+	  This option enables support for the Mesh GATT Proxy Service,
+	  i.e. the ability to act as a proxy between a Mesh GATT Client
+	  and a Mesh network.
+
+config BT_MESH_NODE_ID_TIMEOUT
+	int "Node Identity advertising timeout"
+	depends on BT_MESH_GATT_PROXY
+	range 1 60
+	default 60
+	help
+	  This option determines for how long the local node advertises
+	  using Node Identity. The given value is in seconds. The
+	  specification limits this to 60 seconds, and implies that to
+	  be the appropriate value as well, so just leaving this as the
+	  default is the safest option.
+
+if BT_MESH_PROXY
+
+config BT_MESH_PROXY_FILTER_SIZE
+	int "Maximum number of filter entries per Proxy Client"
+	default 1
+	default 3 if BT_MESH_GATT_PROXY
+	range 1 32767
+	help
+	  This option specifies how many Proxy Filter entries the local
+	  node supports.
+
+endif # BT_MESH_PROXY
+
+endif # BT_CONN
+
+config BT_MESH_SELF_TEST
+	bool "Perform self-tests"
+	help
+	  This option adds extra self-tests which are run every time
+	  mesh networking is initialized.
+
+config BT_MESH_IV_UPDATE_TEST
+	bool "Test the IV Update Procedure"
+	help
+	  This option removes the 96 hour limit of the IV Update
+	  Procedure and lets the state be changed at any time.
+
+config BT_MESH_SUBNET_COUNT
+	int "Maximum number of mesh subnets per network"
+	default 1
+	range 1 4096
+	help
+	  This option specifies how many subnets a Mesh network can
+	  participate in at the same time.
+
+config BT_MESH_APP_KEY_COUNT
+	int "Maximum number of application keys per network"
+	default 1
+	range 1 4096
+	help
+	  This option specifies how many application keys the device can
+	  store per network.
+
+config BT_MESH_MODEL_KEY_COUNT
+	int "Maximum number of application keys per model"
+	default 1
+	range 1 4096
+	help
+	  This option specifies how many application keys each model can
+	  at most be bound to.
+
+config BT_MESH_MODEL_GROUP_COUNT
+	int "Maximum number of group address subscriptions per model"
+	default 1
+	range 1 4096
+	help
+	  This option specifies how many group addresses each model can
+	  at most be subscribed to.
+
+config BT_MESH_LABEL_COUNT
+	int "Maximum number of Label UUIDs used for Virtual Addresses"
+	default 1
+	range 0 4096
+	help
+	  This option specifies how many Label UUIDs can be stored.
+
+config BT_MESH_CRPL
+	int "Maximum capacity of the replay protection list"
+	default 10
+	range 2 65535
+	help
+	  This options specifies the maximum capacity of the replay
+	  protection list. This option is similar to the network message
+	  cache size, but has a different purpose.
+
+config BT_MESH_MSG_CACHE_SIZE
+	int "Network message cache size"
+	default 10
+	range 2 65535
+	help
+	  Number of messages that are cached for the network. This helps
+	  prevent unnecessary decryption operations and unnecessary
+	  relays. This option is similar to the replay protection list,
+	  but has a different purpose.
+
+config BT_MESH_ADV_BUF_COUNT
+	int "Number of advertising buffers"
+	default 6
+	range 6 256
+	help
+	  Number of advertising buffers available. The transport layer
+	  reserves ADV_BUF_COUNT - 3 buffers for outgoing segments. The
+	  maximum outgoing SDU size is 12 times this number (out of which
+	  4 or 8 bytes is used for the Transport Layer MIC). For
+	  example, 5 segments means the maximum SDU size is 60 bytes,
+	  which leaves 56 bytes for application layer data using a
+	  4-byte MIC and 52 bytes using an 8-byte MIC.
+
+config BT_MESH_TX_SEG_MSG_COUNT
+	int "Maximum number of simultaneous outgoing segmented messages"
+	default 1
+	range 1 BT_MESH_ADV_BUF_COUNT
+	help
+	  Maximum number of simultaneous outgoing multi-segment and/or
+	  reliable messages.
+
+config BT_MESH_RX_SEG_MSG_COUNT
+	int "Maximum number of simultaneous incoming segmented messages"
+	default 1
+	range 1 255
+	help
+	  Maximum number of simultaneous incoming multi-segment and/or
+	  reliable messages.
+
+config BT_MESH_RX_SDU_MAX
+	int "Maximum incoming Upper Transport Access PDU length"
+	default 384
+	range 36 384
+	help
+	  Maximum incoming Upper Transport Access PDU length. Leave this
+	  to the default value, unless you really need to optimize memory
+	  usage.
+
+config BT_MESH_RELAY
+	bool "Relay support"
+	help
+	  Support for acting as a Mesh Relay Node.
+
+config BT_MESH_LOW_POWER
+	bool "Support for Low Power features"
+	help
+	  Enable this option to be able to act as a Low Power Node.
+
+if BT_MESH_LOW_POWER
+
+config BT_MESH_LPN_ESTABLISHMENT
+	bool "Perform Friendship establishment using low power"
+	default y
+	help
+	  Perform the Friendship establishment using low power, with
+	  the help of a reduced scan duty cycle. The downside of this
+	  is that the node may miss out on messages intended for it
+	  until it has successfully set up Friendship with a Friend
+	  node.
+
+config BT_MESH_LPN_AUTO
+	bool "Automatically start looking for Friend nodes once provisioned"
+	default y
+	help
+	  Automatically enable LPN functionality once provisioned and start
+	  looking for Friend nodes. If this option is disabled LPN mode
+	  needs to be manually enabled by calling bt_mesh_lpn_set(true).
+
+config BT_MESH_LPN_AUTO_TIMEOUT
+	int "Time from last received message before going to LPN mode"
+	default 15
+	range 0 3600
+	depends on BT_MESH_LPN_AUTO
+	help
+	  Time in seconds from the last received message, that the node
+	  will wait before starting to look for Friend nodes.
+
+config BT_MESH_LPN_RETRY_TIMEOUT
+	int "Retry timeout for Friend requests"
+	default 8
+	range 1 3600
+	help
+	  Time in seconds between Friend Requests, if a previous Friend
+	  Request did not receive any acceptable Friend Offers.
+
+config BT_MESH_LPN_RSSI_FACTOR
+	int "RSSIFactor, used in the Friend Offer Delay calculation"
+	range 0 3
+	default 0
+	help
+	  The contribution of the RSSI measured by the Friend node used
+	  in Friend Offer Delay calculations. 0 = 1, 1 = 1.5, 2 = 2, 3 = 2.5.
+
+config BT_MESH_LPN_RECV_WIN_FACTOR
+	int "ReceiveWindowFactor, used in the Friend Offer Delay calculation"
+	range 0 3
+	default 0
+	help
+	  The contribution of the supported Receive Window used in
+	  Friend Offer Delay calculations. 0 = 1, 1 = 1.5, 2 = 2, 3 = 2.5.
+
+config BT_MESH_LPN_MIN_QUEUE_SIZE
+	int "Minimum size of acceptable friend queue (MinQueueSizeLog)"
+	range 1 7
+	default 1
+	help
+	  The MinQueueSizeLog field is defined as log_2(N), where N is
+	  the minimum number of maximum size Lower Transport PDUs that
+	  the Friend node can store in its Friend Queue. As an example,
+	  MinQueueSizeLog value 1 gives N = 2, and value 7 gives N = 128.
+
+config BT_MESH_LPN_RECV_DELAY
+	int "Receive delay requested by the local node"
+	range 10 255
+	default 100
+	help
+	  The ReceiveDelay is the time between the Low Power node
+	  sending a request and listening for a response. This delay
+	  allows the Friend node time to prepare the response. The value
+	  is in units of milliseconds.
+
+config BT_MESH_LPN_POLL_TIMEOUT
+	int "The value of the PollTimeout timer"
+	range 10 244735
+	default 300
+	help
+	  PollTimeout timer is used to measure time between two
+	  consecutive requests sent by the Low Power node. If no
+	  requests are received by the Friend node before the
+	  PollTimeout timer expires, then the friendship is considered
+	  terminated. The value is in units of 100 milliseconds, so e.g.
+	  a value of 300 means 30 seconds.
+
+config BT_MESH_LPN_INIT_POLL_TIMEOUT
+	int "The starting value of the PollTimeout timer"
+	range 10 BT_MESH_LPN_POLL_TIMEOUT
+	default BT_MESH_LPN_POLL_TIMEOUT
+	help
+	  The initial value of the PollTimeout timer when Friendship
+	  gets established for the first time. After this the timeout
+	  will gradually grow toward the actual PollTimeout, doubling
+	  in value for each iteration. The value is in units of 100
+	  milliseconds, so e.g. a value of 300 means 30 seconds.
+
+config BT_MESH_LPN_SCAN_LATENCY
+	int "Latency for enabling scanning"
+	range 0 50
+	default 10
+	help
+	  Latency in milliseconds that it takes to enable scanning. This
+	  is in practice how much time in advance before the Receive Window
+	  that scanning is requested to be enabled.
+
+config BT_MESH_LPN_GROUPS
+	int "Number of groups the LPN can subscribe to"
+	range 0 16384
+	default 8
+	help
+	  Maximum number of groups that the LPN can subscribe to.
+endif # BT_MESH_LOW_POWER
+
+config BT_MESH_FRIEND
+	bool "Support for acting as a Friend Node"
+	help
+	  Enable this option to be able to act as a Friend Node.
+
+if BT_MESH_FRIEND
+
+config BT_MESH_FRIEND_RECV_WIN
+	int "Friend Receive Window"
+	range 1 255
+	default 255
+	help
+	  Receive Window in milliseconds supported by the Friend node.
+
+config BT_MESH_FRIEND_QUEUE_SIZE
+	int "Minimum number of buffers supported per Friend Queue"
+	range 2 65536
+	default 16
+	help
+	  Minimum number of buffers available to be stored for each
+	  local Friend Queue.
+
+config BT_MESH_FRIEND_SUB_LIST_SIZE
+	int "Friend Subscription List Size"
+	range 0 1023
+	default 3
+	help
+	  Size of the Subscription List that can be supported by a
+	  Friend node for a Low Power node.
+
+config BT_MESH_FRIEND_LPN_COUNT
+	int "Number of supported LPN nodes"
+	range 1 1000
+	default 2
+	help
+	  Number of Low Power Nodes the Friend can have a Friendship
+	  with simultaneously.
+
+config BT_MESH_FRIEND_SEG_RX
+	int "Number of incomplete segment lists per LPN"
+	range 1 1000
+	default 1
+	help
+	  Number of incomplete segment lists that we track for each LPN
+	  that we are Friends for. In other words, this determines how
+	  many elements we can simultaneously be receiving segmented
+	  messages from when the messages are going into the Friend queue.
+
+endif # BT_MESH_FRIEND
+
+config BT_MESH_CFG_CLI
+	bool "Support for Configuration Client Model"
+	help
+	  Enable support for the configuration client model.
+
+config BT_MESH_HEALTH_CLI
+	bool "Support for Health Client Model"
+	help
+	  Enable support for the health client model.
+
+config BT_MESH_SHELL
+	bool "Enable Bluetooth Mesh shell"
+	select CONSOLE_SHELL
+	depends on BT_MESH_CFG_CLI
+	depends on BT_MESH_HEALTH_CLI
+	help
+	  Activate shell module that provides Bluetooth Mesh commands to
+	  the console.
+
+config BT_MESH_DEBUG
+	bool "Enable debug logs"
+	depends on BT_DEBUG
+	help
+	  Use this option to enable debug logs for the Bluetooth
+	  Mesh functionality.
+
+if BT_MESH_DEBUG
+
+config BT_MESH_DEBUG_NET
+	bool "Network layer debug"
+	help
+	  Use this option to enable Network layer debug logs for the
+	  Bluetooth Mesh functionality.
+
+config BT_MESH_DEBUG_TRANS
+	bool "Transport layer debug"
+	help
+	  Use this option to enable Transport layer debug logs for the
+	  Bluetooth Mesh functionality.
+
+config BT_MESH_DEBUG_BEACON
+	bool "Beacon debug"
+	help
+	  Use this option to enable Beacon-related debug logs for the
+	  Bluetooth Mesh functionality.
+
+config BT_MESH_DEBUG_CRYPTO
+	bool "Crypto debug"
+	help
+	  Use this option to enable cryptographic debug logs for the
+	  Bluetooth Mesh functionality.
+
+config BT_MESH_DEBUG_PROV
+	bool "Provisioning debug"
+	help
+	  Use this option to enable Provisioning debug logs for the
+	  Bluetooth Mesh functionality.
+
+config BT_MESH_DEBUG_ACCESS
+	bool "Access layer debug"
+	help
+	  Use this option to enable Access layer and device composition
+	  related debug logs for Bluetooth Mesh.
+
+config BT_MESH_DEBUG_MODEL
+	bool "Foundation model debug"
+	help
+	  Use this option to enable debug logs for the Foundation
+	  Models.
+
+config BT_MESH_DEBUG_ADV
+	bool "Advertising debug"
+	help
+	  Use this option to enable advertising debug logs for
+	  the Bluetooth Mesh functionality.
+
+config BT_MESH_DEBUG_LOW_POWER
+	bool "Low Power debug"
+	help
+	  Use this option to enable Low Power debug logs for the
+	  Bluetooth Mesh functionality.
+
+config BT_MESH_DEBUG_FRIEND
+	bool "Friend debug"
+	help
+	  Use this option to enable Friend debug logs for the
+	  Bluetooth Mesh functionality.
+
+config BT_MESH_DEBUG_PROXY
+	bool "Proxy debug"
+	depends on BT_MESH_PROXY
+	help
+	  Use this option to enable Proxy protocol debug logs.
+
+endif # BT_MESH_DEBUG
+
+endif # BT_MESH

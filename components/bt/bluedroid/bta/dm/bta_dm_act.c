@@ -4827,17 +4827,18 @@ void bta_dm_ble_set_adv_params (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_ble_set_adv_params_all  (tBTA_DM_MSG *p_data)
 {
-    if (BTM_BleSetAdvParamsStartAdv(p_data->ble_set_adv_params_all.adv_int_min,
+    tBTM_STATUS status = 0;
+    if ((status = BTM_BleSetAdvParamsStartAdv(p_data->ble_set_adv_params_all.adv_int_min,
                                 p_data->ble_set_adv_params_all.adv_int_max,
                                 p_data->ble_set_adv_params_all.adv_type,
                                 p_data->ble_set_adv_params_all.addr_type_own,
                                 p_data->ble_set_adv_params_all.p_dir_bda,
                                 p_data->ble_set_adv_params_all.channel_map,
                                 p_data->ble_set_adv_params_all.adv_filter_policy,
-                                p_data->ble_set_adv_params_all.p_start_adv_cback) == BTM_SUCCESS) {
+                                p_data->ble_set_adv_params_all.p_start_adv_cback)) == BTM_SUCCESS) {
         APPL_TRACE_DEBUG("%s(), success to start ble adv.", __func__);
     } else {
-        APPL_TRACE_ERROR("%s(), fail to start ble adv.", __func__);
+        APPL_TRACE_ERROR("%s(), fail to start ble adv, status = %d", __func__, status);
     }
 }
 

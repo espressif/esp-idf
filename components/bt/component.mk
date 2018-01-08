@@ -36,7 +36,6 @@ COMPONENT_PRIV_INCLUDEDIRS +=   bluedroid/bta/include                   \
                                 bluedroid/device/include                \
                                 bluedroid/gki/include                   \
                                 bluedroid/hci/include                   \
-                                bluedroid/osi/include                   \
                                 bluedroid/utils/include                 \
                                 bluedroid/external/sbc/decoder/include  \
                                 bluedroid/external/sbc/encoder/include  \
@@ -66,7 +65,15 @@ COMPONENT_PRIV_INCLUDEDIRS +=   bluedroid/bta/include                   \
                                 bluedroid/utils/include                 \
                                 bluedroid/common/include
 
-COMPONENT_ADD_INCLUDEDIRS +=    bluedroid/api/include/api
+COMPONENT_ADD_INCLUDEDIRS +=    bluedroid/api/include/api       \
+                                bluedroid/osi/include           \
+                                ble_mesh/mesh_core              \
+                                ble_mesh/mesh_core/include      \
+                                ble_mesh/btc/include            \
+                                ble_mesh/mesh_models/include    \
+                                ble_mesh/api/core/include       \
+                                ble_mesh/api/models/include     \
+                                ble_mesh/api
 
 COMPONENT_SRCDIRS +=    bluedroid/bta/dm                      \
                         bluedroid/bta/gatt                    \
@@ -113,5 +120,11 @@ COMPONENT_SRCDIRS +=    bluedroid/bta/dm                      \
                         bluedroid/stack                       \
                         bluedroid/utils                       \
                         bluedroid/api                         \
-                        bluedroid
+                        ble_mesh/mesh_core      \
+                        ble_mesh/btc            \
+                        ble_mesh/mesh_models    \
+                        ble_mesh/api/core       \
+                        ble_mesh/api/models     \
+                        bluedroid               \
+
 endif
