@@ -32,7 +32,8 @@ void app_main(void)
     // and allow format partition in case if it is new one and was not formated before
     const esp_vfs_fat_mount_config_t mount_config = {
             .max_files = 4,
-            .format_if_mount_failed = true
+            .format_if_mount_failed = true,
+            .allocation_unit_size = CONFIG_WL_SECTOR_SIZE
     };
     esp_err_t err = esp_vfs_fat_spiflash_mount(base_path, "storage", &mount_config, &s_wl_handle);
     if (err != ESP_OK) {

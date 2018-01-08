@@ -17,6 +17,7 @@
 #include "esp_log.h"
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
+#include "vfs_fat_internal.h"
 #include "driver/sdmmc_host.h"
 #include "driver/sdspi_host.h"
 #include "sdmmc_cmd.h"
@@ -120,8 +121,11 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
             ESP_LOGD(TAG, "f_fdisk failed (%d)", res);
             goto fail;
         }
-        ESP_LOGW(TAG, "formatting card");
-        res = f_mkfs(drv, FM_ANY, s_card->csd.sector_size, workbuf, workbuf_size);
+        size_t alloc_unit_size = esp_vfs_fat_get_allocation_unit_size(
+                s_card->csd.sector_size,
+                mount_config->allocation_unit_size);
+        ESP_LOGW(TAG, "formatting card, allocation unit size=%d", alloc_unit_size);
+        res = f_mkfs(drv, FM_ANY, alloc_unit_size, workbuf, workbuf_size);
         if (res != FR_OK) {
             err = ESP_FAIL;
             ESP_LOGD(TAG, "f_mkfs failed (%d)", res);

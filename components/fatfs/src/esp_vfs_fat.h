@@ -88,8 +88,26 @@ esp_err_t esp_vfs_fat_unregister_path(const char* base_path);
  * @brief Configuration arguments for esp_vfs_fat_sdmmc_mount and esp_vfs_fat_spiflash_mount functions
  */
 typedef struct {
-    bool format_if_mount_failed;    ///< If FAT partition can not be mounted, and this parameter is true, create partition table and format the filesystem
+    /**
+     * If FAT partition can not be mounted, and this parameter is true,
+     * create partition table and format the filesystem.
+     */
+    bool format_if_mount_failed;
     int max_files;                  ///< Max number of open files
+    /**
+     * If format_if_mount_failed is set, and mount fails, format the card
+     * with given allocation unit size. Must be a power of 2, between sector
+     * size and 128 * sector size.
+     * For SD cards, sector size is always 512 bytes. For wear_levelling,
+     * sector size is determined by CONFIG_WL_SECTOR_SIZE option.
+     *
+     * Using larger allocation unit size will result in higher read/write
+     * performance and higher overhead when storing small files.
+     *
+     * Setting this field to 0 will result in allocation unit set to the
+     * sector size.
+     */
+    size_t allocation_unit_size;
 } esp_vfs_fat_mount_config_t;
 
 // Compatibility definition
