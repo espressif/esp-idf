@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-#define NUM_USED_TYPES 3
+#define NUM_USED_TYPES 4
 
 typedef struct {
     TaskHandle_t task;

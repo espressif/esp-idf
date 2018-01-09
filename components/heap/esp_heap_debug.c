@@ -51,6 +51,8 @@ size_t esp_heap_debug_dump_totals(heap_dump_totals_t* totals, size_t* ntotal, si
 	    ++type;
 	if (!(caps & MALLOC_CAP_8BIT))
 	    ++type;
+	if (caps & MALLOC_CAP_SPIRAM)
+	    type = 3;
 	b = &meta->first_block;
 	multi_heap_internal_lock(meta);
 	while (b && remaining > 0) {
