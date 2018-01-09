@@ -30,6 +30,7 @@
 #include "multi_heap_config.h"
 
 #ifdef MULTI_HEAP_POISONING
+#include "multi_heap_poisoning.h"
 
 /* Alias MULTI_HEAP_POISONING_SLOW to SLOW for better readabilty */
 #ifdef SLOW
@@ -45,15 +46,6 @@
 #define HEAD_CANARY_PATTERN 0xABBA1234
 #define TAIL_CANARY_PATTERN 0xBAAD5678
 
-typedef struct {
-    uint32_t head_canary;
-    size_t alloc_size;
-} poison_head_t;
-
-typedef struct {
-    uint32_t tail_canary;
-} poison_tail_t;
-
 #define POISON_OVERHEAD (sizeof(poison_head_t) + sizeof(poison_tail_t))
 
 /* Given a "poisoned" region with pre-data header 'head', and actual data size 'alloc_size', fill in the head and tail
@@ -67,6 +59,9 @@ static uint8_t *poison_allocated_region(poison_head_t *head, size_t alloc_size)
     poison_tail_t *tail = (poison_tail_t *)(data + alloc_size);
     head->alloc_size = alloc_size;
     head->head_canary = HEAD_CANARY_PATTERN;
+#ifdef CONFIG_HEAP_TASK_TRACKING
+    head->task = xTaskGetCurrentTaskHandle();
+#endif
 
     uint32_t tail_canary = TAIL_CANARY_PATTERN;
     if ((intptr_t)tail % sizeof(void *) == 0) {

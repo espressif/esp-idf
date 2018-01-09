@@ -45,3 +45,41 @@ void multi_heap_internal_poison_fill_region(void *start, size_t size, bool is_fr
 void multi_heap_internal_lock(multi_heap_handle_t heap);
 
 void multi_heap_internal_unlock(multi_heap_handle_t heap);
+
+struct heap_block;
+
+/* Block in the heap
+
+   Heap implementation uses two single linked lists, a block list (all blocks) and a free list (free blocks).
+
+   'header' holds a pointer to the next block (used or free) ORed with a free flag (the LSB of the pointer.) is_free() and get_next_block() utility functions allow typed access to these values.
+
+   'next_free' is valid if the block is free and is a pointer to the next block in the free list.
+*/
+typedef struct heap_block {
+    intptr_t header;                  /* Encodes next block in heap (used or unused) and also free/used flag */
+    union {
+        uint8_t data[1];              /* First byte of data, valid if block is used. Actual size of data is 'block_data_size(block)' */
+        struct heap_block *next_free; /* Pointer to next free block, valid if block is free */
+    };
+} heap_block_t;
+
+/* These masks apply to the 'header' field of heap_block_t */
+#define BLOCK_FREE_FLAG 0x1  /* If set, this block is free & next_free pointer is valid */
+#define NEXT_BLOCK_MASK (~3) /* AND header with this mask to get pointer to next block (free or used) */
+
+/* Metadata header for the heap, stored at the beginning of heap space.
+
+   'first_block' is a "fake" first block, minimum length, used to provide a pointer to the first used & free block in
+   the heap. This block is never allocated or merged into an adjacent block.
+
+   'last_block' is a pointer to a final free block of length 0, which is added at the end of the heap when it is
+   registered. This block is also never allocated or merged into an adjacent block.
+ */
+typedef struct multi_heap_metadata {
+    void *lock;
+    size_t free_bytes;
+    size_t minimum_free_bytes;
+    heap_block_t *last_block;
+    heap_block_t first_block; /* initial 'free block', never allocated */
+} heap_metadata_t;
