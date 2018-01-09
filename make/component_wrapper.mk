@@ -47,7 +47,7 @@ COMPONENT_ADD_INCLUDEDIRS = include
 COMPONENT_ADD_LDFLAGS = -l$(COMPONENT_NAME)
 
 # Define optional compiling macros
-define compile_exclude 
+define compile_exclude
 COMPONENT_OBJEXCLUDE += $(1)
 endef
 
@@ -59,7 +59,7 @@ define compile_only_if
 $(eval $(if $(1), $(call compile_include, $(2)), $(call compile_exclude, $(2))))
 endef
 
-define compile_only_if_not 
+define compile_only_if_not
 $(eval $(if $(1), $(call compile_exclude, $(2)), $(call compile_include, $(2))))
 endef
 
@@ -82,7 +82,7 @@ COMPONENT_SUBMODULES ?=
 # configuration at the global component level
 
 # Save component_path; we pass it to the called Makefile.componentbuild
-# as COMPILING_COMPONENT_PATH, and we use it to restore the current 
+# as COMPILING_COMPONENT_PATH, and we use it to restore the current
 # COMPONENT_PATH later.
 COMPILING_COMPONENT_PATH := $(COMPONENT_PATH)
 
@@ -239,22 +239,22 @@ define GenerateCompileTargets
 #
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.c $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
 	$$(summary) CC $$(patsubst $$(PWD)/%,%,$$(CURDIR))/$$@
-	$$(CC) $$(CFLAGS) $$(CPPFLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
+	$$(CC) $$(CFLAGS) $$(CPPFLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I $(1) -c $$< -o $$@
 	$(call AppendSourceToDependencies,$$<,$$@)
 
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.cpp $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
 	$$(summary) CXX $$(patsubst $$(PWD)/%,%,$$(CURDIR))/$$@
-	$$(CXX) $$(CXXFLAGS) $$(CPPFLAGS) $$(addprefix -I,$$(COMPONENT_INCLUDES)) $$(addprefix -I,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
+	$$(CXX) $$(CXXFLAGS) $$(CPPFLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I $(1) -c $$< -o $$@
 	$(call AppendSourceToDependencies,$$<,$$@)
 
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.cc $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
 	$$(summary) CXX $$(patsubst $$(PWD)/%,%,$$(CURDIR))/$$@
-	$$(CXX) $$(CXXFLAGS) $$(CPPFLAGS) $$(addprefix -I,$$(COMPONENT_INCLUDES)) $$(addprefix -I,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
+	$$(CXX) $$(CXXFLAGS) $$(CPPFLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I $(1) -c $$< -o $$@
 	$(call AppendSourceToDependencies,$$<,$$@)
 
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.S $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
 	$$(summary) AS $$(patsubst $$(PWD)/%,%,$$(CURDIR))/$$@
-	$$(CC) $$(CPPFLAGS) $$(DEBUG_FLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
+	$$(CC) $$(CPPFLAGS) $$(DEBUG_FLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I $(1) -c $$< -o $$@
 	$(call AppendSourceToDependencies,$$<,$$@)
 
 # CWD is build dir, create the build subdirectory if it doesn't exist
