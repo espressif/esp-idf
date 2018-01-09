@@ -529,6 +529,7 @@ void bta_av_rc_opened(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
 
     bdcpy(rc_open.peer_addr, p_data->rc_conn_chg.peer_addr);
     rc_open.peer_features = p_cb->rcb[i].peer_features;
+    rc_open.sdp_disc_done = TRUE;
     rc_open.status = BTA_AV_SUCCESS;
     APPL_TRACE_DEBUG("local features:x%x peer_features:x%x", p_cb->features,
                      rc_open.peer_features);
@@ -536,6 +537,7 @@ void bta_av_rc_opened(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
         /* we have not done SDP on peer RC capabilities.
          * peer must have initiated the RC connection */
         rc_open.peer_features = BTA_AV_FEAT_RCCT;
+        rc_open.sdp_disc_done = FALSE;
         bta_av_rc_disc(disc);
     }
     (*p_cb->p_cback)(BTA_AV_RC_OPEN_EVT, (tBTA_AV *) &rc_open);
@@ -1610,6 +1612,7 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
                 p_scb->use_rc = FALSE;
                 bdcpy(rc_open.peer_addr, p_scb->peer_addr);
                 rc_open.peer_features = 0;
+                rc_open.sdp_disc_done = FALSE;
                 rc_open.status = BTA_AV_FAIL_SDP;
                 (*p_cb->p_cback)(BTA_AV_RC_OPEN_EVT, (tBTA_AV *) &rc_open);
             }

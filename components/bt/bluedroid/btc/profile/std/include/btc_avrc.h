@@ -28,14 +28,6 @@
 #define BTC_AVRC_TGT_INCLUDED      FALSE
 #endif
 
-/* Macros */
-typedef enum {
-    BTRC_FEAT_NONE = 0x00,    /* AVRCP 1.0 */
-    BTRC_FEAT_METADATA = 0x01,    /* AVRCP 1.3 */
-    BTRC_FEAT_ABSOLUTE_VOLUME = 0x02,    /* Supports TG role and volume sync */
-    BTRC_FEAT_BROWSE = 0x04,    /* AVRCP 1.4 and up, with Browsing support */
-} btrc_remote_features_t;
-
 typedef enum {
     BTC_AVRC_CTRL_API_INIT_EVT = 0,
     BTC_AVRC_CTRL_API_DEINIT_EVT,
