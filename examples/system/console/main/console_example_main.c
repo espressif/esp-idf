@@ -18,6 +18,8 @@
 #include "argtable3/argtable3.h"
 #include "cmd_decl.h"
 #include "esp_vfs_fat.h"
+#include "nvs.h"
+#include "nvs_flash.h"
 
 static const char* TAG = "example";
 
@@ -44,6 +46,16 @@ static void initialize_filesystem()
     }
 }
 #endif // CONFIG_STORE_HISTORY
+
+static void initialize_nvs()
+{
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
+        ESP_ERROR_CHECK( nvs_flash_erase() );
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(err);
+}
 
 static void initialize_console()
 {
@@ -94,6 +106,8 @@ static void initialize_console()
 
 void app_main()
 {
+    initialize_nvs();
+
 #if CONFIG_STORE_HISTORY
     initialize_filesystem();
 #endif
