@@ -29,6 +29,9 @@
 #include "l2c_api.h"
 #include "port_int.h"
 #include "rfc_int.h"
+#include "mutex.h"
+#include "allocator.h"
+#if (defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -895,3 +898,4 @@ void rfc_process_mx_message (tRFC_MCB *p_mcb, BT_HDR *p_buf)
     }
 }
 
+#endif ///(defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)

@@ -160,3 +160,22 @@ void uuid128_be_to_esp_uuid(esp_bt_uuid_t *u, uint8_t* uuid128)
 
     return;
 }
+
+void uuid_to_string_legacy(bt_uuid_t *p_uuid, char *str)
+{
+    uint32_t uuid0, uuid4;
+    uint16_t uuid1, uuid2, uuid3, uuid5;
+
+    memcpy(&uuid0, &(p_uuid->uu[0]), 4);
+    memcpy(&uuid1, &(p_uuid->uu[4]), 2);
+    memcpy(&uuid2, &(p_uuid->uu[6]), 2);
+    memcpy(&uuid3, &(p_uuid->uu[8]), 2);
+    memcpy(&uuid4, &(p_uuid->uu[10]), 4);
+    memcpy(&uuid5, &(p_uuid->uu[14]), 2);
+
+    sprintf((char *)str, "%.8x-%.4x-%.4x-%.4x-%.8x%.4x",
+            ntohl(uuid0), ntohs(uuid1),
+            ntohs(uuid2), ntohs(uuid3),
+            ntohl(uuid4), ntohs(uuid5));
+    return;
+}

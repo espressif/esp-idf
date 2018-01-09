@@ -44,24 +44,47 @@
 #define BTA_SDP_INCLUDED            TRUE
 #define BTA_PAN_INCLUDED            FALSE
 #define BTA_HH_INCLUDED             FALSE
+#define SDP_INCLUDED                TRUE
+
+#if CONFIG_A2DP_SNK_ENABLED
 #define BTA_AR_INCLUDED             TRUE
 #define BTA_AV_INCLUDED             TRUE
 #define BTA_AV_SINK_INCLUDED        TRUE
-#define SDP_INCLUDED                TRUE
-#define RFCOMM_INCLUDED             FALSE
-#define PAN_INCLUDED                FALSE
-#define HID_HOST_INCLUDED           FALSE
 #define AVDT_INCLUDED               TRUE
 #define A2D_INCLUDED                TRUE
 #define AVCT_INCLUDED               TRUE
 #define AVRC_INCLUDED               TRUE
+#define BTC_AV_INCLUDED             TRUE
 #define SBC_DEC_INCLUDED            TRUE
+#else
+#define BTA_AR_INCLUDED             FALSE
+#define BTA_AV_INCLUDED             FALSE
+#define BTA_AV_SINK_INCLUDED        FALSE
+#define AVDT_INCLUDED               FALSE
+#define A2D_INCLUDED                FALSE
+#define AVCT_INCLUDED               FALSE
+#define AVRC_INCLUDED               FALSE
+#define BTC_AV_INCLUDED             FALSE
+#define SBC_DEC_INCLUDED            FALSE
+#endif /* CONFIG_A2DP_SNK_ENABLED */
+
+#if CONFIG_BT_SPP_ENABLED
+#define RFCOMM_INCLUDED             TRUE
+#define BTA_JV_INCLUDED             TRUE
+#define BTC_SPP_INCLUDED            TRUE
+#else /* #if CONFIG_BT_SPP_ENABLED */
+#define RFCOMM_INCLUDED             FALSE
+#define BTA_JV_INCLUDED             FALSE
+#define BTC_SPP_INCLUDED            FALSE
+#endif /* #if CONFIG_BT_SPP_ENABLED */
+
+#define PAN_INCLUDED                FALSE
+#define HID_HOST_INCLUDED           FALSE
 #define SBC_ENC_INCLUDED            FALSE
 #define MCA_INCLUDED                FALSE
 #define BTC_SM_INCLUDED             TRUE
 #define BTC_PRF_QUEUE_INCLUDED      TRUE
 #define BTC_GAP_BT_INCLUDED         TRUE
-#define BTC_AV_INCLUDED             TRUE
 
 #else /* #if CONFIG_CLASSIC_BT_ENABLED */
 #define CLASSIC_BT_INCLUDED         FALSE
@@ -73,6 +96,8 @@
 #define BTA_AV_SINK_INCLUDED        FALSE
 #define SDP_INCLUDED                FALSE
 #define RFCOMM_INCLUDED             FALSE
+#define BTA_JV_INCLUDED             FALSE
+#define BTC_SPP_INCLUDED            FALSE
 #define PAN_INCLUDED                FALSE
 #define HID_HOST_INCLUDED           FALSE
 #define AVDT_INCLUDED               FALSE

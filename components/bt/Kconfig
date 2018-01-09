@@ -113,6 +113,20 @@ config CLASSIC_BT_ENABLED
     help
         For now this option needs "SMP_ENABLE" to be set to yes
 
+config A2DP_SNK_ENABLED
+    bool "A2DP(SINK)"
+    depends on CLASSIC_BT_ENABLED
+    default n
+    help
+        This option is used to enable/disable Advanced Audio Distribution Profile(Sink)
+    
+config BT_SPP_ENABLED
+    bool "SPP Profile"
+    depends on CLASSIC_BT_ENABLED
+    default n
+    help
+        This enables the SPP Profile
+
 config GATTS_ENABLE
     bool "Include GATT server module(GATTS)"
     depends on BLUEDROID_ENABLED

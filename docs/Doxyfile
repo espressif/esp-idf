@@ -48,6 +48,7 @@ INPUT = \
     ## Issue with __attribute__
     ../components/bt/bluedroid/api/include/esp_a2dp_api.h \
     ../components/bt/bluedroid/api/include/esp_avrc_api.h \
+    ../components/bt/bluedroid/api/include/esp_spp_api.h \
     ##
     ## Ethernet - API Reference
     ##

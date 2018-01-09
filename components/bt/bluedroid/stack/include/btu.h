@@ -234,6 +234,7 @@ extern const BD_ADDR        BT_BD_ANY;
 */
 void btu_start_timer (TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout);
 void btu_stop_timer (TIMER_LIST_ENT *p_tle);
+void btu_free_timer (TIMER_LIST_ENT *p_tle);
 void btu_start_timer_oneshot(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout);
 void btu_stop_timer_oneshot(TIMER_LIST_ENT *p_tle);
 

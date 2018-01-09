@@ -31,6 +31,9 @@
 #include "l2cdefs.h"
 #include "btm_int.h"
 #include "btu.h"
+#include "mutex.h"
+#include "allocator.h"
+#if (defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)
 
 static const tPORT_STATE default_port_pars = {
     PORT_BAUD_RATE_9600,
@@ -564,3 +567,5 @@ void port_flow_control_peer(tPORT *p_port, BOOLEAN enable, UINT16 count)
     }
 }
 
+
+#endif ///(defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)

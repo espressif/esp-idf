@@ -34,8 +34,12 @@
 #include "btu.h"
 #include "bt_defs.h"
 
+#include "allocator.h"
+#include "mutex.h"
+
 #include <string.h>
 
+#if (defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         rfc_calc_fcs
@@ -183,7 +187,9 @@ tRFC_MCB *rfc_alloc_multiplexer_channel (BD_ADDR bd_addr, BOOLEAN is_initiator)
     return (NULL);
 }
 
-
+void osi_free_fun(void *p){
+    osi_free(p);
+}
 /*******************************************************************************
 **
 ** Function         rfc_release_multiplexer_channel
@@ -197,8 +203,7 @@ void rfc_release_multiplexer_channel (tRFC_MCB *p_mcb)
 
     rfc_timer_stop (p_mcb);
 
-
-    fixed_queue_free(p_mcb->cmd_q, osi_free);
+    fixed_queue_free(p_mcb->cmd_q, osi_free_fun);
 
     memset (p_mcb, 0, sizeof (tRFC_MCB));
     p_mcb->state = RFC_MX_STATE_IDLE;
@@ -269,7 +274,7 @@ void rfc_port_timer_stop (tPORT *p_port)
 {
     RFCOMM_TRACE_EVENT ("rfc_port_timer_stop");
 
-    btu_stop_timer (&p_port->rfc.tle);
+    btu_free_timer (&p_port->rfc.tle);
 }
 
 
@@ -475,3 +480,4 @@ void rfc_check_send_cmd(tRFC_MCB *p_mcb, BT_HDR *p_buf)
 }
 
 
+#endif ///(defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)

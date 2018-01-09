@@ -52,6 +52,7 @@ COMPONENT_ADD_INCLUDEDIRS +=	bluedroid/bta/include			\
 				bluedroid/stack/avrc/include		\
 				bluedroid/stack/avdt/include		\
 				bluedroid/stack/a2dp/include		\
+				bluedroid/stack/rfcomm/include		\
 				bluedroid/stack/include			\
 				bluedroid/utils/include			\
 				bluedroid/api/include			\
@@ -64,6 +65,7 @@ COMPONENT_SRCDIRS += 	bluedroid/bta/dm			\
 			bluedroid/bta/av			\
 			bluedroid/bta/ar			\
 			bluedroid/bta/sys			\
+			bluedroid/bta/jv			\
 			bluedroid/bta				\
 			bluedroid/btcore			\
 			bluedroid/btif				\
@@ -79,6 +81,7 @@ COMPONENT_SRCDIRS += 	bluedroid/bta/dm			\
 			bluedroid/btc/profile/std/gatt		\
 			bluedroid/btc/profile/std/a2dp		\
 			bluedroid/btc/profile/std/avrc		\
+			bluedroid/btc/profile/std/spp		\
 			bluedroid/btc/profile			\
 			bluedroid/stack/btm			\
 			bluedroid/stack/btu			\
@@ -93,6 +96,7 @@ COMPONENT_SRCDIRS += 	bluedroid/bta/dm			\
 			bluedroid/stack/avrc			\
 			bluedroid/stack/avdt			\
 			bluedroid/stack/a2dp			\
+			bluedroid/stack/rfcomm			\
 			bluedroid/stack				\
 			bluedroid/utils				\
 			bluedroid/api			\
