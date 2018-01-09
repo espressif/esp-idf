@@ -119,6 +119,16 @@ typedef struct {
 
 typedef intr_handle_t rmt_isr_handle_t;
 
+typedef void (*rmt_tx_end_fn_t)(rmt_channel_t channel, void *arg);
+
+/**
+ * @brief Structure encapsulating a RMT TX end callback
+ */
+typedef struct {
+    rmt_tx_end_fn_t function; /*!< Function which is called on RMT TX end */
+    void *arg;                /*!< Optional argument passed to function */
+} rmt_tx_end_callback_t;
+
 /**
  * @brief Set RMT clock divider, channel clock is divided from source clock.
  *
@@ -701,6 +711,21 @@ esp_err_t rmt_wait_tx_done(rmt_channel_t channel, TickType_t wait_time);
  *     - ESP_OK Success
  */
 esp_err_t rmt_get_ringbuf_handle(rmt_channel_t channel, RingbufHandle_t* buf_handle);
+
+/**
+ * @brief Registers a callback that will be called when transmission ends.
+ *
+ *        Called by rmt_driver_isr_default in interrupt context.
+ *
+ * @note Requires rmt_driver_install to install the default ISR handler.
+ *
+ * @param function Function to be called from the default interrupt handler or NULL.
+ * @param arg Argument which will be provided to the callback when it is called.
+ *
+ * @return the previous callback settings (members will be set to NULL if there was none)
+ */
+rmt_tx_end_callback_t rmt_register_tx_end_callback(rmt_tx_end_fn_t function, void *arg);
+
 
 /*
  * ----------------EXAMPLE OF RMT INTERRUPT ------------------
