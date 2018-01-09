@@ -665,6 +665,7 @@ BOOLEAN BTM_ReadConnectedTransportAddress(BD_ADDR remote_bda, tBT_TRANSPORT tran
 
     /* if no device can be located, return */
     if (p_dev_rec == NULL) {
+        memset(remote_bda, 0, BD_ADDR_LEN);
         return FALSE;
     }
 

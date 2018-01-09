@@ -785,6 +785,7 @@ typedef struct {
 typedef struct {
     BD_ADDR         bd_addr;            /* BD address peer device. */
     UINT8           status;             /* connection open/closed */
+    UINT8           reason;             /* link down reason */
     BOOLEAN         is_removed;         /* TRUE if device is removed when link is down */
 #if BLE_INCLUDED == TRUE
     tBTA_TRANSPORT  link_type;

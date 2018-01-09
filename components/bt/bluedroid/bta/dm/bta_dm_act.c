@@ -3278,7 +3278,7 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
         }
 
         bdcpy(conn.link_down.bd_addr, p_bda);
-        conn.link_down.status = (UINT8) btm_get_acl_disc_reason_code();
+        conn.link_down.reason = (UINT8) btm_get_acl_disc_reason_code();
         if ( bta_dm_cb.p_sec_cback ) {
             bta_dm_cb.p_sec_cback(BTA_DM_LINK_DOWN_EVT, &conn);
             if ( issue_unpair_cb ) {
