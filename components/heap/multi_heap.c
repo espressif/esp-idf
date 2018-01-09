@@ -284,7 +284,7 @@ size_t multi_heap_get_allocated_size_impl(multi_heap_handle_t heap, void *p)
     heap_block_t *pb = get_block(p);
 
     assert_valid_block(heap, pb);
-    MULTI_HEAP_ASSERT(!is_free(pb), pb); // block should be free
+    MULTI_HEAP_ASSERT(!is_free(pb), pb); // block shouldn't be free
     return block_data_size(pb);
 }
 
