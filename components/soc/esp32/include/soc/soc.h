@@ -75,7 +75,9 @@
 #define DR_REG_AES_BASE                         0x3ff01000
 #define DR_REG_RSA_BASE                         0x3ff02000
 #define DR_REG_SHA_BASE                         0x3ff03000
-#define DR_REG_DPORT_END                        0x3ff03FFC
+#define DR_REG_FLASH_MMU_TABLE_PRO              0x3ff10000
+#define DR_REG_FLASH_MMU_TABLE_APP              0x3ff12000
+#define DR_REG_DPORT_END                        0x3ff13FFC
 #define DR_REG_UART_BASE                        0x3ff40000
 #define DR_REG_SPI1_BASE                        0x3ff42000
 #define DR_REG_SPI0_BASE                        0x3ff43000
