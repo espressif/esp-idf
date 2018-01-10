@@ -54,6 +54,14 @@ size_t multi_heap_free_size(multi_heap_handle_t heap)
 size_t multi_heap_minimum_free_size(multi_heap_handle_t heap)
     __attribute__((alias("multi_heap_minimum_free_size_impl")));
 
+void* multi_heap_get_block_address(multi_heap_block_handle_t block)
+    __attribute__((alias("multi_heap_get_block_address_impl")));
+
+void* multi_heap_get_block_owner(multi_heap_block_handle_t block)
+{
+    return NULL;
+}
+
 #endif
 
 #define ALIGN(X) ((X) & ~(sizeof(void *)-1))
@@ -279,6 +287,11 @@ static void split_if_necessary(heap_t *heap, heap_block_t *block, size_t size, h
     heap->free_bytes += block_data_size(new_block);
 }
 
+void* multi_heap_get_block_address_impl(multi_heap_block_handle_t block)
+{
+    return ((char *)block + offsetof(heap_block_t, data));
+}
+
 size_t multi_heap_get_allocated_size_impl(multi_heap_handle_t heap, void *p)
 {
     heap_block_t *pb = get_block(p);
@@ -337,6 +350,26 @@ void inline multi_heap_internal_lock(multi_heap_handle_t heap)
 void inline multi_heap_internal_unlock(multi_heap_handle_t heap)
 {
     MULTI_HEAP_UNLOCK(heap->lock);
+}
+
+multi_heap_block_handle_t multi_heap_get_first_block(multi_heap_handle_t heap)
+{
+    return &heap->first_block;
+}
+
+multi_heap_block_handle_t multi_heap_get_next_block(multi_heap_handle_t heap, multi_heap_block_handle_t block)
+{
+    heap_block_t *next = get_next_block(block);
+    /* check for valid free last block to avoid assert in assert_valid_block */
+    if (next == heap->last_block && is_last_block(next) && is_free(next))
+	return NULL;
+    assert_valid_block(heap, next);
+    return next;
+}
+
+bool multi_heap_is_free(multi_heap_block_handle_t block)
+{
+    return is_free(block);
 }
 
 void *multi_heap_malloc_impl(multi_heap_handle_t heap, size_t size)
