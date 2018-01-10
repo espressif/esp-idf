@@ -36,8 +36,5 @@ endif # CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION
 ifdef CONFIG_SPIRAM_CACHE_WORKAROUND
 CFLAGS+=-mfix-esp32-psram-cache-issue
 CXXFLAGS+=-mfix-esp32-psram-cache-issue
-#Filter out the standard libstdc++ linkage. The component.mk will add a specific 
-#cache-workaround-enabled version.
-LDFLAGS:=$(filter-out -lstdc++,$(LDFLAGS))
 endif
 
