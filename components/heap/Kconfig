@@ -37,4 +37,13 @@ config HEAP_TRACING_STACK_DEPTH
         More stack frames uses more memory in the heap trace buffer (and slows down allocation), but
         can provide useful information.
 
+config HEAP_TASK_TRACKING
+    bool "Enable heap task tracking"
+    depends on !HEAP_POISONING_DISABLED
+    help
+        Enables tracking the task responsible for each heap allocation.
+
+        This function depends on heap poisoning being enabled and adds four more bytes of overhead for each block
+        allocated.
+
 endmenu
