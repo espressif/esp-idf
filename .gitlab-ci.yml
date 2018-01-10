@@ -75,7 +75,7 @@ before_script:
 
 build_template_app:
   stage: build
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - build
   variables:
@@ -102,7 +102,7 @@ build_template_app:
 
 .build_template: &build_template
   stage: build
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - build
   variables:
@@ -190,7 +190,7 @@ build_examples_07:
 
 build_docs:
   stage: build
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - build_docs
   artifacts:
@@ -212,7 +212,7 @@ build_docs:
 
 test_nvs_on_host:
   stage: test
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - nvs_host_test
   dependencies: []
@@ -222,7 +222,7 @@ test_nvs_on_host:
 
 test_partition_table_on_host:
   stage: test
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - build
   dependencies: []
@@ -232,7 +232,7 @@ test_partition_table_on_host:
 
 test_wl_on_host:
   stage: test
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - wl_host_test
   artifacts:
@@ -245,7 +245,7 @@ test_wl_on_host:
 
 test_multi_heap_on_host:
   stage: test
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - wl_host_test
   script:
@@ -254,7 +254,7 @@ test_multi_heap_on_host:
 
 test_build_system:
   stage: test
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - build_test
   dependencies: []
@@ -267,7 +267,7 @@ test_build_system:
 
 test_report:
   stage: test_report
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - report
   only:
@@ -321,7 +321,7 @@ test_report:
 
 push_master_to_github:
   stage: deploy
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - deploy
   only:
@@ -351,7 +351,7 @@ push_master_to_github:
 
 deploy_docs:
   stage: deploy
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - deploy
   only:
@@ -378,7 +378,7 @@ deploy_docs:
 
 check_doc_links:
   stage: test
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - check_doc_links
   only:
@@ -398,7 +398,7 @@ check_doc_links:
 
 check_commit_msg:
   stage: deploy
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - build
   except:
@@ -415,7 +415,7 @@ check_commit_msg:
 
 check_submodule_sync:
   stage: deploy
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - build
   except:
