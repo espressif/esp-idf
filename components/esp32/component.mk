@@ -38,11 +38,6 @@ COMPONENT_ADD_LDFLAGS += $(COMPONENT_PATH)/libhal.a \
                          -u ld_include_panic_highint_hdl \
                          $(addprefix -T ,$(LINKER_SCRIPTS))
 
-#The cache workaround also needs a c++ standard library recompiled with the workaround.
-ifdef CONFIG_SPIRAM_CACHE_WORKAROUND
-COMPONENT_ADD_LDFLAGS += $(COMPONENT_PATH)/libstdc++-psram-workaround.a
-endif
-
 ALL_LIB_FILES := $(patsubst %,$(COMPONENT_PATH)/lib/lib%.a,$(LIBS))
 
 COMPONENT_SUBMODULES += lib
