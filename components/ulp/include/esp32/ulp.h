@@ -1,4 +1,4 @@
-// Copyright 2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2016-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ extern "C" {
 #define RD_REG_PERIPH_RTC_CNTL 0    /*!< Identifier of RTC_CNTL peripheral for RD_REG and WR_REG instructions */
 #define RD_REG_PERIPH_RTC_IO   1    /*!< Identifier of RTC_IO peripheral for RD_REG and WR_REG instructions */
 #define RD_REG_PERIPH_SENS     2    /*!< Identifier of SARADC peripheral for RD_REG and WR_REG instructions */
+#define RD_REG_PERIPH_RTC_I2C  3    /*!< Identifier of RTC_I2C peripheral for RD_REG and WR_REG instructions */
 
 #define OPCODE_I2C 3            /*!< Instruction: read/write I2C (not implemented yet) */
 
@@ -286,7 +287,7 @@ _Static_assert(sizeof(ulp_insn_t) == 4, "ULP coprocessor instruction size should
  * Map SoC peripheral register to periph_sel field of RD_REG and WR_REG
  * instructions.
  *
- * @param reg peripheral register in RTC_CNTL_, RTC_IO_, SENS_ peripherals.
+ * @param reg peripheral register in RTC_CNTL_, RTC_IO_, SENS_, RTC_I2C peripherals.
  * @return periph_sel value for the peripheral to which this register belongs.
  */
 static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
@@ -297,8 +298,10 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
         ret = RD_REG_PERIPH_RTC_CNTL;
     } else if (reg < DR_REG_SENS_BASE) {
         ret = RD_REG_PERIPH_RTC_IO;
-    } else if (reg < DR_REG_RTCMEM0_BASE){
+    } else if (reg < DR_REG_RTC_I2C_BASE){
         ret = RD_REG_PERIPH_SENS;
+    } else if (reg < DR_REG_IO_MUX_BASE){
+        ret = RD_REG_PERIPH_RTC_I2C;
     } else {
         assert(0 && "invalid register base");
     }
@@ -309,7 +312,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
  * Write literal value to a peripheral register
  *
  * reg[high_bit : low_bit] = val
- * This instruction can access RTC_CNTL_, RTC_IO_, and SENS_ peripheral registers.
+ * This instruction can access RTC_CNTL_, RTC_IO_, SENS_, and RTC_I2C peripheral registers.
  */
 #define I_WR_REG(reg, low_bit, high_bit, val) {.wr_reg = {\
     .addr = (reg & 0xff) / sizeof(uint32_t), \
@@ -323,7 +326,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
  * Read from peripheral register into R0
  *
  * R0 = reg[high_bit : low_bit]
- * This instruction can access RTC_CNTL_, RTC_IO_, and SENS_ peripheral registers.
+ * This instruction can access RTC_CNTL_, RTC_IO_, SENS_, and RTC_I2C peripheral registers.
  */
 #define I_RD_REG(reg, low_bit, high_bit) {.rd_reg = {\
     .addr = (reg & 0xff) / sizeof(uint32_t), \
@@ -337,7 +340,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
  * Set or clear a bit in the peripheral register.
  *
  * Sets bit (1 << shift) of register reg to value val.
- * This instruction can access RTC_CNTL_, RTC_IO_, and SENS_ peripheral registers.
+ * This instruction can access RTC_CNTL_, RTC_IO_, SENS_, and RTC_I2C peripheral registers.
  */
 #define I_WR_REG_BIT(reg, shift, val) I_WR_REG(reg, shift, shift, val)
 
