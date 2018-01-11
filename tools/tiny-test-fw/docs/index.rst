@@ -129,6 +129,7 @@ The following 3rd party lib is required:
     * pyyaml
     * xunitgen
     * netifaces
+    * matplotlib (if use Utility.LineChart)
 
 To build document, we need to install ``Sphinx`` and ``sphinx-rtd-theme`` (you may replace this with your own theme).
 
