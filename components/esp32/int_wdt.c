@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -88,10 +88,11 @@ void esp_int_wdt_init() {
     TIMERG1.wdt_wprotect=0;
     TIMERG1.int_clr_timers.wdt=1;
     timer_group_intr_enable(TIMER_GROUP_1, TIMG_WDT_INT_ENA_M);
-    esp_register_freertos_tick_hook_for_cpu(tick_hook, 0);
-#ifndef CONFIG_FREERTOS_UNICORE
-    esp_register_freertos_tick_hook_for_cpu(tick_hook, 1);
-#endif
+}
+
+void esp_int_wdt_cpu_init()
+{
+    esp_register_freertos_tick_hook_for_cpu(tick_hook, xPortGetCoreID());
     ESP_INTR_DISABLE(WDT_INT_NUM);
     intr_matrix_set(xPortGetCoreID(), ETS_TG1_WDT_LEVEL_INTR_SOURCE, WDT_INT_NUM);
     //We do not register a handler for the interrupt because it is interrupt level 4 which

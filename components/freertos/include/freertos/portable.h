@@ -184,6 +184,12 @@ void vPortSetStackWatchpoint( void* pxStackStart );
 BaseType_t xPortInIsrContext();
 
 /*
+ * This function will be called in High prio ISRs. Returns true if the current core was in ISR context
+ * before calling into high prio ISR context.
+ */
+BaseType_t xPortInterruptedFromISRContext();
+
+/*
  * The structures and methods of manipulating the MPU are contained within the
  * port layer.
  *

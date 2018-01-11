@@ -186,6 +186,12 @@ static void setFirstBreakpoint(uint32_t pc)
         ::"r"(pc):"a3", "a4");
 }
 
+//When interrupt watchdog happen in one core, both cores will be interrupted.
+//The core which doesn't trigger the interrupt watchdog will save the frame and return.
+//The core which triggers the interrupt watchdog will use the saved frame, and dump frames for both cores.
+#if !CONFIG_FREERTOS_UNICORE
+static volatile XtExcFrame * other_core_frame = NULL;
+#endif //!CONFIG_FREERTOS_UNICORE
 
 void panicHandler(XtExcFrame *frame)
 {
@@ -206,11 +212,26 @@ void panicHandler(XtExcFrame *frame)
     if (frame->exccause <= PANIC_RSN_MAX) {
         reason = reasons[frame->exccause];
     }
+
+#if !CONFIG_FREERTOS_UNICORE
+    //Save frame for other core.
+    if ((frame->exccause == PANIC_RSN_INTWDT_CPU0 && core_id == 1) || (frame->exccause == PANIC_RSN_INTWDT_CPU1 && core_id == 0)) {
+        other_core_frame = frame;
+        while (1);
+    }
+
+    //The core which triggers the interrupt watchdog will delay 1 us, so the other core can save its frame.
+    if (frame->exccause == PANIC_RSN_INTWDT_CPU0 || frame->exccause == PANIC_RSN_INTWDT_CPU1) {
+        ets_delay_us(1);
+    }
+
     if (frame->exccause == PANIC_RSN_CACHEERR && esp_cache_err_get_cpuid() != core_id) {
         // Cache error interrupt will be handled by the panic handler
         // on the other CPU.
-        return;
+        while (1);
     }
+#endif //!CONFIG_FREERTOS_UNICORE
+
     haltOtherCore();
     esp_dport_access_int_abort();
     panicPutStr("Guru Meditation Error: Core ");
@@ -428,10 +449,9 @@ static void doBacktrace(XtExcFrame *frame)
 }
 
 /*
-  We arrive here after a panic or unhandled exception, when no OCD is detected. Dump the registers to the
-  serial port and either jump to the gdb stub, halt the CPU or reboot.
-*/
-static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
+ * Dump registers and do backtrace.
+ */
+static void commonErrorHandler_dump(XtExcFrame *frame, int core_id)
 {
     int *regs = (int *)frame;
     int x, y;
@@ -441,17 +461,13 @@ static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
         "A14     ", "A15     ", "SAR     ", "EXCCAUSE", "EXCVADDR", "LBEG    ", "LEND    ", "LCOUNT  "
     };
 
-    // start panic WDT to restart system if we hang in this handler
-    esp_panic_wdt_start();
-
-    //Feed the watchdogs, so they will give us time to print out debug info
-    reconfigureAllWdts();
-
     /* only dump registers for 'real' crashes, if crashing via abort()
        the register window is no longer useful.
     */
     if (!abort_called) {
-        panicPutStr("Register dump:\r\n");
+        panicPutStr("Core");
+        panicPutDec(core_id);
+        panicPutStr(" register dump:\r\n");
 
         for (x = 0; x < 24; x += 4) {
             for (y = 0; y < 4; y++) {
@@ -464,10 +480,64 @@ static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
             }
             panicPutStr("\r\n");
         }
+
+        if (xPortInterruptedFromISRContext()
+#if !CONFIG_FREERTOS_UNICORE
+            && other_core_frame != frame
+#endif //!CONFIG_FREERTOS_UNICORE
+            ) {
+            //If the core which triggers the interrupt watchdog was in ISR context, dump the epc registers.
+            uint32_t __value;
+            panicPutStr("Core");
+            panicPutDec(core_id);
+            panicPutStr(" was running in ISR context:\r\n");
+
+            __asm__("rsr.epc1 %0" : "=a"(__value));
+            panicPutStr("EPC1    : 0x");
+            panicPutHex(__value);
+
+            __asm__("rsr.epc2 %0" : "=a"(__value));
+            panicPutStr("  EPC2    : 0x");
+            panicPutHex(__value);
+
+            __asm__("rsr.epc3 %0" : "=a"(__value));
+            panicPutStr("  EPC3    : 0x");
+            panicPutHex(__value);
+
+            __asm__("rsr.epc4 %0" : "=a"(__value));
+            panicPutStr("  EPC4    : 0x");
+            panicPutHex(__value);
+
+            panicPutStr("\r\n");
+        }
+
     }
 
     /* With windowed ABI backtracing is easy, let's do it. */
     doBacktrace(frame);
+
+}
+
+/*
+  We arrive here after a panic or unhandled exception, when no OCD is detected. Dump the registers to the
+  serial port and either jump to the gdb stub, halt the CPU or reboot.
+*/
+static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
+{
+
+    int core_id = xPortGetCoreID();
+    // start panic WDT to restart system if we hang in this handler
+    esp_panic_wdt_start();
+
+    //Feed the watchdogs, so they will give us time to print out debug info
+    reconfigureAllWdts();
+
+    commonErrorHandler_dump(frame, core_id);
+#if !CONFIG_FREERTOS_UNICORE
+    if (other_core_frame != NULL) {
+        commonErrorHandler_dump((XtExcFrame *)other_core_frame, (core_id ? 0 : 1));
+    }
+#endif //!CONFIG_FREERTOS_UNICORE
 
 #if CONFIG_ESP32_APPTRACE_ENABLE
     disableAllWdts();
