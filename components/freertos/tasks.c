@@ -87,7 +87,6 @@ task.h is included from an application file. */
 #include "StackMacros.h"
 #include "portmacro.h"
 #include "semphr.h"
-#include "multi_heap_poisoning.h"
 
 /* Lint e961 and e750 are suppressed as a MISRA exception justified because the
 MPU ports require MPU_WRAPPERS_INCLUDED_FROM_API_FILE to be defined for the
@@ -3751,6 +3750,13 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
 				pxTaskStatusArray[ uxTask ].eCurrentState = eState;
 				pxTaskStatusArray[ uxTask ].uxCurrentPriority = pxNextTCB->uxPriority;
 #ifndef CONFIG_HEAP_POISONING_DISABLED
+				typedef struct {
+				    uint32_t head_canary;
+#ifdef CONFIG_HEAP_TASK_TRACKING
+				    TaskHandle_t task;
+#endif
+				    size_t alloc_size;
+				} poison_head_t;
 				poison_head_t* stackblk = (poison_head_t*)(pxNextTCB->pxStack - sizeof(poison_head_t));
 				uint32_t stackinfo = stackblk->alloc_size << 16;
 				stackinfo |= pxNextTCB->pxTopOfStack - pxNextTCB->pxStack;
