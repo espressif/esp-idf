@@ -70,7 +70,11 @@ breathe_default_project = "esp32-idf"
 templates_path = ['_templates']
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+source_suffix = ['.rst', '.md']
+
+source_parsers = {
+       '.md': 'recommonmark.parser.CommonMarkParser',
+    }
 
 # The encoding of source files.
 #source_encoding = 'utf-8-sig'
@@ -111,7 +115,7 @@ print 'Version: {0}  Release: {1}'.format(version, release)
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build']
+exclude_patterns = ['_build','README.md']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.

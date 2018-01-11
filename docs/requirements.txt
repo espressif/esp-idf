@@ -8,3 +8,4 @@ sphinxcontrib.blockdiag==1.5.3
 sphinxcontrib.seqdiag==0.8.5
 sphinxcontrib.actdiag==0.8.5
 sphinxcontrib.nwdiag==0.9.5
+recommonmark
