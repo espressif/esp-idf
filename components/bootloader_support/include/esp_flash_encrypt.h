@@ -17,7 +17,9 @@
 #include <stdbool.h>
 #include "esp_attr.h"
 #include "esp_err.h"
+#ifndef BOOTLOADER_BUILD
 #include "esp_spi_flash.h"
+#endif
 #include "soc/efuse_reg.h"
 
 /**

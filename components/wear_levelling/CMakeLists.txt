@@ -1,0 +1,2 @@
+set(COMPONENT_PRIV_INCLUDEDIRS private_include)
+register_component()
