@@ -121,11 +121,14 @@ choice STACK_CHECK_MODE
         smashing attacks. This is done by adding a guard variable to functions with vulnerable objects.
         The guards are initialized when a function is entered and then checked when the function exits.
         If a guard check fails, program is halted. Protection has the following modes:
-          - In NORMAL mode (GCC flag: -fstack-protector) only functions that call alloca, and functions with buffers larger than
-            8 bytes are protected.
-          - STRONG mode (GCC flag: -fstack-protector-strong) is like NORMAL, but includes additional functions to be protected -- those that
-            have local array definitions, or have references to local frame addresses.
-          - In OVERALL mode (GCC flag: -fstack-protector-all) all functions are protected.
+
+          - In NORMAL mode (GCC flag: -fstack-protector) only functions that call
+            alloca, and functions with buffers larger than 8 bytes are protected.
+          - STRONG mode (GCC flag: -fstack-protector-strong) is like NORMAL, but
+            includes additional functions to be protected -- those that have
+            local array definitions, or have references to local frame addresses.
+          - In OVERALL mode (GCC flag: -fstack-protector-all) all functions are
+            protected.
 
         Modes have the following impact on code performance and coverage:
           - performance: NORMAL > STRONG > OVERALL
