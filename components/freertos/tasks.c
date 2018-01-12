@@ -3749,6 +3749,19 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
 				pxTaskStatusArray[ uxTask ].xTaskNumber = pxNextTCB->uxTCBNumber;
 				pxTaskStatusArray[ uxTask ].eCurrentState = eState;
 				pxTaskStatusArray[ uxTask ].uxCurrentPriority = pxNextTCB->uxPriority;
+#ifndef CONFIG_HEAP_POISONING_DISABLED
+				typedef struct {
+				    uint32_t head_canary;
+#ifdef CONFIG_HEAP_TASK_TRACKING
+				    TaskHandle_t task;
+#endif
+				    size_t alloc_size;
+				} poison_head_t;
+				poison_head_t* stackblk = (poison_head_t*)(pxNextTCB->pxStack - sizeof(poison_head_t));
+				uint32_t stackinfo = stackblk->alloc_size << 16;
+				stackinfo |= pxNextTCB->pxTopOfStack - pxNextTCB->pxStack;
+				pxTaskStatusArray[ uxTask ].pxStackBase = (StackType_t*)stackinfo;
+#endif
 
 				#if ( INCLUDE_vTaskSuspend == 1 )
 				{
