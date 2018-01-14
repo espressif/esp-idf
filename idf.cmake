@@ -32,6 +32,13 @@ include(GetGitRevisionDescription)
 include(utilities)
 include(components)
 include(kconfig)
+include(crosstool_version_check)
+
+#
+# Warn if the toolchain version doesn't match
+#
+gcc_version_check("5.2.0")
+crosstool_version_check("1.22.0-80-g6c4433a")
 
 #
 # Configure optional variables
@@ -76,3 +83,4 @@ finish_component_registration()
 if(NOT BOOTLOADER_BUILD)
   include(bootloader_subproject)
 endif()
+
