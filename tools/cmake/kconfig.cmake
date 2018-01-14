@@ -62,6 +62,7 @@ function(build_component_config)
   execute_process(COMMAND python ${IDF_PATH}/tools/kconfig_new/confgen.py
     --kconfig ${ROOT_KCONFIG}
     --config ${SDKCONFIG}
+    --create-config-if-missing
     --env "COMPONENT_KCONFIGS=${kconfigs}"
     --env "COMPONENT_KCONFIGS_PROJBUILD=${kconfigs_projbuild}"
     --output header ${SDKCONFIG_HEADER}

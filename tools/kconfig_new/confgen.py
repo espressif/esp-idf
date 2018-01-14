@@ -39,13 +39,18 @@ def main():
                         nargs='?',
                         default=None)
 
+    parser.add_argument('--create-config-if-missing',
+                        help='If set, a new config file will be saved if the old one is not found',
+                        action='store_true')
+
     parser.add_argument('--kconfig',
                         help='KConfig file with config item definitions',
                         required=True)
 
     parser.add_argument('--output', nargs=2, action='append',
                         help='Write output file (format and output filename)',
-                        metavar=('FORMAT', 'FILENAME'))
+                        metavar=('FORMAT', 'FILENAME'),
+                        default=[])
 
     parser.add_argument('--env', action='append', default=[],
                         help='Environment to set when evaluating the config file', metavar='NAME=VAL')
@@ -69,7 +74,13 @@ def main():
     config = kconfiglib.Kconfig(args.kconfig)
 
     if args.config is not None:
-        config.load_config(args.config)
+        if os.path.exists(args.config):
+            config.load_config(args.config)
+        elif args.create_config_if_missing:
+            print("Creating config file %s..." % args.config)
+            config.write_config(args.config)
+        else:
+            raise RuntimeError("Config file not found: %s" % args.config)
 
         for output_type, filename in args.output:
             temp_file = tempfile.mktemp(prefix="confgen_tmp")
@@ -146,5 +157,15 @@ OUTPUT_FORMATS = {
     "cmake" : write_cmake,
     "docs" : gen_kconfig_doc.write_docs }
 
+class FatalError(RuntimeError):
+    """
+    Class for runtime errors (not caused by bugs but by user input).
+    """
+    pass
+
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except FatalError as e:
+        print("A fatal error occurred: %s" % e)
+        sys.exit(2)
