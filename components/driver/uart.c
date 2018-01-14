@@ -271,8 +271,11 @@ esp_err_t uart_get_hw_flow_ctrl(uart_port_t uart_num, uart_hw_flowcontrol_t* flo
 static esp_err_t uart_reset_rx_fifo(uart_port_t uart_num)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
-    // Read all data from the FIFO
-    while (UART[uart_num]->status.rxfifo_cnt) {
+    //Due to hardware issue, we can not use fifo_rst to reset uart fifo.
+    //See description about UART_TXFIFO_RST and UART_RXFIFO_RST in <<esp32_technical_reference_manual>> v2.6 or later.
+
+    // we read the data out and make `fifo_len == 0 && rd_addr == wr_addr`.
+    while(UART[uart_num]->status.rxfifo_cnt != 0 || (UART[uart_num]->mem_rx_status.wr_addr != UART[uart_num]->mem_rx_status.rd_addr)) {
         READ_PERI_REG(UART_FIFO_REG(uart_num));
     }
     return ESP_OK;
@@ -542,7 +545,6 @@ static void uart_rx_intr_handler_default(void *param)
     int rx_fifo_len = 0;
     uart_event_t uart_event;
     portBASE_TYPE HPTaskAwoken = 0;
-
     while(uart_intr_status != 0x0) {
         buf_idx = 0;
         uart_event.type = UART_EVENT_MAX;
@@ -690,14 +692,12 @@ static void uart_rx_intr_handler_default(void *param)
                 uart_reg->int_clr.val = UART_RXFIFO_FULL_INT_CLR_M | UART_RXFIFO_TOUT_INT_CLR_M;
                 UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
                 uart_event.type = UART_BUFFER_FULL;
-            }
-        } else if(uart_intr_status & UART_RXFIFO_OVF_INT_ST_M) {
+            }   
+        }
+        // When fifo overflows, we reset the fifo.
+        else if(uart_intr_status & UART_RXFIFO_OVF_INT_ST_M) {
             UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
-            // Read all data from the FIFO
-            rx_fifo_len = uart_reg->status.rxfifo_cnt;
-            for (int i = 0; i < rx_fifo_len; i++) {
-                READ_PERI_REG(UART_FIFO_REG(uart_num));
-            }
+            uart_reset_rx_fifo(uart_num);
             uart_reg->int_clr.rxfifo_ovf = 1;
             UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
             uart_event.type = UART_FIFO_OVF;

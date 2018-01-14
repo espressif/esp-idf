@@ -332,8 +332,14 @@ typedef volatile struct {
     } mem_tx_status;
     union {
         struct {
-            uint32_t status:24;
-            uint32_t reserved24:    8;
+            uint32_t status:      24;
+            uint32_t reserved24:   8;
+        };
+        struct {
+            uint32_t reserved0:     2;
+            uint32_t rd_addr:      11;              /*This register stores the rx mem read address.*/
+            uint32_t wr_addr:      11;              /*This register stores the rx mem write address.*/
+            uint32_t reserved:      8;
         };
         uint32_t val;
     } mem_rx_status;
