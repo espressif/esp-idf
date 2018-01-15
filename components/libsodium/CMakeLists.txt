@@ -1,7 +1,5 @@
 set(SRC libsodium/src/libsodium)
 
-set(COMPONENT_SUBMODULES libsodium)
-
 set(COMPONENT_SRCDIRS
   port
 

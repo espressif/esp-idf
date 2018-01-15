@@ -33,6 +33,7 @@ include(utilities)
 include(components)
 include(kconfig)
 include(crosstool_version_check)
+include(git_submodules)
 
 #
 # Warn if the toolchain version doesn't match
@@ -50,8 +51,8 @@ set_default(EXTRA_COMPONENT_DIRS "")
 set_default(COMPONENT_DIRS "${PROJECT_PATH}/components ${EXTRA_COMPONENT_DIRS} ${IDF_PATH}/components")
 spaces2list(COMPONENT_DIRS)
 
-# expand COMPONENT_DIRS variable into full paths to all components and their names
 spaces2list(COMPONENTS)
+# Search COMPONENT_DIRS for COMPONENTS, make a list of full paths to each component in COMPONENT_PATHS
 find_all_components("${COMPONENT_DIRS}" "${COMPONENTS}" COMPONENT_PATHS COMPONENTS)
 build_component_config()
 
@@ -66,6 +67,7 @@ add_definitions(-DHAVE_CONFIG_H)
 
 git_describe(GIT_REVISION)
 add_definitions(-DIDF_VER=\"${GIT_REVISION}\")
+git_submodule_check("${IDF_PATH}")
 
 add_compile_options("-I${CMAKE_BINARY_DIR}") # for sdkconfig.h
 

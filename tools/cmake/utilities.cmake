@@ -24,10 +24,24 @@ endfunction()
 #
 # Note: if using this for directories, keeps the issue in place that
 # directories can't contain spaces...
+#
+# TODO: look at cmake separate_arguments, which is quote-aware
 function(spaces2list variable_name)
   string(REPLACE " " ";" tmp "${${variable_name}}")
   set("${variable_name}" "${tmp}" PARENT_SCOPE)
 endfunction()
+
+
+# lines2list
+#
+# Take a variable with multiple lines of output in it, convert it
+# to a cmake list (semicolon-delimited), one line per item
+#
+function(lines2list variable_name)
+  string(REGEX REPLACE "\r?\n" ";" tmp "${${variable_name}}")
+  set("${variable_name}" "${tmp}" PARENT_SCOPE)
+endfunction()
+
 
 # move_if_different
 #

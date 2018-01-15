@@ -3,6 +3,4 @@ set(COMPONENT_SRCS micro-ecc/uECC.c)
 
 set(COMPONENT_ADD_INCLUDEDIRS micro-ecc)
 
-set(COMPONENT_SUBMODULES micro-ecc)
-
 register_component()
