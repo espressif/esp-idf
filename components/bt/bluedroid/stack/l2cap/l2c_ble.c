@@ -1025,10 +1025,16 @@ void l2cble_process_rc_param_request_evt(UINT16 handle, UINT16 int_min, UINT16 i
         if ((p_lcb->conn_update_mask & L2C_BLE_CONN_UPDATE_DISABLE) == 0) {
             p_lcb->conn_update_mask |= L2C_BLE_UPDATE_PENDING;
             btsnd_hcic_ble_rc_param_req_reply(handle, int_min, int_max, latency, timeout, 0, 0);
-        } else {
-            L2CAP_TRACE_EVENT ("L2CAP - LE - update currently disabled");
-            p_lcb->conn_update_mask |= L2C_BLE_NEW_CONN_PARAM;
-            btsnd_hcic_ble_rc_param_req_neg_reply (handle, HCI_ERR_UNACCEPT_CONN_INTERVAL);
+        }else {
+            /* always accept connection parameters request which is sent by itself */
+            if (int_max == BTM_BLE_CONN_INT_MIN) {
+                p_lcb->conn_update_mask |= L2C_BLE_UPDATE_PENDING;
+                btsnd_hcic_ble_rc_param_req_reply(handle, int_min, int_max, latency, timeout, 0, 0);
+            }else {
+                L2CAP_TRACE_EVENT ("L2CAP - LE - update currently disabled");
+                p_lcb->conn_update_mask |= L2C_BLE_NEW_CONN_PARAM;
+                btsnd_hcic_ble_rc_param_req_neg_reply (handle, HCI_ERR_UNACCEPT_CONN_INTERVAL);
+            }
         }
 
     } else {
