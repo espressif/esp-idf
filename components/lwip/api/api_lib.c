@@ -559,6 +559,26 @@ netconn_recv_tcp_pbuf(struct netconn *conn, struct pbuf **new_buf)
 }
 
 /**
+ * Receive data (in form of a netbuf) from a UDP or RAW netconn
+ *
+ * @param conn the netconn from which to receive data
+ * @param new_buf pointer where a new netbuf is stored when received data
+ * @param apiflags flags that control function behaviour. For now only:
+ * - NETCONN_DONTBLOCK: only read data that is available now, don't wait for more data
+ * @return ERR_OK if data has been received, an error code otherwise (timeout,
+ *                memory error or another error)
+ *         ERR_ARG if conn is not a UDP/RAW netconn
+ */
+err_t
+netconn_recv_udp_raw_netbuf_flags(struct netconn *conn, struct netbuf **new_buf, u8_t apiflags)
+{
+  LWIP_ERROR("netconn_recv_udp_raw_netbuf: invalid conn", (conn != NULL) &&
+                                                          NETCONNTYPE_GROUP(netconn_type(conn)) != NETCONN_TCP, return ERR_ARG;);
+
+  return netconn_recv_data(conn, (void **)new_buf);
+}
+
+/**
  * Receive data (in form of a netbuf containing a packet buffer) from a netconn
  *
  * @param conn the netconn from which to receive data

@@ -770,6 +770,7 @@ enum {
 #define CHECKSUM_CHECK_IP               0
 
 #define LWIP_NETCONN_FULLDUPLEX         1
+#define LWIP_NETBUF_RECVINFO            1
 #define LWIP_NETCONN_SEM_PER_THREAD     1
 
 #define LWIP_DHCP_MAX_NTP_SERVERS       CONFIG_LWIP_DHCP_MAX_NTP_SERVERS

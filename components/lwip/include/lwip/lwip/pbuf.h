@@ -137,6 +137,9 @@ struct pbuf {
    */
   u16_t ref;
 
+  /** For incoming packets, this contains the input netif's index */
+  u8_t if_idx;
+
 #if ESP_LWIP
   struct netif *l2_owner;
   void *l2_buf;

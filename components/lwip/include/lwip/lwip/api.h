@@ -77,6 +77,10 @@ extern "C" {
     dual-stack usage by default. */
 #define NETCONN_FLAG_IPV6_V6ONLY              0x20
 #endif /* LWIP_IPV6 */
+#if LWIP_NETBUF_RECVINFO
+/** Received packet info will be recorded for this netconn */
+#define NETCONN_FLAG_PKTINFO                  0x40
+#endif /* LWIP_NETBUF_RECVINFO */
 
 
     /* Helpers to process several netconn_types by the same code */
@@ -272,6 +276,7 @@ err_t   netconn_disconnect (struct netconn *conn);
 err_t   netconn_listen_with_backlog(struct netconn *conn, u8_t backlog);
 #define netconn_listen(conn) netconn_listen_with_backlog(conn, TCP_DEFAULT_LISTEN_BACKLOG)
 err_t   netconn_accept(struct netconn *conn, struct netconn **new_conn);
+err_t   netconn_recv_udp_raw_netbuf_flags(struct netconn *conn, struct netbuf **new_buf, u8_t apiflags);
 err_t   netconn_recv(struct netconn *conn, struct netbuf **new_buf);
 err_t   netconn_recv_tcp_pbuf(struct netconn *conn, struct pbuf **new_buf);
 void    netconn_recved(struct netconn *conn, u32_t length);

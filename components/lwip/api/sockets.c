@@ -193,12 +193,19 @@ static void sockaddr_to_ipaddr_port(const struct sockaddr* sockaddr, ip_addr_t* 
 #define SELWAIT_T u8_t
 #endif
 
+union lwip_sock_lastdata {
+  struct netbuf *netbuf;
+  struct pbuf *pbuf;
+};
+
 /** Contains all internal pointers and states used for a socket */
 struct lwip_sock {
   /** sockets currently are built on netconns, each socket has one netconn */
   struct netconn *conn;
   /** data that was left from the previous read */
   void *lastdata;
+  /** FIXME unify with lastdata above */
+  union lwip_sock_lastdata lastdata_recvfrom;
   /** offset in the data that was left from the previous read */
   u16_t lastoffset;
   /** number of times data was received, set by event_callback(),
@@ -922,6 +929,30 @@ lwip_connect(int s, const struct sockaddr *name, socklen_t namelen)
   return 0;
 }
 
+/* Convert a netbuf's address data to struct sockaddr */
+static int
+lwip_sock_make_addr(struct netconn *conn, ip_addr_t *fromaddr, u16_t port,
+                    struct sockaddr *from, socklen_t *fromlen)
+{
+  int truncated = 0;
+  union sockaddr_aligned saddr;
+
+  LWIP_UNUSED_ARG(conn);
+
+  LWIP_ASSERT("fromaddr != NULL", fromaddr != NULL);
+  LWIP_ASSERT("from != NULL", from != NULL);
+  LWIP_ASSERT("fromlen != NULL", fromlen != NULL);
+
+  IPADDR_PORT_TO_SOCKADDR(&saddr, fromaddr, port);
+  if (*fromlen < saddr.sa.sa_len) {
+    truncated = 1;
+  } else if (*fromlen > saddr.sa.sa_len) {
+    *fromlen = saddr.sa.sa_len;
+  }
+  MEMCPY(from, &saddr, *fromlen);
+  return truncated;
+}
+
 /**
  * Set a socket into listen mode.
  * The socket may not have been used for another connection previously.
@@ -960,6 +991,120 @@ lwip_listen(int s, int backlog)
 
   sock_set_errno(sock, 0);
   return 0;
+}
+
+/* Helper function to receive a netbuf from a udp or raw netconn.
+ * Keeps sock->lastdata for peeking.
+ */
+static err_t
+lwip_recvfrom_udp_raw(struct lwip_sock *sock, int flags, struct msghdr *msg, u16_t *datagram_len, int dbg_s)
+{
+  struct netbuf *buf;
+  u8_t apiflags;
+  err_t err;
+  u16_t buflen, copylen, copied;
+  int i;
+
+  LWIP_UNUSED_ARG(dbg_s);
+  LWIP_ERROR("lwip_recvfrom_udp_raw: invalid arguments", (msg->msg_iov != NULL) || (msg->msg_iovlen <= 0), return ERR_ARG;);
+
+  if (flags & MSG_DONTWAIT) {
+    apiflags = NETCONN_DONTBLOCK;
+  } else {
+    apiflags = 0;
+  }
+
+  LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_recvfrom_udp_raw[UDP/RAW]: top sock->lastdata=%p\n", (void*)sock->lastdata_recvfrom.netbuf));
+  /* Check if there is data left from the last recv operation. */
+  buf = sock->lastdata_recvfrom.netbuf;
+  if (buf == NULL) {
+    /* No data was left from the previous operation, so we try to get
+        some from the network. */
+    err = netconn_recv_udp_raw_netbuf_flags(sock->conn, &buf, apiflags);
+    LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_recvfrom_udp_raw[UDP/RAW]: netconn_recv err=%d, netbuf=%p\n",
+            err, (void *)buf));
+
+    if (err != ERR_OK) {
+      return err;
+    }
+    LWIP_ASSERT("buf != NULL", buf != NULL);
+    sock->lastdata_recvfrom.netbuf = buf;
+  }
+  buflen = buf->p->tot_len;
+  LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_recvfrom_udp_raw: buflen=%"U16_F"\n", buflen));
+
+  copied = 0;
+  /* copy the pbuf payload into the iovs */
+  for (i = 0; (i < msg->msg_iovlen) && (copied < buflen); i++) {
+    u16_t len_left = (u16_t)(buflen - copied);
+    if (msg->msg_iov[i].iov_len > len_left) {
+      copylen = len_left;
+    } else {
+      copylen = (u16_t)msg->msg_iov[i].iov_len;
+    }
+
+    /* copy the contents of the received buffer into
+        the supplied memory buffer */
+    pbuf_copy_partial(buf->p, (u8_t *)msg->msg_iov[i].iov_base, copylen, copied);
+    copied = (u16_t)(copied + copylen);
+  }
+
+  /* Check to see from where the data was.*/
+#if !SOCKETS_DEBUG
+  if (msg->msg_name && msg->msg_namelen)
+#endif /* !SOCKETS_DEBUG */
+  {
+    LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_recvfrom_udp_raw(%d):  addr=", dbg_s));
+    ip_addr_debug_print_val(SOCKETS_DEBUG, *netbuf_fromaddr(buf));
+    LWIP_DEBUGF(SOCKETS_DEBUG, (" port=%"U16_F" len=%d\n", netbuf_fromport(buf), copied));
+    if (msg->msg_name && msg->msg_namelen) {
+      lwip_sock_make_addr(sock->conn, netbuf_fromaddr(buf), netbuf_fromport(buf),
+                          (struct sockaddr *)msg->msg_name, &msg->msg_namelen);
+    }
+  }
+
+  /* Initialize flag output */
+  msg->msg_flags = 0;
+
+  if (msg->msg_control) {
+    u8_t wrote_msg = 0;
+#if LWIP_NETBUF_RECVINFO
+    /* Check if packet info was recorded */
+    if (buf->flags & NETBUF_FLAG_DESTADDR) {
+      if (IP_IS_V4(&buf->toaddr)) {
+#if LWIP_IPV4
+        if (msg->msg_controllen >= CMSG_SPACE(sizeof(struct in_pktinfo))) {
+          struct cmsghdr *chdr = CMSG_FIRSTHDR(msg); /* This will always return a header!! */
+          struct in_pktinfo *pkti = (struct in_pktinfo *)CMSG_DATA(chdr);
+          chdr->cmsg_level = IPPROTO_IP;
+          chdr->cmsg_type = IP_PKTINFO;
+          chdr->cmsg_len = CMSG_LEN(sizeof(struct in_pktinfo));
+          pkti->ipi_ifindex = buf->p->if_idx;
+          inet_addr_from_ipaddr(&pkti->ipi_addr, ip_2_ip4(netbuf_destaddr(buf)));
+          msg->msg_controllen = CMSG_SPACE(sizeof(struct in_pktinfo));
+          wrote_msg = 1;
+        } else {
+          msg->msg_flags |= MSG_CTRUNC;
+        }
+#endif /* LWIP_IPV4 */
+      }
+    }
+#endif /* LWIP_NETBUF_RECVINFO */
+
+    if (!wrote_msg) {
+      msg->msg_controllen = 0;
+    }
+  }
+
+  /* If we don't peek the incoming message: zero lastdata pointer and free the netbuf */
+  if ((flags & MSG_PEEK) == 0) {
+    sock->lastdata_recvfrom.netbuf = NULL;
+    netbuf_delete(buf);
+  }
+  if (datagram_len) {
+    *datagram_len = buflen;
+  }
+  return ERR_OK;
 }
 
 int
@@ -1157,6 +1302,69 @@ int
 lwip_recv(int s, void *mem, size_t len, int flags)
 {
   return lwip_recvfrom(s, mem, len, flags, NULL, NULL);
+}
+
+int
+lwip_recvmsg(int s, struct msghdr *message, int flags)
+{
+  struct lwip_sock *sock;
+  int i;
+  u16_t buflen;
+
+  LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_recvmsg(%d, message=%p, flags=0x%x)\n", s, (void *)message, flags));
+  LWIP_ERROR("lwip_recvmsg: invalid message pointer", message != NULL, return ERR_ARG;);
+  LWIP_ERROR("lwip_recvmsg: unsupported flags", (flags & ~(MSG_PEEK|MSG_DONTWAIT)) == 0,
+             set_errno(EOPNOTSUPP); return -1;);
+
+  if ((message->msg_iovlen <= 0) || (message->msg_iovlen > IOV_MAX)) {
+    set_errno(EMSGSIZE);
+    return -1;
+  }
+
+  sock = get_socket(s);
+  if (!sock) {
+    return -1;
+  }
+
+  /* check for valid vectors */
+  buflen = 0;
+  for (i = 0; i < message->msg_iovlen; i++) {
+    if ((message->msg_iov[i].iov_base == NULL) || ((ssize_t)message->msg_iov[i].iov_len <= 0) ||
+        ((size_t)(ssize_t)message->msg_iov[i].iov_len != message->msg_iov[i].iov_len) ||
+        ((ssize_t)(buflen + (ssize_t)message->msg_iov[i].iov_len) <= 0)) {
+      sock_set_errno(sock, ERR_VAL);
+      return -1;
+    }
+    buflen = (ssize_t)(buflen + (ssize_t)message->msg_iov[i].iov_len);
+  }
+
+  if (NETCONNTYPE_GROUP(netconn_type(sock->conn)) == NETCONN_TCP) {
+    sock_set_errno(sock, err_to_errno(ERR_ARG));
+    return -1;
+  }
+  /* else, UDP and RAW NETCONNs */
+#if LWIP_UDP || LWIP_RAW
+  {
+    u16_t datagram_len = 0;
+    err_t err;
+    err = lwip_recvfrom_udp_raw(sock, flags, message, &datagram_len, s);
+    if (err != ERR_OK) {
+      LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_recvmsg[UDP/RAW](%d): buf == NULL, error is \"%s\"!\n",
+              s, lwip_strerr(err)));
+      sock_set_errno(sock, err_to_errno(err));
+      return -1;
+    }
+    if (datagram_len > buflen) {
+      message->msg_flags |= MSG_TRUNC;
+    }
+
+    sock_set_errno(sock, 0);
+    return (int)datagram_len;
+  }
+#else /* LWIP_UDP || LWIP_RAW */
+  sock_set_errno(sock, err_to_errno(ERR_ARG));
+  return -1;
+#endif /* LWIP_UDP || LWIP_RAW */
 }
 
 int
@@ -2684,6 +2892,16 @@ lwip_setsockopt_impl(int s, int level, int optname, const void *optval, socklen_
       LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_setsockopt(%d, IPPROTO_IP, IP_TOS, ..)-> %d\n",
                   s, sock->conn->pcb.ip->tos));
       break;
+#if LWIP_NETBUF_RECVINFO
+        case IP_PKTINFO:
+          LWIP_SOCKOPT_CHECK_OPTLEN_CONN_PCB_TYPE(sock, optlen, int, NETCONN_UDP);
+          if (*(const int *)optval) {
+            sock->conn->flags |= NETCONN_FLAG_PKTINFO;
+          } else {
+            sock->conn->flags &= ~NETCONN_FLAG_PKTINFO;
+          }
+          break;
+#endif /* LWIP_NETBUF_RECVINFO */
 #if LWIP_MULTICAST_TX_OPTIONS
     case IP_MULTICAST_TTL:
       LWIP_SOCKOPT_CHECK_OPTLEN_CONN_PCB_TYPE(sock, optlen, u8_t, NETCONN_UDP);
@@ -3182,6 +3400,14 @@ lwip_recvfrom_r(int s, void *mem, size_t len, int flags,
 {
   LWIP_API_LOCK();
   __ret = lwip_recvfrom(s, mem, len, flags, from, fromlen);
+  LWIP_API_UNLOCK();
+}
+
+int
+lwip_recvmsg_r(int s, struct msghdr *message, int flags)
+{
+  LWIP_API_LOCK();
+  __ret = lwip_recvmsg(s, message, flags);
   LWIP_API_UNLOCK();
 }
 

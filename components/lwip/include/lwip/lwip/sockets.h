@@ -138,6 +138,12 @@ struct lwip_setgetsockopt_data {
 };
 #endif /* !LWIP_TCPIP_CORE_LOCKING */
 
+#if !defined IOV_MAX
+#define IOV_MAX 0xFFFF
+#elif IOV_MAX > 0xFFFF
+#error "IOV_MAX larger than supported by LwIP"
+#endif /* IOV_MAX */
+
 #if !defined(iovec)
 struct iovec {
   void  *iov_base;
@@ -154,6 +160,51 @@ struct msghdr {
   socklen_t     msg_controllen;
   int           msg_flags;
 };
+
+/* struct msghdr->msg_flags bit field values */
+#define MSG_TRUNC   0x04
+#define MSG_CTRUNC  0x08
+
+/* RFC 3542, Section 20: Ancillary Data */
+struct cmsghdr {
+    socklen_t  cmsg_len;   /* number of bytes, including header */
+    int        cmsg_level; /* originating protocol */
+    int        cmsg_type;  /* protocol-specific type */
+};
+/* Data section follows header and possible padding, typically referred to as
+      unsigned char cmsg_data[]; */
+
+/* cmsg header/data alignment. NOTE: we align to native word size (double word
+size on 16-bit arch) so structures are not placed at an unaligned address.
+16-bit arch needs double word to ensure 32-bit alignment because socklen_t
+could be 32 bits. If we ever have cmsg data with a 64-bit variable, alignment
+will need to increase long long */
+#define ALIGN_H(size) (((size) + sizeof(long) - 1U) & ~(sizeof(long)-1U))
+#define ALIGN_D(size) ALIGN_H(size)
+
+#define CMSG_FIRSTHDR(mhdr) \
+          ((mhdr)->msg_controllen >= sizeof(struct cmsghdr) ? \
+           (struct cmsghdr *)(mhdr)->msg_control : \
+           (struct cmsghdr *)NULL)
+
+#define CMSG_NXTHDR(mhdr, cmsg) \
+        (((cmsg) == NULL) ? CMSG_FIRSTHDR(mhdr) : \
+         (((u8_t *)(cmsg) + ALIGN_H((cmsg)->cmsg_len) \
+                            + ALIGN_D(sizeof(struct cmsghdr)) > \
+           (u8_t *)((mhdr)->msg_control) + (mhdr)->msg_controllen) ? \
+          (struct cmsghdr *)NULL : \
+          (struct cmsghdr *)((void*)((u8_t *)(cmsg) + \
+                                      ALIGN_H((cmsg)->cmsg_len)))))
+
+#define CMSG_DATA(cmsg) ((void*)((u8_t *)(cmsg) + \
+                         ALIGN_D(sizeof(struct cmsghdr))))
+
+#define CMSG_SPACE(length) (ALIGN_D(sizeof(struct cmsghdr)) + \
+                            ALIGN_H(length))
+
+#define CMSG_LEN(length) (ALIGN_D(sizeof(struct cmsghdr)) + \
+                           length)
+
 
 /* Socket protocol types (TCP/UDP/RAW) */
 #define SOCK_STREAM     1
@@ -239,6 +290,8 @@ struct linger {
  */
 #define IP_TOS             1
 #define IP_TTL             2
+#define IP_PKTINFO         8
+
 
 #if LWIP_TCP
 /*
@@ -315,6 +368,13 @@ typedef struct ip_mreq {
     struct in_addr imr_interface; /* local IP address of interface */
 } ip_mreq;
 #endif /* LWIP_IGMP */
+
+#if LWIP_IPV4
+struct in_pktinfo {
+    unsigned int   ipi_ifindex;  /* Interface index */
+    struct in_addr ipi_addr;     /* Destination (from header) address */
+};
+#endif /* LWIP_IPV4 */
 
 /*
  * The Type of Service provides an indication of the abstract
@@ -481,6 +541,7 @@ void lwip_socket_thread_cleanup(void); /* LWIP_NETCONN_SEM_PER_THREAD==1: destro
 #define lwip_connect      connect
 #define lwip_listen       listen
 #define lwip_recv         recv
+#define lwip_recvmsg      recvmsg
 #define lwip_recvfrom     recvfrom
 #define lwip_send         send
 #define lwip_sendmsg      sendmsg
@@ -515,6 +576,7 @@ int lwip_recv(int s, void *mem, size_t len, int flags);
 int lwip_read(int s, void *mem, size_t len);
 int lwip_recvfrom(int s, void *mem, size_t len, int flags,
       struct sockaddr *from, socklen_t *fromlen);
+int lwip_recvmsg(int s, struct msghdr *message, int flags);
 int lwip_send(int s, const void *dataptr, size_t size, int flags);
 int lwip_sendmsg(int s, const struct msghdr *message, int flags);
 int lwip_sendto(int s, const void *dataptr, size_t size, int flags,
@@ -546,6 +608,7 @@ int lwip_recv_r(int s, void *mem, size_t len, int flags);
 int lwip_read_r(int s, void *mem, size_t len); 
 int lwip_recvfrom_r(int s, void *mem, size_t len, int flags,
       struct sockaddr *from, socklen_t *fromlen);
+int lwip_recvmsg_r(int s, struct msghdr *message, int flags);
 int lwip_send_r(int s, const void *dataptr, size_t size, int flags);
 int lwip_sendmsg_r(int s, const struct msghdr *message, int flags);
 int lwip_sendto_r(int s, const void *dataptr, size_t size, int flags,
@@ -582,6 +645,8 @@ static inline int recv(int s,void *mem,size_t len,int flags)
 { return lwip_recv_r(s,mem,len,flags); }
 static inline int recvfrom(int s,void *mem,size_t len,int flags,struct sockaddr *from,socklen_t *fromlen)
 { return lwip_recvfrom_r(s,mem,len,flags,from,fromlen); }
+static inline int recvmsg(int s, struct msghdr *message, int flags)
+{ return lwip_recvmsg_r(s, message, flags); }
 static inline int send(int s,const void *dataptr,size_t size,int flags)
 { return lwip_send_r(s,dataptr,size,flags); }
 static inline int sendmsg(int s,const struct msghdr *message,int flags)
@@ -636,6 +701,8 @@ static inline int recv(int s,void *mem,size_t len,int flags)
 { return lwip_recv(s,mem,len,flags); }
 static inline int recvfrom(int s,void *mem,size_t len,int flags,struct sockaddr *from,socklen_t *fromlen)
 { return lwip_recvfrom(s,mem,len,flags,from,fromlen); }
+static inline int recvmsg(int s, struct msghdr *message, int flags)
+{ return lwip_recvmsg(s, message, flags); }
 static inline int send(int s,const void *dataptr,size_t size,int flags)
 { return lwip_send(s,dataptr,size,flags); }
 static inline int sendmsg(int s,const struct msghdr *message,int flags)

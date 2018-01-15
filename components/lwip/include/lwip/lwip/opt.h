@@ -975,7 +975,7 @@
  * LWIP_NETBUF_RECVINFO==1: append destination addr and port to every netbuf.
  */
 #ifndef LWIP_NETBUF_RECVINFO
-#define LWIP_NETBUF_RECVINFO            0
+#define LWIP_NETBUF_RECVINFO            1
 #endif
 
 /*

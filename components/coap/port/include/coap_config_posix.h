@@ -26,7 +26,10 @@
 #define HAVE_MALLOC
 #define HAVE_ARPA_INET_H
 
+#ifndef IP_PKTINFO
 #define IP_PKTINFO   IP_MULTICAST_IF
+#endif
+
 #define IPV6_PKTINFO IPV6_V6ONLY
 
 #define PACKAGE_NAME "libcoap-posix"
