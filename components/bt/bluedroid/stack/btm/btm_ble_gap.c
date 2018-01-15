@@ -736,6 +736,22 @@ BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode, tBTM_SET_LOCAL_PRIVACY_CBACK 
     if (!controller_get_interface()->supports_ble()) {
         return FALSE;
     }
+
+/*
+ *  Temporary solutions for pair with random address:
+ *  can't set privacy when advertising, scaning or using static random address
+ *  We will do futher work here
+ */
+    if (p_cb->privacy_mode == BTM_PRIVACY_NONE
+        && random_cb->own_addr_type == BLE_ADDR_RANDOM) {
+        BTM_TRACE_ERROR("Have set random adress, can't set privacy ");
+        return FALSE;
+    }
+    if (!(p_cb->inq_var.state != BTM_BLE_STOP_SCAN && p_cb->inq_var.state != BTM_BLE_STOP_ADV)) {
+        BTM_TRACE_ERROR("Advertising or scaning now, can't set privacy ");
+        return FALSE;
+    }
+
 #if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
     uint8_t addr_resolution = 0;
 #endif  /* defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE && GATTS_INCLUDED == TRUE */
@@ -1165,6 +1181,16 @@ tBTM_STATUS BTM_BleSetAdvParamsStartAdv(UINT16 adv_int_min, UINT16 adv_int_max, 
         return BTM_ILLEGAL_VALUE;
     }
 
+/*
+ *  Temporary solutions for pair with random address:
+ *  can't set advertising with BLE_ADDR_PUBLIC when having set random adress or in privacy mode
+ *  We will do futher work here
+ */
+    if (btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type == BLE_ADDR_RANDOM && own_bda_type == BLE_ADDR_PUBLIC) {
+        BTM_TRACE_ERROR ("own_addr_type is BLE_ADDR_RANDOM but use BLE_ADDR_PUBLIC\n");
+        return BTM_ILLEGAL_VALUE;
+    }
+
     if (!BTM_BLE_ISVALID_PARAM(adv_int_min, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX) ||
             !BTM_BLE_ISVALID_PARAM(adv_int_max, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX)) {
         return BTM_ILLEGAL_VALUE;
@@ -1312,6 +1338,19 @@ void BTM_BleSetScanFilterParams(tGATT_IF client_if, UINT32 scan_interval, UINT32
 
     BTM_TRACE_EVENT ("%s\n", __func__);
     if (!controller_get_interface()->supports_ble()) {
+        return;
+    }
+
+/*
+ *  Temporary solutions for pair with random address:
+ *  can't set scan with BLE_ADDR_PUBLIC when having set random adress or in privacy mode
+ *  We will do futher work here
+ */
+    if (btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type == BLE_ADDR_RANDOM && addr_type_own == BLE_ADDR_PUBLIC) {
+        BTM_TRACE_ERROR ("own_addr_type is BLE_ADDR_RANDOM but use BLE_ADDR_PUBLIC\n");
+        if (scan_setup_status_cback != NULL) {
+            scan_setup_status_cback(client_if, BTM_ILLEGAL_VALUE);
+        }
         return;
     }
 
@@ -1500,6 +1539,24 @@ BOOLEAN BTM_BleSetRandAddress(BD_ADDR rand_addr)
 	if (rand_addr == NULL)
 		return set_flag;
 
+/*
+ *  Temporary solutions for pair with random address:
+ *  can't set rand address when advertising, scaning or in privacy mode
+ *  We will do futher work here
+ */
+#if BLE_PRIVACY_SPT == TRUE
+    if (btm_cb.ble_ctr_cb.privacy_mode != BTM_PRIVACY_NONE) {
+        BTM_TRACE_ERROR("privacy_mode is not BTM_PRIVACY_NONE ");
+        return set_flag;
+    }
+
+#endif
+    if (!(btm_cb.ble_ctr_cb.inq_var.state != BTM_BLE_STOP_SCAN && btm_cb.ble_ctr_cb.inq_var.state != BTM_BLE_STOP_ADV)) {
+        BTM_TRACE_ERROR("Advertising or scaning now, can't set randaddress ");
+        return FALSE;
+    }
+    memcpy(btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr, rand_addr, BD_ADDR_LEN);
+    btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = BLE_ADDR_RANDOM;
     //send the set random address to the controller
     set_flag = btsnd_hcic_ble_set_random_addr(rand_addr);
     return set_flag;
@@ -3297,7 +3354,7 @@ tBTM_STATUS btm_ble_start_adv(void)
 #endif
     if (p_cb->afp != AP_SCAN_CONN_ALL) {
         //find the device in the btm dev buffer and write it to the controller white list
-        btm_execute_wl_dev_operation();    
+        btm_execute_wl_dev_operation();
         btm_cb.ble_ctr_cb.wl_state |= BTM_BLE_WL_ADV;
     }
 
