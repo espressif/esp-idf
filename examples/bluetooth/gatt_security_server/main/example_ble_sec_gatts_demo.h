@@ -1,11 +1,10 @@
-/* BLE Security example_ble_security_gatts_demo example
-  2 
-  3    This example code is in the Public Domain (or CC0 licensed, at your option.)
-  4 
-  5    Unless required by applicable law or agreed to in writing, this
-  6    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-  7    CONDITIONS OF ANY KIND, either express or implied.
-  8 */
+/*
+   This example code is in the Public Domain (or CC0 licensed, at your option.)
+
+   Unless required by applicable law or agreed to in writing, this
+   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+   CONDITIONS OF ANY KIND, either express or implied.
+*/
 
 
 #include <stdio.h>
