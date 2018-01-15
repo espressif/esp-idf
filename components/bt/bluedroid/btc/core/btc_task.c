@@ -30,14 +30,14 @@
 #include "btc_alarm.h"
 #include "bta_gatt_api.h"
 #if CONFIG_CLASSIC_BT_ENABLED
+#include "btc_profile_queue.h"
 #if (BTC_GAP_BT_INCLUDED == TRUE)
 #include "btc_gap_bt.h"
 #endif /* BTC_GAP_BT_INCLUDED == TRUE */
-#include "btc_profile_queue.h"
 #if BTC_AV_INCLUDED
 #include "btc_av.h"
 #include "btc_avrc.h"
-#endif  /* #if BTC_AV_INCLUDED */
+#endif /* #if BTC_AV_INCLUDED */
 #if CONFIG_BT_SPP_ENABLED
 #include "btc_spp.h"
 #endif /* #if CONFIG_BT_SPP_ENABLED */

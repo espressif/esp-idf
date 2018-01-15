@@ -27,8 +27,6 @@
 
 #include "bt_target.h"
 #include "bta_av_api.h"
-
-#include "btc_media.h"
 #include "a2d_api.h"
 #include "a2d_sbc.h"
 

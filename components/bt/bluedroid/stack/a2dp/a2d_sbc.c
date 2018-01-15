@@ -29,7 +29,7 @@
 #include "a2d_api.h"
 #include "a2d_int.h"
 #include "a2d_sbc.h"
-#include "bt_utils.h"
+#include "bt_defs.h"
 
 #if (defined(A2D_INCLUDED) && A2D_INCLUDED == TRUE)
 

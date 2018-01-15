@@ -25,16 +25,22 @@
 #ifndef __BTC_AV_H__
 #define __BTC_AV_H__
 
+#include "bt_target.h"
 #include "esp_a2dp_api.h"
 #include "btc_task.h"
 #include "btc_common.h"
 #include "btc_sm.h"
 #include "bta_av_api.h"
 
-#if (BTA_AV_INCLUDED == TRUE)
+#if (BTC_AV_INCLUDED == TRUE)
 /*******************************************************************************
 **  Type definitions for callback functions
 ********************************************************************************/
+
+enum {
+    BTC_AV_DATAPATH_OPEN_EVT, // original UIPC_OPEN_EVT for data channel in bluedroid
+    BTC_AV_DATAPATH_MAX_EVT,
+};
 
 typedef enum {
     BTC_AV_CONNECT_REQ_EVT = BTA_AV_MAX_EVT,
@@ -46,21 +52,44 @@ typedef enum {
 } btc_av_sm_event_t;
 
 typedef enum {
+#if BTC_AV_SINK_INCLUDED
     BTC_AV_SINK_API_INIT_EVT = 0,
     BTC_AV_SINK_API_DEINIT_EVT,
     BTC_AV_SINK_API_CONNECT_EVT,
     BTC_AV_SINK_API_DISCONNECT_EVT,
     BTC_AV_SINK_API_REG_DATA_CB_EVT,
+#endif  /* BTC_AV_SINK_INCLUDED */
+#if BTC_AV_SRC_INCLUDED
+    BTC_AV_SRC_API_INIT_EVT,
+    BTC_AV_SRC_API_DEINIT_EVT,
+    BTC_AV_SRC_API_CONNECT_EVT,
+    BTC_AV_SRC_API_DISCONNECT_EVT,
+    BTC_AV_SRC_API_REG_DATA_CB_EVT,
+#endif  /* BTC_AV_SRC_INCLUDED */
+    BTC_AV_API_MEDIA_CTRL_EVT,
+    BTC_AV_DATAPATH_CTRL_EVT,
 } btc_av_act_t;
 
 /* btc_av_args_t */
 typedef union {
+#if BTC_AV_SINK_INCLUDED
     // BTC_AV_SINK_CONFIG_REQ_EVT -- internal event
     esp_a2d_mcc_t mcc;
     // BTC_AV_SINK_API_CONNECT_EVT
     bt_bdaddr_t connect;
     // BTC_AV_SINK_API_REG_DATA_CB_EVT
-    esp_a2d_data_cb_t data_cb;
+    esp_a2d_sink_data_cb_t data_cb;
+#endif  /* BTC_AV_SINK_INCLUDED */
+#if BTC_AV_SRC_INCLUDED
+    // BTC_AV_SRC_API_REG_DATA_CB_EVT
+    esp_a2d_source_data_cb_t src_data_cb;
+    // BTC_AV_SRC_API_CONNECT
+    bt_bdaddr_t src_connect;
+#endif /* BTC_AV_SRC_INCLUDED */
+    // BTC_AV_API_MEDIA_CTRL_EVT
+    esp_a2d_media_ctrl_t ctrl;
+    // BTC_AV_DATAPATH_CTRL_EVT
+    uint32_t dp_evt;
 } btc_av_args_t;
 
 /*******************************************************************************
@@ -71,7 +100,9 @@ void btc_a2dp_call_handler(btc_msg_t *msg);
 
 void btc_a2dp_cb_handler(btc_msg_t *msg);
 
-void btc_a2dp_sink_reg_data_cb(esp_a2d_data_cb_t callback);
+void btc_a2dp_sink_reg_data_cb(esp_a2d_sink_data_cb_t callback);
+
+void btc_a2dp_src_reg_data_cb(esp_a2d_source_data_cb_t callback);
 /*******************************************************************************
 **
 ** Function         btc_av_get_sm_handle
@@ -123,18 +154,6 @@ void btc_dispatch_sm_event(btc_av_sm_event_t event, void *p_data, int len);
 
 /*******************************************************************************
 **
-** Function         btc_av_init
-**
-** Description      Initializes btc AV if not already done
-**
-** Returns          bt_status_t
-**
-*******************************************************************************/
-
-bt_status_t btc_av_init(void);
-
-/*******************************************************************************
-**
 ** Function         btc_av_is_connected
 **
 ** Description      Checks if av has a connected sink
@@ -145,6 +164,19 @@ bt_status_t btc_av_init(void);
 
 BOOLEAN btc_av_is_connected(void);
 
+
+/*******************************************************************************
+ *
+ * Function         btc_av_get_peer_sep
+ *
+ * Description      Get the stream endpoint type.
+ *
+ * Returns          The stream endpoint type: either AVDT_TSEP_SRC or
+ *                  AVDT_TSEP_SNK.
+ *
+ ******************************************************************************/
+
+uint8_t btc_av_get_peer_sep(void);
 
 /*******************************************************************************
 **
@@ -171,6 +203,6 @@ BOOLEAN btc_av_is_peer_edr(void);
 ********************************************************************************/
 void btc_av_clear_remote_suspend_flag(void);
 
-#endif  ///BTA_AV_INCLUDED == TRUE
+#endif  ///BTC_AV_INCLUDED == TRUE
 
 #endif /* __BTC_AV_H__ */
