@@ -27,7 +27,7 @@ set(PROJECT_PATH "${CMAKE_SOURCE_DIR}")
 #
 # Load cmake modules
 #
-set(CMAKE_MODULE_PATH "${IDF_PATH}/tools/cmake" ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH "${IDF_PATH}/tools/cmake" "${IDF_PATH}/tools/cmake/third_party" ${CMAKE_MODULE_PATH})
 include(GetGitRevisionDescription)
 include(utilities)
 include(components)
