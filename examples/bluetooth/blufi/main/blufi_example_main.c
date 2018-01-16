@@ -139,6 +139,38 @@ static esp_err_t example_net_event_handler(void *ctx, system_event_t *event)
             esp_blufi_send_wifi_conn_report(mode, ESP_BLUFI_STA_CONN_FAIL, 0, NULL);
         }
         break;
+    case SYSTEM_EVENT_SCAN_DONE: {
+        uint16_t apCount = 0;
+        esp_wifi_scan_get_ap_num(&apCount);
+        if (apCount == 0) {
+            BLUFI_INFO("Nothing AP found");
+            break;
+        }
+        wifi_ap_record_t *ap_list = (wifi_ap_record_t *)malloc(sizeof(wifi_ap_record_t) * apCount);
+        if (!ap_list) {
+            BLUFI_ERROR("malloc error, ap_list is NULL");
+            break;
+        }
+        ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&apCount, ap_list));
+        esp_blufi_ap_record_t * blufi_ap_list = (esp_blufi_ap_record_t *)malloc(apCount * sizeof(esp_blufi_ap_record_t));
+        if (!blufi_ap_list) {
+            if (ap_list) {
+                free(ap_list);
+            }
+            BLUFI_ERROR("malloc error, blufi_ap_list is NULL");
+            break;
+        }
+        for (int i = 0; i < apCount; ++i)
+        {
+            blufi_ap_list[i].rssi = ap_list[i].rssi;
+            memcpy(blufi_ap_list[i].ssid, ap_list[i].ssid, sizeof(ap_list[i].ssid));
+        }
+        esp_blufi_send_wifi_list(apCount, blufi_ap_list);
+        esp_wifi_scan_stop();
+        free(ap_list);
+        free(blufi_ap_list);
+        break;
+    }
     default:
         break;
     }
@@ -181,8 +213,8 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
         break;
     case ESP_BLUFI_EVENT_BLE_CONNECT:
         BLUFI_INFO("BLUFI ble connect\n");
-        server_if=param->connect.server_if;
-        conn_id=param->connect.conn_id;
+        server_if = param->connect.server_if;
+        conn_id = param->connect.conn_id;
         esp_ble_gap_stop_advertising();
         blufi_security_init();
         break;
@@ -225,7 +257,7 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
     }
     case ESP_BLUFI_EVENT_RECV_SLAVE_DISCONNECT_BLE:
         BLUFI_INFO("blufi close a gatt connection");
-        esp_blufi_close(server_if,conn_id);
+        esp_blufi_close(server_if, conn_id);
         break;
     case ESP_BLUFI_EVENT_DEAUTHENTICATE_STA:
         /* TODO */
@@ -283,6 +315,16 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
         esp_wifi_set_config(WIFI_IF_AP, &ap_config);
         BLUFI_INFO("Recv SOFTAP CHANNEL %d\n", ap_config.ap.channel);
         break;
+    case ESP_BLUFI_EVENT_GET_WIFI_LIST:{
+        wifi_scan_config_t scanConf = {
+            .ssid = NULL,
+            .bssid = NULL,
+            .channel = 0,
+            .show_hidden = false
+        };
+        ESP_ERROR_CHECK(esp_wifi_scan_start(&scanConf, true));
+        break;
+    }
 	case ESP_BLUFI_EVENT_RECV_USERNAME:
         /* Not handle currently */
         break;

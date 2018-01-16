@@ -31,6 +31,7 @@
 #include "btc_blufi_prf.h"
 #include "btc_task.h"
 #include "btc_manage.h"
+#include "btc_gatt_util.h"
 
 #include "blufi_int.h"
 
@@ -209,6 +210,9 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         break;
     case BTA_GATTS_CONF_EVT:
         LOG_DEBUG("CONIRM EVT\n");
+        if (p_data && p_data->req_data.value){
+            osi_free(p_data->req_data.value);
+        }
         /* Nothing */
         break;
     case BTA_GATTS_CREATE_EVT:
@@ -276,7 +280,7 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         msg.pid = BTC_PID_BLUFI;
         msg.act = ESP_BLUFI_EVENT_BLE_CONNECT;
         memcpy(param.connect.remote_bda, p_data->conn.remote_bda, sizeof(esp_bd_addr_t));
-        param.connect.conn_id=p_data->conn.conn_id;
+        param.connect.conn_id=BTC_GATT_GET_CONN_ID(p_data->conn.conn_id);
         param.connect.server_if=p_data->conn.server_if;
         btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
         break;
@@ -574,6 +578,40 @@ static void btc_blufi_wifi_conn_report(uint8_t opmode, uint8_t sta_conn_state, u
     osi_free(data);
 }
 
+void btc_blufi_send_wifi_list(uint16_t apCount, esp_blufi_ap_record_t *list)
+{
+    uint8_t type;
+    uint8_t *data;
+    int data_len;
+    uint8_t *p;
+    // malloc size: (len + RSSI + ssid buffer) * apCount;
+    uint malloc_size = (1 + 1 + sizeof(list->ssid)) * apCount;
+    p = data = osi_malloc(malloc_size);
+    if (data == NULL) {
+        LOG_ERROR("malloc error\n");
+        return;
+    }
+    type = BLUFI_BUILD_TYPE(BLUFI_TYPE_DATA, BLUFI_TYPE_DATA_SUBTYPE_WIFI_LIST);
+    for (int i = 0; i < apCount; ++i)
+    {
+        uint len = strlen((const char *)list[i].ssid);
+        data_len = (p - data);
+        //current_len + ssid + rssi + total_len_value
+        if((data_len + len + 1 + 1) >  malloc_size) {
+            LOG_ERROR("%s len error", __func__);
+            osi_free(data);
+            return;
+        }
+        *p++ = len + 1; // length of ssid + rssi
+        *p++ = list[i].rssi;
+        memcpy(p, list[i].ssid, len);
+        p = p + len;
+    }
+    data_len = (p - data);
+    btc_blufi_send_encap(type, data, data_len);
+    osi_free(data);
+}
+
 static void btc_blufi_send_ack(uint8_t seq)
 {
     uint8_t type;
@@ -737,6 +775,9 @@ void btc_blufi_cb_handler(btc_msg_t *msg)
     case ESP_BLUFI_EVENT_GET_WIFI_STATUS:
         btc_blufi_cb_to_app(ESP_BLUFI_EVENT_GET_WIFI_STATUS, NULL);
         break;
+    case ESP_BLUFI_EVENT_GET_WIFI_LIST:
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_GET_WIFI_LIST, NULL);
+        break;
     case ESP_BLUFI_EVENT_DEAUTHENTICATE_STA:
         btc_blufi_cb_to_app(ESP_BLUFI_EVENT_DEAUTHENTICATE_STA, NULL);
         break;
@@ -867,6 +908,19 @@ void btc_blufi_call_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         }
         break;
     }
+    case BTC_BLUFI_ACT_SEND_WIFI_LIST:{
+        esp_blufi_ap_record_t *list = src->wifi_list.list;
+        src->wifi_list.list = NULL;
+        if (list == NULL || src->wifi_list.apCount <= 0) {
+            break;
+        }
+        dst->wifi_list.list = (esp_blufi_ap_record_t *)osi_malloc(sizeof(esp_blufi_ap_record_t) * src->wifi_list.apCount);
+        if (dst->wifi_list.list == NULL) {
+            break;
+        }
+        memcpy(dst->wifi_list.list, list, sizeof(esp_blufi_ap_record_t) * src->wifi_list.apCount);
+        break;
+    }
     default:
         break;
     }
@@ -898,6 +952,13 @@ void btc_blufi_call_deep_free(btc_msg_t *msg)
         osi_free(info);
         break;
     }
+    case BTC_BLUFI_ACT_SEND_WIFI_LIST:{
+        esp_blufi_ap_record_t *list = (esp_blufi_ap_record_t *)arg->wifi_list.list;
+        if (list){
+            osi_free(list);
+        }
+        break;
+    }
     default:
         break;
     }
@@ -921,6 +982,10 @@ void btc_blufi_call_handler(btc_msg_t *msg)
                                    arg->wifi_conn_report.extra_info,
                                    arg->wifi_conn_report.extra_info_len);
         break;
+    case BTC_BLUFI_ACT_SEND_WIFI_LIST:{
+        btc_blufi_send_wifi_list(arg->wifi_list.apCount, arg->wifi_list.list);
+        break;
+    }
     default:
         LOG_ERROR("%s UNKNOWN %d\n", __func__, msg->act);
         break;
