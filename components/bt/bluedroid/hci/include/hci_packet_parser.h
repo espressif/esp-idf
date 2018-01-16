@@ -90,7 +90,8 @@ typedef struct {
 
     void (*parse_ble_read_suggested_default_data_length_response)(
         BT_HDR *response,
-        uint16_t *ble_default_packet_length_ptr
+        uint16_t *ble_default_packet_length_ptr,
+        uint16_t *ble_default_packet_txtime_ptr
     );
 } hci_packet_parser_t;
 

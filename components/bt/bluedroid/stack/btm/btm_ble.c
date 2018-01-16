@@ -812,7 +812,7 @@ tBTM_STATUS BTM_SetBleDataLength(BD_ADDR bd_addr, UINT16 tx_pdu_length)
     }
 
     if (!HCI_LE_DATA_LEN_EXT_SUPPORTED(p_acl->peer_le_features)) {
-        BTM_TRACE_DEBUG("%s failed, peer does not support request", __FUNCTION__);
+        BTM_TRACE_ERROR("%s failed, peer does not support request", __FUNCTION__);
         return BTM_PEER_LE_DATA_LEN_UNSUPPORTED;
     }
 
