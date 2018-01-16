@@ -70,7 +70,7 @@ static btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_ALARM]       = {btc_alarm_handler,           NULL                    },
 #if CONFIG_CLASSIC_BT_ENABLED
 #if (BTC_GAP_BT_INCLUDED == TRUE)
-    [BTC_PID_GAP_BT]      = {btc_gap_bt_call_handler,     NULL                    },
+    [BTC_PID_GAP_BT]    = {btc_gap_bt_call_handler,     btc_gap_bt_cb_handler   },
 #endif /* (BTC_GAP_BT_INCLUDED == TRUE) */
     [BTC_PID_PRF_QUE]     = {btc_profile_queue_handler,   NULL                    },
 #if BTC_AV_INCLUDED

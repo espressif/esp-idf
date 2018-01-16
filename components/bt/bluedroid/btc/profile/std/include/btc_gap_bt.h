@@ -34,6 +34,7 @@ typedef enum {
     BTC_GAP_BT_ACT_GET_REMOTE_SERVICE_RECORD,
     BTC_GAP_BT_ACT_SEARCH_SERVICE_RECORD,
     BTC_GAP_BT_ACT_SET_COD,
+    BTC_GAP_BT_ACT_READ_RSSI_DELTA,
 } btc_gap_bt_act_t;
 
 /* btc_bt_gap_args_t */
@@ -65,9 +66,14 @@ typedef union {
        esp_bt_cod_mode_t mode;
     } set_cod;
 
+    //BTC_GAP_BT_ACT_READ_RSSI_DELTA,
+    struct bt_read_rssi_delta_args {
+        bt_bdaddr_t bda;
+    } read_rssi_delta;
 } btc_gap_bt_args_t;
 
 void btc_gap_bt_call_handler(btc_msg_t *msg);
+void btc_gap_bt_cb_handler(btc_msg_t *msg);
 
 void btc_gap_bt_busy_level_updated(uint8_t bl_flags);
 

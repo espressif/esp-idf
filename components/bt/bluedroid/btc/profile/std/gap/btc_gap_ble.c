@@ -27,6 +27,7 @@
 #include "esp_gap_ble_api.h"
 #include "btc/btc_ble_storage.h"
 #include "btc/btc_dm.h"
+#include "btc/btc_util.h"
 
 static tBTA_BLE_ADV_DATA gl_bta_adv_data;
 static tBTA_BLE_ADV_DATA gl_bta_scan_rsp_data;
@@ -105,85 +106,6 @@ static void btc_cleanup_adv_data(tBTA_BLE_ADV_DATA *bta_adv_data)
     }
 
     btc_gap_adv_point_cleanup((void **) &bta_adv_data->p_sol_service_128b);
-}
-
-
-static esp_bt_status_t btc_hci_to_esp_status(uint8_t hci_status)
-{
-    esp_bt_status_t esp_status = ESP_BT_STATUS_FAIL;
-    switch(hci_status) {
-        case HCI_SUCCESS:
-            esp_status = ESP_BT_STATUS_SUCCESS;
-            break;
-        case HCI_ERR_ESP_VENDOR_FAIL:
-            esp_status = ESP_BT_STATUS_FAIL;
-            break;
-        case HCI_ERR_HOST_TIMEOUT:
-            esp_status = ESP_BT_STATUS_TIMEOUT;
-            break;
-        case HCI_ERR_ILLEGAL_COMMAND:
-            esp_status = ESP_BT_STATUS_PENDING;
-            break;
-        case HCI_ERR_UNACCEPT_CONN_INTERVAL:
-            esp_status = ESP_BT_STATUS_UNACCEPT_CONN_INTERVAL;
-            break;
-        case HCI_ERR_PARAM_OUT_OF_RANGE:
-            esp_status = ESP_BT_STATUS_PARAM_OUT_OF_RANGE;
-            break;
-        case HCI_ERR_ILLEGAL_PARAMETER_FMT:
-            esp_status = ESP_BT_STATUS_ERR_ILLEGAL_PARAMETER_FMT;
-            break;
-        case HCI_ERR_MEMORY_FULL:
-            esp_status = ESP_BT_STATUS_MEMORY_FULL;
-            break;
-        default:
-            esp_status = ESP_BT_STATUS_FAIL;
-            break;
-    }
-
-    return esp_status;
-}
-
-static esp_bt_status_t btc_btm_status_to_esp_status (uint8_t btm_status)
-{
-    esp_bt_status_t esp_status = ESP_BT_STATUS_FAIL;
-    switch(btm_status){
-        case BTM_SUCCESS:
-            esp_status = ESP_BT_STATUS_SUCCESS;
-            break;
-        case BTM_BUSY:
-            esp_status = ESP_BT_STATUS_BUSY;
-            break;
-        case BTM_NO_RESOURCES:
-            esp_status = ESP_BT_STATUS_NOMEM;
-            break;
-        case BTM_ERR_PROCESSING:
-            esp_status = ESP_BT_STATUS_PENDING;
-            break;
-        case BTM_PEER_LE_DATA_LEN_UNSUPPORTED:
-            esp_status = ESP_BT_STATUS_PEER_LE_DATA_LEN_UNSUPPORTED;
-            break;
-        case BTM_CONTROL_LE_DATA_LEN_UNSUPPORTED:
-            esp_status = ESP_BT_STATUS_CONTROL_LE_DATA_LEN_UNSUPPORTED;
-            break;
-        case BTM_SET_PRIVACY_SUCCESS:
-            esp_status = ESP_BT_STATUS_SUCCESS;
-            break;
-        case BTM_SET_PRIVACY_FAIL:
-            esp_status = ESP_BT_STATUS_FAIL;
-            break;
-        case BTM_INVALID_STATIC_RAND_ADDR:
-            esp_status = ESP_BT_STATUS_INVALID_STATIC_RAND_ADDR;
-            break;
-        case BTM_SET_STATIC_RAND_ADDR_FAIL:
-            esp_status = ESP_BT_STATUS_FAIL;
-            break;
-        default:
-            esp_status = ESP_BT_STATUS_FAIL;
-            break;
-    }
-
-    return esp_status;
 }
 
 static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DATA *bta_adv_data, uint32_t *data_mask)
