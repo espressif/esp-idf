@@ -132,12 +132,6 @@ def test_method(**kwargs):
         case_info["name"] = test_func.__name__
         case_info.update(kwargs)
 
-        # create env instance
-        env_config = DefaultEnvConfig.get_default_config()
-        for key in kwargs:
-            if key in env_config:
-                env_config[key] = kwargs[key]
-
         @functools.wraps(test_func)
         def handle_test(extra_data=None, **overwrite):
             """
@@ -147,6 +141,12 @@ def test_method(**kwargs):
             :param overwrite: args that runner or main want to overwrite
             :return: None
             """
+            # create env instance
+            env_config = DefaultEnvConfig.get_default_config()
+            for key in kwargs:
+                if key in env_config:
+                    env_config[key] = kwargs[key]
+
             env_config.update(overwrite)
             env_inst = Env.Env(**env_config)
             # prepare for xunit test results

@@ -40,18 +40,22 @@ class Runner(threading.Thread):
     def __init__(self, test_case, case_config, env_config_file=None):
         super(Runner, self).__init__()
         self.setDaemon(True)
-        test_methods = SearchCases.Search.search_test_cases(test_case)
-        self.test_cases = CaseConfig.Parser.apply_config(test_methods, case_config)
-        self.test_result = True
         if case_config:
             test_suite_name = os.path.splitext(os.path.basename(case_config))[0]
         else:
             test_suite_name = "TestRunner"
         TinyFW.set_default_config(env_config_file=env_config_file, test_suite_name=test_suite_name)
+        test_methods = SearchCases.Search.search_test_cases(test_case)
+        self.test_cases = CaseConfig.Parser.apply_config(test_methods, case_config)
+        self.test_result = []
 
     def run(self):
         for case in self.test_cases:
-            self.test_result = self.test_result and case.run()
+            result = case.run()
+            self.test_result.append(result)
+    
+    def get_test_result(self):
+        return self.test_result and all(self.test_result)
 
 
 if __name__ == '__main__':
@@ -76,5 +80,5 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             print("exit by Ctrl-C")
             break
-    if not runner.test_result:
+    if not runner.get_test_result():
         sys.exit(1)
