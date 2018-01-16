@@ -61,6 +61,8 @@ extern "C" {
 #define NETCONN_DONTBLOCK 0x04
 
 /* Flags for struct netconn.flags (u8_t) */
+/** This netconn had an error, don't block on recvmbox/acceptmbox any more */
+#define NETCONN_FLAG_MBOXCLOSED               0x01
 /** Should this netconn avoid blocking? */
 #define NETCONN_FLAG_NON_BLOCKING             0x02
 /** Was the last connect action a non-blocking one? */

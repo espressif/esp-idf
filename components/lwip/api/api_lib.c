@@ -424,16 +424,23 @@ netconn_accept(struct netconn *conn, struct netconn **new_conn)
 }
 
 /**
+ * @ingroup netconn_common
  * Receive data: actual implementation that doesn't care whether pbuf or netbuf
- * is received
+ * is received (this is internal, it's just here for describing common errors)
  *
  * @param conn the netconn from which to receive data
  * @param new_buf pointer where a new pbuf/netbuf is stored when received data
+ * @param apiflags flags that control function behaviour. For now only:
+ * - NETCONN_DONTBLOCK: only read data that is available now, don't wait for more data
  * @return ERR_OK if data has been received, an error code otherwise (timeout,
  *                memory error or another error)
+ *         ERR_CONN if not connected
+ *         ERR_CLSD if TCP connection has been closed
+ *         ERR_WOULDBLOCK if the netconn is nonblocking but would block to wait for data
+ *         ERR_TIMEOUT if the netconn has a receive timeout and no data was received
  */
 static err_t
-netconn_recv_data(struct netconn *conn, void **new_buf)
+netconn_recv_data(struct netconn *conn, void **new_buf, u8_t apiflags)
 {
   void *buf = NULL;
   u16_t len;
@@ -466,14 +473,28 @@ netconn_recv_data(struct netconn *conn, void **new_buf)
        before the fatal error occurred - is that a problem? */
     return err;
   }
-
+  if (netconn_is_nonblocking(conn) || (apiflags & NETCONN_DONTBLOCK) ||
+      (conn->flags & NETCONN_FLAG_MBOXCLOSED) || (conn->last_err != ERR_OK)) {
+    if (sys_arch_mbox_tryfetch(&conn->recvmbox, &buf) == SYS_ARCH_TIMEOUT) {
+      err_t err = netconn_err(conn);
+      if (err != ERR_OK) {
+        /* return pending error */
+        return err;
+      }
+      if (conn->flags & NETCONN_FLAG_MBOXCLOSED) {
+        return ERR_CONN;
+      }
+      return ERR_WOULDBLOCK;
+    }
+  } else {
 #if LWIP_SO_RCVTIMEO
-  if (sys_arch_mbox_fetch(&conn->recvmbox, &buf, conn->recv_timeout) == SYS_ARCH_TIMEOUT) {
-    return ERR_TIMEOUT;
-  }
+    if (sys_arch_mbox_fetch(&conn->recvmbox, &buf, conn->recv_timeout) == SYS_ARCH_TIMEOUT) {
+      return ERR_TIMEOUT;
+    }
 #else
-  sys_arch_mbox_fetch(&conn->recvmbox, &buf, 0);
+    sys_arch_mbox_fetch(&conn->recvmbox, &buf, 0);
 #endif /* LWIP_SO_RCVTIMEO*/
+  }
 
 #if LWIP_TCP
 #if (LWIP_UDP || LWIP_RAW)
@@ -555,7 +576,7 @@ netconn_recv_tcp_pbuf(struct netconn *conn, struct pbuf **new_buf)
   LWIP_ERROR("netconn_recv: invalid conn", (conn != NULL) &&
              NETCONNTYPE_GROUP(netconn_type(conn)) == NETCONN_TCP, return ERR_ARG;);
 
-  return netconn_recv_data(conn, (void **)new_buf);
+  return netconn_recv_data(conn, (void **)new_buf, 0);
 }
 
 /**
@@ -575,7 +596,7 @@ netconn_recv_udp_raw_netbuf_flags(struct netconn *conn, struct netbuf **new_buf,
   LWIP_ERROR("netconn_recv_udp_raw_netbuf: invalid conn", (conn != NULL) &&
                                                           NETCONNTYPE_GROUP(netconn_type(conn)) != NETCONN_TCP, return ERR_ARG;);
 
-  return netconn_recv_data(conn, (void **)new_buf);
+  return netconn_recv_data(conn, (void **)new_buf, apiflags);
 }
 
 /**
@@ -611,7 +632,7 @@ netconn_recv(struct netconn *conn, struct netbuf **new_buf)
       return ERR_MEM;
     }
 
-    err = netconn_recv_data(conn, (void **)&p);
+    err = netconn_recv_data(conn, (void **)&p, 0);
     if (err != ERR_OK) {
       memp_free(MEMP_NETBUF, buf);
       return err;
@@ -632,7 +653,7 @@ netconn_recv(struct netconn *conn, struct netbuf **new_buf)
 #endif /* LWIP_TCP && (LWIP_UDP || LWIP_RAW) */
   {
 #if (LWIP_UDP || LWIP_RAW)
-    return netconn_recv_data(conn, (void **)new_buf);
+    return netconn_recv_data(conn, (void **)new_buf, 0);
 #endif /* (LWIP_UDP || LWIP_RAW) */
   }
 }
