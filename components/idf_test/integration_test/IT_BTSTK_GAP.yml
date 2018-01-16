@@ -1328,7 +1328,7 @@ test cases:
   allow fail: ''
   cmd set:
   - ""
-  - - "SSC SSC1 bleconn -S -a <dut2_bt_mac>"
+  - - "SSC SSC1 bleconn -S -z ConnParam -a <dut2_bt_mac>"
     - ['R SSC1 C +BLECONN:OK']
 - ID: BTSTK_GAP_07002
   SDK: ESP32_IDF
@@ -1353,7 +1353,7 @@ test cases:
   allow fail: ''
   cmd set:
   - ""
-  - - "SSC SSC2 bleconn -S -a <dut1_bt_mac>"
+  - - "SSC SSC2 bleconn -S -z ConnParam -a <dut1_bt_mac>"
     - ['R SSC2 C +BLECONN:OK']
 - ID: BTSTK_GAP_07003
   SDK: ESP32_IDF
@@ -1382,13 +1382,13 @@ test cases:
   allow fail: ''
   cmd set:
   - ""
-  - - "SSC SSC1 bleconn -S -a <dut2_bt_mac> -i 0-0xFFFF"
+  - - "SSC SSC1 bleconn -S -z ConnParam -a <dut2_bt_mac> -i 0-0xFFFF"
     - ['R SSC1 C +BLECONN:ERROR']
-  - - "SSC SSC1 bleconn -S -a <dut2_bt_mac> -l 0x1F4"
+  - - "SSC SSC1 bleconn -S -z ConnParam -a <dut2_bt_mac> -l 0x1F4"
     - ['R SSC1 C +BLECONN:ERROR']
-  - - "SSC SSC1 bleconn -S -a <dut2_bt_mac> -t 0x08"
+  - - "SSC SSC1 bleconn -S -z ConnParam -a <dut2_bt_mac> -t 0x08"
     - ['R SSC1 C +BLECONN:ERROR']
-  - - "SSC SSC1 bleconn -S -a <dut2_bt_mac> -t 0xC81"
+  - - "SSC SSC1 bleconn -S -z ConnParam -a <dut2_bt_mac> -t 0xC81"
     - ['R SSC1 C +BLECONN:ERROR']
 - ID: BTSTK_GAP_08001
   SDK: ESP32_IDF
