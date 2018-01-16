@@ -123,7 +123,7 @@ ping_prepare_echo( struct icmp_echo_hdr *iecho, u16_t len)
   ICMPH_CODE_SET(iecho, 0);
   iecho->chksum = 0;
   iecho->id     = PING_ID;
-  iecho->seqno  = lwip_htons(++ping_seq_num);
+  iecho->seqno  = htons(++ping_seq_num);
 
   /* fill the additional data buffer with some data */
   for(i = 0; i < data_len; i++) {
@@ -157,7 +157,7 @@ ping_send(int s, ip_addr_t *addr)
   to.sin_family = AF_INET;
   inet_addr_from_ipaddr(&to.sin_addr, ip_2_ip4(addr));
 
-  err = lwip_sendto(s, iecho, ping_size, 0, (struct sockaddr*)&to, sizeof(to));
+  err = sendto(s, iecho, ping_size, 0, (struct sockaddr*)&to, sizeof(to));
 
   mem_free(iecho);
 
@@ -175,7 +175,7 @@ ping_recv(int s)
   int fromlen = sizeof(from);
   struct timeval now;
 
-  while((len = lwip_recvfrom(s, buf, sizeof(buf), 0, (struct sockaddr*)&from, (socklen_t*)&fromlen)) > 0) {
+  while((len = recvfrom(s, buf, sizeof(buf), 0, (struct sockaddr*)&from, (socklen_t*)&fromlen)) > 0) {
     if (len >= (int)(sizeof(struct ip_hdr)+sizeof(struct icmp_echo_hdr))) {
       if (from.sin_family != AF_INET) {
         /* Ping is not IPv4 */ 
@@ -186,12 +186,12 @@ ping_recv(int s)
         iphdr = (struct ip_hdr *)buf;
         iecho = (struct icmp_echo_hdr *)(buf + (IPH_HL(iphdr) * 4));
  
-        LWIP_DEBUGF( PING_DEBUG, ("ping: recv seq=%d ", lwip_ntohs(iecho->seqno)));
+        LWIP_DEBUGF( PING_DEBUG, ("ping: recv seq=%d ", ntohs(iecho->seqno)));
         ip4_addr_debug_print(PING_DEBUG, &fromaddr);
         gettimeofday(&now, NULL);
         LWIP_DEBUGF( PING_DEBUG, (" %"U32_F" ms\n", PING_TIME_DIFF_MS(now, ping_time)));
 
-        if ((iecho->id == PING_ID) && (iecho->seqno == lwip_htons(ping_seq_num))) {
+        if ((iecho->id == PING_ID) && (iecho->seqno == htons(ping_seq_num))) {
           /* do some ping result processing */
 #ifdef ESP_PING
           esp_ping_result((ICMPH_TYPE(iecho) == ICMP_ER), len, PING_TIME_DIFF_MS(now, ping_time));
@@ -254,11 +254,11 @@ ping_thread(void *arg)
 
   LWIP_UNUSED_ARG(arg);
 
-  if ((s = lwip_socket(AF_INET, SOCK_RAW, IP_PROTO_ICMP)) < 0) {
-    return;
+  if ((s = socket(AF_INET, SOCK_RAW, IP_PROTO_ICMP)) < 0) {
+    goto _exit_new_socket_failed;
   }
 
-  ret = lwip_setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+  ret = setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
   LWIP_ASSERT("setting receive timeout failed", ret == 0);
   LWIP_UNUSED_ARG(ret);
 
@@ -289,8 +289,9 @@ ping_thread(void *arg)
 
 #ifdef ESP_PING
 _exit:
-  lwip_close(s);
+  close(s);
 
+_exit_new_socket_failed:
   esp_ping_result(PING_RES_FINISH, 0, 0);
   SYS_ARCH_PROTECT(lev);
   if (ping_init_flag) { /* Ping closed by this thread */
@@ -330,7 +331,7 @@ ping_recv(void *arg, struct raw_pcb *pcb, struct pbuf *p, const ip_addr_t *addr)
       pbuf_header(p, -PBUF_IP_HLEN) == 0) {
     iecho = (struct icmp_echo_hdr *)p->payload;
 
-    if ((iecho->id == PING_ID) && (iecho->seqno == lwip_htons(ping_seq_num))) {
+    if ((iecho->id == PING_ID) && (iecho->seqno == htons(ping_seq_num))) {
       LWIP_DEBUGF( PING_DEBUG, ("ping: recv "));
       ip_addr_debug_print(PING_DEBUG, addr);
       gettimeofday(&now, NULL);
