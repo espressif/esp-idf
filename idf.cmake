@@ -34,6 +34,7 @@ include(components)
 include(kconfig)
 include(crosstool_version_check)
 include(git_submodules)
+include(idf_functions)
 
 #
 # Warn if the toolchain version doesn't match
@@ -61,9 +62,7 @@ include(${SDKCONFIG_CMAKE})
 
 #
 # Add some idf-wide definitions
-#
-add_definitions(-DESP_PLATFORM)
-add_definitions(-DHAVE_CONFIG_H)
+idf_set_global_compiler_options()
 
 git_describe(GIT_REVISION)
 add_definitions(-DIDF_VER=\"${GIT_REVISION}\")
