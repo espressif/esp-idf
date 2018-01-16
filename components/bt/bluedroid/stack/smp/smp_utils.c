@@ -974,6 +974,9 @@ void smp_proc_pairing_cmpl(tSMP_CB *p_cb)
 
     memcpy (pairing_bda, p_cb->pairing_bda, BD_ADDR_LEN);
 
+    if (p_cb->role == HCI_ROLE_SLAVE) {
+        L2CA_EnableUpdateBleConnParams(p_cb->pairing_bda, TRUE);
+    }
     smp_reset_control_value(p_cb);
 
     if (p_callback) {
