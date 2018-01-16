@@ -64,4 +64,6 @@ function(add_executable target)
   _add_executable(${ARGV})
 
   target_link_libraries(${target} "-Wl,--gc-sections -Wl,--cref -Wl,--Map=${mapfile} -Wl,--start-group")
+
+  set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES "${CMAKE_CURRENT_BINARY_DIR}/${mapfile}")
 endfunction()
