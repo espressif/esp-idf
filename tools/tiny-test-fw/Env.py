@@ -49,12 +49,12 @@ class Env(object):
                  dut=None,
                  env_tag=None,
                  env_config_file=None,
-                 test_name=None,
+                 test_suite_name=None,
                  **kwargs):
         self.app_cls = app
         self.default_dut_cls = dut
         self.config = EnvConfig.Config(env_config_file, env_tag)
-        self.log_path = self.app_cls.get_log_folder(test_name)
+        self.log_path = self.app_cls.get_log_folder(test_suite_name)
         if not os.path.exists(self.log_path):
             os.makedirs(self.log_path)
 

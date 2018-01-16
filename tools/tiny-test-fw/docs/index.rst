@@ -69,7 +69,7 @@ Let's first check a simple simple::
 
 
     if __name__ == '__main__':
-        TinyFW.set_default_config(config_file="EnvConfigTemplate.yml")
+        TinyFW.set_default_config(env_config_file="EnvConfigTemplate.yml")
         test_examples_protocol_https_request()
 
 
