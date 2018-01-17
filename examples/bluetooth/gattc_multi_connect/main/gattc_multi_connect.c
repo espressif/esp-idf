@@ -760,7 +760,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
     case ESP_GAP_BLE_SCAN_START_COMPLETE_EVT:
         //scan start complete event to indicate scan start successfully or failed
         if (param->scan_start_cmpl.status == ESP_BT_STATUS_SUCCESS) {
-            ESP_LOGE(GATTC_TAG, "Scan start success");
+            ESP_LOGI(GATTC_TAG, "Scan start success");
         }else{
             ESP_LOGE(GATTC_TAG, "Scan start failed");
         }

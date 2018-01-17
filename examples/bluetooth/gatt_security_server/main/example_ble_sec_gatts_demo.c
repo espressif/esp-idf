@@ -40,7 +40,7 @@ uint8_t heart_str[] = {0x11,0x22,0x33};
 
 uint16_t heart_rate_handle_table[HRS_IDX_NB];
 
-esp_attr_value_t gatts_demo_char1_val = 
+esp_attr_value_t gatts_demo_char1_val =
 {
   .attr_max_len = GATTS_DEMO_CHAR_VAL_LEN_MAX,
   .attr_len     = sizeof(heart_str),
@@ -101,7 +101,7 @@ struct gatts_profile_inst {
     esp_bt_uuid_t descr_uuid;
 };
 
-static void gatts_profile_event_handler(esp_gatts_cb_event_t event, 
+static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
                                         esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 
 /* One gatt-based profile one app_id and one gatts_if, this array will store the gatts_if returned by ESP_GATTS_REG_EVT */
@@ -147,44 +147,44 @@ static const uint8_t heart_ctrl_point[1] = {0x00};
 static const esp_gatts_attr_db_t heart_rate_gatt_db[HRS_IDX_NB] =
 {
     // Heart Rate Service Declaration
-    [HRS_IDX_SVC]                    =  
+    [HRS_IDX_SVC]                    =
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&primary_service_uuid, ESP_GATT_PERM_READ,
       sizeof(uint16_t), sizeof(heart_rate_svc), (uint8_t *)&heart_rate_svc}},
 
     // Heart Rate Measurement Characteristic Declaration
-    [HRS_IDX_HR_MEAS_CHAR]            = 
+    [HRS_IDX_HR_MEAS_CHAR]            =
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ,
       CHAR_DECLARATION_SIZE,CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_notify}},
-      
+
     // Heart Rate Measurement Characteristic Value
-    [HRS_IDX_HR_MEAS_VAL]             =   
+    [HRS_IDX_HR_MEAS_VAL]             =
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&heart_rate_meas_uuid, ESP_GATT_PERM_READ,
       HRPS_HT_MEAS_MAX_LEN,0, NULL}},
 
     // Heart Rate Measurement Characteristic - Client Characteristic Configuration Descriptor
-    [HRS_IDX_HR_MEAS_NTF_CFG]        =    
+    [HRS_IDX_HR_MEAS_NTF_CFG]        =
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid, ESP_GATT_PERM_READ|ESP_GATT_PERM_WRITE,
       sizeof(uint16_t),sizeof(heart_measurement_ccc), (uint8_t *)heart_measurement_ccc}},
 
     // Body Sensor Location Characteristic Declaration
-    [HRS_IDX_BOBY_SENSOR_LOC_CHAR]  = 
+    [HRS_IDX_BOBY_SENSOR_LOC_CHAR]  =
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ,
       CHAR_DECLARATION_SIZE,CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
 
     // Body Sensor Location Characteristic Value
-    [HRS_IDX_BOBY_SENSOR_LOC_VAL]   = 
+    [HRS_IDX_BOBY_SENSOR_LOC_VAL]   =
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&body_sensor_location_uuid, ESP_GATT_PERM_READ_ENCRYPTED,
       sizeof(uint8_t), sizeof(body_sensor_loc_val), (uint8_t *)body_sensor_loc_val}},
 
     // Heart Rate Control Point Characteristic Declaration
-    [HRS_IDX_HR_CTNL_PT_CHAR]          = 
+    [HRS_IDX_HR_CTNL_PT_CHAR]          =
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ,
       CHAR_DECLARATION_SIZE,CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_write}},
-                                         			
+
     // Heart Rate Control Point Characteristic Value
-    [HRS_IDX_HR_CTNL_PT_VAL]             = 
+    [HRS_IDX_HR_CTNL_PT_VAL]             =
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&heart_rate_ctrl_point, ESP_GATT_PERM_WRITE_ENCRYPTED|ESP_GATT_PERM_READ_ENCRYPTED,
-      sizeof(uint8_t), sizeof(heart_ctrl_point), (uint8_t *)heart_ctrl_point}},  
+      sizeof(uint8_t), sizeof(heart_ctrl_point), (uint8_t *)heart_ctrl_point}},
 };
 
 static char *esp_key_type_to_str(esp_ble_key_type_t key_type)
@@ -304,7 +304,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         break;
     case ESP_GAP_BLE_PASSKEY_NOTIF_EVT:  ///the app will receive this evt when the IO  has Output capability and the peer device IO has Input capability.
         ///show the passkey number to the user to input it in the peer deivce.
-        ESP_LOGE(GATTS_TABLE_TAG, "The passkey Notify number:%d", param->ble_security.key_notif.passkey);
+        ESP_LOGI(GATTS_TABLE_TAG, "The passkey Notify number:%d", param->ble_security.key_notif.passkey);
         break;
     case ESP_GAP_BLE_KEY_EVT:
         //shows the ble key info share with peer device to the user.
@@ -369,7 +369,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
             break;
         case ESP_GATTS_READ_EVT:
             break;
-        case ESP_GATTS_WRITE_EVT: 
+        case ESP_GATTS_WRITE_EVT:
             ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_WRITE_EVT, write value:");
             esp_log_buffer_hex(GATTS_TABLE_TAG, param->write.value, param->write.len);
             break;
@@ -430,7 +430,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
 }
 
 
-static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, 
+static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
                                 esp_ble_gatts_cb_param_t *param)
 {
     /* If event is register event, store the gatts_if for each profile */
@@ -439,7 +439,7 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
             heart_rate_profile_tab[HEART_PROFILE_APP_IDX].gatts_if = gatts_if;
         } else {
             ESP_LOGI(GATTS_TABLE_TAG, "Reg app failed, app_id %04x, status %d\n",
-                    param->reg.app_id, 
+                    param->reg.app_id,
                     param->reg.status);
             return;
         }
@@ -523,14 +523,14 @@ void app_main()
     esp_ble_gap_set_security_param(ESP_BLE_SM_MAX_KEY_SIZE, &key_size, sizeof(uint8_t));
     /* If your BLE device act as a Slave, the init_key means you hope which types of key of the master should distribut to you,
     and the response key means which key you can distribut to the Master;
-    If your BLE device act as a master, the response key means you hope which types of key of the slave should distribut to you, 
+    If your BLE device act as a master, the response key means you hope which types of key of the slave should distribut to you,
     and the init key means which key you can distribut to the slave. */
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_INIT_KEY, &init_key, sizeof(uint8_t));
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(uint8_t));
 
-    /* Just show how to clear all the bonded devices 
+    /* Just show how to clear all the bonded devices
      * Delay 30s, clear all the bonded devices
-     * 
+     *
      * vTaskDelay(30000 / portTICK_PERIOD_MS);
      * remove_all_bonded_devices();
      */
