@@ -153,6 +153,16 @@ The following roles are provided:
 - ``:example_file:`path``` - points to file inside ESP-IDF examples dir
 - ``:example_raw:`path``` - points to raw view of the file inside ESP-IDF examples dir
 
+Example implementation::
+
+    * :example:`get-started/hello_world`
+    * :example:`Hello World! <get-started/hello_world>`
+
+How it renders:
+
+* :example:`get-started/hello_world`
+* :example:`Hello World! <get-started/hello_world>`
+
 A check is added to the CI build script, which searches RST files for presence of hard-coded links (identified by tree/master, blob/master, or raw/master part of the URL). This check can be run manually: ``cd docs`` and then ``make gh-linkcheck``.
 
 .. _add-illustrations:
@@ -248,7 +258,7 @@ Installation of Doxygen is OS dependent:
 
 .. note::
 
-    If you are installing on Windows system (Linux and MacOS users should skip this note), **before** going further, execute two extra steps below. These steps are required for the :ref:`blockdiag <add-illustrations>` to install:
+    If you are installing on Windows system (Linux and MacOS users should skip this note), **before** going further, execute two extra steps below. These steps are required to install dependencies of "blockdiag" discussed under :ref:`add-illustrations`.
 
     1.  Update all the system packages:
 
