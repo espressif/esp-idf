@@ -4,7 +4,7 @@
 #
 # component_paths contains only unique component names. Directories
 # earlier in the component_dirs list take precedence.
-function(find_all_components component_dirs filter_names component_paths component_names)
+function(components_find_all component_dirs filter_names component_paths component_names)
   # component_dirs entries can be files or lists of files
   set(paths "")
   set(names "")
@@ -44,7 +44,7 @@ function(find_all_components component_dirs filter_names component_paths compone
 
   set(${component_paths} ${paths} PARENT_SCOPE)
   set(${component_names} ${names} PARENT_SCOPE)
-endfunction()
+endfunction(components_find_all)
 
 
 # Add a component to the build, using the COMPONENT variables defined
@@ -98,16 +98,16 @@ function(register_component)
     target_include_directories(${component} PRIVATE ${include_dir})
   endforeach()
 
-endfunction()
+endfunction(register_component)
 
 function(register_config_only_component)
   get_filename_component(component_dir ${CMAKE_CURRENT_LIST_FILE} DIRECTORY)
   get_filename_component(component ${component_dir} NAME)
 
   # No-op for now...
-endfunction()
+endfunction(register_config_only_component)
 
-function(finish_component_registration)
+function(components_finish_registration)
   # each component should see the include directories of each other
   #
   # (we can't do this until all components are registered, because if(TARGET ...) won't work
@@ -130,4 +130,4 @@ function(finish_component_registration)
 
   # set COMPONENT_LIBRARIES in top-level scope
   set(COMPONENT_LIBRARIES "${COMPONENT_LIBRARIES}" PARENT_SCOPE)
-endfunction()
+endfunction(components_finish_registration)

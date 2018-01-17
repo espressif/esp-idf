@@ -12,7 +12,7 @@ if(NOT SDKCONFIG)
   message(FATAL_ERROR "Bootloader subproject expects the SDKCONFIG variable to be passed in by the app build process.")
 endif()
 
-include($ENV{IDF_PATH}/idf.cmake)
+include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
 add_executable(bootloader.elf
   main/bootloader_start.c
