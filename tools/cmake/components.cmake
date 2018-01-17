@@ -76,14 +76,26 @@ function(register_component)
     endforeach()
   endif()
 
+  # binaries to embed directly in library
+  spaces2list(COMPONENT_EMBED_FILES)
+  spaces2list(COMPONENT_EMBED_TXTFILES)
+  foreach(embed_data ${COMPONENT_EMBED_FILES} ${COMPONENT_EMBED_TXTFILES})
+    if (embed_data IN_LIST COMPONENT_EMBED_TXTFILES)
+      set(embed_type "TEXT")
+    else()
+      set(embed_type "BINARY")
+    endif()
+    target_add_binary_data("${component}" "${embed_data}" "${embed_type}")
+  endforeach()
+
   # add public includes from other components when building this component
-  if(COMPONENT_SRCS)
-    add_library(${component} STATIC ${COMPONENT_SRCS})
+  if(COMPONENT_SRCS OR embed_binaries)
+    add_library(${component} STATIC ${COMPONENT_SRCS} ${embed_binaries})
     set(include_type PUBLIC)
   else()
     add_library(${component} INTERFACE) # header-only component
     set(include_type INTERFACE)
-  endif(COMPONENT_SRCS)
+  endif(COMPONENT_SRCS OR embed_binaries)
 
   foreach(include_dir ${COMPONENT_ADD_INCLUDEDIRS})
     get_filename_component(include_dir ${include_dir} ABSOLUTE BASE_DIR ${component_dir})
@@ -117,9 +129,13 @@ function(components_finish_registration)
       if (${a_type} STREQUAL STATIC_LIBRARY)
         foreach(b ${COMPONENTS})
           if (TARGET ${b} AND NOT ${a} STREQUAL ${b})
+            # Add all public compile options from b in a
             target_include_directories(${a} PRIVATE
-              $<TARGET_PROPERTY:${b},INTERFACE_INCLUDE_DIRECTORIES>
-              )
+              $<TARGET_PROPERTY:${b},INTERFACE_INCLUDE_DIRECTORIES>)
+            target_compile_definitions(${a} PRIVATE
+              $<TARGET_PROPERTY:${b},INTERFACE_COMPILE_DEFINITIONS>)
+            target_compile_options(${a} PRIVATE
+              $<TARGET_PROPERTY:${b},INTERFACE_COMPILE_OPTIONS>)
           endif()
         endforeach(b)
       endif(${a_type} STREQUAL STATIC_LIBRARY)
@@ -130,4 +146,15 @@ function(components_finish_registration)
 
   # set COMPONENT_LIBRARIES in top-level scope
   set(COMPONENT_LIBRARIES "${COMPONENT_LIBRARIES}" PARENT_SCOPE)
+
+  # Embedded binary & text files
+  spaces2list(COMPONENT_EMBED_FILES)
+  foreach(embed_src ${COMPONENT_EMBED_FILES})
+    target_add_binary_data(${component} "${embed_src}" BINARY)
+  endforeach()
+  spaces2list(COMPONENT_EMBED_TXTFILES)
+  foreach(embed_src ${COMPONENT_EMBED_TXTFILES})
+    target_add_binary_data(${component} "${embed_src}" TEXT)
+  endforeach()
+
 endfunction(components_finish_registration)

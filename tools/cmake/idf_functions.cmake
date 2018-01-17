@@ -69,7 +69,7 @@ function(idf_set_global_compiler_options)
   endif()
 
   # Always generate debug symbols (even in Release mode, these don't
-  # go itno ther final binary
+  # go into the final binary so have no impact on size)
   add_compile_options(-ggdb)
 
   add_compile_options("-I${CMAKE_BINARY_DIR}") # for sdkconfig.h
@@ -107,6 +107,4 @@ function(idf_verify_environment)
   gcc_version_check("5.2.0")
   crosstool_version_check("1.22.0-80-g6c4433a")
 
-  
-
-endfunction(idf_verify_environment)
+endfunction()

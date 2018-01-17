@@ -4,5 +4,5 @@ set(COMPONENT_SRCDIRS library port)
 register_component()
 
 target_compile_definitions(mbedtls PUBLIC
-	MBEDTLS_CONFIG_FILE="mbedtls/esp_config.h"
+	-DMBEDTLS_CONFIG_FILE="mbedtls/esp_config.h"
 )
