@@ -73,6 +73,7 @@ function(move_if_different source destination)
 
 endfunction()
 
+
 # add_compile_options variant for C++ code only
 #
 # This adds global options, set target properties for
@@ -94,3 +95,29 @@ function(add_c_compile_options)
     add_compile_options($<$<COMPILE_LANGUAGE:C>:${option}>)
   endforeach()
 endfunction()
+
+
+# target_add_binary_data adds binary data into the built target,
+# by converting it to a generated source file which is then compiled
+# to a binary object as part of the build
+function(target_add_binary_data target embed_file embed_type)
+
+  get_filename_component(embed_file "${embed_file}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+
+  get_filename_component(name "${embed_file}" NAME)
+  set(embed_srcfile "${CMAKE_BINARY_DIR}/${name}.c")
+
+  add_custom_command(OUTPUT "${embed_srcfile}"
+    COMMAND "${CMAKE_COMMAND}"
+    -D "DATA_FILE=${embed_file}"
+    -D "SOURCE_FILE=${embed_srcfile}"
+    -D "FILE_TYPE=${embed_type}"
+    -P "${IDF_PATH}/tools/cmake/scripts/data_file_to_c.cmake"
+    MAIN_DEPENDENCY "${embed_file}"
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+
+  set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES "${embed_srcfile}")
+
+  target_sources("${target}" PRIVATE "${embed_srcfile}")
+endfunction()
+

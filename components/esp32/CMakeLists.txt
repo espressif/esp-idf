@@ -10,6 +10,8 @@ if(BOOTLOADER_BUILD)
 else()
   # Regular app build
 
+  set(COMPONENT_SRCDIRS ". hwcrypto")
+
   register_component()
 
   target_link_libraries(esp32 "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib")
