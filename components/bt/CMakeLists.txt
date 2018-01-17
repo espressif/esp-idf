@@ -10,7 +10,7 @@ if(CONFIG_BT_ENABLED)
 
     set(COMPONENT_ADD_INCLUDEDIRS ${COMPONENT_ADD_INCLUDEDIRS}
       bluedroid/bta/include
-	  bluedroid/bta/sys/include
+      bluedroid/bta/sys/include
       bluedroid/btcore/include
       bluedroid/device/include
       bluedroid/gki/include
