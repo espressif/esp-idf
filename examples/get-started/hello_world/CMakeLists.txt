@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.5)
 set(CMAKE_TOOLCHAIN_FILE $ENV{IDF_PATH}/toolchain.cmake)
 project(idf_project ASM C CXX)
 
-include($ENV{IDF_PATH}/idf.cmake)
+include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
 add_executable(hello_world.elf
   main/hello_world_main.c)

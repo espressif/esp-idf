@@ -1,5 +1,24 @@
 # Some IDF-specific functions and functions
 
+include(crosstool_version_check)
+
+macro(idf_set_global_variables)
+
+  set_default(EXTRA_COMPONENT_DIRS "")
+
+  # PROJECT_PATH has the path to the IDF project (top-level cmake directory)
+  #
+  # (cmake calls this CMAKE_SOURCE_DIR, keeping old name for compatibility.)
+  set(PROJECT_PATH "${CMAKE_SOURCE_DIR}")
+
+  # Note: "main" is no longer a component...
+  #
+  set_default(COMPONENT_DIRS "${PROJECT_PATH}/components ${EXTRA_COMPONENT_DIRS} ${IDF_PATH}/components")
+  spaces2list(COMPONENT_DIRS)
+
+  spaces2list(COMPONENTS)
+
+endmacro()
 
 # Add all the IDF global compiler & preprocessor options
 # (applied to all components). Some are config-dependent
@@ -53,7 +72,9 @@ function(idf_set_global_compiler_options)
   # go itno ther final binary
   add_compile_options(-ggdb)
 
-endfunction()
+  add_compile_options("-I${CMAKE_BINARY_DIR}") # for sdkconfig.h
+
+endfunction(idf_set_global_compiler_options)
 
 # Override add_executable to add IDF-specific
 # linker flags & map file to all built executables
@@ -66,4 +87,26 @@ function(add_executable target)
   target_link_libraries(${target} "-Wl,--gc-sections -Wl,--cref -Wl,--Map=${mapfile} -Wl,--start-group")
 
   set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES "${CMAKE_CURRENT_BINARY_DIR}/${mapfile}")
-endfunction()
+endfunction(add_executable)
+
+
+# Verify the IDF environment is configured correctly (environment, toolchain, etc)
+function(idf_verify_environment)
+
+  # Check toolchain is configured properly in cmake
+  if(NOT ( ${CMAKE_SYSTEM_NAME} STREQUAL "Generic" AND ${CMAKE_C_COMPILER} MATCHES xtensa))
+    message(FATAL_ERROR "The parent project CMakeLists.txt file needs to set CMAKE_TOOLCHAIN_FILE "
+      "before including this file. "
+      "Update CMakeLists.txt to match the template project and delete CMakeCache.txt before "
+      "re-running cmake.")
+  endif()
+
+  #
+  # Warn if the toolchain version doesn't match
+  #
+  gcc_version_check("5.2.0")
+  crosstool_version_check("1.22.0-80-g6c4433a")
+
+  
+
+endfunction(idf_verify_environment)

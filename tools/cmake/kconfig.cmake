@@ -1,14 +1,14 @@
 include(ExternalProject)
 
-add_compile_options("-I${CMAKE_BINARY_DIR}")
+macro(kconfig_set_variables)
+  set(MCONF ${IDF_PATH}/tools/kconfig/mconf)
 
-set(MCONF ${IDF_PATH}/tools/kconfig/mconf)
+  set_default(SDKCONFIG ${PROJECT_PATH}/sdkconfig)
+  set(SDKCONFIG_HEADER ${CMAKE_BINARY_DIR}/sdkconfig.h)
+  set(SDKCONFIG_CMAKE ${CMAKE_BINARY_DIR}/sdkconfig.cmake)
 
-set_default(SDKCONFIG ${PROJECT_PATH}/sdkconfig)
-set(SDKCONFIG_HEADER ${CMAKE_BINARY_DIR}/sdkconfig.h)
-set(SDKCONFIG_CMAKE ${CMAKE_BINARY_DIR}/sdkconfig.cmake)
-
-set(ROOT_KCONFIG ${IDF_PATH}/Kconfig)
+  set(ROOT_KCONFIG ${IDF_PATH}/Kconfig)
+endmacro()
 
 # Use the existing Makefile to build mconf when needed
 #
@@ -24,7 +24,7 @@ ExternalProject_Add(mconf
   )
 
 # Find all Kconfig files for all components
-function(build_component_config)
+function(kconfig_process_config)
   file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/include/config")
   set(kconfigs )
   set(kconfigs_projbuild )
