@@ -307,7 +307,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
 
     switch (event) {
     case ESP_GATTC_REG_EVT:
-        ESP_LOGE(GATTC_TAG, "REG EVT, set scan params");
+        ESP_LOGI(GATTC_TAG, "REG EVT, set scan params");
         esp_ble_gap_set_scan_params(&ble_scan_params);
         break;
     case ESP_GATTC_CONNECT_EVT:

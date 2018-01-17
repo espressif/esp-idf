@@ -2598,7 +2598,6 @@ tBTM_STATUS btm_sec_mx_access_request (BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_o
 void btm_sec_conn_req (UINT8 *bda, UINT8 *dc)
 {
     tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev (bda);
-    BTM_TRACE_ERROR ("%s\n", __func__);
     /* Some device may request a connection before we are done with the HCI_Reset sequence */
     if (!controller_get_interface()->get_is_ready()) {
         BTM_TRACE_ERROR ("Security Manager: connect request when device not ready\n");
@@ -4209,7 +4208,6 @@ void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
 
     btm_acl_resubmit_page();
 
-    BTM_TRACE_ERROR ("%s\n", __func__);
     /* Commenting out trace due to obf/compilation problems.
     */
 #if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
@@ -5971,7 +5969,7 @@ static void btm_sec_check_pending_enc_req (tBTM_SEC_DEV_REC  *p_dev_rec, tBT_TRA
                 if (p_e->p_callback) {
                     (*p_e->p_callback) (p_dev_rec->bd_addr, transport, p_e->p_ref_data, res);
                 }
-				
+
 				fixed_queue_try_remove_from_queue(btm_cb.sec_pending_q, (void *)p_e);
             }
         }

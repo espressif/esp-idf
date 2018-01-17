@@ -1493,7 +1493,7 @@ static void btc_a2dp_source_feeding_state_reset(void)
              btc_aa_src_cb.media_feeding.cfg.pcm.num_channel *
              BTC_MEDIA_TIME_TICK_MS) / 1000;
 
-        APPL_TRACE_WARNING("pcm bytes per tick %d",
+        APPL_TRACE_EVENT("pcm bytes per tick %d",
                            (int)btc_aa_src_cb.media_feeding_state.pcm.bytes_per_tick);
     }
 }
