@@ -64,9 +64,6 @@ Revision: $Rev: 3734 $
 #include "freertos/FreeRTOS.h"
 #include "SEGGER_SYSVIEW.h"
 #include "rom/ets_sys.h"
-#if CONFIG_FREERTOS_UNICORE == 0
-#include "driver/timer.h"
-#endif
 #include "esp_app_trace.h"
 #include "esp_app_trace_util.h"
 #include "esp_intr_alloc.h"
@@ -86,10 +83,49 @@ extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 // The target device name
 #define SYSVIEW_DEVICE_NAME     "ESP32"
 
+// Determine which timer to use as timestamp source
+#if CONFIG_SYSVIEW_TS_SOURCE_CCOUNT
+#define TS_USE_CCOUNT 1
+#elif CONFIG_SYSVIEW_TS_SOURCE_ESP_TIMER
+#define TS_USE_ESP_TIMER 1
+#else
+#define TS_USE_TIMERGROUP 1
+#endif
+
+#if TS_USE_TIMERGROUP
+#include "driver/timer.h"
+
 // Timer group timer divisor
 #define SYSVIEW_TIMER_DIV       2
+
 // Frequency of the timestamp.
 #define SYSVIEW_TIMESTAMP_FREQ  (esp_clk_apb_freq() / SYSVIEW_TIMER_DIV)
+
+// Timer ID and group ID
+#if defined(CONFIG_SYSVIEW_TS_SOURCE_TIMER_00) || defined(CONFIG_SYSVIEW_TS_SOURCE_TIMER_01)
+#define TS_TIMER_ID 0
+#else
+#define TS_TIMER_ID 1
+#endif // TIMER_00 || TIMER_01
+
+#if defined(CONFIG_SYSVIEW_TS_SOURCE_TIMER_00) || defined(CONFIG_SYSVIEW_TS_SOURCE_TIMER_10)
+#define TS_TIMER_GROUP 0
+#else
+#define TS_TIMER_GROUP 1
+#endif // TIMER_00 || TIMER_10
+
+#endif // TS_USE_TIMERGROUP
+
+#if TS_USE_ESP_TIMER
+// esp_timer provides 1us resolution
+#define SYSVIEW_TIMESTAMP_FREQ  (1000000)
+#endif // TS_USE_ESP_TIMER
+
+#if TS_USE_CCOUNT
+// CCOUNT is incremented at CPU frequency
+#define SYSVIEW_TIMESTAMP_FREQ  (CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ * 1000000)
+#endif // TS_USE_CCOUNT
+
 // System Frequency.
 #define SYSVIEW_CPU_FREQ        (esp_clk_cpu_freq())
 
@@ -103,11 +139,8 @@ extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
     #define SYSTICK_INTR_ID (ETS_INTERNAL_TIMER1_INTR_SOURCE+ETS_INTERNAL_INTR_SOURCE_OFF)
 #endif
 
-static timer_idx_t s_ts_timer_idx;
-static timer_group_t s_ts_timer_group;
-
 // SystemView is single core specific: it implies that SEGGER_SYSVIEW_LOCK()
-// disables IRQs (disables rescheduling globaly). So we can not use finite timeouts for locks and return error
+// disables IRQs (disables rescheduling globally). So we can not use finite timeouts for locks and return error
 // in case of expiration, because error will not be handled and SEGGER's code will go further implying that
 // everything is fine, so for multi-core env we have to wait on underlying lock forever
 #define SEGGER_LOCK_WAIT_TMO  ESP_APPTRACE_TMO_INFINITE
@@ -213,35 +246,24 @@ static void _cbSendSystemDesc(void) {
 */
 static void SEGGER_SYSVIEW_TS_Init()
 {
-    timer_config_t config;
-
-#if CONFIG_SYSVIEW_TS_SOURCE_TIMER_00
-    s_ts_timer_group = TIMER_GROUP_0;
-    s_ts_timer_idx = TIMER_0;
-#endif
-#if CONFIG_SYSVIEW_TS_SOURCE_TIMER_01
-    s_ts_timer_group = TIMER_GROUP_0;
-    s_ts_timer_idx = TIMER_1;
-#endif
-#if CONFIG_SYSVIEW_TS_SOURCE_TIMER_10
-    s_ts_timer_group = TIMER_GROUP_1;
-    s_ts_timer_idx = TIMER_0;
-#endif
-#if CONFIG_SYSVIEW_TS_SOURCE_TIMER_11
-    s_ts_timer_group = TIMER_GROUP_1;
-    s_ts_timer_idx = TIMER_1;
-#endif
-    config.alarm_en = 0;
-    config.auto_reload = 0;
-    config.counter_dir = TIMER_COUNT_UP;
-    config.divider = SYSVIEW_TIMER_DIV;
-    config.counter_en = 0;
-    /*Configure timer*/
-    timer_init(s_ts_timer_group, s_ts_timer_idx, &config);
-    /*Load counter value */
-    timer_set_counter_value(s_ts_timer_group, s_ts_timer_idx, 0x00000000ULL);
-    /*Enable timer interrupt*/
-    timer_start(s_ts_timer_group, s_ts_timer_idx);
+    /* We only need to initialize something if we use Timer Group.
+     * esp_timer and ccount can be used as is.
+     */
+#if TS_USE_TIMERGROUP
+    timer_config_t config = {
+        .alarm_en = 0,
+        .auto_reload = 0,
+        .counter_dir = TIMER_COUNT_UP,
+        .divider = SYSVIEW_TIMER_DIV,
+        .counter_en = 0
+    };
+    /* Configure timer */
+    timer_init(TS_TIMER_GROUP, TS_TIMER_ID, &config);
+    /* Load counter value */
+    timer_set_counter_value(TS_TIMER_GROUP, TS_TIMER_ID, 0x00000000ULL);
+    /* Start counting */
+    timer_start(TS_TIMER_GROUP, TS_TIMER_ID);
+#endif // TS_USE_TIMERGROUP
 }
 
 void SEGGER_SYSVIEW_Conf(void) {
@@ -296,12 +318,14 @@ void SEGGER_SYSVIEW_Conf(void) {
 
 U32 SEGGER_SYSVIEW_X_GetTimestamp()
 {
-#if CONFIG_FREERTOS_UNICORE == 0
+#if TS_USE_TIMERGROUP
     uint64_t ts = 0;
-    timer_get_counter_value(s_ts_timer_group, s_ts_timer_idx, &ts);
-    return (U32)ts; // return lower part of counter value
-#else
+    timer_get_counter_value(TS_TIMER_GROUP, TS_TIMER_ID, &ts);
+    return (U32) ts; // return lower part of counter value
+#elif TS_USE_CCOUNT
     return portGET_RUN_TIME_COUNTER_VALUE();
+#elif TS_USE_ESP_TIMER
+    return (U32) esp_timer_get_time(); // return lower part of counter value
 #endif
 }
 
