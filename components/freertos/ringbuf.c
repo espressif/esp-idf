@@ -404,9 +404,8 @@ static void returnItemToRingbufDefault(ringbuf_t *rb, void *item) {
 //can be increase.
 //This function by itself is not threadsafe, always call from within a muxed section.
 static void returnItemToRingbufBytebuf(ringbuf_t *rb, void *item) {
-    uint8_t *data=(uint8_t*)item;
-    configASSERT(data >= rb->data);
-    configASSERT(data < rb->data+rb->size);
+    configASSERT((uint8_t *)item >= rb->data);
+    configASSERT((uint8_t *)item < rb->data+rb->size);
     //Free the read memory.
     rb->free_ptr=rb->read_ptr;
 }
@@ -692,10 +691,9 @@ void *xRingbufferReceiveFromISR(RingbufHandle_t ringbuf, size_t *item_size)
 }
 
 void *xRingbufferReceiveUpTo(RingbufHandle_t ringbuf, size_t *item_size, TickType_t ticks_to_wait, size_t wanted_size) {
-    ringbuf_t *rb=(ringbuf_t *)ringbuf;
     if (wanted_size == 0) return NULL;
-    configASSERT(rb);
-    configASSERT(rb->flags & flag_bytebuf);
+    configASSERT(ringbuf);
+    configASSERT(((ringbuf_t *)ringbuf)->flags & flag_bytebuf);
     return xRingbufferReceiveGeneric(ringbuf, item_size, ticks_to_wait, wanted_size);
 }
 
