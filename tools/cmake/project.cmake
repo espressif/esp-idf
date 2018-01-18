@@ -38,6 +38,8 @@ kconfig_process_config()
 # Include sdkconfig.cmake so rest of the build knows the configuration
 include(${SDKCONFIG_CMAKE})
 
+set(PYTHON "${CONFIG_PYTHON}")
+
 # Add some idf-wide definitions
 idf_set_global_compiler_options()
 
