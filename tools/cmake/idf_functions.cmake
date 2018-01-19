@@ -3,6 +3,7 @@
 include(crosstool_version_check)
 
 macro(idf_set_global_variables)
+  # Note that CONFIG_xxx is not available when this function is called
 
   set_default(EXTRA_COMPONENT_DIRS "")
 
@@ -17,6 +18,9 @@ macro(idf_set_global_variables)
   spaces2list(COMPONENT_DIRS)
 
   spaces2list(COMPONENTS)
+
+  # Tell cmake to drop executables in the top-level build dir
+  set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
 
 endmacro()
 
@@ -76,27 +80,18 @@ function(idf_set_global_compiler_options)
 
 endfunction(idf_set_global_compiler_options)
 
-# Override add_executable to add IDF-specific
-# linker flags & map file to all built executables
-function(add_executable target)
-  get_filename_component(basename ${target} NAME_WE)
-  set(mapfile "${basename}.map")
-
-  _add_executable(${ARGV})
-
-  target_link_libraries(${target} "-Wl,--gc-sections -Wl,--cref -Wl,--Map=${mapfile} -Wl,--start-group")
-
-  set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES "${CMAKE_CURRENT_BINARY_DIR}/${mapfile}")
-endfunction(add_executable)
-
 
 # Verify the IDF environment is configured correctly (environment, toolchain, etc)
 function(idf_verify_environment)
 
+  if(NOT CMAKE_PROJECT_NAME)
+    message(FATAL_ERROR "Project top-level CMakeLists.txt file must call project() before including project.cmake")
+  endif()
+
   # Check toolchain is configured properly in cmake
   if(NOT ( ${CMAKE_SYSTEM_NAME} STREQUAL "Generic" AND ${CMAKE_C_COMPILER} MATCHES xtensa))
-    message(FATAL_ERROR "The parent project CMakeLists.txt file needs to set CMAKE_TOOLCHAIN_FILE "
-      "before including this file. "
+    message(FATAL_ERROR "Project top-level CMakeLists.txt file needs to set CMAKE_TOOLCHAIN_FILE "
+      "before including project.cmake.\n"
       "Update CMakeLists.txt to match the template project and delete CMakeCache.txt before "
       "re-running cmake.")
   endif()
@@ -108,3 +103,28 @@ function(idf_verify_environment)
   crosstool_version_check("1.22.0-80-g6c4433a")
 
 endfunction()
+
+# idf_add_executable
+#
+# Calls add_executable to add the final project executable
+# Adds .map & .bin file targets
+# Sets up flash-related targets
+function(idf_add_executable)
+  set(exe_target ${PROJECT_NAME}.elf)
+
+  spaces2list(${MAIN_SRCS})
+  add_executable(${exe_target} "${MAIN_SRCS}")
+
+  add_map_file(${exe_target})
+endfunction(idf_add_executable)
+
+
+# add_map_file
+#
+# Set linker args for 'exe_target' to generate a linker Map file
+function(add_map_file exe_target)
+  get_filename_component(basename ${exe_target} NAME_WE)
+  set(mapfile "${basename}.map")
+  target_link_libraries(${exe_target} "-Wl,--gc-sections -Wl,--cref -Wl,--Map=${mapfile} -Wl,--start-group")
+  set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES "${CMAKE_CURRENT_BINARY_DIR}/${mapfile}")
+endfunction(add_map_file)

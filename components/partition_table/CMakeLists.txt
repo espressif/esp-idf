@@ -20,27 +20,34 @@ else()
   set(final_partition_target "build_partition_table")
 endif()
 
-add_custom_target(build_partition_table ALL
-  "${PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py" -q
-  ${partition_csv} ${unsigned_partition_bin}
-  BYPRODUCTS ${unsigned_partition_bin}
-  DEPENDS ${partition_csv} "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py"
-  VERBATIM)
+if(CONFIG_PARTITION_TABLE_MD5)
+    set(md5_opt --disable-md5sum)
+endif()
+
+if(CONFIG_ESPTOOLPY_FLASHSIZE)
+    set(flashsize_opt --flash-size ${CONFIG_ESPTOOLPY_FLASHSIZE})
+endif()
+
+add_custom_command(OUTPUT "${unsigned_partition_bin}"
+    COMMAND "${PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py" -q ${md5_opt} ${flashsize_opt}
+    ${partition_csv} ${unsigned_partition_bin}
+    DEPENDS ${partition_csv} "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py"
+    VERBATIM)
 
 # Add signing steps
 if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
   get_filename_component(secure_boot_signing_key "${CONFIG_SECURE_BOOT_SIGNING_KEY}" ABSOLUTE BASE_DIR "${PROJECT_PATH}")
 
-  add_custom_target(signpartition_table ALL
-    "${PYTHON}" "${ESPSECUREPY}" sign_data --keyfile "${secure_boot_signing_key}" -o "${final_partition_bin}" "${unsigned_partition_bin}"
-    BYPRODUCTS "${final_partition_bin}"
+  add_custom_command(OUTPUT "${final_partition_bin}"
+    COMMAND "${PYTHON}" "${ESPSECUREPY}" sign_data --keyfile "${secure_boot_signing_key}" -o "${final_partition_bin}" "${unsigned_partition_bin}"
     DEPENDS "${unsigned_partition_bin}"
     VERBATIM)
 
 endif()
 
-# Use global properties ESPTOOL_WRITE_FLASH_ARGS & FLASH_DEPENDS to pass this info to the esptool component for flashing
-set_property(GLOBAL APPEND_STRING PROPERTY ESPTOOL_WRITE_FLASH_ARGS "${final_partition_bin} ${partition_table_offset} ")
-set_property(GLOBAL APPEND PROPERTY FLASH_DEPENDS "${final_partition_target}")
+add_custom_target(partition_table ALL DEPENDS "${final_partition_bin}")
+
+# Use global properties ESPTOOL_WRITE_FLASH_ARGS to pass this info to build hte list of esptool write arguments for flashing
+set_property(GLOBAL APPEND_STRING PROPERTY ESPTOOL_WRITE_FLASH_ARGS "${partition_table_offset} ${final_partition_bin} ")
 
 register_config_only_component()

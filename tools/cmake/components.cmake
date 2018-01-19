@@ -76,6 +76,15 @@ function(register_component)
     endforeach()
   endif()
 
+  # add public includes from other components when building this component
+  if(COMPONENT_SRCS OR embed_binaries)
+    add_library(${component} STATIC ${COMPONENT_SRCS})
+    set(include_type PUBLIC)
+  else()
+    add_library(${component} INTERFACE) # header-only component
+    set(include_type INTERFACE)
+  endif()
+
   # binaries to embed directly in library
   spaces2list(COMPONENT_EMBED_FILES)
   spaces2list(COMPONENT_EMBED_TXTFILES)
@@ -88,20 +97,13 @@ function(register_component)
     target_add_binary_data("${component}" "${embed_data}" "${embed_type}")
   endforeach()
 
-  # add public includes from other components when building this component
-  if(COMPONENT_SRCS OR embed_binaries)
-    add_library(${component} STATIC ${COMPONENT_SRCS} ${embed_binaries})
-    set(include_type PUBLIC)
-  else()
-    add_library(${component} INTERFACE) # header-only component
-    set(include_type INTERFACE)
-  endif(COMPONENT_SRCS OR embed_binaries)
-
+  # add public includes
   foreach(include_dir ${COMPONENT_ADD_INCLUDEDIRS})
     get_filename_component(include_dir ${include_dir} ABSOLUTE BASE_DIR ${component_dir})
     target_include_directories(${component} ${include_type} ${include_dir})
   endforeach()
 
+  # add private includes
   foreach(include_dir ${COMPONENT_PRIV_INCLUDEDIRS})
     if (${include_type} STREQUAL INTERFACE)
       message(FATAL_ERROR "Component ${component} can't have no source files and COMPONENT_PRIV_INCLUDEDIRS set.")
@@ -123,10 +125,10 @@ function(components_finish_registration)
   # each component should see the include directories of each other
   #
   # (we can't do this until all components are registered, because if(TARGET ...) won't work
-  foreach(a ${COMPONENTS})
+  foreach(a ${COMPONENTS} ${CMAKE_PROJECT_NAME}.elf)
     if (TARGET ${a})
       get_target_property(a_type ${a} TYPE)
-      if (${a_type} STREQUAL STATIC_LIBRARY)
+      if (${a_type} STREQUAL STATIC_LIBRARY OR ${a_type} STREQUAL EXECUTABLE)
         foreach(b ${COMPONENTS})
           if (TARGET ${b} AND NOT ${a} STREQUAL ${b})
             # Add all public compile options from b in a
@@ -138,14 +140,13 @@ function(components_finish_registration)
               $<TARGET_PROPERTY:${b},INTERFACE_COMPILE_OPTIONS>)
           endif()
         endforeach(b)
-      endif(${a_type} STREQUAL STATIC_LIBRARY)
+      endif(${a_type} STREQUAL STATIC_LIBRARY OR ${a_type} STREQUAL EXECUTABLE)
 
-      set(COMPONENT_LIBRARIES "${COMPONENT_LIBRARIES};${a}")
+      if (${a_type} MATCHES .+_LIBRARY)
+        set(COMPONENT_LIBRARIES "${COMPONENT_LIBRARIES};${a}")
+      endif()
     endif()
   endforeach()
-
-  # set COMPONENT_LIBRARIES in top-level scope
-  set(COMPONENT_LIBRARIES "${COMPONENT_LIBRARIES}" PARENT_SCOPE)
 
   # Embedded binary & text files
   spaces2list(COMPONENT_EMBED_FILES)
@@ -156,5 +157,7 @@ function(components_finish_registration)
   foreach(embed_src ${COMPONENT_EMBED_TXTFILES})
     target_add_binary_data(${component} "${embed_src}" TEXT)
   endforeach()
+
+  target_link_libraries(${CMAKE_PROJECT_NAME}.elf ${COMPONENT_LIBRARIES})
 
 endfunction(components_finish_registration)

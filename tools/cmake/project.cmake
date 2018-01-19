@@ -50,17 +50,31 @@ add_definitions(-DIDF_VER=\"${GIT_REVISION}\")
 git_submodule_check("${IDF_PATH}")
 
 
+# Include any top-level project_include.cmake files from components
+foreach(component ${COMPONENT_PATHS})
+  include_if_exists("${component}/project_include.cmake")
+endforeach()
+
 #
-# Add components to the build
+# Add each component to the build as a library
 #
 foreach(component ${COMPONENT_PATHS})
   get_filename_component(component_name ${component} NAME)
   add_subdirectory(${component} ${component_name})
 endforeach()
 
+#
+# Add the app executable to the build (has name of PROJECT.elf)
+#
+idf_add_executable()
+
+#
+# Finish component registration (add cross-dependencies, make
+# executable dependent on all components.)
+#
 components_finish_registration()
 
-# Load the targets for the bootloader subproject
+# Define the external target to build the bootloader subproject
 if(NOT BOOTLOADER_BUILD)
   include(bootloader_subproject)
 endif()
