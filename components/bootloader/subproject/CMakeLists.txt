@@ -12,8 +12,7 @@ set(BOOTLOADER_BUILD 1)
 set(IS_BOOTLOADER_BUILD 1)  # deprecated, use BOOTLOADER_BUILD
 add_definitions(-DBOOTLOADER_BUILD=1)
 
-set(MAIN_SRCS main/bootloader_start.c
-  main/flash_qio_mode.c)
+set(MAIN_SRCS main/bootloader_start.c)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 

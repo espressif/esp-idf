@@ -70,11 +70,6 @@ idf_add_executable()
 
 #
 # Finish component registration (add cross-dependencies, make
-# executable dependent on all components.)
+# executable dependent on all components)
 #
 components_finish_registration()
-
-# Define the external target to build the bootloader subproject
-if(NOT BOOTLOADER_BUILD)
-  include(bootloader_subproject)
-endif()
