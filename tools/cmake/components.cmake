@@ -54,24 +54,23 @@ function(register_component)
   get_filename_component(component_dir ${CMAKE_CURRENT_LIST_FILE} DIRECTORY)
   get_filename_component(component ${component_dir} NAME)
 
-  if(NOT COMPONENT_SRCDIRS)
-    set(COMPONENT_SRCDIRS ".")
-  endif()
   spaces2list(COMPONENT_SRCDIRS)
-
-  if(NOT COMPONENT_ADD_INCLUDEDIRS)
-    set(COMPONENT_ADD_INCLUDEDIRS "include")
-  endif()
   spaces2list(COMPONENT_ADD_INCLUDEDIRS)
 
-  # if not explicit, build COMPONENT_SRCS by globbing in COMPONENT_SRCDIRS
+  # Add to COMPONENT_SRCS by globbing in COMPONENT_SRCDIRS
   if(NOT COMPONENT_SRCS)
     foreach(dir ${COMPONENT_SRCDIRS})
-      get_filename_component(dir ${dir} ABSOLUTE BASE_DIR ${component_dir})
-      file(GLOB matches "${dir}/*.[c|S]" "${dir}/*.cpp")
+      get_filename_component(abs_dir ${dir} ABSOLUTE BASE_DIR ${component_dir})
+      if(NOT IS_DIRECTORY ${abs_dir})
+        message(FATAL_ERROR "${CMAKE_CURRENT_LIST_FILE}: COMPONENT_SRCDIRS entry '${dir}' does not exist")
+      endif()
+
+      file(GLOB matches "${abs_dir}/*.[c|S]" "${abs_dir}/*.cpp")
       if(matches)
         list(SORT matches)
         set(COMPONENT_SRCS "${COMPONENT_SRCS};${matches}")
+      else()
+        message(FATAL_ERROR "${CMAKE_CURRENT_LIST_FILE}: COMPONENT_SRCDIRS entry '${dir}' contains no source files")
       endif(matches)
     endforeach()
   endif()
@@ -99,17 +98,24 @@ function(register_component)
 
   # add public includes
   foreach(include_dir ${COMPONENT_ADD_INCLUDEDIRS})
-    get_filename_component(include_dir ${include_dir} ABSOLUTE BASE_DIR ${component_dir})
-    target_include_directories(${component} ${include_type} ${include_dir})
+    get_filename_component(abs_dir ${include_dir} ABSOLUTE BASE_DIR ${component_dir})
+    if(NOT IS_DIRECTORY ${abs_dir})
+      message(FATAL_ERROR "${CMAKE_CURRENT_LIST_FILE}: COMPONENT_ADD_INCLUDEDIRS entry '${include_dir}' does not exist")
+    endif()
+    target_include_directories(${component} ${include_type} ${abs_dir})
   endforeach()
 
   # add private includes
   foreach(include_dir ${COMPONENT_PRIV_INCLUDEDIRS})
     if (${include_type} STREQUAL INTERFACE)
-      message(FATAL_ERROR "Component ${component} can't have no source files and COMPONENT_PRIV_INCLUDEDIRS set.")
+      message(FATAL_ERROR "${CMAKE_CURRENT_LIST_FILE} sets no component source files but sets COMPONENT_PRIV_INCLUDEDIRS")
     endif()
-    get_filename_component(include_dir ${include_dir} ABSOLUTE BASE_DIR ${component_dir})
-    target_include_directories(${component} PRIVATE ${include_dir})
+
+    get_filename_component(abs_dir ${include_dir} ABSOLUTE BASE_DIR ${component_dir})
+    if(NOT IS_DIRECTORY ${abs_dir})
+      message(FATAL_ERROR "${CMAKE_CURRENT_LIST_FILE}: COMPONENT_PRIV_INCLUDEDIRS entry '${niclude_dir}' does not exist")
+    endif()
+    target_include_directories(${component} PRIVATE ${abs_dir})
   endforeach()
 
 endfunction(register_component)

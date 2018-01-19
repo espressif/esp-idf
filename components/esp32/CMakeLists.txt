@@ -11,6 +11,7 @@ else()
   # Regular app build
 
   set(COMPONENT_SRCDIRS ". hwcrypto")
+  set(COMPONENT_ADD_INCLUDEDIRS "include")
 
   register_component()
 

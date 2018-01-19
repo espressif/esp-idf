@@ -1,4 +1,4 @@
-set(COMPONENT_SRCDIRS library port)
-set(COMPONENT_ADD_INCLUDEDIRS include port/include)
+set(COMPONENT_SRCDIRS cJSON)
+set(COMPONENT_ADD_INCLUDEDIRS cJSON)
 
 register_component()

@@ -1,5 +1,4 @@
 set(COMPONENT_ADD_INCLUDEDIRS port/include include/expat)
-
 set(COMPONENT_SRCDIRS library port)
 
 register_component()

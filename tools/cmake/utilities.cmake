@@ -39,6 +39,7 @@ endfunction()
 #
 function(lines2list variable_name)
   string(REGEX REPLACE "\r?\n" ";" tmp "${${variable_name}}")
+  string(REGEX REPLACE ";;" ";" tmp "${tmp}")
   set("${variable_name}" "${tmp}" PARENT_SCOPE)
 endfunction()
 
