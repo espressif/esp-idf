@@ -102,7 +102,7 @@ endfunction()
 # to a binary object as part of the build
 function(target_add_binary_data target embed_file embed_type)
 
-  get_filename_component(embed_file "${embed_file}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+  get_filename_component(embed_file "${embed_file}" ABSOLUTE)
 
   get_filename_component(name "${embed_file}" NAME)
   set(embed_srcfile "${CMAKE_BINARY_DIR}/${name}.c")
@@ -121,3 +121,8 @@ function(target_add_binary_data target embed_file embed_type)
   target_sources("${target}" PRIVATE "${embed_srcfile}")
 endfunction()
 
+macro(include_if_exists path)
+  if(EXISTS "${path}")
+    include("${path}")
+  endif()
+endmacro(include_if_exists)
