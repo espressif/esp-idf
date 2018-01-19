@@ -1,18 +1,22 @@
+if(IS_BOOTLOADER_BUILD)
+  return()  # don't keep recursing!
+endif()
+
 # Glue to build the bootloader subproject binary as an external
 # cmake project under this one
 #
 #
-set(bootloader_subproject_build_dir "${CMAKE_BINARY_DIR}/bootloader_subproject")
+set(bootloader_build_dir "${CMAKE_BINARY_DIR}/bootloader")
 set(bootloader_binary_files
-  "${bootloader_subproject_build_dir}/bootloader.elf"
-  "${bootloader_subproject_build_dir}/bootloader.bin"
-  "${bootloader_subproject_build_dir}/bootloader.map"
+  "${bootloader_build_dir}/bootloader.elf"
+  "${bootloader_build_dir}/bootloader.bin"
+  "${bootloader_build_dir}/bootloader.map"
   )
 
-ExternalProject_Add(bootloader_subproject
+ExternalProject_Add(bootloader
   # TODO: support overriding the bootloader in COMPONENT_PATHS
   SOURCE_DIR "${IDF_PATH}/components/bootloader/subproject"
-  BINARY_DIR "${bootloader_subproject_build_dir}"
+  BINARY_DIR "${bootloader_build_dir}"
   CMAKE_ARGS -DSDKCONFIG=${SDKCONFIG} -DIDF_PATH="${IDF_PATH}"
   INSTALL_COMMAND ""
   BUILD_ALWAYS 1  # no easy way around this...
