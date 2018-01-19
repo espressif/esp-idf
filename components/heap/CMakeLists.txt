@@ -4,6 +4,8 @@ if(NOT CONFIG_HEAP_POISONING_DISABLED)
   set(COMPONENT_SRCS ${COMPONENT_SRCS} multi_heap_poisoning.c)
 endif()
 
+set(COMPONENT_ADD_INCLUDEDIRS "include")
+
 register_component()
 
 if(CONFIG_HEAP_TRACING)

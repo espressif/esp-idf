@@ -1,5 +1,5 @@
-set(COMPONENT_ADD_INCLUDEDIRS include port/include)
 set(COMPONENT_SRCDIRS src/crypto port src/fast_crypto)
+set(COMPONENT_ADD_INCLUDEDIRS include port/include)
 
 register_component()
 

@@ -1,2 +1,2 @@
-# idf_test will be registered as an INTERFACE library (ie header paths only)
+set(COMPONENT_ADD_INCLUDEDIRS "include")
 register_component()
