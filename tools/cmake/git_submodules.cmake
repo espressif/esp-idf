@@ -41,6 +41,16 @@ else(NOT GIT_FOUND)
       elseif(NOT "${status}" STREQUAL " ")
         message(WARNING "Git submodule ${submodule_path} is out of date. Run 'git submodule update --init --recursive' to fix.")
       endif()
+
+      # Force a re-run of cmake if the submodule's .git file changes or is changed (ie accidental deinit)
+      get_filename_component(submodule_abs_path ${submodule_path} ABSOLUTE BASE_DIR ${root_path})
+      set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${submodule_abs_path}/.git)
+      # same if the HEAD file in the submodule's directory changes (ie commit changes). This will at least prit the 'out of date' warning
+      set(submodule_head "${root_path}/.git/modules/${submodule_path}/HEAD")
+      if(EXISTS "${submodule_head}")
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${submodule_head})
+      endif()
+
     endforeach()
   endfunction(git_submodule_check)
 
