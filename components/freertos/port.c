@@ -288,6 +288,14 @@ BaseType_t xPortInIsrContext()
 	return ret;
 }
 
+/*
+ * This function will be called in High prio ISRs. Returns true if the current core was in ISR context
+ * before calling into high prio ISR context.
+ */
+BaseType_t IRAM_ATTR xPortInterruptedFromISRContext()
+{
+	return (port_interruptNesting[xPortGetCoreID()] != 0);
+}
 
 void vPortAssertIfInISR()
 {
