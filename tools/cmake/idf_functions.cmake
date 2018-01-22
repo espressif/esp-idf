@@ -128,4 +128,19 @@ function(add_map_file exe_target)
   set(mapfile "${basename}.map")
   target_link_libraries(${exe_target} "-Wl,--gc-sections -Wl,--cref -Wl,--Map=${mapfile} -Wl,--start-group")
   set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES "${CMAKE_CURRENT_BINARY_DIR}/${mapfile}")
+
+  # add size targets, depend on map file, run idf_size.py
+  add_custom_target(size
+    DEPENDS ${exe_target}
+    COMMAND ${PYTHON} ${IDF_PATH}/tools/idf_size.py ${mapfile}
+    )
+  add_custom_target(size-files
+    DEPENDS ${exe_target}
+    COMMAND ${PYTHON} ${IDF_PATH}/tools/idf_size.py --files ${mapfile}
+    )
+  add_custom_target(size-components
+    DEPENDS ${exe_target}
+    COMMAND ${PYTHON} ${IDF_PATH}/tools/idf_size.py --archives ${mapfile}
+    )
+
 endfunction(add_map_file)
