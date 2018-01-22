@@ -82,7 +82,6 @@ def load_sections(map_file):
     is a dict with details about this section, including a "sources" key which holds a list of source file line information for each symbol linked into the section.
     """
     scan_to_header(map_file, "Linker script and memory map")
-    scan_to_header(map_file, "END GROUP")
     sections = {}
     section = None
     sym_backup = None
@@ -102,16 +101,24 @@ def load_sections(map_file):
 
         # source file line, ie
         # 0x0000000040080400       0xa4 /home/gus/esp/32/idf/examples/get-started/hello_world/build/esp32/libesp32.a(cpu_start.o)
-        RE_SOURCE_LINE = r"\s*(?P<sym_name>\S*).* +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+) (?P<archive>.+\.a)\((?P<object_file>.+\.o)\)"
-
-        m = re.match(RE_SOURCE_LINE, line, re.M)
+        RE_SOURCE_LINE = r"\s*(?P<sym_name>\S*).* +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+) (?P<archive>.+\.a)\((?P<object_file>.+\.ob?j?)\)"
+        m = re.match(RE_SOURCE_LINE, line)
+        if not m:
+            # cmake build system links some object files directly, not part of any archive
+            RE_SOURCE_LINE = r".*? +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+) (?P<object_file>.+\.ob?j?)"
+            m = re.match(RE_SOURCE_LINE, line)
         if section is not None and m is not None:  # input source file details
             sym_name = m.group("sym_name") if len(m.group("sym_name")) > 0 else sym_backup
+            try:
+                archive = m.group("archive")
+            except IndexError:
+                archive = "(exe)"
+
             source = {
                 "size" : int(m.group("size"), 16),
                 "address" : int(m.group("address"), 16),
-                "archive" : os.path.basename(m.group("archive")),
-                "object_file" : m.group("object_file"),
+                "archive" : os.path.basename(archive)),
+                "object_file" : os.path.basename(m.group("object_file")),
                 "sym_name" : sym_name,
             }
             source["file"] = "%s:%s" % (source["archive"], source["object_file"])
