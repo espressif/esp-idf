@@ -111,11 +111,12 @@ endfunction()
 # Sets up flash-related targets
 function(idf_add_executable)
   set(exe_target ${PROJECT_NAME}.elf)
-
-  spaces2list(${MAIN_SRCS})
+ 
+  spaces2list(MAIN_SRCS)
   add_executable(${exe_target} "${MAIN_SRCS}")
 
   add_map_file(${exe_target})
+
 endfunction(idf_add_executable)
 
 

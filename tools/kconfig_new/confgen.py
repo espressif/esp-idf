@@ -32,10 +32,15 @@ import kconfiglib
 __version__ = "0.1"
 
 def main():
-    parser = argparse.ArgumentParser(description='confgen.py v%s - Config Generation Tool' % __version__, prog='conftool')
+    parser = argparse.ArgumentParser(description='confgen.py v%s - Config Generation Tool' % __version__, prog=os.path.basename(sys.argv[0]))
 
     parser.add_argument('--config',
                         help='Project configuration settings',
+                        nargs='?',
+                        default=None)
+
+    parser.add_argument('--defaults',
+                        help='Optional project defaults file, used if --config file doesn\'t exist',
                         nargs='?',
                         default=None)
 
@@ -73,13 +78,20 @@ def main():
 
     config = kconfiglib.Kconfig(args.kconfig)
 
+    if args.defaults is not None:
+        # always load defaults first, so any items which are not defined in that config
+        # will have the default defined in the defaults file
+        if not os.path.exists(args.defaults):
+            raise RuntimeError("Defaults file not found: %s" % args.defaults)
+        config.load_config(args.defaults)
+
     if args.config is not None:
         if os.path.exists(args.config):
             config.load_config(args.config)
         elif args.create_config_if_missing:
             print("Creating config file %s..." % args.config)
             config.write_config(args.config)
-        else:
+        elif args.default is None:
             raise RuntimeError("Config file not found: %s" % args.config)
 
         for output_type, filename in args.output:
