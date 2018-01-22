@@ -1304,6 +1304,10 @@ static mdns_tx_packet_t * _mdns_get_next_pcb_packet(tcpip_adapter_if_t tcpip_if,
  */
 static void _mdns_remove_scheduled_answer(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protocol, uint16_t type, mdns_srv_item_t * service)
 {
+    mdns_srv_item_t s = {NULL, NULL};
+    if (!service) {
+        service = &s;
+    }
     mdns_tx_packet_t * q = _mdns_server->tx_queue_head;
     while (q) {
         if (q->tcpip_if == tcpip_if && q->ip_protocol == ip_protocol && q->distributed) {
@@ -1335,6 +1339,10 @@ static void _mdns_dealloc_answer(mdns_out_answer_t ** destnation, uint16_t type,
     mdns_out_answer_t * d = *destnation;
     if (!d) {
         return;
+    }
+    mdns_srv_item_t s = {NULL, NULL};
+    if (!service) {
+        service = &s;
     }
     if (d->type == type && d->service == service->service) {
         *destnation = d->next;
