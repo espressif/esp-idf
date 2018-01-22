@@ -803,7 +803,7 @@ static uint16_t _mdns_append_txt_record(uint8_t * packet, uint16_t * index, mdns
     record_length += part_length;
 
     uint16_t data_len_location = *index - 2;
-    uint16_t data_len = 1;
+    uint16_t data_len = 0;
 
     char * tmp;
     mdns_txt_linked_item_t * txt = service->txt;
@@ -820,9 +820,11 @@ static uint16_t _mdns_append_txt_record(uint8_t * packet, uint16_t * index, mdns
         }
         txt = txt->next;
     }
-
-    packet[*index] = 0;
-    *index = *index + 1;
+    if (!data_len) {
+        data_len = 1;
+        packet[*index] = 0;
+        *index = *index + 1;
+    }
     _mdns_set_u16(packet, data_len_location, data_len);
     record_length += data_len;
     return record_length;
@@ -1302,6 +1304,10 @@ static mdns_tx_packet_t * _mdns_get_next_pcb_packet(tcpip_adapter_if_t tcpip_if,
  */
 static void _mdns_remove_scheduled_answer(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protocol, uint16_t type, mdns_srv_item_t * service)
 {
+    mdns_srv_item_t s = {NULL, NULL};
+    if (!service) {
+        service = &s;
+    }
     mdns_tx_packet_t * q = _mdns_server->tx_queue_head;
     while (q) {
         if (q->tcpip_if == tcpip_if && q->ip_protocol == ip_protocol && q->distributed) {
@@ -1333,6 +1339,10 @@ static void _mdns_dealloc_answer(mdns_out_answer_t ** destnation, uint16_t type,
     mdns_out_answer_t * d = *destnation;
     if (!d) {
         return;
+    }
+    mdns_srv_item_t s = {NULL, NULL};
+    if (!service) {
+        service = &s;
     }
     if (d->type == type && d->service == service->service) {
         *destnation = d->next;
