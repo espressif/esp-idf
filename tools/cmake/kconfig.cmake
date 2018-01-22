@@ -44,9 +44,23 @@ function(kconfig_process_config)
     endif()
   endforeach(dir ${COMPONENT_PATHS})
 
+  if(EXISTS ${SDKCONFIG}.defaults)
+    set(defaults_arg --defaults "${SDKCONFIG}.defaults")
+  endif()
+
+  set(confgen_basecommand
+    ${PYTHON} ${IDF_PATH}/tools/kconfig_new/confgen.py
+    --kconfig ${ROOT_KCONFIG}
+    --config ${SDKCONFIG}
+    ${defaults_arg}
+    --create-config-if-missing
+    --env "COMPONENT_KCONFIGS=${kconfigs}"
+    --env "COMPONENT_KCONFIGS_PROJBUILD=${kconfigs_projbuild}")
+
   # Generate the menuconfig target (uses C-based mconf tool)
   add_custom_target(menuconfig
     DEPENDS mconf
+    COMMAND ${confgen_basecommand} --output config ${SDKCONFIG}  # create any missing config file, with defaults if necessary
     COMMAND ${CMAKE_COMMAND} -E env
                 "COMPONENT_KCONFIGS=${kconfigs}"
                 "COMPONENT_KCONFIGS_PROJBUILD=${kconfigs_projbuild}"
@@ -59,12 +73,7 @@ function(kconfig_process_config)
   # makes sdkconfig.h and skdconfig.cmake
   #
   # This happens at cmake runtime not during the build
-  execute_process(COMMAND python ${IDF_PATH}/tools/kconfig_new/confgen.py
-    --kconfig ${ROOT_KCONFIG}
-    --config ${SDKCONFIG}
-    --create-config-if-missing
-    --env "COMPONENT_KCONFIGS=${kconfigs}"
-    --env "COMPONENT_KCONFIGS_PROJBUILD=${kconfigs_projbuild}"
+  execute_process(COMMAND ${confgen_basecommand}
     --output header ${SDKCONFIG_HEADER}
     --output cmake ${SDKCONFIG_CMAKE})
 
