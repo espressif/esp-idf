@@ -363,6 +363,17 @@ static void btc_blufi_send_notify(uint8_t *pkt, int pkt_len)
                                      pkt, rsp);
 }
 
+void btc_blufi_report_error(esp_blufi_error_state_t state)
+{
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_BLUFI;
+    msg.act = ESP_BLUFI_EVENT_REPORT_ERROR;
+    esp_blufi_cb_param_t param;
+    param.report_error.state = state;
+    btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
+}
+
 static void btc_blufi_recv_handler(uint8_t *data, int len)
 {
     struct blufi_hdr *hdr = (struct blufi_hdr *)data;
@@ -371,6 +382,7 @@ static void btc_blufi_recv_handler(uint8_t *data, int len)
 
     if (hdr->seq != blufi_env.recv_seq) {
         LOG_ERROR("%s seq %d is not expect %d\n", __func__, hdr->seq, blufi_env.recv_seq + 1);
+        btc_blufi_report_error(ESP_BLUFI_SEQUENCE_ERROR);
         return;
     }
 
@@ -382,6 +394,7 @@ static void btc_blufi_recv_handler(uint8_t *data, int len)
         ret = blufi_env.cbs->decrypt_func(hdr->seq, hdr->data, hdr->data_len);
         if (ret != hdr->data_len) { /* enc must be success and enc len must equal to plain len */
             LOG_ERROR("%s decrypt error %d\n", __func__, ret);
+            btc_blufi_report_error(ESP_BLUFI_DECRYPT_ERROR);
             return;
         }
     }
@@ -393,6 +406,7 @@ static void btc_blufi_recv_handler(uint8_t *data, int len)
         checksum_pkt = hdr->data[hdr->data_len] | (((uint16_t) hdr->data[hdr->data_len + 1]) << 8);
         if (checksum != checksum_pkt) {
             LOG_ERROR("%s checksum error %04x, pkt %04x\n", __func__, checksum, checksum_pkt);
+            btc_blufi_report_error(ESP_BLUFI_CHECKSUM_ERROR);
             return;
         }
     }
@@ -468,7 +482,7 @@ void btc_blufi_send_encap(uint8_t type, uint8_t *data, int total_data_len)
                 checksum = blufi_env.cbs->checksum_func(hdr->seq, &hdr->seq, hdr->data_len + 2);
                 memcpy(&hdr->data[hdr->data_len], &checksum, 2);
             }
-        } else if (!BLUFI_TYPE_IS_DATA_NEG(hdr->type)) {
+        } else if (!BLUFI_TYPE_IS_DATA_NEG(hdr->type) && !BLUFI_TYPE_IS_DATA_ERROR_INFO(hdr->type)) {
             if ((blufi_env.sec_mode & BLUFI_DATA_SEC_MODE_CHECK_MASK)
                     && (blufi_env.cbs && blufi_env.cbs->checksum_func)) {
                 hdr->fc |= BLUFI_FC_CHECK;
@@ -483,6 +497,7 @@ void btc_blufi_send_encap(uint8_t type, uint8_t *data, int total_data_len)
                     hdr->fc |= BLUFI_FC_ENC;
                 } else {
                     LOG_ERROR("%s encrypt error %d\n", __func__, ret);
+                    btc_blufi_report_error(ESP_BLUFI_ENCRYPT_ERROR);
                     osi_free(hdr);
                     return;
                 }
@@ -621,6 +636,28 @@ static void btc_blufi_send_ack(uint8_t seq)
     data = seq;
 
     btc_blufi_send_encap(type, &data, 1);
+}
+static void btc_blufi_send_error_info(uint8_t state)
+{
+    uint8_t type;
+    uint8_t *data;
+    int data_len;
+    uint8_t *p;
+
+    data_len = 1;
+    p = data = osi_malloc(data_len);
+    if (data == NULL) {
+        return;
+    }
+
+    type = BLUFI_BUILD_TYPE(BLUFI_TYPE_DATA, BLUFI_TYPE_DATA_SUBTYPE_ERROR_INFO);
+    *p++ = state;
+    if (p - data > data_len) {
+        LOG_ERROR("%s len error %d %d\n", __func__, (int)(p - data), data_len);
+    }
+
+    btc_blufi_send_encap(type, data, data_len);
+    osi_free(data);
 }
 
 void btc_blufi_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
@@ -826,6 +863,9 @@ void btc_blufi_cb_handler(btc_msg_t *msg)
     case ESP_BLUFI_EVENT_RECV_SLAVE_DISCONNECT_BLE:
         btc_blufi_cb_to_app(ESP_BLUFI_EVENT_RECV_SLAVE_DISCONNECT_BLE, param);
         break;
+    case ESP_BLUFI_EVENT_REPORT_ERROR:
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_REPORT_ERROR, param);
+        break;
     default:
         LOG_ERROR("%s UNKNOWN %d\n", __func__, msg->act);
         break;
@@ -986,6 +1026,9 @@ void btc_blufi_call_handler(btc_msg_t *msg)
         btc_blufi_send_wifi_list(arg->wifi_list.apCount, arg->wifi_list.list);
         break;
     }
+    case BTC_BLUFI_ACT_SEND_ERR_INFO:
+        btc_blufi_send_error_info(arg->blufi_err_infor.state);
+        break;
     default:
         LOG_ERROR("%s UNKNOWN %d\n", __func__, msg->act);
         break;
