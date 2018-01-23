@@ -20,6 +20,9 @@ config PYTHON
         The executable name/path that is used to run python. On some systems Python 2.x
         may need to be invoked as python2.
 
+        (Note: This option is used with the GNU Make build system only, not idf.py
+        or CMake-based builds.)
+
 config MAKE_WARN_UNDEFINED_VARIABLES
     bool "'make' warns on undefined variables"
     default "y"

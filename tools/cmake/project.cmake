@@ -22,6 +22,8 @@ include(kconfig)
 include(git_submodules)
 include(idf_functions)
 
+set_default(PYTHON "python")
+
 # Verify the environment is configured correctly
 idf_verify_environment()
 
@@ -38,8 +40,6 @@ kconfig_process_config()
 # Include sdkconfig.cmake so rest of the build knows the configuration
 include(${SDKCONFIG_CMAKE})
 
-set(PYTHON "${CONFIG_PYTHON}")
-
 # Add some idf-wide definitions
 idf_set_global_compiler_options()
 
@@ -48,7 +48,6 @@ idf_set_global_compiler_options()
 git_describe(GIT_REVISION)
 add_definitions(-DIDF_VER=\"${GIT_REVISION}\")
 git_submodule_check("${IDF_PATH}")
-
 
 # Include any top-level project_include.cmake files from components
 foreach(component ${COMPONENT_PATHS})
@@ -67,6 +66,10 @@ endforeach()
 # Add the app executable to the build (has name of PROJECT.elf)
 #
 idf_add_executable()
+
+# Write project description JSON file
+configure_file("${CMAKE_CURRENT_LIST_DIR}/project_description.json.in"
+  "${CMAKE_BINARY_DIR}/project_description.json")
 
 #
 # Finish component registration (add cross-dependencies, make
