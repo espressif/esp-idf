@@ -24,17 +24,17 @@ extern "C" {
 #define IPERF_DEFAULT_TIME     30
 
 #define IPERF_TRAFFIC_TASK_NAME       "iperf_traffic"
-#define IPERF_TRAFFIC_TASK_PRIORITY   19
+#define IPERF_TRAFFIC_TASK_PRIORITY   10
 #define IPERF_TRAFFIC_TASK_STACK      4096
 #define IPERF_REPORT_TASK_NAME        "iperf_report"
-#define IPERF_REPORT_TASK_PRIORITY    10
+#define IPERF_REPORT_TASK_PRIORITY    20
 #define IPERF_REPORT_TASK_STACK       4096
 #define IPERF_REPORT_TASK_NAME        "iperf_report"
 
 #define IPERF_UDP_TX_LEN     (1472)
-#define IPERF_UDP_RX_LEN     (32<<10)
-#define IPERF_TCP_TX_LEN     (32<<10)
-#define IPERF_TCP_RX_LEN     (32<<10)
+#define IPERF_UDP_RX_LEN     (16<<10)
+#define IPERF_TCP_TX_LEN     (16<<10)
+#define IPERF_TCP_RX_LEN     (16<<10)
 
 #define IPERF_MAX_DELAY      64
 

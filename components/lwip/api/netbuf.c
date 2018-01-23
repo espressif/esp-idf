@@ -103,7 +103,7 @@ netbuf_delete(struct netbuf *buf)
  * @return pointer to the allocated memory
  *         NULL if no memory could be allocated
  */
-void *
+void * ESP_IRAM_ATTR
 netbuf_alloc(struct netbuf *buf, u16_t size)
 {
   LWIP_ERROR("netbuf_alloc: invalid buf", (buf != NULL), return NULL;);
@@ -127,7 +127,7 @@ netbuf_alloc(struct netbuf *buf, u16_t size)
  *
  * @param buf pointer to the netbuf which contains the packet buffer to free
  */
-void
+void ESP_IRAM_ATTR
 netbuf_free(struct netbuf *buf)
 {
   LWIP_ERROR("netbuf_free: invalid buf", (buf != NULL), return;);

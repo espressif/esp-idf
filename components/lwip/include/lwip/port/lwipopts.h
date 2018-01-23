@@ -727,6 +727,12 @@
 #define ESP_LWIP_LOGI(...)              ESP_LOGI("lwip", __VA_ARGS__)
 #define ESP_PING                        1
 
+#if CONFIG_LWIP_IRAM_OPTIMIZATION
+#define ESP_IRAM_ATTR                   IRAM_ATTR
+#else
+#define ESP_IRAM_ATTR                   
+#endif
+
 #define TCP_WND_DEFAULT                 CONFIG_TCP_WND_DEFAULT
 #define TCP_SND_BUF_DEFAULT             CONFIG_TCP_SND_BUF_DEFAULT
 

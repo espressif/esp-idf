@@ -72,7 +72,7 @@ sys_mutex_new(sys_mutex_t *pxMutex)
 
 /** Lock a mutex
  * @param mutex the mutex to lock */
-void
+void ESP_IRAM_ATTR
 sys_mutex_lock(sys_mutex_t *pxMutex)
 {
   while (xSemaphoreTake(*pxMutex, portMAX_DELAY) != pdPASS);
@@ -87,7 +87,7 @@ sys_mutex_trylock(sys_mutex_t *pxMutex)
 
 /** Unlock a mutex
  * @param mutex the mutex to unlock */
-void
+void ESP_IRAM_ATTR
 sys_mutex_unlock(sys_mutex_t *pxMutex)
 {
   xSemaphoreGive(*pxMutex);
@@ -127,7 +127,7 @@ sys_sem_new(sys_sem_t *sem, u8_t count)
 
 /*-----------------------------------------------------------------------------------*/
 // Signals a semaphore
-void
+void ESP_IRAM_ATTR
 sys_sem_signal(sys_sem_t *sem)
 {
     xSemaphoreGive(*sem);
@@ -149,7 +149,7 @@ sys_sem_signal(sys_sem_t *sem)
   Notice that lwIP implements a function with a similar name,
   sys_sem_wait(), that uses the sys_arch_sem_wait() function.
 */
-u32_t
+u32_t ESP_IRAM_ATTR
 sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 {
   portTickType StartTime, EndTime, Elapsed;
@@ -228,14 +228,14 @@ sys_mbox_new(sys_mbox_t *mbox, int size)
 
 /*-----------------------------------------------------------------------------------*/
 //   Posts the "msg" to the mailbox.
-void
+void ESP_IRAM_ATTR
 sys_mbox_post(sys_mbox_t *mbox, void *msg)
 {
   while (xQueueSendToBack((*mbox)->os_mbox, &msg, portMAX_DELAY) != pdTRUE);
 }
 
 /*-----------------------------------------------------------------------------------*/
-err_t
+err_t ESP_IRAM_ATTR
 sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
 {
   err_t xReturn;
@@ -266,7 +266,7 @@ sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
   Note that a function with a similar name, sys_mbox_fetch(), is
   implemented by lwIP.
 */
-u32_t
+u32_t ESP_IRAM_ATTR
 sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 {
   void *dummyptr;

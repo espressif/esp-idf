@@ -16,6 +16,17 @@ config L2_TO_L3_COPY
         Please make sure you fully understand the impact of this feature before 
         enabling it.
 
+config LWIP_IRAM_OPTIMIZATION
+    bool "Enable LWIP IRAM optimization"
+    default n
+    help
+        If this feature is enabled, some functions relating to RX/TX in LWIP will be
+        put into IRAM, it can improve UDP/TCP throughput by >10% for single core mode,
+        it doesn't help too much for dual core mode. On the other hand, it needs about
+        10KB IRAM for these optimizations.
+
+        If this feature is disabled, all lwip functions will be put into FLASH.
+
 config LWIP_MAX_SOCKETS
     int "Max number of open sockets"
     range 1 32
