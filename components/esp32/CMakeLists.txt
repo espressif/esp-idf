@@ -41,6 +41,7 @@ else()
 
   target_link_libraries(esp32 "${CMAKE_CURRENT_SOURCE_DIR}/libhal.a")
   target_link_libraries(esp32 gcc)
+  target_link_libraries(esp32 "-u call_user_start_cpu0")
 
   #ld_include_panic_highint_hdl is added as an undefined symbol because otherwise the
 #linker will ignore panic_highint_hdl.S as it has no other files depending on any
@@ -69,6 +70,7 @@ else()
       COMMAND ${CMAKE_OBJCOPY} -O binary phy_init_data.obj ${PHY_INIT_DATA_BIN}
       )
     add_custom_target(phy_init_data ALL DEPENDS ${PHY_INIT_DATA_BIN})
+    add_dependencies(flash phy_init_data)
 
   endif(CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION)
 

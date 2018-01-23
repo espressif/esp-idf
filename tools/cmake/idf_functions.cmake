@@ -22,6 +22,12 @@ macro(idf_set_global_variables)
   # Tell cmake to drop executables in the top-level build dir
   set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
 
+  # cmake cross-toolchain doesn't include any gcc binutils names
+  set(CMAKE_OBJCOPY xtensa-esp32-elf-objcopy)
+
+  # path to idf.py tool
+  set(IDFTOOL ${PYTHON} "${IDF_PATH}/tools/idf.py")
+
 endmacro()
 
 # Add all the IDF global compiler & preprocessor options
@@ -117,6 +123,8 @@ function(idf_add_executable)
 
   add_map_file(${exe_target})
 
+  add_flasher_argfile(${exe_target})
+
 endfunction(idf_add_executable)
 
 
@@ -144,3 +152,12 @@ function(add_map_file exe_target)
     )
 
 endfunction(add_map_file)
+
+# add_flasher_argfile
+#
+# Add argument file(s) for flashing the app, and for flashing the whole system
+function(add_flasher_argfile)
+
+  
+
+endfunction(add_flasher_argfile)

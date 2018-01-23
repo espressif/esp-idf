@@ -25,6 +25,7 @@ import sys
 import os
 import os.path
 import tempfile
+import json
 
 import gen_kconfig_doc
 import kconfiglib
@@ -149,6 +150,26 @@ def write_cmake(config, filename):
                     prefix, sym.name, val))
         config.walk_menu(write_node)
 
+def write_json(config, filename):
+    config_dict = {}
+
+    def write_node(node):
+        sym = node.item
+        if not isinstance(sym, kconfiglib.Symbol):
+            return
+
+        val = sym.str_value  # this calculates _write_to_conf, due to kconfiglib magic
+        if sym._write_to_conf:
+            if sym.type in [ kconfiglib.BOOL, kconfiglib.TRISTATE ]:
+                val = (val != "n")
+            elif sym.type == kconfiglib.HEX:
+                val = int(val, 16)
+            elif sym.type == kconfiglib.INT:
+                val = int(val)
+            config_dict[sym.name] = val
+    config.walk_menu(write_node)
+    with open(filename, "w") as f:
+        json.dump(config_dict, f, indent=4, sort_keys=True)
 
 def update_if_changed(source, destination):
     with open(source, "r") as f:
@@ -167,7 +188,9 @@ OUTPUT_FORMATS = {
     "config" : write_config,
     "header" : write_header,
     "cmake" : write_cmake,
-    "docs" : gen_kconfig_doc.write_docs }
+    "docs" : gen_kconfig_doc.write_docs,
+    "json" : write_json,
+    }
 
 class FatalError(RuntimeError):
     """

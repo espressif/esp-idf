@@ -65,7 +65,7 @@ function(register_component)
         message(FATAL_ERROR "${CMAKE_CURRENT_LIST_FILE}: COMPONENT_SRCDIRS entry '${dir}' does not exist")
       endif()
 
-      file(GLOB matches "${abs_dir}/*.[c|S]" "${abs_dir}/*.cpp")
+      file(GLOB matches "${abs_dir}/*.c" "${abs_dir}/*.cpp" "${abs_dir}/*.S")
       if(matches)
         list(SORT matches)
         set(COMPONENT_SRCS "${COMPONENT_SRCS};${matches}")
