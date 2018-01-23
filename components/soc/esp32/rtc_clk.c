@@ -589,7 +589,7 @@ static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate()
      * (shifted by RTC_CLK_CAL_FRACT bits).
      * Xtal frequency will be (cal_val * 8M / 256) / 2^19
      */
-    uint32_t freq_mhz = (cal_val * (RTC_FAST_CLK_FREQ_APPROX / MHZ) / 256 ) >> RTC_CLK_CAL_FRACT;
+    uint32_t freq_mhz = (cal_val * RTC_FAST_CLK_FREQ_APPROX / MHZ / 256 ) >> RTC_CLK_CAL_FRACT;
     /* Guess the XTAL type. For now, only 40 and 26MHz are supported.
      */
     switch (freq_mhz) {
