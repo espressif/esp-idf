@@ -603,6 +603,18 @@ esp_err_t tcpip_adapter_set_hostname(tcpip_adapter_if_t tcpip_if, const char *ho
  */
 esp_err_t tcpip_adapter_get_hostname(tcpip_adapter_if_t tcpip_if, const char **hostname);
 
+/**
+ * @brief  Get the LwIP netif* that is assigned to the interface
+ *
+ * @param[in]   tcpip_if: the interface which we will get the hostname
+ * @param[out]  void ** netif: pointer to fill the resulting interface
+ *
+ * @return ESP_OK:success
+ *         ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY:interface status error
+ *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS:parameter error
+ */
+esp_err_t tcpip_adapter_get_netif(tcpip_adapter_if_t tcpip_if, void ** netif);
+
 #ifdef __cplusplus
 }
 #endif
