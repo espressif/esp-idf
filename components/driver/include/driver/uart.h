@@ -671,6 +671,181 @@ esp_err_t uart_disable_pattern_det_intr(uart_port_t uart_num);
  */
 esp_err_t uart_enable_pattern_det_intr(uart_port_t uart_num, char pattern_chr, uint8_t chr_num, int chr_tout, int post_idle, int pre_idle);
 
+/**
+ * @brief   UART enable RS-485 mode and RS-485 hald-duplex line driver control using the RTS control line
+ *
+ * @param uart_num UART port number.
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_FAIL Parameter error
+ */
+esp_err_t uart_set_rs485_hd_mode(uart_port_t uart_num, bool enable);
+
+
+/***************************EXAMPLE**********************************
+ *
+ *
+ * ----------------EXAMPLE OF UART SETTING ---------------------
+ * @code{c}
+ * //1. Setup UART
+ * #include "freertos/queue.h"
+ * //a. Set UART parameter
+ * int uart_num = 0;                                       //uart port number
+ * uart_config_t uart_config = {
+ *    .baud_rate = 115200,                                 //baudrate
+ *    .data_bits = UART_DATA_8_BITS,                       //data bit mode
+ *    .parity = UART_PARITY_DISABLE,                       //parity mode
+ *    .stop_bits = UART_STOP_BITS_1,                       //stop bit mode
+ *    .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,               //hardware flow control(cts/rts)
+ *    .rx_flow_ctrl_thresh = 120,                          //flow control threshold
+ * };
+ * uart_param_config(uart_num, &uart_config);
+ * //b1. Setup UART driver(with UART queue)
+ * QueueHandle_t uart_queue;
+ * //parameters here are just an example, tx buffer size is 2048
+ * uart_driver_install(uart_num, 1024 * 2, 1024 * 2, 10, &uart_queue, 0);
+ * //b2. Setup UART driver(without UART queue)
+ * //parameters here are just an example, tx buffer size is 0
+ * uart_driver_install(uart_num, 1024 * 2, 0, 10, NULL, 0);
+ *@endcode
+ *-----------------------------------------------------------------------------*
+ * @code{c}
+ * //2. Set UART pin
+ * //set UART pin, not needed if use default pins.
+ * uart_set_pin(uart_num, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, 15, 13);
+ * @endcode
+ *-----------------------------------------------------------------------------*
+ * @code{c}
+ * //3. Read data from UART.
+ * uint8_t data[128];
+ * int length = 0;
+ * length = uart_read_bytes(uart_num, data, sizeof(data), 100);
+ * @endcode
+ *-----------------------------------------------------------------------------*
+ * @code{c}
+ * //4. Write data to UART.
+ * char* test_str = "This is a test string.\n"
+ * uart_write_bytes(uart_num, (const char*)test_str, strlen(test_str));
+ * @endcode
+ *-----------------------------------------------------------------------------*
+ * @code{c}
+ * //5. Write data to UART, end with a break signal.
+ * uart_write_bytes_with_break(0, "test break\n",strlen("test break\n"), 100);
+ * @endcode
+ *-----------------------------------------------------------------------------*
+ * @code{c}
+ * //6. an example of echo test with hardware flow control on UART1
+ * void uart_loop_back_test()
+ * {
+ *     int uart_num = 1;
+ *     uart_config_t uart_config = {
+ *         .baud_rate = 115200,
+ *         .data_bits = UART_DATA_8_BITS,
+ *         .parity = UART_PARITY_DISABLE,
+ *         .stop_bits = UART_STOP_BITS_1,
+ *         .flow_ctrl = UART_HW_FLOWCTRL_CTS_RTS,
+ *         .rx_flow_ctrl_thresh = 122,
+ *     };
+ *     //Configure UART1 parameters
+ *     uart_param_config(uart_num, &uart_config);
+ *     //Set UART1 pins(TX: IO16, RX: IO17, RTS: IO18, CTS: IO19)
+ *     uart_set_pin(uart_num, 16, 17, 18, 19);
+ *     //Install UART driver( We don't need an event queue here)
+ *     uart_driver_install(uart_num, 1024 * 2, 1024*4, 0, NULL, 0);
+ *     uint8_t data[1000];
+ *     while(1) {
+ *         //Read data from UART
+ *         int len = uart_read_bytes(uart_num, data, sizeof(data), 10);
+ *         //Write data back to UART
+ *         uart_write_bytes(uart_num, (const char*)data, len);
+ *     }
+ * }
+ * @endcode
+ *-----------------------------------------------------------------------------*
+ * @code{c}
+ * //7. An example of using UART event queue on UART0.
+ * #include "freertos/queue.h"
+ * //A queue to handle UART event.
+ * QueueHandle_t uart0_queue;
+ * static const char *TAG = "uart_example";
+ * void uart_task(void *pvParameters)
+ * {
+ *     int uart_num = (int)pvParameters;
+ *     uart_event_t event;
+ *     size_t size = 1024;
+ *     uint8_t* dtmp = (uint8_t*)malloc(size);
+ *     for(;;) {
+ *         //Waiting for UART event.
+ *         if(xQueueReceive(uart0_queue, (void * )&event, (portTickType)portMAX_DELAY)) {
+ *             ESP_LOGI(TAG, "uart[%d] event:", uart_num);
+ *             switch(event.type) {
+ *                 memset(dtmp, 0, size);
+ *                 //Event of UART receving data
+ *                 case UART_DATA:
+ *                     ESP_LOGI(TAG,"data, len: %d", event.size);
+ *                     int len = uart_read_bytes(uart_num, dtmp, event.size, 10);
+ *                     ESP_LOGI(TAG, "uart read: %d", len);
+ *                     break;
+ *                 //Event of HW FIFO overflow detected
+ *                 case UART_FIFO_OVF:
+ *                     ESP_LOGI(TAG, "hw fifo overflow\n");
+ *                     break;
+ *                 //Event of UART ring buffer full
+ *                 case UART_BUFFER_FULL:
+ *                     ESP_LOGI(TAG, "ring buffer full\n");
+ *                     break;
+ *                 //Event of UART RX break detected
+ *                 case UART_BREAK:
+ *                     ESP_LOGI(TAG, "uart rx break\n");
+ *                     break;
+ *                 //Event of UART parity check error
+ *                 case UART_PARITY_ERR:
+ *                     ESP_LOGI(TAG, "uart parity error\n");
+ *                     break;
+ *                 //Event of UART frame error
+ *                 case UART_FRAME_ERR:
+ *                     ESP_LOGI(TAG, "uart frame error\n");
+ *                     break;
+ *                 //Others
+ *                 default:
+ *                     ESP_LOGI(TAG, "uart event type: %d\n", event.type);
+ *                     break;
+ *             }
+ *        }
+ *     }
+ *     free(dtmp);
+ *     dtmp = NULL;
+ *     vTaskDelete(NULL);
+ * }
+ *
+ * void uart_queue_test()
+ * {
+ *     int uart_num = 0;
+ *     uart_config_t uart_config = {
+ *        .baud_rate = 115200,
+ *        .data_bits = UART_DATA_8_BITS,
+ *        .parity = UART_PARITY_DISABLE,
+ *        .stop_bits = UART_STOP_BITS_1,
+ *        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+ *        .rx_flow_ctrl_thresh = 122,
+ *     };
+ *     //Set UART parameters
+ *     uart_param_config(uart_num, &uart_config);
+ *     //Set UART pins,(-1: default pin, no change.)
+ *     uart_set_pin(uart_num, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+ *     //Set UART log level
+ *     esp_log_level_set(TAG, ESP_LOG_INFO);
+ *     //Install UART driver, and get the queue.
+ *     uart_driver_install(uart_num, 1024 * 2, 1024*4, 10, &uart0_queue, 0);
+ *     //Create a task to handler UART event from ISR
+ *     xTaskCreate(uart_task, "uTask", 1024, (void*)uart_num, 10, NULL);
+ * }
+ * @endcode
+ *
+ ***************************END OF EXAMPLE**********************************/
+
+
 #ifdef __cplusplus
 }
 #endif
