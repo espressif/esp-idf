@@ -857,7 +857,7 @@ Convenience macros for peripheral registers access
 ULP source files are passed through C preprocessor before the assembler. This allows certain macros to be used to facilitate access to peripheral registers.
 
 Some existing macros are defined in ``soc/soc_ulp.h`` header file. These macros allow access to the fields of peripheral registers by their names.
-Peripheral registers names which can be used with these macros are the ones defined in ``soc/rtc_cntl_reg.h``, ``soc/rtc_io_reg.h``, ``soc/sens_reg.h``, and ``soc_rtc_i2c_reg.h``.
+Peripheral registers names which can be used with these macros are the ones defined in ``soc/rtc_cntl_reg.h``, ``soc/rtc_io_reg.h``, ``soc/sens_reg.h``, and ``soc/rtc_i2c_reg.h``.
 
 READ_RTC_REG(rtc_reg, low_bit, bit_width)
   Read up to 16 bits from rtc_reg[low_bit + bit_width - 1 : low_bit] into R0. For example::
