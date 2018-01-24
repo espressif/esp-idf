@@ -26,6 +26,12 @@
 // Forces data into DRAM instead of flash
 #define DRAM_ATTR __attribute__((section(".dram1")))
 
+// Forces data to be 4 bytes aligned
+#define WORD_ALIGNED_ATTR __attribute__((aligned(4)))
+
+// Forces data to be placed to DMA-capable places
+#define DMA_ATTR WORD_ALIGNED_ATTR DRAM_ATTR
+
 // Forces a string into DRAM instead of flash
 // Use as ets_printf(DRAM_STR("Hello world!\n"));
 #define DRAM_STR(str) (__extension__({static const DRAM_ATTR char __c[] = (str); (const char *)&__c;}))
