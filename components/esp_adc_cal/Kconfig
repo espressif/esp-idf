@@ -1,0 +1,37 @@
+menu "ADC-Calibration"
+
+config ADC_CAL_EFUSE_TP_DISABLE
+    bool "Disable Two Point values"
+    default "n"
+    help
+        Some ESP32s have Two Point calibration values burned into eFuse. Enabling
+        this option will prevent the ADC calibration component from using Two Point
+        values if they are available.
+
+config ADC_CAL_EFUSE_VREF_DISABLE
+    bool "Disable eFuse Vref"
+    default "n"
+    help
+        Some ESP32s have ADC Vref burned into eFuse. Enabling this option will
+        prevent the ADC calibration component from using eFuse Vref if they are 
+        available.
+
+config ADC_CAL_DEFAULT_VREF_DISABLE
+    bool "Disable Default Vref"
+    default "n"
+    help
+        The esp_adc_cal_characterize() function requires the user to provide a
+        vref_default argument to be used if eFuse values are unavailable. Enabling
+        this option will prevent the ADC calibration component from using the 
+        vref_default argument. Note that if eFuse values are also unavailabe, 
+        the esp_adc_cal_characterize will trigger an abort.
+
+config ADC_CAL_NO_BLK3_RESERVE_FLAG
+    bool "EFUSE_BLK3_PART_RESERVE not set"
+    default "n"
+    help
+        By default, ESP32s will have the EFUSE_BLK3_PART_RESERVE flag set if it 
+        uses BLK3 of eFuse to store Two Point values. Some ESP32s do not set this
+        flag. Enable this option if that is the case 
+
+endmenu  # ADC-Calibration

@@ -20,131 +20,171 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include "esp_err.h"
 #include "driver/adc.h"
+#include "esp_adc_cal_constants.h"
 
-/** @cond */
-#define ADC_CAL_GAIN_SCALE    16
-#define ADC_CAL_OFFSET_SCALE  10
+/**
+ * @brief ADC characterization mode
+ */
+typedef enum {
+    ESP_ADC_CAL_MODE_LIN = 0,               /**< Characterize the ADC as a linear curve*/
+    ESP_ADC_CAL_MODE_LUT= 1,                /**< Characterize the ADC using a lookup table*/
+} esp_adc_cal_mode_t;
 
-#define ADC_CAL_IDEAL_V_REF 1100 //In mV
-#define ADC_CAL_LOW_V_REF 1000
-#define ADC_CAL_HIGH_V_REF 1200
-#define ADC_CAL_MIN 0
-#define ADC_CAL_MAX 4095
-/** @endcond */
+/**
+ * @brief Type of calibration value used in characterization
+ */
+typedef enum {
+    ESP_ADC_CAL_VAL_EFUSE_VREF = 0,         /**< Characterization based on reference voltage stored in eFuse*/
+    ESP_ADC_CAL_VAL_EFUSE_TP = 1,           /**< Characterization based on Two Point values stored in eFuse*/
+    ESP_ADC_CAL_VAL_DEFAULT_VREF = 2,       /**< Characterization based on default reference voltage*/
+} esp_adc_cal_value_t;
 
 /**
  * @brief Structure storing Lookup Table
  *
- * The Lookup Tables (LUT) of a given attenuation contains 33 equally spaced
- * points. The Gain and Offset curves are used to find the appopriate gain and
- * offset factor given a reference voltage v_ref.
+ * A Lookup Table (LUT) of a given ADC and attenuation contains two curves
+ * mapping ADC readings to a voltage in mV. Each curve contains 33 equally spaced
+ * points separated by a step size of 128. The low_vref_curve represents the ADC
+ * voltage curve of a module with a reference voltage of 1000mV, whilst the
+ * high_vref_curve represents a reference voltage of 1200mV.
  *
- * @note A seperate LUT is provided for each attenuation and are defined in
- * esp_adc_cal_lookup_tables.c
+ * @note Separate LUTs are provided for each ADC at each attenuation
  */
 typedef struct {
-    uint32_t gain_m;       /**<Gradient of Gain Curve */
-    uint32_t gain_c;       /**<Offset of Gain Curve */
-    uint32_t offset_m;      /**<Gradient of Offset Curve */
-    uint32_t offset_c;      /**<Offset of Offset Curve */
-    uint32_t bit_shift;     /**<Bit shift used find corresponding LUT points
-                                given an ADC reading*/
-    uint32_t voltage[];     /**<Array of voltages in mV representing the
-                                ADC-Voltage curve */
+    uint32_t low_vref_curve[33];        /**< Voltage curve at a reference voltage of 1000mV*/
+    uint32_t high_vref_curve[33];       /**< Voltage curve at a reference voltage of 1200mV*/
 } esp_adc_cal_lookup_table_t;
 
 /**
- * @brief Structure storing ADC characteristics of given v_ref
- *
- * The ADC Characteristics structure stores the gain and offset factors of an
- * ESP32 module's ADC. These factors are calculated using the reference voltage,
- * and the Gain and Offset curves provided in the lookup tables.
+ * @brief Structure storing characteristics of an ADC
  *
  * @note Call esp_adc_cal_get_characteristics() to initialize the structure
- *
  */
 typedef struct {
-    uint32_t v_ref;         /**<Reference Voltage of current ESP32 Module in mV*/
-    uint32_t gain;          /**<Scaling factor used to correct LUT voltages to
-                                current v_ref. Bit shifted by << ADC_CAL_GAIN_SCALE
-                                for uint32 arithmetic */
-    uint32_t offset;        /**<Offset in mV used to correct LUT Voltages to current v_ref */
-    uint32_t ideal_offset;  /**<Offset in mV at the ideal reference voltage */
-    adc_bits_width_t bit_width;     /**<Bit width of ADC e.g. ADC_WIDTH_BIT_12 */
-    const esp_adc_cal_lookup_table_t *table;    /**<Pointer to LUT */
+    esp_adc_cal_mode_t mode;                            /**< Characterization mode*/
+    adc_unit_t adc_num;                                 /**< ADC number*/
+    union {
+        struct {
+            uint32_t coeff_a;                           /**< 1st order coefficient of linear characteristics curve*/
+            uint32_t coeff_b;                           /**< 0th order coefficient of linear characteristics curve*/
+        } linear_chars;
+        struct {
+            uint32_t vref;                              /**< Reference voltage*/
+            const esp_adc_cal_lookup_table_t *table;    /**< Pointer to lookup table*/
+        } lut_chars;
+    };
 } esp_adc_cal_characteristics_t;
 
-extern const esp_adc_cal_lookup_table_t esp_adc_cal_table_atten_0;  /**<LUT for atten0 */
-extern const esp_adc_cal_lookup_table_t esp_adc_cal_table_atten_1;  /**<LUT for atten1 */
-extern const esp_adc_cal_lookup_table_t esp_adc_cal_table_atten_2;  /**<LUT for atten2 */
-extern const esp_adc_cal_lookup_table_t esp_adc_cal_table_atten_3;  /**<LUT for atten3 */
 
 /**
- * @brief Calculate characteristics of ADC
+ * @brief Checks if ADC calibration values are stored in eFuse
  *
- * This function will calculate the gain and offset factors based on the
- * reference voltage parameter and the Gain and Offset curve provided in the LUT.
+ * This function checks if ADC reference voltage or Two Point calibration voltages
+ * have been burned to the eFuse of the current ESP32
  *
- * @note reference voltage of the ADCs can be routed to GPIO using
- * adc2_vref_to_gpio() from the ADC driver
+ * @param   value_type  Type of calibration value (ESP_ADC_CAL_VAL_EFUSE_VREF or ESP_ADC_CAL_VAL_EFUSE_TP)
  *
- * @note The LUT members have been bit shifted by ADC_CAL_GAIN_SCALE or
- * ADC_CAL_OFFSET_SCALE to make them uint32_t compatible. This bit shifting will
- * accounted for in this function
- *
- * @param[in]   v_ref       true reference voltage of the ADC in mV (1000 to 1200mV). Nominal
- *                          value for reference voltage is 1100mV.
- * @param[in]   atten       attenuation setting used to select the corresponding lookup table
- * @param[in]   bit_width   bit width of ADC
- * @param[out]  chars       pointer to structure used to store ADC characteristics of module
+ * @return
+ *      - ESP_OK: The calibration mode is supported in eFuse
+ *      - ESP_ERR_NOT_SUPPORTED: Error, eFuse values are not burned
+ *      - ESP_ERR_INVALID_ARG: Error, invalid argument (ESP_ADC_CAL_VAL_DEFAULT_VREF)
  */
-void esp_adc_cal_get_characteristics(uint32_t v_ref,
-                                     adc_atten_t atten,
-                                     adc_bits_width_t bit_width,
-                                     esp_adc_cal_characteristics_t *chars);
+esp_err_t esp_adc_cal_check_efuse(esp_adc_cal_value_t value_type);
 
 /**
- * @brief   Convert raw ADC reading to voltage in mV
+ * @brief Characterize an ADC at a particular attenuation under Linear or LUT Mode
  *
- * This function converts a raw ADC reading to a voltage in mV. This conversion
- * is based on the ADC's characteristics. The raw ADC reading is referenced
- * against the LUT (pointed to inside characteristics struct) to obtain a voltage.
- * Gain and offset factors are then applied to the voltage in order to obtain
- * the final result.
+ * This function will generate the characteristics curve of one of the ADCs at a
+ * particular attenuation. This characteristics curve will be stored in a
+ * characteristics structure. Linear Mode will be characterize the ADC-Voltage
+ * curve as a linear curve. LUT Mode will characterize the ADC-Voltage curve
+ * using a lookup table. Calibration values in eFuse will be used to generate
+ * the characteristics curve if available, and vref_default will be used if they
+ * are not.
  *
- * @param[in]   adc     ADC reading (different bit widths will be handled)
- * @param[in]   chars   pointer to structure containing ADC characteristics of
- *                      the module. Structure also contains pointer to the
- *                      corresponding LUT
+ * @note This function will abort if there are no available options for
+ *       characterization (characterization modes and calibration value types
+ *       can be enabled and disabled in menuconfig)
  *
- * @return              Calculated voltage in mV
+ * @param[in]   adc_num         ADC to characterize (ADC_UNIT_1 or ADC_UNIT_2)
+ * @param[in]   atten           Attenuation to characterize
+ * @param[in]   mode            Characterization mode (Linear or LUT)
+ * @param[in]   vref_default    Default ADC reference voltage in mV (used if eFuse is not available)
+ * @param[out]  chars           Pointer to empty structure used to store ADC characteristics
  *
- * @note characteristics structure must be initialized using
- * esp_adc_cal_get_characteristics() before this function is used
+ * @return
+ *      - ESP_ADC_CAL_VAL_EFUSE_VREF: eFuse Vref used for characterization
+ *      - ESP_ADC_CAL_VAL_EFUSE_TP: Two Point value used for characterization (only in Linear Mode)
+ *      - ESP_ADC_CAL_VAL_DEFAULT_VREF: Default Vref used for characterization
  */
-uint32_t esp_adc_cal_raw_to_voltage(uint32_t adc,
-                                    const esp_adc_cal_characteristics_t *chars);
+esp_adc_cal_value_t esp_adc_cal_characterize(adc_unit_t adc_num,
+                                             adc_atten_t atten,
+                                             esp_adc_cal_mode_t mode,
+                                             uint32_t vref_default,
+                                             esp_adc_cal_characteristics_t *chars);
+
 
 /**
- * @brief   Reads ADC1 and returns voltage in mV
+ * @brief   Convert an ADC reading to voltage in mV
  *
- * This function reads the ADC1 using adc1_get_raw() to obtain a raw ADC
- * reading. The reading is then converted into a voltage value using
- * esp_adc_cal_raw_to_voltage().
+ * This function converts a an ADC reading to a voltage in mV based on the
+ * ADC characteristics curve provided.
  *
- * @param[in]   channel     Channel of ADC1 to measure
- * @param[in]   chars       Pointer to ADC characteristics struct
+ * @param[in]   adc_reading     ADC reading
+ * @param[in]   bit_width       Bit width of the ADC reading
+ * @param[in]   chars           Pointer to initialized structure containing ADC characteristics curve
  *
- * @return      voltage     Calculated voltage in mV
+ * @return      Voltage in mV
  *
- * @note    ADC must be initialized using adc1_config_width() and
- *          adc1_config_channel_atten() before this function is used
- *
- * @note    characteristics structure must be initialized using
- *          esp_adc_cal_get_characteristics() before this function is used
+ * @note characteristics structure must be initialized first using esp_adc_cal_characterize()
  */
-uint32_t adc1_to_voltage(adc1_channel_t channel, const esp_adc_cal_characteristics_t *chars);
+uint32_t esp_adc_cal_raw_to_voltage(uint32_t adc_reading, adc_bits_width_t bit_width, const esp_adc_cal_characteristics_t *chars);
+
+/**
+ * @brief   Reads an ADC and returns a voltage in mV
+ *
+ * This function reads an ADC then converts the raw reading to a voltage in mV
+ * using the characteristics curve provided. The ADC that is read is also
+ * determined by the characteristics.
+ *
+ * @param[in]   channel     ADC Channel to read
+ * @param[in]   bit_width   Bit width of ADC reading (must be same as ADC configuration)
+ * @param[in]   chars       Pointer to initialized ADC characteristics structure
+ * @param[out]  voltage     Pointer to store converted voltage
+ *
+ * @return
+ *      - ESP_OK: ADC read and converted
+ *      - ESP_ERR_TIMEOUT: Error, could not read ADC
+ *      - ESP_ERR_INVALID_ARG: Error due to invalid arguments
+ *
+ * @note    The ADC must be initialized before calling this function. The
+ *          bit_width parameter must be the same as the bit width used in
+ *          configuration
+ *
+ * @note    Characteristics structure must be initialized using before calling
+ *          this function
+ */
+esp_err_t adc_to_voltage(adc_channel_t channel, adc_bits_width_t bit_width, const esp_adc_cal_characteristics_t *chars, uint32_t *voltage);
+
+/* -------------------------- Deprecated API ------------------------------- */
+
+/** @cond */    //Doxygen command to hide deprecated function from API Reference
+/**
+ * @deprecated  ADC1 characterization function. Deprecated in order to accommodate
+ *              new characterization functions. Use esp_adc_cal_characterize() instead
+ */
+void esp_adc_cal_get_characteristics(uint32_t vref, adc_atten_t atten, adc_bits_width_t bit_width, esp_adc_cal_characteristics_t *chars) __attribute__((deprecated));
+
+/*
+ * @deprecated  This function reads ADC1 and returns the corrected voltage. This
+ *              has been deprecated in order to accommodate ADC2 support and new
+ *              ADC calibration methods. Use the new function adc_to_voltage() instead
+ */
+uint32_t adc1_to_voltage(adc1_channel_t channel, const esp_adc_cal_characteristics_t *chars) __attribute__((deprecated));
+
+/** @endcond */
 
 #ifdef __cplusplus
 }
