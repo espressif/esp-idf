@@ -117,10 +117,15 @@ rtc_vddsdio_config_t rtc_vddsdio_get_config()
         result.force = 0;
         result.enable = (efuse_reg & EFUSE_RD_XPD_SDIO_REG_M) >> EFUSE_RD_XPD_SDIO_REG_S;
         result.tieh = (efuse_reg & EFUSE_RD_SDIO_TIEH_M) >> EFUSE_RD_SDIO_TIEH_S;
-        // in this case, DREFH/M/L are also set from EFUSE
-        result.drefh = (efuse_reg & EFUSE_RD_SDIO_DREFH_M) >> EFUSE_RD_SDIO_DREFH_S;
-        result.drefm = (efuse_reg & EFUSE_RD_SDIO_DREFM_M) >> EFUSE_RD_SDIO_DREFM_S;
-        result.drefl = (efuse_reg & EFUSE_RD_SDIO_DREFL_M) >> EFUSE_RD_SDIO_DREFL_S;
+        //DREFH/M/L eFuse are used for EFUSE_ADC_VREF instead. Therefore tuning
+        //will only be available on older chips that don't have EFUSE_ADC_VREF
+        if(REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG ,EFUSE_RD_BLK3_PART_RESERVE) == 0){
+            //BLK3_PART_RESERVE indicates the presence of EFUSE_ADC_VREF
+            // in this case, DREFH/M/L are also set from EFUSE
+            result.drefh = (efuse_reg & EFUSE_RD_SDIO_DREFH_M) >> EFUSE_RD_SDIO_DREFH_S;
+            result.drefm = (efuse_reg & EFUSE_RD_SDIO_DREFM_M) >> EFUSE_RD_SDIO_DREFM_S;
+            result.drefl = (efuse_reg & EFUSE_RD_SDIO_DREFL_M) >> EFUSE_RD_SDIO_DREFL_S;
+        }
         return result;
     }
 
