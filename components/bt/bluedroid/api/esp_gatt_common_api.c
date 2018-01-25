@@ -16,7 +16,7 @@
 #include "esp_gatt_common_api.h"
 #include "esp_bt_main.h"
 #include "esp_gatt_defs.h"
-#include "btc_main.h"
+#include "btc_gatt_common.h"
 
 /**
  * @brief           This function is called to set local MTU,
@@ -32,7 +32,7 @@
 esp_err_t esp_ble_gatt_set_local_mtu (uint16_t mtu)
 {
     btc_msg_t msg;
-    btc_ble_main_args_t arg;
+    btc_ble_gatt_com_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
@@ -41,9 +41,9 @@ esp_err_t esp_ble_gatt_set_local_mtu (uint16_t mtu)
     }
 
     msg.sig = BTC_SIG_API_CALL;
-    msg.pid = BTC_PID_MAIN_INIT;
+    msg.pid = BTC_PID_GATT_COMMON;
     msg.act = BTC_GATT_ACT_SET_LOCAL_MTU;
     arg.set_mtu.mtu = mtu;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_main_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatt_com_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }

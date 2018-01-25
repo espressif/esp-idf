@@ -24,6 +24,7 @@
 #include "btc_dev.h"
 #include "btc_gatts.h"
 #include "btc_gattc.h"
+#include "btc_gatt_common.h"
 #include "btc_gap_ble.h"
 #include "btc_blufi_prf.h"
 #include "btc_dm.h"
@@ -48,33 +49,36 @@ static xTaskHandle  xBtcTaskHandle = NULL;
 static xQueueHandle xBtcQueue = 0;
 
 static btc_func_t profile_tab[BTC_PID_NUM] = {
-    [BTC_PID_MAIN_INIT] = {btc_main_call_handler,       NULL                    },
-    [BTC_PID_DEV]       = {btc_dev_call_handler,        NULL                    },
+    [BTC_PID_MAIN_INIT]   = {btc_main_call_handler,       NULL                    },
+    [BTC_PID_DEV]         = {btc_dev_call_handler,        NULL                    },
 #if (GATTS_INCLUDED == TRUE)
-    [BTC_PID_GATTS]     = {btc_gatts_call_handler,      btc_gatts_cb_handler    },
+    [BTC_PID_GATTS]       = {btc_gatts_call_handler,      btc_gatts_cb_handler    },
 #endif  ///GATTS_INCLUDED == TRUE
 #if (GATTC_INCLUDED == TRUE)
-    [BTC_PID_GATTC]     = {btc_gattc_call_handler,      btc_gattc_cb_handler    },
+    [BTC_PID_GATTC]       = {btc_gattc_call_handler,      btc_gattc_cb_handler    },
 #endif  ///GATTC_INCLUDED == TRUE
-    [BTC_PID_GAP_BLE]   = {btc_gap_ble_call_handler,    btc_gap_ble_cb_handler  },
-    [BTC_PID_BLE_HID]   = {NULL, NULL},
-    [BTC_PID_SPPLIKE]   = {NULL, NULL},
+#if (GATTS_INCLUDED == TRUE || GATTC_INCLUDED == TRUE)
+    [BTC_PID_GATT_COMMON] = {btc_gatt_com_call_handler,   NULL                    },
+#endif //GATTC_INCLUDED == TRUE || GATTS_INCLUDED == TRUE
+    [BTC_PID_GAP_BLE]     = {btc_gap_ble_call_handler,    btc_gap_ble_cb_handler  },
+    [BTC_PID_BLE_HID]     = {NULL, NULL},
+    [BTC_PID_SPPLIKE]     = {NULL, NULL},
 #if (GATTS_INCLUDED == TRUE)
-    [BTC_PID_BLUFI]     = {btc_blufi_call_handler,      btc_blufi_cb_handler    },
+    [BTC_PID_BLUFI]       = {btc_blufi_call_handler,      btc_blufi_cb_handler    },
 #endif  ///GATTS_INCLUDED == TRUE
-    [BTC_PID_DM_SEC]    = {NULL,                        btc_dm_sec_cb_handler   },
-    [BTC_PID_ALARM]     = {btc_alarm_handler,           NULL                    },
+    [BTC_PID_DM_SEC]      = {NULL,                        btc_dm_sec_cb_handler   },
+    [BTC_PID_ALARM]       = {btc_alarm_handler,           NULL                    },
 #if CONFIG_CLASSIC_BT_ENABLED
 #if (BTC_GAP_BT_INCLUDED == TRUE)
-    [BTC_PID_GAP_BT]    = {btc_gap_bt_call_handler,     NULL                    },
+    [BTC_PID_GAP_BT]      = {btc_gap_bt_call_handler,     NULL                    },
 #endif /* (BTC_GAP_BT_INCLUDED == TRUE) */
-    [BTC_PID_PRF_QUE]   = {btc_profile_queue_handler,   NULL                    },
+    [BTC_PID_PRF_QUE]     = {btc_profile_queue_handler,   NULL                    },
 #if BTC_AV_INCLUDED
-    [BTC_PID_A2DP]      = {btc_a2dp_call_handler,       btc_a2dp_cb_handler     },
-    [BTC_PID_AVRC]      = {btc_avrc_call_handler,       NULL                    },
+    [BTC_PID_A2DP]        = {btc_a2dp_call_handler,       btc_a2dp_cb_handler     },
+    [BTC_PID_AVRC]        = {btc_avrc_call_handler,       NULL                    },
 #endif /* #if BTC_AV_INCLUDED */
 #if CONFIG_BT_SPP_ENABLED
-    [BTC_PID_SPP]       = {btc_spp_call_handler,        btc_spp_cb_handler      },
+    [BTC_PID_SPP]         = {btc_spp_call_handler,        btc_spp_cb_handler      },
 #endif /* #if CONFIG_BT_SPP_ENABLED */
 #endif /* #if CONFIG_CLASSIC_BT_ENABLED */
 };
