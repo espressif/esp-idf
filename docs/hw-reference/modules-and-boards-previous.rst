@@ -30,6 +30,28 @@ Documentation
 * `ESP32-PICO-D4 Datasheet <http://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf>`_ (PDF)
 
 
+.. _esp-modules-and-boards-esp32-devkitc-v2:
+
+ESP32 Core Board V2 / ESP32 DevKitC
+-----------------------------------
+
+Small and convenient development board with :ref:`esp-modules-and-boards-esp-wroom-32` module installed, break out pin headers and minimum additional components. Includes USB to serial programming interface, that also provides power supply for the board. Has pushbuttons to reset the board and put it in upload mode. 
+
+.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-core-board-v2.png
+    :align: center
+    :alt: ESP32 Core Board V2 / ESP32 DevKitC board
+    :width: 50%
+
+    ESP32 Core Board V2 / ESP32 DevKitC board
+
+Documentation
+"""""""""""""
+
+* :doc:`../get-started/get-started-devkitc-v2`
+* `ESP32 DevKitC V2 Schematic <https://dl.espressif.com/dl/schematics/ESP32-Core-Board-V2_sch.pdf>`__ (PDF)
+* `CP210x USB to UART Bridge VCP Drivers <https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers>`_
+
+
 .. _esp-modules-and-boards-esp-wrover-kit-v1:
 
 ESP-WROVER-KIT V1 / ESP32 DevKitJ V1
