@@ -48,6 +48,8 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len);
 /********************************************************************************/
 #if L2C_DYNAMIC_MEMORY == FALSE
 tL2C_CB l2cb;
+#else
+tL2C_CB *l2c_cb_ptr;
 #endif
 
 /*******************************************************************************
@@ -815,7 +817,9 @@ void l2c_process_held_packets(BOOLEAN timed_out)
 void l2c_init (void)
 {
     INT16  xx;
-
+#if L2C_DYNAMIC_MEMORY
+    l2c_cb_ptr = (tL2C_CB *)osi_malloc(sizeof(tL2C_CB));
+#endif /* #if L2C_DYNAMIC_MEMORY */
     memset (&l2cb, 0, sizeof (tL2C_CB));
     /* the psm is increased by 2 before being used */
     l2cb.dyn_psm = 0xFFF;
@@ -874,6 +878,9 @@ void l2c_free(void)
 {
     list_free(l2cb.rcv_pending_q);
     l2cb.rcv_pending_q = NULL;
+#if L2C_DYNAMIC_MEMORY
+    FREE_AND_RESET(l2c_cb_ptr);
+#endif 
 }
 
 /*******************************************************************************

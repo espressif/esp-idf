@@ -48,6 +48,8 @@
 /* system manager control block definition */
 #if BTA_DYNAMIC_MEMORY == FALSE
 tBTA_SYS_CB bta_sys_cb;
+#else
+tBTA_SYS_CB *bta_sys_cb_ptr;
 #endif
 
 static hash_map_t *bta_alarm_hash_map;
@@ -190,6 +192,9 @@ void bta_sys_free(void)
 {
     hash_map_free(bta_alarm_hash_map);
     osi_mutex_free(&bta_alarm_lock);
+#if BTA_DYNAMIC_MEMORY
+    FREE_AND_RESET(bta_sys_cb_ptr);
+#endif
 }
 
 /*******************************************************************************

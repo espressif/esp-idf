@@ -1130,6 +1130,7 @@ extern tBTA_DM_DI_CB *bta_dm_di_cb_ptr;
 
 extern BOOLEAN bta_dm_sm_execute(BT_HDR *p_msg);
 extern void bta_dm_sm_disable( void );
+extern void bta_dm_sm_deinit(void);
 extern BOOLEAN bta_dm_search_sm_execute(BT_HDR *p_msg);
 extern void bta_dm_search_sm_disable( void );
 

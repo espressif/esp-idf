@@ -26,6 +26,7 @@
 #include "bt_target.h"
 #include <string.h>
 
+
 /* Stack Configuation Related Init Definaton
  * TODO: Now Just Unmask these defination until stack layer is OK
  */
@@ -59,6 +60,14 @@
 #include "a2d_api.h"
 #endif
 
+#if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE)
+#include "avdt_int.h"
+#endif
+
+#if (defined(AVCT_INCLUDED) && AVCT_INCLUDED == TRUE)
+#include "avct_int.h"
+#endif
+
 #if (defined(HID_HOST_INCLUDED) && HID_HOST_INCLUDED == TRUE)
 #include "hidh_api.h"
 #endif
@@ -78,8 +87,13 @@
 #if BTA_INCLUDED == TRUE && BTA_DYNAMIC_MEMORY == TRUE
 #include "bta_api.h"
 #include "bta_sys.h"
+#include "allocator.h"
 
-#include "bta_ag_int.h"
+//#include "bta_ag_int.h"
+
+#if BTA_SDP_INCLUDED == TRUE
+#include "bta_sdp_int.h"
+#endif
 
 #if BTA_HS_INCLUDED == TRUE
 #include "bta_hs_int.h"
@@ -119,9 +133,9 @@ tBTA_JV_CB *bta_jv_cb_ptr = NULL;
 #include "bta_sys_int.h"
 
 // control block for patch ram downloading
-#include "bta_prm_int.h"
+//#include "bta_prm_int.h"
 
-#endif // BTA_INCLUDED
+#endif // BTA_INCLUDED == TRUE && BTA_DYNAMIC_MEMORY == TRUE
 
 
 /*****************************************************************************
@@ -169,6 +183,20 @@ void BTE_InitStack(void)
     AVRC_Init();
 #endif
 
+#if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE && AVDT_DYNAMIC_MEMORY == TRUE)
+    if ((avdt_cb_ptr = (tAVDT_CB *)osi_malloc(sizeof(tAVDT_CB))) == NULL) {
+        return;
+    }
+    memset((void *)avdt_cb_ptr, 0, sizeof(tAVDT_CB));
+#endif
+
+#if (defined(AVCT_INCLUDED) && AVCT_INCLUDED == TRUE && AVCT_DYNAMIC_MEMORY == TRUE)
+    if ((avct_cb_ptr = (tAVCT_CB *)osi_malloc(sizeof(tAVCT_CB))) == NULL) {
+        return;
+    }
+    memset((void *)avct_cb_ptr, 0, sizeof(tAVCT_CB));
+#endif
+
 #if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE)
     GAP_Init();
 #endif
@@ -183,29 +211,66 @@ void BTE_InitStack(void)
 
     //BTA Modules
 #if (BTA_INCLUDED == TRUE && BTA_DYNAMIC_MEMORY == TRUE)
+    if ((bta_sys_cb_ptr = (tBTA_SYS_CB *)osi_malloc(sizeof(tBTA_SYS_CB))) == NULL) {
+        return;
+    }
+    if ((bta_dm_cb_ptr = (tBTA_DM_CB *)osi_malloc(sizeof(tBTA_DM_CB))) == NULL) {
+        return;
+    }
+    if ((bta_dm_search_cb_ptr = (tBTA_DM_SEARCH_CB *)osi_malloc(sizeof(tBTA_DM_SEARCH_CB))) == NULL) {
+        return;
+    }
+    if ((bta_dm_di_cb_ptr = (tBTA_DM_DI_CB *)osi_malloc(sizeof(tBTA_DM_DI_CB))) == NULL) {
+        return;
+    }
     memset((void *)bta_sys_cb_ptr, 0, sizeof(tBTA_SYS_CB));
     memset((void *)bta_dm_cb_ptr, 0, sizeof(tBTA_DM_CB));
     memset((void *)bta_dm_search_cb_ptr, 0, sizeof(tBTA_DM_SEARCH_CB));
     memset((void *)bta_dm_di_cb_ptr, 0, sizeof(tBTA_DM_DI_CB));
-    memset((void *)bta_prm_cb_ptr, 0, sizeof(tBTA_PRM_CB));
-    memset((void *)bta_ag_cb_ptr, 0, sizeof(tBTA_AG_CB));
+    //memset((void *)bta_prm_cb_ptr, 0, sizeof(tBTA_PRM_CB));
+    //memset((void *)bta_ag_cb_ptr, 0, sizeof(tBTA_AG_CB));
 #if BTA_HS_INCLUDED == TRUE
     memset((void *)bta_hs_cb_ptr, 0, sizeof(tBTA_HS_CB));
 #endif
+#if BTA_SDP_INCLUDED == TRUE
+    if ((bta_sdp_cb_ptr = (tBTA_SDP_CB *)osi_malloc(sizeof(tBTA_SDP_CB))) == NULL) {
+        return;
+    }
+    memset((void *)bta_sdp_cb_ptr, 0, sizeof(tBTA_SDP_CB));
+#endif
 #if BTA_AR_INCLUDED==TRUE
+    if ((bta_ar_cb_ptr = (tBTA_AR_CB *)osi_malloc(sizeof(tBTA_AR_CB))) == NULL) {
+        return;
+    }
     memset((void *)bta_ar_cb_ptr, 0, sizeof(tBTA_AR_CB));
 #endif
 #if BTA_AV_INCLUDED==TRUE
+    if ((bta_av_cb_ptr = (tBTA_AV_CB *)osi_malloc(sizeof(tBTA_AV_CB))) == NULL) {
+        return;
+    }
     memset((void *)bta_av_cb_ptr, 0, sizeof(tBTA_AV_CB));
 #endif
 #if BTA_HH_INCLUDED==TRUE
+    if ((bta_hh_cb_ptr = (tBTA_HH_CB *)osi_malloc(sizeof(tBTA_HH_CB))) == NULL) {
+        return;
+    } 
     memset((void *)bta_hh_cb_ptr, 0, sizeof(tBTA_HH_CB));
 #endif
 #if BTA_HL_INCLUDED==TRUE
     memset((void *)bta_hl_cb_ptr, 0, sizeof(tBTA_HL_CB));
 #endif
-#if BTA_GATT_INCLUDED==TRUE
+#if GATTC_INCLUDED==TRUE
+    if ((bta_gattc_cb_ptr = (tBTA_GATTC_CB *)osi_malloc(sizeof(tBTA_GATTC_CB))) == NULL) {
+        return;
+    }
     memset((void *)bta_gattc_cb_ptr, 0, sizeof(tBTA_GATTC_CB));
+#endif
+#if GATTS_INCLUDED == TRUE
+    if ((bta_gatts_cb_ptr = (tBTA_GATTS_CB *)osi_malloc(sizeof(tBTA_GATTS_CB))) == NULL) {
+        return;
+    }
+    memset((void *)bta_gattc_cb_ptr, 0, sizeof(tBTA_GATTC_CB));
+    //
     memset((void *)bta_gatts_cb_ptr, 0, sizeof(tBTA_GATTS_CB));
 #endif
 #if BTA_PAN_INCLUDED==TRUE

@@ -47,6 +47,8 @@
 /********************************************************************************/
 #if SDP_DYNAMIC_MEMORY == FALSE
 tSDP_CB  sdp_cb;
+#else
+tSDP_CB  *sdp_cb_ptr;
 #endif
 
 /********************************************************************************/
@@ -79,6 +81,9 @@ static void sdp_disconnect_cfm (UINT16 l2cap_cid, UINT16 result);
 *******************************************************************************/
 void sdp_init (void)
 {
+#if SDP_DYNAMIC_MEMORY
+    sdp_cb_ptr = (tSDP_CB *)osi_malloc(sizeof(tSDP_CB));
+#endif /* #if SDP_DYNAMIC_MEMORY */
     /* Clears all structures and local SDP database (if Server is enabled) */
     memset (&sdp_cb, 0, sizeof (tSDP_CB));
 

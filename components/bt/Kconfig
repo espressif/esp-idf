@@ -173,6 +173,20 @@ config BT_ACL_CONNECTIONS
     help 
         Maximum BT/BLE connection count
 
+config BT_ALLOCATION_FROM_SPIRAM_FIRST
+    bool "BT/BLE will first malloc the memory from the PSRAM"
+    depends on BLUEDROID_ENABLED
+    default n
+    help
+        This select can save the internal RAM if there have the PSRAM
+
+config BT_BLE_DYNAMIC_ENV_MEMORY
+    bool "Use dynamic memory allocation in BT/BLE stack"
+    depends on BLUEDROID_ENABLED
+    default n
+    help
+        This select can make the allocation of memory will become more flexible
+
 config SMP_ENABLE
    bool
    depends on BLUEDROID_ENABLED

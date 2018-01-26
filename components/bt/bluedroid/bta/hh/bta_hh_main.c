@@ -245,6 +245,8 @@ const tBTA_HH_ST_TBL bta_hh_st_tbl[] = {
 *****************************************************************************/
 #if BTA_DYNAMIC_MEMORY == FALSE
 tBTA_HH_CB  bta_hh_cb;
+#else
+tBTA_HH_CB  *bta_hh_cb_ptr;
 #endif
 /*****************************************************************************
 ** Static functions

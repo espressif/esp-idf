@@ -36,6 +36,7 @@
 
 #include "btu.h"
 #include "p_256_ecc_pp.h"
+#include "allocator.h"
 
 /*******************************************************************************
 **
@@ -48,6 +49,9 @@
 *******************************************************************************/
 void SMP_Init(void)
 {
+#if SMP_DYNAMIC_MEMORY
+    smp_cb_ptr = (tSMP_CB *)osi_malloc(sizeof(tSMP_CB));
+#endif
     memset(&smp_cb, 0, sizeof(tSMP_CB));
 
 #if defined(SMP_INITIAL_TRACE_LEVEL)
@@ -60,6 +64,14 @@ void SMP_Init(void)
     smp_l2cap_if_init();
     /* initialization of P-256 parameters */
     p_256_init_curve(KEY_LENGTH_DWORDS_P256);
+}
+
+void SMP_Free(void)
+{
+    memset(&smp_cb, 0, sizeof(tSMP_CB));
+#if SMP_DYNAMIC_MEMORY
+    FREE_AND_RESET(smp_cb_ptr);
+#endif /* #if SMP_DYNAMIC_MEMORY */
 }
 
 

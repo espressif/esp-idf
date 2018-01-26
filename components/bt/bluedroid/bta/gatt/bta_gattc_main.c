@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include "bta_gattc_int.h"
+#include "allocator.h"
 
 
 /*****************************************************************************
@@ -237,6 +238,8 @@ const tBTA_GATTC_ST_TBL bta_gattc_st_tbl[] = {
 /* GATTC control block */
 #if BTA_DYNAMIC_MEMORY == FALSE
 tBTA_GATTC_CB  bta_gattc_cb;
+#else
+tBTA_GATTC_CB  *bta_gattc_cb_ptr;
 #endif
 
 #if BTA_GATT_DEBUG == TRUE
@@ -493,4 +496,12 @@ static char *gattc_state_code(tBTA_GATTC_STATE state_code)
 }
 
 #endif  /* Debug Functions */
+
+void bta_gattc_deinit(void)
+{
+#if BTA_DYNAMIC_MEMORY
+    memset(bta_gattc_cb_ptr, 0, sizeof(tBTA_GATTC_CB));
+    FREE_AND_RESET(bta_gattc_cb_ptr);
+#endif /* #if BTA_DYNAMIC_MEMORY */
+}
 #endif /* GATTC_INCLUDED == TRUE && BLE_INCLUDED == TRUE */

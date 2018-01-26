@@ -514,5 +514,6 @@ extern BOOLEAN bta_gattc_conn_dealloc(BD_ADDR remote_bda);
 
 extern bool bta_gattc_cache_load(tBTA_GATTC_CLCB *p_clcb);
 extern void bta_gattc_cache_reset(BD_ADDR server_bda);
+extern void bta_gattc_deinit(void);
 
 #endif /* BTA_GATTC_INT_H */

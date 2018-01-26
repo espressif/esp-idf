@@ -27,6 +27,7 @@
 #include "a2d_api.h"
 #include "a2d_int.h"
 #include "avdt_api.h"
+#include "allocator.h"
 
 #if (defined(A2D_INCLUDED) && A2D_INCLUDED == TRUE)
 
@@ -35,6 +36,8 @@
 *****************************************************************************/
 #if A2D_DYNAMIC_MEMORY == FALSE
 tA2D_CB a2d_cb;
+#else
+tA2D_CB *a2d_cb_ptr;
 #endif
 
 
@@ -374,6 +377,9 @@ UINT8 A2D_BitsSet(UINT8 num)
 *******************************************************************************/
 void A2D_Init(void)
 {
+#if (A2D_DYNAMIC_MEMORY)
+    a2d_cb_ptr = (tA2D_CB *)osi_malloc(sizeof(tA2D_CB));
+#endif /* #if (A2D_DYNAMIC_MEMORY) */
     memset(&a2d_cb, 0, sizeof(tA2D_CB));
 
     a2d_cb.avdt_sdp_ver = AVDT_VERSION;
