@@ -517,7 +517,13 @@ tBTM_STATUS BTM_BleBroadcast(BOOLEAN start, tBTM_START_STOP_ADV_CMPL_CBACK  *p_s
         evt_type = p_cb->scan_rsp ? BTM_BLE_CONNECT_EVT : BTM_BLE_NON_CONNECT_EVT;
     }
 #endif
-
+    // if adv state is BTM_BLE_ADV_PENDING, return immediately
+    if (p_cb->state == BTM_BLE_ADV_PENDING) {
+        if (p_stop_adv_cback) {
+            (*p_stop_adv_cback)(HCI_ERR_ILLEGAL_COMMAND);
+        }
+        return BTM_BUSY;
+    }
     if (start && p_cb->adv_mode == BTM_BLE_ADV_DISABLE) {
         /* update adv params */
         if (!btsnd_hcic_ble_write_adv_params ((UINT16)(p_cb->adv_interval_min ? p_cb->adv_interval_min :
@@ -538,7 +544,7 @@ tBTM_STATUS BTM_BleBroadcast(BOOLEAN start, tBTM_START_STOP_ADV_CMPL_CBACK  *p_s
         }
 
         status = btm_ble_start_adv ();
-    } else if (!start) {
+    } else if (!start && p_cb->adv_mode == BTM_BLE_ADV_ENABLE) {
         //save the stop adv callback to the BTM env.
         p_cb->p_stop_adv_cb = p_stop_adv_cback;
         status = btm_ble_stop_adv();
@@ -546,9 +552,14 @@ tBTM_STATUS BTM_BleBroadcast(BOOLEAN start, tBTM_START_STOP_ADV_CMPL_CBACK  *p_s
         btm_ble_disable_resolving_list(BTM_BLE_RL_ADV, TRUE);
 #endif
     } else {
-        status = BTM_WRONG_MODE;
-        BTM_TRACE_ERROR("Can not %s Broadcast, device %s in Broadcast mode",
-                        (start ? "Start" : "Stop"), (start ? "already" : "not"));
+        /*
+            1. start adv when adv has already started (not used)
+            2. stop adv shen adv has already stoped
+        */
+        status = BTM_SUCCESS;
+        if (p_stop_adv_cback) {
+            (*p_stop_adv_cback)(status);
+        }
     }
     return status;
 }
@@ -1217,8 +1228,23 @@ tBTM_STATUS BTM_BleSetAdvParamsStartAdv(UINT16 adv_int_min, UINT16 adv_int_max, 
     }
 
     BTM_TRACE_EVENT ("update params for an active adv\n");
-
-    btm_ble_stop_adv();
+    // if adv state is BTM_BLE_ADV_PENDING, return immediately
+    if (p_cb->state == BTM_BLE_ADV_PENDING) {
+        if (p_cb->p_adv_cb) {
+            (*p_cb->p_adv_cb)(HCI_ERR_ILLEGAL_COMMAND);
+        }
+        return BTM_BUSY;
+    }
+    /* host will stop adv first and then  start adv again if adv has already started
+       it will get callback twice.
+    */
+    if (p_cb->adv_mode == BTM_BLE_ADV_ENABLE) {
+        p_cb->adv_callback_twice = TRUE;
+    }
+    tBTM_STATUS status = btm_ble_stop_adv();
+    if (status != BTM_SUCCESS) {
+        p_cb->adv_callback_twice = FALSE;
+    }
 
     /* update adv params */
     btsnd_hcic_ble_write_adv_params (adv_int_min,
@@ -3360,7 +3386,7 @@ tBTM_STATUS btm_ble_start_adv(void)
 
     if (btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_ENABLE)) {
         p_cb->adv_mode = BTM_BLE_ADV_ENABLE;
-        p_cb->state = BTM_BLE_ADVERTISING;
+        p_cb->state = BTM_BLE_ADV_PENDING;
         btm_ble_adv_states_operation(btm_ble_set_topology_mask, p_cb->evt_type);
         rt = BTM_SUCCESS;
         BTM_TRACE_EVENT ("BTM_SUCCESS\n");
@@ -3389,7 +3415,7 @@ tBTM_STATUS btm_ble_stop_adv(void)
         if (btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_DISABLE)) {
             p_cb->fast_adv_on = FALSE;
             p_cb->adv_mode = BTM_BLE_ADV_DISABLE;
-            p_cb->state = BTM_BLE_STOP_ADV;
+            p_cb->state = BTM_BLE_ADV_PENDING;
             btm_cb.ble_ctr_cb.wl_state &= ~BTM_BLE_WL_ADV;
 
             /* clear all adv states */
@@ -3563,8 +3589,14 @@ void btm_ble_write_adv_enable_complete(UINT8 *p)
 
     // callback to the APP after receive the adv complete from the controller.
     if (p_cb->p_adv_cb && p_cb->adv_mode == BTM_BLE_ADV_ENABLE) {
-        (*p_cb->p_adv_cb)(status);
+        if (p_cb->adv_callback_twice) {
+            p_cb->adv_callback_twice = FALSE;
+        }else {
+            p_cb->state = BTM_BLE_ADVERTISING;
+            (*p_cb->p_adv_cb)(status);
+        }
     } else if (p_cb->p_stop_adv_cb && p_cb->adv_mode == BTM_BLE_ADV_DISABLE) {
+        p_cb->state = BTM_BLE_STOP_ADV;
         (*p_cb->p_stop_adv_cb)(status);
     }
     /* if write adv enable/disbale not succeed */

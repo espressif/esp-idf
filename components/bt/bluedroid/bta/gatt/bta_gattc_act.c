@@ -2173,7 +2173,7 @@ void bta_gattc_broadcast(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg)
 
     cb_data.reg_oper.client_if = p_msg->api_listen.client_if;
     cb_data.reg_oper.status = BTM_BleBroadcast(p_msg->api_listen.start, NULL);
-
+    //TODO need modify callback if used
     if (p_clreg && p_clreg->p_cback) {
         (*p_clreg->p_cback)(BTA_GATTC_LISTEN_EVT, &cb_data);
     }
