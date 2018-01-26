@@ -46,12 +46,12 @@ static int s_phy_rf_init_count = 0;
 
 static _lock_t s_phy_rf_init_lock;
 
-uint32_t phy_enter_critical(void)
+uint32_t IRAM_ATTR phy_enter_critical(void)
 {
     return portENTER_CRITICAL_NESTED();
 }
 
-void phy_exit_critical(uint32_t level)
+void IRAM_ATTR phy_exit_critical(uint32_t level)
 {
     portEXIT_CRITICAL_NESTED(level);
 }
