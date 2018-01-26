@@ -429,8 +429,8 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     switch (msg->act) {
     case BTA_DM_ENABLE_EVT: {
         btc_clear_services_mask();
-        btc_storage_load_bonded_devices();
 #if (SMP_INCLUDED == TRUE)
+        btc_storage_load_bonded_devices();
         //load the bonding device to the btm layer
         btc_storage_load_bonded_ble_devices();
 #endif  ///SMP_INCLUDED == TRUE
