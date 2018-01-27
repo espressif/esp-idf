@@ -203,6 +203,21 @@ void l2c_fcr_stop_timer (tL2C_CCB *p_ccb)
 
 /*******************************************************************************
 **
+** Function         l2c_fcr_free_timer
+**
+** Description      This function releases the (monitor or transmission) timer.
+**
+** Returns          -
+**
+*******************************************************************************/
+void l2c_fcr_free_timer (tL2C_CCB *p_ccb)
+{
+    assert(p_ccb != NULL);
+    btu_free_quick_timer (&p_ccb->fcrb.mon_retrans_timer);
+}
+
+/*******************************************************************************
+**
 ** Function         l2c_fcr_cleanup
 **
 ** Description      This function cleans up the variable used for flow-control/retrans.
@@ -232,9 +247,12 @@ void l2c_fcr_cleanup (tL2C_CCB *p_ccb)
     fixed_queue_free(p_fcrb->retrans_q, osi_free_func);
     p_fcrb->retrans_q = NULL;
 	
-    btu_stop_quick_timer (&p_fcrb->ack_timer);
-    btu_stop_quick_timer (&p_ccb->fcrb.mon_retrans_timer);
-
+    btu_free_quick_timer (&p_fcrb->ack_timer);
+    memset(&p_fcrb->ack_timer, 0, sizeof(TIMER_LIST_ENT));
+    
+    btu_free_quick_timer (&p_ccb->fcrb.mon_retrans_timer);
+    memset(&p_fcrb->mon_retrans_timer, 0, sizeof(TIMER_LIST_ENT));
+    
 #if (L2CAP_ERTM_STATS == TRUE)
     if ( (p_ccb->local_cid >= L2CAP_BASE_APPL_CID) && (p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) ) {
         UINT32  dur = osi_time_get_os_boottime_ms() - p_ccb->fcrb.connect_tick_count;

@@ -1683,6 +1683,7 @@ tGATT_CLCB *gatt_clcb_alloc (UINT16 conn_id)
 void gatt_clcb_dealloc (tGATT_CLCB *p_clcb)
 {
     if (p_clcb && p_clcb->in_use) {
+        btu_free_timer(&p_clcb->rsp_timer_ent);
         memset(p_clcb, 0, sizeof(tGATT_CLCB));
     }
 }
@@ -2211,8 +2212,8 @@ void gatt_cleanup_upon_disc(BD_ADDR bda, UINT16 reason, tBT_TRANSPORT transport)
             }
         }
 
-        btu_stop_timer (&p_tcb->ind_ack_timer_ent);
-        btu_stop_timer (&p_tcb->conf_timer_ent);
+        btu_free_timer (&p_tcb->ind_ack_timer_ent);
+        btu_free_timer (&p_tcb->conf_timer_ent);
         gatt_free_pending_ind(p_tcb);
         gatt_free_pending_enc_queue(p_tcb);
         gatt_free_pending_prepare_write_queue(p_tcb);
