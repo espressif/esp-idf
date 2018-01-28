@@ -357,8 +357,12 @@ esp_err_t esp_spiffs_info(const char* partition_label, size_t *total_bytes, size
 
 esp_err_t esp_spiffs_format(const char* partition_label)
 {
-    bool mount_on_success = false;
+    bool partition_was_mounted = false;
     int index;
+    /* If the partition is not mounted, need to create SPIFFS structures
+     * and mount the partition, unmount, format, delete SPIFFS structures.
+     * See SPIFFS wiki for the reason why.
+     */
     esp_err_t err = esp_spiffs_by_label(partition_label, &index);
     if (err != ESP_OK) {
         esp_vfs_spiffs_conf_t conf = {
@@ -371,23 +375,28 @@ esp_err_t esp_spiffs_format(const char* partition_label)
             return err;
         }
         err = esp_spiffs_by_label(partition_label, &index);
-        if (err != ESP_OK) {
-            return err;
-        }
-        esp_spiffs_free(&_efs[index]);
-        return ESP_OK;
+        assert(err == ESP_OK && "failed to get index of the partition just mounted");
     } else if (SPIFFS_mounted(_efs[index]->fs)) {
-        SPIFFS_unmount(_efs[index]->fs);
-        mount_on_success = true;
+        partition_was_mounted = true;
     }
+
+    SPIFFS_unmount(_efs[index]->fs);
+
     s32_t res = SPIFFS_format(_efs[index]->fs);
     if (res != SPIFFS_OK) {
         ESP_LOGE(TAG, "format failed, %i", SPIFFS_errno(_efs[index]->fs));
         SPIFFS_clearerr(_efs[index]->fs);
+        /* If the partition was previously mounted, but format failed, don't
+         * try to mount the partition back (it will probably fail). On the
+         * other hand, if it was not mounted, need to clean up.
+         */
+        if (!partition_was_mounted) {
+            esp_spiffs_free(&_efs[index]);
+        }
         return ESP_FAIL;
     }
 
-    if (mount_on_success) {
+    if (partition_was_mounted) {
         res = SPIFFS_mount(_efs[index]->fs, &_efs[index]->cfg, _efs[index]->work,
                             _efs[index]->fds, _efs[index]->fds_sz, _efs[index]->cache,
                             _efs[index]->cache_sz, spiffs_api_check);
@@ -396,6 +405,8 @@ esp_err_t esp_spiffs_format(const char* partition_label)
             SPIFFS_clearerr(_efs[index]->fs);
             return ESP_FAIL;
         }
+    } else {
+        esp_spiffs_free(&_efs[index]);
     }
     return ESP_OK;
 }
