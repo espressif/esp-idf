@@ -76,10 +76,12 @@ config SPIFFS_OBJ_NAME_LEN
     default 32
     range 1 256
     help
-        Object name maximum length. Note that this length 
-        include the zero-termination character, 
-        meaning maximum string of characters can at most be 
-        SPIFFS_OBJ_NAME_LEN - 1.
+        Object name maximum length. Note that this length include the 
+        zero-termination character, meaning maximum string of characters
+        can at most be SPIFFS_OBJ_NAME_LEN - 1.
+        
+        SPIFFS_OBJ_NAME_LEN + SPIFFS_META_LENGTH should not exceed
+        SPIFFS_PAGE_SIZE - 64.
 
 config SPIFFS_USE_MAGIC
     bool "Enable SPIFFS Filesystem Magic"
@@ -108,6 +110,9 @@ config SPIFFS_META_LENGTH
         These bytes can be used in an application-specific manner.
         Set this to at least 4 bytes to enable support for saving file
         modification time.
+        
+        SPIFFS_OBJ_NAME_LEN + SPIFFS_META_LENGTH should not exceed
+        SPIFFS_PAGE_SIZE - 64.
 
 config SPIFFS_USE_MTIME
     bool "Save file modification time"

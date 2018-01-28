@@ -153,12 +153,15 @@ extern void spiffs_api_unlock(struct spiffs_t *fs);
 // changes the on-disk format, so the change is not backward-compatible.
 //
 // Do note: the meta length must never exceed
-// logical_page_size - (SPIFFS_OBJ_NAME_LEN + 64)
+// logical_page_size - (SPIFFS_OBJ_NAME_LEN + SPIFFS_PAGE_EXTRA_SIZE)
 //
 // This is derived from following:
 // logical_page_size - (SPIFFS_OBJ_NAME_LEN + sizeof(spiffs_page_header) +
 // spiffs_object_ix_header fields + at least some LUT entries)
 #define SPIFFS_OBJ_META_LEN             (CONFIG_SPIFFS_META_LENGTH)
+#define SPIFFS_PAGE_EXTRA_SIZE          (64)
+_Static_assert(SPIFFS_OBJ_META_LEN + SPIFFS_OBJ_NAME_LEN + SPIFFS_PAGE_EXTRA_SIZE
+        <= CONFIG_SPIFFS_PAGE_SIZE, "SPIFFS_OBJ_META_LEN or SPIFFS_OBJ_NAME_LEN too long");
 
 // Size of buffer allocated on stack used when copying data.
 // Lower value generates more read/writes. No meaning having it bigger
