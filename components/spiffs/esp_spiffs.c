@@ -222,6 +222,14 @@ static esp_err_t esp_spiffs_init(const esp_vfs_spiffs_conf_t* conf)
         return ESP_ERR_INVALID_STATE;
     }
 
+    uint32_t flash_page_size = g_rom_flashchip.page_size;
+    uint32_t log_page_size = CONFIG_SPIFFS_PAGE_SIZE;
+    if (log_page_size % flash_page_size != 0) {
+        ESP_LOGE(TAG, "SPIFFS_PAGE_SIZE is not multiple of flash chip page size (%d)",
+                flash_page_size);
+        return ESP_ERR_INVALID_ARG;
+    }
+
     esp_partition_subtype_t subtype = conf->partition_label ?
             ESP_PARTITION_SUBTYPE_ANY : ESP_PARTITION_SUBTYPE_DATA_SPIFFS;
     const esp_partition_t* partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, 
@@ -247,7 +255,7 @@ static esp_err_t esp_spiffs_init(const esp_vfs_spiffs_conf_t* conf)
     efs->cfg.hal_read_f        = spiffs_api_read;
     efs->cfg.hal_write_f       = spiffs_api_write;
     efs->cfg.log_block_size    = g_rom_flashchip.sector_size;
-    efs->cfg.log_page_size     = g_rom_flashchip.page_size;
+    efs->cfg.log_page_size     = log_page_size;
     efs->cfg.phys_addr         = 0;
     efs->cfg.phys_erase_block  = g_rom_flashchip.sector_size;
     efs->cfg.phys_size         = partition->size;

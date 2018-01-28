@@ -59,6 +59,18 @@ config SPIFFS_GC_STATS
         Enable/disable statistics on gc. 
         Debug/test purpose only.
 
+config SPIFFS_PAGE_SIZE
+	int "SPIFFS logical page size"
+	default 256
+	range 256 1024
+	help
+		Logical page size of SPIFFS partition, in bytes. Must be multiple
+		of flash page size (which is usually 256 bytes).
+		Larger page sizes reduce overhead when storing large files, and
+		improve filesystem performance when reading large files.
+		Smaller page sizes reduce overhead when storing small (< page size)
+		files.
+
 config SPIFFS_OBJ_NAME_LEN
     int "Set SPIFFS Maximum Name Length"
     default 32
