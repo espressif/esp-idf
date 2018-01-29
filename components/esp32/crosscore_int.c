@@ -61,10 +61,10 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg) {
         DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, 0);
     }
     //Grab the reason and clear it.
-    portENTER_CRITICAL(&reason_spinlock);
+    portENTER_CRITICAL_ISR(&reason_spinlock);
     my_reason_val=*my_reason;
     *my_reason=0;
-    portEXIT_CRITICAL(&reason_spinlock);
+    portEXIT_CRITICAL_ISR(&reason_spinlock);
 
     //Check what we need to do.
     if (my_reason_val & REASON_YIELD) {
