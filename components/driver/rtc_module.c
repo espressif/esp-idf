@@ -783,6 +783,7 @@ esp_err_t touch_pad_init()
         return ESP_FAIL;
     }
     touch_pad_intr_disable();
+    touch_pad_clear_group_mask(TOUCH_PAD_BIT_MASK_MAX, TOUCH_PAD_BIT_MASK_MAX, TOUCH_PAD_BIT_MASK_MAX);
     touch_pad_set_fsm_mode(TOUCH_FSM_MODE_DEFAULT);
     touch_pad_set_trigger_mode(TOUCH_TRIGGER_MODE_DEFAULT);
     touch_pad_set_trigger_source(TOUCH_TRIGGER_SOURCE_DEFAULT);
