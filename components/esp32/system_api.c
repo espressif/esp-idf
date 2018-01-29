@@ -355,11 +355,6 @@ void IRAM_ATTR esp_restart_noos()
 
 void system_restart(void) __attribute__((alias("esp_restart")));
 
-void system_restore(void)
-{
-    esp_wifi_restore();
-}
-
 uint32_t esp_get_free_heap_size( void )
 {
     return heap_caps_get_free_size( MALLOC_CAP_DEFAULT );
