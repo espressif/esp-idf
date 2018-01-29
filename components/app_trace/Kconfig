@@ -64,33 +64,37 @@ config SYSVIEW_ENABLE
         Enables supporrt for SEGGER SystemView tracing functionality.
 
 choice SYSVIEW_TS_SOURCE
-    prompt "ESP32 timer to use as SystemView timestamp source"
+    prompt "Timer to use as timestamp source"
     depends on SYSVIEW_ENABLE
-    default SYSVIEW_TS_SOURCE_TIMER_00
+    default SYSVIEW_TS_SOURCE_CCOUNT if FREERTOS_UNICORE && !PM_ENABLE
+    default SYSVIEW_TS_SOURCE_TIMER_00 if !FREERTOS_UNICORE && !PM_ENABLE
+    default SYSVIEW_TS_SOURCE_ESP_TIMER if PM_ENABLE
     help
         SystemView needs to use a hardware timer as the source of timestamps
-        when tracing 
-        This option selects HW timer for it.
+        when tracing. This option selects the timer for it.
+
+config SYSVIEW_TS_SOURCE_CCOUNT
+	bool "CPU cycle counter (CCOUNT)"
+	depends on FREERTOS_UNICORE && !PM_ENABLE
 
 config SYSVIEW_TS_SOURCE_TIMER_00
     bool "Timer 0, Group 0"
-    help
-        Select this to use timer 0 of group 0
+    depends on !PM_ENABLE
 
 config SYSVIEW_TS_SOURCE_TIMER_01
     bool "Timer 1, Group 0"
-    help
-        Select this to use timer 1 of group 0
+    depends on !PM_ENABLE
 
 config SYSVIEW_TS_SOURCE_TIMER_10
     bool "Timer 0, Group 1"
-    help
-        Select this to use timer 0 of group 1
+    depends on !PM_ENABLE
 
 config SYSVIEW_TS_SOURCE_TIMER_11
     bool "Timer 1, Group 1"
-    help
-        Select this to use timer 1 of group 1
+    depends on !PM_ENABLE
+
+config SYSVIEW_TS_SOURCE_ESP_TIMER
+	bool "esp_timer high resolution timer"
 
 endchoice
 
