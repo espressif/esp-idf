@@ -120,8 +120,12 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
  * @param level     level of the log
  *
  */
-#define ESP_LOG_BUFFER_HEX_LEVEL( tag, buffer, buff_len, level ) do {\
-        if ( LOG_LOCAL_LEVEL >= level ) esp_log_buffer_hex_internal( tag, buffer, buff_len, level ); } while(0)
+#define ESP_LOG_BUFFER_HEX_LEVEL( tag, buffer, buff_len, level ) \
+    do {\
+        if ( LOG_LOCAL_LEVEL >= (level) ) { \
+            esp_log_buffer_hex_internal( tag, buffer, buff_len, level ); \
+        } \
+    } while(0)
 
 /**
  * @brief Log a buffer of characters at specified level, separated into 16 bytes each line. Buffer should contain only printable characters.
@@ -135,8 +139,12 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
  * @param level     level of the log
  *
  */
-#define ESP_LOG_BUFFER_CHAR_LEVEL( tag, buffer, buff_len, level ) do {\
-    if ( LOG_LOCAL_LEVEL >= level ) esp_log_buffer_char_internal( tag, buffer, buff_len, level ); } while(0)
+#define ESP_LOG_BUFFER_CHAR_LEVEL( tag, buffer, buff_len, level ) \
+    do {\
+        if ( LOG_LOCAL_LEVEL >= (level) ) { \
+            esp_log_buffer_char_internal( tag, buffer, buff_len, level ); \
+        } \
+    } while(0)
 
 /**
  * @brief Dump a buffer to the log at specified level.
@@ -157,11 +165,13 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
  * 
  * @param level level of the log
  */
-#define ESP_LOG_BUFFER_HEXDUMP( tag, buffer, buff_len, level ) do {\
-    if ( LOG_LOCAL_LEVEL >= level ) esp_log_buffer_hexdump_internal( tag, buffer, buff_len, level); } while(0)
+#define ESP_LOG_BUFFER_HEXDUMP( tag, buffer, buff_len, level ) \
+    do { \
+        if ( LOG_LOCAL_LEVEL >= (level) ) { \
+            esp_log_buffer_hexdump_internal( tag, buffer, buff_len, level); \
+        } \
+    } while(0)
 
-
-#if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO)
 /**
  * @brief Log a buffer of hex bytes at Info level
  *
@@ -174,7 +184,12 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
  * @see ``esp_log_buffer_hex_level``
  *
  */
-#define ESP_LOG_BUFFER_HEX(tag, buffer, buff_len)   ESP_LOG_BUFFER_HEX_LEVEL( tag, buffer, buff_len, ESP_LOG_INFO )
+#define ESP_LOG_BUFFER_HEX(tag, buffer, buff_len) \
+    do { \
+        if (LOG_LOCAL_LEVEL > ESP_LOG_INFO) { \
+            ESP_LOG_BUFFER_HEX_LEVEL( tag, buffer, buff_len, ESP_LOG_INFO ); \
+        }\
+    } while(0)
 
 /**
  * @brief Log a buffer of characters at Info level. Buffer should contain only printable characters.
@@ -188,12 +203,13 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
  * @see ``esp_log_buffer_char_level``
  *
  */
-#define ESP_LOG_BUFFER_CHAR(tag, buffer, buff_len)   ESP_LOG_BUFFER_CHAR_LEVEL( tag, buffer, buff_len, ESP_LOG_INFO )
+#define ESP_LOG_BUFFER_CHAR(tag, buffer, buff_len) \
+    do { \
+        if (LOG_LOCAL_LEVEL > ESP_LOG_INFO) { \
+            ESP_LOG_BUFFER_CHAR_LEVEL( tag, buffer, buff_len, ESP_LOG_INFO ); \
+        }\
+    } while(0)
 
-#else
-#define ESP_LOG_BUFFER_HEX(tag, buffer, buff_len)   {}
-#define ESP_LOG_BUFFER_CHAR(tag, buffer, buff_len)  {}
-#endif
 
 //to be back compatible
 #define esp_log_buffer_hex      ESP_LOG_BUFFER_HEX
