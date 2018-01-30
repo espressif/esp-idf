@@ -176,7 +176,8 @@ esp_err_t esp_a2d_register_callback(esp_a2d_cb_t callback);
 /**
  * @brief           Register A2DP sink data output function; For now the output is PCM data stream decoded
  *                  from SBC format. This function should be called only after esp_bluedroid_enable()
- *                  completes successfully, used only by A2DP sink.
+ *                  completes successfully, used only by A2DP sink. The callback is invoked in the context
+ *                  of A2DP sink task whose stack size is configurable through menuconfig
  *
  * @param[in]       callback: A2DP sink data callback function
  *
@@ -291,7 +292,8 @@ esp_err_t esp_a2d_source_deinit(void);
 /**
  * @brief           Register A2DP source data input function; For now the input is PCM data stream.
  *                  This function should be called only after esp_bluedroid_enable() completes
- *                  successfully
+ *                  successfully. The callback is invoked in the context of A2DP source task whose
+ *                  stack size is configurable through menuconfig
  *
  * @param[in]       callback: A2DP source data callback function
  *

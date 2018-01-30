@@ -232,13 +232,13 @@ bool btc_a2dp_sink_startup(void)
 
     APPL_TRACE_EVENT("## A2DP SINK START MEDIA THREAD ##");
 
-    btc_aa_snk_queue_set = xQueueCreateSet(BTC_MEDIA_TASK_QUEUE_SET_LEN);
+    btc_aa_snk_queue_set = xQueueCreateSet(BTC_A2DP_SINK_TASK_QUEUE_SET_LEN);
     configASSERT(btc_aa_snk_queue_set);
-    btc_aa_snk_data_queue = xQueueCreate(BTC_MEDIA_DATA_QUEUE_LEN, sizeof(int32_t));
+    btc_aa_snk_data_queue = xQueueCreate(BTC_A2DP_SINK_DATA_QUEUE_LEN, sizeof(int32_t));
     configASSERT(btc_aa_snk_data_queue);
     xQueueAddToSet(btc_aa_snk_data_queue, btc_aa_snk_queue_set);
 
-    btc_aa_snk_ctrl_queue = xQueueCreate(BTC_MEDIA_CTRL_QUEUE_LEN, sizeof(void *));
+    btc_aa_snk_ctrl_queue = xQueueCreate(BTC_A2DP_SINK_CTRL_QUEUE_LEN, sizeof(void *));
     configASSERT(btc_aa_snk_ctrl_queue);
     xQueueAddToSet(btc_aa_snk_ctrl_queue, btc_aa_snk_queue_set);
 
@@ -246,7 +246,7 @@ bool btc_a2dp_sink_startup(void)
         goto error_exit;
     }
 
-    xTaskCreatePinnedToCore(btc_a2dp_sink_task_handler, BTC_MEDIA_TASK_NAME, BTC_MEDIA_TASK_STACK_SIZE, NULL, BTC_MEDIA_TASK_PRIO, &btc_aa_snk_task_hdl, BTC_MEDIA_TASK_PINNED_TO_CORE);
+    xTaskCreatePinnedToCore(btc_a2dp_sink_task_handler, BTC_A2DP_SINK_TASK_NAME, BTC_A2DP_SINK_TASK_STACK_SIZE, NULL, BTC_A2DP_SINK_TASK_PRIO, &btc_aa_snk_task_hdl, BTC_A2DP_SINK_TASK_PINNED_TO_CORE);
     if (btc_aa_snk_task_hdl == NULL) {
         goto error_exit;
     }
