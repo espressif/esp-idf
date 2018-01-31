@@ -164,7 +164,7 @@ void esp_log_level_set(const char* tag, esp_log_level_t level)
 #ifdef LOG_BUILTIN_CHECKS
         assert(i == 0 || s_log_cache[(i - 1) / 2].generation < s_log_cache[i].generation);
 #endif
-        if (s_log_cache[i].tag == tag) {
+        if (strcmp(s_log_cache[i].tag,tag) == 0) {
             s_log_cache[i].level = level;
             break;
         }
