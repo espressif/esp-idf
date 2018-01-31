@@ -446,22 +446,21 @@ assign_test:
       - components/idf_test/*/CIConfigs
       - components/idf_test/*/TC.sqlite
       - $EXAMPLE_CONFIG_OUTPUT_PATH
+      - tools/unit-test-app/output
     expire_in: 1 mos
   before_script: *add_gitlab_key_before
   script:
     # first move test bins together: test_bins/CHIP_SDK/TestApp/bin_files
     - mkdir -p $OUTPUT_BIN_PATH
-    # copy and rename folder name to "UT_config"
-    - for CONFIG in $(ls $UT_BIN_PATH); do cp -r "$UT_BIN_PATH/$CONFIG" "$OUTPUT_BIN_PATH/UT_$CONFIG"; done
     - cp -r SSC/ssc_bin/* $OUTPUT_BIN_PATH
     # assign example tests
     - python $TEST_FW_PATH/CIAssignExampleTest.py $IDF_PATH/examples $IDF_PATH/.gitlab-ci.yml $EXAMPLE_CONFIG_OUTPUT_PATH
+    # assign unit test cases
+    - python $TEST_FW_PATH/CIAssignUnitTest.py $IDF_PATH/components/idf_test/unit_test/TestCaseAll.yml $IDF_PATH/.gitlab-ci.yml $IDF_PATH/components/idf_test/unit_test/CIConfigs
     # clone test script to assign tests
     - git clone $TEST_SCRIPT_REPOSITORY
     - cd auto_test_script
     - python $CHECKOUT_REF_SCRIPT auto_test_script
-    # assign unit test cases
-    - python CIAssignTestCases.py -t $IDF_PATH/components/idf_test/unit_test -c $IDF_PATH/.gitlab-ci.yml -b $IDF_PATH/test_bins
     # assgin integration test cases
     - python CIAssignTestCases.py -t $IDF_PATH/components/idf_test/integration_test -c $IDF_PATH/.gitlab-ci.yml -b $IDF_PATH/test_bins
 
@@ -492,6 +491,17 @@ assign_test:
     - cd $TEST_FW_PATH
     # run test
     - python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE
+
+.unit_test_template: &unit_test_template
+  <<: *example_test_template
+  stage: unit_test
+  dependencies:
+    - assign_test
+  variables:
+    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
+    TEST_CASE_PATH: "$CI_PROJECT_DIR/tools/unit-test-app"
+    CONFIG_FILE: "$CI_PROJECT_DIR/components/idf_test/unit_test/CIConfigs/$CI_JOB_NAME.yml"
+    LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
 
 .test_template: &test_template
   stage: test
@@ -529,18 +539,6 @@ assign_test:
     - python $CHECKOUT_REF_SCRIPT auto_test_script
     # run test
     - python CIRunner.py -l "$LOG_PATH/$CI_JOB_NAME" -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH -m $MODULE_UPDATE_FILE
-
-# template for unit test jobs
-.unit_test_template: &unit_test_template
-  <<: *test_template
-  allow_failure: false
-  stage: unit_test
-  variables:
-    LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF"
-    LOG_PATH: "$CI_PROJECT_DIR/$CI_COMMIT_SHA"
-    TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/unit_test"
-    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/ModuleDefinition.yml"
-    CONFIG_FILE: "$CI_PROJECT_DIR/components/idf_test/unit_test/CIConfigs/$CI_JOB_NAME.yml"
 
 nvs_compatible_test:
   <<: *test_template

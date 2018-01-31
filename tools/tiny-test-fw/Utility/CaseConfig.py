@@ -51,6 +51,20 @@ import yaml
 import TestCase
 
 
+def _convert_to_lower_case(item):
+    """
+    bot filter is always lower case string.
+    this function will convert to all string to lower case.
+    """
+    if isinstance(item, (tuple, list)):
+        output = [_convert_to_lower_case(v) for v in item]
+    elif isinstance(item, str):
+        output = item.lower()
+    else:
+        output = item
+    return output
+
+
 def _filter_one_case(test_method, case_filter):
     """ Apply filter for one case (the filter logic is the same as described in ``filter_test_cases``) """
     filter_result = True
@@ -58,7 +72,8 @@ def _filter_one_case(test_method, case_filter):
         if key in test_method.case_info:
             # the filter key is both in case and filter
             # we need to check if they match
-            filter_item, accepted_item = case_filter[key], test_method.case_info[key]
+            filter_item = _convert_to_lower_case(case_filter[key])
+            accepted_item = _convert_to_lower_case(test_method.case_info[key])
 
             if isinstance(filter_item, (tuple, list)) \
                     and isinstance(accepted_item, (tuple, list)):
@@ -91,6 +106,7 @@ def filter_test_cases(test_methods, case_filter):
             * if one is list/tuple, the other one is string/int, then check if string/int is in list/tuple
             * if both are list/tuple, then check if they have common item
         2. if only case attribute or filter have the key, filter succeed
+        3. will do case insensitive compare for string
 
     for example, the following are match succeed scenarios
     (the rule is symmetric, result is same if exchange values for user filter and case attribute):
