@@ -3598,6 +3598,14 @@ void btm_ble_write_adv_enable_complete(UINT8 *p)
     } else if (p_cb->p_stop_adv_cb && p_cb->adv_mode == BTM_BLE_ADV_DISABLE) {
         p_cb->state = BTM_BLE_STOP_ADV;
         (*p_cb->p_stop_adv_cb)(status);
+    }else {
+        // p_cb->p_adv_cb is NULL or p_cb->p_stop_adv_cb is NULL
+        if (p_cb->adv_mode == BTM_BLE_ADV_ENABLE) {
+            p_cb->state = BTM_BLE_ADVERTISING;
+        }else {
+            p_cb->state = BTM_BLE_STOP_ADV;
+        }
+        p_cb->adv_callback_twice = FALSE;
     }
     /* if write adv enable/disbale not succeed */
     if (*p != HCI_SUCCESS) {
