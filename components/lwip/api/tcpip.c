@@ -77,7 +77,7 @@ sys_mutex_t lock_tcpip_core;
  *
  * @param arg unused argument
  */
-static void
+static void ESP_IRAM_ATTR
 tcpip_thread(void *arg)
 {
 
@@ -195,7 +195,7 @@ tcpip_thread(void *arg)
  * @param inp the network interface on which the packet was received
  * @param input_fn input function to call
  */
-err_t
+err_t ESP_IRAM_ATTR
 tcpip_inpkt(struct pbuf *p, struct netif *inp, netif_input_fn input_fn)
 {
 #if LWIP_TCPIP_CORE_LOCKING_INPUT
@@ -244,7 +244,7 @@ tcpip_inpkt(struct pbuf *p, struct netif *inp, netif_input_fn input_fn)
  *          NETIF_FLAG_ETHERNET flags)
  * @param inp the network interface on which the packet was received
  */
-err_t
+err_t ESP_IRAM_ATTR
 tcpip_input(struct pbuf *p, struct netif *inp)
 {
 #if LWIP_ETHERNET
@@ -363,7 +363,7 @@ tcpip_untimeout(sys_timeout_handler h, void *arg)
  * @param sem semaphore to wait on
  * @return ERR_OK if the function was called, another err_t if not
  */
-err_t
+err_t ESP_IRAM_ATTR
 tcpip_send_api_msg(tcpip_callback_fn fn, void *apimsg, sys_sem_t* sem)
 {
   LWIP_ASSERT("semaphore not initialized", sys_sem_valid(sem));

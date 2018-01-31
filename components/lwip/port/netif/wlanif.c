@@ -101,7 +101,7 @@ low_level_init(struct netif *netif)
  *       to become availale since the stack doesn't retry to send a packet
  *       dropped because of memory failure (except for the TCP timers).
  */
-static err_t
+static err_t ESP_IRAM_ATTR
 low_level_output(struct netif *netif, struct pbuf *p)
 {
   wifi_interface_t wifi_if = tcpip_adapter_get_esp_if(netif);
@@ -139,7 +139,7 @@ low_level_output(struct netif *netif, struct pbuf *p)
  *
  * @param netif the lwip network interface structure for this ethernetif
  */
-void
+void ESP_IRAM_ATTR
 wlanif_input(struct netif *netif, void *buffer, u16_t len, void* eb)
 {
   struct pbuf *p;
