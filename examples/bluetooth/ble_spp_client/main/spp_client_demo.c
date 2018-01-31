@@ -493,7 +493,7 @@ void spp_heart_beat_task(void * arg)
                                               spp_conn_id,
                                               (db+SPP_IDX_SPP_HEARTBEAT_VAL)->attribute_handle,
                                               sizeof(heartbeat_s),
-                                              (char *)heartbeat_s,
+                                              (uint8_t *)heartbeat_s,
                                               ESP_GATT_WRITE_TYPE_RSP,
                                               ESP_GATT_AUTH_REQ_NONE);
                     vTaskDelay(5000 / portTICK_PERIOD_MS);
