@@ -281,7 +281,7 @@ config SYSTEM_EVENT_QUEUE_SIZE
 
 config SYSTEM_EVENT_TASK_STACK_SIZE
     int "Event loop task stack size"
-    default 2048
+    default 2304
     help
         Config system event task stack size in different application.
 
