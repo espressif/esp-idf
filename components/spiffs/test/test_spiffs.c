@@ -18,6 +18,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/unistd.h>
+#include <sys/errno.h>
 #include "unity.h"
 #include "test_utils.h"
 #include "esp_log.h"
@@ -199,6 +200,11 @@ void test_spiffs_can_opendir(const char* path)
 
 void test_spiffs_opendir_readdir_rewinddir(const char* dir_prefix)
 {
+#ifdef CONFIG_SPIFFS_USE_DIR
+    printf("Directories support enabled\n");
+#else
+    printf("Directories support disabled\n");
+#endif
     char name_dir_inner_file[64];
     char name_dir_inner[64];
     char name_dir_file3[64];
@@ -212,18 +218,31 @@ void test_spiffs_opendir_readdir_rewinddir(const char* dir_prefix)
     snprintf(name_dir_file1, sizeof(name_dir_file1), "%s/1.txt", dir_prefix);
 
     unlink(name_dir_inner_file);
+#ifdef CONFIG_SPIFFS_USE_DIR
     rmdir(name_dir_inner);
+    if (rmdir(dir_prefix) < 0)
+        printf("rmdir [%s] Error %d (%s)\n", name_dir_inner, errno, strerror(errno));
+#endif
     unlink(name_dir_file1);
     unlink(name_dir_file2);
     unlink(name_dir_file3);
-    rmdir(dir_prefix);
-
+#ifdef CONFIG_SPIFFS_USE_DIR
+    if (rmdir(dir_prefix) < 0)
+        printf("rmdir [%s] Error %d (%s)\n", dir_prefix, errno, strerror(errno));
+    if (mkdir(dir_prefix, 0777) < 0)
+        printf("mkdir [%s] Error %d (%s)\n", dir_prefix, errno, strerror(errno));
+    if (mkdir(name_dir_inner, 0777) < 0)
+        printf("mkdir [%s] Error %d (%s)\n", name_dir_inner, errno, strerror(errno));
+#endif
     test_spiffs_create_file_with_text(name_dir_file1, "1\n");
     test_spiffs_create_file_with_text(name_dir_file2, "2\n");
     test_spiffs_create_file_with_text(name_dir_file3, "\01\02\03");
     test_spiffs_create_file_with_text(name_dir_inner_file, "3\n");
 
+    printf("opendir %s\n", dir_prefix);
     DIR* dir = opendir(dir_prefix);
+    if (!dir)
+        printf("opendir Error %d (%s)\n", errno, strerror(errno));
     TEST_ASSERT_NOT_NULL(dir);
     int count = 0;
     const char* names[4];
@@ -241,9 +260,15 @@ void test_spiffs_opendir_readdir_rewinddir(const char* dir_prefix)
             TEST_ASSERT_TRUE(de->d_type == DT_REG);
             names[count] = "2.txt";
             ++count;
+#ifdef CONFIG_SPIFFS_USE_DIR
+        } else if (strcasecmp(de->d_name, "inner") == 0) {
+            TEST_ASSERT_TRUE(de->d_type == DT_DIR);
+            names[count] = "inner";
+#else
         } else if (strcasecmp(de->d_name, "inner/3.txt") == 0) {
             TEST_ASSERT_TRUE(de->d_type == DT_REG);
             names[count] = "inner/3.txt";
+#endif
             ++count;
         } else if (strcasecmp(de->d_name, "boo.bin") == 0) {
             TEST_ASSERT_TRUE(de->d_type == DT_REG);
@@ -255,6 +280,7 @@ void test_spiffs_opendir_readdir_rewinddir(const char* dir_prefix)
     }
     TEST_ASSERT_EQUAL(count, 4);
 
+    printf("rewinddir %s\n", dir_prefix);
     rewinddir(dir);
     struct dirent* de = readdir(dir);
     TEST_ASSERT_NOT_NULL(de);

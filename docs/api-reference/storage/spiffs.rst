@@ -10,7 +10,8 @@ It supports wear leveling, file system consistency checks and more.
 Notes
 -----
 
- - Presently, spiffs does not support directories. It produces a flat structure. If SPIFFS is mounted under ``/spiffs`` creating a file with path ``/spiffs/tmp/myfile.txt`` will create a file called ``/tmp/myfile.txt`` in SPIFFS, instead of ``myfile.txt`` under directory ``/spiffs/tmp``. 
+ - Full directory handling is supported if "Enable directories" (SPIFFS_USE_DIR) is selected in menuconfig.
+ - If "Enable directories" is not selected, spiffs will produce a flat structure. If SPIFFS is mounted under ``/spiffs`` creating a file with path ``/spiffs/tmp/myfile.txt`` will create a file called ``/tmp/myfile.txt`` in SPIFFS, instead of ``myfile.txt`` under directory ``/spiffs/tmp``. 
  - It is not a realtime stack. One write operation might last much longer than another.
  - Presently, it does not detect or handle bad blocks.
 
@@ -19,6 +20,8 @@ Tools
 
 Host-Side tools for creating SPIFS partition images exist and one such tool is `mkspiffs <https://github.com/igrr/mkspiffs>`_.
 You can use it to create image from a given folder and then flash that image with ``esptool.py``
+As spiffs configuration can be changed via menuconfig, you will need to **rebuild** the mkspiffs after every configuration change.
+Before building **copy** the **sdkconfig.h** from your application *build/include* to *mkspiffs/include* directory.
 
 To do that you need to obtain some parameters:
 
