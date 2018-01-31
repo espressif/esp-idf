@@ -67,7 +67,7 @@ static sys_sem_t api_sync_sem = NULL;
 static bool tcpip_inited = false;
 static sys_sem_t api_lock_sem = NULL;
 extern sys_thread_t g_lwip_task;
-#define TAG "tcpip_adapter"
+static const char* TAG = "tcpip_adapter";
 
 static void tcpip_adapter_api_cb(void* api_msg)
 {
@@ -79,7 +79,7 @@ static void tcpip_adapter_api_cb(void* api_msg)
     }
 
     msg->ret = msg->api_fn(msg);
-    ESP_LOGD(TAG, "call api in lwip: ret=0x%x, give sem", msg->ret);
+    ESP_LOGV(TAG, "call api in lwip: ret=0x%x, give sem", msg->ret);
     sys_sem_signal(&api_sync_sem);
 
     return;
