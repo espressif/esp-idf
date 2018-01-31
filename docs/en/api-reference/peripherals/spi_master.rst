@@ -15,7 +15,16 @@ The spi_master driver
 
 The spi_master driver allows easy communicating with SPI slave devices, even in a multithreaded environment.
 It fully transparently handles DMA transfers to read and write data and automatically takes care of
-multiplexing between different SPI slaves on the same master
+multiplexing between different SPI slaves on the same master.
+
+.. note::
+
+    **Notes about thread safety**
+
+    The SPI driver API is thread safe when multiple SPI devices on the same bus are accessed from different tasks. However, the driver is not thread safe if the same SPI device is accessed from multiple tasks.
+
+    In this case, it is recommended to either refactor your application so only a single task accesses each SPI device, or to add mutex locking around access of the shared device.
+
 
 Terminology
 ^^^^^^^^^^^
@@ -45,7 +54,6 @@ The spi_master driver uses the following terms:
   CS going inactive again. Transactions are atomic, as in they will never be interrupted by another
   transaction.
 
-
 SPI transactions
 ^^^^^^^^^^^^^^^^
 
@@ -72,6 +80,154 @@ fields are set to zero, no command or address phase is done.
 Something similar is true for the read and write phase: not every transaction needs both data to be written
 as well as data to be read. When ``rx_buffer`` is NULL (and SPI_USE_RXDATA) is not set) the read phase
 is skipped. When ``tx_buffer`` is NULL (and SPI_USE_TXDATA) is not set) the write phase is skipped.
+
+The driver offers two different kinds of transactions: the interrupt
+transactions and the polling transactions. Each device can choose one kind of
+transaction to send. See :ref:`mixed_transactions` if your device do require
+both kinds of transactions.
+
+.. _interrupt_transactions:
+
+Interrupt transactions
+""""""""""""""""""""""""
+
+The interrupt transactions use an interrupt-driven logic when the
+transactions are in-flight. The routine will get blocked, allowing the CPU to
+run other tasks, while it is waiting for a transaction to be finished.
+
+Interrupt transactions can be queued into a device, the driver automatically
+send them one-by-one in the ISR. A task can queue several transactions, and
+then do something else before the transactions are finished.
+
+.. _polling_transactions:
+
+Polling transactions
+""""""""""""""""""""
+
+The polling transactions don't rely on the interrupt, the routine keeps polling
+the status bit of the SPI peripheral until the transaction is done.
+
+All the tasks that do interrupt transactions may get blocked by the queue, at
+which point they need to wait for the ISR to run twice before the transaction
+is done. Polling transactions save the time spent on queue handling and
+context switching, resulting in a smaller transaction interval smaller. The
+disadvantage is that the the CPU is busy while these transactions are in
+flight.
+
+The ``spi_device_polling_end`` routine spends at least 1us overhead to
+unblock other tasks when the transaction is done. It is strongly recommended
+to wrap a series of polling transactions inside of ``spi_device_acquire_bus``
+and ``spi_device_release_bus`` to avoid the overhead. (See
+:ref:`bus_acquiring`)
+
+Command and address phases
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+During the command and address phases, ``cmd`` and ``addr`` field in the
+``spi_transaction_t`` struct are sent to the bus, while nothing is read at the
+same time. The default length of command and address phase are set in the
+``spi_device_interface_config_t`` and by ``spi_bus_add_device``. When the the
+flag ``SPI_TRANS_VARIABLE_CMD`` and ``SPI_TRANS_VARIABLE_ADDR`` are not set in
+the ``spi_transaction_t``,the driver automatically set the length of these
+phases to the default value as set when the device is initialized respectively.
+
+If the length of command and address phases needs to be variable, declare a
+``spi_transaction_ext_t`` descriptor, set the flag ``SPI_TRANS_VARIABLE_CMD``
+or/and ``SPI_TRANS_VARIABLE_ADDR`` in the ``flags`` of ``base`` member and
+configure the rest part of ``base`` as usual. Then the length of each phases
+will be ``command_bits`` and ``address_bits`` set in the ``spi_transaction_ext_t``.
+
+Write and read phases
+^^^^^^^^^^^^^^^^^^^^^
+
+Normally, data to be transferred to or from a device will be read from or written to a chunk of memory
+indicated by the ``rx_buffer`` and ``tx_buffer`` members of the transaction structure.
+When DMA is enabled for transfers, these buffers are highly recommended to meet the requirements as below:
+
+  1. allocated in DMA-capable memory using ``pvPortMallocCaps(size, MALLOC_CAP_DMA)``;
+  2. 32-bit aligned (start from the boundary and have length of multiples of 4 bytes).
+
+If these requirements are not satisfied, efficiency of the transaction will suffer due to the allocation and
+memcpy of temporary buffers.
+
+.. note::  Half duplex transactions with both read and write phases are not supported when using DMA. See
+  :ref:`spi_known_issues` for details and workarounds.
+
+.. _bus_acquiring:
+
+Bus acquiring
+^^^^^^^^^^^^^
+
+Sometimes you may want to send spi transactions exclusively, continuously, to
+make it as fast as possible. You may use ``spi_device_acquire_bus`` and
+``spi_device_release_bus`` to realize this. When the bus is acquired,
+transactions to other devices (no matter polling or interrupt) are pending
+until the bus is released.
+
+Using the spi_master driver
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Initialize a SPI bus by calling ``spi_bus_initialize``. Make sure to set the correct IO pins in
+  the ``bus_config`` struct. Take care to set signals that are not needed to -1.
+
+- Tell the driver about a SPI slave device connected to the bus by calling spi_bus_add_device.
+  Make sure to configure any timing requirements the device has in the ``dev_config`` structure.
+  You should now have a handle for the device, to be used when sending it a transaction.
+
+- To interact with the device, fill one or more spi_transaction_t structure with any transaction
+  parameters you need. Then send them either in a polling way or the interrupt way:
+
+    - :ref:`Interrupt <interrupt_transactions>`
+        Either queue all transactions by calling ``spi_device_queue_trans``,
+        and at a later time query the result using
+        ``spi_device_get_trans_result``, or handle all requests
+        synchroneously by feeding them into ``spi_device_transmit``.
+
+    - :ref:`Polling <polling_transactions>`
+        Call the ``spi_device_polling_transmit`` to send polling
+        transactions. Alternatively, you can send a polling transaction by
+        ``spi_device_polling_start`` and ``spi_device_polling_end`` if you
+        want to insert something between them.
+
+- Optional: to do back-to-back transactions to a device, call
+  ``spi_device_acquire_bus`` before and ``spi_device_release_bus`` after the
+  transactions.
+
+- Optional: to unload the driver for a device, call ``spi_bus_remove_device`` with the device
+  handle as an argument
+
+- Optional: to remove the driver for a bus, make sure no more drivers are attached and call
+  ``spi_bus_free``.
+
+Tips
+""""
+
+1. Transactions with small amount of data:
+    Sometimes, the amount of data is very small making it less than optimal allocating a separate buffer
+    for it. If the data to be transferred is 32 bits or less, it can be stored in the transaction struct
+    itself. For transmitted data, use the ``tx_data`` member for this and set the ``SPI_USE_TXDATA`` flag
+    on the transmission. For received data, use ``rx_data`` and set ``SPI_USE_RXDATA``. In both cases, do
+    not touch the ``tx_buffer`` or ``rx_buffer`` members, because they use the same memory locations
+    as ``tx_data`` and ``rx_data``.
+
+2. Transactions with integers other than uint8_t
+    The SPI peripheral reads and writes the memory byte-by-byte. By default,
+    the SPI works at MSB first mode, each bytes are sent or received from the
+    MSB to the LSB. However, if you want to send data with length which is
+    not multiples of 8 bits, unused bits are sent.
+
+    E.g. you write ``uint8_t data = 0x15`` (00010101B), and set length to
+    only 5 bits, the sent data is ``00010B`` rather than expected ``10101B``.
+
+    Moreover, ESP32 is a little-endian chip whose lowest byte is stored at
+    the very beginning address for uint16_t and uint32_t variables. Hence if
+    a uint16_t is stored in the memory, it's bit 7 is first sent, then bit 6
+    to 0, then comes its bit 15 to bit 8.
+
+    To send data other than uint8_t arrays, macros ``SPI_SWAP_DATA_TX`` is
+    provided to shift your data to the MSB and swap the MSB to the lowest
+    address; while ``SPI_SWAP_DATA_RX`` can be used to swap received data
+    from the MSB to it's correct place.
 
 GPIO matrix and IOMUX
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -113,92 +269,38 @@ IOMUX pins for SPI controllers are as below:
 
 note * Only the first device attaching to the bus can use CS0 pin.
 
-Using the spi_master driver
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _mixed_transactions:
 
-- Initialize a SPI bus by calling ``spi_bus_initialize``. Make sure to set the correct IO pins in
-  the ``bus_config`` struct. Take care to set signals that are not needed to -1.
+Notes to send mixed transactions to the same device
+"""""""""""""""""""""""""""""""""""""""""""""""""""
 
-- Tell the driver about a SPI slave device connected to the bus by calling spi_bus_add_device.
-  Make sure to configure any timing requirements the device has in the ``dev_config`` structure.
-  You should now have a handle for the device, to be used when sending it a transaction.
+Though we suggest to send only one type (interrupt or polling) of
+transactions to one device to reduce coding complexity, it is supported to
+send both interrupt and polling transactions alternately. Notes below is to
+help you do this.
 
-- To interact with the device, fill one or more spi_transaction_t structure with any transaction
-  parameters you need. Either queue all transactions by calling ``spi_device_queue_trans``, later
-  quering the result using ``spi_device_get_trans_result``, or handle all requests synchroneously
-  by feeding them into ``spi_device_transmit``.
+The polling transactions should be started when all the other transactions
+are finished, no matter they are polling or interrupt.
 
-- Optional: to unload the driver for a device, call ``spi_bus_remove_device`` with the device
-  handle as an argument
+An unfinished polling transaction forbid other transactions from being sent.
+Always call ``spi_device_polling_end`` after ``spi_device_polling_start`` to
+allow other device using the bus, or allow other transactions to be started
+to the same device. You can use ``spi_device_polling_transmit`` to simplify
+this if you don't need to do something during your polling transaction.
 
-- Optional: to remove the driver for a bus, make sure no more drivers are attached and call
-  ``spi_bus_free``.
+An in-flight polling transaction would get disturbed by the ISR operation
+caused by interrupt transactions. Always make sure all the interrupt
+transactions sent to the ISR are finished before you call
+``spi_device_polling_start``. To do that, you can call
+``spi_device_get_trans_result`` until all the transactions are returned.
 
-Command and address phases
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-During the command and address phases, ``cmd`` and ``addr`` field in the
-``spi_transaction_t`` struct are sent to the bus, while nothing is read at the
-same time. The default length of command and address phase are set in the
-``spi_device_interface_config_t`` and by ``spi_bus_add_device``. When the the
-flag ``SPI_TRANS_VARIABLE_CMD`` and ``SPI_TRANS_VARIABLE_ADDR`` are not set in
-the ``spi_transaction_t``,the driver automatically set the length of these
-phases to the default value as set when the device is initialized respectively.
-
-If the length of command and address phases needs to be variable, declare a
-``spi_transaction_ext_t`` descriptor, set the flag ``SPI_TRANS_VARIABLE_CMD``
-or/and ``SPI_TRANS_VARIABLE_ADDR`` in the ``flags`` of ``base`` member and
-configure the rest part of ``base`` as usual. Then the length of each phases
-will be ``command_bits`` and ``address_bits`` set in the ``spi_transaction_ext_t``.
-
-Write and read phases
-^^^^^^^^^^^^^^^^^^^^^
-
-Normally, data to be transferred to or from a device will be read from or written to a chunk of memory
-indicated by the ``rx_buffer`` and ``tx_buffer`` members of the transaction structure.
-When DMA is enabled for transfers, these buffers are highly recommended to meet the requirements as below:
-
-  1. allocated in DMA-capable memory using ``pvPortMallocCaps(size, MALLOC_CAP_DMA)``;
-  2. 32-bit aligned (start from the boundary and have length of multiples of 4 bytes).
-
-If these requirements are not satisfied, efficiency of the transaction will suffer due to the allocation and
-memcpy of temporary buffers.
-
-.. note::  Half duplex transactions with both read and write phases are not supported when using DMA. See
-  :ref:`spi_known_issues` for details and workarounds.
-
-Tips
-""""
-
-1. Transactions with small amount of data:
-    Sometimes, the amount of data is very small making it less than optimal allocating a separate buffer
-    for it. If the data to be transferred is 32 bits or less, it can be stored in the transaction struct
-    itself. For transmitted data, use the ``tx_data`` member for this and set the ``SPI_USE_TXDATA`` flag
-    on the transmission. For received data, use ``rx_data`` and set ``SPI_USE_RXDATA``. In both cases, do
-    not touch the ``tx_buffer`` or ``rx_buffer`` members, because they use the same memory locations
-    as ``tx_data`` and ``rx_data``.
-
-2. Transactions with integers other than uint8_t
-    The SPI peripheral reads and writes the memory byte-by-byte. By default,
-    the SPI works at MSB first mode, each bytes are sent or received from the
-    MSB to the LSB. However, if you want to send data with length which is
-    not multiples of 8 bits, unused bits are sent.
-
-    E.g. you write ``uint8_t data = 0x15`` (00010101B), and set length to
-    only 5 bits, the sent data is ``00010B`` rather than expected ``10101B``.
-
-    Moreover, ESP32 is a little-endian chip whose lowest byte is stored at
-    the very beginning address for uint16_t and uint32_t variables. Hence if
-    a uint16_t is stored in the memory, it's bit 7 is first sent, then bit 6
-    to 0, then comes its bit 15 to bit 8.
-
-    To send data other than uint8_t arrays, macros ``SPI_SWAP_DATA_TX`` is
-    provided to shift your data to the MSB and swap the MSB to the lowest
-    address; while ``SPI_SWAP_DATA_RX`` can be used to swap received data
-    from the MSB to it's correct place.
+It is strongly recommended to send mixed transactions to the same device in
+only one task to control the calling sequence of functions.
 
 Speed and Timing Considerations
 -------------------------------
+
+.. _speed_considerations:
 
 Transferring speed
 ^^^^^^^^^^^^^^^^^^
@@ -207,13 +309,20 @@ There're two factors limiting the transferring speed: (1) The transaction interv
 When large transactions are used, the clock frequency determines the transferring speed; while the interval effects the
 speed a lot if small transactions are used.
 
-    1. Transaction interval: The interval mainly comes from the cost of FreeRTOS queues and the time switching between
-       tasks and the ISR. It also takes time for the software to setup spi peripheral registers as well as copy data to
-       FIFOs, or setup DMA links. Depending on whether the DMA is used, the interval of an one-byte transaction is around
-       25us typically.
+    1. Transaction interval: It takes time for the software to setup spi
+       peripheral registers as well as copy data to FIFOs, or setup DMA links.
+       When the interrupt transactions are used, an extra overhead is appended,
+       from the cost of FreeRTOS queues and the time switching between tasks and
+       the ISR.
 
-            1.  The CPU is blocked and switched to other tasks when the
-                transaction is in flight. This save the cpu time but increase the interval.
+            1. For **interrupt transactions**, the CPU can switched to other
+               tasks when the transaction is in flight. This save the cpu time
+               but increase the interval (See :ref:`interrupt_transactions`).
+               For
+               **polling transactions**, it does not block the task but do
+               polling when the transaction is in flight. (See
+               :ref:`polling_transactions`).
+
             2.  When the DMA is enabled, it needs about 2us per transaction to setup the linked list. When the master is
                 transferring, it automatically read data from the linked list. If the DMA is not enabled,
                 CPU has to write/read each byte to/from the FIFO by itself. Usually this is faster than 2us, but the
@@ -221,20 +330,20 @@ speed a lot if small transactions are used.
 
        Typical transaction interval with one byte data is as below:
 
-       +--------+------------------+
-       |        | Transaction Time |
-       +========+==================+
-       |        | Typical (us)     |
-       +--------+------------------+
-       | DMA    | 24               |
-       +--------+------------------+
-       | No DMA | 22               |
-       +--------+------------------+
+       +--------+----------------+--------------+
+       |        | Typical Transaction Time (us) |
+       +========+================+==============+
+       |        | Interrupt      | Polling      |
+       +--------+----------------+--------------+
+       | DMA    | 24             | 8            |
+       +--------+----------------+--------------+
+       | No DMA | 22             | 7            |
+       +--------+----------------+--------------+
 
     2. SPI clock frequency: Each byte transferred takes 8 times of the clock period *8/fspi*. If the clock frequency is
        too high, some functions may be limited to use. See :ref:`timing_considerations`.
 
-For a normal transaction, the overall cost is *20+8n/Fspi[MHz]* [us] for n bytes tranferred
+For an interrupt transaction, the overall cost is *20+8n/Fspi[MHz]* [us] for n bytes tranferred
 in one transaction. Hence the transferring speed is : *n/(20+8n/Fspi)*. Example of transferring speed under 8MHz
 clock speed:
 
@@ -380,13 +489,6 @@ table:
 |        | 75               | 100                  | 8.89              |
 +--------+------------------+----------------------+-------------------+
 
-
-Thread Safety
--------------
-
-The SPI driver API is thread safe when multiple SPI devices on the same bus are accessed from different tasks. However, the driver is not thread safe if the same SPI device is accessed from multiple tasks.
-
-In this case, it is recommended to either refactor your application so only a single task accesses each SPI device, or to add mutex locking around access of the shared device.
 
 .. _spi_known_issues:
 
