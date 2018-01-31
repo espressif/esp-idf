@@ -152,7 +152,13 @@ DRAM_ATTR static const lcd_init_cmd_t ili_init_cmds[]={
     {0, {0}, 0xff},
 };
 
-//Send a command to the LCD. Uses spi_device_transmit, which waits until the transfer is complete.
+/* Send a command to the LCD. Uses spi_device_polling_transmit, which waits
+ * until the transfer is complete.
+ *
+ * Since command transactions are usually small, they are handled in polling
+ * mode for higher speed. The overhead of interrupt transactions is more than
+ * just waiting for the transaction to complete.
+ */
 void lcd_cmd(spi_device_handle_t spi, const uint8_t cmd)
 {
     esp_err_t ret;
@@ -161,11 +167,17 @@ void lcd_cmd(spi_device_handle_t spi, const uint8_t cmd)
     t.length=8;                     //Command is 8 bits
     t.tx_buffer=&cmd;               //The data is the cmd itself
     t.user=(void*)0;                //D/C needs to be set to 0
-    ret=spi_device_transmit(spi, &t);  //Transmit!
+    ret=spi_device_polling_transmit(spi, &t);  //Transmit!
     assert(ret==ESP_OK);            //Should have had no issues.
 }
 
-//Send data to the LCD. Uses spi_device_transmit, which waits until the transfer is complete.
+/* Send data to the LCD. Uses spi_device_polling_transmit, which waits until the
+ * transfer is complete.
+ *
+ * Since data transactions are usually small, they are handled in polling
+ * mode for higher speed. The overhead of interrupt transactions is more than
+ * just waiting for the transaction to complete.
+ */
 void lcd_data(spi_device_handle_t spi, const uint8_t *data, int len)
 {
     esp_err_t ret;
@@ -175,7 +187,7 @@ void lcd_data(spi_device_handle_t spi, const uint8_t *data, int len)
     t.length=len*8;                 //Len is in bytes, transaction length is in bits.
     t.tx_buffer=data;               //Data
     t.user=(void*)1;                //D/C needs to be set to 1
-    ret=spi_device_transmit(spi, &t);  //Transmit!
+    ret=spi_device_polling_transmit(spi, &t);  //Transmit!
     assert(ret==ESP_OK);            //Should have had no issues.
 }
 
@@ -190,7 +202,7 @@ void lcd_spi_pre_transfer_callback(spi_transaction_t *t)
 uint32_t lcd_get_id(spi_device_handle_t spi)
 {
     //get_id cmd
-    lcd_cmd( spi, 0x04);
+    lcd_cmd(spi, 0x04);
 
     spi_transaction_t t;
     memset(&t, 0, sizeof(t));
@@ -198,7 +210,7 @@ uint32_t lcd_get_id(spi_device_handle_t spi)
     t.flags = SPI_TRANS_USE_RXDATA;
     t.user = (void*)1;
 
-    esp_err_t ret = spi_device_transmit(spi, &t);
+    esp_err_t ret = spi_device_polling_transmit(spi, &t);
     assert( ret == ESP_OK );
 
     return *(uint32_t*)t.rx_data;
@@ -269,10 +281,13 @@ void lcd_init(spi_device_handle_t spi)
 }
 
 
-//To send a set of lines we have to send a command, 2 data bytes, another command, 2 more data bytes and another command
-//before sending the line data itself; a total of 6 transactions. (We can't put all of this in just one transaction
-//because the D/C line needs to be toggled in the middle.)
-//This routine queues these commands up so they get sent as quickly as possible.
+/* To send a set of lines we have to send a command, 2 data bytes, another command, 2 more data bytes and another command
+ * before sending the line data itself; a total of 6 transactions. (We can't put all of this in just one transaction
+ * because the D/C line needs to be toggled in the middle.)
+ * This routine queues these commands up as interrupt transactions so they get
+ * sent faster (compared to calling spi_device_transmit several times), and at
+ * the mean while the lines for next transactions can get calculated.
+ */
 static void send_lines(spi_device_handle_t spi, int ypos, uint16_t *linedata)
 {
     esp_err_t ret;
