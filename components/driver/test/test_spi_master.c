@@ -23,6 +23,7 @@
 #include "esp_log.h"
 #include "freertos/ringbuf.h"
 
+const static char TAG[] = "test_spi";
 
 static void check_spi_pre_n_for(int clk, int pre, int n)
 {
@@ -733,12 +734,9 @@ TEST_CASE("SPI master variable cmd & addr test","[spi]")
 #define RECORD_TIME_START()   do {__t1 = xthal_get_ccount();}while(0)
 #define RECORD_TIME_END(p_time) do{__t2 = xthal_get_ccount(); *p_time = (__t2-__t1)/240;}while(0)
 
-TEST_CASE("spi_speed","[spi]")
+static void speed_setup(spi_device_handle_t* spi, bool use_dma)
 {
-    RECORD_TIME_PREPARE();    
-    uint32_t t_no_dma, t_dma;
     esp_err_t ret;
-    spi_device_handle_t spi;
     spi_bus_config_t buscfg={
         .miso_io_num=PIN_NUM_MISO, 
         .mosi_io_num=PIN_NUM_MOSI,
@@ -750,54 +748,87 @@ TEST_CASE("spi_speed","[spi]")
         .clock_speed_hz=10*1000*1000,            //currently only up to 4MHz for internel connect
         .mode=0,                                //SPI mode 0
         .spics_io_num=PIN_NUM_CS,               //CS pin
-        .queue_size=16,                          //We want to be able to queue 7 transactions at a time
+        .queue_size=8,                          //We want to be able to queue 7 transactions at a time
         .pre_cb=NULL,  
         .cs_ena_pretrans = 0,
     };
-    //Initialize the SPI bus
-    ret=spi_bus_initialize(HSPI_HOST, &buscfg, 1);
+    //Initialize the SPI bus and the device to test
+    ret=spi_bus_initialize(HSPI_HOST, &buscfg, (use_dma?1:0));
     TEST_ASSERT(ret==ESP_OK);
-    //Attach the LCD to the SPI bus
-    ret=spi_bus_add_device(HSPI_HOST, &devcfg, &spi);
+    ret=spi_bus_add_device(HSPI_HOST, &devcfg, spi);
     TEST_ASSERT(ret==ESP_OK);
+}
 
-    spi_transaction_t trans = {
+static void speed_deinit(spi_device_handle_t spi)
+{
+    TEST_ESP_OK( spi_bus_remove_device(spi) );
+    TEST_ESP_OK( spi_bus_free(HSPI_HOST) );
+}
+
+static void sorted_array_insert(uint32_t* array, int* size, uint32_t item)
+{
+    int pos;
+    for (pos = *size; pos>0; pos--) {
+        if (array[pos-1] < item) break;
+        array[pos] = array[pos-1];
+    }
+    array[pos]=item;
+    (*size)++;
+}
+
+#define TEST_TIMES  11
+
+TEST_CASE("spi_speed","[spi]")
+{
+    RECORD_TIME_PREPARE();    
+    uint32_t t_flight;
+    //to get rid of the influence of randomly interrupts, we measured the performance by median value
+    uint32_t t_flight_sorted[TEST_TIMES];
+    int t_flight_num = 0;
+        
+    spi_device_handle_t spi;
+    const bool use_dma = true;
+    WORD_ALIGNED_ATTR spi_transaction_t trans = {
         .length = 1*8,
         .flags = SPI_TRANS_USE_TXDATA,
     };
+
+    //first work with DMA
+    speed_setup(&spi, use_dma);
+
+    //first time introduces a device switch, which costs more time. we skip this
     spi_device_transmit(spi, &trans);
-
-    //only record the second time
-    RECORD_TIME_START();
-    spi_device_transmit(spi, &trans);
-    RECORD_TIME_END(&t_dma);
-
-    TEST_PERFORMANCE_LESS_THAN( SPI_PER_TRANS_NO_POLLING, "%d us", t_dma );
-
-    TEST_ESP_OK( spi_bus_remove_device(spi) );
-    TEST_ESP_OK( spi_bus_free(HSPI_HOST) );
-
-    ret=spi_bus_initialize(HSPI_HOST, &buscfg, 0);
-    TEST_ASSERT(ret==ESP_OK);
-    //Attach the LCD to the SPI bus
-    ret=spi_bus_add_device(HSPI_HOST, &devcfg, &spi);
-    TEST_ASSERT(ret==ESP_OK);
-
-    trans = (spi_transaction_t){
-        .length = 1*8,
-        .flags = SPI_TRANS_USE_TXDATA,
-    };
-    spi_device_transmit(spi, &trans);
-
-    //only record the second time
-    RECORD_TIME_START();
-    spi_device_transmit(spi, &trans);
-    RECORD_TIME_END(&t_no_dma);  
-
-    TEST_PERFORMANCE_LESS_THAN( SPI_PER_TRANS_NO_POLLING_NO_DMA, "%d us", t_no_dma );
-
-    TEST_ESP_OK( spi_bus_remove_device(spi) );
-    TEST_ESP_OK( spi_bus_free(HSPI_HOST) );
-
     
+    //record flight time by isr, with DMA
+    t_flight_num = 0;
+    for (int i = 0; i < TEST_TIMES; i++) {
+        RECORD_TIME_START();
+        spi_device_transmit(spi, &trans);
+        RECORD_TIME_END(&t_flight);        
+        sorted_array_insert(t_flight_sorted, &t_flight_num, t_flight);
+    }
+    TEST_PERFORMANCE_LESS_THAN(SPI_PER_TRANS_NO_POLLING, "%d us", t_flight_sorted[(TEST_TIMES+1)/2]);
+    for (int i = 0; i < TEST_TIMES; i++) {
+        ESP_LOGI(TAG, "%d", t_flight_sorted[i]);
+    }
+    
+    speed_deinit(spi);
+    speed_setup(&spi, !use_dma);
+    
+    //first time introduces a device switch, which costs more time. we skip this
+    spi_device_transmit(spi, &trans);
+    
+    //record flight time by isr, without DMA
+    t_flight_num = 0;
+    for (int i = 0; i < TEST_TIMES; i++) {
+        RECORD_TIME_START();
+        spi_device_transmit(spi, &trans);
+        RECORD_TIME_END(&t_flight);  
+        sorted_array_insert(t_flight_sorted, &t_flight_num, t_flight);
+    }
+    TEST_PERFORMANCE_LESS_THAN( SPI_PER_TRANS_NO_POLLING_NO_DMA, "%d us", t_flight_sorted[(TEST_TIMES+1)/2]);
+    for (int i = 0; i < TEST_TIMES; i++) {
+        ESP_LOGI(TAG, "%d", t_flight_sorted[i]);
+    }    
+    speed_deinit(spi);    
 }
