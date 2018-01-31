@@ -316,7 +316,7 @@ class BaseDUT(object):
         if flush:
             self.data_cache.flush()
         # do write if cache
-        if data:
+        if data is not None:
             self._port_write(data + eol if eol else data)
 
     @_expect_lock
@@ -557,9 +557,9 @@ class SerialDUT(BaseDUT):
         :return: formatted data (str)
         """
         timestamp = time.time()
-        timestamp = "{}:{}".format(time.strftime("%m-%d %H:%M:%S", time.localtime(timestamp)),
-                                   str(timestamp % 1)[2:5])
-        formatted_data = "[{}]:\r\n{}\r\n".format(timestamp, _decode_data(data))
+        timestamp = "[{}:{}]".format(time.strftime("%m-%d %H:%M:%S", time.localtime(timestamp)),
+                                     str(timestamp % 1)[2:5])
+        formatted_data = timestamp.encode() + b"\r\n" + data + b"\r\n"
         return formatted_data
 
     def _port_open(self):
@@ -571,11 +571,13 @@ class SerialDUT(BaseDUT):
     def _port_read(self, size=1):
         data = self.port_inst.read(size)
         if data:
-            with open(self.log_file, "a+") as _log_file:
+            with open(self.log_file, "ab+") as _log_file:
                 _log_file.write(self._format_data(data))
         return data
 
     def _port_write(self, data):
+        if isinstance(data, str):
+            data = data.encode()
         self.port_inst.write(data)
 
     @classmethod
