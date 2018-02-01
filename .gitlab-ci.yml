@@ -319,6 +319,17 @@ test_report:
     - git push origin master
     - test "${TEST_RESULT}" = "Pass" || exit 1
 
+test_esp_err_to_name_on_host:
+  stage: test
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - build
+  dependencies: []
+  script:
+    - cd tools/
+    - ./gen_esp_err_to_name.py
+    - git diff --exit-code -- ../components/esp32/esp_err_to_name.c || (echo 'Differences found. Please run gen_esp_err_to_name.py and commit the changes.'; exit 1)
+
 push_master_to_github:
   stage: deploy
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
