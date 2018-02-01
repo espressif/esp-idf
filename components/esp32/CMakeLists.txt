@@ -58,4 +58,18 @@ else()
   add_custom_target(esp32_linker_script DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/esp32_out.ld)
   add_dependencies(esp32 esp32_linker_script)
 
-endif()
+  if(CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION)
+    set(PHY_INIT_DATA_BIN phy_init_data.bin)
+
+    # To get the phy_init_data.bin file, compile phy_init_data.h as a C file and then objcopy the object file to a raw binary
+    add_custom_command(
+      OUTPUT ${PHY_INIT_DATA_BIN}
+      DEPENDS ${CMAKE_CURRENT_LIST_DIR}/phy_init_data.h
+      COMMAND ${CMAKE_C_COMPILER} -x c -c -o phy_init_data.obj -I ${CMAKE_CURRENT_LIST_DIR} -I ${CMAKE_CURRENT_LIST_DIR}/include -I ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_LIST_DIR}/phy_init_data.h
+      COMMAND ${CMAKE_OBJCOPY} -O binary phy_init_data.obj ${PHY_INIT_DATA_BIN}
+      )
+    add_custom_target(phy_init_data ALL DEPENDS ${PHY_INIT_DATA_BIN})
+
+  endif(CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION)
+
+endif(BOOTLOADER_BUILD)

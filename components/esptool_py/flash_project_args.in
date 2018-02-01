@@ -1,0 +1,3 @@
+0x1000 bootloader/bootloader.bin
+0x8000 partition_table/partition-table.bin
+${CONFIG_APP_OFFSET} ${PROJECT_NAME}.elf
