@@ -579,6 +579,17 @@ if os.name == 'nt':
             self.handle = GetStdHandle(STD_ERROR_HANDLE if self.output == sys.stderr else STD_OUTPUT_HANDLE)
             self.matched = b''
 
+        def _output_write(self, data):
+            # Windows 10 bug since the Fall Creators Update, sometimes writing to console randomly fails
+            # (but usually succeeds afterwards, it seems.)
+            # Ref https://github.com/espressif/esp-idf/issues/1136
+            for tries in range(3):
+                try:
+                    self.output.write(data)
+                    return
+                except IOError:
+                    pass
+
         def write(self, data):
             for b in data:
                 l = len(self.matched)
@@ -597,18 +608,10 @@ if os.name == 'nt':
                                 color |= FOREGROUND_INTENSITY
                             SetConsoleTextAttribute(self.handle, color)
                         else:
-                            self.output.write(self.matched) # not an ANSI color code, display verbatim
+                            self._output_write(self.matched) # not an ANSI color code, display verbatim
                         self.matched = b''
                 else:
-                    try:
-                        self.output.write(b)
-                    except IOError:
-                        # Windows 10 bug since the Fall Creators Update, sometimes writing to console randomly fails
-                        # (but usually succeeds the second time, it seems.) Ref https://github.com/espressif/esp-idf/issues/1136
-                        try:
-                            self.output.write(b)
-                        except IOError:
-                            pass
+                    self._output_write(b)
                     self.matched = b''
 
         def flush(self):
