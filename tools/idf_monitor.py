@@ -443,13 +443,25 @@ class Monitor(object):
         with self:  # disable console control
             sys.stderr.write(ANSI_NORMAL)
             try:
-                subprocess.call(["%sgdb" % self.toolchain_prefix,
+                process = subprocess.Popen(["%sgdb" % self.toolchain_prefix,
                                 "-ex", "set serial baud %d" % self.serial.baudrate,
                                 "-ex", "target remote %s" % self.serial.port,
                                 "-ex", "interrupt",  # monitor has already parsed the first 'reason' command, need a second
                                 self.elf_file], cwd=".")
+                process.wait()
             except KeyboardInterrupt:
                 pass  # happens on Windows, maybe other OSes
+            finally:
+                try:
+                    # on Linux, maybe other OSes, gdb sometimes seems to be alive even after wait() returns...
+                    process.terminate()
+                except:
+                    pass
+                try:
+                    # also on Linux, maybe other OSes, gdb sometimes exits uncleanly and breaks the tty mode
+                    subprocess.call(["stty", "sane"])
+                except:
+                    pass  # don't care if there's no stty, we tried...
             self.prompt_next_action("gdb exited")
 
     def output_enable(self, enable):
