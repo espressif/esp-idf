@@ -83,6 +83,8 @@
 /* SD mode R1 response type bits */
 #define MMC_R1_READY_FOR_DATA           (1<<8)  /* ready for next transfer */
 #define MMC_R1_APP_CMD                  (1<<5)  /* app. commands supported */
+#define MMC_R1_SWITCH_ERROR             (1<<7)  /* switch command did not succeed */
+
 
 /* SPI mode R1 response type bits */
 #define SD_SPI_R1_IDLE_STATE            (1<<0)
@@ -115,6 +117,13 @@
 #define EXT_CSD_STRUCTURE               194     /* RO */
 #define EXT_CSD_CARD_TYPE               196     /* RO */
 #define EXT_CSD_SEC_COUNT               212     /* RO */
+#define EXT_CSD_PWR_CL_26_360           203     /* RO */
+#define EXT_CSD_PWR_CL_52_360           202     /* RO */
+#define EXT_CSD_PWR_CL_26_195           201     /* RO */
+#define EXT_CSD_PWR_CL_52_195           200     /* RO */
+#define EXT_CSD_POWER_CLASS             187     /* R/W */
+#define EXT_CSD_CMD_SET                 191     /* R/W */
+#define EXT_CSD_S_CMD_SET               504     /* RO */
 
 /* EXT_CSD field definitions */
 #define EXT_CSD_CMD_SET_NORMAL          (1U << 0)
