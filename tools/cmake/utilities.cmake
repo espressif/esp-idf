@@ -127,3 +127,22 @@ macro(include_if_exists path)
     include("${path}")
   endif()
 endmacro(include_if_exists)
+
+# Append a single line to the file specified
+# The line ending is determined by the host OS
+function(file_append_line file line)
+  if(ENV{MSYSTEM} OR CMAKE_HOST_WIN32)
+    set(line_ending "\r\n")
+  else() # unix
+    set(line_ending "\n")
+  endif()
+  file(READ ${file} existing)
+  string(FIND ${existing} ${line_ending} last_newline REVERSE)
+  string(LENGTH ${existing} length)
+  math(EXPR length "${length}-1")
+  if(NOT length EQUAL last_newline) # file doesn't end with a newline
+    file(APPEND "${file}" "${line_ending}")
+  endif()
+  file(APPEND "${file}" "${line}${line_ending}")
+endfunction()
+
