@@ -130,6 +130,16 @@ config A2DP_SRC_ENABLE
     bool "SOURCE"
 endchoice
 
+config A2DP_SINK_TASK_STACK_SIZE
+    int "A2DP sink (audio stream decoding) task stack size"
+    depends on A2DP_ENABLE && A2DP_SINK_ENABLE
+    default 2048
+
+config A2DP_SOURCE_TASK_STACK_SIZE
+    int "A2DP source (audio stream encoding) task stack size"
+    depends on A2DP_ENABLE && A2DP_SRC_ENABLE
+    default 2048
+
 config BT_SPP_ENABLED
     bool "SPP"
     depends on CLASSIC_BT_ENABLED
