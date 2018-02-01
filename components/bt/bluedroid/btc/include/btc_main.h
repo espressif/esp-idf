@@ -26,7 +26,6 @@ typedef enum {
     BTC_MAIN_ACT_DEINIT,
     BTC_MAIN_ACT_ENABLE,
     BTC_MAIN_ACT_DISABLE,
-    BTC_GATT_ACT_SET_LOCAL_MTU,
 } btc_main_act_t;
 
 typedef enum {
@@ -60,14 +59,6 @@ void btc_disable_bluetooth(future_t *future);
 bt_status_t btc_init_bluetooth(future_t *future);
 void btc_deinit_bluetooth(future_t *future);
 #endif
-
-/* btc_ble_gattc_args_t */
-typedef union {
-    //BTC_GATT_ACT_SET_LOCAL_MTU,
-    struct set_mtu_arg {
-        uint16_t mtu;
-    } set_mtu;
-} btc_ble_main_args_t;
 
 void btc_main_call_handler(btc_msg_t *msg);
 #endif /* __BTC_BT_MAIN_H__ */

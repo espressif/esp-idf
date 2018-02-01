@@ -41,6 +41,7 @@ typedef enum {
 #if (GATTC_INCLUDED == TRUE)
     BTC_PID_GATTC,
 #endif  ///GATTC_INCLUDED == TRUE
+    BTC_PID_GATT_COMMON,
     BTC_PID_GAP_BLE,
     BTC_PID_BLE_HID,
     BTC_PID_SPPLIKE,
