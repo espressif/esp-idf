@@ -644,7 +644,7 @@ void avdt_scb_dealloc(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
     UNUSED(p_data);
 
     AVDT_TRACE_DEBUG("avdt_scb_dealloc hdl=%d\n", avdt_scb_to_hdl(p_scb));
-    btu_stop_timer(&p_scb->timer_entry);
+    btu_free_timer(&p_scb->timer_entry);
 
 #if AVDT_MULTIPLEXING == TRUE
     /* free fragments we're holding, if any; it shouldn't happen */

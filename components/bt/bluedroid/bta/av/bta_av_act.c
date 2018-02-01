@@ -1268,6 +1268,11 @@ void bta_av_disable(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
         hdr.layer_specific = xx + 1;
         bta_av_api_deregister((tBTA_AV_DATA *)&hdr);
     }
+
+    bta_sys_free_timer(&p_cb->sig_tmr);
+    memset(&p_cb->sig_tmr, 0, sizeof(TIMER_LIST_ENT));
+    bta_sys_free_timer(&p_cb->acp_sig_tmr);
+    memset(&p_cb->acp_sig_tmr, 0, sizeof(TIMER_LIST_ENT));
 }
 
 /*******************************************************************************

@@ -54,8 +54,11 @@ tL2C_LCB *l2cu_allocate_lcb (BD_ADDR p_bd_addr, BOOLEAN is_bonding, tBT_TRANSPOR
 
     for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
         if (!p_lcb->in_use) {
+            btu_free_timer(&p_lcb->timer_entry);
+            btu_free_timer(&p_lcb->info_timer_entry);
+            btu_free_timer(&p_lcb->upda_con_timer);
+            
             memset (p_lcb, 0, sizeof (tL2C_LCB));
-
             memcpy (p_lcb->remote_bd_addr, p_bd_addr, BD_ADDR_LEN);
 
             p_lcb->in_use          = TRUE;
@@ -127,10 +130,14 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
     p_lcb->in_use     = FALSE;
     p_lcb->is_bonding = FALSE;
 
-    /* Stop timers */
-    btu_stop_timer (&p_lcb->timer_entry);
-    btu_stop_timer (&p_lcb->info_timer_entry);
-
+    /* Stop and release timers */
+    btu_free_timer (&p_lcb->timer_entry);
+    memset(&p_lcb->timer_entry, 0, sizeof(TIMER_LIST_ENT));
+    btu_free_timer (&p_lcb->info_timer_entry);
+    memset(&p_lcb->info_timer_entry, 0, sizeof(TIMER_LIST_ENT));
+    btu_free_timer(&p_lcb->upda_con_timer);
+    memset(&p_lcb->upda_con_timer, 0, sizeof(TIMER_LIST_ENT));
+        
     /* Release any unfinished L2CAP packet on this link */
     if (p_lcb->p_hcit_rcv_acl) {
         osi_free(p_lcb->p_hcit_rcv_acl);
@@ -1476,25 +1483,24 @@ tL2C_CCB *l2cu_allocate_ccb (tL2C_LCB *p_lcb, UINT16 cid)
     memset (&p_ccb->ertm_info, 0, sizeof(tL2CAP_ERTM_INFO));
     p_ccb->peer_cfg_already_rejected = FALSE;
     p_ccb->fcr_cfg_tries         = L2CAP_MAX_FCR_CFG_TRIES;
+
+    /* stop and release timers */
+    btu_free_quick_timer(&p_ccb->fcrb.ack_timer);
+    memset(&p_ccb->fcrb.ack_timer, 0, sizeof(TIMER_LIST_ENT));
     p_ccb->fcrb.ack_timer.param  = (TIMER_PARAM_TYPE)p_ccb;
-
-    /* if timer is running, remove it from timer list */
-    if (p_ccb->fcrb.ack_timer.in_use) {
-        btu_stop_quick_timer (&p_ccb->fcrb.ack_timer);
-    }
-
+    
+    btu_free_quick_timer(&p_ccb->fcrb.mon_retrans_timer);
+    memset(&p_ccb->fcrb.mon_retrans_timer, 0, sizeof(TIMER_LIST_ENT));
     p_ccb->fcrb.mon_retrans_timer.param  = (TIMER_PARAM_TYPE)p_ccb;
 
 // btla-specific ++
     /*  CSP408639 Fix: When L2CAP send amp move channel request or receive
       * L2CEVT_AMP_MOVE_REQ do following sequence. Send channel move
       * request -> Stop retrans/monitor timer -> Change channel state to CST_AMP_MOVING. */
-    if (p_ccb->fcrb.mon_retrans_timer.in_use) {
-        btu_stop_quick_timer (&p_ccb->fcrb.mon_retrans_timer);
-    }
 // btla-specific --
+
 #if (CLASSIC_BT_INCLUDED == TRUE)
-    l2c_fcr_stop_timer (p_ccb);
+    l2c_fcr_free_timer (p_ccb);
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
     p_ccb->ertm_info.preferred_mode  = L2CAP_FCR_BASIC_MODE;        /* Default mode for channel is basic mode */
     p_ccb->ertm_info.allowed_modes   = L2CAP_FCR_CHAN_OPT_BASIC;    /* Default mode for channel is basic mode */
@@ -1531,6 +1537,8 @@ tL2C_CCB *l2cu_allocate_ccb (tL2C_LCB *p_lcb, UINT16 cid)
     p_ccb->is_flushable = FALSE;
 #endif
 
+    btu_free_timer(&p_ccb->timer_entry);
+    memset(&p_ccb->timer_entry, 0, sizeof(TIMER_LIST_ENT));
     p_ccb->timer_entry.param = (TIMER_PARAM_TYPE)p_ccb;
     p_ccb->timer_entry.in_use = 0;
 
@@ -1628,9 +1636,8 @@ void l2cu_release_ccb (tL2C_CCB *p_ccb)
         btm_sec_clr_temp_auth_service (p_lcb->remote_bd_addr);
     }
 
-    /* Stop the timer */
-    btu_stop_timer (&p_ccb->timer_entry);
-
+    /* Stop and free the timer */
+    btu_free_timer (&p_ccb->timer_entry);
 
     fixed_queue_free(p_ccb->xmit_hold_q, osi_free_func);
     p_ccb->xmit_hold_q = NULL;
