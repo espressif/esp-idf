@@ -173,6 +173,13 @@ void gatt_free(void)
 
         fixed_queue_free(gatt_cb.tcb[i].pending_ind_q, NULL);
         gatt_cb.tcb[i].pending_ind_q = NULL;
+
+        btu_free_timer(&gatt_cb.tcb[i].conf_timer_ent);
+        memset(&gatt_cb.tcb[i].conf_timer_ent, 0, sizeof(TIMER_LIST_ENT));
+
+        btu_free_timer(&gatt_cb.tcb[i].ind_ack_timer_ent);
+        memset(&gatt_cb.tcb[i].ind_ack_timer_ent, 0, sizeof(TIMER_LIST_ENT));
+    
 #if (GATTS_INCLUDED == TRUE)
         fixed_queue_free(gatt_cb.tcb[i].sr_cmd.multi_rsp_q, NULL);
         gatt_cb.tcb[i].sr_cmd.multi_rsp_q = NULL;

@@ -296,8 +296,10 @@ tRFC_MCB  *rfc_alloc_multiplexer_channel (BD_ADDR bd_addr, BOOLEAN is_initiator)
 extern void      rfc_release_multiplexer_channel (tRFC_MCB *p_rfc_mcb);
 extern void      rfc_timer_start (tRFC_MCB *p_rfc_mcb, UINT16 timeout);
 extern void      rfc_timer_stop (tRFC_MCB *p_rfc_mcb);
+extern void      rfc_timer_free (tRFC_MCB *p_rfc_mcb);
 extern void      rfc_port_timer_start (tPORT *p_port, UINT16 tout);
 extern void      rfc_port_timer_stop (tPORT *p_port);
+extern void      rfc_port_timer_free (tPORT *p_port);
 
 BOOLEAN   rfc_check_uih_fcs (UINT8 dlci, UINT8 received_fcs);
 BOOLEAN   rfc_check_fcs (UINT16 len, UINT8 *p, UINT8 received_fcs);
