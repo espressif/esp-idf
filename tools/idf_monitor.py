@@ -585,7 +585,15 @@ if os.name == 'nt':
                                 color |= FOREGROUND_INTENSITY
                             SetConsoleTextAttribute(self.handle, color)
                         else:
-                            self.output.write(self.matched) # not an ANSI color code, display verbatim
+							try:
+								self.output.write(self.matched) # not an ANSI color code, display verbatim
+							except IOError:
+								# Windows 10 bug since the Fall Creators Update, sometimes writing to console randomly fails
+								# (but usually succeeds the second time, it seems.) Ref https://github.com/espressif/esp-idf/issues/1136
+								try:
+									self.output.write(self.matched) # not an ANSI color code, display verbatim
+								except IOError:
+									pass
                         self.matched = b''
                 else:
                     try:
