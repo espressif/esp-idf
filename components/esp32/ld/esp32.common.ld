@@ -115,6 +115,7 @@ SECTIONS
     *(.jcr)
     *(.dram1 .dram1.*)
     *libesp32.a:panic.o(.rodata .rodata.*)
+    *libphy.a:(.rodata .rodata.*)
     *libsoc.a:rtc_clk.o(.rodata .rodata.*)
     *libapp_trace.a:(.rodata .rodata.*)
     *libgcov.a:(.rodata .rodata.*)
