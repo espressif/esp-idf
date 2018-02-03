@@ -39,6 +39,7 @@ extern "C" {
     .io_voltage = 3.3f, \
     .init = &sdmmc_host_init, \
     .set_bus_width = &sdmmc_host_set_bus_width, \
+    .get_bus_width = &sdmmc_host_get_slot_width, \
     .set_card_clk = &sdmmc_host_set_card_clk, \
     .do_transaction = &sdmmc_host_do_transaction, \
     .deinit = &sdmmc_host_deinit, \
@@ -114,6 +115,14 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config)
  *      - ESP_ERR_INVALID_ARG if slot number or width is not valid
  */
 esp_err_t sdmmc_host_set_bus_width(int slot, size_t width);
+
+/**
+ * @brief Get bus width configured in ``sdmmc_host_init_slot`` to be used for data transfer
+ *
+ * @param slot  slot number (SDMMC_HOST_SLOT_0 or SDMMC_HOST_SLOT_1)
+ * @return configured bus width of the specified slot.
+ */
+size_t sdmmc_host_get_slot_width(int slot);
 
 /**
  * @brief Set card clock frequency

@@ -125,6 +125,7 @@ typedef struct {
     float io_voltage;           /*!< I/O voltage used by the controller (voltage switching is not supported) */
     esp_err_t (*init)(void);    /*!< Host function to initialize the driver */
     esp_err_t (*set_bus_width)(int slot, size_t width);    /*!< host function to set bus width */
+    size_t (*get_bus_width)(int slot); /*!< host function to get bus width */
     esp_err_t (*set_card_clk)(int slot, uint32_t freq_khz); /*!< host function to set card clock frequency */
     esp_err_t (*do_transaction)(int slot, sdmmc_command_t* cmdinfo);    /*!< host function to do a transaction */
     esp_err_t (*deinit)(void);  /*!< host function to deinitialize the driver */

@@ -85,6 +85,7 @@ static const char* TAG = "sdmmc_periph";
 static intr_handle_t s_intr_handle;
 static QueueHandle_t s_event_queue;
 
+size_t s_slot_width[2] = {1,1};
 
 void sdmmc_host_reset()
 {
@@ -327,6 +328,7 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config)
     else if (slot_width > pslot->width) {
         return ESP_ERR_INVALID_ARG;
     }
+    s_slot_width[slot] = slot_width;
 
     configure_pin(pslot->clk);
     configure_pin(pslot->cmd);
@@ -426,6 +428,12 @@ esp_err_t sdmmc_host_set_bus_width(int slot, size_t width)
     }
     ESP_LOGD(TAG, "slot=%d width=%d", slot, width);
     return ESP_OK;
+}
+
+size_t sdmmc_host_get_slot_width(int slot)
+{
+    assert( slot == 0 || slot == 1 );
+    return s_slot_width[slot];
 }
 
 static void sdmmc_host_dma_init()
