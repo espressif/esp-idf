@@ -106,7 +106,7 @@ def print_all_components():
     heading_level = INITIAL_HEADING_LEVEL
     # Currently this works only for IDF components.
     # TODO: figure out if this can be re-used for documenting applications?
-    components_path = os.path.join(os.path.curdir, '..', 'components')
+    components_path = os.path.join(os.path.curdir, '../..', 'components')
     for component_name in os.listdir(components_path):
         if component_name.startswith('.'):
             continue    # skip system thumbnail folders
