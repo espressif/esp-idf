@@ -1,0 +1,1 @@
+.. include:: ../../en/get-started/windows-setup-scratch.rst

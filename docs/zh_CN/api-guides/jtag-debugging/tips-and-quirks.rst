@@ -1,0 +1,1 @@
+.. include:: ../../../en/api-guides/jtag-debugging/tips-and-quirks.rst

@@ -1,0 +1,1 @@
+.. include:: ../../../en/api-reference/system/power_management.rst
