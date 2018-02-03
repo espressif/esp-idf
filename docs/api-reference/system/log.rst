@@ -1,4 +1,4 @@
-.. include:: ../../../components/log/README.rst
+.. include:: ../../../../components/log/README.rst
 
 Application Example
 -------------------

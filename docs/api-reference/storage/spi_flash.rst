@@ -1,4 +1,4 @@
-.. include:: ../../../components/spi_flash/README.rst
+.. include:: ../../../../components/spi_flash/README.rst
 
 See also
 --------

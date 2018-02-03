@@ -1,4 +1,4 @@
-.. include:: ../../../components/nvs_flash/README.rst
+.. include:: ../../../../components/nvs_flash/README.rst
 
 Application Example
 -------------------
