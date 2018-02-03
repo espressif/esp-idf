@@ -1,4 +1,4 @@
-.. include:: ../../../components/wear_levelling/README.rst
+.. include:: ../../../../components/wear_levelling/README.rst
 
 See also
 --------

@@ -1,11 +1,11 @@
-.. include:: ../../../components/vfs/README.rst
+.. include:: ../../../../components/vfs/README.rst
 
 Application Example
 -------------------
 
 `Instructions`_
 
-.. _Instructions: ../template.html
+.. _Instructions: ../../template.html
 
 API Reference
 -------------

@@ -26,15 +26,14 @@ examples/**/sdkconfig
 examples/**/sdkconfig.old
 examples/**/build
 
-#Doc build artifacts
-docs/_build/
-docs/doxygen-warning-log.txt
-docs/sphinx-warning-log.txt
-docs/sphinx-warning-log-sanitized.txt
-docs/xml/
-docs/xml_in/
-docs/man/
-docs/doxygen_sqlite3.db
+# Doc build artifacts
+docs/*/_build/
+docs/*/doxygen-warning-log.txt
+docs/*/sphinx-warning-log.txt
+docs/*/sphinx-warning-log-sanitized.txt
+docs/*/xml/
+docs/*/xml_in/
+docs/*/man/
 
 # Unit test app files
 tools/unit-test-app/sdkconfig
