@@ -48,7 +48,7 @@ How it Works?
 
 The key software and hardware to perform debugging of ESP32 with OpenOCD over JTAG (Joint Test Action Group) interface is presented below and includes **xtensa-esp32-elf-gdb debugger**, **OpenOCD on chip debugger** and **JTAG adapter** connected to **ESP32** target.
 
-.. figure:: ../../_static/jtag-debugging-overview.jpg
+.. figure:: ../../../_static/jtag-debugging-overview.jpg
     :align: center
     :alt: JTAG debugging - overview diagram 
     :figclass: align-center
@@ -100,13 +100,13 @@ Pick up your OS below and follow provided instructions to setup OpenOCD.
 | `Windows`_        | `Linux`_          | `Mac OS`_         |
 +-------------------+-------------------+-------------------+
 
-.. |windows-logo| image:: ../../_static/windows-logo.png
+.. |windows-logo| image:: ../../../_static/windows-logo.png
     :target: ../jtag-debugging/setup-openocd-windows.html
 
-.. |linux-logo| image:: ../../_static/linux-logo.png
+.. |linux-logo| image:: ../../../_static/linux-logo.png
     :target: ../jtag-debugging/setup-openocd-linux.html
 
-.. |macos-logo| image:: ../../_static/macos-logo.png
+.. |macos-logo| image:: ../../../_static/macos-logo.png
     :target: ../jtag-debugging/setup-openocd-macos.html
 
 .. _Windows: ../jtag-debugging/setup-openocd-windows.html

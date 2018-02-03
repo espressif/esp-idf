@@ -28,7 +28,7 @@ Once installation is complete, configure debugging session following steps below
 
     A sample window with settings entered in points 1 - 5 is shown below.
 
-    .. figure:: ../../_static/hw-debugging-main-tab.jpg
+    .. figure:: ../../../_static/hw-debugging-main-tab.jpg
         :align: center
         :alt: Configuration of GDB Hardware Debugging - Main tab
         :figclass: align-center
@@ -41,7 +41,7 @@ Once installation is complete, configure debugging session following steps below
 
     Configuration entered in points 6 and 7 is shown on the following picture.
 
-    .. figure:: ../../_static/hw-debugging-debugger-tab.jpg
+    .. figure:: ../../../_static/hw-debugging-debugger-tab.jpg
         :align: center
         :alt: Configuration of GDB Hardware Debugging - Debugger tab
         :figclass: align-center
@@ -67,7 +67,7 @@ Once installation is complete, configure debugging session following steps below
 
     Configuration described in points 8 - 11 is shown below.
 
-    .. figure:: ../../_static/hw-debugging-startup-tab.jpg
+    .. figure:: ../../../_static/hw-debugging-startup-tab.jpg
         :align: center
         :alt: Configuration of GDB Hardware Debugging - Startup tab
         :figclass: align-center
@@ -80,7 +80,7 @@ Once installation is complete, configure debugging session following steps below
 
 Once all 1 - 12 configuration steps are satisfied, the new Eclipse perspective called "Debug" will open as shown on example picture below. 
 
-.. figure:: ../../_static/debug-perspective.jpg
+.. figure:: ../../../_static/debug-perspective.jpg
     :align: center
     :alt: Debug Perspective in Eclipse
     :figclass: align-center

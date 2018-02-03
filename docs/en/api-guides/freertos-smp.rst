@@ -208,7 +208,7 @@ where each element of the array is a linked list. Each linked list is of type
 Ready state. The following diagram illustrates the ``pxReadyTasksList`` 
 structure.
 
-.. figure:: ../_static/freertos-ready-task-list.png
+.. figure:: ../../_static/freertos-ready-task-list.png
     :align: center
     :alt: Vanilla FreeRTOS Ready Task List Structure
     
@@ -226,7 +226,7 @@ calls the scheduler, it is able to look at the ``xCoreID`` member of each TCB
 in the list to determine if a task is allowed to run on calling the core. The 
 ESP-IDF FreeRTOS ``pxReadyTasksList`` is illustrated below.
 
-.. figure:: ../_static/freertos-ready-task-list-smp.png
+.. figure:: ../../_static/freertos-ready-task-list-smp.png
     :align: center
     :alt: ESP-IDF FreeRTOS Ready Task List Structure
     
@@ -246,7 +246,7 @@ the previous scheduler call from the other core would not be considered on the
 current scheduler call. This issue is demonstrated in the following 
 illustration.
 
-.. figure:: ../_static/freertos-ready-task-list-smp-pxIndex.png
+.. figure:: ../../_static/freertos-ready-task-list-smp-pxIndex.png
     :align: center
     :alt: ESP-IDF pxIndex Behavior
     

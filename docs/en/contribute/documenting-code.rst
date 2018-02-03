@@ -17,7 +17,7 @@ Doxygen is phrasing the code, extracting the commands together with subsequent t
 
 Typical comment block, that contains documentation of a function, looks like below.
 
-.. image:: ../_static/doc-code-documentation-inline.png
+.. image:: ../../_static/doc-code-documentation-inline.png
     :align: center
     :alt: Sample inline code documentation
  
@@ -31,7 +31,7 @@ The ultimate goal is to ensure that all the code is consistently documented, so 
 
 With these tools the above piece of code renders like below:
 
-.. image:: ../_static/doc-code-documentation-rendered.png
+.. image:: ../../_static/doc-code-documentation-rendered.png
     :align: center
     :alt: Sample inline code after rendering
 
@@ -47,19 +47,19 @@ When writing code for this repository, please follow guidelines below.
 
 3. Do not add a data type before parameter or any other characters besides spaces. All spaces and line breaks are compressed into a single space. If you like to break a line, then break it twice.
 
-    .. image:: ../_static/doc-code-function.png
+    .. image:: ../../_static/doc-code-function.png
         :align: center
         :alt: Sample function documented inline and after rendering
 
 4. If function has void input or does not return any value, then skip ``@param`` or ``@return``
 
-    .. image:: ../_static/doc-code-void-function.png
+    .. image:: ../../_static/doc-code-void-function.png
         :align: center
         :alt: Sample void function documented inline and after rendering
  
 5. When documenting a ``define`` as well as members of a ``struct`` or ``enum``, place specific comment like below after each member.
 
-    .. image:: ../_static/doc-code-member.png
+    .. image:: ../../_static/doc-code-member.png
         :align: center
         :alt: Sample of member documentation inline and after rendering
 

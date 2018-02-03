@@ -29,7 +29,7 @@ Functionality Overview
 
 Block diagram below presents main components of ESP-WROVER-KIT and interconnections between components.
 
-.. figure:: ../_static/esp32-wrover-kit-block-diagram.png
+.. figure:: ../../_static/esp32-wrover-kit-block-diagram.png
     :align: center
     :alt: ESP-WROVER-KIT block diagram
     :figclass: align-center
@@ -89,7 +89,7 @@ Micro SD Card
 LCD
     ESP-WROVER-KIT supports mounting and interfacing a 3.2” SPI (standard 4-wire Serial Peripheral Interface) LCD, as shown on figure :ref:`esp-wrover-kit-v2-board-back`.
 
-.. figure:: ../_static/esp-wrover-kit-v2-layout-front.png
+.. figure:: ../../_static/esp-wrover-kit-v2-layout-front.png
     :align: center
     :alt: ESP-WROVER-KIT board layout - front
     :figclass: align-center
@@ -98,7 +98,7 @@ LCD
 
 .. _esp-wrover-kit-v2-board-back:
 
-.. figure:: ../_static/esp-wrover-kit-v2-layout-back.png
+.. figure:: ../../_static/esp-wrover-kit-v2-layout-back.png
     :align: center
     :alt: ESP-WROVER-KIT board layout - back
     :figclass: align-center
@@ -180,12 +180,12 @@ Related Documents
 * :doc:`../hw-reference/index`
 
 
-.. |jp1-sd_io2| image:: ../_static/wrover-jp1-sd_io2.png
-.. |jp1-both| image:: ../_static/wrover-jp1-both.png
-.. |jp7-ext_5v| image:: ../_static/wrover-jp7-ext_5v.png
-.. |jp7-usb_5v| image:: ../_static/wrover-jp7-usb_5v.png
-.. |jp8| image:: ../_static/wrover-jp8.png
-.. |jp11-rx-tx| image:: ../_static/wrover-jp11-tx-rx.png
-.. |jp14| image:: ../_static/wrover-jp14.png
+.. |jp1-sd_io2| image:: ../../_static/wrover-jp1-sd_io2.png
+.. |jp1-both| image:: ../../_static/wrover-jp1-both.png
+.. |jp7-ext_5v| image:: ../../_static/wrover-jp7-ext_5v.png
+.. |jp7-usb_5v| image:: ../../_static/wrover-jp7-usb_5v.png
+.. |jp8| image:: ../../_static/wrover-jp8.png
+.. |jp11-rx-tx| image:: ../../_static/wrover-jp11-tx-rx.png
+.. |jp14| image:: ../../_static/wrover-jp14.png
 
 .. _ESP-WROVER-KIT V2 schematic: https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_SCH-2.pdf

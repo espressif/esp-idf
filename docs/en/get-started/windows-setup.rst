@@ -23,7 +23,7 @@ Check it Out
 
 Open a MSYS2 MINGW32 terminal window by running ``C:\msys32\mingw32.exe``. The environment in this window is a bash shell. 
 
-.. figure:: ../_static/msys2-terminal-window.png
+.. figure:: ../../_static/msys2-terminal-window.png
     :align: center
     :alt: MSYS2 MINGW32 shell window
     :figclass: align-center

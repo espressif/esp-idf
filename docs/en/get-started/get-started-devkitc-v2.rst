@@ -36,7 +36,7 @@ I/O
 
 .. _get-started-esp32-devkitc-v2-board-front:
 
-.. figure:: ../_static/esp32-devkitc-v2-functional-overview.png
+.. figure:: ../../_static/esp32-devkitc-v2-functional-overview.png
     :align: center
     :alt: ESP32-DevKitC V2 board layout
     :figclass: align-center

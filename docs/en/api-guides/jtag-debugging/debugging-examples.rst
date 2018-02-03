@@ -12,7 +12,7 @@ Eclipse
 
 Verify if your target is ready and loaded with :example:`get-started/blink` example. Configure and start debugger following steps in section :ref:`jtag-debugging-using-debugger-eclipse`. Pick up where target was left by debugger, i.e. having the application halted at breakpoint established at ``app_main()``.
 
-.. figure:: ../../_static/debug-perspective.jpg
+.. figure:: ../../../_static/debug-perspective.jpg
     :align: center
     :alt: Debug Perspective in Eclipse
     :figclass: align-center
@@ -39,7 +39,7 @@ Navigating though the code, call stack and threads
 
 When the target is halted, debugger shows the list of threads in "Debug" window. The line of code where program halted is highlighted in another window below, as shown on the following picture. The LED stops blinking. 
 
-.. figure:: ../../_static/debugging-target-halted.jpg
+.. figure:: ../../../_static/debugging-target-halted.jpg
     :align: center
     :alt: Target halted during debugging
     :figclass: align-center
@@ -50,7 +50,7 @@ Specific thread where the program halted is expanded showing the call stack. It 
 
 By expanding threads you can navigate throughout the application. Expand Thread #5 that contains much longer call stack. You will see there, besides function calls, numbers like ``0x4000000c``. They represent addresses of binary code not provided in source form.
 
-.. figure:: ../../_static/debugging-navigate-through-the-stack.jpg
+.. figure:: ../../../_static/debugging-navigate-through-the-stack.jpg
     :align: center
     :alt: Navigate through the call stack
     :figclass: align-center
@@ -71,7 +71,7 @@ When debugging, we would like to be able to stop the application at critical lin
 
 Let's establish two breakpoints when the state of LED changes. Basing on code listing above, this happens at lines 33 and 36. To do so, hold the "Control" on the keyboard and double clink on number ``33`` in file ``blink.c`` file. A dialog will open where you can confirm your selection by pressing "OK" button. If you do not like to see the dialog just double click the line number. Set another breakpoint in line 36. 
 
-.. figure:: ../../_static/debugging-setting-breakpoint.jpg
+.. figure:: ../../../_static/debugging-setting-breakpoint.jpg
     :align: center
     :alt: Setting a breakpoint
     :figclass: align-center
@@ -80,7 +80,7 @@ Let's establish two breakpoints when the state of LED changes. Basing on code li
 
 Information how many breakpoints are set and where is shown in window "Breakpoints" on top right. Click "Show Breakpoints Supported by Selected Target" to refresh this list. Besides the two just set breakpoints the list may contain temporary breakpoint at function ``app_main()`` established at debugger start. As maximum two breakpoints are allowed (see :ref:`jtag-debugging-tip-breakpoints`), you need to delete it, or debugging will fail.
 
-.. figure:: ../../_static/debugging-three-breakpoints-set.jpg
+.. figure:: ../../../_static/debugging-three-breakpoints-set.jpg
     :align: center
     :alt: Three breakpoints are set / maximum two are allowed
     :figclass: align-center
@@ -103,7 +103,7 @@ When debugging, you may resume application and enter code waiting for some event
 
 To check it, delete all breakpoints and click "Resume". Then click "Suspend". Application will be halted at some random point and LED will stop blinking. Debugger will expand tread and highlight the line of code where application halted.
 
-.. figure:: ../../_static/debugging-target-halted-manually.jpg
+.. figure:: ../../../_static/debugging-target-halted-manually.jpg
     :align: center
     :alt: Target halted manually
     :figclass: align-center
@@ -124,7 +124,7 @@ Before being able to demonstrate this functionality, using information discussed
 
 Resume program by entering pressing F8 and let it halt. Now press "Step Over (F6)", one by one couple of times, to see how debugger is stepping one program line at a time.
 
-.. figure:: ../../_static/debugging-step-over.jpg
+.. figure:: ../../../_static/debugging-step-over.jpg
     :align: center
     :alt: Stepping through the code with "Step Over (F6)"
     :figclass: align-center
@@ -133,7 +133,7 @@ Resume program by entering pressing F8 and let it halt. Now press "Step Over (F6
 
 If you press "Step Into (F5)" instead, then debugger will step inside subroutine calls.
 
-.. figure:: ../../_static/debugging-step-into.jpg
+.. figure:: ../../../_static/debugging-step-into.jpg
     :align: center
     :alt: Stepping through the code with "Step Into (F5)"
     :figclass: align-center
@@ -158,7 +158,7 @@ Being in the same ``blink.c`` project as before, set two breakpoints right after
 
 Now resume program by pressing F8 and observe "Monitor" tab.
 
-.. figure:: ../../_static/debugging-memory-location-on.jpg
+.. figure:: ../../../_static/debugging-memory-location-on.jpg
     :align: center
     :alt: Observing memory location 0x3FF44004 changing one bit to ON"
     :figclass: align-center
@@ -167,7 +167,7 @@ Now resume program by pressing F8 and observe "Monitor" tab.
 
 You should see one bit being flipped over at memory location ``0x3FF44004`` (and LED changing the state) each time F8 is pressed.
 
-.. figure:: ../../_static/debugging-memory-location-off.jpg
+.. figure:: ../../../_static/debugging-memory-location-off.jpg
     :align: center
     :alt: Observing memory location 0x3FF44004 changing one bit to ON"
     :figclass: align-center
@@ -192,7 +192,7 @@ In next step, in the window with "Breakpoints", click the "Expressions" tab. If 
 
 Resume program execution by pressing F8. Each time the program is halted you will see ``i`` value being incremented.
 
-.. figure:: ../../_static/debugging-watch-variable.jpg
+.. figure:: ../../../_static/debugging-watch-variable.jpg
     :align: center
     :alt: Watching program variable "i"
     :figclass: align-center
@@ -210,7 +210,7 @@ Setting conditional breakpoints
 
 Here comes more interesting part. You may set a breakpoint to halt the program execution, if certain condition is satisfied. Right click on the breakpoint to open a context menu and select "Breakpoint Properties". Change the selection under "Type:" to "Hardware" and enter a "Condition:" like ``i == 2``. 
 
-.. figure:: ../../_static/debugging-setting-conditional-breakpoint.jpg
+.. figure:: ../../../_static/debugging-setting-conditional-breakpoint.jpg
     :align: center
     :alt: Setting a conditional breakpoint
     :figclass: align-center

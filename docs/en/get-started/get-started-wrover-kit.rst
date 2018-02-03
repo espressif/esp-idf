@@ -29,7 +29,7 @@ Functionality Overview
 
 Block diagram below presents main components of ESP-WROVER-KIT and interconnections between components.
 
-.. figure:: ../_static/esp32-wrover-kit-block-diagram.png
+.. figure:: ../../_static/esp32-wrover-kit-block-diagram.png
     :align: center
     :alt: ESP-WROVER-KIT block diagram
     :figclass: align-center
@@ -90,7 +90,7 @@ LCD
 
 .. _get-started-esp-wrover-kit-board-front:
 
-.. figure:: ../_static/esp32-wrover-kit-layout-front.jpg
+.. figure:: ../../_static/esp32-wrover-kit-layout-front.jpg
     :align: center
     :alt: ESP-WROVER-KIT board layout - front
     :figclass: align-center
@@ -99,7 +99,7 @@ LCD
 
 .. _get-started-esp-wrover-kit-board-back:
 
-.. figure:: ../_static/esp32-wrover-kit-layout-back.jpg
+.. figure:: ../../_static/esp32-wrover-kit-layout-back.jpg
     :align: center
     :alt: ESP-WROVER-KIT board layout - back
     :figclass: align-center
@@ -399,13 +399,13 @@ Related Documents
 * :doc:`../hw-reference/index`
 
 
-.. |jp1-sd_io2| image:: ../_static/wrover-jp1-sd_io2.png
-.. |jp1-both| image:: ../_static/wrover-jp1-both.png
-.. |jp7-ext_5v| image:: ../_static/wrover-jp7-ext_5v.png
-.. |jp7-usb_5v| image:: ../_static/wrover-jp7-usb_5v.png
-.. |jp8| image:: ../_static/wrover-jp8.png
-.. |jp11-rx-tx| image:: ../_static/wrover-jp11-tx-rx.png
-.. |jp14| image:: ../_static/wrover-jp14.png
+.. |jp1-sd_io2| image:: ../../_static/wrover-jp1-sd_io2.png
+.. |jp1-both| image:: ../../_static/wrover-jp1-both.png
+.. |jp7-ext_5v| image:: ../../_static/wrover-jp7-ext_5v.png
+.. |jp7-usb_5v| image:: ../../_static/wrover-jp7-usb_5v.png
+.. |jp8| image:: ../../_static/wrover-jp8.png
+.. |jp11-rx-tx| image:: ../../_static/wrover-jp11-tx-rx.png
+.. |jp14| image:: ../../_static/wrover-jp14.png
 
 .. _ESP-WROVER-KIT V3 schematic: https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_SCH-3.pdf
 

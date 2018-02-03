@@ -15,7 +15,7 @@ Developers can use this library to send application specific state of execution 
 
 Tracing components when working over JTAG interface are shown in the figure below.
 
-.. figure:: ../_static/app_trace-overview.jpg
+.. figure:: ../../_static/app_trace-overview.jpg
     :align: center
     :alt: Tracing Components when Working Over JTAG
     :figclass: align-center

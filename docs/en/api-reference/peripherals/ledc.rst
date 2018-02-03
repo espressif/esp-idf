@@ -22,7 +22,7 @@ Getting LEDC to work on specific channel in either :ref:`high or low speed mode 
 
 In an optional step it is also possible to set up an interrupt on the fade end.
 
-.. figure:: ../../_static/ledc-api-settings.jpg
+.. figure:: ../../../_static/ledc-api-settings.jpg
     :align: center
     :alt: Key Settings of LED PWM Controller's API
     :figclass: align-center
