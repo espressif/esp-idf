@@ -260,7 +260,7 @@ void *multi_heap_realloc(multi_heap_handle_t heap, void *p, size_t size)
     return result;
 }
 
-void* multi_heap_get_block_address(multi_heap_block_handle_t block)
+void *multi_heap_get_block_address(multi_heap_block_handle_t block)
 {
     char *head = multi_heap_get_block_address_impl(block);
     return head + sizeof(poison_head_t);
@@ -277,7 +277,7 @@ size_t multi_heap_get_allocated_size(multi_heap_handle_t heap, void *p)
     return 0;
 }
 
-void* multi_heap_get_block_owner(multi_heap_block_handle_t block)
+void *multi_heap_get_block_owner(multi_heap_block_handle_t block)
 {
     poison_head_t *head = (poison_head_t*)multi_heap_get_block_address_impl(block);
     return MULTI_HEAP_GET_BLOCK_OWNER(head);

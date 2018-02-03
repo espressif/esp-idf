@@ -55,19 +55,6 @@ IRAM_ATTR static void *dram_alloc_to_iram_addr(void *addr, size_t len)
     return (void *)(iptr + 1);
 }
 
-/* return all possible capabilities (across all priorities) for a given heap */
-inline static uint32_t get_all_caps(const heap_t *heap)
-{
-    if (heap->heap == NULL) {
-        return 0;
-    }
-    uint32_t all_caps = 0;
-    for (int prio = 0; prio < SOC_MEMORY_TYPE_NO_PRIOS; prio++) {
-        all_caps |= heap->caps[prio];
-    }
-    return all_caps;
-}
-
 bool heap_caps_match(const heap_t *heap, uint32_t caps)
 {
     return heap->heap != NULL && ((get_all_caps(heap) & caps) == caps);

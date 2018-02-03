@@ -6,10 +6,6 @@ COMPONENT_OBJS := heap_caps_init.o heap_caps.o multi_heap.o heap_trace.o
 
 ifndef CONFIG_HEAP_POISONING_DISABLED
 COMPONENT_OBJS += multi_heap_poisoning.o
-
-ifdef CONFIG_HEAP_TASK_TRACKING
-COMPONENT_OBJS += esp_heap_debug.o
-endif
 endif
 
 ifdef CONFIG_HEAP_TRACING

@@ -54,10 +54,10 @@ size_t multi_heap_free_size(multi_heap_handle_t heap)
 size_t multi_heap_minimum_free_size(multi_heap_handle_t heap)
     __attribute__((alias("multi_heap_minimum_free_size_impl")));
 
-void* multi_heap_get_block_address(multi_heap_block_handle_t block)
+void *multi_heap_get_block_address(multi_heap_block_handle_t block)
     __attribute__((alias("multi_heap_get_block_address_impl")));
 
-void* multi_heap_get_block_owner(multi_heap_block_handle_t block)
+void *multi_heap_get_block_owner(multi_heap_block_handle_t block)
 {
     return NULL;
 }
@@ -287,7 +287,7 @@ static void split_if_necessary(heap_t *heap, heap_block_t *block, size_t size, h
     heap->free_bytes += block_data_size(new_block);
 }
 
-void* multi_heap_get_block_address_impl(multi_heap_block_handle_t block)
+void *multi_heap_get_block_address_impl(multi_heap_block_handle_t block)
 {
     return ((char *)block + offsetof(heap_block_t, data));
 }
@@ -361,8 +361,9 @@ multi_heap_block_handle_t multi_heap_get_next_block(multi_heap_handle_t heap, mu
 {
     heap_block_t *next = get_next_block(block);
     /* check for valid free last block to avoid assert in assert_valid_block */
-    if (next == heap->last_block && is_last_block(next) && is_free(next))
-	return NULL;
+    if (next == heap->last_block && is_last_block(next) && is_free(next)) {
+        return NULL;
+    }
     assert_valid_block(heap, next);
     return next;
 }
