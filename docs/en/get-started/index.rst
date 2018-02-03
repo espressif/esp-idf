@@ -24,7 +24,7 @@ To develop applications for ESP32 you need:
 * A text editor to write programs (**Projects**) in C, e.g. `Eclipse <https://www.eclipse.org/>`_
 * The **ESP32** board itself and a **USB cable** to connect it to the **PC**
 
-.. figure:: ../_static/what-you-need.png
+.. figure:: ../../_static/what-you-need.png
     :align: center
     :alt: Development of applications for ESP32
     :figclass: align-center
@@ -84,13 +84,13 @@ The quickest way to start development with ESP32 is by installing a prebuilt too
 | `Windows`_        | `Linux`_          | `Mac OS`_         |
 +-------------------+-------------------+-------------------+
 
-.. |windows-logo| image:: ../_static/windows-logo.png
+.. |windows-logo| image:: ../../_static/windows-logo.png
     :target: ../get-started/windows-setup.html
 
-.. |linux-logo| image:: ../_static/linux-logo.png
+.. |linux-logo| image:: ../../_static/linux-logo.png
     :target: ../get-started/linux-setup.html
 
-.. |macos-logo| image:: ../_static/macos-logo.png
+.. |macos-logo| image:: ../../_static/macos-logo.png
     :target: ../get-started/macos-setup.html
 
 .. _Windows: ../get-started/windows-setup.html
@@ -175,7 +175,7 @@ Being in terminal window, go to directory of ``hello_world`` application by typi
 
 If previous steps have been done correctly, the following menu will be displayed: 
 
-.. figure:: ../_static/project-configuration.png
+.. figure:: ../../_static/project-configuration.png
     :align: center
     :alt: Project configuration - Home window
     :figclass: align-center

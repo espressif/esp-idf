@@ -36,7 +36,7 @@ EN Button
 BOOT Button
     Holding down the Boot button and pressing the EN button initiates the firmware download mode. Then user can download firmware through the serial port.
 
-.. figure:: ../_static/esp32-pico-kit-v3-layout.jpg
+.. figure:: ../../_static/esp32-pico-kit-v3-layout.jpg
     :align: center
     :alt: ESP32-PICO-KIT V3 board layout
     :figclass: align-center

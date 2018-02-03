@@ -53,7 +53,7 @@ I/O
 
 .. _get-started-esp32-devkitc-board-front:
 
-.. figure:: ../_static/esp32-devkitc-functional-overview.jpg
+.. figure:: ../../_static/esp32-devkitc-functional-overview.jpg
     :align: center
     :alt: ESP32-DevKitC V4 with ESP-WROOM-32 module soldered
     :figclass: align-center
@@ -91,7 +91,7 @@ To start development of applications, proceed to section :doc:`index`, that will
 Board Dimensions
 ----------------
 
-.. figure:: ../_static/esp32-devkitc-dimensions-back.jpg
+.. figure:: ../../_static/esp32-devkitc-dimensions-back.jpg
     :align: center
     :alt: ESP32 DevKitC board dimensions - back
     :figclass: align-center

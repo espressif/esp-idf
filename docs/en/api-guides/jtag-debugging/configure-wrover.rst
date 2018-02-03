@@ -47,7 +47,7 @@ Windows
 
 5.  Check the list of devices that should contain two WROVER specific USB entries: "Dual RS232-HS (Interface 0)" and "Dual RS232-HS (Interface 1)". The driver name would be "FTDIBUS (vxxxx)" and USB ID: 0403 6010.
 
-    .. figure:: ../../_static/jtag-usb-configuration-zadig.jpg
+    .. figure:: ../../../_static/jtag-usb-configuration-zadig.jpg
         :align: center
         :alt: Configuration of JTAG USB driver in Zadig tool
         :figclass: align-center

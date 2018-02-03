@@ -29,7 +29,7 @@ For easy interfacing, all the IO signals and system power on ESP32-PICO-D4 are l
 
 The board dimensions are 52 x 20.3 x 10 mm (2.1" x 0.8" x 0.4"), see section `Board Dimensions`_. An overview functional block diagram is shown below.
 
-.. figure:: ../_static/esp32-pico-kit-v4-functional-block-diagram.png
+.. figure:: ../../_static/esp32-pico-kit-v4-functional-block-diagram.png
     :align: center
     :alt: ESP32-PICO-KIT V4 functional block diagram
     :figclass: align-center
@@ -61,7 +61,7 @@ EN Button
 
 .. _get-started-pico-kit-v4-board-front:
 
-.. figure:: ../_static/esp32-pico-kit-v4-layout.jpg
+.. figure:: ../../_static/esp32-pico-kit-v4-layout.jpg
     :align: center
     :alt: ESP32-PICO-KIT V4 board layout
     :figclass: align-center
@@ -182,14 +182,14 @@ No.     Name               Type    Function
 Board Dimensions
 ----------------
 
-.. figure:: ../_static/esp32-pico-kit-v4-dimensions-back.jpg
+.. figure:: ../../_static/esp32-pico-kit-v4-dimensions-back.jpg
     :align: center
     :alt: ESP32-PICO-KIT V4 dimensions - back
     :figclass: align-center
 
     ESP32-PICO-KIT V4 dimensions - back
 
-.. figure:: ../_static/esp32-pico-kit-v4-dimensions-side.jpg
+.. figure:: ../../_static/esp32-pico-kit-v4-dimensions-side.jpg
     :align: center
     :alt: ESP32-PICO-KIT V4 dimensions - side
     :figclass: align-center

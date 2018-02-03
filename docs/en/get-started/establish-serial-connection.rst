@@ -25,14 +25,14 @@ Check the list of identified COM ports in the Windows Device Manager. Disconnect
 
 Figures below show serial port for ESP32 DevKitC and ESP32 WROVER KIT
 
-.. figure:: ../_static/esp32-devkitc-in-device-manager.png
+.. figure:: ../../_static/esp32-devkitc-in-device-manager.png
     :align: center
     :alt: USB to UART bridge of ESP32-DevKitC in Windows Device Manager
     :figclass: align-center
 
     USB to UART bridge of ESP32-DevKitC in Windows Device Manager
 
-.. figure:: ../_static/esp32-wrover-kit-in-device-manager.png
+.. figure:: ../../_static/esp32-wrover-kit-in-device-manager.png
     :align: center
     :alt: Two USB Serial Ports of ESP-WROVER-KIT in Windows Device Manager
     :figclass: align-center
@@ -73,14 +73,14 @@ Now verify that the serial connection is operational. You can do this using a se
 
 Run terminal, set identified serial port, baud rate = 115200, data bits = 8, stop bits = 1, and parity = N. Below are example screen shots of setting the port and such transmission parameters (in short described as  115200-8-1-N) on Windows and Linux. Remember to select exactly the same serial port you have identified in steps above.
 
-.. figure:: ../_static/putty-settings-windows.png
+.. figure:: ../../_static/putty-settings-windows.png
     :align: center
     :alt: Setting Serial Communication in PuTTY on Windows
     :figclass: align-center
 
     Setting Serial Communication in PuTTY on Windows
 
-.. figure:: ../_static/putty-settings-linux.png
+.. figure:: ../../_static/putty-settings-linux.png
     :align: center
     :alt: Setting Serial Communication in PuTTY on Linux
     :figclass: align-center

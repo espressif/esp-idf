@@ -5,7 +5,7 @@ This is documentation of `ESP-IDF <https://github.com/espressif/esp-idf>`_, the 
 
 The ESP32 is 2.4 GHz Wi-Fi and Bluetooth combo, 32 bit dual core chip with 600 DMIPS processing power.
 
-.. figure:: _static/about-doc.png
+.. figure:: ../_static/about-doc.png
     :align: center
     :alt: Espressif IoT Integrated Development Framework
     :figclass: align-center

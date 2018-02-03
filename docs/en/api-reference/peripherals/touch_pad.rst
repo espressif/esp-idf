@@ -77,7 +77,7 @@ The following summarizes available measurement parameters and corresponding 'set
 
 Relationship between voltage range (high / low reference voltages), speed (slope) and measure time is shown on figure below. 
 
-.. figure:: ../../_static/touch_pad-measurement-parameters.jpg
+.. figure:: ../../../_static/touch_pad-measurement-parameters.jpg
     :align: center
     :alt: Touch Pad - relationship between measurement parameters 
     :figclass: align-center
