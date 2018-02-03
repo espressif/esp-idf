@@ -1,0 +1,1 @@
+.. include:: ../../en/hw-reference/modules-and-boards.rst
