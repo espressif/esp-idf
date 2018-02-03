@@ -196,19 +196,26 @@ build_docs:
   artifacts:
     when: always
     paths:
-      - docs/doxygen-warning-log.txt
-      - docs/sphinx-warning-log.txt
-      - docs/sphinx-warning-log-sanitized.txt
-      - docs/_build/html
+      # English version of documentation
+      - docs/en/doxygen-warning-log.txt
+      - docs/en/sphinx-warning-log.txt
+      - docs/en/sphinx-warning-log-sanitized.txt
+      - docs/en/_build/html
+      # Chinese version of documentation
+      - docs/zh_CN/doxygen-warning-log.txt
+      - docs/zh_CN/sphinx-warning-log.txt
+      - docs/zh_CN/sphinx-warning-log-sanitized.txt
+      - docs/zh_CN/_build/html
     expire_in: 1 mos
   script:
-    - cd docs
-    - doxygen
-    # If there are Doxygen warnings, print them and bail out
-    - test $(cat doxygen-warning-log.txt | wc -l) -eq 0 || ( echo "Doxygen pass had some warnings:" && cat doxygen-warning-log.txt && false )
+    - cd docs/en
     - make gh-linkcheck
     - make html
-    - ./check_doc_warnings.sh
+    - ../check_doc_warnings.sh
+    - cd ../zh_CN
+    - make gh-linkcheck
+    - make html
+    - ../check_doc_warnings.sh
 
 test_nvs_on_host:
   stage: test
