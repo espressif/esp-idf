@@ -37,6 +37,9 @@ struct esp_tls {
  */
 struct esp_tls *esp_tls_conn_new(const char *hostname, int hostlen, int port, struct esp_tls_cfg *cfg);
 
+/* Convenience API for HTTP URIs */
+struct esp_tls *esp_tls_conn_http_new(const char *url, struct esp_tls_cfg *cfg);
+    
 static inline ssize_t esp_tls_conn_write(struct esp_tls *tls, const char *data, size_t datalen)
 {
     return tls->write(tls, data, datalen);

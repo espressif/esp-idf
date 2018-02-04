@@ -21,8 +21,8 @@
 #include <ctype.h>
 #include <netdb.h>
 #include <esp_log.h>
+#include <esp-tls.h>
 
-#include "connectlib.h"
 #include "sh2lib.h"
 
 static const char *TAG = "sh2lib";
@@ -75,10 +75,9 @@ static int do_ssl_connect(struct sh2lib_handle *hd, int sockfd, const char *host
 static ssize_t callback_send_inner(struct sh2lib_handle *hd, const uint8_t *data,
                                    size_t length)
 {
-    int rv = SSL_write(hd->ssl, data, (int)length);
+    int rv = esp_tls_conn_write(hd->http2_tls, (const char *)data, (int)length);
     if (rv <= 0) {
-        int err = SSL_get_error(hd->ssl, rv);
-        if (err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_READ) {
+        if (rv == -SSL_ERROR_WANT_WRITE || rv == -SSL_ERROR_WANT_READ) {
             rv = NGHTTP2_ERR_WOULDBLOCK;
         } else {
             rv = NGHTTP2_ERR_CALLBACK_FAILURE;
@@ -128,10 +127,9 @@ static ssize_t callback_recv(nghttp2_session *session, uint8_t *buf,
 {
     struct sh2lib_handle *hd = user_data;
     int rv;
-    rv = SSL_read(hd->ssl, buf, (int)length);
+    rv = esp_tls_conn_read(hd->http2_tls, (char *)buf, (int)length);
     if (rv < 0) {
-        int err = SSL_get_error(hd->ssl, rv);
-        if (err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_READ) {
+        if (rv == -SSL_ERROR_WANT_WRITE || rv == -SSL_ERROR_WANT_READ) {
             rv = NGHTTP2_ERR_WOULDBLOCK;
         } else {
             rv = NGHTTP2_ERR_CALLBACK_FAILURE;
@@ -281,24 +279,10 @@ static int do_http2_connect(struct sh2lib_handle *hd)
 int sh2lib_connect(struct sh2lib_handle *hd, const char *uri)
 {
     memset(hd, 0, sizeof(*hd));
-
-    struct uri res;
-    /* Parse the URI */
-    if (parse_uri(&res, uri) != 0) {
-        ESP_LOGE(TAG, "[sh2-connect] Failed to parse URI");
-        return -1;
-    }
-
-    /* TCP connection with the server */
-    int sockfd = connect_to_host(res.host, res.hostlen, res.port);
-    if (sockfd < 0) {
-        ESP_LOGE(TAG, "[sh2-connect] Failed to connect to %s", uri);
-        return -1;
-    }
-
-    /* SSL Connection on the socket */
-    if (do_ssl_connect(hd, sockfd, res.host) != 0) {
-        ESP_LOGE(TAG, "[sh2-connect] SSL Handshake failed with %s", uri);
+    struct esp_tls_cfg tls_cfg;
+    tls_cfg.alpn_protos = (unsigned char *) "\x02h2";
+    if ((hd->http2_tls = esp_tls_conn_http_new(uri, &tls_cfg)) == NULL) {
+        ESP_LOGE(TAG, "[sh2-connect] esp-tls connection failed");
         goto error;
     }
 
@@ -307,6 +291,9 @@ int sh2lib_connect(struct sh2lib_handle *hd, const char *uri)
         ESP_LOGE(TAG, "[sh2-connect] HTTP2 Connection failed with %s", uri);
         goto error;
     }
+
+    int flags = fcntl(hd->http2_tls->sockfd, F_GETFL, 0);
+    fcntl(hd->http2_tls->sockfd, F_SETFL, flags | O_NONBLOCK);
 
     return 0;
 error:
@@ -320,17 +307,9 @@ void sh2lib_free(struct sh2lib_handle *hd)
         nghttp2_session_del(hd->http2_sess);
         hd->http2_sess = NULL;
     }
-    if (hd->ssl) {
-        SSL_free(hd->ssl);
-        hd->ssl = NULL;
-    }
-    if (hd->ssl_ctx) {
-        SSL_CTX_free(hd->ssl_ctx);
-        hd->ssl_ctx = NULL;
-    }
-    if (hd->sockfd) {
-        close(hd->sockfd);
-        hd->ssl_ctx = 0;
+    if (hd->http2_tls) {
+	esp_tls_conn_delete(hd->http2_tls);
+        hd->http2_tls = NULL;
     }
     if (hd->hostname) {
         free(hd->hostname);
@@ -346,11 +325,13 @@ int sh2lib_execute(struct sh2lib_handle *hd)
         ESP_LOGE(TAG, "[sh2-execute] HTTP2 session send failed %d", ret);
         return -1;
     }
+
     ret = nghttp2_session_recv(hd->http2_sess);
     if (ret != 0) {
         ESP_LOGE(TAG, "[sh2-execute] HTTP2 session recv failed %d", ret);
         return -1;
     }
+
     return 0;
 }
 
