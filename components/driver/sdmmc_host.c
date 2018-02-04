@@ -40,6 +40,7 @@ typedef struct {
     uint32_t d5;
     uint32_t d6;
     uint32_t d7;
+    uint8_t d3_gpio;
     uint8_t card_detect;
     uint8_t write_protect;
     uint8_t width;
@@ -57,6 +58,7 @@ static const sdmmc_slot_info_t s_slot_info[2]  = {
         .d1 = PERIPHS_IO_MUX_SD_DATA1_U,
         .d2 = PERIPHS_IO_MUX_SD_DATA2_U,
         .d3 = PERIPHS_IO_MUX_SD_DATA3_U,
+        .d3_gpio = 10,
         .d4 = PERIPHS_IO_MUX_GPIO16_U,
         .d5 = PERIPHS_IO_MUX_GPIO17_U,
         .d6 = PERIPHS_IO_MUX_GPIO5_U,
@@ -72,6 +74,7 @@ static const sdmmc_slot_info_t s_slot_info[2]  = {
         .d1 = PERIPHS_IO_MUX_GPIO4_U,
         .d2 = PERIPHS_IO_MUX_MTDI_U,
         .d3 = PERIPHS_IO_MUX_MTCK_U,
+        .d3_gpio = 13,
         .card_detect = HOST_CARD_DETECT_N_2_IDX,
         .write_protect = HOST_CARD_WRITE_PRT_2_IDX,
         .width = 4
@@ -328,10 +331,20 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config)
     configure_pin(pslot->clk);
     configure_pin(pslot->cmd);
     configure_pin(pslot->d0);
+
     if (slot_width >= 4) {
         configure_pin(pslot->d1);
         configure_pin(pslot->d2);
-        configure_pin(pslot->d3);
+        //force pull-up D3 to make slave detect SD mode. connect to peripheral after width configuration.
+        gpio_config_t gpio_conf = {
+            .pin_bit_mask = BIT(pslot->d3_gpio),
+            .mode = GPIO_MODE_OUTPUT ,
+            .pull_up_en = 0,
+            .pull_down_en = 0,
+            .intr_type = GPIO_INTR_DISABLE,
+        };
+        gpio_config( &gpio_conf );
+        gpio_set_level( pslot->d3_gpio, 1 );
         if (slot_width == 8) {
             configure_pin(pslot->d4);
             configure_pin(pslot->d5);
@@ -404,8 +417,10 @@ esp_err_t sdmmc_host_set_bus_width(int slot, size_t width)
     } else if (width == 4) {
         SDMMC.ctype.card_width_8 &= ~mask;
         SDMMC.ctype.card_width |= mask;
+        configure_pin(s_slot_info[slot].d3);   // D3 was set to GPIO high to force slave into SD 1-bit mode, until 4-bit mode is set
     } else if (width == 8){
         SDMMC.ctype.card_width_8 |= mask;
+        configure_pin(s_slot_info[slot].d3);   // D3 was set to GPIO high to force slave into SD 1-bit mode, until 4-bit mode is set
     } else {
         return ESP_ERR_INVALID_ARG;
     }
