@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+#include <http_parser.h>
 #include "esp-tls.h"
 
 
@@ -209,3 +210,28 @@ struct esp_tls *esp_tls_conn_new(const char *hostname, int hostlen, int port, st
     return tls;
 }
 
+static int get_port(const char *url, struct http_parser_url *u)
+{
+    if (u->field_data[UF_PORT].len) {
+        return strtol(&url[u->field_data[UF_PORT].off], NULL, 10);
+    } else {
+        if (strncmp(&url[u->field_data[UF_SCHEMA].off], "http", u->field_data[UF_SCHEMA].len) == 0) {
+            return 80;
+        } else if (strncmp(&url[u->field_data[UF_SCHEMA].off], "https", u->field_data[UF_SCHEMA].len) == 0) {
+            return 443;
+        }
+    }
+    return 0;
+}
+
+struct esp_tls *esp_tls_conn_http_new(const char *url, struct esp_tls_cfg *cfg)
+{
+    /* Parse URI */
+    struct http_parser_url u;
+    http_parser_url_init(&u);
+    http_parser_parse_url(url, strlen(url), 0, &u);
+
+    /* Connect to host */
+    return esp_tls_conn_new(&url[u.field_data[UF_HOST].off], u.field_data[UF_HOST].len,
+			    get_port(url, &u), cfg);
+}

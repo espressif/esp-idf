@@ -33,14 +33,10 @@
  * @brief Handle for working with sh2lib APIs
  */
 struct sh2lib_handle {
-    /* Ideally, CTX is per-program, so we could potentially take it out of this
-     * per-connection structure
-     */
-    SSL_CTX         *ssl_ctx;      /*!< Pointer to the SSL context */
-    SSL             *ssl;          /*!< Pointer to the SSL handle */
     nghttp2_session *http2_sess;   /*!< Pointer to the HTTP2 session handle */
     int              sockfd;       /*!< Socket file descriptor */
     char            *hostname;     /*!< The hostname we are connected to */
+    struct esp_tls  *http2_tls;    /*!< Pointer to the TLS session handle */
 };
 
 /** Flag indicating receive stream is reset */
