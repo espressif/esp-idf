@@ -265,6 +265,10 @@ esp_err_t gpio_set_intr_type(gpio_num_t gpio_num, gpio_int_type_t intr_type);
 /**
  * @brief  Enable GPIO module interrupt signal
  *
+ * @note Please do not use the interrupt of GPIO36 and GPIO39 when using ADC.
+ *       Please refer to the comments of `adc1_get_raw`.
+ *       Please refer to section 3.11 of 'ECO_and_Workarounds_for_Bugs_in_ESP32' for the description of this issue.
+ *
  * @param  gpio_num GPIO number. If you want to enable an interrupt on e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);
  *
  * @return
