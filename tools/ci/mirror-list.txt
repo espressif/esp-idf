@@ -3,6 +3,7 @@ components/bt/lib                                   @GENERAL_MIRROR_SERVER@/idf/
 components/aws_iot/aws-iot-device-sdk-embedded-C    @GENERAL_MIRROR_SERVER@/idf/aws-iot-device-sdk-embedded-C.git   ALLOW_TO_SYNC_FROM_PUBLIC
 components/coap/libcoap                             @GENERAL_MIRROR_SERVER@/idf/libcoap.git                         ALLOW_TO_SYNC_FROM_PUBLIC
 components/esptool_py/esptool                       @GENERAL_MIRROR_SERVER@/idf/esptool.git                         ALLOW_TO_SYNC_FROM_PUBLIC
+components/json/cJSON                               @GENERAL_MIRROR_SERVER@/idf/cJSON.git                           ALLOW_TO_SYNC_FROM_PUBLIC
 components/libsodium/libsodium                      @GENERAL_MIRROR_SERVER@/idf/libsodium.git                       ALLOW_TO_SYNC_FROM_PUBLIC
 components/micro-ecc/micro-ecc                      @GENERAL_MIRROR_SERVER@/idf/micro-ecc.git                       ALLOW_TO_SYNC_FROM_PUBLIC
 components/nghttp/nghttp2                           @GENERAL_MIRROR_SERVER@/idf/nghttp2.git                         ALLOW_TO_SYNC_FROM_PUBLIC
