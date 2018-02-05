@@ -675,6 +675,31 @@ esp_err_t esp_wifi_set_promiscuous_filter(const wifi_promiscuous_filter_t *filte
 esp_err_t esp_wifi_get_promiscuous_filter(wifi_promiscuous_filter_t *filter);
 
 /**
+  * @brief Enable subtype filter of the control packet in promiscuous mode.
+  *
+  * @note The default filter is to filter none control packet.
+  *
+  * @param filter the subtype of the control packet filtered in promiscuous mode.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  */
+esp_err_t esp_wifi_set_promiscuous_ctrl_filter(const wifi_promiscuous_filter_t *filter);
+
+/**
+  * @brief     Get the subtype filter of the control packet in promiscuous mode.
+  *
+  * @param[out] filter  store the current status of subtype filter of the control packet in promiscuous mode
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_ARG: invalid argument
+  */
+esp_err_t esp_wifi_get_promiscuous_ctrl_filter(wifi_promiscuous_filter_t *filter);
+
+/**
   * @brief     Set the configuration of the ESP32 STA or AP
   *
   * @attention 1. This API can be called only when specified interface is enabled, otherwise, API fail
