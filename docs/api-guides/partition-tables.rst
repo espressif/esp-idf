@@ -6,7 +6,7 @@ Overview
 
 A single ESP32's flash can contain multiple apps, as well as many different kinds of data (calibration data, filesystems, parameter storage, etc). For this reason a partition table is flashed to offset 0x8000 in the flash.
 
-Partition table length is 0xC00 bytes (maximum 95 partition table entries). If the partition table is signed due to `secure boot`, the signature is appended after the table data.
+Partition table length is 0xC00 bytes (maximum 95 partition table entries). An MD5 checksum is appended after the table data. If the partition table is signed due to `secure boot`, the signature is appended after the partition table.
 
 Each entry in the partition table has a name (label), type (app, data, or something else), subtype and the offset in flash where the partition is loaded.
 
@@ -147,6 +147,11 @@ To display the contents of a binary partition table on stdout (this is how the s
   python gen_esp32part.py binary_partitions.bin
 
 ``gen_esp32part.py`` takes one optional argument, ``--verify``, which will also verify the partition table during conversion (checking for overlapping partitions, unaligned partitions, etc.)
+
+MD5 checksum
+~~~~~~~~~~~~
+
+The binary format of the partition table contains an MD5 checksum computed based on the partition table. This checksum is used for checking the integrity of the partition table during the boot.
 
 Flashing the partition table
 ----------------------------

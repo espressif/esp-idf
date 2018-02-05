@@ -37,6 +37,10 @@ LONGER_BINARY_TABLE += b"\xAA\x50\x10\x00" + \
                        b"\x00\x10\x00\x00" + \
                        b"second" + (b"\0"*10) + \
                        b"\x00\x00\x00\x00"
+# MD5 checksum
+LONGER_BINARY_TABLE += b"\xEB\xEB" + b"\xFF" * 14
+LONGER_BINARY_TABLE += b'\xf9\xbd\x06\x1b\x45\x68\x6f\x86\x57\x1a\x2c\xd5\x2a\x1d\xa6\x5b'
+# empty partition
 LONGER_BINARY_TABLE += b"\xFF" * 32
 
 
@@ -168,12 +172,14 @@ first, 0x30, 0xEE, 0x100400, 0x300000
 """
         t = PartitionTable.from_csv(csv)
         tb = _strip_trailing_ffs(t.to_binary())
-        self.assertEqual(len(tb), 64)
+        self.assertEqual(len(tb), 64+32)
         self.assertEqual(b'\xAA\x50', tb[0:2]) # magic
         self.assertEqual(b'\x30\xee', tb[2:4]) # type, subtype
         eo, es = struct.unpack("<LL", tb[4:12])
         self.assertEqual(eo, 0x100400) # offset
         self.assertEqual(es, 0x300000) # size
+        self.assertEqual(b"\xEB\xEB" + b"\xFF" * 14, tb[32:48])
+        self.assertEqual(b'\x43\x03\x3f\x33\x40\x87\x57\x51\x69\x83\x9b\x40\x61\xb1\x27\x26', tb[48:64])
 
     def test_multiple_entries(self):
         csv = """
@@ -182,7 +188,7 @@ second,0x31, 0xEF,         , 0x100000
 """
         t = PartitionTable.from_csv(csv)
         tb = _strip_trailing_ffs(t.to_binary())
-        self.assertEqual(len(tb), 96)
+        self.assertEqual(len(tb), 96+32)
         self.assertEqual(b'\xAA\x50', tb[0:2])
         self.assertEqual(b'\xAA\x50', tb[32:34])
 
