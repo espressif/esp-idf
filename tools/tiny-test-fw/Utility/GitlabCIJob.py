@@ -70,4 +70,4 @@ class Job(dict):
         file_name = os.path.join(file_path, self["name"] + ".yml")
         if "case group" in self:
             with open(file_name, "w") as f:
-                yaml.dump(self["case group"].output(), f)
+                yaml.dump(self["case group"].output(), f, default_flow_style=False)

@@ -40,7 +40,7 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
     return ESP_OK;
 }
 
-TEST_CASE("adc2 work with wifi","[adc]")
+TEST_CASE("adc2 work with wifi","[adc][ignore]")
 {
     int     read_raw;
     int     target_value;

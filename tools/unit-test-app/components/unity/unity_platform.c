@@ -342,6 +342,12 @@ void unity_run_menu()
                 print_test_menu();
             }
         }
+        /*use '-' to show test history. Need to do it before UNITY_BEGIN cleanup history */
+        if (cmdline[0] == '-')
+        {
+            UNITY_END();
+            continue;
+        }
 
         UNITY_BEGIN();
 
