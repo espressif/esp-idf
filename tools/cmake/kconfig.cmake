@@ -1,7 +1,7 @@
 include(ExternalProject)
 
 macro(kconfig_set_variables)
-  set(MCONF ${IDF_PATH}/tools/kconfig/mconf)
+  set(MCONF kconfig_bin/mconf)
 
   set_default(SDKCONFIG ${PROJECT_PATH}/sdkconfig)
   set(SDKCONFIG_HEADER ${CMAKE_BINARY_DIR}/sdkconfig.h)
@@ -10,18 +10,19 @@ macro(kconfig_set_variables)
   set(ROOT_KCONFIG ${IDF_PATH}/Kconfig)
 endmacro()
 
-# Use the existing Makefile to build mconf when needed
+# Use the existing Makefile to build mconf (out of tree) when needed
 #
-# TODO: replace this with something more Windows-friendly
+# TODO: Find a solution on Windows
 ExternalProject_Add(mconf
   SOURCE_DIR ${IDF_PATH}/tools/kconfig
   CONFIGURE_COMMAND ""
-  BUILD_IN_SOURCE 1
-  BUILD_COMMAND make mconf
-  BUILD_BYPRODUCTS ${MCONF}
+  BINARY_DIR "kconfig_bin"
+  BUILD_COMMAND make -f ${IDF_PATH}/tools/kconfig/Makefile mconf
+  BUILD_BYPRODUCTS "kconfig_bin" ${MCONF}
   INSTALL_COMMAND ""
   EXCLUDE_FROM_ALL 1
   )
+
 
 # Find all Kconfig files for all components
 function(kconfig_process_config)
@@ -65,7 +66,7 @@ function(kconfig_process_config)
                 "COMPONENT_KCONFIGS=${kconfigs}"
                 "COMPONENT_KCONFIGS_PROJBUILD=${kconfigs_projbuild}"
                 "KCONFIG_CONFIG=${SDKCONFIG}"
-                ${IDF_PATH}/tools/kconfig/mconf ${ROOT_KCONFIG}
+                ${MCONF} ${ROOT_KCONFIG}
     VERBATIM
     USES_TERMINAL)
 
