@@ -186,7 +186,7 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
  */
 #define ESP_LOG_BUFFER_HEX(tag, buffer, buff_len) \
     do { \
-        if (LOG_LOCAL_LEVEL > ESP_LOG_INFO) { \
+        if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) { \
             ESP_LOG_BUFFER_HEX_LEVEL( tag, buffer, buff_len, ESP_LOG_INFO ); \
         }\
     } while(0)
@@ -205,7 +205,7 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
  */
 #define ESP_LOG_BUFFER_CHAR(tag, buffer, buff_len) \
     do { \
-        if (LOG_LOCAL_LEVEL > ESP_LOG_INFO) { \
+        if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) { \
             ESP_LOG_BUFFER_CHAR_LEVEL( tag, buffer, buff_len, ESP_LOG_INFO ); \
         }\
     } while(0)
