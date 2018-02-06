@@ -45,6 +45,15 @@ config SPIRAM_BOOT_INIT
         have specific requirements, you'll want to leave this enabled so memory allocated
         during boot-up can also be placed in SPI RAM.
 
+config SPIRAM_IGNORE_NOTFOUND
+    bool "Ignore PSRAM when not found"
+    default "n"
+    depends on SPIRAM_BOOT_INIT
+    help
+        Normally, if psram initialization is enabled during compile time but not found at runtime, it
+        is seen as an error making the ESP32 panic. If this is enabled, the ESP32 will keep on
+        running but will not add the (non-existing) RAM to any allocator.
+
 choice SPIRAM_USE
     prompt "SPI RAM access method"
     default SPIRAM_USE_MALLOC
