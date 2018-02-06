@@ -2645,7 +2645,7 @@ static UINT8 bta_dm_authorize_cback (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NA
         return BTM_NOT_AUTHORIZED;
     }
 }
- 
+
 
 
 
@@ -4182,6 +4182,8 @@ static void bta_dm_observe_results_cb (tBTM_INQ_RESULTS *p_inq, UINT8 *p_eir)
     result.inq_res.flag             = p_inq->flag;
     result.inq_res.adv_data_len     = p_inq->adv_data_len;
     result.inq_res.scan_rsp_len     = p_inq->scan_rsp_len;
+    memcpy(result.inq_res.dev_class, p_inq->dev_class, sizeof(DEV_CLASS));
+    result.inq_res.ble_evt_type     = p_inq->ble_evt_type;
 
     /* application will parse EIR to find out remote device name */
     result.inq_res.p_eir = p_eir;
@@ -4338,7 +4340,7 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
         } else {
             sec_event.auth_cmpl.success = TRUE;
             if (!p_data->complt.smp_over_br) {
-                
+
             }
         }
 
@@ -5394,7 +5396,7 @@ static void bta_ble_energy_info_cmpl(tBTM_BLE_TX_TIME_MS tx_time,
     if (BTA_SUCCESS == st) {
         ctrl_state = bta_dm_pm_obtain_controller_state();
     }
-#endif  
+#endif
     if (bta_dm_cb.p_energy_info_cback) {
         bta_dm_cb.p_energy_info_cback(tx_time, rx_time, idle_time, energy_used, ctrl_state, st);
     }
