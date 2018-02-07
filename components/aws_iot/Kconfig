@@ -83,3 +83,77 @@ config AWS_IOT_MQTT_MAX_RECONNECT_WAIT_INTERVAL
         Maximum delay between reconnection attempts. If the exponentially increased delay
         interval reaches this value, the client will stop automatically attempting to reconnect.
 
+menu "Thing Shadow"
+    depends on AWS_IOT_SDK
+
+config AWS_IOT_OVERRIDE_THING_SHADOW_RX_BUFFER
+    bool "Override Shadow RX buffer size"
+    depends on AWS_IOT_SDK
+    default n
+    help
+        Allows setting a different Thing Shadow RX buffer
+        size. This is the maximum size of a Thing Shadow
+        message in bytes, plus one.
+
+        If not overridden, the default value is the MQTT RX Buffer length plus one. If overriden, do not set higher than the default value.
+
+config AWS_IOT_SHADOW_MAX_SIZE_OF_RX_BUFFER
+    int "Maximum RX Buffer (bytes)"
+    depends on AWS_IOT_OVERRIDE_THING_SHADOW_RX_BUFFER
+    default 513
+    range 32 65536
+    help
+        Allows setting a different Thing Shadow RX buffer size.
+        This is the maximum size of a Thing Shadow message in bytes,
+        plus one.
+
+
+config AWS_IOT_SHADOW_MAX_SIZE_OF_UNIQUE_CLIENT_ID_BYTES
+    int "Maximum unique client ID size (bytes)"
+    depends on AWS_IOT_SDK
+    default 80
+    range 4 1000
+    help
+        Maximum size of the Unique Client Id.
+
+config AWS_IOT_SHADOW_MAX_SIMULTANEOUS_ACKS
+    int "Maximum simultaneous responses"
+    depends on AWS_IOT_SDK
+    default 10
+    range 1 100
+    help
+        At any given time we will wait for this many responses. This will correlate to the rate at which the shadow actions are requested
+
+config AWS_IOT_SHADOW_MAX_SIMULTANEOUS_THINGNAMES
+    int "Maximum simultaneous Thing Name operations"
+    depends on AWS_IOT_SDK
+    default 10
+    range 1 100
+    help
+       We could perform shadow action on any thing Name and this is maximum Thing Names we can act on at any given time
+
+config AWS_IOT_SHADOW_MAX_JSON_TOKEN_EXPECTED
+    int "Maximum expected JSON tokens"
+    depends on AWS_IOT_SDK
+    default 120
+    help
+        These are the max tokens that is expected to be in the Shadow JSON document. Includes the metadata which is published
+
+config AWS_IOT_SHADOW_MAX_SHADOW_TOPIC_LENGTH_WITHOUT_THINGNAME
+    int "Maximum topic length (not including Thing Name)"
+    depends on AWS_IOT_SDK
+    default 60
+    range 10 1000
+    help
+       All shadow actions have to be published or subscribed to a topic which is of the format $aws/things/{thingName}/shadow/update/accepted. This refers to the size of the topic without the Thing Name
+
+config AWS_IOT_SHADOW_MAX_SIZE_OF_THING_NAME
+    int "Maximum Thing Name length"
+    depends on AWS_IOT_SDK
+    default 20
+    range 4 1000
+    help
+        Maximum length of a Thing Name.
+
+endmenu  # Thing Shadow
+
