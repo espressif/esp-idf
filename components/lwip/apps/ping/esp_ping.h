@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-#define ESP_ERR_PING_BASE      0x5000
+#define ESP_ERR_PING_BASE               0x6000
 
 #define ESP_ERR_PING_INVALID_PARAMS     ESP_ERR_PING_BASE + 0x00
 #define ESP_ERR_PING_NO_MEM             ESP_ERR_PING_BASE + 0x01
