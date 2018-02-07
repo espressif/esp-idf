@@ -1,0 +1,18 @@
+﻿Third Party Notices for Azure IoT SDKs project
+
+This project incorporates material from the project(s) listed below (collectively, "Third Party Code").
+Microsoft Corporation is not the original author of the Third Party Code.
+The original copyright notice and license, under which Microsoft Corporation received such Third Party Code, 
+are set out below.  This Third Party Code is licensed to you under their original license terms set forth below.  
+Microsoft Corporation reserves all other rights not expressly granted, whether by implication, estoppel or otherwise.  
+
+
+1. ESP32 sample main file, obtained from https://github.com/ustccw/AzureESP32 
+
+Content from the sample main file at https://github.com/ustccw/AzureESP32/blob/master/main/azure_main.c 
+is copied into https://github.com/Azure/azure-iot-pal-esp32/blob/master/sample/main/azure_main.c 
+for use in ESP32 samples.
+
+/*
+Public Domain
+*/
