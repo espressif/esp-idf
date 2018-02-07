@@ -82,6 +82,17 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
     memcpy(&card->host, config, sizeof(*config));
     const bool is_spi = host_is_spi(card);
 
+    if ( !is_spi ) {
+        //check HOST flags compatible with slot configuration.
+        int slot_bit_width = config->get_bus_width(config->slot);        
+        if ( slot_bit_width == 1 && (config->flags & (SDMMC_HOST_FLAG_4BIT|SDMMC_HOST_FLAG_8BIT))) {
+            ESP_LOGW(TAG, "HOST slot only enables 1-bit.");
+            card->host.flags = ((card->host.flags&(~(SDMMC_HOST_FLAG_4BIT|SDMMC_HOST_FLAG_8BIT)))|SDMMC_HOST_FLAG_1BIT);
+        } else if ( slot_bit_width == 4  && (config->flags & SDMMC_HOST_FLAG_8BIT)){
+            ESP_LOGW(TAG, "HOST slot only enables 4-bit.");
+            card->host.flags = ((card->host.flags&(~(SDMMC_HOST_FLAG_1BIT|SDMMC_HOST_FLAG_8BIT)))|SDMMC_HOST_FLAG_4BIT);            
+        }
+    }
     /* GO_IDLE_STATE (CMD0) command resets the card */
     esp_err_t err = sdmmc_send_cmd_go_idle_state(card);
     if (err != ESP_OK) {
@@ -218,7 +229,7 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
     /* If the host has been initialized with 4-bit bus support, and the card
      * supports 4-bit bus, switch to 4-bit bus now.
      */
-    if ((config->flags & SDMMC_HOST_FLAG_4BIT) &&
+    if ((card->host.flags & SDMMC_HOST_FLAG_4BIT) &&
         (card->scr.bus_width & SCR_SD_BUS_WIDTHS_4BIT)) {
         ESP_LOGD(TAG, "switching to 4-bit bus mode");
         err = sdmmc_send_cmd_set_bus_width(card, 4);

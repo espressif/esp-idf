@@ -36,7 +36,7 @@ TEST_CASE("MMC_RSP_BITS", "[sd]")
     TEST_ASSERT_EQUAL_HEX32(0x11,  MMC_RSP_BITS(data, 59, 5));
 }
 
-TEST_CASE("can probe SD", "[sd][test_env=UT_T1_SDMODE][ignore]")
+TEST_CASE("can probe SD (4-bit)", "[sd][test_env=UT_T1_SDMODE]")
 {
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
@@ -50,8 +50,37 @@ TEST_CASE("can probe SD", "[sd][test_env=UT_T1_SDMODE][ignore]")
     free(card);
 }
 
+TEST_CASE("can probe SD (1-bit)", "[sd][test_env=UT_T1_SDMODE]")
+{
+    //the card DAT3 should be connected to high in SD 1-bit mode
+    //do it by our own GPIO.
+    gpio_config_t conf = {
+        .pin_bit_mask = GPIO_SEL_13,
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = 1,
+        .pull_down_en = 0,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&conf);
+    gpio_set_level(GPIO_NUM_13, 1);
 
-TEST_CASE("can probe SD(using SPI)", "[sdspi][test_env=UT_T1_SPIMODE][ignore]")
+    sdmmc_host_t config = SDMMC_HOST_DEFAULT();
+    config.flags = SDMMC_HOST_FLAG_1BIT;
+    sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
+    slot_config.width=1;
+    TEST_ESP_OK(sdmmc_host_init());
+    TEST_ESP_OK(sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config));
+    sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
+    TEST_ASSERT_NOT_NULL(card);
+    TEST_ESP_OK(sdmmc_card_init(&config, card));
+    sdmmc_card_print_info(stdout, card);
+    TEST_ESP_OK(sdmmc_host_deinit());
+    free(card);
+}
+
+
+
+TEST_CASE("can probe SD(using SPI)", "[sdspi][test_env=UT_T1_SPIMODE]")
 {
     sdmmc_host_t config = SDSPI_HOST_DEFAULT();
     sdspi_slot_config_t slot_config = SDSPI_SLOT_CONFIG_DEFAULT();
