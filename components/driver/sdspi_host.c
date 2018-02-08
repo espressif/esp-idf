@@ -575,8 +575,9 @@ static esp_err_t start_command_read_blocks(int slot, sdspi_hw_cmd_t *cmd,
 {
     bool need_stop_command = rx_length > SDSPI_MAX_DATA_LEN;
     spi_transaction_t* t_command = get_transaction(slot);
+    const int cmd_extra_bytes = 8;
     *t_command = (spi_transaction_t) {
-        .length = (SDSPI_CMD_R1_SIZE + 8) * 8,
+        .length = (SDSPI_CMD_R1_SIZE + cmd_extra_bytes) * 8,
         .tx_buffer = cmd,
         .rx_buffer = cmd,
     };
@@ -587,9 +588,21 @@ static esp_err_t start_command_read_blocks(int slot, sdspi_hw_cmd_t *cmd,
     release_transaction(slot);
 
     uint8_t* cmd_u8 = (uint8_t*) cmd;
-    size_t pre_scan_data_size = 8;
+    size_t pre_scan_data_size = cmd_extra_bytes;
     uint8_t* pre_scan_data_ptr = cmd_u8 + SDSPI_CMD_R1_SIZE;
 
+    /* R1 response is delayed by 1-8 bytes from the request.
+     * This loop searches for the response and writes it to cmd->r1.
+     */
+    while ((cmd->r1 & SD_SPI_R1_NO_RESPONSE) != 0 && pre_scan_data_size > 0) {
+        cmd->r1 = *pre_scan_data_ptr;
+        ++pre_scan_data_ptr;
+        --pre_scan_data_size;
+    }
+    if (cmd->r1 & SD_SPI_R1_NO_RESPONSE) {
+        ESP_LOGD(TAG, "no response token found");
+        return ESP_ERR_TIMEOUT;
+    }
 
     while (rx_length > 0) {
         size_t extra_data_size = 0;
