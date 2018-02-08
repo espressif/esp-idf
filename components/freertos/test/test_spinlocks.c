@@ -48,7 +48,11 @@ TEST_CASE("portMUX spinlocks (no contention)", "[freertos]")
 #ifdef CONFIG_FREERTOS_UNICORE
     TEST_PERFORMANCE_LESS_THAN(FREERTOS_SPINLOCK_CYCLES_PER_OP_UNICORE, "%d cycles/op", ((end - start)/REPEAT_OPS));
 #else
+#if CONFIG_SPIRAM_SUPPORT
+    TEST_PERFORMANCE_LESS_THAN(FREERTOS_SPINLOCK_CYCLES_PER_OP_PSRAM, "%d cycles/op", ((end - start)/REPEAT_OPS));
+#else
     TEST_PERFORMANCE_LESS_THAN(FREERTOS_SPINLOCK_CYCLES_PER_OP, "%d cycles/op", ((end - start)/REPEAT_OPS));
+#endif
 #endif
 }
 
