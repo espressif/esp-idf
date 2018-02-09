@@ -20,3 +20,5 @@ target_link_libraries(bootloader.elf "-L ${CMAKE_CURRENT_SOURCE_DIR}/main")
 target_link_libraries(bootloader.elf "-T esp32.bootloader.ld")
 target_link_libraries(bootloader.elf "-T esp32.bootloader.rom.ld")
 target_link_libraries(bootloader.elf "${BOOTLOADER_LINKER_ARGS}")
+target_link_libraries(bootloader.elf gcc)
+
