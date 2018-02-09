@@ -55,7 +55,7 @@ extern "C" {
  *
  * @return
  *    - ESP_OK: succeed
- *    - ESP_ERR_WIFI_NO_MEM: out of memory
+ *    - ESP_ERR_NO_MEM: out of memory
  *    - others: refer to error code esp_err.h
  */
 esp_err_t esp_wifi_init_internal(const wifi_init_config_t *config);

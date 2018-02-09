@@ -40,15 +40,15 @@ extern "C" {
   * @{
   */
 
-#define ESP_ERR_ESPNOW_BASE         (ESP_ERR_WIFI_BASE + 101) /*!< ESPNOW error number base. */
-#define ESP_ERR_ESPNOW_NOT_INIT     (ESP_ERR_ESPNOW_BASE)     /*!< ESPNOW is not initialized. */
-#define ESP_ERR_ESPNOW_ARG          (ESP_ERR_ESPNOW_BASE + 1) /*!< Invalid argument */
-#define ESP_ERR_ESPNOW_NO_MEM       (ESP_ERR_ESPNOW_BASE + 2) /*!< Out of memory */
-#define ESP_ERR_ESPNOW_FULL         (ESP_ERR_ESPNOW_BASE + 3) /*!< ESPNOW peer list is full */
-#define ESP_ERR_ESPNOW_NOT_FOUND    (ESP_ERR_ESPNOW_BASE + 4) /*!< ESPNOW peer is not found */
-#define ESP_ERR_ESPNOW_INTERNAL     (ESP_ERR_ESPNOW_BASE + 5) /*!< Internal error */
-#define ESP_ERR_ESPNOW_EXIST        (ESP_ERR_ESPNOW_BASE + 6) /*!< ESPNOW peer has existed */
-#define ESP_ERR_ESPNOW_IF           (ESP_ERR_ESPNOW_BASE + 7) /*!< Interface error */
+#define ESP_ERR_ESPNOW_BASE         (ESP_ERR_WIFI_BASE + 100) /*!< ESPNOW error number base. */
+#define ESP_ERR_ESPNOW_NOT_INIT     (ESP_ERR_ESPNOW_BASE + 1) /*!< ESPNOW is not initialized. */
+#define ESP_ERR_ESPNOW_ARG          (ESP_ERR_ESPNOW_BASE + 2) /*!< Invalid argument */
+#define ESP_ERR_ESPNOW_NO_MEM       (ESP_ERR_ESPNOW_BASE + 3) /*!< Out of memory */
+#define ESP_ERR_ESPNOW_FULL         (ESP_ERR_ESPNOW_BASE + 4) /*!< ESPNOW peer list is full */
+#define ESP_ERR_ESPNOW_NOT_FOUND    (ESP_ERR_ESPNOW_BASE + 5) /*!< ESPNOW peer is not found */
+#define ESP_ERR_ESPNOW_INTERNAL     (ESP_ERR_ESPNOW_BASE + 6) /*!< Internal error */
+#define ESP_ERR_ESPNOW_EXIST        (ESP_ERR_ESPNOW_BASE + 7) /*!< ESPNOW peer has existed */
+#define ESP_ERR_ESPNOW_IF           (ESP_ERR_ESPNOW_BASE + 8) /*!< Interface error */
 
 #define ESP_NOW_ETH_ALEN             6         /*!< Length of ESPNOW peer MAC address */
 #define ESP_NOW_KEY_LEN              16        /*!< Length of ESPNOW peer local master key */
