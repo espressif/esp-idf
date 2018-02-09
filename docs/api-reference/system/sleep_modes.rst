@@ -122,6 +122,20 @@ The following function can be used to enter deep sleep once wakeup sources are c
 
 .. doxygenfunction:: esp_deep_sleep_start
 
+Configuring IOs
+---------------
+
+Some ESP32 IOs have internal pullups or pulldowns, which are enabled by default. If an external circuit drives this pin in deep sleep mode, current consumption may increase due to current flowing through these pullups and pulldowns.
+
+To isolate a pin, preventing extra current draw, call :cpp:func:`rtc_gpio_isolate` function.
+
+For example, on ESP32-WROVER module, GPIO12 is pulled up externally. GPIO12 also has an internal pulldown in the ESP32 chip. This means that in deep sleep, some current will flow through these external and internal resistors, increasing deep sleep current above the minimal possible value.
+Add the following code before :cpp:func:`esp_deep_sleep_start` to remove this extra current:
+
+```c++
+rtc_gpio_isolate(GPIO_NUM_12);
+```
+
 Checking sleep wakeup cause
 ---------------------------
 
