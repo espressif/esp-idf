@@ -44,7 +44,7 @@ Expressions, Math
 Control
 -------
 
-- IF expression THEN statement - *perform statement if expression is true*
+- IF expression statement - *perform statement if expression is true*
 - FOR variable = start TO end	- *start for block*
 - FOR variable = start TO end STEP value - *start for block with step*
 - NEXT - *end of for block*
