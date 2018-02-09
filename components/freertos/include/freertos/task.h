@@ -380,6 +380,9 @@ is used in assert() statements. */
  * @return pdPASS if the task was successfully created and added to a ready
  * list, otherwise an error code defined in the file projdefs.h
  *
+ * @note If program uses thread local variables (ones specified with "__thread" keyword)
+ * then storage for them will be allocated on the task's stack.
+ *
  * Example usage:
  * @code{c}
  *  // Task to be created.
@@ -529,6 +532,9 @@ is used in assert() statements. */
  * be created and pdPASS is returned.  If either pxStackBuffer or pxTaskBuffer
  * are NULL then the task will not be created and
  * errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY is returned.
+ *
+ * @note If program uses thread local variables (ones specified with "__thread" keyword)
+ * then storage for them will be allocated on the task's stack.
  *
  * Example usage:
  * @code{c}
