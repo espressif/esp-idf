@@ -368,7 +368,7 @@ push_master_to_github:
 
 
 deploy_docs:
-  stage: deploy
+  stage: assign_test
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - deploy
@@ -388,11 +388,17 @@ deploy_docs:
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host $DOCS_SERVER\n\tStrictHostKeyChecking no\n\tUser $DOCS_SERVER_USER\n" >> ~/.ssh/config
     - export GIT_VER=$(git describe --always)
-    - cd docs/_build/
+    - cd docs/en/_build/
     - mv html $GIT_VER
     - tar czvf $GIT_VER.tar.gz $GIT_VER
-    - scp $GIT_VER.tar.gz $DOCS_SERVER:$DOCS_PATH
-    - ssh $DOCS_SERVER -x "cd $DOCS_PATH && tar xzvf $GIT_VER.tar.gz && rm -f latest && ln -s $GIT_VER latest"
+    - scp $GIT_VER.tar.gz $DOCS_SERVER:$DOCS_PATH/en
+    - ssh $DOCS_SERVER -x "cd $DOCS_PATH/en && tar xzvf $GIT_VER.tar.gz && rm -f latest && ln -s $GIT_VER latest"
+    - cd ../../zh_CN/_build/
+    - mv html $GIT_VER
+    - tar czvf $GIT_VER.tar.gz $GIT_VER
+    - scp $GIT_VER.tar.gz $DOCS_SERVER:$DOCS_PATH/zh_CN
+    - ssh $DOCS_SERVER -x "cd $DOCS_PATH/zh_CN && tar xzvf $GIT_VER.tar.gz && rm -f latest && ln -s $GIT_VER latest"
+
 
 check_doc_links:
   stage: test
