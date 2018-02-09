@@ -28,6 +28,8 @@ macro(idf_set_global_variables)
   # path to idf.py tool
   set(IDFTOOL ${PYTHON} "${IDF_PATH}/tools/idf.py")
 
+  # generate compile_commands.json
+  set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 endmacro()
 
 # Add all the IDF global compiler & preprocessor options
