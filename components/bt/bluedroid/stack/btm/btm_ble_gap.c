@@ -3594,10 +3594,12 @@ void btm_ble_write_adv_enable_complete(UINT8 *p)
         }else {
             p_cb->state = BTM_BLE_ADVERTISING;
             (*p_cb->p_adv_cb)(status);
+            p_cb->p_adv_cb = NULL;
         }
     } else if (p_cb->p_stop_adv_cb && p_cb->adv_mode == BTM_BLE_ADV_DISABLE) {
         p_cb->state = BTM_BLE_STOP_ADV;
         (*p_cb->p_stop_adv_cb)(status);
+        p_cb->p_stop_adv_cb = NULL;
     }else {
         // p_cb->p_adv_cb is NULL or p_cb->p_stop_adv_cb is NULL
         if (p_cb->adv_mode == BTM_BLE_ADV_ENABLE) {
