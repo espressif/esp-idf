@@ -1233,7 +1233,7 @@ void bta_gattc_read_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_OP_CMPL *p_data)
     } else {
         cb_data.read.handle = p_clcb->p_q_cmd->api_read.handle;
     }
-    
+
     if (p_clcb->p_q_cmd->hdr.event != BTA_GATTC_API_READ_MULTI_EVT) {
         event = p_clcb->p_q_cmd->api_read.cmpl_evt;
     } else {
@@ -1625,7 +1625,9 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, BD_ADDR bda, UINT16 conn_id,
 
     if ((transport == BT_TRANSPORT_LE) && (connected == TRUE) && (p_conn != NULL) \
          && (p_conn->service_change_ccc_written == FALSE) && (p_conn->ccc_timer_used == FALSE)) {
+#ifdef CONFIG_BLE_ENABLE_SRVCHG_REG
         result = bta_gattc_register_service_change_notify(conn_id, bda, &start_ccc_timer);
+#endif
         if (start_ccc_timer == TRUE) {
             TIMER_LIST_ENT *ccc_timer = &(p_conn->service_change_ccc_timer);
             /* start a 1000ms timer to wait for service discovery finished */
