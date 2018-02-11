@@ -309,7 +309,7 @@ IRAM_ATTR void *heap_caps_realloc( void *ptr, size_t size, int caps)
     if (new_p != NULL) {
         size_t old_size = multi_heap_get_allocated_size(heap->heap, ptr);
         assert(old_size > 0);
-        memcpy(new_p, ptr, old_size);
+        memcpy(new_p, ptr, MIN(size, old_size));
         heap_caps_free(ptr);
         return new_p;
     }
