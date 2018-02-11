@@ -184,10 +184,10 @@ typedef struct tcpip_adapter_dns_param_s {
     msg.data     = (void*)(_data);\
     msg.api_fn   = (_fn);\
     if (TCPIP_ADAPTER_IPC_REMOTE == tcpip_adapter_ipc_check(&msg)) {\
-        ESP_LOGD(TAG, "check: remote, if=%d fn=%p\n", (_if), (_fn));\
+        ESP_LOGV(TAG, "check: remote, if=%d fn=%p\n", (_if), (_fn));\
         return msg.ret;\
     } else {\
-        ESP_LOGD(TAG, "check: local, if=%d fn=%p\n", (_if), (_fn));\
+        ESP_LOGV(TAG, "check: local, if=%d fn=%p\n", (_if), (_fn));\
     }\
 }while(0)
 
