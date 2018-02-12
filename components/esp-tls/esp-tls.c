@@ -117,6 +117,27 @@ static int create_ssl_handle(struct esp_tls *tls, const char *hostname, size_t h
     SSL_CTX_set_mode(ssl_ctx, SSL_MODE_AUTO_RETRY);
     SSL_CTX_set_mode(ssl_ctx, SSL_MODE_RELEASE_BUFFERS);
 #endif
+
+    if (cfg->cacert_pem_buf != NULL) {
+        SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_PEER, NULL);
+
+        BIO *bio;
+        bio = BIO_new(BIO_s_mem());
+        BIO_write(bio, cfg->cacert_pem_buf, cfg->cacert_pem_bytes);
+
+        X509 *ca = PEM_read_bio_X509(bio, NULL, 0, NULL);
+
+        if (!ca) {
+            ESP_LOGE(TAG, "CA Error\n");                                                                                    
+        }
+        ESP_LOGD(TAG, "CA OK\n");
+            
+        X509_STORE_add_cert(SSL_CTX_get_cert_store(ssl_ctx), ca);
+
+        X509_free(ca);
+        BIO_free(bio);
+    }
+
     if (cfg->alpn_protos) {
 	SSL_CTX_set_alpn_protos(ssl_ctx, cfg->alpn_protos, strlen((char *)cfg->alpn_protos));
     }

@@ -19,6 +19,8 @@ struct esp_tls_cfg {
      * - the subsequent 'h2' is the protocol name
      */
     const unsigned char *alpn_protos;
+    const unsigned char *cacert_pem_buf;
+    const unsigned int cacert_pem_bytes;
 };
 
 struct esp_tls {
