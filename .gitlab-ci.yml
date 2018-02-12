@@ -398,7 +398,9 @@ deploy_docs:
     - tar czvf $GIT_VER.tar.gz $GIT_VER
     - scp $GIT_VER.tar.gz $DOCS_SERVER:$DOCS_PATH/zh_CN
     - ssh $DOCS_SERVER -x "cd $DOCS_PATH/zh_CN && tar xzvf $GIT_VER.tar.gz && rm -f latest && ln -s $GIT_VER latest"
-
+    # add link to preview doc
+    - echo "[document preview][en] $CI_DOCKER_REGISTRY/docs/esp-idf/en/${GIT_VER}/index.html"
+    - echo "[document preview][zh_CN] $CI_DOCKER_REGISTRY/docs/esp-idf/zh_CN/${GIT_VER}/index.html"
 
 check_doc_links:
   stage: test
