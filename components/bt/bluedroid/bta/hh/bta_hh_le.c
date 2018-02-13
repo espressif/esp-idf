@@ -2577,7 +2577,7 @@ void bta_hh_le_get_dscp_act(tBTA_HH_DEV_CB *p_cb)
 **
 ** Function         bta_hh_le_add_dev_bg_conn
 **
-** Description      Remove a LE HID device from back ground connection procedure.
+** Description      Remove a LE HID device from background connection procedure.
 **
 ** Returns          void
 **
@@ -2613,7 +2613,7 @@ static void bta_hh_le_add_dev_bg_conn(tBTA_HH_DEV_CB *p_cb, BOOLEAN check_bond)
 ** Function         bta_hh_le_add_device
 **
 ** Description      Add a LE HID device as a known device, and also add the address
-**                  into back ground connection WL for incoming connection.
+**                  into background connection WL for incoming connection.
 **
 ** Returns          void
 **
@@ -2648,7 +2648,7 @@ UINT8 bta_hh_le_add_device(tBTA_HH_DEV_CB *p_cb, tBTA_HH_MAINT_DEV *p_dev_info)
 **
 ** Function         bta_hh_le_remove_dev_bg_conn
 **
-** Description      Remove a LE HID device from back ground connection procedure.
+** Description      Remove a LE HID device from background connection procedure.
 **
 ** Returns          void
 **

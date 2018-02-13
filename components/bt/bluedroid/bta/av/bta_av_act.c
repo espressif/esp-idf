@@ -1063,7 +1063,7 @@ void bta_av_stream_chg(tBTA_AV_SCB *p_scb, BOOLEAN started)
 **
 ** Function         bta_av_conn_chg
 **
-** Description      connetion status changed.
+** Description      connection status changed.
 **                  Open an AVRCP acceptor channel, if new conn.
 **
 ** Returns          void

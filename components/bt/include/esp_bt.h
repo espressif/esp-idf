@@ -84,7 +84,7 @@ typedef enum {
 
 /**
  * @brief BLE tx power type
- *        ESP_BLE_PWR_TYPE_CONN_HDL0-8: for each connection, and only be set after connetion completed.
+ *        ESP_BLE_PWR_TYPE_CONN_HDL0-8: for each connection, and only be set after connection completed.
  *                                      when disconnect, the correspond TX power is not effected.
  *        ESP_BLE_PWR_TYPE_ADV : for advertising/scan response.
  *        ESP_BLE_PWR_TYPE_SCAN : for scan.

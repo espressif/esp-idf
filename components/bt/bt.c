@@ -97,7 +97,7 @@ typedef struct {
     intptr_t end;
 } btdm_dram_available_region_t;
 
-/* the mode column will be modifid by release function to indicate the available region */
+/* the mode column will be modified by release function to indicate the available region */
 static btdm_dram_available_region_t btdm_dram_available_region[] = {
     //following is .data 
     {ESP_BT_MODE_BTDM,          0x3ffae6e0, 0x3ffaff10},
@@ -402,7 +402,7 @@ esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
         return ESP_ERR_INVALID_STATE;
     }
 
-    //already relesed
+    //already released
     if (!(mode & btdm_dram_available_region[0].mode)) {
         return ESP_ERR_INVALID_STATE;
     }
