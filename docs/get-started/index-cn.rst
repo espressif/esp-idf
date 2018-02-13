@@ -142,7 +142,7 @@ ESP-IDF 将会被下载到 ``~/esp/esp-idf``。
 将 :example:`get-started/hello_world` 拷贝到 ``~/esp`` 目录： ::
 
     cd ~/esp
-    cp -r $IDF_PATH/examples/get-started/hello_world
+    cp -r $IDF_PATH/examples/get-started/hello_world .
 
 ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照上面的方法进行创建。
 
