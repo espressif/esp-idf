@@ -86,7 +86,7 @@
 #define EFUSE_RD_CHIP_VER_REV1_V  0x1
 #define EFUSE_RD_CHIP_VER_REV1_S  15
 /* EFUSE_RD_BLK3_PART_RESERVE : R/W ; bitpos:[14] ; default: 1'b0; */
-/*description: If set, this bit indicates that BLOCK3[143:96] is reserved for calibration purposes and BLOCK1/2/3 uses 3/4 encoding*/
+/*description: If set, this bit indicates that BLOCK3[143:96] is reserved for internal use*/
 #define EFUSE_RD_BLK3_PART_RESERVE  (BIT(14))
 #define EFUSE_RD_BLK3_PART_RESERVE_M  ((EFUSE_RD_BLK3_PART_RESERVE_V)<<(EFUSE_RD_BLK3_PART_RESERVE_S))
 #define EFUSE_RD_BLK3_PART_RESERVE_V  0x1
@@ -336,7 +336,7 @@
 #define EFUSE_CHIP_VER_REV1_V  0x1
 #define EFUSE_CHIP_VER_REV1_S  15
 /* EFUSE_BLK3_PART_RESERVE : R/W ; bitpos:[14] ; default: 1'b0; */
-/*description: If set, this bit indicates that BLOCK3[143:96] is reserved for calibration purposes and BLOCK1/2/3 uses 3/4 encoding*/
+/*description: If set, this bit indicates that BLOCK3[143:96] is reserved for internal use*/
 #define EFUSE_BLK3_PART_RESERVE  (BIT(14))
 #define EFUSE_BLK3_PART_RESERVE_M  ((EFUSE_BLK3_PART_RESERVE_V)<<(EFUSE_BLK3_PART_RESERVE_S))
 #define EFUSE_BLK3_PART_RESERVE_V  0x1

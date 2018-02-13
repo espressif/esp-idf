@@ -99,7 +99,7 @@ The ESP32 ADC can be sensitive to noise leading to large discrepancies in ADC re
 ADC Calibration
 ---------------
 
-The :component_file:`esp_adc_cal/include/esp_adc_cal.h` API provides functions to correct for differences in measured voltages caused by non-ideal ADC reference voltages and non-linear characteristics (only applicable at 11dB attenuation). The ideal ADC reference voltage is 1100mV, however true reference voltages can range from 1000mV to 1200 mV amongst ESP32s.
+The :component_file:`esp_adc_cal/include/esp_adc_cal.h` API provides functions to correct for differences in measured voltages caused by variation of ADC reference voltages (Vref) between chips. Per design the ADC reference voltage is 1100mV, however the true reference voltage can range from 1000mV to 1200mV amongst different ESP32s.
 
 .. figure:: ../../_static/adc-vref-graph.jpg
     :align: center
@@ -107,36 +107,64 @@ The :component_file:`esp_adc_cal/include/esp_adc_cal.h` API provides functions t
     
     Graph illustrating effect of differing reference voltages on the ADC voltage curve.
 
-Correcting ADC readings using this API involves characterizing one of the ADCs at a given attenuation to obtain a characteristics curve (ADC-Voltage curve). The characteristics curve is used to convert ADC readings to voltages in mV. Representation of characteristics curve will differ under **Linear Mode** and **Lookup Table Mode**. Calculation of the characteristics curve is based on calibration values which can be stored in eFuse or provided by the user. 
-
-.. _linear-mode:
-
-Linear Mode
-^^^^^^^^^^^
-
-Linear Mode characterization will generate a linear characteristics curve in the form of ``y = coeff_a * x + coeff_b``. The linear curve will map ADC readings to a voltage in mV. The calibration values which the calculation of ``coeff_a`` and ``coeff_b`` can be based on will be prioritized in the following order
-
-1. Two Point values
-2. eFuse Vref
-3. Default Vref
-
-.. _lut-mode:
-
-Lookup Table Mode
-^^^^^^^^^^^^^^^^^
-
-Lookup Table (LUT) Mode characterization utilizes a LUT to represent an ADC’s characteristics curve. Each LUT consists of a High and Low reference curve which are representative of the characteristic curve of ESP32s with a Vref of 1200mV and 1000mV respectively. Converting an ADC reading to a voltage using a LUT involves interpolating between the High and Low curves based on an ESP32’s true Vref. The true Vref can be read from eFuse (eFuse Vref) or provided by the user (Default Vref) if eFuse Vref is unavailable.
+Correcting ADC readings using this API involves characterizing one of the ADCs at a given attenuation to obtain a characteristics curve (ADC-Voltage curve) that takes into account the difference in ADC reference voltage. The characteristics curve is in the form of ``y = coeff_a * x + coeff_b`` and is used to convert ADC readings to voltages in mV. Calculation of the characteristics curve is based on calibration values which can be stored in eFuse or provided by the user.
 
 Calibration Values
 ^^^^^^^^^^^^^^^^^^
 
-Calibration values are used during the characterization processes, and there are currently three possible types of calibration values. Note the availability of these calibration values will depend on the type of version of the ESP32 chip/module.
+Calibration values are used to generate characteristic curves that account for the unique ADC reference voltage of a particular ESP32. There are currently three sources of calibration values. The availability of these calibration values will depend on the type and production date of the ESP32 chip/module.
 
-The **Two Point** calibration values represent each of the ADCs’ readings at 150mV and 850mV. The values are burned into eFuse during factory calibration and are used in Linear Mode to generate a linear characteristics curve. Note that the Two Point values are only available on some versions of ESP32 chips/modules
+**Two Point** values represent each of the ADCs’ readings at 150mV and 850mV. These values are measured and burned into eFuse ``BLOCK3`` during factory calibration.
 
-The **eFuse Vref** value represents the true reference voltage of the ADCs and can be used in both Linear and LUT modes. This value is measured and burned into eFuse during factory calibration. Note that eFuse Vref is not available on older variations of ESP32 chips/modules
+**eFuse Vref** represents the true ADC reference voltage. This value is measured and burned into eFuse ``BLOCK0`` during factory calibration. 
 
-**Default Vref** is an estimate of the ADC reference voltage provided by the user as a parameter during characterization. If Two Point or eFuse Vref values are unavailable, Default Vref will be used. To obtain an estimate of an ESP32 modules Vref, users can call the function ``adc2_vref_to_gpio()`` to route the ADC refernce voltage to a GPIO and measure it manually.
+**Default Vref** is an estimate of the ADC reference voltage provided by the user as a parameter during characterization. If Two Point or eFuse Vref values are unavailable, **Default Vref** will be used.
+
+Application Example
+^^^^^^^^^^^^^^^^^^^
+
+For a full example see esp-idf: :example:`peripherals/adc`
+
+Characterizing an ADC at a particular attenuation::
+
+    #include "driver/adc.h"
+    #include "esp_adc_cal.h"
+    
+    ...
+    
+        //Characterize ADC at particular atten
+        esp_adc_cal_characteristics_t *adc_chars = calloc(1, sizeof(esp_adc_cal_characteristics_t));
+        esp_adc_cal_value_t val_type = esp_adc_cal_characterize(unit, atten, ADC_WIDTH_BIT_12, DEFAULT_VREF, adc_chars);
+        //Check type of calibration value used to characterize ADC
+        if (val_type == ESP_ADC_CAL_VAL_EFUSE_VREF) {
+            printf("eFuse Vref");
+        } else if (val_type == ESP_ADC_CAL_VAL_EFUSE_TP) {
+            printf("Two Point");
+        } else {
+            printf("Default");
+        }
+
+Reading an ADC then converting the reading to a voltage::
+
+    #include "driver/adc.h"
+    #include "esp_adc_cal.h"
+    
+    ...
+        uint32_t reading =  adc1_get_raw(ADC1_CHANNEL_5);
+        uint32_t voltage = esp_adc_cal_raw_to_voltage(reading, adc_chars);
+        
+Routing ADC reference voltage to GPIO, so it can be manually measured (for **Default Vref**)::
+
+    #include "driver/adc.h"
+    
+    ...
+
+        esp_err_t status = adc2_vref_to_gpio(GPIO_NUM_25);
+        if (status == ESP_OK) {
+            printf("v_ref routed to GPIO\n");
+        } else {
+            printf("failed to route v_ref\n");
+        }
 
 GPIO Lookup Macros
 ------------------
