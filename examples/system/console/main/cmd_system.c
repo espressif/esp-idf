@@ -94,6 +94,7 @@ static int tasks_info(int argc, char** argv)
         ESP_LOGE(__func__, "failed to allocate buffer for vTaskList output");
         return 1;
     }
+    fputs("Task Name\tStatus\tPrio\tHWM\tTask Number\n", stdout);    
     vTaskList(task_list_buffer);
     fputs(task_list_buffer, stdout);
     free(task_list_buffer);
