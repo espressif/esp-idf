@@ -63,7 +63,7 @@ typedef enum {
     ESP_GATTC_UNREG_FOR_NOTIFY_EVT    = 39,       /*!< When unregister for notification of a service completes, the event comes */
     ESP_GATTC_CONNECT_EVT             = 40,       /*!< When the ble physical connection is set up, the event comes */
     ESP_GATTC_DISCONNECT_EVT          = 41,       /*!< When the ble physical connection disconnected, the event comes */
-    ESP_GATTC_READ_MUTIPLE_EVT        = 42,       /*!< When the ble characteristic or descriptor mutiple complete, the event comes */
+    ESP_GATTC_READ_MULTIPLE_EVT       = 42,       /*!< When the ble characteristic or descriptor multiple complete, the event comes */
     ESP_GATTC_QUEUE_FULL_EVT          = 43,       /*!< When the gattc command queue full, the event comes */
 } esp_gattc_cb_event_t;
 
