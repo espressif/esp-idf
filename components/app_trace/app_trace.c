@@ -156,6 +156,7 @@
 // ALSO SEE example usage of application tracing module in 'components/app_trace/README.rst'
 
 #include <string.h>
+#include <sys/param.h>
 #include "soc/soc.h"
 #include "soc/dport_reg.h"
 #include "eri.h"
@@ -583,11 +584,11 @@ static uint8_t *esp_apptrace_trax_down_buffer_get(uint32_t *size, esp_apptrace_t
     while (1) {
         uint32_t sz = esp_apptrace_rb_read_size_get(&s_trace_buf.rb_down);
         if (sz != 0) {
-            ptr = esp_apptrace_rb_consume(&s_trace_buf.rb_down, sz > *size ? *size : sz);
+            *size = MIN(*size, sz);
+            ptr = esp_apptrace_rb_consume(&s_trace_buf.rb_down, *size);
             if (!ptr) {
                 assert(false && "Failed to consume bytes from down buffer!");
             }
-            *size = sz;
             break;
         }
         // may need to flush
