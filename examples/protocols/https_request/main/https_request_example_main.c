@@ -38,15 +38,6 @@
 #include "lwip/netdb.h"
 #include "lwip/dns.h"
 
-#include "mbedtls/platform.h"
-#include "mbedtls/net_sockets.h"
-#include "mbedtls/esp_debug.h"
-#include "mbedtls/ssl.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
-#include "mbedtls/error.h"
-#include "mbedtls/certs.h"
-
 #include "esp-tls.h"
 
 /* The examples use simple WiFi configuration that you can set via
@@ -144,7 +135,7 @@ static void https_get_task(void *pvParameters)
         xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,
                             false, true, portMAX_DELAY);
         ESP_LOGI(TAG, "Connected to AP");
-        struct esp_tls_cfg cfg = {
+        esp_tls_cfg_t cfg = {
             .cacert_pem_buf  = server_root_cert_pem_start,
             .cacert_pem_bytes = server_root_cert_pem_end - server_root_cert_pem_start,
         };
@@ -161,13 +152,13 @@ static void https_get_task(void *pvParameters)
         size_t written_bytes = 0;
         do {
             ret = esp_tls_conn_write(tls, 
-                                     (const char *)REQUEST + written_bytes, 
+                                     REQUEST + written_bytes, 
                                      strlen(REQUEST) - written_bytes);
             if (ret >= 0) {
                 ESP_LOGI(TAG, "%d bytes written", ret);
                 written_bytes += ret;
-            } else if (-ret != SSL_ERROR_WANT_WRITE  && -ret != SSL_ERROR_WANT_READ) {
-                ESP_LOGE(TAG, "esp_tls_conn_write  returned -0x%x", ret);
+            } else if (ret != -SSL_ERROR_WANT_WRITE  && ret != -SSL_ERROR_WANT_READ) {
+                ESP_LOGE(TAG, "esp_tls_conn_write  returned 0x%x", ret);
                 goto exit;
             }
         } while(written_bytes < strlen(REQUEST));
@@ -180,17 +171,12 @@ static void https_get_task(void *pvParameters)
             bzero(buf, sizeof(buf));
             ret = esp_tls_conn_read(tls, (char *)buf, len);
             
-            if(-ret == SSL_ERROR_WANT_WRITE || -ret == SSL_ERROR_WANT_READ)
+            if(ret == -SSL_ERROR_WANT_WRITE || ret == -SSL_ERROR_WANT_READ)
                 continue;
-
-            if(ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
-                ret = 0;
-                break;
-            }
-
+            
             if(ret < 0)
             {
-                ESP_LOGE(TAG, "esp_tls_conn_read  returned -0x%x", ret);
+                ESP_LOGE(TAG, "esp_tls_conn_read  returned 0x%x", ret);
                 break;
             }
 
@@ -209,12 +195,6 @@ static void https_get_task(void *pvParameters)
         } while(1);
 
     exit:
-       if(ret != 0)
-        {
-            mbedtls_strerror(ret, buf, 100);
-            ESP_LOGE(TAG, "Last error was: -0x%x - %s", -ret, buf);
-        }
-
         esp_tls_conn_delete(tls);    
         putchar('\n'); // JSON output doesn't have a newline at end
 
