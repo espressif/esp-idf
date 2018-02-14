@@ -38,7 +38,7 @@
 #include "lwip/netdb.h"
 #include "lwip/dns.h"
 
-#include "esp-tls.h"
+#include "esp_tls.h"
 
 /* The examples use simple WiFi configuration that you can set via
    'make menuconfig'.

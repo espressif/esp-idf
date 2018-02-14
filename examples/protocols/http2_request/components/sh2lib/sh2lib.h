@@ -14,7 +14,7 @@
 #ifndef __ESP_EXAMPLE_SH2_LIB_H_
 #define __ESP_EXAMPLE_SH2_LIB_H_
 
-#include "esp-tls.h"
+#include "esp_tls.h"
 #include <nghttp2/nghttp2.h>
 
 /*
