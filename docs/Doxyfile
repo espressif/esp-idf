@@ -87,6 +87,9 @@ INPUT = \
     ##
     ## Protocols - API Reference
     ##
+    ## ESP-TLS
+    ../../components/esp-tls/esp_tls.h \
+    ## mDNS    
     ../../components/mdns/include/mdns.h \
     ##
     ## Storage - API Reference

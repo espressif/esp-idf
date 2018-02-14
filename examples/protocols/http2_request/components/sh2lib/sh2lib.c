@@ -17,7 +17,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include <ctype.h>
 #include <netdb.h>
 #include <esp_log.h>
@@ -75,7 +74,7 @@ static int do_ssl_connect(struct sh2lib_handle *hd, int sockfd, const char *host
 static ssize_t callback_send_inner(struct sh2lib_handle *hd, const uint8_t *data,
                                    size_t length)
 {
-    int rv = esp_tls_conn_write(hd->http2_tls, (const char *)data, (int)length);
+    int rv = esp_tls_conn_write(hd->http2_tls, data, length);
     if (rv <= 0) {
         if (rv == -SSL_ERROR_WANT_WRITE || rv == -SSL_ERROR_WANT_READ) {
             rv = NGHTTP2_ERR_WOULDBLOCK;
@@ -279,8 +278,10 @@ static int do_http2_connect(struct sh2lib_handle *hd)
 int sh2lib_connect(struct sh2lib_handle *hd, const char *uri)
 {
     memset(hd, 0, sizeof(*hd));
-    struct esp_tls_cfg tls_cfg;
-    tls_cfg.alpn_protos = (unsigned char *) "\x02h2";
+    esp_tls_cfg_t tls_cfg = {
+        .alpn_protos = (unsigned char *) "\x02h2",
+        .non_block = true,
+    };    
     if ((hd->http2_tls = esp_tls_conn_http_new(uri, &tls_cfg)) == NULL) {
         ESP_LOGE(TAG, "[sh2-connect] esp-tls connection failed");
         goto error;
@@ -291,9 +292,6 @@ int sh2lib_connect(struct sh2lib_handle *hd, const char *uri)
         ESP_LOGE(TAG, "[sh2-connect] HTTP2 Connection failed with %s", uri);
         goto error;
     }
-
-    int flags = fcntl(hd->http2_tls->sockfd, F_GETFL, 0);
-    fcntl(hd->http2_tls->sockfd, F_SETFL, flags | O_NONBLOCK);
 
     return 0;
 error:
