@@ -20,7 +20,6 @@
 #include <ctype.h>
 #include <netdb.h>
 #include <esp_log.h>
-#include <esp-tls.h>
 
 #include "sh2lib.h"
 
