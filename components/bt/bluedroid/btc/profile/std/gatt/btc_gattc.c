@@ -631,7 +631,7 @@ static void btc_gattc_prepare_write_char_descr(btc_ble_gattc_args_t *arg)
                                     arg->prep_write_descr.auth_req);
 }
 
-static void btc_gattc_execute_wrtie(btc_ble_gattc_args_t *arg)
+static void btc_gattc_execute_write(btc_ble_gattc_args_t *arg)
 {
     BTA_GATTC_ExecuteWrite(arg->exec_write.conn_id, arg->exec_write.is_execute);
 }
@@ -711,7 +711,7 @@ void btc_gattc_call_handler(btc_msg_t *msg)
         btc_gattc_prepare_write_char_descr(arg);
         break;
     case BTC_GATTC_ACT_EXECUTE_WRITE:
-        btc_gattc_execute_wrtie(arg);
+        btc_gattc_execute_write(arg);
         break;
     case BTC_GATTC_ACT_REG_FOR_NOTIFY:
         btc_gattc_reg_for_notify(arg);
