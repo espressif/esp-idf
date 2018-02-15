@@ -61,6 +61,7 @@
 #include "esp_panic.h"
 #include "esp_core_dump.h"
 #include "esp_app_trace.h"
+#include "esp_dbg_stubs.h"
 #include "esp_efuse.h"
 #include "esp_spiram.h"
 #include "esp_clk_internal.h"
@@ -332,6 +333,9 @@ void start_cpu0_default(void)
 #endif
 #if CONFIG_SYSVIEW_ENABLE
     SEGGER_SYSVIEW_Conf();
+#endif
+#if CONFIG_ESP32_DEBUG_STUBS_ENABLE
+    esp_dbg_stubs_init();
 #endif
     err = esp_pthread_init();
     assert(err == ESP_OK && "Failed to init pthread module!");
