@@ -511,6 +511,13 @@ config ESP32_DEBUG_OCDAWARE
         The FreeRTOS panic and unhandled exception handers can detect a JTAG OCD debugger and
         instead of panicking, have the debugger stop on the offending instruction.
 
+config ESP32_DEBUG_STUBS_ENABLE
+    bool "OpenOCD debug stubs"
+    default OPTIMIZATION_LEVEL_DEBUG    
+    depends on !ESP32_TRAX
+    help
+        Debug stubs are used by OpenOCD to execute pre-compiled onboard code which does some useful debugging, 
+        e.g. GCOV data dump.
 
 config INT_WDT
     bool "Interrupt watchdog"
