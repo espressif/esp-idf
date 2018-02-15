@@ -2,6 +2,12 @@
 
 include(crosstool_version_check)
 
+#
+# Set some variables used by rest of the build
+#
+# Note at the time this macro is expanded, the config is not yet
+# loaded and the toolchain and project are not yet set
+#
 macro(idf_set_global_variables)
   # Note that CONFIG_xxx is not available when this function is called
 
@@ -21,9 +27,6 @@ macro(idf_set_global_variables)
 
   # Tell cmake to drop executables in the top-level build dir
   set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
-
-  # cmake cross-toolchain doesn't include any gcc binutils names
-  set(CMAKE_OBJCOPY xtensa-esp32-elf-objcopy)
 
   # path to idf.py tool
   set(IDFTOOL ${PYTHON} "${IDF_PATH}/tools/idf.py")
@@ -93,20 +96,18 @@ endfunction(idf_set_global_compiler_options)
 function(idf_verify_environment)
 
   if(NOT CMAKE_PROJECT_NAME)
-    message(FATAL_ERROR "Project top-level CMakeLists.txt file must call project() before including project.cmake")
+    message(FATAL_ERROR "Internal error, IDF project.cmake should have set this variable already")
   endif()
 
   # Check toolchain is configured properly in cmake
   if(NOT ( ${CMAKE_SYSTEM_NAME} STREQUAL "Generic" AND ${CMAKE_C_COMPILER} MATCHES xtensa))
-    message(FATAL_ERROR "Project top-level CMakeLists.txt file needs to set CMAKE_TOOLCHAIN_FILE "
-      "before including project.cmake.\n"
-      "Update CMakeLists.txt to match the template project and delete CMakeCache.txt before "
-      "re-running cmake.")
+    message(FATAL_ERROR "Internal error, toolchain has not been set correctly by project")
   endif()
 
   #
   # Warn if the toolchain version doesn't match
   #
+  # TODO: make these platform-specific for diff toolchains
   gcc_version_check("5.2.0")
   crosstool_version_check("1.22.0-80-g6c4433a")
 

@@ -24,55 +24,79 @@ include(idf_functions)
 
 set_default(PYTHON "python")
 
-# Verify the environment is configured correctly
-idf_verify_environment()
-
-# Set global variables used by rest of the build
-idf_set_global_variables()
-
-# Search COMPONENT_DIRS for COMPONENTS, make a list of full paths to each component in COMPONENT_PATHS
-components_find_all("${COMPONENT_DIRS}" "${COMPONENTS}" COMPONENT_PATHS COMPONENTS)
-
-kconfig_set_variables()
-
-kconfig_process_config()
-
-# Include sdkconfig.cmake so rest of the build knows the configuration
-include(${SDKCONFIG_CMAKE})
-
-# Add some idf-wide definitions
-idf_set_global_compiler_options()
-
-# Check git version (may trigger reruns of cmake)
-# & set GIT_REVISION/IDF_VER variable
-git_describe(GIT_REVISION)
-add_definitions(-DIDF_VER=\"${GIT_REVISION}\")
-git_submodule_check("${IDF_PATH}")
-
-# Include any top-level project_include.cmake files from components
-foreach(component ${COMPONENT_PATHS})
-  include_if_exists("${component}/project_include.cmake")
-endforeach()
-
+# project
 #
-# Add each component to the build as a library
+# This macro wraps the cmake 'project' command to add
+# all of the IDF-specific functionality required
 #
-foreach(component ${COMPONENT_PATHS})
-  get_filename_component(component_name ${component} NAME)
-  add_subdirectory(${component} ${component_name})
-endforeach()
+# Implementation Note: This macro wraps 'project' on purpose, because cmake has some
+# backwards-compatible magic where if you don't call "project" in the top-level
+# CMakeLists file, it will call it implicitly. However, the implict project will not
+# have CMAKE_TOOLCHAIN_FILE set and therefore tries to create a native build project.
+#
+# Therefore, to keep all the IDF "build magic", the cleanest way is to keep the
+# top-level "project" call but customize it to do what we want in the IDF build...
+#
+macro(project name)
+  # Set global variables used by rest of the build
+  idf_set_global_variables()
 
-#
-# Add the app executable to the build (has name of PROJECT.elf)
-#
-idf_add_executable()
+  # Search COMPONENT_DIRS for COMPONENTS, make a list of full paths to each component in COMPONENT_PATHS
+  components_find_all("${COMPONENT_DIRS}" "${COMPONENTS}" COMPONENT_PATHS COMPONENTS)
 
-# Write project description JSON file
-configure_file("${CMAKE_CURRENT_LIST_DIR}/project_description.json.in"
-  "${CMAKE_BINARY_DIR}/project_description.json")
+  kconfig_set_variables()
 
-#
-# Finish component registration (add cross-dependencies, make
-# executable dependent on all components)
-#
-components_finish_registration()
+  kconfig_process_config()
+
+  # Include sdkconfig.cmake so rest of the build knows the configuration
+  include(${SDKCONFIG_CMAKE})
+
+  # Now the configuration is loaded, set the toolchain appropriately
+  #
+  # TODO: support more toolchains than just ESP32
+  set(CMAKE_TOOLCHAIN_FILE $ENV{IDF_PATH}/tools/cmake/toolchain-esp32.cmake)
+
+  # Declare the actual cmake-level project
+  _project(${name} ASM C CXX)
+
+  # Verify the environment is configured correctly
+  idf_verify_environment()
+
+  # Add some idf-wide definitions
+  idf_set_global_compiler_options()
+
+  # Check git version (may trigger reruns of cmake)
+  # & set GIT_REVISION/IDF_VER variable
+  git_describe(GIT_REVISION)
+  add_definitions(-DIDF_VER=\"${GIT_REVISION}\")
+  git_submodule_check("${IDF_PATH}")
+
+  # Include any top-level project_include.cmake files from components
+  foreach(component ${COMPONENT_PATHS})
+    include_if_exists("${component}/project_include.cmake")
+  endforeach()
+
+  #
+  # Add each component to the build as a library
+  #
+  foreach(component ${COMPONENT_PATHS})
+    get_filename_component(component_name ${component} NAME)
+    add_subdirectory(${component} ${component_name})
+  endforeach()
+
+  #
+  # Add the app executable to the build (has name of PROJECT.elf)
+  #
+  idf_add_executable()
+
+  # Write project description JSON file
+  configure_file("${IDF_PATH}/tools/cmake/project_description.json.in"
+    "${CMAKE_BINARY_DIR}/project_description.json")
+
+  #
+  # Finish component registration (add cross-dependencies, make
+  # executable dependent on all components)
+  #
+  components_finish_registration()
+
+endmacro(project)

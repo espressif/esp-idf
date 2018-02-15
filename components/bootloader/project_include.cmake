@@ -1,4 +1,4 @@
-if(IS_BOOTLOADER_BUILD)
+if(BOOTLOADER_BUILD)
   return()  # don't keep recursing!
 endif()
 
