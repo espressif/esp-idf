@@ -138,7 +138,8 @@ typedef struct {
     int                     intr_alloc_flags;       /*!< Flags used to allocate the interrupt. One or multiple (ORred) ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info */
     int                     dma_buf_count;          /*!< I2S DMA Buffer Count */
     int                     dma_buf_len;            /*!< I2S DMA Buffer Length */
-    int                     use_apll;               /*!< I2S using APLL as main I2S clock, enable it to get accurate clock */
+    bool                    use_apll;              /*!< I2S using APLL as main I2S clock, enable it to get accurate clock */
+    int                     fixed_mclk;             /*!< I2S using fixed MCLK output. If use_apll = true and fixed_mclk > 0, then the clock output for i2s is fixed and equal to the fixed_mclk value.*/
 } i2s_config_t;
 
 /**
@@ -391,7 +392,7 @@ esp_err_t i2s_zero_dma_buffer(i2s_port_t i2s_num);
 
 /**
  * @brief Set clock & bit width used for I2S RX and TX.
- * 
+ *
  * Similar to i2s_set_sample_rates(), but also sets bit width.
  *
  * @param i2s_num  I2S_NUM_0, I2S_NUM_1
@@ -401,7 +402,7 @@ esp_err_t i2s_zero_dma_buffer(i2s_port_t i2s_num);
  * @param bits I2S bit width (I2S_BITS_PER_SAMPLE_16BIT, I2S_BITS_PER_SAMPLE_24BIT, I2S_BITS_PER_SAMPLE_32BIT)
  *
  * @param ch I2S channel, (I2S_CHANNEL_MONO, I2S_CHANNEL_STEREO)
- * 
+ *
  * @return
  *     - ESP_OK   Success
  *     - ESP_FAIL Parameter error
