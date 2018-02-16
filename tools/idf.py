@@ -31,6 +31,12 @@ import re
 import shutil
 import json
 
+class FatalError(RuntimeError):
+    """
+    Wrapper class for runtime errors that aren't caused by bugs in idf.py or the build proces.s
+    """
+    pass
+
 # Use this Python interpreter for any subprocesses we launch
 PYTHON=sys.executable
 
@@ -56,6 +62,22 @@ GENERATORS = [
     ]
 GENERATOR_CMDS = dict( (a[0], a[1]) for a in GENERATORS )
 
+def _run_tool(tool_name, args, cwd):
+    def quote_arg(arg):
+        " Quote 'arg' if necessary "
+        if " " in arg and not (arg.startswith('"') or arg.startswith("'")):
+            return "'" + arg + "'"
+        return arg
+    display_args = " ".join(quote_arg(arg) for arg in args)
+    print("Running %s in directory %s" % (tool_name, quote_arg(cwd)))
+    print('Executing "%s"...' % display_args)
+    try:
+        # Note: we explicitly pass in os.environ here, as we may have set IDF_PATH there during startup
+        subprocess.check_call(args, env=os.environ, cwd=cwd)
+    except subprocess.CalledProcessError as e:
+        raise FatalError("%s failed with exit code %d" % (tool_name, e.returncode))
+
+
 def check_environment():
     """
     Verify the environment contains the top-level tools we need to operate
@@ -63,7 +85,7 @@ def check_environment():
     (cmake will check a lot of other things)
     """
     if not executable_exists(["cmake", "--version"]):
-        raise RuntimeError("'cmake' must be available on the PATH to use idf.py")
+        raise FatalError("'cmake' must be available on the PATH to use idf.py")
     # find the directory idf.py is in, then the parent directory of this, and assume this is IDF_PATH
     detected_idf_path = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
     if "IDF_PATH" in os.environ:
@@ -88,7 +110,7 @@ def detect_cmake_generator():
     for (generator, _, version_check) in GENERATORS:
         if executable_exists(version_check):
             return generator
-    raise RuntimeError("To use idf.py, either the 'ninja' or 'GNU make' build tool must be available in the PATH")
+    raise FatalError("To use idf.py, either the 'ninja' or 'GNU make' build tool must be available in the PATH")
 
 def _ensure_build_directory(args):
     """Check the build directory exists and that cmake has been run there.
@@ -104,11 +126,11 @@ def _ensure_build_directory(args):
     # Verify the project directory
     if not os.path.isdir(project_dir):
         if not os.path.exists(project_dir):
-            raise RuntimeError("Project directory %s does not exist")
+            raise FatalError("Project directory %s does not exist")
         else:
-            raise RuntimeError("%s must be a project directory")
+            raise FatalError("%s must be a project directory")
     if not os.path.exists(os.path.join(project_dir, "CMakeLists.txt")):
-        raise RuntimeError("CMakeLists.txt not found in project directory %s" % project_dir)
+        raise FatalError("CMakeLists.txt not found in project directory %s" % project_dir)
 
     # Verify/create the build directory
     build_dir = args.build_dir
@@ -118,12 +140,12 @@ def _ensure_build_directory(args):
     if not os.path.exists(cache_path):
         if args.generator is None:
             args.generator = detect_cmake_generator()
-        print("Running cmake...")
-        # Note: we explicitly pass in os.environ here, as we may have set IDF_PATH there during startup
         try:
-            subprocess.check_call(["cmake", "-G", args.generator, project_dir], env=os.environ, cwd=args.build_dir)
+            _run_tool("cmake", ["cmake", "-G", args.generator, project_dir], cwd=args.build_dir)
         except:
-            if os.path.exists(cache_path):  # don't allow partial CMakeCache.txt files, to keep the "should I run cmake?" logic simple
+            # don't allow partially valid CMakeCache.txt files,
+            # to keep the "should I run cmake?" logic simple
+            if os.path.exists(cache_path):
                 os.remove(cache_path)
             raise
 
@@ -136,13 +158,13 @@ def _ensure_build_directory(args):
     if args.generator is None:
         args.generator = generator  # reuse the previously configured generator, if none was given
     if generator != args.generator:
-        raise RuntimeError("Build is configured for generator '%s' not '%s'. Run 'idf.py fullclean' to start again."
+        raise FatalError("Build is configured for generator '%s' not '%s'. Run 'idf.py fullclean' to start again."
                            % (generator, args.generator))
 
     try:
         home_dir = cache["CMAKE_HOME_DIRECTORY"]
         if os.path.realpath(home_dir) != os.path.realpath(project_dir):
-            raise RuntimeError("Build directory '%s' configured for project '%s' not '%s'. Run 'idf.py fullclean' to start again."
+            raise FatalError("Build directory '%s' configured for project '%s' not '%s'. Run 'idf.py fullclean' to start again."
                             % (build_dir, os.path.realpath(home_dir), os.path.realpath(project_dir)))
     except KeyError:
         pass  # if cmake failed part way, CMAKE_HOME_DIRECTORY may not be set yet
@@ -175,8 +197,8 @@ def build_target(target_name, args):
     """
     _ensure_build_directory(args)
     generator_cmd = GENERATOR_CMDS[args.generator]
-    print("Running '%s %s' in %s..." % (generator_cmd, target_name, args.build_dir))
-    subprocess.check_call(generator_cmd + [target_name], cwd=args.build_dir)
+    _run_tool(generator_cmd[0], generator_cmd + [target_name], args.build_dir)
+
 
 def _get_esptool_args(args):
     esptool_path = os.path.join(os.environ["IDF_PATH"], "components/esptool_py/esptool/esptool.py")
@@ -190,7 +212,7 @@ def flash(action, args):
     """
     Run esptool to flash the entire project, from an argfile generated by the build system
     """
-    flasher_args_path = {
+    flasher_args_path = {  # action -> name of flasher args file generated by build system
         "bootloader-flash":      "flash_bootloader_args",
         "partition_table-flash": "flash_partition_table_args",
         "app-flash":             "flash_app_args",
@@ -198,12 +220,14 @@ def flash(action, args):
     }[action]
     esptool_args = _get_esptool_args(args)
     esptool_args += [ "write_flash", "@"+flasher_args_path ]
-    subprocess.check_call(esptool_args, cwd=args.build_dir)
+    _run_tool("esptool.py", esptool_args, args.build_dir)
+
 
 def erase_flash(action, args):
     esptool_args = _get_esptool_args(args)
     esptool_args += [ "erase_flash" ]
-    subprocess.check_call(esptool_args, cwd=args.build_dir)
+    _run_tool("esptool.py", esptool_args, args.build_dir)
+
 
 def monitor(action, args):
     """
@@ -217,14 +241,15 @@ def monitor(action, args):
 
     elf_file = os.path.join(args.build_dir, project_desc["app_elf"])
     if not os.path.exists(elf_file):
-        raise RuntimeError("ELF file '%s' not found. You need to build & flash the project before running 'monitor', and the binary on the device must match the one in the build directory exactly. Try 'idf.py flash monitor'." % elf_file)
+        raise FatalError("ELF file '%s' not found. You need to build & flash the project before running 'monitor', and the binary on the device must match the one in the build directory exactly. Try 'idf.py flash monitor'." % elf_file)
     idf_monitor = os.path.join(os.environ["IDF_PATH"], "tools/idf_monitor.py")
     monitor_args = [PYTHON, idf_monitor ]
     if args.port is not None:
         monitor_args += [ "-p", args.port ]
     monitor_args += [ "-b", project_desc["monitor_baud"] ]
     monitor_args += [ elf_file ]
-    subprocess.check_call(monitor_args, cwd=args.build_dir)
+    _run_tool("idf_monitor", monitor_args, args.build_dir)
+
 
 def clean(action, args):
     if not os.path.isdir(args.build_dir):
@@ -242,12 +267,12 @@ def fullclean(action, args):
         return
 
     if not os.path.exists(os.path.join(build_dir, "CMakeCache.txt")):
-        raise RuntimeError("Directory '%s' doesn't seem to be a CMake build directory. Refusing to automatically delete files in this directory. Delete the directory manually to 'clean' it." % build_dir)
+        raise FatalError("Directory '%s' doesn't seem to be a CMake build directory. Refusing to automatically delete files in this directory. Delete the directory manually to 'clean' it." % build_dir)
     red_flags = [ "CMakeLists.txt", ".git", ".svn" ]
     for red in red_flags:
         red = os.path.join(build_dir, red)
         if os.path.exists(red):
-            raise RuntimeError("Refusing to automatically delete files in directory containing '%s'. Delete files manually if you're sure." % red)
+            raise FatalError("Refusing to automatically delete files in directory containing '%s'. Delete files manually if you're sure." % red)
     # OK, delete everything in the build directory...
     for f in os.listdir(build_dir):  # TODO: once we are Python 3 only, this can be os.scandir()
         f = os.path.join(build_dir, f)
@@ -295,7 +320,7 @@ def main():
 
     # Advanced parameter checks
     if args.build_dir is not None and os.path.realpath(args.project_dir) == os.path.realpath(args.build_dir):
-        raise RuntimeError("Setting the build directory to the project directory is not supported. Suggest dropping --build-dir option, the default is a 'build' subdirectory inside the project directory.")
+        raise FatalError("Setting the build directory to the project directory is not supported. Suggest dropping --build-dir option, the default is a 'build' subdirectory inside the project directory.")
     if args.build_dir is None:
         args.build_dir = os.path.join(args.project_dir, "build")
     args.build_dir = os.path.realpath(args.build_dir)
@@ -327,5 +352,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except FatalError as e:
+        print(e)
+        sys.exit(2)
+
 
