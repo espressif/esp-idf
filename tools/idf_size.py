@@ -23,6 +23,7 @@
 import argparse, sys, subprocess, re
 import os.path
 import pprint
+import operator
 
 DEFAULT_TOOLCHAIN_PREFIX = "xtensa-esp32-elf-"
 
@@ -204,27 +205,30 @@ def print_detailed_sizes(sections, key, header):
                 "& rodata",
                 "Total")
     print("%24s %10s %6s %6s %10s %8s %7s" % headings)
-    for k in sorted(sizes.keys()):
+    result = {}
+    for k in (sizes.keys()):
         v = sizes[k]
+        result[k] = {}
+        result[k]["data"] = v.get(".dram0.data", 0)
+        result[k]["bss"] = v.get(".dram0.bss", 0)
+        result[k]["iram"] = sum(t for (s,t) in v.items() if s.startswith(".iram0"))
+        result[k]["flash_text"] = v.get(".flash.text", 0)
+        result[k]["flash_rodata"] = v.get(".flash.rodata", 0)
+        result[k]["total"] = sum(result[k].values())
+
+    def return_total_size(elem):
+        val = elem[1]
+        return val["total"]
+    for k,v in sorted(result.items(), key=return_total_size, reverse=True):
         if ":" in k:  # print subheadings for key of format archive:file
             sh,k = k.split(":")
-            if sh != sub_heading:
-                print(sh)
-                sub_heading = sh
-
-        data = v.get(".dram0.data", 0)
-        bss = v.get(".dram0.bss", 0)
-        iram = sum(t for (s,t) in v.items() if s.startswith(".iram0"))
-        flash_text = v.get(".flash.text", 0)
-        flash_rodata = v.get(".flash.rodata", 0)
-        total = data + bss + iram + flash_text + flash_rodata
         print("%24s %10d %6d %6d %10d %8d %7d" % (k[:24],
-                                                   data,
-                                                   bss,
-                                                   iram,
-                                                   flash_text,
-                                                   flash_rodata,
-                                                   total))
+                                                  v["data"],
+                                                  v["bss"],
+                                                  v["iram"],
+                                                  v["flash_text"],
+                                                  v["flash_rodata"],
+                                                  v["total"]))
 
 if __name__ == "__main__":
     main()
