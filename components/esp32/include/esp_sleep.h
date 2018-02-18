@@ -54,12 +54,12 @@ typedef enum {
  * @brief Sleep wakeup cause
  */
 typedef enum {
-    ESP_SLEEP_WAKEUP_UNDEFINED,    //! In case of deep sleep, reset was not caused by exit from deep sleep
-    ESP_SLEEP_WAKEUP_EXT0,         //! Wakeup caused by external signal using RTC_IO
-    ESP_SLEEP_WAKEUP_EXT1,         //! Wakeup caused by external signal using RTC_CNTL
-    ESP_SLEEP_WAKEUP_TIMER,        //! Wakeup caused by timer
-    ESP_SLEEP_WAKEUP_TOUCHPAD,     //! Wakeup caused by touchpad
-    ESP_SLEEP_WAKEUP_ULP,          //! Wakeup caused by ULP program
+    ESP_SLEEP_WAKEUP_UNDEFINED,    //!< In case of deep sleep, reset was not caused by exit from deep sleep
+    ESP_SLEEP_WAKEUP_EXT0,         //!< Wakeup caused by external signal using RTC_IO
+    ESP_SLEEP_WAKEUP_EXT1,         //!< Wakeup caused by external signal using RTC_CNTL
+    ESP_SLEEP_WAKEUP_TIMER,        //!< Wakeup caused by timer
+    ESP_SLEEP_WAKEUP_TOUCHPAD,     //!< Wakeup caused by touchpad
+    ESP_SLEEP_WAKEUP_ULP,          //!< Wakeup caused by ULP program
 } esp_sleep_wakeup_cause_t;
 
 
