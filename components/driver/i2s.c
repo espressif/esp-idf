@@ -185,7 +185,7 @@ esp_err_t i2s_enable_tx_intr(i2s_port_t i2s_num)
     return ESP_OK;
 }
 
-static esp_err_t i2s_isr_register(i2s_port_t i2s_num, uint8_t intr_alloc_flags, void (*fn)(void*), void * arg, i2s_isr_handle_t *handle)
+static esp_err_t i2s_isr_register(i2s_port_t i2s_num, int intr_alloc_flags, void (*fn)(void*), void * arg, i2s_isr_handle_t *handle)
 {
     return esp_intr_alloc(ETS_I2S0_INTR_SOURCE + i2s_num, intr_alloc_flags, fn, arg, handle);
 }
