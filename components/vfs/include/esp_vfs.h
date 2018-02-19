@@ -18,11 +18,15 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include "esp_err.h"
 #include <sys/types.h>
 #include <sys/reent.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <dirent.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,20 +47,9 @@ extern "C" {
  */
 #define ESP_VFS_FLAG_CONTEXT_PTR    1
 
-/**
- * Flag which indicates that the FD space of the VFS implementation should be made
- * the same as the FD space in newlib. This means that the normal masking off
- * of VFS-independent fd bits is ignored and the full user-facing fd is passed to
- * the VFS implementation.
- *
- * Set the p_minimum_fd & p_maximum_fd pointers when registering the socket in
- * order to know what range of FDs can be used with the registered VFS.
- *
- * This is mostly useful for LWIP which shares the socket FD space with
- * socket-specific functions.
- *
- */
-#define ESP_VFS_FLAG_SHARED_FD_SPACE   2
+#if (FD_SETSIZE < CONFIG_LWIP_MAX_SOCKETS)
+#error "FD_SETSIZE < CONFIG_LWIP_MAX_SOCKETS"
+#endif
 
 /**
  * @brief VFS definition structure
@@ -81,7 +74,7 @@ extern "C" {
  */
 typedef struct
 {
-    int flags;      /*!< ESP_VFS_FLAG_CONTEXT_PTR or ESP_VFS_FLAG_DEFAULT, plus optionally ESP_VFS_FLAG_SHARED_FD_SPACE  */
+    int flags;      /*!< ESP_VFS_FLAG_CONTEXT_PTR or ESP_VFS_FLAG_DEFAULT */
     union {
         ssize_t (*write_p)(void* p, int fd, const void * data, size_t size);
         ssize_t (*write)(int fd, const void * data, size_t size);
@@ -166,6 +159,12 @@ typedef struct
         int (*fsync_p)(void* ctx, int fd);
         int (*fsync)(int fd);
     };
+    /** start_select is called for setting up synchronous I/O multiplexing of the desired file descriptors in the given VFS */
+    esp_err_t (*start_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, void *callback_handle);
+    /** socket select function for socket FDs with similar functionality to POSIX select(); this should be set only for the socket VFS */
+    int (*socket_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout);
+    /** end_select is called to stop the I/O multiplexing and deinitialize the environment created by start_select for the given VFS */
+    void (*end_select)();
 } esp_vfs_t;
 
 
@@ -199,8 +198,8 @@ esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ct
  *
  * @param vfs  Pointer to esp_vfs_t. Meaning is the same as for esp_vfs_register().
  * @param ctx Pointer to context structure. Meaning is the same as for esp_vfs_register().
- * @param p_min_fd If non-NULL, on success this variable is written with the minimum (global/user-facing) FD that this VFS will use. This is useful when ESP_VFS_FLAG_SHARED_FD_SPACE is set in vfs->flags.
- * @param p_max_fd If non-NULL, on success this variable is written with one higher than the maximum (global/user-facing) FD that this VFS will use. This is useful when ESP_VFS_FLAG_SHARED_FD_SPACE is set in vfs->flags.
+ * @param p_min_fd If non-NULL, on success this variable is written with the minimum (global/user-facing) FD that this VFS will use.
+ * @param p_max_fd If non-NULL, on success this variable is written with one higher than the maximum (global/user-facing) FD that this VFS will use.
  *
  * @return  ESP_OK if successful, ESP_ERR_NO_MEM if too many VFSes are
  *          registered.
@@ -233,10 +232,55 @@ int esp_vfs_unlink(struct _reent *r, const char *path);
 int esp_vfs_rename(struct _reent *r, const char *src, const char *dst);
 /**@}*/
 
+/**
+ * @brief Synchronous I/O multiplexing which implements the functionality of POSIX select() for VFS
+ * @param nfds      Specifies the range of descriptors which should be checked.
+ *                  The first nfds descriptors will be checked in each set.
+ * @param readfds   If not NULL, then points to a descriptor set that on input
+ *                  specifies which descriptors should be checked for being
+ *                  ready to read, and on output indicates which descriptors
+ *                  are ready to read.
+ * @param writefds  If not NULL, then points to a descriptor set that on input
+ *                  specifies which descriptors should be checked for being
+ *                  ready to write, and on output indicates which descriptors
+ *                  are ready to write.
+ * @param errorfds  If not NULL, then points to a descriptor set that on input
+ *                  specifies which descriptors should be checked for error
+ *                  conditions, and on output indicates which descriptors
+ *                  have error conditions.
+ * @param timeout   If not NULL, then points to timeval structure which
+ *                  specifies the time period after which the functions should
+ *                  time-out and return. If it is NULL, then the function will
+ *                  not time-out.
+ *
+ * @return      The number of descriptors set in the descriptor sets, or -1
+ *              when an error (specified by errno) have occurred.
+ */
+int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout);
+
+/**
+ * @brief Notification from a VFS driver about a read/write/error condition
+ *
+ * This function is called when the VFS driver detects a read/write/error
+ * condition as it was requested by the previous call to start_select.
+ *
+ * @param callback_handle Callback handle which was provided by start_select.
+ */
+void esp_vfs_select_triggered(void *callback_handle);
+
+/**
+ * @brief Notification from a VFS driver about a read/write/error condition (ISR version)
+ *
+ * This function is called when the VFS driver detects a read/write/error
+ * condition as it was requested by the previous call to start_select.
+ *
+ * @param callback_handle Callback handle which was provided by start_select.
+ * @param woken should be set to pdTRUE if the function wakes up a task with higher priority
+ */
+void esp_vfs_select_triggered_isr(void *callback_handle, BaseType_t *woken);
 
 #ifdef __cplusplus
 } // extern "C"
 #endif
-
 
 #endif //__ESP_VFS_H__

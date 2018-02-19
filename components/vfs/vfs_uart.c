@@ -24,6 +24,7 @@
 #include "soc/uart_struct.h"
 #include "driver/uart.h"
 #include "sdkconfig.h"
+#include "driver/uart_select.h"
 
 // TODO: make the number of UARTs chip dependent
 #define UART_NUM 3
@@ -55,6 +56,14 @@ static int s_peek_char[UART_NUM] = { NONE, NONE, NONE };
 // flag, all reads are non-blocking. This option becomes effective if UART
 // driver is used.
 static bool s_non_blocking[UART_NUM];
+
+static fd_set *_readfds = NULL;
+static fd_set *_writefds = NULL;
+static fd_set *_errorfds = NULL;
+static fd_set *_readfds_orig = NULL;
+static fd_set *_writefds_orig = NULL;
+static fd_set *_errorfds_orig = NULL;
+static void *_vfs_callback_handle = NULL;
 
 // Newline conversion mode when transmitting
 static esp_line_endings_t s_tx_mode =
@@ -267,6 +276,111 @@ static int uart_fcntl(int fd, int cmd, va_list args)
     return result;
 }
 
+static void select_notif_callback(uart_port_t uart_num, uart_select_notif_t uart_select_notif, BaseType_t *task_woken)
+{
+    switch (uart_select_notif) {
+        case UART_SELECT_READ_NOTIF:
+            if (FD_ISSET(uart_num, _readfds_orig)) {
+                FD_SET(uart_num, _readfds);
+                esp_vfs_select_triggered_isr(_vfs_callback_handle, task_woken);
+            }
+            break;
+        case UART_SELECT_WRITE_NOTIF:
+            if (FD_ISSET(uart_num, _writefds_orig)) {
+                FD_SET(uart_num, _writefds);
+                esp_vfs_select_triggered_isr(_vfs_callback_handle, task_woken);
+            }
+            break;
+        case UART_SELECT_ERROR_NOTIF:
+            if (FD_ISSET(uart_num, _errorfds_orig)) {
+                FD_SET(uart_num, _errorfds);
+                esp_vfs_select_triggered_isr(_vfs_callback_handle, task_woken);
+            }
+            break;
+    }
+}
+
+static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, void *callback_handle)
+{
+    const int max_fds = nfds < UART_NUM ? nfds : UART_NUM;
+
+    taskENTER_CRITICAL(uart_get_selectlock());
+
+    if (_readfds || _writefds || _errorfds || _readfds_orig || _writefds_orig || _errorfds_orig) {
+        taskEXIT_CRITICAL(uart_get_selectlock());
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if ((_readfds_orig = malloc(sizeof(fd_set))) == NULL) {
+        taskEXIT_CRITICAL(uart_get_selectlock());
+        return ESP_ERR_NO_MEM;
+    }
+
+    if ((_writefds_orig = malloc(sizeof(fd_set))) == NULL) {
+        taskEXIT_CRITICAL(uart_get_selectlock());
+        return ESP_ERR_NO_MEM;
+    }
+
+    if ((_errorfds_orig = malloc(sizeof(fd_set))) == NULL) {
+        taskEXIT_CRITICAL(uart_get_selectlock());
+        return ESP_ERR_NO_MEM;
+    }
+
+    _vfs_callback_handle = callback_handle;
+
+    //uart_set_select_notif_callback set the callbacks in UART ISR
+    for (int i = 0; i < max_fds; ++i) {
+        if (FD_ISSET(i, readfds) || FD_ISSET(i, writefds) || FD_ISSET(i, exceptfds)) {
+            uart_set_select_notif_callback(i, select_notif_callback);
+        }
+    }
+
+    _readfds = readfds;
+    _writefds = writefds;
+    _errorfds = exceptfds;
+
+    *_readfds_orig = *readfds;
+    *_writefds_orig = *writefds;
+    *_errorfds_orig = *exceptfds;
+
+    FD_ZERO(readfds);
+    FD_ZERO(writefds);
+    FD_ZERO(exceptfds);
+
+    taskEXIT_CRITICAL(uart_get_selectlock());
+
+    return ESP_OK;
+}
+
+static void uart_end_select()
+{
+    taskENTER_CRITICAL(uart_get_selectlock());
+    _vfs_callback_handle = NULL;
+    for (int i = 0; i < UART_NUM; ++i) {
+        uart_set_select_notif_callback(i, NULL);
+    }
+
+    _readfds = NULL;
+    _writefds = NULL;
+    _errorfds = NULL;
+
+    if (_readfds_orig) {
+        free(_readfds_orig);
+        _readfds_orig = NULL;
+    }
+
+    if (_writefds_orig) {
+        free(_writefds_orig);
+        _writefds_orig = NULL;
+    }
+
+    if (_errorfds_orig) {
+        free(_errorfds_orig);
+        _errorfds_orig = NULL;
+    }
+    taskEXIT_CRITICAL(uart_get_selectlock());
+}
+
 void esp_vfs_dev_uart_register()
 {
     esp_vfs_t vfs = {
@@ -276,7 +390,9 @@ void esp_vfs_dev_uart_register()
         .fstat = &uart_fstat,
         .close = &uart_close,
         .read = &uart_read,
-        .fcntl = &uart_fcntl
+        .fcntl = &uart_fcntl,
+        .start_select = &uart_start_select,
+        .end_select = &uart_end_select,
     };
     ESP_ERROR_CHECK(esp_vfs_register("/dev/uart", &vfs, NULL));
 }
