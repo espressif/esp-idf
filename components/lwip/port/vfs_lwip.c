@@ -25,16 +25,8 @@
 #include "lwip/sockets.h"
 #include "sdkconfig.h"
 
-/* LWIP is a special case for VFS use.
-
-   From the LWIP side:
-   - We set LWIP_SOCKET_OFFSET dynamically at VFS registration time so that native LWIP socket functions & VFS functions
-   see the same fd space. This is necessary to mix POSIX file operations defined in VFS with POSIX socket operations defined
-   in LWIP, without needing to wrap all of them.
-
-   From the VFS side:
-   - ESP_VFS_FLAG_SHARED_FD_SPACE is set, so unlike other VFS implementations the FDs that the LWIP "VFS" sees and the
-   FDs that the user sees are the same FDs.
+/* Non-LWIP file descriptors are from 0 to (LWIP_SOCKET_OFFSET-1).
+ * LWIP file descriptors are from LWIP_SOCKET_OFFSET to FD_SETSIZE-1.
 */
 
 int lwip_socket_offset;
@@ -45,7 +37,7 @@ static int lwip_ioctl_r_wrapper(int fd, int cmd, va_list args);
 void esp_vfs_lwip_sockets_register()
 {
     esp_vfs_t vfs = {
-        .flags = ESP_VFS_FLAG_DEFAULT | ESP_VFS_FLAG_SHARED_FD_SPACE,
+        .flags = ESP_VFS_FLAG_DEFAULT,
         .write = &lwip_write_r,
         .open = NULL,
         .fstat = NULL,
@@ -53,6 +45,7 @@ void esp_vfs_lwip_sockets_register()
         .read = &lwip_read_r,
         .fcntl = &lwip_fcntl_r_wrapper,
         .ioctl = &lwip_ioctl_r_wrapper,
+        .socket_select = &lwip_select
     };
     int max_fd;
 
