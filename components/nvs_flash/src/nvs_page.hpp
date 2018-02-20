@@ -133,6 +133,8 @@ public:
 
     void debugDump() const;
 
+    esp_err_t calcEntries(nvs_stats_t &nvsStats);
+
 protected:
 
     class Header
