@@ -29,7 +29,6 @@ typedef void X509_STORE;
 typedef void RSA;
 
 typedef void STACK;
-typedef void BIO;
 
 #define ossl_inline inline
 
@@ -84,6 +83,9 @@ typedef struct pkey_method_st PKEY_METHOD;
 struct ssl_alpn_st;
 typedef struct ssl_alpn_st SSL_ALPN;
 
+struct bio_st;
+typedef struct bio_st BIO;
+
 struct stack_st {
 
     char **data;
@@ -106,6 +108,8 @@ struct x509_st {
     void *x509_pm;
 
     const X509_METHOD *method;
+
+    int ref_counter;
 };
 
 struct cert_st {
@@ -145,6 +149,11 @@ struct X509_VERIFY_PARAM_st {
 
     int depth;
 
+};
+
+struct bio_st {
+    const unsigned char * data;
+    int dlen;
 };
 
 typedef enum { ALPN_INIT, ALPN_ENABLE, ALPN_DISABLE, ALPN_ERROR } ALPN_STATUS;
