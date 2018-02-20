@@ -197,4 +197,26 @@ esp_err_t PageManager::activatePage()
     return ESP_OK;
 }
 
+esp_err_t PageManager::fillStats(nvs_stats_t& nvsStats)
+{
+    nvsStats.used_entries      = 0;
+    nvsStats.free_entries      = 0;
+    nvsStats.total_entries     = 0;
+    esp_err_t err = ESP_OK;
+
+    // list of used pages
+    for (auto p = mPageList.begin(); p != mPageList.end(); ++p) {
+        err = p->calcEntries(nvsStats);
+        if (err != ESP_OK) {
+            return err;
+        }
+    }
+
+    // free pages
+    nvsStats.total_entries += mFreePageList.size() * Page::ENTRY_COUNT;
+    nvsStats.free_entries  += mFreePageList.size() * Page::ENTRY_COUNT;
+
+    return err;
+}
+
 } // namespace nvs

@@ -50,6 +50,8 @@ public:
 
     esp_err_t requestNewPage();
 
+    esp_err_t fillStats(nvs_stats_t& nvsStats);
+
 protected:
     friend class Iterator;
 
