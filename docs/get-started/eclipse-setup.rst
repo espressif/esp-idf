@@ -86,11 +86,11 @@ You can integrate the "make flash" target into your Eclipse project to flash usi
 
 * Right-click your project in Project Explorer (important to make sure you select the project, not a directory in the project, or Eclipse may find the wrong Makefile.)
 
-* Select Make Targets -> Create from the context menu.
+* Select Build Targets -> Create... from the context menu.
 
 * Type "flash" as the target name. Leave the other options as their defaults.
 
-* Now you can use Project -> Make Target -> Build (Shift+F9) to build the custom flash target, which will compile and flash the project.
+* Now you can use Project -> Build Target -> Build (Shift+F9) to build the custom flash target, which will compile and flash the project.
 
 Note that you will need to use "make menuconfig" to set the serial port and other config options for flashing. "make menuconfig" still requires a command line terminal (see the instructions for your platform.)
 
