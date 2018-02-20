@@ -125,18 +125,6 @@ static const char * ROOT_CA_PATH = CONFIG_EXAMPLE_ROOT_CA_PATH;
 #error "Invalid method for loading certs"
 #endif
 
-/**
- * @brief Default MQTT HOST URL is pulled from the aws_iot_config.h which
- * uses menuconfig to find a default.
- */
-char HostAddress[255] = AWS_IOT_MQTT_HOST;
-
-/**
- * @brief Default MQTT port is pulled from the aws_iot_config.h which
- * uses menuconfig to find a default.
- */
-uint32_t port = AWS_IOT_MQTT_PORT;
-
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
     switch(event->event_id) {
@@ -325,6 +313,8 @@ void aws_iot_task(void *param) {
             }
         }
         ESP_LOGI(TAG, "*****************************************************************************************");
+        ESP_LOGI(TAG, "Stack remaining for task '%s' is %d bytes", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
+
         vTaskDelay(1000 / portTICK_RATE_MS);
     }
 
@@ -374,5 +364,5 @@ void app_main()
 
     initialise_wifi();
     /* Temporarily pin task to core, due to FPU uncertainty */
-    xTaskCreatePinnedToCore(&aws_iot_task, "aws_iot_task", 16384+1024, NULL, 5, NULL, 1);
+    xTaskCreatePinnedToCore(&aws_iot_task, "aws_iot_task", 9216, NULL, 5, NULL, 1);
 }
