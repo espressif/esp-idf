@@ -45,6 +45,8 @@
 /* Enable all Espressif-only options */
 #define  CONFIG_MDNS 1
 
+#define MEM_SIZE  600
+
 /*
    -----------------------------------------------
    ---------- Platform specific locking ----------
@@ -95,7 +97,7 @@
  *    4 byte alignment -> #define MEM_ALIGNMENT 4
  *    2 byte alignment -> #define MEM_ALIGNMENT 2
  */
-#define MEM_ALIGNMENT           4
+#define MEM_ALIGNMENT           1
 
 /*
    ------------------------------------------------
