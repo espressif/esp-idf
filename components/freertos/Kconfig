@@ -295,7 +295,7 @@ config FREERTOS_USE_TRACE_FACILITY
 
 config FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
     bool "Enable FreeRTOS stats formatting functions"
-    depends on FREERTOS_USE_TRACE_FACILITY || FREERTOS_GENERATE_RUN_TIME_STATS
+    depends on FREERTOS_USE_TRACE_FACILITY
     default n
     help
         If enabled, configUSE_STATS_FORMATTING_FUNCTIONS will be defined as 1 in
@@ -305,6 +305,8 @@ config FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
 config FREERTOS_GENERATE_RUN_TIME_STATS
     bool "Enable FreeRTOS to collect run time stats"
     default n
+    select FREERTOS_USE_TRACE_FACILITY
+    select FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
     help
         If enabled, configGENERATE_RUN_TIME_STATS will be defined as 1 in 
         FreeRTOS. This will allow FreeRTOS to collect information regarding the 

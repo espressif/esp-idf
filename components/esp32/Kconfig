@@ -100,6 +100,7 @@ endchoice
 config SPIRAM_MEMTEST
     bool "Run memory test on SPI RAM initialization"
     default "y"
+    depends on SPIRAM_BOOT_INIT
     help
         Runs a rudimentary memory test on initialization. Aborts when memory test fails. Disable this for
         slightly faster startop.
