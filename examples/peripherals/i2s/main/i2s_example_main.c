@@ -87,7 +87,7 @@ void app_main()
         .communication_format = I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB,
         .dma_buf_count = 6,
         .dma_buf_len = 60,
-        .use_apll = 0,
+        .use_apll = false,
         .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1                                //Interrupt level 1
     };
     i2s_pin_config_t pin_config = {

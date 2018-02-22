@@ -10,7 +10,9 @@ The I2S peripheral supports DMA meaning it can stream sample data without requir
 
 I2S output can also be routed directly to the Digital/Analog Converter output channels (GPIO 25 & GPIO 26) to produce analog output directly, rather than via an external I2S codec.
 
-.. note:: For high accuracy clock applications, APLL clock source can be used with `.use_apll = 1` and ESP32 will automatic caculate APLL parameter. 
+.. note:: For high accuracy clock applications, APLL clock source can be used with `.use_apll = true` and ESP32 will automatically calculate APLL parameter. 
+
+.. note:: If `use_apll = true` and `fixed_mclk > 0`, then the Master clock output for I2S is fixed and equal to the fixed_mclk value. The audio clock rate (LRCK) is always the MCLK divisor and  0 < MCLK/LRCK/channels/bits_per_sample < 64
 
 Application Example
 -------------------
@@ -37,7 +39,7 @@ Short example of I2S configuration:
          .intr_alloc_flags = 0, // default interrupt priority
          .dma_buf_count = 8,
          .dma_buf_len = 64,
-         .use_apll = 0
+         .use_apll = false
     };
 
     static const i2s_pin_config_t pin_config = {
@@ -73,7 +75,7 @@ Short example configuring I2S to use internal DAC for analog output::
          .intr_alloc_flags = 0, // default interrupt priority
          .dma_buf_count = 8,
          .dma_buf_len = 64,
-         .use_apll = 0
+         .use_apll = false
     };
 
     ...
