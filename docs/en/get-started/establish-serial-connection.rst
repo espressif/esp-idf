@@ -125,5 +125,7 @@ If you see some legible log, it means serial connection is working and you are r
 
 If you got here from section :ref:`get-started-connect` when installing s/w for ESP32 development, then go back to section :ref:`get-started-configure`.
 
+(If you are following the CMake preview documentation, `go back to the CMake-specific section instead <:ref:get-started-configure>`.
+
 
 .. _esptool documentation: https://github.com/espressif/esptool/wiki/ESP32-Boot-Mode-Selection#automatic-bootloader

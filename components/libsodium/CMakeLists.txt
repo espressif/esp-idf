@@ -72,7 +72,7 @@ set(COMPONENT_PRIV_INCLUDEDIRS ${SRC}/include/sodium port_include/sodium port)
 
 register_component()
 
-target_compile_definitions(libsodium PRIVATE
+component_compile_definitions(
 	CONFIGURED
 	NATIVE_LITTLE_ENDIAN
 	HAVE_WEAK_SYMBOLS
@@ -80,9 +80,7 @@ target_compile_definitions(libsodium PRIVATE
 	__STDC_CONSTANT_MACROS
 )
 
-target_compile_options(libsodium PRIVATE
-	-Wno-unknown-pragmas
-    )
+component_compile_options(-Wno-unknown-pragmas)
 
 # patch around warnings in third-party files
 set_source_files_properties(

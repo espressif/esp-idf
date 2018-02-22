@@ -18,9 +18,7 @@ set(COMPONENT_SRCDIRS
 
 register_component()
 
-target_compile_options(lwip PRIVATE
-	-Wno-address
-)
+component_compile_options(-Wno-address)
 
 # patch around warnings in third-party files
 set_source_files_properties(api/tcpip.c

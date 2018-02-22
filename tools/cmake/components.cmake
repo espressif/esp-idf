@@ -133,20 +133,23 @@ function(components_finish_registration)
   # (we can't do this until all components are registered, because if(TARGET ...) won't work
   foreach(a ${COMPONENTS} ${CMAKE_PROJECT_NAME}.elf)
     if (TARGET ${a})
+      get_target_property(a_imported ${a} IMPORTED)
       get_target_property(a_type ${a} TYPE)
-      if (${a_type} STREQUAL STATIC_LIBRARY OR ${a_type} STREQUAL EXECUTABLE)
-        foreach(b ${COMPONENTS})
-          if (TARGET ${b} AND NOT ${a} STREQUAL ${b})
-            # Add all public compile options from b in a
-            target_include_directories(${a} PRIVATE
-              $<TARGET_PROPERTY:${b},INTERFACE_INCLUDE_DIRECTORIES>)
-            target_compile_definitions(${a} PRIVATE
-              $<TARGET_PROPERTY:${b},INTERFACE_COMPILE_DEFINITIONS>)
-            target_compile_options(${a} PRIVATE
-              $<TARGET_PROPERTY:${b},INTERFACE_COMPILE_OPTIONS>)
-          endif()
-        endforeach(b)
-      endif(${a_type} STREQUAL STATIC_LIBRARY OR ${a_type} STREQUAL EXECUTABLE)
+      if (NOT a_imported)
+        if (${a_type} STREQUAL STATIC_LIBRARY OR ${a_type} STREQUAL EXECUTABLE)
+          foreach(b ${COMPONENTS})
+            if (TARGET ${b} AND NOT ${a} STREQUAL ${b})
+              # Add all public compile options from b in a
+              target_include_directories(${a} PRIVATE
+                $<TARGET_PROPERTY:${b},INTERFACE_INCLUDE_DIRECTORIES>)
+              target_compile_definitions(${a} PRIVATE
+                $<TARGET_PROPERTY:${b},INTERFACE_COMPILE_DEFINITIONS>)
+              target_compile_options(${a} PRIVATE
+                $<TARGET_PROPERTY:${b},INTERFACE_COMPILE_OPTIONS>)
+            endif()
+          endforeach(b)
+        endif(${a_type} STREQUAL STATIC_LIBRARY OR ${a_type} STREQUAL EXECUTABLE)
+      endif(NOT a_imported)
 
       if (${a_type} MATCHES .+_LIBRARY)
         set(COMPONENT_LIBRARIES "${COMPONENT_LIBRARIES};${a}")
@@ -165,5 +168,7 @@ function(components_finish_registration)
   endforeach()
 
   target_link_libraries(${CMAKE_PROJECT_NAME}.elf ${COMPONENT_LIBRARIES})
+
+  message(STATUS "Component libraries: ${COMPONENT_LIBRARIES}")
 
 endfunction(components_finish_registration)

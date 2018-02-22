@@ -193,3 +193,5 @@ Language features
 
 To be written.
 
+.. _cmake-lint: https://github.com/richq/cmake-lint
+

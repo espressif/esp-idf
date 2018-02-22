@@ -3,7 +3,7 @@ set(COMPONENT_SRCDIRS library port)
 
 register_component()
 
-target_compile_definitions(expat PRIVATE HAVE_EXPAT_CONFIG_H)
+component_compile_definitions(HAVE_EXPAT_CONFIG_H)
 
 # patch around warnings in third-party files
 set_source_files_properties(

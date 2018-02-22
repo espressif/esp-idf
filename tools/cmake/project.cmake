@@ -44,6 +44,12 @@ macro(project name)
   # Search COMPONENT_DIRS for COMPONENTS, make a list of full paths to each component in COMPONENT_PATHS
   components_find_all("${COMPONENT_DIRS}" "${COMPONENTS}" COMPONENT_PATHS COMPONENTS)
 
+  # Print list of components
+  string(REPLACE ";" " " COMPONENTS_SPACES "${COMPONENTS}")
+  message(STATUS "Component names: ${COMPONENTS_SPACES}")
+  unset(COMPONENTS_SPACES)
+  message(STATUS "Component paths: ${COMPONENT_PATHS}")
+
   kconfig_set_variables()
 
   kconfig_process_config()
@@ -59,17 +65,20 @@ macro(project name)
   # Declare the actual cmake-level project
   _project(${name} ASM C CXX)
 
-  # Verify the environment is configured correctly
+  # generate compile_commands.json (needs to come after project)
+  set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+
+   # Verify the environment is configured correctly
   idf_verify_environment()
 
   # Add some idf-wide definitions
   idf_set_global_compiler_options()
 
-  # Check git version (may trigger reruns of cmake)
-  # & set GIT_REVISION/IDF_VER variable
-  git_describe(GIT_REVISION)
-  add_definitions(-DIDF_VER=\"${GIT_REVISION}\")
-  git_submodule_check("${IDF_PATH}")
+  # Check git revision (may trigger reruns of cmake)
+  ##  sets IDF_VER to IDF git revision
+  idf_get_git_revision()
+  ## if project uses git, retrieve revision
+  git_describe(PROJECT_VER "${CMAKE_CURRENT_SOURCE_DIR}")
 
   # Include any top-level project_include.cmake files from components
   foreach(component ${COMPONENT_PATHS})
@@ -79,10 +88,12 @@ macro(project name)
   #
   # Add each component to the build as a library
   #
-  foreach(component ${COMPONENT_PATHS})
-    get_filename_component(component_name ${component} NAME)
-    add_subdirectory(${component} ${component_name})
+  foreach(COMPONENT_PATH ${COMPONENT_PATHS})
+    get_filename_component(COMPONENT_NAME ${COMPONENT_PATH} NAME)
+    add_subdirectory(${COMPONENT_PATH} ${COMPONENT_NAME})
   endforeach()
+  unset(COMPONENT_NAME)
+  unset(COMPONENT_PATH)
 
   #
   # Add the app executable to the build (has name of PROJECT.elf)
