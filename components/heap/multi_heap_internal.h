@@ -13,6 +13,9 @@
 // limitations under the License.
 #pragma once
 
+/* Opaque handle to a heap block */
+typedef const struct heap_block *multi_heap_block_handle_t;
+
 /* Internal definitions for the "implementation" of the multi_heap API,
    as defined in multi_heap.c.
 
@@ -28,6 +31,7 @@ void multi_heap_get_info_impl(multi_heap_handle_t heap, multi_heap_info_t *info)
 size_t multi_heap_free_size_impl(multi_heap_handle_t heap);
 size_t multi_heap_minimum_free_size_impl(multi_heap_handle_t heap);
 size_t multi_heap_get_allocated_size_impl(multi_heap_handle_t heap, void *p);
+void *multi_heap_get_block_address_impl(multi_heap_block_handle_t block);
 
 /* Some internal functions for heap poisoning use */
 
@@ -45,3 +49,20 @@ void multi_heap_internal_poison_fill_region(void *start, size_t size, bool is_fr
 void multi_heap_internal_lock(multi_heap_handle_t heap);
 
 void multi_heap_internal_unlock(multi_heap_handle_t heap);
+
+/* Some internal functions for heap debugging code to use */
+
+/* Get the handle to the first (fixed free) block in a heap */
+multi_heap_block_handle_t multi_heap_get_first_block(multi_heap_handle_t heap);
+
+/* Get the handle to the next block in a heap, with validation */
+multi_heap_block_handle_t multi_heap_get_next_block(multi_heap_handle_t heap, multi_heap_block_handle_t block);
+
+/* Test if a heap block is free */
+bool multi_heap_is_free(const multi_heap_block_handle_t block);
+
+/* Get the data address of a heap block */
+void *multi_heap_get_block_address(multi_heap_block_handle_t block);
+
+/* Get the owner identification for a heap block */
+void *multi_heap_get_block_owner(multi_heap_block_handle_t block);
