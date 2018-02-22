@@ -380,24 +380,24 @@ void app_main()
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     ret = esp_bt_controller_init(&bt_cfg);
     if (ret) {
-        BLUFI_ERROR("%s initialize bt controller failed\n", __func__);
+        BLUFI_ERROR("%s initialize bt controller failed: %s\n", __func__, esp_err_to_name(ret));
     }
 
     ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
     if (ret) {
-        BLUFI_ERROR("%s enable bt controller failed\n", __func__);
+        BLUFI_ERROR("%s enable bt controller failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 
     ret = esp_bluedroid_init();
     if (ret) {
-        BLUFI_ERROR("%s init bluedroid failed\n", __func__);
+        BLUFI_ERROR("%s init bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 
     ret = esp_bluedroid_enable();
     if (ret) {
-        BLUFI_ERROR("%s init bluedroid failed\n", __func__);
+        BLUFI_ERROR("%s init bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 

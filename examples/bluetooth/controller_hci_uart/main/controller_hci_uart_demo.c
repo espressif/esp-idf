@@ -50,13 +50,13 @@ void app_main()
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     ret = esp_bt_controller_init(&bt_cfg);
     if (ret != ESP_OK) {
-        ESP_LOGE(tag, "Bluetooth Controller initialize failed, ret %d", ret);
+        ESP_LOGE(tag, "Bluetooth Controller initialize failed: %s", esp_err_to_name(ret));
         return;
     }
 
     ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
     if (ret != ESP_OK) {
-        ESP_LOGE(tag, "Bluetooth Controller initialize failed, ret %d", ret);
+        ESP_LOGE(tag, "Bluetooth Controller initialize failed: %s", esp_err_to_name(ret));
         return;
     }
 }

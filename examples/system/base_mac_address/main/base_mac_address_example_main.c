@@ -40,7 +40,7 @@ void app_main()
     /* Get base MAC address from BLK3 of EFUSE */
     ret = esp_efuse_mac_get_custom(mac_addr);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Get base MAC address from BLK3 of EFUSE error");
+        ESP_LOGE(TAG, "Get base MAC address from BLK3 of EFUSE error (%s)", esp_err_to_name(ret));
         /* If get custom base MAC address error, the application developer can decide what to do:
          * abort or use the default base MAC address which is stored in BLK0 of EFUSE by doing
          * nothing.
@@ -67,7 +67,7 @@ void app_main()
         ESP_LOGI(TAG, "Use base MAC address which is stored in other external storage(flash, EEPROM, etc)");
     }
     else {
-        ESP_LOGI(TAG, "Use base MAC address which is stored in BLK0 of EFUSE");
+        ESP_LOGI(TAG, "Use base MAC address which is stored in BLK0 of EFUSE (%s)", esp_err_to_name(ret));
     }
 #endif//CONFIG_BASE_MAC_STORED_OTHER_EXTERNAL_STORAGE
 #else
