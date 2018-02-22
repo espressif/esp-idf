@@ -9,6 +9,8 @@ macro(kconfig_set_variables)
   set(SDKCONFIG_JSON ${CMAKE_BINARY_DIR}/sdkconfig.json)
 
   set(ROOT_KCONFIG ${IDF_PATH}/Kconfig)
+
+  set_default(SDKCONFIG_DEFAULTS "${SDKCONFIG}.defaults")
 endmacro()
 
 # Use the existing Makefile to build mconf (out of tree) when needed
@@ -46,8 +48,8 @@ function(kconfig_process_config)
     endif()
   endforeach(dir ${COMPONENT_PATHS})
 
-  if(EXISTS ${SDKCONFIG}.defaults)
-    set(defaults_arg --defaults "${SDKCONFIG}.defaults")
+  if(EXISTS ${SDKCONFIG_DEFAULTS})
+    set(defaults_arg --defaults "${SDKCONFIG_DEFAULTS}")
   endif()
 
   set(confgen_basecommand

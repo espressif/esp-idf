@@ -141,7 +141,11 @@ def _ensure_build_directory(args, always_run_cmake=False):
         if args.generator is None:
             args.generator = detect_cmake_generator()
         try:
-            _run_tool("cmake", ["cmake", "-G", args.generator, project_dir], cwd=args.build_dir)
+            cmake_args = ["cmake", "-G", args.generator]
+            if not args.no_warnings:
+                cmake_args += [ "--warn-uninitialized" ]
+            cmake_args += [ project_dir]
+            _run_tool("cmake", cmake_args, cwd=args.build_dir)
         except:
             # don't allow partially valid CMakeCache.txt files,
             # to keep the "should I run cmake?" logic simple
@@ -315,6 +319,7 @@ def main():
     parser.add_argument('-C', '--project-dir', help="Project directory", default=os.getcwd())
     parser.add_argument('-B', '--build-dir', help="Build directory", default=None)
     parser.add_argument('-G', '--generator', help="Cmake generator", choices=GENERATOR_CMDS.keys())
+    parser.add_argument('-n', '--no-warnings', help="Disable Cmake warnings")
     parser.add_argument('actions', help="Actions (build targets or other operations)", nargs='+',
                         choices=ACTIONS.keys())
 

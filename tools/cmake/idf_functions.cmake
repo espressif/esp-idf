@@ -30,9 +30,6 @@ macro(idf_set_global_variables)
 
   # path to idf.py tool
   set(IDFTOOL ${PYTHON} "${IDF_PATH}/tools/idf.py")
-
-  # generate compile_commands.json
-  set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 endmacro()
 
 # Add all the IDF global compiler & preprocessor options
@@ -161,6 +158,31 @@ endfunction(add_map_file)
 # Add argument file(s) for flashing the app, and for flashing the whole system
 function(add_flasher_argfile)
 
-  
-
 endfunction(add_flasher_argfile)
+
+# component_compile_options
+#
+# Wrapper around target_compile_options that passes the component name
+function(component_compile_options)
+  target_compile_options(${COMPONENT_NAME} PRIVATE ${ARGV})
+endfunction()
+
+# component_compile_definitions
+#
+# Wrapper around target_compile_definitions that passes the component name
+function(component_compile_definitions)
+  target_compile_definitions(${COMPONENT_NAME} PRIVATE ${ARGV})
+endfunction()
+
+# idf_get_git_revision
+#
+# Set global IDF_VER to the git revision of ESP-IDF.
+#
+# Running git_describe() here automatically triggers rebuilds
+# if the ESP-IDF git version changes
+function(idf_get_git_revision)
+  git_describe(IDF_VER "${IDF_PATH}")
+  add_definitions(-DIDF_VER=\"${IDF_VER}\")
+  git_submodule_check("${IDF_PATH}")
+  set(IDF_VER ${IDF_VER} PARENT_SCOPE)
+endfunction()

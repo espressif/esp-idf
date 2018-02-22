@@ -5,7 +5,7 @@
     "config_file":        "${SDKCONFIG}",
     "app_elf":            "${PROJECT_NAME}.elf",
     "app_bin":            "${PROJECT_NAME}.bin",
-    "git_revision":       "${GIT_REVISION}",
+    "git_revision":       "${IDF_VER}",
     "project_binaries":  {
         "bootloader":        [ "0x1000", "bootloader/bootloader.bin" ],
         "partition_table":   [ "0x8000", "partition_table/partition-table.bin" ],

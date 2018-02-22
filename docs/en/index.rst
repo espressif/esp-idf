@@ -40,6 +40,7 @@ This is the documentation for Espressif IoT Development Framework (`esp-idf <htt
    API Reference <api-reference/index>
    H/W Reference <hw-reference/index>
    API Guides <api-guides/index>
+   CMake Build System Preview <api-guides/cmake-preview-index>
    Contribute <contribute/index>
    Resources <resources>
    Copyrights <COPYRIGHT>
