@@ -62,6 +62,15 @@ config PHY_DATA_OFFSET
        default PARTITION_TABLE_CUSTOM_PHY_DATA_OFFSET if PARTITION_TABLE_CUSTOM
        default 0xf000 # this is the factory app offset used by the default tables
 
+config PARTITION_TABLE_MD5
+    bool "Generate an MD5 checksum for the partition table"
+    default y
+    help
+        Generate an MD5 checksum for the partition table for protecting the
+        integrity of the table. The generation should be turned off for legacy
+        bootloaders which cannot recognize the MD5 checksum in the partition
+        table.
+
 endmenu
 
 
