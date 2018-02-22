@@ -38,6 +38,7 @@
 #include "tcpip_adapter.h"
 #endif
 
+#ifdef CONFIG_ESP_ERR_TO_NAME_LOOKUP
 #define ERR_TBL_IT(err)    {err, #err}
 
 typedef struct {
@@ -359,11 +360,18 @@ static const esp_err_msg_t esp_err_msg_table[] = {
     ERR_TBL_IT(ESP_ERR_FLASH_OP_TIMEOUT),                   /* 65554 0x10012 */
 #   endif
 };
+#endif //CONFIG_ESP_ERR_TO_NAME_LOOKUP
 
-static const char esp_unknown_msg[] = "UNKNOWN ERROR";
+static const char esp_unknown_msg[] =
+#ifdef CONFIG_ESP_ERR_TO_NAME_LOOKUP
+    "ERROR";
+#else
+    "UNKNOWN ERROR";
+#endif //CONFIG_ESP_ERR_TO_NAME_LOOKUP
 
 const char *esp_err_to_name(esp_err_t code)
 {
+#ifdef CONFIG_ESP_ERR_TO_NAME_LOOKUP
     int i;
 
     for (i = 0; i < sizeof(esp_err_msg_table)/sizeof(esp_err_msg_table[0]); ++i) {
@@ -371,12 +379,14 @@ const char *esp_err_to_name(esp_err_t code)
             return esp_err_msg_table[i].msg;
         }
     }
+#endif //CONFIG_ESP_ERR_TO_NAME_LOOKUP
 
     return esp_unknown_msg;
 }
 
 const char *esp_err_to_name_r(esp_err_t code, char *buf, size_t buflen)
 {
+#ifdef CONFIG_ESP_ERR_TO_NAME_LOOKUP
     int i;
 
     for (i = 0; i < sizeof(esp_err_msg_table)/sizeof(esp_err_msg_table[0]); ++i) {
@@ -385,6 +395,7 @@ const char *esp_err_to_name_r(esp_err_t code, char *buf, size_t buflen)
             return buf;
         }
     }
+#endif //CONFIG_ESP_ERR_TO_NAME_LOOKUP
 
     if (strerror_r(code, buf, buflen) == 0) {
         return buf;
