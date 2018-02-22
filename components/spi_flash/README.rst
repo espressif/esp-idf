@@ -18,14 +18,14 @@ SPI flash access APIs
 
 This is the set of APIs for working with data in flash:
 
-- ``spi_flash_read`` used to read data from flash to RAM
-- ``spi_flash_write`` used to write data from RAM to flash
-- ``spi_flash_erase_sector`` used to erase individual sectors of flash
-- ``spi_flash_erase_range`` used to erase range of addresses in flash
-- ``spi_flash_get_chip_size`` returns flash chip size, in bytes, as configured in menuconfig
+- :cpp:func:`spi_flash_read` used to read data from flash to RAM
+- :cpp:func:`spi_flash_write` used to write data from RAM to flash
+- :cpp:func:`spi_flash_erase_sector` used to erase individual sectors of flash
+- :cpp:func:`spi_flash_erase_range` used to erase range of addresses in flash
+- :cpp:func:`spi_flash_get_chip_size` returns flash chip size, in bytes, as configured in menuconfig
 
 Generally, try to avoid using the raw SPI flash functions in favour of
-partition-specific functions.
+:ref:`partition-specific functions <flash-partition-apis>`.
 
 SPI Flash Size
 --------------
@@ -35,8 +35,8 @@ image header, flashed at offset 0x1000.
 
 By default, the SPI flash size is detected by esptool.py when this bootloader is
 written to flash, and the header is updated with the correct
-size. Alternatively, it is possible to generate a fixed flash size by disabling
-detection in ``make menuconfig`` (under Serial Flasher Config).
+size. Alternatively, it is possible to generate a fixed flash size by setting
+:ref:`CONFIG_ESPTOOLPY_FLASHSIZE` in ``make menuconfig``.
 
 If it is necessary to override the configured flash size at runtime, is is
 possible to set the ``chip_size`` member of ``g_rom_flashchip`` structure. This
@@ -47,9 +47,13 @@ Concurrency Constraints
 -----------------------
 
 Because the SPI flash is also used for firmware execution (via the instruction &
-data caches), these caches much be disabled while reading/writing/erasing. This
+data caches), these caches must be disabled while reading/writing/erasing. This
 means that both CPUs must be running code from IRAM and only reading data from
 DRAM while flash write operations occur.
+
+If you use the APIs documented here, then this happens automatically and
+transparently. However note that it will have some performance impact on other
+tasks in the system.
 
 Refer to the :ref:`application memory layout <memory-layout>` documentation for
 an explanation of the differences between IRAM, DRAM and flash cache.
@@ -99,6 +103,8 @@ handler reads from the flash cache during a flash operation, it will cause a
 crash due to Illegal Instruction exception (for code which should be in IRAM) or
 garbage data to be read (for constant data which should be in DRAM).
 
+.. _flash-partition-apis:
+
 Partition table APIs
 --------------------
 
@@ -109,20 +115,21 @@ More information about partition tables can be found :doc:`here </api-guides/par
 This component provides APIs to enumerate partitions found in the partition table
 and perform operations on them. These functions are declared in ``esp_partition.h``:
 
-- ``esp_partition_find`` used to search partition table for entries with
+- :cpp:func:`esp_partition_find` used to search partition table for entries with
   specific type, returns an opaque iterator
-- ``esp_partition_get`` returns a structure describing the partition, for the given iterator
-- ``esp_partition_next`` advances iterator to the next partition found
-- ``esp_partition_iterator_release`` releases iterator returned by ``esp_partition_find``
-- ``esp_partition_find_first`` is a convenience function which returns structure
+- :cpp:func:`esp_partition_get` returns a structure describing the partition, for the given iterator
+- :cpp:func:`esp_partition_next` advances iterator to the next partition found
+- :cpp:func:`esp_partition_iterator_release` releases iterator returned by ``esp_partition_find``
+- :cpp:func:`esp_partition_find_first` is a convenience function which returns structure
   describing the first partition found by esp_partition_find
-- ``esp_partition_read``, ``esp_partition_write``, ``esp_partition_erase_range``
-  are equivalent to ``spi_flash_read``, ``spi_flash_write``,
-  ``spi_flash_erase_range``, but operate within partition boundaries
+- :cpp:func:`esp_partition_read`, :cpp:func:`esp_partition_write`, :cpp:func:`esp_partition_erase_range`
+  are equivalent to :cpp:func:`spi_flash_read`, :cpp:func:`spi_flash_write`,
+  :cpp:func:`spi_flash_erase_range`, but operate within partition boundaries
 
-Most application code should use ``esp_partition_*`` APIs instead of lower level
-``spi_flash_*`` APIs. Partition APIs do bounds checking and calculate correct
-offsets in flash based on data stored in partition table.
+.. note::
+    Most application code should use these ``esp_partition_*`` APIs instead of lower level
+    ``spi_flash_*`` APIs. Partition APIs do bounds checking and calculate correct
+    offsets in flash based on data stored in partition table.
 
 SPI Flash Encryption
 --------------------
@@ -151,14 +158,14 @@ Decryption is performed at hardware level.
 
 Memory mapping APIs are declared in ``esp_spi_flash.h`` and ``esp_partition.h``:
 
-- ``spi_flash_mmap`` maps a region of physical flash addresses into instruction space or data space of the CPU
-- ``spi_flash_munmap`` unmaps previously mapped region
-- ``esp_partition_mmap`` maps part of a partition into the instruction space or data space of the CPU
+- :cpp:func:`spi_flash_mmap` maps a region of physical flash addresses into instruction space or data space of the CPU
+- :cpp:func:`spi_flash_munmap` unmaps previously mapped region
+- :cpp:func:`esp_partition_mmap` maps part of a partition into the instruction space or data space of the CPU
 
-Differences between ``spi_flash_mmap`` and ``esp_partition_mmap`` are as follows:
+Differences between :cpp:func:`spi_flash_mmap` and :cpp:func:`esp_partition_mmap` are as follows:
 
-- ``spi_flash_mmap`` must be given a 64KB aligned physical address
-- ``esp_partition_mmap`` may be given an arbitrary offset within the partition,
+- :cpp:func:`spi_flash_mmap` must be given a 64KB aligned physical address
+- :cpp:func:`esp_partition_mmap` may be given any arbitrary offset within the partition,
   it will adjust returned pointer to mapped memory as necessary
 
 Note that because memory mapping happens in 64KB blocks, it may be possible to
