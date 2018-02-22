@@ -205,7 +205,7 @@ void aws_iot_task(void *param) {
     sdmmc_card_t* card;
     esp_err_t ret = esp_vfs_fat_sdmmc_mount("/sdcard", &host, &slot_config, &mount_config, &card);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to mount SD card VFAT filesystem.");
+        ESP_LOGE(TAG, "Failed to mount SD card VFAT filesystem. Error: %s", esp_err_to_name(ret));
         abort();
     }
 #endif

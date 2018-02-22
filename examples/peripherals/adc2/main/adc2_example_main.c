@@ -49,11 +49,14 @@ void app_main(void)
         if ( r == ESP_OK ) {
             printf("%d: %d\n", output_data, read_raw );
         } else if ( r == ESP_ERR_INVALID_STATE ) {
-            printf("ADC2 not initialized yet.\n");
+            printf("%s: ADC2 not initialized yet.\n", esp_err_to_name(r));
         } else if ( r == ESP_ERR_TIMEOUT ) {
             //This can not happen in this example. But if WiFi is in use, such error code could be returned.
-            printf("ADC2 is in use by Wi-Fi.\n");
+            printf("%s: ADC2 is in use by Wi-Fi.\n", esp_err_to_name(r));
+        } else {
+            printf("%s\n", esp_err_to_name(r));
         }
+
         vTaskDelay( 2 * portTICK_PERIOD_MS );
     }
 }

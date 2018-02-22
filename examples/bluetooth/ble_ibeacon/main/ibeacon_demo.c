@@ -62,6 +62,8 @@ static esp_ble_adv_params_t ble_adv_params = {
 
 static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
+    esp_err_t err;
+
     switch (event) {
     case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT:{
 #if (IBEACON_MODE == IBEACON_SENDER)
@@ -79,14 +81,14 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
     }
     case ESP_GAP_BLE_SCAN_START_COMPLETE_EVT:
         //scan start complete event to indicate scan start successfully or failed
-        if (param->scan_start_cmpl.status != ESP_BT_STATUS_SUCCESS) {
-            ESP_LOGE(DEMO_TAG, "Scan start failed");
+        if ((err = param->scan_start_cmpl.status) != ESP_BT_STATUS_SUCCESS) {
+            ESP_LOGE(DEMO_TAG, "Scan start failed: %s", esp_err_to_name(err));
         }
         break;
     case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
         //adv start complete event to indicate adv start successfully or failed
-        if (param->adv_start_cmpl.status != ESP_BT_STATUS_SUCCESS) {
-            ESP_LOGE(DEMO_TAG, "Adv start failed");
+        if ((err = param->adv_start_cmpl.status) != ESP_BT_STATUS_SUCCESS) {
+            ESP_LOGE(DEMO_TAG, "Adv start failed: %s", esp_err_to_name(err));
         }
         break;
     case ESP_GAP_BLE_SCAN_RESULT_EVT: {
@@ -115,8 +117,8 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
     }
 
     case ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT:
-        if (param->scan_stop_cmpl.status != ESP_BT_STATUS_SUCCESS){
-            ESP_LOGE(DEMO_TAG, "Scan stop failed");
+        if ((err = param->scan_stop_cmpl.status) != ESP_BT_STATUS_SUCCESS){
+            ESP_LOGE(DEMO_TAG, "Scan stop failed: %s", esp_err_to_name(err));
         }
         else {
             ESP_LOGI(DEMO_TAG, "Stop scan successfully");
@@ -124,8 +126,8 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
         break;
 
     case ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT:
-        if (param->adv_stop_cmpl.status != ESP_BT_STATUS_SUCCESS){
-            ESP_LOGE(DEMO_TAG, "Adv stop failed");
+        if ((err = param->adv_stop_cmpl.status) != ESP_BT_STATUS_SUCCESS){
+            ESP_LOGE(DEMO_TAG, "Adv stop failed: %s", esp_err_to_name(err));
         }
         else {
             ESP_LOGI(DEMO_TAG, "Stop adv successfully");
@@ -146,7 +148,7 @@ void ble_ibeacon_appRegister(void)
 
     //register the scan callback function to the gap module
     if ((status = esp_ble_gap_register_callback(esp_gap_cb)) != ESP_OK) {
-        ESP_LOGE(DEMO_TAG, "gap register error, error code = %x", status);
+        ESP_LOGE(DEMO_TAG, "gap register error: %s", esp_err_to_name(status));
         return;
     }
 
@@ -180,7 +182,7 @@ void app_main()
         esp_ble_gap_config_adv_data_raw((uint8_t*)&ibeacon_adv_data, sizeof(ibeacon_adv_data));
     }
     else {
-        ESP_LOGE(DEMO_TAG, "Config iBeacon data failed, status =0x%x\n", status);
+        ESP_LOGE(DEMO_TAG, "Config iBeacon data failed: %s\n", esp_err_to_name(status));
     }
 #endif
 }

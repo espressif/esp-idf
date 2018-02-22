@@ -85,24 +85,25 @@ void app_main()
 
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_BLE));
 
+    esp_err_t err;
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-    if (esp_bt_controller_init(&bt_cfg) != ESP_OK) {
-        ESP_LOGE(BT_AV_TAG, "%s initialize controller failed\n", __func__);
+    if ((err = esp_bt_controller_init(&bt_cfg)) != ESP_OK) {
+        ESP_LOGE(BT_AV_TAG, "%s initialize controller failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 
-    if (esp_bt_controller_enable(ESP_BT_MODE_CLASSIC_BT) != ESP_OK) {
-        ESP_LOGE(BT_AV_TAG, "%s enable controller failed\n", __func__);
+    if ((err = esp_bt_controller_enable(ESP_BT_MODE_CLASSIC_BT)) != ESP_OK) {
+        ESP_LOGE(BT_AV_TAG, "%s enable controller failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 
-    if (esp_bluedroid_init() != ESP_OK) {
-        ESP_LOGE(BT_AV_TAG, "%s initialize bluedroid failed\n", __func__);
+    if ((err = esp_bluedroid_init()) != ESP_OK) {
+        ESP_LOGE(BT_AV_TAG, "%s initialize bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 
-    if (esp_bluedroid_enable() != ESP_OK) {
-        ESP_LOGE(BT_AV_TAG, "%s enable bluedroid failed\n", __func__);
+    if ((err = esp_bluedroid_enable()) != ESP_OK) {
+        ESP_LOGE(BT_AV_TAG, "%s enable bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 
