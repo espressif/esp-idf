@@ -37,3 +37,7 @@
 [submodule "components/json/cJSON"]
 	path = components/json/cJSON
 	url = https://github.com/DaveGamble/cJSON.git
+    
+[submodule "components/azure-iot/sdk"]
+	path = components/azure-iot/sdk
+	url = https://github.com/Azure/azure-iot-sdk-c.git
