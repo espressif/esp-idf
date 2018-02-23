@@ -32,6 +32,8 @@
 #include "nvs_flash.h"
 #include "sdkconfig.h"
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/portmacro.h"
 #include "phy.h"
 #include "phy_init_data.h"
 #include "esp_coexist.h"
@@ -43,6 +45,16 @@ static const char* TAG = "phy_init";
 static int s_phy_rf_init_count = 0;
 
 static _lock_t s_phy_rf_init_lock;
+
+uint32_t IRAM_ATTR phy_enter_critical(void)
+{
+    return portENTER_CRITICAL_NESTED();
+}
+
+void IRAM_ATTR phy_exit_critical(uint32_t level)
+{
+    portEXIT_CRITICAL_NESTED(level);
+}
 
 esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data,
         esp_phy_calibration_mode_t mode, esp_phy_calibration_data_t* calibration_data)
@@ -56,6 +68,11 @@ esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data,
         ESP_LOGV(TAG, "register_chipv7_phy, init_data=%p, cal_data=%p, mode=%d",
                 init_data, calibration_data, mode);
         phy_set_wifi_mode_only(0);
+        if (calibration_data != NULL) {
+            uint8_t mac[6];
+            esp_efuse_mac_get_default(mac);
+            memcpy(&calibration_data->opaque[4], mac, 6);
+        }
         register_chipv7_phy(init_data, calibration_data, mode);
         coex_bt_high_prio();
     } else {

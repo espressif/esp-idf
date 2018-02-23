@@ -18,6 +18,9 @@ GPATH
 # eclipse setting
 .settings
 
+# MacOS directory files
+.DS_Store
+
 # Example project files
 examples/**/sdkconfig
 examples/**/sdkconfig.old

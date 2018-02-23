@@ -55,7 +55,7 @@ const ip_addr_t ip_addr_broadcast = IPADDR4_INIT(IPADDR_BROADCAST);
  * @param netif the network interface against which the address is checked
  * @return returns non-zero if the address is a broadcast address
  */
-u8_t
+u8_t ESP_IRAM_ATTR
 ip4_addr_isbroadcast_u32(u32_t addr, const struct netif *netif)
 {
   ip4_addr_t ipaddr;

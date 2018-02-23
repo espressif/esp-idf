@@ -19,7 +19,40 @@
 #define DYN_MEM_H
 
 #include "sdkconfig.h"
-#if CONFIG_CLASSIC_BT_ENABLED
+#if CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY
+#define BTU_DYNAMIC_MEMORY         TRUE
+#define BTM_DYNAMIC_MEMORY         TRUE
+#define L2C_DYNAMIC_MEMORY         TRUE
+#define GATT_DYNAMIC_MEMORY        TRUE
+#define SMP_DYNAMIC_MEMORY         TRUE
+#define BTA_DYNAMIC_MEMORY         TRUE
+#define SDP_DYNAMIC_MEMORY         TRUE
+#define RFC_DYNAMIC_MEMORY         TRUE
+#define TCS_DYNAMIC_MEMORY         TRUE
+#define BNEP_DYNAMIC_MEMORY        TRUE
+#define AVDT_DYNAMIC_MEMORY        TRUE
+#define AVCT_DYNAMIC_MEMORY        TRUE
+#define MCA_DYNAMIC_MEMORY         TRUE
+#define A2D_DYNAMIC_MEMORY         TRUE
+#define VDP_DYNAMIC_MEMORY         TRUE
+#define AVRC_DYNAMIC_MEMORY        TRUE
+#define BIP_DYNAMIC_MEMORY         TRUE
+#define BPP_DYNAMIC_MEMORY         TRUE
+#define CTP_DYNAMIC_MEMORY         TRUE
+#define FTP_DYNAMIC_MEMORY         TRUE
+#define HCRP_DYNAMIC_MEMORY        TRUE
+#define HFP_DYNAMIC_MEMORY         TRUE
+#define HID_DYNAMIC_MEMORY         TRUE
+#define HSP2_DYNAMIC_MEMORY        TRUE
+#define ICP_DYNAMIC_MEMORY         TRUE
+#define OPP_DYNAMIC_MEMORY         TRUE
+#define PAN_DYNAMIC_MEMORY         TRUE
+#define SPP_DYNAMIC_MEMORY         TRUE
+#define SLIP_DYNAMIC_MEMORY        TRUE
+#define LLCP_DYNAMIC_MEMORY        TRUE
+#define BTC_SBC_DEC_DYNAMIC_MEMORY TRUE
+
+#else  /* #if CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY */
 
 #define SDP_DYNAMIC_MEMORY         FALSE
 #define RFC_DYNAMIC_MEMORY         FALSE
@@ -45,35 +78,9 @@
 #define SPP_DYNAMIC_MEMORY         FALSE
 #define SLIP_DYNAMIC_MEMORY        FALSE
 #define LLCP_DYNAMIC_MEMORY        FALSE
+#define BTC_SBC_DEC_DYNAMIC_MEMORY FALSE
 
-#else  /* #if CONFIG_CLASSIC_BT_ENABLED */
-
-#define SDP_DYNAMIC_MEMORY         TRUE
-#define RFC_DYNAMIC_MEMORY         TRUE
-#define TCS_DYNAMIC_MEMORY         TRUE
-#define BNEP_DYNAMIC_MEMORY        TRUE
-#define AVDT_DYNAMIC_MEMORY        TRUE
-#define AVCT_DYNAMIC_MEMORY        TRUE
-#define MCA_DYNAMIC_MEMORY         TRUE
-#define A2D_DYNAMIC_MEMORY         TRUE
-#define VDP_DYNAMIC_MEMORY         TRUE
-#define AVRC_DYNAMIC_MEMORY        TRUE
-#define BIP_DYNAMIC_MEMORY         TRUE
-#define BPP_DYNAMIC_MEMORY         TRUE
-#define CTP_DYNAMIC_MEMORY         TRUE
-#define FTP_DYNAMIC_MEMORY         TRUE
-#define HCRP_DYNAMIC_MEMORY        TRUE
-#define HFP_DYNAMIC_MEMORY         TRUE
-#define HID_DYNAMIC_MEMORY         TRUE
-#define HSP2_DYNAMIC_MEMORY        TRUE
-#define ICP_DYNAMIC_MEMORY         TRUE
-#define OPP_DYNAMIC_MEMORY         TRUE
-#define PAN_DYNAMIC_MEMORY         TRUE
-#define SPP_DYNAMIC_MEMORY         TRUE
-#define SLIP_DYNAMIC_MEMORY        TRUE
-#define LLCP_DYNAMIC_MEMORY        TRUE
-
-#endif /* #if CONFIG_CLASSIC_BT_ENABLED */
+#endif /* #if CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY */
 /****************************************************************************
 ** Define memory usage for each CORE component (if not defined in bdroid_buildcfg.h)
 **  The default for each component is to use static memory allocations.

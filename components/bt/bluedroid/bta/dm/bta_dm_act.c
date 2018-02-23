@@ -283,6 +283,47 @@ void bta_dm_enable(tBTA_DM_MSG *p_data)
 }
 
 /*******************************************************************************
+ *
+ * Function         bta_dm_init_cb
+ *
+ * Description      Initializes the bta_dm_cb control block
+ *
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void bta_dm_init_cb(void)
+{
+    memset(&bta_dm_cb, 0, sizeof(bta_dm_cb));
+}
+
+/*******************************************************************************
+ *
+ * Function         bta_dm_deinit_cb
+ *
+ * Description      De-initializes the bta_dm_cb control block
+ *
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void bta_dm_deinit_cb(void)
+{
+    bta_sys_free_timer(&bta_dm_cb.disable_timer);
+#if ( BTA_EIR_CANNED_UUID_LIST != TRUE )
+    bta_sys_free_timer(&bta_dm_cb.app_ready_timer);
+#endif
+#if BTM_SSR_INCLUDED == TRUE
+    for (size_t i = 0; i < BTA_DM_NUM_PM_TIMER; i++) {
+        for (size_t j = 0; j < BTA_DM_PM_MODE_TIMER_MAX; j++) {
+            bta_sys_free_timer(&bta_dm_cb.pm_timer[i].timer[j]);
+        }
+    }
+#endif
+    memset(&bta_dm_cb, 0, sizeof(bta_dm_cb));
+}
+
+/*******************************************************************************
 **
 ** Function         bta_dm_sys_hw_cback
 **
@@ -318,7 +359,15 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
         }
 
         /* reinitialize the control block */
-        memset(&bta_dm_cb, 0, sizeof(bta_dm_cb));
+        bta_dm_deinit_cb();
+
+        bta_sys_free_timer(&bta_dm_search_cb.search_timer);
+#if ((defined BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
+#if ((defined BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE)
+        bta_sys_free_timer(&bta_dm_search_cb.gatt_close_timer);
+#endif
+#endif
+        memset(&bta_dm_search_cb, 0x00, sizeof(bta_dm_search_cb));
 
         /* unregister from SYS */
         bta_sys_hw_unregister( BTA_SYS_HW_BLUETOOTH );
@@ -332,11 +381,18 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
         /* save security callback */
         temp_cback = bta_dm_cb.p_sec_cback;
         /* make sure the control block is properly initialized */
-        memset(&bta_dm_cb, 0, sizeof(bta_dm_cb));
+        bta_dm_init_cb();
+
         /* and retrieve the callback */
         bta_dm_cb.p_sec_cback = temp_cback;
         bta_dm_cb.is_bta_dm_active = TRUE;
 
+        bta_sys_free_timer(&bta_dm_search_cb.search_timer);
+#if ((defined BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
+#if ((defined BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE)
+        bta_sys_free_timer(&bta_dm_search_cb.gatt_close_timer);
+#endif
+#endif
         /* hw is ready, go on with BTA DM initialization */
         memset(&bta_dm_search_cb, 0x00, sizeof(bta_dm_search_cb));
 #if (BTM_SSR_INCLUDED == TRUE)
@@ -2589,7 +2645,7 @@ static UINT8 bta_dm_authorize_cback (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NA
         return BTM_NOT_AUTHORIZED;
     }
 }
- 
+
 
 
 
@@ -4126,6 +4182,8 @@ static void bta_dm_observe_results_cb (tBTM_INQ_RESULTS *p_inq, UINT8 *p_eir)
     result.inq_res.flag             = p_inq->flag;
     result.inq_res.adv_data_len     = p_inq->adv_data_len;
     result.inq_res.scan_rsp_len     = p_inq->scan_rsp_len;
+    memcpy(result.inq_res.dev_class, p_inq->dev_class, sizeof(DEV_CLASS));
+    result.inq_res.ble_evt_type     = p_inq->ble_evt_type;
 
     /* application will parse EIR to find out remote device name */
     result.inq_res.p_eir = p_eir;
@@ -4282,7 +4340,7 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
         } else {
             sec_event.auth_cmpl.success = TRUE;
             if (!p_data->complt.smp_over_br) {
-                
+
             }
         }
 
@@ -5338,7 +5396,7 @@ static void bta_ble_energy_info_cmpl(tBTM_BLE_TX_TIME_MS tx_time,
     if (BTA_SUCCESS == st) {
         ctrl_state = bta_dm_pm_obtain_controller_state();
     }
-#endif  
+#endif
     if (bta_dm_cb.p_energy_info_cback) {
         bta_dm_cb.p_energy_info_cback(tx_time, rx_time, idle_time, energy_used, ctrl_state, st);
     }

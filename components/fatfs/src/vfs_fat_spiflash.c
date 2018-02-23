@@ -17,6 +17,7 @@
 #include "esp_log.h"
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
+#include "vfs_fat_internal.h"
 #include "diskio.h"
 
 #include "wear_levelling.h"
@@ -78,8 +79,15 @@ esp_err_t esp_vfs_fat_spiflash_mount(const char* base_path,
             goto fail;
         }
         workbuf = malloc(workbuf_size);
-        ESP_LOGI(TAG, "Formatting FATFS partition");
-        fresult = f_mkfs(drv, FM_ANY | FM_SFD, workbuf_size, workbuf, workbuf_size);
+        if (workbuf == NULL) {
+            result = ESP_ERR_NO_MEM;
+            goto fail;
+        }
+        size_t alloc_unit_size = esp_vfs_fat_get_allocation_unit_size(
+                CONFIG_WL_SECTOR_SIZE,
+                mount_config->allocation_unit_size);
+        ESP_LOGI(TAG, "Formatting FATFS partition, allocation unit size=%d", alloc_unit_size);
+        fresult = f_mkfs(drv, FM_ANY | FM_SFD, alloc_unit_size, workbuf, workbuf_size);
         if (fresult != FR_OK) {
             result = ESP_FAIL;
             ESP_LOGE(TAG, "f_mkfs failed (%d)", fresult);

@@ -113,19 +113,39 @@ config CLASSIC_BT_ENABLED
     help
         For now this option needs "SMP_ENABLE" to be set to yes
 
-config A2DP_SNK_ENABLED
-    bool "A2DP(SINK)"
+config A2DP_ENABLE
+    bool "A2DP"
     depends on CLASSIC_BT_ENABLED
     default n
     help
-        This option is used to enable/disable Advanced Audio Distribution Profile(Sink)
+        Advanced Audio Distrubution Profile
     
+choice A2DP_ROLE
+    prompt "A2DP ROLE config"
+    depends on A2DP_ENABLE
+
+config A2DP_SINK_ENABLE
+    bool "SINK"
+config A2DP_SRC_ENABLE
+    bool "SOURCE"
+endchoice
+
+config A2DP_SINK_TASK_STACK_SIZE
+    int "A2DP sink (audio stream decoding) task stack size"
+    depends on A2DP_ENABLE && A2DP_SINK_ENABLE
+    default 2048
+
+config A2DP_SOURCE_TASK_STACK_SIZE
+    int "A2DP source (audio stream encoding) task stack size"
+    depends on A2DP_ENABLE && A2DP_SRC_ENABLE
+    default 2048
+
 config BT_SPP_ENABLED
-    bool "SPP Profile"
+    bool "SPP"
     depends on CLASSIC_BT_ENABLED
     default n
     help
-        This enables the SPP Profile
+        This enables the Serial Port Profile
 
 config GATTS_ENABLE
     bool "Include GATT server module(GATTS)"
@@ -162,6 +182,20 @@ config BT_ACL_CONNECTIONS
     default 4
     help 
         Maximum BT/BLE connection count
+
+config BT_ALLOCATION_FROM_SPIRAM_FIRST
+    bool "BT/BLE will first malloc the memory from the PSRAM"
+    depends on BLUEDROID_ENABLED
+    default n
+    help
+        This select can save the internal RAM if there have the PSRAM
+
+config BT_BLE_DYNAMIC_ENV_MEMORY
+    bool "Use dynamic memory allocation in BT/BLE stack"
+    depends on BLUEDROID_ENABLED
+    default n
+    help
+        This select can make the allocation of memory will become more flexible
 
 config SMP_ENABLE
    bool

@@ -535,7 +535,7 @@ sys_timeouts_sleeptime(void)
  * @param mbox the mbox to fetch the message from
  * @param msg the place to store the message
  */
-void
+void ESP_IRAM_ATTR
 sys_timeouts_mbox_fetch(sys_mbox_t *mbox, void **msg)
 {
   u32_t time_needed;

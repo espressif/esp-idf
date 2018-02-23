@@ -153,6 +153,16 @@ The following roles are provided:
 - ``:example_file:`path``` - points to file inside ESP-IDF examples dir
 - ``:example_raw:`path``` - points to raw view of the file inside ESP-IDF examples dir
 
+Example implementation::
+
+    * :example:`get-started/hello_world`
+    * :example:`Hello World! <get-started/hello_world>`
+
+How it renders:
+
+* :example:`get-started/hello_world`
+* :example:`Hello World! <get-started/hello_world>`
+
 A check is added to the CI build script, which searches RST files for presence of hard-coded links (identified by tree/master, blob/master, or raw/master part of the URL). This check can be run manually: ``cd docs`` and then ``make gh-linkcheck``.
 
 .. _add-illustrations:
@@ -198,7 +208,7 @@ Once documentation is ready, follow instruction in :doc:`../api-reference/templa
 OK, but I am new to Sphinx!
 ---------------------------
 
-1. No worries. All the software you need is well documented. It is also open source and free. Start by checking `Sphinx <http://www.sphinx-doc.org/>`_ documentation. If you are not clear how to write using rst markup language, see `reStructuredText Primer <http://www.sphinx-doc.org/en/stable/rest.html>`_.
+1. No worries. All the software you need is well documented. It is also open source and free. Start by checking `Sphinx <http://www.sphinx-doc.org/>`_ documentation. If you are not clear how to write using rst markup language, see `reStructuredText Primer <http://www.sphinx-doc.org/en/stable/rest.html>`_. You can also use markdown (.md) files, and find out about more about the specific markdown syntax that we use on`Recommonmark parser's documentation page <https://recommonmark.readthedocs.io/en/latest/>`_.
 
 2. Check the source files of this documentation to understand what is behind of what you see now on the screen. Sources are maintained on GitHub in `espressif/esp-idf`_ repository in :idf:`docs` folder. You can go directly to the source file of this page by scrolling up and clicking the link in the top right corner. When on GitHub, see what's really inside, open source files by clicking ``Raw`` button.
 
@@ -221,6 +231,7 @@ You can setup environment to build documentation locally on your PC by installin
 3. Docment theme "sphinx_rtd_theme" - https://github.com/rtfd/sphinx_rtd_theme
 4. Breathe - https://github.com/michaeljones/breathe#breathe
 5. Blockdiag - http://blockdiag.com/en/index.html
+6. Recommonmark - https://github.com/rtfd/recommonmark
 
 The package "sphinx_rtd_theme" is added to have the same "look and feel" of `ESP32 Programming Guide <https://esp-idf.readthedocs.io/en/latest/index.html>`_ documentation like on the "Read the Docs" hosting site.
 
@@ -248,7 +259,7 @@ Installation of Doxygen is OS dependent:
 
 .. note::
 
-    If you are installing on Windows system (Linux and MacOS users should skip this note), **before** going further, execute two extra steps below. These steps are required for the :ref:`blockdiag <add-illustrations>` to install:
+    If you are installing on Windows system (Linux and MacOS users should skip this note), **before** going further, execute two extra steps below. These steps are required to install dependencies of "blockdiag" discussed under :ref:`add-illustrations`.
 
     1.  Update all the system packages:
 

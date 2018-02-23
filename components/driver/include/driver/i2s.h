@@ -138,7 +138,8 @@ typedef struct {
     int                     intr_alloc_flags;       /*!< Flags used to allocate the interrupt. One or multiple (ORred) ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info */
     int                     dma_buf_count;          /*!< I2S DMA Buffer Count */
     int                     dma_buf_len;            /*!< I2S DMA Buffer Length */
-    int                     use_apll;               /*!< I2S using APLL as main I2S clock, enable it to get accurate clock */
+    bool                    use_apll;              /*!< I2S using APLL as main I2S clock, enable it to get accurate clock */
+    int                     fixed_mclk;             /*!< I2S using fixed MCLK output. If use_apll = true and fixed_mclk > 0, then the clock output for i2s is fixed and equal to the fixed_mclk value.*/
 } i2s_config_t;
 
 /**
@@ -293,6 +294,8 @@ int i2s_write_bytes(i2s_port_t i2s_num, const char *src, size_t size, TickType_t
  *
  * Format of the data in source buffer is determined by the I2S
  * configuration (see i2s_config_t).
+ * @note If the built-in ADC mode is enabled, we should call i2s_adc_start and i2s_adc_stop around the whole reading process,
+ *       to prevent the data getting corrupted.
  *
  * @return  Number of bytes read, or ESP_FAIL (-1) for parameter error. If a timeout occurred, bytes read will be less than total size.
  */
@@ -389,7 +392,7 @@ esp_err_t i2s_zero_dma_buffer(i2s_port_t i2s_num);
 
 /**
  * @brief Set clock & bit width used for I2S RX and TX.
- * 
+ *
  * Similar to i2s_set_sample_rates(), but also sets bit width.
  *
  * @param i2s_num  I2S_NUM_0, I2S_NUM_1
@@ -399,7 +402,7 @@ esp_err_t i2s_zero_dma_buffer(i2s_port_t i2s_num);
  * @param bits I2S bit width (I2S_BITS_PER_SAMPLE_16BIT, I2S_BITS_PER_SAMPLE_24BIT, I2S_BITS_PER_SAMPLE_32BIT)
  *
  * @param ch I2S channel, (I2S_CHANNEL_MONO, I2S_CHANNEL_STEREO)
- * 
+ *
  * @return
  *     - ESP_OK   Success
  *     - ESP_FAIL Parameter error
@@ -416,6 +419,31 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
  *     - ESP_FAIL Parameter error
  */
 esp_err_t i2s_set_adc_mode(adc_unit_t adc_unit, adc1_channel_t adc_channel);
+
+/**
+ * @brief Start to use I2S built-in ADC mode
+ * @note This function would acquire the lock of ADC to prevent the data getting corrupted
+ *       during the I2S peripheral is being used to do fully continuous ADC sampling.
+ *
+ * @param i2s_num i2s port index
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_INVALID_STATE driver state error
+ *     - ESP_FAIL Internal driver error
+ */
+esp_err_t i2s_adc_enable(i2s_port_t i2s_num);
+
+/**
+ * @brief Stop to use I2S built-in ADC mode
+ * @param i2s_num i2s port index
+ * @note This function would release the lock of ADC so that other tasks can use ADC.
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_INVALID_STATE driver state error
+ */
+esp_err_t i2s_adc_disable(i2s_port_t i2s_num);
 
 #ifdef __cplusplus
 }

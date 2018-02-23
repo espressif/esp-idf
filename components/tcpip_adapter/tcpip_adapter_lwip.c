@@ -67,7 +67,7 @@ static sys_sem_t api_sync_sem = NULL;
 static bool tcpip_inited = false;
 static sys_sem_t api_lock_sem = NULL;
 extern sys_thread_t g_lwip_task;
-#define TAG "tcpip_adapter"
+static const char* TAG = "tcpip_adapter";
 
 static void tcpip_adapter_api_cb(void* api_msg)
 {
@@ -79,7 +79,7 @@ static void tcpip_adapter_api_cb(void* api_msg)
     }
 
     msg->ret = msg->api_fn(msg);
-    ESP_LOGD(TAG, "call api in lwip: ret=0x%x, give sem", msg->ret);
+    ESP_LOGV(TAG, "call api in lwip: ret=0x%x, give sem", msg->ret);
     sys_sem_signal(&api_sync_sem);
 
     return;
@@ -1178,6 +1178,20 @@ static esp_err_t tcpip_adapter_reset_ip_info(tcpip_adapter_if_t tcpip_if)
     ip4_addr_set_zero(&esp_ip[tcpip_if].ip);
     ip4_addr_set_zero(&esp_ip[tcpip_if].gw);
     ip4_addr_set_zero(&esp_ip[tcpip_if].netmask);
+    return ESP_OK;
+}
+
+esp_err_t tcpip_adapter_get_netif(tcpip_adapter_if_t tcpip_if, void ** netif)
+{
+    if (tcpip_if >= TCPIP_ADAPTER_IF_MAX) {
+        return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
+    }
+
+    *netif = esp_netif[tcpip_if];
+
+    if (*netif == NULL) {
+        return ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY;
+    }
     return ESP_OK;
 }
 

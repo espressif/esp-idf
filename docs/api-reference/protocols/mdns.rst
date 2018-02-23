@@ -20,21 +20,19 @@ Example method to start mDNS for the STA interface and set ``hostname`` and ``de
 
 ::
 
-    mdns_server_t * mdns = NULL;
-    
     void start_mdns_service()
     {
-        //initialize mDNS service on STA interface
-        esp_err_t err = mdns_init(TCPIP_ADAPTER_IF_STA, &mdns);
+        //initialize mDNS service
+        esp_err_t err = mdns_init();
         if (err) {
             printf("MDNS Init failed: %d\n", err);
             return;
         }
     
         //set hostname
-        mdns_set_hostname(mdns, "my-esp32");
+        mdns_hostname_set("my-esp32");
         //set default instance
-        mdns_set_instance(mdns, "Jhon's ESP32 Thing");
+        mdns_instance_name_set("Jhon's ESP32 Thing");
     }
 
 mDNS Services
@@ -42,36 +40,35 @@ mDNS Services
 
 mDNS can advertise information about network services that your device offers. Each service is defined by a few properties.
 
-    * ``service``: (required) service type, prepended with underscore. Some common types can be found `here <http://www.dns-sd.org/serviceTypes.html>`_.
+    * ``instance_name``: friendly name for your service, like ``Jhon's ESP32 Web Server``. If not defined, ``default_instance`` will be used.
+    * ``service_type``: (required) service type, prepended with underscore. Some common types can be found `here <http://www.dns-sd.org/serviceTypes.html>`_.
     * ``proto``: (required) protocol that the service runs on, prepended with underscore. Example: ``_tcp`` or ``_udp`` 
     * ``port``: (required) network port that the service runs on
-    * ``instance``: friendly name for your service, like ``Jhon's ESP32 Web Server``. If not defined, ``default_instance`` will be used.
-    * ``txt``: ``var=val`` array of strings, used to define properties for your service
+    * ``txt``: ``{var, val}`` array of strings, used to define properties for your service
 
 Example method to add a few services and different properties::
 
     void add_mdns_services()
     {
         //add our services
-        mdns_service_add(mdns, "_http", "_tcp", 80);
-        mdns_service_add(mdns, "_arduino", "_tcp", 3232);
-        mdns_service_add(mdns, "_myservice", "_udp", 1234);
+        mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0);
+        mdns_service_add(NULL, "_arduino", "_tcp", 3232, NULL, 0);
+        mdns_service_add(NULL, "_myservice", "_udp", 1234, NULL, 0);
         
         //NOTE: services must be added before their properties can be set
         //use custom instance for the web server
-        mdns_service_instance_set(mdns, "_http", "_tcp", "Jhon's ESP32 Web Server");
+        mdns_service_instance_name_set("_http", "_tcp", "Jhon's ESP32 Web Server");
 
-        const char * arduTxtData[4] = {
-                "board=esp32",
-                "tcp_check=no",
-                "ssh_upload=no",
-                "auth_upload=no"
+        mdns_txt_item_t serviceTxtData[3] = {
+            {"board","esp32"},
+            {"u","user"},
+            {"p","password"}
         };
         //set txt data for service (will free and replace current data)
-        mdns_service_txt_set(mdns, "_arduino", "_tcp", 4, arduTxtData);
+        mdns_service_txt_set("_http", "_tcp", serviceTxtData, 3);
         
         //change service port
-        mdns_service_port_set(mdns, "_myservice", "_udp", 4321);
+        mdns_service_port_set("_myservice", "_udp", 4321);
     }
 
 mDNS Query
@@ -79,60 +76,85 @@ mDNS Query
 
 mDNS provides methods for browsing for services and resolving host's IP/IPv6 addresses.
 
-Results are returned as a linked list of ``mdns_result_t`` objects. If the result is from host query, it will contain only ``addr`` and ``addrv6`` if found. Service queries will populate all fields in a result that were found.
+Results for services are returned as a linked list of ``mdns_result_t`` objects.
 
 Example method to resolve host IPs::
 
-    void resolve_mdns_host(const char * hostname)
+    void resolve_mdns_host(const char * host_name)
     {
-        printf("mDNS Host Lookup: %s.local\n", hostname);
-        //run search for 1000 ms
-        if (mdns_query(mdns, hostname, NULL, 1000)) {
-            //results were found
-            const mdns_result_t * results = mdns_result_get(mdns, 0);
-            //itterate through all results
-            size_t i = 1;
-            while(results) {
-                //print result information
-                printf("  %u: IP:" IPSTR ", IPv6:" IPV6STR "\n", i++
-                    IP2STR(&results->addr), IPV62STR(results->addrv6));
-                //load next result. Will be NULL if this was the last one
-                results = results->next;
+        printf("Query A: %s.local", host_name);
+
+        struct ip4_addr addr;
+        addr.addr = 0;
+
+        esp_err_t err = mdns_query_a(host_name, 2000,  &addr);
+        if(err){
+            if(err == ESP_ERR_NOT_FOUND){
+                printf("Host was not found!");
+                return;
             }
-            //free the results from memory
-            mdns_result_free(mdns);
-        } else {
-            //host was not found
-            printf("  Host Not Found\n");
+            printf("Query Failed");
+            return;
         }
+
+        printf(IPSTR, IP2STR(&addr));
     }
 
 Example method to resolve local services::
 
-    void find_mdns_service(const char * service, const char * proto)
-    {
-        printf("mDNS Service Lookup: %s.%s\n", service, proto);
-        //run search for 1000 ms
-        if (mdns_query(mdns, service, proto, 1000)) {
-            //results were found
-            const mdns_result_t * results = mdns_result_get(mdns, 0);
-            //itterate through all results
-            size_t i = 1;
-            while(results) {
-                //print result information
-                printf("  %u: hostname:%s, instance:\"%s\", IP:" IPSTR ", IPv6:" IPV6STR ", port:%u, txt:%s\n", i++,
-                    (results->host)?results->host:"NULL", (results->instance)?results->instance:"NULL",
-                    IP2STR(&results->addr), IPV62STR(results->addrv6),
-                    results->port, (results->txt)?results->txt:"\r");
-                //load next result. Will be NULL if this was the last one
-                results = results->next;
+    static const char * if_str[] = {"STA", "AP", "ETH", "MAX"};
+    static const char * ip_protocol_str[] = {"V4", "V6", "MAX"};
+
+    void mdns_print_results(mdns_result_t * results){
+        mdns_result_t * r = results;
+        mdns_ip_addr_t * a = NULL;
+        int i = 1, t;
+        while(r){
+            printf("%d: Interface: %s, Type: %s\n", i++, if_str[r->tcpip_if], ip_protocol_str[r->ip_protocol]);
+            if(r->instance_name){
+                printf("  PTR : %s\n", r->instance_name);
             }
-            //free the results from memory
-            mdns_result_free(mdns);
-        } else {
-            //service was not found
-            printf("  Service Not Found\n");
+            if(r->hostname){
+                printf("  SRV : %s.local:%u\n", r->hostname, r->port);
+            }
+            if(r->txt_count){
+                printf("  TXT : [%u] ", r->txt_count);
+                for(t=0; t<r->txt_count; t++){
+                    printf("%s=%s; ", r->txt[t].key, r->txt[t].value);
+                }
+                printf("\n");
+            }
+            a = r->addr;
+            while(a){
+                if(a->addr.type == MDNS_IP_PROTOCOL_V6){
+                    printf("  AAAA: " IPV6STR "\n", IPV62STR(a->addr.u_addr.ip6));
+                } else {
+                    printf("  A   : " IPSTR "\n", IP2STR(&(a->addr.u_addr.ip4)));
+                }
+                a = a->next;
+            }
+            r = r->next;
         }
+
+    }
+
+    void find_mdns_service(const char * service_name, const char * proto)
+    {
+        ESP_LOGI(TAG, "Query PTR: %s.%s.local", service_name, proto);
+
+        mdns_result_t * results = NULL;
+        esp_err_t err = mdns_query_ptr(service_name, proto, 3000, 20,  &results);
+        if(err){
+            ESP_LOGE(TAG, "Query Failed");
+            return;
+        }
+        if(!results){
+            ESP_LOGW(TAG, "No results found!");
+            return;
+        }
+
+        mdns_print_results(results);
+        mdns_query_results_free(results);
     }
 
 Example of using the methods above::

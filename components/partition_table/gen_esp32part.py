@@ -26,12 +26,16 @@ import os
 import re
 import struct
 import sys
+import hashlib
+import binascii
 
 MAX_PARTITION_LENGTH = 0xC00   # 3K for partition data (96 entries) leaves 1K in a 4K sector for signature
+MD5_PARTITION_BEGIN = b"\xEB\xEB" + b"\xFF" * 14 # The first 2 bytes are like magic numbers for MD5 sum
 
 __version__ = '1.0'
 
 quiet = False
+md5sum = True
 
 def status(msg):
     """ Print status message to stderr """
@@ -112,6 +116,7 @@ class PartitionTable(list):
 
     @classmethod
     def from_binary(cls, b):
+        md5 = hashlib.md5();
         result = cls()
         for o in range(0,len(b),32):
             data = b[o:o+32]
@@ -119,11 +124,20 @@ class PartitionTable(list):
                 raise InputError("Partition table length must be a multiple of 32 bytes")
             if data == b'\xFF'*32:
                 return result  # got end marker
+            if md5sum and data[:2] == MD5_PARTITION_BEGIN[:2]: #check only the magic number part
+                if data[16:] == md5.digest():
+                    continue # the next iteration will check for the end marker
+                else:
+                    raise InputError("MD5 checksums don't match! (computed: 0x%s, parsed: 0x%s)" % (md5.hexdigest(), binascii.hexlify(data[16:])))
+            else:
+                md5.update(data)
             result.append(PartitionDefinition.from_binary(data))
         raise InputError("Partition table is missing an end-of-table marker")
 
     def to_binary(self):
         result = b"".join(e.to_binary() for e in self)
+        if md5sum:
+            result += MD5_PARTITION_BEGIN + hashlib.md5(result).digest()
         if len(result )>= MAX_PARTITION_LENGTH:
             raise InputError("Binary partition table length (%d) longer than max" % len(result))
         result += b"\xFF" * (MAX_PARTITION_LENGTH - len(result))  # pad the sector, for signing
@@ -333,8 +347,10 @@ def parse_int(v, keywords={}):
 
 def main():
     global quiet
+    global md5sum
     parser = argparse.ArgumentParser(description='ESP32 partition table utility')
 
+    parser.add_argument('--disable-md5sum', help='Disable md5 checksum for the partition table', default=False, action='store_true')
     parser.add_argument('--verify', '-v', help='Verify partition table fields', default=True, action='store_false')
     parser.add_argument('--quiet', '-q', help="Don't print status messages to stderr", action='store_true')
 
@@ -346,6 +362,7 @@ def main():
     args = parser.parse_args()
 
     quiet = args.quiet
+    md5sum = not args.disable_md5sum
     input = args.input.read()
     input_is_binary = input[0:2] == PartitionDefinition.MAGIC_BYTES
     if input_is_binary:

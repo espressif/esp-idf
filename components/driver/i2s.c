@@ -31,6 +31,7 @@
 #include "driver/i2s.h"
 #include "driver/rtc_io.h"
 #include "driver/dac.h"
+#include "adc1_i2s_private.h"
 
 #include "esp_intr.h"
 #include "esp_err.h"
@@ -48,7 +49,7 @@ static const char* I2S_TAG = "I2S";
 #define I2S_EXIT_CRITICAL()          portEXIT_CRITICAL(&i2s_spinlock[i2s_num])
 #define I2S_FULL_DUPLEX_SLAVE_MODE_MASK   (I2S_MODE_TX | I2S_MODE_RX | I2S_MODE_SLAVE)
 #define I2S_FULL_DUPLEX_MASTER_MODE_MASK  (I2S_MODE_TX | I2S_MODE_RX | I2S_MODE_MASTER)
-#define APLL_MIN_FREQ (350000000)
+#define APLL_MIN_FREQ (250000000)
 #define APLL_MAX_FREQ (500000000)
 #define APLL_I2S_MIN_RATE (10675) //in Hz, I2S Clock rate limited by hardware
 /**
@@ -82,27 +83,16 @@ typedef struct {
     int bytes_per_sample;        /*!< Bytes per sample*/
     int bits_per_sample;        /*!< Bits per sample*/
     i2s_mode_t mode;            /*!< I2S Working mode*/
-    int use_apll;                /*!< I2S use APLL clock */
+    uint32_t sample_rate;              /*!< I2S sample rate */
+    bool use_apll;               /*!< I2S use APLL clock */
+    int fixed_mclk;             /*!< I2S fixed MLCK clock */
 } i2s_obj_t;
 
 static i2s_obj_t *p_i2s_obj[I2S_NUM_MAX] = {0};
 static i2s_dev_t* I2S[I2S_NUM_MAX] = {&I2S0, &I2S1};
 static portMUX_TYPE i2s_spinlock[I2S_NUM_MAX] = {portMUX_INITIALIZER_UNLOCKED, portMUX_INITIALIZER_UNLOCKED};
-
-/**
- * @brief Pre define APLL parameters, save compute time
- *        | bits_per_sample | rate | sdm0 | sdm1 | sdm2 | odir
- */
-static const int apll_predefine[][6] = {
-    {16, 11025, 38,  80,  5, 31},
-    {16, 16000, 147, 107, 5, 21},
-    {16, 22050, 130, 152, 5, 15},
-    {16, 32000, 129, 212, 5, 10},
-    {16, 44100, 15,  8,   5, 6},
-    {16, 48000, 136, 212, 5, 6},
-    {16, 96000, 143, 212, 5, 2},
-    {0,  0,     0,   0,   0, 0}
-};
+static int _i2s_adc_unit = -1;
+static int _i2s_adc_channel = -1;
 
 static i2s_dma_t *i2s_create_dma_queue(i2s_port_t i2s_num, int dma_buf_count, int dma_buf_len);
 static esp_err_t i2s_destroy_dma_queue(i2s_port_t i2s_num, i2s_dma_t *dma);
@@ -118,16 +108,16 @@ static esp_err_t i2s_reset_fifo(i2s_port_t i2s_num)
     return ESP_OK;
 }
 
-inline static void gpio_matrix_out_check(uint32_t gpio, uint32_t signal_idx, bool out_inv, bool oen_inv) 
+inline static void gpio_matrix_out_check(uint32_t gpio, uint32_t signal_idx, bool out_inv, bool oen_inv)
 {
     //if pin = -1, do not need to configure
     if (gpio != -1) {
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
         gpio_set_direction(gpio, GPIO_MODE_DEF_OUTPUT);
         gpio_matrix_out(gpio, signal_idx, out_inv, oen_inv);
-    } 
-} 
-inline static void gpio_matrix_in_check(uint32_t gpio, uint32_t signal_idx, bool inv) 
+    }
+}
+inline static void gpio_matrix_in_check(uint32_t gpio, uint32_t signal_idx, bool inv)
 {
     if (gpio != -1) {
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
@@ -182,13 +172,13 @@ esp_err_t i2s_enable_tx_intr(i2s_port_t i2s_num)
     return ESP_OK;
 }
 
-static esp_err_t i2s_isr_register(i2s_port_t i2s_num, uint8_t intr_alloc_flags, void (*fn)(void*), void * arg, i2s_isr_handle_t *handle)
+static esp_err_t i2s_isr_register(i2s_port_t i2s_num, int intr_alloc_flags, void (*fn)(void*), void * arg, i2s_isr_handle_t *handle)
 {
     return esp_intr_alloc(ETS_I2S0_INTR_SOURCE + i2s_num, intr_alloc_flags, fn, arg, handle);
 }
 
 
-static float i2s_get_apll_real_rate(int bits_per_sample, int sdm0, int sdm1, int sdm2, int odir)
+static float i2s_apll_get_fi2s(int bits_per_sample, int sdm0, int sdm1, int sdm2, int odir)
 {
     int f_xtal = (int)rtc_clk_xtal_freq_get() * 1000000;
     uint32_t is_rev0 = (GET_PERI_REG_BITS2(EFUSE_BLK0_RDATA3_REG, 1, 15) == 0);
@@ -198,37 +188,37 @@ static float i2s_get_apll_real_rate(int bits_per_sample, int sdm0, int sdm1, int
     }
     float fout = f_xtal * (sdm2 + sdm1 / 256.0f + sdm0 / 65536.0f + 4);
     if (fout < APLL_MIN_FREQ || fout > APLL_MAX_FREQ) {
-        return 9999999;
+        return APLL_MAX_FREQ;
     }
     float fpll = fout / (2 * (odir+2)); //== fi2s (N=1, b=0, a=1)
-    return fpll/(8*4*bits_per_sample); //fbck = fi2s/bck_div
+    return fpll/2;
 }
 
 /**
  * @brief     APLL calculate function, was described by following:
  *            APLL Output frequency is given by the formula:
- *            
+ *
  *            apll_freq = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)/((o_div + 2) * 2)
  *            apll_freq = fout / ((o_div + 2) * 2)
- *            
+ *
  *            The dividend in this expression should be in the range of 240 - 600 MHz.
  *            In rev. 0 of ESP32, sdm0 and sdm1 are unused and always set to 0.
  *            * sdm0  frequency adjustment parameter, 0..255
  *            * sdm1  frequency adjustment parameter, 0..255
  *            * sdm2  frequency adjustment parameter, 0..63
  *            * o_div  frequency divider, 0..31
- *            
- *            The most accurate way to find the sdm0..2 and odir parameters is to loop through them all, 
- *            then apply the above formula, finding the closest frequency to the desired one. 
+ *
+ *            The most accurate way to find the sdm0..2 and odir parameters is to loop through them all,
+ *            then apply the above formula, finding the closest frequency to the desired one.
  *            But 256*256*64*32 = 134.217.728 loops are too slow with ESP32
  *            1. We will choose the parameters with the highest level of change,
- *               With 350MHz<fout<500MHz, we limit the sdm2 from 4 to 9, 
+ *               With 350MHz<fout<500MHz, we limit the sdm2 from 4 to 9,
  *               Take average frequency close to the desired frequency, and select sdm2
- *            2. Next, we look for sequences of less influential and more detailed parameters, 
+ *            2. Next, we look for sequences of less influential and more detailed parameters,
  *               also by taking the average of the largest and smallest frequencies closer to the desired frequency.
  *            3. And finally, loop through all the most detailed of the parameters, finding the best desired frequency
  *
- * @param[in]  rate                  The sample rate
+ * @param[in]  rate                  The I2S Frequency (MCLK)
  * @param[in]  bits_per_sample       The bits per sample
  * @param[out]      sdm0             The sdm 0
  * @param[out]      sdm1             The sdm 1
@@ -237,45 +227,35 @@ static float i2s_get_apll_real_rate(int bits_per_sample, int sdm0, int sdm1, int
  *
  * @return     ESP_FAIL or ESP_OK
  */
-static esp_err_t i2s_apll_calculate(int rate, int bits_per_sample, int *sdm0, int *sdm1, int *sdm2, int *odir)
+
+static esp_err_t i2s_apll_calculate_fi2s(int rate, int bits_per_sample, int *sdm0, int *sdm1, int *sdm2, int *odir)
 {
-    int _odir, _sdm0, _sdm1, _sdm2, i;
+    int _odir, _sdm0, _sdm1, _sdm2;
     float avg;
     float min_rate, max_rate, min_diff;
-    if (rate < APLL_I2S_MIN_RATE) {
+    if (rate/bits_per_sample/2/8 < APLL_I2S_MIN_RATE) {
         return ESP_FAIL;
     }
-    //check pre-define apll parameters
-    i = 0;
-    while (apll_predefine[i][0]) {
-        if (apll_predefine[i][0] == bits_per_sample && apll_predefine[i][0] == rate) {
-            *sdm0 = apll_predefine[i][1];
-            *sdm1 = apll_predefine[i][2];
-            *sdm2 = apll_predefine[i][3];
-            *odir = apll_predefine[i][4];
-            return ESP_OK;
-        }
-        i++;
-    }
+
     *sdm0 = 0;
     *sdm1 = 0;
     *sdm2 = 0;
     *odir = 0;
-    min_diff = 99999;
+    min_diff = APLL_MAX_FREQ;
 
     for (_sdm2 = 4; _sdm2 < 9; _sdm2 ++) {
-        max_rate = i2s_get_apll_real_rate(bits_per_sample, 255, 255, _sdm2, 0);
-        min_rate = i2s_get_apll_real_rate(bits_per_sample, 0, 0, _sdm2, 31);
+        max_rate = i2s_apll_get_fi2s(bits_per_sample, 255, 255, _sdm2, 0);
+        min_rate = i2s_apll_get_fi2s(bits_per_sample, 0, 0, _sdm2, 31);
         avg = (max_rate + min_rate)/2;
         if(abs(avg - rate) < min_diff) {
             min_diff = abs(avg - rate);
             *sdm2 = _sdm2;
         }
     }
-    min_diff = 99999;
+    min_diff = APLL_MAX_FREQ;
     for (_odir = 0; _odir < 32; _odir ++) {
-        max_rate = i2s_get_apll_real_rate(bits_per_sample, 255, 255, *sdm2, _odir);
-        min_rate = i2s_get_apll_real_rate(bits_per_sample, 0, 0, *sdm2, _odir);
+        max_rate = i2s_apll_get_fi2s(bits_per_sample, 255, 255, *sdm2, _odir);
+        min_rate = i2s_apll_get_fi2s(bits_per_sample, 0, 0, *sdm2, _odir);
         avg = (max_rate + min_rate)/2;
         if(abs(avg - rate) < min_diff) {
             min_diff = abs(avg - rate);
@@ -283,29 +263,28 @@ static esp_err_t i2s_apll_calculate(int rate, int bits_per_sample, int *sdm0, in
         }
     }
 
-    min_diff = 99999;
+    min_diff = APLL_MAX_FREQ;
     for (_sdm1 = 0; _sdm1 < 256; _sdm1 ++) {
-        max_rate = i2s_get_apll_real_rate(bits_per_sample, 255, _sdm1, *sdm2, *odir);
-        min_rate = i2s_get_apll_real_rate(bits_per_sample, 0, _sdm1, *sdm2, *odir);
+        max_rate = i2s_apll_get_fi2s(bits_per_sample, 255, _sdm1, *sdm2, *odir);
+        min_rate = i2s_apll_get_fi2s(bits_per_sample, 0, _sdm1, *sdm2, *odir);
         avg = (max_rate + min_rate)/2;
         if (abs(avg - rate) < min_diff) {
             min_diff = abs(avg - rate);
             *sdm1 = _sdm1;
         }
     }
-    
-    min_diff = 99999;
+
+    min_diff = APLL_MAX_FREQ;
     for (_sdm0 = 0; _sdm0 < 256; _sdm0 ++) {
-        avg = i2s_get_apll_real_rate(bits_per_sample, _sdm0, *sdm1, *sdm2, *odir);
+        avg = i2s_apll_get_fi2s(bits_per_sample, _sdm0, *sdm1, *sdm2, *odir);
         if (abs(avg - rate) < min_diff) {
             min_diff = abs(avg - rate);
             *sdm0 = _sdm0;
         }
     }
-    
+
     return ESP_OK;
 }
-
 esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t bits, i2s_channel_t ch)
 {
     int factor = (256%bits)? 384 : 256; // According to hardware codec requirement(supported 256fs or 384fs)
@@ -321,12 +300,11 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
         return ESP_ERR_INVALID_ARG;
     }
 
-
     if (p_i2s_obj[i2s_num] == NULL) {
         ESP_LOGE(I2S_TAG, "Not initialized yet");
         return ESP_FAIL;
     }
-
+    p_i2s_obj[i2s_num]->sample_rate = rate;
     double clkmdiv = (double)I2S_BASE_CLK / (rate * factor);
 
     if (clkmdiv > 256) {
@@ -400,7 +378,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
         if (p_i2s_obj[i2s_num]->mode & I2S_MODE_RX) {
 
             save_rx = p_i2s_obj[i2s_num]->rx;
-            
+
             p_i2s_obj[i2s_num]->rx = i2s_create_dma_queue(i2s_num, p_i2s_obj[i2s_num]->dma_buf_count, p_i2s_obj[i2s_num]->dma_buf_len);
             if (p_i2s_obj[i2s_num]->rx == NULL){
                 ESP_LOGE(I2S_TAG, "Failed to create rx dma buffer");
@@ -415,7 +393,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
                 i2s_destroy_dma_queue(i2s_num, save_rx);
             }
         }
-        
+
     }
 
     double mclk;
@@ -451,18 +429,24 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
         mclk = clkmInteger + denom * clkmDecimals;
         bck = factor/(bits * channel);
     }
-    int sdm0, sdm1, sdm2, odir;
-    if(p_i2s_obj[i2s_num]->use_apll && i2s_apll_calculate(rate, bits, &sdm0, &sdm1, &sdm2, &odir) == ESP_OK) {
+    int sdm0, sdm1, sdm2, odir, m_scale = 8;
+    int fi2s_clk = rate*channel*bits*m_scale;
+    if(p_i2s_obj[i2s_num]->use_apll && p_i2s_obj[i2s_num]->fixed_mclk) {
+        fi2s_clk = p_i2s_obj[i2s_num]->fixed_mclk;
+        m_scale = fi2s_clk/bits/rate/channel;
+    }
+    if(p_i2s_obj[i2s_num]->use_apll && i2s_apll_calculate_fi2s(fi2s_clk, bits, &sdm0, &sdm1, &sdm2, &odir) == ESP_OK) {
+        ESP_LOGD(I2S_TAG, "sdm0=%d, sdm1=%d, sdm2=%d, odir=%d", sdm0, sdm1, sdm2, odir);
         rtc_clk_apll_enable(1, sdm0, sdm1, sdm2, odir);
         I2S[i2s_num]->clkm_conf.clkm_div_num = 1;
         I2S[i2s_num]->clkm_conf.clkm_div_b = 0;
         I2S[i2s_num]->clkm_conf.clkm_div_a = 1;
-        I2S[i2s_num]->sample_rate_conf.tx_bck_div_num = 8;
-        I2S[i2s_num]->sample_rate_conf.rx_bck_div_num = 8;
+        I2S[i2s_num]->sample_rate_conf.tx_bck_div_num = m_scale;
+        I2S[i2s_num]->sample_rate_conf.rx_bck_div_num = m_scale;
         I2S[i2s_num]->clkm_conf.clka_en = 1;
-        double real_rate = i2s_get_apll_real_rate(bits, sdm0, sdm1, sdm2, odir);
-        ESP_LOGI(I2S_TAG, "APLL: Req RATE: %d, real rate: %0.3f, BITS: %u, CLKM: %u, BCK: %u, MCLK: %0.3f, SCLK: %f, diva: %d, divb: %d",
-            rate, real_rate, bits, 1, 8, (double)I2S_BASE_CLK / mclk, real_rate*bits*channel, 1, 0);
+        double fi2s_rate = i2s_apll_get_fi2s(bits, sdm0, sdm1, sdm2, odir);
+        ESP_LOGI(I2S_TAG, "APLL: Req RATE: %d, real rate: %0.3f, BITS: %u, CLKM: %u, BCK_M: %u, MCLK: %0.3f, SCLK: %f, diva: %d, divb: %d",
+            rate, fi2s_rate/bits/channel/m_scale, bits, 1, m_scale, fi2s_rate, fi2s_rate/8, 1, 0);
     } else {
         I2S[i2s_num]->clkm_conf.clka_en = 0;
         I2S[i2s_num]->clkm_conf.clkm_div_a = 63;
@@ -474,10 +458,10 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
         ESP_LOGI(I2S_TAG, "PLL_D2: Req RATE: %d, real rate: %0.3f, BITS: %u, CLKM: %u, BCK: %u, MCLK: %0.3f, SCLK: %f, diva: %d, divb: %d",
             rate, real_rate, bits, clkmInteger, bck, (double)I2S_BASE_CLK / mclk, real_rate*bits*channel, 64, clkmDecimals);
     }
-    
+
     I2S[i2s_num]->sample_rate_conf.tx_bits_mod = bits;
     I2S[i2s_num]->sample_rate_conf.rx_bits_mod = bits;
-    
+
     // wait all writing on-going finish
     if ((p_i2s_obj[i2s_num]->mode & I2S_MODE_TX) && p_i2s_obj[i2s_num]->tx) {
         xSemaphoreGive(p_i2s_obj[i2s_num]->tx->mux);
@@ -645,6 +629,18 @@ esp_err_t i2s_start(i2s_port_t i2s_num)
 {
     //start DMA link
     I2S_ENTER_CRITICAL();
+    i2s_reset_fifo(i2s_num);
+    //reset dma
+    I2S[i2s_num]->lc_conf.in_rst = 1;
+    I2S[i2s_num]->lc_conf.in_rst = 0;
+    I2S[i2s_num]->lc_conf.out_rst = 1;
+    I2S[i2s_num]->lc_conf.out_rst = 0;
+
+    I2S[i2s_num]->conf.tx_reset = 1;
+    I2S[i2s_num]->conf.tx_reset = 0;
+    I2S[i2s_num]->conf.rx_reset = 1;
+    I2S[i2s_num]->conf.rx_reset = 0;
+
     esp_intr_disable(p_i2s_obj[i2s_num]->i2s_isr_handle);
     I2S[i2s_num]->int_clr.val = 0xFFFFFFFF;
     if (p_i2s_obj[i2s_num]->mode & I2S_MODE_TX) {
@@ -677,17 +673,6 @@ esp_err_t i2s_stop(i2s_port_t i2s_num)
         i2s_disable_rx_intr(i2s_num);
     }
     I2S[i2s_num]->int_clr.val = I2S[i2s_num]->int_st.val; //clear pending interrupt
-    i2s_reset_fifo(i2s_num);
-    //reset dma
-    I2S[i2s_num]->lc_conf.in_rst = 1;
-    I2S[i2s_num]->lc_conf.in_rst = 0;
-    I2S[i2s_num]->lc_conf.out_rst = 1;
-    I2S[i2s_num]->lc_conf.out_rst = 0;
-
-    I2S[i2s_num]->conf.tx_reset = 1;
-    I2S[i2s_num]->conf.tx_reset = 0;
-    I2S[i2s_num]->conf.rx_reset = 1;
-    I2S[i2s_num]->conf.rx_reset = 0;
     I2S_EXIT_CRITICAL();
     return 0;
 }
@@ -714,10 +699,18 @@ esp_err_t i2s_set_dac_mode(i2s_dac_mode_t dac_mode)
     return ESP_OK;
 }
 
+static esp_err_t _i2s_adc_mode_recover()
+{
+    I2S_CHECK(((_i2s_adc_unit != -1) && (_i2s_adc_channel != -1)), "i2s ADC recover error, not initialized...", ESP_ERR_INVALID_ARG);
+    return adc_i2s_mode_init(_i2s_adc_unit, _i2s_adc_channel);
+}
+
 esp_err_t i2s_set_adc_mode(adc_unit_t adc_unit, adc1_channel_t adc_channel)
 {
     I2S_CHECK((adc_unit < ADC_UNIT_2), "i2s ADC unit error, only support ADC1 for now", ESP_ERR_INVALID_ARG);
     // For now, we only support SAR ADC1.
+    _i2s_adc_unit = adc_unit;
+    _i2s_adc_channel = adc_channel;
     return adc_i2s_mode_init(adc_unit, adc_channel);
 }
 
@@ -856,7 +849,7 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
         //initialize the specific ADC channel.
         //in the current stage, we only support ADC1 and single channel mode.
         //In default data mode, the ADC data is in 12-bit resolution mode.
-        adc_power_on();
+        adc_power_always_on();
     }
     // configure I2S data port interface.
     i2s_reset_fifo(i2s_num);
@@ -919,7 +912,7 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
         I2S[i2s_num]->conf.rx_right_first = 0;
         I2S[i2s_num]->conf.rx_slave_mod = 0; // Master
         I2S[i2s_num]->fifo_conf.rx_fifo_mod_force_en = 1;
-        
+
         if (i2s_config->mode & I2S_MODE_SLAVE) {
             I2S[i2s_num]->conf.rx_slave_mod = 1;//RX Slave
         }
@@ -990,6 +983,7 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
     }
 
     p_i2s_obj[i2s_num]->use_apll = i2s_config->use_apll;
+    p_i2s_obj[i2s_num]->fixed_mclk = i2s_config->fixed_mclk;
     return ESP_OK;
 }
 
@@ -1142,6 +1136,27 @@ int i2s_write_bytes(i2s_port_t i2s_num, const char *src, size_t size, TickType_t
     }
     xSemaphoreGive(p_i2s_obj[i2s_num]->tx->mux);
     return bytes_writen;
+}
+
+esp_err_t i2s_adc_enable(i2s_port_t i2s_num)
+{
+    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
+    I2S_CHECK((p_i2s_obj[i2s_num] != NULL), "Not initialized yet", ESP_ERR_INVALID_STATE);
+    I2S_CHECK((p_i2s_obj[i2s_num]->mode & I2S_MODE_ADC_BUILT_IN), "i2s built-in adc not enabled", ESP_ERR_INVALID_STATE);
+
+    adc1_i2s_mode_acquire();
+    _i2s_adc_mode_recover();
+    return i2s_set_clk(i2s_num, p_i2s_obj[i2s_num]->sample_rate, p_i2s_obj[i2s_num]->bits_per_sample, p_i2s_obj[i2s_num]->channel_num);
+}
+
+esp_err_t i2s_adc_disable(i2s_port_t i2s_num)
+{
+    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
+    I2S_CHECK((p_i2s_obj[i2s_num] != NULL), "Not initialized yet", ESP_ERR_INVALID_STATE);
+    I2S_CHECK((p_i2s_obj[i2s_num]->mode & I2S_MODE_ADC_BUILT_IN), "i2s built-in adc not enabled", ESP_ERR_INVALID_STATE);
+
+    adc1_lock_release();
+    return ESP_OK;
 }
 
 int i2s_read_bytes(i2s_port_t i2s_num, char* dest, size_t size, TickType_t ticks_to_wait)

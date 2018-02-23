@@ -39,81 +39,57 @@
 
 #include "dyn_mem.h"    /* defines static and/or dynamic memory for components */
 
+/******************************************************************************
+**
+** Classic BT features
+**
+******************************************************************************/
 #if CONFIG_CLASSIC_BT_ENABLED
 #define CLASSIC_BT_INCLUDED         TRUE
+#define BTC_SM_INCLUDED             TRUE
+#define BTC_PRF_QUEUE_INCLUDED      TRUE
+#define BTC_GAP_BT_INCLUDED         TRUE
 #define BTA_SDP_INCLUDED            TRUE
-#define BTA_PAN_INCLUDED            FALSE
-#define BTA_HH_INCLUDED             FALSE
 #define SDP_INCLUDED                TRUE
 
-#if CONFIG_A2DP_SNK_ENABLED
+#if CONFIG_A2DP_ENABLE
 #define BTA_AR_INCLUDED             TRUE
 #define BTA_AV_INCLUDED             TRUE
-#define BTA_AV_SINK_INCLUDED        TRUE
 #define AVDT_INCLUDED               TRUE
 #define A2D_INCLUDED                TRUE
 #define AVCT_INCLUDED               TRUE
 #define AVRC_INCLUDED               TRUE
 #define BTC_AV_INCLUDED             TRUE
+#endif /* CONFIG_A2DP_ENABLE */
+
+#if CONFIG_A2DP_SINK_ENABLE
+#define BTA_AV_SINK_INCLUDED        TRUE
+#define BTC_AV_SINK_INCLUDED        TRUE
 #define SBC_DEC_INCLUDED            TRUE
-#else
-#define BTA_AR_INCLUDED             FALSE
-#define BTA_AV_INCLUDED             FALSE
-#define BTA_AV_SINK_INCLUDED        FALSE
-#define AVDT_INCLUDED               FALSE
-#define A2D_INCLUDED                FALSE
-#define AVCT_INCLUDED               FALSE
-#define AVRC_INCLUDED               FALSE
-#define BTC_AV_INCLUDED             FALSE
-#define SBC_DEC_INCLUDED            FALSE
-#endif /* CONFIG_A2DP_SNK_ENABLED */
+#endif /* CONFIG_A2DP_SINK_ENABLE */
+
+#if CONFIG_A2DP_SRC_ENABLE
+#define BTC_AV_SRC_INCLUDED         TRUE
+#define SBC_ENC_INCLUDED            TRUE
+#endif /* CONFIG_A2DP_SRC_ENABLE */
 
 #if CONFIG_BT_SPP_ENABLED
 #define RFCOMM_INCLUDED             TRUE
 #define BTA_JV_INCLUDED             TRUE
 #define BTC_SPP_INCLUDED            TRUE
-#else /* #if CONFIG_BT_SPP_ENABLED */
-#define RFCOMM_INCLUDED             FALSE
-#define BTA_JV_INCLUDED             FALSE
-#define BTC_SPP_INCLUDED            FALSE
-#endif /* #if CONFIG_BT_SPP_ENABLED */
-
-#define PAN_INCLUDED                FALSE
-#define HID_HOST_INCLUDED           FALSE
-#define SBC_ENC_INCLUDED            FALSE
-#define MCA_INCLUDED                FALSE
-#define BTC_SM_INCLUDED             TRUE
-#define BTC_PRF_QUEUE_INCLUDED      TRUE
-#define BTC_GAP_BT_INCLUDED         TRUE
-
-#else /* #if CONFIG_CLASSIC_BT_ENABLED */
-#define CLASSIC_BT_INCLUDED         FALSE
-#define BTA_SDP_INCLUDED            FALSE
-#define BTA_PAN_INCLUDED            FALSE
-#define BTA_HH_INCLUDED             FALSE
-#define BTA_AR_INCLUDED             FALSE
-#define BTA_AV_INCLUDED             FALSE
-#define BTA_AV_SINK_INCLUDED        FALSE
-#define SDP_INCLUDED                FALSE
-#define RFCOMM_INCLUDED             FALSE
-#define BTA_JV_INCLUDED             FALSE
-#define BTC_SPP_INCLUDED            FALSE
-#define PAN_INCLUDED                FALSE
-#define HID_HOST_INCLUDED           FALSE
-#define AVDT_INCLUDED               FALSE
-#define A2D_INCLUDED                FALSE
-#define AVCT_INCLUDED               FALSE
-#define AVRC_INCLUDED               FALSE
-#define SBC_DEC_INCLUDED            FALSE
-#define SBC_ENC_INCLUDED            FALSE
-#define MCA_INCLUDED                FALSE
-#define BTC_SM_INCLUDED             FALSE
-#define BTC_PRF_QUEUE_INCLUDED      FALSE
-#define BTC_GAP_BT_INCLUDED         FALSE
-#define BTC_AV_INCLUDED             FALSE
+#endif /* CONFIG_BT_SPP_ENABLED */
 
 #endif /* #if CONFIG_CLASSIC_BT_ENABLED */
 
+#ifndef CLASSIC_BT_INCLUDED
+#define CLASSIC_BT_INCLUDED         FALSE
+#endif /* CLASSIC_BT_INCLUDED */
+
+/******************************************************************************
+**
+** BLE features
+**
+******************************************************************************/
 #if (CONFIG_GATTS_ENABLE)
 #define GATTS_INCLUDED              TRUE
 #else
@@ -164,16 +140,62 @@
 #define BTIF_INCLUDED FALSE
 #endif
 
+/******************************************************************************
+**
+** BTC-layer components
+**
+******************************************************************************/
+#ifndef BTC_GAP_BT_INCLUDED
+#define BTC_GAP_BT_INCLUDED FALSE
+#endif
+
+#ifndef BTC_PRF_QUEUE_INCLUDED
+#define BTC_PRF_QUEUE_INCLUDED FALSE
+#endif
+
+#ifndef BTC_SM_INCLUDED
+#define BTC_SM_INCLUDED FALSE
+#endif
+
+#ifndef BTC_AV_INCLUDED
+#define BTC_AV_INCLUDED FALSE
+#endif
+
+#ifndef BTC_AV_SINK_INCLUDED
+#define BTC_AV_SINK_INCLUDED FALSE
+#endif
+
+#ifndef BTC_AV_SRC_INCLUDED
+#define BTC_AV_SRC_INCLUDED FALSE
+#endif
+
+#ifndef BTC_SPP_INCLUDED
+#define BTC_SPP_INCLUDED FALSE
+#endif
+
+#ifndef SBC_DEC_INCLUDED
+#define SBC_DEC_INCLUDED FALSE
+#endif
+
+#ifndef SBC_ENC_INCLUDED
+#define SBC_ENC_INCLUDED FALSE
+#endif
+
+/******************************************************************************
+**
+** BTA-layer components
+**
+******************************************************************************/
 #ifndef BTA_INCLUDED
 #define BTA_INCLUDED TRUE
 #endif
 
 #ifndef BTA_PAN_INCLUDED
-#define BTA_PAN_INCLUDED FALSE//TRUE
+#define BTA_PAN_INCLUDED FALSE
 #endif
 
 #ifndef BTA_HH_INCLUDED
-#define BTA_HH_INCLUDED FALSE//TRUE
+#define BTA_HH_INCLUDED FALSE
 #endif
 
 #ifndef BTA_HH_ROLE
@@ -181,21 +203,47 @@
 #endif
 
 #ifndef BTA_HH_LE_INCLUDED
-#define BTA_HH_LE_INCLUDED FALSE//TRUE
+#define BTA_HH_LE_INCLUDED FALSE
 #endif
 
 #ifndef BTA_AR_INCLUDED
-#define BTA_AR_INCLUDED TRUE//TRUE
+#define BTA_AR_INCLUDED FALSE
 #endif
 
 #ifndef BTA_AV_INCLUDED
-#define BTA_AV_INCLUDED TRUE//TRUE
+#define BTA_AV_INCLUDED FALSE
 #endif
 
 #ifndef BTA_AV_SINK_INCLUDED
-#define BTA_AV_SINK_INCLUDED TRUE//FALSE
+#define BTA_AV_SINK_INCLUDED FALSE
 #endif
 
+#ifndef BTA_JV_INCLUDED
+#define BTA_JV_INCLUDED FALSE
+#endif
+
+#ifndef BTA_SDP_INCLUDED
+#define BTA_SDP_INCLUDED FALSE
+#endif
+
+/******************************************************************************
+**
+** Stack-layer components
+**
+******************************************************************************/
+#ifndef AVCT_INCLUDED
+#define AVCT_INCLUDED FALSE
+#endif
+
+#ifndef AVDT_INCLUDED
+#define AVDT_INCLUDED FALSE
+#endif
+
+/******************************************************************************
+**
+** Parameter Configurations for components
+**
+******************************************************************************/
 #ifndef BTA_DISABLE_DELAY
 #define BTA_DISABLE_DELAY 200 /* in milliseconds */
 #endif
@@ -1071,7 +1119,7 @@
 ******************************************************************************/
 
 #ifndef SDP_INCLUDED
-#define SDP_INCLUDED                FALSE //TRUE
+#define SDP_INCLUDED                FALSE
 #endif
 
 /* This is set to enable SDP server functionality. */
@@ -1458,7 +1506,7 @@ Range: 2 octets
 ******************************************************************************/
 
 #ifndef PAN_INCLUDED
-#define PAN_INCLUDED                     FALSE//TRUE
+#define PAN_INCLUDED                     FALSE
 #endif
 
 /* This will enable the PANU role */
@@ -1603,7 +1651,7 @@ Range: 2 octets
 ** Definitions for HID-Host
 */
 #ifndef  HID_HOST_INCLUDED
-#define HID_HOST_INCLUDED           FALSE//TRUE
+#define HID_HOST_INCLUDED           FALSE
 #endif
 
 #ifndef HID_HOST_MAX_DEVICES
@@ -1630,7 +1678,7 @@ Range: 2 octets
  * A2DP Definitions
  */
 #ifndef A2D_INCLUDED
-#define A2D_INCLUDED            FALSE//TRUE
+#define A2D_INCLUDED            FALSE
 #endif
 
 /******************************************************************************
@@ -1655,7 +1703,7 @@ Range: 2 octets
 **
 ******************************************************************************/
 #ifndef AVRC_INCLUDED
-#define AVRC_INCLUDED               TRUE
+#define AVRC_INCLUDED               FALSE
 #endif
 
 #ifndef AVRC_METADATA_INCLUDED

@@ -676,6 +676,8 @@ static const tSMP_ENTRY_TBL smp_entry_table[] = {
 
 #if SMP_DYNAMIC_MEMORY == FALSE
 tSMP_CB  smp_cb;
+#else
+tSMP_CB  *smp_cb_ptr;
 #endif
 #define SMP_ALL_TBL_MASK        0x80
 

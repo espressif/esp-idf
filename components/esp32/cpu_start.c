@@ -1,4 +1,4 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -328,6 +328,8 @@ void start_cpu0_default(void)
     do_global_ctors();
 #if CONFIG_INT_WDT
     esp_int_wdt_init();
+    //Initialize the interrupt watch dog for CPU0.
+    esp_int_wdt_cpu_init();
 #endif
     esp_cache_err_int_init();
     esp_crosscore_int_init();
@@ -377,6 +379,10 @@ void start_cpu1_default(void)
 #if CONFIG_ESP32_APPTRACE_ENABLE
     esp_err_t err = esp_apptrace_init();
     assert(err == ESP_OK && "Failed to init apptrace module on APP CPU!");
+#endif
+#if CONFIG_INT_WDT
+    //Initialize the interrupt watch dog for CPU1.
+    esp_int_wdt_cpu_init();
 #endif
     //Take care putting stuff here: if asked, FreeRTOS will happily tell you the scheduler
     //has started, but it isn't active *on this CPU* yet.

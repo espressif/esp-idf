@@ -77,6 +77,8 @@ static const tL2CAP_APPL_INFO dyn_info = {
 
 #if GATT_DYNAMIC_MEMORY == FALSE
 tGATT_CB  gatt_cb;
+#else
+tGATT_CB  *gatt_cb_ptr;
 #endif
 
 tGATT_DEFAULT gatt_default;
@@ -94,9 +96,9 @@ tGATT_DEFAULT gatt_default;
 void gatt_init (void)
 {
     tL2CAP_FIXED_CHNL_REG  fixed_reg;
-
-    GATT_TRACE_DEBUG("gatt_init()");
-
+#if GATT_DYNAMIC_MEMORY
+    gatt_cb_ptr = (tGATT_CB *)osi_malloc(sizeof(tGATT_CB));
+#endif /* #if GATT_DYNAMIC_MEMORY */
     memset (&gatt_cb, 0, sizeof(tGATT_CB));
     memset (&fixed_reg, 0, sizeof(tL2CAP_FIXED_CHNL_REG));
 
@@ -152,7 +154,7 @@ void gatt_init (void)
 ** Returns          void
 **
 *******************************************************************************/
-#if (GATTS_INCLUDED == TRUE)
+#if (GATT_INCLUDED == TRUE)
 void gatt_free(void)
 {
     int i;
@@ -172,13 +174,26 @@ void gatt_free(void)
         fixed_queue_free(gatt_cb.tcb[i].pending_ind_q, NULL);
         gatt_cb.tcb[i].pending_ind_q = NULL;
 
+        btu_free_timer(&gatt_cb.tcb[i].conf_timer_ent);
+        memset(&gatt_cb.tcb[i].conf_timer_ent, 0, sizeof(TIMER_LIST_ENT));
+
+        btu_free_timer(&gatt_cb.tcb[i].ind_ack_timer_ent);
+        memset(&gatt_cb.tcb[i].ind_ack_timer_ent, 0, sizeof(TIMER_LIST_ENT));
+    
+#if (GATTS_INCLUDED == TRUE)
         fixed_queue_free(gatt_cb.tcb[i].sr_cmd.multi_rsp_q, NULL);
         gatt_cb.tcb[i].sr_cmd.multi_rsp_q = NULL;
+#endif /* #if (GATTS_INCLUDED == TRUE) */
     }
 
+#if (GATTS_INCLUDED == TRUE)
     for (i = 0; i < GATT_MAX_SR_PROFILES; i++) {
         gatt_free_hdl_buffer(&gatt_cb.hdl_list[i]);
     }
+#endif /* #if (GATTS_INCLUDED == TRUE) */
+#if GATT_DYNAMIC_MEMORY
+    FREE_AND_RESET(gatt_cb_ptr);
+#endif /* #if GATT_DYNAMIC_MEMORY */
 }
 #endif  ///GATTS_INCLUDED == TRUE
 

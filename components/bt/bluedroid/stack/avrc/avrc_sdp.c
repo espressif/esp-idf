@@ -25,6 +25,7 @@
 #include "bt_target.h"
 #include "avrc_api.h"
 #include "avrc_int.h"
+#include "allocator.h"
 
 #if (defined(AVRC_INCLUDED) && AVRC_INCLUDED == TRUE)
 
@@ -41,6 +42,8 @@
 *****************************************************************************/
 #if AVRC_DYNAMIC_MEMORY == FALSE
 tAVRC_CB avrc_cb;
+#else
+tAVRC_CB *avrc_cb_ptr;
 #endif
 
 /* update AVRC_NUM_PROTO_ELEMS if this constant is changed */
@@ -342,6 +345,9 @@ UINT8 AVRC_SetTraceLevel (UINT8 new_level)
 *******************************************************************************/
 void AVRC_Init(void)
 {
+#if AVRC_DYNAMIC_MEMORY
+    avrc_cb_ptr = (tAVRC_CB *)osi_malloc(sizeof(tAVRC_CB));
+#endif /* #if AVRC_DYNAMIC_MEMORY */
     memset(&avrc_cb, 0, sizeof(tAVRC_CB));
 
 #if defined(AVRC_INITIAL_TRACE_LEVEL)

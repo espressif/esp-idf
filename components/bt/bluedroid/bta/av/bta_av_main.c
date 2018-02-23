@@ -194,6 +194,8 @@ const tBTA_AV_NSM_ACT bta_av_nsm_act[] = {
 /* AV control block */
 #if BTA_DYNAMIC_MEMORY == FALSE
 tBTA_AV_CB  bta_av_cb;
+#else
+tBTA_AV_CB  *bta_av_cb_ptr;
 #endif
 
 #if (defined(BTA_AV_DEBUG) && BTA_AV_DEBUG == TRUE)

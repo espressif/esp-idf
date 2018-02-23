@@ -407,7 +407,7 @@ static void test_teardown()
     TEST_ESP_OK(esp_vfs_spiffs_unregister(spiffs_test_partition_label));
 }
 
-TEST_CASE("can format partition", "[spiffs]")
+TEST_CASE("can initialize SPIFFS in erased partition", "[spiffs]")
 {
     const esp_partition_t* part = get_test_data_partition();
     TEST_ASSERT_NOT_NULL(part);
@@ -417,6 +417,44 @@ TEST_CASE("can format partition", "[spiffs]")
     TEST_ESP_OK(esp_spiffs_info(spiffs_test_partition_label, &total, &used));
     printf("total: %d, used: %d\n", total, used);
     TEST_ASSERT_EQUAL(0, used);
+    test_teardown();
+}
+
+TEST_CASE("can format mounted partition", "[spiffs]")
+{
+    // Mount SPIFFS, create file, format, check that the file does not exist.
+    const esp_partition_t* part = get_test_data_partition();
+    TEST_ASSERT_NOT_NULL(part);
+    test_setup();
+    const char* filename = "/spiffs/hello.txt";
+    test_spiffs_create_file_with_text(filename, spiffs_test_hello_str);
+    esp_spiffs_format(part->label);
+    FILE* f = fopen(filename, "r");
+    TEST_ASSERT_NULL(f);
+    test_teardown();
+}
+
+TEST_CASE("can format unmounted partition", "[spiffs]")
+{
+    // Mount SPIFFS, create file, unmount. Format. Mount again, check that
+    // the file does not exist.
+    const esp_partition_t* part = get_test_data_partition();
+    TEST_ASSERT_NOT_NULL(part);
+    test_setup();
+    const char* filename = "/spiffs/hello.txt";
+    test_spiffs_create_file_with_text(filename, spiffs_test_hello_str);
+    test_teardown();
+    esp_spiffs_format(part->label);
+    // Don't use test_setup here, need to mount without formatting
+    esp_vfs_spiffs_conf_t conf = {
+        .base_path = "/spiffs",
+        .partition_label = spiffs_test_partition_label,
+        .max_files = 5,
+        .format_if_mount_failed = false
+    };
+    TEST_ESP_OK(esp_vfs_spiffs_register(&conf));
+    FILE* f = fopen(filename, "r");
+    TEST_ASSERT_NULL(f);
     test_teardown();
 }
 

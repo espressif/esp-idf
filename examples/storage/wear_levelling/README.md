@@ -1,4 +1,4 @@
-# SD Card example
+# Wear levelling example
 
 This example demonstrates how to use wear levelling library and FATFS library to store files in a partition inside SPI flash. Example does the following steps:
 
@@ -15,9 +15,14 @@ This example demonstrates how to use wear levelling library and FATFS library to
 Here is an typical example console output. 
 
 ```
-Try to open file ...
-I (239) wear_level: Reading file
-Read from file: 'Hello User! I'm happy to see you!1'
-W (239) wear_levelling: wl_unmount Delete driver
+I (280) example: Mounting FAT filesystem
+W (440) vfs_fat_spiflash: f_mount failed (13)
+I (440) vfs_fat_spiflash: Formatting FATFS partition, allocation unit size=4096
+I (660) vfs_fat_spiflash: Mounting again
+I (660) example: Opening file
+I (910) example: File written
+I (910) example: Reading file
+I (920) example: Read from file: 'written using ESP-IDF v3.1-dev-171-gf9ad17eee-dirty'
+I (920) example: Unmounting FAT filesystem
+I (1000) example: Done
 ```
-

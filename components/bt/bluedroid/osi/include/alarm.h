@@ -57,6 +57,9 @@ void osi_alarm_free(osi_alarm_t *alarm);
 // |alarm| and |cb| may not be NULL.
 osi_alarm_err_t osi_alarm_set(osi_alarm_t *alarm, period_ms_t timeout);
 
+// Sets an periodic alarm to fire |cb| each given |period|.
+osi_alarm_err_t osi_alarm_set_periodic(osi_alarm_t *alarm, period_ms_t period);
+
 // This function cancels the |alarm| if it was previously set. When this call
 // returns, the caller has a guarantee that the callback is not in progress and
 // will not be called if it hasn't already been called. This function is idempotent.
@@ -65,6 +68,7 @@ osi_alarm_err_t osi_alarm_cancel(osi_alarm_t *alarm);
 
 // Figure out how much time until next expiration.
 // Returns 0 if not armed. |alarm| may not be NULL.
+// only for oneshot alarm, not for periodic alarm
 // TODO: Remove this function once PM timers can be re-factored
 period_ms_t osi_alarm_get_remaining_ms(const osi_alarm_t *alarm);
 

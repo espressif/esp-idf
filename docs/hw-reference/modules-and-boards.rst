@@ -104,6 +104,7 @@ Documentation
 
 * `ESP32-WROVER Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wrover_datasheet_en.pdf>`__ (PDF)
 * `ESP-PSRAM32 Datasheet <https://espressif.com/sites/default/files/documentation/esp-psram32_datasheet_en.pdf>`__ (PDF)
+* `ESP32-WROVER Reference Design <http://www.espressif.com/sites/default/files/documentation/esp32-wrover_reference_design.zip>`_ PDF containing OrCAD schematic, PCB layout, gerbers and BOM
 
 
 .. _esp-modules-and-boards-esp32-pico-pit-v4:
@@ -138,25 +139,30 @@ Previous Versions
 
 .. _esp-modules-and-boards-esp32-devkitc:
    
-ESP32 Core Board V2 / ESP32 DevKitC
-===================================
+ESP32 DevKitC V4
+================
 
-Small and convenient development board with :ref:`esp-modules-and-boards-esp-wroom-32` module installed, break out pin headers and minimum additional components. Includes USB to serial programming interface, that also provides power supply for the board. Has pushbuttons to reset the board and put it in upload mode. 
+Small and convenient development board with :ref:`esp-modules-and-boards-esp-wroom-32` module installed, break out pin headers and minimum additional components. Includes USB to serial programming interface, that also provides power supply for the board. Has pushbuttons to reset the board and put it in upload mode. Comparing to the previous :ref:`esp-modules-and-boards-esp32-devkitc-v2`, instead of ESP-WROOM-32 it can accommodate :ref:`esp-modules-and-boards-esp32-wrover` module and has CP2102N chip that supports faster baud rates.
 
-.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-core-board-v2.png
+.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-devkitc-v4-front.jpg
     :align: center
-    :alt: ESP32 Core Board V2 / ESP32 DevKitC board
+    :alt: ESP32 DevKitC V4 board
     :width: 50%
 
-    ESP32 Core Board V2 / ESP32 DevKitC board
+    ESP32 DevKitC V4 board
 
 Documentation
 -------------
 
 * :doc:`../get-started/get-started-devkitc`
-* `ESP32 DevKitC Schematic <https://dl.espressif.com/dl/schematics/ESP32-Core-Board-V2_sch.pdf>`__ (PDF)
-* `ESP32 Development Board Reference Design <https://espressif.com/sites/default/files/documentation/esp32_development_board_reference_design.zip>`_ (ZIP) containing OrCAD schematic, PCB layout, gerbers and BOM
+* `ESP32-DevKitC schematic <https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch.pdf>`_ (PDF)
+* `ESP32-DevKitC Reference Design <http://www.espressif.com/sites/default/files/documentation/esp32-devkitc-v4_reference_design_0.zip>`_ (ZIP) containing OrCAD schematic, PCB layout, gerbers and BOM
 * `CP210x USB to UART Bridge VCP Drivers <https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers>`_
+
+Previous Versions
+-----------------
+
+* :ref:`esp-modules-and-boards-esp32-devkitc-v2`
 
 
 .. _esp-modules-and-boards-esp-wrover-kit-v3:

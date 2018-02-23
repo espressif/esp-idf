@@ -1440,7 +1440,7 @@ lwip_netconn_do_listen(void *m)
  *
  * @param msg the api_msg_msg pointing to the connection
  */
-void
+void ESP_IRAM_ATTR
 lwip_netconn_do_send(void *m)
 {
   struct api_msg_msg *msg = (struct api_msg_msg*)m;

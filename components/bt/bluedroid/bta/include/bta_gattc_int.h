@@ -30,6 +30,7 @@
 #include "bta_gattc_ci.h"
 #include "bta_gattc_co.h"
 #include "fixed_queue.h"
+#include "mutex.h"
 
 /*****************************************************************************
 **  Constants and data types
@@ -357,8 +358,8 @@ enum {
 };
 
 typedef struct {
-    UINT8             state;
-
+    UINT8               state;
+    osi_mutex_t         write_ccc_mutex;
     tBTA_GATTC_CONN     conn_track[BTA_GATTC_CONN_MAX];
     tBTA_GATTC_BG_TCK   bg_track[BTA_GATTC_KNOWN_SR_MAX];
     tBTA_GATTC_RCB      cl_rcb[BTA_GATTC_CL_MAX];
@@ -514,5 +515,6 @@ extern BOOLEAN bta_gattc_conn_dealloc(BD_ADDR remote_bda);
 
 extern bool bta_gattc_cache_load(tBTA_GATTC_CLCB *p_clcb);
 extern void bta_gattc_cache_reset(BD_ADDR server_bda);
+extern void bta_gattc_deinit(void);
 
 #endif /* BTA_GATTC_INT_H */

@@ -132,26 +132,40 @@ void *osi_malloc_func(size_t size)
 {
 #ifdef CONFIG_BLUEDROID_MEM_DEBUG
     void *p;
-
+#if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST
+    p = heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
+#else
     p = malloc(size);
+#endif /* #if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST */
     osi_mem_dbg_record(p, size, __func__, __LINE__);
     return p;
 #else
+#if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST
+    return heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
+#else
     return malloc(size);
-#endif
+#endif /* #if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST */
+#endif /* #ifdef CONFIG_BLUEDROID_MEM_DEBUG */
 }
 
 void *osi_calloc_func(size_t size)
 {
 #ifdef CONFIG_BLUEDROID_MEM_DEBUG
     void *p;
-
+#if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST
+    p = heap_caps_calloc_prefer(1, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
+#else
     p = calloc(1, size);
+#endif /* #if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST */
     osi_mem_dbg_record(p, size, __func__, __LINE__);
     return p;
 #else
+#if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST
+    return heap_caps_calloc_prefer(1, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
+#else
     return calloc(1, size);
-#endif
+#endif /* #if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST */ 
+#endif /* #ifdef CONFIG_BLUEDROID_MEM_DEBUG */
 }
 
 void osi_free_func(void *ptr)

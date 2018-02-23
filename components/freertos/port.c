@@ -92,6 +92,7 @@
 */
 
 #include <stdlib.h>
+#include <string.h>
 #include <xtensa/config/core.h>
 
 #include "xtensa_rtos.h"
@@ -146,9 +147,24 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 	#if XCHAL_CP_NUM > 0
 	uint32_t *p;
 	#endif
+	uint32_t *threadptr;
+	void *task_thread_local_start;
+	extern int _thread_local_start, _thread_local_end, _rodata_start;
+	// TODO: check that TLS area fits the stack
+	uint32_t thread_local_sz = (uint8_t *)&_thread_local_end - (uint8_t *)&_thread_local_start;
 
-	/* Create interrupt stack frame aligned to 16 byte boundary */
-	sp = (StackType_t *) (((UBaseType_t)(pxTopOfStack + 1) - XT_CP_SIZE - XT_STK_FRMSZ) & ~0xf);
+	thread_local_sz = ALIGNUP(0x10, thread_local_sz);
+
+	/* Initialize task's stack so that we have the following structure at the top:
+
+		----LOW ADDRESSES ----------------------------------------HIGH ADDRESSES----------
+		 task stack | interrupt stack frame | thread local vars | co-processor save area |
+		----------------------------------------------------------------------------------
+					|																	 |
+					SP 																pxTopOfStack
+
+		All parts are aligned to 16 byte boundary. */
+	sp = (StackType_t *) (((UBaseType_t)(pxTopOfStack + 1) - XT_CP_SIZE - thread_local_sz - XT_STK_FRMSZ) & ~0xf);
 
 	/* Clear the entire frame (do not use memset() because we don't depend on C library) */
 	for (tp = sp; tp <= pxTopOfStack; ++tp)
@@ -177,6 +193,14 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 	/* Set the initial virtual priority mask value to all 1's. */
 	frame->vpri = 0xFFFFFFFF;
 	#endif
+
+	/* Init threadptr reg and TLS vars */
+	task_thread_local_start = (void *)(((uint32_t)pxTopOfStack - XT_CP_SIZE - thread_local_sz) & ~0xf);
+	memcpy(task_thread_local_start, &_thread_local_start, thread_local_sz);
+	threadptr = (uint32_t *)(sp + XT_STK_EXTRA);
+	/* shift threadptr by the offset of _thread_local_start from DROM start;
+	   need to take into account extra 16 bytes offset */
+	*threadptr = (uint32_t)task_thread_local_start - ((uint32_t)&_thread_local_start - (uint32_t)&_rodata_start) - 0x10;
 
 	#if XCHAL_CP_NUM > 0
 	/* Init the coprocessor save area (see xtensa_context.h) */
@@ -288,6 +312,14 @@ BaseType_t xPortInIsrContext()
 	return ret;
 }
 
+/*
+ * This function will be called in High prio ISRs. Returns true if the current core was in ISR context
+ * before calling into high prio ISR context.
+ */
+BaseType_t IRAM_ATTR xPortInterruptedFromISRContext()
+{
+	return (port_interruptNesting[xPortGetCoreID()] != 0);
+}
 
 void vPortAssertIfInISR()
 {
@@ -298,10 +330,6 @@ void vPortAssertIfInISR()
  * For kernel use: Initialize a per-CPU mux. Mux will be initialized unlocked.
  */
 void vPortCPUInitializeMutex(portMUX_TYPE *mux) {
-#if defined(CONFIG_SPIRAM_SUPPORT)
-    // Check if mux belongs to internal memory (DRAM), prerequisite for atomic operations
-    configASSERT(esp_ptr_internal((const void *) mux));
-#endif
 
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 	ets_printf("Initializing mux %p\n", mux);
@@ -377,6 +405,34 @@ void vPortSetStackWatchpoint( void* pxStackStart ) {
 	addr=(addr+31)&(~31);
 	esp_set_watchpoint(1, (char*)addr, 32, ESP_WATCHPOINT_STORE);
 }
+
+#if defined(CONFIG_SPIRAM_SUPPORT)
+/*
+ * Compare & set (S32C1) does not work in external RAM. Instead, this routine uses a mux (in internal memory) to fake it.
+ */
+static portMUX_TYPE extram_mux = portMUX_INITIALIZER_UNLOCKED;
+
+void uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set) {
+	uint32_t prev;
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
+	vPortCPUAcquireMutexIntsDisabled(&extram_mux, portMUX_NO_TIMEOUT, __FUNCTION__, __LINE__);
+#else
+	vPortCPUAcquireMutexIntsDisabled(&extram_mux, portMUX_NO_TIMEOUT); 
+#endif
+	prev=*addr;
+	if (prev==compare) {
+		*addr=*set;
+	}
+	*set=prev;
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
+	vPortCPUReleaseMutexIntsDisabled(&extram_mux, __FUNCTION__, __LINE__);
+#else
+	vPortCPUReleaseMutexIntsDisabled(&extram_mux);
+#endif
+}
+#endif //defined(CONFIG_SPIRAM_SUPPORT)
+
+
 
 uint32_t xPortGetTickRateHz(void) {
 	return (uint32_t)configTICK_RATE_HZ;

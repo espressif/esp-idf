@@ -65,12 +65,12 @@ inline static void multi_heap_assert(bool condition, const char *format, int lin
 
 #ifdef CONFIG_HEAP_TASK_TRACKING
 #define MULTI_HEAP_BLOCK_OWNER TaskHandle_t task;
-#define MULTI_HEAP_SET_BLOCK_OWNER(HEAD) HEAD->task = xTaskGetCurrentTaskHandle()
-#define MULTI_HEAP_GET_BLOCK_OWNER(HEAD) (HEAD->task)
+#define MULTI_HEAP_SET_BLOCK_OWNER(HEAD) (HEAD)->task = xTaskGetCurrentTaskHandle()
+#define MULTI_HEAP_GET_BLOCK_OWNER(HEAD) ((HEAD)->task)
 #else
 #define MULTI_HEAP_BLOCK_OWNER
 #define MULTI_HEAP_SET_BLOCK_OWNER(HEAD)
-#define MULTI_HEAP_GET_BLOCK_OWNER(HEAD)
+#define MULTI_HEAP_GET_BLOCK_OWNER(HEAD) (NULL)
 #endif
 
 #else // ESP_PLATFORM
@@ -86,5 +86,6 @@ inline static void multi_heap_assert(bool condition, const char *format, int lin
 
 #define MULTI_HEAP_BLOCK_OWNER
 #define MULTI_HEAP_SET_BLOCK_OWNER(HEAD)
-#define MULTI_HEAP_GET_BLOCK_OWNER(HEAD)
+#define MULTI_HEAP_GET_BLOCK_OWNER(HEAD) (NULL)
+
 #endif

@@ -24,7 +24,7 @@
 #include "bta_dm_ci.h"
 #include "btc_dm.h"
 #if (defined(BTIF_INCLUDED) && BTIF_INCLUDED == TRUE)
-#include "bt_utils.h"
+#include "bt_defs.h"
 #if (BTM_OOB_INCLUDED == TRUE)
 #include "btif_dm.h"
 #endif

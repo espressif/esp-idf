@@ -184,10 +184,10 @@ typedef struct tcpip_adapter_dns_param_s {
     msg.data     = (void*)(_data);\
     msg.api_fn   = (_fn);\
     if (TCPIP_ADAPTER_IPC_REMOTE == tcpip_adapter_ipc_check(&msg)) {\
-        ESP_LOGD(TAG, "check: remote, if=%d fn=%p\n", (_if), (_fn));\
+        ESP_LOGV(TAG, "check: remote, if=%d fn=%p\n", (_if), (_fn));\
         return msg.ret;\
     } else {\
-        ESP_LOGD(TAG, "check: local, if=%d fn=%p\n", (_if), (_fn));\
+        ESP_LOGV(TAG, "check: local, if=%d fn=%p\n", (_if), (_fn));\
     }\
 }while(0)
 
@@ -602,6 +602,18 @@ esp_err_t tcpip_adapter_set_hostname(tcpip_adapter_if_t tcpip_if, const char *ho
  *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS:parameter error
  */
 esp_err_t tcpip_adapter_get_hostname(tcpip_adapter_if_t tcpip_if, const char **hostname);
+
+/**
+ * @brief  Get the LwIP netif* that is assigned to the interface
+ *
+ * @param[in]   tcpip_if: the interface which we will get the hostname
+ * @param[out]  void ** netif: pointer to fill the resulting interface
+ *
+ * @return ESP_OK:success
+ *         ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY:interface status error
+ *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS:parameter error
+ */
+esp_err_t tcpip_adapter_get_netif(tcpip_adapter_if_t tcpip_if, void ** netif);
 
 #ifdef __cplusplus
 }

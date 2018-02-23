@@ -48,6 +48,8 @@
 /* system manager control block definition */
 #if BTA_DYNAMIC_MEMORY == FALSE
 tBTA_SYS_CB bta_sys_cb;
+#else
+tBTA_SYS_CB *bta_sys_cb_ptr;
 #endif
 
 static hash_map_t *bta_alarm_hash_map;
@@ -190,6 +192,9 @@ void bta_sys_free(void)
 {
     hash_map_free(bta_alarm_hash_map);
     osi_mutex_free(&bta_alarm_lock);
+#if BTA_DYNAMIC_MEMORY
+    FREE_AND_RESET(bta_sys_cb_ptr);
+#endif
 }
 
 /*******************************************************************************
@@ -650,6 +655,28 @@ void bta_sys_stop_timer(TIMER_LIST_ENT *p_tle)
         return;
     }
     osi_alarm_cancel(alarm);
+}
+
+/*******************************************************************************
+**
+** Function         bta_sys_free_timer
+**
+** Description      Stop and free a BTA timer.
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_sys_free_timer(TIMER_LIST_ENT *p_tle)
+{
+    assert(p_tle != NULL);
+
+    osi_alarm_t *alarm = hash_map_get(bta_alarm_hash_map, p_tle);
+    if (alarm == NULL) {
+        LOG_DEBUG("%s expected alarm was not in bta alarm hash map.", __func__);
+        return;
+    }
+    osi_alarm_cancel(alarm);
+    hash_map_erase(bta_alarm_hash_map, p_tle);
 }
 
 /*******************************************************************************

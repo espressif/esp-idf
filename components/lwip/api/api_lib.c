@@ -72,7 +72,7 @@ static err_t netconn_close_shutdown(struct netconn *conn, u8_t how);
  * @param apimsg a struct containing the function to call and its parameters
  * @return ERR_OK if the function was called, another err_t if not
  */
-static err_t
+static err_t ESP_IRAM_ATTR
 tcpip_apimsg(struct api_msg *apimsg)
 {
 #if LWIP_DEBUG
@@ -432,7 +432,7 @@ netconn_accept(struct netconn *conn, struct netconn **new_conn)
  * @return ERR_OK if data has been received, an error code otherwise (timeout,
  *                memory error or another error)
  */
-static err_t
+static err_t ESP_IRAM_ATTR
 netconn_recv_data(struct netconn *conn, void **new_buf)
 {
   void *buf = NULL;
@@ -566,7 +566,7 @@ netconn_recv_tcp_pbuf(struct netconn *conn, struct pbuf **new_buf)
  * @return ERR_OK if data has been received, an error code otherwise (timeout,
  *                memory error or another error)
  */
-err_t
+err_t ESP_IRAM_ATTR
 netconn_recv(struct netconn *conn, struct netbuf **new_buf)
 {
 #if LWIP_TCP
@@ -678,7 +678,7 @@ netconn_sendto(struct netconn *conn, struct netbuf *buf, const ip_addr_t *addr, 
  * @param buf a netbuf containing the data to send
  * @return ERR_OK if data was sent, any other err_t on error
  */
-err_t
+err_t ESP_IRAM_ATTR
 netconn_send(struct netconn *conn, struct netbuf *buf)
 {
   API_MSG_VAR_DECLARE(msg);

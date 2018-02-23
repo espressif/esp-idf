@@ -121,6 +121,56 @@ RTC slow memory
 
 Global and static variables used by code which runs from RTC memory (i.e. deep sleep stub code) must be placed into RTC slow memory. Please check detailed description in :doc:`deep sleep <deep-sleep-stub>` documentation.
 
+DMA Capable Requirement
+-----------------------
 
+Most DMA controllers (e.g. SPI, sdmmc, etc.) have requirements that sending/receiving buffers should be placed in DRAM
+and word-aligned. We suggest to place DMA buffers in static variables rather than in the stack. Use macro ``DMA_ATTR``
+to declare global/local static variables like::
+    
+    DMA_ATTR uint8_t buffer[]="I want to send something";
 
+    void app_main()
+    {
+        // initialization code...
+        spi_transaction_t temp = {
+            .tx_buffer = buffer,
+            .length = 8*sizeof(buffer),
+        };
+        spi_device_transmit( spi, &temp );
+        // other stuff
+    }
 
+Or::
+
+    void app_main()
+    {
+        DMA_ATTR static uint8_t buffer[]="I want to send something";
+        // initialization code...
+        spi_transaction_t temp = {
+            .tx_buffer = buffer,
+            .length = 8*sizeof(buffer),
+        };
+        spi_device_transmit( spi, &temp );
+        // other stuff
+    }
+
+Placing DMA buffers in the stack is still allowed, though you have to keep in mind:
+
+1. Never try to do this if the stack is in the pSRAM. If the stack of a task is placed in the pSRAM, several steps have
+   to be taken as described in :doc:`external-ram` (at least ``SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY`` option enabled in
+   the menuconfig). Make sure your task is not in the pSRAM.
+2. Use macro ``WORD_ALIGNED_ATTR`` in functions before variables to place them in proper positions like::
+
+    void app_main()
+    {
+        uint8_t stuff;
+        WORD_ALIGNED_ATTR uint8_t buffer[]="I want to send something";   //or the buffer will be placed right after stuff.
+        // initialization code...
+        spi_transaction_t temp = {
+            .tx_buffer = buffer,
+            .length = 8*sizeof(buffer),
+        };
+        spi_device_transmit( spi, &temp );
+        // other stuff
+    }

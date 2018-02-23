@@ -404,9 +404,8 @@ static void returnItemToRingbufDefault(ringbuf_t *rb, void *item) {
 //can be increase.
 //This function by itself is not threadsafe, always call from within a muxed section.
 static void returnItemToRingbufBytebuf(ringbuf_t *rb, void *item) {
-    uint8_t *data=(uint8_t*)item;
-    configASSERT(data >= rb->data);
-    configASSERT(data < rb->data+rb->size);
+    configASSERT((uint8_t *)item >= rb->data);
+    configASSERT((uint8_t *)item < rb->data+rb->size);
     //Free the read memory.
     rb->free_ptr=rb->read_ptr;
 }
@@ -603,16 +602,22 @@ BaseType_t xRingbufferSend(RingbufHandle_t ringbuf, void *data, size_t dataSize,
                 //we will need to wait some more.
                 if (ticks_to_wait != portMAX_DELAY) {
                     ticks_remaining = ticks_end - xTaskGetTickCount();
+
+                    // ticks_remaining will always be less than or equal to the original ticks_to_wait,
+                    // unless the timeout is reached - in which case it unsigned underflows to a much
+                    // higher value.
+                    //
+                    // (Check is written this non-intuitive way to allow for the case where xTaskGetTickCount()
+                    // has overflowed but the ticks_end value has not overflowed.)
+                    if(ticks_remaining > ticks_to_wait) {
+                        //Timeout, but there is not enough free space for the item that need to be sent.
+                        xSemaphoreGive(rb->free_space_sem);
+                        return pdFALSE;
+                    }
                 }
 
-                // ticks_remaining will always be less than or equal to the original ticks_to_wait,
-                // unless the timeout is reached - in which case it unsigned underflows to a much
-                // higher value.
-                //
-                // (Check is written this non-intuitive way to allow for the case where xTaskGetTickCount()
-                // has overflowed but the ticks_end value has not overflowed.)
             }
-        } while (ringbufferFreeMem(rb) < needed_size && ticks_remaining > 0 && ticks_remaining <= ticks_to_wait);
+        } while (ringbufferFreeMem(rb) < needed_size);
 
         //Lock the mux in order to make sure no one else is messing with the ringbuffer and do the copy.
         portENTER_CRITICAL(&rb->mux);
@@ -692,10 +697,9 @@ void *xRingbufferReceiveFromISR(RingbufHandle_t ringbuf, size_t *item_size)
 }
 
 void *xRingbufferReceiveUpTo(RingbufHandle_t ringbuf, size_t *item_size, TickType_t ticks_to_wait, size_t wanted_size) {
-    ringbuf_t *rb=(ringbuf_t *)ringbuf;
     if (wanted_size == 0) return NULL;
-    configASSERT(rb);
-    configASSERT(rb->flags & flag_bytebuf);
+    configASSERT(ringbuf);
+    configASSERT(((ringbuf_t *)ringbuf)->flags & flag_bytebuf);
     return xRingbufferReceiveGeneric(ringbuf, item_size, ticks_to_wait, wanted_size);
 }
 

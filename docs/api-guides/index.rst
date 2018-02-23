@@ -10,6 +10,7 @@ API Guides
    ESP32 Core Dump <core_dump>
    Flash Encryption <../security/flash-encryption>
    FreeRTOS SMP Changes <freertos-smp>
+   Thread Local Storage <thread-local-storage>
    High Level Interrupts <hlinterrupts>
    JTAG Debugging <jtag-debugging/index>
    Partition Tables <partition-tables>

@@ -308,7 +308,6 @@
 #define SOC_MEM_INTERNAL_LOW        0x3FF90000
 #define SOC_MEM_INTERNAL_HIGH       0x400C2000
 
-
 //Interrupt hardware source table
 //This table is decided by hardware, don't touch this.
 #define ETS_WIFI_MAC_INTR_SOURCE                0/**< interrupt of WiFi MAC, level*/

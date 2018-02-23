@@ -164,7 +164,7 @@ void esp_log_level_set(const char* tag, esp_log_level_t level)
 #ifdef LOG_BUILTIN_CHECKS
         assert(i == 0 || s_log_cache[(i - 1) / 2].generation < s_log_cache[i].generation);
 #endif
-        if (s_log_cache[i].tag == tag) {
+        if (strcmp(s_log_cache[i].tag,tag) == 0) {
             s_log_cache[i].level = level;
             break;
         }
@@ -419,8 +419,8 @@ void esp_log_buffer_hexdump_internal( const char *tag, const void *buffer, uint1
     char temp_buffer[BYTES_PER_LINE+3];   //for not-byte-accessible memory
     const char *ptr_line;
     //format: field[length]
-    // ADDR[10]+" "+DATA_HEX[8*3]+" "+DATA_HEX[8*3]+"  |"+DATA_CHAR[8]+"|"
-    char hd_buffer[10+2+BYTES_PER_LINE*3+3+BYTES_PER_LINE+1+1];
+    // ADDR[10]+"   "+DATA_HEX[8*3]+" "+DATA_HEX[8*3]+"  |"+DATA_CHAR[8]+"|"
+    char hd_buffer[10+3+BYTES_PER_LINE*3+3+BYTES_PER_LINE+1+1];
     char *ptr_hd;
     int bytes_cur_line;
 

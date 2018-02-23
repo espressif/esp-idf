@@ -25,7 +25,7 @@
 #include <string.h>
 #include "bt_types.h"
 #include "bt_target.h"
-#include "bt_utils.h"
+#include "bt_defs.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"
 #include "btm_api.h"
@@ -38,6 +38,8 @@
 /* Control block for AVCT */
 #if AVCT_DYNAMIC_MEMORY == FALSE
 tAVCT_CB avct_cb;
+#else 
+tAVCT_CB *avct_cb_ptr;
 #endif
 
 /*******************************************************************************

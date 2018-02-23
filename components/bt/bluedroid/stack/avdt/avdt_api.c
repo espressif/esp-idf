@@ -39,6 +39,8 @@
 /* Control block for AVDT */
 #if AVDT_DYNAMIC_MEMORY == FALSE
 tAVDT_CB avdt_cb;
+#else
+tAVDT_CB *avdt_cb_ptr;
 #endif
 
 /*******************************************************************************
