@@ -3748,6 +3748,9 @@ void btm_ble_init (void)
 
     BTM_TRACE_DEBUG("%s", __func__);
 
+    btu_free_timer(&p_cb->obs_timer_ent);
+    btu_free_timer(&p_cb->scan_timer_ent);
+    btu_free_timer(&p_cb->inq_var.fast_adv_timer);
     memset(p_cb, 0, sizeof(tBTM_BLE_CB));
     memset(&(btm_cb.cmn_ble_vsc_cb), 0 , sizeof(tBTM_BLE_VSC_CB));
     btm_cb.cmn_ble_vsc_cb.values_read = FALSE;
