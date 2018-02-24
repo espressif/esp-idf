@@ -113,6 +113,13 @@ config CLASSIC_BT_ENABLED
     help
         For now this option needs "SMP_ENABLE" to be set to yes
 
+config A2DP_SINK_TASK_STACK_SIZE
+    int "A2DP sink (audio stream decoding) task stack size"
+    depends on CLASSIC_BT_ENABLED
+    default 2048
+    help
+        This affects the stack size of A2DP sink task which invokes the data callback function.
+
 config GATTS_ENABLE
     bool "Include GATT server module(GATTS)"
     depends on BLUEDROID_ENABLED
