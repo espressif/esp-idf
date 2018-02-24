@@ -348,7 +348,10 @@ error_exit:;
         vQueueDelete(btc_aa_src_ctrl_queue);
         btc_aa_src_ctrl_queue = NULL;
     }
-
+    if (btc_aa_src_queue_set) {
+        vQueueDelete(btc_aa_src_queue_set);
+        btc_aa_src_queue_set = NULL;
+    }
     return false;
 }
 
@@ -367,6 +370,9 @@ void btc_a2dp_source_shutdown(void)
 
     vQueueDelete(btc_aa_src_ctrl_queue);
     btc_aa_src_ctrl_queue = NULL;
+
+    vQueueDelete(btc_aa_src_queue_set);
+    btc_aa_src_queue_set = NULL;
 }
 
 /*****************************************************************************
