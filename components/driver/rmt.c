@@ -66,6 +66,7 @@ typedef struct {
     int tx_offset;
     int tx_len_rem;
     int tx_sub_len;
+    bool wait_done; //Mark whether wait tx done.
     rmt_channel_t channel;
     const rmt_item32_t* tx_data;
     xSemaphoreHandle tx_sem;
@@ -181,7 +182,10 @@ esp_err_t rmt_tx_stop(rmt_channel_t channel)
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&rmt_spinlock);
+    RMTMEM.chan[channel].data32[0].val = 0;
     RMT.conf_ch[channel].conf1.tx_start = 0;
+    RMT.conf_ch[channel].conf1.mem_rd_rst = 1;
+    RMT.conf_ch[channel].conf1.mem_rd_rst = 0;
     portEXIT_CRITICAL(&rmt_spinlock);
     return ESP_OK;
 }
@@ -548,6 +552,8 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
                     //TX END
                     case 0:
                         xSemaphoreGiveFromISR(p_rmt->tx_sem, &HPTaskAwoken);
+                        RMT.conf_ch[channel].conf1.mem_rd_rst = 1;
+                        RMT.conf_ch[channel].conf1.mem_rd_rst = 0;
                         if(HPTaskAwoken == pdTRUE) {
                             portYIELD_FROM_ISR();
                         }
@@ -635,8 +641,10 @@ esp_err_t rmt_driver_uninstall(rmt_channel_t channel)
     if(p_rmt_obj[channel] == NULL) {
         return ESP_OK;
     }
-    xSemaphoreTake(p_rmt_obj[channel]->tx_sem, portMAX_DELAY);
-
+    //Avoid blocking here(when the interrupt is disabled and do not wait tx done).
+    if(p_rmt_obj[channel]->wait_done) {
+        xSemaphoreTake(p_rmt_obj[channel]->tx_sem, portMAX_DELAY);  
+    }
     rmt_set_rx_intr_en(channel, 0);
     rmt_set_err_intr_en(channel, 0);
     rmt_set_tx_intr_en(channel, 0);
@@ -695,6 +703,7 @@ esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr
     p_rmt_obj[channel]->channel = channel;
     p_rmt_obj[channel]->tx_offset = 0;
     p_rmt_obj[channel]->tx_sub_len = 0;
+    p_rmt_obj[channel]->wait_done = false;
 
     if(p_rmt_obj[channel]->tx_sem == NULL) {
         p_rmt_obj[channel]->tx_sem = xSemaphoreCreateBinary();
@@ -748,9 +757,10 @@ esp_err_t rmt_write_items(rmt_channel_t channel, const rmt_item32_t* rmt_item, i
     } else {
         rmt_fill_memory(channel, rmt_item, len_rem, 0);
         RMTMEM.chan[channel].data32[len_rem].val = 0;
-        len_rem = 0;
+        p_rmt->tx_len_rem = 0;
     }
     rmt_tx_start(channel, true);
+    p_rmt->wait_done = wait_tx_done;
     if(wait_tx_done) {
         xSemaphoreTake(p_rmt->tx_sem, portMAX_DELAY);
         xSemaphoreGive(p_rmt->tx_sem);
@@ -763,6 +773,7 @@ esp_err_t rmt_wait_tx_done(rmt_channel_t channel, TickType_t wait_time)
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     RMT_CHECK(p_rmt_obj[channel] != NULL, RMT_DRIVER_ERROR_STR, ESP_FAIL);
     if(xSemaphoreTake(p_rmt_obj[channel]->tx_sem, wait_time) == pdTRUE) {
+        p_rmt_obj[channel]->wait_done = false;
         xSemaphoreGive(p_rmt_obj[channel]->tx_sem);
         return ESP_OK;
     }
