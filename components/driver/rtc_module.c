@@ -381,6 +381,19 @@ esp_err_t rtc_gpio_hold_dis(gpio_num_t gpio_num)
     return ESP_OK;
 }
 
+esp_err_t rtc_gpio_isolate(gpio_num_t gpio_num)
+{
+    if (rtc_gpio_desc[gpio_num].reg == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    rtc_gpio_pullup_dis(gpio_num);
+    rtc_gpio_pulldown_dis(gpio_num);
+    rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED);
+    rtc_gpio_hold_en(gpio_num);
+
+    return ESP_OK;
+}
 
 void rtc_gpio_force_hold_dis_all()
 {

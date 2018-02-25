@@ -157,6 +157,11 @@ void app_main()
     esp_sleep_enable_ulp_wakeup();
 #endif
 
+    // Isolate GPIO12 pin from external circuits. This is needed for modules
+    // which have an external pull-up resistor on GPIO12 (such as ESP32-WROVER)
+    // to minimize current consumption.
+    rtc_gpio_isolate(GPIO_NUM_12);
+
     printf("Entering deep sleep\n");
     gettimeofday(&sleep_enter_time, NULL);
 

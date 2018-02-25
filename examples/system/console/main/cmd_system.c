@@ -155,6 +155,7 @@ static int deep_sleep(int argc, char** argv)
 
         ESP_ERROR_CHECK( esp_sleep_enable_ext1_wakeup(1ULL << io_num, level) );
     }
+    rtc_gpio_isolate(GPIO_NUM_12);
     esp_deep_sleep_start();
 }
 
