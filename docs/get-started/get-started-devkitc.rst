@@ -1,13 +1,13 @@
-ESP32-DevKitC Getting Started Guide
-===================================
+ESP32-DevKitC V4 Getting Started Guide
+======================================
 
-This user guide shows how to get started with ESP32-DevKitC development board.
+This user guide shows how to get started with ESP32-DevKitC V4 development board. For description of other versions of the ESP32-DevKitC check :doc:`../hw-reference/index`.
 
 
 What You Need
 -------------
 
-* 1 × :ref:`ESP32-DevKitC board <get-started-esp32-devkitc-board-front>`
+* 1 × :ref:`ESP32-DevKitC V4 board <get-started-esp32-devkitc-board-front>`
 * 1 × USB A / micro USB B cable 
 * 1 × PC loaded with Windows, Linux or Mac OS
 
@@ -15,7 +15,7 @@ What You Need
 Overview
 --------
 
-ESP32-DevKitC is a small-sized ESP32-based development board produced by `Espressif <https://espressif.com>`_. Most of the I/O pins are broken out to the pin headers on both sides for easy interfacing. Developers can connect these pins to peripherals as needed. Standard headers also make development easy and convenient when using a breadboard. 
+ESP32-DevKitC V4 is a small-sized ESP32-based development board produced by `Espressif <https://espressif.com>`_. Most of the I/O pins are broken out to the pin headers on both sides for easy interfacing. Developers can connect these pins to peripherals as needed. Standard headers also make development easy and convenient when using a breadboard. 
 
 The board comes in two versions, either with :ref:`esp-modules-and-boards-esp-wroom-32` or :ref:`esp-modules-and-boards-esp32-wrover` module soldered.
 
@@ -23,10 +23,10 @@ The board comes in two versions, either with :ref:`esp-modules-and-boards-esp-wr
 Functional Description
 ----------------------
 
-The following list and figure below describe key components, interfaces and controls of ESP32-DevKitC board.
+The following list and figure below describe key components, interfaces and controls of ESP32-DevKitC V4 board.
 
 ESP-WROOM-32
-    :ref:`esp-modules-and-boards-esp-wroom-32` module soldered to the ESP32-DevKitC board.
+    :ref:`esp-modules-and-boards-esp-wroom-32` module soldered to the ESP32-DevKitC V4 board.
 ESP32-WROVER
     Optionally :ref:`esp-modules-and-boards-esp32-wrover` module may be soldered instead of the ESP-WROOM-32.
 USB-UART Bridge
@@ -55,10 +55,10 @@ I/O
 
 .. figure:: ../_static/esp32-devkitc-functional-overview.jpg
     :align: center
-    :alt: ESP32-DevKitC with ESP-WROOM-32 module soldered
+    :alt: ESP32-DevKitC V4 with ESP-WROOM-32 module soldered
     :figclass: align-center
 
-    ESP32-DevKitC with ESP-WROOM-32 module soldered
+    ESP32-DevKitC V4 with ESP-WROOM-32 module soldered
 
 
 Power Supply Options
@@ -102,7 +102,7 @@ Board Dimensions
 Related Documents
 -----------------
 
-* `ESP32-DevKitC schematic <https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch.pdf>`_ (PDF)
+* `ESP32-DevKitC V4 schematic <https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch.pdf>`_ (PDF)
 * `ESP32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF)
 * `ESP-WROOM-32 Datasheet <https://espressif.com/sites/default/files/documentation/esp-wroom-32_datasheet_en.pdf>`_ (PDF)
 * `ESP32-WROVER Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wrover_datasheet_en.pdf>`_ (PDF)
