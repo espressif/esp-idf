@@ -1,0 +1,27 @@
+menu "ADC-Calibration"
+
+config ADC_CAL_EFUSE_TP_ENABLE
+    bool "Use Two Point Values"
+    default "y"
+    help
+        Some ESP32s have Two Point calibration values burned into eFuse BLOCK3.
+        This option will allow the ADC calibration component to characterize the
+        ADC-Voltage curve using Two Point values if they are available.
+
+config ADC_CAL_EFUSE_VREF_ENABLE
+    bool "Use eFuse Vref"
+    default "y"
+    help
+        Some ESP32s have Vref burned into eFuse BLOCK0. This option will allow 
+        the ADC calibration component to characterize the ADC-Voltage curve using 
+        eFuse Vref if it is available.
+
+config ADC_CAL_LUT_ENABLE
+    bool "Use Lookup Tables"
+    default "y"
+    help
+        This option will allow the ADC calibration component to use Lookup Tables
+        to correct for non-linear behavior in 11db attenuation. Other attenuations
+        do not exhibit non-linear behavior hence will not be affected by this option.
+
+endmenu  # ADC-Calibration
