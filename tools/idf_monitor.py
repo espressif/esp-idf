@@ -580,15 +580,13 @@ if os.name == 'nt':
             self.matched = b''
 
         def _output_write(self, data):
-            # Windows 10 bug since the Fall Creators Update, sometimes writing to console randomly fails
-            # (but usually succeeds afterwards, it seems.)
-            # Ref https://github.com/espressif/esp-idf/issues/1136
-            for tries in range(3):
-                try:
-                    self.output.write(data)
-                    return
-                except IOError:
-                    pass
+            try:
+                self.output.write(data)
+            except IOError:
+                # Windows 10 bug since the Fall Creators Update, sometimes writing to console randomly throws
+                # an exception (however, the character is still written to the screen)
+                # Ref https://github.com/espressif/esp-idf/issues/1136
+                pass
 
         def write(self, data):
             for b in data:
