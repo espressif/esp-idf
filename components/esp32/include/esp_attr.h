@@ -47,4 +47,12 @@
 // Forces read-only data into RTC slow memory. See "docs/deep-sleep-stub.rst"
 #define RTC_RODATA_ATTR __attribute__((section(".rtc.rodata")))
 
+// Forces data into noinit section to avoid initialization after restart.
+#define __NOINIT_ATTR __attribute__((section(".noinit")))
+
+// Forces data into RTC slow memory of .noinit section.
+// Any variable marked with this attribute will keep its value
+// after restart or during a deep sleep / wake cycle.
+#define RTC_NOINIT_ATTR  __attribute__((section(".rtc_noinit")))
+
 #endif /* __ESP_ATTR_H__ */
