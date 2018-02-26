@@ -45,8 +45,8 @@ typedef struct _ping_found {
 typedef enum {
     PING_TARGET_IP_ADDRESS          = 50,   /**< target IP address */
     PING_TARGET_IP_ADDRESS_COUNT    = 51,   /**< target IP address total counter */
-    PING_TARGET_RCV_TIMEO           = 52,   /**< receive timeout */
-    PING_TARGET_DELAY_TIME          = 53,   /**< delay time */
+    PING_TARGET_RCV_TIMEO           = 52,   /**< receive timeout in milliseconds */
+    PING_TARGET_DELAY_TIME          = 53,   /**< delay time in milliseconds */
     PING_TARGET_ID                  = 54,   /**< identifier */
     PING_TARGET_RES_FN              = 55,   /**< ping result callback function */
     PING_TARGET_RES_RESET           = 56    /**< ping result statistic reset */

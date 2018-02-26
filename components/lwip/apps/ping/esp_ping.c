@@ -49,11 +49,11 @@ esp_err_t esp_ping_set_target(ping_target_id_t opt_id, void *opt_val, uint32_t o
         break;
     case PING_TARGET_RCV_TIMEO:
         ESP_PING_CHECK_OPTLEN(opt_len, uint32_t);
-        ping_option_info->ping_rcv_timeout = (*(uint32_t *)opt_val) * 1000;
+        ping_option_info->ping_rcv_timeout = (*(uint32_t *)opt_val);
         break;
     case PING_TARGET_DELAY_TIME:
         ESP_PING_CHECK_OPTLEN(opt_len, uint32_t);
-        ping_option_info->ping_delay = (*(uint32_t *)opt_val) * 1000;
+        ping_option_info->ping_delay = (*(uint32_t *)opt_val);
         break;
     case PING_TARGET_ID:
         ESP_PING_CHECK_OPTLEN(opt_len, uint16_t);
