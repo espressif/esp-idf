@@ -335,14 +335,16 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
         return EINVAL;
     }
 
-    // Check if once_control belongs to internal DRAM for uxPortCompare to succeed
-    if (!esp_ptr_internal(once_control)) {
-        ESP_LOGE(TAG, "%s: once_control should belong to internal DRAM region!", __FUNCTION__);
-        return EINVAL;
-    }
-
     uint32_t res = 1;
-    uxPortCompareSet((uint32_t *) &once_control->init_executed, 0, &res);
+#if defined(CONFIG_SPIRAM_SUPPORT)
+    if (esp_ptr_external_ram(once_control)) {
+        uxPortCompareSetExtram((uint32_t *) &once_control->init_executed, 0, &res);
+    } else {
+#endif
+        uxPortCompareSet((uint32_t *) &once_control->init_executed, 0, &res);
+#if defined(CONFIG_SPIRAM_SUPPORT)
+    }
+#endif
     // Check if compare and set was successful
     if (res == 0) {
         ESP_LOGV(TAG, "%s: call init_routine %p", __FUNCTION__, once_control);
