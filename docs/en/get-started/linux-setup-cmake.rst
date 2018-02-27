@@ -12,15 +12,15 @@ To compile with ESP-IDF you need to get the following packages:
 
 - CentOS 7::
 
-    sudo yum install git wget ncurses-devel flex bison gperf python pyserial cmake ninja-build
+    sudo yum install git wget ncurses-devel flex bison gperf python pyserial cmake ninja-build ccache
 
 - Ubuntu and Debian::
 
-    sudo apt-get install git wget libncurses-dev flex bison gperf python python-serial cmake ninja-build
+    sudo apt-get install git wget libncurses-dev flex bison gperf python python-serial cmake ninja-build ccache
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial cmake ninja
+    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial cmake ninja ccache
 
 .. note::
     CMake version 3.5 or newer is required for use with ESP-IDF. Older Linux distributions may require updating, or enabling of a "backports" repository, or installing of a "cmake3" package not "cmake")

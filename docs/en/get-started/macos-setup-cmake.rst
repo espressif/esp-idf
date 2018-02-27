@@ -24,6 +24,8 @@ Install Prerequisites
 
   Otherwise, consult the CMake_ and Ninja_ home pages for Mac OS installation.
 
+- It is strongly recommended to also install ccache_ for faster builds. If you have HomeBrew, this can be done via ``brew install ccache``.
+
 Toolchain Setup
 ===============
 
@@ -59,3 +61,4 @@ To carry on with development environment setup, proceed to section :ref:`get-sta
 
 .. _cmake: https://cmake.org/
 .. _ninja: https://ninja-build.org/
+.. _ccache: https://ccache.samba.org/
