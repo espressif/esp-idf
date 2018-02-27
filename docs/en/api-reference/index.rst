@@ -6,6 +6,7 @@ API Reference
    :maxdepth: 2
 
    Wi-Fi <wifi/index>
+   Mesh <mesh/index>
    Bluetooth <bluetooth/index>
    Ethernet <ethernet/index>
    Peripherals <peripherals/index>

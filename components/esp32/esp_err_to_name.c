@@ -13,6 +13,9 @@
 #if __has_include("esp_image_format.h")
 #include "esp_image_format.h"
 #endif
+#if __has_include("esp_mesh.h")
+#include "esp_mesh.h"
+#endif
 #if __has_include("esp_now.h")
 #include "esp_now.h"
 #endif
@@ -288,6 +291,74 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   endif
 #   ifdef      ESP_ERR_ESPNOW_IF
     ERR_TBL_IT(ESP_ERR_ESPNOW_IF),                          /* 12396 0x306c Interface error */
+#   endif
+    // components/esp32/include/esp_err.h
+#   ifdef      ESP_ERR_MESH_BASE
+    ERR_TBL_IT(ESP_ERR_MESH_BASE),                          /* 16384 0x4000 Starting number of MESH error codes */
+#   endif
+    // components/esp32/include/esp_mesh.h
+#   ifdef      ESP_ERR_MESH_WIFI_NOT_START
+    ERR_TBL_IT(ESP_ERR_MESH_WIFI_NOT_START),                /* 16385 0x4001 */
+#   endif
+#   ifdef      ESP_ERR_MESH_NOT_INIT
+    ERR_TBL_IT(ESP_ERR_MESH_NOT_INIT),                      /* 16386 0x4002 */
+#   endif
+#   ifdef      ESP_ERR_MESH_NOT_CONFIG
+    ERR_TBL_IT(ESP_ERR_MESH_NOT_CONFIG),                    /* 16387 0x4003 */
+#   endif
+#   ifdef      ESP_ERR_MESH_NOT_START
+    ERR_TBL_IT(ESP_ERR_MESH_NOT_START),                     /* 16388 0x4004 */
+#   endif
+#   ifdef      ESP_ERR_MESH_NOT_SUPPORT
+    ERR_TBL_IT(ESP_ERR_MESH_NOT_SUPPORT),                   /* 16389 0x4005 */
+#   endif
+#   ifdef      ESP_ERR_MESH_NOT_ALLOWED
+    ERR_TBL_IT(ESP_ERR_MESH_NOT_ALLOWED),                   /* 16390 0x4006 */
+#   endif
+#   ifdef      ESP_ERR_MESH_NO_MEMORY
+    ERR_TBL_IT(ESP_ERR_MESH_NO_MEMORY),                     /* 16391 0x4007 */
+#   endif
+#   ifdef      ESP_ERR_MESH_ARGUMENT
+    ERR_TBL_IT(ESP_ERR_MESH_ARGUMENT),                      /* 16392 0x4008 */
+#   endif
+#   ifdef      ESP_ERR_MESH_EXCEED_MTU
+    ERR_TBL_IT(ESP_ERR_MESH_EXCEED_MTU),                    /* 16393 0x4009 */
+#   endif
+#   ifdef      ESP_ERR_MESH_TIMEOUT
+    ERR_TBL_IT(ESP_ERR_MESH_TIMEOUT),                       /* 16394 0x400a */
+#   endif
+#   ifdef      ESP_ERR_MESH_DISCONNECTED
+    ERR_TBL_IT(ESP_ERR_MESH_DISCONNECTED),                  /* 16395 0x400b */
+#   endif
+#   ifdef      ESP_ERR_MESH_QUEUE_FAIL
+    ERR_TBL_IT(ESP_ERR_MESH_QUEUE_FAIL),                    /* 16396 0x400c */
+#   endif
+#   ifdef      ESP_ERR_MESH_QUEUE_FULL
+    ERR_TBL_IT(ESP_ERR_MESH_QUEUE_FULL),                    /* 16397 0x400d */
+#   endif
+#   ifdef      ESP_ERR_MESH_NO_PARENT_FOUND
+    ERR_TBL_IT(ESP_ERR_MESH_NO_PARENT_FOUND),               /* 16398 0x400e */
+#   endif
+#   ifdef      ESP_ERR_MESH_NO_ROUTE_FOUND
+    ERR_TBL_IT(ESP_ERR_MESH_NO_ROUTE_FOUND),                /* 16399 0x400f */
+#   endif
+#   ifdef      ESP_ERR_MESH_OPTION_NULL
+    ERR_TBL_IT(ESP_ERR_MESH_OPTION_NULL),                   /* 16400 0x4010 */
+#   endif
+#   ifdef      ESP_ERR_MESH_OPTION_UNKNOWN
+    ERR_TBL_IT(ESP_ERR_MESH_OPTION_UNKNOWN),                /* 16401 0x4011 */
+#   endif
+#   ifdef      ESP_ERR_MESH_XON_NO_WINDOW
+    ERR_TBL_IT(ESP_ERR_MESH_XON_NO_WINDOW),                 /* 16402 0x4012 */
+#   endif
+#   ifdef      ESP_ERR_MESH_INTERFACE
+    ERR_TBL_IT(ESP_ERR_MESH_INTERFACE),                     /* 16403 0x4013 */
+#   endif
+#   ifdef      ESP_ERR_MESH_DISCARD_DUPLICATE
+    ERR_TBL_IT(ESP_ERR_MESH_DISCARD_DUPLICATE),             /* 16404 0x4014 */
+#   endif
+#   ifdef      ESP_ERR_MESH_DISCARD
+    ERR_TBL_IT(ESP_ERR_MESH_DISCARD),                       /* 16405 0x4015 */
 #   endif
     // components/tcpip_adapter/include/tcpip_adapter.h
 #   ifdef      ESP_ERR_TCPIP_ADAPTER_BASE
