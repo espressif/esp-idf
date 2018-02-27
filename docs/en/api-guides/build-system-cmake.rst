@@ -564,7 +564,7 @@ the esp-idf build system entirely by using a CMake feature called ExternalProjec
 
   # External build process for quirc, runs in source dir and
   # produces libquirc.a
-  ExternalProject_Add(quirc_build
+  externalproject_add(quirc_build
       PREFIX ${COMPONENT_PATH}
       SOURCE_DIR ${COMPONENT_PATH}/quirc
       CONFIGURE_COMMAND ""
@@ -588,10 +588,10 @@ the esp-idf build system entirely by using a CMake feature called ExternalProjec
 
 (The above CMakeLists.txt can be used to create a component named ``quirc`` that builds the quirc_ project using its own Makefile.)
 
-- ExternalProject_Add defines an external build system.
+- ``externalproject_add`` defines an external build system.
   - ``SOURCE_DIR``, ``CONFIGURE_COMMAND``, ``BUILD_COMMAND`` and ``INSTALL_COMMAND`` should always be set. ``CONFIGURE_COMMAND`` can be set to an empty string if the build system has no "configure" step. ``INSTALL_COMMAND`` will generally be empty for ESP-IDF builds.
   - Setting ``BUILD_IN_SOURCE`` means the build directory is the same as the source directory. Otherwise you can set ``BUILD_DIR``.
-  - Consult the ExternalProject_ documentation for more details about ``ExternalProject_Add()``
+  - Consult the ExternalProject_ documentation for more details about ``externalproject_add()``
 
 - The second set of commands adds a library target, which points to the "imported" library file built by the external system. Some properties need to be set in order to add include directories and tell CMake where this file is.
 - Finally, the generated library is added to `ADDITIONAL_MAKE_CLEAN_FILES`_. This means ``make clean`` will delete this library. (Note that the other object files from the build won't be deleted.)
@@ -606,8 +606,8 @@ CMake has some unusual behaviour around external project builds:
 - `ADDITIONAL_MAKE_CLEAN_FILES`_ only works when "make" is used as the build system. If Ninja_ or an IDE build system is used, it won't delete these files when cleaning.
 - However, the ExternalProject_ configure & build commands will *always* be re-run after a clean is run.
 - Therefore, there are two alternative recommended ways to configure the external build command:
-  1. Have the external ``BUILD_COMMAND`` run a full clean compile of all sources. The build command will be run if any of the dependencies passed to ``ExternalProject_Add`` with ``DEPENDS`` have changed, or if this is a clean build (ie any of ``idf.py clean``, ``ninja clean``, or ``make clean`` was run.)
-  2. Have the external ``BUILD_COMMAND`` be an incremental build command. Pass the parameter ``BUILD_ALWAYS 1`` to ``ExternalProject_Add``. This means the external project will be built each time a build is run, regardless of dependencies. This is only recommended if the external project has correct incremental build behaviour, and doesn't take too long to run.
+  1. Have the external ``BUILD_COMMAND`` run a full clean compile of all sources. The build command will be run if any of the dependencies passed to ``externalproject_add`` with ``DEPENDS`` have changed, or if this is a clean build (ie any of ``idf.py clean``, ``ninja clean``, or ``make clean`` was run.)
+  2. Have the external ``BUILD_COMMAND`` be an incremental build command. Pass the parameter ``BUILD_ALWAYS 1`` to ``externalproject_add``. This means the external project will be built each time a build is run, regardless of dependencies. This is only recommended if the external project has correct incremental build behaviour, and doesn't take too long to run.
 
 The best of these approaches for building an external project will depend on the project itself, its build system, and whether you anticipate needing to frequently recompile the project.
 
