@@ -112,7 +112,7 @@ def detect_cmake_generator():
             return generator
     raise FatalError("To use idf.py, either the 'ninja' or 'GNU make' build tool must be available in the PATH")
 
-def _ensure_build_directory(args):
+def _ensure_build_directory(args, always_run_cmake=False):
     """Check the build directory exists and that cmake has been run there.
 
     If this isn't the case, create the build directory (if necessary) and
@@ -137,7 +137,7 @@ def _ensure_build_directory(args):
     if not os.path.isdir(build_dir):
         os.mkdir(build_dir)
     cache_path = os.path.join(build_dir, "CMakeCache.txt")
-    if not os.path.exists(cache_path):
+    if not os.path.exists(cache_path) or always_run_cmake:
         if args.generator is None:
             args.generator = detect_cmake_generator()
         try:
@@ -257,6 +257,9 @@ def clean(action, args):
         return
     build_target("clean", args)
 
+def reconfigure(action, args):
+    _ensure_build_directory(args, True)
+
 def fullclean(action, args):
     build_dir = args.build_dir
     if not os.path.isdir(build_dir):
@@ -283,10 +286,11 @@ def fullclean(action, args):
 
 ACTIONS = {
     # action name : ( function (or alias), dependencies, order-only dependencies )
-    "all" :                  ( build_target, [], [ "menuconfig", "clean", "fullclean" ] ),
+    "all" :                  ( build_target, [], [ "reconfigure", "menuconfig", "clean", "fullclean" ] ),
     "build":                 ( "all",        [], [] ),  # build is same as 'all' target
     "clean":                 ( clean,        [], [ "fullclean" ] ),
     "fullclean":             ( fullclean,    [], [] ),
+    "reconfigure":           ( reconfigure,  [], [] ),
     "menuconfig":            ( build_target, [], [] ),
     "size":                  ( build_target, [], [ "app" ] ),
     "size-components":       ( build_target, [], [ "app" ] ),
@@ -294,9 +298,9 @@ ACTIONS = {
     "bootloader":            ( build_target, [], [] ),
     "bootloader-clean":      ( build_target, [], [] ),
     "bootloader-flash":      ( flash,        [ "bootloader" ], [] ),
-    "app":                   ( build_target, [], [] ),
+    "app":                   ( build_target, [], [ "clean", "fullclean", "reconfigure" ] ),
     "app-flash":             ( flash,        [], [ "app" ]),
-    "partition_table":       ( build_target, [], [] ),
+    "partition_table":       ( build_target, [], [ "reconfigure" ] ),
     "partition_table-flash": ( flash,        [ "partition_table" ], []),
     "flash":                 ( flash,        [ "all" ], [ ] ),
     "erase_flash":           ( erase_flash,  [], []),
