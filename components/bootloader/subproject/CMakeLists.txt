@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 
 if(NOT SDKCONFIG)
-  message(FATAL_ERROR "Bootloader subproject expects the SDKCONFIG variable to be passed in by the parent build process.")
+    message(FATAL_ERROR "Bootloader subproject expects the SDKCONFIG variable to be passed "
+        "in by the parent build process.")
 endif()
 
 set(COMPONENTS bootloader esptool_py esp32 soc bootloader_support log spi_flash micro-ecc soc)
@@ -18,4 +19,3 @@ target_link_libraries(bootloader.elf "-T esp32.bootloader.ld")
 target_link_libraries(bootloader.elf "-T esp32.bootloader.rom.ld")
 target_link_libraries(bootloader.elf "${BOOTLOADER_LINKER_ARGS}")
 target_link_libraries(bootloader.elf gcc)
-

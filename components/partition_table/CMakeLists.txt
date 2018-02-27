@@ -3,21 +3,21 @@ set(partition_table_offset 0x8000)
 # Set partition_csv to the configured partition source file
 #
 if(CONFIG_PARTITION_TABLE_CUSTOM)
-  # Custom filename expands any path relative to the project
-  get_filename_component(partition_csv "${CONFIG_PARTITION_TABLE_CUSTOM}" ABSOLUTE BASE_DIR "${PROJECT_PATH}")
+    # Custom filename expands any path relative to the project
+    get_filename_component(partition_csv "${CONFIG_PARTITION_TABLE_CUSTOM}" ABSOLUTE BASE_DIR "${PROJECT_PATH}")
 else()
-  # Other .csv files are always in the component directory
-  set(partition_csv "${CMAKE_CURRENT_SOURCE_DIR}/${CONFIG_PARTITION_TABLE_FILENAME}")
+    # Other .csv files are always in the component directory
+    set(partition_csv "${CMAKE_CURRENT_SOURCE_DIR}/${CONFIG_PARTITION_TABLE_FILENAME}")
 endif()
 
 if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
-  set(unsigned_partition_bin "partition-table-unsigned.bin")
-  set(final_partition_bin "partition-table.bin")
-  set(final_partition_target "sign_partition_table")
+    set(unsigned_partition_bin "partition-table-unsigned.bin")
+    set(final_partition_bin "partition-table.bin")
+    set(final_partition_target "sign_partition_table")
 else()
-  set(unsigned_partition_bin "partition-table.bin")
-  set(final_partition_bin "partition-table.bin")
-  set(final_partition_target "build_partition_table")
+    set(unsigned_partition_bin "partition-table.bin")
+    set(final_partition_bin "partition-table.bin")
+    set(final_partition_target "build_partition_table")
 endif()
 
 if(CONFIG_PARTITION_TABLE_MD5)
@@ -36,18 +36,24 @@ add_custom_command(OUTPUT "${unsigned_partition_bin}"
 
 # Add signing steps
 if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
-  get_filename_component(secure_boot_signing_key "${CONFIG_SECURE_BOOT_SIGNING_KEY}" ABSOLUTE BASE_DIR "${PROJECT_PATH}")
+    get_filename_component(secure_boot_signing_key
+        "${CONFIG_SECURE_BOOT_SIGNING_KEY}"
+        ABSOLUTE BASE_DIR "${PROJECT_PATH}")
 
-  add_custom_command(OUTPUT "${final_partition_bin}"
-    COMMAND "${PYTHON}" "${ESPSECUREPY}" sign_data --keyfile "${secure_boot_signing_key}" -o "${final_partition_bin}" "${unsigned_partition_bin}"
-    DEPENDS "${unsigned_partition_bin}"
-    VERBATIM)
+    add_custom_command(OUTPUT "${final_partition_bin}"
+        COMMAND "${PYTHON}" "${ESPSECUREPY}" sign_data --keyfile "${secure_boot_signing_key}"
+        -o "${final_partition_bin}" "${unsigned_partition_bin}"
+        DEPENDS "${unsigned_partition_bin}"
+        VERBATIM)
 
 endif()
 
 add_custom_target(partition_table ALL DEPENDS "${final_partition_bin}")
 
-# Use global properties ESPTOOL_WRITE_FLASH_ARGS to pass this info to build hte list of esptool write arguments for flashing
-set_property(GLOBAL APPEND_STRING PROPERTY ESPTOOL_WRITE_FLASH_ARGS "${partition_table_offset} ${final_partition_bin} ")
+# Use global properties ESPTOOL_WRITE_FLASH_ARGS to pass this info to build
+# the list of esptool write arguments for flashing
+set_property(GLOBAL APPEND_STRING PROPERTY
+    ESPTOOL_WRITE_FLASH_ARGS
+    "${partition_table_offset} ${final_partition_bin} ")
 
 register_config_only_component()

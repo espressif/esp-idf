@@ -2,8 +2,8 @@ register_config_only_component()
 
 # Generate pre-canned flasher args files suitable for passing to esptool.py
 foreach(part project app bootloader)
-configure_file(
-  "${CMAKE_CURRENT_LIST_DIR}/flash_${part}_args.in"
-  "${CMAKE_BINARY_DIR}/flash_${part}_args"
-  )
+    configure_file(
+        "${CMAKE_CURRENT_LIST_DIR}/flash_${part}_args.in"
+        "${CMAKE_BINARY_DIR}/flash_${part}_args"
+        )
 endforeach()

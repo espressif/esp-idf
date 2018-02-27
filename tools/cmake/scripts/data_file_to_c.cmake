@@ -16,17 +16,17 @@
 #
 #
 if(NOT DATA_FILE)
-  message(FATAL_ERROR "DATA_FILE for converting must be specified")
+    message(FATAL_ERROR "DATA_FILE for converting must be specified")
 endif()
 
 if(NOT SOURCE_FILE)
-  message(FATAL_ERROR "SOURCE_FILE destination must be specified")
+    message(FATAL_ERROR "SOURCE_FILE destination must be specified")
 endif()
 
 file(READ "${DATA_FILE}" data HEX)
 
 if(FILE_TYPE STREQUAL "TEXT")
-  set(data "${data}00")  # null-byte terimnation
+    set(data "${data}00")  # null-byte terimnation
 endif()
 
 ## Convert string of raw hex bytes to lines of hex bytes in C array format
@@ -41,7 +41,7 @@ string(MAKE_C_IDENTIFIER "${source_filename}" varname)
 file(WRITE "${SOURCE_FILE}"  "/*\n")
 file(APPEND "${SOURCE_FILE}" " * Data converted from ${DATA_FILE}\n")
 if(FILE_TYPE STREQUAL "TEXT")
-  file(APPEND "${SOURCE_FILE}" " * (null byte appended)\n")
+    file(APPEND "${SOURCE_FILE}" " * (null byte appended)\n")
 endif()
 file(APPEND "${SOURCE_FILE}" " */\n")
 file(APPEND "${SOURCE_FILE}" "#include <stdlib.h>\n")

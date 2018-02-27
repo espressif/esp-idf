@@ -1,7 +1,7 @@
 set(COMPONENT_SRCS heap_caps_init.c heap_caps.c multi_heap.c heap_trace.c)
 
 if(NOT CONFIG_HEAP_POISONING_DISABLED)
-  set(COMPONENT_SRCS ${COMPONENT_SRCS} multi_heap_poisoning.c)
+    set(COMPONENT_SRCS ${COMPONENT_SRCS} multi_heap_poisoning.c)
 endif()
 
 set(COMPONENT_ADD_INCLUDEDIRS "include")
@@ -9,11 +9,11 @@ set(COMPONENT_ADD_INCLUDEDIRS "include")
 register_component()
 
 if(CONFIG_HEAP_TRACING)
-  set(WRAP_FUNCTIONS
-    calloc malloc free realloc heap_caps_malloc heap_caps_free heap_caps_realloc)
+    set(WRAP_FUNCTIONS
+        calloc malloc free realloc heap_caps_malloc heap_caps_free heap_caps_realloc)
 
-  foreach(wrap ${WRAP_FUNCTIONS})
-    target_link_libraries(heap "-Wl,--wrap=${wrap}")
-  endforeach()
+    foreach(wrap ${WRAP_FUNCTIONS})
+        target_link_libraries(heap "-Wl,--wrap=${wrap}")
+    endforeach()
 
-endif(CONFIG_HEAP_TRACING)
+endif()
