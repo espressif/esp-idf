@@ -31,7 +31,7 @@ else()
     target_link_libraries(esp32 "-T esp32.peripherals.ld")
 
     if(CONFIG_SPIRAM_CACHE_WORKAROUND)
-        target_link_libraries(esp32 ${CMAKE_CURRENT_SOURCE_DIR}/libstdc++-psram-workaround.a)
+        add_compile_options(-mfix-esp32-psram-cache-issue)
     else()
         target_link_libraries(esp32 "-T esp32.rom.spiram_incompatible_fns.ld")
     endif()
