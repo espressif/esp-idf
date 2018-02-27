@@ -3,16 +3,16 @@
 # These functions force a re-configure on each git commit so that you can
 # trust the values of the variables in your build system.
 #
-#  get_git_head_revision(<refspecvar> <hashvar> [<additional arguments to git describe> ...])
+#  get_git_head_revision(<refspecvar> <hashvar> <repo dir> [<additional arguments to git describe> ...])
 #
 # Returns the refspec and sha hash of the current head revision
 #
-#  git_describe(<var> [<additional arguments to git describe> ...])
+#  git_describe(<var> <repo dir> [<additional arguments to git describe> ...])
 #
 # Returns the results of git describe on the source tree, and adjusting
 # the output so that it tests false if an error occurs.
 #
-#  git_get_exact_tag(<var> [<additional arguments to git describe> ...])
+#  git_get_exact_tag(<var> <repo dir> [<additional arguments to git describe> ...])
 #
 # Returns the results of git describe --exact-match on the source tree,
 # and adjusting the output so that it tests false if there was no exact
@@ -29,6 +29,9 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE_1_0.txt or copy at
 # http://www.boost.org/LICENSE_1_0.txt)
+#
+# Updated 2018 Espressif Systems to add _repo_dir argument
+# to get revision of other repositories
 
 if(__get_git_revision_description)
 	return()
@@ -39,8 +42,8 @@ set(__get_git_revision_description YES)
 # to find the path to this module rather than the path to a calling list file
 get_filename_component(_gitdescmoddir ${CMAKE_CURRENT_LIST_FILE} PATH)
 
-function(get_git_head_revision _refspecvar _hashvar)
-	set(GIT_PARENT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+function(get_git_head_revision _refspecvar _hashvar _repo_dir)
+    set(GIT_PARENT_DIR "${_repo_dir}")
 	set(GIT_DIR "${GIT_PARENT_DIR}/.git")
 	while(NOT EXISTS "${GIT_DIR}")	# .git dir not found, search parent directories
 		set(GIT_PREVIOUS_PARENT "${GIT_PARENT_DIR}")
@@ -80,11 +83,11 @@ function(get_git_head_revision _refspecvar _hashvar)
 	set(${_hashvar} "${HEAD_HASH}" PARENT_SCOPE)
 endfunction()
 
-function(git_describe _var)
+function(git_describe _var _repo_dir)
 	if(NOT GIT_FOUND)
 		find_package(Git QUIET)
 	endif()
-	get_git_head_revision(refspec hash)
+	get_git_head_revision(refspec hash "${_repo_dir}")
 	if(NOT GIT_FOUND)
 		set(${_var} "GIT-NOTFOUND" PARENT_SCOPE)
 		return()
@@ -124,7 +127,7 @@ function(git_describe _var)
 	set(${_var} "${out}" PARENT_SCOPE)
 endfunction()
 
-function(git_get_exact_tag _var)
-	git_describe(out --exact-match ${ARGN})
+function(git_get_exact_tag _var _repo_dir)
+	git_describe(out "${_repo_dir}" --exact-match ${ARGN})
 	set(${_var} "${out}" PARENT_SCOPE)
 endfunction()
