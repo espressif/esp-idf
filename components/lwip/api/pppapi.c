@@ -270,11 +270,12 @@ pppapi_connect(ppp_pcb *pcb, u16_t holdoff)
 /**
  * Call ppp_listen() inside the tcpip_thread context.
  */
-static void
-pppapi_do_ppp_listen(struct pppapi_msg_msg *msg)
+static err_t
+pppapi_do_ppp_listen(struct tcpip_api_call *m)
 {
-  msg->err = ppp_listen(msg->ppp, msg->msg.listen.addrs);
-  TCPIP_PPPAPI_ACK(msg);
+  struct pppapi_msg *msg = (struct pppapi_msg *)m;
+    
+  return ppp_listen(msg->msg.ppp, msg->msg.msg.listen.addrs);
 }
 
 /**
@@ -285,11 +286,10 @@ err_t
 pppapi_listen(ppp_pcb *pcb, struct ppp_addrs *addrs)
 {
   struct pppapi_msg msg;
-  msg.function = pppapi_do_ppp_listen;
   msg.msg.ppp = pcb;
   msg.msg.msg.listen.addrs = addrs;
-  TCPIP_PPPAPI(&msg);
-  return msg.msg.err;
+
+  return tcpip_api_call(pppapi_do_ppp_listen, &msg.call);
 }
 #endif /* PPP_SERVER */
 
