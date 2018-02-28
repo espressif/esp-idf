@@ -16,8 +16,17 @@
 
 #include <stdbool.h>
 #include <sys/socket.h>
-#include <openssl/ssl.h>
 #include <fcntl.h>
+
+
+#include "mbedtls/platform.h"
+#include "mbedtls/net_sockets.h"
+#include "mbedtls/esp_debug.h"
+#include "mbedtls/ssl.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/error.h"
+#include "mbedtls/certs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,13 +45,12 @@ typedef struct esp_tls_cfg {
                                                  "\x02h2"
                                                  - where the first '2' is the length of the protocol and
                                                  - the subsequent 'h2' is the protocol name */
+ 
     const unsigned char *cacert_pem_buf;    /*!< Certificate Authority's certificate in a buffer */
+ 
     const unsigned int cacert_pem_bytes;    /*!< Size of Certificate Authority certificate 
                                                  pointed to by cacert_pem_buf */
-    const SSL_METHOD *ssl_method;           /*!< SSL method that describes internal ssl library
-                                                 methods/functions which implements the various protocol 
-                                                 versions. If set to NULL, it defaults to 
-                                                 method returned by TLSv1_2_client_method() API. */
+ 
     bool non_block;                         /*!< Configure non-blocking mode. If set to true the 
                                                  underneath socket will be configured in non 
                                                  blocking mode after tls session is established */
@@ -52,15 +60,27 @@ typedef struct esp_tls_cfg {
  * @brief      ESP-TLS Connection Handle 
  */
 typedef struct esp_tls {
-    SSL_CTX  *ctx;                                                             /*!< SSL_CTX object is used to establish
-                                                                                    TLS/SSL enabled connection */
-    SSL      *ssl;                                                              /*!< SSL object which is needed to hold the data for a 
-                                                                                    TLS/SSL connection. The new structure inherits the settings of the
-                                                                                    underlying context ctx: connection method (SSLv2/v3/TLSv1), 
-                                                                                    options, verification settings, timeout settings. */  
-    int      sockfd;                                                            /*!< Underlying socket file descriptor. */
+    mbedtls_ssl_context ssl;                                                    /*!< TLS/SSL context */
+ 
+    mbedtls_entropy_context entropy;                                            /*!< mbedTLS entropy context structure */
+ 
+    mbedtls_ctr_drbg_context ctr_drbg;                                          /*!< mbedTLS ctr drbg context structure.
+                                                                                     CTR_DRBG is deterministic random 
+                                                                                     bit generation based on AES-256 */
+ 
+    mbedtls_ssl_config conf;                                                    /*!< TLS/SSL configuration to be shared 
+                                                                                     between mbedtls_ssl_context 
+                                                                                     structures */
+ 
+    mbedtls_net_context server_fd;                                              /*!< mbedTLS wrapper type for sockets */
+ 
+    mbedtls_x509_crt cacert;                                                    /*!< Container for an X.509 certificate */
+ 
+    int sockfd;                                                                 /*!< Underlying socket file descriptor. */
+ 
     ssize_t (*read)(struct esp_tls  *tls, char *data, size_t datalen);          /*!< Callback function for reading data from TLS/SSL
                                                                                      connection. */
+ 
     ssize_t (*write)(struct esp_tls *tls, const char *data, size_t datalen);    /*!< Callback function for writing data to TLS/SSL
                                                                                      connection. */
 } esp_tls_t;
