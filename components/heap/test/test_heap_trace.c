@@ -11,6 +11,9 @@
 #include "sdkconfig.h"
 #include "unity.h"
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
 #ifdef CONFIG_HEAP_TRACING
 // only compile in heap tracing tests if tracing is enabled
 
@@ -120,6 +123,42 @@ TEST_CASE("heap trace wrapped buffer check", "[heap]")
     heap_trace_stop();
 }
 
+static void print_floats_task(void *ignore)
+{
+    heap_trace_start(HEAP_TRACE_ALL);
+    char buf[16] = { };
+    volatile float f = 12.3456;
+    sprintf(buf, "%.4f", f);
+    TEST_ASSERT_EQUAL_STRING("12.3456", buf);
+    heap_trace_stop();
+
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("can trace allocations made by newlib", "[heap]")
+{
+    const size_t N = 8;
+    heap_trace_record_t recs[N];
+    heap_trace_init_standalone(recs, N);
+
+    /* Verifying that newlib code performs an allocation is very fiddly:
+
+       - Printing a float allocates data associated with the task, but only the
+       first time a task prints a float of this length. So we do it in a one-shot task
+       to avoid possibility it already happened.
+
+       - If newlib is updated this test may start failing if the printf() implementation
+       changes. (This version passes for both nano & regular formatting in newlib 2.2.0)
+
+       - We also do the tracing in the task so we only capture things directly related to it.
+    */
+
+    xTaskCreate(print_floats_task, "print_float", 4096, NULL, 5, NULL);
+    vTaskDelay(10);
+
+    /* has to be at least a few as newlib allocates via multiple different function calls */
+    TEST_ASSERT(heap_trace_get_count() > 3);
+}
 
 
 #endif
