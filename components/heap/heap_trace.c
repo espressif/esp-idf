@@ -312,6 +312,8 @@ typedef enum {
 
 
 void *__real_heap_caps_malloc(size_t size, uint32_t caps);
+void *__real_heap_caps_malloc_default( size_t size );
+void *__real_heap_caps_realloc_default( void *ptr, size_t size );
 
 /* trace any 'malloc' event */
 static IRAM_ATTR __attribute__((noinline)) void *trace_malloc(size_t size, uint32_t caps, trace_malloc_mode_t mode)
@@ -321,7 +323,7 @@ static IRAM_ATTR __attribute__((noinline)) void *trace_malloc(size_t size, uint3
     if ( mode == TRACE_MALLOC_CAPS ) {
         p = __real_heap_caps_malloc(size, caps);
     } else { //TRACE_MALLOC_DEFAULT
-        p = heap_caps_malloc_default(size);
+        p = __real_heap_caps_malloc_default(size);
     }
 
     if (tracing && p != NULL) {
@@ -364,7 +366,7 @@ static IRAM_ATTR __attribute__((noinline)) void *trace_realloc(void *p, size_t s
     if (mode == TRACE_MALLOC_CAPS ) {
         r = __real_heap_caps_realloc(p, size, caps);
     } else { //TRACE_MALLOC_DEFAULT
-        r = heap_caps_realloc_default(p, size);
+        r = __real_heap_caps_realloc_default(p, size);
     }
     if (tracing && r != NULL) {
         get_call_stack(callers);
@@ -422,4 +424,14 @@ IRAM_ATTR void __wrap_heap_caps_free(void *p) __attribute__((alias("__wrap_free"
 IRAM_ATTR void *__wrap_heap_caps_realloc(void *p, size_t size, uint32_t caps)
 {
     return trace_realloc(p, size, caps, TRACE_MALLOC_CAPS);
+}
+
+IRAM_ATTR void *__wrap_heap_caps_malloc_default( size_t size )
+{
+    return trace_malloc(size, 0, TRACE_MALLOC_DEFAULT);
+}
+
+IRAM_ATTR void *__wrap_heap_caps_realloc_default( void *ptr, size_t size )
+{
+    return trace_realloc(ptr, size, 0, TRACE_MALLOC_DEFAULT);
 }
