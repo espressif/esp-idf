@@ -157,7 +157,7 @@ static void https_get_task(void *pvParameters)
             if (ret >= 0) {
                 ESP_LOGI(TAG, "%d bytes written", ret);
                 written_bytes += ret;
-            } else if (ret != -SSL_ERROR_WANT_WRITE  && ret != -SSL_ERROR_WANT_READ) {
+            } else if (ret != MBEDTLS_ERR_SSL_WANT_READ  && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
                 ESP_LOGE(TAG, "esp_tls_conn_write  returned 0x%x", ret);
                 goto exit;
             }
@@ -171,12 +171,12 @@ static void https_get_task(void *pvParameters)
             bzero(buf, sizeof(buf));
             ret = esp_tls_conn_read(tls, (char *)buf, len);
             
-            if(ret == -SSL_ERROR_WANT_WRITE || ret == -SSL_ERROR_WANT_READ)
+            if(ret == MBEDTLS_ERR_SSL_WANT_WRITE  || ret == MBEDTLS_ERR_SSL_WANT_READ)
                 continue;
             
             if(ret < 0)
-            {
-                ESP_LOGE(TAG, "esp_tls_conn_read  returned 0x%x", ret);
+           {
+                ESP_LOGE(TAG, "esp_tls_conn_read  returned -0x%x", -ret);
                 break;
             }
 

@@ -23,7 +23,6 @@
 #include <http_parser.h>
 #include "esp_tls.h"
 
-
 static const char *TAG = "esp-tls";
 
 #ifdef ESP_PLATFORM
@@ -63,13 +62,14 @@ static ssize_t tcp_read(esp_tls_t *tls, char *data, size_t datalen)
 
 static ssize_t tls_read(esp_tls_t *tls, char *data, size_t datalen)
 {
-    ssize_t ret = SSL_read(tls->ssl, data, datalen);
+    ssize_t ret = mbedtls_ssl_read(&tls->ssl, (unsigned char *)data, datalen);   
     if (ret < 0) {
-	int err = SSL_get_error(tls->ssl, ret);
-	if (err != SSL_ERROR_WANT_WRITE && err != SSL_ERROR_WANT_READ) {
-	    ESP_LOGE(TAG, "read error :%d:", ret);
-	}
-	return -err;
+        if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
+            return 0;
+        }
+        if (ret != MBEDTLS_ERR_SSL_WANT_READ  && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+            ESP_LOGE(TAG, "read error :%d:", ret);
+        }
     }
     return ret;
 }
@@ -89,17 +89,17 @@ static int esp_tcp_connect(const char *host, int hostlen, int port)
 
     void *addr_ptr;
     if (res->ai_family == AF_INET) {
-	struct sockaddr_in *p = (struct sockaddr_in *)res->ai_addr;
-	p->sin_port = htons(port);
-	addr_ptr = p;
+        struct sockaddr_in *p = (struct sockaddr_in *)res->ai_addr;
+        p->sin_port = htons(port);
+        addr_ptr = p;
     } else if (res->ai_family == AF_INET6) {
-	struct sockaddr_in6 *p = (struct sockaddr_in6 *)res->ai_addr;
-	p->sin6_port = htons(port);
-	p->sin6_family = AF_INET6;
-	addr_ptr = p;
+        struct sockaddr_in6 *p = (struct sockaddr_in6 *)res->ai_addr;
+        p->sin6_port = htons(port);
+        p->sin6_family = AF_INET6;
+        addr_ptr = p;
     } else {
 	/* Unsupported Protocol Family */
-	goto err_freesocket;
+        goto err_freesocket;
     }
 
     ret = connect(fd, addr_ptr, res->ai_addrlen);
@@ -117,74 +117,112 @@ err_freeaddr:
     return -1;
 }
 
+static void verify_certificate(esp_tls_t *tls)
+{
+    int flags;
+    char buf[100]; 
+    if ((flags = mbedtls_ssl_get_verify_result(&tls->ssl)) != 0) {
+        ESP_LOGI(TAG, "Failed to verify peer certificate!");
+        bzero(buf, sizeof(buf));
+        mbedtls_x509_crt_verify_info(buf, sizeof(buf), "  ! ", flags);
+        ESP_LOGI(TAG, "verification info: %s", buf);
+    } else {
+        ESP_LOGI(TAG, "Certificate verified.");
+    }
+}
+
+static void mbedtls_cleanup(esp_tls_t *tls) 
+{
+    if (!tls) {
+        return;
+    }
+    
+    mbedtls_entropy_free(&tls->entropy);
+    mbedtls_ssl_config_free(&tls->conf);
+    mbedtls_ctr_drbg_free(&tls->ctr_drbg);
+    mbedtls_ssl_free(&tls->ssl);
+    mbedtls_net_free(&tls->server_fd);
+}
+
 static int create_ssl_handle(esp_tls_t *tls, const char *hostname, size_t hostlen, const esp_tls_cfg_t *cfg)
 {
     int ret;
     
-    const SSL_METHOD *method = cfg->ssl_method!= NULL ? cfg->ssl_method : TLSv1_2_client_method();
-    SSL_CTX *ssl_ctx = SSL_CTX_new(method);
-    if (!ssl_ctx) {
-        return -1;
+    mbedtls_net_init(&tls->server_fd);
+    tls->server_fd.fd = tls->sockfd;
+    mbedtls_ssl_init(&tls->ssl);
+    mbedtls_ctr_drbg_init(&tls->ctr_drbg);
+    mbedtls_ssl_config_init(&tls->conf);
+    mbedtls_entropy_init(&tls->entropy);
+    
+    if ((ret = mbedtls_ctr_drbg_seed(&tls->ctr_drbg, 
+                    mbedtls_entropy_func, &tls->entropy, NULL, 0)) != 0) {
+        ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned %d", ret);
+        goto exit;        
     }
-#ifdef __APPLE__
-    SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2);
-    SSL_CTX_set_mode(ssl_ctx, SSL_MODE_AUTO_RETRY);
-    SSL_CTX_set_mode(ssl_ctx, SSL_MODE_RELEASE_BUFFERS);
-#endif
-
-    if (cfg->cacert_pem_buf != NULL) {
-        SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_PEER, NULL);
-
-        BIO *bio;
-        bio = BIO_new(BIO_s_mem());
-        BIO_write(bio, cfg->cacert_pem_buf, cfg->cacert_pem_bytes);
-
-        X509 *ca = PEM_read_bio_X509(bio, NULL, 0, NULL);
-
-        if (!ca) {
-            ESP_LOGE(TAG, "CA Error");
-            X509_free(ca);
-            BIO_free(bio);
-            SSL_CTX_free(ssl_ctx);
-            return -1;            
-        }
-        ESP_LOGD(TAG, "CA OK");
-            
-        X509_STORE_add_cert(SSL_CTX_get_cert_store(ssl_ctx), ca);
-
-        X509_free(ca);
-        BIO_free(bio);
-    }
-
-    if (cfg->alpn_protos) {
-	SSL_CTX_set_alpn_protos(ssl_ctx, cfg->alpn_protos, strlen((char *)cfg->alpn_protos));
-    }
-    SSL *ssl = SSL_new(ssl_ctx);
-    if (!ssl) {
-        SSL_CTX_free(ssl_ctx);
-        return -1;
-    }
-
+    
+    /* Hostname set here should match CN in server certificate */    
     char *use_host = strndup(hostname, hostlen);
     if (!use_host) {
-	    SSL_CTX_free(ssl_ctx);
-	    return -1;
+        goto exit;
     }
-    SSL_set_tlsext_host_name(ssl, use_host);
+
+    if ((ret = mbedtls_ssl_set_hostname(&tls->ssl, use_host)) != 0) {
+        ESP_LOGE(TAG, "mbedtls_ssl_set_hostname returned -0x%x", -ret);
+        free(use_host);
+        goto exit;
+    }
     free(use_host);
 
-    SSL_set_fd(ssl, tls->sockfd);
-    ret = SSL_connect(ssl);
-    if (ret < 1) {
-        ESP_LOGE(TAG, "SSL handshake failed");
-        SSL_free(ssl);
-        SSL_CTX_free(ssl_ctx);
-        return -1;
+    if ((ret = mbedtls_ssl_config_defaults(&tls->conf,
+                    MBEDTLS_SSL_IS_CLIENT,
+                    MBEDTLS_SSL_TRANSPORT_STREAM,
+                    MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
+        ESP_LOGE(TAG, "mbedtls_ssl_config_defaults returned %d", ret);
+        goto exit;
     }
 
-    tls->ctx = ssl_ctx;
-    tls->ssl = ssl;
+    if (cfg->cacert_pem_buf != NULL) {
+        mbedtls_x509_crt_init(&tls->cacert);
+        ret = mbedtls_x509_crt_parse(&tls->cacert, cfg->cacert_pem_buf, cfg->cacert_pem_bytes);
+        if (ret < 0) {
+            ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
+            goto exit;
+        }
+        mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
+        mbedtls_ssl_conf_ca_chain(&tls->conf, &tls->cacert, NULL);
+    } else {
+        mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_NONE);
+    }
+    
+    mbedtls_ssl_conf_rng(&tls->conf, mbedtls_ctr_drbg_random, &tls->ctr_drbg);
+
+#ifdef CONFIG_MBEDTLS_DEBUG
+    mbedtls_esp_enable_debug_log(&tls->conf, 4);
+#endif
+
+    if ((ret = mbedtls_ssl_setup(&tls->ssl, &tls->conf)) != 0) {
+        ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%x\n\n", -ret);
+        goto exit;
+    }
+
+    mbedtls_ssl_set_bio(&tls->ssl, &tls->server_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
+
+    while ((ret = mbedtls_ssl_handshake(&tls->ssl)) != 0) {
+        if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+            ESP_LOGE(TAG, "mbedtls_ssl_handshake returned -0x%x", -ret);
+            if (cfg->cacert_pem_buf != NULL) {
+                /* This is to check whether handshake failed due to invalid certificate*/
+                verify_certificate(tls);
+            }   
+            goto exit;
+        }
+    }
+    
     return 0;
+exit:
+    mbedtls_cleanup(tls);
+    return -1;
 }
 
 /**
@@ -192,15 +230,7 @@ static int create_ssl_handle(esp_tls_t *tls, const char *hostname, size_t hostle
  */
 void esp_tls_conn_delete(esp_tls_t *tls)
 {
-    if (!tls) {
-        return;
-    }
-    if (tls->ssl) {
-        SSL_free(tls->ssl);
-    }
-    if (tls->ctx) {
-        SSL_CTX_free(tls->ctx);
-    }
+    mbedtls_cleanup(tls);
     if (tls->sockfd) {
         close(tls->sockfd);
     }
@@ -214,13 +244,11 @@ static ssize_t tcp_write(esp_tls_t *tls, const char *data, size_t datalen)
 
 static ssize_t tls_write(esp_tls_t *tls, const char *data, size_t datalen)
 {
-    ssize_t ret = SSL_write(tls->ssl, data, datalen);
+    ssize_t ret = mbedtls_ssl_write(&tls->ssl, (unsigned char*) data, datalen);
     if (ret < 0) {
-	int err = SSL_get_error(tls->ssl, ret);
-	if (err != SSL_ERROR_WANT_WRITE && err != SSL_ERROR_WANT_READ) {
-	    ESP_LOGE(TAG, "write error :%d:", ret);
-	}
-	return -err;
+        if (ret != MBEDTLS_ERR_SSL_WANT_READ  && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+            ESP_LOGE(TAG, "write error :%d:", ret);
+        }
     }
     return ret;
 }
@@ -253,7 +281,7 @@ esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const e
 	tls->write = tls_write;
     }
 
-    if(cfg->non_block == true) {
+    if (cfg->non_block == true) {
         int flags = fcntl(tls->sockfd, F_GETFL, 0);
         fcntl(tls->sockfd, F_SETFL, flags | O_NONBLOCK);    
     }
