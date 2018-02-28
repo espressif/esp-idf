@@ -174,13 +174,15 @@ static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
         // spiconfig specifies a custom efuse pin configuration. This config defines all pins -except- WP,
         // which is compiled into the bootloader instead.
         //
-        // Most commonly an overriden pin mapping means ESP32-D2WD. Warn if chip is ESP32-D2WD
-        // but someone has changed the WP pin assignment from that chip's WP pin.
-        uint32_t chip_ver = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_RESERVE);
-        uint32_t pkg_ver = chip_ver & 0x7;
-        const int PKG_VER_ESP32_D2WD = 2; // TODO: use chip detection API once available
-        if (pkg_ver == PKG_VER_ESP32_D2WD && CONFIG_BOOTLOADER_SPI_WP_PIN != ESP32_D2WD_WP_GPIO) {
-            ESP_LOGW(TAG, "Chip is ESP32-D2WD but flash WP pin is different value to internal flash");
+        // Most commonly an overriden pin mapping means ESP32-D2WD or ESP32-PICOD4.
+        //Warn if chip is ESP32-D2WD/ESP32-PICOD4 but someone has changed the WP pin
+        //assignment from that chip's WP pin.
+        uint32_t pkg_ver = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_PKG);
+        if (CONFIG_BOOTLOADER_SPI_WP_PIN != ESP32_D2WD_WP_GPIO  &&
+            (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5 ||
+             pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2 ||
+             pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4)) {
+            ESP_LOGW(TAG, "Chip is ESP32-D2WD/ESP32-PICOD4 but flash WP pin is different value to internal flash");
         }
     }
 
