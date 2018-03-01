@@ -161,6 +161,24 @@ function(components_finish_registration)
         endif()
     endforeach()
 
+    # Add each component library's link-time dependencies (which are otherwise ignored) to the executable
+    # LINK_DEPENDS in order to trigger a re-link when needed (on Ninja/Makefile generators at least).
+    # (maybe this should probably be something CMake does, but it doesn't do it...)
+    foreach(component ${COMPONENTS})
+        if(TARGET ${component})
+            get_target_property(imported ${component} IMPORTED)
+            get_target_property(type ${component} TYPE)
+            if(NOT imported)
+                if(${type} STREQUAL STATIC_LIBRARY OR ${type} STREQUAL EXECUTABLE)
+                    get_target_property(link_depends "${component}" LINK_DEPENDS)
+                    if(link_depends)
+                        set_property(TARGET ${CMAKE_PROJECT_NAME}.elf APPEND PROPERTY LINK_DEPENDS "${link_depends}")
+                    endif()
+                endif()
+            endif()
+        endif()
+    endforeach()
+
     # Embedded binary & text files
     spaces2list(COMPONENT_EMBED_FILES)
     foreach(embed_src ${COMPONENT_EMBED_FILES})
