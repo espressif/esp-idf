@@ -106,15 +106,16 @@ function(target_add_binary_data target embed_file embed_type)
     get_filename_component(embed_file "${embed_file}" ABSOLUTE)
 
     get_filename_component(name "${embed_file}" NAME)
-    set(embed_srcfile "${CMAKE_BINARY_DIR}/${name}.c")
+    set(embed_srcfile "${CMAKE_BINARY_DIR}/${name}.S")
 
     add_custom_command(OUTPUT "${embed_srcfile}"
         COMMAND "${CMAKE_COMMAND}"
         -D "DATA_FILE=${embed_file}"
         -D "SOURCE_FILE=${embed_srcfile}"
         -D "FILE_TYPE=${embed_type}"
-        -P "${IDF_PATH}/tools/cmake/scripts/data_file_to_c.cmake"
+        -P "${IDF_PATH}/tools/cmake/scripts/data_file_embed_asm.cmake"
         MAIN_DEPENDENCY "${embed_file}"
+        DEPENDENCIES "${IDF_PATH}/tools/cmake/scripts/data_file_embed_asm.cmake"
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
 
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES "${embed_srcfile}")
