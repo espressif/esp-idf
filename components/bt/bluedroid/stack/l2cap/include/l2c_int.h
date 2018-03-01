@@ -767,7 +767,7 @@ extern BOOLEAN  l2c_fcr_renegotiate_chan(tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg
 extern UINT8    l2c_fcr_process_peer_cfg_req(tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg);
 extern void     l2c_fcr_adj_monitor_retran_timeout (tL2C_CCB *p_ccb);
 extern void     l2c_fcr_stop_timer (tL2C_CCB *p_ccb);
-
+extern void     l2c_fcr_free_timer (tL2C_CCB *p_ccb);
 /* Functions provided by l2c_ble.c
 ************************************
 */

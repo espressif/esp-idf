@@ -1359,6 +1359,12 @@ void btm_inq_db_init (void)
 #if 0  /* cleared in btm_init; put back in if called from anywhere else! */
     memset (&btm_cb.btm_inq_vars, 0, sizeof (tBTM_INQUIRY_VAR_ST));
 #endif
+
+    btu_free_timer(&btm_cb.btm_inq_vars.rmt_name_timer_ent);
+    memset(&btm_cb.btm_inq_vars.rmt_name_timer_ent, 0, sizeof(TIMER_LIST_ENT));
+    btu_free_timer(&btm_cb.btm_inq_vars.inq_timer_ent);
+    memset(&btm_cb.btm_inq_vars.inq_timer_ent, 0, sizeof(TIMER_LIST_ENT));
+
     btm_cb.btm_inq_vars.no_inc_ssp = BTM_NO_SSP_ON_INQUIRY;
 }
 

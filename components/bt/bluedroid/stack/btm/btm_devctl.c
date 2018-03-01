@@ -533,7 +533,7 @@ void btm_read_local_name_complete (UINT8 *p, UINT16 evt_len)
     UINT8           status;
     UNUSED(evt_len);
 
-    btu_stop_timer (&btm_cb.devcb.rln_timer);
+    btu_free_timer (&btm_cb.devcb.rln_timer);
 
     /* If there was a callback address for read local name, call it */
     btm_cb.devcb.p_rln_cmpl_cb = NULL;

@@ -119,6 +119,7 @@ tCONN_CB *sdpu_allocate_ccb (void)
     /* Look through each connection control block for a free one */
     for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
         if (p_ccb->con_state == SDP_STATE_IDLE) {
+            btu_free_timer(&p_ccb->timer_entry);
             memset (p_ccb, 0, sizeof (tCONN_CB));
 
             p_ccb->timer_entry.param = (UINT32) p_ccb;
@@ -143,8 +144,8 @@ tCONN_CB *sdpu_allocate_ccb (void)
 *******************************************************************************/
 void sdpu_release_ccb (tCONN_CB *p_ccb)
 {
-    /* Ensure timer is stopped */
-    btu_stop_timer (&p_ccb->timer_entry);
+    /* Ensure timer is stopped and released */
+    btu_free_timer(&p_ccb->timer_entry);
 
     /* Drop any response pointer we may be holding */
     p_ccb->con_state = SDP_STATE_IDLE;

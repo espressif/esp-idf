@@ -165,6 +165,7 @@ tRFC_MCB *rfc_alloc_multiplexer_channel (BD_ADDR bd_addr, BOOLEAN is_initiator)
         if (rfc_cb.port.rfc_mcb[j].state == RFC_MX_STATE_IDLE) {
             /* New multiplexer control block */
             fixed_queue_free(p_mcb->cmd_q, NULL);
+            rfc_timer_free(p_mcb);
             memset (p_mcb, 0, sizeof (tRFC_MCB));
             memcpy (p_mcb->bd_addr, bd_addr, BD_ADDR_LEN);
             RFCOMM_TRACE_DEBUG("rfc_alloc_multiplexer_channel:is_initiator:%d, create new p_mcb:%p, index:%d",
@@ -195,7 +196,7 @@ tRFC_MCB *rfc_alloc_multiplexer_channel (BD_ADDR bd_addr, BOOLEAN is_initiator)
 void rfc_release_multiplexer_channel (tRFC_MCB *p_mcb)
 {
 
-    rfc_timer_stop (p_mcb);
+    rfc_timer_free (p_mcb);
 
 
     fixed_queue_free(p_mcb->cmd_q, osi_free);
@@ -223,7 +224,6 @@ void rfc_timer_start (tRFC_MCB *p_mcb, UINT16 timeout)
     btu_start_timer (p_tle, BTU_TTYPE_RFCOMM_MFC, timeout);
 }
 
-
 /*******************************************************************************
 **
 ** Function         rfc_timer_stop
@@ -238,6 +238,20 @@ void rfc_timer_stop (tRFC_MCB *p_mcb)
     btu_stop_timer (&p_mcb->tle);
 }
 
+/*******************************************************************************
+**
+** Function         rfc_timer_free
+**
+** Description      Stop and free RFC Timer
+**
+*******************************************************************************/
+void rfc_timer_free (tRFC_MCB *p_mcb)
+{
+    RFCOMM_TRACE_EVENT ("rfc_timer_free");
+
+    btu_free_timer (&p_mcb->tle);
+    memset(&p_mcb->tle, 0, sizeof(TIMER_LIST_ENT));
+}
 
 /*******************************************************************************
 **
@@ -257,7 +271,6 @@ void rfc_port_timer_start (tPORT *p_port, UINT16 timeout)
     btu_start_timer (p_tle, BTU_TTYPE_RFCOMM_PORT, timeout);
 }
 
-
 /*******************************************************************************
 **
 ** Function         rfc_port_timer_stop
@@ -272,6 +285,20 @@ void rfc_port_timer_stop (tPORT *p_port)
     btu_stop_timer (&p_port->rfc.tle);
 }
 
+/*******************************************************************************
+**
+** Function         rfc_port_timer_free
+**
+** Description      Stop and free RFC Timer
+**
+*******************************************************************************/
+void rfc_port_timer_free (tPORT *p_port)
+{
+    RFCOMM_TRACE_EVENT ("rfc_port_timer_stop");
+
+    btu_free_timer (&p_port->rfc.tle);
+    memset(&p_port->rfc.tle, 0, sizeof(TIMER_LIST_ENT));
+}
 
 /*******************************************************************************
 **
@@ -473,5 +500,3 @@ void rfc_check_send_cmd(tRFC_MCB *p_mcb, BT_HDR *p_buf)
         L2CA_DataWrite (p_mcb->lcid, p);
     }
 }
-
-
