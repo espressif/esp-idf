@@ -540,6 +540,10 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
             if(intr_st & BIT(i)) {
                 channel = i / 3;
                 rmt_obj_t* p_rmt = p_rmt_obj[channel];
+                if(NULL == p_rmt) {
+                    RMT.int_clr.val = BIT(i);
+                    continue;
+                }
                 switch(i % 3) {
                     //TX END
                     case 0:
