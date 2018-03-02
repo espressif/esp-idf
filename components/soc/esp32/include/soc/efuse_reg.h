@@ -79,17 +79,23 @@
 #define EFUSE_RD_WIFI_MAC_CRC_HIGH_S  0
 
 #define EFUSE_BLK0_RDATA3_REG          (DR_REG_EFUSE_BASE + 0x00c)
-/* EFUSE_RD_CHIP_VER_REV1 : R/W ;bitpos:[16] ;default: 1'b0 ; */
+/* EFUSE_RD_CHIP_VER_REV1 : R/W ;bitpos:[15] ;default: 1'b0 ; */
 /*description: bit is set to 1 for rev1 silicon*/
 #define EFUSE_RD_CHIP_VER_REV1  (BIT(15))
 #define EFUSE_RD_CHIP_VER_REV1_M  ((EFUSE_RD_CHIP_VER_REV1_V)<<(EFUSE_RD_CHIP_VER_REV1_S))
 #define EFUSE_RD_CHIP_VER_REV1_V  0x1
 #define EFUSE_RD_CHIP_VER_REV1_S  15
-/* EFUSE_RD_CHIP_VER_RESERVE : R/W ;bitpos:[15:12] ;default: 3'b0 ; */
+/* EFUSE_RD_BLK3_PART_RESERVE : R/W ; bitpos:[14] ; default: 1'b0; */
+/*description: If set, this bit indicates that BLOCK3[143:96] is reserved for internal use*/
+#define EFUSE_RD_BLK3_PART_RESERVE  (BIT(14))
+#define EFUSE_RD_BLK3_PART_RESERVE_M  ((EFUSE_RD_BLK3_PART_RESERVE_V)<<(EFUSE_RD_BLK3_PART_RESERVE_S))
+#define EFUSE_RD_BLK3_PART_RESERVE_V  0x1
+#define EFUSE_RD_BLK3_PART_RESERVE_S  14
+/* EFUSE_RD_CHIP_VER_RESERVE : R/W ;bitpos:[13:12] ;default: 2'b0 ; */
 /*description: */
-#define EFUSE_RD_CHIP_VER_RESERVE  0x00000007
+#define EFUSE_RD_CHIP_VER_RESERVE  0x00000003
 #define EFUSE_RD_CHIP_VER_RESERVE_M  ((EFUSE_RD_CHIP_VER_RESERVE_V)<<(EFUSE_RD_CHIP_VER_RESERVE_S))
-#define EFUSE_RD_CHIP_VER_RESERVE_V  0x7
+#define EFUSE_RD_CHIP_VER_RESERVE_V  0x3
 #define EFUSE_RD_CHIP_VER_RESERVE_S  12
 /* EFUSE_RD_CHIP_VER : R/W ;bitpos:[11:9] ;default: 3'b0 ; */
 /*description: chip package */
@@ -152,6 +158,15 @@
 #define EFUSE_RD_XPD_SDIO_REG_M  (BIT(14))
 #define EFUSE_RD_XPD_SDIO_REG_V  0x1
 #define EFUSE_RD_XPD_SDIO_REG_S  14
+/* EFUSE_RD_ADC_VREF : R/W ;bitpos:[12:8] ;default: 5'b0 ; */
+/*description: True ADC reference voltage */
+#define EFUSE_RD_ADC_VREF  0x0000001F
+#define EFUSE_RD_ADC_VREF_M  ((EFUSE_RD_ADC_VREF_V)<<(EFUSE_RD_ADC_VREF_S))
+#define EFUSE_RD_ADC_VREF_V  0x1F
+#define EFUSE_RD_ADC_VREF_S  8
+/* Note: EFUSE_ADC_VREF and SDIO_DREFH/M/L share the same address space. Newer
+ * versions of ESP32 come with EFUSE_ADC_VREF already burned, therefore
+ * SDIO_DREFH/M/L is only available in older versions of ESP32 */
 /* EFUSE_RD_SDIO_DREFL : RO ;bitpos:[13:12] ;default: 2'b0 ; */
 /*description: */
 #define EFUSE_RD_SDIO_DREFL  0x00000003
@@ -314,17 +329,23 @@
 #define EFUSE_WIFI_MAC_CRC_HIGH_S  0
 
 #define EFUSE_BLK0_WDATA3_REG          (DR_REG_EFUSE_BASE + 0x028)
-/* EFUSE_CHIP_VER_REV1 : R/W ;bitpos:[16] ;default: 1'b0 ; */
+/* EFUSE_CHIP_VER_REV1 : R/W ;bitpos:[15] ;default: 1'b0 ; */
 /*description: */
 #define EFUSE_CHIP_VER_REV1  (BIT(15))
 #define EFUSE_CHIP_VER_REV1_M  ((EFUSE_CHIP_VER_REV1_V)<<(EFUSE_CHIP_VER_REV1_S))
 #define EFUSE_CHIP_VER_REV1_V  0x1
 #define EFUSE_CHIP_VER_REV1_S  15
-/* EFUSE_CHIP_VER_RESERVE : R/W ;bitpos:[15:12] ;default: 3'b0 ; */
+/* EFUSE_BLK3_PART_RESERVE : R/W ; bitpos:[14] ; default: 1'b0; */
+/*description: If set, this bit indicates that BLOCK3[143:96] is reserved for internal use*/
+#define EFUSE_BLK3_PART_RESERVE  (BIT(14))
+#define EFUSE_BLK3_PART_RESERVE_M  ((EFUSE_BLK3_PART_RESERVE_V)<<(EFUSE_BLK3_PART_RESERVE_S))
+#define EFUSE_BLK3_PART_RESERVE_V  0x1
+#define EFUSE_BLK3_PART_RESERVE_S  14
+/* EFUSE_CHIP_VER_RESERVE : R/W ;bitpos:[13:12] ;default: 2'b0 ; */
 /*description: */
-#define EFUSE_CHIP_VER_RESERVE  0x00000007
+#define EFUSE_CHIP_VER_RESERVE  0x00000003
 #define EFUSE_CHIP_VER_RESERVE_M  ((EFUSE_CHIP_VER_RESERVE_V)<<(EFUSE_CHIP_VER_RESERVE_S))
-#define EFUSE_CHIP_VER_RESERVE_V  0x7
+#define EFUSE_CHIP_VER_RESERVE_V  0x3
 #define EFUSE_CHIP_VER_RESERVE_S  12
 /* EFUSE_CHIP_VER : R/W ;bitpos:[11:9] ;default: 3'b0 ; */
 /*description: */
@@ -382,6 +403,15 @@
 #define EFUSE_XPD_SDIO_REG_M  (BIT(14))
 #define EFUSE_XPD_SDIO_REG_V  0x1
 #define EFUSE_XPD_SDIO_REG_S  14
+/* EFUSE_ADC_VREF : R/W ;bitpos:[12:8] ;default: 5'b0 ; */
+/*description: True ADC reference voltage */
+#define EFUSE_ADC_VREF  0x0000001F
+#define EFUSE_ADC_VREF_M  ((EFUSE_ADC_VREF_V)<<(EFUSE_ADC_VREF_S))
+#define EFUSE_ADC_VREF_V  0x1F
+#define EFUSE_ADC_VREF_S  8
+/* Note: EFUSE_ADC_VREF and SDIO_DREFH/M/L share the same address space. Newer
+ * versions of ESP32 come with EFUSE_ADC_VREF already burned, therefore
+ * SDIO_DREFH/M/L is only available in older versions of ESP32 */
 /* EFUSE_SDIO_DREFL : R/W ;bitpos:[13:12] ;default: 2'b0 ; */
 /*description: */
 #define EFUSE_SDIO_DREFL  0x00000003
@@ -659,6 +689,8 @@
 #define EFUSE_BLK3_DOUT2_V  0xFFFFFFFF
 #define EFUSE_BLK3_DOUT2_S  0
 
+/* Note: Newer ESP32s utilize BLK3_DATA3 and parts of BLK3_DATA4 for calibration
+ * purposes. This usage is indicated by the EFUSE_RD_BLK3_PART_RESERVE bit.*/
 #define EFUSE_BLK3_RDATA3_REG          (DR_REG_EFUSE_BASE + 0x084)
 /* EFUSE_BLK3_DOUT3 : RO ;bitpos:[31:0] ;default: 32'h0 ; */
 /*description: read for BLOCK3*/
@@ -666,6 +698,30 @@
 #define EFUSE_BLK3_DOUT3_M  ((EFUSE_BLK3_DOUT3_V)<<(EFUSE_BLK3_DOUT3_S))
 #define EFUSE_BLK3_DOUT3_V  0xFFFFFFFF
 #define EFUSE_BLK3_DOUT3_S  0
+/* EFUSE_RD_ADC2_TP_HIGH : R/W ;bitpos:[31:23] ;default: 9'b0 ; */
+/*description: ADC2 Two Point calibration high point. Only valid if EFUSE_RD_BLK3_PART_RESERVE */
+#define EFUSE_RD_ADC2_TP_HIGH  0x1FF
+#define EFUSE_RD_ADC2_TP_HIGH_M  ((EFUSE_RD_ADC2_TP_HIGH_V)<<(EFUSE_RD_ADC2_TP_HIGH_S))
+#define EFUSE_RD_ADC2_TP_HIGH_V  0x1FF
+#define EFUSE_RD_ADC2_TP_HIGH_S  23
+/* EFUSE_RD_ADC2_TP_LOW : R/W ;bitpos:[22:16] ;default: 7'b0 ; */
+/*description: ADC2 Two Point calibration low point. Only valid if EFUSE_RD_BLK3_PART_RESERVE */
+#define EFUSE_RD_ADC2_TP_LOW  0x7F
+#define EFUSE_RD_ADC2_TP_LOW_M  ((EFUSE_RD_ADC2_TP_LOW_V)<<(EFUSE_RD_ADC2_TP_LOW_S))
+#define EFUSE_RD_ADC2_TP_LOW_V  0x7F
+#define EFUSE_RD_ADC2_TP_LOW_S  16
+/* EFUSE_RD_ADC1_TP_HIGH : R/W ;bitpos:[15:7] ;default: 9'b0 ; */
+/*description: ADC1 Two Point calibration high point. Only valid if EFUSE_RD_BLK3_PART_RESERVE */
+#define EFUSE_RD_ADC1_TP_HIGH  0x1FF
+#define EFUSE_RD_ADC1_TP_HIGH_M  ((EFUSE_RD_ADC1_TP_HIGH_V)<<(EFUSE_RD_ADC1_TP_HIGH_S))
+#define EFUSE_RD_ADC1_TP_HIGH_V  0x1FF
+#define EFUSE_RD_ADC1_TP_HIGH_S  7
+/* EFUSE_RD_ADC1_TP_LOW : R/W ;bitpos:[6:0] ;default: 7'b0 ; */
+/*description: ADC1 Two Point calibration low point. Only valid if EFUSE_RD_BLK3_PART_RESERVE */
+#define EFUSE_RD_ADC1_TP_LOW  0x7F
+#define EFUSE_RD_ADC1_TP_LOW_M  ((EFUSE_RD_ADC1_TP_LOW_V)<<(EFUSE_RD_ADC1_TP_LOW_S))
+#define EFUSE_RD_ADC1_TP_LOW_V  0x7F
+#define EFUSE_RD_ADC1_TP_LOW_S  0
 
 #define EFUSE_BLK3_RDATA4_REG          (DR_REG_EFUSE_BASE + 0x088)
 /* EFUSE_BLK3_DOUT4 : RO ;bitpos:[31:0] ;default: 32'h0 ; */
@@ -674,6 +730,12 @@
 #define EFUSE_BLK3_DOUT4_M  ((EFUSE_BLK3_DOUT4_V)<<(EFUSE_BLK3_DOUT4_S))
 #define EFUSE_BLK3_DOUT4_V  0xFFFFFFFF
 #define EFUSE_BLK3_DOUT4_S  0
+/* EFUSE_RD_CAL_RESERVED: R/W ; bitpos:[0:15] ; default : 16'h0 ; */
+/*description: Reserved for future calibration use. Indicated by EFUSE_RD_BLK3_PART_RESERVE */
+#define EFUSE_RD_CAL_RESERVED  0x0000FFFF
+#define EFUSE_RD_CAL_RESERVED_M  ((EFUSE_RD_CAL_RESERVED_V)<<(EFUSE_RD_CAL_RESERVED_S))
+#define EFUSE_RD_CAL_RESERVED_V  0xFFFF
+#define EFUSE_RD_CAL_RESERVED_S  0
 
 #define EFUSE_BLK3_RDATA5_REG          (DR_REG_EFUSE_BASE + 0x08c)
 /* EFUSE_BLK3_DOUT5 : RO ;bitpos:[31:0] ;default: 32'h0 ; */
@@ -851,6 +913,8 @@
 #define EFUSE_BLK3_DIN2_V  0xFFFFFFFF
 #define EFUSE_BLK3_DIN2_S  0
 
+/* Note: Newer ESP32s utilize BLK3_DATA3 and parts of BLK3_DATA4 for calibration
+ * purposes. This usage is indicated by the EFUSE_RD_BLK3_PART_RESERVE bit.*/
 #define EFUSE_BLK3_WDATA3_REG          (DR_REG_EFUSE_BASE + 0x0e4)
 /* EFUSE_BLK3_DIN3 : R/W ;bitpos:[31:0] ;default: 32'h0 ; */
 /*description: program for BLOCK3*/
@@ -858,6 +922,30 @@
 #define EFUSE_BLK3_DIN3_M  ((EFUSE_BLK3_DIN3_V)<<(EFUSE_BLK3_DIN3_S))
 #define EFUSE_BLK3_DIN3_V  0xFFFFFFFF
 #define EFUSE_BLK3_DIN3_S  0
+/* EFUSE_ADC2_TP_HIGH : R/W ;bitpos:[31:23] ;default: 9'b0 ; */
+/*description: ADC2 Two Point calibration high point. Only valid if EFUSE_RD_BLK3_PART_RESERVE */
+#define EFUSE_ADC2_TP_HIGH  0x1FF
+#define EFUSE_ADC2_TP_HIGH_M  ((EFUSE_ADC2_TP_HIGH_V)<<(EFUSE_ADC2_TP_HIGH_S))
+#define EFUSE_ADC2_TP_HIGH_V  0x1FF
+#define EFUSE_ADC2_TP_HIGH_S  23
+/* EFUSE_ADC2_TP_LOW : R/W ;bitpos:[22:16] ;default: 7'b0 ; */
+/*description: ADC2 Two Point calibration low point. Only valid if EFUSE_RD_BLK3_PART_RESERVE */
+#define EFUSE_ADC2_TP_LOW  0x7F
+#define EFUSE_ADC2_TP_LOW_M  ((EFUSE_ADC2_TP_LOW_V)<<(EFUSE_ADC2_TP_LOW_S))
+#define EFUSE_ADC2_TP_LOW_V  0x7F
+#define EFUSE_ADC2_TP_LOW_S  16
+/* EFUSE_ADC1_TP_HIGH : R/W ;bitpos:[15:7] ;default: 9'b0 ; */
+/*description: ADC1 Two Point calibration high point. Only valid if EFUSE_RD_BLK3_PART_RESERVE */
+#define EFUSE_ADC1_TP_HIGH  0x1FF
+#define EFUSE_ADC1_TP_HIGH_M  ((EFUSE_ADC1_TP_HIGH_V)<<(EFUSE_ADC1_TP_HIGH_S))
+#define EFUSE_ADC1_TP_HIGH_V  0x1FF
+#define EFUSE_ADC1_TP_HIGH_S  7
+/* EFUSE_ADC1_TP_LOW : R/W ;bitpos:[6:0] ;default: 7'b0 ; */
+/*description: ADC1 Two Point calibration low point. Only valid if EFUSE_RD_BLK3_PART_RESERVE */
+#define EFUSE_ADC1_TP_LOW  0x7F
+#define EFUSE_ADC1_TP_LOW_M  ((EFUSE_ADC1_TP_LOW_V)<<(EFUSE_ADC1_TP_LOW_S))
+#define EFUSE_ADC1_TP_LOW_V  0x7F
+#define EFUSE_ADC1_TP_LOW_S  0
 
 #define EFUSE_BLK3_WDATA4_REG          (DR_REG_EFUSE_BASE + 0x0e8)
 /* EFUSE_BLK3_DIN4 : R/W ;bitpos:[31:0] ;default: 32'h0 ; */
@@ -866,6 +954,12 @@
 #define EFUSE_BLK3_DIN4_M  ((EFUSE_BLK3_DIN4_V)<<(EFUSE_BLK3_DIN4_S))
 #define EFUSE_BLK3_DIN4_V  0xFFFFFFFF
 #define EFUSE_BLK3_DIN4_S  0
+/* EFUSE_CAL_RESERVED: R/W ; bitpos:[0:15] ; default : 16'h0 ; */
+/*description: Reserved for future calibration use. Indicated by EFUSE_BLK3_PART_RESERVE */
+#define EFUSE_CAL_RESERVED  0x0000FFFF
+#define EFUSE_CAL_RESERVED_M  ((EFUSE_CAL_RESERVED_V)<<(EFUSE_CAL_RESERVED_S))
+#define EFUSE_CAL_RESERVED_V  0xFFFF
+#define EFUSE_CAL_RESERVED_S  0
 
 #define EFUSE_BLK3_WDATA5_REG          (DR_REG_EFUSE_BASE + 0x0ec)
 /* EFUSE_BLK3_DIN5 : R/W ;bitpos:[31:0] ;default: 32'h0 ; */
