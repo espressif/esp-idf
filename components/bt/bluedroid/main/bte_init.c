@@ -269,8 +269,6 @@ void BTE_InitStack(void)
     if ((bta_gatts_cb_ptr = (tBTA_GATTS_CB *)osi_malloc(sizeof(tBTA_GATTS_CB))) == NULL) {
         return;
     }
-    memset((void *)bta_gattc_cb_ptr, 0, sizeof(tBTA_GATTC_CB));
-    //
     memset((void *)bta_gatts_cb_ptr, 0, sizeof(tBTA_GATTS_CB));
 #endif
 #if BTA_PAN_INCLUDED==TRUE
