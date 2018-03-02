@@ -297,6 +297,33 @@ BaseType_t xRingbufferAddToQueueSetRead(RingbufHandle_t ringbuf, QueueSetHandle_
  */
 BaseType_t xRingbufferAddToQueueSetWrite(RingbufHandle_t ringbuf, QueueSetHandle_t xQueueSet);
 
+/**
+ * @brief Check if the selected queue set member is the ringbuffer's read semaphore
+ *
+ * This API checks if queue set member returned from xQueueSelectFromSet
+ * is the read semaphore of this ring buffer. If so, this indicates the ring buffer
+ * has items waiting to be read.
+ *
+ * @param ringbuf Ring buffer which should be checked
+ * @param member Member returned from xQueueSelectFromSet
+ *
+ * @return pdTRUE when semaphore belongs to ringbuffer, pdFALSE otherwise.
+ */
+BaseType_t xRingbufferCanRead(RingbufHandle_t ringbuf, QueueSetMemberHandle_t member);
+
+/**
+ * @brief Check if the selected queue set member is the ringbuffer's write semaphore
+ *
+ * This API checks if queue set member returned from xQueueSelectFromSet
+ * is the write semaphore of this ring buffer. If so, this indicates the ring buffer
+ * has items waiting for write.
+ *
+ * @param ringbuf Ring buffer which should be checked
+ * @param member Member returned from xQueueSelectFromSet
+ *
+ * @return pdTRUE when semaphore belongs to ringbuffer, pdFALSE otherwise.
+ */
+BaseType_t xRingbufferCanWrite(RingbufHandle_t ringbuf, QueueSetMemberHandle_t member);
 
 /**
  * @brief  Remove the ringbuffer from a queue set.
