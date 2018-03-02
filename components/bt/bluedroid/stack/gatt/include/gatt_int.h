@@ -682,6 +682,7 @@ extern void gatt_sr_update_cback_cnt(tGATT_TCB *p_tcb, tGATT_IF gatt_if, BOOLEAN
 extern void gatt_sr_update_prep_cnt(tGATT_TCB *p_tcb, tGATT_IF gatt_if, BOOLEAN is_inc, BOOLEAN is_reset_first);
 
 extern BOOLEAN gatt_find_app_hold_link(tGATT_TCB *p_tcb, UINT8 start_idx, UINT8 *p_found_idx, tGATT_IF *p_gatt_if);
+extern BOOLEAN gatt_find_specific_app_in_hold_link(tGATT_TCB *p_tcb, tGATT_IF p_gatt_if);
 extern UINT8 gatt_num_apps_hold_link(tGATT_TCB *p_tcb);
 extern UINT8 gatt_num_clcb_by_bd_addr(BD_ADDR bda);
 extern tGATT_TCB *gatt_find_tcb_by_cid(UINT16 lcid);
