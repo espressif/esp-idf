@@ -142,3 +142,4 @@
     *lib_a-strdup_r.o(.literal .text .literal.* .text.*)
     *lib_a-system.o(.literal .text .literal.* .text.*)
     *lib_a-strndup_r.o(.literal .text .literal.* .text.*)
+    *lib_a-sysgettod.o(.literal .text .literal.* .text.*)
