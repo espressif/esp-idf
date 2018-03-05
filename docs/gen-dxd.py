@@ -10,6 +10,11 @@ import sys
 import os
 import re
 
+# Determime build directory
+builddir = '_build'
+if 'BUILDDIR' in os.environ:
+    builddir = os.environ['BUILDDIR']
+
 # Script configuration
 header_file_path_prefix = "../components/"
 """string: path prefix for header files.
@@ -20,7 +25,7 @@ doxyfile_path = "Doxyfile"
 xml_directory_path = "xml"
 """string: path to directory with XML files by Doxygen.
 """
-inc_directory_path = "_build/inc"
+inc_directory_path = os.path.join(builddir, 'inc')
 """string: path prefix for header files.
 """
 all_kinds = [
@@ -263,9 +268,15 @@ def generate_api_inc_files():
         api_name = get_api_name(header_file_path)
         inc_file_path = inc_directory_path + "/" + api_name + ".inc"
         rst_output = generate_directives(header_file_path)
-        inc_file = open(inc_file_path, "w")
-        inc_file.write(rst_output)
-        inc_file.close()
+
+        previous_rst_output = ''
+        if os.path.isfile(inc_file_path):
+            with open(inc_file_path, "r") as inc_file_old:
+                previous_rst_output = inc_file_old.read()
+
+        if previous_rst_output != rst_output:
+            with open(inc_file_path, "w") as inc_file:
+                inc_file.write(rst_output)
 
 
 if __name__ == "__main__":

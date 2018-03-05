@@ -2,7 +2,7 @@
 
 import re
 from docutils import nodes
-from repo_util import run_cmd_get_output
+from local_util import run_cmd_get_output
 
 def get_github_rev():
     path = run_cmd_get_output('git rev-parse --short HEAD')
