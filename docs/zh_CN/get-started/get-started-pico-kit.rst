@@ -1,7 +1,7 @@
 ESP32-PICO-KIT V4 入门指南
 ============================
 
-用户指南介绍了如何开始使用 ESP32-PICO-KIT V4 迷你开发板。有关 ESP32-PICO-KIT 其他版本的内容，请见 :doc:`../hw-reference/index`。
+本指南介绍了如何开始使用 ESP32-PICO-KIT V4 迷你开发板。有关 ESP32-PICO-KIT 其他版本的介绍，请见 :doc:`../hw-reference/index`。
 
 
 准备工作
@@ -17,11 +17,11 @@ ESP32-PICO-KIT V4 入门指南
 简介
 ----
 
-ESP32-PICO-KIT V4 是一款来自`乐鑫 <https://espressif.com>`_，其内核采用了具有完整 Wi-Fi 和蓝牙功能的 ESP32 系 SIP 模组 ESP32-PICO-D4。与其他 ESP32 系模组相比，ESP32-PICO-D4 模组已将 40 MHz 晶体振荡器、4 MB flash、滤波电容及射频匹配链路等所有外围器件无缝集成进封装内，无需外围元器件即可工作。这将大大降低了用户额外采购元器件的数量和成本，及额外组装测试的复杂度。
+ESP32-PICO-KIT V4 是一款来自 `乐鑫 <https://espressif.com>`_ 的开发板，其核心采用了具有完整 Wi-Fi 和蓝牙功能的 ESP32 系列 SIP 模组 ESP32-PICO-D4。与其他 ESP32 系列模组相比，ESP32-PICO-D4 模组已将 40 MHz 晶体振荡器、4 MB flash、滤波电容及射频匹配链路等所有外围器件无缝集成进封装内，无需外围元器件即可工作。这将大大降低了用户额外采购元器件的数量和成本，及额外组装测试的复杂度。
 
 ESP32-PICO-KIT V4  集成了一个 USB-UART 桥接电路，可连接至 PC 的 USB 端口进行下载和调试。
 
-为了便于连接，ESP32-PICO-D4 上的所有 IO 信号和系统电源管脚均通过开发板两侧的排针（每侧 20 个 x 0.1 英寸）引出。为了方便在微型面包板上的使用，ESP32-PICO-KIT V4 开发板每侧的 20 个管脚中，有 17 个引出了排针，另外 3 个靠近天线的管脚不引出，可供用户最后焊接使用。
+为了便于连接，ESP32-PICO-D4 上的所有 IO 信号和系统电源管脚均通过开发板两侧的排针（每侧 20 个 x 0.1 英寸间隔）引出。为了方便在微型面包板上的使用，ESP32-PICO-KIT V4 开发板每侧的 20 个管脚中，有 17 个引出了排针，另外 3 个靠近天线的管脚不引出，可供用户最后焊接使用。
 
 .. note::
 
@@ -40,28 +40,28 @@ ESP32-PICO-KIT V4 开发板的尺寸为 52 x 20.3 x 10 mm (2.1" x 0.8" x 0.4")�
 功能说明
 --------
 
-ESP32-PICO-KIT V4 开发板的关键元件、接口及控制方式如下文所示。
+ESP32-PICO-KIT V4 开发板的主要元件、接口及控制方式如下文所示。
 
 ESP32-PICO-D4
-    标准 ESP32-PICO-D4 模组，已焊接至 ESP32-PICO-KIT V4 开发板，具备 ESP32 芯片的完整功能，仅需连接天线、LC 匹配电路、耦合电容和 EN 信号上拉电阻即可正常工作。
+    ESP32-PICO-KIT V4 开发板上焊接的标准 ESP32-PICO-D4 模组，集成了 ESP32 芯片的完整系统，仅需连接天线、LC 匹配电路、退耦电容和 EN 信号上拉电阻即可正常工作。
 
 LDO
     5V-to-3.3V 低压差稳压器
 
-USB-UART 桥
-    单芯片 USB-UART 桥，可提供高达 1 Mbps 的传输速率。
+USB-UART 桥接器
+    单芯片 USB-UART 桥接器，可提供高达 1 Mbps 的传输速率。
 
 Micro USB 接口
     USB 接口，可用作电路板的供电电源及连接 PC 端的通信接口。
 
 5V LED 电源指示灯
-    当开发板通电后（USB 或外部 5V），该指示灯将亮起。更多信息，请见 `相关文档`_ 技术规格书中的原理图。
+    当开发板通电后（USB 或外部 5V），该指示灯将亮起。更多信息，请见 `相关文档`_ 中的原理图。
         
 I/O
     I/O      ESP32-PICO-D4 上的所有管脚均通过开发板的排针引出。用户可以对 ESP32 进行编程，实现 PWM、ADC、DAC、I2C、I2S、SPI 等多种功能。更多信息，请见章节 `管脚说明`_。
 
 BOOT 键
-    长按 BOOT 键，并按下 EN 键进入固件下载模式，通过串口下载固件。
+    按下 BOOT 键并保持，同时按一下 EN 键（此时不要松开 BOOT 键）进入固件下载模式，通过串口下载固件。
     
 EN 键
     复位键，可重置系统。
@@ -87,7 +87,7 @@ ESP32-PICO-KIT V4 支持以下几种供电模式：
 
 .. warning::
 
-    上述供电模式不可同时使用，否则可能会损坏电路板和/或电源。
+    上述供电模式不可同时连接，否则可能会损坏电路板和/或电源。
 
 
 应用程序开发
@@ -98,16 +98,16 @@ ESP32-PICO-KIT V4 支持以下几种供电模式：
 
 有关应用程序开发的具体步骤，请见章节 :doc:`index`：
 
-* :ref:`设置 Toolchain <get-started-setup-toolchain>`，用 C 语言开发应用
+* :ref:`设置 Toolchain <get-started-setup-toolchain>`，以便用 C 语言开发应用
 * :ref:`连接 <get-started-connect>` 模组至 PC，并确认访问状态
 * :ref:`构建并向 ESP32 烧录 example <get-started-build-flash>`
-* 即刻 :ref:`监测 <get-started-build-monitor>` 应用程序的动作
+* :ref:`即刻监测 <get-started-build-monitor>` 应用程序的动作
 
 
 管脚说明
 --------
 
-下表提供了介绍了开发板 I/O 管脚的**名称**和**功能**，具体布局与 `相关文档`_ 中的原理图一致。请参考 :ref:`get-started-pico-kit-v4-board-front`。
+下表介绍了开发板 I/O 管脚的 **名称** 和 **功能**，具体布局请见 `相关文档`_ 中的原理图。请参考 :ref:`get-started-pico-kit-v4-board-front` 。
 
 
 Header J2
@@ -178,12 +178,12 @@ Header J3
 
 .. _get-started-pico-kit-v4-pin-notes:
 
-**Notes to** `管脚说明`_ 
+**备注**  
 
     1. 该管脚已连接至 ESP32-PICO-D4 的内置 flash 管脚。
     2. 当用作 ADC_PRE_AMP 时，请在以下位置增加 270 pF 电容：(a) SENSOR_VP 和 IO37 之间；(b) SENSOR_VN 和 IO38 之间。
     3. 32.768 kHz 晶振：(a) 输入；(b) 输出。
-    4. 该管脚已连接至开发板的 USB 桥芯片。
+    4. 该管脚已连接至开发板的 USB 桥接器芯片。
     5. ESP32-PICO-KIT 内置 SPI flash 的工作电压为 3.3V。因此，strapping 管脚 MTDI 在模组重启过程中应保持低电平。
 
 
@@ -209,7 +209,7 @@ Header J3
 -----------------
 
 * `ESP32-PICO-KIT V4 原理图 <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v4_schematic.pdf>`_ (PDF)
-* `ESP32-PICO-D4 技术规格书 <http://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf>`_ (PDF)
+* `ESP32-PICO-D4 技术规格书 <http://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_cn.pdf>`_ (PDF)
 * :doc:`../hw-reference/index`
 
 
