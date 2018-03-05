@@ -319,6 +319,11 @@ error_exit:;
         xBtcMediaCtrlQueue = NULL;
     }
 
+    if (xBtcMediaQueueSet) {
+        vQueueDelete(xBtcMediaQueueSet);
+        xBtcMediaQueueSet = NULL;
+    }
+
     fixed_queue_free(btc_media_cmd_msg_queue, NULL);
     btc_media_cmd_msg_queue = NULL;
     return false;
@@ -339,6 +344,9 @@ void btc_a2dp_stop_media_task(void)
 
     vQueueDelete(xBtcMediaCtrlQueue);
     xBtcMediaCtrlQueue = NULL;
+
+    vQueueDelete(xBtcMediaQueueSet);
+    xBtcMediaQueueSet = NULL;
 
     fixed_queue_free(btc_media_cmd_msg_queue, NULL);
     btc_media_cmd_msg_queue = NULL;
