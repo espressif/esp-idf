@@ -90,7 +90,7 @@ Minimizing Noise
 
 The ESP32 ADC can be sensitive to noise leading to large discrepancies in ADC readings. To minimize noise, users may connect a 0.1uF capacitor to the ADC input pad in use. Multisampling may also be used to further mitigate the effects of noise.
 
-.. figure:: ../../_static/adc-noise-graph.jpg
+.. figure:: ../../../_static/adc-noise-graph.jpg
     :align: center
     :alt: ADC noise mitigation
     
@@ -101,7 +101,7 @@ ADC Calibration
 
 The :component_file:`esp_adc_cal/include/esp_adc_cal.h` API provides functions to correct for differences in measured voltages caused by variation of ADC reference voltages (Vref) between chips. Per design the ADC reference voltage is 1100mV, however the true reference voltage can range from 1000mV to 1200mV amongst different ESP32s.
 
-.. figure:: ../../_static/adc-vref-graph.jpg
+.. figure:: ../../../_static/adc-vref-graph.jpg
     :align: center
     :alt: ADC reference voltage comparison
     
