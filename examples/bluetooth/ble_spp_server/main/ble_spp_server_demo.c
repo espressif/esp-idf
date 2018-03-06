@@ -461,7 +461,7 @@ static void spp_task_init(void)
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
-    ESP_LOGE(GATTS_TABLE_TAG, "GAP_EVT, event %d\n", event);
+    ESP_LOGI(GATTS_TABLE_TAG, "GAP_EVT, event %d\n", event);
 
     switch (event) {
     case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT:
@@ -483,7 +483,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
     esp_ble_gatts_cb_param_t *p_data = (esp_ble_gatts_cb_param_t *) param;
     uint8_t res = 0xff;
 
-    ESP_LOGE(GATTS_TABLE_TAG, "event = %x\n",event);
+    ESP_LOGI(GATTS_TABLE_TAG, "event = %x\n",event);
     switch (event) {
     	case ESP_GATTS_REG_EVT:
     	    ESP_LOGI(GATTS_TABLE_TAG, "%s %d\n", __func__, __LINE__);
@@ -633,7 +633,7 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
             return;
         }
     }
-	
+
     do {
         int idx;
         for (idx = 0; idx < SPP_PROFILE_NUM; idx++) {

@@ -29,7 +29,7 @@ static inline void btc_gattc_cb_to_app(esp_gattc_cb_event_t event, esp_gatt_if_t
     esp_gattc_cb_t btc_gattc_cb = (esp_gattc_cb_t )btc_profile_cb_get(BTC_PID_GATTC);
     if (btc_gattc_cb) {
 	btc_gattc_cb(event, gattc_if, param);
-    }									
+    }
 }
 
 void btc_gattc_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
@@ -128,7 +128,7 @@ static void btc_gattc_copy_req_data(btc_msg_t *msg, void *p_dest, void *p_src)
     // Allocate buffer for request data if necessary
     switch (msg->act) {
         case BTA_GATTC_READ_DESCR_EVT:
-        case BTA_GATTC_READ_CHAR_EVT: 
+        case BTA_GATTC_READ_CHAR_EVT:
         case BTA_GATTC_READ_MUTIPLE_EVT: {
             if (p_src_data->read.p_value && p_src_data->read.p_value->p_value) {
                 p_dest_data->read.p_value = (tBTA_GATT_UNFMT  *)osi_malloc(sizeof(tBTA_GATT_UNFMT) + p_src_data->read.p_value->len);
@@ -141,7 +141,7 @@ static void btc_gattc_copy_req_data(btc_msg_t *msg, void *p_dest, void *p_src)
                 }
             }
             break;
-        } 
+        }
         default:
             break;
     }
@@ -152,7 +152,7 @@ static void btc_gattc_free_req_data(btc_msg_t *msg)
     tBTA_GATTC *arg = (tBTA_GATTC *)(msg->arg);
     switch (msg->act) {
         case BTA_GATTC_READ_DESCR_EVT:
-        case BTA_GATTC_READ_CHAR_EVT: 
+        case BTA_GATTC_READ_CHAR_EVT:
         case BTA_GATTC_READ_MUTIPLE_EVT: {
             if (arg->read.p_value) {
                 osi_free(arg->read.p_value);
@@ -290,7 +290,7 @@ static void btc_gattc_search_service(btc_ble_gattc_args_t *arg)
     }
 }
 
-esp_gatt_status_t btc_ble_gattc_get_service(uint16_t conn_id, esp_bt_uuid_t *svc_uuid, 
+esp_gatt_status_t btc_ble_gattc_get_service(uint16_t conn_id, esp_bt_uuid_t *svc_uuid,
                                                            esp_gattc_service_elem_t *result,
                                                            uint16_t *count, uint16_t offset)
 {
@@ -302,7 +302,7 @@ esp_gatt_status_t btc_ble_gattc_get_service(uint16_t conn_id, esp_bt_uuid_t *svc
         bta_uuid = osi_malloc(sizeof(tBT_UUID));
         btc_to_bta_uuid(bta_uuid, svc_uuid);
     }
-    
+
     BTA_GATTC_GetServiceWithUUID(conn_id, bta_uuid, &db, &svc_num);
 
     if ((status = btc_gattc_check_valid_param(svc_num, offset)) != ESP_GATT_OK) {
@@ -312,7 +312,7 @@ esp_gatt_status_t btc_ble_gattc_get_service(uint16_t conn_id, esp_bt_uuid_t *svc
         if (bta_uuid) {
             osi_free(bta_uuid);
         }
-        return status; 
+        return status;
     } else {
         btc_gattc_fill_gatt_db_conversion(*count, (uint16_t)svc_num, ESP_GATT_DB_PRIMARY_SERVICE, offset, (void *)result, db);
     }
@@ -370,7 +370,7 @@ esp_gatt_status_t btc_ble_gattc_get_all_descr(uint16_t conn_id,
         if (db) {
             osi_free(db);
         }
-        return status; 
+        return status;
     } else {
         btc_gattc_fill_gatt_db_conversion(*count, (uint16_t)descr_num, ESP_GATT_DB_DESCRIPTOR, offset, (void *)result, db);
     }
@@ -387,7 +387,7 @@ esp_gatt_status_t btc_ble_gattc_get_char_by_uuid(uint16_t conn_id,
                                                  uint16_t start_handle,
                                                  uint16_t end_handle,
                                                  esp_bt_uuid_t char_uuid,
-                                                 esp_gattc_char_elem_t *result, 
+                                                 esp_gattc_char_elem_t *result,
                                                  uint16_t *count)
 {
     esp_gatt_status_t status;
@@ -419,7 +419,7 @@ esp_gatt_status_t btc_ble_gattc_get_descr_by_uuid(uint16_t conn_id,
                                                   uint16_t end_handle,
                                                   esp_bt_uuid_t char_uuid,
                                                   esp_bt_uuid_t descr_uuid,
-                                                  esp_gattc_descr_elem_t *result, 
+                                                  esp_gattc_descr_elem_t *result,
                                                   uint16_t *count)
 {
     esp_gatt_status_t status;
@@ -429,8 +429,8 @@ esp_gatt_status_t btc_ble_gattc_get_descr_by_uuid(uint16_t conn_id,
     tBT_UUID bta_descr_uuid = {0};
     btc_to_bta_uuid(&bta_char_uuid, &char_uuid);
     btc_to_bta_uuid(&bta_descr_uuid, &descr_uuid);
-    
-    BTA_GATTC_GetDescrByUUID(conn_id, start_handle, end_handle, 
+
+    BTA_GATTC_GetDescrByUUID(conn_id, start_handle, end_handle,
                              bta_char_uuid, bta_descr_uuid, &db, &descr_num);
 
     if ((status = btc_gattc_check_valid_param(descr_num, 0)) != ESP_GATT_OK) {
@@ -441,7 +441,7 @@ esp_gatt_status_t btc_ble_gattc_get_descr_by_uuid(uint16_t conn_id,
     } else {
         btc_gattc_fill_gatt_db_conversion(*count, (uint16_t)descr_num, ESP_GATT_DB_DESCRIPTOR, 0, (void *)result, db);
     }
-    
+
     *count = descr_num;
     //don't forget to free the db buffer after used.
     if (db) {
@@ -461,7 +461,7 @@ esp_gatt_status_t btc_ble_gattc_get_descr_by_char_handle(uint16_t conn_id,
     int descr_num = 0;
     tBT_UUID bta_descr_uuid = {0};
     btc_to_bta_uuid(&bta_descr_uuid, &descr_uuid);
-    
+
     BTA_GATTC_GetDescrByCharHandle(conn_id, char_handle, bta_descr_uuid, &db, &descr_num);
 
     if ((status = btc_gattc_check_valid_param(descr_num, 0)) != ESP_GATT_OK) {
@@ -479,7 +479,7 @@ esp_gatt_status_t btc_ble_gattc_get_descr_by_char_handle(uint16_t conn_id,
         osi_free(db);
     }
     return ESP_GATT_OK;
-    
+
 }
 
 esp_gatt_status_t btc_ble_gattc_get_include_service(uint16_t conn_id,
@@ -588,7 +588,7 @@ static void btc_gattc_read_char_descr(btc_ble_gattc_args_t *arg)
 
 static void btc_gattc_write_char(btc_ble_gattc_args_t *arg)
 {
-    BTA_GATTC_WriteCharValue(arg->write_char.conn_id, 
+    BTA_GATTC_WriteCharValue(arg->write_char.conn_id,
                              arg->write_char.handle,
                              arg->write_char.write_type,
                              arg->write_char.value_len,
@@ -603,7 +603,7 @@ static void btc_gattc_write_char_descr(btc_ble_gattc_args_t *arg)
     descr_val.len = arg->write_descr.value_len;
     descr_val.p_value = arg->write_descr.value;
 
-    BTA_GATTC_WriteCharDescr(arg->write_descr.conn_id, 
+    BTA_GATTC_WriteCharDescr(arg->write_descr.conn_id,
                              arg->write_descr.handle,
                              arg->write_descr.write_type, &descr_val,
                              arg->write_descr.auth_req);
@@ -671,7 +671,6 @@ void btc_gattc_call_handler(btc_msg_t *msg)
     btc_ble_gattc_args_t *arg = (btc_ble_gattc_args_t *)(msg->arg);
     switch (msg->act) {
     case BTC_GATTC_ACT_APP_REGISTER:
-        LOG_ERROR("%s()", __func__);
         btc_gattc_app_register(arg);
         break;
     case BTC_GATTC_ACT_APP_UNREGISTER:
