@@ -251,6 +251,14 @@ void btc_blufi_protocol_handler(uint8_t type, uint8_t *data, int len)
 
             btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), btc_blufi_cb_deep_copy);
             break;
+        case BLUFI_TYPE_DATA_SUBTYPE_CUSTOM_DATA:
+            msg.sig = BTC_SIG_API_CB;
+            msg.pid = BTC_PID_BLUFI;
+            msg.act = ESP_BLUFI_EVENT_RECV_CUSTOM_DATA;
+            param.custom_data.data = &data[0];
+            param.custom_data.data_len = len;
+            btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), btc_blufi_cb_deep_copy);
+            break;
         default:
             LOG_ERROR("%s Unkown Ctrl pkt %02x\n", __func__, type);
             break;

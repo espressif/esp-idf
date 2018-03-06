@@ -142,3 +142,23 @@ esp_err_t esp_blufi_send_error_info(esp_blufi_error_state_t state)
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_blufi_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+
+esp_err_t esp_blufi_send_custom_data(uint8_t *data, uint32_t data_len)
+{
+    btc_msg_t msg;
+    btc_blufi_args_t arg;
+    if(data == NULL || data_len == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_BLUFI;
+    msg.act = BTC_BLUFI_ACT_SEND_CUSTOM_DATA;
+    arg.custom_data.data = data;
+    arg.custom_data.data_len = data_len;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_blufi_args_t), btc_blufi_call_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
