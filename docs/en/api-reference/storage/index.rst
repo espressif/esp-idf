@@ -5,7 +5,7 @@ Storage API
    :maxdepth: 1
 
    SPI Flash and Partition APIs <spi_flash>
-   SD/MMC Card Host <sdmmc>
+   SD/SDIO/MMC Driver <sdmmc>
    Non-Volatile Storage <nvs_flash>
    Virtual Filesystem <vfs>
    FAT Filesystem <fatfs>
