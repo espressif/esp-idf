@@ -211,28 +211,33 @@ static void btc_spp_dm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *user_d
 
     uint32_t id = (uintptr_t)user_data;
     spp_slot_t *slot;
-    osi_mutex_lock(&spp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
     switch (event) {
     case BTA_JV_GET_SCN_EVT:
+        osi_mutex_lock(&spp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
         slot = find_slot_by_id(id);
         if (!slot) {
             LOG_ERROR("%s unable to find RFCOMM slot!", __func__);
+            osi_mutex_unlock(&spp_slot_mutex);
             break;
         }
         if (p_data->scn == 0) {
             LOG_ERROR("%s unable to get scn, start server fail!", __func__);
             btc_create_server_fail_cb();
             free_spp_slot(slot);
+            osi_mutex_unlock(&spp_slot_mutex);
             break;
         }
 
         slot->scn = p_data->scn;
         BTA_JvCreateRecordByUser(slot->service_name, slot->scn, (void *)slot->id);
+        osi_mutex_unlock(&spp_slot_mutex);
         break;
     case BTA_JV_CREATE_RECORD_EVT:
+        osi_mutex_lock(&spp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
         slot = find_slot_by_id(id);
         if (!slot) {
             LOG_ERROR("%s unable to find RFCOMM slot!", __func__);
+            osi_mutex_unlock(&spp_slot_mutex);
             break;
         }
         if (p_data->create_rec.status == BTA_JV_SUCCESS) {
@@ -245,6 +250,7 @@ static void btc_spp_dm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *user_d
             BTA_JvFreeChannel(slot->scn, BTA_JV_CONN_TYPE_RFCOMM);
             free_spp_slot(slot);
         }
+        osi_mutex_unlock(&spp_slot_mutex);
         break;
     default:
         msg.sig = BTC_SIG_API_CB;
@@ -258,17 +264,14 @@ static void btc_spp_dm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *user_d
         }
         break;
     }
-    osi_mutex_unlock(&spp_slot_mutex);
-
 }
 
 static void btc_spp_init(void)
 {
-    BTA_JvEnable((tBTA_JV_DM_CBACK *)btc_spp_dm_inter_cb);
     if (osi_mutex_new(&spp_slot_mutex) != 0) {
         LOG_ERROR("%s osi_mutex_new failed\n", __func__);
     }
-
+    BTA_JvEnable((tBTA_JV_DM_CBACK *)btc_spp_dm_inter_cb);
 }
 static void btc_spp_uninit(void)
 {
@@ -345,7 +348,7 @@ static void btc_spp_start_srv(btc_spp_args_t *arg)
     strcpy(slot->service_name, arg->start_srv.name);
 
     BTA_JvGetChannelId(BTA_JV_CONN_TYPE_RFCOMM, (void *)slot->id, arg->start_srv.local_scn);
-    osi_mutex_lock(&spp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
+    osi_mutex_unlock(&spp_slot_mutex);
 }
 
 static void btc_spp_write(btc_spp_args_t *arg)
