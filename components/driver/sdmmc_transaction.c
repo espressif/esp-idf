@@ -287,20 +287,22 @@ static void process_command_response(uint32_t status, sdmmc_command_t* cmd)
             cmd->response[3] = 0;
         }
     }
+    esp_err_t err = ESP_OK;
     if (status & SDMMC_INTMASK_RTO) {
         // response timeout is only possible when response is expected
         assert(cmd->flags & SCF_RSP_PRESENT);
-        cmd->error = ESP_ERR_TIMEOUT;
+        err = ESP_ERR_TIMEOUT;
     } else if ((cmd->flags & SCF_RSP_CRC) && (status & SDMMC_INTMASK_RCRC)) {
-        cmd->error = ESP_ERR_INVALID_CRC;
+        err = ESP_ERR_INVALID_CRC;
     } else if (status & SDMMC_INTMASK_RESP_ERR) {
-        cmd->error = ESP_ERR_INVALID_RESPONSE;
+        err = ESP_ERR_INVALID_RESPONSE;
     }
-    if (cmd->error != ESP_OK) {
+    if (err != ESP_OK) {
+        cmd->error = err;
         if (cmd->data) {
             sdmmc_host_dma_stop();
         }
-        ESP_LOGD(TAG, "%s: error 0x%x  (status=%08x)", __func__, cmd->error, status);
+        ESP_LOGD(TAG, "%s: error 0x%x  (status=%08x)", __func__, err, status);
     }
 }
 
