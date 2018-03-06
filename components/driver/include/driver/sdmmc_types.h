@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "esp_err.h"
+#include "freertos/FreeRTOS.h"
 
 /**
  * Decoded values from SD card Card Specific Data register
@@ -78,6 +79,7 @@ typedef struct {
         size_t datalen;             /*!< length of data buffer */
         size_t blklen;              /*!< block length */
         int flags;                  /*!< see below */
+/** @cond */
 #define SCF_ITSDONE      0x0001     /*!< command is complete */
 #define SCF_CMD(flags)   ((flags) & 0x00f0)
 #define SCF_CMD_AC       0x0000
@@ -101,6 +103,7 @@ typedef struct {
 #define SCF_RSP_R5B      (SCF_RSP_PRESENT|SCF_RSP_CRC|SCF_RSP_IDX|SCF_RSP_BSY)
 #define SCF_RSP_R6       (SCF_RSP_PRESENT|SCF_RSP_CRC|SCF_RSP_IDX)
 #define SCF_RSP_R7       (SCF_RSP_PRESENT|SCF_RSP_CRC|SCF_RSP_IDX)
+/** @endcond */
         esp_err_t error;            /*!< error returned from transfer */
         int timeout_ms;             /*!< response timeout, in milliseconds */
 } sdmmc_command_t;
@@ -129,6 +132,8 @@ typedef struct {
     esp_err_t (*set_card_clk)(int slot, uint32_t freq_khz); /*!< host function to set card clock frequency */
     esp_err_t (*do_transaction)(int slot, sdmmc_command_t* cmdinfo);    /*!< host function to do a transaction */
     esp_err_t (*deinit)(void);  /*!< host function to deinitialize the driver */
+    esp_err_t (*io_int_enable)(int slot); /*!< Host function to enable SDIO interrupt line */
+    esp_err_t (*io_int_wait)(int slot, TickType_t timeout_ticks); /*!< Host function to wait for SDIO interrupt line to be active */
     int command_timeout_ms;     /*!< timeout, in milliseconds, of a single command. Set to 0 to use the default value. */
 } sdmmc_host_t;
 
@@ -142,9 +147,11 @@ typedef struct {
     sdmmc_csd_t csd;            /*!< decoded CSD (Card-Specific Data) register value */
     sdmmc_scr_t scr;            /*!< decoded SCR (SD card Configuration Register) value */
     uint16_t rca;               /*!< RCA (Relative Card Address) */
+    uint32_t is_mem : 1;        /*!< Bit indicates if the card is a memory card */
+    uint32_t is_sdio : 1;       /*!< Bit indicates if the card is an IO card */
+    uint32_t num_io_functions : 3;  /*!< If is_sdio is 1, contains the number of IO functions on the card */
+    uint32_t reserved : 27;     /*!< Reserved for future expansion */
 } sdmmc_card_t;
-
-
 
 
 #endif // _SDMMC_TYPES_H_
