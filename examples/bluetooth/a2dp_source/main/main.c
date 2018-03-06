@@ -320,7 +320,7 @@ static void a2d_app_heart_beat(void *arg)
 
 static void bt_app_av_sm_hdlr(uint16_t event, void *param)
 {
-    ESP_LOGE(BT_AV_TAG, "%s state %d, evt 0x%x", __func__, m_a2d_state, event);
+    ESP_LOGI(BT_AV_TAG, "%s state %d, evt 0x%x", __func__, m_a2d_state, event);
     switch (m_a2d_state) {
     case APP_AV_STATE_DISCOVERING:
     case APP_AV_STATE_DISCOVERED:

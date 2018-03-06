@@ -579,23 +579,23 @@ static void btc_search_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data
     }
     case BTA_DM_INQ_CMPL_EVT: {
         param.scan_rst.num_resps = p_data->inq_cmpl.num_resps;
-        LOG_ERROR("%s  BLE observe complete. Num Resp %d\n", __FUNCTION__, p_data->inq_cmpl.num_resps);
+        LOG_DEBUG("%s  BLE observe complete. Num Resp %d\n", __FUNCTION__, p_data->inq_cmpl.num_resps);
         break;
     }
     case BTA_DM_DISC_RES_EVT:
-        LOG_ERROR("BTA_DM_DISC_RES_EVT\n");
+        LOG_DEBUG("BTA_DM_DISC_RES_EVT\n");
         break;
     case BTA_DM_DISC_BLE_RES_EVT:
-        LOG_ERROR("BTA_DM_DISC_BLE_RES_EVT\n");
+        LOG_DEBUG("BTA_DM_DISC_BLE_RES_EVT\n");
         break;
     case BTA_DM_DISC_CMPL_EVT:
-        LOG_ERROR("BTA_DM_DISC_CMPL_EVT\n");
+        LOG_DEBUG("BTA_DM_DISC_CMPL_EVT\n");
         break;
     case BTA_DM_DI_DISC_CMPL_EVT:
-        LOG_ERROR("BTA_DM_DI_DISC_CMPL_EVT\n");
+        LOG_DEBUG("BTA_DM_DI_DISC_CMPL_EVT\n");
         break;
     case BTA_DM_SEARCH_CANCEL_CMPL_EVT:
-        LOG_ERROR("BTA_DM_SEARCH_CANCEL_CMPL_EVT\n");
+        LOG_DEBUG("BTA_DM_SEARCH_CANCEL_CMPL_EVT\n");
         break;
     default:
         LOG_ERROR("%s : Unknown event 0x%x\n", __FUNCTION__, event);

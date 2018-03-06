@@ -361,7 +361,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
         break;
     case ESP_GAP_BLE_PASSKEY_NOTIF_EVT:  ///the app will receive this evt when the IO  has Output capability and the peer device IO has Input capability.
         ///show the passkey number to the user to input it in the peer deivce.
-        ESP_LOGE(GATTC_TAG, "The passkey Notify number:%d", param->ble_security.key_notif.passkey);
+        ESP_LOGI(GATTC_TAG, "The passkey Notify number:%d", param->ble_security.key_notif.passkey);
         break;
     case ESP_GAP_BLE_KEY_EVT:
         //shows the ble key info share with peer device to the user.
@@ -524,7 +524,7 @@ void app_main()
     esp_ble_gap_set_security_param(ESP_BLE_SM_MAX_KEY_SIZE, &key_size, sizeof(uint8_t));
     /* If your BLE device act as a Slave, the init_key means you hope which types of key of the master should distribut to you,
     and the response key means which key you can distribut to the Master;
-    If your BLE device act as a master, the response key means you hope which types of key of the slave should distribut to you, 
+    If your BLE device act as a master, the response key means you hope which types of key of the slave should distribut to you,
     and the init key means which key you can distribut to the slave. */
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_INIT_KEY, &init_key, sizeof(uint8_t));
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(uint8_t));

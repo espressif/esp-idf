@@ -3118,7 +3118,7 @@ static BOOLEAN bta_dm_check_av(UINT16 event)
     }
 #endif
 
-    APPL_TRACE_WARNING("bta_dm_check_av:%d", bta_dm_cb.cur_av_count);
+    APPL_TRACE_EVENT("bta_dm_check_av:%d", bta_dm_cb.cur_av_count);
     if (bta_dm_cb.cur_av_count) {
         for (i = 0; i < bta_dm_cb.device_list.count; i++) {
             p_dev = &bta_dm_cb.device_list.peer_device[i];
@@ -3442,7 +3442,7 @@ static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
 #endif  ///BTM_SSR_INCLUDED == TRUE
             }
         }
-        APPL_TRACE_WARNING("bta_dm_rm_cback:%d, status:%d", bta_dm_cb.cur_av_count, status);
+        APPL_TRACE_EVENT("bta_dm_rm_cback:%d, status:%d", bta_dm_cb.cur_av_count, status);
     }
 
     /* Don't adjust roles for each busy/idle state transition to avoid

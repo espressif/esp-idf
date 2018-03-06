@@ -123,7 +123,7 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
                 sample_rate = 48000;
             }
             i2s_set_clk(0, sample_rate, 16, 2);
-        
+
             ESP_LOGI(BT_AV_TAG, "Configure audio player %x-%x-%x-%x",
                      a2d->audio_cfg.mcc.cie.sbc[0],
                      a2d->audio_cfg.mcc.cie.sbc[1],

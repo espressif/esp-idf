@@ -474,7 +474,7 @@ void bta_av_rc_opened(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
             p_scb->rc_handle = p_data->rc_conn_chg.handle;
             APPL_TRACE_DEBUG("bta_av_rc_opened shdl:%d, srch %d", i + 1, p_scb->rc_handle);
             shdl = i + 1;
-            LOG_INFO("%s allow incoming AVRCP connections:%d", __func__, p_scb->use_rc);
+            APPL_TRACE_EVENT("%s allow incoming AVRCP connections:%d", __func__, p_scb->use_rc);
             bta_sys_stop_timer(&p_scb->timer);
             disc = p_scb->hndl;
             break;
@@ -506,7 +506,7 @@ void bta_av_rc_opened(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
 
     p_cb->rcb[i].shdl = shdl;
     rc_open.rc_handle = i;
-    APPL_TRACE_ERROR("bta_av_rc_opened rcb[%d] shdl:%d lidx:%d/%d",
+    APPL_TRACE_EVENT("bta_av_rc_opened rcb[%d] shdl:%d lidx:%d/%d",
                      i, shdl, p_cb->rcb[i].lidx, p_cb->lcb[BTA_AV_NUM_LINKS].lidx);
     p_cb->rcb[i].status |= BTA_AV_RC_CONN_MASK;
 
