@@ -17,12 +17,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "esp_log.h"
 
-Flash_Emulator::Flash_Emulator(size_t size, size_t sector_sise)
+static const char *TAG = "Flash_Emulator";
+
+Flash_Emulator::Flash_Emulator(size_t size, size_t sector_sise, size_t min_size)
 {
     this->reset_count = 0x7fffffff;
     this->size = size;
     this->sector_sise = sector_sise;
+    this->min_size = min_size;
     this->buff = (uint8_t *)malloc(this->size);
     this->access_count = new uint32_t[this->size / this->sector_sise];
     memset(this->access_count, 0, this->size / this->sector_sise * sizeof(uint32_t));
@@ -81,6 +85,18 @@ esp_err_t Flash_Emulator::erase_range(size_t start_address, size_t size)
 esp_err_t Flash_Emulator::write(size_t dest_addr, const void *src, size_t size)
 {
     esp_err_t result = ESP_OK;
+    if ((size % this->min_size) != 0)
+    {
+        result = ESP_ERR_INVALID_SIZE;
+        ESP_LOGE(TAG, "%s - wrond size, result=%08x, size=%08x", __func__, result, size);
+        return result;        
+    }
+    if ((dest_addr % this->min_size) != 0)
+    {
+        result = ESP_ERR_INVALID_SIZE;
+        ESP_LOGE(TAG, "%s - wrong address, result=%08x, address=%08x", __func__, result, dest_addr);
+        return result;        
+    }
     if ((this->reset_count != 0x7fffffff) && (this->reset_count != 0)) {
         this->reset_count--;
     }
