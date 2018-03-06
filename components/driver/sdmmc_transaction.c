@@ -78,6 +78,7 @@ static esp_err_t handle_event(sdmmc_command_t* cmd, sdmmc_req_state_t* pstate);
 static esp_err_t process_events(sdmmc_event_t evt, sdmmc_command_t* cmd, sdmmc_req_state_t* pstate);
 static void process_command_response(uint32_t status, sdmmc_command_t* cmd);
 static void fill_dma_descriptors(size_t num_desc);
+static size_t get_free_descriptors_count();
 
 esp_err_t sdmmc_host_transaction_handler_init()
 {
@@ -165,6 +166,28 @@ esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
 #endif
     xSemaphoreGive(s_request_mutex);
     return ret;
+}
+
+static size_t get_free_descriptors_count()
+{
+    const size_t next = s_cur_transfer.next_desc;
+    size_t count = 0;
+    /* Starting with the current DMA descriptor, count the number of
+     * descriptors which have 'owned_by_idmac' set to 0. These are the
+     * descriptors already processed by the DMA engine.
+     */
+    for (size_t i = 0; i < SDMMC_DMA_DESC_CNT; ++i) {
+        sdmmc_desc_t* desc = &s_dma_desc[(next + i) % SDMMC_DMA_DESC_CNT];
+        if (desc->owned_by_idmac) {
+            break;
+        }
+        ++count;
+        if (desc->next_desc_ptr == NULL) {
+            /* final descriptor in the chain */
+            break;
+        }
+    }
+    return count;
 }
 
 static void fill_dma_descriptors(size_t num_desc)
@@ -376,7 +399,8 @@ static esp_err_t process_events(sdmmc_event_t evt, sdmmc_command_t* cmd, sdmmc_r
                 if (mask_check_and_clear(&evt.dma_status, SDMMC_DMA_DONE_MASK)) {
                     s_cur_transfer.desc_remaining--;
                     if (s_cur_transfer.size_remaining) {
-                        fill_dma_descriptors(1);
+                        int desc_to_fill = get_free_descriptors_count();
+                        fill_dma_descriptors(desc_to_fill);
                         sdmmc_host_dma_resume();
                     }
                     if (s_cur_transfer.desc_remaining == 0) {
