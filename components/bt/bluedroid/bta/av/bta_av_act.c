@@ -1847,6 +1847,8 @@ void bta_av_dereg_comp(tBTA_AV_DATA *p_data)
 
         /* make sure that the timer is not active */
         bta_sys_stop_timer(&p_scb->timer);
+        list_free(p_scb->a2d_list);
+        p_scb->a2d_list = NULL;
         utl_freebuf((void **)&p_cb->p_scb[p_scb->hdi]);
     }
 
