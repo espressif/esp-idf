@@ -26,6 +26,7 @@
 #include "driver/sdmmc_host.h"
 #include "driver/periph_ctrl.h"
 #include "sdmmc_private.h"
+#include "freertos/semphr.h"
 
 #define SDMMC_EVENT_QUEUE_LENGTH 32
 
@@ -40,9 +41,11 @@ typedef struct {
     uint32_t d5;
     uint32_t d6;
     uint32_t d7;
+    uint8_t d1_gpio;
     uint8_t d3_gpio;
     uint8_t card_detect;
     uint8_t write_protect;
+    uint8_t card_int;
     uint8_t width;
 } sdmmc_slot_info_t;
 
@@ -58,6 +61,7 @@ static const sdmmc_slot_info_t s_slot_info[2]  = {
         .d1 = PERIPHS_IO_MUX_SD_DATA1_U,
         .d2 = PERIPHS_IO_MUX_SD_DATA2_U,
         .d3 = PERIPHS_IO_MUX_SD_DATA3_U,
+        .d1_gpio = 8,
         .d3_gpio = 10,
         .d4 = PERIPHS_IO_MUX_GPIO16_U,
         .d5 = PERIPHS_IO_MUX_GPIO17_U,
@@ -65,6 +69,7 @@ static const sdmmc_slot_info_t s_slot_info[2]  = {
         .d7 = PERIPHS_IO_MUX_GPIO18_U,
         .card_detect = HOST_CARD_DETECT_N_1_IDX,
         .write_protect = HOST_CARD_WRITE_PRT_1_IDX,
+        .card_int = HOST_CARD_INT_N_1_IDX,
         .width = 8
     },
     {
@@ -74,9 +79,11 @@ static const sdmmc_slot_info_t s_slot_info[2]  = {
         .d1 = PERIPHS_IO_MUX_GPIO4_U,
         .d2 = PERIPHS_IO_MUX_MTDI_U,
         .d3 = PERIPHS_IO_MUX_MTCK_U,
+        .d1_gpio = 4,
         .d3_gpio = 13,
         .card_detect = HOST_CARD_DETECT_N_2_IDX,
         .write_protect = HOST_CARD_WRITE_PRT_2_IDX,
+        .card_int = HOST_CARD_INT_N_2_IDX,
         .width = 4
     }
 };
@@ -84,6 +91,7 @@ static const sdmmc_slot_info_t s_slot_info[2]  = {
 static const char* TAG = "sdmmc_periph";
 static intr_handle_t s_intr_handle;
 static QueueHandle_t s_event_queue;
+static SemaphoreHandle_t s_io_intr_event;
 
 size_t s_slot_width[2] = {1,1};
 
@@ -282,11 +290,19 @@ esp_err_t sdmmc_host_init()
     if (!s_event_queue) {
         return ESP_ERR_NO_MEM;
     }
+    s_io_intr_event = xSemaphoreCreateBinary();
+    if (!s_io_intr_event) {
+        vQueueDelete(s_event_queue);
+        s_event_queue = NULL;
+        return ESP_ERR_NO_MEM;
+    }
     // Attach interrupt handler
     esp_err_t ret = esp_intr_alloc(ETS_SDIO_HOST_INTR_SOURCE, 0, &sdmmc_isr, s_event_queue, &s_intr_handle);
     if (ret != ESP_OK) {
         vQueueDelete(s_event_queue);
         s_event_queue = NULL;
+        vSemaphoreDelete(s_io_intr_event);
+        s_io_intr_event = NULL;
         return ret;
     }
     // Enable interrupts
@@ -297,7 +313,7 @@ esp_err_t sdmmc_host_init()
             SDMMC_INTMASK_RCRC | SDMMC_INTMASK_DCRC |
             SDMMC_INTMASK_RTO | SDMMC_INTMASK_DTO | SDMMC_INTMASK_HTO |
             SDMMC_INTMASK_SBE | SDMMC_INTMASK_EBE |
-            SDMMC_INTMASK_RESP_ERR | SDMMC_INTMASK_HLE;
+            SDMMC_INTMASK_RESP_ERR | SDMMC_INTMASK_HLE; //sdio is enabled only when use.
     SDMMC.ctrl.int_enable = 1;
 
     // Enable DMA
@@ -308,6 +324,8 @@ esp_err_t sdmmc_host_init()
     if (ret != ESP_OK) {
         vQueueDelete(s_event_queue);
         s_event_queue = NULL;
+        vSemaphoreDelete(s_io_intr_event);
+        s_io_intr_event = NULL;
         esp_intr_free(s_intr_handle);
         s_intr_handle = NULL;
         return ret;
@@ -376,10 +394,17 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config)
             configure_pin(pslot->d7);
         }
     }
+
+    // SDIO slave interrupt is edge sensitive to ~(int_n | card_int | card_detect)
+    // set this and card_detect to high to enable sdio interrupt
+    gpio_matrix_in(GPIO_FUNC_IN_HIGH, pslot->card_int, 0);
     if (gpio_cd != -1) {
         gpio_set_direction(gpio_cd, GPIO_MODE_INPUT);
         gpio_matrix_in(gpio_cd, pslot->card_detect, 0);
+    } else {
+        gpio_matrix_in(GPIO_FUNC_IN_HIGH, pslot->card_detect, 0);
     }
+
     if (gpio_wp != -1) {
         gpio_set_direction(gpio_wp, GPIO_MODE_INPUT);
         gpio_matrix_in(gpio_wp, pslot->write_protect, 0);
@@ -405,6 +430,8 @@ esp_err_t sdmmc_host_deinit()
     s_intr_handle = NULL;
     vQueueDelete(s_event_queue);
     s_event_queue = NULL;
+    vQueueDelete(s_io_intr_event);
+    s_io_intr_event = NULL;
     sdmmc_host_input_clk_disable();
     sdmmc_host_transaction_handler_deinit();
     periph_module_disable(PERIPH_SDMMC_MODULE);
@@ -497,24 +524,62 @@ void sdmmc_host_dma_resume()
     SDMMC.pldmnd = 1;
 }
 
+esp_err_t sdmmc_host_io_int_enable(int slot)
+{
+    configure_pin(s_slot_info[slot].d1);
+    return ESP_OK;
+}
+
+esp_err_t sdmmc_host_io_int_wait(int slot, TickType_t timeout_ticks)
+{   
+    /* SDIO interrupts are negedge sensitive ones: the status bit is only set
+     * when first interrupt triggered.
+     *
+     * If D1 GPIO is low when entering this function, we know that interrupt
+     * (in SDIO sense) has occurred and we don't need to use SDMMC peripheral
+     * interrupt.
+     */
+
+    SDMMC.intmask.sdio &= ~BIT(slot);   /* Disable SDIO interrupt */
+    SDMMC.rintsts.sdio = BIT(slot);
+    if (gpio_get_level(s_slot_info[slot].d1_gpio) == 0) {
+        return ESP_OK;
+    }
+    /* Otherwise, need to wait for an interrupt. Since D1 was high,
+     * SDMMC peripheral interrupt is guaranteed to trigger on negedge.
+     */
+    xSemaphoreTake(s_io_intr_event, 0);
+    SDMMC.intmask.sdio |= BIT(slot);    /* Re-enable SDIO interrupt */
+    
+    if (xSemaphoreTake(s_io_intr_event, timeout_ticks) == pdTRUE) {
+        return ESP_OK;
+    } else {
+        return ESP_ERR_TIMEOUT;
+    }
+}
+
 /**
  * @brief SDMMC interrupt handler
  *
- * Ignoring SDIO and streaming read/writes for now (and considering just SD memory cards),
- * all communication is driven by the master, and the hardware handles things like stop
- * commands automatically. So the interrupt handler doesn't need to do much, we just push
- * interrupt status into a queue, clear interrupt flags, and let the task currently doing
- * communication figure out what to do next.
+ * All communication in SD protocol is driven by the master, and the hardware
+ * handles things like stop commands automatically.
+ * So the interrupt handler doesn't need to do much, we just push interrupt
+ * status into a queue, clear interrupt flags, and let the task currently
+ * doing communication figure out what to do next.
+ * This also applies to SDIO interrupts which are generated by the slave.
  *
- * Card detect interrupts pose a small issue though, because if a card is plugged in and
- * out a few times, while there is no task to process the events, event queue can become
- * full and some card detect events may be dropped. We ignore this problem for now, since
- * the there are no other interesting events which can get lost due to this.
+ * Card detect interrupts pose a small issue though, because if a card is
+ * plugged in and out a few times, while there is no task to process
+ * the events, event queue can become full and some card detect events
+ * may be dropped. We ignore this problem for now, since the there are no other
+ * interesting events which can get lost due to this.
  */
 static void sdmmc_isr(void* arg) {
     QueueHandle_t queue = (QueueHandle_t) arg;
     sdmmc_event_t event;
-    uint32_t pending = SDMMC.mintsts.val;
+    int higher_priority_task_awoken = pdFALSE;
+
+    uint32_t pending = SDMMC.mintsts.val & 0xFFFF;
     SDMMC.rintsts.val = pending;
     event.sdmmc_status = pending;
 
@@ -522,8 +587,17 @@ static void sdmmc_isr(void* arg) {
     SDMMC.idsts.val = dma_pending;
     event.dma_status = dma_pending & 0x1f;
 
-    int higher_priority_task_awoken = pdFALSE;
-    xQueueSendFromISR(queue, &event, &higher_priority_task_awoken);
+    if (pending != 0 || dma_pending != 0) {
+        xQueueSendFromISR(queue, &event, &higher_priority_task_awoken);
+    }
+
+    uint32_t sdio_pending = SDMMC.mintsts.sdio;
+    if (sdio_pending) {
+        // disable the interrupt (no need to clear here, this is done in sdmmc_host_io_wait_int)
+        SDMMC.intmask.sdio &= ~sdio_pending;
+        xSemaphoreGiveFromISR(s_io_intr_event, &higher_priority_task_awoken);
+    }
+
     if (higher_priority_task_awoken == pdTRUE) {
         portYIELD_FROM_ISR();
     }
