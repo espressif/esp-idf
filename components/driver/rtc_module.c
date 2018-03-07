@@ -1046,11 +1046,18 @@ void adc_power_always_on()
 void adc_power_on()
 {
     portENTER_CRITICAL(&rtc_spinlock);
+    //The power FSM controlled mode saves more power, while the ADC noise may get increased.
+#ifndef CONFIG_ADC_FORCE_XPD_FSM
+    //Set the power always on to increase precision.
+    SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
+#else    
+    //Use the FSM to turn off the power while not used to save power.
     if (SENS.sar_meas_wait2.force_xpd_sar & SENS_FORCE_XPD_SAR_SW_M) {
         SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
     } else {
         SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_FSM;
     }
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
 }
 
@@ -1466,6 +1473,8 @@ static inline void adc2_config_width(adc_bits_width_t width_bit)
     portENTER_CRITICAL(&rtc_spinlock);
     //sar_start_force shared with ADC1
     SENS.sar_start_force.sar2_bit_width = width_bit;
+    //cct set to the same value with PHY
+    SENS.sar_start_force.sar2_pwdet_cct = 4;
     portEXIT_CRITICAL(&rtc_spinlock);
 
     //Invert the adc value,the Output value is invert
