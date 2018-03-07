@@ -121,7 +121,7 @@ and perform operations on them. These functions are declared in ``esp_partition.
 - :cpp:func:`esp_partition_next` advances iterator to the next partition found
 - :cpp:func:`esp_partition_iterator_release` releases iterator returned by ``esp_partition_find``
 - :cpp:func:`esp_partition_find_first` is a convenience function which returns structure
-  describing the first partition found by esp_partition_find
+  describing the first partition found by ``esp_partition_find``
 - :cpp:func:`esp_partition_read`, :cpp:func:`esp_partition_write`, :cpp:func:`esp_partition_erase_range`
   are equivalent to :cpp:func:`spi_flash_read`, :cpp:func:`spi_flash_write`,
   :cpp:func:`spi_flash_erase_range`, but operate within partition boundaries
