@@ -359,6 +359,7 @@ void gatt_process_exec_write_req (tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, U
     tGATT_IF gatt_if;
     UINT16  conn_id;
     UINT16  queue_num = 0;
+    BOOLEAN is_first = TRUE;
     BOOLEAN is_prepare_write_valid = FALSE;
     BOOLEAN is_need_dequeue_sr_cmd = FALSE;
     tGATT_PREPARE_WRITE_RECORD *prepare_record = NULL;
@@ -420,6 +421,11 @@ void gatt_process_exec_write_req (tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, U
         queue_data = fixed_queue_dequeue(prepare_record->queue);
         if (is_prepare_write_valid){
             if((queue_data->p_attr->p_value != NULL) && (queue_data->p_attr->p_value->attr_val.attr_val != NULL)){
+                if(is_first) {
+                    //clear attr_val.attr_len before handle prepare write data
+                    queue_data->p_attr->p_value->attr_val.attr_len = 0;
+                    is_first = FALSE;
+                }
                 memcpy(queue_data->p_attr->p_value->attr_val.attr_val+queue_data->offset, queue_data->value, queue_data->len);
                 //don't forget to increase the attribute value length in the gatts database.
                 queue_data->p_attr->p_value->attr_val.attr_len += queue_data->len;
