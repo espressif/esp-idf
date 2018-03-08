@@ -240,7 +240,8 @@ esp_err_t esp_ble_gap_set_prefer_conn_params(esp_bd_addr_t bd_addr,
     if (ESP_BLE_IS_VALID_PARAM(min_conn_int, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
         ESP_BLE_IS_VALID_PARAM(max_conn_int, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
         ESP_BLE_IS_VALID_PARAM(supervision_tout, ESP_BLE_CONN_SUP_TOUT_MIN, ESP_BLE_CONN_SUP_TOUT_MAX) &&
-        (slave_latency <= ESP_BLE_CONN_LATENCY_MAX || slave_latency == ESP_BLE_CONN_PARAM_UNDEF)) {
+        (slave_latency <= ESP_BLE_CONN_LATENCY_MAX || slave_latency == ESP_BLE_CONN_PARAM_UNDEF) &&
+        ((supervision_tout * 10) >= ((1 + slave_latency) * ((max_conn_int * 5) >> 1))) && min_conn_int <= max_conn_int) {
 
         msg.sig = BTC_SIG_API_CALL;
         msg.pid = BTC_PID_GAP_BLE;
