@@ -16,7 +16,7 @@
 #define __BLUFI_INT_H__
 
 #define BTC_BLUFI_GREAT_VER   0x01  //Version + Subversion
-#define BTC_BLUFI_SUB_VER     0x01  //Version + Subversion
+#define BTC_BLUFI_SUB_VER     0x02  //Version + Subversion
 #define BTC_BLUFI_VERSION     ((BTC_BLUFI_GREAT_VER<<8)|BTC_BLUFI_SUB_VER)  //Version + Subversion
 
 /* service engine control block */
@@ -115,6 +115,7 @@ typedef struct blufi_frag_hdr blufi_frag_hdr_t;
 #define BLUFI_TYPE_DATA_SUBTYPE_REPLY_VERSION           0x10
 #define BLUFI_TYPE_DATA_SUBTYPE_WIFI_LIST               0x11
 #define BLUFI_TYPE_DATA_SUBTYPE_ERROR_INFO              0x12
+#define BLUFI_TYPE_DATA_SUBTYPE_CUSTOM_DATA             0x13
 #define BLUFI_TYPE_IS_CTRL(type)        (BLUFI_GET_TYPE((type)) == BLUFI_TYPE_CTRL)
 #define BLUFI_TYPE_IS_DATA(type)        (BLUFI_GET_TYPE((type)) == BLUFI_TYPE_DATA)
 

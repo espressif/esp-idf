@@ -52,6 +52,7 @@ typedef enum {
     ESP_BLUFI_EVENT_RECV_SLAVE_DISCONNECT_BLE,           /*<! When Phone send Disconnect key to ESP32, this event happen */
     ESP_BLUFI_EVENT_GET_WIFI_LIST,                       /*<! When Phone send get wifi list command to ESP32, this event happen */
     ESP_BLUFI_EVENT_REPORT_ERROR,                        /*<! When Blufi report error, this event happen */
+    ESP_BLUFI_EVENT_RECV_CUSTOM_DATA,                    /*<! When Phone send custom data to ESP32, this event happen */
 } esp_blufi_cb_event_t;
 
 /// BLUFI config status
@@ -273,8 +274,15 @@ typedef union {
      */
     struct blufi_get_error_evt_param {
         esp_blufi_error_state_t state;              /*!< Blufi error state */
-    } report_error;                                    /*!< Blufi callback param of ESP_BLUFI_EVENT_REPORT_ERROR */
-
+    } report_error;                                 /*!< Blufi callback param of ESP_BLUFI_EVENT_REPORT_ERROR */
+    /**
+     * @brief 
+     * ESP_BLUFI_EVENT_RECV_CUSTOM_DATA
+     */
+    struct blufi_recv_custom_data_evt_param {
+        uint8_t *data;                              /*!< Custom data */
+        uint32_t data_len;                          /*!< Custom data Length */
+    } custom_data;                                  /*!< Blufi callback param of ESP_BLUFI_EVENT_RECV_CUSTOM_DATA */
 } esp_blufi_cb_param_t;
 
 /**
@@ -416,6 +424,16 @@ esp_err_t esp_blufi_close(esp_gatt_if_t gatts_if, uint16_t conn_id);
  *
  */
 esp_err_t esp_blufi_send_error_info(esp_blufi_error_state_t state);
+/**
+ *
+ * @brief           This function is called to custom data
+ * @param data :  custom data value
+ * @param data_len :  the length of custom data
+ *
+ * @return          ESP_OK - success, other - failed
+ *
+ */
+esp_err_t esp_blufi_send_custom_data(uint8_t *data, uint32_t data_len);
 #ifdef __cplusplus
 }
 #endif

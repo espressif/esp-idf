@@ -25,6 +25,7 @@ typedef enum {
     BTC_BLUFI_ACT_SEND_CFG_REPORT,
     BTC_BLUFI_ACT_SEND_WIFI_LIST,
     BTC_BLUFI_ACT_SEND_ERR_INFO,
+    BTC_BLUFI_ACT_SEND_CUSTOM_DATA,
 } btc_blufi_act_t;
 
 typedef union {
@@ -48,6 +49,13 @@ typedef union {
     struct blufi_error_infor {
         esp_blufi_error_state_t state;
     } blufi_err_infor;
+    /*
+        BTC_BLUFI_ACT_SEND_CUSTOM_DATA
+    */
+    struct blufi_custom_data {
+         uint8_t *data;
+         uint32_t data_len;
+    } custom_data;
 } btc_blufi_args_t;
 
 void btc_blufi_cb_handler(btc_msg_t *msg);
