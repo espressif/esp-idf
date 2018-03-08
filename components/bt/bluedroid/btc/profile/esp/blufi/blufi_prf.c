@@ -660,6 +660,23 @@ static void btc_blufi_send_error_info(uint8_t state)
     osi_free(data);
 }
 
+static void btc_blufi_send_custom_data(uint8_t *value, uint32_t value_len)
+{
+    if(value == NULL || value_len == 0) {
+        LOG_ERROR("%s value or value len error", __func__);
+        return;
+    }
+    uint8_t *data = osi_malloc(value_len);
+    if (data == NULL) {
+        LOG_ERROR("%s mem malloc error", __func__);
+        return;
+    }
+    uint8_t type = BLUFI_BUILD_TYPE(BLUFI_TYPE_DATA, BLUFI_TYPE_DATA_SUBTYPE_CUSTOM_DATA);
+    memcpy(data, value, value_len);
+    btc_blufi_send_encap(type, data, value_len);
+    osi_free(data);
+}
+
 void btc_blufi_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 {
     esp_blufi_cb_param_t *dst = (esp_blufi_cb_param_t *) p_dest;
@@ -736,6 +753,14 @@ void btc_blufi_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         }
         memcpy(dst->server_pkey.pkey, src->server_pkey.pkey, src->server_pkey.pkey_len);
         break;
+    case ESP_BLUFI_EVENT_RECV_CUSTOM_DATA:
+         dst->custom_data.data = osi_malloc(src->custom_data.data_len);
+        if (dst->custom_data.data == NULL) {
+            LOG_ERROR("%s %d no mem\n", __func__, msg->act);
+            break;
+        }
+        memcpy(dst->custom_data.data, src->custom_data.data, src->custom_data.data_len);
+        break;
     default:
         break;
     }
@@ -775,6 +800,9 @@ void btc_blufi_cb_deep_free(btc_msg_t *msg)
         break;
     case ESP_BLUFI_EVENT_RECV_SERVER_PRIV_KEY:
         osi_free(param->server_pkey.pkey);
+        break;
+    case ESP_BLUFI_EVENT_RECV_CUSTOM_DATA:
+        osi_free(param->custom_data.data);
         break;
     default:
         break;
@@ -865,6 +893,9 @@ void btc_blufi_cb_handler(btc_msg_t *msg)
         break;
     case ESP_BLUFI_EVENT_REPORT_ERROR:
         btc_blufi_cb_to_app(ESP_BLUFI_EVENT_REPORT_ERROR, param);
+        break;
+    case ESP_BLUFI_EVENT_RECV_CUSTOM_DATA:
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_RECV_CUSTOM_DATA, param);
         break;
     default:
         LOG_ERROR("%s UNKNOWN %d\n", __func__, msg->act);
@@ -961,6 +992,20 @@ void btc_blufi_call_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         memcpy(dst->wifi_list.list, list, sizeof(esp_blufi_ap_record_t) * src->wifi_list.apCount);
         break;
     }
+    case BTC_BLUFI_ACT_SEND_CUSTOM_DATA:{
+        uint8_t *data = src->custom_data.data;
+        if(data == NULL) {
+            LOG_ERROR("custom data is NULL\n");
+            break;
+        }
+        dst->custom_data.data = osi_malloc(src->custom_data.data_len);
+        if(dst->custom_data.data == NULL) {
+            LOG_ERROR("custom data malloc error\n");
+            break;
+        }
+        memcpy(dst->custom_data.data, src->custom_data.data, src->custom_data.data_len);
+        break;
+    }
     default:
         break;
     }
@@ -999,6 +1044,13 @@ void btc_blufi_call_deep_free(btc_msg_t *msg)
         }
         break;
     }
+    case BTC_BLUFI_ACT_SEND_CUSTOM_DATA:{
+        uint8_t *data = arg->custom_data.data;
+        if(data) {
+            osi_free(data);    
+        }
+        break;
+    }
     default:
         break;
     }
@@ -1028,6 +1080,9 @@ void btc_blufi_call_handler(btc_msg_t *msg)
     }
     case BTC_BLUFI_ACT_SEND_ERR_INFO:
         btc_blufi_send_error_info(arg->blufi_err_infor.state);
+        break;
+    case BTC_BLUFI_ACT_SEND_CUSTOM_DATA:
+        btc_blufi_send_custom_data(arg->custom_data.data, arg->custom_data.data_len);
         break;
     default:
         LOG_ERROR("%s UNKNOWN %d\n", __func__, msg->act);
