@@ -1560,13 +1560,13 @@ static void bta_jv_port_mgmt_cl_cback(UINT32 code, UINT16 port_handle)
     PORT_CheckConnection(port_handle, rem_bda, &lcid);
 
     if (code == PORT_SUCCESS) {
-        evt_data.rfc_open.handle = p_cb->handle;
+        evt_data.rfc_open.handle = p_pcb->handle;
         evt_data.rfc_open.status = BTA_JV_SUCCESS;
         bdcpy(evt_data.rfc_open.rem_bda, rem_bda);
         p_pcb->state = BTA_JV_ST_CL_OPEN;
         p_cb->p_cback(BTA_JV_RFCOMM_OPEN_EVT, &evt_data, p_pcb->user_data);
     } else {
-        evt_data.rfc_close.handle = p_cb->handle;
+        evt_data.rfc_close.handle = p_pcb->handle;
         evt_data.rfc_close.status = BTA_JV_FAILURE;
         evt_data.rfc_close.port_status = code;
         evt_data.rfc_close.async = TRUE;
@@ -1605,14 +1605,14 @@ static void bta_jv_port_event_cl_cback(UINT32 code, UINT16 port_handle)
     APPL_TRACE_DEBUG( "bta_jv_port_event_cl_cback code=x%x port_handle:%d handle:%d",
                       code, port_handle, p_cb->handle);
     if (code & PORT_EV_RXCHAR) {
-        evt_data.data_ind.handle = p_cb->handle;
+        evt_data.data_ind.handle = p_pcb->handle;
         p_cb->p_cback(BTA_JV_RFCOMM_DATA_IND_EVT, &evt_data, p_pcb->user_data);
     }
 
     if (code & PORT_EV_FC) {
         p_pcb->cong = (code & PORT_EV_FCS) ? FALSE : TRUE;
         evt_data.rfc_cong.cong = p_pcb->cong;
-        evt_data.rfc_cong.handle = p_cb->handle;
+        evt_data.rfc_cong.handle = p_pcb->handle;
         evt_data.rfc_cong.status = BTA_JV_SUCCESS;
         p_cb->p_cback(BTA_JV_RFCOMM_CONG_EVT, &evt_data, p_pcb->user_data);
     }
@@ -1684,7 +1684,7 @@ void bta_jv_rfcomm_connect(tBTA_JV_MSG *p_data)
                FALSE-POSITIVE: port_state is initialized at PORT_GetState() */
             PORT_SetState(handle, &port_state);
 
-            evt_data.handle = p_cb->handle;
+            evt_data.handle = p_pcb->handle;
         } else {
             evt_data.status = BTA_JV_FAILURE;
             APPL_TRACE_ERROR("run out of rfc control block");
@@ -1823,7 +1823,7 @@ static void bta_jv_port_mgmt_sr_cback(UINT32 code, UINT16 port_handle)
         }
     }
     if (failed) {
-        evt_data.rfc_close.handle = p_cb->handle;
+        evt_data.rfc_close.handle = p_pcb->handle;
         evt_data.rfc_close.status = BTA_JV_FAILURE;
         evt_data.rfc_close.async = TRUE;
         evt_data.rfc_close.port_status = code;
@@ -1869,14 +1869,14 @@ static void bta_jv_port_event_sr_cback(UINT32 code, UINT16 port_handle)
 
     void *user_data = p_pcb->user_data;
     if (code & PORT_EV_RXCHAR) {
-        evt_data.data_ind.handle = p_cb->handle;
+        evt_data.data_ind.handle = p_pcb->handle;
         p_cb->p_cback(BTA_JV_RFCOMM_DATA_IND_EVT, &evt_data, user_data);
     }
 
     if (code & PORT_EV_FC) {
         p_pcb->cong = (code & PORT_EV_FCS) ? FALSE : TRUE;
         evt_data.rfc_cong.cong = p_pcb->cong;
-        evt_data.rfc_cong.handle = p_cb->handle;
+        evt_data.rfc_cong.handle = p_pcb->handle;
         evt_data.rfc_cong.status = BTA_JV_SUCCESS;
         p_cb->p_cback(BTA_JV_RFCOMM_CONG_EVT, &evt_data, user_data);
     }
@@ -2017,7 +2017,7 @@ void bta_jv_rfcomm_start_server(tBTA_JV_MSG *p_data)
         p_pcb->state = BTA_JV_ST_SR_LISTEN;
         p_pcb->user_data = rs->user_data;
         evt_data.status = BTA_JV_SUCCESS;
-        evt_data.handle = p_cb->handle;
+        evt_data.handle = p_pcb->handle;
         evt_data.sec_id = sec_id;
         evt_data.use_co = TRUE;
 
@@ -2092,7 +2092,7 @@ void bta_jv_rfcomm_read(tBTA_JV_MSG *p_data)
     tBTA_JV_RFCOMM_READ    evt_data;
 
     evt_data.status = BTA_JV_FAILURE;
-    evt_data.handle = p_cb->handle;
+    evt_data.handle = p_pcb->handle;
     evt_data.req_id = rc->req_id;
     evt_data.p_data = rc->p_data;
     if (PORT_ReadData(rc->p_pcb->port_handle, (char *)rc->p_data, rc->len, &evt_data.len) ==
@@ -2120,7 +2120,7 @@ void bta_jv_rfcomm_write(tBTA_JV_MSG *p_data)
     tBTA_JV_RFCOMM_WRITE    evt_data;
 
     evt_data.status = BTA_JV_FAILURE;
-    evt_data.handle = p_cb->handle;
+    evt_data.handle = p_pcb->handle;
     evt_data.req_id = wc->req_id;
     evt_data.cong   = p_pcb->cong;
     bta_jv_pm_conn_busy(p_pcb->p_pm_cb);
