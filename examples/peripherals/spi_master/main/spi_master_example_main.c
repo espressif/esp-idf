@@ -16,14 +16,12 @@
 #include "soc/gpio_struct.h"
 #include "driver/gpio.h"
 
+#include "pretty_effect.h"
 
 /*
  This code displays some fancy graphics on the 320x240 LCD on an ESP-WROVER_KIT board.
- It is not very fast, even when the SPI transfer itself happens at 8MHz and with DMA, because
- the rest of the code is not very optimized. Especially calculating the image line-by-line
- is inefficient; it would be quicker to send an entire screenful at once. This example does, however,
- demonstrate the use of both spi_device_transmit as well as spi_device_queue_trans/spi_device_get_trans_result
- as well as pre-transmit callbacks.
+ This example demonstrates the use of both spi_device_transmit as well as 
+ spi_device_queue_trans/spi_device_get_trans_result and pre-transmit callbacks.
 
  Some info about the ILI9341/ST7789V: It has an C/D line, which is connected to a GPIO here. It expects this
  line to be low for a command and high for data. We use a pre-transmit callback here to control that
@@ -40,6 +38,9 @@
 #define PIN_NUM_RST  18
 #define PIN_NUM_BCKL 5
 
+//To speed up transfers, every SPI transfer sends a bunch of lines. This define specifies how many. More means more memory use, 
+//but less overhead for setting up / finishing transfers. Make sure 240 is dividable by this.
+#define PARALLEL_LINES 16
 
 /*
  The LCD needs a bunch of command/argument values to be initialized. They are stored in this struct.
@@ -182,11 +183,11 @@ void lcd_init(spi_device_handle_t spi)
     if ( lcd_id == 0 ) {
         //zero, ili
         lcd_detected_type = LCD_TYPE_ILI;
-        printf("ILI9341 detected...\n");   
+        printf("ILI9341 detected.\n");
     } else {
         // none-zero, ST
         lcd_detected_type = LCD_TYPE_ST;
-        printf("ST7789V detected...\n");
+        printf("ST7789V detected.\n");
     }
 
 #ifdef CONFIG_LCD_TYPE_AUTO
@@ -197,12 +198,12 @@ void lcd_init(spi_device_handle_t spi)
 #elif defined( CONFIG_LCD_TYPE_ILI9341 )
     printf("kconfig: force CONFIG_LCD_TYPE_ILI9341.\n");
     lcd_type = LCD_TYPE_ILI;
-#endif   
+#endif
     if ( lcd_type == LCD_TYPE_ST ) {
         printf("LCD ST7789V initialization.\n");
         lcd_init_cmds = st_init_cmds;
     } else {
-        printf("LCD ILI9341 initialization.\n");   
+        printf("LCD ILI9341 initialization.\n");
         lcd_init_cmds = ili_init_cmds;
     }
 
@@ -221,11 +222,11 @@ void lcd_init(spi_device_handle_t spi)
 }
 
 
-//To send a line we have to send a command, 2 data bytes, another command, 2 more data bytes and another command
+//To send a set of lines we have to send a command, 2 data bytes, another command, 2 more data bytes and another command
 //before sending the line data itself; a total of 6 transactions. (We can't put all of this in just one transaction
 //because the D/C line needs to be toggled in the middle.)
 //This routine queues these commands up so they get sent as quickly as possible.
-static void send_line(spi_device_handle_t spi, int ypos, uint16_t *line) 
+static void send_lines(spi_device_handle_t spi, int ypos, uint16_t *linedata) 
 {
     esp_err_t ret;
     int x;
@@ -256,11 +257,11 @@ static void send_line(spi_device_handle_t spi, int ypos, uint16_t *line)
     trans[2].tx_data[0]=0x2B;           //Page address set
     trans[3].tx_data[0]=ypos>>8;        //Start page high
     trans[3].tx_data[1]=ypos&0xff;      //start page low
-    trans[3].tx_data[2]=(ypos+1)>>8;    //end page high
-    trans[3].tx_data[3]=(ypos+1)&0xff;  //end page low
+    trans[3].tx_data[2]=(ypos+PARALLEL_LINES)>>8;    //end page high
+    trans[3].tx_data[3]=(ypos+PARALLEL_LINES)&0xff;  //end page low
     trans[4].tx_data[0]=0x2C;           //memory write
-    trans[5].tx_buffer=line;            //finally send the line data
-    trans[5].length=320*2*8;            //Data length, in bits
+    trans[5].tx_buffer=linedata;        //finally send the line data
+    trans[5].length=320*2*8*PARALLEL_LINES;          //Data length, in bits
     trans[5].flags=0; //undo SPI_TRANS_USE_TXDATA flag
 
     //Queue all transactions.
@@ -294,28 +295,31 @@ static void send_line_finish(spi_device_handle_t spi)
 //while the previous one is being sent.
 static void display_pretty_colors(spi_device_handle_t spi) 
 {
-    uint16_t line[2][320];
-    int x, y, frame=0;
+    uint16_t *lines[2];
+    //Allocate memory for the pixel buffers
+    for (int i=0; i<2; i++) {
+        lines[i]=heap_caps_malloc(320*PARALLEL_LINES*sizeof(uint16_t), MALLOC_CAP_DMA);
+        assert(lines[i]!=NULL);
+    }
+    int frame=0;
     //Indexes of the line currently being sent to the LCD and the line we're calculating.
     int sending_line=-1;
     int calc_line=0;
     
     while(1) {
         frame++;
-        for (y=0; y<240; y++) {
+        for (int y=0; y<240; y+=PARALLEL_LINES) {
             //Calculate a line.
-            for (x=0; x<320; x++) {
-                line[calc_line][x]=((x<<3)^(y<<3)^(frame+x*y));
-            }
+            pretty_effect_calc_lines(lines[calc_line], y, frame, PARALLEL_LINES);
             //Finish up the sending process of the previous line, if any
             if (sending_line!=-1) send_line_finish(spi);
             //Swap sending_line and calc_line
             sending_line=calc_line;
             calc_line=(calc_line==1)?0:1;
             //Send the line we currently calculated.
-            send_line(spi, y, line[sending_line]);
-            //The line is queued up for sending now; the actual sending happens in the
-            //background. We can go on to calculate the next line as long as we do not
+            send_lines(spi, y, lines[sending_line]);
+            //The line set is queued up for sending now; the actual sending happens in the
+            //background. We can go on to calculate the next line set as long as we do not
             //touch line[sending_line]; the SPI sending process is still reading from that.
         }
     }
@@ -330,10 +334,15 @@ void app_main()
         .mosi_io_num=PIN_NUM_MOSI,
         .sclk_io_num=PIN_NUM_CLK,
         .quadwp_io_num=-1,
-        .quadhd_io_num=-1
+        .quadhd_io_num=-1,
+        .max_transfer_sz=PARALLEL_LINES*320*2+8
     };
     spi_device_interface_config_t devcfg={
-        .clock_speed_hz=10*1000*1000,               //Clock out at 10 MHz
+#ifdef CONFIG_LCD_OVERCLOCK
+        .clock_speed_hz=26*1000*1000,           //Clock out at 26 MHz
+#else
+        .clock_speed_hz=10*1000*1000,           //Clock out at 10 MHz
+#endif
         .mode=0,                                //SPI mode 0
         .spics_io_num=PIN_NUM_CS,               //CS pin
         .queue_size=7,                          //We want to be able to queue 7 transactions at a time
@@ -341,12 +350,16 @@ void app_main()
     };
     //Initialize the SPI bus
     ret=spi_bus_initialize(HSPI_HOST, &buscfg, 1);
-    assert(ret==ESP_OK);
+    ESP_ERROR_CHECK(ret);
     //Attach the LCD to the SPI bus
     ret=spi_bus_add_device(HSPI_HOST, &devcfg, &spi);
-    assert(ret==ESP_OK);
+    ESP_ERROR_CHECK(ret);
     //Initialize the LCD
     lcd_init(spi);
+    //Initialize the effect displayed
+    ret=pretty_effect_init();
+    ESP_ERROR_CHECK(ret);
+
     //Go do nice stuff.
     display_pretty_colors(spi);
 }
