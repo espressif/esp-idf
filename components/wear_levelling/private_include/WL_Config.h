@@ -38,6 +38,8 @@ public:
     }
 } wl_config_t;
 
-_Static_assert((sizeof(wl_config_t) % 16) == 0, "Size of wl_config_t structure should be compatible with flash encryption");
+#ifndef _MSC_VER // MSVS has different format for this define
+static_assert(sizeof(wl_config_t) % 16 == 0, "Size of wl_config_t structure should be compatible with flash encryption");
+#endif // _MSC_VER
 
 #endif // _WL_Config_H_
