@@ -225,7 +225,9 @@ SPI Flash / JP13
 | 6 | CMD / GPIO11 |
 +---+--------------+
 
-The module's flash bus is connected to the pin header JP13 through 0-Ohm resistors R140 ~ R145. If the flash frequency needs to operate at 80 MHz, to improve integrity of the bus signals, it is recommended to desolder resistors R140 ~ R145. At this point, the module's flash bus is disconnected with the pin header JP13.
+.. important::
+
+    The module's flash bus is connected to the pin header JP13 through 0-Ohm resistors R140 ~ R145. If the flash frequency needs to operate at 80 MHz, to improve integrity of the bus signals, it is recommended to desolder resistors R140 ~ R145. At this point, the module's flash bus is disconnected with the pin header JP13.
 
 
 .. _get-started-esp-wrover-jtag-header:
