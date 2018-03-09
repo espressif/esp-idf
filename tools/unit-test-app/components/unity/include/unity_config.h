@@ -107,6 +107,34 @@ void unity_run_all_tests();
 
 
 /*
+ * Multiple stages test cases will handle the case that test steps are separated by DUT reset.
+ * e.g: we want to verify some function after SW reset, WDT reset or deep sleep reset.
+ *
+ * First argument is a free-form description,
+ * second argument is (by convention) a list of identifiers, each one in square brackets.
+ * subsequent arguments are names test functions separated by reset.
+ * e.g:
+ * TEST_CASE_MULTIPLE_STAGES("run light sleep after deep sleep","[sleep]", goto_deepsleep, light_sleep_after_deep_sleep_wakeup);
+ * */
+
+#define TEST_CASE_MULTIPLE_STAGES(name_, desc_, ...) \
+    UNITY_TEST_FN_SET(__VA_ARGS__); \
+    static void __attribute__((constructor)) UNITY_TEST_UID(test_reg_helper_) () \
+    { \
+        static struct test_desc_t UNITY_TEST_UID(test_desc_) = { \
+            .name = name_, \
+            .desc = desc_"[multi_stage]", \
+            .fn = UNITY_TEST_UID(test_functions), \
+            .file = __FILE__, \
+            .line = __LINE__, \
+            .test_fn_count = PP_NARG(__VA_ARGS__), \
+            .test_fn_name = UNITY_TEST_UID(test_fn_name), \
+            .next = NULL \
+        }; \
+        unity_testcase_register( & UNITY_TEST_UID(test_desc_) ); \
+    }
+
+/*
  * First argument is a free-form description,
  * second argument is (by convention) a list of identifiers, each one in square brackets.
  * subsequent arguments are names of test functions for different DUTs
@@ -120,7 +148,7 @@ void unity_run_all_tests();
     { \
         static struct test_desc_t UNITY_TEST_UID(test_desc_) = { \
             .name = name_, \
-            .desc = desc_, \
+            .desc = desc_"[multi_device]", \
             .fn = UNITY_TEST_UID(test_functions), \
             .file = __FILE__, \
             .line = __LINE__, \
@@ -130,6 +158,7 @@ void unity_run_all_tests();
         }; \
         unity_testcase_register( & UNITY_TEST_UID(test_desc_) ); \
     }
+
 /**
  * Note: initialization of test_desc_t fields above has to be done exactly
  * in the same order as the fields are declared in the structure.

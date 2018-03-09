@@ -17,7 +17,8 @@ from Utility import CIAssignTest
 
 
 class Group(CIAssignTest.Group):
-    SORT_KEYS = ["Test App", "SDK", "test environment"]
+    SORT_KEYS = ["Test App", "SDK", "test environment", "multi_device", "multi_stage"]
+    CI_JOB_MATCH_KEYS = ["Test App", "SDK", "test environment"]
     MAX_CASE = 30
     ATTR_CONVERT_TABLE = {
         "execution_time": "execution time"
@@ -36,22 +37,39 @@ class Group(CIAssignTest.Group):
         assert test_app[:3] == "UT_"
         return test_app[3:]
 
-    def _create_extra_data(self):
+    def _create_extra_data(self, test_function):
         case_data = []
         for case in self.case_list:
-            if self._get_case_attr(case, "cmd set") == "multiple_devices_case":
-                case_data.append({
-                    "config": self._get_ut_config(self._get_case_attr(case, "Test App")),
-                    "name": self._get_case_attr(case, "summary"),
-                    "child case num": self._get_case_attr(case, "child case num")
-                })
-            else:
-                case_data.append({
-                    "config": self._get_ut_config(self._get_case_attr(case, "Test App")),
-                    "name": self._get_case_attr(case, "summary"),
-                    "reset": self._get_case_attr(case, "reset") ,
-                })
+            one_case_data = {
+                "config": self._get_ut_config(self._get_case_attr(case, "Test App")),
+                "name": self._get_case_attr(case, "summary"),
+                "reset": self._get_case_attr(case, "reset"),
+            }
+
+            if test_function in ["run_multiple_devices_cases", "run_multiple_stage_cases"]:
+                try:
+                    one_case_data["child case num"] = self._get_case_attr(case, "child case num")
+                except KeyError as e:
+                    print("multiple devices/stages cases must contains at least two test functions")
+                    print("case name: {}".format(one_case_data["name"]))
+                    raise e
+
+            case_data.append(one_case_data)
         return case_data
+
+    def _map_test_function(self):
+        """
+        determine which test function to use according to current test case
+
+        :return: test function name to use
+        """
+        if self.filters["multi_device"] == "Yes":
+            test_function = "run_multiple_devices_cases"
+        elif self.filters["multi_stage"] == "Yes":
+            test_function = "run_multiple_stage_cases"
+        else:
+            test_function = "run_unit_test_cases"
+        return test_function
 
     def output(self):
         """
@@ -59,12 +77,13 @@ class Group(CIAssignTest.Group):
 
         :return: {"Filter": case filter, "CaseConfig": list of case configs for cases in this group}
         """
+        test_function = self._map_test_function()
         output_data = {
             # we don't need filter for test function, as UT uses a few test functions for all cases
             "CaseConfig": [
                 {
-                    "name": self.case_list[0]["cmd set"] if isinstance(self.case_list[0]["cmd set"], str) else self.case_list[0]["cmd set"][0],
-                    "extra_data": self._create_extra_data(),
+                    "name": test_function,
+                    "extra_data": self._create_extra_data(test_function),
                 }
             ]
         }

@@ -103,9 +103,7 @@ class Parser(object):
                         self.test_env_tags.update({tc["test environment"]: [tc["ID"]]})
 
                     if function_count > 1:
-                        tc.update({"cmd set": "multiple_devices_case",
-                                   "child case num": function_count})
-                        del tc['reset']
+                        tc.update({"child case num": function_count})
 
                     # only add  cases need to be executed
                     test_cases.append(tc)
@@ -191,7 +189,9 @@ class Parser(object):
                           "test environment": prop["test_env"],
                           "reset": prop["reset"],
                           "sub module": self.module_map[prop["module"]]['sub module'],
-                          "summary": name})
+                          "summary": name,
+                          "multi_device": prop["multi_device"],
+                          "multi_stage": prop["multi_stage"]})
         return test_case
 
     def dump_test_cases(self, test_cases):
