@@ -1,0 +1,3 @@
+# Override some defaults so BT stack is enabled
+# by default in this example
+CONFIG_BT_ENABLED=y
