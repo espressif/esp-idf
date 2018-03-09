@@ -404,7 +404,7 @@ static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
     //reset the env after sent the data to app
     memset(&btc_creat_tab_env, 0, sizeof(esp_btc_creat_tab_t));
 
-    //release the flag vaule to false after finish the service created.
+    //set the flag value to false after the service is created.
     btc_creat_tab_env.is_tab_creat_svc = false;
 }
 
