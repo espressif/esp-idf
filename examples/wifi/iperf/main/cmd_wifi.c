@@ -314,6 +314,13 @@ static int restart(int argc, char** argv)
     ESP_LOGI(TAG, "Restarting");
     esp_restart();
 }
+
+static int heap_size(int argc, char** argv)
+{
+    uint32_t heap_size = heap_caps_get_minimum_free_size(MALLOC_CAP_DEFAULT);
+    ESP_LOGI(TAG, "min heap size: %u", heap_size);
+    return 0;
+}
  
 void register_wifi()
 {
@@ -378,4 +385,12 @@ void register_wifi()
     };
 
     ESP_ERROR_CHECK( esp_console_cmd_register(&iperf_cmd) );
+
+    const esp_console_cmd_t heap_cmd = {
+        .command = "heap",
+        .help = "get min free heap size druing test",
+        .hint = NULL,
+        .func = &heap_size,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&heap_cmd) );
 }
