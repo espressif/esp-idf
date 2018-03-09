@@ -183,6 +183,7 @@ static void *btc_spp_rfcomm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *u
             BTA_JvRfcommClose(slot->rfc_handle, (void *)slot->id);
         }
         free_spp_slot(slot);
+        p_data->rfc_close.status = BTA_JV_SUCCESS;
         break;
     case BTA_JV_RFCOMM_DATA_IND_EVT:
         break;
