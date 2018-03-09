@@ -3,7 +3,7 @@
 See also
 --------
 
-- :doc:`FAT Filesystem <../../api-guides/partition-tables>`
+- :doc:`FAT Filesystem <./fatfs>`
 - :doc:`Partition Table documentation <../../api-guides/partition-tables>`
 
 Application Example
