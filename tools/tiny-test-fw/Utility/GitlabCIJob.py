@@ -41,7 +41,7 @@ class Job(dict):
             if "case group" in self:
                 # this job is already assigned
                 break
-            for value in group.filters.values():
+            for value in group.ci_job_match_keys.values():
                 if value not in self["tags"]:
                     break
             else:

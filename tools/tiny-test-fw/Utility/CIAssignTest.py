@@ -53,11 +53,18 @@ class Group(object):
     MAX_EXECUTION_TIME = 30
     MAX_CASE = 15
     SORT_KEYS = ["env_tag"]
+    # Matching CI job rules could be different from the way we want to group test cases.
+    # For example, when assign unit test cases, different test cases need to use different test functions.
+    # We need to put them into different groups.
+    # But these groups can be assigned to jobs with same tags, as they use the same test environment.
+    CI_JOB_MATCH_KEYS = SORT_KEYS
 
     def __init__(self, case):
         self.execution_time = 0
         self.case_list = [case]
         self.filters = dict(zip(self.SORT_KEYS, [self._get_case_attr(case, x) for x in self.SORT_KEYS]))
+        self.ci_job_match_keys = dict(zip(self.CI_JOB_MATCH_KEYS,
+                                      [self._get_case_attr(case, x) for x in self.CI_JOB_MATCH_KEYS]))
 
     @staticmethod
     def _get_case_attr(case, attr):
