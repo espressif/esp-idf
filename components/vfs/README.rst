@@ -15,7 +15,7 @@ FS registration
 
 
 
-To register an FS driver, application needs to define in instance of esp_vfs_t structure and populate it with function pointers to FS APIs:
+To register an FS driver, application needs to define in instance of :cpp:type:`esp_vfs_t` structure and populate it with function pointers to FS APIs:
 
 .. highlight:: c
 
