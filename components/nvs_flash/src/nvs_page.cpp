@@ -314,7 +314,6 @@ esp_err_t Page::eraseEntryAndSpan(size_t index)
 {
     auto state = mEntryTable.get(index);
     assert(state == EntryState::WRITTEN || state == EntryState::EMPTY);
-    mHashList.erase(index);
 
     size_t span = 1;
     if (state == EntryState::WRITTEN) {
@@ -324,6 +323,7 @@ esp_err_t Page::eraseEntryAndSpan(size_t index)
             return rc;
         }
         if (item.calculateCrc32() != item.crc32) {
+            mHashList.erase(index, false);
             rc = alterEntryState(index, EntryState::ERASED);
             --mUsedEntryCount;
             ++mErasedEntryCount;
@@ -331,6 +331,7 @@ esp_err_t Page::eraseEntryAndSpan(size_t index)
                 return rc;
             }
         } else {
+            mHashList.erase(index);
             span = item.span;
             for (ptrdiff_t i = index + span - 1; i >= static_cast<ptrdiff_t>(index); --i) {
                 if (mEntryTable.get(i) == EntryState::WRITTEN) {
@@ -511,11 +512,6 @@ esp_err_t Page::mLoadEntryTable()
                 return err;
             }
             
-            mHashList.insert(item, i);
-            
-            // search for potential duplicate item
-            size_t duplicateIndex = mHashList.find(0, item);
-
             if (item.crc32 != item.calculateCrc32()) {
                 err = eraseEntryAndSpan(i);
                 if (err != ESP_OK) {
@@ -525,6 +521,10 @@ esp_err_t Page::mLoadEntryTable()
                 continue;
             }
 
+            mHashList.insert(item, i);
+            
+            // search for potential duplicate item
+            size_t duplicateIndex = mHashList.find(0, item);
             
             if (item.datatype == ItemType::BLOB || item.datatype == ItemType::SZ) {
                 span = item.span;
@@ -576,8 +576,6 @@ esp_err_t Page::mLoadEntryTable()
                 return err;
             }
 
-            mHashList.insert(item, i);
-            
             if (item.crc32 != item.calculateCrc32()) {
                 err = eraseEntryAndSpan(i);
                 if (err != ESP_OK) {
@@ -586,8 +584,10 @@ esp_err_t Page::mLoadEntryTable()
                 }
                 continue;
             }
-            
+
             assert(item.span > 0);
+
+            mHashList.insert(item, i);
 
             size_t span = item.span;
             i += span - 1;
@@ -726,7 +726,11 @@ esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, si
 
         auto crc32 = item.calculateCrc32();
         if (item.crc32 != crc32) {
-            eraseEntryAndSpan(i);
+            rc = eraseEntryAndSpan(i);
+            if (rc != ESP_OK) {
+                mState = PageState::INVALID;
+                return rc;
+            }
             continue;
         }
 
