@@ -1002,8 +1002,6 @@ static void btc_a2d_sink_deinit(void)
 {
     LOG_DEBUG("%s\n", __FUNCTION__);
 
-    btc_a2dp_stop_media_task();
-
     btc_dm_disable_service(BTA_A2DP_SOURCE_SERVICE_ID);
 #if (BTA_AV_SINK_INCLUDED == TRUE)
     btc_dm_disable_service(BTA_A2DP_SINK_SERVICE_ID);
@@ -1012,6 +1010,8 @@ static void btc_a2d_sink_deinit(void)
     /* Also shut down the AV state machine */
     btc_sm_shutdown(btc_av_cb.sm_handle);
     btc_av_cb.sm_handle = NULL;
+
+    btc_a2dp_stop_media_task();
 }
 
 /*******************************************************************************
