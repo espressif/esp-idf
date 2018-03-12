@@ -34,6 +34,8 @@
 #define GPIO_UNUSED 0xff                //!< Flag indicating that CD/WP is unused
 /// Size of the buffer returned by get_block_buf
 #define SDSPI_BLOCK_BUF_SIZE    (SDSPI_MAX_DATA_LEN + 4)
+/// Maximum number of dummy bytes between the request and response (minimum is 1)
+#define SDSPI_RESPONSE_MAX_DELAY  8
 
 
 /// Structure containing run time configuration for a single SD slot
@@ -422,6 +424,30 @@ static esp_err_t start_command_default(int slot, int flags, sdspi_hw_cmd_t *cmd)
         .rx_buffer = cmd
     };
     esp_err_t ret = spi_device_transmit(spi_handle(slot), &t);
+    if (cmd->cmd_index == MMC_STOP_TRANSMISSION) {
+        /* response is a stuff byte from previous transfer, ignore it */
+        cmd->r1 = 0xff;
+    }
+    int response_delay_bytes = SDSPI_RESPONSE_MAX_DELAY;
+    while ((cmd->r1 & SD_SPI_R1_NO_RESPONSE) != 0 && response_delay_bytes-- > 0) {
+        spi_transaction_t* t = get_transaction(slot);
+        *t = (spi_transaction_t) {
+            .flags = SPI_TRANS_USE_RXDATA | SPI_TRANS_USE_TXDATA,
+            .length = 8,
+        };
+        t->tx_data[0] = 0xff;
+        ret = spi_device_transmit(spi_handle(slot), t);
+        uint8_t r1 = t->rx_data[0];
+        release_transaction(slot);
+        if (ret != ESP_OK) {
+            return ret;
+        }
+        cmd->r1 = r1;
+    }
+    if (cmd->r1 & SD_SPI_R1_NO_RESPONSE) {
+        ESP_LOGD(TAG, "%s: no response token found", __func__);
+        return ESP_ERR_TIMEOUT;
+    }
     return ret;
 }
 
@@ -564,6 +590,9 @@ static esp_err_t poll_data_token(int slot, spi_transaction_t* t,
  *    indicating the start of the next block. Actual scanning is done by
  *    setting pre_scan_data_ptr to point to these last 2 bytes, and setting
  *    pre_scan_data_size = 2, then going to step 2 to receive the next block.
+ *    When the final block is being received, the number of extra bytes is 2
+ *    (only for CRC), because we don't need to wait for start token of the
+ *    next block, and some cards are getting confused by these two extra bytes.
  *
  * With this approach the delay between blocks of a multi-block transfer is
  * ~95 microseconds, out of which 35 microseconds are spend doing the CRC check.
@@ -575,9 +604,8 @@ static esp_err_t start_command_read_blocks(int slot, sdspi_hw_cmd_t *cmd,
 {
     bool need_stop_command = rx_length > SDSPI_MAX_DATA_LEN;
     spi_transaction_t* t_command = get_transaction(slot);
-    const int cmd_extra_bytes = 8;
     *t_command = (spi_transaction_t) {
-        .length = (SDSPI_CMD_R1_SIZE + cmd_extra_bytes) * 8,
+        .length = (SDSPI_CMD_R1_SIZE + SDSPI_RESPONSE_MAX_DELAY) * 8,
         .tx_buffer = cmd,
         .rx_buffer = cmd,
     };
@@ -588,7 +616,7 @@ static esp_err_t start_command_read_blocks(int slot, sdspi_hw_cmd_t *cmd,
     release_transaction(slot);
 
     uint8_t* cmd_u8 = (uint8_t*) cmd;
-    size_t pre_scan_data_size = cmd_extra_bytes;
+    size_t pre_scan_data_size = SDSPI_RESPONSE_MAX_DELAY;
     uint8_t* pre_scan_data_ptr = cmd_u8 + SDSPI_CMD_R1_SIZE;
 
     /* R1 response is delayed by 1-8 bytes from the request.
@@ -640,7 +668,7 @@ static esp_err_t start_command_read_blocks(int slot, sdspi_hw_cmd_t *cmd,
         }
 
         // receive actual data
-        const size_t receive_extra_bytes = 4;
+        const size_t receive_extra_bytes = (rx_length > SDSPI_MAX_DATA_LEN) ? 4 : 2;
         memset(rx_data, 0xff, will_receive + receive_extra_bytes);
         spi_transaction_t* t_data = get_transaction(slot);
         *t_data = (spi_transaction_t) {
@@ -694,6 +722,9 @@ static esp_err_t start_command_read_blocks(int slot, sdspi_hw_cmd_t *cmd,
         ret = start_command_default(slot, SDSPI_CMD_FLAG_RSP_R1, &stop_cmd);
         if (ret != ESP_OK) {
             return ret;
+        }
+        if (stop_cmd.r1 != 0) {
+            ESP_LOGD(TAG, "%s: STOP_TRANSMISSION response 0x%02x", __func__, stop_cmd.r1);
         }
         spi_transaction_t* t_poll = get_transaction(slot);
         ret = poll_busy(slot, t_poll, cmd->timeout_ms);
