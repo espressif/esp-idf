@@ -76,7 +76,7 @@ esp_err_t PageManager::load(uint32_t baseSector, uint32_t sectorCount)
     // check if power went out while page was being freed
     for (auto it = begin(); it!= end(); ++it) {
         if (it->state() == Page::PageState::FREEING) {
-            Page* newPage = &mPageList.back();
+          /*  Page* newPage = &mPageList.back();
             if (newPage->state() != Page::PageState::ACTIVE) {
                 auto err = activatePage();
                 if (err != ESP_OK) {
@@ -91,7 +91,7 @@ esp_err_t PageManager::load(uint32_t baseSector, uint32_t sectorCount)
                 } else if (err != ESP_OK) {
                     return err;
                 }
-            }
+            }*/
 
             auto err = it->erase();
             if (err != ESP_OK) {
@@ -109,7 +109,7 @@ esp_err_t PageManager::load(uint32_t baseSector, uint32_t sectorCount)
     if (mFreePageList.size() == 0) {
         return ESP_ERR_NVS_NO_FREE_PAGES;
     }
-    
+
     return ESP_OK;
 }
 
@@ -171,7 +171,7 @@ esp_err_t PageManager::requestNewPage()
 #ifndef NDEBUG
     assert(usedEntries == newPage->getUsedEntryCount());
 #endif
-    
+
     mPageList.erase(maxErasedItemsPageIt);
     mFreePageList.push_back(erasedPage);
 
