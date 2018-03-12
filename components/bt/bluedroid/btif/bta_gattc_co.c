@@ -24,15 +24,22 @@
 #include "bta_gattc_ci.h"
 // #include "btif_util.h"
 #include "btm_int.h"
+#include "nvs.h"
+#include "nvs_flash.h"
+#include "list.h"
+#include "esp_err.h"
+#include "allocator.h"
 
 #if( defined BLE_INCLUDED ) && (BLE_INCLUDED == TRUE)
 #if( defined BTA_GATT_INCLUDED ) && (GATTC_INCLUDED == TRUE)
 
-#define GATT_CACHE_PREFIX "/data/misc/bluedroid/gatt_cache_"
+#define GATT_CACHE_PREFIX "gatt_"
+#define INVALID_ADDR_NUM 0xff
+#define MAX_DEVICE_IN_CACHE 50
+#define MAX_ADDR_LIST_CACHE_BUF 2048
 
 #ifdef BT_SUPPORT_NVM
 static FILE *sCacheFD = 0;
-
 static void getFilename(char *buffer, BD_ADDR bda)
 {
     sprintf(buffer, "%s%02x%02x%02x%02x%02x%02x", GATT_CACHE_PREFIX
@@ -65,6 +72,96 @@ static void cacheReset(BD_ADDR bda)
     unlink(fname);
 }
 
+#else
+
+static const char *cache_key = "gattc_cahe_key";
+static const char *cache_addr = "cache_addr_tab";
+nvs_handle nvs_fp;
+
+typedef struct {
+    //save the service data in the list according to the address
+    nvs_handle cache_fp;
+    BOOLEAN is_open;
+    BD_ADDR addr;
+    coap_key_t hash_key;
+    list_t *ass_addr;
+}cache_addr_info_t;
+
+typedef struct {
+    //save the address list in the cache
+    nvs_handle addr_fp;
+    BOOLEAN is_open;
+    UINT8 num_addr;
+    cache_addr_info_t cache_addr[MAX_DEVICE_IN_CACHE];
+}cache_env_t;
+
+cache_env_t cache_env;
+
+static void getFilename(char *buffer, coap_key_t hash)
+{
+    sprintf(buffer, "%s%02x%02x%02x%02x", GATT_CACHE_PREFIX,
+            hash[0], hash[1], hash[2], hash[3]);
+}
+
+static void cacheClose(BD_ADDR bda)
+{
+    UINT8 index = 0;
+    if ((index = bta_gattc_co_find_addr_in_cache(bda)) != INVALID_ADDR_NUM) {
+        if (cache_env.cache_addr[index].is_open) {
+            nvs_close(cache_env.cache_addr[index].cache_fp);
+            cache_env.cache_addr[index].is_open = FALSE;
+        }
+    }
+}
+
+static bool cacheOpen(BD_ADDR bda, bool to_save, UINT8 *index)
+{
+    UNUSED(to_save);
+    char fname[255] = {0};
+    UINT8 *ass_addr = NULL;
+    esp_err_t status = ESP_FAIL;
+    coap_key_t hash_key = {0};
+    if (((*index = bta_gattc_co_find_addr_in_cache(bda)) != INVALID_ADDR_NUM) ||
+        ((ass_addr = bta_gattc_co_cache_find_src_addr(bda, index)) != NULL)) {
+        if (cache_env.cache_addr[*index].is_open) {
+            return TRUE;
+        } else {
+            memcpy(hash_key, cache_env.cache_addr[*index].hash_key, sizeof(coap_key_t));
+            getFilename(fname, hash_key);
+            if ((status = nvs_open(fname, NVS_READWRITE, &cache_env.cache_addr[*index].cache_fp)) == ESP_OK) {
+                // Set the open flag to TRUE when success to open the hash file.
+                cache_env.cache_addr[*index].is_open = TRUE;
+            }
+        }
+    }
+    
+    return ((status == ESP_OK) ? true : false);
+}
+
+static void cacheReset(BD_ADDR bda)
+{
+    char fname[255] = {0};
+    getFilename(fname, bda);
+    UINT8 index = 0;
+      //cache_env.cache_addr
+    if ((index = bta_gattc_co_find_addr_in_cache(bda)) != INVALID_ADDR_NUM) {
+        //clear the association address pending in the source address.
+        bta_gattc_co_cache_clear_ass_addr(bda);
+        if (cache_env.cache_addr[index].is_open) {
+            nvs_erase_all(cache_env.cache_addr[index].cache_fp);
+            nvs_close(cache_env.cache_addr[index].cache_fp);
+            cache_env.cache_addr[index].is_open = FALSE;
+        }
+        UINT8 num = cache_env.num_addr;
+        //delete the server_bda in the addr_info list.
+        for(UINT8 i = index; i < (num - 1); i++) {
+            memcpy(&cache_env.cache_addr[i], &cache_env.cache_addr[i+1], sizeof(cache_addr_info_t));
+        }
+        //reduced the number address counter also
+        cache_env.num_addr--;
+    }
+}
+
 #endif /* BT_SUPPORT_NVM */
 /*****************************************************************************
 **  Function Declarations
@@ -85,20 +182,16 @@ static void cacheReset(BD_ADDR bda)
 ** Returns          void.
 **
 *******************************************************************************/
-void bta_gattc_co_cache_open(BD_ADDR server_bda, UINT16 evt, UINT16 conn_id, BOOLEAN to_save)
+tBTA_GATT_STATUS bta_gattc_co_cache_open(BD_ADDR server_bda, BOOLEAN to_save, UINT8 *index)
 {
-#ifdef BT_SUPPORT_NVM
     /* open NV cache and send call in */
-    tBTA_GATT_STATUS    status = BTA_GATT_OK;
-    if (!btm_sec_is_a_bonded_dev(server_bda) || !cacheOpen(server_bda, to_save)) {
+    tBTA_GATT_STATUS status = BTA_GATT_OK;
+    if (!cacheOpen(server_bda, to_save, index)) {
         status = BTA_GATT_ERROR;
     }
 
-    BTIF_TRACE_DEBUG("%s() - status=%d", __FUNCTION__, status);
-    bta_gattc_ci_cache_open(server_bda, evt, status, conn_id);
-#else
-    bta_gattc_ci_cache_open(server_bda, evt, BTA_GATT_ERROR, conn_id);
-#endif /* BT_SUPPORT_NVM */
+    APPL_TRACE_DEBUG("%s() - status=%d", __func__, status);
+    return status;
 }
 
 /*******************************************************************************
@@ -116,21 +209,33 @@ void bta_gattc_co_cache_open(BD_ADDR server_bda, UINT16 evt, UINT16 conn_id, BOO
 ** Returns
 **
 *******************************************************************************/
-void bta_gattc_co_cache_load(BD_ADDR server_bda, UINT16 evt, UINT16 start_index, UINT16 conn_id)
+tBTA_GATT_STATUS bta_gattc_co_cache_load(tBTA_GATTC_NV_ATTR *attr, UINT8 index)
 {
     UINT16              num_attr = 0;
-    tBTA_GATTC_NV_ATTR  attr[BTA_GATTC_NV_LOAD_MAX];
     tBTA_GATT_STATUS    status = BTA_GATT_ERROR;
-#ifdef BT_SUPPORT_NVM
-    if (sCacheFD && (0 == fseek(sCacheFD, start_index * sizeof(tBTA_GATTC_NV_ATTR), SEEK_SET))) {
-        num_attr = fread(attr, sizeof(tBTA_GATTC_NV_ATTR), BTA_GATTC_NV_LOAD_MAX, sCacheFD);
-        status = (num_attr < BTA_GATTC_NV_LOAD_MAX ? BTA_GATT_OK : BTA_GATT_MORE);
-    }
-    BTIF_TRACE_DEBUG("%s() - sCacheFD=%p, start_index=%d, read=%d, status=%d",
-                     __FUNCTION__, sCacheFD, start_index, num_attr, status);
-#endif /* BT_SUPPORT_NVM */
+    size_t length = 0;
+    // Read the size of memory space required for blob
+    nvs_get_blob(cache_env.cache_addr[index].cache_fp, cache_key, NULL, &length);
+    // Read previously saved blob if available
+    esp_err_t err_code = nvs_get_blob(cache_env.cache_addr[index].cache_fp, cache_key, attr, &length);
+    num_attr = length / sizeof(tBTA_GATTC_NV_ATTR);
+    status = (err_code == ESP_OK && length != 0) ? BTA_GATT_OK : BTA_GATT_ERROR;
+    APPL_TRACE_DEBUG("%s() - read=%d, status=%d, err_code = %d",
+                     __func__, num_attr, status, err_code);
 
-    bta_gattc_ci_cache_load(server_bda, evt, num_attr, attr, status, conn_id);
+    return status;
+ }
+
+size_t bta_gattc_get_cache_attr_length(UINT8 index)
+{
+    size_t length = 0;
+    if (index == INVALID_ADDR_NUM) {
+        return 0;
+    }
+
+    // Read the size of memory space required for blob
+    nvs_get_blob(cache_env.cache_addr[index].cache_fp, cache_key, NULL, &length);
+    return length;
 }
 
 /*******************************************************************************
@@ -149,18 +254,26 @@ void bta_gattc_co_cache_load(BD_ADDR server_bda, UINT16 evt, UINT16 start_index,
 ** Returns
 **
 *******************************************************************************/
-void bta_gattc_co_cache_save (BD_ADDR server_bda, UINT16 evt, UINT16 num_attr,
-                              tBTA_GATTC_NV_ATTR *p_attr_list, UINT16 attr_index, UINT16 conn_id)
+void bta_gattc_co_cache_save (BD_ADDR server_bda, UINT16 num_attr,
+                              tBTA_GATTC_NV_ATTR *p_attr_list)
 {
     tBTA_GATT_STATUS    status = BTA_GATT_OK;
-    UNUSED(attr_index);
-#ifdef BT_SUPPORT_NVM
-    if (sCacheFD != 0) {
-        int num = fwrite(p_attr_list, sizeof(tBTA_GATTC_NV_ATTR), num_attr, sCacheFD);
-        BTIF_TRACE_DEBUG("%s() wrote %d", __FUNCTION__, num);
+    coap_key_t hash_key = {0};
+    UINT8 index = INVALID_ADDR_NUM;
+    //calculate  the hash value of the attribute table which should be added to the nvs flash.
+    coap_hash_impl((unsigned char *)p_attr_list, sizeof(tBTA_GATTC_NV_ATTR)*num_attr, hash_key);
+    //save the address list to the nvs flash
+    bta_gattc_co_cache_addr_save(server_bda, hash_key);
+
+    if (cacheOpen(server_bda, TRUE, &index)) {
+        esp_err_t err_code = nvs_set_blob(cache_env.cache_addr[index].cache_fp, cache_key,
+                                          p_attr_list, sizeof(tBTA_GATTC_NV_ATTR)*num_attr);
+        status = (err_code == ESP_OK) ? BTA_GATT_OK : BTA_GATT_ERROR;
+    } else {
+        status = BTA_GATT_ERROR;
     }
-#endif /* BT_SUPPORT_NVM */
-    bta_gattc_ci_cache_save(server_bda, evt, status, conn_id);
+
+    APPL_TRACE_DEBUG("%s() wrote hash_key = %x%x%x%x, num_attr = %d, status = %d.", __func__, hash_key[0], hash_key[1], hash_key[2], hash_key[3], num_attr, status);
 }
 
 /*******************************************************************************
@@ -178,11 +291,10 @@ void bta_gattc_co_cache_save (BD_ADDR server_bda, UINT16 evt, UINT16 num_attr,
 *******************************************************************************/
 void bta_gattc_co_cache_close(BD_ADDR server_bda, UINT16 conn_id)
 {
-    UNUSED(server_bda);
     UNUSED(conn_id);
-#ifdef BT_SUPPORT_NVM
-    cacheClose();
-#endif /* BT_SUPPORT_NVM */
+//#ifdef BT_SUPPORT_NVM
+    cacheClose(server_bda);
+//#endif /* BT_SUPPORT_NVM */
     /* close NV when server cache is done saving or loading,
        does not need to do anything for now on Insight */
 
@@ -203,10 +315,256 @@ void bta_gattc_co_cache_close(BD_ADDR server_bda, UINT16 conn_id)
 *******************************************************************************/
 void bta_gattc_co_cache_reset(BD_ADDR server_bda)
 {
-    BTIF_TRACE_DEBUG("%s()", __FUNCTION__);
-#ifdef BT_SUPPORT_NVM
     cacheReset(server_bda);
-#endif /* BT_SUPPORT_NVM */
+}
+
+void bta_gattc_co_cache_addr_init(void)
+{
+    nvs_handle fp;
+    esp_err_t err_code;
+    UINT8 num_addr;
+    UINT8 *p_buf = osi_malloc(MAX_ADDR_LIST_CACHE_BUF);
+    size_t length = 0;
+
+    if ((err_code = nvs_open(cache_addr, NVS_READWRITE, &fp)) == ESP_OK) {
+        cache_env.addr_fp = fp;
+        // Read previously saved blob if available
+        if ((err_code = nvs_get_blob(fp, cache_key, p_buf, &length)) != ESP_OK) {
+            APPL_TRACE_ERROR("%s, Line = %d, nvs flash get blob data fail, err_code = %x", __func__, __LINE__, err_code);
+            osi_free(p_buf);
+            return;
+        }
+        num_addr = length / (sizeof(BD_ADDR) + sizeof(coap_key_t));
+        cache_env.num_addr = num_addr;
+        //read the address from nvs flash to cache address list.
+        for (UINT8 i = 0; i < num_addr; i++) {
+            memcpy(cache_env.cache_addr[i].addr, p_buf + i*(sizeof(BD_ADDR) + sizeof(coap_key_t)), sizeof(BD_ADDR));
+            memcpy(cache_env.cache_addr[i].hash_key,
+                    p_buf + i*(sizeof(BD_ADDR) + sizeof(coap_key_t)) + sizeof(BD_ADDR), sizeof(coap_key_t));
+
+            APPL_TRACE_DEBUG("cache_addr[%x] = %x:%x:%x:%x:%x:%x", i, cache_env.cache_addr[i].addr[0], cache_env.cache_addr[i].addr[1], cache_env.cache_addr[i].addr[2],
+                             cache_env.cache_addr[i].addr[3], cache_env.cache_addr[i].addr[4], cache_env.cache_addr[i].addr[5]);
+            APPL_TRACE_DEBUG("hash_key[%x] = %x%x%x%x", i, cache_env.cache_addr[i].hash_key[0], cache_env.cache_addr[i].hash_key[1],
+                             cache_env.cache_addr[i].hash_key[2], cache_env.cache_addr[i].hash_key[3]);
+            bta_gattc_co_cache_new_ass_list(cache_env.cache_addr[i].addr, i);
+        }
+    } else {
+        APPL_TRACE_ERROR("%s, Line = %d, nvs flash open fail, err_code = %x", __func__, __LINE__, err_code);
+        osi_free(p_buf);
+        return;
+    }
+
+    osi_free(p_buf);
+    return;
+}
+
+BOOLEAN bta_gattc_co_addr_in_cache(BD_ADDR bda)
+{
+    UINT8 addr_index = 0;
+    UINT8 num = cache_env.num_addr;
+    cache_addr_info_t *addr_info = &cache_env.cache_addr[0];
+    for (addr_index = 0; addr_index < num; addr_index++) {
+        if (!memcmp(addr_info->addr, bda, sizeof(BD_ADDR))) {
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+UINT8 bta_gattc_co_find_addr_in_cache(BD_ADDR bda)
+{
+    UINT8 addr_index = 0;
+    UINT8 num = cache_env.num_addr;
+    cache_addr_info_t *addr_info = &cache_env.cache_addr[0];
+
+    for (addr_index = 0; addr_index < num; addr_index++, addr_info++) {
+        if (!memcmp(addr_info->addr, bda, sizeof(BD_ADDR))) {
+            return addr_index;
+        }
+    }
+
+    return INVALID_ADDR_NUM;
+}
+
+UINT8 bta_gattc_co_find_hash_in_cache(coap_key_t hash_key)
+{
+    UINT8 index = 0;
+    UINT8 num = cache_env.num_addr;
+    cache_addr_info_t *addr_info = &cache_env.cache_addr[0];
+    for (index = 0; index < num; index++) {
+        if (!memcmp(addr_info->hash_key, hash_key, sizeof(coap_key_t))) {
+            return index;
+        }
+    }
+
+    return INVALID_ADDR_NUM;
+}
+
+UINT8 bta_gattc_co_get_addr_num(void)
+{
+    return cache_env.num_addr;
+}
+
+void bta_gattc_co_get_addr_list(BD_ADDR *addr_list)
+{
+    UINT8 num = cache_env.num_addr;
+    for (UINT8 i = 0; i < num; i++) {
+        memcpy(addr_list[i], cache_env.cache_addr[i].addr, sizeof(BD_ADDR));
+    }
+}
+
+void bta_gattc_co_cache_addr_save(BD_ADDR bd_addr, coap_key_t hash_key)
+{
+    esp_err_t err_code;
+    UINT8 num = ++cache_env.num_addr;
+    UINT8 index = 0;
+    UINT8 *p_buf = osi_malloc(MAX_ADDR_LIST_CACHE_BUF);
+    // check the address list has the same hash key or not
+    if (bta_gattc_co_find_hash_in_cache(hash_key) != INVALID_ADDR_NUM) {
+        APPL_TRACE_DEBUG("%s(), the hash key already in the cache list.", __func__);
+        if ((index = bta_gattc_co_find_addr_in_cache(bd_addr)) != INVALID_ADDR_NUM) {
+            APPL_TRACE_DEBUG("%s(), the hash bd_addr already in the cache list, index = %x", __func__, index);
+            //if the bd_addr already in the address list, update the hash key in it.
+            memcpy(cache_env.cache_addr[index].addr, bd_addr, sizeof(BD_ADDR));
+            memcpy(cache_env.cache_addr[index].hash_key, hash_key, sizeof(coap_key_t));
+        } else {
+            //if the bd_addr didn't in the address list, added the bd_addr to the last of the address list.
+            memcpy(cache_env.cache_addr[num - 1].hash_key, hash_key, sizeof(coap_key_t));
+            memcpy(cache_env.cache_addr[num - 1].addr, bd_addr, sizeof(BD_ADDR));
+        }
+
+    } else {
+        APPL_TRACE_DEBUG("%s(), num = %d", __func__, num);
+        memcpy(cache_env.cache_addr[num - 1].addr, bd_addr, sizeof(BD_ADDR));
+        memcpy(cache_env.cache_addr[num - 1].hash_key, hash_key, sizeof(coap_key_t));
+    }
+
+    nvs_handle *fp = &cache_env.addr_fp;
+    UINT16 length = num*(sizeof(BD_ADDR) + sizeof(coap_key_t));
+
+    for (UINT8 i = 0; i < num; i++) {
+        //copy the address to the buffer.
+        memcpy(p_buf + i*(sizeof(BD_ADDR) + sizeof(coap_key_t)), cache_env.cache_addr[i].addr, sizeof(BD_ADDR));
+        //copy the hash key to the buffer.
+        memcpy(p_buf + i*(sizeof(BD_ADDR) + sizeof(coap_key_t)) + sizeof(BD_ADDR),
+                cache_env.cache_addr[i].hash_key, sizeof(coap_key_t));
+    }
+
+    if (cache_env.is_open) {
+        if ((err_code = nvs_set_blob(cache_env.addr_fp, cache_key, p_buf, length)) != ESP_OK) {
+            APPL_TRACE_WARNING("%s(), nvs set blob fail, err %d", __func__, err_code);
+        }
+    } else {
+        if ((err_code = nvs_open(cache_addr, NVS_READWRITE , fp)) == ESP_OK) {
+            cache_env.is_open = true;
+            if (( err_code = nvs_set_blob(cache_env.addr_fp, cache_key, p_buf, length)) != ESP_OK) {
+                APPL_TRACE_WARNING("%s(), nvs set blob fail, err %d", __func__, err_code);
+            }
+        } else {
+            APPL_TRACE_ERROR("%s, Line = %d, nvs flash open fail, err_code = %x", __func__, __LINE__, err_code);
+        }
+    }
+    //free the buffer after used.
+    osi_free(p_buf);
+    return;
+
+}
+
+BOOLEAN bta_gattc_co_cache_new_ass_list(BD_ADDR src_addr, UINT8 index)
+{
+    cache_addr_info_t *addr_info = &cache_env.cache_addr[index];
+    addr_info->ass_addr = list_new(osi_free_func);
+    return (addr_info->ass_addr != NULL ? TRUE : FALSE);
+}
+
+BOOLEAN bta_gattc_co_cache_append_ass_addr(BD_ADDR src_addr, BD_ADDR ass_addr)
+{
+    UINT8 addr_index = 0;
+    cache_addr_info_t *addr_info;
+    UINT8 *p_ass_buf = osi_malloc(sizeof(BD_ADDR));
+    memcpy(p_ass_buf, ass_addr, sizeof(BD_ADDR));
+    if ((addr_index = bta_gattc_co_find_addr_in_cache(src_addr)) != INVALID_ADDR_NUM) {
+        addr_info = &cache_env.cache_addr[addr_index];
+        if (addr_info->ass_addr == NULL) {
+            addr_info->ass_addr =list_new(NULL);
+        }
+        return list_append(addr_info->ass_addr, p_ass_buf);
+    }
+
+    return FALSE;
+}
+
+BOOLEAN bta_gattc_co_cache_remove_ass_addr(BD_ADDR src_addr, BD_ADDR ass_addr)
+{
+    UINT8 addr_index = 0;
+    cache_addr_info_t *addr_info;
+    if ((addr_index = bta_gattc_co_find_addr_in_cache(src_addr)) != INVALID_ADDR_NUM) {
+        addr_info = &cache_env.cache_addr[addr_index];
+        if (addr_info->ass_addr != NULL) {
+            for (list_node_t *sn = list_begin(addr_info->ass_addr);
+             sn != list_end(addr_info->ass_addr); sn = list_next(sn)) {
+                void *addr = list_node(sn);
+                if (!memcmp(addr, ass_addr, sizeof(BD_ADDR))) {
+                    return list_remove(addr_info->ass_addr, addr);
+                }
+            }
+            //return list_remove(addr_info->ass_addr, ass_addr);
+        } else {
+            return FALSE;
+        }
+    }
+
+    return FALSE;
+}
+
+UINT8* bta_gattc_co_cache_find_src_addr(BD_ADDR ass_addr, UINT8 *index)
+{
+    UINT8 num = cache_env.num_addr;
+    cache_addr_info_t *addr_info = &cache_env.cache_addr[0];
+    UINT8 *addr_data;
+    //Check the ass_addr list is NULL or not
+    if (addr_info->ass_addr == NULL) {
+        *index = INVALID_ADDR_NUM;
+        return NULL;
+    }
+
+    for (int i = 0; i < num; i++) {
+       for (const list_node_t *node = list_begin(addr_info->ass_addr); node != list_end(addr_info->ass_addr); 
+            node = list_next(node)) {
+            addr_data = (UINT8 *)list_node(node);
+           if (!memcmp(addr_data, ass_addr, sizeof(BD_ADDR))) {
+               *index = i;
+               return (UINT8 *)addr_info->addr;
+           }
+       }
+       addr_info++;
+
+       if (addr_info->ass_addr == NULL) {
+           *index = INVALID_ADDR_NUM;
+           return NULL;
+       }
+    }
+
+    *index = INVALID_ADDR_NUM;
+    return NULL;
+}
+
+BOOLEAN bta_gattc_co_cache_clear_ass_addr(BD_ADDR src_addr)
+{
+    UINT8 addr_index = 0;
+    cache_addr_info_t *addr_info;
+    if ((addr_index = bta_gattc_co_find_addr_in_cache(src_addr)) != INVALID_ADDR_NUM) {
+        addr_info = &cache_env.cache_addr[addr_index];
+        if (addr_info->ass_addr != NULL) {
+            list_clear(addr_info->ass_addr);
+        } else {
+            return FALSE;
+        }
+        return TRUE;
+    }
+
+    return FALSE;
 }
 
 #endif /* #if( defined BLE_INCLUDED ) && (BLE_INCLUDED == TRUE) */

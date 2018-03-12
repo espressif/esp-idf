@@ -183,6 +183,8 @@ typedef UINT8 tBTA_GATT_STATUS;
 #define BTA_GATTC_DISCONNECT_EVT        36 /* GATTC DISCONNECT  event */
 #define BTA_GATTC_READ_MULTIPLE_EVT     37 /* GATTC Read mutiple event */
 #define BTA_GATTC_QUEUE_FULL_EVT        38 /* GATTC queue full event */
+#define BTA_GATTC_ASSOCIAT_EVT          39 /* GATTC association address event */
+#define BTA_GATTC_GET_ADDR_LIST_EVT     40 /* GATTC get address list in the cache event */
 
 typedef UINT8 tBTA_GATTC_EVT;
 
@@ -365,11 +367,23 @@ typedef struct {
 } tBTA_GATTC_QUEUE_FULL;
 
 typedef struct {
+    tBTA_GATT_STATUS   status;
+    tBTA_GATTC_IF      client_if;
+} tBTA_GATTC_SET_ASSOCIAT;
+
+typedef struct {
+    tBTA_GATT_STATUS    status;
+    tBTA_GATTC_IF       client_if;
+    UINT8               num_addr;
+    BD_ADDR             *bda_list;
+} tBTA_GATTC_GET_ADDR_LIST;
+
+typedef struct {
     tBTA_GATT_STATUS        status;
     tBTA_GATTC_IF           client_if;
     UINT16                  conn_id;
     BD_ADDR                 remote_bda;
-}tBTA_GATTC_OPEN_CLOSE;
+} tBTA_GATTC_OPEN_CLOSE;
 
 typedef struct {
     tBTA_GATTC_IF           client_if;
@@ -413,6 +427,8 @@ typedef union {
     tBTA_GATTC_CONGEST      congest;
     tBTA_GATTC_QUEUE_FULL   queue_full;
     tBTA_GATTC_SERVICE_CHANGE srvc_chg;     /* service change event */
+    tBTA_GATTC_SET_ASSOCIAT set_associa;
+    tBTA_GATTC_GET_ADDR_LIST get_addr_list;
 } tBTA_GATTC;
 
 /* GATTC enable callback function */
@@ -1084,6 +1100,10 @@ extern void BTA_GATTC_ReadMultiple(UINT16 conn_id, tBTA_GATTC_MULTI *p_read_mult
 **
 *******************************************************************************/
 extern void BTA_GATTC_Refresh(BD_ADDR remote_bda);
+
+extern void BTA_GATTC_CacheAssociat(tBTA_GATTC_IF client_if, BD_ADDR src_addr, BD_ADDR ass_addr, BOOLEAN is_associa);
+
+extern void BTA_GATTC_CacheGetAddrList(tBTA_GATTC_IF client_if);
 
 
 /*******************************************************************************

@@ -65,6 +65,8 @@ typedef enum {
     ESP_GATTC_DISCONNECT_EVT          = 41,       /*!< When the ble physical connection disconnected, the event comes */
     ESP_GATTC_READ_MULTIPLE_EVT       = 42,       /*!< When the ble characteristic or descriptor multiple complete, the event comes */
     ESP_GATTC_QUEUE_FULL_EVT          = 43,       /*!< When the gattc command queue full, the event comes */
+    ESP_GATTC_SET_ASSOCIAT_EVT        = 44,       /*!< When the ble gattc set the associat address complete, the event comes */
+    ESP_GATTC_GET_ADDR_LIST_EVT       = 45,       /*!< When the ble get gattc address list in cache finish, the event comes */
 } esp_gattc_cb_event_t;
 
 
@@ -215,6 +217,20 @@ typedef union {
         uint16_t conn_id;               /*!< Connection id */
         esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address */
     } disconnect;                       /*!< Gatt client callback param of ESP_GATTC_DISCONNECT_EVT */
+    /**
+     * @brief ESP_GATTC_SET_ASSOCIAT_EVT
+     */
+    struct gattc_set_ass_addr_cmp_evt_param {
+        esp_gatt_status_t status;      /*!< Operation status */
+    } set_ass_cmp;                     /*!< Gatt client callback param of ESP_GATTC_SET_ASSOCIAT_EVT */
+    /**
+     * @brief ESP_GATTC_GET_ADDR_LIST_EVT
+     */
+    struct gattc_get_addr_list_evt_param {
+        esp_gatt_status_t status;      /*!< Operation status */
+        uint8_t num_addr;              /*!< The number of address in the gattc cache address list */
+        esp_bd_addr_t *addr_list;      /*!< The pointer to the address list which has been get from the gattc cache */
+    } get_addr_list;                   /*!< Gatt client callback param of ESP_GATTC_GET_ADDR_LIST_EVT */
 
     /**
      * @brief ESP_GATTC_QUEUE_FULL_EVT
@@ -783,6 +799,34 @@ esp_err_t esp_ble_gattc_unregister_for_notify (esp_gatt_if_t gattc_if,
 *
 */
 esp_err_t esp_ble_gattc_cache_refresh(esp_bd_addr_t remote_bda);
+
+/**
+* @brief           Add or delete the associated address with the source address.
+*
+* @param[in]       gattc_if: Gatt client access interface.
+* @param[in]       src_addr: the source address which provide the attribute table.
+* @param[in]       ass_addr: the associated device address which went to share the attribute table with the source address.
+* @param[in]       is_associa: true add the associated device address, false remove the associated device address.
+* @return
+*                  - ESP_OK: success
+*                  - other: failed
+*
+*/
+esp_err_t esp_ble_gattc_cache_associa(esp_gatt_if_t gattc_if, esp_bd_addr_t src_addr, 
+                                      esp_bd_addr_t ass_addr, bool is_associa);
+/**
+* @brief           Get the address list which has store the attribute table in the gattc cache. There will
+*                  callback ESP_GATTC_GET_ADDR_LIST_EVT event when get address list complete.
+*
+* @param[in]       gattc_if: Gatt client access interface.
+* @return
+*                  - ESP_OK: success
+*                  - other: failed
+*
+*/
+esp_err_t esp_ble_gattc_cache_get_addr_list(esp_gatt_if_t gattc_if);
+
+
 
 #ifdef __cplusplus
 }

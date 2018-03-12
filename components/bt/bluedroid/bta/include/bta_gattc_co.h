@@ -25,6 +25,7 @@
 #define BTA_GATTC_CO_H
 
 #include "bta_gatt_api.h"
+#include "hashkey.h"
 
 /*******************************************************************************
 **
@@ -41,8 +42,7 @@
 ** Returns          void.
 **
 *******************************************************************************/
-extern void bta_gattc_co_cache_open(BD_ADDR server_bda, UINT16 evt,
-                                    UINT16 conn_id, BOOLEAN to_save);
+extern tBTA_GATT_STATUS bta_gattc_co_cache_open(BD_ADDR server_bda, BOOLEAN to_save, UINT8 *index);
 
 /*******************************************************************************
 **
@@ -75,9 +75,8 @@ extern void bta_gattc_co_cache_close(BD_ADDR server_bda, UINT16 conn_id);
 ** Returns
 **
 *******************************************************************************/
-extern void bta_gattc_co_cache_save(BD_ADDR server_bda, UINT16 evt,
-                                    UINT16 num_attr, tBTA_GATTC_NV_ATTR *p_attr,
-                                    UINT16 attr_index, UINT16 conn_id);
+extern void bta_gattc_co_cache_save (BD_ADDR server_bda, UINT16 num_attr,
+                              tBTA_GATTC_NV_ATTR *p_attr_list);
 
 /*******************************************************************************
 **
@@ -94,8 +93,7 @@ extern void bta_gattc_co_cache_save(BD_ADDR server_bda, UINT16 evt,
 ** Returns
 **
 *******************************************************************************/
-extern void bta_gattc_co_cache_load(BD_ADDR server_bda, UINT16 evt,
-                                    UINT16 start_index, UINT16 conn_id);
+extern tBTA_GATT_STATUS bta_gattc_co_cache_load(tBTA_GATTC_NV_ATTR *attr, UINT8 index);
 
 /*******************************************************************************
 **
@@ -110,5 +108,31 @@ extern void bta_gattc_co_cache_load(BD_ADDR server_bda, UINT16 evt,
 **
 *******************************************************************************/
 extern void bta_gattc_co_cache_reset(BD_ADDR server_bda);
+
+extern size_t bta_gattc_get_cache_attr_length(UINT8 index);
+
+extern void bta_gattc_co_cache_addr_init(void);
+
+extern BOOLEAN bta_gattc_co_addr_in_cache(BD_ADDR bda);
+
+extern uint8_t bta_gattc_co_find_addr_in_cache(BD_ADDR bda);
+
+extern uint8_t bta_gattc_co_find_hash_in_cache(coap_key_t hash_key);
+
+extern UINT8 bta_gattc_co_get_addr_num(void);
+
+extern void bta_gattc_co_get_addr_list(BD_ADDR *addr_list);
+
+extern void bta_gattc_co_cache_addr_save(BD_ADDR bd_addr, coap_key_t hash_key);
+
+extern BOOLEAN bta_gattc_co_cache_new_ass_list(BD_ADDR src_addr, uint8_t index);
+
+extern BOOLEAN bta_gattc_co_cache_append_ass_addr(BD_ADDR src_addr, BD_ADDR ass_addr);
+
+extern BOOLEAN bta_gattc_co_cache_remove_ass_addr(BD_ADDR src_addr, BD_ADDR ass_addr);
+
+uint8_t* bta_gattc_co_cache_find_src_addr(BD_ADDR ass_addr, uint8_t *index);
+
+extern BOOLEAN bta_gattc_co_cache_clear_ass_addr(BD_ADDR src_addr);
 
 #endif /* BTA_GATT_CO_H */

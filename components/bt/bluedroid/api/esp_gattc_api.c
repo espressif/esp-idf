@@ -547,5 +547,37 @@ esp_err_t esp_ble_gattc_cache_refresh(esp_bd_addr_t remote_bda)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+esp_err_t esp_ble_gattc_cache_associa(esp_gatt_if_t gattc_if, esp_bd_addr_t src_addr, esp_bd_addr_t ass_addr, bool is_associa)
+{
+    btc_msg_t msg;
+    btc_ble_gattc_args_t arg;
+
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GATTC;
+    msg.act = BTC_GATTC_ACT_CACHE_ASSOCIAT;
+    arg.cache_associat.is_associa = is_associa;
+    arg.cache_associat.gattc_if = gattc_if;
+    memcpy(arg.cache_associat.src_addr, src_addr, sizeof(esp_bd_addr_t));
+    memcpy(arg.cache_associat.ass_addr, ass_addr, sizeof(esp_bd_addr_t));
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_gattc_cache_get_addr_list(esp_gatt_if_t gattc_if)
+{
+    btc_msg_t msg;
+    btc_ble_gattc_args_t arg;
+
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GATTC;
+    msg.act = BTC_GATTC_ATC_CACHE_GET_ADDR_LIST;
+    arg.get_addr_list.gattc_if = gattc_if;
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
 #endif  ///GATTC_INCLUDED == TRUE
 
