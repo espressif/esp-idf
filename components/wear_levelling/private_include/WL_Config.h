@@ -29,12 +29,12 @@ typedef struct WL_Config_s {
     uint32_t wr_size;       /*!< Minimum amount of bytes per one block at write operation: 1...*/
     uint32_t version;       /*!< A version of current implementatioon. To erase and reallocate complete memory this ID must be different from id before.*/
     size_t   temp_buff_size;  /*!< Size of temporary allocated buffer to copy from one flash area to another. The best way, if this value will be equal to sector size.*/
-    uint32_t reserved[5];   /*!< dummy array to make wl_config_t size compatible with flash encryption (divided by 16)*/
+    uint32_t reserved[3];   /*!< dummy array to make wl_config_t size compatible with flash encryption (divided by 16)*/
     uint32_t crc;           /*!< CRC for this config*/
 public:
     WL_Config_s()
     {
-        for (int i=0 ; i< 5 ; i++) this->reserved[i] = 0;
+        for (int i=0 ; i< 3 ; i++) this->reserved[i] = 0;
     }
 } wl_config_t;
 
