@@ -20,6 +20,9 @@
 * @brief This class is used as a structure to configure wear levelling module
 *
 */
+#ifndef wl_config_t_size
+#define wl_config_t_size (int)((48 - (2*sizeof(size_t) + 7*sizeof(uint32_t)) + sizeof(uint32_t) - 1)/sizeof(uint32_t))
+#endif // wl_config_t_size
 typedef struct WL_Config_s {
     size_t   start_addr;      /*!< start address in the flash*/
     uint32_t full_mem_size; /*!< Amount of memory used to store data in bytes*/
@@ -29,12 +32,12 @@ typedef struct WL_Config_s {
     uint32_t wr_size;       /*!< Minimum amount of bytes per one block at write operation: 1...*/
     uint32_t version;       /*!< A version of current implementatioon. To erase and reallocate complete memory this ID must be different from id before.*/
     size_t   temp_buff_size;  /*!< Size of temporary allocated buffer to copy from one flash area to another. The best way, if this value will be equal to sector size.*/
-    uint32_t reserved[3];   /*!< dummy array to make wl_config_t size compatible with flash encryption (divided by 16)*/
+    uint32_t reserved[wl_config_t_size];   /*!< dummy array to make wl_config_t size compatible with flash encryption (divided by 16)*/
     uint32_t crc;           /*!< CRC for this config*/
 public:
     WL_Config_s()
     {
-        for (int i=0 ; i< 3 ; i++) this->reserved[i] = 0;
+        for (int i=0 ; i< wl_config_t_size ; i++) this->reserved[i] = 0;
     }
 } wl_config_t;
 
