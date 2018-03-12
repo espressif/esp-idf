@@ -142,6 +142,18 @@ static void btc_gattc_copy_req_data(btc_msg_t *msg, void *p_dest, void *p_src)
             }
             break;
         }
+        case BTA_GATTC_GET_ADDR_LIST_EVT: {
+            if (p_src_data->get_addr_list.bda_list != NULL) {
+                uint8_t num_addr = p_src_data->get_addr_list.num_addr;
+                p_dest_data->get_addr_list.bda_list = (BD_ADDR *)osi_malloc(sizeof(BD_ADDR) * num_addr);
+                if (p_dest_data->get_addr_list.bda_list) {
+                    memcpy(p_dest_data->get_addr_list.bda_list, p_src_data->get_addr_list.bda_list, sizeof(BD_ADDR) * num_addr);
+                } else {
+                    LOG_ERROR("%s %d no mem\n", __func__, msg->act);
+                }
+            }
+            break;
+        }
         default:
             break;
     }
@@ -156,6 +168,12 @@ static void btc_gattc_free_req_data(btc_msg_t *msg)
         case BTA_GATTC_READ_MULTIPLE_EVT: {
             if (arg->read.p_value) {
                 osi_free(arg->read.p_value);
+            }
+            break;
+        }
+        case BTA_GATTC_GET_ADDR_LIST_EVT: {
+            if (arg->get_addr_list.bda_list) {
+                osi_free(arg->get_addr_list.bda_list);
             }
             break;
         }
@@ -721,6 +739,15 @@ void btc_gattc_call_handler(btc_msg_t *msg)
     case BTC_GATTC_ACT_CACHE_REFRESH:
         BTA_GATTC_Refresh(arg->cache_refresh.remote_bda);
         break;
+    case BTC_GATTC_ACT_CACHE_ASSOCIAT:
+        BTA_GATTC_CacheAssociat(arg->cache_associat.gattc_if,
+                                arg->cache_associat.src_addr,
+                                arg->cache_associat.ass_addr,
+                                arg->cache_associat.is_associa);
+        break;
+    case BTC_GATTC_ATC_CACHE_GET_ADDR_LIST:
+        BTA_GATTC_CacheGetAddrList(arg->get_addr_list.gattc_if);
+        break;
     default:
         LOG_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
         break;
@@ -926,6 +953,20 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
         param.queue_full.status = arg->status;
         param.queue_full.is_full = queue_full->is_full;
         btc_gattc_cb_to_app(ESP_GATTC_QUEUE_FULL_EVT, gattc_if, &param);
+        break;
+    }
+    case BTA_GATTC_ASSOCIAT_EVT: {
+        gattc_if = arg->set_associa.client_if;
+        param.set_ass_cmp.status = arg->set_associa.status;
+        btc_gattc_cb_to_app(ESP_GATTC_SET_ASSOCIAT_EVT, gattc_if, &param);
+        break;
+    }
+    case BTA_GATTC_GET_ADDR_LIST_EVT: {
+        gattc_if = arg->get_addr_list.client_if;
+        param.get_addr_list.status = arg->get_addr_list.status;
+        param.get_addr_list.num_addr = arg->get_addr_list.num_addr;
+        param.get_addr_list.addr_list = arg->get_addr_list.bda_list;
+        btc_gattc_cb_to_app(ESP_GATTC_GET_ADDR_LIST_EVT, gattc_if, &param);
         break;
     }
     default:

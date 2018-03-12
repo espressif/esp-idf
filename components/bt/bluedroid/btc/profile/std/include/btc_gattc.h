@@ -38,6 +38,8 @@ typedef enum {
     BTC_GATTC_ACT_REG_FOR_NOTIFY,
     BTC_GATTC_ACT_UNREG_FOR_NOTIFY,
     BTC_GATTC_ACT_CACHE_REFRESH,
+    BTC_GATTC_ACT_CACHE_ASSOCIAT,
+    BTC_GATTC_ATC_CACHE_GET_ADDR_LIST,
 } btc_gattc_act_t;
 
 /* btc_ble_gattc_args_t */
@@ -167,6 +169,17 @@ typedef union {
     struct cache_refresh_arg {
         esp_bd_addr_t remote_bda;
     } cache_refresh;
+    //BTC_GATTC_ACT_CACHE_ASSOCIAT
+    struct cache_associat_arg {
+        esp_gatt_if_t gattc_if;
+        esp_bd_addr_t src_addr;
+        esp_bd_addr_t ass_addr;
+        bool is_associa;
+    } cache_associat;
+    //BTC_GATTC_ATC_CACHE_GET_ADDR_LIST
+    struct cache_get_addr_list_arg {
+        esp_gatt_if_t gattc_if;
+    }get_addr_list;
 } btc_ble_gattc_args_t;
 
 void btc_gattc_call_handler(btc_msg_t *msg);

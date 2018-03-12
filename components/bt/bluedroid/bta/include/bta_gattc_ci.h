@@ -36,7 +36,7 @@ typedef struct {
     tBTA_GATT_STATUS  status;
 } tBTA_GATTC_CI_EVT;
 
-#define BTA_GATTC_NV_LOAD_MAX   10
+#define BTA_GATTC_NV_LOAD_MAX   100
 
 /* Read Ready Event */
 typedef struct {

@@ -929,6 +929,35 @@ void BTA_GATTC_Refresh(BD_ADDR remote_bda)
     return;
 }
 
+void BTA_GATTC_CacheAssociat(tBTA_GATTC_IF client_if, BD_ADDR src_addr, BD_ADDR ass_addr, BOOLEAN is_associa)
+{
+    tBTA_GATTC_API_CACHE_ASSO *p_buf;
+
+    if ((p_buf = (tBTA_GATTC_API_CACHE_ASSO *)osi_malloc(sizeof(tBTA_GATTC_API_CACHE_ASSO))) != NULL) {
+        p_buf->hdr.event = BTA_GATTC_API_CACHE_ASSOCIAT_EVT;
+        p_buf->is_associa = is_associa;
+        p_buf->client_if  = client_if;
+        memcpy(p_buf->src_addr, src_addr, sizeof(BD_ADDR));
+        memcpy(p_buf->ass_addr, ass_addr, sizeof(BD_ADDR));
+
+        bta_sys_sendmsg(p_buf);
+        
+    }
+    return;
+}
+
+void BTA_GATTC_CacheGetAddrList(tBTA_GATTC_IF client_if)
+{
+    tBTA_GATTC_API_GET_ADDR *p_buf;
+    if ((p_buf = (tBTA_GATTC_API_GET_ADDR *)osi_malloc(sizeof(tBTA_GATTC_API_GET_ADDR))) != NULL) {
+        p_buf->hdr.event = BTA_GATTC_API_CACHE_GET_ADDR_LIST_EVT;
+        p_buf->client_if = client_if;
+
+        bta_sys_sendmsg(p_buf);
+    }
+    return;
+}
+
 /*******************************************************************************
 **
 ** Function         BTA_GATTC_Listen

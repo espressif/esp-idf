@@ -49,6 +49,8 @@ static size_t bta_gattc_get_db_size_with_type(list_t *services,
                                               bt_gatt_db_attribute_type_t type,
                                               tBT_UUID *char_uuid,
                                               UINT16 start_handle, UINT16 end_handle);
+static void bta_gattc_cache_write(BD_ADDR server_bda, UINT16 num_attr,
+                           tBTA_GATTC_NV_ATTR *attr);
 tBTA_GATTC_SERVICE*  bta_gattc_find_matching_service(const list_t *services, UINT16 handle);
 tBTA_GATTC_DESCRIPTOR*  bta_gattc_get_descriptor_srcb(tBTA_GATTC_SERV *p_srcb, UINT16 handle);
 tBTA_GATTC_CHARACTERISTIC*  bta_gattc_get_characteristic_srcb(tBTA_GATTC_SERV *p_srcb, UINT16 handle);
@@ -551,10 +553,7 @@ static void bta_gattc_explore_srvc(UINT16 conn_id, tBTA_GATTC_SERV *p_srvc_cb)
     /* save cache to NV */
     p_clcb->p_srcb->state = BTA_GATTC_SERV_SAVE;
 
-    if (btm_sec_is_a_bonded_dev(p_srvc_cb->server_bda)) {
-        bta_gattc_cache_save(p_clcb->p_srcb, p_clcb->bta_conn_id);
-    }
-
+    bta_gattc_cache_save(p_clcb->p_srcb, p_clcb->bta_conn_id);
     bta_gattc_reset_discover_st(p_clcb->p_srcb, BTA_GATT_OK);
 }
 /*******************************************************************************
@@ -1217,6 +1216,7 @@ void bta_gattc_get_db_with_opration(UINT16 conn_id,
 
     tBTA_GATTC_SERV *p_srcb = p_clcb->p_srcb;
     if (!p_srcb->p_srvc_cache || list_is_empty(p_srcb->p_srvc_cache)) {
+        APPL_TRACE_DEBUG("the service cache is empty.");
         *count = 0;
         *char_db = NULL;
         return;
@@ -1225,6 +1225,7 @@ void bta_gattc_get_db_with_opration(UINT16 conn_id,
     size_t db_size = ((end_handle - start_handle) < p_srcb->total_attr) ? (end_handle - start_handle) : p_srcb->total_attr;
 
     if (!db_size) {
+        APPL_TRACE_DEBUG("the db size is 0.");
         *count = 0;
         *char_db = NULL;
         return;
@@ -1233,6 +1234,7 @@ void bta_gattc_get_db_with_opration(UINT16 conn_id,
     void *buffer = osi_malloc(db_size*sizeof(btgatt_db_element_t));
 
     if (!buffer) {
+        APPL_TRACE_DEBUG("the buffer is NULL.");
         *count = 0;
         *char_db = NULL;
         return;
@@ -1303,6 +1305,7 @@ void bta_gattc_get_db_with_opration(UINT16 conn_id,
             }
             if ((op == GATT_OP_GET_ALL_CHAR || op == GATT_OP_GET_CHAR_BY_UUID) &&
                 (char_uuid == NULL || bta_gattc_uuid_compare(&p_char->uuid, char_uuid, TRUE))) {
+                APPL_TRACE_DEBUG("%s(), uuid match.", __func__);
                 bta_gattc_fill_gatt_db_el(curr_db_attr,
                                           BTGATT_DB_CHARACTERISTIC,
                                           p_char->handle,
@@ -1813,7 +1816,7 @@ void bta_gattc_rebuild_cache(tBTA_GATTC_SERV *p_srvc_cb, UINT16 num_attr,
                              tBTA_GATTC_NV_ATTR *p_attr)
 {
     /* first attribute loading, initialize buffer */
-    APPL_TRACE_ERROR("%s: bta_gattc_rebuild_cache", __func__);
+    APPL_TRACE_DEBUG("%s: bta_gattc_rebuild_cache, num_attr = %d", __func__, num_attr);
 
     list_free(p_srvc_cb->p_srvc_cache);
     p_srvc_cb->p_srvc_cache = NULL;
@@ -1892,6 +1895,11 @@ void bta_gattc_cache_save(tBTA_GATTC_SERV *p_srvc_cb, UINT16 conn_id)
     int i = 0;
     size_t db_size = bta_gattc_get_db_size(p_srvc_cb->p_srvc_cache, 0x0000, 0xFFFF);
     tBTA_GATTC_NV_ATTR *nv_attr = osi_malloc(db_size * sizeof(tBTA_GATTC_NV_ATTR));
+    // This step is very importent, if not clear the memory, the hasy key base on the attribute case will be not corret.
+    if (nv_attr != NULL) {
+        memset(nv_attr, 0, db_size * sizeof(tBTA_GATTC_NV_ATTR));
+    }
+
     if (!nv_attr) {
         APPL_TRACE_WARNING("%s(), no resource.", __func__);
         return;
@@ -1967,6 +1975,7 @@ void bta_gattc_cache_save(tBTA_GATTC_SERV *p_srvc_cb, UINT16 conn_id)
     }
 
     /* TODO: Gattc cache write/read need to be added in IDF 3.1*/
+    bta_gattc_cache_write(p_srvc_cb->server_bda, db_size, nv_attr);
     osi_free(nv_attr);
 }
 
@@ -1983,56 +1992,56 @@ void bta_gattc_cache_save(tBTA_GATTC_SERV *p_srvc_cb, UINT16 conn_id)
 *******************************************************************************/
 bool bta_gattc_cache_load(tBTA_GATTC_CLCB *p_clcb)
 {
-#if 0
-    char fname[255] = {0};
-    bta_gattc_generate_cache_file_name(fname, p_clcb->p_srcb->server_bda);
+    /* open NV cache and send call in */
+    tBTA_GATT_STATUS status = BTA_GATT_OK;
+    UINT8 index = 0;
+    tBTA_GATTC_NV_ATTR  *attr = NULL;
 
-    FILE *fd = fopen(fname, "rb");
-    if (!fd) {
-        APPL_TRACE_ERROR("%s: can't open GATT cache file %s for reading, error: %s",
-                         __func__, fname, strerror(errno));
+    if ((status = bta_gattc_co_cache_open(p_clcb->p_srcb->server_bda, true, &index)) != BTA_GATT_OK) {
+        APPL_TRACE_DEBUG("%s(), gattc cache open fail, index = %x", __func__, index);
         return false;
     }
 
-    UINT16 cache_ver = 0;
-    tBTA_GATTC_NV_ATTR  *attr = NULL;
-    bool success = false;
+    size_t num_attr = bta_gattc_get_cache_attr_length(index) / sizeof(tBTA_GATTC_NV_ATTR);
 
-    if (fread(&cache_ver, sizeof(UINT16), 1, fd) != 1) {
-        APPL_TRACE_ERROR("%s: can't read GATT cache version from: %s", __func__, fname);
-        goto done;
+    if (!num_attr) {
+        return false;
     }
-
-    if (cache_ver != GATT_CACHE_VERSION) {
-        APPL_TRACE_ERROR("%s: wrong GATT cache version: %s", __func__, fname);
-        goto done;
+    //don't forget to set the total attribute number.
+    p_clcb->p_srcb->total_attr = num_attr;
+    APPL_TRACE_DEBUG("%s(), index = %x, num_attr = %d", __func__, index, num_attr);
+    if ((attr = osi_malloc(sizeof(tBTA_GATTC_NV_ATTR) * num_attr)) == NULL) {
+        APPL_TRACE_ERROR("%s, No Memory.", __func__);
+        return false;
     }
-
-    UINT16 num_attr = 0;
-
-    if (fread(&num_attr, sizeof(UINT16), 1, fd) != 1) {
-        APPL_TRACE_ERROR("%s: can't read number of GATT attributes: %s", __func__, fname);
-        goto done;
-    }
-
-    attr = osi_malloc(sizeof(tBTA_GATTC_NV_ATTR) * num_attr);
-
-    if (fread(attr, sizeof(tBTA_GATTC_NV_ATTR), 0xFF, fd) != num_attr) {
-        APPL_TRACE_ERROR("%s: can't read GATT attributes: %s", __func__, fname);
-        goto done;
+    if ((status = bta_gattc_co_cache_load(attr, index)) != BTA_GATT_OK) {
+        APPL_TRACE_DEBUG("%s(), gattc cache load fail, status = %x", __func__, status);
+        return false;
     }
 
     bta_gattc_rebuild_cache(p_clcb->p_srcb, num_attr, attr);
-
-    success = true;
-
-done:
+    //free the attr buffer after used.
     osi_free(attr);
-    fclose(fd);
-    return success;
-#endif
-    bool success = false;
-    return success;
+    return true;
+}
+
+/*******************************************************************************
+**
+** Function         bta_gattc_cache_write
+**
+** Description      This callout function is executed by GATT when a server cache
+**                  is available to save.
+**
+** Parameter        server_bda: server bd address of this cache belongs to
+**                  num_attr: number of attribute to be save.
+**                  attr: pointer to the list of attributes to save.
+** Returns
+**
+*******************************************************************************/
+static void bta_gattc_cache_write(BD_ADDR server_bda, UINT16 num_attr,
+                           tBTA_GATTC_NV_ATTR *attr)
+{
+    bta_gattc_co_cache_save(server_bda, num_attr, attr);
 }
 
 /*******************************************************************************
@@ -2052,6 +2061,7 @@ void bta_gattc_cache_reset(BD_ADDR server_bda)
     BTIF_TRACE_DEBUG("%s", __func__);
     char fname[255] = {0};
     bta_gattc_generate_cache_file_name(fname, server_bda);
+    bta_gattc_co_cache_reset(server_bda);
     //unlink(fname);
 }
 #endif /* BTA_GATT_INCLUDED */
