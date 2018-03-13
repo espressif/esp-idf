@@ -1,0 +1,1 @@
+.. include:: ../../en/get-started/get-started-devkitc-v2.rst

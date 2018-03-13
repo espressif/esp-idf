@@ -1,0 +1,1 @@
+.. include:: ../../../en/api-reference/system/mem_alloc.rst

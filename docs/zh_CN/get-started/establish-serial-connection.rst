@@ -1,0 +1,1 @@
+.. include:: ../../en/get-started/establish-serial-connection.rst

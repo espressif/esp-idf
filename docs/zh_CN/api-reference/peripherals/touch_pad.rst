@@ -1,0 +1,1 @@
+.. include:: ../../../en/api-reference/peripherals/touch_pad.rst

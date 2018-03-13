@@ -1,0 +1,1 @@
+.. include:: ../../en/api-guides/partition-tables.rst

@@ -1,0 +1,1 @@
+.. include:: ../../../en/api-reference/ethernet/esp_eth.rst
