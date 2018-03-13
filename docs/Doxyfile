@@ -24,146 +24,146 @@ INPUT = \
     ##
     ## Wi-Fi - API Reference
     ##
-    ../components/esp32/include/esp_wifi.h \
-    ../components/esp32/include/esp_wifi_types.h \
-    ../components/esp32/include/esp_smartconfig.h \
-    ../components/esp32/include/esp_now.h \
+    ../../components/esp32/include/esp_wifi.h \
+    ../../components/esp32/include/esp_wifi_types.h \
+    ../../components/esp32/include/esp_smartconfig.h \
+    ../../components/esp32/include/esp_now.h \
     ## Bluetooth - API Reference
     ## Controller && VHCI
-    ../components/bt/include/bt.h \
+    ../../components/bt/include/bt.h \
     ## Bluetooth COMMON
     ## Issue with __attribute__
-    ../components/bt/bluedroid/api/include/esp_bt_defs.h \
-    ../components/bt/bluedroid/api/include/esp_bt_main.h \
-    ../components/bt/bluedroid/api/include/esp_bt_device.h \
+    ../../components/bt/bluedroid/api/include/esp_bt_defs.h \
+    ../../components/bt/bluedroid/api/include/esp_bt_main.h \
+    ../../components/bt/bluedroid/api/include/esp_bt_device.h \
     ## Bluetooth LE
-    ../components/bt/bluedroid/api/include/esp_gap_ble_api.h \
+    ../../components/bt/bluedroid/api/include/esp_gap_ble_api.h \
     ## Issue with __attribute__
-    ../components/bt/bluedroid/api/include/esp_gatt_defs.h \
-    ../components/bt/bluedroid/api/include/esp_gatts_api.h \
-    ../components/bt/bluedroid/api/include/esp_gattc_api.h \
-    ../components/bt/bluedroid/api/include/esp_blufi_api.h \
+    ../../components/bt/bluedroid/api/include/esp_gatt_defs.h \
+    ../../components/bt/bluedroid/api/include/esp_gatts_api.h \
+    ../../components/bt/bluedroid/api/include/esp_gattc_api.h \
+    ../../components/bt/bluedroid/api/include/esp_blufi_api.h \
     ## Bluetooth Classic
-    ../components/bt/bluedroid/api/include/esp_gap_bt_api.h \
+    ../../components/bt/bluedroid/api/include/esp_gap_bt_api.h \
     ## Issue with __attribute__
-    ../components/bt/bluedroid/api/include/esp_a2dp_api.h \
-    ../components/bt/bluedroid/api/include/esp_avrc_api.h \
-    ../components/bt/bluedroid/api/include/esp_spp_api.h \
+    ../../components/bt/bluedroid/api/include/esp_a2dp_api.h \
+    ../../components/bt/bluedroid/api/include/esp_avrc_api.h \
+    ../../components/bt/bluedroid/api/include/esp_spp_api.h \
     ##
     ## Ethernet - API Reference
     ##
-    ../components/ethernet/include/esp_eth.h \
-    ../components/ethernet/include/eth_phy/phy.h \
-    ../components/ethernet/include/eth_phy/phy_tlk110.h \
-    ../components/ethernet/include/eth_phy/phy_lan8720.h \
+    ../../components/ethernet/include/esp_eth.h \
+    ../../components/ethernet/include/eth_phy/phy.h \
+    ../../components/ethernet/include/eth_phy/phy_tlk110.h \
+    ../../components/ethernet/include/eth_phy/phy_lan8720.h \
     ##
     ## Peripherals - API Reference
     ##
-    ../components/driver/include/driver/adc.h \
-    ../components/driver/include/driver/dac.h \
-    ../components/driver/include/driver/gpio.h \
-    ../components/driver/include/driver/rtc_io.h \
-    ../components/driver/include/driver/i2c.h \
-    ../components/driver/include/driver/i2s.h \
-    ../components/driver/include/driver/ledc.h \
-    ../components/driver/include/driver/mcpwm.h \
-    ../components/driver/include/driver/pcnt.h \
-    ../components/driver/include/driver/rmt.h \
-    ../components/driver/include/driver/sigmadelta.h \
-    ../components/driver/include/driver/spi_common.h \
-    ../components/driver/include/driver/spi_master.h \
-    ../components/driver/include/driver/spi_slave.h \
-    ../components/driver/include/driver/timer.h \
-    ../components/driver/include/driver/touch_pad.h \
-    ../components/driver/include/driver/uart.h \
-    ../components/esp_adc_cal/include/esp_adc_cal.h \
-    ../components/soc/esp32/include/soc/adc_channel.h \
-    ../components/soc/esp32/include/soc/dac_channel.h \
-    ../components/soc/esp32/include/soc/touch_channel.h \
-    ../components/soc/esp32/include/soc/uart_channel.h \
-    ../components/soc/esp32/include/soc/rtc_gpio_channel.h \
+    ../../components/driver/include/driver/adc.h \
+    ../../components/driver/include/driver/dac.h \
+    ../../components/driver/include/driver/gpio.h \
+    ../../components/driver/include/driver/rtc_io.h \
+    ../../components/driver/include/driver/i2c.h \
+    ../../components/driver/include/driver/i2s.h \
+    ../../components/driver/include/driver/ledc.h \
+    ../../components/driver/include/driver/mcpwm.h \
+    ../../components/driver/include/driver/pcnt.h \
+    ../../components/driver/include/driver/rmt.h \
+    ../../components/driver/include/driver/sigmadelta.h \
+    ../../components/driver/include/driver/spi_common.h \
+    ../../components/driver/include/driver/spi_master.h \
+    ../../components/driver/include/driver/spi_slave.h \
+    ../../components/driver/include/driver/timer.h \
+    ../../components/driver/include/driver/touch_pad.h \
+    ../../components/driver/include/driver/uart.h \
+    ../../components/esp_adc_cal/include/esp_adc_cal.h \
+    ../../components/soc/esp32/include/soc/adc_channel.h \
+    ../../components/soc/esp32/include/soc/dac_channel.h \
+    ../../components/soc/esp32/include/soc/touch_channel.h \
+    ../../components/soc/esp32/include/soc/uart_channel.h \
+    ../../components/soc/esp32/include/soc/rtc_gpio_channel.h \
     ##
     ## Protocols - API Reference
     ##
-    ../components/mdns/include/mdns.h \
+    ../../components/mdns/include/mdns.h \
     ##
     ## Storage - API Reference
     ##
     ## SPI Flash and Partition APIs
-    ../components/spi_flash/include/esp_spi_flash.h \
-    ../components/spi_flash/include/esp_partition.h \
-    ../components/bootloader_support/include/esp_flash_encrypt.h \
+    ../../components/spi_flash/include/esp_spi_flash.h \
+    ../../components/spi_flash/include/esp_partition.h \
+    ../../components/bootloader_support/include/esp_flash_encrypt.h \
     ## SPIFFS
-    ../components/spiffs/include/esp_spiffs.h \
+    ../../components/spiffs/include/esp_spiffs.h \
     ## SD/MMC Card Host
     ## NOTE: for three lines below header_file.inc is not used
-    ../components/sdmmc/include/sdmmc_cmd.h \
-    ../components/driver/include/driver/sdmmc_host.h \
-    ../components/driver/include/driver/sdmmc_types.h \
-    ../components/driver/include/driver/sdspi_host.h \
+    ../../components/sdmmc/include/sdmmc_cmd.h \
+    ../../components/driver/include/driver/sdmmc_host.h \
+    ../../components/driver/include/driver/sdmmc_types.h \
+    ../../components/driver/include/driver/sdspi_host.h \
     ## Non-Volatile Storage
-    ../components/nvs_flash/include/nvs.h \
-    ../components/nvs_flash/include/nvs_flash.h \
+    ../../components/nvs_flash/include/nvs.h \
+    ../../components/nvs_flash/include/nvs_flash.h \
     ## Virtual Filesystem
-    ../components/vfs/include/esp_vfs.h \
-    ../components/vfs/include/esp_vfs_dev.h \
+    ../../components/vfs/include/esp_vfs.h \
+    ../../components/vfs/include/esp_vfs_dev.h \
     ## FAT Filesystem
     ## NOTE: for two lines below header_file.inc is not used
-    ../components/fatfs/src/esp_vfs_fat.h \
-    ../components/fatfs/src/diskio.h \
+    ../../components/fatfs/src/esp_vfs_fat.h \
+    ../../components/fatfs/src/diskio.h \
     ## Wear Levelling
-    ../components/wear_levelling/include/wear_levelling.h \
+    ../../components/wear_levelling/include/wear_levelling.h \
     ##
     ## System - API Reference
     ##
     ## Memory Allocation    #
-    ../components/heap/include/esp_heap_caps.h \
-    ../components/heap/include/esp_heap_trace.h \
-    ../components/heap/include/esp_heap_caps_init.h \
-    ../components/heap/include/multi_heap.h \
+    ../../components/heap/include/esp_heap_caps.h \
+    ../../components/heap/include/esp_heap_trace.h \
+    ../../components/heap/include/esp_heap_caps_init.h \
+    ../../components/heap/include/multi_heap.h \
     ## Interrupt Allocation
-    ../components/esp32/include/esp_intr_alloc.h \
+    ../../components/esp32/include/esp_intr_alloc.h \
     ## Watchdogs
     ## NOTE: for two lines below header_file.inc is not used
-    ../components/esp32/include/esp_int_wdt.h \
-    ../components/esp32/include/esp_task_wdt.h \
+    ../../components/esp32/include/esp_int_wdt.h \
+    ../../components/esp32/include/esp_task_wdt.h \
     ## Hooks
-    ../components/esp32/include/esp_freertos_hooks.h \
+    ../../components/esp32/include/esp_freertos_hooks.h \
     ## Inter-Processor Call
-    ../components/esp32/include/esp_ipc.h \
+    ../../components/esp32/include/esp_ipc.h \
     ## Over The Air Updates (OTA)
-    ../components/app_update/include/esp_ota_ops.h \
+    ../../components/app_update/include/esp_ota_ops.h \
     ## Sleep
     ## NOTE: for line below header_file.inc is not used
-    ../components/esp32/include/esp_sleep.h \
+    ../../components/esp32/include/esp_sleep.h \
     ## Logging
-    ../components/log/include/esp_log.h \
+    ../../components/log/include/esp_log.h \
     ## Base MAC address
     ## NOTE: for line below header_file.inc is not used
-    ../components/esp32/include/esp_system.h \
+    ../../components/esp32/include/esp_system.h \
     ##
     ## ULP Coprocessor - API Guides
     ##
     ## NOTE: for line below header_file.inc is not used
-    ../components/ulp/include/esp32/ulp.h \
+    ../../components/ulp/include/esp32/ulp.h \
     ##
     ## Application Level Tracing - API Reference
     ##
-    ../components/app_trace/include/esp_app_trace.h \
+    ../../components/app_trace/include/esp_app_trace.h \
     ### Power management
-    ../components/esp32/include/esp_pm.h \
-    ../components/esp32/include/esp32/pm.h \
+    ../../components/esp32/include/esp_pm.h \
+    ../../components/esp32/include/esp32/pm.h \
     ### esp_timer, High Resolution Timer
-    ../components/esp32/include/esp_timer.h \
+    ../../components/esp32/include/esp_timer.h \
     ###
     ### FreeRTOS
     ###
-    ../components/freertos/include/freertos/task.h \
-    ../components/freertos/include/freertos/queue.h \
-    ../components/freertos/include/freertos/semphr.h \
-    ../components/freertos/include/freertos/timers.h \
-    ../components/freertos/include/freertos/event_groups.h \
-    ../components/freertos/include/freertos/ringbuf.h
+    ../../components/freertos/include/freertos/task.h \
+    ../../components/freertos/include/freertos/queue.h \
+    ../../components/freertos/include/freertos/semphr.h \
+    ../../components/freertos/include/freertos/timers.h \
+    ../../components/freertos/include/freertos/event_groups.h \
+    ../../components/freertos/include/freertos/ringbuf.h
 
 
 

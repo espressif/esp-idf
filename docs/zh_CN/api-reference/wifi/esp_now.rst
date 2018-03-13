@@ -1,0 +1,1 @@
+.. include:: ../../../en/api-reference/wifi/esp_now.rst

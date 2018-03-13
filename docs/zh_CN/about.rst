@@ -1,0 +1,1 @@
+.. include:: ../en/about.rst

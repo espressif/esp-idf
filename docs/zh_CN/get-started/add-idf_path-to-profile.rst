@@ -1,0 +1,1 @@
+.. include:: ../../en/get-started/add-idf_path-to-profile.rst

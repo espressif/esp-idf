@@ -1,0 +1,1 @@
+.. include:: ../../en/get-started/linux-setup-scratch.rst

@@ -1,0 +1,1 @@
+.. include:: ../../../en/api-reference/peripherals/sigmadelta.rst

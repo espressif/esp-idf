@@ -1,0 +1,1 @@
+.. include:: ../../en/api-guides/external-ram.rst

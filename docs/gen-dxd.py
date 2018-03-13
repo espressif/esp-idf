@@ -16,10 +16,10 @@ if 'BUILDDIR' in os.environ:
     builddir = os.environ['BUILDDIR']
 
 # Script configuration
-header_file_path_prefix = "../components/"
+header_file_path_prefix = "../../components/"
 """string: path prefix for header files.
 """
-doxyfile_path = "Doxyfile"
+doxyfile_path = "../Doxyfile"
 """string: path to a file containing header files to processs.
 """
 xml_directory_path = "xml"
