@@ -14,6 +14,11 @@
 #ifndef ESP_CORE_DUMP_H_
 #define ESP_CORE_DUMP_H_
 
+
+/**************************************************************************************/
+/******************************** EXCEPTION MODE API **********************************/
+/**************************************************************************************/
+
 /**
  * @brief  Initializes core dump module internal data.
  *
@@ -60,5 +65,21 @@ void esp_core_dump_to_flash();
  * 3) Printed base64 data are surrounded with special messages to help user recognize the start and end of actual data.
  */
 void esp_core_dump_to_uart();
+
+
+/**************************************************************************************/
+/*********************************** USER MODE API ************************************/
+/**************************************************************************************/
+
+/**
+ * @brief  Retrieves address and size of coredump data in flash.
+ *         This function is always available, even when core dump is disabled in menuconfig.
+ *
+ * @param  out_addr   pointer to store image address in flash.
+ * @param  out_size   pointer to store image size in flash (including CRC). In bytes.
+ *
+ * @return ESP_OK on success, otherwise \see esp_err_t
+ */
+esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size);
 
 #endif
