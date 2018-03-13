@@ -22,15 +22,26 @@ import shlex
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('.'))
 
-from repo_util import run_cmd_get_output
+from local_util import run_cmd_get_output, copy_if_modified
+
+builddir = '_build'
+if 'BUILDDIR' in os.environ:
+    builddir = os.environ['BUILDDIR']
 
 # Call Doxygen to get XML files from the header files
 print "Calling Doxygen to generate latest XML files"
 call('doxygen')
+# Doxygen has generated XML files in 'xml' directory.
+# Copy them to 'xml_in', only touching the files which have changed.
+copy_if_modified('xml/', 'xml_in/')
+
 # Generate 'api_name.inc' files using the XML files by Doxygen
-os.system("python gen-dxd.py")
+os.system('python gen-dxd.py')
+
 # Generate 'kconfig.inc' file from components' Kconfig files
-os.system("python gen-kconfig-doc.py > _build/inc/kconfig.inc")
+kconfig_inc_path = '{}/inc/kconfig.inc'.format(builddir)
+os.system('python gen-kconfig-doc.py > ' + kconfig_inc_path + '.in')
+copy_if_modified(kconfig_inc_path + '.in', kconfig_inc_path)
 
 # http://stackoverflow.com/questions/12772927/specifying-an-online-image-in-sphinx-restructuredtext-format
 # 
@@ -63,7 +74,11 @@ rackdiag_fontpath = '_static/DejaVuSans.ttf'
 packetdiag_fontpath = '_static/DejaVuSans.ttf'
 
 # Breathe extension variables
-breathe_projects = { "esp32-idf": "xml/" }
+
+# Doxygen regenerates files in 'xml/' directory every time,
+# but we copy files to 'xml_in/' only when they change, to speed up
+# incremental builds.
+breathe_projects = { "esp32-idf": "xml_in/" }
 breathe_default_project = "esp32-idf"
 
 # Add any paths that contain templates here, relative to this directory.
