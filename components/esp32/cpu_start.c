@@ -38,8 +38,6 @@
 #include "freertos/queue.h"
 #include "freertos/portmacro.h"
 
-#include "tcpip_adapter.h"
-
 #include "esp_heap_caps_init.h"
 #include "sdkconfig.h"
 #include "esp_system.h"
@@ -55,6 +53,7 @@
 #include "esp_newlib.h"
 #include "esp_brownout.h"
 #include "esp_int_wdt.h"
+#include "esp_task.h"
 #include "esp_task_wdt.h"
 #include "esp_phy_init.h"
 #include "esp_cache_err_int.h"
