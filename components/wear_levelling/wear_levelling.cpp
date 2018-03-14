@@ -76,11 +76,6 @@ esp_err_t wl_mount(const esp_partition_t *partition, wl_handle_t *out_handle)
             break;
         }
     }
-    if (*out_handle == WL_INVALID_HANDLE) {
-        ESP_LOGE(TAG, "MAX_WL_HANDLES=%d instances already allocated", MAX_WL_HANDLES);
-        result = ESP_ERR_NO_MEM;
-        goto out;
-    }
 
     wl_ext_cfg_t cfg;
     cfg.full_mem_size = partition->size;
@@ -93,6 +88,12 @@ esp_err_t wl_mount(const esp_partition_t *partition, wl_handle_t *out_handle)
     cfg.wr_size = WL_DEFAULT_WRITE_SIZE;
     // FAT sector size by default will be 512
     cfg.fat_sector_size = CONFIG_WL_SECTOR_SIZE;
+
+    if (*out_handle == WL_INVALID_HANDLE) {
+        ESP_LOGE(TAG, "MAX_WL_HANDLES=%d instances already allocated", MAX_WL_HANDLES);
+        result = ESP_ERR_NO_MEM;
+        goto out;
+    }
 
     // Allocate memory for a Partition object, and then initialize the object
     // using placement new operator. This way we can recover from out of
