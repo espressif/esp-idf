@@ -75,7 +75,7 @@ typedef enum {
  */
 esp_err_t esp_sleep_enable_ulp_wakeup();
 
-/**
+ /**
  * @brief Enable wakeup by timer
  * @param time_in_us  time before wakeup, in microseconds
  * @return
@@ -83,6 +83,23 @@ esp_err_t esp_sleep_enable_ulp_wakeup();
  *      - ESP_ERR_INVALID_ARG if value is out of range (TBD)
  */
 esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us);
+
+/**
+ * @brief Disable timer wakeup
+ * 
+ * This function is used to deactivate timer wakeup trigger 
+ * after first sleep for example to allow wakeup from other sources. 
+ * 
+ * @note This function does not modify wakeup configuration in RTC.
+ *       It will be performed in esp_sleep_start function.
+ *        
+ * See docs/sleep-modes.rst for details.
+ * 
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_STATE if trigger was not active
+ */
+esp_err_t esp_sleep_disable_timer_wakeup();
 
 /**
  * @brief Enable wakeup by touch sensor

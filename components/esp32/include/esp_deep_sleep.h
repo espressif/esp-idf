@@ -47,6 +47,11 @@ inline static esp_err_t esp_deep_sleep_enable_timer_wakeup(uint64_t time_in_us)
     return esp_sleep_enable_timer_wakeup(time_in_us);
 }
 
+inline static esp_err_t esp_deep_sleep_disable_timer_wakeup(void)
+{
+    return esp_sleep_disable_timer_wakeup();
+}
+
 inline static esp_err_t esp_deep_sleep_enable_touchpad_wakeup(void)
 {
     return esp_sleep_enable_touchpad_wakeup();

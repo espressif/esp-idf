@@ -303,6 +303,22 @@ esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us)
     return ESP_OK;
 }
 
+esp_err_t esp_sleep_disable_timer_wakeup()
+{
+    if (s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) {
+        // The only timer wakeup trigger should be disabled, setup will  
+        // be performed in rtc_sleep_start() which updates wakeup options
+        // in RTC peripheral registers
+        s_config.wakeup_triggers &= ~RTC_TIMER_TRIG_EN;
+        s_config.sleep_duration = 0;
+    }
+    else {
+        ESP_LOGE(TAG, "The timer wake-up trigger is not set.");
+        return ESP_ERR_INVALID_STATE;
+    }
+    return ESP_OK;
+}
+
 static void timer_wakeup_prepare()
 {
     uint32_t period = esp_clk_slowclk_cal_get();

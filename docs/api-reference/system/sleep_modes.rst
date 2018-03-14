@@ -37,6 +37,10 @@ The following function can be used to enable deep sleep wakeup using a timer.
 
 .. doxygenfunction:: esp_sleep_enable_timer_wakeup
 
+The timer wakeup functionality can be disabled to use other wakeup sources instead of timer after first sleep. The function below can be used in this case.
+
+.. doxygenfunction:: esp_sleep_disable_timer_wakeup
+
 Touch pad
 ^^^^^^^^^
 
