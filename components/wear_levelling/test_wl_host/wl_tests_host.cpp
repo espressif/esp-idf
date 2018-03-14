@@ -25,7 +25,7 @@
 #define FLASH_PAGE_SIZE         FLASH_SECTOR_SIZE*1
 #define FLASH_UPDATERATE        3
 #define FLASH_TEMP_SIZE         FLASH_SECTOR_SIZE
-#define FLASH_WR_BLOCK_SIZE     2
+#define FLASH_WR_BLOCK_SIZE     16
 
 static const char *TAG = "wl_test_host";
 Flash_Access *s_flash;
@@ -47,7 +47,7 @@ TEST_CASE("flash starts with all bytes == 0xff", "[spi_flash_emu]")
     wl->wr_size = FLASH_WR_BLOCK_SIZE;
 
     WL_Flash *wl_flash = new WL_Flash();
-    Flash_Emulator *emul = new Flash_Emulator(FLASH_ACCESS_SIZE + FLASH_START_ADDR, FLASH_SECTOR_SIZE);
+    Flash_Emulator *emul = new Flash_Emulator(FLASH_ACCESS_SIZE + FLASH_START_ADDR, FLASH_SECTOR_SIZE, FLASH_WR_BLOCK_SIZE);
     CHECK(wl_flash->config(wl, emul) == ESP_OK);
 
     test_power_down(wl_flash, emul, TEST_COUNT_MAX);

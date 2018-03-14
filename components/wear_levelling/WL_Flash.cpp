@@ -318,13 +318,13 @@ esp_err_t WL_Flash::updateWL()
     uint32_t byte_pos = this->state.pos * this->cfg.wr_size;
     this->used_bits = 0;
     // write state to mem. We updating only affected bits
-    result |= this->flash_drv->write(this->addr_state1 + sizeof(wl_state_t) + byte_pos, &this->used_bits, 1);
+    result |= this->flash_drv->write(this->addr_state1 + sizeof(wl_state_t) + byte_pos, &this->used_bits, this->cfg.wr_size);
     if (result != ESP_OK) {
         ESP_LOGE(TAG, "%s - update position 1 result=%08x", __func__, result);
         this->state.access_count = this->state.max_count - 1; // we will update next time
         return result;
     }
-    result |= this->flash_drv->write(this->addr_state2 + sizeof(wl_state_t) + byte_pos, &this->used_bits, 1);
+    result |= this->flash_drv->write(this->addr_state2 + sizeof(wl_state_t) + byte_pos, &this->used_bits, this->cfg.wr_size);
     if (result != ESP_OK) {
         ESP_LOGE(TAG, "%s - update position 2 result=%08x", __func__, result);
         this->state.access_count = this->state.max_count - 1; // we will update next time
