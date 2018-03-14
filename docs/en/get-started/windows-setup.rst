@@ -21,7 +21,11 @@ Unzip the zip file to ``C:\`` (or some other location, but this guide assumes ``
 Check it Out
 ============
 
-Open a MSYS2 MINGW32 terminal window by running ``C:\msys32\mingw32.exe``. The environment in this window is a bash shell. 
+Open a MSYS2 MINGW32 terminal window by running ``C:\msys32\mingw32.exe``. The environment in this window is a bash shell. Create a directory named ``esp`` that is a default location to develop ESP32 applications. To do so, run the following shell command::
+
+    mkdir -p ~/esp
+
+By typing ``cd ~/esp`` you can then move to the newly created directory. If there are no error messages you are done with this step.
 
 .. figure:: ../../_static/msys2-terminal-window.png
     :align: center

@@ -50,7 +50,7 @@ Project Properties
 
 * Click "Add..." again, and enter name ``IDF_PATH``. The value should be the full path where ESP-IDF is installed.
 
-* Edit the ``PATH`` environment variable. Keep the current value, and append the path to the Xtensa toolchain that will installed as part of IDF setup (``something/xtensa-esp32-elf/bin``) if this is not already listed on the PATH.
+* Edit the ``PATH`` environment variable. Keep the current value, and append the path to the Xtensa toolchain installed as part of IDF setup, if this is not already listed on the PATH. A typical path to the toolchain looks like ``/home/user-name/esp/xtensa-esp32-elf/bin``. Note that you need to add a colon ``:`` before the appended path.
 
 * On macOS, add a ``PYTHONPATH`` environment variable and set it to ``/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages``. This is so that the system Python, which has pyserial installed as part of the setup steps, overrides any built-in Eclipse Python.
 
