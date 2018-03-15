@@ -482,24 +482,36 @@ static void btc_stop_adv_callback(uint8_t status)
 static void btc_ble_start_advertising (esp_ble_adv_params_t *ble_adv_params, tBTA_START_ADV_CMPL_CBACK start_adv_cback)
 {
     tBLE_BD_ADDR peer_addr;
-
+    esp_bt_status_t status = ESP_BT_STATUS_SUCCESS;
     if (!BLE_ISVALID_PARAM(ble_adv_params->adv_int_min, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX) ||
             !BLE_ISVALID_PARAM(ble_adv_params->adv_int_max, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX)) {
+        status = ESP_BT_STATUS_PARM_INVALID;
         LOG_ERROR("Invalid advertisting interval parameters.\n");
-        return ;
     }
 
-    if ((ble_adv_params->adv_type < ADV_TYPE_IND) &&
+    if ((ble_adv_params->adv_type < ADV_TYPE_IND) ||
             (ble_adv_params->adv_type > ADV_TYPE_DIRECT_IND_LOW) ) {
+        status = ESP_BT_STATUS_PARM_INVALID;
         LOG_ERROR("Invalid advertisting type parameters.\n");
-        return;
     }
 
-    if ((ble_adv_params->adv_filter_policy < ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY) &&
+    if ((ble_adv_params->adv_filter_policy < ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY) ||
             (ble_adv_params->adv_filter_policy > ADV_FILTER_ALLOW_SCAN_WLST_CON_WLST) ) {
+        status = ESP_BT_STATUS_PARM_INVALID;
         LOG_ERROR("Invalid advertisting type parameters.\n");
+    }
+
+    if((ble_adv_params->channel_map | ADV_CHNL_ALL) != ADV_CHNL_ALL || ble_adv_params->channel_map == 0) {
+        status = ESP_BT_STATUS_PARM_INVALID;
+        LOG_ERROR("Invalid advertisting channel map parameters.\n");
+    }
+    if(status != ESP_BT_STATUS_SUCCESS) {
+        if(start_adv_cback) {
+            start_adv_cback(status);
+        }
         return;
     }
+    
     LOG_DEBUG("API_Ble_AppStartAdvertising\n");
 
     memcpy(peer_addr.bda, ble_adv_params->peer_addr, ESP_BD_ADDR_LEN);
