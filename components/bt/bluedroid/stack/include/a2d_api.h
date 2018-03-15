@@ -251,5 +251,6 @@ extern UINT8 A2D_BitsSet(UINT8 num);
 **
 *******************************************************************************/
 extern void A2D_Init(void);
+extern void A2D_Deinit(void);
 #endif  ///A2D_INCLUDED
 #endif /* A2D_API_H */
