@@ -52,6 +52,8 @@
 #include "bt_utils.h"
 #include "esp_a2dp_api.h"
 #include "mutex.h"
+#include "future.h"
+#include <assert.h>
 
 // #if (BTA_AV_SINK_INCLUDED == TRUE)
 #include "oi_codec_sbc.h"
@@ -162,6 +164,7 @@ static void btc_media_thread_cleanup(UNUSED_ATTR void *context);
 
 static tBTC_MEDIA_CB btc_media_cb;
 static int media_task_running = MEDIA_TASK_STATE_OFF;
+static future_t *media_task_future = NULL;
 static fixed_queue_t *btc_media_cmd_msg_queue = NULL;
 static xTaskHandle  xBtcMediaTaskHandle = NULL;
 static QueueHandle_t xBtcMediaDataQueue = NULL;
@@ -334,8 +337,13 @@ void btc_a2dp_stop_media_task(void)
     APPL_TRACE_EVENT("## A2DP STOP MEDIA THREAD ##\n");
 
     // Exit thread
+    media_task_running = MEDIA_TASK_STATE_SHUTTING_DOWN;
+    media_task_future = future_new();
+    assert(media_task_future);
     btc_media_ctrl_post(SIG_MEDIA_TASK_CLEAN_UP);
-    // TODO: wait until CLEAN up is done, then do task delete
+    future_await(media_task_future);
+    media_task_future = NULL;
+
     vTaskDelete(xBtcMediaTaskHandle);
     xBtcMediaTaskHandle = NULL;
 
@@ -535,6 +543,10 @@ static void btc_media_task_avk_data_ready(UNUSED_ATTR void *context)
         }
 
         while ((p_msg = (tBT_SBC_HDR *)fixed_queue_try_peek_first(btc_media_cb.RxSbcQ)) != NULL ) {
+            if (media_task_running != MEDIA_TASK_STATE_ON){
+                return;
+            }
+
             btc_media_task_handle_inc_media(p_msg);
             p_msg = (tBT_SBC_HDR *)fixed_queue_try_dequeue(btc_media_cb.RxSbcQ);
             if ( p_msg == NULL ) {
@@ -560,14 +572,13 @@ static void btc_media_thread_init(UNUSED_ATTR void *context)
 
 static void btc_media_thread_cleanup(UNUSED_ATTR void *context)
 {
-    /* make sure no channels are restarted while shutting down */
-    media_task_running = MEDIA_TASK_STATE_SHUTTING_DOWN;
-
     btc_media_cb.data_channel_open = FALSE;
     /* Clear media task flag */
     media_task_running = MEDIA_TASK_STATE_OFF;
 
     fixed_queue_free(btc_media_cb.RxSbcQ, osi_free_func);
+
+    future_ready(media_task_future, NULL);
 }
 
 /*******************************************************************************
@@ -901,6 +912,10 @@ static void btc_media_task_aa_handle_decoder_reset(BT_HDR *p_msg)
 UINT8 btc_media_sink_enque_buf(BT_HDR *p_pkt)
 {
     tBT_SBC_HDR *p_msg;
+
+    if (media_task_running != MEDIA_TASK_STATE_ON){
+        return 0;
+    }
 
     if (btc_media_cb.rx_flush == TRUE) { /* Flush enabled, do not enque*/
         return fixed_queue_length(btc_media_cb.RxSbcQ);
