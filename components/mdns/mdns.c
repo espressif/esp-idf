@@ -4079,6 +4079,12 @@ static esp_err_t _mdns_service_task_stop()
 #ifndef MDNS_TEST_MODE
     MDNS_SERVICE_LOCK();
     _mdns_stop_timer();
+    MDNS_SERVICE_UNLOCK();
+    /** NOTE: TODO:
+     * If The lock is taken for the entire time till task
+     * is exited all pending task in queue will be blocked
+     * and this function will be in deadlock with mdns task
+     * */
     if (_mdns_service_task_handle) {
         mdns_action_t action;
         mdns_action_t * a = &action;
@@ -4091,7 +4097,6 @@ static esp_err_t _mdns_service_task_stop()
             vTaskDelay(10 / portTICK_PERIOD_MS);
         }
     }
-    MDNS_SERVICE_UNLOCK();
 #endif
     return ESP_OK;
 }
