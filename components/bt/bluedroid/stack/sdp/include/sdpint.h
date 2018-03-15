@@ -237,6 +237,7 @@ extern tSDP_CB *sdp_cb_ptr;
 
 /* Functions provided by sdp_main.c */
 extern void     sdp_init (void);
+extern void     sdp_deinit (void);
 extern void     sdp_disconnect (tCONN_CB *p_ccb, UINT16 reason);
 
 #if (defined(SDP_DEBUG) && SDP_DEBUG == TRUE)
