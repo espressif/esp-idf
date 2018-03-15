@@ -514,6 +514,9 @@ static void bta_av_proc_stream_evt(UINT8 handle, BD_ADDR bd_addr, UINT8 event, t
             p_msg->disc_rsn = p_data->hdr.err_param;
             break;
             */
+            case AVDT_DISCONNECT_IND_EVT:
+                p_msg->hdr.offset = p_data->hdr.err_param;
+                break;
             default:
                 break;
             }
