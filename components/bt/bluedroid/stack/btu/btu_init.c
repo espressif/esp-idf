@@ -118,6 +118,10 @@ void btu_free_core(void)
     // Free the mandatory core stack components
     l2c_free();
 
+#if (defined(SDP_INCLUDED) && SDP_INCLUDED == TRUE)
+    sdp_deinit();
+#endif
+
 #if BLE_INCLUDED == TRUE
 #if (defined(GATT_INCLUDED) && GATT_INCLUDED == true)
     gatt_free();

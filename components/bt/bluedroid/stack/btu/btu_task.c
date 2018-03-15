@@ -86,6 +86,7 @@ extern void avdt_rcv_sync_info (BT_HDR *p_buf);
 //#endif
 
 extern void BTE_InitStack(void);
+extern void BTE_DeinitStack(void);
 
 /* Define BTU storage area
 */
@@ -314,6 +315,7 @@ void btu_task_shut_down(void)
 #if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)
     bta_sys_free();
 #endif
+    BTE_DeinitStack();
 
     btu_free_core();
 }

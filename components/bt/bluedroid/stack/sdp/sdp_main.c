@@ -138,6 +138,14 @@ void sdp_init (void)
     }
 }
 
+void sdp_deinit (void)
+{
+#if SDP_DYNAMIC_MEMORY
+    osi_free(sdp_cb_ptr);
+    sdp_cb_ptr = NULL;
+#endif /* #if SDP_DYNAMIC_MEMORY */
+}
+
 #if (defined(SDP_DEBUG) && SDP_DEBUG == TRUE)
 /*******************************************************************************
 **

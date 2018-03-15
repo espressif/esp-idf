@@ -556,6 +556,19 @@ extern void AVRC_Init(void);
 
 /*******************************************************************************
 **
+** Function         AVRC_Deinit
+**
+** Description      This function is called at stack shotdown to free the
+**                  control block (if using dynamic memory), and deinitializes the
+**                  control block and tracing level.
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void AVRC_Deinit(void);
+
+/*******************************************************************************
+**
 ** Function         AVRC_ParsCommand
 **
 ** Description      This function is used to parse the received command.
