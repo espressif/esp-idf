@@ -391,4 +391,22 @@ void A2D_Init(void)
 #endif
 }
 
+/*******************************************************************************
+**
+** Function         A2D_Deinit
+**
+** Description      This function is called to deinitialize the control block
+**                  for this layer.
+**
+** Returns          void
+**
+*******************************************************************************/
+void A2D_Deinit(void)
+{
+#if (A2D_DYNAMIC_MEMORY)
+    osi_free(a2d_cb_ptr);
+    a2d_cb_ptr = NULL;
+#endif /* #if (A2D_DYNAMIC_MEMORY) */
+}
+
 #endif /* #if (defined(A2D_INCLUDED) && A2D_INCLUDED == TRUE) */
