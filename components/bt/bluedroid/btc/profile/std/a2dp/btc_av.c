@@ -1022,10 +1022,6 @@ static void clean_up(int service_id)
 #if BTC_AV_SRC_INCLUDED
         btc_a2dp_source_shutdown();
 #endif /* BTC_AV_SRC_INCLUDED */
-    } else if (service_id == BTA_A2DP_SINK_SERVICE_ID) {
-#if BTC_AV_SINK_INCLUDED
-        btc_a2dp_sink_shutdown();
-#endif /* BTC_AV_SINK_INCLUDED */
     }
 
     btc_dm_disable_service(BTA_A2DP_SOURCE_SERVICE_ID);
@@ -1037,6 +1033,12 @@ static void clean_up(int service_id)
     /* Also shut down the AV state machine */
     btc_sm_shutdown(btc_av_cb.sm_handle);
     btc_av_cb.sm_handle = NULL;
+
+    if (service_id == BTA_A2DP_SINK_SERVICE_ID) {
+#if BTC_AV_SINK_INCLUDED
+        btc_a2dp_sink_shutdown();
+#endif /* BTC_AV_SINK_INCLUDED */
+    }
 }
 
 /*******************************************************************************
