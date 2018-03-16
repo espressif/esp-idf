@@ -10,7 +10,7 @@ In light sleep mode, digital peripherals, most of the RAM, and CPUs are clock-ga
 
 In deep sleep mode, CPUs, most of the RAM, and all the digital peripherals which are clocked from APB_CLK are powered off. The only parts of the chip which can still be powered on are: RTC controller, RTC peripherals (including ULP coprocessor), and RTC memories (slow and fast).
 
-Wakeup from deep and light sleep modes can be done using several sources. These sources can be combined, in this case the chip will wake up when any one of the sources is triggered. Wakeup sources can be enabled using ``esp_sleep_enable_X_wakeup`` APIs. Next section describes these APIs in detail. Wakeup sources can be configured at any moment before entering light or deep sleep mode. 
+Wakeup from deep and light sleep modes can be done using several sources. These sources can be combined, in this case the chip will wake up when any one of the sources is triggered. Wakeup sources can be enabled using ``esp_sleep_enable_X_wakeup`` APIs and can be disabled using ``esp_sleep_disable_wakeup_source`` API. Next section describes these APIs in detail. Wakeup sources can be configured at any moment before entering light or deep sleep mode. 
 
 Additionally, the application can force specific powerdown modes for the RTC peripherals and RTC memories using ``esp_sleep_pd_config`` API.
 
@@ -36,10 +36,6 @@ This wakeup mode doesn't require RTC peripherals or RTC memories to be powered o
 The following function can be used to enable deep sleep wakeup using a timer.
 
 .. doxygenfunction:: esp_sleep_enable_timer_wakeup
-
-The timer wakeup functionality can be disabled to use other wakeup sources instead of timer after first sleep. The function below can be used in this case.
-
-.. doxygenfunction:: esp_sleep_disable_timer_wakeup
 
 Touch pad
 ^^^^^^^^^
@@ -150,6 +146,13 @@ The following function can be used to check which wakeup source has triggered wa
 .. doxygenfunction:: esp_sleep_get_touchpad_wakeup_status
 .. doxygenfunction:: esp_sleep_get_ext1_wakeup_status
 
+Disable sleep wakeup source
+---------------------------
+
+Previously configured wakeup source can be disabled later using ``esp_sleep_disable_wakeup_source`` API. This function deactivates trigger for source defined as input parameter if it should not be used to wake up from sleep.
+
+.. doxygenenum:: esp_sleep_source_t
+.. doxygenfunction:: esp_sleep_disable_wakeup_source
 
 Application Example
 -------------------
