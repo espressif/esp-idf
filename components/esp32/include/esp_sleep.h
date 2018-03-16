@@ -18,6 +18,7 @@
 #include "esp_err.h"
 #include "driver/gpio.h"
 #include "driver/touch_pad.h"
+#include "soc/rtc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,6 +63,35 @@ typedef enum {
     ESP_SLEEP_WAKEUP_ULP,          //!< Wakeup caused by ULP program
 } esp_sleep_wakeup_cause_t;
 
+/**
+ * @brief Sleep wakeup sources for esp_sleep_disable_wakeup_source function
+ */
+typedef enum {
+    ESP_SLEEP_SOURCE_UNDEFINED,     //!< Wakeup source is not defined
+    ESP_SLEEP_SOURCE_EXT0,          //!< Wakeup source for external signal using RTC_IO
+    ESP_SLEEP_SOURCE_EXT1,          //!< Wakeup source for external signal using RTC_CNTL
+    ESP_SLEEP_SOURCE_TIMER,         //!< Wakeup source for timer
+    ESP_SLEEP_SOURCE_TOUCHPAD,      //!< Wakeup source for touchpad
+    ESP_SLEEP_SOURCE_ULP,           //!< Wakeup source for ULP program
+} esp_sleep_source_t;
+
+/**
+ * @brief Disable wakeup source
+ *
+ * This function is used to deactivate wake up trigger for source
+ * defined as parameter of the function.
+ *
+ * @note This function does not modify wake up configuration in RTC.
+ *       It will be performed in esp_sleep_start function.
+ *
+ * See docs/sleep-modes.rst for details.
+ *
+ * @param source - number of source to disable of type esp_sleep_source_t
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_STATE if trigger was not active
+ */
+esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source);
 
 /**
  * @brief Enable wakeup by ULP coprocessor
@@ -75,7 +105,7 @@ typedef enum {
  */
 esp_err_t esp_sleep_enable_ulp_wakeup();
 
- /**
+/**
  * @brief Enable wakeup by timer
  * @param time_in_us  time before wakeup, in microseconds
  * @return
@@ -83,23 +113,6 @@ esp_err_t esp_sleep_enable_ulp_wakeup();
  *      - ESP_ERR_INVALID_ARG if value is out of range (TBD)
  */
 esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us);
-
-/**
- * @brief Disable timer wakeup
- * 
- * This function is used to deactivate timer wakeup trigger 
- * after first sleep for example to allow wakeup from other sources. 
- * 
- * @note This function does not modify wakeup configuration in RTC.
- *       It will be performed in esp_sleep_start function.
- *        
- * See docs/sleep-modes.rst for details.
- * 
- * @return
- *      - ESP_OK on success
- *      - ESP_ERR_INVALID_STATE if trigger was not active
- */
-esp_err_t esp_sleep_disable_timer_wakeup();
 
 /**
  * @brief Enable wakeup by touch sensor
