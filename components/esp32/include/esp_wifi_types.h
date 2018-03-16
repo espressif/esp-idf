@@ -344,6 +344,10 @@ typedef struct {
     uint32_t filter_mask; /**< OR of one or more filter values WIFI_PROMIS_FILTER_* */
 } wifi_promiscuous_filter_t;
 
+#define WIFI_EVENT_MASK_ALL                 (0xFFFFFFFF)  /**< mask all WiFi events */
+#define WIFI_EVENT_MASK_NONE                (0)           /**< mask none of the WiFi events */
+#define WIFI_EVENT_MASK_AP_PROBEREQRECVED   (BIT(0))      /**< mask SYSTEM_EVENT_AP_PROBEREQRECVED event */
+
 #ifdef __cplusplus
 }
 #endif
