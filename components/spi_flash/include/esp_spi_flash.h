@@ -239,7 +239,7 @@ void spi_flash_mmap_dump();
 /**
  * @brief get free pages number which can be mmap
  *
- * @note This function will return free page number of the mmu table which can mmap,
+ * This function will return free page number of the mmu table which can mmap,
  * when you want to call spi_flash_mmap to mmap an ranger of flash data to Dcache or Icache
  * memmory region, maybe the size of  MMU table will exceed,so if you are not sure the
  * size need mmap is ok, can call the interface and watch how many MMU table page can be

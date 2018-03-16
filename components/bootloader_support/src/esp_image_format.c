@@ -34,6 +34,9 @@ static const char *TAG = "esp_image";
 /* Headroom to ensure between stack SP (at time of checking) and data loaded from flash */
 #define STACK_LOAD_HEADROOM 32768
 
+/* Mmap source address mask */
+#define MMAP_ALIGNED_MASK 0x0000FFFF
+
 #ifdef BOOTLOADER_BUILD
 /* 64 bits of random data to obfuscate loaded RAM with, until verification is complete
    (Means loaded code isn't executable until after the secure boot check.)
@@ -296,15 +299,17 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
         }
     }
 #ifndef BOOTLOADER_BUILD
-    uint32_t page_count = spi_flash_mmap_get_free_pages(SPI_FLASH_MMAP_DATA);
-    ESP_LOGI(TAG, "free data page_count 0x%08x",page_count);
-    while (data_len >= page_count * SPI_FLASH_MMU_PAGE_SIZE) {
-        err = process_segment_data(load_addr, data_addr, page_count * SPI_FLASH_MMU_PAGE_SIZE, do_load, sha_handle, checksum);
+    uint32_t free_page_count = spi_flash_mmap_get_free_pages(SPI_FLASH_MMAP_DATA);
+    ESP_LOGD(TAG, "free data page_count 0x%08x",free_page_count);
+    uint32_t offset_page = 0;
+    while (data_len >= free_page_count * SPI_FLASH_MMU_PAGE_SIZE) {
+        offset_page = ((data_addr & MMAP_ALIGNED_MASK) != 0)?1:0;
+        err = process_segment_data(load_addr, data_addr, (free_page_count - offset_page) * SPI_FLASH_MMU_PAGE_SIZE, do_load, sha_handle, checksum);
         if (err != ESP_OK) {
             return err;
         }
-        data_addr += page_count * SPI_FLASH_MMU_PAGE_SIZE;
-        data_len -= page_count * SPI_FLASH_MMU_PAGE_SIZE;
+        data_addr += (free_page_count - offset_page) * SPI_FLASH_MMU_PAGE_SIZE;
+        data_len -= (free_page_count - offset_page) * SPI_FLASH_MMU_PAGE_SIZE;
     }
 #endif
     err = process_segment_data(load_addr, data_addr, data_len, do_load, sha_handle, checksum);
