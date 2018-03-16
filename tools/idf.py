@@ -56,11 +56,12 @@ else:
     MAKE_GENERATOR = "Unix Makefiles"
 
 GENERATORS = [
-    # ('generator name', 'build command line', 'version command line')
-    ("Ninja", [ "ninja" ], [ "ninja", "--version" ]),
-    (MAKE_GENERATOR, [ MAKE_CMD, "-j", str(multiprocessing.cpu_count()+2) ], [ "make", "--version" ]),
+    # ('generator name', 'build command line', 'version command line', 'verbose flag')
+    ("Ninja", [ "ninja" ], [ "ninja", "--version" ], "-v"),
+    (MAKE_GENERATOR, [ MAKE_CMD, "-j", str(multiprocessing.cpu_count()+2) ], [ "make", "--version" ], "VERBOSE=1"),
     ]
 GENERATOR_CMDS = dict( (a[0], a[1]) for a in GENERATORS )
+GENERATOR_VERBOSE = dict( (a[0], a[3]) for a in GENERATORS )
 
 def _run_tool(tool_name, args, cwd):
     def quote_arg(arg):
@@ -107,7 +108,7 @@ def detect_cmake_generator():
     """
     Find the default cmake generator, if none was specified. Raises an exception if no valid generator is found.
     """
-    for (generator, _, version_check) in GENERATORS:
+    for (generator, _, version_check, _) in GENERATORS:
         if executable_exists(version_check):
             return generator
     raise FatalError("To use idf.py, either the 'ninja' or 'GNU make' build tool must be available in the PATH")
@@ -144,6 +145,8 @@ def _ensure_build_directory(args, always_run_cmake=False):
             cmake_args = ["cmake", "-G", args.generator]
             if not args.no_warnings:
                 cmake_args += [ "--warn-uninitialized" ]
+            if args.no_ccache:
+                cmake_args += [ "-DCCACHE_DISABLE=1" ]
             cmake_args += [ project_dir]
             _run_tool("cmake", cmake_args, cwd=args.build_dir)
         except:
@@ -167,7 +170,7 @@ def _ensure_build_directory(args, always_run_cmake=False):
 
     try:
         home_dir = cache["CMAKE_HOME_DIRECTORY"]
-        if os.path.realpath(home_dir) != os.path.realpath(project_dir):
+        if os.path.normcase(os.path.realpath(home_dir)) != os.path.normcase(os.path.realpath(project_dir)):
             raise FatalError("Build directory '%s' configured for project '%s' not '%s'. Run 'idf.py fullclean' to start again."
                             % (build_dir, os.path.realpath(home_dir), os.path.realpath(project_dir)))
     except KeyError:
@@ -201,6 +204,18 @@ def build_target(target_name, args):
     """
     _ensure_build_directory(args)
     generator_cmd = GENERATOR_CMDS[args.generator]
+    if not args.no_ccache:
+        # Setting CCACHE_BASEDIR & CCACHE_NO_HASHDIR ensures that project paths aren't stored in the ccache entries
+        # (this means ccache hits can be shared between different projects. It may mean that some debug information
+        # will point to files in another project, if these files are perfect duplicates of each other.)
+        #
+        # It would be nicer to set these from cmake, but there's no cross-platform way to set build-time environment
+        #os.environ["CCACHE_BASEDIR"] = args.build_dir
+        #os.environ["CCACHE_NO_HASHDIR"] = "1"
+        pass
+    if args.verbose:
+        generator_cmd += [ GENERATOR_VERBOSE[args.generator] ]
+
     _run_tool(generator_cmd[0], generator_cmd + [target_name], args.build_dir)
 
 
@@ -319,7 +334,9 @@ def main():
     parser.add_argument('-C', '--project-dir', help="Project directory", default=os.getcwd())
     parser.add_argument('-B', '--build-dir', help="Build directory", default=None)
     parser.add_argument('-G', '--generator', help="Cmake generator", choices=GENERATOR_CMDS.keys())
-    parser.add_argument('-n', '--no-warnings', help="Disable Cmake warnings")
+    parser.add_argument('-n', '--no-warnings', help="Disable Cmake warnings", action="store_true")
+    parser.add_argument('-v', '--verbose', help="Verbose build output", action="store_true")
+    parser.add_argument('--no-ccache', help="Disable ccache. Otherwise, if ccache is available on the PATH then it will be used for faster builds.", action="store_true")
     parser.add_argument('actions', help="Actions (build targets or other operations)", nargs='+',
                         choices=ACTIONS.keys())
 
