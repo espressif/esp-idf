@@ -21,7 +21,6 @@
 #include "esp_adc_cal.h"
 
 /* ----------------------------- Configuration ------------------------------ */
-
 #ifdef CONFIG_ADC_CAL_EFUSE_TP_ENABLE
 #define EFUSE_TP_ENABLED        1
 #else
@@ -39,23 +38,21 @@
 #else
 #define LUT_ENABLED             0
 #endif
-/*
- * By default, ESP32s that have Two Point values burned to BLOCK3 will also
- * set the EFUSE_BLK3_PART_RESERVE flag to indicate this. However, some ESP32s
- * with Two Point values do not set this flag. Set the following definition
- * to 0 if this is the case.
+
+/* ESP32s with both Two Point Values and Vref burned into eFuse are required to
+ * also also burn the EFUSE_BLK3_PART_RESERVE flag. A limited set of ESP32s
+ * (not available through regular sales channel) DO NOT have the
+ * EFUSE_BLK3_PART_RESERVE burned. Moreover, this set of ESP32s represents Vref
+ * in Two's Complement format. If this is the case, modify the preprocessor
+ * definitions below as follows...
+ * #define CHECK_BLK3_FLAG         0        //Do not check BLK3 flag as it is not burned
+ * #define VREF_FORMAT             1        //eFuse Vref is in Two's Complement format
  */
 #define CHECK_BLK3_FLAG         1
-/*
- * By default, Vref is burned into eFuse of ESP32s in Sign-Magnitude format.
- * However some chips have Vref burned in two's complement format. Set the following
- * definition to 1 if this is the case.
- */
 #define VREF_FORMAT             0
 
 /* ------------------------------ eFuse Access ----------------------------- */
-
-#define BLK3_RESERVED_REG               EFUSE_BLK0_RDATA4_REG
+#define BLK3_RESERVED_REG               EFUSE_BLK0_RDATA3_REG
 
 #define VREF_REG                        EFUSE_BLK0_RDATA4_REG
 #define VREF_MASK                       0x1F
@@ -74,7 +71,6 @@
 #define TP_STEP_SIZE                    4
 
 /* ----------------------- Raw to Voltage Constants ------------------------- */
-
 #define LIN_COEFF_A_SCALE               65536
 #define LIN_COEFF_A_ROUND               (LIN_COEFF_A_SCALE/2)
 
@@ -93,7 +89,6 @@
 })
 
 /* ------------------------ Characterization Constants ---------------------- */
-
 static const uint32_t adc1_tp_atten_scale[4] = {65504, 86975, 120389, 224310};
 static const uint32_t adc2_tp_atten_scale[4] = {65467, 86861, 120416, 224708};
 static const uint32_t adc1_tp_atten_offset[4] = {0, 1, 27, 54};
@@ -115,7 +110,6 @@ static const uint32_t lut_adc2_high[LUT_POINTS] = {2657, 2698, 2738, 2774, 2807,
                                                    2971, 2996, 3020, 3043, 3067, 3092, 3116, 3139, 3162, 3185};
 
 /* ----------------------- EFuse Access Functions --------------------------- */
-
 static bool check_efuse_vref()
 {
     //Check if Vref is burned in eFuse
@@ -200,7 +194,6 @@ static uint32_t read_efuse_tp_high(adc_unit_t adc_num)
 }
 
 /* ----------------------- Characterization Functions ----------------------- */
-
 static void characterize_using_two_point(adc_unit_t adc_num,
                                          adc_atten_t atten,
                                          uint32_t high,
@@ -250,7 +243,6 @@ static void characterize_using_vref(adc_unit_t adc_num,
 }
 
 /* ------------------------ Conversion Functions --------------------------- */
-
 static uint32_t calculate_voltage_linear(uint32_t adc_reading, uint32_t coeff_a, uint32_t coeff_b)
 {
     //Where voltage = coeff_a * adc_reading + coeff_b
@@ -290,7 +282,6 @@ static inline uint32_t interpolate_two_points(uint32_t y1, uint32_t y2, uint32_t
 }
 
 /* ------------------------- Public API ------------------------------------- */
-
 esp_err_t esp_adc_cal_check_efuse(esp_adc_cal_value_t source)
 {
     if (source == ESP_ADC_CAL_VAL_EFUSE_TP) {
@@ -339,7 +330,7 @@ esp_adc_cal_value_t esp_adc_cal_characterize(adc_unit_t adc_num,
     chars->adc_num = adc_num;
     chars->atten = atten;
     chars->bit_width = bit_width;
-    chars->vref = (efuse_vref_present) ? read_efuse_vref() : default_vref;
+    chars->vref = (EFUSE_VREF_ENABLED && efuse_vref_present) ? read_efuse_vref() : default_vref;
     //Initialize fields for lookup table if necessary
     if (LUT_ENABLED && atten == ADC_ATTEN_DB_11) {
         chars->low_curve = (adc_num == ADC_UNIT_1) ? lut_adc1_low : lut_adc2_low;
@@ -401,7 +392,6 @@ esp_err_t esp_adc_cal_get_voltage(adc_channel_t channel,
 }
 
 /* ------------------------ Deprecated API --------------------------------- */
-
 void esp_adc_cal_get_characteristics(uint32_t vref,
                                      adc_atten_t atten,
                                      adc_bits_width_t bit_width,
