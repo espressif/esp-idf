@@ -98,10 +98,12 @@ function(idf_set_global_compiler_options)
     add_compile_options("-I${CMAKE_BINARY_DIR}") # for sdkconfig.h
 
     # Enable ccache if it's on the path
-    find_program(CCACHE_FOUND ccache)
-    if(CCACHE_FOUND)
-        message(STATUS "ccache will be used")
-        set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+	if(NOT CCACHE_DISABLE)
+		find_program(CCACHE_FOUND ccache)
+		if(CCACHE_FOUND)
+			message(STATUS "ccache will be used for faster builds")			
+			set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)		
+		endif()
     endif()
 
 endfunction()
