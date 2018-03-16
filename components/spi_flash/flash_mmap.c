@@ -180,8 +180,10 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(int *pages, size_t page_count, spi_flas
     // Algorithm is essentially naïve strstr algorithm, except that unused MMU
     // entries are treated as wildcards.
     int start;
-    int end = region_begin + region_size - page_count;
-    for (start = region_begin; start <= end; ++start) {
+    // the " + 1" is a fix when loop the MMU table pages, because the last MMU page 
+    // is valid as well if it have not been used
+    int end = region_begin + region_size - page_count + 1;
+    for (start = region_begin; start < end; ++start) {
         int pageno = 0;
         int pos;
         DPORT_STALL_OTHER_CPU_START();
@@ -199,7 +201,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(int *pages, size_t page_count, spi_flas
         }
     }
     // checked all the region(s) and haven't found anything?
-    if (start > end) {
+    if (start == end) {
         *out_handle = 0;
         *out_ptr = NULL;
         ret = ESP_ERR_NO_MEM;
@@ -312,11 +314,7 @@ uint32_t spi_flash_mmap_get_free_pages(spi_flash_mmap_memory_t memory)
         }
     }
     DPORT_STALL_OTHER_CPU_END();
-    if(count >= 1) {
-        return count - 1; //don't sure mmap src_addr,if src_addr not align 64K bytes,max need one more pages
-    } else {
-        return 0;
-    }
+    return count;
 }
 
 /* 256-bit (up to 16MB of 64KB pages) bitset of all flash pages
