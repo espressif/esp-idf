@@ -1287,7 +1287,7 @@ esp_err_t adc1_adc_mode_acquire()
     //lazy initialization
     //for adc1, block until acquire the lock
     _lock_acquire( &adc1_i2s_lock );
-    ESP_LOGD( RTC_MODULE_TAG, "adc mode takes adc1 lock." );
+    //ESP_LOGD( RTC_MODULE_TAG, "adc mode takes adc1 lock." );
     portENTER_CRITICAL(&rtc_spinlock);
     // for now the WiFi would use ADC2 and set xpd_sar force on.
     // so we can not reset xpd_sar to fsm mode directly.
@@ -1301,13 +1301,13 @@ esp_err_t adc1_adc_mode_acquire()
 
 esp_err_t adc1_lock_release()
 {
-    RTC_MODULE_CHECK((uint32_t*)adc1_i2s_lock != NULL, "adc1 lock release called before acquire", ESP_ERR_INVALID_STATE );
+    //RTC_MODULE_CHECK((uint32_t*)adc1_i2s_lock != NULL, "adc1 lock release called before acquire", ESP_ERR_INVALID_STATE );
     // for now the WiFi would use ADC2 and set xpd_sar force on.
     // so we can not reset xpd_sar to fsm mode directly.
     // We should handle this after the synchronization mechanism is established.
 
     _lock_release( &adc1_i2s_lock );
-    ESP_LOGD( RTC_MODULE_TAG, "returns adc1 lock." );
+    //ESP_LOGD( RTC_MODULE_TAG, "returns adc1 lock." );
     return ESP_OK;
 }
 
