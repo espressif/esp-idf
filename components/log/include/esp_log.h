@@ -44,10 +44,18 @@ typedef int (*vprintf_like_t)(const char *, va_list);
  *
  * If logging for given component has already been enabled, changes previous setting.
  *
+ * Note that this function can not raise log level above the level set using
+ * CONFIG_LOG_DEFAULT_LEVEL setting in menuconfig.
+ *
+ * To raise log level above the default one for a given file, define
+ * LOG_LOCAL_LEVEL to one of the ESP_LOG_* values, before including
+ * esp_log.h in this file.
+ *
  * @param tag Tag of the log entries to enable. Must be a non-NULL zero terminated string.
  *            Value "*" resets log level for all tags to the given value.
  *
- * @param level  Selects log level to enable. Only logs at this and lower levels will be shown.
+ * @param level  Selects log level to enable. Only logs at this and lower verbosity
+ * levels will be shown.
  */
 void esp_log_level_set(const char* tag, esp_log_level_t level);
 
@@ -98,6 +106,8 @@ uint32_t esp_log_early_timestamp(void);
  */
 void esp_log_write(esp_log_level_t level, const char* tag, const char* format, ...) __attribute__ ((format (printf, 3, 4)));
 
+/** @cond */
+
 #include "esp_log_internal.h"
 
 #ifndef LOG_LOCAL_LEVEL
@@ -108,16 +118,15 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
 #endif
 #endif
 
+/** @endcond */
+
 /**
  * @brief Log a buffer of hex bytes at specified level, separated into 16 bytes each line.
  *
  * @param  tag      description tag
- *
  * @param  buffer   Pointer to the buffer array
- *
  * @param  buff_len length of buffer in bytes
- *
- * @param level     level of the log
+ * @param  level    level of the log
  *
  */
 #define ESP_LOG_BUFFER_HEX_LEVEL( tag, buffer, buff_len, level ) \
@@ -131,12 +140,9 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
  * @brief Log a buffer of characters at specified level, separated into 16 bytes each line. Buffer should contain only printable characters.
  *
  * @param  tag      description tag
- *
  * @param  buffer   Pointer to the buffer array
- *
  * @param  buff_len length of buffer in bytes
- *
- * @param level     level of the log
+ * @param  level    level of the log
  *
  */
 #define ESP_LOG_BUFFER_CHAR_LEVEL( tag, buffer, buff_len, level ) \
@@ -158,11 +164,8 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
  * It is highly recommend to use terminals with over 102 text width.
  * 
  * @param tag description tag
- * 
  * @param buffer Pointer to the buffer array
- * 
  * @param buff_len length of buffer in bytes
- * 
  * @param level level of the log
  */
 #define ESP_LOG_BUFFER_HEXDUMP( tag, buffer, buff_len, level ) \
@@ -176,9 +179,7 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
  * @brief Log a buffer of hex bytes at Info level
  *
  * @param  tag      description tag
- *
  * @param  buffer   Pointer to the buffer array
- *
  * @param  buff_len length of buffer in bytes
  *
  * @see ``esp_log_buffer_hex_level``
@@ -195,9 +196,7 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
  * @brief Log a buffer of characters at Info level. Buffer should contain only printable characters.
  *
  * @param  tag      description tag
- *
  * @param  buffer   Pointer to the buffer array
- *
  * @param  buff_len length of buffer in bytes
  *
  * @see ``esp_log_buffer_char_level``
@@ -210,6 +209,7 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
         }\
     } while(0)
 
+/** @cond */
 
 //to be back compatible
 #define esp_log_buffer_hex      ESP_LOG_BUFFER_HEX
@@ -242,6 +242,8 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
 #endif //CONFIG_LOG_COLORS
 
 #define LOG_FORMAT(letter, format)  LOG_COLOR_ ## letter #letter " (%d) %s: " format LOG_RESET_COLOR "\n"
+
+/** @endcond */
 
 /// macro to output logs in startup code, before heap allocator and syscalls have been initialized. log at ``ESP_LOG_ERROR`` level. @see ``printf``,``ESP_LOGE``
 #define ESP_EARLY_LOGE( tag, format, ... ) ESP_LOG_EARLY_IMPL(tag, format, ESP_LOG_ERROR,   E, ##__VA_ARGS__)
@@ -287,11 +289,8 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
 /** runtime macro to output logs at a specified level.
  * 
  * @param tag tag of the log, which can be used to change the log level by ``esp_log_level_set`` at runtime.
- *
  * @param level level of the output log.
- *
  * @param format format of the output log. see ``printf``
- *
  * @param ... variables to be replaced into the log. see ``printf``
  *
  * @see ``printf``
