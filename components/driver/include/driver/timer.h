@@ -238,7 +238,7 @@ esp_err_t timer_set_alarm_value(timer_group_t group_num, timer_idx_t timer_num, 
 esp_err_t timer_get_alarm_value(timer_group_t group_num, timer_idx_t timer_num, uint64_t* alarm_value);
 
 /**
- * @brief Get timer alarm value.
+ * @brief Enable or disable generation of timer alarm events.
  *
  * @param group_num Timer group, 0 for TIMERG0 or 1 for TIMERG1
  * @param timer_num Timer index, 0 for hw_timer[0] & 1 for hw_timer[1]
