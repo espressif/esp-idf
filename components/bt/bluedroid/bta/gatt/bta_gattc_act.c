@@ -493,7 +493,12 @@ void bta_gattc_open_fail(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 void bta_gattc_open(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 {
     tBTA_GATTC_DATA gattc_data;
+    BOOLEAN found_app = FALSE;
 
+    tGATT_TCB *p_tcb = gatt_find_tcb_by_addr(p_data->api_conn.remote_bda, BT_TRANSPORT_LE);
+    if(p_tcb && p_clcb && p_data) {
+        found_app = gatt_find_specific_app_in_hold_link(p_tcb, p_clcb->p_rcb->client_if);
+    }
     /* open/hold a connection */
     if (!GATT_Connect(p_clcb->p_rcb->client_if, p_data->api_conn.remote_bda,
                       TRUE, p_data->api_conn.transport)) {
@@ -507,7 +512,7 @@ void bta_gattc_open(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
                                       &p_clcb->bta_conn_id,
                                       p_data->api_conn.transport)) {
             gattc_data.int_conn.hdr.layer_specific = p_clcb->bta_conn_id;
-
+            gattc_data.int_conn.already_connect = found_app;
             bta_gattc_sm_execute(p_clcb, BTA_GATTC_INT_CONN_EVT, &gattc_data);
         }
         /* else wait for the callback event */
@@ -672,14 +677,14 @@ void bta_gattc_conn(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
             if (bta_gattc_cache_load(p_clcb)) {
                 p_clcb->p_srcb->state = BTA_GATTC_SERV_IDLE;
                 bta_gattc_reset_discover_st(p_clcb->p_srcb, BTA_GATT_OK);
-        } else { /* cache is building */
+            } else { /* cache is building */
                 p_clcb->p_srcb->state = BTA_GATTC_SERV_DISC;
                 /* cache load failure, start discovery */
                 bta_gattc_start_discover(p_clcb, NULL);
+            }
+        } else { /* cache is building */
+            p_clcb->state = BTA_GATTC_DISCOVER_ST;
         }
-    } else { /* cache is building */
-        p_clcb->state = BTA_GATTC_DISCOVER_ST;
-    }
     } else {
         /* a pending service handle change indication */
         if (p_clcb->p_srcb->srvc_hdl_chg) {
@@ -694,9 +699,14 @@ void bta_gattc_conn(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
         if (p_clcb->transport == BTA_TRANSPORT_BR_EDR) {
             bta_sys_conn_open(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
         }
-
+        tBTA_GATT_STATUS status = BTA_GATT_OK;
+        if (p_data && p_data->int_conn.already_connect) {
+            //clear already_connect
+            p_data->int_conn.already_connect = FALSE;
+            status = BTA_GATT_ALREADY_OPEN;
+        }
         bta_gattc_send_open_cback(p_clcb->p_rcb,
-                                  BTA_GATT_OK,
+                                  status,
                                   p_clcb->bda,
                                   p_clcb->bta_conn_id,
                                   p_clcb->transport,
