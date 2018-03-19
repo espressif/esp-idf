@@ -326,7 +326,7 @@ typedef struct {
     UINT16              reason;
 } tBTA_GATTC_CLCB;
 
-/* back ground connection tracking information */
+/* background connection tracking information */
 #if GATT_MAX_APPS <= 8
 typedef UINT8 tBTA_GATTC_CIF_MASK ;
 #elif GATT_MAX_APPS <= 16
