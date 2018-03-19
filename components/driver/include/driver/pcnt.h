@@ -330,6 +330,61 @@ esp_err_t pcnt_set_mode(pcnt_unit_t unit, pcnt_channel_t channel,
                         pcnt_count_mode_t pos_mode, pcnt_count_mode_t neg_mode,
                         pcnt_ctrl_mode_t hctrl_mode, pcnt_ctrl_mode_t lctrl_mode);
 
+/**
+ * @brief Add ISR handler for specified unit.
+ *
+ * Call this function after using pcnt_isr_service_install() to
+ * install the PCNT driver's ISR handler service.
+ *
+ * The ISR handlers do not need to be declared with IRAM_ATTR,
+ * unless you pass the ESP_INTR_FLAG_IRAM flag when allocating the
+ * ISR in pcnt_isr_service_install().
+ *
+ * This ISR handler will be called from an ISR. So there is a stack
+ * size limit (configurable as "ISR stack size" in menuconfig). This
+ * limit is smaller compared to a global PCNT interrupt handler due
+ * to the additional level of indirection.
+ *
+ * @param unit PCNT unit number
+ * @param isr_handler Interrupt handler function.
+ * @param args Parameter for handler function
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t pcnt_isr_handler_add(pcnt_unit_t unit, void(*isr_handler)(void *), void *args);
+
+/**
+ * @brief Install PCNT ISR service.
+ * @note We can manage different interrupt service for each unit.
+ *       Please do not use pcnt_isr_register if this function was called.
+ *
+ * @param intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
+ *        ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_NO_MEM No memory to install this service
+ *     - ESP_ERR_INVALID_STATE ISR service already installed
+ */
+esp_err_t pcnt_isr_service_install(int intr_alloc_flags);
+
+/**
+ * @brief Uninstall PCNT ISR service, freeing related resources.
+ */
+void pcnt_isr_service_uninstall(void);
+
+/**
+ * @brief Delete ISR handler for specified unit.
+ *
+ * @param unit PCNT unit number
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t pcnt_isr_handler_remove(pcnt_unit_t unit);
 
 /**
  * @addtogroup pcnt-examples
