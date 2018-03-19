@@ -32,7 +32,7 @@
 static const char *CONFIG_FILE_PATH = "bt_config.conf";
 static const period_ms_t CONFIG_SETTLE_PERIOD_MS = 3000;
 
-static void btc_key_value_to_string(uint8_t *key_vaule, char *value_str, int key_length);
+static void btc_key_value_to_string(uint8_t *key_value, char *value_str, int key_length);
 static osi_mutex_t lock;  // protects operations on |config|.
 static config_t *config;
 
@@ -51,16 +51,16 @@ bool btc_compare_address_key_value(const char *section, char *key_type, void *ke
     return status;
 }
 
-static void btc_key_value_to_string(uint8_t *key_vaule, char *value_str, int key_length)
+static void btc_key_value_to_string(uint8_t *key_value, char *value_str, int key_length)
 {
     const char *lookup = "0123456789abcdef";
 
-    assert(key_vaule != NULL);
+    assert(key_value != NULL);
     assert(value_str != NULL);
 
     for (size_t i = 0; i < key_length; ++i) {
-        value_str[(i * 2) + 0] = lookup[(key_vaule[i] >> 4) & 0x0F];
-        value_str[(i * 2) + 1] = lookup[key_vaule[i] & 0x0F];
+        value_str[(i * 2) + 0] = lookup[(key_value[i] >> 4) & 0x0F];
+        value_str[(i * 2) + 1] = lookup[key_value[i] & 0x0F];
     }
 
     return;

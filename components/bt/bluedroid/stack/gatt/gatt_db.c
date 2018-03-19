@@ -794,7 +794,7 @@ tGATT_STATUS gatts_get_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
                         *value = p_cur->p_value->attr_val.attr_val;
                         return GATT_SUCCESS;
                     } else {
-                        GATT_TRACE_ERROR("gatts_get_attribute_vaule failt:the value length is 0");
+                        GATT_TRACE_ERROR("gatts_get_attribute_value failed:the value length is 0");
                         return GATT_INVALID_ATTR_LEN;
                     }
                     break;
@@ -805,7 +805,7 @@ tGATT_STATUS gatts_get_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
                     *value = p_cur->p_value->attr_val.attr_val;
                     return GATT_SUCCESS;
                 } else {
-                    GATT_TRACE_ERROR("gatts_get_attribute_vaule failed:the value length is 0");
+                    GATT_TRACE_ERROR("gatts_get_attribute_value failed:the value length is 0");
                     return GATT_INVALID_ATTR_LEN;
                 }
 
