@@ -185,8 +185,11 @@ bool rtc_clk_32k_enabled();
  * must be called one the 32k XTAL oscillator has started up. This function
  * will initially disable the 32k XTAL oscillator, so it should not be called
  * when the system is using 32k XTAL as RTC_SLOW_CLK.
+ *
+ * @param cycle Number of 32kHz cycles to bootstrap external crystal.
+ *              If 0, no square wave will be used to bootstrap crystal oscillation.
  */
-void rtc_clk_32k_bootstrap();
+void rtc_clk_32k_bootstrap(uint32_t cycle);
 
 /**
  * @brief Enable or disable 8 MHz internal oscillator
@@ -603,7 +606,6 @@ rtc_vddsdio_config_t rtc_vddsdio_get_config();
  * @param config new VDDSDIO configuration
  */
 void rtc_vddsdio_set_config(rtc_vddsdio_config_t config);
-
 
 #ifdef __cplusplus
 }

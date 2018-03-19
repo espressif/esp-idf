@@ -700,6 +700,16 @@ config ESP32_RTC_CLK_CAL_CYCLES
         - 150000 Hz if internal RC oscillator is used as clock source
         - 32768 Hz if the 32k crystal oscillator is used
 
+config ESP32_RTC_XTAL_BOOTSTRAP_CYCLES
+    int "Bootstrap cycles for external 32kHz crystal"
+    default 100
+    range 0 32768
+    help
+        To reduce the startup time of an external RTC crystal, 
+        we bootstrap it with a 32kHz square wave for a fixed number of cycles. 
+        Setting 0 will disable bootstrapping (if disabled, the crystal may take 
+        longer to start up or fail to oscillate under some conditions).
+
 config ESP32_DEEP_SLEEP_WAKEUP_DELAY
     int "Extra delay in deep sleep wake stub (in us)"
     default 2000
