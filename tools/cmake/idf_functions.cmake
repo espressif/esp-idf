@@ -18,8 +18,7 @@ macro(idf_set_global_variables)
     # (cmake calls this CMAKE_SOURCE_DIR, keeping old name for compatibility.)
     set(PROJECT_PATH "${CMAKE_SOURCE_DIR}")
 
-    # Note: "main" is no longer a component...
-    #
+    # Note: Unlike older build system, "main" is no longer a component. See build docs for details.    
     set_default(COMPONENT_DIRS "${PROJECT_PATH}/components ${EXTRA_COMPONENT_DIRS} ${IDF_PATH}/components")
     spaces2list(COMPONENT_DIRS)
 
