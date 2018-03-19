@@ -192,6 +192,7 @@ typedef struct {
     UINT8                   role;
     tBT_TRANSPORT           transport;
     tGATT_DISCONN_REASON    reason;
+    BOOLEAN                 already_connect;
 } tBTA_GATTC_INT_CONN;
 
 typedef struct {
