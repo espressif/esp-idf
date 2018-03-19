@@ -2396,7 +2396,7 @@ tGATT_BG_CONN_DEV *gatt_alloc_bg_dev(BD_ADDR remote_bda)
 **
 ** Function         gatt_add_bg_dev_list
 **
-** Description      add/remove device from the back ground connection device list
+** Description      add/remove device from the background connection device list
 **
 ** Returns          TRUE if device added to the list; FALSE failed
 **
@@ -2536,7 +2536,7 @@ BOOLEAN gatt_find_app_for_bg_dev(BD_ADDR bd_addr, tGATT_IF *p_gatt_if)
 **
 ** Function         gatt_remove_bg_dev_from_list
 **
-** Description      add/remove device from the back ground connection device list or
+** Description      add/remove device from the background connection device list or
 **                  listening to advertising list.
 **
 ** Returns          pointer to the device record
@@ -2599,7 +2599,7 @@ BOOLEAN gatt_remove_bg_dev_from_list(tGATT_REG *p_reg, BD_ADDR bd_addr, BOOLEAN 
 **
 ** Function         gatt_deregister_bgdev_list
 **
-** Description      deregister all related back ground connetion device.
+** Description      deregister all related background connection device.
 **
 ** Returns          pointer to the device record
 **
