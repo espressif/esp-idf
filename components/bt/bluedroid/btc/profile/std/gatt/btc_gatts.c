@@ -832,7 +832,7 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         param.add_char_descr.status = p_data->add_result.status;
         param.add_char_descr.attr_handle = p_data->add_result.attr_id;
         param.add_char_descr.service_handle = p_data->add_result.service_id;
-        bta_to_btc_uuid(&param.add_char_descr.char_uuid, &p_data->add_result.char_uuid);
+        bta_to_btc_uuid(&param.add_char_descr.descr_uuid, &p_data->add_result.char_uuid);
 
         btc_gatts_cb_to_app(ESP_GATTS_ADD_CHAR_DESCR_EVT, gatts_if, &param);
         break;
