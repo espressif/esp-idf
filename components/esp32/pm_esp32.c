@@ -426,9 +426,15 @@ void esp_pm_impl_dump_stats(FILE* out)
 
     time_in_mode[cur_mode] += now - last_mode_change_time;
 
+    fprintf(out, "Mode stats:\n");
     for (int i = 0; i < PM_MODE_COUNT; ++i) {
-        fprintf(out, "%8s  %12lld  %2d%%\n",
+        if (i == PM_MODE_LIGHT_SLEEP && !s_light_sleep_en) {
+            /* don't display light sleep mode if it's not enabled */
+            continue;
+        }
+        fprintf(out, "%8s %6s %12lld  %2d%%\n",
                 s_mode_names[i],
+                s_freq_names[s_cpu_freq_by_mode[i]],
                 time_in_mode[i],
                 (int) (time_in_mode[i] * 100 / now));
     }
