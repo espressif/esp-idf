@@ -67,7 +67,8 @@ After the alarm is enabled and the timer reaches the alarm value, depending on c
 
 .. note::
 
-    The alarm will be triggered immediately, if an alarm value is set and the timer has already passed this value.
+    * The alarm will be triggered immediately, if an alarm value is set and the timer has already passed this value.
+    * Once triggered the alarm will be disabled automatically and needs to be re-armed to trigger again.
 
 To check what alarm value has been set up, call :cpp:func:`timer_get_alarm_value`.
 
