@@ -37,11 +37,6 @@ typedef esp_sleep_pd_option_t esp_deep_sleep_pd_option_t;
 typedef esp_sleep_ext1_wakeup_mode_t esp_ext1_wakeup_mode_t;
 typedef esp_sleep_wakeup_cause_t esp_deep_sleep_wakeup_cause_t;
 
-inline static esp_err_t esp_deep_sleep_disable_wakeup_source(esp_sleep_source_t source)
-{
-    return esp_sleep_disable_wakeup_source(source);
-}
-
 inline static esp_err_t esp_deep_sleep_enable_ulp_wakeup(void)
 {
     return esp_sleep_enable_ulp_wakeup();
