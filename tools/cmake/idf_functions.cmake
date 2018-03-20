@@ -18,7 +18,7 @@ macro(idf_set_global_variables)
     # (cmake calls this CMAKE_SOURCE_DIR, keeping old name for compatibility.)
     set(PROJECT_PATH "${CMAKE_SOURCE_DIR}")
 
-    # Note: Unlike older build system, "main" is no longer a component. See build docs for details.    
+    # Note: Unlike older build system, "main" is no longer a component. See build docs for details.
     set_default(COMPONENT_DIRS "${PROJECT_PATH}/components ${EXTRA_COMPONENT_DIRS} ${IDF_PATH}/components")
     spaces2list(COMPONENT_DIRS)
 
@@ -97,12 +97,12 @@ function(idf_set_global_compiler_options)
     add_compile_options("-I${CMAKE_BINARY_DIR}") # for sdkconfig.h
 
     # Enable ccache if it's on the path
-	if(NOT CCACHE_DISABLE)
-		find_program(CCACHE_FOUND ccache)
-		if(CCACHE_FOUND)
-			message(STATUS "ccache will be used for faster builds")			
-			set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)		
-		endif()
+    if(NOT CCACHE_DISABLE)
+        find_program(CCACHE_FOUND ccache)
+        if(CCACHE_FOUND)
+            message(STATUS "ccache will be used for faster builds")
+            set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+        endif()
     endif()
 
 endfunction()

@@ -1,7 +1,7 @@
 set(COMPONENT_SRCDIRS "." "gcov")
 set(COMPONENT_ADD_INCLUDEDIRS "include")
 
-if (CONFIG_SYSVIEW_ENABLE)
+if(CONFIG_SYSVIEW_ENABLE)
     list(APPEND COMPONENT_ADD_INCLUDEDIRS
         sys_view/Config
         sys_view/SEGGER

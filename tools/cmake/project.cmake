@@ -7,7 +7,7 @@ set(IDF_PATH "$ENV{IDF_PATH}")
 if(NOT IDF_PATH)
     # Documentation says you should set IDF_PATH in your environment, but we
     # can infer it here if it's not set.
-    set(IDF_PATH ${CMAKE_CURRENT_LIST_DIR})    
+    set(IDF_PATH ${CMAKE_CURRENT_LIST_DIR})
 endif()
 file(TO_CMAKE_PATH "${IDF_PATH}" IDF_PATH)
 set($ENV{IDF_PATH} "${IDF_PATH}")
