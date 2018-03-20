@@ -18,7 +18,6 @@
 #include "esp_err.h"
 #include "driver/gpio.h"
 #include "driver/touch_pad.h"
-#include "soc/rtc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,19 +60,10 @@ typedef enum {
     ESP_SLEEP_WAKEUP_TIMER,        //!< Wakeup caused by timer
     ESP_SLEEP_WAKEUP_TOUCHPAD,     //!< Wakeup caused by touchpad
     ESP_SLEEP_WAKEUP_ULP,          //!< Wakeup caused by ULP program
-} esp_sleep_wakeup_cause_t;
-
-/**
- * @brief Sleep wakeup sources for esp_sleep_disable_wakeup_source function
- */
-typedef enum {
-    ESP_SLEEP_SOURCE_UNDEFINED,     //!< Wakeup source is not defined
-    ESP_SLEEP_SOURCE_EXT0,          //!< Wakeup source for external signal using RTC_IO
-    ESP_SLEEP_SOURCE_EXT1,          //!< Wakeup source for external signal using RTC_CNTL
-    ESP_SLEEP_SOURCE_TIMER,         //!< Wakeup source for timer
-    ESP_SLEEP_SOURCE_TOUCHPAD,      //!< Wakeup source for touchpad
-    ESP_SLEEP_SOURCE_ULP,           //!< Wakeup source for ULP program
 } esp_sleep_source_t;
+
+/* Leave this type define for compatibility */
+typedef esp_sleep_source_t esp_sleep_wakeup_cause_t;
 
 /**
  * @brief Disable wakeup source

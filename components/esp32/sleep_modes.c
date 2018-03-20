@@ -290,28 +290,25 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
     // For most of sources it is enough to set trigger mask in local
     // configuration structure. The actual RTC wake up options
     // will be updated by esp_sleep_start().
-    if (CHECK_SOURCE(source, ESP_SLEEP_SOURCE_TIMER, RTC_TIMER_TRIG_EN)) {
+    if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_TIMER, RTC_TIMER_TRIG_EN)) {
         s_config.wakeup_triggers &= ~RTC_TIMER_TRIG_EN;
         s_config.sleep_duration = 0;
     }
-    else if (CHECK_SOURCE(source, ESP_SLEEP_SOURCE_EXT0, RTC_EXT0_TRIG_EN)) {
+    else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_EXT0, RTC_EXT0_TRIG_EN)) {
         s_config.ext0_rtc_gpio_num = 0;
         s_config.ext0_trigger_level = 0;
         s_config.wakeup_triggers &= ~RTC_EXT0_TRIG_EN;
     }
-    else if (CHECK_SOURCE(source, ESP_SLEEP_SOURCE_EXT1, RTC_EXT1_TRIG_EN)) {
+    else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_EXT1, RTC_EXT1_TRIG_EN)) {
         s_config.ext1_rtc_gpio_mask = 0;
         s_config.ext1_trigger_mode = 0;
         s_config.wakeup_triggers &= ~RTC_EXT1_TRIG_EN;
     }
-    else if (CHECK_SOURCE(source, ESP_SLEEP_SOURCE_TOUCHPAD, RTC_TOUCH_TRIG_EN)) {
+    else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_TOUCHPAD, RTC_TOUCH_TRIG_EN)) {
         s_config.wakeup_triggers &= ~RTC_TOUCH_TRIG_EN;
     }
 #ifdef CONFIG_ULP_COPROC_ENABLED
-    else if (CHECK_SOURCE(source, ESP_SLEEP_SOURCE_ULP, RTC_ULP_TRIG_EN)) {
-        // The ulp wake up option is disabled immediately
-        CLEAR_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_WAKEUP_FORCE_EN);
-        CLEAR_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
+    else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_ULP, RTC_ULP_TRIG_EN)) {
         s_config.wakeup_triggers &= ~RTC_ULP_TRIG_EN;
     }
 #endif
