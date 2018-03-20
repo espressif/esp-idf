@@ -829,7 +829,7 @@ tBTA_GATT_STATUS BTA_GATTC_RegisterForNotifications (tBTA_GATTC_IF client_if,
             if ( p_clreg->notif_reg[i].in_use &&
                     !memcmp(p_clreg->notif_reg[i].remote_bda, bda, BD_ADDR_LEN) &&
                   p_clreg->notif_reg[i].handle == handle) {
-                APPL_TRACE_WARNING("notification already registered");
+                APPL_TRACE_DEBUG("notification already registered");
                 status = BTA_GATT_OK;
                 break;
             }

@@ -180,11 +180,7 @@ BOOLEAN BTM_SecAddBleKey (BD_ADDR bd_addr, tBTM_LE_KEY_VALUE *p_le_key, tBTM_LE_
 
 #if (BLE_PRIVACY_SPT == TRUE)
     if (key_type == BTM_LE_KEY_PID || key_type == BTM_LE_KEY_LID) {
-        /* It will cause that scanner doesn't send scan request to advertiser
-         * which has sent IRK to us and we have stored the IRK in controller.
-         * It is a design problem of hardware. The temporal solution is not to 
-         * send the key to the controller and then resolve the random address in host. */
-        //btm_ble_resolving_list_load_dev (p_dev_rec);
+        btm_ble_resolving_list_load_dev (p_dev_rec);
     }
 #endif
 
@@ -1916,7 +1912,17 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
 
         /* possiblly receive connection complete with resolvable random on
            slave role while the device has been paired */
-        if (!match && role == HCI_ROLE_SLAVE && BTM_BLE_IS_RESOLVE_BDA(bda)) {
+
+        /* It will cause that scanner doesn't send scan request to advertiser
+        * which has sent IRK to us and we have stored the IRK in controller.
+        * It is a design problem of hardware. The temporal solution is not to 
+        * send the key to the controller and then resolve the random address in host.
+        * so we need send the real address information to controller to connect. 
+        * Once the connection is successful, resolve device address whether it is 
+        * slave or master*/
+
+        /* if (!match && role == HCI_ROLE_SLAVE && BTM_BLE_IS_RESOLVE_BDA(bda)) { */
+        if (!match && BTM_BLE_IS_RESOLVE_BDA(bda)) {
             // save the enhanced value to used in btm_ble_resolve_random_addr_on_conn_cmpl func.
             temp_enhanced = enhanced;
             btm_ble_resolve_random_addr(bda, btm_ble_resolve_random_addr_on_conn_cmpl, p_data);
@@ -2075,11 +2081,7 @@ UINT8 btm_proc_smp_cback(tSMP_EVT event, BD_ADDR bd_addr, tSMP_EVT_DATA *p_data)
                     p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
                     /* add all bonded device into resolving list if IRK is available*/
-                    /* It will cause that scanner doesn't send scan request to advertiser
-                     * which has sent IRK to us and we have stored the IRK in controller.
-                     * It is a design problem of hardware. The temporal solution is not to 
-                     * send the key to the controller and then resolve the random address in host. */
-                    //btm_ble_resolving_list_load_dev(p_dev_rec);
+                    btm_ble_resolving_list_load_dev(p_dev_rec);
 #endif
                 }
 
