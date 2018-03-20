@@ -162,7 +162,7 @@ typedef union {
         esp_gatt_status_t status;       /*!< Operation status */
         uint16_t attr_handle;           /*!< Descriptor attribute handle */
         uint16_t service_handle;        /*!< Service attribute handle */
-        esp_bt_uuid_t char_uuid;        /*!< Characteristic uuid */
+        esp_bt_uuid_t descr_uuid;       /*!< Characteristic descriptor uuid */
     } add_char_descr;                   /*!< Gatt server callback param of ESP_GATTS_ADD_CHAR_DESCR_EVT */
 
     /**
