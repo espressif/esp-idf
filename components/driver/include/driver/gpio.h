@@ -302,6 +302,8 @@ esp_err_t gpio_set_level(gpio_num_t gpio_num, uint32_t level);
 /**
  * @brief  GPIO get input level
  *
+ * @warning If the pad is not configured for input (or input and output) the returned value is always 0.
+ *
  * @param  gpio_num GPIO number. If you want to get the logic level of e.g. pin GPIO16, gpio_num should be GPIO_NUM_16 (16);
  *
  * @return
