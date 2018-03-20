@@ -82,14 +82,9 @@ static bool s_core_idle[portNUM_PROCESSORS];
 extern uint32_t g_ticks_per_us_pro;
 
 /* Lookup table of CPU frequencies to be used in each mode.
- * Modified by esp_pm_configure.
+ * Initialized by esp_pm_impl_init and modified by esp_pm_configure.
  */
-rtc_cpu_freq_t s_cpu_freq_by_mode[PM_MODE_COUNT] = {
-        [PM_MODE_LIGHT_SLEEP] = (rtc_cpu_freq_t) -1, /* unused */
-        [PM_MODE_APB_MIN] = RTC_CPU_FREQ_XTAL,
-        [PM_MODE_APB_MAX] = RTC_CPU_FREQ_80M,
-        [PM_MODE_CPU_MAX] = RTC_CPU_FREQ_80M,
-};
+rtc_cpu_freq_t s_cpu_freq_by_mode[PM_MODE_COUNT];
 
 /* Lookup table of CPU ticks per microsecond for each RTC_CPU_FREQ_ value.
  * Essentially the same as returned by rtc_clk_cpu_freq_value(), but without
@@ -192,6 +187,7 @@ esp_err_t esp_pm_configure(const void* vconfig)
     s_cpu_freq_by_mode[PM_MODE_CPU_MAX] = max_freq;
     s_cpu_freq_by_mode[PM_MODE_APB_MAX] = apb_max_freq;
     s_cpu_freq_by_mode[PM_MODE_APB_MIN] = min_freq;
+    s_cpu_freq_by_mode[PM_MODE_LIGHT_SLEEP] = min_freq;
     s_light_sleep_en = config->light_sleep_enable;
     portEXIT_CRITICAL(&s_switch_lock);
 
@@ -452,5 +448,14 @@ void esp_pm_impl_init()
     ESP_ERROR_CHECK(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "rtos1",
             &s_rtos_lock_handle[1]));
     ESP_ERROR_CHECK(esp_pm_lock_acquire(s_rtos_lock_handle[1]));
+
+    /* Configure all modes to use the default CPU frequency.
+     * This will be modified later by a call to esp_pm_configure.
+     */
+    rtc_cpu_freq_t default_freq;
+    assert(rtc_clk_cpu_freq_from_mhz(CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ, &default_freq));
+    for (size_t i = 0; i < PM_MODE_COUNT; ++i) {
+        s_cpu_freq_by_mode[i] = default_freq;
+    }
 #endif // portNUM_PROCESSORS == 2
 }
