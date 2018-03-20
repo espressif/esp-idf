@@ -15,7 +15,7 @@ if(CONFIG_BLUEDROID_ENABLED)
         bluedroid/hci/include
         bluedroid/osi/include
         bluedroid/external/sbc/decoder/include
-		bluedroid/external/sbc/encoder/include
+        bluedroid/external/sbc/encoder/include
         bluedroid/btc/profile/esp/blufi/include
         bluedroid/btc/profile/esp/include
         bluedroid/btc/profile/std/a2dp/include
@@ -51,7 +51,7 @@ if(CONFIG_BLUEDROID_ENABLED)
         bluedroid/main
         bluedroid/osi
         bluedroid/external/sbc/decoder/srce
-	    bluedroid/external/sbc/encoder/srce
+        bluedroid/external/sbc/encoder/srce
         bluedroid/btc/core
         bluedroid/btc/profile/esp/blufi
         bluedroid/btc/profile/std/gap

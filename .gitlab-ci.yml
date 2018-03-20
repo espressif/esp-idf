@@ -234,6 +234,12 @@ build_docs:
     - make html
     - ../check_doc_warnings.sh
 
+verify_cmake_style:
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  script:
+    tools/cmake/run_cmake_lint.sh
+
 test_nvs_on_host:
   stage: test
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
