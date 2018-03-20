@@ -29,6 +29,7 @@
 #include "freertos/semphr.h"
 
 #include "pthread_internal.h"
+#include "esp_pthread.h"
 
 #define LOG_LOCAL_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include "esp_log.h"
@@ -53,6 +54,7 @@ typedef struct esp_pthread_entry {
 typedef struct {
     void *(*func)(void *);  ///< user task entry
     void *arg;              ///< user task argument
+    esp_pthread_cfg_t cfg;  ///< pthread configuration
 } esp_pthread_task_arg_t;
 
 /** pthread mutex FreeRTOS wrapper */
@@ -66,14 +68,24 @@ static SemaphoreHandle_t s_threads_mux  = NULL;
 static portMUX_TYPE s_mutex_init_lock   = portMUX_INITIALIZER_UNLOCKED;
 static SLIST_HEAD(esp_thread_list_head, esp_pthread_entry) s_threads_list
                                         = SLIST_HEAD_INITIALIZER(s_threads_list);
+static pthread_key_t s_pthread_cfg_key;
 
 
 static int IRAM_ATTR pthread_mutex_lock_internal(esp_pthread_mutex_t *mux, TickType_t tmo);
 
+static void esp_pthread_cfg_key_destructor(void *value)
+{
+    free(value);
+}
+
 esp_err_t esp_pthread_init(void)
 {
+    if (pthread_key_create(&s_pthread_cfg_key, esp_pthread_cfg_key_destructor) != 0) {
+        return ESP_ERR_NO_MEM;
+    }
     s_threads_mux = xSemaphoreCreateMutex();
     if (s_threads_mux == NULL) {
+	pthread_key_delete(s_pthread_cfg_key);
         return ESP_ERR_NO_MEM;
     }
     return ESP_OK;
@@ -123,15 +135,46 @@ static void pthread_delete(esp_pthread_t *pthread)
     free(pthread);
 }
 
+
+/* Call this function to configure pthread stacks in Pthreads */
+esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg)
+{
+    /* If a value is already set, update that value */
+    esp_pthread_cfg_t *p = pthread_getspecific(s_pthread_cfg_key);
+    if (!p) {
+	p = malloc(sizeof(esp_pthread_cfg_t));
+	if (!p) {
+	    return ESP_ERR_NO_MEM;
+	}
+    }
+    *p = *cfg;
+    pthread_setspecific(s_pthread_cfg_key, p);
+    return 0;
+}
+
+esp_err_t esp_pthread_get_cfg(esp_pthread_cfg_t *p)
+{
+    esp_pthread_cfg_t *cfg = pthread_getspecific(s_pthread_cfg_key);
+    if (cfg) {
+	*p = *cfg;
+	return ESP_OK;
+    }
+    memset(p, 0, sizeof(*p));
+    return ESP_ERR_NOT_FOUND;
+}
+
 static void pthread_task_func(void *arg)
 {
     esp_pthread_task_arg_t *task_arg = (esp_pthread_task_arg_t *)arg;
 
     ESP_LOGV(TAG, "%s ENTER %p", __FUNCTION__, task_arg->func);
-
     // wait for start
     xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
 
+    if (task_arg->cfg.inherit_cfg) {
+	/* If inherit option is set, then do a set_cfg() ourselves for future forks */
+	esp_pthread_set_cfg(&task_arg->cfg);
+    }
     ESP_LOGV(TAG, "%s START %p", __FUNCTION__, task_arg->func);
     task_arg->func(task_arg->arg);
     ESP_LOGV(TAG, "%s END %p", __FUNCTION__, task_arg->func);
@@ -190,11 +233,23 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
         free(task_arg);
         return ENOMEM;
     }
+    uint32_t stack_size = CONFIG_ESP32_PTHREAD_TASK_STACK_SIZE_DEFAULT;
+    BaseType_t prio = CONFIG_ESP32_PTHREAD_TASK_PRIO_DEFAULT;
+    esp_pthread_cfg_t *pthread_cfg = pthread_getspecific(s_pthread_cfg_key);
+    if (pthread_cfg) {
+	if (pthread_cfg->stack_size) {
+	    stack_size = pthread_cfg->stack_size;
+	}
+	if (pthread_cfg->prio && pthread_cfg->prio < configMAX_PRIORITIES) {
+	    prio = pthread_cfg->prio;
+	}
+	task_arg->cfg = *pthread_cfg;
+    }
     memset(pthread, 0, sizeof(esp_pthread_t));
     task_arg->func = start_routine;
     task_arg->arg = arg;
-    BaseType_t res = xTaskCreate(&pthread_task_func, "pthread", CONFIG_ESP32_PTHREAD_TASK_STACK_SIZE_DEFAULT,
-        task_arg, CONFIG_ESP32_PTHREAD_TASK_PRIO_DEFAULT, &xHandle);
+    BaseType_t res = xTaskCreate(&pthread_task_func, "pthread", stack_size,
+		      task_arg, prio, &xHandle);
     if(res != pdPASS) {
         ESP_LOGE(TAG, "Failed to create task!");
         free(pthread);
