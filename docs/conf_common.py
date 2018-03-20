@@ -16,7 +16,7 @@
 
 import sys, os
 import re
-from subprocess import Popen, PIPE
+import subprocess
 import shlex
 
 # Note: If extensions (or modules to document with autodoc) are in another directory,
@@ -41,9 +41,21 @@ copy_if_modified('xml/', 'xml_in/')
 os.system('python ../gen-dxd.py')
 
 # Generate 'kconfig.inc' file from components' Kconfig files
+print "Generating kconfig.inc from kconfig contents"
 kconfig_inc_path = '{}/inc/kconfig.inc'.format(builddir)
-os.system('python ../gen-kconfig-doc.py > ' + kconfig_inc_path + '.in')
-copy_if_modified(kconfig_inc_path + '.in', kconfig_inc_path)
+temp_sdkconfig_path = '{}/sdkconfig.tmp'.format(builddir)
+kconfigs = subprocess.check_output(["find", "../../components", "-name", "Kconfig"])
+kconfig_projbuilds = subprocess.check_output(["find", "../../components", "-name", "Kconfig.projbuild"])
+confgen_args = ["python",
+                "../../tools/kconfig_new/confgen.py",
+                "--kconfig", "../../Kconfig",
+                "--config", temp_sdkconfig_path,
+                "--create-config-if-missing",
+                "--env", "COMPONENT_KCONFIGS={}".format(kconfigs),
+                "--env", "COMPONENT_KCONFIGS_PROJBUILD={}".format(kconfig_projbuilds),
+                "--output", "docs", kconfig_inc_path
+]
+subprocess.check_call(confgen_args)
 
 # http://stackoverflow.com/questions/12772927/specifying-an-online-image-in-sphinx-restructuredtext-format
 # 
