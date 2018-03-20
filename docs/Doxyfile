@@ -155,6 +155,8 @@ INPUT = \
     ../../components/esp32/include/esp32/pm.h \
     ### esp_timer, High Resolution Timer
     ../../components/esp32/include/esp_timer.h \
+    ### ESP Pthread parameters
+    ../../components/pthread/include/esp_pthread.h \
     ###
     ### FreeRTOS
     ###
