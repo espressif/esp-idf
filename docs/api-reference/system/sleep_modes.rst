@@ -142,7 +142,7 @@ Checking sleep wakeup cause
 The following function can be used to check which wakeup source has triggered wakeup from sleep mode. For touch pad and ext1 wakeup sources, it is possible to identify pin or touch pad which has caused wakeup.
 
 .. doxygenfunction:: esp_sleep_get_wakeup_cause
-.. doxygenenum:: esp_sleep_wakeup_cause_t
+.. doxygentypedef:: esp_sleep_wakeup_cause_t
 .. doxygenfunction:: esp_sleep_get_touchpad_wakeup_status
 .. doxygenfunction:: esp_sleep_get_ext1_wakeup_status
 
