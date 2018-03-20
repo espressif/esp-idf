@@ -766,6 +766,15 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
 *******************************************************************************/
 BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
 {
+#if ( (defined BLE_PRIVACY_SPT) && (BLE_PRIVACY_SPT == TRUE))
+    //check for security device information in the cache
+    bool dev_rec_exist = true;
+    tBTM_SEC_DEV_REC *find_dev_rec = btm_find_dev (p_lcb->remote_bd_addr);
+    if(find_dev_rec == NULL) {
+        dev_rec_exist = false;
+    }
+
+#endif
     tBTM_SEC_DEV_REC *p_dev_rec = btm_find_or_alloc_dev (p_lcb->remote_bd_addr);
     tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
     UINT16 scan_int;
@@ -788,6 +797,26 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
 
 #if ( (defined BLE_PRIVACY_SPT) && (BLE_PRIVACY_SPT == TRUE))
     own_addr_type = btm_cb.ble_ctr_cb.privacy_mode ? BLE_ADDR_RANDOM : BLE_ADDR_PUBLIC;
+    if(dev_rec_exist) {
+        // if the current address information is valid, get the real address information
+        if(p_dev_rec->ble.current_addr_valid) {
+            peer_addr_type = p_dev_rec->ble.current_addr_type;
+            memcpy(peer_addr, p_dev_rec->ble.current_addr, 6);
+        } else {
+            /* find security device information but not find the real address information
+             * This state may be directly open whithout scanning. In this case, you must 
+             * use the current adv address of the device to open*/
+        } 
+    } else {
+        //not find security device information, We think this is a new device, connect directly
+    }
+
+    /* It will cause that scanner doesn't send scan request to advertiser
+    * which has sent IRK to us and we have stored the IRK in controller.
+    * It is a design problem of hardware. The temporal solution is not to 
+    * send the key to the controller and then resolve the random address in host.
+    * so we need send the real address information to controller. */
+    /*
     if (p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {
         if (btm_cb.ble_ctr_cb.privacy_mode >=  BTM_PRIVACY_1_2) {
             own_addr_type |= BLE_ADDR_TYPE_ID_BIT;
@@ -798,6 +827,7 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
     } else {
         btm_ble_disable_resolving_list(BTM_BLE_RL_INIT, TRUE);
     }
+    */
 #endif
 
     if (!btm_ble_topology_check(BTM_BLE_STATE_INIT)) {
