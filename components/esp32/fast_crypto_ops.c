@@ -55,7 +55,7 @@ const wpa2_crypto_funcs_t g_wifi_default_wpa2_crypto_funcs = {
     .crypto_cipher_encrypt = (esp_crypto_cipher_encrypt_t)fast_crypto_cipher_encrypt,
     .crypto_cipher_decrypt = (esp_crypto_cipher_decrypt_t)fast_crypto_cipher_decrypt,
     .crypto_cipher_deinit = (esp_crypto_cipher_deinit_t)fast_crypto_cipher_deinit,
-    .sha256_vector = (esp_sha256_vector_t)fast_sha256_vector,
-    .crypto_mod_exp = (esp_crypto_mod_exp_t)crypto_mod_exp
+    .crypto_mod_exp = (esp_crypto_mod_exp_t)crypto_mod_exp,
+    .sha256_vector = (esp_sha256_vector_t)fast_sha256_vector
 };
 

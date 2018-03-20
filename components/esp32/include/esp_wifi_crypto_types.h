@@ -296,8 +296,8 @@ typedef struct {
     esp_crypto_cipher_encrypt_t crypto_cipher_encrypt;        /**< function used to encrypt cipher when use TLSV1 */
     esp_crypto_cipher_decrypt_t crypto_cipher_decrypt;        /**< function used to decrypt cipher when use TLSV1 */
     esp_crypto_cipher_deinit_t crypto_cipher_deinit;          /**< function used to free context when use TLSV1 */
-    esp_sha256_vector_t sha256_vector;                        /**< function used to do X.509v3 certificate parsing and processing */
     esp_crypto_mod_exp_t crypto_mod_exp;                      /**< function used to do key exchange when use TLSV1 */
+    esp_sha256_vector_t sha256_vector;                        /**< function used to do X.509v3 certificate parsing and processing */
 } wpa2_crypto_funcs_t;
 
 #ifdef __cplusplus
