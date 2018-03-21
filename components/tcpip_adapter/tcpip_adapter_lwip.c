@@ -408,19 +408,25 @@ esp_err_t tcpip_adapter_set_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_i
 
     if (p_netif != NULL && netif_is_up(p_netif)) {
         netif_set_addr(p_netif, &ip_info->ip, &ip_info->netmask, &ip_info->gw);
-        if (!(ip4_addr_isany_val(ip_info->ip) || ip4_addr_isany_val(ip_info->netmask) || ip4_addr_isany_val(ip_info->gw))) {
-            system_event_t evt;
-            evt.event_id = SYSTEM_EVENT_STA_GOT_IP;
-            evt.event_info.got_ip.ip_changed = false;
+        if (tcpip_if == TCPIP_ADAPTER_IF_STA || tcpip_if == TCPIP_ADAPTER_IF_ETH) {
+            if (!(ip4_addr_isany_val(ip_info->ip) || ip4_addr_isany_val(ip_info->netmask) || ip4_addr_isany_val(ip_info->gw))) {
+                system_event_t evt;
+                if (tcpip_if == TCPIP_ADAPTER_IF_STA) {
+                    evt.event_id = SYSTEM_EVENT_STA_GOT_IP;
+                } else if (tcpip_if == TCPIP_ADAPTER_IF_ETH) {
+                    evt.event_id = SYSTEM_EVENT_ETH_GOT_IP;
+                }
+                evt.event_info.got_ip.ip_changed = false;
 
-            if (memcmp(ip_info, &esp_ip_old[tcpip_if], sizeof(tcpip_adapter_ip_info_t))) {
-                evt.event_info.got_ip.ip_changed = true;
+                if (memcmp(ip_info, &esp_ip_old[tcpip_if], sizeof(tcpip_adapter_ip_info_t))) {
+                    evt.event_info.got_ip.ip_changed = true;
+                }
+
+                memcpy(&evt.event_info.got_ip.ip_info, ip_info, sizeof(tcpip_adapter_ip_info_t));
+                memcpy(&esp_ip_old[tcpip_if], ip_info, sizeof(tcpip_adapter_ip_info_t));
+                esp_event_send(&evt);
+                ESP_LOGD(TAG, "if%d tcpip adapter set static ip: ip changed=%d", tcpip_if, evt.event_info.got_ip.ip_changed);
             }
-
-            memcpy(&evt.event_info.got_ip.ip_info, ip_info, sizeof(tcpip_adapter_ip_info_t));
-            memcpy(&esp_ip_old[tcpip_if], ip_info, sizeof(tcpip_adapter_ip_info_t));
-            esp_event_send(&evt);
-            ESP_LOGD(TAG, "if%d tcpip adapter set static ip: ip changed=%d", tcpip_if, evt.event_info.got_ip.ip_changed);
         }
     }
 
