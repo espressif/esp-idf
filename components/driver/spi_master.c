@@ -84,7 +84,7 @@ typedef struct {
     int prev_cs;
     lldesc_t *dmadesc_tx;
     lldesc_t *dmadesc_rx;
-    bool no_gpio_matrix;
+    uint32_t flags;
     int dma_chan;
     int max_transfer_sz;
 #ifdef CONFIG_PM_ENABLE
@@ -121,7 +121,7 @@ static void spi_intr(void *arg);
 
 esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, int dma_chan)
 {
-    bool native, spi_chan_claimed, dma_chan_claimed;
+    bool spi_chan_claimed, dma_chan_claimed;
     esp_err_t ret = ESP_OK;
     esp_err_t err;
     /* ToDo: remove this when we have flash operations cooperating with this */
@@ -155,14 +155,13 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
         goto cleanup;
     }
 #endif //CONFIG_PM_ENABLE
-    
-    err = spicommon_bus_initialize_io(host, bus_config, dma_chan, SPICOMMON_BUSFLAG_MASTER|SPICOMMON_BUSFLAG_QUAD, &native);
+
+    err = spicommon_bus_initialize_io(host, bus_config, dma_chan, SPICOMMON_BUSFLAG_MASTER|bus_config->flags, &spihost[host]->flags);
     if (err != ESP_OK) {
         ret = err;
         goto cleanup;
     }
-    spihost[host]->no_gpio_matrix=native;
-    
+
     spihost[host]->dma_chan=dma_chan;
     if (dma_chan == 0) {
         spihost[host]->max_transfer_sz = 32;
@@ -294,7 +293,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host, const spi_device_interface_
     //Speeds >=40MHz over GPIO matrix needs a dummy cycle, but these don't work for full-duplex connections.
     duty_cycle = (dev_config->duty_cycle_pos==0? 128: dev_config->duty_cycle_pos);
     eff_clk = spi_cal_clock(apbclk, dev_config->clock_speed_hz, duty_cycle, (uint32_t*)&clk_reg);    
-    uint32_t dummy_limit = spi_dummy_limit(!spihost[host]->no_gpio_matrix);
+    uint32_t dummy_limit = spi_dummy_limit(!(spihost[host]->flags&SPICOMMON_BUSFLAG_NATIVE_PINS));
     SPI_CHECK( dev_config->flags & SPI_DEVICE_HALFDUPLEX || (eff_clk/1000/1000) < (dummy_limit/1000/1000) ||
             dev_config->flags & SPI_DEVICE_NO_DUMMY,
 "When GPIO matrix is used in full-duplex mode at frequency > 26MHz, device cannot read correct data.\n\
@@ -327,7 +326,7 @@ Specify ``SPI_DEVICE_NO_DUMMY`` to ignore this checking. Then you can output dat
     //Set CS pin, CS options
     if (dev_config->spics_io_num >= 0) {
         gpio_set_direction(dev_config->spics_io_num, GPIO_MODE_OUTPUT);
-        spicommon_cs_initialize(host, dev_config->spics_io_num, freecs, spihost[host]->no_gpio_matrix == false);
+        spicommon_cs_initialize(host, dev_config->spics_io_num, freecs, !(spihost[host]->flags&SPICOMMON_BUSFLAG_NATIVE_PINS));
     }
     if (dev_config->flags&SPI_DEVICE_CLK_AS_CS) {
         spihost[host]->hw->pin.master_ck_sel |= (1<<freecs);
@@ -519,7 +518,7 @@ static void IRAM_ATTR spi_intr(void *arg)
             //Configure polarity
             //SPI iface needs to be configured for a delay in some cases.
             int nodelay=0;
-            if (host->no_gpio_matrix) {
+            if ((host->flags&SPICOMMON_BUSFLAG_NATIVE_PINS)!=0) {
                 if (effclk >= apbclk/2) {
                     nodelay=1;
                 }
