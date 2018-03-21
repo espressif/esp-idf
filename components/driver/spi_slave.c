@@ -56,7 +56,7 @@ typedef struct {
     spi_slave_transaction_t *cur_trans;
     lldesc_t *dmadesc_tx;
     lldesc_t *dmadesc_rx;
-    bool no_gpio_matrix;
+    uint32_t flags;
     int max_transfer_sz;
     QueueHandle_t trans_queue;
     QueueHandle_t ret_queue;
@@ -72,7 +72,7 @@ static void IRAM_ATTR spi_intr(void *arg);
 
 esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, const spi_slave_interface_config_t *slave_config, int dma_chan)
 {
-    bool native, spi_chan_claimed, dma_chan_claimed;
+    bool spi_chan_claimed, dma_chan_claimed;
     esp_err_t ret = ESP_OK;
     esp_err_t err;
     //We only support HSPI/VSPI, period.
@@ -98,14 +98,13 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     memset(spihost[host], 0, sizeof(spi_slave_t));
     memcpy(&spihost[host]->cfg, slave_config, sizeof(spi_slave_interface_config_t));
 
-    err = spicommon_bus_initialize_io(host, bus_config, dma_chan, SPICOMMON_BUSFLAG_SLAVE, &native);
+    err = spicommon_bus_initialize_io(host, bus_config, dma_chan, SPICOMMON_BUSFLAG_SLAVE|bus_config->flags, &spihost[host]->flags);
     if (err!=ESP_OK) {
         ret = err;
         goto cleanup;
     }
     gpio_set_direction(slave_config->spics_io_num, GPIO_MODE_INPUT);
-    spicommon_cs_initialize(host, slave_config->spics_io_num, 0, native == false);
-    spihost[host]->no_gpio_matrix = native;
+    spicommon_cs_initialize(host, slave_config->spics_io_num, 0, !(spihost[host]->flags&SPICOMMON_BUSFLAG_NATIVE_PINS));
     spihost[host]->dma_chan = dma_chan;
     if (dma_chan != 0) {
         //See how many dma descriptors we need and allocate them
@@ -185,7 +184,6 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
         spihost[host]->hw->user.ck_i_edge = 1;
         spihost[host]->hw->ctrl2.miso_delay_mode = nodelay ? 0 : 2;
     }
-
 
     //Reset DMA
     spihost[host]->hw->dma_conf.val |= SPI_OUT_RST | SPI_IN_RST | SPI_AHBM_RST | SPI_AHBM_FIFO_RST;
