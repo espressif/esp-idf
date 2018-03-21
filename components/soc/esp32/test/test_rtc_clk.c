@@ -12,6 +12,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "../esp_clk_internal.h"
+
 
 
 #define CALIBRATE_ONE(cali_clk) calibrate_one(cali_clk, #cali_clk)
@@ -131,4 +133,52 @@ TEST_CASE("Test fast switching between PLL and XTAL", "[rtc_clk]")
     test_clock_switching(rtc_clk_cpu_freq_set_fast);
 }
 
+#define COUNT_TEST      10
+#define TIMEOUT_TEST_MS 50
 
+void stop_rtc_external_quartz(){
+    const uint8_t pin_32 = 32;
+    const uint8_t pin_33 = 33;
+    const uint8_t mask_32 = (1 << (pin_32 - 32));
+    const uint8_t mask_33 = (1 << (pin_33 - 32));
+
+    rtc_clk_32k_enable(false);
+
+    gpio_pad_select_gpio(pin_32);
+    gpio_pad_select_gpio(pin_33);
+    gpio_output_set_high(0, mask_32 | mask_33, mask_32 | mask_33, 0);
+    ets_delay_us(500000);
+    gpio_output_set_high(0, 0, 0, mask_32 | mask_33); // disable pins
+}
+
+TEST_CASE("Test starting external RTC quartz", "[rtc_clk]")
+{
+    int i = 0, fail = 0;
+    uint32_t start_time;
+    uint32_t end_time;
+
+    stop_rtc_external_quartz();
+    printf("Start test. Number of oscillation cycles = %d\n", CONFIG_ESP32_RTC_XTAL_BOOTSTRAP_CYCLES);
+    while(i < COUNT_TEST){
+        start_time = xTaskGetTickCount() * (1000 / configTICK_RATE_HZ);
+        i++;
+        printf("attempt #%d/%d...", i, COUNT_TEST);
+        rtc_clk_32k_bootstrap(CONFIG_ESP32_RTC_XTAL_BOOTSTRAP_CYCLES);
+        rtc_clk_select_rtc_slow_clk();
+        end_time = xTaskGetTickCount() * (1000 / configTICK_RATE_HZ);
+        if((end_time - start_time) > TIMEOUT_TEST_MS){
+            printf("FAIL\n");
+            fail = 1;
+        } else {
+            printf("PASS\n");
+        }
+        stop_rtc_external_quartz();
+        ets_delay_us(100000);
+    }
+    if (fail == 1){
+        printf("Test failed\n");
+        TEST_ASSERT(false);
+    } else {
+        printf("Test passed successfully\n");
+    }
+}
