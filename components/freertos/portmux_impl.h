@@ -32,138 +32,80 @@
    deal by FreeRTOS internals.
 
    It should be #included by freertos port.c or tasks.c, in esp-idf.
+
+   The way it works is that it essentially uses portmux_impl.inc.h as a
+   generator template of sorts. When no external memory is used, this 
+   template is only used to generate the vPortCPUAcquireMutexIntsDisabledInternal
+   and vPortCPUReleaseMutexIntsDisabledInternal functions, which use S32C1 to
+   do an atomic compare & swap. When external memory is used the functions
+   vPortCPUAcquireMutexIntsDisabledExtram and vPortCPUReleaseMutexIntsDisabledExtram
+   are also generated, which use uxPortCompareSetExtram to fake the S32C1 instruction.
+   The wrapper functions vPortCPUAcquireMutexIntsDisabled and 
+   vPortCPUReleaseMutexIntsDisabled will then use the appropriate function to do the
+   actual lock/unlock.
 */
 #include "soc/cpu.h"
+#include "portable.h"
 
 /* XOR one core ID with this value to get the other core ID */
 #define CORE_ID_XOR_SWAP (CORE_ID_PRO ^ CORE_ID_APP)
 
-static inline bool __attribute__((always_inline))
+
+
+
+//Define the mux routines for use with muxes in internal RAM
+#define PORTMUX_AQUIRE_MUX_FN_NAME vPortCPUAcquireMutexIntsDisabledInternal
+#define PORTMUX_RELEASE_MUX_FN_NAME vPortCPUReleaseMutexIntsDisabledInternal
+#define PORTMUX_COMPARE_SET_FN_NAME uxPortCompareSet
+#include "portmux_impl.inc.h"
+#undef PORTMUX_AQUIRE_MUX_FN_NAME
+#undef PORTMUX_RELEASE_MUX_FN_NAME
+#undef PORTMUX_COMPARE_SET_FN_NAME
+
+
+#if defined(CONFIG_SPIRAM_SUPPORT)
+
+#define PORTMUX_AQUIRE_MUX_FN_NAME vPortCPUAcquireMutexIntsDisabledExtram
+#define PORTMUX_RELEASE_MUX_FN_NAME vPortCPUReleaseMutexIntsDisabledExtram
+#define PORTMUX_COMPARE_SET_FN_NAME uxPortCompareSetExtram
+#include "portmux_impl.inc.h"
+#undef PORTMUX_AQUIRE_MUX_FN_NAME
+#undef PORTMUX_RELEASE_MUX_FN_NAME
+#undef PORTMUX_COMPARE_SET_FN_NAME
+
+#endif
+
+
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-vPortCPUAcquireMutexIntsDisabled(portMUX_TYPE *mux, int timeout_cycles, const char *fnName, int line) {
+#define PORTMUX_AQUIRE_MUX_FN_ARGS portMUX_TYPE *mux, int timeout_cycles, const char *fnName, int line
+#define PORTMUX_RELEASE_MUX_FN_ARGS portMUX_TYPE *mux, const char *fnName, int line
+#define PORTMUX_AQUIRE_MUX_FN_CALL_ARGS(x) x, timeout_cycles, fnName, line
+#define PORTMUX_RELEASE_MUX_FN_CALL_ARGS(x) x, fnName, line
 #else
-vPortCPUAcquireMutexIntsDisabled(portMUX_TYPE *mux, int timeout_cycles) {
-#endif
-#if !CONFIG_FREERTOS_UNICORE
-	uint32_t res;
-	portBASE_TYPE coreID, otherCoreID;
-	uint32_t ccount_start;
-	bool set_timeout = timeout_cycles > portMUX_NO_TIMEOUT;
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-	if (!set_timeout) {
-		timeout_cycles = 10000; // Always set a timeout in debug mode
-		set_timeout = true;
-	}
-#endif
-	if (set_timeout) { // Timeout
-		RSR(CCOUNT, ccount_start);
-	}
-
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-	uint32_t owner = mux->owner;
-	if (owner != portMUX_FREE_VAL && owner != CORE_ID_PRO && owner != CORE_ID_APP) {
-		ets_printf("ERROR: vPortCPUAcquireMutex: mux %p is uninitialized (0x%X)! Called from %s line %d.\n", mux, owner, fnName, line);
-		mux->owner=portMUX_FREE_VAL;
-	}
+#define PORTMUX_AQUIRE_MUX_FN_ARGS portMUX_TYPE *mux, int timeout_cycles
+#define PORTMUX_RELEASE_MUX_FN_ARGS portMUX_TYPE *mux
+#define PORTMUX_AQUIRE_MUX_FN_CALL_ARGS(x) x, timeout_cycles
+#define PORTMUX_RELEASE_MUX_FN_CALL_ARGS(x) x
 #endif
 
-	/* Spin until we own the core */
 
-	RSR(PRID, coreID);
-	/* Note: coreID is the full 32 bit core ID (CORE_ID_PRO/CORE_ID_APP),
-	   not the 0/1 value returned by xPortGetCoreID()
-	*/
-	otherCoreID = CORE_ID_XOR_SWAP ^ coreID;
-	do {
-		/* mux->owner should be one of portMUX_FREE_VAL, CORE_ID_PRO,
-		   CORE_ID_APP:
-
-		   - If portMUX_FREE_VAL, we want to atomically set to 'coreID'.
-		   - If "our" coreID, we can drop through immediately.
-		   - If "otherCoreID", we spin here.
-		 */
-		res = coreID;
-		uxPortCompareSet(&mux->owner, portMUX_FREE_VAL, &res);
-
-		if (res != otherCoreID) {
-			break; // mux->owner is "our" coreID
-		}
-
-		if (set_timeout) {
-			uint32_t ccount_now;
-			RSR(CCOUNT, ccount_now);
-			if (ccount_now - ccount_start > (unsigned)timeout_cycles) {
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-				ets_printf("Timeout on mux! last non-recursive lock %s line %d, curr %s line %d\n", mux->lastLockedFn, mux->lastLockedLine, fnName, line);
-				ets_printf("Owner 0x%x count %d\n", mux->owner, mux->count);
-#endif
-				return false;
-			}
-		}
-	} while (1);
-
-	assert(res == coreID || res == portMUX_FREE_VAL); /* any other value implies memory corruption or uninitialized mux */
-	assert((res == portMUX_FREE_VAL) == (mux->count == 0)); /* we're first to lock iff count is zero */
-    assert(mux->count < 0xFF); /* Bad count value implies memory corruption */
-
-	/* now we own it, we can increment the refcount */
-	mux->count++;
-
-
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-	if (res==portMUX_FREE_VAL) { //initial lock
-		mux->lastLockedFn=fnName;
-		mux->lastLockedLine=line;
-	} else {
-		ets_printf("Recursive lock: count=%d last non-recursive lock %s line %d, curr %s line %d\n", mux->count-1,
-				   mux->lastLockedFn, mux->lastLockedLine, fnName, line);
+static inline bool __attribute__((always_inline)) vPortCPUAcquireMutexIntsDisabled(PORTMUX_AQUIRE_MUX_FN_ARGS) {
+#if defined(CONFIG_SPIRAM_SUPPORT)
+	if (esp_ptr_external_ram(mux)) {
+		return vPortCPUAcquireMutexIntsDisabledExtram(PORTMUX_AQUIRE_MUX_FN_CALL_ARGS(mux));
 	}
-#endif /* CONFIG_FREERTOS_PORTMUX_DEBUG */
-#endif /* CONFIG_FREERTOS_UNICORE */
-	return true;
+#endif
+	return vPortCPUAcquireMutexIntsDisabledInternal(PORTMUX_AQUIRE_MUX_FN_CALL_ARGS(mux));
 }
 
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
- static inline void vPortCPUReleaseMutexIntsDisabled(portMUX_TYPE *mux, const char *fnName, int line) {
-#else
-static inline void vPortCPUReleaseMutexIntsDisabled(portMUX_TYPE *mux) {
-#endif
-#if !CONFIG_FREERTOS_UNICORE
-	portBASE_TYPE coreID;
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-	const char *lastLockedFn=mux->lastLockedFn;
-	int lastLockedLine=mux->lastLockedLine;
-	mux->lastLockedFn=fnName;
-	mux->lastLockedLine=line;
-	uint32_t owner = mux->owner;
-	if (owner != portMUX_FREE_VAL && owner != CORE_ID_PRO && owner != CORE_ID_APP) {
-		ets_printf("ERROR: vPortCPUReleaseMutex: mux %p is invalid (0x%x)!\n", mux, mux->owner);
+
+static inline void vPortCPUReleaseMutexIntsDisabled(PORTMUX_RELEASE_MUX_FN_ARGS) {
+#if defined(CONFIG_SPIRAM_SUPPORT)
+	if (esp_ptr_external_ram(mux)) {
+		vPortCPUReleaseMutexIntsDisabledExtram(PORTMUX_RELEASE_MUX_FN_CALL_ARGS(mux));
+		return;
 	}
 #endif
-
-#if CONFIG_FREERTOS_PORTMUX_DEBUG || !defined(NDEBUG)
-	RSR(PRID, coreID);
-#endif
-
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-	if (coreID != mux->owner) {
-		ets_printf("ERROR: vPortCPUReleaseMutex: mux %p was already unlocked!\n", mux);
-		ets_printf("Last non-recursive unlock %s line %d, curr unlock %s line %d\n", lastLockedFn, lastLockedLine, fnName, line);
-	}
-#endif
-
-    assert(coreID == mux->owner); // This is a mutex we didn't lock, or it's corrupt
-    assert(mux->count > 0); // Indicates memory corruption
-    assert(mux->count < 0x100); // Indicates memory corruption
-
-	mux->count--;
-	if(mux->count == 0) {
-		mux->owner = portMUX_FREE_VAL;
-	}
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG_RECURSIVE
-	else {
-		ets_printf("Recursive unlock: count=%d last locked %s line %d, curr %s line %d\n", mux->count, lastLockedFn, lastLockedLine, fnName, line);
-	}
-#endif
-#endif //!CONFIG_FREERTOS_UNICORE
+	vPortCPUReleaseMutexIntsDisabledInternal(PORTMUX_RELEASE_MUX_FN_CALL_ARGS(mux));
 }
+
