@@ -127,42 +127,52 @@ void IRAM_ATTR ets_update_cpu_frequency(uint32_t ticks_per_us)
 
 static void select_rtc_slow_clk(rtc_slow_freq_t slow_clk)
 {
-    if (slow_clk == RTC_SLOW_FREQ_32K_XTAL) {
-        /* 32k XTAL oscillator needs to be enabled and running before it can
-         * be used. Hardware doesn't have a direct way of checking if the
-         * oscillator is running. Here we use rtc_clk_cal function to count
-         * the number of main XTAL cycles in the given number of 32k XTAL
-         * oscillator cycles. If the 32k XTAL has not started up, calibration
-         * will time out, returning 0.
-         */
-        rtc_clk_32k_enable(true);
-        uint32_t cal_val = 0;
-        uint32_t wait = 0;
-        // increment of 'wait' counter equivalent to 3 seconds
-        const uint32_t warning_timeout = 3 /* sec */ * 32768 /* Hz */ / (2 * XTAL_32K_DETECT_CYCLES);
-        ESP_EARLY_LOGD(TAG, "waiting for 32k oscillator to start up")
-        do {
-            ++wait;
-            cal_val = rtc_clk_cal(RTC_CAL_32K_XTAL, XTAL_32K_DETECT_CYCLES);
-            if (wait % warning_timeout == 0) {
-                ESP_EARLY_LOGW(TAG, "still waiting for 32k oscillator to start up");
-            }
-        } while (cal_val == 0);
-        ESP_EARLY_LOGD(TAG, "32k oscillator ready, wait=%d", wait);
-    }
-    rtc_clk_slow_freq_set(slow_clk);
-    uint32_t cal_val;
-    if (SLOW_CLK_CAL_CYCLES > 0) {
-        /* TODO: 32k XTAL oscillator has some frequency drift at startup.
-         * Improve calibration routine to wait until the frequency is stable.
-         */
-        cal_val = rtc_clk_cal(RTC_CAL_RTC_MUX, SLOW_CLK_CAL_CYCLES);
-    } else {
-        const uint64_t cal_dividend = (1ULL << RTC_CLK_CAL_FRACT) * 1000000ULL;
-        cal_val = (uint32_t) (cal_dividend / rtc_clk_slow_freq_get_hz());
-    }
+    uint32_t cal_val = 0;
+    do {
+        if (slow_clk == RTC_SLOW_FREQ_32K_XTAL) {
+            /* 32k XTAL oscillator needs to be enabled and running before it can
+             * be used. Hardware doesn't have a direct way of checking if the
+             * oscillator is running. Here we use rtc_clk_cal function to count
+             * the number of main XTAL cycles in the given number of 32k XTAL
+             * oscillator cycles. If the 32k XTAL has not started up, calibration
+             * will time out, returning 0.
+             */
+            uint32_t wait = 0;
+            // increment of 'wait' counter equivalent to 3 seconds
+            const uint32_t warning_timeout = 3 /* sec */ * 32768 /* Hz */ / (2 * XTAL_32K_DETECT_CYCLES);
+            ESP_EARLY_LOGD(TAG, "waiting for 32k oscillator to start up")
+            do {
+                ++wait;
+                rtc_clk_32k_enable(true);
+                cal_val = rtc_clk_cal(RTC_CAL_32K_XTAL, XTAL_32K_DETECT_CYCLES);
+                if (wait % warning_timeout == 0) {
+                    ESP_EARLY_LOGW(TAG, "still waiting for 32k oscillator to start up");
+                }
+                if(cal_val == 0){
+                    rtc_clk_32k_enable(false);
+                    rtc_clk_32k_bootstrap(CONFIG_ESP32_RTC_XTAL_BOOTSTRAP_CYCLES);
+                }
+            } while (cal_val == 0);
+        }
+        rtc_clk_slow_freq_set(slow_clk);
+
+        if (SLOW_CLK_CAL_CYCLES > 0) {
+            /* TODO: 32k XTAL oscillator has some frequency drift at startup.
+             * Improve calibration routine to wait until the frequency is stable.
+             */
+            cal_val = rtc_clk_cal(RTC_CAL_RTC_MUX, SLOW_CLK_CAL_CYCLES);
+        } else {
+            const uint64_t cal_dividend = (1ULL << RTC_CLK_CAL_FRACT) * 1000000ULL;
+            cal_val = (uint32_t) (cal_dividend / rtc_clk_slow_freq_get_hz());
+        }
+    } while (cal_val == 0);
     ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK calibration value: %d", cal_val);
     esp_clk_slowclk_cal_set(cal_val);
+}
+
+void rtc_clk_select_rtc_slow_clk()
+{
+    select_rtc_slow_clk(RTC_SLOW_FREQ_32K_XTAL);
 }
 
 /* This function is not exposed as an API at this point.

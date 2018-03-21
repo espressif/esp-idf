@@ -55,7 +55,7 @@ void bootloader_clock_configure()
      */
 #ifdef CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
     if (!rtc_clk_32k_enabled()) {
-        rtc_clk_32k_bootstrap();
+        rtc_clk_32k_bootstrap(CONFIG_ESP32_RTC_XTAL_BOOTSTRAP_CYCLES);
     }
 #endif
 }
