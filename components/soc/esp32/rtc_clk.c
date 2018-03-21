@@ -402,6 +402,7 @@ void rtc_clk_cpu_freq_set_fast(rtc_cpu_freq_t cpu_freq)
         rtc_clk_cpu_freq_to_xtal();
     } else if (cpu_freq > RTC_CPU_FREQ_XTAL) {
         rtc_clk_cpu_freq_to_pll(cpu_freq);
+        rtc_clk_wait_for_slow_cycle();
     }
 }
 
