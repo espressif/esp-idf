@@ -420,7 +420,7 @@ void bta_gatts_add_char(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_msg)
                                       p_msg->api_add_char.perm,
                                       p_msg->api_add_char.property, p_attr_val, p_control);
     cb_data.add_result.server_if = p_rcb->gatt_if;
-    cb_data.add_result.service_id = p_msg->api_add_incl_srvc.hdr.layer_specific;
+    cb_data.add_result.service_id = p_msg->api_add_char.hdr.layer_specific;
     cb_data.add_result.attr_id = attr_id;
 // btla-specific ++
     memcpy(&cb_data.add_result.char_uuid, &p_msg->api_add_char.char_uuid, sizeof(tBT_UUID));
@@ -470,7 +470,7 @@ void bta_gatts_add_char_descr(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_
                                       p_control);
 
     cb_data.add_result.server_if = p_rcb->gatt_if;
-    cb_data.add_result.service_id = p_msg->api_add_incl_srvc.hdr.layer_specific;
+    cb_data.add_result.service_id = p_msg->api_add_char_descr.hdr.layer_specific;
     cb_data.add_result.attr_id = attr_id;
 // btla-specific ++
     memcpy(&cb_data.add_result.char_uuid, &p_msg->api_add_char_descr.descr_uuid, sizeof(tBT_UUID));
