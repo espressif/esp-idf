@@ -122,6 +122,8 @@ static void spi_intr(void *arg);
 esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, int dma_chan)
 {
     bool native, spi_chan_claimed, dma_chan_claimed;
+    esp_err_t ret = ESP_OK;
+    esp_err_t err;
     /* ToDo: remove this when we have flash operations cooperating with this */
     SPI_CHECK(host!=SPI_HOST, "SPI1 is not supported", ESP_ERR_NOT_SUPPORTED);
 
@@ -140,17 +142,25 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
     }
 
     spihost[host]=malloc(sizeof(spi_host_t));
-    if (spihost[host]==NULL) goto nomem;
+    if (spihost[host]==NULL) {
+        ret = ESP_ERR_NO_MEM;
+        goto cleanup;
+    }
     memset(spihost[host], 0, sizeof(spi_host_t));
 #ifdef CONFIG_PM_ENABLE
-    esp_err_t err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "spi_master",
+    err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "spi_master",
             &spihost[host]->pm_lock);
     if (err != ESP_OK) {
-        goto nomem;
+        ret = err;
+        goto cleanup;
     }
 #endif //CONFIG_PM_ENABLE
     
-    spicommon_bus_initialize_io(host, bus_config, dma_chan, SPICOMMON_BUSFLAG_MASTER|SPICOMMON_BUSFLAG_QUAD, &native);
+    err = spicommon_bus_initialize_io(host, bus_config, dma_chan, SPICOMMON_BUSFLAG_MASTER|SPICOMMON_BUSFLAG_QUAD, &native);
+    if (err != ESP_OK) {
+        ret = err;
+        goto cleanup;
+    }
     spihost[host]->no_gpio_matrix=native;
     
     spihost[host]->dma_chan=dma_chan;
@@ -163,9 +173,17 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
         spihost[host]->max_transfer_sz = dma_desc_ct*SPI_MAX_DMA_LEN;
         spihost[host]->dmadesc_tx=heap_caps_malloc(sizeof(lldesc_t)*dma_desc_ct, MALLOC_CAP_DMA);
         spihost[host]->dmadesc_rx=heap_caps_malloc(sizeof(lldesc_t)*dma_desc_ct, MALLOC_CAP_DMA);
-        if (!spihost[host]->dmadesc_tx || !spihost[host]->dmadesc_rx) goto nomem;
+        if (!spihost[host]->dmadesc_tx || !spihost[host]->dmadesc_rx) {
+            ret = ESP_ERR_NO_MEM;
+            goto cleanup;
+        }
     }
-    esp_intr_alloc(spicommon_irqsource_for_host(host), ESP_INTR_FLAG_INTRDISABLED, spi_intr, (void*)spihost[host], &spihost[host]->intr);
+    
+    err = esp_intr_alloc(spicommon_irqsource_for_host(host), ESP_INTR_FLAG_INTRDISABLED, spi_intr, (void*)spihost[host], &spihost[host]->intr);
+    if (err != ESP_OK) {
+        ret = err;
+        goto cleanup;
+    }
     spihost[host]->hw=spicommon_hw_for_host(host);
 
     spihost[host]->cur_cs = NO_CS;
@@ -197,7 +215,7 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
 
     return ESP_OK;
 
-nomem:
+cleanup:
     if (spihost[host]) {
         free(spihost[host]->dmadesc_tx);
         free(spihost[host]->dmadesc_rx);
@@ -210,7 +228,7 @@ nomem:
     free(spihost[host]);
     spicommon_periph_free(host);
     spicommon_dma_chan_free(dma_chan);
-    return ESP_ERR_NO_MEM;
+    return ret;
 }
 
 esp_err_t spi_bus_free(spi_host_device_t host)
