@@ -1,5 +1,7 @@
 set(partition_table_offset 0x8000)
 
+register_config_only_component()
+
 # Set partition_csv to the configured partition source file
 #
 if(CONFIG_PARTITION_TABLE_CUSTOM)
@@ -56,4 +58,3 @@ set_property(GLOBAL APPEND_STRING PROPERTY
     ESPTOOL_WRITE_FLASH_ARGS
     "${partition_table_offset} ${final_partition_bin} ")
 
-register_config_only_component()

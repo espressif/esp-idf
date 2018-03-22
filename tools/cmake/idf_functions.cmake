@@ -13,6 +13,10 @@ macro(idf_set_global_variables)
 
     set_default(EXTRA_COMPONENT_DIRS "")
 
+    # Commmon components, required by every component in the build
+    #
+    set_default(COMPONENT_REQUIRES_COMMON "cxx esp32 newlib freertos heap log soc")
+
     # PROJECT_PATH has the path to the IDF project (top-level cmake directory)
     #
     # (cmake calls this CMAKE_SOURCE_DIR, keeping old name for compatibility.)

@@ -19,6 +19,8 @@ set(COMPONENT_SRCS
     port/coap_io_socket.c
     )
 
+set(COMPONENT_REQUIRES lwip)
+
 register_component()
 
 # Needed for coap headers in public builds, also.

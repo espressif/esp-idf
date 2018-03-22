@@ -1,4 +1,5 @@
 set(COMPONENT_SRCDIRS ".")
+set(COMPONENT_REQUIRES)
 register_component()
 
 target_link_libraries(cxx stdc++)

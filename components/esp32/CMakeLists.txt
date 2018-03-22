@@ -1,7 +1,9 @@
 if(BOOTLOADER_BUILD)
     # For bootloader, all we need from esp32 is headers
-    add_library(esp32 INTERFACE)
-    target_include_directories(esp32 INTERFACE include)
+    set(COMPONENT_ADD_INCLUDEDIRS include)
+    set(COMPONENT_REQUIRES ${COMPONENTS})
+    set(COMPONENT_SRCDIRS "")
+    register_component(esp32)
 
     # as cmake won't attach linker args to a header-only library, attach
     # linker args directly to the bootloader.elf
@@ -17,6 +19,11 @@ else()
 
     set(COMPONENT_SRCDIRS ". hwcrypto")
     set(COMPONENT_ADD_INCLUDEDIRS "include")
+
+    set(COMPONENT_REQUIRES driver)  # required because esp_sleep.h uses gpio_num_t & touch_pad_t
+    set(COMPONENT_PRIV_REQUIRES
+        adapter app bootloader_debug ethernet_flash flash_log mbedtls_module nvs_pthread
+        spi-supplicant-support tcpip trace_vfs wpa xtensa)
 
     register_component()
 

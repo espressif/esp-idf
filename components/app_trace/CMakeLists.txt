@@ -14,6 +14,9 @@ if(CONFIG_SYSVIEW_ENABLE)
         "sys_view/esp32")
 endif()
 
+set(COMPONENT_REQUIRES)
+set(COMPONENT_PRIV_REQUIRES xtensa-debug-module)
+
 register_component()
 
 # disable --coverage for this component, as it is used as transport

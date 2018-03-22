@@ -78,7 +78,7 @@ The :ref:`getting started guide <get-started-configure-cmake>` contains a brief 
 
 ``idf.py`` should be run in an ESP-IDF "project" directory, ie one containing a ``CMakeLists.txt`` file. Older style projects with a Makefile will not work with ``idf.py``.
 
-Type ``idf.py --help`` for a full list of commands. Here are a summary of a few:
+Type ``idf.py --help`` for a full list of commands. Here are a summary of the most useful ones:
 
 - ``idf.py menuconfig`` runs the "menuconfig" tool to configure the project.
 - ``idf.py build`` will build the project found in the current directory. This can involve multiple steps:
@@ -207,7 +207,8 @@ These variables all have default values that can be overridden for custom behavi
 
 - ``COMPONENT_DIRS``: Directories to search for components. Defaults to `${IDF_PATH}/components`, `${PROJECT_PATH}/components`, and ``EXTRA_COMPONENT_DIRS``. Override this variable if you don't want to search for components in these places.
 - ``EXTRA_COMPONENT_DIRS``: Optional list of additional directories to search for components. Paths can be relative to the project directory, or absolute.
-- ``COMPONENTS``: A list of component names to build into the project. Defaults to all components found in the ``COMPONENT_DIRS`` directories. Use this variable to "trim down" the project for faster build times.
+- ``COMPONENTS``: A list of component names to build into the project. Defaults to all components found in the ``COMPONENT_DIRS`` directories. Use this variable to "trim down" the project for faster build times. Note that any component which "requires" another component via ``COMPONENT_REQUIRES`` will automatically have it added to this list, so the ``COMPONENTS`` list doesn't need to include dependencies in this way.
+- ``COMPONENT_REQUIRES_COMMON``: A list of components that every component requires. These components are automatically treated to be in every component's ``COMPONENT_PRIV_REQUIRES`` list and also the project's ``COMPONENTS`` list. By default, this is set to the minimal set of core "system" components needed for any ESP-IDF project.
 
 Any paths in these variables can be absolute paths, or set relative to the project directory.
 
@@ -273,22 +274,18 @@ The following variables are set at the project level, but available for use in c
 
 If you modify any of these variables inside ``CMakeLists.txt`` then this will not prevent other components from building but it may make your component hard to build and/or debug.
 
-Optional Project-Wide Component Variables
------------------------------------------
-
-The following variables can be set inside component ``CMakeLists.txt`` to control build settings across the entire project:
 
 - ``COMPONENT_ADD_INCLUDEDIRS``: Paths, relative to the component
   directory, which will be added to the include search path for
-  all components in the project. If an include directory is only needed to compile
+  all other components which require this one. If an include directory is only needed to compile
   this specific component, add it to ``COMPONENT_PRIV_INCLUDEDIRS`` instead.
-- ``COMPONENT_DEPENDS``: Optional list of component names that should be
-  compiled before this component. This is not necessary for
-  link-time dependencies, because all component include directories
-  are available at all times. It is necessary if one component
-  generates an include file which you then want to include in another
-  component. Most components do not need to set this variable.
+- ``COMPONENT_REQUIRES`` is a (space-separated) list of components that are required to include this project's header files into other components. If a public header header file listed in ``COMPONENT_ADD_INCLUDEDIRS`` includes a header from another component, that component should be listed in ``COMPONENT_REQUIRES``. Requirements are recursive.
 
+  The ``COMPONENT_REQUIRES`` list can be empty because some very common components (like newlib for libc, freertos for RTOS functions, etc) are always required by all components. This list is found in the project-level variable ``COMPONENT_REQUIRES_COMMON``.
+
+  If a component only requires another component's headers to compile its source files (not for including this component's headers), then these components should be listed in ``COMPONENT_PRIV_REQUIRES`` instead.
+
+  See `Component Requirements` for more details.
 
 Optional Component-Specific Variables
 -------------------------------------
@@ -298,6 +295,7 @@ The following variables can be set inside ``component.mk`` to control the build 
 - ``COMPONENT_PRIV_INCLUDEDIRS``: Directory paths, must be relative to
   the component directory, which will be added to the include search
   path for this component's source files only.
+- ``COMPONENT_PRIV_REQUIRES`` is a (space-separated) list of components that are required to either compile or link this component's source files. These components' header paths do not propagate to other components which require it, they are only used to compile this component's sources. See `Component Requirements` for more details.
 - ``COMPONENT_SRCDIRS``: Directory paths, must be relative to the
   component directory, which will be searched for source files (``*.cpp``,
   ``*.c``, ``*.S``). Set this to specify a list of directories
@@ -345,6 +343,45 @@ The ESP-IDF build system adds the following C preprocessor definitions on the co
 - ``ESP_PLATFORM`` — Can be used to detect that build happens within ESP-IDF.
 - ``IDF_VER`` — Defined to a git version string.  E.g. ``v2.0`` for a tagged release or ``v1.0-275-g0efaa4f`` for an arbitrary commit.
 
+Component Requirements
+======================
+
+When compiling each component, the ESP-IDF build system recurisvely evaluates its components.
+
+Each component's source file is compiled with these include path directories:
+
+- The current component's ``COMPONENT_ADD_INCLUDEDIRS`` and ``COMPONENT_PRIV_INCLUDEDIRS``.
+- The ``COMPONENT_ADD_INCLUDEDIRS`` set by all components in the current component's ``COMPONENT_REQUIRES`` and ``COMPONENT_PRIV_REQUIRES`` variables (ie all the current component's public and private dependencies).
+- All of the ``COMPONENT_REQUIRES`` of those components, evaluated recursively (ie all public dependencies of this component's dependencies, recursively expanded).
+
+When writing a component
+------------------------
+
+- ``COMPONENT_REQUIRES`` should be set to all components whose header files are #included from the *public* header files of this component.
+- ``COMPONENT_PRIV_REQUIRES`` should be set to all components whose header files are #included from *any source files* of this component, unless already listed in ``COMPONENT_REQUIRES``. Or any component which is required to be linked in order for this component to function correctly.
+- ``COMPONENT_REQUIRES`` and/or ``COMPONENT_PRIV_REQUIRES`` should be set before calling ``register_component()``.
+- The values of ``COMPONENT_REQUIRES`` and ``COMPONENT_PRIV_REQUIRES`` should not depend on any configuration choices (``CONFIG_xxx`` macros). This is because requirements are expanded before configuration is loaded. Other component variables (like include paths or source files) can depend on configuration choices.
+- Not setting either or both ``REQUIRES`` variables is fine. If the component has no requirements except for the "common" components needed for RTOS, libc, etc (``COMPONENT_REQUIRES_COMMON``) then both variables can be empty or unset.
+
+When creating a project
+-----------------------
+
+- By default, every component is included in the build.
+- If you set the ``COMPONENTS`` variable to a minimal list of components used directly by your project, then the build will include:
+  - Components mentioned explicitly in ``COMPONENTS``.
+  - Those components' requirements (evaluated recursively).
+  - The "common" components that every component depends on.
+- Setting ``COMPONENTS`` to the minimal list of components you need can significantly reduce your project's compile time.
+- When compiling the project's source files (``MAIN_SRCS``), the public header directories of all components included in the build are available.
+
+Requirements in the build system implementation
+------------------------------------------------------------------
+
+- Very early in the cmake configuration process, the script ``expand_requirements.cmake`` is run. This script does a partial evaluation of all component CMakeLists.txt files and builds a graph of component requirements (this graph may have cycles). The graph is used to generate a file ``component_depends.cmake`` in the build directory.
+- The main cmake process then includes this file and uses it to determine the list of components to include in the build (internal ``BUILD_COMPONENTS`` variable).
+- Configuration is then evaluated for the components included in the build.
+- Each component is included in the build normally and the CMakeLists.txt file is evaluated again to add the component libraries to the build.
+
 Build Process Internals
 =======================
 
@@ -362,6 +399,7 @@ project function
 
 The custom ``project()`` function performs the following steps:
 
+- Evaluates component dependencies and builds the ``BUILD_COMPONENTS`` list of components to include in the build (see `above<requirements-in-the-build-system-implementation>`).
 - Finds all components in the project (searching ``COMPONENT_DIRS`` and filtering by ``COMPONENTS`` if this is set).
 - Loads the project configuration from the ``sdkconfig`` file and produces a ``cmake`` include file and a C header file, to set config macros. If the project configuration changes, cmake will automatically be re-run to reconfigure the project.
 - Sets the `CMAKE_TOOLCHAIN_FILE`_ variable to the ESP-IDF toolchain file with the Xtensa ESP32 toolchain.
@@ -525,10 +563,8 @@ why it is added to the `ADDITIONAL_MAKE_CLEAN_FILES`_ property.
 
 (Note: If generating files as part of the project CMakeLists, not a component CMakeLists, use ``${PROJECT_PATH}`` instead of ``${COMPONENT_PATH}`` and ``${PROJECT_NAME}.elf`` instead of ``${COMPONENT_NAME}``.)
 
-If a a source file from another component included ``logo.h``, then this
-component's name would have to be added to the other component's
-``COMPONENT_DEPENDS`` list to ensure that the components were built
-in-order.
+If a a source file from another component included ``logo.h``, then ``add_dependencies`` would need to be called to add a dependency between
+the two components, to ensure that the component source files were always compiled in the correct order.
 
 Embedding Binary Data
 ---------------------

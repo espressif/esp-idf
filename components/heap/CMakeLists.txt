@@ -6,6 +6,8 @@ endif()
 
 set(COMPONENT_ADD_INCLUDEDIRS "include")
 
+set(COMPONENT_REQUIRES "")
+
 register_component()
 
 if(CONFIG_HEAP_TRACING)

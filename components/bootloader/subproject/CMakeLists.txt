@@ -9,6 +9,8 @@ set(COMPONENTS bootloader esptool_py esp32 soc bootloader_support log spi_flash 
 set(BOOTLOADER_BUILD 1)
 add_definitions(-DBOOTLOADER_BUILD=1)
 
+set(COMPONENT_REQUIRES_COMMON log esp32 soc)
+
 set(MAIN_SRCS main/bootloader_start.c)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
