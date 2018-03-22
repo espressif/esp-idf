@@ -14,8 +14,8 @@
 #pragma once
 
 #ifdef ESP_PLATFORM
-
 #include "sdkconfig.h"
+#endif
 
 /* Configuration macros for multi-heap */
 
@@ -26,12 +26,4 @@
 #ifdef CONFIG_HEAP_POISONING_COMPREHENSIVE
 #define MULTI_HEAP_POISONING
 #define MULTI_HEAP_POISONING_SLOW
-#endif
-
-#else /* !ESP_PLATFORM */
-
-/* Host-side tests, enable full poisoning */
-#define MULTI_HEAP_POISONING
-#define MULTI_HEAP_POISONING_SLOW
-
 #endif
