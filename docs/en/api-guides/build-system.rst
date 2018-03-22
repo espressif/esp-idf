@@ -202,7 +202,7 @@ The following variables can be set inside ``component.mk`` to control build sett
   the app executable. Defaults to ``-l$(COMPONENT_NAME)``.  If
   adding pre-compiled libraries to this directory, add them as
   absolute paths - ie $(COMPONENT_PATH)/libwhatever.a
-- ``COMPONENT_DEPENDS``: Optional list of component names that should
+- ``COMPONENT_REQUIRES``: Optional list of component names that should
   be compiled before this component. This is not necessary for
   link-time dependencies, because all component include directories
   are available at all times. It is necessary if one component
@@ -544,7 +544,7 @@ generated before ``graphics_lib.c`` is compiled.
 
 If a a source file in another component included ``logo.h``, then this
 component's name would have to be added to the other component's
-``COMPONENT_DEPENDS`` list to ensure that the components were built
+``COMPONENT_REQUIRES`` list to ensure that the components were built
 in-order.
 
 Embedding Binary Data

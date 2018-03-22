@@ -20,7 +20,6 @@
 #include <stddef.h>
 #include "esp_err.h"
 #include "esp_partition.h"
-#include "esp_spi_flash.h"
 
 #ifdef __cplusplus
 extern "C"

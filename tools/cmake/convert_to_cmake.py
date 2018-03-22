@@ -180,6 +180,11 @@ def convert_component(project_path, component_path):
 
     with open(cmakelists_path, "w") as f:
         f.write("set(COMPONENT_ADD_INCLUDEDIRS %s)\n\n" % component_add_includedirs)
+
+        f.write("# Edit following two lines to set component requirements (see docs)\n")
+        f.write("set(COMPONENT_REQUIRES "")\n")
+        f.write("set(COMPONENT_PRIV_REQUIRES "")\n\n")
+
         if component_srcdirs is not None:
             f.write("set(COMPONENT_SRCDIRS %s)\n\n" % component_srcdirs)
             f.write("register_component()\n")

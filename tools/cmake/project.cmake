@@ -46,16 +46,32 @@ macro(project name)
     # Set global variables used by rest of the build
     idf_set_global_variables()
 
-    # Search COMPONENT_DIRS for COMPONENTS, make a list of full paths to each
-    # component in COMPONENT_PATHS
-    components_find_all("${COMPONENT_DIRS}" "${COMPONENTS}"
-        COMPONENT_PATHS COMPONENTS)
+    # Establish dependencies for components in the build
+    # (this happens before we even generate config...)
+    if(COMPONENTS)
+        # Make sure if an explicit list of COMPONENTS is given, it contains the "common" component requirements
+        # (otherwise, if COMPONENTS is empty then all components will be included in the build.)
+        set(COMPONENTS "${COMPONENTS} ${COMPONENT_REQUIRES_COMMON}")
+    endif()
+    execute_process(COMMAND "${CMAKE_COMMAND}"
+        -D "COMPONENTS=${COMPONENTS}"
+        -D "DEPENDENCIES_FILE=${CMAKE_BINARY_DIR}/component_depends.cmake"
+        -D "COMPONENT_DIRS=${COMPONENT_DIRS}"
+        -D "BOOTLOADER_BUILD=${BOOTLOADER_BUILD}"
+        -P "${IDF_PATH}/tools/cmake/scripts/expand_requirements.cmake"
+        WORKING_DIRECTORY "${IDF_PATH}/tools/cmake")
+    include("${CMAKE_BINARY_DIR}/component_depends.cmake")
+
+    # We now have the following component-related variables:
+    # COMPONENTS is the list of initial components set by the user (or empty to include all components in the build).
+    # BUILD_COMPONENTS is the list of components to include in the build.
+    # BUILD_COMPONENT_PATHS is the paths to all of these components.
 
     # Print list of components
-    string(REPLACE ";" " " COMPONENTS_SPACES "${COMPONENTS}")
-    message(STATUS "Component names: ${COMPONENTS_SPACES}")
-    unset(COMPONENTS_SPACES)
-    message(STATUS "Component paths: ${COMPONENT_PATHS}")
+    string(REPLACE ";" " " BUILD_COMPONENTS_SPACES "${BUILD_COMPONENTS}")
+    message(STATUS "Component names: ${BUILD_COMPONENTS_SPACES}")
+    unset(BUILD_COMPONENTS_SPACES)
+    message(STATUS "Component paths: ${BUILD_COMPONENT_PATHS}")
 
     kconfig_set_variables()
 
@@ -88,14 +104,14 @@ macro(project name)
     git_describe(PROJECT_VER "${CMAKE_CURRENT_SOURCE_DIR}")
 
     # Include any top-level project_include.cmake files from components
-    foreach(component ${COMPONENT_PATHS})
+    foreach(component ${BUILD_COMPONENT_PATHS})
         include_if_exists("${component}/project_include.cmake")
     endforeach()
 
     #
     # Add each component to the build as a library
     #
-    foreach(COMPONENT_PATH ${COMPONENT_PATHS})
+    foreach(COMPONENT_PATH ${BUILD_COMPONENT_PATHS})
         get_filename_component(COMPONENT_NAME ${COMPONENT_PATH} NAME)
         add_subdirectory(${COMPONENT_PATH} ${COMPONENT_NAME})
     endforeach()

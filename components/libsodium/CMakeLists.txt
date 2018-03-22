@@ -1,5 +1,7 @@
 set(SRC libsodium/src/libsodium)
 
+set(COMPONENT_REQUIRES "mbedtls")
+
 set(COMPONENT_SRCDIRS
     port
 

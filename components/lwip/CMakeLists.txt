@@ -16,6 +16,9 @@ set(COMPONENT_SRCDIRS
     ${LWIP_PPP_DIRS} netif
     port/freertos port/netif port/debug port)
 
+set(COMPONENT_REQUIRES "")
+set(COMPONENT_PRIV_REQUIRES ethernet tcpip_adapter)
+
 register_component()
 
 component_compile_options(-Wno-address)

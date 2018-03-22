@@ -15,6 +15,8 @@ else()
     set(LIBM m)
 endif()
 
+set(COMPONENT_REQUIRES vfs)  # for sys/ioctl.h
+
 register_component()
 
 target_link_libraries(newlib "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib")
