@@ -117,11 +117,17 @@ static inline void __attribute__ ((deprecated)) PIN_PULLDWN_EN(uint32_t PIN_NAME
 
 #define PIN_CTRL                          (DR_REG_IO_MUX_BASE +0x00)
 #define CLK_OUT3                                    0xf
+#define CLK_OUT3_V                                  CLK_OUT3
 #define CLK_OUT3_S                                  8
+#define CLK_OUT3_M                                  (CLK_OUT3_V << CLK_OUT3_S)
 #define CLK_OUT2                                    0xf
+#define CLK_OUT2_V                                  CLK_OUT2
 #define CLK_OUT2_S                                  4
+#define CLK_OUT2_M                                  (CLK_OUT2_V << CLK_OUT2_S)
 #define CLK_OUT1                                    0xf
+#define CLK_OUT1_V                                  CLK_OUT1
 #define CLK_OUT1_S                                  0
+#define CLK_OUT1_M                                  (CLK_OUT1_V << CLK_OUT1_S)
 
 #define PERIPHS_IO_MUX_GPIO0_U            (DR_REG_IO_MUX_BASE +0x44)
 #define IO_MUX_GPIO0_REG                  PERIPHS_IO_MUX_GPIO0_U
