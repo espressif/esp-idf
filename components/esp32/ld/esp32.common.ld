@@ -11,11 +11,40 @@ SECTIONS
     . = ALIGN(4);
     *(.rtc.literal .rtc.text)
     *rtc_wake_stub*.*(.literal .text .literal.* .text.*)
+    _rtc_text_end = ABSOLUTE(.);
   } > rtc_iram_seg
+  
+  /*
+    This section is required to skip rtc.text area because rtc_iram_seg and 
+    rtc_data_seg are reflect the same address space on different buses.
+  */
+  .rtc.dummy :
+  {
+    _rtc_dummy_start = ABSOLUTE(.);
+    _rtc_fast_start = ABSOLUTE(.);
+    . = SIZEOF(.rtc.text);
+    _rtc_dummy_end = ABSOLUTE(.);
+  } > rtc_data_seg
 
-  /* RTC slow memory holds RTC wake stub
+  /* This section located in RTC FAST Memory area. 
+     It holds data marked with RTC_FAST_ATTR attribute. 
+     See the file "esp_attr.h" for more information.
+  */
+  .rtc.force_fast :
+  {
+    . = ALIGN(4);
+    _rtc_force_fast_start = ABSOLUTE(.);
+    *(.rtc.force_fast .rtc.force_fast.*)
+    . = ALIGN(4) ;
+    _rtc_force_fast_end = ABSOLUTE(.);
+  } > rtc_data_seg
+
+  /* RTC data section holds RTC wake stub
      data/rodata, including from any source file
-     named rtc_wake_stub*.c
+     named rtc_wake_stub*.c and the data marked with
+     RTC_DATA_ATTR, RTC_RODATA_ATTR attributes.
+     The memory location of the data dependent on 
+     CONFIG_ESP32_RTCDATA_IN_FAST_MEM option.
   */
   .rtc.data :
   {
@@ -24,7 +53,7 @@ SECTIONS
     *(.rtc.rodata)
     *rtc_wake_stub*.*(.data .rodata .data.* .rodata.* .bss .bss.*)
     _rtc_data_end = ABSOLUTE(.);
-  } > rtc_slow_seg
+  } > rtc_data_location
 
   /* RTC bss, from any source file named rtc_wake_stub*.c */
   .rtc.bss (NOLOAD) :
@@ -34,6 +63,19 @@ SECTIONS
     *rtc_wake_stub*.*(COMMON)
     *(.rtc.bss)
     _rtc_bss_end = ABSOLUTE(.);
+  } > rtc_data_location
+
+  /* This section located in RTC SLOW Memory area. 
+     It holds data marked with RTC_SLOW_ATTR attribute. 
+     See the file "esp_attr.h" for more information.
+  */
+  .rtc.force_slow :
+  {
+    . = ALIGN(4);
+    _rtc_force_slow_start = ABSOLUTE(.);
+    *(.rtc.force_slow .rtc.force_slow.*)
+    . = ALIGN(4) ;
+    _rtc_force_slow_end = ABSOLUTE(.);
   } > rtc_slow_seg
 
   /* This section holds data that should not be initialized at power up 
@@ -49,6 +91,21 @@ SECTIONS
     . = ALIGN(4) ;
     _rtc_noinit_end = ABSOLUTE(.);
   } > rtc_slow_seg
+
+  /* Get size of rtc slow data based on rtc_data_location alias */
+  _rtc_slow_length = (ORIGIN(rtc_slow_seg) == ORIGIN(rtc_data_location)) 
+                        ? (_rtc_noinit_end - _rtc_data_start) 
+                        : (_rtc_noinit_end - _rtc_force_slow_start);
+
+  _rtc_fast_length = (ORIGIN(rtc_slow_seg) == ORIGIN(rtc_data_location)) 
+                        ? (_rtc_force_fast_end - _rtc_fast_start) 
+                        : (_rtc_bss_end - _rtc_fast_start);
+  
+  ASSERT((_rtc_slow_length <= LENGTH(rtc_slow_seg)),
+          "RTC_SLOW segment data does not fit.")
+          
+  ASSERT((_rtc_fast_length <= LENGTH(rtc_data_seg)),
+          "RTC_FAST segment data does not fit.")
 
   /* Send .iram0 code to iram */
   .iram0.vectors :
@@ -87,7 +144,7 @@ SECTIONS
     *(.init.literal)
     *(.init)
     _init_end = ABSOLUTE(.);
-} > iram0_0_seg
+  } > iram0_0_seg
 
   .iram0.text :
   {
@@ -112,6 +169,9 @@ SECTIONS
     _iram_text_end = ABSOLUTE(.);
     _iram_end = ABSOLUTE(.);
   } > iram0_0_seg
+
+  ASSERT(((_iram_text_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),
+          "IRAM0 segment data does not fit.")
 
   .dram0.data :
   {
@@ -195,6 +255,9 @@ SECTIONS
     _heap_start = ABSOLUTE(.);
   } > dram0_0_seg
 
+  ASSERT(((_bss_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
+          "DRAM segment data does not fit.")
+          
   .flash.rodata :
   {
     _rodata_start = ABSOLUTE(.);

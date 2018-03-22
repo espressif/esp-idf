@@ -61,6 +61,9 @@ MEMORY
   /* RTC fast memory (executable). Persists over deep sleep.
    */
   rtc_iram_seg(RWX) :                org = 0x400C0000, len = 0x2000
+  
+  /* RTC fast memory (same block as above), viewed from data bus */
+  rtc_data_seg(RW) :                 org = 0x3ff80000, len = 0x2000
 
   /* RTC slow memory (data accessible). Persists over deep sleep.
 
@@ -72,3 +75,14 @@ MEMORY
 
 /* Heap ends at top of dram0_0_seg */
 _heap_end = 0x40000000 - CONFIG_TRACEMEM_RESERVE_DRAM;
+
+_data_seg_org = ORIGIN(rtc_data_seg);
+
+/* The lines below define location alias for .rtc.data section based on Kconfig option. 
+   When the option is not defined then use slow memory segment 
+   else the data will be placed in fast memory segment */ 
+#ifndef CONFIG_ESP32_RTCDATA_IN_FAST_MEM
+REGION_ALIAS("rtc_data_location", rtc_slow_seg );
+#else
+REGION_ALIAS("rtc_data_location", rtc_data_seg );
+#endif
