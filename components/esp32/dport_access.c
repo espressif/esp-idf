@@ -217,3 +217,22 @@ void IRAM_ATTR esp_dport_access_int_resume(void)
 #endif
 }
 
+/**
+ * @brief Read a sequence of DPORT registers to the buffer, SMP-safe version.
+ *
+ * This implementation uses a method of the pre-reading of the APB register
+ * before reading the register of the DPORT, without stall other CPU.
+ * There is disable/enable interrupt.
+ *
+ * @param[out] buff_out  Contains the read data.
+ * @param[in]  address   Initial address for reading registers.
+ * @param[in]  num_words The number of words.
+ */
+void IRAM_ATTR esp_dport_access_read_buffer(uint32_t *buff_out, uint32_t address, uint32_t num_words)
+{
+    DPORT_INTERRUPT_DISABLE();
+    for (uint32_t i = 0;  i < num_words; ++i) {
+        buff_out[i] = DPORT_SEQUENCE_REG_READ(address + i * 4);
+    }
+    DPORT_INTERRUPT_RESTORE();
+}

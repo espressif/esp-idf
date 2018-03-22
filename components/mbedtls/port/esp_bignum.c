@@ -76,17 +76,13 @@ void esp_mpi_acquire_hardware( void )
     /* newlib locks lazy initialize on ESP-IDF */
     _lock_acquire(&mpi_lock);
 
-    DPORT_STALL_OTHER_CPU_START();
-    {
-        _DPORT_REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_RSA);
-        /* also clear reset on digital signature, otherwise RSA is held in reset */
-        _DPORT_REG_CLR_BIT(DPORT_PERI_RST_EN_REG,
-                           DPORT_PERI_EN_RSA
-                           | DPORT_PERI_EN_DIGITAL_SIGNATURE);
+    DPORT_REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_RSA);
+    /* also clear reset on digital signature, otherwise RSA is held in reset */
+    DPORT_REG_CLR_BIT(DPORT_PERI_RST_EN_REG,
+                       DPORT_PERI_EN_RSA
+                       | DPORT_PERI_EN_DIGITAL_SIGNATURE);
 
-        _DPORT_REG_CLR_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
-    }
-    DPORT_STALL_OTHER_CPU_END();
+    DPORT_REG_CLR_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
 
     while(DPORT_REG_READ(RSA_CLEAN_REG) != 1);
     // Note: from enabling RSA clock to here takes about 1.3us
@@ -98,15 +94,11 @@ void esp_mpi_acquire_hardware( void )
 
 void esp_mpi_release_hardware( void )
 {
-    DPORT_STALL_OTHER_CPU_START();
-    {
-        _DPORT_REG_SET_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
+    DPORT_REG_SET_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
 
-        /* don't reset digital signature unit, as this resets AES also */
-        _DPORT_REG_SET_BIT(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_RSA);
-        _DPORT_REG_CLR_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_RSA);
-    }
-    DPORT_STALL_OTHER_CPU_END();
+    /* don't reset digital signature unit, as this resets AES also */
+    DPORT_REG_SET_BIT(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_RSA);
+    DPORT_REG_CLR_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_RSA);
 
     _lock_release(&mpi_lock);
 }
@@ -183,14 +175,7 @@ static inline int mem_block_to_mpi(mbedtls_mpi *x, uint32_t mem_base, int num_wo
     MBEDTLS_MPI_CHK( mbedtls_mpi_grow(x, num_words) );
 
     /* Copy data from memory block registers */
-    DPORT_STALL_OTHER_CPU_START();
-    {
-        for (size_t i = 0; i < num_words; ++i) {
-            x->p[i] = _DPORT_REG_READ(mem_base + i * 4);
-        }
-    }
-    DPORT_STALL_OTHER_CPU_END();
-
+    esp_dport_access_read_buffer(x->p, mem_base, num_words);
     /* Zero any remaining limbs in the bignum, if the buffer is bigger
        than num_words */
     for(size_t i = num_words; i < x->n; i++) {
