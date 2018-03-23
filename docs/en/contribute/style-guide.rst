@@ -158,6 +158,21 @@ Although not directly related to formatting, here are a few notes about using co
     }
 
 
+Line Endings
+^^^^^^^^^^^^
+
+Commits should only contain files with LF (Unix style) endings.
+
+Windows users can configure git to check out CRLF (Windows style) endings locally and commit LF endings by setting the ``core.autocrlf`` setting. `Github has a document about setting this option <github-line-endings>`. However because MSYS2 uses Unix-style line endings, it is often easier to configure your text editor to use LF (Unix style) endings when editing ESP-IDF source files.
+
+If you accidentally have some commits in your branch that add LF endings, you can convert them to Unix by running this command in an MSYS2 or Unix terminal (change directory to the IDF working directory and check the correct branch is currently checked out, beforehand)::
+
+  git rebase --exec 'git diff-tree --no-commit-id --name-only -r HEAD | xargs dos2unix && git commit -a --amend --no-edit --allow-empty' master
+
+(Note that this line rebases on master, change the branch name at the end to rebase on another branch.)
+
+For updating a single commit, it's possible to run ``dos2unix FILENAME`` and then run ``git commit --amend``
+
 Formatting your code
 ^^^^^^^^^^^^^^^^^^^^
 
