@@ -135,13 +135,14 @@ void BTA_GATTC_AppDeregister(tBTA_GATTC_IF client_if)
 **
 ** Parameters       client_if: server interface.
 **                  remote_bda: remote device BD address.
+**                  remote_addr_type: remote device BD address type.
 **                  is_direct: direct connection or background auto connection
 **                  transport: Transport to be used for GATT connection (BREDR/LE)
 **
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_GATTC_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda,
+void BTA_GATTC_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_ADDR_TYPE remote_addr_type,
                     BOOLEAN is_direct, tBTA_GATT_TRANSPORT transport)
 {
     tBTA_GATTC_API_OPEN  *p_buf;
@@ -152,6 +153,7 @@ void BTA_GATTC_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda,
         p_buf->client_if = client_if;
         p_buf->is_direct = is_direct;
         p_buf->transport = transport;
+        p_buf->remote_addr_type = remote_addr_type;
         memcpy(p_buf->remote_bda, remote_bda, BD_ADDR_LEN);
 
 

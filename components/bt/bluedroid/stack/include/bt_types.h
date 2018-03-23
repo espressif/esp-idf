@@ -499,6 +499,8 @@ typedef struct {
 #define BLE_ADDR_RANDOM         0x01
 #define BLE_ADDR_PUBLIC_ID      0x02
 #define BLE_ADDR_RANDOM_ID      0x03
+#define BLE_ADDR_TYPE_MAX       BLE_ADDR_RANDOM_ID
+#define BLE_ADDR_UNKNOWN_TYPE   0XFF
 typedef UINT8 tBLE_ADDR_TYPE;
 #define BLE_ADDR_TYPE_MASK      (BLE_ADDR_RANDOM | BLE_ADDR_PUBLIC)
 

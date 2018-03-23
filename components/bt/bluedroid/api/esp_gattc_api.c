@@ -67,7 +67,7 @@ esp_err_t esp_ble_gattc_app_unregister(esp_gatt_if_t gattc_if)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_gattc_open(esp_gatt_if_t gattc_if, esp_bd_addr_t remote_bda, bool is_direct)
+esp_err_t esp_ble_gattc_open(esp_gatt_if_t gattc_if, esp_bd_addr_t remote_bda, esp_ble_addr_type_t remote_addr_type, bool is_direct)
 {
     btc_msg_t msg;
     btc_ble_gattc_args_t arg;
@@ -79,6 +79,7 @@ esp_err_t esp_ble_gattc_open(esp_gatt_if_t gattc_if, esp_bd_addr_t remote_bda, b
     msg.act = BTC_GATTC_ACT_OPEN;
     arg.open.gattc_if = gattc_if;
     memcpy(arg.open.remote_bda, remote_bda, ESP_BD_ADDR_LEN);
+    arg.open.remote_addr_type = remote_addr_type;
     arg.open.is_direct = is_direct;
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);

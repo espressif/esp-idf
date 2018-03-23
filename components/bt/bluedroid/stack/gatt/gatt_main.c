@@ -195,11 +195,11 @@ void gatt_free(void)
 ** Description      This function is called to initiate a connection to a peer device.
 **
 ** Parameter        rem_bda: remote device address to connect to.
-**
+**                  bd_addr_type: emote device address type.
 ** Returns          TRUE if connection is started, otherwise return FALSE.
 **
 *******************************************************************************/
-BOOLEAN gatt_connect (BD_ADDR rem_bda, tGATT_TCB *p_tcb, tBT_TRANSPORT transport)
+BOOLEAN gatt_connect (BD_ADDR rem_bda, tBLE_ADDR_TYPE bd_addr_type, tGATT_TCB *p_tcb, tBT_TRANSPORT transport)
 {
     BOOLEAN             gatt_ret = FALSE;
 
@@ -209,7 +209,7 @@ BOOLEAN gatt_connect (BD_ADDR rem_bda, tGATT_TCB *p_tcb, tBT_TRANSPORT transport
 
     if (transport == BT_TRANSPORT_LE) {
         p_tcb->att_lcid = L2CAP_ATT_CID;
-        gatt_ret = L2CA_ConnectFixedChnl (L2CAP_ATT_CID, rem_bda);
+        gatt_ret = L2CA_ConnectFixedChnl (L2CAP_ATT_CID, rem_bda, bd_addr_type);
 #if (CLASSIC_BT_INCLUDED == TRUE)
     } else {
         if ((p_tcb->att_lcid = L2CA_ConnectReq(BT_PSM_ATT, rem_bda)) != 0) {
@@ -354,7 +354,7 @@ void gatt_update_app_use_link_flag (tGATT_IF gatt_if, tGATT_TCB *p_tcb, BOOLEAN 
 ** Returns          void.
 **
 *******************************************************************************/
-BOOLEAN gatt_act_connect (tGATT_REG *p_reg, BD_ADDR bd_addr, tBT_TRANSPORT transport)
+BOOLEAN gatt_act_connect (tGATT_REG *p_reg, BD_ADDR bd_addr, tBLE_ADDR_TYPE bd_addr_type, tBT_TRANSPORT transport)
 {
     BOOLEAN     ret = FALSE;
     tGATT_TCB   *p_tcb;
@@ -367,7 +367,7 @@ BOOLEAN gatt_act_connect (tGATT_REG *p_reg, BD_ADDR bd_addr, tBT_TRANSPORT trans
         /* before link down, another app try to open a GATT connection */
         if (st == GATT_CH_OPEN &&  gatt_num_apps_hold_link(p_tcb) == 0 &&
                 transport == BT_TRANSPORT_LE ) {
-            if (!gatt_connect(bd_addr,  p_tcb, transport)) {
+            if (!gatt_connect(bd_addr, bd_addr_type, p_tcb, transport)) {
                 ret = FALSE;
             }
         } else if (st == GATT_CH_CLOSING) {
@@ -376,7 +376,7 @@ BOOLEAN gatt_act_connect (tGATT_REG *p_reg, BD_ADDR bd_addr, tBT_TRANSPORT trans
         }
     } else {
         if ((p_tcb = gatt_allocate_tcb_by_bdaddr(bd_addr, transport)) != NULL) {
-            if (!gatt_connect(bd_addr,  p_tcb, transport)) {
+            if (!gatt_connect(bd_addr, bd_addr_type, p_tcb, transport)) {
                 GATT_TRACE_ERROR("gatt_connect failed");
                 fixed_queue_free(p_tcb->pending_enc_clcb, NULL);
                 fixed_queue_free(p_tcb->pending_ind_q, NULL);

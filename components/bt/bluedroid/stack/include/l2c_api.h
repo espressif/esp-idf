@@ -1079,11 +1079,12 @@ extern BOOLEAN  L2CA_RegisterFixedChannel (UINT16 fixed_cid, tL2CAP_FIXED_CHNL_R
 **
 **  Parameters:     Fixed CID
 **                  BD Address of remote
+**                  BD Address type
 **
 **  Return value:   TRUE if connection started
 **
 *******************************************************************************/
-extern BOOLEAN L2CA_ConnectFixedChnl (UINT16 fixed_cid, BD_ADDR bd_addr);
+extern BOOLEAN L2CA_ConnectFixedChnl (UINT16 fixed_cid, BD_ADDR bd_addr, tBLE_ADDR_TYPE bd_addr_type);
 
 /*******************************************************************************
 **
