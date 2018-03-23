@@ -188,6 +188,8 @@ typedef UINT8 tBTA_GATTC_EVT;
 
 typedef tGATT_IF tBTA_GATTC_IF;
 
+typedef UINT8 tBTA_ADDR_TYPE;
+
 typedef struct {
     UINT16              unit;       /* as UUIUD defined by SIG */
     UINT16              descr;      /* as UUID as defined by SIG */
@@ -737,13 +739,14 @@ extern void BTA_GATTC_AppDeregister (tBTA_GATTC_IF client_if);
 **
 ** Parameters       client_if: server interface.
 **                  remote_bda: remote device BD address.
+**                  remote_addr_type: remote device BD address type.
 **                  is_direct: direct connection or background auto connection
 **
 ** Returns          void
 **
 *******************************************************************************/
-extern void BTA_GATTC_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda,
-                           BOOLEAN is_direct, tBTA_GATT_TRANSPORT transport);
+extern void BTA_GATTC_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_ADDR_TYPE remote_addr_type,
+                    BOOLEAN is_direct, tBTA_GATT_TRANSPORT transport);
 
 /*******************************************************************************
 **

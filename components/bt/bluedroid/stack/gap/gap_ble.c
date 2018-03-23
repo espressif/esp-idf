@@ -694,7 +694,7 @@ BOOLEAN gap_ble_accept_cl_operation(BD_ADDR peer_bda, UINT16 uuid, tGAP_BLE_CMPL
     }
 
     /* hold the link here */
-    if (!GATT_Connect(gap_cb.gatt_if, p_clcb->bda, TRUE, BT_TRANSPORT_LE)) {
+    if (!GATT_Connect(gap_cb.gatt_if, p_clcb->bda, BLE_ADDR_UNKNOWN_TYPE, TRUE, BT_TRANSPORT_LE)) {
         return started;
     }
 

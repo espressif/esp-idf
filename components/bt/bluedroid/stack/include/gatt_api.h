@@ -1097,13 +1097,14 @@ extern  void GATT_StartIf (tGATT_IF gatt_if);
 **
 ** Parameters       gatt_if: applicaiton interface
 **                  bd_addr: peer device address.
+**                  bd_addr_type: peer device address type.
 **                  is_direct: is a direct conenection or a background auto connection
 **                  transport : Physical transport for GATT connection (BR/EDR or LE)
 **
 ** Returns          TRUE if connection started; FALSE if connection start failure.
 **
 *******************************************************************************/
-extern BOOLEAN GATT_Connect (tGATT_IF gatt_if, BD_ADDR bd_addr,
+extern BOOLEAN GATT_Connect (tGATT_IF gatt_if, BD_ADDR bd_addr, tBLE_ADDR_TYPE bd_addr_type,
                              BOOLEAN is_direct, tBT_TRANSPORT transport);
 
 
