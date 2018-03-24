@@ -38,7 +38,7 @@ Obtaining Current Time
 
 ``esp_timer`` also provides a convenience function to obtain the time passed since start-up, with microsecond precision: :cpp:func:`esp_timer_get_time`. This function returns the number of microseconds since ``esp_timer`` was initialized, which usually happens shortly before ``app_main`` function is called.
 
-Unlike `gettimeofday` function, values returned by :cpp:func:`esp_timer_get_time`:
+Unlike :cpp:func:`gettimeofday` function, values returned by :cpp:func:`esp_timer_get_time`:
 
 - Start from zero after the chip wakes up from deep sleep
 - Do not have timezone or DST adjustments applied
