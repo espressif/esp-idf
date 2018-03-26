@@ -2284,12 +2284,12 @@ extern void BTA_DmBleStopAdvertising(void)
 ** Description      This function set the random address for the APP
 **
 ** Parameters       rand_addr: the random address whith should be setting
-**
+**                  p_set_rand_addr_cback: complete callback
 ** Returns          void
 **
 **
 *******************************************************************************/
-extern void BTA_DmSetRandAddress(BD_ADDR rand_addr)
+extern void BTA_DmSetRandAddress(BD_ADDR rand_addr, tBTA_SET_RAND_ADDR_CBACK *p_set_rand_addr_cback)
 {
     tBTA_DM_APT_SET_DEV_ADDR *p_msg;
     APPL_TRACE_API("set the random address ");
@@ -2298,6 +2298,7 @@ extern void BTA_DmSetRandAddress(BD_ADDR rand_addr)
         memcpy(p_msg->address, rand_addr, BD_ADDR_LEN);
         p_msg->hdr.event = BTA_DM_API_SET_RAND_ADDR_EVT;
         p_msg->addr_type = BLE_ADDR_RANDOM;
+        p_msg->p_set_rand_addr_cback = p_set_rand_addr_cback;
         //start sent the msg to the bta system control moudle
         bta_sys_sendmsg(p_msg);
     }
