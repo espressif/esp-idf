@@ -814,6 +814,26 @@ BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode, tBTM_SET_LOCAL_PRIVACY_CBACK 
 
 /*******************************************************************************
 **
+** Function         BTM_BleConfigLocalIcon
+**
+** Description      This function is called to set local icon
+**
+** Parameters       icon:  appearance value.
+**
+**
+*******************************************************************************/
+void BTM_BleConfigLocalIcon(uint16_t icon)
+{
+#if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
+    tGAP_BLE_ATTR_VALUE p_value;
+    p_value.icon = icon;
+    GAP_BleAttrDBUpdate(GATT_UUID_GAP_ICON, &p_value);
+#else
+    BTM_TRACE_ERROR("%s\n", __func__); 
+#endif
+}
+/*******************************************************************************
+**
 ** Function          BTM_BleMaxMultiAdvInstanceCount
 **
 ** Description        Returns max number of multi adv instances supported by controller

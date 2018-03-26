@@ -776,6 +776,20 @@ esp_err_t esp_ble_gap_set_rand_addr(esp_bd_addr_t rand_addr);
 esp_err_t esp_ble_gap_config_local_privacy (bool privacy_enable);
 
 /**
+ * @brief           set local gap appearance icon
+ *                  
+ *
+ * @param[in]       icon   - Appearance value, these vlues are Defined by the Bluetooth organization, please refer to 
+ *                  https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.gap.appearance.xml
+ *                
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
+esp_err_t esp_ble_gap_config_local_icon (uint16_t icon);
+
+/**
 * @brief            Add or remove device from white list
 *
 * @param[in]        add_remove: the value is true if added the ble device to the white list, and false remove to the white list.
