@@ -1634,6 +1634,18 @@ BOOLEAN BTM_BleConfigPrivacy(BOOLEAN enable, tBTM_SET_LOCAL_PRIVACY_CBACK *set_l
 
 /*******************************************************************************
 **
+** Function         BTM_BleConfigLocalIcon
+**
+** Description      This function is called to set local icon
+**
+** Parameters       icon: appearance value.
+**
+**
+*******************************************************************************/
+void BTM_BleConfigLocalIcon(uint16_t icon);
+
+/*******************************************************************************
+**
 ** Function         BTM_BleLocalPrivacyEnabled
 **
 ** Description        Checks if local device supports private address
