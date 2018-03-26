@@ -151,6 +151,9 @@ void stop_rtc_external_quartz(){
     gpio_output_set_high(0, 0, 0, mask_32 | mask_33); // disable pins
 }
 
+#ifdef CONFIG_SPIRAM_SUPPORT
+// PSRAM tests run on ESP-WROVER-KIT boards, which have the 32k XTAL installed.
+// Other tests may run on DevKitC boards, which don't have a 32k XTAL.
 TEST_CASE("Test starting external RTC quartz", "[rtc_clk]")
 {
     int i = 0, fail = 0;
@@ -182,3 +185,4 @@ TEST_CASE("Test starting external RTC quartz", "[rtc_clk]")
         printf("Test passed successfully\n");
     }
 }
+#endif // CONFIG_SPIRAM_SUPPORT
