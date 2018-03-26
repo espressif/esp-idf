@@ -982,7 +982,7 @@ tBTM_STATUS BTM_BleWriteAdvData(tBTM_BLE_AD_MASK  data_mask,
 tBTM_STATUS BTM_BleWriteAdvDataRaw(UINT8 *p_raw_adv, UINT32 raw_adv_len);
 
 
-BOOLEAN BTM_BleSetRandAddress(BD_ADDR rand_addr);
+tBTM_STATUS BTM_BleSetRandAddress(BD_ADDR rand_addr);
 
 
 /*******************************************************************************
