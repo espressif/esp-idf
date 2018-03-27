@@ -148,6 +148,21 @@ pm_mode_t esp_pm_impl_get_mode(esp_pm_lock_type_t type, int arg)
     }
 }
 
+/* rtc_cpu_freq_t enum is not ordered by frequency, so convert to MHz,
+ * figure out the maximum value, then convert back to rtc_cpu_freq_t.
+ */
+static rtc_cpu_freq_t max_freq_of(rtc_cpu_freq_t f1, rtc_cpu_freq_t f2)
+{
+    int f1_hz = rtc_clk_cpu_freq_value(f1);
+    int f2_hz = rtc_clk_cpu_freq_value(f2);
+    int f_max_hz = MAX(f1_hz, f2_hz);
+    rtc_cpu_freq_t result = RTC_CPU_FREQ_XTAL;
+    if (!rtc_clk_cpu_freq_from_mhz(f_max_hz/1000000, &result)) {
+        assert(false && "unsupported frequency");
+    }
+    return result;
+}
+
 esp_err_t esp_pm_configure(const void* vconfig)
 {
 #ifndef CONFIG_PM_ENABLE
@@ -160,6 +175,11 @@ esp_err_t esp_pm_configure(const void* vconfig)
     }
     rtc_cpu_freq_t min_freq = config->min_cpu_freq;
     rtc_cpu_freq_t max_freq = config->max_cpu_freq;
+    int min_freq_mhz = rtc_clk_cpu_freq_value(min_freq);
+    int max_freq_mhz = rtc_clk_cpu_freq_value(max_freq);
+    if (min_freq_mhz > max_freq_mhz) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     rtc_cpu_freq_t apb_max_freq; /* CPU frequency in APB_MAX mode */
     if (max_freq == RTC_CPU_FREQ_240M) {
@@ -174,7 +194,7 @@ esp_err_t esp_pm_configure(const void* vconfig)
         apb_max_freq = RTC_CPU_FREQ_80M;
     }
 
-    apb_max_freq = MAX(apb_max_freq, min_freq);
+    apb_max_freq = max_freq_of(apb_max_freq, min_freq);
 
     ESP_LOGI(TAG, "Frequency switching config: "
                   "CPU_MAX: %s, APB_MAX: %s, APB_MIN: %s, Light sleep: %s",
