@@ -1543,6 +1543,19 @@ UINT8 *BTM_CheckAdvData( UINT8 *p_adv, UINT8 type, UINT8 *p_length);
 
 /*******************************************************************************
 **
+** Function         BTM_BleGetCurrentAddress
+**
+** Description      This function is called to get local used BLE address.
+**
+** Parameters:       None.
+**
+** Returns          success or fail
+**
+*******************************************************************************/
+BOOLEAN BTM_BleGetCurrentAddress(BD_ADDR addr, uint8_t *addr_type);
+
+/*******************************************************************************
+**
 ** Function         BTM__BLEReadDiscoverability
 **
 ** Description      This function is called to read the current LE discoverability

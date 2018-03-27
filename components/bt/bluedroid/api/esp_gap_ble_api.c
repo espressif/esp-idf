@@ -268,6 +268,18 @@ esp_err_t esp_ble_gap_set_device_name(const char *name)
     return esp_bt_dev_set_device_name(name);
 }
 
+esp_err_t esp_ble_gap_get_local_used_addr(esp_bd_addr_t local_used_addr, uint8_t * addr_type)
+{
+    if(esp_bluedroid_get_status() != (ESP_BLUEDROID_STATUS_ENABLED)) {
+        LOG_ERROR("%s, bluedroid status error", __func__);
+        return ESP_FAIL;
+    } 
+    if(!BTM_BleGetCurrentAddress(local_used_addr, addr_type)) {
+        return ESP_FAIL;
+    }
+    return ESP_OK;
+}
+
 uint8_t *esp_ble_resolve_adv_data( uint8_t *adv_data, uint8_t type, uint8_t *length)
 {
     if (((type < ESP_BLE_AD_TYPE_FLAG) || (type > ESP_BLE_AD_TYPE_128SERVICE_DATA)) &&
