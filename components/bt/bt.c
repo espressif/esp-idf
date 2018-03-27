@@ -57,6 +57,7 @@ extern int btdm_controller_deinit(void);
 extern int btdm_controller_enable(esp_bt_mode_t mode);
 extern int btdm_controller_disable(esp_bt_mode_t mode);
 extern uint8_t btdm_controller_get_mode(void);
+extern const char *btdm_controller_get_compile_version(void);
 extern void btdm_rf_bb_init(void);
 
 /* VHCI function interface */
@@ -476,6 +477,8 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         return err;
     }
 #endif
+
+    ESP_LOGI(BTDM_LOG_TAG, "BT controller compile version [%s]\n", btdm_controller_get_compile_version());
 
     btdm_osi_funcs_register(&osi_funcs);
 
