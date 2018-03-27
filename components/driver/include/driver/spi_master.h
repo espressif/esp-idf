@@ -35,6 +35,12 @@ extern "C"
 #define SPI_DEVICE_POSITIVE_CS             (1<<3)  ///< Make CS positive during a transaction instead of negative
 #define SPI_DEVICE_HALFDUPLEX              (1<<4)  ///< Transmit data before receiving it, instead of simultaneously
 #define SPI_DEVICE_CLK_AS_CS               (1<<5)  ///< Output clock on CS line if CS is active
+/** There are timing issue when reading at high frequency (the frequency is related to whether native pins are used, valid time after slave sees the clock).
+ * In half-duplex mode, the driver automatically inserts dummy bits before reading phase to fix the timing issue. Set this flag to disable this feature.
+ * However in full-duplex mode, dummy bits are not allowed to use and no way to prevent reading data from being corrupted. 
+ * Set this flag to confirm that you're going to work with output only, or read without dummy bits at your own risk.
+ */
+#define SPI_DEVICE_NO_DUMMY                (1<<6)  
 
 
 typedef struct spi_transaction_t spi_transaction_t;
