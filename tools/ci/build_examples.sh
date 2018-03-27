@@ -23,7 +23,7 @@
 # -----------------------------------------------------------------------------
 # Safety settings (see https://gist.github.com/ilg-ul/383869cbb01f61a51c4d).
 
-if [[ ! -z ${DEBUG} ]]
+if [[ ! -z ${DEBUG_SHELL} ]]
 then
   set -x # Activate the expand mode if DEBUG is anything but empty.
 fi

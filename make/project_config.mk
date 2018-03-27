@@ -15,15 +15,19 @@ SDKCONFIG ?= $(PROJECT_PATH)/sdkconfig
 # overrides (usually used for esp-idf examples)
 SDKCONFIG_DEFAULTS ?= $(PROJECT_PATH)/sdkconfig.defaults
 
+# Workaround to run make parallel (-j). mconf and conf cannot be made simultaneously
+$(KCONFIG_TOOL_DIR)/mconf: $(KCONFIG_TOOL_DIR)/conf
+
 # reset MAKEFLAGS as the menuconfig makefile uses implicit compile rules
 $(KCONFIG_TOOL_DIR)/mconf $(KCONFIG_TOOL_DIR)/conf: $(wildcard $(KCONFIG_TOOL_DIR)/*.c)
 	MAKEFLAGS="" CC=$(HOSTCC) LD=$(HOSTLD) \
 	$(MAKE) -C $(KCONFIG_TOOL_DIR)
 
 ifeq ("$(wildcard $(SDKCONFIG))","")
-ifeq ("$(filter defconfig clean% %clean, $(MAKECMDGOALS))","")
-# if no configuration file is present and defconfig or clean
-# is not a named target, run defconfig then menuconfig to get the initial config
+# if no configuration file is present we need a rule for it
+ifeq ("$(filter $(NON_INTERACTIVE_TARGET), $(MAKECMDGOALS))","")
+# if special non-interactive item is not a named target (eg. 'defconfig', 'clean')
+# run defconfig then menuconfig to get the initial config
 $(SDKCONFIG): menuconfig
 menuconfig: defconfig
 else

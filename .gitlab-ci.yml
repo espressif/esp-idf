@@ -26,6 +26,8 @@ variables:
 # IDF environment
 
   IDF_PATH: "$CI_PROJECT_DIR"
+  BATCH_BUILD: "1"
+  V: "0"
   APPLY_BOT_FILTER_SCRIPT: "$CI_PROJECT_DIR/tools/ci/apply_bot_filter.py"
   CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
 
