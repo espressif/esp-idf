@@ -34,7 +34,7 @@ void app_main()
     nvs_handle my_handle;
     err = nvs_open("storage", NVS_READWRITE, &my_handle);
     if (err != ESP_OK) {
-        printf("Error (%d) opening NVS handle!\n", err);
+        printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
     } else {
         printf("Done\n");
 
@@ -51,7 +51,7 @@ void app_main()
                 printf("The value is not initialized yet!\n");
                 break;
             default :
-                printf("Error (%d) reading!\n", err);
+                printf("Error (%s) reading!\n", esp_err_to_name(err));
         }
 
         // Write

@@ -156,10 +156,10 @@ void app_main()
     ESP_ERROR_CHECK( err );
 
     err = print_what_saved();
-    if (err != ESP_OK) printf("Error (%d) reading data from NVS!\n", err);
+    if (err != ESP_OK) printf("Error (%s) reading data from NVS!\n", esp_err_to_name(err));
 
     err = save_restart_counter();
-    if (err != ESP_OK) printf("Error (%d) saving restart counter to NVS!\n", err);
+    if (err != ESP_OK) printf("Error (%s) saving restart counter to NVS!\n", esp_err_to_name(err));
 
     gpio_pad_select_gpio(GPIO_NUM_0);
     gpio_set_direction(GPIO_NUM_0, GPIO_MODE_DEF_INPUT);
@@ -172,7 +172,7 @@ void app_main()
             vTaskDelay(1000 / portTICK_PERIOD_MS);
             if(gpio_get_level(GPIO_NUM_0) == 0) {
                 err = save_run_time();
-                if (err != ESP_OK) printf("Error (%d) saving run time blob to NVS!\n", err);
+                if (err != ESP_OK) printf("Error (%s) saving run time blob to NVS!\n", esp_err_to_name(err));
                 printf("Restarting...\n");
                 fflush(stdout);
                 esp_restart();

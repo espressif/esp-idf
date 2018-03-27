@@ -41,7 +41,7 @@ static void initialize_filesystem()
     };
     esp_err_t err = esp_vfs_fat_spiflash_mount(MOUNT_PATH, "storage", &mount_config, &wl_handle);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to mount FATFS (0x%x)", err);
+        ESP_LOGE(TAG, "Failed to mount FATFS (%s)", esp_err_to_name(err));
         return;
     }
 }
@@ -170,9 +170,9 @@ void app_main()
         } else if (err == ESP_ERR_INVALID_ARG) {
             // command was empty
         } else if (err == ESP_OK && ret != ESP_OK) {
-            printf("Command returned non-zero error code: 0x%x\n", ret);
+            printf("Command returned non-zero error code: 0x%x (%s)\n", ret, esp_err_to_name(err));
         } else if (err != ESP_OK) {
-            printf("Internal error: 0x%x\n", err);
+            printf("Internal error: %s\n", esp_err_to_name(err));
         }
         /* linenoise allocates line buffer on the heap, so need to free it */
         linenoiseFree(line);
