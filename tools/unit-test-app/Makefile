@@ -5,6 +5,8 @@
 
 PROJECT_NAME := unit-test-app
 
+NON_INTERACTIVE_TARGET += ut-apply-config-% ut-clean-%
+
 include $(IDF_PATH)/make/project.mk
 
 # List of unit-test-app configurations.
