@@ -95,6 +95,7 @@ typedef struct {
 typedef struct {
     spi_clock_reg_t reg;
     int eff_clk;
+    int dummy_num;
 } clock_config_t;
 
 struct spi_device_t {
@@ -238,6 +239,16 @@ esp_err_t spi_bus_free(spi_host_device_t host)
     return ESP_OK;
 }
 
+static inline uint32_t spi_dummy_limit(bool gpio_is_used)
+{
+    const int apbclk=APB_CLK_FREQ;
+    if (!gpio_is_used) {
+        return apbclk;  //dummy bit workaround is not used when native pins are used
+    } else {
+        return apbclk/2;  //the dummy bit workaround is used when freq is 40MHz and GPIO matrix is used.
+    }
+}
+
 /*
  Add a device. This allocates a CS line for the device, allocates memory for the device structure and hooks
  up the CS pin to whatever is specified.
@@ -246,6 +257,9 @@ esp_err_t spi_bus_add_device(spi_host_device_t host, const spi_device_interface_
 {
     int freecs;
     int apbclk=APB_CLK_FREQ;
+    int eff_clk;
+    int duty_cycle;
+    spi_clock_reg_t clk_reg;
     SPI_CHECK(host>=SPI_HOST && host<=VSPI_HOST, "invalid host", ESP_ERR_INVALID_ARG);
     SPI_CHECK(spihost[host]!=NULL, "host not initialized", ESP_ERR_INVALID_STATE);
     SPI_CHECK(dev_config->spics_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(dev_config->spics_io_num), "spics pin invalid", ESP_ERR_INVALID_ARG);
@@ -258,9 +272,17 @@ esp_err_t spi_bus_add_device(spi_host_device_t host, const spi_device_interface_
     //The hardware looks like it would support this, but actually setting cs_ena_pretrans when transferring in full
     //duplex mode does absolutely nothing on the ESP32.
     SPI_CHECK(dev_config->cs_ena_pretrans==0 || (dev_config->flags & SPI_DEVICE_HALFDUPLEX), "cs pretrans delay incompatible with full-duplex", ESP_ERR_INVALID_ARG);
+    
     //Speeds >=40MHz over GPIO matrix needs a dummy cycle, but these don't work for full-duplex connections.
-    SPI_CHECK(!( ((dev_config->flags & SPI_DEVICE_HALFDUPLEX)==0) && (dev_config->clock_speed_hz > ((apbclk*2)/5)) && (!spihost[host]->no_gpio_matrix)),
-            "No speeds >26MHz supported for full-duplex, GPIO-matrix SPI transfers", ESP_ERR_INVALID_ARG);
+    duty_cycle = (dev_config->duty_cycle_pos==0? 128: dev_config->duty_cycle_pos);
+    eff_clk = spi_cal_clock(apbclk, dev_config->clock_speed_hz, duty_cycle, (uint32_t*)&clk_reg);    
+    uint32_t dummy_limit = spi_dummy_limit(!spihost[host]->no_gpio_matrix);
+    SPI_CHECK( dev_config->flags & SPI_DEVICE_HALFDUPLEX || (eff_clk/1000/1000) < (dummy_limit/1000/1000) ||
+            dev_config->flags & SPI_DEVICE_NO_DUMMY,
+"When GPIO matrix is used in full-duplex mode at frequency > 26MHz, device cannot read correct data.\n\
+Please note the SPI can only work at divisors of 80MHz, and the driver always tries to find the closest frequency to your configuration.\n\
+Specify ``SPI_DEVICE_NO_DUMMY`` to ignore this checking. Then you can output data at higher speed, or read data at your own risk.", 
+            ESP_ERR_INVALID_ARG );
 
     //Allocate memory for device
     spi_device_t *dev=malloc(sizeof(spi_device_t));
@@ -276,9 +298,13 @@ esp_err_t spi_bus_add_device(spi_host_device_t host, const spi_device_interface_
 
     //We want to save a copy of the dev config in the dev struct.
     memcpy(&dev->cfg, dev_config, sizeof(spi_device_interface_config_t));
-    if (dev->cfg.duty_cycle_pos==0) dev->cfg.duty_cycle_pos=128;
-    // TODO: if we have to change the apb clock among transactions, re-calculate this each time the apb clock lock is acquired.
-    dev->clk_cfg.eff_clk = spi_cal_clock(apbclk, dev->cfg.clock_speed_hz, dev->cfg.duty_cycle_pos, (uint32_t*)&dev->clk_cfg.reg);
+    dev->cfg.duty_cycle_pos = duty_cycle;
+    // TODO: if we have to change the apb clock among transactions, re-calculate this each time the apb clock lock is acquired.    
+    dev->clk_cfg= (clock_config_t) {
+        .eff_clk = eff_clk,
+        .dummy_num = (dev->clk_cfg.eff_clk >= dummy_limit? 1: 0),
+        .reg = clk_reg,
+    };
 
     //Set CS pin, CS options
     if (dev_config->spics_io_num >= 0) {
@@ -465,7 +491,7 @@ static void IRAM_ATTR spi_intr(void *arg)
         
         //Reconfigure according to device settings, but only if we change CSses.
         if (i!=host->prev_cs) {
-            int apbclk=APB_CLK_FREQ;
+            const int apbclk=APB_CLK_FREQ;
             int effclk=dev->clk_cfg.eff_clk;
             spi_set_clock(host->hw, dev->clk_cfg.reg);
             //Configure bit order
@@ -475,16 +501,13 @@ static void IRAM_ATTR spi_intr(void *arg)
             //Configure polarity
             //SPI iface needs to be configured for a delay in some cases.
             int nodelay=0;
-            int extra_dummy=0;
             if (host->no_gpio_matrix) {
                 if (effclk >= apbclk/2) {
                     nodelay=1;
                 }
             } else {
-                if (effclk >= apbclk/2) {
-                    nodelay=1;
-                    extra_dummy=1;          //Note: This only works on half-duplex connections. spi_bus_add_device checks for this.
-                } else if (effclk >= apbclk/4) {
+                uint32_t delay_limit = apbclk/4;
+                if (effclk >= delay_limit) {
                     nodelay=1;
                 }
             }
@@ -506,10 +529,6 @@ static void IRAM_ATTR spi_intr(void *arg)
                 host->hw->user.ck_out_edge=0;
                 host->hw->ctrl2.miso_delay_mode=nodelay?0:2;
             }
-
-            //configure dummy bits
-            host->hw->user.usr_dummy=(dev->cfg.dummy_bits+extra_dummy)?1:0;
-            host->hw->user1.usr_dummy_cyclelen=dev->cfg.dummy_bits+extra_dummy-1;
             //Configure misc stuff
             host->hw->user.doutdin=(dev->cfg.flags & SPI_DEVICE_HALFDUPLEX)?0:1;
             host->hw->user.sio=(dev->cfg.flags & SPI_DEVICE_3WIRE)?1:0;
@@ -554,8 +573,8 @@ static void IRAM_ATTR spi_intr(void *arg)
             host->hw->ctrl.fastrd_mode=1;
         }
 
-
         //Fill DMA descriptors
+        int extra_dummy=0;
         if (trans_buf->buffer_to_rcv) {
             host->hw->user.usr_miso_highpart=0;
             if (host->dma_chan == 0) {
@@ -565,6 +584,10 @@ static void IRAM_ATTR spi_intr(void *arg)
                 spicommon_setup_dma_desc_links(host->dmadesc_rx, ((trans->rxlength+7)/8), (uint8_t*)trans_buf->buffer_to_rcv, true);
                 host->hw->dma_in_link.addr=(int)(&host->dmadesc_rx[0]) & 0xFFFFF;
                 host->hw->dma_in_link.start=1;
+            }
+            //when no_dummy is not set and in half-duplex mode, sets the dummy bit if RX phase exist
+            if (((dev->cfg.flags&SPI_DEVICE_NO_DUMMY)==0) && (dev->cfg.flags&SPI_DEVICE_HALFDUPLEX)) {
+                extra_dummy=dev->clk_cfg.dummy_num;
             }
         } else {
             //DMA temporary workaround: let RX DMA work somehow to avoid the issue in ESP32 v0/v1 silicon 
@@ -593,6 +616,10 @@ static void IRAM_ATTR spi_intr(void *arg)
                 host->hw->user.usr_mosi_highpart=0;
             }
         }
+
+        //configure dummy bits
+        host->hw->user.usr_dummy=(dev->cfg.dummy_bits+extra_dummy)?1:0;
+        host->hw->user1.usr_dummy_cyclelen=dev->cfg.dummy_bits+extra_dummy-1;
 
         host->hw->mosi_dlen.usr_mosi_dbitlen=trans->length-1;
         if ( dev->cfg.flags & SPI_DEVICE_HALFDUPLEX ) {
@@ -660,7 +687,6 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
     SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO|SPI_TRANS_MODE_QIO)) && (!(handle->cfg.flags & SPI_DEVICE_HALFDUPLEX))), "incompatible iface params", ESP_ERR_INVALID_ARG);
     SPI_CHECK( !(handle->cfg.flags & SPI_DEVICE_HALFDUPLEX) || handle->host->dma_chan == 0 || !(trans_desc->flags & SPI_TRANS_USE_RXDATA || trans_desc->rx_buffer != NULL)
         || !(trans_desc->flags & SPI_TRANS_USE_TXDATA || trans_desc->tx_buffer!=NULL), "SPI half duplex mode does not support using DMA with both MOSI and MISO phases.", ESP_ERR_INVALID_ARG );
-
     //In Full duplex mode, default rxlength to be the same as length, if not filled in.
     // set rxlength to length is ok, even when rx buffer=NULL
     if (trans_desc->rxlength==0 && !(handle->cfg.flags & SPI_DEVICE_HALFDUPLEX)) {
