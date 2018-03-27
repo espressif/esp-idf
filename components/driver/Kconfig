@@ -1,0 +1,16 @@
+#menu "Driver configurations"
+
+menu "ADC configuration"
+
+config ADC_FORCE_XPD_FSM
+    bool "Use the FSM to control ADC power"
+    default n
+    help
+        ADC power can be controlled by the FSM instead of software. This allows the ADC to 
+        be shut off when it is not working leading to lower power consumption. However 
+        using the FSM control ADC power will increase the noise of ADC.
+
+endmenu  # ADC Configuration
+
+#endmenu  # Driver configurations
+
