@@ -120,7 +120,7 @@ static bool read_past_http_header(char text[], int total_len, esp_ota_handle_t u
 
             esp_err_t err = esp_ota_write( update_handle, (const void *)ota_write_data, i_write_len);
             if (err != ESP_OK) {
-                ESP_LOGE(TAG, "Error: esp_ota_write failed! err=0x%x", err);
+                ESP_LOGE(TAG, "Error: esp_ota_write failed (%s)!", esp_err_to_name(err));
                 return false;
             } else {
                 ESP_LOGI(TAG, "esp_ota_write header OK");
@@ -240,7 +240,7 @@ static void ota_example_task(void *pvParameter)
 
     err = esp_ota_begin(update_partition, OTA_SIZE_UNKNOWN, &update_handle);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "esp_ota_begin failed, error=%d", err);
+        ESP_LOGE(TAG, "esp_ota_begin failed (%s)", esp_err_to_name(err));
         task_fatal_error();
     }
     ESP_LOGI(TAG, "esp_ota_begin succeeded");
@@ -261,7 +261,7 @@ static void ota_example_task(void *pvParameter)
             memcpy(ota_write_data, text, buff_len);
             err = esp_ota_write( update_handle, (const void *)ota_write_data, buff_len);
             if (err != ESP_OK) {
-                ESP_LOGE(TAG, "Error: esp_ota_write failed! err=0x%x", err);
+                ESP_LOGE(TAG, "Error: esp_ota_write failed (%s)!", esp_err_to_name(err));
                 task_fatal_error();
             }
             binary_file_length += buff_len;
@@ -283,7 +283,7 @@ static void ota_example_task(void *pvParameter)
     }
     err = esp_ota_set_boot_partition(update_partition);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "esp_ota_set_boot_partition failed! err=0x%x", err);
+        ESP_LOGE(TAG, "esp_ota_set_boot_partition failed (%s)!", esp_err_to_name(err));
         task_fatal_error();
     }
     ESP_LOGI(TAG, "Prepare to restart system!");

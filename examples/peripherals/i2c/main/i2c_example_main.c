@@ -238,7 +238,7 @@ static void i2c_test_task(void* arg)
             printf("data_l: %02x\n", sensor_data_l);
             printf("sensor val: %f\n", (sensor_data_h << 8 | sensor_data_l) / 1.2);
         } else {
-            printf("No ack, sensor not connected...skip...\n");
+            printf("%s: No ack, sensor not connected...skip...\n", esp_err_to_name(ret));
         }
         xSemaphoreGive(print_mux);
         vTaskDelay(( DELAY_TIME_BETWEEN_ITEMS_MS * ( task_idx + 1 ) ) / portTICK_RATE_MS);
@@ -267,7 +267,7 @@ static void i2c_test_task(void* arg)
             printf("====TASK[%d] Master read ====\n", task_idx);
             disp_buf(data_rd, d_size);
         } else {
-            printf("Master read slave error, IO not connected...\n");
+            printf("%s: Master read slave error, IO not connected...\n", esp_err_to_name(ret));
         }
         xSemaphoreGive(print_mux);
         vTaskDelay(( DELAY_TIME_BETWEEN_ITEMS_MS * ( task_idx + 1 ) ) / portTICK_RATE_MS);
@@ -293,7 +293,7 @@ static void i2c_test_task(void* arg)
             printf("----TASK[%d] Slave read: [%d] bytes ----\n", task_idx, size);
             disp_buf(data, size);
         } else {
-            printf("TASK[%d] Master write slave error, IO not connected....\n", task_idx);
+            printf("TASK[%d] %s: Master write slave error, IO not connected....\n", task_idx, esp_err_to_name(ret));
         }
         xSemaphoreGive(print_mux);
         vTaskDelay(( DELAY_TIME_BETWEEN_ITEMS_MS * ( task_idx + 1 ) ) / portTICK_RATE_MS);

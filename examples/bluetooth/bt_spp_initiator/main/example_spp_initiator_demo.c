@@ -210,38 +210,38 @@ void app_main()
 
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-    if (esp_bt_controller_init(&bt_cfg) != ESP_OK) {
-        ESP_LOGE(SPP_TAG, "%s initialize controller failed\n", __func__);
+    if ((ret = esp_bt_controller_init(&bt_cfg)) != ESP_OK) {
+        ESP_LOGE(SPP_TAG, "%s initialize controller failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 
-    if (esp_bt_controller_enable(ESP_BT_MODE_CLASSIC_BT) != ESP_OK) {
-        ESP_LOGE(SPP_TAG, "%s enable controller failed\n", __func__);
+    if ((ret = esp_bt_controller_enable(ESP_BT_MODE_CLASSIC_BT)) != ESP_OK) {
+        ESP_LOGE(SPP_TAG, "%s enable controller failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 
-    if (esp_bluedroid_init() != ESP_OK) {
-        ESP_LOGE(SPP_TAG, "%s initialize bluedroid failed\n", __func__);
+    if ((ret = esp_bluedroid_init()) != ESP_OK) {
+        ESP_LOGE(SPP_TAG, "%s initialize bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 
-    if (esp_bluedroid_enable() != ESP_OK) {
-        ESP_LOGE(SPP_TAG, "%s enable bluedroid failed\n", __func__);
+    if ((ret = esp_bluedroid_enable()) != ESP_OK) {
+        ESP_LOGE(SPP_TAG, "%s enable bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 
-    if (esp_bt_gap_register_callback(esp_bt_gap_cb) != ESP_OK) {
-        ESP_LOGE(SPP_TAG, "%s gap register failed\n", __func__);
+    if ((ret = esp_bt_gap_register_callback(esp_bt_gap_cb)) != ESP_OK) {
+        ESP_LOGE(SPP_TAG, "%s gap register failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 
-    if (esp_spp_register_callback(esp_spp_cb) != ESP_OK) {
-        ESP_LOGE(SPP_TAG, "%s spp register failed\n", __func__);
+    if ((ret = esp_spp_register_callback(esp_spp_cb)) != ESP_OK) {
+        ESP_LOGE(SPP_TAG, "%s spp register failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 
-    if (esp_spp_init(esp_spp_mode) != ESP_OK) {
-        ESP_LOGE(SPP_TAG, "%s spp init failed\n", __func__);
+    if ((ret = esp_spp_init(esp_spp_mode)) != ESP_OK) {
+        ESP_LOGE(SPP_TAG, "%s spp init failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 }

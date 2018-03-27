@@ -79,6 +79,8 @@ static void esp_eddystone_show_inform(const esp_eddystone_result_t* res)
 
 static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t* param)
 {
+    esp_err_t err;
+
     switch(event)
     {
         case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT: {
@@ -87,8 +89,8 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t* par
             break;
         }
         case ESP_GAP_BLE_SCAN_START_COMPLETE_EVT: {
-            if(param->scan_start_cmpl.status != ESP_BT_STATUS_SUCCESS) {
-                ESP_LOGE(DEMO_TAG,"Scan start failed");
+            if((err = param->scan_start_cmpl.status) != ESP_BT_STATUS_SUCCESS) {
+                ESP_LOGE(DEMO_TAG,"Scan start failed: %s", esp_err_to_name(err));
             }
             else {
                 ESP_LOGI(DEMO_TAG,"Start scanning...");
@@ -124,8 +126,8 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t* par
             break;
         }
         case ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT:{
-            if(param->scan_stop_cmpl.status != ESP_BT_STATUS_SUCCESS) {
-                ESP_LOGE(DEMO_TAG,"Scan stop failed");
+            if((err = param->scan_stop_cmpl.status) != ESP_BT_STATUS_SUCCESS) {
+                ESP_LOGE(DEMO_TAG,"Scan stop failed: %s", esp_err_to_name(err));
             }
             else {
                 ESP_LOGI(DEMO_TAG,"Stop scan successfully");
@@ -145,7 +147,7 @@ void esp_eddystone_appRegister(void)
 
     /*<! register the scan callback function to the gap module */
     if((status = esp_ble_gap_register_callback(esp_gap_cb)) != ESP_OK) {
-        ESP_LOGE(DEMO_TAG,"gap register error,error code = %x",status);
+        ESP_LOGE(DEMO_TAG,"gap register error: %s", esp_err_to_name(status));
         return;
     }
 }

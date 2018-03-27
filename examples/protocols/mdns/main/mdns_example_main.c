@@ -162,7 +162,7 @@ static void query_mdns_service(const char * service_name, const char * proto)
     mdns_result_t * results = NULL;
     esp_err_t err = mdns_query_ptr(service_name, proto, 3000, 20,  &results);
     if(err){
-        ESP_LOGE(TAG, "Query Failed");
+        ESP_LOGE(TAG, "Query Failed: %s", esp_err_to_name(err));
         return;
     }
     if(!results){
@@ -184,10 +184,10 @@ static void query_mdns_host(const char * host_name)
     esp_err_t err = mdns_query_a(host_name, 2000,  &addr);
     if(err){
         if(err == ESP_ERR_NOT_FOUND){
-            ESP_LOGW(TAG, "Host was not found!");
+            ESP_LOGW(TAG, "%s: Host was not found!", esp_err_to_name(err));
             return;
         }
-        ESP_LOGE(TAG, "Query Failed");
+        ESP_LOGE(TAG, "Query Failed: %s", esp_err_to_name(err));
         return;
     }
 

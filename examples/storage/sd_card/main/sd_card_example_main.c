@@ -97,8 +97,8 @@ void app_main(void)
             ESP_LOGE(TAG, "Failed to mount filesystem. "
                 "If you want the card to be formatted, set format_if_mount_failed = true.");
         } else {
-            ESP_LOGE(TAG, "Failed to initialize the card (%d). "
-                "Make sure SD card lines have pull-up resistors in place.", ret);
+            ESP_LOGE(TAG, "Failed to initialize the card (%s). "
+                "Make sure SD card lines have pull-up resistors in place.", esp_err_to_name(ret));
         }
         return;
     }
