@@ -110,6 +110,13 @@ static const char* s_freq_names[] __attribute__((unused)) = {
 /* Whether automatic light sleep is enabled. Currently always false */
 static bool s_light_sleep_en = false;
 
+/* When configuration is changed, current frequency may not match the
+ * newly configured frequency for the current mode. This is an indicator
+ * to the mode switch code to get the actual current frequency instead of
+ * relying on the current mode.
+ */
+static bool s_config_changed = false;
+
 #ifdef WITH_PROFILING
 /* Time, in microseconds, spent so far in each mode */
 static pm_time_t s_time_in_mode[PM_MODE_COUNT];
@@ -209,6 +216,7 @@ esp_err_t esp_pm_configure(const void* vconfig)
     s_cpu_freq_by_mode[PM_MODE_APB_MIN] = min_freq;
     s_cpu_freq_by_mode[PM_MODE_LIGHT_SLEEP] = min_freq;
     s_light_sleep_en = config->light_sleep_enable;
+    s_config_changed = true;
     portEXIT_CRITICAL(&s_switch_lock);
 
     return ESP_OK;
@@ -343,10 +351,17 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
     } while (true);
     s_new_mode = new_mode;
     s_is_switching = true;
+    bool config_changed = s_config_changed;
+    s_config_changed = false;
     portEXIT_CRITICAL_ISR(&s_switch_lock);
 
-    rtc_cpu_freq_t old_freq = s_cpu_freq_by_mode[s_mode];
     rtc_cpu_freq_t new_freq = s_cpu_freq_by_mode[new_mode];
+    rtc_cpu_freq_t old_freq;
+    if (!config_changed) {
+        old_freq = s_cpu_freq_by_mode[s_mode];
+    } else {
+        old_freq = rtc_clk_cpu_freq_get();
+    }
 
     if (new_freq != old_freq) {
         uint32_t old_ticks_per_us = g_ticks_per_us_pro;
