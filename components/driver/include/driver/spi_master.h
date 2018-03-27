@@ -36,10 +36,10 @@ extern "C"
 #define SPI_DEVICE_HALFDUPLEX              (1<<4)  ///< Transmit data before receiving it, instead of simultaneously
 #define SPI_DEVICE_CLK_AS_CS               (1<<5)  ///< Output clock on CS line if CS is active
 /** There are timing issue when reading at high frequency (the frequency is related to whether native pins are used, valid time after slave sees the clock).
- * In half-duplex mode, the driver automatically inserts dummy bits before reading phase to fix the timing issue. Set this flag to disable this feature.
- * However in full-duplex mode, dummy bits are not allowed to use and no way to prevent reading data from being corrupted. 
- * Set this flag to confirm that you're going to work with output only, or read without dummy bits at your own risk.
- */
+  *     - In half-duplex mode, the driver automatically inserts dummy bits before reading phase to fix the timing issue. Set this flag to disable this feature.
+  *     - In full-duplex mode, however, the hardware cannot use dummy bits, so there is no way to prevent data being read from getting corrupted.
+  *       Set this flag to confirm that you're going to work with output only, or read without dummy bits at your own risk.
+  */
 #define SPI_DEVICE_NO_DUMMY                (1<<6)  
 
 
@@ -79,12 +79,18 @@ typedef struct {
  */
 struct spi_transaction_t {
     uint32_t flags;                 ///< Bitwise OR of SPI_TRANS_* flags
-    uint16_t cmd;                   ///< Command data, of which the length is set in the ``command_bits`` of spi_device_interface_config_t.
-                                    ///< <b>NOTE: this field, used to be "command" in ESP-IDF 2.1 and before, is re-written to be used in a new way in ESP-IDF 3.0.</b>
-                                    ///< - Example: write 0x0123 and command_bits=12 to send command 0x12, 0x3_ (in previous version, you may have to write 0x3_12).
-    uint64_t addr;                  ///< Address data, of which the length is set in the ``address_bits`` of spi_device_interface_config_t.
-                                    ///< <b>NOTE: this field, used to be "address" in ESP-IDF 2.1 and before, is re-written to be used in a new way in ESP-IDF3.0.</b> 
-                                    ///< - Example: write 0x123400 and address_bits=24 to send address of 0x12, 0x34, 0x00 (in previous version, you may have to write 0x12340000).  
+    uint16_t cmd;                   /**< Command data, of which the length is set in the ``command_bits`` of spi_device_interface_config_t.
+                                      *
+                                      *  <b>NOTE: this field, used to be "command" in ESP-IDF 2.1 and before, is re-written to be used in a new way in ESP-IDF 3.0.</b>
+                                      *
+                                      *  Example: write 0x0123 and command_bits=12 to send command 0x12, 0x3_ (in previous version, you may have to write 0x3_12).
+                                      */
+    uint64_t addr;                  /**< Address data, of which the length is set in the ``address_bits`` of spi_device_interface_config_t.
+                                      *
+                                      *  <b>NOTE: this field, used to be "address" in ESP-IDF 2.1 and before, is re-written to be used in a new way in ESP-IDF3.0.</b> 
+                                      *
+                                      *  Example: write 0x123400 and address_bits=24 to send address of 0x12, 0x34, 0x00 (in previous version, you may have to write 0x12340000).  
+                                      */
     size_t length;                  ///< Total data length, in bits
     size_t rxlength;                ///< Total data length received, should be not greater than ``length`` in full-duplex mode (0 defaults this to the value of ``length``).
     void *user;                     ///< User-defined variable. Can be used to store eg transaction ID.
