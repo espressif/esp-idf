@@ -454,14 +454,16 @@ void esp_pm_impl_init()
     ESP_ERROR_CHECK(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "rtos1",
             &s_rtos_lock_handle[1]));
     ESP_ERROR_CHECK(esp_pm_lock_acquire(s_rtos_lock_handle[1]));
+#endif // portNUM_PROCESSORS == 2
 
     /* Configure all modes to use the default CPU frequency.
      * This will be modified later by a call to esp_pm_configure.
      */
     rtc_cpu_freq_t default_freq;
-    assert(rtc_clk_cpu_freq_from_mhz(CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ, &default_freq));
+    if (!rtc_clk_cpu_freq_from_mhz(CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ, &default_freq)) {
+        assert(false && "unsupported frequency");
+    }
     for (size_t i = 0; i < PM_MODE_COUNT; ++i) {
         s_cpu_freq_by_mode[i] = default_freq;
     }
-#endif // portNUM_PROCESSORS == 2
 }
