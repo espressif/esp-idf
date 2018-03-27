@@ -180,6 +180,12 @@ esp_err_t esp_pm_configure(const void* vconfig)
     if (config->light_sleep_enable) {
         return ESP_ERR_NOT_SUPPORTED;
     }
+
+    if (config->min_cpu_freq == RTC_CPU_FREQ_2M) {
+        /* Minimal APB frequency to achieve 1MHz REF_TICK frequency is 5 MHz */
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
     rtc_cpu_freq_t min_freq = config->min_cpu_freq;
     rtc_cpu_freq_t max_freq = config->max_cpu_freq;
     int min_freq_mhz = rtc_clk_cpu_freq_value(min_freq);
@@ -188,14 +194,14 @@ esp_err_t esp_pm_configure(const void* vconfig)
         return ESP_ERR_INVALID_ARG;
     }
 
-    rtc_cpu_freq_t apb_max_freq; /* CPU frequency in APB_MAX mode */
+    rtc_cpu_freq_t apb_max_freq = max_freq; /* CPU frequency in APB_MAX mode */
     if (max_freq == RTC_CPU_FREQ_240M) {
         /* We can't switch between 240 and 80/160 without disabling PLL,
          * so use 240MHz CPU frequency when 80MHz APB frequency is requested.
          */
         apb_max_freq = RTC_CPU_FREQ_240M;
-    } else {
-        /* Otherwise (max CPU frequency is 80MHz or 160MHz), can use 80MHz
+    } else if (max_freq == RTC_CPU_FREQ_160M || max_freq == RTC_CPU_FREQ_80M) {
+        /* Otherwise, can use 80MHz
          * CPU frequency when 80MHz APB frequency is requested.
          */
         apb_max_freq = RTC_CPU_FREQ_80M;
