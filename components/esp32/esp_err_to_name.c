@@ -51,35 +51,15 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_FAIL
     ERR_TBL_IT(ESP_FAIL),                                   /*    -1 */
 #   endif
-    // components/esp32/include/esp_wifi.h
-#   ifdef      ESP_ERR_WIFI_FAIL
-    ERR_TBL_IT(ESP_ERR_WIFI_FAIL),                          /*    -1 General fail code */
-#   endif
-    // components/esp32/include/esp_err.h
 #   ifdef      ESP_OK
     ERR_TBL_IT(ESP_OK),                                     /*     0 */
 #   endif
-    // components/esp32/include/esp_wifi.h
-#   ifdef      ESP_ERR_WIFI_OK
-    ERR_TBL_IT(ESP_ERR_WIFI_OK),                            /*     0 No error */
-#   endif
-    // components/esp32/include/esp_err.h
 #   ifdef      ESP_ERR_NO_MEM
     ERR_TBL_IT(ESP_ERR_NO_MEM),                             /*   257 0x101 */
 #   endif
-    // components/esp32/include/esp_wifi.h
-#   ifdef      ESP_ERR_WIFI_NO_MEM
-    ERR_TBL_IT(ESP_ERR_WIFI_NO_MEM),                        /*   257 0x101 Out of memory */
-#   endif
-    // components/esp32/include/esp_err.h
 #   ifdef      ESP_ERR_INVALID_ARG
     ERR_TBL_IT(ESP_ERR_INVALID_ARG),                        /*   258 0x102 */
 #   endif
-    // components/esp32/include/esp_wifi.h
-#   ifdef      ESP_ERR_WIFI_ARG
-    ERR_TBL_IT(ESP_ERR_WIFI_ARG),                           /*   258 0x102 Invalid argument */
-#   endif
-    // components/esp32/include/esp_err.h
 #   ifdef      ESP_ERR_INVALID_STATE
     ERR_TBL_IT(ESP_ERR_INVALID_STATE),                      /*   259 0x103 */
 #   endif
@@ -92,11 +72,6 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_NOT_SUPPORTED
     ERR_TBL_IT(ESP_ERR_NOT_SUPPORTED),                      /*   262 0x106 */
 #   endif
-    // components/esp32/include/esp_wifi.h
-#   ifdef      ESP_ERR_WIFI_NOT_SUPPORT
-    ERR_TBL_IT(ESP_ERR_WIFI_NOT_SUPPORT),                   /*   262 0x106 Indicates that API is not supported yet */
-#   endif
-    // components/esp32/include/esp_err.h
 #   ifdef      ESP_ERR_TIMEOUT
     ERR_TBL_IT(ESP_ERR_TIMEOUT),                            /*   263 0x107 */
 #   endif
@@ -287,11 +262,11 @@ static const esp_err_msg_t esp_err_msg_table[] = {
     ERR_TBL_IT(ESP_ERR_WIFI_WPS_SM),                        /* 12341 0x3035 WPS state machine is not initialized */
 #   endif
     // components/esp32/include/esp_now.h
+#   ifdef      ESP_ERR_ESPNOW_BASE
+    ERR_TBL_IT(ESP_ERR_ESPNOW_BASE),                        /* 12388 0x3064 ESPNOW error number base. */
+#   endif
 #   ifdef      ESP_ERR_ESPNOW_NOT_INIT
     ERR_TBL_IT(ESP_ERR_ESPNOW_NOT_INIT),                    /* 12389 0x3065 ESPNOW is not initialized. */
-#   endif
-#   ifdef      ESP_ERR_ESPNOW_BASE
-    ERR_TBL_IT(ESP_ERR_ESPNOW_BASE),                        /* 12389 0x3065 ESPNOW error number base. */
 #   endif
 #   ifdef      ESP_ERR_ESPNOW_ARG
     ERR_TBL_IT(ESP_ERR_ESPNOW_ARG),                         /* 12390 0x3066 Invalid argument */
@@ -315,39 +290,39 @@ static const esp_err_msg_t esp_err_msg_table[] = {
     ERR_TBL_IT(ESP_ERR_ESPNOW_IF),                          /* 12396 0x306c Interface error */
 #   endif
     // components/tcpip_adapter/include/tcpip_adapter.h
-#   ifdef      ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
-    ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS),       /* 20480 0x5000 */
-#   endif
 #   ifdef      ESP_ERR_TCPIP_ADAPTER_BASE
     ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_BASE),                 /* 20480 0x5000 */
 #   endif
+#   ifdef      ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
+    ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS),       /* 20481 0x5001 */
+#   endif
 #   ifdef      ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY
-    ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY),         /* 20481 0x5001 */
+    ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY),         /* 20482 0x5002 */
 #   endif
 #   ifdef      ESP_ERR_TCPIP_ADAPTER_DHCPC_START_FAILED
-    ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_DHCPC_START_FAILED),   /* 20482 0x5002 */
+    ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_DHCPC_START_FAILED),   /* 20483 0x5003 */
 #   endif
 #   ifdef      ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STARTED
-    ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STARTED), /* 20483 0x5003 */
+    ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STARTED), /* 20484 0x5004 */
 #   endif
 #   ifdef      ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STOPPED
-    ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STOPPED), /* 20484 0x5004 */
+    ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STOPPED), /* 20485 0x5005 */
 #   endif
 #   ifdef      ESP_ERR_TCPIP_ADAPTER_NO_MEM
-    ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_NO_MEM),               /* 20485 0x5005 */
+    ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_NO_MEM),               /* 20486 0x5006 */
 #   endif
 #   ifdef      ESP_ERR_TCPIP_ADAPTER_DHCP_NOT_STOPPED
-    ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_DHCP_NOT_STOPPED),     /* 20486 0x5006 */
+    ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_DHCP_NOT_STOPPED),     /* 20487 0x5007 */
 #   endif
     // components/lwip/apps/ping/esp_ping.h
-#   ifdef      ESP_ERR_PING_INVALID_PARAMS
-    ERR_TBL_IT(ESP_ERR_PING_INVALID_PARAMS),                /* 24576 0x6000 */
-#   endif
 #   ifdef      ESP_ERR_PING_BASE
     ERR_TBL_IT(ESP_ERR_PING_BASE),                          /* 24576 0x6000 */
 #   endif
+#   ifdef      ESP_ERR_PING_INVALID_PARAMS
+    ERR_TBL_IT(ESP_ERR_PING_INVALID_PARAMS),                /* 24577 0x6001 */
+#   endif
 #   ifdef      ESP_ERR_PING_NO_MEM
-    ERR_TBL_IT(ESP_ERR_PING_NO_MEM),                        /* 24577 0x6001 */
+    ERR_TBL_IT(ESP_ERR_PING_NO_MEM),                        /* 24578 0x6002 */
 #   endif
     // components/spi_flash/include/esp_spi_flash.h
 #   ifdef      ESP_ERR_FLASH_BASE

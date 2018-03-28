@@ -23,8 +23,8 @@ extern "C" {
 
 #define ESP_ERR_PING_BASE               0x6000
 
-#define ESP_ERR_PING_INVALID_PARAMS     ESP_ERR_PING_BASE + 0x00
-#define ESP_ERR_PING_NO_MEM             ESP_ERR_PING_BASE + 0x01
+#define ESP_ERR_PING_INVALID_PARAMS     ESP_ERR_PING_BASE + 0x01
+#define ESP_ERR_PING_NO_MEM             ESP_ERR_PING_BASE + 0x02
 
 #define ESP_PING_CHECK_OPTLEN(optlen, opttype) do { if ((optlen) < sizeof(opttype)) { return ESP_ERR_PING_INVALID_PARAMS; }}while(0)
 
