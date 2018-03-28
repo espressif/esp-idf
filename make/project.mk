@@ -45,6 +45,9 @@ help:
 	@echo "See also 'make bootloader', 'make bootloader-flash', 'make bootloader-clean', "
 	@echo "'make partition_table', etc, etc."
 
+# Non-interactive targets. Mostly, those for which you do not need to build a binary
+NON_INTERACTIVE_TARGET += defconfig clean% %clean help list-components print_flash_cmd
+
 # dependency checks
 ifndef MAKE_RESTARTS
 ifeq ("$(filter 4.% 3.81 3.82,$(MAKE_VERSION))","")

@@ -5,6 +5,10 @@
 # Sets the error behaviour options for shell throughout the CI environment
 #
 set -o errexit # Exit if command failed.
+set -o pipefail # Exit if pipe failed.
+
+# we can use the appropriate secret variable for debugging
+[ ! -z $DEBUG_SHELL ] && set -x
 
 [ -z $CI_COMMIT_REF_NAME ] && echo "This internal script should only be run by a Gitlab CI runner." && exit 1
 
