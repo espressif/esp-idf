@@ -53,8 +53,8 @@ Just like the handling of "rainy-day" scenarios, a good error-recovery routine i
 ESP32 Wi-Fi API Error Code
 ---------------------------
 All of the ESP32 Wi-Fi APIs have well-defined return values, namely, the error code. The error code can be categorized into:
- - No errors, e.g. ESP_ERR_WIFI_OK means that the API returns successfully
- - Recoverable errors, such as ESP_ERR_WIFI_NO_MEM, etc.
+ - No errors, e.g. ESP_OK means that the API returns successfully
+ - Recoverable errors, such as ESP_ERR_NO_MEM, etc.
  - Non-recoverable, non-critical errors 
  - Non-recoverable, critical errors 
 
@@ -62,7 +62,7 @@ Whether the error is critical or not depends on the API and the application scen
 
 **The primary principle to write a robust application with Wi-Fi API is to always check the error code and write the error-handling code.** Generally, the error-handling code can be used:
 
- - for recoverable errors, in which case you can write a recoverable-error code. For example, when esp_wifi_start returns ESP_ERR_WIFI_NO_MEM, the recoverable-error code vTaskDelay can be called, in order to get a microseconds' delay for another try.
+ - for recoverable errors, in which case you can write a recoverable-error code. For example, when esp_wifi_start returns ESP_ERR_NO_MEM, the recoverable-error code vTaskDelay can be called, in order to get a microseconds' delay for another try.
  - for non-recoverable, yet non-critical, errors, in which case printing the error code is a good method for error handling.
  - for non-recoverable, critical errors, in which case "assert" may be a good method for error handling. For example, if esp_wifi_set_mode returns ESP_ERR_WIFI_NOT_INIT, it means that the Wi-Fi driver is not initialized by esp_wifi_init successfully. You can detect this kind of error very quickly in the application development phase.
 
@@ -1318,14 +1318,14 @@ Parameters of esp_wifi_80211_tx
 |                             |                                                   |
 |                             | If the buffer is wrong, or violates the Wi-Fi     |
 |                             | driver's restrictions, the API returns            |
-|                             | ESP_ERR_WIFI_ARG or results in unexpected         |
+|                             | ESP_ERR_INVALID_ARG or results in unexpected      |
 |                             | behavior. **Please read the following section     |
 |                             | carefully to make sure you understand the         |
 |                             | restrictions on encapsulating the buffer.**       |
 |                             |                                                   |
 +-----------------------------+---------------------------------------------------+
 | len                         | The length must be <= 1500; otherwise, the API    |
-|                             | will return ESP_ERR_WIFI_ARG.                     |
+|                             | will return ESP_ERR_INVALID_ARG.                  |
 |                             |                                                   |
 +-----------------------------+---------------------------------------------------+
 | en_sys_seq                  | If en_sys_seq is true, it means that the Wi-Fi    |
@@ -1345,7 +1345,7 @@ Preconditions of Using esp_wifi_80211_tx
 ++++++++++++++++++++++++++++++++++++++++++++
 
  - The Wi-Fi mode is Station, or SoftAP, or Station+SoftAP.
- - Either esp_wifi_set_promiscuous(true), or esp_wifi_start(), or both of these APIs return ESP_ERR_WIFI_OK. This is because we need to make sure that Wi-Fi hardware is initialized before esp_wifi_80211_tx() is called. In ESP32, both esp_wifi_set_promiscuous(true) and esp_wifi_start() can trigger the initialization of Wi-Fi hardware.
+ - Either esp_wifi_set_promiscuous(true), or esp_wifi_start(), or both of these APIs return ESP_OK. This is because we need to make sure that Wi-Fi hardware is initialized before esp_wifi_80211_tx() is called. In ESP32, both esp_wifi_set_promiscuous(true) and esp_wifi_start() can trigger the initialization of Wi-Fi hardware.
  - The parameters of esp_wifi_80211_tx are hereby correctly provided.
 
 Side-Effects to Avoid in Different Scenarios

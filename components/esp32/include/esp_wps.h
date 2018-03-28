@@ -77,7 +77,7 @@ typedef struct {
   *          - ESP_OK : succeed
   *          - ESP_ERR_WIFI_WPS_TYPE : wps type is invalid
   *          - ESP_ERR_WIFI_WPS_MODE : wifi is not in station mode or sniffer mode is on
-  *          - ESP_ERR_WIFI_FAIL : wps initialization fails
+  *          - ESP_FAIL : wps initialization fails
   */
 esp_err_t esp_wifi_wps_enable(const esp_wps_config_t *config);
 
@@ -106,7 +106,7 @@ esp_err_t esp_wifi_wps_disable(void);
   *          - ESP_ERR_WIFI_WPS_TYPE : wps type is invalid
   *          - ESP_ERR_WIFI_WPS_MODE : wifi is not in station mode or sniffer mode is on
   *          - ESP_ERR_WIFI_WPS_SM : wps state machine is not initialized
-  *          - ESP_ERR_WIFI_FAIL : wps initialization fails
+  *          - ESP_FAIL : wps initialization fails
   */
 esp_err_t esp_wifi_wps_start(int timeout_ms);
 
