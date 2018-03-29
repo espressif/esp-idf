@@ -45,6 +45,7 @@ import threading
 import ctypes
 import types
 from distutils.version import StrictVersion
+from log_converter import LogConverter
 
 key_description = miniterm.key_description
 
@@ -60,6 +61,11 @@ CTRL_RBRACKET = '\x1d'  # Ctrl+]
 # ANSI terminal codes
 ANSI_RED = '\033[1;31m'
 ANSI_YELLOW = '\033[0;33m'
+ANSI_GREEN = '\033[0;32m'
+ANSI_CYAN = '\033[0;36m'
+ANSI_BLUE = '\033[1;34m'
+ANSI_WHITE = '\033[1;37m'
+ANSI_MAGENTA = '\033[1;35m'
 ANSI_NORMAL = '\033[0m'
 
 def color_print(message, color):
@@ -163,7 +169,7 @@ class ConsoleReader(StoppableThread):
             # this is the way cancel() is implemented in pyserial 3.3 or newer,
             # older pyserial (3.1+) has cancellation implemented via 'select',
             # which does not work when console sends an escape sequence response
-            # 
+            #
             # even older pyserial (<3.1) does not have this method
             #
             # on Windows there is a different (also hacky) fix, applied above.
@@ -234,9 +240,9 @@ class Monitor(object):
                 if c == unichr(0x7f):
                     c = unichr(8)    # map the BS key (which yields DEL) to backspace
                 return c
-            
-            self.console.getkey = types.MethodType(getkey_patched, self.console) 
-        
+
+            self.console.getkey = types.MethodType(getkey_patched, self.console)
+
         self.serial = serial_instance
         self.console_reader = ConsoleReader(self.console, self.event_queue)
         self.serial_reader = SerialReader(self.serial, self.event_queue)
@@ -245,6 +251,17 @@ class Monitor(object):
         self.toolchain_prefix = toolchain_prefix
         self.menu_key = CTRL_T
         self.exit_key = CTRL_RBRACKET
+
+        self.log_converter = LogConverter()
+        try:
+            file_name = 'log_text.json'
+            if not os.path.isfile(file_name):
+                self.console.write('Cannot find file log_text.json')
+            else:
+                self.log_converter.LoadJson(file_name)
+        except:
+            self.console.write("CWD: " + os.getcwd() + '\n')
+            self.console.write('\nFailed to load log_text.json. LogConverter unavailable\n')
 
         self.translate_eol = {
             "CRLF": lambda c: c.replace(b"\n", b"\r\n"),
@@ -260,13 +277,36 @@ class Monitor(object):
     def main_loop(self):
         self.console_reader.start()
         self.serial_reader.start()
+        last_line = ''
         try:
             while self.console_reader.alive and self.serial_reader.alive:
                 (event_tag, data) = self.event_queue.get()
                 if event_tag == TAG_KEY:
                     self.handle_key(data)
                 elif event_tag == TAG_SERIAL:
-                    self.handle_serial_input(data)
+                    chunk = last_line + data
+                    chunk_by_line = chunk.split('\n')
+                    last_line = chunk_by_line.pop()
+                    for line in chunk_by_line:
+                        index = str.find(line, 'ENCODED')
+                        if index > -1:
+                            messages = self.log_converter.ParseEncoded(line[index+9:], self.console)
+                            for message in messages:
+                                color = ANSI_GREEN
+                                if message['level'] == 'warning':
+                                    color = ANSI_YELLOW
+                                elif message['level'] == 'critical':
+                                    color = ANSI_RED
+                                elif message['level'] == 'error':
+                                    color = ANSI_MAGENTA
+                                elif message['level'] == 'debug':
+                                    color = ANSI_BLUE
+                                else:
+                                    color = ANSI_GREEN
+                                self.console.write(color + self.log_converter.FormatMessage(message) + '\n')
+                            #self.handle_serial_input(line + '\n')
+                        else:
+                            self.handle_serial_input(line + '\n')
                 else:
                     raise RuntimeError("Bad event data %r" % ((event_tag,data),))
         finally:
@@ -470,8 +510,6 @@ def main():
 
     if args.port.startswith("/dev/tty."):
         args.port = args.port.replace("/dev/tty.", "/dev/cu.")
-        yellow_print("--- WARNING: Serial ports accessed as /dev/tty.* will hang gdb if launched.")
-        yellow_print("--- Using %s instead..." % args.port)
 
     serial_instance = serial.serial_for_url(args.port, args.baud,
                                             do_not_open=True)
