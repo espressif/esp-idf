@@ -2,11 +2,11 @@
 IDF Monitor
 ***********
 
-idf_monitor 工具是在 IDF 中调用 “make monitor” 目标时运行的 Python 程序。
+IDF Monitor 工具是在 IDF 中调用 “make monitor” 目标时运行的 Python 程序。
 
-它主要是一个串行终端程序，用于收发该端口的串行数据，idf_monitor 同时兼具 IDF 特有的其他 xfeatures。
+它主要是一个串行终端程序，用于收发该端口的串行数据，IDF Monitor 同时兼具 IDF 的其他特性。
 
-idf_monitor 操作快捷键
+IDF Monitor 操作快捷键
 ===========================
 - ``Ctrl-]`` 退出 monitor；
 - ``Ctrl-T Ctrl-H`` 展示帮助页面和其他快捷键；
@@ -14,7 +14,7 @@ idf_monitor 操作快捷键
 
 自动解码地址
 =================
-当 esp-idf 以 “0x4 _______” 形式打印一个十六进制的代码地址时，idf_monitor 将使用 addr2line_ 来查找源代码的位置和函数名称。
+当 esp-idf 以 “0x4 _______” 形式打印一个十六进制的代码地址时，IDF Monitor 将使用 addr2line_ 来查找源代码的位置和函数名称。
 
 .. highlight:: none
 
@@ -31,7 +31,7 @@ idf_monitor 操作快捷键
 
     Backtrace: 0x400f360d:0x3ffb7e00 0x400dbf56:0x3ffb7e20 0x400dbf5e:0x3ffb7e40 0x400dbf82:0x3ffb7e60 0x400d071d:0x3ffb7e90
 
-idf_monitor 为转储补充如下信息::
+IDF Monitor 为转储补充如下信息::
 
     Guru Meditation Error of type StoreProhibited occurred on core  0. Exception was unhandled.
     Register dump:
@@ -52,7 +52,7 @@ idf_monitor 为转储补充如下信息::
     0x400dbf82: app_main at /home/gus/esp/32/idf/examples/get-started/hello_world/main/./hello_world_main.c:33
     0x400d071d: main_task at /home/gus/esp/32/idf/components/esp32/./cpu_start.c:254
 
-在后台，idf_monitor 运行以下命令解码各个地址::
+在后台，IDF Monitor 运行以下命令解码各个地址::
 
   xtensa-esp32-elf-addr2line -pfiaC -e build/PROJECT.elf ADDRESS
 
@@ -66,9 +66,9 @@ idf_monitor 为转储补充如下信息::
 
 要启用 gdbstub，运行 ``make menuconfig`` 并将 :ref:`CONFIG_ESP32_PANIC` 选项设置为 ``Invoke GDBStub``。
 
-如果启用此选项并且 idf_monitor 发现 gdbstub 已加载，它将自动暂停串口监控并使用正确的参数运行 GDB。GDB 退出后，电路板将通过 RTS 串行线路复位（如果已连接）。
+如果启用此选项并且 IDF Monitor 发现 gdbstub 已加载，它将自动暂停串口监控并使用正确的参数运行 GDB。GDB 退出后，电路板将通过 RTS 串行线路复位（如果已连接）。
 
-idf_monitor 在后台运行的命令是::
+IDF Monitor 在后台运行的命令是::
 
   xtensa-esp32-elf-gdb -ex "set serial baud BAUD" -ex "target remote PORT" -ex interrupt build/PROJECT.elf
 
@@ -76,9 +76,9 @@ idf_monitor 在后台运行的命令是::
 快速编译与烧录
 =================
 
-使用快捷键 ``Ctrl-T Ctrl-A`` 暂停 idf_monitor，并运行 ``make flash`` 目标，然后 idf_monitor 就会恢复正常。任何更改的源文件将在烧录之前重新编译。
+使用快捷键 ``Ctrl-T Ctrl-A`` 暂停 IDF Monitor，并运行 ``make flash`` 目标，然后 IDF Monitor 就会恢复正常。任何更改的源文件将在烧录之前重新编译。
 
-使用快捷键 ``Ctrl-T Ctrl-A`` 暂停 idf-monitor，并运行 ``make app-flash`` 目标，然后 idf_monitor 就会恢复正常。这与 ``make flash`` 类似，但只有主应用程序被编译和重新烧录。
+使用快捷键 ``Ctrl-T Ctrl-A`` 暂停 IDF Monitor，并运行 ``make app-flash`` 目标，然后 IDF Monitor 就会恢复正常。这与 ``make flash`` 类似，但只有主应用程序被编译和重新烧录。
 
 快速重置
 ======================
@@ -102,9 +102,9 @@ Simple Monitor
 
 这个程序仍然可以通过 ``make simple_monitor`` 运行。
 
-idf_monitor 基于 miniterm 并使用相同的快捷键。
+IDF Monitor 基于 miniterm 并使用相同的快捷键。
 
-idf_monitor 已知问题
+IDF Monitor 已知问题
 =============================
 
 Windows 环境下已知问题
