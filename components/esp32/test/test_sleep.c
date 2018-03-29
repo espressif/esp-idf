@@ -123,7 +123,7 @@ static float get_time_ms(void)
     
     float dt = (tv_stop.tv_sec - tv_start.tv_sec) * 1e3f +
                 (tv_stop.tv_usec - tv_start.tv_usec) * 1e-3f;
-    return abs(dt);
+    return fabs(dt);
 }
 
 static uint32_t get_cause()
