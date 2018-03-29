@@ -91,15 +91,22 @@ static int uart_open(const char * path, int flags, int mode)
 {
     // this is fairly primitive, we should check if file is opened read only,
     // and error out if write is requested
+    int fd = -1;
+
     if (strcmp(path, "/0") == 0) {
-        return 0;
+        fd = 0;
     } else if (strcmp(path, "/1") == 0) {
-        return 1;
+        fd = 1;
     } else if (strcmp(path, "/2") == 0) {
-        return 2;
+        fd = 2;
+    } else {
+        errno = ENOENT;
+        return fd;
     }
-    errno = ENOENT;
-    return -1;
+
+    s_non_blocking[fd] = ((flags & O_NONBLOCK) == O_NONBLOCK);
+
+    return fd;
 }
 
 static void uart_tx_char(int fd, int c)
