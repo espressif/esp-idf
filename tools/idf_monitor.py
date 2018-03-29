@@ -290,7 +290,7 @@ class Monitor(object):
                     for line in chunk_by_line:
                         index = str.find(line, 'ENCODED')
                         if index > -1:
-                            messages = self.log_converter.ParseEncoded(line[index+9:], self.console)
+                            messages = self.log_converter.ParseEncoded(line[index+9:])
                             for message in messages:
                                 color = ANSI_GREEN
                                 if message['level'] == 'warning':

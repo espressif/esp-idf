@@ -4,6 +4,7 @@ import json
 import collections
 import time
 import datetime
+import sys
 
 class LogConverter:
 
@@ -32,12 +33,14 @@ class LogConverter:
         self._components = self.sortDict(self._data['log']['components'])
         #print(json.dumps(self._components, indent=4))
 
-    def ParseEncoded(self, encodedLog, console):
+    def ParseEncoded(self, encodedLog):
+
         # decode into integer array
+        encodedLog = str(encodedLog).strip() + "==="
         try:
             decoded = [ord(c) for c in encodedLog.decode('base64')]
-        except:
-            console.write("Cannot decode " + encodedLog)
+        except __import__('binascii').Error as err:
+            print "Unexpected error:", err
             return []
 
         # split decoded string into message array
@@ -57,6 +60,7 @@ class LogConverter:
                     # TODO: these types shouldn't be hardcoded
                     # 1 = uint8, 2 = uint32, 3 = uint64, 4 = string
                     message['value'] = ''
+
                     if message['type'] == 1:
                         message['value'] = decoded[i+10]
                     elif message['type'] == 2:
@@ -66,7 +70,7 @@ class LogConverter:
                     elif message['type'] == 4:
                         stringLength = decoded[i+10]
                         for i in range(11, 11 + stringLength):
-                            message['value'] = chr(num[i])
+                            message['value'] += chr(decoded[i])
 
                     self.MessageLookup(message)
                     messages.append(message)
@@ -91,7 +95,7 @@ class LogConverter:
                 i += len(self._components[message['componentText']][level].keys())
 
     def FormatMessage(self, message):
-        return message['timeText'] + ' | ' + message['level'].upper().ljust(8) + " | " + message['componentText'].title().ljust(12) + ' | ' + message['codeText']
+        return message['timeText'] + ' | ' + message['level'].upper().ljust(8) + " | " + (message['componentText'].title() + "." + str(message['line'])).ljust(14) + ' | ' + message['codeText']
 
 if __name__ == "__main__":
     logTest = LogConverter()
