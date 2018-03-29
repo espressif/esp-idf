@@ -2,11 +2,11 @@
 IDF Monitor
 ***********
 
-The idf_monitor tool is a Python program which runs when the ``make monitor`` target is invoked in IDF.
+The IDF Monitor tool is a Python program which runs when the ``make monitor`` target is invoked in IDF.
 
-It is mainly a serial terminal program which relays serial data to and from the target device's serial port, but it has some other IDF-specific xfeatures.
+It is mainly a serial terminal program which relays serial data to and from the target device's serial port, but it has some other IDF-specific features.
 
-Interacting With idf_monitor
+Interacting With IDF Monitor
 ============================
 
 - ``Ctrl-]`` will exit the monitor.
@@ -16,7 +16,7 @@ Interacting With idf_monitor
 Automatically Decoding Addresses
 ================================
 
-Any time esp-idf prints a hexadecimal code address of the form ``0x4_______``, idf_monitor will use addr2line_ to look up the source code location and function name.
+Any time esp-idf prints a hexadecimal code address of the form ``0x4_______``, IDF Monitor will use addr2line_ to look up the source code location and function name.
 
 .. highlight:: none
 
@@ -33,7 +33,7 @@ When an esp-idf app crashes and panics a register dump and backtrace such as thi
 
     Backtrace: 0x400f360d:0x3ffb7e00 0x400dbf56:0x3ffb7e20 0x400dbf5e:0x3ffb7e40 0x400dbf82:0x3ffb7e60 0x400d071d:0x3ffb7e90
 
-idf_monitor will augment the dump::
+IDF Monitor will augment the dump::
 
     Guru Meditation Error of type StoreProhibited occurred on core  0. Exception was unhandled.
     Register dump:
@@ -54,7 +54,7 @@ idf_monitor will augment the dump::
     0x400dbf82: app_main at /home/gus/esp/32/idf/examples/get-started/hello_world/main/./hello_world_main.c:33
     0x400d071d: main_task at /home/gus/esp/32/idf/components/esp32/./cpu_start.c:254
 
-Behind the scenes, the command idf_monitor runs to decode each address is::
+Behind the scenes, the command IDF Monitor runs to decode each address is::
 
   xtensa-esp32-elf-addr2line -pfiaC -e build/PROJECT.elf ADDRESS
 
@@ -68,9 +68,9 @@ Optionally, the panic handler can be configured to run a serial "gdb stub" which
 
 To enable the gdbstub, run ``make menuconfig`` and set :ref:`CONFIG_ESP32_PANIC` option to ``Invoke GDBStub``.
 
-If this option is enabled and idf_monitor sees the gdb stub has loaded, it will automatically pause serial monitoring and run GDB with the correct arguments. After GDB exits, the board will be reset via the RTS serial line (if this is connected.)
+If this option is enabled and IDF Monitor sees the gdb stub has loaded, it will automatically pause serial monitoring and run GDB with the correct arguments. After GDB exits, the board will be reset via the RTS serial line (if this is connected.)
 
-Behind the scenes, the command idf_monitor runs is::
+Behind the scenes, the command IDF Monitor runs is::
 
   xtensa-esp32-elf-gdb -ex "set serial baud BAUD" -ex "target remote PORT" -ex interrupt build/PROJECT.elf
 
@@ -78,9 +78,9 @@ Behind the scenes, the command idf_monitor runs is::
 Quick Compile and Flash
 =======================
 
-The keyboard shortcut ``Ctrl-T Ctrl-F`` will pause idf_monitor, run the ``make flash`` target, then resume idf_monitor. Any changed source files will be recompiled before re-flashing.
+The keyboard shortcut ``Ctrl-T Ctrl-F`` will pause IDF Monitor, run the ``make flash`` target, then resume IDF Monitor. Any changed source files will be recompiled before re-flashing.
 
-The keyboard shortcut ``Ctrl-T Ctrl-A`` will pause idf-monitor, run the ``make app-flash`` target, then resume idf_monitor. This is similar to ``make flash``, but only the main app is compiled and reflashed.
+The keyboard shortcut ``Ctrl-T Ctrl-A`` will pause IDF Monitor, run the ``make app-flash`` target, then resume IDF Monitor. This is similar to ``make flash``, but only the main app is compiled and reflashed.
 
 
 Quick Reset
@@ -112,10 +112,10 @@ Earlier versions of ESP-IDF used the pySerial_ command line program miniterm_ as
 
 This program can still be run, via ``make simple_monitor``.
 
-idf_monitor is based on miniterm and shares the same basic keyboard shortcuts.
+IDF Monitor is based on miniterm and shares the same basic keyboard shortcuts.
 
 
-Known Issues with idf_monitor
+Known Issues with IDF Monitor
 =============================
 
 Issues Observed on Windows
