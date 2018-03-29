@@ -1837,7 +1837,10 @@ BOOLEAN bta_gattc_process_srvc_chg_ind(UINT16 conn_id,
         }
         /* notify applicationf or service change */
         if (p_clrcb->p_cback != NULL) {
-            (* p_clrcb->p_cback)(BTA_GATTC_SRVC_CHG_EVT, (tBTA_GATTC *)p_srcb->server_bda);
+            tBTA_GATTC_SERVICE_CHANGE srvc_chg= {0};
+            memcpy(srvc_chg.remote_bda, p_srcb->server_bda, sizeof(BD_ADDR));
+            srvc_chg.conn_id = conn_id;
+            (* p_clrcb->p_cback)(BTA_GATTC_SRVC_CHG_EVT, (tBTA_GATTC *)&srvc_chg);
         }
 
     }
