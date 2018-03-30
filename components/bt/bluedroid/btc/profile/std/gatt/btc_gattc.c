@@ -914,8 +914,10 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
         break;
     }
     case BTA_GATTC_SRVC_CHG_EVT: {
-        memcpy(param.srvc_chg.remote_bda, arg->remote_bda, sizeof(esp_bd_addr_t));
-        btc_gattc_cb_to_app(ESP_GATTC_SRVC_CHG_EVT, ESP_GATT_IF_NONE, &param);
+        tBTA_GATTC_SERVICE_CHANGE *srvc_change = &arg->srvc_chg;
+        gattc_if = BTC_GATT_GET_GATT_IF(srvc_change->conn_id);
+        memcpy(param.srvc_chg.remote_bda, srvc_change->remote_bda, sizeof(esp_bd_addr_t));
+        btc_gattc_cb_to_app(ESP_GATTC_SRVC_CHG_EVT, gattc_if, &param);
         break;
     }
     case BTA_GATTC_QUEUE_FULL_EVT: {
