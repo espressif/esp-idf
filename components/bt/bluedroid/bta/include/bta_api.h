@@ -409,6 +409,8 @@ typedef tBTM_ADD_WHITELIST_CBACK tBTA_ADD_WHITELIST_CBACK;
 
 typedef tBTM_SET_PKT_DATA_LENGTH_CBACK tBTA_SET_PKT_DATA_LENGTH_CBACK;
 
+typedef tBTM_SET_RAND_ADDR_CBACK tBTA_SET_RAND_ADDR_CBACK;
+
 typedef tBTM_SET_LOCAL_PRIVACY_CBACK tBTA_SET_LOCAL_PRIVACY_CBACK;
 
 typedef tBTM_CMPL_CB tBTA_CMPL_CB;
@@ -2060,7 +2062,7 @@ extern void BTA_DmBleScan(BOOLEAN start, UINT32 duration,
 
 extern void BTA_DmBleStopAdvertising(void);
 
-extern void BTA_DmSetRandAddress(BD_ADDR rand_addr);
+extern void BTA_DmSetRandAddress(BD_ADDR rand_addr, tBTA_SET_RAND_ADDR_CBACK *p_set_rand_addr_cback);
 
 #endif
 

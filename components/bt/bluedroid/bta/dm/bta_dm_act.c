@@ -4631,14 +4631,18 @@ void bta_dm_ble_disconnect (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_ble_set_rand_address(tBTA_DM_MSG *p_data)
 {
-    BOOLEAN set_flag = false;
+    tBTM_STATUS status = BTM_SET_STATIC_RAND_ADDR_FAIL;
     if (p_data->set_addr.addr_type != BLE_ADDR_RANDOM) {
         APPL_TRACE_ERROR("Invalid random adress type = %d\n", p_data->set_addr.addr_type);
+        if(p_data->set_addr.p_set_rand_addr_cback) {
+            (*p_data->set_addr.p_set_rand_addr_cback)(status);
+        }
         return;
     }
     //send the setting random address to BTM layer
-    if ((set_flag = BTM_BleSetRandAddress(p_data->set_addr.address) != TRUE)){
-        APPL_TRACE_ERROR("%s,set random address fail.", __func__);
+    status = BTM_BleSetRandAddress(p_data->set_addr.address);
+    if(p_data->set_addr.p_set_rand_addr_cback) {
+        (*p_data->set_addr.p_set_rand_addr_cback)(status);
     }
 
 }

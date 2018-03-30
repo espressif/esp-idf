@@ -115,6 +115,9 @@ static esp_bt_status_t btc_hci_to_esp_status(uint8_t hci_status)
         case HCI_SUCCESS:
             esp_status = ESP_BT_STATUS_SUCCESS;
             break;
+        case HCI_ERR_ESP_VENDOR_FAIL:
+            esp_status = ESP_BT_STATUS_FAIL;
+            break;
         case HCI_ERR_HOST_TIMEOUT:
             esp_status = ESP_BT_STATUS_TIMEOUT;
             break;
@@ -167,6 +170,12 @@ static esp_bt_status_t btc_btm_status_to_esp_status (uint8_t btm_status)
             esp_status = ESP_BT_STATUS_SUCCESS;
             break;
         case BTM_SET_PRIVACY_FAIL:
+            esp_status = ESP_BT_STATUS_FAIL;
+            break;
+        case BTM_INVALID_STATIC_RAND_ADDR:
+            esp_status = ESP_BT_STATUS_INVALID_STATIC_RAND_ADDR;
+            break;
+        case BTM_SET_STATIC_RAND_ADDR_FAIL:
             esp_status = ESP_BT_STATUS_FAIL;
             break;
         default:
@@ -714,6 +723,24 @@ static void btc_add_whitelist_complete_callback(UINT8 status, tBTM_WL_OPERATION 
     }
 }
 
+static void btc_set_rand_addr_callback(UINT8 status) 
+{
+    esp_ble_gap_cb_param_t param;
+    bt_status_t ret;
+    btc_msg_t msg;
+    param.set_rand_addr_cmpl.status = btc_btm_status_to_esp_status(status); //todo status 
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT;
+    ret = btc_transfer_context(&msg, &param,
+                               sizeof(esp_ble_gap_cb_param_t), NULL);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        LOG_ERROR("%s btc_transfer_context failed\n", __func__);
+    }
+
+}
+
 static void btc_set_local_privacy_callback(UINT8 status)
 {
     esp_ble_gap_cb_param_t param;
@@ -821,13 +848,8 @@ static void btc_ble_set_pkt_data_len(BD_ADDR remote_device, uint16_t tx_data_len
     BTA_DmBleSetDataLength(remote_device, tx_data_length, p_set_pkt_data_cback);
 }
 
-static void btc_ble_set_rand_addr (BD_ADDR rand_addr)
+static void btc_ble_set_rand_addr (BD_ADDR rand_addr, tBTA_SET_RAND_ADDR_CBACK *p_set_rand_addr_cback)
 {
-    esp_ble_gap_cb_param_t param;
-    bt_status_t ret;
-    btc_msg_t msg;
-    param.set_rand_addr_cmpl.status = ESP_BT_STATUS_SUCCESS;
-
     if (rand_addr != NULL) {
         /*
         A static address is a 48-bit randomly generated address and shall meet the following requirements:
@@ -842,24 +864,14 @@ static void btc_ble_set_rand_addr (BD_ADDR rand_addr)
         if((rand_addr[0] & BT_STATIC_RAND_ADDR_MASK) == BT_STATIC_RAND_ADDR_MASK
             && memcmp(invalid_rand_addr_a, rand_addr, BD_ADDR_LEN) != 0
             && memcmp(invalid_rand_addr_b, rand_addr, BD_ADDR_LEN) != 0){
-            BTA_DmSetRandAddress(rand_addr);
+            BTA_DmSetRandAddress(rand_addr, btc_set_rand_addr_callback);
         } else {
-            param.set_rand_addr_cmpl.status = ESP_BT_STATUS_INVALID_STATIC_RAND_ADDR;
+            btc_set_rand_addr_callback(BTM_INVALID_STATIC_RAND_ADDR);
             LOG_ERROR("Invalid random address, the high bit should be 0b11, all bits of the random part shall not be to 1 or 0");
         }
     } else {
-        param.set_rand_addr_cmpl.status = ESP_BT_STATUS_INVALID_STATIC_RAND_ADDR;
+        btc_set_rand_addr_callback(BTM_INVALID_STATIC_RAND_ADDR);
         LOG_ERROR("Invalid random addressm, the address value is NULL");
-    }
-
-    msg.sig = BTC_SIG_API_CB;
-    msg.pid = BTC_PID_GAP_BLE;
-    msg.act = ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT;
-    ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_ble_gap_cb_param_t), NULL);
-
-    if (ret != BT_STATUS_SUCCESS) {
-        LOG_ERROR("%s btc_transfer_context failed\n", __func__);
     }
 }
 
@@ -1057,7 +1069,7 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
     case BTC_GAP_BLE_ACT_SET_RAND_ADDRESS: {
         BD_ADDR bd_addr;
         memcpy(bd_addr, arg->set_rand_addr.rand_addr, sizeof(BD_ADDR));
-        btc_ble_set_rand_addr(bd_addr);
+        btc_ble_set_rand_addr(bd_addr, btc_set_rand_addr_callback);
         break;
     }
     case BTC_GAP_BLE_ACT_CONFIG_LOCAL_PRIVACY:
