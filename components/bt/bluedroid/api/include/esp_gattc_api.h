@@ -283,6 +283,7 @@ esp_err_t esp_ble_gattc_app_unregister(esp_gatt_if_t gattc_if);
  *
  * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       remote_bda: remote device bluetooth device address.
+ * @param[in]       remote_addr_type: remote device bluetooth device the address type.
  * @param[in]       is_direct: direct connection or background auto connection
  *
  * @return
@@ -290,7 +291,7 @@ esp_err_t esp_ble_gattc_app_unregister(esp_gatt_if_t gattc_if);
  *                  - other: failed
  *
  */
-esp_err_t esp_ble_gattc_open(esp_gatt_if_t gattc_if, esp_bd_addr_t remote_bda, bool is_direct);
+esp_err_t esp_ble_gattc_open(esp_gatt_if_t gattc_if, esp_bd_addr_t remote_bda, esp_ble_addr_type_t remote_addr_type, bool is_direct);
 
 
 /**

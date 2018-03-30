@@ -500,7 +500,7 @@ void bta_gattc_open(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
         found_app = gatt_find_specific_app_in_hold_link(p_tcb, p_clcb->p_rcb->client_if);
     }
     /* open/hold a connection */
-    if (!GATT_Connect(p_clcb->p_rcb->client_if, p_data->api_conn.remote_bda,
+    if (!GATT_Connect(p_clcb->p_rcb->client_if, p_data->api_conn.remote_bda, p_data->api_conn.remote_addr_type,
                       TRUE, p_data->api_conn.transport)) {
         APPL_TRACE_ERROR("Connection open failure");
 
@@ -536,7 +536,7 @@ void bta_gattc_init_bk_conn(tBTA_GATTC_API_OPEN *p_data, tBTA_GATTC_RCB *p_clreg
 
     if (bta_gattc_mark_bg_conn(p_data->client_if, p_data->remote_bda, TRUE, FALSE)) {
         /* always call open to hold a connection */
-        if (!GATT_Connect(p_data->client_if, p_data->remote_bda, FALSE, p_data->transport)) {
+        if (!GATT_Connect(p_data->client_if, p_data->remote_bda, p_data->remote_addr_type, FALSE, p_data->transport)) {
             uint8_t *bda = (uint8_t *)p_data->remote_bda;
             status = BTA_GATT_ERROR;
             APPL_TRACE_ERROR("%s unable to connect to remote bd_addr:%02x:%02x:%02x:%02x:%02x:%02x",
