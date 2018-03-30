@@ -68,11 +68,11 @@ int osi_alarm_delete_mux(void)
     osi_mutex_free(&alarm_mutex);
     return 0;
 }
-    
+
 void osi_alarm_init(void)
 {
     assert(alarm_mutex != NULL);
-    
+
     osi_mutex_lock(&alarm_mutex, OSI_MUTEX_MAX_TIMEOUT);
     if (alarm_state != ALARM_STATE_IDLE) {
         LOG_WARN("%s, invalid state %d\n", __func__, alarm_state);
@@ -80,7 +80,7 @@ void osi_alarm_init(void)
     }
     memset(alarm_cbs, 0x00, sizeof(alarm_cbs));
     alarm_state = ALARM_STATE_OPEN;
-    
+
 end:
     osi_mutex_unlock(&alarm_mutex);
 }
@@ -88,13 +88,13 @@ end:
 void osi_alarm_deinit(void)
 {
     assert(alarm_mutex != NULL);
-    
+
     osi_mutex_lock(&alarm_mutex, OSI_MUTEX_MAX_TIMEOUT);
     if (alarm_state != ALARM_STATE_OPEN) {
         LOG_WARN("%s, invalid state %d\n", __func__, alarm_state);
         goto end;
     }
-    
+
     for (int i = 0; i < ALARM_CBS_NUM; i++) {
         if (alarm_cbs[i].alarm_hdl != NULL) {
             alarm_free(&alarm_cbs[i]);
@@ -123,6 +123,10 @@ static struct alarm_t *alarm_cbs_lookfor_available(void)
 static void alarm_cb_handler(struct alarm_t *alarm)
 {
     LOG_DEBUG("TimerID %p\n", alarm);
+    if (alarm_state != ALARM_STATE_OPEN) {
+        LOG_WARN("%s, invalid state %d\n", __func__, alarm_state);
+        return;
+    }
     btc_msg_t msg;
     btc_alarm_args_t arg;
     msg.sig = BTC_SIG_API_CALL;
@@ -137,14 +141,14 @@ osi_alarm_t *osi_alarm_new(const char *alarm_name, osi_alarm_callback_t callback
     assert(alarm_mutex != NULL);
 
     struct alarm_t *timer_id = NULL;
-    
+
     osi_mutex_lock(&alarm_mutex, OSI_MUTEX_MAX_TIMEOUT);
     if (alarm_state != ALARM_STATE_OPEN) {
         LOG_ERROR("%s, invalid state %d\n", __func__, alarm_state);
         timer_id = NULL;
         goto end;
     }
-    
+
     timer_id = alarm_cbs_lookfor_available();
 
     if (!timer_id) {
@@ -162,7 +166,7 @@ osi_alarm_t *osi_alarm_new(const char *alarm_name, osi_alarm_callback_t callback
     timer_id->cb = callback;
     timer_id->cb_data = data;
     timer_id->deadline_us = 0;
-    
+
     esp_err_t stat = esp_timer_create(&tca, &timer_id->alarm_hdl);
     if (stat != ESP_OK) {
         LOG_ERROR("%s failed to create timer, err 0x%x\n", __func__, stat);
@@ -181,13 +185,13 @@ static osi_alarm_err_t alarm_free(osi_alarm_t *alarm)
         LOG_ERROR("%s null\n", __func__);
         return OSI_ALARM_ERR_INVALID_ARG;
     }
-
+    esp_timer_stop(alarm->alarm_hdl);
     esp_err_t stat = esp_timer_delete(alarm->alarm_hdl);
     if (stat != ESP_OK) {
         LOG_ERROR("%s failed to delete timer, err 0x%x\n", __func__, stat);
         return OSI_ALARM_ERR_FAIL;
     }
-    
+
     memset(alarm, 0, sizeof(osi_alarm_t));
     return OSI_ALARM_ERR_PASS;
 }
@@ -195,7 +199,7 @@ static osi_alarm_err_t alarm_free(osi_alarm_t *alarm)
 void osi_alarm_free(osi_alarm_t *alarm)
 {
     assert(alarm_mutex != NULL);
-    
+
     osi_mutex_lock(&alarm_mutex, OSI_MUTEX_MAX_TIMEOUT);
     if (alarm_state != ALARM_STATE_OPEN) {
         LOG_ERROR("%s, invalid state %d\n", __func__, alarm_state);
@@ -211,7 +215,7 @@ end:
 static osi_alarm_err_t alarm_set(osi_alarm_t *alarm, period_ms_t timeout, bool is_periodic)
 {
     assert(alarm_mutex != NULL);
-    
+
     osi_alarm_err_t ret = OSI_ALARM_ERR_PASS;
     osi_mutex_lock(&alarm_mutex, OSI_MUTEX_MAX_TIMEOUT);
     if (alarm_state != ALARM_STATE_OPEN) {
@@ -219,7 +223,7 @@ static osi_alarm_err_t alarm_set(osi_alarm_t *alarm, period_ms_t timeout, bool i
         ret = OSI_ALARM_ERR_INVALID_STATE;
         goto end;
     }
-    
+
     if (!alarm || alarm->alarm_hdl == NULL) {
         LOG_ERROR("%s null\n", __func__);
         ret = OSI_ALARM_ERR_INVALID_ARG;
@@ -239,7 +243,7 @@ static osi_alarm_err_t alarm_set(osi_alarm_t *alarm, period_ms_t timeout, bool i
         goto end;
     }
     alarm->deadline_us = is_periodic ? 0 : (timeout_us + esp_timer_get_time());
-    
+
 end:
     osi_mutex_unlock(&alarm_mutex);
     return ret;
@@ -264,7 +268,7 @@ osi_alarm_err_t osi_alarm_cancel(osi_alarm_t *alarm)
         ret = OSI_ALARM_ERR_INVALID_STATE;
         goto end;
     }
-    
+
     if (!alarm || alarm->alarm_hdl == NULL) {
         LOG_ERROR("%s null\n", __func__);
         ret = OSI_ALARM_ERR_INVALID_ARG;
@@ -286,7 +290,7 @@ period_ms_t osi_alarm_get_remaining_ms(const osi_alarm_t *alarm)
 {
     assert(alarm_mutex != NULL);
     int64_t dt_us = 0;
-    
+
     osi_mutex_lock(&alarm_mutex, OSI_MUTEX_MAX_TIMEOUT);
     dt_us = alarm->deadline_us - esp_timer_get_time();
     osi_mutex_unlock(&alarm_mutex);
