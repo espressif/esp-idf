@@ -141,9 +141,12 @@ int btc_init(void)
 {
     xBtcQueue = xQueueCreate(BTC_TASK_QUEUE_LEN, sizeof(btc_msg_t));
     xTaskCreatePinnedToCore(btc_task, "Btc_task", BTC_TASK_STACK_SIZE, NULL, BTC_TASK_PRIO, &xBtcTaskHandle, BTC_TASK_PINNED_TO_CORE);
+    if (xBtcTaskHandle == NULL || xBtcQueue == 0){
+        return BT_STATUS_NOMEM;
+    }
+
     btc_gap_callback_init();
     /* TODO: initial the profile_tab */
-
     return BT_STATUS_SUCCESS;
 }
 
