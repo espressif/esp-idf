@@ -100,6 +100,21 @@ static void IRAM_ATTR spi_flash_mmap_init()
     DPORT_STALL_OTHER_CPU_END();
 }
 
+static void IRAM_ATTR get_mmu_region(spi_flash_mmap_memory_t memory, int* out_begin, int* out_size,uint32_t* region_addr)
+{
+    if (memory == SPI_FLASH_MMAP_DATA) {
+        // Vaddr0
+        *out_begin = 0;
+        *out_size = 64;
+        *region_addr = VADDR0_START_ADDR;
+    } else {
+        // only part of VAddr1 is usable, so adjust for that
+        *out_begin = PRO_IRAM0_FIRST_USABLE_PAGE;
+        *out_size = 3 * 64 - *out_begin;
+        *region_addr = VADDR1_FIRST_USABLE_ADDR;
+    }
+}
+
 esp_err_t IRAM_ATTR spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_memory_t memory,
                          const void** out_ptr, spi_flash_mmap_handle_t* out_handle)
 {
@@ -157,17 +172,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(int *pages, size_t page_count, spi_flas
     int region_begin;   // first page to check
     int region_size;    // number of pages to check
     uint32_t region_addr;  // base address of memory region
-    if (memory == SPI_FLASH_MMAP_DATA) {
-        // Vaddr0
-        region_begin = 0;
-        region_size = 64;
-        region_addr = VADDR0_START_ADDR;
-    } else {
-        // only part of VAddr1 is usable, so adjust for that
-        region_begin = PRO_IRAM0_FIRST_USABLE_PAGE;
-        region_size = 3 * 64 - region_begin;
-        region_addr = VADDR1_FIRST_USABLE_ADDR;
-    }
+    get_mmu_region(memory,&region_begin,&region_size,&region_addr);
     if (region_size < page_count) {
         return ESP_ERR_NO_MEM;
     }
@@ -175,7 +180,9 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(int *pages, size_t page_count, spi_flas
     // Algorithm is essentially naïve strstr algorithm, except that unused MMU
     // entries are treated as wildcards.
     int start;
-    int end = region_begin + region_size - page_count;
+    // the " + 1" is a fix when loop the MMU table pages, because the last MMU page 
+    // is valid as well if it have not been used
+    int end = region_begin + region_size - page_count + 1;
     for (start = region_begin; start < end; ++start) {
         int pageno = 0;
         int pos;
@@ -290,6 +297,24 @@ void spi_flash_mmap_dump()
                     i, (int) s_mmap_page_refcnt[i], DPORT_PRO_FLASH_MMU_TABLE[i]);
         }
     }
+}
+
+uint32_t spi_flash_mmap_get_free_pages(spi_flash_mmap_memory_t memory)
+{
+    spi_flash_mmap_init();
+    int count = 0;
+    int region_begin;   // first page to check
+    int region_size;    // number of pages to check
+    uint32_t region_addr;  // base address of memory region
+    get_mmu_region(memory,&region_begin,&region_size,&region_addr);
+    DPORT_STALL_OTHER_CPU_START();
+    for (int i = region_begin; i < region_begin + region_size; ++i) {
+        if (s_mmap_page_refcnt[i] == 0 && DPORT_PRO_FLASH_MMU_TABLE[i] == INVALID_ENTRY_VAL) {
+            count++;
+        }
+    }
+    DPORT_STALL_OTHER_CPU_END();
+    return count;
 }
 
 /* 256-bit (up to 16MB of 64KB pages) bitset of all flash pages
