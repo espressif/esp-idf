@@ -13,6 +13,7 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "../esp_clk_internal.h"
+#include "esp_clk.h"
 
 
 
@@ -134,7 +135,7 @@ TEST_CASE("Test fast switching between PLL and XTAL", "[rtc_clk]")
 }
 
 #define COUNT_TEST      10
-#define TIMEOUT_TEST_MS 50
+#define TIMEOUT_TEST_MS (5 + CONFIG_ESP32_RTC_CLK_CAL_CYCLES / 16)
 
 void stop_rtc_external_quartz(){
     const uint8_t pin_32 = 32;
@@ -151,6 +152,68 @@ void stop_rtc_external_quartz(){
     gpio_output_set_high(0, 0, 0, mask_32 | mask_33); // disable pins
 }
 
+static void start_freq(rtc_slow_freq_t required_src_freq, uint32_t start_delay_ms)
+{
+    int i = 0, fail = 0;
+    uint32_t start_time;
+    uint32_t end_time;
+    rtc_slow_freq_t selected_src_freq;
+    stop_rtc_external_quartz();
+#ifdef CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
+    uint32_t bootstrap_cycles = CONFIG_ESP32_RTC_XTAL_BOOTSTRAP_CYCLES;
+    printf("Test is started. Kconfig settings:\n External 32K crystal is selected,\n Oscillation cycles = %d,\n Calibration cycles = %d.\n",
+            bootstrap_cycles,
+            CONFIG_ESP32_RTC_CLK_CAL_CYCLES);
+#else
+    uint32_t bootstrap_cycles = 5;
+    printf("Test is started. Kconfig settings:\n Internal RC is selected,\n Oscillation cycles = %d,\n Calibration cycles = %d.\n",
+            bootstrap_cycles,
+            CONFIG_ESP32_RTC_CLK_CAL_CYCLES);
+#endif
+    if (start_delay_ms == 0 && CONFIG_ESP32_RTC_CLK_CAL_CYCLES < 1500){
+        start_delay_ms = 50;
+        printf("Recommended increase Number of cycles for RTC_SLOW_CLK calibration to 3000!\n");
+    }
+    while(i < COUNT_TEST){
+        start_time = xTaskGetTickCount() * (1000 / configTICK_RATE_HZ);
+        i++;
+        printf("attempt #%d/%d...", i, COUNT_TEST);
+        rtc_clk_32k_bootstrap(bootstrap_cycles);
+        ets_delay_us(start_delay_ms * 1000);
+        rtc_clk_select_rtc_slow_clk();
+        selected_src_freq = rtc_clk_slow_freq_get();
+        end_time = xTaskGetTickCount() * (1000 / configTICK_RATE_HZ);
+        printf(" [time=%d] ", (end_time - start_time) - start_delay_ms);
+        if(selected_src_freq != required_src_freq){
+            printf("FAIL. Time measurement...");
+            fail = 1;
+        } else {
+            printf("PASS. Time measurement...");
+        }
+        uint64_t clk_rtc_time;
+        uint32_t fail_measure = 0;
+        for (int j = 0; j < 3; ++j) {
+            clk_rtc_time = esp_clk_rtc_time();
+            ets_delay_us(1000000);
+            uint64_t delta = esp_clk_rtc_time() - clk_rtc_time;
+            if (delta < 900000LL || delta > 1100000){
+                printf("FAIL");
+                fail = 1;
+                fail_measure = 1;
+                break;
+            }
+        }
+        if(fail_measure == 0) {
+            printf("PASS");
+        }
+        printf(" [calibration val = %d] \n", esp_clk_slowclk_cal_get());
+        stop_rtc_external_quartz();
+        ets_delay_us(500000);
+    }
+    TEST_ASSERT_MESSAGE(fail == 0, "Test failed");
+    printf("Test passed successfully\n");
+}
+
 #ifdef CONFIG_SPIRAM_SUPPORT
 // PSRAM tests run on ESP-WROVER-KIT boards, which have the 32k XTAL installed.
 // Other tests may run on DevKitC boards, which don't have a 32k XTAL.
@@ -159,16 +222,29 @@ TEST_CASE("Test starting external RTC quartz", "[rtc_clk]")
     int i = 0, fail = 0;
     uint32_t start_time;
     uint32_t end_time;
-
     stop_rtc_external_quartz();
-    printf("Start test. Number of oscillation cycles = %d\n", CONFIG_ESP32_RTC_XTAL_BOOTSTRAP_CYCLES);
+#ifdef CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
+    uint32_t bootstrap_cycles = CONFIG_ESP32_RTC_XTAL_BOOTSTRAP_CYCLES;
+    printf("Test is started. Kconfig settings:\n External 32K crystal is selected,\n Oscillation cycles = %d,\n Calibration cycles = %d.\n",
+            bootstrap_cycles,
+            CONFIG_ESP32_RTC_CLK_CAL_CYCLES);
+#else
+    uint32_t bootstrap_cycles = 5;
+    printf("Test is started. Kconfig settings:\n Internal RC is selected,\n Oscillation cycles = %d,\n Calibration cycles = %d.\n",
+            bootstrap_cycles,
+            CONFIG_ESP32_RTC_CLK_CAL_CYCLES);
+#endif
+    if (CONFIG_ESP32_RTC_CLK_CAL_CYCLES < 1500){
+        printf("Recommended increase Number of cycles for RTC_SLOW_CLK calibration to 3000!\n");
+    }
     while(i < COUNT_TEST){
         start_time = xTaskGetTickCount() * (1000 / configTICK_RATE_HZ);
         i++;
         printf("attempt #%d/%d...", i, COUNT_TEST);
-        rtc_clk_32k_bootstrap(CONFIG_ESP32_RTC_XTAL_BOOTSTRAP_CYCLES);
+        rtc_clk_32k_bootstrap(bootstrap_cycles);
         rtc_clk_select_rtc_slow_clk();
         end_time = xTaskGetTickCount() * (1000 / configTICK_RATE_HZ);
+        printf(" [time=%d] ", end_time - start_time);
         if((end_time - start_time) > TIMEOUT_TEST_MS){
             printf("FAIL\n");
             fail = 1;
@@ -178,11 +254,30 @@ TEST_CASE("Test starting external RTC quartz", "[rtc_clk]")
         stop_rtc_external_quartz();
         ets_delay_us(100000);
     }
-    if (fail == 1){
-        printf("Test failed\n");
-        TEST_ASSERT(false);
-    } else {
-        printf("Test passed successfully\n");
-    }
+    TEST_ASSERT_MESSAGE(fail == 0, "Test failed");
+    printf("Test passed successfully\n");
 }
+
+TEST_CASE("Test starting 'External 32kHz XTAL' on the board with it.", "[rtc_clk]")
+{
+    start_freq(RTC_SLOW_FREQ_32K_XTAL, 200);
+    start_freq(RTC_SLOW_FREQ_32K_XTAL, 0);
+}
+
+#else
+
+TEST_CASE("Test starting 'External 32kHz XTAL' on the board without it.", "[rtc_clk]")
+{
+    printf("Tries to start the 'External 32kHz XTAL' on the board without it. "
+            "Clock switching to 'Internal 150 kHz RC oscillator'.\n");
+
+    printf("This test will be successful for boards without an external crystal or non-working crystal. "
+            "First, there will be an attempt to start from the external crystal after a failure "
+            "will switch to the internal RC circuit. If the switch to the internal RC circuit "
+            "was successful then the test succeeded.\n");
+
+    start_freq(RTC_SLOW_FREQ_RTC, 200);
+    start_freq(RTC_SLOW_FREQ_RTC, 0);
+}
+
 #endif // CONFIG_SPIRAM_SUPPORT
