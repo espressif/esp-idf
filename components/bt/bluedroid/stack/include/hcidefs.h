@@ -792,6 +792,9 @@
 
 #define HCI_ERR_MAX_ERR                                 0x43
 
+//ESP vendor error code
+#define HCI_ERR_ESP_VENDOR_FAIL                         0xE0               
+
 #define HCI_HINT_TO_RECREATE_AMP_PHYS_LINK              0xFF
 
 /*
