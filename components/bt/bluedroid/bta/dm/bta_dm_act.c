@@ -5641,7 +5641,8 @@ void btm_dm_start_gatt_discovery (BD_ADDR bd_addr)
         bta_sys_stop_timer(&bta_dm_search_cb.gatt_close_timer);
         btm_dm_start_disc_gatt_services(bta_dm_search_cb.conn_id);
     } else {
-        BTA_GATTC_Open(bta_dm_search_cb.client_if, bd_addr, TRUE, BTA_GATT_TRANSPORT_LE);
+        //TODO need to add addr_type in future
+        BTA_GATTC_Open(bta_dm_search_cb.client_if, bd_addr, BLE_ADDR_UNKNOWN_TYPE, TRUE, BTA_GATT_TRANSPORT_LE);
     }
 }
 #endif /* #if (GATTC_INCLUDED == TRUE) */

@@ -116,6 +116,7 @@ typedef tBTA_GATTC_INT_START_IF tBTA_GATTC_INT_DEREG;
 typedef struct {
     BT_HDR                  hdr;
     BD_ADDR                 remote_bda;
+    tBTA_ADDR_TYPE          remote_addr_type;
     tBTA_GATTC_IF           client_if;
     BOOLEAN                 is_direct;
     tBTA_TRANSPORT          transport;
