@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <esp_types.h>
+#include <string.h>
 #include "esp_intr.h"
 #include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
@@ -40,6 +41,9 @@ typedef struct {
     ledc_fade_mode_t mode;
     xSemaphoreHandle ledc_fade_sem;
     xSemaphoreHandle ledc_fade_mux;
+#if CONFIG_SPIRAM_USE_MALLOC
+    StaticQueue_t ledc_fade_sem_storage;
+#endif
 } ledc_fade_t;
 
 static ledc_fade_t *s_ledc_fade_rec[LEDC_SPEED_MODE_MAX][LEDC_CHANNEL_MAX];
@@ -485,9 +489,20 @@ static esp_err_t ledc_fade_channel_deinit(ledc_mode_t speed_mode, ledc_channel_t
 static esp_err_t ledc_fade_channel_init_check(ledc_mode_t speed_mode, ledc_channel_t channel)
 {
     if (s_ledc_fade_rec[speed_mode][channel] == NULL) {
+#if CONFIG_SPIRAM_USE_MALLOC
+        s_ledc_fade_rec[speed_mode][channel] = (ledc_fade_t *) heap_caps_calloc(1, sizeof(ledc_fade_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+        if (!s_ledc_fade_rec[speed_mode][channel]) {
+            ledc_fade_channel_deinit(speed_mode, channel);
+            return ESP_FAIL;
+        }
+
+        memset(&s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem_storage, 0, sizeof(StaticQueue_t));
+        s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem = xSemaphoreCreateBinaryStatic(&s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem_storage);
+#else
         s_ledc_fade_rec[speed_mode][channel] = (ledc_fade_t *) calloc(1, sizeof(ledc_fade_t));
-        s_ledc_fade_rec[speed_mode][channel]->ledc_fade_mux = xSemaphoreCreateMutex();
         s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem = xSemaphoreCreateBinary();
+#endif
+        s_ledc_fade_rec[speed_mode][channel]->ledc_fade_mux = xSemaphoreCreateMutex();
     }
     if (s_ledc_fade_rec[speed_mode][channel]
         && s_ledc_fade_rec[speed_mode][channel]->ledc_fade_mux
