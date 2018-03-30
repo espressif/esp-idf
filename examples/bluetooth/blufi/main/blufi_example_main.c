@@ -6,6 +6,14 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
+
+/****************************************************************************
+* This is a demo for bluetooth config wifi connection to ap. You can config ESP32 to connect a softap
+* or config ESP32 as a softap to be connected by other device. APP can be downloaded from github 
+* android source code: https://github.com/EspressifApp/EspBlufi
+* iOS source code: https://github.com/EspressifApp/EspBlufiForiOS
+****************************************************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
