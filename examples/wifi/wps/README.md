@@ -1,8 +1,8 @@
 # Wifi WPS Example
 
-This example shows how to use wps in esp32.
+This example shows how to use wps enrollee in esp32.
 
-The wps only works in station mode now.
+Now we support to use enrollee feature in STA and APSTA mode.
 
 * PBC_MODE: Start esp32 and press the wps button on router, Then esp32 will get the ssid&password by wps PBC mode.
 
