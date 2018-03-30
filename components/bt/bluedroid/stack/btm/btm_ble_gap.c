@@ -756,10 +756,18 @@ BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode, tBTM_SET_LOCAL_PRIVACY_CBACK 
     if (p_cb->privacy_mode == BTM_PRIVACY_NONE
         && random_cb->own_addr_type == BLE_ADDR_RANDOM) {
         BTM_TRACE_ERROR("Have set random adress, can't set privacy ");
+        if (random_cb && random_cb->set_local_privacy_cback){
+            (*random_cb->set_local_privacy_cback)(BTM_SET_PRIVACY_FAIL);
+            random_cb->set_local_privacy_cback = NULL;
+        }
         return FALSE;
     }
-    if (!(p_cb->inq_var.state != BTM_BLE_STOP_SCAN && p_cb->inq_var.state != BTM_BLE_STOP_ADV)) {
+    if (!(p_cb->inq_var.state == BTM_BLE_STOP_SCAN || p_cb->inq_var.state == BTM_BLE_STOP_ADV || p_cb->inq_var.state == BTM_BLE_IDLE)) {
         BTM_TRACE_ERROR("Advertising or scaning now, can't set privacy ");
+        if (random_cb && random_cb->set_local_privacy_cback){
+            (*random_cb->set_local_privacy_cback)(BTM_SET_PRIVACY_FAIL);
+            random_cb->set_local_privacy_cback = NULL;
+        }
         return FALSE;
     }
 
@@ -1199,11 +1207,18 @@ tBTM_STATUS BTM_BleSetAdvParamsStartAdv(UINT16 adv_int_min, UINT16 adv_int_max, 
  */
     if (btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type == BLE_ADDR_RANDOM && own_bda_type == BLE_ADDR_PUBLIC) {
         BTM_TRACE_ERROR ("own_addr_type is BLE_ADDR_RANDOM but use BLE_ADDR_PUBLIC\n");
+        if(adv_cb) {
+            (* adv_cb)(HCI_ERR_ESP_VENDOR_FAIL);
+        }
         return BTM_ILLEGAL_VALUE;
     }
 
     if (!BTM_BLE_ISVALID_PARAM(adv_int_min, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX) ||
             !BTM_BLE_ISVALID_PARAM(adv_int_max, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX)) {
+         BTM_TRACE_ERROR ("adv_int_min or adv_int_max is invalid\n");    
+        if(adv_cb) {
+            (* adv_cb)(HCI_ERR_ESP_VENDOR_FAIL);
+        }
         return BTM_ILLEGAL_VALUE;
     }
 
@@ -1558,12 +1573,10 @@ tBTM_STATUS BTM_BleWriteAdvDataRaw(UINT8 *p_raw_adv, UINT32 raw_adv_len)
 ** Returns          void
 **
 *******************************************************************************/
-BOOLEAN BTM_BleSetRandAddress(BD_ADDR rand_addr)
+tBTM_STATUS BTM_BleSetRandAddress(BD_ADDR rand_addr)
 {
-    BOOLEAN set_flag = false;
-
 	if (rand_addr == NULL)
-		return set_flag;
+		return BTM_SET_STATIC_RAND_ADDR_FAIL;
 
 /*
  *  Temporary solutions for pair with random address:
@@ -1573,19 +1586,22 @@ BOOLEAN BTM_BleSetRandAddress(BD_ADDR rand_addr)
 #if BLE_PRIVACY_SPT == TRUE
     if (btm_cb.ble_ctr_cb.privacy_mode != BTM_PRIVACY_NONE) {
         BTM_TRACE_ERROR("privacy_mode is not BTM_PRIVACY_NONE ");
-        return set_flag;
+        return BTM_SET_STATIC_RAND_ADDR_FAIL;
     }
 
 #endif
-    if (!(btm_cb.ble_ctr_cb.inq_var.state != BTM_BLE_STOP_SCAN && btm_cb.ble_ctr_cb.inq_var.state != BTM_BLE_STOP_ADV)) {
-        BTM_TRACE_ERROR("Advertising or scaning now, can't set randaddress ");
-        return FALSE;
+    if (!(btm_cb.ble_ctr_cb.inq_var.state == BTM_BLE_STOP_SCAN || btm_cb.ble_ctr_cb.inq_var.state == BTM_BLE_STOP_ADV || btm_cb.ble_ctr_cb.inq_var.state == BTM_BLE_IDLE)) {
+        BTM_TRACE_ERROR("Advertising or scaning now, can't set randaddress %d", btm_cb.ble_ctr_cb.inq_var.state);
+        return BTM_SET_STATIC_RAND_ADDR_FAIL;
     }
     memcpy(btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr, rand_addr, BD_ADDR_LEN);
     btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = BLE_ADDR_RANDOM;
     //send the set random address to the controller
-    set_flag = btsnd_hcic_ble_set_random_addr(rand_addr);
-    return set_flag;
+    if(btsnd_hcic_ble_set_random_addr(rand_addr)) {
+        return BTM_SUCCESS;
+    } else {
+        return BTM_SET_STATIC_RAND_ADDR_FAIL;
+    }
 }
 
 /*******************************************************************************

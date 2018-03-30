@@ -532,6 +532,7 @@ typedef struct {
     BT_HDR      hdr;
     tBLE_ADDR_TYPE addr_type;
     BD_ADDR address;
+    tBTA_SET_RAND_ADDR_CBACK *p_set_rand_addr_cback;
 } tBTA_DM_APT_SET_DEV_ADDR;
 
 /* set adv parameter for BLE advertising */
