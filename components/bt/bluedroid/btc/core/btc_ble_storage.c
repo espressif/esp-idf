@@ -784,7 +784,10 @@ bt_status_t btc_storage_get_bonded_ble_devices_list(esp_ble_bond_dev_t *bond_dev
         //resolve the peer device irk
         if (_btc_storage_get_ble_bonding_key(&bd_addr, BTM_LE_KEY_PID, buffer, sizeof(tBTM_LE_PID_KEYS)) == BT_STATUS_SUCCESS) {
             bond_dev->bond_key.key_mask |= ESP_BLE_ID_KEY_MASK;
-            memcpy(&bond_dev->bond_key.pid_key, buffer, sizeof(tBTM_LE_PID_KEYS));
+            tBTM_LE_PID_KEYS *pid_key = (tBTM_LE_PID_KEYS *) buffer;
+            memcpy(&bond_dev->bond_key.pid_key.irk, pid_key->irk, BT_OCTET16_LEN);
+            bond_dev->bond_key.pid_key.addr_type = pid_key->addr_type;
+            memcpy(&bond_dev->bond_key.pid_key.static_addr, pid_key->static_addr, sizeof(BD_ADDR));
         }
         //serch for the next bond device
         bond_dev++;
