@@ -2202,9 +2202,7 @@ BOOLEAN l2cu_create_conn (tL2C_LCB *p_lcb, tBT_TRANSPORT transport)
 
 #if (BLE_INCLUDED == TRUE)
     tBT_DEVICE_TYPE     dev_type;
-    tBLE_ADDR_TYPE      addr_type;
-
-
+    tBLE_ADDR_TYPE      addr_type = p_lcb->open_addr_type;
     BTM_ReadDevInfo(p_lcb->remote_bd_addr, &dev_type, &addr_type);
 
     if (transport == BT_TRANSPORT_LE) {

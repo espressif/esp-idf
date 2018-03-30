@@ -422,6 +422,7 @@ typedef struct t_l2c_linkcb {
 
     tBT_TRANSPORT       transport;
 #if (BLE_INCLUDED == TRUE)
+    tBLE_ADDR_TYPE      open_addr_type; /* be set by open API */
     tBLE_ADDR_TYPE      ble_addr_type;
     UINT16              tx_data_len;            /* tx data length used in data length extension */
     fixed_queue_t       *le_sec_pending_q;      /* LE coc channels waiting for security check completion */

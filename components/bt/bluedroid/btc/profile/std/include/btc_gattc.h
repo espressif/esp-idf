@@ -54,6 +54,7 @@ typedef union {
     struct open_arg {
         esp_gatt_if_t gattc_if;
         esp_bd_addr_t remote_bda;
+        esp_ble_addr_type_t remote_addr_type;
         bool is_direct;
     } open;
     //BTC_GATTC_ACT_CLOSE,
