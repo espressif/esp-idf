@@ -31,7 +31,7 @@ Power Management Locks
 
 As mentioned in the overview, applications can acquire/release locks to control the power management algorithm. When application takes a lock, power management algorithm operation is restricted in a way described below, for each lock. When the lock is released, such restriction is removed.
 
-Different parts of the application can take the same lock. In this case, lock mush be released the same number of times as it was acquired, in order for power managment algorithm to resume.
+Different parts of the application can take the same lock. In this case, the lock must be released the same number of times as it was acquired, in order for power managment algorithm to resume.
 
 In ESP32, three types of locks are supported:
 
