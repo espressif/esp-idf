@@ -112,7 +112,9 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
         ESP_LOGD(TAG, "SDHC/SDXC card");
         host_ocr |= SD_OCR_SDHC_CAP;
     } else if (err == ESP_ERR_TIMEOUT) {
-        ESP_LOGD(TAG, "CMD8 timeout; not an SDHC/SDXC card");
+        ESP_LOGD(TAG, "CMD8 timeout; not an SD v2.00 card");
+    } else if (is_spi && err == ESP_ERR_NOT_SUPPORTED) {
+        ESP_LOGD(TAG, "CMD8 rejected; not an SD v2.00 card");
     } else {
         ESP_LOGE(TAG, "%s: send_if_cond (1) returned 0x%x", __func__, err);
         return err;
