@@ -1447,6 +1447,12 @@ tBTM_STATUS btm_ble_set_encryption (BD_ADDR bd_addr, void *p_ref_data, UINT8 lin
             }
         }
 
+        // already have encrypted information, do not need to update connection parameters
+        if(link_role == BTM_ROLE_SLAVE && (p_rec->ble.key_type & BTM_LE_KEY_PENC)) {
+            p_rec->ble.skip_update_conn_param = true;
+        } else {
+            p_rec->ble.skip_update_conn_param = false;    
+        }
         if (SMP_Pair(bd_addr) == SMP_STARTED) {
             cmd = BTM_CMD_STARTED;
             p_rec->sec_state = BTM_SEC_STATE_AUTHENTICATING;

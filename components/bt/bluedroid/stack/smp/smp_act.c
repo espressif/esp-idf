@@ -1389,6 +1389,11 @@ void smp_idle_terminate(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 *******************************************************************************/
 void smp_fast_conn_param(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
+    tBTM_SEC_DEV_REC    *p_rec = btm_find_dev (p_cb->pairing_bda);
+    if(p_rec && p_rec->ble.skip_update_conn_param) {
+        //do nothing
+        return;
+    }
     /* Disable L2CAP connection parameter updates while bonding since
        some peripherals are not able to revert to fast connection parameters
        during the start of service discovery. Connection paramter updates
