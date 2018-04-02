@@ -37,6 +37,12 @@
 #define SDMMC_DEFAULT_CMD_TIMEOUT_MS  1000   // Max timeout of ordinary commands
 #define SDMMC_WRITE_CMD_TIMEOUT_MS    5000   // Max timeout of write commands
 
+/* Maximum retry/error count for SEND_OP_COND (CMD1).
+ * These are somewhat arbitrary, values originate from OpenBSD driver.
+ */
+#define SDMMC_SEND_OP_COND_MAX_RETRIES  100
+#define SDMMC_SEND_OP_COND_MAX_ERRORS   3
+
 static const char* TAG = "sdmmc_cmd";
 
 static esp_err_t sdmmc_send_cmd(sdmmc_card_t* card, sdmmc_command_t* cmd);
@@ -97,11 +103,13 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
     /* ----------- standard initialization process starts here ---------- */
 
     /* Reset SDIO (CMD52, RES) before re-initializing IO (CMD5).
-     * Non-IO cards are allowed to time out.
+     * Non-IO cards are allowed to time out (in SD mode) or
+     * return "invalid command" error (in SPI mode).
      */
     uint8_t sdio_reset = CCCR_CTL_RES;
     err = sdmmc_io_rw_direct(card, 0, SD_IO_CCCR_CTL, SD_ARG_CMD52_WRITE, &sdio_reset);
-    if (err != ESP_OK && err != ESP_ERR_TIMEOUT) {
+    if (err != ESP_OK && err != ESP_ERR_TIMEOUT
+            && !(is_spi && err == ESP_ERR_NOT_SUPPORTED)) {
         ESP_LOGE(TAG, "%s: sdio_reset: unexpected return: 0x%x", __func__, err );
         return err;
     }
@@ -112,12 +120,6 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
         ESP_LOGE(TAG, "%s: go_idle_state (1) returned 0x%x", __func__, err);
         return err;
     }
-
-    /* FIXME: we should check card status to wait until it is out of idle
-     * state, instead of using a delay.
-     */
-    vTaskDelay(SDMMC_GO_IDLE_DELAY_MS / portTICK_PERIOD_MS);
-    sdmmc_send_cmd_go_idle_state(card);
     vTaskDelay(SDMMC_GO_IDLE_DELAY_MS / portTICK_PERIOD_MS);
 
     /* SEND_IF_COND (CMD8) command is used to identify SDHC/SDXC cards.
@@ -454,7 +456,7 @@ static esp_err_t sdmmc_send_cmd(sdmmc_card_t* card, sdmmc_command_t* cmd)
             slot, cmd->opcode, cmd->arg, cmd->flags, cmd->data, cmd->blklen, cmd->datalen, cmd->timeout_ms);
     esp_err_t err = (*card->host.do_transaction)(slot, cmd);
     if (err != 0) {
-        ESP_LOGD(TAG, "sdmmc_req_run returned 0x%x", err);
+        ESP_LOGD(TAG, "cmd=%d, sdmmc_req_run returned 0x%x", cmd->opcode, err);
         return err;
     }
     int state = MMC_R1_CURRENT_STATE(cmd->response);
@@ -494,7 +496,21 @@ static esp_err_t sdmmc_send_cmd_go_idle_state(sdmmc_card_t* card)
         .opcode = MMC_GO_IDLE_STATE,
         .flags = SCF_CMD_BC | SCF_RSP_R0,
     };
-    return sdmmc_send_cmd(card, &cmd);
+    esp_err_t err = sdmmc_send_cmd(card, &cmd);
+    if (host_is_spi(card)) {
+        /* To enter SPI mode, CMD0 needs to be sent twice (see figure 4-1 in
+         * SD Simplified spec v4.10). Some cards enter SD mode on first CMD0,
+         * so don't expect the above command to succeed.
+         * SCF_RSP_R1 flag below tells the lower layer to expect correct R1
+         * response (in SPI mode).
+         */
+        (void) err;
+        vTaskDelay(SDMMC_GO_IDLE_DELAY_MS / portTICK_PERIOD_MS);
+
+        cmd.flags |= SCF_RSP_R1;
+        err = sdmmc_send_cmd(card, &cmd);
+    }
+    return err;
 }
 
 
@@ -525,11 +541,18 @@ static esp_err_t sdmmc_send_cmd_send_op_cond(sdmmc_card_t* card, uint32_t ocr, u
             .flags = SCF_CMD_BCR | SCF_RSP_R3,
             .opcode = SD_APP_OP_COND
     };
-    int nretries = 100;   // arbitrary, BSD driver uses this value
+    int nretries = SDMMC_SEND_OP_COND_MAX_RETRIES;
+    int err_cnt = SDMMC_SEND_OP_COND_MAX_ERRORS;
     for (; nretries != 0; --nretries)  {
         esp_err_t err = sdmmc_send_app_cmd(card, &cmd);
         if (err != ESP_OK) {
-            return err;
+            if (--err_cnt == 0) {
+                ESP_LOGD(TAG, "%s: sdmmc_send_app_cmd err=0x%x", __func__, err);
+                return err;
+            } else {
+                ESP_LOGV(TAG, "%s: ignoring err=0x%x", __func__, err);
+                continue;
+            }
         }
         // In SD protocol, card sets MEM_READY bit in OCR when it is ready.
         // In SPI protocol, card clears IDLE_STATE bit in R1 response.
