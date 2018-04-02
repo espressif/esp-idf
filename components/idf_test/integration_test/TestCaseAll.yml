@@ -8435,7 +8435,7 @@ test cases:
   version: v1 (2015-8-15)
 - ID: SYS_NVS_01001
   SDK: ESP32_IDF
-  Test App: SSC_BLE
+  Test App: SSC_BLE_WIFI
   auto test: 'Yes'
   category: Function
   test point 1: compatiable test
