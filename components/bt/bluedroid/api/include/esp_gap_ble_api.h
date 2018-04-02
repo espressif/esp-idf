@@ -830,7 +830,18 @@ esp_err_t esp_ble_gap_set_prefer_conn_params(esp_bd_addr_t bd_addr,
  */
 esp_err_t esp_ble_gap_set_device_name(const char *name);
 
-
+/**
+ * @brief          This function is called to get local used address and adress type.
+ *                 uint8_t *esp_bt_dev_get_address(void) get the public address
+ *
+ * @param[in]       local_used_addr - current local used ble address (six bytes)
+ * @param[in]       addr_type   - ble address type
+ *
+ * @return          - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
+esp_err_t esp_ble_gap_get_local_used_addr(esp_bd_addr_t local_used_addr, uint8_t * addr_type);
 /**
  * @brief          This function is called to get ADV data for a specific type.
  *
