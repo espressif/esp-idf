@@ -86,7 +86,13 @@
 
 /* SPI mode R1 response type bits */
 #define SD_SPI_R1_IDLE_STATE            (1<<0)
+#define SD_SPI_R1_ERASE_RST             (1<<1)
+#define SD_SPI_R1_ILLEGAL_CMD           (1<<2)
 #define SD_SPI_R1_CMD_CRC_ERR           (1<<3)
+#define SD_SPI_R1_ERASE_SEQ_ERR         (1<<4)
+#define SD_SPI_R1_ADDR_ERR              (1<<5)
+#define SD_SPI_R1_PARAM_ERR             (1<<6)
+#define SD_SPI_R1_NO_RESPONSE           (1<<7)
 
 /* 48-bit response decoding (32 bits w/o CRC) */
 #define MMC_R1(resp)                    ((resp)[0])
