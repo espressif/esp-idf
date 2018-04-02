@@ -11,17 +11,25 @@ config WIFI_PASSWORD
     default "mypassword"
     help
 	WiFi password (WPA or WPA2) for the example to use.
+	
+config WIFI_LISTEN_INTERVAL
+    int "WiFi listen interval"
+    default 3
+    help
+	WiFi listen interval for station to receive beacon from AP.
 
 choice POWER_SAVE_MODE
     prompt "power save mode"
-    default POWER_SAVE_MODEM
+    default POWER_SAVE_MIN_MODEM
     help
 	Power save mode for the esp32 to use.
 
 config POWER_SAVE_NONE
     bool "none"
-config POWER_SAVE_MODEM
-    bool "modem"
+config POWER_SAVE_MIN_MODEM
+    bool "minimum modem"
+config POWER_SAVE_MAX_MODEM
+    bool "maximum modem"
 endchoice
 
 endmenu
