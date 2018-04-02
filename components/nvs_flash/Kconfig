@@ -1,0 +1,9 @@
+menu "Non-volatile storage"
+
+config MP_BLOB_SUPPORT
+    bool "Enable multi-page blob support"
+    default n
+    help
+        When enabled, blobs larger than the sector size are split and stored on multiple sectors.
+        This removes the earlier limitation of 1984 bytes for storing data-blobs.
+endmenu

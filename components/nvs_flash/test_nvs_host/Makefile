@@ -39,6 +39,9 @@ $(OUTPUT_DIR):
 test: $(TEST_PROGRAM)
 	./$(TEST_PROGRAM) -d yes exclude:[long]
 
+test_mp_blob_support: CPPFLAGS += -DCONFIG_MP_BLOB_SUPPORT
+test_mp_blob_support: test
+
 long-test: $(TEST_PROGRAM)
 	./$(TEST_PROGRAM) -d yes
 

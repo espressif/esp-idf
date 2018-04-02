@@ -9,6 +9,7 @@
 #include "esp_partition.h"
 #include "esp_log.h"
 #include <string.h>
+#include "esp_system.h"
 
 static const char* TAG = "test_nvs";
 
@@ -196,20 +197,56 @@ TEST_CASE("calculate used and free space", "[nvs]")
     uint32_t blob[12];
     TEST_ESP_OK(nvs_set_blob(handle_3, "bl1", &blob, sizeof(blob)));
     TEST_ESP_OK(nvs_get_stats(NULL, &stat1));
+#ifdef CONFIG_MP_BLOB_SUPPORT
+    TEST_ASSERT_TRUE(stat1.free_entries + 4 == stat2.free_entries);
+#else
     TEST_ASSERT_TRUE(stat1.free_entries + 3 == stat2.free_entries);
+#endif
+
     TEST_ASSERT_TRUE(stat1.namespace_count == 3);
     TEST_ASSERT_TRUE(stat1.total_entries == stat2.total_entries);
+#ifdef CONFIG_MP_BLOB_SUPPORT
+    TEST_ASSERT_TRUE(stat1.used_entries == 12);
+#else
     TEST_ASSERT_TRUE(stat1.used_entries == 11);
-
+#endif
     // amount valid pair in namespace 2
     size_t h3_count_entries;
     TEST_ESP_OK(nvs_get_used_entry_count(handle_3, &h3_count_entries));
+#ifdef CONFIG_MP_BLOB_SUPPORT
+    TEST_ASSERT_TRUE(h3_count_entries == 4);
+#else
     TEST_ASSERT_TRUE(h3_count_entries == 3);
-
+#endif
     TEST_ASSERT_TRUE(stat1.used_entries == (h1_count_entries + h2_count_entries + h3_count_entries + stat1.namespace_count));
 
     nvs_close(handle_3);
 
     TEST_ESP_OK(nvs_flash_erase());
     TEST_ESP_OK(nvs_flash_deinit());
+}
+
+TEST_CASE("check for memory leaks in nvs_set_blob", "[nvs]")
+{
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+    TEST_ESP_OK( err );
+
+    for (int i = 0; i < 500; ++i) {
+        nvs_handle my_handle;
+        uint8_t key[20] = {0};
+
+        TEST_ESP_OK( nvs_open("test_namespace", NVS_READWRITE, &my_handle) );
+        TEST_ESP_OK( nvs_set_blob(my_handle, "key", key, sizeof(key)) );
+        TEST_ESP_OK( nvs_commit(my_handle) );
+        nvs_close(my_handle);
+        printf("%d\n", esp_get_free_heap_size());
+    }
+
+    nvs_flash_deinit();
+    printf("%d\n", esp_get_free_heap_size());
+    /* heap leaks will be checked in unity_platform.c */
 }
