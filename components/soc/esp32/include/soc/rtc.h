@@ -427,7 +427,6 @@ void rtc_clk_wait_for_slow_cycle();
  * @brief sleep configuration for rtc_sleep_init function
  */
 typedef struct {
-    uint32_t soc_clk_sel : 2;           //!< SoC clock select, see RTC_CNTL_SOC_CLK_SEL
     uint32_t lslp_mem_inf_fpu : 1;      //!< force normal voltage in sleep mode (digital domain memory)
     uint32_t rtc_mem_inf_fpu : 1;       //!< force normal voltage in sleep mode (RTC memory)
     uint32_t rtc_mem_inf_follow_cpu : 1;//!< keep low voltage in sleep mode (even if ULP/touch is used)
@@ -455,7 +454,6 @@ typedef struct {
  * @param RTC_SLEEP_PD_x flags combined using bitwise OR
  */
 #define RTC_SLEEP_CONFIG_DEFAULT(sleep_flags) { \
-    .soc_clk_sel = RTC_CNTL_SOC_CLK_SEL_XTL, \
     .lslp_mem_inf_fpu = 0, \
     .rtc_mem_inf_fpu = 0, \
     .rtc_mem_inf_follow_cpu = ((sleep_flags) & RTC_SLEEP_PD_RTC_MEM_FOLLOW_CPU) ? 1 : 0, \
