@@ -60,8 +60,28 @@ typedef enum {
     ESP_SLEEP_WAKEUP_TIMER,        //!< Wakeup caused by timer
     ESP_SLEEP_WAKEUP_TOUCHPAD,     //!< Wakeup caused by touchpad
     ESP_SLEEP_WAKEUP_ULP,          //!< Wakeup caused by ULP program
-} esp_sleep_wakeup_cause_t;
+} esp_sleep_source_t;
 
+/* Leave this type define for compatibility */
+typedef esp_sleep_source_t esp_sleep_wakeup_cause_t;
+
+/**
+ * @brief Disable wakeup source
+ *
+ * This function is used to deactivate wake up trigger for source
+ * defined as parameter of the function.
+ *
+ * @note This function does not modify wake up configuration in RTC.
+ *       It will be performed in esp_sleep_start function.
+ *
+ * See docs/sleep-modes.rst for details.
+ *
+ * @param source - number of source to disable of type esp_sleep_source_t
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_STATE if trigger was not active
+ */
+esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source);
 
 /**
  * @brief Enable wakeup by ULP coprocessor
