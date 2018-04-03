@@ -128,3 +128,12 @@ int net80211_printf(const char* format, ...)
     va_end(arg);
     return res;
 }
+
+int coexist_printf(const char* format, ...)
+{
+    va_list arg;
+    va_start(arg, format);
+    int res = lib_printf("coexist", format, arg);
+    va_end(arg);
+    return res;
+}

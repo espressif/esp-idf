@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,70 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef __ESP_COEXIST_H__
+#define __ESP_COEXIST_H__
+
 #include <stdbool.h>
+#include "esp_err.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * @brief coex prefer value
+ */
 typedef enum {
-    COEX_PREFER_WIFI = 0,
-    COEX_PREFER_BT,
-    COEX_PREFER_BALANCE,
-    COEX_PREFER_NUM,
-} coex_prefer_t;
-
-/**
- * @brief Init software coexist
- *        extern function for internal use.
- *
- * @return Init ok or failed.
- */
-esp_err_t coex_init(void);
-
-/**
- * @brief De-init software coexist
- *        extern function for internal use.
- */
-void coex_deinit(void);
-
-/**
- * @brief Pause software coexist
- *        extern function for internal use.
- */
-void coex_pause(void);
-
-/**
- * @brief Resume software coexist
- *        extern function for internal use.
- */
-void coex_resume(void);
-
-/**
- * @brief Get software coexist version string
- *        extern function for internal use.
- * @return : version string
- */
-const char *coex_version_get(void);
-
-/**
- * @brief Coexist performance preference set from libbt.a
- *        extern function for internal use.
- *
- *  @param prefer : the prefer enumeration value
- *  @return : ESP_OK - success, other - failed
- */
-esp_err_t coex_preference_set(coex_prefer_t prefer);
+    ESP_COEX_PREFER_WIFI = 0,       /*!< Prefer to WiFi, WiFi will have more opportunity to use RF */
+    ESP_COEX_PREFER_BT,             /*!< Prefer to bluetooth, bluetooth will have more opportunity to use RF */
+    ESP_COEX_PREFER_BALANCE,        /*!< Do balance of WiFi and bluetooth */
+    ESP_COEX_PREFER_NUM,            /*!< Prefer value numbers */
+} esp_coex_prefer_t;
 
 /**
  * @brief Get software coexist version string
  *
  * @return : version string
  */
-static inline const char *esp_coex_version_get(void)
-{
-    return coex_version_get();
-}
+const char *esp_coex_version_get(void);
 
 /**
  * @brief Set coexist preference of performance
@@ -87,11 +49,11 @@ static inline const char *esp_coex_version_get(void)
  *  @param prefer : the prefer enumeration value
  *  @return : ESP_OK - success, other - failed
  */
-static inline esp_err_t esp_coex_preference_set(coex_prefer_t prefer)
-{
-    return coex_preference_set(prefer);
-}
+esp_err_t esp_coex_preference_set(esp_coex_prefer_t prefer);
 
 #ifdef __cplusplus
 }
 #endif
+
+
+#endif /* __ESP_COEXIST_H__ */
