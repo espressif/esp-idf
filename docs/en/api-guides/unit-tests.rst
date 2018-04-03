@@ -84,6 +84,30 @@ DUT2 (slave) console::
 Once the signal is set from DUT2, you need to press "Enter" on DUT1, then DUT1 unblocks from ``unity_wait_for_signal`` and starts to change GPIO level.
 
 
+Add multiple stages test cases
+-------------------------------
+
+The normal test cases are expected to finish without reset (or only need to check if reset happens). Sometimes we want to run some specific test after certain kinds of reset. 
+For example, we want to test if reset reason is correct after wakeup from deep sleep. We need to create deep sleep reset first and then check the reset reason.
+To support this, we can define multiple stages test case, to group a set of test functions together::
+
+    static void trigger_deepsleep(void)
+    {
+        esp_sleep_enable_timer_wakeup(2000);
+        esp_deep_sleep_start();
+    }
+
+    void check_deepsleep_reset_reason()
+    {
+        RESET_REASON reason = rtc_get_reset_reason(0);
+        TEST_ASSERT(reason == DEEPSLEEP_RESET);
+    }
+
+    TEST_CASE_MULTIPLE_STAGES("reset reason check for deepsleep", "[esp32]", trigger_deepsleep, check_deepsleep_reset_reason);
+
+Multiple stages test cases present a group of test functions to users. It need user interactions (select case and select different stages) to run the case.
+
+
 Building unit test app
 ----------------------
 
@@ -123,7 +147,7 @@ When unit test app is idle, press "Enter" will make it print test menu with all 
     (10)    "global initializers run in the correct order" [cxx]
     (11)    "before scheduler has started, static initializers work correctly" [cxx]
     (12)    "adc2 work with wifi" [adc]
-    (13)    "gpio master/slave test example" [ignore][misc][test_env=UT_T2_1]
+    (13)    "gpio master/slave test example" [ignore][misc][test_env=UT_T2_1][multi_device]
             (1)     "gpio_master_test"
             (2)     "gpio_slave_test"
     (14)    "SPI Master clockdiv calculation routines" [spi]
@@ -132,6 +156,9 @@ When unit test app is idle, press "Enter" will make it print test menu with all 
     (17)    "SPI Master no response when switch from host1 (HSPI) to host2 (VSPI)" [spi]
     (18)    "SPI Master DMA test, TX and RX in different regions" [spi]
     (19)    "SPI Master DMA test: length, start, not aligned" [spi]
+    (20)    "reset reason check for deepsleep" [esp32][test_env=UT_T2_1][multi_stage]
+            (1)     "trigger_deepsleep"
+            (2)     "check_deepsleep_reset_reason"
 
 Normal case will print the case name and description. Master slave cases will also print the sub-menu (the registered test function names).
 
@@ -145,7 +172,10 @@ Test cases can be run by inputting one of the following:
 
 - An asterisk to run all test cases
 
-After you select multiple devices test case, it will print sub menu::
+``[multi_device]`` and ``[multi_stage]`` tags tell the test runner whether a test case is a multiple devices or multiple stages test case.
+These tags are automatically added by ```TEST_CASE_MULTIPLE_STAGES`` and ``TEST_CASE_MULTIPLE_DEVICES`` macros.
+
+After you select a multiple devices test case, it will print sub menu::
 
     Running gpio master/slave test example...
     gpio master/slave test example
@@ -153,3 +183,14 @@ After you select multiple devices test case, it will print sub menu::
             (2)     "gpio_slave_test"
 
 You need to input number to select the test running on the DUT.
+
+Similar to multiple devices test cases, multiple stages test cases will also print sub menu::
+
+    Running reset reason check for deepsleep...
+    reset reason check for deepsleep
+            (1)     "trigger_deepsleep"
+            (2)     "check_deepsleep_reset_reason"
+
+First time you execute this case, input ``1`` to run first stage (trigger deepsleep).
+After DUT is rebooted and able to run test cases, select this case again and input ``2`` to run the second stage.
+The case only passes if the last stage passes and all previous stages trigger reset.
