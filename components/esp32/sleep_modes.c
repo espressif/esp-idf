@@ -42,6 +42,9 @@
 // Time from VDD_SDIO power up to first flash read in ROM code
 #define VDD_SDIO_POWERUP_TO_FLASH_READ_US 700
 
+#define CHECK_SOURCE(source, value, mask) ((s_config.wakeup_triggers & mask) && \
+                                            (source == value))
+
 /**
  * Internal structure which holds all requested deep sleep parameters
  */
@@ -281,6 +284,40 @@ esp_err_t esp_light_sleep_start()
 }
 
 void system_deep_sleep(uint64_t) __attribute__((alias("esp_deep_sleep")));
+
+esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
+{
+    // For most of sources it is enough to set trigger mask in local
+    // configuration structure. The actual RTC wake up options
+    // will be updated by esp_sleep_start().
+    if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_TIMER, RTC_TIMER_TRIG_EN)) {
+        s_config.wakeup_triggers &= ~RTC_TIMER_TRIG_EN;
+        s_config.sleep_duration = 0;
+    }
+    else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_EXT0, RTC_EXT0_TRIG_EN)) {
+        s_config.ext0_rtc_gpio_num = 0;
+        s_config.ext0_trigger_level = 0;
+        s_config.wakeup_triggers &= ~RTC_EXT0_TRIG_EN;
+    }
+    else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_EXT1, RTC_EXT1_TRIG_EN)) {
+        s_config.ext1_rtc_gpio_mask = 0;
+        s_config.ext1_trigger_mode = 0;
+        s_config.wakeup_triggers &= ~RTC_EXT1_TRIG_EN;
+    }
+    else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_TOUCHPAD, RTC_TOUCH_TRIG_EN)) {
+        s_config.wakeup_triggers &= ~RTC_TOUCH_TRIG_EN;
+    }
+#ifdef CONFIG_ULP_COPROC_ENABLED
+    else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_ULP, RTC_ULP_TRIG_EN)) {
+        s_config.wakeup_triggers &= ~RTC_ULP_TRIG_EN;
+    }
+#endif
+    else {
+        ESP_LOGE(TAG, "Incorrect wakeup source (%d) to disable.", (int) source);
+        return ESP_ERR_INVALID_STATE;
+    }
+    return ESP_OK;
+}
 
 esp_err_t esp_sleep_enable_ulp_wakeup()
 {
