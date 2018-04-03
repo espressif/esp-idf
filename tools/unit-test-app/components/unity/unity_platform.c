@@ -145,13 +145,13 @@ void unity_testcase_register(struct test_desc_t* desc)
     }
 }
 
-/* print the multiple devices case name and its sub-menu
+/* print the multiple function case name and its sub-menu
  * e.g:
  * (1) spi master/slave case
  *       (1)master case
  *       (2)slave case
  * */
-static void print_multiple_devices_test_menu(const struct test_desc_t* test_ms)
+static void print_multiple_function_test_menu(const struct test_desc_t* test_ms)
  {
     unity_printf("%s\n", test_ms->name);
     for (int i = 0; i < test_ms->test_fn_count; i++)
@@ -160,12 +160,12 @@ static void print_multiple_devices_test_menu(const struct test_desc_t* test_ms)
     }
  }
 
-void multiple_devices_option(const struct test_desc_t* test_ms)
+void multiple_function_option(const struct test_desc_t* test_ms)
 {
     int selection;
     char cmdline[256] = {0};
 
-    print_multiple_devices_test_menu(test_ms);
+    print_multiple_function_test_menu(test_ms);
     while(strlen(cmdline) == 0)
     {
         /* Flush anything already in the RX buffer */
@@ -175,7 +175,7 @@ void multiple_devices_option(const struct test_desc_t* test_ms)
         UartRxString((uint8_t*) cmdline, sizeof(cmdline) - 1);
         if(strlen(cmdline) == 0) {
             /* if input was newline, print a new menu */
-            print_multiple_devices_test_menu(test_ms);
+            print_multiple_function_test_menu(test_ms);
         }
     }
     selection = atoi((const char *) cmdline) - 1;
@@ -194,7 +194,7 @@ static void unity_run_single_test(const struct test_desc_t* test)
     if(test->test_fn_count == 1) {
         UnityDefaultTestRun(test->fn[0], test->name, test->line);
     } else {
-        multiple_devices_option(test);
+        multiple_function_option(test);
     }
 }
 
