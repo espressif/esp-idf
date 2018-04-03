@@ -190,6 +190,13 @@ esp_err_t esp_timer_delete(esp_timer_handle_t timer);
 int64_t esp_timer_get_time();
 
 /**
+ * @brief Get the timestamp when the next timeout is expected to occur
+ * @return Timestamp of the nearest timer event, in microseconds.
+ *         The timebase is the same as for the values returned by esp_timer_get_time.
+ */
+int64_t esp_timer_get_next_alarm();
+
+/**
  * @brief Dump the list of timers to a stream
  *
  * If CONFIG_ESP_TIMER_PROFILING option is enabled, this prints the list of all

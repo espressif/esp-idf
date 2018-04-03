@@ -455,6 +455,18 @@ esp_err_t esp_timer_dump(FILE* stream)
     return ESP_OK;
 }
 
+int64_t IRAM_ATTR esp_timer_get_next_alarm()
+{
+    int64_t next_alarm = INT64_MAX;
+    timer_list_lock();
+    esp_timer_handle_t it = LIST_FIRST(&s_timers);
+    if (it) {
+        next_alarm = it->alarm;
+    }
+    timer_list_unlock();
+    return next_alarm;
+}
+
 int64_t IRAM_ATTR esp_timer_get_time()
 {
     return (int64_t) esp_timer_impl_get_time();
