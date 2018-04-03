@@ -411,6 +411,19 @@ int uart_pattern_pop_pos(uart_port_t uart_num)
     return pos;
 }
 
+int uart_pattern_get_pos(uart_port_t uart_num)
+{
+    UART_CHECK((p_uart_obj[uart_num]), "uart driver error", (-1));
+    UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
+    uart_pat_rb_t* pat_pos = &p_uart_obj[uart_num]->rx_pattern_pos;
+    int pos = -1;
+    if (pat_pos != NULL && pat_pos->rd != pat_pos->wr) {
+        pos = pat_pos->data[pat_pos->rd];
+    }
+    UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
+    return pos;
+}
+
 esp_err_t uart_pattern_queue_reset(uart_port_t uart_num, int queue_length)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
