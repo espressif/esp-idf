@@ -518,6 +518,35 @@ esp_err_t gpio_set_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t streng
   */
 esp_err_t gpio_get_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t* strength);
 
+/**
+  * @brief Set gpio pad hold function.
+  *
+  * The gpio pad hold function works in both input and output modes, but must be output-capable gpios.
+  * If pad hold enabled:
+  *   in output mode: the output level of the pad will be force locked and can not be changed.
+  *   in input mode: the input value read will not change, regardless the changes of input signal.
+  *
+  * Power down or call gpio_hold_dis will disable this function.
+  *
+  * @param gpio_num GPIO number, only support output-capable GPIOs
+  *
+  * @return
+  *     - ESP_OK Success
+  *     - ESP_ERR_NOT_SUPPORTED Not support pad hold function
+  */
+esp_err_t gpio_hold_en(gpio_num_t gpio_num);
+
+/**
+  * @brief Unset gpio pad hold function.
+  *
+  * @param gpio_num GPIO number, only support output-capable GPIOs
+  *
+  * @return
+  *     - ESP_OK Success
+  *     - ESP_ERR_NOT_SUPPORTED Not support pad hold function
+  */
+ esp_err_t gpio_hold_dis(gpio_num_t gpio_num);
+
 #ifdef __cplusplus
 }
 #endif
