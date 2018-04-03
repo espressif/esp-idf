@@ -111,17 +111,29 @@ build_template_app:
     BATCH_BUILD: "1"
     V: "0"
 
-build_ssc:
+.build_ssc_template: &build_ssc_template
   <<: *build_template
   artifacts:
     paths:
       - SSC/ssc_bin
-    expire_in: 6 mos
+    expire_in: 1 mos
+  variables:
+    SSC_CONFIG_FOLDER: "$CI_PROJECT_DIR/SSC/configs/ESP32_IDF"
   script:
     - git clone $SSC_REPOSITORY
     - cd SSC
     - python $CHECKOUT_REF_SCRIPT SSC
-    - MAKEFLAGS= ./gen_misc_ng.sh
+    - MAKEFLAGS= ./ci_build_ssc.sh "${CI_JOB_NAME}" "${IDF_PATH}/.gitlab-ci.yml"
+
+# don't forget to add to dependency to test_template when adding new build_ssc jobs
+build_ssc_00:
+  <<: *build_ssc_template
+
+build_ssc_01:
+  <<: *build_ssc_template
+
+build_ssc_02:
+  <<: *build_ssc_template
 
 build_esp_idf_tests:
   <<: *build_template
@@ -472,7 +484,7 @@ assign_test:
     EXAMPLE_CONFIG_OUTPUT_PATH: "$CI_PROJECT_DIR/examples/test_configs"
   artifacts:
     paths:
-      - test_bins
+      - $OUTPUT_BIN_PATH
       - components/idf_test/*/CIConfigs
       - components/idf_test/*/TC.sqlite
       - $EXAMPLE_CONFIG_OUTPUT_PATH
@@ -492,7 +504,7 @@ assign_test:
     - cd auto_test_script
     - python $CHECKOUT_REF_SCRIPT auto_test_script
     # assgin integration test cases
-    - python CIAssignTestCases.py -t $IDF_PATH/components/idf_test/integration_test -c $IDF_PATH/.gitlab-ci.yml -b $IDF_PATH/test_bins
+    - python CIAssignTestCases.py -t $IDF_PATH/components/idf_test/integration_test -c $IDF_PATH/.gitlab-ci.yml -b $IDF_PATH/SSC/ssc_bin
 
 .example_test_template: &example_test_template
   stage: test
@@ -544,6 +556,9 @@ assign_test:
   allow_failure: true
   dependencies:
     - assign_test
+    - build_ssc_00
+    - build_ssc_01
+    - build_ssc_02
   artifacts:
     when: always
     paths:
