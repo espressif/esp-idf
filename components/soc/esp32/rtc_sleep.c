@@ -89,9 +89,6 @@ static void rtc_sleep_pd(rtc_sleep_pd_config_t cfg)
 
 void rtc_sleep_init(rtc_sleep_config_t cfg)
 {
-    rtc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
-    REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL, cfg.soc_clk_sel);
-
     //set 5 PWC state machine times to fit in main state machine time
     REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_PLL_BUF_WAIT, 1);
     REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_XTL_BUF_WAIT, RTC_CNTL_XTL_BUF_WAIT_DEFAULT);
@@ -111,16 +108,6 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
     //set rtc memory timer
     REG_SET_FIELD(RTC_CNTL_TIMER5_REG, RTC_CNTL_RTCMEM_POWERUP_TIMER, RTC_MEM_POWERUP_DELAY);
     REG_SET_FIELD(RTC_CNTL_TIMER5_REG, RTC_CNTL_RTCMEM_WAIT_TIMER, RTC_MEM_WAIT_DELAY);
-
-    if (cfg.soc_clk_sel == RTC_CNTL_SOC_CLK_SEL_PLL) {
-        REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_PLL_BUF_WAIT, RTC_CNTL_PLL_BUF_WAIT_DEFAULT);
-    } else if (cfg.soc_clk_sel == RTC_CNTL_SOC_CLK_SEL_XTL) {
-        ets_update_cpu_frequency(xtal_freq);
-        rtc_clk_apb_freq_update(xtal_freq * MHZ);
-    } else if (cfg.soc_clk_sel == RTC_CNTL_SOC_CLK_SEL_8M) {
-        ets_update_cpu_frequency(8);
-        rtc_clk_apb_freq_update(8 * MHZ);
-    }
 
     if (cfg.lslp_mem_inf_fpu) {
         SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_LSLP_MEM_FORCE_PU);
