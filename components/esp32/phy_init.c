@@ -36,7 +36,7 @@
 #include "freertos/portmacro.h"
 #include "phy.h"
 #include "phy_init_data.h"
-#include "esp_coexist.h"
+#include "coexist_internal.h"
 #include "driver/periph_ctrl.h"
 
 
