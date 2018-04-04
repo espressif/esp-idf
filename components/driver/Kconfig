@@ -10,6 +10,14 @@ config ADC_FORCE_XPD_FSM
         be shut off when it is not working leading to lower power consumption. However 
         using the FSM control ADC power will increase the noise of ADC.
 
+config ADC2_DISABLE_DAC
+    bool "Disable DAC when ADC2 is used on GPIO 25 and 26"
+    default y
+    help
+        If this is set, the ADC2 driver will disables the output of the DAC corresponding to the specified channel. This is the default value.
+
+        For testing, disable this option so that we can measure the output of DAC by internal ADC.
+
 endmenu  # ADC Configuration
 
 #endmenu  # Driver configurations
