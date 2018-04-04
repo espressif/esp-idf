@@ -26,7 +26,7 @@ typedef volatile struct {
             uint32_t sar1_sample_bit:   2;
             uint32_t sar1_clk_gated:    1;
             uint32_t sar1_sample_num:   8;
-            uint32_t sar1_dig_force:    1;
+            uint32_t sar1_dig_force:    1;                /*1: ADC1 is controlled by the digital controller  0: RTC controller*/
             uint32_t sar1_data_inv:     1;
             uint32_t reserved29:        3;
         };
@@ -162,9 +162,9 @@ typedef volatile struct {
             uint32_t meas1_data_sar:   16;
             uint32_t meas1_done_sar:    1;
             uint32_t meas1_start_sar:   1;
-            uint32_t meas1_start_force: 1;
+            uint32_t meas1_start_force: 1;                /*1: ADC1 is controlled by the digital or RTC controller  0: Ulp coprocessor*/
             uint32_t sar1_en_pad:      12;
-            uint32_t sar1_en_pad_force: 1;
+            uint32_t sar1_en_pad_force: 1;                /*1: Data ports are controlled by the digital or RTC controller  0: Ulp coprocessor*/
         };
         uint32_t val;
     } sar_meas_start1;
@@ -174,8 +174,8 @@ typedef volatile struct {
             uint32_t touch_xpd_wait:   8;
             uint32_t touch_out_sel:    1;
             uint32_t touch_out_1en:    1;
-            uint32_t xpd_hall_force:   1;
-            uint32_t hall_phase_force: 1;
+            uint32_t xpd_hall_force:   1;                 /*1: Power of hall sensor is controlled by the digital or RTC controller  0: Ulp coprocessor*/
+            uint32_t hall_phase_force: 1;                 /*1: Phase of hall sensor is controlled by the digital or RTC controller  0: Ulp coprocessor*/
             uint32_t reserved28:       4;
         };
         uint32_t val;
@@ -224,8 +224,8 @@ typedef volatile struct {
             uint32_t sar2_sample_bit:   2;
             uint32_t sar2_clk_gated:    1;
             uint32_t sar2_sample_num:   8;
-            uint32_t sar2_pwdet_force:  1;
-            uint32_t sar2_dig_force:    1;
+            uint32_t sar2_pwdet_force:  1;                /*1: ADC2 is controlled by PWDET  0: digital or RTC controller*/
+            uint32_t sar2_dig_force:    1;                /*1: ADC2 is controlled by the digital controller  0: RTC controller*/
             uint32_t sar2_data_inv:     1;
             uint32_t reserved30:        2;
         };
@@ -236,9 +236,9 @@ typedef volatile struct {
             uint32_t meas2_data_sar:   16;
             uint32_t meas2_done_sar:    1;
             uint32_t meas2_start_sar:   1;
-            uint32_t meas2_start_force: 1;
+            uint32_t meas2_start_force: 1;                /*1: ADC2 is controlled by the digital or RTC controller  0: Ulp coprocessor*/
             uint32_t sar2_en_pad:      12;
-            uint32_t sar2_en_pad_force: 1;
+            uint32_t sar2_en_pad_force: 1;                /*1: Data ports are controlled by the digital or RTC controller  0: Ulp coprocessor*/
         };
         uint32_t val;
     } sar_meas_start2;
