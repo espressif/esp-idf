@@ -465,7 +465,7 @@ typedef struct {
     .wdt_flashboot_mod_en = 0, \
     .dig_dbias_wak = RTC_CNTL_DBIAS_1V10, \
     .dig_dbias_slp = RTC_CNTL_DBIAS_0V90, \
-    .rtc_dbias_wak = RTC_CNTL_DBIAS_0V90, \
+    .rtc_dbias_wak = RTC_CNTL_DBIAS_1V10, \
     .rtc_dbias_slp = RTC_CNTL_DBIAS_0V90, \
     .lslp_meminf_pd = 1, \
     .vddsdio_pd_en = ((sleep_flags) & RTC_SLEEP_PD_VDDSDIO) ? 1 : 0, \
