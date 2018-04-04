@@ -41,6 +41,7 @@ typedef int32_t esp_err_t;
 #define ESP_ERR_INVALID_MAC     0x10B
 
 #define ESP_ERR_WIFI_BASE       0x3000 /*!< Starting number of WiFi error codes */
+#define ESP_ERR_MESH_BASE       0x4000 /*!< Starting number of MESH error codes */
 
 /**
   * @brief Returns string for esp_err_t error codes
