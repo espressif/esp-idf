@@ -540,52 +540,54 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
             if(intr_st & BIT(i)) {
                 channel = i / 3;
                 rmt_obj_t* p_rmt = p_rmt_obj[channel];
-                switch(i % 3) {
-                    //TX END
-                    case 0:
-                        xSemaphoreGiveFromISR(p_rmt->tx_sem, &HPTaskAwoken);
-                        if(HPTaskAwoken == pdTRUE) {
-                            portYIELD_FROM_ISR();
-                        }
-                        p_rmt->tx_data = NULL;
-                        p_rmt->tx_len_rem = 0;
-                        p_rmt->tx_offset = 0;
-                        p_rmt->tx_sub_len = 0;
-                        if(rmt_tx_end_callback.function != NULL) {
-                            rmt_tx_end_callback.function(channel, rmt_tx_end_callback.arg);
-                        }
-                        break;
-                        //RX_END
-                    case 1:
-                        RMT.conf_ch[channel].conf1.rx_en = 0;
-                        int item_len = rmt_get_mem_len(channel);
-                        //change memory owner to protect data.
-                        RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_TX;
-                        if(p_rmt->rx_buf) {
-                            BaseType_t res = xRingbufferSendFromISR(p_rmt->rx_buf, (void*) RMTMEM.chan[channel].data32, item_len * 4, &HPTaskAwoken);
-                            if(res == pdFALSE) {
-                                ESP_EARLY_LOGE(RMT_TAG, "RMT RX BUFFER FULL");
-                            } else {
-
-                            }
+                if(p_rmt != NULL) {
+                    switch(i % 3) {
+                        //TX END
+                        case 0:
+                            xSemaphoreGiveFromISR(p_rmt->tx_sem, &HPTaskAwoken);
                             if(HPTaskAwoken == pdTRUE) {
                                 portYIELD_FROM_ISR();
                             }
-                        } else {
-                            ESP_EARLY_LOGE(RMT_TAG, "RMT RX BUFFER ERROR\n");
-                        }
-                        RMT.conf_ch[channel].conf1.mem_wr_rst = 1;
-                        RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_RX;
-                        RMT.conf_ch[channel].conf1.rx_en = 1;
-                        break;
-                        //ERR
-                    case 2:
-                        ESP_EARLY_LOGE(RMT_TAG, "RMT[%d] ERR", channel);
-                        ESP_EARLY_LOGE(RMT_TAG, "status: 0x%08x", RMT.status_ch[channel]);
-                        RMT.int_ena.val &= (~(BIT(i)));
-                        break;
-                    default:
-                        break;
+                            p_rmt->tx_data = NULL;
+                            p_rmt->tx_len_rem = 0;
+                            p_rmt->tx_offset = 0;
+                            p_rmt->tx_sub_len = 0;
+                            if(rmt_tx_end_callback.function != NULL) {
+                                rmt_tx_end_callback.function(channel, rmt_tx_end_callback.arg);
+                            }
+                            break;
+                            //RX_END
+                        case 1:
+                            RMT.conf_ch[channel].conf1.rx_en = 0;
+                            int item_len = rmt_get_mem_len(channel);
+                            //change memory owner to protect data.
+                            RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_TX;
+                            if(p_rmt->rx_buf) {
+                                BaseType_t res = xRingbufferSendFromISR(p_rmt->rx_buf, (void*) RMTMEM.chan[channel].data32, item_len * 4, &HPTaskAwoken);
+                                if(res == pdFALSE) {
+                                    ESP_EARLY_LOGE(RMT_TAG, "RMT RX BUFFER FULL");
+                                } else {
+
+                                }
+                                if(HPTaskAwoken == pdTRUE) {
+                                    portYIELD_FROM_ISR();
+                                }
+                            } else {
+                                ESP_EARLY_LOGE(RMT_TAG, "RMT RX BUFFER ERROR\n");
+                            }
+                            RMT.conf_ch[channel].conf1.mem_wr_rst = 1;
+                            RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_RX;
+                            RMT.conf_ch[channel].conf1.rx_en = 1;
+                            break;
+                            //ERR
+                        case 2:
+                            ESP_EARLY_LOGE(RMT_TAG, "RMT[%d] ERR", channel);
+                            ESP_EARLY_LOGE(RMT_TAG, "status: 0x%08x", RMT.status_ch[channel]);
+                            RMT.int_ena.val &= (~(BIT(i)));
+                            break;
+                        default:
+                            break;
+                    }
                 }
                 RMT.int_clr.val = BIT(i);
             }
@@ -595,27 +597,29 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
                 rmt_obj_t* p_rmt = p_rmt_obj[channel];
                 RMT.int_clr.val = BIT(i);
 
-                if(p_rmt->tx_data == NULL) {
-                    //skip
-                } else {
-                    const rmt_item32_t* pdata = p_rmt->tx_data;
-                    int len_rem = p_rmt->tx_len_rem;
-                    if(len_rem >= p_rmt->tx_sub_len) {
-                        rmt_fill_memory(channel, pdata, p_rmt->tx_sub_len, p_rmt->tx_offset);
-                        p_rmt->tx_data += p_rmt->tx_sub_len;
-                        p_rmt->tx_len_rem -= p_rmt->tx_sub_len;
-                    } else if(len_rem == 0) {
-                        RMTMEM.chan[channel].data32[p_rmt->tx_offset].val = 0;
+                if(p_rmt != NULL) {
+                    if(p_rmt->tx_data == NULL) {
+                        //skip
                     } else {
-                        rmt_fill_memory(channel, pdata, len_rem, p_rmt->tx_offset);
-                        RMTMEM.chan[channel].data32[p_rmt->tx_offset + len_rem].val = 0;
-                        p_rmt->tx_data += len_rem;
-                        p_rmt->tx_len_rem -= len_rem;
-                    }
-                    if(p_rmt->tx_offset == 0) {
-                        p_rmt->tx_offset = p_rmt->tx_sub_len;
-                    } else {
-                        p_rmt->tx_offset = 0;
+                        const rmt_item32_t* pdata = p_rmt->tx_data;
+                        int len_rem = p_rmt->tx_len_rem;
+                        if(len_rem >= p_rmt->tx_sub_len) {
+                            rmt_fill_memory(channel, pdata, p_rmt->tx_sub_len, p_rmt->tx_offset);
+                            p_rmt->tx_data += p_rmt->tx_sub_len;
+                            p_rmt->tx_len_rem -= p_rmt->tx_sub_len;
+                        } else if(len_rem == 0) {
+                            RMTMEM.chan[channel].data32[p_rmt->tx_offset].val = 0;
+                        } else {
+                            rmt_fill_memory(channel, pdata, len_rem, p_rmt->tx_offset);
+                            RMTMEM.chan[channel].data32[p_rmt->tx_offset + len_rem].val = 0;
+                            p_rmt->tx_data += len_rem;
+                            p_rmt->tx_len_rem -= len_rem;
+                        }
+                        if(p_rmt->tx_offset == 0) {
+                            p_rmt->tx_offset = p_rmt->tx_sub_len;
+                        } else {
+                            p_rmt->tx_offset = 0;
+                        }
                     }
                 }
             }
