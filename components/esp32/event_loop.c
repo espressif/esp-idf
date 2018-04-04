@@ -21,6 +21,7 @@
 #include "esp_event.h"
 #include "esp_event_loop.h"
 #include "esp_task.h"
+#include "esp_mesh.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -76,6 +77,20 @@ esp_err_t esp_event_send(system_event_t *event)
         ESP_LOGE(TAG, "Event loop not initialized via esp_event_loop_init, but esp_event_send called");
         return ESP_ERR_INVALID_STATE;
     }
+
+    if (event->event_id == SYSTEM_EVENT_STA_GOT_IP || event->event_id == SYSTEM_EVENT_STA_LOST_IP) {
+        if (g_mesh_event_cb) {
+            mesh_event_t mevent;
+            if (event->event_id == SYSTEM_EVENT_STA_GOT_IP) {
+                mevent.id = MESH_EVENT_ROOT_GOT_IP;
+                memcpy(&mevent.info.got_ip, &event->event_info.got_ip, sizeof(system_event_sta_got_ip_t));
+            } else {
+                mevent.id = MESH_EVENT_ROOT_LOST_IP;
+            }
+            g_mesh_event_cb(mevent);
+        }
+    }
+
     portBASE_TYPE ret = xQueueSendToBack(s_event_queue, event, 0);
     if (ret != pdPASS) {
         if (event) {
