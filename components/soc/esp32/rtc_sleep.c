@@ -219,5 +219,8 @@ uint32_t rtc_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt)
     uint32_t reject = REG_GET_FIELD(RTC_CNTL_INT_RAW_REG, RTC_CNTL_SLP_REJECT_INT_RAW);
     SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG,
             RTC_CNTL_SLP_REJECT_INT_CLR | RTC_CNTL_SLP_WAKEUP_INT_CLR);
+
+    /* restore DBG_ATTEN to the default value */
+    REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_DBG_ATTEN, RTC_CNTL_DBG_ATTEN_DEFAULT);
     return reject;
 }
