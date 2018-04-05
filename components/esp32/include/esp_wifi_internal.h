@@ -81,7 +81,7 @@ void esp_wifi_internal_free_rx_buffer(void* buffer);
   *
   * @param  wifi_interface_t wifi_if : wifi interface id
   * @param  void *buffer : the buffer to be tansmit
-  * @param  u16_t len : the length of buffer
+  * @param  uint16_t len : the length of buffer
   *
   * @return
   *    - ERR_OK  : Successfully transmit the buffer to wifi driver
@@ -89,7 +89,7 @@ void esp_wifi_internal_free_rx_buffer(void* buffer);
   *    - ERR_IF : WiFi driver error
   *    - ERR_ARG : Invalid argument
   */
-int esp_wifi_internal_tx(wifi_interface_t wifi_if, void *buffer, u16_t len);
+int esp_wifi_internal_tx(wifi_interface_t wifi_if, void *buffer, uint16_t len);
 
 /**
   * @brief     The WiFi RX callback function
