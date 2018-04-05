@@ -108,8 +108,12 @@ macro(project name)
     idf_add_executable()
 
     # Write project description JSON file
+    make_json_list("${BUILD_COMPONENTS}" build_components_json)
+    make_json_list("${BUILD_COMPONENT_PATHS}" build_component_paths_json)
     configure_file("${IDF_PATH}/tools/cmake/project_description.json.in"
         "${CMAKE_BINARY_DIR}/project_description.json")
+    unset(build_components_json)
+    unset(build_component_paths_json)
 
     #
     # Finish component registration (add cross-dependencies, make

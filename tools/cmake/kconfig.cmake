@@ -52,6 +52,11 @@ function(kconfig_process_config)
         set(defaults_arg --defaults "${SDKCONFIG_DEFAULTS}")
     endif()
 
+    # Set these in the parent scope, so that they can be written to project_description.json
+    set(kconfigs "${kconfigs}")
+    set(COMPONENT_KCONFIGS "${kconfigs}" PARENT_SCOPE)
+    set(COMPONENT_KCONFIGS_PROJBUILD "${kconfigs_projbuild}" PARENT_SCOPE)
+
     set(confgen_basecommand
         ${PYTHON} ${IDF_PATH}/tools/kconfig_new/confgen.py
         --kconfig ${ROOT_KCONFIG}

@@ -170,3 +170,9 @@ function(target_linker_script target scriptfile)
     # executable(s) the library is linked to. This is done manually in components.cmake.
     set_property(TARGET "${target}" APPEND PROPERTY LINK_DEPENDS "${abs_script}")
 endfunction()
+
+# Convert a CMake list to a JSON list and store it in a variable
+function(make_json_list list variable)
+    string(REPLACE ";" "\", \"" result "[ \"${list}\" ]")
+    set("${variable}" "${result}" PARENT_SCOPE)
+endfunction()
