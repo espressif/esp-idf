@@ -638,7 +638,7 @@ You can pass any of these flasher argument files to ``esptool.py`` as follows::
 
 Alternatively, it is possible to manually copy the parameters from the argument file and pass them on the command line.
 
-The build directory also contains a generated file ``project_description.json`` which contains project information, including project flash information, in the JSON format. This file is used by ``idf.py`` and can also be used by other tools which need information about the project build.
+The build directory also contains a generated file ``flasher_args.json`` which contains project flash information, in JSON format. This file is used by ``idf.py`` and can also be used by other tools which need information about the project build.
 
 Building the Bootloader
 =======================
@@ -727,6 +727,14 @@ The following variables no longer have default values:
 
 It is no longer necessary to set ``COMPONENT_SRCDIRS`` if setting ``COMPONENT_SRCS`` (in fact, ``COMPONENT_SRCDIRS`` is ignored if ``COMPONENT_SRCS`` is set).
 
+Build System Metadata
+=====================
+
+For integration into IDEs and other build systems, when cmake runs the build process generates a number of metadata files in the ``build/`` directory. To regenerate these files, run ``cmake`` or ``idf.py reconfigure`` (or any other ``idf.py`` build command).
+
+- ``project_description.json`` contains some general information about the project, configured paths, etc.
+- ``flasher_args.json`` contains esptool.py arguments to flash the project's binary files. There are also ``flash_*_args`` files which can be used directly with esptool.py. See `Flash arguments`.
+- ``CMakeCache.txt`` is the CMake cache file which contains other information about the CMake process, toolchain, etc.
 
 .. _esp-idf-template: https://github.com/espressif/esp-idf-template
 .. _cmake: https://cmake.org
