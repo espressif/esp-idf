@@ -8,7 +8,7 @@ config WIFI_SSID
 
 config WIFI_PASSWORD
     string "WiFi Password"
-	default "myssid"
+	default "mypassword"
 	help
 		WiFi password (WPA or WPA2) for the example to use.
 
