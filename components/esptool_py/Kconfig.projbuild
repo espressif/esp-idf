@@ -4,15 +4,19 @@ config ESPTOOLPY_PORT
 	string "Default serial port"
 	default "/dev/ttyUSB0"
 	help
-		The serial port that's connected to the ESP chip. This can be overridden by setting the ESPPORT
-		environment variable.
+        The serial port that's connected to the ESP chip. This can be overridden by setting the ESPPORT
+        environment variable.
+
+        This value is ignored when using the CMake-based build system or idf.py.
 
 choice ESPTOOLPY_BAUD
-	prompt "Default baud rate"
-	default ESPTOOLPY_BAUD_115200B
-	help
-		Default baud rate to use while communicating with the ESP chip. Can be overridden by
-		setting the ESPBAUD variable.
+    prompt "Default baud rate"
+    default ESPTOOLPY_BAUD_115200B
+    help
+        Default baud rate to use while communicating with the ESP chip. Can be overridden by
+        setting the ESPBAUD variable.
+
+        This value is ignored when using the CMake-based build system or idf.py.
 
 config ESPTOOLPY_BAUD_115200B
 	bool "115200 baud"
