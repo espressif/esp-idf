@@ -71,9 +71,9 @@ ESP32 是一套 Wi-Fi (2.4 GHz) 和蓝牙 (4.2) 双模解决方案，集成了�
 .. toctree::
     :hidden:
 
-    Windows <../get-started/windows-setup>
-    Linux <../get-started/linux-setup> 
-    MacOS <../get-started/macos-setup>
+    Windows <windows-setup>
+    Linux <linux-setup> 
+    MacOS <macos-setup>
 
 +-------------------+-------------------+-------------------+
 | |windows-logo|    | |linux-logo|      | |macos-logo|      |
@@ -82,17 +82,17 @@ ESP32 是一套 Wi-Fi (2.4 GHz) 和蓝牙 (4.2) 双模解决方案，集成了�
 +-------------------+-------------------+-------------------+
 
 .. |windows-logo| image:: ../../_static/windows-logo.png
-    :target: ../get-started/windows-setup.html
+    :target: windows-setup.html
 
 .. |linux-logo| image:: ../../_static/linux-logo.png
-    :target: ../get-started/linux-setup.html
+    :target: linux-setup.html
 
 .. |macos-logo| image:: ../../_static/macos-logo.png
-    :target: ../get-started/macos-setup.html
+    :target: macos-setup.html
 
-.. _Windows: ../get-started/windows-setup.html
-.. _Linux: ../get-started/linux-setup.html
-.. _Mac OS: ../get-started/macos-setup.html
+.. _Windows: windows-setup.html
+.. _Linux: linux-setup.html
+.. _Mac OS: macos-setup.html
 
 .. note::
 
@@ -316,9 +316,9 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
 .. toctree::
     :maxdepth: 1
 
-    ../get-started/add-idf_path-to-profile
-    ../get-started/establish-serial-connection
-    ../get-started/make-project
-    ../get-started/eclipse-setup
-    ../get-started/idf-monitor
-    ../get-started/toolchain-setup-scratch
+    add-idf_path-to-profile
+    establish-serial-connection
+    make-project
+    eclipse-setup
+    idf-monitor
+    toolchain-setup-scratch
