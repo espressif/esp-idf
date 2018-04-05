@@ -6,12 +6,6 @@
     "app_elf":            "${PROJECT_NAME}.elf",
     "app_bin":            "${PROJECT_NAME}.bin",
     "git_revision":       "${IDF_VER}",
-    "project_binaries":  {
-        "bootloader":        [ "0x1000", "bootloader/bootloader.bin" ],
-        "partition_table":   [ "0x8000", "partition_table/partition-table.bin" ],
-        "app":               [ "${CONFIG_APP_OFFSET}", "${PROJECT_NAME}.bin" ],
-        "phy_data":          [ "${PHY_PARTITION_OFFSET}", "${PHY_PARTITION_BIN_FILE}" ]
-    },
     "phy_data_partition": "${CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION}",
     "monitor_baud" : "${CONFIG_MONITOR_BAUD}"
 }

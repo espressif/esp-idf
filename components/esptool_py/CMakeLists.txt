@@ -7,3 +7,8 @@ foreach(part project app bootloader)
         "${CMAKE_BINARY_DIR}/flash_${part}_args"
         )
 endforeach()
+
+configure_file(
+    "${CMAKE_CURRENT_LIST_DIR}/flasher_args.json.in"
+    "${CMAKE_BINARY_DIR}/flasher_args.json"
+    )
