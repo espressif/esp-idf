@@ -27,43 +27,6 @@ static const char *TAG = "sh2lib";
 
 #define DBG_FRAME_SEND 1
 
-/* SSL connection on the TCP socket that is already connected */
-static int do_ssl_connect(struct sh2lib_handle *hd, int sockfd, const char *hostname)
-{
-    SSL_CTX *ssl_ctx = SSL_CTX_new(TLSv1_2_client_method());
-    if (!ssl_ctx) {
-        return -1;
-    }
-
-    unsigned char vector[] = "\x02h2";
-    SSL_CTX_set_alpn_protos(ssl_ctx, vector, strlen((char *)vector));
-    SSL *ssl = SSL_new(ssl_ctx);
-    if (!ssl) {
-        SSL_CTX_free(ssl_ctx);
-        return -1;
-    }
-
-    SSL_set_tlsext_host_name(ssl, hostname);
-    SSL_set_fd(ssl, sockfd);
-    int ret = SSL_connect(ssl);
-    if (ret < 1) {
-        int err = SSL_get_error(ssl, ret);
-        ESP_LOGE(TAG, "[ssl-connect] Failed SSL handshake ret=%d error=%d", ret, err);
-        SSL_CTX_free(ssl_ctx);
-        SSL_free(ssl);
-        return -1;
-    }
-    hd->ssl_ctx = ssl_ctx;
-    hd->ssl = ssl;
-    hd->sockfd = sockfd;
-    hd->hostname = strdup(hostname);
-
-    int flags = fcntl(hd->sockfd, F_GETFL, 0);
-    fcntl(hd->sockfd, F_SETFL, flags | O_NONBLOCK);
-
-    return 0;
-}
-
 /*
  * The implementation of nghttp2_send_callback type. Here we write
  * |data| with size |length| to the network and return the number of
