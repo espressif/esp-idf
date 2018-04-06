@@ -96,7 +96,7 @@ typedef struct esp_partition_iterator_opaque_* esp_partition_iterator_t;
  * However, this is the format used by this API.
  */
 typedef struct {
-    esp_partition_type_t type;          /*!< partition type (app/data) */
+    uint8_t type;			            /*!< partition type (app/data) */
     esp_partition_subtype_t subtype;    /*!< partition subtype */
     uint32_t address;                   /*!< starting address of the partition in flash */
     uint32_t size;                      /*!< size of the partition, in bytes */
@@ -119,7 +119,7 @@ typedef struct {
  *         Iterator obtained through this function has to be released
  *         using esp_partition_iterator_release when not used any more.
  */
-esp_partition_iterator_t esp_partition_find(esp_partition_type_t type, esp_partition_subtype_t subtype, const char* label);
+esp_partition_iterator_t esp_partition_find(uint8_t type, esp_partition_subtype_t subtype, const char* label);
 
 /**
  * @brief Find first partition based on one or more parameters
@@ -134,7 +134,7 @@ esp_partition_iterator_t esp_partition_find(esp_partition_type_t type, esp_parti
  * @return pointer to esp_partition_t structure, or NULL if no partition is found.
  *         This pointer is valid for the lifetime of the application.
  */
-const esp_partition_t* esp_partition_find_first(esp_partition_type_t type, esp_partition_subtype_t subtype, const char* label);
+const esp_partition_t* esp_partition_find_first(uint8_t type, esp_partition_subtype_t subtype, const char* label);
 
 /**
  * @brief Get esp_partition_t structure for given partition

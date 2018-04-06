@@ -58,7 +58,7 @@ static SLIST_HEAD(partition_list_head_, partition_list_item_) s_partition_list =
 static _lock_t s_partition_list_lock;
 
 
-esp_partition_iterator_t esp_partition_find(esp_partition_type_t type,
+esp_partition_iterator_t esp_partition_find(uint8_t type,
         esp_partition_subtype_t subtype, const char* label)
 {
     if (SLIST_EMPTY(&s_partition_list)) {
@@ -115,7 +115,7 @@ esp_partition_iterator_t esp_partition_next(esp_partition_iterator_t it)
     return it;
 }
 
-const esp_partition_t* esp_partition_find_first(esp_partition_type_t type,
+const esp_partition_t* esp_partition_find_first(uint8_t type,
         esp_partition_subtype_t subtype, const char* label)
 {
     esp_partition_iterator_t it = esp_partition_find(type, subtype, label);
