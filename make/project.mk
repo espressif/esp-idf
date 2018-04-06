@@ -267,6 +267,10 @@ COMMON_WARNING_FLAGS = -Wall -Werror=all \
 	-Wextra \
 	-Wno-unused-parameter -Wno-sign-compare
 
+ifdef CONFIG_WARN_WRITE_STRINGS
+COMMON_WARNING_FLAGS += -Wwrite-strings
+endif #CONFIG_WARN_WRITE_STRINGS
+
 # Flags which control code generation and dependency generation, both for C and C++
 COMMON_FLAGS = \
 	-ffunction-sections -fdata-sections \
