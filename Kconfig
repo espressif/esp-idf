@@ -148,6 +148,20 @@ config STACK_CHECK
     help
         Stack smashing protection.
 
+config WARN_WRITE_STRINGS
+    bool "Enable -Wwrite-strings warning flag"
+    default "n"
+    help
+        Adds -Wwrite-strings flag for the C/C++ compilers.
+
+        For C, this gives string constants the type "const char[]" so that
+        copying the address of one into a non-"const" "char *" pointer
+        produces a warning. This warning helps to find at compile time code
+        that tries to write into a string constant.
+
+        For C++, this warns about the deprecated conversion from string
+        literals to "char *".
+
 endmenu # Compiler Options
 
 menu "Component config"
