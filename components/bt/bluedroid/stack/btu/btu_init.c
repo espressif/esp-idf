@@ -17,19 +17,19 @@
  ******************************************************************************/
 #include <string.h>
 
-#include "bt_defs.h"
-#include "bt_target.h"
-#include "bt_trace.h"
-#include "controller.h"
-#include "alarm.h"
-#include "hash_map.h"
-#include "hash_functions.h"
-#include "thread.h"
-#include "mutex.h"
+#include "common/bt_defs.h"
+#include "common/bt_target.h"
+#include "common/bt_trace.h"
+#include "device/controller.h"
+#include "osi/alarm.h"
+#include "osi/hash_map.h"
+#include "osi/hash_functions.h"
+#include "osi/thread.h"
+#include "osi/mutex.h"
 
 #include "l2c_int.h"
-#include "dyn_mem.h"
-#include "btu.h"
+#include "stack/dyn_mem.h"
+#include "stack/btu.h"
 #include "btm_int.h"
 
 #if SDP_INCLUDED == TRUE
@@ -37,7 +37,7 @@
 #endif
 
 #if (BLE_INCLUDED == TRUE)
-#include "gatt_api.h"
+#include "stack/gatt_api.h"
 #include "gatt_int.h"
 #if SMP_INCLUDED == TRUE
 #include "smp_int.h"

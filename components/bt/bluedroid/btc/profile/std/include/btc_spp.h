@@ -15,11 +15,11 @@
 #ifndef __BTC_SPP_H__
 #define __BTC_SPP_H__
 
-#include "btc_task.h"
+#include "btc/btc_task.h"
 #include "esp_bt_defs.h"
 #include "esp_spp_api.h"
-#include "bt_target.h"
-#include "bta_jv_api.h"
+#include "common/bt_target.h"
+#include "bta/bta_jv_api.h"
 
 #if (defined BTC_SPP_INCLUDED && BTC_SPP_INCLUDED == TRUE)
 

@@ -16,17 +16,17 @@
  *
  ******************************************************************************/
 #include <string.h>
-#include "bt_trace.h"
-#include "bt_defs.h"
-#include "controller.h"
-#include "buffer_allocator.h"
-#include "hci_internals.h"
-#include "hci_layer.h"
-#include "packet_fragmenter.h"
+#include "common/bt_trace.h"
+#include "common/bt_defs.h"
+#include "device/controller.h"
+#include "hci/buffer_allocator.h"
+#include "hci/hci_internals.h"
+#include "hci/hci_layer.h"
+#include "hci/packet_fragmenter.h"
 
-#include "hash_map.h"
-#include "hash_functions.h"
-#include "bt_trace.h"
+#include "osi/hash_map.h"
+#include "osi/hash_functions.h"
+#include "common/bt_trace.h"
 
 
 #define APPLY_CONTINUATION_FLAG(handle) (((handle) & 0xCFFF) | 0x1000)

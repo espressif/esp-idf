@@ -22,11 +22,11 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 #if defined(BTA_AV_INCLUDED) && (BTA_AV_INCLUDED == TRUE)
 
 #include <string.h>
-#include "bta_av_co.h"
+#include "bta/bta_av_co.h"
 #include "bta_av_int.h"
 
 /*****************************************************************************

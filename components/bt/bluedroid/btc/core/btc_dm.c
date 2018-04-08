@@ -12,21 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 #include <stdlib.h>
 #include <string.h>
-#include "btc_common.h"
-#include "btc_dm.h"
-#include "btc_main.h"
-#include "bt_trace.h"
-#include "bt_target.h"
-#include "btc_storage.h"
-#include "btc_ble_storage.h"
+#include "btc/btc_common.h"
+#include "btc/btc_dm.h"
+#include "btc/btc_main.h"
+#include "common/bt_trace.h"
+#include "common/bt_target.h"
+#include "btc/btc_storage.h"
+#include "btc/btc_ble_storage.h"
 #include "esp_gap_ble_api.h"
 #include "btm_int.h"
-#include "bta_api.h"
-#include "bta_gatt_api.h"
-#include "allocator.h"
+#include "bta/bta_api.h"
+#include "bta/bta_gatt_api.h"
+#include "osi/allocator.h"
 
 #if (BTC_GAP_BT_INCLUDED == TRUE)
 #include "btc_gap_bt.h"

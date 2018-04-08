@@ -25,18 +25,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "allocator.h"
-#include "controller.h"
-#include "bt_types.h"
-#include "hcimsgs.h"
-#include "l2cdefs.h"
+#include "osi/allocator.h"
+#include "device/controller.h"
+#include "stack/bt_types.h"
+#include "stack/hcimsgs.h"
+#include "stack/l2cdefs.h"
 #include "l2c_int.h"
-#include "hcidefs.h"
-#include "btu.h"
-#include "btm_api.h"
+#include "stack/hcidefs.h"
+#include "stack/btu.h"
+#include "stack/btm_api.h"
 #include "btm_int.h"
-#include "hcidefs.h"
-#include "allocator.h"
+#include "stack/hcidefs.h"
+#include "osi/allocator.h"
 
 /*******************************************************************************
 **

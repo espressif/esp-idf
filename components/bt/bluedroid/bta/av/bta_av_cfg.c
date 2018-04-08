@@ -25,8 +25,8 @@
 
 #include <stddef.h>
 
-#include "bt_target.h"
-#include "bta_api.h"
+#include "common/bt_target.h"
+#include "bta/bta_api.h"
 #include "bta_av_int.h"
 
 #if defined(BTA_AV_INCLUDED) && (BTA_AV_INCLUDED == TRUE)

@@ -16,11 +16,11 @@
  *
  ******************************************************************************/
 
-#include "bt_defs.h"
-#include "bt_trace.h"
-#include "list.h"
-#include "hash_map.h"
-#include "allocator.h"
+#include "common/bt_defs.h"
+#include "common/bt_trace.h"
+#include "osi/list.h"
+#include "osi/hash_map.h"
+#include "osi/allocator.h"
 
 struct hash_map_t;
 

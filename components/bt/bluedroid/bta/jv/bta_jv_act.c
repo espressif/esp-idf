@@ -26,25 +26,25 @@
 #include <pthread.h>
 #include <stdlib.h>
 
-#include "allocator.h"
-#include "bt_types.h"
-#include "utl.h"
-#include "bta_sys.h"
-#include "bta_api.h"
-#include "bta_jv_api.h"
+#include "osi/allocator.h"
+#include "stack/bt_types.h"
+#include "bta/utl.h"
+#include "bta/bta_sys.h"
+#include "bta/bta_api.h"
+#include "bta/bta_jv_api.h"
 #include "bta_jv_int.h"
-#include "bta_jv_co.h"
-#include "btm_api.h"
+#include "bta/bta_jv_co.h"
+#include "stack/btm_api.h"
 #include "btm_int.h"
-#include "sdp_api.h"
-#include "l2c_api.h"
-#include "port_api.h"
+#include "stack/sdp_api.h"
+#include "stack/l2c_api.h"
+#include "stack/port_api.h"
 #include <string.h>
-#include "rfcdefs.h"
-#include "avct_api.h"
-#include "avdt_api.h"
-#include "gap_api.h"
-#include "l2c_api.h"
+#include "stack/rfcdefs.h"
+#include "stack/avct_api.h"
+#include "stack/avdt_api.h"
+#include "stack/gap_api.h"
+#include "stack/l2c_api.h"
 
 
 #if (defined BTA_JV_INCLUDED && BTA_JV_INCLUDED == TRUE)

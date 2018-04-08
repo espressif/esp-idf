@@ -24,17 +24,17 @@
  ******************************************************************************/
 #define LOG_TAG "bt_bta_gattc"
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 
-#include "utl.h"
-#include "bta_sys.h"
+#include "bta/utl.h"
+#include "bta/bta_sys.h"
 
 #include "bta_gattc_int.h"
-#include "l2c_api.h"
+#include "stack/l2c_api.h"
 #include "l2c_int.h"
 #include "gatt_int.h"
-#include "allocator.h"
-#include "mutex.h"
+#include "osi/allocator.h"
+#include "osi/mutex.h"
 
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
 #include "bta_hh_int.h"

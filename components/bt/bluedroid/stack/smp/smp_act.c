@@ -17,10 +17,10 @@
  ******************************************************************************/
 
 #include <string.h>
-#include "interop.h"
-#include "bt_target.h"
+#include "device/interop.h"
+#include "common/bt_target.h"
 #include "btm_int.h"
-#include "l2c_api.h"
+#include "stack/l2c_api.h"
 #include "smp_int.h"
 //#include "utils/include/bt_utils.h"
 

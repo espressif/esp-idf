@@ -18,15 +18,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include "bt_defs.h"
-#include "bt_trace.h"
-#include "alarm.h"
-#include "allocator.h"
-#include "list.h"
+#include "common/bt_defs.h"
+#include "common/bt_trace.h"
+#include "osi/alarm.h"
+#include "osi/allocator.h"
+#include "osi/list.h"
 #include "esp_timer.h"
-#include "btc_task.h"
-#include "btc_alarm.h"
-#include "mutex.h"
+#include "btc/btc_task.h"
+#include "btc/btc_alarm.h"
+#include "osi/mutex.h"
 
 typedef struct alarm_t {
     /* timer id point to here */

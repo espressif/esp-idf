@@ -18,7 +18,7 @@
 
 #include <string.h>
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 //#include "bt_utils.h"
 #include "gap_int.h"
 

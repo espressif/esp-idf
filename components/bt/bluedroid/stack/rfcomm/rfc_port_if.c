@@ -24,13 +24,13 @@
  *****************************************************************************/
 
 #include <string.h>
-#include "bt_target.h"
-#include "rfcdefs.h"
-#include "port_api.h"
-#include "l2c_api.h"
+#include "common/bt_target.h"
+#include "stack/rfcdefs.h"
+#include "stack/port_api.h"
+#include "stack/l2c_api.h"
 #include "port_int.h"
 #include "rfc_int.h"
-#include "bt_defs.h"
+#include "common/bt_defs.h"
 
 #if (defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)
 

@@ -15,15 +15,15 @@
 #include <string.h>
 
 #include "btc_spp.h"
-#include "btc_manage.h"
-#include "btc_task.h"
-#include "bta_jv_api.h"
-#include "bt_trace.h"
-#include "allocator.h"
+#include "btc/btc_manage.h"
+#include "btc/btc_task.h"
+#include "bta/bta_jv_api.h"
+#include "common/bt_trace.h"
+#include "osi/allocator.h"
 #include "esp_spp_api.h"
-#include "list.h"
+#include "osi/list.h"
 
-#include "mutex.h"
+#include "osi/mutex.h"
 #include <sys/errno.h>
 #include <sys/lock.h>
 #include <sys/fcntl.h>

@@ -23,12 +23,12 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
-#include "bta_api.h"
-#include "bta_sys.h"
+#include "common/bt_target.h"
+#include "bta/bta_api.h"
+#include "bta/bta_sys.h"
 #include "bta_av_int.h"
-#include "bta_av_ci.h"
-#include "allocator.h"
+#include "bta/bta_av_ci.h"
+#include "osi/allocator.h"
 
 #include <string.h>
 

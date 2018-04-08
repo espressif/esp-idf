@@ -33,7 +33,7 @@ Checksum and header-related functions.
 @{
 */
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 #include "oi_codec_sbc_private.h"
 #include "oi_assert.h"
 

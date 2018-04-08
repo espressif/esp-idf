@@ -17,15 +17,15 @@
  ******************************************************************************/
 
 
-#include "bt_target.h"
-#include "bt_defs.h"
-#include "btu.h"
+#include "common/bt_target.h"
+#include "common/bt_defs.h"
+#include "stack/btu.h"
 #include "gap_int.h"
-#include "l2cdefs.h"
+#include "stack/l2cdefs.h"
 #include "l2c_int.h"
 #include <string.h>
-#include "mutex.h"
-#include "allocator.h"
+#include "osi/mutex.h"
+#include "osi/allocator.h"
 
 #if GAP_CONN_INCLUDED == TRUE
 #include "btm_int.h"

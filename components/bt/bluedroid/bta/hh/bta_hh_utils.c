@@ -17,7 +17,7 @@
  ******************************************************************************/
 #include <string.h>
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 #if defined(BTA_HH_INCLUDED) && (BTA_HH_INCLUDED == TRUE)
 
 

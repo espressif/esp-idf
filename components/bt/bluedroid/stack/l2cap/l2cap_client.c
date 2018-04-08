@@ -17,15 +17,15 @@
  ******************************************************************************/
 #if (defined(L2CAP_CLIENT_INCLUDED) && L2CAP_CLIENT_INCLUDED == TRUE)
 #include <string.h>
-#include "bt_trace.h"
-#include "bt_defs.h"
-#include "bdaddr.h"
-#include "allocator.h"
-#include "buffer.h"
-#include "list.h"
-#include "osi.h"
-#include "l2cap_client.h"
-#include "l2c_api.h"
+#include "common/bt_trace.h"
+#include "common/bt_defs.h"
+#include "device/bdaddr.h"
+#include "osi/allocator.h"
+#include "osi/buffer.h"
+#include "osi/list.h"
+#include "osi/osi.h"
+#include "stack/l2cap_client.h"
+#include "stack/l2c_api.h"
 
 struct l2cap_client_t {
     l2cap_client_callbacks_t callbacks;

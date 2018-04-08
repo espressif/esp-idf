@@ -28,10 +28,10 @@
 #include <stdint.h>
 
 #ifdef BUILDCFG
-#include "bt_target.h"
+#include "common/bt_target.h"
 #endif
 
-#include "bt_types.h"
+#include "stack/bt_types.h"
 
 typedef short SINT16;
 typedef long SINT32;

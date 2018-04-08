@@ -22,15 +22,15 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if BLE_INCLUDED == TRUE
 
 #include "gatt_int.h"
-#include "l2c_api.h"
+#include "stack/l2c_api.h"
 #include "btm_int.h"
 #include "btm_ble_int.h"
-#include "allocator.h"
+#include "osi/allocator.h"
 
 /* Configuration flags. */
 #define GATT_L2C_CFG_IND_DONE   (1<<0)

@@ -23,24 +23,24 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 #if defined(BTA_AV_INCLUDED) && (BTA_AV_INCLUDED == TRUE)
 
 #include <string.h>
-#include "bta_av_api.h"
+#include "bta/bta_av_api.h"
 #include "bta_av_int.h"
-#include "avdt_api.h"
-#include "utl.h"
-#include "l2c_api.h"
-#include "allocator.h"
-#include "list.h"
+#include "stack/avdt_api.h"
+#include "bta/utl.h"
+#include "stack/l2c_api.h"
+#include "osi/allocator.h"
+#include "osi/list.h"
 #if( defined BTA_AR_INCLUDED ) && (BTA_AR_INCLUDED == TRUE)
-#include "bta_ar_api.h"
+#include "bta/bta_ar_api.h"
 #endif
 
 #define LOG_TAG "bt_bta_av"
 // #include "osi/include/log.h"
-#include "bt_trace.h"
+#include "common/bt_trace.h"
 
 /*****************************************************************************
 **  Constants

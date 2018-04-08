@@ -16,7 +16,7 @@
  *  limitations under the License.
  *
  ******************************************************************************/
-#include "bt_target.h"
+#include "common/bt_target.h"
 #include <stdlib.h>
 #include <oi_codec_sbc_private.h>
 

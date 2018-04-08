@@ -22,9 +22,9 @@
  *
  ******************************************************************************/
 #include <stddef.h>
-#include "utl.h"
-#include "btm_api.h"
-#include "allocator.h"
+#include "bta/utl.h"
+#include "stack/btm_api.h"
+#include "osi/allocator.h"
 
 /*******************************************************************************
 **

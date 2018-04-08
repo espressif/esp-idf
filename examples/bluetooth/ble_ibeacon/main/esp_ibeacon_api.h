@@ -22,7 +22,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include "controller.h"
 
 #include "esp_gap_ble_api.h"
 #include "esp_gattc_api.h"
@@ -73,6 +72,6 @@ typedef struct {
 /* Constant part of iBeacon data */
 extern esp_ble_ibeacon_head_t ibeacon_common_head;
 
-BOOLEAN esp_ble_is_ibeacon_packet (uint8_t *adv_data, uint8_t adv_data_len);
+bool esp_ble_is_ibeacon_packet (uint8_t *adv_data, uint8_t adv_data_len);
 
 esp_err_t esp_ble_config_ibeacon_data (esp_ble_ibeacon_vendor_t *vendor_config, esp_ble_ibeacon_t *ibeacon_adv_data);

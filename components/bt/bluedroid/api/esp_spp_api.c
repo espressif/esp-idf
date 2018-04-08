@@ -15,11 +15,11 @@
 #include <string.h>
 
 #include "esp_bt_main.h"
-#include "btc_manage.h"
+#include "btc/btc_manage.h"
 
 #include "btc_spp.h"
 #include "esp_spp_api.h"
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if (defined BTC_SPP_INCLUDED && BTC_SPP_INCLUDED == TRUE)
 

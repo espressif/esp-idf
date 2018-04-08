@@ -26,11 +26,11 @@
 
 #include <stdbool.h>
 
-#include "btm_api.h"
-#include "l2c_api.h"
-#include "l2cdefs.h"
-#include "list.h"
-#include "fixed_queue.h"
+#include "stack/btm_api.h"
+#include "stack/l2c_api.h"
+#include "stack/l2cdefs.h"
+#include "osi/list.h"
+#include "osi/fixed_queue.h"
 
 #define L2CAP_MIN_MTU   48      /* Minimum acceptable MTU is 48 bytes */
 

@@ -26,19 +26,19 @@
 #include <string.h>
 //#include <stdio.h>
 
-#include "bt_target.h"
-#include "allocator.h"
-#include "l2cdefs.h"
-#include "hcidefs.h"
-#include "hcimsgs.h"
+#include "common/bt_target.h"
+#include "osi/allocator.h"
+#include "stack/l2cdefs.h"
+#include "stack/hcidefs.h"
+#include "stack/hcimsgs.h"
 
-#include "l2c_api.h"
-#include "l2cdefs.h"
+#include "stack/l2c_api.h"
+#include "stack/l2cdefs.h"
 
-#include "btu.h"
-#include "btm_api.h"
+#include "stack/btu.h"
+#include "stack/btm_api.h"
 
-#include "sdp_api.h"
+#include "stack/sdp_api.h"
 #include "sdpint.h"
 
 #if (SDP_INCLUDED == TRUE)

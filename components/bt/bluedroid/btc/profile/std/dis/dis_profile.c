@@ -16,9 +16,9 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 //#include "bt_utils.h"
-//#include "gatt_api.h"
+//#include "stack/gatt_api.h"
 
 #define LOG_TAG "bt_srvc"
 //#include "osi/include/log.h"
@@ -26,14 +26,14 @@
 #include "stdint.h"
 #include "string.h"
 
-#include "bta_api.h"
-#include "bta_gatt_api.h"
-#include "controller.h"
+#include "bta/bta_api.h"
+#include "bta/bta_gatt_api.h"
+#include "device/controller.h"
 
 #include "gatt_int.h"
-#include "bt_trace.h"
-#include "btm_api.h"
-#include "bt_types.h"
+#include "common/bt_trace.h"
+#include "stack/btm_api.h"
+#include "stack/bt_types.h"
 #include "dis_api.h"
 
 #if BLE_INCLUDED == TRUE

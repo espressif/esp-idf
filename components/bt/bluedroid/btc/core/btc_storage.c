@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "btc_storage.h"
-#include "btc_util.h"
-#include "osi.h"
-#include "bt_trace.h"
+#include "btc/btc_storage.h"
+#include "btc/btc_util.h"
+#include "osi/osi.h"
+#include "common/bt_trace.h"
 #include "esp_system.h"
-#include "bta_api.h"
-#include "bdaddr.h"
-#include "btc_config.h"
+#include "bta/bta_api.h"
+#include "device/bdaddr.h"
+#include "btc/btc_config.h"
 
 /*******************************************************************************
 **

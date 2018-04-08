@@ -22,14 +22,14 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
-#include "allocator.h"
+#include "common/bt_target.h"
+#include "osi/allocator.h"
 
 #if defined(GATTC_INCLUDED) && (GATTC_INCLUDED == TRUE)
 
 #include <string.h>
-#include "bta_sys.h"
-#include "bta_gatt_api.h"
+#include "bta/bta_sys.h"
+#include "bta/bta_gatt_api.h"
 #include "bta_gattc_int.h"
 
 /*****************************************************************************

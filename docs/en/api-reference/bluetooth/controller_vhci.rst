@@ -18,4 +18,4 @@ Check :example:`bluetooth` folder in ESP-IDF examples, which contains the follow
 API Reference
 -------------
 
-.. include:: /_build/inc/bt.inc
+.. include:: /_build/inc/esp_bt.inc

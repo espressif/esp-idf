@@ -23,8 +23,8 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
-#include "bta_hh_api.h"
+#include "common/bt_target.h"
+#include "bta/bta_hh_api.h"
 
 #if defined(BTA_HH_INCLUDED) && (BTA_HH_INCLUDED == TRUE)
 

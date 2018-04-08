@@ -15,11 +15,11 @@
 #ifndef __BTC_GAP_BT_H__
 #define __BTC_GAP_BT_H__
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 #include "esp_bt_defs.h"
 #include "esp_gap_bt_api.h"
-#include "btc_task.h"
-#include "utl.h"
+#include "btc/btc_task.h"
+#include "bta/utl.h"
 
 #if (BTC_GAP_BT_INCLUDED == TRUE)
 

@@ -14,12 +14,12 @@
 
 #include <string.h>
 
-#include "bta_api.h"
-#include "btc_config.h"
-#include "bdaddr.h"
-#include "btc_ble_storage.h"
-#include "bta_gatts_co.h"
-#include "btc_util.h"
+#include "bta/bta_api.h"
+#include "btc/btc_config.h"
+#include "device/bdaddr.h"
+#include "btc/btc_ble_storage.h"
+#include "bta/bta_gatts_co.h"
+#include "btc/btc_util.h"
 
 #if (SMP_INCLUDED == TRUE)
 

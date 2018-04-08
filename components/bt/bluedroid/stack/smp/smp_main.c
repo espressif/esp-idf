@@ -16,7 +16,7 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if SMP_INCLUDED == TRUE
 

@@ -24,17 +24,17 @@
  ******************************************************************************/
 
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if defined(GATTS_INCLUDED) && (GATTS_INCLUDED == TRUE)
 
-#include "utl.h"
-#include "bta_sys.h"
+#include "bta/utl.h"
+#include "bta/bta_sys.h"
 #include "bta_gatts_int.h"
-#include "bta_gatts_co.h"
-#include "btm_ble_api.h"
+#include "bta/bta_gatts_co.h"
+#include "stack/btm_ble_api.h"
 #include <string.h>
-#include "allocator.h"
+#include "osi/allocator.h"
 
 static void bta_gatts_nv_save_cback(BOOLEAN is_saved, tGATTS_HNDL_RANGE *p_hndl_range);
 static BOOLEAN bta_gatts_nv_srv_chg_cback(tGATTS_SRV_CHG_CMD cmd, tGATTS_SRV_CHG_REQ *p_req,

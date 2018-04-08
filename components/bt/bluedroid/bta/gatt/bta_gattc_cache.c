@@ -23,20 +23,20 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if defined(GATTC_INCLUDED) && (GATTC_INCLUDED == TRUE)
 
 #include <string.h>
-#include "utl.h"
-#include "bta_sys.h"
-#include "sdp_api.h"
-#include "sdpdefs.h"
+#include "bta/utl.h"
+#include "bta/bta_sys.h"
+#include "stack/sdp_api.h"
+#include "stack/sdpdefs.h"
 #include "bta_gattc_int.h"
-#include "btm_api.h"
-#include "btm_ble_api.h"
-#include "allocator.h"
-#include "l2c_api.h"
+#include "stack/btm_api.h"
+#include "stack/btm_ble_api.h"
+#include "osi/allocator.h"
+#include "stack/l2c_api.h"
 #include "btm_int.h"
 #include "errno.h"
 

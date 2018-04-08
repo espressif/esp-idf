@@ -22,13 +22,13 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if defined(BTA_HH_INCLUDED) && (BTA_HH_INCLUDED == TRUE)
 
 #include <string.h>
 
-#include "bta_hh_api.h"
+#include "bta/bta_hh_api.h"
 #include "bta_hh_int.h"
 
 /*****************************************************************************

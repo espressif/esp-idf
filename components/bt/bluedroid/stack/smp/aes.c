@@ -46,7 +46,7 @@
 #include <stdlib.h>
 
 /* add the target configuration to allow using internal data types and compilation options */
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 /* define if you have fast 32-bit types on your system */
 #if 1

@@ -19,12 +19,12 @@
 #ifndef  GATT_INT_H
 #define  GATT_INT_H
 
-#include "bt_target.h"
-#include "bt_trace.h"
-#include "gatt_api.h"
-#include "btm_ble_api.h"
-#include "btu.h"
-#include "fixed_queue.h"
+#include "common/bt_target.h"
+#include "common/bt_trace.h"
+#include "stack/gatt_api.h"
+#include "stack/btm_ble_api.h"
+#include "stack/btu.h"
+#include "osi/fixed_queue.h"
 
 #include <string.h>
 

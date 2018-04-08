@@ -18,7 +18,7 @@
 
 #include <string.h>
 
-#include "hash_functions.h"
+#include "osi/hash_functions.h"
 
 hash_index_t hash_function_naive(const void *key)
 {
