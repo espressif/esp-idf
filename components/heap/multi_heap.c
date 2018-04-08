@@ -123,6 +123,12 @@ static inline bool is_free(const heap_block_t *block)
     return block->header & BLOCK_FREE_FLAG;
 }
 
+/* Return true if this block is the first in the heap */
+static inline bool is_first_block(const heap_t *heap, const heap_block_t *block)
+{
+    return (block == &heap->first_block);
+}
+
 /* Return true if this block is the last_block in the heap
    (the only block with no next pointer) */
 static inline bool is_last_block(const heap_block_t *block)
@@ -167,7 +173,7 @@ static void assert_valid_block(const heap_t *heap, const heap_block_t *block)
 */
 static heap_block_t *get_prev_free_block(heap_t *heap, const heap_block_t *block)
 {
-    assert(block != &heap->first_block); /* can't look for a block before first_block */
+    assert(!is_first_block(heap, block)); /* can't look for a block before first_block */
 
     for (heap_block_t *b = &heap->first_block; b != NULL && b < block; b = b->next_free) {
         MULTI_HEAP_ASSERT(is_free(b), b); // Block should be free
@@ -198,7 +204,7 @@ static heap_block_t *merge_adjacent(heap_t *heap, heap_block_t *a, heap_block_t 
     if (is_last_block(b)) {
         return a;
     }
-    if (a == &heap->first_block) {
+    if (is_first_block(heap, a)) {
         return b;
     }
 
@@ -250,33 +256,52 @@ static heap_block_t *merge_adjacent(heap_t *heap, heap_block_t *a, heap_block_t 
 */
 static void split_if_necessary(heap_t *heap, heap_block_t *block, size_t size, heap_block_t *prev_free_block)
 {
+    const size_t block_size = block_data_size(block);
     MULTI_HEAP_ASSERT(!is_free(block), block); // split block shouldn't be free
-    MULTI_HEAP_ASSERT(size <= block_data_size(block), block); // size should be valid
+    MULTI_HEAP_ASSERT(size <= block_size, block); // size should be valid
     size = ALIGN_UP(size);
 
     /* can't split the head or tail block */
-    assert(block != &heap->first_block);
+    assert(!is_first_block(heap, block));
     assert(!is_last_block(block));
 
-    if (block_data_size(block) < size + sizeof(heap_block_t)) {
-        /* Can't split 'block' if we're not going to get a usable free block afterwards */
-        return;
-    }
-
-    /* Block is larger than it needs to be, insert a new free block after it */
     heap_block_t *new_block = (heap_block_t *)(block->data + size);
-    new_block->header = block->header | BLOCK_FREE_FLAG;
-    block->header = (intptr_t)new_block;
+    heap_block_t *next_block = get_next_block(block);
 
-    if (prev_free_block == NULL) {
-        prev_free_block = get_prev_free_block(heap, block);
+    if (is_free(next_block) && !is_last_block(next_block)) {
+        /* The next block is free, just extend it upwards. */
+        new_block->header = next_block->header;
+        new_block->next_free = next_block->next_free;
+        if (prev_free_block == NULL) {
+            prev_free_block = get_prev_free_block(heap, block);
+        }
+        /* prev_free_block should point to the next block (which we found to be free). */
+        MULTI_HEAP_ASSERT(prev_free_block->next_free == next_block,
+                          &prev_free_block->next_free); // free blocks should be in order
+        /* Note: We have not introduced a new block header, hence the simple math. */
+        heap->free_bytes += block_size - size;
+#ifdef MULTI_HEAP_POISONING_SLOW
+        /* next_block header needs to be replaced with a fill pattern */
+        multi_heap_internal_poison_fill_region(next_block, sizeof(heap_block_t), true /* free */);
+#endif
+    } else {
+        /* Insert a free block between the current and the next one. */
+        if (block_data_size(block) < size + sizeof(heap_block_t)) {
+            /* Can't split 'block' if we're not going to get a usable free block afterwards */
+            return;
+        }
+        if (prev_free_block == NULL) {
+            prev_free_block = get_prev_free_block(heap, block);
+        }
+        new_block->header = block->header | BLOCK_FREE_FLAG;
+        new_block->next_free = prev_free_block->next_free;
+        /* prev_free_block should point to a free block after new_block */
+        MULTI_HEAP_ASSERT(prev_free_block->next_free > new_block,
+                          &prev_free_block->next_free); // free blocks should be in order
+        heap->free_bytes += block_data_size(new_block);
     }
-    /* prev_free_block should point to a free block after new_block */
-    MULTI_HEAP_ASSERT(prev_free_block->next_free > new_block,
-                      &prev_free_block->next_free); // free blocks should be in order
-    new_block->next_free = prev_free_block->next_free;
+    block->header = (intptr_t)new_block;
     prev_free_block->next_free = new_block;
-    heap->free_bytes += block_data_size(new_block);
 }
 
 size_t multi_heap_get_allocated_size_impl(multi_heap_handle_t heap, void *p)
@@ -414,7 +439,7 @@ void multi_heap_free_impl(multi_heap_handle_t heap, void *p)
     assert_valid_block(heap, pb);
     MULTI_HEAP_ASSERT(!is_free(pb), pb); // block should not be free
     MULTI_HEAP_ASSERT(!is_last_block(pb), pb); // block should not be last block
-    MULTI_HEAP_ASSERT(pb != &heap->first_block, pb); // block should not be first block
+    MULTI_HEAP_ASSERT(!is_first_block(heap, pb), pb); // block should not be first block
 
     heap_block_t *next = get_next_block(pb);
 
@@ -570,19 +595,21 @@ bool multi_heap_check(multi_heap_handle_t heap, bool print_errors)
             FAIL_PRINT("CORRUPT HEAP: Block %p is outside heap (last valid block %p)\n", b, prev);
             goto done;
         }
-        prev = b;
-
         if (is_free(b)) {
+            if (prev != NULL && is_free(prev) && !is_first_block(heap, prev) && !is_last_block(b)) {
+                FAIL_PRINT("CORRUPT HEAP: Two adjacent free blocks found, %p and %p\n", prev, b);
+            }
             if (expected_free != NULL && expected_free != b) {
                 FAIL_PRINT("CORRUPT HEAP: Prev free block %p pointed to next free %p but this free block is %p\n",
                        prev_free, expected_free, b);
             }
             prev_free = b;
             expected_free = b->next_free;
-            if (b != &heap->first_block) {
+            if (!is_first_block(heap, b)) {
                 total_free_bytes += block_data_size(b);
             }
         }
+        prev = b;
 
 #ifdef MULTI_HEAP_POISONING
         if (!is_last_block(b)) {

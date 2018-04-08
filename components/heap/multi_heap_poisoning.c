@@ -242,6 +242,8 @@ void *multi_heap_realloc(multi_heap_handle_t heap, void *p, size_t size)
        place.)
 
        For now we just malloc a new buffer, copy, and free. :|
+
+       Note: If this ever changes, multi_heap defrag realloc test should be enabled.
     */
     size_t orig_alloc_size = head->alloc_size;
 
