@@ -22,12 +22,12 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if BLE_INCLUDED == TRUE && GATTC_INCLUDED == TRUE
 
 #include <string.h>
-#include "allocator.h"
+#include "osi/allocator.h"
 #include "gatt_int.h"
 #include "l2c_int.h"
 

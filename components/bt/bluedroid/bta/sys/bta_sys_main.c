@@ -26,23 +26,23 @@
 // #include <assert.h>
 #include <string.h>
 
-#include "alarm.h"
-#include "thread.h"
-#include "btm_api.h"
-#include "bta_api.h"
-#include "bta_sys.h"
+#include "osi/alarm.h"
+#include "osi/thread.h"
+#include "stack/btm_api.h"
+#include "bta/bta_api.h"
+#include "bta/bta_sys.h"
 #include "bta_sys_int.h"
 
-#include "fixed_queue.h"
-#include "hash_map.h"
-#include "osi.h"
-#include "hash_functions.h"
+#include "osi/fixed_queue.h"
+#include "osi/hash_map.h"
+#include "osi/osi.h"
+#include "osi/hash_functions.h"
 #if( defined BTA_AR_INCLUDED ) && (BTA_AR_INCLUDED == TRUE)
-#include "bta_ar_api.h"
+#include "bta/bta_ar_api.h"
 #endif
-#include "utl.h"
-#include "allocator.h"
-#include "mutex.h"
+#include "bta/utl.h"
+#include "osi/allocator.h"
+#include "osi/mutex.h"
 
 
 /* system manager control block definition */
@@ -75,7 +75,7 @@ typedef void (*tBTA_SYS_ACTION)(tBTA_SYS_HW_MSG *p_data);
 
 /* action function list */
 const tBTA_SYS_ACTION bta_sys_action[] = {
-    /* device manager local device API events - cf bta_sys.h for events */
+    /* device manager local device API events - cf bta/bta_sys.h for events */
     bta_sys_hw_api_enable,             /* 0  BTA_SYS_HW_API_ENABLE_EVT    */
     bta_sys_hw_evt_enabled,           /* 1  BTA_SYS_HW_EVT_ENABLED_EVT */
     bta_sys_hw_evt_stack_enabled,       /* 2  BTA_SYS_HW_EVT_STACK_ENABLED_EVT */

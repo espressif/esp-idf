@@ -15,21 +15,21 @@
  *  limitations under the License.
  *
  ******************************************************************************/
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if (defined BLE_INCLUDED && BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
 
-#include "bt_defs.h"
-#include "allocator.h"
+#include "common/bt_defs.h"
+#include "osi/allocator.h"
 #include <string.h>
 #include "gap_int.h"
-#include "gap_api.h"
-#include "gattdefs.h"
-#include "gatt_api.h"
+#include "stack/gap_api.h"
+#include "stack/gattdefs.h"
+#include "stack/gatt_api.h"
 #include "gatt_int.h"
 #include "btm_int.h"
-#include "hcimsgs.h"
-#include "sdpdefs.h"
+#include "stack/hcimsgs.h"
+#include "stack/sdpdefs.h"
 
 #define GAP_CHAR_ICON_SIZE          2
 #define GAP_CHAR_DEV_NAME_SIZE      248

@@ -26,19 +26,19 @@
 //#include <stdio.h>
 #include <stddef.h>
 
-#include "bt_types.h"
+#include "stack/bt_types.h"
 //#include "bt_utils.h"
 #include "btm_int.h"
-#include "btm_ble_api.h"
-#include "btu.h"
-#include "controller.h"
-#include "hcimsgs.h"
-#include "gap_api.h"
+#include "stack/btm_ble_api.h"
+#include "stack/btu.h"
+#include "device/controller.h"
+#include "stack/hcimsgs.h"
+#include "stack/gap_api.h"
 
 #if BLE_INCLUDED == TRUE
 #include "l2c_int.h"
 
-#include "gattdefs.h"
+#include "stack/gattdefs.h"
 #include "gatt_int.h"
 
 #include "btm_ble_int.h"

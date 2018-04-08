@@ -18,27 +18,27 @@
 #include <string.h>
 
 
-#include "alarm.h"
-#include "thread.h"
-#include "bt_target.h"
-#include "bt_trace.h"
-#include "bt_types.h"
-#include "allocator.h"
-#include "mutex.h"
-#include "btm_api.h"
+#include "osi/alarm.h"
+#include "osi/thread.h"
+#include "common/bt_target.h"
+#include "common/bt_trace.h"
+#include "stack/bt_types.h"
+#include "osi/allocator.h"
+#include "osi/mutex.h"
+#include "stack/btm_api.h"
 #include "btm_int.h"
-#include "btu.h"
-#include "hash_map.h"
-#include "hcimsgs.h"
+#include "stack/btu.h"
+#include "osi/hash_map.h"
+#include "stack/hcimsgs.h"
 #include "l2c_int.h"
-#include "osi.h"
+#include "osi/osi.h"
 #if (defined(SDP_INCLUDED) && SDP_INCLUDED == TRUE)
 #include "sdpint.h"
 #endif
 
 #if (defined(RFCOMM_INCLUDED) && RFCOMM_INCLUDED == TRUE)
-#include "port_api.h"
-#include "port_ext.h"
+#include "stack/port_api.h"
+#include "stack/port_ext.h"
 #endif
 
 #if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE)
@@ -70,7 +70,7 @@ extern void avdt_rcv_sync_info (BT_HDR *p_buf);
 #endif
 
 #if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)
-#include "bta_sys.h"
+#include "bta/bta_sys.h"
 #endif
 
 #if (BLE_INCLUDED == TRUE)

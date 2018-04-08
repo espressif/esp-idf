@@ -23,10 +23,10 @@
  ******************************************************************************/
 
 #include <stddef.h>
-#include "bta_api.h"
-#include "bta_sys.h"
+#include "bta/bta_api.h"
+#include "bta/bta_sys.h"
 #include "bta_sys_int.h"
-#include "utl.h"
+#include "bta/utl.h"
 
 /*******************************************************************************
 **

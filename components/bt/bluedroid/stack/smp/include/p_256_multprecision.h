@@ -23,7 +23,7 @@
  ******************************************************************************/
 #pragma once
 
-#include "bt_types.h"
+#include "stack/bt_types.h"
 
 /* Type definitions */
 typedef unsigned long  DWORD;

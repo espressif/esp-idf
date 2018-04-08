@@ -23,11 +23,11 @@
  *
  ******************************************************************************/
 
-#include "bt_types.h"
-#include "bt_target.h"
+#include "stack/bt_types.h"
+#include "common/bt_target.h"
 #include <string.h>
 #include "btm_int.h"
-#include "allocator.h"
+#include "osi/allocator.h"
 
 /* Global BTM control block structure
 */

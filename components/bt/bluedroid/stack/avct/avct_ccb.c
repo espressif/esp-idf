@@ -24,9 +24,9 @@
  ******************************************************************************/
 
 #include <string.h>
-#include "bt_types.h"
-#include "bt_target.h"
-#include "avct_api.h"
+#include "stack/bt_types.h"
+#include "common/bt_target.h"
+#include "stack/avct_api.h"
 #include "avct_int.h"
 
 #if (defined(AVCT_INCLUDED) && AVCT_INCLUDED == TRUE)

@@ -24,16 +24,16 @@
 
 #include <string.h>
 
-#include "bt_types.h"
-#include "hcimsgs.h"
-#include "btu.h"
+#include "stack/bt_types.h"
+#include "stack/hcimsgs.h"
+#include "stack/btu.h"
 #include "btm_int.h"
-#include "gap_api.h"
-#include "controller.h"
+#include "stack/gap_api.h"
+#include "device/controller.h"
 
 #if (defined BLE_INCLUDED && BLE_INCLUDED == TRUE)
 #include "btm_ble_int.h"
-#include "smp_api.h"
+#include "stack/smp_api.h"
 
 
 /*******************************************************************************

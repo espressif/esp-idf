@@ -15,8 +15,8 @@
 #ifndef __BTC_GATT_UTIL_H__
 #define __BTC_GATT_UTIL_H__
 
-#include "bt_types.h"
-#include "bta_gatt_api.h"
+#include "stack/bt_types.h"
+#include "bta/bta_gatt_api.h"
 #include "esp_bt_defs.h"
 #include "esp_gatt_defs.h"
 #include "esp_gattc_api.h"

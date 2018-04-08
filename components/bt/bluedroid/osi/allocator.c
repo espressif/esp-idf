@@ -18,8 +18,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "bt_defs.h"
-#include "allocator.h"
+#include "common/bt_defs.h"
+#include "osi/allocator.h"
 
 extern void *pvPortZalloc(size_t size);
 extern void vPortFree(void *pv);

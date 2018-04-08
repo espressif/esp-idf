@@ -27,14 +27,14 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "bt_types.h"
-#include "controller.h"
-#include "hcimsgs.h"
-#include "btu.h"
+#include "stack/bt_types.h"
+#include "device/controller.h"
+#include "stack/hcimsgs.h"
+#include "stack/btu.h"
 #include "btm_int.h"
 #include "l2c_int.h"
-#include "fixed_queue.h"
-#include "alarm.h"
+#include "osi/fixed_queue.h"
+#include "osi/alarm.h"
 
 #if (BT_USE_TRACES == TRUE && BT_TRACE_VERBOSE == FALSE)
 /* needed for sprintf() */

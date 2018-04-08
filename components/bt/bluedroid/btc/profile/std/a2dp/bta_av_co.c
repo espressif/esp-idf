@@ -23,19 +23,19 @@
  *
  ******************************************************************************/
 #include "string.h"
-#include "bt_target.h"
-#include "a2d_api.h"
-#include "a2d_sbc.h"
-#include "bta_sys.h"
-#include "bta_av_api.h"
-#include "bta_av_co.h"
-#include "bta_av_ci.h"
-#include "bta_av_sbc.h"
+#include "common/bt_target.h"
+#include "stack/a2d_api.h"
+#include "stack/a2d_sbc.h"
+#include "bta/bta_sys.h"
+#include "bta/bta_av_api.h"
+#include "bta/bta_av_co.h"
+#include "bta/bta_av_ci.h"
+#include "bta/bta_av_sbc.h"
 #include "btc_a2dp.h"
 #include "btc_a2dp_source.h"
 #include "btc_av_co.h"
-#include "btc_util.h"
-#include "mutex.h"
+#include "btc/btc_util.h"
+#include "osi/mutex.h"
 
 #if BTC_AV_INCLUDED
 

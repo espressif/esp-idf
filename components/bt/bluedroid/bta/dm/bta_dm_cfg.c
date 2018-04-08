@@ -24,11 +24,11 @@
  ******************************************************************************/
 
 #include <stddef.h>
-#include "bt_target.h"
-#include "bta_sys.h"
-#include "bta_api.h"
+#include "common/bt_target.h"
+#include "bta/bta_sys.h"
+#include "bta/bta_api.h"
 #include "bta_dm_int.h"
-// #include "bta_jv_api.h"
+// #include "bta/bta_jv_api.h"
 
 #ifndef BTA_DM_LINK_POLICY_SETTINGS
 #define BTA_DM_LINK_POLICY_SETTINGS    (HCI_ENABLE_MASTER_SLAVE_SWITCH | HCI_ENABLE_HOLD_MODE | HCI_ENABLE_SNIFF_MODE | HCI_ENABLE_PARK_MODE)
@@ -459,13 +459,13 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
 #endif  /* BTE_SIM_APP */
 };
 
-/* Please refer to the SNIFF table definitions in bta_api.h.
+/* Please refer to the SNIFF table definitions in bta/bta_api.h.
  *
  * Adding to or Modifying the Table
  * Additional sniff parameter entries can be added for BTA_DM_PM_SNIFF5 - BTA_DM_PM_SNIFF7.
  * Overrides of additional table entries can be specified in bdroid_buildcfg.h.  If additional
  * sniff parameter entries are added or an override of an existing entry is specified in
- * bdroid_buildcfg.h then the BTA_DM_PM_*_IDX defines in bta_api.h will need to be match the new
+ * bdroid_buildcfg.h then the BTA_DM_PM_*_IDX defines in bta/bta_api.h will need to be match the new
  * ordering.
  *
  * Table Ordering
@@ -478,7 +478,7 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTM_PM_PWR_MD bta_dm_pm_md[] = {
      * More sniff parameter entries can be added for
      * BTA_DM_PM_SNIFF3 - BTA_DM_PM_SNIFF7, if needed. When entries are added or
      * removed, BTA_DM_PM_PARK_IDX needs to be updated to reflect the actual index
-     * BTA_DM_PM_PARK_IDX is defined in bta_api.h and can be override by the
+     * BTA_DM_PM_PARK_IDX is defined in bta/bta_api.h and can be override by the
      * bdroid_buildcfg.h settings.
      * The SNIFF table entries must be in the order from highest latency (biggest
      * interval) to lowest latency. If there's a conflict among the connected

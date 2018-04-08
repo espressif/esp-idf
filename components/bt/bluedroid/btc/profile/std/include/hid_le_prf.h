@@ -16,9 +16,9 @@
 
 #if (HIDD_LE_PROFILE_CFG)
 #include "bta_gatts_int.h"
-#include "bt_types.h"
-#include "bta_api.h"
-#include "gatt_api.h"
+#include "stack/bt_types.h"
+#include "bta/bta_api.h"
+#include "stack/gatt_api.h"
 #include "bt_app_api.h"
 
 /// Maximal number of HIDS that can be added in the DB

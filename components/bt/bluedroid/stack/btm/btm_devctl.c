@@ -27,17 +27,17 @@
 #include <string.h>
 //#include <stdio.h>
 #include <stddef.h>
-#include "bt_trace.h"
-#include "bt_types.h"
+#include "common/bt_trace.h"
+#include "stack/bt_types.h"
 //#include "bt_utils.h"
 #include "btm_int.h"
-#include "btu.h"
-#include "controller.h"
-#include "hci_layer.h"
-#include "hcimsgs.h"
+#include "stack/btu.h"
+#include "device/controller.h"
+#include "hci/hci_layer.h"
+#include "stack/hcimsgs.h"
 #include "l2c_int.h"
 //#include "btcore/include/module.h"
-//#include "osi/include/thread.h"
+//#include "osi/include/osi/thread.h"
 
 #if BLE_INCLUDED == TRUE
 #include "gatt_int.h"
@@ -804,7 +804,7 @@ tBTM_STATUS BTM_WritePageTimeout(UINT16 timeout)
 ** Function         BTM_WriteVoiceSettings
 **
 ** Description      Send HCI Write Voice Settings command.
-**                  See hcidefs.h for settings bitmask values.
+**                  See stack/hcidefs.h for settings bitmask values.
 **
 ** Returns
 **      BTM_SUCCESS         Command sent.

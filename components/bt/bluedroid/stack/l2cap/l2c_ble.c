@@ -23,14 +23,14 @@
  ******************************************************************************/
 
 #include <string.h>
-#include "bt_target.h"
+#include "common/bt_target.h"
 //#include "bt_utils.h"
-#include "l2cdefs.h"
+#include "stack/l2cdefs.h"
 #include "l2c_int.h"
-#include "btu.h"
+#include "stack/btu.h"
 #include "btm_int.h"
-#include "hcimsgs.h"
-#include "controller.h"
+#include "stack/hcimsgs.h"
+#include "device/controller.h"
 
 #if (BLE_INCLUDED == TRUE)
 static BOOLEAN l2cble_start_conn_update (tL2C_LCB *p_lcb);

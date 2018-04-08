@@ -24,7 +24,7 @@
  ******************************************************************************/
 #ifndef AVDT_DEFS_H
 #define AVDT_DEFS_H
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if (AVDT_INCLUDED == TRUE)
 

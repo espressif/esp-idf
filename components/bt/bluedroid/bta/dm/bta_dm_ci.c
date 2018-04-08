@@ -22,12 +22,12 @@
  *
  ******************************************************************************/
 
-#include "bta_sys.h"
-#include "bta_api.h"
+#include "bta/bta_sys.h"
+#include "bta/bta_api.h"
 #include "bta_dm_int.h"
 #include <string.h>
-#include "bta_dm_ci.h"
-#include "allocator.h"
+#include "bta/bta_dm_ci.h"
+#include "osi/allocator.h"
 
 
 #if (BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE)

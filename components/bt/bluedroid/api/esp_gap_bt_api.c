@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 #include <string.h>
 #include "esp_bt_main.h"
 #include "esp_gap_bt_api.h"
-#include "bt_trace.h"
-#include "btc_manage.h"
+#include "common/bt_trace.h"
+#include "btc/btc_manage.h"
 #include "btc_gap_bt.h"
 
 #if (BTC_GAP_BT_INCLUDED == TRUE)

@@ -25,9 +25,9 @@
 #ifndef SRVC_DIS_API_H
 #define SRVC_DIS_API_H
 
-#include "bt_target.h"
-#include "gatt_api.h"
-#include "gattdefs.h"
+#include "common/bt_target.h"
+#include "stack/gatt_api.h"
+#include "stack/gattdefs.h"
 #include "esp_gatts_api.h"
 
 #define DIS_SUCCESS             GATT_SUCCESS

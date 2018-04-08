@@ -16,9 +16,9 @@
 
 #if (WX_AIRSYNC_CFG)
 
-#include "bt_target.h"
-#include "gatt_api.h"
-#include "gattdefs.h"
+#include "common/bt_target.h"
+#include "stack/gatt_api.h"
+#include "stack/gattdefs.h"
 #include "bt_app_api.h"
 
 

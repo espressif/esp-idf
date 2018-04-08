@@ -24,7 +24,7 @@
 #ifndef A2D_INT_H
 #define A2D_INT_H
 
-#include "a2d_api.h"
+#include "stack/a2d_api.h"
 #if (A2D_INCLUDED == TRUE)
 /*****************************************************************************
 **  Constants

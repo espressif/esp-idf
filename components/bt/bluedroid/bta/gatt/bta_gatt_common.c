@@ -21,7 +21,7 @@
  *
  ******************************************************************************/
 
-#include "bta_gatt_common.h"
+#include "bta/bta_gatt_common.h"
 #include "gatt_int.h"
 
 void BTA_GATT_SetLocalMTU(uint16_t mtu)

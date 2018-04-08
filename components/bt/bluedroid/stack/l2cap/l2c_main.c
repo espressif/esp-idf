@@ -26,15 +26,15 @@
 #include <string.h>
 //#include <stdio.h>
 
-#include "controller.h"
+#include "device/controller.h"
 //#include "btcore/include/counter.h"
-#include "bt_target.h"
+#include "common/bt_target.h"
 #include "btm_int.h"
-#include "btu.h"
-#include "hcimsgs.h"
-#include "l2c_api.h"
+#include "stack/btu.h"
+#include "stack/hcimsgs.h"
+#include "stack/l2c_api.h"
 #include "l2c_int.h"
-#include "l2cdefs.h"
+#include "stack/l2cdefs.h"
 //#include "osi/include/log.h"
 
 /********************************************************************************/

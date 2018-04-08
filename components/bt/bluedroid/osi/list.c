@@ -1,9 +1,9 @@
 
-#include "bt_defs.h"
+#include "common/bt_defs.h"
 
-#include "allocator.h"
-#include "list.h"
-#include "osi.h"
+#include "osi/allocator.h"
+#include "osi/list.h"
+#include "osi/osi.h"
 
 struct list_node_t {
     struct list_node_t *next;

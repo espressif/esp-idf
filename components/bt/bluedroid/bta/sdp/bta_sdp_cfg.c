@@ -20,9 +20,9 @@
  *  This file contains compile-time configurable constants for SDP Search
  ******************************************************************************/
 
-#include "bt_target.h"
-#include "bta_api.h"
-#include "bta_sdp_api.h"
+#include "common/bt_target.h"
+#include "bta/bta_api.h"
+#include "bta/bta_sdp_api.h"
 
 #if defined(BTA_SDP_INCLUDED) && (BTA_SDP_INCLUDED == TRUE)
 

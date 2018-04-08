@@ -22,17 +22,17 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE
 
-#include "bt_trace.h"
-#include "allocator.h"
+#include "common/bt_trace.h"
+#include "osi/allocator.h"
 
 //#include <stdio.h>
 #include <string.h>
 #include "gatt_int.h"
-#include "l2c_api.h"
+#include "stack/l2c_api.h"
 #include "btm_int.h"
 
 /********************************************************************************

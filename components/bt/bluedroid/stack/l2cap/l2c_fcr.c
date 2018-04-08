@@ -26,16 +26,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "bt_trace.h"
-#include "bt_types.h"
-#include "hcimsgs.h"
-#include "l2c_api.h"
+#include "common/bt_trace.h"
+#include "stack/bt_types.h"
+#include "stack/hcimsgs.h"
+#include "stack/l2c_api.h"
 #include "l2c_int.h"
-#include "l2cdefs.h"
-#include "btm_api.h"
+#include "stack/l2cdefs.h"
+#include "stack/btm_api.h"
 #include "btm_int.h"
-#include "btu.h"
-#include "allocator.h"
+#include "stack/btu.h"
+#include "osi/allocator.h"
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
 

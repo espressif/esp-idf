@@ -30,22 +30,22 @@
 //#include <stdlib.h>
 #include <string.h>
 
-#include "bt_types.h"
-#include "hcimsgs.h"
-#include "btu.h"
+#include "stack/bt_types.h"
+#include "stack/hcimsgs.h"
+#include "stack/btu.h"
 #include "l2c_int.h"
-#include "btm_api.h"
+#include "stack/btm_api.h"
 #include "btm_int.h"
 //#include "bt_utils.h"
-#include "controller.h"
-#include "osi.h"
-#include "hci_layer.h"
-#include "bt_trace.h"
+#include "device/controller.h"
+#include "osi/osi.h"
+#include "hci/hci_layer.h"
+#include "common/bt_trace.h"
 
-#include "thread.h"
+#include "osi/thread.h"
 
 // TODO(zachoverflow): remove this horrible hack
-#include "btu.h"
+#include "stack/btu.h"
 
 extern void btm_process_cancel_complete(UINT8 status, UINT8 mode);
 extern void btm_ble_test_command_complete(UINT8 *p);

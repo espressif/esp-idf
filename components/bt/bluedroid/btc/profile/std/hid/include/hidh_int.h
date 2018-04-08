@@ -25,9 +25,9 @@
 #ifndef HIDH_INT_H
 #define HIDH_INT_H
 
-#include "hidh_api.h"
+#include "stack/hidh_api.h"
 #include "hid_conn.h"
-#include "l2c_api.h"
+#include "stack/l2c_api.h"
 
 #if (HID_HOST_INCLUDED == TRUE)
 

@@ -27,7 +27,7 @@
 #define AVRC_INT_H
 
 #include "avct_defs.h"
-#include "avrc_api.h"
+#include "stack/avrc_api.h"
 
 #if (AVRC_INCLUDED == TRUE)
 /*      DEBUG FLAGS
@@ -70,7 +70,7 @@
 #define AVRC_VENDOR_UNIQUE_MASK     0x70           /* vendor unique id */
 
 
-/* Company ID is 24-bit integer We can not use the macros in bt_types.h */
+/* Company ID is 24-bit integer We can not use the macros in stack/bt_types.h */
 #define AVRC_CO_ID_TO_BE_STREAM(p, u32) {*(p)++ = (UINT8)((u32) >> 16); *(p)++ = (UINT8)((u32) >> 8); *(p)++ = (UINT8)(u32); }
 #define AVRC_BE_STREAM_TO_CO_ID(u32, p) {u32 = (((UINT32)(*((p) + 2))) + (((UINT32)(*((p) + 1))) << 8) + (((UINT32)(*(p))) << 16)); (p) += 3;}
 

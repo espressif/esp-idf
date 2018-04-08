@@ -17,10 +17,10 @@
  *  Filename:      btc_a2dp.c
  *
  *****************************************************************************/
-#include "bt_target.h"
-#include "bt_trace.h"
-#include "bta_api.h"
-#include "bta_av_api.h"
+#include "common/bt_target.h"
+#include "common/bt_trace.h"
+#include "bta/bta_api.h"
+#include "bta/bta_av_api.h"
 #include "btc_av.h"
 #include "btc_av_co.h"
 #include "btc_a2dp.h"

@@ -16,11 +16,11 @@
 #include "esp_bt_device.h"
 #include "esp_bt_main.h"
 #include "esp_gap_ble_api.h"
-#include "bta_api.h"
-#include "bt_trace.h"
-#include "btc_manage.h"
+#include "bta/bta_api.h"
+#include "common/bt_trace.h"
+#include "btc/btc_manage.h"
 #include "btc_gap_ble.h"
-#include "btc_ble_storage.h"
+#include "btc/btc_ble_storage.h"
 
 
 esp_err_t esp_ble_gap_register_callback(esp_gap_ble_cb_t callback)
