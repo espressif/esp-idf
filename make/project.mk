@@ -150,6 +150,10 @@ COMPONENTS := $(dir $(foreach cd,$(COMPONENT_DIRS),                           \
 				))
 COMPONENTS := $(sort $(foreach comp,$(COMPONENTS),$(lastword $(subst /, ,$(comp)))))
 endif
+# After a full manifest of component names is determined, subtract the ones explicitly omitted by the project Makefile.
+ifdef EXCLUDE_COMPONENTS
+COMPONENTS := $(filter-out $(EXCLUDE_COMPONENTS), $(COMPONENTS))
+endif
 export COMPONENTS
 
 # Resolve all of COMPONENTS into absolute paths in COMPONENT_PATHS.
@@ -511,6 +515,9 @@ list-components:
 	$(info $(call dequote,$(SEPARATOR)))
 	$(info COMPONENTS (list of component names))
 	$(info $(COMPONENTS))
+	$(info $(call dequote,$(SEPARATOR)))
+	$(info EXCLUDE_COMPONENTS (list of excluded names))
+	$(info $(if $(EXCLUDE_COMPONENTS),$(EXCLUDE_COMPONENTS),(none provided)))	
 	$(info $(call dequote,$(SEPARATOR)))
 	$(info COMPONENT_PATHS (paths to all components):)
 	$(foreach cp,$(COMPONENT_PATHS),$(info $(cp)))

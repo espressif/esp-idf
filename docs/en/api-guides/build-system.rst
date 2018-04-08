@@ -123,6 +123,7 @@ These variables all have default values that can be overridden for custom behavi
 - ``COMPONENT_DIRS``: Directories to search for components. Defaults to `$(IDF_PATH)/components`, `$(PROJECT_PATH)/components`, ``$(PROJECT_PATH)/main`` and ``EXTRA_COMPONENT_DIRS``. Override this variable if you don't want to search for components in these places.
 - ``EXTRA_COMPONENT_DIRS``: Optional list of additional directories to search for components.
 - ``COMPONENTS``: A list of component names to build into the project. Defaults to all components found in the COMPONENT_DIRS directories.
+- ``EXCLUDE_COMPONENTS``: Optional list of component names to exclude during the build process. Note that this decreases build time, but not binary size.
 
 Any paths in these Makefile variables should be absolute paths. You can convert relative paths using ``$(PROJECT_PATH)/xxx``, ``$(IDF_PATH)/xxx``, or use the Make function ``$(abspath xxx)``.
 
