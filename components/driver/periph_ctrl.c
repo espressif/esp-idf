@@ -114,6 +114,10 @@ static uint32_t get_clk_en_mask(periph_module_t periph)
             return DPORT_WIFI_CLK_BT_EN_M;
         case PERIPH_WIFI_BT_COMMON_MODULE:
             return DPORT_WIFI_CLK_WIFI_BT_COMMON_M;
+        case PERIPH_BT_BASEBAND_MODULE:
+            return DPORT_BT_BASEBAND_EN;
+        case PERIPH_BT_LC_MODULE:
+            return DPORT_BT_LC_EN;
         default:
             return 0;
     }
@@ -177,6 +181,8 @@ static uint32_t get_rst_en_mask(periph_module_t periph)
         case PERIPH_WIFI_MODULE:
         case PERIPH_BT_MODULE:
         case PERIPH_WIFI_BT_COMMON_MODULE:
+        case PERIPH_BT_BASEBAND_MODULE:
+        case PERIPH_BT_LC_MODULE:
             return 0;
         default:
             return 0;
@@ -195,6 +201,8 @@ static bool is_wifi_clk_peripheral(periph_module_t periph)
     case PERIPH_WIFI_MODULE:
     case PERIPH_BT_MODULE:
     case PERIPH_WIFI_BT_COMMON_MODULE:
+    case PERIPH_BT_BASEBAND_MODULE:
+    case PERIPH_BT_LC_MODULE:
         return true;
     default:
         return false;

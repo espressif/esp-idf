@@ -64,6 +64,48 @@ config BT_HCI_UART_BAUDRATE
         UART Baudrate for HCI. Please use standard baudrate.
 endmenu
 
+menu "MODEM SLEEP Options"
+    visible if BT_ENABLED
+
+config BTDM_CONTROLLER_MODEM_SLEEP
+    bool "Bluetooth modem sleep"
+    depends on BT_ENABLED
+    default y
+    help
+        Enable/disable bluetooth controller low power mode.
+        Note that currently there is problem in the combination use of bluetooth modem sleep and Dynamic Frequency Scaling(DFS). So do not enable DFS if bluetooth modem sleep is in use.
+
+choice BTDM_MODEM_SLEEP_MODE
+    prompt "Bluetooth Modem sleep mode"
+    depends on BTDM_CONTROLLER_MODEM_SLEEP
+    help
+        To select which strategy to use for modem sleep
+
+config BTDM_MODEM_SLEEP_MODE_ORIG
+    bool "ORIG Mode(sleep with low power clock)"
+    help
+        ORIG mode is a deep sleep mode that can be used for dual mode controller. In this mode, bluetooth controller sleeps between BR/EDR frames and BLE events. A low power clock is used to maintain bluetooth reference clock.
+config BTDM_MODEM_SLEEP_MODE_EVED
+    bool "EVED Mode "
+    help
+        This mode is for BLE only.
+endchoice
+
+choice BTDM_LOW_POWER_CLOCK
+    prompt "Bluetooth low power clock"
+    depends on BTDM_MODEM_SLEEP_MODE_ORIG
+    help
+        Select the low power clock source for bluetooth controller
+
+config BTDM_LPCLK_SEL_MAIN_XTAL
+    bool "Main crystal"
+config BTDM_LPCLK_SEL_EXT_32K_XTAL
+    bool "External 32kHz crystal"
+    depends on ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
+endchoice
+
+endmenu
+
 menuconfig BLUEDROID_ENABLED
     bool "Bluedroid Enable"
     depends on BTDM_CONTROLLER_HCI_MODE_VHCI
