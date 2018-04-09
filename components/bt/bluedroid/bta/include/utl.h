@@ -138,6 +138,21 @@ extern BOOLEAN utl_set_device_class(tBTA_UTL_COD *p_cod, UINT8 cmd);
 
 /*******************************************************************************
 **
+** Function         utl_get_device_class
+**
+** Description      This function get the local Device Class.
+**
+** Parameters:
+**                  p_cod   - Pointer to the device class to get to
+**
+**
+** Returns          TRUE if successful, Otherwise FALSE
+**
+*******************************************************************************/
+extern BOOLEAN utl_get_device_class(tBTA_UTL_COD *p_cod);
+
+/*******************************************************************************
+**
 ** Function         utl_isintstr
 **
 ** Description      This utility function checks if the given string is an
