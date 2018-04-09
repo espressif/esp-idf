@@ -90,7 +90,7 @@ static tBTM_STATUS btm_sec_send_hci_disconnect (tBTM_SEC_DEV_REC *p_dev_rec, UIN
 UINT8           btm_sec_start_role_switch (tBTM_SEC_DEV_REC *p_dev_rec);
 tBTM_SEC_DEV_REC *btm_sec_find_dev_by_sec_state (UINT8 state);
 
-static BOOLEAN  btm_sec_set_security_level ( CONNECTION_TYPE conn_type, char *p_name, UINT8 service_id,
+static BOOLEAN  btm_sec_set_security_level ( CONNECTION_TYPE conn_type, const char *p_name, UINT8 service_id,
         UINT16 sec_level, UINT16 psm, UINT32 mx_proto_id,
         UINT32 mx_chan_id);
 #if (SMP_INCLUDED == TRUE)
@@ -459,7 +459,7 @@ void BTM_SetSecureConnectionsOnly (BOOLEAN secure_connections_only_mode)
 ** Returns          TRUE if registered OK, else FALSE
 **
 *******************************************************************************/
-BOOLEAN BTM_SetSecurityLevel (BOOLEAN is_originator, char *p_name, UINT8 service_id,
+BOOLEAN BTM_SetSecurityLevel (BOOLEAN is_originator, const char *p_name, UINT8 service_id,
                               UINT16 sec_level, UINT16 psm, UINT32 mx_proto_id,
                               UINT32 mx_chan_id)
 {
@@ -499,7 +499,7 @@ BOOLEAN BTM_SetSecurityLevel (BOOLEAN is_originator, char *p_name, UINT8 service
 ** Returns          TRUE if registered OK, else FALSE
 **
 *******************************************************************************/
-static BOOLEAN btm_sec_set_security_level (CONNECTION_TYPE conn_type, char *p_name, UINT8 service_id,
+static BOOLEAN btm_sec_set_security_level (CONNECTION_TYPE conn_type, const char *p_name, UINT8 service_id,
         UINT16 sec_level, UINT16 psm, UINT32 mx_proto_id,
         UINT32 mx_chan_id)
 {

@@ -134,7 +134,7 @@ bool config_has_key(const config_t *config, const char *section, const char *key
     return (entry_find(config, section, key) != NULL);
 }
 
-bool config_has_key_in_section(config_t *config, char *key, char *key_value)
+bool config_has_key_in_section(config_t *config, const char *key, char *key_value)
 {
     LOG_DEBUG("key = %s, value = %s", key, key_value);
     for (const list_node_t *node = list_begin(config->sections); node != list_end(config->sections); node = list_next(node)) {

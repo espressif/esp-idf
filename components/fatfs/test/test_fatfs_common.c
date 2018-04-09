@@ -194,7 +194,7 @@ void test_fatfs_link_rename(const char* filename_prefix)
 
     FILE* f = fopen(name_src, "w+");
     TEST_ASSERT_NOT_NULL(f);
-    char* str = "0123456789";
+    const char* str = "0123456789";
     for (int i = 0; i < 4000; ++i) {
         TEST_ASSERT_NOT_EQUAL(EOF, fputs(str, f));
     }
