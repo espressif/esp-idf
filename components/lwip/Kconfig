@@ -29,7 +29,7 @@ config LWIP_IRAM_OPTIMIZATION
 
 config LWIP_MAX_SOCKETS
     int "Max number of open sockets"
-    range 1 32
+    range 1 16
     default 10
     help
         Sockets take up a certain amount of memory, and allowing fewer
