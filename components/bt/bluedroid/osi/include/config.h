@@ -68,7 +68,7 @@ bool config_has_key(const config_t *config, const char *section, const char *key
 
 // Returns true if the config file has a key named |key| and the key_value.
 // Returns false otherwise. |config|, |key|, and |key_value| must not be NULL.
-bool config_has_key_in_section(config_t *config, char *key, char *key_value);
+bool config_has_key_in_section(config_t *config, const char *key, char *key_value);
 
 // Returns the integral value for a given |key| in |section|. If |section|
 // or |key| do not exist, or the value cannot be fully converted to an integer,

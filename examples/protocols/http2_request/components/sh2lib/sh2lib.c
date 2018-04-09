@@ -101,7 +101,7 @@ static ssize_t callback_recv(nghttp2_session *session, uint8_t *buf,
     return rv;
 }
 
-char *sh2lib_frame_type_str(int type)
+const char *sh2lib_frame_type_str(int type)
 {
     switch (type) {
     case NGHTTP2_HEADERS:

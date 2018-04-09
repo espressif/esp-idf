@@ -85,9 +85,9 @@ static struct gattc_profile_inst gl_profile_tab[PROFILE_NUM] = {
     },
 };
 
-static char *esp_key_type_to_str(esp_ble_key_type_t key_type)
+static const char *esp_key_type_to_str(esp_ble_key_type_t key_type)
 {
-   char *key_str = NULL;
+   const char *key_str = NULL;
    switch(key_type) {
     case ESP_LE_KEY_NONE:
         key_str = "ESP_LE_KEY_NONE";
