@@ -175,9 +175,11 @@ typedef struct {
 
 typedef enum {
     WIFI_PS_NONE,        /**< No power save */
-    WIFI_PS_MIN_MODEM,   /**< Minimum modem power save. In this mode, station wakes up to receive beacon every DTIM period */
-    WIFI_PS_MAX_MODEM,   /**< Maximum modem power save. In this mode, station wakes up to receive beacon every listen interval */
+    WIFI_PS_MIN_MODEM,   /**< Minimum modem power saving. In this mode, station wakes up to receive beacon every DTIM period */
+    WIFI_PS_MAX_MODEM,   /**< Maximum modem power saving. In this mode, interval to receive beacons is determined by the listen_interval parameter in wifi_sta_config_t */
 } wifi_ps_type_t;
+
+#define WIFI_PS_MODEM WIFI_PS_MIN_MODEM /**< @deprecated Use WIFI_PS_MIN_MODEM or WIFI_PS_MAX_MODEM instead */
 
 #define WIFI_PROTOCOL_11B         1
 #define WIFI_PROTOCOL_11G         2
@@ -209,7 +211,7 @@ typedef struct {
     bool bssid_set;        /**< whether set MAC address of target AP or not. Generally, station_config.bssid_set needs to be 0; and it needs to be 1 only when users need to check the MAC address of the AP.*/
     uint8_t bssid[6];     /**< MAC address of target AP*/
     uint8_t channel;       /**< channel of target AP. Set to 1~13 to scan starting from the specified channel before connecting to AP. If the channel of AP is unknown, set it to 0.*/
-    uint16_t listen_interval;   /**< Listen interval for ESP32 station to receive beacon in maximum power save mode, units: beacon interval */
+    uint16_t listen_interval;   /**< Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set. Units: AP beacon intervals. Defaults to 3 if set to 0. */
     wifi_sort_method_t sort_method;    /**< sort the connect AP in the list by rssi or security mode */
     wifi_fast_scan_threshold_t  threshold;     /**< When scan_method is set to WIFI_FAST_SCAN, only APs which have an auth mode that is more secure than the selected auth mode and a signal stronger than the minimum RSSI will be used. */
 } wifi_sta_config_t;
