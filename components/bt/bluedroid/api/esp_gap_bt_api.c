@@ -37,7 +37,7 @@ esp_err_t esp_bt_gap_register_callback(esp_bt_gap_cb_t callback)
     return ESP_OK;
 }
 
-esp_err_t esp_bt_gap_set_scan_mode(esp_bt_scan_mode_t mode)
+esp_err_t esp_bt_gap_set_scan_mode(esp_bt_connection_mode_t c_mode, esp_bt_discovery_mode_t d_mode)
 {
     btc_msg_t msg;
     btc_gap_bt_args_t arg;
@@ -49,7 +49,8 @@ esp_err_t esp_bt_gap_set_scan_mode(esp_bt_scan_mode_t mode)
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BT;
     msg.act = BTC_GAP_BT_ACT_SET_SCAN_MODE;
-    arg.set_scan_mode.mode = mode;
+    arg.set_scan_mode.c_mode = c_mode;
+    arg.set_scan_mode.d_mode = d_mode;
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
