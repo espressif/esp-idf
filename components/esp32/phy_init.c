@@ -188,7 +188,6 @@ esp_err_t esp_phy_rf_deinit(phy_rf_module_t module)
         }
 
         if (s_is_phy_rf_en == false) {
-            gpio_set_level(15, 0); //G1, 15
             // Disable PHY and RF.
             phy_close_rf();
             // Disable WiFi/BT common peripheral clock. Do not disable clock for hardware RNG
