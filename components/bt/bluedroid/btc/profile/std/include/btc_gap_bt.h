@@ -19,6 +19,7 @@
 #include "esp_bt_defs.h"
 #include "esp_gap_bt_api.h"
 #include "btc_task.h"
+#include "utl.h"
 
 #if (BTC_GAP_BT_INCLUDED == TRUE)
 
@@ -32,6 +33,7 @@ typedef enum {
     BTC_GAP_BT_ACT_SEARCH_SERVICES,
     BTC_GAP_BT_ACT_GET_REMOTE_SERVICE_RECORD,
     BTC_GAP_BT_ACT_SEARCH_SERVICE_RECORD,
+    BTC_GAP_BT_ACT_SET_COD,
 } btc_gap_bt_act_t;
 
 /* btc_bt_gap_args_t */
@@ -56,12 +58,20 @@ typedef union {
         bt_bdaddr_t bda;
         esp_bt_uuid_t uuid;
     } get_rmt_srv_rcd;
+
+    // BTC_GAP_BT_ACT_SET_COD
+    struct set_cod_args {
+       esp_bt_cod_t cod;
+       esp_bt_cod_mode_t mode;
+    } set_cod;
+
 } btc_gap_bt_args_t;
 
 void btc_gap_bt_call_handler(btc_msg_t *msg);
 
 void btc_gap_bt_busy_level_updated(uint8_t bl_flags);
 
+esp_err_t btc_gap_bt_get_cod(esp_bt_cod_t *cod);
 #endif /* #if BTC_GAP_BT_INCLUDED */
 
 #endif /* __BTC_GAP_BT_H__ */
