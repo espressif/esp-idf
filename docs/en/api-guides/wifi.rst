@@ -772,9 +772,7 @@ Wi-Fi Reason Code
 The table below shows the reason-code defined in ESP32. The first column is the macro name defined in esp_wifi_types.h. The common prefix *WIFI_REASON* is removed, which means that *UNSPECIFIED* actually stands for *WIFI_REASON_UNSPECIFIED* and so on. The second column is the value of the reason. The third column is the standard value to which this reason is mapped in section 8.4.1.7 of ieee802.11-2012. (For more information, refer to the standard mentioned above.) The last column is a description of the reason.
 
 +---------------------------+-------+---------+-------------------------------------------------------------+
-| Reason code               | ESP32 |Mapped To| Description                                                 |
-|                           | value |Standard |                                                             | 
-|                           |       |Value    |                                                             | 
+| Reason code               | Value |Mapped To| Description                                                 |
 +===========================+=======+=========+=============================================================+
 | UNSPECIFIED               |   1   |    1    | Generally, it means an internal failure, e.g., the memory   |
 |                           |       |         | runs out, the internal TX fails, or the reason is received  |
