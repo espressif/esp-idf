@@ -299,7 +299,7 @@ Updating ESP-IDF
 
 After some time of using ESP-IDF, you may want to update it to take advantage of new features or bug fixes. The simplest way to do so is by deleting existing ``esp-idf`` folder and cloning it again, exactly as when doing initial installation described in sections :ref:`get-started-get-esp-idf`.
 
-Another solution is to update only what has changed. This method is useful if you have slow connection to the GiHub. To do the update run the following commands::
+Another solution is to update only what has changed. This method is useful if you have slow connection to the GitHub. To do the update run the following commands::
 
     cd ~/esp/esp-idf
     git pull
