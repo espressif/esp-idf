@@ -98,9 +98,17 @@ static const char* TAG = "rtc_clk";
 #define DIG_DBIAS_XTAL      RTC_CNTL_DBIAS_1V10
 #define DIG_DBIAS_2M        RTC_CNTL_DBIAS_1V00
 
+/* PLL currently enabled, if any */
+typedef enum {
+    RTC_PLL_NONE,
+    RTC_PLL_320M,
+    RTC_PLL_480M
+} rtc_pll_t;
+static rtc_pll_t s_cur_pll = RTC_PLL_NONE;
 
+/* Current CPU frequency; saved in a variable for faster freq. switching */
 static rtc_cpu_freq_t s_cur_freq = RTC_CPU_FREQ_XTAL;
-static int s_pll_freq = 0;
+
 
 static void rtc_clk_32k_enable_internal(int dac, int dres, int dbias)
 {
@@ -392,8 +400,9 @@ static void rtc_clk_cpu_freq_to_xtal()
 static void rtc_clk_cpu_freq_to_pll(rtc_cpu_freq_t cpu_freq)
 {
     int freq = 0;
-    if ((cpu_freq == RTC_CPU_FREQ_240M && s_pll_freq == 320) ||
-        (cpu_freq != RTC_CPU_FREQ_240M && s_pll_freq == 240)) {
+    if (s_cur_pll == RTC_PLL_NONE ||
+        (cpu_freq == RTC_CPU_FREQ_240M && s_cur_pll == RTC_PLL_320M) ||
+        (cpu_freq != RTC_CPU_FREQ_240M && s_cur_pll == RTC_PLL_480M)) {
         /* need to switch PLLs, fall back to full implementation */
         rtc_clk_cpu_freq_set(cpu_freq);
         return;
@@ -451,7 +460,7 @@ void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq)
     SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG,
             RTC_CNTL_BB_I2C_FORCE_PD | RTC_CNTL_BBPLL_FORCE_PD |
             RTC_CNTL_BBPLL_I2C_FORCE_PD);
-    s_pll_freq = 0;
+    s_cur_pll = RTC_PLL_NONE;
     rtc_clk_apb_freq_update(xtal_freq * MHZ);
 
     /* is APLL under force power down? */
@@ -479,15 +488,15 @@ void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq)
         if (cpu_freq == RTC_CPU_FREQ_80M) {
             DPORT_REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 0);
             ets_update_cpu_frequency(80);
-            s_pll_freq = 320;
+            s_cur_pll = RTC_PLL_320M;
         } else if (cpu_freq == RTC_CPU_FREQ_160M) {
             DPORT_REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 1);
             ets_update_cpu_frequency(160);
-            s_pll_freq = 320;
+            s_cur_pll = RTC_PLL_320M;
         } else if (cpu_freq == RTC_CPU_FREQ_240M) {
             DPORT_REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 2);
             ets_update_cpu_frequency(240);
-            s_pll_freq = 480;
+            s_cur_pll = RTC_PLL_480M;
         }
         REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL, RTC_CNTL_SOC_CLK_SEL_PLL);
         rtc_clk_wait_for_slow_cycle();
