@@ -273,7 +273,7 @@ test_multi_heap_on_host:
     - wl_host_test
   script:
     - cd components/heap/test_multi_heap_host
-    - make test
+    - ./test_all_configs.sh
 
 test_build_system:
   stage: test
