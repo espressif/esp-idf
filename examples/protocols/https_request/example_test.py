@@ -30,10 +30,8 @@ def test_examples_protocol_https_request(env, extra_data):
     IDF.check_performance("https_request_bin_size", bin_size//1024)
     # start test
     dut1.start_app()
-    dut1.expect("Connecting to www.howsmyssl.com:443", timeout=30)
-    dut1.expect("Performing the SSL/TLS handshake")
-    dut1.expect("Certificate verified.", timeout=15)
-    dut1.expect("Cipher suite is TLS-ECDHE-RSA-WITH-AES-128-GCM-SHA256", timeout=20)
+    dut1.expect("Connection established...", timeout=30)
+    dut1.expect("Reading HTTP response...")
     dut1.expect(re.compile(r"Completed (\d) requests"))
 
 
