@@ -132,7 +132,7 @@ typedef enum {
 /** Inquiry Mode */
 typedef enum {
     ESP_BT_INQ_MODE_GENERAL_INQUIRY,                /*!< General inquiry mode */
-    ESP_BT_INQ_MODE_LIMITED_INQIURY,                /*!< Limited inquiry mode */
+    ESP_BT_INQ_MODE_LIMITED_INQUIRY,                /*!< Limited inquiry mode */
 } esp_bt_inq_mode_t;
 
 /** Minimum and Maximum inquiry length*/
