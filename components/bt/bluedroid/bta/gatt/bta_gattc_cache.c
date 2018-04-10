@@ -1142,6 +1142,11 @@ void bta_gattc_get_service_with_uuid(UINT16 conn_id, tBT_UUID *svc_uuid,
                                      int *count)
 {
     const list_t* svc = bta_gattc_get_services(conn_id);
+    if (svc == NULL) {
+        *svc_db = NULL;
+        *count = 0;
+        return;
+    }
     size_t db_size = list_length(svc);
     void *buffer = osi_malloc(db_size*sizeof(btgatt_db_element_t));
     if (!buffer) {
