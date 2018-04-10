@@ -128,7 +128,6 @@ typedef enum {
 } RcvMsgBuffState;
 
 typedef struct {
-//    uint32_t     RcvBuffSize;
     uint8_t *pRcvMsgBuff;
     uint8_t *pWritePos;
     uint8_t *pReadPos;
@@ -248,7 +247,7 @@ STATUS uart_tx_one_char(uint8_t TxChar);
   *
   * @return OK.
   */
-STATUS uart_tx_one_char2(uint8_t TxChar);//for send message
+STATUS uart_tx_one_char2(uint8_t TxChar);
 
 /**
   * @brief Wait until uart tx full empty.
@@ -285,7 +284,7 @@ static inline void IRAM_ATTR uart_tx_wait_idle(uint8_t uart_no) {
 STATUS uart_rx_one_char(uint8_t *pRxChar);
 
 /**
-  * @brief Get an input char to message channel, wait until successful.
+  * @brief Get an input char from message channel, wait until successful.
   *        Please do not call this function in SDK.
   *
   * @param  None

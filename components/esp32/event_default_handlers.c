@@ -41,7 +41,7 @@ static const char* TAG = "event";
 do{\
     esp_err_t __err = (api_call);\
     if ((ret) != __err) {\
-        ESP_LOGE(TAG, "%s %d %s ret=%d", __FUNCTION__, __LINE__, (info), __err);\
+        ESP_LOGE(TAG, "%s %d %s ret=0x%X", __FUNCTION__, __LINE__, (info), __err);\
         return __err;\
     }\
 } while(0)
