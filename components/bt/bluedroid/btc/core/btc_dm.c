@@ -434,6 +434,12 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         //load the bonding device to the btm layer
         btc_storage_load_bonded_ble_devices();
 #endif  ///SMP_INCLUDED == TRUE
+
+        /* Set initial device name, it can be overwritten later */
+        if (p_data->enable.status == BTA_SUCCESS) {
+            char *initial_device_name = "ESP32";
+            BTA_DmSetDeviceName(initial_device_name);
+        }
         btc_enable_bluetooth_evt(p_data->enable.status);
         break;
     }
@@ -465,7 +471,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         memcpy(bd_addr.address, p_data->link_down.bd_addr, sizeof(BD_ADDR));
         btm_set_bond_type_dev(p_data->link_down.bd_addr, BOND_TYPE_UNKNOWN);
         param.remove_bond_dev_cmpl.status = ESP_BT_STATUS_FAIL;
-        
+
         if (p_data->link_down.status == HCI_SUCCESS) {
             //remove the bonded key in the config and nvs flash.
             btc_storage_remove_ble_dev_type(&bd_addr, false);
