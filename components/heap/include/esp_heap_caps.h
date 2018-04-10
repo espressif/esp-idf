@@ -67,7 +67,7 @@ void *heap_caps_malloc(size_t size, uint32_t caps);
 void heap_caps_free( void *ptr);
 
 /**
- * @brief Reallocate memory previously allocated via heap_caps_malloc() or heaps_caps_realloc().
+ * @brief Reallocate memory previously allocated via heap_caps_malloc() or heap_caps_realloc().
  *
  * Equivalent semantics to libc realloc(), for capability-aware memory.
  *
@@ -90,7 +90,7 @@ void *heap_caps_realloc( void *ptr, size_t size, int caps);
  *
  * Equivalent semantics to libc calloc(), for capability-aware memory.
  *
- * In IDF, ``calloc(p)`` is equivalent to ``heaps_caps_calloc(p, MALLOC_CAP_8BIT)``.
+ * In IDF, ``calloc(p)`` is equivalent to ``heap_caps_calloc(p, MALLOC_CAP_8BIT)``.
  *
  * @param n    Number of continuing chunks of memory to allocate
  * @param size Size, in bytes, of a chunk of memory to allocate
