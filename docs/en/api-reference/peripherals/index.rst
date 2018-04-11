@@ -13,7 +13,8 @@ Peripherals API
    MCPWM <mcpwm>
    Pulse Counter <pcnt>
    Remote Control <rmt>
-   SD/MMC Card Host <../storage/sdmmc>
+   SDMMC Host <sdmmc_host>
+   SD SPI Host <sdspi_host>
    Sigma-delta Modulation <sigmadelta>
    SPI Master <spi_master>
    SPI Slave <spi_slave>

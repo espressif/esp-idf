@@ -44,6 +44,8 @@ extern "C" {
     .do_transaction = &sdmmc_host_do_transaction, \
     .deinit = &sdmmc_host_deinit, \
     .command_timeout_ms = 0, \
+    .io_int_enable = sdmmc_host_io_int_enable, \
+    .io_int_wait = sdmmc_host_io_int_wait, \
 }
 
 /**
@@ -165,6 +167,26 @@ esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz);
  *      - ESP_ERR_INVALID_ARG if the data buffer is not in DMA capable memory
  */
 esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo);
+
+/**
+ * @brief Enable IO interrupts
+ *
+ * This function configures the host to accept SDIO interrupts.
+ *
+ * @param slot  slot number (SDMMC_HOST_SLOT_0 or SDMMC_HOST_SLOT_1)
+ * @return returns ESP_OK, other errors possible in the future
+ */
+esp_err_t sdmmc_host_io_int_enable(int slot);
+
+/**
+ * @brief Block until an SDIO interrupt is received, or timeout occurs
+ * @param slot  slot number (SDMMC_HOST_SLOT_0 or SDMMC_HOST_SLOT_1)
+ * @param timeout_ticks  number of RTOS ticks to wait for the interrupt
+ * @return
+ *  - ESP_OK on success (interrupt received)
+ *  - ESP_ERR_TIMEOUT if the interrupt did not occur within timeout_ticks
+ */
+esp_err_t sdmmc_host_io_int_wait(int slot, TickType_t timeout_ticks);
 
 /**
  * @brief Disable SDMMC host and release allocated resources

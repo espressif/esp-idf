@@ -1,18 +1,19 @@
-SDMMC Host Peripheral
-=====================
+SD/SDIO/MMC Driver
+==================
 
 Overview
 --------
 
-SDMMC peripheral supports SD and MMC memory cards and SDIO cards. SDMMC software builds on top of SDMMC driver and consists of the following parts:
+SD/SDIO/MMC driver currently supports SD memory and IO cards. Support for MCC/eMMC cards will be added in the future. This protocol level driver builds on top of SDMMC and SD SPI host drivers.
 
-1. SDMMC host driver (``driver/sdmmc_host.h``) — this driver provides APIs to send commands to the slave device(s), send and receive data, and handling error conditions on the bus.
+SDMMC and SD SPI host drivers (``driver/sdmmc_host.h``) provide APIs to send commands to the slave device(s), send and receive data, and handle error conditions on the bus.
+    
+- See :doc:`SDMMC Host API <../peripherals/sdmmc_host>` for functions used to initialize and configure SDMMC host.
+- See :doc:`SD SPI Host API <../peripherals/sdspi_host>` for functions used to initialize and configure SD SPI host.
 
-2. SDMMC protocol layer (``sdmmc_cmd.h``) — this component handles specifics of SD protocol such as card initialization and data transfer commands. Despite the name, only SD (SDSC/SDHC/SDXC) cards are supported at the moment. Support for MCC/eMMC cards can be added in the future.
+SDMMC protocol layer (``sdmmc_cmd.h``), described in this document, handles specifics of SD protocol such as card initialization and data transfer commands.
 
-Protocol layer works with the host via ``sdmmc_host_t`` structure. This structure contains pointers to various functions of the host.
-
-In addition to SDMMC Host peripheral, ESP32 has SPI peripherals which can also be used to work with SD cards. This is supported using a variant of the host driver, ``driver/sdspi_host.h``. This driver has the same interface as SDMMC host driver, and the protocol layer can use either of two.
+Protocol layer works with the host via :cpp:class:`sdmmc_host_t` structure. This structure contains pointers to various functions of the host.
 
 Application Example
 -------------------
@@ -23,107 +24,54 @@ An example which combines SDMMC driver with FATFS library is provided in ``examp
 Protocol layer APIs
 -------------------
 
-Protocol layer is given ``sdmmc_host_t`` structure which describes the SD/MMC host driver, lists its capabilites, and provides pointers to functions of the driver. Protocol layer stores card-specific information in ``sdmmc_card_t`` structure. When sending commands to the SD/MMC host driver, protocol layer uses ``sdmmc_command_t`` structure to describe the command, argument, expected return value, and data to transfer, if any.
+Protocol layer is given :cpp:class:`sdmmc_host_t` structure which describes the SD/MMC host driver, lists its capabilites, and provides pointers to functions of the driver. Protocol layer stores card-specific information in :cpp:class:`sdmmc_card_t` structure. When sending commands to the SD/MMC host driver, protocol layer uses :cpp:class:`sdmmc_command_t` structure to describe the command, argument, expected return value, and data to transfer, if any.
 
-Normal usage of the protocol layer is as follows:
+Usage with SD memory cards
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-1. Call the host driver functions to initialize the host (e.g. ``sdmmc_host_init``, ``sdmmc_host_init_slot``). 
-2. Call ``sdmmc_card_init`` to initialize the card, passing it host driver information (``host``) and a pointer to ``sdmmc_card_t`` structure which will be filled in (``card``).
-3. To read and write sectors of the card, use ``sdmmc_read_sectors`` and ``sdmmc_write_sectors``, passing the pointer to card information structure (``card``).
-4. When card is not used anymore, call the host driver function to disable SDMMC host peripheral and free resources allocated by the driver (e.g. ``sdmmc_host_deinit``).
+1. Call the host driver functions to initialize the host (e.g. :cpp:func:`sdmmc_host_init`, :cpp:func:`sdmmc_host_init_slot`). 
+2. Call :cpp:func:`sdmmc_card_init` to initialize the card, passing it host driver information (``host``) and a pointer to :cpp:class:`sdmmc_card_t` structure which will be filled in (``card``).
+3. To read and write sectors of the card, use :cpp:func:`sdmmc_read_sectors` and :cpp:func:`sdmmc_write_sectors`, passing the pointer to card information structure (``card``).
+4. When card is not used anymore, call the host driver function to disable the host peripheral and free resources allocated by the driver (e.g. :cpp:func:`sdmmc_host_deinit`).
 
-Most applications need to use the protocol layer only in one task; therefore the protocol layer doesn't implement any kind of locking on the ``sdmmc_card_t`` structure, or when accessing SDMMC host driver. Such locking has to be implemented in the higher layer, if necessary (e.g. in the filesystem driver).
+Usage with SDIO cards
+^^^^^^^^^^^^^^^^^^^^^
 
-.. doxygenstruct:: sdmmc_host_t
-    :members:
+Initialization an probing process is the same as with SD memory cards. Only data transfer commands differ in SDIO mode.
 
-.. doxygendefine:: SDMMC_HOST_FLAG_1BIT
-.. doxygendefine:: SDMMC_HOST_FLAG_4BIT
-.. doxygendefine:: SDMMC_HOST_FLAG_8BIT
-.. doxygendefine:: SDMMC_HOST_FLAG_SPI
-.. doxygendefine:: SDMMC_FREQ_DEFAULT
-.. doxygendefine:: SDMMC_FREQ_HIGHSPEED
-.. doxygendefine:: SDMMC_FREQ_PROBING
+During probing and card initialization (done by :cpp:func:`sdmmc_card_init`), the driver only configures the following registers of the IO card:
 
-.. doxygenstruct:: sdmmc_command_t
-    :members:
+1. The IO portion of the card is reset by setting RES bit in "I/O Abort" (0x06) register.
+2. If 4-line mode is enalbed in host and slot configuration, driver attempts to set "Bus width" field in "Bus Interface Control" (0x07) register. If that succeeds (which means that slave supports 4-line mode), host is also switched to 4-line mode.
+3. If high-speed mode is enabled in host configuration, SHS bit is set in "High Speed" (0x13) register.
 
-.. doxygenstruct:: sdmmc_card_t
-    :members:
+In particular, the driver does not set any of the bits in I/O Enable, Int Enable registers, IO block sizes, etc. Applications can set these by calling :cpp:func:`sdmmc_io_write_byte`.
 
-.. doxygenstruct:: sdmmc_csd_t
-    :members:
+For card configuration and data transfer, use one of the following functions:
 
-.. doxygenstruct:: sdmmc_cid_t
-    :members:
+- :cpp:func:`sdmmc_io_read_byte`, :cpp:func:`sdmmc_io_write_byte` — read and write single byte using IO_RW_DIRECT (CMD52).
+- :cpp:func:`sdmmc_io_read_bytes`,  :cpp:func:`sdmmc_io_write_bytes` — read and write multiple bytes using IO_RW_EXTENDED (CMD53), in byte mode.
+- :cpp:func:`sdmmc_io_read_blocks`, :cpp:func:`sdmmc_io_write_blocks` — read and write blocks of data using IO_RW_EXTENDED (CMD53), in block mode.
 
-.. doxygenstruct:: sdmmc_scr_t
-    :members:
+SDIO interrupts can be enabled by the application using :cpp:func:`sdmmc_io_enable_int` function. When using SDIO in 1-line mode, D1 line also needs to be connected to use SDIO interrupts.
 
-.. doxygenfunction:: sdmmc_card_init
-.. doxygenfunction:: sdmmc_write_sectors
-.. doxygenfunction:: sdmmc_read_sectors
+The application can wait for SDIO interrupt to occur using :cpp:func:`sdmmc_io_wait_int`.
 
-SDMMC host driver APIs
-----------------------
+Combo (memory + IO) cards
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
-On the ESP32, SDMMC host peripheral has two slots:
-
-- Slot 0 (``SDMMC_HOST_SLOT_0``) is an 8-bit slot. It uses ``HS1_*`` signals in the PIN MUX.
-- Slot 1 (``SDMMC_HOST_SLOT_1``) is a 4-bit slot. It uses ``HS2_*`` signals in the PIN MUX.
-
-Card Detect and Write Protect signals can be routed to arbitrary pins using GPIO matrix. To use these pins, set ``gpio_cd`` and ``gpio_wp`` members of ``sdmmc_slot_config_t`` structure when calling ``sdmmc_host_init_slot``.
-
-Of all the funtions listed below, only ``sdmmc_host_init``, ``sdmmc_host_init_slot``, and ``sdmmc_host_deinit`` will be used directly by most applications. Other functions, such as ``sdmmc_host_set_bus_width``, ``sdmmc_host_set_card_clk``, and ``sdmmc_host_do_transaction`` will be called by the SD/MMC protocol layer via function pointers in ``sdmmc_host_t`` structure.
-
-.. doxygenfunction:: sdmmc_host_init
-
-.. doxygendefine:: SDMMC_HOST_SLOT_0
-.. doxygendefine:: SDMMC_HOST_SLOT_1
-.. doxygendefine:: SDMMC_HOST_DEFAULT
-.. doxygendefine:: SDMMC_SLOT_WIDTH_DEFAULT
-
-.. doxygenfunction:: sdmmc_host_init_slot
-
-.. doxygenstruct:: sdmmc_slot_config_t
-    :members:
-
-.. doxygendefine:: SDMMC_SLOT_NO_CD
-.. doxygendefine:: SDMMC_SLOT_NO_WP
-.. doxygendefine:: SDMMC_SLOT_CONFIG_DEFAULT
-
-.. doxygenfunction:: sdmmc_host_set_bus_width
-.. doxygenfunction:: sdmmc_host_set_card_clk
-.. doxygenfunction:: sdmmc_host_do_transaction
-.. doxygenfunction:: sdmmc_host_deinit
-
-SD SPI driver APIs
-------------------
-
-SPI controllers accessible via spi_master driver (HSPI, VSPI) can be used to work with SD cards. In SPI mode, SD driver has lower throughput than in 1-line SD mode. However SPI mode makes pin selection more flexible, as SPI peripheral can be connected to any ESP32 pins using GPIO Matrix. SD SPI driver uses software controlled CS signal. Currently SD SPI driver assumes that it can use the SPI controller exclusively, so applications which need to share SPI bus between SD cards and other peripherals need to make sure that SD card and other devices are not used at the same time from different tasks. 
-
-SD SPI driver is represented using an ``sdmmc_host_t`` structure initialized using ``SDSPI_HOST_DEFAULT`` macro. For slot initialization, ``SDSPI_SLOT_CONFIG_DEFAULT`` can be used to fill in default pin mapping, which is the same as the pin mapping in SD mode.
-
-SD SPI driver APIs are very similar to SDMMC host APIs. As with the SDMMC host driver, only ``sdspi_host_init``, ``sdspi_host_init_slot``, and ``sdspi_host_deinit`` functions are normally used by the applications. Other functions are called by the protocol level driver via function pointers in ``sdmmc_host_t`` structure.
-
-.. note:
-	
-	SD over SPI does not support speeds above SDMMC_FREQ_DEFAULT due to a limitation of SPI driver.
+The driver does not support SD combo cards. Combo cards will be treated as IO cards.
 
 
-.. doxygenfunction:: sdspi_host_init
+Thread safety
+^^^^^^^^^^^^^
 
-.. doxygendefine:: SDSPI_HOST_DEFAULT
+Most applications need to use the protocol layer only in one task; therefore the protocol layer doesn't implement any kind of locking on the :cpp:class:`sdmmc_card_t` structure, or when accessing SDMMC or SD SPI host drivers. Such locking is usually implemented in the higher layer (e.g. in the filesystem driver).
 
-.. doxygenfunction:: sdspi_host_init_slot
 
-.. doxygenstruct:: sdspi_slot_config_t
-    :members:
+API Reference
+-------------
 
-.. doxygendefine:: SDSPI_SLOT_NO_CD
-.. doxygendefine:: SDSPI_SLOT_NO_WP
-.. doxygendefine:: SDSPI_SLOT_CONFIG_DEFAULT
+.. include:: /_build/inc/sdmmc_cmd.inc
 
-.. doxygenfunction:: sdspi_host_set_card_clk
-.. doxygenfunction:: sdspi_host_do_transaction
-.. doxygenfunction:: sdspi_host_deinit
+.. include:: /_build/inc/sdmmc_types.inc
