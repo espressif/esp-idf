@@ -54,9 +54,9 @@ struct netif ppp_netif;
 static const char *TAG = "example";
 
 typedef struct {
-    char *cmd;
+    const char *cmd;
     uint16_t cmdSize;
-    char *cmdResponseOnOk;
+    const char *cmdResponseOnOk;
     uint32_t timeoutMs;
 } GSM_Cmd;
 

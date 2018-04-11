@@ -392,7 +392,7 @@ bool _btc_storage_compare_address_key_value(bt_bdaddr_t *remote_bd_addr,
 {
     bdstr_t bdstr;
     bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
-    char *key_type_str;
+    const char *key_type_str;
     switch (key_type) {
     case BTM_LE_KEY_PENC:
         key_type_str = BTC_BLE_STORAGE_LE_KEY_PENC_STR;

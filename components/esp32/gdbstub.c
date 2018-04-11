@@ -66,7 +66,7 @@ static void ATTR_GDBFN gdbPacketChar(char c) {
 }
 
 //Send a string as part of a packet
-static void ATTR_GDBFN gdbPacketStr(char *c) {
+static void ATTR_GDBFN gdbPacketStr(const char *c) {
 	while (*c!=0) {
 		gdbPacketChar(*c);
 		c++;
