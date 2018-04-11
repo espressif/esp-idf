@@ -1106,9 +1106,9 @@ const char *SSL_rstate_string_long(SSL *ssl)
 /**
  * @brief get SSL statement string
  */
-char *SSL_state_string(const SSL *ssl)
+const char *SSL_state_string(const SSL *ssl)
 {
-    char *str = "UNKWN ";
+    const char *str = "UNKWN ";
 
     SSL_ASSERT2(ssl);
 
@@ -1214,9 +1214,9 @@ char *SSL_state_string(const SSL *ssl)
 /**
  * @brief get SSL statement long string
  */
-char *SSL_state_string_long(const SSL *ssl)
+const char *SSL_state_string_long(const SSL *ssl)
 {
-    char *str = "UNKWN ";
+    const char *str = "UNKWN ";
 
     SSL_ASSERT2(ssl);
 

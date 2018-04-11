@@ -115,7 +115,7 @@ TEST_CASE("test asctime", "[newlib]")
     TEST_ASSERT_EQUAL_STRING(buf, time_str);
 }
 
-static bool fn_in_rom(void *fn, char *name)
+static bool fn_in_rom(void *fn, const char *name)
 {
     const int fnaddr = (int)fn;
     return (fnaddr >= 0x40000000) && (fnaddr < 0x40070000);

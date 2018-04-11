@@ -36,7 +36,7 @@ static void btc_key_value_to_string(uint8_t *key_value, char *value_str, int key
 static osi_mutex_t lock;  // protects operations on |config|.
 static config_t *config;
 
-bool btc_compare_address_key_value(const char *section, char *key_type, void *key_value, int key_length)
+bool btc_compare_address_key_value(const char *section, const char *key_type, void *key_value, int key_length)
 {
     assert(key_value != NULL);
     bool status = false;
