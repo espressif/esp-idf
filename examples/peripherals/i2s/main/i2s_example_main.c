@@ -1,7 +1,7 @@
 /* I2S Example
-    
+
     This example code will output 100Hz sine wave and triangle wave to 2-channel of I2S driver
-    Every 5 seconds, it will change bits_per_sample [16, 24, 32] for i2s data 
+    Every 5 seconds, it will change bits_per_sample [16, 24, 32] for i2s data
 
     This example code is in the Public Domain (or CC0 licensed, at your option.)
 
@@ -29,11 +29,12 @@ static void setup_triangle_sine_waves(int bits)
     int *samples_data = malloc(((bits+8)/16)*SAMPLE_PER_CYCLE*4);
     unsigned int i, sample_val;
     double sin_float, triangle_float, triangle_step = (double) pow(2, bits) / SAMPLE_PER_CYCLE;
+    size_t i2s_bytes_write = 0;
 
     printf("\r\nTest bits=%d free mem=%d, written data=%d\n", bits, esp_get_free_heap_size(), ((bits+8)/16)*SAMPLE_PER_CYCLE*4);
 
     triangle_float = -(pow(2, bits)/2 - 1);
-    
+
     for(i = 0; i < SAMPLE_PER_CYCLE; i++) {
         sin_float = sin(i * PI / 180.0);
         if(sin_float >= 0)
@@ -56,7 +57,7 @@ static void setup_triangle_sine_waves(int bits)
             samples_data[i*2] = ((int) triangle_float);
             samples_data[i*2 + 1] = ((int) sin_float);
         }
-        
+
     }
 
     i2s_set_clk(I2S_NUM, SAMPLE_RATE, bits, 2);
@@ -68,12 +69,12 @@ static void setup_triangle_sine_waves(int bits)
     //         i2s_push_sample(0, &samples_data[i*2], 100);
     // }
     // or write
-    i2s_write_bytes(I2S_NUM, (const char *)samples_data, ((bits+8)/16)*SAMPLE_PER_CYCLE*4, 100);
-    
+    i2s_write(I2S_NUM, samples_data, ((bits+8)/16)*SAMPLE_PER_CYCLE*4, &i2s_bytes_write, 100);
+
     free(samples_data);
 }
 void app_main()
-{    
+{
     //for 36Khz sample rates, we create 100Hz sine wave, every cycle need 36000/100 = 360 samples (4-bytes or 8-bytes each sample)
     //depend on bits_per_sample
     //using 6 buffers, we need 60-samples per buffer
@@ -82,7 +83,7 @@ void app_main()
     i2s_config_t i2s_config = {
         .mode = I2S_MODE_MASTER | I2S_MODE_TX,                                  // Only TX
         .sample_rate = SAMPLE_RATE,
-        .bits_per_sample = 16,                                              
+        .bits_per_sample = 16,
         .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,                           //2-channels
         .communication_format = I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB,
         .dma_buf_count = 6,
@@ -106,7 +107,7 @@ void app_main()
         test_bits += 8;
         if(test_bits > 32)
             test_bits = 16;
-        
-    } 
-    
+
+    }
+
 }
