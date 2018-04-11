@@ -56,7 +56,8 @@ void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
 
 void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len)
 {
-    i2s_write_bytes(0, (const char *)data, len, portMAX_DELAY);
+    int i2s_write_len;
+    i2s_write(0, (const char *)data, len, &i2s_write_len, portMAX_DELAY);
     if (++m_pkt_cnt % 100 == 0) {
         ESP_LOGE(BT_AV_TAG, "audio data pkt cnt %u", m_pkt_cnt);
     }
@@ -124,7 +125,7 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
                 sample_rate = 48000;
             }
             i2s_set_clk(0, sample_rate, 16, 2);
-        
+
             ESP_LOGI(BT_AV_TAG, "configure audio player %x-%x-%x-%x\n",
                      a2d->audio_cfg.mcc.cie.sbc[0],
                      a2d->audio_cfg.mcc.cie.sbc[1],

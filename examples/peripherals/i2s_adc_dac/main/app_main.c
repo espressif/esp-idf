@@ -199,6 +199,7 @@ void example_i2s_adc_dac(void*arg)
     example_i2s_init();
     int i2s_read_len = EXAMPLE_I2S_READ_LEN;
     int flash_wr_size = 0;
+    int i2s_bytes_read = 0;
 
     //2. Record audio from ADC and save in flash
 #if RECORD_IN_FLASH_EN
@@ -206,7 +207,7 @@ void example_i2s_adc_dac(void*arg)
     uint8_t* flash_write_buff = (uint8_t*) calloc(i2s_read_len, sizeof(char));
     while (flash_wr_size < FLASH_RECORD_SIZE) {
         //read data from I2S bus, in this case, from ADC.
-        i2s_read_bytes(EXAMPLE_I2S_NUM, (char*) i2s_read_buff, i2s_read_len, portMAX_DELAY);
+        i2s_read(EXAMPLE_I2S_NUM, (char*) i2s_read_buff, i2s_read_len, &i2s_bytes_read, portMAX_DELAY);
         example_disp_buf((uint8_t*) i2s_read_buff, 64);
         //save original data from I2S(ADC) into flash.
         esp_partition_write(data_partition, flash_wr_size, i2s_read_buff, i2s_read_len);
@@ -221,6 +222,7 @@ void example_i2s_adc_dac(void*arg)
 
     uint8_t* flash_read_buff = (uint8_t*) calloc(i2s_read_len, sizeof(char));
     uint8_t* i2s_write_buff = (uint8_t*) calloc(i2s_read_len, sizeof(char));
+    int i2s_write_len = 0;
     while (1) {
 
         //3. Read flash and replay the sound via DAC
@@ -231,7 +233,7 @@ void example_i2s_adc_dac(void*arg)
             //process data and scale to 8bit for I2S DAC.
             example_i2s_adc_data_scale(i2s_write_buff, flash_read_buff, FLASH_SECTOR_SIZE);
             //send data
-            i2s_write_bytes(EXAMPLE_I2S_NUM, (char*) i2s_write_buff, FLASH_SECTOR_SIZE, portMAX_DELAY);
+            i2s_write(EXAMPLE_I2S_NUM, (char*) i2s_write_buff, FLASH_SECTOR_SIZE, &i2s_write_len, portMAX_DELAY);
             printf("playing: %d %%\n", rd_offset * 100 / flash_wr_size);
         }
 #endif
@@ -244,7 +246,7 @@ void example_i2s_adc_dac(void*arg)
         while (offset < tot_size) {
             int play_len = ((tot_size - offset) > (4 * 1024)) ? (4 * 1024) : (tot_size - offset);
             int i2s_wr_len = example_i2s_dac_data_scale(i2s_write_buff, (uint8_t*)(audio_table + offset), play_len);
-            i2s_write_bytes(EXAMPLE_I2S_NUM, (const char*) i2s_write_buff, i2s_wr_len, portMAX_DELAY);
+            i2s_write(EXAMPLE_I2S_NUM, (const char*) i2s_write_buff, i2s_wr_len, &i2s_write_len, portMAX_DELAY);
             offset += play_len;
             example_disp_buf((uint8_t*) i2s_write_buff, 32);
         }
