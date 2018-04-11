@@ -4679,6 +4679,19 @@ void bta_dm_ble_config_local_privacy (tBTA_DM_MSG *p_data)
 
 /*******************************************************************************
 **
+** Function         bta_dm_ble_config_local_privacy
+**
+** Description      This function set the local device LE privacy settings.
+**
+**
+*******************************************************************************/
+void bta_dm_ble_config_local_icon (tBTA_DM_MSG *p_data)
+{
+    BTM_BleConfigLocalIcon (p_data->ble_local_icon.icon);
+}
+
+/*******************************************************************************
+**
 ** Function         bta_dm_ble_observe
 **
 ** Description      This function set the preferred connection scan parameters.

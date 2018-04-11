@@ -1631,6 +1631,30 @@ void BTA_DmBleConfigLocalPrivacy(BOOLEAN privacy_enable, tBTA_SET_LOCAL_PRIVACY_
 #if BLE_INCLUDED == TRUE
 /*******************************************************************************
 **
+** Function         BTA_DmBleConfigLocalIcon
+**
+** Description      set gap local icon
+**
+** Parameters:      icon   - appearance value.
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmBleConfigLocalIcon(uint16_t icon)
+{
+    tBTA_DM_API_LOCAL_ICON *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_LOCAL_ICON *) osi_malloc(sizeof(tBTA_DM_API_LOCAL_ICON))) != NULL) {
+        memset (p_msg, 0, sizeof(tBTA_DM_API_LOCAL_ICON));
+
+        p_msg->hdr.event = BTA_DM_API_LOCAL_ICON_EVT;
+        p_msg->icon   = icon;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+/*******************************************************************************
+**
 ** Function         BTA_BleEnableAdvInstance
 **
 ** Description      This function enable a Multi-ADV instance with the specififed

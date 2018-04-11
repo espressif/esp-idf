@@ -31,6 +31,7 @@ typedef enum {
     BTC_GAP_BLE_ACT_SET_PKT_DATA_LEN,
     BTC_GAP_BLE_ACT_SET_RAND_ADDRESS,
     BTC_GAP_BLE_ACT_CONFIG_LOCAL_PRIVACY,
+    BTC_GAP_BLE_ACT_CONFIG_LOCAL_ICON,
     BTC_GAP_BLE_ACT_UPDATE_WHITE_LIST,
     BTC_GAP_BLE_ACT_SET_CONN_PARAMS,
     BTC_GAP_BLE_ACT_SET_DEV_NAME,
@@ -83,6 +84,10 @@ typedef union {
     struct cfg_local_privacy_args {
         bool privacy_enable;
     } cfg_local_privacy;
+    //BTC_GAP_BLE_ACT_CONFIG_LOCAL_ICON,
+    struct cfg_local_icon_args {
+        uint16_t icon;
+    } cfg_local_icon;
     //BTC_GAP_BLE_ACT_UPDATE_WHITE_LIST
     struct update_white_list_args {
         bool add_remove;

@@ -848,6 +848,11 @@ static void btc_ble_set_pkt_data_len(BD_ADDR remote_device, uint16_t tx_data_len
     BTA_DmBleSetDataLength(remote_device, tx_data_length, p_set_pkt_data_cback);
 }
 
+static void btc_ble_config_local_icon(uint16_t icon)
+{
+    BTA_DmBleConfigLocalIcon(icon);
+}
+
 static void btc_ble_set_rand_addr (BD_ADDR rand_addr, tBTA_SET_RAND_ADDR_CBACK *p_set_rand_addr_cback)
 {
     if (rand_addr != NULL) {
@@ -1074,6 +1079,9 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
     }
     case BTC_GAP_BLE_ACT_CONFIG_LOCAL_PRIVACY:
         btc_ble_config_local_privacy(arg->cfg_local_privacy.privacy_enable, btc_set_local_privacy_callback);
+        break;
+    case BTC_GAP_BLE_ACT_CONFIG_LOCAL_ICON:
+        btc_ble_config_local_icon(arg->cfg_local_icon.icon);
         break;
     case BTC_GAP_BLE_ACT_UPDATE_WHITE_LIST:
         BTA_DmUpdateWhiteList(arg->update_white_list.add_remove, arg->update_white_list.remote_bda, btc_add_whitelist_complete_callback);
