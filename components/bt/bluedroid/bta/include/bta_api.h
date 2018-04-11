@@ -2083,6 +2083,19 @@ extern void BTA_DmBleConfigLocalPrivacy(BOOLEAN privacy_enable, tBTA_SET_LOCAL_P
 
 /*******************************************************************************
 **
+** Function         BTA_DmBleConfigLocalIcon
+**
+** Description      set gap local icon
+**
+** Parameters:      icon   - appearance value.
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_DmBleConfigLocalIcon(uint16_t icon);
+
+/*******************************************************************************
+**
 ** Function         BTA_DmBleEnableRemotePrivacy
 **
 ** Description      Enable/disable privacy on a remote device

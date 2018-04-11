@@ -108,6 +108,7 @@ enum {
 #if BLE_PRIVACY_SPT == TRUE
     BTA_DM_API_LOCAL_PRIVACY_EVT,
 #endif
+    BTA_DM_API_LOCAL_ICON_EVT,
     BTA_DM_API_BLE_ADV_PARAM_EVT,
 
     /*******This event added by Yulong at 2016/10/20 to
@@ -468,6 +469,11 @@ typedef struct {
     tBTA_SET_LOCAL_PRIVACY_CBACK *set_local_privacy_cback;
 } tBTA_DM_API_LOCAL_PRIVACY;
 
+typedef struct {
+    BT_HDR                  hdr;
+    uint16_t                icon;
+} tBTA_DM_API_LOCAL_ICON;
+
 /* set scan parameter for BLE connections */
 typedef struct {
     BT_HDR hdr;
@@ -775,6 +781,7 @@ typedef union {
     tBTA_DM_API_BLE_SCAN                ble_scan;
     tBTA_DM_API_ENABLE_PRIVACY          ble_remote_privacy;
     tBTA_DM_API_LOCAL_PRIVACY           ble_local_privacy;
+    tBTA_DM_API_LOCAL_ICON              ble_local_icon;
     tBTA_DM_API_BLE_ADV_PARAMS          ble_set_adv_params;
     tBTA_DM_API_BLE_ADV_PARAMS_ALL      ble_set_adv_params_all;
     tBTA_DM_API_SET_ADV_CONFIG          ble_set_adv_data;
@@ -1180,6 +1187,7 @@ extern void bta_dm_ble_disconnect (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_rand_address(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_stop_advertising(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_config_local_privacy (tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_config_local_icon (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_adv_params (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_adv_params_all(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_adv_config (tBTA_DM_MSG *p_data);
