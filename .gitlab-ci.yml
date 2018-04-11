@@ -296,6 +296,7 @@ test_report:
   only:
     - master
     - triggers
+    - schedules
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
   variables:
@@ -514,6 +515,7 @@ assign_test:
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
     - triggers
+    - schedules
   # gitlab ci do not support match job with RegEx or wildcard now in dependencies.
   # we have a lot build example jobs and the binaries them exceed the limitation of artifacts.
   # we can't artifact them in one job. For example test jobs, download all artifacts from previous stages.
@@ -553,6 +555,7 @@ assign_test:
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
     - triggers
+    - schedules
   allow_failure: true
   dependencies:
     - assign_test
@@ -970,6 +973,48 @@ IT_003_07:
     - ESP32_IDF
     - SSC_T2_1
 
+IT_003_08:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_1
+
+IT_003_09:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_1
+
+IT_003_10:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_1
+
+IT_003_11:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_1
+
+IT_003_12:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_1
+
+IT_003_13:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_1
+
+IT_003_14:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_1
+
 IT_004_01:
   <<: *test_template
   tags:
@@ -982,29 +1027,17 @@ IT_005_01:
     - ESP32_IDF
     - SSC_T1_WEP
 
-IT_006_01:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T3_PhyMode
-
-IT_007_01:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T2_PhyMode
-
-IT_008_01:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T2_PhyMode
-
 IT_009_01:
   <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T1_3
+
+IT_010_01:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T5_1
 
 IT_501_01:
   <<: *test_template
