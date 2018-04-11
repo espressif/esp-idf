@@ -1,0 +1,1985 @@
+test cases:
+- CI ready: 'Yes'
+  ID: WIFI_CONN_0101
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 ap -S -s <target_ssid> -t 0
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t 2
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t 4
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t 1
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC2 sta -S
+    - - R SSC2 RE "\+SCAN:%%s,.+,0,\d+"%%(<target_ssid>) C +SCANDONE
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t 5
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC2 sta -S
+    - - R SSC2 RE "\+SCAN:%%s,.+,0,\d+"%%(<target_ssid>) C +SCANDONE
+  execution time: 0.0
+  expected result: "1.target1 set AP,open, \n2.target 2 jap succeed\n3.target1 set
+    AP,wpa_psk \n4.target 2 jap succeed\n5.target1 set AP, wpa2_psk \n6.target 2 jap
+    succeed\n7.target1 set AP,wap_wpa2_psk\n8.target 2 jap succeed\n9.target1 set
+    AP,加密方式为t 1\n10.target 2 上查询到target_ssid\n11.target1 set AP,加密方式为t 5\n12.target
+    2 上查询到target_ssid"
+  initial condition: T2_1
+  level: Integration
+  module: WIFI MAC
+  steps: "1.target1下设置ssid 和pwd,加密方式 open\n2.target2 jap target1\n3.target1下设置ssid
+    和pwd,加密方式 wpa_psk \n4.target2 jap target1\n5.target1下设置ssid 和pwd,加密方式 wpa2_psk
+    \n6.target 2 jap target1\n7.target1下设置ssid 和pwd,加密方式 wap_wpa2_psk\n8.target2 jap
+    target1\n9.target1下设置ssid 和pwd,加密方式 wep \n10.target2上查询target_ssid\n11.target1下设置ssid
+    和pwd,加密方式 t 5 错误的加密方式\n12.target2上查询 target_ssid"
+  sub module: WIFI Connect
+  summary: station SAP+JAP test, different encryption
+  test environment: SSC_T2_1
+  test point 1: basic function
+  test point 2: SAP/JAP with different config
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_0102
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 ap -S -s <target_ssid> -t 0 -n 1
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC1 ap -S -s <target_ssid> -t 0 -n 13
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC1 ap -S -s <target_ssid> -n 15
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC2 sta -S
+    - - R SSC2 RE "\+SCAN:%%s,.+,\d+,1"%%(<target_ssid>)
+  execution time: 0.0
+  expected result: |-
+    1. target1 set AP,set channel 1
+    2.target 2 jap succeed
+    3.target1 set AP,set channel 10
+    4.target 2 jap succeed
+    5.target1 set AP,set channel 15
+    6.target 2 上查询到target_ssid
+  initial condition: T2O_1
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1. target1下设置ssid 和pwd 加密方式,set channel 1
+    2.target2 jap target 1
+    3.target1下设置ssid 和pwd 加密方式,set channel 10
+    4.target2 jap target 1
+    5.target1下设置ssid 和pwd 加密方式,set channel 15
+    6.target 2 上查询target_ssid
+  sub module: WIFI Connect
+  summary: station SAP+JAP test, different channel
+  test environment: SSC_T2_1
+  test point 1: basic function
+  test point 2: SAP/JAP with different config
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_0103
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -h
+      0
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC2 sta -S -h 0
+    - - R SSC2 P <target_ap_mac>
+      - R SSC2 C +SCANDONE
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -h
+      1
+    - - R SSC1 C +SAP:OK
+  - - DELAY 3
+    - - ''
+  - - SSC SSC2 sta -S -h 0
+    - - R SSC2 C +SCANDONE
+  - - DELAY 3
+    - - ''
+  - - SSC SSC2 sta -S -h 0
+    - - R SSC2 NP <target_ap_mac> C +SCANDONE
+  execution time: 0.0
+  expected result: |-
+    1.target1 set AP,set ssid broad cast
+    2.target 2上scan target_ap_mac
+    3.target1 set AP,set ssid hidden,
+    4.target 2上不能scan target_ap_mac
+  initial condition: T2_1
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1. target1下设置ssid 和pwd 加密方式,set ssid broad cast
+    2.target 2上scan target_ap_mac
+    3. target1下设置ssid 和pwd 加密方式,set ssid hidden,
+    4.target 2上scan target_ap_mac
+  sub module: WIFI Connect
+  summary: station SAP+JAP test, ssid hidden
+  test environment: SSC_T2_1
+  test point 1: basic function
+  test point 2: SAP/JAP with different config
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_0104
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: '1/2'
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -m
+      1
+    - - R SSC1 C +SAP:OK
+  - - WIFI <pc_wifi_nic> DISCONN
+    - - R PC_COM C +WIFIDISCONN:OK
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - WIFI <pc_wifi_nic> CONN <target_ssid> <target_password> <pc_ip_wifi> <target_auth>
+      <target_encryption>
+    - - R PC_COM C +WIFICONN:ERROR
+  execution time: 0.0
+  expected result: |-
+    1. target1 set AP,set max allowed sta as 1
+    2. use PC disconnect,
+    3.target 2 jap succeed
+    4.PC WIFI can not CONN
+  initial condition: T2_1
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1.target1下设置ssid 和pwd 加密方式,set max allowed sta as 1
+    2.use PC disconnect target1
+    3.target 2 jap target1
+    4.PC WIFI CONNECT target1
+  sub module: WIFI Connect
+  summary: station SAP test, max allowed sta
+  test environment: SSC_T2_1
+  test point 1: basic function
+  test point 2: SAP/JAP with different config
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_0201
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)
+  - - SSC SSC1 sta -Q
+    - - R SSC1 RE "\+JAP:CONNECTED,%%s,%%s"%%(<ap_mac>,<ap_ssid>)
+  - - SSC SSC1 sta -D
+    - - R SSC1 C +QAP:OK
+  - - SSC SSC1 sta -Q
+    - - R SSC1 C +JAP:DISCONNECTED
+  execution time: 0.0
+  expected result: |-
+    1.target1 jion AP 成功
+    2.查询JAP的状态
+    3.target1 断开AP
+    4.查询target1 JAP 是DISCONN
+  initial condition: STAM1
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1.target1 jion AP 成功
+    2.查询JAP的状态
+    3.target1 断开AP
+    4.查询target1 JAP 是DISCONN
+  sub module: WIFI Connect
+  summary: JAP query test
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: query JAP status
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_0301
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -h
+      0 -m 8
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC1 ap -Q
+    - - R SSC1 RE "\+APCONFIG:%%s,%%s,\d+,3,0,8,\d+"%%(<target_ssid>,<target_password>)
+  execution time: 0.0
+  expected result: |
+    1. target1 set AP
+    2.target 1上查询到跟设置AP时一致
+  initial condition: APM1
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. target1 set AP
+    2.target 1上查询到跟设置AP时一致
+  sub module: WIFI Connect
+  summary: AP config query test
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: query AP config
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_0401
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 sta -R -a 0
+    - - R SSC1 C +AUTORECONN:OK
+  - - SSC SSC1 sta -R -a 2
+    - - R SSC1 C +AUTORECONN:0
+  - - SSC SSC1 reboot
+    - - ''
+  - - DELAY 15
+    - - ''
+  - - SSC SSC1 sta -Q
+    - - R SSC1 C JAP:DISCONNECTED
+  - - SSC SSC1 sta -R -a 1
+    - - R SSC1 C +AUTORECONN:OK
+  - - SSC SSC1 sta -R -a 2
+    - - R SSC1 C +AUTORECONN:1
+  - - SSC SSC1 reboot
+    - - R SSC1 C +JAP:CONNECTED
+  execution time: 0.0
+  expected result: |-
+    1.设置autoreconn,关闭
+    2.查询当前autoreconn状态是否关闭
+    3.重启系统，等待15s
+    4.查询target1 未自动重连AP
+    5.设置autoreconn,开启
+    6.查询当前autoreconn状态是否开启
+    7.系统重启后target1 自动重连AP
+  initial condition: STAM2
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1.设置autoreconn,关闭
+    2.查询当前autoreconn状态是否关闭
+    3.重启系统，等待15s
+    4.查询target1 未自动重连AP
+    5.设置autoreconn,开启
+    6.查询当前autoreconn状态是否开启
+    7.系统重启后target1 自动重连AP
+  sub module: WIFI Connect
+  summary: auto reconnect test
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: power on auto reconnect test
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_0501
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC2 sta -R -r 1
+    - - R SSC2 C +RECONN:OK
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC1 op -S -o 1
+    - - R SSC1 C +MODE:OK
+  - - DELAY 10
+    - - ''
+  - - SSC SSC1 op -S -o 2
+    - - R SSC1 C +MODE:OK
+  - - DELAY 15
+    - - R SSC2 C +JAP:CONNECTED
+  - - SSC SSC2 sta -R -r 0
+    - - R SSC2 C +RECONN:OK
+  - - SSC SSC2 sta -R -r 2
+    - - R SSC2 C +RECONN:0
+  - - SSC SSC1 op -S -o 1
+    - - R SSC1 C +MODE:OK
+  - - DELAY 10
+    - - ''
+  - - SSC SSC1 op -S -o 2
+    - - R SSC1 C +MODE:OK
+  - - DELAY 15
+    - - P PC_COM C +DELAYDONE
+      - P SSC2 NC +JAP:CONNECTED
+  - - SSC SSC2 sta -R -r 1
+    - - R SSC2 C +RECONN:OK
+  execution time: 0.0
+  expected result: |-
+    1.设置reconn,开启（此功能不需要重启系统）
+    2.target1 set AP
+    3.target2 JAP target1 成功
+    4.target2 断开target1 连接
+    5.等待10s，target2 自动重连target1
+    6.成功
+    7.查询reconn状态，关闭
+    8.修改mode 成功
+    9.等待15s，target2 不会自动重连target1
+  initial condition: T2_1
+  level: Integration
+  module: WIFI MAC
+  steps: "1.设置reconn,开启（此功能不需要重启系统）\n2.target1下设置ssid 和pwd 加密方式\n3.target2 JAP target1
+    \n4.target1 修改mode 为sta mode\n5.等待10s，target1 修改mode 为softAP mode\n6.设置reconn，关闭\n7.查询reconn状态，关闭\n8.target1
+    修改mode 为sta mode\n9.等待15s，target1 修改mode 为softAP mode"
+  sub module: WIFI Connect
+  summary: reconnect policy test
+  test environment: SSC_T2_1
+  test point 1: basic function
+  test point 2: reconnect policy test
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_0502
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC2 C +JAP:CONNECTED
+  - - SSC SSC2 sta -R -r 1
+    - - R SSC2 C +RECONN:OK
+  - - SSC SSC1 op -S -o 1
+    - - R SSC1 C +MODE:OK
+  - - DELAY 5
+    - - R SSC2 C +JAP:DISCONNECTED
+  - - SSC SSC1 op -S -o 2
+    - - R SSC1 C +MODE:OK
+  - - DELAY 10
+    - - R SSC2 C +JAP:CONNECTED
+  - - SSC SSC2 sta -D
+    - - R SSC2 C +QAP:OK
+  - - DELAY 10
+    - - P PC_COM C +DELAYDONE
+      - P SSC2 NC +JAP:CONNECTED
+  execution time: 0.0
+  expected result: |-
+    1.target1 set AP
+    2.target2 jap target 1
+    3.设置reconn,开启（此功能不需要重启系统）
+    4.target2 断开target1 连接
+    5.等待10s，target2 自动重连target1
+    6.target2 断开target1 连接
+  initial condition: T2_1
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1.target1下设置ssid 和pwd 加密方式
+    2.target2 jap target 1
+    3.设置reconn,开启（此功能不需要重启系统）
+    4.target2 断开target1 连接
+    5.等待10s，target2 自动重连target1
+    6.target2 断开target1 连接
+  sub module: WIFI Connect
+  summary: will not do reconnect after manually disconnected
+  test environment: SSC_T2_1
+  test point 1: abnormal/special use
+  test point 2: reconnect policy test
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_0503
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 sta -R -r 0
+    - - R SSC1 C OK
+  - - SSC SSC1 sta -C -s <random_string> -p <random_string>
+    - - R SSC1 C +JAP:OK
+      - R SSC1 NC +JAP:DISCONNECTED,1 C +JAP:DISCONNECTED,3
+  - - DELAY 5
+    - - R SSC1 NC +JAP:DISCONNECTED
+      - P PC_COM C +DELAYDONE
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <random_string>
+    - - R SSC1 C +JAP:OK
+      - R SSC1 NC +JAP:DISCONNECTED,1 C +JAP:DISCONNECTED,2
+  - - DELAY 5
+    - - R SSC1 NC +JAP:DISCONNECTED
+      - P PC_COM C +DELAYDONE
+  - - SSC SSC1 sta -R -r 1
+    - - SSC SSC1 C OK
+  execution time: 0.0
+  expected result: |-
+    1. succeed
+    2. not reconnect when connect failed, status when recv disconnect event is correct
+    3. not reconnect when connect failed, status when recv disconnect event is correct
+    4. succeed
+  initial condition: STAM1
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. set sta reconnect policy as not reconnect
+    2. sta connect to ap not exist
+    3. sta connect to ap with wrong password
+    4. reset sta reconnect policy as auto reconnect
+  sub module: WIFI Connect
+  summary: reconnect policy interact with failed STA connect/reconnect
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: reconnect policy test
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_0601
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
+    - - R SSC1 C +SAP:OK
+  - - WIFI <pc_wifi_nic> CONN <target_ssid> <target_password> <pc_ip_wifi> <target_auth>
+      <target_encryption>
+    - - R PC_COM C +WIFICONN:OK
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC2 C +JAP:CONNECTED
+  - - SSC SSC1 ap -L
+    - - 'R SSC1 C +LSTA:'
+      - 'R SSC1 C +LSTA:'
+      - R SSC1 C +LSTADONE
+  execution time: 0.0
+  expected result: |-
+    1.target1 set AP
+    2.PC WIFI CONNECTED
+    3.target2 jap target 1
+    4.查询到两个sta 连接到target1 上
+  initial condition: T2_1
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1. target1下设置ssid 和pwd 加密方式
+    2.PC WIFI CONNECTED target1
+    3.target2 jap target 1
+    4.查询到两个sta 连接到target1 上
+  sub module: WIFI Connect
+  summary: list stations connected to soft ap test
+  test environment: SSC_T2_1
+  test point 1: basic function
+  test point 2: list SoftAP connected station
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_0701
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 sta -D
+    - - R SSC1 C QAP
+  - - SSC SSC1 sta -Q
+    - - R SSC1 C +STA_STATUS:0
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - - R SSC1 C +JAP:OK
+  - - SSC SSC1 sta -Q
+    - - R SSC1 C +STA_STATUS:1
+      - R SSC1 C +JAP:CONNECTED
+  - - SSC SSC1 sta -Q
+    - - R SSC1 C +STA_STATUS:5
+  - - APC <APC1> OFF <ap_apc>
+    - - P PC_COM L OK
+      - P SSC1 C bcn_timout
+  - - SSC SSC1 sta -Q
+    - - R SSC1 C +STA_STATUS:4
+  - - APC <APC1> ON <ap_apc>
+    - - P PC_COM L OK
+  execution time: 0.0
+  expected result: |-
+    1. idle state
+    2. connecting state
+    3. got IP state
+    4. connect fail state
+  initial condition: STAM1
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1. sta disconnected, query status
+    2. sta connect to AP, query status
+    3. got IP, query status
+    4. AP power off, query status when beacon timeout
+  sub module: WIFI Connect
+  summary: check wifi status idle, connecting, got ip and connect fail
+  test environment: SSC_T1_APC
+  test point 1: basic function
+  test point 2: wifi connect status check
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_0702
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 sta -C -s <random_string> -p <random_string>
+    - - R SSC1 C +JAP:OK
+      - R SSC1 C +JAP:DISCONNECTED,3
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <random_string>
+    - - R SSC1 C +JAP:OK
+      - R SSC1 C +JAP:DISCONNECTED,2
+  execution time: 0.0
+  expected result: |-
+    1. get status AP not exist in disconnect event
+    2. get status wrong password in disconnect event
+  initial condition: STAM1
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. sta connect to ap not exist
+    2. sta connect to ap with wrong password
+  sub module: WIFI Connect
+  summary: check wifi status wrong password, no ap found
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: wifi connect status check
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_0703
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 sta -C -s <wep_ap_ssid> -p bacfd
+    - - R SSC1 C +JAP:DISCONNECTED,4,2
+  execution time: 0.0
+  expected result: 1. connect status connect fail in disconnect evnet
+  initial condition: STAM1
+  level: Integration
+  module: WIFI MAC
+  steps: 1. connect WEP ap with error password (valid wep password)
+  sub module: WIFI Connect
+  summary: check wifi status connect fail
+  test environment: SSC_T1_WEP
+  test point 1: basic function
+  test point 2: wifi connect status check
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_0801
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 ap -S -s <random_string> -p <random_string> -t 0
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC2 sta -C -s <random_string> -p <random_string>
+    - - R SSC2 C +JAP:CONNECTED
+  - - SSC SSC1 ap -S -s <random_string> -p <random_string> -t 2
+    - - P SSC1 C +SAP:OK
+      - P SSC2 C +JAP:AUTHCHANGED,2,0
+  - - SSC SSC1 ap -S -s <random_string> -p <random_string> -t 3
+    - - P SSC1 C +SAP:OK
+      - P SSC2 C +JAP:AUTHCHANGED,3,2
+  - - SSC SSC1 ap -S -s <random_string> -p <random_string> -t 4
+    - - P SSC1 C +SAP:OK
+      - P SSC2 C +JAP:AUTHCHANGED,4,3
+  - - SSC SSC1 ap -S -s <random_string> -p <random_string> -t 0
+    - - P SSC1 C +SAP:OK
+      - P SSC2 C +JAP:AUTHCHANGED,0,4
+  execution time: 0.0
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. auth change event old mode 0 new mode 2
+    4. auth change event old mode 2 new mode 3
+    5. auth change event old mode 3 new mode 4
+    6. auth change event old mode 4 new mode 0
+  initial condition: T2_1
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1. set target1 softap auth mode 0
+    2. target2 connect to target1
+    3. set target1 softap auth mode 2, wait sta connected
+    4. set target1 softap auth mode 3, wait sta connected
+    5. set target1 softap auth mode 4, wait sta connected
+    6. set target1 softap auth mode 0, wait sta connected
+  sub module: WIFI Connect
+  summary: test auth change event
+  test environment: SSC_T2_1
+  test point 1: basic function
+  test point 2: wifi auth changed event test
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_0901
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: basic function
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - - R SSC1 C +JAP:CONNECTED
+  - - SSC SSC1 sta -D
+    - - R SSC1 RE JAP:DISCONNECTED,\d+,8
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <random_string>
+    - - R SSC1 RE JAP:DISCONNECTED,\d+,15
+  - - SSC SSC1 sta -C -s <random_string> -p <ap_password>
+    - - R SSC1 RE JAP:DISCONNECTED,\d+,201
+  execution time: 0.0
+  expected result: |-
+    1. disconnect event reason REASON_ASSOC_LEAVE
+    2. disconnect event reason REASON_4WAY_HANDSHAKE_TIMEOUT
+    3. disconnect event reason REASON_NO_AP_FOUND
+  initial condition: STAM1
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1. sta connect to AP, and disconnect
+    2. connect to AP with wrong password
+    3. connect to AP not exist
+  sub module: WIFI Connect
+  summary: test wifi disconnect reason REASON_ASSOC_LEAVE, REASON_4WAY_HANDSHAKE_TIMEOUT,
+    REASON_NO_AP_FOUND
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: wifi disconnect reason test
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_0902
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - - R SSC1 C +JAP:CONNECTED
+  - - APC <APC1> OFF <ap_apc>
+    - - P PC_COM L OK
+      - R SSC1 RE JAP:DISCONNECTED,\d+,200
+  - - APC <APC1> ON <ap_apc>
+    - - P PC_COM L OK
+  execution time: 0.0
+  expected result: |-
+    1. succeed
+    2. disconnect event REASON_BEACON_TIMEOUT
+  initial condition: STAM1
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1. connect to AP
+    2. AP power off
+  sub module: WIFI Connect
+  summary: test wifi disconnect reason REASON_BEACON_TIMEOUT
+  test environment: SSC_T1_APC
+  test point 1: basic function
+  test point 2: wifi disconnect reason test
+  version: v1 (2016-8-15)
+- CI ready: 'No'
+  ID: WIFI_CONN_0903
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: '1/2'
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 sta -C -s <wep_ap_ssid> -p bacfd
+    - - R SSC1 RE JAP:DISCONNECTED,\d+,2
+  execution time: 0.0
+  expected result: 1. disconect event reason REASON_AUTH_EXPIRE
+  initial condition: STAM1
+  level: Integration
+  module: WIFI MAC
+  steps: 1. connect WEP ap with error password (valid wep password)
+  sub module: WIFI Connect
+  summary: test wifi disconnect reason REASON_AUTH_EXPIRE
+  test environment: SSC_T1_WEP
+  test point 1: basic function
+  test point 2: wifi disconnect reason test
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_0904
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: '2/3'
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 ap -S -s <random_string> -p <random_string> -t 3 -m 1
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC2 sta -C -s <random_string> -p 1234567890
+    - - R SSC2 RE JAP:DISCONNECTED,\d+,204
+  - - SSC SSC2 sta -D
+    - - R SSC2 C +QAP:OK
+  - - WIFI <pc_wifi_nic> CONN <random_string> <random_string> <pc_ip_wifi>
+    - - R PC_COM NC ERROR C +WIFICONN:OK
+  - - SSC SSC2 sta -C -s <random_string> -p <random_string>
+    - - R SSC2 RE JAP:DISCONNECTED,\d+,5
+  - - WIFI <pc_wifi_nic> DISCONN
+    - - P PC_COM C OK
+      - R SSC2 C +JAP:CONNECTED
+  - - SSC SSC1 ap -S -s <random_string> -p <random_string> -t 3 -m 1
+    - - P SSC1 C +SAP:OK
+      - P SSC2 RE JAP:DISCONNECTED,\d+,4
+  execution time: 0.0
+  expected result: |-
+    1. succeed
+    2. disconnect event REASON_HANDSHAKE_TIMEOUT
+    3. succeed
+    4. succeed
+    5. disconnect event REASON_ASSOC_TOOMANY
+    6. succeed, target2 connect succeed
+    7. disconnect event REASON_ASSOC_EXPIRE
+  initial condition: T2_1
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1. config target1 softap max sta allowed 1
+    2. target2 connect to target1 with wrong password
+    3. target2 disconnect
+    4. PC WIFI NIC connect to target1
+    5. target2 connect to target1 with correct password
+    6. PC WIFI NIC disconnect
+    7. reconfig softap
+  sub module: WIFI Connect
+  summary: test wifi disconnect reason REASON_ASSOC_TOOMANY, REASON_HANDSHAKE_TIMEOUT,
+    REASON_ASSOC_EXPIRE
+  test environment: SSC_T2_1
+  test point 1: basic function
+  test point 2: wifi disconnect reason test
+  version: v1 (2016-8-15)
+- CI ready: 'No'
+  ID: WIFI_CONN_1001
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'No'
+  category: Function
+  cmd set: ''
+  execution time: 1.0
+  expected result: 4.平均beacon delay时间小于10ms
+  initial condition: None
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1.target设置成AP 模式
+    2.PC 端启动wireshark 抓包工具抓取target beacon包
+    3.停止抓包将抓取的beacon 包以txt格式导出
+    4.利用脚本计算beacon delay时间
+  sub module: WIFI Connect
+  summary: beacon delay
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: beacon delay
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_1101
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 ram -Q
+    - - R SSC1 A <FREg>:\+FREEHEAP:(\d+)\r\n
+  - - SSC SSC1 op -W -a start
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 op -W -a stop
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 ram -Q
+    - - R SSC1 P <FREg>
+  execution time: 0
+  expected result: |
+    1. get current heap size
+    2.OK
+    3.OK
+    4.heap size unchanged
+  initial condition: WIFISTO
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. check heap size
+    2. wifi start
+    3. wifi stop
+    4. check heap size
+  sub module: WIFI Connect
+  summary: wifi start and stop, heap size unchanged
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: wifi start and stop, heap size unchanged
+  version: v1 (2016-12-31)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_1201
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - - R SSC1 C +JAP:ERROR
+  execution time: 0
+  expected result: |
+    1. ERROR
+  initial condition: WIFISTO
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. sta connect
+  sub module: WIFI Connect
+  summary: sta connect after WiFi stop
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: use WiFi API after WiFi stop
+  version: v1 (2016-12-31)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_1202
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 sta -R -a 1
+    - - R SSC1 C +AUTORECONN:OK
+  - - SSC SSC1 sta -Q
+    - - R SSC1 C +JAP:DISCONNECTED
+  execution time: 0
+  expected result: |
+    1. OK
+    2. DISCONNECTED
+  initial condition: WIFISTO
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. sta reconnect start
+    2. query sta state
+  sub module: WIFI Connect
+  summary: sta reconnect start and connect fail after WiFi stop
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: use WiFi API after WiFi stop
+  version: v1 (2016-12-31)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_1203
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 sta -D
+    - - R SSC1 C +QAP:ERROR
+  execution time: 0
+  expected result: |
+    1. ERROR
+  initial condition: WIFISTO
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. sta disconnect
+  sub module: WIFI Connect
+  summary: station disconnect after WiFi stop
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: use WiFi API after WiFi stop
+  version: v1 (2016-12-31)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_1204
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 sta -Q
+    - - R SSC1 C +JAP:DISCONNECTED
+  execution time: 0
+  expected result: |
+    1. DISCONNECTED
+  initial condition: WIFISTO
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. query sta state
+  sub module: WIFI Connect
+  summary: query sta state after WiFi stop
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: use WiFi API after WiFi stop
+  version: v1 (2016-12-31)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_1205
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 sta -S -s <ap_ssid>
+    - - R SSC1 C +SCAN:ERROR,1
+  execution time: 0
+  expected result: |
+    1. ERROR
+  initial condition: WIFISTO
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. sta scan ssid and pwd
+  sub module: WIFI Connect
+  summary: sta scan after WiFi stop
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: use WiFi API after WiFi stop
+  version: v1 (2016-12-31)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_1206
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 ap -C -s <target_ssid> -p <target_password>
+    - - R SSC1 C +JAP:ERROR
+  execution time: 0
+  expected result: |
+    1. ERROR
+  initial condition: WIFISTO
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. ap connect ssid and pwd
+  sub module: WIFI Connect
+  summary: ap connect after WiFi stop
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: use WiFi API after WiFi stop
+  version: v1 (2016-12-31)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_1207
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 ap -D
+    - - R SSC1 C +QAP:ERROR
+  execution time: 0
+  expected result: |
+    1. ERROR
+  initial condition: WIFISTO
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. ap disconnect
+  sub module: WIFI Connect
+  summary: ap disconnect after WiFi stop
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: use WiFi API after WiFi stop
+  version: v1 (2016-12-31)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_1208
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 ap -L
+    - - R SSC1 C +LSTADONE
+  execution time: 0
+  expected result: |
+    1. +LSTADONE
+  initial condition: WIFISTO
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. ap list station
+  sub module: WIFI Connect
+  summary: ap list station after WiFi stop
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: use WiFi API after WiFi stop
+  version: v1 (2016-12-31)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_1209
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 ap -Q
+    - - 'R SSC1 C +APCONFIG:'
+  execution time: 0
+  expected result: |
+    1. +APCONFIG:ssid and pwd
+  initial condition: WIFISTO
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. query ap config
+  sub module: WIFI Connect
+  summary: query ap config after WiFi stop
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: use WiFi API after WiFi stop
+  version: v1 (2016-12-31)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_1210
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 2
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password>
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC1 op -S -o 1
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password>
+    - - R SSC1 C +SAP:ERROR
+  execution time: 0
+  expected result: |
+    1. OK
+    2. OK
+    3. OK
+    4. ERROR
+  initial condition: WIFISTO
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. set ap mode
+    2. ap set ssid and pwd
+    3. set station mode
+    4. ap set ssid and pwd
+  sub module: WIFI Connect
+  summary: ap set ssid and pwd after WiFi stop
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: use WiFi API after WiFi stop
+  version: v1 (2016-12-31)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_1211
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 mac -Q
+    - - 'R SSC1 C MAC:'
+  execution time: 0
+  expected result: |
+    1. MAC:
+  initial condition: WIFISTO
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. query mac
+  sub module: WIFI Connect
+  summary: query mac after WiFi stop
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: use WiFi API after WiFi stop
+  version: v1 (2016-12-31)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_1212
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 2
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - - R SSC1 C +MAC:AP,OK
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - - R SSC1 C +MAC:STA,ERROR
+  execution time: 0
+  expected result: |
+    1. OK
+    2. OK
+    3. ERROR
+  initial condition: WIFISTO
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. set ap mode
+    2. set ap mac
+    3. set station mac
+  sub module: WIFI Connect
+  summary: set mac after WiFi stop
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: use WiFi API after WiFi stop
+  version: v1 (2016-12-31)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_1213
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 1
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - - R SSC1 C +MAC:STA,OK
+  - - SSC SSC1 mac -Q -o 1
+    - - 'R SSC1 C +STAMAC:'
+  execution time: 0
+  expected result: |
+    1. OK
+    2. OK
+    3. get station mac
+  initial condition: WIFISTO
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. set station mode
+    2. set station mac
+    3. query station mac
+  sub module: WIFI Connect
+  summary: query mac after WiFi stop
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: use WiFi API after WiFi stop
+  version: v1 (2016-12-31)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_1214
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 1
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - - R SSC1 C +MAC:STA,OK
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - - R SSC1 C +MAC:AP,ERROR
+  execution time: 0
+  expected result: |
+    1. OK
+    2. OK
+    3. ERROR
+  initial condition: WIFISTO
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. set station mode
+    2. set station mac
+    3. set ap mac
+  sub module: WIFI Connect
+  summary: set mac after WiFi stop
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: use WiFi API after WiFi stop
+  version: v1 (2016-12-31)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_1215
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 channel -S -c 13
+    - - R SSC1 C +CHANNEL:ERROR
+  execution time: 0
+  expected result: |
+    1. +CHANNEL:ERROR
+  initial condition: WIFISTO
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. set channel
+  sub module: WIFI Connect
+  summary: set channel after WiFi stop
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: use WiFi API after WiFi stop
+  version: v1 (2016-12-31)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_1216
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 channel -S -c 13
+    - - R SSC1 C +CHANNEL:ERROR
+  - - SSC SSC1 channel -G
+    - - R SSC1 C +CHANNEL
+  execution time: 0
+  expected result: |
+    1. +CHANNEL:ERROR
+    2. +CHANNEL
+  initial condition: WIFISTO
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. set channel
+    2. query channel
+  sub module: WIFI Connect
+  summary: query channel after WiFi stop
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: use WiFi API after WiFi stop
+  version: v1 (2016-12-31)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_1217
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - - R SSC1 C +MODE:OK
+  execution time: 0
+  expected result: |
+    1. +CURMODE:2
+  initial condition: WIFISTO
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. query current mode
+  sub module: WIFI Connect
+  summary: be AP mode after WiFi stop
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: use WiFi API after WiFi stop
+  version: v1 (2016-12-31)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_1218
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 1
+    - - R SSC1 C +MODE:OK
+  execution time: 0
+  expected result: |
+    1. OK
+  initial condition: WIFISTO
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. set STA mode
+  sub module: WIFI Connect
+  summary: set STA mode after WiFi stop
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: use WiFi API after WiFi stop
+  version: v1 (2016-12-31)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_1219
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 2
+    - - R SSC1 C +MODE:OK
+  execution time: 0
+  expected result: |
+    1. OK
+  initial condition: WIFISTO
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. set AP mode
+  sub module: WIFI Connect
+  summary: set ap mode after WiFi stop
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: use WiFi API after WiFi stop
+  version: v1 (2016-12-31)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_1301
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 op -W -a init
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 op -W -a start
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 op -W -a deinit
+    - - R SSC1 C +MODE:ERROR
+  - - SSC SSC1 op -W -a stop
+    - - R SSC1 C +MODE:OK
+  execution time: 0
+  expected result: |
+    1. OK
+    2. OK
+    3. ERROR
+    4. OK
+  initial condition: WIFISTO
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. wifi init
+    2. wifi start
+    3. wifi deinit
+    4. wifi stop
+  sub module: WIFI Connect
+  summary: incorrect deinit stop flow
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: WiFi deinit and stop
+  version: v1 (2016-12-31)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_1302
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 op -W -a init
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 op -W -a deinit
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 op -W -a start
+    - - R SSC1 C +MODE:ERROR
+  - - SSC SSC1 op -W -a stop
+    - - R SSC1 C +MODE:ERROR
+  execution time: 0
+  expected result: |
+    1. OK
+    2. OK
+    3. ERROR
+    4. ERROR
+  initial condition: WIFISTO
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. wifi init
+    2. wifi deinit
+    3. wifi start
+    4. wifi stop
+  sub module: WIFI Connect
+  summary: incorrect deinit start flow
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: WiFi deinit and start
+  version: v1 (2016-12-31)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_1303
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 op -W -a init
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 op -W -a init
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 op -W -a start
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 op -W -a deinit
+    - - R SSC1 C +MODE:ERROR
+  - - SSC SSC1 op -W -a deinit
+    - - R SSC1 C +MODE:ERROR
+  - - SSC SSC1 op -W -a stop
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 op -W -a deinit
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 op -W -a start
+    - - R SSC1 C +MODE:ERROR
+  execution time: 0
+  expected result: |
+    1. OK
+    2. OK
+    3. OK
+    4. ERROR
+    5. ERROR
+    6. OK
+    7. OK
+    8. ERROR
+  initial condition: WIFISTO
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. wifi init
+    2. wifi init
+    3. wifi start
+    4. wifi deinit
+    5. wifi deinit
+    6. wifi stop
+    7. wifi deinit
+    8. wifi start
+  sub module: WIFI Connect
+  summary: incorrect deinit stop flow
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: WiFi deinit and stop
+  version: v1 (2016-12-31)
+- CI ready: 'No'
+  ID: WIFI_CONN_5001
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stress
+  cmd set:
+  - WiFiStress/WifiJAP
+  - - target_ap_num = 10
+    - - '["TENDA123456", 11, "1234567890", 10, 10, 3, 2]'
+  - - test_count = 500
+    - - '["not_pig_head", 12, "", 0, 10, 0, 3]'
+  - - join_test_method = ["Normal", "OFF_ON"]
+    - - '["MW300R_T", 8, "12345", 5, 9, 0, 5]'
+  - - join_delay = [[0, 4], [0, 5]]
+    - - '["AC750", 5, "1234567890", 10, 1, 0, 8]'
+  - - step_config = [0x0B, 0x07, 0x02]
+    - - '["AUF", 3, "1234567890", 10, 9, 0, 1]'
+  - - reconnect_test_method = ["OFF_ON"]
+    - - ''
+  - - reconnect_delay = [[0, 10], [2, 10]]
+    - - ''
+  execution time: 5.0
+  expected result: |-
+    1. SAP succeed
+    2. JAP succeed
+    3. reconnect succeed
+  initial condition: None
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1. random generate test parameter (ssid, password, auth type, ssid hidden/broadcast), SAP and JAP
+    2. power off AP during JAP, power on AP
+    3. power off AP after JAP succeed, power on AP
+    Loop step 1-3
+  sub module: WIFI Connect
+  summary: 使用各种可能的 ssid+password+auth type 组合进行SAP和JAP；JAP过程中AP随机断电或更改设置；AP随机断电后重连
+  test environment: SSC_T2_JAP
+  test point 1: function + performance + stress
+  test point 2: JAP stress test
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_5101
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stress
+  cmd set:
+  - WiFiStress/SoftAPNSTA
+  - - sta_num = 4
+    - - dummy
+  - - max_sta = 4
+    - - ''
+  - - test_time = 300
+    - - ''
+  - - delay1 = [0, 1]
+    - - ''
+  - - delay2 = [0, 1]
+    - - ''
+  - - change_mac = True
+    - - ''
+  - - channel = 1
+    - - ''
+  execution time: 5.0
+  expected result: |-
+    1. succeed
+    2. JAP succeed
+  initial condition: None
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1. 1 target set to softap mode and rest set to sta mode
+    2. all sta random join and disconnect from softap
+    Loop step 2
+  sub module: WIFI Connect
+  summary: max sta connect to SotfAP and disconnect
+  test environment: SSC_T5_1
+  test point 1: stress
+  test point 2: SoftAP WIFI connect/disconnect stress test
+  version: v2 (2016-11-15)
+- CI ready: 'No'
+  ID: WIFI_CONN_5102
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stress
+  cmd set:
+  - WiFiStress/WifiJAPAtt
+  - - test_count = 5
+    - - dummy
+  execution time: 5.0
+  expected result: |-
+    2. Scan succeed with RSSI > -90
+    3. Join succeed with RSSI > -90
+  initial condition: STAM1
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1. config attenuator (0-59)
+    2. scan AP to get AP RSSI
+    3. try to join AP
+    Loop step 1 - 3
+  sub module: WIFI Connect
+  summary: connect AP with rssi from -50 to -100
+  test environment: SSC_T1_ShieldBox
+  test point 1: stress
+  test point 2: JAP with different RSSI
+  version: v1 (2016-8-15)
+- CI ready: 'No'
+  ID: WIFI_CONN_5103
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stress
+  cmd set:
+  - WiFiStress/WifiJAPAtt
+  - - test_count = 5
+    - - dummy
+  - - att_test_list = range(30, 50)
+    - - ''
+  execution time: 5.0
+  expected result: |-
+    2. Scan succeed with RSSI > -90
+    3. Join succeed with RSSI > -90
+  initial condition: STAM1
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1. config attenuator (30-59)
+    2. scan AP to get AP RSSI
+    3. try to join AP
+    Loop step 1 - 3
+  sub module: WIFI Connect
+  summary: connect AP with rssi from -80 to -100
+  test environment: SSC_T1_ShieldBox
+  test point 1: stress
+  test point 2: JAP with different RSSI
+  version: v1 (2016-8-15)
+- CI ready: 'No'
+  ID: WIFI_CONN_5104
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stress
+  cmd set:
+  - WiFiStress/WifiJAPScanSpecified
+  - - target_ap_num = 6
+    - []
+  - - test_count = 50
+    - []
+  - - test_times = 2
+    - []
+  execution time: 5.0
+  expected result: |-
+    1. JAP succeed
+    2. reconnect succeed and connection time less than 1.5s
+    3. connect succeed, and connection time less than 1.5s
+  initial condition: None
+  level: Integration
+  module: WIFI MAC
+  steps: 1. SSC target connect the first five AP, first 5 AP which will be stored
+    to connected AP cached of DUT. 2. SSC target reconnect ap. 3. SSC target connect
+    the last AP, last AP will not be stored in AP cache and DUT do not know the channel
+    of this AP. Loop step 1-3
+  sub module: WIFI Connect
+  summary: 1 STA 6 AP, count connect AP requires time by scanning the specified channel.
+  test environment: SSC_T1_SCANSPECIFIED
+  test point 1: function + performance + stress
+  test point 2: JAP stress test
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_5105
+  SDK: ESP32_IDF
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stress
+  cmd set:
+  - WiFiStress/WifiJAPCSA
+  - - test_count = 2
+    - - ''
+  - - test_times = 10
+    - - ''
+  execution time: 5.0
+  expected result: 3. connect success 4. PC stay connected
+  initial condition: None
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1. 1 SSC target connect PC by Uart.
+    2. SSC target set as softap+sta mode.
+    3. PC wireless NIC connect softap.
+    4. sta connect AP ,softap and AP should in different channel
+  sub module: WIFI Connect
+  summary: channel switch announcements verify
+  test environment: SSC_T1_1
+  test point 1: function + stress
+  test point 2: channel switch announcements
+  version: v2 (2016-11-15)
+- CI ready: 'No'
+  ID: WIFI_CONN_5106
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stable
+  cmd set:
+  - WiFiStress/WifiConnStable
+  - - check_count = 1440
+    - - dummy
+  - - check_time = 60
+    - - ''
+  - - sleep_mode = "NoneSleep"
+    - - ''
+  execution time: 24.0
+  expected result: 3. no disconnected
+  initial condition: None
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1. set SSC as sta mode and disable sleep function
+    2. 1 SSC connect with AP
+    3. check connection status within 24 hours
+  sub module: WIFI Connect
+  summary: connection stable
+  test environment: SSC_T1_1
+  test point 1: stress + function
+  test point 2: connection keep alive stress test
+  version: v2 (2016-10-23)
+- CI ready: 'No'
+  ID: WIFI_CONN_5107
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stable
+  cmd set:
+  - WiFiStress/WifiSendpktSwitchChan
+  - - test_count = 1000
+    - - dummy
+  - - test_time = 20
+    - - ''
+  - - send_len = 1000
+    - - ''
+  - - send_count = 1000
+    - - ''
+  - - send_delay = 20
+    - - ''
+  execution time: 24.0
+  expected result: 4. connect suc
+  initial condition: None
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1. set SSC as sta mode send UDP broadcast pkt
+    2. switch SSC send pkt channel
+    3. SSC stop send pkt
+    4. SSC connect ap
+  sub module: WIFI Connect
+  summary: connection stable
+  test environment: SSC_T1_1
+  test point 1: stress
+  test point 2: connect ap
+  version: v2 (2016-10-23)
+- CI ready: 'No'
+  ID: WIFI_CONN_5201
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  auto test: 'Yes'
+  category: IOT
+  cmd set:
+  - ''
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)
+  execution time: TBD
+  expected result: |-
+    1. 配置成功，如有需要就重启路由
+    2. target 连接AP成功
+  initial condition: STAM1
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1. 将每个需要测试的AP手动配置为该AP所有可能的模式（bgn），带宽，加密模式的组合
+    2. 控制 target 连接 AP
+  sub module: WIFI Connect
+  summary: basic join ap
+  test environment: SSC_T1_IOT1
+  test point 1: interoperability
+  test point 2: JAP inter operablity test
+  version: v1 (2016-8-15)
+- CI ready: 'No'
+  ID: WIFI_CONN_5202
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  auto test: 'Yes'
+  category: IOT
+  cmd set:
+  - ''
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)
+  - - DELAY 60
+    - - P PC_COM C +DELAYDONE
+      - P SSC1 NC +JAP:DISCONNECTED
+  execution time: TBD
+  expected result: |-
+    1. 配置成功，如有需要就重启路由
+    2. target 连接AP成功
+    3. target 没有从AP断开
+  initial condition: STAM1
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1. 将每个需要测试的AP手动配置为该AP所有可能的模式（bgn），带宽，加密模式的组合
+    2. 控制 target 连接 AP
+    3. 等待60s
+  sub module: WIFI Connect
+  summary: join ap not disconnected in 60 seconds
+  test environment: SSC_T1_IOT1
+  test point 1: interoperability
+  test point 2: JAP inter operablity test
+  version: v1 (2016-8-15)
+- CI ready: 'No'
+  ID: WIFI_CONN_5203
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  auto test: 'No'
+  category: IOT
+  cmd set: ''
+  execution time: TBD
+  expected result: |-
+    1. 配置成功，如有需要就重启路由
+    2. 开始连接AP
+    3. target 最终连接AP成功
+    4. target 从 AP 断开
+    5. target 重连AP成功
+  initial condition: STAM1
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1. 将每个需要测试的AP手动配置为该AP所有可能的模式（bgn），带宽，加密模式的组合
+    2. 控制 target 连接 AP
+    3. 快速在连接AP过程中对AP断电上电
+    4. AP断电后再上电
+    5. 等待 target 重连 AP
+  sub module: WIFI Connect
+  summary: power off and power on AP during JAP， reconnect after AP power off and
+    power on
+  test environment: SSC_T1_IOT1
+  test point 1: interoperability
+  test point 2: JAP inter operablity test
+  version: v1 (2016-8-15)
+- CI ready: 'No'
+  ID: WIFI_CONN_5301
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  auto test: 'No'
+  category: IOT
+  cmd set: ''
+  execution time: TBD
+  expected result: 3. get test result form smart phone APK
+  initial condition: None
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1. setup a few SoftAP with different configs (special character in ssid/passwd, differnt auth type)
+    2. install and config APK on all smart phones
+    3. use APK to test WiFi connect
+  sub module: WIFI Connect
+  summary: connect to softap IOT test
+  test environment: SSC_T5_IOT1
+  test point 1: interoperability
+  test point 2: Connect to SoftAP inter operablity test
+  version: v1 (2016-10-18)
+- CI ready: 'No'
+  ID: WIFI_CONN_9901
+  SDK: All
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Performance
+  cmd set:
+  - WiFiStress/WifiJAPCompatibility
+  - - test_count = 10
+    - - ''
+  - - retry_count = 1
+    - - ''
+  execution time: 1
+  expected result: 1. set succeed 2. disconnect succeed 3. connect succeed
+  initial condition: STAM1
+  level: Integration
+  module: WIFI MAC
+  steps: 1. set sta mode 2. disconnect sta 3. sta connect ap
+  sub module: WIFI Connect
+  summary: sta connect ap
+  test environment: SSC_T1_IOT1
+  test point 1: Compatibility Test test point
+  test point 2: WIFI compatibility test
+  version: v1 (2016-10-23)

@@ -1,0 +1,2306 @@
+.SMP_CASE: &SMP_CASE
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  initial condition: BLE_INIT_SMP
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: SMP
+  version: v1 (2017-05-26)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+
+.just_work_pair: &just_work_pair
+  LIST_MERGE:
+    - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+      - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+    - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
+      - ['P SSC1 C +BLESMP:SecReq']
+    - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
+      - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+
+.slave_passkey_entry_pair: &slave_passkey_entry_pair
+  LIST_MERGE:
+    - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+      - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+    - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
+      - ['P SSC1 C +BLESMP:SecReq']
+    - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
+      - ['P SSC2 C +BLESMP:PassKeyReq', 'P SSC1 A <key>:BLESMP:PassKeyNotify,(\d+)']
+    - - "SSC SSC2 blesmp -K -r <dut1_bt_mac> -a 1 -k <key>"
+      - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+
+.master_passkey_entry_pair: &master_passkey_entry_pair
+  LIST_MERGE:
+    - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+      - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+    - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
+      - ['P SSC1 C +BLESMP:SecReq']
+    - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
+      - ['P SSC1 C +BLESMP:PassKeyReq', 'P SSC2 A <key>:BLESMP:PassKeyNotify,(\d+)']
+    - - "SSC SSC1 blesmp -K -r <dut2_bt_mac> -a 1 -k <key>"
+      - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+
+.both_side_passkey_entry_pair: &both_side_passkey_entry_pair
+  LIST_MERGE:
+    - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+      - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+    - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
+      - ['P SSC1 C +BLESMP:SecReq']
+    - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
+      - ['P SSC[1,2] C +BLESMP:PassKeyReq']
+    - - "SSC SSC[1,2] blesmp -K -r <dut[2,1]_bt_mac> -a 1 -k 123456"
+      - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+
+.numberic_comparision_pair: &numberic_comparision_pair
+  LIST_MERGE:
+    - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+      - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+    - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
+      - ['P SSC1 C +BLESMP:SecReq']
+    - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
+      - ['R SSC2 A <key>:BLESMP:NCReq,(\d+)', 'R SSC1 C NCReq P <key>']
+    - - "SSC SSC[1-2] blesmp -C -r <dut[2,1]_bt_mac> -a 1"
+      - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+
+.check_connection: &check_connection
+  LIST_MERGE:
+    - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+      - ["R SSC1 C +GATTC:DiscoverService,A000"]
+
+.disconnect: &disconnect
+  LIST_MERGE:
+    - - "SSC SSC1 bleconn -D -z all"
+      - ['P SSC1 C +BLE:GattcDisconnect', 'P SSC2 C +BLE:GattsDisconnect']
+    - - "SSC SSC2 bleadv -D -z start"
+      - ['P SSC2 C +BLEADV:OK']
+
+.start_pair: &start_pair
+  LIST_MERGE:
+    - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+      - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+    - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
+      - ['P SSC1 C +BLESMP:SecReq']
+
+.config_just_work: &config_just_work
+  LIST_MERGE:
+    - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x00"
+      - ['P SSC[1-2] C +BLESMP:OK']
+    - - "SSC SSC[1-2] blesmp -S -z IOCAP -v 0x04"
+      - ['P SSC[1-2] C +BLESMP:OK']
+
+.config_master_passkey_entry: &config_master_passkey_entry
+  LIST_MERGE:
+    - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+      - ['P SSC[1-2] C +BLESMP:OK']
+    - - "SSC SSC1 blesmp -S -z IOCAP -v 0x02"
+      - ['P SSC1 C +BLESMP:OK']
+    - - "SSC SSC2 blesmp -S -z IOCAP -v 0x04"
+      - ['P SSC2 C +BLESMP:OK']
+
+.config_slave_passkey_entry: &config_slave_passkey_entry
+  LIST_MERGE:
+    - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+      - ['P SSC[1-2] C +BLESMP:OK']
+    - - "SSC SSC[1-2] blesmp -S -z IOCAP -v 0x04"
+      - ['P SSC[1-2] C +BLESMP:OK']
+
+.config_both_side_passkey_entry: &config_both_side_passkey_entry
+  LIST_MERGE:
+    - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+      - ['P SSC[1-2] C +BLESMP:OK']
+    - - "SSC SSC[1-2] blesmp -S -z IOCAP -v 0x02"
+      - ['P SSC[1-2] C +BLESMP:OK']
+
+.config_numberic_comparision: &config_numberic_comparision
+  LIST_MERGE:
+    - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+      - ['P SSC[1-2] C +BLESMP:OK']
+    - - "SSC SSC[1-2] blesmp -S -z IOCAP -v 0x04"
+      - ['P SSC[1-2] C +BLESMP:OK']
+
+.config_bond_device: &config_bond_device
+  LIST_MERGE:
+    - - "SSC SSC2 blesmp -S -z AuthReqMode -v 0x01"
+      - ['P SSC2 C +BLESMP:OK']
+    - - "SSC SSC2 blesmp -S -z IOCAP -v 0x03"
+      - ['P SSC2 C +BLESMP:OK']
+
+
+test cases:
+- ID: BTSTK_SMP_01001
+  <<: *SMP_CASE
+  test point 2: BLE SMP sec properity test
+  summary: BLE SMP sec properity None + None test
+  steps: |
+    1. set sec properity None on initiator and responder
+    2. set IOCAP to KeyboardDisplay on initiator and responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use just work and pair succeed
+    4. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 blesmp -S -z AuthReqMode -v 0x00"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z AuthReqMode -v 0x00"
+    - ['P SSC2 C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+- ID: BTSTK_SMP_01002
+  <<: *SMP_CASE
+  test point 2: BLE SMP sec properity test
+  summary: BLE SMP sec properity None + SC test
+  steps: |
+    1. set sec properity None on initiator and SC on responder
+    2. set IOCAP to KeyboardDisplay on initiator and responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use just work and pair succeed
+    4. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 blesmp -S -z AuthReqMode -v 0x00"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z AuthReqMode -v 0x08"
+    - ['P SSC2 C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+- ID: BTSTK_SMP_01003
+  <<: *SMP_CASE
+  test point 2: BLE SMP sec properity test
+  summary: BLE SMP sec properity None + MITM test
+  steps: |
+    1. set sec properity None on initiator and MITM on responder
+    2. set IOCAP to KeyboardDisplay on initiator and responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use passkey entry (initiator displays, responder inputs) and pair succeed
+    4. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 blesmp -S -z AuthReqMode -v 0x00"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC2 C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - *slave_passkey_entry_pair
+  - *check_connection
+- ID: BTSTK_SMP_01004
+  <<: *SMP_CASE
+  test point 2: BLE SMP sec properity test
+  summary: BLE SMP sec properity None + SC_MITM test
+  steps: |
+    1. set sec properity None on initiator and SC_MITM on responder
+    2. set IOCAP to KeyboardDisplay on initiator and responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use passkey entry (initiator displays, responder inputs) and pair succeed
+    4. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 blesmp -S -z AuthReqMode -v 0x00"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC2 C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - *slave_passkey_entry_pair
+  - *check_connection
+- ID: BTSTK_SMP_01005
+  <<: *SMP_CASE
+  test point 2: BLE SMP sec properity test
+  summary: BLE SMP sec properity SC + None test
+  steps: |
+    1. set sec properity SC only on initiator and None on responder
+    2. set IOCAP to KeyboardDisplay on initiator and responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use just work and pair succeed
+    4. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 blesmp -S -z AuthReqMode -v 0x08"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z AuthReqMode -v 0x00"
+    - ['P SSC2 C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+- ID: BTSTK_SMP_01006
+  <<: *SMP_CASE
+  test point 2: BLE SMP sec properity test
+  summary: BLE SMP sec properity SC + SC test
+  steps: |
+    1. set sec properity SC on initiator and SC on responder
+    2. set IOCAP to KeyboardDisplay on initiator and responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use just work and pair succeed
+    4. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 blesmp -S -z AuthReqMode -v 0x08"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z AuthReqMode -v 0x08"
+    - ['P SSC2 C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+- ID: BTSTK_SMP_01007
+  <<: *SMP_CASE
+  test point 2: BLE SMP sec properity test
+  summary: BLE SMP sec properity SC + MITM test
+  steps: |
+    1. set sec properity SC on initiator and MITM on responder
+    2. set IOCAP to KeyboardDisplay on initiator and responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use passkey entry (initiator displays, responder inputs) and pair succeed
+    4. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 blesmp -S -z AuthReqMode -v 0x08"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC2 C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - *slave_passkey_entry_pair
+  - *check_connection
+- ID: BTSTK_SMP_01008
+  <<: *SMP_CASE
+  test point 2: BLE SMP sec properity test
+  summary: BLE SMP sec properity SC + SC_MITM test
+  steps: |
+    1. set sec properity SC on initiator and SC_MITM on responder
+    2. set IOCAP to KeyboardDisplay on initiator and responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use numberic comparision and pair succeed
+    4. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 blesmp -S -z AuthReqMode -v 0x08"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC2 C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - *numberic_comparision_pair
+  - *check_connection
+- ID: BTSTK_SMP_01009
+  <<: *SMP_CASE
+  test point 2: BLE SMP sec properity test
+  summary: BLE SMP sec properity MITM + None test
+  steps: |
+    1. set sec properity MITM on initiator and None on responder
+    2. set IOCAP to KeyboardDisplay on initiator and responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use passkey entry (initiator displays, responder inputs) and pair succeed
+    4. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z AuthReqMode -v 0x00"
+    - ['P SSC2 C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - *slave_passkey_entry_pair
+  - *check_connection
+- ID: BTSTK_SMP_01010
+  <<: *SMP_CASE
+  test point 2: BLE SMP sec properity test
+  summary: BLE SMP sec properity MITM + SC test
+  steps: |
+    1. set sec properity MITM on initiator and SC on responder
+    2. set IOCAP to KeyboardDisplay on initiator and responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use passkey entry (initiator displays, responder inputs) and pair succeed
+    4. succeed
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z AuthReqMode -v 0x08"
+    - ['P SSC2 C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - *slave_passkey_entry_pair
+  - *check_connection
+- ID: BTSTK_SMP_01011
+  <<: *SMP_CASE
+  test point 2: BLE SMP sec properity test
+  summary: BLE SMP sec properity MITM + MITM test
+  steps: |
+    1. set sec properity MITM on initiator and MITM on responder
+    2. set IOCAP to KeyboardDisplay on initiator and responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use passkey entry (initiator displays, responder inputs) and pair succeed
+    4. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC2 C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - *slave_passkey_entry_pair
+  - *check_connection
+- ID: BTSTK_SMP_01012
+  <<: *SMP_CASE
+  test point 2: BLE SMP sec properity test
+  summary: BLE SMP sec properity MITM + SC_MITM test
+  steps: |
+    1. set sec properity MITM on initiator and SC_MITM on responder
+    2. set IOCAP to KeyboardDisplay on initiator and responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use passkey entry (initiator displays, responder inputs) and pair succeed
+    4. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC2 C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - *slave_passkey_entry_pair
+  - *check_connection
+- ID: BTSTK_SMP_01013
+  <<: *SMP_CASE
+  test point 2: BLE SMP sec properity test
+  summary: BLE SMP sec properity SC_MITM + None test
+  steps: |
+    1. set sec properity SC_MITM on initiator and SC on responder
+    2. set IOCAP to KeyboardDisplay on initiator and responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use passkey entry (initiator displays, responder inputs) and pair succeed
+    4. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z AuthReqMode -v 0x00"
+    - ['P SSC2 C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - *slave_passkey_entry_pair
+  - *check_connection
+- ID: BTSTK_SMP_01014
+  <<: *SMP_CASE
+  test point 2: BLE SMP sec properity test
+  summary: BLE SMP sec properity SC_MITM + SC test
+  steps: |
+    1. set sec properity SC_MITM on initiator and SC on responder
+    2. set IOCAP to KeyboardDisplay on initiator and responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use numberic comparision and pair succeed
+    4. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z AuthReqMode -v 0x08"
+    - ['P SSC2 C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - *numberic_comparision_pair
+  - *check_connection
+- ID: BTSTK_SMP_01015
+  <<: *SMP_CASE
+  test point 2: BLE SMP sec properity test
+  summary: BLE SMP sec properity SC_MITM + MITM test
+  steps: |
+    1. set sec properity SC_MITM on initiator and MITM on responder
+    2. set IOCAP to KeyboardDisplay on initiator and responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use passkey entry (initiator displays, responder inputs) and pair succeed
+    4. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC2 C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - *slave_passkey_entry_pair
+  - *check_connection
+- ID: BTSTK_SMP_01016
+  <<: *SMP_CASE
+  test point 2: BLE SMP sec properity test
+  summary: BLE SMP sec properity SC_MITM + SC_MITM test
+  steps: |
+    1. set sec properity SC_MITM on initiator and SC_MITM on responder
+    2. set IOCAP to KeyboardDisplay on initiator and responder
+    3. DUT1 connect to DUT2, do pair procedure
+    4. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use numberic comparision and pair succeed
+    4. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC2 C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - *numberic_comparision_pair
+  - *check_connection
+- ID: BTSTK_SMP_02001
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities DisplayOnly + DisplayOnly test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to DisplayOnly on initiator and DisplayOnly on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to DisplayOnly on initiator and DisplayOnly on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use just work and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use just work and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x00"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x00"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x00"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x00"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+- ID: BTSTK_SMP_02002
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities DisplayOnly + DisplayYesNo test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to DisplayOnly on initiator and DisplayYesNo on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to DisplayOnly on initiator and DisplayYesNo on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use just work and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use just work and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x00"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x01"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x00"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x01"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+- ID: BTSTK_SMP_02003
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities DisplayOnly + KeyboardOnly test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to DisplayOnly on initiator and KeyboardOnly on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to DisplayOnly on initiator and KeyboardOnly on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use passkey entry (initiator displays, responder inputs) and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use passkey entry (initiator displays, responder inputs) and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x00"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x02"
+    - ['P SSC2 C +BLESMP:OK']
+  - *slave_passkey_entry_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x00"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x02"
+    - ['P SSC2 C +BLESMP:OK']
+  - *slave_passkey_entry_pair
+  - *check_connection
+- ID: BTSTK_SMP_02004
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities DisplayOnly + NoInputNoOutput test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to DisplayOnly on initiator and NoInputNoOutput on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to DisplayOnly on initiator and NoInputNoOutput on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use just works and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use just works and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x00"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x03"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x00"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x03"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+- ID: BTSTK_SMP_02005
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities DisplayOnly + KeyboardDisplay test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to DisplayOnly on initiator and KeyboardDisplay on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to DisplayOnly on initiator and KeyboardDisplay on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use passkey entry (initiator displays, responder inputs) and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use passkey entry (initiator displays, responder inputs) and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x00"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC2 C +BLESMP:OK']
+  - *slave_passkey_entry_pair
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x00"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC2 C +BLESMP:OK']
+  - *slave_passkey_entry_pair
+  - *check_connection
+- ID: BTSTK_SMP_02006
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities DisplayYesNo + DisplayOnly test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to DisplayYesNo on initiator and DisplayOnly on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to DisplayYesNo on initiator and DisplayOnly on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use just work and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use just work and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x01"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x00"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x01"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x00"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+- ID: BTSTK_SMP_02007
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities DisplayYesNo + DisplayYesNo test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to DisplayYesNo on initiator and DisplayYesNo on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to DisplayYesNo on initiator and DisplayYesNo on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use just work and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use numberic comparision and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x01"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x01"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x01"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x01"
+    - ['P SSC2 C +BLESMP:OK']
+  - *numberic_comparision_pair
+  - *check_connection
+- ID: BTSTK_SMP_02008
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities DisplayYesNo + KeyboardOnly test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to DisplayYesNo on initiator and KeyboardOnly on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to DisplayYesNo on initiator and KeyboardOnly on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use passkey entry (initiator displays, responder inputs) and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use passkey entry (initiator displays, responder inputs) and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x01"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x02"
+    - ['P SSC2 C +BLESMP:OK']
+  - *slave_passkey_entry_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x01"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x02"
+    - ['P SSC2 C +BLESMP:OK']
+  - *slave_passkey_entry_pair
+  - *check_connection
+- ID: BTSTK_SMP_02009
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities DisplayYesNo + NoInputNoOutput test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to DisplayYesNo on initiator and NoInputNoOutput on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to DisplayYesNo on initiator and NoInputNoOutput on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use just works and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use just works and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x01"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x03"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x01"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x03"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+- ID: BTSTK_SMP_02010
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities DisplayYesNo + KeyboardDisplay test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to DisplayYesNo on initiator and KeyboardDisplay on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to DisplayYesNo on initiator and KeyboardDisplay on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use passkey entry (initiator displays, responder inputs) and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use numberic comparision and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x01"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC2 C +BLESMP:OK']
+  - *slave_passkey_entry_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x01"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC2 C +BLESMP:OK']
+  - *numberic_comparision_pair
+  - *check_connection
+- ID: BTSTK_SMP_02011
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities KeyboardOnly + DisplayOnly test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to KeyboardOnly on initiator and DisplayOnly on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to KeyboardOnly on initiator and DisplayOnly on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use passkey entry (responder displays, initiator inputs) and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use passkey entry (responder displays, initiator inputs) and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x02"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x00"
+    - ['P SSC2 C +BLESMP:OK']
+  - *master_passkey_entry_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x02"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x00"
+    - ['P SSC2 C +BLESMP:OK']
+  - *master_passkey_entry_pair
+  - *check_connection
+- ID: BTSTK_SMP_02012
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities KeyboardOnly + DisplayYesNo test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to KeyboardOnly on initiator and DisplayYesNo on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to KeyboardOnly on initiator and DisplayYesNo on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use passkey entry (responder displays, initiator inputs) and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use passkey entry (responder displays, initiator inputs) and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x02"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x01"
+    - ['P SSC2 C +BLESMP:OK']
+  - *master_passkey_entry_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x02"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x01"
+    - ['P SSC2 C +BLESMP:OK']
+  - *master_passkey_entry_pair
+  - *check_connection
+- ID: BTSTK_SMP_02013
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities KeyboardOnly + KeyboardOnly test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to KeyboardOnly on initiator and KeyboardOnly on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to KeyboardOnly on initiator and KeyboardOnly on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use passkey entry (initiator and responder inputs) and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use passkey entry (initiator and responder inputs) and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x02"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x02"
+    - ['P SSC2 C +BLESMP:OK']
+  - *both_side_passkey_entry_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x02"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x02"
+    - ['P SSC2 C +BLESMP:OK']
+  - *both_side_passkey_entry_pair
+  - *check_connection
+- ID: BTSTK_SMP_02014
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities KeyboardOnly + NoInputNoOutput test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to KeyboardOnly on initiator and NoInputNoOutput on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to KeyboardOnly on initiator and NoInputNoOutput on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use just works and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use just works and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x02"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x03"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x02"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x03"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+- ID: BTSTK_SMP_02015
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities KeyboardOnly + KeyboardDisplay test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to KeyboardOnly on initiator and KeyboardDisplay on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to KeyboardOnly on initiator and KeyboardDisplay on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use passkey entry (responder displays, initiator inputs) and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use passkey entry (responder displays, initiator inputs) and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x02"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC2 C +BLESMP:OK']
+  - *master_passkey_entry_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x02"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC2 C +BLESMP:OK']
+  - *master_passkey_entry_pair
+  - *check_connection
+- ID: BTSTK_SMP_02016
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities NoInputNoOutput + DisplayOnly test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to NoInputNoOutput on initiator and DisplayOnly on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to NoInputNoOutput on initiator and DisplayOnly on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use just works and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use just works and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x03"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x00"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x03"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x00"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+- ID: BTSTK_SMP_02017
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities NoInputNoOutput + DisplayYesNo test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to NoInputNoOutput on initiator and DisplayYesNo on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to NoInputNoOutput on initiator and DisplayYesNo on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use just works and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use just works and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x03"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x01"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x03"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x01"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+- ID: BTSTK_SMP_02018
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities NoInputNoOutput + KeyboardOnly test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to NoInputNoOutput on initiator and KeyboardOnly on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to NoInputNoOutput on initiator and KeyboardOnly on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use just works and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use just works and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x03"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x02"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x03"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x02"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+- ID: BTSTK_SMP_02019
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities NoInputNoOutput + NoInputNoOutput test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to NoInputNoOutput on initiator and NoInputNoOutput on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to NoInputNoOutput on initiator and NoInputNoOutput on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use just works and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use just works and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x03"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x03"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x03"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x03"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+- ID: BTSTK_SMP_02020
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities NoInputNoOutput + KeyboardDisplay test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to NoInputNoOutput on initiator and KeyboardDisplay on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to NoInputNoOutput on initiator and KeyboardDisplay on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use just works and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use just works and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x03"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x03"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+- ID: BTSTK_SMP_02021
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities KeyboardDisplay + DisplayOnly test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to KeyboardDisplay on initiator and DisplayOnly on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to KeyboardDisplay on initiator and DisplayOnly on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use passkey entry (responder displays, initiator inputs) and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use passkey entry (responder displays, initiator inputs) and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x00"
+    - ['P SSC2 C +BLESMP:OK']
+  - *master_passkey_entry_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x00"
+    - ['P SSC2 C +BLESMP:OK']
+  - *master_passkey_entry_pair
+  - *check_connection
+- ID: BTSTK_SMP_02022
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities KeyboardDisplay + DisplayYesNo test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to KeyboardDisplay on initiator and DisplayYesNo on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to KeyboardDisplay on initiator and DisplayYesNo on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use passkey entry (responder displays, initiator inputs) and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use numberic comparision and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x01"
+    - ['P SSC2 C +BLESMP:OK']
+  - *master_passkey_entry_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x01"
+    - ['P SSC2 C +BLESMP:OK']
+  - *numberic_comparision_pair
+  - *check_connection
+- ID: BTSTK_SMP_02023
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities KeyboardDisplay + KeyboardOnly test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to KeyboardDisplay on initiator and KeyboardOnly on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to KeyboardDisplay on initiator and KeyboardOnly on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use passkey entry (initiator displays, responder inputs) and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use passkey entry (initiator displays, responder inputs) and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x02"
+    - ['P SSC2 C +BLESMP:OK']
+  - *slave_passkey_entry_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x02"
+    - ['P SSC2 C +BLESMP:OK']
+  - *slave_passkey_entry_pair
+  - *check_connection
+- ID: BTSTK_SMP_02024
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities KeyboardDisplay + NoInputNoOutput test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to KeyboardDisplay on initiator and NoInputNoOutput on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to KeyboardDisplay on initiator and NoInputNoOutput on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use just works and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use just works and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x03"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x03"
+    - ['P SSC2 C +BLESMP:OK']
+  - *just_work_pair
+  - *check_connection
+- ID: BTSTK_SMP_02025
+  <<: *SMP_CASE
+  test point 2: BLE SMP IO Capabilities test
+  summary: BLE SMP IO Capabilities KeyboardDisplay + KeyboardDisplay test
+  allow fail: 2/3
+  steps: |
+    1. set sec properity MITM on both initiator and responder
+    2. set IOCAP to KeyboardDisplay on initiator and KeyboardDisplay on responder
+    3. DUT1 connect to DUT2, do pair (if required)
+    4. do service discovery
+    5. disconnect
+    6. set sec properity SC_MITM on both initiator and responder
+    7. set IOCAP to KeyboardDisplay on initiator and KeyboardDisplay on responder
+    8. DUT1 connect to DUT2, do pair (if required)
+    9. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. use passkey entry (initiator displays, responder inputs) and pair succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. use numberic comparision and pair succeed
+    9. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x04"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC2 C +BLESMP:OK']
+  - *slave_passkey_entry_pair
+  - *check_connection
+  - *disconnect
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x04"
+    - ['P SSC2 C +BLESMP:OK']
+  - *numberic_comparision_pair
+  - *check_connection
+- ID: BTSTK_SMP_03001
+  <<: *SMP_CASE
+  test point 2: BLE SMP pair with pairing request test
+  summary: BLE SMP start pair with pairing request
+  steps: |
+    1. set sec properity None on initiator and responder
+    2. set IOCAP to KeyboardDisplay on initiator and responder
+    3. DUT1 connect to DUT2
+    4. DUT2 send secruity request, do pair (if required)
+    5. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. connected
+    4. use just work and pair succeed
+    5. succeed
+  cmd set:
+  - ""
+  - *config_just_work
+  - *just_work_pair
+  - *check_connection
+- ID: BTSTK_SMP_03002
+  <<: *SMP_CASE
+  test point 2: BLE SMP initiate pair test
+  summary: BLE SMP start pair with pairing request
+  steps: |
+    1. set sec properity None on initiator and responder
+    2. set IOCAP to KeyboardDisplay on initiator and responder
+    3. DUT1 connect to DUT2
+    4. DUT1 send pair req, do pair (if required)
+    5. do service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. connected
+    4. use just work and pair succeed
+    5. succeed
+  cmd set:
+  - ""
+  - *config_just_work
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+  - - "SSC SSC1 blesmp -E -r <dut2_bt_mac> -z Enc"
+    - ['P SSC2 C +BLESMP:SecReq']
+  - - "SSC SSC2 blesmp -R -a 1 -r <dut1_bt_mac>"
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+  - *check_connection
+- ID: BTSTK_SMP_04001
+  <<: *SMP_CASE
+  test point 2: BLE SMP key test
+  summary: BLE SMP set key size test
+  allow fail: 1/2
+  steps: |
+    1. set key size 7
+    2. set key size 6
+    3. do just work pair
+  expected result: |
+    1. succeed
+    2. LTK size is 7
+    3. succeed
+  cmd set:
+  - ""
+  - *config_numberic_comparision
+  - - "SSC SSC1 blesmp -S -z KeySize -v 0x07"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z KeySize -v 0x06"
+    - ['P SSC1 C +BLESMP:OK']
+  - *start_pair
+  - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
+    - ['R SSC2 A <key>:BLESMP:NCReq,(\d+)', 'R SSC1 C NCReq P <key>']
+  - - "SSC SSC[1-2] blesmp -C -r <dut[2,1]_bt_mac> -a 1"
+    - ['P SSC[1-2] C +BLESMP:Key,LocalLTK,16 C +BLESMP:AuthComplete,Success,0']
+- ID: BTSTK_SMP_04002
+  <<: *SMP_CASE
+  test point 2: BLE SMP key test
+  summary: BLE SMP set key size test
+  allow fail: 1/2
+  steps: |
+    1. set key size 16
+    2. set key size 17
+    3. do just work pair
+  expected result: |
+    1. succeed
+    2. LTK size is 17
+    3. succeed
+  cmd set:
+  - ""
+  - *config_numberic_comparision
+  - - "SSC SSC1 blesmp -S -z KeySize -v 0x10"
+    - ['P SSC1 C +BLESMP:OK']
+  - - "SSC SSC1 blesmp -S -z KeySize -v 0x11"
+    - ['P SSC1 C +BLESMP:OK']
+  - *start_pair
+  - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
+    - ['R SSC2 A <key>:BLESMP:NCReq,(\d+)', 'R SSC1 C NCReq P <key>']
+  - - "SSC SSC[1-2] blesmp -C -r <dut[2,1]_bt_mac> -a 1"
+    - ['P SSC[1-2] C +BLESMP:Key,LocalLTK,16 C +BLESMP:AuthComplete,Success,0']
+- ID: BTSTK_SMP_05001
+  <<: *SMP_CASE
+  test point 2: BLE SMP unsuccessful pair reply test
+  summary: BLE SMP unsuccessful passkey entry test
+  steps: |
+    1. enter passkey entry phase
+    2. entry incorrect passkey and accept
+    3. enter passkey entry phase
+    4. entry correct passkey and reject
+    5. enter passkey entry phase
+    6. send numberic comparision accept
+    7. enter passkey entry phase
+    8. send numberic comparision reject
+  expected result: |
+    1. succeed
+    2. pair failed
+    3. succeed
+    4. pair failed
+    5. succeed
+    6. pair failed
+    7. succeed
+    8. pair failed
+  cmd set:
+  - ""
+  - *config_slave_passkey_entry
+  - - LOOP 2 6 "[1,0]" "['000001','<key>']"
+    - ""
+  - *start_pair
+  - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
+    - ['P SSC2 C +BLESMP:PassKeyReq', 'P SSC1 A <key>:BLESMP:PassKeyNotify,(\d+)']
+  - - "SSC SSC2 blesmp -K -r <dut1_bt_mac> -a {%d} -k {%s}"
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Fail']
+  - *disconnect
+  - - LOOP 2 6 "[1,0]"
+    - ""
+  - *start_pair
+  - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
+    - ['P SSC2 C +BLESMP:PassKeyReq', 'P SSC1 A <key>:BLESMP:PassKeyNotify,(\d+)']
+  - - "SSC SSC[1-2] blesmp -C -r <dut[2,1]_bt_mac> -a {%d}"
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Fail']
+  - *disconnect
+- ID: BTSTK_SMP_05002
+  <<: *SMP_CASE
+  test point 2: BLE SMP unsuccessful pair reply test
+  summary: BLE SMP unsuccessful numberic comparision test
+  steps: |
+    1. enter numberic comparision phase
+    2. entry passkey and accept
+    3. enter numberic comparision phase
+    4. send numberic comparision reject
+  expected result: |
+    1. succeed
+    2. pair failed
+    3. succeed
+    4. pair failed
+  cmd set:
+  - ""
+  - *config_numberic_comparision
+  - - LOOP 2 6 "[1,0]"
+    - ""
+  - *start_pair
+  - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
+    - ['R SSC2 A <key>:BLESMP:NCReq,(\d+)', 'R SSC1 C NCReq P <key>']
+  - - "SSC SSC2 blesmp -K -r <dut1_bt_mac> -a {%d} -k 000001"
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Fail']
+  - *disconnect
+  - - LOOP 2 6 "[1,0]" "[0,1]"
+    - ""
+  - *start_pair
+  - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
+    - ['R SSC2 A <key>:BLESMP:NCReq,(\d+)', 'R SSC1 C NCReq P <key>']
+  - - "SSC SSC[1,2] blesmp -C -r <dut[2,1]_bt_mac> -a [{%d},{%d}]"
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Fail']
+  - *disconnect
+- ID: BTSTK_SMP_05003
+  <<: *SMP_CASE
+  test point 2: BLE SMP unsuccessful pair reply test
+  summary: BLE SMP unsuccessful passkey entry on both side test
+  steps: |
+    1. enter both side passkey entry phase
+    2. entry different passkey and accept
+    3. enter both side passkey entry phase
+    4. entry same passkey and reject
+    5. enter both side passkey entry phase
+    6. send numberic comparision accept
+    7. enter both side passkey entry phase
+    8. send numberic comparision reject
+  expected result: |
+    1. succeed
+    2. pair failed
+    3. succeed
+    4. pair failed
+    5. succeed
+    6. pair failed
+    7. succeed
+    8. pair failed
+  cmd set:
+  - ""
+  - *config_both_side_passkey_entry
+  - - LOOP 2 6 "[1,0]" "['000002','000001']"
+    - ""
+  - *start_pair
+  - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
+    - ['R SSC[1,2] C +BLESMP:PassKeyReq']
+  - - "SSC SSC2 blesmp -K -r <dut1_bt_mac> -a [1,{%d}] -k [000001,{%s}]"
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Fail']
+  - *disconnect
+  - - LOOP 2 6 "[1,0]" "[0,1]"
+    - ""
+  - *start_pair
+  - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
+    - ['P SSC[1,2] C +BLESMP:PassKeyReq']
+  - - "SSC SSC[1,2] blesmp -C -r <dut[2,1]_bt_mac> -a [{%d},{%d}]"
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Fail']
+  - *disconnect
+- ID: BTSTK_SMP_05004
+  <<: *SMP_CASE
+  test point 2: BLE SMP unsuccessful pair reply test
+  summary: BLE SMP reject pair
+  steps: |
+    1. DUT1 connect to DUT2
+    2. DUT2 send security req
+    3. DUT1 reject pairing
+    4. disconnect
+    5. DUT1 connect to DUT2
+    6. DUT1 send pairing req
+    7. DUT2 reject pairing
+    4. disconnect
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. succeed
+  cmd set:
+  - ""
+  - *start_pair
+  - - "SSC SSC1 blesmp -R -a 0 -r <dut2_bt_mac>"
+    - [""]
+  - *disconnect
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+  - - "SSC SSC1 blesmp -E -r <dut2_bt_mac> -z Enc"
+    - ['P SSC2 C +BLESMP:SecReq']
+  - - "SSC SSC2 blesmp -R -a 0 -r <dut1_bt_mac>"
+    - [""]
+- ID: BTSTK_SMP_06001
+  <<: *SMP_CASE
+  test environment: SSC_T1_1
+  initial condition: BLE_DEINIT1
+  test point 2: BLE SMP use API in abnormal state
+  summary: BLE SMP use API when BLE not initialized, not enabled or not registered callback
+  steps: |
+    1. set security parameter
+    2. send security response
+    3. send passkey reply
+    4. send confirm reply
+    5. init BLE
+    6. set security parameter
+    7. send security response
+    8. send passkey reply
+    9. send confirm reply
+    10. init BLE
+    11. set security parameter
+    12. send security response
+    13. send passkey reply
+    14. send confirm reply
+  expected result: |
+    1. failed
+    2. failed
+    3. failed
+    4. failed
+    5. succeed
+    6. failed
+    7. failed
+    8. failed
+    9. failed
+    10. succeed
+    11. failed
+    12. failed
+    13. failed
+    14. failed
+  cmd set:
+  - ""
+  - - "SSC SSC1 blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC1 C +BLESMP:ERROR']
+  - - "SSC SSC1 blesmp -R -a 1 -r <dut1_bt_mac>"
+    - ['P SSC1 C +BLESMP:ERROR']
+  - - "SSC SSC1 blesmp -K -r <dut1_bt_mac> -a 1 -k 123456"
+    - ['P SSC1 C +BLESMP:ERROR']
+  - - "SSC SSC1 blesmp -C -r <dut1_bt_mac> -a 1"
+    - ['P SSC1 C +BLESMP:ERROR']
+  - - SSC SSC1 bt -D -z init
+    - ['R SSC1 C +BT:']
+  - - "SSC SSC1 blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC1 C +BLESMP']
+  - - "SSC SSC1 blesmp -R -a 1 -r <dut1_bt_mac>"
+    - ['P SSC1 C +BLESMP']
+  - - "SSC SSC1 blesmp -K -r <dut1_bt_mac> -a 1 -k 123456"
+    - ['P SSC1 C +BLESMP']
+  - - "SSC SSC1 blesmp -C -r <dut1_bt_mac> -a 1"
+    - ['P SSC1 C +BLESMP']
+  - - SSC SSC1 bt -D -z enable
+    - ['R SSC1 C +BT:']
+  - - "SSC SSC1 blesmp -S -z AuthReqMode -v 0x0C"
+    - ['P SSC1 C +BLESMP']
+  - - "SSC SSC1 blesmp -R -a 1 -r <dut1_bt_mac>"
+    - ['P SSC1 C +BLESMP']
+  - - "SSC SSC1 blesmp -K -r <dut1_bt_mac> -a 1 -k 123456"
+    - ['P SSC1 C +BLESMP']
+  - - "SSC SSC1 blesmp -C -r <dut1_bt_mac> -a 1"
+    - ['P SSC1 C +BLESMP']
+- ID: BTSTK_SMP_06002
+  <<: *SMP_CASE
+  test point 2: BLE SMP use API in abnormal state
+  summary: BLE SMP use phase 2 API in phase 1
+  steps: |
+    1. enter entry passkey phase
+    2. send ble security response
+    3. continue pairing
+  expected result: |
+    1. succeed
+    2. failed
+    3. pair succeed
+  cmd set:
+  - ""
+  - *config_slave_passkey_entry
+  - *start_pair
+  - - "SSC SSC2 blesmp -K -r <dut1_bt_mac> -a 1 -k <key>"
+    - ['P SSC2 C +BLESMP']
+  - - "SSC SSC2 blesmp -C -r <dut1_bt_mac> -a 1"
+    - ['P SSC2 C +BLESMP']
+  - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
+    - ['P SSC2 C +BLESMP:PassKeyReq', 'P SSC1 A <key>:BLESMP:PassKeyNotify,(\d+)']
+  - - "SSC SSC2 blesmp -K -r <dut1_bt_mac> -a 1 -k <key>"
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+- ID: BTSTK_SMP_06003
+  <<: *SMP_CASE
+  test point 2: BLE SMP use API in abnormal state
+  summary: BLE SMP use phase 1 API in phase 2
+  steps: |
+    1. enter phase 1 (don't send security response)
+    2. do passkey entry
+    3. do number comparision
+  expected result: |
+    1. succeed
+    2. failed
+    3. failed
+  cmd set:
+  - ""
+  - *config_slave_passkey_entry
+  - *start_pair
+  - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
+    - ['P SSC2 C +BLESMP:PassKeyReq', 'P SSC1 A <key>:BLESMP:PassKeyNotify,(\d+)']
+  - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
+    - ['P SSC1 C +BLESMP']
+  - - "SSC SSC2 blesmp -K -r <dut1_bt_mac> -a 1 -k <key>"
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+- ID: BTSTK_SMP_06004
+  <<: *SMP_CASE
+  test point 2: BLE SMP use API in abnormal state
+  summary: BLE SMP master disconnect during pairing and repairing
+  steps: |
+    1. enter phase 1 (don't send security response)
+    2. disconnect
+    3. enter phase 1, send response but do not do pair
+    4. disconnect
+  expected result: |
+    1. succeed
+    2. disconnected
+    3. succeed
+    4. disconnected
+  cmd set:
+  - ""
+  - *config_slave_passkey_entry
+  - *start_pair
+  - *disconnect
+  - *start_pair
+  - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
+    - ['P SSC2 C +BLESMP:PassKeyReq', 'P SSC1 A <key>:BLESMP:PassKeyNotify,(\d+)']
+  - *disconnect
+- ID: BTSTK_SMP_06005
+  <<: *SMP_CASE
+  test point 2: BLE SMP use API in abnormal state
+  summary: BLE SMP slave disconnect during pairing and repairing
+  steps: |
+    1. enter phase 1 (don't send security response)
+    2. disconnect
+    3. enter phase 1, send response but do not do pair
+    4. disconnect
+  expected result: |
+    1. succeed
+    2. disconnected
+    3. succeed
+    4. disconnected
+  cmd set:
+  - ""
+  - *config_slave_passkey_entry
+  - *start_pair
+  - - "SSC SSC2 bleconn -D -z all"
+    - ['P SSC2 C +BLE:GattsDisconnect', 'P SSC1 C +BLE:GattcDisconnect,OK']
+  - - "SSC SSC2 bleadv -D -z start"
+    - ['P SSC2 C +BLEADV:Start,OK']
+  - *start_pair
+  - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
+    - ['P SSC2 C +BLESMP:PassKeyReq', 'P SSC1 A <key>:BLESMP:PassKeyNotify,(\d+)']
+  - - "SSC SSC2 bleconn -D -z all"
+    - ['P SSC2 C +BLE:GattsDisconnect', 'P SSC1 C +BLE:GattcDisconnect,OK']
+- ID: BTSTK_SMP_07001
+  <<: *SMP_CASE
+  test point 2: BLE SMP bond and NVS test
+  summary: BLE SMP initiator bond with lagecy pairing
+  steps: |
+    1. DUT1 and DUT2 SMP bond with lagecy pairing
+    2. DUT1 disconnect
+    3. DUT1 connect to DUT2
+    4. DUT1 disconnect
+    5. DUT1 reboot
+    6. DUT1 connect to DUT2
+  expected result: |
+    1. succeed
+    2. succeed
+    3. connect succeed without pairing again
+    4. succeed
+    5. succeed
+    6. connect succeed without pairing again
+  cmd set:
+  - ""
+  - *config_master_passkey_entry
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+  - - "SSC SSC1 blesmp -E -r <dut2_bt_mac> -z Enc"
+    - ['P SSC2 C +BLESMP:SecReq']
+  - - "SSC SSC2 blesmp -R -a 1 -r <dut1_bt_mac>"
+    - ['P SSC1 C +BLESMP:PassKeyReq', 'P SSC2 A <key>:BLESMP:PassKeyNotify,(\d+)']
+  - - "SSC SSC1 blesmp -K -r <dut2_bt_mac> -a 1 -k <key>"
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+  - *disconnect
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+  - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+  - - "SSC SSC[1-2] reboot"
+    - ['P SSC[1-2] C !!!ready!!!']
+  - - "SSC SSC[1-2] ble -R"
+    - ['R SSC[1-2] C +BLE:']
+  - - "SSC SSC2 gatts -S -z load -p 0xA0"
+    - ['R SSC2 C +GATTS:StartService,OK,A000']
+  - - "SSC SSC2 bleadv -L -c 0 -t 3"
+    - ['R SSC2 C +BLEADV:SetAdv,OK']
+  - - "SSC SSC2 bleadv -D -z start"
+    - ['R SSC2 C +BLEADV:OK']
+  - - "SSC SSC[1-2] blesmp -L -c [1,0]"
+    - ['R SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+  - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+- ID: BTSTK_SMP_07002
+  <<: *SMP_CASE
+  test point 2: BLE SMP bond and NVS test
+  summary: BLE SMP initiator bond with secure connection pairing
+  steps: |
+    1. DUT1 and DUT2 SMP bond with secure connection pairing
+    2. DUT1 disconnect
+    3. DUT1 connect to DUT2
+    4. DUT1 disconnect
+    5. DUT1 reboot
+    6. DUT1 connect to DUT2
+  expected result: |
+    1. succeed
+    2. succeed
+    3. connect succeed without pairing again
+    4. succeed
+    5. succeed
+    6. connect succeed without pairing again
+  cmd set:
+  - ""
+  - *config_numberic_comparision
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+  - - "SSC SSC1 blesmp -E -r <dut2_bt_mac> -z Enc"
+    - ['P SSC2 C +BLESMP:SecReq']
+  - - "SSC SSC2 blesmp -R -a 1 -r <dut1_bt_mac>"
+    - ['R SSC2 A <key>:BLESMP:NCReq,(\d+)', 'R SSC1 C NCReq P <key>']
+  - - "SSC SSC[1-2] blesmp -C -r <dut[2,1]_bt_mac> -a 1"
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+  - *disconnect
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+  - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+  - - "SSC SSC[1-2] reboot"
+    - ['P SSC[1-2] C !!!ready!!!']
+  - - "SSC SSC[1-2] ble -R"
+    - ['R SSC[1-2] C +BLE:']
+  - - "SSC SSC2 gatts -S -z load -p 0xA0"
+    - ['R SSC2 C +GATTS:StartService,OK,A000']
+  - - "SSC SSC2 bleadv -L -c 0 -t 3"
+    - ['R SSC2 C +BLEADV:SetAdv,OK']
+  - - "SSC SSC2 bleadv -D -z start"
+    - ['R SSC2 C +BLEADV:OK']
+  - - "SSC SSC[1-2] blesmp -L -c [1,0]"
+    - ['R SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+  - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+- ID: BTSTK_SMP_07003
+  <<: *SMP_CASE
+  test point 2: BLE SMP bond and NVS test
+  summary: BLE SMP responder bond with lagecy pairing
+  steps: |
+    1. DUT1 and DUT2 SMP bond with lagecy pairing
+    2. DUT1 disconnect
+    3. DUT1 connect to DUT2
+    4. DUT1 disconnect
+    5. DUT1 reboot
+    6. DUT1 connect to DUT2
+  expected result: |
+    1. succeed
+    2. succeed
+    3. connect succeed without pairing again
+    4. succeed
+    5. succeed
+    6. connect succeed without pairing again
+  cmd set:
+  - ""
+  - *config_master_passkey_entry
+  - *master_passkey_entry_pair
+  - *disconnect
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+  - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+  - - "SSC SSC[1-2] reboot"
+    - ['P SSC[1-2] C !!!ready!!!']
+  - - "SSC SSC[1-2] ble -R"
+    - ['R SSC[1-2] C +BLE:']
+  - - "SSC SSC2 gatts -S -z load -p 0xA0"
+    - ['R SSC2 C +GATTS:StartService,OK,A000']
+  - - "SSC SSC2 bleadv -L -c 0 -t 3"
+    - ['R SSC2 C +BLEADV:SetAdv,OK']
+  - - "SSC SSC2 bleadv -D -z start"
+    - ['R SSC2 C +BLEADV:OK']
+  - - "SSC SSC[1-2] blesmp -L -c [1,0]"
+    - ['R SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+  - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+- ID: BTSTK_SMP_07004
+  <<: *SMP_CASE
+  test point 2: BLE SMP bond and NVS test
+  summary: BLE SMP responder bond with secure connection pairing
+  steps: |
+    1. DUT1 and DUT2 SMP bond with secure connection pairing
+    2. DUT1 disconnect
+    3. DUT1 connect to DUT2
+    4. DUT1 disconnect
+    5. DUT1 reboot
+    6. DUT1 connect to DUT2
+  expected result: |
+    1. succeed
+    2. succeed
+    3. connect succeed without pairing again
+    4. succeed
+    5. succeed
+    6. connect succeed without pairing again
+  cmd set:
+  - ""
+  - *config_numberic_comparision
+  - *numberic_comparision_pair
+  - *disconnect
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+  - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+  - - "SSC SSC[1-2] reboot"
+    - ['P SSC[1-2] C !!!ready!!!']
+  - - "SSC SSC[1-2] ble -R"
+    - ['R SSC[1-2] C +BLE:']
+  - - "SSC SSC2 gatts -S -z load -p 0xA0"
+    - ['R SSC2 C +GATTS:StartService,OK,A000']
+  - - "SSC SSC2 bleadv -L -c 0 -t 3"
+    - ['R SSC2 C +BLEADV:SetAdv,OK']
+  - - "SSC SSC2 bleadv -D -z start"
+    - ['R SSC2 C +BLEADV:OK']
+  - - "SSC SSC[1-2] blesmp -L -c [1,0]"
+    - ['R SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+  - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+- ID: BTSTK_SMP_08001
+  <<: *SMP_CASE
+  test point 2: BLE SMP bond item management test
+  summary: BLE SMP get bond list and number without bond device
+  steps: |
+    1. DUT1 get bond list
+    2. DUT1 get bond number
+  expected result: |
+    1. succeed
+    2. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 blesmp -B -z getlist -n 1"
+    - ['P SSC1 C +BLESMP:GetBondList,OK,0']
+  - - "SSC SSC1 blesmp -B -z getnum"
+    - ['P SSC1 C +BLESMP:GetBondNum,0']
+- ID: BTSTK_SMP_08002
+  <<: *SMP_CASE
+  test point 2: BLE SMP bond item management test
+  summary: BLE SMP remove bond after connected
+  steps: |
+   1. DUT2 set AuthReqMode and RspKey
+   2. pairing
+   3. remove bond
+  expected result: |
+   1. Succeed
+   2. Succeed
+   3. Succeed
+  cmd set:
+  - ""
+  - *config_bond_device
+  - - "SSC SSC2 bleadv -D -z start"
+    - ['R SSC2 C +BLEADV:Start,OK']
+  - *start_pair
+  - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
+    - ['P SSC1 C +BLESMP:AuthComplete,Success,0','P SSC2 C +BLESMP:AuthComplete,Success,0']
+  - - "SSC SSC1 blesmp -B -z getnum"
+    - ['P SSC1 C +BLESMP:GetBondNum,1']
+  - - "SSC SSC1 blesmp -B -z remove -r <dut2_bt_mac>"
+    - ['P SSC1 RE "\+BLESMP:RemoveBond,Success,%%s"%%(<dut2_bt_mac>)']
+- ID: BTSTK_SMP_08003
+  <<: *SMP_CASE
+  test point 2: BLE SMP bond item management test
+  summary: BLE SMP get bond list and number
+  steps: |
+   1. DUT2 set AuthReqMode and RspKey
+   2. pairing
+   3. get bong and remove bond
+  expected result: |
+   1. Succeed
+   2. Succeed
+   3. Succeed
+  test environment: SSC_T5_1
+  initial condition: BLE_INIT_SMP5
+  cmd set:
+  - ""
+  - - "SSC SSC[2-5] blesmp -S -z AuthReqMode -v 0x01"
+    - ['P SSC[2-5] C +BLESMP:OK']
+  - - "SSC SSC[2-5] blesmp -S -z IOCAP -v 0x03"
+    - ['P SSC[2-5] C +BLESMP:OK']
+  - - "SSC SSC[2-5] blesmp -S -z RspKey -v 0x03"
+    - ['P SSC[2-5] C +BLESMP:OK']
+  - - LOOP 4 4 "[2,3,4,5]" "[2,3,4,5]" "[2,3,4,5]" "[2,3,4,5]" "[2,3,4,5]" "[2,3,4,5]" "[2,3,4,5]"
+    - ""
+  - - "SSC SSC{%d} bleadv -D -z start"
+    - ['R SSC{%d} C +BLEADV:Start,OK']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut{%d}_bt_mac>"
+    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC{%d} C +BLE:GattsConnect']
+  - - "SSC SSC{%d} blesmp -E -r <dut1_bt_mac> -z Enc"
+    - ['P SSC1 C +BLESMP:SecReq']
+  - - "SSC SSC1 blesmp -R -a 1 -r <dut{%d}_bt_mac>"
+    - ['P SSC1 C +BLESMP:AuthComplete,Success,0','P SSC{%d} C +BLESMP:AuthComplete,Success,0']
+  - - "SSC SSC1 blesmp -B -z getlist -n 4"
+    - ['P SSC1 C +BLESMP:GetBondList,OK,4']
+  - - "SSC SSC1 blesmp -B -z getnum"
+    - ['P SSC1 C +BLESMP:GetBondNum,4']
+  - - "SSC SSC1 bleconn -D -z all"
+    - ['R SSC1 C +BLECONN:']
+  - - "SSC SSC1 blesmp -B -z remove -r <dut2_bt_mac>"
+    - ['P SSC1 RE "\+BLESMP:RemoveBond,Success,%%s"%%(<dut2_bt_mac>)']
+  - - "SSC SSC1 blesmp -B -z remove -r <dut3_bt_mac>"
+    - ['P SSC1 RE "\+BLESMP:RemoveBond,Success,%%s"%%(<dut3_bt_mac>)']
+- ID: BTSTK_SMP_08004
+  <<: *SMP_CASE
+  test point 2: BLE SMP bond item management test
+  summary: BLE SMP remove bond which not bond
+  steps: |
+   1. DUT1 remove bond
+  expected result: |
+   1. failed
+  cmd set:
+  - ""
+  - - "SSC SSC1 blesmp -B -z remove -r <dut2_bt_mac>"
+    - ['P SSC1 C +BLESMP:RemoveBond,Fail']

@@ -1,0 +1,57 @@
+test cases:
+- CI ready: SpecialJob
+  ID: SYS_NVS_01001
+  SDK: ESP32_IDF
+  Test App: SSC_BLE_WIFI
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - NVSTest/NVSCompatibleWiFi
+  - - nvs_path = "nvs_bin_folder"
+    - - ''
+  execution time: 0
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  initial condition: None
+  level: Integration
+  module: System
+  steps: |
+    1. get NVS data from earlier released branches and last master
+    2. download each NVS data to target
+    3. check if auto connected to the same AP
+    4. check if SoftAP config is correct
+  sub module: NVS
+  summary: use old NVS data WIFI function test
+  test environment: SSC_T1_1
+  test point 1: compatiable test
+  test point 2: test if latest SDK work with pervious version of NVS data
+  version: v1 (2017-06-01)
+- CI ready: 'No'
+  ID: SYS_NVS_5001
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: Reboot
+  auto test: 'Yes'
+  category: Stress
+  cmd set: ''
+  execution time: 12.0
+  expected result: 3.无异常发生
+  initial condition: None
+  level: Integration
+  module: System
+  steps: |-
+    1.target1、target2通过UART与PC相连接
+    2.target2的GPIO PIN脚通过排线与target1的电源相连接，target1与target2 GND通过排线连接
+    3.PC发送命令控制target2使GPIO不停的拉高拉低
+  sub module: NVS
+  summary: random reboot when access NVS
+  test environment: NVS_T1_1
+  test point 1: stress
+  test point 2: reboot when accessing NVS
+  version: v1 (2016-8-15)

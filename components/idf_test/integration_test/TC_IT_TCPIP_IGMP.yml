@@ -1,0 +1,347 @@
+test cases:
+- CI ready: 'Yes'
+  ID: TCPIP_IGMP_0101
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 igmp -J -h <target_ip> -m 224.1.1.1
+    - - R SSC1 C +IGMP:OK
+  - - SSC SSC1 igmp -L -h <target_ip> -m 224.1.1.1
+    - - R SSC1 C +IGMP:OK
+  - - SSC SSC1 igmp -J -h <target_ip> -m 223.1.1.1
+    - - R SSC1 C +IGMP:ERROR
+  - - SSC SSC1 igmp -J -h <target_ip> -m 240.1.1.1
+    - - R SSC1 C +IGMP:ERROR
+  - - SSC SSC1 igmp -J -h 192.168.237.77 -m 224.1.1.1
+    - - R SSC1 C +IGMP:ERROR
+  - - SSC SSC1 igmp -J -h 192.168.237.77 -m 240.1.1.1
+    - - R SSC1 C +IGMP:ERROR
+  execution time: 0.0
+  expected result: |-
+    1. success
+    2. failed
+    3. failed
+    4. failed
+  initial condition: STAM2
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1. join group with correct host addr and multicast addr
+    2. join group with correct host addr and wrong multicast addr
+    3. join group with wrong host addr and correct multicast addr
+    4. join group with wrong host addr and wrong multicast addr
+  sub module: IGMP
+  summary: station IGMP join group address check
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: IGMP API parameter check
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: TCPIP_IGMP_0102
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 igmp -J -h <target_ip> -m 224.1.1.1
+    - - R SSC1 C +IGMP:OK
+  - - SSC SSC1 igmp -L -h <target_ip> -m 224.1.1.2
+    - - R SSC1 C +IGMP:ERROR
+  - - SSC SSC1 igmp -L -h 192.168.237.77 -m 224.1.1.1
+    - - R SSC1 C +IGMP:ERROR
+  - - SSC SSC1 igmp -L -h 192.168.237.77 -m 240.1.1.1
+    - - R SSC1 C +IGMP:ERROR
+  - - SSC SSC1 igmp -L -h <target_ip> -m 224.1.1.1
+    - - R SSC1 C +IGMP:OK
+  execution time: 0.0
+  expected result: |-
+    1. success
+    2. failed
+    3. failed
+    4. failed
+    5. succeed
+  initial condition: STAM2
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1. join group with correct host addr and multicast addr
+    2. leave group with correct host addr and wrong multicast addr
+    3. leave group with wrong host addr and correct multicast addr
+    4. leave group with wrong host addr and wrong multicast addr
+    5. leave group with correct host addr and correct multicast addr
+  sub module: IGMP
+  summary: station IGMP leave group address check
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: IGMP API parameter check
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: TCPIP_IGMP_0103
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 igmp -J -h <target_ap_ip> -m 224.1.1.1
+    - - R SSC1 C +IGMP:OK
+  - - SSC SSC1 igmp -L -h <target_ap_ip> -m 224.1.1.1
+    - - R SSC1 C +IGMP:OK
+  - - SSC SSC1 igmp -J -h <target_ap_ip> -m 223.1.1.1
+    - - R SSC1 C +IGMP:ERROR
+  - - SSC SSC1 igmp -J -h <target_ap_ip> -m 240.1.1.1
+    - - R SSC1 C +IGMP:ERROR
+  - - SSC SSC1 igmp -J -h 192.168.237.77 -m 224.1.1.1
+    - - R SSC1 C +IGMP:ERROR
+  - - SSC SSC1 igmp -J -h 192.168.237.77 -m 240.1.1.1
+    - - R SSC1 C +IGMP:ERROR
+  execution time: 0.0
+  expected result: |-
+    1. success
+    2. failed
+    3. failed
+    4. failed
+  initial condition: APM2
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1. join group with correct host addr and multicast addr
+    2. join group with correct host addr and wrong multicast addr
+    3. join group with wrong host addr and correct multicast addr
+    4. join group with wrong host addr and wrong multicast addr
+  sub module: IGMP
+  summary: softAP IGMP join group address check
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: IGMP API parameter check
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: TCPIP_IGMP_0104
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 igmp -J -h <target_ap_ip> -m 224.1.1.1
+    - - R SSC1 C +IGMP:OK
+  - - SSC SSC1 igmp -L -h <target_ap_ip> -m 224.1.1.2
+    - - R SSC1 C +IGMP:ERROR
+  - - SSC SSC1 igmp -L -h 192.168.237.77 -m 224.1.1.1
+    - - R SSC1 C +IGMP:ERROR
+  - - SSC SSC1 igmp -L -h 192.168.237.77 -m 240.1.1.1
+    - - R SSC1 C +IGMP:ERROR
+  - - SSC SSC1 igmp -L -h <target_ap_ip> -m 224.1.1.1
+    - - R SSC1 C +IGMP:OK
+  execution time: 0.0
+  expected result: |-
+    1. success
+    2. failed
+    3. failed
+    4. failed
+    5. succeed
+  initial condition: APM2
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1. join group with correct host addr and multicast addr
+    2. leave group with correct host addr and wrong multicast addr
+    3. leave group with wrong host addr and correct multicast addr
+    4. leave group with wrong host addr and wrong multicast addr
+    5. leave group with correct host addr and correct multicast addr
+  sub module: IGMP
+  summary: softAP IGMP leave group address check
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: IGMP API parameter check
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: TCPIP_IGMP_0201
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: '1/2'
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 igmp -J -h <target_ip> -m 224.1.1.1
+    - - R SSC1 C +IGMP:OK
+  - - SSC SSC1 soc -B -t UDP -i 224.1.1.1 -p <test_udp_port1>
+    - - R SSC1 A <sock1>:\+BIND:(\d+),OK
+  - - SOC SOC1 BIND <test_udp_port1>
+    - - R SOC_COM L OK
+  - - SOC SOC1 SENDTO 1 <test_udp_port1> 224.1.1.1
+    - - R SSC1 SL <sock1>+1
+  - - SSC SSC1 igmp -L -h <target_ip> -m 224.1.1.1
+    - - R SSC1 C +IGMP:OK
+  execution time: 0.0
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. able to recv packet
+  initial condition: STAM2
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1. join group
+    2. create UDP socket using multicast addr
+    3. PC send UDP packet to multicast addr
+  sub module: IGMP
+  summary: station IGMP recv packets
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: IGMP send/recv test
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: TCPIP_IGMP_0202
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: '1/2'
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC2 op -S -o 1
+    - - R SSC2 C +MODE:OK
+  - - SSC SSC2 sta -C -s <ap_ssid> -p <ap_password>
+    - - R SSC2 C +JAP:CONNECTED
+  - - SSC SSC1 igmp -J -h <target_ip> -m 224.1.1.1
+    - - R SSC1 C +IGMP:OK
+  - - SSC SSC1 soc -B -t UDP -i 224.1.1.1 -p <test_udp_port1>
+    - - R SSC1 A <sock1>:\+BIND:(\d+),OK
+  - - SSC SSC2 soc -B -t UDP -p <random_port>
+    - - R SSC2 A <sock2>:\+BIND:(\d+),OK
+  - - SSC SSC2 soc -S -s <sock2> -i 224.1.1.1 -p <test_udp_port1> -l 10
+    - - R SSC1 SL <sock1>+1
+  - - SSC SSC1 igmp -L -h <target_ip> -m 224.1.1.1
+    - - R SSC1 C +IGMP:OK
+  execution time: 0.0
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. target1 recv multicast packet
+  initial condition: STAM2
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1. target2 set to sta mode and join AP
+    2. target1 join group and create UDP socket using multicast addr
+    3. target2 create UDP socket
+    4. target2 send to multicast addr
+  sub module: IGMP
+  summary: station send multicast packets
+  test environment: SSC_T2_1
+  test point 1: basic function
+  test point 2: IGMP send/recv test
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: TCPIP_IGMP_0203
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 igmp -J -h <target_ap_ip> -m 224.1.1.1
+    - - R SSC1 C +IGMP:OK
+  - - SSC SSC1 soc -B -t UDP -i 224.1.1.1 -p <test_udp_port1>
+    - - R SSC1 A <sock1>:BIND:(\d+),OK
+  - - SOC SOC1 BIND <test_udp_port1> <pc_ip_wifi>
+    - - R SOC_COM L OK
+  - - SOC SOC1 SENDTO 1 <test_udp_port1> 224.1.1.1
+    - - R SSC1 SL <sock1>+1
+  - - SSC SSC1 igmp -L -h <target_ap_ip> -m 224.1.1.1
+    - - R SSC1 C +IGMP:OK
+  execution time: 0.0
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. able to recv packet
+  initial condition: APM2
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1. join group
+    2. create UDP socket using multicast addr
+    3. PC send UDP packet to multicast addr
+  sub module: IGMP
+  summary: softAP IGMP recv packets
+  test environment: SSC_T1_1
+  test point 1: basic function
+  test point 2: IGMP send/recv test
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: TCPIP_IGMP_0204
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC2 C +JAP:CONNECTED
+  - - SSC SSC1 igmp -J -h <target_ap_ip> -m 224.1.1.1
+    - - R SSC1 C +IGMP:OK
+  - - SSC SSC1 soc -B -t UDP -i 224.1.1.1 -p <test_udp_port1>
+    - - R SSC1 A <sock1>:\+BIND:(\d+),OK
+  - - SSC SSC2 soc -B -t UDP -p <test_udp_port1>
+    - - R SSC2 A <sock2>:\+BIND:(\d+),OK
+  - - SSC SSC2 soc -S -s <sock2> -i 224.1.1.1 -p <test_udp_port1> -l 10
+    - - R SSC1 SL <sock1>+1
+  - - SSC SSC1 igmp -L -h <target_ap_ip> -m 224.1.1.1
+    - - R SSC1 C +IGMP:OK
+  execution time: 0.0
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. target1 recv multicast packet
+  initial condition: T2_1
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1. target2 join SoftAP
+    2. target1 join group and create UDP socket using multicast addr
+    3. target2 create UDP socket
+    4. target2 send to multicast addr
+  sub module: IGMP
+  summary: softAP send multicast packets
+  test environment: SSC_T2_1
+  test point 1: basic function
+  test point 2: IGMP send/recv test
+  version: v1 (2016-8-15)
