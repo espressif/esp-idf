@@ -394,7 +394,7 @@ esp_err_t sdspi_host_start_command(int slot, sdspi_hw_cmd_t *cmd, void *data,
     release_bus(slot);
 
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "%s: cmd=%d error=0x%x", __func__, cmd_index, ret);
+        ESP_LOGD(TAG, "%s: cmd=%d error=0x%x", __func__, cmd_index, ret);
     } else {
         // Update internal state when some commands are sent successfully
         if (cmd_index == SD_CRC_ON_OFF) {
@@ -408,7 +408,8 @@ esp_err_t sdspi_host_start_command(int slot, sdspi_hw_cmd_t *cmd, void *data,
 static esp_err_t start_command_default(int slot, int flags, sdspi_hw_cmd_t *cmd)
 {
     size_t cmd_size = SDSPI_CMD_R1_SIZE;
-    if (flags & SDSPI_CMD_FLAG_RSP_R1) {
+    if ((flags & SDSPI_CMD_FLAG_RSP_R1) ||
+        (flags & SDSPI_CMD_FLAG_NORSP)) {
         cmd_size = SDSPI_CMD_R1_SIZE;
     } else if (flags & SDSPI_CMD_FLAG_RSP_R2) {
         cmd_size = SDSPI_CMD_R2_SIZE;
@@ -427,6 +428,11 @@ static esp_err_t start_command_default(int slot, int flags, sdspi_hw_cmd_t *cmd)
     if (cmd->cmd_index == MMC_STOP_TRANSMISSION) {
         /* response is a stuff byte from previous transfer, ignore it */
         cmd->r1 = 0xff;
+    }
+    if (flags & SDSPI_CMD_FLAG_NORSP) {
+        /* no (correct) response expected from the card, so skip polling loop */
+        ESP_LOGV(TAG, "%s: ignoring response byte", __func__);
+        cmd->r1 = 0x00;
     }
     int response_delay_bytes = SDSPI_RESPONSE_MAX_DELAY;
     while ((cmd->r1 & SD_SPI_R1_NO_RESPONSE) != 0 && response_delay_bytes-- > 0) {

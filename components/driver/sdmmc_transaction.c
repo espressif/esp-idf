@@ -78,6 +78,7 @@ static esp_err_t handle_event(sdmmc_command_t* cmd, sdmmc_req_state_t* pstate);
 static esp_err_t process_events(sdmmc_event_t evt, sdmmc_command_t* cmd, sdmmc_req_state_t* pstate);
 static void process_command_response(uint32_t status, sdmmc_command_t* cmd);
 static void fill_dma_descriptors(size_t num_desc);
+static size_t get_free_descriptors_count();
 
 esp_err_t sdmmc_host_transaction_handler_init()
 {
@@ -167,6 +168,28 @@ esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
     return ret;
 }
 
+static size_t get_free_descriptors_count()
+{
+    const size_t next = s_cur_transfer.next_desc;
+    size_t count = 0;
+    /* Starting with the current DMA descriptor, count the number of
+     * descriptors which have 'owned_by_idmac' set to 0. These are the
+     * descriptors already processed by the DMA engine.
+     */
+    for (size_t i = 0; i < SDMMC_DMA_DESC_CNT; ++i) {
+        sdmmc_desc_t* desc = &s_dma_desc[(next + i) % SDMMC_DMA_DESC_CNT];
+        if (desc->owned_by_idmac) {
+            break;
+        }
+        ++count;
+        if (desc->next_desc_ptr == NULL) {
+            /* final descriptor in the chain */
+            break;
+        }
+    }
+    return count;
+}
+
 static void fill_dma_descriptors(size_t num_desc)
 {
     for (size_t i = 0; i < num_desc; ++i) {
@@ -246,9 +269,8 @@ static sdmmc_hw_cmd_t make_hw_cmd(sdmmc_command_t* cmd)
     } else {
         res.wait_complete = 1;
     }
-    if (s_is_app_cmd && cmd->opcode == SD_APP_SET_BUS_WIDTH) {
-        res.send_auto_stop = 1;
-        res.data_expected = 1;
+    if (cmd->opcode == MMC_GO_IDLE_STATE) {
+        res.send_init = 1;
     }
     if (cmd->flags & SCF_RSP_PRESENT) {
         res.response_expect = 1;
@@ -288,22 +310,22 @@ static void process_command_response(uint32_t status, sdmmc_command_t* cmd)
             cmd->response[3] = 0;
         }
     }
-
-    if ((status & SDMMC_INTMASK_RTO) &&
-        cmd->opcode != MMC_ALL_SEND_CID &&
-        cmd->opcode != MMC_SELECT_CARD &&
-        cmd->opcode != MMC_STOP_TRANSMISSION) {
-        cmd->error = ESP_ERR_TIMEOUT;
+    esp_err_t err = ESP_OK;
+    if (status & SDMMC_INTMASK_RTO) {
+        // response timeout is only possible when response is expected
+        assert(cmd->flags & SCF_RSP_PRESENT);
+        err = ESP_ERR_TIMEOUT;
     } else if ((cmd->flags & SCF_RSP_CRC) && (status & SDMMC_INTMASK_RCRC)) {
-        cmd->error = ESP_ERR_INVALID_CRC;
+        err = ESP_ERR_INVALID_CRC;
     } else if (status & SDMMC_INTMASK_RESP_ERR) {
-        cmd->error = ESP_ERR_INVALID_RESPONSE;
+        err = ESP_ERR_INVALID_RESPONSE;
     }
-    if (cmd->error != 0) {
+    if (err != ESP_OK) {
+        cmd->error = err;
         if (cmd->data) {
             sdmmc_host_dma_stop();
         }
-        ESP_LOGD(TAG, "%s: error 0x%x  (status=%08x)", __func__, cmd->error, status);
+        ESP_LOGD(TAG, "%s: error 0x%x  (status=%08x)", __func__, err, status);
     }
 }
 
@@ -358,15 +380,7 @@ static esp_err_t process_events(sdmmc_event_t evt, sdmmc_command_t* cmd, sdmmc_r
             case SDMMC_SENDING_CMD:
                 if (mask_check_and_clear(&evt.sdmmc_status, SDMMC_CMD_ERR_MASK)) {
                     process_command_response(orig_evt.sdmmc_status, cmd);
-                    if (cmd->error != ESP_ERR_TIMEOUT) {
-                        // Unless this is a timeout error, we need to wait for the
-                        // CMD_DONE interrupt
-                        break;
-                    }
-                }
-                if (!mask_check_and_clear(&evt.sdmmc_status, SDMMC_INTMASK_CMD_DONE) &&
-                        cmd->error != ESP_ERR_TIMEOUT) {
-                    break;
+                    break;      // Need to wait for the CMD_DONE interrupt
                 }
                 process_command_response(orig_evt.sdmmc_status, cmd);
                 if (cmd->error != ESP_OK || cmd->data == NULL) {
@@ -385,7 +399,8 @@ static esp_err_t process_events(sdmmc_event_t evt, sdmmc_command_t* cmd, sdmmc_r
                 if (mask_check_and_clear(&evt.dma_status, SDMMC_DMA_DONE_MASK)) {
                     s_cur_transfer.desc_remaining--;
                     if (s_cur_transfer.size_remaining) {
-                        fill_dma_descriptors(1);
+                        int desc_to_fill = get_free_descriptors_count();
+                        fill_dma_descriptors(desc_to_fill);
                         sdmmc_host_dma_resume();
                     }
                     if (s_cur_transfer.desc_remaining == 0) {

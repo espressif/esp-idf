@@ -89,6 +89,7 @@ typedef struct {
 #define SDSPI_CMD_FLAG_RSP_R2   BIT(3)  //!< Response format R2 (2 bytes)
 #define SDSPI_CMD_FLAG_RSP_R3   BIT(4)  //!< Response format R3 (5 bytes)
 #define SDSPI_CMD_FLAG_RSP_R7   BIT(5)  //!< Response format R7 (5 bytes)
+#define SDSPI_CMD_FLAG_NORSP    BIT(6)  //!< Don't expect response (used when sending CMD0 first time).
 
 #define SDSPI_MAX_DATA_LEN      512     //!< Max size of single block transfer
 

@@ -40,6 +40,9 @@ extern "C" {
 #define GPIO_ID_PIN(n)                  (GPIO_ID_PIN0+(n))
 #define GPIO_PIN_ADDR(i)                (GPIO_PIN0_REG + i*4)
 
+#define GPIO_FUNC_IN_HIGH               0x38
+#define GPIO_FUNC_IN_LOW                0x30
+
 #define GPIO_ID_IS_PIN_REGISTER(reg_id) \
     ((reg_id >= GPIO_ID_PIN0) && (reg_id <= GPIO_ID_PIN(GPIO_PIN_COUNT-1)))
 
