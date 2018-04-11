@@ -951,6 +951,7 @@ void smp_proc_pairing_cmpl(tSMP_CB *p_cb)
     tSMP_EVT_DATA   evt_data = {0};
     tSMP_CALLBACK   *p_callback = p_cb->p_callback;
     BD_ADDR         pairing_bda;
+    tBTM_SEC_DEV_REC    *p_rec;
 
     SMP_TRACE_DEBUG ("smp_proc_pairing_cmpl \n");
 
@@ -975,7 +976,13 @@ void smp_proc_pairing_cmpl(tSMP_CB *p_cb)
     memcpy (pairing_bda, p_cb->pairing_bda, BD_ADDR_LEN);
 
     if (p_cb->role == HCI_ROLE_SLAVE) {
-        L2CA_EnableUpdateBleConnParams(p_cb->pairing_bda, TRUE);
+        p_rec = btm_find_dev (p_cb->pairing_bda);
+        if(p_rec && p_rec->ble.skip_update_conn_param) {
+            //clear flag
+            p_rec->ble.skip_update_conn_param = false;
+        } else {
+            L2CA_EnableUpdateBleConnParams(p_cb->pairing_bda, TRUE);
+        }
     }
     smp_reset_control_value(p_cb);
 
