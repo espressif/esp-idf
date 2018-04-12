@@ -22,6 +22,7 @@ typedef enum {
     ESP_PM_TRACE_FREQ_SWITCH,
     ESP_PM_TRACE_CCOMPARE_UPDATE,
     ESP_PM_TRACE_ISR_HOOK,
+    ESP_PM_TRACE_SLEEP,
     ESP_PM_TRACE_TYPE_MAX
 } esp_pm_trace_event_t;
 

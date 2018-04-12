@@ -2151,6 +2151,23 @@ void vTaskSuspendAll( void )
 
 #if ( configUSE_TICKLESS_IDLE != 0 )
 
+	static BaseType_t xHaveReadyTasks()
+	{
+		for (int i = tskIDLE_PRIORITY + 1; i < configMAX_PRIORITIES; ++i)
+		{
+			if( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ i ] ) ) > 0 )
+			{
+				return pdTRUE;
+			}
+			else
+			{
+				mtCOVERAGE_TEST_MARKER();
+			}
+		}
+		return pdFALSE;
+	}
+
+
 	static TickType_t prvGetExpectedIdleTime( void )
 	{
 	TickType_t xReturn;
@@ -2161,7 +2178,18 @@ void vTaskSuspendAll( void )
 		{
 			xReturn = 0;
 		}
-		else if( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ tskIDLE_PRIORITY ] ) ) > 1 )
+#if portNUM_PROCESSORS > 1
+		/* This function is called from Idle task; in single core case this
+		 * means that no higher priority tasks are ready to run, and we can
+		 * enter sleep. In SMP case, there might be ready tasks waiting for
+		 * the other CPU, so need to check all ready lists.
+		 */
+		else if( xHaveReadyTasks() )
+		{
+			xReturn = 0;
+		}
+#endif // portNUM_PROCESSORS > 1
+		else if( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ tskIDLE_PRIORITY ] ) ) > portNUM_PROCESSORS )
 		{
 			/* There are other idle priority tasks in the ready state.  If
 			time slicing is used then the very next tick interrupt must be
@@ -3405,7 +3433,6 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 		#endif /* configUSE_IDLE_HOOK */
 		{
 			/* Call the esp-idf hook system */
-			extern void esp_vApplicationIdleHook( void );
 			esp_vApplicationIdleHook();
 		}
 
@@ -3417,6 +3444,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 		#if ( configUSE_TICKLESS_IDLE != 0 )
 		{
 		TickType_t xExpectedIdleTime;
+		BaseType_t xEnteredSleep = pdFALSE;
 
 			/* It is not desirable to suspend then resume the scheduler on
 			each iteration of the idle task.  Therefore, a preliminary
@@ -3427,7 +3455,6 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 
 			if( xExpectedIdleTime >= configEXPECTED_IDLE_TIME_BEFORE_SLEEP )
 			{
-//				vTaskSuspendAll();
 				taskENTER_CRITICAL(&xTaskQueueMutex);
 				{
 					/* Now the scheduler is suspended, the expected idle
@@ -3439,7 +3466,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 					if( xExpectedIdleTime >= configEXPECTED_IDLE_TIME_BEFORE_SLEEP )
 					{
 						traceLOW_POWER_IDLE_BEGIN();
-						portSUPPRESS_TICKS_AND_SLEEP( xExpectedIdleTime );
+						xEnteredSleep = portSUPPRESS_TICKS_AND_SLEEP( xExpectedIdleTime );
 						traceLOW_POWER_IDLE_END();
 					}
 					else
@@ -3448,13 +3475,21 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 					}
 				}
 				taskEXIT_CRITICAL(&xTaskQueueMutex);
-//				( void ) xTaskResumeAll();
 			}
 			else
 			{
 				mtCOVERAGE_TEST_MARKER();
 			}
+			/* It might be possible to enter tickless idle again, so skip
+			 * the fallback sleep hook if tickless idle was successful
+			 */
+			if ( !xEnteredSleep )
+			{
+				esp_vApplicationWaitiHook();
+			}
 		}
+		#else
+		esp_vApplicationWaitiHook();
 		#endif /* configUSE_TICKLESS_IDLE */
 	}
 }

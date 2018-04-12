@@ -357,6 +357,31 @@ config FREERTOS_RUN_TIME_STATS_USING_CPU_CLK
 
 endchoice
 
+config FREERTOS_USE_TICKLESS_IDLE
+    bool "Tickless idle support"
+    depends on PM_ENABLE
+    default n
+    help
+        If power management support is enabled, FreeRTOS will be able to put
+        the system into light sleep mode when no tasks need to run for a number
+        of ticks. This number can be set using FREERTOS_IDLE_TIME_BEFORE_SLEEP option.
+        This feature is also known as "automatic light sleep".
+
+        Note that timers created using esp_timer APIs may prevent the system from
+        entering sleep mode, even when no tasks need to run.
+
+        If disabled, automatic light sleep support will be disabled.
+
+config FREERTOS_IDLE_TIME_BEFORE_SLEEP
+    int "Minimum number of ticks to enter sleep mode for"
+    depends on FREERTOS_USE_TICKLESS_IDLE
+    default 3
+    range 2 4294967295
+    # Minimal value is 2 because of a check in FreeRTOS.h (search configEXPECTED_IDLE_TIME_BEFORE_SLEEP)
+    help
+        FreeRTOS will enter light sleep mode if no tasks need to run for this number
+        of ticks.
+
 menuconfig FREERTOS_DEBUG_INTERNALS
     bool "Debug FreeRTOS internals"
     default n
