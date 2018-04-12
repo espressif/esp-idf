@@ -19,7 +19,12 @@ https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain-20180110
 检出
 ============
 
-运行 ``C:\msys32\mingw32.exe`` 打开一个 MSYS2 的终端窗口。该窗口的环境是一个 bash shell。
+运行 ``C:\msys32\mingw32.exe`` 打开一个 MSYS2 的终端窗口。该窗口的环境是一个 bash shell。创建一个 ``esp`` 目录作为开发 ESP32 应用的默认地址。运行指令 ::
+
+    mkdir -p ~/esp  
+    
+输入 ``cd ~/esp`` 就进入到新创建的目录。如果没有错误信息出现则表明此步骤已完成。
+
 
 .. figure:: ../../_static/msys2-terminal-window.png
     :align: center
