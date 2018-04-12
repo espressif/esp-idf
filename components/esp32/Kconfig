@@ -60,6 +60,7 @@ config SPIRAM_USE_CAPS_ALLOC
     bool "Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPIRAM)"
 config SPIRAM_USE_MALLOC
     bool "Make RAM allocatable using malloc() as well"
+    select SUPPORT_STATIC_ALLOCATION
 endchoice
 
 choice SPIRAM_TYPE

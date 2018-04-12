@@ -40,6 +40,11 @@
 extern "C" {
 #endif
 
+typedef struct {
+    QueueHandle_t handle; /**< FreeRTOS queue handler */
+    void *storage;        /**< storage for FreeRTOS queue */
+} wifi_static_queue_t;
+
 /**
  * @brief Initialize Wi-Fi Driver
  *     Alloc resource for WiFi driver, such as WiFi control structure, RX/TX buffer,
