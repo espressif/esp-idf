@@ -25,19 +25,24 @@
 #define PCNT_CTRL_MODE_ERR_STR  "PCNT CTRL MODE ERROR"
 #define PCNT_EVT_TYPE_ERR_STR   "PCNT value type error"
 
-static const char* PCNT_TAG = "pcnt";
+#define PCNT_ENTER_CRITICAL(mux)    portENTER_CRITICAL(mux)
+#define PCNT_EXIT_CRITICAL(mux)     portEXIT_CRITICAL(mux)
+
 #define PCNT_CHECK(a, str, ret_val) \
     if (!(a)) { \
         ESP_LOGE(PCNT_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str); \
         return (ret_val); \
     }
 
-static portMUX_TYPE pcnt_spinlock = portMUX_INITIALIZER_UNLOCKED;
+typedef struct{
+    void(*fn)(void *args);   /*!< isr function */
+    void* args;              /*!< isr function args */
+} pcnt_isr_func_t;
 
-#define PCNT_ENTER_CRITICAL(mux)    portENTER_CRITICAL(mux)
-#define PCNT_EXIT_CRITICAL(mux)     portEXIT_CRITICAL(mux)
-#define PCNT_ENTER_CRITICAL_ISR(mux)    portENTER_CRITICAL_ISR(mux)
-#define PCNT_EXIT_CRITICAL_ISR(mux)     portEXIT_CRITICAL_ISR(mux)
+static pcnt_isr_func_t *pcnt_isr_func = NULL;
+static pcnt_isr_handle_t pcnt_isr_service = NULL;
+static portMUX_TYPE pcnt_spinlock = portMUX_INITIALIZER_UNLOCKED;
+static const char* PCNT_TAG = "pcnt";
 
 esp_err_t pcnt_unit_config(const pcnt_config_t *pcnt_config)
 {
@@ -285,3 +290,73 @@ esp_err_t pcnt_isr_register(void (*fun)(void*), void * arg, int intr_alloc_flags
     return esp_intr_alloc(ETS_PCNT_INTR_SOURCE, intr_alloc_flags, fun, arg, handle);
 }
 
+// pcnt interrupt service
+static void IRAM_ATTR pcnt_intr_service(void* arg)
+{
+    uint32_t intr_status = PCNT.int_st.val;
+    for (int unit = 0; unit < PCNT_UNIT_MAX; unit++) {
+        if (intr_status & (BIT(unit))) {
+            if (pcnt_isr_func[unit].fn != NULL) {
+                (pcnt_isr_func[unit].fn)(pcnt_isr_func[unit].args);
+            }
+            PCNT.int_clr.val = BIT(unit);
+        }
+    }
+}
+
+esp_err_t pcnt_isr_handler_add(pcnt_unit_t unit, void(*isr_handler)(void *), void *args)
+{
+    PCNT_CHECK(pcnt_isr_func != NULL, "ISR service is not installed, call pcnt_install_isr_service() first", ESP_ERR_INVALID_STATE);
+    PCNT_CHECK(unit < PCNT_UNIT_MAX, "PCNT unit error", ESP_ERR_INVALID_ARG);
+    PCNT_ENTER_CRITICAL(&pcnt_spinlock);
+    pcnt_intr_disable(unit);
+    if (pcnt_isr_func) {
+        pcnt_isr_func[unit].fn = isr_handler;
+        pcnt_isr_func[unit].args = args;
+    }
+    pcnt_intr_enable(unit);
+    PCNT_EXIT_CRITICAL(&pcnt_spinlock);
+    return ESP_OK;
+}
+
+esp_err_t pcnt_isr_handler_remove(pcnt_unit_t unit)
+{
+    PCNT_CHECK(pcnt_isr_func != NULL, "ISR service is not installed", ESP_ERR_INVALID_STATE);
+    PCNT_CHECK(unit < PCNT_UNIT_MAX, "PCNT unit error", ESP_ERR_INVALID_ARG);
+    PCNT_ENTER_CRITICAL(&pcnt_spinlock);
+    pcnt_intr_disable(unit);
+    if (pcnt_isr_func) {
+        pcnt_isr_func[unit].fn = NULL;
+        pcnt_isr_func[unit].args = NULL;
+    }
+    PCNT_EXIT_CRITICAL(&pcnt_spinlock);
+    return ESP_OK;
+}
+
+esp_err_t pcnt_isr_service_install(int intr_alloc_flags)
+{
+    PCNT_CHECK(pcnt_isr_func == NULL, "ISR service already installed", ESP_ERR_INVALID_STATE);
+    PCNT_ENTER_CRITICAL(&pcnt_spinlock);
+    esp_err_t ret = ESP_FAIL;
+    pcnt_isr_func = (pcnt_isr_func_t*) calloc(PCNT_UNIT_MAX, sizeof(pcnt_isr_func_t));
+    if (pcnt_isr_func == NULL) {
+        ret = ESP_ERR_NO_MEM;
+    } else {
+        ret = pcnt_isr_register(pcnt_intr_service, NULL, intr_alloc_flags, &pcnt_isr_service);
+    }
+    PCNT_EXIT_CRITICAL(&pcnt_spinlock);
+    return ret;
+}
+
+void pcnt_isr_service_uninstall(void)
+{
+    if (pcnt_isr_func == NULL) {
+        return;
+    }
+    PCNT_ENTER_CRITICAL(&pcnt_spinlock);
+    esp_intr_free(pcnt_isr_service);
+    free(pcnt_isr_func);
+    pcnt_isr_func = NULL;
+    pcnt_isr_service = NULL;
+    PCNT_EXIT_CRITICAL(&pcnt_spinlock);
+}
