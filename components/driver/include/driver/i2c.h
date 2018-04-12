@@ -69,6 +69,13 @@ typedef enum {
     I2C_ADDR_BIT_MAX,
 } i2c_addr_mode_t;
 
+typedef enum {
+    I2C_MASTER_ACK = 0x0,        /*!< I2C ack for each byte read */
+    I2C_MASTER_NACK = 0x1,       /*!< I2C nack for each byte read */
+    I2C_MASTER_LAST_NACK = 0x2,   /*!< I2C nack for the last byte*/
+    I2C_MASTER_ACK_MAX,
+} i2c_ack_type_t;
+
 /**
  * @brief I2C initialization parameters
  */
@@ -200,7 +207,7 @@ esp_err_t i2c_isr_free(intr_handle_t handle);
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t i2c_set_pin(i2c_port_t i2c_num, gpio_num_t sda_io_num, gpio_num_t scl_io_num,
+esp_err_t i2c_set_pin(i2c_port_t i2c_num, int sda_io_num, int scl_io_num,
                       gpio_pullup_t sda_pullup_en, gpio_pullup_t scl_pullup_en, i2c_mode_t mode);
 
 /**
@@ -288,7 +295,7 @@ esp_err_t i2c_master_write(i2c_cmd_handle_t cmd_handle, uint8_t* data, size_t da
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t i2c_master_read_byte(i2c_cmd_handle_t cmd_handle, uint8_t* data, int ack);
+esp_err_t i2c_master_read_byte(i2c_cmd_handle_t cmd_handle, uint8_t* data, i2c_ack_type_t ack);
 
 /**
  * @brief Queue command for I2C master to read data from I2C bus
@@ -305,7 +312,7 @@ esp_err_t i2c_master_read_byte(i2c_cmd_handle_t cmd_handle, uint8_t* data, int a
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t i2c_master_read(i2c_cmd_handle_t cmd_handle, uint8_t* data, size_t data_len, int ack);
+esp_err_t i2c_master_read(i2c_cmd_handle_t cmd_handle, uint8_t* data, size_t data_len, i2c_ack_type_t ack);
 
 /**
  * @brief Queue command for I2C master to generate a stop signal
@@ -341,7 +348,7 @@ esp_err_t i2c_master_stop(i2c_cmd_handle_t cmd_handle);
  *     - ESP_ERR_INVALID_STATE I2C driver not installed or not in master mode.
  *     - ESP_ERR_TIMEOUT Operation timeout because the bus is busy.
  */
-esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, portBASE_TYPE ticks_to_wait);
+esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, TickType_t ticks_to_wait);
 
 /**
  * @brief I2C slave write data to internal ringbuffer, when tx fifo empty, isr will fill the hardware
@@ -358,7 +365,7 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
  *     - ESP_FAIL(-1) Parameter error
  *     - Others(>=0) The number of data bytes that pushed to the I2C slave buffer.
  */
-int i2c_slave_write_buffer(i2c_port_t i2c_num, uint8_t* data, int size, portBASE_TYPE ticks_to_wait);
+int i2c_slave_write_buffer(i2c_port_t i2c_num, uint8_t* data, int size, TickType_t ticks_to_wait);
 
 /**
  * @brief I2C slave read data from internal buffer. When I2C slave receive data, isr will copy received data
@@ -375,7 +382,7 @@ int i2c_slave_write_buffer(i2c_port_t i2c_num, uint8_t* data, int size, portBASE
  *     - ESP_FAIL(-1) Parameter error
  *     - Others(>=0) The number of data bytes that read from I2C slave buffer.
  */
-int i2c_slave_read_buffer(i2c_port_t i2c_num, uint8_t* data, size_t max_size, portBASE_TYPE ticks_to_wait);
+int i2c_slave_read_buffer(i2c_port_t i2c_num, uint8_t* data, size_t max_size, TickType_t ticks_to_wait);
 
 /**
  * @brief set I2C master clock period
@@ -481,6 +488,25 @@ esp_err_t i2c_set_data_timing(i2c_port_t i2c_num, int sample_time, int hold_time
  */
 esp_err_t i2c_get_data_timing(i2c_port_t i2c_num, int* sample_time, int* hold_time);
 
+/**
+ * @brief set I2C timeout value
+ * @param i2c_num I2C port number
+ * @param timeout timeout value for I2C bus (unit: APB 80Mhz clock cycle)
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t i2c_set_timeout(i2c_port_t i2c_num, int timeout);
+
+/**
+ * @brief get I2C timeout value
+ * @param i2c_num I2C port number
+ * @param timeout pointer to get timeout value
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t i2c_get_timeout(i2c_port_t i2c_num, int* timeout);
 /**
  * @brief set I2C data transfer mode
  *
