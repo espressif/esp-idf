@@ -49,9 +49,10 @@ void btc_a2dp_on_init(void)
 
 void btc_a2dp_on_idle(void)
 {
-    APPL_TRACE_EVENT("## ON A2DP IDLE ## peer_sep = %d", btc_av_get_peer_sep());
+    APPL_TRACE_EVENT("## ON A2DP IDLE ## peer_sep = %d, service id = %d", btc_av_get_peer_sep(),
+            btc_av_get_service_id());
 #if BTC_AV_SRC_INCLUDED
-    if (btc_av_get_peer_sep() == AVDT_TSEP_SNK) {
+    if (btc_av_get_peer_sep() == AVDT_TSEP_SNK && btc_av_get_service_id() == BTA_A2DP_SOURCE_SERVICE_ID) {
         btc_a2dp_source_on_idle();
     }
 #endif // BTC_AV_SRC_INCLUDED
@@ -59,7 +60,7 @@ void btc_a2dp_on_idle(void)
     bta_av_co_init();
 
 #if BTC_AV_SINK_INCLUDED
-    if (btc_av_get_peer_sep() == AVDT_TSEP_SRC) {
+    if (btc_av_get_peer_sep() == AVDT_TSEP_SRC && btc_av_get_service_id() == BTA_A2DP_SINK_SERVICE_ID) {
         btc_a2dp_sink_on_idle();
     }
 #endif // BTC_AV_SINK_INCLUDED
@@ -120,7 +121,7 @@ void btc_a2dp_on_stopped(tBTA_AV_SUSPEND *p_av)
 {
     APPL_TRACE_EVENT("## ON A2DP STOPPED ##");
 #if BTC_AV_SINK_INCLUDED
-    if (btc_av_get_peer_sep() == AVDT_TSEP_SRC) {
+    if (btc_av_get_peer_sep() == AVDT_TSEP_SRC && btc_av_get_service_id() == BTA_A2DP_SINK_SERVICE_ID) {
         btc_a2dp_sink_on_stopped(p_av);
         return;
     }
@@ -140,7 +141,7 @@ void btc_a2dp_on_suspended(tBTA_AV_SUSPEND *p_av)
 {
     APPL_TRACE_EVENT("## ON A2DP SUSPENDED ##");
 #if BTC_AV_SINK_INCLUDED
-    if (btc_av_get_peer_sep() == AVDT_TSEP_SRC) {
+    if (btc_av_get_peer_sep() == AVDT_TSEP_SRC && btc_av_get_service_id() == BTA_A2DP_SINK_SERVICE_ID) {
         btc_a2dp_sink_on_suspended(p_av);
         return;
     }
