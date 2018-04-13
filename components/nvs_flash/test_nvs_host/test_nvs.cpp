@@ -1402,8 +1402,33 @@ TEST_CASE("calculate used and free space", "[nvs]")
     nvs_close(handle_3);
 }
 
+TEST_CASE("Recovery from power-off when the entry being erased is not on active page", "[nvs]")
+{
+    const size_t blob_size = Page::BLOB_MAX_SIZE;
+    size_t read_size = blob_size;
+    uint8_t blob[blob_size] = {0x11};
+    SpiFlashEmulator emu(3);
+    TEST_ESP_OK( nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, 0, 3) );
+    nvs_handle handle;
+    TEST_ESP_OK( nvs_open("test", NVS_READWRITE, &handle) );
 
+    emu.clearStats();
+    emu.failAfter(2 * Page::BLOB_MAX_SIZE/4 + 36);
+    TEST_ESP_OK( nvs_set_blob(handle, "1a", blob, blob_size) );
+    TEST_ESP_OK( nvs_set_blob(handle, "1b", blob, blob_size) );
 
+    TEST_ESP_ERR( nvs_erase_key(handle, "1a"), ESP_ERR_FLASH_OP_FAIL );
+
+    TEST_ESP_OK( nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, 0, 3) );
+
+    /* Check 1a is erased fully*/
+    TEST_ESP_ERR( nvs_get_blob(handle, "1a", blob, &read_size), ESP_ERR_NVS_NOT_FOUND);
+
+    /* Check 2b is still accessible*/
+    TEST_ESP_OK( nvs_get_blob(handle, "1b", blob, &read_size));
+
+    nvs_close(handle);
+}
 
 /* Add new tests above */
 /* This test has to be the final one */
