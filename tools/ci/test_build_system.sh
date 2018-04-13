@@ -183,6 +183,28 @@ function run_tests()
     assert_rebuilt nvs_flash/src/nvs_api.o
     assert_rebuilt freertos/xtensa_vectors.o
 
+    print_status "Can include/exclude object files"
+    echo "#error This file should not compile" > main/excluded_file.c
+    echo "int required_global;" > main/included_file.c
+    echo "COMPONENT_OBJEXCLUDE := excluded_file.o" >> main/component.mk
+    echo "COMPONENT_OBJINCLUDE := included_file.o" >> main/component.mk
+    echo "COMPONENT_ADD_LDFLAGS := -l\$(COMPONENT_NAME) -u required_global" >> main/component.mk
+    make
+    git checkout main/component.mk
+    rm main/{included,excluded}_file.c
+
+    print_status "Can include/exclude object files outside of component tree"
+    mkdir -p extra_source_dir
+    echo "#error This file should not compile" > extra_source_dir/excluded_file.c
+    echo "int required_global;" > extra_source_dir/included_file.c
+    echo "COMPONENT_SRCDIRS := . ../extra_source_dir" >> main/component.mk
+    echo "COMPONENT_OBJEXCLUDE := ../extra_source_dir/excluded_file.o" >> main/component.mk
+    echo "COMPONENT_OBJINCLUDE := ../extra_source_dir/included_file.o" >> main/component.mk
+    echo "COMPONENT_ADD_LDFLAGS := -l\$(COMPONENT_NAME) -u required_global" >> main/component.mk
+    make
+    git checkout main/component.mk
+    rm -rf extra_source_dir
+
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
         echo "Some failures were detected:"
