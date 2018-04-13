@@ -183,6 +183,10 @@ function run_tests()
     assert_rebuilt nvs_flash/src/nvs_api.o
     assert_rebuilt freertos/xtensa_vectors.o
 
+    print_status "print_flash_cmd target should produce one line of output"
+    make
+    test $(make print_flash_cmd V=0 | wc -l | tr -d ' ') -eq 1
+
     print_status "Can include/exclude object files"
     echo "#error This file should not compile" > main/excluded_file.c
     echo "int required_global;" > main/included_file.c
