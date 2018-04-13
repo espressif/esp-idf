@@ -73,25 +73,49 @@ as the default error-handling code in the application development phase. However
 
 ESP32 Wi-Fi Programming Model
 ------------------------------
-The ESP32 Wi-Fi programming model is depicted as follows::
+The ESP32 Wi-Fi programming model is depicted as follows:
 
-                            default handler              user handler
-   -----------               -------------               -------------
-  |           |   event     |             | callback or |             |
-  |   TCPIP   | --------->  |    event    | ----------> | application |
-  |   stack   |             |     task    |  event      |    task     |
-   -----------               -------------               -------------
-                                  /|\                          |
-                                   |                           |
-                            event  |                           |
-                                   |                           |
-                                   |                           |
-                              -------------                    |
-                             |             |                   |
-                             | Wi-Fi Driver|/__________________|
-                             |             |\     API call
-                             |             |
-                              -------------
+.. blockdiag::
+    :caption: Wi-Fi Programming Model
+    :align: center
+
+    blockdiag wifi-programming-model {
+
+        # global attributes
+        node_height = 60;
+        node_width = 100;
+        span_width = 100;
+        span_height = 60;
+        default_shape = roundedbox;
+        default_group_color = none;
+
+        # node labels
+        TCP_STACK [label="TCP\n stack", fontsize=12];
+        EVNT_TASK [label="Event\n task", fontsize=12];
+        APPL_TASK [label="Application\n task", width = 120, fontsize=12];
+        WIFI_DRV  [label="Wi-Fi\n Driver", width = 120, fontsize=12];
+        KNOT [shape=none];
+
+        # node connections + labels
+        TCP_STACK -> EVNT_TASK [label=event];
+        EVNT_TASK -> APPL_TASK [label="callback\n or event"];
+
+        # arrange nodes vertically
+        group {
+           label = "default handler";
+           orientation = portrait;
+           EVNT_TASK <- WIFI_DRV [label=event];
+        }
+
+        # intermediate node
+        group {
+            label = "user handler";
+            orientation = portrait;
+            APPL_TASK -- KNOT;
+        }
+        WIFI_DRV <- KNOT [label="API\n call"];
+    }
+
 
 The Wi-Fi driver can be considered a black box that knows nothing about high-layer code, such as the
 TCPIP stack, application task, event task, etc. All the Wi-Fi driver can do is receive API calls from the high layer,
@@ -211,78 +235,61 @@ Currently, the ESP32 implementation will never generate this event. It may be re
 
 ESP32 Wi-Fi Station General Scenario
 ---------------------------------------
-Below is a "big scenario" which describes some small scenarios in Station mode::
+Below is a "big scenario" which describes some small scenarios in Station mode:
 
-    ---------           ---------           ---------           ---------          ---------
-   |  Main   |         |   app   |         |  Event  |         |  LwIP   |        |  Wi-Fi  |
-   |  task   |         |   task  |         |   task  |         |  task   |        |  task   |
-    ---------           ---------           ---------           ---------          ---------
-        |                   |                   |                   |                  |         ---
-        |              1.1> create/init LwIP    |                   |                  |          |
-        |---------------------------------------------------------->|                  |          |
-        |     1.2> create/init event            |                   |                  |       
-        |-------------------------------------->|                   |                  |      1. Init Phase
-        |                   |    1.3> create/init Wi-Fi             |                  |        
-        |----------------------------------------------------------------------------->|          |
-        |  1.4> create app task                 |                   |                  |          |
-        |------------------>|                   |                   |                  |          |
-        |                   |                   |                   |                  |         ---
-        |                   |                   |                   |                  |          |
-        |                   |                   |                   |                  |         
-        |                   |    2> configure Wi-Fi                 |                  |      2. Configure Phase
-        |----------------------------------------------------------------------------->|         
-        |                   |                   |                   |                  |          |
-        |                   |                   |                   |                  |         ---
-        |                   |         3.1> start Wi-Fi              |                  |          |
-        |----------------------------------------------------------------------------->|     
-        |                   |                   |     3.2 > SYSTEM_EVENT_STA_START     |     3. Start Phase
-        |                   |                   |<-------------------------------------|          
-        |              3.3> SYSTEM_EVENT_STA_START                  |                  |          |
-        |                   |<------------------|                   |                  |         ---
-        |                   |                   |                   |                  |          |
-        |                   |                   |                   |                  |          |
-        |                   |               4.1> connect wifi       |                  |          |
-        |                   |--------------------------------------------------------->|     4. Connect Phase
-        |                   |                   |   4.2> SYSTEM_EVENT_STA_CONNECTED    |          |
-        |                   |                   |<-------------------------------------|          |
-        |              4.3> SYSTEM_EVENT_STA_CONNECTED              |                  |          |
-        |                   |<------------------|                   |                  |         ---
-        |                   |                   |                   |                  |          |
-        |                   |                   |                   |                  |          |
-        |                   |               5.1> start DHCP client  |                  |          |
-        |                   |                   |------------------>|                  |          |
-        |                   |               5.2> SYSTEM_EVENT_STA_GOT_IP               |          |
-        |                   |                   |<------------------|                  |          
-        |                 5.3> SYSTEM_EVENT_STA_GOT_IP              |                  |     5. Got IP Phase
-        |                   |<------------------|                   |                  |          
-        |                   |-----              |                   |                  |          |
-        |                   |     | 5.4> socket related init        |                  |          |
-        |                   |<----              |                   |                  |          |
-        |                   |                   |                   |                  |         ---
-        |                   |                   |   6.1> SYSTEM_EVENT_STA_DISCONNECTED |          |
-        |                   |                   |<-------------------------------------|     
-        |              6.2> SYSTEM_EVENT_STA_DISCONNECTED           |                  |     6. Disconnect Phase     
-        |                   |<------------------|                   |                  |     
-        |                   |-----              |                   |                  |          |
-        |                   |     | 6.3> disconnect handling        |                  |          |
-        |                   |<----              |                   |                  |         ---
-        |                   |                   |                   |                  |          |
-        |                   |               7.1> SYSTEM_EVENT_STA_GOT_IP               |          |
-        |                   |                   |<------------------|                  |          |
-        |                 7.2> SYSTEM_EVENT_STA_GOT_IP              |                  |          
-        |                   |<------------------|                   |                  |    7. IP change phase
-        |                   |-----              |                   |                  |          
-        |                   |     | 7.3> socket error handling      |                  |          |
-        |                   |<----              |                   |                  |          |
-        |                   |                   |                   |                  |         ---
-        |                   |           8.1> disconnect Wi-Fi       |                  |          |
-        |                   |--------------------------------------------------------->|          
-        |                   |           8.2> stop Wi-Fi             |                  |    8. Deinit phase      
-        |                   |--------------------------------------------------------->|          
-        |                   |           8.3> deinit Wi-Fi           |                  |          |
-        |                   |--------------------------------------------------------->|          |
-        |                   |                   |                   |                  |         ---  
-  
+.. seqdiag::
+    :caption: Sample Wi-Fi Event Scenarios in Station Mode
+    :align: center
+
+    seqdiag sample-scenarios-station-mode {
+        activation = none;
+        node_width = 80;
+        node_height = 60;
+        edge_length = 140;
+        span_height = 5;
+        default_shape = roundedbox;
+        default_fontsize = 12; 
+
+        MAIN_TASK  [label = "Main\ntask"]; 
+        APP_TASK   [label = "App\ntask"];
+        EVENT_TASK [label = "Event\ntask"];
+        LWIP_TASK  [label = "LwIP\ntask"];
+        WIFI_TASK  [label = "Wi-Fi\ntask"];
+
+        === 1. Init Phase ===
+        MAIN_TASK  ->  LWIP_TASK   [label="1.1> Create / init LwIP"];
+        MAIN_TASK  ->  EVENT_TASK  [label="1.2> Create / init event"];
+        MAIN_TASK  ->  WIFI_TASK   [label="1.3> Create / init Wi-Fi"];
+        MAIN_TASK  ->  APP_TASK    [label="1.4> Create app task"];
+        === 2. Configure Phase ===
+        MAIN_TASK  ->  WIFI_TASK   [label="2> Configure Wi-Fi"];
+        === 3. Start Phase ===
+        MAIN_TASK  ->  WIFI_TASK   [label="3.1> Start Wi-Fi"];
+        EVENT_TASK <-  WIFI_TASK   [label="3.2> SYSTEM_EVENT_STA_START"];
+        APP_TASK   <-  EVENT_TASK  [label="3.3> SYSTEM_EVENT_STA_START"];
+        === 4. Connect Phase ===
+        APP_TASK   ->  WIFI_TASK   [label="4.1> Connect Wi-Fi"];
+        EVENT_TASK <-  WIFI_TASK   [label="4.2> SYSTEM_EVENT_STA_CONNECTED"];
+        APP_TASK   <- EVENT_TASK   [label="4.3> SYSTEM_EVENT_STA_CONNECTED"];
+        === 5. Got IP Phase ===
+        EVENT_TASK ->  LWIP_TASK   [label="5.1> Start DHCP client"];
+        EVENT_TASK <-  LWIP_TASK   [label="5.2> SYSTEM_EVENT_STA_GOT_IP"];
+        APP_TASK   <-  EVENT_TASK  [label="5.3> SYSTEM_EVENT_STA_GOT_IP"];
+        APP_TASK   ->  APP_TASK    [label="5.4> socket related init"];
+        === 6. Disconnect Phase ===
+        EVENT_TASK <-  WIFI_TASK   [label="6.1> SYSTEM_EVENT_STA_DISCONNECTED"];
+        APP_TASK   <-  EVENT_TASK  [label="6.2> SYSTEM_EVENT_STA_DISCONNECTED"];
+        APP_TASK   ->  APP_TASK    [label="6.3> disconnect handling"];
+        === 7. IP Change Phase ===
+        EVENT_TASK <-  LWIP_TASK   [label="7.1> SYSTEM_EVENT_STA_GOT_IP"];
+        APP_TASK   <-  EVENT_TASK  [label="7.2> SYSTEM_EVENT_STA_GOT_IP"];
+        APP_TASK   ->  APP_TASK    [label="7.3> Socket error handling"];
+        === 8. Deinit Phase ===
+        APP_TASK   ->  WIFI_TASK   [label="8.1> Disconnect Wi-Fi"];
+        APP_TASK   ->  WIFI_TASK   [label="8.2> Stop Wi-Fi"];
+        APP_TASK   ->  WIFI_TASK   [label="8.3> Deinit Wi-Fi"];
+    }
+
 
 1. Wi-Fi/LwIP Init Phase
 ++++++++++++++++++++++++++++++
@@ -349,63 +356,51 @@ In step 4.2, the Wi-Fi connection may fail because, for example, the password is
 
 ESP32 Wi-Fi soft-AP General Scenario
 ---------------------------------------------
-Below is a "big scenario" which describes some small scenarios in Soft-AP mode::
+Below is a "big scenario" which describes some small scenarios in Soft-AP mode:
 
-    ---------           ---------           ---------           ---------          ---------
-   |  Main   |         |   app   |         |  Event  |         |  LwIP   |        |  Wi-Fi  |
-   |  task   |         |   task  |         |   task  |         |  task   |        |  task   |
-    ---------           ---------           ---------           ---------          ---------
-        |                   |                   |                   |                  |
-        |                   |                   |                   |                  |         ---
-        |              1.1> create/init LwIP    |                   |                  |          |
-        |---------------------------------------------------------->|                  |          |
-        |     1.2> create/init event            |                   |                  |          
-        |-------------------------------------->|                   |                  |     1. Init Phase
-        |                   |    1.3> create/init Wi-Fi             |                  |          
-        |----------------------------------------------------------------------------->|          |
-        |  1.4> create app task                 |                   |                  |          |
-        |------------------>|                   |                   |                  |          |
-        |                   |                   |                   |                  |         ---
-        |                   |                   |                   |                  |          |
-        |                   |                   |                   |                  |          
-        |                   |    2> configure Wi-Fi                 |                  |     2. Configure Phase
-        |----------------------------------------------------------------------------->|          
-        |                   |                   |                   |                  |          |
-        |                   |                   |                   |                  |         ---
-        |                   |                   |                   |                  |          |
-        |                   |         3.1> start Wi-Fi              |                  |          
-        |----------------------------------------------------------------------------->|     3. Start Phase
-        |                   |                   |     3.2 > SYSTEM_EVENT_AP_START      |          
-        |                   |                   |<-------------------------------------|          |
-        |              3.3> SYSTEM_EVENT_AP_START                   |                  |          |
-        |                   |<------------------|                   |                  |         ---
-        |                   |                   |                   |                  |          |
-        |                   |                   |                   |                  |          
-        |                   |                   |   4.1> SYSTEM_EVENT_AP_STACONNECTED  |     4. Connect Phase      
-        |                   |                   |<-------------------------------------|          
-        |              4.2> SYSTEM_EVENT_AP_STACONNECTED            |                  |          |
-        |                   |<------------------|                   |                  |         ---
-        |                   |                   |                   |                  |          |
-        |                   |                   |                   |                  |          |
-        |                   |                   |   5.1> SYSTEM_EVENT_STA_DISCONNECTED |          
-        |                   |                   |<-------------------------------------|     5. Disconnect Phase
-        |              5.2> SYSTEM_EVENT_STA_DISCONNECTED           |                  |          
-        |                   |<------------------|                   |                  |          |
-        |                   |-----              |                   |                  |          |
-        |                   |     | 5.3> disconnect handling        |                  |          |
-        |                   |<----              |                   |                  |         ---
-        |                   |                   |                   |                  |          |
-        |                   |                   |                   |                  |          |
-        |                   |                   |                   |                  |          |
-        |                   |           6.1> disconnect Wi-Fi       |                  |          |
-        |                   |--------------------------------------------------------->|          
-        |                   |           6.2> stop Wi-Fi             |                  |    6. Deinit phase      
-        |                   |--------------------------------------------------------->|          
-        |                   |           6.3> deinit Wi-Fi           |                  |          |
-        |                   |--------------------------------------------------------->|          |
-        |                   |                   |                   |                  |         ---  
-        |                   |                   |                   |                  |         
-  
+ .. seqdiag::
+    :caption: Sample Wi-Fi Event Scenarios in Soft-AP Mode
+    :align: center
+
+    seqdiag sample-scenarios-soft-ap-mode {
+        activation = none;
+        node_width = 80;
+        node_height = 60;
+        edge_length = 140;
+        span_height = 5;
+        default_shape = roundedbox;
+        default_fontsize = 12; 
+
+        MAIN_TASK  [label = "Main\ntask"]; 
+        APP_TASK   [label = "App\ntask"];
+        EVENT_TASK [label = "Event\ntask"];
+        LWIP_TASK  [label = "LwIP\ntask"];
+        WIFI_TASK  [label = "Wi-Fi\ntask"];
+
+        === 1. Init Phase ===
+        MAIN_TASK  ->  LWIP_TASK   [label="1.1> Create / init LwIP"];
+        MAIN_TASK  ->  EVENT_TASK  [label="1.2> Create / init event"];
+        MAIN_TASK  ->  WIFI_TASK   [label="1.3> Create / init Wi-Fi"];
+        MAIN_TASK  ->  APP_TASK    [label="1.4> Create app task"];
+        === 2. Configure Phase ===
+        MAIN_TASK  ->  WIFI_TASK   [label="2> Configure Wi-Fi"];
+        === 3. Start Phase ===
+        MAIN_TASK  ->  WIFI_TASK   [label="3.1> Start Wi-Fi"];
+        EVENT_TASK <-  WIFI_TASK   [label="3.2> SYSTEM_EVENT_AP_START"];
+        APP_TASK   <-  EVENT_TASK  [label="3.3> SYSTEM_EVENT_AP_START"];
+        === 4. Connect Phase ===
+        EVENT_TASK <-  WIFI_TASK   [label="4.1> SYSTEM_EVENT_AP_STA_CONNECTED"];
+        APP_TASK   <- EVENT_TASK   [label="4.2> SYSTEM_EVENT_AP_STA_CONNECTED"];
+        === 5. Disconnect Phase ===
+        EVENT_TASK <-  WIFI_TASK   [label="5.1> SYSTEM_EVENT_STA_DISCONNECTED"];
+        APP_TASK   <-  EVENT_TASK  [label="5.2> SYSTEM_EVENT_STA_DISCONNECTED"];
+        APP_TASK   ->  APP_TASK    [label="5.3> disconnect handling"];
+        === 6. Deinit Phase ===
+        APP_TASK   ->  WIFI_TASK   [label="6.1> Disconnect Wi-Fi"];
+        APP_TASK   ->  WIFI_TASK   [label="6.2> Stop Wi-Fi"];
+        APP_TASK   ->  WIFI_TASK   [label="6.3> Deinit Wi-Fi"];
+    }
+
 
 ESP32 Wi-Fi Scan
 ------------------------
@@ -514,38 +509,34 @@ The scan type and other scan attributes are configured by esp_wifi_scan_start. T
 Scan All APs In All Channels(foreground)
 +++++++++++++++++++++++++++++++++++++++++++
 
-Scenario::
+Scenario:
 
-    ---------           ---------           --------- 
-   |  app    |         |  event  |         |   Wi-Fi |
-   |  task   |         |   task  |         |   task  |
-    ---------           ---------           --------- 
-        |                   |                   |
-        |                   |                   |
-        |      1.1> Configure country code      |
-        |-------------------------------------->|
-        |      1.2> Scan configuration          |
-        |-------------------------------------->|
-        |                   |                   |
-        |                   |                   |
-        |                   |                   |----
-        |                   |                   |    | 2.1> Scan channel 1
-        |                   |                   |<---
-        |                   |                   |----
-        |                   |                   |    | 2.2> Scan channel 2
-        |                   |                   |<---
-        |                   |                   |
-        |                   |                   |      ....  ...
-        |                   |                   |
-        |                   |                   |----
-        |                   |                   |    | 2.x> Scan channel N
-        |                   |                   |<---
-        |                   |                   |
-        |           3.1 SYSTEM_EVENT_SCAN_DONE  |
-        |                   |<------------------|
-        |  3.2 SYSTEM_EVENT_SCAN_DONE           |
-        |<------------------|                   |
-        |                   |                   |
+.. seqdiag::
+    :caption: Foreground Scan of all Wi-Fi Channels
+    :align: center
+
+    seqdiag foreground-scan-all-channels {
+        activation = none;
+        node_width = 80;
+        node_height = 60;
+        edge_length = 160;
+        span_height = 5;
+        default_shape = roundedbox;
+        default_fontsize = 12; 
+
+        APP_TASK   [label = "App\ntask"];
+        EVENT_TASK [label = "Event\ntask"];
+        WIFI_TASK  [label = "Wi-Fi\ntask"];
+
+        APP_TASK   ->  WIFI_TASK  [label="1.1 > Configure country code"];
+        APP_TASK   ->  WIFI_TASK  [label="1.2 > Scan configuration"];
+        WIFI_TASK  ->  WIFI_TASK  [label="2.1 > Scan channel 1"];
+        WIFI_TASK  ->  WIFI_TASK  [label="2.2 > Scan channel 2"];
+        WIFI_TASK  ->  WIFI_TASK  [label="..."];
+        WIFI_TASK  ->  WIFI_TASK  [label="2.x > Scan channel N"];
+        EVENT_TASK <-  WIFI_TASK  [label="3.1 > SYSTEM_EVENT_SCAN_DONE"];
+        APP_TASK   <-  EVENT_TASK [label="3.2 > SYSTEM_EVENT_SCAN_DONE"];
+    }
 
 
 The scenario above describes an all-channel, foreground scan. The foreground scan can only occur in Station mode where the station does not connect to any AP. Whether it is a foreground or background scan is totally determined by the Wi-Fi driver, and cannot be configured by the application. 
@@ -574,84 +565,70 @@ Scan-Done Event Handling Phase
 
 Scan All APs on All Channels(background)
 ++++++++++++++++++++++++++++++++++++++++
-Scenario::
+Scenario:
 
-    ---------           ---------           --------- 
-   |  app    |         |  event  |         |   Wi-Fi |
-   |  task   |         |   task  |         |   task  |
-    ---------           ---------           --------- 
-        |                   |                   |
-        |                   |                   |
-        |      1.1> Configure country code      |
-        |-------------------------------------->|
-        |      1.2> Scan configuration          |
-        |-------------------------------------->|
-        |                   |                   |
-        |                   |                   |
-        |                   |                   |----
-        |                   |                   |    | 2.1> Scan channel 1
-        |                   |                   |<---
-        |                   |                   |----
-        |                   |                   |    | 2.2> Back to home channel H
-        |                   |                   |<---
-        |                   |                   |----
-        |                   |                   |    | 2.3> Scan channel 2
-        |                   |                   |<---
-        |                   |                   |----
-        |                   |                   |    | 2.4> Back to home channel H
-        |                   |                   |<---
-        |                   |                   |
-        |                   |                   |      ....  ...
-        |                   |                   |
-        |                   |                   |----
-        |                   |                   |    | 2.x-1> Scan channel N
-        |                   |                   |<---
-        |                   |                   |----
-        |                   |                   |    | 2.x> Back to home channel H
-        |                   |                   |<---
-        |                   |                   |
-        |           3.1 SYSTEM_EVENT_SCAN_DONE  |
-        |                   |<------------------|
-        |  3.2 SYSTEM_EVENT_SCAN_DONE           |
-        |<------------------|                   |
-        |                   |                   |
+.. seqdiag::
+    :caption: Background Scan of all Wi-Fi Channels
+    :align: center
+
+    seqdiag background-scan-all-channels {
+        activation = none;
+        node_width = 80;
+        node_height = 60;
+        edge_length = 160;
+        span_height = 5;
+        default_shape = roundedbox;
+        default_fontsize = 12; 
+
+        APP_TASK   [label = "App\ntask"];
+        EVENT_TASK [label = "Event\ntask"];
+        WIFI_TASK  [label = "Wi-Fi\ntask"];
+
+        APP_TASK   ->  WIFI_TASK  [label="1.1 > Configure country code"];
+        APP_TASK   ->  WIFI_TASK  [label="1.2 > Scan configuration"];
+        WIFI_TASK  ->  WIFI_TASK  [label="2.1 > Scan channel 1"];
+        WIFI_TASK  ->  WIFI_TASK  [label="2.2 > Back to home channel H"];
+        WIFI_TASK  ->  WIFI_TASK  [label="2.3 > Scan channel 2"];
+        WIFI_TASK  ->  WIFI_TASK  [label="2.4 > Back to home channel H"];
+        WIFI_TASK  ->  WIFI_TASK  [label="..."];
+        WIFI_TASK  ->  WIFI_TASK  [label="2.x-1 > Scan channel N"];
+        WIFI_TASK  ->  WIFI_TASK  [label="2.x > Back to home channel H"];
+        EVENT_TASK <-  WIFI_TASK  [label="3.1 > SYSTEM_EVENT_SCAN_DONE"];
+        APP_TASK   <-  EVENT_TASK [label="3.2 > SYSTEM_EVENT_SCAN_DONE"];
+    }
 
 The scenario above is an all-channel background scan. Compared to `Scan All APs In All Channels(foreground)`_ , the difference in the all-channel background scan is that the Wi-Fi driver will scan the back-to-home channel for 30 ms before it switches to the next channel to give the Wi-Fi connection a chance to transmit/receive data.
 
 Scan for a Specific AP in All Channels
 +++++++++++++++++++++++++++++++++++++++
-Scenario::
+Scenario:
 
-    ---------           ---------           --------- 
-   |  app    |         |  event  |         |   Wi-Fi |
-   |  task   |         |   task  |         |   task  |
-    ---------           ---------           --------- 
-        |                   |                   |
-        |                   |                   |
-        |      1.1> Configure country code      |
-        |-------------------------------------->|
-        |      1.2> Scan configuration          |
-        |-------------------------------------->|
-        |                   |                   |
-        |                   |                   |
-        |                   |                   |----
-        |                   |                   |    | 2.1> Scan channel C1
-        |                   |                   |<---
-        |                   |                   |----
-        |                   |                   |    | 2.2> Scan channel C2
-        |                   |                   |<---
-        |                   |                   |
-        |                   |                   | ...
-        |                   |                   |
-        |                   |                   |----
-        |                   |                   |    | 2.x> Scan channel CN, or the AP is found
-        |                   |                   |<---
-        |                   |                   |
-        |           3.1 SYSTEM_EVENT_SCAN_DONE  |
-        |                   |<------------------|
-        |  3.2 SYSTEM_EVENT_SCAN_DONE           |
-        |<------------------|                   |
-        |                   |                   |
+.. seqdiag::
+    :caption: Scan of specific Wi-Fi Channels
+    :align: center
+
+    seqdiag scan-specific-channels {
+        activation = none;
+        node_width = 80;
+        node_height = 60;
+        edge_length = 160;
+        span_height = 5;
+        default_shape = roundedbox;
+        default_fontsize = 12; 
+
+        APP_TASK   [label = "App\ntask"];
+        EVENT_TASK [label = "Event\ntask"];
+        WIFI_TASK  [label = "Wi-Fi\ntask"];
+
+        APP_TASK   ->  WIFI_TASK  [label="1.1 > Configure country code"];
+        APP_TASK   ->  WIFI_TASK  [label="1.2 > Scan configuration"];
+        WIFI_TASK  ->  WIFI_TASK  [label="2.1 > Scan channel C1"];
+        WIFI_TASK  ->  WIFI_TASK  [label="2.2 > Scan channel C2"];
+        WIFI_TASK  ->  WIFI_TASK  [label="..."];
+        WIFI_TASK  ->  WIFI_TASK  [label="2.x > Scan channel CN, or the AP is found"];
+        EVENT_TASK <-  WIFI_TASK  [label="3.1 > SYSTEM_EVENT_SCAN_DONE"];
+        APP_TASK   <-  EVENT_TASK [label="3.2 > SYSTEM_EVENT_SCAN_DONE"];
+    }
 
 This scan is similar to `Scan All APs In All Channels(foreground)`_. The differences are:
 
@@ -681,60 +658,50 @@ ESP32 Wi-Fi Station Connecting Scenario
 ----------------------------------------
 Generally, the application does not need to care about the connecting process. Below is a brief introduction to the process for those who are really interested.
 
-Scenario::
+Scenario:
 
-    ---------           ---------           --------- 
-   |  Event  |         |   Wi-Fi |         |  AP     |
-   |  task   |         |   task  |         |         |
-    ---------           ---------           --------- 
-        |                   |                   |
-        |                   |                   |       ---
-        |                   |----               |        |
-        |                   |    | 1.1> Scan    |        
-        |                   |<---               |      Scan phase
-        | 1.2> SYSTEM_EVENT_STA_DISCONNECTED    |      
-        |<------------------|                   |        |
-        |                   |                   |       ---
-        |                   |                   |        |
-        |                    2.1> Auth Request  |        |
-        |                   |------------------>|        |
-        | 2.2> SYSTEM_EVENT_STA_DISCONNECTED    |       
-        |<------------------|                   |      Auth phase
-        |                    2.3> Auth Response |       
-        |                   |<------------------|        |
-        | 2.4> SYSTEM_EVENT_STA_DISCONNECTED    |        |
-        |<------------------|                   |       ---
-        |                   |                   |        |
-        |                   | 3.1 Assoc Request |        |
-        |                   |------------------>|        |
-        | 3.2> SYSTEM_EVENT_STA_DISCONNECTED    |        
-        |<------------------|                   |     Assoc phase
-        |                    3.3 Assoc Response |       
-        |                   |<------------------|        |
-        | 3.4> SYSTEM_EVENT_STA_DISCONNECTED    |        |
-        |<------------------|                   |        |
-        |                   |                   |       ---  
-        |                   |                   |        |
-        |                   | 4.1> 1/4 EAPOL    |        |
-        |                   |<------------------|        |
-        | 4.2> SYSTEM_EVENT_STA_DISCONNECTED    |        |
-        |<------------------|                   |        |
-        |                   | 4.3> 2/4 EAPOL    |        |
-        |                   |------------------>|        |
-        | 4.4> SYSTEM_EVENT_STA_DISCONNECTED    |        
-        |<------------------|                   |     4-way handshake phase
-        |                   | 4.5> 3/4 EAPOL    |        
-        |                   |<------------------|        |
-        | 4.6> SYSTEM_EVENT_STA_DISCONNECTED    |        |
-        |<------------------|                   |        |
-        |                   | 4.7> 4/4 EAPOL    |        |
-        |                   |------------------>|        |
-        | 4.8> SYSTEM_EVENT_STA_DISCONNECTED    |        |
-        |<------------------|                   |        |
-        |                   |                   |        |
-        | 4.9> SYSTEM_EVENT_STA_DISCONNECTED    |        |
-        |<------------------|                   |       ---  
-        |                   |                   | 
+.. seqdiag::
+    :caption: Wi-Fi Station Connecting Process
+    :align: center
+
+    seqdiag station-connecting-process {
+        activation = none;
+        node_width = 80;
+        node_height = 60;
+        edge_length = 160;
+        span_height = 5;
+        default_shape = roundedbox;
+        default_fontsize = 12; 
+
+        EVENT_TASK  [label = "Event\ntask"];
+        WIFI_TASK   [label = "Wi-Fi\ntask"];
+        AP          [label = "AP"];
+
+        === 1. Scan Phase ===
+        WIFI_TASK  ->  WIFI_TASK [label="1.1 > Scan"];
+        EVENT_TASK <-  WIFI_TASK [label="1.2 > SYSTEM_EVENT_STA_DISCONNECTED"];
+        === 2. Auth Phase ===
+        WIFI_TASK  ->  AP        [label="2.1 > Auth request"];
+        EVENT_TASK <-  WIFI_TASK [label="2.2 > SYSTEM_EVENT_STA_DISCONNECTED"];
+        WIFI_TASK  <-  AP        [label="2.3 > Auth response"];
+        EVENT_TASK <-  WIFI_TASK [label="2.4 > SYSTEM_EVENT_STA_DISCONNECTED"];
+        === 3. Assoc Phase ===
+        WIFI_TASK  ->  AP        [label="3.1 > Assoc request"];
+        EVENT_TASK <-  WIFI_TASK [label="3.2 > SYSTEM_EVENT_STA_DISCONNECTED"];
+        WIFI_TASK  <-  AP        [label="3.3 > Assoc response"];
+        EVENT_TASK <-  WIFI_TASK [label="3.4 > SYSTEM_EVENT_STA_DISCONNECTED"];
+        === 4. 4-way Handshake Phase ===
+        WIFI_TASK  ->  AP        [label="4.1 > 1/4 EAPOL"];
+        EVENT_TASK <-  WIFI_TASK [label="4.2 > SYSTEM_EVENT_STA_DISCONNECTED"];
+        WIFI_TASK  ->  AP        [label="4.3 > 2/4 EAPOL"];
+        EVENT_TASK <-  WIFI_TASK [label="4.4 > SYSTEM_EVENT_STA_DISCONNECTED"];
+        WIFI_TASK  ->  AP        [label="4.5 > 3/4 EAPOL"];
+        EVENT_TASK <-  WIFI_TASK [label="4.6 > SYSTEM_EVENT_STA_DISCONNECTED"];
+        WIFI_TASK  ->  AP        [label="4.7 > 4/4 EAPOL"];
+        EVENT_TASK <-  WIFI_TASK [label="4.8 > SYSTEM_EVENT_STA_DISCONNECTED"];
+        EVENT_TASK <-  WIFI_TASK [label="4.9 > SYSTEM_EVENT_STA_DISCONNECTED"];
+    }
+
 
 Scan Phase
 +++++++++++++++++++++
@@ -1598,26 +1565,73 @@ Wi-Fi Menuconfig
 Wi-Fi Buffer Configure
 +++++++++++++++++++++++
 
-If you are going to modify the default number or type of buffer, it would be helpful to also have an overview of how the buffer is allocated/freed in the data path. The following diagram shows this process in the TX direction::
+If you are going to modify the default number or type of buffer, it would be helpful to also have an overview of how the buffer is allocated/freed in the data path. The following diagram shows this process in the TX direction:
 
-     -------------              -------------              -------------
-    | Application |            |    LwIP     |            |    Wi-Fi    |
-    |    task     | ---------> |    task     | ---------> |    task     |
-     -------------              -------------              -------------
-      1> User data               2> Pbuf                    3> Dynamic (Static) TX Buffer
+.. blockdiag::
+    :caption: TX Buffer Allocation
+    :align: center
+
+    blockdiag buffer_allocation_tx {
+
+        # global attributes
+        node_height = 60;
+        node_width = 100;
+        span_width = 50;
+        span_height = 20;
+        default_shape = roundedbox;
+
+        # labels of diagram nodes
+        APPL_TASK [label="Application\n task", fontsize=12];  
+        LWIP_TASK [label="LwIP\n task", fontsize=12];  
+        WIFI_TASK [label="Wi-Fi\n task", fontsize=12];
+
+        # labels of description nodes
+        APPL_DESC [label="1> User data", width=120, height=25, shape=note, color=yellow];  
+        LWIP_DESC [label="2> Pbuf", width=120, height=25, shape=note, color=yellow];  
+        WIFI_DESC [label="3> Dynamic (Static)\n TX Buffer", width=150, height=40, shape=note, color=yellow];
+
+        # node connections
+        APPL_TASK -> LWIP_TASK -> WIFI_TASK
+        APPL_DESC -> LWIP_DESC -> WIFI_DESC [style=none]
+    }
+
 
 Description:
  - The application allocates the data which needs to be sent out.
  - The application calls TCPIP-/Socket-related APIs to send the user data. These APIs will allocate a PBUF used in LwIP, and make a copy of the user data.
  - When LwIP calls a Wi-Fi API to send the PBUF, the Wi-Fi API will allocate a "Dynamic Tx Buffer" or "Static Tx Buffer", make a copy of the LwIP PBUF, and finally send the data.
 
-The following diagram shows how buffer is allocated/freed in the RX direction::
+The following diagram shows how buffer is allocated/freed in the RX direction:
 
-     -------------              -------------              -------------              ------------- 
-    | Application |            |    LwIP     |            |    Wi-Fi    |            |    Wi-Fi    |
-    |    Task     | <--------- |    task     | <--------- |    task     | <--------- |  Interrupt  |
-     -------------              -------------              -------------              -------------
-      4> User data               3> Pbuf                    2> Dynamic RX Buffer       1> Static RX Buffer
+.. blockdiag::
+    :caption: RX Buffer Allocation
+    :align: center
+
+    blockdiag buffer_allocation_rx {
+
+        # global attributes
+        node_height = 60;
+        node_width = 100;
+        span_width = 40;
+        span_height = 20;
+        default_shape = roundedbox;
+
+        # labels of diagram nodes
+        APPL_TASK [label="Application\n task", fontsize=12];  
+        LWIP_TASK [label="LwIP\n task", fontsize=12];  
+        WIFI_TASK [label="Wi-Fi\n task", fontsize=12];
+        WIFI_INTR [label="Wi-Fi\n interrupt", fontsize=12];
+
+        # labels of description nodes
+        APPL_DESC [label="4> User\n Data Buffer", height=40, shape=note, color=yellow];  
+        LWIP_DESC [label="3> Pbuf", height=40, shape=note, color=yellow];  
+        WIFI_DESC [label="2> Dynamic\n RX Buffer", height=40, shape=note, color=yellow];
+        INTR_DESC [label="1> Static\n RX Buffer", height=40, shape=note, color=yellow];
+
+        # node connections
+        APPL_TASK <- LWIP_TASK <- WIFI_TASK <- WIFI_INTR
+        APPL_DESC <- LWIP_DESC <- WIFI_DESC <- INTR_DESC [style=none]
+    }
 
 Description:
 
