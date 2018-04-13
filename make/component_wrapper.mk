@@ -123,17 +123,20 @@ else
 # Add in components defined by conditional compiling macros
 COMPONENT_OBJS += $(COMPONENT_OBJINCLUDE)
 endif
-# Remove items disabled by optional compilation
-COMPONENT_OBJS := $(foreach obj,$(COMPONENT_OBJS),$(if $(filter $(realpath $(obj)),$(realpath $(COMPONENT_OBJEXCLUDE))), ,$(obj)))
-
-# Remove duplicates
-COMPONENT_OBJS := $(call uniq,$(COMPONENT_OBJS))
-
 # Remove any leading ../ from paths, so everything builds inside build dir
 COMPONENT_OBJS := $(call stripLeadingParentDirs,$(COMPONENT_OBJS))
 
+# Do the same for COMPONENT_OBJEXCLUDE (used below)
+COMPONENT_OBJEXCLUDE := $(call stripLeadingParentDirs,$(COMPONENT_OBJEXCLUDE))
+
 # COMPONENT_OBJDIRS is COMPONENT_SRCDIRS with the same transform applied
 COMPONENT_OBJDIRS := $(call stripLeadingParentDirs,$(COMPONENT_SRCDIRS))
+
+# Remove items disabled by optional compilation
+COMPONENT_OBJS := $(foreach obj,$(COMPONENT_OBJS),$(if $(filter $(abspath $(obj)),$(abspath $(COMPONENT_OBJEXCLUDE))), ,$(obj)))
+
+# Remove duplicates
+COMPONENT_OBJS := $(call uniq,$(COMPONENT_OBJS))
 
 # Object files with embedded binaries to add to the component library
 # Correspond to the files named in COMPONENT_EMBED_FILES & COMPONENT_EMBED_TXTFILES
