@@ -118,7 +118,7 @@ There are five jumper headers available to set up the board functionality. Typic
 | Header | Jumper Setting   | Description of Functionality                     |
 +--------+------------------+--------------------------------------------------+
 |  JP7   | |jp7-ext_5v|     | Power ESP-WROVER-KIT board from an external      |
-|        |                  | | power supply                                   |
+|        |                  | power supply                                     |
 +--------+------------------+--------------------------------------------------+
 |  JP7   | |jp7-usb_5v|     | Power ESP-WROVER-KIT board from an USB port      |
 +--------+------------------+--------------------------------------------------+
