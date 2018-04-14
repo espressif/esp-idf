@@ -32,7 +32,7 @@
  *                Variable Definitions
  *******************************************************/
 static const char *MESH_TAG = "mesh_main";
-static const uint8_t MESH_ID[6] = { 0x77, 0x77, 0x77, 0x77, 0x77, 0x77 };
+static const uint8_t MESH_ID[6] = { 0x77, 0x77, 0x77, 0x77, 0x77, 0x77};
 static uint8_t tx_buf[TX_SIZE] = { 0, };
 static uint8_t rx_buf[RX_SIZE] = { 0, };
 static bool is_running = true;
@@ -101,10 +101,10 @@ void esp_mesh_p2p_tx_main(void *arg)
     while (is_running) {
         /* normal nodes rather than root do nothing but print */
         if (!esp_mesh_is_root()) {
-            ESP_LOGI(MESH_TAG, "[layer:%d]%s%s[rtableSize:%d]", mesh_layer,
+            ESP_LOGI(MESH_TAG, "layer:%d, rtableSize:%d, %s%s", mesh_layer,
+                     esp_mesh_get_routing_table_size(),
                      is_mesh_connected ? "CONNECT" : "DISCONNECT",
-                     esp_mesh_is_root() ? "<ROOT>" : "[NODE]",
-                     esp_mesh_get_routing_table_size())
+                     esp_mesh_is_root() ? "<ROOT>" : "[NODE]")
             vTaskDelay(10 * 1000 / portTICK_RATE_MS);
             continue;
         }
@@ -149,7 +149,9 @@ void esp_mesh_p2p_tx_main(void *arg)
                          err, data.proto, data.tos)
             }
         }
-        vTaskDelay(1 * 1000 / portTICK_RATE_MS);
+        if (route_table_size < 10) {
+            vTaskDelay(1 * 1000 / portTICK_RATE_MS);
+        }
     }
     vTaskDelete(NULL);
 }
@@ -394,6 +396,11 @@ void app_main(void)
     memcpy((uint8_t *) &cfg.mesh_ap.password, CONFIG_MESH_AP_PASSWD,
            strlen(CONFIG_MESH_AP_PASSWD));
     ESP_ERROR_CHECK(esp_mesh_set_config(&cfg));
+    /* set RSSI threshold for connecting to the root */
+    mesh_switch_parent_t switch_paras ;
+    ESP_ERROR_CHECK(esp_mesh_get_switch_parent_paras(&switch_paras));
+    switch_paras.backoff_rssi = -45;
+    ESP_ERROR_CHECK(esp_mesh_set_switch_parent_paras(&switch_paras));
     /* mesh start */
     ESP_ERROR_CHECK(esp_mesh_start());
     ESP_LOGI(MESH_TAG, "mesh starts successfully, heap:%d\n",  esp_get_free_heap_size())
