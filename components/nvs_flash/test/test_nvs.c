@@ -71,7 +71,7 @@ TEST_CASE("calculate used and free space", "[nvs]")
     TEST_ESP_ERR(nvs_get_stats(NULL, NULL), ESP_ERR_INVALID_ARG);
     nvs_stats_t stat1;
     nvs_stats_t stat2;
-    TEST_ESP_ERR(nvs_get_stats(NULL, &stat1), ESP_ERR_NVS_PART_NOT_FOUND);
+    TEST_ESP_ERR(nvs_get_stats(NULL, &stat1), ESP_ERR_NVS_NOT_INITIALIZED);
     TEST_ASSERT_TRUE(stat1.free_entries == 0);
     TEST_ASSERT_TRUE(stat1.namespace_count == 0);
     TEST_ASSERT_TRUE(stat1.total_entries == 0);
