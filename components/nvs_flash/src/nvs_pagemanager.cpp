@@ -125,17 +125,18 @@ esp_err_t PageManager::requestNewPage()
     }
 
     // find the page with the higest number of erased items
-    TPageListIterator maxErasedItemsPageIt;
-    size_t maxErasedItems = 0;
+    TPageListIterator maxUnusedItemsPageIt;
+    size_t maxUnusedItems = 0;
     for (auto it = begin(); it != end(); ++it) {
-        auto erased = it->getErasedEntryCount();
-        if (erased > maxErasedItems) {
-            maxErasedItemsPageIt = it;
-            maxErasedItems = erased;
+
+        auto unused =  Page::ENTRY_COUNT - it->getUsedEntryCount();
+        if (unused > maxUnusedItems) {
+            maxUnusedItemsPageIt = it;
+            maxUnusedItems = unused;
         }
     }
 
-    if (maxErasedItems == 0) {
+    if (maxUnusedItems == 0) {
         return ESP_ERR_NVS_NOT_ENOUGH_SPACE;
     }
 
@@ -146,7 +147,8 @@ esp_err_t PageManager::requestNewPage()
 
     Page* newPage = &mPageList.back();
 
-    Page* erasedPage = maxErasedItemsPageIt;
+    Page* erasedPage = maxUnusedItemsPageIt;
+
 #ifndef NDEBUG
     size_t usedEntries = erasedPage->getUsedEntryCount();
 #endif
@@ -172,7 +174,7 @@ esp_err_t PageManager::requestNewPage()
     assert(usedEntries == newPage->getUsedEntryCount());
 #endif
     
-    mPageList.erase(maxErasedItemsPageIt);
+    mPageList.erase(maxUnusedItemsPageIt);
     mFreePageList.push_back(erasedPage);
 
     return ESP_OK;

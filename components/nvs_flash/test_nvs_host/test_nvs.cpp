@@ -1246,6 +1246,27 @@ TEST_CASE("multiple partitions access check", "[nvs]")
     CHECK(v2 == 0xcafebabe);
 }
 
+TEST_CASE("nvs page selection takes into account free entries also not just erased entries", "[nvs]")
+{
+    const size_t blob_size = Page::BLOB_MAX_SIZE;
+    uint8_t blob[blob_size] = {0};
+    SpiFlashEmulator emu(3);
+    TEST_ESP_OK( nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, 0, 3) );
+    nvs_handle handle;
+    TEST_ESP_OK( nvs_open("test", NVS_READWRITE, &handle) );
+    // Fill first page
+    TEST_ESP_OK( nvs_set_blob(handle, "1a", blob, blob_size/3) );
+    TEST_ESP_OK( nvs_set_blob(handle, "1b", blob, blob_size) );
+    // Fill second page
+    TEST_ESP_OK( nvs_set_blob(handle, "2a", blob, blob_size) );
+    TEST_ESP_OK( nvs_set_blob(handle, "2b", blob, blob_size) );
+
+    // The item below should be able to fit the first page.
+    TEST_ESP_OK( nvs_set_blob(handle, "3a", blob, 4) );
+    TEST_ESP_OK( nvs_commit(handle) );
+    nvs_close(handle);
+}
+
 TEST_CASE("dump all performance data", "[nvs]")
 {
     std::cout << "====================" << std::endl << "Dumping benchmarks" << std::endl;
