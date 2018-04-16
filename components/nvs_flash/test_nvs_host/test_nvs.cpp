@@ -720,7 +720,7 @@ TEST_CASE("can init storage from flash with random contents", "[nvs]")
 }
 
 
-TEST_CASE("nvs api tests, starting with random data in flash", "[nvs][.][long]")
+TEST_CASE("nvs api tests, starting with random data in flash", "[nvs][long]")
 {
     const size_t testIters = 3000;
     int lastPercent = -1;
@@ -984,7 +984,7 @@ TEST_CASE("monkey test", "[nvs][monkey]")
     s_perf << "Monkey test: nErase=" << emu.getEraseOps() << " nWrite=" << emu.getWriteOps() << std::endl;
 }
 
-TEST_CASE("test recovery from sudden poweroff", "[.][long][nvs][recovery][monkey]")
+TEST_CASE("test recovery from sudden poweroff", "[long][nvs][recovery][monkey]")
 {
     std::random_device rd;
     std::mt19937 gen(rd());
