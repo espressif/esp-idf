@@ -133,6 +133,23 @@ extern "C" esp_err_t nvs_flash_init(void)
     return nvs_flash_init_partition(NVS_DEFAULT_PART_NAME);
 }
 
+extern "C" esp_err_t nvs_flash_erase_partition(const char *part_name)
+{
+    const esp_partition_t* partition = esp_partition_find_first(
+            ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, part_name);
+    if (partition == NULL) {
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    return esp_partition_erase_range(partition, 0, partition->size);
+}
+
+extern "C" esp_err_t nvs_flash_erase()
+{
+    return nvs_flash_erase_partition(NVS_DEFAULT_PART_NAME);
+}
+#endif // ESP_PLATFORM
+
 extern "C" esp_err_t nvs_flash_deinit_partition(const char* partition_name)
 {
     Lock::init();
@@ -150,7 +167,7 @@ extern "C" esp_err_t nvs_flash_deinit_partition(const char* partition_name)
         next++;
         if (it->mStoragePtr == storage) {
             ESP_LOGD(TAG, "Deleting handle %d (ns=%d) related to partition \"%s\" (missing call to nvs_close?)",
-                    it->mHandle, it->mNsIndex, partition_name);
+                     it->mHandle, it->mNsIndex, partition_name);
             s_nvs_handles.erase(it);
             delete static_cast<HandleEntry*>(it);
         }
@@ -168,23 +185,6 @@ extern "C" esp_err_t nvs_flash_deinit(void)
 {
     return nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME);
 }
-
-extern "C" esp_err_t nvs_flash_erase_partition(const char *part_name)
-{
-    const esp_partition_t* partition = esp_partition_find_first(
-            ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, part_name);
-    if (partition == NULL) {
-        return ESP_ERR_NOT_FOUND;
-    }
-
-    return esp_partition_erase_range(partition, 0, partition->size);
-}
-
-extern "C" esp_err_t nvs_flash_erase()
-{
-    return nvs_flash_erase_partition(NVS_DEFAULT_PART_NAME);
-}
-#endif
 
 static esp_err_t nvs_find_ns_handle(nvs_handle handle, HandleEntry& entry)
 {
@@ -473,11 +473,11 @@ extern "C" esp_err_t nvs_get_stats(const char* part_name, nvs_stats_t* nvs_stats
 
     pStorage = lookup_storage_from_name((part_name == NULL) ? NVS_DEFAULT_PART_NAME : part_name);
     if (pStorage == NULL) {
-        return ESP_ERR_NVS_PART_NOT_FOUND;
+        return ESP_ERR_NVS_NOT_INITIALIZED;
     }
 
     if(!pStorage->isValid()){
-        return ESP_ERR_NVS_NOT_INITIALIZED;
+        return ESP_ERR_NVS_INVALID_STATE;
     }
 
     return pStorage->fillStats(*nvs_stats);
