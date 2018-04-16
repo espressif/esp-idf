@@ -1267,16 +1267,10 @@ TEST_CASE("nvs page selection takes into account free entries also not just eras
     nvs_close(handle);
 }
 
-TEST_CASE("dump all performance data", "[nvs]")
-{
-    std::cout << "====================" << std::endl << "Dumping benchmarks" << std::endl;
-    std::cout << s_perf.str() << std::endl;
-    std::cout << "====================" << std::endl;
-}
-
 TEST_CASE("calculate used and free space", "[nvs]")
 {
     SpiFlashEmulator emu(6);
+    nvs_flash_deinit();
     TEST_ESP_ERR(nvs_get_stats(NULL, NULL), ESP_ERR_INVALID_ARG);
     nvs_stats_t stat1;
     nvs_stats_t stat2;
@@ -1406,4 +1400,17 @@ TEST_CASE("calculate used and free space", "[nvs]")
     CHECK(stat1.used_entries == (h1_count_entries + h2_count_entries + h3_count_entries + stat1.namespace_count));
 
     nvs_close(handle_3);
+}
+
+
+
+
+/* Add new tests above */
+/* This test has to be the final one */
+
+TEST_CASE("dump all performance data", "[nvs]")
+{
+    std::cout << "====================" << std::endl << "Dumping benchmarks" << std::endl;
+    std::cout << s_perf.str() << std::endl;
+    std::cout << "====================" << std::endl;
 }
