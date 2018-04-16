@@ -722,7 +722,14 @@ TEST_CASE("can init storage from flash with random contents", "[nvs]")
 
 TEST_CASE("nvs api tests, starting with random data in flash", "[nvs][.][long]")
 {
-    for (size_t count = 0; count < 10000; ++count) {
+    const size_t testIters = 3000;
+    int lastPercent = -1;
+    for (size_t count = 0; count < testIters; ++count) {
+        int percentDone = (int) (count * 100 / testIters);
+        if (percentDone != lastPercent) {
+            lastPercent = percentDone;
+            printf("%d%%\n", percentDone);
+        }
         SpiFlashEmulator emu(10);
         emu.randomize(static_cast<uint32_t>(count));
         
