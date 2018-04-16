@@ -41,6 +41,12 @@ typedef struct {
 
 bool flash_encrypt(bootloader_state_t *bs);
 
+/* Indices used by index_to_partition are the OTA index
+   number, or these special constants */
+#define FACTORY_INDEX (-1)
+#define TEST_APP_INDEX (-2)
+#define INVALID_INDEX (-99)
+
 #ifdef __cplusplus
 }
 #endif

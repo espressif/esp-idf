@@ -13,6 +13,7 @@ API Guides
    Thread Local Storage <thread-local-storage>
    High Level Interrupts <hlinterrupts>
    JTAG Debugging <jtag-debugging/index>
+   Bootloader <bootloader>
    Partition Tables <partition-tables>
    Secure Boot <../security/secure-boot>
    ULP Coprocessor <ulp>
