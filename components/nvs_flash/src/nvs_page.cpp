@@ -862,4 +862,33 @@ void Page::debugDump() const
     }
 }
 
+esp_err_t Page::calcEntries(nvs_stats_t &nvsStats)
+{
+    assert(mState != PageState::FREEING);
+
+    nvsStats.total_entries += ENTRY_COUNT;
+
+    switch (mState) {
+        case PageState::UNINITIALIZED:
+        case PageState::CORRUPT:
+            nvsStats.free_entries += ENTRY_COUNT;
+            break;
+
+        case PageState::FULL:
+        case PageState::ACTIVE:
+            nvsStats.used_entries += mUsedEntryCount;
+            nvsStats.free_entries += ENTRY_COUNT - mUsedEntryCount; // it's equivalent free + erase entries.
+            break;
+
+        case PageState::INVALID:
+            return ESP_ERR_INVALID_STATE;
+            break;
+
+        default:
+            assert(false && "Unhandled state");
+            break;
+    }
+    return ESP_OK;
+}
+
 } // namespace nvs

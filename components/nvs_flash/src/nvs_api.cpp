@@ -458,3 +458,49 @@ extern "C" esp_err_t nvs_get_blob(nvs_handle handle, const char* key, void* out_
     return nvs_get_str_or_blob(handle, nvs::ItemType::BLOB, key, out_value, length);
 }
 
+extern "C" esp_err_t nvs_get_stats(const char* part_name, nvs_stats_t* nvs_stats)
+{
+    Lock lock;
+    nvs::Storage* pStorage;
+
+    if (nvs_stats == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    nvs_stats->used_entries     = 0;
+    nvs_stats->free_entries     = 0;
+    nvs_stats->total_entries    = 0;
+    nvs_stats->namespace_count  = 0;
+
+    pStorage = lookup_storage_from_name((part_name == NULL) ? NVS_DEFAULT_PART_NAME : part_name);
+    if (pStorage == NULL) {
+        return ESP_ERR_NVS_PART_NOT_FOUND;
+    }
+
+    if(!pStorage->isValid()){
+        return ESP_ERR_NVS_NOT_INITIALIZED;
+    }
+
+    return pStorage->fillStats(*nvs_stats);
+}
+
+extern "C" esp_err_t nvs_get_used_entry_count(nvs_handle handle, size_t* used_entries)
+{
+    Lock lock;
+    if(used_entries == NULL){
+        return ESP_ERR_INVALID_ARG;
+    }
+    *used_entries = 0;
+
+    HandleEntry entry;
+    auto err = nvs_find_ns_handle(handle, entry);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    size_t used_entry_count;
+    err = entry.mStoragePtr->calcEntriesInNamespace(entry.mNsIndex, used_entry_count);
+    if(err == ESP_OK){
+        *used_entries = used_entry_count;
+    }
+    return err;
+}

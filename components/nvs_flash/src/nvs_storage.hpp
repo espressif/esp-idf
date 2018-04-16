@@ -89,6 +89,9 @@ public:
     
     void debugCheck();
 
+    esp_err_t fillStats(nvs_stats_t& nvsStats);
+
+    esp_err_t calcEntriesInNamespace(uint8_t nsIndex, size_t& usedEntries);
 
 protected:
 

@@ -356,6 +356,88 @@ esp_err_t nvs_commit(nvs_handle handle);
  */
 void nvs_close(nvs_handle handle);
 
+/**
+ * @note Info about storage space NVS.
+ */
+typedef struct {
+    size_t used_entries;      /**< Amount of used entries. */
+    size_t free_entries;      /**< Amount of free entries. */
+    size_t total_entries;     /**< Amount all available entries. */
+    size_t namespace_count;   /**< Amount name space. */
+} nvs_stats_t;
+
+/**
+ * @brief      Fill structure nvs_stats_t. It provides info about used memory the partition.
+ *
+ * This function calculates to runtime the number of used entries, free entries, total entries,
+ * and amount namespace in partition.
+ *
+ * \code{c}
+ * // Example of nvs_get_stats() to get the number of used entries and free entries:
+ * nvs_stats_t nvs_stats;
+ * nvs_get_stats(NULL, &nvs_stats);
+ * printf("Count: UsedEntries = (%d), FreeEntries = (%d), AllEntries = (%d)\n",
+          nvs_stats.used_entries, nvs_stats.free_entries, nvs_stats.total_entries);
+ * \endcode
+ *
+ * @param[in]   part_name   Partition name NVS in the partition table.
+ *                          If pass a NULL than will use NVS_DEFAULT_PART_NAME ("nvs").
+ *
+ * @param[out]  nvs_stats   Returns filled structure nvs_states_t.
+ *                          It provides info about used memory the partition.
+ *
+ *
+ * @return
+ *             - ESP_OK if the changes have been written successfully.
+ *               Return param nvs_stats will be filled.
+ *             - ESP_ERR_NVS_PART_NOT_FOUND if the partition with label "name" is not found.
+ *               Return param nvs_stats will be filled 0.
+ *             - ESP_ERR_NVS_NOT_INITIALIZED if the storage driver is not initialized.
+ *               Return param nvs_stats will be filled 0.
+ *             - ESP_ERR_INVALID_ARG if nvs_stats equal to NULL.
+ *             - ESP_ERR_INVALID_STATE if there is page with the status of INVALID.
+ *               Return param nvs_stats will be filled not with correct values because
+ *               not all pages will be counted. Counting will be interrupted at the first INVALID page.
+ */
+esp_err_t nvs_get_stats(const char* part_name, nvs_stats_t* nvs_stats);
+
+/**
+ * @brief      Calculate all entries in a namespace.
+ *
+ * Note that to find out the total number of records occupied by the namespace,
+ * add one to the returned value used_entries (if err is equal to ESP_OK).
+ * Because the name space entry takes one entry.
+ *
+ * \code{c}
+ * // Example of nvs_get_used_entry_count() to get amount of all key-value pairs in one namespace:
+ * nvs_handle handle;
+ * nvs_open("namespace1", NVS_READWRITE, &handle);
+ * ...
+ * size_t used_entries;
+ * size_t total_entries_namespace;
+ * if(nvs_get_used_entry_count(handle, &used_entries) == ESP_OK){
+ *     // the total number of records occupied by the namespace
+ *     total_entries_namespace = used_entries + 1;
+ * }
+ * \endcode
+ *
+ * @param[in]   handle              Handle obtained from nvs_open function.
+ *
+ * @param[out]  used_entries        Returns amount of used entries from a namespace.
+ *
+ *
+ * @return
+ *             - ESP_OK if the changes have been written successfully.
+ *               Return param used_entries will be filled valid value.
+ *             - ESP_ERR_NVS_NOT_INITIALIZED if the storage driver is not initialized.
+ *               Return param used_entries will be filled 0.
+ *             - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL.
+ *               Return param used_entries will be filled 0.
+ *             - ESP_ERR_INVALID_ARG if nvs_stats equal to NULL.
+ *             - Other error codes from the underlying storage driver.
+ *               Return param used_entries will be filled 0.
+ */
+esp_err_t nvs_get_used_entry_count(nvs_handle handle, size_t* used_entries);
 
 #ifdef __cplusplus
 } // extern "C"
