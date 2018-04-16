@@ -4684,9 +4684,9 @@ void bta_dm_ble_config_local_privacy (tBTA_DM_MSG *p_data)
 
 /*******************************************************************************
 **
-** Function         bta_dm_ble_config_local_privacy
+** Function         bta_dm_ble_config_local_icon
 **
-** Description      This function set the local device LE privacy settings.
+** Description      This function sets the local icon value.
 **
 **
 *******************************************************************************/

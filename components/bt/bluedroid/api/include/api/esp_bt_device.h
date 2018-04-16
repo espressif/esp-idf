@@ -44,7 +44,7 @@ const uint8_t *esp_bt_dev_get_address(void);
  * @return
  *                  - ESP_OK : Succeed
  *                  - ESP_ERR_INVALID_ARG : if name is NULL pointer or empty, or string length out of limit
- *                  - ESP_INVALID_STATE : if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE : if bluetooth stack is not yet enabled
  *                  - ESP_FAIL : others
  */
 esp_err_t esp_bt_dev_set_device_name(const char *name);
