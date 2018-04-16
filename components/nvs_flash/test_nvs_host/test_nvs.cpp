@@ -132,14 +132,14 @@ TEST_CASE("when writing and erasing, used/erased counts are updated correctly", 
     CHECK(page.getErasedEntryCount() == 1);
     for (size_t i = 0; i < Page::ENTRY_COUNT - 2; ++i) {
         char name[16];
-        snprintf(name, sizeof(name), "i%ld", i);
+        snprintf(name, sizeof(name), "i%ld", (long int)i);
         CHECK(page.writeItem(1, name, i) == ESP_OK);
     }
     CHECK(page.getUsedEntryCount() == Page::ENTRY_COUNT - 1);
     CHECK(page.getErasedEntryCount() == 1);
     for (size_t i = 0; i < Page::ENTRY_COUNT - 2; ++i) {
         char name[16];
-        snprintf(name, sizeof(name), "i%ld", i);
+        snprintf(name, sizeof(name), "i%ld", (long int)i);
         CHECK(page.eraseItem(1, itemTypeOf<size_t>(), name) == ESP_OK);
     }
     CHECK(page.getUsedEntryCount() == 1);
@@ -153,7 +153,7 @@ TEST_CASE("when page is full, adding an element fails", "[nvs]")
     CHECK(page.load(0) == ESP_OK);
     for (size_t i = 0; i < Page::ENTRY_COUNT; ++i) {
         char name[16];
-        snprintf(name, sizeof(name), "i%ld", i);
+        snprintf(name, sizeof(name), "i%ld", (long int)i);
         CHECK(page.writeItem(1, name, i) == ESP_OK);
     }
     CHECK(page.writeItem(1, "foo", 64UL) == ESP_ERR_NVS_PAGE_FULL);
@@ -1123,7 +1123,7 @@ TEST_CASE("crc errors in item header are handled", "[nvs]")
     // add more items to make the page full
     for (size_t i = 0; i < Page::ENTRY_COUNT; ++i) {
         char item_name[Item::MAX_KEY_LENGTH + 1];
-        snprintf(item_name, sizeof(item_name), "item_%ld", i);
+        snprintf(item_name, sizeof(item_name), "item_%ld", (long int)i);
         TEST_ESP_OK(storage.writeItem(1, item_name, static_cast<uint32_t>(i)));
     }
 
@@ -1251,4 +1251,138 @@ TEST_CASE("dump all performance data", "[nvs]")
     std::cout << "====================" << std::endl << "Dumping benchmarks" << std::endl;
     std::cout << s_perf.str() << std::endl;
     std::cout << "====================" << std::endl;
+}
+
+TEST_CASE("calculate used and free space", "[nvs]")
+{
+    SpiFlashEmulator emu(6);
+    TEST_ESP_ERR(nvs_get_stats(NULL, NULL), ESP_ERR_INVALID_ARG);
+    nvs_stats_t stat1;
+    nvs_stats_t stat2;
+    TEST_ESP_ERR(nvs_get_stats(NULL, &stat1), ESP_ERR_NVS_NOT_INITIALIZED);
+    CHECK(stat1.free_entries == 0);
+    CHECK(stat1.namespace_count == 0);
+    CHECK(stat1.total_entries == 0);
+    CHECK(stat1.used_entries == 0);
+
+    nvs_handle handle = 0;
+    size_t h_count_entries;
+    TEST_ESP_ERR(nvs_get_used_entry_count(handle, &h_count_entries), ESP_ERR_NVS_INVALID_HANDLE);
+    CHECK(h_count_entries == 0);
+
+    // init nvs
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, 0, 6));
+
+    TEST_ESP_ERR(nvs_get_used_entry_count(handle, &h_count_entries), ESP_ERR_NVS_INVALID_HANDLE);
+    CHECK(h_count_entries == 0);
+
+    Page p;
+    // after erase. empty partition
+    TEST_ESP_OK(nvs_get_stats(NULL, &stat1));
+    CHECK(stat1.free_entries != 0);
+    CHECK(stat1.namespace_count == 0);
+    CHECK(stat1.total_entries == 6 * p.ENTRY_COUNT);
+    CHECK(stat1.used_entries == 0);
+
+    // create namespace test_k1
+    nvs_handle handle_1;
+    TEST_ESP_OK(nvs_open("test_k1", NVS_READWRITE, &handle_1));
+    TEST_ESP_OK(nvs_get_stats(NULL, &stat2));
+    CHECK(stat2.free_entries + 1 == stat1.free_entries);
+    CHECK(stat2.namespace_count == 1);
+    CHECK(stat2.total_entries == stat1.total_entries);
+    CHECK(stat2.used_entries == 1);
+
+    // create pair key-value com
+    TEST_ESP_OK(nvs_set_i32(handle_1, "com", 0x12345678));
+    TEST_ESP_OK(nvs_get_stats(NULL, &stat1));
+    CHECK(stat1.free_entries + 1 == stat2.free_entries);
+    CHECK(stat1.namespace_count == 1);
+    CHECK(stat1.total_entries == stat2.total_entries);
+    CHECK(stat1.used_entries == 2);
+
+    // change value in com
+    TEST_ESP_OK(nvs_set_i32(handle_1, "com", 0x01234567));
+    TEST_ESP_OK(nvs_get_stats(NULL, &stat2));
+    CHECK(stat2.free_entries == stat1.free_entries);
+    CHECK(stat2.namespace_count == 1);
+    CHECK(stat2.total_entries != 0);
+    CHECK(stat2.used_entries == 2);
+
+    // create pair key-value ru
+    TEST_ESP_OK(nvs_set_i32(handle_1, "ru", 0x00FF00FF));
+    TEST_ESP_OK(nvs_get_stats(NULL, &stat1));
+    CHECK(stat1.free_entries + 1 == stat2.free_entries);
+    CHECK(stat1.namespace_count == 1);
+    CHECK(stat1.total_entries != 0);
+    CHECK(stat1.used_entries == 3);
+
+    // amount valid pair in namespace 1
+    size_t h1_count_entries;
+    TEST_ESP_OK(nvs_get_used_entry_count(handle_1, &h1_count_entries));
+    CHECK(h1_count_entries == 2);
+
+    nvs_handle handle_2;
+    // create namespace test_k2
+    TEST_ESP_OK(nvs_open("test_k2", NVS_READWRITE, &handle_2));
+    TEST_ESP_OK(nvs_get_stats(NULL, &stat2));
+    CHECK(stat2.free_entries + 1 == stat1.free_entries);
+    CHECK(stat2.namespace_count == 2);
+    CHECK(stat2.total_entries == stat1.total_entries);
+    CHECK(stat2.used_entries == 4);
+
+    // create pair key-value
+    TEST_ESP_OK(nvs_set_i32(handle_2, "su1", 0x00000001));
+    TEST_ESP_OK(nvs_set_i32(handle_2, "su2", 0x00000002));
+    TEST_ESP_OK(nvs_set_i32(handle_2, "sus", 0x00000003));
+    TEST_ESP_OK(nvs_get_stats(NULL, &stat1));
+    CHECK(stat1.free_entries + 3 == stat2.free_entries);
+    CHECK(stat1.namespace_count == 2);
+    CHECK(stat1.total_entries == stat2.total_entries);
+    CHECK(stat1.used_entries == 7);
+
+    CHECK(stat1.total_entries == (stat1.used_entries + stat1.free_entries));
+
+    // amount valid pair in namespace 2
+    size_t h2_count_entries;
+    TEST_ESP_OK(nvs_get_used_entry_count(handle_2, &h2_count_entries));
+    CHECK(h2_count_entries == 3);
+
+    CHECK(stat1.used_entries == (h1_count_entries + h2_count_entries + stat1.namespace_count));
+
+    nvs_close(handle_1);
+    nvs_close(handle_2);
+
+    size_t temp = h2_count_entries;
+    TEST_ESP_ERR(nvs_get_used_entry_count(handle_1, &h2_count_entries), ESP_ERR_NVS_INVALID_HANDLE);
+    CHECK(h2_count_entries == 0);
+    h2_count_entries = temp;
+    TEST_ESP_ERR(nvs_get_used_entry_count(handle_1, NULL), ESP_ERR_INVALID_ARG);
+
+    nvs_handle handle_3;
+    // create namespace test_k3
+    TEST_ESP_OK(nvs_open("test_k3", NVS_READWRITE, &handle_3));
+    TEST_ESP_OK(nvs_get_stats(NULL, &stat2));
+    CHECK(stat2.free_entries + 1 == stat1.free_entries);
+    CHECK(stat2.namespace_count == 3);
+    CHECK(stat2.total_entries == stat1.total_entries);
+    CHECK(stat2.used_entries == 8);
+
+    // create pair blobs
+    uint32_t blob[12];
+    TEST_ESP_OK(nvs_set_blob(handle_3, "bl1", &blob, sizeof(blob)));
+    TEST_ESP_OK(nvs_get_stats(NULL, &stat1));
+    CHECK(stat1.free_entries + 3 == stat2.free_entries);
+    CHECK(stat1.namespace_count == 3);
+    CHECK(stat1.total_entries == stat2.total_entries);
+    CHECK(stat1.used_entries == 11);
+
+    // amount valid pair in namespace 2
+    size_t h3_count_entries;
+    TEST_ESP_OK(nvs_get_used_entry_count(handle_3, &h3_count_entries));
+    CHECK(h3_count_entries == 3);
+
+    CHECK(stat1.used_entries == (h1_count_entries + h2_count_entries + h3_count_entries + stat1.namespace_count));
+
+    nvs_close(handle_3);
 }

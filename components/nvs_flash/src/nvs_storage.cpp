@@ -291,4 +291,37 @@ void Storage::debugCheck()
 }
 #endif //ESP_PLATFORM
 
+esp_err_t Storage::fillStats(nvs_stats_t& nvsStats)
+{
+    nvsStats.namespace_count = mNamespaces.size();
+    return mPageManager.fillStats(nvsStats);
+}
+
+esp_err_t Storage::calcEntriesInNamespace(uint8_t nsIndex, size_t& usedEntries)
+{
+    usedEntries = 0;
+
+    if (mState != StorageState::ACTIVE) {
+        return ESP_ERR_NVS_NOT_INITIALIZED;
+    }
+
+    for (auto it = std::begin(mPageManager); it != std::end(mPageManager); ++it) {
+        size_t itemIndex = 0;
+        Item item;
+        while (true) {
+            auto err = it->findItem(nsIndex, ItemType::ANY, nullptr, itemIndex, item);
+            if (err == ESP_ERR_NVS_NOT_FOUND) {
+                break;
+            }
+            else if (err != ESP_OK) {
+                return err;
+            }
+            usedEntries += item.span;
+            itemIndex   += item.span;
+            if(itemIndex >= it->ENTRY_COUNT) break;
+        }
+    }
+    return ESP_OK;
+}
+
 }
