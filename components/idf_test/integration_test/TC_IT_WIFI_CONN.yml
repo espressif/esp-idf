@@ -741,8 +741,6 @@ test cases:
   category: Function
   cmd set:
   - ''
-  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
-    - - R SSC1 C +JAP:CONNECTED
   - - APC <APC1> OFF <ap_apc>
     - - P PC_COM L OK
       - R SSC1 RE JAP:DISCONNECTED,\d+,200
@@ -752,7 +750,7 @@ test cases:
   expected result: |-
     1. succeed
     2. disconnect event REASON_BEACON_TIMEOUT
-  initial condition: STAM1
+  initial condition: STAM2
   level: Integration
   module: WIFI MAC
   steps: |-
