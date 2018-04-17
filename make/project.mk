@@ -374,7 +374,7 @@ APP_BIN:=$(APP_ELF:.elf=.bin)
 # Include any Makefile.projbuild file letting components add
 # configuration at the project level
 define includeProjBuildMakefile
-$(if $(V),$(info including $(1)/Makefile.projbuild...))
+$(if $(V),$$(info including $(1)/Makefile.projbuild...))
 COMPONENT_PATH := $(1)
 include $(1)/Makefile.projbuild
 endef
