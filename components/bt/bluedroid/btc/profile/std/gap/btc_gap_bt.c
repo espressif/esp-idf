@@ -567,6 +567,33 @@ static void search_services_copy_cb(btc_msg_t *msg, void *p_dest, void *p_src)
     }
 }
 
+static void btc_gap_bt_set_cod(btc_gap_bt_args_t *arg)
+{
+    tBTA_UTL_COD p_cod;
+    esp_bt_cod_t *cod = &(arg->set_cod.cod);
+    p_cod.minor = cod->minor << 2;
+    p_cod.major = cod->major;
+    p_cod.service = cod->service << 5;
+    bool ret = utl_set_device_class(&p_cod, arg->set_cod.mode);
+    if (!ret){
+        LOG_ERROR("%s set class of device failed!",__func__);
+    }
+}
+
+esp_err_t btc_gap_bt_get_cod(esp_bt_cod_t *cod)
+{
+    tBTA_UTL_COD p_cod;
+    bool ret = utl_get_device_class(&p_cod);
+    if (!ret){
+        LOG_ERROR("%s get class of device failed!",__func__);
+        return ESP_BT_STATUS_FAIL;
+    }
+    cod->minor = p_cod.minor >> 2;
+    cod->major = p_cod.major;
+    cod->service = p_cod.service >> 5;
+    return ESP_BT_STATUS_SUCCESS;
+}
+
 void btc_gap_bt_call_handler(btc_msg_t *msg)
 {
     btc_gap_bt_args_t *arg = (btc_gap_bt_args_t *)msg->arg;
@@ -602,6 +629,10 @@ void btc_gap_bt_call_handler(btc_msg_t *msg)
     }
     case BTC_GAP_BT_ACT_SEARCH_SERVICE_RECORD: {
         btc_gap_bt_search_service_record(msg->aid, msg->arg);
+        break;
+    }
+    case BTC_GAP_BT_ACT_SET_COD: {
+        btc_gap_bt_set_cod(msg->arg);
         break;
     }
     default:

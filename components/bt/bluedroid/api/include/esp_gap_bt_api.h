@@ -23,6 +23,23 @@
 extern "C" {
 #endif
 
+/// Class of device
+typedef struct {
+    uint32_t      reserved_2: 2;                         /*!< undefined */
+    uint32_t      minor: 6;                              /*!< minor class */
+    uint32_t      major: 5;                              /*!< major class */
+    uint32_t      service: 11;                           /*!< service class */
+    uint32_t      reserved_8: 8;                         /*!< undefined */
+} esp_bt_cod_t;
+
+/// class of device settings
+typedef enum {
+    ESP_BT_SET_COD_MAJOR_MINOR     = 0x01,          /*!< overwrite major, minor class */
+    ESP_BT_SET_COD_SERVICE_CLASS   = 0x02,          /*!< set the bits in the input, the current bit will remain */
+    ESP_BT_CLR_COD_SERVICE_CLASS   = 0x04,          /*!< clear the bits in the input, others will remain */
+    ESP_BT_SET_COD_ALL             = 0x08,          /*!< overwrite major, minor, set the bits in service class */
+    ESP_BT_INIT_COD                = 0x0a,          /*!< overwrite major, minor, and service class */
+} esp_bt_cod_mode_t;
 
 /// Discoverability and Connectability mode
 typedef enum {
@@ -174,6 +191,7 @@ typedef union {
         esp_bd_addr_t bda;                     /*!< remote bluetooth device address*/
         esp_bt_status_t stat;                  /*!< service search status */
     } rmt_srvc_rec;                            /*!< specific service record from remote device parameter struct */
+
 } esp_bt_gap_cb_param_t;
 
 /**
@@ -258,7 +276,7 @@ esp_err_t esp_bt_gap_register_callback(esp_bt_gap_cb_t callback);
  * @return
  *                  - ESP_OK : Succeed
  *                  - ESP_ERR_INVALID_ARG: if argument invalid
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  */
 esp_err_t esp_bt_gap_set_scan_mode(esp_bt_scan_mode_t mode);
@@ -274,7 +292,7 @@ esp_err_t esp_bt_gap_set_scan_mode(esp_bt_scan_mode_t mode);
  *
  * @return
  *                  - ESP_OK : Succeed
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_ERR_INVALID_ARG: if invalid parameters are provided
  *                  - ESP_FAIL: others
  */
@@ -286,7 +304,7 @@ esp_err_t esp_bt_gap_start_discovery(esp_bt_inq_mode_t mode, uint8_t inq_len, ui
  *
  * @return
  *                  - ESP_OK : Succeed
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  */
 esp_err_t esp_bt_gap_cancel_discovery(void);
@@ -297,7 +315,7 @@ esp_err_t esp_bt_gap_cancel_discovery(void);
  *
  * @return
  *                  - ESP_OK : Succeed
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  */
 esp_err_t esp_bt_gap_get_remote_services(esp_bd_addr_t remote_bda);
@@ -309,7 +327,7 @@ esp_err_t esp_bt_gap_get_remote_services(esp_bd_addr_t remote_bda);
  *                  esp_bt_gap_cb_t will is called with ESP_BT_GAP_RMT_SRVC_REC_EVT after service discovery ends
  * @return
  *                  - ESP_OK : Succeed
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  */
 esp_err_t esp_bt_gap_get_remote_service_record(esp_bd_addr_t remote_bda, esp_bt_uuid_t *uuid);
@@ -325,6 +343,34 @@ esp_err_t esp_bt_gap_get_remote_service_record(esp_bd_addr_t remote_bda, esp_bt_
  *
  */
 uint8_t *esp_bt_gap_resolve_eir_data(uint8_t *eir, esp_bt_eir_type_t type, uint8_t *length);
+
+/**
+ * @brief           This function is called to set class of device.
+ *                  esp_bt_gap_cb_t will is called with ESP_BT_GAP_SET_COD_EVT after set COD ends
+ *                  Some profile have special restrictions on class of device,
+ *                  changes may cause these profile do not work
+ *
+ * @param[in]       cod - class of device
+ * @param[in]       mode   - setting mode
+ *
+ * @return
+ *                  - ESP_OK : Succeed
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: if param is invalid
+ *                  - ESP_FAIL: others
+ */
+esp_err_t esp_bt_gap_set_cod(esp_bt_cod_t cod, esp_bt_cod_mode_t mode);
+
+/**
+ * @brief           This function is called to get class of device.
+ *
+ * @param[out]      cod - class of device
+ *
+ * @return
+ *                  - ESP_OK : Succeed
+ *                  - ESP_FAIL: others
+ */
+esp_err_t esp_bt_gap_get_cod(esp_bt_cod_t *cod);
 
 #ifdef __cplusplus
 }
