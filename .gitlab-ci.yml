@@ -313,6 +313,19 @@ test_build_system:
     - cd test_build_system
     - ${IDF_PATH}/tools/ci/test_build_system.sh
 
+test_build_system_cmake:
+  stage: test
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - build_test
+  dependencies: []
+  script:
+    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
+    - rm -rf test_build_system
+    - mkdir test_build_system
+    - cd test_build_system
+    - ${IDF_PATH}/tools/ci/test_build_system_cmake.sh
+
 test_report:
   stage: test_report
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG

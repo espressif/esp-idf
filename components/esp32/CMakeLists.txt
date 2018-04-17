@@ -7,12 +7,12 @@ if(BOOTLOADER_BUILD)
 
     # as cmake won't attach linker args to a header-only library, attach
     # linker args directly to the bootloader.elf
-    set(BOOTLOADER_LINKER_ARGS
-        "-L ${CMAKE_CURRENT_SOURCE_DIR}/ld"
-        "-T esp32.rom.ld"
-        "-T esp32.rom.spiram_incompatible_fns.ld"
-        "-T esp32.peripherals.ld"
-        PARENT_SCOPE)
+    set(ESP32_BOOTLOADER_LINKER_SCRIPTS
+        "${CMAKE_CURRENT_SOURCE_DIR}/ld/esp32.rom.ld"
+        "${CMAKE_CURRENT_SOURCE_DIR}/ld/esp32.rom.spiram_incompatible_fns.ld"
+        "${CMAKE_CURRENT_SOURCE_DIR}/ld/esp32.peripherals.ld"
+        PARENT_SCOPE
+        )
 
 else()
     # Regular app build
@@ -22,8 +22,8 @@ else()
 
     set(COMPONENT_REQUIRES driver)  # required because esp_sleep.h uses gpio_num_t & touch_pad_t
     set(COMPONENT_PRIV_REQUIRES
-        adapter app bootloader_debug ethernet_flash flash_log mbedtls_module nvs_pthread
-        spi-supplicant-support tcpip trace_vfs wpa xtensa)
+        app_trace bootloader_support ethernet log mbedtls nvs_flash
+        pthread spi_flash tcpip_adapter vfs wpa_supplicant xtensa-debug-module)
 
     register_component()
 
@@ -33,9 +33,10 @@ else()
     endif()
     target_linker_script(esp32 "${CMAKE_CURRENT_BINARY_DIR}/esp32_out.ld")
 
-    target_linker_script(esp32 "ld/esp32.common.ld")
-    target_linker_script(esp32 "ld/esp32.rom.ld")
-    target_linker_script(esp32 "ld/esp32.peripherals.ld")
+    target_linker_script(esp32
+        "ld/esp32.common.ld"
+        "ld/esp32.rom.ld"
+        "ld/esp32.peripherals.ld")
 
     if(CONFIG_SPIRAM_CACHE_WORKAROUND)
         add_compile_options(-mfix-esp32-psram-cache-issue)
