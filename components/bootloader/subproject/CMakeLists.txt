@@ -16,7 +16,10 @@ set(MAIN_SRCS main/bootloader_start.c)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(bootloader)
 
-target_linker_script(bootloader.elf "main/esp32.bootloader.ld")
-target_linker_script(bootloader.elf "main/esp32.bootloader.rom.ld")
-target_link_libraries(bootloader.elf "${BOOTLOADER_LINKER_ARGS}")
+target_linker_script(bootloader.elf
+    "main/esp32.bootloader.ld"
+    "main/esp32.bootloader.rom.ld")
+# Imported from esp32 component
+target_linker_script(bootloader.elf ${ESP32_BOOTLOADER_LINKER_SCRIPTS})
+
 target_link_libraries(bootloader.elf gcc)

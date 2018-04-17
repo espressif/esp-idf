@@ -147,28 +147,31 @@ function(file_append_line file line)
     file(APPEND "${file}" "${line}${line_ending}")
 endfunction()
 
-# Add a linker script to the target, including a link-time dependency
+# Add one or more linker scripts to the target, including a link-time dependency
 #
 # Automatically adds a -L search path for the containing directory (if found),
 # and then adds -T with the filename only. This allows INCLUDE directives to be
 # used to include other linker scripts in the same directory.
-function(target_linker_script target scriptfile)
-    get_filename_component(abs_script "${scriptfile}" ABSOLUTE)
+function(target_linker_script target)
+    foreach(scriptfile ${ARGN})
+        get_filename_component(abs_script "${scriptfile}" ABSOLUTE)
+        message(STATUS "Adding linker script ${abs_script}")
 
-    get_filename_component(search_dir "${abs_script}" DIRECTORY)
-    get_filename_component(scriptname "${abs_script}" NAME)
+        get_filename_component(search_dir "${abs_script}" DIRECTORY)
+        get_filename_component(scriptname "${abs_script}" NAME)
 
-    get_target_property(link_libraries "${target}" LINK_LIBRARIES)
-    list(FIND "${link_libraries}" "-L ${search_dir}" found_search_dir)
-    if(found_search_dir EQUAL "-1")  # not already added as a search path
-        target_link_libraries("${target}" "-L ${search_dir}")
-    endif()
+        get_target_property(link_libraries "${target}" LINK_LIBRARIES)
+        list(FIND "${link_libraries}" "-L ${search_dir}" found_search_dir)
+        if(found_search_dir EQUAL "-1")  # not already added as a search path
+            target_link_libraries("${target}" "-L ${search_dir}")
+        endif()
 
-    target_link_libraries("${target}" "-T ${scriptname}")
+        target_link_libraries("${target}" "-T ${scriptname}")
 
-    # Note: In ESP-IDF, most targets are libraries and libary LINK_DEPENDS don't propagate to
-    # executable(s) the library is linked to. This is done manually in components.cmake.
-    set_property(TARGET "${target}" APPEND PROPERTY LINK_DEPENDS "${abs_script}")
+        # Note: In ESP-IDF, most targets are libraries and libary LINK_DEPENDS don't propagate to
+        # executable(s) the library is linked to. This is done manually in components.cmake.
+        set_property(TARGET "${target}" APPEND PROPERTY LINK_DEPENDS "${abs_script}")
+    endforeach()
 endfunction()
 
 # Convert a CMake list to a JSON list and store it in a variable
