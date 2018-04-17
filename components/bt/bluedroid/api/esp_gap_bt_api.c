@@ -141,4 +141,41 @@ uint8_t *esp_bt_gap_resolve_eir_data(uint8_t *eir, esp_bt_eir_type_t type, uint8
 
     return BTM_CheckEirData(eir, type, length);
 }
+
+esp_err_t esp_bt_gap_set_cod(esp_bt_cod_t cod, esp_bt_cod_mode_t mode)
+{
+    btc_msg_t msg;
+    btc_gap_bt_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    switch (mode) {
+    case ESP_BT_SET_COD_MAJOR_MINOR:
+    case ESP_BT_SET_COD_SERVICE_CLASS:
+    case ESP_BT_CLR_COD_SERVICE_CLASS:
+    case ESP_BT_SET_COD_ALL:
+    case ESP_BT_INIT_COD:
+        break;
+    default:
+        return ESP_ERR_INVALID_ARG;
+        break;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_ACT_SET_COD;
+
+    arg.set_cod.mode = mode;
+    memcpy(&arg.set_cod.cod, &cod, sizeof(esp_bt_cod_t));
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+
+esp_err_t esp_bt_gap_get_cod(esp_bt_cod_t *cod)
+{
+    return btc_gap_bt_get_cod(cod);
+}
+
 #endif /* #if BTC_GAP_BT_INCLUDED == TRUE */
