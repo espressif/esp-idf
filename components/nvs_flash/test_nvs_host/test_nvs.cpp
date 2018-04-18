@@ -259,6 +259,25 @@ TEST_CASE("Page validates blob size", "[nvs]")
     TEST_ESP_OK(page.writeItem(1, ItemType::BLOB, "2", buf, Page::BLOB_MAX_SIZE));
 }
 
+TEST_CASE("Page handles invalid CRC of variable length items", "[nvs][cur]")
+{
+    SpiFlashEmulator emu(4);
+    {
+        Page page;
+        TEST_ESP_OK(page.load(0));
+        char buf[128] = {0};
+        TEST_ESP_OK(page.writeItem(1, ItemType::BLOB, "1", buf, sizeof(buf)));
+    }
+    // corrupt header of the item (64 is the offset of the first item in page)
+    uint32_t overwrite_buf = 0;
+    emu.write(64, &overwrite_buf, 4);
+    // load page again
+    {
+        Page page;
+        TEST_ESP_OK(page.load(0));
+    }
+}
+
 TEST_CASE("can init PageManager in empty flash", "[nvs]")
 {
     SpiFlashEmulator emu(4);
