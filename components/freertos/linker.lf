@@ -1,0 +1,5 @@
+[mapping]
+archive: libfreertos.a
+entries:
+    * (noflash_text)
+

@@ -16,7 +16,7 @@ endif
 #Linker scripts used to link the final application.
 #Warning: These linker scripts are only used when the normal app is compiled; the bootloader
 #specifies its own scripts.
-LINKER_SCRIPTS += esp32.common.ld esp32.rom.ld esp32.peripherals.ld
+LINKER_SCRIPTS += $(COMPONENT_BUILD_DIR)/esp32.common.ld esp32.rom.ld esp32.peripherals.ld
 
 #Force pure functions from libgcc.a to be linked from ROM
 LINKER_SCRIPTS += esp32.rom.libgcc.ld
@@ -35,7 +35,7 @@ ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
 LINKER_SCRIPTS += esp32.rom.spiflash.ld
 endif
 
-#ld_include_panic_highint_hdl is added as an undefined symbol because otherwise the 
+#ld_include_panic_highint_hdl is added as an undefined symbol because otherwise the
 #linker will ignore panic_highint_hdl.S as it has no other files depending on any
 #symbols in it.
 COMPONENT_ADD_LDFLAGS += $(COMPONENT_PATH)/libhal.a \
@@ -44,7 +44,9 @@ COMPONENT_ADD_LDFLAGS += $(COMPONENT_PATH)/libhal.a \
                          -L $(COMPONENT_PATH)/ld \
                          -T esp32_out.ld \
                          -u ld_include_panic_highint_hdl \
-                         $(addprefix -T ,$(LINKER_SCRIPTS))
+                         $(addprefix -T ,$(LINKER_SCRIPTS)) \
+
+COMPONENT_ADD_LDFRAGMENTS += ld/esp32_fragments.lf linker.lf
 
 ALL_LIB_FILES := $(patsubst %,$(COMPONENT_PATH)/lib/lib%.a,$(LIBS))
 
@@ -52,7 +54,9 @@ COMPONENT_SUBMODULES += lib
 
 # final linking of project ELF depends on all binary libraries, and
 # all linker scripts (except esp32_out.ld, as this is code generated here.)
-COMPONENT_ADD_LINKER_DEPS := $(ALL_LIB_FILES) $(addprefix ld/,$(LINKER_SCRIPTS))
+COMPONENT_ADD_LINKER_DEPS := $(ALL_LIB_FILES) \
+                            $(addprefix ld/, $(filter-out $(COMPONENT_BUILD_DIR)/esp32.common.ld, $(LINKER_SCRIPTS))) \
+                            $(COMPONENT_BUILD_DIR)/esp32.common.ld
 
 # Preprocess esp32.ld linker script into esp32_out.ld
 #
@@ -63,7 +67,7 @@ $(COMPONENT_LIBRARY): esp32_out.ld
 esp32_out.ld: $(COMPONENT_PATH)/ld/esp32.ld ../include/sdkconfig.h
 	$(CC) -I ../include -C -P -x c -E $< -o $@
 
-COMPONENT_EXTRA_CLEAN := esp32_out.ld
+COMPONENT_EXTRA_CLEAN := esp32_out.ld $(COMPONENT_BUILD_DIR)/esp32.common.ld
 
 # disable stack protection in files which are involved in initialization of that feature
 stack_check.o: CFLAGS := $(filter-out -fstack-protector%, $(CFLAGS))

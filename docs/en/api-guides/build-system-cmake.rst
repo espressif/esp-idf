@@ -350,6 +350,7 @@ The following variables can be set inside ``component.mk`` to control the build 
   ``*.c``, ``*.S``). Source files are globbed from the listed directories and compiled as part of the component in place of ``COMPONENT_SRCS``, i.e. setting this will cause ``COMPONENT_SRCS`` to be ignored.
   This can be a convenient way of including source files to the components en masse, but is generally not recommended due to caveats attached to CMake globbing (see `File Globbing & Incremental Builds`).
 - ``COMPONENT_SRCEXCLUDE``: Paths to source files to exclude from component. Can be set in conjunction with ``COMPONENT_SRCDIRS`` if there is a directory with a large number of source files to include in the component but one or more source files which should not be. Paths can be specified relative to the component directory or absolute.
+- ``COMPONENT_ADD_LDFRAGMENTS``: Paths to linker fragment files for the linker script generation functionality. See :doc:`Linker Script Generation <linker-script-generation>`.
 
 .. note::
 
@@ -687,6 +688,14 @@ To embed a file into a project, rather than a component, you can call the functi
 Place this line after the ``project()`` line in your project CMakeLists.txt file. Replace ``myproject.elf`` with your project name. The final argument can be ``TEXT`` to embed a null-terminated string, or ``BINARY`` to embed the content as-is.
 
 For an example of using this technique, see :example:`protocols/https_request` - the certificate file contents are loaded from the text .pem file at compile time.
+
+Code and Data Placements
+------------------------
+
+ESP-IDF has a feature called linker script generation that enables components to define where its code and data will be placed in memory through 
+linker fragment files. These files are processed by the build system, and is used to augment the linker script used for linking 
+app binary. See :doc:`Linker Script Generation <linker-script-generation>` for a quick start guide as well as a detailed discussion
+of the mechanism.
 
 .. _component-build-full-override:
 

@@ -1,0 +1,4 @@
+[mapping]
+archive: libxtensa-debug-module.a
+entries: 
+    eri (noflash_text)

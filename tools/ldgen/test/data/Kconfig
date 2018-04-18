@@ -1,0 +1,7 @@
+menu "Test config"
+
+config PERFORMANCE_LEVEL
+   int "Performance level"
+   range 0 3
+
+endmenu
