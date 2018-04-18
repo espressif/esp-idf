@@ -43,7 +43,7 @@
 
 // Thing Shadow specific configs
 #ifdef CONFIG_AWS_IOT_OVERRIDE_THING_SHADOW_RX_BUFFER
-#define SHADOW_MAX_SIZE_OF_RX_BUFFER CONFIG AWS_IOT_SHADOW_MAX_SIZE_OF_RX_BUFFER ///< Maximum size of the SHADOW buffer to store the received Shadow message, including NULL termianting byte
+#define SHADOW_MAX_SIZE_OF_RX_BUFFER CONFIG_AWS_IOT_SHADOW_MAX_SIZE_OF_RX_BUFFER ///< Maximum size of the SHADOW buffer to store the received Shadow message, including NULL termianting byte
 #else
 #define SHADOW_MAX_SIZE_OF_RX_BUFFER (AWS_IOT_MQTT_RX_BUF_LEN + 1)
 #endif
