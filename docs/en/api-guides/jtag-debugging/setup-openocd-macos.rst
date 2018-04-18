@@ -1,19 +1,26 @@
-***********************
-Setup OpenOCD for MacOS
-***********************
+************************
+Set up OpenOCD for MacOS
+************************
 
 
-Setup OpenOCD
-=============
+Install libusb
+==============
 
-OpenOCD for MacOS is available for download from Espressif website:
+Use `Homebrew <https://brew.sh/>`_ or `Macports <https://www.macports.org/>`_ to install `libusb` package.
 
-https://dl.espressif.com/dl/openocd-esp32-macos-a859564.tar.gz 
+Set up OpenOCD
+==============
 
-Download this file, then extract it in ``~/esp`` directory::
+OpenOCD for MacOS is available for download from Github:
+
+https://github.com/espressif/openocd-esp32/releases
+
+Download latest release archive with `macos` in its name, for example `openocd-esp32-macos-0.10.0-esp32-20180418.tar.gz`.
+
+Extract the downloaded file in ``~/esp/`` directory::
 
     cd ~/esp
-    tar -xzf ~/Downloads/openocd-esp32-macos-a859564.tar.gz 
+    tar -xzf ~/Downloads/openocd-esp32-macos-<version>.tar.gz 
 
 
 Next Steps
