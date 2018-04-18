@@ -8,7 +8,7 @@
 #
 # Set variables DATA_FILE, SOURCE_FILE, FILE_TYPE when running this.
 #
-# If FILE_TYPE is set to STRING, a null byte is appended to DATA_FILE's contents
+# If FILE_TYPE is set to TEXT, a null byte is appended to DATA_FILE's contents
 # before SOURCE_FILE is created.
 #
 # If FILE_TYPE is unset (or any other value), DATA_FILE is copied

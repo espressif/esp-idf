@@ -6,7 +6,7 @@ register_config_only_component()
 #
 if(CONFIG_PARTITION_TABLE_CUSTOM)
     # Custom filename expands any path relative to the project
-    get_filename_component(partition_csv "${CONFIG_PARTITION_TABLE_CUSTOM}" ABSOLUTE BASE_DIR "${PROJECT_PATH}")
+    get_filename_component(partition_csv "${CONFIG_PARTITION_TABLE_FILENAME}" ABSOLUTE BASE_DIR "${PROJECT_PATH}")
 else()
     # Other .csv files are always in the component directory
     set(partition_csv "${CMAKE_CURRENT_SOURCE_DIR}/${CONFIG_PARTITION_TABLE_FILENAME}")

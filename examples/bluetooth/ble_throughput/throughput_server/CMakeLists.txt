@@ -3,9 +3,8 @@
 cmake_minimum_required(VERSION 3.5)
 
 set(MAIN_SRCS
-    main/bt_app_core.c
-    main/main.c
+    main/example_ble_server_throughput.c
     )
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(a2dp_source)
+project(throughput_server_demo)
