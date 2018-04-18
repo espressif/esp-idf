@@ -277,13 +277,12 @@ esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const e
             esp_tls_conn_delete(tls);
             return NULL;
         }
-	tls->read = tls_read;
-	tls->write = tls_write;
-    }
-
-    if (cfg->non_block == true) {
-        int flags = fcntl(tls->sockfd, F_GETFL, 0);
-        fcntl(tls->sockfd, F_SETFL, flags | O_NONBLOCK);    
+    	tls->read = tls_read;
+    	tls->write = tls_write;
+        if (cfg->non_block == true) {
+            int flags = fcntl(tls->sockfd, F_GETFL, 0);
+            fcntl(tls->sockfd, F_SETFL, flags | O_NONBLOCK);
+        }
     }
 
     return tls;
