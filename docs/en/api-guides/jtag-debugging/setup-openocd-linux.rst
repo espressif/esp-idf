@@ -1,19 +1,21 @@
-***********************
-Setup OpenOCD for Linux
-***********************
+************************
+Set up OpenOCD for Linux
+************************
 
 
-Setup OpenOCD
-=============
+Set up OpenOCD
+==============
 
-OpenOCD for 64-bit Linux is available for download from Espressif website:
+OpenOCD for 64-bit Linux is available for download from Github:
 
-https://dl.espressif.com/dl/openocd-esp32-linux64-a859564.tar.gz 
+https://github.com/espressif/openocd-esp32/releases
 
-Download this file, then extract it in ``~/esp/`` directory::
+Download latest release archive with `linux64` in its name, for example `openocd-esp32-linux64-0.10.0-esp32-20180418.tar.gz`.
+
+Extract the downloaded file in ``~/esp/`` directory::
 
     cd ~/esp
-    tar -xzf ~/Downloads/openocd-esp32-linux64-a859564.tar.gz 
+    tar -xzf ~/Downloads/openocd-esp32-linux64-<version>.tar.gz 
 
 
 Next Steps
