@@ -36,3 +36,6 @@ set_source_files_properties(apps/dhcpserver.c
     PROPERTIES COMPILE_FLAGS
     "-Wno-unused-variable -Wno-unused-but-set-variable -Wno-type-limits"
     )
+set_source_files_properties(netif/ppp/pppos.c
+    PROPERTIES COMPILE_FLAGS
+    -Wno-type-limits)
