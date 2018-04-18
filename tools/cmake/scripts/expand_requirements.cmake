@@ -85,6 +85,9 @@ function(require_idf_targets)
     endif()
 endfunction()
 
+# Dummy call for ldgen_add_fragment_file
+function(ldgen_add_fragment_file files)
+endfunction()
 
 # expand_component_requirements: Recursively expand a component's requirements,
 # setting global properties BUILD_COMPONENTS & BUILD_COMPONENT_PATHS and

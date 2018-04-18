@@ -1,0 +1,30 @@
+[mapping]
+archive: libesp32.a
+entries: 
+    core_dump (noflash_text)
+    panic (noflash)
+
+[mapping]
+archive: libphy.a
+entries: 
+    * (noflash_data)
+
+[mapping]
+archive: libhal.a
+entries: 
+    * (noflash_text)
+
+[mapping]
+archive: librtc.a
+entries: 
+    * (noflash_text)
+
+[mapping]
+archive: libgcc.a
+entries: 
+    lib2funcs (noflash_text)
+
+[mapping]
+archive: libgcov.a
+entries: 
+    * (noflash)

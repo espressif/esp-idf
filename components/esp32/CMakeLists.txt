@@ -71,6 +71,8 @@ else()
         app_trace bootloader_support ethernet log mbedtls nvs_flash
         pthread smartconfig_ack spi_flash vfs wpa_supplicant xtensa-debug-module)
 
+    set(COMPONENT_ADD_LDFRAGMENTS linker.lf ld/esp32_fragments.lf)
+
     register_component()
 
     target_link_libraries(esp32 "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib")
@@ -84,7 +86,16 @@ else()
         target_linker_script(esp32 "ld/esp32.extram.bss.ld")
     endif()
 
-    target_linker_script(esp32 "ld/esp32.common.ld")
+    # Process the template file through the linker script generation mechanism, and use the output for linking the
+    # final binary
+    set(esp32_common_script "${CMAKE_CURRENT_BINARY_DIR}/esp32.common.ld")
+    set(esp32_common_template "${CMAKE_CURRENT_LIST_DIR}/ld/esp32.common.ld.in")
+
+    ldgen_process_template(${esp32_common_template} ${esp32_common_script})
+
+    target_link_libraries(esp32 "-T ${esp32_common_script}")
+
+    set_property(TARGET ${PROJECT_NAME}.elf APPEND PROPERTY LINK_DEPENDS ${esp32_common_script})
 
     target_linker_script(esp32
         "ld/esp32.rom.ld"
@@ -146,7 +157,7 @@ else()
 
     endif()
 
-    # Enable dynamic esp_timer overflow value if building unit tests 
+    # Enable dynamic esp_timer overflow value if building unit tests
     if(NOT "${BUILD_TEST_COMPONENTS}" EQUAL "")
         add_definitions(-DESP_TIMER_DYNAMIC_OVERFLOW_VAL)
     endif()

@@ -107,6 +107,11 @@ function(register_component)
         target_link_libraries(${component} "-L${CMAKE_CURRENT_BINARY_DIR}")
         target_link_libraries(${component} "-Wl,--whole-archive -l${component} -Wl,--no-whole-archive")
     endif()
+
+    if(COMPONENT_ADD_LDFRAGMENTS)
+        spaces2list(COMPONENT_ADD_LDFRAGMENTS)
+        ldgen_add_fragment_files(${component} "${COMPONENT_ADD_LDFRAGMENTS}")
+    endif()
 endfunction()
 
 function(register_config_only_component)

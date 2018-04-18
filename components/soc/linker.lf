@@ -1,0 +1,12 @@
+[mapping]
+archive: libsoc.a
+entries: 
+    cpu_util (noflash_text)
+    rtc_clk (noflash)
+    rtc_clk_init (noflash_text)
+    rtc_init (noflash_text)
+    rtc_periph (noflash_text)
+    rtc_pm (noflash_text)
+    rtc_sleep (noflash_text)
+    rtc_time (noflash_text)
+    rtc_wdt (noflash_text)

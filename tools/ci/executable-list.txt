@@ -64,3 +64,6 @@ docs/gen-dxd.py
 tools/ci/multirun_with_pyenv.sh
 components/espcoredump/test/test_espcoredump.py
 components/espcoredump/test/test_espcoredump.sh
+tools/ldgen/ldgen.py
+tools/ldgen/test/test_fragments.py
+tools/ldgen/test/test_generation.py

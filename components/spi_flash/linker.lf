@@ -1,0 +1,5 @@
+[mapping]
+archive: libspi_flash.a
+entries: 
+    spi_flash_rom_patch (noflash_text)
+
