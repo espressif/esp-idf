@@ -590,6 +590,16 @@ esp_err_t Page::mLoadEntryTable()
             assert(item.span > 0);
 
             size_t span = item.span;
+
+            if (item.datatype == ItemType::BLOB || item.datatype == ItemType::SZ) {
+                for (size_t j = i + 1; j < i + span; ++j) {
+                    if (mEntryTable.get(j) != EntryState::WRITTEN) {
+                        eraseEntryAndSpan(i);
+                        break;
+                    }
+                }
+            }
+
             i += span - 1;
         }
 
