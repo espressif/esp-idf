@@ -1,5 +1,10 @@
 .. include:: ../../../../components/nvs_flash/README.rst
 
+NVS Partition Generator Utility
+-------------------------------
+
+This utility helps in generating NVS-esque partition binary file which can be flashed separately on a dedicated partition via a flashing utility. Key-value pairs to be flashed onto the partition can be provided via a CSV file. Refer to :doc:`NVS Partition Generator Utility <nvs_partition_gen>` for more details.
+
 Application Example
 -------------------
 

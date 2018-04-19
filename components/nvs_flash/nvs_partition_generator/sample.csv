@@ -1,0 +1,12 @@
+key,type,encoding,value
+dummyNamespace,namespace,,
+dummyU8Key,data,u8,127
+dummyI8Key,data,i8,-128
+dummyU16Key,data,u16,32768
+dummyU32Key,data,u32,4294967295
+dummyI32Key,data,i32,-2147483648
+dummyStringKey,data,string,0A:0B:0C:0D:0E:0F
+dummyHex2BinKey,data,hex2bin,010203abcdef
+hexFileKey,file,hex2bin,testdata/sample.hex
+stringFileKey,file,string,testdata/sample.txt
+binFileKey,file,binary,testdata/sample.bin
