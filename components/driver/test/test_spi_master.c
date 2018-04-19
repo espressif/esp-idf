@@ -21,6 +21,7 @@
 #include "soc/spi_struct.h"
 #include "esp_heap_caps.h"
 #include "esp_log.h"
+#include "driver/spi_pins.h"
 #include "freertos/ringbuf.h"
 
 const static char TAG[] = "test_spi";
@@ -41,6 +42,7 @@ const static char TAG[] = "test_spi";
     .pre_cb=NULL,  \
     .cs_ena_pretrans = 0,\
     .cs_ena_posttrans = 0,\
+    .input_delay_ns = 62.5,\
 }
 
 //steal register definition from gpio.c
@@ -507,17 +509,6 @@ DRAM_ATTR  static uint32_t data_dram[320]={0};
 //force to place in code area.
 static const uint32_t data_drom[320] = {0};
 
-
-#define HSPI_NATIVE_PIN_NUM_MISO 12
-#define HSPI_NATIVE_PIN_NUM_MOSI 13
-#define HSPI_NATIVE_PIN_NUM_CLK  14
-#define HSPI_NATIVE_PIN_NUM_CS   15
-
-#define VSPI_NATIVE_PIN_NUM_MISO 19
-#define VSPI_NATIVE_PIN_NUM_MOSI 23
-#define VSPI_NATIVE_PIN_NUM_CLK  18
-#define VSPI_NATIVE_PIN_NUM_CS   5
-
 #if 1 //HSPI
 #define PIN_NUM_MISO HSPI_NATIVE_PIN_NUM_MISO
 #define PIN_NUM_MOSI HSPI_NATIVE_PIN_NUM_MOSI
@@ -913,6 +904,351 @@ TEST_CASE("SPI master variable cmd & addr test","[spi]")
 
     TEST_ASSERT(spi_bus_remove_device(spi) == ESP_OK);
     TEST_ASSERT(spi_bus_free(HSPI_HOST) == ESP_OK);
+
+    ESP_LOGI(MASTER_TAG, "test passed.");
+}
+/********************************************************************************
+ *      Test Timing By Internal Connections
+ ********************************************************************************/
+typedef enum {
+    FULL_DUPLEX = 0,
+    HALF_DUPLEX_MISO = 1,
+    HALF_DUPLEX_MOSI = 2,
+} spi_dup_t;
+
+static int timing_speed_array[]={/**/
+    SPI_MASTER_FREQ_8M ,
+    SPI_MASTER_FREQ_9M ,
+    SPI_MASTER_FREQ_10M,
+    SPI_MASTER_FREQ_11M,
+    SPI_MASTER_FREQ_13M,
+    SPI_MASTER_FREQ_16M,
+    SPI_MASTER_FREQ_20M,
+    SPI_MASTER_FREQ_26M,
+    SPI_MASTER_FREQ_40M,
+    SPI_MASTER_FREQ_80M,
+};
+
+typedef struct {
+    uint8_t master_rxbuf[320];
+    spi_transaction_t master_trans[16];
+    TaskHandle_t handle_slave;
+    spi_slave_task_context_t slave_context;
+    slave_txdata_t slave_trans[16];
+} timing_context_t;
+
+void master_print_data(spi_transaction_t *t, spi_dup_t dup)
+{
+    if (t->tx_buffer) {
+        ESP_LOG_BUFFER_HEX( "master tx", t->tx_buffer, t->length/8 );
+    } else {
+        ESP_LOGI( "master tx", "no data" );
+    }
+
+    int rxlength;
+    if (dup!=HALF_DUPLEX_MISO) {
+        rxlength = t->length/8;
+    } else {
+        rxlength = t->rxlength/8;
+    }
+    if (t->rx_buffer) {
+        ESP_LOG_BUFFER_HEX( "master rx", t->rx_buffer, rxlength );
+    } else {
+        ESP_LOGI( "master rx", "no data" );
+    }
+}
+
+void slave_print_data(slave_rxdata_t *t)
+{
+    int rcv_len = (t->len+7)/8;
+    ESP_LOGI(SLAVE_TAG, "trans_len: %d", t->len);
+    ESP_LOG_BUFFER_HEX( "slave tx", t->tx_start, rcv_len);
+    ESP_LOG_BUFFER_HEX( "slave rx", t->data, rcv_len);
+}
+
+esp_err_t check_data(spi_transaction_t *t, spi_dup_t dup, slave_rxdata_t *slave_t)
+{
+    int length;
+    if (dup!=HALF_DUPLEX_MISO) {
+        length = t->length;
+    } else {
+        length = t->rxlength;
+    }
+    TEST_ASSERT(length!=0);
+
+    //currently the rcv_len can be in range of [t->length-1, t->length+3]
+    uint32_t rcv_len = slave_t->len;
+    TEST_ASSERT(rcv_len >= length-1 && rcv_len <= length+3);
+
+    //the timing speed is temporarily only for master
+    if (dup!=HALF_DUPLEX_MISO) {
+//        TEST_ASSERT_EQUAL_HEX8_ARRAY(t->tx_buffer, slave_t->data, (t->length+7)/8);
+    }
+    if (dup!=HALF_DUPLEX_MOSI) {
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(slave_t->tx_start, t->rx_buffer, (length+7)/8);
+    }
+    return ESP_OK;
+}
+
+static void timing_init_transactions(spi_dup_t dup, timing_context_t* context)
+{
+    spi_transaction_t* trans = context->master_trans;
+    uint8_t *rx_buf_ptr = context->master_rxbuf;
+    if (dup==HALF_DUPLEX_MISO) {
+        for (int i = 0; i < 8; i++ ) {
+            trans[i] = (spi_transaction_t) {
+                .flags = 0,
+                .rxlength = 8*(i*2+1),
+                .rx_buffer = rx_buf_ptr,
+            };
+            rx_buf_ptr += ((context->master_trans[i].rxlength + 31)/8)&(~3);
+        }
+    } else if (dup==HALF_DUPLEX_MOSI) {
+        for (int i = 0; i < 8; i++ ) {
+            trans[i] = (spi_transaction_t) {
+                .flags = 0,
+                .length = 8*(i*2+1),
+                .tx_buffer = master_send+i,
+            };
+        }
+    } else {
+        for (int i = 0; i < 8; i++ ) {
+            trans[i] = (spi_transaction_t) {
+                .flags = 0,
+                .length = 8*(i*2+1),
+                .tx_buffer = master_send+i,
+                .rx_buffer = rx_buf_ptr,
+            };
+            rx_buf_ptr += ((context->master_trans[i].length + 31)/8)&(~3);
+        }
+    }
+    //prepare slave tx data
+    for (int i = 0; i < 8; i ++) {
+        context->slave_trans[i] = (slave_txdata_t) {
+            .start = slave_send + 4*(i%3),
+            .len = 256,
+        };
+    }
+}
+
+typedef struct {
+    const char cfg_name[30];
+    /*The test work till the frequency below,
+     *set the frequency to higher and remove checks in the driver to know how fast the system can run.
+     */
+    int freq_limit;
+    spi_dup_t dup;
+    bool master_native;
+    bool slave_native;
+    int slave_tv_ns;
+} test_timing_config_t;
+
+#define ESP_SPI_SLAVE_TV    (12.5*3)
+#define GPIO_DELAY          (12.5*2)
+#define SAMPLE_DELAY        12.5
+
+#define TV_INT_CONNECT_GPIO     (ESP_SPI_SLAVE_TV+GPIO_DELAY)
+#define TV_INT_CONNECT          (ESP_SPI_SLAVE_TV)
+#define TV_WITH_ESP_SLAVE_GPIO  (ESP_SPI_SLAVE_TV+SAMPLE_DELAY+GPIO_DELAY)
+#define TV_WITH_ESP_SLAVE       (ESP_SPI_SLAVE_TV+SAMPLE_DELAY)
+
+//currently ESP32 slave only supports up to 20MHz, but 40MHz on the same board
+#define ESP_SPI_SLAVE_MAX_FREQ      SPI_MASTER_FREQ_20M
+#define ESP_SPI_SLAVE_MAX_FREQ_SYNC SPI_MASTER_FREQ_40M
+
+
+static test_timing_config_t timing_master_conf_t[] = {/**/
+    { .cfg_name = "FULL_DUP, MASTER NATIVE",
+      .freq_limit = SPI_MASTER_FREQ_13M,
+      .dup = FULL_DUPLEX,
+      .master_native = true,
+      .slave_native = false,
+      .slave_tv_ns = TV_INT_CONNECT_GPIO,
+    },
+    { .cfg_name = "FULL_DUP, SLAVE NATIVE",
+      .freq_limit = SPI_MASTER_FREQ_13M,
+      .dup = FULL_DUPLEX,
+      .master_native = false,
+      .slave_native = true,
+      .slave_tv_ns = TV_INT_CONNECT,
+    },
+    { .cfg_name = "FULL_DUP, BOTH GPIO",
+      .freq_limit = SPI_MASTER_FREQ_10M,
+      .dup = FULL_DUPLEX,
+      .master_native = false,
+      .slave_native = false,
+      .slave_tv_ns = TV_INT_CONNECT_GPIO,
+    },
+    { .cfg_name = "HALF_DUP, MASTER NATIVE",
+      .freq_limit = ESP_SPI_SLAVE_MAX_FREQ_SYNC,
+      .dup = HALF_DUPLEX_MISO,
+      .master_native = true,
+      .slave_native = false,
+      .slave_tv_ns = TV_INT_CONNECT_GPIO,
+    },
+    { .cfg_name = "HALF_DUP, SLAVE NATIVE",
+      .freq_limit = ESP_SPI_SLAVE_MAX_FREQ_SYNC,
+      .dup = HALF_DUPLEX_MISO,
+      .master_native = false,
+      .slave_native = true,
+      .slave_tv_ns = TV_INT_CONNECT,
+    },
+    { .cfg_name = "HALF_DUP, BOTH GPIO",
+      .freq_limit = ESP_SPI_SLAVE_MAX_FREQ_SYNC,
+      .dup = HALF_DUPLEX_MISO,
+      .master_native = false,
+      .slave_native = false,
+      .slave_tv_ns = TV_INT_CONNECT_GPIO,
+    },
+    { .cfg_name = "MOSI_DUP, MASTER NATIVE",
+      .freq_limit = ESP_SPI_SLAVE_MAX_FREQ_SYNC,
+      .dup = HALF_DUPLEX_MOSI,
+      .master_native = true,
+      .slave_native = false,
+      .slave_tv_ns = TV_INT_CONNECT_GPIO,
+    },
+    { .cfg_name = "MOSI_DUP, SLAVE NATIVE",
+      .freq_limit = ESP_SPI_SLAVE_MAX_FREQ_SYNC,
+      .dup = HALF_DUPLEX_MOSI,
+      .master_native = false,
+      .slave_native = true,
+      .slave_tv_ns = TV_INT_CONNECT,
+    },
+    { .cfg_name = "MOSI_DUP, BOTH GPIO",
+      .freq_limit = ESP_SPI_SLAVE_MAX_FREQ_SYNC,
+      .dup = HALF_DUPLEX_MOSI,
+      .master_native = false,
+      .slave_native = false,
+      .slave_tv_ns = TV_INT_CONNECT_GPIO,
+    },
+};
+
+//this case currently only checks master read
+TEST_CASE("test timing_master","[spi][timeout=120]")
+{
+    timing_context_t context;
+
+    //Enable pull-ups on SPI lines so we don't detect rogue pulses when no master is connected.
+    //slave_pull_up(&slv_buscfg, slvcfg.spics_io_num);
+
+    context.slave_context = (spi_slave_task_context_t){};
+    esp_err_t err = init_slave_context( &context.slave_context );
+    TEST_ASSERT( err == ESP_OK );
+
+    xTaskCreate( task_slave, "spi_slave", 4096, &context.slave_context, 0, &context.handle_slave);
+
+    const int test_size = sizeof(timing_master_conf_t)/sizeof(test_timing_config_t);
+    for (int i = 0; i < test_size; i++) {
+        test_timing_config_t* conf = &timing_master_conf_t[i];
+
+        spi_device_handle_t spi;
+
+        timing_init_transactions(conf->dup, &context);
+
+        ESP_LOGI(MASTER_TAG, "****************** %s ***************", conf->cfg_name);
+        for (int j=0; j<sizeof(timing_speed_array)/sizeof(int); j++ ) {
+            if (timing_speed_array[j] > conf->freq_limit) break;
+            ESP_LOGI(MASTER_TAG, "======> %dk", timing_speed_array[j]/1000);
+
+            //master config
+            const int master_mode = 0;
+            spi_bus_config_t buscfg=SPI_BUS_TEST_DEFAULT_CONFIG();
+            spi_device_interface_config_t devcfg=SPI_DEVICE_TEST_DEFAULT_CONFIG();
+            devcfg.mode = master_mode;
+            if (conf->dup==HALF_DUPLEX_MISO||conf->dup==HALF_DUPLEX_MOSI) {
+                devcfg.cs_ena_pretrans = 20;
+                devcfg.flags |= SPI_DEVICE_HALFDUPLEX;
+            } else {
+                devcfg.cs_ena_pretrans = 1;
+            }
+            devcfg.cs_ena_posttrans = 20;
+            devcfg.input_delay_ns = conf->slave_tv_ns;
+            devcfg.clock_speed_hz = timing_speed_array[j];
+
+            //slave config
+            int slave_mode = 0;
+            spi_slave_interface_config_t slvcfg=SPI_SLAVE_TEST_DEFAULT_CONFIG();
+            slvcfg.mode = slave_mode;
+
+            //pin config & initialize
+            //we can't have two sets of native pins on the same pins
+            assert(!conf->master_native || !conf->slave_native);
+            if (conf->slave_native) {
+                //only in this case, use VSPI native pins
+                buscfg.miso_io_num = VSPI_NATIVE_PIN_NUM_MISO;
+                buscfg.mosi_io_num = VSPI_NATIVE_PIN_NUM_MOSI;
+                buscfg.sclk_io_num = VSPI_NATIVE_PIN_NUM_CLK;
+                devcfg.spics_io_num = VSPI_NATIVE_PIN_NUM_CS;
+                slvcfg.spics_io_num = VSPI_NATIVE_PIN_NUM_CS;
+            } else {
+                buscfg.miso_io_num = HSPI_NATIVE_PIN_NUM_MISO;
+                buscfg.mosi_io_num = HSPI_NATIVE_PIN_NUM_MOSI;
+                buscfg.sclk_io_num = HSPI_NATIVE_PIN_NUM_CLK;
+                devcfg.spics_io_num = HSPI_NATIVE_PIN_NUM_CS;
+                slvcfg.spics_io_num = HSPI_NATIVE_PIN_NUM_CS;
+            }
+            slave_pull_up(&buscfg, slvcfg.spics_io_num);
+
+            //this does nothing, but avoid the driver from using native pins if required
+            buscfg.quadhd_io_num = (!conf->master_native && !conf->slave_native? VSPI_NATIVE_PIN_NUM_MISO: -1);
+            TEST_ESP_OK(spi_bus_initialize(HSPI_HOST, &buscfg, 0));
+            TEST_ESP_OK(spi_bus_add_device(HSPI_HOST, &devcfg, &spi));
+            //slave automatically use native pins if pins are on VSPI_* pins
+            buscfg.quadhd_io_num = -1;
+            TEST_ESP_OK( spi_slave_initialize(VSPI_HOST, &buscfg, &slvcfg, 0) );
+
+            //initialize master and slave on the same pins break some of the output configs, fix them
+            if (conf->master_native) {
+                gpio_output_sel(buscfg.mosi_io_num, FUNC_SPI, HSPID_OUT_IDX);
+                gpio_output_sel(buscfg.miso_io_num, FUNC_GPIO, VSPIQ_OUT_IDX);
+                gpio_output_sel(devcfg.spics_io_num, FUNC_SPI, HSPICS0_OUT_IDX);
+                gpio_output_sel(buscfg.sclk_io_num, FUNC_SPI, HSPICLK_OUT_IDX);
+            } else if (conf->slave_native) {
+                gpio_output_sel(buscfg.mosi_io_num, FUNC_GPIO, HSPID_OUT_IDX);
+                gpio_output_sel(buscfg.miso_io_num, FUNC_SPI, VSPIQ_OUT_IDX);
+                gpio_output_sel(devcfg.spics_io_num, FUNC_GPIO, HSPICS0_OUT_IDX);
+                gpio_output_sel(buscfg.sclk_io_num, FUNC_GPIO, HSPICLK_OUT_IDX);
+            } else {
+                gpio_output_sel(buscfg.mosi_io_num, FUNC_GPIO, HSPID_OUT_IDX);
+                gpio_output_sel(buscfg.miso_io_num, FUNC_GPIO, VSPIQ_OUT_IDX);
+                gpio_output_sel(devcfg.spics_io_num, FUNC_GPIO, HSPICS0_OUT_IDX);
+                gpio_output_sel(buscfg.sclk_io_num, FUNC_GPIO, HSPICLK_OUT_IDX);
+            }
+
+            //clear master receive buffer
+            memset(context.master_rxbuf, 0x66, sizeof(context.master_rxbuf));
+
+            //prepare slave tx data
+            for (int k = 0; k < 8; k ++) xQueueSend( context.slave_context.data_to_send, &context.slave_trans[k], portMAX_DELAY );
+
+            for( int k= 0; k < 8; k ++ ) {
+                //wait for both master and slave end
+                ESP_LOGI( MASTER_TAG, "=> test%d", k );
+                //send master tx data
+                vTaskDelay(9);
+
+                spi_transaction_t *t = &context.master_trans[k];
+                TEST_ESP_OK (spi_device_transmit( spi, t) );
+                master_print_data(t, conf->dup);
+
+                size_t rcv_len;
+                slave_rxdata_t *rcv_data = xRingbufferReceive( context.slave_context.data_received, &rcv_len, portMAX_DELAY );
+                slave_print_data(rcv_data);
+
+                //check result
+                TEST_ESP_OK(check_data(t, conf->dup, rcv_data));
+                //clean
+                vRingbufferReturnItem(context.slave_context.data_received, rcv_data);
+            }
+            master_deinit(spi);
+            TEST_ASSERT(spi_slave_free(VSPI_HOST) == ESP_OK);
+        }
+    }
+
+    vTaskDelete( context.handle_slave );
+    context.handle_slave = 0;
+
+    deinit_slave_context(&context.slave_context);
 
     ESP_LOGI(MASTER_TAG, "test passed.");
 }
