@@ -403,7 +403,7 @@ esp_err_t gpio_isr_handler_remove(gpio_num_t gpio_num)
 
 esp_err_t gpio_install_isr_service(int intr_alloc_flags)
 {
-    GPIO_CHECK(gpio_isr_func == NULL, "GPIO isr service already installed", ESP_FAIL);
+    GPIO_CHECK(gpio_isr_func == NULL, "GPIO isr service already installed", ESP_ERR_INVALID_STATE);
     esp_err_t ret;
     portENTER_CRITICAL(&gpio_spinlock);
     gpio_isr_func = (gpio_isr_func_t*) calloc(GPIO_NUM_MAX, sizeof(gpio_isr_func_t));
