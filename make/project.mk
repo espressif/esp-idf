@@ -227,7 +227,12 @@ endif
 	@echo $(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
 
 
+# If we have `version.txt` then prefer that for extracting IDF version
+ifeq ("$(wildcard ${IDF_PATH}/version.txt)","")
 IDF_VER := $(shell cd ${IDF_PATH} && git describe --always --tags --dirty)
+else
+IDF_VER := `cat ${IDF_PATH}/version.txt`
+endif
 
 # Set default LDFLAGS
 EXTRA_LDFLAGS ?=
@@ -485,6 +490,8 @@ clean: app-clean bootloader-clean config-clean
 #
 # This only works for components inside IDF_PATH
 check-submodules:
+# Check if .gitmodules exists, otherwise skip submodule check, assuming flattened structure
+ifneq ("$(wildcard ${IDF_PATH}/.gitmodules)","")
 
 # Dump the git status for the whole working copy once, then grep it for each submodule. This saves a lot of time on Windows.
 GIT_STATUS := $(shell cd ${IDF_PATH} && git status --porcelain --ignore-submodules=dirty)
@@ -509,6 +516,7 @@ endef
 # filter/subst in expression ensures all submodule paths begin with $(IDF_PATH), and then strips that prefix
 # so the argument is suitable for use with 'git submodule' commands
 $(foreach submodule,$(subst $(IDF_PATH)/,,$(filter $(IDF_PATH)/%,$(COMPONENT_SUBMODULES))),$(eval $(call GenerateSubmoduleCheckTarget,$(submodule))))
+endif # End check for .gitmodules existence
 
 
 # PHONY target to list components in the build and their paths

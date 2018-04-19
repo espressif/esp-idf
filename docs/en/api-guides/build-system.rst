@@ -185,7 +185,7 @@ The following variables are set at the project level, but exported for use in th
 - ``CONFIG_*``: Each value in the project configuration has a corresponding variable available in make. All names begin with ``CONFIG_``.
 - ``CC``, ``LD``, ``AR``, ``OBJCOPY``: Full paths to each tool from the gcc xtensa cross-toolchain.
 - ``HOSTCC``, ``HOSTLD``, ``HOSTAR``: Full names of each tool from the host native toolchain.
-- ``IDF_VER``: Git version of ESP-IDF (produced by ``git describe``)
+- ``IDF_VER``: ESP-IDF version, retrieved from either ``$(IDF_PATH)/version.txt`` file (if present) else using git command ``git describe``. Recommended format here is single liner that specifies major IDF release version, e.g. ``v2.0`` for a tagged release or ``v2.0-275-g0efaa4f`` for an arbitrary commit. Application can make use of this by calling :cpp:func:`esp_get_idf_version`.
 
 If you modify any of these variables inside ``component.mk`` then this will not prevent other components from building but it may make your component hard to build and/or debug.
 
@@ -298,7 +298,7 @@ Preprocessor Definitions
 ESP-IDF build systems adds the following C preprocessor definitions on the command line:
 
 - ``ESP_PLATFORM`` — Can be used to detect that build happens within ESP-IDF.
-- ``IDF_VER`` — Defined to a git version string.  E.g. ``v2.0`` for a tagged release or ``v1.0-275-g0efaa4f`` for an arbitrary commit.
+- ``IDF_VER`` — ESP-IDF version, see `Preset Component Variables`_ for more details.
 
 Build Process Internals
 -----------------------
