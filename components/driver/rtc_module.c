@@ -1240,7 +1240,7 @@ static int adc_convert( adc_unit_t unit, int channel)
         adc_value = SENS.sar_meas_start2.meas2_data_sar;    
     } else {
         ESP_LOGE(TAG, "invalid adc unit");
-        assert(0);
+        return ESP_ERR_INVALID_ARG;
     }
     return adc_value;
 }
