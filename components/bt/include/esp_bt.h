@@ -139,6 +139,31 @@ esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_
  */
 esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type);
 
+/**
+ * @brief  Set BR/EDR TX power
+ *         BR/EDR power control will use the power in range of minimum value and maximum value.
+ *         The power level will effect the global BR/EDR TX power, such inquire, page, connection and so on.
+ *         Please call the function after esp_bt_controller_enable and before any function which cause RF do TX.
+ *         So you can call the function can before do discover, beofre profile init and so on.
+ *         For example, if you want BR/EDR use the new TX power to do inquire, you should call
+ *         this function before inquire. Another word, If call this function when BR/EDR is in inquire(ING),
+ *         please do inquire again after call this function.
+ *         Default minimum power level is ESP_PWR_LVL_N2, and maximum power level is ESP_PWR_LVL_P1.
+ * @param  min_power_level: The minimum power level
+ * @param  max_power_level: The maximum power level
+ * @return              ESP_OK - success, other - failed
+ */
+esp_err_t esp_bredr_tx_power_set(esp_power_level_t min_power_level, esp_power_level_t max_power_level);
+
+/**
+ * @brief  Get BR/EDR TX power
+ *         If the argument is not NULL, then store the corresponding value.
+ * @param  min_power_level: The minimum power level
+ * @param  max_power_level: The maximum power level
+ * @return              ESP_OK - success, other - failed
+ */
+esp_err_t esp_bredr_tx_power_get(esp_power_level_t *min_power_level, esp_power_level_t *max_power_level);
+
 
 /**
  * @brief  Initialize BT controller to allocate task and other resource.
