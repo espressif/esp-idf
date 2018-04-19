@@ -389,6 +389,7 @@ esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num);
  * @return
  *     - ESP_OK Success ;
  *     - ESP_ERR_INVALID_ARG GPIO error
+ *     - ESP_ERR_NOT_FOUND No free interrupt found with the specified flags
  */
 esp_err_t gpio_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags, gpio_isr_handle_t *handle);
 
@@ -446,8 +447,10 @@ esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num);
   *
   * @return
   *     - ESP_OK Success
-  *     - ESP_FAIL Operation fail
   *     - ESP_ERR_NO_MEM No memory to install this service
+  *     - ESP_ERR_INVALID_STATE ISR service already installed.
+  *     - ESP_ERR_NOT_FOUND No free interrupt found with the specified flags
+  *     - ESP_ERR_INVALID_ARG GPIO error
   */
 esp_err_t gpio_install_isr_service(int intr_alloc_flags);
 
