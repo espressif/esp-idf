@@ -1119,9 +1119,9 @@ esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num)
     return ESP_OK;
 }
 
-int i2s_write_bytes(i2s_port_t i2s_num, const char *src, size_t size, TickType_t ticks_to_wait)
+int i2s_write_bytes(i2s_port_t i2s_num, const void *src, size_t size, TickType_t ticks_to_wait)
 {
-    int bytes_written = 0;
+    size_t bytes_written = 0;
     int res = 0;
     res = i2s_write(i2s_num, src, size, &bytes_written, ticks_to_wait);
     if (res != ESP_OK) {
@@ -1131,15 +1131,16 @@ int i2s_write_bytes(i2s_port_t i2s_num, const char *src, size_t size, TickType_t
     }
 }
 
-esp_err_t i2s_write(i2s_port_t i2s_num, const char *src, size_t size, int *bytes_written, TickType_t ticks_to_wait)
+esp_err_t i2s_write(i2s_port_t i2s_num, const void *src, size_t size, size_t *bytes_written, TickType_t ticks_to_wait)
 {
-    char *data_ptr;
+    char *data_ptr, *src_byte;
     int bytes_can_write;
     *bytes_written = 0;
     I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
     I2S_CHECK((size < I2S_MAX_BUFFER_SIZE), "size is too large", ESP_ERR_INVALID_ARG);
     I2S_CHECK((p_i2s_obj[i2s_num]->tx), "tx NULL", ESP_ERR_INVALID_ARG);
     xSemaphoreTake(p_i2s_obj[i2s_num]->tx->mux, (portTickType)portMAX_DELAY);
+    src_byte = (char *)src;
     while (size > 0) {
         if (p_i2s_obj[i2s_num]->tx->rw_pos == p_i2s_obj[i2s_num]->tx->buf_size || p_i2s_obj[i2s_num]->tx->curr_ptr == NULL) {
             if (xQueueReceive(p_i2s_obj[i2s_num]->tx->queue, &p_i2s_obj[i2s_num]->tx->curr_ptr, ticks_to_wait) == pdFALSE) {
@@ -1154,9 +1155,9 @@ esp_err_t i2s_write(i2s_port_t i2s_num, const char *src, size_t size, int *bytes
         if (bytes_can_write > size) {
             bytes_can_write = size;
         }
-        memcpy(data_ptr, src, bytes_can_write);
+        memcpy(data_ptr, src_byte, bytes_can_write);
         size -= bytes_can_write;
-        src += bytes_can_write;
+        src_byte += bytes_can_write;
         p_i2s_obj[i2s_num]->tx->rw_pos += bytes_can_write;
         (*bytes_written) += bytes_can_write;
     }
@@ -1164,7 +1165,7 @@ esp_err_t i2s_write(i2s_port_t i2s_num, const char *src, size_t size, int *bytes
     return ESP_OK;
 }
 
-esp_err_t i2s_write_expand(i2s_port_t i2s_num, const char *src, int size, int src_bits, int aim_bits, int *bytes_written, TickType_t ticks_to_wait)
+esp_err_t i2s_write_expand(i2s_port_t i2s_num, const void *src, size_t size, size_t src_bits, size_t aim_bits, size_t *bytes_written, TickType_t ticks_to_wait)
 {
     char *data_ptr;
     int bytes_can_write, tail;
@@ -1227,9 +1228,9 @@ esp_err_t i2s_write_expand(i2s_port_t i2s_num, const char *src, int size, int sr
     return ESP_OK;
 }
 
-int i2s_read_bytes(i2s_port_t i2s_num, char* dest, size_t size, TickType_t ticks_to_wait)
+int i2s_read_bytes(i2s_port_t i2s_num, const void *dest, size_t size, TickType_t ticks_to_wait)
 {
-    int bytes_read = 0;
+    size_t bytes_read = 0;
     int res = 0;
     res = i2s_read(i2s_num, dest, size, &bytes_read, ticks_to_wait);
     if (res != ESP_OK) {
@@ -1239,11 +1240,12 @@ int i2s_read_bytes(i2s_port_t i2s_num, char* dest, size_t size, TickType_t ticks
     }
 }
 
-esp_err_t i2s_read(i2s_port_t i2s_num, char* dest, size_t size, int *bytes_read, TickType_t ticks_to_wait)
+esp_err_t i2s_read(i2s_port_t i2s_num, const void *dest, size_t size, size_t *bytes_read, TickType_t ticks_to_wait)
 {
-    char *data_ptr;
+    char *data_ptr, *dest_byte;
     int bytes_can_read;
     *bytes_read = 0;
+    dest_byte = (char *)dest;
     I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
     I2S_CHECK((size < I2S_MAX_BUFFER_SIZE), "size is too large", ESP_ERR_INVALID_ARG);
     I2S_CHECK((p_i2s_obj[i2s_num]->rx), "rx NULL", ESP_ERR_INVALID_ARG);
@@ -1261,9 +1263,9 @@ esp_err_t i2s_read(i2s_port_t i2s_num, char* dest, size_t size, int *bytes_read,
         if (bytes_can_read > size) {
             bytes_can_read = size;
         }
-        memcpy(dest, data_ptr, bytes_can_read);
+        memcpy(dest_byte, data_ptr, bytes_can_read);
         size -= bytes_can_read;
-        dest += bytes_can_read;
+        dest_byte += bytes_can_read;
         p_i2s_obj[i2s_num]->rx->rw_pos += bytes_can_read;
         (*bytes_read) += bytes_can_read;
     }
@@ -1271,11 +1273,12 @@ esp_err_t i2s_read(i2s_port_t i2s_num, char* dest, size_t size, int *bytes_read,
     return ESP_OK;
 }
 
-int i2s_push_sample(i2s_port_t i2s_num, const char *sample, TickType_t ticks_to_wait)
+int i2s_push_sample(i2s_port_t i2s_num, const void *sample, TickType_t ticks_to_wait)
 {
-    int bytes_push = 0;
+    size_t bytes_push = 0;
     int res = 0;
-    res = i2s_write_sample(i2s_num, sample, &bytes_push, ticks_to_wait);
+    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_FAIL);
+    res = i2s_write(i2s_num, sample, p_i2s_obj[i2s_num]->bytes_per_sample, &bytes_push, ticks_to_wait);
     if (res != ESP_OK) {
         return ESP_FAIL;
     } else {
@@ -1283,35 +1286,12 @@ int i2s_push_sample(i2s_port_t i2s_num, const char *sample, TickType_t ticks_to_
     }
 }
 
-esp_err_t i2s_write_sample(i2s_port_t i2s_num, const char *sample, int *sample_write, TickType_t ticks_to_wait)
+int i2s_pop_sample(i2s_port_t i2s_num, const void *sample, TickType_t ticks_to_wait)
 {
-    int i;
-    char *data_ptr;
-    *sample_write = 0;
-    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
-    if (p_i2s_obj[i2s_num]->tx->rw_pos == p_i2s_obj[i2s_num]->tx->buf_size || p_i2s_obj[i2s_num]->tx->curr_ptr == NULL) {
-        if (xQueueReceive(p_i2s_obj[i2s_num]->tx->queue, &p_i2s_obj[i2s_num]->tx->curr_ptr, ticks_to_wait) == pdFALSE) {
-            return *sample_write;
-        }
-        ESP_LOGD(I2S_TAG, "rw_pos: %d, buf_size: %d, curr_ptr: %d", p_i2s_obj[i2s_num]->tx->rw_pos, p_i2s_obj[i2s_num]->tx->buf_size, (int)p_i2s_obj[i2s_num]->tx->curr_ptr);
-        p_i2s_obj[i2s_num]->tx->rw_pos = 0;
-    }
-    data_ptr = (char*)p_i2s_obj[i2s_num]->tx->curr_ptr;
-    data_ptr += p_i2s_obj[i2s_num]->tx->rw_pos;
-    for (i = 0; i < p_i2s_obj[i2s_num]->bytes_per_sample * p_i2s_obj[i2s_num]->channel_num; i++) {
-        *data_ptr++ = *sample++;
-        (*sample_write) += 1;
-    }
-    p_i2s_obj[i2s_num]->tx->rw_pos += (*sample_write);
-    return ESP_OK;
-
-}
-
-int i2s_pop_sample(i2s_port_t i2s_num, char *sample, TickType_t ticks_to_wait)
-{
-    int bytes_pop = 0;
+    size_t bytes_pop = 0;
     int res = 0;
-    res = i2s_read_sample(i2s_num, sample, &bytes_pop, ticks_to_wait);
+    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_FAIL);
+    res = i2s_read(i2s_num, sample, p_i2s_obj[i2s_num]->bytes_per_sample, &bytes_pop, ticks_to_wait);
     if (res != ESP_OK) {
         return ESP_FAIL;
     } else {
@@ -1319,32 +1299,4 @@ int i2s_pop_sample(i2s_port_t i2s_num, char *sample, TickType_t ticks_to_wait)
     }
 }
 
-esp_err_t i2s_read_sample(i2s_port_t i2s_num, char *sample, int *sample_read, TickType_t ticks_to_wait)
-{
-    int i;
-    *sample_read = 0;
-    char *data_ptr;
-    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
-    if (p_i2s_obj[i2s_num]->rx->rw_pos == p_i2s_obj[i2s_num]->rx->buf_size || p_i2s_obj[i2s_num]->rx->curr_ptr == NULL) {
-        if (xQueueReceive(p_i2s_obj[i2s_num]->rx->queue, &p_i2s_obj[i2s_num]->rx->curr_ptr, ticks_to_wait) == pdFALSE) {
-            return *sample_read;
-        }
-        p_i2s_obj[i2s_num]->rx->rw_pos = 0;
-    }
-    data_ptr = (char*)p_i2s_obj[i2s_num]->rx->curr_ptr;
-    data_ptr += p_i2s_obj[i2s_num]->rx->rw_pos;
-    for (i = 0; i < p_i2s_obj[i2s_num]->bytes_per_sample; i++) {
-        *sample++ = *data_ptr++;
-        (*sample_read) += 1;
-    }
-    if (p_i2s_obj[i2s_num]->channel_num == 2) {
-        for (i = 0; i < p_i2s_obj[i2s_num]->bytes_per_sample; i++) {
-            *sample++ = *data_ptr++;
-            (*sample_read) += 1;
-        }
-    }
-
-    p_i2s_obj[i2s_num]->rx->rw_pos += p_i2s_obj[i2s_num]->bytes_per_sample * p_i2s_obj[i2s_num]->channel_num;
-    return ESP_OK;
-}
 

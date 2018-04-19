@@ -29,7 +29,7 @@ static void setup_triangle_sine_waves(int bits)
     int *samples_data = malloc(((bits+8)/16)*SAMPLE_PER_CYCLE*4);
     unsigned int i, sample_val;
     double sin_float, triangle_float, triangle_step = (double) pow(2, bits) / SAMPLE_PER_CYCLE;
-    int i2s_bytes_write = 0;
+    size_t i2s_bytes_write = 0;
 
     printf("\r\nTest bits=%d free mem=%d, written data=%d\n", bits, esp_get_free_heap_size(), ((bits+8)/16)*SAMPLE_PER_CYCLE*4);
 
@@ -69,7 +69,7 @@ static void setup_triangle_sine_waves(int bits)
     //         i2s_push_sample(0, &samples_data[i*2], 100);
     // }
     // or write
-    i2s_write(I2S_NUM, (const char *)samples_data, ((bits+8)/16)*SAMPLE_PER_CYCLE*4, &i2s_bytes_write, 100);
+    i2s_write(I2S_NUM, samples_data, ((bits+8)/16)*SAMPLE_PER_CYCLE*4, &i2s_bytes_write, 100);
 
     free(samples_data);
 }
