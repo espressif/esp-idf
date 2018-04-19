@@ -83,6 +83,7 @@ static int esp_tcp_connect(const char *host, int hostlen, int port)
 
     int ret = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
     if (ret < 0) {
+        ESP_LOGE(TAG, "Failed to create socket (family %d socktype %d protocol %d)", res->ai_family, res->ai_socktype, res->ai_protocol);
         goto err_freeaddr;
     }
     int fd = ret;
@@ -98,12 +99,13 @@ static int esp_tcp_connect(const char *host, int hostlen, int port)
         p->sin6_family = AF_INET6;
         addr_ptr = p;
     } else {
-	/* Unsupported Protocol Family */
+        ESP_LOGE(TAG, "Unsupported protocol family %d", res->ai_family);
         goto err_freesocket;
     }
 
     ret = connect(fd, addr_ptr, res->ai_addrlen);
     if (ret < 0) {
+        ESP_LOGE(TAG, "Failed to connnect to host (errno %d)", errno);
         goto err_freesocket;
     }
 
