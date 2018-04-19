@@ -55,6 +55,7 @@ static const char* TAG = "boot";
 /* Reduce literal size for some generic string literals */
 #define MAP_ERR_MSG "Image contains multiple %s segments. Only the last one will be mapped."
 
+static void load_image(const esp_image_metadata_t* image_data);
 static void unpack_load_app(const esp_image_metadata_t *data);
 static void set_cache_and_start_app(uint32_t drom_addr,
     uint32_t drom_load_addr,
@@ -74,7 +75,7 @@ bool bootloader_utility_load_partition_table(bootloader_state_t* bs)
 #ifdef CONFIG_SECURE_BOOT_ENABLED
     if(esp_secure_boot_enabled()) {
         ESP_LOGI(TAG, "Verifying partition table signature...");
-        err = esp_secure_boot_verify_signature(ESP_PARTITION_TABLE_ADDR, ESP_PARTITION_TABLE_MAX_LEN);
+        err = esp_secure_boot_verify_signature(ESP_PARTITION_TABLE_OFFSET, ESP_PARTITION_TABLE_MAX_LEN);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to verify partition table signature.");
             return false;
@@ -83,12 +84,12 @@ bool bootloader_utility_load_partition_table(bootloader_state_t* bs)
     }
 #endif
 
-    partitions = bootloader_mmap(ESP_PARTITION_TABLE_ADDR, ESP_PARTITION_TABLE_MAX_LEN);
+    partitions = bootloader_mmap(ESP_PARTITION_TABLE_OFFSET, ESP_PARTITION_TABLE_MAX_LEN);
     if (!partitions) {
-            ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", ESP_PARTITION_TABLE_ADDR, ESP_PARTITION_TABLE_MAX_LEN);
-            return false;
+        ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", ESP_PARTITION_TABLE_OFFSET, ESP_PARTITION_TABLE_MAX_LEN);
+        return false;
     }
-    ESP_LOGD(TAG, "mapped partition table 0x%x at 0x%x", ESP_PARTITION_TABLE_ADDR, (intptr_t)partitions);
+    ESP_LOGD(TAG, "mapped partition table 0x%x at 0x%x", ESP_PARTITION_TABLE_OFFSET, (intptr_t)partitions);
 
     err = esp_partition_table_basic_verify(partitions, true, &num_partitions);
     if (err != ESP_OK) {
@@ -287,18 +288,21 @@ static bool try_load_partition(const esp_partition_pos_t *partition, esp_image_m
 
 #define TRY_LOG_FORMAT "Trying partition index %d offs 0x%x size 0x%x"
 
-bool bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_index, esp_image_metadata_t *result)
+void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_index)
 {
     int index = start_index;
     esp_partition_pos_t part;
+    esp_image_metadata_t image_data;
+
     if(start_index == TEST_APP_INDEX) {
-        if (try_load_partition(&bs->test, result)) {
-            return true;
+        if (try_load_partition(&bs->test, &image_data)) {
+            load_image(&image_data);
         } else {
             ESP_LOGE(TAG, "No bootable test partition in the partition table");
-            return false;
+            return;
         }
     }
+
     /* work backwards from start_index, down to the factory app */
     for(index = start_index; index >= FACTORY_INDEX; index--) {
         part = index_to_partition(bs, index);
@@ -306,8 +310,8 @@ bool bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_
             continue;
         }
         ESP_LOGD(TAG, TRY_LOG_FORMAT, index, part.offset, part.size);
-        if (try_load_partition(&part, result)) {
-            return true;
+        if (try_load_partition(&part, &image_data)) {
+            load_image(&image_data);
         }
         log_invalid_app_partition(index);
     }
@@ -319,23 +323,23 @@ bool bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_
             continue;
         }
         ESP_LOGD(TAG, TRY_LOG_FORMAT, index, part.offset, part.size);
-        if (try_load_partition(&part, result)) {
-            return true;
+        if (try_load_partition(&part, &image_data)) {
+            load_image(&image_data);
         }
         log_invalid_app_partition(index);
     }
 
-    if (try_load_partition(&bs->test, result)) {
+    if (try_load_partition(&bs->test, &image_data)) {
         ESP_LOGW(TAG, "Falling back to test app as only bootable partition");
-        return true;
+        load_image(&image_data);
     }
 
     ESP_LOGE(TAG, "No bootable app partitions in the partition table");
-    bzero(result, sizeof(esp_image_metadata_t));
-    return false;
+    bzero(&image_data, sizeof(esp_image_metadata_t));
 }
 
-void bootloader_utility_load_image(const esp_image_metadata_t* image_data)
+// Copy loaded segments to RAM, set up caches for mapped segments, and start application.
+static void load_image(const esp_image_metadata_t* image_data)
 {
 #if defined(CONFIG_SECURE_BOOT_ENABLED) || defined(CONFIG_FLASH_ENCRYPTION_ENABLED)
     esp_err_t err;
@@ -463,7 +467,7 @@ static void set_cache_and_start_app(
     // Application will need to do Cache_Flush(1) and Cache_Read_Enable(1)
 
     ESP_LOGD(TAG, "start: 0x%08x", entry_addr);
-    typedef void (*entry_t)(void);
+    typedef void (*entry_t)(void) __attribute__((noreturn));
     entry_t entry = ((entry_t) entry_addr);
 
     // TODO: we have used quite a bit of stack at this point.
