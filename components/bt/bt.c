@@ -72,6 +72,8 @@ extern void API_vhci_host_register_callback(const vhci_host_callback_t *callback
 
 extern int ble_txpwr_set(int power_type, int power_level);
 extern int ble_txpwr_get(int power_type);
+extern int bredr_txpwr_set(int min_power_level, int max_power_level);
+extern int bredr_txpwr_get(int *min_power_level, int *max_power_level);
 
 extern char _bss_start_btdm;
 extern char _bss_end_btdm;
@@ -612,6 +614,33 @@ esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_
 esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type)
 {
     return (esp_power_level_t)ble_txpwr_get(power_type);
+}
+
+esp_err_t esp_bredr_tx_power_set(esp_power_level_t min_power_level, esp_power_level_t max_power_level)
+{
+    esp_err_t err;
+    int ret;
+
+    ret = bredr_txpwr_set(min_power_level, max_power_level);
+
+    if (ret == 0) {
+        err = ESP_OK;
+    } else if (ret == -1) {
+        err = ESP_ERR_INVALID_ARG;
+    } else {
+        err = ESP_ERR_INVALID_STATE;
+    }
+
+    return err;
+}
+
+esp_err_t esp_bredr_tx_power_get(esp_power_level_t *min_power_level, esp_power_level_t *max_power_level)
+{
+    if (bredr_txpwr_get((int *)min_power_level, (int *)max_power_level) != 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return ESP_OK;
 }
 
 #endif /*  CONFIG_BT_ENABLED */
