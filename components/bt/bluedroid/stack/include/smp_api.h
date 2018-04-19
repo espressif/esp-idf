@@ -85,23 +85,23 @@ typedef UINT8   tSMP_EVT;
 #define SMP_MAX_FAIL_RSN_PER_SPEC   SMP_XTRANS_DERIVE_NOT_ALLOW
 
 /* self defined error code */
-#define SMP_PAIR_INTERNAL_ERR       (SMP_MAX_FAIL_RSN_PER_SPEC + 0x01) /* 0x0E */
+#define SMP_PAIR_INTERNAL_ERR       (SMP_MAX_FAIL_RSN_PER_SPEC + 0x01) /* 0x0F */
 
 /* 0x0F unknown IO capability, unable to decide association model */
-#define SMP_UNKNOWN_IO_CAP          (SMP_MAX_FAIL_RSN_PER_SPEC + 0x02) /* 0x0F */
+#define SMP_UNKNOWN_IO_CAP          (SMP_MAX_FAIL_RSN_PER_SPEC + 0x02) /* 0x10 */
 
-#define SMP_INIT_FAIL               (SMP_MAX_FAIL_RSN_PER_SPEC + 0x03) /* 0x10 */
-#define SMP_CONFIRM_FAIL            (SMP_MAX_FAIL_RSN_PER_SPEC + 0x04) /* 0x11 */
-#define SMP_BUSY                    (SMP_MAX_FAIL_RSN_PER_SPEC + 0x05) /* 0x12 */
-#define SMP_ENC_FAIL                (SMP_MAX_FAIL_RSN_PER_SPEC + 0x06) /* 0x13 */
-#define SMP_STARTED                 (SMP_MAX_FAIL_RSN_PER_SPEC + 0x07) /* 0x14 */
-#define SMP_RSP_TIMEOUT             (SMP_MAX_FAIL_RSN_PER_SPEC + 0x08) /* 0x15 */
-#define SMP_DIV_NOT_AVAIL           (SMP_MAX_FAIL_RSN_PER_SPEC + 0x09) /* 0x16 */
+#define SMP_INIT_FAIL               (SMP_MAX_FAIL_RSN_PER_SPEC + 0x03) /* 0x11 */
+#define SMP_CONFIRM_FAIL            (SMP_MAX_FAIL_RSN_PER_SPEC + 0x04) /* 0x12 */
+#define SMP_BUSY                    (SMP_MAX_FAIL_RSN_PER_SPEC + 0x05) /* 0x13 */
+#define SMP_ENC_FAIL                (SMP_MAX_FAIL_RSN_PER_SPEC + 0x06) /* 0x14 */
+#define SMP_STARTED                 (SMP_MAX_FAIL_RSN_PER_SPEC + 0x07) /* 0x15 */
+#define SMP_RSP_TIMEOUT             (SMP_MAX_FAIL_RSN_PER_SPEC + 0x08) /* 0x16 */
+#define SMP_DIV_NOT_AVAIL           (SMP_MAX_FAIL_RSN_PER_SPEC + 0x09) /* 0x17 */
 
 /* 0x17 unspecified failed reason */
-#define SMP_FAIL                    (SMP_MAX_FAIL_RSN_PER_SPEC + 0x0A) /* 0x17 */
+#define SMP_FAIL                    (SMP_MAX_FAIL_RSN_PER_SPEC + 0x0A) /* 0x18 */
 
-#define SMP_CONN_TOUT               (SMP_MAX_FAIL_RSN_PER_SPEC + 0x0B)
+#define SMP_CONN_TOUT               (SMP_MAX_FAIL_RSN_PER_SPEC + 0x0B) /* 0x19 */
 #define SMP_SUCCESS                 0
 
 typedef UINT8 tSMP_STATUS;
