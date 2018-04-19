@@ -230,11 +230,13 @@ exit:
  */
 void esp_tls_conn_delete(esp_tls_t *tls)
 {
-    mbedtls_cleanup(tls);
-    if (tls->sockfd) {
-        close(tls->sockfd);
+    if (tls != NULL) {
+        mbedtls_cleanup(tls);
+        if (tls->sockfd) {
+            close(tls->sockfd);
+        }
+        free(tls);
     }
-    free(tls);
 };
 
 static ssize_t tcp_write(esp_tls_t *tls, const char *data, size_t datalen)
