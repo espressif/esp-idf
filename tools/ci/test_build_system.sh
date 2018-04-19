@@ -209,6 +209,23 @@ function run_tests()
     git checkout main/component.mk
     rm -rf extra_source_dir
 
+    print_status "Can build without git installed on system"
+    clean_build_dir
+    # Make provision for getting IDF version
+    echo "custom-version-x.y" > ${IDF_PATH}/version.txt
+    # Hide .gitmodules so that submodule check is avoided
+    [ -f ${IDF_PATH}/.gitmodules ] && mv ${IDF_PATH}/.gitmodules ${IDF_PATH}/.gitmodules_backup
+    # Overload `git` command
+    echo -e '#!/bin/bash\ntouch ${IDF_PATH}/git_invoked' > git
+    chmod +x git
+    OLD_PATH=$PATH
+    export PATH="$PWD:$PATH"
+    make
+    [ -f ${IDF_PATH}/git_invoked ] && rm ${IDF_PATH}/git_invoked && failure "git should not have been invoked in this case"
+    rm -f ${IDF_PATH}/version.txt git
+    [ -f ${IDF_PATH}/.gitmodules_backup ] && mv ${IDF_PATH}/.gitmodules_backup ${IDF_PATH}/.gitmodules
+    export PATH=$OLD_PATH
+
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
         echo "Some failures were detected:"
