@@ -446,6 +446,7 @@ extern const struct __sFILE_fake __sf_fake_stderr;
     _NULL \
   }
 
+#ifndef ESP_PLATFORM
 #define _REENT_INIT_PTR(var) \
   { memset((var), 0, sizeof(*(var))); \
     (var)->_stdin = (__FILE *)&__sf_fake_stdin; \
@@ -453,6 +454,10 @@ extern const struct __sFILE_fake __sf_fake_stderr;
     (var)->_stderr = (__FILE *)&__sf_fake_stderr; \
     (var)->_current_locale = "C"; \
   }
+#else
+extern void esp_reent_init(struct _reent* reent);
+#define _REENT_INIT_PTR(var) esp_reent_init(var)
+#endif
 
 /* Only built the assert() calls if we are built with debugging.  */
 #if DEBUG

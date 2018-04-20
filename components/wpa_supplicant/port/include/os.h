@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "rom/ets_sys.h"
-#include "lwip/mem.h"
+
 typedef long os_time_t;
 
 /**
