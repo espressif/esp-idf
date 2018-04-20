@@ -65,7 +65,7 @@ typedef enum {
     ESP_GATTC_DISCONNECT_EVT          = 41,       /*!< When the ble physical connection disconnected, the event comes */
     ESP_GATTC_READ_MULTIPLE_EVT       = 42,       /*!< When the ble characteristic or descriptor multiple complete, the event comes */
     ESP_GATTC_QUEUE_FULL_EVT          = 43,       /*!< When the gattc command queue full, the event comes */
-    ESP_GATTC_SET_ASSOCIAT_EVT        = 44,       /*!< When the ble gattc set the associat address complete, the event comes */
+    ESP_GATTC_SET_ASSOC_EVT           = 44,       /*!< When the ble gattc set the associated address complete, the event comes */
     ESP_GATTC_GET_ADDR_LIST_EVT       = 45,       /*!< When the ble get gattc address list in cache finish, the event comes */
 } esp_gattc_cb_event_t;
 
@@ -218,11 +218,11 @@ typedef union {
         esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address */
     } disconnect;                       /*!< Gatt client callback param of ESP_GATTC_DISCONNECT_EVT */
     /**
-     * @brief ESP_GATTC_SET_ASSOCIAT_EVT
+     * @brief ESP_GATTC_SET_ASSOC_EVT
      */
-    struct gattc_set_ass_addr_cmp_evt_param {
+    struct gattc_set_assoc_addr_cmp_evt_param {
         esp_gatt_status_t status;      /*!< Operation status */
-    } set_ass_cmp;                     /*!< Gatt client callback param of ESP_GATTC_SET_ASSOCIAT_EVT */
+    } set_assoc_cmp;                     /*!< Gatt client callback param of ESP_GATTC_SET_ASSOC_EVT */
     /**
      * @brief ESP_GATTC_GET_ADDR_LIST_EVT
      */
@@ -802,18 +802,25 @@ esp_err_t esp_ble_gattc_cache_refresh(esp_bd_addr_t remote_bda);
 
 /**
 * @brief           Add or delete the associated address with the source address.
+*                  Note: The role of this API is mainly when the client side has stored a server-side database, 
+*                        when it needs to connect another device, but the device's attribute database is the same 
+*                        as the server database stored on the client-side, calling this API can use the database 
+*                        that the device has stored used as the peer server database to reduce the attribute 
+*                        database search and discovery process and speed up the connection time.
+*                        The associated address mains that device want to used the database has stored in the local cache.
+*                        The source address mains that device want to share the database to the associated address device.
 *
 * @param[in]       gattc_if: Gatt client access interface.
 * @param[in]       src_addr: the source address which provide the attribute table.
-* @param[in]       ass_addr: the associated device address which went to share the attribute table with the source address.
-* @param[in]       is_associat: true add the associated device address, false remove the associated device address.
+* @param[in]       assoc_addr: the associated device address which went to share the attribute table with the source address.
+* @param[in]       is_assoc: true add the associated device address, false remove the associated device address.
 * @return
 *                  - ESP_OK: success
 *                  - other: failed
 *
 */
-esp_err_t esp_ble_gattc_cache_associat(esp_gatt_if_t gattc_if, esp_bd_addr_t src_addr, 
-                                      esp_bd_addr_t ass_addr, bool is_associat);
+esp_err_t esp_ble_gattc_cache_assoc(esp_gatt_if_t gattc_if, esp_bd_addr_t src_addr, 
+                                      esp_bd_addr_t assoc_addr, bool is_assoc);
 /**
 * @brief           Get the address list which has store the attribute table in the gattc cache. There will
 *                  callback ESP_GATTC_GET_ADDR_LIST_EVT event when get address list complete.

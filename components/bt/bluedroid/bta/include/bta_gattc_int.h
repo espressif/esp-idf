@@ -66,7 +66,7 @@ enum {
     BTA_GATTC_API_BROADCAST_EVT,
     BTA_GATTC_API_DISABLE_EVT,
     BTA_GATTC_ENC_CMPL_EVT,  
-    BTA_GATTC_API_CACHE_ASSOCIAT_EVT,
+    BTA_GATTC_API_CACHE_ASSOC_EVT,
     BTA_GATTC_API_CACHE_GET_ADDR_LIST_EVT,
 };
 typedef UINT16 tBTA_GATTC_INT_EVT;
@@ -192,9 +192,9 @@ typedef struct {
     BT_HDR             hdr;
     tBTA_GATTC_IF      client_if;
     BD_ADDR            src_addr;
-    BD_ADDR            ass_addr;
-    BOOLEAN            is_associa;
-} tBTA_GATTC_API_CACHE_ASSO;
+    BD_ADDR            assoc_addr;
+    BOOLEAN            is_assoc;
+} tBTA_GATTC_API_CACHE_ASSOC;
 
 typedef struct {
     BT_HDR             hdr;
@@ -230,7 +230,7 @@ typedef union {
     tBTA_GATTC_API_EXEC         api_exec;
     tBTA_GATTC_API_READ_MULTI   api_read_multi;
     tBTA_GATTC_API_CFG_MTU      api_mtu;
-    tBTA_GATTC_API_CACHE_ASSO   api_associa;
+    tBTA_GATTC_API_CACHE_ASSOC  api_assoc;
     tBTA_GATTC_API_GET_ADDR     api_get_addr;
     tBTA_GATTC_OP_CMPL          op_cmpl;
     tBTA_GATTC_INT_CONN         int_conn;
@@ -464,7 +464,7 @@ extern void bta_gattc_send_connect_cback( tBTA_GATTC_RCB *p_clreg, BD_ADDR remot
 extern void bta_gattc_send_disconnect_cback( tBTA_GATTC_RCB *p_clreg, tGATT_DISCONN_REASON reason,
                                 BD_ADDR remote_bda, UINT16 conn_id);
 extern void bta_gattc_process_api_refresh(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg);
-extern void bta_gattc_process_api_cache_associat(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg);
+extern void bta_gattc_process_api_cache_assoc(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg);
 extern void bta_gattc_process_api_cache_get_addr_list(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg);
 extern void bta_gattc_cfg_mtu(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
 #if BLE_INCLUDED == TRUE
