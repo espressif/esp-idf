@@ -63,7 +63,7 @@ esp_err_t esp_bt_gap_start_discovery(esp_bt_inq_mode_t mode, uint8_t inq_len, ui
     }
 
     if (mode != ESP_BT_INQ_MODE_GENERAL_INQUIRY &&
-            mode != ESP_BT_INQ_MODE_LIMITED_INQIURY) {
+            mode != ESP_BT_INQ_MODE_LIMITED_INQUIRY) {
         return ESP_ERR_INVALID_ARG;
     }
 
