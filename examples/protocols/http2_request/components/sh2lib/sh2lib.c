@@ -20,6 +20,7 @@
 #include <ctype.h>
 #include <netdb.h>
 #include <esp_log.h>
+#include <http_parser.h>
 
 #include "sh2lib.h"
 
@@ -240,14 +241,19 @@ static int do_http2_connect(struct sh2lib_handle *hd)
 int sh2lib_connect(struct sh2lib_handle *hd, const char *uri)
 {
     memset(hd, 0, sizeof(*hd));
+    const char *proto[] = {"h2", NULL};
     esp_tls_cfg_t tls_cfg = {
-        .alpn_protos = (unsigned char *) "\x02h2",
+        .alpn_protos = proto,
         .non_block = true,
     };    
     if ((hd->http2_tls = esp_tls_conn_http_new(uri, &tls_cfg)) == NULL) {
         ESP_LOGE(TAG, "[sh2-connect] esp-tls connection failed");
         goto error;
     }
+    struct http_parser_url u;
+    http_parser_url_init(&u);
+    http_parser_parse_url(uri, strlen(uri), 0, &u);
+    hd->hostname = strndup(&uri[u.field_data[UF_HOST].off], u.field_data[UF_HOST].len);
 
     /* HTTP/2 Connection */
     if (do_http2_connect(hd) != 0) {
