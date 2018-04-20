@@ -233,14 +233,14 @@ void hid_demo_task(void *pvParameters)
         vTaskDelay(2000 / portTICK_PERIOD_MS);
         if (sec_conn) {
             LOG_ERROR("Send the volume");
-            //send_volum_up = true;
-            uint8_t key_vaule = {HID_KEY_A};
-            esp_hidd_send_keyboard_value(hid_conn_id, 0, &key_vaule, 1);
-            //esp_hidd_send_consumer_value(hid_conn_id, HID_CONSUMER_VOLUME_UP, true);
+            send_volum_up = true;
+            //uint8_t key_vaule = {HID_KEY_A};
+            //esp_hidd_send_keyboard_value(hid_conn_id, 0, &key_vaule, 1);
+            esp_hidd_send_consumer_value(hid_conn_id, HID_CONSUMER_VOLUME_UP, true);
             vTaskDelay(3000 / portTICK_PERIOD_MS);
             if (send_volum_up) {
                 send_volum_up = false;
-                //esp_hidd_send_consumer_value(hid_conn_id, HID_CONSUMER_VOLUME_UP, false);
+                esp_hidd_send_consumer_value(hid_conn_id, HID_CONSUMER_VOLUME_UP, false);
                 esp_hidd_send_consumer_value(hid_conn_id, HID_CONSUMER_VOLUME_DOWN, true);
             }
         }
