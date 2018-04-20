@@ -63,7 +63,7 @@ static esp_err_t bootloader_main();
 static void print_flash_info(const esp_image_header_t* pfhdr);
 static void update_flash_config(const esp_image_header_t* pfhdr);
 static void vddsdio_configure();
-static void flash_gpio_configure();
+static void flash_gpio_configure(const esp_image_header_t* pfhdr);
 static void uart_console_configure(void);
 static void wdt_reset_check(void);
 
@@ -118,7 +118,14 @@ esp_err_t bootloader_init()
 static esp_err_t bootloader_main()
 {
     vddsdio_configure();
-    flash_gpio_configure();
+    /* Read and keep flash ID, for further use. */
+    g_rom_flashchip.device_id = bootloader_read_flash_id();
+    esp_image_header_t fhdr;
+    if (bootloader_flash_read(ESP_BOOTLOADER_OFFSET, &fhdr, sizeof(esp_image_header_t), true) != ESP_OK) {
+        ESP_LOGE(TAG, "failed to load bootloader header!");
+        return ESP_FAIL;
+    }
+    flash_gpio_configure(&fhdr);
 #if (CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ == 240)
     //Check if ESP32 is rated for a CPU frequency of 160MHz only
     if (REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_CPU_FREQ_RATED) &&
@@ -131,8 +138,6 @@ static esp_err_t bootloader_main()
     uart_console_configure();
     wdt_reset_check();
     ESP_LOGI(TAG, "ESP-IDF %s 2nd stage bootloader", IDF_VER);
-
-    esp_image_header_t fhdr;
 
     ESP_LOGI(TAG, "compile time " __TIME__ );
     ets_set_appcpu_boot_addr(0);
@@ -157,11 +162,6 @@ static esp_err_t bootloader_main()
 #if CONFIG_FLASHMODE_QIO || CONFIG_FLASHMODE_QOUT
     bootloader_enable_qio_mode();
 #endif
-
-    if (bootloader_flash_read(ESP_BOOTLOADER_OFFSET, &fhdr, sizeof(esp_image_header_t), true) != ESP_OK) {
-        ESP_LOGE(TAG, "failed to load bootloader header!");
-        return ESP_FAIL;
-    }
 
     print_flash_info(&fhdr);
 
@@ -295,31 +295,49 @@ static void vddsdio_configure()
 #define FLASH_SPIHD_IO    9
 #define FLASH_IO_MATRIX_DUMMY_40M   1
 #define FLASH_IO_MATRIX_DUMMY_80M   2
-static void IRAM_ATTR flash_gpio_configure()
+#define FLASH_IO_DRIVE_GD_WITH_1V8PSRAM    3
+
+/*
+ * Bootloader reads SPI configuration from bin header, so that
+ * the burning configuration can be different with compiling configuration.
+ */
+static void IRAM_ATTR flash_gpio_configure(const esp_image_header_t* pfhdr)
 {
     int spi_cache_dummy = 0;
     int drv = 2;
-#if CONFIG_FLASHMODE_QIO
-    spi_cache_dummy = SPI0_R_QIO_DUMMY_CYCLELEN;   //qio 3
-#elif CONFIG_FLASHMODE_QOUT
-    spi_cache_dummy = SPI0_R_FAST_DUMMY_CYCLELEN;  //qout 7
-#elif CONFIG_FLASHMODE_DIO
-    spi_cache_dummy = SPI0_R_DIO_DUMMY_CYCLELEN;   //dio 3
-#elif CONFIG_FLASHMODE_DOUT
-    spi_cache_dummy = SPI0_R_FAST_DUMMY_CYCLELEN;  //dout 7
-#endif
+    switch (pfhdr->spi_mode) {
+        case ESP_IMAGE_SPI_MODE_QIO:
+            spi_cache_dummy = SPI0_R_DIO_DUMMY_CYCLELEN;
+            break;
+        case ESP_IMAGE_SPI_MODE_DIO:
+            spi_cache_dummy = SPI0_R_DIO_DUMMY_CYCLELEN;   //qio 3
+            break;
+        case ESP_IMAGE_SPI_MODE_QOUT:
+        case ESP_IMAGE_SPI_MODE_DOUT:
+        default:
+            spi_cache_dummy = SPI0_R_FAST_DUMMY_CYCLELEN;
+            break;
+    }
+
     /* dummy_len_plus values defined in ROM for SPI flash configuration */
     extern uint8_t g_rom_spiflash_dummy_len_plus[];
-#if CONFIG_ESPTOOLPY_FLASHFREQ_40M
-    g_rom_spiflash_dummy_len_plus[0] = FLASH_IO_MATRIX_DUMMY_40M;
-    g_rom_spiflash_dummy_len_plus[1] = FLASH_IO_MATRIX_DUMMY_40M;
-    SET_PERI_REG_BITS(SPI_USER1_REG(0), SPI_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + FLASH_IO_MATRIX_DUMMY_40M, SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
-#elif CONFIG_ESPTOOLPY_FLASHFREQ_80M
-    g_rom_spiflash_dummy_len_plus[0] = FLASH_IO_MATRIX_DUMMY_80M;
-    g_rom_spiflash_dummy_len_plus[1] = FLASH_IO_MATRIX_DUMMY_80M;
-    SET_PERI_REG_BITS(SPI_USER1_REG(0), SPI_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + FLASH_IO_MATRIX_DUMMY_80M, SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
-    drv = 3;
-#endif
+    switch (pfhdr->spi_speed) {
+        case ESP_IMAGE_SPI_SPEED_80M:
+            g_rom_spiflash_dummy_len_plus[0] = FLASH_IO_MATRIX_DUMMY_80M;
+            g_rom_spiflash_dummy_len_plus[1] = FLASH_IO_MATRIX_DUMMY_80M;
+            SET_PERI_REG_BITS(SPI_USER1_REG(0), SPI_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + FLASH_IO_MATRIX_DUMMY_80M,
+                    SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
+            drv = 3;
+            break;
+        case ESP_IMAGE_SPI_SPEED_40M:
+            g_rom_spiflash_dummy_len_plus[0] = FLASH_IO_MATRIX_DUMMY_40M;
+            g_rom_spiflash_dummy_len_plus[1] = FLASH_IO_MATRIX_DUMMY_40M;
+            SET_PERI_REG_BITS(SPI_USER1_REG(0), SPI_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + FLASH_IO_MATRIX_DUMMY_40M,
+                    SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
+            break;
+        default:
+            break;
+    }
 
     uint32_t chip_ver = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_PKG);
     uint32_t pkg_ver = chip_ver & 0x7;
@@ -361,6 +379,19 @@ static void IRAM_ATTR flash_gpio_configure()
             // set drive ability for clock
             PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
             SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, drv, FUN_DRV_S);
+
+            #if CONFIG_SPIRAM_TYPE_ESPPSRAM32
+            uint32_t flash_id = g_rom_flashchip.device_id;
+            if (flash_id == FLASH_ID_GD25LQ32C) {
+                // Set drive ability for 1.8v flash in 80Mhz.
+                SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_DATA0_U, FUN_DRV, 3, FUN_DRV_S);
+                SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_DATA1_U, FUN_DRV, 3, FUN_DRV_S);
+                SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_DATA2_U, FUN_DRV, 3, FUN_DRV_S);
+                SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_DATA3_U, FUN_DRV, 3, FUN_DRV_S);
+                SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CMD_U, FUN_DRV, 3, FUN_DRV_S);
+                SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, 3, FUN_DRV_S);
+            }
+            #endif
         }
     }
 }
