@@ -806,14 +806,14 @@ esp_err_t esp_ble_gattc_cache_refresh(esp_bd_addr_t remote_bda);
 * @param[in]       gattc_if: Gatt client access interface.
 * @param[in]       src_addr: the source address which provide the attribute table.
 * @param[in]       ass_addr: the associated device address which went to share the attribute table with the source address.
-* @param[in]       is_associa: true add the associated device address, false remove the associated device address.
+* @param[in]       is_associat: true add the associated device address, false remove the associated device address.
 * @return
 *                  - ESP_OK: success
 *                  - other: failed
 *
 */
-esp_err_t esp_ble_gattc_cache_associa(esp_gatt_if_t gattc_if, esp_bd_addr_t src_addr, 
-                                      esp_bd_addr_t ass_addr, bool is_associa);
+esp_err_t esp_ble_gattc_cache_associat(esp_gatt_if_t gattc_if, esp_bd_addr_t src_addr, 
+                                      esp_bd_addr_t ass_addr, bool is_associat);
 /**
 * @brief           Get the address list which has store the attribute table in the gattc cache. There will
 *                  callback ESP_GATTC_GET_ADDR_LIST_EVT event when get address list complete.

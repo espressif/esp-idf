@@ -174,7 +174,7 @@ typedef union {
         esp_gatt_if_t gattc_if;
         esp_bd_addr_t src_addr;
         esp_bd_addr_t ass_addr;
-        bool is_associa;
+        bool is_associat;
     } cache_associat;
     //BTC_GATTC_ATC_CACHE_GET_ADDR_LIST
     struct cache_get_addr_list_arg {
