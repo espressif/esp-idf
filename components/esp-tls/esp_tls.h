@@ -36,7 +36,7 @@ extern "C" {
  * @brief      ESP-TLS configuration parameters 
  */ 
 typedef struct esp_tls_cfg {
-    const unsigned char *alpn_protos;       /*!< Application protocols required for HTTP2. 
+    const char **alpn_protos;               /*!< Application protocols required for HTTP2.
                                                  If HTTP2/ALPN support is required, a list
                                                  of protocols that should be negotiated. 
                                                  The format is length followed by protocol
