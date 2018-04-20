@@ -309,35 +309,33 @@ static void test_cmd52_read_write_single_byte(sdmmc_card_t* card)
     TEST_ASSERT_EQUAL_UINT8(test_byte_2, val);
 }
 
-static void test_cmd53_read_write_multiple_bytes(sdmmc_card_t* card)
+static void test_cmd53_read_write_multiple_bytes(sdmmc_card_t* card, size_t n_bytes)
 {
     printf("Write multiple bytes using CMD53\n");
     const size_t scratch_area_reg = SLCHOST_CONF_W0 - DR_REG_SLCHOST_BASE;
 
     uint8_t* src = heap_caps_malloc(512, MALLOC_CAP_DMA);
     uint32_t* src_32 = (uint32_t*) src;
-    const size_t n_words = 6;
-    srand(0);
-    for (size_t i = 0; i < n_words; ++i) {
+
+    for (size_t i = 0; i < (n_bytes + 3) / 4; ++i) {
         src_32[i] = rand();
     }
-    size_t len = n_words * sizeof(uint32_t);
 
-    TEST_ESP_OK(sdmmc_io_write_bytes(card, 1, scratch_area_reg, src, len));
-    ESP_LOG_BUFFER_HEX(TAG, src, len);
+    TEST_ESP_OK(sdmmc_io_write_bytes(card, 1, scratch_area_reg, src, n_bytes));
+    ESP_LOG_BUFFER_HEX(TAG, src, n_bytes);
 
     printf("Read back using CMD52\n");
     uint8_t* dst = heap_caps_malloc(512, MALLOC_CAP_DMA);
-    for (size_t i = 0; i < len; ++i) {
+    for (size_t i = 0; i < n_bytes; ++i) {
         TEST_ESP_OK(sdmmc_io_read_byte(card, 1, scratch_area_reg + i, &dst[i]));
     }
-    ESP_LOG_BUFFER_HEX(TAG, dst, len);
-    TEST_ASSERT_EQUAL_UINT8_ARRAY(src, dst, len);
+    ESP_LOG_BUFFER_HEX(TAG, dst, n_bytes);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(src, dst, n_bytes);
 
     printf("Read back using CMD53\n");
-    TEST_ESP_OK(sdmmc_io_read_bytes(card, 1, scratch_area_reg, dst, len));
-    ESP_LOG_BUFFER_HEX(TAG, dst, len);
-    TEST_ASSERT_EQUAL_UINT8_ARRAY(src, dst, len);
+    TEST_ESP_OK(sdmmc_io_read_bytes(card, 1, scratch_area_reg, dst, n_bytes));
+    ESP_LOG_BUFFER_HEX(TAG, dst, n_bytes);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(src, dst, n_bytes);
 
     free(src);
     free(dst);
@@ -364,9 +362,16 @@ TEST_CASE("can probe and talk to ESP32 SDIO slave", "[sdio][ignore]")
     /* Set up standard SDIO registers */
     sdio_slave_common_init(card);
 
-    for (int repeat = 0; repeat < 10; ++repeat) {
+    srand(0);
+    for (int repeat = 0; repeat < 4; ++repeat) {
         test_cmd52_read_write_single_byte(card);
-        test_cmd53_read_write_multiple_bytes(card);
+        test_cmd53_read_write_multiple_bytes(card, 1);
+        test_cmd53_read_write_multiple_bytes(card, 2);
+        test_cmd53_read_write_multiple_bytes(card, 3);
+        test_cmd53_read_write_multiple_bytes(card, 4);
+        test_cmd53_read_write_multiple_bytes(card, 5);
+        test_cmd53_read_write_multiple_bytes(card, 23);
+        test_cmd53_read_write_multiple_bytes(card, 24);
     }
 
     sdio_slave_set_blocksize(card, 0, 512);

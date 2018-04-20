@@ -1269,22 +1269,57 @@ static esp_err_t sdmmc_io_rw_extended(sdmmc_card_t* card, int func,
 esp_err_t sdmmc_io_read_bytes(sdmmc_card_t* card, uint32_t function,
         uint32_t addr, void* dst, size_t size)
 {
-    return sdmmc_io_rw_extended(card, function, addr,
-            SD_ARG_CMD53_READ | SD_ARG_CMD53_INCREMENT,
-            dst, size);
+    /* host quirk: SDIO transfer with length not divisible by 4 bytes
+     * has to be split into two transfers: one with aligned length,
+     * the other one for the remaining 1-3 bytes.
+     */
+    uint8_t *pc_dst = dst;
+    while (size > 0) {
+        size_t size_aligned = size & (~3);
+        size_t will_transfer = size_aligned > 0 ? size_aligned : size;
+
+        esp_err_t err = sdmmc_io_rw_extended(card, function, addr,
+                SD_ARG_CMD53_READ | SD_ARG_CMD53_INCREMENT,
+                pc_dst, will_transfer);
+        if (err != ESP_OK) {
+            return err;
+        }
+        pc_dst += will_transfer;
+        size -= will_transfer;
+        addr += will_transfer;
+    }
+    return ESP_OK;
 }
 
 esp_err_t sdmmc_io_write_bytes(sdmmc_card_t* card, uint32_t function,
         uint32_t addr, const void* src, size_t size)
 {
-    return sdmmc_io_rw_extended(card, function, addr,
-            SD_ARG_CMD53_WRITE | SD_ARG_CMD53_INCREMENT,
-            (void*) src, size);
+    /* same host quirk as in sdmmc_io_read_bytes */
+    const uint8_t *pc_src = (const uint8_t*) src;
+
+    while (size > 0) {
+        size_t size_aligned = size & (~3);
+        size_t will_transfer = size_aligned > 0 ? size_aligned : size;
+
+        esp_err_t err = sdmmc_io_rw_extended(card, function, addr,
+                SD_ARG_CMD53_WRITE | SD_ARG_CMD53_INCREMENT,
+                (void*) pc_src, will_transfer);
+        if (err != ESP_OK) {
+            return err;
+        }
+        pc_src += will_transfer;
+        size -= will_transfer;
+        addr += will_transfer;
+    }
+    return ESP_OK;
 }
 
 esp_err_t sdmmc_io_read_blocks(sdmmc_card_t* card, uint32_t function,
         uint32_t addr, void* dst, size_t size)
 {
+    if (size % 4 != 0) {
+        return ESP_ERR_INVALID_SIZE;
+    }
     return sdmmc_io_rw_extended(card, function, addr,
             SD_ARG_CMD53_READ | SD_ARG_CMD53_INCREMENT | SD_ARG_CMD53_BLOCK_MODE,
             dst, size);
@@ -1293,6 +1328,9 @@ esp_err_t sdmmc_io_read_blocks(sdmmc_card_t* card, uint32_t function,
 esp_err_t sdmmc_io_write_blocks(sdmmc_card_t* card, uint32_t function,
         uint32_t addr, const void* src, size_t size)
 {
+    if (size % 4 != 0) {
+        return ESP_ERR_INVALID_SIZE;
+    }
     return sdmmc_io_rw_extended(card, function, addr,
             SD_ARG_CMD53_WRITE | SD_ARG_CMD53_INCREMENT | SD_ARG_CMD53_BLOCK_MODE,
             (void*) src, size);

@@ -122,9 +122,10 @@ esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
     // convert cmdinfo to hardware register value
     sdmmc_hw_cmd_t hw_cmd = make_hw_cmd(cmdinfo);
     if (cmdinfo->data) {
-        if (cmdinfo->datalen < 4 || cmdinfo->blklen % 4 != 0) {
-            ESP_LOGD(TAG, "%s: invalid size: total=%d block=%d",
-                    __func__, cmdinfo->datalen, cmdinfo->blklen);
+        // Length should be either <4 or >=4 and =0 (mod 4).
+        if (cmdinfo->datalen >= 4 && cmdinfo->datalen % 4 != 0) {
+            ESP_LOGD(TAG, "%s: invalid size: total=%d",
+                    __func__, cmdinfo->datalen);
             ret = ESP_ERR_INVALID_SIZE;
             goto out;
         }
@@ -212,7 +213,8 @@ static void fill_dma_descriptors(size_t num_desc)
         desc->owned_by_idmac = 1;
         desc->buffer1_ptr = s_cur_transfer.ptr;
         desc->next_desc_ptr = (last) ? NULL : &s_dma_desc[(next + 1) % SDMMC_DMA_DESC_CNT];
-        desc->buffer1_size = size_to_fill;
+        assert(size_to_fill < 4 || size_to_fill % 4 == 0);
+        desc->buffer1_size = (size_to_fill + 3) & (~3);
 
         s_cur_transfer.size_remaining -= size_to_fill;
         s_cur_transfer.ptr += size_to_fill;
