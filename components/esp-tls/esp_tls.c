@@ -182,6 +182,10 @@ static int create_ssl_handle(esp_tls_t *tls, const char *hostname, size_t hostle
         goto exit;
     }
 
+    if (cfg->alpn_protos) {
+        mbedtls_ssl_conf_alpn_protocols(&tls->conf, cfg->alpn_protos);
+    }
+
     if (cfg->cacert_pem_buf != NULL) {
         mbedtls_x509_crt_init(&tls->cacert);
         ret = mbedtls_x509_crt_parse(&tls->cacert, cfg->cacert_pem_buf, cfg->cacert_pem_bytes);
