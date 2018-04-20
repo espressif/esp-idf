@@ -38,11 +38,9 @@
 #include <sys/time.h>
 #include <sys/fcntl.h>
 #include <sys/ioctl.h>
-#include <sys/types.h>
 #include "esp_task.h"
 #include "esp_system.h"
 #include "sdkconfig.h"
-#include "esp_vfs.h"
 
 /* Enable all Espressif-only options */
 
@@ -728,7 +726,6 @@
 #define ESP_DHCP_TIMER                  1
 #define ESP_LWIP_LOGI(...)              ESP_LOGI("lwip", __VA_ARGS__)
 #define ESP_PING                        1
-#define ESP_VFS_SELECT                  1
 
 #if CONFIG_LWIP_IRAM_OPTIMIZATION
 #define ESP_IRAM_ATTR                   IRAM_ATTR

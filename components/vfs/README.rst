@@ -64,35 +64,6 @@ Case 2: API functions are declared with an extra context pointer (FS driver supp
     myfs_t* myfs_inst2 = myfs_mount(partition2->offset, partition2->size);
     ESP_ERROR_CHECK(esp_vfs_register("/data2", &myfs, myfs_inst2));
 
-Synchronous input/output multiplexing
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-If you want to use synchronous input/output multiplexing by :cpp:func:`select`
-then you need to register the VFS with :cpp:func:`start_select` and
-:cpp:func:`end_select` functions similarly to the following example:
-
-.. highlight:: c
-
-::
-
-    // In definition of esp_vfs_t:
-        .start_select = &uart_start_select,
-        .end_select = &uart_end_select,
-    // ... other members initialized
-
-:cpp:func:`start_select` is called for setting up the environment for
-detection of read/write/error conditions on file descriptors belonging to the
-given VFS. :cpp:func:`end_select` is called to stop/deinitialize/free the
-environment which was setup by :cpp:func:`start_select`. Please refer to the
-reference implementation for the UART peripheral in
-:component_file:`vfs/vfs_uart.c` and most particularly to functions
-:cpp:func:`esp_vfs_dev_uart_register`, :cpp:func:`uart_start_select` and
-:cpp:func:`uart_end_select`.
-
-Examples demonstrating the use of :cpp:func:`select` with VFS file descriptors
-are the :example:`peripherals/uart_select` and the :example:`system/select`
-examples.
-
 Paths
 -----
 
@@ -122,10 +93,41 @@ When opening files, FS driver will only be given relative path to files. For exa
 
 VFS doesn't impose a limit on total file path length, but it does limit FS path prefix to ``ESP_VFS_PATH_MAX`` characters. Individual FS drivers may have their own filename length limitations.
 
+
 File descriptors
 ----------------
 
-File descriptors are small positive integers from ``0`` to ``FD_SETSIZE - 1`` where ``FD_SETSIZE`` is defined in newlib's ``sys/types.h``. The largest file descriptors (configured by ``CONFIG_LWIP_MAX_SOCKETS``) are reserved for sockets. The VFS component contains a lookup-table called ``fd_vfs`` for mapping file descriptors to VFS driver indexes registered in the ``s_vfs`` array.
+It is suggested that filesystem drivers should use small positive integers as file descriptors. VFS component assumes that ``CONFIG_MAX_FD_BITS`` bits (12 by default) are sufficient to represent a file descriptor.
+
+While file descriptors returned by VFS component to newlib library are rarely seen by the application, the following details may be useful for debugging purposes. File descriptors returned by VFS component are composed of two parts: FS driver ID, and the actual file descriptor. Because newlib stores file descriptors as 16-bit integers, VFS component is also limited by 16 bits to store both parts.
+
+Lower ``CONFIG_MAX_FD_BITS`` bits are used to store zero-based file descriptor. The per-filesystem FD obtained from the FS ``open`` call, and this result is stored in the lower bits of the FD. Higher bits are used to save the index of FS in the internal table of registered filesystems.
+
+When VFS component receives a call from newlib which has a file descriptor, this file descriptor is translated back to the FS-specific file descriptor. First, higher bits of FD are used to identify the FS. Then only the lower ``CONFIG_MAX_FD_BITS`` bits of the fd are masked in, and resulting FD is passed to the FS driver.
+
+.. highlight:: none
+
+::
+
+       FD as seen by newlib                                    FD as seen by FS driver
+
+    +-------+---------------+                               +------------------------+
+    | FS id | Zero—based FD |     +-------------------------->                        |
+    +---+---+------+--------+     |                          +------------------------+
+        |          |              |
+        |          +--------------+
+        |
+        |       +-------------+
+        |       | Table of    |
+        |       | registered  |
+        |       | filesystems |
+        |       +-------------+    +-------------+
+        +------->  entry      +----> esp_vfs_t   |
+        index   +-------------+    | structure   |
+                |             |    |             |
+                |             |    |             |
+                +-------------+    +-------------+
+
 
 Standard IO streams (stdin, stdout, stderr)
 -------------------------------------------
