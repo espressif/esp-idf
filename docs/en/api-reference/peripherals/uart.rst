@@ -142,8 +142,6 @@ Demonstration of how to report various communication events and how to use pater
 
 Transmitting and receiveing with the same UART in two separate FreeRTOS tasks: :example:`peripherals/uart_async_rxtxtasks`.
 
-Using synchronous I/O multiplexing for UART file descriptors: :example:`peripherals/uart_select`.
-
 
 API Reference
 -------------
