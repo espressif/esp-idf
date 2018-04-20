@@ -26,6 +26,10 @@ struct eap_peer_config {
 	 */
 	size_t identity_len;
 
+	u8 *anonymous_identity;
+
+	size_t anonymous_identity_len;
+
 	/**
 	 * password - Password string for EAP
 	 *
@@ -139,7 +143,28 @@ struct eap_peer_config {
 	 */
 	u8 *private_key_passwd;
 
+	/**
+	 * Phase 2
+	 */
+	u8 *ca_cert2;
+
+	u8 *ca_path2;
+
+	u8 *client_cert2;
+
+	u8 *private_key2;
+
+	u8 *private_key2_password;
+
+	/**
+	 * eap_methods - Allowed EAP methods
+	 */
+	struct eap_method_type *eap_methods;
+
+
 	char *phase1;
+
+	char *phase2;
 
 	/**
 	 * pin - PIN for USIM, GSM SIM, and smartcards
@@ -151,6 +176,10 @@ struct eap_peer_config {
 	 * If left out, this will be asked through control interface.
 	 */
 	char *pin;
+
+	int mschapv2_retry;
+	u8 *new_password;
+	size_t new_password_len;
 
 	/**
 	 * fragment_size - Maximum EAP fragment size in bytes (default 1398)
@@ -204,7 +233,7 @@ struct wpa_config_blob {
 	/**
 	 * data - Pointer to binary data
 	 */
-	u8 *data;
+	const u8 *data;
 
 	/**
 	 * len - Length of binary data

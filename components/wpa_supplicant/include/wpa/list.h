@@ -15,6 +15,8 @@
 #ifndef LIST_H
 #define LIST_H
 
+#include <stddef.h>
+
 /**
  * struct dl_list - Doubly-linked list
  */

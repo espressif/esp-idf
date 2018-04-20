@@ -15,8 +15,22 @@
 #ifndef WPA_DEBUG_H
 #define WPA_DEBUG_H
 
+#include "wpabuf.h"
+#include "esp_log.h"
 
+#ifdef ESPRESSIF_USE
+
+#define TAG "wpa"
+
+#define MSG_ERROR ESP_LOG_ERROR
+#define MSG_WARNING ESP_LOG_WARN
+#define MSG_INFO ESP_LOG_INFO
+#define MSG_DEBUG ESP_LOG_DEBUG
+#define MSG_MSGDUMP ESP_LOG_VERBOSE
+
+#else 
 enum { MSG_MSGDUMP, MSG_DEBUG, MSG_INFO, MSG_WARNING, MSG_ERROR };
+#endif
 
 /** EAP authentication completed successfully */
 #define WPA_EVENT_EAP_SUCCESS "CTRL-EVENT-EAP-SUCCESS "
@@ -44,8 +58,8 @@ void wpa_debug_print_timestamp(void);
  *
  * Note: New line '\n' is added to the end of the text when printing to stdout.
  */
-//#define  DEBUG_PRINT
-//#define   MSG_PRINT
+#define  DEBUG_PRINT
+#define   MSG_PRINT
 
 /**
  * wpa_hexdump - conditional hex dump
@@ -59,7 +73,7 @@ void wpa_debug_print_timestamp(void);
  * configuration. The contents of buf is printed out has hex dump.
  */
 #ifdef DEBUG_PRINT
-#define wpa_printf(level,fmt, args...) ets_printf(fmt,## args)
+#define wpa_printf(level,fmt, args...) ESP_LOG_LEVEL_LOCAL(level, TAG, fmt, ##args)
 
 static inline void wpa_hexdump_ascii(int level, const char *title, const u8 *buf, size_t len)
 {

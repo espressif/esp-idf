@@ -18,6 +18,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "esp_err.h"
 #include "rom/ets_sys.h"
 
 typedef long os_time_t;
@@ -200,6 +201,10 @@ char * os_readfile(const char *name, size_t *len);
 #ifndef os_free
 #define os_free(p) free((p))
 #endif
+
+#ifndef os_bzero
+#define os_bzero(s, n) bzero(s, n)
+#endif 
 
 
 #ifndef os_strdup
