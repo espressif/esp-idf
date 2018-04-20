@@ -163,13 +163,13 @@ reconnect:
         ESP_LOGI(TAG, "SSL read: %s", recv_buf);
         if (strstr(recv_buf, "GET ") &&
             strstr(recv_buf, " HTTP/1.1")) {
-            ESP_LOGI(TAG, "SSL get matched message")
-            ESP_LOGI(TAG, "SSL write message")
+            ESP_LOGI(TAG, "SSL get matched message");
+            ESP_LOGI(TAG, "SSL write message");
             ret = SSL_write(ssl, send_data, send_bytes);
             if (ret > 0) {
-                ESP_LOGI(TAG, "OK")
+                ESP_LOGI(TAG, "OK");
             } else {
-                ESP_LOGI(TAG, "error")
+                ESP_LOGI(TAG, "error");
             }
             break;
         }
