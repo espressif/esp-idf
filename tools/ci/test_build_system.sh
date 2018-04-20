@@ -226,6 +226,14 @@ function run_tests()
     [ -f ${IDF_PATH}/.gitmodules_backup ] && mv ${IDF_PATH}/.gitmodules_backup ${IDF_PATH}/.gitmodules
     export PATH=$OLD_PATH
 
+    print_status "Build fails if partitions don't fit in flash"
+    cp sdkconfig sdkconfig.bak
+    sed -i "s/CONFIG_ESPTOOLPY_FLASHSIZE.\+//" sdkconfig  # remove all flashsize config
+    echo "CONFIG_ESPTOOLPY_FLASHSIZE_1MB=y" >> sdkconfig     # introduce undersize flash
+    make defconfig || failure "Failed to reconfigure with smaller flash"
+    ( make 2>&1 | grep "does not fit in configured flash size 1MB" ) || failure "Build didn't fail with expected flash size failure message"
+    mv sdkconfig.bak sdkconfig
+
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
         echo "Some failures were detected:"
