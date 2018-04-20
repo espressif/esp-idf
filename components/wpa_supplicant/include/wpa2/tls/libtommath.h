@@ -13,7 +13,6 @@
  * If CONFIG_INTERNAL_LIBTOMMATH is defined, bignum.c includes this
  * libtommath.c file instead of using the external LibTomMath library.
  */
-#include "c_types.h"
 #include "os.h"
 #include "stdarg.h"
 
@@ -193,7 +192,7 @@ static int mp_mul_d (mp_int * a, mp_digit b, mp_int * c);
 
 
 /* reverse an array, used for radix code */
-static void ICACHE_FLASH_ATTR
+static void
 bn_reverse (unsigned char *s, int len)
 {
   int     ix, iy;
@@ -212,7 +211,7 @@ bn_reverse (unsigned char *s, int len)
 
 
 /* low level addition, based on HAC pp.594, Algorithm 14.7 */
-static int ICACHE_FLASH_ATTR
+static int
 s_mp_add (mp_int * a, mp_int * b, mp_int * c)
 {
   mp_int *x;
@@ -301,7 +300,7 @@ s_mp_add (mp_int * a, mp_int * b, mp_int * c)
 
 
 /* low level subtraction (assumes |a| > |b|), HAC pp.595 Algorithm 14.9 */
-static int ICACHE_FLASH_ATTR
+static int
 s_mp_sub (mp_int * a, mp_int * b, mp_int * c)
 {
   int     olduse, res, min, max;
@@ -369,7 +368,7 @@ s_mp_sub (mp_int * a, mp_int * b, mp_int * c)
 
 
 /* init a new mp_int */
-static int ICACHE_FLASH_ATTR
+static int
 mp_init (mp_int * a)
 {
   int i;
@@ -396,7 +395,7 @@ mp_init (mp_int * a)
 
 
 /* clear one (frees)  */
-static void ICACHE_FLASH_ATTR
+static void
 mp_clear (mp_int * a)
 {
   int i;
@@ -420,7 +419,7 @@ mp_clear (mp_int * a)
 
 
 /* high level addition (handles signs) */
-static int ICACHE_FLASH_ATTR
+static int
 mp_add (mp_int * a, mp_int * b, mp_int * c)
 {
   int     sa, sb, res;
@@ -453,7 +452,7 @@ mp_add (mp_int * a, mp_int * b, mp_int * c)
 
 
 /* high level subtraction (handles signs) */
-static int ICACHE_FLASH_ATTR
+static int
 mp_sub (mp_int * a, mp_int * b, mp_int * c)
 {
   int     sa, sb, res;
@@ -491,7 +490,7 @@ mp_sub (mp_int * a, mp_int * b, mp_int * c)
 
 
 /* high level multiplication (handles sign) */
-static int ICACHE_FLASH_ATTR
+static int
 mp_mul (mp_int * a, mp_int * b, mp_int * c)
 {
   int     res, neg;
@@ -539,7 +538,7 @@ mp_mul (mp_int * a, mp_int * b, mp_int * c)
 
 
 /* d = a * b (mod c) */
-static int ICACHE_FLASH_ATTR
+static int
 mp_mulmod (mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 {
   int     res;
@@ -560,7 +559,7 @@ mp_mulmod (mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 
 
 /* c = a mod b, 0 <= c < b */
-static int ICACHE_FLASH_ATTR
+static int
 mp_mod (mp_int * a, mp_int * b, mp_int * c)
 {
   mp_int  t;
@@ -592,10 +591,12 @@ mp_mod (mp_int * a, mp_int * b, mp_int * c)
  * embedded in the normal function but that wasted a lot of stack space
  * for nothing (since 99% of the time the Montgomery code would be called)
  */
-static int ICACHE_FLASH_ATTR
+static int
 mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y)
 {
-  int dr;
+#if defined(BN_MP_DR_IS_MODULUS_C)||defined(BN_MP_REDUCE_IS_2K_C)||defined(BN_MP_EXPTMOD_FAST_C)
+  int dr = 0;
+#endif
 
   /* modulus P must be positive */
   if (P->sign == MP_NEG) {
@@ -652,9 +653,6 @@ mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y)
 #ifdef BN_MP_DR_IS_MODULUS_C
   /* is it a DR modulus? */
   dr = mp_dr_is_modulus(P);
-#else
-  /* default to no */
-  dr = 0;
 #endif
 
 #ifdef BN_MP_REDUCE_IS_2K_C
@@ -685,7 +683,7 @@ mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y)
 
 
 /* compare two ints (signed)*/
-static int ICACHE_FLASH_ATTR
+static int
 mp_cmp (mp_int * a, mp_int * b)
 {
   /* compare based on sign */
@@ -708,7 +706,7 @@ mp_cmp (mp_int * a, mp_int * b)
 
 
 /* compare a digit */
-static int ICACHE_FLASH_ATTR
+static int
 mp_cmp_d(mp_int * a, mp_digit b)
 {
   /* compare based on sign */
@@ -734,7 +732,7 @@ mp_cmp_d(mp_int * a, mp_digit b)
 
 #ifndef LTM_NO_NEG_EXP
 /* hac 14.61, pp608 */
-static int ICACHE_FLASH_ATTR
+static int
 mp_invmod (mp_int * a, mp_int * b, mp_int * c)
 {
   /* b cannot be negative */
@@ -764,7 +762,7 @@ mp_invmod (mp_int * a, mp_int * b, mp_int * c)
 
 
 /* get the size for an unsigned equivalent */
-static int ICACHE_FLASH_ATTR
+static int
 mp_unsigned_bin_size (mp_int * a)
 {
   int     size = mp_count_bits (a);
@@ -774,7 +772,7 @@ mp_unsigned_bin_size (mp_int * a)
 
 #ifndef LTM_NO_NEG_EXP
 /* hac 14.61, pp608 */
-static int ICACHE_FLASH_ATTR
+static int
 mp_invmod_slow (mp_int * a, mp_int * b, mp_int * c)
 {
   mp_int  x, y, u, v, A, B, C, D;
@@ -931,7 +929,7 @@ LBL_ERR:mp_clear_multi (&x, &y, &u, &v, &A, &B, &C, &D, NULL);
 
 
 /* compare maginitude of two ints (unsigned) */
-static int ICACHE_FLASH_ATTR
+static int
 mp_cmp_mag (mp_int * a, mp_int * b)
 {
   int     n;
@@ -967,7 +965,7 @@ mp_cmp_mag (mp_int * a, mp_int * b)
 
 
 /* reads a unsigned char array, assumes the msb is stored first [big endian] */
-static int ICACHE_FLASH_ATTR
+static int
 mp_read_unsigned_bin (mp_int * a, const unsigned char *b, int c)
 {
   int     res;
@@ -1003,7 +1001,7 @@ mp_read_unsigned_bin (mp_int * a, const unsigned char *b, int c)
 
 
 /* store in unsigned [big endian] format */
-static int ICACHE_FLASH_ATTR
+static int
 mp_to_unsigned_bin (mp_int * a, unsigned char *b)
 {
   int     x, res;
@@ -1032,7 +1030,7 @@ mp_to_unsigned_bin (mp_int * a, unsigned char *b)
 
 
 /* shift right by a certain bit count (store quotient in c, optional remainder in d) */
-static int ICACHE_FLASH_ATTR
+static int
 mp_div_2d (mp_int * a, int b, mp_int * c, mp_int * d)
 {
   mp_digit D, r, rr;
@@ -1109,7 +1107,7 @@ mp_div_2d (mp_int * a, int b, mp_int * c, mp_int * d)
 }
 
 
-static int ICACHE_FLASH_ATTR
+static int
 mp_init_copy (mp_int * a, mp_int * b)
 {
   int     res;
@@ -1122,7 +1120,7 @@ mp_init_copy (mp_int * a, mp_int * b)
 
 
 /* set to zero */
-static void ICACHE_FLASH_ATTR
+static void
 mp_zero (mp_int * a)
 {
   int       n;
@@ -1139,7 +1137,7 @@ mp_zero (mp_int * a)
 
 
 /* copy, b = a */
-static int ICACHE_FLASH_ATTR
+static int
 mp_copy (mp_int * a, mp_int * b)
 {
   int     res, n;
@@ -1187,7 +1185,7 @@ mp_copy (mp_int * a, mp_int * b)
 
 
 /* shift right a certain amount of digits */
-static void ICACHE_FLASH_ATTR
+static void
 mp_rshd (mp_int * a, int b)
 {
   int     x;
@@ -1242,7 +1240,7 @@ mp_rshd (mp_int * a, int b)
 /* swap the elements of two integers, for cases where you can't simply swap the 
  * mp_int pointers around
  */
-static void ICACHE_FLASH_ATTR
+static void
 mp_exch (mp_int * a, mp_int * b)
 {
   mp_int  t;
@@ -1260,7 +1258,7 @@ mp_exch (mp_int * a, mp_int * b)
  * Typically very fast.  Also fixes the sign if there
  * are no more leading digits
  */
-static void ICACHE_FLASH_ATTR
+static void
 mp_clamp (mp_int * a)
 {
   /* decrease used while the most significant digit is
@@ -1278,7 +1276,7 @@ mp_clamp (mp_int * a)
 
 
 /* grow as required */
-static int ICACHE_FLASH_ATTR
+static int
 mp_grow (mp_int * a, int size)
 {
   int     i;
@@ -1320,7 +1318,7 @@ mp_grow (mp_int * a, int size)
  *
  * Simple function copies the input and fixes the sign to positive
  */
-static int ICACHE_FLASH_ATTR
+static int
 mp_abs (mp_int * a, mp_int * b)
 {
   int     res;
@@ -1341,7 +1339,7 @@ mp_abs (mp_int * a, mp_int * b)
 
 
 /* set to a digit */
-static void ICACHE_FLASH_ATTR
+static void
 mp_set (mp_int * a, mp_digit b)
 {
   mp_zero (a);
@@ -1352,7 +1350,7 @@ mp_set (mp_int * a, mp_digit b)
 
 #ifndef LTM_NO_NEG_EXP
 /* b = a/2 */
-static int ICACHE_FLASH_ATTR
+static int
 mp_div_2(mp_int * a, mp_int * b)
 {
   int     x, res, oldused;
@@ -1402,7 +1400,7 @@ mp_div_2(mp_int * a, mp_int * b)
 
 
 /* shift left by a certain bit count */
-static int ICACHE_FLASH_ATTR
+static int
 mp_mul_2d (mp_int * a, int b, mp_int * c)
 {
   mp_digit d;
@@ -1468,7 +1466,7 @@ mp_mul_2d (mp_int * a, int b, mp_int * c)
 
 
 #ifdef BN_MP_INIT_MULTI_C
-static int ICACHE_FLASH_ATTR
+static int
 mp_init_multi(mp_int *mp, ...) 
 {
     mp_err res = MP_OKAY;      /* Assume ok until proven otherwise */
@@ -1508,7 +1506,7 @@ mp_init_multi(mp_int *mp, ...)
 
 
 #ifdef BN_MP_CLEAR_MULTI_C
-static void ICACHE_FLASH_ATTR
+static void
 mp_clear_multi(mp_int *mp, ...) 
 {
     mp_int* next_mp = mp;
@@ -1524,7 +1522,7 @@ mp_clear_multi(mp_int *mp, ...)
 
 
 /* shift left a certain amount of digits */
-static int ICACHE_FLASH_ATTR
+static int
 mp_lshd (mp_int * a, int b)
 {
   int     x, res;
@@ -1572,7 +1570,7 @@ mp_lshd (mp_int * a, int b)
 
 
 /* returns the number of bits in an int */
-static int ICACHE_FLASH_ATTR
+static int
 mp_count_bits (mp_int * a)
 {
   int     r;
@@ -1597,7 +1595,7 @@ mp_count_bits (mp_int * a)
 
 
 /* calc a value mod 2**b */
-static int ICACHE_FLASH_ATTR
+static int
 mp_mod_2d (mp_int * a, int b, mp_int * c)
 {
   int     x, res;
@@ -1634,7 +1632,7 @@ mp_mod_2d (mp_int * a, int b, mp_int * c)
 #ifdef BN_MP_DIV_SMALL
 
 /* slower bit-bang division... also smaller */
-static int ICACHE_FLASH_ATTR
+static int
 mp_div(mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 {
    mp_int ta, tb, tq, q;
@@ -1717,7 +1715,7 @@ LBL_ERR:
  * The overall algorithm is as described as 
  * 14.20 from HAC but fixed to treat these cases.
 */
-static int ICACHE_FLASH_ATTR
+static int
 mp_div (mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 {
   mp_int  q, x, y, t1, t2;
@@ -1910,7 +1908,7 @@ LBL_Q:mp_clear (&q);
    #define TAB_SIZE 256
 #endif
 
-static int ICACHE_FLASH_ATTR
+static int
 s_mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y, int redmode)
 {
   mp_int  M[TAB_SIZE], res, mu;
@@ -2139,7 +2137,7 @@ LBL_M:
 
 
 /* computes b = a*a */
-static int ICACHE_FLASH_ATTR
+static int
 mp_sqr (mp_int * a, mp_int * b)
 {
   int     res;
@@ -2181,7 +2179,7 @@ if (a->used >= KARATSUBA_SQR_CUTOFF) {
    This differs from reduce_2k since "d" can be larger
    than a single digit.
 */
-static int ICACHE_FLASH_ATTR
+static int
 mp_reduce_2k_l(mp_int *a, mp_int *n, mp_int *d)
 {
    mp_int q;
@@ -2220,7 +2218,7 @@ ERR:
 
 
 /* determines the setup value */
-static int ICACHE_FLASH_ATTR
+static int
 mp_reduce_2k_setup_l(mp_int *a, mp_int *d)
 {
    int    res;
@@ -2249,7 +2247,7 @@ ERR:
  * Simple algorithm which zeroes the int, grows it then just sets one bit
  * as required.
  */
-static int ICACHE_FLASH_ATTR
+static int
 mp_2expt (mp_int * a, int b)
 {
   int     res;
@@ -2275,7 +2273,7 @@ mp_2expt (mp_int * a, int b)
 /* pre-calculate the value required for Barrett reduction
  * For a given modulus "b" it calulates the value required in "a"
  */
-static int ICACHE_FLASH_ATTR
+static int
 mp_reduce_setup (mp_int * a, mp_int * b)
 {
   int     res;
@@ -2291,7 +2289,7 @@ mp_reduce_setup (mp_int * a, mp_int * b)
  * precomputed via mp_reduce_setup.
  * From HAC pp.604 Algorithm 14.42
  */
-static int ICACHE_FLASH_ATTR
+static int
 mp_reduce (mp_int * x, mp_int * m, mp_int * mu)
 {
   mp_int  q;
@@ -2375,7 +2373,7 @@ CLEANUP:
  * HAC pp. 595, Algorithm 14.12  Modified so you can control how 
  * many digits of output are created.
  */
-static int ICACHE_FLASH_ATTR
+static int
 s_mp_mul_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
 {
   mp_int  t;
@@ -2458,7 +2456,7 @@ s_mp_mul_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
  * Based on Algorithm 14.12 on pp.595 of HAC.
  *
  */
-static int ICACHE_FLASH_ATTR
+static int
 fast_s_mp_mul_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
 {
   int     olduse, res, pa, ix, iz;
@@ -2531,7 +2529,7 @@ fast_s_mp_mul_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
 
 
 /* init an mp_init for a given size */
-static int ICACHE_FLASH_ATTR
+static int
 mp_init_size (mp_int * a, int size)
 {
   int x;
@@ -2560,7 +2558,7 @@ mp_init_size (mp_int * a, int size)
 
 
 /* low level squaring, b = a*a, HAC pp.596-597, Algorithm 14.16 */
-static int ICACHE_FLASH_ATTR
+static int
 s_mp_sqr (mp_int * a, mp_int * b)
 {
   mp_int  t;
@@ -2627,7 +2625,7 @@ s_mp_sqr (mp_int * a, mp_int * b)
 /* multiplies |a| * |b| and does not compute the lower digs digits
  * [meant to get the higher part of the product]
  */
-static int ICACHE_FLASH_ATTR
+static int
 s_mp_mul_high_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
 {
   mp_int  t;
@@ -2687,7 +2685,7 @@ s_mp_mul_high_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
 
 #ifdef BN_MP_MONTGOMERY_SETUP_C
 /* setups the montgomery reduction stuff */
-static int ICACHE_FLASH_ATTR
+static int
 mp_montgomery_setup (mp_int * n, mp_digit * rho)
 {
   mp_digit x, b;
@@ -2735,7 +2733,7 @@ mp_montgomery_setup (mp_int * n, mp_digit * rho)
  *
  * Based on Algorithm 14.32 on pp.601 of HAC.
 */
-int ICACHE_FLASH_ATTR
+int
 fast_mp_montgomery_reduce (mp_int * x, mp_int * n, mp_digit rho)
 {
   int     ix, res, olduse;
@@ -2883,7 +2881,7 @@ fast_mp_montgomery_reduce (mp_int * x, mp_int * n, mp_digit rho)
 
 #ifdef BN_MP_MUL_2_C
 /* b = a*2 */
-static int ICACHE_FLASH_ATTR
+static int
 mp_mul_2(mp_int * a, mp_int * b)
 {
   int     x, res, oldused;
@@ -2953,7 +2951,7 @@ mp_mul_2(mp_int * a, mp_int * b)
  * The method is slightly modified to shift B unconditionally up to just under
  * the leading bit of b.  This saves a lot of multiple precision shifting.
  */
-static int ICACHE_FLASH_ATTR
+static int
 mp_montgomery_calc_normalization (mp_int * a, mp_int * b)
 {
   int     x, bits, res;
@@ -2997,7 +2995,7 @@ mp_montgomery_calc_normalization (mp_int * a, mp_int * b)
  * Uses Montgomery or Diminished Radix reduction [whichever appropriate]
  */
 
-static int ICACHE_FLASH_ATTR
+static int
 mp_exptmod_fast (mp_int * G, mp_int * X, mp_int * P, mp_int * Y, int redmode)
 {
   mp_int  M[TAB_SIZE], res;
@@ -3296,7 +3294,7 @@ LBL_M:
 After that loop you do the squares and add them in.
 */
 
-static int ICACHE_FLASH_ATTR
+static int
 fast_s_mp_sqr (mp_int * a, mp_int * b)
 {
   int       olduse, res, pa, ix, iz;
@@ -3384,7 +3382,7 @@ fast_s_mp_sqr (mp_int * a, mp_int * b)
 
 #ifdef BN_MP_MUL_D_C
 /* multiply by a digit */
-static int ICACHE_FLASH_ATTR
+static int
 mp_mul_d (mp_int * a, mp_digit b, mp_int * c)
 {
   mp_digit u, *tmpa, *tmpc;
