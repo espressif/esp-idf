@@ -243,7 +243,7 @@ void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
 
 static void IRAM_ATTR timer_alarm_isr(void *arg)
 {
-    portENTER_CRITICAL(&s_time_update_lock);
+    portENTER_CRITICAL_ISR(&s_time_update_lock);
     // Timekeeping: adjust s_time_base_us if counter has passed ALARM_OVERFLOW_VAL
     if (timer_overflow_happened()) {
         timer_count_reload();
@@ -256,17 +256,17 @@ static void IRAM_ATTR timer_alarm_isr(void *arg)
     // Set alarm to the next overflow moment. Later, upper layer function may
     // call esp_timer_impl_set_alarm to change this to an earlier value.
     REG_WRITE(FRC_TIMER_ALARM_REG(1), ALARM_OVERFLOW_VAL);
-    portEXIT_CRITICAL(&s_time_update_lock);
+    portEXIT_CRITICAL_ISR(&s_time_update_lock);
     // Call the upper layer handler
     (*s_alarm_handler)(arg);
 }
 
 void IRAM_ATTR esp_timer_impl_update_apb_freq(uint32_t apb_ticks_per_us)
 {
-    portENTER_CRITICAL(&s_time_update_lock);
+    portENTER_CRITICAL_ISR(&s_time_update_lock);
     /* Bail out if the timer is not initialized yet */
     if (s_timer_interrupt_handle == NULL) {
-        portEXIT_CRITICAL(&s_time_update_lock);
+        portEXIT_CRITICAL_ISR(&s_time_update_lock);
         return;
     }
 
@@ -308,7 +308,7 @@ void IRAM_ATTR esp_timer_impl_update_apb_freq(uint32_t apb_ticks_per_us)
     s_timer_ticks_per_us = new_ticks_per_us;
     s_timer_us_per_overflow = ALARM_OVERFLOW_VAL / new_ticks_per_us;
 
-    portEXIT_CRITICAL(&s_time_update_lock);
+    portEXIT_CRITICAL_ISR(&s_time_update_lock);
 }
 
 esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)

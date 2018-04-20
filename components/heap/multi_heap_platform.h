@@ -16,7 +16,6 @@
 #ifdef ESP_PLATFORM
 
 #include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
 #include <rom/ets_sys.h>
 #include <assert.h>
 
@@ -24,14 +23,14 @@
    we need to use portmux spinlocks here not RTOS mutexes */
 #define MULTI_HEAP_LOCK(PLOCK) do {               \
         if((PLOCK) != NULL) {                               \
-            taskENTER_CRITICAL((portMUX_TYPE *)(PLOCK));    \
+            portENTER_CRITICAL((portMUX_TYPE *)(PLOCK));    \
         }                                                   \
     } while(0)
 
 
 #define MULTI_HEAP_UNLOCK(PLOCK) do {                \
         if ((PLOCK) != NULL) {                              \
-            taskEXIT_CRITICAL((portMUX_TYPE *)(PLOCK));     \
+            portEXIT_CRITICAL((portMUX_TYPE *)(PLOCK));     \
         }                                                   \
     } while(0)
 
