@@ -85,6 +85,7 @@ def load_sections(map_file):
     scan_to_header(map_file, "END GROUP")
     sections = {}
     section = None
+    sym_backup = None
     for line in map_file:
         # output section header, ie '.iram0.text     0x0000000040080400    0x129a5'
         RE_SECTION_HEADER = r"(?P<name>[^ ]+) +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+)$"
@@ -101,17 +102,26 @@ def load_sections(map_file):
 
         # source file line, ie
         # 0x0000000040080400       0xa4 /home/gus/esp/32/idf/examples/get-started/hello_world/build/esp32/libesp32.a(cpu_start.o)
-        RE_SOURCE_LINE = r".*? +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+) (?P<archive>.+\.a)\((?P<object_file>.+\.o)\)"
-        m = re.match(RE_SOURCE_LINE, line)
+        RE_SOURCE_LINE = r"\s*(?P<sym_name>\S*).* +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+) (?P<archive>.+\.a)\((?P<object_file>.+\.o)\)"
+
+        m = re.match(RE_SOURCE_LINE, line, re.M)
         if section is not None and m is not None:  # input source file details
+            sym_name = m.group("sym_name") if len(m.group("sym_name")) > 0 else sym_backup
             source = {
                 "size" : int(m.group("size"), 16),
                 "address" : int(m.group("address"), 16),
                 "archive" : os.path.basename(m.group("archive")),
                 "object_file" : m.group("object_file"),
+                "sym_name" : sym_name,
             }
             source["file"] = "%s:%s" % (source["archive"], source["object_file"])
             section["sources"] += [ source ]
+
+        # In some cases the section name appears on the previous line, back it up in here
+        RE_SYMBOL_ONLY_LINE = r"^ (?P<sym_name>\S*)$"
+        m = re.match(RE_SYMBOL_ONLY_LINE, line)
+        if section is not None and m is not None:
+            sym_backup = m.group("sym_name")
 
     return sections
 
@@ -148,6 +158,9 @@ def main():
         '--archives', help='Print per-archive sizes', action='store_true')
 
     parser.add_argument(
+        '--archive_details', help='Print detailed symbols per archive')
+
+    parser.add_argument(
         '--files', help='Print per-file sizes', action='store_true')
 
     args = parser.parse_args()
@@ -161,6 +174,9 @@ def main():
     if args.files:
         print("Per-file contributions to ELF file:")
         print_detailed_sizes(sections, "file", "Object File")
+    if args.archive_details:
+        print "Symbols within the archive:", args.archive_details, "(Not all symbols may be reported)"
+        print_archive_symbols(sections, args.archive_details)
 
 def print_summary(memory_config, sections):
     def get_size(section):
@@ -229,6 +245,28 @@ def print_detailed_sizes(sections, key, header):
                                                   v["flash_text"],
                                                   v["flash_rodata"],
                                                   v["total"]))
+
+def print_archive_symbols(sections, archive):
+    interested_sections = [".dram0.data", ".dram0.bss", ".iram0.text", ".iram0.vectors", ".flash.text", ".flash.rodata"]
+    result = {}
+    for t in interested_sections:
+        result[t] = {}
+    for section in sections.values():
+        section_name = section["name"]
+        if section_name not in interested_sections:
+            continue
+        for s in section["sources"]:
+            if archive != s["archive"]:
+                continue
+            s["sym_name"] = re.sub("(.text.|.literal.|.data.|.bss.|.rodata.)", "", s["sym_name"]);
+            result[section_name][s["sym_name"]] = result[section_name].get(s["sym_name"], 0) + s["size"]
+    for t in interested_sections:
+        print "\nSymbols from section:", t
+        section_total = 0
+        for key,val in sorted(result[t].items(), key=lambda (k,v): v, reverse=True):
+            print("%s(%d)"% (key.replace(t + ".", ""), val)),
+            section_total += val
+        print "\nSection total:",section_total
 
 if __name__ == "__main__":
     main()
