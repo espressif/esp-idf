@@ -743,7 +743,7 @@ void btc_gattc_call_handler(btc_msg_t *msg)
         BTA_GATTC_CacheAssociat(arg->cache_associat.gattc_if,
                                 arg->cache_associat.src_addr,
                                 arg->cache_associat.ass_addr,
-                                arg->cache_associat.is_associa);
+                                arg->cache_associat.is_associat);
         break;
     case BTC_GATTC_ATC_CACHE_GET_ADDR_LIST:
         BTA_GATTC_CacheGetAddrList(arg->get_addr_list.gattc_if);
