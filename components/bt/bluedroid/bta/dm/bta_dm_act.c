@@ -29,6 +29,7 @@
 #include "bta_api.h"
 #include "bta_dm_int.h"
 #include "bta_dm_co.h"
+#include "bta_gattc_co.h"
 #include "btm_api.h"
 #include "btm_int.h"
 #include "btu.h"
@@ -404,6 +405,10 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
         BTM_SetDeviceClass (dev_class);
 
 #if (defined BLE_INCLUDED && BLE_INCLUDED == TRUE)
+#if (GATTC_INCLUDED == TRUE)
+        // load the gattc cache address list
+        bta_gattc_co_cache_addr_init();
+#endif /* #if (GATTC_INCLUDED = TRUE) */
         /* load BLE local information: ID keys, ER if available */
         bta_dm_co_ble_load_local_keys(&key_mask, er, &id_key);
 
