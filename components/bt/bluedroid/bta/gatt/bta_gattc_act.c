@@ -1768,49 +1768,49 @@ void bta_gattc_process_api_refresh(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg)
     bta_gattc_cache_reset(p_msg->api_conn.remote_bda);
 }
 
-void bta_gattc_process_api_cache_associat(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg)
+void bta_gattc_process_api_cache_assoc(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg)
 {
     tBTA_GATTC gattc_cb = {0};
-    gattc_cb.set_associa.client_if = p_msg->api_associa.client_if;
+    gattc_cb.set_assoc.client_if = p_msg->api_assoc.client_if;
     BOOLEAN state = FALSE;
-    tBTA_GATTC_CLCB *p_ass_clcb = bta_gattc_find_clcb_by_cif(p_msg->api_associa.client_if, 
-                                                             p_msg->api_associa.ass_addr, BTA_TRANSPORT_LE);
-    tBTA_GATTC_RCB *p_clrcb = bta_gattc_cl_get_regcb(p_msg->api_associa.client_if);
-    if (p_ass_clcb != NULL) {
-        if (p_ass_clcb->state == BTA_GATTC_CONN_ST || p_ass_clcb->state == BTA_GATTC_DISCOVER_ST) {
-            gattc_cb.set_associa.status = BTA_GATT_BUSY;
+    tBTA_GATTC_CLCB *p_assoc_clcb = bta_gattc_find_clcb_by_cif(p_msg->api_assoc.client_if, 
+                                                             p_msg->api_assoc.assoc_addr, BTA_TRANSPORT_LE);
+    tBTA_GATTC_RCB *p_clrcb = bta_gattc_cl_get_regcb(p_msg->api_assoc.client_if);
+    if (p_assoc_clcb != NULL) {
+        if (p_assoc_clcb->state == BTA_GATTC_CONN_ST || p_assoc_clcb->state == BTA_GATTC_DISCOVER_ST) {
+            gattc_cb.set_assoc.status = BTA_GATT_BUSY;
             if (p_clrcb != NULL) {
-                (*p_clrcb->p_cback)(BTA_GATTC_ASSOCIAT_EVT, &gattc_cb);
+                (*p_clrcb->p_cback)(BTA_GATTC_ASSOC_EVT, &gattc_cb);
                 return;
             }
         }
     }
 
-    if (p_msg->api_associa.is_associa) {
-        if ((state = bta_gattc_co_cache_append_ass_addr(p_msg->api_associa.src_addr, p_msg->api_associa.ass_addr)) == TRUE) {
-            gattc_cb.set_associa.status = BTA_GATT_OK;
+    if (p_msg->api_assoc.is_assoc) {
+        if ((state = bta_gattc_co_cache_append_assoc_addr(p_msg->api_assoc.src_addr, p_msg->api_assoc.assoc_addr)) == TRUE) {
+            gattc_cb.set_assoc.status = BTA_GATT_OK;
 
         } else {
-            gattc_cb.set_associa.status = BTA_GATT_ERROR;
+            gattc_cb.set_assoc.status = BTA_GATT_ERROR;
             if (p_clrcb != NULL) {
-                (*p_clrcb->p_cback)(BTA_GATTC_ASSOCIAT_EVT, &gattc_cb);
+                (*p_clrcb->p_cback)(BTA_GATTC_ASSOC_EVT, &gattc_cb);
                 return;
             }
         }
     } else {
-        if (( state = bta_gattc_co_cache_remove_ass_addr(p_msg->api_associa.src_addr, p_msg->api_associa.ass_addr)) == TRUE) {
-            gattc_cb.set_associa.status = BTA_GATT_OK;
+        if (( state = bta_gattc_co_cache_remove_assoc_addr(p_msg->api_assoc.src_addr, p_msg->api_assoc.assoc_addr)) == TRUE) {
+            gattc_cb.set_assoc.status = BTA_GATT_OK;
         } else {
-            gattc_cb.set_associa.status = BTA_GATT_ERROR;
+            gattc_cb.set_assoc.status = BTA_GATT_ERROR;
             if (p_clrcb != NULL) {
-                (*p_clrcb->p_cback)(BTA_GATTC_ASSOCIAT_EVT, &gattc_cb);
+                (*p_clrcb->p_cback)(BTA_GATTC_ASSOC_EVT, &gattc_cb);
                 return;
             }
         }
     }
 
     if (p_clrcb != NULL) {
-        (*p_clrcb->p_cback)(BTA_GATTC_ASSOCIAT_EVT, &gattc_cb);
+        (*p_clrcb->p_cback)(BTA_GATTC_ASSOC_EVT, &gattc_cb);
     }
 
     return;

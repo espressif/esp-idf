@@ -84,7 +84,7 @@ typedef struct {
     BOOLEAN is_open;
     BD_ADDR addr;
     coap_key_t hash_key;
-    list_t *ass_addr;
+    list_t *assoc_addr;
 }cache_addr_info_t;
 
 typedef struct {
@@ -118,11 +118,11 @@ static bool cacheOpen(BD_ADDR bda, bool to_save, UINT8 *index)
 {
     UNUSED(to_save);
     char fname[255] = {0};
-    UINT8 *ass_addr = NULL;
+    UINT8 *assoc_addr = NULL;
     esp_err_t status = ESP_FAIL;
     coap_key_t hash_key = {0};
     if (((*index = bta_gattc_co_find_addr_in_cache(bda)) != INVALID_ADDR_NUM) ||
-        ((ass_addr = bta_gattc_co_cache_find_src_addr(bda, index)) != NULL)) {
+        ((assoc_addr = bta_gattc_co_cache_find_src_addr(bda, index)) != NULL)) {
         if (cache_env.cache_addr[*index].is_open) {
             return TRUE;
         } else {
@@ -146,7 +146,7 @@ static void cacheReset(BD_ADDR bda)
       //cache_env.cache_addr
     if ((index = bta_gattc_co_find_addr_in_cache(bda)) != INVALID_ADDR_NUM) {
         //clear the association address pending in the source address.
-        bta_gattc_co_cache_clear_ass_addr(bda);
+        bta_gattc_co_cache_clear_assoc_addr(bda);
         if (cache_env.cache_addr[index].is_open) {
             nvs_erase_all(cache_env.cache_addr[index].cache_fp);
             nvs_close(cache_env.cache_addr[index].cache_fp);
@@ -346,7 +346,7 @@ void bta_gattc_co_cache_addr_init(void)
                              cache_env.cache_addr[i].addr[3], cache_env.cache_addr[i].addr[4], cache_env.cache_addr[i].addr[5]);
             APPL_TRACE_DEBUG("hash_key[%x] = %x%x%x%x", i, cache_env.cache_addr[i].hash_key[0], cache_env.cache_addr[i].hash_key[1],
                              cache_env.cache_addr[i].hash_key[2], cache_env.cache_addr[i].hash_key[3]);
-            bta_gattc_co_cache_new_ass_list(cache_env.cache_addr[i].addr, i);
+            bta_gattc_co_cache_new_assoc_list(cache_env.cache_addr[i].addr, i);
         }
     } else {
         APPL_TRACE_ERROR("%s, Line = %d, nvs flash open fail, err_code = %x", __func__, __LINE__, err_code);
@@ -471,45 +471,45 @@ void bta_gattc_co_cache_addr_save(BD_ADDR bd_addr, coap_key_t hash_key)
 
 }
 
-BOOLEAN bta_gattc_co_cache_new_ass_list(BD_ADDR src_addr, UINT8 index)
+BOOLEAN bta_gattc_co_cache_new_assoc_list(BD_ADDR src_addr, UINT8 index)
 {
     cache_addr_info_t *addr_info = &cache_env.cache_addr[index];
-    addr_info->ass_addr = list_new(osi_free_func);
-    return (addr_info->ass_addr != NULL ? TRUE : FALSE);
+    addr_info->assoc_addr = list_new(osi_free_func);
+    return (addr_info->assoc_addr != NULL ? TRUE : FALSE);
 }
 
-BOOLEAN bta_gattc_co_cache_append_ass_addr(BD_ADDR src_addr, BD_ADDR ass_addr)
+BOOLEAN bta_gattc_co_cache_append_assoc_addr(BD_ADDR src_addr, BD_ADDR assoc_addr)
 {
     UINT8 addr_index = 0;
     cache_addr_info_t *addr_info;
-    UINT8 *p_ass_buf = osi_malloc(sizeof(BD_ADDR));
-    memcpy(p_ass_buf, ass_addr, sizeof(BD_ADDR));
+    UINT8 *p_assoc_buf = osi_malloc(sizeof(BD_ADDR));
+    memcpy(p_assoc_buf, assoc_addr, sizeof(BD_ADDR));
     if ((addr_index = bta_gattc_co_find_addr_in_cache(src_addr)) != INVALID_ADDR_NUM) {
         addr_info = &cache_env.cache_addr[addr_index];
-        if (addr_info->ass_addr == NULL) {
-            addr_info->ass_addr =list_new(NULL);
+        if (addr_info->assoc_addr == NULL) {
+            addr_info->assoc_addr =list_new(NULL);
         }
-        return list_append(addr_info->ass_addr, p_ass_buf);
+        return list_append(addr_info->assoc_addr, p_assoc_buf);
     }
 
     return FALSE;
 }
 
-BOOLEAN bta_gattc_co_cache_remove_ass_addr(BD_ADDR src_addr, BD_ADDR ass_addr)
+BOOLEAN bta_gattc_co_cache_remove_assoc_addr(BD_ADDR src_addr, BD_ADDR assoc_addr)
 {
     UINT8 addr_index = 0;
     cache_addr_info_t *addr_info;
     if ((addr_index = bta_gattc_co_find_addr_in_cache(src_addr)) != INVALID_ADDR_NUM) {
         addr_info = &cache_env.cache_addr[addr_index];
-        if (addr_info->ass_addr != NULL) {
-            for (list_node_t *sn = list_begin(addr_info->ass_addr);
-             sn != list_end(addr_info->ass_addr); sn = list_next(sn)) {
+        if (addr_info->assoc_addr != NULL) {
+            for (list_node_t *sn = list_begin(addr_info->assoc_addr);
+             sn != list_end(addr_info->assoc_addr); sn = list_next(sn)) {
                 void *addr = list_node(sn);
-                if (!memcmp(addr, ass_addr, sizeof(BD_ADDR))) {
-                    return list_remove(addr_info->ass_addr, addr);
+                if (!memcmp(addr, assoc_addr, sizeof(BD_ADDR))) {
+                    return list_remove(addr_info->assoc_addr, addr);
                 }
             }
-            //return list_remove(addr_info->ass_addr, ass_addr);
+            //return list_remove(addr_info->assoc_addr, assoc_addr);
         } else {
             return FALSE;
         }
@@ -518,29 +518,29 @@ BOOLEAN bta_gattc_co_cache_remove_ass_addr(BD_ADDR src_addr, BD_ADDR ass_addr)
     return FALSE;
 }
 
-UINT8* bta_gattc_co_cache_find_src_addr(BD_ADDR ass_addr, UINT8 *index)
+UINT8* bta_gattc_co_cache_find_src_addr(BD_ADDR assoc_addr, UINT8 *index)
 {
     UINT8 num = cache_env.num_addr;
     cache_addr_info_t *addr_info = &cache_env.cache_addr[0];
     UINT8 *addr_data;
-    //Check the ass_addr list is NULL or not
-    if (addr_info->ass_addr == NULL) {
+    //Check the assoc_addr list is NULL or not
+    if (addr_info->assoc_addr == NULL) {
         *index = INVALID_ADDR_NUM;
         return NULL;
     }
 
     for (int i = 0; i < num; i++) {
-       for (const list_node_t *node = list_begin(addr_info->ass_addr); node != list_end(addr_info->ass_addr); 
+       for (const list_node_t *node = list_begin(addr_info->assoc_addr); node != list_end(addr_info->assoc_addr); 
             node = list_next(node)) {
             addr_data = (UINT8 *)list_node(node);
-           if (!memcmp(addr_data, ass_addr, sizeof(BD_ADDR))) {
+           if (!memcmp(addr_data, assoc_addr, sizeof(BD_ADDR))) {
                *index = i;
                return (UINT8 *)addr_info->addr;
            }
        }
        addr_info++;
 
-       if (addr_info->ass_addr == NULL) {
+       if (addr_info->assoc_addr == NULL) {
            *index = INVALID_ADDR_NUM;
            return NULL;
        }
@@ -550,14 +550,14 @@ UINT8* bta_gattc_co_cache_find_src_addr(BD_ADDR ass_addr, UINT8 *index)
     return NULL;
 }
 
-BOOLEAN bta_gattc_co_cache_clear_ass_addr(BD_ADDR src_addr)
+BOOLEAN bta_gattc_co_cache_clear_assoc_addr(BD_ADDR src_addr)
 {
     UINT8 addr_index = 0;
     cache_addr_info_t *addr_info;
     if ((addr_index = bta_gattc_co_find_addr_in_cache(src_addr)) != INVALID_ADDR_NUM) {
         addr_info = &cache_env.cache_addr[addr_index];
-        if (addr_info->ass_addr != NULL) {
-            list_clear(addr_info->ass_addr);
+        if (addr_info->assoc_addr != NULL) {
+            list_clear(addr_info->assoc_addr);
         } else {
             return FALSE;
         }

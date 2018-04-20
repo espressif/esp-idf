@@ -739,11 +739,11 @@ void btc_gattc_call_handler(btc_msg_t *msg)
     case BTC_GATTC_ACT_CACHE_REFRESH:
         BTA_GATTC_Refresh(arg->cache_refresh.remote_bda);
         break;
-    case BTC_GATTC_ACT_CACHE_ASSOCIAT:
-        BTA_GATTC_CacheAssociat(arg->cache_associat.gattc_if,
-                                arg->cache_associat.src_addr,
-                                arg->cache_associat.ass_addr,
-                                arg->cache_associat.is_associat);
+    case BTC_GATTC_ACT_CACHE_ASSOC:
+        BTA_GATTC_CacheAssoc(arg->cache_assoc.gattc_if,
+                                arg->cache_assoc.src_addr,
+                                arg->cache_assoc.assoc_addr,
+                                arg->cache_assoc.is_assoc);
         break;
     case BTC_GATTC_ATC_CACHE_GET_ADDR_LIST:
         BTA_GATTC_CacheGetAddrList(arg->get_addr_list.gattc_if);
@@ -955,10 +955,10 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
         btc_gattc_cb_to_app(ESP_GATTC_QUEUE_FULL_EVT, gattc_if, &param);
         break;
     }
-    case BTA_GATTC_ASSOCIAT_EVT: {
-        gattc_if = arg->set_associa.client_if;
-        param.set_ass_cmp.status = arg->set_associa.status;
-        btc_gattc_cb_to_app(ESP_GATTC_SET_ASSOCIAT_EVT, gattc_if, &param);
+    case BTA_GATTC_ASSOC_EVT: {
+        gattc_if = arg->set_assoc.client_if;
+        param.set_assoc_cmp.status = arg->set_assoc.status;
+        btc_gattc_cb_to_app(ESP_GATTC_SET_ASSOC_EVT, gattc_if, &param);
         break;
     }
     case BTA_GATTC_GET_ADDR_LIST_EVT: {

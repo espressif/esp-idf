@@ -125,14 +125,14 @@ extern void bta_gattc_co_get_addr_list(BD_ADDR *addr_list);
 
 extern void bta_gattc_co_cache_addr_save(BD_ADDR bd_addr, coap_key_t hash_key);
 
-extern BOOLEAN bta_gattc_co_cache_new_ass_list(BD_ADDR src_addr, uint8_t index);
+extern BOOLEAN bta_gattc_co_cache_new_assoc_list(BD_ADDR src_addr, uint8_t index);
 
-extern BOOLEAN bta_gattc_co_cache_append_ass_addr(BD_ADDR src_addr, BD_ADDR ass_addr);
+extern BOOLEAN bta_gattc_co_cache_append_assoc_addr(BD_ADDR src_addr, BD_ADDR assoc_addr);
 
-extern BOOLEAN bta_gattc_co_cache_remove_ass_addr(BD_ADDR src_addr, BD_ADDR ass_addr);
+extern BOOLEAN bta_gattc_co_cache_remove_assoc_addr(BD_ADDR src_addr, BD_ADDR assoc_addr);
 
-uint8_t* bta_gattc_co_cache_find_src_addr(BD_ADDR ass_addr, uint8_t *index);
+uint8_t* bta_gattc_co_cache_find_src_addr(BD_ADDR assoc_addr, uint8_t *index);
 
-extern BOOLEAN bta_gattc_co_cache_clear_ass_addr(BD_ADDR src_addr);
+extern BOOLEAN bta_gattc_co_cache_clear_assoc_addr(BD_ADDR src_addr);
 
 #endif /* BTA_GATT_CO_H */
