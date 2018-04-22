@@ -929,6 +929,13 @@ static void uart_rx_intr_handler_default(void *param)
             if(HPTaskAwoken == pdTRUE) {
                 portYIELD_FROM_ISR() ;
             }
+        } else if(uart_intr_status & UART_RS485_CLASH_INT_ST_M) {
+            // For RS485 clash lets clear the rx fifo and continue 
+            uart_clear_intr_status(uart_num, UART_RS485_CLASH_INT_CLR_M);
+            UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
+            uart_reset_rx_fifo(uart_num);
+            UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
+            uart_event.type = UART_EVENT_MAX;
         } else {
             uart_reg->int_clr.val = uart_intr_status; /*simply clear all other intr status*/
             uart_event.type = UART_EVENT_MAX;
@@ -1273,6 +1280,11 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         .rx_timeout_thresh = UART_TOUT_THRESH_DEFAULT,
         .txfifo_empty_intr_thresh = UART_EMPTY_THRESH_DEFAULT
     };
+    /* If RS485 then enable interrupts, note currently we only service UART_RS485_CLASH_INT */
+    if (UART[uart_num]->rs485_conf.en ){
+         uart_intr.intr_enable_mask |= UART_RS485_CLASH_INT_ENA | UART_RS485_FRM_ERR_INT_ENA | UART_RS485_PARITY_ERR_INT_ENA;
+    }
+
     r=uart_intr_config(uart_num, &uart_intr);
     if (r!=ESP_OK) goto err;
     return r;
@@ -1340,5 +1352,27 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
            periph_module_disable(PERIPH_UART2_MODULE);
        }
     }
+    return ESP_OK;
+}
+
+esp_err_t uart_set_rs485(uart_port_t uart_num, bool enable, bool tx_rx_en, bool rx_busy_tx_en)
+{
+    UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
+    UART_CHECK((!enable || !UART[uart_num]->conf1.rx_flow_en), "Disable hw flowctrl before using RS485 mode", ESP_FAIL);
+    UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
+    if(enable) {
+        // Disable hw flow control and set RTS low so TX is active
+        UART[uart_num]->conf1.rx_flow_en = 0;
+        UART[uart_num]->conf0.sw_rts = 0;
+        // Transmitter’s output signal loop back to the receiver’s input signal
+        UART[uart_num]->rs485_conf.tx_rx_en = tx_rx_en ? 1:0 ;
+        // Transmitter should send data when its receiver is busy
+        UART[uart_num]->rs485_conf.rx_busy_tx_en = rx_busy_tx_en ? 1:0;
+        UART[uart_num]->rs485_conf.en = 1;
+    } else {
+        uart_disable_intr_mask(uart_num, UART_RS485_CLASH_INT_ENA | UART_RS485_FRM_ERR_INT_ENA | UART_RS485_PARITY_ERR_INT_ENA);
+        UART[uart_num]->rs485_conf.en = 0;
+    }
+    UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
     return ESP_OK;
 }
