@@ -1010,6 +1010,12 @@ esp_err_t i2s_zero_dma_buffer(i2s_port_t i2s_num)
         }
     }
     if (p_i2s_obj[i2s_num]->tx && p_i2s_obj[i2s_num]->tx->buf != NULL && p_i2s_obj[i2s_num]->tx->buf_size != 0) {
+        int bytes_left = 0;
+        bytes_left = (p_i2s_obj[i2s_num]->tx->buf_size - p_i2s_obj[i2s_num]->tx->rw_pos) % 4;
+        if (bytes_left) {
+            size_t zero_bytes = 0, bytes_written;
+            i2s_write(i2s_num, (void *)&zero_bytes, bytes_left, &bytes_written, portMAX_DELAY);
+        }
         for (int i = 0; i < p_i2s_obj[i2s_num]->dma_buf_count; i++) {
             memset(p_i2s_obj[i2s_num]->tx->buf[i], 0, p_i2s_obj[i2s_num]->tx->buf_size);
         }
@@ -1228,7 +1234,7 @@ esp_err_t i2s_write_expand(i2s_port_t i2s_num, const void *src, size_t size, siz
     return ESP_OK;
 }
 
-int i2s_read_bytes(i2s_port_t i2s_num, const void *dest, size_t size, TickType_t ticks_to_wait)
+int i2s_read_bytes(i2s_port_t i2s_num, void *dest, size_t size, TickType_t ticks_to_wait)
 {
     size_t bytes_read = 0;
     int res = 0;
@@ -1240,7 +1246,7 @@ int i2s_read_bytes(i2s_port_t i2s_num, const void *dest, size_t size, TickType_t
     }
 }
 
-esp_err_t i2s_read(i2s_port_t i2s_num, const void *dest, size_t size, size_t *bytes_read, TickType_t ticks_to_wait)
+esp_err_t i2s_read(i2s_port_t i2s_num, void *dest, size_t size, size_t *bytes_read, TickType_t ticks_to_wait)
 {
     char *data_ptr, *dest_byte;
     int bytes_can_read;
@@ -1286,7 +1292,7 @@ int i2s_push_sample(i2s_port_t i2s_num, const void *sample, TickType_t ticks_to_
     }
 }
 
-int i2s_pop_sample(i2s_port_t i2s_num, const void *sample, TickType_t ticks_to_wait)
+int i2s_pop_sample(i2s_port_t i2s_num, void *sample, TickType_t ticks_to_wait)
 {
     size_t bytes_pop = 0;
     int res = 0;

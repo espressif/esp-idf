@@ -336,7 +336,7 @@ esp_err_t i2s_write_expand(i2s_port_t i2s_num, const void *src, size_t size, siz
  *     - The amount of bytes read, if timeout, bytes read will be less than the size passed in
  *     - ESP_FAIL  Parameter error
  */
-int i2s_read_bytes(i2s_port_t i2s_num, const void *dest, size_t size, TickType_t ticks_to_wait) __attribute__ ((deprecated));
+int i2s_read_bytes(i2s_port_t i2s_num, void *dest, size_t size, TickType_t ticks_to_wait) __attribute__ ((deprecated));
 
 /**
  * @brief Read data from I2S DMA receive buffer
@@ -358,7 +358,7 @@ int i2s_read_bytes(i2s_port_t i2s_num, const void *dest, size_t size, TickType_t
  *     - ESP_OK               Success
  *     - ESP_ERR_INVALID_ARG  Parameter error
  */
-esp_err_t i2s_read(i2s_port_t i2s_num, const void *dest, size_t size, size_t *bytes_read, TickType_t ticks_to_wait);
+esp_err_t i2s_read(i2s_port_t i2s_num, void *dest, size_t size, size_t *bytes_read, TickType_t ticks_to_wait);
 
 /**
  * @brief Write a single sample to the I2S DMA TX buffer.
@@ -394,7 +394,7 @@ int i2s_push_sample(i2s_port_t i2s_num, const void *sample, TickType_t ticks_to_
  *     - Number of bytes successfully read from DMA buffer, will be either zero or the size of configured sample buffer (in bytes).
  *     - ESP_FAIL Parameter error
  */
-int i2s_pop_sample(i2s_port_t i2s_num, const void *sample, TickType_t ticks_to_wait) __attribute__ ((deprecated));
+int i2s_pop_sample(i2s_port_t i2s_num, void *sample, TickType_t ticks_to_wait) __attribute__ ((deprecated));
 
 /**
  * @brief Set sample rate used for I2S RX and TX.
