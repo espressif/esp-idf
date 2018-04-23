@@ -547,3 +547,16 @@ esp_err_t gpio_hold_dis(gpio_num_t gpio_num)
     }
     return r == ESP_OK ? ESP_OK : ESP_ERR_NOT_SUPPORTED;
 }
+
+void gpio_iomux_in(uint32_t gpio, uint32_t signal_idx)
+{
+    GPIO.func_in_sel_cfg[signal_idx].sig_in_sel = 0;
+    PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[gpio]);
+}
+
+void gpio_iomux_out(uint8_t gpio_num, int func, bool oen_inv)
+{
+    GPIO.func_out_sel_cfg[gpio_num].oen_sel = 0;
+    GPIO.func_out_sel_cfg[gpio_num].oen_inv_sel = oen_inv;
+    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], func);
+}
