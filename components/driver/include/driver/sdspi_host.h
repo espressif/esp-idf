@@ -40,6 +40,7 @@ extern "C" {
     .io_voltage = 3.3f, \
     .init = &sdspi_host_init, \
     .set_bus_width = NULL, \
+    .get_bus_width = NULL, \
     .set_card_clk = &sdspi_host_set_card_clk, \
     .do_transaction = &sdspi_host_do_transaction, \
     .deinit = &sdspi_host_deinit, \
@@ -72,8 +73,8 @@ typedef struct {
     .gpio_mosi = GPIO_NUM_15, \
     .gpio_sck  = GPIO_NUM_14, \
     .gpio_cs   = GPIO_NUM_13, \
-    .gpio_cd   = SDMMC_SLOT_NO_CD, \
-    .gpio_wp   = SDMMC_SLOT_NO_WP, \
+    .gpio_cd   = SDSPI_SLOT_NO_CD, \
+    .gpio_wp   = SDSPI_SLOT_NO_WP, \
     .dma_channel = 1 \
 }
 
