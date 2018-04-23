@@ -136,7 +136,7 @@ static void mbedtls_cleanup(esp_tls_t *tls)
     if (!tls) {
         return;
     }
-    
+    mbedtls_x509_crt_free(&tls->cacert);
     mbedtls_entropy_free(&tls->entropy);
     mbedtls_ssl_config_free(&tls->conf);
     mbedtls_ctr_drbg_free(&tls->ctr_drbg);
