@@ -34,7 +34,7 @@ choice BTDM_CONTROLLER_HCI_MODE_CHOICE
 
 config BTDM_CONTROLLER_HCI_MODE_VHCI
     bool "VHCI"
-    help 
+    help
         Normal option. Mostly, choose this VHCI when bluetooth host run on ESP32, too.
 
 config BTDM_CONTROLLER_HCI_MODE_UART_H4
@@ -119,7 +119,7 @@ config A2DP_ENABLE
     default n
     help
         Advanced Audio Distrubution Profile
-    
+
 choice A2DP_ROLE
     prompt "A2DP ROLE config"
     depends on A2DP_ENABLE
@@ -150,7 +150,7 @@ config BT_SPP_ENABLED
 config GATTS_ENABLE
     bool "Include GATT server module(GATTS)"
     depends on BLUEDROID_ENABLED
-    default y 
+    default y
     help
         This option can be disabled when the app work only on gatt client mode
 
@@ -168,6 +168,15 @@ config BLE_SMP_ENABLE
    help
        This option can be close when the app not used the ble security connect.
 
+config BLE_ENABLE_SRVCHG_REG
+    bool "Enable automatic service change notify registration"
+    depends on BLUEDROID_ENABLED
+    default y
+    help
+        This option enables automatic registration of service change notification
+        after connect. Be careful, it can may collide with your command sequences
+        and lead to GATT_BUSY.
+
 config BT_STACK_NO_LOG
     bool "Close the bluedroid bt stack log print"
     depends on BLUEDROID_ENABLED
@@ -180,7 +189,7 @@ config BT_ACL_CONNECTIONS
     depends on BLUEDROID_ENABLED
     range 1 7
     default 4
-    help 
+    help
         Maximum BT/BLE connection count
 
 config BT_ALLOCATION_FROM_SPIRAM_FIRST
@@ -201,7 +210,7 @@ config SMP_ENABLE
    bool
    depends on BLUEDROID_ENABLED
    default CLASSIC_BT_ENABLED || BLE_SMP_ENABLE
-   
+
 # Memory reserved at start of DRAM for Bluetooth stack
 config BT_RESERVE_DRAM
     hex
