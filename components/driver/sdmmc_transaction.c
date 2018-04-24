@@ -112,6 +112,7 @@ void sdmmc_host_transaction_handler_deinit()
 
 esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
 {
+    esp_err_t ret;
     xSemaphoreTake(s_request_mutex, portMAX_DELAY);
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_acquire(s_pm_lock);
@@ -124,12 +125,14 @@ esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
         if (cmdinfo->datalen < 4 || cmdinfo->blklen % 4 != 0) {
             ESP_LOGD(TAG, "%s: invalid size: total=%d block=%d",
                     __func__, cmdinfo->datalen, cmdinfo->blklen);
-            return ESP_ERR_INVALID_SIZE;
+            ret = ESP_ERR_INVALID_SIZE;
+            goto out;
         }
         if ((intptr_t) cmdinfo->data % 4 != 0 ||
                 !esp_ptr_dma_capable(cmdinfo->data)) {
             ESP_LOGD(TAG, "%s: buffer %p can not be used for DMA", __func__, cmdinfo->data);
-            return ESP_ERR_INVALID_ARG;
+            ret = ESP_ERR_INVALID_ARG;
+            goto out;
         }
         // this clears "owned by IDMAC" bits
         memset(s_dma_desc, 0, sizeof(s_dma_desc));
@@ -146,10 +149,9 @@ esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
         sdmmc_host_dma_prepare(&s_dma_desc[0], cmdinfo->blklen, cmdinfo->datalen);
     }
     // write command into hardware, this also sends the command to the card
-    esp_err_t ret = sdmmc_host_start_command(slot, hw_cmd, cmdinfo->arg);
+    ret = sdmmc_host_start_command(slot, hw_cmd, cmdinfo->arg);
     if (ret != ESP_OK) {
-        xSemaphoreGive(s_request_mutex);
-        return ret;
+        goto out;
     }
     // process events until transfer is complete
     cmdinfo->error = ESP_OK;
@@ -161,6 +163,8 @@ esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
         }
     }
     s_is_app_cmd = (ret == ESP_OK && cmdinfo->opcode == MMC_APP_CMD);
+
+out:
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_release(s_pm_lock);
 #endif

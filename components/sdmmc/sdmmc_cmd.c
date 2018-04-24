@@ -102,14 +102,17 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
     
     /* ----------- standard initialization process starts here ---------- */
 
-    /* Reset SDIO (CMD52, RES) before re-initializing IO (CMD5).
-     * Non-IO cards are allowed to time out (in SD mode) or
-     * return "invalid command" error (in SPI mode).
-     */
+    /* Reset SDIO (CMD52, RES) before re-initializing IO (CMD5). */
     uint8_t sdio_reset = CCCR_CTL_RES;
     err = sdmmc_io_rw_direct(card, 0, SD_IO_CCCR_CTL, SD_ARG_CMD52_WRITE, &sdio_reset);
-    if (err != ESP_OK && err != ESP_ERR_TIMEOUT
-            && !(is_spi && err == ESP_ERR_NOT_SUPPORTED)) {
+    if (err == ESP_ERR_TIMEOUT || (is_spi && err == ESP_ERR_NOT_SUPPORTED)) {
+        /* Non-IO cards are allowed to time out (in SD mode) or
+         * return "invalid command" error (in SPI mode).
+         */
+    } else if (err == ESP_ERR_NOT_FOUND) {
+        ESP_LOGD(TAG, "%s: card not present", __func__);
+        return err;
+    } else if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: sdio_reset: unexpected return: 0x%x", __func__, err );
         return err;
     }
