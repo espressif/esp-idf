@@ -37,10 +37,10 @@ $(OUTPUT_DIR):
 	mkdir -p $(OUTPUT_DIR)
 
 test: $(TEST_PROGRAM)
-	./$(TEST_PROGRAM)
+	./$(TEST_PROGRAM) -d yes exclude:[long]
 
 long-test: $(TEST_PROGRAM)
-	./$(TEST_PROGRAM) [list],[enumtable],[spi_flash_emu],[nvs],[long]
+	./$(TEST_PROGRAM) -d yes
 
 $(COVERAGE_FILES): $(TEST_PROGRAM) long-test
 
@@ -58,4 +58,4 @@ clean:
 	rm -rf coverage_report/
 	rm -f coverage.info
 
-.PHONY: clean all test
+.PHONY: clean all test long-test
