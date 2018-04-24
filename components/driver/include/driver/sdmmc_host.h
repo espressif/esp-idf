@@ -43,9 +43,9 @@ extern "C" {
     .set_card_clk = &sdmmc_host_set_card_clk, \
     .do_transaction = &sdmmc_host_do_transaction, \
     .deinit = &sdmmc_host_deinit, \
-    .command_timeout_ms = 0, \
     .io_int_enable = sdmmc_host_io_int_enable, \
     .io_int_wait = sdmmc_host_io_int_wait, \
+    .command_timeout_ms = 0, \
 }
 
 /**

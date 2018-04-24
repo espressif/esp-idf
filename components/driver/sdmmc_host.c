@@ -255,6 +255,12 @@ esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg) {
     if (!(slot == 0 || slot == 1)) {
         return ESP_ERR_INVALID_ARG;
     }
+    if ((SDMMC.cdetect.cards & BIT(slot)) != 0) {
+        return ESP_ERR_NOT_FOUND;
+    }
+    if (cmd.data_expected && cmd.rw && (SDMMC.wrtprt.cards & BIT(slot)) != 0) {
+        return ESP_ERR_INVALID_STATE;
+    }
     while (SDMMC.cmd.start_command == 1) {
         ;
     }
@@ -397,18 +403,36 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config)
 
     // SDIO slave interrupt is edge sensitive to ~(int_n | card_int | card_detect)
     // set this and card_detect to high to enable sdio interrupt
-    gpio_matrix_in(GPIO_FUNC_IN_HIGH, pslot->card_int, 0);
-    if (gpio_cd != -1) {
-        gpio_set_direction(gpio_cd, GPIO_MODE_INPUT);
-        gpio_matrix_in(gpio_cd, pslot->card_detect, 0);
-    } else {
-        gpio_matrix_in(GPIO_FUNC_IN_HIGH, pslot->card_detect, 0);
-    }
+    gpio_matrix_in(GPIO_FUNC_IN_HIGH, pslot->card_int, false);
 
-    if (gpio_wp != -1) {
-        gpio_set_direction(gpio_wp, GPIO_MODE_INPUT);
-        gpio_matrix_in(gpio_wp, pslot->write_protect, 0);
+    // Set up Card Detect input
+    int matrix_in_cd;
+    if (gpio_cd != SDMMC_SLOT_NO_CD) {
+        ESP_LOGD(TAG, "using GPIO%d as CD pin", gpio_cd);
+        gpio_pad_select_gpio(gpio_cd);
+        gpio_set_direction(gpio_cd, GPIO_MODE_INPUT);
+        matrix_in_cd = gpio_cd;
+    } else {
+        // if not set, default to CD low (card present)
+        matrix_in_cd = GPIO_FUNC_IN_LOW;
     }
+    gpio_matrix_in(matrix_in_cd, pslot->card_detect, false);
+
+    // Set up Write Protect input
+    int matrix_in_wp;
+    if (gpio_wp != SDMMC_SLOT_NO_WP) {
+        ESP_LOGD(TAG, "using GPIO%d as WP pin", gpio_wp);
+        gpio_pad_select_gpio(gpio_wp);
+        gpio_set_direction(gpio_wp, GPIO_MODE_INPUT);
+        matrix_in_wp = gpio_wp;
+    } else {
+        // if not set, default to WP high (not write protected)
+        matrix_in_wp = GPIO_FUNC_IN_HIGH;
+    }
+    // WP signal is normally active low, but hardware expects
+    // an active-high signal, so invert it in GPIO matrix
+    gpio_matrix_in(matrix_in_wp, pslot->write_protect, true);
+
     // By default, set probing frequency (400kHz) and 1-bit bus
     esp_err_t ret = sdmmc_host_set_card_clk(slot, 400);
     if (ret != ESP_OK) {

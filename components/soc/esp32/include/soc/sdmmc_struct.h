@@ -255,7 +255,7 @@ typedef volatile struct {
 
     union {
         struct {
-            uint32_t cards: 2;              ///< bit N reads 1 if card N is present
+            uint32_t cards: 2;              ///< bit N reads 0 if card N is present
             uint32_t reserved: 30;
         };
         uint32_t val;
@@ -263,7 +263,7 @@ typedef volatile struct {
 
     union {
         struct {
-            uint32_t card0: 2;              ///< bit N reads 1 if card N is write protected
+            uint32_t cards: 2;              ///< bit N reads 1 if card N is write protected
             uint32_t reserved: 30;
         };
         uint32_t val;

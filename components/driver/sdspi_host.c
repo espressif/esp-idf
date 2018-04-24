@@ -310,22 +310,22 @@ esp_err_t sdspi_host_init_slot(int slot, const sdspi_slot_config_t* slot_config)
     // Configure CD and WP pins
     io_conf = (gpio_config_t) {
         .intr_type = GPIO_PIN_INTR_DISABLE,
-        .mode = GPIO_MODE_OUTPUT,
+        .mode = GPIO_MODE_INPUT,
         .pin_bit_mask = 0,
         .pull_up_en = true
     };
     if (slot_config->gpio_cd != SDSPI_SLOT_NO_CD) {
         io_conf.pin_bit_mask |= (1 << slot_config->gpio_cd);
-        s_slots[slot].gpio_wp = slot_config->gpio_wp;
+        s_slots[slot].gpio_cd = slot_config->gpio_cd;
     } else {
-        s_slots[slot].gpio_wp = GPIO_UNUSED;
+        s_slots[slot].gpio_cd = GPIO_UNUSED;
     }
 
     if (slot_config->gpio_wp != SDSPI_SLOT_NO_WP) {
         io_conf.pin_bit_mask |= (1 << slot_config->gpio_wp);
-        s_slots[slot].gpio_cd = slot_config->gpio_cd;
+        s_slots[slot].gpio_wp = slot_config->gpio_wp;
     } else {
-        s_slots[slot].gpio_cd = GPIO_UNUSED;
+        s_slots[slot].gpio_wp = GPIO_UNUSED;
     }
 
     if (io_conf.pin_bit_mask != 0) {
