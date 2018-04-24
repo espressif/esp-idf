@@ -1247,7 +1247,7 @@ void dhcps_coarse_tmr(void)
         }
     }
 
-    if (num_dhcps_pool >= MAX_STATION_NUM) {
+    if (num_dhcps_pool > MAX_STATION_NUM) {
         kill_oldest_dhcps_pool();
     }
 }
