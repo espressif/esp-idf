@@ -6,65 +6,46 @@ Setup for cmake on Windows
       The CMake-based build system is currently in preview release. Documentation may have missing gaps, and you may enocunter bugs (please report these). The original (non-cmake) version of this doc is :doc:`here<windows-setup>`.
 
 .. note::
-   Windows support in particular currently requires more manual installation of tools and setup of system Path than is planned for final release.
+      The CMake-based build system is only supported on 64-bit versions of Windows.
 
 Introduction
 ============
 
-Unlike the conventional ESP-IDF make-based build environment, cmake does not require a GNU-compatible environment for building. You can build with cmake from Windows Command Prompt, or from an IDE with cmake support.
+Unlike the conventional ESP-IDF make-based build environment, cmake does not require MSYS2 or another GNU-compatible environment (like Cygwin) for building. You can build with cmake from Windows Command Prompt, or from an IDE with cmake support.
 
-Tools
-=====
+ESP-IDF Tools Installer
+=======================
 
-The following software packages need to be installed:
+The easiest way to install ESP-IDF's prerequisites is to download the ESP-IDF Tools installer from this URL:
 
-cmake
-^^^^^
+https://dl.espressif.com/esp-idf-tools-setup-1.0.exe
 
-Download the latest stable release of CMake_ for Windows and run the installer.
+The installer will automatically install the ESP32 Xtensa gcc toolchain, Ninja_ build tool, and mconf configuration tool. The installer can also download and run installers for CMake_ and Python_ 2.7 if these are not already installed on the computer.
 
-When the installer asks for Install Options, choose either "Add CMake to the system PATH for all users" or "Add CMake to the system PATH for the current user".
+By default, the installer updates the Windows ``Path`` environment variable so all of these tools can be run from anywhere. If you disable this option, you will need to configure the environment where you are using ESP-IDF (terminal or chosen IDE) with the correct paths.
 
+Note that this installer is for the ESP-IDF Tools package, it doesn't include ESP-IDF itself.
 
-Ninja build
-^^^^^^^^^^^
+Installing Git
+==============
 
-Download the ninja_ latest stable Windows release from the (`download page <ninja-dl>`_).
+The ESP-IDF tools does not include Git. By default, the getting started guide assumes you will be using Git on the command line. You can download and install a Git command line for Windows (along with the Git-Bash terminal) from https://gitforwindows.org/.
 
-The Ninja for Windows download is a .zip file containing a single ``ninja.exe`` file which needs to be unzipped to a directory on your PATH.
-
-An easy directory to place ``ninja.exe`` is the CMake executable directory, as this is already on the PATH. This directory will be something like ``C:\Program Files\CMake\bin`` (look for the file ``cmake.exe`` in this directory to know it's the correct one).
-
-Python 2.x
-^^^^^^^^^^
-
-Download the latest Python_ 2.7 for Windows installer, and run it.
-
-The "Customise" step of the Python installer gives a list of options. The last option is "Add python.exe to Path". Change this option to select "Will be installed".
-
-Once Python is installed, open a Windows Command Prompt from the Start menu and run the following command::
-
-  pip install pyserial
+If you prefer to use a different graphical Git client, then you can install one of these instead - you will need to translate the Git commands in the getting started guide for use with your chosen Git client.
 
 
-Toolchain Setup
-===============
+Related Documents
+=================
 
-Download the precompiled Windows toolchain from dl.espressif.com:
+.. toctree::
+    :maxdepth: 1
 
-https://dl.espressif.com/dl/xtensa-esp32-elf-win32-1.22.0-80-g6c4433a-5.2.0.zip
+    windows-setup-scratch-cmake
 
-Unzip the zip file to ``C:\Program Files`` (or some other location). The zip file contains a single directory ``xtensa-esp32-elf``.
+Manual Installation
+^^^^^^^^^^^^^^^^^^^
 
-Next, you need to add the ``bin`` subdirectory to your PATH. For example, the directory to add may be ``C:\Program Files\xtensa-esp32-elf\bin``.
-
-Open the System control panel and navigate to the Environment Variables dialog. (On Windows 10, this is found under Advanced System Settings).
-
-Double-click the ``Path`` variable (either User or System Path, depending if you want other users to use the toolchain.) Go to the end of the value, and append ``;C:\Program Files\xtensa-esp32-elf\bin`` (or whatever the path to your toolchain ``bin`` directory is).
-
-.. note::
-   If you already have the MSYS2 environment (for use with the "GNU Make" build system) installed, you can skip the separate download and add the directory ``C:\msys32\opt\xtensa-esp32-elf\bin`` to the Path instead, as the toolchain is included in the MSYS2 environment.
-
+Optionall
 
 Next Steps
 ==========
@@ -74,5 +55,4 @@ To carry on with development environment setup, proceed to section :ref:`get-sta
 
 .. _cmake: https://cmake.org/download/
 .. _ninja: https://ninja-build.org/
-.. _ninja-dl: https://github.com/ninja-build/ninja/releases
 .. _Python: https://www.python.org/downloads/windows/

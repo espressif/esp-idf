@@ -1,0 +1,85 @@
+***************************************
+Setup for cmake on Windows from Scratch
+***************************************
+
+Setting up the environment gives you some more control over the process, and also provides the information for advanced users to customize the install. The :doc:`ESP-IDF Tools Installer <windows-setup-cmake>` automates the steps mentioned below.
+
+To quickly setup the toolchain and other tools in standard way, using the installer, proceed to section :doc:`windows-setup-cmake`.
+
+Note that, unlike the previous "GNU Make" based ESP-IDF build environment, the cmake environment does not include or require MSYS2 or any other Unix compatibility layer.
+
+Tools
+=====
+
+cmake
+^^^^^
+
+Download the latest stable release of CMake_ for Windows and run the installer.
+
+When the installer asks for Install Options, choose either "Add CMake to the system PATH for all users" or "Add CMake to the system PATH for the current user".
+
+Ninja build
+^^^^^^^^^^^
+
+.. note::
+    Ninja currently only provides binaries for 64-bit Windows. It is possible to use CMake and ``idf.py`` with other build tools, such as mingw-make, on 32-bit windows. However this is currently undocumented.
+
+Download the ninja_ latest stable Windows release from the (`download page <ninja-dl>`_).
+
+The Ninja for Windows download is a .zip file containing a single ``ninja.exe`` file which needs to be unzipped to a directory which is then `added to your Path <add-directory-windows-path>` (or you can choose a directory which is already on your Path).
+
+
+Python 2.x
+^^^^^^^^^^
+
+Download the latest Python_ 2.7 for Windows installer, and run it.
+
+The "Customise" step of the Python installer gives a list of options. The last option is "Add python.exe to Path". Change this option to select "Will be installed".
+
+Once Python is installed, open a Windows Command Prompt from the Start menu and run the following command::
+
+  pip install pyserial
+
+MConf
+^^^^^
+
+Download the ESP-IDF customized version of the configuration tool mconf from the `mconf releases page <mconf>`.
+
+This tool will also need to be unzipped to a directory which is then `added to your Path <add-directory-windows-path>`.
+
+Toolchain Setup
+===============
+
+Download the precompiled Windows toolchain from dl.espressif.com:
+
+https://dl.espressif.com/dl/xtensa-esp32-elf-win32-1.22.0-80-g6c4433a-5.2.0.zip
+
+Unzip the zip file to ``C:\Program Files`` (or some other location). The zip file contains a single directory ``xtensa-esp32-elf``.
+
+Next, the ``bin`` subdirectory of this directory must be `added to your Path <add-directory-windows-path>`. For example, the directory to add may be ``C:\Program Files\xtensa-esp32-elf\bin``.
+
+.. note::
+   If you already have the MSYS2 environment (for use with the "GNU Make" build system) installed, you can skip the separate download and add the directory ``C:\msys32\opt\xtensa-esp32-elf\bin`` to the Path instead, as the toolchain is included in the MSYS2 environment.
+
+
+.. _add-directory-windows-path:
+
+Adding Directory to Path
+========================
+
+To add any new directory to your Windows Path environment variable:
+
+Open the System control panel and navigate to the Environment Variables dialog. (On Windows 10, this is found under Advanced System Settings).
+
+Double-click the ``Path`` variable (either User or System Path, depending if you want other users to have this directory on their path.) Go to the end of the value, and append ``;<new value>``.
+
+Next Steps
+==========
+
+To carry on with development environment setup, proceed to section :ref:`get-started-get-esp-idf-cmake`.
+
+
+.. _cmake: https://cmake.org/download/
+.. _ninja: https://ninja-build.org/
+.. _ninja-dl: https://github.com/ninja-build/ninja/releases
+.. _Python: https://www.python.org/downloads/windows/
