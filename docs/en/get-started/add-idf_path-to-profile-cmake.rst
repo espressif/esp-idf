@@ -19,7 +19,7 @@ To preserve setting of these variables between system restarts, add them to the 
 Windows
 -------
 
-To edit Environment Variables on Windows 10, search for "Edit Environment Vartiables" under the Start menu.
+To edit Environment Variables on Windows 10, search for "Edit Environment Variables" under the Start menu.
 
 On earlier Windows versions, open the System Control Panel then choose "Advanced" and look for the Environment Variables button.
 

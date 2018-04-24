@@ -138,8 +138,9 @@ ESP-IDF will be downloaded into ``~/esp/esp-idf``.
 Setup Paths for ESP-IDF
 =======================
 
-The toolchain programs access ESP-IDF using ``IDF_PATH`` environment variable. This variable should be set up on your PC, otherwise projects will not build. Setting may be done manually, each time PC is restarted. Another option is to set up it permanently by defining ``IDF_PATH`` in user profile. To do so, follow instructions specific to :ref:`Windows <add-paths-to-profile-windows-cmake>` , :ref:`Linux and MacOS <add-idf_path-to-profile-linux-macos-cmake>` in section :doc:`add-idf_path-to-profile-cmake`.
+The build system and tools find ESP-IDF using the ``IDF_PATH`` environment variable, or by running the ``idf.py`` utility in the tools/ directory of the esp-idf source.
 
+These paths should be set up as environment variables on your computer, otherwise projects will not build. Setting may be done manually, each time PC is restarted. Another option is to set up it permanently by defining ``IDF_PATH`` and updating ``PATH`` in your user profile. To do so, follow instructions specific to :ref:`Windows <add-paths-to-profile-windows-cmake>` , :ref:`Linux and MacOS <add-idf_path-to-profile-linux-macos-cmake>` in section :doc:`add-idf_path-to-profile-cmake`.
 
 .. _get-started-start-project-cmake:
 
