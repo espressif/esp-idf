@@ -543,7 +543,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
             while (1) {
                 spi_status = READ_PERI_REG(SPI_EXT2_REG(PSRAM_SPI_3));
                 if (spi_status != 0 && spi_status != 1) {
-                    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI_CLK_EN_2);
+                    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI3_CLK_EN);
                     break;
                 }
             }

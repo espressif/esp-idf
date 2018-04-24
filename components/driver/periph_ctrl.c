@@ -91,11 +91,11 @@ static uint32_t get_clk_en_mask(periph_module_t periph)
         case PERIPH_PCNT_MODULE:
             return DPORT_PCNT_CLK_EN;
         case PERIPH_SPI_MODULE:
-            return DPORT_SPI_CLK_EN_1;
+            return DPORT_SPI01_CLK_EN;
         case PERIPH_HSPI_MODULE:
-            return DPORT_SPI_CLK_EN;
+            return DPORT_SPI2_CLK_EN;
         case PERIPH_VSPI_MODULE:
-            return DPORT_SPI_CLK_EN_2;
+            return DPORT_SPI3_CLK_EN;
         case PERIPH_SPI_DMA_MODULE:
             return DPORT_SPI_DMA_CLK_EN;
         case PERIPH_SDMMC_MODULE:
@@ -159,11 +159,11 @@ static uint32_t get_rst_en_mask(periph_module_t periph)
         case PERIPH_PCNT_MODULE:
             return DPORT_PCNT_RST;
         case PERIPH_SPI_MODULE:
-            return DPORT_SPI_RST_1;
+            return DPORT_SPI01_RST;
         case PERIPH_HSPI_MODULE:
-            return DPORT_SPI_RST;
+            return DPORT_SPI2_RST;
         case PERIPH_VSPI_MODULE:
-            return DPORT_SPI_RST_2;
+            return DPORT_SPI3_RST;
         case PERIPH_SPI_DMA_MODULE:
             return DPORT_SPI_DMA_RST;
         case PERIPH_SDMMC_MODULE:

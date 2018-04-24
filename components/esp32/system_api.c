@@ -327,7 +327,7 @@ void IRAM_ATTR esp_restart_noos()
 
     // Reset timer/spi/uart
     DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG,
-            DPORT_TIMERS_RST | DPORT_SPI_RST_1 | DPORT_UART_RST);
+            DPORT_TIMERS_RST | DPORT_SPI01_RST | DPORT_UART_RST);
     DPORT_REG_WRITE(DPORT_PERIP_RST_EN_REG, 0);
 
     // Set CPU back to XTAL source, no PLL, same as hard reset
