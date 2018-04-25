@@ -240,6 +240,14 @@ static const oid_x520_attr_t oid_x520_attr_type[] =
         "uniqueIdentifier",
     },
     {
+        { ADD_LEN( MBEDTLS_OID_MAC_ADDRESS ), "macAddress",    "Media Access Control (MAC) address" },
+        "macAddress",
+    },
+    {
+        { ADD_LEN( MBEDTLS_OID_PKCS9_CSR_CHALLENGE_PASSWORD ), "challengePassword",    "CSR challenge password" },
+        "challengePassword",
+    },
+    {
         { NULL, 0, NULL, NULL },
         NULL,
     }
