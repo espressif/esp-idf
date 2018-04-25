@@ -321,6 +321,7 @@ typedef struct {
     UINT16              start_handle;
     UINT16              end_handle;
     tBTA_GATT_ID        service_uuid;
+    bool                is_primary;
 }tBTA_GATTC_SRVC_RES;
 
 typedef struct {

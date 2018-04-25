@@ -127,6 +127,7 @@ typedef union {
         uint16_t start_handle;          /*!< Service start handle */
         uint16_t end_handle;            /*!< Service end handle */
         esp_gatt_id_t srvc_id;          /*!< Service id, include service uuid and other information */
+        bool      is_primary;           /*!< True if this is the primary service */
     } search_res;                       /*!< Gatt client callback param of ESP_GATTC_SEARCH_RES_EVT */
 
     /**
