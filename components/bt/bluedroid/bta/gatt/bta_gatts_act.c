@@ -335,19 +335,19 @@ void bta_gatts_create_srvc(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
 
                 cb_data.create.status      = BTA_GATT_OK;
                 cb_data.create.service_id  = service_id;
-// btla-specific ++
+
                 cb_data.create.is_primary  = p_msg->api_create_svc.is_pri;
-// btla-specific --
+
                 cb_data.create.server_if   = p_cb->rcb[rcb_idx].gatt_if;
             } else {
                 cb_data.status  = BTA_GATT_ERROR;
                 memset(&p_cb->srvc_cb[srvc_idx], 0, sizeof(tBTA_GATTS_SRVC_CB));
                 APPL_TRACE_ERROR("service creation failed.");
             }
-// btla-specific ++
+
             memcpy(&cb_data.create.uuid, &p_msg->api_create_svc.service_uuid, sizeof(tBT_UUID));
             cb_data.create.svc_instance = p_msg->api_create_svc.inst;
-// btla-specific --
+
         }
         if (p_cb->rcb[rcb_idx].p_cback) {
             (* p_cb->rcb[rcb_idx].p_cback)(BTA_GATTS_CREATE_EVT, &cb_data);
