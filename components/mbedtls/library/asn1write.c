@@ -387,4 +387,30 @@ mbedtls_asn1_named_data *mbedtls_asn1_store_named_data( mbedtls_asn1_named_data 
 
     return( cur );
 }
+
+mbedtls_asn1_buf *mbedtls_asn1_store_asn1_buf( const unsigned char tag,
+                                        const unsigned char *val,
+                                        size_t val_len )
+{
+        mbedtls_asn1_buf *asn1_buf = NULL;
+
+        asn1_buf = mbedtls_calloc(1, sizeof(mbedtls_asn1_buf));
+        if (asn1_buf == NULL)
+                return NULL;
+
+        asn1_buf->p = mbedtls_calloc(val_len, 1);
+        if (asn1_buf->p == NULL)   {
+                free(asn1_buf);
+                return NULL;
+        }
+
+        if (val != NULL)
+                memcpy(asn1_buf->p, val, val_len);
+
+        asn1_buf->tag = tag;
+        asn1_buf->len = val_len;
+
+        return asn1_buf;
+}
+
 #endif /* MBEDTLS_ASN1_WRITE_C */

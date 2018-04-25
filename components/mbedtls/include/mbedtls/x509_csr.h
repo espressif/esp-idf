@@ -76,6 +76,7 @@ typedef struct mbedtls_x509write_csr
     mbedtls_asn1_named_data *subject;
     mbedtls_md_type_t md_alg;
     mbedtls_asn1_named_data *extensions;
+    mbedtls_x509_buf *challenge_password;
 }
 mbedtls_x509write_csr;
 
@@ -234,6 +235,16 @@ int mbedtls_x509write_csr_set_ns_cert_type( mbedtls_x509write_csr *ctx,
 int mbedtls_x509write_csr_set_extension( mbedtls_x509write_csr *ctx,
                                  const char *oid, size_t oid_len,
                                  const unsigned char *val, size_t val_len );
+
+/**
+ * \brief           Set the challenge password CSR attribute.
+ *
+ * \param ctx       CSR context to use
+ * \param password  challenge password to include into CSR
+ * \param len       size of the password
+ */
+int mbedtls_x509write_csr_set_password( mbedtls_x509write_csr *ctx,
+                                 const unsigned char *password, size_t len );
 
 /**
  * \brief           Free the contents of a CSR context

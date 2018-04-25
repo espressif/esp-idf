@@ -232,6 +232,20 @@ mbedtls_asn1_named_data *mbedtls_asn1_store_named_data( mbedtls_asn1_named_data 
                                         const unsigned char *val,
                                         size_t val_len );
 
+
+/**
+ * \brief           Allocate and initialize the ASN1 type-length-data structure
+ *
+ * \param tag       ASN1 tag
+ * \param data      data to copy into the allocated type-length-data structure
+ * \param size      length of the data buffer
+ *
+ * \return          allocated ASN1 type-length-data structure
+ */
+mbedtls_asn1_buf *mbedtls_asn1_store_asn1_buf( const unsigned char tag,
+                                        const unsigned char *data,
+                                        size_t data_len );
+
 #ifdef __cplusplus
 }
 #endif

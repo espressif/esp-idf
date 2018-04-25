@@ -2502,6 +2502,7 @@
 #define x509write_crt_set_version mbedtls_x509write_crt_set_version
 #define x509write_csr mbedtls_x509write_csr
 #define x509write_csr_der mbedtls_x509write_csr_der
+#define x509write_csr_set_password mbedtls_x509write_csr_set_password
 #define x509write_csr_free mbedtls_x509write_csr_free
 #define x509write_csr_init mbedtls_x509write_csr_init
 #define x509write_csr_pem mbedtls_x509write_csr_pem

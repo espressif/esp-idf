@@ -337,4 +337,30 @@ int mbedtls_x509_write_extensions( unsigned char **p, unsigned char *start,
     return( (int) len );
 }
 
+int mbedtls_x509_write_asn1_buf( unsigned char **p, unsigned char *start,
+                            mbedtls_asn1_buf *asn1_buf)
+{
+    int ret;
+    size_t len = 0;
+
+    if ( asn1_buf == NULL )
+        return( 0 ) ;
+
+    if ( asn1_buf->tag == 0 || ( asn1_buf->len != 0 && asn1_buf->p == NULL ) )
+        return( MBEDTLS_ERR_X509_BAD_INPUT_DATA ) ;
+
+    if( *p < start || (size_t)( *p - start ) < asn1_buf->len )
+        return( MBEDTLS_ERR_ASN1_BUF_TOO_SMALL );
+
+    len = asn1_buf->len;
+    (*p) -= len;
+    if ( asn1_buf->p != NULL )
+        memcpy( *p, asn1_buf->p, len );
+
+    MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_len( p, start, len ) );
+    MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_tag( p, start, asn1_buf->tag ) );
+
+    return( (int) len );
+}
+
 #endif /* MBEDTLS_X509_CREATE_C */

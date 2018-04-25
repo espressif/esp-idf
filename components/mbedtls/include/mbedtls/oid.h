@@ -98,10 +98,19 @@
 
 /**
  * Private Internet Extensions
+ */
+
+/**
  * { iso(1) identified-organization(3) dod(6) internet(1)
  *                      security(5) mechanisms(5) pkix(7) }
  */
 #define MBEDTLS_OID_PKIX                        MBEDTLS_OID_ISO_IDENTIFIED_ORG MBEDTLS_OID_ORG_DOD "\x01\x05\x05\x07"
+
+/**
+ * {iso(1) identified-organization(3) dod(6) internet(1)
+ *                      directory(1) nisSchema(1) 1 macAddress(22)}
+ */
+#define MBEDTLS_OID_MAC_ADDRESS                 MBEDTLS_OID_ISO_IDENTIFIED_ORG MBEDTLS_OID_ORG_DOD "\x01\x01\x01\x01\x16"
 
 /*
  * Arc for standard naming attributes
@@ -254,6 +263,7 @@
  * PKCS#8 OIDs
  */
 #define MBEDTLS_OID_PKCS9_CSR_EXT_REQ           MBEDTLS_OID_PKCS9 "\x0e" /**< extensionRequest OBJECT IDENTIFIER ::= {pkcs-9 14} */
+#define MBEDTLS_OID_PKCS9_CSR_CHALLENGE_PASSWORD    MBEDTLS_OID_PKCS9 "\x07" /**< extensionRequest OBJECT IDENTIFIER ::= {pkcs-9 7} */
 
 /*
  * PKCS#12 PBE OIDs
