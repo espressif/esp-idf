@@ -95,7 +95,7 @@ static void btc_task(void *arg)
 
     for (;;) {
         if (pdTRUE == xQueueReceive(xBtcQueue, &msg, (portTickType)portMAX_DELAY)) {
-            LOG_DEBUG("%s msg %u %u %u %p\n", __func__, msg.sig, msg.pid, msg.act, msg.arg);
+            BTC_TRACE_DEBUG("%s msg %u %u %u %p\n", __func__, msg.sig, msg.pid, msg.act, msg.arg);
             switch (msg.sig) {
             case BTC_SIG_API_CALL:
                 profile_tab[msg.pid].btc_call(&msg);
@@ -120,7 +120,7 @@ static bt_status_t btc_task_post(btc_msg_t *msg, task_post_t timeout)
     }
 
     if (xQueueSend(xBtcQueue, msg, timeout) != pdTRUE) {
-        LOG_ERROR("Btc Post failed\n");
+        BTC_TRACE_ERROR("Btc Post failed\n");
         return BT_STATUS_BUSY;
     }
 
@@ -135,7 +135,7 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
         return BT_STATUS_PARM_INVALID;
     }
 
-    LOG_DEBUG("%s msg %u %u %u %p\n", __func__, msg->sig, msg->pid, msg->act, arg);
+    BTC_TRACE_DEBUG("%s msg %u %u %u %p\n", __func__, msg->sig, msg->pid, msg->act, arg);
 
     memcpy(&lmsg, msg, sizeof(btc_msg_t));
     if (arg) {

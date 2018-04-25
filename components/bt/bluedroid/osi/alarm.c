@@ -52,7 +52,7 @@ static osi_alarm_err_t alarm_set(osi_alarm_t *alarm, period_ms_t timeout, bool i
 int osi_alarm_create_mux(void)
 {
     if (alarm_state != ALARM_STATE_IDLE) {
-        LOG_WARN("%s, invalid state %d\n", __func__, alarm_state);
+        OSI_TRACE_WARNING("%s, invalid state %d\n", __func__, alarm_state);
         return -1;
     }
     osi_mutex_new(&alarm_mutex);
@@ -62,7 +62,7 @@ int osi_alarm_create_mux(void)
 int osi_alarm_delete_mux(void)
 {
     if (alarm_state != ALARM_STATE_IDLE) {
-        LOG_WARN("%s, invalid state %d\n", __func__, alarm_state);
+        OSI_TRACE_WARNING("%s, invalid state %d\n", __func__, alarm_state);
         return -1;
     }
     osi_mutex_free(&alarm_mutex);
@@ -75,7 +75,7 @@ void osi_alarm_init(void)
 
     osi_mutex_lock(&alarm_mutex, OSI_MUTEX_MAX_TIMEOUT);
     if (alarm_state != ALARM_STATE_IDLE) {
-        LOG_WARN("%s, invalid state %d\n", __func__, alarm_state);
+        OSI_TRACE_WARNING("%s, invalid state %d\n", __func__, alarm_state);
         goto end;
     }
     memset(alarm_cbs, 0x00, sizeof(alarm_cbs));
@@ -91,7 +91,7 @@ void osi_alarm_deinit(void)
 
     osi_mutex_lock(&alarm_mutex, OSI_MUTEX_MAX_TIMEOUT);
     if (alarm_state != ALARM_STATE_OPEN) {
-        LOG_WARN("%s, invalid state %d\n", __func__, alarm_state);
+        OSI_TRACE_WARNING("%s, invalid state %d\n", __func__, alarm_state);
         goto end;
     }
 
@@ -112,7 +112,7 @@ static struct alarm_t *alarm_cbs_lookfor_available(void)
 
     for (i = 0; i < ALARM_CBS_NUM; i++) {
         if (alarm_cbs[i].alarm_hdl == NULL) { //available
-            LOG_DEBUG("%s %d %p\n", __func__, i, &alarm_cbs[i]);
+            OSI_TRACE_DEBUG("%s %d %p\n", __func__, i, &alarm_cbs[i]);
             return &alarm_cbs[i];
         }
     }
@@ -122,9 +122,9 @@ static struct alarm_t *alarm_cbs_lookfor_available(void)
 
 static void alarm_cb_handler(struct alarm_t *alarm)
 {
-    LOG_DEBUG("TimerID %p\n", alarm);
+    OSI_TRACE_DEBUG("TimerID %p\n", alarm);
     if (alarm_state != ALARM_STATE_OPEN) {
-        LOG_WARN("%s, invalid state %d\n", __func__, alarm_state);
+        OSI_TRACE_WARNING("%s, invalid state %d\n", __func__, alarm_state);
         return;
     }
     btc_msg_t msg;
@@ -144,7 +144,7 @@ osi_alarm_t *osi_alarm_new(const char *alarm_name, osi_alarm_callback_t callback
 
     osi_mutex_lock(&alarm_mutex, OSI_MUTEX_MAX_TIMEOUT);
     if (alarm_state != ALARM_STATE_OPEN) {
-        LOG_ERROR("%s, invalid state %d\n", __func__, alarm_state);
+        OSI_TRACE_ERROR("%s, invalid state %d\n", __func__, alarm_state);
         timer_id = NULL;
         goto end;
     }
@@ -152,7 +152,7 @@ osi_alarm_t *osi_alarm_new(const char *alarm_name, osi_alarm_callback_t callback
     timer_id = alarm_cbs_lookfor_available();
 
     if (!timer_id) {
-        LOG_ERROR("%s alarm_cbs exhausted\n", __func__);
+        OSI_TRACE_ERROR("%s alarm_cbs exhausted\n", __func__);
         timer_id = NULL;
         goto end;
     }
@@ -169,7 +169,7 @@ osi_alarm_t *osi_alarm_new(const char *alarm_name, osi_alarm_callback_t callback
 
     esp_err_t stat = esp_timer_create(&tca, &timer_id->alarm_hdl);
     if (stat != ESP_OK) {
-        LOG_ERROR("%s failed to create timer, err 0x%x\n", __func__, stat);
+        OSI_TRACE_ERROR("%s failed to create timer, err 0x%x\n", __func__, stat);
         timer_id = NULL;
         goto end;
     }
@@ -182,13 +182,13 @@ end:
 static osi_alarm_err_t alarm_free(osi_alarm_t *alarm)
 {
     if (!alarm || alarm->alarm_hdl == NULL) {
-        LOG_ERROR("%s null\n", __func__);
+        OSI_TRACE_ERROR("%s null\n", __func__);
         return OSI_ALARM_ERR_INVALID_ARG;
     }
     esp_timer_stop(alarm->alarm_hdl);
     esp_err_t stat = esp_timer_delete(alarm->alarm_hdl);
     if (stat != ESP_OK) {
-        LOG_ERROR("%s failed to delete timer, err 0x%x\n", __func__, stat);
+        OSI_TRACE_ERROR("%s failed to delete timer, err 0x%x\n", __func__, stat);
         return OSI_ALARM_ERR_FAIL;
     }
 
@@ -202,7 +202,7 @@ void osi_alarm_free(osi_alarm_t *alarm)
 
     osi_mutex_lock(&alarm_mutex, OSI_MUTEX_MAX_TIMEOUT);
     if (alarm_state != ALARM_STATE_OPEN) {
-        LOG_ERROR("%s, invalid state %d\n", __func__, alarm_state);
+        OSI_TRACE_ERROR("%s, invalid state %d\n", __func__, alarm_state);
         goto end;
     }
     alarm_free(alarm);
@@ -219,13 +219,13 @@ static osi_alarm_err_t alarm_set(osi_alarm_t *alarm, period_ms_t timeout, bool i
     osi_alarm_err_t ret = OSI_ALARM_ERR_PASS;
     osi_mutex_lock(&alarm_mutex, OSI_MUTEX_MAX_TIMEOUT);
     if (alarm_state != ALARM_STATE_OPEN) {
-        LOG_ERROR("%s, invalid state %d\n", __func__, alarm_state);
+        OSI_TRACE_ERROR("%s, invalid state %d\n", __func__, alarm_state);
         ret = OSI_ALARM_ERR_INVALID_STATE;
         goto end;
     }
 
     if (!alarm || alarm->alarm_hdl == NULL) {
-        LOG_ERROR("%s null\n", __func__);
+        OSI_TRACE_ERROR("%s null\n", __func__);
         ret = OSI_ALARM_ERR_INVALID_ARG;
         goto end;
     }
@@ -238,7 +238,7 @@ static osi_alarm_err_t alarm_set(osi_alarm_t *alarm, period_ms_t timeout, bool i
         stat = esp_timer_start_once(alarm->alarm_hdl, (uint64_t)timeout_us);
     }
     if (stat != ESP_OK) {
-        LOG_ERROR("%s failed to start timer, err 0x%x\n", __func__, stat);
+        OSI_TRACE_ERROR("%s failed to start timer, err 0x%x\n", __func__, stat);
         ret = OSI_ALARM_ERR_FAIL;
         goto end;
     }
@@ -264,20 +264,20 @@ osi_alarm_err_t osi_alarm_cancel(osi_alarm_t *alarm)
     int ret = OSI_ALARM_ERR_PASS;
     osi_mutex_lock(&alarm_mutex, OSI_MUTEX_MAX_TIMEOUT);
     if (alarm_state != ALARM_STATE_OPEN) {
-        LOG_ERROR("%s, invalid state %d\n", __func__, alarm_state);
+        OSI_TRACE_ERROR("%s, invalid state %d\n", __func__, alarm_state);
         ret = OSI_ALARM_ERR_INVALID_STATE;
         goto end;
     }
 
     if (!alarm || alarm->alarm_hdl == NULL) {
-        LOG_ERROR("%s null\n", __func__);
+        OSI_TRACE_ERROR("%s null\n", __func__);
         ret = OSI_ALARM_ERR_INVALID_ARG;
         goto end;
     }
 
     esp_err_t stat = esp_timer_stop(alarm->alarm_hdl);
     if (stat != ESP_OK) {
-        LOG_DEBUG("%s failed to stop timer, err 0x%x\n", __func__, stat);
+        OSI_TRACE_DEBUG("%s failed to stop timer, err 0x%x\n", __func__, stat);
         ret = OSI_ALARM_ERR_FAIL;
         goto end;
     }

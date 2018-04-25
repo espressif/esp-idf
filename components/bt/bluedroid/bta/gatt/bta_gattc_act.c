@@ -2198,7 +2198,7 @@ void bta_gattc_listen(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg)
                 }
                 /* if listen to all */
                 else {
-                    LOG_DEBUG("Listen For All now");
+                    APPL_TRACE_DEBUG("Listen For All now");
                     /* go through all connected device and send
                     callback for all connected slave connection */
                     bta_gattc_process_listen_all(p_msg->api_listen.client_if);

@@ -63,19 +63,19 @@ static void button_profile_cb(esp_gatts_evt_t event, esp_gatts_t *p_data)
     uint8_t net_event = 0xff;
     uint8_t len = 0;
     uint8_t *p_rec_data = NULL;
-    //LOG_ERROR("p_data->status = %x\n",p_data->status);
+    //BTC_TRACE_ERROR("p_data->status = %x\n",p_data->status);
     //if(p_data->status != BTA_GATT_OK){
-    //  LOG_ERROR("button profile register failed\n");
+    //  BTC_TRACE_ERROR("button profile register failed\n");
     //  return;
     //}
-    LOG_ERROR("button profile cb event = %x\n", event);
+    BTC_TRACE_ERROR("button profile cb event = %x\n", event);
     switch (event) {
     case ESP_GATTS_REG_EVT:
 
-        LOG_ERROR("p_data->reg_oper.status = %x\n", p_data->reg_oper.status);
-        LOG_ERROR("(p_data->reg_oper.uuid.uu.uuid16=%x\n", p_data->reg_oper.uuid.uu.uuid16);
+        BTC_TRACE_ERROR("p_data->reg_oper.status = %x\n", p_data->reg_oper.status);
+        BTC_TRACE_ERROR("(p_data->reg_oper.uuid.uu.uuid16=%x\n", p_data->reg_oper.uuid.uu.uuid16);
         if (p_data->reg_oper.status != BTA_GATT_OK) {
-            LOG_ERROR("button profile register failed\n");
+            BTC_TRACE_ERROR("button profile register failed\n");
         }
         button_cb_env.gatt_if = p_data->reg_oper.server_if;
         button_cb_env.enabled = true;
@@ -96,11 +96,11 @@ static void button_profile_cb(esp_gatts_evt_t event, esp_gatts_t *p_data)
     case ESP_GATTS_WRITE_EVT:
         esp_ble_gatts_send_rsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
                                p_data->req_data.status, NULL);
-        LOG_ERROR("Received button data:");
+        BTC_TRACE_ERROR("Received button data:");
         for (int i = 0; i < p_data->req_data.p_data->write_req.len; i++) {
-            LOG_ERROR("%x", p_data->req_data.p_data->write_req.value[i]);
+            BTC_TRACE_ERROR("%x", p_data->req_data.p_data->write_req.value[i]);
         }
-        LOG_ERROR("\n");
+        BTC_TRACE_ERROR("\n");
         if (p_data->req_data.p_data->write_req.handle == button_cb_env.button_inst.but_wirt_hdl) {
 
             p_rec_data = &p_data->req_data.p_data->write_req.value[0];
@@ -154,12 +154,12 @@ static void button_profile_cb(esp_gatts_evt_t event, esp_gatts_t *p_data)
             button_cb_env.button_inst.but_cfg_hdl = p_data->add_result.attr_id;
         }
         ///Start advertising
-        LOG_ERROR("\n*******Start sent the ADV.*************\n");
+        BTC_TRACE_ERROR("\n*******Start sent the ADV.*************\n");
         //esp_ble_start_advertising (&adv_params);
         //BTA_GATTS_Listen(button_cb_env.gatt_if, true, NULL);
         break;
     case ESP_GATTS_CONNECT_EVT:
-        LOG_ERROR("############BUTTON CONNCET EVT################\n");
+        BTC_TRACE_ERROR("############BUTTON CONNCET EVT################\n");
         //esp_ble_stop_advertising();
         //set the connection flag to true
         button_env_clcb_alloc(p_data->conn.conn_id, p_data->conn.remote_bda);
@@ -205,7 +205,7 @@ void Button_CreateService(void)
     button_cb_env.inst_id = inst;
     //if(!button_cb_env.enabled)
     //{
-    //  LOG_ERROR("button service added error.");
+    //  BTC_TRACE_ERROR("button service added error.");
     //}
     esp_ble_gatts_create_srvc(server_if, &uuid, inst, num_handle, true);
 
@@ -228,7 +228,7 @@ but_clcb_t *button_env_clcb_alloc (uint16_t conn_id, BD_ADDR remote_bda)
     if (!p_clcb->in_use) {
         p_clcb->in_use = TRUE;
         p_clcb->conn_id = conn_id;
-        LOG_ERROR("p_clcb->conn_id = %x\n", conn_id);
+        BTC_TRACE_ERROR("p_clcb->conn_id = %x\n", conn_id);
         p_clcb->connected = TRUE;
         memcpy(p_clcb->remote_bda, remote_bda, BD_ADDR_LEN);
     }
@@ -295,9 +295,9 @@ esp_gatt_status_t button_init (but_prf_cb_t call_back)
 {
     tBT_UUID app_uuid = {LEN_UUID_16, {ATT_SVC_BUTTON}};
 
-    LOG_ERROR("\n=============================button_init==============================================\n");
+    BTC_TRACE_ERROR("\n=============================button_init==============================================\n");
     if (button_cb_env.enabled) {
-        LOG_ERROR("button svc already initaliezd\n");
+        BTC_TRACE_ERROR("button svc already initaliezd\n");
         return ESP_GATT_ERROR;
     } else {
         memset(&button_cb_env, 0, sizeof(button_env_cb_t));
@@ -331,7 +331,7 @@ void button_msg_notify(uint16_t len, uint8_t *button_msg)
     //notify rsp==false; indicate rsp==true.
     BOOLEAN rsp = false;
     if (!conn_status && button_cb_env.clcb.congest) {
-        LOG_ERROR("the conneciton for button profile has been loss\n");
+        BTC_TRACE_ERROR("the conneciton for button profile has been loss\n");
         return;
     }
 

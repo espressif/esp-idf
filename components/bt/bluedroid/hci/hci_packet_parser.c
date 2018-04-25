@@ -112,7 +112,7 @@ static void parse_read_local_extended_features_response(
         assert(*page_number_ptr < feature_pages_count);
         STREAM_TO_ARRAY(feature_pages[*page_number_ptr].as_array, stream, (int)sizeof(bt_device_features_t));
     } else {
-        LOG_ERROR("%s() - WARNING: READING EXTENDED FEATURES FAILED. "
+        HCI_TRACE_ERROR("%s() - WARNING: READING EXTENDED FEATURES FAILED. "
                   "THIS MAY INDICATE A FIRMWARE/CONTROLLER ISSUE.", __func__);
     }
 

@@ -113,7 +113,7 @@ void btc_blufi_protocol_handler(uint8_t type, uint8_t *data, int len)
             btc_transfer_context(&msg, NULL, 0, NULL);
             break;
         default:
-            LOG_ERROR("%s Unkown Ctrl pkt %02x\n", __func__, type);
+            BTC_TRACE_ERROR("%s Unkown Ctrl pkt %02x\n", __func__, type);
             break;
         }
         break;
@@ -260,7 +260,7 @@ void btc_blufi_protocol_handler(uint8_t type, uint8_t *data, int len)
             btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), btc_blufi_cb_deep_copy);
             break;
         default:
-            LOG_ERROR("%s Unkown Ctrl pkt %02x\n", __func__, type);
+            BTC_TRACE_ERROR("%s Unkown Ctrl pkt %02x\n", __func__, type);
             break;
         }
         break;

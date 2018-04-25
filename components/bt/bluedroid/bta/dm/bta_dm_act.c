@@ -5529,7 +5529,7 @@ static void bta_dm_gatt_disc_result(tBTA_GATT_ID service_id)
         APPL_TRACE_ERROR("%s out of room to accomodate more service ids ble_raw_size = %d ble_raw_used = %d", __FUNCTION__, bta_dm_search_cb.ble_raw_size, bta_dm_search_cb.ble_raw_used );
     }
 
-    LOG_INFO("%s service_id_uuid_len=%d ", __func__, service_id.uuid.len);
+    APPL_TRACE_API("%s service_id_uuid_len=%d ", __func__, service_id.uuid.len);
     if ( bta_dm_search_cb.state != BTA_DM_SEARCH_IDLE) {
 
         /* send result back to app now, one by one */

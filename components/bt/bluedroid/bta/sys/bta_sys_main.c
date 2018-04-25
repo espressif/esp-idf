@@ -59,8 +59,8 @@ static osi_mutex_t bta_alarm_lock;
 
 /* trace level */
 /* TODO Bluedroid - Hard-coded trace levels -  Needs to be configurable */
-UINT8 appl_trace_level = BT_TRACE_LEVEL_WARNING; //APPL_INITIAL_TRACE_LEVEL;
-UINT8 btif_trace_level = BT_TRACE_LEVEL_WARNING;
+UINT8 appl_trace_level = APPL_INITIAL_TRACE_LEVEL;
+UINT8 btif_trace_level = BTIF_INITIAL_TRACE_LEVEL;
 
 void btu_bta_alarm_ready(fixed_queue_t *queue);
 
@@ -607,7 +607,7 @@ void bta_sys_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, INT32 timeout_ms)
 
     osi_alarm_t *alarm = hash_map_get(bta_alarm_hash_map, p_tle);
     if (alarm == NULL) {
-        LOG_ERROR("%s unable to create alarm.", __func__);
+        APPL_TRACE_ERROR("%s unable to create alarm.", __func__);
         return;
     }
 
@@ -651,7 +651,7 @@ void bta_sys_stop_timer(TIMER_LIST_ENT *p_tle)
 
     osi_alarm_t *alarm = hash_map_get(bta_alarm_hash_map, p_tle);
     if (alarm == NULL) {
-        LOG_DEBUG("%s expected alarm was not in bta alarm hash map.", __func__);
+        APPL_TRACE_DEBUG("%s expected alarm was not in bta alarm hash map.", __func__);
         return;
     }
     osi_alarm_cancel(alarm);
@@ -672,7 +672,7 @@ void bta_sys_free_timer(TIMER_LIST_ENT *p_tle)
 
     osi_alarm_t *alarm = hash_map_get(bta_alarm_hash_map, p_tle);
     if (alarm == NULL) {
-        LOG_DEBUG("%s expected alarm was not in bta alarm hash map.", __func__);
+        APPL_TRACE_DEBUG("%s expected alarm was not in bta alarm hash map.", __func__);
         return;
     }
     osi_alarm_cancel(alarm);
