@@ -69,7 +69,7 @@ static void btc_bt_set_scan_mode(esp_bt_scan_mode_t mode)
         break;
 
     default:
-        LOG_WARN("invalid scan mode (0x%x)", mode);
+        BTC_TRACE_WARNING("invalid scan mode (0x%x)", mode);
         return;
     }
 
@@ -318,7 +318,7 @@ static void btc_gap_bt_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEAR
         uint32_t cod = devclass2uint (p_data->inq_res.dev_class);
 
         if (cod == 0) {
-            LOG_DEBUG("%s cod is 0, set as unclassified", __func__);
+            BTC_TRACE_DEBUG("%s cod is 0, set as unclassified", __func__);
             cod = COD_UNCLASSIFIED;
         }
 
@@ -577,7 +577,7 @@ static void btc_gap_bt_set_cod(btc_gap_bt_args_t *arg)
     p_cod.service = cod->service << 5;
     bool ret = utl_set_device_class(&p_cod, arg->set_cod.mode);
     if (!ret){
-        LOG_ERROR("%s set class of device failed!",__func__);
+        BTC_TRACE_ERROR("%s set class of device failed!",__func__);
     }
 }
 
@@ -586,7 +586,7 @@ esp_err_t btc_gap_bt_get_cod(esp_bt_cod_t *cod)
     tBTA_UTL_COD p_cod;
     bool ret = utl_get_device_class(&p_cod);
     if (!ret){
-        LOG_ERROR("%s get class of device failed!",__func__);
+        BTC_TRACE_ERROR("%s get class of device failed!",__func__);
         return ESP_BT_STATUS_FAIL;
     }
     cod->minor = p_cod.minor >> 2;
@@ -635,7 +635,7 @@ esp_err_t btc_gap_bt_remove_bond_device(btc_gap_bt_args_t *arg)
 void btc_gap_bt_call_handler(btc_msg_t *msg)
 {
     btc_gap_bt_args_t *arg = (btc_gap_bt_args_t *)msg->arg;
-    LOG_DEBUG("%s act %d\n", __func__, msg->act);
+    BTC_TRACE_DEBUG("%s act %d\n", __func__, msg->act);
     switch (msg->act) {
     case BTC_GAP_BT_ACT_SET_SCAN_MODE: {
         btc_bt_set_scan_mode(arg->set_scan_mode.mode);

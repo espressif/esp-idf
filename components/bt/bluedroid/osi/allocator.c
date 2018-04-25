@@ -57,7 +57,7 @@ void osi_mem_dbg_record(void *p, int size, const char *func, int line)
     int i;
 
     if (!p || size == 0) {
-        LOG_ERROR("%s invalid !!\n", __func__);
+        OSI_TRACE_ERROR("%s invalid !!\n", __func__);
         return;
     }
 
@@ -73,7 +73,7 @@ void osi_mem_dbg_record(void *p, int size, const char *func, int line)
     }
 
     if (i >= OSI_MEM_DBG_INFO_MAX) {
-        LOG_ERROR("%s full %s %d !!\n", __func__, func, line);
+        OSI_TRACE_ERROR("%s full %s %d !!\n", __func__, func, line);
     }
 }
 
@@ -82,7 +82,7 @@ void osi_mem_dbg_clean(void *p, const char *func, int line)
     int i;
 
     if (!p) {
-        LOG_ERROR("%s invalid\n", __func__);
+        OSI_TRACE_ERROR("%s invalid\n", __func__);
         return;
     }
 
@@ -98,7 +98,7 @@ void osi_mem_dbg_clean(void *p, const char *func, int line)
     }
 
     if (i >= OSI_MEM_DBG_INFO_MAX) {
-        LOG_ERROR("%s full %s %d !!\n", __func__, func, line);
+        OSI_TRACE_ERROR("%s full %s %d !!\n", __func__, func, line);
     }
 }
 
@@ -108,10 +108,10 @@ void osi_mem_dbg_show(void)
 
     for (i = 0; i < OSI_MEM_DBG_INFO_MAX; i++) {
         if (mem_dbg_info[i].p || mem_dbg_info[i].size != 0 ) {
-            LOG_ERROR("--> p %p, s %d, f %s, l %d\n", mem_dbg_info[i].p, mem_dbg_info[i].size, mem_dbg_info[i].func, mem_dbg_info[i].line);
+            OSI_TRACE_ERROR("--> p %p, s %d, f %s, l %d\n", mem_dbg_info[i].p, mem_dbg_info[i].size, mem_dbg_info[i].func, mem_dbg_info[i].line);
         }
     }
-    LOG_ERROR("--> count %d\n", mem_dbg_count);
+    OSI_TRACE_ERROR("--> count %d\n", mem_dbg_count);
 }
 #endif
 

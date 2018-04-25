@@ -47,9 +47,9 @@
 #define MAX_CMD_QUEUE_LEN 8
 
 #define CHECK_ESP_RC_CONNECTED       do { \
-        LOG_DEBUG("## %s ##", __FUNCTION__); \
+        BTC_TRACE_DEBUG("## %s ##", __FUNCTION__); \
         if (btc_rc_vb.rc_connected == FALSE) { \
-            LOG_WARN("Function %s() called when RC is not connected", __FUNCTION__); \
+            BTC_TRACE_WARNING("Function %s() called when RC is not connected", __FUNCTION__); \
         return ESP_ERR_INVALID_STATE; \
         } \
     } while (0)
@@ -138,17 +138,17 @@ static void handle_rc_features(void)
  ***************************************************************************/
 static void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open)
 {
-    LOG_DEBUG("%s: rc_handle: %d", __FUNCTION__, p_rc_open->rc_handle);
+    BTC_TRACE_DEBUG("%s: rc_handle: %d", __FUNCTION__, p_rc_open->rc_handle);
     bt_bdaddr_t rc_addr;
 
     if (p_rc_open->status == BTA_AV_SUCCESS) {
         //check if already some RC is connected
         if (btc_rc_vb.rc_connected) {
-            LOG_ERROR("Got RC OPEN in connected state, Connected RC: %d \
+            BTC_TRACE_ERROR("Got RC OPEN in connected state, Connected RC: %d \
                 and Current RC: %d", btc_rc_vb.rc_handle, p_rc_open->rc_handle );
             if ((btc_rc_vb.rc_handle != p_rc_open->rc_handle)
                     && (bdcmp(btc_rc_vb.rc_addr, p_rc_open->peer_addr))) {
-                LOG_DEBUG("Got RC connected for some other handle");
+                BTC_TRACE_DEBUG("Got RC connected for some other handle");
                 BTA_AvCloseRc(p_rc_open->rc_handle);
                 return;
             }
@@ -174,7 +174,7 @@ static void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open)
             handle_rc_features();
         }
     } else {
-        LOG_ERROR("%s Connect failed with error code: %d",
+        BTC_TRACE_ERROR("%s Connect failed with error code: %d",
                   __FUNCTION__, p_rc_open->status);
         btc_rc_vb.rc_connected = FALSE;
     }
@@ -192,10 +192,10 @@ static void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close)
 {
     bt_bdaddr_t rc_addr;
 
-    LOG_DEBUG("%s: rc_handle: %d", __FUNCTION__, p_rc_close->rc_handle);
+    BTC_TRACE_DEBUG("%s: rc_handle: %d", __FUNCTION__, p_rc_close->rc_handle);
     if ((p_rc_close->rc_handle != btc_rc_vb.rc_handle)
             && (bdcmp(btc_rc_vb.rc_addr, p_rc_close->peer_addr))) {
-        LOG_ERROR("Got disconnect of unknown device");
+        BTC_TRACE_ERROR("Got disconnect of unknown device");
         return;
     }
 
@@ -296,7 +296,7 @@ static void handle_rc_metadata_rsp ( tBTA_AV_META_MSG *p_remote_rsp)
         break;
     }
 #else
-    LOG_ERROR("%s AVRCP metadata is not enabled", __FUNCTION__);
+    BTC_TRACE_ERROR("%s AVRCP metadata is not enabled", __FUNCTION__);
 #endif
 }
 
@@ -322,7 +322,7 @@ static void handle_rc_passthrough_rsp ( tBTA_AV_REMOTE_RSP *p_remote_rsp)
             key_state = 0;
         }
 
-        LOG_DEBUG("%s: rc_id=%d status=%s", __FUNCTION__, p_remote_rsp->rc_id, status);
+        BTC_TRACE_DEBUG("%s: rc_id=%d status=%s", __FUNCTION__, p_remote_rsp->rc_id, status);
 
         do {
             esp_avrc_ct_cb_param_t param;
@@ -333,10 +333,10 @@ static void handle_rc_passthrough_rsp ( tBTA_AV_REMOTE_RSP *p_remote_rsp)
             btc_avrc_ct_cb_to_app(ESP_AVRC_CT_PASSTHROUGH_RSP_EVT, &param);
         } while (0);
     } else {
-        LOG_ERROR("%s DUT does not support AVRCP controller role", __FUNCTION__);
+        BTC_TRACE_ERROR("%s DUT does not support AVRCP controller role", __FUNCTION__);
     }
 #else
-    LOG_ERROR("%s AVRCP controller role is not enabled", __FUNCTION__);
+    BTC_TRACE_ERROR("%s AVRCP controller role is not enabled", __FUNCTION__);
 #endif
 }
 
@@ -350,10 +350,10 @@ static void handle_rc_passthrough_rsp ( tBTA_AV_REMOTE_RSP *p_remote_rsp)
  ***************************************************************************/
 void btc_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data)
 {
-    LOG_DEBUG ("%s event:%s", __FUNCTION__, dump_rc_event(event));
+    BTC_TRACE_DEBUG ("%s event:%s", __FUNCTION__, dump_rc_event(event));
     switch (event) {
     case BTA_AV_RC_OPEN_EVT: {
-        LOG_DEBUG("Peer_features:%x", p_data->rc_open.peer_features);
+        BTC_TRACE_DEBUG("Peer_features:%x", p_data->rc_open.peer_features);
         handle_rc_connect( &(p_data->rc_open) );
     } break;
 
@@ -363,14 +363,14 @@ void btc_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data)
 
 #if (AVRC_CTLR_INCLUDED == TRUE)
     case BTA_AV_REMOTE_RSP_EVT: {
-        LOG_DEBUG("RSP: rc_id:0x%x key_state:%d", p_data->remote_rsp.rc_id,
+        BTC_TRACE_DEBUG("RSP: rc_id:0x%x key_state:%d", p_data->remote_rsp.rc_id,
                   p_data->remote_rsp.key_state);
         handle_rc_passthrough_rsp( (&p_data->remote_rsp) );
     }
     break;
 #endif
     case BTA_AV_RC_FEAT_EVT: {
-        LOG_DEBUG("Peer_features:%x", p_data->rc_feat.peer_features);
+        BTC_TRACE_DEBUG("Peer_features:%x", p_data->rc_feat.peer_features);
         btc_rc_vb.rc_features = p_data->rc_feat.peer_features;
         handle_rc_features();
     }
@@ -384,7 +384,7 @@ void btc_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data)
     // below events are not handled for now
     case BTA_AV_REMOTE_CMD_EVT:
     default:
-        LOG_DEBUG("Unhandled RC event : 0x%x", event);
+        BTC_TRACE_DEBUG("Unhandled RC event : 0x%x", event);
     }
 }
 
@@ -419,7 +419,7 @@ BOOLEAN btc_rc_get_connected_peer(BD_ADDR peer_addr)
 *******************************************************************************/
 static void btc_avrc_ct_init(void)
 {
-    LOG_DEBUG("## %s ##", __FUNCTION__);
+    BTC_TRACE_DEBUG("## %s ##", __FUNCTION__);
 
     memset (&btc_rc_vb, 0, sizeof(btc_rc_vb));
     btc_rc_vb.rc_vol_label = MAX_LABEL;
@@ -438,10 +438,10 @@ static void btc_avrc_ct_init(void)
 ***************************************************************************/
 static void btc_avrc_ct_deinit(void)
 {
-    LOG_INFO("## %s ##", __FUNCTION__);
+    BTC_TRACE_API("## %s ##", __FUNCTION__);
 
     memset(&btc_rc_vb, 0, sizeof(btc_rc_cb_t));
-    LOG_INFO("## %s ## completed", __FUNCTION__);
+    BTC_TRACE_API("## %s ## completed", __FUNCTION__);
 }
 
 static bt_status_t btc_avrc_ct_send_set_player_value_cmd(uint8_t tl, uint8_t attr_id, uint8_t value_id)
@@ -471,12 +471,12 @@ static bt_status_t btc_avrc_ct_send_set_player_value_cmd(uint8_t tl, uint8_t att
             status = BT_STATUS_SUCCESS;
         } else {
             status = BT_STATUS_FAIL;
-            LOG_DEBUG("%s: feature not supported", __FUNCTION__);
+            BTC_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
         }
     }
 
 #else
-    LOG_DEBUG("%s: feature not enabled", __FUNCTION__);
+    BTC_TRACE_DEBUG("%s: feature not enabled", __FUNCTION__);
 #endif
 
     return status;
@@ -505,12 +505,12 @@ static bt_status_t btc_avrc_ct_send_register_notification_cmd(uint8_t tl, uint8_
             status = BT_STATUS_SUCCESS;
         } else {
             status = BT_STATUS_FAIL;
-            LOG_DEBUG("%s: feature not supported", __FUNCTION__);
+            BTC_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
         }
     }
 
 #else
-    LOG_DEBUG("%s: feature not enabled", __FUNCTION__);
+    BTC_TRACE_DEBUG("%s: feature not enabled", __FUNCTION__);
 #endif
 
     return status;
@@ -547,12 +547,12 @@ static bt_status_t btc_avrc_ct_send_metadata_cmd (uint8_t tl, uint8_t attr_mask)
             status = BT_STATUS_SUCCESS;
         } else {
             status = BT_STATUS_FAIL;
-            LOG_DEBUG("%s: feature not supported", __FUNCTION__);
+            BTC_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
         }
     }
 
 #else
-    LOG_DEBUG("%s: feature not enabled", __FUNCTION__);
+    BTC_TRACE_DEBUG("%s: feature not enabled", __FUNCTION__);
 #endif
 
     return status;
@@ -564,19 +564,19 @@ static bt_status_t btc_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code
 
 #if (AVRC_CTLR_INCLUDED == TRUE)
     CHECK_ESP_RC_CONNECTED;
-    LOG_DEBUG("%s: key-code: %d, key-state: %d", __FUNCTION__,
+    BTC_TRACE_DEBUG("%s: key-code: %d, key-state: %d", __FUNCTION__,
               key_code, key_state);
     if (btc_rc_vb.rc_features & BTA_AV_FEAT_RCTG) {
         BTA_AvRemoteCmd(btc_rc_vb.rc_handle, tl,
                         (tBTA_AV_RC)key_code, (tBTA_AV_STATE)key_state);
         status =  BT_STATUS_SUCCESS;
-        LOG_INFO("%s: succesfully sent passthrough command to BTA", __FUNCTION__);
+        BTC_TRACE_API("%s: succesfully sent passthrough command to BTA", __FUNCTION__);
     } else {
         status = BT_STATUS_FAIL;
-        LOG_DEBUG("%s: feature not supported", __FUNCTION__);
+        BTC_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
     }
 #else
-    LOG_DEBUG("%s: feature not enabled", __FUNCTION__);
+    BTC_TRACE_DEBUG("%s: feature not enabled", __FUNCTION__);
 #endif
 
     return status;
@@ -614,7 +614,7 @@ void btc_avrc_call_handler(btc_msg_t *msg)
         break;
     }
     default:
-        LOG_WARN("%s : unhandled event: %d\n", __FUNCTION__, msg->act);
+        BTC_TRACE_WARNING("%s : unhandled event: %d\n", __FUNCTION__, msg->act);
     }
 }
 

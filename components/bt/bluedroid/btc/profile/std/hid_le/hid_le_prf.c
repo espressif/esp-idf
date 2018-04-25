@@ -265,12 +265,12 @@ static void hidd_add_characterisitc(const char_desc_t *char_desc)
 {
     uint16_t service_id;
     if (char_desc == NULL) {
-        LOG_ERROR("Invalid hid characteristic\n");
+        BTC_TRACE_ERROR("Invalid hid characteristic\n");
         return;
     }
     //check the hid device serivce has been register to the data base or not
     if (!hidd_le_env.enabled) {
-        LOG_ERROR("The hid device didn't register yet\n");
+        BTC_TRACE_ERROR("The hid device didn't register yet\n");
         return;
     }
     //get the service id from the env whitch has been register
@@ -306,7 +306,7 @@ static void hidd_le_profile_cb(esp_gatts_evt_t event, esp_gatts_t *p_data)
     case ESP_GATTS_REG_EVT:
         //check the register of the hid device profile has been succeess or not
         if (p_data->reg_oper.status != ESP_GATT_OK) {
-            LOG_ERROR("hidd profile register failed\n");
+            BTC_TRACE_ERROR("hidd profile register failed\n");
         }
         hidd_le_env.hidd_inst.app_id = app_id;
         //save the gatt interface in the hid device ENV
@@ -337,9 +337,9 @@ static void hidd_le_profile_cb(esp_gatts_evt_t event, esp_gatts_t *p_data)
     case ESP_GATTS_ADD_CHAR_EVT:
         //save the charateristic handle to the env
         hidd_le_env.hidd_inst.att_tbl[hid_char_idx - 1] = p_data->add_result.attr_id;
-        LOG_ERROR("hanlder = %x, p_data->add_result.char_uuid.uu.uuid16 = %x\n", p_data->add_result.attr_id,
+        BTC_TRACE_ERROR("hanlder = %x, p_data->add_result.char_uuid.uu.uuid16 = %x\n", p_data->add_result.attr_id,
                   p_data->add_result.char_uuid.uu.uuid16);
-        LOG_ERROR("hid_char_idx=%x\n", hid_char_idx);
+        BTC_TRACE_ERROR("hid_char_idx=%x\n", hid_char_idx);
         if (hid_char_idx <= HIDD_LE_CHAR_MAX) { //added the characteristic until the index overflow
 
             if ((p_data->add_result.char_uuid.uu.uuid16 == CHAR_BOOT_KB_IN_REPORT_UUID) ||
@@ -347,7 +347,7 @@ static void hidd_le_profile_cb(esp_gatts_evt_t event, esp_gatts_t *p_data)
                 // add the gattc config descriptor to the notify charateristic
                 //tBTA_GATT_PERM perm = (GATT_PERM_WRITE|GATT_PERM_WRITE);
                 uuid.uu.uuid16 = GATT_UUID_CHAR_CLIENT_CONFIG;
-                LOG_ERROR("p_data->add_result.char_uuid.uu.uuid16 = %x\n",
+                BTC_TRACE_ERROR("p_data->add_result.char_uuid.uu.uuid16 = %x\n",
                           p_data->add_result.char_uuid.uu.uuid16);
                 esp_ble_gatts_add_char_descr (hidd_le_env.hidd_clcb.cur_srvc_id,
                                               GATT_PERM_WRITE,
@@ -366,7 +366,7 @@ static void hidd_le_profile_cb(esp_gatts_evt_t event, esp_gatts_t *p_data)
             BTA_GATTS_AddCharDescriptor (hidd_le_env.hidd_clcb.cur_srvc_id,
                                          GATT_PERM_READ,
                                          &uuid);
-            LOG_ERROR("p_data->add_result.char_uuid.uu.uuid16 = %x\n",
+            BTC_TRACE_ERROR("p_data->add_result.char_uuid.uu.uuid16 = %x\n",
                       p_data->add_result.char_uuid.uu.uuid16);
         }
         if (p_data->add_result.char_uuid.uu.uuid16 == GATT_UUID_RPT_REF_DESCR) {
@@ -377,12 +377,12 @@ static void hidd_le_profile_cb(esp_gatts_evt_t event, esp_gatts_t *p_data)
         }
         break;
     case ESP_GATTS_READ_EVT: {
-        LOG_ERROR("Hidd profile  BTA_GATTS_READ_EVT\n");
+        BTC_TRACE_ERROR("Hidd profile  BTA_GATTS_READ_EVT\n");
         UINT32 trans_id = p_data->req_data.trans_id;
         UINT16 conn_id = p_data->req_data.conn_id;
         UINT16 handle = p_data->req_data.p_data->read_req.handle;
         bool   is_long = p_data->req_data.p_data->read_req.is_long;
-        LOG_ERROR("read request:event=0x%x,handle=0x%x,trans_id=0x%x,conn_id=0x%x\n",
+        BTC_TRACE_ERROR("read request:event=0x%x,handle=0x%x,trans_id=0x%x,conn_id=0x%x\n",
                   event, handle, trans_id, conn_id);
 
         hidd_read_attr_value(p_data->req_data.p_data, trans_id);
@@ -398,7 +398,7 @@ static void hidd_le_profile_cb(esp_gatts_evt_t event, esp_gatts_t *p_data)
         if (!p_clcb->in_use) {
             p_clcb->in_use = TRUE;
             p_clcb->conn_id = p_data->conn.conn_id;;
-            LOG_ERROR("hidd->conn_id = %x\n", p_data->conn.conn_id);
+            BTC_TRACE_ERROR("hidd->conn_id = %x\n", p_data->conn.conn_id);
             p_clcb->connected = TRUE;
             memcpy(p_clcb->remote_bda, p_data->conn.remote_bda, BD_ADDR_LEN);
         }
@@ -510,7 +510,7 @@ void hidd_rsp (uint32_t trans_id, uint16_t conn_id, uint8_t app_id,
     hidd_inst_t *p_inst = &hidd_le_env.hidd_inst;
     tGATTS_RSP  rsp;
     uint8_t   *pp;
-    LOG_ERROR("conn_id = %x, trans_id = %x, event = %x\n",
+    BTC_TRACE_ERROR("conn_id = %x, trans_id = %x, event = %x\n",
               conn_id, trans_id, event);
 
     if (p_inst->app_id == app_id) {
@@ -522,7 +522,7 @@ void hidd_rsp (uint32_t trans_id, uint16_t conn_id, uint8_t app_id,
     if (p_inst->pending_evt == event) {
         switch (event) {
         case HIDD_LE_READ_INFO_EVT:
-            LOG_ERROR(" p_inst->att_tbl[HIDD_LE_INFO_CHAR] = %x\n",
+            BTC_TRACE_ERROR(" p_inst->att_tbl[HIDD_LE_INFO_CHAR] = %x\n",
                       p_inst->att_tbl[HIDD_LE_INFO_CHAR]);
             rsp.attr_value.handle = p_inst->att_tbl[HIDD_LE_INFO_CHAR];
             rsp.attr_value.len = HID_INFORMATION_LEN;
@@ -533,7 +533,7 @@ void hidd_rsp (uint32_t trans_id, uint16_t conn_id, uint8_t app_id,
             break;
 
         case HIDD_LE_READ_CTNL_PT_EVT:
-            LOG_ERROR(" p_inst->att_tbl[HIDD_LE_CTNL_PT_CHAR] = %x\n",
+            BTC_TRACE_ERROR(" p_inst->att_tbl[HIDD_LE_CTNL_PT_CHAR] = %x\n",
                       p_inst->att_tbl[HIDD_LE_CTNL_PT_CHAR]);
             rsp.attr_value.handle = p_inst->att_tbl[HIDD_LE_CTNL_PT_CHAR];
             rsp.attr_value.len = 0;
@@ -542,7 +542,7 @@ void hidd_rsp (uint32_t trans_id, uint16_t conn_id, uint8_t app_id,
             break;
 
         case HIDD_LE_READ_REPORT_MAP_EVT:
-            LOG_ERROR("p_inst->att_tbl[HIDD_LE_REPORT_MAP_CHAR] = %x\n",
+            BTC_TRACE_ERROR("p_inst->att_tbl[HIDD_LE_REPORT_MAP_CHAR] = %x\n",
                       p_inst->att_tbl[HIDD_LE_REPORT_MAP_CHAR]);
             rsp.attr_value.handle = p_inst->att_tbl[HIDD_LE_REPORT_MAP_CHAR];
             rsp.attr_value.len = hidReportMapLen;
@@ -552,7 +552,7 @@ void hidd_rsp (uint32_t trans_id, uint16_t conn_id, uint8_t app_id,
             esp_ble_gatts_send_rsp(conn_id, trans_id, status, &rsp);
             break;
         case HIDD_LE_READ_REPORT_EVT:
-            LOG_ERROR("p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR] = %x\n",
+            BTC_TRACE_ERROR("p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR] = %x\n",
                       p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR]);
             rsp.attr_value.handle = p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR];
             rsp.attr_value.len = 0;
@@ -560,7 +560,7 @@ void hidd_rsp (uint32_t trans_id, uint16_t conn_id, uint8_t app_id,
             esp_ble_gatts_send_rsp(conn_id, trans_id, status, &rsp);
             break;
         case HIDD_LE_READ_PROTO_MODE_EVT:
-            LOG_ERROR("p_inst->att_tbl[HIDD_LE_PROTO_MODE_CHAR] = %x\n",
+            BTC_TRACE_ERROR("p_inst->att_tbl[HIDD_LE_PROTO_MODE_CHAR] = %x\n",
                       p_inst->att_tbl[HIDD_LE_PROTO_MODE_CHAR]);
             rsp.attr_value.handle = p_inst->att_tbl[HIDD_LE_PROTO_MODE_CHAR];
             rsp.attr_value.len = 1;
@@ -570,7 +570,7 @@ void hidd_rsp (uint32_t trans_id, uint16_t conn_id, uint8_t app_id,
             esp_ble_gatts_send_rsp(conn_id, trans_id, status, &rsp);
             break;
         case HIDD_LE_BOOT_KB_IN_REPORT_EVT:
-            LOG_ERROR("p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR] = %x\n",
+            BTC_TRACE_ERROR("p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR] = %x\n",
                       p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR]);
             rsp.attr_value.handle = p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR];
             rsp.attr_value.len = 0;
@@ -578,7 +578,7 @@ void hidd_rsp (uint32_t trans_id, uint16_t conn_id, uint8_t app_id,
             esp_ble_gatts_send_rsp(conn_id, trans_id, status, &rsp);
             break;
         case HIDD_LE_BOOT_KB_OUT_REPORT_EVT:
-            LOG_ERROR("p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR] = %x\n",
+            BTC_TRACE_ERROR("p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR] = %x\n",
                       p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR]);
             rsp.attr_value.handle = p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR];
             rsp.attr_value.len = 0;
@@ -586,7 +586,7 @@ void hidd_rsp (uint32_t trans_id, uint16_t conn_id, uint8_t app_id,
             esp_ble_gatts_send_rsp(conn_id, trans_id, status, &rsp);
             break;
         case HIDD_LE_BOOT_MOUSE_IN_REPORT_EVT:
-            LOG_ERROR("p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR] = %x\n",
+            BTC_TRACE_ERROR("p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR] = %x\n",
                       p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR]);
             rsp.attr_value.handle = p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR];
             rsp.attr_value.len = 0;
@@ -616,7 +616,7 @@ esp_gatt_status_t hidd_le_init (void)
     tBT_UUID app_uuid = {LEN_UUID_16, {ATT_SVC_HID}};
 
     if (hidd_le_env.enabled) {
-        LOG_ERROR("hid device svc already initaliezd\n");
+        BTC_TRACE_ERROR("hid device svc already initaliezd\n");
         return ESP_GATT_ERROR;
     } else {
         memset(&hidd_le_env, 0, sizeof(hidd_le_env_t));

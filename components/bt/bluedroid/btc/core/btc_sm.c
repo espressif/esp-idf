@@ -72,7 +72,7 @@ btc_sm_handle_t btc_sm_init(const btc_sm_handler_t *p_handlers, btc_sm_state_t i
     btc_sm_cb_t *p_cb;
 
     if (p_handlers == NULL) {
-        LOG_ERROR("%s : p_handlers is NULL", __FUNCTION__);
+        BTC_TRACE_ERROR("%s : p_handlers is NULL", __FUNCTION__);
         return NULL;
     }
 
@@ -100,7 +100,7 @@ void btc_sm_shutdown(btc_sm_handle_t handle)
     btc_sm_cb_t *p_cb = (btc_sm_cb_t *)handle;
 
     if (p_cb == NULL) {
-        LOG_ERROR("%s : Invalid handle", __FUNCTION__);
+        BTC_TRACE_ERROR("%s : Invalid handle", __FUNCTION__);
         return;
     }
     osi_free(p_cb);
@@ -120,7 +120,7 @@ btc_sm_state_t btc_sm_get_state(btc_sm_handle_t handle)
     btc_sm_cb_t *p_cb = (btc_sm_cb_t *)handle;
 
     if (p_cb == NULL) {
-        LOG_ERROR("%s : Invalid handle", __FUNCTION__);
+        BTC_TRACE_ERROR("%s : Invalid handle", __FUNCTION__);
         return 0;
     }
 
@@ -146,7 +146,7 @@ bt_status_t btc_sm_dispatch(btc_sm_handle_t handle, btc_sm_event_t event,
     btc_sm_cb_t *p_cb = (btc_sm_cb_t *)handle;
 
     if (p_cb == NULL) {
-        LOG_ERROR("%s : Invalid handle", __FUNCTION__);
+        BTC_TRACE_ERROR("%s : Invalid handle", __FUNCTION__);
         return BT_STATUS_FAIL;
     }
 
@@ -176,7 +176,7 @@ bt_status_t btc_sm_change_state(btc_sm_handle_t handle, btc_sm_state_t state)
     btc_sm_cb_t *p_cb = (btc_sm_cb_t *)handle;
 
     if (p_cb == NULL) {
-        LOG_ERROR("%s : Invalid handle", __FUNCTION__);
+        BTC_TRACE_ERROR("%s : Invalid handle", __FUNCTION__);
         return BT_STATUS_FAIL;
     }
 

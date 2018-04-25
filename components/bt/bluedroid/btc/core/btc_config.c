@@ -73,10 +73,10 @@ bool btc_config_init(void)
     osi_mutex_new(&lock);
     config = config_new(CONFIG_FILE_PATH);
     if (!config) {
-        LOG_WARN("%s unable to load config file; starting unconfigured.\n", __func__);
+        BTC_TRACE_WARNING("%s unable to load config file; starting unconfigured.\n", __func__);
         config = config_new_empty();
         if (!config) {
-            LOG_ERROR("%s unable to allocate a config object.\n", __func__);
+            BTC_TRACE_ERROR("%s unable to allocate a config object.\n", __func__);
             goto error;
         }
     }
@@ -90,7 +90,7 @@ error:;
     config_free(config);
     osi_mutex_free(&lock);
     config = NULL;
-    LOG_ERROR("%s failed\n", __func__);
+    BTC_TRACE_ERROR("%s failed\n", __func__);
     return false;
 }
 
