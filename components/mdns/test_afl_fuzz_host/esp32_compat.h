@@ -67,8 +67,7 @@
                          ((uint32_t)((c) & 0xff) << 16) | \
                          ((uint32_t)((b) & 0xff) << 8)  | \
                           (uint32_t)((a) & 0xff)
-
-typedef uint32_t esp_err_t;
+typedef int32_t esp_err_t;
 
 typedef void * xSemaphoreHandle;
 typedef void * xQueueHandle;
