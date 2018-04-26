@@ -24,7 +24,6 @@
 #include "esp_gatt_defs.h"
 #include "esp_bt_main.h"
 #include "esp_bt_device.h"
-#include "bt_trace.h"
 #include "driver/gpio.h"
 #include "hid_dev.h"
 
@@ -45,7 +44,7 @@
  *
  */
 
-#define GATTS_TAG "HID_DEMO"
+#define HID_DEMO_TAG "HID_DEMO"
 
 
 #define GPIO_OUTPUT_IO_0    18
@@ -110,7 +109,7 @@ void gpio_task_example(void* arg)
     uint32_t io_num;
     for(;;) {
         if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
-            ESP_LOGI(GATTS_TAG, "GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
+            ESP_LOGI(HID_DEMO_TAG, "GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
             if(i == 0) {
             ++i;
             }
@@ -191,13 +190,13 @@ static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *
         }
         case ESP_HIDD_EVENT_BLE_DISCONNECT: {
             sec_conn = false;
-            LOG_ERROR("%s(), ESP_HIDD_EVENT_BLE_DISCONNECT", __func__);
+            ESP_LOGE(HID_DEMO_TAG, "%s(), ESP_HIDD_EVENT_BLE_DISCONNECT", __func__);
             esp_ble_gap_start_advertising(&hidd_adv_params);
             break;
         }
         case ESP_HIDD_EVENT_BLE_VENDOR_REPORT_WRITE_EVT: {
-            LOG_ERROR("%s, ESP_HIDD_EVENT_BLE_VENDOR_REPORT_WRITE_EVT", __func__);
-            ESP_LOG_BUFFER_HEX(GATTS_TAG, param->vendor_write.data, param->vendor_write.length);
+            ESP_LOGE(HID_DEMO_TAG, "%s, ESP_HIDD_EVENT_BLE_VENDOR_REPORT_WRITE_EVT", __func__);
+            ESP_LOG_BUFFER_HEX(HID_DEMO_TAG, param->vendor_write.data, param->vendor_write.length);
         }    
         default:
             break;
@@ -213,13 +212,13 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         break;
      case ESP_GAP_BLE_SEC_REQ_EVT:
         for(int i = 0; i < ESP_BD_ADDR_LEN; i++) {
-             LOG_DEBUG("%x:",param->ble_security.ble_req.bd_addr[i]);
+             ESP_LOGD(HID_DEMO_TAG, "%x:",param->ble_security.ble_req.bd_addr[i]);
         }
         esp_ble_gap_security_rsp(param->ble_security.ble_req.bd_addr, true);
 	 break;
      case ESP_GAP_BLE_AUTH_CMPL_EVT:
         sec_conn = true;
-        LOG_ERROR("staus =%s, ESP_GAP_BLE_AUTH_CMPL_EVT",param->ble_security.auth_cmpl.success ? "success" : "fail");
+        ESP_LOGE(HID_DEMO_TAG, "staus =%s, ESP_GAP_BLE_AUTH_CMPL_EVT",param->ble_security.auth_cmpl.success ? "success" : "fail");
         break;
     default:
         break;
@@ -232,7 +231,7 @@ void hid_demo_task(void *pvParameters)
     while(1) {
         vTaskDelay(2000 / portTICK_PERIOD_MS);
         if (sec_conn) {
-            LOG_ERROR("Send the volume");
+            ESP_LOGE(HID_DEMO_TAG, "Send the volume");
             send_volum_up = true;
             //uint8_t key_vaule = {HID_KEY_A};
             //esp_hidd_send_keyboard_value(hid_conn_id, 0, &key_vaule, 1);
@@ -263,30 +262,30 @@ void app_main()
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     ret = esp_bt_controller_init(&bt_cfg);
     if (ret) {
-        ESP_LOGE(GATTS_TAG, "%s initialize controller failed\n", __func__);
+        ESP_LOGE(HID_DEMO_TAG, "%s initialize controller failed\n", __func__);
         return;
     }
 
     ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
     if (ret) {
-        ESP_LOGE(GATTS_TAG, "%s enable controller failed\n", __func__);
+        ESP_LOGE(HID_DEMO_TAG, "%s enable controller failed\n", __func__);
         return;
     }
 
     ret = esp_bluedroid_init();
     if (ret) {
-        LOG_ERROR("%s init bluedroid failed\n", __func__);
+        ESP_LOGE(HID_DEMO_TAG, "%s init bluedroid failed\n", __func__);
         return;
     }
 
     ret = esp_bluedroid_enable();
     if (ret) {
-        LOG_ERROR("%s init bluedroid failed\n", __func__);
+        ESP_LOGE(HID_DEMO_TAG, "%s init bluedroid failed\n", __func__);
         return;
     }
 
     if((ret = esp_hidd_profile_init()) != ESP_OK) {
-        LOG_ERROR("%s init bluedroid failed\n", __func__);
+        ESP_LOGE(HID_DEMO_TAG, "%s init bluedroid failed\n", __func__);
     }
 
     ///register the callback function to the gap module

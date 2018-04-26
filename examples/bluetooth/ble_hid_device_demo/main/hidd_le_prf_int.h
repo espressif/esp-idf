@@ -22,6 +22,8 @@
 #include "esp_gap_ble_api.h"
 #include "hid_dev.h"
 
+//HID BLE profile log tag
+#define HID_LE_PRF_TAG                        "HID_LE_PRF"
 
 /// Maximal number of HIDS that can be added in the DB
 #ifndef USE_ONE_HIDS_INSTANCE
