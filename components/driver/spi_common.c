@@ -320,7 +320,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         ESP_LOGD(SPI_TAG, "SPI%d use gpio matrix.", host );
         if (bus_config->mosi_io_num >= 0) {
             PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->mosi_io_num], FUNC_GPIO);
-            if (mosi_output) {
+            if (mosi_output || (temp_flag&SPICOMMON_BUSFLAG_DUAL)) {
                 gpio_set_direction(bus_config->mosi_io_num, GPIO_MODE_INPUT_OUTPUT);
                 gpio_matrix_out(bus_config->mosi_io_num, io_signal[host].spid_out, false, false);
             } else {
@@ -330,7 +330,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         }
         if (bus_config->miso_io_num >= 0) {
             PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->miso_io_num], FUNC_GPIO);
-            if (miso_output) {
+            if (miso_output || (temp_flag&SPICOMMON_BUSFLAG_DUAL)) {
                 gpio_set_direction(bus_config->miso_io_num, GPIO_MODE_INPUT_OUTPUT);
                 gpio_matrix_out(bus_config->miso_io_num, io_signal[host].spiq_out, false, false);
             } else {
