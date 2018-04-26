@@ -25,7 +25,7 @@
 #define BTA_GATTC_CO_H
 
 #include "bta/bta_gatt_api.h"
-#include "coap/hashkey.h"
+#include "osi/hash_functions.h"
 
 /*******************************************************************************
 **
@@ -117,13 +117,13 @@ extern BOOLEAN bta_gattc_co_addr_in_cache(BD_ADDR bda);
 
 extern uint8_t bta_gattc_co_find_addr_in_cache(BD_ADDR bda);
 
-extern uint8_t bta_gattc_co_find_hash_in_cache(coap_key_t hash_key);
+extern uint8_t bta_gattc_co_find_hash_in_cache(hash_key_t hash_key);
 
 extern UINT8 bta_gattc_co_get_addr_num(void);
 
 extern void bta_gattc_co_get_addr_list(BD_ADDR *addr_list);
 
-extern void bta_gattc_co_cache_addr_save(BD_ADDR bd_addr, coap_key_t hash_key);
+extern void bta_gattc_co_cache_addr_save(BD_ADDR bd_addr, hash_key_t hash_key);
 
 extern BOOLEAN bta_gattc_co_cache_new_assoc_list(BD_ADDR src_addr, uint8_t index);
 

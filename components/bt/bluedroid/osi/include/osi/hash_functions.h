@@ -21,6 +21,8 @@
 
 #include "osi/hash_map.h"
 
+typedef unsigned char hash_key_t[4];
+
 hash_index_t hash_function_naive(const void *key);
 
 hash_index_t hash_function_integer(const void *key);
@@ -29,5 +31,7 @@ hash_index_t hash_function_integer(const void *key);
 hash_index_t hash_function_pointer(const void *key);
 
 hash_index_t hash_function_string(const void *key);
+
+void hash_function_blob(const unsigned char *s, unsigned int len, hash_key_t h);
 
 #endif /* _HASH_FUNCTIONS_H_ */
