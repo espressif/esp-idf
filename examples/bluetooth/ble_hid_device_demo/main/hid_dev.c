@@ -13,16 +13,11 @@
 // limitations under the License.
 
 #include "hid_dev.h"
-#include "bt_trace.h"
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "esp_log.h"
 
 static hid_report_map_t *hid_dev_rpt_tbl;
 static uint8_t hid_dev_rpt_tbl_Len;
@@ -55,7 +50,7 @@ void hid_dev_send_report(esp_gatt_if_t gatts_if, uint16_t conn_id,
     // get att handle for report
     if ((p_rpt = hid_dev_rpt_by_id(id, type)) != NULL) {
         // if notifications are enabled
-        LOG_DEBUG("%s(), send the report, handle = %d", __func__, p_rpt->handle);
+        ESP_LOGD(HID_LE_PRF_TAG, "%s(), send the report, handle = %d", __func__, p_rpt->handle);
         esp_ble_gatts_send_indicate(gatts_if, conn_id, p_rpt->handle, length, data, false);
     }
     
@@ -65,7 +60,7 @@ void hid_dev_send_report(esp_gatt_if_t gatts_if, uint16_t conn_id,
 void hid_consumer_build_report(uint8_t *buffer, consumer_cmd_t cmd)
 {
     if (!buffer) {
-        LOG_ERROR("%s(), the buffer is NULL, hid build report failed.", __func__);
+        ESP_LOGE(HID_LE_PRF_TAG, "%s(), the buffer is NULL, hid build report failed.", __func__);
         return;
     }
     
