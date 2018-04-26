@@ -157,11 +157,12 @@ goto err;
 
     data->image_len = end_addr - data->start_addr;
     ESP_LOGV(TAG, "image start 0x%08x end of last section 0x%08x", data->start_addr, end_addr);
-    err = verify_checksum(sha_handle, checksum_word, data);
-    if (err != ESP_OK) {
-        goto err;
+    if (!esp_cpu_in_ocd_debug_mode()) {
+        err = verify_checksum(sha_handle, checksum_word, data);
+        if (err != ESP_OK) {
+            goto err;
+        }
     }
-
     if (data->image_len > part->size) {
         FAIL_LOAD("Image length %d doesn't fit in partition length %d", data->image_len, part->size);
     }
@@ -178,7 +179,7 @@ goto err;
         err = verify_secure_boot_signature(sha_handle, data);
 #else
         // No secure boot, but SHA-256 can be appended for basic corruption detection
-        if (sha_handle != NULL) {
+        if (sha_handle != NULL && !esp_cpu_in_ocd_debug_mode()) {
             err = verify_simple_hash(sha_handle, data);
         }
 #endif // CONFIG_SECURE_BOOT_ENABLED
