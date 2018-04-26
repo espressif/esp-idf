@@ -875,6 +875,36 @@ esp_err_t esp_wifi_set_max_tx_power(int8_t power);
   */
 esp_err_t esp_wifi_get_max_tx_power(int8_t *power);
 
+/**
+  * @brief     Set mask to enable or disable some WiFi events
+  *
+  * @attention 1. Mask can be created by logical OR of various WIFI_EVENT_MASK_ constants.
+  *               Events which have corresponding bit set in the mask will not be delivered to the system event handler.
+  * @attention 2. Default WiFi event mask is WIFI_EVENT_MASK_AP_PROBEREQRECVED.
+  * @attention 3. There may be lots of stations sending probe request data around.
+  *               Don't unmask this event unless you need to receive probe request data.
+  *
+  * @param     mask  WiFi event mask.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  */
+esp_err_t esp_wifi_set_event_mask(uint32_t mask);
+
+/**
+  * @brief     Get mask of WiFi events
+  *
+  * @param     mask  WiFi event mask.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_ARG: invalid argument
+  */
+esp_err_t esp_wifi_get_event_mask(uint32_t *mask);
+
+
 #ifdef __cplusplus
 }
 #endif
