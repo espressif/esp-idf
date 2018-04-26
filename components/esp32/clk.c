@@ -140,7 +140,7 @@ static void select_rtc_slow_clk(rtc_slow_freq_t slow_clk)
             uint32_t wait = 0;
             // increment of 'wait' counter equivalent to 3 seconds
             const uint32_t warning_timeout = 3 /* sec */ * 32768 /* Hz */ / (2 * XTAL_32K_DETECT_CYCLES);
-            ESP_EARLY_LOGD(TAG, "waiting for 32k oscillator to start up")
+            ESP_EARLY_LOGD(TAG, "waiting for 32k oscillator to start up");
             do {
                 ++wait;
                 rtc_clk_32k_enable(true);
