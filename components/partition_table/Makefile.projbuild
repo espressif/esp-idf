@@ -20,9 +20,6 @@ endif
 
 GEN_ESP32PART := $(PYTHON) $(COMPONENT_PATH)/gen_esp32part.py -q $(MD5_OPT) $(FLASHSIZE_OPT)
 
-undefine FLASHSIZE_OPT  # we don't need these any more, so take them out of global scope
-undefine MD5_OPT
-
 # Has a matching value in bootloader_support esp_flash_partitions.h
 PARTITION_TABLE_OFFSET := 0x8000
 
