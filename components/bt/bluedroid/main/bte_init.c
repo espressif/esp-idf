@@ -23,7 +23,7 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 #include <string.h>
 
 
@@ -37,7 +37,7 @@
 
 #if (defined(RFCOMM_INCLUDED) && RFCOMM_INCLUDED == TRUE)
 // Include initialization functions definitions
-#include "port_api.h"
+#include "stack/port_api.h"
 #endif
 
 #if (defined(BNEP_INCLUDED) && BNEP_INCLUDED == TRUE)
@@ -45,7 +45,7 @@
 #endif
 
 #if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE)
-#include "gap_api.h"
+#include "stack/gap_api.h"
 #endif
 
 #if (defined(PAN_INCLUDED) && PAN_INCLUDED == TRUE)
@@ -53,11 +53,11 @@
 #endif
 
 #if (defined(AVRC_INCLUDED) && AVRC_INCLUDED == TRUE)
-#include "avrc_api.h"
+#include "stack/avrc_api.h"
 #endif
 
 #if (defined(A2D_INCLUDED) && A2D_INCLUDED == TRUE)
-#include "a2d_api.h"
+#include "stack/a2d_api.h"
 #endif
 
 #if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE)
@@ -69,7 +69,7 @@
 #endif
 
 #if (defined(HID_HOST_INCLUDED) && HID_HOST_INCLUDED == TRUE)
-#include "hidh_api.h"
+#include "stack/hidh_api.h"
 #endif
 
 #if (defined(MCA_INCLUDED) && MCA_INCLUDED == TRUE)
@@ -77,17 +77,17 @@
 #endif
 
 #if (defined(BLE_INCLUDED) && BLE_INCLUDED == TRUE)
-#include "gatt_api.h"
+#include "stack/gatt_api.h"
 #if (defined(SMP_INCLUDED) && SMP_INCLUDED == TRUE)
-#include "smp_api.h"
+#include "stack/smp_api.h"
 #endif
 #endif
 
 //BTA Modules
 #if BTA_INCLUDED == TRUE && BTA_DYNAMIC_MEMORY == TRUE
-#include "bta_api.h"
-#include "bta_sys.h"
-#include "allocator.h"
+#include "bta/bta_api.h"
+#include "bta/bta_sys.h"
+#include "osi/allocator.h"
 
 //#include "bta_ag_int.h"
 

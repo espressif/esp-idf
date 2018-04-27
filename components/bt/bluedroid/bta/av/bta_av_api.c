@@ -24,13 +24,13 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 #if defined(BTA_AV_INCLUDED) && (BTA_AV_INCLUDED == TRUE)
 
-#include "allocator.h"
-#include "bta_api.h"
-#include "bta_sys.h"
-#include "bta_av_api.h"
+#include "osi/allocator.h"
+#include "bta/bta_api.h"
+#include "bta/bta_sys.h"
+#include "bta/bta_av_api.h"
 #include "bta_av_int.h"
 #include <string.h>
 

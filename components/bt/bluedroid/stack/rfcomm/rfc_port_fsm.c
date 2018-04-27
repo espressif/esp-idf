@@ -23,16 +23,16 @@
  *
  ******************************************************************************/
 #include <string.h>
-#include "bt_target.h"
-#include "rfcdefs.h"
-#include "btm_api.h"
+#include "common/bt_target.h"
+#include "stack/rfcdefs.h"
+#include "stack/btm_api.h"
 #include "btm_int.h"
-#include "port_api.h"
+#include "stack/port_api.h"
 #include "port_int.h"
 #include "rfc_int.h"
-#include "bt_defs.h"
-#include "allocator.h"
-#include "mutex.h"
+#include "common/bt_defs.h"
+#include "osi/allocator.h"
+#include "osi/mutex.h"
 #if (defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)
 
 /********************************************************************************/

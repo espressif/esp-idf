@@ -19,19 +19,19 @@
  *  Description:   Bluetooth AVRC implementation
  *
  *****************************************************************************/
-#include "bt_target.h"
+#include "common/bt_target.h"
 #include <string.h>
-#include "bta_api.h"
-#include "bta_av_api.h"
-#include "avrc_defs.h"
-#include "btc_common.h"
-#include "btc_util.h"
+#include "bta/bta_api.h"
+#include "bta/bta_av_api.h"
+#include "stack/avrc_defs.h"
+#include "btc/btc_common.h"
+#include "btc/btc_util.h"
 #include "btc_av.h"
 #include "btc_avrc.h"
-#include "btc_manage.h"
+#include "btc/btc_manage.h"
 #include "esp_avrc_api.h"
-#include "mutex.h"
-#include "allocator.h"
+#include "osi/mutex.h"
+#include "osi/allocator.h"
 
 #if BTC_AV_INCLUDED
 

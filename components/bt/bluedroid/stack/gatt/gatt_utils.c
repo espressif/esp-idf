@@ -21,18 +21,18 @@
  *  this file contains GATT utility functions
  *
  ******************************************************************************/
-#include "bt_target.h"
-#include "allocator.h"
+#include "common/bt_target.h"
+#include "osi/allocator.h"
 
 #if BLE_INCLUDED == TRUE
 #include <string.h>
 #include <stdio.h>
 
-#include "l2cdefs.h"
+#include "stack/l2cdefs.h"
 #include "gatt_int.h"
-#include "gatt_api.h"
-#include "gattdefs.h"
-#include "sdp_api.h"
+#include "stack/gatt_api.h"
+#include "stack/gattdefs.h"
+#include "stack/sdp_api.h"
 #include "btm_int.h"
 /* check if [x, y] and [a, b] have overlapping range */
 #define GATT_VALIDATE_HANDLE_RANGE(x, y, a, b)   (y >= a && x <= b)

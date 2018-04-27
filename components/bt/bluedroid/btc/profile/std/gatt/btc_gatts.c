@@ -14,15 +14,15 @@
 
 #include <string.h>
 
-#include "bta_gatt_api.h"
+#include "bta/bta_gatt_api.h"
 
-#include "btc_task.h"
-#include "btc_manage.h"
+#include "btc/btc_task.h"
+#include "btc/btc_manage.h"
 #include "btc_gatts.h"
 #include "btc_gatt_util.h"
-#include "future.h"
-#include "allocator.h"
-#include "btc_main.h"
+#include "osi/future.h"
+#include "osi/allocator.h"
+#include "btc/btc_main.h"
 #include "esp_gatts_api.h"
 
 #if (GATTS_INCLUDED == TRUE)

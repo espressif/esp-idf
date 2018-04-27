@@ -26,11 +26,11 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "btc_util.h"
+#include "btc/btc_util.h"
 #if (BTA_AV_INCLUDED == TRUE)
-#include "bta_av_api.h"
+#include "bta/bta_av_api.h"
 #endif  ///BTA_AV_INCLUDED == TRUE
-#include "bt_defs.h"
+#include "common/bt_defs.h"
 
 /************************************************************************************
 **  Constants & Macros

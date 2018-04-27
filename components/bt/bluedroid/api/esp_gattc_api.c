@@ -16,7 +16,7 @@
 
 #include "esp_gattc_api.h"
 #include "esp_bt_main.h"
-#include "btc_manage.h"
+#include "btc/btc_manage.h"
 #include "btc_gattc.h"
 #include "btc_gatt_util.h"
 

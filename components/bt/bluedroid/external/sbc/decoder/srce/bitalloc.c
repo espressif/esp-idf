@@ -36,7 +36,7 @@ frame length and bitrate.
 @{
 */
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 #include "oi_utils.h"
 #include <oi_codec_sbc_private.h>
 

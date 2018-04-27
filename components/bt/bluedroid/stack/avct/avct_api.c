@@ -23,15 +23,15 @@
  ******************************************************************************/
 
 #include <string.h>
-#include "bt_types.h"
-#include "bt_target.h"
-#include "bt_defs.h"
-#include "l2c_api.h"
-#include "l2cdefs.h"
-#include "btm_api.h"
-#include "avct_api.h"
+#include "stack/bt_types.h"
+#include "common/bt_target.h"
+#include "common/bt_defs.h"
+#include "stack/l2c_api.h"
+#include "stack/l2cdefs.h"
+#include "stack/btm_api.h"
+#include "stack/avct_api.h"
 #include "avct_int.h"
-#include "allocator.h"
+#include "osi/allocator.h"
 
 #if (defined(AVCT_INCLUDED) && AVCT_INCLUDED == TRUE)
 

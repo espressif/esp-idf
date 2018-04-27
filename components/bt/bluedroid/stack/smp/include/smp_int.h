@@ -26,10 +26,10 @@
 
 #if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
 
-#include "btu.h"
-#include "btm_ble_api.h"
-#include "btm_api.h"
-#include "smp_api.h"
+#include "stack/btu.h"
+#include "stack/btm_ble_api.h"
+#include "stack/btm_api.h"
+#include "stack/smp_api.h"
 
 #define SMP_MODEL_ENCRYPTION_ONLY  0   /* Legacy mode, Just Works model */
 #define SMP_MODEL_PASSKEY       1   /* Legacy mode, Passkey Entry model, this side inputs the key */

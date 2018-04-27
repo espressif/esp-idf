@@ -22,7 +22,7 @@
  *  analysis.
  *
  ******************************************************************************/
-#include "bt_target.h"
+#include "common/bt_target.h"
 #include "sbc_encoder.h"
 
 #if (defined(SBC_ENC_INCLUDED) && SBC_ENC_INCLUDED == TRUE)

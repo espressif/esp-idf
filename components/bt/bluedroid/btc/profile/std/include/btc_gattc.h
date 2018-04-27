@@ -15,7 +15,7 @@
 #ifndef __BTC_GATTC_H__
 #define __BTC_GATTC_H__
 
-#include "btc_task.h"
+#include "btc/btc_task.h"
 #include "esp_bt_defs.h"
 #include "esp_gatt_defs.h"
 #include "esp_gattc_api.h"

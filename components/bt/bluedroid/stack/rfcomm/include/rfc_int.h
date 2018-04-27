@@ -25,7 +25,7 @@
 #ifndef RFC_INT_H
 #define RFC_INT_H
 
-#include "l2c_api.h"
+#include "stack/l2c_api.h"
 #include "port_int.h"
 
 /*

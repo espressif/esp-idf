@@ -17,16 +17,16 @@
  ******************************************************************************/
 
 #include <string.h>
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if (BLE_INCLUDED == TRUE)
-#include "bt_types.h"
-#include "hcimsgs.h"
-#include "btu.h"
+#include "stack/bt_types.h"
+#include "stack/hcimsgs.h"
+#include "stack/btu.h"
 #include "btm_int.h"
 //#include "bt_utils.h"
-#include "hcidefs.h"
-#include "btm_ble_api.h"
+#include "stack/hcidefs.h"
+#include "stack/btm_ble_api.h"
 
 tBTM_BLE_ENERGY_INFO_CB ble_energy_info_cb;
 

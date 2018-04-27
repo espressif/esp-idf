@@ -33,7 +33,7 @@ Functions for manipulating input bitstreams.
 @{
 */
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 #include "oi_stddefs.h"
 #include "oi_bitstream.h"
 #include "oi_assert.h"

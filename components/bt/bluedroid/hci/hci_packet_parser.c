@@ -16,13 +16,13 @@
  *
  ******************************************************************************/
 
-#include "bt_defs.h"
+#include "common/bt_defs.h"
 
-#include "buffer_allocator.h"
-#include "bt_types.h"
-#include "hcimsgs.h"
-#include "hci_layer.h"
-#include "hci_packet_parser.h"
+#include "hci/buffer_allocator.h"
+#include "stack/bt_types.h"
+#include "stack/hcimsgs.h"
+#include "hci/hci_layer.h"
+#include "hci/hci_packet_parser.h"
 
 static const command_opcode_t NO_OPCODE_CHECKING = 0;
 

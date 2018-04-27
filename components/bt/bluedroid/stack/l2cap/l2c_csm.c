@@ -26,15 +26,15 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "bt_target.h"
-#include "hcidefs.h"
-#include "hcimsgs.h"
-#include "l2cdefs.h"
+#include "common/bt_target.h"
+#include "stack/hcidefs.h"
+#include "stack/hcimsgs.h"
+#include "stack/l2cdefs.h"
 #include "l2c_int.h"
 #include "btm_int.h"
-#include "btu.h"
-#include "hcimsgs.h"
-#include "allocator.h"
+#include "stack/btu.h"
+#include "stack/hcimsgs.h"
+#include "osi/allocator.h"
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
 /********************************************************************************/

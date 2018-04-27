@@ -16,15 +16,15 @@
  *
  ******************************************************************************/
 #include <string.h>
-#include "bt_defs.h"
-#include "bt_trace.h"
-#include "bt_types.h"
-#include "buffer_allocator.h"
-#include "fixed_queue.h"
-#include "hci_hal.h"
-#include "hci_internals.h"
-#include "hci_layer.h"
-#include "thread.h"
+#include "common/bt_defs.h"
+#include "common/bt_trace.h"
+#include "stack/bt_types.h"
+#include "hci/buffer_allocator.h"
+#include "osi/fixed_queue.h"
+#include "hci/hci_hal.h"
+#include "hci/hci_internals.h"
+#include "hci/hci_layer.h"
+#include "osi/thread.h"
 #include "esp_bt.h"
 
 #define HCI_HAL_SERIAL_BUFFER_SIZE 1026

@@ -22,8 +22,8 @@
 #define __BTC_A2DP_CONTROL_H__
 
 #include <stdbool.h>
-#include "bt_target.h"
-#include "bta_api.h"
+#include "common/bt_target.h"
+#include "bta/bta_api.h"
 #include "btc_av_api.h"
 #include "esp_a2dp_api.h"
 

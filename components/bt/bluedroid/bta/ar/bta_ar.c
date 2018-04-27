@@ -22,9 +22,9 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 #include <string.h>
-#include "bta_ar_api.h"
+#include "bta/bta_ar_api.h"
 #include "bta_ar_int.h"
 
 #if BTA_AR_INCLUDED

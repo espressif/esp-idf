@@ -26,8 +26,8 @@
  *
  ******************************************************************************/
 #include <string.h>
-#include "bta_api.h"
-#include "bta_sys.h"
+#include "bta/bta_api.h"
+#include "bta/bta_sys.h"
 
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
 

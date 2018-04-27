@@ -23,15 +23,15 @@
  ******************************************************************************/
 
 #include <string.h>
-#include "bt_trace.h"
-#include "controller.h"
-#include "allocator.h"
-#include "hash_map.h"
-#include "bt_types.h"
-#include "btu.h"
+#include "common/bt_trace.h"
+#include "device/controller.h"
+#include "osi/allocator.h"
+#include "osi/hash_map.h"
+#include "stack/bt_types.h"
+#include "stack/btu.h"
 #include "btm_int.h"
 #include "l2c_int.h"
-#include "hcimsgs.h"
+#include "stack/hcimsgs.h"
 //#include "bt_utils.h"
 
 #ifndef BTM_BLE_SCAN_PARAM_TOUT

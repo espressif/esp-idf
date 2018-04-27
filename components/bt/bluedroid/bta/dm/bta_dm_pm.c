@@ -26,10 +26,10 @@
 // #include <assert.h>
 #include <string.h>
 
-#include "bta_sys.h"
-#include "bta_api.h"
+#include "bta/bta_sys.h"
+#include "bta/bta_api.h"
 #include "bta_dm_int.h"
-#include "btm_api.h"
+#include "stack/btm_api.h"
 
 #if (BTM_SSR_INCLUDED == TRUE)
 

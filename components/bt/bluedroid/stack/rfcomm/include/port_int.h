@@ -25,11 +25,11 @@
 #ifndef PORT_INT_H
 #define PORT_INT_H
 
-#include "bt_target.h"
-#include "rfcdefs.h"
-#include "port_api.h"
-#include "fixed_queue.h"
-#include "bt_defs.h"
+#include "common/bt_target.h"
+#include "stack/rfcdefs.h"
+#include "stack/port_api.h"
+#include "osi/fixed_queue.h"
+#include "common/bt_defs.h"
 
 /* Local events passed when application event is sent from the api to PORT */
 /* ???*/

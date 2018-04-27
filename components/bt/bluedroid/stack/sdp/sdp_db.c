@@ -26,15 +26,15 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "bt_target.h"
-#include "allocator.h"
+#include "common/bt_target.h"
+#include "osi/allocator.h"
 
 
-#include "l2cdefs.h"
-#include "hcidefs.h"
-#include "hcimsgs.h"
+#include "stack/l2cdefs.h"
+#include "stack/hcidefs.h"
+#include "stack/hcimsgs.h"
 
-#include "sdp_api.h"
+#include "stack/sdp_api.h"
 #include "sdpint.h"
 
 #if (SDP_INCLUDED == TRUE)

@@ -22,10 +22,10 @@
  *
  ******************************************************************************/
 
-#include "bta_api.h"
-#include "bta_sys.h"
+#include "bta/bta_api.h"
+#include "bta/bta_sys.h"
 #include "bta_dm_int.h"
-#include "allocator.h"
+#include "osi/allocator.h"
 #include <string.h>
 
 

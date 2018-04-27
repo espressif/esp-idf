@@ -26,13 +26,13 @@
 #include <string.h>
 //#include <stdio.h>
 
-#include "bt_types.h"
-#include "hcidefs.h"
-#include "hcimsgs.h"
-#include "l2cdefs.h"
+#include "stack/bt_types.h"
+#include "stack/hcidefs.h"
+#include "stack/hcimsgs.h"
+#include "stack/l2cdefs.h"
 #include "l2c_int.h"
-#include "btu.h"
-#include "btm_api.h"
+#include "stack/btu.h"
+#include "stack/btm_api.h"
 #include "btm_int.h"
 
 #if (L2CAP_UCD_INCLUDED == TRUE)

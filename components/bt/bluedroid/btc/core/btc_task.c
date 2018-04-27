@@ -14,24 +14,24 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "bt_target.h"
-#include "btc_task.h"
-#include "bt_trace.h"
-#include "thread.h"
-#include "bt_defs.h"
-#include "allocator.h"
-#include "btc_main.h"
-#include "btc_dev.h"
+#include "common/bt_target.h"
+#include "btc/btc_task.h"
+#include "common/bt_trace.h"
+#include "osi/thread.h"
+#include "common/bt_defs.h"
+#include "osi/allocator.h"
+#include "btc/btc_main.h"
+#include "btc/btc_dev.h"
 #include "btc_gatts.h"
 #include "btc_gattc.h"
 #include "btc_gatt_common.h"
 #include "btc_gap_ble.h"
 #include "btc_blufi_prf.h"
-#include "btc_dm.h"
-#include "btc_alarm.h"
-#include "bta_gatt_api.h"
+#include "btc/btc_dm.h"
+#include "btc/btc_alarm.h"
+#include "bta/bta_gatt_api.h"
 #if CONFIG_CLASSIC_BT_ENABLED
-#include "btc_profile_queue.h"
+#include "btc/btc_profile_queue.h"
 #if (BTC_GAP_BT_INCLUDED == TRUE)
 #include "btc_gap_bt.h"
 #endif /* BTC_GAP_BT_INCLUDED == TRUE */

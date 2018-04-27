@@ -25,10 +25,10 @@
 #ifndef  SDP_INT_H
 #define  SDP_INT_H
 
-#include "bt_target.h"
-#include "bt_defs.h"
-#include "sdp_api.h"
-#include "l2c_api.h"
+#include "common/bt_target.h"
+#include "common/bt_defs.h"
+#include "stack/sdp_api.h"
+#include "stack/l2c_api.h"
 
 #if (SDP_INCLUDED == TRUE)
 /* Continuation length - we use a 2-byte offset */

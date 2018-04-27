@@ -16,7 +16,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include "controller.h"
 #include "driver/uart.h"
 
 #include "esp_bt.h"
@@ -27,8 +26,9 @@
 #include "esp_gatt_defs.h"
 #include "esp_bt_main.h"
 #include "esp_system.h"
-#include "btc_main.h"
 #include "esp_gatt_common_api.h"
+#include "esp_log.h"
+#include "freertos/FreeRTOS.h"
 
 #define GATTC_TAG                   "GATTC_SPP_DEMO"
 #define PROFILE_NUM                 1

@@ -15,8 +15,8 @@
  *  limitations under the License.
  *
  ******************************************************************************/
-#include "buffer_allocator.h"
-#include "allocator.h"
+#include "hci/buffer_allocator.h"
+#include "osi/allocator.h"
 
 // TODO(zachoverflow): move the assertion into osi_malloc in the future
 static void *buffer_alloc(size_t size)

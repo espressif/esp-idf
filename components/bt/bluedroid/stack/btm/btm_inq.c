@@ -29,16 +29,16 @@
 #include <stdio.h>
 #include <stddef.h>
 
-#include "alarm.h"
-#include "bt_types.h"
-#include "controller.h"
-#include "hcimsgs.h"
-#include "btu.h"
-#include "btm_api.h"
+#include "osi/alarm.h"
+#include "stack/bt_types.h"
+#include "device/controller.h"
+#include "stack/hcimsgs.h"
+#include "stack/btu.h"
+#include "stack/btm_api.h"
 #include "btm_int.h"
-#include "hcidefs.h"
+#include "stack/hcidefs.h"
 #if (defined(SDP_INCLUDED) && SDP_INCLUDED == TRUE)
-#include "sdpdefs.h"
+#include "stack/sdpdefs.h"
 #endif
 
 #define BTM_INQ_REPLY_TIMEOUT   3       /* 3 second timeout waiting for responses */

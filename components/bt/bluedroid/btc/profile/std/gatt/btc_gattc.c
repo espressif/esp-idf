@@ -14,13 +14,13 @@
 
 #include <string.h>
 
-#include "btm_ble_api.h"
+#include "stack/btm_ble_api.h"
 #include "btc_gattc.h"
 #include "btc_gatt_util.h"
-#include "btc_manage.h"
-#include "bta_gatt_api.h"
-#include "bt_trace.h"
-#include "allocator.h"
+#include "btc/btc_manage.h"
+#include "bta/bta_gatt_api.h"
+#include "common/bt_trace.h"
+#include "osi/allocator.h"
 #include "esp_gattc_api.h"
 
 #if (GATTC_INCLUDED == TRUE)

@@ -14,10 +14,7 @@
 
 #include "hidd_le_prf_int.h"
 #include <string.h>
-#include "bt_types.h"
-#include "bt_trace.h"
-//#include "esp_gap_ble_api.h"
-
+#include "esp_log.h"
 
 /// characteristic presentation information
 struct prf_char_pres_fmt
@@ -558,7 +555,7 @@ void esp_hidd_prf_cb_hdl(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
             break;
         case ESP_GATTS_CONNECT_EVT: {
             esp_hidd_cb_param_t cb_param = {0};
-			LOG_ERROR("the connection establish, conn_id = %x",param->connect.conn_id);
+			ESP_LOGE(HID_LE_PRF_TAG, "the connection establish, conn_id = %x",param->connect.conn_id);
 			memcpy(cb_param.connect.remote_bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
             cb_param.connect.conn_id = param->connect.conn_id;
             hidd_clcb_alloc(param->connect.conn_id, param->connect.remote_bda);
@@ -595,7 +592,7 @@ void esp_hidd_prf_cb_hdl(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
                 param->add_attr_tab.status == ESP_GATT_OK) {
                 incl_svc.start_hdl = param->add_attr_tab.handles[BAS_IDX_SVC];
                 incl_svc.end_hdl = incl_svc.start_hdl + BAS_IDX_NB -1;
-                LOG_ERROR("%s(), start added the hid service to the stack database. incl_handle = %d", 
+                ESP_LOGE(HID_LE_PRF_TAG, "%s(), start added the hid service to the stack database. incl_handle = %d", 
                            __func__, incl_svc.start_hdl);
                 esp_ble_gatts_create_attr_tab(hidd_le_gatt_db, gatts_if, HIDD_LE_IDX_NB, 0);
             }
@@ -603,7 +600,7 @@ void esp_hidd_prf_cb_hdl(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
                 param->add_attr_tab.status == ESP_GATT_OK) {
                 memcpy(hidd_le_env.hidd_inst.att_tbl, param->add_attr_tab.handles, 
                             HIDD_LE_IDX_NB*sizeof(uint16_t));
-                LOG_ERROR("hid svc handle = %x",hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_SVC]);
+                ESP_LOGE(HID_LE_PRF_TAG, "hid svc handle = %x",hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_SVC]);
                 hid_add_id_tbl();
 		        esp_ble_gatts_start_service(hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_SVC]);
             } else {
@@ -639,9 +636,9 @@ void hidd_clcb_alloc (uint16_t conn_id, esp_bd_addr_t bda)
 
     for (i_clcb = 0, p_clcb= hidd_le_env.hidd_clcb; i_clcb < HID_MAX_APPS; i_clcb++, p_clcb++) {
         if (!p_clcb->in_use) {
-            p_clcb->in_use      = TRUE;
+            p_clcb->in_use      = true;
             p_clcb->conn_id     = conn_id;
-            p_clcb->connected   = TRUE;
+            p_clcb->connected   = true;
             memcpy (p_clcb->remote_bda, bda, ESP_BD_ADDR_LEN);
             break;
         }
@@ -656,10 +653,10 @@ bool hidd_clcb_dealloc (uint16_t conn_id)
 
     for (i_clcb = 0, p_clcb= hidd_le_env.hidd_clcb; i_clcb < HID_MAX_APPS; i_clcb++, p_clcb++) {
             memset(p_clcb, 0, sizeof(hidd_clcb_t));
-            return TRUE;
+            return true;
     }
     
-    return FALSE;
+    return false;
 }
 
 esp_err_t hidd_register_cb(void)
@@ -676,7 +673,7 @@ void hidd_set_attr_value(uint16_t handle, uint16_t val_len, const uint8_t *value
         hidd_inst->att_tbl[HIDD_LE_IDX_REPORT_REP_REF] >= handle) {
         esp_ble_gatts_set_attr_value(handle, val_len, value);
     } else {
-        LOG_ERROR("%s error:Invalid handle value.",__func__);
+        ESP_LOGE(HID_LE_PRF_TAG, "%s error:Invalid handle value.",__func__);
     }
     return;
 }
@@ -688,7 +685,7 @@ void hidd_get_attr_value(uint16_t handle, uint16_t *length, uint8_t **value)
         hidd_inst->att_tbl[HIDD_LE_IDX_REPORT_REP_REF] >= handle){
         esp_ble_gatts_get_attr_value(handle, length, (const uint8_t **)value);
     } else {
-        LOG_ERROR("%s error:Invalid handle value.", __func__);
+        ESP_LOGE(HID_LE_PRF_TAG, "%s error:Invalid handle value.", __func__);
     }
 
     return;
