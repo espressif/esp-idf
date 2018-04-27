@@ -1,6 +1,7 @@
 ***********
 IDF Monitor
 ***********
+:link_to_translation:`zh_CN:[中文]`
 
 The IDF Monitor tool is a Python program which runs when the ``make monitor`` target is invoked in IDF.
 
