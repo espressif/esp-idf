@@ -1456,6 +1456,48 @@ TEST_CASE("Recovery from power-off when the entry being erased is not on active 
     nvs_close(handle);
 }
 
+TEST_CASE("Recovery from power-off when page is being freed.", "[nvs]")
+{
+    const size_t blob_size = (Page::ENTRY_COUNT-3) * Page::ENTRY_SIZE;
+    size_t read_size = blob_size/2;
+    uint8_t blob[blob_size] = {0};
+    SpiFlashEmulator emu(3);
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, 0, 3));
+    nvs_handle handle;
+    TEST_ESP_OK(nvs_open("test", NVS_READWRITE, &handle));
+    // Fill first page
+    TEST_ESP_OK(nvs_set_blob(handle, "1a", blob, blob_size/3));
+    TEST_ESP_OK(nvs_set_blob(handle, "1b", blob, blob_size/3));
+    TEST_ESP_OK(nvs_set_blob(handle, "1c", blob, blob_size/4));
+    // Fill second page
+    TEST_ESP_OK(nvs_set_blob(handle, "2a", blob, blob_size/2));
+    TEST_ESP_OK(nvs_set_blob(handle, "2b", blob, blob_size/2));
+
+    TEST_ESP_OK(nvs_erase_key(handle, "1c"));
+
+    emu.clearStats();
+    emu.failAfter(6 * Page::ENTRY_COUNT);
+    TEST_ESP_ERR(nvs_set_blob(handle, "1d", blob, blob_size/4), ESP_ERR_FLASH_OP_FAIL);
+
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, 0, 3));
+
+    read_size = blob_size/3;
+    TEST_ESP_OK( nvs_get_blob(handle, "1a", blob, &read_size));
+    TEST_ESP_OK( nvs_get_blob(handle, "1b", blob, &read_size));
+
+    read_size = blob_size /4;
+    TEST_ESP_ERR( nvs_get_blob(handle, "1c", blob, &read_size), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR( nvs_get_blob(handle, "1d", blob, &read_size), ESP_ERR_NVS_NOT_FOUND);
+
+    read_size = blob_size /2;
+    TEST_ESP_OK( nvs_get_blob(handle, "2a", blob, &read_size));
+    TEST_ESP_OK( nvs_get_blob(handle, "2b", blob, &read_size));
+
+    TEST_ESP_OK(nvs_commit(handle));
+    nvs_close(handle);
+}
+
+
 /* Add new tests above */
 /* This test has to be the final one */
 
