@@ -26,15 +26,15 @@
 #include <string.h>
 //#include <stdio.h>
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 //#include "bt_utils.h"
-#include "l2cdefs.h"
-#include "hcidefs.h"
-#include "hcimsgs.h"
-#include "bt_defs.h"
-#include "sdp_api.h"
+#include "stack/l2cdefs.h"
+#include "stack/hcidefs.h"
+#include "stack/hcimsgs.h"
+#include "common/bt_defs.h"
+#include "stack/sdp_api.h"
 #include "sdpint.h"
-#include "btu.h"
+#include "stack/btu.h"
 
 #if (SDP_INCLUDED == TRUE)
 /**********************************************************************

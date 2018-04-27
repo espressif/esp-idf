@@ -16,20 +16,20 @@
  *
  ******************************************************************************/
 
-#include "bta_api.h"
+#include "bta/bta_api.h"
 #include "bta_hh_int.h"
 
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
 
-#include "bta_api.h"
+#include "bta/bta_api.h"
 #include <string.h>
-#include "btm_api.h"
-#include "btm_ble_api.h"
-#include "bta_hh_co.h"
-#include "bta_gatt_api.h"
+#include "stack/btm_api.h"
+#include "stack/btm_ble_api.h"
+#include "bta/bta_hh_co.h"
+#include "bta/bta_gatt_api.h"
 #include "srvc_api.h"
 #include "btm_int.h"
-#include "utl.h"
+#include "bta/utl.h"
 
 #define LOG_TAG "bt_bta_hh"
 #include "osi/include/log.h"

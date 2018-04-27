@@ -13,9 +13,9 @@
 // limitations under the License.
 
 
-#include "btc_task.h"
-#include "bt_trace.h"
-#include "thread.h"
+#include "btc/btc_task.h"
+#include "common/bt_trace.h"
+#include "osi/thread.h"
 #include "esp_bt_defs.h"
 #include "esp_gatt_defs.h"
 

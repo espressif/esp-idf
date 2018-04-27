@@ -23,13 +23,13 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #include <string.h>
-#include "a2d_api.h"
+#include "stack/a2d_api.h"
 #include "a2d_int.h"
-#include "a2d_sbc.h"
-#include "bt_defs.h"
+#include "stack/a2d_sbc.h"
+#include "common/bt_defs.h"
 
 #if (defined(A2D_INCLUDED) && A2D_INCLUDED == TRUE)
 

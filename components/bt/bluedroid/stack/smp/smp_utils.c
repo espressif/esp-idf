@@ -21,20 +21,20 @@
  *  This file contains functions for the SMP L2CAP utility functions
  *
  ******************************************************************************/
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if SMP_INCLUDED == TRUE
 
-#include "bt_types.h"
+#include "stack/bt_types.h"
 //#include "bt_utils.h"
 #include <string.h>
 //#include <ctype.h>
-#include "hcidefs.h"
-#include "btm_ble_api.h"
-#include "l2c_api.h"
+#include "stack/hcidefs.h"
+#include "stack/btm_ble_api.h"
+#include "stack/l2c_api.h"
 #include "l2c_int.h"
 #include "smp_int.h"
-#include "controller.h"
+#include "device/controller.h"
 #include "btm_int.h"
 
 #define SMP_PAIRING_REQ_SIZE    7

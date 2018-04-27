@@ -21,19 +21,19 @@
  *  this file contains GATT interface functions
  *
  ******************************************************************************/
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 
 #if defined(BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE)
 
-#include "allocator.h"
+#include "osi/allocator.h"
 #include <string.h>
-#include "gatt_api.h"
+#include "stack/gatt_api.h"
 #include "gatt_int.h"
-#include "l2c_api.h"
+#include "stack/l2c_api.h"
 #include "btm_int.h"
-#include "sdpdefs.h"
-#include "sdp_api.h"
+#include "stack/sdpdefs.h"
+#include "stack/sdp_api.h"
 
 /*******************************************************************************
 **

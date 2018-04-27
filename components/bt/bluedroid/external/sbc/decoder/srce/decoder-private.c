@@ -33,7 +33,7 @@ This file drives SBC decoding.
 @{
 */
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 #include "oi_codec_sbc_private.h"
 #include "oi_bitstream.h"
 #include <stdio.h>

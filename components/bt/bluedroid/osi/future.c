@@ -16,11 +16,11 @@
  *
  ******************************************************************************/
 
-#include "bt_trace.h"
+#include "common/bt_trace.h"
 
-#include "allocator.h"
-#include "future.h"
-#include "osi.h"
+#include "osi/allocator.h"
+#include "osi/future.h"
+#include "osi/osi.h"
 
 void future_free(future_t *future);
 

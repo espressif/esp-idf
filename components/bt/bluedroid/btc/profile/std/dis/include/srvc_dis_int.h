@@ -19,9 +19,9 @@
 #ifndef SRVC_DIS_INT_H
 #define SRVC_DIS_INT_H
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 #include "srvc_api.h"
-#include "gatt_api.h"
+#include "stack/gatt_api.h"
 
 #define DIS_MAX_CHAR_NUM            9
 

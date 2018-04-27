@@ -23,19 +23,19 @@
  *
  ******************************************************************************/
 
-#include "bta_api.h"
-#include "bta_sys.h"
-#include "bta_jv_api.h"
+#include "bta/bta_api.h"
+#include "bta/bta_sys.h"
+#include "bta/bta_jv_api.h"
 #include "bta_jv_int.h"
-#include "allocator.h"
+#include "osi/allocator.h"
 #include <string.h>
-#include "port_api.h"
-#include "sdp_api.h"
-#include "utl.h"
-#include "gap_api.h"
+#include "stack/port_api.h"
+#include "stack/sdp_api.h"
+#include "bta/utl.h"
+#include "stack/gap_api.h"
 
-#include "bt_target.h"
-#include "sdp_api.h"
+#include "common/bt_target.h"
+#include "stack/sdp_api.h"
 
 
 #if (defined BTA_JV_INCLUDED && BTA_JV_INCLUDED == TRUE)

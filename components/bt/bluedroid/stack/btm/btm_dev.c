@@ -27,14 +27,14 @@
 //#include <stdio.h>
 #include <stddef.h>
 
-#include "bt_types.h"
-#include "controller.h"
-#include "hcimsgs.h"
-#include "btu.h"
-#include "btm_api.h"
+#include "stack/bt_types.h"
+#include "device/controller.h"
+#include "stack/hcimsgs.h"
+#include "stack/btu.h"
+#include "stack/btm_api.h"
 #include "btm_int.h"
-#include "hcidefs.h"
-#include "l2c_api.h"
+#include "stack/hcidefs.h"
+#include "stack/l2c_api.h"
 
 static tBTM_SEC_DEV_REC *btm_find_oldest_dev (void);
 

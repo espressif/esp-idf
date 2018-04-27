@@ -17,7 +17,7 @@
  ******************************************************************************/
 
 
-#include "semaphore.h"
+#include "osi/semaphore.h"
 
 /*-----------------------------------------------------------------------------------*/
 //  Creates and returns a new semaphore. The "init_count" argument specifies

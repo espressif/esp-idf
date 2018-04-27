@@ -15,11 +15,11 @@
 #ifndef __BTC_GATT_COMMON_H__
 #define __BTC_GATT_COMMON_H__
 
-#include "future.h"
-#include "bt_types.h"
-#include "bta_api.h"
-#include "btc_main.h"
-#include "btc_task.h"
+#include "osi/future.h"
+#include "stack/bt_types.h"
+#include "bta/bta_api.h"
+#include "btc/btc_main.h"
+#include "btc/btc_task.h"
 
 typedef enum {
     BTC_GATT_ACT_SET_LOCAL_MTU = 0,

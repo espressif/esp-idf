@@ -22,11 +22,11 @@
  *
  ******************************************************************************/
 
-#include "bta_api.h"
-#include "bta_sys.h"
-#include "bta_jv_api.h"
+#include "bta/bta_api.h"
+#include "bta/bta_sys.h"
+#include "bta/bta_jv_api.h"
 #include "bta_jv_int.h"
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if (defined BTA_JV_INCLUDED && BTA_JV_INCLUDED == TRUE)
 /*****************************************************************************

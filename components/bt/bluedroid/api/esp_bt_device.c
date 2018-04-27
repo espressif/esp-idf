@@ -16,9 +16,9 @@
 #include <string.h>
 #include "esp_bt_device.h"
 #include "esp_bt_main.h"
-#include "controller.h"
-#include "btc_task.h"
-#include "btc_dev.h"
+#include "device/controller.h"
+#include "btc/btc_task.h"
+#include "btc/btc_dev.h"
 
 const uint8_t *esp_bt_dev_get_address(void)
 {

@@ -22,15 +22,15 @@
  *
  ******************************************************************************/
 
-#include "bta_sys.h"
-#include "bta_api.h"
+#include "bta/bta_sys.h"
+#include "bta/bta_api.h"
 #include "bta_dm_int.h"
 #include "bta_sys_int.h"
-#include "btm_api.h"
+#include "stack/btm_api.h"
 #include "btm_int.h"
 #include <string.h>
-#include "utl.h"
-#include "allocator.h"
+#include "bta/utl.h"
+#include "osi/allocator.h"
 
 /*****************************************************************************
 **  Constants

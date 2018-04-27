@@ -19,10 +19,10 @@
 #define LOG_TAG "bt_device_interop"
 */
 #include <string.h> // For memcmp
-#include "bt_trace.h"
-#include "bdaddr.h"
-#include "interop.h"
-#include "interop_database.h"
+#include "common/bt_trace.h"
+#include "device/bdaddr.h"
+#include "device/interop.h"
+#include "device/interop_database.h"
 
 #define CASE_RETURN_STR(const) case const: return #const;
 

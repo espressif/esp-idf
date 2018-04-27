@@ -14,19 +14,19 @@
 
 #include <string.h>
 
-#include "allocator.h"
-#include "bt_types.h"
-#include "bt_defs.h"
-#include "bta_api.h"
-#include "bta_dm_co.h"
-#include "btc_task.h"
-#include "btc_manage.h"
+#include "osi/allocator.h"
+#include "stack/bt_types.h"
+#include "common/bt_defs.h"
+#include "bta/bta_api.h"
+#include "bta/bta_dm_co.h"
+#include "btc/btc_task.h"
+#include "btc/btc_manage.h"
 #include "btc_gap_ble.h"
 #include "btc_gatt_util.h"
 #include "esp_bt_defs.h"
 #include "esp_gap_ble_api.h"
-#include "btc_ble_storage.h"
-#include "btc_dm.h"
+#include "btc/btc_ble_storage.h"
+#include "btc/btc_dm.h"
 
 static tBTA_BLE_ADV_DATA gl_bta_adv_data;
 static tBTA_BLE_ADV_DATA gl_bta_scan_rsp_data;

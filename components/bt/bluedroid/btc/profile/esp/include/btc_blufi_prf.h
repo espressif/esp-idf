@@ -15,8 +15,8 @@
 #ifndef __BTC_BLUFI_PRF_H__
 #define __BTC_BLUFI_PRF_H__
 
-#include "bt_target.h"
-#include "btc_task.h"
+#include "common/bt_target.h"
+#include "btc/btc_task.h"
 #include "esp_blufi_api.h"
 
 typedef enum {

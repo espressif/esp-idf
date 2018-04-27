@@ -16,10 +16,10 @@
 #include "esp_gatt_defs.h"
 #include "esp_gatts_api.h"
 #include "esp_bt_main.h"
-#include "btc_manage.h"
+#include "btc/btc_manage.h"
 #include "btc_gatts.h"
 #include "btc_gatt_util.h"
-#include "bt_target.h"
+#include "common/bt_target.h"
 #if (GATTS_INCLUDED == TRUE)
 #define COPY_TO_GATTS_ARGS(_gatt_args, _arg, _arg_type) memcpy(_gatt_args, _arg, sizeof(_arg_type))
 

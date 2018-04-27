@@ -23,18 +23,18 @@
  ******************************************************************************/
 
 #include <stddef.h>
-#include "bt_target.h"
+#include "common/bt_target.h"
 
-#include "rfcdefs.h"
-#include "port_api.h"
+#include "stack/rfcdefs.h"
+#include "stack/port_api.h"
 #include "port_int.h"
-#include "l2c_api.h"
-#include "l2cdefs.h"
+#include "stack/l2c_api.h"
+#include "stack/l2cdefs.h"
 #include "rfc_int.h"
-#include "bt_defs.h"
-#include "allocator.h"
-#include "mutex.h"
-#include "alarm.h"
+#include "common/bt_defs.h"
+#include "osi/allocator.h"
+#include "osi/mutex.h"
+#include "osi/alarm.h"
 #if (defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)
 /*
 ** Define Callback functions to be called by L2CAP

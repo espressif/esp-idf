@@ -16,16 +16,16 @@
  *
  ******************************************************************************/
 
-#include "bt_defs.h"
+#include "common/bt_defs.h"
 
-#include "allocator.h"
-#include "bt_types.h"
-#include "buffer_allocator.h"
-#include "hcidefs.h"
-#include "hcimsgs.h"
-#include "hci_internals.h"
-#include "hci_layer.h"
-#include "hci_packet_factory.h"
+#include "osi/allocator.h"
+#include "stack/bt_types.h"
+#include "hci/buffer_allocator.h"
+#include "stack/hcidefs.h"
+#include "stack/hcimsgs.h"
+#include "hci/hci_internals.h"
+#include "hci/hci_layer.h"
+#include "hci/hci_packet_factory.h"
 
 static const allocator_t *buffer_allocator;
 

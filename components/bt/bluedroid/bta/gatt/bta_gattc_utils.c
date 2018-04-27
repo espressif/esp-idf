@@ -22,19 +22,19 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if defined(GATTC_INCLUDED) && (GATTC_INCLUDED == TRUE)
 
 #include <string.h>
 
-#include "bdaddr.h"
+#include "device/bdaddr.h"
 // #include "btif/include/btif_util.h"
-#include "utl.h"
-#include "bta_sys.h"
+#include "bta/utl.h"
+#include "bta/bta_sys.h"
 #include "bta_gattc_int.h"
-#include "l2c_api.h"
-#include "allocator.h"
+#include "stack/l2c_api.h"
+#include "osi/allocator.h"
 
 #define LOG_TAG "bt_bta_gattc"
 /*****************************************************************************

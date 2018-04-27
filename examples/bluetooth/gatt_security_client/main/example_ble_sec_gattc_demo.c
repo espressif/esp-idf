@@ -22,7 +22,6 @@
 #include <stdio.h>
 #include "nvs.h"
 #include "nvs_flash.h"
-#include "controller.h"
 
 #include "esp_bt.h"
 #include "esp_gap_ble_api.h"
@@ -30,6 +29,8 @@
 #include "esp_gatt_defs.h"
 #include "esp_bt_main.h"
 #include "esp_gatt_common_api.h"
+#include "esp_log.h"
+#include "freertos/FreeRTOS.h"
 
 #define GATTC_TAG             "SEC_GATTC_DEMO"
 #define REMOTE_SERVICE_UUID   0x1809

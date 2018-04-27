@@ -22,14 +22,14 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
-#include "bta_api.h"
-#include "bta_sys.h"
-#include "bta_sdp_api.h"
+#include "common/bt_target.h"
+#include "bta/bta_api.h"
+#include "bta/bta_sys.h"
+#include "bta/bta_sdp_api.h"
 #include "bta_sdp_int.h"
 #include <string.h>
-#include "allocator.h"
-#include "sdp_api.h"
+#include "osi/allocator.h"
+#include "stack/sdp_api.h"
 
 #if defined(BTA_SDP_INCLUDED) && (BTA_SDP_INCLUDED == TRUE)
 /*****************************************************************************

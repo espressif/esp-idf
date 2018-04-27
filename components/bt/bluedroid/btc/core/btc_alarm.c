@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "btc_task.h"
-#include "btc_alarm.h"
+#include "btc/btc_task.h"
+#include "btc/btc_alarm.h"
 
 void btc_alarm_handler(btc_msg_t *msg)
 {

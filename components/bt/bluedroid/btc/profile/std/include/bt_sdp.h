@@ -19,7 +19,7 @@
 
 #include <stdint.h>
 // #include "bluetooth.h"
-#include "bt_defs.h"
+#include "common/bt_defs.h"
 
 #define SDP_OPP_SUPPORTED_FORMATS_MAX_LENGTH 15
 

@@ -25,18 +25,18 @@
  ******************************************************************************/
 
 
-#include "bt_defs.h"
-#include "bt_common_types.h"
-#include "bte.h"
-#include "btu.h"
-#include "bt_trace.h"
-#include "osi.h"
-#include "alarm.h"
-#include "hash_map.h"
-#include "hash_functions.h"
-#include "controller.h"
-#include "hci_layer.h"
-#include "bta_api.h"
+#include "common/bt_defs.h"
+#include "common/bt_common_types.h"
+#include "common/bte.h"
+#include "stack/btu.h"
+#include "common/bt_trace.h"
+#include "osi/osi.h"
+#include "osi/alarm.h"
+#include "osi/hash_map.h"
+#include "osi/hash_functions.h"
+#include "device/controller.h"
+#include "hci/hci_layer.h"
+#include "bta/bta_api.h"
 
 /*******************************************************************************
 **  Constants & Macros

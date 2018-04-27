@@ -24,12 +24,12 @@
 #ifndef AVDT_INT_H
 #define AVDT_INT_H
 
-#include "avdt_api.h"
-#include "avdtc_api.h"
+#include "stack/avdt_api.h"
+#include "stack/avdtc_api.h"
 #include "avdt_defs.h"
-#include "l2c_api.h"
-#include "btm_api.h"
-#include "fixed_queue.h"
+#include "stack/l2c_api.h"
+#include "stack/btm_api.h"
+#include "osi/fixed_queue.h"
 
 #if (AVRC_INCLUDED == TRUE)
 

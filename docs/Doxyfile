@@ -32,25 +32,25 @@ INPUT = \
     ../../components/esp32/include/esp_mesh.h \
     ## Bluetooth - API Reference
     ## Controller && VHCI
-    ../../components/bt/include/bt.h \
+    ../../components/bt/include/esp_bt.h \
     ## Bluetooth COMMON
     ## Issue with __attribute__
-    ../../components/bt/bluedroid/api/include/esp_bt_defs.h \
-    ../../components/bt/bluedroid/api/include/esp_bt_main.h \
-    ../../components/bt/bluedroid/api/include/esp_bt_device.h \
+    ../../components/bt/bluedroid/api/include/api/esp_bt_defs.h \
+    ../../components/bt/bluedroid/api/include/api/esp_bt_main.h \
+    ../../components/bt/bluedroid/api/include/api/esp_bt_device.h \
     ## Bluetooth LE
-    ../../components/bt/bluedroid/api/include/esp_gap_ble_api.h \
+    ../../components/bt/bluedroid/api/include/api/esp_gap_ble_api.h \
     ## Issue with __attribute__
-    ../../components/bt/bluedroid/api/include/esp_gatt_defs.h \
-    ../../components/bt/bluedroid/api/include/esp_gatts_api.h \
-    ../../components/bt/bluedroid/api/include/esp_gattc_api.h \
-    ../../components/bt/bluedroid/api/include/esp_blufi_api.h \
+    ../../components/bt/bluedroid/api/include/api/esp_gatt_defs.h \
+    ../../components/bt/bluedroid/api/include/api/esp_gatts_api.h \
+    ../../components/bt/bluedroid/api/include/api/esp_gattc_api.h \
+    ../../components/bt/bluedroid/api/include/api/esp_blufi_api.h \
     ## Bluetooth Classic
-    ../../components/bt/bluedroid/api/include/esp_gap_bt_api.h \
+    ../../components/bt/bluedroid/api/include/api/esp_gap_bt_api.h \
     ## Issue with __attribute__
-    ../../components/bt/bluedroid/api/include/esp_a2dp_api.h \
-    ../../components/bt/bluedroid/api/include/esp_avrc_api.h \
-    ../../components/bt/bluedroid/api/include/esp_spp_api.h \
+    ../../components/bt/bluedroid/api/include/api/esp_a2dp_api.h \
+    ../../components/bt/bluedroid/api/include/api/esp_avrc_api.h \
+    ../../components/bt/bluedroid/api/include/api/esp_spp_api.h \
     ##
     ## Ethernet - API Reference
     ##

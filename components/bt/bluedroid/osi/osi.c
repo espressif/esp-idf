@@ -13,8 +13,8 @@
 // limitations under the License.
 
 
-#include "osi.h"
-#include "mutex.h"
+#include "osi/osi.h"
+#include "osi/mutex.h"
 
 int osi_init(void)
 {

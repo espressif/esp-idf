@@ -22,12 +22,12 @@
  *
  ******************************************************************************/
 // #include <assert.h>
-#include "bt_trace.h"
+#include "common/bt_trace.h"
 #include <string.h>
-#include "bt_target.h"
-#include "avrc_api.h"
+#include "common/bt_target.h"
+#include "stack/avrc_api.h"
 #include "avrc_int.h"
-#include "allocator.h"
+#include "osi/allocator.h"
 
 #if (defined(AVRC_INCLUDED) && AVRC_INCLUDED == TRUE)
 

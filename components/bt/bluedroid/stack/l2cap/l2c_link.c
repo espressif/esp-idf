@@ -28,16 +28,16 @@
 #include <string.h>
 //#include <stdio.h>
 
-#include "controller.h"
+#include "device/controller.h"
 //#include "btcore/include/counter.h"
-#include "bt_types.h"
+#include "stack/bt_types.h"
 //#include "bt_utils.h"
-#include "hcimsgs.h"
-#include "l2cdefs.h"
+#include "stack/hcimsgs.h"
+#include "stack/l2cdefs.h"
 #include "l2c_int.h"
-#include "l2c_api.h"
-#include "btu.h"
-#include "btm_api.h"
+#include "stack/l2c_api.h"
+#include "stack/btu.h"
+#include "stack/btm_api.h"
 #include "btm_int.h"
 
 static BOOLEAN l2c_link_send_to_lower (tL2C_LCB *p_lcb, BT_HDR *p_buf);

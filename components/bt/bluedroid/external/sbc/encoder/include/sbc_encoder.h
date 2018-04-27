@@ -28,7 +28,7 @@
 #define ENCODER_VERSION "0025"
 
 #ifdef BUILDCFG
-#include "bt_target.h"
+#include "common/bt_target.h"
 #endif
 
 /*DEFINES*/

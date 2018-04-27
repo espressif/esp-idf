@@ -25,10 +25,10 @@
 #ifndef __BTC_AV_API_H__
 #define __BTC_AV_API_H__
 
-#include "bt_target.h"
-#include "bta_av_api.h"
-#include "a2d_api.h"
-#include "a2d_sbc.h"
+#include "common/bt_target.h"
+#include "bta/bta_av_api.h"
+#include "stack/a2d_api.h"
+#include "stack/a2d_sbc.h"
 
 #if (BTC_AV_INCLUDED == TRUE)
 /*****************************************************************************

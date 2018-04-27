@@ -23,17 +23,17 @@
  ******************************************************************************/
 
 #include <string.h>
-#include "bt_target.h"
-#include "rfcdefs.h"
-#include "port_api.h"
+#include "common/bt_target.h"
+#include "stack/rfcdefs.h"
+#include "stack/port_api.h"
 #include "port_int.h"
 #include "btm_int.h"
-#include "btm_api.h"
+#include "stack/btm_api.h"
 #include "rfc_int.h"
-#include "l2c_api.h"
-#include "sdp_api.h"
-#include "allocator.h"
-#include "mutex.h"
+#include "stack/l2c_api.h"
+#include "stack/sdp_api.h"
+#include "osi/allocator.h"
+#include "osi/mutex.h"
 
 #if (defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)
 /* duration of break in 200ms units */

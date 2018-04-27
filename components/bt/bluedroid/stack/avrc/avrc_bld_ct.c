@@ -16,11 +16,11 @@
  *
  ******************************************************************************/
 #include <string.h>
-#include "bt_target.h"
-#include "avrc_api.h"
-#include "avrc_defs.h"
+#include "common/bt_target.h"
+#include "stack/avrc_api.h"
+#include "stack/avrc_defs.h"
 #include "avrc_int.h"
-#include "allocator.h"
+#include "osi/allocator.h"
 
 #if (defined(AVRC_INCLUDED) && AVRC_INCLUDED == TRUE)
 
