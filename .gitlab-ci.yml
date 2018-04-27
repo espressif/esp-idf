@@ -407,10 +407,11 @@ push_master_to_github:
     - master
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
+    - feature/cmake
   when: on_success
   dependencies: []
   variables:
-    GITHUB_PUSH_REFS: refs/remotes/origin/release refs/remotes/origin/master
+    GITHUB_PUSH_REFS: refs/remotes/origin/release refs/remotes/origin/master refs/remotes/origin/feature/cmake
   before_script: *do_nothing_before
   script:
     - mkdir -p ~/.ssh
