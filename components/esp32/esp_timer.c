@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <sys/param.h>
+#include <string.h>
 #include "esp_types.h"
 #include "esp_attr.h"
 #include "esp_err.h"
@@ -82,6 +83,12 @@ static esp_timer_handle_t s_timer_in_callback;
 static TaskHandle_t s_timer_task;
 // counting semaphore used to notify the timer task from ISR
 static SemaphoreHandle_t s_timer_semaphore;
+
+#if CONFIG_SPIRAM_USE_MALLOC
+// memory for s_timer_semaphore
+static StaticQueue_t s_timer_semaphore_memory;
+#endif
+
 // lock protecting s_timers, s_inactive_timers, s_timer_in_callback
 static portMUX_TYPE s_timer_lock = portMUX_INITIALIZER_UNLOCKED;
 
@@ -329,7 +336,12 @@ esp_err_t esp_timer_init(void)
         return ESP_ERR_INVALID_STATE;
     }
 
+#if CONFIG_SPIRAM_USE_MALLOC
+    memset(&s_timer_semaphore_memory, 0, sizeof(StaticQueue_t));
+    s_timer_semaphore = xSemaphoreCreateCountingStatic(TIMER_EVENT_QUEUE_SIZE, 0, &s_timer_semaphore_memory);
+#else
     s_timer_semaphore = xSemaphoreCreateCounting(TIMER_EVENT_QUEUE_SIZE, 0);
+#endif
     if (!s_timer_semaphore) {
         return ESP_ERR_NO_MEM;
     }
