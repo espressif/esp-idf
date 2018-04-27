@@ -1,5 +1,6 @@
 Establish Serial Connection with ESP32
 ======================================
+:link_to_translation:`zh_CN:[中文]`
 
 This section provides guidance how to establish serial connection between ESP32 and PC.
 

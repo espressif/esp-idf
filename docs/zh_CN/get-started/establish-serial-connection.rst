@@ -1,5 +1,6 @@
 与 ESP32 创建串口连接
 =========================
+:link_to_translation:`en:[English]`
 
 本章节介绍如何在 ESP32 和 PC 之间建立串口连接。
 

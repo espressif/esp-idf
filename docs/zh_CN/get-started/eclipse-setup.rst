@@ -1,6 +1,7 @@
 ****************************
 Eclipse IDE 的创建和烧录指南
 ****************************
+:link_to_translation:`en:[English]`
 
 .. _eclipse-install-steps:
 

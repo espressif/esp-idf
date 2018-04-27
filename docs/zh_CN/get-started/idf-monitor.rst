@@ -1,6 +1,7 @@
 ***********
 IDF Monitor
 ***********
+:link_to_translation:`en:[English]`
 
 IDF Monitor 工具是在 IDF 中调用 “make monitor” 目标时运行的 Python 程序。
 

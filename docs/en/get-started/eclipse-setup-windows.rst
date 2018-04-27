@@ -1,6 +1,7 @@
 **********************
 Eclipse IDE on Windows
 **********************
+:link_to_translation:`zh_CN:[中文]`
 
 Configuring Eclipse on Windows requires some different steps. The full configuration steps for Windows are shown below.
 

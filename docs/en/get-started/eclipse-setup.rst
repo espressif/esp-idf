@@ -1,6 +1,7 @@
 ********************************
 Build and Flash with Eclipse IDE
 ********************************
+:link_to_translation:`zh_CN:[中文]`
 
 .. _eclipse-install-steps:
 
