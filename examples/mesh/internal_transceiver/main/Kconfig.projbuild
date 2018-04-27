@@ -70,5 +70,11 @@ config MESH_ROUTE_TABLE_SIZE
         default 50
         help
             The number of devices over the network(max: 300).
+
+config MESH_PARENT_SSID
+    string "Parent SSID"
+        default "PARENT_SSID"
+        help
+            Parent SSID.
 endmenu
 

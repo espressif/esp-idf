@@ -149,6 +149,7 @@ void esp_mesh_p2p_tx_main(void *arg)
                          err, data.proto, data.tos);
             }
         }
+        /* if route_table_size is less than 10, add delay to avoid watchdog in this task. */
         if (route_table_size < 10) {
             vTaskDelay(1 * 1000 / portTICK_RATE_MS);
         }
@@ -334,14 +335,21 @@ void esp_mesh_event_handler(mesh_event_t event)
                  event.info.switch_req.reason,
                  MAC2STR( event.info.switch_req.rc_addr.addr));
         break;
+
     case MESH_EVENT_ROOT_SWITCH_ACK:
         ESP_LOGI(MESH_TAG, "<MESH_EVENT_ROOT_SWITCH_ACK>");
         break;
+
     case MESH_EVENT_TODS_STATE:
         ESP_LOGI(MESH_TAG, "<MESH_EVENT_TODS_REACHABLE>state:%d",
                  event.info.toDS_state);
-        ;
         break;
+
+    case MESH_EVENT_ROOT_FIXED:
+        ESP_LOGI(MESH_TAG, "<MESH_EVENT_ROOT_FIXED>%s",
+                 event.info.root_fixed.is_fixed ? "fixed" : "not fixed");
+        break;
+
     default:
         ESP_LOGI(MESH_TAG, "unknown");
         break;
@@ -380,6 +388,9 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_mesh_set_ap_authmode(CONFIG_MESH_AP_AUTHMODE));
     ESP_ERROR_CHECK(esp_mesh_set_vote_percentage(1));
     ESP_ERROR_CHECK(esp_mesh_set_ap_assoc_expire(10));
+#ifdef MESH_FIX_ROOT
+    ESP_ERROR_CHECK(esp_mesh_fix_root(1));
+#endif
     mesh_cfg_t cfg = MESH_INIT_CONFIG_DEFAULT();
     /* mesh ID */
     memcpy((uint8_t *) &cfg.mesh_id, MESH_ID, 6);
@@ -401,7 +412,19 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_mesh_get_switch_parent_paras(&switch_paras));
     switch_paras.backoff_rssi = -45;
     ESP_ERROR_CHECK(esp_mesh_set_switch_parent_paras(&switch_paras));
+
+#ifdef MESH_SET_PARENT
+    /* parent */
+    wifi_config_t parent = {
+        .sta = {
+            .ssid = CONFIG_MESH_PARENT_SSID,
+            .channel = CONFIG_MESH_CHANNEL,
+        },
+    };
+    ESP_ERROR_CHECK(esp_mesh_set_parent(&parent, MESH_ROOT, 1));
+#endif
     /* mesh start */
     ESP_ERROR_CHECK(esp_mesh_start());
-    ESP_LOGI(MESH_TAG, "mesh starts successfully, heap:%d\n",  esp_get_free_heap_size());
+    ESP_LOGI(MESH_TAG, "mesh starts successfully, heap:%d, %s\n",  esp_get_free_heap_size(),
+             esp_mesh_is_root_fixed() ? "root fixed" : "root not fixed");
 }
