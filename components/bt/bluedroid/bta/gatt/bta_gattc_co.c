@@ -16,12 +16,13 @@
  *
  ******************************************************************************/
 #ifdef  BT_SUPPORT_NVM
-#include <stdio.h>
 #include <unistd.h>
 #endif /* BT_SUPPORT_NVM */
-
+#include <string.h>
+#include <stdio.h>
 #include "bta/bta_gattc_co.h"
 #include "bta/bta_gattc_ci.h"
+
 // #include "btif_util.h"
 #include "btm_int.h"
 #include "nvs.h"
@@ -83,7 +84,7 @@ typedef struct {
     nvs_handle cache_fp;
     BOOLEAN is_open;
     BD_ADDR addr;
-    coap_key_t hash_key;
+    hash_key_t hash_key;
     list_t *assoc_addr;
 }cache_addr_info_t;
 
@@ -97,7 +98,7 @@ typedef struct {
 
 cache_env_t cache_env;
 
-static void getFilename(char *buffer, coap_key_t hash)
+static void getFilename(char *buffer, hash_key_t hash)
 {
     sprintf(buffer, "%s%02x%02x%02x%02x", GATT_CACHE_PREFIX,
             hash[0], hash[1], hash[2], hash[3]);
@@ -120,13 +121,13 @@ static bool cacheOpen(BD_ADDR bda, bool to_save, UINT8 *index)
     char fname[255] = {0};
     UINT8 *assoc_addr = NULL;
     esp_err_t status = ESP_FAIL;
-    coap_key_t hash_key = {0};
+    hash_key_t hash_key = {0};
     if (((*index = bta_gattc_co_find_addr_in_cache(bda)) != INVALID_ADDR_NUM) ||
         ((assoc_addr = bta_gattc_co_cache_find_src_addr(bda, index)) != NULL)) {
         if (cache_env.cache_addr[*index].is_open) {
             return TRUE;
         } else {
-            memcpy(hash_key, cache_env.cache_addr[*index].hash_key, sizeof(coap_key_t));
+            memcpy(hash_key, cache_env.cache_addr[*index].hash_key, sizeof(hash_key_t));
             getFilename(fname, hash_key);
             if ((status = nvs_open(fname, NVS_READWRITE, &cache_env.cache_addr[*index].cache_fp)) == ESP_OK) {
                 // Set the open flag to TRUE when success to open the hash file.
@@ -258,10 +259,10 @@ void bta_gattc_co_cache_save (BD_ADDR server_bda, UINT16 num_attr,
                               tBTA_GATTC_NV_ATTR *p_attr_list)
 {
     tBTA_GATT_STATUS    status = BTA_GATT_OK;
-    coap_key_t hash_key = {0};
+    hash_key_t hash_key = {0};
     UINT8 index = INVALID_ADDR_NUM;
     //calculate  the hash value of the attribute table which should be added to the nvs flash.
-    coap_hash_impl((unsigned char *)p_attr_list, sizeof(tBTA_GATTC_NV_ATTR)*num_attr, hash_key);
+    hash_function_blob((unsigned char *)p_attr_list, sizeof(tBTA_GATTC_NV_ATTR)*num_attr, hash_key);
     //save the address list to the nvs flash
     bta_gattc_co_cache_addr_save(server_bda, hash_key);
 
@@ -334,13 +335,13 @@ void bta_gattc_co_cache_addr_init(void)
             osi_free(p_buf);
             return;
         }
-        num_addr = length / (sizeof(BD_ADDR) + sizeof(coap_key_t));
+        num_addr = length / (sizeof(BD_ADDR) + sizeof(hash_key_t));
         cache_env.num_addr = num_addr;
         //read the address from nvs flash to cache address list.
         for (UINT8 i = 0; i < num_addr; i++) {
-            memcpy(cache_env.cache_addr[i].addr, p_buf + i*(sizeof(BD_ADDR) + sizeof(coap_key_t)), sizeof(BD_ADDR));
+            memcpy(cache_env.cache_addr[i].addr, p_buf + i*(sizeof(BD_ADDR) + sizeof(hash_key_t)), sizeof(BD_ADDR));
             memcpy(cache_env.cache_addr[i].hash_key,
-                    p_buf + i*(sizeof(BD_ADDR) + sizeof(coap_key_t)) + sizeof(BD_ADDR), sizeof(coap_key_t));
+                    p_buf + i*(sizeof(BD_ADDR) + sizeof(hash_key_t)) + sizeof(BD_ADDR), sizeof(hash_key_t));
 
             APPL_TRACE_DEBUG("cache_addr[%x] = %x:%x:%x:%x:%x:%x", i, cache_env.cache_addr[i].addr[0], cache_env.cache_addr[i].addr[1], cache_env.cache_addr[i].addr[2],
                              cache_env.cache_addr[i].addr[3], cache_env.cache_addr[i].addr[4], cache_env.cache_addr[i].addr[5]);
@@ -387,13 +388,13 @@ UINT8 bta_gattc_co_find_addr_in_cache(BD_ADDR bda)
     return INVALID_ADDR_NUM;
 }
 
-UINT8 bta_gattc_co_find_hash_in_cache(coap_key_t hash_key)
+UINT8 bta_gattc_co_find_hash_in_cache(hash_key_t hash_key)
 {
     UINT8 index = 0;
     UINT8 num = cache_env.num_addr;
     cache_addr_info_t *addr_info = &cache_env.cache_addr[0];
     for (index = 0; index < num; index++) {
-        if (!memcmp(addr_info->hash_key, hash_key, sizeof(coap_key_t))) {
+        if (!memcmp(addr_info->hash_key, hash_key, sizeof(hash_key_t))) {
             return index;
         }
     }
@@ -414,7 +415,7 @@ void bta_gattc_co_get_addr_list(BD_ADDR *addr_list)
     }
 }
 
-void bta_gattc_co_cache_addr_save(BD_ADDR bd_addr, coap_key_t hash_key)
+void bta_gattc_co_cache_addr_save(BD_ADDR bd_addr, hash_key_t hash_key)
 {
     esp_err_t err_code;
     UINT8 num = ++cache_env.num_addr;
@@ -427,28 +428,28 @@ void bta_gattc_co_cache_addr_save(BD_ADDR bd_addr, coap_key_t hash_key)
             APPL_TRACE_DEBUG("%s(), the hash bd_addr already in the cache list, index = %x", __func__, index);
             //if the bd_addr already in the address list, update the hash key in it.
             memcpy(cache_env.cache_addr[index].addr, bd_addr, sizeof(BD_ADDR));
-            memcpy(cache_env.cache_addr[index].hash_key, hash_key, sizeof(coap_key_t));
+            memcpy(cache_env.cache_addr[index].hash_key, hash_key, sizeof(hash_key_t));
         } else {
             //if the bd_addr didn't in the address list, added the bd_addr to the last of the address list.
-            memcpy(cache_env.cache_addr[num - 1].hash_key, hash_key, sizeof(coap_key_t));
+            memcpy(cache_env.cache_addr[num - 1].hash_key, hash_key, sizeof(hash_key_t));
             memcpy(cache_env.cache_addr[num - 1].addr, bd_addr, sizeof(BD_ADDR));
         }
 
     } else {
         APPL_TRACE_DEBUG("%s(), num = %d", __func__, num);
         memcpy(cache_env.cache_addr[num - 1].addr, bd_addr, sizeof(BD_ADDR));
-        memcpy(cache_env.cache_addr[num - 1].hash_key, hash_key, sizeof(coap_key_t));
+        memcpy(cache_env.cache_addr[num - 1].hash_key, hash_key, sizeof(hash_key_t));
     }
 
     nvs_handle *fp = &cache_env.addr_fp;
-    UINT16 length = num*(sizeof(BD_ADDR) + sizeof(coap_key_t));
+    UINT16 length = num*(sizeof(BD_ADDR) + sizeof(hash_key_t));
 
     for (UINT8 i = 0; i < num; i++) {
         //copy the address to the buffer.
-        memcpy(p_buf + i*(sizeof(BD_ADDR) + sizeof(coap_key_t)), cache_env.cache_addr[i].addr, sizeof(BD_ADDR));
+        memcpy(p_buf + i*(sizeof(BD_ADDR) + sizeof(hash_key_t)), cache_env.cache_addr[i].addr, sizeof(BD_ADDR));
         //copy the hash key to the buffer.
-        memcpy(p_buf + i*(sizeof(BD_ADDR) + sizeof(coap_key_t)) + sizeof(BD_ADDR),
-                cache_env.cache_addr[i].hash_key, sizeof(coap_key_t));
+        memcpy(p_buf + i*(sizeof(BD_ADDR) + sizeof(hash_key_t)) + sizeof(BD_ADDR),
+                cache_env.cache_addr[i].hash_key, sizeof(hash_key_t));
     }
 
     if (cache_env.is_open) {
