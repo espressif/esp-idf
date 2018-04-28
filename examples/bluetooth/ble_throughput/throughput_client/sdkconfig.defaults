@@ -1,0 +1,4 @@
+# Override some defaults so BT stack is enabled
+# by default in this example
+CONFIG_BT_ENABLED=y
+CONFIG_GATTS_NOTIFY_THROUGHPUT=y
