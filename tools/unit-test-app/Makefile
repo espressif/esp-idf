@@ -5,9 +5,10 @@
 
 PROJECT_NAME := unit-test-app
 
-NON_INTERACTIVE_TARGET += ut-apply-config-% ut-clean-%
-
 include $(IDF_PATH)/make/project.mk
+
+ifeq ($(MAKELEVEL),0)
+# Define helper targets only when not recursing
 
 # List of unit-test-app configurations.
 # Each file in configs/ directory defines a configuration. The format is the
@@ -61,12 +62,22 @@ $(BINARIES_DIR)/%/$(PROJECT_NAME).bin: configs/%
 	cat sdkconfig.defaults > $(BUILDS_DIR)/$*/sdkconfig.defaults
 	echo "" >> $(BUILDS_DIR)/$*/sdkconfig.defaults # in case there is no trailing newline in sdkconfig.defaults
 	cat configs/$* >> $(BUILDS_DIR)/$*/sdkconfig.defaults
+
 	# Build, tweaking paths to sdkconfig and sdkconfig.defaults
 	$(summary) BUILD_CONFIG $(BUILDS_DIR)/$*
-	$(MAKE) defconfig all \
+	# 'TEST_COMPONENTS=names' option can be added to configs/$* to limit the set
+	# of tests to build for given configuration.
+	# Build all tests if this option is not present.
+	test_components=`sed -n 's/^TEST_COMPONENTS=\(.*\)/\1/p' configs/$*`; \
+		tests_all=`test -n "$${test_components}"; echo $${?}`; \
+		exclude_components=`sed -n 's/^EXCLUDE_COMPONENTS=\(.*\)/\1/p' configs/$*`; \
+	$(MAKE) defconfig list-components all \
 		BUILD_DIR_BASE=$(BUILDS_DIR)/$* \
 		SDKCONFIG=$(BUILDS_DIR)/$*/sdkconfig \
-		SDKCONFIG_DEFAULTS=$(BUILDS_DIR)/$*/sdkconfig.defaults
+		SDKCONFIG_DEFAULTS=$(BUILDS_DIR)/$*/sdkconfig.defaults \
+		TEST_COMPONENTS="$${test_components}" \
+		TESTS_ALL=$${tests_all} \
+		EXCLUDE_COMPONENTS="$${exclude_components}"
 	$(MAKE) print_flash_cmd \
 		BUILD_DIR_BASE=$(BUILDS_DIR)/$* \
 		SDKCONFIG=$(BUILDS_DIR)/$*/sdkconfig \
@@ -87,13 +98,17 @@ ut-help:
 	@echo "make ut-build-NAME - Build unit-test-app with configuration provided in configs/NAME."
 	@echo "                  Build directory will be builds/NAME/, output binaries will be"
 	@echo "                  under output/NAME/"
-	@echo "make ut-clean-NAME - Remove build and output directories for configuration NAME."
 	@echo ""
 	@echo "make ut-build-all-configs - Build all configurations defined in configs/ directory."
+	@echo ""
+	@echo "Above targets determine list of components to be built from configs/NAME files."
+	@echo "To build custom subset of components use 'make ut-apply-config-NAME' and then 'make all'."
 	@echo ""
 	@echo "make ut-apply-config-NAME - Generates configuration based on configs/NAME in sdkconfig"
 	@echo "                         file. After this, normal all/flash targets can be used."
 	@echo "                         Useful for development/debugging."
+	@echo ""
+	@echo "make ut-clean-NAME - Remove build and output directories for configuration NAME."
 	@echo ""
 
 help: ut-help
@@ -101,3 +116,14 @@ help: ut-help
 .PHONY: ut-build-all-configs ut-clean-all-configs \
 		$(CONFIG_BUILD_TARGETS) $(CONFIG_CLEAN_TARGETS) $(CONFIG_APPLY_TARGETS) \
 		ut-help
+
+NON_INTERACTIVE_TARGET += ut-apply-config-% ut-clean-% ut-build-% \
+						  ut-build-all-configs ut-clean-all-configs
+
+else # MAKELEVEL == 0
+
+# If recursing, print the actual list of tests being built
+
+$(info TESTS $(foreach comp,$(TEST_COMPONENT_NAMES),$(patsubst %_test,%,$(comp))))
+
+endif # MAKELEVEL == 0
