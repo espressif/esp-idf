@@ -32,7 +32,8 @@ BOOTLOADER_MAKE= +\
 	V=$(V) \
 	BUILD_DIR_BASE=$(BOOTLOADER_BUILD_DIR) \
 	TEST_COMPONENTS= \
-	TESTS_ALL=
+	TESTS_ALL= \
+	EXCLUDE_COMPONENTS=
 
 .PHONY: bootloader-clean bootloader-flash bootloader-list-components bootloader $(BOOTLOADER_BIN)
 
