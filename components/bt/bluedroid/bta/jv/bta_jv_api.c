@@ -1068,7 +1068,6 @@ tBTA_JV_STATUS BTA_JvRfcommReady(UINT32 handle, UINT32 *p_data_size)
 **                  BTA_JV_FAILURE, otherwise.
 **
 *******************************************************************************/
-// UINT8 spp_data[10] = {1,2,3,4,5,6,7,8,9,0};
 
 tBTA_JV_STATUS BTA_JvRfcommWrite(UINT32 handle, UINT32 req_id, int len, UINT8 *p_data)
 {
@@ -1093,7 +1092,6 @@ tBTA_JV_STATUS BTA_JvRfcommWrite(UINT32 handle, UINT32 req_id, int len, UINT8 *p
         bta_sys_sendmsg(p_msg);
         status = BTA_JV_SUCCESS;
     }
-
     return (status);
 }
 

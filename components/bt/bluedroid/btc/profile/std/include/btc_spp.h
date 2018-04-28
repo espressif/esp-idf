@@ -26,6 +26,8 @@
 #define ESP_SPP_MAX_SESSION     BTA_JV_MAX_RFC_SR_SESSION
 #define ESP_SPP_SERVER_NAME_MAX 32
 
+#define ESP_SPP_RINGBUF_SIZE 1000
+
 typedef enum {
     BTC_SPP_ACT_INIT = 0,
     BTC_SPP_ACT_UNINIT,
@@ -40,6 +42,7 @@ typedef enum {
 typedef union {
     //BTC_SPP_ACT_INIT
     struct init_arg {
+        esp_spp_mode_t mode;
     } init;
     //BTC_SPP_ACT_UNINIT
     struct uninit_arg {
@@ -84,6 +87,6 @@ void btc_spp_call_handler(btc_msg_t *msg);
 void btc_spp_cb_handler(btc_msg_t *msg);
 void btc_spp_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 
-
+void btc_spp_vfs_register(void);
 #endif ///defined BTC_SPP_INCLUDED && BTC_SPP_INCLUDED == TRUE
 #endif ///__BTC_SPP_H__
