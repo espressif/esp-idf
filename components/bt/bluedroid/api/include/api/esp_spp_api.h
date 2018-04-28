@@ -62,9 +62,9 @@ typedef enum {
     ESP_SPP_CLOSE_EVT                   = 27,               /*!< When SPP connection closed, the event comes */
     ESP_SPP_START_EVT                   = 28,               /*!< When SPP server started, the event comes */
     ESP_SPP_CL_INIT_EVT                 = 29,               /*!< When SPP client initiated a connection, the event comes */
-    ESP_SPP_DATA_IND_EVT                = 30,               /*!< When SPP connection received data, the event comes */
-    ESP_SPP_CONG_EVT                    = 31,               /*!< When SPP connection congestion status changed, the event comes */
-    ESP_SPP_WRITE_EVT                   = 33,               /*!< When SPP write operation completes, the event comes */
+    ESP_SPP_DATA_IND_EVT                = 30,               /*!< When SPP connection received data, the event comes, olny for ESP_SPP_MODE_CB */
+    ESP_SPP_CONG_EVT                    = 31,               /*!< When SPP connection congestion status changed, the event comes, olny for ESP_SPP_MODE_CB */
+    ESP_SPP_WRITE_EVT                   = 33,               /*!< When SPP write operation completes, the event comes, olny for ESP_SPP_MODE_CB */
     ESP_SPP_SRV_OPEN_EVT                = 34,               /*!< When SPP Server connection open, the event comes */
 } esp_spp_cb_event_t;
 
@@ -95,6 +95,7 @@ typedef union {
     struct spp_open_evt_param {
         esp_spp_status_t    status;         /*!< status */
         uint32_t            handle;         /*!< The connection handle */
+        int                 fd;             /*!< The file descriptor olny for ESP_SPP_MODE_VFS*/
         esp_bd_addr_t       rem_bda;        /*!< The peer address */
     } open;                                 /*!< SPP callback param of ESP_SPP_OPEN_EVT */
 
@@ -105,6 +106,7 @@ typedef union {
         esp_spp_status_t    status;         /*!< status */
         uint32_t            handle;         /*!< The connection handle */
         uint32_t            new_listen_handle;  /*!< The new listen handle */
+        int                 fd;             /*!< The file descriptor olny for ESP_SPP_MODE_VFS*/
         esp_bd_addr_t       rem_bda;        /*!< The peer address */
     } srv_open;                             /*!< SPP callback param of ESP_SPP_SRV_OPEN_EVT */
     /**
@@ -142,7 +144,6 @@ typedef union {
     struct spp_write_evt_param {
         esp_spp_status_t    status;         /*!< status */
         uint32_t            handle;         /*!< The connection handle */
-        uint32_t            req_id;         /*!< The req_id in the associated BTA_JvRfcommWrite() */
         int                 len;            /*!< The length of the data written. */
         bool                cong;           /*!< congestion status */
     } write;                                /*!< SPP callback param of ESP_SPP_WRITE_EVT */
@@ -275,7 +276,7 @@ esp_err_t esp_spp_start_srv(esp_spp_sec_t sec_mask,
 
 
 /**
- * @brief       This function closes an SPP connection.
+ * @brief       This function is used to write data, olny for ESP_SPP_MODE_CB.
  *
  * @param[in]   handle: The connection handle.
  * @param[in]   len:    The length of the data written.
@@ -286,6 +287,16 @@ esp_err_t esp_spp_start_srv(esp_spp_sec_t sec_mask,
  *              - other: failed
  */
 esp_err_t esp_spp_write(uint32_t handle, int len, uint8_t *p_data);
+
+
+/**
+ * @brief       This function is used to register VFS.
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - other: failed
+ */
+esp_err_t esp_spp_vfs_register(void);
 
 #ifdef __cplusplus
 }
