@@ -19,6 +19,9 @@
 #include "btc/btc_manage.h"
 #include "btc_gattc.h"
 #include "btc_gatt_util.h"
+#include "stack/l2cdefs.h"
+#include "stack/l2c_api.h"
+
 
 #if (GATTC_INCLUDED == TRUE)
 esp_err_t esp_ble_gattc_register_callback(esp_gattc_cb_t callback)
@@ -326,6 +329,11 @@ esp_err_t esp_ble_gattc_read_char (esp_gatt_if_t gattc_if,
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (L2CA_CheckIsCongest(L2CAP_ATT_CID, conn_id)) {
+        LOG_DEBUG("%s, the l2cap chanel is congest.", __func__);
+        return ESP_FAIL;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_READ_CHAR;
@@ -344,6 +352,11 @@ esp_err_t esp_ble_gattc_read_multiple(esp_gatt_if_t gattc_if,
     btc_ble_gattc_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (L2CA_CheckIsCongest(L2CAP_ATT_CID, conn_id)) {
+        LOG_DEBUG("%s, the l2cap chanel is congest.", __func__);
+        return ESP_FAIL;
+    }
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
@@ -371,6 +384,11 @@ esp_err_t esp_ble_gattc_read_char_descr (esp_gatt_if_t gattc_if,
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (L2CA_CheckIsCongest(L2CAP_ATT_CID, conn_id)) {
+        LOG_DEBUG("%s, the l2cap chanel is congest.", __func__);
+        return ESP_FAIL;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_READ_CHAR_DESCR;
@@ -392,6 +410,11 @@ esp_err_t esp_ble_gattc_write_char(esp_gatt_if_t gattc_if,
     btc_ble_gattc_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (L2CA_CheckIsCongest(L2CAP_ATT_CID, conn_id)) {
+        LOG_DEBUG("%s, the l2cap chanel is congest.", __func__);
+        return ESP_FAIL;
+    }
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
@@ -418,6 +441,11 @@ esp_err_t esp_ble_gattc_write_char_descr (esp_gatt_if_t gattc_if,
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (L2CA_CheckIsCongest(L2CAP_ATT_CID, conn_id)) {
+        LOG_DEBUG("%s, the l2cap chanel is congest.", __func__);
+        return ESP_FAIL;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_WRITE_CHAR_DESCR;
@@ -443,6 +471,11 @@ esp_err_t esp_ble_gattc_prepare_write(esp_gatt_if_t gattc_if,
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (L2CA_CheckIsCongest(L2CAP_ATT_CID, conn_id)) {
+        LOG_DEBUG("%s, the l2cap chanel is congest.", __func__);
+        return ESP_FAIL;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_PREPARE_WRITE;
@@ -467,6 +500,11 @@ esp_err_t esp_ble_gattc_prepare_write_char_descr(esp_gatt_if_t gattc_if,
     btc_ble_gattc_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (L2CA_CheckIsCongest(L2CAP_ATT_CID, conn_id)) {
+        LOG_DEBUG("%s, the l2cap chanel is congest.", __func__);
+        return ESP_FAIL;
+    }
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
