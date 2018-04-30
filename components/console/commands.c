@@ -91,9 +91,11 @@ esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd)
         return ESP_ERR_NO_MEM;
     }
     if (cmd->command == NULL) {
+	free(item);
         return ESP_ERR_INVALID_ARG;
     }
     if (strchr(cmd->command, ' ') != NULL) {
+	free(item);
         return ESP_ERR_INVALID_ARG;
     }
     item->command = cmd->command;
@@ -186,10 +188,12 @@ esp_err_t esp_console_run(const char* cmdline, int* cmd_ret)
     size_t argc = esp_console_split_argv(s_tmp_line_buf, argv,
             s_config.max_cmdline_args);
     if (argc == 0) {
+	free(argv);
         return ESP_ERR_INVALID_ARG;
     }
     const cmd_item_t* cmd = find_command_by_name(argv[0]);
     if (cmd == NULL) {
+	free(argv);
         return ESP_ERR_NOT_FOUND;
     }
     *cmd_ret = (*cmd->func)(argc, argv);
