@@ -23,13 +23,17 @@
 extern "C" {
 #endif
 
+/// RSSI threshold
+#define ESP_BT_GAP_RSSI_HIGH_THRLD  -20             /*!< High RSSI threshold */
+#define ESP_BT_GAP_RSSI_LOW_THRLD   -45             /*!< Low RSSI threshold */
+
 /// Class of device
 typedef struct {
-    uint32_t      reserved_2: 2;                         /*!< undefined */
-    uint32_t      minor: 6;                              /*!< minor class */
-    uint32_t      major: 5;                              /*!< major class */
-    uint32_t      service: 11;                           /*!< service class */
-    uint32_t      reserved_8: 8;                         /*!< undefined */
+    uint32_t      reserved_2: 2;                    /*!< undefined */
+    uint32_t      minor: 6;                         /*!< minor class */
+    uint32_t      major: 5;                         /*!< major class */
+    uint32_t      service: 11;                      /*!< service class */
+    uint32_t      reserved_8: 8;                    /*!< undefined */
 } esp_bt_cod_t;
 
 /// class of device settings
@@ -144,6 +148,8 @@ typedef enum {
     ESP_BT_GAP_DISC_STATE_CHANGED_EVT,              /*!< discovery state changed event */
     ESP_BT_GAP_RMT_SRVCS_EVT,                       /*!< get remote services event */
     ESP_BT_GAP_RMT_SRVC_REC_EVT,                    /*!< get remote service record event */
+    ESP_BT_GAP_READ_RSSI_DELTA_EVT,                             /*!< read rssi event */
+    ESP_BT_GAP_EVT_MAX,
 } esp_bt_gap_cb_event_t;
 
 /** Inquiry Mode */
@@ -192,6 +198,14 @@ typedef union {
         esp_bt_status_t stat;                  /*!< service search status */
     } rmt_srvc_rec;                            /*!< specific service record from remote device parameter struct */
 
+    /**
+     * @brief ESP_BT_GAP_READ_RSSI_DELTA_EVT *
+     */
+    struct read_rssi_delta_param {
+        esp_bd_addr_t bda;                     /*!< remote bluetooth device address*/
+        esp_bt_status_t stat;                  /*!< read rssi status */
+        int8_t rssi_delta;                     /*!< rssi delta value range -128 ~127, The value zero indicates that the RSSI is inside the Golden Receive Power Range, the Golden Receive Power Range is from ESP_BT_GAP_RSSI_LOW_THRLD to ESP_BT_GAP_RSSI_HIGH_THRLD */
+    } read_rssi_delta;                         /*!< read rssi parameter struct */
 } esp_bt_gap_cb_param_t;
 
 /**
@@ -371,6 +385,18 @@ esp_err_t esp_bt_gap_set_cod(esp_bt_cod_t cod, esp_bt_cod_mode_t mode);
  *                  - ESP_FAIL: others
  */
 esp_err_t esp_bt_gap_get_cod(esp_bt_cod_t *cod);
+
+/**
+ * @brief           This function is called to read RSSI delta by address after connected. The RSSI value returned by ESP_BT_GAP_READ_RSSI_DELTA_EVT.
+ *
+ *
+ * @param[in]       remote_addr - remote device address, corresponding to a certain connection handle.
+ * @return
+ *                  - ESP_OK : Succeed
+ *                  - ESP_FAIL: others
+ *
+ */
+esp_err_t esp_bt_gap_read_rssi_delta(esp_bd_addr_t remote_addr);
 
 #ifdef __cplusplus
 }
