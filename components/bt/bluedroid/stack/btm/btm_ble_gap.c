@@ -829,7 +829,7 @@ void BTM_BleConfigLocalIcon(uint16_t icon)
     p_value.icon = icon;
     GAP_BleAttrDBUpdate(GATT_UUID_GAP_ICON, &p_value);
 #else
-    BTM_TRACE_ERROR("%s\n", __func__); 
+    BTM_TRACE_ERROR("%s\n", __func__);
 #endif
 }
 /*******************************************************************************
@@ -2833,7 +2833,7 @@ static void btm_ble_appearance_to_cod(UINT16 appearance, UINT8 *dev_class)
         dev_class[1] = BTM_COD_MAJOR_PERIPHERAL;
         dev_class[2] = BTM_COD_MINOR_DIGITAL_PAN;
         break;
-    case BTM_BLE_APPEARANCE_UKNOWN:
+    case BTM_BLE_APPEARANCE_UNKNOWN:
     case BTM_BLE_APPEARANCE_GENERIC_CLOCK:
     case BTM_BLE_APPEARANCE_GENERIC_TAG:
     case BTM_BLE_APPEARANCE_GENERIC_KEYRING:
