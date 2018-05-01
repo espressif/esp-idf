@@ -11,8 +11,11 @@ To use the CMake-based build system and the idf.py tool, two modifications need 
 
 To preserve setting of these variables between system restarts, add them to the user profile by following the instructions below.
 
-.. note::
-   If you only plan to use ``idf.py`` from the command line, and don't need integration with any IDEs, then you can skip setting ``IDF_PATH``. ``idf.py`` will use its own IDF directory as the default ``IDF_PATH``.
+.. note:: If using an IDE, you can optionally set these environment variables in your IDE's project environment rather than from the command line as described below.
+
+.. note:: If you don't ever use the command line ``idf.py`` tool, but run cmake directly or via an IDE, then it is not necessary to set the ``PATH`` variable - only ``IDF_PATH``. However it can be useful to set both.
+
+.. note:: If you only ever use the command line ``idf.py`` tool, and never use cmake directly or via an IDE, then it is not necessary to set the ``IDF_PATH`` variable - ``idf.py`` will detect the directory it is contained within and set ``IDF_PATH`` appropriately if it is missing.
 
 .. _add-paths-to-profile-windows-cmake:
 
@@ -59,8 +62,9 @@ To verify idf.py is now on the ``PATH``, you can run the following::
 
 A path like ``${IDF_PATH}/tools/idf.py`` should be printed.
 
-If you do not like to have ``IDF_PATH`` set up permanently, you should enter it manually in terminal window on each restart or logout::
+If you do not like to have ``IDF_PATH`` or ``PATH`` modifications set, you can enter it manually in terminal window on each restart or logout::
 
     export IDF_PATH=~/esp/esp-idf
+    export PATH="$PATH:$IDF_PATH/tools"
 
 If you got here from section :ref:`get-started-setup-path-cmake`, while installing s/w for ESP32 development, then go back to section :ref:`get-started-start-project-cmake`.
