@@ -119,8 +119,15 @@ static void eap_tls_success(struct eap_sm *sm, struct eap_tls_data *data,
 		return;
 	}
 
-	ret->methodState = METHOD_DONE;
-	ret->decision = DECISION_UNCOND_SUCC;
+	if (data->ssl.tls_v13) {
+		/* A possible NewSessionTicket may be received before
+		 * EAP-Success, so need to allow it to be received. */
+		ret->methodState = METHOD_MAY_CONT;
+		ret->decision = DECISION_COND_SUCC;
+	} else {
+		ret->methodState = METHOD_DONE;
+		ret->decision = DECISION_UNCOND_SUCC;
+	}
 
 	os_free(data->key_data);
 	data->key_data = eap_peer_tls_derive_key(sm, &data->ssl,
