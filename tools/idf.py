@@ -267,6 +267,8 @@ def monitor(action, args):
         monitor_args += [ "-p", args.port ]
     monitor_args += [ "-b", project_desc["monitor_baud"] ]
     monitor_args += [ elf_file ]
+    if "MSYSTEM" is os.environ:
+        monitor_args = [ "winpty" ] + monitor_args
     _run_tool("idf_monitor", monitor_args, args.build_dir)
 
 

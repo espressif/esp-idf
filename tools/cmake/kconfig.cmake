@@ -13,6 +13,7 @@ endmacro()
 
 if(CMAKE_HOST_WIN32)
     # Prefer a prebuilt mconf on Windows
+    find_program(WINPTY winpty)
     find_program(MCONF mconf)
 
     if(NOT MCONF)
@@ -23,6 +24,8 @@ if(CMAKE_HOST_WIN32)
                 "on the PATH, or an MSYS2 version of gcc on the PATH to build mconf. "
                 "Consult the setup docs for ESP-IDF on Windows.")
         endif()
+    elseif(WINPTY)
+        set(MCONF "${WINPTY}" "${MCONF}")
     endif()
 endif()
 
