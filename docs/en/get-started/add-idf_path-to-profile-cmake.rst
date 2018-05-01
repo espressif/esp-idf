@@ -39,7 +39,7 @@ Linux and MacOS
 Set up ``IDF_PATH`` and add ``idf.py`` to the PATH by adding the following two lines to ``~/.profile`` file::
 
     export IDF_PATH=~/esp/esp-idf
-    export PATH="$PATH:'$IDF_PATH/tools'"
+    export PATH="$PATH:$IDF_PATH/tools"
 
 Log off and log in back to make this change effective.
 
