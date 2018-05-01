@@ -616,6 +616,8 @@ int eap_peer_tls_process_helper(struct eap_sm *sm, struct eap_ssl_data *data,
 		 */
 		int res = eap_tls_process_input(sm, data, in_data, in_len,
 						out_data);
+		char buf[20];
+
 		if (res) {
 			/*
 			 * Input processing failed (res = -1) or more data is
@@ -628,6 +630,12 @@ int eap_peer_tls_process_helper(struct eap_sm *sm, struct eap_ssl_data *data,
 		 * The incoming message has been reassembled and processed. The
 		 * response was allocated into data->tls_out buffer.
 		 */
+
+		if (tls_get_version(data->ssl_ctx, data->conn,
+				    buf, sizeof(buf)) == 0) {
+			wpa_printf(MSG_DEBUG, "SSL: Using TLS version %s", buf);
+			data->tls_v13 = os_strcmp(buf, "TLSv1.3") == 0;
+		}
 	}
 
 	if (data->tls_out == NULL) {

@@ -78,6 +78,11 @@ struct eap_ssl_data {
 	 * client_cert_conf: Whether client certificate has been configured
 	 */
 	bool client_cert_conf;
+
+	/**
+	 * tls_v13 - Whether TLS v1.3 or newer is used
+	 */
+	int tls_v13;
 };
 
 
