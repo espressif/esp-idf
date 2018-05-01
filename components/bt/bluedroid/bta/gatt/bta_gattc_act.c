@@ -1278,11 +1278,16 @@ void bta_gattc_write_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_OP_CMPL *p_data)
 
     if (p_clcb->p_q_cmd->api_write.hdr.event == BTA_GATTC_API_WRITE_EVT &&
         p_clcb->p_q_cmd->api_write.write_type == BTA_GATTC_WRITE_PREPARE) {
+        // Should check the value received from the peer device is correct or not.
+        if (memcmp(p_clcb->p_q_cmd->api_write.p_value, p_data->p_cmpl->att_value.value,
+                   p_data->p_cmpl->att_value.len) != 0) {
+            cb_data.write.status = BTA_GATT_INVALID_PDU;
+        }
 
         event = BTA_GATTC_PREP_WRITE_EVT;
-		} else {
+    } else {
         event = p_clcb->p_q_cmd->api_write.cmpl_evt;
-	}
+    }
     //free the command data store in the queue.
     bta_gattc_free_command_data(p_clcb);
     bta_gattc_pop_command_to_send(p_clcb);
