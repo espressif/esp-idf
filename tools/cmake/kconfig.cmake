@@ -1,8 +1,6 @@
 include(ExternalProject)
 
 macro(kconfig_set_variables)
-    set(MCONF kconfig_bin/mconf)
-
     set_default(SDKCONFIG ${PROJECT_PATH}/sdkconfig)
     set(SDKCONFIG_HEADER ${CMAKE_BINARY_DIR}/sdkconfig.h)
     set(SDKCONFIG_CMAKE ${CMAKE_BINARY_DIR}/sdkconfig.cmake)
@@ -13,19 +11,37 @@ macro(kconfig_set_variables)
     set_default(SDKCONFIG_DEFAULTS "${SDKCONFIG}.defaults")
 endmacro()
 
-# Use the existing Makefile to build mconf (out of tree) when needed
-#
-# TODO: Download(?) a prebuilt mingw mconf on Windows
-externalproject_add(mconf
-    SOURCE_DIR ${IDF_PATH}/tools/kconfig
-    CONFIGURE_COMMAND ""
-    BINARY_DIR "kconfig_bin"
-    BUILD_COMMAND make -f ${IDF_PATH}/tools/kconfig/Makefile mconf
-    BUILD_BYPRODUCTS ${MCONF}
-    INSTALL_COMMAND ""
-    EXCLUDE_FROM_ALL 1
-    )
+if(CMAKE_HOST_WIN32)
+    # Prefer a prebuilt mconf on Windows
+    find_program(MCONF mconf)
 
+    if(NOT MCONF)
+        find_program(NATIVE_GCC gcc)
+        if(NOT NATIVE_GCC)
+            message(FATAL_ERROR
+                "Windows requires a prebuilt ESP-IDF-specific mconf for your platform "
+                "on the PATH, or an MSYS2 version of gcc on the PATH to build mconf. "
+                "Consult the setup docs for ESP-IDF on Windows.")
+        endif()
+    endif()
+endif()
+
+if(NOT MCONF)
+    # Use the existing Makefile to build mconf (out of tree) when needed
+    #
+    set(MCONF kconfig_bin/mconf)
+
+    externalproject_add(mconf
+        SOURCE_DIR ${IDF_PATH}/tools/kconfig
+        CONFIGURE_COMMAND ""
+        BINARY_DIR "kconfig_bin"
+        BUILD_COMMAND make -f ${IDF_PATH}/tools/kconfig/Makefile mconf
+        BUILD_BYPRODUCTS ${MCONF}
+        INSTALL_COMMAND ""
+        EXCLUDE_FROM_ALL 1
+        )
+    set(menuconfig_depends DEPENDS mconf)
+endif()
 
 # Find all Kconfig files for all components
 function(kconfig_process_config)
@@ -66,9 +82,9 @@ function(kconfig_process_config)
         --env "COMPONENT_KCONFIGS=${kconfigs}"
         --env "COMPONENT_KCONFIGS_PROJBUILD=${kconfigs_projbuild}")
 
-    # Generate the menuconfig target (uses C-based mconf tool)
+    # Generate the menuconfig target (uses C-based mconf tool, either prebuilt or via mconf target above)
     add_custom_target(menuconfig
-        DEPENDS mconf
+        ${menuconfig_depends}
         # create any missing config file, with defaults if necessary
         COMMAND ${confgen_basecommand} --output config ${SDKCONFIG}
         COMMAND ${CMAKE_COMMAND} -E env
