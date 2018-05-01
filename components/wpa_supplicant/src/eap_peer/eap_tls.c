@@ -114,6 +114,11 @@ static void eap_tls_success(struct eap_sm *sm, struct eap_tls_data *data,
 {
 	wpa_printf(MSG_DEBUG, "EAP-TLS: Done");
 
+	if (data->ssl.tls_out) {
+		wpa_printf(MSG_DEBUG, "EAP-TLS: Fragment(s) remaining");
+		return;
+	}
+
 	ret->methodState = METHOD_DONE;
 	ret->decision = DECISION_UNCOND_SUCC;
 
