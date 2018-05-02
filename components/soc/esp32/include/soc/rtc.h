@@ -427,7 +427,6 @@ void rtc_clk_wait_for_slow_cycle();
  * @brief sleep configuration for rtc_sleep_init function
  */
 typedef struct {
-    uint32_t soc_clk_sel : 2;           //!< SoC clock select, see RTC_CNTL_SOC_CLK_SEL
     uint32_t lslp_mem_inf_fpu : 1;      //!< force normal voltage in sleep mode (digital domain memory)
     uint32_t rtc_mem_inf_fpu : 1;       //!< force normal voltage in sleep mode (RTC memory)
     uint32_t rtc_mem_inf_follow_cpu : 1;//!< keep low voltage in sleep mode (even if ULP/touch is used)
@@ -444,6 +443,7 @@ typedef struct {
     uint32_t rtc_dbias_slp : 3;         //!< set bias for RTC domain, in sleep mode
     uint32_t lslp_meminf_pd : 1;        //!< remove all peripheral force power up flags
     uint32_t vddsdio_pd_en : 1;         //!< power down VDDSDIO regulator
+    uint32_t xtal_fpu : 1;              //!< keep main XTAL powered up in sleep
 } rtc_sleep_config_t;
 
 /**
@@ -455,7 +455,6 @@ typedef struct {
  * @param RTC_SLEEP_PD_x flags combined using bitwise OR
  */
 #define RTC_SLEEP_CONFIG_DEFAULT(sleep_flags) { \
-    .soc_clk_sel = RTC_CNTL_SOC_CLK_SEL_XTL, \
     .lslp_mem_inf_fpu = 0, \
     .rtc_mem_inf_fpu = 0, \
     .rtc_mem_inf_follow_cpu = ((sleep_flags) & RTC_SLEEP_PD_RTC_MEM_FOLLOW_CPU) ? 1 : 0, \
@@ -468,10 +467,11 @@ typedef struct {
     .wdt_flashboot_mod_en = 0, \
     .dig_dbias_wak = RTC_CNTL_DBIAS_1V10, \
     .dig_dbias_slp = RTC_CNTL_DBIAS_0V90, \
-    .rtc_dbias_wak = RTC_CNTL_DBIAS_0V90, \
+    .rtc_dbias_wak = RTC_CNTL_DBIAS_1V10, \
     .rtc_dbias_slp = RTC_CNTL_DBIAS_0V90, \
     .lslp_meminf_pd = 1, \
     .vddsdio_pd_en = ((sleep_flags) & RTC_SLEEP_PD_VDDSDIO) ? 1 : 0, \
+    .xtal_fpu = ((sleep_flags) & RTC_SLEEP_PD_XTAL) ? 0 : 1 \
 };
 
 #define RTC_SLEEP_PD_DIG                BIT(0)  //!< Deep sleep (power down digital domain)
@@ -480,6 +480,7 @@ typedef struct {
 #define RTC_SLEEP_PD_RTC_FAST_MEM       BIT(3)  //!< Power down RTC FAST memory
 #define RTC_SLEEP_PD_RTC_MEM_FOLLOW_CPU BIT(4)  //!< RTC FAST and SLOW memories are automatically powered up and down along with the CPU
 #define RTC_SLEEP_PD_VDDSDIO            BIT(5)  //!< Power down VDDSDIO regulator
+#define RTC_SLEEP_PD_XTAL               BIT(6)  //!< Power down main XTAL
 
 /**
  * @brief Prepare the chip to enter sleep mode

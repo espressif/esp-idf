@@ -61,6 +61,15 @@ void esp_timer_impl_set_alarm(uint64_t timestamp);
 void esp_timer_impl_update_apb_freq(uint32_t apb_ticks_per_us);
 
 /**
+ * @brief Adjust current esp_timer time by a certain value
+ *
+ * Called from light sleep code to synchronize esp_timer time with RTC time.
+ *
+ * @param time_us  adjustment to apply to esp_timer time, in microseconds
+ */
+void esp_timer_impl_advance(int64_t time_us);
+
+/**
  * @brief Get time, in microseconds, since esp_timer_impl_init was called
  * @return timestamp in microseconds
  */
