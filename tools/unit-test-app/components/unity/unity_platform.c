@@ -17,8 +17,6 @@
 #include "esp_heap_trace.h"
 #endif
 
-#define unity_printf ets_printf
-
 // Pointers to the head and tail of linked list of test description structs:
 static struct test_desc_t* s_unity_tests_first = NULL;
 static struct test_desc_t* s_unity_tests_last = NULL;
@@ -153,10 +151,10 @@ void unity_testcase_register(struct test_desc_t* desc)
  * */
 static void print_multiple_function_test_menu(const struct test_desc_t* test_ms)
  {
-    unity_printf("%s\n", test_ms->name);
+    printf("%s\n", test_ms->name);
     for (int i = 0; i < test_ms->test_fn_count; i++)
     {
-        unity_printf("\t(%d)\t\"%s\"\n", i+1, test_ms->test_fn_name[i]);
+        printf("\t(%d)\t\"%s\"\n", i+1, test_ms->test_fn_name[i]);
     }
  }
 
@@ -189,6 +187,10 @@ void multiple_function_option(const struct test_desc_t* test_ms)
 static void unity_run_single_test(const struct test_desc_t* test)
 {
     printf("Running %s...\n", test->name);
+    // Unit test runner expects to see test name before the test starts
+    fflush(stdout);
+    uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
+
     Unity.TestFile = test->file;
     Unity.CurrentDetail1 = test->desc;
     if(test->test_fn_count == 1) {
@@ -293,17 +295,17 @@ static void trim_trailing_space(char* str)
 static int print_test_menu(void)
 {
     int test_counter = 0;
-    unity_printf("\n\nHere's the test menu, pick your combo:\n");
+    printf("\n\nHere's the test menu, pick your combo:\n");
     for (const struct test_desc_t* test = s_unity_tests_first;
          test != NULL;
          test = test->next, ++test_counter)
     {
-        unity_printf("(%d)\t\"%s\" %s\n", test_counter + 1, test->name, test->desc);
+        printf("(%d)\t\"%s\" %s\n", test_counter + 1, test->name, test->desc);
         if(test->test_fn_count > 1)
         {
             for (int i = 0; i < test->test_fn_count; i++)
             {
-                unity_printf("\t(%d)\t\"%s\"\n", i+1, test->test_fn_name[i]);
+                printf("\t(%d)\t\"%s\"\n", i+1, test->test_fn_name[i]);
             }
          }
      }
@@ -324,7 +326,7 @@ static int get_test_count(void)
 
 void unity_run_menu()
 {
-    unity_printf("\n\nPress ENTER to see the list of tests.\n");
+    printf("\n\nPress ENTER to see the list of tests.\n");
     int test_count = get_test_count();
     while (true)
     {
