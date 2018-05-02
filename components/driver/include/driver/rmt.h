@@ -632,6 +632,7 @@ esp_err_t rmt_fill_tx_items(rmt_channel_t channel, const rmt_item32_t* item, uin
  * @param rx_buf_size Size of RMT RX ringbuffer. Can be 0 if the RX ringbuffer is not used.
  *
  * @param intr_alloc_flags Flags for the RMT driver interrupt handler. Pass 0 for default flags. See esp_intr_alloc.h for details.
+ *        If ESP_INTR_FLAG_IRAM is used, please do not use the memory allocated from psram when calling rmt_write_items.
  *
  * @return
  *     - ESP_ERR_INVALID_STATE Driver is already installed, call rmt_driver_uninstall first.
@@ -660,6 +661,7 @@ esp_err_t rmt_driver_uninstall(rmt_channel_t channel);
  * @param channel RMT channel (0 - 7)
  *
  * @param rmt_item head point of RMT items array.
+ *        If ESP_INTR_FLAG_IRAM is used, please do not use the memory allocated from psram when calling rmt_write_items.
  *
  * @param item_num RMT data item number.
  *
