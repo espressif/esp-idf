@@ -7,6 +7,7 @@ Storage API
    SPI Flash and Partition APIs <spi_flash>
    SD/SDIO/MMC Driver <sdmmc>
    Non-Volatile Storage <nvs_flash>
+   NVS Partition Generation Utility <nvs_partition_gen.rst>
    Virtual Filesystem <vfs>
    FAT Filesystem <fatfs>
    Wear Levelling <wear-levelling>
