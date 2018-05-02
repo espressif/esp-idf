@@ -27,6 +27,15 @@ mesh_event_cb_t g_mesh_event_cb = NULL;
 static esp_pm_lock_handle_t s_wifi_modem_sleep_lock;
 #endif
 
+static void __attribute__((constructor)) s_set_default_wifi_log_level()
+{
+    /* WiFi libraries aren't compiled to know CONFIG_LOG_DEFAULT_LEVEL,
+       so set it at runtime startup. Done here not in esp_wifi_init() to allow
+       the user to set the level again before esp_wifi_init() is called.
+    */
+    esp_log_level_set("wifi", CONFIG_LOG_DEFAULT_LEVEL);
+}
+
 esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 {
 #ifdef CONFIG_PM_ENABLE
