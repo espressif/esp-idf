@@ -2,6 +2,8 @@
 Standard Setup of Toolchain for Linux
 *************************************
 
+.. note::
+   This is documentation for the CMake-based build system which is currently in preview release. The documentation may have gaps, and you may encounter bugs (please report either of these). To view documentation for the older GNU Make based build system, switch versions to the 'latest' master branch or a stable release.
 
 Install Prerequisites
 =====================
@@ -10,16 +12,18 @@ To compile with ESP-IDF you need to get the following packages:
 
 - CentOS 7::
 
-    sudo yum install gcc git wget make ncurses-devel flex bison gperf python pyserial
+    sudo yum install git wget ncurses-devel flex bison gperf python pyserial cmake ninja-build ccache
 
 - Ubuntu and Debian::
 
-    sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-serial
+    sudo apt-get install git wget libncurses-dev flex bison gperf python python-serial cmake ninja-build ccache
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial
+    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial cmake ninja ccache
 
+.. note::
+    CMake version 3.5 or newer is required for use with ESP-IDF. Older Linux distributions may require updating, or enabling of a "backports" repository, or installing of a "cmake3" package not "cmake")
 
 Toolchain Setup
 ===============
@@ -79,7 +83,7 @@ With some Linux distributions you may get the ``Failed to open port /dev/ttyUSB0
 Arch Linux Users
 ----------------
 
-To run the precompiled gdb (xtensa-esp32-elf-gdb) in Arch Linux requires ncurses 5, but Arch uses ncurses 6. 
+To run the precompiled gdb (xtensa-esp32-elf-gdb) in Arch Linux requires ncurses 5, but Arch uses ncurses 6.
 
 Backwards compatibility libraries are available in AUR_ for native and lib32 configurations:
 

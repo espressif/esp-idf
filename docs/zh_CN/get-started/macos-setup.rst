@@ -2,6 +2,8 @@
 在 Mac OS 上安装 ESP32 工具链
 **************************************
 
+.. important:: 对不起，CMake-based Build System Preview 还没有中文翻译。
+
 安装准备
 ================
 
