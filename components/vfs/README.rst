@@ -64,6 +64,35 @@ Case 2: API functions are declared with an extra context pointer (FS driver supp
     myfs_t* myfs_inst2 = myfs_mount(partition2->offset, partition2->size);
     ESP_ERROR_CHECK(esp_vfs_register("/data2", &myfs, myfs_inst2));
 
+Synchronous input/output multiplexing
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you want to use synchronous input/output multiplexing by :cpp:func:`select`
+then you need to register the VFS with :cpp:func:`start_select` and
+:cpp:func:`end_select` functions similarly to the following example:
+
+.. highlight:: c
+
+::
+
+    // In definition of esp_vfs_t:
+        .start_select = &uart_start_select,
+        .end_select = &uart_end_select,
+    // ... other members initialized
+
+:cpp:func:`start_select` is called for setting up the environment for
+detection of read/write/error conditions on file descriptors belonging to the
+given VFS. :cpp:func:`end_select` is called to stop/deinitialize/free the
+environment which was setup by :cpp:func:`start_select`. Please refer to the
+reference implementation for the UART peripheral in
+:component_file:`vfs/vfs_uart.c` and most particularly to functions
+:cpp:func:`esp_vfs_dev_uart_register`, :cpp:func:`uart_start_select` and
+:cpp:func:`uart_end_select`.
+
+Examples demonstrating the use of :cpp:func:`select` with VFS file descriptors
+are the :example:`peripherals/uart_select` and the :example:`system/select`
+examples.
+
 Paths
 -----
 

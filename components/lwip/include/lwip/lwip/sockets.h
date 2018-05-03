@@ -38,6 +38,7 @@
 
 #if LWIP_SOCKET /* don't build if not configured for use in lwipopts.h */
 
+#include <sys/select.h>
 #include <stddef.h> /* for size_t */
 #include <string.h> /* for FD_ZERO */
 
@@ -589,8 +590,10 @@ static inline int sendto(int s,const void *dataptr,size_t size,int flags,const s
 { return lwip_sendto_r(s,dataptr,size,flags,to,tolen); }
 static inline int socket(int domain,int type,int protocol)
 { return lwip_socket(domain,type,protocol); }
+#ifndef ESP_PLATFORM
 static inline int select(int maxfdp1,fd_set *readset,fd_set *writeset,fd_set *exceptset,struct timeval *timeout)
 { return lwip_select(maxfdp1,readset,writeset,exceptset,timeout); }
+#endif /* ESP_PLATFORM */
 static inline int ioctlsocket(int s,long cmd,void *argp)
 { return lwip_ioctl_r(s,cmd,argp); }
 
@@ -643,8 +646,10 @@ static inline int sendto(int s,const void *dataptr,size_t size,int flags,const s
 { return lwip_sendto(s,dataptr,size,flags,to,tolen); }
 static inline int socket(int domain,int type,int protocol)
 { return lwip_socket(domain,type,protocol); }
+#ifndef ESP_PLATFORM
 static inline int select(int maxfdp1,fd_set t*readset,fd_set *writeset,fd_set *exceptset,struct timeval *timeout)
 { return lwip_select(maxfdp1,readset,writeset,exceptset,timeout); }
+#endif /* ESP_PLATFORM */
 static inline int ioctlsocket(int s,long cmd,void *argp)
 { return lwip_ioctl(s,cmd,argp); }
 

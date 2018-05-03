@@ -25,7 +25,9 @@
 #include <sys/types.h>
 #include <sys/reent.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <dirent.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -167,6 +169,16 @@ typedef struct
         int (*access_p)(void* ctx, const char *path, int amode);
         int (*access)(const char *path, int amode);
     };
+    /** start_select is called for setting up synchronous I/O multiplexing of the desired file descriptors in the given VFS */
+    esp_err_t (*start_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds);
+    /** socket select function for socket FDs with the functionality of POSIX select(); this should be set only for the socket VFS */
+    int (*socket_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout);
+    /** called by VFS to interrupt the socket_select call when select is activated from a non-socket VFS driver; set only for the socket driver */
+    void (*stop_socket_select)();
+    /** stop_socket_select which can be called from ISR; set only for the socket driver */
+    void (*stop_socket_select_isr)(BaseType_t *woken);
+    /** end_select is called to stop the I/O multiplexing and deinitialize the environment created by start_select for the given VFS */
+    void (*end_select)();
 } esp_vfs_t;
 
 
@@ -234,6 +246,50 @@ int esp_vfs_link(struct _reent *r, const char* n1, const char* n2);
 int esp_vfs_unlink(struct _reent *r, const char *path);
 int esp_vfs_rename(struct _reent *r, const char *src, const char *dst);
 /**@}*/
+
+/**
+ * @brief Synchronous I/O multiplexing which implements the functionality of POSIX select() for VFS
+ * @param nfds      Specifies the range of descriptors which should be checked.
+ *                  The first nfds descriptors will be checked in each set.
+ * @param readfds   If not NULL, then points to a descriptor set that on input
+ *                  specifies which descriptors should be checked for being
+ *                  ready to read, and on output indicates which descriptors
+ *                  are ready to read.
+ * @param writefds  If not NULL, then points to a descriptor set that on input
+ *                  specifies which descriptors should be checked for being
+ *                  ready to write, and on output indicates which descriptors
+ *                  are ready to write.
+ * @param errorfds  If not NULL, then points to a descriptor set that on input
+ *                  specifies which descriptors should be checked for error
+ *                  conditions, and on output indicates which descriptors
+ *                  have error conditions.
+ * @param timeout   If not NULL, then points to timeval structure which
+ *                  specifies the time period after which the functions should
+ *                  time-out and return. If it is NULL, then the function will
+ *                  not time-out.
+ *
+ * @return      The number of descriptors set in the descriptor sets, or -1
+ *              when an error (specified by errno) have occurred.
+ */
+int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout);
+
+/**
+ * @brief Notification from a VFS driver about a read/write/error condition
+ *
+ * This function is called when the VFS driver detects a read/write/error
+ * condition as it was requested by the previous call to start_select.
+ */
+void esp_vfs_select_triggered();
+
+/**
+ * @brief Notification from a VFS driver about a read/write/error condition (ISR version)
+ *
+ * This function is called when the VFS driver detects a read/write/error
+ * condition as it was requested by the previous call to start_select.
+ *
+ * @param woken is set to pdTRUE if the function wakes up a task with higher priority
+ */
+void esp_vfs_select_triggered_isr(BaseType_t *woken);
 
 #ifdef __cplusplus
 } // extern "C"

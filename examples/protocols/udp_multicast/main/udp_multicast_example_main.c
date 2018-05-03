@@ -420,7 +420,7 @@ static void mcast_example_task(void *pvParameters)
             FD_ZERO(&rfds);
             FD_SET(sock, &rfds);
 
-            int s = lwip_select(sock + 1, &rfds, NULL, NULL, &tv);
+            int s = select(sock + 1, &rfds, NULL, NULL, &tv);
             if (s < 0) {
                 ESP_LOGE(TAG, "Select failed: errno %d", errno);
                 err = -1;
