@@ -9,6 +9,7 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "test_utils.h"
+#include "../esp_timer_impl.h"
 
 #ifdef CONFIG_ESP_TIMER_PROFILING
 #define WITH_PROFILING 1
@@ -417,4 +418,63 @@ TEST_CASE("Can delete timer from callback", "[esp_timer]")
     TEST_ASSERT_TRUE(heap_caps_check_integrity_addr((intptr_t) args.timer, true));
 
     vSemaphoreDelete(args.notify_from_timer_cb);
+}
+
+TEST_CASE("esp_timer_impl_advance moves time base correctly", "[esp_timer]")
+{
+    ref_clock_init();
+    int64_t t0 = esp_timer_get_time();
+    const int64_t diff_us = 1000000;
+    esp_timer_impl_advance(diff_us);
+    int64_t t1 = esp_timer_get_time();
+    int64_t t_delta = t1 - t0;
+    printf("diff_us=%lld t1-t0=%lld\n", diff_us, t_delta);
+    TEST_ASSERT_INT_WITHIN(1000, diff_us, (int) t_delta);
+    ref_clock_deinit();
+}
+
+
+TEST_CASE("after esp_timer_impl_advance, timers run when expected", "[esp_timer]")
+{
+    typedef struct {
+        int64_t cb_time;
+    } test_state_t;
+
+    void timer_func(void* varg) {
+        test_state_t* arg = (test_state_t*) varg;
+        arg->cb_time = ref_clock_get();
+    }
+
+    ref_clock_init();
+
+    test_state_t state = { 0 };
+
+    esp_timer_create_args_t timer_args = {
+            .callback = &timer_func,
+            .arg = &state
+    };
+    esp_timer_handle_t timer;
+    TEST_ESP_OK(esp_timer_create(&timer_args, &timer));
+
+    const int64_t interval = 10000;
+    const int64_t advance = 2000;
+
+    printf("test 1\n");
+    int64_t t_start = ref_clock_get();
+    esp_timer_start_once(timer, interval);
+    esp_timer_impl_advance(advance);
+    vTaskDelay(2 * interval / 1000 / portTICK_PERIOD_MS);
+
+    TEST_ASSERT_INT_WITHIN(portTICK_PERIOD_MS * 1000, interval - advance, state.cb_time - t_start);
+
+    printf("test 2\n");
+    state.cb_time = 0;
+    t_start = ref_clock_get();
+    esp_timer_start_once(timer, interval);
+    esp_timer_impl_advance(interval);
+    vTaskDelay(1);
+
+    TEST_ASSERT(state.cb_time > t_start);
+
+    ref_clock_deinit();
 }

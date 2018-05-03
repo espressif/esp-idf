@@ -317,9 +317,13 @@ void esp_timer_impl_advance(int64_t time_us)
 
     portENTER_CRITICAL(&s_time_update_lock);
     uint64_t count = REG_READ(FRC_TIMER_COUNT_REG(1));
+    /* Trigger an ISR to handle past alarms and set new one.
+     * ISR handler will run once we exit the critical section.
+     */
+    REG_WRITE(FRC_TIMER_ALARM_REG(1), 0);
     REG_WRITE(FRC_TIMER_LOAD_REG(1), 0);
     s_time_base_us += count / s_timer_ticks_per_us + time_us;
-    esp_timer_impl_set_alarm(esp_timer_get_next_alarm());
+    s_overflow_happened = false;
     portEXIT_CRITICAL(&s_time_update_lock);
 }
 
