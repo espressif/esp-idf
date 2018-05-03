@@ -16,7 +16,7 @@ ESP-IDF provides special script `espcoredump.py` to help users to retrieve and a
 Configuration
 -------------
 
-There are a number of core dump related configuration options which user can choose in configuration menu of the application (`make menuconfig`).
+There are a number of core dump related configuration options which user can choose in configuration menu of the application (`idf.py menuconfig`).
 
 1. Core dump data destination (`Components -> ESP32-specific config -> Core dump destination`):
 
@@ -81,6 +81,6 @@ Generic command syntax:
     * --gdb,-g GDB.                 Path to gdb to use for data retrieval.
     * --core,-c CORE.               Path to core dump file to use (if skipped core dump will be read from flash).
     * --core-format,-t CORE_FORMAT. Specifies that file passed with "-c" is an ELF ("elf"), dumped raw binary ("raw") or base64-encoded ("b64") format.
-    * --off,-o OFF.                 Ofsset of coredump partition in flash (type "make partition_table" to see it).
+    * --off,-o OFF.                 Ofsset of coredump partition in flash (type "idf.py partition_table" to see it).
     * --save-core,-s SAVE_CORE.     Save core to file. Othwerwise temporary core file will be deleted. Ignored with "-c".
     * --print-mem,-m                Print memory dump. Used only with "info_corefile".
