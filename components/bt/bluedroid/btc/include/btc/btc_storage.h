@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include "common/bt_defs.h"
 #include "stack/bt_types.h"
+#include "esp_gap_bt_api.h"
 
 
 #define BTC_STORAGE_DEV_CLASS_STR       "DevClass"
@@ -64,5 +65,28 @@ bt_status_t btc_storage_remove_bonded_device(bt_bdaddr_t *remote_bd_addr);
 **
 *******************************************************************************/
 bt_status_t btc_storage_load_bonded_devices(void);
+
+/*******************************************************************************
+**
+** Function         btc_storage_get_num_bt_bond_devices
+**
+** Description      BTC storage API - get the num of the bonded device from NVRAM
+**
+** Returns          the num of the bonded device
+**
+*******************************************************************************/
+int btc_storage_get_num_bt_bond_devices(void);
+
+/*******************************************************************************
+**
+** Function         btc_storage_get_bonded_bt_devices_list
+**
+** Description      BTC storage API - get the list of the bonded device from NVRAM
+**
+** Returns          BT_STATUS_SUCCESS if get the list successful,
+**                  BT_STATUS_FAIL otherwise
+**
+*******************************************************************************/
+bt_status_t btc_storage_get_bonded_bt_devices_list(bt_bdaddr_t *bond_dev, int dev_num);
 
 #endif /* BTC_STORAGE_H */
