@@ -14,7 +14,7 @@ Background
 
 - Most data is stored in flash. Flash access does not need to be protected from physical access in order for secure boot to function, because critical data is stored (non-software-accessible) in Efuses internal to the chip.
 
-- Efuses are used to store the secure bootloader key (in efuse BLOCK2), and also a single Efuse bit (ABS_DONE_0) is burned (written to 1) to permanently enable secure boot on the chip.  For more details about efuse, see Chapter 11 "eFuse Controller" in the Technical Referecnce Manual.
+- Efuses are used to store the secure bootloader key (in efuse BLOCK2), and also a single Efuse bit (ABS_DONE_0) is burned (written to 1) to permanently enable secure boot on the chip.  For more details about efuse, see Chapter 11 "eFuse Controller" in the Technical Reference Manual.
 
 - To understand the secure boot process, first familiarise yourself with the standard :doc:`ESP-IDF boot process <../api-guides/general-notes>`.
 
@@ -51,7 +51,7 @@ The following keys are used by the secure boot process:
 
 - "secure boot signing key" is a standard ECDSA public/private key pair (see :ref:`secure-boot-image-signing-algorithm`) in PEM format.
 
-  - The public key from this key pair (for signature verificaton but not signature creation) is compiled into the software bootloader and used to verify the second stage of booting (partition table, app image) before booting continues. The public key can be freely distributed, it does not need to be kept secret.
+  - The public key from this key pair (for signature verification but not signature creation) is compiled into the software bootloader and used to verify the second stage of booting (partition table, app image) before booting continues. The public key can be freely distributed, it does not need to be kept secret.
 
   - The private key from this key pair *must be securely kept private*, as anyone who has this key can authenticate to any bootloader that is configured with secure boot and the matching public key.
 
@@ -82,7 +82,7 @@ How To Enable Secure Boot
 
    *NOTE*: ``make flash`` doesn't flash the bootloader if secure boot is enabled.
 
-8. Reset the ESP32 and it will boot the software bootloader you flashed. The software bootloader will enable secure boot on the chip, and then it verifies the app image signature and boots the app. You should watch the serial console output from the ESP32 to verify that secure boot is enabled and no errors have occured due to the build configuration.
+8. Reset the ESP32 and it will boot the software bootloader you flashed. The software bootloader will enable secure boot on the chip, and then it verifies the app image signature and boots the app. You should watch the serial console output from the ESP32 to verify that secure boot is enabled and no errors have occurred due to the build configuration.
 
 **NOTE** Secure boot won't be enabled until after a valid partition table and app image have been flashed. This is to prevent accidents before the system is fully configured.
 
