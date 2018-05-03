@@ -16,6 +16,7 @@
 #include "esp_bt_defs.h"
 #include "esp_gap_bt_api.h"
 #include "btc_gap_bt.h"
+#include "btc/btc_storage.h"
 #include "bta/bta_api.h"
 #include "common/bt_trace.h"
 #include "common/bt_target.h"
@@ -620,6 +621,17 @@ static void btc_gap_bt_read_rssi_delta(btc_gap_bt_args_t *arg)
     BTA_DmBleReadRSSI(arg->read_rssi_delta.bda.address, btc_gap_bt_read_rssi_delta_cmpl_callback);
 }
 
+esp_err_t btc_gap_bt_remove_bond_device(btc_gap_bt_args_t *arg)
+{
+    BD_ADDR bd_addr;
+    memcpy(bd_addr, arg->rm_bond_device.bda.address, sizeof(BD_ADDR));
+    if(BTA_DmRemoveDevice(bd_addr) == BTA_SUCCESS){
+        btc_storage_remove_bonded_device(&(arg->rm_bond_device.bda));
+        return ESP_BT_STATUS_SUCCESS;
+    }
+    return ESP_BT_STATUS_FAIL;
+}
+
 void btc_gap_bt_call_handler(btc_msg_t *msg)
 {
     btc_gap_bt_args_t *arg = (btc_gap_bt_args_t *)msg->arg;
@@ -665,6 +677,10 @@ void btc_gap_bt_call_handler(btc_msg_t *msg)
         btc_gap_bt_read_rssi_delta(msg->arg);
         break;
     }
+    case BTC_GAP_BT_ACT_REMOVE_BOND_DEVICE:{
+        btc_gap_bt_remove_bond_device(msg->arg);
+        break;
+    }
     default:
         break;
     }
@@ -697,6 +713,6 @@ void btc_gap_bt_cb_handler(btc_msg_t *msg)
     } else {
         LOG_ERROR("%s, unknow msg->act = %d", __func__, msg->act);
     }
-    
+
 }
 #endif /* (BTC_GAP_BT_INCLUDED == TRUE) */
