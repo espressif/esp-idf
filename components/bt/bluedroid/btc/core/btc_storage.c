@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <string.h>
 
 #include "btc/btc_storage.h"
 #include "btc/btc_util.h"
@@ -164,4 +165,71 @@ bt_status_t btc_storage_remove_bonded_device(bt_bdaddr_t *remote_bd_addr)
     btc_config_unlock();
 
     return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
+}
+
+/*******************************************************************************
+**
+** Function         btc_storage_get_num_bt_bond_devices
+**
+** Description      BTC storage API - get the num of the bonded device from NVRAM
+**
+** Returns          the num of the bonded device
+**
+*******************************************************************************/
+int btc_storage_get_num_bt_bond_devices(void)
+{
+    int num_dev = 0;
+
+    btc_config_lock();
+    for (const btc_config_section_iter_t *iter = btc_config_section_begin(); iter != btc_config_section_end();
+            iter = btc_config_section_next(iter)) {
+        const char *name = btc_config_section_name(iter);
+        if (string_is_bdaddr(name) &&
+            btc_config_exist(name, BTC_STORAGE_LINK_KEY_TYPE_STR) &&
+            btc_config_exist(name, BTC_STORAGE_PIN_LENGTH_STR) &&
+            btc_config_exist(name, BTC_STORAGE_LINK_KEY_STR)) {
+            num_dev++;
+        }
+    }
+    btc_config_unlock();
+
+    return num_dev;
+}
+
+/*******************************************************************************
+**
+** Function         btc_storage_get_bonded_bt_devices_list
+**
+** Description      BTC storage API - get the list of the bonded device from NVRAM
+**
+** Returns          BT_STATUS_SUCCESS if get the list successful,
+**                  BT_STATUS_FAIL otherwise
+**
+*******************************************************************************/
+bt_status_t btc_storage_get_bonded_bt_devices_list(bt_bdaddr_t *bond_dev, int dev_num)
+{
+    bt_bdaddr_t bd_addr;
+
+    btc_config_lock();
+    for (const btc_config_section_iter_t *iter = btc_config_section_begin(); iter != btc_config_section_end();
+            iter = btc_config_section_next(iter)) {
+
+        if (dev_num-- <= 0) {
+            break;
+        }
+
+        const char *name = btc_config_section_name(iter);
+
+        if (string_is_bdaddr(name) &&
+            btc_config_exist(name, BTC_STORAGE_LINK_KEY_TYPE_STR) &&
+            btc_config_exist(name, BTC_STORAGE_PIN_LENGTH_STR) &&
+            btc_config_exist(name, BTC_STORAGE_LINK_KEY_STR)) {
+            string_to_bdaddr(name, &bd_addr);
+            memcpy(bond_dev, &bd_addr, sizeof(bt_bdaddr_t));
+            bond_dev++;
+        }
+    }
+    btc_config_unlock();
+
+    return BT_STATUS_SUCCESS;
 }

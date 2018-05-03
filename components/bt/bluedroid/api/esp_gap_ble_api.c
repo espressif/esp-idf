@@ -35,7 +35,7 @@ esp_err_t esp_ble_gap_config_adv_data(esp_ble_adv_data_t *adv_data)
 {
     btc_msg_t msg;
     btc_ble_gap_args_t arg;
-    
+
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (adv_data == NULL) {
@@ -60,7 +60,7 @@ esp_err_t esp_ble_gap_set_scan_params(esp_ble_scan_params_t *scan_params)
 {
     btc_msg_t msg;
     btc_ble_gap_args_t arg;
-    
+
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (scan_params == NULL) {
@@ -353,7 +353,7 @@ esp_err_t esp_ble_gap_get_local_used_addr(esp_bd_addr_t local_used_addr, uint8_t
     if(esp_bluedroid_get_status() != (ESP_BLUEDROID_STATUS_ENABLED)) {
         LOG_ERROR("%s, bluedroid status error", __func__);
         return ESP_FAIL;
-    } 
+    }
     if(!BTM_BleGetCurrentAddress(local_used_addr, addr_type)) {
         return ESP_FAIL;
     }
@@ -542,7 +542,9 @@ esp_err_t esp_ble_remove_bond_device(esp_bd_addr_t bd_addr)
 
 int esp_ble_get_bond_device_num(void)
 {
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_FAIL;
+    }
 
     return btc_storage_get_num_ble_bond_devices();
 }
