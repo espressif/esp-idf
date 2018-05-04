@@ -150,6 +150,7 @@ typedef struct {
     tBTA_SERVICE_ID     sec_id;     /* service id */
     UINT8               handle;     /* index: the handle reported to java app */
     UINT8               scn;        /* the scn of the server */
+    UINT8               accept_any_scn; /* TRUE, if the server accepts any SCN */
     UINT8               max_sess;   /* max sessions */
     int                 curr_sess;   /* current sessions count*/
 } tBTA_JV_RFC_CB;
@@ -249,6 +250,7 @@ typedef struct {
     tBTA_SEC        sec_mask;
     tBTA_JV_ROLE    role;
     UINT8           local_scn;
+    UINT8           accept_any_scn;
     UINT8           max_session;
     UINT32          handle;
     tBTA_JV_RFCOMM_CBACK *p_cback;

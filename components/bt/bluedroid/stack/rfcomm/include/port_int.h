@@ -200,6 +200,7 @@ struct t_port_info {
     BOOLEAN     keep_port_handle;           /* TRUE if port is not deallocated when closing */
     /* it is set to TRUE for server when allocating port */
     UINT16      keep_mtu;                   /* Max MTU that port can receive by server */
+    BOOLEAN 	allow_dlci_change;          /* set to allow dlci to be updated on connection to server */
 };
 typedef struct t_port_info tPORT;
 
@@ -225,6 +226,7 @@ extern void     port_release_port (tPORT *p_port);
 extern tPORT    *port_find_mcb_dlci_port (tRFC_MCB *p_mcb, UINT8 dlci);
 extern tRFC_MCB *port_find_mcb (BD_ADDR bd_addr);
 extern tPORT    *port_find_dlci_port (UINT8 dlci);
+extern tPORT *port_find_dlci_port_change_dlci (tRFC_MCB *p_mcb, UINT8 dlci, UINT8* old_dlci);
 extern tPORT    *port_find_port (UINT8 dlci, BD_ADDR bd_addr);
 extern UINT32   port_get_signal_changes (tPORT *p_port, UINT8 old_signals, UINT8 signal);
 extern UINT32   port_flow_control_user (tPORT *p_port);

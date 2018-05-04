@@ -1066,6 +1066,9 @@ BOOLEAN            btm_set_bond_type_dev(BD_ADDR bd_addr,
 /* Internal functions provided by btm_sec.c
 **********************************************
 */
+tBTM_SEC_SERV_REC *btm_sec_find_mx_serv (UINT8 is_originator, UINT16 psm,
+        UINT32 mx_proto_id, UINT32 mx_chan_id);
+
 BOOLEAN btm_dev_support_switch (BD_ADDR bd_addr);
 tBTM_STATUS  btm_sec_l2cap_access_req (BD_ADDR bd_addr, UINT16 psm,
                                        UINT16 handle, CONNECTION_TYPE conn_type,

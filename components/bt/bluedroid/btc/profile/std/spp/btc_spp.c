@@ -54,6 +54,7 @@ typedef struct {
     list_t *incoming_list;
     uint8_t service_uuid[16];
     char service_name[ESP_SPP_SERVER_NAME_MAX];
+    bool accept_any_scn;
 } spp_slot_t;
 
 static struct spp_local_param_t {
@@ -216,6 +217,7 @@ static void *btc_spp_rfcomm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *u
         slot_new->sdp_handle = slot->sdp_handle;
         slot_new->rfc_handle = p_data->rfc_srv_open.new_listen_handle;
         slot_new->rfc_port_handle = BTA_JvRfcommGetPortHdl(p_data->rfc_srv_open.new_listen_handle);
+        slot_new->accept_any_scn = slot->accept_any_scn;
 
         memcpy(slot->addr, p_data->rfc_srv_open.rem_bda, ESP_BD_ADDR_LEN);
         slot->connected = TRUE;
@@ -302,7 +304,7 @@ static void btc_spp_dm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *user_d
         }
         if (p_data->create_rec.status == BTA_JV_SUCCESS) {
             slot->sdp_handle = p_data->create_rec.handle;
-            BTA_JvRfcommStartServer(slot->security, slot->role, slot->scn,
+            BTA_JvRfcommStartServer(slot->security, slot->role, slot->scn, slot->accept_any_scn,
                                     slot->max_session, (tBTA_JV_RFCOMM_CBACK *)btc_spp_rfcomm_inter_cb, (void *)slot->id);
         } else {
             LOG_ERROR("%s unable to create record, start server fail!", __func__);
@@ -409,7 +411,9 @@ static void btc_spp_start_srv(btc_spp_args_t *arg)
     }
     slot->security = arg->start_srv.sec_mask;
     slot->role = arg->start_srv.role;
-    slot->scn = arg->start_srv.local_scn;;
+    slot->scn = arg->start_srv.local_scn;
+    /* if the scn is 0, the server should connect on any scn */ 
+    slot->accept_any_scn = slot->scn == 0;
     slot->max_session = arg->start_srv.max_session;
     strcpy(slot->service_name, arg->start_srv.name);
 
@@ -584,6 +588,7 @@ void btc_spp_cb_handler(btc_msg_t *msg)
         }
         param.srv_open.status = p_data->rfc_srv_open.status;
         param.srv_open.handle = p_data->rfc_srv_open.handle;
+        param.srv_open.scn = p_data->rfc_srv_open.scn;
         param.srv_open.new_listen_handle = p_data->rfc_srv_open.new_listen_handle;
         memcpy(param.srv_open.rem_bda, p_data->rfc_srv_open.rem_bda, ESP_BD_ADDR_LEN);
         btc_spp_cb_to_app(ESP_SPP_SRV_OPEN_EVT, &param);

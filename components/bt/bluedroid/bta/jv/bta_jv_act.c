@@ -1657,7 +1657,7 @@ void bta_jv_rfcomm_connect(tBTA_JV_MSG *p_data)
     }
 
     if (evt_data.status == BTA_JV_SUCCESS &&
-            RFCOMM_CreateConnection(UUID_SERVCLASS_SERIAL_PORT, cc->remote_scn, FALSE,
+            RFCOMM_CreateConnection(UUID_SERVCLASS_SERIAL_PORT, cc->remote_scn, FALSE, FALSE,
                                     BTA_JV_DEF_RFC_MTU, cc->peer_bd_addr, &handle, bta_jv_port_mgmt_cl_cback) != PORT_SUCCESS) {
         APPL_TRACE_ERROR("bta_jv_rfcomm_connect, RFCOMM_CreateConnection failed");
         evt_data.status = BTA_JV_FAILURE;
@@ -1812,6 +1812,11 @@ static void bta_jv_port_mgmt_sr_cback(UINT32 code, UINT16 port_handle)
         evt_data.rfc_srv_open.handle = p_pcb->handle;
         evt_data.rfc_srv_open.status = BTA_JV_SUCCESS;
         bdcpy(evt_data.rfc_srv_open.rem_bda, rem_bda);
+        // The server channel number might has changed on SPP connection establishment.
+        // The new port must have the same scn as the existing connection, so first get
+        // the actual scn from connected port.
+        PORT_GetSCN( port_handle, &p_cb->scn);
+        evt_data.rfc_srv_open.scn = p_cb->scn;
         tBTA_JV_PCB *p_pcb_new_listen  = bta_jv_add_rfc_port(p_cb, p_pcb);
         if (p_pcb_new_listen) {
             evt_data.rfc_srv_open.new_listen_handle = p_pcb_new_listen->handle;
@@ -1930,7 +1935,7 @@ static tBTA_JV_PCB *bta_jv_add_rfc_port(tBTA_JV_RFC_CB *p_cb, tBTA_JV_PCB *p_pcb
                          p_cb->max_sess, used, p_cb->curr_sess, listen, si);
         if (used < p_cb->max_sess && listen == 1 && si) {
             si--;
-            if (RFCOMM_CreateConnection(p_cb->sec_id, p_cb->scn, TRUE,
+            if (RFCOMM_CreateConnection(p_cb->sec_id, p_cb->scn, p_cb->accept_any_scn, TRUE,
                                         BTA_JV_DEF_RFC_MTU, (UINT8 *) bd_addr_any, &(p_cb->rfc_hdl[si]), bta_jv_port_mgmt_sr_cback) == PORT_SUCCESS) {
                 p_cb->curr_sess++;
                 p_pcb = &bta_jv_cb.port_cb[p_cb->rfc_hdl[si] - 1];
@@ -1997,7 +2002,7 @@ void bta_jv_rfcomm_start_server(tBTA_JV_MSG *p_data)
             break;
         }
 
-        if (RFCOMM_CreateConnection(sec_id, rs->local_scn, TRUE,
+        if (RFCOMM_CreateConnection(sec_id, rs->local_scn, rs->accept_any_scn, TRUE,
                                     BTA_JV_DEF_RFC_MTU, (UINT8 *) bd_addr_any, &handle, bta_jv_port_mgmt_sr_cback) != PORT_SUCCESS) {
             APPL_TRACE_ERROR("bta_jv_rfcomm_start_server, RFCOMM_CreateConnection failed");
             break;
@@ -2014,6 +2019,7 @@ void bta_jv_rfcomm_start_server(tBTA_JV_MSG *p_data)
         p_cb->p_cback = rs->p_cback;
         p_cb->sec_id = sec_id;
         p_cb->scn = rs->local_scn;
+        p_cb->accept_any_scn = rs->accept_any_scn;
         p_pcb->state = BTA_JV_ST_SR_LISTEN;
         p_pcb->user_data = rs->user_data;
         evt_data.status = BTA_JV_SUCCESS;

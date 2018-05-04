@@ -276,6 +276,7 @@ typedef struct {
 typedef struct {
     tBTA_JV_STATUS  status;             /* Whether the operation succeeded or failed. */
     UINT32          handle;             /* The connection handle */
+    UINT8           scn;                /* The server channel number */
     UINT32          new_listen_handle;  /* The new listen handle */
     BD_ADDR         rem_bda;            /* The peer address */
 } tBTA_JV_RFCOMM_SRV_OPEN;
@@ -787,7 +788,7 @@ extern tBTA_JV_STATUS BTA_JvRfcommClose(UINT32 handle, void *user_data);
 **
 *******************************************************************************/
 extern tBTA_JV_STATUS BTA_JvRfcommStartServer(tBTA_SEC sec_mask,
-        tBTA_JV_ROLE role, UINT8 local_scn, UINT8 max_session,
+        tBTA_JV_ROLE role, UINT8 local_scn, UINT8 accept_any_scn, UINT8 max_session,
         tBTA_JV_RFCOMM_CBACK *p_cback, void *user_data);
 
 /*******************************************************************************

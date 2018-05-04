@@ -196,6 +196,10 @@ extern "C"
 ** Parameters:      scn          - Service Channel Number as registered with
 **                                 the SDP (server) or obtained using SDP from
 **                                 the peer device (client).
+**                  accept_any_scn
+**                               - server_only: CreateConnection needs to be called
+**                                 with scn != 0. Set accept_any_scn to make the server
+**                                 accept other scn values too.  
 **                  is_server    - TRUE if requesting application is a server
 **                  mtu          - Maximum frame size the application can accept
 **                  bd_addr      - BD_ADDR of the peer (client)
@@ -215,7 +219,7 @@ extern "C"
 ** (scn * 2 + 1) dlci.
 **
 *******************************************************************************/
-extern int RFCOMM_CreateConnection (UINT16 uuid, UINT8 scn,
+extern int RFCOMM_CreateConnection (UINT16 uuid, UINT8 scn, BOOLEAN accept_any_scn,
                                     BOOLEAN is_server, UINT16 mtu,
                                     BD_ADDR bd_addr, UINT16 *p_handle,
                                     tPORT_CALLBACK *p_mgmt_cb);
@@ -259,6 +263,18 @@ extern int RFCOMM_RemoveServer (UINT16 handle);
 *******************************************************************************/
 extern int PORT_SetEventCallback (UINT16 port_handle,
                                   tPORT_CALLBACK *p_port_cb);
+
+/*******************************************************************************
+**
+** Function         PORT_GetSCN
+**
+** Description      Get the SCN (server channel nummber)
+**
+** Parameters:      handle      - Handle of the port returned in the Open
+**                  scn         - address of UINT8 to store scn
+**
+*******************************************************************************/
+int PORT_GetSCN( UINT16 port_handle, UINT8* scn);
 
 /*******************************************************************************
 **

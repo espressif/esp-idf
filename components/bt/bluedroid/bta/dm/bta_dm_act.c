@@ -3469,8 +3469,12 @@ static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
 *******************************************************************************/
 static void bta_dm_delay_role_switch_cback(TIMER_LIST_ENT *p_tle)
 {
-    UNUSED(p_tle);
+    //UNUSED(p_tle);
     APPL_TRACE_EVENT("bta_dm_delay_role_switch_cback: initiating Delayed RS");
+    /* reset the switch_delay_timer_running flag (hopefully) */ 
+    if ((p_tle)&&(p_tle->data)){
+      *(bool*)p_tle->data = false;
+    }
     bta_dm_adjust_roles (FALSE);
 }
 
@@ -3577,6 +3581,14 @@ static void bta_dm_adjust_roles(BOOLEAN delay_role_switch)
                     } else {
                         bta_dm_cb.switch_delay_timer.p_cback =
                             (TIMER_CBACK *)&bta_dm_delay_role_switch_cback;
+			/* the switch_delay_timer_running flag is intended to prevent starting
+			  an already started timer. This mechanism should be replaced as soon as
+			  we have a better way */
+                        if (bta_dm_cb.switch_delay_timer_running){
+                            bta_sys_stop_timer(&bta_dm_cb.switch_delay_timer);
+                        }
+                        bta_dm_cb.switch_delay_timer_running = true;
+                        bta_dm_cb.switch_delay_timer.data = (UINT32)&bta_dm_cb.switch_delay_timer_running;
                         bta_sys_start_timer(&bta_dm_cb.switch_delay_timer, 0, 500);
                     }
                 }

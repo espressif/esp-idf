@@ -912,7 +912,7 @@ tBTA_JV_STATUS BTA_JvRfcommClose(UINT32 handle, void *user_data)
 **
 *******************************************************************************/
 tBTA_JV_STATUS BTA_JvRfcommStartServer(tBTA_SEC sec_mask,
-                                       tBTA_JV_ROLE role, UINT8 local_scn, UINT8 max_session,
+                                       tBTA_JV_ROLE role, UINT8 local_scn, UINT8 accept_any_scn, UINT8 max_session,
                                        tBTA_JV_RFCOMM_CBACK *p_cback, void *user_data)
 {
     tBTA_JV_STATUS status = BTA_JV_FAILURE;
@@ -932,6 +932,7 @@ tBTA_JV_STATUS BTA_JvRfcommStartServer(tBTA_SEC sec_mask,
         p_msg->sec_mask = sec_mask;
         p_msg->role = role;
         p_msg->local_scn = local_scn;
+        p_msg->accept_any_scn = accept_any_scn;
         p_msg->max_session = max_session;
         p_msg->p_cback = p_cback;
         p_msg->user_data = user_data; //caller's private data

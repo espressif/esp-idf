@@ -966,6 +966,7 @@ typedef struct {
 
     tBTA_DM_ENCRYPT_CBACK      *p_encrypt_cback;
     TIMER_LIST_ENT              switch_delay_timer;
+    bool                        switch_delay_timer_running; /* helper flag to prevent restarting switch_delay_timer */
 
 } tBTA_DM_CB;
 
