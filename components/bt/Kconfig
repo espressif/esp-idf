@@ -168,15 +168,6 @@ config BLE_SMP_ENABLE
    help
        This option can be close when the app not used the ble security connect.
 
-config BLE_ENABLE_SRVCHG_REG
-    bool "Enable automatic service change notify registration"
-    depends on BLUEDROID_ENABLED
-    default y
-    help
-        This option enables automatic registration of service change notification
-        after connect. Be careful, it can may collide with your command sequences
-        and lead to GATT_BUSY.
-
 config BT_STACK_NO_LOG
     bool "Close the bluedroid bt stack log print"
     depends on BLUEDROID_ENABLED
