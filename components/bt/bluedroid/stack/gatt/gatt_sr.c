@@ -22,13 +22,13 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
-#include "allocator.h"
+#include "common/bt_target.h"
+#include "osi/allocator.h"
 
 #if BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE
 #include <string.h>
 #include "gatt_int.h"
-#include "l2c_api.h"
+#include "stack/l2c_api.h"
 #include "l2c_int.h"
 #define GATT_MTU_REQ_MIN_LEN        2
 

@@ -33,7 +33,7 @@ version number of the eSBC codec
 /**********************************************************************************
   $Revision: #1 $
 ***********************************************************************************/
-#include "bt_target.h"
+#include "common/bt_target.h"
 #include "oi_stddefs.h"
 #include "oi_codec_sbc_private.h"
 

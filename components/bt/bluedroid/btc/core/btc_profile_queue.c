@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 #include <string.h>
 #include "esp_bt_main.h"
-#include "bt_trace.h"
-#include "bt_defs.h"
-#include "btc_profile_queue.h"
-#include "list.h"
-#include "allocator.h"
+#include "common/bt_trace.h"
+#include "common/bt_defs.h"
+#include "btc/btc_profile_queue.h"
+#include "osi/list.h"
+#include "osi/allocator.h"
 
 #if BTC_PRF_QUEUE_INCLUDED
 /*******************************************************************************

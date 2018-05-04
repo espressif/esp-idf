@@ -16,12 +16,12 @@
 #include "esp_bt_defs.h"
 #include "esp_gap_bt_api.h"
 #include "btc_gap_bt.h"
-#include "bta_api.h"
-#include "bt_trace.h"
-#include "bt_target.h"
-#include "btc_manage.h"
-#include "btc_util.h"
-#include "allocator.h"
+#include "bta/bta_api.h"
+#include "common/bt_trace.h"
+#include "common/bt_target.h"
+#include "btc/btc_manage.h"
+#include "btc/btc_util.h"
+#include "osi/allocator.h"
 
 #if (BTC_GAP_BT_INCLUDED == TRUE)
 
@@ -594,6 +594,32 @@ esp_err_t btc_gap_bt_get_cod(esp_bt_cod_t *cod)
     return ESP_BT_STATUS_SUCCESS;
 }
 
+static void btc_gap_bt_read_rssi_delta_cmpl_callback(void *p_data)
+{
+    tBTA_RSSI_RESULTS *result = (tBTA_RSSI_RESULTS *)p_data;
+    esp_bt_gap_cb_param_t param;
+    bt_status_t ret;
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = ESP_BT_GAP_READ_RSSI_DELTA_EVT;
+    memcpy(param.read_rssi_delta.bda, result->rem_bda, sizeof(BD_ADDR));
+    param.read_rssi_delta.stat = btc_btm_status_to_esp_status(result->status);
+    param.read_rssi_delta.rssi_delta = result->rssi;
+
+    ret = btc_transfer_context(&msg, &param,
+                               sizeof(esp_bt_gap_cb_param_t), NULL);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        LOG_ERROR("%s btc_transfer_context failed\n", __func__);
+    }
+}
+
+static void btc_gap_bt_read_rssi_delta(btc_gap_bt_args_t *arg)
+{
+    BTA_DmBleReadRSSI(arg->read_rssi_delta.bda.address, btc_gap_bt_read_rssi_delta_cmpl_callback);
+}
+
 void btc_gap_bt_call_handler(btc_msg_t *msg)
 {
     btc_gap_bt_args_t *arg = (btc_gap_bt_args_t *)msg->arg;
@@ -635,6 +661,10 @@ void btc_gap_bt_call_handler(btc_msg_t *msg)
         btc_gap_bt_set_cod(msg->arg);
         break;
     }
+    case BTC_GAP_BT_ACT_READ_RSSI_DELTA: {
+        btc_gap_bt_read_rssi_delta(msg->arg);
+        break;
+    }
     default:
         break;
     }
@@ -658,4 +688,15 @@ void btc_gap_bt_busy_level_updated(uint8_t bl_flags)
     }
 }
 
+void btc_gap_bt_cb_handler(btc_msg_t *msg)
+{
+    esp_bt_gap_cb_param_t *param = (esp_bt_gap_cb_param_t *)msg->arg;
+
+    if (msg->act < ESP_BT_GAP_EVT_MAX) {
+        btc_gap_bt_cb_to_app(msg->act, param);
+    } else {
+        LOG_ERROR("%s, unknow msg->act = %d", __func__, msg->act);
+    }
+    
+}
 #endif /* (BTC_GAP_BT_INCLUDED == TRUE) */

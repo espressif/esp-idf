@@ -23,16 +23,16 @@
  ******************************************************************************/
 #include <string.h>
 
-#include "bt_target.h"
-#include "rfcdefs.h"
-#include "port_api.h"
+#include "common/bt_target.h"
+#include "stack/rfcdefs.h"
+#include "stack/port_api.h"
 #include "port_int.h"
 #include "rfc_int.h"
-#include "l2cdefs.h"
+#include "stack/l2cdefs.h"
 #include "btm_int.h"
-#include "btu.h"
-#include "mutex.h"
-#include "allocator.h"
+#include "stack/btu.h"
+#include "osi/mutex.h"
+#include "osi/allocator.h"
 #if (defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)
 
 static const tPORT_STATE default_port_pars = {
@@ -318,10 +318,12 @@ tPORT *port_find_mcb_dlci_port (tRFC_MCB *p_mcb, UINT8 dlci)
     UINT8 inx;
 
     if (!p_mcb) {
+        RFCOMM_TRACE_DEBUG("port_find_mcb_dlci_port: p_mcb IS NULL");
         return (NULL);
     }
 
     if (dlci > RFCOMM_MAX_DLCI) {
+        RFCOMM_TRACE_DEBUG("port_find_mcb_dlci_port: DLCI wrong %d", dlci);
         return (NULL);
     }
 
@@ -330,6 +332,7 @@ tPORT *port_find_mcb_dlci_port (tRFC_MCB *p_mcb, UINT8 dlci)
         RFCOMM_TRACE_DEBUG("port_find_mcb_dlci_port: p_mcb:%p, port_inx[dlci:%d] is 0", p_mcb, dlci);
         return (NULL);
     } else {
+        RFCOMM_TRACE_DEBUG("port_find_mcb_dlci_port: %p", &rfc_cb.port.port[inx - 1]);
         return (&rfc_cb.port.port[inx - 1]);
     }
 }
@@ -351,7 +354,7 @@ tPORT *port_find_dlci_port (UINT8 dlci)
 
     for (i = 0; i < MAX_RFC_PORTS; i++) {
         p_port = &rfc_cb.port.port[i];
-
+        RFCOMM_TRACE_DEBUG("port_find_dlci_port(%d): inuse %d dlci %d", dlci, p_port->in_use, p_port->dlci);
         if (p_port->in_use && (p_port->rfc.p_mcb == NULL)) {
             if (p_port->dlci == dlci) {
                 return (p_port);
@@ -428,6 +431,44 @@ UINT32 port_flow_control_user (tPORT *p_port)
     }
 
     return (event);
+}
+
+
+/*******************************************************************************
+**
+** Function         port_find_dlci_port_change_dlci
+**
+** Description      Find port not assigned to multiplexer channel and set DLCI
+**                  on success sets old_dci to the previous DCLI
+**
+** Returns          Pointer to the PORT or NULL if not found
+**
+*******************************************************************************/
+tPORT *port_find_dlci_port_change_dlci (tRFC_MCB *p_mcb, UINT8 dlci, UINT8* old_dlci)
+{
+    UINT16 i;
+    tPORT  *p_port;
+
+    for (i = 0; i < MAX_RFC_PORTS; i++) {
+        p_port = &rfc_cb.port.port[i];
+        RFCOMM_TRACE_DEBUG("port_find_dlci_port_change_dlci(%d): inuse %d dlci %d", dlci, p_port->in_use, p_port->dlci);
+        if (p_port->in_use && (p_port->rfc.p_mcb == NULL)) {
+            if (p_port->dlci == dlci) {
+                if (old_dlci) *old_dlci = dlci;
+                return (p_port);
+            } else if ((dlci & 0x01) && (p_port->dlci == (dlci - 1))) {
+                if (old_dlci) *old_dlci = dlci;
+                p_port->dlci++;
+                return (p_port);
+            } else if (p_port->allow_dlci_change){
+                RFCOMM_TRACE_DEBUG("FIND PORT CHANGE DLCI %d inuse %d dlci %d", dlci, p_port->in_use, p_port->dlci);
+                if (old_dlci) *old_dlci = p_port->dlci;
+                p_port->dlci = dlci;
+                return(p_port);
+            }
+        }
+    }
+    return (NULL);
 }
 
 

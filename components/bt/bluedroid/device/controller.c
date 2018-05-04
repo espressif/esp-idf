@@ -16,18 +16,18 @@
  *
  ******************************************************************************/
 #include <stdbool.h>
-#include "bt_trace.h"
-#include "bdaddr.h"
-#include "bt_types.h"
-#include "controller.h"
-#include "event_mask.h"
-#include "hcimsgs.h"
-#include "hci_layer.h"
-#include "hci_packet_factory.h"
-#include "hci_packet_parser.h"
-#include "btm_ble_api.h"
-#include "version.h"
-#include "future.h"
+#include "common/bt_trace.h"
+#include "device/bdaddr.h"
+#include "stack/bt_types.h"
+#include "device/controller.h"
+#include "device/event_mask.h"
+#include "stack/hcimsgs.h"
+#include "hci/hci_layer.h"
+#include "hci/hci_packet_factory.h"
+#include "hci/hci_packet_parser.h"
+#include "stack/btm_ble_api.h"
+#include "device/version.h"
+#include "osi/future.h"
 
 const bt_event_mask_t BLE_EVENT_MASK = { "\x00\x00\x00\x00\x00\x00\x06\x7f" };
 

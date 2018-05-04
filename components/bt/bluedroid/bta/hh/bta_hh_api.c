@@ -22,7 +22,7 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if defined(BTA_HH_INCLUDED) && (BTA_HH_INCLUDED == TRUE)
 
@@ -30,10 +30,10 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "bta_hh_api.h"
+#include "bta/bta_hh_api.h"
 #include "bta_hh_int.h"
-#include "l2c_api.h"
-#include "utl.h"
+#include "stack/l2c_api.h"
+#include "bta/utl.h"
 
 #define LOG_TAG "bt_bta_hh"
 #include "osi/include/log.h"

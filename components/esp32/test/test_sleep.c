@@ -1,10 +1,16 @@
 #include "unity.h"
 #include <sys/time.h>
+#include <sys/param.h>
 #include "esp_sleep.h"
+#include "esp_clk.h"
 #include "driver/rtc_io.h"
+#include "soc/gpio_reg.h"
+#include "soc/rtc.h"
+#include "soc/uart_reg.h"
+#include "rom/uart.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-
+#include "freertos/semphr.h"
 #include "soc/rtc.h"            // for wakeup trigger defines
 #include "soc/rtc_cntl_reg.h"   // for read rtc registers directly (cause)
 #include "soc/soc.h"            // for direct register read macros
@@ -14,10 +20,6 @@
 
 static struct timeval tv_start, tv_stop;
 
-TEST_CASE("esp_deepsleep works", "[deepsleep][reset=DEEPSLEEP_RESET]")
-{
-    esp_deep_sleep(2000000);
-}
 
 static void deep_sleep_task(void *arg)
 {
@@ -36,9 +38,16 @@ static void do_deep_sleep_from_app_cpu()
     }
 }
 
-TEST_CASE("wake up using timer", "[deepsleep][reset=DEEPSLEEP_RESET]")
+TEST_CASE("wake up from deep sleep using timer", "[deepsleep][reset=DEEPSLEEP_RESET]")
 {
     esp_sleep_enable_timer_wakeup(2000000);
+    esp_deep_sleep_start();
+}
+
+TEST_CASE("light sleep followed by deep sleep", "[deepsleep][reset=DEEPSLEEP_RESET]")
+{
+    esp_sleep_enable_timer_wakeup(1000000);
+    esp_light_sleep_start();
     esp_deep_sleep_start();
 }
 
@@ -52,6 +61,103 @@ TEST_CASE("wake up from light sleep using timer", "[deepsleep]")
     float dt = (tv_stop.tv_sec - tv_start.tv_sec) * 1e3f +
                (tv_stop.tv_usec - tv_start.tv_usec) * 1e-3f;
     TEST_ASSERT_INT32_WITHIN(500, 2000, (int) dt);
+}
+
+static void test_light_sleep(void* arg)
+{
+    vTaskDelay(2);
+    for (int i = 0; i < 1000; ++i) {
+        printf("%d %d\n", xPortGetCoreID(), i);
+        fflush(stdout);
+        esp_light_sleep_start();
+    }
+    SemaphoreHandle_t done = (SemaphoreHandle_t) arg;
+    xSemaphoreGive(done);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("light sleep stress test", "[deepsleep]")
+{
+    SemaphoreHandle_t done = xSemaphoreCreateCounting(2, 0);
+    esp_sleep_enable_timer_wakeup(1000);
+    xTaskCreatePinnedToCore(&test_light_sleep, "ls0", 4096, done, UNITY_FREERTOS_PRIORITY + 1, NULL, 0);
+#if portNUM_PROCESSORS == 2
+    xTaskCreatePinnedToCore(&test_light_sleep, "ls1", 4096, done, UNITY_FREERTOS_PRIORITY + 1, NULL, 1);
+#endif
+    xSemaphoreTake(done, portMAX_DELAY);
+#if portNUM_PROCESSORS == 2
+    xSemaphoreTake(done, portMAX_DELAY);
+#endif
+    vSemaphoreDelete(done);
+}
+
+#ifdef CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
+#define MAX_SLEEP_TIME_ERROR_US 200
+#else
+#define MAX_SLEEP_TIME_ERROR_US 100
+#endif
+
+
+TEST_CASE("light sleep duration is correct", "[deepsleep]")
+{
+    // don't power down XTAL — powering it up takes different time on
+    // different boards
+    esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_ON);
+
+    // run one light sleep without checking timing, to warm up the cache
+    esp_sleep_enable_timer_wakeup(1000);
+    esp_light_sleep_start();
+
+    const int sleep_intervals_ms[] = {
+            1, 1, 2, 3, 4, 5, 6, 7, 8, 10, 15,
+            20, 25, 50, 100, 200, 500,
+    };
+
+    const int sleep_intervals_count = sizeof(sleep_intervals_ms)/sizeof(sleep_intervals_ms[0]);
+    for (int i = 0; i < sleep_intervals_count; ++i) {
+        uint64_t sleep_time = sleep_intervals_ms[i] * 1000;
+        esp_sleep_enable_timer_wakeup(sleep_time);
+        for (int repeat = 0; repeat < 5; ++repeat) {
+            uint64_t start = esp_clk_rtc_time();
+            int64_t start_hs = esp_timer_get_time();
+            esp_light_sleep_start();
+            int64_t stop_hs = esp_timer_get_time();
+            uint64_t stop = esp_clk_rtc_time();
+
+            int diff_us = (int) (stop - start);
+            int diff_hs_us = (int) (stop_hs - start_hs);
+            printf("%lld %d\n", sleep_time, (int) (diff_us - sleep_time));
+            int32_t threshold = MAX(sleep_time / 100, MAX_SLEEP_TIME_ERROR_US);
+            TEST_ASSERT_INT32_WITHIN(threshold, sleep_time, diff_us);
+            TEST_ASSERT_INT32_WITHIN(threshold, sleep_time, diff_hs_us);
+            fflush(stdout);
+        }
+
+        vTaskDelay(10/portTICK_PERIOD_MS);
+    }
+}
+
+
+TEST_CASE("light sleep and frequency switching", "[deepsleep]")
+{
+#ifndef CONFIG_PM_ENABLE
+    const int uart_clk_freq = REF_CLK_FREQ;
+    CLEAR_PERI_REG_MASK(UART_CONF0_REG(CONFIG_CONSOLE_UART_NUM), UART_TICK_REF_ALWAYS_ON);
+    uart_div_modify(CONFIG_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
+#endif
+
+    esp_sleep_enable_timer_wakeup(1000);
+    rtc_cpu_freq_t default_freq = rtc_clk_cpu_freq_get();
+    for (int i = 0; i < 1000; ++i) {
+        if (i % 2 == 0) {
+            rtc_clk_cpu_freq_set_fast(RTC_CPU_FREQ_XTAL);
+        } else {
+            rtc_clk_cpu_freq_set_fast(default_freq);
+        }
+        printf("%d\n", i);
+        fflush(stdout);
+        esp_light_sleep_start();
+    }
 }
 
 #ifndef CONFIG_FREERTOS_UNICORE
@@ -138,7 +244,7 @@ TEST_CASE("disable source trigger behavior", "[deepsleep]")
 {
     float dt = 0;
 
-    printf("Setup timer and ext0 to wakeup imediately from GPIO_13 \n");
+    printf("Setup timer and ext0 to wake up immediately from GPIO_13 \n");
     
     // Setup ext0 configuration to wake up almost immediately
     // The wakeup time is proportional to input capacitance * pullup resistance
@@ -159,7 +265,7 @@ TEST_CASE("disable source trigger behavior", "[deepsleep]")
 
     // Check wakeup from Ext0 using time measurement because wakeup cause is 
     // not available in light sleep mode
-    TEST_ASSERT_INT32_WITHIN(299, 300, (int) dt);
+    TEST_ASSERT_INT32_WITHIN(100, 100, (int) dt);
     
     TEST_ASSERT((get_cause() & RTC_EXT0_TRIG_EN) != 0);
     
@@ -175,7 +281,7 @@ TEST_CASE("disable source trigger behavior", "[deepsleep]")
     
     TEST_ASSERT_INT32_WITHIN(500, 2000, (int) dt);
 
-    // Additionaly check wakeup cause
+    // Additionally check wakeup cause
     TEST_ASSERT((get_cause() & RTC_TIMER_TRIG_EN) != 0);
 
     // Disable timer source.
@@ -195,12 +301,11 @@ TEST_CASE("disable source trigger behavior", "[deepsleep]")
     dt = get_time_ms();
     printf("Ext0 sleep time = %d \n", (int) dt);
 
-    TEST_ASSERT_INT32_WITHIN(199, 200, (int) dt);
+    TEST_ASSERT_INT32_WITHIN(100, 100, (int) dt);
     TEST_ASSERT((get_cause() & RTC_EXT0_TRIG_EN) != 0);
     
     // Check error message when source is already disabled 
     esp_err_t err_code = esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
     TEST_ASSERT(err_code == ESP_ERR_INVALID_STATE);
-    printf("Test case completed successfully.");
 }
 

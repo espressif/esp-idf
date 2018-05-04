@@ -23,14 +23,14 @@
  ******************************************************************************/
 
 #include <string.h>
-#include "bt_target.h"
+#include "common/bt_target.h"
 //#include "bt_utils.h"
-#include "l2cdefs.h"
+#include "stack/l2cdefs.h"
 #include "l2c_int.h"
-#include "btu.h"
+#include "stack/btu.h"
 #include "btm_int.h"
-#include "hcimsgs.h"
-#include "controller.h"
+#include "stack/hcimsgs.h"
+#include "device/controller.h"
 
 #if (BLE_INCLUDED == TRUE)
 static BOOLEAN l2cble_start_conn_update (tL2C_LCB *p_lcb);
@@ -914,7 +914,7 @@ void l2c_link_processs_ble_num_bufs (UINT16 num_lm_ble_bufs)
         num_lm_ble_bufs = L2C_DEF_NUM_BLE_BUF_SHARED;
         l2cb.num_lm_acl_bufs -= L2C_DEF_NUM_BLE_BUF_SHARED;
     }
-    L2CAP_TRACE_DEBUG("#####################################num_lm_ble_bufs = %d",num_lm_ble_bufs);
+    L2CAP_TRACE_DEBUG("num_lm_ble_bufs = %d",num_lm_ble_bufs);
     l2cb.num_lm_ble_bufs = l2cb.controller_le_xmit_window = num_lm_ble_bufs;
 }
 

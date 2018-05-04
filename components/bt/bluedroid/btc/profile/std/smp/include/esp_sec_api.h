@@ -15,7 +15,7 @@
 #ifndef __ESP_SEC_API_H__
 #define __ESP_SEC_API_H__
 
-#include "bt_types.h"
+#include "stack/bt_types.h"
 
 #define APP_SEC_IRK_FLAG        (0)
 #define RAND_NB_LEN         0x08

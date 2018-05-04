@@ -23,28 +23,28 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
-#include "bt_types.h"
-#include "bta_sys.h"
-#include "bta_api.h"
+#include "common/bt_target.h"
+#include "stack/bt_types.h"
+#include "bta/bta_sys.h"
+#include "bta/bta_api.h"
 #include "bta_dm_int.h"
-#include "bta_dm_co.h"
-#include "bta_gattc_co.h"
-#include "btm_api.h"
+#include "bta/bta_dm_co.h"
+#include "bta/bta_gattc_co.h"
+#include "stack/btm_api.h"
 #include "btm_int.h"
-#include "btu.h"
-#include "sdp_api.h"
-#include "l2c_api.h"
-#include "utl.h"
-#include "gap_api.h"    /* For GAP_BleReadPeerPrefConnParams */
+#include "stack/btu.h"
+#include "stack/sdp_api.h"
+#include "stack/l2c_api.h"
+#include "bta/utl.h"
+#include "stack/gap_api.h"    /* For GAP_BleReadPeerPrefConnParams */
 #include <string.h>
-#include "controller.h"
+#include "device/controller.h"
 
 #define LOG_TAG "bt_bta_dm"
 // #include "osi/include/log.h"
 
 #if (GAP_INCLUDED == TRUE)
-#include "gap_api.h"
+#include "stack/gap_api.h"
 #endif
 
 static void bta_dm_inq_results_cb (tBTM_INQ_RESULTS *p_inq, UINT8 *p_eir);
@@ -169,10 +169,10 @@ const UINT16 bta_service_id_to_uuid_lkup_tbl [BTA_MAX_SERVICE_ID] = {
 
 /*
  * NOTE : The number of element in bta_service_id_to_btm_srv_id_lkup_tbl should be matching with
- *        the value BTA_MAX_SERVICE_ID in bta_api.h
+ *        the value BTA_MAX_SERVICE_ID in bta/bta_api.h
  *
  *        i.e., If you add new Service ID for BTA, the correct security ID of the new service
- *              from Security service definitions (btm_api.h) should be added to this lookup table.
+ *              from Security service definitions (stack/btm_api.h) should be added to this lookup table.
  */
 const UINT32 bta_service_id_to_btm_srv_id_lkup_tbl [BTA_MAX_SERVICE_ID] = {
     0,                                      /* Reserved */
@@ -3469,8 +3469,12 @@ static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
 *******************************************************************************/
 static void bta_dm_delay_role_switch_cback(TIMER_LIST_ENT *p_tle)
 {
-    UNUSED(p_tle);
+    //UNUSED(p_tle);
     APPL_TRACE_EVENT("bta_dm_delay_role_switch_cback: initiating Delayed RS");
+    /* reset the switch_delay_timer_running flag (hopefully) */ 
+    if ((p_tle)&&(p_tle->data)){
+      *(bool*)p_tle->data = false;
+    }
     bta_dm_adjust_roles (FALSE);
 }
 
@@ -3577,6 +3581,14 @@ static void bta_dm_adjust_roles(BOOLEAN delay_role_switch)
                     } else {
                         bta_dm_cb.switch_delay_timer.p_cback =
                             (TIMER_CBACK *)&bta_dm_delay_role_switch_cback;
+			/* the switch_delay_timer_running flag is intended to prevent starting
+			  an already started timer. This mechanism should be replaced as soon as
+			  we have a better way */
+                        if (bta_dm_cb.switch_delay_timer_running){
+                            bta_sys_stop_timer(&bta_dm_cb.switch_delay_timer);
+                        }
+                        bta_dm_cb.switch_delay_timer_running = true;
+                        bta_dm_cb.switch_delay_timer.data = (UINT32)&bta_dm_cb.switch_delay_timer_running;
                         bta_sys_start_timer(&bta_dm_cb.switch_delay_timer, 0, 500);
                     }
                 }
@@ -4684,9 +4696,9 @@ void bta_dm_ble_config_local_privacy (tBTA_DM_MSG *p_data)
 
 /*******************************************************************************
 **
-** Function         bta_dm_ble_config_local_privacy
+** Function         bta_dm_ble_config_local_icon
 **
-** Description      This function set the local device LE privacy settings.
+** Description      This function sets the local icon value.
 **
 **
 *******************************************************************************/

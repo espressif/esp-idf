@@ -12,9 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string.h>
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
 #include "sdkconfig.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+#include "esp_wifi.h"
+#include "esp_wifi_internal.h"
 
 /*
  If CONFIG_WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST is enabled. Prefer to allocate a chunk of memory in SPIRAM firstly.
@@ -53,4 +58,59 @@ IRAM_ATTR void *wifi_calloc( size_t n, size_t size )
 #else
     return calloc(n, size);
 #endif
+}
+
+wifi_static_queue_t* wifi_create_queue( int queue_len, int item_size)
+{
+    wifi_static_queue_t *queue = NULL;
+
+    queue = (wifi_static_queue_t*)heap_caps_malloc(sizeof(wifi_static_queue_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+    if (!queue) {
+        return NULL;
+    }
+
+#if CONFIG_SPIRAM_USE_MALLOC
+
+    queue->storage = heap_caps_calloc(1, sizeof(StaticQueue_t) + (queue_len*item_size), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+    if (!queue->storage) {
+        goto _error;
+    }
+
+    queue->handle = xQueueCreateStatic( queue_len, item_size, ((uint8_t*)(queue->storage)) + sizeof(StaticQueue_t), (StaticQueue_t*)(queue->storage));
+
+    if (!queue->handle) {
+        goto _error;
+    }
+
+    return queue;
+
+_error:
+    if (queue) {
+        if (queue->storage) {
+            free(queue->storage);
+        }
+
+        free(queue);
+    }
+
+    return NULL;
+#else
+    queue->handle = xQueueCreate( queue_len, item_size);
+    return queue;
+#endif
+}
+
+void wifi_delete_queue(wifi_static_queue_t *queue)
+{
+    if (queue) {
+        vQueueDelete(queue->handle);
+
+#if CONFIG_SPIRAM_USE_MALLOC
+        if (queue->storage) {
+            free(queue->storage);
+        }
+#endif
+
+        free(queue);
+    }
 }

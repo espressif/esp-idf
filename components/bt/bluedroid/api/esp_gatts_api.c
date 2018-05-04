@@ -16,10 +16,13 @@
 #include "esp_gatt_defs.h"
 #include "esp_gatts_api.h"
 #include "esp_bt_main.h"
-#include "btc_manage.h"
+#include "btc/btc_manage.h"
 #include "btc_gatts.h"
 #include "btc_gatt_util.h"
-#include "bt_target.h"
+#include "common/bt_target.h"
+#include "stack/l2cdefs.h"
+#include "stack/l2c_api.h"
+
 #if (GATTS_INCLUDED == TRUE)
 #define COPY_TO_GATTS_ARGS(_gatt_args, _arg, _arg_type) memcpy(_gatt_args, _arg, sizeof(_arg_type))
 
@@ -256,6 +259,11 @@ esp_err_t esp_ble_gatts_send_indicate(esp_gatt_if_t gatts_if, uint16_t conn_id, 
     btc_ble_gatts_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    
+    if (L2CA_CheckIsCongest(L2CAP_ATT_CID, conn_id)) {
+        LOG_ERROR("%s, the l2cap chanel is congest.", __func__);
+        return ESP_FAIL;
+    }
     
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;

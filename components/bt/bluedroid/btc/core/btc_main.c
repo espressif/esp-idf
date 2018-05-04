@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "btc_task.h"
-#include "btc_main.h"
-#include "btc_dm.h"
-#include "future.h"
+#include "btc/btc_task.h"
+#include "btc/btc_main.h"
+#include "btc/btc_dm.h"
+#include "osi/future.h"
 #include "esp_err.h"
-#include "btc_config.h"
-#include "alarm.h"
-#include "btc_ble_storage.h"
+#include "btc/btc_config.h"
+#include "osi/alarm.h"
+#include "btc/btc_ble_storage.h"
 #include "btc_gap_ble.h"
 #include "bta_gattc_int.h"
 #include "bta_gatts_int.h"

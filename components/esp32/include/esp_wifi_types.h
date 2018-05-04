@@ -230,6 +230,11 @@ typedef union {
 /** @brief Description of STA associated with AP */
 typedef struct {
     uint8_t mac[6];  /**< mac address */
+    uint32_t phy_11b:1;      /**< bit: 0 flag to identify if 11b mode is enabled or not */
+    uint32_t phy_11g:1;      /**< bit: 1 flag to identify if 11g mode is enabled or not */
+    uint32_t phy_11n:1;      /**< bit: 2 flag to identify if 11n mode is enabled or not */
+    uint32_t phy_lr:1;       /**< bit: 3 flag to identify if low rate is enabled or not */
+    uint32_t reserved:28;    /**< bit: 4..31 reserved */
 } wifi_sta_info_t;
 
 #define ESP_WIFI_MAX_CONN_NUM  (10)       /**< max number of stations which can connect to ESP32 soft-AP */
@@ -343,6 +348,10 @@ typedef enum {
 typedef struct {
     uint32_t filter_mask; /**< OR of one or more filter values WIFI_PROMIS_FILTER_* */
 } wifi_promiscuous_filter_t;
+
+#define WIFI_EVENT_MASK_ALL                 (0xFFFFFFFF)  /**< mask all WiFi events */
+#define WIFI_EVENT_MASK_NONE                (0)           /**< mask none of the WiFi events */
+#define WIFI_EVENT_MASK_AP_PROBEREQRECVED   (BIT(0))      /**< mask SYSTEM_EVENT_AP_PROBEREQRECVED event */
 
 #ifdef __cplusplus
 }

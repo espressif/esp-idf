@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 #include <string.h>
 #include "esp_bt_main.h"
 #include "esp_gap_bt_api.h"
-#include "bt_trace.h"
-#include "btc_manage.h"
+#include "common/bt_trace.h"
+#include "btc/btc_manage.h"
 #include "btc_gap_bt.h"
 
 #if (BTC_GAP_BT_INCLUDED == TRUE)
@@ -176,6 +176,19 @@ esp_err_t esp_bt_gap_set_cod(esp_bt_cod_t cod, esp_bt_cod_mode_t mode)
 esp_err_t esp_bt_gap_get_cod(esp_bt_cod_t *cod)
 {
     return btc_gap_bt_get_cod(cod);
+}
+
+esp_err_t esp_bt_gap_read_rssi_delta(esp_bd_addr_t remote_addr)
+{
+    btc_msg_t msg;
+    btc_gap_bt_args_t arg;
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_ACT_READ_RSSI_DELTA;
+    memcpy(arg.read_rssi_delta.bda.address, remote_addr, sizeof(esp_bd_addr_t));
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 #endif /* #if BTC_GAP_BT_INCLUDED == TRUE */

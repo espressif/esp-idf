@@ -23,12 +23,12 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
-#include "allocator.h"
-#include "hcidefs.h"
-#include "hcimsgs.h"
-#include "hcidefs.h"
-#include "btu.h"
+#include "common/bt_target.h"
+#include "osi/allocator.h"
+#include "stack/hcidefs.h"
+#include "stack/hcimsgs.h"
+#include "stack/hcidefs.h"
+#include "stack/btu.h"
 
 #include <stddef.h>
 #include <string.h>

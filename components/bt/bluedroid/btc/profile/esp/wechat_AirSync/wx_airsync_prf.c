@@ -22,12 +22,12 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "bt_target.h"
-#include "bt_trace.h"
-#include "bt_types.h"
-#include "gatt_api.h"
-#include "bta_api.h"
-#include "bta_gatt_api.h"
+#include "common/bt_target.h"
+#include "common/bt_trace.h"
+#include "stack/bt_types.h"
+#include "stack/gatt_api.h"
+#include "bta/bta_api.h"
+#include "bta/bta_gatt_api.h"
 #include "bta_gatts_int.h"
 
 

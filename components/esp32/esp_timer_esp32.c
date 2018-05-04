@@ -311,6 +311,18 @@ void IRAM_ATTR esp_timer_impl_update_apb_freq(uint32_t apb_ticks_per_us)
     portEXIT_CRITICAL_ISR(&s_time_update_lock);
 }
 
+void esp_timer_impl_advance(int64_t time_us)
+{
+    assert(time_us > 0 && "negative adjustments not supported yet");
+
+    portENTER_CRITICAL(&s_time_update_lock);
+    uint64_t count = REG_READ(FRC_TIMER_COUNT_REG(1));
+    REG_WRITE(FRC_TIMER_LOAD_REG(1), 0);
+    s_time_base_us += count / s_timer_ticks_per_us + time_us;
+    esp_timer_impl_set_alarm(esp_timer_get_next_alarm());
+    portEXIT_CRITICAL(&s_time_update_lock);
+}
+
 esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
 {
     s_alarm_handler = alarm_handler;

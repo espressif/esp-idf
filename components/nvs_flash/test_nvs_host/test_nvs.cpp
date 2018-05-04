@@ -17,6 +17,8 @@
 #include "spi_flash_emulation.h"
 #include <sstream>
 #include <iostream>
+#include <unistd.h>
+#include <sys/wait.h>
 
 #define TEST_ESP_ERR(rc, res) CHECK((rc) == (res))
 #define TEST_ESP_OK(rc) CHECK((rc) == ESP_OK)
@@ -1458,6 +1460,53 @@ TEST_CASE("Recovery from power-off when the entry being erased is not on active 
 
 /* Add new tests above */
 /* This test has to be the final one */
+
+TEST_CASE("check partition generation utility", "[nvs_part_gen]")
+{
+    int childpid = fork();
+    if (childpid == 0) {
+        exit(execlp("python", "python",
+                "../nvs_partition_generator/nvs_partition_gen.py",
+                "../nvs_partition_generator/sample.csv",
+                "../nvs_partition_generator/partition.bin", NULL));
+    } else {
+        CHECK(childpid > 0);
+        int status;
+        waitpid(childpid, &status, 0);
+        CHECK(WEXITSTATUS(status) != -1);
+    }
+}
+
+TEST_CASE("read data from partition generated via partition generation utility", "[nvs_part_gen]")
+{
+    SpiFlashEmulator emu("../nvs_partition_generator/partition.bin");
+    nvs_handle handle;
+    TEST_ESP_OK( nvs_flash_init_custom("test", 0, 2) );
+    TEST_ESP_OK( nvs_open_from_partition("test", "dummyNamespace", NVS_READONLY, &handle));
+    uint8_t u8v;
+    TEST_ESP_OK( nvs_get_u8(handle, "dummyU8Key", &u8v));
+    CHECK(u8v == 127);
+    int8_t i8v;
+    TEST_ESP_OK( nvs_get_i8(handle, "dummyI8Key", &i8v));
+    CHECK(i8v == -128);
+    uint16_t u16v;
+    TEST_ESP_OK( nvs_get_u16(handle, "dummyU16Key", &u16v));
+    CHECK(u16v == 32768);
+    uint32_t u32v;
+    TEST_ESP_OK( nvs_get_u32(handle, "dummyU32Key", &u32v));
+    CHECK(u32v == 4294967295);
+    int32_t i32v;
+    TEST_ESP_OK( nvs_get_i32(handle, "dummyI32Key", &i32v));
+    CHECK(i32v == -2147483648);
+    char buf[64] = {0};
+    size_t buflen = 64;
+    TEST_ESP_OK( nvs_get_str(handle, "dummyStringKey", buf, &buflen));
+    CHECK(strncmp(buf, "0A:0B:0C:0D:0E:0F", buflen) == 0);
+    buflen = 64;
+    uint8_t hexdata[] = {0x01, 0x02, 0x03, 0xab, 0xcd, 0xef};
+    TEST_ESP_OK( nvs_get_blob(handle, "dummyHex2BinKey", buf, &buflen));
+    CHECK(memcmp(buf, hexdata, buflen) == 0);
+}
 
 TEST_CASE("dump all performance data", "[nvs]")
 {

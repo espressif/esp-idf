@@ -19,9 +19,9 @@
 #ifndef SRVC_BATTERY_INT_H
 #define SRVC_BATTERY_INT_H
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 #include "srvc_api.h"
-#include "gatt_api.h"
+#include "stack/gatt_api.h"
 
 #ifndef BA_MAX_INT_NUM
 #define BA_MAX_INT_NUM     4

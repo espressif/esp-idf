@@ -142,7 +142,7 @@ def run_unit_test_cases(env, extra_data):
             # to determine if DUT is ready to test.
             dut.write("-", flush=False)
             dut.expect_any(UT_APP_BOOT_UP_DONE,
-                           "0 Tests 0 Failures 0 Ignored")
+                           "0 Tests 0 Failures 0 Ignored", timeout=UT_TIMEOUT)
 
             # run test case
             dut.write("\"{}\"".format(one_case["name"]))

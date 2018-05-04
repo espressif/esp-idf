@@ -23,17 +23,17 @@
  *
  ******************************************************************************/
 #include <string.h>
-#include "bt_types.h"
-#include "rfcdefs.h"
-#include "l2cdefs.h"
-#include "port_api.h"
+#include "stack/bt_types.h"
+#include "stack/rfcdefs.h"
+#include "stack/l2cdefs.h"
+#include "stack/port_api.h"
 #include "port_int.h"
-#include "l2c_api.h"
+#include "stack/l2c_api.h"
 #include "rfc_int.h"
-#include "bt_defs.h"
-#include "allocator.h"
-#include "mutex.h"
-#include "bt_target.h"
+#include "common/bt_defs.h"
+#include "osi/allocator.h"
+#include "osi/mutex.h"
+#include "common/bt_target.h"
 #if (defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)
 
 #define L2CAP_SUCCESS   0

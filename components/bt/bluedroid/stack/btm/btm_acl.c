@@ -36,15 +36,15 @@
 //#include <stdio.h>
 #include <stddef.h>
 
-#include "bt_types.h"
-#include "bt_target.h"
-#include "controller.h"
-#include "hcimsgs.h"
-#include "btu.h"
-#include "btm_api.h"
+#include "stack/bt_types.h"
+#include "common/bt_target.h"
+#include "device/controller.h"
+#include "stack/hcimsgs.h"
+#include "stack/btu.h"
+#include "stack/btm_api.h"
 #include "btm_int.h"
 #include "l2c_int.h"
-#include "hcidefs.h"
+#include "stack/hcidefs.h"
 //#include "bt_utils.h"
 
 static void btm_read_remote_features (UINT16 handle);

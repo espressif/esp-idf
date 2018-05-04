@@ -13,10 +13,10 @@
 // limitations under the License.
 
 #include <string.h>
-#include "bta_api.h"
-#include "btc_task.h"
-#include "btc_manage.h"
-#include "btc_dev.h"
+#include "bta/bta_api.h"
+#include "btc/btc_task.h"
+#include "btc/btc_manage.h"
+#include "btc/btc_dev.h"
 
 void btc_dev_call_handler(btc_msg_t *msg)
 {

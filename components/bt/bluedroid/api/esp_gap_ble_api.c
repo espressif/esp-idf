@@ -16,11 +16,11 @@
 #include "esp_bt_device.h"
 #include "esp_bt_main.h"
 #include "esp_gap_ble_api.h"
-#include "bta_api.h"
-#include "bt_trace.h"
-#include "btc_manage.h"
+#include "bta/bta_api.h"
+#include "common/bt_trace.h"
+#include "btc/btc_manage.h"
 #include "btc_gap_ble.h"
-#include "btc_ble_storage.h"
+#include "btc/btc_ble_storage.h"
 
 
 esp_err_t esp_ble_gap_register_callback(esp_gap_ble_cb_t callback)
@@ -197,17 +197,82 @@ esp_err_t esp_ble_gap_config_local_privacy (bool privacy_enable)
 
 esp_err_t esp_ble_gap_config_local_icon (uint16_t icon)
 {
+    esp_err_t ret;
     btc_msg_t msg;
     btc_ble_gap_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    msg.sig = BTC_SIG_API_CALL;
-    msg.pid = BTC_PID_GAP_BLE;
-    msg.act = BTC_GAP_BLE_ACT_CONFIG_LOCAL_ICON;
-    arg.cfg_local_icon.icon = icon;
-
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    switch (icon) {
+    case ESP_BLE_APPEARANCE_GENERIC_PHONE:
+    case ESP_BLE_APPEARANCE_GENERIC_COMPUTER:
+    case ESP_BLE_APPEARANCE_GENERIC_REMOTE:
+    case ESP_BLE_APPEARANCE_GENERIC_THERMOMETER:
+    case ESP_BLE_APPEARANCE_THERMOMETER_EAR:
+    case ESP_BLE_APPEARANCE_GENERIC_HEART_RATE:
+    case ESP_BLE_APPEARANCE_HEART_RATE_BELT:
+    case ESP_BLE_APPEARANCE_GENERIC_BLOOD_PRESSURE:
+    case ESP_BLE_APPEARANCE_BLOOD_PRESSURE_ARM:
+    case ESP_BLE_APPEARANCE_BLOOD_PRESSURE_WRIST:
+    case ESP_BLE_APPEARANCE_GENERIC_PULSE_OXIMETER:
+    case ESP_BLE_APPEARANCE_PULSE_OXIMETER_FINGERTIP:
+    case ESP_BLE_APPEARANCE_PULSE_OXIMETER_WRIST:
+    case ESP_BLE_APPEARANCE_GENERIC_GLUCOSE:
+    case ESP_BLE_APPEARANCE_GENERIC_WEIGHT:
+    case ESP_BLE_APPEARANCE_GENERIC_WALKING:
+    case ESP_BLE_APPEARANCE_WALKING_IN_SHOE:
+    case ESP_BLE_APPEARANCE_WALKING_ON_SHOE:
+    case ESP_BLE_APPEARANCE_WALKING_ON_HIP:
+    case ESP_BLE_APPEARANCE_GENERIC_WATCH:
+    case ESP_BLE_APPEARANCE_SPORTS_WATCH:
+    case ESP_BLE_APPEARANCE_GENERIC_EYEGLASSES:
+    case ESP_BLE_APPEARANCE_GENERIC_DISPLAY:
+    case ESP_BLE_APPEARANCE_GENERIC_MEDIA_PLAYER:
+    case ESP_BLE_APPEARANCE_GENERIC_BARCODE_SCANNER:
+    case ESP_BLE_APPEARANCE_HID_BARCODE_SCANNER:
+    case ESP_BLE_APPEARANCE_GENERIC_HID:
+    case ESP_BLE_APPEARANCE_HID_KEYBOARD:
+    case ESP_BLE_APPEARANCE_HID_MOUSE:
+    case ESP_BLE_APPEARANCE_HID_JOYSTICK:
+    case ESP_BLE_APPEARANCE_HID_GAMEPAD:
+    case ESP_BLE_APPEARANCE_HID_DIGITIZER_TABLET:
+    case ESP_BLE_APPEARANCE_HID_CARD_READER:
+    case ESP_BLE_APPEARANCE_HID_DIGITAL_PEN:
+    case ESP_BLE_APPEARANCE_UNKNOWN:
+    case ESP_BLE_APPEARANCE_GENERIC_CLOCK:
+    case ESP_BLE_APPEARANCE_GENERIC_TAG:
+    case ESP_BLE_APPEARANCE_GENERIC_KEYRING:
+    case ESP_BLE_APPEARANCE_GENERIC_CYCLING:
+    case ESP_BLE_APPEARANCE_CYCLING_COMPUTER:
+    case ESP_BLE_APPEARANCE_CYCLING_SPEED:
+    case ESP_BLE_APPEARANCE_CYCLING_CADENCE:
+    case ESP_BLE_APPEARANCE_CYCLING_POWER:
+    case ESP_BLE_APPEARANCE_CYCLING_SPEED_CADENCE:
+    case ESP_BLE_APPEARANCE_GENERIC_PERSONAL_MOBILITY_DEVICE:
+    case ESP_BLE_APPEARANCE_POWERED_WHEELCHAIR:
+    case ESP_BLE_APPEARANCE_MOBILITY_SCOOTER:
+    case ESP_BLE_APPEARANCE_GENERIC_CONTINUOUS_GLUCOSE_MONITOR:
+    case ESP_BLE_APPEARANCE_GENERIC_INSULIN_PUMP:
+    case ESP_BLE_APPEARANCE_INSULIN_PUMP_DURABLE_PUMP:
+    case ESP_BLE_APPEARANCE_INSULIN_PUMP_PATCH_PUMP:
+    case ESP_BLE_APPEARANCE_INSULIN_PEN:
+    case ESP_BLE_APPEARANCE_GENERIC_MEDICATION_DELIVERY:
+    case ESP_BLE_APPEARANCE_GENERIC_OUTDOOR_SPORTS:
+    case ESP_BLE_APPEARANCE_OUTDOOR_SPORTS_LOCATION:
+    case ESP_BLE_APPEARANCE_OUTDOOR_SPORTS_LOCATION_AND_NAV:
+    case ESP_BLE_APPEARANCE_OUTDOOR_SPORTS_LOCATION_POD:
+    case ESP_BLE_APPEARANCE_OUTDOOR_SPORTS_LOCATION_POD_AND_NAV:
+        msg.sig = BTC_SIG_API_CALL;
+        msg.pid = BTC_PID_GAP_BLE;
+        msg.act = BTC_GAP_BLE_ACT_CONFIG_LOCAL_ICON;
+        arg.cfg_local_icon.icon = icon;
+        ret = (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+        break;
+    default:
+        ret = ESP_ERR_INVALID_ARG;
+        break;
+    }
+    return ret;
 }
 
 esp_err_t esp_ble_gap_update_whitelist(bool add_remove, esp_bd_addr_t remote_bda)

@@ -22,15 +22,15 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if defined(GATTS_INCLUDED) && (GATTS_INCLUDED == TRUE)
 
 #include <string.h>
-#include "bta_sys.h"
-#include "bta_gatt_api.h"
+#include "bta/bta_sys.h"
+#include "bta/bta_gatt_api.h"
 #include "bta_gatts_int.h"
-#include "allocator.h"
+#include "osi/allocator.h"
 
 /*****************************************************************************
 **  Constants

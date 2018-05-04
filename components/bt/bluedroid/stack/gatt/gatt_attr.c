@@ -23,12 +23,12 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 //#include "bt_utils.h"
 
-#include "gatt_api.h"
+#include "stack/gatt_api.h"
 #include "gatt_int.h"
-#include "sdpdefs.h"
+#include "stack/sdpdefs.h"
 
 #if (BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
 

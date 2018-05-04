@@ -24,10 +24,10 @@
 #ifndef AVCT_INT_H
 #define AVCT_INT_H
 
-#include "avct_api.h"
+#include "stack/avct_api.h"
 #include "avct_defs.h"
-#include "l2c_api.h"
-#include "fixed_queue.h"
+#include "stack/l2c_api.h"
+#include "osi/fixed_queue.h"
 
 /*****************************************************************************
 ** constants

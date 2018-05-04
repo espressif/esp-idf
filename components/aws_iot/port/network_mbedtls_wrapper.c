@@ -236,6 +236,15 @@ IoT_Error_t iot_tls_connect(Network *pNetwork, TLSConnectParams *params) {
 
     mbedtls_ssl_conf_read_timeout(&(tlsDataParams->conf), pNetwork->tlsConnectParams.timeout_ms);
 
+    /* Use the AWS IoT ALPN extension for MQTT, if port 443 is requested */
+    if (pNetwork->tlsConnectParams.DestinationPort == 443) {
+        const char *alpnProtocols[] = { "x-amzn-mqtt-ca", NULL };
+        if ((ret = mbedtls_ssl_conf_alpn_protocols(&(tlsDataParams->conf), alpnProtocols)) != 0) {
+            ESP_LOGE(TAG, "failed! mbedtls_ssl_conf_alpn_protocols returned -0x%x", -ret);
+            return SSL_CONNECTION_ERROR;
+        }
+    }
+
     if((ret = mbedtls_ssl_setup(&(tlsDataParams->ssl), &(tlsDataParams->conf))) != 0) {
         ESP_LOGE(TAG, "failed! mbedtls_ssl_setup returned -0x%x", -ret);
         return SSL_CONNECTION_ERROR;

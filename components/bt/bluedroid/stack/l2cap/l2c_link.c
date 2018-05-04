@@ -28,16 +28,16 @@
 #include <string.h>
 //#include <stdio.h>
 
-#include "controller.h"
+#include "device/controller.h"
 //#include "btcore/include/counter.h"
-#include "bt_types.h"
+#include "stack/bt_types.h"
 //#include "bt_utils.h"
-#include "hcimsgs.h"
-#include "l2cdefs.h"
+#include "stack/hcimsgs.h"
+#include "stack/l2cdefs.h"
 #include "l2c_int.h"
-#include "l2c_api.h"
-#include "btu.h"
-#include "btm_api.h"
+#include "stack/l2c_api.h"
+#include "stack/btu.h"
+#include "stack/btm_api.h"
 #include "btm_int.h"
 
 static BOOLEAN l2c_link_send_to_lower (tL2C_LCB *p_lcb, BT_HDR *p_buf);
@@ -1096,10 +1096,10 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
 #if (BLE_INCLUDED == TRUE)
         while ( ((l2cb.controller_xmit_window != 0 && (p_lcb->transport == BT_TRANSPORT_BR_EDR)) ||
                  (l2cb.controller_le_xmit_window != 0 && (p_lcb->transport == BT_TRANSPORT_LE)))
-                && (p_lcb->sent_not_acked < p_lcb->link_xmit_quota))
+                && (p_lcb->sent_not_acked <= p_lcb->link_xmit_quota))
 #else
         while ( (l2cb.controller_xmit_window != 0)
-                && (p_lcb->sent_not_acked < p_lcb->link_xmit_quota))
+                && (p_lcb->sent_not_acked <= p_lcb->link_xmit_quota))
 #endif
         {
             if (list_is_empty(p_lcb->link_xmit_data_q)) {
@@ -1118,7 +1118,7 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
 #if (BLE_INCLUDED == TRUE)
             while ( ((l2cb.controller_xmit_window != 0 && (p_lcb->transport == BT_TRANSPORT_BR_EDR)) ||
                      (l2cb.controller_le_xmit_window != 0 && (p_lcb->transport == BT_TRANSPORT_LE)))
-                    && (p_lcb->sent_not_acked < p_lcb->link_xmit_quota))
+                    && (p_lcb->sent_not_acked <= p_lcb->link_xmit_quota))
 #else
             while ((l2cb.controller_xmit_window != 0) && (p_lcb->sent_not_acked < p_lcb->link_xmit_quota))
 #endif

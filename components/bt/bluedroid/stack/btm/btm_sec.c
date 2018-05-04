@@ -27,14 +27,14 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "bt_types.h"
-#include "controller.h"
-#include "hcimsgs.h"
-#include "btu.h"
+#include "stack/bt_types.h"
+#include "device/controller.h"
+#include "stack/hcimsgs.h"
+#include "stack/btu.h"
 #include "btm_int.h"
 #include "l2c_int.h"
-#include "fixed_queue.h"
-#include "alarm.h"
+#include "osi/fixed_queue.h"
+#include "osi/alarm.h"
 
 #if (BT_USE_TRACES == TRUE && BT_TRACE_VERBOSE == FALSE)
 /* needed for sprintf() */
@@ -57,7 +57,7 @@ BOOLEAN (APPL_AUTH_WRITE_EXCEPTION)(BD_ADDR bd_addr);
 *********************************************************************************/
 #if (SMP_INCLUDED == TRUE)
 static tBTM_SEC_SERV_REC *btm_sec_find_next_serv (tBTM_SEC_SERV_REC *p_cur);
-static tBTM_SEC_SERV_REC *btm_sec_find_mx_serv (UINT8 is_originator, UINT16 psm,
+tBTM_SEC_SERV_REC *btm_sec_find_mx_serv (UINT8 is_originator, UINT16 psm,
         UINT32 mx_proto_id,
         UINT32 mx_chan_id);
 static tBTM_STATUS btm_sec_execute_procedure (tBTM_SEC_DEV_REC *p_dev_rec);
@@ -5480,14 +5480,14 @@ static tBTM_SEC_SERV_REC *btm_sec_find_next_serv (tBTM_SEC_SERV_REC *p_cur)
 ** Returns          Pointer to the record or NULL
 **
 *******************************************************************************/
-static tBTM_SEC_SERV_REC *btm_sec_find_mx_serv (UINT8 is_originator, UINT16 psm,
+tBTM_SEC_SERV_REC *btm_sec_find_mx_serv (UINT8 is_originator, UINT16 psm,
         UINT32 mx_proto_id, UINT32 mx_chan_id)
 {
     tBTM_SEC_SERV_REC *p_out_serv = btm_cb.p_out_serv;
     tBTM_SEC_SERV_REC *p_serv_rec = &btm_cb.sec_serv_rec[0];
     int i;
 
-    BTM_TRACE_DEBUG ("%s()\n", __func__);
+    BTM_TRACE_DEBUG ("%s( %d %d %d %d)", __func__, is_originator, psm, mx_proto_id, mx_chan_id);
     if (is_originator && p_out_serv && p_out_serv->psm == psm
             && p_out_serv->mx_proto_id == mx_proto_id
             && p_out_serv->orig_mx_chan_id == mx_chan_id) {

@@ -46,12 +46,12 @@ esp_ble_ibeacon_vendor_t vendor_config = {
     .measured_power = 0xC5
 };
 
-BOOLEAN esp_ble_is_ibeacon_packet (uint8_t *adv_data, uint8_t adv_data_len){
-    BOOLEAN result = FALSE;
+bool esp_ble_is_ibeacon_packet (uint8_t *adv_data, uint8_t adv_data_len){
+    bool result = false;
 
     if ((adv_data != NULL) && (adv_data_len == 0x1E)){
         if (!memcmp(adv_data, (uint8_t*)&ibeacon_common_head, sizeof(ibeacon_common_head))){
-            result = TRUE;
+            result = true;
         }
     }
 

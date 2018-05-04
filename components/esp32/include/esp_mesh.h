@@ -171,6 +171,9 @@ typedef enum {
                                              and this device is specified to be a root by users, users should set a new parent
                                              for this device. if self organized is enabled, this device will find a new parent
                                              by itself, users could ignore this event. */
+    MESH_EVENT_ROOT_FIXED,              /**< When nodes join a network, if the setting of Root Fixed for one node is different
+                                             from that of its parent, the node will update the setting the same as its parent's.
+                                             Root Fixed setting of each node is variable as that setting changes of root. */
     MESH_EVENT_MAX,
 } mesh_event_id_t;
 
@@ -340,6 +343,13 @@ typedef struct {
 } mesh_event_routing_table_change_t;
 
 /**
+ * @brief root fixed
+ */
+typedef struct {
+    bool is_fixed;     /**< status */
+} mesh_event_root_fixed_t;
+
+/**
  * @brief mesh event information
  */
 typedef union {
@@ -360,6 +370,7 @@ typedef union {
     mesh_event_root_address_t root_addr;                   /**< root address */
     mesh_event_root_switch_req_t switch_req;               /**< root switch request */
     mesh_event_root_conflict_t root_conflict;              /**< other powerful root */
+    mesh_event_root_fixed_t root_fixed;                    /**< root fixed */
 } mesh_event_info_t;
 
 /**
@@ -864,7 +875,7 @@ bool esp_mesh_is_root(void);
 /**
  * @brief     enable/disable mesh networking self-organized, self-organized by default
  *            if self-organized is disabled, users should set a parent for this node via
- *            esp_mesh_set_parent()(Unimplemented);
+ *            esp_mesh_set_parent();
  *
  * @param     enable
  *
@@ -1060,6 +1071,13 @@ int esp_mesh_get_xon_qsize(void);
 esp_err_t esp_mesh_allow_root_conflicts(const bool allowed);
 
 /**
+ * @brief     check if allow more than one root to exist in one network
+ *
+ * @return    true/false
+ */
+bool esp_mesh_is_root_conflicts_allowed(void);
+
+/**
  * @brief     set group ID addresses
  *
  * @param     addr  pointer to new addresses
@@ -1193,6 +1211,42 @@ int esp_mesh_get_root_healing_delay(void);
  *    - ESP_OK
  */
 esp_err_t esp_mesh_set_event_cb(const mesh_event_cb_t event_cb);
+
+/**
+ * @brief     set Root Fixed setting for nodes
+ *            If Root Fixed setting of nodes is enabled, they won't compete to be a root.
+ *            If a scenario needs a fixed root, all nodes in this network must enable this setting.
+ *
+ * @param     enable  enable or not
+ *
+ * @return
+ *    - ESP_OK
+ */
+esp_err_t esp_mesh_fix_root(const bool enable);
+
+/**
+ * @brief     check if Root Fixed setting is enabled
+ *            Root Fixed setting can be changed by API esp_mesh_fix_root().
+ *            Root Fixed setting can also be changed by event MESH_EVENT_ROOT_FIXED.
+ *
+ * @return    true/false
+ */
+bool esp_mesh_is_root_fixed(void);
+
+/**
+ * @brief     set a specified parent
+ *            self-organized networking will be disabled.
+ *
+ * @param     parent  parent configuration
+ * @param     my_type  my mesh type
+ * @param     my_layer  my mesh layer
+ *
+ * @return
+ *    - ESP_OK
+ *    - ESP_ERR_ARGUMENT
+ *    - ESP_ERR_MESH_NOT_CONFIG
+ */
+esp_err_t esp_mesh_set_parent(wifi_config_t *parent, mesh_type_t my_type, int my_layer);
 
 
 #ifdef __cplusplus

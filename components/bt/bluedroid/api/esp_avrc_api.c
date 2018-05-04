@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 #include <string.h>
 #include "esp_err.h"
 #include "esp_avrc_api.h"
 #include "esp_bt_main.h"
-#include "btc_manage.h"
+#include "btc/btc_manage.h"
 #include "btc_avrc.h"
 
 #if BTC_AV_INCLUDED

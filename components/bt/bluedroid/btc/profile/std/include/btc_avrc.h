@@ -19,9 +19,9 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "bt_defs.h"
-#include "bt_types.h"
-#include "bta_av_api.h"
+#include "common/bt_defs.h"
+#include "stack/bt_types.h"
+#include "bta/bta_av_api.h"
 
 #if (BTC_AV_INCLUDED == TRUE)
 #ifndef BTC_AVRC_TGT_INCLUDED

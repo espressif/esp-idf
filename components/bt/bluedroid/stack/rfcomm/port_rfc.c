@@ -24,16 +24,16 @@
  ******************************************************************************/
 #include <string.h>
 
-#include "bt_target.h"
-#include "rfcdefs.h"
-#include "port_api.h"
+#include "common/bt_target.h"
+#include "stack/rfcdefs.h"
+#include "stack/port_api.h"
 #include "btm_int.h"
-#include "btm_api.h"
+#include "stack/btm_api.h"
 #include "port_int.h"
 #include "rfc_int.h"
-#include "bt_defs.h"
-#include "mutex.h"
-#include "allocator.h"
+#include "common/bt_defs.h"
+#include "osi/mutex.h"
+#include "osi/allocator.h"
 #if (defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)
 /*
 ** Local function definitions
@@ -296,7 +296,8 @@ void PORT_ParNegInd (tRFC_MCB *p_mcb, UINT8 dlci, UINT16 mtu, UINT8 cl, UINT8 k)
 
     if (!p_port) {
         /* This can be a first request for this port */
-        p_port = port_find_dlci_port (dlci);
+        UINT8 old_dlci;
+        p_port = port_find_dlci_port_change_dlci (p_mcb, dlci, &old_dlci);
         if (!p_port) {
             /* If the port cannot be opened, send a DM.  Per Errata 1205 */
             rfc_send_dm(p_mcb, dlci, FALSE);
@@ -306,6 +307,14 @@ void PORT_ParNegInd (tRFC_MCB *p_mcb, UINT8 dlci, UINT16 mtu, UINT8 cl, UINT8 k)
             RFCOMM_TRACE_EVENT( "PORT_ParNegInd: port not found" );
             return;
         }
+        /* find and update the security record with the new channel, if changed.
+         * TODO this seems bad practice. How to improve? */
+        tBTM_SEC_SERV_REC* sec_serv_rec = btm_sec_find_mx_serv(0,3,3,old_dlci/2);
+        if (sec_serv_rec){
+          RFCOMM_TRACE_EVENT ("PORT_ParNegInd: update sec_serv_rec");
+          sec_serv_rec->term_mx_chan_id = dlci/2;
+        }
+        p_port->scn = dlci/2;
         p_mcb->port_inx[dlci] = p_port->inx;
     }
 

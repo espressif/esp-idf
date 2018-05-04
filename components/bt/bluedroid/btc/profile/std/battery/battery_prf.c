@@ -18,14 +18,14 @@
 #include <stdio.h>
 
 //#include "bluedroid_test.h"
-#include "bta_api.h"
-#include "bta_gatt_api.h"
-#include "controller.h"
+#include "bta/bta_api.h"
+#include "bta/bta_gatt_api.h"
+#include "device/controller.h"
 
 #include "gatt_int.h"
-#include "bt_trace.h"
-#include "btm_api.h"
-#include "bt_types.h"
+#include "common/bt_trace.h"
+#include "stack/btm_api.h"
+#include "stack/bt_types.h"
 #include "dis_api.h"
 
 #if BLE_INCLUDED == true

@@ -22,16 +22,16 @@
  *
  ******************************************************************************/
 #include <string.h>
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if (BLE_INCLUDED == TRUE && BLE_PRIVACY_SPT == TRUE)
-#include "bt_types.h"
-#include "hcimsgs.h"
-#include "btu.h"
+#include "stack/bt_types.h"
+#include "stack/hcimsgs.h"
+#include "stack/btu.h"
 //#include "vendor_hcidefs.h"
 #include "btm_int.h"
-#include "controller.h"
-#include "hcidefs.h"
+#include "device/controller.h"
+#include "stack/hcidefs.h"
 
 #define HCI_VENDOR_BLE_RPA_VSC          (0x0155 | HCI_GRP_VENDOR_SPECIFIC)
 

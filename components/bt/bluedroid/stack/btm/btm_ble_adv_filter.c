@@ -19,17 +19,17 @@
 //#define LOG_TAG "bt_btm_ble"
 
 #include <string.h>
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if (BLE_INCLUDED == TRUE)
-#include "bt_types.h"
-#include "hcimsgs.h"
-#include "btu.h"
+#include "stack/bt_types.h"
+#include "stack/hcimsgs.h"
+#include "stack/btu.h"
 #include "btm_int.h"
-#include "allocator.h"
-#include "hcidefs.h"
-#include "btm_ble_api.h"
-#include "controller.h"
+#include "osi/allocator.h"
+#include "stack/hcidefs.h"
+#include "stack/btm_ble_api.h"
+#include "device/controller.h"
 
 #define BTM_BLE_ADV_FILT_META_HDR_LENGTH 3
 #define BTM_BLE_ADV_FILT_FEAT_SELN_LEN  13

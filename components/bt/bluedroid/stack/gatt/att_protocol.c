@@ -22,13 +22,13 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
-#include "allocator.h"
+#include "common/bt_target.h"
+#include "osi/allocator.h"
 
 #if BLE_INCLUDED == TRUE
 
 #include "gatt_int.h"
-#include "l2c_api.h"
+#include "stack/l2c_api.h"
 
 #define GATT_HDR_FIND_TYPE_VALUE_LEN    21
 #define GATT_OP_CODE_SIZE   1

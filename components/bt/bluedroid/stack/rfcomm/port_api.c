@@ -23,17 +23,17 @@
  ******************************************************************************/
 
 #include <string.h>
-#include "bt_target.h"
-#include "rfcdefs.h"
-#include "port_api.h"
+#include "common/bt_target.h"
+#include "stack/rfcdefs.h"
+#include "stack/port_api.h"
 #include "port_int.h"
 #include "btm_int.h"
-#include "btm_api.h"
+#include "stack/btm_api.h"
 #include "rfc_int.h"
-#include "l2c_api.h"
-#include "sdp_api.h"
-#include "allocator.h"
-#include "mutex.h"
+#include "stack/l2c_api.h"
+#include "stack/sdp_api.h"
+#include "osi/allocator.h"
+#include "osi/mutex.h"
 
 #if (defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)
 /* duration of break in 200ms units */
@@ -82,6 +82,10 @@ static const char *result_code_strings[] = {
 ** Parameters:      scn          - Service Channel Number as registered with
 **                                 the SDP (server) or obtained using SDP from
 **                                 the peer device (client).
+**                  accept_any_scn
+**                               - server_only: CreateConnection needs to be called
+**                                 with scn != 0. Set accept_any_scn to make the server
+**                                 accept other scn values too.  
 **                  is_server    - TRUE if requesting application is a server
 **                  mtu          - Maximum frame size the application can accept
 **                  bd_addr      - BD_ADDR of the peer (client)
@@ -101,7 +105,7 @@ static const char *result_code_strings[] = {
 ** (scn * 2 + 1) dlci.
 **
 *******************************************************************************/
-int RFCOMM_CreateConnection (UINT16 uuid, UINT8 scn, BOOLEAN is_server,
+int RFCOMM_CreateConnection (UINT16 uuid, UINT8 scn, BOOLEAN accept_any_scn, BOOLEAN is_server,
                              UINT16 mtu, BD_ADDR bd_addr, UINT16 *p_handle,
                              tPORT_CALLBACK *p_mgmt_cb)
 {
@@ -151,6 +155,7 @@ int RFCOMM_CreateConnection (UINT16 uuid, UINT8 scn, BOOLEAN is_server,
                      scn, dlci, is_server, mtu, p_mcb, p_port);
 
     p_port->default_signal_state = (PORT_DTRDSR_ON | PORT_CTSRTS_ON | PORT_DCD_ON);
+    p_port->allow_dlci_change = accept_any_scn;
 
     switch (uuid) {
     case UUID_PROTOCOL_OBEX:
@@ -349,6 +354,30 @@ int PORT_ClearKeepHandleFlag (UINT16 port_handle)
 
     p_port = &rfc_cb.port.port[port_handle - 1];
     p_port->keep_port_handle = 0;
+    return (PORT_SUCCESS);
+}
+
+/*******************************************************************************
+**
+** Function         PORT_GetSCN
+**
+** Description      Get the SCN (server channel nummber)
+**
+** Parameters:      handle      - Handle of the port returned in the Open
+**                  scn         - address of UINT8 to store scn
+**
+*******************************************************************************/
+int PORT_GetSCN( UINT16 port_handle, UINT8* scn)
+{
+    tPORT  *p_port;
+
+    /* Check if handle is valid to avoid crashing */
+    if ((port_handle == 0) || (port_handle > MAX_RFC_PORTS)) {
+        return (PORT_BAD_HANDLE);
+    }
+
+    p_port = &rfc_cb.port.port[port_handle - 1];
+    *scn = p_port->scn;
     return (PORT_SUCCESS);
 }
 

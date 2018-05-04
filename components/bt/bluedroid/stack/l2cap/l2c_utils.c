@@ -25,18 +25,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "allocator.h"
-#include "controller.h"
-#include "bt_types.h"
-#include "hcimsgs.h"
-#include "l2cdefs.h"
+#include "osi/allocator.h"
+#include "device/controller.h"
+#include "stack/bt_types.h"
+#include "stack/hcimsgs.h"
+#include "stack/l2cdefs.h"
 #include "l2c_int.h"
-#include "hcidefs.h"
-#include "btu.h"
-#include "btm_api.h"
+#include "stack/hcidefs.h"
+#include "stack/btu.h"
+#include "stack/btm_api.h"
 #include "btm_int.h"
-#include "hcidefs.h"
-#include "allocator.h"
+#include "stack/hcidefs.h"
+#include "osi/allocator.h"
 
 /*******************************************************************************
 **
@@ -950,7 +950,7 @@ void l2cu_send_peer_disc_rsp (tL2C_LCB *p_lcb, UINT8 remote_id, UINT16 local_cid
         L2CAP_TRACE_WARNING("lcb already released\n");
         return;
     }
-    
+
     if ((p_buf = l2cu_build_header(p_lcb, L2CAP_DISC_RSP_LEN, L2CAP_CMD_DISC_RSP, remote_id)) == NULL) {
         L2CAP_TRACE_WARNING ("L2CAP - no buffer for disc_rsp");
         return;
@@ -1649,7 +1649,7 @@ void l2cu_release_ccb (tL2C_CCB *p_ccb)
     p_ccb->fcrb.retrans_q = NULL;
     p_ccb->fcrb.waiting_for_ack_q = NULL;
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
-  
+
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
     l2c_fcr_cleanup (p_ccb);
@@ -2545,10 +2545,10 @@ void l2cu_resubmit_pending_sec_req (BD_ADDR p_bda)
                     l2c_csm_execute (p_ccb, L2CEVT_SEC_RE_SEND_CMD, NULL);
                 }
             }
-        }       
+        }
     }
 }
-#endif  ///CLASSIC_BT_INCLUDED == TRUE 
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
 #if L2CAP_CONFORMANCE_TESTING == TRUE
 /*******************************************************************************
@@ -2585,7 +2585,7 @@ void l2cu_adjust_out_mps (tL2C_CCB *p_ccb)
 
     if (packet_size <= (L2CAP_PKT_OVERHEAD + L2CAP_FCR_OVERHEAD + L2CAP_SDU_LEN_OVERHEAD + L2CAP_FCS_LEN)) {
         /* something is very wrong */
-        L2CAP_TRACE_ERROR ("l2cu_adjust_out_mps bad packet size: %u  will use MPS: %u", packet_size, p_ccb->peer_cfg.fcr.mps);
+        L2CAP_TRACE_DEBUG ("l2cu_adjust_out_mps bad packet size: %u  will use MPS: %u", packet_size, p_ccb->peer_cfg.fcr.mps);
         p_ccb->tx_mps = p_ccb->peer_cfg.fcr.mps;
     } else {
         packet_size -= (L2CAP_PKT_OVERHEAD + L2CAP_FCR_OVERHEAD + L2CAP_SDU_LEN_OVERHEAD + L2CAP_FCS_LEN);
@@ -3428,7 +3428,7 @@ BT_HDR *l2cu_get_next_buffer_to_send (tL2C_LCB *p_lcb)
                 return (p_buf);
             }
 #else
-            continue;          
+            continue;
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
 
         } else {

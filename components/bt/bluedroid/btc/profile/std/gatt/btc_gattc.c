@@ -14,13 +14,13 @@
 
 #include <string.h>
 
-#include "btm_ble_api.h"
+#include "stack/btm_ble_api.h"
 #include "btc_gattc.h"
 #include "btc_gatt_util.h"
-#include "btc_manage.h"
-#include "bta_gatt_api.h"
-#include "bt_trace.h"
-#include "allocator.h"
+#include "btc/btc_manage.h"
+#include "bta/bta_gatt_api.h"
+#include "common/bt_trace.h"
+#include "osi/allocator.h"
 #include "esp_gattc_api.h"
 
 #if (GATTC_INCLUDED == TRUE)
@@ -827,6 +827,7 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
         param.search_res.conn_id = BTC_GATT_GET_CONN_ID(srvc_res->conn_id);
         param.search_res.start_handle = srvc_res->start_handle;
         param.search_res.end_handle = srvc_res->end_handle;
+        param.search_res.is_primary = srvc_res->is_primary;
         bta_to_btc_gatt_id(&param.search_res.srvc_id, &srvc_res->service_uuid);
         btc_gattc_cb_to_app(ESP_GATTC_SEARCH_RES_EVT, gattc_if, &param);
         break;

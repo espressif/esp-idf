@@ -24,17 +24,17 @@
  ******************************************************************************/
 
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if defined(GATTS_INCLUDED) && (GATTS_INCLUDED == TRUE)
 
-#include "utl.h"
-#include "bta_sys.h"
+#include "bta/utl.h"
+#include "bta/bta_sys.h"
 #include "bta_gatts_int.h"
-#include "bta_gatts_co.h"
-#include "btm_ble_api.h"
+#include "bta/bta_gatts_co.h"
+#include "stack/btm_ble_api.h"
 #include <string.h>
-#include "allocator.h"
+#include "osi/allocator.h"
 
 static void bta_gatts_nv_save_cback(BOOLEAN is_saved, tGATTS_HNDL_RANGE *p_hndl_range);
 static BOOLEAN bta_gatts_nv_srv_chg_cback(tGATTS_SRV_CHG_CMD cmd, tGATTS_SRV_CHG_REQ *p_req,
@@ -335,19 +335,19 @@ void bta_gatts_create_srvc(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
 
                 cb_data.create.status      = BTA_GATT_OK;
                 cb_data.create.service_id  = service_id;
-// btla-specific ++
+
                 cb_data.create.is_primary  = p_msg->api_create_svc.is_pri;
-// btla-specific --
+
                 cb_data.create.server_if   = p_cb->rcb[rcb_idx].gatt_if;
             } else {
                 cb_data.status  = BTA_GATT_ERROR;
                 memset(&p_cb->srvc_cb[srvc_idx], 0, sizeof(tBTA_GATTS_SRVC_CB));
                 APPL_TRACE_ERROR("service creation failed.");
             }
-// btla-specific ++
+
             memcpy(&cb_data.create.uuid, &p_msg->api_create_svc.service_uuid, sizeof(tBT_UUID));
             cb_data.create.svc_instance = p_msg->api_create_svc.inst;
-// btla-specific --
+
         }
         if (p_cb->rcb[rcb_idx].p_cback) {
             (* p_cb->rcb[rcb_idx].p_cback)(BTA_GATTS_CREATE_EVT, &cb_data);
@@ -692,7 +692,7 @@ void bta_gatts_indicate_handle (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
             cb_data.req_data.status = status;
             cb_data.req_data.conn_id = p_msg->api_indicate.hdr.layer_specific;
 
-            cb_data.req_data.value =(uint8_t *)osi_malloc(p_msg->api_indicate.len);
+            cb_data.req_data.value = (uint8_t *)osi_malloc(p_msg->api_indicate.len);
             if (cb_data.req_data.value != NULL){
                 memset(cb_data.req_data.value, 0, p_msg->api_indicate.len);
                 cb_data.req_data.data_len = p_msg->api_indicate.len;

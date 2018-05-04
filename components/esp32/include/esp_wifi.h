@@ -397,6 +397,9 @@ esp_err_t esp_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_re
   * @brief     Get information of AP which the ESP32 station is associated with
   *
   * @param     ap_info  the wifi_ap_record_t to hold AP information
+  *            sta can get the connected ap's phy mode info through the struct member
+  *            phy_11b，phy_11g，phy_11n，phy_lr in the wifi_ap_record_t struct.
+  *            For example, phy_11b = 1 imply that ap support 802.11b mode
   *
   * @return
   *    - ESP_OK: succeed
@@ -714,6 +717,9 @@ esp_err_t esp_wifi_get_config(wifi_interface_t interface, wifi_config_t *conf);
   * @attention SSC only API
   *
   * @param[out] sta  station list
+  *             ap can get the connected sta's phy mode info through the struct member
+  *             phy_11b，phy_11g，phy_11n，phy_lr in the wifi_sta_info_t struct.
+  *             For example, phy_11b = 1 imply that sta support 802.11b mode
   *
   * @return
   *    - ESP_OK: succeed
@@ -868,6 +874,36 @@ esp_err_t esp_wifi_set_max_tx_power(int8_t power);
   *    - ESP_ERR_INVALID_ARG: invalid argument
   */
 esp_err_t esp_wifi_get_max_tx_power(int8_t *power);
+
+/**
+  * @brief     Set mask to enable or disable some WiFi events
+  *
+  * @attention 1. Mask can be created by logical OR of various WIFI_EVENT_MASK_ constants.
+  *               Events which have corresponding bit set in the mask will not be delivered to the system event handler.
+  * @attention 2. Default WiFi event mask is WIFI_EVENT_MASK_AP_PROBEREQRECVED.
+  * @attention 3. There may be lots of stations sending probe request data around.
+  *               Don't unmask this event unless you need to receive probe request data.
+  *
+  * @param     mask  WiFi event mask.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  */
+esp_err_t esp_wifi_set_event_mask(uint32_t mask);
+
+/**
+  * @brief     Get mask of WiFi events
+  *
+  * @param     mask  WiFi event mask.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_ARG: invalid argument
+  */
+esp_err_t esp_wifi_get_event_mask(uint32_t *mask);
+
 
 #ifdef __cplusplus
 }

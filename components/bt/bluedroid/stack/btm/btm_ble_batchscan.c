@@ -18,15 +18,15 @@
 #include <string.h>
 //#include <stdio.h>
 #include <stddef.h>
-#include "bt_target.h"
+#include "common/bt_target.h"
 
-#include "btm_ble_api.h"
-#include "bt_types.h"
+#include "stack/btm_ble_api.h"
+#include "stack/bt_types.h"
 //#include "bt_utils.h"
-#include "btu.h"
+#include "stack/btu.h"
 #include "btm_int.h"
-#include "controller.h"
-#include "hcimsgs.h"
+#include "device/controller.h"
+#include "stack/hcimsgs.h"
 
 #if (BLE_INCLUDED == TRUE)
 

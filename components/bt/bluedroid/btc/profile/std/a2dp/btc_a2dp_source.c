@@ -17,35 +17,35 @@
  **  Name:          btc_a2dp_source.c
  **
  ******************************************************************************/
-#include "bt_target.h"
-#include "bt_trace.h"
+#include "common/bt_target.h"
+#include "common/bt_trace.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <time.h>
 #include <sys/time.h>
-#include "allocator.h"
-#include "alarm.h"
-#include "thread.h"
-#include "mutex.h"
-#include "fixed_queue.h"
-#include "a2d_api.h"
-#include "a2d_sbc.h"
-#include "bta_av_api.h"
-#include "bta_av_sbc.h"
-#include "bta_av_ci.h"
-#include "btc_manage.h"
-#include "btc_common.h"
+#include "osi/allocator.h"
+#include "osi/alarm.h"
+#include "osi/thread.h"
+#include "osi/mutex.h"
+#include "osi/fixed_queue.h"
+#include "stack/a2d_api.h"
+#include "stack/a2d_sbc.h"
+#include "bta/bta_av_api.h"
+#include "bta/bta_av_sbc.h"
+#include "bta/bta_av_ci.h"
+#include "btc/btc_manage.h"
+#include "btc/btc_common.h"
 #include "btc_av_co.h"
 #include "btc_a2dp.h"
 #include "btc_a2dp_control.h"
 #include "btc_a2dp_source.h"
 #include "btc_av.h"
-#include "btc_util.h"
+#include "btc/btc_util.h"
 #include "esp_a2dp_api.h"
 #include "sbc_encoder.h"
-#include "future.h"
+#include "osi/future.h"
 #include <assert.h>
 
 #if BTC_AV_SRC_INCLUDED

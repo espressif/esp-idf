@@ -22,18 +22,18 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if defined(BTA_HH_INCLUDED) && (BTA_HH_INCLUDED == TRUE)
 
 #include <string.h>
 
-#include "bta_sys.h"
-#include "btm_api.h"
-#include "l2c_api.h"
+#include "bta/bta_sys.h"
+#include "stack/btm_api.h"
+#include "stack/l2c_api.h"
 #include "bta_hh_int.h"
-#include "bta_hh_co.h"
-#include "utl.h"
+#include "bta/bta_hh_co.h"
+#include "bta/utl.h"
 
 /*****************************************************************************
 **  Constants

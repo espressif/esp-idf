@@ -21,7 +21,7 @@
  *  source file for fast dct operations
  *
  ******************************************************************************/
-#include "bt_target.h"
+#include "common/bt_target.h"
 #include "sbc_encoder.h"
 #include "sbc_enc_func_declare.h"
 #include "sbc_dct.h"

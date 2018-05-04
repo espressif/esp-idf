@@ -21,7 +21,7 @@
  *  This file contains security manager protocol utility functions
  *
  ******************************************************************************/
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if SMP_INCLUDED == TRUE
 #if SMP_DEBUG == TRUE
@@ -29,14 +29,14 @@
 #endif
 #include <string.h>
 //#include "bt_utils.h"
-#include "btm_ble_api.h"
+#include "stack/btm_ble_api.h"
 #include "smp_int.h"
 #include "btm_int.h"
 #include "btm_ble_int.h"
-#include "hcimsgs.h"
+#include "stack/hcimsgs.h"
 #include "aes.h"
 #include "p_256_ecc_pp.h"
-#include "controller.h"
+#include "device/controller.h"
 
 #ifndef SMP_MAX_ENC_REPEAT
 #define SMP_MAX_ENC_REPEAT  3

@@ -15,11 +15,11 @@
 #include <string.h>
 
 #include "esp_bt_main.h"
-#include "btc_manage.h"
+#include "btc/btc_manage.h"
 
 #include "btc_spp.h"
 #include "esp_spp_api.h"
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if (defined BTC_SPP_INCLUDED && BTC_SPP_INCLUDED == TRUE)
 
@@ -46,14 +46,11 @@ esp_err_t esp_spp_init(esp_spp_mode_t mode)
     btc_spp_args_t arg;
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    if (mode != ESP_SPP_MODE_CB) {
-        LOG_ERROR("%s Watch this space!", __func__);
-        return ESP_FAIL;
-    }
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_SPP;
     msg.act = BTC_SPP_ACT_INIT;
 
+    arg.init.mode = mode;
     return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
@@ -166,4 +163,13 @@ esp_err_t esp_spp_write(uint32_t handle, int len, uint8_t *p_data)
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), btc_spp_arg_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+
+esp_err_t esp_spp_vfs_register()
+{
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    btc_spp_vfs_register();
+    return ESP_OK;
+}
+
 #endif ///defined BTC_SPP_INCLUDED && BTC_SPP_INCLUDED == TRUE

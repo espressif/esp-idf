@@ -23,17 +23,17 @@
  ******************************************************************************/
 
 #include <string.h>
-#include "bt_types.h"
-#include "bt_target.h"
-#include "bt_defs.h"
-#include "avdt_api.h"
-#include "avdtc_api.h"
+#include "stack/bt_types.h"
+#include "common/bt_target.h"
+#include "common/bt_defs.h"
+#include "stack/avdt_api.h"
+#include "stack/avdtc_api.h"
 #include "avdt_int.h"
-#include "l2c_api.h"
-#include "l2cdefs.h"
-#include "btm_api.h"
+#include "stack/l2c_api.h"
+#include "stack/l2cdefs.h"
+#include "stack/btm_api.h"
 #include "btm_int.h"
-#include "allocator.h"
+#include "osi/allocator.h"
 
 #if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE)
 

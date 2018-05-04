@@ -14,15 +14,15 @@
 
 #include <string.h>
 
-#include "bta_gatt_api.h"
+#include "bta/bta_gatt_api.h"
 
-#include "btc_task.h"
-#include "btc_manage.h"
+#include "btc/btc_task.h"
+#include "btc/btc_manage.h"
 #include "btc_gatts.h"
 #include "btc_gatt_util.h"
-#include "future.h"
-#include "allocator.h"
-#include "btc_main.h"
+#include "osi/future.h"
+#include "osi/allocator.h"
+#include "btc/btc_main.h"
 #include "esp_gatts_api.h"
 
 #if (GATTS_INCLUDED == TRUE)
@@ -284,8 +284,8 @@ static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
                 esp_gatt_srvc_id_t        esp_srvc_id;
 
                 esp_srvc_id.id.inst_id = srvc_inst_id;
-                btc_gatts_uuid_format_convert(&esp_srvc_id.id.uuid,gatts_attr_db[i].att_desc.uuid_length,
-                                              gatts_attr_db[i].att_desc.uuid_p);
+                btc_gatts_uuid_format_convert(&esp_srvc_id.id.uuid,gatts_attr_db[i].att_desc.length,
+                                              gatts_attr_db[i].att_desc.value);
                 btc_to_bta_srvc_id(&srvc_id, &esp_srvc_id);
                 if (btc_creat_tab_env.is_use_svc != true) {
                     BTA_GATTS_CreateService(gatts_if, &srvc_id.id.uuid,

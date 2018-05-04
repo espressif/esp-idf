@@ -20,11 +20,11 @@
  *  Description:   Generic BTC state machine API
  *
  *****************************************************************************/
-#include "bt_target.h"
-#include "bt_defs.h"
-#include "allocator.h"
-#include "btc_common.h"
-#include "btc_sm.h"
+#include "common/bt_target.h"
+#include "common/bt_defs.h"
+#include "osi/allocator.h"
+#include "btc/btc_common.h"
+#include "btc/btc_sm.h"
 
 #if BTC_SM_INCLUDED
 /*****************************************************************************
