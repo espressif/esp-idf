@@ -84,6 +84,7 @@ static void vfs_fat_seekdir(void* ctx, DIR* pdir, long offset);
 static int vfs_fat_closedir(void* ctx, DIR* pdir);
 static int vfs_fat_mkdir(void* ctx, const char* name, mode_t mode);
 static int vfs_fat_rmdir(void* ctx, const char* name);
+static int vfs_fat_access(void* ctx, const char *path, int amode);
 
 static vfs_fat_ctx_t* s_fat_ctxs[FF_VOLUMES] = { NULL, NULL };
 //backwards-compatibility with esp_vfs_fat_unregister()
@@ -141,7 +142,8 @@ esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive, siz
         .seekdir_p = &vfs_fat_seekdir,
         .telldir_p = &vfs_fat_telldir,
         .mkdir_p = &vfs_fat_mkdir,
-        .rmdir_p = &vfs_fat_rmdir
+        .rmdir_p = &vfs_fat_rmdir,
+        .access_p = &vfs_fat_access,
     };
     size_t ctx_size = sizeof(vfs_fat_ctx_t) + max_files * sizeof(FIL);
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) calloc(1, ctx_size);
@@ -719,4 +721,32 @@ static int vfs_fat_rmdir(void* ctx, const char* name)
         return -1;
     }
     return 0;
+}
+
+static int vfs_fat_access(void* ctx, const char *path, int amode)
+{
+    FILINFO info;
+    int ret = 0;
+    FRESULT res;
+
+    vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
+
+    _lock_acquire(&fat_ctx->lock);
+    prepend_drive_to_path(fat_ctx, &path, NULL);
+    res = f_stat(path, &info);
+    _lock_release(&fat_ctx->lock);
+
+    if (res == FR_OK) {
+        if (((amode & W_OK) == W_OK) && ((info.fattrib & AM_RDO) == AM_RDO)) {
+            ret = -1;
+            errno = EACCES;
+        }
+        // There is no flag to test readable or executable: we assume that if
+        // it exists then it is readable and executable
+    } else {
+        ret = -1;
+        errno = ENOENT;
+    }
+
+    return ret;
 }
