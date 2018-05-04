@@ -32,7 +32,7 @@ Background
 
 - Although software running on the chip can transparently decrypt flash contents, by default it is made impossible for the UART bootloader to decrypt (or encrypt) data when flash encryption is enabled.
 
-- If flash encrption may be enabled, the programmer must take certain precautions when writing code that :ref:`uses encrypted flash <using-encrypted-flash>`.
+- If flash encryption may be enabled, the programmer must take certain precautions when writing code that :ref:`uses encrypted flash <using-encrypted-flash>`.
 
 .. _flash-encryption-initialisation:
 
