@@ -450,7 +450,8 @@ typedef struct {
   */
 typedef struct {
     uint16_t                   handle;                      /*!< The include service current attribute handle */
-    uint16_t                   incl_srvc_s_handle;          /*!< The start hanlde of the service which has been included */
+    uint16_t                   incl_srvc_s_handle;          /*!< The start handle of the service which has been included */
+    uint16_t                   incl_srvc_e_handle;          /*!< The end handle of the service which has been included */
     esp_bt_uuid_t              uuid;                        /*!< The include service uuid */
 } esp_gattc_incl_svc_elem_t;                                /*!< The gattc inclue service element */
 

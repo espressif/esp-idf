@@ -284,6 +284,7 @@ static void btc_gattc_fill_gatt_db_conversion(uint16_t count, uint16_t num, esp_
             for (int i = 0; i < db_size; i++) {
                 incl_result->handle = db[offset + i].attribute_handle;
                 incl_result->incl_srvc_s_handle = db[offset + i].start_handle;
+                incl_result->incl_srvc_e_handle = db[offset + i].end_handle;
                 btc128_to_bta_uuid(&bta_uuid, db[offset + i].uuid.uu);
                 bta_to_btc_uuid(&incl_result->uuid, &bta_uuid);
                 incl_result++;
