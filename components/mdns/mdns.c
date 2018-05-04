@@ -11,25 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #include "mdns.h"
-
-#include <string.h>
-#include "sdkconfig.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
-#include "freertos/semphr.h"
-#include "lwip/ip_addr.h"
-#include "lwip/pbuf.h"
-#include "lwip/igmp.h"
-#include "lwip/udp.h"
-#include "lwip/mld6.h"
-#include "lwip/priv/tcpip_priv.h"
-#include "esp_wifi.h"
-#include "esp_system.h"
-#include "esp_timer.h"
-#include "esp_event_loop.h"
-
 #include "mdns_private.h"
+#include "mdns_networking.h"
+#include <string.h>
 
 #ifdef MDNS_ENABLE_DEBUG
 void mdns_debug_packet(const uint8_t * data, size_t len);
@@ -38,7 +24,7 @@ void mdns_debug_packet(const uint8_t * data, size_t len);
 static const char * MDNS_DEFAULT_DOMAIN = "local";
 static const char * MDNS_SUB_STR = "_sub";
 
-static mdns_server_t * _mdns_server = NULL;
+mdns_server_t * _mdns_server = NULL;
 
 static volatile TaskHandle_t _mdns_service_task_handle = NULL;
 static SemaphoreHandle_t _mdns_service_semaphore = NULL;
@@ -110,14 +96,7 @@ static mdns_srv_item_t * _mdns_get_service_item(const char * service, const char
     return NULL;
 }
 
-/*
- * MDNS Server Networking
- * */
-
-/**
- * @brief  Queue RX packet action
- */
-static esp_err_t _mdns_send_rx_action(mdns_rx_packet_t * packet)
+esp_err_t _mdns_send_rx_action(mdns_rx_packet_t * packet)
 {
     mdns_action_t * action = NULL;
 
@@ -133,286 +112,6 @@ static esp_err_t _mdns_send_rx_action(mdns_rx_packet_t * packet)
         return ESP_ERR_NO_MEM;
     }
     return ESP_OK;
-}
-
-/**
- * @brief  the receive callback of the raw udp api. Packets are received here
- *
- */
-static void _udp_recv(void *arg, struct udp_pcb *upcb, struct pbuf *pb, const ip_addr_t *raddr, uint16_t rport)
-{
-    uint8_t i;
-    while (pb != NULL) {
-        struct pbuf * this_pb = pb;
-        pb = pb->next;
-        this_pb->next = NULL;
-
-        mdns_rx_packet_t * packet = (mdns_rx_packet_t *)malloc(sizeof(mdns_rx_packet_t));
-        if (!packet) {
-            //missed packet - no memory
-            pbuf_free(this_pb);
-            continue;
-        }
-
-        packet->tcpip_if = TCPIP_ADAPTER_IF_MAX;
-        packet->pb = this_pb;
-        packet->src_port = rport;
-        memcpy(&packet->src, raddr, sizeof(ip_addr_t));
-        packet->dest.type = packet->src.type;
-
-        if (packet->src.type == IPADDR_TYPE_V4) {
-            packet->ip_protocol = MDNS_IP_PROTOCOL_V4;
-            struct ip_hdr * iphdr = (struct ip_hdr *)(((uint8_t *)(packet->pb->payload)) - UDP_HLEN - IP_HLEN);
-            packet->dest.u_addr.ip4.addr = iphdr->dest.addr;
-        } else {
-            packet->ip_protocol = MDNS_IP_PROTOCOL_V6;
-            struct ip6_hdr * ip6hdr = (struct ip6_hdr *)(((uint8_t *)(packet->pb->payload)) - UDP_HLEN - IP6_HLEN);
-            memcpy(&packet->dest.u_addr.ip6.addr, (uint8_t *)ip6hdr->dest.addr, 16);
-        }
-        packet->multicast = ip_addr_ismulticast(&(packet->dest));
-
-        //lwip does not return the proper pcb if you have more than one for the same multicast address (but different interfaces)
-        struct netif * netif = NULL;
-        void * nif = NULL;
-        struct udp_pcb * pcb = NULL;
-        for (i=0; i<TCPIP_ADAPTER_IF_MAX; i++) {
-            pcb = _mdns_server->interfaces[i].pcbs[packet->ip_protocol].pcb;
-            tcpip_adapter_get_netif (i, &nif);
-            netif = (struct netif *)nif;
-            if (pcb && netif && netif == ip_current_input_netif ()) {
-                if (packet->src.type == IPADDR_TYPE_V4) {
-                    if ((packet->src.u_addr.ip4.addr & netif->netmask.u_addr.ip4.addr) != (netif->ip_addr.u_addr.ip4.addr & netif->netmask.u_addr.ip4.addr)) {
-                        //packet source is not in the same subnet
-                        pcb = NULL;
-                        break;
-                    }
-                }
-                packet->tcpip_if = i;
-                break;
-            }
-            pcb = NULL;
-        }
-
-        if (!pcb || !_mdns_server || !_mdns_server->action_queue
-          || _mdns_send_rx_action(packet) != ESP_OK) {
-            pbuf_free(this_pb);
-            free(packet);
-        }
-    }
-}
-
-/**
- * @brief  Stop PCB Main code
- */
-static void _udp_pcb_deinit(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protocol)
-{
-    if (!_mdns_server) {
-        return;
-    }
-    mdns_pcb_t * _pcb = &_mdns_server->interfaces[tcpip_if].pcbs[ip_protocol];
-    if (_pcb->pcb) {
-        _pcb->state = PCB_OFF;
-        udp_recv(_pcb->pcb, NULL, NULL);
-        udp_disconnect(_pcb->pcb);
-        udp_remove(_pcb->pcb);
-        free(_pcb->probe_services);
-        _pcb->pcb = NULL;
-        _pcb->probe_ip = false;
-        _pcb->probe_services = NULL;
-        _pcb->probe_services_len = 0;
-        _pcb->probe_running = false;
-        _pcb->failed_probes = 0;
-    }
-}
-
-/**
- * @brief  Start PCB V4
- */
-static esp_err_t _udp_pcb_v4_init(tcpip_adapter_if_t tcpip_if)
-{
-    tcpip_adapter_ip_info_t if_ip_info;
-
-    if (!_mdns_server || _mdns_server->interfaces[tcpip_if].pcbs[MDNS_IP_PROTOCOL_V4].pcb) {
-        return ESP_ERR_INVALID_STATE;
-    }
-
-    if (tcpip_adapter_get_ip_info(tcpip_if, &if_ip_info) || if_ip_info.ip.addr == 0) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    ip_addr_t interface_addr = IPADDR4_INIT(if_ip_info.ip.addr);
-
-    ip_addr_t multicast_addr;
-    IP_ADDR4(&multicast_addr, 224, 0, 0, 251);
-
-    if (igmp_joingroup((const struct ip4_addr *)&interface_addr.u_addr.ip4, (const struct ip4_addr *)&multicast_addr.u_addr.ip4)) {
-        return ESP_ERR_INVALID_STATE;
-    }
-
-    struct udp_pcb * pcb = udp_new_ip_type(IPADDR_TYPE_V4);
-    if (!pcb) {
-        return ESP_ERR_NO_MEM;
-    }
-
-    if (udp_bind(pcb, &interface_addr, MDNS_SERVICE_PORT) != 0) {
-        udp_remove(pcb);
-        return ESP_ERR_INVALID_STATE;
-    }
-
-    pcb->mcast_ttl = 1;
-    pcb->remote_port = MDNS_SERVICE_PORT;
-    ip_addr_copy(pcb->multicast_ip, interface_addr);
-    ip_addr_copy(pcb->remote_ip, multicast_addr);
-
-    _mdns_server->interfaces[tcpip_if].pcbs[MDNS_IP_PROTOCOL_V4].pcb = pcb;
-    _mdns_server->interfaces[tcpip_if].pcbs[MDNS_IP_PROTOCOL_V4].failed_probes = 0;
-    udp_recv(pcb, &_udp_recv, _mdns_server);
-
-    return ESP_OK;
-}
-
-/**
- * @brief  Start PCB V6
- */
-static esp_err_t _udp_pcb_v6_init(tcpip_adapter_if_t tcpip_if)
-{
-    ip_addr_t multicast_addr = IPADDR6_INIT(0x000002ff, 0, 0, 0xfb000000);
-    ip_addr_t interface_addr;
-    interface_addr.type = IPADDR_TYPE_V6;
-
-    if (!_mdns_server || _mdns_server->interfaces[tcpip_if].pcbs[MDNS_IP_PROTOCOL_V6].pcb) {
-        return ESP_ERR_INVALID_STATE;
-    }
-
-    if (tcpip_adapter_get_ip6_linklocal(tcpip_if, &interface_addr.u_addr.ip6)) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    if (mld6_joingroup(&(interface_addr.u_addr.ip6), &(multicast_addr.u_addr.ip6))) {
-        return ESP_ERR_INVALID_STATE;
-    }
-
-    struct udp_pcb * pcb = udp_new_ip_type(IPADDR_TYPE_V6);
-    if (!pcb) {
-        return ESP_ERR_NO_MEM;
-    }
-
-    if (udp_bind(pcb, &interface_addr, MDNS_SERVICE_PORT) != 0) {
-        udp_remove(pcb);
-        return ESP_ERR_INVALID_STATE;
-    }
-
-    pcb->remote_port = MDNS_SERVICE_PORT;
-    ip_addr_copy(pcb->remote_ip, multicast_addr);
-
-    _mdns_server->interfaces[tcpip_if].pcbs[MDNS_IP_PROTOCOL_V6].pcb = pcb;
-    _mdns_server->interfaces[tcpip_if].pcbs[MDNS_IP_PROTOCOL_V6].failed_probes = 0;
-    udp_recv(pcb, &_udp_recv, _mdns_server);
-
-    return ESP_OK;
-}
-
-/**
- * @brief  Start PCB Main code
- */
-static esp_err_t _udp_pcb_init(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protocol)
-{
-    if (ip_protocol == MDNS_IP_PROTOCOL_V4) {
-        return _udp_pcb_v4_init(tcpip_if);
-    } else if (ip_protocol == MDNS_IP_PROTOCOL_V6) {
-        return _udp_pcb_v6_init(tcpip_if);
-    }
-    return ESP_ERR_INVALID_ARG;
-}
-
-typedef struct {
-    struct tcpip_api_call call;
-    tcpip_adapter_if_t tcpip_if;
-    mdns_ip_protocol_t ip_protocol;
-    esp_err_t err;
-} mdns_api_call_t;
-
-/**
- * @brief  Start PCB from LwIP thread
- */
-static err_t _mdns_pcb_init_api(struct tcpip_api_call *api_call_msg)
-{
-    mdns_api_call_t * msg = (mdns_api_call_t *)api_call_msg;
-    msg->err = _udp_pcb_init(msg->tcpip_if, msg->ip_protocol);
-    return msg->err;
-}
-
-/**
- * @brief  Start PCB
- */
-static esp_err_t _mdns_pcb_init(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protocol)
-{
-    mdns_api_call_t msg = {
-        .tcpip_if = tcpip_if,
-        .ip_protocol = ip_protocol
-    };
-    tcpip_api_call(_mdns_pcb_init_api, (struct tcpip_api_call*)&msg);
-    return msg.err;
-}
-
-/**
- * @brief  Stop PCB from LwIP thread
- */
-static err_t _mdns_pcb_deinit_api(struct tcpip_api_call *api_call_msg)
-{
-    mdns_api_call_t * msg = (mdns_api_call_t *)api_call_msg;
-    _udp_pcb_deinit(msg->tcpip_if, msg->ip_protocol);
-    msg->err = ESP_OK;
-    return ESP_OK;
-}
-
-/**
- * @brief  Stop PCB
- */
-static esp_err_t _mdns_pcb_deinit(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protocol)
-{
-    mdns_api_call_t msg = {
-        .tcpip_if = tcpip_if,
-        .ip_protocol = ip_protocol
-    };
-    tcpip_api_call(_mdns_pcb_deinit_api, (struct tcpip_api_call*)&msg);
-    return msg.err;
-}
-
-
-/**
- * @brief  send packet over UDP
- *
- * @param  server       The server
- * @param  data         byte array containing the packet data
- * @param  len          length of the packet data
- *
- * @return length of sent packet or 0 on error
- */
-static size_t _udp_pcb_write(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protocol, const ip_addr_t *ip, uint16_t port, uint8_t * data, size_t len)
-{
-#ifndef MDNS_TEST_MODE
-    struct netif * netif = NULL;
-    void * nif = NULL;
-    esp_err_t err = tcpip_adapter_get_netif(tcpip_if, &nif);
-    netif = (struct netif *)nif;
-    if (err) {
-        return 0;
-    }
-
-    struct pbuf* pbt = pbuf_alloc(PBUF_TRANSPORT, len, PBUF_RAM);
-    if (pbt == NULL) {
-        return 0;
-    }
-    memcpy((uint8_t *)pbt->payload, data, len);
-
-    err = udp_sendto_if (_mdns_server->interfaces[tcpip_if].pcbs[ip_protocol].pcb, pbt, ip, port, netif);
-    pbuf_free(pbt);
-    if (err) {
-        return 0;
-    }
-#endif
-    return len;
 }
 
 /**
@@ -1235,7 +934,7 @@ static void _mdns_dispatch_tx_packet(mdns_tx_packet_t * p)
     mdns_debug_packet(packet, index);
 #endif
 
-    _udp_pcb_write(p->tcpip_if, p->ip_protocol, &p->dst, p->port, packet, index);
+    _mdns_udp_pcb_write(p->tcpip_if, p->ip_protocol, &p->dst, p->port, packet, index);
 }
 
 /**
@@ -4192,7 +3891,6 @@ static esp_err_t _mdns_stop_timer(){
  */
 static esp_err_t _mdns_service_task_start()
 {
-#ifndef MDNS_TEST_MODE
     if (!_mdns_service_semaphore) {
         _mdns_service_semaphore = xSemaphoreCreateMutex();
         if (!_mdns_service_semaphore) {
@@ -4212,8 +3910,6 @@ static esp_err_t _mdns_service_task_start()
         }
     }
     MDNS_SERVICE_UNLOCK();
-#endif
-
     return ESP_OK;
 }
 
@@ -4225,7 +3921,6 @@ static esp_err_t _mdns_service_task_start()
  */
 static esp_err_t _mdns_service_task_stop()
 {
-#ifndef MDNS_TEST_MODE
     MDNS_SERVICE_LOCK();
     _mdns_stop_timer();
     if (_mdns_service_task_handle) {
@@ -4241,7 +3936,6 @@ static esp_err_t _mdns_service_task_stop()
         }
     }
     MDNS_SERVICE_UNLOCK();
-#endif
     return ESP_OK;
 }
 
