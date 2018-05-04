@@ -165,6 +165,16 @@ static inline void IRAM_ATTR timer_count_reload(void)
     REG_WRITE(FRC_TIMER_LOAD_REG(1), REG_READ(FRC_TIMER_COUNT_REG(1)) - ALARM_OVERFLOW_VAL);
 }
 
+void esp_timer_impl_lock()
+{
+    portENTER_CRITICAL(&s_time_update_lock);
+}
+
+void esp_timer_impl_unlock()
+{
+    portEXIT_CRITICAL(&s_time_update_lock);
+}
+
 uint64_t IRAM_ATTR esp_timer_impl_get_time()
 {
     uint32_t timer_val;

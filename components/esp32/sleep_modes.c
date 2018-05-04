@@ -279,6 +279,11 @@ esp_err_t esp_light_sleep_start()
 {
     static portMUX_TYPE light_sleep_lock = portMUX_INITIALIZER_UNLOCKED;
     portENTER_CRITICAL(&light_sleep_lock);
+    /* We will be calling esp_timer_impl_advance inside DPORT access critical
+     * section. Make sure the code on the other CPU is not holding esp_timer
+     * lock, otherwise there will be deadlock.
+     */
+    esp_timer_impl_lock();
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
     uint64_t frc_time_at_start = esp_timer_get_time();
     DPORT_STALL_OTHER_CPU_START();
@@ -332,6 +337,7 @@ esp_err_t esp_light_sleep_start()
     }
     esp_set_time_from_rtc();
 
+    esp_timer_impl_unlock();
     DPORT_STALL_OTHER_CPU_END();
     rtc_wdt_disable();
     portEXIT_CRITICAL(&light_sleep_lock);
