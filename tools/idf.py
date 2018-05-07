@@ -346,8 +346,10 @@ def get_commandline_options():
 
 def main():
     parser = argparse.ArgumentParser(description='ESP-IDF build management tool')
-    parser.add_argument('-p', '--port', help="Serial port", default=None)
-    parser.add_argument('-b', '--baud', help="Baud rate", default=460800)
+    parser.add_argument('-p', '--port', help="Serial port",
+                        default=os.environ.get('ESPPORT', None))
+    parser.add_argument('-b', '--baud', help="Baud rate",
+                        default=os.environ.get('ESPBAUD', 460800))
     parser.add_argument('-C', '--project-dir', help="Project directory", default=os.getcwd())
     parser.add_argument('-B', '--build-dir', help="Build directory", default=None)
     parser.add_argument('-G', '--generator', help="Cmake generator", choices=GENERATOR_CMDS.keys())

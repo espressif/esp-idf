@@ -40,10 +40,14 @@ To set the serial port for flashing/monitoring:
 - CMake based: ``idf.py -p (port) flash``
 - GNU Make based: ``make flash ESPPORT=/dev/ttyUSB0``, or set in ``menuconfig``.
 
+(Note: ``idf.py`` will also use the ``ESPPORT`` environment variable for a default serial port, if no ``-p`` argument is provided.)
+
 To set the baud rate for flashing:
 
 - CMake based: ``idf.py -b 921600 flash``
 - GNU Make based: ``make flash ESPBAUD=921600``, or set in ``menuconfig``.
+
+(Note: ``idf.py`` will also use the ``ESPBAUD`` environment variable for a default baud rate, if no ``-b`` argument is provided.)
 
 Porting GNU Make Based Components to CMake
 ==========================================
