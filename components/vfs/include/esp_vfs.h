@@ -28,6 +28,15 @@
 extern "C" {
 #endif
 
+#ifndef _SYS_TYPES_FD_SET
+#error "VFS should be used with FD_SETSIZE and FD_SET from sys/types.h"
+#endif
+
+/**
+ * Maximum number of (global) file descriptors.
+ */
+#define MAX_FDS         FD_SETSIZE /* for compatibility with fd_set and select() */
+
 /**
  * Maximum length of path prefix (not including zero terminator)
  */
@@ -42,21 +51,6 @@ extern "C" {
  * Flag which indicates that FS needs extra context pointer in syscalls.
  */
 #define ESP_VFS_FLAG_CONTEXT_PTR    1
-
-/**
- * Flag which indicates that the FD space of the VFS implementation should be made
- * the same as the FD space in newlib. This means that the normal masking off
- * of VFS-independent fd bits is ignored and the full user-facing fd is passed to
- * the VFS implementation.
- *
- * Set the p_minimum_fd & p_maximum_fd pointers when registering the socket in
- * order to know what range of FDs can be used with the registered VFS.
- *
- * This is mostly useful for LWIP which shares the socket FD space with
- * socket-specific functions.
- *
- */
-#define ESP_VFS_FLAG_SHARED_FD_SPACE   2
 
 /**
  * @brief VFS definition structure
@@ -81,7 +75,7 @@ extern "C" {
  */
 typedef struct
 {
-    int flags;      /*!< ESP_VFS_FLAG_CONTEXT_PTR or ESP_VFS_FLAG_DEFAULT, plus optionally ESP_VFS_FLAG_SHARED_FD_SPACE  */
+    int flags;      /*!< ESP_VFS_FLAG_CONTEXT_PTR or ESP_VFS_FLAG_DEFAULT */
     union {
         ssize_t (*write_p)(void* p, int fd, const void * data, size_t size);
         ssize_t (*write)(int fd, const void * data, size_t size);
@@ -193,19 +187,20 @@ esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ct
 
 /**
  * Special case function for registering a VFS that uses a method other than
- * open() to open new file descriptors.
+ * open() to open new file descriptors from the interval <min_fd; max_fd).
  *
  * This is a special-purpose function intended for registering LWIP sockets to VFS.
  *
- * @param vfs  Pointer to esp_vfs_t. Meaning is the same as for esp_vfs_register().
+ * @param vfs Pointer to esp_vfs_t. Meaning is the same as for esp_vfs_register().
  * @param ctx Pointer to context structure. Meaning is the same as for esp_vfs_register().
- * @param p_min_fd If non-NULL, on success this variable is written with the minimum (global/user-facing) FD that this VFS will use. This is useful when ESP_VFS_FLAG_SHARED_FD_SPACE is set in vfs->flags.
- * @param p_max_fd If non-NULL, on success this variable is written with one higher than the maximum (global/user-facing) FD that this VFS will use. This is useful when ESP_VFS_FLAG_SHARED_FD_SPACE is set in vfs->flags.
+ * @param min_fd The smallest file descriptor this VFS will use.
+ * @param max_fd Upper boundary for file descriptors this VFS will use (the biggest file descriptor plus one).
  *
  * @return  ESP_OK if successful, ESP_ERR_NO_MEM if too many VFSes are
- *          registered.
+ *          registered, ESP_ERR_INVALID_ARG if the file descriptor boundaries
+ *          are incorrect.
  */
-esp_err_t esp_vfs_register_socket_space(const esp_vfs_t *vfs, void *ctx, int *p_min_fd, int *p_max_fd);
+esp_err_t esp_vfs_register_fd_range(const esp_vfs_t *vfs, void *ctx, int min_fd, int max_fd);
 
 /**
  * Unregister a virtual filesystem for given path prefix
@@ -233,10 +228,8 @@ int esp_vfs_unlink(struct _reent *r, const char *path);
 int esp_vfs_rename(struct _reent *r, const char *src, const char *dst);
 /**@}*/
 
-
 #ifdef __cplusplus
 } // extern "C"
 #endif
-
 
 #endif //__ESP_VFS_H__

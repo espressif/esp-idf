@@ -291,22 +291,22 @@ void esp_vfs_dev_uart_set_tx_line_endings(esp_line_endings_t mode)
     s_tx_mode = mode;
 }
 
-void esp_vfs_dev_uart_use_nonblocking(int fd)
+void esp_vfs_dev_uart_use_nonblocking(int uart_num)
 {
-    _lock_acquire_recursive(&s_uart_read_locks[fd]);
-    _lock_acquire_recursive(&s_uart_write_locks[fd]);
-    s_uart_tx_func[fd] = uart_tx_char;
-    s_uart_rx_func[fd] = uart_rx_char;
-    _lock_release_recursive(&s_uart_write_locks[fd]);
-    _lock_release_recursive(&s_uart_read_locks[fd]);
+    _lock_acquire_recursive(&s_uart_read_locks[uart_num]);
+    _lock_acquire_recursive(&s_uart_write_locks[uart_num]);
+    s_uart_tx_func[uart_num] = uart_tx_char;
+    s_uart_rx_func[uart_num] = uart_rx_char;
+    _lock_release_recursive(&s_uart_write_locks[uart_num]);
+    _lock_release_recursive(&s_uart_read_locks[uart_num]);
 }
 
-void esp_vfs_dev_uart_use_driver(int fd)
+void esp_vfs_dev_uart_use_driver(int uart_num)
 {
-    _lock_acquire_recursive(&s_uart_read_locks[fd]);
-    _lock_acquire_recursive(&s_uart_write_locks[fd]);
-    s_uart_tx_func[fd] = uart_tx_char_via_driver;
-    s_uart_rx_func[fd] = uart_rx_char_via_driver;
-    _lock_release_recursive(&s_uart_write_locks[fd]);
-    _lock_release_recursive(&s_uart_read_locks[fd]);
+    _lock_acquire_recursive(&s_uart_read_locks[uart_num]);
+    _lock_acquire_recursive(&s_uart_write_locks[uart_num]);
+    s_uart_tx_func[uart_num] = uart_tx_char_via_driver;
+    s_uart_rx_func[uart_num] = uart_rx_char_via_driver;
+    _lock_release_recursive(&s_uart_write_locks[uart_num]);
+    _lock_release_recursive(&s_uart_read_locks[uart_num]);
 }
