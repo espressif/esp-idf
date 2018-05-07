@@ -4,6 +4,9 @@
 #
 mainmenu "Espressif IoT Development Framework Configuration"
 
+config IDF_CMAKE
+    bool
+    option env="IDF_CMAKE"
 
 menu "SDK tool configuration"
 config TOOLPREFIX

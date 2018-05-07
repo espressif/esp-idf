@@ -83,7 +83,8 @@ function(kconfig_process_config)
         ${defaults_arg}
         --create-config-if-missing
         --env "COMPONENT_KCONFIGS=${kconfigs}"
-        --env "COMPONENT_KCONFIGS_PROJBUILD=${kconfigs_projbuild}")
+        --env "COMPONENT_KCONFIGS_PROJBUILD=${kconfigs_projbuild}"
+        --env "IDF_CMAKE=y")
 
     # Generate the menuconfig target (uses C-based mconf tool, either prebuilt or via mconf target above)
     add_custom_target(menuconfig
@@ -93,6 +94,7 @@ function(kconfig_process_config)
         COMMAND ${CMAKE_COMMAND} -E env
         "COMPONENT_KCONFIGS=${kconfigs}"
         "COMPONENT_KCONFIGS_PROJBUILD=${kconfigs_projbuild}"
+        "IDF_CMAKE=y"
         "KCONFIG_CONFIG=${SDKCONFIG}"
         ${MCONF} ${ROOT_KCONFIG}
         VERBATIM
