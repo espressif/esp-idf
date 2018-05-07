@@ -241,19 +241,34 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle handle,
         const esp_phy_calibration_data_t* cal_data)
 {
     esp_err_t err;
-    uint32_t cal_format_version = phy_get_rf_cal_version() & (~BIT(16));
-    ESP_LOGV(TAG, "phy_get_rf_cal_version: %d\n", cal_format_version);
-    err = nvs_set_u32(handle, PHY_CAL_VERSION_KEY, cal_format_version);
+
+    err = nvs_set_blob(handle, PHY_CAL_DATA_KEY, cal_data, sizeof(*cal_data));
     if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: store calibration data failed(0x%x)\n", __func__, err);
         return err;
     }
+
     uint8_t sta_mac[6];
     esp_efuse_mac_get_default(sta_mac);
     err = nvs_set_blob(handle, PHY_CAL_MAC_KEY, sta_mac, sizeof(sta_mac));
     if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: store calibration mac failed(0x%x)\n", __func__, err);
         return err;
     }
-    err = nvs_set_blob(handle, PHY_CAL_DATA_KEY, cal_data, sizeof(*cal_data));
+
+    uint32_t cal_format_version = phy_get_rf_cal_version() & (~BIT(16));
+    ESP_LOGV(TAG, "phy_get_rf_cal_version: %d\n", cal_format_version);
+    err = nvs_set_u32(handle, PHY_CAL_VERSION_KEY, cal_format_version);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: store calibration version failed(0x%x)\n", __func__, err);
+        return err;
+    }
+
+    err = nvs_commit(handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: store calibration nvs commit failed(0x%x)\n", __func__, err);
+    }
+    
     return err;
 }
 
