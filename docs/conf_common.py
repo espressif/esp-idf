@@ -31,7 +31,7 @@ if 'BUILDDIR' in os.environ:
     builddir = os.environ['BUILDDIR']
 
 # Call Doxygen to get XML files from the header files
-print "Calling Doxygen to generate latest XML files"
+print("Calling Doxygen to generate latest XML files")
 os.system("doxygen ../Doxyfile")
 # Doxygen has generated XML files in 'xml' directory.
 # Copy them to 'xml_in', only touching the files which have changed.
@@ -115,7 +115,7 @@ version = run_cmd_get_output('git describe')
 # The full version, including alpha/beta/rc tags.
 # If needed, nearest tag is returned by 'git describe --abbrev=0'.
 release = version
-print 'Version: {0}  Release: {1}'.format(version, release)
+print('Version: {0}  Release: {1}'.format(version, release))
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
