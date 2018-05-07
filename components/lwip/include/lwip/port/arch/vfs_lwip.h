@@ -16,11 +16,6 @@
 extern "C" {
 #endif
 
-/* Internal declarations used to ingreate LWIP port layer
-   to ESP-IDF VFS for POSIX I/O.
-*/
-extern int lwip_socket_offset;
-
 void esp_vfs_lwip_sockets_register();
 
 #ifdef __cplusplus
