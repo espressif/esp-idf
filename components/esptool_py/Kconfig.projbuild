@@ -2,6 +2,7 @@ menu "Serial flasher config"
 
 config ESPTOOLPY_PORT
 	string "Default serial port"
+    depends on !IDF_CMAKE
 	default "/dev/ttyUSB0"
 	help
         The serial port that's connected to the ESP chip. This can be overridden by setting the ESPPORT
@@ -11,6 +12,7 @@ config ESPTOOLPY_PORT
 
 choice ESPTOOLPY_BAUD
     prompt "Default baud rate"
+    depends on !IDF_CMAKE
     default ESPTOOLPY_BAUD_115200B
     help
         Default baud rate to use while communicating with the ESP chip. Can be overridden by
@@ -36,6 +38,7 @@ config ESPTOOLPY_BAUD_OTHER_VAL
 
 config ESPTOOLPY_BAUD
 	int
+    depends on !IDF_CMAKE
 	default 115200 if ESPTOOLPY_BAUD_115200B
 	default 230400 if ESPTOOLPY_BAUD_230400B
 	default 921600 if ESPTOOLPY_BAUD_921600B
@@ -44,6 +47,7 @@ config ESPTOOLPY_BAUD
 
 config ESPTOOLPY_COMPRESSED
 	bool "Use compressed upload"
+    depends on !IDF_CMAKE
 	default "y"
 	help
 		The flasher tool can send data compressed using zlib, letting the ROM on the ESP chip
