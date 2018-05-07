@@ -88,6 +88,8 @@ Type ``idf.py --help`` for a full list of commands. Here are a summary of the mo
 
 Multiple ``idf.py`` commands can be combined into one. For example, ``idf.py -p COM4 clean flash monitor`` will clean the source tree, then build the project and flash it to the ESP32 before running the serial monitor.
 
+.. note:: The environment variables ``ESPPORT`` and ``ESPBAUD`` can be used to set default values for the ``-p`` and ``-b`` options, respectively. Providing these options on the command line overrides the default.
+
 Advanced Commands
 ^^^^^^^^^^^^^^^^^
 
