@@ -67,7 +67,9 @@ esp_err_t PageManager::load(uint32_t baseSector, uint32_t sectorCount)
     if (lastItemIndex != SIZE_MAX) {
         auto last = PageManager::TPageListIterator(&lastPage);
         for (auto it = begin(); it != last; ++it) {
-            if (it->eraseItem(item.nsIndex, item.datatype, item.key) == ESP_OK) {
+
+            if ((it->state() != Page::PageState::FREEING) &&
+                    (it->eraseItem(item.nsIndex, item.datatype, item.key) == ESP_OK)) {
                 break;
             }
         }
@@ -77,23 +79,26 @@ esp_err_t PageManager::load(uint32_t baseSector, uint32_t sectorCount)
     for (auto it = begin(); it!= end(); ++it) {
         if (it->state() == Page::PageState::FREEING) {
             Page* newPage = &mPageList.back();
-            if (newPage->state() != Page::PageState::ACTIVE) {
-                auto err = activatePage();
+            if (newPage->state() == Page::PageState::ACTIVE) {
+                auto err = newPage->erase();
                 if (err != ESP_OK) {
                     return err;
                 }
-                newPage = &mPageList.back();
+                mPageList.erase(newPage);
+                mFreePageList.push_back(newPage);
             }
-            while (true) {
-                auto err = it->moveItem(*newPage);
-                if (err == ESP_ERR_NVS_NOT_FOUND) {
-                    break;
-                } else if (err != ESP_OK) {
-                    return err;
-                }
+            auto err = activatePage();
+            if (err != ESP_OK) {
+                return err;
+            }
+            newPage = &mPageList.back();
+
+            err = it->copyItems(*newPage);
+            if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+                return err;
             }
 
-            auto err = it->erase();
+            err = it->erase();
             if (err != ESP_OK) {
                 return err;
             }
@@ -109,7 +114,7 @@ esp_err_t PageManager::load(uint32_t baseSector, uint32_t sectorCount)
     if (mFreePageList.size() == 0) {
         return ESP_ERR_NVS_NO_FREE_PAGES;
     }
-    
+
     return ESP_OK;
 }
 
@@ -156,13 +161,9 @@ esp_err_t PageManager::requestNewPage()
     if (err != ESP_OK) {
         return err;
     }
-    while (true) {
-        err = erasedPage->moveItem(*newPage);
-        if (err == ESP_ERR_NVS_NOT_FOUND) {
-            break;
-        } else if (err != ESP_OK) {
-            return err;
-        }
+    err = erasedPage->copyItems(*newPage);
+    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+        return err;
     }
 
     err = erasedPage->erase();
@@ -173,7 +174,7 @@ esp_err_t PageManager::requestNewPage()
 #ifndef NDEBUG
     assert(usedEntries == newPage->getUsedEntryCount());
 #endif
-    
+
     mPageList.erase(maxUnusedItemsPageIt);
     mFreePageList.push_back(erasedPage);
 
