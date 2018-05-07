@@ -29,7 +29,12 @@
 #include <sys/fcntl.h>
 #include "esp_vfs.h"
 #include "esp_vfs_dev.h"
+#include "lwip/opt.h" // just for LWIP_SOCKET_OFFSET
 
+/**
+ * BTC_SPP_FDS is the number of file descriptors this VFS driver registers
+ */
+#define BTC_SPP_FDS         32
 
 #if (defined BTC_SPP_INCLUDED && BTC_SPP_INCLUDED == TRUE)
 
@@ -828,7 +833,7 @@ static ssize_t spp_vfs_read(int fd, void * dst, size_t size)
 void btc_spp_vfs_register()
 {
     esp_vfs_t vfs = {
-        .flags = ESP_VFS_FLAG_DEFAULT | ESP_VFS_FLAG_SHARED_FD_SPACE,
+        .flags = ESP_VFS_FLAG_DEFAULT,
         .write = spp_vfs_write,
         .open = NULL,
         .fstat = NULL,
@@ -836,7 +841,14 @@ void btc_spp_vfs_register()
         .read = spp_vfs_read,
         .fcntl = NULL
     };
-    ESP_ERROR_CHECK(esp_vfs_register_socket_space(&vfs, NULL, &spp_local_param.spp_min_fd, &spp_local_param.spp_max_fd));
+    // File descriptors from LWIP_SOCKET_OFFSET to MAX_FDS-1 are registered
+    // for sockets. So here we register from (LWIP_SOCKET_OFFSET - BTC_SPP_FDS)
+    // to (LWIP_SOCKET_OFFSET-1) leaving unregistered from 0 to
+    // .(LWIP_SOCKET_OFFSET - BTC_SPP_FDS - 1).
+    spp_local_param.spp_min_fd = LWIP_SOCKET_OFFSET - BTC_SPP_FDS;
+    assert(spp_local_param.spp_min_fd >= 0); //TODO return error instead
+    spp_local_param.spp_max_fd = LWIP_SOCKET_OFFSET;
+    ESP_ERROR_CHECK(esp_vfs_register_fd_range(&vfs, NULL, spp_local_param.spp_min_fd, spp_local_param.spp_max_fd));//TODO return error if fails
     spp_local_param.spp_fd = spp_local_param.spp_min_fd;
 }
 
