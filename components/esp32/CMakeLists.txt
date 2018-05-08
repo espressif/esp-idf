@@ -65,8 +65,8 @@ else()
     set(LD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ld)
     add_custom_command(
         OUTPUT esp32_out.ld
-        COMMAND "${CMAKE_C_COMPILER}" -C -P -x c -E -o esp32_out.ld -I ${CMAKE_BINARY_DIR} ${LD_DIR}/esp32.ld
-        MAIN_DEPENDENCY ${LD_DIR}/esp32.ld
+        COMMAND "${CMAKE_C_COMPILER}" -C -P -x c -E -o esp32_out.ld -I ${CONFIG_DIR} ${LD_DIR}/esp32.ld
+        MAIN_DEPENDENCY ${LD_DIR}/esp32.ld ${SDKCONFIG_H}
         COMMENT "Generating linker script..."
         VERBATIM)
     add_custom_target(esp32_linker_script DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/esp32_out.ld)

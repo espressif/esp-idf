@@ -825,7 +825,7 @@ For integration into IDEs and other build systems, when cmake runs the build pro
 - ``project_description.json`` contains some general information about the ESP-IDF project, configured paths, etc.
 - ``flasher_args.json`` contains esptool.py arguments to flash the project's binary files. There are also ``flash_*_args`` files which can be used directly with esptool.py. See `Flash arguments`_.
 - ``CMakeCache.txt`` is the CMake cache file which contains other information about the CMake process, toolchain, etc.
-- ``sdkconfig.json`` is a JSON-formatted version of the project configuration values.
+- ``config/sdkconfig.json`` is a JSON-formatted version of the project configuration values.
 
 .. _esp-idf-template: https://github.com/espressif/esp-idf-template
 .. _cmake: https://cmake.org
