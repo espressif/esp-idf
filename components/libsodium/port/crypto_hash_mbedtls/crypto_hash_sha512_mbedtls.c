@@ -67,7 +67,10 @@ crypto_hash_sha512_init(crypto_hash_sha512_state *state)
 {
     mbedtls_sha512_context ctx;
     mbedtls_sha512_init(&ctx);
-    mbedtls_sha512_starts(&ctx, 0);
+    int ret = mbedtls_sha512_starts_ret(&ctx, 0);
+    if (ret != 0) {
+        return ret;
+    }
     sha512_mbedtls_to_libsodium(state, &ctx);
     return 0;
 }
@@ -78,7 +81,10 @@ crypto_hash_sha512_update(crypto_hash_sha512_state *state,
 {
     mbedtls_sha512_context ctx;
     sha512_libsodium_to_mbedtls(&ctx, state);
-    mbedtls_sha512_update(&ctx, in, inlen);
+    int ret = mbedtls_sha512_update_ret(&ctx, in, inlen);
+    if (ret != 0) {
+        return ret;
+    }
     sha512_mbedtls_to_libsodium(state, &ctx);
     return 0;
 }
@@ -88,14 +94,12 @@ crypto_hash_sha512_final(crypto_hash_sha512_state *state, unsigned char *out)
 {
     mbedtls_sha512_context ctx;
     sha512_libsodium_to_mbedtls(&ctx, state);
-    mbedtls_sha512_finish(&ctx, out);
-    return 0;
+    return mbedtls_sha512_finish_ret(&ctx, out);
 }
 
 int
 crypto_hash_sha512(unsigned char *out, const unsigned char *in,
                    unsigned long long inlen)
 {
-    mbedtls_sha512(in, inlen, out, 0);
-    return 0;
+    return mbedtls_sha512_ret(in, inlen, out, 0);
 }
