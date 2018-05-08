@@ -2,63 +2,60 @@
 Standard Setup of Toolchain for Windows
 ***************************************
 
+.. note::
+   This is documentation for the CMake-based build system which is currently in preview release. The documentation may have gaps, and you may encounter bugs (please report either of these). To view documentation for the older GNU Make based build system, switch versions to the 'latest' master branch or a stable release.
+
+.. note::
+      The CMake-based build system is only supported on 64-bit versions of Windows.
+
 Introduction
 ============
 
-Windows doesn't have a built-in "make" environment, so as well as installing the toolchain you will need a GNU-compatible environment. We use the MSYS2_ environment to provide this. You don't need to use this environment all the time (you can use :doc:`Eclipse <eclipse-setup>` or some other front-end), but it runs behind the scenes.
+ESP-IDF requires some prerequisite tools to be installed so you can build firmware for the ESP32. The prerequisite tools include Git, a cross-compiler and the CMake build tool. We'll go over each one in this document.
 
+For this Getting Started we're going to use a command prompt, but after ESP-IDF is installed you can use :doc:`Eclipse <eclipse-setup>` or another graphical IDE with CMake support instead.
 
-Toolchain Setup 
-===============
+.. note::
+   Previous versions of ESP-IDF used a GNU Make based build system, which required the MSYS2_ Unix compatibility environment on Windows. This is no longer required.
 
-The quick setup is to download the Windows all-in-one toolchain & MSYS2 zip file from dl.espressif.com:
+ESP-IDF Tools Installer
+=======================
 
-https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain-20180110.zip
+The easiest way to install ESP-IDF's prerequisites is to download the ESP-IDF Tools installer from this URL:
 
-Unzip the zip file to ``C:\`` (or some other location, but this guide assumes ``C:\``) and it will create an ``msys32`` directory with a pre-prepared environment.
+https://dl.espressif.com/dl/esp-idf-tools-setup-1.0.exe
 
+The installer will automatically install the ESP32 Xtensa gcc toolchain, Ninja_ build tool, and a customized configuration tool called mconf. The installer can also download and run installers for CMake_ and Python_ 2.7 if these are not already installed on the computer.
 
-Check it Out
-============
+By default, the installer updates the Windows ``Path`` environment variable so all of these tools can be run from anywhere. If you disable this option, you will need to configure the environment where you are using ESP-IDF (terminal or chosen IDE) with the correct paths.
 
-Open a MSYS2 MINGW32 terminal window by running ``C:\msys32\mingw32.exe``. The environment in this window is a bash shell. Create a directory named ``esp`` that is a default location to develop ESP32 applications. To do so, run the following shell command::
+Note that this installer is for the ESP-IDF Tools package, it doesn't include ESP-IDF itself.
 
-    mkdir -p ~/esp
+Installing Git
+==============
 
-By typing ``cd ~/esp`` you can then move to the newly created directory. If there are no error messages you are done with this step.
+The ESP-IDF tools installer does not install Git. By default, the getting started guide assumes you will be using Git on the command line. You can download and install a command line Git for Windows (along with the "Git Bash" terminal) from `Git For Windows`_.
 
-.. figure:: ../../_static/msys2-terminal-window.png
-    :align: center
-    :alt: MSYS2 MINGW32 shell window
-    :figclass: align-center
+If you prefer to use a different graphical Git client, then you can install one such as `Github Desktop`. You will need to translate the Git commands in the Getting Started guide for use with your chosen Git client.
 
-    MSYS2 MINGW32 shell window
+Using a Terminal
+================
 
-Use this window in the following steps setting up development environment for ESP32.
+For the remaining Getting Started steps, we're going to use a terminal command prompt. It doesn't matter which command prompt you use:
 
+- You can use the built-in Windows Command Prompt, under the Start menu. Note that command line instructions in this documentation give "bash" commands for Mac OS or Linux first. The Windows Command Prompt equivalent is given afterwards.
+- You can use the "Git Bash" terminal which is part of `Git for Windows`_. This uses the same "bash" command prompt syntax as Mac OS or Linux. You can find it in the Start menu once installed.
+- If you have MSYS2_ installed (maybe from a previous ESP-IDF version), then you can also use the MSYS terminal.
 
 Next Steps
 ==========
 
 To carry on with development environment setup, proceed to section :ref:`get-started-get-esp-idf`.
 
-Updating The Environment
-========================
-
-When IDF is updated, sometimes new toolchains are required or new requirements are added to the Windows MSYS2 environment. To move any data from an old version of the precompiled environment to a new one:
-
-- Take the old MSYS2 environment (ie ``C:\msys32``) and move/rename it to a different directory (ie ``C:\msys32_old``).
-- Download the new precompiled environment using the steps above.
-- Unzip the new MSYS2 environment to ``C:\msys32`` (or another location).
-- Find the old ``C:\msys32_old\home`` directory and move this into ``C:\msys32``.
-- You can now delete the ``C:\msys32_old`` directory if you no longer need it.
-
-You can have independent different MSYS2 environments on your system, as long as they are in different directories.
-
-There are :ref:`also steps to update the existing environment without downloading a new one <updating-existing-windows-environment>`, although this is more complex.
-
 Related Documents
 =================
+
+For advanced users who want to customize the install process:
 
 .. toctree::
     :maxdepth: 1
@@ -67,3 +64,9 @@ Related Documents
 
 
 .. _MSYS2: https://msys2.github.io/
+.. _cmake: https://cmake.org/download/
+.. _ninja: https://ninja-build.org/
+.. _Python: https://www.python.org/downloads/windows/
+.. _Git for Windows: https://gitforwindows.org/
+.. _mconf: https://github.com/espressif/kconfig-frontends/releases/
+.. _Github Desktop: https://desktop.github.com/

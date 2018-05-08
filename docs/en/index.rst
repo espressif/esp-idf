@@ -3,6 +3,9 @@ ESP-IDF Programming Guide
 
 This is the documentation for Espressif IoT Development Framework (`esp-idf <https://github.com/espressif/esp-idf>`_). ESP-IDF is the official development framework for the `ESP32 <https://espressif.com/en/products/hardware/esp32/overview>`_ chip.
 
+.. note::
+   This is documentation for the the CMake-based build system which is currently in preview release. The documentation may have gaps, and you may encounter bugs (please report either of these). To view documentation for the older GNU Make based build system, switch versions to the 'latest' master branch or a stable release.
+
 ==================  ==================  ==================
 |Get Started|_      |API Reference|_    |H/W Reference|_
 ------------------  ------------------  ------------------
@@ -40,7 +43,6 @@ This is the documentation for Espressif IoT Development Framework (`esp-idf <htt
    API Reference <api-reference/index>
    H/W Reference <hw-reference/index>
    API Guides <api-guides/index>
-   CMake Build System Preview <api-guides/cmake-preview-index>
    Contribute <contribute/index>
    Resources <resources>
    Copyrights <COPYRIGHT>

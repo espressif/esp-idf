@@ -7,7 +7,7 @@ Set up OpenOCD
 ==============
 
 
-OpenOCD for Windows / MSYS2 is available for download from Github:
+OpenOCD for Windows is available for download from Github:
 
 https://github.com/espressif/openocd-esp32/releases
 
@@ -16,7 +16,7 @@ Download latest release archive with `win32` in its name, for example `openocd-e
 Extract the downloaded file in ``~/esp/`` directory.
 
     cd ~/esp
-    unzip /c/Users/<user>/Downloads/openocd-esp32-win32-<version>.zip 
+    unzip /c/Users/<user>/Downloads/openocd-esp32-win32-<version>.zip
 
 Next Steps
 ==========

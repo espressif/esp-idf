@@ -2,7 +2,7 @@
 IDF Monitor
 ***********
 
-The idf_monitor tool is a Python program which runs when the ``make monitor`` target is invoked in IDF.
+The idf_monitor tool is a Python program which runs when the ``idf.py monitor`` target is invoked in IDF.
 
 It is mainly a serial terminal program which relays serial data to and from the target device's serial port, but it has some other IDF-specific xfeatures.
 
@@ -66,7 +66,7 @@ By default, if an esp-idf app crashes then the panic handler prints registers an
 
 Optionally, the panic handler can be configured to run a serial "gdb stub" which can communicate with a gdb_ debugger program and allow memory to be read, variables and stack frames examined, etc. This is not as versatile as JTAG debugging, but no special hardware is required.
 
-To enable the gdbstub, run ``make menuconfig`` and set :ref:`CONFIG_ESP32_PANIC` option to ``Invoke GDBStub``.
+To enable the gdbstub, run ``idf.py menuconfig`` and set :ref:`CONFIG_ESP32_PANIC` option to ``Invoke GDBStub``.
 
 If this option is enabled and idf_monitor sees the gdb stub has loaded, it will automatically pause serial monitoring and run GDB with the correct arguments. After GDB exits, the board will be reset via the RTS serial line (if this is connected.)
 
@@ -78,9 +78,9 @@ Behind the scenes, the command idf_monitor runs is::
 Quick Compile and Flash
 =======================
 
-The keyboard shortcut ``Ctrl-T Ctrl-F`` will pause idf_monitor, run the ``make flash`` target, then resume idf_monitor. Any changed source files will be recompiled before re-flashing.
+The keyboard shortcut ``Ctrl-T Ctrl-F`` will pause idf_monitor, run the ``idf.py flash`` target, then resume idf_monitor. Any changed source files will be recompiled before re-flashing.
 
-The keyboard shortcut ``Ctrl-T Ctrl-A`` will pause idf-monitor, run the ``make app-flash`` target, then resume idf_monitor. This is similar to ``make flash``, but only the main app is compiled and reflashed.
+The keyboard shortcut ``Ctrl-T Ctrl-A`` will pause idf-monitor, run the ``idf.py app-flash`` target, then resume idf_monitor. This is similar to ``idf.py flash``, but only the main app is compiled and reflashed.
 
 
 Quick Reset
@@ -114,6 +114,7 @@ This program can still be run, via ``make simple_monitor``.
 
 idf_monitor is based on miniterm and shares the same basic keyboard shortcuts.
 
+.. note:: This target only works in the GNU Make based build system, not the CMake-based build system preview.
 
 Known Issues with idf_monitor
 =============================

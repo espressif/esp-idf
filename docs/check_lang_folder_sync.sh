@@ -20,8 +20,7 @@ find zh_CN -type f | cut -d/ -f2- | sort > file_list_zh_CN
 # format is to display new or different filenames
 DIFF_FORMAT="--unchanged-line-format= --old-line-format=[en]:%L --new-line-format=[zh_CN]:%L"
 
-# TEMPORARY MODIFICATION: -cmake docs are English-only for now
-FOLDER_DIFFERENCES=$(diff $DIFF_FORMAT file_list_en file_list_zh_CN | grep -v "cmake")
+FOLDER_DIFFERENCES=$(diff $DIFF_FORMAT file_list_en file_list_zh_CN)
 if ! [ -z "$FOLDER_DIFFERENCES" ]; then
     echo "$STARS"
     echo "Build failed due to the following differences in 'en' and 'zh_CN' folders:"
