@@ -1,14 +1,18 @@
 include(ExternalProject)
 
 macro(kconfig_set_variables)
+    set(CONFIG_DIR ${CMAKE_BINARY_DIR}/config)
     set_default(SDKCONFIG ${PROJECT_PATH}/sdkconfig)
-    set(SDKCONFIG_HEADER ${CMAKE_BINARY_DIR}/sdkconfig.h)
-    set(SDKCONFIG_CMAKE ${CMAKE_BINARY_DIR}/sdkconfig.cmake)
-    set(SDKCONFIG_JSON ${CMAKE_BINARY_DIR}/sdkconfig.json)
+    set(SDKCONFIG_HEADER ${CONFIG_DIR}/sdkconfig.h)
+    set(SDKCONFIG_CMAKE ${CONFIG_DIR}/sdkconfig.cmake)
+    set(SDKCONFIG_JSON ${CONFIG_DIR}/sdkconfig.json)
 
     set(ROOT_KCONFIG ${IDF_PATH}/Kconfig)
 
     set_default(SDKCONFIG_DEFAULTS "${SDKCONFIG}.defaults")
+
+    # ensure all source files can include sdkconfig.h
+    include_directories("${CONFIG_DIR}")
 endmacro()
 
 if(CMAKE_HOST_WIN32)
@@ -48,7 +52,7 @@ endif()
 
 # Find all Kconfig files for all components
 function(kconfig_process_config)
-    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/include/config")
+    file(MAKE_DIRECTORY "${CONFIG_DIR}")
     set(kconfigs)
     set(kconfigs_projbuild)
 
