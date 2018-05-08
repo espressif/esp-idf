@@ -267,9 +267,13 @@ def monitor(action, args):
         monitor_args += [ "-p", args.port ]
     monitor_args += [ "-b", project_desc["monitor_baud"] ]
     monitor_args += [ elf_file ]
+
+    idf_py = [ PYTHON ] + get_commandline_options()  # commands to re-run idf.py
+    monitor_args += [ "-m", " ".join("'%s'" % a for a in idf_py) ]
+
     if "MSYSTEM" is os.environ:
         monitor_args = [ "winpty" ] + monitor_args
-    _run_tool("idf_monitor", monitor_args, args.build_dir)
+    _run_tool("idf_monitor", monitor_args, args.project_dir)
 
 
 def clean(action, args):
@@ -311,28 +315,41 @@ ACTIONS = {
     "build":                 ( "all",        [], [] ),  # build is same as 'all' target
     "clean":                 ( clean,        [], [ "fullclean" ] ),
     "fullclean":             ( fullclean,    [], [] ),
-    "reconfigure":           ( reconfigure,  [], [] ),
+    "reconfigure":           ( reconfigure,  [], [ "menuconfig" ] ),
     "menuconfig":            ( build_target, [], [] ),
-    "size":                  ( build_target, [], [ "app" ] ),
-    "size-components":       ( build_target, [], [ "app" ] ),
-    "size-files":            ( build_target, [], [ "app" ] ),
+    "size":                  ( build_target, [ "app" ], [] ),
+    "size-components":       ( build_target, [ "app" ], [] ),
+    "size-files":            ( build_target, [ "app" ], [] ),
     "bootloader":            ( build_target, [], [] ),
     "bootloader-clean":      ( build_target, [], [] ),
-    "bootloader-flash":      ( flash,        [ "bootloader" ], [] ),
+    "bootloader-flash":      ( flash,        [ "bootloader" ], [ "erase_flash"] ),
     "app":                   ( build_target, [], [ "clean", "fullclean", "reconfigure" ] ),
-    "app-flash":             ( flash,        [], [ "app" ]),
+    "app-flash":             ( flash,        [ "app" ], [ "erase_flash"]),
     "partition_table":       ( build_target, [], [ "reconfigure" ] ),
-    "partition_table-flash": ( flash,        [ "partition_table" ], []),
-    "flash":                 ( flash,        [ "all" ], [ ] ),
+    "partition_table-flash": ( flash,        [ "partition_table" ], [ "erase_flash" ]),
+    "flash":                 ( flash,        [ "all" ], [ "erase_flash" ] ),
     "erase_flash":           ( erase_flash,  [], []),
     "monitor":               ( monitor,      [], [ "flash", "partition_table-flash", "bootloader-flash", "app-flash" ]),
 }
 
 
+def get_commandline_options():
+    """ Return all the command line options up to but not including the action """
+    result = []
+    for a in sys.argv:
+        if a in ACTIONS.keys():
+            break
+        else:
+            result.append(a)
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description='ESP-IDF build management tool')
-    parser.add_argument('-p', '--port', help="Serial port", default=None)
-    parser.add_argument('-b', '--baud', help="Baud rate", default=460800)
+    parser.add_argument('-p', '--port', help="Serial port",
+                        default=os.environ.get('ESPPORT', None))
+    parser.add_argument('-b', '--baud', help="Baud rate",
+                        default=os.environ.get('ESPBAUD', 460800))
     parser.add_argument('-C', '--project-dir', help="Project directory", default=os.getcwd())
     parser.add_argument('-B', '--build-dir', help="Build directory", default=None)
     parser.add_argument('-G', '--generator', help="Cmake generator", choices=GENERATOR_CMDS.keys())

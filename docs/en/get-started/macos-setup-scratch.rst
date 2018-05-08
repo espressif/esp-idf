@@ -2,6 +2,16 @@
 Setup Toolchain for Mac OS from Scratch
 ***************************************
 
+Package Manager
+===============
+
+To set up the toolchain from scratch, rather than `downloading a precocmpiled toolchain<macos-setup>`, you will need to install either the MacPorts_ or homebrew_ package manager.
+
+MacPorts needs a full XCode installation, while homebrew only needs XCode command line tools.
+
+    .. _homebrew: https://brew.sh/
+    .. _MacPorts: https://www.macports.org/install.php
+
 Install Prerequisites
 =====================
 
@@ -13,24 +23,28 @@ Install Prerequisites
 
     sudo pip install pyserial
 
+- install CMake & Ninja build:
+
+  - If you have HomeBrew, you can run::
+
+      brew install cmake ninja
+
+  - If you have MacPorts, you can run::
+
+      sudo port install cmake ninja
 
 Compile the Toolchain from Source
 =================================
 
 - Install dependencies:
 
-  - Install either MacPorts_ or homebrew_ package manager. MacPorts needs a full XCode installation, while homebrew only needs XCode command line tools.
-    
-    .. _homebrew: https://brew.sh/
-    .. _MacPorts: https://www.macports.org/install.php
-
   - with MacPorts::
 
-        sudo port install gsed gawk binutils gperf grep gettext wget libtool autoconf automake
+        sudo port install gsed gawk binutils gperf grep gettext wget libtool autoconf automake make
 
   - with homebrew::
 
-        brew install gnu-sed gawk binutils gperftools gettext wget help2man libtool autoconf automake
+        brew install gnu-sed gawk binutils gperftools gettext wget help2man libtool autoconf automake make
 
 Create a case-sensitive filesystem image::
 

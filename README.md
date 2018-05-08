@@ -22,7 +22,7 @@ Once you've found the project you want to work with, change to its directory and
 
 ## Configuring the Project
 
-`make menuconfig`
+`idf.py menuconfig`
 
 * Opens a text-based configuration menu for the project.
 * Use up & down arrow keys to navigate the menu.
@@ -36,50 +36,40 @@ Once done configuring, press Escape multiple times to exit and say "Yes" to save
 
 ## Compiling the Project
 
-`make all`
+`idf.py build`
 
 ... will compile app, bootloader and generate a partition table based on the config.
 
 ## Flashing the Project
 
-When `make all` finishes, it will print a command line to use esptool.py to flash the chip. However you can also do this from make by running:
+When the build finishes, it will print a command line to use esptool.py to flash the chip. However you can also do this automatically by running:
 
-`make flash`
+`idf.py flash`
 
-This will flash the entire project (app, bootloader and partition table) to a new chip. The settings for serial port flashing can be configured with `make menuconfig`.
+This will flash the entire project (app, bootloader and partition table) to a new chip. The settings for serial port flashing can be configured with `idf.py menuconfig`.
 
-You don't need to run `make all` before running `make flash`, `make flash` will automatically rebuild anything which needs it.
+You don't need to run `idf.py build` before running `idf.py flash`, `idf.py flash` will automatically rebuild anything which needs it.
 
 ## Viewing Serial Output
 
-The `make monitor` target uses the [idf_monitor tool](https://esp-idf.readthedocs.io/en/latest/get-started/idf-monitor.html) to display serial output from the ESP32. idf_monitor also has a range of features to decode crash output and interact with the device. [Check the documentation page for details](https://esp-idf.readthedocs.io/en/latest/get-started/idf-monitor.html).
+The `idf.py monitor` target uses the [idf_monitor tool](https://esp-idf.readthedocs.io/en/latest/get-started/idf-monitor.html) to display serial output from the ESP32. idf_monitor also has a range of features to decode crash output and interact with the device. [Check the documentation page for details](https://esp-idf.readthedocs.io/en/latest/get-started/idf-monitor.html).
 
 Exit the monitor by typing Ctrl-].
 
 To flash and monitor output in one pass, you can run:
 
-`make flash monitor`
+`idf.py flash monitor`
 
 ## Compiling & Flashing Just the App
 
 After the initial flash, you may just want to build and flash just your app, not the bootloader and partition table:
 
-* `make app` - build just the app.
-* `make app-flash` - flash just the app.
+* `idf.py app` - build just the app.
+* `idf.py app-flash` - flash just the app.
 
-`make app-flash` will automatically rebuild the app if it needs it.
+`idf.py app-flash` will automatically rebuild the app if it needs it.
 
 (In normal development there's no downside to reflashing the bootloader and partition table each time, if they haven't changed.)
-
-## Parallel Builds
-
-ESP-IDF supports compiling multiple files in parallel, so all of the above commands can be run as `make -jN` where `N` is the number of parallel make processes to run (generally N should be equal to or one more than the number of CPU cores in your system.)
-
-Multiple make functions can be combined into one. For example: to build the app & bootloader using 5 jobs in parallel, then flash everything, and then display serial output from the ESP32 run:
-
-```
-make -j5 flash monitor
-```
 
 ## The Partition Table
 
@@ -89,20 +79,20 @@ A single ESP32's flash can contain multiple apps, as well as many different kind
 
 Each entry in the partition table has a name (label), type (app, data, or something else), subtype and the offset in flash where the partition is loaded.
 
-The simplest way to use the partition table is to `make menuconfig` and choose one of the simple predefined partition tables:
+The simplest way to use the partition table is to `idf.py menuconfig` and choose one of the simple predefined partition tables:
 
 * "Single factory app, no OTA"
 * "Factory app, two OTA definitions"
 
-In both cases the factory app is flashed at offset 0x10000. If you `make partition_table` then it will print a summary of the partition table.
+In both cases the factory app is flashed at offset 0x10000. If you `idf.py partition_table` then it will print a summary of the partition table.
 
 For more details about partition tables and how to create custom variations, view the [`docs/en/api-guides/partition-tables.rst`](docs/en/api-guides/partition-tables.rst) file.
 
 ## Erasing Flash
 
-The `make flash` target does not erase the entire flash contents. However it is sometimes useful to set the device back to a totally erased state, particularly when making partition table changes or OTA app updates. To erase the entire flash, run `make erase_flash`.
+The `idf.py flash` target does not erase the entire flash contents. However it is sometimes useful to set the device back to a totally erased state, particularly when making partition table changes or OTA app updates. To erase the entire flash, run `idf.py erase_flash`.
 
-This can be combined with other targets, ie `make erase_flash flash` will erase everything and then re-flash the new app, bootloader and partition table.
+This can be combined with other targets, ie `idf.py erase_flash flash` will erase everything and then re-flash the new app, bootloader and partition table.
 
 # Resources
 
