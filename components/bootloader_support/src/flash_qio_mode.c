@@ -114,6 +114,19 @@ static uint32_t execute_flash_command(uint8_t command, uint32_t mosi_data, uint8
 
 /* dummy_len_plus values defined in ROM for SPI flash configuration */
 extern uint8_t g_rom_spiflash_dummy_len_plus[];
+uint32_t bootloader_read_flash_id()
+{
+    uint32_t old_ctrl_reg = SPIFLASH.ctrl.val;
+    SPIFLASH.ctrl.val = SPI_WP_REG; // keep WP high while idle, otherwise leave DIO mode
+    SPIFLASH.user.usr_dummy = 0;
+    SPIFLASH.user.usr_addr = 0;
+    SPIFLASH.user.usr_command = 1;
+    SPIFLASH.user2.usr_command_bitlen = 7;
+    uint32_t id = execute_flash_command(CMD_RDID, 0, 0, 24);
+    SPIFLASH.ctrl.val = old_ctrl_reg;
+    id = ((id & 0xff) << 16) | ((id >> 16) & 0xff) | (id & 0xff00);
+    return id;
+}
 
 void bootloader_enable_qio_mode(void)
 {
@@ -129,17 +142,12 @@ void bootloader_enable_qio_mode(void)
     /* Set up some of the SPIFLASH user/ctrl variables which don't change
        while we're probing using execute_flash_command() */
     old_ctrl_reg = SPIFLASH.ctrl.val;
-    SPIFLASH.ctrl.val = SPI_WP_REG; // keep WP high while idle, otherwise leave DIO mode
-    SPIFLASH.user.usr_dummy = 0;
-    SPIFLASH.user.usr_addr = 0;
-    SPIFLASH.user.usr_command = 1;
-    SPIFLASH.user2.usr_command_bitlen = 7;
 
-    raw_flash_id = execute_flash_command(CMD_RDID, 0, 0, 24);
+    raw_flash_id = g_rom_flashchip.device_id;
     ESP_LOGD(TAG, "Raw SPI flash chip id 0x%x", raw_flash_id);
 
-    mfg_id = raw_flash_id & 0xFF;
-    flash_id = (raw_flash_id >> 16) | (raw_flash_id & 0xFF00);
+    mfg_id = (raw_flash_id >> 16) & 0xFF;
+    flash_id = raw_flash_id & 0xFFFF;
     ESP_LOGD(TAG, "Manufacturer ID 0x%02x chip ID 0x%04x", mfg_id, flash_id);
 
     for (i = 0; i < NUM_CHIPS-1; i++) {
