@@ -243,7 +243,10 @@ int esp_aes_crypt_ctr( esp_aes_context *ctx,
  * \param input     Plaintext block
  * \param output    Output (ciphertext) block
  */
-void esp_aes_encrypt( esp_aes_context *ctx, const unsigned char input[16], unsigned char output[16] );
+int esp_internal_aes_encrypt( esp_aes_context *ctx, const unsigned char input[16], unsigned char output[16] );
+
+/** Deprecated, see esp_aes_internal_encrypt */
+void esp_aes_encrypt( esp_aes_context *ctx, const unsigned char input[16], unsigned char output[16] ) __attribute__((deprecated));
 
 /**
  * \brief           Internal AES block decryption function
@@ -254,7 +257,10 @@ void esp_aes_encrypt( esp_aes_context *ctx, const unsigned char input[16], unsig
  * \param input     Ciphertext block
  * \param output    Output (plaintext) block
  */
-void esp_aes_decrypt( esp_aes_context *ctx, const unsigned char input[16], unsigned char output[16] );
+int esp_internal_aes_decrypt( esp_aes_context *ctx, const unsigned char input[16], unsigned char output[16] );
+
+/** Deprecated, see esp_aes_internal_decrypt */
+void esp_aes_decrypt( esp_aes_context *ctx, const unsigned char input[16], unsigned char output[16] ) __attribute__((deprecated));
 
 #ifdef __cplusplus
 }
