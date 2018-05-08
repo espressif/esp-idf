@@ -129,7 +129,7 @@ For Windows Command Prompt users, the equivalent commands are::
 
     mkdir %userprofile%\esp
     cd %userprofile%\esp
-    git clone --recursive https://github.com/espressif/esp-idf.git
+    git clone --branch feature/cmake --recursive https://github.com/espressif/esp-idf.git
 
 .. highlight:: bash
 .. note::
@@ -139,6 +139,12 @@ For Windows Command Prompt users, the equivalent commands are::
         cd esp-idf
         git submodule update --init
 
+.. note::
+
+   The CMake-based build system preview uses a different Git branch to the default. This branch is ``feature/cmake``. If you missed the ``--branch`` option when cloning then you can switch branches on the command line::
+
+         cd esp-idf
+         git checkout feature/cmake
 
 .. _get-started-setup-path:
 
@@ -211,7 +217,7 @@ For Windows Command Prompt users::
     cd %userprofile%\esp
     idf.py menuconfig
 
-.. note:: If you get an error about ``idf.py`` not being found, check the ``tools`` directory is part of your Path as described above in :ref:`get-started-setup-path`.
+.. note:: If you get an error about ``idf.py`` not being found, check the ``tools`` directory is part of your Path as described above in :ref:`get-started-setup-path`. If there is no ``idf.py`` in the ``tools`` directory, check you have the correct branch for the CMake preview as shown under :ref:`get-started-get-esp-idf`.
 
 .. note:: Windows users, the Python 2.7 installer will try to configure Windows to associate files with a ``.py`` extension with Python 2. If a separate installed program (such as Visual Studio Python Tools) has created an association with a different version of Python, then running ``idf.py`` may not work. You can either run ``C:\Python27\python idf.py`` each time instead, or change the association that Windows uses for ``.py`` files.
 
