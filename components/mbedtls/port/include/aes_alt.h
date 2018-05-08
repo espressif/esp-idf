@@ -47,8 +47,8 @@ typedef esp_aes_context mbedtls_aes_context;
 #if defined(MBEDTLS_CIPHER_MODE_CTR)
 #define mbedtls_aes_crypt_ctr       esp_aes_crypt_ctr
 #endif
-#define mbedtls_aes_encrypt         esp_aes_encrypt
-#define mbedtls_aes_decrypt         esp_aes_decrypt
+#define mbedtls_internal_aes_encrypt         esp_internal_aes_encrypt
+#define mbedtls_internal_aes_decrypt         esp_internal_aes_decrypt
 #endif /* MBEDTLS_AES_ALT */
 
 #ifdef __cplusplus
