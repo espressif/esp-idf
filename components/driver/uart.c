@@ -210,7 +210,11 @@ esp_err_t uart_get_baudrate(uart_port_t uart_num, uint32_t* baudrate)
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
     uint32_t clk_div = (UART[uart_num]->clk_div.div_int << 4) | UART[uart_num]->clk_div.div_frag;
     UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
-    (*baudrate) = ((UART_CLK_FREQ) << 4) / clk_div;
+    uint32_t uart_clk_freq = esp_clk_apb_freq();
+    if(UART[uart_num]->conf0.tick_ref_always_on == 0) {
+        uart_clk_freq = REF_CLK_FREQ;
+    }
+    (*baudrate) = ((uart_clk_freq) << 4) / clk_div;
     return ESP_OK;
 }
 
