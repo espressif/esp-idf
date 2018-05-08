@@ -45,7 +45,11 @@ function run_tests()
     print_status "Cloning template from ${ESP_IDF_TEMPLATE_GIT}..."
     git clone ${ESP_IDF_TEMPLATE_GIT} template
     cd template
-    git checkout ${CI_BUILD_REF_NAME} || echo "Using esp-idf-template default branch..."
+    if [ -z $CHECKOUT_REF_SCRIPT ]; then
+        git checkout ${CI_BUILD_REF_NAME} || echo "Using esp-idf-template default branch..."
+    else
+        $CHECKOUT_REF_SCRIPT esp-idf-template
+    fi
 
     print_status "Try to clean fresh directory..."
     idf.py fullclean || exit $?
