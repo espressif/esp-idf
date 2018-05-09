@@ -306,6 +306,16 @@ static int vfs_fat_open(void* ctx, const char * path, int flags, int mode)
         fd = -1;
         goto out;
     }
+    if (flags & O_APPEND) {
+        res = f_lseek(&fat_ctx->files[fd], f_size(&fat_ctx->files[fd]));
+        if (res != FR_OK) {
+            ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+            errno = fresult_to_errno(res);
+            f_close(&fat_ctx->files[fd]);
+            file_cleanup(fat_ctx, fd);
+            fd = -1;
+        }
+    }
 out:
     _lock_release(&fat_ctx->lock);
     return fd;
