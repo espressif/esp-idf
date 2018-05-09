@@ -120,6 +120,9 @@ typedef struct {
 #define SDMMC_HOST_FLAG_4BIT    BIT(1)      /*!< host supports 4-line SD and MMC protocol */
 #define SDMMC_HOST_FLAG_8BIT    BIT(2)      /*!< host supports 8-line MMC protocol */
 #define SDMMC_HOST_FLAG_SPI     BIT(3)      /*!< host supports SPI protocol */
+#define SDMMC_HOST_MMC_CARD     BIT(8)      /*!< card in MMC mode (SD otherwise) */
+#define SDMMC_HOST_IO_CARD      BIT(9)      /*!< card in IO mode (SD moe only) */
+#define SDMMC_HOST_MEM_CARD     BIT(10)     /*!< card in memory mode (SD or MMC) */
     int slot;                   /*!< slot number, to be passed to host functions */
     int max_freq_khz;           /*!< max frequency supported by the host */
 #define SDMMC_FREQ_DEFAULT      20000       /*!< SD/MMC Default speed (limited by clock divider) */
