@@ -2163,7 +2163,6 @@ BaseType_t xAlreadyYielded = pdFALSE;
 					{
 						/* We can schedule the awoken task on this CPU. */
 						xYieldPending[xPortGetCoreID()] = pdTRUE;
-						break;
 					}
 					else
 					{
@@ -3023,6 +3022,8 @@ BaseType_t xTaskRemoveFromEventList( const List_t * const pxEventList )
 {
 TCB_t *pxUnblockedTCB;
 BaseType_t xReturn;
+BaseType_t xTaskCanBeReady;
+UBaseType_t i, uxTargetCPU;
 
 	/* THIS FUNCTION MUST BE CALLED FROM A CRITICAL SECTION.  It can also be
 	called from a critical section within an ISR. */
@@ -3046,7 +3047,24 @@ BaseType_t xReturn;
 		return pdFALSE;
 	}
 
-	if( uxSchedulerSuspended[ xPortGetCoreID() ] == ( UBaseType_t ) pdFALSE )
+	/* Determine if the task can possibly be run on either CPU now, either because the scheduler
+	   the task is pinned to is running or because a scheduler is running on any CPU. */
+	xTaskCanBeReady = pdFALSE;
+	if ( pxUnblockedTCB->xCoreID == tskNO_AFFINITY ) {
+		uxTargetCPU = xPortGetCoreID();
+		for (i = 0; i < portNUM_PROCESSORS; i++) {
+			if ( uxSchedulerSuspended[ i ] == ( UBaseType_t ) pdFALSE ) {
+				xTaskCanBeReady = pdTRUE;
+				break;
+			}
+		}
+	} else {
+		uxTargetCPU = pxUnblockedTCB->xCoreID;
+		xTaskCanBeReady = uxSchedulerSuspended[ uxTargetCPU ] == ( UBaseType_t ) pdFALSE;
+
+	}
+
+	if( xTaskCanBeReady )
 	{
 		( void ) uxListRemove( &( pxUnblockedTCB->xGenericListItem ) );
 		prvAddTaskToReadyList( pxUnblockedTCB );
@@ -3054,8 +3072,8 @@ BaseType_t xReturn;
 	else
 	{
 		/* The delayed and ready lists cannot be accessed, so hold this task
-		pending until the scheduler is resumed. */
-		vListInsertEnd( &( xPendingReadyList[ xPortGetCoreID() ] ), &( pxUnblockedTCB->xEventListItem ) );
+		pending until the scheduler is resumed on this CPU. */
+		vListInsertEnd( &( xPendingReadyList[ uxTargetCPU ] ), &( pxUnblockedTCB->xEventListItem ) );
 	}
 
 	if ( tskCAN_RUN_HERE(pxUnblockedTCB->xCoreID) && pxUnblockedTCB->uxPriority >= pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
