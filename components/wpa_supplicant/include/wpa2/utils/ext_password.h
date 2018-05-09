@@ -23,10 +23,10 @@ void ext_password_free(struct wpabuf *pw);
 
 #else /* CONFIG_EXT_PASSWORD */
 
-#define ext_password_init(b, p) ((void *) 1)
-#define ext_password_deinit(d) do { } while (0)
-#define ext_password_get(d, n) (NULL)
-#define ext_password_free(p) do { } while (0)
+#define ext_password_init(b, p)
+#define ext_password_deinit(d)
+#define ext_password_get(d, n)
+#define ext_password_free(p)
 
 #endif /* CONFIG_EXT_PASSWORD */
 
