@@ -13,6 +13,7 @@
 #include "eap.h"
 #include "eap_common.h"
 #include "eap_config.h"
+#include "esp_wpa2.h"
 
 /* RFC 4137 - EAP Peer state machine */
 
@@ -54,11 +55,48 @@ struct eap_method_ret {
 	Boolean allowNotifications;
 };
 
+struct eap_sm;
+
+struct eap_method {
+	/**
+	 * vendor -EAP Vendor-ID
+	 */
+	int vendor;
+
+	/**
+	 * method - EAP type number
+	 */
+	EapType method;	
+
+	/**
+	 * name - Name of the method (e.g., "TLS")
+	 */
+	const char *name;
+
+	struct eap_method *next;
+
+	void * (*init)(struct eap_sm *sm);
+	void (*deinit)(struct eap_sm *sm, void *priv);
+	struct wpabuf * (*process)(struct eap_sm *sm, void *priv,
+				   struct eap_method_ret *ret,
+				   const struct wpabuf *reqData);
+	bool (*isKeyAvailable)(struct eap_sm *sm, void *priv);
+	u8 * (*getKey)(struct eap_sm *sm, void *priv, size_t *len);
+	int (*get_status)(struct eap_sm *sm, void *priv, char *buf,
+			  size_t buflen, int verbose);
+	const u8 * (*get_identity)(struct eap_sm *sm, void *priv, size_t *len);
+	void (*free)(struct eap_method *method);
+	bool (*has_reauth_data)(struct eap_sm *sm, void *priv);
+	void (*deinit_for_reauth)(struct eap_sm *sm, void *priv);
+	void * (*init_for_reauth)(struct eap_sm *sm, void *priv);
+	u8 * (*getSessionId)(struct eap_sm *sm, void *priv, size_t *len);
+};
+
 #define CLIENT_CERT_NAME	"CLC"
 #define CA_CERT_NAME		"CAC"
 #define PRIVATE_KEY_NAME	"PVK"
 #define BLOB_NAME_LEN		3
-#define BLOB_NUM		2
+#define BLOB_NUM		3
 
 /**
  * struct eap_sm - EAP state machine data
@@ -80,9 +118,26 @@ struct eap_sm {
     	u8 wpa2_sig_cnt[SIG_WPA2_NUM];
 #endif
 	u8 finish_state;
+
+	int init_phase2;
+	bool peap_done;
+
+	u8 *eapKeyData;
+	size_t eapKeyDataLen;
+	struct wpabuf *lastRespData;
+	const struct eap_method *m;
 };
 
+wpa2_crypto_funcs_t wpa2_crypto_funcs;
+
+const u8 * eap_get_config_identity(struct eap_sm *sm, size_t *len);
+const u8 * eap_get_config_password(struct eap_sm *sm, size_t *len);
+const u8 * eap_get_config_password2(struct eap_sm *sm, size_t *len, int *hash);
+const u8 * eap_get_config_new_password(struct eap_sm *sm, size_t *len);
 struct eap_peer_config * eap_get_config(struct eap_sm *sm);
 const struct wpa_config_blob * eap_get_config_blob(struct eap_sm *sm, const char *name);
+bool wifi_sta_get_enterprise_disable_time_check(void);
+
+struct wpabuf * eap_sm_build_identity_resp(struct eap_sm *sm, u8 id, int encrypted);
 
 #endif /* EAP_I_H */
