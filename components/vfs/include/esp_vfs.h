@@ -233,6 +233,23 @@ int esp_vfs_unlink(struct _reent *r, const char *path);
 int esp_vfs_rename(struct _reent *r, const char *src, const char *dst);
 /**@}*/
 
+/**
+ * Translate given vfs file descriptor to the underlying file descriptor.
+ *
+ * If given pctx is not NULL, then the ctx corresponding to the appropriate
+ * mount point will be written to it.
+ *
+ * If the given descriptor is invalid, then -1 is returned, and `pctx` is left
+ * intact.
+ *
+ * @param fd  Vfs file descriptor.
+ * @param pctx  Pointer to the application-dependent context pointer. If not
+ *              NULL, then the context corresponding to the appropriate mount
+ *              point will be written to it.
+ *
+ * @return  Underlying file descriptor, or -1 in case of an error.
+ */
+int esp_vfs_translate_fd(int fd, void **pctx);
 
 #ifdef __cplusplus
 } // extern "C"
