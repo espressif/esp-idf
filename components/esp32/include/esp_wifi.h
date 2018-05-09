@@ -99,6 +99,7 @@ typedef struct {
     int                    tx_buf_type;            /**< WiFi TX buffer type */
     int                    static_tx_buf_num;      /**< WiFi static TX buffer number */
     int                    dynamic_tx_buf_num;     /**< WiFi dynamic TX buffer number */
+    int                    csi_enable;             /**< WiFi channel state information enable flag */
     int                    ampdu_rx_enable;        /**< WiFi AMPDU RX feature enable flag */
     int                    ampdu_tx_enable;        /**< WiFi AMPDU TX feature enable flag */
     int                    nvs_enable;             /**< WiFi NVS flash enable flag */
@@ -119,6 +120,12 @@ typedef struct {
 #define WIFI_DYNAMIC_TX_BUFFER_NUM CONFIG_ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
 #else
 #define WIFI_DYNAMIC_TX_BUFFER_NUM 0
+#endif
+
+#if CONFIG_ESP32_WIFI_CSI_ENABLED
+#define WIFI_CSI_ENABLED         1
+#else
+#define WIFI_CSI_ENABLED         0
 #endif
 
 #if CONFIG_ESP32_WIFI_AMPDU_RX_ENABLED
@@ -175,6 +182,7 @@ extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
     .tx_buf_type = CONFIG_ESP32_WIFI_TX_BUFFER_TYPE,\
     .static_tx_buf_num = WIFI_STATIC_TX_BUFFER_NUM,\
     .dynamic_tx_buf_num = WIFI_DYNAMIC_TX_BUFFER_NUM,\
+    .csi_enable = WIFI_CSI_ENABLED,\
     .ampdu_rx_enable = WIFI_AMPDU_RX_ENABLED,\
     .ampdu_tx_enable = WIFI_AMPDU_TX_ENABLED,\
     .nvs_enable = WIFI_NVS_ENABLED,\
@@ -963,6 +971,59 @@ esp_err_t esp_wifi_get_event_mask(uint32_t *mask);
   */
 
 esp_err_t esp_wifi_80211_tx(wifi_interface_t ifx, const void *buffer, int len, bool en_sys_seq);
+
+/**
+  * @brief The RX callback function of Channel State Information(CSI)  data. 
+  *
+  *        Each time a CSI data is received, the callback function will be called.
+  *
+  * @param ctx context argument, passed to esp_wifi_set_csi_rx_cb() when registering callback function. 
+  * @param data CSI data received. 
+  *
+  */
+typedef void (* wifi_csi_cb_t)(void *ctx, wifi_csi_info_t *data);
+
+
+/**
+  * @brief Register the RX callback function of CSI data.
+  *
+  *        Each time a CSI data is received, the callback function will be called.
+  *
+  * @param cb  callback
+  * @param ctx context argument, passed to callback function
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  */
+
+esp_err_t esp_wifi_set_csi_rx_cb(wifi_csi_cb_t cb, void *ctx);
+
+/**
+  * @brief Set CSI data configuration
+  *
+  * @param config configuration
+  * 
+  * return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_START: WiFi is not started by esp_wifi_start or promiscuous mode is not enabled
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  */
+esp_err_t esp_wifi_set_csi_config(const wifi_csi_config_t *config);
+
+/**
+  * @brief Enable or disable CSI
+  *
+  * @param en true - enable, false - disable
+  *
+  * return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_START: WiFi is not started by esp_wifi_start or promiscuous mode is not enabled
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  */
+esp_err_t esp_wifi_set_csi(bool en);
 
 #ifdef __cplusplus
 }
