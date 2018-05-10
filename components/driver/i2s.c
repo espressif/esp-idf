@@ -487,6 +487,7 @@ static void IRAM_ATTR i2s_intr_handler_default(void *arg)
     lldesc_t *finish_desc;
 
     if (i2s_reg->int_st.out_dscr_err || i2s_reg->int_st.in_dscr_err) {
+        ESP_EARLY_LOGE(I2S_TAG, "dma error, interrupt status: 0x%08x", i2s_reg->int_st.val);
         if (p_i2s->i2s_queue) {
             i2s_event.type = I2S_EVENT_DMA_ERROR;
             if (xQueueIsQueueFullFromISR(p_i2s->i2s_queue)) {
@@ -581,14 +582,13 @@ static i2s_dma_t *i2s_create_dma_queue(i2s_port_t i2s_num, int dma_buf_count, in
     memset(dma->buf, 0, sizeof(char*) * dma_buf_count);
 
     for (bux_idx = 0; bux_idx < dma_buf_count; bux_idx++) {
-        dma->buf[bux_idx] = (char*) malloc(dma_buf_len * sample_size);
+        dma->buf[bux_idx] = (char*) heap_caps_calloc(1, dma_buf_len * sample_size, MALLOC_CAP_DMA);
         if (dma->buf[bux_idx] == NULL) {
             ESP_LOGE(I2S_TAG, "Error malloc dma buffer");
             i2s_destroy_dma_queue(i2s_num, dma);
             return NULL;
         }
         ESP_LOGD(I2S_TAG, "Addr[%d] = %d", bux_idx, (int)dma->buf[bux_idx]);
-        memset(dma->buf[bux_idx], 0, dma_buf_len * sample_size);
     }
 
     dma->desc = (lldesc_t**) malloc(sizeof(lldesc_t*) * dma_buf_count);
@@ -598,7 +598,7 @@ static i2s_dma_t *i2s_create_dma_queue(i2s_port_t i2s_num, int dma_buf_count, in
         return NULL;
     }
     for (bux_idx = 0; bux_idx < dma_buf_count; bux_idx++) {
-        dma->desc[bux_idx] = (lldesc_t*) malloc(sizeof(lldesc_t));
+        dma->desc[bux_idx] = (lldesc_t*) heap_caps_malloc(sizeof(lldesc_t), MALLOC_CAP_DMA);
         if (dma->desc[bux_idx] == NULL) {
             ESP_LOGE(I2S_TAG, "Error malloc dma description entry");
             i2s_destroy_dma_queue(i2s_num, dma);
