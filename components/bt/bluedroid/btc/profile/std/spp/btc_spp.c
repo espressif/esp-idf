@@ -353,6 +353,7 @@ static void btc_spp_uninit(void)
     }
     for (size_t i = 1; i <= BTA_JV_MAX_RFC_SR_SESSION; i++) {
         if (spp_local_param.spp_slots[i] != NULL && !(spp_local_param.spp_slots[i]->connected)) {
+            BTA_JvRfcommStopServer(spp_local_param.spp_slots[i]->sdp_handle, (void *)spp_local_param.spp_slots[i]->id);
             BTA_JvDeleteRecord(spp_local_param.spp_slots[i]->sdp_handle);
             BTA_JvFreeChannel(spp_local_param.spp_slots[i]->scn, BTA_JV_CONN_TYPE_RFCOMM);
             free_spp_slot(spp_local_param.spp_slots[i]);
