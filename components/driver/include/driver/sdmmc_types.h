@@ -120,9 +120,6 @@ typedef struct {
 #define SDMMC_HOST_FLAG_4BIT    BIT(1)      /*!< host supports 4-line SD and MMC protocol */
 #define SDMMC_HOST_FLAG_8BIT    BIT(2)      /*!< host supports 8-line MMC protocol */
 #define SDMMC_HOST_FLAG_SPI     BIT(3)      /*!< host supports SPI protocol */
-#define SDMMC_HOST_MMC_CARD     BIT(8)      /*!< card in MMC mode (SD otherwise) */
-#define SDMMC_HOST_IO_CARD      BIT(9)      /*!< card in IO mode (SD moe only) */
-#define SDMMC_HOST_MEM_CARD     BIT(10)     /*!< card in memory mode (SD or MMC) */
     int slot;                   /*!< slot number, to be passed to host functions */
     int max_freq_khz;           /*!< max frequency supported by the host */
 #define SDMMC_FREQ_DEFAULT      20000       /*!< SD/MMC Default speed (limited by clock divider) */
@@ -152,6 +149,9 @@ typedef struct {
     sdmmc_csd_t csd;            /*!< decoded CSD (Card-Specific Data) register value */
     sdmmc_scr_t scr;            /*!< decoded SCR (SD card Configuration Register) value */
     uint16_t rca;               /*!< RCA (Relative Card Address) */
+#define SDMMC_HOST_MMC_CARD     BIT(8)      /*!< card in MMC mode (SD otherwise) */
+#define SDMMC_HOST_IO_CARD      BIT(9)      /*!< card in IO mode (SD moe only) */
+#define SDMMC_HOST_MEM_CARD     BIT(10)     /*!< card in memory mode (SD or MMC) */    
     uint32_t is_mem : 1;        /*!< Bit indicates if the card is a memory card */
     uint32_t is_sdio : 1;       /*!< Bit indicates if the card is an IO card */
     uint32_t num_io_functions : 3;  /*!< If is_sdio is 1, contains the number of IO functions on the card */
