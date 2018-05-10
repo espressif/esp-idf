@@ -214,7 +214,7 @@ Being in terminal window, go to directory of ``hello_world`` application by typi
 
 For Windows Command Prompt users::
 
-    cd %userprofile%\esp
+    cd %userprofile%\esp\hello_world
     idf.py menuconfig
 
 .. note:: If you get an error about ``idf.py`` not being found, check the ``tools`` directory is part of your Path as described above in :ref:`get-started-setup-path`. If there is no ``idf.py`` in the ``tools`` directory, check you have the correct branch for the CMake preview as shown under :ref:`get-started-get-esp-idf`.
@@ -369,7 +369,7 @@ Another solution is to update only what has changed. This method is useful if yo
 
 For Windows Command Prompt users::
 
-    cd %userprofile%\esp
+    cd %userprofile%\esp\esp-idf
     git pull
     git submodule update --init --recursive
 
