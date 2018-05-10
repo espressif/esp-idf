@@ -47,7 +47,7 @@ BluFi 配网的配置 Station 包含广播、连接、服务发现、协商共�
 
 配网流程图请参考下图：
 
-.. figure:: https://github.com/Freddy-Jin/ESP32_BLUFI_-Design_Guidelines/blob/master/Docs/Figure1.png
+.. figure:: ../../_static/api-guides_blufi.png
     :align: center
     :figclass: align-center
 
