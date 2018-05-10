@@ -9,7 +9,7 @@
 #
 function(set_default variable default_value)
     if(NOT ${variable})
-        if($ENV{${variable}})
+        if(DEFINED ENV{${variable}} AND NOT "$ENV{${variable}}" STREQUAL "")
             set(${variable} $ENV{${variable}} PARENT_SCOPE)
         else()
             set(${variable} ${default_value} PARENT_SCOPE)
@@ -132,7 +132,7 @@ endmacro()
 # Append a single line to the file specified
 # The line ending is determined by the host OS
 function(file_append_line file line)
-    if(ENV{MSYSTEM} OR CMAKE_HOST_WIN32)
+    if(DEFINED ENV{MSYSTEM} OR CMAKE_HOST_WIN32)
         set(line_ending "\r\n")
     else() # unix
         set(line_ending "\n")
