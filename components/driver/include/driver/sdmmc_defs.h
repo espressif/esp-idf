@@ -169,6 +169,9 @@
 #define EXT_CSD_CARD_TYPE_52M_V12       0x0b
 #define EXT_CSD_CARD_TYPE_52M_V12_18    0x0f
 
+/* EXT_CSD MMC */
+#define EXT_CSD_MMC_SIZE 512
+
 /* MMC_SWITCH access mode */
 #define MMC_SWITCH_MODE_CMD_SET         0x00    /* Change the command set */
 #define MMC_SWITCH_MODE_SET_BITS        0x01    /* Set bits in value */
