@@ -130,6 +130,8 @@ You can also use an IDE with CMake integration. The IDE will want to know the pa
 
 When adding custom non-build steps like "flash" to the IDE, it is recommended to execute ``idf.py`` for these "special" commands.
 
+.. _example-project-structure:
+
 Example Project
 ===============
 
@@ -189,6 +191,8 @@ Minimal project::
       include($ENV{IDF_PATH}/tools/cmake/project.cmake)
       project(myProject)
 
+
+.. _project-mandatory-parts:
 
 Mandatory Parts
 ---------------
@@ -758,12 +762,23 @@ For project components (not part of ESP-IDF), there are a few options:
 
 The best option will depend on your particular project and its users.
 
+Build System Metadata
+=====================
+
+For integration into IDEs and other build systems, when CMake runs the build process generates a number of metadata files in the ``build/`` directory. To regenerate these files, run ``cmake`` or ``idf.py reconfigure`` (or any other ``idf.py`` build command).
+
+- ``compile_commands.json`` is a standard format JSON file which describes every source file which is compiled in the project. A CMake feature generates this file, and many IDEs know how to parse it.
+- ``project_description.json`` contains some general information about the ESP-IDF project, configured paths, etc.
+- ``flasher_args.json`` contains esptool.py arguments to flash the project's binary files. There are also ``flash_*_args`` files which can be used directly with esptool.py. See `Flash arguments`_.
+- ``CMakeCache.txt`` is the CMake cache file which contains other information about the CMake process, toolchain, etc.
+- ``config/sdkconfig.json`` is a JSON-formatted version of the project configuration values.
+
 .. _gnu-make-to-cmake:
 
 Migrating from ESP-IDF GNU Make System
 ======================================
 
-Some aspects of the CMake-based ESP-IDF build system are very similar to the older GNU Make-based system. For example, to adapt a ``component.mk`` file to ``CMakeLists.txt`` variables like ``COMPONENT_SRCS`` and ``COMPONENT_SRCDIRS`` can stay the same and the syntax only needs changing to CMake syntax.
+Some aspects of the CMake-based ESP-IDF build system are very similar to the older GNU Make-based system. For example, to adapt a ``component.mk`` file to ``CMakeLists.txt`` variables like ``COMPONENT_ADD_INCLUDEDIRS`` and ``COMPONENT_SRCDIRS`` can stay the same and the syntax only needs changing to CMake syntax.
 
 Automatic Conversion Tool
 -------------------------
@@ -782,6 +797,14 @@ It does so by running ``make`` to expand the ESP-IDF build system variables whic
 
 The conversion tool is not capable of dealing with complex Makefile logic or unusual targets. These will need to be converted by hand.
 
+'main' is no longer a component
+-------------------------------
+
+In the GNU Make build system ``main`` is a component with a ``component.mk`` file like other components.
+
+Due to CMake requirements for building executables, ``main`` source files are now linked directly into the final binary. The source files in ``main`` must be listed in the ``MAIN_SRCS`` variable (see :ref:`project mandatory variables <project-mandatory-parts>` for more details). At least one source file has to be listed here (although it doesn't need to contain anything in particular).
+
+In general, it's better not to have too many source files in ``MAIN_SRCS``. If you find that you are adding many source files here, see if you reorganize and group some into project components (see the :ref:`example project structure <example-project-structure>`, above).
 
 No Longer Available in CMake
 ----------------------------
@@ -793,10 +816,10 @@ Some features are significantly different or removed in the CMake-based system. 
 - ``CC``, ``LD``, ``AR``, ``OBJCOPY``: Full paths to each tool from the gcc xtensa cross-toolchain. Use ``CMAKE_C_COMPILER``, ``CMAKE_C_LINK_EXECUTABLE``, ``CMAKE_OBJCOPY``, etc instead. `Full list here <cmake language variables_>`_.
 - ``HOSTCC``, ``HOSTLD``, ``HOSTAR``: Full names of each tool from the host native toolchain. These are no longer provided, external projects should detect any required host toolchain manually.
 - ``COMPONENT_ADD_LDFLAGS``: Used to override linker flags. Use the CMake `target_link_libraries`_ command instead.
-- ``COMPONENT_ADD_LINKER_DEPS``: List of files that linking should depend on. `target_link_libraries`_ will usually infer these dependencies automatically for files like linker scripts.
-- ``COMPONENT_SUBMODULES``: No longer used by ESP-IDF components, the build system will automatically enumerate all submodules in the repo.
+- ``COMPONENT_ADD_LINKER_DEPS``: List of files that linking should depend on. `target_link_libraries`_ will usually infer these dependencies automatically. For linker scripts, use the provided custom CMake function ``target_linker_scripts``.
+- ``COMPONENT_SUBMODULES``: No longer used, the build system will automatically enumerate all submodules in the ESP-IDF repo.
 - ``COMPONENT_EXTRA_INCLUDES``: Used to be an alternative to ``COMPONENT_PRIV_INCLUDEDIRS`` for absolute paths. Use ``COMPONENT_PRIV_INCLUDEDIRS`` for all cases now (can be relative or absolute).
-- ``COMPONENT_OBJS``: Used to be specified as a list of object files. Now specified as an optional list of source files via ``COMPONENT_SRCS``.
+- ``COMPONENT_OBJS``: Previously, component sources could be specified as a list of object files. Now they can be specified as an list of source files via ``COMPONENT_SRCS``.
 - ``COMPONENT_EXTRA_CLEAN``: Set property ``ADDITIONAL_MAKE_CLEAN_FILES`` instead but note :ref:`CMake has some restrictions around this functionality <ADDITIONAL_MAKE_CLEAN_FILES_note>`.
 - ``COMPONENT_OWNBUILDTARGET`` & ``COMPONENT_OWNCLEANTARGET``: Use CMake `ExternalProject`_ instead. See :ref:`component-build-full-override` for full details.
 - ``COMPONENT_CONFIG_ONLY``: Call ``register_config_only_component()`` instead. See `Configuration-Only Components`_.
@@ -815,17 +838,6 @@ No Longer Necessary
 -------------------
 
 It is no longer necessary to set ``COMPONENT_SRCDIRS`` if setting ``COMPONENT_SRCS`` (in fact, in the CMake-based system ``COMPONENT_SRCDIRS`` is ignored if ``COMPONENT_SRCS`` is set).
-
-Build System Metadata
-=====================
-
-For integration into IDEs and other build systems, when cmake runs the build process generates a number of metadata files in the ``build/`` directory. To regenerate these files, run ``cmake`` or ``idf.py reconfigure`` (or any other ``idf.py`` build command).
-
-- ``compile_commands.json`` is a standard format JSON file which describes every source file which is compiled in the project. A CMake feature generates this file, and many IDEs know how to parse it.
-- ``project_description.json`` contains some general information about the ESP-IDF project, configured paths, etc.
-- ``flasher_args.json`` contains esptool.py arguments to flash the project's binary files. There are also ``flash_*_args`` files which can be used directly with esptool.py. See `Flash arguments`_.
-- ``CMakeCache.txt`` is the CMake cache file which contains other information about the CMake process, toolchain, etc.
-- ``config/sdkconfig.json`` is a JSON-formatted version of the project configuration values.
 
 .. _esp-idf-template: https://github.com/espressif/esp-idf-template
 .. _cmake: https://cmake.org
