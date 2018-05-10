@@ -247,18 +247,29 @@ Here are couple of tips on navigation and use of ``menuconfig``:
 
 .. _get-started-build-flash:
 
-Build and Flash
-===============
+Build The Project and Flash
+===========================
 
 .. highlight:: bash
 
-Now you can build and flash the application. Run::
+Now you can build the project. Run::
+
+    idf.py build
+
+This command will compile the application and all the ESP-IDF components, generate bootloader, partition table, and application binaries.
+
+Flash To A Device
+=================
+
+Now you can flash the application to the ESP32 board. Run::
 
     idf.py -p PORT flash
 
 Replace PORT with the name of your ESP32 board's serial port. On Windows, serial ports have names like ``COM1``. On MacOS, they start with ``/dev/cu.``. On Linux, they start with ``/dev/tty``. (See :doc:`establish-serial-connection` for full details.)
 
-This will compile the application and all the ESP-IDF components, generate bootloader, partition table, and application binaries, and flash these binaries to your ESP32 board.
+This step will flash the binaries that you just built to your ESP32 board.
+
+.. note:: Running ``idf.py build`` before ``idf.py flash`` is not actually necessary, the flash step will automatically build the project if required before flashing.
 
 .. highlight:: none
 
