@@ -46,7 +46,7 @@ The procedure is as follows:
 
 The flow chat of BluFi:
 
-.. figure:: https://github.com/Freddy-Jin/ESP32_BLUFI_-Design_Guidelines/blob/master/Docs/Figure1.png
+.. figure:: ../../_static/api-guides_blufi.png
     :align: center
     :figclass: align-center
 
