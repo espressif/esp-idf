@@ -890,6 +890,13 @@ UT_004_09:
     - UT_T1_1
     - UT_psram
 
+UT_004_10:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_psram
+
 IT_001_01:
   <<: *test_template
   tags:
