@@ -701,6 +701,13 @@ UT_001_09:
     - UT_T1_1
     - UT_default
 
+UT_001_10:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_default
+
 UT_002_01:
   <<: *unit_test_template
   tags:
@@ -764,6 +771,13 @@ UT_002_09:
     - UT_T1_1
     - UT_release
 
+UT_002_10:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_release
+
 UT_003_01:
   <<: *unit_test_template
   tags:
@@ -821,6 +835,13 @@ UT_003_08:
     - UT_single_core
 
 UT_003_09:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_single_core
+
+UT_003_10:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
@@ -891,6 +912,13 @@ UT_004_09:
     - UT_psram
 
 UT_004_10:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+    - UT_psram
+
+UT_004_11:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
