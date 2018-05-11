@@ -84,3 +84,18 @@ uint64_t esp_timer_impl_get_time();
  * @return minimal period of periodic timer, in microseconds
  */
 uint64_t esp_timer_impl_get_min_period_us();
+
+/**
+ * @brief obtain internal critical section used esp_timer implementation
+ * This can be used when a sequence of calls to esp_timer has to be made,
+ * and it is necessary that the state of the timer is consistent between
+ * the calls. Should be treated in the same way as a spinlock.
+ * Call esp_timer_impl_unlock to release the lock
+ */
+void esp_timer_impl_lock();
+
+
+/**
+ * @brief counterpart of esp_timer_impl_lock
+ */
+void esp_timer_impl_unlock();
