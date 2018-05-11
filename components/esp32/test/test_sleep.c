@@ -127,7 +127,7 @@ TEST_CASE("light sleep stress test with periodic esp_timer", "[deepsleep]")
 #endif
 
 
-TEST_CASE("light sleep duration is correct", "[deepsleep]")
+TEST_CASE("light sleep duration is correct", "[deepsleep][ignore]")
 {
     // don't power down XTAL — powering it up takes different time on
     // different boards
