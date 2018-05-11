@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SMARTCONFIG_H
-#define SMARTCONFIG_H
+#ifndef SMARTCONFIG_ACK_H
+#define SMARTCONFIG_ACK_H
 
 #ifdef __cplusplus
 extern "C" {

@@ -25,7 +25,7 @@
 #include "esp_log.h"
 #include "esp_wifi.h"
 #include "esp_smartconfig.h"
-#include "smartconfig.h"
+#include "smartconfig_ack.h"
 
 static const char *TAG = "smartconfig";
 
@@ -50,7 +50,7 @@ static void sc_ack_send_task(void *pvParameters)
     int remote_port = (ack->type == SC_ACK_TYPE_ESPTOUCH) ? SC_ACK_TOUCH_SERVER_PORT : SC_ACK_AIRKISS_SERVER_PORT;
     struct sockaddr_in server_addr;
     socklen_t sin_size = sizeof(server_addr);
-    int send_sock = 0;
+    int send_sock = -1;
     int optval = 1;
     int sendlen;
     int ack_len = (ack->type == SC_ACK_TYPE_ESPTOUCH) ? SC_ACK_TOUCH_LEN : SC_ACK_AIRKISS_LEN;
@@ -78,10 +78,9 @@ static void sc_ack_send_task(void *pvParameters)
 
             /* Create UDP socket. */
             send_sock = socket(AF_INET, SOCK_DGRAM, 0);
-            if (send_sock < 0) {
+            if ((send_sock < LWIP_SOCKET_OFFSET) || (send_sock > (FD_SETSIZE - 1))) {
                 ESP_LOGE(TAG,  "Creat udp socket failed");
-                free(ack);
-                vTaskDelete(NULL);
+                goto _end;	
             }
 
             setsockopt(send_sock, SOL_SOCKET, SO_BROADCAST | SO_REUSEADDR, &optval, sizeof(int));
@@ -100,9 +99,7 @@ static void sc_ack_send_task(void *pvParameters)
                         if (ack->cb) {
                             ack->cb(SC_STATUS_LINK_OVER, remote_ip);
                         }
-                        close(send_sock);
-                        free(ack);
-                        vTaskDelete(NULL);
+                        goto _end;
                     }
                 }
                 else {
@@ -112,9 +109,7 @@ static void sc_ack_send_task(void *pvParameters)
                         continue;
                     }
                     ESP_LOGE(TAG, "send failed, errno %d", err);
-                    close(send_sock);
-                    free(ack);
-                    vTaskDelete(NULL);
+                    goto _end;
                 }
             }
         }
@@ -123,6 +118,10 @@ static void sc_ack_send_task(void *pvParameters)
         }
     }
 
+_end:
+    if ((send_sock >= LWIP_SOCKET_OFFSET) && (send_sock <= (FD_SETSIZE - 1))) {
+        close(send_sock);
+    }
     free(ack);
     vTaskDelete(NULL);
 }
@@ -145,7 +144,10 @@ void sc_ack_send(sc_ack_t *param)
 
     s_sc_ack_send = true;
 
-    xTaskCreate(sc_ack_send_task, "sc_ack_send_task", SC_ACK_TASK_STACK_SIZE, ack, SC_ACK_TASK_PRIORITY, NULL);
+    if (xTaskCreate(sc_ack_send_task, "sc_ack_send_task", SC_ACK_TASK_STACK_SIZE, ack, SC_ACK_TASK_PRIORITY, NULL) != pdPASS) {
+        ESP_LOGE(TAG, "Create sending smartconfig ACK task fail");
+        free(ack);
+    }
 }
 
 void sc_ack_send_stop(void)
