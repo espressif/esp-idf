@@ -130,6 +130,21 @@ You can also use an IDE with CMake integration. The IDE will want to know the pa
 
 When adding custom non-build steps like "flash" to the IDE, it is recommended to execute ``idf.py`` for these "special" commands.
 
+.. setting-python-interpreter:
+
+Setting the Python Interpreter
+------------------------------
+
+Currently, ESP-IDF only works with Python 2.7. If you have a system where the default ``python`` interpreter is Python 3.x, this can lead to problems.
+
+If using ``idf.py``, running ``idf.py`` as ``python2 $IDF_PATH/tools/idf.py ...`` will work around this issue (``idf.py`` will tell other Python processes to use the same Python interpreter). You can set up a shell alias or another script to simplify the command.
+
+If using CMake directly, running ``cmake -D PYTHON=python2 ...`` will cause CMake to override the default Python interpreter.
+
+If using an IDE with CMake, setting the ``PYTHON`` value as a CMake cache override in the IDE UI will override the default Python interpreter.
+
+To manage the Python version more generally via the command line, check out the tools pyenv_ or virtualenv_. These let you change the default python version.
+
 .. _example-project-structure:
 
 Example Project
@@ -860,3 +875,6 @@ It is no longer necessary to set ``COMPONENT_SRCDIRS`` if setting ``COMPONENT_SR
 .. _target_link_libraries: https://cmake.org/cmake/help/v3.5/command/target_link_libraries.html#command:target_link_libraries
 .. _cmake_toolchain_file: https://cmake.org/cmake/help/v3.5/variable/CMAKE_TOOLCHAIN_FILE.html
 .. _quirc: https://github.com/dlbeer/quirc
+.. _pyenv: https://github.com/pyenv/pyenv#README
+.. _virtualenv: https://virtualenv.pypa.io/en/stable/
+
