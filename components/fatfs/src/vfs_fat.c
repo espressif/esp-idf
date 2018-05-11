@@ -32,6 +32,7 @@ typedef struct {
     FATFS fs;           /* fatfs library FS structure */
     char tmp_path_buf[FILENAME_MAX+3];  /* temporary buffer used to prepend drive name to the path */
     char tmp_path_buf2[FILENAME_MAX+3]; /* as above; used in functions which take two path arguments */
+    bool *o_append;  /* O_APPEND is stored here for each max_files entries (because O_APPEND is not compatible with FA_OPEN_APPEND) */
     FIL files[0];   /* array with max_files entries; must be the final member of the structure */
 } vfs_fat_ctx_t;
 
@@ -147,12 +148,18 @@ esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive, siz
     if (fat_ctx == NULL) {
         return ESP_ERR_NO_MEM;
     }
+    fat_ctx->o_append = malloc(max_files * sizeof(bool));
+    if (fat_ctx->o_append == NULL) {
+        free(fat_ctx);
+        return ESP_ERR_NO_MEM;
+    }
     fat_ctx->max_files = max_files;
     strlcpy(fat_ctx->fat_drive, fat_drive, sizeof(fat_ctx->fat_drive) - 1);
     strlcpy(fat_ctx->base_path, base_path, sizeof(fat_ctx->base_path) - 1);
 
     esp_err_t err = esp_vfs_register(base_path, &vfs, fat_ctx);
     if (err != ESP_OK) {
+        free(fat_ctx->o_append);
         free(fat_ctx);
         return err;
     }
@@ -180,6 +187,7 @@ esp_err_t esp_vfs_fat_unregister_path(const char* base_path)
         return err;
     }
     _lock_close(&fat_ctx->lock);
+    free(fat_ctx->o_append);
     free(fat_ctx);
     s_fat_ctxs[ctx] = NULL;
     return ESP_OK;
@@ -306,6 +314,13 @@ static int vfs_fat_open(void* ctx, const char * path, int flags, int mode)
         fd = -1;
         goto out;
     }
+    // O_APPEND need to be stored because it is not compatible with FA_OPEN_APPEND:
+    //  - FA_OPEN_APPEND means to jump to the end of file only after open()
+    //  - O_APPEND means to jump to the end only before each write()
+    // Other VFS drivers handles O_APPEND well (to the best of my knowledge),
+    // therefore this flag is stored here (at this VFS level) in order to save
+    // memory.
+    fat_ctx->o_append[fd] = (flags & O_APPEND) == O_APPEND;
 out:
     _lock_release(&fat_ctx->lock);
     return fd;
@@ -315,8 +330,16 @@ static ssize_t vfs_fat_write(void* ctx, int fd, const void * data, size_t size)
 {
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
     FIL* file = &fat_ctx->files[fd];
+    FRESULT res;
+    if (fat_ctx->o_append[fd]) {
+        if ((res = f_lseek(file, f_size(file))) != FR_OK) {
+            ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+            errno = fresult_to_errno(res);
+            return -1;
+        }
+    }
     unsigned written = 0;
-    FRESULT res = f_write(file, data, size, &written);
+    res = f_write(file, data, size, &written);
     if (res != FR_OK) {
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
         errno = fresult_to_errno(res);
