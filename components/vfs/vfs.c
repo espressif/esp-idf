@@ -138,6 +138,16 @@ esp_err_t esp_vfs_register_fd_range(const esp_vfs_t *vfs, void *ctx, int min_fd,
     return ret;
 }
 
+esp_err_t esp_vfs_register_with_id(const esp_vfs_t *vfs, void *ctx, esp_vfs_id_t *vfs_id)
+{
+    if (vfs_id == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    *vfs_id = -1;
+    return esp_vfs_register_common("", LEN_PATH_PREFIX_IGNORED, vfs, ctx, vfs_id);
+}
+
 esp_err_t esp_vfs_unregister(const char* base_path)
 {
     for (size_t i = 0; i < s_vfs_count; ++i) {
@@ -162,6 +172,48 @@ esp_err_t esp_vfs_unregister(const char* base_path)
         }
     }
     return ESP_ERR_INVALID_STATE;
+}
+
+esp_err_t esp_vfs_register_fd(esp_vfs_id_t vfs_id, int *fd)
+{
+    if (vfs_id < 0 || vfs_id >= s_vfs_count || fd == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_err_t ret = ESP_ERR_NO_MEM;
+    _lock_acquire(&s_fd_table_lock);
+    for (int i = 0; i < MAX_FDS; ++i) {
+        if (s_fd_table[i].vfs_index == -1) {
+            s_fd_table[i].permanent = true;
+            s_fd_table[i].vfs_index = vfs_id;
+            s_fd_table[i].local_fd = i;
+            *fd = i;
+            ret = ESP_OK;
+            break;
+        }
+    }
+    _lock_release(&s_fd_table_lock);
+
+    return ret;
+}
+
+esp_err_t esp_vfs_unregister_fd(esp_vfs_id_t vfs_id, int fd)
+{
+    esp_err_t ret = ESP_ERR_INVALID_ARG;
+
+    if (vfs_id < 0 || vfs_id >= s_vfs_count || fd < 0 || fd >= MAX_FDS) {
+        return ret;
+    }
+
+    _lock_acquire(&s_fd_table_lock);
+    fd_table_t *item = s_fd_table + fd;
+    if (item->permanent == true && item->vfs_index == vfs_id && item->local_fd == fd) {
+        *item = FD_TABLE_ENTRY_UNUSED;
+        ret = ESP_OK;
+    }
+    _lock_release(&s_fd_table_lock);
+
+    return ret;
 }
 
 static inline const vfs_entry_t *get_vfs_for_index(int index)
