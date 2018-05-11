@@ -49,6 +49,7 @@ typedef struct {
     char                  cc[3];   /**< country code string */
     uint8_t               schan;   /**< start channel */
     uint8_t               nchan;   /**< total channel number */
+    int8_t                max_tx_power;   /**< maximum tx power */
     wifi_country_policy_t policy;  /**< country policy */
 } wifi_country_t;
 
@@ -155,6 +156,7 @@ typedef struct {
     uint32_t phy_lr:1;                    /**< bit: 3 flag to identify if low rate is enabled or not */
     uint32_t wps:1;                       /**< bit: 4 flag to identify if WPS is supported or not */
     uint32_t reserved:27;                 /**< bit: 5..31 reserved */
+    wifi_country_t country;               /**< country information of AP */
 } wifi_ap_record_t;
 
 typedef enum {
@@ -230,6 +232,7 @@ typedef union {
 /** @brief Description of STA associated with AP */
 typedef struct {
     uint8_t mac[6];  /**< mac address */
+    int8_t  rssi;    /**< current average rssi of sta connected */
     uint32_t phy_11b:1;      /**< bit: 0 flag to identify if 11b mode is enabled or not */
     uint32_t phy_11g:1;      /**< bit: 1 flag to identify if 11g mode is enabled or not */
     uint32_t phy_11n:1;      /**< bit: 2 flag to identify if 11n mode is enabled or not */
