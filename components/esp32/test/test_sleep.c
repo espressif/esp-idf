@@ -91,6 +91,35 @@ TEST_CASE("light sleep stress test", "[deepsleep]")
     vSemaphoreDelete(done);
 }
 
+TEST_CASE("light sleep stress test with periodic esp_timer", "[deepsleep]")
+{
+    void timer_func(void* arg)
+    {
+        ets_delay_us(50);
+    }
+
+    SemaphoreHandle_t done = xSemaphoreCreateCounting(2, 0);
+    esp_sleep_enable_timer_wakeup(1000);
+    esp_timer_handle_t timer;
+    esp_timer_create_args_t config = {
+            .callback = &timer_func,
+    };
+    TEST_ESP_OK(esp_timer_create(&config, &timer));
+    esp_timer_start_periodic(timer, 500);
+    xTaskCreatePinnedToCore(&test_light_sleep, "ls1", 4096, done, UNITY_FREERTOS_PRIORITY + 1, NULL, 0);
+#if portNUM_PROCESSORS == 2
+    xTaskCreatePinnedToCore(&test_light_sleep, "ls1", 4096, done, UNITY_FREERTOS_PRIORITY + 1, NULL, 1);
+#endif
+    xSemaphoreTake(done, portMAX_DELAY);
+#if portNUM_PROCESSORS == 2
+    xSemaphoreTake(done, portMAX_DELAY);
+#endif
+    vSemaphoreDelete(done);
+    esp_timer_stop(timer);
+    esp_timer_delete(timer);
+}
+
+
 #ifdef CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
 #define MAX_SLEEP_TIME_ERROR_US 200
 #else
