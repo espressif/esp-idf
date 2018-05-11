@@ -18,6 +18,7 @@ config TOOLPREFIX
 
 config PYTHON
     string "Python 2 interpreter"
+    depends on !IDF_CMAKE
     default "python"
     help
         The executable name/path that is used to run python. On some systems Python 2.x

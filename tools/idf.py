@@ -345,6 +345,9 @@ def get_commandline_options():
 
 
 def main():
+    if sys.version_info[0] != 2 or sys.version_info[1] != 7:
+        raise FatalError("ESP-IDF currently only supports Python 2.7, and this is Python %d.%d.%d. Search for 'Setting the Python Interpreter' in the ESP-IDF docs for some tips to handle this." % sys.version_info[:3])
+
     parser = argparse.ArgumentParser(description='ESP-IDF build management tool')
     parser.add_argument('-p', '--port', help="Serial port",
                         default=os.environ.get('ESPPORT', None))
