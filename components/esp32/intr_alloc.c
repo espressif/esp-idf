@@ -194,10 +194,10 @@ static void insert_vector_desc(vector_desc_t *to_insert)
         prev=vd;
         vd=vd->next;
     }
-    if (vd==NULL && prev==NULL) {
+    if ((vector_desc_head==NULL) || (prev==NULL)) {
         //First item
+        to_insert->next = vd;
         vector_desc_head=to_insert;
-        vector_desc_head->next=NULL;
     } else {
         prev->next=to_insert;
         to_insert->next=vd;
