@@ -33,6 +33,10 @@ static size_t s_static_init_waiting_count = 0;              //!< number of tasks
 static size_t s_static_init_max_waiting_count = 0;          //!< maximum ever value of the above; can be inspected using GDB for debugging purposes
 #endif
 
+extern "C" int __cxa_guard_acquire(__guard* pg);
+extern "C" void __cxa_guard_release(__guard* pg);
+extern "C" void __cxa_guard_abort(__guard* pg);
+extern "C" void __cxa_guard_dummy();
 
 /**
  * Layout of the guard object (defined by the ABI).
