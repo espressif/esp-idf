@@ -140,7 +140,7 @@ typedef void (tGAP_BLE_CMPL_CBACK)(BOOLEAN status, BD_ADDR addr, UINT16 length, 
 ** Returns          handle of the connection if successful, else GAP_INVALID_HANDLE
 **
 *******************************************************************************/
-extern UINT16 GAP_ConnOpen (char *p_serv_name, UINT8 service_id, BOOLEAN is_server,
+extern UINT16 GAP_ConnOpen (const char *p_serv_name, UINT8 service_id, BOOLEAN is_server,
                             BD_ADDR p_rem_bda, UINT16 psm, tL2CAP_CFG_INFO *p_cfg,
                             tL2CAP_ERTM_INFO *ertm_info,
                             UINT16 security, UINT8 chan_mode_mask, tGAP_CONN_CALLBACK *p_cb);

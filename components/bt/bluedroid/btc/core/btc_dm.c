@@ -454,7 +454,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
 
         /* Set initial device name, it can be overwritten later */
         if (p_data->enable.status == BTA_SUCCESS) {
-            char *initial_device_name = "ESP32";
+            const char *initial_device_name = "ESP32";
             BTA_DmSetDeviceName(initial_device_name);
         }
         btc_enable_bluetooth_evt(p_data->enable.status);
