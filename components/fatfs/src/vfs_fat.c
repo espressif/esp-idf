@@ -637,6 +637,7 @@ static int vfs_fat_readdir_r(void* ctx, DIR* pdir,
     vfs_fat_dir_t* fat_dir = (vfs_fat_dir_t*) pdir;
     FRESULT res = f_readdir(&fat_dir->ffdir, &fat_dir->filinfo);
     if (res != FR_OK) {
+        *out_dirent = NULL;
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
         return fresult_to_errno(res);
     }

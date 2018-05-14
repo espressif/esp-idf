@@ -321,7 +321,7 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
     } else {
         /* IO card */
         if (config->flags & SDMMC_HOST_FLAG_4BIT) {
-            uint8_t card_cap;
+            uint8_t card_cap = 0;
             err = sdmmc_io_rw_direct(card, 0, SD_IO_CCCR_CARD_CAP,
                     SD_ARG_CMD52_READ, &card_cap);
             if (err != ESP_OK) {
