@@ -89,7 +89,6 @@ SECTIONS
     *libesp32.a:core_dump.o(.literal .text .literal.* .text.*)
     *libapp_trace.a:(.literal .text .literal.* .text.*)
     *libxtensa-debug-module.a:eri.o(.literal .text .literal.* .text.*)
-    *libphy.a:(.literal .text .literal.* .text.*)
     *librtc.a:(.literal .text .literal.* .text.*)
     *libsoc.a:(.literal .text .literal.* .text.*)
     *libhal.a:(.literal .text .literal.* .text.*)
