@@ -594,8 +594,7 @@ int uart_write_bytes(uart_port_t uart_num, const char* src, size_t size);
  * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
  * @param src   data buffer address
  * @param size  data length to send
- * @param brk_len break signal length (unit: the time it takes to send a complete byte
-                  including start, stop and parity bits at current_baudrate)
+ * @param brk_len break signal duration(unit: the time it takes to send one bit at current baudrate)
  *
  * @return
  *     - (-1) Parameter error
