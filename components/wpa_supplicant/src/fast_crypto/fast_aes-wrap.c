@@ -61,7 +61,10 @@ int fast_aes_wrap(const uint8_t *kek, int n, const uint8_t *plain, uint8_t *ciph
 	for (i = 1; i <= n; i++) {
             os_memcpy(b, a, 8);
             os_memcpy(b + 8, r, 8);
-            mbedtls_aes_encrypt(&ctx, b, b);
+            ret = mbedtls_internal_aes_encrypt(&ctx, b, b);
+            if (ret != 0) {
+                break;
+            }
             os_memcpy(a, b, 8);
             a[7] ^= n * j + i;
             os_memcpy(r, b + 8, 8);
@@ -76,5 +79,5 @@ int fast_aes_wrap(const uint8_t *kek, int n, const uint8_t *plain, uint8_t *ciph
      * variables.
      */
 
-    return 0;
+    return ret;
 }
