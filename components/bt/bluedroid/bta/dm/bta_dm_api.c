@@ -166,7 +166,7 @@ void BTA_DisableTestMode(void)
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_DmSetDeviceName(char *p_name)
+void BTA_DmSetDeviceName(const char *p_name)
 {
 
     tBTA_DM_API_SET_NAME    *p_msg;
