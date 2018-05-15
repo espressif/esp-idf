@@ -31,11 +31,11 @@ extern "C" {
 
 #define GPIO_SEL_0              (BIT(0))                         /*!< Pin 0 selected */
 #define GPIO_SEL_1              (BIT(1))                         /*!< Pin 1 selected */
-#define GPIO_SEL_2              (BIT(2))                         /*!< Pin 2 selected 
+#define GPIO_SEL_2              (BIT(2))                         /*!< Pin 2 selected
                                                                       @note There are more macros
                                                                       like that up to pin 39,
                                                                       excluding pins 20, 24 and 28..31.
-                                                                      They are not shown here 
+                                                                      They are not shown here
                                                                       to reduce redundant information. */
 /** @cond */
 #define GPIO_SEL_3              (BIT(3))                         /*!< Pin 3 selected */
@@ -172,7 +172,7 @@ typedef enum {
     GPIO_NUM_38 = 38,   /*!< GPIO38, input mode only */
     GPIO_NUM_39 = 39,   /*!< GPIO39, input mode only */
     GPIO_NUM_MAX = 40,
-/** @endcond */    
+/** @endcond */
 } gpio_num_t;
 
 typedef enum {
@@ -553,6 +553,22 @@ esp_err_t gpio_hold_en(gpio_num_t gpio_num);
   *     - ESP_ERR_NOT_SUPPORTED Not support pad hold function
   */
  esp_err_t gpio_hold_dis(gpio_num_t gpio_num);
+
+/**
+  * @brief Set pad input to a peripheral signal through the IOMUX.
+  * @param gpio_num GPIO number of the pad.
+  * @param signal_idx Peripheral signal id to input. One of the ``*_IN_IDX`` signals in ``soc/gpio_sig_map.h``.
+  */
+void gpio_iomux_in(uint32_t gpio_num, uint32_t signal_idx);
+
+/**
+  * @brief Set peripheral output to an GPIO pad through the IOMUX.
+  * @param gpio_num gpio_num GPIO number of the pad.
+  * @param func The function number of the peripheral pin to output pin.
+  *        One of the ``FUNC_X_*`` of specified pin (X) in ``soc/io_mux_reg.h``.
+  * @param oen_inv True if the output enable needs to be inversed, otherwise False.
+  */
+void gpio_iomux_out(uint8_t gpio_num, int func, bool oen_inv);
 
 #ifdef __cplusplus
 }
