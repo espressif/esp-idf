@@ -4,23 +4,24 @@ Copyrights and Licenses
 Software Copyrights
 ===================
 
-All original source code in this repository is Copyright (C) 2015-2016
-Espressif Systems. This source code is licensed under the Apache
-License 2.0 as described in the file LICENSE.
+All original source code in this repository is Copyright (C) 2015-2018 Espressif Systems. This source code is licensed under the Apache License 2.0 as described in the file LICENSE.
 
-Additional third party copyrighted code is included under the following licenses:
+Additional third party copyrighted code is included under the following licenses.
 
-* Newlib_ (components/newlib) is licensed under the BSD License and is Copyright of various parties, as described in the file components/newlib/COPYING.NEWLIB.
+Where source code headers specify Copyright & License information, this information takes precedence over the summaries made here.
 
-* Xtensa header files (components/esp32/include/xtensa) are Copyright (C) 2013 Tensilica Inc and are licensed under the MIT License as reproduce in the individual header files.
+Firmware Components
+-------------------
 
-* `esptool.py`_ (components/esptool_py/esptool) is Copyright (C) 2014-2016 Fredrik Ahlberg, Angus Gratton and is licensed under the GNU General Public License v2, as described in the file components/esptool_py/LICENSE.
+These third party libraries can be included into the application (firmware) produced by ESP-IDF.
 
-* Original parts of FreeRTOS_ (components/freertos) are Copyright (C) 2015 Real Time Engineers Ltd and is licensed under the GNU General Public License V2 with the FreeRTOS Linking Exception, as described in the file components/freertos/license.txt.
+* :component:`Newlib <newlib>` is licensed under the BSD License and is Copyright of various parties, as described in :component_file:`COPYING.NEWLIB<newlib/COPYING.NEWLIB>`.
 
-* Original parts of LWIP_ (components/lwip) are Copyright (C) 2001, 2002 Swedish Institute of Computer Science and are licensed under the BSD License as described in the file components/lwip/COPYING.
+* :component:`Xtensa header files<esp32/include/xtensa>` are Copyright (C) 2013 Tensilica Inc and are licensed under the MIT License as reproduced in the individual header files.
 
-* KConfig (tools/kconfig) is Copyright (C) 2002 Roman Zippel and others, and is licensed under the GNU General Public License V2.
+* Original parts of FreeRTOS_ (components/freertos) are Copyright (C) 2015 Real Time Engineers Ltd and is licensed under the GNU General Public License V2 with the FreeRTOS Linking Exception, as described in :component_file:`license.txt<freertos/license.txt>`.
+
+* Original parts of LWIP_ (components/lwip) are Copyright (C) 2001, 2002 Swedish Institute of Computer Science and are licensed under the BSD License as described in :component_file:`COPYING file<lwip/COPYING>`.
 
 * `wpa_supplicant`_ Copyright (c) 2003-2005 Jouni Malinen and licensed under the BSD license.
 
@@ -28,18 +29,46 @@ Additional third party copyrighted code is included under the following licenses
 
 * `JSMN`_ JSON Parser (components/jsmn) Copyright (c) 2010 Serge A. Zaitsev and licensed under the MIT license.
 
-* `argtable3`_ arugment parsing library Copyright (C) 1998-2001,2003-2011,2013 Stewart Heitmann and licensed under 3-clause BSD license.
+* `argtable3`_ argument parsing library Copyright (C) 1998-2001,2003-2011,2013 Stewart Heitmann and licensed under 3-clause BSD license.
 
-* `linenoise`_ line editing library Copyright (c) 2010-2014, Salvatore Sanfilippo <antirez at gmail dot com>, Copyright (c) 2010-2013, Pieter Noordhuis <pcnoordhuis at gmail dot com>, licensed under 2-clause BSD license.
+* `linenoise`_ line editing library Copyright (c) 2010-2014 Salvatore Sanfilippo, Copyright (c) 2010-2013 Pieter Noordhuis, licensed under 2-clause BSD license.
 
-Where source code headers specify Copyright & License information, this information takes precedence over the summaries made here.
+* `libcoap`_ COAP library Copyright (c) 2010-2017 Olaf Bergmann and others, is licensed under 2-clause BSD license.
+
+* `libexpat`_ XML parsing library Copyright (c) 1998-2000 Thai Open Source Software Center Ltd and Clark Cooper, Copyright (c) 2001-2016 Expat maintainers, is licensed under MIT license.
+
+* `FatFS`_ library, Copyright (C) 2017 ChaN, is licensed under :component_file:`a BSD-style license <fatfs/src/ff.h#L1-L18>`.
+
+* `cJSON`_ library, Copyright (c) 2009-2017 Dave Gamble and cJSON contributors, is licensed under MIT license.
+
+* `libsodium`_ library, Copyright (c) 2013-2018 Frank Denis, is licensed under ISC license.
+
+* `micro-ecc`_ library, Copyright (c) 2014 Kenneth MacKay, is licensed under 2-clause BSD license.
+
+* `nghttp2`_ library, Copyright (c) 2012, 2014, 2015, 2016 Tatsuhiro Tsujikawa, Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors, is licensed under MIT license.
+
+* `Mbed TLS`_ library, Copyright (C) 2006-2018 ARM Limited, is licensed under Apache License 2.0.
+
+* `SPIFFS`_ library, Copyright (c) 2013-2017 Peter Andersson, is licensed under MIT license.
+
+* :component_file:`SD/MMC driver <sdmmc/sdmmc_cmd.c>` is derived from `OpenBSD SD/MMC driver`_, Copyright (c) 2006 Uwe Stuehler, and is licensed under BSD license.
+
+Build Tools
+-----------
+
+This is the list of licenses for tools included in this repository, which are used to build applications. The tools do not become part of the application (firmware), so their license does not affect licensing of the application.
+
+* :component:`esptool.py <esptool_py/esptool>` is Copyright (C) 2014-2016 Fredrik Ahlberg, Angus Gratton and is licensed under the GNU General Public License v2, as described in :component_file:`LICENSE file<esptool_py/LICENSE>`.
+
+* :idf:`KConfig <tools/kconfig>` is Copyright (C) 2002 Roman Zippel and others, and is licensed under the GNU General Public License V2.
+
 
 ROM Source Code Copyrights
 ==========================
 
 ESP32 mask ROM hardware includes binaries compiled from portions of the following third party software:
 
-* Newlib_, as licensed under the BSD License and Copyright of various parties, as described in the file components/newlib/COPYING.NEWLIB.
+* :component:`Newlib <newlib>`, licensed under the BSD License and is Copyright of various parties, as described in :component_file:`COPYING.NEWLIB<newlib/COPYING.NEWLIB>`.
 
 * Xtensa libhal, Copyright (c) Tensilica Inc and licensed under the MIT license (see below).
 
@@ -88,6 +117,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 TJpgDec License
 ===============
+
 TJpgDec - Tiny JPEG Decompressor R0.01                       (C)ChaN, 2011
 The TJpgDec is a generic JPEG decompressor module for tiny embedded systems.
 This is a free software that opened for education, research and commercial
@@ -112,4 +142,14 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _JSMN: http://zserge.com/jsmn.html
 .. _argtable3: https://github.com/argtable/argtable3
 .. _linenoise: https://github.com/antirez/linenoise
+.. _libcoap: https://github.com/obgm/libcoap
+.. _fatfs: http://elm-chan.org/fsw/ff/00index_e.html
+.. _cJSON: https://github.com/DaveGamble/cJSON
+.. _libsodium: https://github.com/jedisct1/libsodium
+.. _libexpat: https://github.com/libexpat/libexpat
+.. _micro-ecc: https://github.com/kmackay/micro-ecc
+.. _nghttp2: https://github.com/nghttp2/nghttp2
+.. _OpenBSD SD/MMC driver: https://github.com/openbsd/src/blob/f303646/sys/dev/sdmmc/sdmmc.c
+.. _Mbed TLS: https://github.com/ARMmbed/mbedtls
+.. _spiffs: https://github.com/pellepl/spiffs
 
