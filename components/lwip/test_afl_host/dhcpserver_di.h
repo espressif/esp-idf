@@ -2,6 +2,7 @@
  * dhcpserver dependecy injection -- preincluded to inject interface test functions into static variables
  * 
  */
+#include "no_warn_host.h"
 #include "lwip/pbuf.h"
 #include "lwip/udp.h"
 #include "tcpip_adapter.h"
