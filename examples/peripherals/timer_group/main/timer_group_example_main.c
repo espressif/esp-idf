@@ -1,14 +1,3 @@
-/* Timer group-hardware timer example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
-
-#include <stdio.h>
-#include "esp_types.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -21,32 +10,18 @@
 #define TIMER_INTERVAL0_SEC   (3.4179) // sample test interval for the first timer
 #define TIMER_INTERVAL1_SEC   (5.78)   // sample test interval for the second timer
 #define TEST_WITHOUT_RELOAD   0        // testing will be done without auto reload
-#define TEST_WITH_RELOAD      1        // testing will be done with auto reload
-
+#define TEST_WITH_RELOAD 1 // testing will be done with auto reload
 /*
  * A sample structure to pass events
  * from the timer interrupt handler to the main program.
  */
 typedef struct {
     int type;  // the type of timer's event
-    int timer_group;
-    int timer_idx;
+    timer_group_t timer_group;
+    timer_idx_t timer_idx;
     uint64_t timer_counter_value;
 } timer_event_t;
-
 xQueueHandle timer_queue;
-
-/*
- * A simple helper function to print the raw timer counter value
- * and the counter value converted to seconds
- */
-static void inline print_timer_counter(uint64_t counter_value)
-{
-    printf("Counter: 0x%08x%08x\n", (uint32_t) (counter_value >> 32),
-                                    (uint32_t) (counter_value));
-    printf("Time   : %.8f s\n", (double) counter_value / TIMER_SCALE);
-}
-
 /*
  * Timer group0 ISR handler
  *
@@ -57,8 +32,7 @@ static void inline print_timer_counter(uint64_t counter_value)
  */
 void IRAM_ATTR timer_group0_isr(void *para)
 {
-    int timer_idx = (int) para;
-
+    timer_idx_t timer_idx = timer_idx_t(int(para));
     /* Retrieve the interrupt status and the counter value
        from the timer that reported the interrupt */
     uint32_t intr_status = TIMERG0.int_st_timers.val;
@@ -70,7 +44,7 @@ void IRAM_ATTR timer_group0_isr(void *para)
     /* Prepare basic event data
        that will be then sent back to the main program task */
     timer_event_t evt;
-    evt.timer_group = 0;
+    evt.timer_group = timer_group_t(0);
     evt.timer_idx = timer_idx;
     evt.timer_counter_value = timer_counter_value;
 
@@ -104,7 +78,7 @@ void IRAM_ATTR timer_group0_isr(void *para)
  * auto_reload - should the timer auto reload on alarm?
  * timer_interval_sec - the interval of alarm to set
  */
-static void example_tg0_timer_init(int timer_idx, 
+static void example_tg0_timer_init(timer_idx_t timer_idx, 
     bool auto_reload, double timer_interval_sec)
 {
     /* Select and initialize basic parameters of the timer */
@@ -129,6 +103,18 @@ static void example_tg0_timer_init(int timer_idx,
 
     timer_start(TIMER_GROUP_0, timer_idx);
 }
+
+/*
+ * A simple helper function to print the raw timer counter value
+ * and the counter value converted to seconds
+ */
+static void inline print_timer_counter(uint64_t counter_value)
+{
+    printf("Counter: 0x%08x%08x\n", (uint32_t) (counter_value >> 32),
+                                    (uint32_t) (counter_value));
+    printf("Time   : %.8f s\n", (double) counter_value / TIMER_SCALE);
+}
+
 
 /*
  * The main task of this example program
@@ -159,16 +145,5 @@ static void timer_example_evt_task(void *arg)
         timer_get_counter_value(evt.timer_group, evt.timer_idx, &task_counter_value);
         print_timer_counter(task_counter_value);
     }
-}
-
-/*
- * In this example, we will test hardware timer0 and timer1 of timer group0.
- */
-void app_main()
-{
-    timer_queue = xQueueCreate(10, sizeof(timer_event_t));
-    example_tg0_timer_init(TIMER_0, TEST_WITHOUT_RELOAD, TIMER_INTERVAL0_SEC);
-    example_tg0_timer_init(TIMER_1, TEST_WITH_RELOAD,    TIMER_INTERVAL1_SEC);
-    xTaskCreate(timer_example_evt_task, "timer_evt_task", 2048, NULL, 5, NULL);
 }
 
