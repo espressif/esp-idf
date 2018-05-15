@@ -505,23 +505,16 @@ assign_test:
     - build_ssc_02
     - build_esp_idf_tests
   variables:
-    UT_BIN_PATH: "tools/unit-test-app/output"
-    OUTPUT_BIN_PATH: "test_bins/ESP32_IDF"
     TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     EXAMPLE_CONFIG_OUTPUT_PATH: "$CI_PROJECT_DIR/examples/test_configs"
   artifacts:
     paths:
-      - $OUTPUT_BIN_PATH
       - components/idf_test/*/CIConfigs
       - components/idf_test/*/TC.sqlite
       - $EXAMPLE_CONFIG_OUTPUT_PATH
-      - tools/unit-test-app/output
     expire_in: 1 mos
   before_script: *add_gitlab_key_before
   script:
-    # first move test bins together: test_bins/CHIP_SDK/TestApp/bin_files
-    - mkdir -p $OUTPUT_BIN_PATH
-    - cp -r SSC/ssc_bin/* $OUTPUT_BIN_PATH
     # assign example tests
     - python $TEST_FW_PATH/CIAssignExampleTest.py $IDF_PATH/examples $IDF_PATH/.gitlab-ci.yml $EXAMPLE_CONFIG_OUTPUT_PATH
     # assign unit test cases
@@ -572,6 +565,7 @@ assign_test:
   stage: unit_test
   dependencies:
     - assign_test
+    - build_esp_idf_tests
   variables:
     TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     TEST_CASE_PATH: "$CI_PROJECT_DIR/tools/unit-test-app"
