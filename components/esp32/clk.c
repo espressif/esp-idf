@@ -221,7 +221,7 @@ void esp_perip_clk_init(void)
 #if CONFIG_CONSOLE_UART_NUM != 2
                               DPORT_UART2_CLK_EN |
 #endif
-                              DPORT_SPI_CLK_EN |
+                              DPORT_SPI2_CLK_EN |
                               DPORT_I2C_EXT0_CLK_EN |
                               DPORT_UHCI0_CLK_EN |
                               DPORT_RMT_CLK_EN |
@@ -229,7 +229,7 @@ void esp_perip_clk_init(void)
                               DPORT_LEDC_CLK_EN |
                               DPORT_UHCI1_CLK_EN |
                               DPORT_TIMERGROUP1_CLK_EN |
-                              DPORT_SPI_CLK_EN_2 |
+                              DPORT_SPI3_CLK_EN |
                               DPORT_PWM0_CLK_EN |
                               DPORT_I2C_EXT1_CLK_EN |
                               DPORT_CAN_CLK_EN |
@@ -253,11 +253,11 @@ void esp_perip_clk_init(void)
 
 
 #if CONFIG_SPIRAM_SPEED_80M
-//80MHz SPIRAM uses SPI2 as well; it's initialized before this is called. Because it is used in
+//80MHz SPIRAM uses SPI3 as well; it's initialized before this is called. Because it is used in
 //a weird mode where clock to the peripheral is disabled but reset is also disabled, it 'hangs'
 //in a state where it outputs a continuous 80MHz signal. Mask its bit here because we should
 //not modify that state, regardless of what we calculated earlier.
-    common_perip_clk &= ~DPORT_SPI_CLK_EN_2;
+    common_perip_clk &= ~DPORT_SPI3_CLK_EN;
 #endif
 
     /* Change I2S clock to audio PLL first. Because if I2S uses 160MHz clock,
