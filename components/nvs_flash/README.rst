@@ -49,17 +49,7 @@ Security, tampering, and robustness
 
 NVS library doesn't implement tamper prevention measures. It is possible for anyone with physical access to the flash chip to alter, erase, or add key-value pairs.
 
-NVS is compatible with the ESP32 flash encryption system, and it can store  key-value pairs in an encrypted form. Some metadata, like page state and write/erase flags of individual entries can not be encrypted as they are represented as bits of flash memory for efficient access and manipulation. Flash encryption can prevent some forms of modification:
-
-- replacing keys or values with arbitrary data
-- changing data types of values
-
-The following forms of modification are still possible when flash encryption is used:
-
-- erasing a page completely, removing all key-value pairs which were stored in that page
-- corrupting data in a page, which will cause the page to be erased automatically when such condition is detected
-- rolling back the contents of flash memory to an earlier snapshot
-- merging two snapshots of flash memory, rolling back some key-value pairs to an earlier state (although this is possible to mitigate with the current design — TODO)
+NVS is not currently compatible with the ESP32 flash encryption system.
 
 The library does try to recover from conditions when flash memory is in an inconsistent state. In particular, one should be able to power off the device at any point and time and then power it back on. This should not result in loss of data, expect for the new key-value pair if it was being written at the moment of power off. The library should also be able to initialize properly with any random data present in flash memory.
 
