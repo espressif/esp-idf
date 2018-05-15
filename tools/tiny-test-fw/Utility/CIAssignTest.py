@@ -45,7 +45,7 @@ import json
 
 import yaml
 
-from Utility import (CaseConfig, SearchCases, GitlabCIJob)
+from Utility import (CaseConfig, SearchCases, GitlabCIJob, console_log)
 
 
 class Group(object):
@@ -206,7 +206,11 @@ class AssignTest(object):
                     break
             else:
                 failed_to_assign.append(group)
-        assert not failed_to_assign
+        if failed_to_assign:
+            console_log("Please add the following jobs to .gitlab-ci.yml with specific tags:", "R")
+            for group in failed_to_assign:
+                console_log("* Add job with: " + ",".join(group.ci_job_match_keys), "R")
+            raise RuntimeError("Failed to assign test case to CI jobs")
 
     def output_configs(self, output_path):
         """
