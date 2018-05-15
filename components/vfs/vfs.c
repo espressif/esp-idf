@@ -623,3 +623,17 @@ int fsync(int fd)
     CHECK_AND_CALL(ret, r, vfs, fsync, local_fd);
     return ret;
 }
+
+int access(const char *path, int amode)
+{
+    int ret;
+    const vfs_entry_t* vfs = get_vfs_for_path(path);
+    struct _reent* r = __getreent();
+    if (vfs == NULL) {
+        __errno_r(r) = ENOENT;
+        return -1;
+    }
+    const char* path_within_vfs = translate_path(vfs, path);
+    CHECK_AND_CALL(ret, r, vfs, access, path_within_vfs, amode);
+    return ret;
+}

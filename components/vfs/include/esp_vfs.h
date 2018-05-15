@@ -18,6 +18,9 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include <unistd.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include "esp_err.h"
 #include <sys/types.h>
 #include <sys/reent.h>
@@ -159,6 +162,10 @@ typedef struct
     union {
         int (*fsync_p)(void* ctx, int fd);
         int (*fsync)(int fd);
+    };
+    union {
+        int (*access_p)(void* ctx, const char *path, int amode);
+        int (*access)(const char *path, int amode);
     };
 } esp_vfs_t;
 
