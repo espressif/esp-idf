@@ -854,7 +854,7 @@ static void uart_rx_intr_handler_default(void *param)
                                             p_uart->rx_buffered_len + pat_idx);
                         }
                         if ((p_uart->xQueueUart != NULL) && (pdFALSE == xQueueSendFromISR(p_uart->xQueueUart, (void * )&uart_event, &HPTaskAwoken))) {
-                            ESP_EARLY_LOGW(UART_TAG, "UART event queue full");
+                            ESP_EARLY_LOGV(UART_TAG, "UART event queue full");
                         }
                     }
                     uart_event.type = UART_BUFFER_FULL;
@@ -940,7 +940,7 @@ static void uart_rx_intr_handler_default(void *param)
 
         if(uart_event.type != UART_EVENT_MAX && p_uart->xQueueUart) {
             if (pdFALSE == xQueueSendFromISR(p_uart->xQueueUart, (void * )&uart_event, &HPTaskAwoken)) {
-                ESP_EARLY_LOGW(UART_TAG, "UART event queue full");
+                ESP_EARLY_LOGV(UART_TAG, "UART event queue full");
             }
             if(HPTaskAwoken == pdTRUE) {
                 portYIELD_FROM_ISR() ;
