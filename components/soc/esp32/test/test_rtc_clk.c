@@ -134,7 +134,7 @@ TEST_CASE("Test fast switching between PLL and XTAL", "[rtc_clk]")
     test_clock_switching(rtc_clk_cpu_freq_set_fast);
 }
 
-#define COUNT_TEST      10
+#define COUNT_TEST      3
 #define TIMEOUT_TEST_MS (5 + CONFIG_ESP32_RTC_CLK_CAL_CYCLES / 16)
 
 void stop_rtc_external_quartz(){
@@ -266,7 +266,7 @@ TEST_CASE("Test starting 'External 32kHz XTAL' on the board with it.", "[rtc_clk
 
 #else
 
-TEST_CASE("Test starting 'External 32kHz XTAL' on the board without it.", "[rtc_clk]")
+TEST_CASE("Test starting 'External 32kHz XTAL' on the board without it.", "[rtc_clk][ignore]")
 {
     printf("Tries to start the 'External 32kHz XTAL' on the board without it. "
             "Clock switching to 'Internal 150 kHz RC oscillator'.\n");
