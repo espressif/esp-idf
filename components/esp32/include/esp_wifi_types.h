@@ -140,7 +140,17 @@ typedef enum {
     WIFI_CIPHER_TYPE_UNKNOWN,    /**< the cipher type is unknown */
 } wifi_cipher_type_t;
 
-/** @brief Description of an WiFi AP */
+/**
+  * @brief WiFi antenna
+  *
+  */
+typedef enum {
+    WIFI_ANT_ANT0,          /**< WiFi antenna 0 */
+    WIFI_ANT_ANT1,          /**< WiFi antenna 1 */
+    WIFI_ANT_MAX,           /**< Invalid WiFi antenna */
+} wifi_ant_t;
+
+/** @brief Description of a WiFi AP */
 typedef struct {
     uint8_t bssid[6];                     /**< MAC address of AP */
     uint8_t ssid[33];                     /**< SSID of AP */
@@ -150,6 +160,7 @@ typedef struct {
     wifi_auth_mode_t authmode;            /**< authmode of AP */
     wifi_cipher_type_t pairwise_cipher;   /**< pairwise cipher of AP */
     wifi_cipher_type_t group_cipher;      /**< group cipher of AP */
+    wifi_ant_t ant;                       /**< antenna used to receive beacon from AP */
     uint32_t phy_11b:1;                   /**< bit: 0 flag to identify if 11b mode is enabled or not */
     uint32_t phy_11g:1;                   /**< bit: 1 flag to identify if 11g mode is enabled or not */
     uint32_t phy_11n:1;                   /**< bit: 2 flag to identify if 11n mode is enabled or not */
@@ -394,6 +405,46 @@ typedef struct {
     uint8_t *buf;              /**< buffer of CSI data */
     uint16_t len;              /**< length of CSI data */
 } wifi_csi_info_t;
+
+/**
+  * @brief WiFi GPIO configuration for antenna selection
+  *
+  */
+typedef struct {
+    uint8_t gpio_select: 1,           /**< Whether this GPIO is connected to external antenna switch */
+            gpio_num: 7;              /**< The GPIO number that connects to external antenna switch */
+} wifi_ant_gpio_t;
+
+/**
+  * @brief WiFi GPIOs configuration for antenna selection
+  *
+  */
+typedef struct {
+    wifi_ant_gpio_t  gpio_cfg[4];  /**< The configurations of GPIOs that connect to external antenna switch */
+} wifi_ant_gpio_config_t;
+
+/**
+  * @brief WiFi antenna mode
+  *
+  */
+typedef enum {
+    WIFI_ANT_MODE_ANT0,          /**< Enable WiFi antenna 0 only */
+    WIFI_ANT_MODE_ANT1,          /**< Enable WiFi antenna 1 only */
+    WIFI_ANT_MODE_AUTO,          /**< Enable WiFi antenna 0 and 1, automatically select an antenna */
+    WIFI_ANT_MODE_MAX,           /**< Invalid WiFi enabled antenna */
+} wifi_ant_mode_t;
+
+/**
+  * @brief WiFi antenna configuration
+  *
+  */
+typedef struct {
+    wifi_ant_mode_t rx_ant_mode;          /**< WiFi antenna mode for receiving */
+    wifi_ant_t      rx_ant_default;       /**< Default antenna mode for receiving, it's ignored if rx_ant_mode is not WIFI_ANT_MODE_AUTO */
+    wifi_ant_mode_t tx_ant_mode;          /**< WiFi antenna mode for transmission, it can be set to WIFI_ANT_MODE_AUTO only if rx_ant_mode is set to WIFI_ANT_MODE_AUTO */
+    uint8_t         enabled_ant0: 4,      /**< Index (in antenna GPIO configuration) of enabled WIFI_ANT_MODE_ANT0 */
+                    enabled_ant1: 4;      /**< Index (in antenna GPIO configuration) of enabled WIFI_ANT_MODE_ANT1 */
+} wifi_ant_config_t;
 
 #ifdef __cplusplus
 }
