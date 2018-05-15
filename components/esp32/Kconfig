@@ -685,7 +685,8 @@ endchoice
 
 config ESP32_RTC_CLK_CAL_CYCLES
     int "Number of cycles for RTC_SLOW_CLK calibration"
-    default 1024
+    default 3000 if ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
+    default 1024 if ESP32_RTC_CLOCK_SOURCE_INTERNAL_RC
     range 0 125000
     help
         When the startup code initializes RTC_SLOW_CLK, it can perform
@@ -698,18 +699,27 @@ config ESP32_RTC_CLK_CAL_CYCLES
         When this option is set to 0, clock calibration will not be performed at
         startup, and approximate clock frequencies will be assumed:
 
-        - 150000 Hz if internal RC oscillator is used as clock source
-        - 32768 Hz if the 32k crystal oscillator is used
+        - 150000 Hz if internal RC oscillator is used as clock source. For this use value 1024.
+        - 32768 Hz if the 32k crystal oscillator is used. For this use value 3000 or more.
+          In case more value will help improve the definition of the launch of the crystal.
+          If the crystal could not start, it will be switched to internal RC.
 
 config ESP32_RTC_XTAL_BOOTSTRAP_CYCLES
     int "Bootstrap cycles for external 32kHz crystal"
-    default 100
+    depends on ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
+    default 5
     range 0 32768
     help
         To reduce the startup time of an external RTC crystal, 
         we bootstrap it with a 32kHz square wave for a fixed number of cycles. 
         Setting 0 will disable bootstrapping (if disabled, the crystal may take 
         longer to start up or fail to oscillate under some conditions).
+        
+        If this value is too high, a faulty crystal may initially start and then fail. 
+        If this value is too low, an otherwise good crystal may not start.
+        
+        To accurately determine if the crystal has started, 
+        set a larger "Number of cycles for RTC_SLOW_CLK calibration" (about 3000).
 
 config ESP32_DEEP_SLEEP_WAKEUP_DELAY
     int "Extra delay in deep sleep wake stub (in us)"

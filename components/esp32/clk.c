@@ -36,7 +36,6 @@
  * Larger values increase startup delay. Smaller values may cause false positive
  * detection (i.e. oscillator runs for a few cycles and then stops).
  */
-#define XTAL_32K_DETECT_CYCLES  32
 #define SLOW_CLK_CAL_CYCLES     CONFIG_ESP32_RTC_CLK_CAL_CYCLES
 
 #define MHZ (1000000)
@@ -128,6 +127,9 @@ void IRAM_ATTR ets_update_cpu_frequency(uint32_t ticks_per_us)
 static void select_rtc_slow_clk(rtc_slow_freq_t slow_clk)
 {
     uint32_t cal_val = 0;
+    uint32_t wait = 0;
+    const uint32_t warning_timeout = 3 /* sec */ * 32768 /* Hz */ / (2 * SLOW_CLK_CAL_CYCLES);
+    bool changing_clock_to_150k = false;
     do {
         if (slow_clk == RTC_SLOW_FREQ_32K_XTAL) {
             /* 32k XTAL oscillator needs to be enabled and running before it can
@@ -137,24 +139,23 @@ static void select_rtc_slow_clk(rtc_slow_freq_t slow_clk)
              * oscillator cycles. If the 32k XTAL has not started up, calibration
              * will time out, returning 0.
              */
-            uint32_t wait = 0;
-            // increment of 'wait' counter equivalent to 3 seconds
-            const uint32_t warning_timeout = 3 /* sec */ * 32768 /* Hz */ / (2 * XTAL_32K_DETECT_CYCLES);
             ESP_EARLY_LOGD(TAG, "waiting for 32k oscillator to start up");
-            do {
-                ++wait;
-                rtc_clk_32k_enable(true);
-                cal_val = rtc_clk_cal(RTC_CAL_32K_XTAL, XTAL_32K_DETECT_CYCLES);
-                if (wait % warning_timeout == 0) {
-                    ESP_EARLY_LOGW(TAG, "still waiting for 32k oscillator to start up");
-                }
-                if(cal_val == 0){
-                    rtc_clk_32k_enable(false);
-                    rtc_clk_32k_bootstrap(CONFIG_ESP32_RTC_XTAL_BOOTSTRAP_CYCLES);
-                }
-            } while (cal_val == 0);
+            rtc_clk_32k_enable(true);
+            cal_val = rtc_clk_cal(RTC_CAL_32K_XTAL, SLOW_CLK_CAL_CYCLES);
+            if(cal_val == 0 || cal_val < 15000000L){
+                ESP_EARLY_LOGE(TAG, "RTC: Not found External 32 kHz XTAL. Switching to Internal 150 kHz RC chain");
+                slow_clk = RTC_SLOW_FREQ_RTC;
+                changing_clock_to_150k = true;
+            }
         }
         rtc_clk_slow_freq_set(slow_clk);
+        if (changing_clock_to_150k == true && wait > 1){
+            // This helps when there are errors when switching the clock from External 32 kHz XTAL to Internal 150 kHz RC chain.
+            rtc_clk_32k_enable(false);
+            uint32_t min_bootstrap = 5; // Min bootstrapping for continue switching the clock.
+            rtc_clk_32k_bootstrap(min_bootstrap);
+            rtc_clk_32k_enable(true);
+        }
 
         if (SLOW_CLK_CAL_CYCLES > 0) {
             /* TODO: 32k XTAL oscillator has some frequency drift at startup.
@@ -164,6 +165,9 @@ static void select_rtc_slow_clk(rtc_slow_freq_t slow_clk)
         } else {
             const uint64_t cal_dividend = (1ULL << RTC_CLK_CAL_FRACT) * 1000000ULL;
             cal_val = (uint32_t) (cal_dividend / rtc_clk_slow_freq_get_hz());
+        }
+        if (++wait % warning_timeout == 0) {
+            ESP_EARLY_LOGW(TAG, "still waiting for source selection RTC");
         }
     } while (cal_val == 0);
     ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK calibration value: %d", cal_val);
