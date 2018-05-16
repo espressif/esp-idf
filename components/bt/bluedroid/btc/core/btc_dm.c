@@ -32,14 +32,6 @@
 
 #if (BTC_GAP_BT_INCLUDED == TRUE)
 #include "btc_gap_bt.h"
-
-static inline void btc_gap_bt_cb_to_app(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
-{
-    esp_bt_gap_cb_t cb = (esp_bt_gap_cb_t)btc_profile_cb_get(BTC_PID_GAP_BT);
-    if (cb) {
-        cb(event, param);
-    }
-}
 #endif /* BTC_GAP_BT_INCLUDED == TRUE */
 /******************************************************************************
 **  Constants & Macros
@@ -360,10 +352,22 @@ static void btc_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
     }
 #if (BTC_GAP_BT_INCLUDED == TRUE)
     esp_bt_gap_cb_param_t param;
+    bt_status_t ret;
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_AUTH_CMPL_EVT;
     param.auth_cmpl.stat = status;
     memcpy(param.auth_cmpl.bda, p_auth_cmpl->bd_addr, ESP_BD_ADDR_LEN);
     memcpy(param.auth_cmpl.device_name, p_auth_cmpl->bd_name, ESP_BT_GAP_MAX_BDNAME_LEN + 1);
-    btc_gap_bt_cb_to_app(ESP_BT_GAP_AUTH_CMPL_EVT, &param);
+
+    ret = btc_transfer_context(&msg, &param,
+                               sizeof(esp_bt_gap_cb_param_t), NULL);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        BTC_TRACE_DEBUG("%s btc_transfer_context failed\n", __func__);
+    }
+
 #endif /* BTC_GAP_BT_INCLUDED == TRUE */
     (void) status;
 }
