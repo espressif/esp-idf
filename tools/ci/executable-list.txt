@@ -37,4 +37,6 @@ tools/cmake/convert_to_cmake.py
 tools/cmake/run_cmake_lint.sh
 tools/idf.py
 tools/kconfig_new/confgen.py
+tools/kconfig_new/confserver.py
+tools/kconfig_new/test/test_confserver.py
 tools/windows/tool_setup/build_installer.sh
