@@ -35,7 +35,7 @@ buffer_t *buffer_new(size_t size)
 
     buffer_t *buffer = osi_malloc(sizeof(buffer_t) + size);
     if (!buffer) {
-        LOG_ERROR("%s unable to allocate buffer of %zu bytes.", __func__, size);
+        OSI_TRACE_ERROR("%s unable to allocate buffer of %zu bytes.", __func__, size);
         return NULL;
     }
 
@@ -60,7 +60,7 @@ buffer_t *buffer_new_slice(const buffer_t *buf, size_t slice_size)
 
     buffer_t *ret = osi_calloc(sizeof(buffer_t));
     if (!ret) {
-        LOG_ERROR("%s unable to allocate new buffer for slice of length %zu.", __func__, slice_size);
+        OSI_TRACE_ERROR("%s unable to allocate new buffer for slice of length %zu.", __func__, slice_size);
         return NULL;
     }
 

@@ -36,7 +36,6 @@
 #include "stack/l2c_api.h"
 #include "osi/allocator.h"
 
-#define LOG_TAG "bt_bta_gattc"
 /*****************************************************************************
 **  Constants
 *****************************************************************************/
@@ -963,7 +962,7 @@ void bta_to_btif_uuid(bt_uuid_t *p_dest, tBT_UUID *p_src)
             break;
 
         default:
-            LOG_ERROR("%s: Unknown UUID length %d!", __FUNCTION__, p_src->len);
+            APPL_TRACE_ERROR("%s: Unknown UUID length %d!", __FUNCTION__, p_src->len);
             break;
     }
 }
