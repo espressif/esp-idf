@@ -1295,51 +1295,9 @@ Wi-Fi 80211 Packet Send
 The esp_wifi_80211_tx API can be used to:
 
  - Send the beacon, probe request, probe response, action frame.
- - Send the QoS and non-QoS data frame.
+ - Send the non-QoS data frame.
 
-It cannot be used for sending cryptographic frames.
-
-Parameters of esp_wifi_80211_tx
-+++++++++++++++++++++++++++++++++++++++++++
-
-+-----------------------------+---------------------------------------------------+
-| Parameter                   | Description                                       |
-+=============================+===================================================+
-| ifx                         | Wi-Fi interface ID: if the Wi-Fi mode is Station, |
-|                             | the ifx should be WIFI_IF_STA. If the Wi-Fi       |
-|                             | mode is SoftAP, the ifx should be WIFI_IF_AP. If  |
-|                             | the Wi-Fi mode is Station+SoftAP, the ifx should  |
-|                             | be WIFI_IF_STA or WIFI_IF_AP.                     |
-|                             | If the ifx is wrong, the API returns              |
-|                             | ESP_ERR_WIFI_IF.                                  |
-+-----------------------------+---------------------------------------------------+
-| buffer                      | Raw 802.11 buffer. For building the correct       |
-|                             | buffer, refer to the following sections:          |
-|                             |                                                   |
-|                             | If the buffer is wrong, or violates the Wi-Fi     |
-|                             | driver's restrictions, the API returns            |
-|                             | ESP_ERR_INVALID_ARG or results in unexpected      |
-|                             | behavior. **Please read the following section     |
-|                             | carefully to make sure you understand the         |
-|                             | restrictions on encapsulating the buffer.**       |
-|                             |                                                   |
-+-----------------------------+---------------------------------------------------+
-| len                         | The length must be <= 1500; otherwise, the API    |
-|                             | will return ESP_ERR_INVALID_ARG.                  |
-|                             |                                                   |
-+-----------------------------+---------------------------------------------------+
-| en_sys_seq                  | If en_sys_seq is true, it means that the Wi-Fi    |
-|                             | driver will rewrite the sequence number in the    |
-|                             | buffer; otherwise, it will not rewrite the        |
-|                             | sequence number.                                  |
-|                             | Generally, if esp_wifi_80211_tx is called before  |
-|                             | the Wi-Fi connection has been set up, both        |
-|                             | en_sys_seq==true and en_sys_seq==false are fine.  |
-|                             | However, if the API is called after the Wi-Fi     |
-|                             | connection has been set up, en_sys_seq should be  |
-|                             | true. For more details, read the following section|
-|                             | about the sequence configuration.                 |
-+-----------------------------+---------------------------------------------------+
+It cannot be used for sending encrypted or QoS frames.
 
 Preconditions of Using esp_wifi_80211_tx
 ++++++++++++++++++++++++++++++++++++++++++++
@@ -1347,6 +1305,12 @@ Preconditions of Using esp_wifi_80211_tx
  - The Wi-Fi mode is Station, or SoftAP, or Station+SoftAP.
  - Either esp_wifi_set_promiscuous(true), or esp_wifi_start(), or both of these APIs return ESP_OK. This is because we need to make sure that Wi-Fi hardware is initialized before esp_wifi_80211_tx() is called. In ESP32, both esp_wifi_set_promiscuous(true) and esp_wifi_start() can trigger the initialization of Wi-Fi hardware.
  - The parameters of esp_wifi_80211_tx are hereby correctly provided.
+
+Data rate
++++++++++++++++++++++++++++++++++++++++++++++++
+
+ - If there is no WiFi connection, the data rate is 1Mbps.
+ - If there is WiFi connection and the packet is from station to SoftAP or from SoftAP to station, the data rate is same as the WiFi connection. Otherwise the data rate is 1Mbps.
 
 Side-Effects to Avoid in Different Scenarios
 +++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1356,10 +1320,10 @@ Theoretically, if we do not consider the side-effects the API imposes on the Wi-
 +-----------------------------+---------------------------------------------------+
 | Scenario                    | Description                                       |
 +=============================+===================================================+
-| NO_CONN_MGMT                | In this scenario, no Wi-Fi connection is set up,  |
+| No WiFi connection          | In this scenario, no Wi-Fi connection is set up,  |
 |                             | so there are no side-effects on the Wi-Fi driver. |
-|  - No Wi-Fi connection      | If en_sys_seq==true, the Wi-Fi driver is          |
-|  - Can send management frame| responsible for the sequence control. If          |
+|                             | If en_sys_seq==true, the Wi-Fi driver is          |
+|                             | responsible for the sequence control. If          |
 |                             | en_sys_seq==false, the application needs to ensure|
 |                             | that the buffer has the correct sequence.         |
 |                             |                                                   |
@@ -1394,47 +1358,47 @@ Theoretically, if we do not consider the side-effects the API imposes on the Wi-
 |                             | side-effects and can be ignored when there are    |
 |                             | good reasons for doing this.                      |
 +-----------------------------+---------------------------------------------------+
-| NO_CONN_NON_QOS             | Same as in NO_CONN_MGMT                           |
-|                             |                                                   |
-|  - No Wi-Fi connection      |                                                   |
-|  - Can send non-QoS frame   |                                                   |
-|                             |                                                   |
-+-----------------------------+---------------------------------------------------+
-| NO_CONN_QOS                 | Same as in NO_CONN_MGMT                           |
-|                             |                                                   |
-|  - No Wi-Fi connection      |                                                   |
-|  - Can send QoS frame       |                                                   |
-|                             |                                                   |
-+-----------------------------+---------------------------------------------------+
-| CONN_MGMT                   | When the Wi-Fi connection is already set up, and  |
+| Have WiFi connection        | When the Wi-Fi connection is already set up, and  |
 |                             | the sequence is controlled by the application, the|
-|  - Have Wi-Fi connection    | latter may impact the sequence control of the     |
-|  - Send management frame    | Wi-Fi connection, as a whole. So, the             |
-|    only                     | recommendation is that en_sys_seq be true.        |
-|                             | The MAC-address recommendations in the            |
-|                             | NO_CONN_MGMT scenario also apply to the CONN_MGMT |
-|                             | scenario.                                         |
-+-----------------------------+---------------------------------------------------+
-| CONN_NON_QOS                | Generally, we should use a socket API, instead of |
-|                             | this one, in order to send the data frame when    |
-|  - Have Wi-Fi connection    | the Wi-Fi connection is already set up.           |
-|  - Can send non-QoS frame   |                                                   |
-|                             | However, if you have any special reasons for using|
-|                             | this particular API, then en_sys_seq must be true;|
-|                             | otherwise, you  may impact the internal sequence  |
-|                             | control of the Wi-Fi connection described         |
-|                             | in CONN_MGMT.                                     |
-|                             | The MAC-address recommendations in the            |
-|                             | NO_CONN_MGMT scenario also apply to the CONN_MGMT |
-|                             | scenario.                                         |
-+-----------------------------+---------------------------------------------------+
-| CONN_QOS                    | Same as in CONN_NON_QOS                           |
+|                             | latter may impact the sequence control of the     |
+|                             | Wi-Fi connection, as a whole. So, the             |
+|                             | en_sys_seq need to be true, otherwise             |
+|                             | ESP_ERR_WIFI_ARG is returned.                     |
 |                             |                                                   |
-|  - Have Wi-Fi connection    |                                                   |
-|  - Can send non-QoS frame   |                                                   |
+|                             | The MAC-address recommendations in the            |
+|                             | "No WiFi connection" scenario also apply to this  |
+|                             | scenario.                                         |
 |                             |                                                   |
+|                             | If the WiFi mode is station mode and the MAC      |
+|                             | address1 is the MAC of AP to which the station is |
+|                             | connected, the MAC address2 is the MAC of station |
+|                             | interface, we say the packets is from the station |
+|                             | to SoftAP. On the other hand, if the WiFi mode is |
+|                             | SoftAP mode and the MAC address1 is the MAC of    |
+|                             | the station who connects to this SoftAP, the MAC  |
+|                             | address2 is the MAC of SoftAP interface, we say   |
+|                             | the packet is from the SoftAP to station.         |
+|                             | To avoid conflicting with WiFi connections, the   |
+|                             | following checks are applied:                     |
+|                             |                                                   |
+|                             |  - If the packet type is data and is from the     |
+|                             |    station to SoftAP, the ToDS bit in ieee80211   |
+|                             |    frame control should be 1, the FromDS bit      |
+|                             |    should be 0, otherwise the packet will be      |
+|                             |    discarded by WiFi driver.                      |
+|                             |  - If the packet type is data and is from the     |
+|                             |    softAP to station, the ToDS bit in ieee80211   |
+|                             |    frame control should be 0, the FromDS bit      |
+|                             |    should be 1, otherwise the packet will be      |
+|                             |    discarded by WiFi driver.                      |
+|                             |  - If the packet is from station to SoftAP or     |
+|                             |    from SoftAP to station, the Power Management,  |
+|                             |    More Data, Re-Transmission bits should be 0,   |
+|                             |    otherwise the packet will be discarded by WiFi |
+|                             |    driver.                                        |
+|                             |                                                   |
+|                             | ESP_ERR_WIFI_ARG is returned if any check fails.  |
 +-----------------------------+---------------------------------------------------+
-
 
 Wi-Fi Sniffer Mode
 ---------------------------
