@@ -1,0 +1,44 @@
+menu "Test config"
+
+config TEST_BOOL
+  bool "Test boolean"
+  default n
+
+config TEST_CHILD_BOOL
+  bool "Test boolean"
+  depends on TEST_BOOL
+  default y
+
+config TEST_CHILD_STR
+  string "Test str"
+  depends on TEST_BOOL
+  default "OHAI!"
+
+choice TEST_CHOICE
+  prompt "Some choice"
+  default CHOICE_A
+
+config CHOICE_A
+  bool "A"
+
+config CHOICE_B
+  bool "B"
+
+endchoice
+
+config DEPENDS_ON_CHOICE
+   string "Depends on choice"
+   default "Depends on A" if CHOICE_A
+   default "Depends on B" if CHOICE_B
+   default "WAT"
+
+config SOME_UNRELATED_THING
+   bool "Some unrelated thing"
+
+config TEST_CONDITIONAL_RANGES
+   int "Something with a range"
+   range 0 100 if TEST_BOOL
+   range 0 10
+   default 1
+
+endmenu

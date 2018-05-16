@@ -29,6 +29,7 @@ import json
 
 import gen_kconfig_doc
 import kconfiglib
+import pprint
 
 __version__ = "0.1"
 
@@ -65,7 +66,7 @@ def main():
 
     for fmt, filename in args.output:
         if not fmt in OUTPUT_FORMATS.keys():
-            print("Format '%s' not recognised. Known formats: %s" % (fmt, OUTPUT_FORMATS))
+            print("Format '%s' not recognised. Known formats: %s" % (fmt, OUTPUT_FORMATS.keys()))
             sys.exit(1)
 
     try:
@@ -150,9 +151,8 @@ def write_cmake(config, filename):
                     prefix, sym.name, val))
         config.walk_menu(write_node)
 
-def write_json(config, filename):
+def get_json_values(config):
     config_dict = {}
-
     def write_node(node):
         sym = node.item
         if not isinstance(sym, kconfiglib.Symbol):
@@ -168,8 +168,93 @@ def write_json(config, filename):
                 val = int(val)
             config_dict[sym.name] = val
     config.walk_menu(write_node)
+    return config_dict
+
+def write_json(config, filename):
+    config_dict = get_json_values(config)
     with open(filename, "w") as f:
         json.dump(config_dict, f, indent=4, sort_keys=True)
+
+def write_json_menus(config, filename):
+    result = []  # root level items
+    node_lookup = {}  # lookup from MenuNode to an item in result
+
+    def write_node(node):
+        try:
+            json_parent = node_lookup[node.parent]["children"]
+        except KeyError:
+            assert not node.parent in node_lookup  # if fails, we have a parent node with no "children" entity (ie a bug)
+            json_parent = result  # root level node
+
+        # node.kconfig.y means node has no dependency,
+        if node.dep is node.kconfig.y:
+            depends = None
+        else:
+            depends = kconfiglib.expr_str(node.dep)
+
+        try:
+            is_menuconfig = node.is_menuconfig
+        except AttributeError:
+            is_menuconfig = False
+
+        new_json = None
+        if node.item == kconfiglib.MENU or is_menuconfig:
+            new_json = { "type" : "menu",
+                         "title" : node.prompt[0],
+                         "depends_on": depends,
+                         "children": []
+            }
+            if is_menuconfig:
+                sym = node.item
+                new_json["name"] = sym.name
+                new_json["help"] = node.help
+                new_json["is_menuconfig"] = is_menuconfig
+                greatest_range = None
+                if len(sym.ranges) > 0:
+                    # Note: Evaluating the condition using kconfiglib's expr_value
+                    # should have one result different from value 0 ("n").
+                    for min_range, max_range, cond_expr in sym.ranges:
+                        if kconfiglib.expr_value(cond_expr) != "n":
+                            greatest_range = [min_range, max_range]
+                new_json["range"] = greatest_range
+
+        elif isinstance(node.item, kconfiglib.Symbol):
+            sym = node.item
+            greatest_range = None
+            if len(sym.ranges) > 0:
+                # Note: Evaluating the condition using kconfiglib's expr_value
+                # should have one result different from value 0 ("n").
+                for min_range, max_range, cond_expr in sym.ranges:
+                    if kconfiglib.expr_value(cond_expr) != "n":
+                        greatest_range = [int(min_range.str_value), int(max_range.str_value)]
+
+            new_json = {
+                "type" : kconfiglib.TYPE_TO_STR[sym.type],
+                "name" : sym.name,
+                "title": node.prompt[0] if node.prompt else None,
+                "depends_on" : depends,
+                "help": node.help,
+                "range" : greatest_range,
+                "children": [],
+            }
+        elif isinstance(node.item, kconfiglib.Choice):
+            choice = node.item
+            new_json = {
+                "type": "choice",
+                "title": node.prompt[0],
+                "name": choice.name,
+                "depends_on" : depends,
+                "help": node.help,
+                "children": []
+            }
+
+        if new_json:
+            json_parent.append(new_json)
+            node_lookup[node] = new_json
+
+    config.walk_menu(write_node)
+    with open(filename, "w") as f:
+        f.write(json.dumps(result, sort_keys=True, indent=4))
 
 def update_if_changed(source, destination):
     with open(source, "r") as f:
@@ -190,6 +275,7 @@ OUTPUT_FORMATS = {
     "cmake" : write_cmake,
     "docs" : gen_kconfig_doc.write_docs,
     "json" : write_json,
+    "json_menus" : write_json_menus,
     }
 
 class FatalError(RuntimeError):

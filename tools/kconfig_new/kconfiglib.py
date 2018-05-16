@@ -2419,24 +2419,11 @@ class Symbol(object):
             base = _TYPE_TO_BASE[self.orig_type]
 
             # Check if a range is in effect
-            for low_expr, high_expr, cond in self.ranges:
-                if expr_value(cond):
-                    has_active_range = True
-
-                    # The zeros are from the C implementation running strtoll()
-                    # on empty strings
-                    low = int(low_expr.str_value, base) if \
-                      _is_base_n(low_expr.str_value, base) else 0
-                    high = int(high_expr.str_value, base) if \
-                      _is_base_n(high_expr.str_value, base) else 0
-
-                    break
-            else:
-                has_active_range = False
+            low, high = self.active_range
 
             if vis and self.user_value is not None and \
                _is_base_n(self.user_value, base) and \
-               (not has_active_range or
+               (low is None or
                 low <= int(self.user_value, base) <= high):
 
                 # If the user value is well-formed and satisfies range
@@ -2463,7 +2450,7 @@ class Symbol(object):
                     val_num = 0  # strtoll() on empty string
 
                 # This clamping procedure runs even if there's no default
-                if has_active_range:
+                if low is not None:
                     clamp = None
                     if val_num < low:
                         clamp = low
@@ -2713,6 +2700,28 @@ class Symbol(object):
             self.user_value = None
             if self._is_user_assignable():
                 self._rec_invalidate()
+
+    @property
+    def active_range(self):
+        """
+        Returns a tuple of (low, high) integer values if a range
+        limit is active for this symbol, or (None, None) if no range
+        limit exists.
+        """
+        base = _TYPE_TO_BASE[self.orig_type]
+
+        for low_expr, high_expr, cond in self.ranges:
+            if expr_value(cond):
+                # The zeros are from the C implementation running strtoll()
+                # on empty strings
+                low = int(low_expr.str_value, base) if \
+                    _is_base_n(low_expr.str_value, base) else 0
+                high = int(high_expr.str_value, base) if \
+                    _is_base_n(high_expr.str_value, base) else 0
+
+                return (low, high)
+        return (None, None)
+
 
     def __repr__(self):
         """

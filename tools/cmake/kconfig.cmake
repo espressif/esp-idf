@@ -6,6 +6,7 @@ macro(kconfig_set_variables)
     set(SDKCONFIG_HEADER ${CONFIG_DIR}/sdkconfig.h)
     set(SDKCONFIG_CMAKE ${CONFIG_DIR}/sdkconfig.cmake)
     set(SDKCONFIG_JSON ${CONFIG_DIR}/sdkconfig.json)
+    set(KCONFIG_JSON_MENUS ${CONFIG_DIR}/kconfig_menus.json)
 
     set(ROOT_KCONFIG ${IDF_PATH}/Kconfig)
 
@@ -123,6 +124,15 @@ function(kconfig_process_config)
         VERBATIM
         USES_TERMINAL)
 
+    # Custom target to run confserver.py from the build tool
+    add_custom_target(confserver
+        COMMAND ${CMAKE_COMMAND} -E env
+        "COMPONENT_KCONFIGS=${kconfigs}"
+        "COMPONENT_KCONFIGS_PROJBUILD=${kconfigs_projbuild}"
+        ${IDF_PATH}/tools/kconfig_new/confserver.py --kconfig ${IDF_PATH}/Kconfig --config ${SDKCONFIG}
+        VERBATIM
+        USES_TERMINAL)
+
     # Generate configuration output via confgen.py
     # makes sdkconfig.h and skdconfig.cmake
     #
@@ -131,6 +141,7 @@ function(kconfig_process_config)
         --output header ${SDKCONFIG_HEADER}
         --output cmake ${SDKCONFIG_CMAKE}
         --output json ${SDKCONFIG_JSON}
+        --output json_menus ${KCONFIG_JSON_MENUS}
         RESULT_VARIABLE config_result)
     if(config_result)
         message(FATAL_ERROR "Failed to run confgen.py (${confgen_basecommand}). Error ${config_result}")
