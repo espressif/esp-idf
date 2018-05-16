@@ -204,12 +204,13 @@ int adc1_get_voltage(adc1_channel_t channel) __attribute__((deprecated));
 /** @endcond */
 
 /**
- * @brief Power on SAR ADC
+ * @brief Enable ADC power
  */
 void adc_power_on();
 
 /**
  * @brief Power off SAR ADC
+ * This function will force power down for ADC
  */
 void adc_power_off();
 
