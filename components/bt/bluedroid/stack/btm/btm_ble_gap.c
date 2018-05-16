@@ -1812,14 +1812,14 @@ UINT8 *btm_ble_build_adv_data(tBTM_BLE_AD_MASK *p_data_mask, UINT8 **p_dst,
             } else {
                 cp_len = p_data->p_manu->len;
             }
-            LOG_DEBUG("cp_len = %d\n,p_data->p_manu->len=%d\n", cp_len, p_data->p_manu->len);
+            BTM_TRACE_DEBUG("cp_len = %d\n,p_data->p_manu->len=%d\n", cp_len, p_data->p_manu->len);
             for (int i = 0; i < p_data->p_manu->len; i++) {
-                LOG_DEBUG("p_data->p_manu->p_val[%d] = %x\n", i, p_data->p_manu->p_val[i]);
+                BTM_TRACE_DEBUG("p_data->p_manu->p_val[%d] = %x\n", i, p_data->p_manu->p_val[i]);
             }
             *p++ = cp_len + 1;
             *p++ = BTM_BLE_AD_TYPE_MANU;
             ARRAY_TO_STREAM(p, p_data->p_manu->p_val, cp_len);
-            LOG_DEBUG("p_addr = %p\n,p_data->p_manu->p_val = %p\n", p, p_data->p_manu->p_val);
+            BTM_TRACE_DEBUG("p_addr = %p\n,p_data->p_manu->p_val = %p\n", p, p_data->p_manu->p_val);
             len -= (cp_len + MIN_ADV_LENGTH);
             data_mask &= ~BTM_BLE_AD_BIT_MANU;
         }
@@ -2085,7 +2085,7 @@ void btm_ble_set_adv_flag(UINT16 connect_mode, UINT16 disc_mode)
 
     btm_ble_update_dmt_flag_bits (&flag, connect_mode, disc_mode);
 
-    LOG_DEBUG("disc_mode %04x", disc_mode);
+    BTM_TRACE_DEBUG("disc_mode %04x", disc_mode);
     /* update discoverable flag */
     if (disc_mode & BTM_BLE_LIMITED_DISCOVERABLE) {
         flag &= ~BTM_BLE_GEN_DISC_FLAG;
@@ -2098,7 +2098,7 @@ void btm_ble_set_adv_flag(UINT16 connect_mode, UINT16 disc_mode)
     }
 
     if (flag != old_flag) {
-        LOG_ERROR("flag = 0x%x,old_flag = 0x%x", flag, old_flag);
+        BTM_TRACE_ERROR("flag = 0x%x,old_flag = 0x%x", flag, old_flag);
         btm_ble_update_adv_flag(flag);
     }
 }
@@ -3164,7 +3164,7 @@ static void btm_ble_process_adv_pkt_cont(BD_ADDR bda, UINT8 addr_type, UINT8 evt
     }
 
     if ((result = btm_ble_is_discoverable(bda, evt_type, p)) == 0) {
-        LOG_WARN("%s device is no longer discoverable so discarding advertising packet pkt",
+        BTM_TRACE_WARNING("%s device is no longer discoverable so discarding advertising packet pkt",
                  __func__);
         return;
     }

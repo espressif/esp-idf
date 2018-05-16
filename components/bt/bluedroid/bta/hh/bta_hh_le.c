@@ -613,7 +613,7 @@ tBTA_HH_STATUS bta_hh_le_read_char_dscrpt(tBTA_HH_DEV_CB *p_cb, UINT16 srvc_uuid
         status = BTA_HH_OK;
     } else {
 #if BTA_HH_DEBUG == TRUE
-        LOG_WARN("%s No descriptor exists: %s(0x%04x)", __func__,
+        APPL_TRACE_WARNING("%s No descriptor exists: %s(0x%04x)", __func__,
                  bta_hh_uuid_to_str(char_descp_uuid), char_descp_uuid);
 #endif
     }
@@ -1092,7 +1092,7 @@ void bta_hh_le_expl_rpt(tBTA_HH_DEV_CB *p_dev_cb,
         p_char_id = &char_result;
     } while (1);
 
-    LOG_INFO("%s all BLE reports searched", __func__);
+    APPL_TRACE_API("%s all BLE reports searched", __func__);
     bta_hh_le_read_rpt_ref_descr(p_dev_cb,
                                  &p_dev_cb->hid_srvc[p_dev_cb->cur_srvc_index].report[0]);
 

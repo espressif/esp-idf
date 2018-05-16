@@ -42,7 +42,7 @@ bt_status_t btc_storage_add_bonded_device(bt_bdaddr_t *remote_bd_addr,
     bdstr_t bdstr;
 
     bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
-    LOG_DEBUG("add to storage: Remote device:%s\n", bdstr);
+    BTC_TRACE_DEBUG("add to storage: Remote device:%s\n", bdstr);
 
     btc_config_lock();
     int ret = btc_config_set_int(bdstr, BTC_STORAGE_LINK_KEY_TYPE_STR, (int)key_type);
@@ -52,7 +52,7 @@ bt_status_t btc_storage_add_bonded_device(bt_bdaddr_t *remote_bd_addr,
     btc_config_flush();
     btc_config_unlock();
 
-    LOG_DEBUG("Storage add rslt %d\n", ret);
+    BTC_TRACE_DEBUG("Storage add rslt %d\n", ret);
     return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
@@ -77,7 +77,7 @@ static bt_status_t btc_in_fetch_bonded_devices(int add)
             continue;
         }
 
-        LOG_DEBUG("Remote device:%s\n", name);
+        BTC_TRACE_DEBUG("Remote device:%s\n", name);
         LINK_KEY link_key;
         size_t size = sizeof(link_key);
         if (btc_config_get_bin(name, BTC_STORAGE_LINK_KEY_STR, link_key, &size)) {
@@ -100,11 +100,11 @@ static bt_status_t btc_in_fetch_bonded_devices(int add)
                 }
                 bt_linkkey_file_found = TRUE;
             } else {
-                LOG_ERROR("bounded device:%s, LinkKeyType or PinLength is invalid\n", name);
+                BTC_TRACE_ERROR("bounded device:%s, LinkKeyType or PinLength is invalid\n", name);
             }
         }
         if (!bt_linkkey_file_found) {
-            LOG_DEBUG("Remote device:%s, no link key\n", name);
+            BTC_TRACE_DEBUG("Remote device:%s, no link key\n", name);
         }
     }
     btc_config_unlock();
@@ -129,7 +129,7 @@ bt_status_t btc_storage_load_bonded_devices(void)
 {
     bt_status_t status;
     status = btc_in_fetch_bonded_devices(1);
-    LOG_DEBUG("Storage load rslt %d\n", status);
+    BTC_TRACE_DEBUG("Storage load rslt %d\n", status);
     return status;
 }
 
@@ -148,7 +148,7 @@ bt_status_t btc_storage_remove_bonded_device(bt_bdaddr_t *remote_bd_addr)
     bdstr_t bdstr;
     bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
     int ret = 1;
-    LOG_DEBUG("Add to storage: Remote device:%s\n", bdstr);
+    BTC_TRACE_DEBUG("Add to storage: Remote device:%s\n", bdstr);
 
     btc_config_lock();
     if (btc_config_exist(bdstr, BTC_STORAGE_LINK_KEY_TYPE_STR)) {
