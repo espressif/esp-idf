@@ -338,7 +338,7 @@ static void rmt_example_nec_tx_task()
         int i, offset = 0;
         while(1) {
             //To build a series of waveforms.
-            i = nec_build_items(channel, item + offset, item_num - offset, ((~addr) << 8) | addr, cmd);
+            i = nec_build_items(channel, item + offset, item_num - offset, ((~addr) << 8) | addr, ((~cmd) << 8) |  cmd);
             if(i < 0) {
                 break;
             }
