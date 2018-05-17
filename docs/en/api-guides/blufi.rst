@@ -3,22 +3,22 @@ BluFi
 
 Overview
 ========
-BluFi for ESP32 is a network-configuration funcion via Bluetooth channel.
+The BluFi for ESP32 is a Wi-Fi network configuration function via Bluetooth channel. It provides a secure protocol to pass Wi-Fi configuration and credentials to the ESP32. Using this information ESP32 can then e.g. connect to an AP or establish a SoftAP.
 
-It is built on the GATT protocol, which defines the procedure of ESP32 working as the GATT Server to connect the GATT Client (e.g. an SoftAP created by a mobile phone) through Wi-Fi or configuring for the SoftAP Profile. Sharding, data encryption, checksum verification in the BluFi layer are the key parts that need your attention.
+Fragmenting, data encryption, checksum verification in the BluFi layer are the key elements of this process..
 
-The algorithms of symmetric encryption, asymmetric encryption and checksum support custmization on your demand in practical use. Here we use the DH algorithm for key negotiation, 128-AES algorithm for data encryption, and CRC16 algorithm for checksum verification.
+You can customize symmetric encryption, asymmetric encryption and checksum support custmization on your demand in practical use. Here we use the DH algorithm for key negotiation, 128-AES algorithm for data encryption, and CRC16 algorithm for checksum verification.
 
 The BluFi Flow:
 ---------------
 The BluFi networking flow includes the configuration of the SoftAP and Station.
 
-Take the configuration of the Station as an example to illustrate the core parts of the procedure, including broadcast, connection, service discovery, negotiation of the shared key, data transmission, connection status backhaul.
+The following uses Station as an example to illustrate the core parts of the procedure, including broadcast, connection, service discovery, negotiation of the shared key, data transmission, connection status backhaul.
 
-The procedure is as follows:
-------------------------------
+The procedure is as follows
+---------------------------
 
-1. Set the ESP32 into GATT Server mode and then it will send broadcasts with specific *adv data*. You can customize this broadcast as needed, which is not a part of the BluFi Profile.
+1. Set the ESP32 into GATT Server mode and then it will send broadcasts with specific *advertising data*. You can customize this broadcast as needed, which is not a part of the BluFi Profile.
 
 2. Use the APP installed on the mobile phone to search for this particular broadcast. The mobile phone will connect to ESP32 as the GATT Client once the broadcast is confirmed. The APP used during this part is up to you.
 
