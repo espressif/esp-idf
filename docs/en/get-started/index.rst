@@ -314,9 +314,9 @@ If you'd like to use the Eclipse IDE instead of running ``idf.py``, check out th
 Monitor
 =======
 
-To see if "hello_world" application is indeed running, type ``idf.py monitor``. This command is launching :doc:`IDF Monitor <idf-monitor>` application::
+To see if "hello_world" application is indeed running, type ``idf.py -p PORT monitor``. This command is launching :doc:`IDF Monitor <idf-monitor>` application::
 
-    $ idf.py monitor
+    $ idf.py -p /dev/ttyUSB0 monitor
     Running idf_monitor in directory [...]/esp/hello_world/build
     Executing "python [...]/esp-idf/tools/idf_monitor.py -b 115200 [...]/esp/hello_world/build/hello-world.elf"...
     --- idf_monitor on /dev/ttyUSB0 115200 ---
