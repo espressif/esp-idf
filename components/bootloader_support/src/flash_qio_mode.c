@@ -116,21 +116,13 @@ static uint32_t execute_flash_command(uint8_t command, uint32_t mosi_data, uint8
 extern uint8_t g_rom_spiflash_dummy_len_plus[];
 uint32_t bootloader_read_flash_id()
 {
-    uint32_t old_ctrl_reg = SPIFLASH.ctrl.val;
-    SPIFLASH.ctrl.val = SPI_WP_REG; // keep WP high while idle, otherwise leave DIO mode
-    SPIFLASH.user.usr_dummy = 0;
-    SPIFLASH.user.usr_addr = 0;
-    SPIFLASH.user.usr_command = 1;
-    SPIFLASH.user2.usr_command_bitlen = 7;
     uint32_t id = execute_flash_command(CMD_RDID, 0, 0, 24);
-    SPIFLASH.ctrl.val = old_ctrl_reg;
     id = ((id & 0xff) << 16) | ((id >> 16) & 0xff) | (id & 0xff00);
     return id;
 }
 
 void bootloader_enable_qio_mode(void)
 {
-    uint32_t old_ctrl_reg;
     uint32_t raw_flash_id;
     uint8_t mfg_id;
     uint16_t flash_id;
@@ -138,10 +130,6 @@ void bootloader_enable_qio_mode(void)
 
     ESP_LOGD(TAG, "Probing for QIO mode enable...");
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);
-
-    /* Set up some of the SPIFLASH user/ctrl variables which don't change
-       while we're probing using execute_flash_command() */
-    old_ctrl_reg = SPIFLASH.ctrl.val;
 
     raw_flash_id = g_rom_flashchip.device_id;
     ESP_LOGD(TAG, "Raw SPI flash chip id 0x%x", raw_flash_id);
@@ -162,13 +150,9 @@ void bootloader_enable_qio_mode(void)
         ESP_LOGI(TAG, "Enabling default flash chip QIO");
     }
 
-    esp_err_t res = enable_qio_mode(chip_data[i].read_status_fn,
-                                    chip_data[i].write_status_fn,
-                                    chip_data[i].status_qio_bit);
-    if (res != ESP_OK) {
-        // Restore SPI flash CTRL setting, to keep us in DIO/DOUT mode
-        SPIFLASH.ctrl.val = old_ctrl_reg;
-    }
+    enable_qio_mode(chip_data[i].read_status_fn,
+                    chip_data[i].write_status_fn,
+                    chip_data[i].status_qio_bit);
 }
 
 static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
@@ -264,6 +248,13 @@ static void write_status_16b_wrsr(unsigned new_status)
 
 static uint32_t execute_flash_command(uint8_t command, uint32_t mosi_data, uint8_t mosi_len, uint8_t miso_len)
 {
+    uint32_t old_ctrl_reg = SPIFLASH.ctrl.val;
+    SPIFLASH.ctrl.val = SPI_WP_REG_M; // keep WP high while idle, otherwise leave DIO mode
+    SPIFLASH.user.usr_dummy = 0;
+    SPIFLASH.user.usr_addr = 0;
+    SPIFLASH.user.usr_command = 1;
+    SPIFLASH.user2.usr_command_bitlen = 7;
+
     SPIFLASH.user2.usr_command_value = command;
     SPIFLASH.user.usr_miso = miso_len > 0;
     SPIFLASH.miso_dlen.usr_miso_dbitlen = miso_len ? (miso_len - 1) : 0;
@@ -286,5 +277,6 @@ static uint32_t execute_flash_command(uint8_t command, uint32_t mosi_data, uint8
     while(SPIFLASH.cmd.usr != 0)
     { }
 
+    SPIFLASH.ctrl.val = old_ctrl_reg;
     return SPIFLASH.data_buf[0];
 }
