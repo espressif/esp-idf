@@ -63,6 +63,8 @@ Base64-encoded body of core dump will be between the following header and footer
  <body of base64-encoded core dump, save it to file on disk>
  ================= CORE DUMP END ===================
 
+The `CORE DUMP START` and `CORE DUMP END` lines must not be included in core dump text file.
+
 Running 'espcoredump.py'
 ------------------------------------
 
