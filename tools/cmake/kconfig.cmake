@@ -38,7 +38,7 @@ if(NOT MCONF)
     #
     set(MCONF kconfig_bin/mconf)
 
-    externalproject_add(mconf
+    Externalproject_Add(mconf
         SOURCE_DIR ${IDF_PATH}/tools/kconfig
         CONFIGURE_COMMAND ""
         BINARY_DIR "kconfig_bin"
@@ -47,7 +47,16 @@ if(NOT MCONF)
         INSTALL_COMMAND ""
         EXCLUDE_FROM_ALL 1
         )
+
+    file(GLOB mconf_srcfiles ${IDF_PATH}/tools/kconfig/*.c)
+    ExternalProject_Add_StepDependencies(mconf build
+        ${mconf_srcfiles}
+        ${IDF_PATH}/tools/kconfig/Makefile
+        ${CMAKE_CURRENT_LIST_FILE})
+    unset(mconf_srcfiles)
+
     set(menuconfig_depends DEPENDS mconf)
+
 endif()
 
 # Find all Kconfig files for all components
