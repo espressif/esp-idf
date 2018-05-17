@@ -4,15 +4,15 @@
 #include "esp_spi_flash.h"
 #include "Flash_Emulator.h"
 
-#define PARTITIONS_MAX                  8
+#define EMULATORS_MAX                  8
 
-static Flash_Emulator* emulators[PARTITIONS_MAX];
+static Flash_Emulator* emulators[EMULATORS_MAX];
 
 esp_partition_t esp_partition_create(uint32_t size, uint32_t start)
 { 
     int handle = -1;
 
-    for (int i = 0; i < PARTITIONS_MAX; i++) {
+    for (int i = 0; i < EMULATORS_MAX; i++) {
         if (emulators[i] == NULL) {
             emulators[i] = new Flash_Emulator(start + size, SPI_FLASH_SEC_SIZE, SPI_FLASH_WRITE_SIZE);
             handle = i;

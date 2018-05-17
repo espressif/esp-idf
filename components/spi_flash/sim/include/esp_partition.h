@@ -2,8 +2,13 @@
 
 #include <stdbool.h>
 
+#include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_spi_flash.h"
+
+#if defined(__cplusplus)
+extern "C" {                 // Make sure we have C-declarations in C++ programs
+#endif
 
 /**
  * @brief Partition type
@@ -82,4 +87,8 @@ esp_err_t esp_partition_read(const esp_partition_t* partition,
 esp_partition_t esp_partition_create(uint32_t size, uint32_t start);
 
 void esp_partition_delete(esp_partition_t partition);
+
+#if defined(__cplusplus)
+}
+#endif
 
