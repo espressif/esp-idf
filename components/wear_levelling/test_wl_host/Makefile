@@ -1,53 +1,76 @@
 TEST_PROGRAM=test_wl
+
+# Expose as a library for FS components that require wear_levelling
+TEST_LIB=lib$(TEST_PROGRAM).a
+
+# Use simulated block device
+TEST_PARTITION_SIM_DIR=$(IDF_PATH)/components/spi_flash/sim
+TEST_PARTITION_SIM_LIB=libpartition_sim.a
+
 all: $(TEST_PROGRAM)
 
-SOURCE_FILES = \
-	esp_error_check_stub.cpp \
-	$(addprefix ../, \
-		crc32.cpp \
-		WL_Flash.cpp \
-		../nvs_flash/test_nvs_host/crc.cpp\
+LIB_SOURCE_FILES = \
+	$(addprefix stubs/, \
+	newlib/lock.c \
+	log/log.c \
+	esp32/crc.cpp \
 	) \
-	Flash_Emulator.cpp \
-	wl_tests_host.cpp  \
-	TestPowerDown.cpp  \
-	esp_log_stub.cpp \
+	$(addprefix ../, \
+	wear_levelling.cpp \
+	crc32.cpp \
+	WL_Flash.cpp \
+	Partition.cpp \
+	) \
+
+TEST_SOURCE_FILES = \
+	test_wl.cpp \
 	main.cpp
 
-
 INCLUDE_FLAGS = $(addprefix -I,\
+	. \
 	../ \
 	../include \
 	../private_include \
+	$(addprefix stubs/, \
+	esp32/include \
+	newlib/include \
+	log/include \
+	) \
 	../../esp32/include \
-	../../soc/esp32/include \
-	../../log/include \
-	../../spi_flash/include \
-	../../nvs_flash/test_nvs_host \
+	../../spi_flash/sim/include \
 	../../../tools/catch \
-) 
+)
 
 GCOV ?= gcov
 
-CPPFLAGS += $(INCLUDE_FLAGS) -D CONFIG_LOG_DEFAULT_LEVEL
+CPPFLAGS += $(INCLUDE_FLAGS) -D CONFIG_LOG_DEFAULT_LEVEL -g
 CFLAGS += -fprofile-arcs -ftest-coverage
 CXXFLAGS += -std=c++11 -Wall -Werror  -fprofile-arcs -ftest-coverage
 LDFLAGS += -lstdc++ -fprofile-arcs -ftest-coverage
 
-OBJ_FILES = $(SOURCE_FILES:.cpp=.o)
+LIB_OBJ_FILES = $(filter %.o, $(LIB_SOURCE_FILES:.cpp=.o) $(LIB_SOURCE_FILES:.c=.o))
+TEST_OBJ_FILES = $(filter %.o, $(TEST_SOURCE_FILES:.cpp=.o) $(TEST_SOURCE_FILES:.c=.o))
 
-COVERAGE_FILES = $(OBJ_FILES:.o=.gc*)
+$(TEST_PARTITION_SIM_DIR)/$(TEST_PARTITION_SIM_LIB): force
+	$(MAKE) -C $(TEST_PARTITION_SIM_DIR) lib
 
-$(OBJ_FILES): %.o: %.cpp
+$(TEST_LIB): $(LIB_OBJ_FILES)
+	$(AR) rcs $@ $^
 
-$(TEST_PROGRAM): $(OBJ_FILES)
-	g++ $(LDFLAGS) -o $(TEST_PROGRAM) $(OBJ_FILES)
+lib: $(TEST_LIB)
+
+$(TEST_PROGRAM): lib $(TEST_OBJ_FILES) $(TEST_PARTITION_SIM_DIR)/$(TEST_PARTITION_SIM_LIB)
+	g++ $(LDFLAGS) -o $@  $(TEST_OBJ_FILES) -L$(abspath .) -l:$(TEST_LIB) -L$(TEST_PARTITION_SIM_DIR) -l:$(TEST_PARTITION_SIM_LIB)
+
+force:
+
+test: $(TEST_PROGRAM)
+	./$(TEST_PROGRAM)
 
 $(OUTPUT_DIR):
 	mkdir -p $(OUTPUT_DIR)
 
-test: $(TEST_PROGRAM)
-	./$(TEST_PROGRAM)
+COVERAGE_FILES = $(LIB_OBJ_FILES:.o=.gc*) $(TEST_OBJ_FILES:.o=.gc*)
 
 $(COVERAGE_FILES): $(TEST_PROGRAM) test
 
@@ -60,9 +83,10 @@ coverage_report: coverage.info
 	@echo "Coverage report is in coverage_report/index.html"
 
 clean:
-	rm -f $(OBJ_FILES) $(TEST_PROGRAM)
+	$(MAKE) -C $(TEST_PARTITION_SIM_DIR) clean
+	rm -f $(LIB_OBJ_FILES) $(TEST_OBJ_FILES) $(TEST_PROGRAM) $(TEST_LIB)
 	rm -f $(COVERAGE_FILES) *.gcov
 	rm -rf coverage_report/
 	rm -f coverage.info
 
-.PHONY: clean all test
+.PHONY: clean all test lib
