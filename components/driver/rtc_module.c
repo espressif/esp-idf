@@ -508,9 +508,10 @@ static void touch_pad_filter_cb(void *arg)
     if (s_touch_pad_filter == NULL) {
         return;
     }
-    uint16_t val;
+    uint16_t val = 0;
     for (int i = 0; i < TOUCH_PAD_MAX; i++) {
-        touch_pad_read(i, &val);
+        (void) touch_pad_read(i, &val);
+        // if touch_pad_read fails then the previous value of val is used
         s_touch_pad_filter->filtered_val[i] = s_touch_pad_filter->filtered_val[i] == 0 ? (val << TOUCH_PAD_SHIFT_DEFAULT) : s_touch_pad_filter->filtered_val[i];
         s_touch_pad_filter->filtered_val[i] = _touch_filter_iir((val << TOUCH_PAD_SHIFT_DEFAULT),
                 s_touch_pad_filter->filtered_val[i], TOUCH_PAD_FILTER_FACTOR_DEFAULT);

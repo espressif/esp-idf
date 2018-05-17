@@ -880,7 +880,7 @@ tBTM_SEC_ACTION btm_ble_determine_security_act(BOOLEAN is_originator, BD_ADDR bd
             auth_req |= BTM_LE_AUTH_REQ_MITM;
     }
 
-    tBTM_BLE_SEC_REQ_ACT ble_sec_act;
+    tBTM_BLE_SEC_REQ_ACT ble_sec_act = BTM_BLE_SEC_REQ_ACT_NONE;
     btm_ble_link_sec_check(bdaddr, auth_req, &ble_sec_act);
 
     BTM_TRACE_DEBUG ("%s ble_sec_act %d", __func__ , ble_sec_act);
