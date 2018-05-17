@@ -53,7 +53,8 @@ void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
 
 void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len)
 {
-    i2s_write_bytes(0, (const char *)data, len, portMAX_DELAY);
+    size_t bytes_written;
+    i2s_write(0, data, len, &bytes_written, portMAX_DELAY);
     if (++m_pkt_cnt % 100 == 0) {
         ESP_LOGI(BT_AV_TAG, "Audio packet count %u", m_pkt_cnt);
     }
