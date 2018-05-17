@@ -97,6 +97,11 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
         uint8_t *bda = a2d->conn_stat.remote_bda;
         ESP_LOGI(BT_AV_TAG, "A2DP connection state: %s, [%02x:%02x:%02x:%02x:%02x:%02x]",
              m_a2d_conn_state_str[a2d->conn_stat.state], bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
+        if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_DISCONNECTED) {
+            esp_bt_gap_set_scan_mode(ESP_BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE);
+        } else if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_CONNECTED){
+            esp_bt_gap_set_scan_mode(ESP_BT_SCAN_MODE_NONE);
+        }
         break;
     }
     case ESP_A2D_AUDIO_STATE_EVT: {
