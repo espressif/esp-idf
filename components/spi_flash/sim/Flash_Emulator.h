@@ -16,12 +16,12 @@
 #define _Flash_Emulator_H_
 
 #include "esp_err.h"
-#include "Flash_Access.h"
+
 /**
 * @brief This class is used to emulate flash devices. Class implements Flash_Access interface
 *
 */
-class Flash_Emulator : public Flash_Access
+class Flash_Emulator
 {
 
 public:
