@@ -123,6 +123,7 @@ extern "C" {
 #define ESP_ERR_MESH_INTERFACE            (ESP_ERR_MESH_BASE + 19)   /**< low-level WiFi interface error */
 #define ESP_ERR_MESH_DISCARD_DUPLICATE    (ESP_ERR_MESH_BASE + 20)   /**< discard the packet due to the duplicate sequence number */
 #define ESP_ERR_MESH_DISCARD              (ESP_ERR_MESH_BASE + 21)   /**< discard the packet */
+#define ESP_ERR_MESH_VOTING               (ESP_ERR_MESH_BASE + 22)   /**< vote in progress */
 
 /**
  * @brief flags used with esp_mesh_send() and esp_mesh_recv()
@@ -138,7 +139,7 @@ extern "C" {
 /**
  * @brief option definitions for esp_mesh_send() and esp_mesh_recv()
  */
-#define MESH_OPT_SEND_GROUP     (7)     /**< data transmission by group; used with esp_mesh_send() and must have payload */
+#define MESH_OPT_SEND_GROUP     (7)     /**< data transmission by group; used with esp_mesh_send() and shall have payload */
 #define MESH_OPT_RECV_DS_ADDR   (8)     /**< return a remote IP address; used with esp_mesh_send() and esp_mesh_recv() */
 
 /*******************************************************
@@ -438,11 +439,21 @@ typedef struct {
 } mesh_cfg_t;
 
 /**
- * @brief vote
+ * @brief vote address configuration
  */
 typedef union {
-    int attempts;           /**< max vote attempts */
-    mesh_addr_t rc_addr;    /**< root address specified by users for API esp_mesh_waive_root() */
+    int attempts;           /**< max vote attempts before a new root is elected automatically by mesh network. (min:15, 15 by default) */
+    mesh_addr_t rc_addr;    /**< a new root address specified by users for API esp_mesh_waive_root() */
+} mesh_rc_config_t;
+
+/**
+ * @brief vote
+ */
+typedef struct {
+    float percentage;           /**< vote percentage threshold for approval of being a root */
+    bool is_rc_specified;       /**< if true, rc_addr shall be specified(Unimplemented).
+                                     if false, attempts value shall be specified to make network start root election. */
+    mesh_rc_config_t config;    /**< vote address configuration */
 } mesh_vote_t;
 
 /**
@@ -1080,8 +1091,8 @@ bool esp_mesh_is_root_conflicts_allowed(void);
 /**
  * @brief     set group ID addresses
  *
- * @param     addr  pointer to new addresses
- * @param     num  number of addresses
+ * @param     addr  pointer to new group ID addresses
+ * @param     num  the number of group ID addresses
  *
  * @return
  *    - ESP_OK
@@ -1092,8 +1103,8 @@ esp_err_t esp_mesh_set_group_id(const mesh_addr_t *addr, const int num);
 /**
  * @brief     delete group ID addresses
  *
- * @param     addr  pointer to deleted address
- * @param     num  number of addresses
+ * @param     addr  pointer to deleted group ID address
+ * @param     num  the number of group ID addresses
  *
  * @return
  *    - ESP_OK
@@ -1111,8 +1122,8 @@ int esp_mesh_get_group_num(void);
 /**
  * @brief     get group ID addresses
  *
- * @param     addr  pointer to group address
- * @param     num  number of addresses
+ * @param     addr  pointer to group ID addresses
+ * @param     num  the number of group ID addresses
  *
  * @return
  *    - ESP_OK
@@ -1161,29 +1172,30 @@ esp_err_t esp_mesh_set_ie_crypto_funcs(const mesh_crypto_funcs_t *crypto_funcs);
 /**
  * @brief    set mesh ie crypto key
  *
- * @attention This API should be called before esp_mesh_start().
+ * @attention This API should be called after esp_mesh_set_config() and before esp_mesh_start().
  *
- * @param     key  crypto key
- * @param     len  the present implementation only supports 32
+ * @param     key  ASCII crypto key
+ * @param     len  length in bytes, range:8~64
  *
  * @return
  *    - ESP_OK
  *    - ESP_ERR_MESH_NOT_ALLOWED
+ *    - ESP_ERR_MESH_NOT_CONFIG
  *    - ESP_MESH_ERR_ARGUMENT
  */
-esp_err_t esp_mesh_set_ie_crypto_key(const uint8_t *key, int len);
+esp_err_t esp_mesh_set_ie_crypto_key(const char *key, int len);
 
 /**
  * @brief    get mesh ie crypto key
  *
- * @param     key  crypto key
- * @param     len  the present implementation only supports 32
+ * @param     key  ASCII crypto key
+ * @param     len  length in bytes, range:8~64
  *
  * @return
  *    - ESP_OK
  *    - ESP_MESH_ERR_ARGUMENT
  */
-esp_err_t esp_mesh_get_ie_crypto_key(uint8_t *key, int len);
+esp_err_t esp_mesh_get_ie_crypto_key(char *key, int len);
 
 /**
  * @brief    set delay time before starting root healing
@@ -1215,7 +1227,7 @@ esp_err_t esp_mesh_set_event_cb(const mesh_event_cb_t event_cb);
 /**
  * @brief     set Root Fixed setting for nodes
  *            If Root Fixed setting of nodes is enabled, they won't compete to be a root.
- *            If a scenario needs a fixed root, all nodes in this network must enable this setting.
+ *            If a scenario needs a fixed root, all nodes in this network shall enable this setting.
  *
  * @param     enable  enable or not
  *
