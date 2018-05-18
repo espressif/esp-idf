@@ -24,15 +24,31 @@
 #include "soc/uart_struct.h"
 #include "lwip/sockets.h"
 #include "sdkconfig.h"
-
-/* Non-LWIP file descriptors are from 0 to (LWIP_SOCKET_OFFSET-1).
- * LWIP file descriptors are from LWIP_SOCKET_OFFSET to FD_SETSIZE-1.
-*/
+#include "lwip/sys.h"
 
 _Static_assert(MAX_FDS >= CONFIG_LWIP_MAX_SOCKETS, "MAX_FDS < CONFIG_LWIP_MAX_SOCKETS");
 
-static int lwip_fcntl_r_wrapper(int fd, int cmd, va_list args);
-static int lwip_ioctl_r_wrapper(int fd, int cmd, va_list args);
+static void lwip_stop_socket_select()
+{
+    sys_sem_signal(sys_thread_sem_get()); //socket_select will return
+}
+
+static void lwip_stop_socket_select_isr(BaseType_t *woken)
+{
+    if (sys_sem_signal_isr(sys_thread_sem_get()) && woken) {
+        *woken = pdTRUE;
+    }
+}
+
+static int lwip_fcntl_r_wrapper(int fd, int cmd, va_list args)
+{
+    return lwip_fcntl_r(fd, cmd, va_arg(args, int));
+}
+
+static int lwip_ioctl_r_wrapper(int fd, int cmd, va_list args)
+{
+    return lwip_ioctl_r(fd, cmd, va_arg(args, void *));
+}
 
 void esp_vfs_lwip_sockets_register()
 {
@@ -45,17 +61,14 @@ void esp_vfs_lwip_sockets_register()
         .read = &lwip_read_r,
         .fcntl = &lwip_fcntl_r_wrapper,
         .ioctl = &lwip_ioctl_r_wrapper,
+        .socket_select = &lwip_select,
+        .stop_socket_select = &lwip_stop_socket_select,
+        .stop_socket_select_isr = &lwip_stop_socket_select_isr,
     };
+    /* Non-LWIP file descriptors are from 0 to (LWIP_SOCKET_OFFSET-1). LWIP
+     * file descriptors are registered from LWIP_SOCKET_OFFSET to
+     * MAX_FDS-1.
+     */
 
     ESP_ERROR_CHECK(esp_vfs_register_fd_range(&vfs, NULL, LWIP_SOCKET_OFFSET, MAX_FDS));
-}
-
-static int lwip_fcntl_r_wrapper(int fd, int cmd, va_list args)
-{
-    return lwip_fcntl_r(fd, cmd, va_arg(args, int));
-}
-
-static int lwip_ioctl_r_wrapper(int fd, int cmd, va_list args)
-{
-    return lwip_ioctl_r(fd, cmd, va_arg(args, void *));
 }

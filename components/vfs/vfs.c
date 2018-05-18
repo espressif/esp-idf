@@ -20,7 +20,10 @@
 #include <sys/ioctl.h>
 #include <sys/unistd.h>
 #include <sys/lock.h>
+#include <sys/param.h>
 #include <dirent.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include "esp_vfs.h"
 #include "esp_log.h"
 
@@ -49,11 +52,27 @@ typedef struct vfs_entry_ {
     int offset;             // index of this structure in s_vfs array
 } vfs_entry_t;
 
+typedef struct {
+    bool isset; // none or at least one bit is set in the following 3 fd sets
+    fd_set readfds;
+    fd_set writefds;
+    fd_set errorfds;
+} fds_triple_t;
+
 static vfs_entry_t* s_vfs[VFS_MAX_COUNT] = { 0 };
 static size_t s_vfs_count = 0;
 
 static fd_table_t s_fd_table[MAX_FDS] = { [0 ... MAX_FDS-1] = FD_TABLE_ENTRY_UNUSED };
 static _lock_t s_fd_table_lock;
+
+/* Semaphore used for waiting select events from other VFS drivers when socket
+ * select is not used (not registered or socket FDs are not observed by the
+ * given call of select)
+ */
+static SemaphoreHandle_t s_select_sem = NULL;
+
+/* Lock ensuring that select is called from only one task at the time */
+static _lock_t s_one_select_lock;
 
 static esp_err_t esp_vfs_register_common(const char* base_path, size_t len, const esp_vfs_t* vfs, void* ctx, int *vfs_index)
 {
@@ -636,4 +655,215 @@ int access(const char *path, int amode)
     const char* path_within_vfs = translate_path(vfs, path);
     CHECK_AND_CALL(ret, r, vfs, access, path_within_vfs, amode);
     return ret;
+}
+
+static void call_end_selects(int end_index, const fds_triple_t *vfs_fds_triple)
+{
+    for (int i = 0; i < end_index; ++i) {
+        const vfs_entry_t *vfs = get_vfs_for_index(i);
+        const fds_triple_t *item = &vfs_fds_triple[i];
+        if (vfs && vfs->vfs.end_select && item->isset) {
+            vfs->vfs.end_select();
+        }
+    }
+}
+
+static int set_global_fd_sets(const fds_triple_t *vfs_fds_triple, int size, fd_set *readfds, fd_set *writefds, fd_set *errorfds)
+{
+    int ret = 0;
+
+    for (int i = 0; i < size; ++i) {
+        const fds_triple_t *item = &vfs_fds_triple[i];
+        if (item->isset) {
+            for (int fd = 0; fd < MAX_FDS; ++fd) {
+                const int local_fd = s_fd_table[fd].local_fd; // single read -> no locking is required
+                if (readfds && FD_ISSET(local_fd, &item->readfds)) {
+                    FD_SET(fd, readfds);
+                    ++ret;
+                }
+                if (writefds && FD_ISSET(local_fd, &item->writefds)) {
+                    FD_SET(fd, writefds);
+                    ++ret;
+                }
+                if (errorfds && FD_ISSET(local_fd, &item->errorfds)) {
+                    FD_SET(fd, errorfds);
+                    ++ret;
+                }
+            }
+        }
+    }
+
+    return ret;
+}
+
+int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout)
+{
+    int ret = 0;
+    struct _reent* r = __getreent();
+
+    if (nfds > MAX_FDS || nfds < 0) {
+        __errno_r(r) = EINVAL;
+        return -1;
+    }
+
+    if (_lock_try_acquire(&s_one_select_lock)) {
+        __errno_r(r) = EINTR;
+        return -1;
+    }
+
+    fds_triple_t *vfs_fds_triple;
+    if ((vfs_fds_triple = calloc(s_vfs_count, sizeof(fds_triple_t))) == NULL) {
+        __errno_r(r) = ENOMEM;
+        _lock_release(&s_one_select_lock);
+        return -1;
+    }
+
+    int (*socket_select)(int, fd_set *, fd_set *, fd_set *, struct timeval *) = NULL;
+    for (int fd = 0; fd < nfds; ++fd) {
+        _lock_acquire(&s_fd_table_lock);
+        const bool is_socket_fd = s_fd_table[fd].permanent;
+        const int vfs_index = s_fd_table[fd].vfs_index;
+        const int local_fd = s_fd_table[fd].local_fd;
+        _lock_release(&s_fd_table_lock);
+
+        if (vfs_index < 0) {
+            continue;
+        }
+
+        if (!socket_select && is_socket_fd) {
+            // no socket_select found yet and the fd is for a socket so take a look
+            if ((readfds && FD_ISSET(fd, readfds)) ||
+                    (writefds && FD_ISSET(fd, writefds)) ||
+                    (errorfds && FD_ISSET(fd, errorfds))) {
+                const vfs_entry_t *vfs = s_vfs[vfs_index];
+                socket_select = vfs->vfs.socket_select;
+            }
+            continue;
+        }
+
+        fds_triple_t *item = &vfs_fds_triple[vfs_index]; // FD sets for VFS which belongs to fd
+        if (readfds && FD_ISSET(fd, readfds)) {
+            item->isset = true;
+            FD_SET(local_fd, &item->readfds);
+            FD_CLR(fd, readfds);
+        }
+        if (writefds && FD_ISSET(fd, writefds)) {
+            item->isset = true;
+            FD_SET(local_fd, &item->writefds);
+            FD_CLR(fd, writefds);
+        }
+        if (errorfds && FD_ISSET(fd, errorfds)) {
+            item->isset = true;
+            FD_SET(local_fd, &item->errorfds);
+            FD_CLR(fd, errorfds);
+        }
+    }
+
+    // all non-socket VFSs have their FD sets in vfs_fds_triple
+    // the global readfds, writefds and errorfds contain only socket FDs (if
+    // there any)
+
+    if (!socket_select) {
+        // There is no socket VFS registered or select() wasn't called for
+        // any socket. Therefore, we will use our own signalization.
+        if ((s_select_sem = xSemaphoreCreateBinary()) == NULL) {
+            free(vfs_fds_triple);
+            __errno_r(r) = ENOMEM;
+            _lock_release(&s_one_select_lock);
+            return -1;
+        }
+    }
+
+    for (int i = 0; i < s_vfs_count; ++i) {
+        const vfs_entry_t *vfs = get_vfs_for_index(i);
+        fds_triple_t *item = &vfs_fds_triple[i];
+
+        if (vfs && vfs->vfs.start_select && item->isset) {
+            // call start_select for all non-socket VFSs with has at least one FD set in readfds, writefds, or errorfds
+            // note: it can point to socket VFS but item->isset will be false for that
+            esp_err_t err = vfs->vfs.start_select(nfds, &item->readfds, &item->writefds, &item->errorfds);
+
+            if (err != ESP_OK) {
+                call_end_selects(i, vfs_fds_triple);
+                (void) set_global_fd_sets(vfs_fds_triple, s_vfs_count, readfds, writefds, errorfds);
+                if (s_select_sem) {
+                    vSemaphoreDelete(s_select_sem);
+                    s_select_sem = NULL;
+                }
+                free(vfs_fds_triple);
+                __errno_r(r) = ENOMEM;
+                _lock_release(&s_one_select_lock);
+                return -1;
+            }
+        }
+    }
+
+    if (socket_select) {
+        ret = socket_select(nfds, readfds, writefds, errorfds, timeout);
+    } else {
+        if (readfds) {
+            FD_ZERO(readfds);
+        }
+        if (writefds) {
+            FD_ZERO(writefds);
+        }
+        if (errorfds) {
+            FD_ZERO(errorfds);
+        }
+
+        TickType_t ticks_to_wait = portMAX_DELAY;
+        if (timeout) {
+            uint32_t timeout_ms = timeout->tv_sec * 1000 + timeout->tv_usec / 1000;
+            ticks_to_wait = timeout_ms / portTICK_PERIOD_MS;
+        }
+        xSemaphoreTake(s_select_sem, ticks_to_wait);
+    }
+
+    call_end_selects(s_vfs_count, vfs_fds_triple); // for VFSs for start_select was called before
+    if (ret >= 0) {
+        ret += set_global_fd_sets(vfs_fds_triple, s_vfs_count, readfds, writefds, errorfds);
+    }
+    if (s_select_sem) {
+        vSemaphoreDelete(s_select_sem);
+        s_select_sem = NULL;
+    }
+    free(vfs_fds_triple);
+    _lock_release(&s_one_select_lock);
+    return ret;
+}
+
+void esp_vfs_select_triggered()
+{
+    if (s_select_sem) {
+        xSemaphoreGive(s_select_sem);
+    } else {
+        // Another way would be to go through s_fd_table and find the VFS
+        // which has a permanent FD. But in order to avoid to lock
+        // s_fd_table_lock we go through the VFS table.
+        for (int i = 0; i < s_vfs_count; ++i) {
+            const vfs_entry_t *vfs = s_vfs[i];
+            if (vfs != NULL && vfs->vfs.stop_socket_select != NULL) {
+                vfs->vfs.stop_socket_select();
+                break;
+            }
+        }
+    }
+}
+
+void esp_vfs_select_triggered_isr(BaseType_t *woken)
+{
+    if (s_select_sem) {
+        xSemaphoreGiveFromISR(s_select_sem, woken);
+    } else {
+        // Another way would be to go through s_fd_table and find the VFS
+        // which has a permanent FD. But in order to avoid to lock
+        // s_fd_table_lock we go through the VFS table.
+        for (int i = 0; i < s_vfs_count; ++i) {
+            const vfs_entry_t *vfs = s_vfs[i];
+            if (vfs != NULL && vfs->vfs.stop_socket_select_isr != NULL) {
+                vfs->vfs.stop_socket_select_isr(woken);
+                break;
+            }
+        }
+    }
 }
