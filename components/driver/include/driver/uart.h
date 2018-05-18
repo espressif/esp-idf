@@ -737,6 +737,20 @@ int uart_pattern_get_pos(uart_port_t uart_num);
  */
 esp_err_t uart_pattern_queue_reset(uart_port_t uart_num, int queue_length);
 
+/**
+ * @brief Enable or disables RS485 half duplex mode. Note, hardware flow control must be disabled to enable RS485.
+ *        We have the option to support a half-duplex transceiver by toggling the RTS pin to manually control
+          data direction. If using a Auto direction control transceiver then the RTS pin isn't required.
+ *        Currently the code enables collision detection interrupt and simply resets the RX FIFO on detection.
+ * @param uart_num UART port number.
+ * @param enable Enabled or disable RS485 mode.
+ * @param tx_rx_en Enable the transmitter’s output signal to be fed to the receiver’s input signal mainly.
+ * @param rx_busy_tx_en Enable the RS-485 transmitter to send data when the RS-485 receiver line is busy.
+ * @return
+ *     - ESP_OK Success
+ */
+esp_err_t uart_set_rs485(uart_port_t uart_num, bool enable, bool tx_rx_en, bool rx_busy_tx_en);
+
 #ifdef __cplusplus
 }
 #endif
