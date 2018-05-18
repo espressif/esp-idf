@@ -57,6 +57,11 @@ extern "C" {
  */
 #define ESP_VFS_FLAG_CONTEXT_PTR    1
 
+/*
+ * @brief VFS identificator used for esp_vfs_register_with_id()
+ */
+typedef int esp_vfs_id_t;
+
 /**
  * @brief VFS definition structure
  *
@@ -222,6 +227,24 @@ esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ct
 esp_err_t esp_vfs_register_fd_range(const esp_vfs_t *vfs, void *ctx, int min_fd, int max_fd);
 
 /**
+ * Special case function for registering a VFS that uses a method other than
+ * open() to open new file descriptors. In comparison with
+ * esp_vfs_register_fd_range, this function doesn't pre-registers an interval
+ * of file descriptors. File descriptors can be registered later, by using
+ * esp_vfs_register_fd.
+ *
+ * @param vfs Pointer to esp_vfs_t. Meaning is the same as for esp_vfs_register().
+ * @param ctx Pointer to context structure. Meaning is the same as for esp_vfs_register().
+ * @param vfs_id Here will be written the VFS ID which can be passed to
+ *               esp_vfs_register_fd for registering file descriptors.
+ *
+ * @return  ESP_OK if successful, ESP_ERR_NO_MEM if too many VFSes are
+ *          registered, ESP_ERR_INVALID_ARG if the file descriptor boundaries
+ *          are incorrect.
+ */
+esp_err_t esp_vfs_register_with_id(const esp_vfs_t *vfs, void *ctx, esp_vfs_id_t *vfs_id);
+
+/**
  * Unregister a virtual filesystem for given path prefix
  *
  * @param base_path  file prefix previously used in esp_vfs_register call
@@ -229,6 +252,31 @@ esp_err_t esp_vfs_register_fd_range(const esp_vfs_t *vfs, void *ctx, int min_fd,
  *         hasn't been registered
  */
 esp_err_t esp_vfs_unregister(const char* base_path);
+
+/**
+ * Special function for registering another file descriptor for a VFS registered
+ * by esp_vfs_register_with_id.
+ *
+ * @param vfs_id VFS identificator returned by esp_vfs_register_with_id.
+ * @param fd The registered file descriptor will be written to this address.
+ *
+ * @return  ESP_OK if the registration is successful,
+ *          ESP_ERR_NO_MEM if too many file descriptors are registered,
+ *          ESP_ERR_INVALID_ARG if the arguments are incorrect.
+ */
+esp_err_t esp_vfs_register_fd(esp_vfs_id_t vfs_id, int *fd);
+
+/**
+ * Special function for unregistering a file descriptor belonging to a VFS
+ * registered by esp_vfs_register_with_id.
+ *
+ * @param vfs_id VFS identificator returned by esp_vfs_register_with_id.
+ * @param fd File descriptor which should be unregistered.
+ *
+ * @return  ESP_OK if the registration is successful,
+ *          ESP_ERR_INVALID_ARG if the arguments are incorrect.
+ */
+esp_err_t esp_vfs_unregister_fd(esp_vfs_id_t vfs_id, int fd);
 
 /**
  * These functions are to be used in newlib syscall table. They will be called by
