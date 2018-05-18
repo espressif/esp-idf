@@ -103,14 +103,17 @@ typedef enum {
 typedef intr_handle_t touch_isr_handle_t;
 
 #define TOUCH_PAD_SLEEP_CYCLE_DEFAULT   (0x1000)  /*!<The timer frequency is RTC_SLOW_CLK (can be 150k or 32k depending on the options), max value is 0xffff */
-#define TOUCH_PAD_MEASURE_CYCLE_DEFAULT (0xffff)  /*!<The timer frequency is 8Mhz, the max value is 0xffff */
-#define TOUCH_FSM_MODE_DEFAULT          (TOUCH_FSM_MODE_TIMER)  /*!<The touch FSM my be started by the software or timer */
+#define TOUCH_PAD_MEASURE_CYCLE_DEFAULT (0x7fff)  /*!<The timer frequency is 8Mhz, the max value is 0x7fff */
+#define TOUCH_PAD_MEASURE_WAIT_DEFAULT  (0xFF)    /*!<The timer frequency is 8Mhz, the max value is 0xff */
+#define TOUCH_FSM_MODE_DEFAULT          (TOUCH_FSM_MODE_SW)  /*!<The touch FSM my be started by the software or timer */
 #define TOUCH_TRIGGER_MODE_DEFAULT      (TOUCH_TRIGGER_BELOW)   /*!<Interrupts can be triggered if sensor value gets below or above threshold */
 #define TOUCH_TRIGGER_SOURCE_DEFAULT    (TOUCH_TRIGGER_SOURCE_SET1)  /*!<The wakeup trigger source can be SET1 or both SET1 and SET2 */
 #define TOUCH_PAD_BIT_MASK_MAX          (0x3ff)
 
 /**
  * @brief Initialize touch module.
+ * @note  The default FSM mode is 'TOUCH_FSM_MODE_SW'. If you want to use interrupt trigger mode,
+ *        then set it using function 'touch_pad_set_fsm_mode' to 'TOUCH_FSM_MODE_TIMER' after calling 'touch_pad_init'.
  * @return
  *     - ESP_OK Success
  *     - ESP_FAIL Touch pad init error
@@ -138,11 +141,11 @@ esp_err_t touch_pad_config(touch_pad_t touch_num, uint16_t threshold);
 
 /**
  * @brief get touch sensor counter value.
- *  Each touch sensor has a counter to count the number of charge/discharge cycles.
- *  When the pad is not 'touched', we can get a number of the counter.
- *  When the pad is 'touched', the value in counter will get smaller because of the larger equivalent capacitance.
- *  User can use this function to determine the interrupt trigger threshold.
- *
+ *        Each touch sensor has a counter to count the number of charge/discharge cycles.
+ *        When the pad is not 'touched', we can get a number of the counter.
+ *        When the pad is 'touched', the value in counter will get smaller because of the larger equivalent capacitance.
+ * @note This API requests hardware measurement once. If IIR filter mode is enabled,,
+ *       please use 'touch_pad_read_raw_data' interface instead.
  * @param touch_num touch pad index
  * @param touch_value pointer to accept touch sensor value
  * @return
@@ -162,9 +165,50 @@ esp_err_t touch_pad_read(touch_pad_t touch_num, uint16_t * touch_value);
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Touch pad error
+ *     - ESP_ERR_INVALID_STATE Touch pad not initialized
  *     - ESP_FAIL Touch pad not initialized
  */
 esp_err_t touch_pad_read_filtered(touch_pad_t touch_num, uint16_t *touch_value);
+
+/**
+ * @brief get raw data (touch sensor counter value) from IIR filter process.
+ *        Need not request hardware measurements.
+ * @note touch_pad_filter_start has to be called before calling touch_pad_read_raw_data.
+ *       This function can be called from ISR
+ *
+ * @param touch_num touch pad index
+ * @param touch_value pointer to accept touch sensor value
+ *
+ * @return
+ *      - ESP_OK Success
+ *      - ESP_ERR_INVALID_ARG Touch pad error
+ *      - ESP_ERR_INVALID_STATE Touch pad not initialized
+ *      - ESP_FAIL Touch pad not initialized
+ */
+esp_err_t touch_pad_read_raw_data(touch_pad_t touch_num, uint16_t *touch_value);
+
+/**
+  * @brief Callback function that is called after each IIR filter calculation.
+  * @note This callback is called in timer task in each filtering cycle.
+  * @note This callback should not be blocked.
+  * @param raw_value  The latest raw data(touch sensor counter value) that
+  *        points to all channels(raw_value[0..TOUCH_PAD_MAX-1]).
+  * @param filtered_value  The latest IIR filtered data(calculated from raw data) that
+  *        points to all channels(filtered_value[0..TOUCH_PAD_MAX-1]).
+  *
+  */
+typedef void (* filter_cb_t)(uint16_t *raw_value, uint16_t *filtered_value);
+
+/**
+ * @brief Register the callback function that is called after each IIR filter calculation.
+ * @note The 'read_cb' callback is called in timer task in each filtering cycle.
+ * @param read_cb  Pointer to filtered callback function.
+ *                 If the argument passed in is NULL, the callback will stop.
+ * @return
+ *      - ESP_OK Success
+ *      - ESP_ERR_INVALID_ARG set error
+ */
+esp_err_t touch_pad_set_filter_read_cb(filter_cb_t read_cb);
 
 /**
  * @brief   Register touch-pad ISR,
@@ -177,6 +221,7 @@ esp_err_t touch_pad_read_filtered(touch_pad_t touch_num, uint16_t *touch_value);
  * @return
  *     - ESP_OK Success ;
  *     - ESP_ERR_INVALID_ARG GPIO error
+ *     - ESP_ERR_NO_MEM No memory
  */
 esp_err_t touch_pad_isr_handler_register(void(*fn)(void *), void *arg, int unused, intr_handle_t *handle_unused) __attribute__ ((deprecated));
 
@@ -188,6 +233,7 @@ esp_err_t touch_pad_isr_handler_register(void(*fn)(void *), void *arg, int unuse
  * @return
  *     - ESP_OK Success ;
  *     - ESP_ERR_INVALID_ARG GPIO error
+ *     - ESP_ERR_NO_MEM No memory
  */
 esp_err_t touch_pad_isr_register(intr_handler_t fn, void* arg);
 
