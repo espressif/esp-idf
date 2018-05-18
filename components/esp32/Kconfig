@@ -997,6 +997,19 @@ config ESP32_WIFI_NVS_ENABLED
     help
         Select this option to enable WiFi NVS flash
 
+choice ESP32_WIFI_TASK_CORE_ID
+    depends on !FREERTOS_UNICORE
+    prompt "WiFi Task Core ID"
+    default ESP32_WIFI_TASK_PINNED_TO_CORE_0
+    help
+        Pinned WiFi task to core 0 or core 1.
+
+config ESP32_WIFI_TASK_PINNED_TO_CORE_0
+    bool "Core 0"
+config ESP32_WIFI_TASK_PINNED_TO_CORE_1
+    bool "Core 1"
+endchoice
+
 endmenu  # Wi-Fi
 
 menu PHY
