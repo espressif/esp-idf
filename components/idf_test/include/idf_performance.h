@@ -16,7 +16,10 @@
 #define IDF_PERFORMANCE_MAX_ESP_TIMER_GET_TIME_PER_CALL                         1000
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING                            30
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING_NO_DMA                     27
+/* Due to code size & linker layout differences interacting with cache, VFS
+   microbenchmark currently runs slower with PSRAM enabled. */
 #define IDF_PERFORMANCE_MAX_VFS_OPEN_WRITE_CLOSE_TIME                           20000
+#define IDF_PERFORMANCE_MAX_VFS_OPEN_WRITE_CLOSE_TIME_PSRAM                     40000
 // throughput performance by iperf
 #define IDF_PERFORMANCE_MIN_TCP_RX_THROUGHPUT                                   50
 #define IDF_PERFORMANCE_MIN_TCP_TX_THROUGHPUT                                   40
