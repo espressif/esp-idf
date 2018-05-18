@@ -105,6 +105,7 @@ typedef struct {
     int                    nano_enable;            /**< Nano option for printf/scan family enable flag */
     int                    tx_ba_win;              /**< WiFi Block Ack TX window size */
     int                    rx_ba_win;              /**< WiFi Block Ack RX window size */
+    int                    wifi_task_core_id;      /**< WiFi Task Core ID */
     int                    magic;                  /**< WiFi init magic number, it should be the last field */
 } wifi_init_config_t;
 
@@ -160,6 +161,12 @@ extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
 #define WIFI_DEFAULT_RX_BA_WIN 0 /* unused if ampdu_rx_enable == false */
 #endif
 
+#if CONFIG_ESP32_WIFI_TASK_PINNED_TO_CORE_1
+#define WIFI_TASK_CORE_ID 1
+#else
+#define WIFI_TASK_CORE_ID 0
+#endif
+
 #define WIFI_INIT_CONFIG_DEFAULT() { \
     .event_handler = &esp_event_send, \
     .wpa_crypto_funcs = g_wifi_default_wpa_crypto_funcs, \
@@ -174,6 +181,7 @@ extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
     .nano_enable = WIFI_NANO_FORMAT_ENABLED,\
     .tx_ba_win = WIFI_DEFAULT_TX_BA_WIN,\
     .rx_ba_win = WIFI_DEFAULT_RX_BA_WIN,\
+    .wifi_task_core_id = WIFI_TASK_CORE_ID,\
     .magic = WIFI_INIT_CONFIG_MAGIC\
 };
 
