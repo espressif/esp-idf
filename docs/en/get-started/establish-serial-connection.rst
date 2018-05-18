@@ -13,7 +13,7 @@ Below are the links to drivers for ESP32 boards produced by Espressif:
 
 * ESP32-PICO-KIT and ESP32-DevKitC - `CP210x USB to UART Bridge VCP Drivers <https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers>`_
 
-* ESP32-WROVER-KIT and ESP32 Demo Board - `FTDI Virtual COM Port Drivers <http://www.ftdichip.com/Drivers/D2XX.htm>`_
+* ESP32-WROVER-KIT and ESP32 Demo Board - `FTDI Virtual COM Port Drivers <http://www.ftdichip.com/Drivers/VCP.htm>`_
 
 Above drivers are primarily for reference. They should already be bundled with the operating system and installed automatically once one of listed boards is connected to the PC.
 
