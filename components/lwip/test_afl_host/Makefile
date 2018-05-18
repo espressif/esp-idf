@@ -5,14 +5,21 @@ INC_DIRS=-I . -I $(COMPONENTS_DIR)/lwip/include/lwip -I $(COMPONENTS_DIR)/lwip/i
 TEST_NAME=test
 FUZZ=afl-fuzz
 LD=$(CC)
-ifeq ($(MODE),client)
-    DHCP_C_DEPENDENCY_INJECTION=-include dhcp_di.h
-    OBJECTS=dhcp.o network_mock.o test_client.o
-    SAMPLE_PACKETS=in_client
-else 
-    DHCP_C_DEPENDENCY_INJECTION=-include dhcpserver_di.h
-    OBJECTS=dhcpserver.o test_server.o network_mock.o
-    SAMPLE_PACKETS=in_server
+ifeq ($(MODE),dhcp_client)
+    DEPENDENCY_INJECTION=-include dhcp_di.h
+    OBJECTS=dhcp.o network_mock.o test_dhcp_client.o
+    SAMPLE_PACKETS=in_dhcp_client
+else ifeq ($(MODE),dhcp_server)
+    DEPENDENCY_INJECTION=-include dhcpserver_di.h
+    OBJECTS=dhcpserver.o test_dhcp_server.o network_mock.o
+    SAMPLE_PACKETS=in_dhcp_server
+else ifeq ($(MODE),dns)
+    CFLAGS+=-DNOT_MOCK_DNS
+    DEPENDENCY_INJECTION=-include dns_di.h
+    OBJECTS=dns.o test_dns.o network_mock.o
+    SAMPLE_PACKETS=in_dns
+else
+    $(error Please specify MODE: dhcp_server, dhcp_client, dns)
 endif
 
 ifeq ($(INSTR),off)
@@ -27,13 +34,17 @@ CFLAGS+=$(INC_DIRS)
 
 all: $(TEST_NAME)
 
+dns.o: ../core/dns.c
+	@echo "[CC] $<"
+	@$(CC) $(CFLAGS) $(DEPENDENCY_INJECTION) -c $< -o $@
+
 dhcp.o: ../core/ipv4/dhcp.c
 	@echo "[CC] $<"
-	@$(CC) $(CFLAGS) $(DHCP_C_DEPENDENCY_INJECTION) -c $< -o $@
+	@$(CC) $(CFLAGS) $(DEPENDENCY_INJECTION) -c $< -o $@
 
 dhcpserver.o: ../apps/dhcpserver.c
 	@echo "[CC] $<"
-	@$(CC) $(CFLAGS) $(DHCP_C_DEPENDENCY_INJECTION) -c $< -o $@
+	@$(CC) $(CFLAGS) $(DEPENDENCY_INJECTION) -c $< -o $@
 
 %.o: %.c
 	@echo "[CC] $<"
