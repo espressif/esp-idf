@@ -334,6 +334,10 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
                    MAC2STR(stadisconnected->mac), stadisconnected->aid);
         break;
     }
+    case SYSTEM_EVENT_AP_STAIPASSIGNED: {
+        ESP_LOGD(TAG, "SYSTEM_EVENT_AP_STAIPASSIGNED");
+        break;
+    }
     case SYSTEM_EVENT_AP_PROBEREQRECVED: {
         system_event_ap_probe_req_rx_t *ap_probereqrecved = &event->event_info.ap_probereqrecved;
         ESP_LOGD(TAG, "SYSTEM_EVENT_AP_PROBEREQRECVED, rssi:%d, mac:" MACSTR, \
