@@ -27,7 +27,7 @@ extern "C" {
 
 /**
  * @brief Controller config options, depend on config mask.
- *        Config mask indicate which functions enabled, this means 
+ *        Config mask indicate which functions enabled, this means
  *        some options or parameters of some functions enabled by config mask.
  */
 typedef struct {
@@ -259,6 +259,62 @@ void esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callback);
  * @return ESP_OK - success, other - failed
  */
 esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode);
+
+/**
+ * @brief enable bluetooth to enter modem sleep
+ *
+ * Note that this function shall not be invoked before esp_bt_controller_enable()
+ *
+ * There are currently two options for bluetooth modem sleep, one is ORIG mode, and another is EVED Mode. EVED Mode is intended for BLE only.
+ *
+ * For ORIG mode:
+ * Bluetooth modem sleep is enabled in controller start up by default if CONFIG_BTDM_CONTROLLER_MODEM_SLEEP is set and "ORIG mode" is selected. In ORIG modem sleep mode, bluetooth controller will switch off some components and pause to work every now and then, if there is no event to process; and wakeup according to the scheduled interval and resume the work. It can also wakeup earlier upon external request using function "esp_bt_controller_wakeup_request".
+ * Note that currently there is problem in the combination use of bluetooth modem sleep and Dynamic Frequency Scaling(DFS). So do not enable DFS if bluetooth modem sleep is in use.
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_bt_sleep_enable(void);
+
+
+/**
+ * @brief disable bluetooth modem sleep
+ *
+ * Note that this function shall not be invoked before esp_bt_controller_enable()
+ *
+ * If esp_bt_sleep_disable() is called, bluetooth controller will not be allowed to enter modem sleep;
+ *
+ * If ORIG modem sleep mode is in use, if this function is called, bluetooth controller may not immediately wake up if it is dormant then.
+ * In this case, esp_bt_controller_wakeup_request() can be used to shorten the time for wakeup.
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_bt_sleep_disable(void);
+
+/**
+ * @brief to check whether bluetooth controller is sleeping at the instant, if modem sleep is enabled
+ *
+ * Note that this function shall not be invoked before esp_bt_controller_enable()
+ * This function is supposed to be used ORIG mode of modem sleep
+ *
+ * @return  true if in modem sleep state, false otherwise
+ */
+bool esp_bt_controller_is_sleeping(void);
+
+/**
+ * @brief request controller to wakeup from sleeping state during sleep mode
+ *
+ * Note that this function shall not be invoked before esp_bt_controller_enable()
+ * Note that this function is supposed to be used ORIG mode of modem sleep
+ * Note that after this request, bluetooth controller may again enter sleep as long as the modem sleep is enabled
+ *
+ * Profiling shows that it takes several milliseconds to wakeup from modem sleep after this request.
+ * Generally it takes longer if 32kHz XTAL is used than the main XTAL, due to the lower frequncy of the former as the bluetooth low power clock source.
+ */
+void esp_bt_controller_wakeup_request(void);
 
 #ifdef __cplusplus
 }

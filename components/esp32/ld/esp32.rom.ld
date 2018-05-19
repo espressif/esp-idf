@@ -169,6 +169,7 @@ PROVIDE ( hci_cmd_desc_tab_testing = 0x3ff97a98 );
 PROVIDE ( hci_cmd_desc_tab_vs = 0x3ff97714 );
 PROVIDE ( hci_command_handler = 0x4004c928 );
 PROVIDE ( hci_env = 0x3ffb9350 );
+PROVIDE ( rwip_env = 0x3ffb8bcc );
 PROVIDE ( hci_evt_dbg_desc_tab = 0x3ff9750c );
 PROVIDE ( hci_evt_desc_tab = 0x3ff9751c );
 PROVIDE ( hci_evt_le_desc_tab = 0x3ff974b4 );
