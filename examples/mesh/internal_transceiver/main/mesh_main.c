@@ -99,12 +99,11 @@ void esp_mesh_p2p_tx_main(void *arg)
 
     is_running = true;
     while (is_running) {
-        /* normal nodes rather than root do nothing but print */
+        /* non-root do nothing but print */
         if (!esp_mesh_is_root()) {
-            ESP_LOGI(MESH_TAG, "layer:%d, rtableSize:%d, %s%s", mesh_layer,
+            ESP_LOGI(MESH_TAG, "layer:%d, rtableSize:%d, %s", mesh_layer,
                      esp_mesh_get_routing_table_size(),
-                     is_mesh_connected ? "CONNECT" : "DISCONNECT",
-                     esp_mesh_is_root() ? "<ROOT>" : "[NODE]");
+                     (is_mesh_connected && esp_mesh_is_root()) ? "ROOT" : is_mesh_connected ? "NODE" : "DISCONNECT");
             vTaskDelay(10 * 1000 / portTICK_RATE_MS);
             continue;
         }
@@ -213,15 +212,18 @@ void esp_mesh_event_handler(mesh_event_t event)
     mesh_addr_t group;
 #endif
     static uint8_t last_layer = 0;
-    static int disconnect_count = 0;
     ESP_LOGD(MESH_TAG, "esp_event_handler:%d", event.id);
 
     switch (event.id) {
     case MESH_EVENT_STARTED:
-        ESP_LOGI(MESH_TAG, "<MESH_EVENT_STARTED>");
+        ESP_LOGI(MESH_TAG, "<MESH_EVENT_STARTED>heap:%d", esp_get_free_heap_size());
+        is_mesh_connected = false;
+        mesh_layer = esp_mesh_get_layer();
         break;
     case MESH_EVENT_STOPPED:
-        ESP_LOGI(MESH_TAG, "<MESH_EVENT_STOPPED>");
+        ESP_LOGI(MESH_TAG, "<MESH_EVENT_STOPPED>heap:%d", esp_get_free_heap_size());
+        is_mesh_connected = false;
+        mesh_layer = esp_mesh_get_layer();
         break;
     case MESH_EVENT_CHILD_CONNECTED:
         ESP_LOGI(MESH_TAG, "<MESH_EVENT_CHILD_CONNECTED>aid:%d, "MACSTR"",
@@ -238,28 +240,24 @@ void esp_mesh_event_handler(mesh_event_t event)
                  event.info.routing_table.rt_size_change,
                  event.info.routing_table.rt_size_new);
         break;
-
     case MESH_EVENT_ROUTING_TABLE_REMOVE:
         ESP_LOGW(MESH_TAG, "<MESH_EVENT_ROUTING_TABLE_REMOVE>remove %d, new:%d",
                  event.info.routing_table.rt_size_change,
                  event.info.routing_table.rt_size_new);
         break;
-
     case MESH_EVENT_NO_PARNET_FOUND:
         ESP_LOGI(MESH_TAG, "<MESH_EVENT_NO_PARNET_FOUND>scan times:%d",
                  event.info.no_parent.scan_times);
         /* TODO handler for the failure */
         break;
-
     case MESH_EVENT_PARENT_CONNECTED:
         mesh_layer = event.info.connected.self_layer;
         memcpy(&mesh_parent_addr.addr, event.info.connected.connected.bssid, 6);
         ESP_LOGI(MESH_TAG,
-                 "<MESH_EVENT_PARENT_CONNECTED>layer:%d-->%d, parent:"MACSTR"%s, discnx:%d",
+                 "<MESH_EVENT_PARENT_CONNECTED>layer:%d-->%d, parent:"MACSTR"%s",
                  last_layer, mesh_layer, MAC2STR(mesh_parent_addr.addr),
                  esp_mesh_is_root() ? "<ROOT>" :
-                 (mesh_layer == 2) ? "<layer2>" : "", disconnect_count);
-        disconnect_count = 0;
+                 (mesh_layer == 2) ? "<layer2>" : "");
         last_layer = mesh_layer;
         mesh_connected_indicator(mesh_layer);
         is_mesh_connected = true;
@@ -277,18 +275,13 @@ void esp_mesh_event_handler(mesh_event_t event)
 #endif
         esp_mesh_comm_p2p_start();
         break;
-
     case MESH_EVENT_PARENT_DISCONNECTED:
         ESP_LOGI(MESH_TAG,
-                 "<MESH_EVENT_PARENT_DISCONNECTED>reason:%d, count:%d",
-                 event.info.disconnected.reason, disconnect_count);
-        if (event.info.disconnected.reason == 201) {
-            disconnect_count++;
-        }
+                 "<MESH_EVENT_PARENT_DISCONNECTED>reason:%d",
+                 event.info.disconnected.reason);
         is_mesh_connected = false;
         mesh_disconnected_indicator();
         break;
-
     case MESH_EVENT_LAYER_CHANGE:
         mesh_layer = event.info.layer_change.new_layer;
         ESP_LOGI(MESH_TAG, "<MESH_EVENT_LAYER_CHANGE>layer:%d-->%d%s",
@@ -298,12 +291,10 @@ void esp_mesh_event_handler(mesh_event_t event)
         last_layer = mesh_layer;
         mesh_connected_indicator(mesh_layer);
         break;
-
     case MESH_EVENT_ROOT_ADDRESS:
-        ESP_LOGI(MESH_TAG, "<MESH_EVENT_ROOT_ADDRESS>rc_addr:"MACSTR"",
+        ESP_LOGI(MESH_TAG, "<MESH_EVENT_ROOT_ADDRESS>root address:"MACSTR"",
                  MAC2STR(event.info.root_addr.addr));
         break;
-
     case MESH_EVENT_ROOT_GOT_IP:
         /* root starts to connect to server */
         ESP_LOGI(MESH_TAG,
@@ -312,11 +303,9 @@ void esp_mesh_event_handler(mesh_event_t event)
                  IP2STR(&event.info.got_ip.ip_info.netmask),
                  IP2STR(&event.info.got_ip.ip_info.gw));
         break;
-
     case MESH_EVENT_ROOT_LOST_IP:
         ESP_LOGI(MESH_TAG, "<MESH_EVENT_ROOT_LOST_IP>");
         break;
-
     case MESH_EVENT_VOTE_STARTED:
         ESP_LOGI(MESH_TAG,
                  "<MESH_EVENT_VOTE_STARTED>attempts:%d, reason:%d, rc_addr:"MACSTR"",
@@ -324,34 +313,32 @@ void esp_mesh_event_handler(mesh_event_t event)
                  event.info.vote_started.reason,
                  MAC2STR(event.info.vote_started.rc_addr.addr));
         break;
-
     case MESH_EVENT_VOTE_STOPPED:
-        ESP_LOGI(MESH_TAG, "<MESH_EVENT_VOTE_DONE>");
+        ESP_LOGI(MESH_TAG, "<MESH_EVENT_VOTE_STOPPED>");
         break;
-
     case MESH_EVENT_ROOT_SWITCH_REQ:
         ESP_LOGI(MESH_TAG,
                  "<MESH_EVENT_ROOT_SWITCH_REQ>reason:%d, rc_addr:"MACSTR"",
                  event.info.switch_req.reason,
                  MAC2STR( event.info.switch_req.rc_addr.addr));
         break;
-
     case MESH_EVENT_ROOT_SWITCH_ACK:
-        ESP_LOGI(MESH_TAG, "<MESH_EVENT_ROOT_SWITCH_ACK>");
+        /* new root */
+        mesh_layer = esp_mesh_get_layer();
+        esp_mesh_get_parent_bssid(&mesh_parent_addr);
+        ESP_LOGI(MESH_TAG, "<MESH_EVENT_ROOT_SWITCH_ACK>layer:%d, parent:"MACSTR"", mesh_layer, MAC2STR(mesh_parent_addr.addr));
         break;
 
     case MESH_EVENT_TODS_STATE:
         ESP_LOGI(MESH_TAG, "<MESH_EVENT_TODS_REACHABLE>state:%d",
                  event.info.toDS_state);
         break;
-
     case MESH_EVENT_ROOT_FIXED:
         ESP_LOGI(MESH_TAG, "<MESH_EVENT_ROOT_FIXED>%s",
                  event.info.root_fixed.is_fixed ? "fixed" : "not fixed");
         break;
-
     default:
-        ESP_LOGI(MESH_TAG, "unknown");
+        ESP_LOGI(MESH_TAG, "unknown id:%d", event.id);
         break;
     }
 }
