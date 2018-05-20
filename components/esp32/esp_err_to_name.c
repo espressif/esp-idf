@@ -360,6 +360,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_MESH_DISCARD
     ERR_TBL_IT(ESP_ERR_MESH_DISCARD),                       /* 16405 0x4015 */
 #   endif
+#   ifdef      ESP_ERR_MESH_VOTING
+    ERR_TBL_IT(ESP_ERR_MESH_VOTING),                        /* 16406 0x4016 */
+#   endif
     // components/tcpip_adapter/include/tcpip_adapter.h
 #   ifdef      ESP_ERR_TCPIP_ADAPTER_BASE
     ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_BASE),                 /* 20480 0x5000 */
