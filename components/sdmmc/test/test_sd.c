@@ -266,7 +266,7 @@ static void test_cd_input(int gpio_cd_num, const sdmmc_host_t* config)
     free(card);
 }
 
-TEST_CASE("CD input works in SD mode", "[sd][test_env=UT_T1_SDMODE]")
+TEST_CASE("CD input works in SD mode", "[sd][test_env=UT_T1_SDMODE][ignore]")
 {
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
@@ -327,7 +327,7 @@ static void test_wp_input(int gpio_wp_num, const sdmmc_host_t* config)
     free(card);
 }
 
-TEST_CASE("WP input works in SD mode", "[sd][test_env=UT_T1_SDMODE]")
+TEST_CASE("WP input works in SD mode", "[sd][test_env=UT_T1_SDMODE][ignore]")
 {
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
