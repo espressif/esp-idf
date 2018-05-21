@@ -308,13 +308,15 @@ typedef struct {
     unsigned stbc:2;          /**< STBC */
     unsigned fec_coding:1;    /**< Flag is set for 11n packets which are LDPC */
     unsigned sgi:1;           /**< SGI */
-    unsigned noise_floor:8;   /**< noise floor */
+    signed noise_floor:8;     /**< noise floor */
     unsigned ampdu_cnt:8;     /**< ampdu cnt */
-    unsigned channel:4;       /**< which channel this packet in */
-    unsigned :12;             /**< reserve */
-    unsigned timestamp:32;    /**< timestamp */
+    unsigned channel:4;       /**< which primary channel this packet in */
+    unsigned second_channel:4;/**< which second channel this packet in */
+    unsigned :8;              /**< reserve */
+    unsigned timestamp:32;    /**< timestamp, unit: microsecond */
     unsigned :32;             /**< reserve */
-    unsigned :32;             /**< reserve */
+    unsigned :31;             /**< reserve */
+    unsigned ant:1;           /**< antenna number from which this packet is received */
     unsigned sig_len:12;      /**< length of packet */
     unsigned :12;             /**< reserve */
     unsigned rx_state:8;      /**< rx state */
@@ -368,6 +370,30 @@ typedef struct {
 #define WIFI_EVENT_MASK_ALL                 (0xFFFFFFFF)  /**< mask all WiFi events */
 #define WIFI_EVENT_MASK_NONE                (0)           /**< mask none of the WiFi events */
 #define WIFI_EVENT_MASK_AP_PROBEREQRECVED   (BIT(0))      /**< mask SYSTEM_EVENT_AP_PROBEREQRECVED event */
+
+/**
+  * @brief Channel state information(CSI) configuration type
+  *
+  */
+typedef struct {
+    bool lltf_en;           /**< enable to receive legacy long training field(lltf) data */
+    bool htltf_en;          /**< enable to receive HT long training field(htltf) data */
+    bool stbcltf2_en;       /**< enable to receive space time block code long training field(stbcltf2) data */
+    bool manu_scale;        /**< manually scale the CSI data by left shifting or automatically scale the CSI data. If set true, please set the shift bits. false: automatically. true: manually */ 
+    uint8_t shift;          /**< manually left shift bits of the scale of the CSI data. The range of the left shift bits is 0~15 */
+} wifi_csi_config_t;
+
+/**
+  * @brief CSI data type
+  *
+  */
+typedef struct {
+    wifi_pkt_rx_ctrl_t rx_ctrl;/**< received packet radio metadata header of the CSI data */
+    uint8_t mac[6];            /**< source MAC address of the CSI data */
+    bool last_word_invalid;    /**< last four bytes of the CSI data is invalid or not */
+    uint8_t *buf;              /**< buffer of CSI data */
+    uint16_t len;              /**< length of CSI data */
+} wifi_csi_info_t;
 
 #ifdef __cplusplus
 }

@@ -963,6 +963,14 @@ config ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
         can deliver frames faster than WiFi layer can transmit. In these cases, we may run out of TX
         buffers.
 
+config ESP32_WIFI_CSI_ENABLED
+    bool "WiFi CSI(Channel State Information)"
+    default n
+    help
+        Select this option to enable CSI(Channel State Information) feature. CSI takes about 
+        CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM KB of RAM. If CSI is not used, it is better to disable 
+        this feature in order to save memory.
+
 config ESP32_WIFI_AMPDU_TX_ENABLED
     bool "WiFi AMPDU TX"
     default y
