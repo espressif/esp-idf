@@ -54,6 +54,8 @@
 #define BTDM_CFG_BT_DATA_RELEASE            (1<<0)
 #define BTDM_CFG_HCI_UART                   (1<<1)
 #define BTDM_CFG_CONTROLLER_RUN_APP_CPU     (1<<2)
+#define BTDM_CFG_SCAN_DUPLICATE_OPTIONS     (1<<3)
+#define BTDM_CFG_SEND_ADV_RESERVED_SIZE     (1<<4)
 /* Other reserved for future */
 
 /* not for user call, so don't put to include file */
@@ -706,6 +708,10 @@ static uint32_t btdm_config_mask_load(void)
 #if CONFIG_BTDM_CONTROLLER_PINNED_TO_CORE == 1
     mask |= BTDM_CFG_CONTROLLER_RUN_APP_CPU;
 #endif
+    mask |= BTDM_CFG_SCAN_DUPLICATE_OPTIONS;
+
+    mask |= BTDM_CFG_SEND_ADV_RESERVED_SIZE;
+
     return mask;
 }
 

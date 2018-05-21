@@ -906,7 +906,30 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
     case HCI_BLE_CLEAR_WHITE_LIST:
         btm_ble_clear_white_list_complete(p, evt_len);
         break;
-
+    case HCI_BLE_WRITE_ADV_PARAMS: {
+        uint8_t status;
+        STREAM_TO_UINT8  (status, p);
+        if(status != HCI_SUCCESS) {
+            HCI_TRACE_ERROR("hci write adv params error 0x%x", status);
+        }
+        break;
+    }
+    case HCI_BLE_RC_PARAM_REQ_REPLY: {
+        uint8_t status;
+        STREAM_TO_UINT8  (status, p);
+        if(status != HCI_SUCCESS) {
+            HCI_TRACE_ERROR("hci connection params reply command error 0x%x", status);
+        }
+        break;
+    }
+    case HCI_BLE_RC_PARAM_REQ_NEG_REPLY: {
+        uint8_t status;
+        STREAM_TO_UINT8  (status, p);
+        if(status != HCI_SUCCESS) {
+            HCI_TRACE_ERROR("hci connection params neg reply command error %x", status);
+        }
+        break;
+    }
     case HCI_BLE_REMOVE_WHITE_LIST:
         btm_ble_remove_from_white_list_complete(p, evt_len);
         break;
@@ -960,11 +983,17 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
 #endif
 #endif /* (BLE_INCLUDED == TRUE) */
 
-    default:
+    default: {
         if ((opcode & HCI_GRP_VENDOR_SPECIFIC) == HCI_GRP_VENDOR_SPECIFIC) {
             btm_vsc_complete (p, opcode, evt_len, (tBTM_CMPL_CB *)p_cplt_cback);
         }
+        uint8_t status;
+        STREAM_TO_UINT8  (status, p);
+        if(status != HCI_SUCCESS) {
+            HCI_TRACE_ERROR("%s opcode 0x%x status 0x%x", __func__, opcode, status);
+        }
         break;
+    }
     }
 }
 
