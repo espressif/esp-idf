@@ -396,9 +396,7 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
 #endif
         /* hw is ready, go on with BTA DM initialization */
         memset(&bta_dm_search_cb, 0x00, sizeof(bta_dm_search_cb));
-#if (BTM_SSR_INCLUDED == TRUE)
         memset(&bta_dm_conn_srvcs, 0x00, sizeof(bta_dm_conn_srvcs));
-#endif  ///BTM_SSR_INCLUDED == TRUE
         memset(&bta_dm_di_cb, 0, sizeof(tBTA_DM_DI_CB));
 
         memcpy(dev_class, p_bta_dm_cfg->dev_class, sizeof(dev_class));
@@ -443,10 +441,12 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
         BTM_ReadLocalDeviceNameFromController((tBTM_CMPL_CB *)bta_dm_local_name_cback);
 
         bta_sys_rm_register((tBTA_SYS_CONN_CBACK *)bta_dm_rm_cback);
-#if (BTM_SSR_INCLUDED == TRUE)
+
+#if (BTA_DM_PM_INCLUDED == TRUE)
         /* initialize bluetooth low power manager */
         bta_dm_init_pm();
-#endif  ///BTM_SSR_INCLUDED == TRUE
+#endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
+
         bta_sys_policy_register((tBTA_SYS_CONN_CBACK *)bta_dm_policy_cback);
 
 #if (BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE && SDP_INCLUDED == TRUE) && (GATTC_INCLUDED == TRUE)
@@ -483,9 +483,11 @@ void bta_dm_disable (tBTA_DM_MSG *p_data)
 
     BTM_SetDiscoverability(BTM_NON_DISCOVERABLE, 0, 0);
     BTM_SetConnectability(BTM_NON_CONNECTABLE, 0, 0);
-#if (BTM_SSR_INCLUDED == TRUE)
+
+#if (BTA_DM_PM_INCLUDED == TRUE)
     bta_dm_disable_pm();
-#endif  ///BTM_SSR_INCLUDED == TRUE
+#endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
+
     bta_dm_disable_search_and_disc();
     bta_dm_cb.disabling = TRUE;
 
@@ -1070,12 +1072,12 @@ static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app
         p_dev->link_policy &= (~policy);
         BTM_SetLinkPolicy(p_dev->peer_bdaddr, &(p_dev->link_policy));
 
+#if (BTA_DM_PM_INCLUDED == TRUE)
         if (policy & (HCI_ENABLE_SNIFF_MODE | HCI_ENABLE_PARK_MODE)) {
             /* if clearing sniff/park, wake the link */
-#if (BTM_SSR_INCLUDED == TRUE)
             bta_dm_pm_active(p_dev->peer_bdaddr);
-#endif  ///BTM_SSR_INCLUDED == TRUE
         }
+#endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
         break;
 
     case BTA_SYS_PLCY_DEF_SET:
@@ -3365,10 +3367,12 @@ static void bta_dm_disable_conn_down_timer_cback (TIMER_LIST_ENT *p_tle)
 {
     UNUSED(p_tle);
     tBTA_SYS_HW_MSG *sys_enable_event;
-#if (BTM_SSR_INCLUDED == TRUE)
+
+#if (BTA_DM_PM_INCLUDED == TRUE)
     /* disable the power managment module */
     bta_dm_disable_pm();
-#endif  ///BTM_SSR_INCLUDED == TRUE
+#endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
+
     /* register our callback to SYS HW manager */
     bta_sys_hw_register( BTA_SYS_HW_BLUETOOTH, bta_dm_sys_hw_cback );
 
@@ -3431,9 +3435,7 @@ static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
             }
             /* AV calls bta_sys_conn_open with the A2DP stream count as app_id */
             if (BTA_ID_AV == id) {
-#if (BTM_SSR_INCLUDED == TRUE)
                 bta_dm_cb.cur_av_count = bta_dm_get_av_count();
-#endif  ///BTM_SSR_INCLUDED == TRUE
             }
         } else if ( status == BTA_SYS_CONN_IDLE) {
             if (p_dev) {
@@ -3442,9 +3444,7 @@ static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
 
             /* get cur_av_count from connected services */
             if (BTA_ID_AV == id) {
-#if (BTM_SSR_INCLUDED == TRUE)
                 bta_dm_cb.cur_av_count = bta_dm_get_av_count();
-#endif  ///BTM_SSR_INCLUDED == TRUE
             }
         }
         APPL_TRACE_EVENT("bta_dm_rm_cback:%d, status:%d", bta_dm_cb.cur_av_count, status);

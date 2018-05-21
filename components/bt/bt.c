@@ -97,6 +97,7 @@ extern int ble_txpwr_set(int power_type, int power_level);
 extern int ble_txpwr_get(int power_type);
 extern int bredr_txpwr_set(int min_power_level, int max_power_level);
 extern int bredr_txpwr_get(int *min_power_level, int *max_power_level);
+extern void bredr_sco_datapath_set(uint8_t data_path);
 
 extern char _bss_start_btdm;
 extern char _bss_end_btdm;
@@ -1101,6 +1102,15 @@ void esp_bt_controller_wakeup_request(void)
     }
 
     btdm_wakeup_request();
+}
+
+esp_err_t esp_bredr_sco_datapath_set(esp_sco_data_path_t data_path)
+{
+    if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    bredr_sco_datapath_set(data_path);
+    return ESP_OK;
 }
 
 #endif /*  CONFIG_BT_ENABLED */

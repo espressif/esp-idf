@@ -50,6 +50,7 @@
 #define BTC_PRF_QUEUE_INCLUDED      TRUE
 #define BTC_GAP_BT_INCLUDED         TRUE
 #define BTA_SDP_INCLUDED            TRUE
+#define BTA_DM_PM_INCLUDED          TRUE
 #define SDP_INCLUDED                TRUE
 
 #if CONFIG_A2DP_ENABLE
@@ -78,6 +79,20 @@
 #define BTA_JV_INCLUDED             TRUE
 #define BTC_SPP_INCLUDED            TRUE
 #endif /* CONFIG_BT_SPP_ENABLED */
+
+#if CONFIG_HFP_CLIENT_ENABLE
+#define BTC_HF_CLIENT_INCLUDED      TRUE
+#define BTA_HF_INCLUDED             TRUE
+#ifndef RFCOMM_INCLUDED
+#define RFCOMM_INCLUDED             TRUE
+#endif
+#ifndef BTM_SCO_INCLUDED
+#define BTM_SCO_INCLUDED            TRUE
+#endif
+#ifndef BTM_MAX_SCO_LINKS
+#define BTM_MAX_SCO_LINKS           (1)
+#endif
+#endif  /* CONFIG_HFP_HF_ENABLE */
 
 #endif /* #if CONFIG_CLASSIC_BT_ENABLED */
 
@@ -188,6 +203,10 @@
 ******************************************************************************/
 #ifndef BTA_INCLUDED
 #define BTA_INCLUDED TRUE
+#endif
+
+#ifndef BTA_DM_PM_INCLUDED
+#define BTA_DM_PM_INCLUDED FALSE
 #endif
 
 #ifndef BTA_PAN_INCLUDED
@@ -491,12 +510,16 @@
 
 /* Includes SCO if TRUE */
 #ifndef BTM_SCO_INCLUDED
-#define BTM_SCO_INCLUDED            FALSE	//TRUE       /* TRUE includes SCO code */
+#define BTM_SCO_INCLUDED                FALSE       /* TRUE includes SCO code */
 #endif
 
 /* Includes SCO if TRUE */
 #ifndef BTM_SCO_HCI_INCLUDED
-#define BTM_SCO_HCI_INCLUDED            FALSE       /* TRUE includes SCO over HCI code */
+#if CONFIG_HFP_AUDIO_DATA_PATH_HCI
+#define BTM_SCO_HCI_INCLUDED            TRUE       /* TRUE includes SCO over HCI code */
+#else
+#define BTM_SCO_HCI_INCLUDED            FALSE
+#endif /* CONFIG_HFP_AUDIO_DATA_PATH_HCI */
 #endif
 
 /* Includes WBS if TRUE */
@@ -516,7 +539,7 @@
 *************************/
 /* max TX SCO data packet size */
 #ifndef BTM_SCO_DATA_SIZE_MAX
-#define BTM_SCO_DATA_SIZE_MAX       240
+#define BTM_SCO_DATA_SIZE_MAX       120 //240
 #endif
 
 /* The size in bytes of the BTM inquiry database. 5 As Default */
@@ -580,11 +603,7 @@
 
 /* The number of SCO links. */
 #ifndef BTM_MAX_SCO_LINKS
-#if (CLASSIC_BT_INCLUDED == TRUE)
-#define BTM_MAX_SCO_LINKS           1	//3
-#else   ///CLASSIC_BT_INCLUDED == TRUE
-#define BTM_MAX_SCO_LINKS           0
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
+#define BTM_MAX_SCO_LINKS           0	//3
 #endif
 
 /* The preferred type of SCO links (2-eSCO, 0-SCO). */
@@ -656,7 +675,7 @@
 
 /* This is set to TRUE if link is to be unparked due to BTM_CreateSCO API. */
 #ifndef BTM_SCO_WAKE_PARKED_LINK
-#define BTM_SCO_WAKE_PARKED_LINK    TRUE
+#define BTM_SCO_WAKE_PARKED_LINK    FALSE
 #endif
 
 /* If the user does not respond to security process requests within this many seconds,
@@ -710,9 +729,11 @@
 #endif
 
 /* TRUE to include Sniff Subrating */
+#if (BTA_DM_PM_INCLUDED == TRUE)
 #ifndef BTM_SSR_INCLUDED
 #define BTM_SSR_INCLUDED                FALSE
 #endif
+#endif /* BTA_DM_PM_INCLUDED */
 
 /*************************
 ** End of Lisbon Features

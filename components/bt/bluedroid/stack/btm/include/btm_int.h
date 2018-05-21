@@ -365,7 +365,9 @@ typedef struct {
 typedef struct {
     tBTM_ESCO_INFO   esco;              /* Current settings             */
 #if BTM_SCO_HCI_INCLUDED == TRUE
+#define BTM_SCO_XMIT_QUEUE_THRS         20
     fixed_queue_t   *xmit_data_q;       /* SCO data transmitting queue  */
+    INT16           sent_not_acked;
 #endif
     tBTM_SCO_CB     *p_conn_cb;         /* Callback for when connected  */
     tBTM_SCO_CB     *p_disc_cb;         /* Callback for when disconnect */
@@ -382,6 +384,7 @@ typedef struct {
 #if BTM_SCO_HCI_INCLUDED == TRUE
     tBTM_SCO_DATA_CB     *p_data_cb;        /* Callback for SCO data over HCI */
     UINT32               xmit_window_size; /* Total SCO window in bytes  */
+    UINT16               num_lm_sco_bufs;
 #endif
     tSCO_CONN            sco_db[BTM_MAX_SCO_LINKS];
     tBTM_ESCO_PARAMS     def_esco_parms;
@@ -996,6 +999,10 @@ void btm_pm_proc_mode_change (UINT8 hci_status, UINT16 hci_handle, UINT8 mode,
 void btm_pm_proc_ssr_evt (UINT8 *p, UINT16 evt_len);
 #if BTM_SCO_INCLUDED == TRUE
 void btm_sco_chk_pend_unpark (UINT8 hci_status, UINT16 hci_handle);
+#if (BTM_SCO_HCI_INCLUDED == TRUE )
+void btm_sco_process_num_bufs (UINT16 num_lm_sco_bufs);
+void btm_sco_process_num_completed_pkts (UINT8 *p);
+#endif /* (BTM_SCO_HCI_INCLUDED == TRUE ) */
 #else
 #define btm_sco_chk_pend_unpark(hci_status, hci_handle)
 #endif /* BTM_SCO_INCLUDED */
