@@ -1,6 +1,7 @@
 ﻿***********
 Get Started
 ***********
+:link_to_translation:`zh_CN:[中文]`
 
 This document is intended to help users set up the software environment for development of applications using hardware based on the Espressif ESP32. Through a simple example we would like to illustrate how to use ESP-IDF (Espressif IoT Development Framework), including the menu based configuration, compiling the ESP-IDF and firmware download to ESP32 boards. 
 

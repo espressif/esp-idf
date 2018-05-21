@@ -1,5 +1,6 @@
 通过 make 指令创建和烧录项目
 =============================
+:link_to_translation:`en:[English]`
 
 
 寻找项目

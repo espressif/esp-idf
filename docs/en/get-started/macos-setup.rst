@@ -1,6 +1,7 @@
 **************************************
 Standard Setup of Toolchain for Mac OS
 **************************************
+:link_to_translation:`zh_CN:[中文]`
 
 Install Prerequisites
 =====================

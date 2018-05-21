@@ -1,6 +1,7 @@
 ***************************************
 Standard Setup of Toolchain for Windows
 ***************************************
+:link_to_translation:`zh_CN:[中文]`
 
 Introduction
 ============
