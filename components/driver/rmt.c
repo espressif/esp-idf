@@ -45,6 +45,7 @@
 #define RMT_CLK_DIV_ERROR_STR     "RMT CLK DIV ERR"
 #define RMT_DRIVER_ERROR_STR      "RMT DRIVER ERR"
 #define RMT_DRIVER_LENGTH_ERROR_STR  "RMT PARAM LEN ERROR"
+#define RMT_PSRAM_BUFFER_WARN_STR    "Using buffer allocated from psram"
 
 static const char* RMT_TAG = "rmt";
 static uint8_t s_rmt_driver_channels; // Bitmask (bits 0-7) of installed drivers' channels
@@ -70,6 +71,10 @@ typedef struct {
     rmt_channel_t channel;
     const rmt_item32_t* tx_data;
     xSemaphoreHandle tx_sem;
+#if CONFIG_SPIRAM_USE_MALLOC
+    int intr_alloc_flags;
+    StaticSemaphore_t tx_sem_buffer;
+#endif
     RingbufHandle_t tx_buf;
     RingbufHandle_t rx_buf;
 } rmt_obj_t;
@@ -690,7 +695,15 @@ esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr
         return ESP_ERR_INVALID_STATE;
     }
 
+#if !CONFIG_SPIRAM_USE_MALLOC
     p_rmt_obj[channel] = (rmt_obj_t*) malloc(sizeof(rmt_obj_t));
+#else
+    if( !(intr_alloc_flags & ESP_INTR_FLAG_IRAM) ) {
+        p_rmt_obj[channel] = (rmt_obj_t*) malloc(sizeof(rmt_obj_t));
+    } else {
+        p_rmt_obj[channel] = (rmt_obj_t*) heap_caps_calloc(1, sizeof(rmt_obj_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+    }
+#endif
 
     if(p_rmt_obj[channel] == NULL) {
         ESP_LOGE(RMT_TAG, "RMT driver malloc error");
@@ -706,7 +719,16 @@ esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr
     p_rmt_obj[channel]->wait_done = false;
 
     if(p_rmt_obj[channel]->tx_sem == NULL) {
+#if !CONFIG_SPIRAM_USE_MALLOC
         p_rmt_obj[channel]->tx_sem = xSemaphoreCreateBinary();
+#else
+        p_rmt_obj[channel]->intr_alloc_flags = intr_alloc_flags;
+        if( !(intr_alloc_flags & ESP_INTR_FLAG_IRAM) ) {
+            p_rmt_obj[channel]->tx_sem = xSemaphoreCreateBinary();
+        } else {
+            p_rmt_obj[channel]->tx_sem = xSemaphoreCreateBinaryStatic(&p_rmt_obj[channel]->tx_sem_buffer);
+        }
+#endif
         xSemaphoreGive(p_rmt_obj[channel]->tx_sem);
     }
     if(p_rmt_obj[channel]->rx_buf == NULL && rx_buf_size > 0) {
@@ -736,6 +758,14 @@ esp_err_t rmt_write_items(rmt_channel_t channel, const rmt_item32_t* rmt_item, i
     RMT_CHECK(p_rmt_obj[channel] != NULL, RMT_DRIVER_ERROR_STR, ESP_FAIL);
     RMT_CHECK(rmt_item != NULL, RMT_ADDR_ERROR_STR, ESP_FAIL);
     RMT_CHECK(item_num > 0, RMT_DRIVER_LENGTH_ERROR_STR, ESP_ERR_INVALID_ARG);
+#if CONFIG_SPIRAM_USE_MALLOC
+    if( p_rmt_obj[channel]->intr_alloc_flags & ESP_INTR_FLAG_IRAM ) {
+        if( !esp_ptr_internal(rmt_item) ) {
+            ESP_LOGE(RMT_TAG, RMT_PSRAM_BUFFER_WARN_STR);
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+#endif
     rmt_obj_t* p_rmt = p_rmt_obj[channel];
     int block_num = RMT.conf_ch[channel].conf0.mem_size;
     int item_block_len = block_num * RMT_MEM_ITEM_NUM;
