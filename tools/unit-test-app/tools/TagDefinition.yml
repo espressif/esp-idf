@@ -15,3 +15,6 @@ multi_device:
 multi_stage:
   default: "Yes"
   omitted: "No"
+timeout:
+  default: 30
+  omitted: 30

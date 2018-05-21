@@ -8,7 +8,6 @@ import hashlib
 from copy import deepcopy
 import CreateSectionTable
 
-
 TEST_CASE_PATTERN = {
     "initial condition": "UTINIT1",
     "SDK": "ESP32_IDF",
@@ -21,7 +20,7 @@ TEST_CASE_PATTERN = {
     "test environment": "UT_T1_1",
     "reset": "",
     "expected result": "1. set succeed",
-    "cmd set": "test_unit_test_case",
+    "cmd set": "test_unit_test_case"
 }
 
 CONFIG_FILE_PATTERN = {
@@ -191,7 +190,8 @@ class Parser(object):
                           "sub module": self.module_map[prop["module"]]['sub module'],
                           "summary": name,
                           "multi_device": prop["multi_device"],
-                          "multi_stage": prop["multi_stage"]})
+                          "multi_stage": prop["multi_stage"],
+                          "timeout": int(prop["timeout"])})
         return test_case
 
     def dump_test_cases(self, test_cases):
