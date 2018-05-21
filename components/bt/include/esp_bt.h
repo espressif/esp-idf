@@ -123,6 +123,14 @@ typedef enum {
 } esp_power_level_t;
 
 /**
+ * @brief Bluetooth audio data transport path
+ */
+typedef enum {
+    ESP_SCO_DATA_PATH_HCI = 0,            /*!< data over HCI transport */
+    ESP_SCO_DATA_PATH_PCM = 1,            /*!< data over PCM interface */
+} esp_sco_data_path_t;
+
+/**
  * @brief  Set BLE TX power
  *         Connection Tx power should only be set after connection created.
  * @param  power_type : The type of which tx power, could set Advertising/Connection/Default and etc
@@ -164,6 +172,13 @@ esp_err_t esp_bredr_tx_power_set(esp_power_level_t min_power_level, esp_power_le
  */
 esp_err_t esp_bredr_tx_power_get(esp_power_level_t *min_power_level, esp_power_level_t *max_power_level);
 
+/**
+ * @brief  set default SCO data path
+ *         Should be called after controller is enabled, and before (e)SCO link is established
+ * @param  data_path: SCO data path
+ * @return              ESP_OK - success, other - failed
+ */
+esp_err_t esp_bredr_sco_datapath_set(esp_sco_data_path_t data_path);
 
 /**
  * @brief  Initialize BT controller to allocate task and other resource.

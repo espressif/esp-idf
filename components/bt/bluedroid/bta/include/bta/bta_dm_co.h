@@ -26,29 +26,6 @@
 
 #include "bta/bta_sys.h"
 
-
-#ifndef BTA_SCO_OUT_PKT_SIZE
-#define BTA_SCO_OUT_PKT_SIZE    BTM_SCO_DATA_SIZE_MAX
-#endif
-
-#define BTA_SCO_CODEC_PCM       0       /* used for regular SCO */
-#define BTA_SCO_CODEC_SBC       1       /* used for WBS */
-typedef UINT8   tBTA_SCO_CODEC_TYPE;
-
-#define BTA_DM_SCO_SAMP_RATE_8K     8000
-#define BTA_DM_SCO_SAMP_RATE_16K    16000
-
-/* SCO codec information */
-typedef struct {
-    tBTA_SCO_CODEC_TYPE   codec_type;
-} tBTA_CODEC_INFO;
-
-#define BTA_DM_SCO_ROUTE_PCM    BTM_SCO_ROUTE_PCM
-#define BTA_DM_SCO_ROUTE_HCI    BTM_SCO_ROUTE_HCI
-
-typedef tBTM_SCO_ROUTE_TYPE tBTA_DM_SCO_ROUTE_TYPE;
-
-
 /*****************************************************************************
 **  Function Declarations
 *****************************************************************************/
@@ -134,72 +111,6 @@ extern void bta_dm_co_loc_oob(BOOLEAN valid, BT_OCTET16 c, BT_OCTET16 r);
 **
 *******************************************************************************/
 extern void bta_dm_co_rmt_oob(BD_ADDR bd_addr);
-
-/*****************************************************************************
-**  SCO over HCI Function Declarations
-*****************************************************************************/
-/*******************************************************************************
-**
-** Function         bta_dm_sco_co_init
-**
-** Description      This function can be used by the phone to initialize audio
-**                  codec or for other initialization purposes before SCO connection
-**                  is opened.
-**
-**
-** Returns          Void.
-**
-*******************************************************************************/
-extern tBTA_DM_SCO_ROUTE_TYPE bta_dm_sco_co_init(UINT32 rx_bw, UINT32 tx_bw,
-        tBTA_CODEC_INFO *p_codec_info, UINT8 app_id);
-
-
-/*******************************************************************************
-**
-** Function         bta_dm_sco_co_open
-**
-** Description      This function is executed when a SCO connection is open.
-**
-**
-** Returns          void
-**
-*******************************************************************************/
-extern void bta_dm_sco_co_open(UINT16 handle, UINT8 pkt_size, UINT16 event);
-
-/*******************************************************************************
-**
-** Function         bta_dm_sco_co_close
-**
-** Description      This function is called when a SCO connection is closed
-**
-**
-** Returns          void
-**
-*******************************************************************************/
-extern void bta_dm_sco_co_close(void);
-
-/*******************************************************************************
-**
-** Function         bta_dm_sco_co_out_data
-**
-** Description      This function is called to send SCO data over HCI.
-**
-** Returns          void
-**
-*******************************************************************************/
-extern void bta_dm_sco_co_out_data(BT_HDR  **p_buf);
-
-/*******************************************************************************
-**
-** Function         bta_dm_sco_co_in_data
-**
-** Description      This function is called to send incoming SCO data to application.
-**
-** Returns          void
-**
-*******************************************************************************/
-extern void bta_dm_sco_co_in_data(BT_HDR  *p_buf, tBTM_SCO_DATA_FLAG status);
-
 
 
 /*******************************************************************************

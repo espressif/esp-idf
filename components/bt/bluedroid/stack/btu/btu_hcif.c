@@ -1292,7 +1292,9 @@ static void btu_hcif_num_compl_data_pkts_evt (UINT8 *p)
     l2c_link_process_num_completed_pkts (p);
 
     /* Send on to SCO */
-    /*?? No SCO for now */
+#if (BTM_SCO_HCI_INCLUDED == TRUE) && (BTM_SCO_INCLUDED == TRUE)
+    btm_sco_process_num_completed_pkts (p);
+#endif
 }
 
 /*******************************************************************************

@@ -57,6 +57,9 @@ static btc_dm_local_key_cb_t ble_local_key_cb;
 extern bt_status_t btc_av_execute_service(BOOLEAN b_enable);
 extern bt_status_t btc_av_sink_execute_service(BOOLEAN b_enable);
 #endif
+#if BTC_HF_CLIENT_INCLUDED
+extern bt_status_t btc_hf_client_execute_service(BOOLEAN b_enable);
+#endif
 /******************************************************************************
 **  Functions
 ******************************************************************************/
@@ -396,6 +399,11 @@ static bt_status_t btc_in_execute_service_request(tBTA_SERVICE_ID service_id,
         btc_av_sink_execute_service(b_enable);
         break;
 #endif
+#if BTC_HF_CLIENT_INCLUDED
+    case BTA_HFP_HS_SERVICE_ID:
+        btc_hf_client_execute_service(b_enable);
+        break;
+#endif /* #if BTC_HF_CLIENT_INCLUDED */
     default:
         BTC_TRACE_ERROR("%s: Unknown service being enabled\n", __FUNCTION__);
         return BT_STATUS_FAIL;
