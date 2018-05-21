@@ -1,5 +1,6 @@
 Add IDF_PATH to User Profile
 ============================
+:link_to_translation:`zh_CN:[中文]`
 
 To preserve setting of ``IDF_PATH`` environment variable between system restarts, add it to the user profile, following instructions below.
 

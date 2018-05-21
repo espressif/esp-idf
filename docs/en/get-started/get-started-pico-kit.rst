@@ -1,5 +1,6 @@
 ESP32-PICO-KIT V4 Getting Started Guide
 =======================================
+:link_to_translation:`zh_CN:[中文]`
 
 This user guide shows how to get started with the ESP32-PICO-KIT V4 mini development board. For description of other versions of the ESP32-PICO-KIT check :doc:`../hw-reference/index`.
 
