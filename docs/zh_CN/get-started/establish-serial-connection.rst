@@ -13,7 +13,7 @@
 
 * ESP32-PICO-KIT 和 ESP32-DevKitC - `CP210x USB to UART Bridge VCP Drivers <https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers>`_
 
-* ESP32-WROVER-KIT 和 ESP32 Demo Board - `FTDI Virtual COM Port Drivers <http://www.ftdichip.com/Drivers/D2XX.htm>`_
+* ESP32-WROVER-KIT 和 ESP32 Demo Board - `FTDI Virtual COM Port Drivers <http://www.ftdichip.com/Drivers/VCP.htm>`_
 
 以上驱动仅用于参考。当您将上述 ESP32 开发板与 PC 连接时，对应驱动程序应该已经被打包在操作系统中并自动安装。
 
