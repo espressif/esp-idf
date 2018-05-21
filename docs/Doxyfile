@@ -51,6 +51,8 @@ INPUT = \
     ../../components/bt/bluedroid/api/include/api/esp_a2dp_api.h \
     ../../components/bt/bluedroid/api/include/api/esp_avrc_api.h \
     ../../components/bt/bluedroid/api/include/api/esp_spp_api.h \
+    ../../components/bt/bluedroid/api/include/api/esp_hf_defs.h \
+    ../../components/bt/bluedroid/api/include/api/esp_hf_client_api.h \
     ##
     ## Ethernet - API Reference
     ##

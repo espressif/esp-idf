@@ -189,6 +189,33 @@ config BT_SPP_ENABLED
     help
         This enables the Serial Port Profile
 
+config HFP_ENABLE
+    bool "Hands Free/Handset Profile"
+    depends on CLASSIC_BT_ENABLED
+    default n
+
+choice HFP_ROLE
+    prompt "Hands-free Profile Role configuration"
+    depends on HFP_ENABLE
+
+config HFP_CLIENT_ENABLE
+    bool "Hands Free Unit"
+endchoice
+
+choice HFP_AUDIO_DATA_PATH
+    prompt "audio(SCO) data path"
+    depends on HFP_ENABLE
+
+config HFP_AUDIO_DATA_PATH_PCM
+    bool "PCM"
+    help
+        This enables the Serial Port Profile
+config HFP_AUDIO_DATA_PATH_HCI
+    bool "HCI"
+    help
+        This enables the Serial Port Profile
+endchoice
+
 config GATTS_ENABLE
     bool "Include GATT server module(GATTS)"
     depends on BLUEDROID_ENABLED
