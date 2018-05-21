@@ -59,6 +59,10 @@ void esp_vApplicationIdleHook()
 #ifdef CONFIG_PM_ENABLE
     esp_pm_impl_idle_hook();
 #endif
+}
+
+extern void esp_vApplicationWaitiHook( void )
+{
     asm("waiti 0");
 }
 
