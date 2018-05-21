@@ -215,31 +215,12 @@ void esp_perip_clk_init(void)
     }
     else {
         common_perip_clk = DPORT_WDG_CLK_EN |
-                              DPORT_I2S0_CLK_EN |
-#if CONFIG_CONSOLE_UART_NUM != 0
-                              DPORT_UART_CLK_EN |
-#endif
-#if CONFIG_CONSOLE_UART_NUM != 1
-                              DPORT_UART1_CLK_EN |
-#endif
-#if CONFIG_CONSOLE_UART_NUM != 2
-                              DPORT_UART2_CLK_EN |
-#endif
-                              DPORT_SPI2_CLK_EN |
-                              DPORT_I2C_EXT0_CLK_EN |
-                              DPORT_UHCI0_CLK_EN |
-                              DPORT_RMT_CLK_EN |
                               DPORT_PCNT_CLK_EN |
                               DPORT_LEDC_CLK_EN |
-                              DPORT_UHCI1_CLK_EN |
                               DPORT_TIMERGROUP1_CLK_EN |
-                              DPORT_SPI3_CLK_EN |
                               DPORT_PWM0_CLK_EN |
-                              DPORT_I2C_EXT1_CLK_EN |
                               DPORT_CAN_CLK_EN |
                               DPORT_PWM1_CLK_EN |
-                              DPORT_I2S1_CLK_EN |
-                              DPORT_SPI_DMA_CLK_EN |
                               DPORT_PWM2_CLK_EN |
                               DPORT_PWM3_CLK_EN;
         hwcrypto_perip_clk = DPORT_PERI_EN_AES |
@@ -255,6 +236,26 @@ void esp_perip_clk_init(void)
                               DPORT_WIFI_CLK_EMAC_EN;
     }
 
+    //Reset the communication peripherals like I2C, SPI, UART, I2S and bring them to known state.
+    common_perip_clk |= DPORT_I2S0_CLK_EN |
+#if CONFIG_CONSOLE_UART_NUM != 0
+                        DPORT_UART_CLK_EN |
+#endif
+#if CONFIG_CONSOLE_UART_NUM != 1
+                        DPORT_UART1_CLK_EN |
+#endif
+#if CONFIG_CONSOLE_UART_NUM != 2
+                        DPORT_UART2_CLK_EN |
+#endif
+                        DPORT_SPI2_CLK_EN |
+                        DPORT_I2C_EXT0_CLK_EN |
+                        DPORT_UHCI0_CLK_EN |
+                        DPORT_RMT_CLK_EN |
+                        DPORT_UHCI1_CLK_EN |
+                        DPORT_SPI3_CLK_EN |
+                        DPORT_I2C_EXT1_CLK_EN |
+                        DPORT_I2S1_CLK_EN |
+                        DPORT_SPI_DMA_CLK_EN;
 
 #if CONFIG_SPIRAM_SPEED_80M
 //80MHz SPIRAM uses SPI3 as well; it's initialized before this is called. Because it is used in
