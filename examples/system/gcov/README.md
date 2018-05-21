@@ -4,53 +4,98 @@ See the README.md file in the upper level 'examples' directory for more informat
 
 GCC has useful feature which allows to generate code coverage information. Generated data show how many times every program execution paths has been taken.
 Basing on coverage data developers can detect untested pieces of code and also it gives valuable information about critical (frequently used) execution paths.
-In general case when coverage option is enabled GCC generates additional code to accumulate necessary data and save them into files. File system is not always available
-in ESP32 based projects or size of the file storage can be very limited to keep all the coverage data. To overcome those limitations IDF provides functionality
-to transfer the data to the host and save them on host file system. The data transfer is done via JTAG.
+In general case when coverage option is enabled GCC generates additional code to accumulate necessary data and save them into files. File system is not always available in ESP32 based projects or size of the file storage can be very limited to keep all the coverage data. To overcome those limitations IDF provides functionality to transfer the data to host and save them on its file system. Data transfer is done via JTAG.
 This example shows how to generate coverage information for the program.
-
 
 ## How To Gather Coverage Info
 
-Below are the steps which should be performed to obtain coverage info. Steps 1-3 are already done for this example project. They should be performed if user wants to fork new IDF-based project and needs to collect coverage info.
+There are two ways to collect gcov data:
+* Hard-coded call to `esp_gcov_dump`.
+* Instant run-time dumping w/o changes in your code via IDF's gcov debug stub.
+
+### Generic Steps
+
+Below are generic steps which should be performed to obtain coverage info. The steps are already done for this example project.
 
 1. Enable application tracing module in menuconfig. Choose `Trace memory` in `Component config -> Application Level Tracing -> Data Destination`.
-2. Enable coverage info generation for necessary source files. To do this add the following line to the 'component.mk' files of your project:
+2. Enable GCOV to host interface in menuconfig `Component config -> Application Level Tracing -> GCOV to Host Enable`.
+3. Enable coverage info generation for necessary source files. To do this add the following line to the 'component.mk' files of your project:
 `CFLAGS += --coverage`
-It will enable coverage info for all source files of your component. If you need to enable the option only for certain files you need to add the following line for every file of interest:
+It will enable coverage info for all source files of your component. If you need to enable the option only for certain files the following line should be added for every file of interest:
 `gcov_example.o: CFLAGS += --coverage`
 Replace `gcov_example.o` with path to your file.
-3. Add call to `esp_gcov_dump` function in your program. This function will wait for command from the host and dump coverage data. The exact place where to put call to `esp_gcov_dump` depends on the program.
-Usually it should be placed at the end of the program execution (at exit). See `gcov_example.c` for example.
-4. Build, flash and run program.
-5. Wait until `esp_gcov_dump` is called. To detect this a call to `printf` can be used (see `gcov_example.c`) or, for example, you can use a LED to indicate the readiness to dump data.
-6. Connect OpenOCD to the target and start telnet session with it.
-7. Run the following OpenOCD command:
-`esp32 gcov`
-Example of the command output:
 
+### Hard-coded Dump Call
+
+This method requires `esp_gcov_dump` to be called from your application's code. Below are additional steps which should be performed after the generic ones to obtain coverage info via hard-coded call. Step 1 is already done for this example project.
+
+1. Add call to `esp_gcov_dump` function in your program. This function will wait for command from host and dump coverage data. The exact place where to put the call  depends on the program.
+Usually it should be placed at the end of the program execution (at exit). But if you need to generate GCOV data incrementally `esp_gcov_dump` can be called multiple times. See `gcov_example.c` for example.
+2. Build, flash and run program.
+3. Wait until `esp_gcov_dump` is called. To detect this a call to `printf` can be used (see `gcov_example.c`) or, for example, you can use a LED to indicate the readiness to dump data.
+Another way to detect call to `esp_gcov_dump` is to set breakpoint on that function, start target execution and wait for the target to be stopped. See the next section for respective GDB example.
+4. Connect OpenOCD to the target and start telnet session with it.
+5. Run the following OpenOCD command: `esp32 gcov dump`
+
+Example of the command output:
+```
+> esp32 gcov dump
+Total trace memory: 16384 bytes
+Connect targets...
+Target halted. PRO_CPU: PC=0x40088BC3 (active)    APP_CPU: PC=0x400D14E6 
+Targets connected.
+Open file 0x1 '/home/alexey/projects/esp/esp-idf/examples/system/gcov/build/main/gcov_example.gcda'
+Open file 0x1 '/home/alexey/projects/esp/esp-idf/examples/system/gcov/build/main/gcov_example.gcda'
+Open file 0x2 '/home/alexey/projects/esp/esp-idf/examples/system/gcov/build/main/gcov_example_func.gcda'
+Open file 0x2 '/home/alexey/projects/esp/esp-idf/examples/system/gcov/build/main/gcov_example_func.gcda'
+Disconnect targets...
+Target halted. PRO_CPU: PC=0x400D14E6 (active)    APP_CPU: PC=0x400D14E6 
+Targets disconnected.
+```
+
+#### Dump Using GDB
+
+As it was said above breakpoint can be used to detect when `esp_gcov_dump` is called.
+The following GDB commands can be used to dump data upon call to `esp_gcov_dump` automatically (you can put them into `gdbinit` file):
+```
+b esp_gcov_dump
+commands
+mon esp32 gcov dump
+end
+```
+Note that all OpenOCD commands should be invoked in gdb as: `mon <oocd_command>`.
+
+### Instant Run-Time Dump
+
+Instant dump does not require to call `esp_gcov_dump`, so your application's code does not need to be modified. This method stops target at its current state and executes builtin IDF gcov debug stub function.
+Having data dumped target resumes its execution. Below are the steps which should be performed to do instant dump. Step 1 is already done for this example project.
+
+1. Enable OpenOCD debug stubs in menuconfig `Component config -> ESP32-specific -> OpenOCD debug stubs`.
+2. Build, flash and run program.
+3. Connect OpenOCD to the target and start telnet session with it.
+4. Run the following OpenOCD command: `esp32 gcov`
+
+Example of the command output:
 ```
 > esp32 gcov
 Total trace memory: 16384 bytes
 Connect targets...
-Target halted. PRO_CPU: PC=0x400D0CDC (active)    APP_CPU: PC=0x00000000
-esp32: target state: halted
-Resume targets
+Target halted. PRO_CPU: PC=0x400D14DA (active)    APP_CPU: PC=0x400D14DA 
 Targets connected.
-Open file '/home/alexey/projects/esp/esp-idf/examples/system/gcov/build/main/gcov_example.gcda'
-Open file '/home/alexey/projects/esp/esp-idf/examples/system/gcov/build/main/gcov_example.gcda'
-Open file '/home/alexey/projects/esp/esp-idf/examples/system/gcov/build/main/gcov_example_func.gcda'
-Open file '/home/alexey/projects/esp/esp-idf/examples/system/gcov/build/main/gcov_example_func.gcda'
+Open file 0x1 '/home/alexey/projects/esp/esp-idf/examples/system/gcov/build/main/gcov_example.gcda'
+Open file 0x1 '/home/alexey/projects/esp/esp-idf/examples/system/gcov/build/main/gcov_example.gcda'
+Open file 0x2 '/home/alexey/projects/esp/esp-idf/examples/system/gcov/build/main/gcov_example_func.gcda'
+Open file 0x2 '/home/alexey/projects/esp/esp-idf/examples/system/gcov/build/main/gcov_example_func.gcda'
+Target halted. PRO_CPU: PC=0x400844CE (active)    APP_CPU: PC=0x400855E3 
 Disconnect targets...
-Target halted. PRO_CPU: PC=0x400D17CA (active)    APP_CPU: PC=0x400D0CDC
-esp32: target state: halted
-Resume targets
 Targets disconnected.
 >
 ```
 
-As shown in the output above there can be errors reported. This is because GCOV code tries to open non-existing coverage data files for reading before writing to them. It is normal situation and actually is not an error.
-GCOV will save coverage data for every source file in directories for corresponding object files, usually under root build directory `build`.
+### Coverage Data Accumulation
+
+Coverage data from several dumps are automatically accumulated. So the resulting gcov data files contain statistics since the board reset. Every data dump updates files accordingly.
+New data collection is started if target has been reset.
 
 ## How To Process Coverage Info
 
