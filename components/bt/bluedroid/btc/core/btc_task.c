@@ -42,6 +42,9 @@
 #if CONFIG_BT_SPP_ENABLED
 #include "btc_spp.h"
 #endif /* #if CONFIG_BT_SPP_ENABLED */
+#if BTC_HF_CLIENT_INCLUDED
+#include "btc_hf_client.h"
+#endif  /* #if BTC_HF_CLIENT_INCLUDED */
 #endif /* #if CONFIG_CLASSIC_BT_ENABLED */
 
 
@@ -80,6 +83,9 @@ static btc_func_t profile_tab[BTC_PID_NUM] = {
 #if CONFIG_BT_SPP_ENABLED
     [BTC_PID_SPP]         = {btc_spp_call_handler,        btc_spp_cb_handler      },
 #endif /* #if CONFIG_BT_SPP_ENABLED */
+#if BTC_HF_CLIENT_INCLUDED
+    [BTC_PID_HF_CLIENT]   = {btc_hf_client_call_handler,  btc_hf_client_cb_handler},
+#endif  /* #if BTC_HF_CLIENT_INCLUDED */
 #endif /* #if CONFIG_CLASSIC_BT_ENABLED */
 };
 

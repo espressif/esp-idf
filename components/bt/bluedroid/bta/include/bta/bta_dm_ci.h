@@ -61,18 +61,6 @@ extern void bta_dm_ci_io_req(BD_ADDR bd_addr, tBTA_IO_CAP io_cap,
 *******************************************************************************/
 extern void bta_dm_ci_rmt_oob(BOOLEAN accept, BD_ADDR bd_addr,
                               BT_OCTET16 c, BT_OCTET16 r);
-/*******************************************************************************
-**
-** Function         bta_dm_sco_ci_data_ready
-**
-** Description      This function sends an event to indicating that the phone
-**                  has SCO data ready..
-**
-** Returns          void
-**
-*******************************************************************************/
-extern void bta_dm_sco_ci_data_ready(UINT16 event, UINT16 sco_handle);
-
 #ifdef __cplusplus
 }
 #endif

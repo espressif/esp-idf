@@ -33,8 +33,10 @@ typedef struct {
 
     void (*parse_read_buffer_size_response)(
         BT_HDR *response,
-        uint16_t *data_size_ptr,
-        uint16_t *acl_buffer_count_ptr
+        uint16_t *acl_data_size_ptr,
+        uint16_t *acl_buffer_count_ptr,
+        uint8_t *sco_data_size_ptr,
+        uint16_t *sco_buffer_count_ptr
     );
 
     void (*parse_read_local_version_info_response)(
