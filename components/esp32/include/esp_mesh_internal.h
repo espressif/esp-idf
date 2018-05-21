@@ -49,6 +49,46 @@ typedef struct {
     int backoff_rssi;  /* RSSI threshold for connecting to the root */
 } mesh_switch_parent_t;
 
+/**
+ * @brief mesh networking IE
+ */
+typedef struct {
+    /**< mesh networking IE head */
+    uint8_t eid;             /**< element ID */
+    uint8_t len;             /**< element length */
+    uint8_t oui[3];          /**< organization identifier */
+    /**< mesh networking IE content */
+    uint8_t type;            /** mesh networking IE type */
+    uint8_t encryped : 1;    /**< if mesh networking IE is encrypted */
+    uint8_t version : 7;     /**< mesh networking IE version */
+    /**< content */
+    uint8_t mesh_type;       /**< mesh device type */
+    uint8_t mesh_id[6];      /**< mesh ID */
+    uint8_t layer_cap;       /**< max layer */
+    uint8_t layer;           /**< current layer */
+    uint8_t assoc_cap;       /**< max connections of mesh AP */
+    uint8_t assoc;           /**< current connections */
+    uint8_t leaf_cap;        /**< leaf capacity */
+    uint8_t leaf_assoc;      /**< the number of current connected leaf */
+    uint16_t root_cap;       /**< root capacity */
+    uint16_t self_cap;       /**< self capacity */
+    uint16_t layer2_cap;     /**< layer2 capacity */
+    uint16_t scan_ap_num;    /**< the number of scanned APs */
+    int8_t rssi;             /**< rssi of the parent */
+    int8_t router_rssi;      /**< rssi of the router */
+    uint8_t flag;            /**< flag of networking */
+    uint8_t rc_addr[6];      /**< root address */
+    int8_t rc_rssi;          /**< root rssi */
+    uint8_t vote_addr[6];    /**< voter address */
+    int8_t vote_rssi;        /**< vote rssi of the router */
+    uint8_t vote_ttl;        /**< vote ttl */
+    uint16_t votes;          /**< votes */
+    uint16_t my_votes;       /**< my votes */
+    uint8_t reason;          /**< reason */
+    uint8_t child[6];        /**< child address */
+    uint8_t toDS;            /**< toDS state */
+} __attribute__((packed)) mesh_assoc_t;
+
 /*******************************************************
  *                Function Definitions
  *******************************************************/
