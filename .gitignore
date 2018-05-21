@@ -51,3 +51,5 @@ examples/protocols/aws_iot/*/main/certs/*.pem.*
 *.gcno
 coverage.info
 coverage_report/
+
+test_multi_heap_host
