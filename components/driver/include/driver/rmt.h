@@ -130,6 +130,32 @@ typedef struct {
 } rmt_tx_end_callback_t;
 
 /**
+ * @brief User callback function to convert uint8_t type data to rmt format(rmt_item32_t).
+ *
+ *        This function may be called from an ISR, so, the code should be short and efficient.
+ *
+ * @param  src Pointer to the buffer storing the raw data that needs to be converted to rmt format.
+ *
+ * @param[out] dest Pointer to the buffer storing the rmt format data.
+ *
+ * @param  src_size The raw data size.
+ *
+ * @param  wanted_num The number of rmt format data that wanted to get.
+ *
+ * @param[out] translated_size The size of the raw data that has been converted to rmt format,
+ *             it should return 0 if no data is converted in user callback.
+ *
+ * @param[out] item_num The number of the rmt format data that actually converted to, it can be less than wanted_num if there is not enough raw data,
+ *             but cannot exceed wanted_num. it should return 0 if no data was converted.
+ *
+ *       @note
+ *       In fact, item_num should be a multiple of translated_size, e.g. :
+ *       When we convert each byte of uint8_t type data to rmt format data,
+ *       the relation between item_num and translated_size should be `item_num = translated_size*8`.
+ */
+typedef void (*sample_to_rmt_t)(const void* src, rmt_item32_t* dest, size_t src_size, size_t wanted_num, size_t* translated_size, size_t* item_num);
+
+/**
  * @brief Set RMT clock divider, channel clock is divided from source clock.
  *
  * @param channel RMT channel (0-7)
@@ -713,6 +739,39 @@ esp_err_t rmt_wait_tx_done(rmt_channel_t channel, TickType_t wait_time);
  *     - ESP_OK Success
  */
 esp_err_t rmt_get_ringbuf_handle(rmt_channel_t channel, RingbufHandle_t* buf_handle);
+
+/**
+ * @brief Init rmt translator and register user callback.
+ *        The callback will convert the raw data that needs to be sent to rmt format.
+ *        If a channel is initialized more than once, tha user callback will be replaced by the later.
+ *
+ * @param channel RMT channel (0 - 7).
+ *
+ * @param fn Point to the data conversion function.
+ *
+ * @return
+ *     - ESP_FAIL Init fail.
+ *     - ESP_OK Init success.
+ */
+esp_err_t rmt_translator_init(rmt_channel_t channel, sample_to_rmt_t fn);
+
+/**
+ * @brief Translate uint8_t type of data into rmt format and send it out.
+ *        Requires rmt_translator_init to init the translator first.
+ *
+ * @param channel RMT channel (0 - 7).
+ *
+ * @param src Pointer to the raw data.
+ *
+ * @param src_size The size of the raw data.
+ *
+ * @param wait_tx_done Set true to wait all data send done.
+ *
+ * @return
+ *     - ESP_FAIL Send fail
+ *     - ESP_OK Send success
+ */
+esp_err_t rmt_write_sample(rmt_channel_t channel, const uint8_t *src, size_t src_size, bool wait_tx_done);
 
 /**
  * @brief Registers a callback that will be called when transmission ends.
