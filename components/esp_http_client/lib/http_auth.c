@@ -51,7 +51,7 @@ static int md5_printf(char *md, const char *fmt, ...)
     va_start(ap, fmt);
     len = vasprintf((char **)&buf, fmt, ap);
     if (buf == NULL) {
-        return -1;
+        return ESP_FAIL;
     }
 
     MD5Init(&md5_ctx);
