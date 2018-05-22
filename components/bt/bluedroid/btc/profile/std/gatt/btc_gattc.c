@@ -738,7 +738,7 @@ void btc_gattc_call_handler(btc_msg_t *msg)
         btc_gattc_unreg_for_notify(arg);
         break;
     case BTC_GATTC_ACT_CACHE_REFRESH:
-        BTA_GATTC_Refresh(arg->cache_refresh.remote_bda);
+        BTA_GATTC_Refresh(arg->cache_refresh.remote_bda, true);
         break;
     case BTC_GATTC_ACT_CACHE_ASSOC:
         BTA_GATTC_CacheAssoc(arg->cache_assoc.gattc_if,

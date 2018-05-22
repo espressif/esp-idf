@@ -666,11 +666,14 @@ void bta_gattc_conn(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
     if (p_clcb->p_srcb->p_srvc_cache == NULL ||
             p_clcb->p_srcb->state != BTA_GATTC_SERV_IDLE) {
         if (p_clcb->p_srcb->state == BTA_GATTC_SERV_IDLE) {
+#if (GATTC_CACHE_NVS == TRUE)
             p_clcb->p_srcb->state = BTA_GATTC_SERV_LOAD;
             if (bta_gattc_cache_load(p_clcb)) {
                 p_clcb->p_srcb->state = BTA_GATTC_SERV_IDLE;
                 bta_gattc_reset_discover_st(p_clcb->p_srcb, BTA_GATT_OK);
-            } else { /* cache is building */
+            } else 
+#endif
+            { /* cache is building */
                 p_clcb->p_srcb->state = BTA_GATTC_SERV_DISC;
                 /* cache load failure, start discovery */
                 bta_gattc_start_discover(p_clcb, NULL);
@@ -1016,9 +1019,10 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
             list_free(p_clcb->p_srcb->p_srvc_cache);
             p_clcb->p_srcb->p_srvc_cache = NULL;
         }
-
+#if(GATTC_CACHE_NVS == TRUE)
         /* used to reset cache in application */
         bta_gattc_cache_reset(p_clcb->p_srcb->server_bda);
+#endif
     }
     if (p_clcb->p_srcb && p_clcb->p_srcb->p_srvc_list) {
         /* release pending attribute list buffer */
@@ -1716,7 +1720,6 @@ void bta_gattc_process_api_refresh(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg)
             }
             if (found) {
                 bta_gattc_sm_execute(p_clcb, BTA_GATTC_INT_DISCOVER_EVT, NULL);
-                bta_gattc_cache_reset(p_msg->api_conn.remote_bda);
                 return;
             }
         }
@@ -1726,8 +1729,6 @@ void bta_gattc_process_api_refresh(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg)
             p_srvc_cb->p_srvc_cache = NULL;
         }
     }
-    /* used to reset cache in application */
-    bta_gattc_cache_reset(p_msg->api_conn.remote_bda);
 }
 
 void bta_gattc_process_api_cache_assoc(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg)
