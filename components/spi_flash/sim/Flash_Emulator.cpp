@@ -27,6 +27,7 @@ Flash_Emulator::Flash_Emulator(size_t size, size_t sector_sise, size_t min_size)
     this->buff = (uint8_t *)malloc(this->size);
     this->access_count = new uint32_t[this->size / this->sector_sise];
     memset(this->access_count, 0, this->size / this->sector_sise * sizeof(uint32_t));
+    memset(this->buff, 1, this->size);
 }
 
 size_t Flash_Emulator::chip_size()

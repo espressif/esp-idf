@@ -23,7 +23,7 @@ TEST_CASE("create volume, open file, write and read back data", "[fatfs]")
     uint32_t size = 0x00400000;
     int flash_handle = esp_flash_create(size, 4096, 1);
     esp_partition_t partition = esp_partition_create(size, 0, flash_handle);
-
+    
     // Mount wear-levelled partition
     wl_handle_t wl_handle;
     esp_result = wl_mount(&partition, &wl_handle);
@@ -77,7 +77,7 @@ TEST_CASE("create volume, open file, write and read back data", "[fatfs]")
     fr_result = f_mount(0, "", 0);
     REQUIRE(fr_result == FR_OK);
 
-    esp_partition_delete(partition);
+    esp_flash_delete(flash_handle);
 
     free(read);
 }

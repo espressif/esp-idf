@@ -84,9 +84,11 @@ esp_err_t esp_partition_erase_range(const esp_partition_t* partition,
 esp_err_t esp_partition_read(const esp_partition_t* partition,
                              size_t src_offset, void* dst, size_t size);
 
-esp_partition_t esp_partition_create(uint32_t size, uint32_t start);
+esp_partition_t esp_partition_create(uint32_t size, uint32_t start, int handle);
 
-void esp_partition_delete(esp_partition_t partition);
+int esp_flash_create(uint32_t size, uint32_t sector_size, uint32_t write_size);
+
+void esp_flash_delete(int handle);
 
 #if defined(__cplusplus)
 }

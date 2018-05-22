@@ -28,7 +28,8 @@ TEST_CASE("write and read back data", "[wear_levelling]")
     esp_err_t result;
     wl_handle_t wl_handle;
 
-    esp_partition_t partition = esp_partition_create(PARTITION_SIZE, PARTITION_START);
+    int flash_handle = esp_flash_create(PARTITION_SIZE, 4096, 16);
+    esp_partition_t partition = esp_partition_create(PARTITION_SIZE, PARTITION_START, flash_handle);
 
     // Mount wear-levelled partition
     result = wl_mount(partition, &wl_handle);
