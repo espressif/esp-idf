@@ -10,6 +10,8 @@ ESP32 can provide up to 10 capacitive touch pads / GPIOs. The sensing pads can b
 
 Design, operation and control registers of touch sensor are discussed in `ESP32 Technical Reference Manual <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf>`_ (PDF). Please refer to it for additional details how this subsystem works.
 
+In depth details of design of touch sensors and firmware development guidelines for the ESP32 are available in `Touch Sensor Application Note <https://github.com/espressif/esp-iot-solution/blob/master/documents/touch_pad_solution/touch_sensor_design_en.md>`_. If you would like to test touch sensors in various configurations without building them on your own, check `Guide for ESP32-Sense Development Kit <https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/esp32_sense_kit_guide_en.md>`_. 
+
 
 Functionality Overview
 ----------------------
