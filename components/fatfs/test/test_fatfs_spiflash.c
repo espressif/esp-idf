@@ -145,7 +145,7 @@ TEST_CASE("(WL) multiple tasks can use same volume", "[fatfs][wear_levelling]")
     test_teardown();
 }
 
-TEST_CASE("(WL) write/read speed test", "[fatfs][wear_levelling]")
+TEST_CASE("(WL) write/read speed test", "[fatfs][wear_levelling][timeout=60]")
 {
     /* Erase partition before running the test to get consistent results */
     const esp_partition_t* part = get_test_data_partition();
