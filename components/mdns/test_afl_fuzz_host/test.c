@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifdef MDNS_TEST_MODE
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -21,93 +19,210 @@
 #include <string.h>
 
 #include "mdns.h"
+#include "mdns_private.h"
 
-void mdns_parse_packet(mdns_server_t * server, const uint8_t * data, size_t len);
+//
+// Global stuctures containing packet payload, search
+mdns_rx_packet_t g_packet;
+struct pbuf mypbuf;
+mdns_search_once_t * search = NULL;
 
+//
+// Dependency injected test functions
+void mdns_test_execute_action(void * action);
+mdns_srv_item_t * mdns_test_mdns_get_service_item(const char * service, const char * proto);
+mdns_search_once_t * mdns_test_search_init(const char * name, const char * service, const char * proto, uint16_t type, uint32_t timeout, uint8_t max_results);
+esp_err_t mdns_test_send_search_action(mdns_action_type_t type, mdns_search_once_t * search);
+void mdns_test_search_free(mdns_search_once_t * search);
+void mdns_test_init_di();
+
+//
+// mdns function wrappers for mdns setup in test mode
+static int mdns_test_hostname_set(const char * mdns_hostname)
+{
+    int ret = mdns_hostname_set(mdns_hostname);
+    mdns_action_t * a = NULL;
+    GetLastItem(&a);
+    mdns_test_execute_action(a);
+    return ret;
+}
+
+static int mdns_test_service_instance_name_set(const char * service, const char * proto, const char * instance)
+{
+    int ret = mdns_service_instance_name_set(service, proto, instance);
+    mdns_action_t * a = NULL;
+    GetLastItem(&a);
+    mdns_test_execute_action(a);
+    return ret;
+}
+
+static int mdns_test_service_txt_set(const char * service, const char * proto,  uint8_t num_items, mdns_txt_item_t txt[])
+{
+    int ret = mdns_service_txt_set(service, proto, txt, num_items);
+    mdns_action_t * a = NULL;
+    GetLastItem(&a);
+    mdns_test_execute_action(a);
+    return ret;
+}
+
+static int mdns_test_service_add(const char * service_name, const char * proto, uint32_t port)
+{
+    if (mdns_service_add(NULL, service_name, proto, port, NULL, 0)) {
+        // This is expected failure as the service thread is not running
+    }
+    mdns_action_t * a = NULL;
+    GetLastItem(&a);
+    mdns_test_execute_action(a);
+
+    if (mdns_test_mdns_get_service_item(service_name, proto)==NULL) {
+        return ESP_FAIL;
+    }
+    return ESP_OK;
+}
+
+static mdns_result_t* mdns_test_query(const char * service_name, const char * proto)
+{
+    search = mdns_test_search_init(NULL, service_name, proto, MDNS_TYPE_PTR, 3000, 20);
+    if (!search) {
+        abort();
+    }
+
+    if (mdns_test_send_search_action(ACTION_SEARCH_ADD, search)) {
+        mdns_test_search_free(search);
+        abort();
+    }
+
+    mdns_action_t * a = NULL;
+    GetLastItem(&a);
+    mdns_test_execute_action(a);
+    return NULL;
+}
+
+static void mdns_test_query_free()
+{
+    mdns_test_search_free(search);
+}
+
+//
+// function "under test" where afl-mangled packets passed
+//
+void mdns_parse_packet(mdns_rx_packet_t * packet);
+
+//
+// Test starts here
+//
 int main(int argc, char** argv)
 {
+    int i;
     const char * mdns_hostname = "minifritz";
     const char * mdns_instance = "Hristo's Time Capsule";
-    const char * arduTxtData[4] = {
-        "board=esp32",
-        "tcp_check=no",
-        "ssh_upload=no",
-        "auth_upload=no"
+    mdns_txt_item_t arduTxtData[4] = {
+        {"board","esp32"},
+        {"tcp_check","no"},
+        {"ssh_upload","no"},
+        {"auth_upload","no"}
     };
+
     const uint8_t mac[6] = {0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x32};
     
-    mdns_server_t * mdns = NULL;
     uint8_t buf[1460];
     char winstance[21+strlen(mdns_hostname)];
 
     sprintf(winstance, "%s [%02x:%02x:%02x:%02x:%02x:%02x]", mdns_hostname, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
-    if (mdns_init(TCPIP_ADAPTER_IF_ETH, &mdns)) {
+    // Init depencency injected methods
+    mdns_test_init_di();
+
+    if (mdns_init()) {
         abort();
     }
 
-    if (mdns_set_hostname(mdns, mdns_hostname)) {
+    if (mdns_test_hostname_set(mdns_hostname)) {
         abort();
     }
 
-    if (mdns_set_instance(mdns, mdns_instance)) {
+    if (mdns_test_service_add("_workstation", "_tcp", 9)) {
+        abort();
+    }
+    if (mdns_test_service_instance_name_set("_workstation", "_tcp", winstance)) {
         abort();
     }
 
-    if (mdns_service_add(mdns, "_workstation", "_tcp", 9)) {
+    if (mdns_test_service_add("_arduino", "_tcp", 3232)) {
         abort();
     }
 
-    if (mdns_service_instance_set(mdns, "_workstation", "_tcp", winstance)) {
+    if (mdns_test_service_txt_set("_arduino", "_tcp", 4, arduTxtData)) {
         abort();
     }
 
-    if (mdns_service_add(mdns, "_arduino", "_tcp", 3232)) {
+    if (mdns_test_service_add("_http", "_tcp", 80)) {
         abort();
     }
 
-    if (mdns_service_txt_set(mdns, "_arduino", "_tcp", 4, arduTxtData)) {
-        abort();
-    }
-
-    if (mdns_service_add(mdns, "_http", "_tcp", 80)) {
-        abort();
-    }
-
-    if (mdns_service_instance_set(mdns, "_http", "_tcp", "ESP WebServer")) {
+    if (mdns_test_service_instance_name_set("_http", "_tcp", "ESP WebServer")) {
         abort();
     }
 
     if (
-           mdns_service_add(mdns, "_afpovertcp", "_tcp", 548)
-        || mdns_service_add(mdns, "_rfb", "_tcp", 885)
-        || mdns_service_add(mdns, "_smb", "_tcp", 885)
-        || mdns_service_add(mdns, "_adisk", "_tcp", 885)
-        || mdns_service_add(mdns, "_airport", "_tcp", 885)
-        || mdns_service_add(mdns, "_printer", "_tcp", 885)
-        || mdns_service_add(mdns, "_airplay", "_tcp", 885)
-        || mdns_service_add(mdns, "_raop", "_tcp", 885)
-        || mdns_service_add(mdns, "_uscan", "_tcp", 885)
-        || mdns_service_add(mdns, "_uscans", "_tcp", 885)
-        || mdns_service_add(mdns, "_ippusb", "_tcp", 885)
-        || mdns_service_add(mdns, "_scanner", "_tcp", 885)
-        || mdns_service_add(mdns, "_ipp", "_tcp", 885)
-        || mdns_service_add(mdns, "_ipps", "_tcp", 885)
-        || mdns_service_add(mdns, "_pdl-datastream", "_tcp", 885)
-        || mdns_service_add(mdns, "_ptp", "_tcp", 885)
-        || mdns_service_add(mdns, "_sleep-proxy", "_udp", 885))
+           mdns_test_service_add("_afpovertcp", "_tcp", 548)
+        || mdns_test_service_add("_rfb", "_tcp", 885)
+        || mdns_test_service_add("_smb", "_tcp", 885)
+        || mdns_test_service_add("_adisk", "_tcp", 885)
+        || mdns_test_service_add("_airport", "_tcp", 885)
+        || mdns_test_service_add("_printer", "_tcp", 885)
+        || mdns_test_service_add("_airplay", "_tcp", 885)
+        || mdns_test_service_add("_raop", "_tcp", 885)
+        || mdns_test_service_add("_uscan", "_tcp", 885)
+        || mdns_test_service_add("_uscans", "_tcp", 885)
+        || mdns_test_service_add("_ippusb", "_tcp", 885)
+        || mdns_test_service_add("_scanner", "_tcp", 885)
+        || mdns_test_service_add("_ipp", "_tcp", 885)
+        || mdns_test_service_add("_ipps", "_tcp", 885)
+        || mdns_test_service_add("_pdl-datastream", "_tcp", 885)
+        || mdns_test_service_add("_ptp", "_tcp", 885)
+        || mdns_test_service_add("_sleep-proxy", "_udp", 885))
     {
-        abort();
+        abort(); 
+    }
+        
+    mdns_result_t * results = NULL;
+    FILE *file;
+    size_t nread;
+
+#ifdef INSTR_IS_OFF
+    size_t len = 1460;
+    memset(buf, 0, 1460);
+
+    if (argc != 2)
+    {
+        printf("Non-instrumentation mode: please supply a file name created by AFL to reproduce crash\n");
+        return 1;
+    }
+    else
+    {
+        //
+        // Note: parameter1 is a file (mangled packet) which caused the crash
+        file = fopen(argv[1], "r");
+        if (file) {
+            len = fread(buf, 1, 1460, file);
+        }
+        fclose(file);
     }
 
+    for (i=0; i<1; i++) {
+#else
     while (__AFL_LOOP(1000)) {
         memset(buf, 0, 1460);
         size_t len = read(0, buf, 1460);
-        mdns_query(mdns, "_afpovertcp", "_tcp", 0);
-        mdns_parse_packet(mdns, buf, len);
-        mdns_query_end(mdns);
+#endif
+        mypbuf.payload = buf;
+        mypbuf.len = len;
+        g_packet.pb = &mypbuf;
+        mdns_test_query("_afpovertcp", "_tcp");
+        mdns_parse_packet(&g_packet);
     }
+    ForceTaskDelete();
+    mdns_free();
     return 0;
 }
-
-#endif
