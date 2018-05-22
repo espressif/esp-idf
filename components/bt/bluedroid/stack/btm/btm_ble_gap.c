@@ -3457,15 +3457,21 @@ tBTM_STATUS btm_ble_start_adv(void)
         btm_execute_wl_dev_operation();
         btm_cb.ble_ctr_cb.wl_state |= BTM_BLE_WL_ADV;
     }
-
+    /* The complete event comes up immediately after the 'btsnd_hcic_ble_set_adv_enable' being called in dual core, 
+    this causes the 'adv_mode' and 'state' not be set yet, so we set the state first */
+    tBTM_BLE_GAP_STATE temp_state = p_cb->state;
+    UINT8 adv_mode = p_cb->adv_mode;
+    p_cb->adv_mode = BTM_BLE_ADV_ENABLE;
+    p_cb->state = BTM_BLE_ADV_PENDING;
+    btm_ble_adv_states_operation(btm_ble_set_topology_mask, p_cb->evt_type);
     if (btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_ENABLE)) {
-        p_cb->adv_mode = BTM_BLE_ADV_ENABLE;
-        p_cb->state = BTM_BLE_ADV_PENDING;
-        btm_ble_adv_states_operation(btm_ble_set_topology_mask, p_cb->evt_type);
         rt = BTM_SUCCESS;
         BTM_TRACE_EVENT ("BTM_SUCCESS\n");
     } else {
         p_cb->adv_mode = BTM_BLE_ADV_DISABLE;
+        p_cb->state = temp_state;
+        p_cb->adv_mode = adv_mode;
+        btm_ble_adv_states_operation(btm_ble_clear_topology_mask, p_cb->evt_type);
         btm_cb.ble_ctr_cb.wl_state &= ~BTM_BLE_WL_ADV;
     }
     return rt;
