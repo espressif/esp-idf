@@ -19,6 +19,8 @@
 extern "C" {
 #endif
 
+#define ESP_CAL_DATA_CHECK_FAIL 1
+
 /**
  * @file phy.h
  * @brief Declarations for functions provided by libphy.a
@@ -34,7 +36,7 @@ void phy_get_romfunc_addr(void);
  * @param[in] init_data Initialization parameters to be used by the PHY
  * @param[inout] cal_data As input, calibration data previously obtained. As output, will contain new calibration data.
  * @param[in] cal_mode  RF calibration mode
- * @return reserved for future use
+ * @return ESP_CAL_DATA_CHECK_FAIL if calibration data checksum fails, other values are reserved for future use
  */
 int register_chipv7_phy(const esp_phy_init_data_t* init_data, esp_phy_calibration_data_t *cal_data, esp_phy_calibration_mode_t cal_mode);
 
