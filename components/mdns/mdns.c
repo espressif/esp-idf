@@ -2269,7 +2269,7 @@ static bool _mdns_question_matches(mdns_parsed_question_t * question, uint16_t t
         }
     } else if (type == MDNS_TYPE_SRV || type == MDNS_TYPE_TXT) {
         const char * name = _mdns_get_service_instance_name(service->service);
-        if (name && !strcasecmp(name, question->host)
+        if (name && question->host && !strcasecmp(name, question->host)
             && !strcasecmp(service->service->service, question->service)
             && !strcasecmp(service->service->proto, question->proto)
             && !strcasecmp(MDNS_DEFAULT_DOMAIN, question->domain)) {
