@@ -8,13 +8,13 @@
 
 static Flash_Emulator* emulators[EMULATORS_MAX];
 
-esp_partition_t esp_partition_create(uint32_t size, uint32_t start)
-{ 
+int esp_flash_create(uint32_t size, uint32_t sector_size, uint32_t write_size)
+{
     int handle = -1;
 
     for (int i = 0; i < EMULATORS_MAX; i++) {
         if (emulators[i] == NULL) {
-            emulators[i] = new Flash_Emulator(start + size, SPI_FLASH_SEC_SIZE, SPI_FLASH_WRITE_SIZE);
+            emulators[i] = new Flash_Emulator(size, sector_size, write_size);
             handle = i;
             break;
         }
@@ -22,23 +22,28 @@ esp_partition_t esp_partition_create(uint32_t size, uint32_t start)
     
     assert(handle != -1);
 
+    return handle;
+}
+
+esp_partition_t esp_partition_create(uint32_t size, uint32_t start, int flash)
+{ 
     esp_partition_t partition;
 
     // Fills partition with default values, and attaches the flash_emulator reference
     // to the struct
     partition.type = ESP_PARTITION_TYPE_DATA;
-    partition.subtype = ESP_PARTITION_SUBTYPE_DATA_FAT;
+    partition.subtype = ESP_PARTITION_SUBTYPE_ANY;
     partition.address = start;
     partition.size = size;
-    partition.handle = handle;
+    partition.handle = flash;
 
     return partition;
 }
 
-void esp_partition_delete(esp_partition_t partition)
+void esp_flash_delete(int handle)
 {
-    delete emulators[partition.handle];
-    emulators[partition.handle] = NULL;
+    delete emulators[handle];
+    emulators[handle] = NULL;
 }
 
 esp_err_t esp_partition_write(const esp_partition_t* partition,
