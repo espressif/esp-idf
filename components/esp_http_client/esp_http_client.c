@@ -119,6 +119,8 @@ static esp_err_t _clear_connection_info(esp_http_client_handle_t client);
 #define DEFAULT_HTTP_PORT (80)
 #define DEFAULT_HTTPS_PORT (443)
 
+#define HTTP_LENGTH_CHUNKED_ENCODING (-1)
+
 static const char *DEFAULT_HTTP_USER_AGENT = "ESP32 HTTP Client/1.0";
 static const char *DEFAULT_HTTP_PROTOCOL = "HTTP/1.1";
 static const char *DEFAULT_HTTP_PATH = "/";
@@ -131,6 +133,19 @@ static const char *HTTP_METHOD_MAPPING[] = {
     "PUT",
     "PATCH",
     "DELETE"
+};
+
+/**
+ * Enum for the HTTP status codes.
+ */
+enum HttpStatus_Code
+{
+    /* 3xx - Redirection */
+    HttpStatus_MovedPermanently  = 301,
+    HttpStatus_Found             = 302,
+
+    /* 4xx - Client Error */
+    HttpStatus_Unauthorized      = 401
 };
 
 static esp_err_t http_dispatch_event(esp_http_client_t *client, esp_http_client_event_id_t event_id, void *data, int len)
@@ -525,14 +540,14 @@ static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
         return ESP_ERR_HTTP_MAX_REDIRECT;
     }
     switch (client->response->status_code) {
-        case 301:
-        case 302:
+        case HttpStatus_MovedPermanently:
+        case HttpStatus_Found:
             ESP_LOGI(TAG, "Redirect to %s", client->location);
             esp_http_client_set_url(client, client->location);
             client->redirect_counter ++;
             client->process_again = 1;
             break;
-        case 401:
+        case HttpStatus_Unauthorized:
             auth_header = client->auth_header;
             http_utils_trim_whitespace(&auth_header);
             ESP_LOGI(TAG, "UNAUTHORIZED: %s", auth_header);
@@ -675,7 +690,7 @@ esp_err_t esp_http_client_set_method(esp_http_client_handle_t client, esp_http_c
 static int esp_http_client_get_data(esp_http_client_handle_t client)
 {
     if (client->state < HTTP_STATE_RES_COMPLETE_HEADER) {
-        return -1;
+        return ESP_FAIL;
     }
     esp_http_buffer_t *res_buffer = client->response->buffer;
 
@@ -692,7 +707,7 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
 {
     esp_http_buffer_t *res_buffer = client->response->buffer;
 
-    int rlen = -1, ridx = 0;
+    int rlen = ESP_FAIL, ridx = 0;
     if (res_buffer->raw_len) {
         int remain_len = client->response->buffer->raw_len;
         if (remain_len > len) {
@@ -790,7 +805,7 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
 int esp_http_client_fetch_headers(esp_http_client_handle_t client)
 {
     if (client->state < HTTP_STATE_REQ_COMPLETE_HEADER) {
-        return -1;
+        return ESP_FAIL;
     }
 
     client->state = HTTP_STATE_REQ_COMPLETE_DATA;
@@ -800,7 +815,7 @@ int esp_http_client_fetch_headers(esp_http_client_handle_t client)
     while (client->state < HTTP_STATE_RES_COMPLETE_HEADER) {
         buffer->len = transport_read(client->transport, buffer->data, client->buffer_size, client->timeout_ms);
         if (buffer->len <= 0) {
-            return -1;
+            return ESP_FAIL;
         }
         http_parser_execute(client->parser, client->parser_settings, buffer->data, buffer->len);
     }
@@ -903,7 +918,7 @@ esp_err_t esp_http_client_open(esp_http_client_handle_t client, int write_len)
 int esp_http_client_write(esp_http_client_handle_t client, const char *buffer, int len)
 {
     if (client->state < HTTP_STATE_REQ_COMPLETE_HEADER) {
-        return -1;
+        return ESP_FAIL;
     }
     int need_write;
     int wlen = 0, widx = 0;

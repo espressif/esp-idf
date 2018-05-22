@@ -258,7 +258,8 @@ int esp_http_client_write(esp_http_client_handle_t client, const char *buffer, i
  * @param[in]  client  The esp_http_client handle
  *
  * @return
- *     - (-1) if stream doesn't contain content-length header, or chunked encoding (checked by `esp_http_client_is_chunked` response)
+ *     - (0) if stream doesn't contain content-length header, or chunked encoding (checked by `esp_http_client_is_chunked` response)
+ *     - (-1: ESP_FAIL) if any errors
  *     - Download data length defined by content-length header
  */
 int esp_http_client_fetch_headers(esp_http_client_handle_t client);
