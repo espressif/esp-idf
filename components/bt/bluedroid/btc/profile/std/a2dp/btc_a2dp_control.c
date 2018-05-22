@@ -75,7 +75,7 @@ void btc_a2dp_control_command_ack(int status)
 static void btc_a2dp_datapath_open(void)
 {
 #if BTC_AV_SRC_INCLUDED
-    if (btc_av_get_peer_sep() == AVDT_TSEP_SNK) {
+    if (btc_av_get_peer_sep() == AVDT_TSEP_SNK && btc_av_get_service_id() == BTA_A2DP_SOURCE_SERVICE_ID) {
         /* Start the media task to encode SBC */
         btc_a2dp_source_start_audio_req();
 
@@ -147,7 +147,7 @@ void btc_a2dp_control_media_ctrl(esp_a2d_media_ctrl_t ctrl)
 
             btc_a2dp_dispatch_datapath_evt(BTC_AV_DATAPATH_OPEN_EVT);
 #if (BTC_AV_SINK_INCLUDED == TRUE)
-            if (btc_av_get_peer_sep() == AVDT_TSEP_SRC) {
+            if (btc_av_get_peer_sep() == AVDT_TSEP_SRC && btc_av_get_service_id() == BTA_A2DP_SINK_SERVICE_ID) {
                 btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_SUCCESS);
             }
 #endif
@@ -160,7 +160,8 @@ void btc_a2dp_control_media_ctrl(esp_a2d_media_ctrl_t ctrl)
         break;
     case ESP_A2D_MEDIA_CTRL_STOP:
 #if BTC_AV_SRC_INCLUDED
-        if (btc_av_get_peer_sep() == AVDT_TSEP_SNK && !btc_a2dp_source_is_streaming()) {
+        if (btc_av_get_peer_sep() == AVDT_TSEP_SNK && !btc_a2dp_source_is_streaming() &&
+                btc_av_get_service_id() == BTA_A2DP_SOURCE_SERVICE_ID) {
             /* we are already stopped, just ack back*/
             btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_SUCCESS);
             break;
@@ -168,7 +169,7 @@ void btc_a2dp_control_media_ctrl(esp_a2d_media_ctrl_t ctrl)
 #endif /* BTC_AV_SRC_INCLUDED */
         btc_dispatch_sm_event(BTC_AV_STOP_STREAM_REQ_EVT, NULL, 0);
 #if (BTC_AV_SINK_INCLUDED == TRUE)
-        if (btc_av_get_peer_sep() == AVDT_TSEP_SRC) {
+        if (btc_av_get_peer_sep() == AVDT_TSEP_SRC && btc_av_get_service_id() == BTA_A2DP_SINK_SERVICE_ID) {
             btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_SUCCESS);
         }
 #endif
