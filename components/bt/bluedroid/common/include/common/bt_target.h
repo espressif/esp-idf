@@ -61,18 +61,12 @@
 #define AVCT_INCLUDED               TRUE
 #define AVRC_INCLUDED               TRUE
 #define BTC_AV_INCLUDED             TRUE
-#endif /* CONFIG_A2DP_ENABLE */
-
-#if CONFIG_A2DP_SINK_ENABLE
 #define BTA_AV_SINK_INCLUDED        TRUE
 #define BTC_AV_SINK_INCLUDED        TRUE
 #define SBC_DEC_INCLUDED            TRUE
-#endif /* CONFIG_A2DP_SINK_ENABLE */
-
-#if CONFIG_A2DP_SRC_ENABLE
 #define BTC_AV_SRC_INCLUDED         TRUE
 #define SBC_ENC_INCLUDED            TRUE
-#endif /* CONFIG_A2DP_SRC_ENABLE */
+#endif /* CONFIG_A2DP_ENABLE */
 
 #if CONFIG_BT_SPP_ENABLED
 #define RFCOMM_INCLUDED             TRUE

@@ -72,6 +72,7 @@ typedef enum {
 ******************************************************************************/
 
 typedef struct {
+    int service_id;
     tBTA_AV_HNDL bta_handle;
     bt_bdaddr_t peer_bda;
     btc_sm_handle_t sm_handle;
@@ -957,6 +958,7 @@ static void btc_av_event_free_data(btc_sm_event_t event, void *p_data)
 static bt_status_t btc_av_init(int service_id)
 {
     if (btc_av_cb.sm_handle == NULL) {
+        btc_av_cb.service_id = service_id;
         bool stat = false;
         if (service_id == BTA_A2DP_SOURCE_SERVICE_ID) {
 #if BTC_AV_SRC_INCLUDED
@@ -1263,6 +1265,21 @@ BOOLEAN btc_av_is_connected(void)
 {
     btc_sm_state_t state = btc_sm_get_state(btc_av_cb.sm_handle);
     return ((state == BTC_AV_STATE_OPENED) || (state ==  BTC_AV_STATE_STARTED));
+}
+
+/*******************************************************************************
+ *
+ * Function         btc_av_get_service_id
+ *
+ * Description      Get the current AV service ID.
+ *
+ * Returns          The stream endpoint type: either BTA_A2DP_SOURCE_SERVICE_ID or
+ *                  BTA_A2DP_SINK_SERVICE_ID.
+ *
+ ******************************************************************************/
+uint8_t btc_av_get_service_id(void)
+{
+    return btc_av_cb.service_id;
 }
 
 /*******************************************************************************
