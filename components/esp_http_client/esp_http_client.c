@@ -119,8 +119,6 @@ static esp_err_t _clear_connection_info(esp_http_client_handle_t client);
 #define DEFAULT_HTTP_PORT (80)
 #define DEFAULT_HTTPS_PORT (443)
 
-#define HTTP_LENGTH_CHUNKED_ENCODING (-1)
-
 static const char *DEFAULT_HTTP_USER_AGENT = "ESP32 HTTP Client/1.0";
 static const char *DEFAULT_HTTP_PROTOCOL = "HTTP/1.1";
 static const char *DEFAULT_HTTP_PATH = "/";
