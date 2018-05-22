@@ -38,12 +38,17 @@ class Group(CIAssignTest.Group):
         return test_app[3:]
 
     def _create_extra_data(self, test_function):
+        """
+        For unit test case, we need to copy some attributes of test cases into config file.
+        So unit test function knows how to run the case.
+        """
         case_data = []
         for case in self.case_list:
             one_case_data = {
                 "config": self._get_ut_config(self._get_case_attr(case, "Test App")),
                 "name": self._get_case_attr(case, "summary"),
                 "reset": self._get_case_attr(case, "reset"),
+                "timeout": self._get_case_attr(case, "timeout"),
             }
 
             if test_function in ["run_multiple_devices_cases", "run_multiple_stage_cases"]:
