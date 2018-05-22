@@ -119,7 +119,16 @@ esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data, esp_phy_calibrat
             // Enable WiFi/BT common peripheral clock
             periph_module_enable(PERIPH_WIFI_BT_COMMON_MODULE);
             phy_set_wifi_mode_only(0);
-            register_chipv7_phy(init_data, calibration_data, mode);
+
+            if (ESP_CAL_DATA_CHECK_FAIL == register_chipv7_phy(init_data, calibration_data, mode)) {
+                ESP_LOGW(TAG, "saving new calibration data because of checksum failure, mode(%d)", mode);
+#ifdef CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
+                if (mode != PHY_RF_CAL_FULL) {
+                    esp_phy_store_cal_data_to_nvs(calibration_data);
+                }
+#endif
+            }
+
             coex_bt_high_prio();
         }
     }
@@ -476,6 +485,7 @@ static esp_err_t load_cal_data_from_nvs_handle(nvs_handle handle,
         ESP_LOGD(TAG, "%s: invalid length of cal_data (%d)", __func__, length);
         return ESP_ERR_INVALID_SIZE;
     }
+    memcpy(out_cal_data->mac, sta_mac, 6);
     return ESP_OK;
 }
 
