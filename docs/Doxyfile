@@ -107,6 +107,8 @@ INPUT = \
     ../../components/driver/include/driver/sdmmc_host.h \
     ../../components/driver/include/driver/sdmmc_types.h \
     ../../components/driver/include/driver/sdspi_host.h \
+    ## SDIO slave 
+    ../../components/driver/include/driver/sdio_slave.h \
     ## Non-Volatile Storage
     ../../components/nvs_flash/include/nvs.h \
     ../../components/nvs_flash/include/nvs_flash.h \
