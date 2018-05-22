@@ -73,23 +73,10 @@ extern "C" {
  */
 static inline uint32_t IRAM_ATTR DPORT_REG_READ(uint32_t reg)
 {
-#ifndef CONFIG_FREERTOS_UNICORE
-    uint32_t apb;
-    unsigned int intLvl;
-    __asm__ __volatile__ (\
-                  "movi %[APB], "XTSTR(0x3ff40078)"\n"\
-                  "rsil %[LVL], "XTSTR(3)"\n"\
-                  "l32i %[APB], %[APB], 0\n"\
-                  "l32i %[REG], %[REG], 0\n"\
-                  "wsr  %[LVL], "XTSTR(PS)"\n"\
-                  "rsync\n"\
-                  : [APB]"=a"(apb), [REG]"+a"(reg), [LVL]"=a"(intLvl)\
-                  : \
-                  : "memory" \
-                  );
-    return reg;
-#else
+#if defined(BOOTLOADER_BUILD) || defined(CONFIG_FREERTOS_UNICORE) || !defined(ESP_PLATFORM)
     return _DPORT_REG_READ(reg);
+#else
+    return esp_dport_access_reg_read(reg);
 #endif
 }
 
@@ -119,19 +106,10 @@ static inline uint32_t IRAM_ATTR DPORT_REG_READ(uint32_t reg)
  */
 static inline uint32_t IRAM_ATTR DPORT_SEQUENCE_REG_READ(uint32_t reg)
 {
-#ifndef CONFIG_FREERTOS_UNICORE
-    uint32_t apb;
-    __asm__ __volatile__ (\
-                  "movi %[APB], "XTSTR(0x3ff40078)"\n"\
-                  "l32i %[APB], %[APB], 0\n"\
-                  "l32i %[REG], %[REG], 0\n"\
-                  : [APB]"=a"(apb), [REG]"+a"(reg)\
-                  : \
-                  : "memory" \
-                  );
-    return reg;
-#else
+#if defined(BOOTLOADER_BUILD) || defined(CONFIG_FREERTOS_UNICORE) || !defined(ESP_PLATFORM)
     return _DPORT_REG_READ(reg);
+#else
+    return esp_dport_access_sequence_reg_read(reg);
 #endif
 }
 
@@ -188,23 +166,10 @@ static inline uint32_t IRAM_ATTR DPORT_SEQUENCE_REG_READ(uint32_t reg)
  */
 static inline uint32_t IRAM_ATTR DPORT_READ_PERI_REG(uint32_t reg)
 {
-#ifndef CONFIG_FREERTOS_UNICORE
-    uint32_t apb;
-    unsigned int intLvl;
-    __asm__ __volatile__ (\
-                  "movi %[APB], "XTSTR(0x3ff40078)"\n"\
-                  "rsil %[LVL], "XTSTR(3)"\n"\
-                  "l32i %[APB], %[APB], 0\n"\
-                  "l32i %[REG], %[REG], 0\n"\
-                  "wsr  %[LVL], "XTSTR(PS)"\n"\
-                  "rsync\n"\
-                  : [APB]"=a"(apb), [REG]"+a"(reg), [LVL]"=a"(intLvl)\
-                  : \
-                  : "memory" \
-                  );
-    return reg;
+#if defined(BOOTLOADER_BUILD) || defined(CONFIG_FREERTOS_UNICORE) || !defined(ESP_PLATFORM)
+    return _DPORT_REG_READ(reg);
 #else
-    return _DPORT_READ_PERI_REG(reg);
+    return esp_dport_access_reg_read(reg);
 #endif
 }
 
