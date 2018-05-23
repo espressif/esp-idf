@@ -995,6 +995,60 @@
 #define RMT_STATUS_CH0_M  ((RMT_STATUS_CH0_V)<<(RMT_STATUS_CH0_S))
 #define RMT_STATUS_CH0_V  0xFFFFFFFF
 #define RMT_STATUS_CH0_S  0
+/* RMT_APB_MEM_RD_ERR_CH0 : RO ;bitpos:[31] ;default: 1'b0 ; */
+/*description: The apb read memory status bit for channel0 turns to
+ high level when the apb read address exceeds the configuration range.*/
+#define RMT_APB_MEM_RD_ERR_CH0 (BIT(31))
+#define RMT_APB_MEM_RD_ERR_CH0_M  ((RMT_APB_MEM_RD_ERR_CH0_V)<<(RMT_APB_MEM_RD_ERR_CH0_S))
+#define RMT_APB_MEM_RD_ERR_CH0_V  0x1
+#define RMT_APB_MEM_RD_ERR_CH0_S  31
+/* RMT_APB_MEM_WR_ERR_CH0 : RO ;bitpos:[30] ;default: 1'b0 ; */
+/*description: The apb write memory status bit for channel0 turns to
+ high level when the apb write address exceeds the configuration range.*/
+#define RMT_APB_MEM_WR_ERR_CH0 (BIT(30))
+#define RMT_APB_MEM_WR_ERR_CH0_M  ((RMT_APB_MEM_WR_ERR_CH0_V)<<(RMT_APB_MEM_WR_ERR_CH0_S))
+#define RMT_APB_MEM_WR_ERR_CH0_V  0x1
+#define RMT_APB_MEM_WR_ERR_CH0_S  30
+/* RMT_MEM_EMPTY_CH0 : RO ;bitpos:[29] ;default: 1'b0 ; */
+/*description: The memory empty status bit for channel0. in acyclic mode,
+ this bit turns to high level when mem_raddr_ex is greater than or equal to the configured range.*/
+#define RMT_MEM_EMPTY_CH0 (BIT(29))
+#define RMT_MEM_EMPTY_CH0_M  ((RMT_MEM_EMPTY_CH0_V)<<(RMT_MEM_EMPTY_CH0_S))
+#define RMT_MEM_EMPTY_CH0_V  0x1
+#define RMT_MEM_EMPTY_CH0_S  29
+/* RMT_MEM_FULL_CH0 : RO ;bitpos:[28] ;default: 1'b0 ; */
+/*description: The memory full status bit for channel0 turns to high level
+ when mem_waddr_ex is greater than or equal to the configuration range.*/
+#define RMT_MEM_FULL_CH0 (BIT(28))
+#define RMT_MEM_FULL_CH0_M  ((RMT_MEM_FULL_CH0_V)<<(RMT_MEM_FULL_CH0_S))
+#define RMT_MEM_FULL_CH0_V  0x1
+#define RMT_MEM_FULL_CH0_S  28
+/* RMT_MEM_OWNER_ERR_CH0 : RO ;bitpos:[27] ;default: 1'b0 ; */
+/*description: When channel0 is configured for receive mode, this bit will turn to high level
+ if rmt_mem_owner register is not set to 1.*/
+#define RMT_MEM_OWNER_ERR_CH0 (BIT(27))
+#define RMT_MEM_OWNER_ERR_CH0_M  ((RMT_MEM_OWNER_ERR_CH0_V)<<(RMT_MEM_OWNER_ERR_CH0_S))
+#define RMT_MEM_OWNER_ERR_CH0_V  0x1
+#define RMT_MEM_OWNER_ERR_CH0_S  27
+/* RMT_STATE_CH0 : RO ;bitpos:[26:24] ;default: 3'h0 ; */
+/*description: The channel0 state machine status register.
+3'h0 : idle, 3'h1 : send, 3'h2 : read memory, 3'h3 : receive, 3'h4 : wait.*/
+#define RMT_STATE_CH0 0x07000000
+#define RMT_STATE_CH0_M  ((RMT_STATE_CH0_V)<<(RMT_STATE_CH0_S))
+#define RMT_STATE_CH0_V  0x7
+#define RMT_STATE_CH0_S  24
+/* RMT_MEM_RADDR_EX_CH0 : RO ;bitpos:[21:12] ;default: 10'h0 ; */
+/*description: The current memory write address of channel0.*/
+#define RMT_MEM_RADDR_EX_CH0 0x003ff000
+#define RMT_MEM_RADDR_EX_CH0_M  ((RMT_MEM_RADDR_EX_CH0_V)<<(RMT_MEM_RADDR_EX_CH0_S))
+#define RMT_MEM_RADDR_EX_CH0_V  0x3ff
+#define RMT_MEM_RADDR_EX_CH0_S  12
+/* RMT_MEM_WADDR_EX_CH0 : RO ;bitpos:[9:0] ;default: 10'h0 ; */
+/*description: The current memory read address of channel0.*/
+#define RMT_MEM_WADDR_EX_CH0 0x000003ff
+#define RMT_MEM_WADDR_EX_CH0_M  ((RMT_MEM_WADDR_EX_CH0_V)<<(RMT_MEM_WADDR_EX_CH0_S))
+#define RMT_MEM_WADDR_EX_CH0_V  0x3ff
+#define RMT_MEM_WADDR_EX_CH0_S  0
 
 #define RMT_CH1STATUS_REG          (DR_REG_RMT_BASE + 0x0064)
 /* RMT_STATUS_CH1 : RO ;bitpos:[31:0] ;default: 32'h0 ; */
@@ -1003,6 +1057,60 @@
 #define RMT_STATUS_CH1_M  ((RMT_STATUS_CH1_V)<<(RMT_STATUS_CH1_S))
 #define RMT_STATUS_CH1_V  0xFFFFFFFF
 #define RMT_STATUS_CH1_S  0
+/* RMT_APB_MEM_RD_ERR_CH1 : RO ;bitpos:[31] ;default: 1'b0 ; */
+/*description: The apb read memory status bit for channel1 turns to
+ high level when the apb read address exceeds the configuration range.*/
+#define RMT_APB_MEM_RD_ERR_CH1 (BIT(31))
+#define RMT_APB_MEM_RD_ERR_CH1_M  ((RMT_APB_MEM_RD_ERR_CH1_V)<<(RMT_APB_MEM_RD_ERR_CH1_S))
+#define RMT_APB_MEM_RD_ERR_CH1_V  0x1
+#define RMT_APB_MEM_RD_ERR_CH1_S  31
+/* RMT_APB_MEM_WR_ERR_CH1 : RO ;bitpos:[30] ;default: 1'b0 ; */
+/*description: The apb write memory status bit for channel1 turns to
+ high level when the apb write address exceeds the configuration range.*/
+#define RMT_APB_MEM_WR_ERR_CH1 (BIT(30))
+#define RMT_APB_MEM_WR_ERR_CH1_M  ((RMT_APB_MEM_WR_ERR_CH1_V)<<(RMT_APB_MEM_WR_ERR_CH1_S))
+#define RMT_APB_MEM_WR_ERR_CH1_V  0x1
+#define RMT_APB_MEM_WR_ERR_CH1_S  30
+/* RMT_MEM_EMPTY_CH1 : RO ;bitpos:[29] ;default: 1'b0 ; */
+/*description: The memory empty status bit for channel1. in acyclic mode,
+ this bit turns to high level when mem_raddr_ex is greater than or equal to the configured range.*/
+#define RMT_MEM_EMPTY_CH1 (BIT(29))
+#define RMT_MEM_EMPTY_CH1_M  ((RMT_MEM_EMPTY_CH1_V)<<(RMT_MEM_EMPTY_CH1_S))
+#define RMT_MEM_EMPTY_CH1_V  0x1
+#define RMT_MEM_EMPTY_CH1_S  29
+/* RMT_MEM_FULL_CH1 : RO ;bitpos:[28] ;default: 1'b0 ; */
+/*description: The memory full status bit for channel1 turns to high level
+ when mem_waddr_ex is greater than or equal to the configuration range.*/
+#define RMT_MEM_FULL_CH1 (BIT(28))
+#define RMT_MEM_FULL_CH1_M  ((RMT_MEM_FULL_CH1_V)<<(RMT_MEM_FULL_CH1_S))
+#define RMT_MEM_FULL_CH1_V  0x1
+#define RMT_MEM_FULL_CH1_S  28
+/* RMT_MEM_OWNER_ERR_CH1 : RO ;bitpos:[27] ;default: 1'b0 ; */
+/*description: When channel1 is configured for receive mode, this bit will turn to high level
+ if rmt_mem_owner register is not set to 1.*/
+#define RMT_MEM_OWNER_ERR_CH1 (BIT(27))
+#define RMT_MEM_OWNER_ERR_CH1_M  ((RMT_MEM_OWNER_ERR_CH1_V)<<(RMT_MEM_OWNER_ERR_CH1_S))
+#define RMT_MEM_OWNER_ERR_CH1_V  0x1
+#define RMT_MEM_OWNER_ERR_CH1_S  27
+/* RMT_STATE_CH1 : RO ;bitpos:[26:24] ;default: 3'h0 ; */
+/*description: The channel1 state machine status register.
+3'h0 : idle, 3'h1 : send, 3'h2 : read memory, 3'h3 : receive, 3'h4 : wait.*/
+#define RMT_STATE_CH1 0x07000000
+#define RMT_STATE_CH1_M  ((RMT_STATE_CH1_V)<<(RMT_STATE_CH1_S))
+#define RMT_STATE_CH1_V  0x7
+#define RMT_STATE_CH1_S  24
+/* RMT_MEM_RADDR_EX_CH1 : RO ;bitpos:[21:12] ;default: 10'h0 ; */
+/*description: The current memory write address of channel1.*/
+#define RMT_MEM_RADDR_EX_CH1 0x003ff000
+#define RMT_MEM_RADDR_EX_CH1_M  ((RMT_MEM_RADDR_EX_CH1_V)<<(RMT_MEM_RADDR_EX_CH1_S))
+#define RMT_MEM_RADDR_EX_CH1_V  0x3ff
+#define RMT_MEM_RADDR_EX_CH1_S  12
+/* RMT_MEM_WADDR_EX_CH1 : RO ;bitpos:[9:0] ;default: 10'h0 ; */
+/*description: The current memory read address of channel1.*/
+#define RMT_MEM_WADDR_EX_CH1 0x000003ff
+#define RMT_MEM_WADDR_EX_CH1_M  ((RMT_MEM_WADDR_EX_CH1_V)<<(RMT_MEM_WADDR_EX_CH1_S))
+#define RMT_MEM_WADDR_EX_CH1_V  0x3ff
+#define RMT_MEM_WADDR_EX_CH1_S  0
 
 #define RMT_CH2STATUS_REG          (DR_REG_RMT_BASE + 0x0068)
 /* RMT_STATUS_CH2 : RO ;bitpos:[31:0] ;default: 32'h0 ; */
@@ -1011,6 +1119,60 @@
 #define RMT_STATUS_CH2_M  ((RMT_STATUS_CH2_V)<<(RMT_STATUS_CH2_S))
 #define RMT_STATUS_CH2_V  0xFFFFFFFF
 #define RMT_STATUS_CH2_S  0
+/* RMT_APB_MEM_RD_ERR_CH2 : RO ;bitpos:[31] ;default: 1'b0 ; */
+/*description: The apb read memory status bit for channel2 turns to
+ high level when the apb read address exceeds the configuration range.*/
+#define RMT_APB_MEM_RD_ERR_CH2 (BIT(31))
+#define RMT_APB_MEM_RD_ERR_CH2_M  ((RMT_APB_MEM_RD_ERR_CH2_V)<<(RMT_APB_MEM_RD_ERR_CH2_S))
+#define RMT_APB_MEM_RD_ERR_CH2_V  0x1
+#define RMT_APB_MEM_RD_ERR_CH2_S  31
+/* RMT_APB_MEM_WR_ERR_CH2 : RO ;bitpos:[30] ;default: 1'b0 ; */
+/*description: The apb write memory status bit for channel2 turns to
+ high level when the apb write address exceeds the configuration range.*/
+#define RMT_APB_MEM_WR_ERR_CH2 (BIT(30))
+#define RMT_APB_MEM_WR_ERR_CH2_M  ((RMT_APB_MEM_WR_ERR_CH2_V)<<(RMT_APB_MEM_WR_ERR_CH2_S))
+#define RMT_APB_MEM_WR_ERR_CH2_V  0x1
+#define RMT_APB_MEM_WR_ERR_CH2_S  30
+/* RMT_MEM_EMPTY_CH2 : RO ;bitpos:[29] ;default: 1'b0 ; */
+/*description: The memory empty status bit for channel2. in acyclic mode,
+ this bit turns to high level when mem_raddr_ex is greater than or equal to the configured range.*/
+#define RMT_MEM_EMPTY_CH2 (BIT(29))
+#define RMT_MEM_EMPTY_CH2_M  ((RMT_MEM_EMPTY_CH2_V)<<(RMT_MEM_EMPTY_CH2_S))
+#define RMT_MEM_EMPTY_CH2_V  0x1
+#define RMT_MEM_EMPTY_CH2_S  29
+/* RMT_MEM_FULL_CH2 : RO ;bitpos:[28] ;default: 1'b0 ; */
+/*description: The memory full status bit for channel2 turns to high level
+ when mem_waddr_ex is greater than or equal to the configuration range.*/
+#define RMT_MEM_FULL_CH2 (BIT(28))
+#define RMT_MEM_FULL_CH2_M  ((RMT_MEM_FULL_CH2_V)<<(RMT_MEM_FULL_CH2_S))
+#define RMT_MEM_FULL_CH2_V  0x1
+#define RMT_MEM_FULL_CH2_S  28
+/* RMT_MEM_OWNER_ERR_CH2 : RO ;bitpos:[27] ;default: 1'b0 ; */
+/*description: When channel2 is configured for receive mode, this bit will turn to high level
+ if rmt_mem_owner register is not set to 1.*/
+#define RMT_MEM_OWNER_ERR_CH2 (BIT(27))
+#define RMT_MEM_OWNER_ERR_CH2_M  ((RMT_MEM_OWNER_ERR_CH2_V)<<(RMT_MEM_OWNER_ERR_CH2_S))
+#define RMT_MEM_OWNER_ERR_CH2_V  0x1
+#define RMT_MEM_OWNER_ERR_CH2_S  27
+/* RMT_STATE_CH2 : RO ;bitpos:[26:24] ;default: 3'h0 ; */
+/*description: The channel2 state machine status register.
+3'h0 : idle, 3'h1 : send, 3'h2 : read memory, 3'h3 : receive, 3'h4 : wait.*/
+#define RMT_STATE_CH2 0x07000000
+#define RMT_STATE_CH2_M  ((RMT_STATE_CH2_V)<<(RMT_STATE_CH2_S))
+#define RMT_STATE_CH2_V  0x7
+#define RMT_STATE_CH2_S  24
+/* RMT_MEM_RADDR_EX_CH2 : RO ;bitpos:[21:12] ;default: 10'h0 ; */
+/*description: The current memory write address of channel2.*/
+#define RMT_MEM_RADDR_EX_CH2 0x003ff000
+#define RMT_MEM_RADDR_EX_CH2_M  ((RMT_MEM_RADDR_EX_CH2_V)<<(RMT_MEM_RADDR_EX_CH2_S))
+#define RMT_MEM_RADDR_EX_CH2_V  0x3ff
+#define RMT_MEM_RADDR_EX_CH2_S  12
+/* RMT_MEM_WADDR_EX_CH2 : RO ;bitpos:[9:0] ;default: 10'h0 ; */
+/*description: The current memory read address of channel2.*/
+#define RMT_MEM_WADDR_EX_CH2 0x000003ff
+#define RMT_MEM_WADDR_EX_CH2_M  ((RMT_MEM_WADDR_EX_CH2_V)<<(RMT_MEM_WADDR_EX_CH2_S))
+#define RMT_MEM_WADDR_EX_CH2_V  0x3ff
+#define RMT_MEM_WADDR_EX_CH2_S  0
 
 #define RMT_CH3STATUS_REG          (DR_REG_RMT_BASE + 0x006c)
 /* RMT_STATUS_CH3 : RO ;bitpos:[31:0] ;default: 32'h0 ; */
@@ -1019,6 +1181,60 @@
 #define RMT_STATUS_CH3_M  ((RMT_STATUS_CH3_V)<<(RMT_STATUS_CH3_S))
 #define RMT_STATUS_CH3_V  0xFFFFFFFF
 #define RMT_STATUS_CH3_S  0
+/* RMT_APB_MEM_RD_ERR_CH3 : RO ;bitpos:[31] ;default: 1'b0 ; */
+/*description: The apb read memory status bit for channel3 turns to
+ high level when the apb read address exceeds the configuration range.*/
+#define RMT_APB_MEM_RD_ERR_CH3 (BIT(31))
+#define RMT_APB_MEM_RD_ERR_CH3_M  ((RMT_APB_MEM_RD_ERR_CH3_V)<<(RMT_APB_MEM_RD_ERR_CH3_S))
+#define RMT_APB_MEM_RD_ERR_CH3_V  0x1
+#define RMT_APB_MEM_RD_ERR_CH3_S  31
+/* RMT_APB_MEM_WR_ERR_CH3 : RO ;bitpos:[30] ;default: 1'b0 ; */
+/*description: The apb write memory status bit for channel3 turns to
+ high level when the apb write address exceeds the configuration range.*/
+#define RMT_APB_MEM_WR_ERR_CH3 (BIT(30))
+#define RMT_APB_MEM_WR_ERR_CH3_M  ((RMT_APB_MEM_WR_ERR_CH3_V)<<(RMT_APB_MEM_WR_ERR_CH3_S))
+#define RMT_APB_MEM_WR_ERR_CH3_V  0x1
+#define RMT_APB_MEM_WR_ERR_CH3_S  30
+/* RMT_MEM_EMPTY_CH3 : RO ;bitpos:[29] ;default: 1'b0 ; */
+/*description: The memory empty status bit for channel3. in acyclic mode,
+ this bit turns to high level when mem_raddr_ex is greater than or equal to the configured range.*/
+#define RMT_MEM_EMPTY_CH3 (BIT(29))
+#define RMT_MEM_EMPTY_CH3_M  ((RMT_MEM_EMPTY_CH3_V)<<(RMT_MEM_EMPTY_CH3_S))
+#define RMT_MEM_EMPTY_CH3_V  0x1
+#define RMT_MEM_EMPTY_CH3_S  29
+/* RMT_MEM_FULL_CH3 : RO ;bitpos:[28] ;default: 1'b0 ; */
+/*description: The memory full status bit for channel3 turns to high level
+ when mem_waddr_ex is greater than or equal to the configuration range.*/
+#define RMT_MEM_FULL_CH3 (BIT(28))
+#define RMT_MEM_FULL_CH3_M  ((RMT_MEM_FULL_CH3_V)<<(RMT_MEM_FULL_CH3_S))
+#define RMT_MEM_FULL_CH3_V  0x1
+#define RMT_MEM_FULL_CH3_S  28
+/* RMT_MEM_OWNER_ERR_CH3 : RO ;bitpos:[27] ;default: 1'b0 ; */
+/*description: When channel3 is configured for receive mode, this bit will turn to high level
+ if rmt_mem_owner register is not set to 1.*/
+#define RMT_MEM_OWNER_ERR_CH3 (BIT(27))
+#define RMT_MEM_OWNER_ERR_CH3_M  ((RMT_MEM_OWNER_ERR_CH3_V)<<(RMT_MEM_OWNER_ERR_CH3_S))
+#define RMT_MEM_OWNER_ERR_CH3_V  0x1
+#define RMT_MEM_OWNER_ERR_CH3_S  27
+/* RMT_STATE_CH3 : RO ;bitpos:[26:24] ;default: 3'h0 ; */
+/*description: The channel3 state machine status register.
+3'h0 : idle, 3'h1 : send, 3'h2 : read memory, 3'h3 : receive, 3'h4 : wait.*/
+#define RMT_STATE_CH3 0x07000000
+#define RMT_STATE_CH3_M  ((RMT_STATE_CH3_V)<<(RMT_STATE_CH3_S))
+#define RMT_STATE_CH3_V  0x7
+#define RMT_STATE_CH3_S  24
+/* RMT_MEM_RADDR_EX_CH3 : RO ;bitpos:[21:12] ;default: 10'h0 ; */
+/*description: The current memory write address of channel3.*/
+#define RMT_MEM_RADDR_EX_CH3 0x003ff000
+#define RMT_MEM_RADDR_EX_CH3_M  ((RMT_MEM_RADDR_EX_CH3_V)<<(RMT_MEM_RADDR_EX_CH3_S))
+#define RMT_MEM_RADDR_EX_CH3_V  0x3ff
+#define RMT_MEM_RADDR_EX_CH3_S  12
+/* RMT_MEM_WADDR_EX_CH3 : RO ;bitpos:[9:0] ;default: 10'h0 ; */
+/*description: The current memory read address of channel3.*/
+#define RMT_MEM_WADDR_EX_CH3 0x000003ff
+#define RMT_MEM_WADDR_EX_CH3_M  ((RMT_MEM_WADDR_EX_CH3_V)<<(RMT_MEM_WADDR_EX_CH3_S))
+#define RMT_MEM_WADDR_EX_CH3_V  0x3ff
+#define RMT_MEM_WADDR_EX_CH3_S  0
 
 #define RMT_CH4STATUS_REG          (DR_REG_RMT_BASE + 0x0070)
 /* RMT_STATUS_CH4 : RO ;bitpos:[31:0] ;default: 32'h0 ; */
@@ -1027,6 +1243,60 @@
 #define RMT_STATUS_CH4_M  ((RMT_STATUS_CH4_V)<<(RMT_STATUS_CH4_S))
 #define RMT_STATUS_CH4_V  0xFFFFFFFF
 #define RMT_STATUS_CH4_S  0
+/* RMT_APB_MEM_RD_ERR_CH4 : RO ;bitpos:[31] ;default: 1'b0 ; */
+/*description: The apb read memory status bit for channel4 turns to
+ high level when the apb read address exceeds the configuration range.*/
+#define RMT_APB_MEM_RD_ERR_CH4 (BIT(31))
+#define RMT_APB_MEM_RD_ERR_CH4_M  ((RMT_APB_MEM_RD_ERR_CH4_V)<<(RMT_APB_MEM_RD_ERR_CH4_S))
+#define RMT_APB_MEM_RD_ERR_CH4_V  0x1
+#define RMT_APB_MEM_RD_ERR_CH4_S  31
+/* RMT_APB_MEM_WR_ERR_CH4 : RO ;bitpos:[30] ;default: 1'b0 ; */
+/*description: The apb write memory status bit for channel4 turns to
+ high level when the apb write address exceeds the configuration range.*/
+#define RMT_APB_MEM_WR_ERR_CH4 (BIT(30))
+#define RMT_APB_MEM_WR_ERR_CH4_M  ((RMT_APB_MEM_WR_ERR_CH4_V)<<(RMT_APB_MEM_WR_ERR_CH4_S))
+#define RMT_APB_MEM_WR_ERR_CH4_V  0x1
+#define RMT_APB_MEM_WR_ERR_CH4_S  30
+/* RMT_MEM_EMPTY_CH4 : RO ;bitpos:[29] ;default: 1'b0 ; */
+/*description: The memory empty status bit for channel4. in acyclic mode,
+ this bit turns to high level when mem_raddr_ex is greater than or equal to the configured range.*/
+#define RMT_MEM_EMPTY_CH4 (BIT(29))
+#define RMT_MEM_EMPTY_CH4_M  ((RMT_MEM_EMPTY_CH4_V)<<(RMT_MEM_EMPTY_CH4_S))
+#define RMT_MEM_EMPTY_CH4_V  0x1
+#define RMT_MEM_EMPTY_CH4_S  29
+/* RMT_MEM_FULL_CH4 : RO ;bitpos:[28] ;default: 1'b0 ; */
+/*description: The memory full status bit for channel4 turns to high level
+ when mem_waddr_ex is greater than or equal to the configuration range.*/
+#define RMT_MEM_FULL_CH4 (BIT(28))
+#define RMT_MEM_FULL_CH4_M  ((RMT_MEM_FULL_CH4_V)<<(RMT_MEM_FULL_CH4_S))
+#define RMT_MEM_FULL_CH4_V  0x1
+#define RMT_MEM_FULL_CH4_S  28
+/* RMT_MEM_OWNER_ERR_CH4 : RO ;bitpos:[27] ;default: 1'b0 ; */
+/*description: When channel4 is configured for receive mode, this bit will turn to high level
+ if rmt_mem_owner register is not set to 1.*/
+#define RMT_MEM_OWNER_ERR_CH4 (BIT(27))
+#define RMT_MEM_OWNER_ERR_CH4_M  ((RMT_MEM_OWNER_ERR_CH4_V)<<(RMT_MEM_OWNER_ERR_CH4_S))
+#define RMT_MEM_OWNER_ERR_CH4_V  0x1
+#define RMT_MEM_OWNER_ERR_CH4_S  27
+/* RMT_STATE_CH4 : RO ;bitpos:[26:24] ;default: 3'h0 ; */
+/*description: The channel4 state machine status register.
+3'h0 : idle, 3'h1 : send, 3'h2 : read memory, 3'h3 : receive, 3'h4 : wait.*/
+#define RMT_STATE_CH4 0x07000000
+#define RMT_STATE_CH4_M  ((RMT_STATE_CH4_V)<<(RMT_STATE_CH4_S))
+#define RMT_STATE_CH4_V  0x7
+#define RMT_STATE_CH4_S  24
+/* RMT_MEM_RADDR_EX_CH4 : RO ;bitpos:[21:12] ;default: 10'h0 ; */
+/*description: The current memory write address of channel4.*/
+#define RMT_MEM_RADDR_EX_CH4 0x003ff000
+#define RMT_MEM_RADDR_EX_CH4_M  ((RMT_MEM_RADDR_EX_CH4_V)<<(RMT_MEM_RADDR_EX_CH4_S))
+#define RMT_MEM_RADDR_EX_CH4_V  0x3ff
+#define RMT_MEM_RADDR_EX_CH4_S  12
+/* RMT_MEM_WADDR_EX_CH4 : RO ;bitpos:[9:0] ;default: 10'h0 ; */
+/*description: The current memory read address of channel4.*/
+#define RMT_MEM_WADDR_EX_CH4 0x000003ff
+#define RMT_MEM_WADDR_EX_CH4_M  ((RMT_MEM_WADDR_EX_CH4_V)<<(RMT_MEM_WADDR_EX_CH4_S))
+#define RMT_MEM_WADDR_EX_CH4_V  0x3ff
+#define RMT_MEM_WADDR_EX_CH4_S  0
 
 #define RMT_CH5STATUS_REG          (DR_REG_RMT_BASE + 0x0074)
 /* RMT_STATUS_CH5 : RO ;bitpos:[31:0] ;default: 32'h0 ; */
@@ -1035,6 +1305,60 @@
 #define RMT_STATUS_CH5_M  ((RMT_STATUS_CH5_V)<<(RMT_STATUS_CH5_S))
 #define RMT_STATUS_CH5_V  0xFFFFFFFF
 #define RMT_STATUS_CH5_S  0
+/* RMT_APB_MEM_RD_ERR_CH5 : RO ;bitpos:[31] ;default: 1'b0 ; */
+/*description: The apb read memory status bit for channel5 turns to
+ high level when the apb read address exceeds the configuration range.*/
+#define RMT_APB_MEM_RD_ERR_CH5 (BIT(31))
+#define RMT_APB_MEM_RD_ERR_CH5_M  ((RMT_APB_MEM_RD_ERR_CH5_V)<<(RMT_APB_MEM_RD_ERR_CH5_S))
+#define RMT_APB_MEM_RD_ERR_CH5_V  0x1
+#define RMT_APB_MEM_RD_ERR_CH5_S  31
+/* RMT_APB_MEM_WR_ERR_CH5 : RO ;bitpos:[30] ;default: 1'b0 ; */
+/*description: The apb write memory status bit for channel5 turns to
+ high level when the apb write address exceeds the configuration range.*/
+#define RMT_APB_MEM_WR_ERR_CH5 (BIT(30))
+#define RMT_APB_MEM_WR_ERR_CH5_M  ((RMT_APB_MEM_WR_ERR_CH5_V)<<(RMT_APB_MEM_WR_ERR_CH5_S))
+#define RMT_APB_MEM_WR_ERR_CH5_V  0x1
+#define RMT_APB_MEM_WR_ERR_CH5_S  30
+/* RMT_MEM_EMPTY_CH5 : RO ;bitpos:[29] ;default: 1'b0 ; */
+/*description: The memory empty status bit for channel5. in acyclic mode,
+ this bit turns to high level when mem_raddr_ex is greater than or equal to the configured range.*/
+#define RMT_MEM_EMPTY_CH5 (BIT(29))
+#define RMT_MEM_EMPTY_CH5_M  ((RMT_MEM_EMPTY_CH5_V)<<(RMT_MEM_EMPTY_CH5_S))
+#define RMT_MEM_EMPTY_CH5_V  0x1
+#define RMT_MEM_EMPTY_CH5_S  29
+/* RMT_MEM_FULL_CH5 : RO ;bitpos:[28] ;default: 1'b0 ; */
+/*description: The memory full status bit for channel5 turns to high level
+ when mem_waddr_ex is greater than or equal to the configuration range.*/
+#define RMT_MEM_FULL_CH5 (BIT(28))
+#define RMT_MEM_FULL_CH5_M  ((RMT_MEM_FULL_CH5_V)<<(RMT_MEM_FULL_CH5_S))
+#define RMT_MEM_FULL_CH5_V  0x1
+#define RMT_MEM_FULL_CH5_S  28
+/* RMT_MEM_OWNER_ERR_CH5 : RO ;bitpos:[27] ;default: 1'b0 ; */
+/*description: When channel5 is configured for receive mode, this bit will turn to high level
+ if rmt_mem_owner register is not set to 1.*/
+#define RMT_MEM_OWNER_ERR_CH5 (BIT(27))
+#define RMT_MEM_OWNER_ERR_CH5_M  ((RMT_MEM_OWNER_ERR_CH5_V)<<(RMT_MEM_OWNER_ERR_CH5_S))
+#define RMT_MEM_OWNER_ERR_CH5_V  0x1
+#define RMT_MEM_OWNER_ERR_CH5_S  27
+/* RMT_STATE_CH5 : RO ;bitpos:[26:24] ;default: 3'h0 ; */
+/*description: The channel5 state machine status register.
+3'h0 : idle, 3'h1 : send, 3'h2 : read memory, 3'h3 : receive, 3'h4 : wait.*/
+#define RMT_STATE_CH5 0x07000000
+#define RMT_STATE_CH5_M  ((RMT_STATE_CH5_V)<<(RMT_STATE_CH5_S))
+#define RMT_STATE_CH5_V  0x7
+#define RMT_STATE_CH5_S  24
+/* RMT_MEM_RADDR_EX_CH5 : RO ;bitpos:[21:12] ;default: 10'h0 ; */
+/*description: The current memory write address of channel5.*/
+#define RMT_MEM_RADDR_EX_CH5 0x003ff000
+#define RMT_MEM_RADDR_EX_CH5_M  ((RMT_MEM_RADDR_EX_CH5_V)<<(RMT_MEM_RADDR_EX_CH5_S))
+#define RMT_MEM_RADDR_EX_CH5_V  0x3ff
+#define RMT_MEM_RADDR_EX_CH5_S  12
+/* RMT_MEM_WADDR_EX_CH5 : RO ;bitpos:[9:0] ;default: 10'h0 ; */
+/*description: The current memory read address of channel5.*/
+#define RMT_MEM_WADDR_EX_CH5 0x000003ff
+#define RMT_MEM_WADDR_EX_CH5_M  ((RMT_MEM_WADDR_EX_CH5_V)<<(RMT_MEM_WADDR_EX_CH5_S))
+#define RMT_MEM_WADDR_EX_CH5_V  0x3ff
+#define RMT_MEM_WADDR_EX_CH5_S  0
 
 #define RMT_CH6STATUS_REG          (DR_REG_RMT_BASE + 0x0078)
 /* RMT_STATUS_CH6 : RO ;bitpos:[31:0] ;default: 32'h0 ; */
@@ -1043,6 +1367,60 @@
 #define RMT_STATUS_CH6_M  ((RMT_STATUS_CH6_V)<<(RMT_STATUS_CH6_S))
 #define RMT_STATUS_CH6_V  0xFFFFFFFF
 #define RMT_STATUS_CH6_S  0
+/* RMT_APB_MEM_RD_ERR_CH6 : RO ;bitpos:[31] ;default: 1'b0 ; */
+/*description: The apb read memory status bit for channel6 turns to
+ high level when the apb read address exceeds the configuration range.*/
+#define RMT_APB_MEM_RD_ERR_CH6 (BIT(31))
+#define RMT_APB_MEM_RD_ERR_CH6_M  ((RMT_APB_MEM_RD_ERR_CH6_V)<<(RMT_APB_MEM_RD_ERR_CH6_S))
+#define RMT_APB_MEM_RD_ERR_CH6_V  0x1
+#define RMT_APB_MEM_RD_ERR_CH6_S  31
+/* RMT_APB_MEM_WR_ERR_CH6 : RO ;bitpos:[30] ;default: 1'b0 ; */
+/*description: The apb write memory status bit for channel6 turns to
+ high level when the apb write address exceeds the configuration range.*/
+#define RMT_APB_MEM_WR_ERR_CH6 (BIT(30))
+#define RMT_APB_MEM_WR_ERR_CH6_M  ((RMT_APB_MEM_WR_ERR_CH6_V)<<(RMT_APB_MEM_WR_ERR_CH6_S))
+#define RMT_APB_MEM_WR_ERR_CH6_V  0x1
+#define RMT_APB_MEM_WR_ERR_CH6_S  30
+/* RMT_MEM_EMPTY_CH6 : RO ;bitpos:[29] ;default: 1'b0 ; */
+/*description: The memory empty status bit for channel6. in acyclic mode,
+ this bit turns to high level when mem_raddr_ex is greater than or equal to the configured range.*/
+#define RMT_MEM_EMPTY_CH6 (BIT(29))
+#define RMT_MEM_EMPTY_CH6_M  ((RMT_MEM_EMPTY_CH6_V)<<(RMT_MEM_EMPTY_CH6_S))
+#define RMT_MEM_EMPTY_CH6_V  0x1
+#define RMT_MEM_EMPTY_CH6_S  29
+/* RMT_MEM_FULL_CH6 : RO ;bitpos:[28] ;default: 1'b0 ; */
+/*description: The memory full status bit for channel6 turns to high level
+ when mem_waddr_ex is greater than or equal to the configuration range.*/
+#define RMT_MEM_FULL_CH6 (BIT(28))
+#define RMT_MEM_FULL_CH6_M  ((RMT_MEM_FULL_CH6_V)<<(RMT_MEM_FULL_CH6_S))
+#define RMT_MEM_FULL_CH6_V  0x1
+#define RMT_MEM_FULL_CH6_S  28
+/* RMT_MEM_OWNER_ERR_CH6 : RO ;bitpos:[27] ;default: 1'b0 ; */
+/*description: When channel6 is configured for receive mode, this bit will turn to high level
+ if rmt_mem_owner register is not set to 1.*/
+#define RMT_MEM_OWNER_ERR_CH6 (BIT(27))
+#define RMT_MEM_OWNER_ERR_CH6_M  ((RMT_MEM_OWNER_ERR_CH6_V)<<(RMT_MEM_OWNER_ERR_CH6_S))
+#define RMT_MEM_OWNER_ERR_CH6_V  0x1
+#define RMT_MEM_OWNER_ERR_CH6_S  27
+/* RMT_STATE_CH6 : RO ;bitpos:[26:24] ;default: 3'h0 ; */
+/*description: The channel6 state machine status register.
+3'h0 : idle, 3'h1 : send, 3'h2 : read memory, 3'h3 : receive, 3'h4 : wait.*/
+#define RMT_STATE_CH6 0x07000000
+#define RMT_STATE_CH6_M  ((RMT_STATE_CH6_V)<<(RMT_STATE_CH6_S))
+#define RMT_STATE_CH6_V  0x7
+#define RMT_STATE_CH6_S  24
+/* RMT_MEM_RADDR_EX_CH6 : RO ;bitpos:[21:12] ;default: 10'h0 ; */
+/*description: The current memory write address of channel6.*/
+#define RMT_MEM_RADDR_EX_CH6 0x003ff000
+#define RMT_MEM_RADDR_EX_CH6_M  ((RMT_MEM_RADDR_EX_CH6_V)<<(RMT_MEM_RADDR_EX_CH6_S))
+#define RMT_MEM_RADDR_EX_CH6_V  0x3ff
+#define RMT_MEM_RADDR_EX_CH6_S  12
+/* RMT_MEM_WADDR_EX_CH6 : RO ;bitpos:[9:0] ;default: 10'h0 ; */
+/*description: The current memory read address of channel6.*/
+#define RMT_MEM_WADDR_EX_CH6 0x000003ff
+#define RMT_MEM_WADDR_EX_CH6_M  ((RMT_MEM_WADDR_EX_CH6_V)<<(RMT_MEM_WADDR_EX_CH6_S))
+#define RMT_MEM_WADDR_EX_CH6_V  0x3ff
+#define RMT_MEM_WADDR_EX_CH6_S  0
 
 #define RMT_CH7STATUS_REG          (DR_REG_RMT_BASE + 0x007c)
 /* RMT_STATUS_CH7 : RO ;bitpos:[31:0] ;default: 32'h0 ; */
@@ -1051,6 +1429,60 @@
 #define RMT_STATUS_CH7_M  ((RMT_STATUS_CH7_V)<<(RMT_STATUS_CH7_S))
 #define RMT_STATUS_CH7_V  0xFFFFFFFF
 #define RMT_STATUS_CH7_S  0
+/* RMT_APB_MEM_RD_ERR_CH7 : RO ;bitpos:[31] ;default: 1'b0 ; */
+/*description: The apb read memory status bit for channel7 turns to
+ high level when the apb read address exceeds the configuration range.*/
+#define RMT_APB_MEM_RD_ERR_CH7 (BIT(31))
+#define RMT_APB_MEM_RD_ERR_CH7_M  ((RMT_APB_MEM_RD_ERR_CH7_V)<<(RMT_APB_MEM_RD_ERR_CH7_S))
+#define RMT_APB_MEM_RD_ERR_CH7_V  0x1
+#define RMT_APB_MEM_RD_ERR_CH7_S  31
+/* RMT_APB_MEM_WR_ERR_CH7 : RO ;bitpos:[30] ;default: 1'b0 ; */
+/*description: The apb write memory status bit for channel7 turns to
+ high level when the apb write address exceeds the configuration range.*/
+#define RMT_APB_MEM_WR_ERR_CH7 (BIT(30))
+#define RMT_APB_MEM_WR_ERR_CH7_M  ((RMT_APB_MEM_WR_ERR_CH7_V)<<(RMT_APB_MEM_WR_ERR_CH7_S))
+#define RMT_APB_MEM_WR_ERR_CH7_V  0x1
+#define RMT_APB_MEM_WR_ERR_CH7_S  30
+/* RMT_MEM_EMPTY_CH7 : RO ;bitpos:[29] ;default: 1'b0 ; */
+/*description: The memory empty status bit for channel7. in acyclic mode,
+ this bit turns to high level when mem_raddr_ex is greater than or equal to the configured range.*/
+#define RMT_MEM_EMPTY_CH7 (BIT(29))
+#define RMT_MEM_EMPTY_CH7_M  ((RMT_MEM_EMPTY_CH7_V)<<(RMT_MEM_EMPTY_CH7_S))
+#define RMT_MEM_EMPTY_CH7_V  0x1
+#define RMT_MEM_EMPTY_CH7_S  29
+/* RMT_MEM_FULL_CH7 : RO ;bitpos:[28] ;default: 1'b0 ; */
+/*description: The memory full status bit for channel7 turns to high level
+ when mem_waddr_ex is greater than or equal to the configuration range.*/
+#define RMT_MEM_FULL_CH7 (BIT(28))
+#define RMT_MEM_FULL_CH7_M  ((RMT_MEM_FULL_CH7_V)<<(RMT_MEM_FULL_CH7_S))
+#define RMT_MEM_FULL_CH7_V  0x1
+#define RMT_MEM_FULL_CH7_S  28
+/* RMT_MEM_OWNER_ERR_CH7 : RO ;bitpos:[27] ;default: 1'b0 ; */
+/*description: When channel7 is configured for receive mode, this bit will turn to high level
+ if rmt_mem_owner register is not set to 1.*/
+#define RMT_MEM_OWNER_ERR_CH7 (BIT(27))
+#define RMT_MEM_OWNER_ERR_CH7_M  ((RMT_MEM_OWNER_ERR_CH7_V)<<(RMT_MEM_OWNER_ERR_CH7_S))
+#define RMT_MEM_OWNER_ERR_CH7_V  0x1
+#define RMT_MEM_OWNER_ERR_CH7_S  27
+/* RMT_STATE_CH7 : RO ;bitpos:[26:24] ;default: 3'h0 ; */
+/*description: The channel7 state machine status register.
+3'h0 : idle, 3'h1 : send, 3'h2 : read memory, 3'h3 : receive, 3'h4 : wait.*/
+#define RMT_STATE_CH7 0x07000000
+#define RMT_STATE_CH7_M  ((RMT_STATE_CH7_V)<<(RMT_STATE_CH7_S))
+#define RMT_STATE_CH7_V  0x7
+#define RMT_STATE_CH7_S  24
+/* RMT_MEM_RADDR_EX_CH7 : RO ;bitpos:[21:12] ;default: 10'h0 ; */
+/*description: The current memory write address of channel7.*/
+#define RMT_MEM_RADDR_EX_CH7 0x003ff000
+#define RMT_MEM_RADDR_EX_CH7_M  ((RMT_MEM_RADDR_EX_CH7_V)<<(RMT_MEM_RADDR_EX_CH7_S))
+#define RMT_MEM_RADDR_EX_CH7_V  0x3ff
+#define RMT_MEM_RADDR_EX_CH7_S  12
+/* RMT_MEM_WADDR_EX_CH7 : RO ;bitpos:[9:0] ;default: 10'h0 ; */
+/*description: The current memory read address of channel7.*/
+#define RMT_MEM_WADDR_EX_CH7 0x000003ff
+#define RMT_MEM_WADDR_EX_CH7_M  ((RMT_MEM_WADDR_EX_CH7_V)<<(RMT_MEM_WADDR_EX_CH7_S))
+#define RMT_MEM_WADDR_EX_CH7_V  0x3ff
+#define RMT_MEM_WADDR_EX_CH7_S  0
 
 #define RMT_CH0ADDR_REG          (DR_REG_RMT_BASE + 0x0080)
 /* RMT_APB_MEM_ADDR_CH0 : RO ;bitpos:[31:0] ;default: 32'h0 ; */
@@ -1118,8 +1550,8 @@
 
 #define RMT_INT_RAW_REG          (DR_REG_RMT_BASE + 0x00a0)
 /* RMT_CH7_TX_THR_EVENT_INT_RAW : RO ;bitpos:[31] ;default: 1'b0 ; */
-/*description: The interrupt raw bit for channel 7 turns to high level when
- transmitter in channle7  have send datas more than  reg_rmt_tx_lim_ch7  after detecting this interrupt  software can updata the old datas with new datas.*/
+/*description: The interrupt raw bit for channel7 turns to high level when
+ transmitter in channle 7  have send datas more than  reg_rmt_tx_lim_ch7  after detecting this interrupt  software can updata the old datas with new datas.*/
 #define RMT_CH7_TX_THR_EVENT_INT_RAW  (BIT(31))
 #define RMT_CH7_TX_THR_EVENT_INT_RAW_M  (BIT(31))
 #define RMT_CH7_TX_THR_EVENT_INT_RAW_V  0x1
