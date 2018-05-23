@@ -5,7 +5,7 @@ System API
    :maxdepth: 1
 
    FreeRTOS <freertos>
-   FreeRTOS Hooks <hooks>
+   FreeRTOS Additions <freertos_additions>
    Heap Memory Allocation <mem_alloc>
    Heap Memory Debugging <heap_debug>
    Interrupt Allocation <intr_alloc>
