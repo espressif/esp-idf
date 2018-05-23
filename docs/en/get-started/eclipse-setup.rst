@@ -63,6 +63,10 @@ Navigate to "C/C++ General" -> "Preprocessor Include Paths" property page:
 
 * In the list of providers, click "CDT GCC Build Output Parser" and type ``xtensa-esp32-elf-`` at the beginning of the Compiler command pattern. This means the full Compiler command pattern should be ``xtensa-esp32-elf-(g?cc)|([gc]\+\+)|(clang)``
 
+Navigate to "C/C++ General" -> "Indexer" property page:
+
+* Uncheck "Allow heuristic resolution of includes". When this option is enabled, Eclipse can make some mistakes when eclipse try to find project headers.
+
 .. _eclipse-build-project:
 
 Building in Eclipse
