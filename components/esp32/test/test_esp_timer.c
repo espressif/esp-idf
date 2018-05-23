@@ -85,6 +85,42 @@ TEST_CASE("esp_timer orders timers correctly", "[esp_timer]")
     fclose(stream);
 }
 
+TEST_CASE("esp_timer_impl_set_alarm stress test", "[esp_timer]")
+{
+    const int test_time_sec = 10;
+
+    void set_alarm_task(void* arg)
+    {
+        SemaphoreHandle_t done = (SemaphoreHandle_t) arg;
+
+        uint64_t start = esp_timer_impl_get_time();
+        uint64_t now = start;
+        int count = 0;
+        const int delays[] = {50, 5000, 10000000};
+        const int delays_count = sizeof(delays)/sizeof(delays[0]);
+        while (now - start < test_time_sec * 1000000) {
+            now = esp_timer_impl_get_time();
+            esp_timer_impl_set_alarm(now + delays[count % delays_count]);
+            ++count;
+        }
+        xSemaphoreGive(done);
+        vTaskDelete(NULL);
+    }
+
+    SemaphoreHandle_t done = xSemaphoreCreateCounting(portNUM_PROCESSORS, 0);
+    setup_overflow();
+    xTaskCreatePinnedToCore(&set_alarm_task, "set_alarm_0", 4096, done, UNITY_FREERTOS_PRIORITY, NULL, 0);
+#if portNUM_PROCESSORS == 2
+    xTaskCreatePinnedToCore(&set_alarm_task, "set_alarm_1", 4096, done, UNITY_FREERTOS_PRIORITY, NULL, 1);
+#endif
+
+    TEST_ASSERT(xSemaphoreTake(done, test_time_sec * 2 * 1000 / portTICK_PERIOD_MS));
+#if portNUM_PROCESSORS == 2
+    TEST_ASSERT(xSemaphoreTake(done, test_time_sec * 2 * 1000 / portTICK_PERIOD_MS));
+#endif
+    teardown_overflow();
+    vSemaphoreDelete(done);
+}
 
 TEST_CASE("esp_timer produces correct delay", "[esp_timer]")
 {
