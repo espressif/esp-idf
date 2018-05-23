@@ -206,18 +206,6 @@ void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
     // Adjust current time if overflow has happened
     bool overflow = timer_overflow_happened();
     uint64_t cur_count = REG_READ(FRC_TIMER_COUNT_REG(1));
-    uint32_t offset = s_timer_ticks_per_us * 2; //remain 2us for more safe
-
-    //If overflow is going to happen in 1us, let's wait until it happens,
-    //else we think it will not happen before new alarm set.
-    //And we should wait current timer count less than ALARM_OVERFLOW_VAL,
-    //maybe equals to 0.
-    if (cur_count + offset >= ALARM_OVERFLOW_VAL) {
-        do {
-            overflow = timer_overflow_happened();
-            cur_count = REG_READ(FRC_TIMER_COUNT_REG(1));
-        } while(!overflow || cur_count == ALARM_OVERFLOW_VAL);
-    }
 
     if (overflow) {
         assert(time_after_timebase_us > s_timer_us_per_overflow);
@@ -227,13 +215,17 @@ void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
     // Calculate desired timer compare value (may exceed 2^32-1)
     uint64_t compare_val = time_after_timebase_us * s_timer_ticks_per_us;
     uint32_t alarm_reg_val = ALARM_OVERFLOW_VAL;
-    // Use calculated alarm value if it is less than 2^32-1
+    // Use calculated alarm value if it is less than ALARM_OVERFLOW_VAL.
+    // Note that if by the time we update ALARM_REG, COUNT_REG value is higher,
+    // interrupt will not happen for another ALARM_OVERFLOW_VAL timer ticks,
+    // so need to check if alarm value is too close in the future (e.g. <2 us away).
+    const uint32_t offset = s_timer_ticks_per_us * 2;
     if (compare_val < ALARM_OVERFLOW_VAL) {
-        // If we by the time we update ALARM_REG, COUNT_REG value is higher,
-        // interrupt will not happen for another 2^32 timer ticks, so need to
-        // check if alarm value is too close in the future (e.g. <1 us away).
         if (compare_val < cur_count + offset) {
             compare_val = cur_count + offset;
+            if (compare_val > ALARM_OVERFLOW_VAL) {
+                compare_val = ALARM_OVERFLOW_VAL;
+            }
         }
         alarm_reg_val = (uint32_t) compare_val;
     }
