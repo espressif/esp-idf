@@ -110,11 +110,11 @@ The format of Ack Frame（8 bit）：
 
 1. Type
 
-   The **Type** field, taking 1 Byte, is divided into **Type** and **Subtype**, that Type uses the lower 2 bit and **Subtype** uses the upper 6 bit.
+   The **Type** field, taking 1 Byte, is divided into **Type** and **Subtype**, that Type uses the lower 2 bit and **Subtype** uses the upper 6 bit.
 
-   * The control frame is not encrypted for the time being and supports to be verified;
+   * The control frame is not encrypted for the time being and supports to be verified;
 
-   * The data frame supports to be encrypted and verified.
+   * The data frame supports to be encrypted and verified.
    
  **1.1 Control Frame (0x0b’00)**  
 
@@ -198,15 +198,15 @@ The format of Ack Frame（8 bit）：
 
 4. Length
 
-   The length of the data field that does not include CheckSum.
+   The length of the data field that does not include CheckSum.
 
 5. Data
 
-   The instruction of the data field is different according to various values of Type or Subtype. Please refer to the table above.
+   The instruction of the data field is different according to various values of Type or Subtype. Please refer to the table above.
 
 6. CheckSum
 
-   This field takes 2 bytes that is used to check "sequence + data length + clear text data".
+   This field takes 2 bytes that is used to check "sequence + data length + clear text data".
 
 The Security Implementation of ESP32
 *************************************
@@ -225,9 +225,9 @@ The Security Implementation of ESP32
 
 4. Replay attack prevention
 
-   It is added to the Sequence field and used during the checksum verification.
+   It is added to the Sequence field and used during the checksum verification.
 
-   For the coding of ESP32, you can determine and develop the security processing, such as key negotiation. The mobile application sends the negotiation data to ESP32 and then the data will be sent to the application layer for processing. If the application layer does not process it, you can use the DH encryption algorithm provided by BluFi to negotiate the key.
+   For the coding of ESP32, you can determine and develop the security processing, such as key negotiation. The mobile application sends the negotiation data to ESP32 and then the data will be sent to the application layer for processing. If the application layer does not process it, you can use the DH encryption algorithm provided by BluFi to negotiate the key.
   
    The application layer needs to register several security-related functions to BluFi:
 
@@ -265,11 +265,11 @@ GATT Related Instructions
 UUID
 ====
 
-BluFi Service UUID： 0xFFFF，16 bit
+BluFi Service UUID: 0xFFFF，16 bit
 
-BluFi（the mobile -> ESP32）: 0xFF01, writable
+BluFi (the mobile -> ESP32): 0xFF01, writable
 
-Blufi（ESP32 -> the mobile phone）: 0xFF02, readable and callable
+Blufi (ESP32 -> the mobile phone): 0xFF02, readable and callable
 
 .. note::
 
