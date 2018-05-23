@@ -404,40 +404,75 @@ TEST_CASE("esp_timer_get_time call takes less than 1us", "[esp_timer]")
     TEST_PERFORMANCE_LESS_THAN(ESP_TIMER_GET_TIME_PER_CALL, "%dns", ns_per_call);
 }
 
-/* This test runs for about 10 minutes and is disabled in CI.
- * Such run time is needed to have FRC2 timer overflow a few times.
- */
-TEST_CASE("esp_timer_get_time returns monotonic values", "[esp_timer][ignore]")
+TEST_CASE("esp_timer_get_time returns monotonic values", "[esp_timer]")
 {
-    void timer_test_task(void* arg) {
-        int64_t delta = esp_timer_get_time() - ref_clock_get();
+    typedef struct {
+        SemaphoreHandle_t done;
+        bool pass;
+        int test_cnt;
+        int error_cnt;
+        int64_t total_sq_error;
+        int64_t max_error;
+    } test_state_t;
 
-        const int iter_count = 1000000000;
-        for (int i = 0; i < iter_count; ++i) {
-            int64_t now = esp_timer_get_time();
-            int64_t ref_now = ref_clock_get();
-            int64_t diff = now - (ref_now + delta);
+    void timer_test_task(void* arg) {
+        test_state_t* state = (test_state_t*) arg;
+        state->pass = true;
+        int64_t start_time = ref_clock_get();
+        int64_t delta = esp_timer_get_time() - start_time;
+
+        int64_t now = start_time;
+        int error_repeat_cnt = 0;
+        while (now - start_time < 10000000) {  /* 10 seconds */
+            int64_t hs_now = esp_timer_get_time();
+            now = ref_clock_get();
+            int64_t diff = hs_now - (now + delta);
             /* Allow some difference due to rtos tick interrupting task between
              * getting 'now' and 'ref_now'.
              */
-            TEST_ASSERT_INT32_WITHIN(100, 0, (int) diff);
+            if (abs(diff) > 100) {
+                error_repeat_cnt++;
+                state->error_cnt++;
+            } else {
+                error_repeat_cnt = 0;
+            }
+            if (error_repeat_cnt > 2) {
+                printf("diff=%lld\n", diff);
+                state->pass = false;
+            }
+            state->max_error = MAX(state->max_error, abs(diff));
+            state->test_cnt++;
+            state->total_sq_error += diff * diff;
         }
-
-        xSemaphoreGive((SemaphoreHandle_t) arg);
+        xSemaphoreGive(state->done);
         vTaskDelete(NULL);
     }
+
     ref_clock_init();
-    SemaphoreHandle_t done_1 = xSemaphoreCreateBinary();
-    SemaphoreHandle_t done_2 = xSemaphoreCreateBinary();
+    setup_overflow();
 
-    xTaskCreatePinnedToCore(&timer_test_task, "t1", 4096, (void*) done_1, 6, NULL, 0);
-    xTaskCreatePinnedToCore(&timer_test_task, "t2", 4096, (void*) done_2, 6, NULL, 1);
+    test_state_t states[portNUM_PROCESSORS] = {0};
+    SemaphoreHandle_t done = xSemaphoreCreateCounting(portNUM_PROCESSORS, 0);
+    for (int i = 0; i < portNUM_PROCESSORS; ++i) {
+        states[i].done = done;
+        xTaskCreatePinnedToCore(&timer_test_task, "test", 4096, &states[i], 6, NULL, i);
+    }
 
-    TEST_ASSERT_TRUE( xSemaphoreTake(done_1, portMAX_DELAY) );
-    TEST_ASSERT_TRUE( xSemaphoreTake(done_2, portMAX_DELAY) );
-    vSemaphoreDelete(done_1);
-    vSemaphoreDelete(done_2);
+    for (int i = 0; i < portNUM_PROCESSORS; ++i) {
+        TEST_ASSERT_TRUE( xSemaphoreTake(done, portMAX_DELAY) );
+        printf("CPU%d: %s test_cnt=%d error_cnt=%d std_error=%d |max_error|=%d\n",
+                i, states[i].pass ? "PASS" : "FAIL",
+                states[i].test_cnt, states[i].error_cnt,
+                (int) sqrt(states[i].total_sq_error / states[i].test_cnt), (int) states[i].max_error);
+    }
+
+    vSemaphoreDelete(done);
+    teardown_overflow();
     ref_clock_deinit();
+
+    for (int i = 0; i < portNUM_PROCESSORS; ++i) {
+        TEST_ASSERT(states[i].pass);
+    }
 }
 
 TEST_CASE("Can dump esp_timer stats", "[esp_timer]")
