@@ -1,3 +1,17 @@
+// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #ifndef FREERTOS_RINGBUF_H
 #define FREERTOS_RINGBUF_H
 
@@ -11,71 +25,48 @@ extern "C" {
 
 #include <freertos/queue.h>
 
-//An opaque handle for a ringbuff object.
+/**
+ * Type by which ring buffers are referenced. For example, a call to xRingbufferCreate()
+ * returns a RingbufHandle_t variable that can then be used as a parameter to
+ * xRingbufferSend(), xRingbufferReceive(), etc.
+ */
 typedef void * RingbufHandle_t;
 
-/**
- * @brief The various types of buffer
- *
- * A ringbuffer instantiated by these functions essentially acts like a
- * FreeRTOS queue, with the difference that it's strictly FIFO and with
- * the main advantage that you can put in randomly-sized items. The capacity,
- * accordingly, isn't measured in the amount of items, but the amount of
- * memory that is used for storing the items. Dependent on the size of
- * the items, more or less of them will fit in the ring buffer.
- *
- * This ringbuffer tries to be efficient with memory: when inserting an item,
- * the item data will be copied to the ringbuffer memory. When retrieving
- * an item, however, a reference to ringbuffer memory will be returned.
- * The returned memory is guaranteed to be 32-bit aligned and contiguous.
- * The application can use this memory, but as long as it does, ringbuffer
- * writes that would write to this bit of memory will block.
- *
- * The requirement for items to be contiguous is slightly problematic when
- * the only way to place the next item would involve a wraparound from the end
- * to the beginning of the ringbuffer. This can be solved (or not) in a few ways,
- * see descriptions of possible ringbuf_type_t types below.
- *
- * The maximum size of an item will be affected by ringbuffer type.
- * When split items are allowed, it is acceptable to push items of
- * (buffer_size)-16 bytes into the buffer.
- * When it's not allowed, the maximum size is (buffer_size/2)-8 bytes.
- * The bytebuf can fill the entire buffer with data, it has no overhead.
- */
 typedef enum {
-	/** The insertion code will leave the room at the end of the ringbuffer
-	 * unused and instead will put the entire item at the start of the ringbuffer,
-	 * as soon as there is enough free space.
+	/**
+	 * No-split buffers will only store an item in contiguous memory and will
+	 * never split an item. Each item requires an 8 byte overhead for a header
+	 * and will always internally occupy a 32-bit aligned size of space.
 	 */
 	RINGBUF_TYPE_NOSPLIT = 0,
-	/** The insertion code will split the item in two items; one which fits
-	 * in the space left at the end of the ringbuffer, one that contains
-	 * the remaining data which is placed in the beginning.
-	 * Two xRingbufferReceive calls will be needed to retrieve the data.
+	/**
+	 * Allow-split buffers will split an item into two parts if necessary in
+	 * order to store it. Each item requires an 8 byte overhead for a header,
+	 * splitting incurs an extra header. Each item will always internally occupy
+	 * a 32-bit aligned size of space.
 	 */
 	RINGBUF_TYPE_ALLOWSPLIT,
-	/** This is your conventional byte-based ringbuffer. It does have no
-	 * overhead, but it has no item contiguousness either: a read will just
-	 * give you the entire written buffer space, or the space up to the end
-	 * of the buffer, and writes can be broken up in any way possible.
-	 * Note that this type cannot do a 2nd read before returning the memory
-	 * of the 1st.
+	/**
+	 * Byte buffers store data as a sequence of bytes and do not maintain separate
+	 * items, therefore byte buffers have no overhead. All data is stored as a
+	 * sequence of byte and any number of bytes can be sent or retrieved each
+	 * time.
 	 */
 	RINGBUF_TYPE_BYTEBUF
 } ringbuf_type_t;
 
-
 /**
- * @brief  Create a ring buffer
+ * @brief       Create a ring buffer
  *
- * @param  buf_length  Length of circular buffer, in bytes. Each entry will
- *                     take up its own length, plus a header that at the moment
- *                     is equal to sizeof(size_t).
- * @param  type  Type of ring buffer, see ringbuf_type_t.
+ * @param[in]   xBufferSize Size of the buffer in bytes. Note that items require
+ *              space for overhead in no-split/allow-split buffers
+ * @param[in]   xBufferType Type of ring buffer, see documentation.
  *
- * @return A RingbufHandle_t handle to the created ringbuffer, or NULL in case of error.
+ * @note    xBufferSize of no-split/allow-split buffers will be rounded up to the nearest 32-bit aligned size.
+ *
+ * @return  A handle to the created ring buffer, or NULL in case of error.
  */
-RingbufHandle_t xRingbufferCreate(size_t buf_length, ringbuf_type_t type);
+RingbufHandle_t xRingbufferCreate(size_t xBufferSize, ringbuf_type_t xBufferType);
 
 /**
  * @brief Create a ring buffer of type RINGBUF_TYPE_NOSPLIT for a fixed item_size
@@ -83,255 +74,338 @@ RingbufHandle_t xRingbufferCreate(size_t buf_length, ringbuf_type_t type);
  * This API is similar to xRingbufferCreate(), but it will internally allocate
  * additional space for the headers.
  *
- * @param item_size Size of each item to be put into the ring buffer
- * @param num_item Maximum number of items the buffer needs to hold simultaneously
+ * @param[in]   xItemSize   Size of each item to be put into the ring buffer
+ * @param[in]   xItemNum    Maximum number of items the buffer needs to hold simultaneously
  *
- * @return A RingbufHandle_t handle to the created ringbuffer, or NULL in case of error.
+ * @return  A RingbufHandle_t handle to the created ring buffer, or NULL in case of error.
  */
-RingbufHandle_t xRingbufferCreateNoSplit(size_t item_size, size_t num_item);
+RingbufHandle_t xRingbufferCreateNoSplit(size_t xItemSize, size_t xItemNum);
 
 /**
- * @brief  Delete a ring buffer
+ * @brief       Insert an item into the ring buffer
  *
- * @param  ringbuf  Ring buffer to delete
- */
-void vRingbufferDelete(RingbufHandle_t ringbuf);
-
-
-/**
- * @brief  Get maximum size of an item that can be placed in the ring buffer
+ * Attempt to insert an item into the ring buffer. This function will block until
+ * enough free space is available or until it timesout.
  *
- * @param  ringbuf  Ring buffer to query
+ * @param[in]   xRingbuffer     Ring buffer to insert the item into
+ * @param[in]   pvItem          Pointer to data to insert. NULL is allowed if xItemSize is 0.
+ * @param[in]   xItemSize       Size of data to insert.
+ * @param[in]   xTicksToWait    Ticks to wait for room in the ring buffer.
  *
- * @return Maximum size, in bytes, of an item that can be placed in a ring buffer.
- */
-size_t xRingbufferGetMaxItemSize(RingbufHandle_t ringbuf);
-
-/**
- * @brief Get current free size available in the buffer
- *
- * This gives the real time free space available in the ring buffer. So basically,
- * this will be the maximum size of the entry that can be sent into the buffer.
- *
- * @note This API is not thread safe. So, if multiple threads are accessing the same
- * ring buffer, it is the application's responsibility to ensure atomic access to this
- * API and the subsequent Send
- *
- * @param ringbuf - Ring buffer to query
- *
- * @return Current free size, in bytes,  available for an entry
- */
-size_t xRingbufferGetCurFreeSize(RingbufHandle_t ringbuf);
-
-/**
- * @brief Check if the next item is wrapped
- *
- * This API tells if the next item that is available for a Receive is wrapped
- * or not. This is valid only if the ring buffer type is RINGBUF_TYPE_ALLOWSPLIT
- *
- * @note This API is not thread safe. So, if multiple threads are accessing the same
- * ring buffer, it is the application's responsibility to ensure atomic access to this
- * API and the subsequent Receive
- *
- * @param ringbuf - Ring buffer to query
- *
- * @return true if the next item is wrapped around
- * @return false if the next item is not wrapped
- */
-bool xRingbufferIsNextItemWrapped(RingbufHandle_t ringbuf);
-
-/**
- * @brief  Insert an item into the ring buffer
- *
- * @param  ringbuf  Ring buffer to insert the item into
- * @param  data  Pointer to data to insert. NULL is allowed if data_size is 0.
- * @param  data_size  Size of data to insert. A value of 0 is allowed.
- * @param  ticks_to_wait  Ticks to wait for room in the ringbuffer.
+ * @note    For no-split/allow-split ring buffers, the actual size of memory that
+ *          the item will occupy will be rounded up to the nearest 32-bit aligned
+ *          size. This is done to ensure all items are always stored in 32-bit
+ *          aligned fashion.
  *
  * @return
  *      - pdTRUE if succeeded
- *      - pdFALSE on time-out or when the buffer is larger than indicated
- *        by xRingbufferGetMaxItemSize(ringbuf).
+ *      - pdFALSE on time-out or when the data is larger than the maximum permissible size of the buffer
  */
-BaseType_t xRingbufferSend(RingbufHandle_t ringbuf, void *data, size_t data_size, TickType_t ticks_to_wait);
-
+BaseType_t xRingbufferSend(RingbufHandle_t xRingbuffer, const void *pvItem, size_t xItemSize, TickType_t xTicksToWait);
 
 /**
- * @brief  Insert an item into the ring buffer from an ISR
+ * @brief       Insert an item into the ring buffer in an ISR
  *
- * @param  ringbuf  Ring buffer to insert the item into
- * @param  data  Pointer to data to insert. NULL is allowed if data_size is 0.
- * @param  data_size  Size of data to insert. A value of 0 is allowed.
- * @param[out]  higher_prio_task_awoken  Value pointed to will be set to pdTRUE
- *                                  if the push woke up a higher priority task.
+ * Attempt to insert an item into the ring buffer from an ISR. This function
+ * will return immediately if there is insufficient free space in the buffer.
  *
- * @return pdTRUE if succeeded, pdFALSE when the ring buffer does not have space.
- */
-BaseType_t xRingbufferSendFromISR(RingbufHandle_t ringbuf, void *data, size_t data_size, BaseType_t *higher_prio_task_awoken);
-
-/**
- * @brief  Retrieve an item from the ring buffer
+ * @param[in]   xRingbuffer Ring buffer to insert the item into
+ * @param[in]   pvItem      Pointer to data to insert. NULL is allowed if xItemSize is 0.
+ * @param[in]   xItemSize   Size of data to insert.
+ * @param[out]  pxHigherPriorityTaskWoken   Value pointed to will be set to pdTRUE if the function woke up a higher priority task.
  *
- * @note A call to vRingbufferReturnItem() is required after this to free up
- * the data received.
- *
- * @param  ringbuf  Ring buffer to retrieve the item from
- * @param[out] item_size  Pointer to a variable to which the size of the
- *                        retrieved item will be written.
- * @param  ticks_to_wait  Ticks to wait for items in the ringbuffer.
+ * @note    For no-split/allow-split ring buffers, the actual size of memory that
+ *          the item will occupy will be rounded up to the nearest 32-bit aligned
+ *          size. This is done to ensure all items are always stored in 32-bit
+ *          aligned fashion.
  *
  * @return
- *      - pointer to the retrieved item on success; *item_size filled with
- *        the length of the item.
- *      - NULL on timeout, *item_size is untouched in that case.
+ *      - pdTRUE if succeeded
+ *      - pdFALSE when the ring buffer does not have space.
  */
-void *xRingbufferReceive(RingbufHandle_t ringbuf, size_t *item_size, TickType_t ticks_to_wait);
-
+BaseType_t xRingbufferSendFromISR(RingbufHandle_t xRingbuffer, const void *pvItem, size_t xItemSize, BaseType_t *pxHigherPriorityTaskWoken);
 
 /**
- * @brief  Retrieve an item from the ring buffer from an ISR
+ * @brief   Retrieve an item from the ring buffer
  *
- * @note A call to vRingbufferReturnItemFromISR() is required after this to
- * free up the data received
+ * Attempt to retrieve an item from the ring buffer. This function will block
+ * until an item is available or until it timesout.
  *
- * @param  ringbuf  Ring buffer to retrieve the item from
- * @param[out] item_size  Pointer to a variable to which the size of the
- *                        retrieved item will be written.
+ * @param[in]   xRingbuffer     Ring buffer to retrieve the item from
+ * @param[out]  pxItemSize      Pointer to a variable to which the size of the retrieved item will be written.
+ * @param[in]   xTicksToWait    Ticks to wait for items in the ring buffer.
+ *
+ * @note    A call to vRingbufferReturnItem() is required after this to free the item retrieved.
  *
  * @return
- *      - Pointer to the retrieved item on success; *item_size filled with
- *        the length of the item.
- *      - NULL when the ringbuffer is empty, *item_size is untouched in that case.
+ *      - Pointer to the retrieved item on success; *pxItemSize filled with the length of the item.
+ *      - NULL on timeout, *pxItemSize is untouched in that case.
  */
-void *xRingbufferReceiveFromISR(RingbufHandle_t ringbuf, size_t *item_size);
-
+void *xRingbufferReceive(RingbufHandle_t xRingbuffer, size_t *pxItemSize, TickType_t xTicksToWait);
 
 /**
- * @brief  Retrieve bytes from a ByteBuf type of ring buffer,
- * specifying the maximum amount of bytes to return
+ * @brief   Retrieve an item from the ring buffer in an ISR
  *
- * @note A call to vRingbufferReturnItem() is required after this to free up
- * the data received.
+ * Attempt to retrieve an item from the ring buffer. This function returns immediately
+ * if there are no items available for retrieval
  *
- * @param  ringbuf  Ring buffer to retrieve the item from
- * @param[out] item_size  Pointer to a variable to which the size
- *                        of the retrieved item will be written.
- * @param  ticks_to_wait  Ticks to wait for items in the ringbuffer.
- * @param  wanted_size  Maximum number of bytes to return.
+ * @param[in]   xRingbuffer     Ring buffer to retrieve the item from
+ * @param[out]  pxItemSize      Pointer to a variable to which the size of the
+ *                              retrieved item will be written.
+ *
+ * @note    A call to vRingbufferReturnItemFromISR() is required after this to free the item retrieved.
+ * @note    Byte buffers do not allow multiple retrievals before returning an item
  *
  * @return
- *      - Pointer to the retrieved item on success; *item_size filled with
- *        the length of the item.
- *      - NULL on timeout, *item_size is untouched in that case.
+ *      - Pointer to the retrieved item on success; *pxItemSize filled with the length of the item.
+ *      - NULL when the ring buffer is empty, *pxItemSize is untouched in that case.
  */
-void *xRingbufferReceiveUpTo(RingbufHandle_t ringbuf, size_t *item_size, TickType_t ticks_to_wait, size_t wanted_size);
-
+void *xRingbufferReceiveFromISR(RingbufHandle_t xRingbuffer, size_t *pxItemSize);
 
 /**
- * @brief  Retrieve bytes from a ByteBuf type of ring buffer,
- * specifying the maximum amount of bytes to return. Call this from an ISR.
+ * @brief   Retrieve a split item from an allow-split ring buffer
  *
- * @note A call to vRingbufferReturnItemFromISR() is required after this
- * to free up the data received.
+ * Attempt to retrieve a split item from an allow-split ring buffer. If the item
+ * is not split, only a single item is retried. If the item is split, both parts
+ * will be retrieved. This function will block until an item is available or
+ * until it timesout.
  *
- * @param  ringbuf  Ring buffer to retrieve the item from
- * @param[out] item_size  Pointer to a variable to which the size of the
- *                        retrieved item will be written.
- * @param  wanted_size  Maximum number of bytes to return.
+ * @param[in]   xRingbuffer     Ring buffer to retrieve the item from
+ * @param[out]  ppvHeadItem     Double pointer to first part (set to NULL if no items were retrieved)
+ * @param[out]  ppvTailItem     Double pointer to second part (set to NULL if item is not split)
+ * @param[out]  pxHeadItemSize  Pointer to size of first part (unmodified if no items were retrieved)
+ * @param[out]  pxTailItemSize  Pointer to size of second part (unmodified if item is not split)
+ * @param[in]   xTicksToWait    Ticks to wait for items in the ring buffer.
+ *
+ * @note    Call(s) to vRingbufferReturnItem() is required after this to free up the item(s) retrieved.
+ * @note    This function should only be called on allow-split buffers
  *
  * @return
- *      - Pointer to the retrieved item on success; *item_size filled with
+ *      - pdTRUE if an item (split or unsplit) was retrieved
+ *      - pdFALSE when no item was retrieved
+ */
+BaseType_t xRingbufferReceiveSplit(RingbufHandle_t xRingbuffer, void **ppvHeadItem, void **ppvTailItem, size_t *pxHeadItemSize, size_t *pxTailItemSize, TickType_t xTicksToWait);
+
+/**
+ * @brief   Retrieve a split item from an allow-split ring buffer in an ISR
+ *
+ * Attempt to retrieve a split item from an allow-split ring buffer. If the item
+ * is not split, only a single item is retried. If the item is split, both parts
+ * will be retrieved. This function returns immediately if there are no items
+ * available for retrieval
+ *
+ * @param[in]   xRingbuffer     Ring buffer to retrieve the item from
+ * @param[out]  ppvHeadItem     Double pointer to first part (set to NULL if no items were retrieved)
+ * @param[out]  ppvTailItem     Double pointer to second part (set to NULL if item is not split)
+ * @param[out]  pxHeadItemSize  Pointer to size of first part (unmodified if no items were retrieved)
+ * @param[out]  pxTailItemSize  Pointer to size of second part (unmodified if item is not split)
+ *
+ * @note    Calls to vRingbufferReturnItemFromISR() is required after this to free up the item(s) retrieved.
+ * @note    This function should only be called on allow-split buffers
+ *
+ * @return
+ *      - pdTRUE if an item (split or unsplit) was retrieved
+ *      - pdFALSE when no item was retrieved
+ */
+BaseType_t xRingbufferReceiveSplitFromISR(RingbufHandle_t xRingbuffer, void **ppvHeadItem, void **ppvTailItem, size_t *pxHeadItemSize, size_t *pxTailItemSize);
+
+/**
+ * @brief   Retrieve bytes from a byte buffer, specifying the maximum amount of bytes to retrieve
+ *
+ * Attempt to retrieve data from a byte buffer whilst specifying a maximum number
+ * of bytes to retrieve. This function will block until there is data available
+ * for retrieval or until it timesout.
+ *
+ * @param[in]   xRingbuffer     Ring buffer to retrieve the item from
+ * @param[out]  pxItemSize      Pointer to a variable to which the size of the retrieved item will be written.
+ * @param[in]   xTicksToWait    Ticks to wait for items in the ring buffer.
+ * @param[in]   xMaxSize        Maximum number of bytes to return.
+ *
+ * @note    A call to vRingbufferReturnItem() is required after this to free up the data retrieved.
+ * @note    This function should only be called on byte buffers
+ * @note    Byte buffers do not allow multiple retrievals before returning an item
+ *
+ * @return
+ *      - Pointer to the retrieved item on success; *pxItemSize filled with
  *        the length of the item.
- *      - NULL when the ringbuffer is empty, *item_size is untouched in that case.
+ *      - NULL on timeout, *pxItemSize is untouched in that case.
  */
-void *xRingbufferReceiveUpToFromISR(RingbufHandle_t ringbuf, size_t *item_size, size_t wanted_size);
-
-
+void *xRingbufferReceiveUpTo(RingbufHandle_t xRingbuffer, size_t *pxItemSize, TickType_t xTicksToWait, size_t xMaxSize);
 
 /**
- * @brief  Return a previously-retrieved item to the ringbuffer
+ * @brief   Retrieve bytes from a byte buffer, specifying the maximum amount of
+ *          bytes to retrieve. Call this from an ISR.
  *
- * @param  ringbuf  Ring buffer the item was retrieved from
- * @param  item  Item that was received earlier
+ * Attempt to retrieve bytes from a byte buffer whilst specifying a maximum number
+ * of bytes to retrieve. This function will return immediately if there is no data
+ * available for retrieval.
+ *
+ * @param[in]   xRingbuffer Ring buffer to retrieve the item from
+ * @param[out]  pxItemSize  Pointer to a variable to which the size of the retrieved item will be written.
+ * @param[in]   xMaxSize    Maximum number of bytes to return.
+ *
+ * @note    A call to vRingbufferReturnItemFromISR() is required after this to free up the data received.
+ * @note    This function should only be called on byte buffers
+ * @note    Byte buffers do not allow multiple retrievals before returning an item
+ *
+ * @return
+ *      - Pointer to the retrieved item on success; *pxItemSize filled with
+ *        the length of the item.
+ *      - NULL when the ring buffer is empty, *pxItemSize is untouched in that case.
  */
-void vRingbufferReturnItem(RingbufHandle_t ringbuf, void *item);
-
-
+void *xRingbufferReceiveUpToFromISR(RingbufHandle_t xRingbuffer, size_t *pxItemSize, size_t xMaxSize);
 
 /**
- * @brief  Return a previously-retrieved item to the ringbuffer from an ISR
+ * @brief   Return a previously-retrieved item to the ring buffer
  *
- * @param  ringbuf  Ring buffer the item was retrieved from
- * @param  item  Item that was received earlier
- * @param[out]  higher_prio_task_awoken  Value pointed to will be set to pdTRUE
- *                                  if the push woke up a higher priority task.
+ * @param[in]   xRingbuffer Ring buffer the item was retrieved from
+ * @param[in]   pvItem      Item that was received earlier
+ *
+ * @note    If a split item is retrieved, both parts should be returned by calling this function twice
  */
-void vRingbufferReturnItemFromISR(RingbufHandle_t ringbuf, void *item, BaseType_t *higher_prio_task_awoken);
-
+void vRingbufferReturnItem(RingbufHandle_t xRingbuffer, void *pvItem);
 
 /**
- * @brief  Add the ringbuffer to a queue set.
+ * @brief   Return a previously-retrieved item to the ring buffer from an ISR
  *
- * This specifically adds the semaphore that indicates more space
- * has become available in the ringbuffer.
+ * @param[in]   xRingbuffer Ring buffer the item was retrieved from
+ * @param[in]   pvItem      Item that was received earlier
+ * @param[out]  pxHigherPriorityTaskWoken   Value pointed to will be set to pdTRUE
+ *                                          if the function woke up a higher priority task.
  *
- * @param  ringbuf  Ring buffer to add to the queue set
- * @param  xQueueSet  Queue set to add the ringbuffer to
+ * @note    If a split item is retrieved, both parts should be returned by calling this function twice
+ */
+void vRingbufferReturnItemFromISR(RingbufHandle_t xRingbuffer, void *pvItem, BaseType_t *pxHigherPriorityTaskWoken);
+
+/**
+ * @brief   Delete a ring buffer
+ *
+ * @param[in]   xRingbuffer     Ring buffer to delete
+ */
+void vRingbufferDelete(RingbufHandle_t xRingbuffer);
+
+/**
+ * @brief   Get maximum size of an item that can be placed in the ring buffer
+ *
+ * This function returns the maximum size an item can have if it was placed in
+ * an empty ring buffer.
+ *
+ * @param[in]   xRingbuffer     Ring buffer to query
+ *
+ * @return  Maximum size, in bytes, of an item that can be placed in a ring buffer.
+ */
+size_t xRingbufferGetMaxItemSize(RingbufHandle_t xRingbuffer);
+
+/**
+ * @brief   Get current free size available for an item/data in the buffer
+ *
+ * This gives the real time free space available for an item/data in the ring
+ * buffer. This represents the maximum size an item/data can have if it was
+ * currently sent to the ring buffer.
+ *
+ * @warning This API is not thread safe. So, if multiple threads are accessing
+ *          the same ring buffer, it is the application's responsibility to
+ *          ensure atomic access to this API and the subsequent Send
+ *
+ * @param[in]   xRingbuffer     Ring buffer to query
+ *
+ * @return  Current free size, in bytes, available for an entry
+ */
+size_t xRingbufferGetCurFreeSize(RingbufHandle_t xRingbuffer);
+
+/**
+ * @brief   Add the ring buffer's read semaphore to a queue set.
+ *
+ * The ring buffer's read semaphore indicates that data has been written
+ * to the ring buffer. This function adds the ring buffer's read semaphore to
+ * a queue set.
+ *
+ * @param[in]   xRingbuffer     Ring buffer to add to the queue set
+ * @param[in]   xQueueSet       Queue set to add the ring buffer's read semaphore to
  *
  * @return
  *      - pdTRUE on success, pdFALSE otherwise
  */
-BaseType_t xRingbufferAddToQueueSetRead(RingbufHandle_t ringbuf, QueueSetHandle_t xQueueSet);
+BaseType_t xRingbufferAddToQueueSetRead(RingbufHandle_t xRingbuffer, QueueSetHandle_t xQueueSet);
 
 
 /**
- * @brief  Add the ringbuffer to a queue set.
+ * @brief   Check if the selected queue set member is the ring buffer's read semaphore
  *
- * This specifically adds the semaphore that indicates something has been
- * written into the ringbuffer.
+ * This API checks if queue set member returned from xQueueSelectFromSet()
+ * is the read semaphore of this ring buffer. If so, this indicates the ring buffer
+ * has items waiting to be retrieved.
  *
- * @param  ringbuf  Ring buffer to add to the queue set
- * @param  xQueueSet  Queue set to add the ringbuffer to
+ * @param[in]   xRingbuffer     Ring buffer which should be checked
+ * @param[in]   xMember         Member returned from xQueueSelectFromSet
  *
- * @return pdTRUE on success, pdFALSE otherwise
+ * @return
+ *      - pdTRUE when semaphore belongs to ring buffer
+ *      - pdFALSE otherwise.
  */
-BaseType_t xRingbufferAddToQueueSetWrite(RingbufHandle_t ringbuf, QueueSetHandle_t xQueueSet);
-
+BaseType_t xRingbufferCanRead(RingbufHandle_t xRingbuffer, QueueSetMemberHandle_t xMember);
 
 /**
- * @brief  Remove the ringbuffer from a queue set.
+ * @brief   Remove the ring buffer's read semaphore from a queue set.
  *
- * This specifically removes the semaphore that indicates more space
- * has become available in the ringbuffer.
+ * This specifically removes a ring buffer's read semaphore from a queue set. The
+ * read semaphore is used to indicate when data has been written to the ring buffer
  *
- * @param  ringbuf  Ring buffer to remove from the queue set
- * @param  xQueueSet  Queue set to remove the ringbuffer from
+ * @param[in]   xRingbuffer     Ring buffer to remove from the queue set
+ * @param[in]   xQueueSet       Queue set to remove the ring buffer's read semaphore from
  *
- * @return pdTRUE on success, pdFALSE otherwise
+ * @return
+ *      - pdTRUE on success
+ *      - pdFALSE otherwise
  */
-BaseType_t xRingbufferRemoveFromQueueSetRead(RingbufHandle_t ringbuf, QueueSetHandle_t xQueueSet);
-
+BaseType_t xRingbufferRemoveFromQueueSetRead(RingbufHandle_t xRingbuffer, QueueSetHandle_t xQueueSet);
 
 /**
- * @brief  Remove the ringbuffer from a queue set.
+ * @brief   Get information about ring buffer status
  *
- * This specifically removes the semaphore that indicates something
- * has been written to the ringbuffer.
+ * Get information of the a ring buffer's current status such as
+ * free/read/write pointer positions, and number of items waiting to be retrieved.
+ * Arguments can be set to NULL if they are not required.
  *
- * @param  ringbuf  Ring buffer to remove from the queue set
- * @param  xQueueSet  Queue set to remove the ringbuffer from
- *
- * @return pdTRUE on success, pdFALSE otherwise
+ * @param[in]   xRingbuffer     Ring buffer to remove from the queue set
+ * @param[out]  uxFree          Pointer use to store free pointer position
+ * @param[out]  uxRead          Pointer use to store read pointer position
+ * @param[out]  uxWrite         Pointer use to store write pointer position
+ * @param[out]  uxItemsWaiting  Pointer use to store number of items (bytes for byte buffer) waiting to be retrieved
  */
-BaseType_t xRingbufferRemoveFromQueueSetWrite(RingbufHandle_t ringbuf, QueueSetHandle_t xQueueSet);
-
+void vRingbufferGetInfo(RingbufHandle_t xRingbuffer, UBaseType_t *uxFree, UBaseType_t *uxRead, UBaseType_t *uxWrite, UBaseType_t *uxItemsWaiting);
 
 /**
- * @brief  Debugging function to print the internal pointers in the ring buffer
+ * @brief   Debugging function to print the internal pointers in the ring buffer
  *
- * @param  ringbuf  Ring buffer to show
+ * @param   xRingbuffer Ring buffer to show
  */
-void xRingbufferPrintInfo(RingbufHandle_t ringbuf);
+void xRingbufferPrintInfo(RingbufHandle_t xRingbuffer);
+
+/* -------------------------------- Deprecated Functions --------------------------- */
+
+/** @cond */    //Doxygen command to hide deprecated function from API Reference
+/*
+ * Deprecated as function is not thread safe and does not check if an item is
+ * actually available for retrieval. Use xRingbufferReceiveSplit() instead for
+ * thread safe method of retrieve a split item.
+ */
+bool xRingbufferIsNextItemWrapped(RingbufHandle_t xRingbuffer) __attribute__((deprecated));
+
+/*
+ * Deprecated as queue sets are not meant to be used for writing to buffers. Adding
+ * the ring buffer write semaphore to a queue set will break queue set usage rules,
+ * as every read of a semaphore must be preceded by a call to xQueueSelectFromSet().
+ * QueueSetWrite no longer supported.
+ */
+BaseType_t xRingbufferAddToQueueSetWrite(RingbufHandle_t xRingbuffer, QueueSetHandle_t xQueueSet) __attribute__((deprecated));
+
+/*
+ * Deprecated as queue sets are not meant to be used for writing to buffers.
+ * QueueSetWrite no longer supported.
+ */
+BaseType_t xRingbufferRemoveFromQueueSetWrite(RingbufHandle_t xRingbuffer, QueueSetHandle_t xQueueSet) __attribute__((deprecated));
+/** @endcond */
 
 #ifdef __cplusplus
 }
