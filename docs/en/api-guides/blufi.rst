@@ -1,9 +1,8 @@
-*****
 BluFi
-*****
+^^^^^
 
 Overview
-==========
+--------
 The BluFi for ESP32 is a Wi-Fi network configuration function via Bluetooth channel. It provides a secure protocol to pass Wi-Fi configuration and credentials to the ESP32. Using this information ESP32 can then e.g. connect to an AP or establish a SoftAP.
 
 Fragmenting, data encryption, checksum verification in the BluFi layer are the key elements of this process.
@@ -11,7 +10,7 @@ Fragmenting, data encryption, checksum verification in the BluFi layer are the k
 You can customize symmetric encryption, asymmetric encryption and checksum support custmization on your demand in practical use. Here we use the DH algorithm for key negotiation, 128-AES algorithm for data encryption, and CRC16 algorithm for checksum verification.
 
 The BluFi Flow
-----------------
+--------------
 The BluFi networking flow includes the configuration of the SoftAP and Station.
 
 The following uses Station as an example to illustrate the core parts of the procedure, including broadcast, connection, service discovery, negotiation of the shared key, data transmission, connection status backhaul.
@@ -72,7 +71,7 @@ The flow chat of BluFi
 .. _frame_formats:
 
 The Frame Formats Defined in BluFi
-===================================
+----------------------------------
 
 The frame formats for the communication between the mobile phone APP and ESP32 are defined as follows:
 
@@ -209,7 +208,7 @@ The format of Ack Frame（8 bit）：
    This field takes 2 bytes that is used to check "sequence + data length + clear text data".
 
 The Security Implementation of ESP32
-*************************************
+------------------------------------
 
 1. Securing data
 
@@ -243,7 +242,7 @@ Here are two "*", because the length of the data to be emitted is unknown that r
 
 .. code-block:: c
 
-   typedef int (* esp_blufi_encrypt_func_t)(uint8_t iv8, uint8_t *crypt_data, int cyprt_len) 
+   typedef int (* esp_blufi_encrypt_func_t)(uint8_t iv8, uint8_t *crypt_data, int cyprt_len) 
 
 The data to be encrypted and decrypted must use the same length. The IV8 is a 8 bit sequence value of frames, which can be used as a 8 bit of IV.
 
@@ -260,10 +259,10 @@ The data to be encrypted and decrypted must use the same length. The IV8 is a 8 
 This function is used to compute CheckSum and return a value of CheckSum. BluFi uses the returned value to compare the CheckSum of the frame.
 
 GATT Related Instructions
-**************************
+-------------------------
 
 UUID
-====
+>>>>>
 
 BluFi Service UUID: 0xFFFF，16 bit
 
