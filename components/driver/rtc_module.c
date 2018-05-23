@@ -43,6 +43,7 @@
 #include "rom/queue.h"
 
 
+#define ADC_I2S_ITEMS_MAX             (16)
 #define ADC_FSM_RSTB_WAIT_DEFAULT     (8)
 #define ADC_FSM_START_WAIT_DEFAULT    (5)
 #define ADC_FSM_STANDBY_WAIT_DEFAULT  (100)
@@ -1203,6 +1204,21 @@ esp_err_t adc_set_data_inv(adc_unit_t adc_unit, bool inv_en)
     return ESP_OK;
 }
 
+esp_err_t adc_set_mode_inv(adc_unit_t adc_unit, bool inv_en)
+{
+    portENTER_CRITICAL(&rtc_spinlock);
+    if (adc_unit & ADC_UNIT_1) {
+        // Enable DIG ADC1 CTRL is inverted
+        SYSCON.saradc_ctrl2.sar1_inv = inv_en;
+    }
+    if (adc_unit & ADC_UNIT_2) {
+        // Enable DIG ADC2 CTRL is inverted
+        SYSCON.saradc_ctrl2.sar2_inv = inv_en;
+    }
+    portEXIT_CRITICAL(&rtc_spinlock);
+    return ESP_OK;
+}
+
 esp_err_t adc_set_data_width(adc_unit_t adc_unit, adc_bits_width_t bits)
 {
     ADC_CHECK_UNIT(adc_unit);
@@ -1334,46 +1350,42 @@ static esp_err_t adc_set_i2s_data_len(adc_unit_t adc_unit, int patt_len)
     return ESP_OK;
 }
 
-static esp_err_t adc_set_i2s_data_pattern(adc_unit_t adc_unit, int seq_num, adc_channel_t channel, adc_bits_width_t bits, adc_atten_t atten)
+static esp_err_t adc_set_i2s_data_pattern(adc_unit_t adc_unit, int seq_num, adc_i2s_pattern_t pattern)
 {
     ADC_CHECK_UNIT(adc_unit);
     if (adc_unit & ADC_UNIT_1) {
-        RTC_MODULE_CHECK((adc1_channel_t) channel < ADC1_CHANNEL_MAX, "ADC1 channel error", ESP_ERR_INVALID_ARG);
+        RTC_MODULE_CHECK((adc1_channel_t) pattern.channel < ADC1_CHANNEL_MAX, "ADC1 channel error", ESP_ERR_INVALID_ARG);
     }
-    RTC_MODULE_CHECK(bits < ADC_WIDTH_MAX, "ADC bit width error", ESP_ERR_INVALID_ARG);
-    RTC_MODULE_CHECK(atten < ADC_ATTEN_MAX, "ADC Atten Err", ESP_ERR_INVALID_ARG);
+    RTC_MODULE_CHECK(pattern.bits < ADC_WIDTH_MAX, "ADC bit width error", ESP_ERR_INVALID_ARG);
+    RTC_MODULE_CHECK(pattern.atten < ADC_ATTEN_MAX, "ADC Atten Err", ESP_ERR_INVALID_ARG);
 
     portENTER_CRITICAL(&rtc_spinlock);
-    //Configure pattern table, each 8 bit defines one channel
-    //[7:4]-channel [3:2]-bit width [1:0]- attenuation
-    //BIT WIDTH: 3: 12BIT  2: 11BIT  1: 10BIT  0: 9BIT
-    //ATTEN: 3: ATTEN = 11dB 2: 6dB 1: 2.5dB 0: 0dB
-    uint8_t val = (channel << 4) | (bits << 2) | (atten << 0);
     if (adc_unit & ADC_UNIT_1) {
         SYSCON.saradc_sar1_patt_tab[seq_num / 4] &= (~(0xff << ((3 - (seq_num % 4)) * 8)));
-        SYSCON.saradc_sar1_patt_tab[seq_num / 4] |= (val << ((3 - (seq_num % 4)) * 8));
+        SYSCON.saradc_sar1_patt_tab[seq_num / 4] |= (pattern.val << ((3 - (seq_num % 4)) * 8));
     }
     if (adc_unit & ADC_UNIT_2) {
         SYSCON.saradc_sar2_patt_tab[seq_num / 4] &= (~(0xff << ((3 - (seq_num % 4)) * 8)));
-        SYSCON.saradc_sar2_patt_tab[seq_num / 4] |= (val << ((3 - (seq_num % 4)) * 8));
+        SYSCON.saradc_sar2_patt_tab[seq_num / 4] |= (pattern.val << ((3 - (seq_num % 4)) * 8));
     }
     portEXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
 
-esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
+esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, const adc_i2s_pattern_t* adc_pattern, uint8_t adc_items)
 {
     ADC_CHECK_UNIT(adc_unit);
-    if (adc_unit & ADC_UNIT_1) {
-        RTC_MODULE_CHECK((adc1_channel_t) channel < ADC1_CHANNEL_MAX, "ADC1 channel error", ESP_ERR_INVALID_ARG);
-    }
-
-    uint8_t table_len = 1;
+    RTC_MODULE_CHECK(adc_items < ADC_I2S_ITEMS_MAX, "i2s ADC items error, exceed pattern table items", ESP_ERR_INVALID_ARG);
     //POWER ON SAR
     adc_power_always_on();
-    adc_gpio_init(adc_unit, channel);
-    adc_set_i2s_data_len(adc_unit, table_len);
-    adc_set_i2s_data_pattern(adc_unit, 0, channel, ADC_WIDTH_BIT_12, ADC_ATTEN_DB_11);
+    adc_set_i2s_data_len(adc_unit, adc_items);
+    for (int i = 0; i < adc_items; ++i) {
+        if (adc_unit & ADC_UNIT_1) {
+            RTC_MODULE_CHECK((adc1_channel_t) adc_pattern[i].channel < ADC1_CHANNEL_MAX, "ADC1 channel error", ESP_ERR_INVALID_ARG);
+        }
+        adc_gpio_init(adc_unit, adc_pattern[i].channel);
+        adc_set_i2s_data_pattern(adc_unit, i, adc_pattern[i]);
+    }
     portENTER_CRITICAL(&rtc_spinlock);
     if (adc_unit & ADC_UNIT_1) {
         adc_set_controller( ADC_UNIT_1, ADC_CTRL_DIG );
@@ -1390,10 +1402,10 @@ esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
     adc_set_work_mode(adc_unit);
     adc_set_data_format(ADC_ENCODE_12BIT);
     adc_set_measure_limit(ADC_MAX_MEAS_NUM_DEFAULT, ADC_MEAS_NUM_LIM_DEFAULT);
-    //Invert The Level, Invert SAR ADC1 data
-    adc_set_data_inv(adc_unit, true);
+    //Invert The Level, Invert DIG ADC1 CTRL data
+    adc_set_mode_inv(adc_unit, true);
     return ESP_OK;
- }
+}
 
 /*-------------------------------------------------------------------------------------
  *                      ADC1

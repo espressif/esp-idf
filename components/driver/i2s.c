@@ -93,7 +93,8 @@ static i2s_obj_t *p_i2s_obj[I2S_NUM_MAX] = {0};
 static i2s_dev_t* I2S[I2S_NUM_MAX] = {&I2S0, &I2S1};
 static portMUX_TYPE i2s_spinlock[I2S_NUM_MAX] = {portMUX_INITIALIZER_UNLOCKED, portMUX_INITIALIZER_UNLOCKED};
 static int _i2s_adc_unit = -1;
-static int _i2s_adc_channel = -1;
+static int _i2s_adc_items = -1;
+static const adc_i2s_pattern_t* _i2s_adc_pattern = NULL;
 
 static i2s_dma_t *i2s_create_dma_queue(i2s_port_t i2s_num, int dma_buf_count, int dma_buf_len);
 static esp_err_t i2s_destroy_dma_queue(i2s_port_t i2s_num, i2s_dma_t *dma);
@@ -709,17 +710,18 @@ esp_err_t i2s_set_dac_mode(i2s_dac_mode_t dac_mode)
 
 static esp_err_t _i2s_adc_mode_recover()
 {
-    I2S_CHECK(((_i2s_adc_unit != -1) && (_i2s_adc_channel != -1)), "i2s ADC recover error, not initialized...", ESP_ERR_INVALID_ARG);
-    return adc_i2s_mode_init(_i2s_adc_unit, _i2s_adc_channel);
+    I2S_CHECK(((_i2s_adc_unit != -1) && (_i2s_adc_items != -1) && (_i2s_adc_pattern != NULL)), "i2s ADC recover error, not initialized...", ESP_ERR_INVALID_ARG);
+    return adc_i2s_mode_init(_i2s_adc_unit, _i2s_adc_pattern, _i2s_adc_items);
 }
 
-esp_err_t i2s_set_adc_mode(adc_unit_t adc_unit, adc1_channel_t adc_channel)
+esp_err_t i2s_set_adc_mode(adc_unit_t adc_unit, const adc_i2s_pattern_t* adc_pattern, uint8_t adc_items)
 {
     I2S_CHECK((adc_unit < ADC_UNIT_2), "i2s ADC unit error, only support ADC1 for now", ESP_ERR_INVALID_ARG);
     // For now, we only support SAR ADC1.
     _i2s_adc_unit = adc_unit;
-    _i2s_adc_channel = adc_channel;
-    return adc_i2s_mode_init(adc_unit, adc_channel);
+    _i2s_adc_pattern = adc_pattern;
+    _i2s_adc_items = adc_items;
+    return adc_i2s_mode_init(adc_unit, adc_pattern, adc_items);
 }
 
 esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin)
@@ -854,9 +856,8 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
 
     if(i2s_config->mode & I2S_MODE_ADC_BUILT_IN) {
         //in ADC built-in mode, we need to call i2s_set_adc_mode to
-        //initialize the specific ADC channel.
-        //in the current stage, we only support ADC1 and single channel mode.
-        //In default data mode, the ADC data is in 12-bit resolution mode.
+        //initialize the specific ADC multiple channel pattern.
+        //in the current stage, we only support ADC1.
         adc_power_always_on();
     }
     // configure I2S data port interface.

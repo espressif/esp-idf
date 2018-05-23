@@ -63,18 +63,21 @@ void example_i2s_init()
         .mode = I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN | I2S_MODE_ADC_BUILT_IN,
         .sample_rate =  EXAMPLE_I2S_SAMPLE_RATE,
         .bits_per_sample = EXAMPLE_I2S_SAMPLE_BITS,
-	    .communication_format = I2S_COMM_FORMAT_I2S_MSB,
-	    .channel_format = EXAMPLE_I2S_FORMAT,
-	    .intr_alloc_flags = 0,
-	    .dma_buf_count = 2,
-	    .dma_buf_len = 1024
-	 };
-	 //install and start i2s driver
-	 i2s_driver_install(i2s_num, &i2s_config, 0, NULL);
-	 //init DAC pad
-	 i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
-	 //init ADC pad
-	 i2s_set_adc_mode(I2S_ADC_UNIT, I2S_ADC_CHANNEL);
+        .communication_format = I2S_COMM_FORMAT_I2S_MSB,
+        .channel_format = EXAMPLE_I2S_FORMAT,
+        .intr_alloc_flags = 0,
+        .dma_buf_count = 2,
+        .dma_buf_len = 1024
+    };
+    //install and start i2s driver
+    i2s_driver_install(i2s_num, &i2s_config, 0, NULL);
+    //init DAC pad
+    i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
+    //init ADC pad
+    const adc_i2s_pattern_t adc_i2s_pattern[] = {
+        {.atten = ADC_ATTEN_DB_11, .bits = ADC_WIDTH_BIT_12, .channel = I2S_ADC_CHANNEL}
+    };
+    i2s_set_adc_mode(I2S_ADC_UNIT, adc_i2s_pattern, sizeof(adc_i2s_pattern));
 }
 
 /*
