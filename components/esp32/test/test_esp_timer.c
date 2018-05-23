@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
+#include <sys/param.h>
 #include "unity.h"
 #include "esp_timer.h"
 #include "esp_heap_caps.h"
@@ -14,6 +15,20 @@
 #define WITH_PROFILING 1
 #endif
 
+extern uint32_t esp_timer_impl_get_overflow_val();
+extern void esp_timer_impl_set_overflow_val(uint32_t overflow_val);
+
+static uint32_t s_old_overflow_val;
+
+static void setup_overflow()
+{
+    s_old_overflow_val = esp_timer_impl_get_overflow_val();
+    esp_timer_impl_set_overflow_val(0x7fffff); /* overflow every ~0.1 sec */}
+
+static void teardown_overflow()
+{
+    esp_timer_impl_set_overflow_val(s_old_overflow_val);
+}
 
 TEST_CASE("esp_timer orders timers correctly", "[esp_timer]")
 {
@@ -26,6 +41,7 @@ TEST_CASE("esp_timer orders timers correctly", "[esp_timer]")
     const size_t num_timers = sizeof(timeouts)/sizeof(timeouts[0]);
     esp_timer_handle_t handles[num_timers];
     char* names[num_timers];
+    setup_overflow();
     for (size_t i = 0; i < num_timers; ++i) {
         asprintf(&names[i], "timer%d", i);
         esp_timer_create_args_t args = {
@@ -35,6 +51,7 @@ TEST_CASE("esp_timer orders timers correctly", "[esp_timer]")
         TEST_ESP_OK(esp_timer_create(&args, &handles[i]));
         TEST_ESP_OK(esp_timer_start_once(handles[i], timeouts[i] * 100));
     }
+    teardown_overflow();
     char* stream_str[1024];
     FILE* stream = fmemopen(stream_str, sizeof(stream_str), "r+");
     TEST_ESP_OK(esp_timer_dump(stream));
@@ -89,6 +106,7 @@ TEST_CASE("esp_timer produces correct delay", "[esp_timer]")
     const size_t delays_count = sizeof(delays_ms)/sizeof(delays_ms[0]);
 
     ref_clock_init();
+    setup_overflow();
     for (size_t i = 0; i < delays_count; ++i) {
         t_end = 0;
         int64_t t_start = ref_clock_get();
@@ -102,6 +120,7 @@ TEST_CASE("esp_timer produces correct delay", "[esp_timer]")
 
         TEST_ASSERT_INT32_WITHIN(portTICK_PERIOD_MS, delays_ms[i], ms_diff);
     }
+    teardown_overflow();
     ref_clock_deinit();
 
     TEST_ESP_OK( esp_timer_dump(stdout) );
@@ -149,6 +168,7 @@ TEST_CASE("periodic esp_timer produces correct delays", "[esp_timer]")
     };
     TEST_ESP_OK(esp_timer_create(&create_args, &timer1));
     ref_clock_init();
+    setup_overflow();
     args.timer = timer1;
     args.t_start = ref_clock_get();
     args.done = xSemaphoreCreateBinary();
@@ -160,6 +180,7 @@ TEST_CASE("periodic esp_timer produces correct delays", "[esp_timer]")
     for (size_t i = 0; i < NUM_INTERVALS; ++i) {
         TEST_ASSERT_INT32_WITHIN(portTICK_PERIOD_MS, (i + 1) * delay_ms, args.intervals[i]);
     }
+    teardown_overflow();
     ref_clock_deinit();
     TEST_ESP_OK( esp_timer_dump(stdout) );
 
@@ -316,6 +337,7 @@ TEST_CASE("esp_timer for very short intervals", "[esp_timer]")
     esp_timer_handle_t timer1, timer2;
     ESP_ERROR_CHECK( esp_timer_create(&timer_args, &timer1) );
     ESP_ERROR_CHECK( esp_timer_create(&timer_args, &timer2) );
+    setup_overflow();
     const int timeout_ms = 10;
     for (int timeout_delta_us = -150; timeout_delta_us < 150; timeout_delta_us++) {
         printf("delta=%d", timeout_delta_us);
@@ -328,6 +350,7 @@ TEST_CASE("esp_timer for very short intervals", "[esp_timer]")
         TEST_ESP_ERR(ESP_ERR_INVALID_STATE, esp_timer_stop(timer2));
     }
 
+    teardown_overflow();
     vSemaphoreDelete(semaphore);
 }
 

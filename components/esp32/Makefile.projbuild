@@ -38,3 +38,7 @@ CFLAGS+=-mfix-esp32-psram-cache-issue
 CXXFLAGS+=-mfix-esp32-psram-cache-issue
 endif
 
+# Enable dynamic esp_timer overflow value if building unit tests 
+ifneq ("$(TEST_COMPONENTS_LIST)","")
+CPPFLAGS += -DESP_TIMER_DYNAMIC_OVERFLOW_VAL
+endif

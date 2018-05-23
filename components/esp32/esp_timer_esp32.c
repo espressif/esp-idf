@@ -82,7 +82,18 @@
  * ISR happens follow set_alarm, so change the ALARM_OVERFLOW_VAL to resolve this problem.
  * Set it to 0xefffffffUL. The remain 0x10000000UL(about 3 second) is enough to handle ISR.
  */
-#define ALARM_OVERFLOW_VAL  0xefffffffUL
+#define DEFAULT_ALARM_OVERFLOW_VAL 0xefffffffUL
+
+/* Provision to set lower overflow value for unit testing. Lowering the
+ * overflow value helps check for race conditions which occur near overflow
+ * moment.
+ */
+#ifndef ESP_TIMER_DYNAMIC_OVERFLOW_VAL
+#define ALARM_OVERFLOW_VAL  DEFAULT_ALARM_OVERFLOW_VAL
+#else
+static uint32_t s_alarm_overflow_val = DEFAULT_ALARM_OVERFLOW_VAL;
+#define ALARM_OVERFLOW_VAL (s_alarm_overflow_val)
+#endif
 
 static const char* TAG = "esp_timer_impl";
 
@@ -353,3 +364,17 @@ uint64_t IRAM_ATTR esp_timer_impl_get_min_period_us()
 {
     return 50;
 }
+
+#ifdef ESP_TIMER_DYNAMIC_OVERFLOW_VAL
+uint32_t esp_timer_impl_get_overflow_val()
+{
+    return s_alarm_overflow_val;
+}
+
+void esp_timer_impl_set_overflow_val(uint32_t overflow_val)
+{
+    s_alarm_overflow_val = overflow_val;
+    /* update alarm value */
+    esp_timer_impl_update_apb_freq(esp_clk_apb_freq() / 1000000);
+}
+#endif // ESP_TIMER_DYNAMIC_OVERFLOW_VAL
