@@ -11,7 +11,7 @@ Fragmenting, data encryption, checksum verification in the BluFi layer are the k
 You can customize symmetric encryption, asymmetric encryption and checksum support custmization on your demand in practical use. Here we use the DH algorithm for key negotiation, 128-AES algorithm for data encryption, and CRC16 algorithm for checksum verification.
 
 The BluFi Flow
---------------
+----------------
 The BluFi networking flow includes the configuration of the SoftAP and Station.
 
 The following uses Station as an example to illustrate the core parts of the procedure, including broadcast, connection, service discovery, negotiation of the shared key, data transmission, connection status backhaul.
