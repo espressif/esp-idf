@@ -258,6 +258,29 @@ Now you can build the project. Run::
 
 This command will compile the application and all the ESP-IDF components, generate bootloader, partition table, and application binaries.
 
+.. highlight: none
+
+::
+   $ idf.py build
+   Running cmake in directory /path/to/hello_world/build
+   Executing "cmake -G Ninja --warn-uninitialized /path/to/hello_world"...
+   Warn about uninitialized values.
+   -- Found Git: /usr/bin/git (found version "2.17.0")
+   -- Building empty aws_iot component due to configuration
+   -- Component names: ...
+   -- Component paths: ...
+   
+   ... (more lines of build system output)
+   
+   [527/527] Generating hello-world.bin
+   esptool.py v2.3.1
+   
+   Project build complete. To flash, run this command:
+   ../../../components/esptool_py/esptool/esptool.py -p (PORT) -b 921600 write_flash --flash_mode dio --flash_size detect --flash_freq 40m 0x10000 build/hello-world.bin  build 0x1000 build/bootloader/bootloader.bin 0x8000 build/partition_table/partition-table.bin
+   or run 'idf.py flash'
+
+If there are no errors, the build will finish by generating the firmware binary .bin file.
+
 Flash To A Device
 =================
 

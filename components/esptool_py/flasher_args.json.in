@@ -7,5 +7,11 @@
         "0x8000" : "partition_table/partition-table.bin",
         "${CONFIG_APP_OFFSET}" : "${PROJECT_NAME}.bin",
         "${PHY_PARTITION_OFFSET}" : "${PHY_PARTITION_BIN_FILE}"
-    }
+    },
+    "bootloader" :      { "offset" : "0x1000",
+                          "file" : "bootloader/bootloader.bin" },
+    "app" :             { "offset" : "${CONFIG_APP_OFFSET}",
+                          "file" : "${PROJECT_NAME}.bin" },
+    "partition_table" : { "offset" : "0x8000",
+                          "file" : "partition_table/partition-table.bin" }
 }
