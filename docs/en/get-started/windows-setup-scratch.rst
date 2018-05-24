@@ -45,10 +45,10 @@ Once Python is installed, open a Windows Command Prompt from the Start menu and 
 
   pip install pyserial
 
-MConf
-^^^^^
+MConf for IDF
+^^^^^^^^^^^^^
 
-Download the ESP-IDF customized version of the configuration tool mconf from the `mconf releases page <mconf>`_.
+Download the configuration tool mconf-idf from the `kconfig-frontends releases page <mconf-idf>`_. This is the ``mconf`` configuration tool with some minor customizations for ESP-IDF.
 
 This tool will also need to be unzipped to a directory which is then `added to your Path <add-directory-windows-path>`_.
 
