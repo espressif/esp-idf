@@ -8,6 +8,8 @@ Standard Setup of Toolchain for Mac OS
 Install Prerequisites
 =====================
 
+ESP-IDF will use the version of Python installed by default on Mac OS.
+
 - install pip::
 
     sudo easy_install pip
