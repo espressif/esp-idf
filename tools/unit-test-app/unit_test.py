@@ -131,6 +131,7 @@ def run_unit_test_cases(env, extra_data):
     failed_cases = []
 
     for ut_config in case_config:
+        Utility.console_log("Running unit test for config: " + ut_config, "O")
         dut = env.get_dut("unit-test-app", app_path=ut_config)
         dut.start_app()
 
@@ -365,6 +366,7 @@ def run_multiple_devices_cases(env, extra_data):
     case_config = format_test_case_config(extra_data)
     DUTS = {}
     for ut_config in case_config:
+        Utility.console_log("Running unit test for config: " + ut_config, "O")
         for one_case in case_config[ut_config]:
             case_run(DUTS, ut_config, env, one_case, failed_cases)
 
@@ -396,6 +398,7 @@ def run_multiple_stage_cases(env, extra_data):
     failed_cases = []
 
     for ut_config in case_config:
+        Utility.console_log("Running unit test for config: " + ut_config, "O")
         dut = env.get_dut("unit-test-app", app_path=ut_config)
         dut.start_app()
 
