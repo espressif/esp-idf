@@ -54,6 +54,8 @@ MacOS ::
     ls /dev/cu.*
 
 
+.. note: MacOS users: if you don't see the serial port then check you have the USB/serial drivers installed as shown in the Getting Started guide for your particular development board. For MacOS High Sierra (10.13), you may also have to explicitly allow the drivers to load. Open System Preferences -> Security & Privacy -> General and check if there is a message shown here about "System Software from developer ..." where the developer name is Silicon Labs or FTDI.
+
 .. _linux-dialout-group:
 
 Adding user to ``dialout`` on Linux
