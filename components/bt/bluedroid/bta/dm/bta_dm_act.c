@@ -4568,6 +4568,7 @@ void bta_dm_ble_set_scan_fil_params(tBTA_DM_MSG *p_data)
                                 p_data->ble_set_scan_fil_params.scan_window,
                                 p_data->ble_set_scan_fil_params.scan_mode,
                                 p_data->ble_set_scan_fil_params.addr_type_own,
+                                p_data->ble_set_scan_fil_params.scan_duplicate_filter,
                                 p_data->ble_set_scan_fil_params.scan_filter_policy,
                                 p_data->ble_set_scan_fil_params.scan_param_setup_cback);
 }

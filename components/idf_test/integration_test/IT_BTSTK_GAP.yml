@@ -798,7 +798,7 @@ test cases:
     - ['R PC_COM C +NIC_START:OK']
   - - "SSC SSC1 bleadv -D -z stop"
     - ["R SSC1 C +BLEADV"]
-  - - LOOP 2 2 "['0x20-0x40','0xA0-0xB0']" "['NPDU','PDU']"
+  - - LOOP 2 2 "['0x20-0x40','0xA0-0xB0']" "['PDU','PDU']"
     - [""]
   - - "SSC SSC1 bleadv -D -z start -t 2 -i {%s}"
     - ["R SSC1 C +BLEADV:OK"]
@@ -842,7 +842,7 @@ test cases:
     - ['R PC_COM C +NIC_START:OK']
   - - "SSC SSC1 bleadv -D -z stop"
     - ["R SSC1 C +BLEADV"]
-  - - LOOP 2 2 "['0x20-0x40','0xA0-0xB0']" "['NPDU','PDU']"
+  - - LOOP 2 2 "['0x20-0x40','0xA0-0xB0']" "['PDU','PDU']"
     - [""]
   - - "SSC SSC1 bleadv -D -z start -t 3 -i {%s}"
     - ["R SSC1 C +BLEADV:OK"]
@@ -890,7 +890,7 @@ test cases:
     - ["R SSC1 C +BLEADV:OK"]
   - - "SSC SSC2 bleadv -D -z stop"
     - ["R SSC2 C +BLEADV:OK"]
-  - - "SSC SSC2 blescan -L -c 0 -s 0"
+  - - "SSC SSC2 blescan -L -c 0 -s 0 -d 1"
     - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
   - - "SSC SSC2 blescan -D -z start -t 3 -e 2"
     - - 'P SSC2 RE "\+BTSCANEXT:%%s,man,0x1011121314151617181910111213141516171819"%%(<dut1_bt_mac>)'
@@ -944,7 +944,7 @@ test cases:
     - ["R SSC2 C +BLEADV:OK"]
   - - LOOP 4 2 "[0,1,2,3]"
     - ['']
-  - - "SSC SSC2 blescan -L -c 0 -s 1 -o {%d}"
+  - - "SSC SSC2 blescan -L -c 0 -s 1 -o {%d} -d 1"
     - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
   - - "SSC SSC2 blescan -D -z start -t 1"
     - ['R SSC2 P <dut1_bt_mac> C Complete']
@@ -1075,7 +1075,7 @@ test cases:
     - ["R SSC1 C +BLEADV:OK"]
   - - "SSC SSC1 bleadv -D -z start"
     - ["R SSC1 C +BLEADV:OK"]
-  - - "SSC SSC2 blescan -L -c 0"
+  - - "SSC SSC2 blescan -L -c 0 -d 1"
     - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
   - - "SSC SSC2 blescan -D -z start -t 1"
     - ["R SSC2 P <dut1_bt_mac> C Complete"]
@@ -1538,6 +1538,8 @@ test cases:
   - ""
   - - "SSC SSC1 bleadv -D -z stop"
     - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC2 blescan -L -c 0 -d 1"
+    - ['R SSC2 C +BLESCAN']
   - - "SSC SSC1 bleadv -R -t 1 -r 0x020AEB06FF1112131415051220004000021901020106"
     - ["R SSC1 C +BLEADV:OK"]
   - - "SSC SSC1 bleadv -D -z start"
@@ -1584,6 +1586,8 @@ test cases:
     - ["R SSC1 C +BLEADV"]
   - - "SSC SSC2 bleadv -D -z stop"
     - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC2 blescan -L -c 0 -d 1"
+    - ['R SSC2 C +BLESCAN']
   - - LOOP 4 3 "['0302ABCD','0303ABCD','0504ABCDABCD','0505ABCDABCD',]" "['insrv16,0xABCD','srv16,0xABCD','insrv32,0xABCDABCD','srv32,0xABCDABCD']"
   - - "SSC SSC1 bleadv -R -t 1 -r 0x{%s}"
     - ["R SSC1 C +BLEADV:OK"]
@@ -1633,6 +1637,8 @@ test cases:
     - ["R SSC1 C +BLEADV"]
   - - "SSC SSC2 bleadv -D -z stop"
     - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC2 blescan -L -c 0 -d 1"
+    - ['R SSC2 C +BLESCAN']  
   - - LOOP 3 3 "['0416ABCDEF','0620ABCDABCDEF','1221ABCDABCDABCDABCDABCDABCDABCDABCDEF',]" "['srvdata,0xABCDEF','srvdata32,0xABCDABCDEF','srvdata128,0xABCDABCDABCDABCDABCDABCDABCDABCDEF']"
   - - "SSC SSC1 bleadv -R -t 1 -r 0x{%s}"
     - ["R SSC1 C +BLEADV:OK"]
@@ -1671,6 +1677,8 @@ test cases:
   - ""
   - - "SSC SSC1 bleadv -D -z stop"
     - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC2 blescan -L -c 0 -d 1"
+    - ['R SSC2 C +BLESCAN']
   - - "SSC SSC1 bleadv -R -t 1 -r 0x15FF1011121314151617181910111213141516171819"
     - ["R SSC1 C +BLEADV:OK"]
   - - "SSC SSC1 bleadv -R -t 2 -r 0x020AEB051220004000021901020106"
