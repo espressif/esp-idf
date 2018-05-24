@@ -33,6 +33,24 @@ typedef struct {
 
 static const char message[] = "Hello world!";
 
+static int open_dummy_socket()
+{
+    const struct addrinfo hints = {
+        .ai_family = AF_INET,
+        .ai_socktype = SOCK_DGRAM,
+    };
+    struct addrinfo *res = NULL;
+
+    const int err = getaddrinfo("localhost", "80", &hints, &res);
+    TEST_ASSERT_EQUAL(0, err);
+    TEST_ASSERT_NOT_NULL(res);
+
+    const int dummy_socket_fd = socket(res->ai_family, res->ai_socktype, 0);
+    TEST_ASSERT(dummy_socket_fd >= 0);
+
+    return dummy_socket_fd;
+}
+
 static int socket_init()
 {
     const struct addrinfo hints = {
@@ -185,11 +203,13 @@ TEST_CASE("socket can do select()", "[vfs]")
     char recv_message[sizeof(message)];
 
     init(&uart_fd, &socket_fd);
+    const int dummy_socket_fd = open_dummy_socket();
 
     fd_set rfds;
     FD_ZERO(&rfds);
     FD_SET(uart_fd, &rfds);
     FD_SET(socket_fd, &rfds);
+    FD_SET(dummy_socket_fd, &rfds);
 
     const test_task_param_t test_task_param = {
         .fd = socket_fd,
@@ -199,9 +219,10 @@ TEST_CASE("socket can do select()", "[vfs]")
     TEST_ASSERT_NOT_NULL(test_task_param.sem);
     start_task(&test_task_param);
 
-    const int s = select(MAX(uart_fd, socket_fd) + 1, &rfds, NULL, NULL, &tv);
-    TEST_ASSERT_EQUAL(s, 1);
+    const int s = select(MAX(MAX(uart_fd, socket_fd), dummy_socket_fd) + 1, &rfds, NULL, NULL, &tv);
+    TEST_ASSERT_EQUAL(1, s);
     TEST_ASSERT_UNLESS(FD_ISSET(uart_fd, &rfds));
+    TEST_ASSERT_UNLESS(FD_ISSET(dummy_socket_fd, &rfds));
     TEST_ASSERT(FD_ISSET(socket_fd, &rfds));
 
     int read_bytes = read(socket_fd, recv_message, sizeof(message));
@@ -212,6 +233,7 @@ TEST_CASE("socket can do select()", "[vfs]")
     vSemaphoreDelete(test_task_param.sem);
 
     deinit(uart_fd, socket_fd);
+    close(dummy_socket_fd);
 }
 
 TEST_CASE("select() timeout", "[vfs]")
