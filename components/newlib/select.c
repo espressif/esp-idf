@@ -14,8 +14,17 @@
 
 #include <sys/select.h>
 #include "esp_vfs.h"
+#include "sdkconfig.h"
+
+#ifdef CONFIG_USE_ONLY_LWIP_SELECT
+#include "lwip/sockets.h"
+#endif
 
 int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout)
 {
+#ifdef CONFIG_USE_ONLY_LWIP_SELECT
+    return lwip_select(nfds, readfds, writefds, errorfds, timeout);
+#else
     return esp_vfs_select(nfds, readfds, writefds, errorfds, timeout);
+#endif
 }
