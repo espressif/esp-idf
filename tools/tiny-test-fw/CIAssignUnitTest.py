@@ -17,25 +17,24 @@ from Utility import CIAssignTest
 
 
 class Group(CIAssignTest.Group):
-    SORT_KEYS = ["Test App", "SDK", "test environment", "multi_device", "multi_stage"]
-    CI_JOB_MATCH_KEYS = ["Test App", "SDK", "test environment"]
+    SORT_KEYS = ["config", "SDK", "test environment", "multi_device", "multi_stage", "tags"]
     MAX_CASE = 30
     ATTR_CONVERT_TABLE = {
         "execution_time": "execution time"
     }
+    # when IDF support multiple chips, SDK will be moved into tags, we can remove it
+    CI_JOB_MATCH_KEYS = ["test environment", "SDK"]
+
+    def __init__(self, case):
+        super(Group, self).__init__(case)
+        for tag in self._get_case_attr(case, "tags"):
+            self.ci_job_match_keys.add(tag)
 
     @staticmethod
     def _get_case_attr(case, attr):
         if attr in Group.ATTR_CONVERT_TABLE:
             attr = Group.ATTR_CONVERT_TABLE[attr]
         return case[attr]
-
-    @staticmethod
-    def _get_ut_config(test_app):
-        # we format test app "UT_ + config" when parsing test cases
-        # now we need to extract config
-        assert test_app[:3] == "UT_"
-        return test_app[3:]
 
     def _create_extra_data(self, test_function):
         """
@@ -45,7 +44,7 @@ class Group(CIAssignTest.Group):
         case_data = []
         for case in self.case_list:
             one_case_data = {
-                "config": self._get_ut_config(self._get_case_attr(case, "Test App")),
+                "config": self._get_case_attr(case, "config"),
                 "name": self._get_case_attr(case, "summary"),
                 "reset": self._get_case_attr(case, "reset"),
                 "timeout": self._get_case_attr(case, "timeout"),
@@ -101,8 +100,7 @@ class UnitTestAssignTest(CIAssignTest.AssignTest):
     def __init__(self, test_case_path, ci_config_file):
         CIAssignTest.AssignTest.__init__(self, test_case_path, ci_config_file, case_group=Group)
 
-    @staticmethod
-    def _search_cases(test_case_path, case_filter=None):
+    def _search_cases(self, test_case_path, case_filter=None):
         """
         For unit test case, we don't search for test functions.
         The unit test cases is stored in a yaml file which is created in job build-idf-test.

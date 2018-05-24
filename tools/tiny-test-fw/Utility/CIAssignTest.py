@@ -45,7 +45,7 @@ import json
 
 import yaml
 
-from Utility import (CaseConfig, SearchCases, GitlabCIJob)
+from Utility import (CaseConfig, SearchCases, GitlabCIJob, console_log)
 
 
 class Group(object):
@@ -63,8 +63,8 @@ class Group(object):
         self.execution_time = 0
         self.case_list = [case]
         self.filters = dict(zip(self.SORT_KEYS, [self._get_case_attr(case, x) for x in self.SORT_KEYS]))
-        self.ci_job_match_keys = dict(zip(self.CI_JOB_MATCH_KEYS,
-                                      [self._get_case_attr(case, x) for x in self.CI_JOB_MATCH_KEYS]))
+        # we use ci_job_match_keys to match CI job tags. It's a set of required tags.
+        self.ci_job_match_keys = set([self._get_case_attr(case, x) for x in self.CI_JOB_MATCH_KEYS])
 
     @staticmethod
     def _get_case_attr(case, attr):
@@ -206,7 +206,11 @@ class AssignTest(object):
                     break
             else:
                 failed_to_assign.append(group)
-        assert not failed_to_assign
+        if failed_to_assign:
+            console_log("Please add the following jobs to .gitlab-ci.yml with specific tags:", "R")
+            for group in failed_to_assign:
+                console_log("* Add job with: " + ",".join(group.ci_job_match_keys), "R")
+            raise RuntimeError("Failed to assign test case to CI jobs")
 
     def output_configs(self, output_path):
         """
