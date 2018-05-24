@@ -43,7 +43,7 @@ endif
 endif # MING32
 endif # MSYSTEM
 
-default: mconf conf
+default: mconf-idf conf-idf
 
 xconfig: qconf
 	$< $(silent) $(Kconfig)
@@ -51,41 +51,41 @@ xconfig: qconf
 gconfig: gconf
 	$< $(silent) $(Kconfig)
 
-menuconfig: mconf
+menuconfig: mconf-idf
 	$< $(silent) $(Kconfig)
 
-config: conf
+config: conf-idf
 	$< $(silent) --oldaskconfig $(Kconfig)
 
 nconfig: nconf
 	$< $(silent) $(Kconfig)
 
-silentoldconfig: conf
+silentoldconfig: conf-idf
 	mkdir -p include/config include/generated
 	$< $(silent) --$@ $(Kconfig)
 
-localyesconfig localmodconfig: streamline_config.pl conf
+localyesconfig localmodconfig: streamline_config.pl conf-idf
 	mkdir -p include/config include/generated
 	perl $< --$@ . $(Kconfig) > .tmp.config
 	if [ -f .config ]; then 					\
 			cmp -s .tmp.config .config ||			\
 			(mv -f .config .config.old.1;			\
 			 mv -f .tmp.config .config;			\
-			 conf $(silent) --silentoldconfig $(Kconfig); \
+			 conf-idf $(silent) --silentoldconfig $(Kconfig); \
 			 mv -f .config.old.1 .config.old)		\
 	else								\
 			mv -f .tmp.config .config;			\
-			conf $(silent) --silentoldconfig $(Kconfig); \
+			conf-idf $(silent) --silentoldconfig $(Kconfig); \
 	fi
 	rm -f .tmp.config
 
 
-# These targets map 1:1 to the commandline options of 'conf'
+# These targets map 1:1 to the commandline options of 'conf-idf'
 simple-targets := oldconfig allnoconfig allyesconfig allmodconfig \
 	alldefconfig randconfig listnewconfig olddefconfig
 PHONY += $(simple-targets)
 
-$(simple-targets): conf
+$(simple-targets): conf-idf
 	$< $(silent) --$@ $(Kconfig)
 
 PHONY += oldnoconfig savedefconfig defconfig
@@ -95,10 +95,10 @@ PHONY += oldnoconfig savedefconfig defconfig
 # counter-intuitive name.
 oldnoconfig: olddefconfig
 
-savedefconfig: conf
+savedefconfig: conf-idf
 	$< $(silent) --$@=defconfig $(Kconfig)
 
-defconfig: conf
+defconfig: conf-idf
 ifeq ($(KBUILD_DEFCONFIG),)
 	$< $(silent) --defconfig $(Kconfig)
 else
@@ -111,12 +111,12 @@ else
 endif
 endif
 
-%_defconfig: conf
+%_defconfig: conf-idf
 	$< $(silent) --defconfig=arch/$(SRCARCH)/configs/$@ $(Kconfig)
 
 configfiles=$(wildcard $(srctree)/kernel/configs/$@ $(srctree)/arch/$(SRCARCH)/configs/$@)
 
-%.config: conf
+%.config: conf-idf
 	$(if $(call configfiles),, $(error No configuration exists for this target on this architecture))
 	$(CONFIG_SHELL) $(srctree)/scripts/kconfig/merge_config.sh -m .config $(configfiles)
 	+yes "" | $(MAKE) -f $(srctree)/Makefile oldconfig
@@ -178,10 +178,10 @@ lxdialog/%.o: $(SRCDIR)/lxdialog/%.c
 
 # ===========================================================================
 # Shared Makefile for the various kconfig executables:
-# conf:	  Used for defconfig, oldconfig and related targets
+# conf-idf:	  Used for defconfig, oldconfig and related targets
 # nconf:  Used for the nconfig target.
 #         Utilizes ncurses
-# mconf:  Used for the menuconfig target
+# mconf-idf:  Used for the menuconfig target
 #         Utilizes the lxdialog package
 # qconf:  Used for the xconfig target
 #         Based on Qt which needs to be installed to compile it
@@ -200,14 +200,15 @@ qconf-cxxobjs	:= qconf.o
 qconf-objs	:= zconf.tab.o
 gconf-objs	:= gconf.o zconf.tab.o
 
-hostprogs-y := conf nconf mconf kxgettext qconf gconf
+hostprogs-y := conf-idf nconf mconf-idf kxgettext qconf gconf
 
 all-objs := $(conf-objs) $(mconf-objs) $(lxdialog)
 all-deps := $(all-objs:.o=.d)
 
 clean-files	:= qconf.moc .tmp_qtcheck .tmp_gtkcheck
 clean-files	+= zconf.tab.c zconf.lex.c zconf.hash.c gconf.glade.h
-clean-files += $(all-objs) $(all-deps) conf mconf
+clean-files += $(all-objs) $(all-deps) conf-idf mconf-idf conf mconf
+# (note: cleans both mconf & conf (old names) and conf-idf & mconf-idf (new names))
 
 # Check that we have the required ncurses stuff installed for lxdialog (menuconfig)
 PHONY += dochecklxdialog
@@ -324,10 +325,10 @@ gconf.glade.h: gconf.glade
 	gconf.glade
 
 
-mconf: lxdialog $(mconf-objs)
+mconf-idf: lxdialog $(mconf-objs)
 	$(CC) -o $@ $(mconf-objs) $(LOADLIBES_mconf)
 
-conf: $(conf-objs)
+conf-idf: $(conf-objs)
 	$(CC) -o $@ $(conf-objs) $(LOADLIBES_conf)
 
 zconf.tab.c: zconf.lex.c
