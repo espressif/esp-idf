@@ -2236,7 +2236,7 @@ void init_alloc_info (
 /* exFAT: Load the object's directory entry block */
 /*------------------------------------------------*/
 static
-FRESULT load_obj_xdir (	
+FRESULT load_obj_xdir (
 	FF_DIR* dp,			/* Blank directory object to be used to access containing direcotry */
 	const FFOBJID* obj	/* Object with its containing directory information */
 )
@@ -5975,7 +5975,7 @@ FRESULT f_fdisk (
 	BYTE s_hd, e_hd, *p, *buf = (BYTE*)work;
 	DSTATUS stat;
 	DWORD sz_disk, sz_part, s_part;
-    DWORD cluster_size = CLUSTER_SIZE;
+	DWORD cluster_size = CLUSTER_SIZE;
 	FRESULT res;
 
 
@@ -5991,14 +5991,17 @@ FRESULT f_fdisk (
 	if (!buf) return FR_NOT_ENOUGH_CORE;
 
 	/* Determine the CHS without any consideration of the drive geometry */
-    for (n = 16; n < 256 && sz_disk / n / cluster_size > 1024; n *= 2) ;
+	for (n = 16; n < 256 && sz_disk / n / cluster_size > 1024; n *= 2)
+	{
+		;
+	}
 	if (n == 256) n--;
-    if (sz_disk < SUPPORTED_FLASH_SIZE) {
-        cluster_size = 1;
-        n = sz_disk;
-    }
+	if (sz_disk < SUPPORTED_FLASH_SIZE) {
+		cluster_size = 1;
+		n = sz_disk;
+	}
 	e_hd = n - 1;
-    sz_cyl = cluster_size * n;
+	sz_cyl = cluster_size * n;
 	tot_cyl = sz_disk / sz_cyl;
 
 	/* Create partition table */
@@ -6011,7 +6014,7 @@ FRESULT f_fdisk (
 		sz_part = (DWORD)sz_cyl * p_cyl;
 		if (i == 0) {	/* Exclude first track of cylinder 0 */
 			s_hd = 1;
-            s_part += cluster_size; sz_part -= cluster_size;
+			s_part += cluster_size; sz_part -= cluster_size;
 		} else {
 			s_hd = 0;
 		}
