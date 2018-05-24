@@ -309,6 +309,54 @@ def fullclean(action, args):
         else:
             os.remove(f)
 
+def print_closing_message(args):
+    # print a closing message of some kind
+    #
+
+    if "flash" in str(args.actions):
+        print("Done")
+        return
+
+    # Otherwise, if we built any binaries print a message about
+    # how to flash them
+    def print_flashing_message(title, key):
+        print("\n%s build complete. To flash, run this command:" % title)
+
+        with open(os.path.join(args.build_dir, "flasher_args.json")) as f:
+            flasher_args = json.load(f)
+
+        def flasher_path(f):
+            return os.path.relpath(os.path.join(args.build_dir, f))
+
+        if key != "project":
+            cmd = ""
+            if key == "bootloader":
+                cmd = " ".join(flasher_args["write_flash_args"]) + " "
+
+            cmd += flasher_args[key]["offset"] + " "
+            cmd += flasher_path(flasher_args[key]["file"])
+        else:
+            cmd = " ".join(flasher_args["write_flash_args"]) + " "
+            for o,f in flasher_args["flash_files"].items():
+                cmd += o + " " + flasher_path(f) + " "
+
+        print("%s -p %s -b %s write_flash %s" % (
+            os.path.relpath("%s/components/esptool_py/esptool/esptool.py" % os.environ["IDF_PATH"]),
+            args.port or "(PORT)",
+            args.baud,
+            cmd.strip()))
+        print("or run 'idf.py %s'" % (key + "-flash" if key != "project" else "flash",))
+
+    if "all" in args.actions or "build" in args.actions:
+        print_flashing_message("Project", "project")
+    else:
+        if "app" in args.actions:
+            print_flashing_message("App", "app")
+        if "partition_table" in args.actions:
+            print_flashing_message("Partition Table", "partition_table")
+        if "bootloader" in args.actions:
+            print_flashing_message("Bootloader", "bootloader")
+
 ACTIONS = {
     # action name : ( function (or alias), dependencies, order-only dependencies )
     "all" :                  ( build_target, [], [ "reconfigure", "menuconfig", "clean", "fullclean" ] ),
@@ -342,7 +390,6 @@ def get_commandline_options():
         else:
             result.append(a)
     return result
-
 
 def main():
     if sys.version_info[0] != 2 or sys.version_info[1] != 7:
@@ -394,10 +441,12 @@ def main():
 
         completed_actions.add(action)
 
-    while len(args.actions) > 0:
-        execute_action(args.actions[0], args.actions[1:])
-        args.actions.pop(0)
+    actions = list(args.actions)
+    while len(actions) > 0:
+        execute_action(actions[0], actions[1:])
+        actions.pop(0)
 
+    print_closing_message(args)
 
 if __name__ == "__main__":
     try:
