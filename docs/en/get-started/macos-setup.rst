@@ -32,6 +32,13 @@ ESP-IDF will use the version of Python installed by default on Mac OS.
 
 - It is strongly recommended to also install ccache_ for faster builds. If you have HomeBrew_, this can be done via ``brew install ccache`` or ``sudo port install ccache`` on MacPorts_.
 
+.. note::
+   If an error like this is shown during any step::
+
+     xcrun: error: invalid active developer path (/Library/Developer/CommandLineTools), missing xcrun at: /Library/Developer/CommandLineTools/usr/bin/xcrun
+
+    Then you will need to install the XCode command line tools to continue. You can install these by running ``xcode-select --install``.
+
 Toolchain Setup
 ===============
 
