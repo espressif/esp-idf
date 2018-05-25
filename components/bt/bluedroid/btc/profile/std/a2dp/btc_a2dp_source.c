@@ -820,7 +820,7 @@ static void btc_a2dp_source_enc_init(BT_HDR *p_msg)
     btc_aa_src_cb.timestamp = 0;
 
     /* SBC encoder config (enforced even if not used) */
-
+    btc_sbc_encoder.sbc_mode = SBC_MODE_STD;
     btc_sbc_encoder.s16ChannelMode = pInitAudio->ChannelMode;
     btc_sbc_encoder.s16NumOfSubBands = pInitAudio->NumOfSubBands;
     btc_sbc_encoder.s16NumOfBlocks = pInitAudio->NumOfBlocks;
@@ -879,7 +879,6 @@ static void btc_a2dp_source_enc_update(BT_HDR *p_msg)
                                       BTC_MEDIA_AA_SBC_OFFSET - sizeof(BT_HDR))
                                      < pUpdateAudio->MinMtuSize) ? (BTC_MEDIA_AA_BUF_SIZE - BTC_MEDIA_AA_SBC_OFFSET
                                              - sizeof(BT_HDR)) : pUpdateAudio->MinMtuSize;
-
         /* Set the initial target bit rate */
         pstrEncParams->u16BitRate = btc_a2dp_source_get_sbc_rate();
 
