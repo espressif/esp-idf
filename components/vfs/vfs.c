@@ -782,13 +782,15 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
             continue;
         }
 
-        if (!socket_select && is_socket_fd) {
-            // no socket_select found yet and the fd is for a socket so take a look
-            if ((readfds && FD_ISSET(fd, readfds)) ||
-                    (writefds && FD_ISSET(fd, writefds)) ||
-                    (errorfds && FD_ISSET(fd, errorfds))) {
-                const vfs_entry_t *vfs = s_vfs[vfs_index];
-                socket_select = vfs->vfs.socket_select;
+        if (is_socket_fd) {
+            if (!socket_select) {
+                // no socket_select found yet so take a look
+                if ((readfds && FD_ISSET(fd, readfds)) ||
+                        (writefds && FD_ISSET(fd, writefds)) ||
+                        (errorfds && FD_ISSET(fd, errorfds))) {
+                    const vfs_entry_t *vfs = s_vfs[vfs_index];
+                    socket_select = vfs->vfs.socket_select;
+                }
             }
             continue;
         }
