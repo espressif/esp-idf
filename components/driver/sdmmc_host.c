@@ -17,76 +17,21 @@
 #include <sys/param.h>
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
-#include "soc/sdmmc_struct.h"
-#include "soc/sdmmc_reg.h"
 #include "soc/io_mux_reg.h"
-#include "soc/gpio_sig_map.h"
 #include "rom/gpio.h"
 #include "driver/gpio.h"
 #include "driver/sdmmc_host.h"
 #include "driver/periph_ctrl.h"
 #include "sdmmc_private.h"
 #include "freertos/semphr.h"
+#include "soc/sdmmc_periph.h"
 
 #define SDMMC_EVENT_QUEUE_LENGTH 32
-
-typedef struct {
-    uint32_t clk;
-    uint32_t cmd;
-    uint32_t d0;
-    uint32_t d1;
-    uint32_t d2;
-    uint32_t d3;
-    uint32_t d4;
-    uint32_t d5;
-    uint32_t d6;
-    uint32_t d7;
-    uint8_t d1_gpio;
-    uint8_t d3_gpio;
-    uint8_t card_detect;
-    uint8_t write_protect;
-    uint8_t card_int;
-    uint8_t width;
-} sdmmc_slot_info_t;
 
 
 static void sdmmc_isr(void* arg);
 static void sdmmc_host_dma_init();
 
-static const sdmmc_slot_info_t s_slot_info[2]  = {
-    {
-        .clk = PERIPHS_IO_MUX_SD_CLK_U,
-        .cmd = PERIPHS_IO_MUX_SD_CMD_U,
-        .d0 = PERIPHS_IO_MUX_SD_DATA0_U,
-        .d1 = PERIPHS_IO_MUX_SD_DATA1_U,
-        .d2 = PERIPHS_IO_MUX_SD_DATA2_U,
-        .d3 = PERIPHS_IO_MUX_SD_DATA3_U,
-        .d1_gpio = 8,
-        .d3_gpio = 10,
-        .d4 = PERIPHS_IO_MUX_GPIO16_U,
-        .d5 = PERIPHS_IO_MUX_GPIO17_U,
-        .d6 = PERIPHS_IO_MUX_GPIO5_U,
-        .d7 = PERIPHS_IO_MUX_GPIO18_U,
-        .card_detect = HOST_CARD_DETECT_N_1_IDX,
-        .write_protect = HOST_CARD_WRITE_PRT_1_IDX,
-        .card_int = HOST_CARD_INT_N_1_IDX,
-        .width = 8
-    },
-    {
-        .clk = PERIPHS_IO_MUX_MTMS_U,
-        .cmd = PERIPHS_IO_MUX_MTDO_U,
-        .d0 = PERIPHS_IO_MUX_GPIO2_U,
-        .d1 = PERIPHS_IO_MUX_GPIO4_U,
-        .d2 = PERIPHS_IO_MUX_MTDI_U,
-        .d3 = PERIPHS_IO_MUX_MTCK_U,
-        .d1_gpio = 4,
-        .d3_gpio = 13,
-        .card_detect = HOST_CARD_DETECT_N_2_IDX,
-        .write_protect = HOST_CARD_WRITE_PRT_2_IDX,
-        .card_int = HOST_CARD_INT_N_2_IDX,
-        .width = 4
-    }
-};
 
 static const char* TAG = "sdmmc_periph";
 static intr_handle_t s_intr_handle;
@@ -340,18 +285,24 @@ esp_err_t sdmmc_host_init()
     return ESP_OK;
 }
 
-
-static inline void configure_pin(uint32_t io_mux_reg)
+static void configure_pin(int pin)
 {
     const int sdmmc_func = 3;
     const int drive_strength = 3;
-    PIN_INPUT_ENABLE(io_mux_reg);
-    PIN_FUNC_SELECT(io_mux_reg, sdmmc_func);
-    PIN_SET_DRV(io_mux_reg, drive_strength);
+    assert(pin!=-1);
+    uint32_t reg = GPIO_PIN_MUX_REG[pin];
+    assert(reg != UINT32_MAX);
+    PIN_INPUT_ENABLE(reg);
+    PIN_FUNC_SELECT(reg, sdmmc_func);
+    PIN_SET_DRV(reg, drive_strength);
 }
 
 esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config)
 {
+    bool pullup = slot_config->flags & SDMMC_SLOT_FLAG_INTERNAL_PULLUP;
+    if (pullup) {
+        sdmmc_host_pullup_en(slot, slot_config->width);
+    }
     if (!s_intr_handle) {
         return ESP_ERR_INVALID_STATE;
     }
@@ -366,7 +317,7 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config)
     uint8_t slot_width = slot_config->width;
 
     // Configure pins
-    const sdmmc_slot_info_t* pslot = &s_slot_info[slot];
+    const sdmmc_slot_info_t* pslot = &sdmmc_slot_info[slot];
 
     if (slot_width == SDMMC_SLOT_WIDTH_DEFAULT) {
         slot_width = pslot->width;
@@ -376,13 +327,13 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config)
     }
     s_slot_width[slot] = slot_width;
 
-    configure_pin(pslot->clk);
-    configure_pin(pslot->cmd);
-    configure_pin(pslot->d0);
+    configure_pin(pslot->clk_gpio);
+    configure_pin(pslot->cmd_gpio);
+    configure_pin(pslot->d0_gpio);
 
     if (slot_width >= 4) {
-        configure_pin(pslot->d1);
-        configure_pin(pslot->d2);
+        configure_pin(pslot->d1_gpio);
+        configure_pin(pslot->d2_gpio);
         //force pull-up D3 to make slave detect SD mode. connect to peripheral after width configuration.
         gpio_config_t gpio_conf = {
             .pin_bit_mask = BIT(pslot->d3_gpio),
@@ -394,10 +345,10 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config)
         gpio_config( &gpio_conf );
         gpio_set_level( pslot->d3_gpio, 1 );
         if (slot_width == 8) {
-            configure_pin(pslot->d4);
-            configure_pin(pslot->d5);
-            configure_pin(pslot->d6);
-            configure_pin(pslot->d7);
+            configure_pin(pslot->d4_gpio);
+            configure_pin(pslot->d5_gpio);
+            configure_pin(pslot->d6_gpio);
+            configure_pin(pslot->d7_gpio);
         }
     }
 
@@ -482,7 +433,7 @@ esp_err_t sdmmc_host_set_bus_width(int slot, size_t width)
     if (!(slot == 0 || slot == 1)) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (s_slot_info[slot].width < width) {
+    if (sdmmc_slot_info[slot].width < width) {
         return ESP_ERR_INVALID_ARG;
     }
     const uint16_t mask = BIT(slot);
@@ -492,10 +443,10 @@ esp_err_t sdmmc_host_set_bus_width(int slot, size_t width)
     } else if (width == 4) {
         SDMMC.ctype.card_width_8 &= ~mask;
         SDMMC.ctype.card_width |= mask;
-        configure_pin(s_slot_info[slot].d3);   // D3 was set to GPIO high to force slave into SD 1-bit mode, until 4-bit mode is set
+        configure_pin(sdmmc_slot_info[slot].d3_gpio);   // D3 was set to GPIO high to force slave into SD 1-bit mode, until 4-bit mode is set
     } else if (width == 8){
         SDMMC.ctype.card_width_8 |= mask;
-        configure_pin(s_slot_info[slot].d3);   // D3 was set to GPIO high to force slave into SD 1-bit mode, until 4-bit mode is set
+        configure_pin(sdmmc_slot_info[slot].d3_gpio);   // D3 was set to GPIO high to force slave into SD 1-bit mode, until 4-bit mode is set
     } else {
         return ESP_ERR_INVALID_ARG;
     }
@@ -550,7 +501,7 @@ void sdmmc_host_dma_resume()
 
 esp_err_t sdmmc_host_io_int_enable(int slot)
 {
-    configure_pin(s_slot_info[slot].d1);
+    configure_pin(sdmmc_slot_info[slot].d1_gpio);
     return ESP_OK;
 }
 
@@ -566,7 +517,7 @@ esp_err_t sdmmc_host_io_int_wait(int slot, TickType_t timeout_ticks)
 
     SDMMC.intmask.sdio &= ~BIT(slot);   /* Disable SDIO interrupt */
     SDMMC.rintsts.sdio = BIT(slot);
-    if (gpio_get_level(s_slot_info[slot].d1_gpio) == 0) {
+    if (gpio_get_level(sdmmc_slot_info[slot].d1_gpio) == 0) {
         return ESP_OK;
     }
     /* Otherwise, need to wait for an interrupt. Since D1 was high,
@@ -627,3 +578,34 @@ static void sdmmc_isr(void* arg) {
     }
 }
 
+esp_err_t sdmmc_host_pullup_en(int slot, int width)
+{
+    if (width > sdmmc_slot_info[slot].width) {
+        //in esp32 we only support 8 bit in slot 0, note this is occupied by the flash by default
+        return ESP_ERR_INVALID_ARG;
+    }
+    //according to the spec, the host control the clk, we don't to pull it up here
+    gpio_pullup_en(sdmmc_slot_info[slot].cmd_gpio);
+    gpio_pulldown_dis(sdmmc_slot_info[slot].cmd_gpio);
+    gpio_pullup_en(sdmmc_slot_info[slot].d0_gpio);
+    gpio_pulldown_dis(sdmmc_slot_info[slot].d0_gpio);
+    if (width >= 4) {
+        gpio_pullup_en(sdmmc_slot_info[slot].d1_gpio);
+        gpio_pulldown_dis(sdmmc_slot_info[slot].d1_gpio);
+        gpio_pullup_en(sdmmc_slot_info[slot].d2_gpio);
+        gpio_pulldown_dis(sdmmc_slot_info[slot].d2_gpio);
+        gpio_pullup_en(sdmmc_slot_info[slot].d3_gpio);
+        gpio_pulldown_dis(sdmmc_slot_info[slot].d3_gpio);
+    }
+    if (width == 8) {
+        gpio_pullup_en(sdmmc_slot_info[slot].d4_gpio);
+        gpio_pulldown_dis(sdmmc_slot_info[slot].d4_gpio);
+        gpio_pullup_en(sdmmc_slot_info[slot].d5_gpio);
+        gpio_pulldown_dis(sdmmc_slot_info[slot].d5_gpio);
+        gpio_pullup_en(sdmmc_slot_info[slot].d6_gpio);
+        gpio_pulldown_dis(sdmmc_slot_info[slot].d6_gpio);
+        gpio_pullup_en(sdmmc_slot_info[slot].d7_gpio);
+        gpio_pulldown_dis(sdmmc_slot_info[slot].d7_gpio);
+    }
+    return ESP_OK;
+}
