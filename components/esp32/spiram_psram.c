@@ -570,7 +570,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
     #if CONFIG_BOOTLOADER_VDDSDIO_BOOST_1_9V
         // For flash 80Mhz, we must update ldo voltage in case older version of bootloader didn't do this.
         rtc_vddsdio_config_t cfg = rtc_vddsdio_get_config();
-        if (cfg.enable == 1 && cfg.tieh == 0) {    // VDDSDIO regulator is enabled @ 1.8V
+        if (cfg.enable == 1 && cfg.tieh == RTC_VDDSDIO_TIEH_1_8V) {    // VDDSDIO regulator is enabled @ 1.8V
             cfg.drefh = 3;
             cfg.drefm = 3;
             cfg.drefl = 3;

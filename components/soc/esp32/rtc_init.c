@@ -132,8 +132,8 @@ rtc_vddsdio_config_t rtc_vddsdio_get_config()
     // Otherwise, VDD_SDIO is controlled by bootstrapping pin
     uint32_t strap_reg = REG_READ(GPIO_STRAP_REG);
     result.force = 0;
-    result.tieh = (strap_reg & BIT(5)) ? 0 : 1;
-    result.enable = result.tieh == 0; // only power on the regulator if VDD=1.8
+    result.tieh = (strap_reg & BIT(5)) ? RTC_VDDSDIO_TIEH_1_8V : RTC_VDDSDIO_TIEH_3_3V;
+    result.enable = result.tieh == RTC_VDDSDIO_TIEH_1_8V; // only power on the regulator if VDD=1.8
     return result;
 }
 

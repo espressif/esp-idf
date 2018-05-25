@@ -578,13 +578,16 @@ typedef struct {
  */
 void rtc_init(rtc_config_t cfg);
 
+#define RTC_VDDSDIO_TIEH_1_8V 0 //!< TIEH field value for 1.8V VDDSDIO
+#define RTC_VDDSDIO_TIEH_3_3V 1 //!< TIEH field value for 3.3V VDDSDIO
+
 /**
  * Structure describing vddsdio configuration
  */
 typedef struct {
     uint32_t force : 1;     //!< If 1, use configuration from RTC registers; if 0, use EFUSE/bootstrapping pins.
     uint32_t enable : 1;    //!< Enable VDDSDIO regulator
-    uint32_t tieh  : 1;     //!< Select VDDSDIO voltage: 1 — 1.8V, 0 — 3.3V
+    uint32_t tieh  : 1;     //!< Select VDDSDIO voltage. One of RTC_VDDSDIO_TIEH_1_8V, RTC_VDDSDIO_TIEH_3_3V
     uint32_t drefh : 2;     //!< Tuning parameter for VDDSDIO regulator
     uint32_t drefm : 2;     //!< Tuning parameter for VDDSDIO regulator
     uint32_t drefl : 2;     //!< Tuning parameter for VDDSDIO regulator
