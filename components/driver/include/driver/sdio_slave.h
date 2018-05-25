@@ -20,7 +20,7 @@
 #include "esp_err.h"
 #include "rom/queue.h"
 
-#include "soc/host_reg.h"
+#include "soc/sdio_slave_periph.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -71,6 +71,23 @@ typedef struct {
                             ///< All data that do not fully fill a buffer is still counted as one buffer. E.g. 10 bytes data costs 2 buffers if the size is 8 bytes per buffer.
                             ///< Buffer size of the slave pre-defined between host and slave before communication. All receive buffer given to the driver should be larger than this.
     sdio_event_cb_t     event_cb;           ///< when the host interrupts slave, this callback will be called with interrupt number (0-7).
+    uint32_t            flags; ///< Features to be enabled for the slave, combinations of ``SDIO_SLAVE_FLAG_*``.
+#define SDIO_SLAVE_FLAG_DAT2_DISABLED       BIT(0)      /**< It is required by the SD specification that all 4 data 
+        lines should be used and pulled up even in 1-bit mode or SPI mode. However, as a feature, the user can speicfy 
+        this flag to make use of DAT2 pin in 1-bit mode. Note that the host cannot read CCCR registers to know we don't 
+        support 4-bit mode anymore, please do this at your own risk.
+        */
+#define SDIO_SLAVE_FLAG_HOST_INTR_DISABLED  BIT(1)      /**< The DAT1 line is used as the interrupt line in SDIO        
+        protocol. However, as a feature, the user can speicfy this flag to make use of DAT1 pin of the slave in 1-bit 
+        mode. Note that the host has to do polling to the interrupt registers to know whether there are interrupts from
+        the slave. And it cannot read CCCR registers to know we don't support 4-bit mode anymore, please do this at 
+        your own risk.
+        */
+#define SDIO_SLAVE_FLAG_INTERNAL_PULLUP     BIT(2)      /**< Enable internal pullups for enabled pins. It is required 
+        by the SD specification that all the 4 data lines should be pulled up even in 1-bit mode or SPI mode. Note that 
+        the internal pull-ups are not sufficient for stable communication, please do connect external pull-ups on the 
+        bus. This is only for example and debug use.
+        */
 } sdio_slave_config_t;
 
 /** Handle of a receive buffer, register a handle by calling ``sdio_slave_recv_register_buf``. Use the handle to load the buffer to the

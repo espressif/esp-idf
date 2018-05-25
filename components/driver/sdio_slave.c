@@ -86,10 +86,7 @@ The driver of FIFOs works as below:
 
 #include <string.h>
 #include "driver/sdio_slave.h"
-#include "soc/slc_struct.h"
-#include "soc/slc_reg.h"
-#include "soc/host_struct.h"
-#include "soc/hinf_struct.h"
+#include "soc/sdio_slave_periph.h"
 #include "rom/lldesc.h"
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
@@ -118,41 +115,6 @@ typedef enum {
     STATE_WAIT_FOR_START = 2,
     STATE_SENDING = 3,
 } send_state_t;
-
-typedef struct {
-    uint32_t clk;
-    uint32_t cmd;
-    uint32_t d0;
-    uint32_t d1;
-    uint32_t d2;
-    uint32_t d3;
-    int      func;
-} sdio_slave_slot_info_t ;
-
-// I/O slot of sdio slave:
-// 0: GPIO 6, 11, 7, 8, 9, 10,
-// 1: GPIO 14, 15, 2, 4, 12, 13 for CLK, CMD, D0, D1, D2, D3 respectively.
-// only one peripheral for SDIO and only one slot can work at the same time.
-// currently slot 0 is occupied by SPI for flash
-static const sdio_slave_slot_info_t s_slot_info[2]  = {
-    {
-        .clk = PERIPHS_IO_MUX_SD_CLK_U,
-        .cmd = PERIPHS_IO_MUX_SD_CMD_U,
-        .d0 = PERIPHS_IO_MUX_SD_DATA0_U,
-        .d1 = PERIPHS_IO_MUX_SD_DATA1_U,
-        .d2 = PERIPHS_IO_MUX_SD_DATA2_U,
-        .d3 = PERIPHS_IO_MUX_SD_DATA3_U,
-        .func = 0,
-    }, {
-        .clk = PERIPHS_IO_MUX_MTMS_U,
-        .cmd = PERIPHS_IO_MUX_MTDO_U,
-        .d0 = PERIPHS_IO_MUX_GPIO2_U,
-        .d1 = PERIPHS_IO_MUX_GPIO4_U,
-        .d2 = PERIPHS_IO_MUX_MTDI_U,
-        .d3 = PERIPHS_IO_MUX_MTCK_U,
-        .func = 4,
-    },
-};
 
 // first 3 WORDs of this struct is defined by and compatible to the DMA link list format.
 // sdio_slave_buf_handle_t is of type buf_desc_t*;
@@ -499,13 +461,21 @@ no_mem:
     return ESP_ERR_NO_MEM;
 }
 
-static inline void configure_pin(uint32_t io_mux_reg, uint32_t func)
+static void configure_pin(int pin, uint32_t func, bool pullup)
 {
     const int sdmmc_func = func;
     const int drive_strength = 3;
-    PIN_INPUT_ENABLE(io_mux_reg);
-    PIN_FUNC_SELECT(io_mux_reg, sdmmc_func);
-    PIN_SET_DRV(io_mux_reg, drive_strength);
+    assert(pin!=-1);
+    uint32_t reg = GPIO_PIN_MUX_REG[pin];
+    assert(reg!=UINT32_MAX);
+
+    PIN_INPUT_ENABLE(reg);
+    PIN_FUNC_SELECT(reg, sdmmc_func);
+    PIN_SET_DRV(reg, drive_strength);
+    if (pullup) {
+        gpio_pullup_en(pin);
+        gpio_pulldown_dis(pin);
+    }
 }
 
 static inline esp_err_t sdio_slave_hw_init(sdio_slave_config_t *config)
@@ -514,13 +484,20 @@ static inline esp_err_t sdio_slave_hw_init(sdio_slave_config_t *config)
     SLC.slc0_int_ena.val = 0;
 
     //initialize pin
-    const sdio_slave_slot_info_t *slot = &s_slot_info[1];
-    configure_pin(slot->clk, slot->func);
-    configure_pin(slot->cmd, slot->func);
-    configure_pin(slot->d0, slot->func);
-    configure_pin(slot->d1, slot->func);
-    configure_pin(slot->d2, slot->func);
-    configure_pin(slot->d3, slot->func);
+    const sdio_slave_slot_info_t *slot = &sdio_slave_slot_info[1];
+
+    bool pullup = config->flags & SDIO_SLAVE_FLAG_INTERNAL_PULLUP;
+    configure_pin(slot->clk_gpio, slot->func, false);   //clk doesn't need a pullup
+    configure_pin(slot->cmd_gpio, slot->func, pullup);
+    configure_pin(slot->d0_gpio, slot->func, pullup);
+    if ((config->flags & SDIO_SLAVE_FLAG_HOST_INTR_DISABLED)==0) {
+        configure_pin(slot->d1_gpio, slot->func, pullup);
+    } 
+    if ((config->flags & SDIO_SLAVE_FLAG_DAT2_DISABLED)==0) {
+       configure_pin(slot->d2_gpio, slot->func, pullup); 
+    }
+    configure_pin(slot->d3_gpio, slot->func, pullup);
+
     //enable module and config
     periph_module_reset(PERIPH_SDIO_SLAVE_MODULE);
     periph_module_enable(PERIPH_SDIO_SLAVE_MODULE);
