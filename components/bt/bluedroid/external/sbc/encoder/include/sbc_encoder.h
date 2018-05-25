@@ -67,6 +67,12 @@
 
 #define SBC_NULL    0
 
+#define SBC_MODE_STD      0
+#define SBC_MODE_MSBC     1
+
+#define SBC_SYNC_WORD_STD        (0x9C)
+#define SBC_SYNC_WORD_MSBC       (0xAD)
+
 #ifndef SBC_MAX_NUM_FRAME
 #define SBC_MAX_NUM_FRAME 1
 #endif
@@ -161,6 +167,7 @@ typedef struct SBC_ENC_PARAMS_TAG {
     SINT16 s16BitPool;                              /* 16*numOfSb for mono & dual;
                                                        32*numOfSb for stereo & joint stereo */
     UINT16 u16BitRate;
+    UINT8  sbc_mode;                                /* SBC_MODE_STD or SBC_MODE_MSBC */
     UINT8   u8NumPacketToEncode;                    /* number of sbc frame to encode. Default is 1 */
 #if (SBC_JOINT_STE_INCLUDED == TRUE)
     SINT16 as16Join[SBC_MAX_NUM_OF_SUBBANDS];       /*1 if JS, 0 otherwise*/
