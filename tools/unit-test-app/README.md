@@ -12,6 +12,12 @@ ESP-IDF unit tests are run using Unit Test App. The app can be built with the un
 * Follow the printed instructions to flash, or run `make flash`.
 * Unit test have a few preset sdkconfigs. It provides command `make ut-clean-config_name` and `make ut-build-config_name` (where `config_name` is the file name under `unit-test-app/configs` folder) to build with preset configs. For example, you can use `make ut-build-default TESTS_ALL=1` to build with config file `unit-test-app/configs/default`. Built binary for this config will be copied to `unit-test-app/output/config_name` folder.
 
+# Flash Size
+
+The unit test partition table assumes a 4MB flash size. When testing `TESTS_ALL=1`, this additional factory app partition size is required.
+
+If building unit tests to run on a smaller flash size, edit `partition_table_unit_tests_app.csv` and use `TEST_COMPONENTS=` instead of `TESTS_ALL` if tests don't fit in a smaller factory app partition (exact size will depend on configured options).
+
 # Running Unit Tests
 
 The unit test loader will prompt by showing a menu of available tests to run:
