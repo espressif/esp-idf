@@ -9,19 +9,20 @@
 
 #include "catch.hpp"
 
+extern "C" void init_spi_flash(size_t chip_size, size_t block_size, size_t sector_size, size_t page_size, const char* partition_bin);
+
 TEST_CASE("format disk, open file, write and read file", "[spiffs]")
 {
-    uint32_t size = 0x00400000;
-
-    int flash_handle = esp_flash_create(size, CONFIG_WL_SECTOR_SIZE, 1);
-    esp_partition_t partition = esp_partition_create(size, 0, flash_handle);
+    init_spi_flash(0x00400000, CONFIG_WL_SECTOR_SIZE * 16, CONFIG_WL_SECTOR_SIZE, CONFIG_WL_SECTOR_SIZE, "partitions_table.bin");
 
     spiffs fs;
     spiffs_config cfg;
 
+    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_SPIFFS, "storage");
+
     // Configure objects needed by SPIFFS
     esp_spiffs_t esp_user_data;
-    esp_user_data.partition = &partition;
+    esp_user_data.partition = partition;
     fs.user_data = (void*)&esp_user_data;
 
     cfg.hal_erase_f = spiffs_api_erase;
@@ -31,7 +32,7 @@ TEST_CASE("format disk, open file, write and read file", "[spiffs]")
     cfg.log_page_size = CONFIG_SPIFFS_PAGE_SIZE;
     cfg.phys_addr = 0;
     cfg.phys_erase_block = CONFIG_WL_SECTOR_SIZE;
-    cfg.phys_size = partition.size;
+    cfg.phys_size = partition->size;
 
     uint32_t max_files = 5;
 
@@ -63,34 +64,44 @@ TEST_CASE("format disk, open file, write and read file", "[spiffs]")
     spiffs_res = SPIFFS_open(&fs, "test.txt", SPIFFS_O_CREAT | SPIFFS_O_RDWR, 0);    
     REQUIRE(spiffs_res >= SPIFFS_OK);
 
-    // Write to the test file
+    // Generate data
     spiffs_file file = spiffs_res;
 
-    const char data[] = "Hello, World!";
-    char *read = (char*) malloc(sizeof(data));
+    uint32_t data_size = 100000;
+
+    char *data = (char*) malloc(data_size);
+    char *read = (char*) malloc(data_size);
+
+    for(uint32_t i = 0; i < data_size; i += sizeof(i))
+    {
+        *((uint32_t*)(data + i)) = i;
+    }
 
     s32_t bw;
 
-    spiffs_res = SPIFFS_write(&fs, file, (void*)data, sizeof(data));    
+    // Write data to file
+    spiffs_res = SPIFFS_write(&fs, file, (void*)data, data_size);    
     REQUIRE(spiffs_res >= SPIFFS_OK);
-    REQUIRE(spiffs_res == sizeof(data));
+    REQUIRE(spiffs_res == data_size);
 
     // Set the file object pointer to the beginning
     spiffs_res = SPIFFS_lseek(&fs, file, 0, SPIFFS_SEEK_SET);
     REQUIRE(spiffs_res >= SPIFFS_OK);
     
-    // Set the file object pointer to the beginning
-    spiffs_res = SPIFFS_read(&fs, file, (void*)read, sizeof(data));
+    // Read the file
+    spiffs_res = SPIFFS_read(&fs, file, (void*)read, data_size);
     REQUIRE(spiffs_res >= SPIFFS_OK);
-    REQUIRE(spiffs_res == sizeof(data));
+    REQUIRE(spiffs_res == data_size);
 
     // Close the test file
     spiffs_res = SPIFFS_close(&fs, file);
     REQUIRE(spiffs_res >= SPIFFS_OK);
 
+    REQUIRE(memcmp(data, read, data_size) == 0);
+
     // Unmount
     SPIFFS_unmount(&fs);
 
-    esp_flash_delete(flash_handle);
     free(read);
+    free(data);
 }

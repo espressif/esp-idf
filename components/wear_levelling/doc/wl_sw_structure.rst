@@ -10,10 +10,9 @@ The WLC Files
 ^^^^^^^^^^^^^^^
 The WLC consist of few components that are implemented in different files. The list and brief description of these components written below.
 
- - Flash_Access - memory access interface. Used to access the memory. A classes WL_Flash, Partition, SPI_Flash, Flash_Emulator are implements this interface.
+ - Flash_Access - memory access interface. Used to access the memory. A classes WL_Flash, Partition, SPI_Flash are implements this interface.
  - SPI_Flash - class implements the Flash_Access interface to provide access to the flash memory.
  - Partition - class implements the Flash_Access interface to provide access to the partition.
- - Flash_Emulator - class implements the Flash_Access interface to provide test functionality for WLC testing.
  - WL_Flash - the main class that implements wear levelling functionality.
  - WL_State -  contains state structure of the WLC.
  - WL_Config - contains structure to configure the WLC component at startup.
