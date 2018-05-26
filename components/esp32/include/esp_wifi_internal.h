@@ -35,6 +35,7 @@
 #include "esp_err.h"
 #include "esp_wifi_types.h"
 #include "esp_event.h"
+#include "esp_wifi.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -125,6 +126,17 @@ esp_err_t esp_wifi_internal_reg_rxcb(wifi_interface_t ifx, wifi_rxcb_t fn);
   *     - others : fail
   */
 esp_err_t esp_wifi_internal_set_sta_ip(void);
+
+/**
+  * @brief     Check the MD5 values of the OS adapter header files in IDF and WiFi library
+  *
+  * @attention 1. It is used for internal CI version check
+  *
+  * @return
+  *     - ESP_OK : succeed
+  *     - ESP_WIFI_INVALID_ARG : MD5 check fail
+  */
+esp_err_t esp_wifi_internal_osi_funcs_md5_check(const char *md5);
 
 /**
   * @brief     Allocate a chunk of memory for WiFi driver
