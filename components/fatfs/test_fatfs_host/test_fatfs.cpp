@@ -9,8 +9,12 @@
 
 #include "catch.hpp"
 
+extern "C" void init_spi_flash(size_t chip_size, size_t block_size, size_t sector_size, size_t page_size, const char* partition_bin);
+
 TEST_CASE("create volume, open file, write and read back data", "[fatfs]")
 {
+    init_spi_flash(0x00400000, CONFIG_WL_SECTOR_SIZE * 16, CONFIG_WL_SECTOR_SIZE, CONFIG_WL_SECTOR_SIZE, "partition_table.bin");
+
     FRESULT fr_result;
     BYTE pdrv;
     FATFS fs;
@@ -19,14 +23,11 @@ TEST_CASE("create volume, open file, write and read back data", "[fatfs]")
 
     esp_err_t esp_result;
 
-    // Create a 4MB partition
-    uint32_t size = 0x00400000;
-    int flash_handle = esp_flash_create(size, 4096, 1);
-    esp_partition_t partition = esp_partition_create(size, 0, flash_handle);
+    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_FAT, "storage");
     
     // Mount wear-levelled partition
     wl_handle_t wl_handle;
-    esp_result = wl_mount(&partition, &wl_handle);
+    esp_result = wl_mount(partition, &wl_handle);
     REQUIRE(esp_result == ESP_OK);
 
     // Get a physical drive
@@ -52,22 +53,32 @@ TEST_CASE("create volume, open file, write and read back data", "[fatfs]")
     fr_result = f_open(&file, "test.txt", FA_OPEN_ALWAYS | FA_READ | FA_WRITE);
     REQUIRE(fr_result == FR_OK);
 
-    const char data[] = "Hello, World!";
-    char *read = (char*) malloc(sizeof(data));
+    // Generate data
+    uint32_t data_size = 100000;
 
-    fr_result = f_write(&file, data, sizeof(data), &bw);
+    char *data = (char*) malloc(data_size);
+    char *read = (char*) malloc(data_size);
+
+    for(uint32_t i = 0; i < data_size; i += sizeof(i))
+    {
+        *((uint32_t*)(data + i)) = i;
+    }
+
+    // Write generated data
+    fr_result = f_write(&file, data, data_size, &bw);
     REQUIRE(fr_result == FR_OK);
-    REQUIRE(bw == sizeof(data));
+    REQUIRE(bw == data_size);
 
     // Move to beginning of file
     fr_result = f_lseek(&file, 0);
     REQUIRE(fr_result == FR_OK);
 
-    fr_result = f_read(&file, read, sizeof(data), &bw);
+    // Read written data
+    fr_result = f_read(&file, read, data_size, &bw);
     REQUIRE(fr_result == FR_OK);
-    REQUIRE(bw == sizeof(data));
+    REQUIRE(bw == data_size);
 
-    REQUIRE(strcmp(data, read) == 0);
+    REQUIRE(memcmp(data, read, data_size) == 0);
 
     // Close file
     fr_result = f_close(&file);
@@ -77,7 +88,6 @@ TEST_CASE("create volume, open file, write and read back data", "[fatfs]")
     fr_result = f_mount(0, "", 0);
     REQUIRE(fr_result == FR_OK);
 
-    esp_flash_delete(flash_handle);
-
     free(read);
+    free(data);
 }

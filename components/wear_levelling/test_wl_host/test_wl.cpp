@@ -1,35 +1,27 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "esp_spi_flash.h"
 #include "esp_partition.h"
 #include "wear_levelling.h"
 #include "WL_Flash.h"
 
 #include "catch.hpp"
 
+#include "sdkconfig.h"
+
 extern "C" void init_spi_flash(size_t chip_size, size_t block_size, size_t sector_size, size_t page_size, const char* partition_bin);
 
 TEST_CASE("write and read back data", "[wear_levelling]")
 {
+    init_spi_flash(0x00400000, CONFIG_WL_SECTOR_SIZE * 16, CONFIG_WL_SECTOR_SIZE, CONFIG_WL_SECTOR_SIZE, "partition_table.bin");
+
     esp_err_t result;
     wl_handle_t wl_handle;
 
-    int flash_handle = esp_flash_create(PARTITION_SIZE, 4096, 16);
-    esp_partition_t partition = esp_partition_create(PARTITION_SIZE, PARTITION_START, flash_handle);
+    int flash_handle;
+    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_FAT, "storage");
 
     // Mount wear-levelled partition
     result = wl_mount(partition, &wl_handle);
