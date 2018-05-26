@@ -233,9 +233,7 @@ enum wps_process_res wps_process_msg(struct wps_data *wps,
 struct wpabuf * wps_get_msg(struct wps_data *wps, enum wsc_op_code *op_code);
 
 int wps_is_selected_pbc_registrar(const struct wpabuf *msg, u8 *bssid);
-#ifdef CONFIG_WPS_PIN
 int wps_is_selected_pin_registrar(const struct wpabuf *msg, u8 *bssid);
-#endif
 int wps_ap_priority_compar(const struct wpabuf *wps_a,
 			   const struct wpabuf *wps_b);
 int wps_is_addr_authorized(const struct wpabuf *msg, const u8 *addr,
@@ -803,9 +801,9 @@ int wps_build_credential_wrap(struct wpabuf *msg,
 
 unsigned int wps_pin_checksum(unsigned int pin);
 unsigned int wps_pin_valid(unsigned int pin);
-unsigned int wps_generate_pin(void);
 int wps_pin_str_valid(const char *pin);
 #endif
+unsigned int wps_generate_pin(void);
 
 #ifdef CONFIG_WPS_OOB
 

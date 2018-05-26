@@ -10,6 +10,7 @@
 #define EAP_METHODS_H
 
 #include "eap_defs.h"
+#include "eap_config.h"
 
 const struct eap_method * eap_peer_get_eap_method(int vendor, EapType method);
 const struct eap_method * eap_peer_get_methods(size_t *count);
