@@ -45,17 +45,20 @@
 
 #if LWIP_IPV6  /* don't build if not configured for use in lwipopts.h */
 
+#include "lwip/dns.h"
 #include "lwip/nd6.h"
 #include "lwip/pbuf.h"
 #include "lwip/mem.h"
 #include "lwip/memp.h"
 #include "lwip/ip6.h"
 #include "lwip/ip6_addr.h"
+#include "lwip/inet.h"
 #include "lwip/inet_chksum.h"
 #include "lwip/netif.h"
 #include "lwip/icmp6.h"
 #include "lwip/mld6.h"
 #include "lwip/ip.h"
+#include "lwip/ip_addr.h"
 #include "lwip/stats.h"
 
 #include <string.h>
@@ -401,7 +404,8 @@ nd6_input(struct pbuf *p, struct netif *inp)
     i = nd6_get_router(ip6_current_src_addr(), inp);
     if (i < 0) {
       /* Create a new router entry. */
-      i = nd6_new_router(ip6_current_src_addr(), inp);
+        LWIP_DEBUGF(IP6_DEBUG | LWIP_DBG_TRACE, ("nd6_input: RA creating new router entry for %s\n", inet6_ntoa(*ip6_current_src_addr())));
+        i = nd6_new_router(ip6_current_src_addr(), inp);
     }
 
     if (i < 0) {
@@ -442,6 +446,7 @@ nd6_input(struct pbuf *p, struct netif *inp)
         buffer = nd6_ra_buffer;
         pbuf_copy_partial(p, buffer, sizeof(struct prefix_option), offset);
       }
+      LWIP_DEBUGF(IP6_DEBUG | LWIP_DBG_TRACE, ("nd6_input: RA option type %d with length %d\n", buffer[0], buffer[1]));
       switch (buffer[0]) {
       case ND6_OPTION_TYPE_SOURCE_LLADDR:
       {
@@ -504,6 +509,20 @@ nd6_input(struct pbuf *p, struct netif *inp)
         struct route_option * route_opt;
         route_opt = (struct route_option *)buffer;*/
 
+        break;
+      case ND6_OPTION_TYPE_RECURSIVE_DNS_SERVER:;
+        struct rdnss_option * rdnss_opt;
+        rdnss_opt = (struct rdnss_option *)buffer;
+        u8_t num_addrs = (u8_t) ((rdnss_opt->length - 1) / 2);
+        LWIP_DEBUGF(IP6_DEBUG | LWIP_DBG_TRACE, ("nd6_input: RA RDNSS option: length=%d (%d addresses), lifetime=%d\n", rdnss_opt->length, num_addrs, rdnss_opt->lifetime));
+        for (u8_t j = 0; j < num_addrs; j++) {
+            ip6_addr_p_t* addr = (ip6_addr_p_t*) &buffer[sizeof(*rdnss_opt) + j * sizeof(ip6_addr_p_t)];
+            LWIP_DEBUGF(IP6_DEBUG | LWIP_DBG_TRACE, ("nd6_input: RA RDNSS address %d: %s\n", j, inet6_ntoa(*addr)));
+            ip_addr_t *rdnss = (ip_addr_t *) mem_malloc(sizeof(ip_addr_t));
+            SMEMCPY(&rdnss->u_addr.ip6, addr, sizeof(ip6_addr_p_t));
+            rdnss->type =IPADDR_TYPE_V6;
+            dns_setserver(j, rdnss);
+        }
         break;
       default:
         /* Unrecognized option, abort. */
@@ -780,6 +799,7 @@ nd6_tmr(void)
             (prefix_list[i].flags & ND6_PREFIX_AUTOCONFIG_AUTONOMOUS) &&
             !(prefix_list[i].flags & ND6_PREFIX_AUTOCONFIG_ADDRESS_GENERATED)) {
           s8_t j;
+          LWIP_DEBUGF(IP6_DEBUG | LWIP_DBG_TRACE, ("nd6_tmr: initiating address autoconfiguration"));
           /* Try to get an address on this netif that is invalid.
            * Skip 0 index (link-local address) */
           for (j = 1; j < LWIP_IPV6_NUM_ADDRESSES; j++) {
@@ -1688,12 +1708,12 @@ nd6_queue_packet(s8_t neighbor_index, struct pbuf * q)
         /* queue did not exist, first item in queue */
         neighbor_cache[neighbor_index].q = new_entry;
       }
-      LWIP_DEBUGF(LWIP_DBG_TRACE, ("ipv6: queued packet %p on neighbor entry %"S16_F"\n", (void *)p, (s16_t)neighbor_index));
+      LWIP_DEBUGF(IP6_DEBUG | LWIP_DBG_TRACE, ("nd6_queue_packet: queued packet %p on neighbor entry %"S16_F"\n", (void *)p, (s16_t)neighbor_index));
       result = ERR_OK;
     } else {
       /* the pool MEMP_ND6_QUEUE is empty */
       pbuf_free(p);
-      LWIP_DEBUGF(LWIP_DBG_TRACE, ("ipv6: could not queue a copy of packet %p (out of memory)\n", (void *)p));
+      LWIP_DEBUGF(IP6_DEBUG | LWIP_DBG_TRACE, ("nd6_queue_packet: could not queue a copy of packet %p (out of memory)\n", (void *)p));
       /* { result == ERR_MEM } through initialization */
     }
 #else /* LWIP_ND6_QUEUEING */
@@ -1706,7 +1726,7 @@ nd6_queue_packet(s8_t neighbor_index, struct pbuf * q)
     result = ERR_OK;
 #endif /* LWIP_ND6_QUEUEING */
   } else {
-    LWIP_DEBUGF(LWIP_DBG_TRACE, ("ipv6: could not queue a copy of packet %p (out of memory)\n", (void *)q));
+    LWIP_DEBUGF(IP6_DEBUG | LWIP_DBG_TRACE, ("nd6_queue_packet: could not queue a copy of packet %p (out of memory)\n", (void *)q));
     /* { result == ERR_MEM } through initialization */
   }
 

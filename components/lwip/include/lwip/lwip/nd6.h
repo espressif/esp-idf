@@ -328,6 +328,24 @@ PACK_STRUCT_END
 #  include "arch/epstruct.h"
 #endif
 
+/** Recursive DNS search option (RFC 8106). */
+#define ND6_OPTION_TYPE_RECURSIVE_DNS_SERVER (25)
+#define ND6_OPTION_TYPE_DNS_SEARCH_LIST (31)
+#ifdef PACK_STRUCT_USE_INCLUDES
+#  include "arch/bpstruct.h"
+#endif
+PACK_STRUCT_BEGIN
+struct rdnss_option {
+  PACK_STRUCT_FLD_8(u8_t type);
+  PACK_STRUCT_FLD_8(u8_t length);
+  PACK_STRUCT_FIELD(u16_t reserved);
+  PACK_STRUCT_FIELD(u32_t lifetime);
+} PACK_STRUCT_STRUCT;
+PACK_STRUCT_END
+#ifdef PACK_STRUCT_USE_INCLUDES
+#  include "arch/epstruct.h"
+#endif
+
 /** 1 second period */
 #define ND6_TMR_INTERVAL 1000
 
