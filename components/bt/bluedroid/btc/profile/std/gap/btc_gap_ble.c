@@ -442,7 +442,7 @@ static void btc_ble_start_advertising (esp_ble_adv_params_t *ble_adv_params, tBT
         }
         return;
     }
-    
+
     BTC_TRACE_DEBUG("API_Ble_AppStartAdvertising\n");
 
     memcpy(peer_addr.bda, ble_adv_params->peer_addr, ESP_BD_ADDR_LEN);
@@ -647,12 +647,12 @@ static void btc_add_whitelist_complete_callback(UINT8 status, tBTM_WL_OPERATION 
     }
 }
 
-static void btc_set_rand_addr_callback(UINT8 status) 
+static void btc_set_rand_addr_callback(UINT8 status)
 {
     esp_ble_gap_cb_param_t param;
     bt_status_t ret;
     btc_msg_t msg;
-    param.set_rand_addr_cmpl.status = btc_btm_status_to_esp_status(status); //todo status 
+    param.set_rand_addr_cmpl.status = btc_btm_status_to_esp_status(status); //todo status
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT;
@@ -939,6 +939,13 @@ void btc_gap_ble_arg_deep_free(btc_msg_t *msg)
         }
         break;
     }
+    case BTC_GAP_BLE_SET_SECURITY_PARAM_EVT: {
+        uint8_t *value = ((btc_ble_gap_args_t *)msg->arg)->set_security_param.value;
+        if (value) {
+            osi_free(value);
+        }
+        break;
+    }
     default:
         BTC_TRACE_DEBUG("Unhandled deep free %d\n", msg->act);
         break;
@@ -1040,36 +1047,37 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
         break;
     }
     case BTC_GAP_BLE_SET_SECURITY_PARAM_EVT: {
+        uint8_t *value = arg->set_security_param.value;
         switch(arg->set_security_param.param_type) {
             case ESP_BLE_SM_PASSKEY:
                 break;
             case ESP_BLE_SM_AUTHEN_REQ_MODE: {
                 uint8_t authen_req = 0;
-                STREAM_TO_UINT8(authen_req, arg->set_security_param.value);
+                STREAM_TO_UINT8(authen_req, value);
                 bta_dm_co_ble_set_auth_req(authen_req);
                 break;
             }
             case ESP_BLE_SM_IOCAP_MODE: {
                 uint8_t iocap = 0;
-                STREAM_TO_UINT8(iocap, arg->set_security_param.value);
+                STREAM_TO_UINT8(iocap, value);
                 bta_dm_co_ble_set_io_cap(iocap);
                 break;
             }
             case ESP_BLE_SM_SET_INIT_KEY: {
                 uint8_t init_key = 0;
-                STREAM_TO_UINT8(init_key, arg->set_security_param.value);
+                STREAM_TO_UINT8(init_key, value);
                 bta_dm_co_ble_set_init_key_req(init_key);
                 break;
             }
             case ESP_BLE_SM_SET_RSP_KEY: {
                 uint8_t rsp_key = 0;
-                STREAM_TO_UINT8(rsp_key, arg->set_security_param.value);
+                STREAM_TO_UINT8(rsp_key, value);
                 bta_dm_co_ble_set_rsp_key_req(rsp_key);
                 break;
             }
             case ESP_BLE_SM_MAX_KEY_SIZE: {
                 uint8_t key_size = 0;
-                STREAM_TO_UINT8(key_size, arg->set_security_param.value);
+                STREAM_TO_UINT8(key_size, value);
                 bta_dm_co_ble_set_max_key_size(key_size);
                 break;
             }
