@@ -8,7 +8,7 @@
 # as ReST markup.
 # For each option in Kconfig file (e.g. 'FOO'), CONFIG_FOO link target is
 # generated, allowing options to be referenced in other documents 
-# (using :ref:`CONFIG_FOO`)
+# (using :envvar:`CONFIG_FOO`)
 #
 # This script uses kconfiglib library to do all the work of parsing Kconfig
 # files: https://github.com/ulfalizer/Kconfiglib
@@ -42,10 +42,12 @@ INITIAL_HEADING_LEVEL = 2
 MAX_HEADING_LEVEL = 5
 OPTION_HEADING_LEVEL = 6
 
-
-def print_menu_contents(title, items, heading_level, breadcrumbs):
-    if title:
-        print_section_heading(title, heading_level)
+def print_menu_contents(title, items, heading_level, breadcrumbs, genindex):
+    if not genindex:
+        if title:
+            print_section_heading(title, heading_level)
+        if heading_level == INITIAL_HEADING_LEVEL+1:
+            print_menu_contents(title, items, heading_level, breadcrumbs, True)
     for entry in items:
         if entry.is_menu():
             if len(breadcrumbs) > 0:
@@ -55,7 +57,9 @@ def print_menu_contents(title, items, heading_level, breadcrumbs):
 
             print_menu_contents(entry.get_title(), entry.get_items(),
                                 min(heading_level + 1, MAX_HEADING_LEVEL),
-                                new_breadcrumbs)
+                                new_breadcrumbs, genindex)
+        elif genindex:
+            print_item(entry, breadcrumbs)
         elif entry.is_choice():
             print_choice(entry, breadcrumbs)
         else:
@@ -71,7 +75,7 @@ def print_menu_contents(title, items, heading_level, breadcrumbs):
 def print_choice(choice, breadcrumbs):
     print_option(choice, breadcrumbs)
     print
-    print '%sAvailable options:' % INDENT
+    print '%sAvailable options' % INDENT
     for opt in choice.get_symbols():
         # Format available options as a list
         print '%s- %s' % (INDENT * 2, opt.name)
@@ -82,25 +86,28 @@ def print_section_heading(title, heading_level):
     print
 
 def print_option(opt, breadcrumbs):
-    # add link target so we can use :ref:`CONFIG_FOO` 
-    print '.. _CONFIG_%s:' % opt.name
+    # add link target so we can use :envvar:`CONFIG_FOO` 
+    print '.. envvar:: CONFIG_%s' % opt.name
     print
-    print_section_heading(opt.name, OPTION_HEADING_LEVEL)
     if len(opt.prompts) > 0:
         print '%s%s' % (INDENT, opt.prompts[0][0])
         print
-    print '%s:emphasis:`Found in: %s`' % (INDENT, breadcrumbs)
-    print
     if opt.get_help() is not None:
         # Help text normally contains newlines, but spaces at the beginning of
         # each line are stripped by kconfiglib. We need to re-indent the text
         # to produce valid ReST.
         print '%s%s' % (INDENT, opt.get_help().replace('\n', '\n%s' % INDENT))
+    print '%sFound in\n%s' % (INDENT, INDENT * 2 + breadcrumbs)
+    print
+
+def print_item(opt, breadcrumbs):
+    print '- :envvar:`CONFIG_%s`' % opt.name
+    print
 
 def process_kconfig_file(kconfig_file, heading_level, breadcrumbs):
     if os.path.exists(kconfig_file):
         cfg = kconfiglib.Config(kconfig_file, print_warnings=True)
-        print_menu_contents(None, cfg.get_top_level_items(), heading_level, breadcrumbs)
+        print_menu_contents(None, cfg.get_top_level_items(), heading_level, breadcrumbs, False)
 
 def print_all_components():
     heading_level = INITIAL_HEADING_LEVEL

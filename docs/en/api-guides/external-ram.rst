@@ -65,7 +65,7 @@ The use of external RAM has a few restrictions:
    execution of code afterwards slower.
  * External RAM cannot be used as task stack memory; because of this, xTaskCreate and similar functions will always allocate internal memory
    for stack and task TCBs and xTaskCreateStatic-type functions will check if the buffers passed are internal. However, for tasks not calling
-   on code in ROM in any way, directly or indirectly, the menuconfig option :ref:`CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY` will eliminate
+   on code in ROM in any way, directly or indirectly, the menuconfig option :envvar:`CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY` will eliminate
    the check in xTaskCreateStatic, allowing task stack in external RAM. Using this is not advised, however.
 
 
@@ -91,7 +91,7 @@ The bugs in this silicon revision introduce a hazard when certain sequences of m
 To work around this, the gcc compiler to compile ESP-IDF has been expanded with a flag: ``-mfix-esp32-psram-cache-issue``. With this flag passed to gcc 
 on the command line, the compiler works around these sequences and only outputs code that can safely be executed.
 
-In ESP-IDF, this flag is enabled when you select :ref:`CONFIG_SPIRAM_CACHE_WORKAROUND`. ESP-IDF also takes other measures to make
+In ESP-IDF, this flag is enabled when you select :envvar:`CONFIG_SPIRAM_CACHE_WORKAROUND`. ESP-IDF also takes other measures to make
 sure no combination of PSRAM access plus the offending instruction sets are used: it links to a version of Newlib recompiled with the gcc flag, doesn't use
 some ROM functions and allocates static memory for the WiFi stack.
 
