@@ -209,6 +209,9 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         break;
     case BTA_GATTS_CONF_EVT:
         LOG_DEBUG("CONIRM EVT\n");
+        if (p_data && p_data->req_data.value){
+            osi_free(p_data->req_data.value);
+        }
         /* Nothing */
         break;
     case BTA_GATTS_CREATE_EVT:

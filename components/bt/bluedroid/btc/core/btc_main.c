@@ -41,7 +41,9 @@ static void btc_enable_bluetooth(void)
 
 static void btc_disable_bluetooth(void)
 {
+#if (SMP_INCLUDED)
     btc_config_shut_down();
+#endif /* #if (SMP_INCLUDED) */
     if (BTA_DisableBluetooth() != BTA_SUCCESS) {
         future_ready(*btc_main_get_future_p(BTC_MAIN_DISABLE_FUTURE), FUTURE_FAIL);
     }
