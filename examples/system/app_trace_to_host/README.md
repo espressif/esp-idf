@@ -107,21 +107,21 @@ To run the example and retrieve the log from the host, do the following:
 6.  In telnet execute the following command:
 
     ```
-    esp32 apptrace start file://adc0.log file://adc1.log 0 9000 5 0 0
+    esp32 apptrace start file://adc.log 0 9000 5 0 0
     ```
 
-    This command should collect 9000 bytes of log data and save them to `adc0.log` file in `~/esp/openocd-esp32` folder. The `adc1.log` file will be empty / is not used.
+    This command should collect 9000 bytes of log data and save them to `adc.log` file in `~/esp/openocd-esp32` folder.
 
 7.  Decode and print out retrieved log file by executing:
 
     ```
-    $IDF_PATH/tools/esp_app_trace/logtrace_proc.py ~/esp/openocd-esp32/adc0.log ~/esp/app_trace_to_host/build/app_trace_to_host_test.elf
+    $IDF_PATH/tools/esp_app_trace/logtrace_proc.py ~/esp/openocd-esp32/adc.log ~/esp/app_trace_to_host/build/app_trace_to_host_test.elf
     ```
 
     This should provide a similar output:
 
     ```
-    Parse trace file '/user-home/esp/openocd-esp32/adc0.log'...
+    Parse trace file '/user-home/esp/openocd-esp32/adc.log'...
     Unprocessed 7 bytes of log record args!
     Parsing completed.
     ====================================================================
