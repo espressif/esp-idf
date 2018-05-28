@@ -374,8 +374,8 @@ defined Idle Hook and Tick Hook on every iteration of the Idle Task and Tick
 Interrupt respectively. 
 
 Vanilla FreeRTOS hooks are referred to as **Legacy Hooks** in ESP-IDF FreeRTOS. 
-To enable legacy hooks, :ref:`CONFIG_FREERTOS_LEGACY_HOOKS`, 
-:ref:`CONFIG_FREERTOS_LEGACY_IDLE_HOOK`, and :ref:`CONFIG_FREERTOS_LEGACY_TICK_HOOK` 
+To enable legacy hooks, :envvar:`CONFIG_FREERTOS_LEGACY_HOOKS`, 
+:envvar:`CONFIG_FREERTOS_LEGACY_IDLE_HOOK`, and :envvar:`CONFIG_FREERTOS_LEGACY_TICK_HOOK` 
 should all be enabled in ``make menuconfig``.
 
 Due to vanilla FreeRTOS being designed for single core, ``vApplicationIdleHook()``
