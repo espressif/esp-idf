@@ -924,7 +924,7 @@ class Kconfig(object):
 
             def write_node(node):
                 item = node.item
-                if isinstance(item, Symbol):
+                if isinstance(item, Symbol) and item.env_var is None:
                     config_string = item.config_string
                     if config_string:
                         write(config_string)
