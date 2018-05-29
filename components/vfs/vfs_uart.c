@@ -89,6 +89,8 @@ static esp_line_endings_t s_rx_mode =
         ESP_LINE_ENDINGS_LF;
 #endif
 
+static void uart_end_select();
+
 // Functions used to write bytes to UART. Default to "basic" functions.
 static tx_func_t s_uart_tx_func[UART_NUM] = {
         &uart_tx_char, &uart_tx_char, &uart_tx_char
@@ -337,25 +339,25 @@ static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, 
 
     if (_readfds || _writefds || _errorfds || _readfds_orig || _writefds_orig || _errorfds_orig || _signal_sem) {
         taskEXIT_CRITICAL(uart_get_selectlock());
-        _lock_release(&s_one_select_lock);
+        uart_end_select();
         return ESP_ERR_INVALID_STATE;
     }
 
     if ((_readfds_orig = malloc(sizeof(fd_set))) == NULL) {
         taskEXIT_CRITICAL(uart_get_selectlock());
-        _lock_release(&s_one_select_lock);
+        uart_end_select();
         return ESP_ERR_NO_MEM;
     }
 
     if ((_writefds_orig = malloc(sizeof(fd_set))) == NULL) {
         taskEXIT_CRITICAL(uart_get_selectlock());
-        _lock_release(&s_one_select_lock);
+        uart_end_select();
         return ESP_ERR_NO_MEM;
     }
 
     if ((_errorfds_orig = malloc(sizeof(fd_set))) == NULL) {
         taskEXIT_CRITICAL(uart_get_selectlock());
-        _lock_release(&s_one_select_lock);
+        uart_end_select();
         return ESP_ERR_NO_MEM;
     }
 
