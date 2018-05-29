@@ -50,7 +50,6 @@ Should be included by all Xtensa generic and RTOS port-specific sources.
 
 #include    <xtensa/corebits.h>
 #include    <xtensa/config/system.h>
-#include    <xtensa/simcall.h>
 
 /*
 Include any RTOS specific definitions that are needed by this header.
