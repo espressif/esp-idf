@@ -1,0 +1,43 @@
+menu "Example Configuration"
+
+config SDIO_EXAMPLE_4BIT
+    bool "Host tries using 4-bit mode to communicate with slave"
+    default n
+    help
+        If this is set, the host tries using 4-bit mode to communicate with
+        slave. If failed, the communication falls back to 1-bit mode.
+        
+        If this is not set, the host uses 1-bit mode. However, CMD1 is still
+        mandatory for interrupts.
+
+        Note that 4-bit mode is not compatible (by default) if the slave is
+        using 3.3V flash which requires a pull-down on the MTDI pin.
+
+config SDIO_EXAMPLE_HIGHSPEED
+    bool "Host tries using HS mode to communicate with slave"
+    default y
+    help
+        If this is set, the host tries using high-speed mode to communicate
+        with slave. If the slave doesn't support high-speed mode, the
+        communication falls back to default-speed mode. If this is not set,
+        the host uses DS mode.
+
+        If the example does not work, please try disabling the HS mode.
+
+choice EXAMPLE_SLAVE
+    prompt "Id of Slave used in Espressif master-slave board."
+    default EXAMPLE_SLAVE_NONE
+    help
+        If Espressif master-slave board is used, select which slave is used.
+
+config EXAMPLE_SLAVE_NONE
+    bool "Not using Espressif master-slave board."
+config EXAMPLE_SLAVE_B1
+    bool "Using slave B1"
+config EXAMPLE_SLAVE_B2
+    bool "Using slave B2"
+config EXAMPLE_SLAVE_B3
+    bool "Using slave B3"
+endchoice
+
+endmenu
