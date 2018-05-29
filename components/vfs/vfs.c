@@ -728,6 +728,11 @@ static void call_end_selects(int end_index, const fds_triple_t *vfs_fds_triple)
     }
 }
 
+static inline bool esp_vfs_safe_fd_isset(int fd, const fd_set *fds)
+{
+    return fds && FD_ISSET(fd, fds);
+}
+
 static int set_global_fd_sets(const fds_triple_t *vfs_fds_triple, int size, fd_set *readfds, fd_set *writefds, fd_set *errorfds)
 {
     int ret = 0;
@@ -737,17 +742,17 @@ static int set_global_fd_sets(const fds_triple_t *vfs_fds_triple, int size, fd_s
         if (item->isset) {
             for (int fd = 0; fd < MAX_FDS; ++fd) {
                 const int local_fd = s_fd_table[fd].local_fd; // single read -> no locking is required
-                if (readfds && FD_ISSET(local_fd, &item->readfds)) {
+                if (readfds && esp_vfs_safe_fd_isset(local_fd, &item->readfds)) {
                     ESP_LOGD(TAG, "FD %d in readfds was set from VFS ID %d", fd, i);
                     FD_SET(fd, readfds);
                     ++ret;
                 }
-                if (writefds && FD_ISSET(local_fd, &item->writefds)) {
+                if (writefds && esp_vfs_safe_fd_isset(local_fd, &item->writefds)) {
                     ESP_LOGD(TAG, "FD %d in writefds was set from VFS ID %d", fd, i);
                     FD_SET(fd, writefds);
                     ++ret;
                 }
-                if (errorfds && FD_ISSET(local_fd, &item->errorfds)) {
+                if (errorfds && esp_vfs_safe_fd_isset(local_fd, &item->errorfds)) {
                     ESP_LOGD(TAG, "FD %d in errorfds was set from VFS ID %d", fd, i);
                     FD_SET(fd, errorfds);
                     ++ret;
@@ -764,7 +769,7 @@ static void esp_vfs_log_fd_set(const char *fds_name, const fd_set *fds)
     if (fds_name && fds) {
         ESP_LOGD(TAG, "FDs in %s =", fds_name);
         for (int i = 0; i < MAX_FDS; ++i) {
-            if (FD_ISSET(i, fds)) {
+            if (esp_vfs_safe_fd_isset(i, fds)) {
                 ESP_LOGD(TAG, "%d", i);
             }
         }
@@ -812,9 +817,9 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
         if (is_socket_fd) {
             if (!socket_select) {
                 // no socket_select found yet so take a look
-                if ((readfds && FD_ISSET(fd, readfds)) ||
-                        (writefds && FD_ISSET(fd, writefds)) ||
-                        (errorfds && FD_ISSET(fd, errorfds))) {
+                if (esp_vfs_safe_fd_isset(fd, readfds) ||
+                        esp_vfs_safe_fd_isset(fd, writefds) ||
+                        esp_vfs_safe_fd_isset(fd, errorfds)) {
                     const vfs_entry_t *vfs = s_vfs[vfs_index];
                     socket_select = vfs->vfs.socket_select;
                 }
@@ -823,19 +828,19 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
         }
 
         fds_triple_t *item = &vfs_fds_triple[vfs_index]; // FD sets for VFS which belongs to fd
-        if (readfds && FD_ISSET(fd, readfds)) {
+        if (esp_vfs_safe_fd_isset(fd, readfds)) {
             item->isset = true;
             FD_SET(local_fd, &item->readfds);
             FD_CLR(fd, readfds);
             ESP_LOGD(TAG, "removing %d from readfds and adding as local FD %d to fd_set of VFS ID %d", fd, local_fd, vfs_index);
         }
-        if (writefds && FD_ISSET(fd, writefds)) {
+        if (esp_vfs_safe_fd_isset(fd, writefds)) {
             item->isset = true;
             FD_SET(local_fd, &item->writefds);
             FD_CLR(fd, writefds);
             ESP_LOGD(TAG, "removing %d from writefds and adding as local FD %d to fd_set of VFS ID %d", fd, local_fd, vfs_index);
         }
-        if (errorfds && FD_ISSET(fd, errorfds)) {
+        if (esp_vfs_safe_fd_isset(fd, errorfds)) {
             item->isset = true;
             FD_SET(local_fd, &item->errorfds);
             FD_CLR(fd, errorfds);
