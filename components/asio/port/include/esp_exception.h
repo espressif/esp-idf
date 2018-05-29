@@ -1,3 +1,4 @@
+
 // Copyright 2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,21 +12,28 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#ifndef _ESP_EXCEPTION_H_
+#define _ESP_EXCEPTION_H_
 
+//
+// This exception stub is enabled only if exceptions are disabled in menuconfig
+//
+#if !defined(CONFIG_CXX_EXCEPTIONS) && defined (ASIO_NO_EXCEPTIONS)
 
-#ifndef _ESP_SYS_UNISTD_H
-#define _ESP_SYS_UNISTD_H
+#include "esp_log.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include_next <sys/unistd.h>
-
-int     _EXFUN(truncate, (const char *, off_t __length));
-int     _EXFUN(gethostname, (char *__name, size_t __len));
-
-#ifdef __cplusplus
+//
+// asio exception stub
+//
+namespace asio {
+namespace detail {
+template <typename Exception>
+void throw_exception(const Exception& e)
+{
+  ESP_LOGE("esp32_asio_exception", "Caught exception: %s!", e.what());   
+  abort();
 }
-#endif
-#endif /* _SYS_UNISTD_H */
+}}
+#endif // CONFIG_CXX_EXCEPTIONS==1 && defined (ASIO_NO_EXCEPTIONS)
+
+#endif // _ESP_EXCEPTION_H_
