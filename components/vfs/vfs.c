@@ -25,7 +25,14 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_vfs.h"
+#include "sdkconfig.h"
+
+#ifdef CONFIG_SUPPRESS_SELECT_DEBUG_OUTPUT
+#define LOG_LOCAL_LEVEL ESP_LOG_NONE
+#endif //CONFIG_SUPPRESS_SELECT_DEBUG_OUTPUT
 #include "esp_log.h"
+
+static const char *TAG = "vfs";
 
 #define VFS_MAX_COUNT   8   /* max number of VFS entries (registered filesystems) */
 #define LEN_PATH_PREFIX_IGNORED SIZE_MAX /* special length value for VFS which is never recognised by open() */
@@ -127,6 +134,7 @@ esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ct
 esp_err_t esp_vfs_register_fd_range(const esp_vfs_t *vfs, void *ctx, int min_fd, int max_fd)
 {
     if (min_fd < 0 || max_fd < 0 || min_fd > MAX_FDS || max_fd > MAX_FDS || min_fd > max_fd) {
+        ESP_LOGD(TAG, "Invalid arguments: esp_vfs_register_fd_range(0x%x, 0x%x, %d, %d)", (int) vfs, (int) ctx, min_fd, max_fd);
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -145,6 +153,7 @@ esp_err_t esp_vfs_register_fd_range(const esp_vfs_t *vfs, void *ctx, int min_fd,
                     }
                 }
                 _lock_release(&s_fd_table_lock);
+                ESP_LOGD(TAG, "esp_vfs_register_fd_range cannot set fd %d (used by other VFS)", i);
                 return ESP_ERR_INVALID_ARG;
             }
             s_fd_table[i].permanent = true;
@@ -153,6 +162,8 @@ esp_err_t esp_vfs_register_fd_range(const esp_vfs_t *vfs, void *ctx, int min_fd,
         }
         _lock_release(&s_fd_table_lock);
     }
+
+    ESP_LOGD(TAG, "esp_vfs_register_fd_range is successful for range <%d; %d) and VFS ID %d", min_fd, max_fd, index);
 
     return ret;
 }
@@ -196,6 +207,7 @@ esp_err_t esp_vfs_unregister(const char* base_path)
 esp_err_t esp_vfs_register_fd(esp_vfs_id_t vfs_id, int *fd)
 {
     if (vfs_id < 0 || vfs_id >= s_vfs_count || fd == NULL) {
+        ESP_LOGD(TAG, "Invalid arguments for esp_vfs_register_fd(%d, 0x%x)", vfs_id, (int) fd);
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -213,6 +225,8 @@ esp_err_t esp_vfs_register_fd(esp_vfs_id_t vfs_id, int *fd)
     }
     _lock_release(&s_fd_table_lock);
 
+    ESP_LOGD(TAG, "esp_vfs_register_fd(%d, 0x%x) finished with %s", vfs_id, (int) fd, esp_err_to_name(ret));
+
     return ret;
 }
 
@@ -221,6 +235,7 @@ esp_err_t esp_vfs_unregister_fd(esp_vfs_id_t vfs_id, int fd)
     esp_err_t ret = ESP_ERR_INVALID_ARG;
 
     if (vfs_id < 0 || vfs_id >= s_vfs_count || fd < 0 || fd >= MAX_FDS) {
+        ESP_LOGD(TAG, "Invalid arguments for esp_vfs_unregister_fd(%d, %d)", vfs_id, fd);
         return ret;
     }
 
@@ -231,6 +246,8 @@ esp_err_t esp_vfs_unregister_fd(esp_vfs_id_t vfs_id, int fd)
         ret = ESP_OK;
     }
     _lock_release(&s_fd_table_lock);
+
+    ESP_LOGD(TAG, "esp_vfs_unregister_fd(%d, %d) finished with %s", vfs_id, fd, esp_err_to_name(ret));
 
     return ret;
 }
@@ -390,7 +407,7 @@ int esp_vfs_open(struct _reent *r, const char * path, int flags, int mode)
         _lock_release(&s_fd_table_lock);
         int ret;
         CHECK_AND_CALL(ret, r, vfs, close, fd_within_vfs);
-        (void) ret; // remove "set but not used" warning 
+        (void) ret; // remove "set but not used" warning
         __errno_r(r) = ENOMEM;
         return -1;
     }
@@ -730,14 +747,17 @@ static int set_global_fd_sets(const fds_triple_t *vfs_fds_triple, int size, fd_s
             for (int fd = 0; fd < MAX_FDS; ++fd) {
                 const int local_fd = s_fd_table[fd].local_fd; // single read -> no locking is required
                 if (readfds && FD_ISSET(local_fd, &item->readfds)) {
+                    ESP_LOGD(TAG, "FD %d in readfds was set from VFS ID %d", fd, i);
                     FD_SET(fd, readfds);
                     ++ret;
                 }
                 if (writefds && FD_ISSET(local_fd, &item->writefds)) {
+                    ESP_LOGD(TAG, "FD %d in writefds was set from VFS ID %d", fd, i);
                     FD_SET(fd, writefds);
                     ++ret;
                 }
                 if (errorfds && FD_ISSET(local_fd, &item->errorfds)) {
+                    ESP_LOGD(TAG, "FD %d in errorfds was set from VFS ID %d", fd, i);
                     FD_SET(fd, errorfds);
                     ++ret;
                 }
@@ -748,17 +768,39 @@ static int set_global_fd_sets(const fds_triple_t *vfs_fds_triple, int size, fd_s
     return ret;
 }
 
+static void esp_vfs_log_fd_set(const char *fds_name, const fd_set *fds)
+{
+    if (fds_name && fds) {
+        ESP_LOGD(TAG, "FDs in %s =", fds_name);
+        for (int i = 0; i < MAX_FDS; ++i) {
+            if (FD_ISSET(i, fds)) {
+                ESP_LOGD(TAG, "%d", i);
+            }
+        }
+    }
+}
+
 int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout)
 {
     int ret = 0;
     struct _reent* r = __getreent();
 
+    ESP_LOGD(TAG, "esp_vfs_select starts with nfds = %d", nfds);
+    if (timeout) {
+        ESP_LOGD(TAG, "timeout is %lds + %ldus", timeout->tv_sec, timeout->tv_usec);
+    }
+    esp_vfs_log_fd_set("readfds", readfds);
+    esp_vfs_log_fd_set("writefds", writefds);
+    esp_vfs_log_fd_set("errorfds", errorfds);
+
     if (nfds > MAX_FDS || nfds < 0) {
+        ESP_LOGD(TAG, "incorrect nfds");
         __errno_r(r) = EINVAL;
         return -1;
     }
 
     if (_lock_try_acquire(&s_one_select_lock)) {
+        ESP_LOGD(TAG, "concurrent select is not supported");
         __errno_r(r) = EINTR;
         return -1;
     }
@@ -767,6 +809,7 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
     if ((vfs_fds_triple = calloc(s_vfs_count, sizeof(fds_triple_t))) == NULL) {
         __errno_r(r) = ENOMEM;
         _lock_release(&s_one_select_lock);
+        ESP_LOGD(TAG, "calloc is unsuccessful");
         return -1;
     }
 
@@ -800,16 +843,19 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
             item->isset = true;
             FD_SET(local_fd, &item->readfds);
             FD_CLR(fd, readfds);
+            ESP_LOGD(TAG, "removing %d from readfds and adding as local FD %d to fd_set of VFS ID %d", fd, local_fd, vfs_index);
         }
         if (writefds && FD_ISSET(fd, writefds)) {
             item->isset = true;
             FD_SET(local_fd, &item->writefds);
             FD_CLR(fd, writefds);
+            ESP_LOGD(TAG, "removing %d from writefds and adding as local FD %d to fd_set of VFS ID %d", fd, local_fd, vfs_index);
         }
         if (errorfds && FD_ISSET(fd, errorfds)) {
             item->isset = true;
             FD_SET(local_fd, &item->errorfds);
             FD_CLR(fd, errorfds);
+            ESP_LOGD(TAG, "removing %d from errorfds and adding as local FD %d to fd_set of VFS ID %d", fd, local_fd, vfs_index);
         }
     }
 
@@ -824,6 +870,7 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
             free(vfs_fds_triple);
             __errno_r(r) = ENOMEM;
             _lock_release(&s_one_select_lock);
+            ESP_LOGD(TAG, "cannot create s_select_sem");
             return -1;
         }
     }
@@ -835,6 +882,10 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
         if (vfs && vfs->vfs.start_select && item->isset) {
             // call start_select for all non-socket VFSs with has at least one FD set in readfds, writefds, or errorfds
             // note: it can point to socket VFS but item->isset will be false for that
+            ESP_LOGD(TAG, "calling start_select for VFS ID %d with the following local FDs", i);
+            esp_vfs_log_fd_set("readfds", &item->readfds);
+            esp_vfs_log_fd_set("writefds", &item->writefds);
+            esp_vfs_log_fd_set("errorfds", &item->errorfds);
             esp_err_t err = vfs->vfs.start_select(nfds, &item->readfds, &item->writefds, &item->errorfds);
 
             if (err != ESP_OK) {
@@ -847,13 +898,22 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
                 free(vfs_fds_triple);
                 __errno_r(r) = ENOMEM;
                 _lock_release(&s_one_select_lock);
+                ESP_LOGD(TAG, "start_select failed");
                 return -1;
             }
         }
     }
 
     if (socket_select) {
+        ESP_LOGD(TAG, "calling socket_select with the following FDs");
+        esp_vfs_log_fd_set("readfds", readfds);
+        esp_vfs_log_fd_set("writefds", writefds);
+        esp_vfs_log_fd_set("errorfds", errorfds);
         ret = socket_select(nfds, readfds, writefds, errorfds, timeout);
+        ESP_LOGD(TAG, "socket_select returned %d and the FDs are the following", ret);
+        esp_vfs_log_fd_set("readfds", readfds);
+        esp_vfs_log_fd_set("writefds", writefds);
+        esp_vfs_log_fd_set("errorfds", errorfds);
     } else {
         if (readfds) {
             FD_ZERO(readfds);
@@ -869,7 +929,9 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
         if (timeout) {
             uint32_t timeout_ms = timeout->tv_sec * 1000 + timeout->tv_usec / 1000;
             ticks_to_wait = timeout_ms / portTICK_PERIOD_MS;
+            ESP_LOGD(TAG, "timeout is %dms", timeout_ms);
         }
+        ESP_LOGD(TAG, "waiting without calling socket_select");
         xSemaphoreTake(s_select_sem, ticks_to_wait);
     }
 
@@ -883,6 +945,11 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
     }
     free(vfs_fds_triple);
     _lock_release(&s_one_select_lock);
+
+    ESP_LOGD(TAG, "esp_vfs_select returns %d", ret);
+    esp_vfs_log_fd_set("readfds", readfds);
+    esp_vfs_log_fd_set("writefds", writefds);
+    esp_vfs_log_fd_set("errorfds", errorfds);
     return ret;
 }
 
