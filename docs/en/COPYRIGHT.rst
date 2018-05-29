@@ -53,6 +53,8 @@ These third party libraries can be included into the application (firmware) prod
 
 * :component_file:`SD/MMC driver <sdmmc/sdmmc_cmd.c>` is derived from `OpenBSD SD/MMC driver`_, Copyright (c) 2006 Uwe Stuehler, and is licensed under BSD license.
 
+* :component:`Asio <asio>`, Copyright (c) 2003-2018 Christopher M. Kohlhoff is licensed under the Boost Software License.
+
 Build Tools
 -----------
 
@@ -152,4 +154,4 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _OpenBSD SD/MMC driver: https://github.com/openbsd/src/blob/f303646/sys/dev/sdmmc/sdmmc.c
 .. _Mbed TLS: https://github.com/ARMmbed/mbedtls
 .. _spiffs: https://github.com/pellepl/spiffs
-
+.. _asio: https://github.com/chriskohlhoff/asio

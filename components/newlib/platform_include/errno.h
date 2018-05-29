@@ -1,3 +1,4 @@
+
 // Copyright 2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,21 +12,28 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#ifndef _ESP_PLATFORM_ERRNO_H_
+#define _ESP_PLATFORM_ERRNO_H_
 
+#include_next "errno.h"
 
-#ifndef _ESP_SYS_UNISTD_H
-#define _ESP_SYS_UNISTD_H
-
-#ifdef __cplusplus
-extern "C" {
+//
+// Possibly define some missing errors
+//
+#ifndef ESHUTDOWN
+#define ESHUTDOWN      108  /* Cannot send after transport endpoint shutdown */
 #endif
 
-#include_next <sys/unistd.h>
-
-int     _EXFUN(truncate, (const char *, off_t __length));
-int     _EXFUN(gethostname, (char *__name, size_t __len));
-
-#ifdef __cplusplus
-}
+#ifndef EAI_SOCKTYPE
+#define	EAI_SOCKTYPE	10	/* ai_socktype not supported */
 #endif
-#endif /* _SYS_UNISTD_H */
+
+#ifndef EAI_AGAIN
+#define	EAI_AGAIN	     2   /* temporary failure in name resolution */
+#endif
+
+#ifndef EAI_BADFLAGS
+#define	EAI_BADFLAGS	 3	 /* invalid value for ai_flags */
+#endif
+
+#endif // _ESP_PLATFORM_ERRNO_H_
