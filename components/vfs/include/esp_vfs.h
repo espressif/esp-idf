@@ -175,7 +175,7 @@ typedef struct
         int (*access)(const char *path, int amode);
     };
     /** start_select is called for setting up synchronous I/O multiplexing of the desired file descriptors in the given VFS */
-    esp_err_t (*start_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds);
+    esp_err_t (*start_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, SemaphoreHandle_t *signal_sem);
     /** socket select function for socket FDs with the functionality of POSIX select(); this should be set only for the socket VFS */
     int (*socket_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout);
     /** called by VFS to interrupt the socket_select call when select is activated from a non-socket VFS driver; set only for the socket driver */
@@ -326,8 +326,10 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
  *
  * This function is called when the VFS driver detects a read/write/error
  * condition as it was requested by the previous call to start_select.
+ *
+ * @param signal_sem semaphore handle which was passed to the driver by the start_select call
  */
-void esp_vfs_select_triggered();
+void esp_vfs_select_triggered(SemaphoreHandle_t *signal_sem);
 
 /**
  * @brief Notification from a VFS driver about a read/write/error condition (ISR version)
@@ -335,9 +337,10 @@ void esp_vfs_select_triggered();
  * This function is called when the VFS driver detects a read/write/error
  * condition as it was requested by the previous call to start_select.
  *
+ * @param signal_sem semaphore handle which was passed to the driver by the start_select call
  * @param woken is set to pdTRUE if the function wakes up a task with higher priority
  */
-void esp_vfs_select_triggered_isr(BaseType_t *woken);
+void esp_vfs_select_triggered_isr(SemaphoreHandle_t *signal_sem, BaseType_t *woken);
 
 #ifdef __cplusplus
 } // extern "C"

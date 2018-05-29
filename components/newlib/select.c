@@ -18,12 +18,46 @@
 
 #ifdef CONFIG_USE_ONLY_LWIP_SELECT
 #include "lwip/sockets.h"
-#endif
+
+#ifdef CONFIG_SUPPRESS_SELECT_DEBUG_OUTPUT
+#define LOG_LOCAL_LEVEL ESP_LOG_NONE
+#endif //CONFIG_SUPPRESS_SELECT_DEBUG_OUTPUT
+#include "esp_log.h"
+
+static const char *TAG = "newlib_select";
+
+static void log_fd_set(const char *fds_name, const fd_set *fds)
+{
+    if (fds_name && fds) {
+        ESP_LOGD(TAG, "FDs in %s =", fds_name);
+        for (int i = 0; i < MAX_FDS; ++i) {
+            if (FD_ISSET(i, fds)) {
+                ESP_LOGD(TAG, "%d", i);
+            }
+        }
+    }
+}
+#endif //CONFIG_USE_ONLY_LWIP_SELECT
 
 int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout)
 {
 #ifdef CONFIG_USE_ONLY_LWIP_SELECT
-    return lwip_select(nfds, readfds, writefds, errorfds, timeout);
+    ESP_LOGD(TAG, "lwip_select starts with nfds = %d", nfds);
+    if (timeout) {
+        ESP_LOGD(TAG, "timeout is %lds + %ldus", timeout->tv_sec, timeout->tv_usec);
+    }
+    log_fd_set("readfds", readfds);
+    log_fd_set("writefds", writefds);
+    log_fd_set("errorfds", errorfds);
+
+    int ret = lwip_select(nfds, readfds, writefds, errorfds, timeout);
+
+    ESP_LOGD(TAG, "lwip_select returns %d", ret);
+    log_fd_set("readfds", readfds);
+    log_fd_set("writefds", writefds);
+    log_fd_set("errorfds", errorfds);
+
+    return ret;
 #else
     return esp_vfs_select(nfds, readfds, writefds, errorfds, timeout);
 #endif
