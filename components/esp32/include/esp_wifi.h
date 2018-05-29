@@ -981,7 +981,7 @@ esp_err_t esp_wifi_80211_tx(wifi_interface_t ifx, const void *buffer, int len, b
   *        Each time a CSI data is received, the callback function will be called.
   *
   * @param ctx context argument, passed to esp_wifi_set_csi_rx_cb() when registering callback function. 
-  * @param data CSI data received. 
+  * @param data CSI data received. The memory that it points to will be deallocated after callback function returns. 
   *
   */
 typedef void (* wifi_csi_cb_t)(void *ctx, wifi_csi_info_t *data);
