@@ -611,7 +611,6 @@ void throughput_server_task(void *param)
     while(1) {
 #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) 
         if (!can_send_notify) {
-            ESP_LOGI(GATTS_TAG, "===");
             int res = xSemaphoreTake(gatts_semaphore, portMAX_DELAY);
             assert(res == pdTRUE);
         } else {
