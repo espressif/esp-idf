@@ -58,6 +58,10 @@ static int s_peek_char[UART_NUM] = { NONE, NONE, NONE };
 // driver is used.
 static bool s_non_blocking[UART_NUM];
 
+/* Lock ensuring that uart_select is used from only one task at the time */
+static _lock_t s_one_select_lock;
+
+static SemaphoreHandle_t *_signal_sem = NULL;
 static fd_set *_readfds = NULL;
 static fd_set *_writefds = NULL;
 static fd_set *_errorfds = NULL;
@@ -303,47 +307,55 @@ static void select_notif_callback(uart_port_t uart_num, uart_select_notif_t uart
         case UART_SELECT_READ_NOTIF:
             if (FD_ISSET(uart_num, _readfds_orig)) {
                 FD_SET(uart_num, _readfds);
-                esp_vfs_select_triggered_isr(task_woken);
+                esp_vfs_select_triggered_isr(_signal_sem, task_woken);
             }
             break;
         case UART_SELECT_WRITE_NOTIF:
             if (FD_ISSET(uart_num, _writefds_orig)) {
                 FD_SET(uart_num, _writefds);
-                esp_vfs_select_triggered_isr(task_woken);
+                esp_vfs_select_triggered_isr(_signal_sem, task_woken);
             }
             break;
         case UART_SELECT_ERROR_NOTIF:
             if (FD_ISSET(uart_num, _errorfds_orig)) {
                 FD_SET(uart_num, _errorfds);
-                esp_vfs_select_triggered_isr(task_woken);
+                esp_vfs_select_triggered_isr(_signal_sem, task_woken);
             }
             break;
     }
 }
 
-static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds)
+static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, SemaphoreHandle_t *signal_sem)
 {
+    if (_lock_try_acquire(&s_one_select_lock)) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
     const int max_fds = MIN(nfds, UART_NUM);
 
     taskENTER_CRITICAL(uart_get_selectlock());
 
-    if (_readfds || _writefds || _errorfds || _readfds_orig || _writefds_orig || _errorfds_orig) {
+    if (_readfds || _writefds || _errorfds || _readfds_orig || _writefds_orig || _errorfds_orig || _signal_sem) {
         taskEXIT_CRITICAL(uart_get_selectlock());
+        _lock_release(&s_one_select_lock);
         return ESP_ERR_INVALID_STATE;
     }
 
     if ((_readfds_orig = malloc(sizeof(fd_set))) == NULL) {
         taskEXIT_CRITICAL(uart_get_selectlock());
+        _lock_release(&s_one_select_lock);
         return ESP_ERR_NO_MEM;
     }
 
     if ((_writefds_orig = malloc(sizeof(fd_set))) == NULL) {
         taskEXIT_CRITICAL(uart_get_selectlock());
+        _lock_release(&s_one_select_lock);
         return ESP_ERR_NO_MEM;
     }
 
     if ((_errorfds_orig = malloc(sizeof(fd_set))) == NULL) {
         taskEXIT_CRITICAL(uart_get_selectlock());
+        _lock_release(&s_one_select_lock);
         return ESP_ERR_NO_MEM;
     }
 
@@ -353,6 +365,8 @@ static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, 
             uart_set_select_notif_callback(i, select_notif_callback);
         }
     }
+
+    _signal_sem = signal_sem;
 
     _readfds = readfds;
     _writefds = writefds;
@@ -367,6 +381,8 @@ static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, 
     FD_ZERO(exceptfds);
 
     taskEXIT_CRITICAL(uart_get_selectlock());
+    // s_one_select_lock is not released on successfull exit - will be
+    // released in uart_end_select()
 
     return ESP_OK;
 }
@@ -377,6 +393,8 @@ static void uart_end_select()
     for (int i = 0; i < UART_NUM; ++i) {
         uart_set_select_notif_callback(i, NULL);
     }
+
+    _signal_sem = NULL;
 
     _readfds = NULL;
     _writefds = NULL;
@@ -397,6 +415,7 @@ static void uart_end_select()
         _errorfds_orig = NULL;
     }
     taskEXIT_CRITICAL(uart_get_selectlock());
+    _lock_release(&s_one_select_lock);
 }
 
 void esp_vfs_dev_uart_register()
