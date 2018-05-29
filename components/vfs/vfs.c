@@ -72,15 +72,6 @@ static size_t s_vfs_count = 0;
 static fd_table_t s_fd_table[MAX_FDS] = { [0 ... MAX_FDS-1] = FD_TABLE_ENTRY_UNUSED };
 static _lock_t s_fd_table_lock;
 
-/* Semaphore used for waiting select events from other VFS drivers when socket
- * select is not used (not registered or socket FDs are not observed by the
- * given call of select)
- */
-static SemaphoreHandle_t s_select_sem = NULL;
-
-/* Lock ensuring that select is called from only one task at the time */
-static _lock_t s_one_select_lock;
-
 static esp_err_t esp_vfs_register_common(const char* base_path, size_t len, const esp_vfs_t* vfs, void* ctx, int *vfs_index)
 {
     if (len != LEN_PATH_PREFIX_IGNORED) {
@@ -799,16 +790,9 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
         return -1;
     }
 
-    if (_lock_try_acquire(&s_one_select_lock)) {
-        ESP_LOGD(TAG, "concurrent select is not supported");
-        __errno_r(r) = EINTR;
-        return -1;
-    }
-
     fds_triple_t *vfs_fds_triple;
     if ((vfs_fds_triple = calloc(s_vfs_count, sizeof(fds_triple_t))) == NULL) {
         __errno_r(r) = ENOMEM;
-        _lock_release(&s_one_select_lock);
         ESP_LOGD(TAG, "calloc is unsuccessful");
         return -1;
     }
@@ -863,14 +847,19 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
     // the global readfds, writefds and errorfds contain only socket FDs (if
     // there any)
 
+    /* Semaphore used for waiting select events from other VFS drivers when socket
+     * select is not used (not registered or socket FDs are not observed by the
+     * given call of select)
+     */
+    SemaphoreHandle_t select_sem = NULL;
+
     if (!socket_select) {
         // There is no socket VFS registered or select() wasn't called for
         // any socket. Therefore, we will use our own signalization.
-        if ((s_select_sem = xSemaphoreCreateBinary()) == NULL) {
+        if ((select_sem = xSemaphoreCreateBinary()) == NULL) {
             free(vfs_fds_triple);
             __errno_r(r) = ENOMEM;
-            _lock_release(&s_one_select_lock);
-            ESP_LOGD(TAG, "cannot create s_select_sem");
+            ESP_LOGD(TAG, "cannot create select_sem");
             return -1;
         }
     }
@@ -886,18 +875,17 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
             esp_vfs_log_fd_set("readfds", &item->readfds);
             esp_vfs_log_fd_set("writefds", &item->writefds);
             esp_vfs_log_fd_set("errorfds", &item->errorfds);
-            esp_err_t err = vfs->vfs.start_select(nfds, &item->readfds, &item->writefds, &item->errorfds);
+            esp_err_t err = vfs->vfs.start_select(nfds, &item->readfds, &item->writefds, &item->errorfds, &select_sem);
 
             if (err != ESP_OK) {
                 call_end_selects(i, vfs_fds_triple);
                 (void) set_global_fd_sets(vfs_fds_triple, s_vfs_count, readfds, writefds, errorfds);
-                if (s_select_sem) {
-                    vSemaphoreDelete(s_select_sem);
-                    s_select_sem = NULL;
+                if (select_sem) {
+                    vSemaphoreDelete(select_sem);
+                    select_sem = NULL;
                 }
                 free(vfs_fds_triple);
-                __errno_r(r) = ENOMEM;
-                _lock_release(&s_one_select_lock);
+                __errno_r(r) = EINTR;
                 ESP_LOGD(TAG, "start_select failed");
                 return -1;
             }
@@ -932,19 +920,18 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
             ESP_LOGD(TAG, "timeout is %dms", timeout_ms);
         }
         ESP_LOGD(TAG, "waiting without calling socket_select");
-        xSemaphoreTake(s_select_sem, ticks_to_wait);
+        xSemaphoreTake(select_sem, ticks_to_wait);
     }
 
     call_end_selects(s_vfs_count, vfs_fds_triple); // for VFSs for start_select was called before
     if (ret >= 0) {
         ret += set_global_fd_sets(vfs_fds_triple, s_vfs_count, readfds, writefds, errorfds);
     }
-    if (s_select_sem) {
-        vSemaphoreDelete(s_select_sem);
-        s_select_sem = NULL;
+    if (select_sem) {
+        vSemaphoreDelete(select_sem);
+        select_sem = NULL;
     }
     free(vfs_fds_triple);
-    _lock_release(&s_one_select_lock);
 
     ESP_LOGD(TAG, "esp_vfs_select returns %d", ret);
     esp_vfs_log_fd_set("readfds", readfds);
@@ -953,10 +940,10 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
     return ret;
 }
 
-void esp_vfs_select_triggered()
+void esp_vfs_select_triggered(SemaphoreHandle_t *signal_sem)
 {
-    if (s_select_sem) {
-        xSemaphoreGive(s_select_sem);
+    if (signal_sem && (*signal_sem)) {
+        xSemaphoreGive(*signal_sem);
     } else {
         // Another way would be to go through s_fd_table and find the VFS
         // which has a permanent FD. But in order to avoid to lock
@@ -971,10 +958,10 @@ void esp_vfs_select_triggered()
     }
 }
 
-void esp_vfs_select_triggered_isr(BaseType_t *woken)
+void esp_vfs_select_triggered_isr(SemaphoreHandle_t *signal_sem, BaseType_t *woken)
 {
-    if (s_select_sem) {
-        xSemaphoreGiveFromISR(s_select_sem, woken);
+    if (signal_sem && (*signal_sem)) {
+        xSemaphoreGiveFromISR(*signal_sem, woken);
     } else {
         // Another way would be to go through s_fd_table and find the VFS
         // which has a permanent FD. But in order to avoid to lock

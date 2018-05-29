@@ -275,8 +275,12 @@ static void select_task(void *param)
         .tv_usec = 100000,
     };
 
-    int s = select(1, NULL, NULL, NULL, &tv);
-    TEST_ASSERT_EQUAL(s, 0); //timeout
+    fd_set rfds;
+    FD_ZERO(&rfds);
+    FD_SET(test_task_param->fd, &rfds);
+
+    int s = select(test_task_param->fd + 1, &rfds, NULL, NULL, &tv);
+    TEST_ASSERT_EQUAL(0, s); //timeout
 
     if (test_task_param->sem) {
         xSemaphoreGive(test_task_param->sem);
@@ -284,23 +288,52 @@ static void select_task(void *param)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("concurent select() fails", "[vfs]")
+TEST_CASE("concurent selects work", "[vfs]")
 {
     struct timeval tv = {
         .tv_sec = 0,
         .tv_usec = 100000,//irrelevant
     };
-    const test_task_param_t test_task_param = {
+
+    int uart_fd, socket_fd;
+    const int dummy_socket_fd = open_dummy_socket();
+    init(&uart_fd, &socket_fd);
+
+    fd_set rfds;
+    FD_ZERO(&rfds);
+    FD_SET(uart_fd, &rfds);
+
+    test_task_param_t test_task_param = {
+        .fd = uart_fd,
         .sem = xSemaphoreCreateBinary(),
     };
     TEST_ASSERT_NOT_NULL(test_task_param.sem);
+
     xTaskCreate(select_task, "select_task", 4*1024, (void *) &test_task_param, 5, NULL);
     vTaskDelay(10 / portTICK_PERIOD_MS); //make sure the task has started and waits in select()
 
-    int s = select(1, NULL, NULL, NULL, &tv);
-    TEST_ASSERT_EQUAL(s, -1); //this select should fail because the other one is "waiting"
-    TEST_ASSERT_EQUAL(errno, EINTR);
+    int s = select(uart_fd + 1, &rfds, NULL, NULL, &tv);
+    TEST_ASSERT_EQUAL(-1, s); //this select should fail because two selects are accessing UART
+                              //(the other one is waiting for the timeout)
+    TEST_ASSERT_EQUAL(EINTR, errno);
 
-    TEST_ASSERT_EQUAL(xSemaphoreTake(test_task_param.sem, 1000 / portTICK_PERIOD_MS), pdTRUE);
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(test_task_param.sem, 1000 / portTICK_PERIOD_MS));
+
+    FD_ZERO(&rfds);
+    FD_SET(socket_fd, &rfds);
+
+    test_task_param.fd = dummy_socket_fd;
+
+    xTaskCreate(select_task, "select_task", 4*1024, (void *) &test_task_param, 5, NULL);
+    vTaskDelay(10 / portTICK_PERIOD_MS); //make sure the task has started and waits in select()
+
+    s = select(socket_fd + 1, &rfds, NULL, NULL, &tv);
+    TEST_ASSERT_EQUAL(0, s); //this select should timeout as well as the concurrent one because
+                             //concurrent socket select should work
+
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(test_task_param.sem, 1000 / portTICK_PERIOD_MS));
     vSemaphoreDelete(test_task_param.sem);
+
+    deinit(uart_fd, socket_fd);
+    close(dummy_socket_fd);
 }
