@@ -4,7 +4,7 @@
                            "--flash_freq", "${ESPFLASHFREQ}" ],
     "flash_files" : {
         "0x1000" : "bootloader/bootloader.bin",
-        "0x8000" : "partition_table/partition-table.bin",
+        "${PARTITION_TABLE_OFFSET}" : "partition_table/partition-table.bin",
         "${CONFIG_APP_OFFSET}" : "${PROJECT_NAME}.bin",
         "${PHY_PARTITION_OFFSET}" : "${PHY_PARTITION_BIN_FILE}"
     },
@@ -12,6 +12,6 @@
                           "file" : "bootloader/bootloader.bin" },
     "app" :             { "offset" : "${CONFIG_APP_OFFSET}",
                           "file" : "${PROJECT_NAME}.bin" },
-    "partition_table" : { "offset" : "0x8000",
+    "partition_table" : { "offset" : "${PARTITION_TABLE_OFFSET}",
                           "file" : "partition_table/partition-table.bin" }
 }
