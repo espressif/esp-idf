@@ -85,7 +85,9 @@ endif
 simple_monitor: $(call prereq_if_explicit,%flash)
 	$(MONITOR_PYTHON) -m serial.tools.miniterm --rts 0 --dtr 0 --raw $(ESPPORT) $(MONITORBAUD)
 
-MONITOR_OPTS := --baud $(MONITORBAUD) --port $(ESPPORT) --toolchain-prefix $(CONFIG_TOOLPREFIX) --make "$(MAKE)"
+PRINT_FILTER ?=
+
+MONITOR_OPTS := --baud $(MONITORBAUD) --port $(ESPPORT) --toolchain-prefix $(CONFIG_TOOLPREFIX) --make "$(MAKE)" --print_filter "$(PRINT_FILTER)"
 
 monitor: $(call prereq_if_explicit,%flash)
 	$(summary) MONITOR
