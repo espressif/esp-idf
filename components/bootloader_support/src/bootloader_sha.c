@@ -169,3 +169,21 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
 }
 
 #endif
+
+esp_err_t bootloader_sha256_hex_to_str(char *out_str, const uint8_t *in_array_hex, size_t len)
+{
+    if (out_str == NULL || in_array_hex == NULL || len == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    for (int i = 0; i < len; i++) {
+        for (int shift = 0; shift < 2; shift++) {
+            uint8_t nibble = (in_array_hex[i] >> (shift ? 0 : 4)) & 0x0F;
+            if (nibble < 10) {
+                out_str[i*2+shift] = '0' + nibble;
+            } else {
+                out_str[i*2+shift] = 'a' + nibble - 10;
+            }
+        }
+    }
+    return ESP_OK;
+}

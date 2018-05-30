@@ -286,6 +286,37 @@ esp_err_t esp_partition_mmap(const esp_partition_t* partition, uint32_t offset, 
                              spi_flash_mmap_memory_t memory,
                              const void** out_ptr, spi_flash_mmap_handle_t* out_handle);
 
+/**
+ * @brief Get SHA-256 digest for required partition.
+ *
+ * For apps with SHA-256 appended to the app image, the result is the appended SHA-256 value for the app image content.
+ * The hash is verified before returning, if app content is invalid then the function returns ESP_ERR_IMAGE_INVALID.
+ * For apps without SHA-256 appended to the image, the result is the SHA-256 of all bytes in the app image.
+ * For other partition types, the result is the SHA-256 of the entire partition.
+ *
+ * @param[in]  partition    Pointer to info for partition containing app or data. (fields: address, size and type, are required to be filled).
+ * @param[out] sha_256      Returned SHA-256 digest for a given partition.
+ *
+ * @return
+ *          - ESP_OK: In case of successful operation.
+ *          - ESP_ERR_INVALID_ARG: The size was 0 or the sha_256 was NULL.
+ *          - ESP_ERR_NO_MEM: Cannot allocate memory for sha256 operation.
+ *          - ESP_ERR_IMAGE_INVALID: App partition doesn't contain a valid app image.
+ *          - ESP_FAIL: An allocation error occurred.
+ */
+esp_err_t esp_partition_get_sha256(const esp_partition_t *partition, uint8_t *sha_256);
+
+/**
+ * @brief Check for the identity of two partitions by SHA-256 digest.
+ *
+ * @param[in] partition_1 Pointer to info for partition 1 containing app or data. (fields: address, size and type, are required to be filled).
+ * @param[in] partition_2 Pointer to info for partition 2 containing app or data. (fields: address, size and type, are required to be filled).
+ *
+ * @return
+ *         - True:  In case of the two firmware is equal.
+ *         - False: Otherwise
+ */
+bool esp_partition_check_identity(const esp_partition_t *partition_1, const esp_partition_t *partition_2);
 
 #ifdef __cplusplus
 }

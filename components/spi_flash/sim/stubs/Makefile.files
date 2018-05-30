@@ -3,7 +3,8 @@ SOURCE_FILES := \
 	log/log.c \
 	newlib/lock.c \
 	esp32/crc.cpp \
-	esp32/esp_random.c 
+	esp32/esp_random.c \
+	bootloader_support/src/bootloader_common.c 
 
 INCLUDE_DIRS := \
 	../include \

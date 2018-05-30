@@ -27,6 +27,10 @@
 #include "bootloader_flash.h"
 #include "bootloader_common.h"
 #include "soc/gpio_periph.h"
+#include "esp_image_format.h"
+#include "bootloader_sha.h"
+
+#define ESP_PARTITION_HASH_LEN 32 /* SHA-256 digest length */
 
 static const char* TAG = "boot_comm";
 
@@ -144,4 +148,47 @@ bool bootloader_common_erase_part_type_data(const char *list_erase, bool ota_dat
     bootloader_munmap(partitions);
 
     return ret;
+}
+
+esp_err_t bootloader_common_get_sha256_of_partition (uint32_t address, uint32_t size, int type, uint8_t *out_sha_256)
+{
+    if (out_sha_256 == NULL || size == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (type == PART_TYPE_APP) {
+        const esp_partition_pos_t partition_pos = {
+            .offset = address,
+            .size = size,
+        };
+        esp_image_metadata_t data;
+        // Function esp_image_verify() verifies and fills the structure data.
+        // here important to get: image_digest, image_len, hash_appended.
+        if (esp_image_verify(ESP_IMAGE_VERIFY_SILENT, &partition_pos, &data) != ESP_OK) {
+            return ESP_ERR_IMAGE_INVALID;
+        }
+        if (data.image.hash_appended) {
+            memcpy(out_sha_256, data.image_digest, ESP_PARTITION_HASH_LEN);
+            return ESP_OK;
+        }
+        // If image doesn't have a appended hash then hash calculates for entire image.
+        size = data.image_len;
+    }
+    // If image is type by data then hash is calculated for entire image.
+    const void *partition_bin = bootloader_mmap(address, size);
+    if (partition_bin == NULL) {
+        ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", address, size);
+        return ESP_FAIL;
+    }
+    bootloader_sha256_handle_t sha_handle = bootloader_sha256_start();
+    if (sha_handle == NULL) {
+        bootloader_munmap(partition_bin);
+        return ESP_ERR_NO_MEM;
+    }
+    bootloader_sha256_data(sha_handle, partition_bin, size);
+    bootloader_sha256_finish(sha_handle, out_sha_256);
+
+    bootloader_munmap(partition_bin);
+
+    return ESP_OK;
 }
