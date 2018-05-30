@@ -54,6 +54,8 @@ MacOS ::
     ls /dev/cu.*
 
 
+.. note: MacOS users: if you don't see the serial port then check you have the USB/serial drivers installed as shown in the Getting Started guide for your particular development board. For MacOS High Sierra (10.13), you may also have to explicitly allow the drivers to load. Open System Preferences -> Security & Privacy -> General and check if there is a message shown here about "System Software from developer ..." where the developer name is Silicon Labs or FTDI.
+
 .. _linux-dialout-group:
 
 Adding user to ``dialout`` on Linux
@@ -69,7 +71,7 @@ Make sure you re-login to enable read and write permissions for the serial port.
 Verify serial connection
 ------------------------
 
-Now verify that the serial connection is operational. You can do this using a serial terminal program. In this example we will use `PuTTY SSH Client <http://www.putty.org/>`_ that is avilable for both Windows and Linux. You can use other serial program and set communication parameters like below.
+Now verify that the serial connection is operational. You can do this using a serial terminal program. Windows and Linux users can use the `PuTTY SSH Client <http://www.putty.org/>`_ for this. Alternatively, any other serial program can be used with the communication parameters shown below.
 
 Run terminal, set identified serial port, baud rate = 115200, data bits = 8, stop bits = 1, and parity = N. Below are example screen shots of setting the port and such transmission parameters (in short described as  115200-8-1-N) on Windows and Linux. Remember to select exactly the same serial port you have identified in steps above.
 

@@ -98,8 +98,6 @@ function(idf_set_global_compiler_options)
     # go into the final binary so have no impact on size)
     add_compile_options(-ggdb)
 
-    add_compile_options("-I${CMAKE_BINARY_DIR}") # for sdkconfig.h
-
     # Enable ccache if it's on the path
     if(NOT CCACHE_DISABLE)
         find_program(CCACHE_FOUND ccache)

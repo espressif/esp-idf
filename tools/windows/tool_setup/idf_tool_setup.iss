@@ -2,8 +2,8 @@
 
 [Setup]
 AppName=ESP-IDF Tools
-AppVersion=1.0
-OutputBaseFilename=esp-idf-tools-setup-1.0
+AppVersion=1.1
+OutputBaseFilename=esp-idf-tools-setup-1.1
 
 DefaultDirName={pf}\Espressif\ESP-IDF Tools
 DefaultGroupName=ESP-IDF Tools
@@ -22,7 +22,7 @@ Name: "custom"; Description: "Custom installation"; Flags: iscustom
 
 [Components]
 Name: toolchain; Description: ESP32 Xtensa GCC Cross-Toolchain; Types: full custom;
-Name: mconf; Description: ESP-IDF console menuconfig tool; Types: full custom;
+Name: mconf_idf; Description: ESP-IDF console menuconfig tool; Types: full custom;
 Name: ninja; Description: Install Ninja build v1.8.2; Types: full custom
 
 [Tasks]
@@ -42,7 +42,7 @@ Name: python64; Description: Download and Run Python 2.7.14 Installer and instal
 
 [Files]
 Components: toolchain; Source: "input\xtensa-esp32-elf\*"; DestDir: "{app}\toolchain\"; Flags: recursesubdirs;
-Components: mconf; Source: "input\mconf-v4.6.0.0-idf-20180319-win32\*"; DestDir: "{app}\mconf\";
+Components: mconf_idf; Source: "input\mconf-v4.6.0.0-idf-20180525-win32\*"; DestDir: "{app}\mconf-idf\";
 Components: ninja; Source: "input\ninja.exe"; DestDir: "{app}";
 
 [Run]
@@ -61,13 +61,13 @@ Root: HKCU; Subkey: "Environment"; \
     ValueType: expandsz; ValueName: "Path"; ValueData: "{app};{olddata}"; Check: not IsInPath('{app}'); \
     Components: ninja; Tasks: addpath\user
 
-; mconf path
+; mconf-idf path
 Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; \
-    ValueType: expandsz; ValueName: "Path"; ValueData: "{app}\mconf;{olddata}"; Check: not IsInPath('{app}\mconf'); \
-    Components: mconf; Tasks: addpath\allusers
+    ValueType: expandsz; ValueName: "Path"; ValueData: "{app}\mconf-idf;{olddata}"; Check: not IsInPath('{app}\mconf-idf'); \
+    Components: mconf_idf; Tasks: addpath\allusers
 Root: HKCU; Subkey: "Environment"; \
-    ValueType: expandsz; ValueName: "Path"; ValueData: "{app}\mconf;{olddata}"; Check: not IsInPath('{app}\mconf'); \
-    Components: mconf; Tasks: addpath\user
+    ValueType: expandsz; ValueName: "Path"; ValueData: "{app}\mconf-idf;{olddata}"; Check: not IsInPath('{app}\mconf-idf'); \
+    Components: mconf_idf; Tasks: addpath\user
 
 ; toolchain path
 Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; \

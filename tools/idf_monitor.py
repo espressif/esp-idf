@@ -3,8 +3,8 @@
 # esp-idf serial output monitor tool. Does some helpful things:
 # - Looks up hex addresses in ELF file with addr2line
 # - Reset ESP32 via serial RTS line (Ctrl-T Ctrl-R)
-# - Run "make/idf.py flash" (Ctrl-T Ctrl-F)
-# - Run "make/idf.py app-flash" (Ctrl-T Ctrl-A)
+# - Run "make (or idf.py) flash" (Ctrl-T Ctrl-F)
+# - Run "make (or idf.py) app-flash" (Ctrl-T Ctrl-A)
 # - If gdbstub output is detected, gdb is automatically loaded
 #
 # Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
