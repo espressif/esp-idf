@@ -39,16 +39,20 @@ If you got here from section :ref:`get-started-setup-path`, while installing s/w
 Linux and MacOS
 ---------------
 
-Set up ``IDF_PATH`` and add ``idf.py`` to the PATH by adding the following two lines to ``~/.profile`` file::
+Set up ``IDF_PATH`` and add ``idf.py`` to the PATH by adding the following two lines to your ``~/.profile`` file::
 
     export IDF_PATH=~/esp/esp-idf
     export PATH="$PATH:$IDF_PATH/tools"
+
+.. note::
+
+   ``~/.profile`` means a file named ``.profile`` in your user's home directory (which is abbreviated ``~`` in the shell).
 
 Log off and log in back to make this change effective.
 
 .. note::
 
-    If you have ``/bin/bash`` set as login shell, and both ``.bash_profile`` and ``.profile`` exist, then update ``.bash_profile`` instead.
+    Not all shells use ``.profile``. If you have ``/bin/bash`` and ``.bash_profile`` exists then update this file instead. For ``zsh``, update ``.zprofile``. Other shells may use other profile files (consult the shell's documentation).
 
 Run the following command to check if ``IDF_PATH`` is set::
 

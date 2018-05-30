@@ -20,10 +20,12 @@ else()
     set(COMPONENT_SRCDIRS ". hwcrypto")
     set(COMPONENT_ADD_INCLUDEDIRS "include")
 
-    set(COMPONENT_REQUIRES driver)  # required because esp_sleep.h uses gpio_num_t & touch_pad_t
+    set(COMPONENT_REQUIRES driver tcpip_adapter)
+    # driver is a public requirement because esp_sleep.h uses gpio_num_t & touch_pad_t
+    # tcpip_adapter is a public requirement because esp_event.h uses tcpip_adapter types
     set(COMPONENT_PRIV_REQUIRES
         app_trace bootloader_support ethernet log mbedtls nvs_flash
-        pthread spi_flash tcpip_adapter vfs wpa_supplicant xtensa-debug-module)
+        pthread spi_flash vfs wpa_supplicant xtensa-debug-module)
 
     register_component()
 
@@ -65,8 +67,8 @@ else()
     set(LD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ld)
     add_custom_command(
         OUTPUT esp32_out.ld
-        COMMAND "${CMAKE_C_COMPILER}" -C -P -x c -E -o esp32_out.ld -I ${CMAKE_BINARY_DIR} ${LD_DIR}/esp32.ld
-        MAIN_DEPENDENCY ${LD_DIR}/esp32.ld
+        COMMAND "${CMAKE_C_COMPILER}" -C -P -x c -E -o esp32_out.ld -I ${CONFIG_DIR} ${LD_DIR}/esp32.ld
+        MAIN_DEPENDENCY ${LD_DIR}/esp32.ld ${SDKCONFIG_H}
         COMMENT "Generating linker script..."
         VERBATIM)
     add_custom_target(esp32_linker_script DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/esp32_out.ld)

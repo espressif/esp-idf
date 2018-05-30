@@ -2,7 +2,7 @@
 Get Started
 ***********
 
-This document is intended to help users set up the software environment for developement of applications using hardware based on the Espressif ESP32. Through a simple example we would like to illustrate how to use ESP-IDF (Espressif IoT Development Framework), including the menu based configuration, compiling the ESP-IDF and firmware download to ESP32 boards.
+This document is intended to help users set up the software environment for development of applications using hardware based on the Espressif ESP32. Through a simple example we would like to illustrate how to use ESP-IDF (Espressif IoT Development Framework), including the menu based configuration, compiling the ESP-IDF and firmware download to ESP32 boards.
 
 .. note::
    The CMake-based build system is currently in preview release. Documentation may have missing gaps, and you may enocunter bugs (please report these). To view documentation for the older GNU Make based build system, switch versions to the 'latest' master branch or a stable release.
@@ -22,7 +22,8 @@ What You Need
 To develop applications for ESP32 you need:
 
 * **PC** loaded with either Windows, Linux or Mac operating system
-* **Toolchain** to build the **Application** for ESP32
+* **Toolchain** to compile code for ESP32
+* **Build tools** CMake and Ninja to build a full **Application** for ESP32
 * **ESP-IDF** that essentially contains API for ESP32 and scripts to operate the **Toolchain**
 * A text editor to write programs (**Projects**) in C, e.g. `Eclipse <https://www.eclipse.org/>`_
 * The **ESP32** board itself and a **USB cable** to connect it to the **PC**
@@ -34,28 +35,23 @@ To develop applications for ESP32 you need:
 
     Development of applications for ESP32
 
-Preparation of development environment consists of three steps:
+Development Environment Steps:
 
 1. Setup of **Toolchain**
-2. Getting of **ESP-IDF** from GitHub
-3. Installation and configuration of **Eclipse**
+2. Getting **ESP-IDF** from GitHub
 
-You may skip the last step, if you prefer to use different editor.
-
-Having environment set up, you are ready to start the most interesting part - the application development. This process may be summarized in four steps:
+Once the development environment is set up, we will follow these steps to create an ESP-IDF application:
 
 1. Configuration of a **Project** and writing the code
 2. Compilation of the **Project** and linking it to build an **Application**
-3. Flashing (uploading) of the **Application** to **ESP32**
-4. Monitoring / debugging of the **Application**
-
-See instructions below that will walk you through these steps.
+3. Flashing (uploading) the compiled **Application** to **ESP32** over a USB/serial connection
+4. Monitoring / debugging of the **Application** output via USB/serial
 
 
-Guides
-======
+Development Board Guides
+========================
 
-If you have one of ESP32 development boards listed below, click on provided links to get you up and running.
+If you have one of ESP32 development boards listed below, click on the link for hardware setup:
 
 .. toctree::
     :maxdepth: 1
@@ -125,7 +121,7 @@ ESP-IDF will be downloaded into ``~/esp/esp-idf``.
 
 .. highlight:: batch
 
-For Windows Command Prompt users, the equivalent commands are::
+For **Windows Command Prompt** users, the equivalent commands are::
 
     mkdir %userprofile%\esp
     cd %userprofile%\esp
@@ -176,7 +172,7 @@ Copy :example:`get-started/hello_world` to ``~/esp`` directory::
 
 .. highlight:: batch
 
-For Windows Command Prompt users, the equivalent commands are::
+For **Windows Command Prompt** users, the equivalent commands are::
 
     cd %userprofile%\esp
     xcopy /e /i %IDF_PATH%\examples\get-started\hello_world hello_world
@@ -187,7 +183,7 @@ It is also possible to build examples in-place, without copying them first.
 
 .. important::
 
-    The esp-idf build system does not support spaces in paths to esp-idf or to projects.
+    The esp-idf build system does not support spaces in the path to either esp-idf or to projects.
 
 
 .. _get-started-connect:
@@ -196,7 +192,6 @@ Connect
 =======
 
 You are almost there. To be able to proceed further, connect ESP32 board to PC, check under what serial port the board is visible and verify if serial communication works. If you are not sure how to do it, check instructions in section :doc:`establish-serial-connection`. Note the port number, as it will be required in the next step.
-
 
 .. _get-started-configure:
 
@@ -212,9 +207,9 @@ Being in terminal window, go to directory of ``hello_world`` application by typi
 
 .. highlight:: batch
 
-For Windows Command Prompt users::
+For **Windows Command Prompt** users::
 
-    cd %userprofile%\esp
+    cd %userprofile%\esp\hello_world
     idf.py menuconfig
 
 .. note:: If you get an error about ``idf.py`` not being found, check the ``tools`` directory is part of your Path as described above in :ref:`get-started-setup-path`. If there is no ``idf.py`` in the ``tools`` directory, check you have the correct branch for the CMake preview as shown under :ref:`get-started-get-esp-idf`.
@@ -235,7 +230,7 @@ If previous steps have been done correctly, the following menu will be displayed
 Here are couple of tips on navigation and use of ``menuconfig``:
 
 * Use up & down arrow keys to navigate the menu.
-* Use Enter key to go into a submenu, Escape key to go out or to exit.
+* Use Enter key to go into a submenu, Escape key to go up a level or exit.
 * Type ``?`` to see a help screen. Enter key exits the help screen.
 * Use Space key, or ``Y`` and ``N`` keys to enable (Yes) and disable (No) configuration items with checkboxes "``[*]``"
 * Pressing ``?`` while highlighting a configuration item displays help about that item.
@@ -247,18 +242,52 @@ Here are couple of tips on navigation and use of ``menuconfig``:
 
 .. _get-started-build-flash:
 
-Build and Flash
-===============
+Build The Project and Flash
+===========================
 
 .. highlight:: bash
 
-Now you can build and flash the application. Run::
+Now you can build the project. Run::
+
+    idf.py build
+
+This command will compile the application and all the ESP-IDF components, generate bootloader, partition table, and application binaries.
+
+.. highlight: none
+
+::
+   $ idf.py build
+   Running cmake in directory /path/to/hello_world/build
+   Executing "cmake -G Ninja --warn-uninitialized /path/to/hello_world"...
+   Warn about uninitialized values.
+   -- Found Git: /usr/bin/git (found version "2.17.0")
+   -- Building empty aws_iot component due to configuration
+   -- Component names: ...
+   -- Component paths: ...
+   
+   ... (more lines of build system output)
+   
+   [527/527] Generating hello-world.bin
+   esptool.py v2.3.1
+   
+   Project build complete. To flash, run this command:
+   ../../../components/esptool_py/esptool/esptool.py -p (PORT) -b 921600 write_flash --flash_mode dio --flash_size detect --flash_freq 40m 0x10000 build/hello-world.bin  build 0x1000 build/bootloader/bootloader.bin 0x8000 build/partition_table/partition-table.bin
+   or run 'idf.py flash'
+
+If there are no errors, the build will finish by generating the firmware binary .bin file.
+
+Flash To A Device
+=================
+
+Now you can flash the application to the ESP32 board. Run::
 
     idf.py -p PORT flash
 
 Replace PORT with the name of your ESP32 board's serial port. On Windows, serial ports have names like ``COM1``. On MacOS, they start with ``/dev/cu.``. On Linux, they start with ``/dev/tty``. (See :doc:`establish-serial-connection` for full details.)
 
-This will compile the application and all the ESP-IDF components, generate bootloader, partition table, and application binaries, and flash these binaries to your ESP32 board.
+This step will flash the binaries that you just built to your ESP32 board.
+
+.. note:: Running ``idf.py build`` before ``idf.py flash`` is not actually necessary, the flash step will automatically build the project if required before flashing.
 
 .. highlight:: none
 
@@ -295,7 +324,7 @@ This will compile the application and all the ESP-IDF components, generate bootl
 
 If there are no issues, at the end of build process, you should see messages describing progress of flashing the project binary image onto the ESP32. Finally, the module will be reset and "hello_world" application will be running there.
 
-If you'd like to use the Eclipse IDE instead of running ``idf.py``, check out the :doc:`Eclipse guide <eclipse-setup>`.
+.. (Not currently supported) If you'd like to use the Eclipse IDE instead of running ``idf.py``, check out the :doc:`Eclipse guide <eclipse-setup>`.
 
 
 .. _get-started-build-monitor:
@@ -303,9 +332,9 @@ If you'd like to use the Eclipse IDE instead of running ``idf.py``, check out th
 Monitor
 =======
 
-To see if "hello_world" application is indeed running, type ``idf.py monitor``. This command is launching :doc:`IDF Monitor <idf-monitor>` application::
+To see if "hello_world" application is indeed running, type ``idf.py -p PORT monitor``. This command is launching :doc:`IDF Monitor <idf-monitor>` application::
 
-    $ idf.py monitor
+    $ idf.py -p /dev/ttyUSB0 monitor
     Running idf_monitor in directory [...]/esp/hello_world/build
     Executing "python [...]/esp-idf/tools/idf_monitor.py -b 115200 [...]/esp/hello_world/build/hello-world.elf"...
     --- idf_monitor on /dev/ttyUSB0 115200 ---
@@ -335,7 +364,7 @@ To exit the monitor use shortcut ``Ctrl+]``.
         e���)(Xn@�y.!��(�PW+)��Hn9a؅/9�!�t5��P�~�k��e�ea�5�jA
         ~zY��Y(1�,1�� e���)(Xn@�y.!Dr�zY(�jpi�|�+z5Ymvp
 
-    or monitor fails shortly after upload, your board is likely using 26MHz crystal, while the ESP-IDF assumes default of 40MHz. Exit the monitor, go back to the :ref:`menuconfig <get-started-configure>`, change :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` to 26MHz, then :ref:`build and flash <get-started-build-flash>` the application again. This is found under ``idf.py menuconfig`` under Component config --> ESP32-specific --> Main XTAL frequency.
+    or monitor fails shortly after upload, your board is likely using 26MHz crystal. Most development board designs use 40MHz and the ESP-IDF uses this default value. Exit the monitor, go back to the :ref:`menuconfig <get-started-configure>`, change :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` to 26MHz, then :ref:`build and flash <get-started-build-flash>` the application again. This is found under ``idf.py menuconfig`` under Component config --> ESP32-specific --> Main XTAL frequency.
 
 .. note::
 
@@ -367,9 +396,9 @@ Another solution is to update only what has changed. This method is useful if yo
 
 .. highlight:: batch
 
-For Windows Command Prompt users::
+For **Windows Command Prompt** users::
 
-    cd %userprofile%\esp
+    cd %userprofile%\esp\esp-idf
     git pull
     git submodule update --init --recursive
 
@@ -377,7 +406,7 @@ The ``git pull`` command is fetching and merging changes from ESP-IDF repository
 
 .. highlight:: bash
 
-If you would like to use specific release of ESP-IDF, e.g. `v2.1`, run::
+To use a specific release of ESP-IDF, e.g. `v2.1`, run::
 
     cd ~/esp
     git clone https://github.com/espressif/esp-idf.git esp-idf-v2.1
@@ -387,7 +416,7 @@ If you would like to use specific release of ESP-IDF, e.g. `v2.1`, run::
 
 .. highlight:: batch
 
-For Windows Command Prompt users::
+For **Windows Command Prompt** users::
 
     cd %userprofile%\esp
     git clone https://github.com/espressif/esp-idf.git esp-idf-v2.1
