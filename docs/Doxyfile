@@ -51,6 +51,8 @@ INPUT = \
     ../../components/bt/bluedroid/api/include/api/esp_a2dp_api.h \
     ../../components/bt/bluedroid/api/include/api/esp_avrc_api.h \
     ../../components/bt/bluedroid/api/include/api/esp_spp_api.h \
+    ../../components/bt/bluedroid/api/include/api/esp_hf_defs.h \
+    ../../components/bt/bluedroid/api/include/api/esp_hf_client_api.h \
     ##
     ## Ethernet - API Reference
     ##
@@ -91,6 +93,7 @@ INPUT = \
     ../../components/esp-tls/esp_tls.h \
     ## mDNS    
     ../../components/mdns/include/mdns.h \
+    ../../components/esp_http_client/include/esp_http_client.h \
     ##
     ## Storage - API Reference
     ##
@@ -105,6 +108,8 @@ INPUT = \
     ../../components/driver/include/driver/sdmmc_host.h \
     ../../components/driver/include/driver/sdmmc_types.h \
     ../../components/driver/include/driver/sdspi_host.h \
+    ## SDIO slave 
+    ../../components/driver/include/driver/sdio_slave.h \
     ## Non-Volatile Storage
     ../../components/nvs_flash/include/nvs.h \
     ../../components/nvs_flash/include/nvs_flash.h \

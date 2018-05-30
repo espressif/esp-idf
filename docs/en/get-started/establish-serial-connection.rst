@@ -1,5 +1,6 @@
 Establish Serial Connection with ESP32
 ======================================
+:link_to_translation:`zh_CN:[中文]`
 
 This section provides guidance how to establish serial connection between ESP32 and PC.
 
@@ -13,7 +14,7 @@ Below are the links to drivers for ESP32 boards produced by Espressif:
 
 * ESP32-PICO-KIT and ESP32-DevKitC - `CP210x USB to UART Bridge VCP Drivers <https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers>`_
 
-* ESP32-WROVER-KIT and ESP32 Demo Board - `FTDI Virtual COM Port Drivers <http://www.ftdichip.com/Drivers/D2XX.htm>`_
+* ESP32-WROVER-KIT and ESP32 Demo Board - `FTDI Virtual COM Port Drivers <http://www.ftdichip.com/Drivers/VCP.htm>`_
 
 Above drivers are primarily for reference. They should already be bundled with the operating system and installed automatically once one of listed boards is connected to the PC.
 
@@ -71,7 +72,7 @@ Make sure you re-login to enable read and write permissions for the serial port.
 Verify serial connection
 ------------------------
 
-Now verify that the serial connection is operational. You can do this using a serial terminal program. Windows and Linux users can use the `PuTTY SSH Client <http://www.putty.org/>`_ for this. Alternatively, any other serial program can be used with the communication parameters shown below.
+Now verify that the serial connection is operational. You can do this using a serial terminal program. In this example we will use `PuTTY SSH Client <http://www.putty.org/>`_ that is available for both Windows and Linux. You can use other serial program and set communication parameters like below.
 
 Run terminal, set identified serial port, baud rate = 115200, data bits = 8, stop bits = 1, and parity = N. Below are example screen shots of setting the port and such transmission parameters (in short described as  115200-8-1-N) on Windows and Linux. Remember to select exactly the same serial port you have identified in steps above.
 

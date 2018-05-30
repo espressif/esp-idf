@@ -27,6 +27,7 @@ static const int DRAM_ATTR s_trace_io[] = {
         BIT(18), BIT(18), // ESP_PM_TRACE_FREQ_SWITCH
         BIT(19), BIT(19), // ESP_PM_TRACE_CCOMPARE_UPDATE
         BIT(25), BIT(26), // ESP_PM_TRACE_ISR_HOOK
+        BIT(27), BIT(27), // ESP_PM_TRACE_SLEEP
 };
 
 void esp_pm_trace_init()

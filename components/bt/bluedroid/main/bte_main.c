@@ -77,7 +77,7 @@ int bte_main_boot_entry(bluedroid_init_done_cb_t cb)
 {
     hci = hci_layer_get_interface();
     if (!hci) {
-        LOG_ERROR("%s could not get hci layer interface.\n", __func__);
+        APPL_TRACE_ERROR("%s could not get hci layer interface.\n", __func__);
         return -2;
     }
 
@@ -122,9 +122,9 @@ void bte_main_shutdown(void)
 ******************************************************************************/
 static void bte_main_enable(void)
 {
-    LOG_DEBUG("Enable HCI\n");
+    APPL_TRACE_DEBUG("Enable HCI\n");
     if (hci_start_up()) {
-        LOG_ERROR("Start HCI Host Layer Failure\n");
+        APPL_TRACE_ERROR("Start HCI Host Layer Failure\n");
         return;
     }
 

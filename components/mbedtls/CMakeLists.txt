@@ -1,5 +1,7 @@
-set(COMPONENT_ADD_INCLUDEDIRS port/include include)
-set(COMPONENT_SRCDIRS library port)
+set(COMPONENT_ADD_INCLUDEDIRS port/include mbedtls/include)
+set(COMPONENT_SRCDIRS mbedtls/library port)
+
+set(COMPONENT_SRCEXCLUDE mbedtls/library/net_sockets.c)
 
 set(COMPONENT_REQUIRES lwip)
 

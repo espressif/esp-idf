@@ -89,7 +89,9 @@
 #include "bta/bta_sys.h"
 #include "osi/allocator.h"
 
-//#include "bta_ag_int.h"
+#if BTA_HF_INCLUDED == TRUE
+#include "bta_hf_client_int.h"
+#endif
 
 #if BTA_SDP_INCLUDED == TRUE
 #include "bta_sdp_int.h"
@@ -227,7 +229,13 @@ void BTE_InitStack(void)
     memset((void *)bta_dm_search_cb_ptr, 0, sizeof(tBTA_DM_SEARCH_CB));
     memset((void *)bta_dm_di_cb_ptr, 0, sizeof(tBTA_DM_DI_CB));
     //memset((void *)bta_prm_cb_ptr, 0, sizeof(tBTA_PRM_CB));
-    //memset((void *)bta_ag_cb_ptr, 0, sizeof(tBTA_AG_CB));
+
+#if (defined BTA_HF_INCLUDED && BTA_HF_INCLUDED == TRUE)
+    if ((bta_hf_client_cb_ptr = (tBTA_HF_CLIENT_CB *)osi_malloc(sizeof(tBTA_HF_CLIENT_CB))) == NULL) {
+        return;
+    }
+    memset((void *)bta_hf_client_cb_ptr, 0, sizeof(tBTA_HF_CLIENT_CB));
+#endif
 #if (defined BTA_JV_INCLUDED && BTA_JV_INCLUDED == TRUE)
     if ((bta_jv_cb_ptr = (tBTA_JV_CB *)osi_malloc(sizeof(tBTA_JV_CB))) == NULL) {
         return;
@@ -327,6 +335,10 @@ void BTE_DeinitStack(void)
     osi_free(bta_jv_cb_ptr);
     bta_jv_cb_ptr = NULL;
 #endif //JV
+#if (defined BTA_HF_INCLUDED && BTA_HF_INCLUDED == TRUE)
+    osi_free(bta_hf_client_cb_ptr);
+    bta_hf_client_cb_ptr = NULL;
+#endif
     osi_free(bta_dm_di_cb_ptr);
     bta_dm_di_cb_ptr = NULL;
     osi_free(bta_dm_search_cb_ptr);

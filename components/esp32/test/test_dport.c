@@ -6,12 +6,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-
+#include "soc/cpu.h"
 #include "unity.h"
-
+#include "rom/uart.h"
 #include "soc/uart_reg.h"
 #include "soc/dport_reg.h"
-
+#include "soc/rtc.h"
+#define MHZ (1000000)
 static volatile bool exit_flag;
 static bool dport_test_result;
 static bool apb_test_result;
@@ -54,40 +55,267 @@ static void accessAPB(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("access DPORT and APB at same time", "[esp32]")
+void run_tasks(const char *task1_description, void (* task1_func)(void *), const char *task2_description, void (* task2_func)(void *), uint32_t delay_ms)
 {
     int i;
     TaskHandle_t th[2];
     xSemaphoreHandle exit_sema[2];
 
     for (i=0; i<2; i++) {
-        exit_sema[i] = xSemaphoreCreateMutex();
-        xSemaphoreTake(exit_sema[i], portMAX_DELAY);
+        if((task1_func != NULL && i == 0) || (task2_func != NULL && i == 1)){
+            exit_sema[i] = xSemaphoreCreateMutex();
+            xSemaphoreTake(exit_sema[i], portMAX_DELAY);
+        }
     }
 
     exit_flag = false;
 
 #ifndef CONFIG_FREERTOS_UNICORE
     printf("assign task accessing DPORT to core 0 and task accessing APB to core 1\n");
-    xTaskCreatePinnedToCore(accessDPORT  , "accessDPORT"  , 2048, &exit_sema[0], UNITY_FREERTOS_PRIORITY - 1, &th[0], 0);
-    xTaskCreatePinnedToCore(accessAPB  , "accessAPB"  , 2048, &exit_sema[1], UNITY_FREERTOS_PRIORITY - 1, &th[1], 1);
+    if(task1_func != NULL) xTaskCreatePinnedToCore(task1_func, task1_description, 2048, &exit_sema[0], UNITY_FREERTOS_PRIORITY - 1, &th[0], 0);
+    if(task2_func != NULL) xTaskCreatePinnedToCore(task2_func, task2_description, 2048, &exit_sema[1], UNITY_FREERTOS_PRIORITY - 1, &th[1], 1);
 #else
     printf("assign task accessing DPORT and accessing APB\n");
-    xTaskCreate(accessDPORT  , "accessDPORT"  , 2048, &exit_sema[0], UNITY_FREERTOS_PRIORITY - 1, &th[0]);
-    xTaskCreate(accessAPB  , "accessAPB"  , 2048, &exit_sema[1], UNITY_FREERTOS_PRIORITY - 1, &th[1]);
+    if(task1_func != NULL) xTaskCreate(task1_func, task1_description, 2048, &exit_sema[0], UNITY_FREERTOS_PRIORITY - 1, &th[0]);
+    if(task2_func != NULL) xTaskCreate(task2_func, task2_description, 2048, &exit_sema[1], UNITY_FREERTOS_PRIORITY - 1, &th[1]);
 #endif
 
-    printf("start wait for 10 seconds\n");
-    vTaskDelay(10000 / portTICK_PERIOD_MS);
+    printf("start wait for %d seconds [Test %s and %s]\n", delay_ms/1000, task1_description, task2_description);
+    vTaskDelay(delay_ms / portTICK_PERIOD_MS);
 
     // set exit flag to let thread exit
     exit_flag = true;
 
     for (i=0; i<2; i++) {
-        xSemaphoreTake(exit_sema[i], portMAX_DELAY);
-        vSemaphoreDelete(exit_sema[i]);
+        if ((task1_func != NULL && i == 0) || (task2_func != NULL && i == 1)) {
+            xSemaphoreTake(exit_sema[i], portMAX_DELAY);
+            vSemaphoreDelete(exit_sema[i]);
+        }
     }
-
     TEST_ASSERT(dport_test_result == true && apb_test_result == true);
 }
 
+TEST_CASE("access DPORT and APB at same time", "[esp32]")
+{
+    dport_test_result   = false;
+    apb_test_result     = false;
+    printf("CPU_FREQ = %d MHz\n", rtc_clk_cpu_freq_value(rtc_clk_cpu_freq_get()) / MHZ);
+    run_tasks("accessDPORT", accessDPORT, "accessAPB", accessAPB, 10000);
+}
+
+void run_tasks_with_change_freq_cpu (rtc_cpu_freq_t cpu_freq)
+{
+    dport_test_result   = false;
+    apb_test_result     = false;
+    rtc_cpu_freq_t cur_freq = rtc_clk_cpu_freq_get();
+    uint32_t freq_before_changed = rtc_clk_cpu_freq_value(cur_freq) / MHZ;
+    uint32_t freq_changed = freq_before_changed;
+    printf("CPU_FREQ = %d MHz\n", freq_before_changed);
+
+    if (cur_freq != cpu_freq) {
+        uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
+
+        rtc_clk_cpu_freq_set(cpu_freq);
+
+        const int uart_num = CONFIG_CONSOLE_UART_NUM;
+        const int uart_baud = CONFIG_CONSOLE_UART_BAUDRATE;
+        uart_div_modify(uart_num, (rtc_clk_apb_freq_get() << 4) / uart_baud);
+
+        freq_changed = rtc_clk_cpu_freq_value(rtc_clk_cpu_freq_get()) / MHZ;
+        printf("CPU_FREQ switching to %d MHz\n", freq_changed);
+    }
+    run_tasks("accessDPORT", accessDPORT, "accessAPB", accessAPB, 10000 / ((freq_before_changed <= freq_changed) ? 1 : (freq_before_changed / freq_changed)));
+
+    // return old freq.
+    uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
+    rtc_clk_cpu_freq_set(cur_freq);
+    const int uart_num = CONFIG_CONSOLE_UART_NUM;
+    const int uart_baud = CONFIG_CONSOLE_UART_BAUDRATE;
+    uart_div_modify(uart_num, (rtc_clk_apb_freq_get() << 4) / uart_baud);
+}
+
+TEST_CASE("access DPORT and APB at same time (Freq CPU and APB = 80 MHz)", "[esp32] [ignore]")
+{
+    run_tasks_with_change_freq_cpu(RTC_CPU_FREQ_80M);
+}
+
+TEST_CASE("access DPORT and APB at same time (Freq CPU and APB = 40 MHz (XTAL))", "[esp32]")
+{
+    run_tasks_with_change_freq_cpu(RTC_CPU_FREQ_XTAL);
+}
+
+static uint32_t stall_other_cpu_counter;
+static uint32_t pre_reading_apb_counter;
+static uint32_t apb_counter;
+
+static void accessDPORT_stall_other_cpu(void *pvParameters)
+{
+    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    uint32_t dport_date = DPORT_REG_READ(DPORT_DATE_REG);
+    uint32_t dport_date_cur;
+    dport_test_result = true;
+    stall_other_cpu_counter = 0;
+    // although exit flag is set in another task, checking (exit_flag == false) is safe
+    while (exit_flag == false) {
+        ++stall_other_cpu_counter;
+        DPORT_STALL_OTHER_CPU_START();
+        dport_date_cur = _DPORT_REG_READ(DPORT_DATE_REG);
+        DPORT_STALL_OTHER_CPU_END();
+        if (dport_date != dport_date_cur) {
+            apb_test_result = false;
+            break;
+        }
+    }
+
+    xSemaphoreGive(*sema);
+    vTaskDelete(NULL);
+}
+
+static void accessAPB_measure_performance(void *pvParameters)
+{
+    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    uint32_t uart_date = REG_READ(UART_DATE_REG(0));
+
+    apb_test_result = true;
+    apb_counter = 0;
+    // although exit flag is set in another task, checking (exit_flag == false) is safe
+    while (exit_flag == false) {
+        ++apb_counter;
+        if (uart_date != REG_READ(UART_DATE_REG(0))) {
+            apb_test_result = false;
+            break;
+        }
+    }
+
+    xSemaphoreGive(*sema);
+    vTaskDelete(NULL);
+}
+
+static void accessDPORT_pre_reading_apb(void *pvParameters)
+{
+    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    uint32_t dport_date = DPORT_REG_READ(DPORT_DATE_REG);
+    uint32_t dport_date_cur;
+    dport_test_result = true;
+    pre_reading_apb_counter = 0;
+    // although exit flag is set in another task, checking (exit_flag == false) is safe
+    while (exit_flag == false) {
+        ++pre_reading_apb_counter;
+        dport_date_cur = DPORT_REG_READ(DPORT_DATE_REG);
+        if (dport_date != dport_date_cur) {
+            apb_test_result = false;
+            break;
+        }
+    }
+
+    xSemaphoreGive(*sema);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("test for DPORT access performance", "[esp32]")
+{
+    dport_test_result   = true;
+    apb_test_result     = true;
+    typedef struct {
+        uint32_t dport;
+        uint32_t apb;
+        uint32_t summ;
+    } test_performance_t;
+    test_performance_t t[5] = {0};
+    uint32_t delay_ms = 5000;
+
+    run_tasks("-", NULL, "accessAPB", accessAPB_measure_performance, delay_ms);
+    t[0].apb    = apb_counter;
+    t[0].dport  = 0;
+    t[0].summ   = t[0].apb + t[0].dport;
+
+    run_tasks("accessDPORT_stall_other_cpu", accessDPORT_stall_other_cpu, "-", NULL, delay_ms);
+    t[1].apb    = 0;
+    t[1].dport  = stall_other_cpu_counter;
+    t[1].summ   = t[1].apb + t[1].dport;
+
+    run_tasks("accessDPORT_pre_reading_apb", accessDPORT_pre_reading_apb, "-", NULL, delay_ms);
+    t[2].apb    = 0;
+    t[2].dport  = pre_reading_apb_counter;
+    t[2].summ   = t[2].apb + t[2].dport;
+
+    run_tasks("accessDPORT_stall_other_cpu", accessDPORT_stall_other_cpu, "accessAPB", accessAPB_measure_performance, delay_ms);
+    t[3].apb    = apb_counter;
+    t[3].dport  = stall_other_cpu_counter;
+    t[3].summ   = t[3].apb + t[3].dport;
+
+    run_tasks("accessDPORT_pre_reading_apb", accessDPORT_pre_reading_apb, "accessAPB", accessAPB_measure_performance, delay_ms);
+    t[4].apb    = apb_counter;
+    t[4].dport  = pre_reading_apb_counter;
+    t[4].summ   = t[4].apb + t[4].dport;
+
+    printf("\nPerformance table: \n"
+            "The number of simultaneous read operations of the APB and DPORT registers\n"
+            "by different methods for %d seconds.\n", delay_ms/1000);
+    printf("+-----------------------+----------+----------+----------+\n");
+    printf("|    Method read DPORT  |   DPORT  |    APB   |   SUMM   |\n");
+    printf("+-----------------------+----------+----------+----------+\n");
+    printf("|1.Only accessAPB       |%10d|%10d|%10d|\n", t[0].dport, t[0].apb, t[0].summ);
+    printf("|2.Only STALL_OTHER_CPU |%10d|%10d|%10d|\n", t[1].dport, t[1].apb, t[1].summ);
+    printf("|3.Only PRE_READ_APB_REG|%10d|%10d|%10d|\n", t[2].dport, t[2].apb, t[2].summ);
+    printf("+-----------------------+----------+----------+----------+\n");
+    printf("|4.STALL_OTHER_CPU      |%10d|%10d|%10d|\n", t[3].dport, t[3].apb, t[3].summ);
+    printf("|5.PRE_READ_APB_REG     |%10d|%10d|%10d|\n", t[4].dport, t[4].apb, t[4].summ);
+    printf("+-----------------------+----------+----------+----------+\n");
+    printf("| ratio=PRE_READ/STALL  |%10f|%10f|%10f|\n", (float)t[4].dport/t[3].dport, (float)t[4].apb/t[3].apb, (float)t[4].summ/t[3].summ);
+    printf("+-----------------------+----------+----------+----------+\n");
+}
+
+#define REPEAT_OPS 10000
+
+static uint32_t start, end;
+
+#define BENCHMARK_START() do {                                      \
+        RSR(CCOUNT, start);                                         \
+    } while(0)
+
+#define BENCHMARK_END(OPERATION) do {                               \
+        RSR(CCOUNT, end);                                           \
+        printf("%s took %d cycles/op (%d cycles for %d ops)\n",     \
+               OPERATION, (end - start)/REPEAT_OPS,                 \
+               (end - start), REPEAT_OPS);                          \
+    } while(0)
+
+TEST_CASE("BENCHMARK for DPORT access performance", "[freertos]")
+{
+    BENCHMARK_START();
+    for (int i = 0; i < REPEAT_OPS; i++) {
+        DPORT_STALL_OTHER_CPU_START();
+        _DPORT_REG_READ(DPORT_DATE_REG);
+        DPORT_STALL_OTHER_CPU_END();
+    }
+    BENCHMARK_END("[old]DPORT access STALL OTHER CPU");
+
+
+    BENCHMARK_START();
+    for (int i = 0; i < REPEAT_OPS; i++) {
+        DPORT_REG_READ(DPORT_DATE_REG);
+    }
+    BENCHMARK_END("[new]DPORT access PRE-READ APB REG");
+
+
+    BENCHMARK_START();
+    for (int i = 0; i < REPEAT_OPS; i++) {
+        DPORT_SEQUENCE_REG_READ(DPORT_DATE_REG);
+    }
+    BENCHMARK_END("[seq]DPORT access PRE-READ APB REG");
+
+
+    BENCHMARK_START();
+    for (int i = 0; i < REPEAT_OPS; i++) {
+        REG_READ(UART_DATE_REG(0));
+    }
+    BENCHMARK_END("REG_READ");
+
+
+    BENCHMARK_START();
+    for (int i = 0; i < REPEAT_OPS; i++) {
+        _DPORT_REG_READ(DPORT_DATE_REG);
+    }
+    BENCHMARK_END("_DPORT_REG_READ");
+}

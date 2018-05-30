@@ -62,6 +62,71 @@ config BOOTLOADER_VDDSDIO_BOOST_1_9V
     bool "1.9V"
 endchoice
 
+config BOOTLOADER_FACTORY_RESET
+    bool "GPIO triggers factory reset"
+    default N
+    help
+        Allows to reset the device to factory settings:
+        - clear one or more data partitions;
+        - boot from "factory" partition.
+        The factory reset will occur if there is a GPIO input pulled low while device starts up.
+        See settings below.
+
+config BOOTLOADER_NUM_PIN_FACTORY_RESET
+    int "Number of the GPIO input for factory reset"
+    depends on BOOTLOADER_FACTORY_RESET
+    range 0 39
+    default 4
+    help
+        The selected GPIO will be configured as an input with internal pull-up enabled.
+        To trigger a factory reset, this GPIO must be pulled low on reset.
+        Note that GPIO34-39 do not have an internal pullup and an external one must be provided.
+
+config BOOTLOADER_OTA_DATA_ERASE
+    bool "Clear OTA data on factory reset (select factory partition)"
+    depends on BOOTLOADER_FACTORY_RESET
+    help
+        The device will boot from "factory" partition (or OTA slot 0 if no factory partition is present) after a factory reset.
+
+config BOOTLOADER_DATA_FACTORY_RESET
+     string "Comma-separated names of partitions to clear on factory reset"
+     depends on BOOTLOADER_FACTORY_RESET
+     default "nvs"
+     help
+        Allows customers to select which data partitions will be erased while factory reset.
+        
+        Specify the names of partitions as a comma-delimited with optional spaces for readability. (Like this: "nvs, phy_init, ...")
+        Make sure that the name specified in the partition table and here are the same. 
+        Partitions of type "app" cannot be specified here.
+
+config BOOTLOADER_APP_TEST
+    bool "GPIO triggers boot from test app partition"
+    default N
+    help
+        Allows to run the test app from "TEST" partition.
+        A boot from "test" partition will occur if there is a GPIO input pulled low while device starts up.
+        See settings below.
+
+config BOOTLOADER_NUM_PIN_APP_TEST
+    int "Number of the GPIO input to boot TEST partition"
+    depends on BOOTLOADER_APP_TEST
+    range 0 39
+    default 18
+    help
+        The selected GPIO will be configured as an input with internal pull-up enabled.
+        To trigger a test app, this GPIO must be pulled low on reset.
+        After the GPIO input is deactivated and the device reboots, the old application will boot. 
+        (factory or OTA[x]).
+        Note that GPIO34-39 do not have an internal pullup and an external one must be provided.
+
+config BOOTLOADER_HOLD_TIME_GPIO
+    int "Hold time of GPIO for reset/test mode (seconds)"
+    depends on BOOTLOADER_FACTORY_RESET || BOOTLOADER_APP_TEST
+    default 5
+    help
+        The GPIO must be held low continuously for this period of time after reset 
+        before a factory reset or test partition boot (as applicable) is performed.
+
 endmenu  # Bootloader
 
 

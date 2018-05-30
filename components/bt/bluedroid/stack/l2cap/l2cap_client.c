@@ -91,14 +91,14 @@ l2cap_client_t *l2cap_client_new(const l2cap_client_callbacks_t *callbacks, void
     if (!l2cap_clients) {
         l2cap_clients = list_new(NULL);
         if (!l2cap_clients) {
-            LOG_ERROR("%s unable to allocate space for L2CAP client list.", __func__);
+            L2CAP_TRACE_ERROR("%s unable to allocate space for L2CAP client list.", __func__);
             return NULL;
         }
     }
 
     l2cap_client_t *ret = (l2cap_client_t *)osi_calloc(sizeof(l2cap_client_t));
     if (!ret) {
-        LOG_ERROR("%s unable to allocate L2CAP client.", __func__);
+        L2CAP_TRACE_ERROR("%s unable to allocate L2CAP client.", __func__);
         goto error;
     }
 
@@ -108,7 +108,7 @@ l2cap_client_t *l2cap_client_new(const l2cap_client_callbacks_t *callbacks, void
     ret->remote_mtu = L2CAP_MTU_DEFAULT;
     ret->outbound_fragments = list_new(NULL);
     if (!ret) {
-        LOG_ERROR("%s unable to allocate outbound L2CAP fragment list.", __func__);
+        L2CAP_TRACE_ERROR("%s unable to allocate outbound L2CAP fragment list.", __func__);
         goto error;
     }
 
@@ -146,7 +146,7 @@ bool l2cap_client_connect(l2cap_client_t *client, const bt_bdaddr_t *remote_bdad
 
     client->local_channel_id = L2CA_ConnectReq(psm, (uint8_t *)remote_bdaddr);
     if (!client->local_channel_id) {
-        LOG_ERROR("%s unable to create L2CAP connection.", __func__);
+        L2CAP_TRACE_ERROR("%s unable to create L2CAP connection.", __func__);
         return false;
     }
 
@@ -159,7 +159,7 @@ void l2cap_client_disconnect(l2cap_client_t *client)
     assert(client != NULL);
 
     if (client->local_channel_id && !L2CA_DisconnectReq(client->local_channel_id)) {
-        LOG_ERROR("%s unable to send disconnect message for LCID 0x%04x.", __func__, client->local_channel_id);
+        L2CAP_TRACE_ERROR("%s unable to send disconnect message for LCID 0x%04x.", __func__, client->local_channel_id);
     }
 
     client->local_channel_id = 0;
@@ -203,12 +203,12 @@ static void connect_completed_cb(uint16_t local_channel_id, uint16_t error_code)
 
     l2cap_client_t *client = find(local_channel_id);
     if (!client) {
-        LOG_ERROR("%s unable to find L2CAP client for LCID 0x%04x.", __func__, local_channel_id);
+        L2CAP_TRACE_ERROR("%s unable to find L2CAP client for LCID 0x%04x.", __func__, local_channel_id);
         return;
     }
 
     if (error_code != L2CAP_CONN_OK) {
-        LOG_ERROR("%s error connecting L2CAP channel: %d.", __func__, error_code);
+        L2CAP_TRACE_ERROR("%s error connecting L2CAP channel: %d.", __func__, error_code);
         client->callbacks.disconnected(client, client->context);
         return;
     }
@@ -216,7 +216,7 @@ static void connect_completed_cb(uint16_t local_channel_id, uint16_t error_code)
     // Use default L2CAP parameters.
     tL2CAP_CFG_INFO desired_parameters = { 0 };
     if (!L2CA_ConfigReq(local_channel_id, &desired_parameters)) {
-        LOG_ERROR("%s error sending L2CAP config parameters.", __func__);
+        L2CAP_TRACE_ERROR("%s error sending L2CAP config parameters.", __func__);
         client->callbacks.disconnected(client, client->context);
     }
 }
@@ -227,7 +227,7 @@ static void config_request_cb(uint16_t local_channel_id, tL2CAP_CFG_INFO *reques
     l2cap_client_t *client = find(local_channel_id);
 
     if (!client) {
-        LOG_ERROR("%s unable to find L2CAP client matching LCID 0x%04x.", __func__, local_channel_id);
+        L2CAP_TRACE_ERROR("%s unable to find L2CAP client matching LCID 0x%04x.", __func__, local_channel_id);
         return;
     }
 
@@ -255,7 +255,7 @@ static void config_request_cb(uint16_t local_channel_id, tL2CAP_CFG_INFO *reques
     }
 
     if (!L2CA_ConfigRsp(local_channel_id, &response)) {
-        LOG_ERROR("%s unable to send config response for LCID 0x%04x.", __func__, local_channel_id);
+        L2CAP_TRACE_ERROR("%s unable to send config response for LCID 0x%04x.", __func__, local_channel_id);
         l2cap_client_disconnect(client);
         return;
     }
@@ -272,7 +272,7 @@ static void config_completed_cb(uint16_t local_channel_id, tL2CAP_CFG_INFO *nego
     l2cap_client_t *client = find(local_channel_id);
 
     if (!client) {
-        LOG_ERROR("%s unable to find L2CAP client matching LCID 0x%04x.", __func__, local_channel_id);
+        L2CAP_TRACE_ERROR("%s unable to find L2CAP client matching LCID 0x%04x.", __func__, local_channel_id);
         return;
     }
 
@@ -283,7 +283,7 @@ static void config_completed_cb(uint16_t local_channel_id, tL2CAP_CFG_INFO *nego
 
     case L2CAP_CFG_UNACCEPTABLE_PARAMS:
         // TODO: see if we can renegotiate parameters instead of dropping the connection.
-        LOG_WARN("%s dropping L2CAP connection due to unacceptable config parameters.\n", __func__);
+        L2CAP_TRACE_WARNING("%s dropping L2CAP connection due to unacceptable config parameters.\n", __func__);
         l2cap_client_disconnect(client);
         break;
 
@@ -297,7 +297,7 @@ static void config_completed_cb(uint16_t local_channel_id, tL2CAP_CFG_INFO *nego
 
     // Failure, no further parameter negotiation possible.
     default:
-        LOG_WARN("%s L2CAP parameter negotiation failed with error code %d.\n", __func__, negotiated_parameters->result);
+        L2CAP_TRACE_WARNING("%s L2CAP parameter negotiation failed with error code %d.\n", __func__, negotiated_parameters->result);
         l2cap_client_disconnect(client);
         break;
     }
@@ -307,7 +307,7 @@ static void disconnect_request_cb(uint16_t local_channel_id, bool ack_required)
 {
     l2cap_client_t *client = find(local_channel_id);
     if (!client) {
-        LOG_ERROR("%s unable to find L2CAP client with LCID 0x%04x.\n", __func__, local_channel_id);
+        L2CAP_TRACE_ERROR("%s unable to find L2CAP client with LCID 0x%04x.\n", __func__, local_channel_id);
         return;
     }
 
@@ -328,7 +328,7 @@ static void disconnect_completed_cb(uint16_t local_channel_id, UNUSED_ATTR uint1
 
     l2cap_client_t *client = find(local_channel_id);
     if (!client) {
-        LOG_ERROR("%s unable to find L2CAP client with LCID 0x%04x.\n", __func__, local_channel_id);
+        L2CAP_TRACE_ERROR("%s unable to find L2CAP client with LCID 0x%04x.\n", __func__, local_channel_id);
         return;
     }
 
@@ -344,7 +344,7 @@ static void congestion_cb(uint16_t local_channel_id, bool is_congested)
 
     l2cap_client_t *client = find(local_channel_id);
     if (!client) {
-        LOG_ERROR("%s unable to find L2CAP client matching LCID 0x%04x.\n", __func__, local_channel_id);
+        L2CAP_TRACE_ERROR("%s unable to find L2CAP client matching LCID 0x%04x.\n", __func__, local_channel_id);
         return;
     }
 
@@ -367,7 +367,7 @@ static void read_ready_cb(uint16_t local_channel_id, BT_HDR *packet)
 
     l2cap_client_t *client = find(local_channel_id);
     if (!client) {
-        LOG_ERROR("%s unable to find L2CAP client matching LCID 0x%04x.\n", __func__, local_channel_id);
+        L2CAP_TRACE_ERROR("%s unable to find L2CAP client matching LCID 0x%04x.\n", __func__, local_channel_id);
         return;
     }
 
@@ -435,7 +435,7 @@ static void dispatch_fragments(l2cap_client_t *client)
             return;
 
         case L2CAP_DW_FAILED:
-            LOG_ERROR("%s error writing data to L2CAP connection LCID 0x%04x; disconnecting.", __func__, client->local_channel_id);
+            L2CAP_TRACE_ERROR("%s error writing data to L2CAP connection LCID 0x%04x; disconnecting.", __func__, client->local_channel_id);
             l2cap_client_disconnect(client);
             return;
 

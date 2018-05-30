@@ -79,11 +79,10 @@ static void IRAM_ATTR spi_flash_mmap_init()
     if (s_mmap_page_refcnt[0] != 0) {
         return; /* mmap data already initialised */
     }
-    
-    DPORT_STALL_OTHER_CPU_START();
+    DPORT_INTERRUPT_DISABLE();
     for (int i = 0; i < REGIONS_COUNT * PAGES_PER_REGION; ++i) {
-        uint32_t entry_pro = DPORT_PRO_FLASH_MMU_TABLE[i];
-        uint32_t entry_app = DPORT_APP_FLASH_MMU_TABLE[i];
+        uint32_t entry_pro = DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[i]);
+        uint32_t entry_app = DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_APP_FLASH_MMU_TABLE[i]);
 
         if (entry_pro != entry_app) {
             // clean up entries used by boot loader
@@ -97,7 +96,7 @@ static void IRAM_ATTR spi_flash_mmap_init()
             DPORT_APP_FLASH_MMU_TABLE[i] = DPORT_FLASH_MMU_TABLE_INVALID_VAL;
         }
     }
-    DPORT_STALL_OTHER_CPU_END();
+    DPORT_INTERRUPT_RESTORE();
 }
 
 static void IRAM_ATTR get_mmu_region(spi_flash_mmap_memory_t memory, int* out_begin, int* out_size,uint32_t* region_addr)
@@ -186,15 +185,15 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(int *pages, size_t page_count, spi_flas
     for (start = region_begin; start < end; ++start) {
         int pageno = 0;
         int pos;
-        DPORT_STALL_OTHER_CPU_START();
+        DPORT_INTERRUPT_DISABLE();
         for (pos = start; pos < start + page_count; ++pos, ++pageno) {
-            int table_val = (int) DPORT_PRO_FLASH_MMU_TABLE[pos];
+            int table_val = (int) DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[pos]);
             uint8_t refcnt = s_mmap_page_refcnt[pos]; 
             if (refcnt != 0 && table_val != pages[pageno]) {
                 break;
             }
         }
-        DPORT_STALL_OTHER_CPU_END();
+        DPORT_INTERRUPT_RESTORE();
         // whole mapping range matched, bail out
         if (pos - start == page_count) {
             break;
@@ -208,14 +207,16 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(int *pages, size_t page_count, spi_flas
     } else {
         // set up mapping using pages
         uint32_t pageno = 0;
-        DPORT_STALL_OTHER_CPU_START();
+        DPORT_INTERRUPT_DISABLE();
         for (int i = start; i != start + page_count; ++i, ++pageno) {
             // sanity check: we won't reconfigure entries with non-zero reference count
+            uint32_t entry_pro = DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[i]);
+            uint32_t entry_app = DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_APP_FLASH_MMU_TABLE[i]);
             assert(s_mmap_page_refcnt[i] == 0 ||
-                    (DPORT_PRO_FLASH_MMU_TABLE[i] == pages[pageno] &&
-                     DPORT_APP_FLASH_MMU_TABLE[i] == pages[pageno]));
+                    (entry_pro == pages[pageno] &&
+                     entry_app == pages[pageno]));
             if (s_mmap_page_refcnt[i] == 0) {
-                if (DPORT_PRO_FLASH_MMU_TABLE[i] != pages[pageno] || DPORT_APP_FLASH_MMU_TABLE[i] != pages[pageno]) {
+                if (entry_pro != pages[pageno] || entry_app != pages[pageno]) {
                     DPORT_PRO_FLASH_MMU_TABLE[i] = pages[pageno];
                     DPORT_APP_FLASH_MMU_TABLE[i] = pages[pageno];
                     need_flush = true;
@@ -223,7 +224,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(int *pages, size_t page_count, spi_flas
             }
             ++s_mmap_page_refcnt[i];
         }
-        DPORT_STALL_OTHER_CPU_END();
+        DPORT_INTERRUPT_RESTORE();
         LIST_INSERT_HEAD(&s_mmap_entries_head, new_entry, entries);
         new_entry->page = start;
         new_entry->count = page_count;
@@ -264,7 +265,6 @@ void IRAM_ATTR spi_flash_munmap(spi_flash_mmap_handle_t handle)
             // for each page, decrement reference counter
             // if reference count is zero, disable MMU table entry to
             // facilitate debugging of use-after-free conditions
-            DPORT_STALL_OTHER_CPU_START();
             for (int i = it->page; i < it->page + it->count; ++i) {
                 assert(s_mmap_page_refcnt[i] > 0);
                 if (--s_mmap_page_refcnt[i] == 0) {
@@ -272,7 +272,6 @@ void IRAM_ATTR spi_flash_munmap(spi_flash_mmap_handle_t handle)
                     DPORT_APP_FLASH_MMU_TABLE[i] = INVALID_ENTRY_VAL;
                 }
             }
-            DPORT_STALL_OTHER_CPU_END();
             LIST_REMOVE(it, entries);
             break;
         }
@@ -294,7 +293,7 @@ void spi_flash_mmap_dump()
     for (int i = 0; i < REGIONS_COUNT * PAGES_PER_REGION; ++i) {
         if (s_mmap_page_refcnt[i] != 0) {
             printf("page %d: refcnt=%d paddr=%d\n",
-                    i, (int) s_mmap_page_refcnt[i], DPORT_PRO_FLASH_MMU_TABLE[i]);
+                    i, (int) s_mmap_page_refcnt[i], DPORT_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[i]));
         }
     }
 }
@@ -307,13 +306,13 @@ uint32_t spi_flash_mmap_get_free_pages(spi_flash_mmap_memory_t memory)
     int region_size;    // number of pages to check
     uint32_t region_addr;  // base address of memory region
     get_mmu_region(memory,&region_begin,&region_size,&region_addr);
-    DPORT_STALL_OTHER_CPU_START();
+    DPORT_INTERRUPT_DISABLE();
     for (int i = region_begin; i < region_begin + region_size; ++i) {
-        if (s_mmap_page_refcnt[i] == 0 && DPORT_PRO_FLASH_MMU_TABLE[i] == INVALID_ENTRY_VAL) {
+        if (s_mmap_page_refcnt[i] == 0 && DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[i]) == INVALID_ENTRY_VAL) {
             count++;
         }
     }
-    DPORT_STALL_OTHER_CPU_END();
+   DPORT_INTERRUPT_RESTORE();
     return count;
 }
 
@@ -403,9 +402,7 @@ uint32_t spi_flash_cache2phys(const void *cached)
         /* cached address was not in IROM or DROM */
         return SPI_FLASH_CACHE2PHYS_FAIL;
     }
-    DPORT_STALL_OTHER_CPU_START();
-    uint32_t phys_page = DPORT_PRO_FLASH_MMU_TABLE[cache_page];
-    DPORT_STALL_OTHER_CPU_END();
+    uint32_t phys_page = DPORT_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[cache_page]);
     if (phys_page == INVALID_ENTRY_VAL) {
         /* page is not mapped */
         return SPI_FLASH_CACHE2PHYS_FAIL;
@@ -432,16 +429,15 @@ const void *spi_flash_phys2cache(uint32_t phys_offs, spi_flash_mmap_memory_t mem
         base = VADDR1_START_ADDR;
         page_delta = 64;
     }
-    
-    DPORT_STALL_OTHER_CPU_START();
+    DPORT_INTERRUPT_DISABLE();
     for (int i = start; i < end; i++) {
-        if (DPORT_PRO_FLASH_MMU_TABLE[i] == phys_page) {
+        if (DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[i]) == phys_page) {
             i -= page_delta;
             intptr_t cache_page =  base + (SPI_FLASH_MMU_PAGE_SIZE * i);
-            DPORT_STALL_OTHER_CPU_END();
+            DPORT_INTERRUPT_RESTORE();
             return (const void *) (cache_page | (phys_offs & (SPI_FLASH_MMU_PAGE_SIZE-1)));
         }
     }
-    DPORT_STALL_OTHER_CPU_END();
+    DPORT_INTERRUPT_RESTORE();
     return NULL;
 }

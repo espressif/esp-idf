@@ -44,7 +44,9 @@ static void btc_enable_bluetooth(void)
 
 static void btc_disable_bluetooth(void)
 {
+#if (SMP_INCLUDED)
     btc_config_shut_down();
+#endif
     if (BTA_DisableBluetooth() != BTA_SUCCESS) {
         future_ready(*btc_main_get_future_p(BTC_MAIN_DISABLE_FUTURE), FUTURE_FAIL);
     }
@@ -89,7 +91,7 @@ static void btc_deinit_bluetooth(void)
 
 void btc_main_call_handler(btc_msg_t *msg)
 {
-    LOG_DEBUG("%s act %d\n", __func__, msg->act);
+    BTC_TRACE_DEBUG("%s act %d\n", __func__, msg->act);
 
     switch (msg->act) {
     case BTC_MAIN_ACT_INIT:
@@ -105,7 +107,7 @@ void btc_main_call_handler(btc_msg_t *msg)
         btc_disable_bluetooth();
         break;
     default:
-        LOG_ERROR("%s UNKNOWN ACT %d\n", __func__, msg->act);
+        BTC_TRACE_ERROR("%s UNKNOWN ACT %d\n", __func__, msg->act);
         break;
     }
 }

@@ -36,7 +36,6 @@
 #include "stack/l2c_api.h"
 #include "osi/allocator.h"
 
-#define LOG_TAG "bt_bta_gattc"
 /*****************************************************************************
 **  Constants
 *****************************************************************************/
@@ -863,10 +862,6 @@ BOOLEAN bta_gattc_conn_dealloc(BD_ADDR remote_bda)
     if (p_conn != NULL) {
         p_conn->in_use = FALSE;
         memset(p_conn->remote_bda, 0, BD_ADDR_LEN);
-        osi_mutex_lock(&bta_gattc_cb.write_ccc_mutex, OSI_MUTEX_MAX_TIMEOUT);
-        bta_sys_free_timer(&p_conn->service_change_ccc_timer);
-        p_conn->ccc_timer_used = FALSE;
-        osi_mutex_unlock(&bta_gattc_cb.write_ccc_mutex);
         return TRUE;
     }
     return FALSE;
@@ -967,7 +962,7 @@ void bta_to_btif_uuid(bt_uuid_t *p_dest, tBT_UUID *p_src)
             break;
 
         default:
-            LOG_ERROR("%s: Unknown UUID length %d!", __FUNCTION__, p_src->len);
+            APPL_TRACE_ERROR("%s: Unknown UUID length %d!", __FUNCTION__, p_src->len);
             break;
     }
 }

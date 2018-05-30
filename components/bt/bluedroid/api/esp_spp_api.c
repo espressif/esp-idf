@@ -168,8 +168,7 @@ esp_err_t esp_spp_vfs_register()
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    btc_spp_vfs_register();
-    return ESP_OK;
+    return btc_spp_vfs_register();
 }
 
 #endif ///defined BTC_SPP_INCLUDED && BTC_SPP_INCLUDED == TRUE

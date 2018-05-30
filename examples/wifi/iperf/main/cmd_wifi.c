@@ -37,7 +37,14 @@ typedef struct {
     struct arg_str *password;
     struct arg_end *end;
 } wifi_args_t;
+
+typedef struct {
+    struct arg_str *ssid;
+    struct arg_end *end;
+} wifi_scan_arg_t;
+
 static wifi_args_t sta_args;
+static wifi_scan_arg_t scan_args;
 static wifi_args_t ap_args;
 static bool reconnect = true;
 static const char *TAG="iperf";
@@ -46,12 +53,37 @@ static EventGroupHandle_t wifi_event_group;
 const int CONNECTED_BIT = BIT0;
 const int DISCONNECTED_BIT = BIT1;
 
+static void scan_done_handler(void)
+{
+    uint16_t sta_number = 0;
+    uint8_t i;
+    wifi_ap_record_t *ap_list_buffer;
+
+    esp_wifi_scan_get_ap_num(&sta_number);
+    ap_list_buffer = malloc(sta_number * sizeof(wifi_ap_record_t));
+    if (ap_list_buffer == NULL) {
+        ESP_LOGE(TAG, "Failed to malloc buffer to print scan results");
+        return;
+    }
+
+    if (esp_wifi_scan_get_ap_records(&sta_number,(wifi_ap_record_t *)ap_list_buffer) == ESP_OK) {
+        for(i=0; i<sta_number; i++) {
+            ESP_LOGI(TAG, "[%s][rssi=%d]", ap_list_buffer[i].ssid, ap_list_buffer[i].rssi);
+        }
+    }
+    free(ap_list_buffer);
+}
+
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
     switch(event->event_id) {
     case SYSTEM_EVENT_STA_GOT_IP:
         xEventGroupClearBits(wifi_event_group, DISCONNECTED_BIT);
         xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
+        break;
+    case SYSTEM_EVENT_SCAN_DONE:
+        scan_done_handler();
+        ESP_LOGI(TAG, "sta scan done");
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
         if (reconnect) {
@@ -128,6 +160,35 @@ static int wifi_cmd_sta(int argc, char** argv)
 
     ESP_LOGI(TAG, "sta connecting to '%s'", sta_args.ssid->sval[0]);
     wifi_cmd_sta_join(sta_args.ssid->sval[0], sta_args.password->sval[0]);
+    return 0;
+}
+
+static bool wifi_cmd_sta_scan(const char* ssid)
+{
+    wifi_scan_config_t scan_config = { 0 };
+    scan_config.ssid = (uint8_t *) ssid;
+
+    ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
+    ESP_ERROR_CHECK( esp_wifi_scan_start(&scan_config, false) );
+
+    return true;
+}
+
+static int wifi_cmd_scan(int argc, char** argv)
+{
+    int nerrors = arg_parse(argc, argv, (void**) &scan_args);
+
+    if (nerrors != 0) {
+        arg_print_errors(stderr, scan_args.end, argv[0]);
+        return 1;
+    }
+
+    ESP_LOGI(TAG, "sta start to scan");
+    if ( scan_args.ssid->count == 1 ) {
+        wifi_cmd_sta_scan(scan_args.ssid->sval[0]);
+    } else {
+        wifi_cmd_sta_scan(NULL);
+    }
     return 0;
 }
 
@@ -314,6 +375,13 @@ static int restart(int argc, char** argv)
     ESP_LOGI(TAG, "Restarting");
     esp_restart();
 }
+
+static int heap_size(int argc, char** argv)
+{
+    uint32_t heap_size = heap_caps_get_minimum_free_size(MALLOC_CAP_DEFAULT);
+    ESP_LOGI(TAG, "min heap size: %u", heap_size);
+    return 0;
+}
  
 void register_wifi()
 {
@@ -331,9 +399,23 @@ void register_wifi()
 
     ESP_ERROR_CHECK( esp_console_cmd_register(&sta_cmd) );
 
+    scan_args.ssid = arg_str0(NULL, NULL, "<ssid>", "SSID of AP want to be scanned");
+    scan_args.end = arg_end(1);
+
+    const esp_console_cmd_t scan_cmd = {
+        .command = "scan",
+        .help = "WiFi is station mode, start scan ap",
+        .hint = NULL,
+        .func = &wifi_cmd_scan,
+        .argtable = &scan_args
+    };
+
     ap_args.ssid = arg_str1(NULL, NULL, "<ssid>", "SSID of AP");
     ap_args.password = arg_str0(NULL, NULL, "<pass>", "password of AP");
     ap_args.end = arg_end(2);
+
+
+    ESP_ERROR_CHECK( esp_console_cmd_register(&scan_cmd) );
 
     const esp_console_cmd_t ap_cmd = {
         .command = "ap",
@@ -378,4 +460,12 @@ void register_wifi()
     };
 
     ESP_ERROR_CHECK( esp_console_cmd_register(&iperf_cmd) );
+
+    const esp_console_cmd_t heap_cmd = {
+        .command = "heap",
+        .help = "get min free heap size druing test",
+        .hint = NULL,
+        .func = &heap_size,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&heap_cmd) );
 }

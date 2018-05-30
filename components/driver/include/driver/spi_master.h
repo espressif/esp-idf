@@ -226,15 +226,17 @@ esp_err_t spi_device_get_trans_result(spi_device_handle_t handle, spi_transactio
 
 
 /**
- * @brief Do a SPI transaction
+ * @brief Send a SPI transaction, wait for it to complete, and return the result
  *
- * Essentially does the same as spi_device_queue_trans followed by spi_device_get_trans_result. Do
- * not use this when there is still a transaction queued that hasn't been finalized 
- * using spi_device_get_trans_result.
+ * This function is the equivalent of calling spi_device_queue_trans() followed by spi_device_get_trans_result().
+ * Do not use this when there is still a transaction separately queued from spi_device_queue_trans() that hasn't been finalized
+ * using spi_device_get_trans_result().
+ *
+ * @note This function is not thread safe when multiple tasks access the same SPI device.
  *
  * @param handle Device handle obtained using spi_host_add_dev
  * @param trans_desc Description of transaction to execute
- * @return 
+ * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_OK                on success
  */

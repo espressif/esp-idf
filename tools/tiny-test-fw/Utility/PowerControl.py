@@ -1,0 +1,95 @@
+# Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http:#www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+Internal use only.
+
+This file implements controlling  APC PDU via telnet.
+"""
+
+import telnetlib
+
+
+class Control(object):
+    """ control APC via telnet """
+
+    @classmethod
+    def apc_telnet_make_choice(cls, telnet, choice):
+        """ select a choice """
+        telnet.read_until("Event Log")
+        telnet.read_until(">")
+        telnet.write(choice + "\r\n")
+
+    @classmethod
+    def apc_telnet_common_action(cls, telnet, check_str, action):
+        """ wait until a pattern and then write a line """
+        telnet.read_until(check_str)
+        telnet.write(action + "\r\n")
+
+    @classmethod
+    def control(cls, apc_ip, control_dict):
+        """
+        control APC
+
+        :param apc_ip: IP of APC
+        :param control_dict: dict with outlet ID and "ON" or "OFF"
+        """
+
+        for _outlet in control_dict:
+            assert 0 < _outlet < 9
+            assert control_dict[_outlet] in ["ON", "OFF"]
+
+        # telnet
+        # set timeout as 2s so that it won't waste time even can't access APC
+        tn = telnetlib.Telnet(host=apc_ip, timeout=5)
+        # log on
+        cls.apc_telnet_common_action(tn, "User Name :", "apc")
+        cls.apc_telnet_common_action(tn, "Password  :", "apc")
+        # go to Device Manager
+        cls.apc_telnet_make_choice(tn, "1")
+        # go to Outlet Management
+        cls.apc_telnet_make_choice(tn, "2")
+        # go to Outlet Control/Configuration
+        cls.apc_telnet_make_choice(tn, "1")
+
+        # do select Outlet and control
+        for _outlet in control_dict:
+            # choose Outlet
+            cls.apc_telnet_make_choice(tn, str(_outlet))
+            # choose Control Outlet
+            cls.apc_telnet_make_choice(tn, "1")
+            # choose action
+            _action = control_dict[_outlet]
+            if "ON" in _action:
+                cls.apc_telnet_make_choice(tn, "1")
+            else:
+                cls.apc_telnet_make_choice(tn, "2")
+            # do confirm
+            cls.apc_telnet_common_action(tn, "cancel :", "YES")
+            cls.apc_telnet_common_action(tn, "continue...", "")
+            # return to Outlet Control/Configuration
+            cls.apc_telnet_make_choice(tn, "\033")
+            cls.apc_telnet_make_choice(tn, "\033")
+
+        # exit to main menu and logout
+        tn.write("\033\r\n")
+        tn.write("\033\r\n")
+        tn.write("\033\r\n")
+        tn.write("4\r\n")
+
+    @classmethod
+    def control_rest(cls, apc_ip, outlet, action):
+        outlet_list = range(1, 9)
+        outlet_list.remove(outlet)
+        cls.control(apc_ip, dict.fromkeys(outlet_list, action))

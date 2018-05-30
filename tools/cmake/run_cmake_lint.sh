@@ -15,18 +15,9 @@ if [ -z "${IDF_PATH}" ]; then
     exit 3
 fi
 
-# exclusions include some third-party directories which contain upstream
-# CMakeLists files
-find ${IDF_PATH} \
-     -name build -prune \
-     -o -name third_party -prune \
-     \
-     -o -name 'nghttp2' -prune \
-     -o -name 'cJSON' -prune \
-     -o -name 'Findsodium.cmake' -prune \
-     \
-     -o -name CMakeLists.txt -print0 \
-     -o -name '*.cmake' -print0 \
-    | xargs -0 cmakelint --linelength=120 --spaces=4
+# Only list the "main" IDF repo, don't check any files in submodules (which may contain
+# third party CMakeLists.txt)
+ git ls-tree --full-tree --name-only -r HEAD | grep -v "/third_party/" | grep "CMakeLists.txt\|\.cmake$" \
+    | xargs cmakelint --linelength=120 --spaces=4
 
 

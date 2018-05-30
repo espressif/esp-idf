@@ -47,5 +47,5 @@ def test_examples_protocol_https_request(env, extra_data):
 
 
 if __name__ == '__main__':
-    TinyFW.set_default_config(config_file="EnvConfigTemplate.yml", dut=IDF.IDFDUT)
+    TinyFW.set_default_config(env_config_file="EnvConfigTemplate.yml", dut=IDF.IDFDUT)
     test_examples_protocol_https_request()

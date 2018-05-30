@@ -231,7 +231,7 @@ BOOLEAN BTM_SecRegister(tBTM_APPL_INFO *p_cb_info)
     BTM_TRACE_EVENT("%s application registered\n", __func__);
 
 #if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
-    LOG_DEBUG("%s p_cb_info->p_le_callback == 0x%p\n", __func__, p_cb_info->p_le_callback);
+    BTM_TRACE_DEBUG("%s p_cb_info->p_le_callback == 0x%p\n", __func__, p_cb_info->p_le_callback);
     if (p_cb_info->p_le_callback) {
         BTM_TRACE_EVENT("%s SMP_Register( btm_proc_smp_cback )\n", __func__);
         SMP_Register(btm_proc_smp_cback);
@@ -240,13 +240,13 @@ BOOLEAN BTM_SecRegister(tBTM_APPL_INFO *p_cb_info)
             btm_ble_reset_id();
         }
     } else {
-        LOG_WARN("%s p_cb_info->p_le_callback == NULL\n", __func__);
+        BTM_TRACE_WARNING("%s p_cb_info->p_le_callback == NULL\n", __func__);
     }
 #endif
 
     btm_cb.api = *p_cb_info;
 #if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
-    LOG_DEBUG("%s btm_cb.api.p_le_callback = 0x%p\n", __func__, btm_cb.api.p_le_callback);
+    BTM_TRACE_DEBUG("%s btm_cb.api.p_le_callback = 0x%p\n", __func__, btm_cb.api.p_le_callback);
 #endif
     BTM_TRACE_EVENT("%s application registered\n", __func__);
     return (TRUE);
@@ -2325,7 +2325,7 @@ tBTM_STATUS btm_sec_l2cap_access_req (BD_ADDR bd_addr, UINT16 psm, UINT16 handle
             2046 may report HCI_Encryption_Change and L2C Connection Request out of sequence
             because of data path issues. Delay this disconnect a little bit
             */
-            LOG_INFO("%s peer should have initiated security process by now (SM4 to SM4)\n", __func__);
+            BTM_TRACE_API("%s peer should have initiated security process by now (SM4 to SM4)\n", __func__);
             p_dev_rec->p_callback        = p_callback;
             p_dev_rec->sec_state         = BTM_SEC_STATE_DELAY_FOR_ENC;
             (*p_callback) (bd_addr, transport, p_ref_data, rc);
@@ -4018,6 +4018,7 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
 #if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
     tACL_CONN       *p_acl = NULL;
     UINT8           acl_idx = btm_handle_to_acl_index(handle);
+    tGATT_TCB       *p_tcb = NULL;
 #endif
     BTM_TRACE_EVENT ("Security Manager: encrypt_change status:%d State:%d, encr_enable = %d\n",
                      status, (p_dev_rec) ? p_dev_rec->sec_state : 0, encr_enable);
@@ -4045,6 +4046,11 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
                 p_dev_rec->sec_flags |= BTM_SEC_16_DIGIT_PIN_AUTHED;
             }
         } else {
+#if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
+            if ((p_tcb = gatt_find_tcb_by_addr(p_dev_rec->ble.pseudo_addr, BT_TRANSPORT_LE)) == NULL) {
+               //do nothing
+            } else
+#endif
             p_dev_rec->sec_flags |= (BTM_SEC_LE_AUTHENTICATED | BTM_SEC_LE_ENCRYPTED);
         }
     }

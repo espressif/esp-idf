@@ -16,7 +16,6 @@
 
 import os
 import argparse
-import mmap
 import re
 import fnmatch
 import string
@@ -277,19 +276,14 @@ def main():
             idf_path = os.path.relpath(full_path, os.environ['IDF_PATH'])
             if idf_path in ignore_files:
                 continue
-            with open(full_path, "r+b") as f:
-                try:
-                    map = mmap.mmap(f.fileno(), 0, prot=mmap.ACCESS_READ)
-                except ValueError:
-                    pass # An empty file cannot be mmaped
-                else:
-                    for line in iter(map.readline, ""):
-                        # match also ESP_OK and ESP_FAIL because some of ESP_ERRs are referencing them
-                        if re.match(r"\s*#define\s+(ESP_ERR_|ESP_OK|ESP_FAIL)", line):
-                            try:
-                                process(str.strip(line), idf_path)
-                            except InputError as e:
-                                print (e)
+            with open(full_path, "r+") as f:
+                for line in f:
+                    # match also ESP_OK and ESP_FAIL because some of ESP_ERRs are referencing them
+                    if re.match(r"\s*#define\s+(ESP_ERR_|ESP_OK|ESP_FAIL)", line):
+                        try:
+                            process(str.strip(line), idf_path)
+                        except InputError as e:
+                            print (e)
 
     process_remaining_errors()
 

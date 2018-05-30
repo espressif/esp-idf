@@ -28,21 +28,31 @@ int
 fast_sha256_vector(size_t num_elem, const uint8_t *addr[], const size_t *len,
 		  uint8_t *mac)
 {
+    int ret = 0;
     mbedtls_sha256_context ctx;
 
     mbedtls_sha256_init(&ctx);
 
-    mbedtls_sha256_starts(&ctx, 0);
-
-    for(size_t index = 0; index < num_elem; index++) {
-        mbedtls_sha256_update(&ctx, addr[index], len[index]);
+    if (mbedtls_sha256_starts_ret(&ctx, 0) != 0) {
+        ret = -1;
+        goto out;
     }
 
-    mbedtls_sha256_finish(&ctx, mac);
+    for(size_t index = 0; index < num_elem; index++) {
+        if (mbedtls_sha256_update_ret(&ctx, addr[index], len[index]) != 0) {
+            ret = -1;
+            goto out;
+        }
+    }
 
+    if (mbedtls_sha256_finish_ret(&ctx, mac) != 0) {
+        ret = -1;
+        goto out;
+    }
+
+out:
     mbedtls_sha256_free(&ctx);
 
-    return 0;
+    return ret;
 }
-
 

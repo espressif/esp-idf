@@ -48,7 +48,6 @@ pm_sw_reject_t pm_set_sleep_mode(pm_sleep_mode_t sleep_mode, void(*pmac_save_par
     }
 
     rtc_sleep_config_t cfg = { 0 };
-    cfg.soc_clk_sel = RTC_CNTL_SOC_CLK_SEL_XTL;
 
     switch (sleep_mode) {
         case PM_LIGHT_SLEEP:

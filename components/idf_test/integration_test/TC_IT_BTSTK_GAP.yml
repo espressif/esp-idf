@@ -607,7 +607,7 @@ test cases:
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - *open_capture_nic
   - *dut1_stop_adv
-  - - LOOP 2 2 "['0x20-0x40','0xA0-0xB0']" "['NPDU','PDU']"
+  - - LOOP 2 2 "['0x20-0x40','0xA0-0xB0']" "['PDU','PDU']"
     - [""]
   - - "SSC SSC1 bleadv -D -z start -t 2 -i {%s}"
     - ["R SSC1 C +BLEADV:OK"]
@@ -637,7 +637,7 @@ test cases:
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - *open_capture_nic
   - *dut1_stop_adv
-  - - LOOP 2 2 "['0x20-0x40','0xA0-0xB0']" "['NPDU','PDU']"
+  - - LOOP 2 2 "['0x20-0x40','0xA0-0xB0']" "['PDU','PDU']"
     - [""]
   - - "SSC SSC1 bleadv -D -z start -t 3 -i {%s}"
     - ["R SSC1 C +BLEADV:OK"]

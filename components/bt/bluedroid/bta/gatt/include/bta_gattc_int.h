@@ -365,9 +365,7 @@ typedef struct {
 typedef struct {
     BOOLEAN             in_use;
     BD_ADDR             remote_bda;
-    TIMER_LIST_ENT      service_change_ccc_timer;           /* wait for discovering remote device's service change ccc handle */
-    BOOLEAN             ccc_timer_used;                     /* service_change_ccc_timer started */
-    BOOLEAN             service_change_ccc_written;         /* has written remote device's service change ccc */
+    UINT16              svc_change_descr_handle; 
 } tBTA_GATTC_CONN;
 
 enum {
@@ -379,7 +377,6 @@ enum {
 
 typedef struct {
     UINT8               state;
-    osi_mutex_t         write_ccc_mutex;
     tBTA_GATTC_CONN     conn_track[BTA_GATTC_CONN_MAX];
     tBTA_GATTC_BG_TCK   bg_track[BTA_GATTC_KNOWN_SR_MAX];
     tBTA_GATTC_RCB      cl_rcb[BTA_GATTC_CL_MAX];

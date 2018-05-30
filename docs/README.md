@@ -1,6 +1,6 @@
 # Documentation Source Folder
 
-This folder contains source files of **ESP-IDF documentation** avialable in [English](https://esp-idf.readthedocs.io/en/latest/) and [中文](https://esp-idf.readthedocs.io/zh_CN/latest/).
+This folder contains source files of **ESP-IDF documentation** available in [English](https://esp-idf.readthedocs.io/en/latest/) and [中文](https://esp-idf.readthedocs.io/zh_CN/latest/).
 
 The sources do not render well in GitHub and some information is not visible at all.
 

@@ -18,12 +18,8 @@
 extern "C" {
 #endif
 
-#ifndef MDNS_TEST_MODE
 #include <tcpip_adapter.h>
 #include "esp_event.h"
-#else
-#include "esp32_compat.h"
-#endif
 
 #define MDNS_TYPE_A                 0x0001
 #define MDNS_TYPE_PTR               0x000C

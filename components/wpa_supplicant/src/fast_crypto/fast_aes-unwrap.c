@@ -58,7 +58,10 @@ fast_aes_unwrap(const uint8_t *kek, int n, const uint8_t *cipher, uint8_t *plain
             os_memcpy(b, a, 8);
             b[7] ^= n * j + i;
             os_memcpy(b + 8, r, 8);
-            mbedtls_aes_decrypt(&ctx, b, b);
+            ret = mbedtls_internal_aes_decrypt(&ctx, b, b);
+            if (ret != 0) {
+                break;
+            }
             os_memcpy(a, b, 8);
             os_memcpy(r, b + 8, 8);
             r -= 8;
@@ -77,5 +80,5 @@ fast_aes_unwrap(const uint8_t *kek, int n, const uint8_t *cipher, uint8_t *plain
         }
     }
 
-    return 0;
+    return ret;
 }

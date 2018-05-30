@@ -66,11 +66,11 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_bond_cancel,                     /* 12  BTA_DM_API_BOND_CANCEL_EVT */
     bta_dm_pin_reply,                       /* 13 BTA_DM_API_PIN_REPLY_EVT */
 #endif  ///SMP_INCLUDED == TRUE
-#if (BTM_SSR_INCLUDED == TRUE)
+#if (BTA_DM_PM_INCLUDED == TRUE)
     /* power manger events */
     bta_dm_pm_btm_status,                   /* 16 BTA_DM_PM_BTM_STATUS_EVT */
     bta_dm_pm_timer,                        /* 17 BTA_DM_PM_TIMER_EVT*/
-#endif  ///BTM_SSR_INCLUDED == TRUE
+#endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
     /* simple pairing events */
 #if (SMP_INCLUDED == TRUE)
     bta_dm_confirm,                         /* 18 BTA_DM_API_CONFIRM_EVT */

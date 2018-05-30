@@ -38,6 +38,7 @@ typedef enum {
     ESP_PD_DOMAIN_RTC_PERIPH,      //!< RTC IO, sensors and ULP co-processor
     ESP_PD_DOMAIN_RTC_SLOW_MEM,    //!< RTC slow memory
     ESP_PD_DOMAIN_RTC_FAST_MEM,    //!< RTC fast memory
+    ESP_PD_DOMAIN_XTAL,            //!< XTAL oscillator
     ESP_PD_DOMAIN_MAX              //!< Number of domains
 } esp_sleep_pd_domain_t;
 

@@ -382,7 +382,7 @@ void Page::updateFirstUsedEntry(size_t index, size_t span)
     }
 }
 
-esp_err_t Page::moveItem(Page& other)
+esp_err_t Page::copyItems(Page& other)
 {
     if (mFirstUsedEntry == INVALID_ENTRY) {
         return ESP_ERR_NVS_NOT_FOUND;
@@ -396,29 +396,41 @@ esp_err_t Page::moveItem(Page& other)
     }
 
     Item entry;
-    auto err = readEntry(mFirstUsedEntry, entry);
-    if (err != ESP_OK) {
-        return err;
-    }
-    other.mHashList.insert(entry, other.mNextFreeEntry);
-    err = other.writeEntry(entry);
-    if (err != ESP_OK) {
-        return err;
-    }
+    size_t readEntryIndex = mFirstUsedEntry;
 
-    size_t span = entry.span;
-    size_t end = mFirstUsedEntry + span;
+    while (readEntryIndex < ENTRY_COUNT) {
 
-    assert(mFirstUsedEntry != INVALID_ENTRY || span == 1);
+        if (mEntryTable.get(readEntryIndex) != EntryState::WRITTEN) {
+            assert(readEntryIndex != mFirstUsedEntry);
+            readEntryIndex++;
+            continue;
+        }
+        auto err = readEntry(readEntryIndex, entry);
+        if (err != ESP_OK) {
+            return err;
+        }
 
-    for (size_t i = mFirstUsedEntry + 1; i < end; ++i) {
-        readEntry(i, entry);
+        other.mHashList.insert(entry, other.mNextFreeEntry);
         err = other.writeEntry(entry);
         if (err != ESP_OK) {
             return err;
         }
+        size_t span = entry.span;
+        size_t end = readEntryIndex + span;
+
+        assert(end <= ENTRY_COUNT);
+
+        for (size_t i = readEntryIndex + 1; i < end; ++i) {
+            readEntry(i, entry);
+            err = other.writeEntry(entry);
+            if (err != ESP_OK) {
+                return err;
+            }
+        }
+        readEntryIndex = end;
+
     }
-    return eraseEntryAndSpan(mFirstUsedEntry);
+    return ESP_OK;
 }
 
 esp_err_t Page::mLoadEntryTable()

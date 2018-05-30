@@ -870,7 +870,7 @@ void l2c_init (void)
 
     l2cb.rcv_pending_q = list_new(NULL);
     if (l2cb.rcv_pending_q == NULL) {
-        LOG_ERROR("%s unable to allocate memory for link layer control block", __func__);
+        L2CAP_TRACE_ERROR("%s unable to allocate memory for link layer control block", __func__);
     }
 }
 

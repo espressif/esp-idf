@@ -1260,7 +1260,7 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
                             is_need_prepare_write_rsp = TRUE;
                             is_need_queue_data = TRUE;
                         } else if (p_attr->p_value == NULL) {
-                            LOG_ERROR("Error in %s, attribute of handle 0x%x not allocate value buffer\n",
+                            GATT_TRACE_ERROR("Error in %s, attribute of handle 0x%x not allocate value buffer\n",
                                         __func__, handle);
                             status = GATT_UNKNOWN_ERROR;
                         } else {
@@ -1306,11 +1306,11 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
             gatt_dequeue_sr_cmd(p_tcb);
             
             if (rsp_send_status != GATT_SUCCESS){
-                LOG_ERROR("Error in %s, line=%d, fail to send prepare_write_rsp, status=0x%x\n",
+                GATT_TRACE_ERROR("Error in %s, line=%d, fail to send prepare_write_rsp, status=0x%x\n",
                             __func__, __LINE__, rsp_send_status);
             }
         } else{
-            LOG_ERROR("Error in %s, line=%d, queue_data should not be NULL here, fail to send prepare_write_rsp\n",
+            GATT_TRACE_ERROR("Error in %s, line=%d, queue_data should not be NULL here, fail to send prepare_write_rsp\n",
                         __func__, __LINE__);
         }
     }

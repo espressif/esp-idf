@@ -30,7 +30,7 @@ void rtc_init(rtc_config_t cfg)
     REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_XTL_BUF_WAIT, cfg.xtal_wait);
     REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, cfg.ck8m_wait);
 
-    REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_DBG_ATTEN, 0x3);
+    REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_DBG_ATTEN, RTC_CNTL_DBG_ATTEN_DEFAULT);
     SET_PERI_REG_MASK(RTC_CNTL_BIAS_CONF_REG,
             RTC_CNTL_DEC_HEARTBEAT_WIDTH | RTC_CNTL_INC_HEARTBEAT_PERIOD);
 
@@ -132,8 +132,8 @@ rtc_vddsdio_config_t rtc_vddsdio_get_config()
     // Otherwise, VDD_SDIO is controlled by bootstrapping pin
     uint32_t strap_reg = REG_READ(GPIO_STRAP_REG);
     result.force = 0;
-    result.tieh = (strap_reg & BIT(5)) ? 0 : 1;
-    result.enable = result.tieh == 0; // only power on the regulator if VDD=1.8
+    result.tieh = (strap_reg & BIT(5)) ? RTC_VDDSDIO_TIEH_1_8V : RTC_VDDSDIO_TIEH_3_3V;
+    result.enable = 1;
     return result;
 }
 

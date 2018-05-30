@@ -242,6 +242,10 @@ void rtc_clk_apll_enable(bool enable, uint32_t sdm0, uint32_t sdm1, uint32_t sdm
 void rtc_clk_slow_freq_set(rtc_slow_freq_t slow_freq)
 {
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ANA_CLK_RTC_SEL, slow_freq);
+
+    REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN,
+            (slow_freq == RTC_SLOW_FREQ_32K_XTAL) ? 1 : 0);
+
     ets_delay_us(DELAY_SLOW_CLK_SWITCH);
 }
 

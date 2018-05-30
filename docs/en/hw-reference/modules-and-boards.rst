@@ -206,4 +206,4 @@ Related Documents
 * :doc:`modules-and-boards-previous`
 
 
-.. _FTDI Virtual COM Port Drivers: http://www.ftdichip.com/Drivers/D2XX.htm
+.. _FTDI Virtual COM Port Drivers: http://www.ftdichip.com/Drivers/VCP.htm

@@ -111,7 +111,7 @@ void mbedtls_sha1_clone( mbedtls_sha1_context *dst,
 /*
  * SHA-1 context setup
  */
-void mbedtls_sha1_starts( mbedtls_sha1_context *ctx )
+int mbedtls_sha1_starts_ret( mbedtls_sha1_context *ctx )
 {
     ctx->total[0] = 0;
     ctx->total[1] = 0;
@@ -126,11 +126,20 @@ void mbedtls_sha1_starts( mbedtls_sha1_context *ctx )
         esp_sha_unlock_engine(SHA1);
     }
     ctx->mode = ESP_MBEDTLS_SHA1_UNUSED;
+
+    return 0;
 }
+
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+void mbedtls_sha1_starts( mbedtls_sha1_context *ctx )
+{
+    mbedtls_sha1_starts_ret( ctx );
+}
+#endif
 
 static void mbedtls_sha1_software_process( mbedtls_sha1_context *ctx, const unsigned char data[64] );
 
-void mbedtls_sha1_process( mbedtls_sha1_context *ctx, const unsigned char data[64] )
+int mbedtls_internal_sha1_process( mbedtls_sha1_context *ctx, const unsigned char data[64] )
 {
     bool first_block = false;
     if (ctx->mode == ESP_MBEDTLS_SHA1_UNUSED) {
@@ -148,7 +157,17 @@ void mbedtls_sha1_process( mbedtls_sha1_context *ctx, const unsigned char data[6
     } else {
         mbedtls_sha1_software_process(ctx, data);
     }
+
+    return 0;
 }
+
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+void mbedtls_sha1_process( mbedtls_sha1_context *ctx,
+                           const unsigned char data[64] )
+{
+    mbedtls_internal_sha1_process( ctx, data );
+}
+#endif
 
 
 static void mbedtls_sha1_software_process( mbedtls_sha1_context *ctx, const unsigned char data[64] )
@@ -310,13 +329,14 @@ static void mbedtls_sha1_software_process( mbedtls_sha1_context *ctx, const unsi
 /*
  * SHA-1 process buffer
  */
-void mbedtls_sha1_update( mbedtls_sha1_context *ctx, const unsigned char *input, size_t ilen )
+int mbedtls_sha1_update_ret( mbedtls_sha1_context *ctx, const unsigned char *input, size_t ilen )
 {
+    int ret;
     size_t fill;
     uint32_t left;
 
     if( ilen == 0 )
-        return;
+        return 0;
 
     left = ctx->total[0] & 0x3F;
     fill = 64 - left;
@@ -330,7 +350,11 @@ void mbedtls_sha1_update( mbedtls_sha1_context *ctx, const unsigned char *input,
     if( left && ilen >= fill )
     {
         memcpy( (void *) (ctx->buffer + left), input, fill );
-        mbedtls_sha1_process( ctx, ctx->buffer );
+
+        if ( ( ret = mbedtls_internal_sha1_process( ctx, ctx->buffer ) ) != 0 ) {
+            return ret;
+        }
+
         input += fill;
         ilen  -= fill;
         left = 0;
@@ -338,14 +362,28 @@ void mbedtls_sha1_update( mbedtls_sha1_context *ctx, const unsigned char *input,
 
     while( ilen >= 64 )
     {
-        mbedtls_sha1_process( ctx, input );
+        if ( ( ret = mbedtls_internal_sha1_process( ctx, input ) ) != 0 ) {
+            return ret;
+        }
+
         input += 64;
         ilen  -= 64;
     }
 
     if( ilen > 0 )
         memcpy( (void *) (ctx->buffer + left), input, ilen );
+
+    return 0;
 }
+
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+void mbedtls_sha1_update( mbedtls_sha1_context *ctx,
+                          const unsigned char *input,
+                          size_t ilen )
+{
+    mbedtls_sha1_update_ret( ctx, input, ilen );
+}
+#endif
 
 static const unsigned char sha1_padding[64] =
 {
@@ -358,8 +396,9 @@ static const unsigned char sha1_padding[64] =
 /*
 * SHA-1 final digest
  */
-void mbedtls_sha1_finish( mbedtls_sha1_context *ctx, unsigned char output[20] )
+int mbedtls_sha1_finish_ret( mbedtls_sha1_context *ctx, unsigned char output[20] )
 {
+    int ret;
     uint32_t last, padn;
     uint32_t high, low;
     unsigned char msglen[8];
@@ -374,14 +413,16 @@ void mbedtls_sha1_finish( mbedtls_sha1_context *ctx, unsigned char output[20] )
     last = ctx->total[0] & 0x3F;
     padn = ( last < 56 ) ? ( 56 - last ) : ( 120 - last );
 
-    mbedtls_sha1_update( ctx, sha1_padding, padn );
-    mbedtls_sha1_update( ctx, msglen, 8 );
+    if ( ( ret = mbedtls_sha1_update_ret( ctx, sha1_padding, padn ) ) != 0 ) {
+        goto out;
+    }
+    if ( ( ret = mbedtls_sha1_update_ret( ctx, msglen, 8 ) ) != 0 ) {
+        goto out;
+    }
 
     /* if state is in hardware, read it out */
     if (ctx->mode == ESP_MBEDTLS_SHA1_HARDWARE) {
         esp_sha_read_digest_state(SHA1, ctx->state);
-        esp_sha_unlock_engine(SHA1);
-        ctx->mode = ESP_MBEDTLS_SHA1_SOFTWARE;
     }
 
     PUT_UINT32_BE( ctx->state[0], output,  0 );
@@ -390,6 +431,21 @@ void mbedtls_sha1_finish( mbedtls_sha1_context *ctx, unsigned char output[20] )
     PUT_UINT32_BE( ctx->state[3], output, 12 );
     PUT_UINT32_BE( ctx->state[4], output, 16 );
 
+out:
+    if (ctx->mode == ESP_MBEDTLS_SHA1_HARDWARE) {
+        esp_sha_unlock_engine(SHA1);
+        ctx->mode = ESP_MBEDTLS_SHA1_SOFTWARE;
+    }
+
+    return ret;
 }
+
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+void mbedtls_sha1_finish( mbedtls_sha1_context *ctx,
+                          unsigned char output[20] )
+{
+    mbedtls_sha1_finish_ret( ctx, output );
+}
+#endif
 
 #endif /* MBEDTLS_SHA1_C && MBEDTLS_SHA1_ALT */
