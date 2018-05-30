@@ -46,7 +46,7 @@ typedef struct {
 /* While scanning, if the free memory value in controller is less than SCAN_SEND_ADV_RESERVED_SIZE, 
 the adv packet will be discarded until the memory is restored. */
 #define SCAN_SEND_ADV_RESERVED_SIZE        1000
-/* open controller log debug when adv lost */
+/* enable controller log debug when adv lost */
 #define CONTROLLER_ADV_LOST_DEBUG_BIT      (0<<0)
 
 #ifdef CONFIG_BT_HCI_UART_NO
