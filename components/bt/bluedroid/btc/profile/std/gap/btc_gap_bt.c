@@ -16,6 +16,7 @@
 #include "esp_bt_defs.h"
 #include "esp_gap_bt_api.h"
 #include "btc_gap_bt.h"
+#include "btc/btc_storage.h"
 #include "bta/bta_api.h"
 #include "common/bt_trace.h"
 #include "common/bt_target.h"
@@ -68,7 +69,7 @@ static void btc_bt_set_scan_mode(esp_bt_scan_mode_t mode)
         break;
 
     default:
-        LOG_WARN("invalid scan mode (0x%x)", mode);
+        BTC_TRACE_WARNING("invalid scan mode (0x%x)", mode);
         return;
     }
 
@@ -137,31 +138,35 @@ static void btc_gap_bt_get_remote_service_record(btc_gap_bt_args_t *arg)
 *******************************************************************************/
 static void search_devices_copy_cb(btc_msg_t *msg, void *p_dest, void *p_src)
 {
-    tBTA_DM_SEARCH *p_dest_data =  (tBTA_DM_SEARCH *) p_dest;
-    tBTA_DM_SEARCH *p_src_data =  (tBTA_DM_SEARCH *) p_src;
-
+    tBTA_DM_SEARCH_PARAM *p_dest_data =  (tBTA_DM_SEARCH_PARAM *) p_dest;
+    tBTA_DM_SEARCH_PARAM *p_src_data =  (tBTA_DM_SEARCH_PARAM *) p_src;
     if (!p_src) {
         return;
     }
+    p_dest_data->p_data = (void *)osi_malloc(p_dest_data->len);
+    memset(p_dest_data->p_data, 0x00, p_dest_data->len);
+    memcpy(p_dest_data->p_data, p_src_data->p_data, p_dest_data->len);
 
-    switch (msg->aid) {
-    case BTA_DM_INQ_RES_EVT: {
-        if (p_src_data->inq_res.p_eir) {
-            p_dest_data->inq_res.p_eir = (UINT8 *)(p_dest + sizeof(tBTA_DM_SEARCH));
-            memcpy(p_dest_data->inq_res.p_eir, p_src_data->inq_res.p_eir, HCI_EXT_INQ_RESPONSE_LEN);
+    if ( p_dest_data->len > sizeof(tBTA_DM_SEARCH)){
+        switch (p_dest_data->event) {
+        case BTA_DM_INQ_RES_EVT: {
+            if (p_src_data->p_data->inq_res.p_eir) {
+                p_dest_data->p_data->inq_res.p_eir = (UINT8 *)(p_dest_data->p_data + sizeof(tBTA_DM_SEARCH));
+                memcpy(p_dest_data->p_data->inq_res.p_eir, p_src_data->p_data->inq_res.p_eir, HCI_EXT_INQ_RESPONSE_LEN);
+            }
         }
-    }
-    break;
+        break;
 
-    case BTA_DM_DISC_RES_EVT: {
-        if (p_src_data->disc_res.raw_data_size && p_src_data->disc_res.p_raw_data) {
-            p_dest_data->disc_res.p_raw_data = (UINT8 *)(p_dest + sizeof(tBTA_DM_SEARCH));
-            memcpy(p_dest_data->disc_res.p_raw_data,
-                   p_src_data->disc_res.p_raw_data,
-                   p_src_data->disc_res.raw_data_size);
+        case BTA_DM_DISC_RES_EVT: {
+            if (p_src_data->p_data->disc_res.raw_data_size && p_src_data->p_data->disc_res.p_raw_data) {
+                p_dest_data->p_data->disc_res.p_raw_data = (UINT8 *)(p_dest_data->p_data + sizeof(tBTA_DM_SEARCH));
+                memcpy(p_dest_data->p_data->disc_res.p_raw_data,
+                       p_src_data->p_data->disc_res.p_raw_data,
+                       p_src_data->p_data->disc_res.raw_data_size);
+            }
         }
-    }
-    break;
+        break;
+        }
     }
 }
 
@@ -176,26 +181,30 @@ static void search_devices_copy_cb(btc_msg_t *msg, void *p_dest, void *p_src)
 *******************************************************************************/
 static void search_service_record_copy_cb(btc_msg_t *msg, void *p_dest, void *p_src)
 {
-    tBTA_DM_SEARCH *p_dest_data =  (tBTA_DM_SEARCH *) p_dest;
-    tBTA_DM_SEARCH *p_src_data =  (tBTA_DM_SEARCH *) p_src;
+    tBTA_DM_SEARCH_PARAM *p_dest_data =  (tBTA_DM_SEARCH_PARAM *) p_dest;
+    tBTA_DM_SEARCH_PARAM *p_src_data =  (tBTA_DM_SEARCH_PARAM *) p_src;
 
     if (!p_src) {
         return;
     }
-
-    switch (msg->aid) {
-    case BTA_DM_DISC_RES_EVT: {
-        if (p_src_data->disc_res.p_raw_data && p_src_data->disc_res.raw_data_size > 0) {
-            p_dest_data->disc_res.p_raw_data = (UINT8 *)(p_dest + sizeof(tBTA_DM_SEARCH));
-            memcpy(p_dest_data->disc_res.p_raw_data,
-                   p_src_data->disc_res.p_raw_data,
-                   p_src_data->disc_res.raw_data_size);
+    p_dest_data->p_data = osi_malloc(p_dest_data->len);
+    memset(p_dest_data->p_data, 0x00, p_dest_data->len);
+    memcpy(p_dest_data->p_data, p_src_data->p_data, p_dest_data->len);
+    if ( p_dest_data->len > sizeof(tBTA_DM_SEARCH)){
+        switch (p_dest_data->event) {
+        case BTA_DM_DISC_RES_EVT: {
+            if (p_src_data->p_data->disc_res.p_raw_data && p_src_data->p_data->disc_res.raw_data_size > 0) {
+                p_dest_data->p_data->disc_res.p_raw_data = (UINT8 *)(p_dest_data->p_data + sizeof(tBTA_DM_SEARCH));
+                memcpy(p_dest_data->p_data->disc_res.p_raw_data,
+                       p_src_data->p_data->disc_res.p_raw_data,
+                       p_src_data->p_data->disc_res.raw_data_size);
+            }
         }
-    }
-    break;
-
-    default:
         break;
+
+        default:
+            break;
+        }
     }
 }
 
@@ -254,6 +263,10 @@ static BOOLEAN check_eir_remote_name(tBTA_DM_SEARCH *p_search_data,
 *******************************************************************************/
 static void bte_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data)
 {
+    tBTA_DM_SEARCH_PARAM search;
+    search.event = event;
+    search.p_data = p_data;
+
     UINT16 param_len = 0;
 
     if (p_data) {
@@ -281,31 +294,30 @@ static void bte_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_d
         p_data->inq_res.remt_name_not_required = check_eir_remote_name(p_data, NULL, NULL);
     }
 
+    search.len = param_len;
     do {
         btc_msg_t msg;
-        msg.sig = BTC_SIG_API_CALL;
+        msg.sig = BTC_SIG_API_CB;
         msg.pid = BTC_PID_GAP_BT;
-        msg.act = BTC_GAP_BT_ACT_SEARCH_DEVICES;
-        msg.aid = event;
+        msg.act = BTC_GAP_BT_SEARCH_DEVICES_EVT;
 
-        btc_transfer_context(&msg, p_data, param_len,
-                             (param_len > sizeof(tBTA_DM_SEARCH)) ? search_devices_copy_cb : NULL);
+        btc_transfer_context(&msg, &search, sizeof(tBTA_DM_SEARCH_PARAM), search_devices_copy_cb);
     } while (0);
 }
 
-static void btc_gap_bt_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data)
+static void btc_gap_bt_search_devices_evt(tBTA_DM_SEARCH_PARAM *p_data)
 {
-    switch (event) {
+    switch (p_data->event) {
     case BTA_DM_DISC_RES_EVT: {
         /* remote name update */
-        uint32_t bdname_len = strlen((const char *)p_data->disc_res.bd_name);
+        uint32_t bdname_len = strlen((const char *)p_data->p_data->disc_res.bd_name);
         if (bdname_len) {
             esp_bt_gap_dev_prop_t prop[1];
 
-            BTC_STORAGE_FILL_PROPERTY(&prop[0], ESP_BT_GAP_DEV_PROP_BDNAME, bdname_len + 1, p_data->disc_res.bd_name);
+            BTC_STORAGE_FILL_PROPERTY(&prop[0], ESP_BT_GAP_DEV_PROP_BDNAME, bdname_len + 1, p_data->p_data->disc_res.bd_name);
 
             esp_bt_gap_cb_param_t param;
-            bdcpy(param.disc_res.bda, p_data->disc_res.bd_addr);
+            bdcpy(param.disc_res.bda, p_data->p_data->disc_res.bd_addr);
             param.disc_res.num_prop = 1;
             param.disc_res.prop = prop;
             btc_gap_bt_cb_to_app(ESP_BT_GAP_DISC_RES_EVT, &param);
@@ -314,10 +326,10 @@ static void btc_gap_bt_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEAR
     }
     case BTA_DM_INQ_RES_EVT: {
         /* inquiry result */
-        uint32_t cod = devclass2uint (p_data->inq_res.dev_class);
+        uint32_t cod = devclass2uint (p_data->p_data->inq_res.dev_class);
 
         if (cod == 0) {
-            LOG_DEBUG("%s cod is 0, set as unclassified", __func__);
+            BTC_TRACE_DEBUG("%s cod is 0, set as unclassified", __func__);
             cod = COD_UNCLASSIFIED;
         }
 
@@ -329,17 +341,17 @@ static void btc_gap_bt_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEAR
             BTC_STORAGE_FILL_PROPERTY(&prop[0], ESP_BT_GAP_DEV_PROP_COD, sizeof(cod), &cod);
             num_prop++;
 
-            BTC_STORAGE_FILL_PROPERTY(&prop[1], ESP_BT_GAP_DEV_PROP_RSSI, 1, &(p_data->inq_res.rssi));
+            BTC_STORAGE_FILL_PROPERTY(&prop[1], ESP_BT_GAP_DEV_PROP_RSSI, 1, &(p_data->p_data->inq_res.rssi));
             num_prop++;
 
-            if (p_data->inq_res.p_eir) {
-                BTC_STORAGE_FILL_PROPERTY(&prop[2], ESP_BT_GAP_DEV_PROP_EIR, HCI_EXT_INQ_RESPONSE_LEN, p_data->inq_res.p_eir);
+            if (p_data->p_data->inq_res.p_eir) {
+                BTC_STORAGE_FILL_PROPERTY(&prop[2], ESP_BT_GAP_DEV_PROP_EIR, HCI_EXT_INQ_RESPONSE_LEN, p_data->p_data->inq_res.p_eir);
                 num_prop++;
             }
 
             /* Callback to notify upper layer of device */
             esp_bt_gap_cb_param_t param;
-            bdcpy(param.disc_res.bda, p_data->inq_res.bd_addr);
+            bdcpy(param.disc_res.bda, p_data->p_data->inq_res.bd_addr);
             param.disc_res.num_prop = num_prop;
             param.disc_res.prop = prop;
             btc_gap_bt_cb_to_app(ESP_BT_GAP_DISC_RES_EVT, &param);
@@ -381,18 +393,18 @@ static void btc_gap_bt_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEAR
 ** Returns          void
 **
 *******************************************************************************/
-static void btc_gap_bt_search_service_record(UINT16 event, char *p_param)
+static void btc_gap_bt_search_service_record(char *p_param)
 {
-    tBTA_DM_SEARCH *p_data = (tBTA_DM_SEARCH *)p_param;
+    tBTA_DM_SEARCH_PARAM *p_data = (tBTA_DM_SEARCH_PARAM *)p_param;
 
-    switch (event) {
+    switch (p_data->event) {
     case BTA_DM_DISC_RES_EVT: {
         esp_bt_gap_cb_param_t param;
-        memcpy(param.rmt_srvcs.bda, p_data->disc_res.bd_addr, BD_ADDR_LEN);
-        if (p_data->disc_res.p_raw_data && p_data->disc_res.raw_data_size > 0) {
+        memcpy(param.rmt_srvcs.bda, p_data->p_data->disc_res.bd_addr, BD_ADDR_LEN);
+        if (p_data->p_data->disc_res.p_raw_data && p_data->p_data->disc_res.raw_data_size > 0) {
             param.rmt_srvc_rec.stat = ESP_BT_STATUS_SUCCESS;
-            // param.rmt_srvc_rec.raw_data_size = p_data->disc_res.raw_data_size;
-            // param.rmt_srvc_rec.raw_data = p_data->disc_res.p_raw_data;
+            // param.rmt_srvc_rec.raw_data_size = p_data->p_data->disc_res.raw_data_size;
+            // param.rmt_srvc_rec.raw_data = p_data->p_data->disc_res.p_raw_data;
         } else {
             param.rmt_srvc_rec.stat = ESP_BT_STATUS_FAIL;
             // param.rmt_srvc_rec.raw_data_size = 0;
@@ -420,6 +432,9 @@ static void btc_gap_bt_search_service_record(UINT16 event, char *p_param)
 *******************************************************************************/
 static void bte_dm_remote_service_record_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data)
 {
+    tBTA_DM_SEARCH_PARAM search;
+    search.event = event;
+    search.p_data = p_data;
     UINT16 param_len = 0;
 
     if (p_data) {
@@ -431,17 +446,13 @@ static void bte_dm_remote_service_record_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_S
             param_len += p_data->disc_res.raw_data_size;
         }
     }
-
+    search.len = param_len;
     do {
         btc_msg_t msg;
-        msg.sig = BTC_SIG_API_CALL;
+        msg.sig = BTC_SIG_API_CB;
         msg.pid = BTC_PID_GAP_BT;
-        msg.act = BTC_GAP_BT_ACT_SEARCH_SERVICE_RECORD;
-        msg.aid = event;
-
-        btc_transfer_context(&msg, p_data, param_len,
-                             (param_len > sizeof(tBTA_DM_SEARCH)) ? search_service_record_copy_cb : NULL);
-
+        msg.act = BTC_GAP_BT_SEARCH_SERVICE_RECORD_EVT;
+        btc_transfer_context(&msg, &search, sizeof(tBTA_DM_SEARCH_PARAM), search_service_record_copy_cb);
     } while (0);
 
 }
@@ -455,27 +466,27 @@ static void bte_dm_remote_service_record_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_S
 ** Returns          void
 **
 *******************************************************************************/
-static void btc_gap_bt_search_services(UINT16 event, char *p_param)
+static void btc_gap_bt_search_services(char *p_param)
 {
-    tBTA_DM_SEARCH *p_data = (tBTA_DM_SEARCH *)p_param;
+    tBTA_DM_SEARCH_PARAM *p_data = (tBTA_DM_SEARCH_PARAM *)p_param;
 
-    switch (event) {
+    switch (p_data->event) {
     case BTA_DM_DISC_RES_EVT: {
         esp_bt_gap_cb_param_t param;
         esp_bt_uuid_t *uuid_list = NULL;
-        memcpy(param.rmt_srvcs.bda, p_data->disc_res.bd_addr, BD_ADDR_LEN);
+        memcpy(param.rmt_srvcs.bda, p_data->p_data->disc_res.bd_addr, BD_ADDR_LEN);
 
         param.rmt_srvcs.stat = ESP_BT_STATUS_FAIL;
-        if (p_data->disc_res.result == BTA_SUCCESS) {
-            uuid_list = malloc(sizeof(esp_bt_uuid_t) * p_data->disc_res.num_uuids);
+        if (p_data->p_data->disc_res.result == BTA_SUCCESS) {
+            uuid_list = malloc(sizeof(esp_bt_uuid_t) * p_data->p_data->disc_res.num_uuids);
             if (uuid_list) {
                 param.rmt_srvcs.stat = ESP_BT_STATUS_SUCCESS;
-                param.rmt_srvcs.num_uuids = p_data->disc_res.num_uuids;
+                param.rmt_srvcs.num_uuids = p_data->p_data->disc_res.num_uuids;
                 param.rmt_srvcs.uuid_list = uuid_list;
                 // copy UUID list
-                uint8_t *i_uu = (uint8_t *)p_data->disc_res.p_uuid_list;
+                uint8_t *i_uu = (uint8_t *)p_data->p_data->disc_res.p_uuid_list;
                 esp_bt_uuid_t *o_uu = uuid_list;
-                for (int i = 0; i < p_data->disc_res.num_uuids; i++, i_uu += ESP_UUID_LEN_128, o_uu++) {
+                for (int i = 0; i < p_data->p_data->disc_res.num_uuids; i++, i_uu += ESP_UUID_LEN_128, o_uu++) {
                     uuid128_be_to_esp_uuid(o_uu, i_uu);
                 }
             }
@@ -512,6 +523,10 @@ static void btc_gap_bt_search_services(UINT16 event, char *p_param)
 *******************************************************************************/
 static void bte_dm_search_services_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data)
 {
+    tBTA_DM_SEARCH_PARAM search;
+    search.event = event;
+    search.p_data = p_data;
+
     UINT16 param_len = 0;
     if (p_data) {
         param_len += sizeof(tBTA_DM_SEARCH);
@@ -524,46 +539,46 @@ static void bte_dm_search_services_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH 
         }
     } break;
     }
-
-    /* TODO: The only other member that needs a deep copy is the p_raw_data. But not sure
-     * if raw_data is needed. */
+    search.len = param_len;
     do {
         btc_msg_t msg;
-        msg.sig = BTC_SIG_API_CALL;
+        msg.sig = BTC_SIG_API_CB;
         msg.pid = BTC_PID_GAP_BT;
-        msg.act = BTC_GAP_BT_ACT_SEARCH_SERVICES;
-        msg.aid = event;
-
-        btc_transfer_context(&msg, p_data, param_len,
-                             (param_len > sizeof(tBTA_DM_SEARCH)) ? search_services_copy_cb : NULL);
+        msg.act = BTC_GAP_BT_SEARCH_SERVICES_EVT;
+        btc_transfer_context(&msg, &search, sizeof(tBTA_DM_SEARCH_PARAM), search_services_copy_cb);
     } while (0);
 }
 
 static void search_services_copy_cb(btc_msg_t *msg, void *p_dest, void *p_src)
 {
-    tBTA_DM_SEARCH *p_dest_data =  (tBTA_DM_SEARCH *) p_dest;
-    tBTA_DM_SEARCH *p_src_data =  (tBTA_DM_SEARCH *) p_src;
+    tBTA_DM_SEARCH_PARAM *p_dest_data =  (tBTA_DM_SEARCH_PARAM *) p_dest;
+    tBTA_DM_SEARCH_PARAM *p_src_data =  (tBTA_DM_SEARCH_PARAM *) p_src;
 
     if (!p_src) {
         return;
     }
+    p_dest_data->p_data = osi_malloc(p_dest_data->len);
+    memset(p_dest_data->p_data, 0x00, p_dest_data->len);
+    memcpy(p_dest_data->p_data, p_src_data->p_data, p_dest_data->len);
 
-    switch (msg->aid) {
-    case BTA_DM_DISC_RES_EVT: {
-        if (p_src_data->disc_res.result == BTA_SUCCESS) {
-            if (p_src_data->disc_res.num_uuids > 0) {
-                p_dest_data->disc_res.p_uuid_list = (UINT8 *)(p_dest + sizeof(tBTA_DM_SEARCH));
-                memcpy(p_dest_data->disc_res.p_uuid_list, p_src_data->disc_res.p_uuid_list,
-                       p_src_data->disc_res.num_uuids * MAX_UUID_SIZE);
-                osi_free(p_src_data->disc_res.p_uuid_list);
-                p_src_data->disc_res.p_uuid_list = NULL;
+    if ( p_dest_data->len > sizeof(tBTA_DM_SEARCH)){
+        switch (p_dest_data->event) {
+        case BTA_DM_DISC_RES_EVT: {
+            if (p_src_data->p_data->disc_res.result == BTA_SUCCESS) {
+                if (p_src_data->p_data->disc_res.num_uuids > 0) {
+                    p_dest_data->p_data->disc_res.p_uuid_list = (UINT8 *)(p_dest_data->p_data + sizeof(tBTA_DM_SEARCH));
+                    memcpy(p_dest_data->p_data->disc_res.p_uuid_list, p_src_data->p_data->disc_res.p_uuid_list,
+                           p_src_data->p_data->disc_res.num_uuids * MAX_UUID_SIZE);
+                    osi_free(p_src_data->p_data->disc_res.p_uuid_list);
+                    p_src_data->p_data->disc_res.p_uuid_list = NULL;
+                }
+                if (p_src_data->p_data->disc_res.p_raw_data != NULL) {
+                    osi_free(p_src_data->p_data->disc_res.p_raw_data);
+                    p_src_data->p_data->disc_res.p_raw_data = NULL;
+                }
             }
-            if (p_src_data->disc_res.p_raw_data != NULL) {
-                osi_free(p_src_data->disc_res.p_raw_data);
-                p_src_data->disc_res.p_raw_data = NULL;
-            }
+        } break;
         }
-    } break;
     }
 }
 
@@ -576,7 +591,7 @@ static void btc_gap_bt_set_cod(btc_gap_bt_args_t *arg)
     p_cod.service = cod->service << 5;
     bool ret = utl_set_device_class(&p_cod, arg->set_cod.mode);
     if (!ret){
-        LOG_ERROR("%s set class of device failed!",__func__);
+        BTC_TRACE_ERROR("%s set class of device failed!",__func__);
     }
 }
 
@@ -585,7 +600,7 @@ esp_err_t btc_gap_bt_get_cod(esp_bt_cod_t *cod)
     tBTA_UTL_COD p_cod;
     bool ret = utl_get_device_class(&p_cod);
     if (!ret){
-        LOG_ERROR("%s get class of device failed!",__func__);
+        BTC_TRACE_ERROR("%s get class of device failed!",__func__);
         return ESP_BT_STATUS_FAIL;
     }
     cod->minor = p_cod.minor >> 2;
@@ -594,10 +609,47 @@ esp_err_t btc_gap_bt_get_cod(esp_bt_cod_t *cod)
     return ESP_BT_STATUS_SUCCESS;
 }
 
+static void btc_gap_bt_read_rssi_delta_cmpl_callback(void *p_data)
+{
+    tBTA_RSSI_RESULTS *result = (tBTA_RSSI_RESULTS *)p_data;
+    esp_bt_gap_cb_param_t param;
+    bt_status_t ret;
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_READ_RSSI_DELTA_EVT;
+    memcpy(param.read_rssi_delta.bda, result->rem_bda, sizeof(BD_ADDR));
+    param.read_rssi_delta.stat = btc_btm_status_to_esp_status(result->status);
+    param.read_rssi_delta.rssi_delta = result->rssi;
+
+    ret = btc_transfer_context(&msg, &param,
+                               sizeof(esp_bt_gap_cb_param_t), NULL);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
+    }
+}
+
+static void btc_gap_bt_read_rssi_delta(btc_gap_bt_args_t *arg)
+{
+    BTA_DmBleReadRSSI(arg->read_rssi_delta.bda.address, btc_gap_bt_read_rssi_delta_cmpl_callback);
+}
+
+esp_err_t btc_gap_bt_remove_bond_device(btc_gap_bt_args_t *arg)
+{
+    BD_ADDR bd_addr;
+    memcpy(bd_addr, arg->rm_bond_device.bda.address, sizeof(BD_ADDR));
+    if(BTA_DmRemoveDevice(bd_addr) == BTA_SUCCESS){
+        btc_storage_remove_bonded_device(&(arg->rm_bond_device.bda));
+        return ESP_BT_STATUS_SUCCESS;
+    }
+    return ESP_BT_STATUS_FAIL;
+}
+
 void btc_gap_bt_call_handler(btc_msg_t *msg)
 {
     btc_gap_bt_args_t *arg = (btc_gap_bt_args_t *)msg->arg;
-    LOG_DEBUG("%s act %d\n", __func__, msg->act);
+    BTC_TRACE_DEBUG("%s act %d\n", __func__, msg->act);
     switch (msg->act) {
     case BTC_GAP_BT_ACT_SET_SCAN_MODE: {
         btc_bt_set_scan_mode(arg->set_scan_mode.mode);
@@ -605,10 +657,6 @@ void btc_gap_bt_call_handler(btc_msg_t *msg)
     }
     case BTC_GAP_BT_ACT_START_DISCOVERY: {
         btc_gap_bt_start_discovery(msg->arg);
-        break;
-    }
-    case BTC_GAP_BT_ACT_SEARCH_DEVICES: {
-        btc_gap_bt_search_devices_evt(msg->aid, msg->arg);
         break;
     }
     case BTC_GAP_BT_ACT_CANCEL_DISCOVERY: {
@@ -619,20 +667,20 @@ void btc_gap_bt_call_handler(btc_msg_t *msg)
         btc_gap_bt_get_remote_services(msg->arg);
         break;
     }
-    case BTC_GAP_BT_ACT_SEARCH_SERVICES: {
-        btc_gap_bt_search_services(msg->aid, msg->arg);
-        break;
-    }
     case BTC_GAP_BT_ACT_GET_REMOTE_SERVICE_RECORD: {
         btc_gap_bt_get_remote_service_record(msg->arg);
         break;
     }
-    case BTC_GAP_BT_ACT_SEARCH_SERVICE_RECORD: {
-        btc_gap_bt_search_service_record(msg->aid, msg->arg);
-        break;
-    }
     case BTC_GAP_BT_ACT_SET_COD: {
         btc_gap_bt_set_cod(msg->arg);
+        break;
+    }
+    case BTC_GAP_BT_ACT_READ_RSSI_DELTA: {
+        btc_gap_bt_read_rssi_delta(msg->arg);
+        break;
+    }
+    case BTC_GAP_BT_ACT_REMOVE_BOND_DEVICE:{
+        btc_gap_bt_remove_bond_device(msg->arg);
         break;
     }
     default:
@@ -658,4 +706,50 @@ void btc_gap_bt_busy_level_updated(uint8_t bl_flags)
     }
 }
 
+void btc_gap_bt_cb_deep_free(btc_msg_t *msg)
+{
+    switch (msg->act) {
+    case BTC_GAP_BT_SEARCH_DEVICES_EVT:
+    case BTC_GAP_BT_SEARCH_SERVICES_EVT:
+    case BTC_GAP_BT_SEARCH_SERVICE_RECORD_EVT:
+        osi_free(((tBTA_DM_SEARCH_PARAM *) (msg->arg)) ->p_data);
+        break;
+    case BTC_GAP_BT_READ_RSSI_DELTA_EVT:
+    case BTC_GAP_BT_AUTH_CMPL_EVT:
+        break;
+    default:
+        BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
+        break;
+    }
+}
+
+void btc_gap_bt_cb_handler(btc_msg_t *msg)
+{
+    switch (msg->act) {
+    case BTC_GAP_BT_SEARCH_DEVICES_EVT: {
+        btc_gap_bt_search_devices_evt(msg->arg);
+        break;
+    }
+    case BTC_GAP_BT_SEARCH_SERVICES_EVT: {
+        btc_gap_bt_search_services(msg->arg);
+        break;
+    }
+    case BTC_GAP_BT_SEARCH_SERVICE_RECORD_EVT: {
+        btc_gap_bt_search_service_record(msg->arg);
+        break;
+    }
+    case BTC_GAP_BT_READ_RSSI_DELTA_EVT:{
+        btc_gap_bt_cb_to_app(ESP_BT_GAP_READ_RSSI_DELTA_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
+        break;
+    }
+    case BTC_GAP_BT_AUTH_CMPL_EVT:{
+        btc_gap_bt_cb_to_app(ESP_BT_GAP_AUTH_CMPL_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
+        break;
+    }
+    default:
+        BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
+        break;
+    }
+    btc_gap_bt_cb_deep_free(msg);
+}
 #endif /* (BTC_GAP_BT_INCLUDED == TRUE) */

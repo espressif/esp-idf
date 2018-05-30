@@ -63,7 +63,10 @@ crypto_hash_sha256_init(crypto_hash_sha256_state *state)
 {
     mbedtls_sha256_context ctx;
     mbedtls_sha256_init(&ctx);
-    mbedtls_sha256_starts(&ctx, 0);
+    int ret = mbedtls_sha256_starts_ret(&ctx, 0);
+    if (ret != 0) {
+        return ret;
+    }
     sha256_mbedtls_to_libsodium(state, &ctx);
     return 0;
 }
@@ -74,7 +77,10 @@ crypto_hash_sha256_update(crypto_hash_sha256_state *state,
 {
     mbedtls_sha256_context ctx;
     sha256_libsodium_to_mbedtls(&ctx, state);
-    mbedtls_sha256_update(&ctx, in, inlen);
+    int ret = mbedtls_sha256_update_ret(&ctx, in, inlen);
+    if (ret != 0) {
+        return ret;
+    }
     sha256_mbedtls_to_libsodium(state, &ctx);
     return 0;
 }
@@ -84,15 +90,12 @@ crypto_hash_sha256_final(crypto_hash_sha256_state *state, unsigned char *out)
 {
     mbedtls_sha256_context ctx;
     sha256_libsodium_to_mbedtls(&ctx, state);
-    mbedtls_sha256_finish(&ctx, out);
-    sha256_mbedtls_to_libsodium(state, &ctx);
-    return 0;
+    return mbedtls_sha256_finish_ret(&ctx, out);
 }
 
 int
 crypto_hash_sha256(unsigned char *out, const unsigned char *in,
                    unsigned long long inlen)
 {
-    mbedtls_sha256(in, inlen, out, 0);
-    return 0;
+    return mbedtls_sha256_ret(in, inlen, out, 0);
 }

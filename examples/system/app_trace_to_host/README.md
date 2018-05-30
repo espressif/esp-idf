@@ -87,7 +87,7 @@ To run the example and retrieve the log from the host, do the following:
 
 1.  Connect JTAG interface to ESP32 board, power up both JTAG and ESP32. For details how to setup JTAG interface see [JTAG Debugging](https://esp-idf.readthedocs.io/en/latest/api-guides/jtag-debugging/index.html). 
 
-2.  [Run OpenOCD](https://esp-idf.readthedocs.io/en/latest/api-guides/jtag-debugging/index.html#run-openocd). If you are using the [binary distribution of OpenOCD](https://esp-idf.readthedocs.io/en/latest/api-guides/jtag-debugging/index.html#jtag-debugging-setup-openocd) and one of versions of [ESP-WROVER-KIT](https://esp-idf.readthedocs.io/en/latest/hw-reference/modules-and-boards.html#esp32-wrover-kit-v1-esp32-devkitj-v1), respective command line will look as follows:
+2.  [Run OpenOCD](https://esp-idf.readthedocs.io/en/latest/api-guides/jtag-debugging/index.html#run-openocd). If you are using the [binary distribution of OpenOCD](https://esp-idf.readthedocs.io/en/latest/api-guides/jtag-debugging/index.html#jtag-debugging-setup-openocd) and one of versions of [ESP-WROVER-KIT](https://esp-idf.readthedocs.io/en/latest/hw-reference/modules-and-boards.html#esp-wrover-kit-v3), respective command line will look as follows:
 
     ```
     cd ~/esp/openocd-esp32
@@ -107,21 +107,21 @@ To run the example and retrieve the log from the host, do the following:
 6.  In telnet execute the following command:
 
     ```
-    esp32 apptrace start file://adc0.log file://adc1.log 0 9000 5 0 0
+    esp32 apptrace start file://adc.log 0 9000 5 0 0
     ```
 
-    This command should collect 9000 bytes of log data and save them to `adc0.log` file in `~/esp/openocd-esp32` folder. The `adc1.log` file will be empty / is not used.
+    This command should collect 9000 bytes of log data and save them to `adc.log` file in `~/esp/openocd-esp32` folder.
 
 7.  Decode and print out retrieved log file by executing:
 
     ```
-    $IDF_PATH/tools/esp_app_trace/logtrace_proc.py ~/esp/openocd-esp32/adc0.log ~/esp/app_trace_to_host/build/app_trace_to_host_test.elf
+    $IDF_PATH/tools/esp_app_trace/logtrace_proc.py ~/esp/openocd-esp32/adc.log ~/esp/app_trace_to_host/build/app_trace_to_host_test.elf
     ```
 
     This should provide a similar output:
 
     ```
-    Parse trace file '/user-home/esp/openocd-esp32/adc0.log'...
+    Parse trace file '/user-home/esp/openocd-esp32/adc.log'...
     Unprocessed 7 bytes of log record args!
     Parsing completed.
     ====================================================================

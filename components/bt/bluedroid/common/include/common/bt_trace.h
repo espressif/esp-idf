@@ -18,19 +18,42 @@
 
 #ifndef _BT_TRACE_H_
 #define _BT_TRACE_H_
+
 #include "sdkconfig.h"
 
 #include <stdio.h>
 #include "stack/bt_types.h"
 
+#ifndef LOG_LOCAL_LEVEL
+#ifndef BOOTLOADER_BUILD
+#define LOG_LOCAL_LEVEL  CONFIG_LOG_DEFAULT_LEVEL
+#else
+#define LOG_LOCAL_LEVEL  CONFIG_LOG_BOOTLOADER_LEVEL
+#endif
+#endif
+
 #include "esp_log.h"
 
-#define TAG		"BT"
+// Mapping between ESP_LOG_LEVEL and BT_TRACE_LEVEL
+#if (LOG_LOCAL_LEVEL >= 4)
+#define LOG_LOCAL_LEVEL_MAPPING (LOG_LOCAL_LEVEL+1)
+#else
+#define LOG_LOCAL_LEVEL_MAPPING LOG_LOCAL_LEVEL
+#endif
 
-#define BT_PRINTF(fmt, ...)   ESP_LOGE(TAG, fmt, ##__VA_ARGS__)
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define BT_LOG_LEVEL_CHECK(LAYER, LEVEL) (MAX(LAYER##_INITIAL_TRACE_LEVEL, LOG_LOCAL_LEVEL_MAPPING) >= BT_TRACE_LEVEL_##LEVEL)
+
+//#define TAG		"BT"
+
+#define BT_PRINT_E(tag, format, ...)   {esp_log_write(ESP_LOG_ERROR,   tag, LOG_FORMAT(E, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
+#define BT_PRINT_W(tag, format, ...)   {esp_log_write(ESP_LOG_WARN,    tag, LOG_FORMAT(W, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
+#define BT_PRINT_I(tag, format, ...)   {esp_log_write(ESP_LOG_INFO,    tag, LOG_FORMAT(I, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
+#define BT_PRINT_D(tag, format, ...)   {esp_log_write(ESP_LOG_DEBUG,   tag, LOG_FORMAT(D, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
+#define BT_PRINT_V(tag, format, ...)   {esp_log_write(ESP_LOG_VERBOSE, tag, LOG_FORMAT(V, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
 
 #ifndef assert
-#define assert(x)   do { if (!(x)) BT_PRINTF("bt host error %s %u\n", __FILE__, __LINE__); } while (0)
+#define assert(x)   do { if (!(x)) BT_PRINT_E("bt host error %s %u\n", __FILE__, __LINE__); } while (0)
 #endif
 
 inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t len)
@@ -42,15 +65,15 @@ inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t len)
     }
 
     if (prefix) {
-        BT_PRINTF("%s: len %d\n", prefix, len);
+        printf("%s: len %d\r\n", prefix, len);
     }
 
     for (i = 0; i < len; i+=16) {
-        BT_PRINTF("%02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x\n",
+        printf("%02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x\r\n",
                 *(data + i), *(data + i + 1), *(data + i + 2), *(data + i + 3), *(data + i + 4), *(data + i + 5), *(data + i + 6), *(data + i + 7), 
                 *(data + i + 8), *(data + i + 9), *(data + i + 10), *(data + i + 11), *(data + i + 12), *(data + i + 13), *(data + i + 14), *(data + i + 15));
     }
-    BT_PRINTF("\n");
+    printf("\r\n");
 }
 
 #ifdef BTTRC_DUMP_BUFFER
@@ -174,6 +197,10 @@ inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t len)
 #define BT_USE_TRACES       FALSE
 #endif
 
+#ifndef BT_TRACE_APPL
+#define BT_TRACE_APPL   BT_USE_TRACES
+#endif
+
 /******************************************************************************
 **
 ** Trace Levels
@@ -189,238 +216,310 @@ inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t len)
 
 // btla-specific ++
 /* Core Stack default trace levels */
-#ifndef HCI_INITIAL_TRACE_LEVEL
+#ifdef  CONFIG_HCI_INITIAL_TRACE_LEVEL
+#define HCI_INITIAL_TRACE_LEVEL             CONFIG_HCI_INITIAL_TRACE_LEVEL
+#else
 #define HCI_INITIAL_TRACE_LEVEL             BT_TRACE_LEVEL_WARNING
 #endif
 
-#ifndef BTM_INITIAL_TRACE_LEVEL
+#ifdef  CONFIG_BTM_INITIAL_TRACE_LEVEL
+#define BTM_INITIAL_TRACE_LEVEL             CONFIG_BTM_INITIAL_TRACE_LEVEL
+#else
 #define BTM_INITIAL_TRACE_LEVEL             BT_TRACE_LEVEL_WARNING
 #endif
 
-#ifndef L2CAP_INITIAL_TRACE_LEVEL
+#ifdef  CONFIG_L2CAP_INITIAL_TRACE_LEVEL
+#define L2CAP_INITIAL_TRACE_LEVEL           CONFIG_L2CAP_INITIAL_TRACE_LEVEL
+#else
 #define L2CAP_INITIAL_TRACE_LEVEL           BT_TRACE_LEVEL_WARNING
 #endif
 
-#ifndef RFCOMM_INITIAL_TRACE_LEVEL
+#ifdef  CONFIG_RFCOMM_INITIAL_TRACE_LEVEL
+#define RFCOMM_INITIAL_TRACE_LEVEL          CONFIG_RFCOMM_INITIAL_TRACE_LEVEL
+#else
 #define RFCOMM_INITIAL_TRACE_LEVEL          BT_TRACE_LEVEL_WARNING
 #endif
 
-#ifndef SDP_INITIAL_TRACE_LEVEL
+#ifdef  CONFIG_SDP_INITIAL_TRACE_LEVEL
+#define SDP_INITIAL_TRACE_LEVEL             CONFIG_SDP_INITIAL_TRACE_LEVEL
+#else
 #define SDP_INITIAL_TRACE_LEVEL             BT_TRACE_LEVEL_WARNING
 #endif
 
-#ifndef GAP_INITIAL_TRACE_LEVEL
+#ifdef  CONFIG_GAP_INITIAL_TRACE_LEVEL
+#define GAP_INITIAL_TRACE_LEVEL             CONFIG_GAP_INITIAL_TRACE_LEVEL
+#else
 #define GAP_INITIAL_TRACE_LEVEL             BT_TRACE_LEVEL_WARNING
 #endif
 
-#ifndef BNEP_INITIAL_TRACE_LEVEL
+#ifdef  CONFIG_BNEP_INITIAL_TRACE_LEVEL
+#define BNEP_INITIAL_TRACE_LEVEL            CONFIG_BNEP_INITIAL_TRACE_LEVEL
+#else
 #define BNEP_INITIAL_TRACE_LEVEL            BT_TRACE_LEVEL_WARNING
 #endif
 
-#ifndef PAN_INITIAL_TRACE_LEVEL
+#ifdef  CONFIG_PAN_INITIAL_TRACE_LEVEL
+#define PAN_INITIAL_TRACE_LEVEL             CONFIG_PAN_INITIAL_TRACE_LEVEL
+#else
 #define PAN_INITIAL_TRACE_LEVEL             BT_TRACE_LEVEL_WARNING
 #endif
 
-#ifndef A2D_INITIAL_TRACE_LEVEL
+#ifdef  CONFIG_A2D_INITIAL_TRACE_LEVEL
+#define A2D_INITIAL_TRACE_LEVEL             CONFIG_A2D_INITIAL_TRACE_LEVEL
+#else
 #define A2D_INITIAL_TRACE_LEVEL             BT_TRACE_LEVEL_WARNING
 #endif
 
-#ifndef AVDT_INITIAL_TRACE_LEVEL
+#ifdef  CONFIG_AVDT_INITIAL_TRACE_LEVEL
+#define AVDT_INITIAL_TRACE_LEVEL            CONFIG_AVDT_INITIAL_TRACE_LEVEL
+#else
 #define AVDT_INITIAL_TRACE_LEVEL            BT_TRACE_LEVEL_WARNING
 #endif
 
-#ifndef AVCT_INITIAL_TRACE_LEVEL
+#ifdef  CONFIG_AVCT_INITIAL_TRACE_LEVEL
+#define AVCT_INITIAL_TRACE_LEVEL            CONFIG_AVCT_INITIAL_TRACE_LEVEL
+#else
 #define AVCT_INITIAL_TRACE_LEVEL            BT_TRACE_LEVEL_WARNING
 #endif
 
-#ifndef AVRC_INITIAL_TRACE_LEVEL
+#ifdef  CONFIG_AVRC_INITIAL_TRACE_LEVEL
+#define AVRC_INITIAL_TRACE_LEVEL            CONFIG_AVRC_INITIAL_TRACE_LEVEL
+#else
 #define AVRC_INITIAL_TRACE_LEVEL            BT_TRACE_LEVEL_WARNING
 #endif
 
-#ifndef MCA_INITIAL_TRACE_LEVEL
+#ifdef  CONFIG_MCA_INITIAL_TRACE_LEVEL
+#define MCA_INITIAL_TRACE_LEVEL             CONFIG_MCA_INITIAL_TRACE_LEVEL
+#else
 #define MCA_INITIAL_TRACE_LEVEL             BT_TRACE_LEVEL_WARNING
 #endif
 
-#ifndef HID_INITIAL_TRACE_LEVEL
+#ifdef  CONFIG_HID_INITIAL_TRACE_LEVEL
+#define HID_INITIAL_TRACE_LEVEL             CONFIG_HID_INITIAL_TRACE_LEVEL
+#else
 #define HID_INITIAL_TRACE_LEVEL             BT_TRACE_LEVEL_WARNING
 #endif
 
-#ifndef APPL_INITIAL_TRACE_LEVEL
+#ifdef  CONFIG_APPL_INITIAL_TRACE_LEVEL
+#define APPL_INITIAL_TRACE_LEVEL            CONFIG_APPL_INITIAL_TRACE_LEVEL
+#else
 #define APPL_INITIAL_TRACE_LEVEL            BT_TRACE_LEVEL_WARNING
 #endif
 
-#ifndef BT_TRACE_APPL
-#define BT_TRACE_APPL   BT_USE_TRACES
+#ifdef  CONFIG_GATT_INITIAL_TRACE_LEVEL
+#define GATT_INITIAL_TRACE_LEVEL            CONFIG_GATT_INITIAL_TRACE_LEVEL
+#else
+#define GATT_INITIAL_TRACE_LEVEL            BT_TRACE_LEVEL_WARNING
 #endif
 
-#ifndef GATT_INITIAL_TRACE_LEVEL
-#define GATT_INITIAL_TRACE_LEVEL             BT_TRACE_LEVEL_WARNING
-#endif
-
-#ifndef SMP_INITIAL_TRACE_LEVEL
+#ifdef  CONFIG_SMP_INITIAL_TRACE_LEVEL
+#define SMP_INITIAL_TRACE_LEVEL             CONFIG_SMP_INITIAL_TRACE_LEVEL
+#else
 #define SMP_INITIAL_TRACE_LEVEL             BT_TRACE_LEVEL_WARNING
 #endif
-// btla-specific --
 
-/* Define common tracing for all */
-#define LOG_LEVEL_ERROR     1
-#define LOG_LEVEL_WARN      2
-#define LOG_LEVEL_INFO      3
-#define LOG_LEVEL_DEBUG     4
-#define LOG_LEVEL_VERBOSE   5
-#ifndef LOG_LEVEL
-#define LOG_LEVEL   LOG_LEVEL_INFO
+#ifdef  CONFIG_BTIF_INITIAL_TRACE_LEVEL
+#define BTIF_INITIAL_TRACE_LEVEL            CONFIG_BTIF_INITIAL_TRACE_LEVEL
+#else
+#define BTIF_INITIAL_TRACE_LEVEL            BT_TRACE_LEVEL_WARNING
 #endif
 
-#if !CONFIG_BT_STACK_NO_LOG
-#define LOG_ERROR(fmt, args...)             do {if (LOG_LEVEL >= LOG_LEVEL_ERROR) BT_PRINTF(fmt,## args);} while(0)
-#define LOG_WARN(fmt, args...)              do {if (LOG_LEVEL >= LOG_LEVEL_WARN) BT_PRINTF(fmt,## args);} while(0)
-#define LOG_INFO(fmt, args...)              do {if (LOG_LEVEL >= LOG_LEVEL_INFO) BT_PRINTF(fmt,## args);} while(0)
-#define LOG_DEBUG(fmt, args...)             do {if (LOG_LEVEL >= LOG_LEVEL_DEBUG) BT_PRINTF(fmt,## args);} while(0)
-#define LOG_VERBOSE(fmt, args...)           do {if (LOG_LEVEL >= LOG_LEVEL_VERBOSE) BT_PRINTF(fmt,## args);} while(0)
+#ifdef  CONFIG_BTC_INITIAL_TRACE_LEVEL
+#define BTC_INITIAL_TRACE_LEVEL             CONFIG_BTC_INITIAL_TRACE_LEVEL
+#else
+#define BTC_INITIAL_TRACE_LEVEL             BT_TRACE_LEVEL_WARNING
+#endif
 
-/* Define tracing for the HCI unit
-*/
-#define HCI_TRACE_ERROR(fmt, args...)       {if (btu_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt,## args);}
-#define HCI_TRACE_WARNING(fmt, args...)     {if (btu_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt,## args);}
-#define HCI_TRACE_EVENT(fmt, args...)       {if (btu_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt,## args);}
-#define HCI_TRACE_DEBUG(fmt, args...)       {if (btu_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt,## args);}
+#ifdef  CONFIG_OSI_INITIAL_TRACE_LEVEL
+#define OSI_INITIAL_TRACE_LEVEL            CONFIG_OSI_INITIAL_TRACE_LEVEL
+#else
+#define OSI_INITIAL_TRACE_LEVEL            BT_TRACE_LEVEL_WARNING
+#endif
+
+#ifdef  CONFIG_BLUFI_INITIAL_TRACE_LEVEL
+#define BLUFI_INITIAL_TRACE_LEVEL            CONFIG_BLUFI_INITIAL_TRACE_LEVEL
+#else
+#define BLUFI_INITIAL_TRACE_LEVEL            BT_TRACE_LEVEL_WARNING
+#endif
+
+// btla-specific --
+
+#if !CONFIG_BT_STACK_NO_LOG
+#define LOG_ERROR(format, ... )             {if (LOG_LOCAL_LEVEL >= ESP_LOG_ERROR)    esp_log_write(ESP_LOG_ERROR,   "BT_LOG", LOG_FORMAT(E, format), esp_log_timestamp(), "BT_LOG", ##__VA_ARGS__); }
+#define LOG_WARN(format, ... )              {if (LOG_LOCAL_LEVEL >= ESP_LOG_WARN)     esp_log_write(ESP_LOG_WARN,    "BT_LOG", LOG_FORMAT(W, format), esp_log_timestamp(), "BT_LOG", ##__VA_ARGS__); }
+#define LOG_INFO(format, ... )              {if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO)     esp_log_write(ESP_LOG_INFO,    "BT_LOG", LOG_FORMAT(I, format), esp_log_timestamp(), "BT_LOG", ##__VA_ARGS__); }
+#define LOG_DEBUG(format, ... )             {if (LOG_LOCAL_LEVEL >= ESP_LOG_DEBUG)    esp_log_write(ESP_LOG_DEBUG,   "BT_LOG", LOG_FORMAT(D, format), esp_log_timestamp(), "BT_LOG", ##__VA_ARGS__); }
+#define LOG_VERBOSE(format, ... )           {if (LOG_LOCAL_LEVEL >= ESP_LOG_VERBOSE)  esp_log_write(ESP_LOG_VERBOSE, "BT_LOG", LOG_FORMAT(V, format), esp_log_timestamp(), "BT_LOG", ##__VA_ARGS__); }
 
 /* Define tracing for BTM
 */
-#define BTM_TRACE_ERROR(fmt, args...)       {if (btm_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define BTM_TRACE_WARNING(fmt, args...)     {if (btm_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define BTM_TRACE_API(fmt, args...)         {if (btm_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define BTM_TRACE_EVENT(fmt, args...)       {if (btm_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define BTM_TRACE_DEBUG(fmt, args...)       {if (btm_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define BTM_TRACE_ERROR(fmt, args...)       {if (btm_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(BTM, ERROR)) BT_PRINT_E("BT_BTM", fmt, ## args);}
+#define BTM_TRACE_WARNING(fmt, args...)     {if (btm_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(BTM, WARNING)) BT_PRINT_W("BT_BTM", fmt, ## args);}
+#define BTM_TRACE_API(fmt, args...)         {if (btm_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(BTM,API)) BT_PRINT_I("BT_BTM", fmt, ## args);}
+#define BTM_TRACE_EVENT(fmt, args...)       {if (btm_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(BTM,EVENT)) BT_PRINT_D("BT_BTM", fmt, ## args);}
+#define BTM_TRACE_DEBUG(fmt, args...)       {if (btm_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(BTM,DEBUG)) BT_PRINT_D("BT_BTM", fmt, ## args);}
 
 /* Define tracing for the L2CAP unit
 */
-#define L2CAP_TRACE_ERROR(fmt, args...)     {if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define L2CAP_TRACE_WARNING(fmt, args...)   {if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define L2CAP_TRACE_API(fmt, args...)       {if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define L2CAP_TRACE_EVENT(fmt, args...)     {if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define L2CAP_TRACE_DEBUG(fmt, args...)     {if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define L2CAP_TRACE_ERROR(fmt, args...)     {if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(L2CAP, ERROR)) BT_PRINT_E("BT_L2CAP", fmt, ## args);}
+#define L2CAP_TRACE_WARNING(fmt, args...)   {if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(L2CAP, WARNING)) BT_PRINT_W("BT_L2CAP", fmt, ## args);}
+#define L2CAP_TRACE_API(fmt, args...)       {if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(L2CAP,API)) BT_PRINT_I("BT_L2CAP", fmt, ## args);}
+#define L2CAP_TRACE_EVENT(fmt, args...)     {if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(L2CAP,EVENT)) BT_PRINT_D("BT_L2CAP", fmt, ## args);}
+#define L2CAP_TRACE_DEBUG(fmt, args...)     {if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(L2CAP,DEBUG)) BT_PRINT_D("BT_L2CAP", fmt, ## args);}
 
 /* Define tracing for the SDP unit
 */
-#define SDP_TRACE_ERROR(fmt, args...)       {if (sdp_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define SDP_TRACE_WARNING(fmt, args...)     {if (sdp_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define SDP_TRACE_API(fmt, args...)         {if (sdp_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define SDP_TRACE_EVENT(fmt, args...)       {if (sdp_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define SDP_TRACE_DEBUG(fmt, args...)       {if (sdp_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define SDP_TRACE_ERROR(fmt, args...)       {if (sdp_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(SDP, ERROR)) BT_PRINT_E("BT_SDP", fmt, ## args);}
+#define SDP_TRACE_WARNING(fmt, args...)     {if (sdp_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(SDP, WARNING)) BT_PRINT_W("BT_SDP", fmt, ## args);}
+#define SDP_TRACE_API(fmt, args...)         {if (sdp_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(SDP,API)) BT_PRINT_I("BT_SDP", fmt, ## args);}
+#define SDP_TRACE_EVENT(fmt, args...)       {if (sdp_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(SDP,EVENT)) BT_PRINT_D("BT_SDP", fmt, ## args);}
+#define SDP_TRACE_DEBUG(fmt, args...)       {if (sdp_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(SDP,DEBUG)) BT_PRINT_D("BT_SDP", fmt, ## args);}
 
 /* Define tracing for the RFCOMM unit
 */
-#define RFCOMM_TRACE_ERROR(fmt, args...)    {if (rfc_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define RFCOMM_TRACE_WARNING(fmt, args...)  {if (rfc_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define RFCOMM_TRACE_API(fmt, args...)      {if (rfc_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define RFCOMM_TRACE_EVENT(fmt, args...)    {if (rfc_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define RFCOMM_TRACE_DEBUG(fmt, args...)    {if (rfc_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define RFCOMM_TRACE_ERROR(fmt, args...)    {if (rfc_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(RFCOMM, ERROR)) BT_PRINT_E("BT_RFCOMM", fmt, ## args);}
+#define RFCOMM_TRACE_WARNING(fmt, args...)  {if (rfc_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(RFCOMM, WARNING)) BT_PRINT_W("BT_RFCOMM", fmt, ## args);}
+#define RFCOMM_TRACE_API(fmt, args...)      {if (rfc_cb.trace_level >=BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(RFCOMM,API)) BT_PRINT_I("BT_RFCOMM", fmt, ## args);}
+#define RFCOMM_TRACE_EVENT(fmt, args...)    {if (rfc_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(RFCOMM,EVENT)) BT_PRINT_D("BT_RFCOMM", fmt, ## args);}
+#define RFCOMM_TRACE_DEBUG(fmt, args...)    {if (rfc_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(RFCOMM,DEBUG)) BT_PRINT_D("BT_RFCOMM", fmt, ## args);}
 
 /* Generic Access Profile traces */
-#define GAP_TRACE_ERROR(fmt, args...)       {if (gap_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define GAP_TRACE_EVENT(fmt, args...)       {if (gap_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define GAP_TRACE_API(fmt, args...)         {if (gap_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define GAP_TRACE_WARNING(fmt, args...)     {if (gap_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
+#define GAP_TRACE_ERROR(fmt, args...)       {if (gap_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(GAP, ERROR)) BT_PRINT_E("BT_GAP", fmt, ## args);}
+#define GAP_TRACE_API(fmt, args...)         {if (gap_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(GAP,API)) BT_PRINT_I("BT_GAP", fmt, ## args);}
+#define GAP_TRACE_EVENT(fmt, args...)       {if (gap_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(GAP,EVENT)) BT_PRINT_D("BT_GAP", fmt, ## args);}
+#define GAP_TRACE_WARNING(fmt, args...)     {if (gap_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(GAP, WARNING)) BT_PRINT_W("BT_GAP", fmt, ## args);}
 
 /* define traces for HID Host */
-#define HIDH_TRACE_ERROR(fmt, args...)      {if (hh_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define HIDH_TRACE_WARNING(fmt, args...)    {if (hh_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define HIDH_TRACE_API(fmt, args...)        {if (hh_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define HIDH_TRACE_EVENT(fmt, args...)      {if (hh_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define HIDH_TRACE_DEBUG(fmt, args...)      {if (hh_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define HIDH_TRACE_ERROR(fmt, args...)      {if (hh_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(HIDH, ERROR)) BT_PRINT_E("BT_HIDH", fmt, ## args);}
+#define HIDH_TRACE_WARNING(fmt, args...)    {if (hh_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(HIDH, WARNING)) BT_PRINT_W("BT_HIDH", fmt, ## args);}
+#define HIDH_TRACE_API(fmt, args...)        {if (hh_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(HIDH,API)) BT_PRINT_I("BT_HIDH", fmt, ## args);}
+#define HIDH_TRACE_EVENT(fmt, args...)      {if (hh_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(HIDH,EVENT)) BT_PRINT_D("BT_HIDH", fmt, ## args);}
+#define HIDH_TRACE_DEBUG(fmt, args...)      {if (hh_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(HIDH,DEBUG)) BT_PRINT_D("BT_HIDH", fmt, ## args);}
 
 /* define traces for BNEP */
 
-#define BNEP_TRACE_ERROR(fmt, args...)      {if (bnep_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define BNEP_TRACE_WARNING(fmt, args...)    {if (bnep_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define BNEP_TRACE_API(fmt, args...)        {if (bnep_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define BNEP_TRACE_EVENT(fmt, args...)      {if (bnep_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define BNEP_TRACE_DEBUG(fmt, args...)      {if (bnep_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define BNEP_TRACE_ERROR(fmt, args...)      {if (bnep_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(BNEP, ERROR)) BT_PRINT_E("BT_BNEP", fmt, ## args);}
+#define BNEP_TRACE_WARNING(fmt, args...)    {if (bnep_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(BNEP, WARNING)) BT_PRINT_W("BT_BNEP", fmt, ## args);}
+#define BNEP_TRACE_API(fmt, args...)        {if (bnep_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(BNEP,API)) BT_PRINT_I("BT_BNEP", fmt, ## args);}
+#define BNEP_TRACE_EVENT(fmt, args...)      {if (bnep_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(BNEP,EVENT)) BT_PRINT_D("BT_BNEP", fmt, ## args);}
+#define BNEP_TRACE_DEBUG(fmt, args...)      {if (bnep_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(BNEP,DEBUG)) BT_PRINT_D("BT_BNEP", fmt, ## args);}
 
 /* define traces for PAN */
 
-#define PAN_TRACE_ERROR(fmt, args...)       {if (pan_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define PAN_TRACE_WARNING(fmt, args...)     {if (pan_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define PAN_TRACE_API(fmt, args...)         {if (pan_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define PAN_TRACE_EVENT(fmt, args...)       {if (pan_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define PAN_TRACE_DEBUG(fmt, args...)       {if (pan_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define PAN_TRACE_ERROR(fmt, args...)       {if (pan_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(PAN, ERROR)) BT_PRINT_E("BT_PAN", fmt, ## args);}
+#define PAN_TRACE_WARNING(fmt, args...)     {if (pan_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(PAN, WARNING)) BT_PRINT_W("BT_PAN", fmt, ## args);}
+#define PAN_TRACE_API(fmt, args...)         {if (pan_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(PAN,API)) BT_PRINT_I("BT_PAN", fmt, ## args);}
+#define PAN_TRACE_EVENT(fmt, args...)       {if (pan_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(PAN,EVENT)) BT_PRINT_D("BT_PAN", fmt, ## args);}
+#define PAN_TRACE_DEBUG(fmt, args...)       {if (pan_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(PAN,DEBUG)) BT_PRINT_D("BT_PAN", fmt, ## args);}
 
 /* Define tracing for the A2DP profile
 */
-#define A2D_TRACE_ERROR(fmt, args...)       {if (a2d_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define A2D_TRACE_WARNING(fmt, args...)     {if (a2d_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define A2D_TRACE_EVENT(fmt, args...)       {if (a2d_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define A2D_TRACE_DEBUG(fmt, args...)       {if (a2d_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
-#define A2D_TRACE_API(fmt, args...)         {if (a2d_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
+#define A2D_TRACE_ERROR(fmt, args...)       {if (a2d_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(A2D, ERROR)) BT_PRINT_E("BT_A2D", fmt, ## args);}
+#define A2D_TRACE_WARNING(fmt, args...)     {if (a2d_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(A2D, WARNING)) BT_PRINT_W("BT_A2D", fmt, ## args);}
+#define A2D_TRACE_API(fmt, args...)         {if (a2d_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(A2D,API)) BT_PRINT_I("BT_A2D", fmt, ## args);}
+#define A2D_TRACE_EVENT(fmt, args...)       {if (a2d_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(A2D,EVENT)) BT_PRINT_D("BT_A2D", fmt, ## args);}
+#define A2D_TRACE_DEBUG(fmt, args...)       {if (a2d_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(A2D,DEBUG)) BT_PRINT_D("BT_A2D", fmt, ## args);}
 
 /* AVDTP
 */
-#define AVDT_TRACE_ERROR(fmt, args...)      {if (avdt_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define AVDT_TRACE_WARNING(fmt, args...)    {if (avdt_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define AVDT_TRACE_EVENT(fmt, args...)      {if (avdt_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define AVDT_TRACE_DEBUG(fmt, args...)      {if (avdt_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
-#define AVDT_TRACE_API(fmt, args...)        {if (avdt_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
+#define AVDT_TRACE_ERROR(fmt, args...)      {if (avdt_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(AVDT, ERROR)) BT_PRINT_E("BT_AVDT", fmt, ## args);}
+#define AVDT_TRACE_WARNING(fmt, args...)    {if (avdt_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(AVDT, WARNING)) BT_PRINT_W("BT_AVDT", fmt, ## args);}
+#define AVDT_TRACE_API(fmt, args...)        {if (avdt_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(AVDT,API)) BT_PRINT_I("BT_AVDT", fmt, ## args);}
+#define AVDT_TRACE_EVENT(fmt, args...)      {if (avdt_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(AVDT,EVENT)) BT_PRINT_D("BT_AVDT", fmt, ## args);}
+#define AVDT_TRACE_DEBUG(fmt, args...)      {if (avdt_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(AVDT,DEBUG)) BT_PRINT_D("BT_AVDT", fmt, ## args);}
 
 /* Define tracing for the AVCTP protocol
 */
-#define AVCT_TRACE_ERROR(fmt, args...)      {if (avct_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define AVCT_TRACE_WARNING(fmt, args...)    {if (avct_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define AVCT_TRACE_EVENT(fmt, args...)      {if (avct_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define AVCT_TRACE_DEBUG(fmt, args...)      {if (avct_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
-#define AVCT_TRACE_API(fmt, args...)        {if (avct_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
+#define AVCT_TRACE_ERROR(fmt, args...)      {if (avct_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(AVCT, ERROR)) BT_PRINT_E("BT_AVCT", fmt, ## args);}
+#define AVCT_TRACE_WARNING(fmt, args...)    {if (avct_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(AVCT, WARNING)) BT_PRINT_W("BT_AVCT", fmt, ## args);}
+#define AVCT_TRACE_API(fmt, args...)        {if (avct_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(AVCT,API)) BT_PRINT_I("BT_AVCT", fmt, ## args);}
+#define AVCT_TRACE_EVENT(fmt, args...)      {if (avct_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(AVCT,EVENT)) BT_PRINT_D("BT_AVCT", fmt, ## args);}
+#define AVCT_TRACE_DEBUG(fmt, args...)      {if (avct_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(AVCT,DEBUG)) BT_PRINT_D("BT_AVCT", fmt, ## args);}
 
 /* Define tracing for the AVRCP profile
 */
-#define AVRC_TRACE_ERROR(fmt, args...)      {if (avrc_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define AVRC_TRACE_WARNING(fmt, args...)    {if (avrc_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define AVRC_TRACE_EVENT(fmt, args...)      {if (avrc_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define AVRC_TRACE_DEBUG(fmt, args...)      {if (avrc_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
-#define AVRC_TRACE_API(fmt, args...)        {if (avrc_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
+#define AVRC_TRACE_ERROR(fmt, args...)      {if (avrc_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(AVRC, ERROR)) BT_PRINT_E("BT_AVRC", fmt, ## args);}
+#define AVRC_TRACE_WARNING(fmt, args...)    {if (avrc_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(AVRC, WARNING)) BT_PRINT_W("BT_AVRC", fmt, ## args);}
+#define AVRC_TRACE_API(fmt, args...)        {if (avrc_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(AVRC,API)) BT_PRINT_I("BT_AVRC", fmt, ## args);}
+#define AVRC_TRACE_EVENT(fmt, args...)      {if (avrc_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(AVRC,EVENT)) BT_PRINT_D("BT_AVRC", fmt, ## args);}
+#define AVRC_TRACE_DEBUG(fmt, args...)      {if (avrc_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(AVRC,DEBUG)) BT_PRINT_D("BT_AVRC", fmt, ## args);}
 
 /* MCAP
 */
-#define MCA_TRACE_ERROR(fmt, args...)       {if (mca_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define MCA_TRACE_WARNING(fmt, args...)     {if (mca_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define MCA_TRACE_EVENT(fmt, args...)       {if (mca_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define MCA_TRACE_DEBUG(fmt, args...)       {if (mca_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
-#define MCA_TRACE_API(fmt, args...)         {if (mca_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
+#define MCA_TRACE_ERROR(fmt, args...)       {if (mca_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(MCA, ERROR)) BT_PRINT_E("BT_MCA", fmt, ## args);}
+#define MCA_TRACE_WARNING(fmt, args...)     {if (mca_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(MCA, WARNING)) BT_PRINT_W("BT_MCA", fmt, ## args);}
+#define MCA_TRACE_API(fmt, args...)         {if (mca_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(MCA,API)) BT_PRINT_I("BT_MCA", fmt, ## args);}
+#define MCA_TRACE_EVENT(fmt, args...)       {if (mca_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(MCA,EVENT)) BT_PRINT_D("BT_MCA", fmt, ## args);}
+#define MCA_TRACE_DEBUG(fmt, args...)       {if (mca_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(MCA,DEBUG)) BT_PRINT_D("BT_MCA", fmt, ## args);}
 
 /* Define tracing for the ATT/GATT unit
 */
-#define GATT_TRACE_ERROR(fmt, args...)      {if (gatt_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define GATT_TRACE_WARNING(fmt, args...)    {if (gatt_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define GATT_TRACE_API(fmt, args...)        {if (gatt_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define GATT_TRACE_EVENT(fmt, args...)      {if (gatt_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define GATT_TRACE_DEBUG(fmt, args...)      {if (gatt_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define GATT_TRACE_ERROR(fmt, args...)      {if (gatt_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(GATT, ERROR)) BT_PRINT_E("BT_GATT", fmt, ## args);}
+#define GATT_TRACE_WARNING(fmt, args...)    {if (gatt_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(GATT, WARNING)) BT_PRINT_W("BT_GATT", fmt, ## args);}
+#define GATT_TRACE_API(fmt, args...)        {if (gatt_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(GATT,API)) BT_PRINT_I("BT_GATT", fmt, ## args);}
+#define GATT_TRACE_EVENT(fmt, args...)      {if (gatt_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(GATT,EVENT)) BT_PRINT_D("BT_GATT", fmt, ## args);}
+#define GATT_TRACE_DEBUG(fmt, args...)      {if (gatt_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(GATT,DEBUG)) BT_PRINT_D("BT_GATT", fmt, ## args);}
 
 /* Define tracing for the SMP unit
 */
-#define SMP_TRACE_ERROR(fmt, args...)       {if (smp_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define SMP_TRACE_WARNING(fmt, args...)     {if (smp_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define SMP_TRACE_API(fmt, args...)         {if (smp_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define SMP_TRACE_EVENT(fmt, args...)       {if (smp_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define SMP_TRACE_DEBUG(fmt, args...)       {if (smp_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define SMP_TRACE_ERROR(fmt, args...)       {if (smp_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(SMP, ERROR)) BT_PRINT_E("BT_SMP", fmt, ## args);}
+#define SMP_TRACE_WARNING(fmt, args...)     {if (smp_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(SMP, WARNING)) BT_PRINT_W("BT_SMP", fmt, ## args);}
+#define SMP_TRACE_API(fmt, args...)         {if (smp_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(SMP,API)) BT_PRINT_I("BT_SMP", fmt, ## args);}
+#define SMP_TRACE_EVENT(fmt, args...)       {if (smp_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(SMP,EVENT)) BT_PRINT_D("BT_SMP", fmt, ## args);}
+#define SMP_TRACE_DEBUG(fmt, args...)       {if (smp_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(SMP,DEBUG)) BT_PRINT_D("BT_SMP", fmt, ## args);}
+
 
 extern UINT8 btif_trace_level;
 
 // define traces for application
-#define BTIF_TRACE_ERROR(fmt, args...)      {if (btif_trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define BTIF_TRACE_WARNING(fmt, args...)    {if (btif_trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define BTIF_TRACE_API(fmt, args...)        {if (btif_trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define BTIF_TRACE_EVENT(fmt, args...)      {if (btif_trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define BTIF_TRACE_DEBUG(fmt, args...)      {if (btif_trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
-#define BTIF_TRACE_VERBOSE(fmt, args...)    {if (btif_trace_level >= BT_TRACE_LEVEL_VERBOSE)BT_PRINTF(fmt, ## args);}
+#define BTIF_TRACE_ERROR(fmt, args...)      {if (btif_trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(BTIF, ERROR)) BT_PRINT_E("BT_BTIF", fmt, ## args);}
+#define BTIF_TRACE_WARNING(fmt, args...)    {if (btif_trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(BTIF, WARNING)) BT_PRINT_W("BT_BTIF", fmt, ## args);}
+#define BTIF_TRACE_API(fmt, args...)        {if (btif_trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(BTIF,API)) BT_PRINT_I("BT_BTIF", fmt, ## args);}
+#define BTIF_TRACE_EVENT(fmt, args...)      {if (btif_trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(BTIF,EVENT)) BT_PRINT_D("BT_BTIF", fmt, ## args);}
+#define BTIF_TRACE_DEBUG(fmt, args...)      {if (btif_trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(BTIF,DEBUG)) BT_PRINT_D("BT_BTIF", fmt, ## args);}
+#define BTIF_TRACE_VERBOSE(fmt, args...)    {if (btif_trace_level >= BT_TRACE_LEVEL_VERBOSE && BT_LOG_LEVEL_CHECK(BTIF,VERBOSE)) BT_PRINT_V("BT_BTIF", fmt, ## args);}
 
 /* define traces for application */
 
-#define APPL_TRACE_ERROR(fmt, args...)      {if (appl_trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define APPL_TRACE_WARNING(fmt, args...)    {if (appl_trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define APPL_TRACE_API(fmt, args...)        {if (appl_trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define APPL_TRACE_EVENT(fmt, args...)      {if (appl_trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define APPL_TRACE_DEBUG(fmt, args...)      {if (appl_trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
-#define APPL_TRACE_VERBOSE(fmt, args...)    {if (appl_trace_level >= BT_TRACE_LEVEL_VERBOSE) BT_PRINTF(fmt, ## args);}
+#define APPL_TRACE_ERROR(fmt, args...)      {if (appl_trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(APPL, ERROR)) BT_PRINT_E("BT_APPL", fmt, ## args);}
+#define APPL_TRACE_WARNING(fmt, args...)    {if (appl_trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(APPL, WARNING)) BT_PRINT_W("BT_APPL", fmt, ## args);}
+#define APPL_TRACE_API(fmt, args...)        {if (appl_trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(APPL,API)) BT_PRINT_I("BT_APPL", fmt, ## args);}
+#define APPL_TRACE_EVENT(fmt, args...)      {if (appl_trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(APPL,EVENT)) BT_PRINT_D("BT_APPL", fmt, ## args);}
+#define APPL_TRACE_DEBUG(fmt, args...)      {if (appl_trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(APPL,DEBUG)) BT_PRINT_D("BT_APPL", fmt, ## args);}
+#define APPL_TRACE_VERBOSE(fmt, args...)    {if (appl_trace_level >= BT_TRACE_LEVEL_VERBOSE && BT_LOG_LEVEL_CHECK(APPL,VERBOSE)) BT_PRINT_V("BT_APPL", fmt, ## args);}
+
+/* Define tracing for the HCI unit
+ * Modified from `btu_cb.trace_level` to `HCI_INITIAL_TRACE_LEVEL`,
+ * to use HCI_TRACE_XXXX in hci_layer.c without including `btu.h`
+*/
+#define HCI_TRACE_ERROR(fmt, args...)       {if (HCI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(HCI, ERROR)) BT_PRINT_E("BT_HCI", fmt,## args);}
+#define HCI_TRACE_WARNING(fmt, args...)     {if (HCI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(HCI, WARNING)) BT_PRINT_W("BT_HCI", fmt,## args);}
+#define HCI_TRACE_EVENT(fmt, args...)       {if (HCI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(HCI,EVENT)) BT_PRINT_D("BT_HCI", fmt,## args);}
+#define HCI_TRACE_DEBUG(fmt, args...)       {if (HCI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(HCI,DEBUG)) BT_PRINT_D("BT_HCI", fmt,## args);}
+
+/* define traces for BTC */
+#define BTC_TRACE_ERROR(fmt, args...)      {if (BTC_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(BTC, ERROR)) BT_PRINT_E("BT_BTC", fmt, ## args);}
+#define BTC_TRACE_WARNING(fmt, args...)    {if (BTC_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(BTC, WARNING)) BT_PRINT_W("BT_BTC", fmt, ## args);}
+#define BTC_TRACE_API(fmt, args...)        {if (BTC_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(BTC,API)) BT_PRINT_I("BT_BTC", fmt, ## args);}
+#define BTC_TRACE_EVENT(fmt, args...)      {if (BTC_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(BTC,EVENT)) BT_PRINT_D("BT_BTC", fmt, ## args);}
+#define BTC_TRACE_DEBUG(fmt, args...)      {if (BTC_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(BTC,DEBUG)) BT_PRINT_D("BT_BTC", fmt, ## args);}
+#define BTC_TRACE_VERBOSE(fmt, args...)    {if (BTC_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_VERBOSE && BT_LOG_LEVEL_CHECK(BTC,VERBOSE)) BT_PRINT_V("BT_BTC", fmt, ## args);}
+
+/* define traces for OSI */
+#define OSI_TRACE_ERROR(fmt, args...)      {if (OSI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(OSI, ERROR)) BT_PRINT_E("BT_OSI", fmt, ## args);}
+#define OSI_TRACE_WARNING(fmt, args...)    {if (OSI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(OSI, WARNING)) BT_PRINT_W("BT_OSI", fmt, ## args);}
+#define OSI_TRACE_API(fmt, args...)        {if (OSI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(OSI,API)) BT_PRINT_I("BT_OSI", fmt, ## args);}
+#define OSI_TRACE_EVENT(fmt, args...)      {if (OSI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(OSI,EVENT)) BT_PRINT_D("BT_OSI", fmt, ## args);}
+#define OSI_TRACE_DEBUG(fmt, args...)      {if (OSI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(OSI,DEBUG)) BT_PRINT_D("BT_OSI", fmt, ## args);}
+#define OSI_TRACE_VERBOSE(fmt, args...)    {if (OSI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_VERBOSE && BT_LOG_LEVEL_CHECK(OSI,VERBOSE)) BT_PRINT_V("BT_OSI", fmt, ## args);}
+
+/* define traces for BLUFI */
+#define BLUFI_TRACE_ERROR(fmt, args...)      {if (BLUFI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(BLUFI, ERROR)) BT_PRINT_E("BT_BLUFI", fmt, ## args);}
+#define BLUFI_TRACE_WARNING(fmt, args...)    {if (BLUFI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(BLUFI, WARNING)) BT_PRINT_W("BT_BLUFI", fmt, ## args);}
+#define BLUFI_TRACE_API(fmt, args...)        {if (BLUFI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(BLUFI,API)) BT_PRINT_I("BT_BLUFI", fmt, ## args);}
+#define BLUFI_TRACE_EVENT(fmt, args...)      {if (BLUFI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(BLUFI,EVENT)) BT_PRINT_D("BT_BLUFI", fmt, ## args);}
+#define BLUFI_TRACE_DEBUG(fmt, args...)      {if (BLUFI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(BLUFI,DEBUG)) BT_PRINT_D("BT_BLUFI", fmt, ## args);}
+#define BLUFI_TRACE_VERBOSE(fmt, args...)    {if (BLUFI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_VERBOSE && BT_LOG_LEVEL_CHECK(BLUFI,VERBOSE)) BT_PRINT_V("BT_BLUFI", fmt, ## args);}
 
 #else
 #define LOG_ERROR(fmt, args...)            
@@ -571,6 +670,30 @@ extern UINT8 btif_trace_level;
 #define APPL_TRACE_EVENT(fmt, args...)     
 #define APPL_TRACE_DEBUG(fmt, args...)     
 #define APPL_TRACE_VERBOSE(fmt, args...)   
+
+/* define traces for BTC */
+#define BTC_TRACE_ERROR(fmt, args...) 
+#define BTC_TRACE_WARNING(fmt, args...)
+#define BTC_TRACE_API(fmt, args...)
+#define BTC_TRACE_EVENT(fmt, args...)
+#define BTC_TRACE_DEBUG(fmt, args...)
+#define BTC_TRACE_VERBOSE(fmt, args...)
+
+/* define traces for OSI */
+#define OSI_TRACE_ERROR(fmt, args...) 
+#define OSI_TRACE_WARNING(fmt, args...)
+#define OSI_TRACE_API(fmt, args...)
+#define OSI_TRACE_EVENT(fmt, args...)
+#define OSI_TRACE_DEBUG(fmt, args...)
+#define OSI_TRACE_VERBOSE(fmt, args...)
+
+/* define traces for BLUFI */
+#define BLUFI_TRACE_ERROR(fmt, args...) 
+#define BLUFI_TRACE_WARNING(fmt, args...)
+#define BLUFI_TRACE_API(fmt, args...)
+#define BLUFI_TRACE_EVENT(fmt, args...)
+#define BLUFI_TRACE_DEBUG(fmt, args...)
+#define BLUFI_TRACE_VERBOSE(fmt, args...)
 #endif  ///CONFIG_BT_STACK_NO_LOG
 
 
@@ -579,25 +702,25 @@ extern UINT8 btif_trace_level;
 #define bdld(fmt, args...) \
     do{\
         if((MY_LOG_LEVEL) >= BT_TRACE_LEVEL_DEBUG) \
-        BT_PRINTF(fmt, ## args);        \
+        BT_PRINT_D(fmt, ## args);        \
     }while(0)
 
 #define bdlw(fmt, args...) \
     do{\
-        if((MY_LOG_LEVEL) >= BT_TRACE_LEVEL_DEBUG) \
-        BT_PRINTF(fmt, ## args);        \
+        if((MY_LOG_LEVEL) >= BT_TRACE_LEVEL_WARNING) \
+        BT_PRINT_W(fmt, ## args);        \
     }while(0)
 
 #define bdle(fmt, args...) \
     do{\
-        if((MY_LOG_LEVEL) >= BT_TRACE_LEVEL_DEBUG) \
-        BT_PRINTF(fmt, ## args);        \
+        if((MY_LOG_LEVEL) >= BT_TRACE_LEVEL_ERROR) \
+        BT_PRINT_E(fmt, ## args);        \
     }while(0)
 
 #define bdla(assert_if) \
     do{\
         if(((MY_LOG_LEVEL) >= BT_TRACE_LEVEL_ERROR) && !(assert_if)) \
-        BT_PRINTF("%s: assert failed\n", #assert_if);       \
+        BT_PRINT_E("%s: assert failed\n", #assert_if);       \
     }while(0)
 
 typedef UINT8 tBTTRC_PARAM_TYPE;

@@ -68,7 +68,7 @@ static inline void btc_gatts_uuid_format_convert(esp_bt_uuid_t* dest_uuid, uint1
         memcpy(dest_uuid->uuid.uuid128, src_uuid_p, src_uuid_len);
     }
     else{
-        LOG_ERROR("%s wrong uuid length %d\n", __func__, src_uuid_len);
+        BTC_TRACE_ERROR("%s wrong uuid length %d\n", __func__, src_uuid_len);
     }
 
 }
@@ -85,7 +85,7 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         if (dst->send_ind.value) {
             memcpy(dst->send_ind.value, src->send_ind.value, src->send_ind.value_len);
         } else {
-            LOG_ERROR("%s %d no mem\n", __func__, msg->act);
+            BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
         }
         break;
     }
@@ -95,7 +95,7 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             if (dst->send_rsp.rsp) {
                 memcpy(dst->send_rsp.rsp, src->send_rsp.rsp, sizeof(esp_gatt_rsp_t));
             } else {
-                LOG_ERROR("%s %d no mem\n", __func__, msg->act);
+                BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
             }
         }
         break;
@@ -108,7 +108,7 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
                 memcpy(dst->add_char.char_val.attr_value, src->add_char.char_val.attr_value, 
                         src->add_char.char_val.attr_len);
             }else{
-                LOG_ERROR("%s %d no mem\n", __func__, msg->act);
+                BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
             }
         }
         break;
@@ -120,7 +120,7 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
                 memcpy(dst->add_descr.descr_val.attr_value, src->add_descr.descr_val.attr_value,
                         src->add_descr.descr_val.attr_len);
             }else{
-                LOG_ERROR("%s %d no mem\n", __func__, msg->act);
+                BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
             }
         }
         break;
@@ -133,7 +133,7 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
                 memcpy(dst->create_attr_tab.gatts_attr_db, src->create_attr_tab.gatts_attr_db,
                         sizeof(esp_gatts_attr_db_t)*num_attr);
             }else{
-                LOG_ERROR("%s %d no mem\n",__func__, msg->act);
+                BTC_TRACE_ERROR("%s %d no mem\n",__func__, msg->act);
             }
         }
         break;
@@ -145,13 +145,13 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             if(dst->set_attr_val.value != NULL){
                 memcpy(dst->set_attr_val.value, src->set_attr_val.value, len);
             }else{
-                LOG_ERROR("%s %d no mem\n",__func__, msg->act);
+                BTC_TRACE_ERROR("%s %d no mem\n",__func__, msg->act);
             }
         }
         break;
     }
     default:
-        LOG_DEBUG("%s Unhandled deep copy %d\n", __func__, msg->act);
+        BTC_TRACE_DEBUG("%s Unhandled deep copy %d\n", __func__, msg->act);
         break;
     }
 
@@ -200,7 +200,7 @@ void btc_gatts_arg_deep_free(btc_msg_t *msg)
         break;
 
     default:
-        LOG_DEBUG("%s Unhandled deep free %d\n", __func__, msg->act);
+        BTC_TRACE_DEBUG("%s Unhandled deep free %d\n", __func__, msg->act);
         break;
     }
 
@@ -244,7 +244,7 @@ static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
         }
         future_p = future_new();
         if (future_p == NULL) {
-                LOG_ERROR("%s failed:no mem\n", __func__);
+                BTC_TRACE_ERROR("%s failed:no mem\n", __func__);
                 return ;
             }
         btc_creat_tab_env.complete_future = future_p;
@@ -265,7 +265,7 @@ static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
                                             srvc_inst_id, max_nb_attr, true);
                     btc_creat_tab_env.is_use_svc = true;
                 } else {
-                    LOG_ERROR("Each service table can only created one primary service.");
+                    BTC_TRACE_ERROR("Each service table can only created one primary service.");
                     param.add_attr_tab.status = ESP_GATT_ERROR;
                     btc_gatts_cb_to_app(ESP_GATTS_CREAT_ATTR_TAB_EVT, gatts_if, &param);
                     //reset the env after sent the data to app
@@ -274,7 +274,7 @@ static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
                 }
                 
                  if (future_await(future_p) == FUTURE_FAIL) {
-                        LOG_ERROR("%s failed\n", __func__);
+                        BTC_TRACE_ERROR("%s failed\n", __func__);
                         return;
                         }
                     break;
@@ -292,7 +292,7 @@ static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
                                             srvc_inst_id, max_nb_attr, false);
                     btc_creat_tab_env.is_use_svc = true;
                 } else {
-                    LOG_ERROR("Each service table can only created one secondary service.");
+                    BTC_TRACE_ERROR("Each service table can only created one secondary service.");
                     param.add_attr_tab.status = ESP_GATT_ERROR;
                     btc_gatts_cb_to_app(ESP_GATTS_CREAT_ATTR_TAB_EVT, gatts_if, &param);
                     //reset the env after sent the data to app
@@ -300,7 +300,7 @@ static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
                     return;
                 }
                 if (future_await(future_p) == FUTURE_FAIL) {
-                        LOG_ERROR("%s failed\n", __func__);
+                        BTC_TRACE_ERROR("%s failed\n", __func__);
                         return;
                         }
                 break;
@@ -314,7 +314,7 @@ static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
                             incl_svc_desc->start_hdl);
                         
                         if (future_await(future_p) == FUTURE_FAIL) {
-                                LOG_ERROR("%s failed\n", __func__);
+                                BTC_TRACE_ERROR("%s failed\n", __func__);
                                 return;
                             }
                     }
@@ -333,7 +333,7 @@ static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
                 if(btc_creat_tab_env.svc_start_hdl != 0){
                     svc_hal = btc_creat_tab_env.svc_start_hdl;
                     if((gatts_attr_db[i].att_desc.value) == NULL){
-                        LOG_ERROR("%s Characteristic declaration should not be NULL\n", __func__);
+                        BTC_TRACE_ERROR("%s Characteristic declaration should not be NULL\n", __func__);
                     }
                     else{
                         char_property = (uint8_t)(*(uint8_t*)(gatts_attr_db[i].att_desc.value));
@@ -348,7 +348,7 @@ static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
                                          perm, char_property, &attr_val, &control);
 
                         if (future_await(future_p) == FUTURE_FAIL) {
-                                LOG_ERROR("%s failed\n", __func__);
+                                BTC_TRACE_ERROR("%s failed\n", __func__);
                                 return;
                                 }
                     }
@@ -383,7 +383,7 @@ static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
                     BTA_GATTS_AddCharDescriptor(svc_hal, perm, &bta_char_uuid, &attr_val, &control);
         
                     if (future_await(future_p) == FUTURE_FAIL) {
-                        LOG_ERROR("%s failed\n", __func__);
+                        BTC_TRACE_ERROR("%s failed\n", __func__);
                         return;
                         }
                 }
@@ -424,18 +424,18 @@ static esp_gatt_status_t btc_gatts_check_valid_attr_tab(esp_gatts_attr_db_t *gat
             case ESP_GATT_UUID_PRI_SERVICE:
             case ESP_GATT_UUID_SEC_SERVICE:
                 if (++svc_num > 1) {
-                    LOG_ERROR("Each service table can only created one primary service or secondly service.");
+                    BTC_TRACE_ERROR("Each service table can only created one primary service or secondly service.");
                     return ESP_GATT_ERROR;
                 }
                 break;
             case ESP_GATT_UUID_INCLUDE_SERVICE: {
                 esp_gatts_incl_svc_desc_t *svc_desc = (esp_gatts_incl_svc_desc_t *)gatts_attr_db[i].att_desc.value;
                 if(svc_desc == NULL) {
-                    LOG_ERROR("%s, The include service attribute should not be NULL.", __func__);
+                    BTC_TRACE_ERROR("%s, The include service attribute should not be NULL.", __func__);
                     return ESP_GATT_INVALID_PDU;
                 } else if((svc_desc->start_hdl == 0) || (svc_desc->end_hdl == 0) ||
                           (svc_desc->start_hdl == svc_desc->end_hdl)) {
-                    LOG_ERROR("%s, The include service attribute handle is invalid, start_hanlde = %d, end_handle = %d",\
+                    BTC_TRACE_ERROR("%s, The include service attribute handle is invalid, start_hanlde = %d, end_handle = %d",\
                               __func__, svc_desc->start_hdl, svc_desc->end_hdl);
                     return ESP_GATT_INVALID_HANDLE;
                 }
@@ -443,14 +443,14 @@ static esp_gatt_status_t btc_gatts_check_valid_attr_tab(esp_gatts_attr_db_t *gat
             }
             case ESP_GATT_UUID_CHAR_DECLARE:
                 if((gatts_attr_db[i].att_desc.value) == NULL) {
-                    LOG_ERROR("%s, Characteristic declaration should not be NULL.", __func__);
+                    BTC_TRACE_ERROR("%s, Characteristic declaration should not be NULL.", __func__);
                     return ESP_GATT_INVALID_PDU;
                 }
 
                 if(gatts_attr_db[i+1].att_desc.uuid_length != ESP_UUID_LEN_16 &&
                    gatts_attr_db[i+1].att_desc.uuid_length != ESP_UUID_LEN_32 &&
                    gatts_attr_db[i+1].att_desc.uuid_length != ESP_UUID_LEN_128) {
-                    LOG_ERROR("%s, The Charateristic uuid length = %d is invalid", __func__,\
+                    BTC_TRACE_ERROR("%s, The Charateristic uuid length = %d is invalid", __func__,\
                         gatts_attr_db[i+1].att_desc.uuid_length);
                     return ESP_GATT_INVALID_ATTR_LEN;
                 }
@@ -462,7 +462,7 @@ static esp_gatt_status_t btc_gatts_check_valid_attr_tab(esp_gatts_attr_db_t *gat
                         uuid == ESP_GATT_UUID_CHAR_SRVR_CONFIG || uuid == ESP_GATT_UUID_CHAR_PRESENT_FORMAT ||
                         uuid == ESP_GATT_UUID_CHAR_AGG_FORMAT || uuid == ESP_GATT_UUID_CHAR_VALID_RANGE ||
                         uuid == ESP_GATT_UUID_EXT_RPT_REF_DESCR || uuid == ESP_GATT_UUID_RPT_REF_DESCR) {
-                        LOG_ERROR("%s, The charateristic value uuid = %d is invalid", __func__, uuid);
+                        BTC_TRACE_ERROR("%s, The charateristic value uuid = %d is invalid", __func__, uuid);
                         return ESP_GATT_INVALID_PDU;
                     }
                 }
@@ -584,7 +584,7 @@ static void btc_gatts_inter_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
                                   sizeof(tBTA_GATTS), btc_gatts_cb_param_copy_req);
 
     if (status != BT_STATUS_SUCCESS) {
-        LOG_ERROR("%s btc_transfer_context failed\n", __func__);
+        BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
     }
 }
 

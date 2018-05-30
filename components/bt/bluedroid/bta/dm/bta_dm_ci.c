@@ -83,32 +83,3 @@ void bta_dm_ci_rmt_oob(BOOLEAN accept, BD_ADDR bd_addr, BT_OCTET16 c, BT_OCTET16
     }
 }
 #endif /* BTM_OOB_INCLUDED */
-
-#if (BTM_SCO_HCI_INCLUDED == TRUE)
-/*******************************************************************************
-**
-** Function         bta_dm_sco_ci_data_ready
-**
-** Description      This function sends an event to indicating that the phone
-**                  has SCO data ready.
-**
-** Parameters       event: is obtained from bta_dm_sco_co_open() function, which
-**                          is the BTA event we want to send back to BTA module
-**                          when there is encoded data ready.
-**                  sco_handle: is the BTA sco handle which indicate a specific
-**                           SCO connection.
-** Returns          void
-**
-*******************************************************************************/
-void bta_dm_sco_ci_data_ready(UINT16 event, UINT16 sco_handle)
-{
-    BT_HDR  *p_buf;
-
-    if ((p_buf = (BT_HDR *) osi_malloc(sizeof(BT_HDR))) != NULL) {
-        p_buf->event = event;
-        p_buf->layer_specific = sco_handle;
-
-        bta_sys_sendmsg(p_buf);
-    }
-}
-#endif

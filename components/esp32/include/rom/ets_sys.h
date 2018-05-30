@@ -302,6 +302,15 @@ typedef struct _ETSTIMER_ {
 void ets_timer_init(void);
 
 /**
+  * @brief  In FreeRTOS, please call FreeRTOS apis, never call this api.
+  *
+  * @param  None
+  *
+  * @return None
+  */
+void ets_timer_deinit(void);
+
+/**
   * @brief  Arm an ets timer, this timer range is 640 us to 429496 ms.
   *         In FreeRTOS, please call FreeRTOS apis, never call this api.
   *

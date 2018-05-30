@@ -23,13 +23,17 @@
 extern "C" {
 #endif
 
+/// RSSI threshold
+#define ESP_BT_GAP_RSSI_HIGH_THRLD  -20             /*!< High RSSI threshold */
+#define ESP_BT_GAP_RSSI_LOW_THRLD   -45             /*!< Low RSSI threshold */
+
 /// Class of device
 typedef struct {
-    uint32_t      reserved_2: 2;                         /*!< undefined */
-    uint32_t      minor: 6;                              /*!< minor class */
-    uint32_t      major: 5;                              /*!< major class */
-    uint32_t      service: 11;                           /*!< service class */
-    uint32_t      reserved_8: 8;                         /*!< undefined */
+    uint32_t      reserved_2: 2;                    /*!< undefined */
+    uint32_t      minor: 6;                         /*!< minor class */
+    uint32_t      major: 5;                         /*!< major class */
+    uint32_t      service: 11;                      /*!< service class */
+    uint32_t      reserved_8: 8;                    /*!< undefined */
 } esp_bt_cod_t;
 
 /// class of device settings
@@ -144,6 +148,9 @@ typedef enum {
     ESP_BT_GAP_DISC_STATE_CHANGED_EVT,              /*!< discovery state changed event */
     ESP_BT_GAP_RMT_SRVCS_EVT,                       /*!< get remote services event */
     ESP_BT_GAP_RMT_SRVC_REC_EVT,                    /*!< get remote service record event */
+    ESP_BT_GAP_AUTH_CMPL_EVT,                       /*!< AUTH complete event */
+    ESP_BT_GAP_READ_RSSI_DELTA_EVT,                 /*!< read rssi event */
+    ESP_BT_GAP_EVT_MAX,
 } esp_bt_gap_cb_event_t;
 
 /** Inquiry Mode */
@@ -192,6 +199,23 @@ typedef union {
         esp_bt_status_t stat;                  /*!< service search status */
     } rmt_srvc_rec;                            /*!< specific service record from remote device parameter struct */
 
+    /**
+     * @brief ESP_BT_GAP_READ_RSSI_DELTA_EVT *
+     */
+    struct read_rssi_delta_param {
+        esp_bd_addr_t bda;                     /*!< remote bluetooth device address*/
+        esp_bt_status_t stat;                  /*!< read rssi status */
+        int8_t rssi_delta;                     /*!< rssi delta value range -128 ~127, The value zero indicates that the RSSI is inside the Golden Receive Power Range, the Golden Receive Power Range is from ESP_BT_GAP_RSSI_LOW_THRLD to ESP_BT_GAP_RSSI_HIGH_THRLD */
+    } read_rssi_delta;                         /*!< read rssi parameter struct */
+
+    /**
+     * @brief ESP_BT_GAP_AUTH_CMPL_EVT
+     */
+    struct auth_cmpl_param {
+        esp_bd_addr_t bda;                     /*!< remote bluetooth device address*/
+        esp_bt_status_t stat;                  /*!< authentication complete status */
+        uint8_t device_name[ESP_BT_GAP_MAX_BDNAME_LEN + 1]; /*!< device name */
+    } auth_cmpl;                               /*!< authentication complete parameter struct */
 } esp_bt_gap_cb_param_t;
 
 /**
@@ -371,6 +395,57 @@ esp_err_t esp_bt_gap_set_cod(esp_bt_cod_t cod, esp_bt_cod_mode_t mode);
  *                  - ESP_FAIL: others
  */
 esp_err_t esp_bt_gap_get_cod(esp_bt_cod_t *cod);
+
+/**
+ * @brief           This function is called to read RSSI delta by address after connected. The RSSI value returned by ESP_BT_GAP_READ_RSSI_DELTA_EVT.
+ *
+ *
+ * @param[in]       remote_addr - remote device address, corresponding to a certain connection handle.
+ * @return
+ *                  - ESP_OK : Succeed
+ *                  - ESP_FAIL: others
+ *
+ */
+esp_err_t esp_bt_gap_read_rssi_delta(esp_bd_addr_t remote_addr);
+
+/**
+* @brief           Removes a device from the security database list of
+*                  peer device.
+*
+* @param[in]       bd_addr : BD address of the peer device
+*
+* @return          - ESP_OK : success
+*                  - ESP_FAIL  : failed
+*
+*/
+esp_err_t esp_bt_gap_remove_bond_device(esp_bd_addr_t bd_addr);
+
+/**
+* @brief           Get the device number from the security database list of peer device.
+*                  It will return the device bonded number immediately.
+*
+* @return          - >= 0 : bonded devices number.
+*                  - ESP_FAIL  : failed
+*
+*/
+int esp_bt_gap_get_bond_device_num(void);
+
+/**
+* @brief           Get the device from the security database list of peer device.
+*                  It will return the device bonded information immediately.
+* @param[inout]    dev_num: Indicate the dev_list array(buffer) size as input.
+*                           If dev_num is large enough, it means the actual number as output.
+*                           Suggest that dev_num value equal to esp_ble_get_bond_device_num().
+*
+* @param[out]      dev_list: an array(buffer) of `esp_bd_addr_t` type. Use for storing the bonded devices address.
+*                            The dev_list should be allocated by who call this API.
+*
+* @return
+*                  - ESP_OK : Succeed
+*                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+*                  - ESP_FAIL: others
+*/
+esp_err_t esp_bt_gap_get_bond_device_list(int *dev_num, esp_bd_addr_t *dev_list);
 
 #ifdef __cplusplus
 }

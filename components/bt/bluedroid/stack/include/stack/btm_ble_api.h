@@ -206,7 +206,7 @@ typedef UINT8 BLE_SIGNATURE[BTM_BLE_AUTH_SIGN_LEN];         /* Device address */
 #endif
 
 /* Appearance Values Reported with BTM_BLE_AD_TYPE_APPEARANCE */
-#define BTM_BLE_APPEARANCE_UKNOWN                  0x0000
+#define BTM_BLE_APPEARANCE_UNKNOWN                 0x0000
 #define BTM_BLE_APPEARANCE_GENERIC_PHONE           0x0040
 #define BTM_BLE_APPEARANCE_GENERIC_COMPUTER        0x0080
 #define BTM_BLE_APPEARANCE_GENERIC_WATCH           0x00C0
@@ -250,6 +250,15 @@ typedef UINT8 BLE_SIGNATURE[BTM_BLE_AUTH_SIGN_LEN];         /* Device address */
 #define BTM_BLE_APPEARANCE_PULSE_OXIMETER_FINGERTIP 0x0C41
 #define BTM_BLE_APPEARANCE_PULSE_OXIMETER_WRIST    0x0C42
 #define BTM_BLE_APPEARANCE_GENERIC_WEIGHT          0x0C80
+#define BTM_BLE_APPEARANCE_GENERIC_PERSONAL_MOBILITY_DEVICE    0x0CC0
+#define BTM_BLE_APPEARANCE_POWERED_WHEELCHAIR                  0x0CC1
+#define BTM_BLE_APPEARANCE_MOBILITY_SCOOTER                    0x0CC2
+#define BTM_BLE_APPEARANCE_GENERIC_CONTINUOUS_GLUCOSE_MONITOR  0x0D00
+#define BTM_BLE_APPEARANCE_GENERIC_INSULIN_PUMP                0x0D40
+#define BTM_BLE_APPEARANCE_INSULIN_PUMP_DURABLE_PUMP           0x0D41
+#define BTM_BLE_APPEARANCE_INSULIN_PUMP_PATCH_PUMP             0x0D44
+#define BTM_BLE_APPEARANCE_INSULIN_PEN                         0x0D48
+#define BTM_BLE_APPEARANCE_GENERIC_MEDICATION_DELIVERY         0x0D80
 #define BTM_BLE_APPEARANCE_GENERIC_OUTDOOR_SPORTS  0x1440
 #define BTM_BLE_APPEARANCE_OUTDOOR_SPORTS_LOCATION 0x1441
 #define BTM_BLE_APPEARANCE_OUTDOOR_SPORTS_LOCATION_AND_NAV     0x1442
@@ -1050,6 +1059,7 @@ void BTM_BleSetScanParams(tGATT_IF client_if, UINT32 scan_interval,
 **                  scan_window - Scan window
 **                  scan_type - Scan type
 **                  addr_type_own - owner address type
+**                  scan_duplicate_filter - scan duplicate filter
 **                  scan_filter_policy - scan filter policy
 **                  scan_setup_status_cback - Scan setup status callback
 **
@@ -1057,7 +1067,7 @@ void BTM_BleSetScanParams(tGATT_IF client_if, UINT32 scan_interval,
 **
 *******************************************************************************/
 void BTM_BleSetScanFilterParams(tGATT_IF client_if, UINT32 scan_interval, UINT32 scan_window,
-                                tBLE_SCAN_MODE scan_mode, UINT8 addr_type_own, tBTM_BLE_SFP scan_filter_policy,
+                                tBLE_SCAN_MODE scan_mode, UINT8 addr_type_own, UINT8 scan_duplicate_filter, tBTM_BLE_SFP scan_filter_policy,
                                 tBLE_SCAN_PARAM_SETUP_CBACK scan_setup_status_cback);
 
 

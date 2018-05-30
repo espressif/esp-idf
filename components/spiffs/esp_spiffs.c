@@ -522,7 +522,8 @@ static int spiffs_mode_conv(int m)
         res |= SPIFFS_O_CREAT | SPIFFS_O_EXCL;
     } else if ((m & O_CREAT) && (m & O_TRUNC)) {
         res |= SPIFFS_O_CREAT | SPIFFS_O_TRUNC;
-    } else if (m & O_APPEND) {
+    }
+    if (m & O_APPEND) {
         res |= SPIFFS_O_CREAT | SPIFFS_O_APPEND;
     }
     return res;

@@ -37,7 +37,9 @@ typedef struct {
  * @brief Opaque PHY calibration data
  */
 typedef struct {
-    uint8_t opaque[1904];                   /*!< calibration data */
+    uint8_t version[4];                     /*!< PHY version */
+    uint8_t mac[6];                         /*!< The MAC address of the station */
+    uint8_t opaque[1894];                   /*!< calibration data */
 } esp_phy_calibration_data_t;
 
 typedef enum {

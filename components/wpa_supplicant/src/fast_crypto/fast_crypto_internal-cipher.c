@@ -136,7 +136,9 @@ int  fast_crypto_cipher_encrypt(struct crypto_cipher *ctx, const uint8_t *plain,
             for (i = 0; i < blocks; i++) {
                 for (j = 0; j < AES_BLOCK_SIZE; j++)
                     fast_ctx->u.aes.cbc[j] ^= plain[j];
-                mbedtls_aes_encrypt(&(fast_ctx->u.aes.ctx_enc), fast_ctx->u.aes.cbc, fast_ctx->u.aes.cbc);
+                if (mbedtls_internal_aes_encrypt(&(fast_ctx->u.aes.ctx_enc), fast_ctx->u.aes.cbc, fast_ctx->u.aes.cbc) != 0) {
+                    return -1;
+                }
                 os_memcpy(crypt, fast_ctx->u.aes.cbc, AES_BLOCK_SIZE);
                 plain += AES_BLOCK_SIZE;
                 crypt += AES_BLOCK_SIZE;
@@ -209,7 +211,9 @@ int  fast_crypto_cipher_decrypt(struct crypto_cipher *ctx, const uint8_t *crypt,
             blocks = len / AES_BLOCK_SIZE;
             for (i = 0; i < blocks; i++) {
                 os_memcpy(tmp, crypt, AES_BLOCK_SIZE);
-                mbedtls_aes_decrypt(&(fast_ctx->u.aes.ctx_dec), crypt, plain);
+                if (mbedtls_internal_aes_decrypt(&(fast_ctx->u.aes.ctx_dec), crypt, plain) != 0) {
+                    return -1;
+                }
                 for (j = 0; j < AES_BLOCK_SIZE; j++)
                     plain[j] ^= fast_ctx->u.aes.cbc[j];
                 os_memcpy(fast_ctx->u.aes.cbc, tmp, AES_BLOCK_SIZE);

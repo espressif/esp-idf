@@ -327,7 +327,7 @@ bool L2CA_SetConnectionCallbacks(uint16_t local_cid, const tL2CAP_APPL_INFO *cal
 
     tL2C_CCB *channel_control_block = l2cu_find_ccb_by_cid(NULL, local_cid);
     if (!channel_control_block) {
-        LOG_ERROR("%s no channel control block found for L2CAP LCID=0x%04x.", __func__, local_cid);
+        L2CAP_TRACE_ERROR("%s no channel control block found for L2CAP LCID=0x%04x.", __func__, local_cid);
         return false;
     }
 
@@ -339,7 +339,7 @@ bool L2CA_SetConnectionCallbacks(uint16_t local_cid, const tL2CAP_APPL_INFO *cal
     if (!channel_control_block->should_free_rcb) {
         registration_control_block = (tL2C_RCB *)osi_calloc(sizeof(tL2C_RCB));
         if (!registration_control_block) {
-            LOG_ERROR("%s unable to allocate registration control block.", __func__);
+            L2CAP_TRACE_ERROR("%s unable to allocate registration control block.", __func__);
             return false;
         }
 

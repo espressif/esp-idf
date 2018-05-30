@@ -955,8 +955,8 @@ typedef UINT8 tBTM_SCO_TYPE;
 /*******************
 ** SCO Routing Path
 ********************/
-#define BTM_SCO_ROUTE_PCM           HCI_BRCM_SCO_ROUTE_PCM
-#define BTM_SCO_ROUTE_HCI           HCI_BRCM_SCO_ROUTE_HCI
+#define BTM_SCO_ROUTE_PCM           (0) // HCI_BRCM_SCO_ROUTE_PCM
+#define BTM_SCO_ROUTE_HCI           (1) // HCI_BRCM_SCO_ROUTE_HCI
 typedef UINT8 tBTM_SCO_ROUTE_TYPE;
 
 

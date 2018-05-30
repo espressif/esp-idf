@@ -39,6 +39,14 @@ public:
         spi_flash_emulator_set(this);
     }
 
+    SpiFlashEmulator(const char *filename)
+    {
+        load(filename);
+        // Atleast one page should be free, hence we create mData of size of 2 sectors.
+        mData.resize(2 * SPI_FLASH_SEC_SIZE / 4, 0xffffffff);
+        spi_flash_emulator_set(this);
+    }
+
     ~SpiFlashEmulator()
     {
         spi_flash_emulator_set(nullptr);

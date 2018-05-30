@@ -906,7 +906,30 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
     case HCI_BLE_CLEAR_WHITE_LIST:
         btm_ble_clear_white_list_complete(p, evt_len);
         break;
-
+    case HCI_BLE_WRITE_ADV_PARAMS: {
+        uint8_t status;
+        STREAM_TO_UINT8  (status, p);
+        if(status != HCI_SUCCESS) {
+            HCI_TRACE_ERROR("hci write adv params error 0x%x", status);
+        }
+        break;
+    }
+    case HCI_BLE_RC_PARAM_REQ_REPLY: {
+        uint8_t status;
+        STREAM_TO_UINT8  (status, p);
+        if(status != HCI_SUCCESS) {
+            HCI_TRACE_ERROR("hci connection params reply command error 0x%x", status);
+        }
+        break;
+    }
+    case HCI_BLE_RC_PARAM_REQ_NEG_REPLY: {
+        uint8_t status;
+        STREAM_TO_UINT8  (status, p);
+        if(status != HCI_SUCCESS) {
+            HCI_TRACE_ERROR("hci connection params neg reply command error %x", status);
+        }
+        break;
+    }
     case HCI_BLE_REMOVE_WHITE_LIST:
         btm_ble_remove_from_white_list_complete(p, evt_len);
         break;
@@ -960,11 +983,17 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
 #endif
 #endif /* (BLE_INCLUDED == TRUE) */
 
-    default:
+    default: {
         if ((opcode & HCI_GRP_VENDOR_SPECIFIC) == HCI_GRP_VENDOR_SPECIFIC) {
             btm_vsc_complete (p, opcode, evt_len, (tBTM_CMPL_CB *)p_cplt_cback);
         }
+        uint8_t status;
+        STREAM_TO_UINT8  (status, p);
+        if(status != HCI_SUCCESS) {
+            HCI_TRACE_ERROR("%s opcode 0x%x status 0x%x", __func__, opcode, status);
+        }
         break;
+    }
     }
 }
 
@@ -1000,7 +1029,7 @@ static void btu_hcif_command_complete_evt(BT_HDR *response, void *context)
     BT_HDR *event = osi_calloc(sizeof(BT_HDR) + sizeof(command_complete_hack_t));
     command_complete_hack_t *hack = (command_complete_hack_t *)&event->data[0];
 
-    LOG_DEBUG("btu_hcif_command_complete_evt\n");
+    HCI_TRACE_DEBUG("btu_hcif_command_complete_evt\n");
 
     hack->callback = btu_hcif_command_complete_evt_on_task;
     hack->response = response;
@@ -1292,7 +1321,9 @@ static void btu_hcif_num_compl_data_pkts_evt (UINT8 *p)
     l2c_link_process_num_completed_pkts (p);
 
     /* Send on to SCO */
-    /*?? No SCO for now */
+#if (BTM_SCO_HCI_INCLUDED == TRUE) && (BTM_SCO_INCLUDED == TRUE)
+    btm_sco_process_num_completed_pkts (p);
+#endif
 }
 
 /*******************************************************************************

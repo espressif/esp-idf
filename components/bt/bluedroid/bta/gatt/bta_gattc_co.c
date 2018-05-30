@@ -331,7 +331,9 @@ void bta_gattc_co_cache_addr_init(void)
         cache_env.addr_fp = fp;
         // Read previously saved blob if available
         if ((err_code = nvs_get_blob(fp, cache_key, p_buf, &length)) != ESP_OK) {
-            APPL_TRACE_ERROR("%s, Line = %d, nvs flash get blob data fail, err_code = %x", __func__, __LINE__, err_code);
+            if(err_code != ESP_ERR_NVS_NOT_FOUND) {
+                APPL_TRACE_ERROR("%s, Line = %d, nvs flash get blob data fail, err_code = 0x%x", __func__, __LINE__, err_code);
+            }
             osi_free(p_buf);
             return;
         }

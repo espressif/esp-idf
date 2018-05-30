@@ -25,13 +25,13 @@ else()
     # tcpip_adapter is a public requirement because esp_event.h uses tcpip_adapter types
     set(COMPONENT_PRIV_REQUIRES
         app_trace bootloader_support ethernet log mbedtls nvs_flash
-        pthread spi_flash vfs wpa_supplicant xtensa-debug-module)
+        pthread smartconfig_ack spi_flash vfs wpa_supplicant xtensa-debug-module)
 
     register_component()
 
     target_link_libraries(esp32 "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib")
     if(NOT CONFIG_NO_BLOBS)
-        target_link_libraries(esp32 coexist core espnow net80211 phy pp rtc smartconfig wpa2 wpa wps)
+        target_link_libraries(esp32 coexist core espnow mesh net80211 phy pp rtc smartconfig wpa2 wpa wps)
     endif()
     target_linker_script(esp32 "${CMAKE_CURRENT_BINARY_DIR}/esp32_out.ld")
 

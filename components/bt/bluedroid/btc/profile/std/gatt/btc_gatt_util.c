@@ -82,7 +82,7 @@ void btc128_to_bta_uuid(tBT_UUID *p_dest, uint8_t *p_src)
         break;
 
     default:
-        LOG_ERROR("%s: Unknown UUID length %d!", __FUNCTION__, p_dest->len);
+        BTC_TRACE_ERROR("%s: Unknown UUID length %d!", __FUNCTION__, p_dest->len);
         break;
     }
 }
@@ -103,7 +103,7 @@ void btc_to_bta_uuid(tBT_UUID *p_dest, esp_bt_uuid_t *p_src)
     } else if (p_src->len == 0) {
         /* do nothing for now, there's some scenario will input 0 */
     } else {
-        LOG_ERROR("%s UUID len is invalid %d\n", __func__, p_src->len);
+        BTC_TRACE_ERROR("%s UUID len is invalid %d\n", __func__, p_src->len);
     }
 }
 
@@ -136,7 +136,7 @@ void bta_to_btc_uuid(esp_bt_uuid_t *p_dest, tBT_UUID *p_src)
         /* do nothing for now, there's some scenario will input 0
            such as, receive notify, the descriptor may be 0 */
     } else {
-        LOG_ERROR("%s UUID len is invalid %d\n", __func__, p_src->len);
+        BTC_TRACE_ERROR("%s UUID len is invalid %d\n", __func__, p_src->len);
     }
 }
 
@@ -187,7 +187,7 @@ uint16_t set_read_value(uint8_t *gattc_if, esp_ble_gattc_cb_param_t *p_dest, tBT
 
     if (( p_src->status == BTA_GATT_OK ) && (p_src->p_value != NULL))
     {
-        LOG_DEBUG("%s len = %d ", __func__, p_src->p_value->len);
+        BTC_TRACE_DEBUG("%s len = %d ", __func__, p_src->p_value->len);
         p_dest->read.value_len = p_src->p_value->len;
         if ( p_src->p_value->len > 0  && p_src->p_value->p_value != NULL ) {
             p_dest->read.value = p_src->p_value->p_value;

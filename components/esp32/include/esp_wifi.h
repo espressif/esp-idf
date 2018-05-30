@@ -67,6 +67,7 @@
 #include "esp_wifi_types.h"
 #include "esp_wifi_crypto_types.h"
 #include "esp_event.h"
+#include "esp_wifi_os_adapter.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -93,18 +94,21 @@ extern "C" {
  */
 typedef struct {
     system_event_handler_t event_handler;          /**< WiFi event handler */
+    wifi_osi_funcs_t*      osi_funcs;              /**< WiFi OS functions */
     wpa_crypto_funcs_t     wpa_crypto_funcs;       /**< WiFi station crypto functions when connect */
     int                    static_rx_buf_num;      /**< WiFi static RX buffer number */
     int                    dynamic_rx_buf_num;     /**< WiFi dynamic RX buffer number */
     int                    tx_buf_type;            /**< WiFi TX buffer type */
     int                    static_tx_buf_num;      /**< WiFi static TX buffer number */
     int                    dynamic_tx_buf_num;     /**< WiFi dynamic TX buffer number */
+    int                    csi_enable;             /**< WiFi channel state information enable flag */
     int                    ampdu_rx_enable;        /**< WiFi AMPDU RX feature enable flag */
     int                    ampdu_tx_enable;        /**< WiFi AMPDU TX feature enable flag */
     int                    nvs_enable;             /**< WiFi NVS flash enable flag */
     int                    nano_enable;            /**< Nano option for printf/scan family enable flag */
     int                    tx_ba_win;              /**< WiFi Block Ack TX window size */
     int                    rx_ba_win;              /**< WiFi Block Ack RX window size */
+    int                    wifi_task_core_id;      /**< WiFi Task Core ID */
     int                    magic;                  /**< WiFi init magic number, it should be the last field */
 } wifi_init_config_t;
 
@@ -118,6 +122,12 @@ typedef struct {
 #define WIFI_DYNAMIC_TX_BUFFER_NUM CONFIG_ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
 #else
 #define WIFI_DYNAMIC_TX_BUFFER_NUM 0
+#endif
+
+#if CONFIG_ESP32_WIFI_CSI_ENABLED
+#define WIFI_CSI_ENABLED         1
+#else
+#define WIFI_CSI_ENABLED         0
 #endif
 
 #if CONFIG_ESP32_WIFI_AMPDU_RX_ENABLED
@@ -160,20 +170,29 @@ extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
 #define WIFI_DEFAULT_RX_BA_WIN 0 /* unused if ampdu_rx_enable == false */
 #endif
 
+#if CONFIG_ESP32_WIFI_TASK_PINNED_TO_CORE_1
+#define WIFI_TASK_CORE_ID 1
+#else
+#define WIFI_TASK_CORE_ID 0
+#endif
+
 #define WIFI_INIT_CONFIG_DEFAULT() { \
     .event_handler = &esp_event_send, \
+    .osi_funcs = &g_wifi_osi_funcs, \
     .wpa_crypto_funcs = g_wifi_default_wpa_crypto_funcs, \
     .static_rx_buf_num = CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM,\
     .dynamic_rx_buf_num = CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM,\
     .tx_buf_type = CONFIG_ESP32_WIFI_TX_BUFFER_TYPE,\
     .static_tx_buf_num = WIFI_STATIC_TX_BUFFER_NUM,\
     .dynamic_tx_buf_num = WIFI_DYNAMIC_TX_BUFFER_NUM,\
+    .csi_enable = WIFI_CSI_ENABLED,\
     .ampdu_rx_enable = WIFI_AMPDU_RX_ENABLED,\
     .ampdu_tx_enable = WIFI_AMPDU_TX_ENABLED,\
     .nvs_enable = WIFI_NVS_ENABLED,\
     .nano_enable = WIFI_NANO_FORMAT_ENABLED,\
     .tx_ba_win = WIFI_DEFAULT_TX_BA_WIN,\
     .rx_ba_win = WIFI_DEFAULT_RX_BA_WIN,\
+    .wifi_task_core_id = WIFI_TASK_CORE_ID,\
     .magic = WIFI_INIT_CONFIG_MAGIC\
 };
 
@@ -675,6 +694,31 @@ esp_err_t esp_wifi_set_promiscuous_filter(const wifi_promiscuous_filter_t *filte
 esp_err_t esp_wifi_get_promiscuous_filter(wifi_promiscuous_filter_t *filter);
 
 /**
+  * @brief Enable subtype filter of the control packet in promiscuous mode.
+  *
+  * @note The default filter is to filter none control packet.
+  *
+  * @param filter the subtype of the control packet filtered in promiscuous mode.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  */
+esp_err_t esp_wifi_set_promiscuous_ctrl_filter(const wifi_promiscuous_filter_t *filter);
+
+/**
+  * @brief     Get the subtype filter of the control packet in promiscuous mode.
+  *
+  * @param[out] filter  store the current status of subtype filter of the control packet in promiscuous mode
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_ARG: invalid argument
+  */
+esp_err_t esp_wifi_get_promiscuous_ctrl_filter(wifi_promiscuous_filter_t *filter);
+
+/**
   * @brief     Set the configuration of the ESP32 STA or AP
   *
   * @attention 1. This API can be called only when specified interface is enabled, otherwise, API fail
@@ -757,7 +801,7 @@ esp_err_t esp_wifi_set_storage(wifi_storage_t storage);
   *    - ESP_ERR_WIFI_MODE: WiFi internal error, the station/soft-AP control block is invalid
   *    - others: refer to error code in esp_err.h
   */
-esp_err_t esp_wifi_set_auto_connect(bool en);
+esp_err_t esp_wifi_set_auto_connect(bool en) __attribute__ ((deprecated));
 
 /**
   * @brief     Get the auto connect flag
@@ -769,7 +813,7 @@ esp_err_t esp_wifi_set_auto_connect(bool en);
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
   *    - ESP_ERR_INVALID_ARG: invalid argument
   */
-esp_err_t esp_wifi_get_auto_connect(bool *en);
+esp_err_t esp_wifi_get_auto_connect(bool *en) __attribute__ ((deprecated));
 
 /**
   * @brief     Set 802.11 Vendor-Specific Information Element
@@ -904,6 +948,134 @@ esp_err_t esp_wifi_set_event_mask(uint32_t mask);
   */
 esp_err_t esp_wifi_get_event_mask(uint32_t *mask);
 
+/**
+  * @brief     Send raw ieee80211 data
+  *
+  * @attention Currently only support for sending beacon/probe request/probe response/action and non-QoS
+  *            data frame
+  * 
+  * @param     ifx interface if the Wi-Fi mode is Station, the ifx should be WIFI_IF_STA. If the Wi-Fi
+  *            mode is SoftAP, the ifx should be WIFI_IF_AP. If the Wi-Fi mode is Station+SoftAP, the 
+  *            ifx should be WIFI_IF_STA or WIFI_IF_AP. If the ifx is wrong, the API returns ESP_ERR_WIFI_IF.
+  * @param     buffer raw ieee80211 buffer
+  * @param     len the length of raw buffer, the len must be <= 1500 Bytes and >= 24 Bytes
+  * @param     en_sys_seq indicate whether use the internal sequence number. If en_sys_seq is false, the 
+  *            sequence in raw buffer is unchanged, otherwise it will be overwritten by WiFi driver with 
+  *            the system sequence number.
+  *            Generally, if esp_wifi_80211_tx is called before the Wi-Fi connection has been set up, both
+  *            en_sys_seq==true and en_sys_seq==false are fine. However, if the API is called after the Wi-Fi
+  *            connection has been set up, en_sys_seq must be true, otherwise ESP_ERR_WIFI_ARG is returned.
+  *
+  * @return
+  *    - ESP_OK: success
+  *    - ESP_ERR_WIFI_IF: Invalid interface
+  *    - ESP_ERR_INVALID_ARG: Invalid parameter
+  *    - ESP_ERR_WIFI_NO_MEM: out of memory
+  */
+
+esp_err_t esp_wifi_80211_tx(wifi_interface_t ifx, const void *buffer, int len, bool en_sys_seq);
+
+/**
+  * @brief The RX callback function of Channel State Information(CSI)  data. 
+  *
+  *        Each time a CSI data is received, the callback function will be called.
+  *
+  * @param ctx context argument, passed to esp_wifi_set_csi_rx_cb() when registering callback function. 
+  * @param data CSI data received. 
+  *
+  */
+typedef void (* wifi_csi_cb_t)(void *ctx, wifi_csi_info_t *data);
+
+
+/**
+  * @brief Register the RX callback function of CSI data.
+  *
+  *        Each time a CSI data is received, the callback function will be called.
+  *
+  * @param cb  callback
+  * @param ctx context argument, passed to callback function
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  */
+
+esp_err_t esp_wifi_set_csi_rx_cb(wifi_csi_cb_t cb, void *ctx);
+
+/**
+  * @brief Set CSI data configuration
+  *
+  * @param config configuration
+  * 
+  * return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_START: WiFi is not started by esp_wifi_start or promiscuous mode is not enabled
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  */
+esp_err_t esp_wifi_set_csi_config(const wifi_csi_config_t *config);
+
+/**
+  * @brief Enable or disable CSI
+  *
+  * @param en true - enable, false - disable
+  *
+  * return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_START: WiFi is not started by esp_wifi_start or promiscuous mode is not enabled
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  */
+esp_err_t esp_wifi_set_csi(bool en);
+
+/**
+  * @brief     Set antenna GPIO configuration
+  *
+  * @param     config  Antenna GPIO configuration.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_ARG: Invalid argument, e.g. parameter is NULL, invalid GPIO number etc
+  */
+esp_err_t esp_wifi_set_ant_gpio(const wifi_ant_gpio_config_t *config);
+
+/**
+  * @brief     Get current antenna GPIO configuration
+  *
+  * @param     config  Antenna GPIO configuration.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_ARG: invalid argument, e.g. parameter is NULL
+  */
+esp_err_t esp_wifi_get_ant_gpio(wifi_ant_gpio_config_t *config);
+
+
+/**
+  * @brief     Set antenna configuration
+  *
+  * @param     config  Antenna configuration.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_ARG: Invalid argument, e.g. parameter is NULL, invalid antenna mode or invalid GPIO number
+  */
+esp_err_t esp_wifi_set_ant(const wifi_ant_config_t *config);
+
+/**
+  * @brief     Get current antenna configuration
+  *
+  * @param     config  Antenna configuration.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_ARG: invalid argument, e.g. parameter is NULL
+  */
+esp_err_t esp_wifi_get_ant(wifi_ant_config_t *config);
 
 #ifdef __cplusplus
 }

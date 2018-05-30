@@ -57,12 +57,12 @@ static void airsync_profile_cb(esp_gatts_evt_t event, esp_gatts_t *p_data)
     tAirSync_INST  *p_inst = &airsync_cb_env.airsync_inst;
 
 
-    LOG_ERROR("airsync profile cb event = %x\n", event);
+    BTC_TRACE_ERROR("airsync profile cb event = %x\n", event);
     switch (event) {
     case ESP_GATTS_REG_EVT:
 
         if (p_data->reg_oper.status != BTA_GATT_OK) {
-            LOG_ERROR("button profile register failed\n");
+            BTC_TRACE_ERROR("button profile register failed\n");
         }
         airsync_cb_env.gatt_if = p_data->reg_oper.server_if;
         airsync_cb_env.enabled = true;
@@ -203,7 +203,7 @@ tAirSync_CLCB *airsync_env_clcb_alloc (UINT16 conn_id, BD_ADDR remote_bda)
     if (!p_clcb->in_use) {
         p_clcb->in_use = TRUE;
         p_clcb->conn_id = conn_id;
-        LOG_ERROR("p_clcb->conn_id = %x\n", conn_id);
+        BTC_TRACE_ERROR("p_clcb->conn_id = %x\n", conn_id);
         p_clcb->connected = TRUE;
         memcpy(p_clcb->remote_bda, remote_bda, BD_ADDR_LEN);
     }
@@ -248,7 +248,7 @@ tGATT_STATUS AirSync_Init(tAIRSYNC_CBACK *call_back)
 
 
     if (airsync_cb_env.enabled) {
-        LOG_ERROR("airsync svc already initaliezd\n");
+        BTC_TRACE_ERROR("airsync svc already initaliezd\n");
         return ESP_GATT_ERROR;
     } else {
         memset(&airsync_cb_env, 0, sizeof(tAIRSYNC_CB_ENV));

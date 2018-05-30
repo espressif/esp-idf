@@ -398,14 +398,11 @@ Related Documents
 * :doc:`../api-guides/jtag-debugging/index`
 * :doc:`../hw-reference/index`
 
-
-.. |jp1-sd_io2| image:: ../../_static/wrover-jp1-sd_io2.png
-.. |jp1-both| image:: ../../_static/wrover-jp1-both.png
-.. |jp7-ext_5v| image:: ../../_static/wrover-jp7-ext_5v.png
-.. |jp7-usb_5v| image:: ../../_static/wrover-jp7-usb_5v.png
-.. |jp8| image:: ../../_static/wrover-jp8.png
-.. |jp11-rx-tx| image:: ../../_static/wrover-jp11-tx-rx.png
-.. |jp14| image:: ../../_static/wrover-jp14.png
+.. |jp7-ext_5v| image:: ../../_static/esp-wrover-kit-v3-jp7-ext_5v.png
+.. |jp7-usb_5v| image:: ../../_static/esp-wrover-kit-v3-jp7-usb_5v.png
+.. |jp8| image:: ../../_static/esp-wrover-kit-v3-jp8.png
+.. |jp11-rx-tx| image:: ../../_static/esp-wrover-kit-v3-jp11-tx-rx.png
+.. |jp14| image:: ../../_static/esp-wrover-kit-v3-jp14.png
 
 .. _ESP-WROVER-KIT V3 schematic: https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_SCH-3.pdf
 

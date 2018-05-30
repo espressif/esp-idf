@@ -1022,7 +1022,7 @@ typedef struct {
     /* If the device name is known to application BTA skips the remote name request */
     BOOLEAN         is_limited;             /* TRUE, if the limited inquiry bit is set in the CoD */
     INT8            rssi;                   /* The rssi value */
-    UINT8           *p_eir;                 /* received EIR */
+    UINT8           *p_eir;                 /* Received EIR */
 #if (BLE_INCLUDED == TRUE)
     UINT8               inq_result_type;
     UINT8               ble_addr_type;
@@ -1054,7 +1054,7 @@ typedef struct {
     tBTA_SERVICE_MASK   services;       /* Services found on peer device. */
 // btla-specific ++
     UINT8              *p_raw_data;     /* Raw data for discovery DB */
-    UINT32              raw_data_size;  /* size of raw data */
+    UINT32              raw_data_size;  /* Size of raw data */
     tBT_DEVICE_TYPE     device_type;    /* device type in case it is BLE device */
     UINT32              num_uuids;
     UINT8               *p_uuid_list;
@@ -1075,10 +1075,16 @@ typedef union {
     tBTA_DM_INQ_RES     inq_res;        /* Inquiry result for a peer device. */
     tBTA_DM_INQ_CMPL    inq_cmpl;       /* Inquiry complete. */
     tBTA_DM_DISC_RES    disc_res;       /* Discovery result for a peer device. */
-    tBTA_DM_DISC_BLE_RES    disc_ble_res;   /* discovery result for GATT based service */
+    tBTA_DM_DISC_BLE_RES    disc_ble_res;   /* Discovery result for GATT based service */
     tBTA_DM_DI_DISC_CMPL    di_disc;        /* DI discovery result for a peer device */
-
 } tBTA_DM_SEARCH;
+
+/* Structure of search callback event and structures */
+typedef struct {
+    tBTA_DM_SEARCH_EVT      event;      /* Search callback events */
+    UINT16                  len;        /* Length of p_data */
+    tBTA_DM_SEARCH          *p_data;    /* Union of all search callback structures */
+} tBTA_DM_SEARCH_PARAM;
 
 /* Search callback */
 typedef void (tBTA_DM_SEARCH_CBACK)(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data);
@@ -1089,7 +1095,7 @@ typedef void (tBTA_DM_EXEC_CBACK) (void *p_param);
 /* Encryption callback*/
 typedef void (tBTA_DM_ENCRYPT_CBACK) (BD_ADDR bd_addr, tBTA_TRANSPORT transport, tBTA_STATUS result);
 
-/* relate to ESP_BLE_SEC_xxx in esp_gatt_defs.h */
+/* Relate to ESP_BLE_SEC_xxx in esp_gatt_defs.h */
 #if BLE_INCLUDED == TRUE
 #define BTA_DM_BLE_SEC_NONE         BTM_BLE_SEC_NONE
 #define BTA_DM_BLE_SEC_ENCRYPT      BTM_BLE_SEC_ENCRYPT
@@ -1416,7 +1422,7 @@ extern void BTA_DisableTestMode(void);
 ** Returns          void
 **
 *******************************************************************************/
-extern void BTA_DmSetDeviceName(char *p_name);
+extern void BTA_DmSetDeviceName(const char *p_name);
 
 extern void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBTA_ADD_WHITELIST_CBACK *add_wl_cb);
 
@@ -1902,6 +1908,7 @@ extern void BTA_DmSetBleScanParams(tGATT_IF client_if, UINT32 scan_interval,
 **                  scan_interval - scan interval
 **                  scan_window - scan window
 **                  scan_mode - scan mode
+**                  scan_duplicate_filter - scan duplicate filter
 **                  scan_param_setup_status_cback - Set scan param status callback
 **
 ** Returns          void
@@ -1909,7 +1916,7 @@ extern void BTA_DmSetBleScanParams(tGATT_IF client_if, UINT32 scan_interval,
 *******************************************************************************/
 extern void BTA_DmSetBleScanFilterParams(tGATT_IF client_if, UINT32 scan_interval,
         UINT32 scan_window, tBLE_SCAN_MODE scan_mode, UINT8 scan_fil_poilcy,
-        UINT8 addr_type_own, tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_cback);
+        UINT8 addr_type_own, UINT8 scan_duplicate_filter, tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_cback);
 
 
 /*******************************************************************************

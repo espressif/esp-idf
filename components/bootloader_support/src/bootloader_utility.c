@@ -67,7 +67,6 @@ static void set_cache_and_start_app(uint32_t drom_addr,
 bool bootloader_utility_load_partition_table(bootloader_state_t* bs)
 {
     const esp_partition_info_t *partitions;
-    const int ESP_PARTITION_TABLE_DATA_LEN = 0xC00; /* length of actual data (signature is appended to this) */
     const char *partition_usage;
     esp_err_t err;
     int num_partitions;
@@ -75,7 +74,7 @@ bool bootloader_utility_load_partition_table(bootloader_state_t* bs)
 #ifdef CONFIG_SECURE_BOOT_ENABLED
     if(esp_secure_boot_enabled()) {
         ESP_LOGI(TAG, "Verifying partition table signature...");
-        err = esp_secure_boot_verify_signature(ESP_PARTITION_TABLE_ADDR, ESP_PARTITION_TABLE_DATA_LEN);
+        err = esp_secure_boot_verify_signature(ESP_PARTITION_TABLE_ADDR, ESP_PARTITION_TABLE_MAX_LEN);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to verify partition table signature.");
             return false;
@@ -84,9 +83,9 @@ bool bootloader_utility_load_partition_table(bootloader_state_t* bs)
     }
 #endif
 
-    partitions = bootloader_mmap(ESP_PARTITION_TABLE_ADDR, ESP_PARTITION_TABLE_DATA_LEN);
+    partitions = bootloader_mmap(ESP_PARTITION_TABLE_ADDR, ESP_PARTITION_TABLE_MAX_LEN);
     if (!partitions) {
-            ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", ESP_PARTITION_TABLE_ADDR, ESP_PARTITION_TABLE_DATA_LEN);
+            ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", ESP_PARTITION_TABLE_ADDR, ESP_PARTITION_TABLE_MAX_LEN);
             return false;
     }
     ESP_LOGD(TAG, "mapped partition table 0x%x at 0x%x", ESP_PARTITION_TABLE_ADDR, (intptr_t)partitions);
@@ -292,7 +291,14 @@ bool bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_
 {
     int index = start_index;
     esp_partition_pos_t part;
-
+    if(start_index == TEST_APP_INDEX) {
+        if (try_load_partition(&bs->test, result)) {
+            return true;
+        } else {
+            ESP_LOGE(TAG, "No bootable test partition in the partition table");
+            return false;
+        }
+    }
     /* work backwards from start_index, down to the factory app */
     for(index = start_index; index >= FACTORY_INDEX; index--) {
         part = index_to_partition(bs, index);

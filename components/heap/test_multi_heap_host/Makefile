@@ -1,6 +1,10 @@
 TEST_PROGRAM=test_multi_heap
 all: $(TEST_PROGRAM)
 
+ifneq ($(filter clean,$(MAKECMDGOALS)),)
+.NOTPARALLEL:  # prevent make clean racing the other targets
+endif
+
 SOURCE_FILES = $(abspath \
     ../multi_heap.c \
 	../multi_heap_poisoning.c \

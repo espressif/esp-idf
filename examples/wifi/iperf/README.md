@@ -1,5 +1,11 @@
 # Iperf Example
 
+## Note about 80Mhz flash frequency
+The iperf can get better throughput if the SPI flash frequency is set to 80Mhz, but the system may crash in 80Mhz mode for ESP-WROVER-KIT V3. 
+Removing R140~R145 from the board can fix this issue. Currently the default SPI frequency is set to 40Mhz, if you want to change the SPI flash 
+frequency to 80Mhz, please make sure R140~R145 are removed from ESP-WROVER-KIT V3 or use ESP32 DevKitC.
+
+## Introduction
 This example implements the protocol used by the common performance measurement tool [iPerf](https://iperf.fr/). 
 Performance can be measured between two ESP32s running this example, or between a single ESP32 and a computer running the iPerf tool
 

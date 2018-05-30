@@ -69,7 +69,7 @@ Let's first check a simple simple::
 
 
     if __name__ == '__main__':
-        TinyFW.set_default_config(config_file="EnvConfigTemplate.yml")
+        TinyFW.set_default_config(env_config_file="EnvConfigTemplate.yml")
         test_examples_protocol_https_request()
 
 
@@ -128,6 +128,8 @@ The following 3rd party lib is required:
     * pyserial
     * pyyaml
     * xunitgen
+    * netifaces
+    * matplotlib (if use Utility.LineChart)
 
 To build document, we need to install ``Sphinx`` and ``sphinx-rtd-theme`` (you may replace this with your own theme).
 

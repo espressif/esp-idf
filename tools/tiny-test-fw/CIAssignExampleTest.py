@@ -26,7 +26,11 @@ test_fw_path = os.getenv("TEST_FW_PATH")
 if test_fw_path:
     sys.path.insert(0, test_fw_path)
 
-from Utility.CIAssignTest import AssignTest
+from Utility.CIAssignTest import AssignTest, Group
+
+
+class ExampleGroup(Group):
+    SORT_KEYS = CI_JOB_MATCH_KEYS = ["env_tag", "chip"]
 
 
 class CIExampleAssignTest(AssignTest):
@@ -43,6 +47,6 @@ if __name__ == '__main__':
                         help="output path of config files")
     args = parser.parse_args()
 
-    assign_test = CIExampleAssignTest(args.test_case, args.ci_config_file)
+    assign_test = CIExampleAssignTest(args.test_case, args.ci_config_file, case_group=ExampleGroup)
     assign_test.assign_cases()
     assign_test.output_configs(args.output_path)
