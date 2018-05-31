@@ -765,7 +765,7 @@ esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode);
  * @brief UART set threshold timeout for TOUT feature
  *
  * @param uart_num     Uart number to configure
- * @param tout_thresh  This parameter defines timeout threshold in uart symbol periods. 
+ * @param tout_thresh  This parameter defines timeout threshold in uart symbol periods. The maximum value of threshold is 126. 
  *        tout_thresh = 1, defines TOUT interrupt timeout equal to transmission time of one symbol (~11 bit) on current baudrate. 
  *        If the time is expired the UART_RXFIFO_TOUT_INT interrupt is triggered. If tout_thresh == 0,
  *        the TOUT feature is disabled.
@@ -779,7 +779,7 @@ esp_err_t uart_set_rx_timeout(uart_port_t uart_num, const uint8_t tout_thresh);
 /**
  * @brief Returns collision detection flag for RS485 mode
  *        Function returns the collision detection flag into variable pointed by collision_flag.
- *        *collision_flag = true, if collision detected else it is equal to false. The maximum value of threshold is 126. 
+ *        *collision_flag = true, if collision detected else it is equal to false.
  *        This function should be executed when actual transmission is completed (after uart_write_bytes()).
  *
  * @param uart_num       Uart number to configure
