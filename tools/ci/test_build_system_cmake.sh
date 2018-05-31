@@ -159,7 +159,7 @@ function run_tests()
     sed -i s/CONFIG_FREERTOS_UNICORE=/CONFIG_FREERTOS_UNICORE=y/ sdkconfig
     idf.py build
     # check the sdkconfig.h file was rebuilt
-    assert_rebuilt sdkconfig.h
+    assert_rebuilt config/sdkconfig.h
     # pick one each of .c, .cpp, .S that #includes sdkconfig.h
     # and therefore should rebuild
     assert_rebuilt newlib/CMakeFiles/newlib.dir/syscall_table.c.obj
