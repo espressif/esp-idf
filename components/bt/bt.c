@@ -604,6 +604,8 @@ static bool IRAM_ATTR btdm_sleep_check_duration(uint32_t *slot_cnt)
     if (*slot_cnt < BTDM_MIN_SLEEP_DURATION) {
         return false;
     }
+    /* wake up 3 slots in advance */
+    *slot_cnt = *slot_cnt -3;
     return true;
 }
 
@@ -835,9 +837,9 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
     btdm_lpcycle_us = 32 << btdm_lpcycle_us_frac;
+#if CONFIG_BTDM_MODEM_SLEEP_MODE_ORIG
     bool select_src_ret = false;
     bool set_div_ret = false;
-#if CONFIG_BTDM_MODEM_SLEEP_MODE_ORIG
 #if CONFIG_BTDM_LPCLK_SEL_MAIN_XTAL
     select_src_ret = btdm_lpclk_select_src(BTDM_LPCLK_SEL_XTAL);
     set_div_ret = btdm_lpclk_set_div(rtc_clk_xtal_freq_get() * 32 - 1);
