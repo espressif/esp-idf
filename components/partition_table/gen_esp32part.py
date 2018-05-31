@@ -250,6 +250,18 @@ class PartitionDefinition(object):
     def __cmp__(self, other):
         return self.offset - other.offset
 
+    def __lt__(self, other):
+        return self.offset < other.offset
+
+    def __gt__(self, other):
+        return self.offset > other.offset
+
+    def __le__(self, other):
+        return self.offset <= other.offset
+
+    def __ge__(self, other):
+        return self.offset >= other.offset
+
     def parse_type(self, strval):
         if strval == "":
             raise InputError("Field 'type' can't be left empty.")
