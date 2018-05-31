@@ -38,6 +38,7 @@
 #include "bt_utils.h"
 #include "btc_common.h"
 #include "btc_manage.h"
+#include "alarm.h"
 
 #if BTC_AV_INCLUDED
 
@@ -80,7 +81,7 @@ typedef struct {
 } btc_av_cb_t;
 
 typedef struct {
-    bt_bdaddr_t *target_bda;
+    bt_bdaddr_t target_bda;
     uint16_t uuid;
 } btc_av_connect_req_t;
 
@@ -88,7 +89,8 @@ typedef struct {
 **  Static variables
 ******************************************************************************/
 static btc_av_cb_t btc_av_cb = {0};
-static TIMER_LIST_ENT tle_av_open_on_rc;
+
+static osi_alarm_t *tle_av_open_on_rc = NULL;
 
 /* both interface and media task needs to be ready to alloc incoming request */
 #define CHECK_BTAV_INIT() do \
@@ -203,19 +205,18 @@ UNUSED_ATTR static const char *dump_av_sm_event_name(btc_av_sm_event_t event)
 ** Returns          void
 **
 *******************************************************************************/
-static void btc_initiate_av_open_tmr_hdlr(TIMER_LIST_ENT *tle)
+static void btc_initiate_av_open_tmr_hdlr(void *arg)
 {
+    UNUSED(arg);
     BD_ADDR peer_addr;
-    UNUSED(tle);
     btc_av_connect_req_t connect_req;
-    UNUSED(tle);
     /* is there at least one RC connection - There should be */
     if (btc_rc_get_connected_peer(peer_addr)) {
         LOG_DEBUG("%s Issuing connect to the remote RC peer", __FUNCTION__);
         /* In case of AVRCP connection request, we will initiate SRC connection */
-        connect_req.target_bda = (bt_bdaddr_t *)&peer_addr;
+        memcpy(connect_req.target_bda.address, peer_addr, sizeof(bt_bdaddr_t));
         connect_req.uuid = UUID_SERVCLASS_AUDIO_SOURCE;
-        btc_sm_dispatch(btc_av_cb.sm_handle, BTC_AV_CONNECT_REQ_EVT, (char *)&connect_req);
+        btc_dispatch_sm_event(BTC_AV_CONNECT_REQ_EVT, &connect_req, sizeof(btc_av_connect_req_t));
     } else {
         LOG_ERROR("%s No connected RC peers", __FUNCTION__);
     }
@@ -289,7 +290,7 @@ static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data)
     case BTA_AV_PENDING_EVT:
     case BTC_AV_CONNECT_REQ_EVT: {
         if (event == BTC_AV_CONNECT_REQ_EVT) {
-            memcpy(&btc_av_cb.peer_bda, ((btc_av_connect_req_t *)p_data)->target_bda,
+            memcpy(&btc_av_cb.peer_bda, &((btc_av_connect_req_t *)p_data)->target_bda,
                    sizeof(bt_bdaddr_t));
             BTA_AvOpen(btc_av_cb.peer_bda.address, btc_av_cb.bta_handle,
                        TRUE, BTA_SEC_AUTHENTICATE, ((btc_av_connect_req_t *)p_data)->uuid);
@@ -313,10 +314,8 @@ static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data)
          */
 
         LOG_DEBUG("BTA_AV_RC_OPEN_EVT received w/o AV");
-        memset(&tle_av_open_on_rc, 0, sizeof(tle_av_open_on_rc));
-        tle_av_open_on_rc.param = (UINT32)btc_initiate_av_open_tmr_hdlr;
-        btu_start_timer(&tle_av_open_on_rc, BTU_TTYPE_USER_FUNC,
-                        BTC_TIMEOUT_AV_OPEN_ON_RC_SECS);
+        tle_av_open_on_rc = osi_alarm_new("AVconn", btc_initiate_av_open_tmr_hdlr, NULL, BTC_TIMEOUT_AV_OPEN_ON_RC_SECS * 1000);
+        osi_alarm_set(tle_av_open_on_rc, BTC_TIMEOUT_AV_OPEN_ON_RC_SECS * 1000);
         btc_rc_handler(event, p_data);
         break;
 
@@ -329,9 +328,9 @@ static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data)
         break;
 
     case BTA_AV_RC_CLOSE_EVT:
-        if (tle_av_open_on_rc.in_use) {
-            LOG_DEBUG("BTA_AV_RC_CLOSE_EVT: Stopping AV timer.");
-            btu_stop_timer(&tle_av_open_on_rc);
+        if (tle_av_open_on_rc) {
+            osi_alarm_free(tle_av_open_on_rc);
+            tle_av_open_on_rc = NULL;
         }
         btc_rc_handler(event, p_data);
         break;
@@ -616,7 +615,7 @@ static BOOLEAN btc_av_state_opened_handler(btc_sm_event_t event, void *p_data)
         break;
 
     case BTC_AV_CONNECT_REQ_EVT:
-        if (memcmp ((bt_bdaddr_t *)p_data, &(btc_av_cb.peer_bda),
+        if (memcmp (&((btc_av_connect_req_t *)p_data)->target_bda, &(btc_av_cb.peer_bda),
                     sizeof(btc_av_cb.peer_bda)) == 0) {
             LOG_DEBUG("%s: Ignore BTC_AVCONNECT_REQ_EVT for same device\n", __func__);
         } else {
@@ -972,7 +971,7 @@ bt_status_t btc_a2d_sink_init(void)
 static bt_status_t connect_int(bt_bdaddr_t *bd_addr, uint16_t uuid)
 {
     btc_av_connect_req_t connect_req;
-    connect_req.target_bda = bd_addr;
+    memcpy(&connect_req.target_bda, bd_addr, sizeof(bt_bdaddr_t));
     connect_req.uuid = uuid;
     LOG_DEBUG("%s\n", __FUNCTION__);
 
@@ -1001,7 +1000,6 @@ bt_status_t btc_a2d_sink_connect(bt_bdaddr_t *remote_bda)
 static void btc_a2d_sink_deinit(void)
 {
     LOG_DEBUG("%s\n", __FUNCTION__);
-
     btc_dm_disable_service(BTA_A2DP_SOURCE_SERVICE_ID);
 #if (BTA_AV_SINK_INCLUDED == TRUE)
     btc_dm_disable_service(BTA_A2DP_SINK_SERVICE_ID);
@@ -1232,6 +1230,9 @@ void btc_a2dp_call_handler(btc_msg_t *msg)
         btc_a2dp_sink_reg_data_cb(arg->data_cb);
         break;
     }
+    case BTC_AV_CONNECT_REQ_EVT:
+        btc_sm_dispatch(btc_av_cb.sm_handle, msg->act, (char *)msg->arg);
+        break;
     default:
         LOG_WARN("%s : unhandled event: %d\n", __FUNCTION__, msg->act);
     }
