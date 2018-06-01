@@ -139,6 +139,17 @@ esp_err_t esp_wifi_internal_set_sta_ip(void);
 esp_err_t esp_wifi_internal_osi_funcs_md5_check(const char *md5);
 
 /**
+  * @brief     Check the MD5 values of the crypto types header files in IDF and WiFi library
+  *
+  * @attention 1. It is used for internal CI version check
+  *
+  * @return
+  *     - ESP_OK : succeed
+  *     - ESP_WIFI_INVALID_ARG : MD5 check fail
+  */
+esp_err_t esp_wifi_internal_crypto_funcs_md5_check(const char *md5);
+
+/**
   * @brief     Allocate a chunk of memory for WiFi driver
   *
   * @attention This API is not used for DMA memory allocation.
