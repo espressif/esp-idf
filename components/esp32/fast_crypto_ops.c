@@ -36,6 +36,8 @@
  * we recommend, so as the API in WPS default and WPA2 default.
  */
 const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs = {
+    .size = sizeof(wpa_crypto_funcs_t), 
+    .version = ESP_WIFI_CRYPTO_VERSION,
     .aes_wrap = (esp_aes_wrap_t)fast_aes_wrap,
     .aes_unwrap = (esp_aes_unwrap_t)fast_aes_unwrap,
     .hmac_sha256_vector = (esp_hmac_sha256_vector_t)fast_hmac_sha256_vector,
@@ -58,6 +60,8 @@ const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs = {
 };
 
 const wps_crypto_funcs_t g_wifi_default_wps_crypto_funcs = {
+    .size = sizeof(wps_crypto_funcs_t), 
+    .version = ESP_WIFI_CRYPTO_VERSION,
     .aes_128_encrypt = (esp_aes_128_encrypt_t)fast_aes_128_cbc_encrypt,
     .aes_128_decrypt = (esp_aes_128_decrypt_t)fast_aes_128_cbc_decrypt,
     .crypto_mod_exp = (esp_crypto_mod_exp_t)fast_crypto_mod_exp,
@@ -85,6 +89,8 @@ const wps_crypto_funcs_t g_wifi_default_wps_crypto_funcs = {
  * crypto_hash_finish, so do crypto_cipher.
  */
 const wpa2_crypto_funcs_t g_wifi_default_wpa2_crypto_funcs = {
+    .size = sizeof(wpa2_crypto_funcs_t),
+    .version = ESP_WIFI_CRYPTO_VERSION,
     .crypto_hash_init = (esp_crypto_hash_init_t)fast_crypto_hash_init,
     .crypto_hash_update = (esp_crypto_hash_update_t)fast_crypto_hash_update,
     .crypto_hash_finish = (esp_crypto_hash_finish_t)fast_crypto_hash_finish,
@@ -100,6 +106,8 @@ const wpa2_crypto_funcs_t g_wifi_default_wpa2_crypto_funcs = {
     .eap_peer_blob_deinit = (esp_eap_peer_blob_deinit_t)eap_peer_blob_deinit,
     .eap_peer_config_init = (esp_eap_peer_config_init_t)eap_peer_config_init,
     .eap_peer_config_deinit = (esp_eap_peer_config_deinit_t)eap_peer_config_deinit,
+    .eap_peer_register_methods = (esp_eap_peer_register_methods_t)eap_peer_register_methods,
+    .eap_peer_unregister_methods = (esp_eap_peer_unregister_methods_t)eap_peer_unregister_methods,
     .eap_deinit_prev_method = (esp_eap_deinit_prev_method_t)eap_deinit_prev_method,
     .eap_peer_get_eap_method = (esp_eap_peer_get_eap_method_t)eap_peer_get_eap_method,
     .eap_sm_abort = (esp_eap_sm_abort_t)eap_sm_abort,
