@@ -153,6 +153,7 @@ enum {
 #define BTA_AV_MULTI_AV_SUPPORTED   0x01
 #define BTA_AV_MULTI_AV_IN_USE      0x02
 
+#define TSEP_TO_SYS_ID(x) ((x) == AVDT_TSEP_SRC ? BTA_ID_AV : BTA_ID_AVK)
 
 /*****************************************************************************
 **  Data types
