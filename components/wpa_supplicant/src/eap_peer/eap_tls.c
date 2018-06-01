@@ -122,7 +122,7 @@ static void eap_tls_success(struct eap_sm *sm, struct eap_tls_data *data,
 	}
 
 	if (data->ssl.tls_v13) {
-		label = "client EAP encryption KM";
+		label = "EXPORTER_EAP_TLS_Key_Material";
 
 		/* A possible NewSessionTicket may be received before
 		 * EAP-Success, so need to allow it to be received. */
