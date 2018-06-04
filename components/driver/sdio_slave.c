@@ -187,7 +187,7 @@ typedef struct {
     /*------- receiving ---------------*/
     buf_stailq_t    recv_link_list; // now ready to/already hold data
     buf_tailq_t     recv_reg_list;  // removed from the link list, registered but not used now
-    buf_desc_t*     recv_cur_ret;
+    volatile buf_desc_t*     recv_cur_ret;   // next desc to return, NULL if all loaded descriptors are returned
     portMUX_TYPE    recv_spinlock;
 } sdio_context_t;
 
@@ -1137,8 +1137,6 @@ static void sdio_intr_recv(void* arg)
     portBASE_TYPE yield = 0;
     if ( SLC.slc0_int_raw.tx_done ) {
         SLC.slc0_int_clr.tx_done = 1;
-        assert( context.recv_cur_ret != NULL );
-
         while ( context.recv_cur_ret && context.recv_cur_ret->owner == 0 ) {
             // This may cause the ``cur_ret`` pointer to be NULL, indicating the list is empty,
             // in this case the ``tx_done`` should happen no longer until new desc is appended.
@@ -1163,15 +1161,24 @@ esp_err_t sdio_slave_recv_load_buf(sdio_slave_buf_handle_t handle)
     desc->owner = 1;
     desc->not_receiving = 0; //manually remove the prev link (by set not_receiving=0), to indicate this is in the queue
 
-    // 1. If all desc are returned in the ISR, the pointer is moved to NULL. The pointer is set to the newly appended desc here.
-    // 2. If the pointer is move to some not-returned desc (maybe the one appended here), do nothing.
-    // The ``cur_ret`` pointer must be checked and set after new desc appended to the list, or the pointer setting may fail.
+    buf_desc_t *const tail = STAILQ_LAST(queue, buf_desc_s, qe);
+
     STAILQ_INSERT_TAIL( queue, desc, qe );
-    if ( context.recv_cur_ret == NULL ) {
+    if (tail == NULL || (tail->owner == 0)) {
+        //in this case we have to set the ret pointer
+        if (tail != NULL) {
+            /* if the owner of the tail is returned to the software, the ISR is
+             * expect to write this pointer to NULL in a short time, wait until
+             * that and set new value for this pointer
+             */
+            while (context.recv_cur_ret != NULL) {}
+        }
+        assert(context.recv_cur_ret == NULL);
         context.recv_cur_ret = desc;
     }
+    assert(context.recv_cur_ret != NULL);
 
-    if ( desc == STAILQ_FIRST(queue) ) {
+    if (tail == NULL) {
         //no one in the ll, start new ll operation.
         SLC.slc0_tx_link.addr = (uint32_t)desc;
         SLC.slc0_tx_link.start = 1;
