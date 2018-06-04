@@ -11,16 +11,18 @@ Important Notes
 
 ESP32 Wi-Fi Feature List
 -------------------------
-- Supports Station-only mode, SoftAP-only mode, Station/SoftAP-coexistence mode
-- Supports IEEE-802.11B, IEEE-802.11G, IEEE802.11N and APIs to configure the protocol mode
-- Supports WPA/WPA2/WPA2-Enterprise and WPS 
-- Supports AMPDU, HT40, QoS and other key features
-- Supports Modem-sleep
-- Supports an Espressif-specific protocol which, in turn, supports up to **1 km** of data traffic
+- Support Station-only mode, SoftAP-only mode, Station/SoftAP-coexistence mode
+- Support IEEE-802.11B, IEEE-802.11G, IEEE802.11N and APIs to configure the protocol mode
+- Support WPA/WPA2/WPA2-Enterprise and WPS 
+- Support AMPDU, HT40, QoS and other key features
+- Support Modem-sleep
+- Support an Espressif-specific protocol which, in turn, supports up to **1 km** of data traffic
 - Up to 20 MBit/sec TCP throughput and 30 MBit/sec UDP throughput over the air
-- Supports Sniffer
+- Support Sniffer
 - Support set fast_crypto algorithm and normal algorithm switch which used in wifi connect
 - Support both fast scan and all channel scan feature
+- Support multiple antennas
+- Support channel state information
 
 How To Write a Wi-Fi Application
 ----------------------------------
@@ -1474,6 +1476,60 @@ Generally, following steps can be taken to configure the multiple antennas:
          .enabled_ant0 = 1,
          .enabled_ant1 = 3
      };
+
+Wi-Fi Channel State Information
+------------------------------------
+
+Channel state information (CSI) refers to the channel information of a Wi-Fi connection. In ESP32, this information consists of channel frequency responses of sub-carriers and is estimated when packets are received from the transmitter. Each channel frequency response of sub-carrier is recorded by two bytes of signed characters. The first one is imaginary part and the second one is real part. There are up to three fields of channel frequency responses according to the type of received packet. They are legacy long training field (LLTF), high throughput LTF (HT-LTF) and space time block code HT-LTF (STBC-HT-LTF). For different types of packets which are received on channels with different state, the sub-carrier index and total bytes of signed characters of CSI is shown in the following table.
+
++-------------+--------------------+--------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| packet      | signal mode        |             non HT             |                                                          HT                                                         |
++             +--------------------+--------------------------------+---------------------------------+-------------------------------------------------------+---------------------------+
+| information | channel bandwidth  |              20MHz             |             20MHz               |                         40MHz                         |          20MHz            |
++             +--------------------+--------------------------------+----------------+----------------+---------------------------+---------------------------+-------------+-------------+
+|             | STBC               |            non STBC            |    non STBC    |     STBC       |         non STBC          |           STBC            |   non STBC  |     STBC    |
++-------------+--------------------+------------------+-------------+----------------+----------------+---------------------------+---------------------------+-------------+-------------+
+| channel     | HT20/40            |       HT40       |     HT20    |                                           HT40                                          |            HT20           |
++             +--------------------+----------+-------+-------------+--------+-------+--------+-------+-------------+-------------+-------------+-------------+---------------------------+
+| information | secondary channel  |  below   | above |    none     | below  | above | below  | above |    below    |    above    |    below    |    above    |           none            |
++-------------+--------------------+----------+-------+-------------+--------+-------+--------+-------+-------------+-------------+-------------+-------------+-------------+-------------+
+| sub-carrier | LLTF               | -64~-1   |  0~63 | 0~31,-31~-1 | -64~-1 | 0~63  | -64~-1 |  0~63 |    -64~-1   |     0~63    |    -64~-1   |     0~63    | 0~31,-31~-1 | 0~31,-31~-1 |
++             +--------------------+----------+-------+-------------+--------+-------+--------+-------+-------------+-------------+-------------+-------------+-------------+-------------+
+| index       | HT-LTF             |     -    |   -   |      -      | -64~-1 | 0~63  | -62~-1 |  0~62 | 0~63,-64~-1 | 0~63,-64~-1 | 0~60,-60~-1 | 0~60,-60~-1 | 0~31,-31~-1 | 0~31,-31~-1 |
++             +--------------------+----------+-------+-------------+--------+-------+--------+-------+-------------+-------------+-------------+-------------+-------------+-------------+
+|             | STBC-HT-LTF        |     -    |   -   |      -      |   -    |  -    | -62~-1 |  0~62 |      -      |       -     | 0~60,-60~-1 | 0~60,-60~-1 |      -      | 0~31,-31~-1 |
++-------------+--------------------+----------+-------+-------------+--------+-------+--------+-------+-------------+-------------+-------------+-------------+-------------+-------------+
+| total bytes                      |    128   |  128  |      128    |   256  |  256  |   376  |  380  |     384     |      384    |      612    |     612     |      256    |      384    |
++----------------------------------+----------+-------+-------------+--------+-------+--------+-------+-------------+-------------+-------------+-------------+-------------+-------------+
+
+All of the information in the table can be found in the structure wifi_csi_info_t. 
+
+    - Signal mode of packet refers to sig_mode field of rx_ctrl field. 
+    - Channel bandwidth refers to cwb field of rx_ctrl field. 
+    - STBC refers to stbc field of rx_ctrl field. 
+    - HT20/40 depends on secondary channel. If secondary channel is above or below primary channel, it is HT40. If secondary channel is none, it is HT20. 
+    - Secondary channel refers to secondary_channel field of rx_ctrl field. 
+    - Total bytes refers to len field. 
+    - The CSI data corresponding to each Long Training Field type is stored in a buffer starting from the buf field. Each item is stored as two bytes: imaginary part followed by real part. The order is: LLTF, HT-LTF, STBC-HT-LTF. However all 3 items may not be present, depending on the packet type (see above).
+    - If last_word_invalid field of wifi_csi_info_t is true, it means that the last four bytes of CSI data is invalid due to a hardware limitation in ESP32. 
+    - More information like RSSI, noise floor of RF, receiving time and antenna is in the rx_ctrl field.
+
+.. note::
+
+    - For STBC packet, CSI is provided for every space-time stream without CSD (cyclic shift delay). As each cyclic shift on the additional chains shall be -200ns, only the CSD angle of first space-time stream is recorded in sub-carrier 0 of HT-LTF and STBC-HT-LTF for there is no channel frequency response in sub-carrier 0. CSD[10:0] is 11 bits, ranging from -pi to pi.
+    - If LLTF, HT-LTF or STBC-HT-LTF is not enabled by calling API :cpp:func:`esp_wifi_set_csi_config`, the total bytes of CSI data will be fewer than that in the table. For example, if LLTF and HT-LTF is not enabled and STBC-HT-LTF is enabled, when a packet is received with the condition HT/HT40/40MHz/STBC/above, the total bytes of CSI data is 244 ((61 + 60) * 2 + 2 = 244, the result is aligned to four bytes and the last two bytes is invalid). 
+
+Wi-Fi Channel State Information Configure
+-------------------------------------------
+
+To use Wi-Fi CSI, the following steps need to be done.
+
+    - Select Wi-Fi CSI in menuconfig. It is "Menuconfig --> Components config --> Wi-Fi --> WiFi CSI(Channel State Information)".
+    - Set CSI receiving callback function by calling API :cpp:func:`esp_wifi_set_csi_rx_cb`.
+    - Configure CSI by calling API :cpp:func:`esp_wifi_set_csi_config`.
+    - Enable CSI by calling API :cpp:func:`esp_wifi_set_csi`.
+
+The CSI receiving callback function runs from Wi-Fi task. So, do not do lengthy operations in the callback function. Instead, post necessary data to a queue and handle it from a lower priority task. Because station does not receive any packet when it is disconnected and only receives packets from AP when it is connected, it is suggested to enable sniffer mode to receive more CSI data by calling :cpp:func:`esp_wifi_set_promiscuous`.
 
 Wi-Fi Buffer Usage
 --------------------------
