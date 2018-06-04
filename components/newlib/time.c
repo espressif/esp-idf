@@ -80,9 +80,9 @@ static uint64_t s_boot_time;
 static _lock_t s_boot_time_lock;
 static _lock_t s_adjust_time_lock;
 // stores the start time of the slew
-RTC_DATA_ATTR static uint64_t adjtime_start = 0;
+static uint64_t adjtime_start = 0;
 // is how many microseconds total to slew
-RTC_DATA_ATTR static int64_t adjtime_total_correction = 0;
+static int64_t adjtime_total_correction = 0;
 #define ADJTIME_CORRECTION_FACTOR 6
 static uint64_t get_time_since_boot();
 #endif
