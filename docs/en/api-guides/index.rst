@@ -23,5 +23,5 @@ API Guides
    ROM debug console <romconsole>
    WiFi Driver <wifi>
    Mesh Stack <mesh>
-   Blu-Fi <blufi>
+   BluFi <blufi>
    External SPI-connected RAM <external-ram>
