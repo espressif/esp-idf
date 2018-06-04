@@ -132,14 +132,14 @@ test cases:
   - - "SSC SSC2 blescan -L -c 0 -s 1"
     - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
   - - "SSC SSC2 blescan -D -z start -t 3"
-    - ["R SSC2 P <dut1_bt_mac>"]
+    - ["R SSC2 P <dut1_bt_mac> C Complete"]
   - - "SSC SSC1 ble -S -z name -n 123456789012345678901234567890123"
     - ["R SSC1 C +BLE:ERROR"]
   - *set_default_adv_data
   - - "SSC SSC2 blescan -L -c 0 -s 1"
     - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
   - - "SSC SSC2 blescan -D -z start -t 3"
-    - ["R SSC2 P <dut1_bt_mac>"]
+    - ["R SSC2 P <dut1_bt_mac> C Complete"]
 - ID: BTSTK_GAP_02001
   <<: *GAP_CASE
   test point 2: BLE GAP config advertising data
@@ -1761,6 +1761,8 @@ test cases:
     3. scan with the correct adv data
   cmd set:
   - ""
+  - - "SSC SSC2 blescan -L -c 0 -d 1"
+    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
   - *dut1_stop_adv
   - - "SSC SSC1 bleadv -R -t 1 -r 0x020AEB06FF1112131415051220004000021901020106"
     - ["R SSC1 C +BLEADV:OK"]
@@ -1791,6 +1793,8 @@ test cases:
   - ""
   - *dut1_stop_adv
   - *dut2_stop_adv
+  - - "SSC SSC2 blescan -L -c 0 -d 1"
+    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
   - - LOOP 4 3 "['0302ABCD','0303ABCD','0504ABCDABCD','0505ABCDABCD',]" "['insrv16,0xABCD','srv16,0xABCD','insrv32,0xABCDABCD','srv32,0xABCDABCD']"
   - - "SSC SSC1 bleadv -R -t 1 -r 0x{%s}"
     - ["R SSC1 C +BLEADV:OK"]
@@ -1823,6 +1827,8 @@ test cases:
   - ""
   - *dut1_stop_adv
   - *dut2_stop_adv
+  - - "SSC SSC2 blescan -L -c 0 -d 1"
+    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
   - - LOOP 3 3 "['0416ABCDEF','0620ABCDABCDEF','1221ABCDABCDABCDABCDABCDABCDABCDABCDEF',]" "['srvdata,0xABCDEF','srvdata32,0xABCDABCDEF','srvdata128,0xABCDABCDABCDABCDABCDABCDABCDABCDEF']"
   - - "SSC SSC1 bleadv -R -t 1 -r 0x{%s}"
     - ["R SSC1 C +BLEADV:OK"]
@@ -1846,6 +1852,8 @@ test cases:
   cmd set:
   - ""
   - *dut1_stop_adv
+  - - "SSC SSC2 blescan -L -c 0 -d 1"
+    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
   - - "SSC SSC1 bleadv -R -t 1 -r 0x15FF1011121314151617181910111213141516171819"
     - ["R SSC1 C +BLEADV:OK"]
   - - "SSC SSC1 bleadv -R -t 2 -r 0x020AEB051220004000021901020106"
@@ -1884,6 +1892,8 @@ test cases:
   cmd set:
   - ""
   - *dut1_stop_adv
+  - - "SSC SSC2 blescan -L -c 0 -d 1"
+    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
   - - "SSC SSC1 ble -S -z name -n abcde"
     - ["R SSC1 C +BLE"]
   - - "SSC SSC1 bleadv -L -c 0 -n 1 -t 3"
@@ -1924,6 +1934,8 @@ test cases:
   cmd set:
   - ""
   - *dut1_stop_adv
+  - - "SSC SSC2 blescan -L -c 0 -d 1"
+    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
   - *set_default_ble_name
   - - "SSC SSC1 bleadv -L -c 0 -x 1 -t 3"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
@@ -1963,6 +1975,8 @@ test cases:
   cmd set:
   - ""
   - *dut1_stop_adv
+  - - "SSC SSC2 blescan -L -c 0 -d 1"
+    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
   - *set_default_ble_name
   - - "SSC SSC1 bleadv -L -c 0 -i 0x20-0x40 -t 3"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
@@ -2002,6 +2016,8 @@ test cases:
   cmd set:
   - ""
   - *dut1_stop_adv
+  - - "SSC SSC2 blescan -L -c 0 -d 1"
+    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
   - *set_default_ble_name
   - - "SSC SSC1 bleadv -L -c 0 -a 0 -t 3"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
@@ -2033,6 +2049,8 @@ test cases:
   cmd set:
   - ""
   - *dut1_stop_adv
+  - - "SSC SSC2 blescan -L -c 0 -d 1"
+    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
   - *set_default_ble_name
   - - "SSC SSC1 bleadv -L -c 0 -m 0x12345678 -t 3"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
@@ -2057,6 +2075,8 @@ test cases:
   cmd set:
   - ""
   - *dut1_stop_adv
+  - - "SSC SSC2 blescan -L -c 0 -d 1"
+    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
   - *set_default_ble_name
   - - "SSC SSC1 bleadv -L -c 0 -n 0 -d 0x1234123456 -t 3"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
@@ -2081,6 +2101,8 @@ test cases:
   cmd set:
   - ""
   - *dut1_stop_adv
+  - - "SSC SSC2 blescan -L -c 0 -d 1"
+    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
   - - "SSC SSC1 bleadv -L -c 0 -n 0 -x 0 -i 0x00-0x00 -s ABCD,ABCDDCBA,12349B5F8000008000100000ABCD0000 -t 3"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - *dut1_start_adv
