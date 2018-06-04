@@ -28,6 +28,47 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+// Can't test eMMC (slot 0) and PSRAM together
+#ifndef CONFIG_SPIRAM_SUPPORT
+#define WITH_EMMC_TEST
+#endif
+
+/* power supply enable pin */
+#define SD_TEST_BOARD_VSEL_EN_GPIO  27
+
+/* power supply voltage select pin */
+#define SD_TEST_BOARD_VSEL_GPIO     26
+#define SD_TEST_BOARD_VSEL_3V3      1
+#define SD_TEST_BOARD_VSEL_1V8      0
+
+/* time to wait for reset / power-on */
+#define SD_TEST_BOARD_PWR_RST_DELAY_MS  5
+#define SD_TEST_BOARD_PWR_ON_DELAY_MS   50
+
+/* gpio which is not connected to actual CD pin, used to simulate CD behavior */
+#define CD_WP_TEST_GPIO 18
+
+
+static void sd_test_board_power_on()
+{
+    gpio_set_direction(SD_TEST_BOARD_VSEL_GPIO, GPIO_MODE_OUTPUT);
+    gpio_set_level(SD_TEST_BOARD_VSEL_GPIO, SD_TEST_BOARD_VSEL_3V3);
+    gpio_set_direction(SD_TEST_BOARD_VSEL_EN_GPIO, GPIO_MODE_OUTPUT);
+    gpio_set_level(SD_TEST_BOARD_VSEL_EN_GPIO, 0);
+    usleep(SD_TEST_BOARD_PWR_RST_DELAY_MS * 1000);
+    gpio_set_level(SD_TEST_BOARD_VSEL_EN_GPIO, 1);
+    usleep(SD_TEST_BOARD_PWR_ON_DELAY_MS * 1000);
+}
+
+static void sd_test_board_power_off()
+{
+    gpio_set_level(SD_TEST_BOARD_VSEL_EN_GPIO, 0);
+    gpio_set_direction(SD_TEST_BOARD_VSEL_GPIO, GPIO_MODE_INPUT);
+    gpio_set_level(SD_TEST_BOARD_VSEL_GPIO, 0);
+    gpio_set_direction(SD_TEST_BOARD_VSEL_EN_GPIO, GPIO_MODE_INPUT);
+}
+
+
 TEST_CASE("MMC_RSP_BITS", "[sd]")
 {
     uint32_t data[2] = { 0x01234567, 0x89abcdef };
@@ -38,54 +79,49 @@ TEST_CASE("MMC_RSP_BITS", "[sd]")
     TEST_ASSERT_EQUAL_HEX32(0x11,  MMC_RSP_BITS(data, 59, 5));
 }
 
-TEST_CASE("can probe SD (4-bit)", "[sd][test_env=UT_T1_SDMODE]")
+static void probe_sd(int slot, int width, int freq_khz, int ddr)
 {
+    sd_test_board_power_on();
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
+    config.slot = slot;
+    config.max_freq_khz = freq_khz;
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
+    if (width == 1) {
+        config.flags = SDMMC_HOST_FLAG_1BIT;
+        slot_config.width = 1;
+    } else if (width == 4) {
+        config.flags &= ~SDMMC_HOST_FLAG_8BIT;
+        slot_config.width = 4;
+    } else {
+        assert(!ddr && "host driver does not support 8-line DDR mode yet");
+    }
+    if (!ddr) {
+        config.flags &= ~SDMMC_HOST_FLAG_DDR;
+    }
     TEST_ESP_OK(sdmmc_host_init());
-    TEST_ESP_OK(sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config));
+    TEST_ESP_OK(sdmmc_host_init_slot(slot, &slot_config));
     sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
     TEST_ASSERT_NOT_NULL(card);
     TEST_ESP_OK(sdmmc_card_init(&config, card));
     sdmmc_card_print_info(stdout, card);
+    uint8_t* buffer = heap_caps_malloc(512, MALLOC_CAP_DMA);
+    TEST_ESP_OK(sdmmc_read_sectors(card, buffer, 0, 1));
+    free(buffer);
     TEST_ESP_OK(sdmmc_host_deinit());
     free(card);
+    sd_test_board_power_off();
 }
 
-TEST_CASE("can probe SD (1-bit)", "[sd][test_env=UT_T1_SDMODE]")
+static void probe_spi(int freq_khz, int pin_miso, int pin_mosi, int pin_sck, int pin_cs)
 {
-    //the card DAT3 should be connected to high in SD 1-bit mode
-    //do it by our own GPIO.
-    gpio_config_t conf = {
-        .pin_bit_mask = GPIO_SEL_13,
-        .mode = GPIO_MODE_OUTPUT,
-        .pull_up_en = 1,
-        .pull_down_en = 0,
-        .intr_type = GPIO_INTR_DISABLE,
-    };
-    gpio_config(&conf);
-    gpio_set_level(GPIO_NUM_13, 1);
-
-    sdmmc_host_t config = SDMMC_HOST_DEFAULT();
-    config.flags = SDMMC_HOST_FLAG_1BIT;
-    sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
-    slot_config.width=1;
-    TEST_ESP_OK(sdmmc_host_init());
-    TEST_ESP_OK(sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config));
-    sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
-    TEST_ASSERT_NOT_NULL(card);
-    TEST_ESP_OK(sdmmc_card_init(&config, card));
-    sdmmc_card_print_info(stdout, card);
-    TEST_ESP_OK(sdmmc_host_deinit());
-    free(card);
-}
-
-
-
-TEST_CASE("can probe SD(using SPI)", "[sdspi][test_env=UT_T1_SPIMODE]")
-{
+    sd_test_board_power_on();
     sdmmc_host_t config = SDSPI_HOST_DEFAULT();
     sdspi_slot_config_t slot_config = SDSPI_SLOT_CONFIG_DEFAULT();
+    slot_config.gpio_miso = pin_miso;
+    slot_config.gpio_mosi = pin_mosi;
+    slot_config.gpio_sck = pin_sck;
+    slot_config.gpio_cs = pin_cs;
+
     TEST_ESP_OK(sdspi_host_init());
     TEST_ESP_OK(sdspi_host_init_slot(config.slot, &slot_config));
     sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
@@ -94,7 +130,62 @@ TEST_CASE("can probe SD(using SPI)", "[sdspi][test_env=UT_T1_SPIMODE]")
     sdmmc_card_print_info(stdout, card);
     TEST_ESP_OK(sdspi_host_deinit());
     free(card);
+    sd_test_board_power_off();
 }
+
+
+TEST_CASE("probe SD, slot 1, 4-bit", "[sd][test_env=UT_T1_SDMODE]")
+{
+    probe_sd(SDMMC_HOST_SLOT_1, 4, SDMMC_FREQ_PROBING, 0);
+    probe_sd(SDMMC_HOST_SLOT_1, 4, SDMMC_FREQ_DEFAULT, 0);
+    probe_sd(SDMMC_HOST_SLOT_1, 4, SDMMC_FREQ_HIGHSPEED, 0);
+}
+
+TEST_CASE("probe SD, slot 1, 1-bit", "[sd][test_env=UT_T1_SDMODE]")
+{
+    probe_sd(SDMMC_HOST_SLOT_1, 1, SDMMC_FREQ_PROBING, 0);
+    probe_sd(SDMMC_HOST_SLOT_1, 1, SDMMC_FREQ_DEFAULT, 0);
+    probe_sd(SDMMC_HOST_SLOT_1, 1, SDMMC_FREQ_HIGHSPEED, 0);
+}
+
+#ifdef WITH_EMMC_TEST
+TEST_CASE("probe eMMC, slot 0, 4-bit, DDR", "[sd][test_env=EMMC]")
+{
+    probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_HIGHSPEED, 1);
+}
+
+TEST_CASE("probe eMMC, slot 0, 8-bit", "[sd][test_env=EMMC]")
+{
+    probe_sd(SDMMC_HOST_SLOT_0, 8, SDMMC_FREQ_PROBING, 0);
+    probe_sd(SDMMC_HOST_SLOT_0, 8, SDMMC_FREQ_DEFAULT, 0);
+    probe_sd(SDMMC_HOST_SLOT_0, 8, SDMMC_FREQ_HIGHSPEED, 0);
+}
+#endif // WITH_EMMC_TEST
+
+TEST_CASE("probe SD, slot 0, 4-bit", "[sd][test_env=UT_T1_SDCARD][ignore]")
+{
+    probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_PROBING, 0);
+    probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_DEFAULT, 0);
+    probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_HIGHSPEED, 0);
+}
+
+TEST_CASE("probe SD, slot 0, 1-bit", "[sd][test_env=UT_T1_SDCARD][ignore]")
+{
+    probe_sd(SDMMC_HOST_SLOT_0, 1, SDMMC_FREQ_PROBING, 0);
+    probe_sd(SDMMC_HOST_SLOT_0, 1, SDMMC_FREQ_DEFAULT, 0);
+    probe_sd(SDMMC_HOST_SLOT_0, 1, SDMMC_FREQ_HIGHSPEED, 0);
+}
+
+TEST_CASE("probe SD in SPI mode, slot 1", "[sd][test_env=UT_T1_SPIMODE]")
+{
+    probe_spi(SDMMC_FREQ_DEFAULT, 2, 15, 14, 13);
+}
+
+TEST_CASE("probe SD in SPI mode, slot 0", "[sd][test_env=UT_T1_SDCARD][ignore]")
+{
+    probe_spi(SDMMC_FREQ_DEFAULT, 7, 11, 6, 10);
+}
+
 
 // Fill buffer pointed to by 'dst' with 'count' 32-bit ints generated
 // from 'rand' with the starting value of 'seed'
@@ -177,13 +268,20 @@ static void read_write_test(sdmmc_card_t* card)
     do_single_write_read_test(card, card->csd.capacity/2, 128, 1);
 }
 
-TEST_CASE("can write and read back blocks", "[sd][test_env=UT_T1_SDMODE]")
+void test_sd_rw_blocks(int slot, int width)
 {
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
     config.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
-    TEST_ESP_OK(sdmmc_host_init());
+    config.slot = slot;
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
-    TEST_ESP_OK(sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config));
+    if (width != 0) {
+        slot_config.width = width;
+    }
+    if (slot_config.width == 8) {
+        config.flags &= ~SDMMC_HOST_FLAG_DDR;
+    }
+    TEST_ESP_OK(sdmmc_host_init());
+    TEST_ESP_OK(sdmmc_host_init_slot(slot, &slot_config));
     sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
     TEST_ASSERT_NOT_NULL(card);
     TEST_ESP_OK(sdmmc_card_init(&config, card));
@@ -192,8 +290,32 @@ TEST_CASE("can write and read back blocks", "[sd][test_env=UT_T1_SDMODE]")
     TEST_ESP_OK(sdmmc_host_deinit());
 }
 
-TEST_CASE("can write and read back blocks(using SPI)", "[sdspi][test_env=UT_T1_SPIMODE]")
+TEST_CASE("SDMMC read/write test (SD slot 1)", "[sd][test_env=UT_T1_SDMODE]")
 {
+    sd_test_board_power_on();
+    test_sd_rw_blocks(1, 4);
+    sd_test_board_power_off();
+}
+
+#ifdef WITH_EMMC_TEST
+TEST_CASE("SDMMC read/write test (eMMC slot 0, 4 line DDR)", "[sd][test_env=EMMC]")
+{
+    sd_test_board_power_on();
+    test_sd_rw_blocks(0, 4);
+    sd_test_board_power_off();
+}
+
+TEST_CASE("SDMMC read/write test (eMMC slot 0, 8 line)", "[sd][test_env=EMMC]")
+{
+    sd_test_board_power_on();
+    test_sd_rw_blocks(0, 8);
+    sd_test_board_power_off();
+}
+#endif // WITH_EMMC_TEST
+
+TEST_CASE("SDMMC read/write test (SD slot 1, in SPI mode)", "[sdspi][test_env=UT_T1_SPIMODE]")
+{
+    sd_test_board_power_on();
     sdmmc_host_t config = SDSPI_HOST_DEFAULT();
     sdspi_slot_config_t slot_config = SDSPI_SLOT_CONFIG_DEFAULT();
     TEST_ESP_OK(sdspi_host_init());
@@ -204,10 +326,12 @@ TEST_CASE("can write and read back blocks(using SPI)", "[sdspi][test_env=UT_T1_S
     read_write_test(card);
     free(card);
     TEST_ESP_OK(sdspi_host_deinit());
+    sd_test_board_power_off();
 }
 
 TEST_CASE("reads and writes with an unaligned buffer", "[sd][test_env=UT_T1_SDMODE]")
 {
+    sd_test_board_power_on();
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
     TEST_ESP_OK(sdmmc_host_init());
@@ -240,6 +364,7 @@ TEST_CASE("reads and writes with an unaligned buffer", "[sd][test_env=UT_T1_SDMO
     free(buffer);
     free(card);
     TEST_ESP_OK(sdmmc_host_deinit());
+    sd_test_board_power_off();
 }
 
 static void test_cd_input(int gpio_cd_num, const sdmmc_host_t* config)
@@ -255,43 +380,45 @@ static void test_cd_input(int gpio_cd_num, const sdmmc_host_t* config)
 
     // Check that card initialization fails if CD is high
     REG_WRITE(GPIO_OUT_W1TS_REG, BIT(gpio_cd_num));
-    usleep(100);
+    usleep(1000);
     TEST_ESP_ERR(ESP_ERR_NOT_FOUND, sdmmc_card_init(config, card));
 
     // Check that card initialization succeeds if CD is low
     REG_WRITE(GPIO_OUT_W1TC_REG, BIT(gpio_cd_num));
-    usleep(100);
+    usleep(1000);
     TEST_ESP_OK(sdmmc_card_init(config, card));
 
     free(card);
 }
 
-TEST_CASE("CD input works in SD mode", "[sd][test_env=UT_T1_SDMODE][ignore]")
+TEST_CASE("CD input works in SD mode", "[sd][test_env=UT_T1_SDMODE]")
 {
+    sd_test_board_power_on();
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
-    const int gpio_cd_num = 5;
-    slot_config.gpio_cd = gpio_cd_num;
+    slot_config.gpio_cd = CD_WP_TEST_GPIO;
     TEST_ESP_OK(sdmmc_host_init());
     TEST_ESP_OK(sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config));
 
-    test_cd_input(gpio_cd_num, &config);
+    test_cd_input(CD_WP_TEST_GPIO, &config);
 
     TEST_ESP_OK(sdmmc_host_deinit());
+    sd_test_board_power_off();
 }
 
 TEST_CASE("CD input works in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
 {
+    sd_test_board_power_on();
     sdmmc_host_t config = SDSPI_HOST_DEFAULT();
     sdspi_slot_config_t slot_config = SDSPI_SLOT_CONFIG_DEFAULT();
-    const int gpio_cd_num = 5;
-    slot_config.gpio_cd = gpio_cd_num;
+    slot_config.gpio_cd = CD_WP_TEST_GPIO;
     TEST_ESP_OK(sdspi_host_init());
     TEST_ESP_OK(sdspi_host_init_slot(config.slot, &slot_config));
 
-    test_cd_input(gpio_cd_num, &config);
+    test_cd_input(CD_WP_TEST_GPIO, &config);
 
     TEST_ESP_OK(sdspi_host_deinit());
+    sd_test_board_power_off();
 }
 
 static void test_wp_input(int gpio_wp_num, const sdmmc_host_t* config)
@@ -313,12 +440,12 @@ static void test_wp_input(int gpio_wp_num, const sdmmc_host_t* config)
 
     // Check that card write succeeds if WP is high
     REG_WRITE(GPIO_OUT_W1TS_REG, BIT(gpio_wp_num));
-    usleep(100);
+    usleep(1000);
     TEST_ESP_OK(sdmmc_write_sectors(card, &data, 0, 1));
 
     // Check that write fails if WP is low
     REG_WRITE(GPIO_OUT_W1TC_REG, BIT(gpio_wp_num));
-    usleep(100);
+    usleep(1000);
     TEST_ESP_ERR(ESP_ERR_INVALID_STATE, sdmmc_write_sectors(card, &data, 0, 1));
     // ...but reads still work
     TEST_ESP_OK(sdmmc_read_sectors(card, &data, 0, 1));
@@ -327,30 +454,32 @@ static void test_wp_input(int gpio_wp_num, const sdmmc_host_t* config)
     free(card);
 }
 
-TEST_CASE("WP input works in SD mode", "[sd][test_env=UT_T1_SDMODE][ignore]")
+TEST_CASE("WP input works in SD mode", "[sd][test_env=UT_T1_SDMODE]")
 {
+    sd_test_board_power_on();
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
-    const int gpio_wp_num = 5;
-    slot_config.gpio_wp = gpio_wp_num;
+    slot_config.gpio_wp = CD_WP_TEST_GPIO;
     TEST_ESP_OK(sdmmc_host_init());
     TEST_ESP_OK(sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config));
 
-    test_wp_input(gpio_wp_num, &config);
+    test_wp_input(CD_WP_TEST_GPIO, &config);
 
     TEST_ESP_OK(sdmmc_host_deinit());
+    sd_test_board_power_off();
 }
 
 TEST_CASE("WP input works in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
 {
+    sd_test_board_power_on();
     sdmmc_host_t config = SDSPI_HOST_DEFAULT();
     sdspi_slot_config_t slot_config = SDSPI_SLOT_CONFIG_DEFAULT();
-    const int gpio_wp_num = 5;
-    slot_config.gpio_wp = gpio_wp_num;
+    slot_config.gpio_wp = CD_WP_TEST_GPIO;
     TEST_ESP_OK(sdspi_host_init());
     TEST_ESP_OK(sdspi_host_init_slot(config.slot, &slot_config));
 
-    test_wp_input(gpio_wp_num, &config);
+    test_wp_input(CD_WP_TEST_GPIO, &config);
 
     TEST_ESP_OK(sdspi_host_deinit());
+    sd_test_board_power_off();
 }
