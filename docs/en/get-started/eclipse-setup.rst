@@ -65,7 +65,7 @@ Navigate to "C/C++ General" -> "Preprocessor Include Paths" property page:
 
 Navigate to "C/C++ General" -> "Indexer" property page:
 
-* Uncheck "Allow heuristic resolution of includes". When this option is enabled, Eclipse can make some mistakes when eclipse try to find project headers.
+* Uncheck "Allow heuristic resolution of includes". When this option is enabled Eclipse sometimes fails to find correct header directories.
 
 .. _eclipse-build-project:
 
