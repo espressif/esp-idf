@@ -3703,7 +3703,7 @@ static void _mdns_execute_action(mdns_action_t * action)
                 a = a->next;
             }
             if (a->next == action->data.srv_del.service) {
-                mdns_srv_item_t * b = a;
+                mdns_srv_item_t * b = a->next;
                 a->next = a->next->next;
                 _mdns_send_bye(&b, 1, false);
                 _mdns_free_service(b->service);
