@@ -65,6 +65,7 @@ static void bta_gattc_pop_command_to_send(tBTA_GATTC_CLCB *p_clcb);
 static void bta_gattc_deregister_cmpl(tBTA_GATTC_RCB *p_clreg);
 static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, BD_ADDR bda);
 static void bta_gattc_cong_cback (UINT16 conn_id, BOOLEAN congested);
+static void bta_gattc_req_cback (UINT16 conn_id, UINT32 trans_id, tGATTS_REQ_TYPE type, tGATTS_DATA *p_data);
 static tBTA_GATTC_FIND_SERVICE_CB bta_gattc_register_service_change_notify(UINT16 conn_id, BD_ADDR remote_bda);
 
 static tGATT_CBACK bta_gattc_cl_cback = {
@@ -72,7 +73,7 @@ static tGATT_CBACK bta_gattc_cl_cback = {
     bta_gattc_cmpl_cback,
     bta_gattc_disc_res_cback,
     bta_gattc_disc_cmpl_cback,
-    NULL,
+    bta_gattc_req_cback,
     bta_gattc_enc_cmpl_cback,
     bta_gattc_cong_cback
 };
@@ -2083,6 +2084,27 @@ static void bta_gattc_cong_cback (UINT16 conn_id, BOOLEAN congested)
             (*p_clcb->p_rcb->p_cback)(BTA_GATTC_CONGEST_EVT, &cb_data);
         }
     }
+}
+
+/*******************************************************************************
+**
+** Function         bta_gattc_req_cback
+**
+** Description      GATT request command callback for BTA GATT client.
+**
+** Returns          void
+**
+********************************************************************************/
+static void bta_gattc_req_cback (UINT16 conn_id, UINT32 trans_id, tGATTS_REQ_TYPE type, tGATTS_DATA *p_data)
+{
+    /* GATTC doesn't need to process the GATT request commands.
+     * Add this callback here to avoid the warning "Call back not found for application"
+     * printed in the function gatt_sr_send_req_callback
+     * */
+    UNUSED (conn_id);
+    UNUSED (trans_id) ;
+    UNUSED (type);
+    UNUSED (p_data);
 }
 
 #if BLE_INCLUDED == TRUE
