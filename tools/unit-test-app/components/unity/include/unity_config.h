@@ -49,7 +49,7 @@
 
 #define UNITY_TEST_FN_SET(...)  \
     static test_func UNITY_TEST_UID(test_functions)[] = {__VA_ARGS__}; \
-    static char* UNITY_TEST_UID(test_fn_name)[] = FN_NAME_SET(PP_NARG(__VA_ARGS__), __VA_ARGS__)
+    static const char* UNITY_TEST_UID(test_fn_name)[] = FN_NAME_SET(PP_NARG(__VA_ARGS__), __VA_ARGS__)
 
 
 typedef void (* test_func)(void);
@@ -62,7 +62,7 @@ struct test_desc_t
     const char* file;
     int line;
     uint8_t test_fn_count;
-    char ** test_fn_name;
+    const char ** test_fn_name;
     struct test_desc_t* next;
 };
 
