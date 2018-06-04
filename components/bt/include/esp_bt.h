@@ -132,7 +132,7 @@ typedef enum {
  *        ESP_BLE_PWR_TYPE_SCAN : for scan.
  *        ESP_BLE_PWR_TYPE_DEFAULT : if each connection's TX power is not set, it will use this default value.
  *                                   if neither in scan mode nor in adv mode, it will use this default value.
- *        If none of power type is set, system will use ESP_PWR_LVL_P1 as default for ADV/SCAN/CONN0-9.
+ *        If none of power type is set, system will use ESP_PWR_LVL_P3 as default for ADV/SCAN/CONN0-9.
  */
 typedef enum {
     ESP_BLE_PWR_TYPE_CONN_HDL0  = 0,            /*!< For connection handle 0 */
@@ -154,14 +154,22 @@ typedef enum {
  * @brief Bluetooth TX power level(index), it's just a index corresponding to power(dbm).
  */
 typedef enum {
-    ESP_PWR_LVL_N14 = 0,            /*!< Corresponding to -14dbm */
-    ESP_PWR_LVL_N11 = 1,            /*!< Corresponding to -11dbm */
-    ESP_PWR_LVL_N8  = 2,            /*!< Corresponding to  -8dbm */
-    ESP_PWR_LVL_N5  = 3,            /*!< Corresponding to  -5dbm */
-    ESP_PWR_LVL_N2  = 4,            /*!< Corresponding to  -2dbm */
-    ESP_PWR_LVL_P1  = 5,            /*!< Corresponding to   1dbm */
-    ESP_PWR_LVL_P4  = 6,            /*!< Corresponding to   4dbm */
-    ESP_PWR_LVL_P7  = 7,            /*!< Corresponding to   7dbm */
+    ESP_PWR_LVL_N12 = 0,                /*!< Corresponding to -12dbm */
+    ESP_PWR_LVL_N9  = 1,                /*!< Corresponding to  -9dbm */
+    ESP_PWR_LVL_N6  = 2,                /*!< Corresponding to  -6dbm */
+    ESP_PWR_LVL_N3  = 3,                /*!< Corresponding to  -3dbm */
+    ESP_PWR_LVL_N0  = 4,                /*!< Corresponding to   0dbm */
+    ESP_PWR_LVL_P3  = 5,                /*!< Corresponding to  +3dbm */
+    ESP_PWR_LVL_P6  = 6,                /*!< Corresponding to  +6dbm */
+    ESP_PWR_LVL_P9  = 7,                /*!< Corresponding to  +9dbm */
+    ESP_PWR_LVL_N14 = ESP_PWR_LVL_N12,  /*!< Backward compatibility! Setting to -14dbm will actually result to -12dbm */
+    ESP_PWR_LVL_N11 = ESP_PWR_LVL_N9,   /*!< Backward compatibility! Setting to -11dbm will actually result to  -9dbm */
+    ESP_PWR_LVL_N8  = ESP_PWR_LVL_N6,   /*!< Backward compatibility! Setting to  -8dbm will actually result to  -6dbm */
+    ESP_PWR_LVL_N5  = ESP_PWR_LVL_N3,   /*!< Backward compatibility! Setting to  -5dbm will actually result to  -3dbm */
+    ESP_PWR_LVL_N2  = ESP_PWR_LVL_N0,   /*!< Backward compatibility! Setting to  -2dbm will actually result to   0dbm */
+    ESP_PWR_LVL_P1  = ESP_PWR_LVL_P3,   /*!< Backward compatibility! Setting to  +1dbm will actually result to  +3dbm */
+    ESP_PWR_LVL_P4  = ESP_PWR_LVL_P6,   /*!< Backward compatibility! Setting to  +4dbm will actually result to  +6dbm */
+    ESP_PWR_LVL_P7  = ESP_PWR_LVL_P9,   /*!< Backward compatibility! Setting to  +7dbm will actually result to  +9dbm */
 } esp_power_level_t;
 
 /**
@@ -198,7 +206,7 @@ esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type);
  *         For example, if you want BR/EDR use the new TX power to do inquire, you should call
  *         this function before inquire. Another word, If call this function when BR/EDR is in inquire(ING),
  *         please do inquire again after call this function.
- *         Default minimum power level is ESP_PWR_LVL_N2, and maximum power level is ESP_PWR_LVL_P1.
+ *         Default minimum power level is ESP_PWR_LVL_N0, and maximum power level is ESP_PWR_LVL_P3.
  * @param  min_power_level: The minimum power level
  * @param  max_power_level: The maximum power level
  * @return              ESP_OK - success, other - failed
