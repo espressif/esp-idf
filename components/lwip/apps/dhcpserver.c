@@ -95,6 +95,7 @@ static dhcps_lease_t dhcps_poll;
 static dhcps_time_t dhcps_lease_time = DHCPS_LEASE_TIME_DEF;  //minute
 static dhcps_offer_t dhcps_offer = 0xFF;
 static dhcps_offer_t dhcps_dns = 0x00;
+static dhcps_cb_t dhcps_cb;
 
 /******************************************************************************
  * FunctionName : dhcps_option_info
@@ -679,6 +680,10 @@ static void send_ack(struct dhcps_msg *m, u16_t len)
     DHCPS_LOG("dhcps: send_ack>>udp_sendto result %x\n", SendAck_err_t);
 #endif
 
+    if (SendAck_err_t == ERR_OK) {
+        dhcps_cb(m->yiaddr);
+    }
+
     if (p->ref != 0) {
 #if DHCPS_DEBUG
         DHCPS_LOG("udhcp: send_ack>>free pbuf\n");
@@ -1105,6 +1110,19 @@ static void dhcps_poll_set(u32_t ip)
 
 }
 
+
+/******************************************************************************
+ * FunctionName : dhcps_set_new_lease_cb
+ * Description  : set callback for dhcp server when it assign an IP 
+ *                to the connected dhcp client
+ * Parameters   : cb -- callback for dhcp server
+ * Returns      : none
+*******************************************************************************/
+void dhcps_set_new_lease_cb(dhcps_cb_t cb)
+{
+    dhcps_cb = cb;
+}
+
 /******************************************************************************
  * FunctionName : dhcps_start
  * Description  : start dhcp server function
@@ -1247,7 +1265,7 @@ void dhcps_coarse_tmr(void)
         }
     }
 
-    if (num_dhcps_pool >= MAX_STATION_NUM) {
+    if (num_dhcps_pool > MAX_STATION_NUM) {
         kill_oldest_dhcps_pool();
     }
 }

@@ -79,6 +79,11 @@ typedef struct controller_t {
 
     uint8_t (*get_ble_resolving_list_max_size)(void);
     void (*set_ble_resolving_list_max_size)(int resolving_list_max_size);
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
+    // Get the number of sco packets the controller can buffer
+    uint8_t (*get_sco_data_size)(void);
+    uint8_t (*get_sco_buffer_count)(void);
+#endif /* #if (BTM_SCO_HCI_INCLUDED == TRUE) */
 } controller_t;
 
 const controller_t *controller_get_interface();

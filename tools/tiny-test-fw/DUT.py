@@ -85,6 +85,14 @@ def _decode_data(data):
     return data
 
 
+def _pattern_to_string(pattern):
+    try:
+        ret = "RegEx: " + pattern.pattern
+    except AttributeError:
+        ret = pattern
+    return ret
+
+
 class _DataCache(_queue.Queue):
     """
     Data cache based on Queue. Allow users to process data cache based on bytes instead of Queue."
@@ -93,6 +101,21 @@ class _DataCache(_queue.Queue):
     def __init__(self, maxsize=0):
         _queue.Queue.__init__(self, maxsize=maxsize)
         self.data_cache = str()
+
+    def _move_from_queue_to_cache(self):
+        """
+        move all of the available data in the queue to cache
+
+        :return: True if moved any item from queue to data cache, else False
+        """
+        ret = False
+        while True:
+            try:
+                self.data_cache += _decode_data(self.get(0))
+                ret = True
+            except _queue.Empty:
+                break
+        return ret
 
     def get_data(self, timeout=0):
         """
@@ -105,12 +128,16 @@ class _DataCache(_queue.Queue):
         if timeout < 0:
             timeout = 0
 
-        try:
-            data = self.get(timeout=timeout)
-            self.data_cache += _decode_data(data)
-        except _queue.Empty:
-            # don't do anything when on update for cache
-            pass
+        ret = self._move_from_queue_to_cache()
+
+        if not ret:
+            # we only wait for new data if we can't provide a new data_cache
+            try:
+                data = self.get(timeout=timeout)
+                self.data_cache += _decode_data(data)
+            except _queue.Empty:
+                # don't do anything when on update for cache
+                pass
         return copy.deepcopy(self.data_cache)
 
     def flush(self, index=0xFFFFFFFF):
@@ -417,7 +444,7 @@ class BaseDUT(object):
             data = self.data_cache.get_data(time.time() + timeout - start_time)
 
         if ret is None:
-            raise ExpectTimeout(self.name + ": " + str(pattern))
+            raise ExpectTimeout(self.name + ": " + _pattern_to_string(pattern))
         return ret
 
     def _expect_multi(self, expect_all, expect_item_list, timeout):
@@ -457,12 +484,11 @@ class BaseDUT(object):
                     if expect_item["ret"] is not None:
                         # match succeed for one item
                         matched_expect_items.append(expect_item)
-                        break
 
             # if expect all, then all items need to be matched,
             # else only one item need to matched
             if expect_all:
-                match_succeed = (matched_expect_items == expect_items)
+                match_succeed = len(matched_expect_items) == len(expect_items)
             else:
                 match_succeed = True if matched_expect_items else False
 
@@ -482,7 +508,7 @@ class BaseDUT(object):
             # flush already matched data
             self.data_cache.flush(slice_index)
         else:
-            raise ExpectTimeout(self.name + ": " + str(expect_items))
+            raise ExpectTimeout(self.name + ": " + str([_pattern_to_string(x) for x in expect_items]))
 
     @_expect_lock
     def expect_any(self, *expect_items, **timeout):

@@ -17,11 +17,11 @@
 
 static const char* TAG = "Touch pad";
 #define TOUCH_THRESH_NO_USE   (0)
-#define TOUCH_THRESH_PERCENT  (99)
+#define TOUCH_THRESH_PERCENT  (80)
+#define TOUCHPAD_FILTER_TOUCH_PERIOD (10)
 
 static bool s_pad_activated[TOUCH_PAD_MAX];
 static uint32_t s_pad_init_val[TOUCH_PAD_MAX];
-
 
 /*
   Read values sensed at all available touch pads.
@@ -42,7 +42,7 @@ static void tp_example_set_thresholds(void)
         //read filtered value
         touch_pad_read_filtered(i, &touch_value);
         s_pad_init_val[i] = touch_value;
-        ESP_LOGI(TAG, "test init touch val: %d\n", touch_value);
+        ESP_LOGI(TAG, "test init touch val: %d", touch_value);
         //set interrupt threshold.
         ESP_ERROR_CHECK(touch_pad_set_thresh(i, touch_value * 2 / 3));
 
@@ -58,7 +58,7 @@ static void tp_example_set_thresholds(void)
   In interrupt mode, the table is updated in touch ISR.
 
   In filter mode, we will compare the current filtered value with the initial one.
-  If the current filtered value is less than 99% of the initial value, we can
+  If the current filtered value is less than 80% of the initial value, we can
   regard it as a 'touched' event.
   When calling touch_pad_init, a timer will be started to run the filter.
   This mode is designed for the situation that the pad is covered
@@ -90,12 +90,13 @@ static void tp_example_read_task(void *pvParameter)
         } else {
             //filter mode, disable touch interrupt
             touch_pad_intr_disable();
+            touch_pad_clear_status();
             for (int i = 0; i < TOUCH_PAD_MAX; i++) {
                 uint16_t value = 0;
                 touch_pad_read_filtered(i, &value);
                 if (value < s_pad_init_val[i] * TOUCH_THRESH_PERCENT / 100) {
                     ESP_LOGI(TAG, "T%d activated!", i);
-                    ESP_LOGI(TAG, "value: %d; init val: %d\n", value, s_pad_init_val[i]);
+                    ESP_LOGI(TAG, "value: %d; init val: %d", value, s_pad_init_val[i]);
                     vTaskDelay(200 / portTICK_PERIOD_MS);
                     // Reset the counter to stop changing mode.
                     change_mode = 1;
@@ -115,7 +116,7 @@ static void tp_example_read_task(void *pvParameter)
         // We can compare the two different mode.
         if (change_mode++ % 2000 == 0) {
             filter_mode = !filter_mode;
-            ESP_LOGI(TAG, "Change mode...%s\n", filter_mode == 0? "interrupt mode": "filter mode");
+            ESP_LOGW(TAG, "Change mode...%s", filter_mode == 0? "interrupt mode": "filter mode");
         }
     }
 }
@@ -152,26 +153,20 @@ void app_main()
     // Initialize touch pad peripheral, it will start a timer to run a filter
     ESP_LOGI(TAG, "Initializing touch pad");
     touch_pad_init();
-
+    // If use interrupt trigger mode, should set touch sensor FSM mode at 'TOUCH_FSM_MODE_TIMER'.
+    touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER);
+    // Set reference voltage for charging/discharging
+    // For most usage scenarios, we recommend using the following combination:
+    // the high reference valtage will be 2.7V - 1V = 1.7V, The low reference voltage will be 0.5V.
+    touch_pad_set_voltage(TOUCH_HVOLT_2V7, TOUCH_LVOLT_0V5, TOUCH_HVOLT_ATTEN_1V);
     // Initialize and start a software filter to detect slight change of capacitance.
-    touch_pad_filter_start(10);
-    // Set measuring time and sleep time
-    // In this case, measurement will sustain 0xffff / 8Mhz = 8.19ms
-    // Meanwhile, sleep time between two measurement will be 0x1000 / 150Khz = 27.3 ms
-    touch_pad_set_meas_time(0x1000, 0xffff);
-
-    //set reference voltage for charging/discharging
-    // In this case, the high reference valtage will be 2.4V - 1.5V = 0.9V
-    // The low reference voltage will be 0.8V, so that the procedure of charging
-    // and discharging would be very fast.
-    touch_pad_set_voltage(TOUCH_HVOLT_2V4, TOUCH_LVOLT_0V8, TOUCH_HVOLT_ATTEN_1V5);
+    touch_pad_filter_start(TOUCHPAD_FILTER_TOUCH_PERIOD);
     // Init touch pad IO
     tp_example_touch_pad_init();
     // Set thresh hold
     tp_example_set_thresholds();
     // Register touch interrupt ISR
     touch_pad_isr_register(tp_example_rtc_intr, NULL);
-
     // Start a task to show what pads have been touched
     xTaskCreate(&tp_example_read_task, "touch_pad_read_task", 2048, NULL, 5, NULL);
 }

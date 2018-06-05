@@ -2,3 +2,7 @@
 # alternative config file
 CPPFLAGS += -DMBEDTLS_CONFIG_FILE='"mbedtls/esp_config.h"'
 
+# Catch usage of deprecated mbedTLS functions when building tests
+ifneq ("$(TEST_COMPONENTS_LIST)","")
+CPPFLAGS += -DMBEDTLS_DEPRECATED_WARNING
+endif

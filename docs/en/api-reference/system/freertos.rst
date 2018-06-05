@@ -6,7 +6,8 @@ Overview
 
 This section contains documentation of FreeRTOS types, functions, and macros. It is automatically generated from FreeRTOS header files.
 
-For more information about FreeRTOS features specific to ESP-IDF, see :doc:`ESP-IDF FreeRTOS SMP Changes<../../api-guides/freertos-smp>`.
+For more information about FreeRTOS features specific to ESP-IDF, see :doc:`ESP-IDF FreeRTOS SMP Changes<../../api-guides/freertos-smp>`
+and :doc:`ESP-IDF FreeRTOS Additions<freertos_additions>`.
 
 
 Task API
@@ -35,8 +36,4 @@ Event Group API
 
 .. include:: /_build/inc/event_groups.inc
 
-Ringbuffer API
---------------
-
-.. include:: /_build/inc/ringbuf.inc
 

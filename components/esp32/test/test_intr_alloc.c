@@ -16,6 +16,7 @@
 #include "soc/dport_reg.h"
 #include "soc/io_mux_reg.h"
 #include "esp_intr_alloc.h"
+#include "driver/periph_ctrl.h"
 #include "driver/timer.h"
 
 
@@ -266,9 +267,8 @@ TEST_CASE("allocate 2 handlers for a same source and remove the later one","[esp
     intr_alloc_test_ctx_t ctx = {false, false, false, false };
     intr_handle_t handle1, handle2;
 
-    //enable spi
-    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI_CLK_EN );
-    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI_RST);
+    //enable HSPI(spi2)
+    periph_module_enable(PERIPH_HSPI_MODULE);
 
     esp_err_t r;
     r=esp_intr_alloc(ETS_SPI2_INTR_SOURCE, ESP_INTR_FLAG_SHARED, int_handler1, &ctx, &handle1);

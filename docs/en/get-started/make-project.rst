@@ -1,5 +1,6 @@
 Build and Flash with Make
 =========================
+:link_to_translation:`zh_CN:[中文]`
 
 
 Finding a project

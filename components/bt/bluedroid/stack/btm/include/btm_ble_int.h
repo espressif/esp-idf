@@ -55,8 +55,9 @@
 
 #define BTM_BLE_ENC_MASK    0x03
 
-#define BTM_BLE_DUPLICATE_ENABLE        1
 #define BTM_BLE_DUPLICATE_DISABLE       0
+#define BTM_BLE_DUPLICATE_ENABLE        1
+#define BTM_BLE_DUPLICATE_MAX           BTM_BLE_DUPLICATE_ENABLE
 
 #define BTM_BLE_GAP_DISC_SCAN_INT      18         /* Interval(scan_int) = 11.25 ms= 0x0010 * 0.625 ms */
 #define BTM_BLE_GAP_DISC_SCAN_WIN      18         /* scan_window = 11.25 ms= 0x0010 * 0.625 ms */

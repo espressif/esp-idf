@@ -42,6 +42,9 @@
 #if CONFIG_BT_SPP_ENABLED
 #include "btc_spp.h"
 #endif /* #if CONFIG_BT_SPP_ENABLED */
+#if BTC_HF_CLIENT_INCLUDED
+#include "btc_hf_client.h"
+#endif  /* #if BTC_HF_CLIENT_INCLUDED */
 #endif /* #if CONFIG_CLASSIC_BT_ENABLED */
 
 
@@ -70,7 +73,7 @@ static btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_ALARM]       = {btc_alarm_handler,           NULL                    },
 #if CONFIG_CLASSIC_BT_ENABLED
 #if (BTC_GAP_BT_INCLUDED == TRUE)
-    [BTC_PID_GAP_BT]      = {btc_gap_bt_call_handler,     NULL                    },
+    [BTC_PID_GAP_BT]    = {btc_gap_bt_call_handler,     btc_gap_bt_cb_handler   },
 #endif /* (BTC_GAP_BT_INCLUDED == TRUE) */
     [BTC_PID_PRF_QUE]     = {btc_profile_queue_handler,   NULL                    },
 #if BTC_AV_INCLUDED
@@ -80,6 +83,9 @@ static btc_func_t profile_tab[BTC_PID_NUM] = {
 #if CONFIG_BT_SPP_ENABLED
     [BTC_PID_SPP]         = {btc_spp_call_handler,        btc_spp_cb_handler      },
 #endif /* #if CONFIG_BT_SPP_ENABLED */
+#if BTC_HF_CLIENT_INCLUDED
+    [BTC_PID_HF_CLIENT]   = {btc_hf_client_call_handler,  btc_hf_client_cb_handler},
+#endif  /* #if BTC_HF_CLIENT_INCLUDED */
 #endif /* #if CONFIG_CLASSIC_BT_ENABLED */
 };
 
@@ -95,7 +101,7 @@ static void btc_task(void *arg)
 
     for (;;) {
         if (pdTRUE == xQueueReceive(xBtcQueue, &msg, (portTickType)portMAX_DELAY)) {
-            LOG_DEBUG("%s msg %u %u %u %p\n", __func__, msg.sig, msg.pid, msg.act, msg.arg);
+            BTC_TRACE_DEBUG("%s msg %u %u %u %p\n", __func__, msg.sig, msg.pid, msg.act, msg.arg);
             switch (msg.sig) {
             case BTC_SIG_API_CALL:
                 profile_tab[msg.pid].btc_call(&msg);
@@ -120,7 +126,7 @@ static bt_status_t btc_task_post(btc_msg_t *msg, task_post_t timeout)
     }
 
     if (xQueueSend(xBtcQueue, msg, timeout) != pdTRUE) {
-        LOG_ERROR("Btc Post failed\n");
+        BTC_TRACE_ERROR("Btc Post failed\n");
         return BT_STATUS_BUSY;
     }
 
@@ -135,7 +141,7 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
         return BT_STATUS_PARM_INVALID;
     }
 
-    LOG_DEBUG("%s msg %u %u %u %p\n", __func__, msg->sig, msg->pid, msg->act, arg);
+    BTC_TRACE_DEBUG("%s msg %u %u %u %p\n", __func__, msg->sig, msg->pid, msg->act, arg);
 
     memcpy(&lmsg, msg, sizeof(btc_msg_t));
     if (arg) {

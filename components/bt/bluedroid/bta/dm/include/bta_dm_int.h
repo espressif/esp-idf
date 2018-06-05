@@ -63,11 +63,11 @@ enum {
     BTA_DM_API_BOND_CANCEL_EVT,
     BTA_DM_API_PIN_REPLY_EVT,
 #endif  ///SMP_INCLUDED == TRUE
-#if (BTM_SSR_INCLUDED == TRUE)
+#if (BTA_DM_PM_INCLUDED == TRUE)
     /* power manger events */
     BTA_DM_PM_BTM_STATUS_EVT,
     BTA_DM_PM_TIMER_EVT,
-#endif  ///BTM_SSR_INCLUDED == TRUE
+#endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
 #if (SMP_INCLUDED == TRUE)
     /* simple pairing events */
     BTA_DM_API_CONFIRM_EVT,
@@ -350,6 +350,7 @@ typedef struct {
 #endif
 } tBTA_DM_ACL_CHANGE;
 
+#if (BTA_DM_PM_INCLUDED == TRUE)
 /* data type for BTA_DM_PM_BTM_STATUS_EVT */
 typedef struct {
 
@@ -367,7 +368,7 @@ typedef struct {
     BD_ADDR         bd_addr;
     tBTA_DM_PM_ACTION  pm_request;
 } tBTA_DM_PM_TIMER;
-
+#endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
 
 /* data type for BTA_DM_API_ADD_DEVICE_EVT */
 typedef struct {
@@ -491,6 +492,7 @@ typedef struct {
     UINT32 scan_window;
     tBLE_SCAN_MODE scan_mode;
     UINT8 addr_type_own;
+    UINT8 scan_duplicate_filter;
     UINT8 scan_filter_policy;
     tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_cback;
 } tBTA_DM_API_BLE_SCAN_FILTER_PARAMS;
@@ -757,9 +759,11 @@ typedef union {
 
     tBTA_DM_ACL_CHANGE  acl_change;
 
+#if (BTA_DM_PM_INCLUDED == TRUE)
     tBTA_DM_PM_BTM_STATUS pm_status;
 
     tBTA_DM_PM_TIMER pm_timer;
+#endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
 
     tBTA_DM_API_DI_DISC     di_disc;
 
@@ -889,6 +893,10 @@ typedef struct {
 
 }  tBTA_DM_CONNECTED_SRVCS;
 
+extern tBTA_DM_CONNECTED_SRVCS bta_dm_conn_srvcs;
+
+#if (BTA_DM_PM_INCLUDED == TRUE)
+
 typedef struct {
 #define BTA_DM_PM_SNIFF_TIMER_IDX   0
 #define BTA_DM_PM_PARK_TIMER_IDX    1
@@ -908,9 +916,8 @@ typedef struct {
     BOOLEAN                 in_use;
 } tBTA_PM_TIMER;
 
-extern tBTA_DM_CONNECTED_SRVCS bta_dm_conn_srvcs;
-
 #define BTA_DM_NUM_PM_TIMER 7
+#endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
 
 /* DM control block */
 typedef struct {
@@ -931,10 +938,10 @@ typedef struct {
     UINT32                      wbt_sdp_handle;          /* WIDCOMM Extensions SDP record handle */
     UINT8                       wbt_scn;                 /* WIDCOMM Extensions SCN */
     UINT8                       num_master_only;
-#if BTM_SSR_INCLUDED == TRUE
+#if (BTA_DM_PM_INCLUDED == TRUE)
     UINT8                       pm_id;
     tBTA_PM_TIMER               pm_timer[BTA_DM_NUM_PM_TIMER];
-#endif  ///BTM_SSR_INCLUDED == TRUE
+#endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
     UINT32                      role_policy_mask;   /* the bits set indicates the modules that wants to remove role switch from the default link policy */
     UINT16                      cur_policy;         /* current default link policy */
     UINT16                      rs_event;           /* the event waiting for role switch */
@@ -1101,12 +1108,14 @@ typedef struct {
     UINT8 lmp_version;
 } tBTA_DM_LMP_VER_INFO;
 
+#if (BTA_DM_PM_INCLUDED == TRUE)
 extern tBTA_DM_PM_CFG *p_bta_dm_pm_cfg;
 extern tBTA_DM_PM_SPEC *p_bta_dm_pm_spec;
 extern tBTM_PM_PWR_MD *p_bta_dm_pm_md;
 #if (BTM_SSR_INCLUDED == TRUE)
 extern tBTA_DM_SSR_SPEC *p_bta_dm_ssr_spec;
 #endif
+#endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
 
 /* update dynamic BRCM Aware EIR data */
 extern const tBTA_DM_EIR_CONF bta_dm_eir_cfg;
@@ -1161,9 +1170,6 @@ extern void bta_dm_add_device (tBTA_DM_MSG *p_data);
 extern void bta_dm_remove_device (tBTA_DM_MSG *p_data);
 extern void bta_dm_close_acl(tBTA_DM_MSG *p_data);
 
-
-extern void bta_dm_pm_btm_status(tBTA_DM_MSG *p_data);
-extern void bta_dm_pm_timer(tBTA_DM_MSG *p_data);
 extern void bta_dm_add_ampkey (tBTA_DM_MSG *p_data);
 
 #if BLE_INCLUDED == TRUE
@@ -1223,8 +1229,13 @@ extern void bta_dm_ci_io_req_act(tBTA_DM_MSG *p_data);
 extern void bta_dm_ci_rmt_oob_act(tBTA_DM_MSG *p_data);
 #endif /* BTM_OOB_INCLUDED */
 
+#if (BTA_DM_PM_INCLUDED == TRUE)
 extern void bta_dm_init_pm(void);
 extern void bta_dm_disable_pm(void);
+extern void bta_dm_pm_active(BD_ADDR peer_addr);
+extern void bta_dm_pm_btm_status(tBTA_DM_MSG *p_data);
+extern void bta_dm_pm_timer(tBTA_DM_MSG *p_data);
+#endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
 
 extern UINT8 bta_dm_get_av_count(void);
 extern void bta_dm_search_start (tBTA_DM_MSG *p_data);
@@ -1251,9 +1262,6 @@ extern void bta_dm_search_cancel_notify (tBTA_DM_MSG *p_data);
 extern void bta_dm_search_cancel_transac_cmpl(tBTA_DM_MSG *p_data);
 extern void bta_dm_disc_rmt_name (tBTA_DM_MSG *p_data);
 extern tBTA_DM_PEER_DEVICE *bta_dm_find_peer_device(BD_ADDR peer_addr);
-
-extern void bta_dm_pm_active(BD_ADDR peer_addr);
-
 void bta_dm_eir_update_uuid(UINT16 uuid16, BOOLEAN adding);
 
 extern void bta_dm_enable_test_mode(tBTA_DM_MSG *p_data);

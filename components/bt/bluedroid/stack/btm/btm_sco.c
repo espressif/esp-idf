@@ -30,6 +30,7 @@
 #include "stack/hcimsgs.h"
 #include "stack/btu.h"
 #include "stack/btm_api.h"
+#include "osi/allocator.h"
 #include "btm_int.h"
 #include "stack/hcidefs.h"
 //#include "bt_utils.h"
@@ -109,6 +110,11 @@ void btm_sco_init (void)
 {
 #if 0  /* cleared in btm_init; put back in if called from anywhere else! */
     memset (&btm_cb.sco_cb, 0, sizeof(tSCO_CB));
+#endif
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
+    for (int i = 0; i < BTM_MAX_SCO_LINKS; i++) {
+        btm_cb.sco_cb.sco_db[i].xmit_data_q = fixed_queue_new(SIZE_MAX);
+    }
 #endif
     /* Initialize nonzero defaults */
     btm_cb.sco_cb.sco_disc_reason  = BTM_INVALID_SCO_DISC_REASON;
@@ -207,6 +213,66 @@ static void btm_esco_conn_rsp (UINT16 sco_inx, UINT8 hci_status, BD_ADDR bda,
 
 
 #if BTM_SCO_HCI_INCLUDED == TRUE
+void btm_sco_process_num_bufs (UINT16 num_lm_sco_bufs)
+{
+    BTM_TRACE_ERROR("%s, %d", __FUNCTION__, num_lm_sco_bufs);
+    btm_cb.sco_cb.num_lm_sco_bufs = btm_cb.sco_cb.xmit_window_size = num_lm_sco_bufs;
+}
+
+/*******************************************************************************
+**
+** Function         BTM_ConfigScoPath
+**
+** Description      This function enable/disable SCO over HCI and registers SCO
+**                  data callback if SCO over HCI is enabled.
+**
+** Parameter        path: SCO or HCI
+**                  p_sco_data_cb: callback function or SCO data if path is set
+**                                 to transport.
+**                  p_pcm_param: pointer to the PCM interface parameter. If a NULL
+**                               pointer is used, PCM parameter maintained in
+**                               the control block will be used; otherwise update
+**                               control block value.
+**                  err_data_rpt: Lisbon feature to enable the erronous data report
+**                                or not.
+**
+** Returns          BTM_SUCCESS if the successful.
+**                  BTM_NO_RESOURCES: no rsource to start the command.
+**                  BTM_ILLEGAL_VALUE: invalid callback function pointer.
+**                  BTM_CMD_STARTED :Command sent. Waiting for command cmpl event.
+**
+**
+*******************************************************************************/
+//extern
+tBTM_STATUS BTM_ConfigScoPath (tBTM_SCO_ROUTE_TYPE path,
+                               tBTM_SCO_DATA_CB *p_sco_data_cb,
+                               tBTM_SCO_PCM_PARAM *p_pcm_param,
+                               BOOLEAN err_data_rpt)
+{
+    UNUSED(err_data_rpt);
+    UNUSED(p_pcm_param);
+    btm_cb.sco_cb.sco_path = path;
+    if (path == BTM_SCO_ROUTE_PCM) {
+        return BTM_SUCCESS;
+    } else if (path == BTM_SCO_ROUTE_HCI) {
+        if (p_sco_data_cb) {
+            btm_cb.sco_cb.p_data_cb = p_sco_data_cb;
+        }
+    }
+
+    return BTM_SUCCESS;
+}
+
+static void hci_sco_data_to_lower(BT_HDR *p_buf)
+{
+    p_buf->event = BT_EVT_TO_LM_HCI_SCO;
+    if (p_buf->offset == 0) {
+        BTM_TRACE_ERROR("offset cannot be 0");
+        osi_free(p_buf);
+    }
+
+    bte_main_hci_send(p_buf, (UINT16)(BT_EVT_TO_LM_HCI_SCO | LOCAL_BLE_CONTROLLER_ID));
+}
 /*******************************************************************************
 **
 ** Function         btm_sco_check_send_pkts
@@ -224,15 +290,57 @@ void btm_sco_check_send_pkts (UINT16 sco_inx)
 
     /* If there is data to send, send it now */
     BT_HDR  *p_buf;
-    while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->xmit_data_q)) != NULL)
+    while (p_cb->xmit_window_size != 0)
     {
+        if ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->xmit_data_q)) == NULL) {
+            break;
+        }
 #if BTM_SCO_HCI_DEBUG
         BTM_TRACE_DEBUG("btm: [%d] buf in xmit_data_q",
                         fixed_queue_length(p_ccb->xmit_data_q) + 1);
 #endif
+        /* Don't go negative */
+        p_cb->xmit_window_size -= 1;
+        p_ccb->sent_not_acked += 1;
 
-        HCI_SCO_DATA_TO_LOWER(p_buf);
+        // HCI_SCO_DATA_TO_LOWER(p_buf);
+        hci_sco_data_to_lower(p_buf);
     }
+}
+
+void btm_sco_process_num_completed_pkts (UINT8 *p)
+{
+    UINT8       num_handles, xx;
+    UINT16      handle;
+    UINT16      num_sent;
+    UINT16      sco_inx;
+    tSCO_CB  *p_cb = &btm_cb.sco_cb;
+    tSCO_CONN * p_ccb;
+    STREAM_TO_UINT8 (num_handles, p);
+    for (xx = 0; xx < num_handles; xx++) {
+        STREAM_TO_UINT16 (handle, p);
+        handle &= 0x7ff; // walk around for bad handle bit mask from controller
+        STREAM_TO_UINT16 (num_sent, p);
+        if ((sco_inx = btm_find_scb_by_handle(handle & 0x7ff)) == BTM_MAX_SCO_LINKS) {
+            continue;
+        }
+        BTM_TRACE_DEBUG("%s, %d, %u", __FUNCTION__, handle, p_cb->xmit_window_size); //debug
+        p_ccb = &p_cb->sco_db[sco_inx];
+        p_ccb->sent_not_acked -= num_sent;
+        // don't go negative
+        if (p_ccb->sent_not_acked < 0) {
+            BTM_TRACE_WARNING("SCO: un-acked underf: %u", p_ccb->sent_not_acked);
+            p_ccb->sent_not_acked = 0;
+        }
+        p_cb->xmit_window_size += num_sent;
+        if (p_cb->xmit_window_size > p_cb->num_lm_sco_bufs) {
+            BTM_TRACE_WARNING("SCO xwind: %d, max %d", p_cb->xmit_window_size, p_cb->num_lm_sco_bufs);
+            p_cb->xmit_window_size = p_cb->num_lm_sco_bufs;
+        }
+        btm_sco_check_send_pkts (sco_inx);
+    }
+
+    return;
 }
 #endif /* BTM_SCO_HCI_INCLUDED == TRUE */
 
@@ -259,7 +367,7 @@ void  btm_route_sco_data(BT_HDR *p_msg)
     handle   = HCID_GET_HANDLE (handle);
 
     STREAM_TO_UINT8 (pkt_size, p);
-
+    UNUSED(pkt_size);
     if ((sco_inx = btm_find_scb_by_handle(handle)) != BTM_MAX_SCO_LINKS ) {
         /* send data callback */
         if (!btm_cb.sco_cb.p_data_cb )
@@ -272,6 +380,7 @@ void  btm_route_sco_data(BT_HDR *p_msg)
     } else { /* no mapping handle SCO connection is active, free the buffer */
         osi_free (p_msg);
     }
+    BTM_TRACE_DEBUG ("SCO: hdl %x, len %d, pkt_sz %d\n", handle, p_msg->len, pkt_size);
 #else
     osi_free(p_msg);
 #endif
@@ -295,11 +404,13 @@ void  btm_route_sco_data(BT_HDR *p_msg)
 **                  BTM_NO_RESOURCES: no resources.
 **                  BTM_UNKNOWN_ADDR: unknown SCO connection handle, or SCO is not
 **                                    routed via HCI.
+**                  BTM_ERR_PROCESSING: transmit queue overflow
 **
 **
 *******************************************************************************/
 tBTM_STATUS BTM_WriteScoData (UINT16 sco_inx, BT_HDR *p_buf)
 {
+    APPL_TRACE_DEBUG("%s", __FUNCTION__);
 #if (BTM_SCO_HCI_INCLUDED == TRUE) && (BTM_MAX_SCO_LINKS>0)
     tSCO_CONN   *p_ccb = &btm_cb.sco_cb.sco_db[sco_inx];
     UINT8   *p;
@@ -310,7 +421,6 @@ tBTM_STATUS BTM_WriteScoData (UINT16 sco_inx, BT_HDR *p_buf)
         /* Ensure we have enough space in the buffer for the SCO and HCI headers */
         if (p_buf->offset < HCI_SCO_PREAMBLE_SIZE) {
             BTM_TRACE_ERROR ("BTM SCO - cannot send buffer, offset: %d", p_buf->offset);
-            osi_free (p_buf);
             status = BTM_ILLEGAL_VALUE;
         } else { /* write HCI header */
             /* Step back 3 bytes to add the headers */
@@ -327,20 +437,27 @@ tBTM_STATUS BTM_WriteScoData (UINT16 sco_inx, BT_HDR *p_buf)
             }
 
             UINT8_TO_STREAM (p, (UINT8)p_buf->len);
+            BTM_TRACE_DEBUG ("BTM SCO hdl %x, len %u", p_ccb->hci_handle, p_buf->len);
             p_buf->len += HCI_SCO_PREAMBLE_SIZE;
 
-            fixed_queue_enqueue(p_ccb->xmit_data_q, p_buf);
-
-            btm_sco_check_send_pkts (sco_inx);
+            if (fixed_queue_length(p_ccb->xmit_data_q) < BTM_SCO_XMIT_QUEUE_THRS) {
+                fixed_queue_enqueue(p_ccb->xmit_data_q, p_buf);
+                btm_sco_check_send_pkts (sco_inx);
+            } else {
+                BTM_TRACE_WARNING ("SCO xmit Q overflow, pkt dropped");
+                status = BTM_ERR_PROCESSING;
+            }
         }
     } else {
-        osi_free(p_buf);
-
         BTM_TRACE_WARNING ("BTM_WriteScoData, invalid sco index: %d at state [%d]",
                            sco_inx, btm_cb.sco_cb.sco_db[sco_inx].state);
         status = BTM_UNKNOWN_ADDR;
     }
 
+    if (status != BTM_SUCCESS && status != BTM_SCO_BAD_LENGTH) {
+        BTM_TRACE_WARNING ("stat %d", status);
+        osi_free(p_buf);
+    }
     return (status);
 
 #else
@@ -839,7 +956,7 @@ void btm_sco_connected (UINT8 hci_status, BD_ADDR bda, UINT16 hci_handle,
 #endif
 
     btm_cb.sco_cb.sco_disc_reason = hci_status;
-
+    BTM_TRACE_ERROR("%s, handle %x", __FUNCTION__, hci_handle);
 #if (BTM_MAX_SCO_LINKS>0)
     for (xx = 0; xx < BTM_MAX_SCO_LINKS; xx++, p++) {
         if (((p->state == SCO_ST_CONNECTING) ||
@@ -876,7 +993,9 @@ void btm_sco_connected (UINT8 hci_status, BD_ADDR bda, UINT16 hci_handle,
             if (p->state == SCO_ST_LISTENING) {
                 spt = TRUE;
             }
-
+#if BTM_SCO_HCI_INCLUDED == TRUE
+            p->sent_not_acked = 0;
+#endif
             p->state = SCO_ST_CONNECTED;
             p->hci_handle = hci_handle;
 
@@ -1022,6 +1141,14 @@ void btm_sco_removed (UINT16 hci_handle, UINT8 reason)
             btm_sco_flush_sco_data(xx);
 
             p->state = SCO_ST_UNUSED;
+#if BTM_SCO_HCI_INCLUDED == TRUE
+            btm_cb.sco_cb.xmit_window_size += p->sent_not_acked;
+            /* avoid overflow */
+            if (btm_cb.sco_cb.xmit_window_size > btm_cb.sco_cb.num_lm_sco_bufs) {
+                btm_cb.sco_cb.xmit_window_size = btm_cb.sco_cb.num_lm_sco_bufs;
+            }
+            p->sent_not_acked = 0;
+#endif
             p->hci_handle = BTM_INVALID_HCI_HANDLE;
             p->rem_bd_known = FALSE;
             p->esco.p_esco_cback = NULL;    /* Deregister eSCO callback */

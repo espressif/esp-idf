@@ -1,0 +1,11 @@
+# Synchronous I/O multiplexing example
+
+The example demonstrates the use of synchronous I/O multiplexing by the select()
+function with UART and socket file descriptors. The example starts three tasks:
+1. The first task writes periodically to the UART1 file descriptor.
+2. The second task writes periodically to the socket descriptor.
+3. Both UART1 and the socket are configured to act as loopbacks. The third
+   task detects by the use of select() whether it is possible to read from
+   UART1 or the socket, and receives the sent messages from the other tasks.
+
+See the README.md file in the upper level 'examples' directory for more information about examples.

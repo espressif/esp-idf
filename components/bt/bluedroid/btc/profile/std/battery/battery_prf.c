@@ -64,7 +64,7 @@ static void bas_gatts_callback(esp_gatts_evt_t event, tBTA_GATTS *p_data)
     case ESP_GATTS_REG_EVT: {
         esp_gatt_status_t  status = p_data->reg_oper.status;
         server_if = p_data->reg_oper.server_if;
-        LOG_ERROR("BAS register completed: event=%d, status=%d, server_if=%d\n",
+        BTC_TRACE_ERROR("BAS register completed: event=%d, status=%d, server_if=%d\n",
                   event, status, server_if);
 
         UINT8 app_id = 0xff;
@@ -77,18 +77,18 @@ static void bas_gatts_callback(esp_gatts_evt_t event, tBTA_GATTS *p_data)
 
     /*connect callback*/
     case ESP_GATTS_CONNECT_EVT: {
-        LOG_ERROR("\ndevice is connected "BT_BD_ADDR_STR", server_if=%d,reason=0x%x,connect_id=%d\n",
+        BTC_TRACE_ERROR("\ndevice is connected "BT_BD_ADDR_STR", server_if=%d,reason=0x%x,connect_id=%d\n",
                   BT_BD_ADDR_HEX(p_data->conn.remote_bda), p_data->conn.server_if,
                   p_data->conn.reason, p_data->conn.conn_id);
         /*return whether the remote device is currently connected*/
         int is_connected = BTA_DmGetConnectionState(p_data->conn.remote_bda);
-        LOG_ERROR("is_connected=%d\n", is_connected);
+        BTC_TRACE_ERROR("is_connected=%d\n", is_connected);
     }
     break;
 
     /*create service callback*/
     case ESP_GATTS_CREATE_EVT: {
-        LOG_ERROR("create service:server_if=%d,service_id=0x%x,service_uuid=0x%x\n",
+        BTC_TRACE_ERROR("create service:server_if=%d,service_id=0x%x,service_uuid=0x%x\n",
                   p_data->create.server_if, p_data->create.service_id,
                   p_data->create.uuid.uu.uuid16);
         UINT16 service_uuid = p_data->create.uuid.uu.uuid16;
@@ -107,7 +107,7 @@ static void bas_gatts_callback(esp_gatts_evt_t event, tBTA_GATTS *p_data)
     break;
 
     case ESP_GATTS_ADD_CHAR_EVT: {
-        LOG_ERROR("create characteristic:server_if=%d,service_id=0x%x,char_uuid=0x%x\n",
+        BTC_TRACE_ERROR("create characteristic:server_if=%d,service_id=0x%x,char_uuid=0x%x\n",
                   p_data->add_result.server_if, p_data->add_result.service_id,
                   p_data->add_result.char_uuid.uu.uuid16);
         UINT16 char_uuid = p_data->add_result.char_uuid.uu.uuid16;
@@ -144,7 +144,7 @@ static void bas_gatts_callback(esp_gatts_evt_t event, tBTA_GATTS *p_data)
 
     case ESP_GATTS_ADD_CHAR_DESCR_EVT: {
 
-        LOG_ERROR("create descriptor:server_if=%d,service_id=0x%x,attr_id=0x%x,char_uuid=0x%x\n",
+        BTC_TRACE_ERROR("create descriptor:server_if=%d,service_id=0x%x,attr_id=0x%x,char_uuid=0x%x\n",
                   p_data->add_result.server_if, p_data->add_result.service_id,
                   p_data->add_result.attr_id, p_data->add_result.char_uuid.uu.uuid16);
         bas_AddCharDescr(p_data->add_result.service_id, p_data->add_result.attr_id);
@@ -152,7 +152,7 @@ static void bas_gatts_callback(esp_gatts_evt_t event, tBTA_GATTS *p_data)
     break;
 
     case ESP_GATTS_START_EVT: {
-        LOG_ERROR("start service:server_if=%d,service_id=0x%x\n", p_data->srvc_oper.server_if,
+        BTC_TRACE_ERROR("start service:server_if=%d,service_id=0x%x\n", p_data->srvc_oper.server_if,
                   p_data->srvc_oper.service_id);
         bas_service_cmpl(p_data->srvc_oper.service_id, p_data->srvc_oper.status);
 
@@ -168,7 +168,7 @@ static void bas_gatts_callback(esp_gatts_evt_t event, tBTA_GATTS *p_data)
         UINT16 conn_id = p_data->req_data.conn_id;
         UINT16 handle = p_data->req_data.p_data->read_req.handle;
         bool   is_long = p_data->req_data.p_data->read_req.is_long;
-        LOG_ERROR("read request:event=0x%x,handle=0x%x,trans_id=0x%x,conn_id=0x%x\n",
+        BTC_TRACE_ERROR("read request:event=0x%x,handle=0x%x,trans_id=0x%x,conn_id=0x%x\n",
                   event, handle, trans_id, conn_id);
 
         if (dis_valid_handle_range(handle)) {
@@ -188,7 +188,7 @@ static void bas_gatts_callback(esp_gatts_evt_t event, tBTA_GATTS *p_data)
         UINT32 trans_id = p_data->req_data.trans_id;
         UINT16 conn_id = p_data->req_data.conn_id;
         UINT16 handle = p_data->req_data.p_data->write_req.handle;
-        LOG_ERROR("write request:event=0x%x,handle=0x%x,trans_id=0x%x,conn_id=0x%x\n",
+        BTC_TRACE_ERROR("write request:event=0x%x,handle=0x%x,trans_id=0x%x,conn_id=0x%x\n",
                   event, handle, trans_id, conn_id);
         bas_s_write_attr_value(p_data->req_data.p_data, trans_id, conn_id,
                                p_data->req_data.remote_bda);
@@ -199,7 +199,7 @@ static void bas_gatts_callback(esp_gatts_evt_t event, tBTA_GATTS *p_data)
         UINT32 trans_id = p_data->req_data.trans_id;
         UINT16 conn_id = p_data->req_data.conn_id;
         UINT8  exec_write = p_data->req_data.p_data->exec_write;
-        LOG_ERROR("execute write request:event=0x%x,exce_write=0x%x,trans_id=0x%x,conn_id=0x%x\n",
+        BTC_TRACE_ERROR("execute write request:event=0x%x,exce_write=0x%x,trans_id=0x%x,conn_id=0x%x\n",
                   event, exec_write, trans_id, conn_id);
     }
     break;
@@ -208,7 +208,7 @@ static void bas_gatts_callback(esp_gatts_evt_t event, tBTA_GATTS *p_data)
         UINT32 trans_id = p_data->req_data.trans_id;
         UINT16 conn_id = p_data->req_data.conn_id;
         UINT16 mtu = p_data->req_data.p_data->mtu;
-        LOG_ERROR("exchange mtu request:event=0x%x,mtu=0x%x,trans_id=0x%x,conn_id=0x%x\n",
+        BTC_TRACE_ERROR("exchange mtu request:event=0x%x,mtu=0x%x,trans_id=0x%x,conn_id=0x%x\n",
                   event, mtu, trans_id, conn_id);
     }
     break;
@@ -217,13 +217,13 @@ static void bas_gatts_callback(esp_gatts_evt_t event, tBTA_GATTS *p_data)
 
         UINT32 trans_id = p_data->req_data.trans_id;
         UINT16 conn_id = p_data->req_data.conn_id;
-        LOG_ERROR("configue request:trans_id=0x%x,conn_id=0x%x\n",
+        BTC_TRACE_ERROR("configue request:trans_id=0x%x,conn_id=0x%x\n",
                   trans_id, conn_id);
     }
     break;
 
     default:
-        LOG_ERROR("unsettled event: %d\n", event);
+        BTC_TRACE_ERROR("unsettled event: %d\n", event);
         break;
     }
 
@@ -240,32 +240,32 @@ static void bas_callback(UINT32 trans_id, UINT16 conn_id, UINT8 app_id,
     tGATT_STATUS st = ESP_GATT_OK;
     switch (event) {
     case BA_READ_LEVEL_REQ : {
-        LOG_ERROR("read battery level\n");
+        BTC_TRACE_ERROR("read battery level\n");
         p_rsp.ba_level = 60;     //battery level
         Battery_Rsp(trans_id, conn_id, app_id, st, event, &p_rsp);
     }
     break;
 
     case BA_READ_PRE_FMT_REQ : {
-        LOG_ERROR("read presentation format\n");
+        BTC_TRACE_ERROR("read presentation format\n");
     }
     break;
 
     case BA_READ_CLT_CFG_REQ : {
-        LOG_ERROR("read client characteristic configuration request\n");
+        BTC_TRACE_ERROR("read client characteristic configuration request\n");
         p_rsp.clt_cfg = 0x0001;   //notification
         Battery_Rsp(trans_id, conn_id, app_id, st, event, &p_rsp);
     }
     break;
 
     case BA_READ_RPT_REF_REQ : {
-        LOG_ERROR("read report reference descriptor\n");
+        BTC_TRACE_ERROR("read report reference descriptor\n");
     }
     break;
 
     /*battery level notify*/
     case BA_WRITE_CLT_CFG_REQ : {
-        LOG_ERROR("write client characteristic configuration request\n");
+        BTC_TRACE_ERROR("write client characteristic configuration request\n");
         Battery_Rsp(trans_id, conn_id, app_id, st, event, NULL);
 
         int battery_level = 50;
@@ -398,8 +398,8 @@ void bas_init(tBTA_GATTS_IF gatt_if, UINT16 app_id)
 
     p_inst = &battery_cb.battery_inst[battery_cb.inst_id];
 
-    LOG_ERROR("create battery service\n");
-    LOG_ERROR("inst_id=%d\n", battery_cb.inst_id);
+    BTC_TRACE_ERROR("create battery service\n");
+    BTC_TRACE_ERROR("inst_id=%d\n", battery_cb.inst_id);
     esp_ble_gatts_create_srvc (gatt_if, &bas_uuid, battery_cb.inst_id ,
                                BA_MAX_ATTR_NUM, ba_reg_info.is_pri);
 

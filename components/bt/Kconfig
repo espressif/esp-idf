@@ -64,6 +64,48 @@ config BT_HCI_UART_BAUDRATE
         UART Baudrate for HCI. Please use standard baudrate.
 endmenu
 
+menu "MODEM SLEEP Options"
+    visible if BT_ENABLED
+
+config BTDM_CONTROLLER_MODEM_SLEEP
+    bool "Bluetooth modem sleep"
+    depends on BT_ENABLED
+    default y
+    help
+        Enable/disable bluetooth controller low power mode.
+        Note that currently there is problem in the combination use of bluetooth modem sleep and Dynamic Frequency Scaling(DFS). So do not enable DFS if bluetooth modem sleep is in use.
+
+choice BTDM_MODEM_SLEEP_MODE
+    prompt "Bluetooth Modem sleep mode"
+    depends on BTDM_CONTROLLER_MODEM_SLEEP
+    help
+        To select which strategy to use for modem sleep
+
+config BTDM_MODEM_SLEEP_MODE_ORIG
+    bool "ORIG Mode(sleep with low power clock)"
+    help
+        ORIG mode is a deep sleep mode that can be used for dual mode controller. In this mode, bluetooth controller sleeps between BR/EDR frames and BLE events. A low power clock is used to maintain bluetooth reference clock.
+config BTDM_MODEM_SLEEP_MODE_EVED
+    bool "EVED Mode "
+    help
+        This mode is for BLE only.
+endchoice
+
+choice BTDM_LOW_POWER_CLOCK
+    prompt "Bluetooth low power clock"
+    depends on BTDM_MODEM_SLEEP_MODE_ORIG
+    help
+        Select the low power clock source for bluetooth controller
+
+config BTDM_LPCLK_SEL_MAIN_XTAL
+    bool "Main crystal"
+config BTDM_LPCLK_SEL_EXT_32K_XTAL
+    bool "External 32kHz crystal"
+    depends on ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
+endchoice
+
+endmenu
+
 menuconfig BLUEDROID_ENABLED
     bool "Bluedroid Enable"
     depends on BTDM_CONTROLLER_HCI_MODE_VHCI
@@ -120,24 +162,14 @@ config A2DP_ENABLE
     help
         Advanced Audio Distrubution Profile
 
-choice A2DP_ROLE
-    prompt "A2DP ROLE config"
-    depends on A2DP_ENABLE
-
-config A2DP_SINK_ENABLE
-    bool "SINK"
-config A2DP_SRC_ENABLE
-    bool "SOURCE"
-endchoice
-
 config A2DP_SINK_TASK_STACK_SIZE
     int "A2DP sink (audio stream decoding) task stack size"
-    depends on A2DP_ENABLE && A2DP_SINK_ENABLE
+    depends on A2DP_ENABLE
     default 2048
 
 config A2DP_SOURCE_TASK_STACK_SIZE
     int "A2DP source (audio stream encoding) task stack size"
-    depends on A2DP_ENABLE && A2DP_SRC_ENABLE
+    depends on A2DP_ENABLE
     default 2048
 
 config BT_SPP_ENABLED
@@ -146,6 +178,33 @@ config BT_SPP_ENABLED
     default n
     help
         This enables the Serial Port Profile
+
+config HFP_ENABLE
+    bool "Hands Free/Handset Profile"
+    depends on CLASSIC_BT_ENABLED
+    default n
+
+choice HFP_ROLE
+    prompt "Hands-free Profile Role configuration"
+    depends on HFP_ENABLE
+
+config HFP_CLIENT_ENABLE
+    bool "Hands Free Unit"
+endchoice
+
+choice HFP_AUDIO_DATA_PATH
+    prompt "audio(SCO) data path"
+    depends on HFP_ENABLE
+
+config HFP_AUDIO_DATA_PATH_PCM
+    bool "PCM"
+    help
+        This enables the Serial Port Profile
+config HFP_AUDIO_DATA_PATH_HCI
+    bool "HCI"
+    help
+        This enables the Serial Port Profile
+endchoice
 
 config GATTS_ENABLE
     bool "Include GATT server module(GATTS)"
@@ -168,21 +227,753 @@ config BLE_SMP_ENABLE
    help
        This option can be close when the app not used the ble security connect.
 
-config BLE_ENABLE_SRVCHG_REG
-    bool "Enable automatic service change notify registration"
-    depends on BLUEDROID_ENABLED
-    default y
-    help
-        This option enables automatic registration of service change notification
-        after connect. Be careful, it can may collide with your command sequences
-        and lead to GATT_BUSY.
-
 config BT_STACK_NO_LOG
-    bool "Close the bluedroid bt stack log print"
+    bool "Disable BT debug logs (minimize bin size)"
     depends on BLUEDROID_ENABLED
     default n
     help
         This select can save the rodata code size
+
+menu "BT DEBUG LOG LEVEL"
+    depends on BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+
+choice HCI_INITIAL_TRACE_LEVEL
+    prompt "HCI layer"
+    default HCI_TRACE_LEVEL_WARNING
+    depends on BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+    help
+        Define BT trace level for HCI layer
+
+config HCI_TRACE_LEVEL_NONE
+    bool "NONE"
+config HCI_TRACE_LEVEL_ERROR
+    bool "ERROR"
+config HCI_TRACE_LEVEL_WARNING
+    bool "WARNING"
+config HCI_TRACE_LEVEL_API
+    bool "API"
+config HCI_TRACE_LEVEL_EVENT
+    bool "EVENT"
+config HCI_TRACE_LEVEL_DEBUG
+    bool "DEBUG"
+config HCI_TRACE_LEVEL_VERBOSE
+    bool "VERBOSE"
+endchoice
+
+config HCI_INITIAL_TRACE_LEVEL
+    int
+    depends on BLUEDROID_ENABLED
+    default 0 if HCI_TRACE_LEVEL_NONE
+    default 1 if HCI_TRACE_LEVEL_ERROR
+    default 2 if HCI_TRACE_LEVEL_WARNING
+    default 3 if HCI_TRACE_LEVEL_API
+    default 4 if HCI_TRACE_LEVEL_EVENT
+    default 5 if HCI_TRACE_LEVEL_DEBUG
+    default 6 if HCI_TRACE_LEVEL_VERBOSE
+    default 2
+
+choice BTM_INITIAL_TRACE_LEVEL
+    prompt "BTM layer"
+    default BTM_TRACE_LEVEL_WARNING
+    depends on BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+    help
+        Define BT trace level for BTM layer
+
+config BTM_TRACE_LEVEL_NONE
+    bool "NONE"
+config BTM_TRACE_LEVEL_ERROR
+    bool "ERROR"
+config BTM_TRACE_LEVEL_WARNING
+    bool "WARNING"
+config BTM_TRACE_LEVEL_API
+    bool "API"
+config BTM_TRACE_LEVEL_EVENT
+    bool "EVENT"
+config BTM_TRACE_LEVEL_DEBUG
+    bool "DEBUG"
+config BTM_TRACE_LEVEL_VERBOSE
+    bool "VERBOSE"
+endchoice
+
+config BTM_INITIAL_TRACE_LEVEL
+    int
+    depends on BLUEDROID_ENABLED
+    default 0 if BTM_TRACE_LEVEL_NONE
+    default 1 if BTM_TRACE_LEVEL_ERROR
+    default 2 if BTM_TRACE_LEVEL_WARNING
+    default 3 if BTM_TRACE_LEVEL_API
+    default 4 if BTM_TRACE_LEVEL_EVENT
+    default 5 if BTM_TRACE_LEVEL_DEBUG
+    default 6 if BTM_TRACE_LEVEL_VERBOSE
+    default 2
+
+choice L2CAP_INITIAL_TRACE_LEVEL
+    prompt "L2CAP layer"
+    default L2CAP_TRACE_LEVEL_WARNING
+    depends on BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+    help
+        Define BT trace level for L2CAP layer
+
+config L2CAP_TRACE_LEVEL_NONE
+    bool "NONE"
+config L2CAP_TRACE_LEVEL_ERROR
+    bool "ERROR"
+config L2CAP_TRACE_LEVEL_WARNING
+    bool "WARNING"
+config L2CAP_TRACE_LEVEL_API
+    bool "API"
+config L2CAP_TRACE_LEVEL_EVENT
+    bool "EVENT"
+config L2CAP_TRACE_LEVEL_DEBUG
+    bool "DEBUG"
+config L2CAP_TRACE_LEVEL_VERBOSE
+    bool "VERBOSE"
+endchoice
+
+config L2CAP_INITIAL_TRACE_LEVEL
+    int
+    depends on BLUEDROID_ENABLED
+    default 0 if L2CAP_TRACE_LEVEL_NONE
+    default 1 if L2CAP_TRACE_LEVEL_ERROR
+    default 2 if L2CAP_TRACE_LEVEL_WARNING
+    default 3 if L2CAP_TRACE_LEVEL_API
+    default 4 if L2CAP_TRACE_LEVEL_EVENT
+    default 5 if L2CAP_TRACE_LEVEL_DEBUG
+    default 6 if L2CAP_TRACE_LEVEL_VERBOSE
+    default 2
+
+choice RFCOMM_INITIAL_TRACE_LEVEL
+    prompt "RFCOMM layer"
+    default RFCOMM_TRACE_LEVEL_WARNING
+    depends on BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+    help
+        Define BT trace level for RFCOMM layer
+
+config RFCOMM_TRACE_LEVEL_NONE
+    bool "NONE"
+config RFCOMM_TRACE_LEVEL_ERROR
+    bool "ERROR"
+config RFCOMM_TRACE_LEVEL_WARNING
+    bool "WARNING"
+config RFCOMM_TRACE_LEVEL_API
+    bool "API"
+config RFCOMM_TRACE_LEVEL_EVENT
+    bool "EVENT"
+config RFCOMM_TRACE_LEVEL_DEBUG
+    bool "DEBUG"
+config RFCOMM_TRACE_LEVEL_VERBOSE
+    bool "VERBOSE"
+endchoice
+
+config RFCOMM_INITIAL_TRACE_LEVEL
+    int
+    depends on BLUEDROID_ENABLED
+    default 0 if RFCOMM_TRACE_LEVEL_NONE
+    default 1 if RFCOMM_TRACE_LEVEL_ERROR
+    default 2 if RFCOMM_TRACE_LEVEL_WARNING
+    default 3 if RFCOMM_TRACE_LEVEL_API
+    default 4 if RFCOMM_TRACE_LEVEL_EVENT
+    default 5 if RFCOMM_TRACE_LEVEL_DEBUG
+    default 6 if RFCOMM_TRACE_LEVEL_VERBOSE
+    default 2
+
+choice SDP_INITIAL_TRACE_LEVEL
+    prompt "SDP layer"
+    default SDP_TRACE_LEVEL_WARNING
+    depends on BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+    help
+        Define BT trace level for SDP layer
+
+config SDP_TRACE_LEVEL_NONE
+    bool "NONE"
+config SDP_TRACE_LEVEL_ERROR
+    bool "ERROR"
+config SDP_TRACE_LEVEL_WARNING
+    bool "WARNING"
+config SDP_TRACE_LEVEL_API
+    bool "API"
+config SDP_TRACE_LEVEL_EVENT
+    bool "EVENT"
+config SDP_TRACE_LEVEL_DEBUG
+    bool "DEBUG"
+config SDP_TRACE_LEVEL_VERBOSE
+    bool "VERBOSE"
+endchoice
+
+config SDP_INITIAL_TRACE_LEVEL
+    int
+    depends on BLUEDROID_ENABLED
+    default 0 if SDP_TRACE_LEVEL_NONE
+    default 1 if SDP_TRACE_LEVEL_ERROR
+    default 2 if SDP_TRACE_LEVEL_WARNING
+    default 3 if SDP_TRACE_LEVEL_API
+    default 4 if SDP_TRACE_LEVEL_EVENT
+    default 5 if SDP_TRACE_LEVEL_DEBUG
+    default 6 if SDP_TRACE_LEVEL_VERBOSE
+    default 2
+
+choice GAP_INITIAL_TRACE_LEVEL
+    prompt "GAP layer"
+    default GAP_TRACE_LEVEL_WARNING
+    depends on BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+    help
+        Define BT trace level for GAP layer
+
+config GAP_TRACE_LEVEL_NONE
+    bool "NONE"
+config GAP_TRACE_LEVEL_ERROR
+    bool "ERROR"
+config GAP_TRACE_LEVEL_WARNING
+    bool "WARNING"
+config GAP_TRACE_LEVEL_API
+    bool "API"
+config GAP_TRACE_LEVEL_EVENT
+    bool "EVENT"
+config GAP_TRACE_LEVEL_DEBUG
+    bool "DEBUG"
+config GAP_TRACE_LEVEL_VERBOSE
+    bool "VERBOSE"
+endchoice
+
+config GAP_INITIAL_TRACE_LEVEL
+    int
+    depends on BLUEDROID_ENABLED
+    default 0 if GAP_TRACE_LEVEL_NONE
+    default 1 if GAP_TRACE_LEVEL_ERROR
+    default 2 if GAP_TRACE_LEVEL_WARNING
+    default 3 if GAP_TRACE_LEVEL_API
+    default 4 if GAP_TRACE_LEVEL_EVENT
+    default 5 if GAP_TRACE_LEVEL_DEBUG
+    default 6 if GAP_TRACE_LEVEL_VERBOSE
+    default 2
+
+choice BNEP_INITIAL_TRACE_LEVEL
+    prompt "BNEP layer"
+    default BNEP_TRACE_LEVEL_WARNING
+    depends on BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+    help
+        Define BT trace level for BNEP layer
+
+config BNEP_TRACE_LEVEL_NONE
+    bool "NONE"
+config BNEP_TRACE_LEVEL_ERROR
+    bool "ERROR"
+config BNEP_TRACE_LEVEL_WARNING
+    bool "WARNING"
+config BNEP_TRACE_LEVEL_API
+    bool "API"
+config BNEP_TRACE_LEVEL_EVENT
+    bool "EVENT"
+config BNEP_TRACE_LEVEL_DEBUG
+    bool "DEBUG"
+config BNEP_TRACE_LEVEL_VERBOSE
+    bool "VERBOSE"
+endchoice
+
+config BNEP_INITIAL_TRACE_LEVEL
+    int
+    depends on BLUEDROID_ENABLED
+    default 0 if BNEP_TRACE_LEVEL_NONE
+    default 1 if BNEP_TRACE_LEVEL_ERROR
+    default 2 if BNEP_TRACE_LEVEL_WARNING
+    default 3 if BNEP_TRACE_LEVEL_API
+    default 4 if BNEP_TRACE_LEVEL_EVENT
+    default 5 if BNEP_TRACE_LEVEL_DEBUG
+    default 6 if BNEP_TRACE_LEVEL_VERBOSE
+    default 2
+
+choice PAN_INITIAL_TRACE_LEVEL
+    prompt "PAN layer"
+    default PAN_TRACE_LEVEL_WARNING
+    depends on BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+    help
+        Define BT trace level for PAN layer
+
+config PAN_TRACE_LEVEL_NONE
+    bool "NONE"
+config PAN_TRACE_LEVEL_ERROR
+    bool "ERROR"
+config PAN_TRACE_LEVEL_WARNING
+    bool "WARNING"
+config PAN_TRACE_LEVEL_API
+    bool "API"
+config PAN_TRACE_LEVEL_EVENT
+    bool "EVENT"
+config PAN_TRACE_LEVEL_DEBUG
+    bool "DEBUG"
+config PAN_TRACE_LEVEL_VERBOSE
+    bool "VERBOSE"
+endchoice
+
+config PAN_INITIAL_TRACE_LEVEL
+    int
+    depends on BLUEDROID_ENABLED
+    default 0 if PAN_TRACE_LEVEL_NONE
+    default 1 if PAN_TRACE_LEVEL_ERROR
+    default 2 if PAN_TRACE_LEVEL_WARNING
+    default 3 if PAN_TRACE_LEVEL_API
+    default 4 if PAN_TRACE_LEVEL_EVENT
+    default 5 if PAN_TRACE_LEVEL_DEBUG
+    default 6 if PAN_TRACE_LEVEL_VERBOSE
+    default 2
+
+choice A2D_INITIAL_TRACE_LEVEL
+    prompt "A2D layer"
+    default A2D_TRACE_LEVEL_WARNING
+    depends on BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+    help
+        Define BT trace level for A2D layer
+
+config A2D_TRACE_LEVEL_NONE
+    bool "NONE"
+config A2D_TRACE_LEVEL_ERROR
+    bool "ERROR"
+config A2D_TRACE_LEVEL_WARNING
+    bool "WARNING"
+config A2D_TRACE_LEVEL_API
+    bool "API"
+config A2D_TRACE_LEVEL_EVENT
+    bool "EVENT"
+config A2D_TRACE_LEVEL_DEBUG
+    bool "DEBUG"
+config A2D_TRACE_LEVEL_VERBOSE
+    bool "VERBOSE"
+endchoice
+
+config A2D_INITIAL_TRACE_LEVEL
+    int
+    depends on BLUEDROID_ENABLED
+    default 0 if A2D_TRACE_LEVEL_NONE
+    default 1 if A2D_TRACE_LEVEL_ERROR
+    default 2 if A2D_TRACE_LEVEL_WARNING
+    default 3 if A2D_TRACE_LEVEL_API
+    default 4 if A2D_TRACE_LEVEL_EVENT
+    default 5 if A2D_TRACE_LEVEL_DEBUG
+    default 6 if A2D_TRACE_LEVEL_VERBOSE
+    default 2
+
+choice AVDT_INITIAL_TRACE_LEVEL
+    prompt "AVDT layer"
+    default AVDT_TRACE_LEVEL_WARNING
+    depends on BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+    help
+        Define BT trace level for AVDT layer
+
+config AVDT_TRACE_LEVEL_NONE
+    bool "NONE"
+config AVDT_TRACE_LEVEL_ERROR
+    bool "ERROR"
+config AVDT_TRACE_LEVEL_WARNING
+    bool "WARNING"
+config AVDT_TRACE_LEVEL_API
+    bool "API"
+config AVDT_TRACE_LEVEL_EVENT
+    bool "EVENT"
+config AVDT_TRACE_LEVEL_DEBUG
+    bool "DEBUG"
+config AVDT_TRACE_LEVEL_VERBOSE
+    bool "VERBOSE"
+endchoice
+
+config AVDT_INITIAL_TRACE_LEVEL
+    int
+    depends on BLUEDROID_ENABLED
+    default 0 if AVDT_TRACE_LEVEL_NONE
+    default 1 if AVDT_TRACE_LEVEL_ERROR
+    default 2 if AVDT_TRACE_LEVEL_WARNING
+    default 3 if AVDT_TRACE_LEVEL_API
+    default 4 if AVDT_TRACE_LEVEL_EVENT
+    default 5 if AVDT_TRACE_LEVEL_DEBUG
+    default 6 if AVDT_TRACE_LEVEL_VERBOSE
+    default 2
+
+choice AVCT_INITIAL_TRACE_LEVEL
+    prompt "AVCT layer"
+    default AVCT_TRACE_LEVEL_WARNING
+    depends on BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+    help
+        Define BT trace level for AVCT layer
+
+config AVCT_TRACE_LEVEL_NONE
+    bool "NONE"
+config AVCT_TRACE_LEVEL_ERROR
+    bool "ERROR"
+config AVCT_TRACE_LEVEL_WARNING
+    bool "WARNING"
+config AVCT_TRACE_LEVEL_API
+    bool "API"
+config AVCT_TRACE_LEVEL_EVENT
+    bool "EVENT"
+config AVCT_TRACE_LEVEL_DEBUG
+    bool "DEBUG"
+config AVCT_TRACE_LEVEL_VERBOSE
+    bool "VERBOSE"
+endchoice
+
+config AVCT_INITIAL_TRACE_LEVEL
+    int
+    depends on BLUEDROID_ENABLED
+    default 0 if AVCT_TRACE_LEVEL_NONE
+    default 1 if AVCT_TRACE_LEVEL_ERROR
+    default 2 if AVCT_TRACE_LEVEL_WARNING
+    default 3 if AVCT_TRACE_LEVEL_API
+    default 4 if AVCT_TRACE_LEVEL_EVENT
+    default 5 if AVCT_TRACE_LEVEL_DEBUG
+    default 6 if AVCT_TRACE_LEVEL_VERBOSE
+    default 2
+
+choice AVRC_INITIAL_TRACE_LEVEL
+    prompt "AVRC layer"
+    default AVRC_TRACE_LEVEL_WARNING
+    depends on BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+    help
+        Define BT trace level for AVRC layer
+
+config AVRC_TRACE_LEVEL_NONE
+    bool "NONE"
+config AVRC_TRACE_LEVEL_ERROR
+    bool "ERROR"
+config AVRC_TRACE_LEVEL_WARNING
+    bool "WARNING"
+config AVRC_TRACE_LEVEL_API
+    bool "API"
+config AVRC_TRACE_LEVEL_EVENT
+    bool "EVENT"
+config AVRC_TRACE_LEVEL_DEBUG
+    bool "DEBUG"
+config AVRC_TRACE_LEVEL_VERBOSE
+    bool "VERBOSE"
+endchoice
+
+config AVRC_INITIAL_TRACE_LEVEL
+    int
+    depends on BLUEDROID_ENABLED
+    default 0 if AVRC_TRACE_LEVEL_NONE
+    default 1 if AVRC_TRACE_LEVEL_ERROR
+    default 2 if AVRC_TRACE_LEVEL_WARNING
+    default 3 if AVRC_TRACE_LEVEL_API
+    default 4 if AVRC_TRACE_LEVEL_EVENT
+    default 5 if AVRC_TRACE_LEVEL_DEBUG
+    default 6 if AVRC_TRACE_LEVEL_VERBOSE
+    default 2
+
+choice MCA_INITIAL_TRACE_LEVEL
+    prompt "MCA layer"
+    default MCA_TRACE_LEVEL_WARNING
+    depends on BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+    help
+        Define BT trace level for MCA layer
+
+config MCA_TRACE_LEVEL_NONE
+    bool "NONE"
+config MCA_TRACE_LEVEL_ERROR
+    bool "ERROR"
+config MCA_TRACE_LEVEL_WARNING
+    bool "WARNING"
+config MCA_TRACE_LEVEL_API
+    bool "API"
+config MCA_TRACE_LEVEL_EVENT
+    bool "EVENT"
+config MCA_TRACE_LEVEL_DEBUG
+    bool "DEBUG"
+config MCA_TRACE_LEVEL_VERBOSE
+    bool "VERBOSE"
+endchoice
+
+config MCA_INITIAL_TRACE_LEVEL
+    int
+    depends on BLUEDROID_ENABLED
+    default 0 if MCA_TRACE_LEVEL_NONE
+    default 1 if MCA_TRACE_LEVEL_ERROR
+    default 2 if MCA_TRACE_LEVEL_WARNING
+    default 3 if MCA_TRACE_LEVEL_API
+    default 4 if MCA_TRACE_LEVEL_EVENT
+    default 5 if MCA_TRACE_LEVEL_DEBUG
+    default 6 if MCA_TRACE_LEVEL_VERBOSE
+    default 2
+
+choice HID_INITIAL_TRACE_LEVEL
+    prompt "HID layer"
+    default HID_TRACE_LEVEL_WARNING
+    depends on BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+    help
+        Define BT trace level for HID layer
+
+config HID_TRACE_LEVEL_NONE
+    bool "NONE"
+config HID_TRACE_LEVEL_ERROR
+    bool "ERROR"
+config HID_TRACE_LEVEL_WARNING
+    bool "WARNING"
+config HID_TRACE_LEVEL_API
+    bool "API"
+config HID_TRACE_LEVEL_EVENT
+    bool "EVENT"
+config HID_TRACE_LEVEL_DEBUG
+    bool "DEBUG"
+config HID_TRACE_LEVEL_VERBOSE
+    bool "VERBOSE"
+endchoice
+
+config HID_INITIAL_TRACE_LEVEL
+    int
+    depends on BLUEDROID_ENABLED
+    default 0 if HID_TRACE_LEVEL_NONE
+    default 1 if HID_TRACE_LEVEL_ERROR
+    default 2 if HID_TRACE_LEVEL_WARNING
+    default 3 if HID_TRACE_LEVEL_API
+    default 4 if HID_TRACE_LEVEL_EVENT
+    default 5 if HID_TRACE_LEVEL_DEBUG
+    default 6 if HID_TRACE_LEVEL_VERBOSE
+    default 2
+
+choice APPL_INITIAL_TRACE_LEVEL
+    prompt "APPL layer"
+    default APPL_TRACE_LEVEL_WARNING
+    depends on BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+    help
+        Define BT trace level for APPL layer
+
+config APPL_TRACE_LEVEL_NONE
+    bool "NONE"
+config APPL_TRACE_LEVEL_ERROR
+    bool "ERROR"
+config APPL_TRACE_LEVEL_WARNING
+    bool "WARNING"
+config APPL_TRACE_LEVEL_API
+    bool "API"
+config APPL_TRACE_LEVEL_EVENT
+    bool "EVENT"
+config APPL_TRACE_LEVEL_DEBUG
+    bool "DEBUG"
+config APPL_TRACE_LEVEL_VERBOSE
+    bool "VERBOSE"
+endchoice
+
+config APPL_INITIAL_TRACE_LEVEL
+    int
+    depends on BLUEDROID_ENABLED
+    default 0 if APPL_TRACE_LEVEL_NONE
+    default 1 if APPL_TRACE_LEVEL_ERROR
+    default 2 if APPL_TRACE_LEVEL_WARNING
+    default 3 if APPL_TRACE_LEVEL_API
+    default 4 if APPL_TRACE_LEVEL_EVENT
+    default 5 if APPL_TRACE_LEVEL_DEBUG
+    default 6 if APPL_TRACE_LEVEL_VERBOSE
+    default 2
+
+choice GATT_INITIAL_TRACE_LEVEL
+    prompt "GATT layer"
+    default GATT_TRACE_LEVEL_WARNING
+    depends on BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+    help
+        Define BT trace level for GATT layer
+
+config GATT_TRACE_LEVEL_NONE
+    bool "NONE"
+config GATT_TRACE_LEVEL_ERROR
+    bool "ERROR"
+config GATT_TRACE_LEVEL_WARNING
+    bool "WARNING"
+config GATT_TRACE_LEVEL_API
+    bool "API"
+config GATT_TRACE_LEVEL_EVENT
+    bool "EVENT"
+config GATT_TRACE_LEVEL_DEBUG
+    bool "DEBUG"
+config GATT_TRACE_LEVEL_VERBOSE
+    bool "VERBOSE"
+endchoice
+
+config GATT_INITIAL_TRACE_LEVEL
+    int
+    depends on BLUEDROID_ENABLED
+    default 0 if GATT_TRACE_LEVEL_NONE
+    default 1 if GATT_TRACE_LEVEL_ERROR
+    default 2 if GATT_TRACE_LEVEL_WARNING
+    default 3 if GATT_TRACE_LEVEL_API
+    default 4 if GATT_TRACE_LEVEL_EVENT
+    default 5 if GATT_TRACE_LEVEL_DEBUG
+    default 6 if GATT_TRACE_LEVEL_VERBOSE
+    default 2
+
+choice SMP_INITIAL_TRACE_LEVEL
+    prompt "SMP layer"
+    default SMP_TRACE_LEVEL_WARNING
+    depends on BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+    help
+        Define BT trace level for SMP layer
+
+config SMP_TRACE_LEVEL_NONE
+    bool "NONE"
+config SMP_TRACE_LEVEL_ERROR
+    bool "ERROR"
+config SMP_TRACE_LEVEL_WARNING
+    bool "WARNING"
+config SMP_TRACE_LEVEL_API
+    bool "API"
+config SMP_TRACE_LEVEL_EVENT
+    bool "EVENT"
+config SMP_TRACE_LEVEL_DEBUG
+    bool "DEBUG"
+config SMP_TRACE_LEVEL_VERBOSE
+    bool "VERBOSE"
+endchoice
+
+config SMP_INITIAL_TRACE_LEVEL
+    int
+    depends on BLUEDROID_ENABLED
+    default 0 if SMP_TRACE_LEVEL_NONE
+    default 1 if SMP_TRACE_LEVEL_ERROR
+    default 2 if SMP_TRACE_LEVEL_WARNING
+    default 3 if SMP_TRACE_LEVEL_API
+    default 4 if SMP_TRACE_LEVEL_EVENT
+    default 5 if SMP_TRACE_LEVEL_DEBUG
+    default 6 if SMP_TRACE_LEVEL_VERBOSE
+    default 2
+
+choice BTIF_INITIAL_TRACE_LEVEL
+    prompt "BTIF layer"
+    default BTIF_TRACE_LEVEL_WARNING
+    depends on BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+    help
+        Define BT trace level for BTIF layer
+
+config BTIF_TRACE_LEVEL_NONE
+    bool "NONE"
+config BTIF_TRACE_LEVEL_ERROR
+    bool "ERROR"
+config BTIF_TRACE_LEVEL_WARNING
+    bool "WARNING"
+config BTIF_TRACE_LEVEL_API
+    bool "API"
+config BTIF_TRACE_LEVEL_EVENT
+    bool "EVENT"
+config BTIF_TRACE_LEVEL_DEBUG
+    bool "DEBUG"
+config BTIF_TRACE_LEVEL_VERBOSE
+    bool "VERBOSE"
+endchoice
+
+config BTIF_INITIAL_TRACE_LEVEL
+    int
+    depends on BLUEDROID_ENABLED
+    default 0 if BTIF_TRACE_LEVEL_NONE
+    default 1 if BTIF_TRACE_LEVEL_ERROR
+    default 2 if BTIF_TRACE_LEVEL_WARNING
+    default 3 if BTIF_TRACE_LEVEL_API
+    default 4 if BTIF_TRACE_LEVEL_EVENT
+    default 5 if BTIF_TRACE_LEVEL_DEBUG
+    default 6 if BTIF_TRACE_LEVEL_VERBOSE
+    default 2
+
+choice BTC_INITIAL_TRACE_LEVEL
+    prompt "BTC layer"
+    default BTC_TRACE_LEVEL_WARNING
+    depends on BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+    help
+        Define BT trace level for BTC layer
+
+config BTC_TRACE_LEVEL_NONE
+    bool "NONE"
+config BTC_TRACE_LEVEL_ERROR
+    bool "ERROR"
+config BTC_TRACE_LEVEL_WARNING
+    bool "WARNING"
+config BTC_TRACE_LEVEL_API
+    bool "API"
+config BTC_TRACE_LEVEL_EVENT
+    bool "EVENT"
+config BTC_TRACE_LEVEL_DEBUG
+    bool "DEBUG"
+config BTC_TRACE_LEVEL_VERBOSE
+    bool "VERBOSE"
+endchoice
+
+config BTC_INITIAL_TRACE_LEVEL
+    int
+    depends on BLUEDROID_ENABLED
+    default 0 if BTC_TRACE_LEVEL_NONE
+    default 1 if BTC_TRACE_LEVEL_ERROR
+    default 2 if BTC_TRACE_LEVEL_WARNING
+    default 3 if BTC_TRACE_LEVEL_API
+    default 4 if BTC_TRACE_LEVEL_EVENT
+    default 5 if BTC_TRACE_LEVEL_DEBUG
+    default 6 if BTC_TRACE_LEVEL_VERBOSE
+    default 2
+
+choice OSI_INITIAL_TRACE_LEVEL
+    prompt "OSI layer"
+    default OSI_TRACE_LEVEL_WARNING
+    depends on BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+    help
+        Define BT trace level for OSI layer
+
+config OSI_TRACE_LEVEL_NONE
+    bool "NONE"
+config OSI_TRACE_LEVEL_ERROR
+    bool "ERROR"
+config OSI_TRACE_LEVEL_WARNING
+    bool "WARNING"
+config OSI_TRACE_LEVEL_API
+    bool "API"
+config OSI_TRACE_LEVEL_EVENT
+    bool "EVENT"
+config OSI_TRACE_LEVEL_DEBUG
+    bool "DEBUG"
+config OSI_TRACE_LEVEL_VERBOSE
+    bool "VERBOSE"
+endchoice
+
+config OSI_INITIAL_TRACE_LEVEL
+    int
+    depends on BLUEDROID_ENABLED
+    default 0 if OSI_TRACE_LEVEL_NONE
+    default 1 if OSI_TRACE_LEVEL_ERROR
+    default 2 if OSI_TRACE_LEVEL_WARNING
+    default 3 if OSI_TRACE_LEVEL_API
+    default 4 if OSI_TRACE_LEVEL_EVENT
+    default 5 if OSI_TRACE_LEVEL_DEBUG
+    default 6 if OSI_TRACE_LEVEL_VERBOSE
+    default 2
+
+choice BLUFI_INITIAL_TRACE_LEVEL
+    prompt "BLUFI layer"
+    default BLUFI_TRACE_LEVEL_WARNING
+    depends on BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+    help
+        Define BT trace level for BLUFI layer
+
+config BLUFI_TRACE_LEVEL_NONE
+    bool "NONE"
+config BLUFI_TRACE_LEVEL_ERROR
+    bool "ERROR"
+config BLUFI_TRACE_LEVEL_WARNING
+    bool "WARNING"
+config BLUFI_TRACE_LEVEL_API
+    bool "API"
+config BLUFI_TRACE_LEVEL_EVENT
+    bool "EVENT"
+config BLUFI_TRACE_LEVEL_DEBUG
+    bool "DEBUG"
+config BLUFI_TRACE_LEVEL_VERBOSE
+    bool "VERBOSE"
+endchoice
+
+config BLUFI_INITIAL_TRACE_LEVEL
+    int
+    depends on BLUEDROID_ENABLED
+    default 0 if BLUFI_TRACE_LEVEL_NONE
+    default 1 if BLUFI_TRACE_LEVEL_ERROR
+    default 2 if BLUFI_TRACE_LEVEL_WARNING
+    default 3 if BLUFI_TRACE_LEVEL_API
+    default 4 if BLUFI_TRACE_LEVEL_EVENT
+    default 5 if BLUFI_TRACE_LEVEL_DEBUG
+    default 6 if BLUFI_TRACE_LEVEL_VERBOSE
+    default 2
+
+endmenu #BT DEBUG LOG LEVEL
+
 
 config BT_ACL_CONNECTIONS
     int "BT/BLE MAX ACL CONNECTIONS(1~7)"
@@ -205,6 +996,38 @@ config BT_BLE_DYNAMIC_ENV_MEMORY
     default n
     help
         This select can make the allocation of memory will become more flexible
+
+config BLE_SCAN_DUPLICATE
+    bool "BLE Scan Duplicate Options"
+    depends on BLUEDROID_ENABLED
+    default y
+    help
+        This select enables parameters setting of BLE scan duplicate.
+
+config DUPLICATE_SCAN_CACHE_SIZE
+    int "Maximum number of devices in scan duplicate filter"
+    depends on BLE_SCAN_DUPLICATE
+    range 10 200
+    default 20
+    help
+        Maximum number of devices which can be recorded in scan duplicate filter.
+        When the maximum amount of device in the filter is reached, the cache will be refreshed.
+
+config BLE_MESH_SCAN_DUPLICATE_EN
+    bool "Special duplicate scan mechanism for BLE Mesh scan"
+    depends on BLE_SCAN_DUPLICATE
+    default n
+    help
+        This enables the BLE scan duplicate for special BLE Mesh scan.
+
+config MESH_DUPLICATE_SCAN_CACHE_SIZE
+    int "Maximum number of Mesh adv packets in scan duplicate filter"
+    depends on BLE_MESH_SCAN_DUPLICATE_EN
+    range 10 200
+    default 50
+    help
+        Maximum number of adv packets which can be recorded in duplicate scan cache for BLE Mesh.
+        When the maximum amount of device in the filter is reached, the cache will be refreshed.
 
 config SMP_ENABLE
    bool

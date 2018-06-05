@@ -154,7 +154,7 @@ TEST_CASE("(SD) multiple tasks can use same volume", "[fatfs][test_env=UT_T1_SDM
 
 static void speed_test(void* buf, size_t buf_size, size_t file_size, bool write);
 
-TEST_CASE("(SD) write/read speed test", "[fatfs][sd][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) write/read speed test", "[fatfs][sd][test_env=UT_T1_SDMODE][timeout=60]")
 {
     size_t heap_size;
     HEAP_SIZE_CAPTURE(heap_size);

@@ -15,6 +15,7 @@ Peripherals API
    Remote Control <rmt>
    SDMMC Host <sdmmc_host>
    SD SPI Host <sdspi_host>
+   SDIO Slave <sdio_slave>
    Sigma-delta Modulation <sigmadelta>
    SPI Master <spi_master>
    SPI Slave <spi_slave>

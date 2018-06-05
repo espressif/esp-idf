@@ -1136,7 +1136,7 @@ static UINT8 btc_get_num_aa_frame(void)
         }
         btc_aa_src_cb.media_feeding_state.pcm.counter -= result * pcm_bytes_per_frame;
 
-        LOG_VERBOSE("WRITE %d FRAMES", result);
+        BTC_TRACE_VERBOSE("WRITE %d FRAMES", result);
     }
     break;
 
@@ -1461,7 +1461,7 @@ static void btc_a2dp_source_send_aa_frame(void)
     }
 
     /* send it */
-    LOG_VERBOSE("%s: send %d frames", __FUNCTION__, nb_frame_2_send);
+    BTC_TRACE_VERBOSE("%s: send %d frames", __FUNCTION__, nb_frame_2_send);
     bta_av_ci_src_data_ready(BTA_AV_CHNL_AUDIO);
 }
 
@@ -1540,7 +1540,7 @@ static void btc_a2dp_source_aa_start_tx(void)
     btc_aa_src_cb.media_alarm = osi_alarm_new("aaTx", btc_a2dp_source_alarm_cb, NULL, BTC_MEDIA_TIME_TICK_MS);
 
     if (!btc_aa_src_cb.media_alarm) {
-        LOG_ERROR("%s unable to allocate media alarm.", __func__);
+        BTC_TRACE_ERROR("%s unable to allocate media alarm.", __func__);
         return;
     }
 

@@ -833,7 +833,7 @@ void PORT_DataInd (tRFC_MCB *p_mcb, UINT8 dlci, BT_HDR *p_buf)
         //osi_free (p_buf);
         return;
     } else {
-        RFCOMM_TRACE_ERROR("PORT_DataInd, p_port:%p, p_data_co_callback is null", p_port);
+        RFCOMM_TRACE_DEBUG("PORT_DataInd, p_port:%p, p_data_co_callback is null", p_port);
     }
     /* If client registered callback we can just deliver receive data */
     if (p_port->p_data_callback) {

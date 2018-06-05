@@ -1,0 +1,86 @@
+#Diagram demonstrating reading and returning an item in a No-Split/Allow-Split ring buffer
+#Buffer of 128 bytes, with 4 items of 16, 20, 8 and 24 bytes. First 3 items are read and returned
+
+packetdiag ring_buffer_read_ret_non_byte_buf {
+    node_width = 6
+    node_height = 24
+    default_fontsize = 12
+    colwidth = 128
+
+    #Initial
+    0-7: 8 [color = lightblue];
+    8-23: 16 [color = lightyellow];
+    24-31: 8 [color = lightblue];
+    32-51: 20 [color = lightyellow];
+    52-59: 8 [color = lightblue];
+    60-67: 8 [color = lightyellow];
+    68-75: 8 [color = lightblue];
+    76-99: 24 [color = lightyellow];
+    100-127: 28 Free
+
+    #Read item 1
+    128-135: 8 [color = pink];
+    136-151: 16 [color = pink];
+    152-159: 8 [color = lightblue];
+    160-179: 20 [color = lightyellow];
+    180-187: 8 [color = lightblue];
+    188-195: 8 [color = lightyellow];
+    196-203: 8 [color = lightblue];
+    204-227: 24 [color = lightyellow];
+    228-255: 28 Free
+
+    #Read item 2
+    256-263: 8 [color = pink];
+    264-279: 16 [color = pink];
+    280-287: 8 [color = pink];
+    288-307: 20 [color = pink];
+    308-315: 8 [color = lightblue];
+    316-323: 8 [color = lightyellow];
+    324-331: 8 [color = lightblue];
+    332-355: 24 [color = lightyellow];
+    356-383: 28 Free
+
+    #Read item 3
+    384-391: 8 [color = pink];
+    392-407: 16 [color = pink];
+    408-415: 8 [color = pink];
+    416-435: 20 [color = pink];
+    436-443: 8 [color = pink];
+    444-451: 8 [color = pink];
+    452-459: 8 [color = lightblue];
+    460-483: 24 [color = lightyellow];
+    484-511: 28 Free
+
+    #Return item 2
+    512-519: 8 [color = pink];
+    520-535: 16 [color = pink];
+    536-563: Ret [color = lightgrey];
+    564-571: 8 [color = pink];
+    572-579: 8 [color = pink];
+    580-587: 8 [color = lightblue];
+    588-611: 24 [color = lightyellow];
+    612-639: 28 Free
+
+    #Return item 3
+    640-647: 8 [color = pink];
+    648-663: 16 [color = pink];
+    664-691: Ret [color = lightgrey];
+    692-707: Ret [color = lightgrey];
+    708-715: 8 [color = lightblue];
+    716-739: 24 [color = lightyellow];
+    740-767: 28 Free
+
+    #Return item 1
+    768-791: Ret [color = lightgrey];
+    792-819: Ret [color = lightgrey];
+    820-835: Ret [color = lightgrey];
+    836-843: 8 [color = lightblue];
+    844-867: 24 [color = lightyellow];
+    868-895: 28 Free
+
+    #End state
+    896-963: 68 Free
+    964-971: 8 [color = lightblue];
+    972-995: 24 [color = lightyellow];
+    996-1023: 28 Free
+}

@@ -336,6 +336,8 @@ typedef struct {
     uint8_t *(*get_down_buffer)(uint32_t *, esp_apptrace_tmo_t *);
     esp_err_t (*put_down_buffer)(uint8_t *, esp_apptrace_tmo_t *);
     bool (*host_is_connected)(void);
+    esp_err_t (*status_reg_set)(uint32_t val);
+    esp_err_t (*status_reg_get)(uint32_t *val);
 } esp_apptrace_hw_t;
 
 static uint32_t esp_apptrace_trax_down_buffer_write_nolock(uint8_t *data, uint32_t size);
@@ -345,6 +347,8 @@ static esp_err_t esp_apptrace_trax_put_buffer(uint8_t *ptr, esp_apptrace_tmo_t *
 static bool esp_apptrace_trax_host_is_connected(void);
 static uint8_t *esp_apptrace_trax_down_buffer_get(uint32_t *size, esp_apptrace_tmo_t *tmo);
 static esp_err_t esp_apptrace_trax_down_buffer_put(uint8_t *ptr, esp_apptrace_tmo_t *tmo);
+static esp_err_t esp_apptrace_trax_status_reg_set(uint32_t val);
+static esp_err_t esp_apptrace_trax_status_reg_get(uint32_t *val);
 
 static esp_apptrace_hw_t s_trace_hw[ESP_APPTRACE_HW_MAX] = {
     {
@@ -353,7 +357,9 @@ static esp_apptrace_hw_t s_trace_hw[ESP_APPTRACE_HW_MAX] = {
         .flush_up_buffer = esp_apptrace_trax_flush,
         .get_down_buffer = esp_apptrace_trax_down_buffer_get,
         .put_down_buffer = esp_apptrace_trax_down_buffer_put,
-        .host_is_connected = esp_apptrace_trax_host_is_connected
+        .host_is_connected = esp_apptrace_trax_host_is_connected,
+        .status_reg_set = esp_apptrace_trax_status_reg_set,
+        .status_reg_get = esp_apptrace_trax_status_reg_get
     }
 };
 
@@ -416,6 +422,8 @@ static void esp_apptrace_trax_init()
     eri_write(ERI_TRAX_TRAXCTRL, TRAXCTRL_TRSTP);
     eri_write(ERI_TRAX_TRAXCTRL, TRAXCTRL_TMEN);
     eri_write(ESP_APPTRACE_TRAX_CTRL_REG, ESP_APPTRACE_TRAX_BLOCK_ID(ESP_APPTRACE_TRAX_INBLOCK_START));
+    // this is for OpenOCD to let him know where stub entries vector is resided
+    // must be read by host before any transfer using TRAX
     eri_write(ESP_APPTRACE_TRAX_STAT_REG, 0);
 
     ESP_APPTRACE_LOGI("Initialized TRAX on CPU%d", xPortGetCoreID());
@@ -828,6 +836,18 @@ static bool esp_apptrace_trax_host_is_connected(void)
     return eri_read(ESP_APPTRACE_TRAX_CTRL_REG) & ESP_APPTRACE_TRAX_HOST_CONNECT ? true : false;
 }
 
+static esp_err_t esp_apptrace_trax_status_reg_set(uint32_t val)
+{
+    eri_write(ESP_APPTRACE_TRAX_STAT_REG, val);
+    return ESP_OK;
+}
+
+static esp_err_t esp_apptrace_trax_status_reg_get(uint32_t *val)
+{
+    *val = eri_read(ESP_APPTRACE_TRAX_STAT_REG);
+    return ESP_OK;
+}
+
 static esp_err_t esp_apptrace_trax_dest_init()
 {
     for (int i = 0; i < ESP_APPTRACE_TRAX_BLOCKS_NUM; i++) {
@@ -1164,13 +1184,49 @@ bool esp_apptrace_host_is_connected(esp_apptrace_dest_t dest)
         hw = ESP_APPTRACE_HW(ESP_APPTRACE_HW_TRAX);
 #else
         ESP_APPTRACE_LOGE("Application tracing via TRAX is disabled in menuconfig!");
+        return false;
+#endif
+    } else {
+        ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
+        return false;
+    }
+    return hw->host_is_connected();
+}
+
+esp_err_t esp_apptrace_status_reg_set(esp_apptrace_dest_t dest, uint32_t val)
+{
+    esp_apptrace_hw_t *hw = NULL;
+
+    if (dest == ESP_APPTRACE_DEST_TRAX) {
+#if CONFIG_ESP32_APPTRACE_DEST_TRAX
+        hw = ESP_APPTRACE_HW(ESP_APPTRACE_HW_TRAX);
+#else
+        ESP_APPTRACE_LOGE("Application tracing via TRAX is disabled in menuconfig!");
         return ESP_ERR_NOT_SUPPORTED;
 #endif
     } else {
         ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
         return ESP_ERR_NOT_SUPPORTED;
     }
-    return hw->host_is_connected();
+    return hw->status_reg_set(val);
+}
+
+esp_err_t esp_apptrace_status_reg_get(esp_apptrace_dest_t dest, uint32_t *val)
+{
+    esp_apptrace_hw_t *hw = NULL;
+
+    if (dest == ESP_APPTRACE_DEST_TRAX) {
+#if CONFIG_ESP32_APPTRACE_DEST_TRAX
+        hw = ESP_APPTRACE_HW(ESP_APPTRACE_HW_TRAX);
+#else
+        ESP_APPTRACE_LOGE("Application tracing via TRAX is disabled in menuconfig!");
+        return ESP_ERR_NOT_SUPPORTED;
+#endif
+    } else {
+        ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    return hw->status_reg_get(val);
 }
 
 #endif

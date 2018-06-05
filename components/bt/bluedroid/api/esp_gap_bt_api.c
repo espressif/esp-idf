@@ -19,6 +19,7 @@
 #include "common/bt_trace.h"
 #include "btc/btc_manage.h"
 #include "btc_gap_bt.h"
+#include "btc/btc_storage.h"
 
 #if (BTC_GAP_BT_INCLUDED == TRUE)
 
@@ -176,6 +177,67 @@ esp_err_t esp_bt_gap_set_cod(esp_bt_cod_t cod, esp_bt_cod_mode_t mode)
 esp_err_t esp_bt_gap_get_cod(esp_bt_cod_t *cod)
 {
     return btc_gap_bt_get_cod(cod);
+}
+
+
+esp_err_t esp_bt_gap_read_rssi_delta(esp_bd_addr_t remote_addr)
+{
+    btc_msg_t msg;
+    btc_gap_bt_args_t arg;
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_ACT_READ_RSSI_DELTA;
+    memcpy(arg.read_rssi_delta.bda.address, remote_addr, sizeof(esp_bd_addr_t));
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_bt_gap_remove_bond_device(esp_bd_addr_t bd_addr)
+{
+    btc_msg_t msg;
+    btc_gap_bt_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_ACT_REMOVE_BOND_DEVICE;
+
+    memcpy(arg.rm_bond_device.bda.address, bd_addr, sizeof(esp_bd_addr_t));
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+int esp_bt_gap_get_bond_device_num(void)
+{
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_FAIL;
+    }
+    return btc_storage_get_num_bt_bond_devices();
+}
+
+esp_err_t esp_bt_gap_get_bond_device_list(int *dev_num, esp_bd_addr_t *dev_list)
+{
+    int ret;
+    int dev_num_total;
+
+    if (dev_num == NULL || dev_list == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    dev_num_total = btc_storage_get_num_bt_bond_devices();
+    if (*dev_num > dev_num_total) {
+        *dev_num = dev_num_total;
+    }
+
+    ret = btc_storage_get_bonded_bt_devices_list((bt_bdaddr_t *)dev_list, *dev_num);
+
+    return (ret == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 #endif /* #if BTC_GAP_BT_INCLUDED == TRUE */

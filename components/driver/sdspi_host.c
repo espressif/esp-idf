@@ -67,6 +67,8 @@ static esp_err_t start_command_write_blocks(int slot, sdspi_hw_cmd_t *cmd,
 
 static esp_err_t start_command_default(int slot, int flags, sdspi_hw_cmd_t *cmd);
 
+static esp_err_t poll_cmd_response(int slot, sdspi_hw_cmd_t *cmd);
+
 /// A few helper functions
 
 /// Set CS high for given slot
@@ -429,32 +431,21 @@ static esp_err_t start_command_default(int slot, int flags, sdspi_hw_cmd_t *cmd)
         /* response is a stuff byte from previous transfer, ignore it */
         cmd->r1 = 0xff;
     }
+    if (ret != ESP_OK) {
+        ESP_LOGD(TAG, "%s: spi_device_transmit returned 0x%x", __func__, ret);
+        return ret;
+    }
     if (flags & SDSPI_CMD_FLAG_NORSP) {
         /* no (correct) response expected from the card, so skip polling loop */
         ESP_LOGV(TAG, "%s: ignoring response byte", __func__);
         cmd->r1 = 0x00;
     }
-    int response_delay_bytes = SDSPI_RESPONSE_MAX_DELAY;
-    while ((cmd->r1 & SD_SPI_R1_NO_RESPONSE) != 0 && response_delay_bytes-- > 0) {
-        spi_transaction_t* t = get_transaction(slot);
-        *t = (spi_transaction_t) {
-            .flags = SPI_TRANS_USE_RXDATA | SPI_TRANS_USE_TXDATA,
-            .length = 8,
-        };
-        t->tx_data[0] = 0xff;
-        ret = spi_device_transmit(spi_handle(slot), t);
-        uint8_t r1 = t->rx_data[0];
-        release_transaction(slot);
-        if (ret != ESP_OK) {
-            return ret;
-        }
-        cmd->r1 = r1;
+    ret = poll_cmd_response(slot, cmd);
+    if (ret != ESP_OK) {
+        ESP_LOGD(TAG, "%s: poll_cmd_response returned 0x%x", __func__, ret);
+        return ret;
     }
-    if (cmd->r1 & SD_SPI_R1_NO_RESPONSE) {
-        ESP_LOGD(TAG, "%s: no response token found", __func__);
-        return ESP_ERR_TIMEOUT;
-    }
-    return ret;
+    return ESP_OK;
 }
 
 // Wait until MISO goes high
@@ -561,6 +552,30 @@ static esp_err_t poll_data_token(int slot, spi_transaction_t* t,
     } while (esp_timer_get_time() < t_end);
     ESP_LOGD(TAG, "%s: timeout", __func__);
     return ESP_ERR_TIMEOUT;
+}
+
+static esp_err_t poll_cmd_response(int slot, sdspi_hw_cmd_t *cmd)
+{
+    int response_delay_bytes = SDSPI_RESPONSE_MAX_DELAY;
+    while ((cmd->r1 & SD_SPI_R1_NO_RESPONSE) != 0 && response_delay_bytes-- > 0) {
+        spi_transaction_t* t = get_transaction(slot);
+        *t = (spi_transaction_t) {
+            .flags = SPI_TRANS_USE_RXDATA | SPI_TRANS_USE_TXDATA,
+            .length = 8,
+        };
+        t->tx_data[0] = 0xff;
+        esp_err_t ret = spi_device_transmit(spi_handle(slot), t);
+        uint8_t r1 = t->rx_data[0];
+        release_transaction(slot);
+        if (ret != ESP_OK) {
+            return ret;
+        }
+        cmd->r1 = r1;
+    }
+    if (cmd->r1 & SD_SPI_R1_NO_RESPONSE) {
+        return ESP_ERR_TIMEOUT;
+    }
+    return ESP_OK;
 }
 
 
@@ -759,9 +774,17 @@ static esp_err_t start_command_write_blocks(int slot, sdspi_hw_cmd_t *cmd,
     if (ret != ESP_OK) {
         return ret;
     }
+    wait_for_transactions(slot);
+
+    // Poll for command response which may be delayed up to 8 bytes
+    ret = poll_cmd_response(slot, cmd);
+    if (ret != ESP_OK) {
+        ESP_LOGD(TAG, "%s: poll_cmd_response returned 0x%x", __func__, ret);
+        return ret;
+    }
+
     uint8_t start_token = tx_length <= SDSPI_MAX_DATA_LEN ?
             TOKEN_BLOCK_START : TOKEN_BLOCK_START_WRITE_MULTI;
-    wait_for_transactions(slot);
 
     while (tx_length > 0) {
 
@@ -771,7 +794,7 @@ static esp_err_t start_command_write_blocks(int slot, sdspi_hw_cmd_t *cmd,
             .length = sizeof(start_token) * 8,
             .tx_buffer = &start_token
         };
-        esp_err_t ret = spi_device_queue_trans(spi_handle(slot), t_start_token, 0);
+        ret = spi_device_queue_trans(spi_handle(slot), t_start_token, 0);
         if (ret != ESP_OK) {
             return ret;
         }
@@ -815,12 +838,6 @@ static esp_err_t start_command_write_blocks(int slot, sdspi_hw_cmd_t *cmd,
 
         // Wait for data to be sent
         wait_for_transactions(slot);
-
-        // Check if R1 response for the command was correct
-        if (cmd->r1 != 0) {
-            ESP_LOGD(TAG, "%s: invalid R1 response: 0x%02x", __func__, cmd->r1);
-            return ESP_ERR_INVALID_RESPONSE;
-        }
 
         // Poll for response
         spi_transaction_t* t_poll = get_transaction(slot);

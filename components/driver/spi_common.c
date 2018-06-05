@@ -46,6 +46,9 @@ static const char *SPI_TAG = "spi";
 
 typedef struct spi_device_t spi_device_t;
 
+#define FUNC_SPI    1   //all pins of HSPI and VSPI shares this function number
+#define FUNC_GPIO   PIN_FUNC_GPIO
+
 /*
  Stores a bunch of per-spi-peripheral data.
 */
@@ -220,7 +223,7 @@ bool spicommon_dma_chan_free(int dma_chan)
 
 /*
 Do the common stuff to hook up a SPI host to a bus defined by a bunch of GPIO pins. Feed it a host number and a
-bus config struct and it'll set up the GPIO matrix and enable the device. If a pin is set to non-negative value, 
+bus config struct and it'll set up the GPIO matrix and enable the device. If a pin is set to non-negative value,
 it should be able to be initialized.
 */
 esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_config_t *bus_config, int dma_chan, uint32_t flags, uint32_t* flags_o)
@@ -250,7 +253,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
     }
     if (bus_config->quadhd_io_num>=0) {
         SPI_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(bus_config->quadhd_io_num), "spihd not valid", ESP_ERR_INVALID_ARG);
-        if (bus_config->quadhd_io_num != io_signal[host].spihd_native) native = false;        
+        if (bus_config->quadhd_io_num != io_signal[host].spihd_native) native = false;
     } else {
         quad_pins_exist = false;
         SPI_CHECK((flags&SPICOMMON_BUSFLAG_WPHD)==0, "spihd pin required.", ESP_ERR_INVALID_ARG);
@@ -277,11 +280,11 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
     } else {
         SPI_CHECK((flags&SPICOMMON_BUSFLAG_MISO)==0, "miso pin required.", ESP_ERR_INVALID_ARG);
     }
-    //set flags for DUAL mode according to output-capability of MOSI and MISO pins.   
-    if ( (bus_config->mosi_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->mosi_io_num)) && 
+    //set flags for DUAL mode according to output-capability of MOSI and MISO pins.
+    if ( (bus_config->mosi_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->mosi_io_num)) &&
         (bus_config->miso_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->miso_io_num)) ) {
         temp_flag |= SPICOMMON_BUSFLAG_DUAL;
-    }    
+    }
     //set flags for QUAD mode according to the existence of wp and hd
     if (quad_pins_exist) temp_flag |= SPICOMMON_BUSFLAG_WPHD;
     //check native pins if required.
@@ -291,18 +294,33 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         //All SPI native pin selections resolve to 1, so we put that here instead of trying to figure
         //out which FUNC_GPIOx_xSPIxx to grab; they all are defined to 1 anyway.
         ESP_LOGD(SPI_TAG, "SPI%d use native pins.", host );
-        if (bus_config->mosi_io_num >= 0) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->mosi_io_num], 1);
-        if (bus_config->miso_io_num >= 0) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->miso_io_num], 1);
-        if (bus_config->quadwp_io_num >= 0) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadwp_io_num], 1);
-        if (bus_config->quadhd_io_num >= 0) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadhd_io_num], 1);
-        if (bus_config->sclk_io_num >= 0) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->sclk_io_num], 1);
+        if (bus_config->mosi_io_num >= 0) {
+            gpio_iomux_in(bus_config->mosi_io_num, io_signal[host].spid_in);
+            gpio_iomux_out(bus_config->mosi_io_num, FUNC_SPI, false);
+        }
+        if (bus_config->miso_io_num >= 0) {
+            gpio_iomux_in(bus_config->miso_io_num, io_signal[host].spiq_in);
+            gpio_iomux_out(bus_config->miso_io_num, FUNC_SPI, false);
+        }
+        if (bus_config->quadwp_io_num >= 0) {
+            gpio_iomux_in(bus_config->quadwp_io_num, io_signal[host].spiwp_in);
+            gpio_iomux_out(bus_config->quadwp_io_num, FUNC_SPI, false);
+        }
+        if (bus_config->quadhd_io_num >= 0) {
+            gpio_iomux_in(bus_config->quadhd_io_num, io_signal[host].spihd_in);
+            gpio_iomux_out(bus_config->quadhd_io_num, FUNC_SPI, false);
+        }
+        if (bus_config->sclk_io_num >= 0) {
+            gpio_iomux_in(bus_config->sclk_io_num, io_signal[host].spiclk_in);
+            gpio_iomux_out(bus_config->sclk_io_num, FUNC_SPI, false);
+        }
         temp_flag |= SPICOMMON_BUSFLAG_NATIVE_PINS;
     } else {
         //Use GPIO matrix
-        ESP_LOGD(SPI_TAG, "SPI%d use gpio matrix.", host );        
+        ESP_LOGD(SPI_TAG, "SPI%d use gpio matrix.", host );
         if (bus_config->mosi_io_num >= 0) {
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->mosi_io_num], PIN_FUNC_GPIO);
-            if (mosi_output) {
+            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->mosi_io_num], FUNC_GPIO);
+            if (mosi_output || (temp_flag&SPICOMMON_BUSFLAG_DUAL)) {
                 gpio_set_direction(bus_config->mosi_io_num, GPIO_MODE_INPUT_OUTPUT);
                 gpio_matrix_out(bus_config->mosi_io_num, io_signal[host].spid_out, false, false);
             } else {
@@ -311,29 +329,29 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
             gpio_matrix_in(bus_config->mosi_io_num, io_signal[host].spid_in, false);
         }
         if (bus_config->miso_io_num >= 0) {
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->miso_io_num], PIN_FUNC_GPIO);
-            if (miso_output) {
+            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->miso_io_num], FUNC_GPIO);
+            if (miso_output || (temp_flag&SPICOMMON_BUSFLAG_DUAL)) {
                 gpio_set_direction(bus_config->miso_io_num, GPIO_MODE_INPUT_OUTPUT);
                 gpio_matrix_out(bus_config->miso_io_num, io_signal[host].spiq_out, false, false);
             } else {
                 gpio_set_direction(bus_config->miso_io_num, GPIO_MODE_INPUT);
             }
-            gpio_matrix_in(bus_config->miso_io_num, io_signal[host].spiq_in, false);                
+            gpio_matrix_in(bus_config->miso_io_num, io_signal[host].spiq_in, false);
         }
         if (bus_config->quadwp_io_num >= 0) {
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadwp_io_num], PIN_FUNC_GPIO);
+            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadwp_io_num], FUNC_GPIO);
             gpio_set_direction(bus_config->quadwp_io_num, GPIO_MODE_INPUT_OUTPUT);
             gpio_matrix_out(bus_config->quadwp_io_num, io_signal[host].spiwp_out, false, false);
             gpio_matrix_in(bus_config->quadwp_io_num, io_signal[host].spiwp_in, false);
         }
         if (bus_config->quadhd_io_num >= 0) {
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadhd_io_num], PIN_FUNC_GPIO);
+            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadhd_io_num], FUNC_GPIO);
             gpio_set_direction(bus_config->quadhd_io_num, GPIO_MODE_INPUT_OUTPUT);
             gpio_matrix_out(bus_config->quadhd_io_num, io_signal[host].spihd_out, false, false);
             gpio_matrix_in(bus_config->quadhd_io_num, io_signal[host].spihd_in, false);
         }
         if (bus_config->sclk_io_num >= 0) {
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->sclk_io_num], PIN_FUNC_GPIO);
+            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->sclk_io_num], FUNC_GPIO);
             gpio_set_direction(bus_config->sclk_io_num, GPIO_MODE_INPUT_OUTPUT);
             gpio_matrix_out(bus_config->sclk_io_num, io_signal[host].spiclk_out, false, false);
             gpio_matrix_in(bus_config->sclk_io_num, io_signal[host].spiclk_in, false);
@@ -377,10 +395,11 @@ void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, 
 {
     if (!force_gpio_matrix && cs_io_num == io_signal[host].spics0_native && cs_num == 0) {
         //The cs0s for all SPI peripherals map to pin mux source 1, so we use that instead of a define.
-        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[cs_io_num], 1);
+        gpio_iomux_in(cs_io_num, io_signal[host].spics_in);
+        gpio_iomux_out(cs_io_num, FUNC_SPI, false);
     } else {
         //Use GPIO matrix
-        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[cs_io_num], PIN_FUNC_GPIO);
+        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[cs_io_num], FUNC_GPIO);
         gpio_matrix_out(cs_io_num, io_signal[host].spics_out[cs_num], false, false);
         if (cs_num == 0) gpio_matrix_in(cs_io_num, io_signal[host].spics_in, false);
     }

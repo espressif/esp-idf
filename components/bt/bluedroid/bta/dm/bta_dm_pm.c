@@ -30,9 +30,11 @@
 #include "bta/bta_api.h"
 #include "bta_dm_int.h"
 #include "stack/btm_api.h"
+#include "osi/allocator.h"
 
-#if (BTM_SSR_INCLUDED == TRUE)
+tBTA_DM_CONNECTED_SRVCS bta_dm_conn_srvcs;
 
+#if (BTA_DM_PM_INCLUDED == TRUE)
 static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id, BD_ADDR peer_addr);
 static void bta_dm_pm_set_mode(BD_ADDR peer_addr, tBTA_DM_PM_ACTION pm_mode,
                                tBTA_DM_PM_REQ pm_req);
@@ -45,18 +47,15 @@ static void bta_dm_pm_hid_check(BOOLEAN bScoActive);
 static void bta_dm_pm_set_sniff_policy(tBTA_DM_PEER_DEVICE *p_dev, BOOLEAN bDisable);
 static void bta_dm_pm_stop_timer_by_index(tBTA_PM_TIMER *p_timer,
         UINT8 timer_idx);
-#endif///BTM_SSR_INCLUDED == TRUE
 
 #if (BTM_SSR_INCLUDED == TRUE)
 #if (defined BTA_HH_INCLUDED && BTA_HH_INCLUDED == TRUE)
 #include "../hh/bta_hh_int.h"
 /* BTA_DM_PM_SSR1 will be dedicated for HH SSR setting entry, no other profile can use it */
 #define BTA_DM_PM_SSR_HH      BTA_DM_PM_SSR1
-#endif
+#endif /* (defined BTA_HH_INCLUDED && BTA_HH_INCLUDED == TRUE) */
 static void bta_dm_pm_ssr(BD_ADDR peer_addr);
-
-tBTA_DM_CONNECTED_SRVCS bta_dm_conn_srvcs;
-
+#endif /* (BTM_SSR_INCLUDED == TRUE) */
 
 /*******************************************************************************
 **
@@ -116,27 +115,6 @@ void bta_dm_disable_pm(void)
             bta_dm_cb.pm_timer[i].pm_action[j] = BTA_DM_PM_NO_ACTION;
         }
     }
-}
-
-/*******************************************************************************
-**
-** Function         bta_dm_get_av_count
-**
-** Description      Get the number of connected AV
-**
-**
-** Returns          number of av connections
-**
-*******************************************************************************/
-UINT8 bta_dm_get_av_count(void)
-{
-    UINT8 count = 0;
-    for (int i = 0; i < bta_dm_conn_srvcs.count; i++) {
-        if (bta_dm_conn_srvcs.conn_srvc[i].id == BTA_ID_AV) {
-            ++count;
-        }
-    }
-    return count;
 }
 
 /*******************************************************************************
@@ -337,10 +315,10 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
 {
 
     UINT8 i, j;
-    UINT8 *p = NULL;
     tBTA_DM_PEER_DEVICE *p_dev;
 
 #if (BTM_SSR_INCLUDED == TRUE)
+    UINT8 *p = NULL;
     int               index = BTA_DM_PM_SSR0;
 #endif
 
@@ -492,7 +470,6 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
 ** Returns          void
 **
 *******************************************************************************/
-
 static void bta_dm_pm_set_mode(BD_ADDR peer_addr, tBTA_DM_PM_ACTION pm_request,
                                tBTA_DM_PM_REQ pm_req )
 {
@@ -595,7 +572,7 @@ static void bta_dm_pm_set_mode(BD_ADDR peer_addr, tBTA_DM_PM_ACTION pm_request,
                 if ((timer_idx = bta_pm_action_to_timer_idx(pm_action)) != BTA_DM_PM_MODE_TIMER_MAX) {
                     remaining_ticks = bta_dm_pm_get_remaining_ticks(&bta_dm_cb.pm_timer[i].timer[timer_idx]);
                     if (remaining_ticks < timeout) {
-                        LOG_DEBUG("%s remain 0\n", __func__);
+                        APPL_TRACE_DEBUG("%s remain 0\n", __func__);
                         /* Cancel and restart the timer */
                         /*
                          * TODO: The value of pm_action[timer_idx] is
@@ -702,8 +679,6 @@ static BOOLEAN bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE *p_peer_dev, UINT8 index)
     BTM_ReadPowerMode(p_peer_dev->peer_bdaddr, &mode);
 #if (BTM_SSR_INCLUDED == TRUE)
     p_rem_feat = BTM_ReadRemoteFeatures (p_peer_dev->peer_bdaddr);
-#endif  ///BTM_SSR_INCLUDED == TRUE
-#if (BTM_SSR_INCLUDED == TRUE)
     APPL_TRACE_DEBUG("bta_dm_pm_sniff cur:%d, idx:%d, info:x%x", mode, index, p_peer_dev->info);
     if (mode != BTM_PM_MD_SNIFF ||
             (HCI_SNIFF_SUB_RATE_SUPPORTED(BTM_ReadLocalFeatures ()) && p_rem_feat &&
@@ -805,6 +780,7 @@ static void bta_dm_pm_ssr(BD_ADDR peer_addr)
     }
 }
 #endif
+
 /*******************************************************************************
 **
 ** Function         bta_dm_pm_active
@@ -824,10 +800,7 @@ void bta_dm_pm_active(BD_ADDR peer_addr)
     /* switch to active mode */
     pm.mode = BTM_PM_MD_ACTIVE;
     BTM_SetPowerMode (bta_dm_cb.pm_id, peer_addr, &pm);
-
-
 }
-
 
 /*******************************************************************************
 **
@@ -900,6 +873,7 @@ static void bta_dm_pm_timer_cback(void *p_tle)
         bta_sys_sendmsg(p_buf);
     }
 }
+
 
 /*******************************************************************************
 **
@@ -995,10 +969,8 @@ void bta_dm_pm_btm_status(tBTA_DM_MSG *p_data)
     default:
         break;
     }
-
-
-
 }
+
 
 /*******************************************************************************
 **
@@ -1015,33 +987,7 @@ void bta_dm_pm_timer(tBTA_DM_MSG *p_data)
     APPL_TRACE_EVENT("%s", __func__);
     bta_dm_pm_set_mode(p_data->pm_timer.bd_addr, p_data->pm_timer.pm_request, BTA_DM_PM_EXECUTE);
 }
-#endif  ///BTM_SSR_INCLUDED == TRUE
 
-
-/*******************************************************************************
-**
-** Function         bta_dm_find_peer_device
-**
-** Description      Given an address, find the associated control block.
-**
-** Returns          tBTA_DM_PEER_DEVICE
-**
-*******************************************************************************/
-tBTA_DM_PEER_DEVICE *bta_dm_find_peer_device(BD_ADDR peer_addr)
-{
-    tBTA_DM_PEER_DEVICE *p_dev = NULL;
-
-    for (int i = 0; i < bta_dm_cb.device_list.count; i++) {
-        if (!bdcmp( bta_dm_cb.device_list.peer_device[i].peer_bdaddr, peer_addr)) {
-            p_dev = &bta_dm_cb.device_list.peer_device[i];
-            break;
-        }
-
-    }
-    return p_dev;
-}
-
-#if (BTM_SSR_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_is_sco_active
@@ -1138,7 +1084,52 @@ static void bta_dm_pm_set_sniff_policy(tBTA_DM_PEER_DEVICE *p_dev, BOOLEAN bDisa
     BTM_SetLinkPolicy(p_dev->peer_bdaddr, &policy_setting);
 
 }
-#endif  ///BTM_SSR_INCLUDED == TRUE
+#endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
+
+/*******************************************************************************
+**
+** Function         bta_dm_get_av_count
+**
+** Description      Get the number of connected AV
+**
+**
+** Returns          number of av connections
+**
+*******************************************************************************/
+UINT8 bta_dm_get_av_count(void)
+{
+    UINT8 count = 0;
+    for (int i = 0; i < bta_dm_conn_srvcs.count; i++) {
+        if (bta_dm_conn_srvcs.conn_srvc[i].id == BTA_ID_AV) {
+            ++count;
+        }
+    }
+    return count;
+}
+
+/*******************************************************************************
+**
+** Function         bta_dm_find_peer_device
+**
+** Description      Given an address, find the associated control block.
+**
+** Returns          tBTA_DM_PEER_DEVICE
+**
+*******************************************************************************/
+tBTA_DM_PEER_DEVICE *bta_dm_find_peer_device(BD_ADDR peer_addr)
+{
+    tBTA_DM_PEER_DEVICE *p_dev = NULL;
+
+    for (int i = 0; i < bta_dm_cb.device_list.count; i++) {
+        if (!bdcmp( bta_dm_cb.device_list.peer_device[i].peer_bdaddr, peer_addr)) {
+            p_dev = &bta_dm_cb.device_list.peer_device[i];
+            break;
+        }
+
+    }
+    return p_dev;
+}
+
 
 #if ((defined BLE_INCLUDED) && (BLE_INCLUDED == TRUE) && SDP_INCLUDED == TRUE)
 /*******************************************************************************
@@ -1161,5 +1152,6 @@ tBTA_DM_CONTRL_STATE bta_dm_pm_obtain_controller_state(void)
     APPL_TRACE_DEBUG("bta_dm_pm_obtain_controller_state: %d", cur_state);
     return cur_state;
 }
+
 #endif
 

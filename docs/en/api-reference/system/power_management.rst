@@ -20,11 +20,15 @@ Power management can be enabled at compile time, using :ref:`CONFIG_PM_ENABLE` o
 
 Enabling power management features comes at the cost of increased interrupt latency. Extra latency depends on a number of factors, among which are CPU frequency, single/dual core mode, whether frequency switch needs to be performed or not. Minimal extra latency is 0.2us (when CPU frequency is 240MHz, and frequency scaling is not enabled), maximum extra latency is 40us (when frequency scaling is enabled, and a switch from 40MHz to 80MHz is performed on interrupt entry).
 
-Dynamic frequency scaling (DFS) can be enabled in the application by calling :cpp:func:`esp_pm_configure` function. Its argument is a structure defining frequency scaling settings (for ESP32, minimum and maximum CPU frequencies). Alternatively, :ref:`CONFIG_PM_DFS_INIT_AUTO` option can be enabled in menuconfig.  If enabled, maximal CPU frequency is determined by :ref:`CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ` setting, and minimal CPU frequency is set to the XTAL frequency.
+Dynamic frequency scaling (DFS) and automatic light sleep can be enabled in the application by calling :cpp:func:`esp_pm_configure` function. Its argument is a structure defining frequency scaling settings (for ESP32, minimum and maximum CPU frequencies). Alternatively, :ref:`CONFIG_PM_DFS_INIT_AUTO` option can be enabled in menuconfig.  If enabled, maximal CPU frequency is determined by :ref:`CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ` setting, and minimal CPU frequency is set to the XTAL frequency.
 
 .. note::
 
-	:cpp:func:`esp_pm_configure` function also has provisions for enabling automatic light sleep mode. However this feature is not fully supported yet, so `esp_pm_configure` will return an `ESP_ERR_NOT_SUPPORTED` if automatic light sleep is requested.
+	Automatic light sleep is based on FreeRTOS Tickless Idle functionality. :cpp:func:`esp_pm_configure` will return an `ESP_ERR_NOT_SUPPORTED` error if :ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE` option is not enabled in menuconfig, but automatic light sleep is requested.
+
+.. note::
+
+  In light sleep, peripherals are clock gated, and interrupts (from GPIOs and internal peripherals) will not be generated. Wakeup source described in :doc:`Sleep Modes <sleep_modes>` documentation can be used to wake from light sleep state. For example, EXT0 and EXT1 wakeup source can be used to wake up from a GPIO.
 
 Power Management Locks
 ----------------------
@@ -42,7 +46,7 @@ In ESP32, three types of locks are supported:
   Requests APB frequency to be at the maximal supported value. For ESP32, this is 80 MHz.
 
 ``ESP_PM_NO_LIGHT_SLEEP``
-  Prevents automatic light sleep from being used. Note: currently taking this lock has no effect, as automatic light sleep is never used.
+  Prevents automatic light sleep from being used.
 
 
 Power Management Algorithm for the ESP32
@@ -69,6 +73,13 @@ When dynamic frequency scaling is enabled, CPU frequency will be switched as fol
   1. When ``ESP_PM_CPU_FREQ_MAX`` or ``ESP_PM_APB_FREQ_MAX``  locks are acquired, CPU and APB frequencies will be 80 MHz.
 
   2. Otherwise, frequency will be switched to the minimal value set using :cpp:func:`esp_pm_configure` (usually, XTAL).
+
+- When none of the locks are aquired, and light sleep is enabled in a call to :cpp:func:`esp_pm_configure`, the system will go into light sleep mode. The duration of light sleep will be determined by:
+
+  - FreeRTOS tasks blocked with finite timeouts
+  - Timers registered with :doc:`High resolution timer <esp_timer>` APIs
+
+  Light sleep will duration will be chosen to wake up before the nearest event (task being unblocked, or timer elapses).
 
 
 Dynamic Frequency Scaling and Peripheral Drivers

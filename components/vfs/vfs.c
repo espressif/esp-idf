@@ -19,33 +19,37 @@
 #include <sys/fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/unistd.h>
+#include <sys/lock.h>
+#include <sys/param.h>
 #include <dirent.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include "esp_vfs.h"
+#include "sdkconfig.h"
+
+#ifdef CONFIG_SUPPRESS_SELECT_DEBUG_OUTPUT
+#define LOG_LOCAL_LEVEL ESP_LOG_NONE
+#endif //CONFIG_SUPPRESS_SELECT_DEBUG_OUTPUT
 #include "esp_log.h"
 
-/*
- * File descriptors visible by the applications are composed of two parts.
- * Lower CONFIG_MAX_FD_BITS bits are used for the actual file descriptor.
- * Next (16 - CONFIG_MAX_FD_BITS - 1) bits are used to identify the VFS this
- * descriptor corresponds to.
- * Highest bit is zero.
- * We can only use 16 bits because newlib stores file descriptor as short int.
- */
+static const char *TAG = "vfs";
 
-#ifndef CONFIG_MAX_FD_BITS
-#define CONFIG_MAX_FD_BITS 12
-#endif
-
-#define MAX_VFS_ID_BITS (16 - CONFIG_MAX_FD_BITS - 1)
-// mask of actual file descriptor (e.g. 0x00000fff)
-#define VFS_FD_MASK     ((1 << CONFIG_MAX_FD_BITS) - 1)
-// max number of VFS entries
-#define VFS_MAX_COUNT   ((1 << MAX_VFS_ID_BITS) - 1)
-// mask of VFS id (e.g. 0x00007000)
-#define VFS_INDEX_MASK  (VFS_MAX_COUNT << CONFIG_MAX_FD_BITS)
-#define VFS_INDEX_S     CONFIG_MAX_FD_BITS
-
+#define VFS_MAX_COUNT   8   /* max number of VFS entries (registered filesystems) */
 #define LEN_PATH_PREFIX_IGNORED SIZE_MAX /* special length value for VFS which is never recognised by open() */
+#define FD_TABLE_ENTRY_UNUSED   (fd_table_t) { .permanent = false, .vfs_index = -1, .local_fd = -1 }
+
+typedef uint8_t local_fd_t;
+_Static_assert((1 << (sizeof(local_fd_t)*8)) >= MAX_FDS, "file descriptor type too small");
+
+typedef int8_t vfs_index_t;
+_Static_assert((1 << (sizeof(vfs_index_t)*8)) >= VFS_MAX_COUNT, "VFS index type too small");
+_Static_assert(((vfs_index_t) -1) < 0, "vfs_index_t must be a signed type");
+
+typedef struct {
+    bool permanent;
+    vfs_index_t vfs_index;
+    local_fd_t local_fd;
+} fd_table_t;
 
 typedef struct vfs_entry_ {
     esp_vfs_t vfs;          // contains pointers to VFS functions
@@ -55,10 +59,20 @@ typedef struct vfs_entry_ {
     int offset;             // index of this structure in s_vfs array
 } vfs_entry_t;
 
+typedef struct {
+    bool isset; // none or at least one bit is set in the following 3 fd sets
+    fd_set readfds;
+    fd_set writefds;
+    fd_set errorfds;
+} fds_triple_t;
+
 static vfs_entry_t* s_vfs[VFS_MAX_COUNT] = { 0 };
 static size_t s_vfs_count = 0;
 
-static esp_err_t esp_vfs_register_common(const char* base_path, size_t len, const esp_vfs_t* vfs, void* ctx, int *p_minimum_fd, int *p_maximum_fd)
+static fd_table_t s_fd_table[MAX_FDS] = { [0 ... MAX_FDS-1] = FD_TABLE_ENTRY_UNUSED };
+static _lock_t s_fd_table_lock;
+
+static esp_err_t esp_vfs_register_common(const char* base_path, size_t len, const esp_vfs_t* vfs, void* ctx, int *vfs_index)
 {
     if (len != LEN_PATH_PREFIX_IGNORED) {
         if ((len != 0 && len < 2) || (len > ESP_VFS_PATH_MAX)) {
@@ -96,11 +110,8 @@ static esp_err_t esp_vfs_register_common(const char* base_path, size_t len, cons
     entry->ctx = ctx;
     entry->offset = index;
 
-    if (p_minimum_fd != NULL) {
-        *p_minimum_fd = index << VFS_INDEX_S;
-    }
-    if (p_maximum_fd != NULL) {
-        *p_maximum_fd = (index + 1) << VFS_INDEX_S;
+    if (vfs_index) {
+        *vfs_index = index;
     }
 
     return ESP_OK;
@@ -108,12 +119,54 @@ static esp_err_t esp_vfs_register_common(const char* base_path, size_t len, cons
 
 esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ctx)
 {
-    return esp_vfs_register_common(base_path, strlen(base_path), vfs, ctx, NULL, NULL);
+    return esp_vfs_register_common(base_path, strlen(base_path), vfs, ctx, NULL);
 }
 
-esp_err_t esp_vfs_register_socket_space(const esp_vfs_t *vfs, void *ctx, int *p_min_fd, int *p_max_fd)
+esp_err_t esp_vfs_register_fd_range(const esp_vfs_t *vfs, void *ctx, int min_fd, int max_fd)
 {
-    return esp_vfs_register_common("", LEN_PATH_PREFIX_IGNORED, vfs, ctx, p_min_fd, p_max_fd);
+    if (min_fd < 0 || max_fd < 0 || min_fd > MAX_FDS || max_fd > MAX_FDS || min_fd > max_fd) {
+        ESP_LOGD(TAG, "Invalid arguments: esp_vfs_register_fd_range(0x%x, 0x%x, %d, %d)", (int) vfs, (int) ctx, min_fd, max_fd);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    int index = -1;
+    esp_err_t ret = esp_vfs_register_common("", LEN_PATH_PREFIX_IGNORED, vfs, ctx, &index);
+
+    if (ret == ESP_OK) {
+        _lock_acquire(&s_fd_table_lock);
+        for (int i = min_fd; i < max_fd; ++i) {
+            if (s_fd_table[i].vfs_index != -1) {
+                free(s_vfs[i]);
+                s_vfs[i] = NULL;
+                for (int j = min_fd; j < i; ++j) {
+                    if (s_fd_table[j].vfs_index == index) {
+                        s_fd_table[j] = FD_TABLE_ENTRY_UNUSED;
+                    }
+                }
+                _lock_release(&s_fd_table_lock);
+                ESP_LOGD(TAG, "esp_vfs_register_fd_range cannot set fd %d (used by other VFS)", i);
+                return ESP_ERR_INVALID_ARG;
+            }
+            s_fd_table[i].permanent = true;
+            s_fd_table[i].vfs_index = index;
+            s_fd_table[i].local_fd = i;
+        }
+        _lock_release(&s_fd_table_lock);
+    }
+
+    ESP_LOGD(TAG, "esp_vfs_register_fd_range is successful for range <%d; %d) and VFS ID %d", min_fd, max_fd, index);
+
+    return ret;
+}
+
+esp_err_t esp_vfs_register_with_id(const esp_vfs_t *vfs, void *ctx, esp_vfs_id_t *vfs_id)
+{
+    if (vfs_id == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    *vfs_id = -1;
+    return esp_vfs_register_common("", LEN_PATH_PREFIX_IGNORED, vfs, ctx, vfs_id);
 }
 
 esp_err_t esp_vfs_unregister(const char* base_path)
@@ -126,28 +179,103 @@ esp_err_t esp_vfs_unregister(const char* base_path)
         if (memcmp(base_path, vfs->path_prefix, vfs->path_prefix_len) == 0) {
             free(vfs);
             s_vfs[i] = NULL;
+
+            _lock_acquire(&s_fd_table_lock);
+            // Delete all references from the FD lookup-table
+            for (int j = 0; j < MAX_FDS; ++j) {
+                if (s_fd_table[j].vfs_index == i) {
+                    s_fd_table[j] = FD_TABLE_ENTRY_UNUSED;
+                }
+            }
+            _lock_release(&s_fd_table_lock);
+
             return ESP_OK;
         }
     }
     return ESP_ERR_INVALID_STATE;
 }
 
-static const vfs_entry_t* get_vfs_for_fd(int fd)
+esp_err_t esp_vfs_register_fd(esp_vfs_id_t vfs_id, int *fd)
 {
-    int index = ((fd & VFS_INDEX_MASK) >> VFS_INDEX_S);
-    if (index >= s_vfs_count) {
-        return NULL;
+    if (vfs_id < 0 || vfs_id >= s_vfs_count || fd == NULL) {
+        ESP_LOGD(TAG, "Invalid arguments for esp_vfs_register_fd(%d, 0x%x)", vfs_id, (int) fd);
+        return ESP_ERR_INVALID_ARG;
     }
-    return s_vfs[index];
+
+    esp_err_t ret = ESP_ERR_NO_MEM;
+    _lock_acquire(&s_fd_table_lock);
+    for (int i = 0; i < MAX_FDS; ++i) {
+        if (s_fd_table[i].vfs_index == -1) {
+            s_fd_table[i].permanent = true;
+            s_fd_table[i].vfs_index = vfs_id;
+            s_fd_table[i].local_fd = i;
+            *fd = i;
+            ret = ESP_OK;
+            break;
+        }
+    }
+    _lock_release(&s_fd_table_lock);
+
+    ESP_LOGD(TAG, "esp_vfs_register_fd(%d, 0x%x) finished with %s", vfs_id, (int) fd, esp_err_to_name(ret));
+
+    return ret;
 }
 
-static int translate_fd(const vfs_entry_t* vfs, int fd)
+esp_err_t esp_vfs_unregister_fd(esp_vfs_id_t vfs_id, int fd)
 {
-    if (vfs->vfs.flags & ESP_VFS_FLAG_SHARED_FD_SPACE) {
-        return fd;
-    } else {
-        return fd & VFS_FD_MASK;
+    esp_err_t ret = ESP_ERR_INVALID_ARG;
+
+    if (vfs_id < 0 || vfs_id >= s_vfs_count || fd < 0 || fd >= MAX_FDS) {
+        ESP_LOGD(TAG, "Invalid arguments for esp_vfs_unregister_fd(%d, %d)", vfs_id, fd);
+        return ret;
     }
+
+    _lock_acquire(&s_fd_table_lock);
+    fd_table_t *item = s_fd_table + fd;
+    if (item->permanent == true && item->vfs_index == vfs_id && item->local_fd == fd) {
+        *item = FD_TABLE_ENTRY_UNUSED;
+        ret = ESP_OK;
+    }
+    _lock_release(&s_fd_table_lock);
+
+    ESP_LOGD(TAG, "esp_vfs_unregister_fd(%d, %d) finished with %s", vfs_id, fd, esp_err_to_name(ret));
+
+    return ret;
+}
+
+static inline const vfs_entry_t *get_vfs_for_index(int index)
+{
+    if (index < 0 || index >= s_vfs_count) {
+        return NULL;
+    } else {
+        return s_vfs[index];
+    }
+}
+
+static inline bool fd_valid(int fd)
+{
+    return (fd < MAX_FDS) && (fd >= 0);
+}
+
+static const vfs_entry_t *get_vfs_for_fd(int fd)
+{
+    const vfs_entry_t *vfs = NULL;
+    if (fd_valid(fd)) {
+        const int index = s_fd_table[fd].vfs_index; // single read -> no locking is required
+        vfs = get_vfs_for_index(index);
+    }
+    return vfs;
+}
+
+static inline int get_local_fd(const vfs_entry_t *vfs, int fd)
+{
+    int local_fd = -1;
+
+    if (vfs && fd_valid(fd)) {
+        local_fd = s_fd_table[fd].local_fd; // single read -> no locking is required
+    }
+
+    return local_fd;
 }
 
 static const char* translate_path(const vfs_entry_t* vfs, const char* src_path)
@@ -248,28 +376,44 @@ static const vfs_entry_t* get_vfs_for_path(const char* path)
 
 int esp_vfs_open(struct _reent *r, const char * path, int flags, int mode)
 {
-    const vfs_entry_t* vfs = get_vfs_for_path(path);
+    const vfs_entry_t *vfs = get_vfs_for_path(path);
     if (vfs == NULL) {
         __errno_r(r) = ENOENT;
         return -1;
     }
-    const char* path_within_vfs = translate_path(vfs, path);
-    int ret;
-    CHECK_AND_CALL(ret, r, vfs, open, path_within_vfs, flags, mode);
-    if (ret < 0) {
-        return ret;
+    const char *path_within_vfs = translate_path(vfs, path);
+    int fd_within_vfs;
+    CHECK_AND_CALL(fd_within_vfs, r, vfs, open, path_within_vfs, flags, mode);
+    if (fd_within_vfs >= 0) {
+        _lock_acquire(&s_fd_table_lock);
+        for (int i = 0; i < MAX_FDS; ++i) {
+            if (s_fd_table[i].vfs_index == -1) {
+                s_fd_table[i].permanent = false;
+                s_fd_table[i].vfs_index = vfs->offset;
+                s_fd_table[i].local_fd = fd_within_vfs;
+                _lock_release(&s_fd_table_lock);
+                return i;
+            }
+        }
+        _lock_release(&s_fd_table_lock);
+        int ret;
+        CHECK_AND_CALL(ret, r, vfs, close, fd_within_vfs);
+        (void) ret; // remove "set but not used" warning
+        __errno_r(r) = ENOMEM;
+        return -1;
     }
-    return ret + (vfs->offset << VFS_INDEX_S);
+    __errno_r(r) = ENOENT;
+    return -1;
 }
 
 ssize_t esp_vfs_write(struct _reent *r, int fd, const void * data, size_t size)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
-    if (vfs == NULL) {
+    const int local_fd = get_local_fd(vfs, fd);
+    if (vfs == NULL || local_fd < 0) {
         __errno_r(r) = EBADF;
         return -1;
     }
-    int local_fd = translate_fd(vfs, fd);
     ssize_t ret;
     CHECK_AND_CALL(ret, r, vfs, write, local_fd, data, size);
     return ret;
@@ -278,11 +422,11 @@ ssize_t esp_vfs_write(struct _reent *r, int fd, const void * data, size_t size)
 off_t esp_vfs_lseek(struct _reent *r, int fd, off_t size, int mode)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
-    if (vfs == NULL) {
+    const int local_fd = get_local_fd(vfs, fd);
+    if (vfs == NULL || local_fd < 0) {
         __errno_r(r) = EBADF;
         return -1;
     }
-    int local_fd = translate_fd(vfs, fd);
     off_t ret;
     CHECK_AND_CALL(ret, r, vfs, lseek, local_fd, size, mode);
     return ret;
@@ -291,11 +435,11 @@ off_t esp_vfs_lseek(struct _reent *r, int fd, off_t size, int mode)
 ssize_t esp_vfs_read(struct _reent *r, int fd, void * dst, size_t size)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
-    if (vfs == NULL) {
+    const int local_fd = get_local_fd(vfs, fd);
+    if (vfs == NULL || local_fd < 0) {
         __errno_r(r) = EBADF;
         return -1;
     }
-    int local_fd = translate_fd(vfs, fd);
     ssize_t ret;
     CHECK_AND_CALL(ret, r, vfs, read, local_fd, dst, size);
     return ret;
@@ -305,24 +449,30 @@ ssize_t esp_vfs_read(struct _reent *r, int fd, void * dst, size_t size)
 int esp_vfs_close(struct _reent *r, int fd)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
-    if (vfs == NULL) {
+    const int local_fd = get_local_fd(vfs, fd);
+    if (vfs == NULL || local_fd < 0) {
         __errno_r(r) = EBADF;
         return -1;
     }
-    int local_fd = translate_fd(vfs, fd);
     int ret;
     CHECK_AND_CALL(ret, r, vfs, close, local_fd);
+
+    _lock_acquire(&s_fd_table_lock);
+    if (!s_fd_table[fd].permanent) {
+        s_fd_table[fd] = FD_TABLE_ENTRY_UNUSED;
+    }
+    _lock_release(&s_fd_table_lock);
     return ret;
 }
 
 int esp_vfs_fstat(struct _reent *r, int fd, struct stat * st)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
-    if (vfs == NULL) {
+    const int local_fd = get_local_fd(vfs, fd);
+    if (vfs == NULL || local_fd < 0) {
         __errno_r(r) = EBADF;
         return -1;
     }
-    int local_fd = translate_fd(vfs, fd);
     int ret;
     CHECK_AND_CALL(ret, r, vfs, fstat, local_fd, st);
     return ret;
@@ -404,14 +554,14 @@ DIR* opendir(const char* name)
     DIR* ret;
     CHECK_AND_CALLP(ret, r, vfs, opendir, path_within_vfs);
     if (ret != NULL) {
-        ret->dd_vfs_idx = vfs->offset << VFS_INDEX_S;
+        ret->dd_vfs_idx = vfs->offset;
     }
     return ret;
 }
 
 struct dirent* readdir(DIR* pdir)
 {
-    const vfs_entry_t* vfs = get_vfs_for_fd(pdir->dd_vfs_idx);
+    const vfs_entry_t* vfs = get_vfs_for_index(pdir->dd_vfs_idx);
     struct _reent* r = __getreent();
     if (vfs == NULL) {
        __errno_r(r) = EBADF;
@@ -424,7 +574,7 @@ struct dirent* readdir(DIR* pdir)
 
 int readdir_r(DIR* pdir, struct dirent* entry, struct dirent** out_dirent)
 {
-    const vfs_entry_t* vfs = get_vfs_for_fd(pdir->dd_vfs_idx);
+    const vfs_entry_t* vfs = get_vfs_for_index(pdir->dd_vfs_idx);
     struct _reent* r = __getreent();
     if (vfs == NULL) {
         errno = EBADF;
@@ -437,7 +587,7 @@ int readdir_r(DIR* pdir, struct dirent* entry, struct dirent** out_dirent)
 
 long telldir(DIR* pdir)
 {
-    const vfs_entry_t* vfs = get_vfs_for_fd(pdir->dd_vfs_idx);
+    const vfs_entry_t* vfs = get_vfs_for_index(pdir->dd_vfs_idx);
     struct _reent* r = __getreent();
     if (vfs == NULL) {
         errno = EBADF;
@@ -450,7 +600,7 @@ long telldir(DIR* pdir)
 
 void seekdir(DIR* pdir, long loc)
 {
-    const vfs_entry_t* vfs = get_vfs_for_fd(pdir->dd_vfs_idx);
+    const vfs_entry_t* vfs = get_vfs_for_index(pdir->dd_vfs_idx);
     struct _reent* r = __getreent();
     if (vfs == NULL) {
         errno = EBADF;
@@ -466,7 +616,7 @@ void rewinddir(DIR* pdir)
 
 int closedir(DIR* pdir)
 {
-    const vfs_entry_t* vfs = get_vfs_for_fd(pdir->dd_vfs_idx);
+    const vfs_entry_t* vfs = get_vfs_for_index(pdir->dd_vfs_idx);
     struct _reent* r = __getreent();
     if (vfs == NULL) {
         errno = EBADF;
@@ -508,12 +658,12 @@ int rmdir(const char* name)
 int fcntl(int fd, int cmd, ...)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
+    const int local_fd = get_local_fd(vfs, fd);
     struct _reent* r = __getreent();
-    if (vfs == NULL) {
+    if (vfs == NULL || local_fd < 0) {
         __errno_r(r) = EBADF;
         return -1;
     }
-    int local_fd = translate_fd(vfs, fd);
     int ret;
     va_list args;
     va_start(args, cmd);
@@ -525,12 +675,12 @@ int fcntl(int fd, int cmd, ...)
 int ioctl(int fd, int cmd, ...)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
+    const int local_fd = get_local_fd(vfs, fd);
     struct _reent* r = __getreent();
-    if (vfs == NULL) {
+    if (vfs == NULL || local_fd < 0) {
         __errno_r(r) = EBADF;
         return -1;
     }
-    int local_fd = translate_fd(vfs, fd);
     int ret;
     va_list args;
     va_start(args, cmd);
@@ -542,13 +692,291 @@ int ioctl(int fd, int cmd, ...)
 int fsync(int fd)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
+    const int local_fd = get_local_fd(vfs, fd);
     struct _reent* r = __getreent();
-    if (vfs == NULL) {
+    if (vfs == NULL || local_fd < 0) {
         __errno_r(r) = EBADF;
         return -1;
     }
-    int local_fd = translate_fd(vfs, fd);
     int ret;
     CHECK_AND_CALL(ret, r, vfs, fsync, local_fd);
     return ret;
+}
+
+int access(const char *path, int amode)
+{
+    int ret;
+    const vfs_entry_t* vfs = get_vfs_for_path(path);
+    struct _reent* r = __getreent();
+    if (vfs == NULL) {
+        __errno_r(r) = ENOENT;
+        return -1;
+    }
+    const char* path_within_vfs = translate_path(vfs, path);
+    CHECK_AND_CALL(ret, r, vfs, access, path_within_vfs, amode);
+    return ret;
+}
+
+static void call_end_selects(int end_index, const fds_triple_t *vfs_fds_triple)
+{
+    for (int i = 0; i < end_index; ++i) {
+        const vfs_entry_t *vfs = get_vfs_for_index(i);
+        const fds_triple_t *item = &vfs_fds_triple[i];
+        if (vfs && vfs->vfs.end_select && item->isset) {
+            vfs->vfs.end_select();
+        }
+    }
+}
+
+static inline bool esp_vfs_safe_fd_isset(int fd, const fd_set *fds)
+{
+    return fds && FD_ISSET(fd, fds);
+}
+
+static int set_global_fd_sets(const fds_triple_t *vfs_fds_triple, int size, fd_set *readfds, fd_set *writefds, fd_set *errorfds)
+{
+    int ret = 0;
+
+    for (int i = 0; i < size; ++i) {
+        const fds_triple_t *item = &vfs_fds_triple[i];
+        if (item->isset) {
+            for (int fd = 0; fd < MAX_FDS; ++fd) {
+                const int local_fd = s_fd_table[fd].local_fd; // single read -> no locking is required
+                if (readfds && esp_vfs_safe_fd_isset(local_fd, &item->readfds)) {
+                    ESP_LOGD(TAG, "FD %d in readfds was set from VFS ID %d", fd, i);
+                    FD_SET(fd, readfds);
+                    ++ret;
+                }
+                if (writefds && esp_vfs_safe_fd_isset(local_fd, &item->writefds)) {
+                    ESP_LOGD(TAG, "FD %d in writefds was set from VFS ID %d", fd, i);
+                    FD_SET(fd, writefds);
+                    ++ret;
+                }
+                if (errorfds && esp_vfs_safe_fd_isset(local_fd, &item->errorfds)) {
+                    ESP_LOGD(TAG, "FD %d in errorfds was set from VFS ID %d", fd, i);
+                    FD_SET(fd, errorfds);
+                    ++ret;
+                }
+            }
+        }
+    }
+
+    return ret;
+}
+
+static void esp_vfs_log_fd_set(const char *fds_name, const fd_set *fds)
+{
+    if (fds_name && fds) {
+        ESP_LOGD(TAG, "FDs in %s =", fds_name);
+        for (int i = 0; i < MAX_FDS; ++i) {
+            if (esp_vfs_safe_fd_isset(i, fds)) {
+                ESP_LOGD(TAG, "%d", i);
+            }
+        }
+    }
+}
+
+int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout)
+{
+    int ret = 0;
+    struct _reent* r = __getreent();
+
+    ESP_LOGD(TAG, "esp_vfs_select starts with nfds = %d", nfds);
+    if (timeout) {
+        ESP_LOGD(TAG, "timeout is %lds + %ldus", timeout->tv_sec, timeout->tv_usec);
+    }
+    esp_vfs_log_fd_set("readfds", readfds);
+    esp_vfs_log_fd_set("writefds", writefds);
+    esp_vfs_log_fd_set("errorfds", errorfds);
+
+    if (nfds > MAX_FDS || nfds < 0) {
+        ESP_LOGD(TAG, "incorrect nfds");
+        __errno_r(r) = EINVAL;
+        return -1;
+    }
+
+    fds_triple_t *vfs_fds_triple;
+    if ((vfs_fds_triple = calloc(s_vfs_count, sizeof(fds_triple_t))) == NULL) {
+        __errno_r(r) = ENOMEM;
+        ESP_LOGD(TAG, "calloc is unsuccessful");
+        return -1;
+    }
+
+    int (*socket_select)(int, fd_set *, fd_set *, fd_set *, struct timeval *) = NULL;
+    for (int fd = 0; fd < nfds; ++fd) {
+        _lock_acquire(&s_fd_table_lock);
+        const bool is_socket_fd = s_fd_table[fd].permanent;
+        const int vfs_index = s_fd_table[fd].vfs_index;
+        const int local_fd = s_fd_table[fd].local_fd;
+        _lock_release(&s_fd_table_lock);
+
+        if (vfs_index < 0) {
+            continue;
+        }
+
+        if (is_socket_fd) {
+            if (!socket_select) {
+                // no socket_select found yet so take a look
+                if (esp_vfs_safe_fd_isset(fd, readfds) ||
+                        esp_vfs_safe_fd_isset(fd, writefds) ||
+                        esp_vfs_safe_fd_isset(fd, errorfds)) {
+                    const vfs_entry_t *vfs = s_vfs[vfs_index];
+                    socket_select = vfs->vfs.socket_select;
+                }
+            }
+            continue;
+        }
+
+        fds_triple_t *item = &vfs_fds_triple[vfs_index]; // FD sets for VFS which belongs to fd
+        if (esp_vfs_safe_fd_isset(fd, readfds)) {
+            item->isset = true;
+            FD_SET(local_fd, &item->readfds);
+            FD_CLR(fd, readfds);
+            ESP_LOGD(TAG, "removing %d from readfds and adding as local FD %d to fd_set of VFS ID %d", fd, local_fd, vfs_index);
+        }
+        if (esp_vfs_safe_fd_isset(fd, writefds)) {
+            item->isset = true;
+            FD_SET(local_fd, &item->writefds);
+            FD_CLR(fd, writefds);
+            ESP_LOGD(TAG, "removing %d from writefds and adding as local FD %d to fd_set of VFS ID %d", fd, local_fd, vfs_index);
+        }
+        if (esp_vfs_safe_fd_isset(fd, errorfds)) {
+            item->isset = true;
+            FD_SET(local_fd, &item->errorfds);
+            FD_CLR(fd, errorfds);
+            ESP_LOGD(TAG, "removing %d from errorfds and adding as local FD %d to fd_set of VFS ID %d", fd, local_fd, vfs_index);
+        }
+    }
+
+    // all non-socket VFSs have their FD sets in vfs_fds_triple
+    // the global readfds, writefds and errorfds contain only socket FDs (if
+    // there any)
+
+    /* Semaphore used for waiting select events from other VFS drivers when socket
+     * select is not used (not registered or socket FDs are not observed by the
+     * given call of select)
+     */
+    SemaphoreHandle_t select_sem = NULL;
+
+    if (!socket_select) {
+        // There is no socket VFS registered or select() wasn't called for
+        // any socket. Therefore, we will use our own signalization.
+        if ((select_sem = xSemaphoreCreateBinary()) == NULL) {
+            free(vfs_fds_triple);
+            __errno_r(r) = ENOMEM;
+            ESP_LOGD(TAG, "cannot create select_sem");
+            return -1;
+        }
+    }
+
+    for (int i = 0; i < s_vfs_count; ++i) {
+        const vfs_entry_t *vfs = get_vfs_for_index(i);
+        fds_triple_t *item = &vfs_fds_triple[i];
+
+        if (vfs && vfs->vfs.start_select && item->isset) {
+            // call start_select for all non-socket VFSs with has at least one FD set in readfds, writefds, or errorfds
+            // note: it can point to socket VFS but item->isset will be false for that
+            ESP_LOGD(TAG, "calling start_select for VFS ID %d with the following local FDs", i);
+            esp_vfs_log_fd_set("readfds", &item->readfds);
+            esp_vfs_log_fd_set("writefds", &item->writefds);
+            esp_vfs_log_fd_set("errorfds", &item->errorfds);
+            esp_err_t err = vfs->vfs.start_select(nfds, &item->readfds, &item->writefds, &item->errorfds, &select_sem);
+
+            if (err != ESP_OK) {
+                call_end_selects(i, vfs_fds_triple);
+                (void) set_global_fd_sets(vfs_fds_triple, s_vfs_count, readfds, writefds, errorfds);
+                if (select_sem) {
+                    vSemaphoreDelete(select_sem);
+                    select_sem = NULL;
+                }
+                free(vfs_fds_triple);
+                __errno_r(r) = EINTR;
+                ESP_LOGD(TAG, "start_select failed");
+                return -1;
+            }
+        }
+    }
+
+    if (socket_select) {
+        ESP_LOGD(TAG, "calling socket_select with the following FDs");
+        esp_vfs_log_fd_set("readfds", readfds);
+        esp_vfs_log_fd_set("writefds", writefds);
+        esp_vfs_log_fd_set("errorfds", errorfds);
+        ret = socket_select(nfds, readfds, writefds, errorfds, timeout);
+        ESP_LOGD(TAG, "socket_select returned %d and the FDs are the following", ret);
+        esp_vfs_log_fd_set("readfds", readfds);
+        esp_vfs_log_fd_set("writefds", writefds);
+        esp_vfs_log_fd_set("errorfds", errorfds);
+    } else {
+        if (readfds) {
+            FD_ZERO(readfds);
+        }
+        if (writefds) {
+            FD_ZERO(writefds);
+        }
+        if (errorfds) {
+            FD_ZERO(errorfds);
+        }
+
+        TickType_t ticks_to_wait = portMAX_DELAY;
+        if (timeout) {
+            uint32_t timeout_ms = timeout->tv_sec * 1000 + timeout->tv_usec / 1000;
+            ticks_to_wait = timeout_ms / portTICK_PERIOD_MS;
+            ESP_LOGD(TAG, "timeout is %dms", timeout_ms);
+        }
+        ESP_LOGD(TAG, "waiting without calling socket_select");
+        xSemaphoreTake(select_sem, ticks_to_wait);
+    }
+
+    call_end_selects(s_vfs_count, vfs_fds_triple); // for VFSs for start_select was called before
+    if (ret >= 0) {
+        ret += set_global_fd_sets(vfs_fds_triple, s_vfs_count, readfds, writefds, errorfds);
+    }
+    if (select_sem) {
+        vSemaphoreDelete(select_sem);
+        select_sem = NULL;
+    }
+    free(vfs_fds_triple);
+
+    ESP_LOGD(TAG, "esp_vfs_select returns %d", ret);
+    esp_vfs_log_fd_set("readfds", readfds);
+    esp_vfs_log_fd_set("writefds", writefds);
+    esp_vfs_log_fd_set("errorfds", errorfds);
+    return ret;
+}
+
+void esp_vfs_select_triggered(SemaphoreHandle_t *signal_sem)
+{
+    if (signal_sem && (*signal_sem)) {
+        xSemaphoreGive(*signal_sem);
+    } else {
+        // Another way would be to go through s_fd_table and find the VFS
+        // which has a permanent FD. But in order to avoid to lock
+        // s_fd_table_lock we go through the VFS table.
+        for (int i = 0; i < s_vfs_count; ++i) {
+            const vfs_entry_t *vfs = s_vfs[i];
+            if (vfs != NULL && vfs->vfs.stop_socket_select != NULL) {
+                vfs->vfs.stop_socket_select();
+                break;
+            }
+        }
+    }
+}
+
+void esp_vfs_select_triggered_isr(SemaphoreHandle_t *signal_sem, BaseType_t *woken)
+{
+    if (signal_sem && (*signal_sem)) {
+        xSemaphoreGiveFromISR(*signal_sem, woken);
+    } else {
+        // Another way would be to go through s_fd_table and find the VFS
+        // which has a permanent FD. But in order to avoid to lock
+        // s_fd_table_lock we go through the VFS table.
+        for (int i = 0; i < s_vfs_count; ++i) {
+            const vfs_entry_t *vfs = s_vfs[i];
+            if (vfs != NULL && vfs->vfs.stop_socket_select_isr != NULL) {
+                vfs->vfs.stop_socket_select_isr(woken);
+                break;
+            }
+        }
+    }
 }

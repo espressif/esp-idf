@@ -27,7 +27,8 @@ RESET_PATTERN = re.compile(r"(ets [\w]{3}\s+[\d]{1,2} [\d]{4} [\d]{2}:[\d]{2}:[\
 EXCEPTION_PATTERN = re.compile(r"(Guru Meditation Error: Core\s+\d panic'ed \([\w].*?\))")
 ABORT_PATTERN = re.compile(r"(abort\(\) was called at PC 0x[a-eA-E\d]{8} on core \d)")
 FINISH_PATTERN = re.compile(r"1 Tests (\d) Failures (\d) Ignored")
-UT_TIMEOUT = 30
+
+STARTUP_TIMEOUT=10
 
 
 def format_test_case_config(test_case_data):
@@ -130,6 +131,7 @@ def run_unit_test_cases(env, extra_data):
     failed_cases = []
 
     for ut_config in case_config:
+        Utility.console_log("Running unit test for config: " + ut_config, "O")
         dut = env.get_dut("unit-test-app", app_path=ut_config)
         dut.start_app()
 
@@ -142,7 +144,7 @@ def run_unit_test_cases(env, extra_data):
             # to determine if DUT is ready to test.
             dut.write("-", flush=False)
             dut.expect_any(UT_APP_BOOT_UP_DONE,
-                           "0 Tests 0 Failures 0 Ignored")
+                           "0 Tests 0 Failures 0 Ignored", timeout=STARTUP_TIMEOUT)
 
             # run test case
             dut.write("\"{}\"".format(one_case["name"]))
@@ -203,7 +205,7 @@ def run_unit_test_cases(env, extra_data):
                                    (ABORT_PATTERN, handle_exception_reset),
                                    (FINISH_PATTERN, handle_test_finish),
                                    (UT_APP_BOOT_UP_DONE, handle_reset_finish),
-                                   timeout=UT_TIMEOUT)
+                                   timeout=one_case["timeout"])
                 except ExpectTimeout:
                     Utility.console_log("Timeout in expect", color="orange")
                     one_case_finish(False)
@@ -223,7 +225,7 @@ class Handler(threading.Thread):
     SEND_SIGNAL_PATTERN = re.compile(r'Send signal: \[(.+)\]!')
     FINISH_PATTERN = re.compile(r"1 Tests (\d) Failures (\d) Ignored")
 
-    def __init__(self, dut, sent_signal_list, lock, parent_case_name, child_case_index, timeout=30):
+    def __init__(self, dut, sent_signal_list, lock, parent_case_name, child_case_index, timeout):
         self.dut = dut
         self.sent_signal_list = sent_signal_list
         self.lock = lock
@@ -288,7 +290,7 @@ class Handler(threading.Thread):
                                     (self.WAIT_SIGNAL_PATTERN, device_wait_action),  # wait signal pattern
                                     (self.SEND_SIGNAL_PATTERN, device_send_action),  # send signal pattern
                                     (self.FINISH_PATTERN, handle_device_test_finish),  # test finish pattern
-                                    timeout=UT_TIMEOUT)
+                                    timeout=self.timeout)
             except ExpectTimeout:
                 Utility.console_log("Timeout in expect", color="orange")
                 one_device_case_finish(False)
@@ -321,7 +323,7 @@ def case_run(duts, ut_config, env, one_case, failed_cases):
     for i in range(case_num):
         dut = get_dut(duts, env, "dut%d" % i, ut_config)
         threads.append(Handler(dut, send_signal_list, lock,
-                               parent_case, i))
+                               parent_case, i, one_case["timeout"]))
     for thread in threads:
         thread.setDaemon(True)
         thread.start()
@@ -364,6 +366,7 @@ def run_multiple_devices_cases(env, extra_data):
     case_config = format_test_case_config(extra_data)
     DUTS = {}
     for ut_config in case_config:
+        Utility.console_log("Running unit test for config: " + ut_config, "O")
         for one_case in case_config[ut_config]:
             case_run(DUTS, ut_config, env, one_case, failed_cases)
 
@@ -395,6 +398,7 @@ def run_multiple_stage_cases(env, extra_data):
     failed_cases = []
 
     for ut_config in case_config:
+        Utility.console_log("Running unit test for config: " + ut_config, "O")
         dut = env.get_dut("unit-test-app", app_path=ut_config)
         dut.start_app()
 
@@ -487,7 +491,7 @@ def run_multiple_stage_cases(env, extra_data):
                                        (ABORT_PATTERN, handle_exception_reset),
                                        (FINISH_PATTERN, handle_test_finish),
                                        (UT_APP_BOOT_UP_DONE, handle_next_stage),
-                                       timeout=UT_TIMEOUT)
+                                       timeout=one_case["timeout"])
                     except ExpectTimeout:
                         Utility.console_log("Timeout in expect", color="orange")
                         one_case_finish(False)

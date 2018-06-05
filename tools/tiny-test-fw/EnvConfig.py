@@ -53,7 +53,7 @@ class Config(object):
         try:
             with open(config_file) as f:
                 configs = yaml.load(f)[env_name]
-        except (OSError, TypeError):
+        except (OSError, TypeError, IOError):
             configs = dict()
         return configs
 

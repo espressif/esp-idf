@@ -4,6 +4,7 @@
 
 #include <esp_types.h>
 #include <stdio.h>
+#include "string.h"
 #include "rom/ets_sys.h"
 
 #include "freertos/FreeRTOS.h"
@@ -12,7 +13,7 @@
 #include "freertos/queue.h"
 #include "freertos/xtensa_api.h"
 #include "unity.h"
-
+#include "bootloader_common.h"
 #include "esp_partition.h"
 #include "esp_ota_ops.h"
 #include "esp_image_format.h"
@@ -47,3 +48,47 @@ TEST_CASE("Verify unit test app image", "[bootloader_support]")
     TEST_ASSERT_TRUE(data.image_len <= running->size);
 }
 
+void check_label_search (int num_test, const char *list, const char *t_label, bool result)
+{
+    // gen_esp32part.py trims up to 16 characters
+    // and the string may not have a null terminal symbol.
+    // below is cutting as it does the generator.
+    char label[16 + 1] = {0};
+    strncpy(label, t_label, sizeof(label) - 1);
+
+    bool ret = bootloader_common_label_search(list, label);
+    if (ret != result) {
+        printf("%d) %s  |  %s \n", num_test, list, label);
+    }
+    TEST_ASSERT_MESSAGE(ret == result, "Test failed");
+}
+
+TEST_CASE("Test label_search", "[bootloader_support]")
+{
+    TEST_ASSERT_FALSE(bootloader_common_label_search(NULL, NULL));
+    TEST_ASSERT_FALSE(bootloader_common_label_search("nvs", NULL));
+
+    check_label_search(1,   "nvs",                   "nvs",      true);
+    check_label_search(2,   "nvs, ",                 "nvs",      true);
+    check_label_search(3,   "nvs1",                  "nvs",      false);
+    check_label_search(3,   "nvs1, ",                "nvs",      false);
+    check_label_search(4,   "nvs1nvs1, phy",         "nvs1",     false);
+    check_label_search(5,   "nvs1, nvs1, phy",       "nvs1",     true);
+    check_label_search(6,   "nvs12, nvs12, phy",     "nvs1",     false);
+    check_label_search(7,   "nvs12, nvs1, phy",      "nvs1",     true);
+    check_label_search(8,   "nvs12, nvs3, phy, nvs1","nvs1",     true);
+    check_label_search(9,   "nvs1nvs1, phy, nvs",    "nvs",      true);
+    check_label_search(10,  "nvs1nvs1, phy, nvs1",   "nvs",      false);
+    check_label_search(11,  "nvs1,  nvs, phy, nvs1", "nvs",      true);
+    check_label_search(12,  "nvs1, nvs2,  phy,  nvs","nvs",      true);
+    check_label_search(13,  "ota_data, backup_nvs",  "nvs",      false);
+    check_label_search(14,  "nvs1, nvs2, ota, nvs",  "vs1",      false);
+
+    check_label_search(20,  "12345678901234, phy, nvs1",    "12345678901234",       true);
+    check_label_search(21,  "123456789012345, phy, nvs1",   "123456789012345",      true);
+    check_label_search(22,  "1234567890123456, phy, nvs1",  "1234567890123456",     true);
+    check_label_search(23,  "12345678901234567, phy, nvs1", "12345678901234567",    false);
+    check_label_search(24,  "1234567890123456, phy, nvs1",  "12345678901234567",    true);
+    check_label_search(25,  "phy, 1234567890123456, nvs1",  "12345678901234567",    true);
+
+}

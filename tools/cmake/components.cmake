@@ -20,6 +20,7 @@ function(register_component)
 
     spaces2list(COMPONENT_SRCDIRS)
     spaces2list(COMPONENT_ADD_INCLUDEDIRS)
+    spaces2list(COMPONENT_SRCEXCLUDE)
 
     # Add to COMPONENT_SRCS by globbing in COMPONENT_SRCDIRS
     if(NOT COMPONENT_SRCS)
@@ -38,6 +39,17 @@ function(register_component)
             endif()
         endforeach()
     endif()
+
+    # Remove COMPONENT_SRCEXCLUDE matches
+    foreach(exclude ${COMPONENT_SRCEXCLUDE})
+        get_filename_component(exclude "${exclude}" ABSOLUTE ${component_dir})
+        foreach(src ${COMPONENT_SRCS})
+            get_filename_component(abs_src "${src}" ABSOLUTE ${component_dir})
+            if("${exclude}" STREQUAL "${abs_src}")  # compare as canonical paths
+                list(REMOVE_ITEM COMPONENT_SRCS src)
+            endif()
+        endforeach()
+    endforeach()
 
     # add as a PUBLIC library (if there are source files) or INTERFACE (if header only)
     if(COMPONENT_SRCS OR embed_binaries)

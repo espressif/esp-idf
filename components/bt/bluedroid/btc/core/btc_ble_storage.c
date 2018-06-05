@@ -645,7 +645,7 @@ static void _btc_read_le_key(const uint8_t key_type, const size_t key_len, bt_bd
             }
 
             char bd_str[20] = {0};
-            LOG_DEBUG("%s() Adding key type %d for %s", __func__,
+            BTC_TRACE_DEBUG("%s() Adding key type %d for %s", __func__,
                 key_type, bdaddr_to_string(&bd_addr, bd_str, sizeof(bd_str)));
             BTA_DmAddBleKey(bta_bd_addr, (tBTA_LE_KEY_VALUE *)buffer, key_type);
         }
@@ -663,7 +663,7 @@ static bt_status_t _btc_storage_in_fetch_bonded_ble_device(const char *remote_bd
     bool key_found = false;
 
     if (!btc_config_get_int(remote_bd_addr, BTC_BLE_STORAGE_DEV_TYPE_STR, (int *)&device_type)) {
-        LOG_ERROR("%s, device_type = %x", __func__, device_type);
+        BTC_TRACE_ERROR("%s, device_type = %x", __func__, device_type);
         return BT_STATUS_FAIL;
     }
    
@@ -715,9 +715,9 @@ static bt_status_t btc_storage_in_fetch_bonded_ble_devices(int add)
             ((device_type & BT_DEVICE_TYPE_BLE) != BT_DEVICE_TYPE_BLE)) {
             continue;
         }
-        LOG_DEBUG("%s, name = %s", __func__, name);
+        BTC_TRACE_DEBUG("%s, name = %s", __func__, name);
         if (_btc_storage_in_fetch_bonded_ble_device(name, add) != BT_STATUS_SUCCESS) {
-            LOG_DEBUG("Remote device:%s, no link key or ble key found", name);
+            BTC_TRACE_DEBUG("Remote device:%s, no link key or ble key found", name);
         } else {
             status = BT_STATUS_SUCCESS;
         }
@@ -743,7 +743,7 @@ bt_status_t btc_storage_load_bonded_ble_devices(void)
 {
     bt_status_t status;
     status = btc_storage_in_fetch_bonded_ble_devices(1);
-    LOG_DEBUG("Storage load rslt %d\n", status);
+    BTC_TRACE_DEBUG("Storage load rslt %d\n", status);
     return status;
 }
 

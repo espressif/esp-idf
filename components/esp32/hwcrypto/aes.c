@@ -53,31 +53,23 @@ void esp_aes_acquire_hardware( void )
     /* newlib locks lazy initialize on ESP-IDF */
     portENTER_CRITICAL(&aes_spinlock);
 
-    DPORT_STALL_OTHER_CPU_START();
-    {
-        /* Enable AES hardware */
-        _DPORT_REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_AES);
-        /* Clear reset on digital signature & secure boot units,
-           otherwise AES unit is held in reset also. */
-        _DPORT_REG_CLR_BIT(DPORT_PERI_RST_EN_REG,
-                           DPORT_PERI_EN_AES
-                           | DPORT_PERI_EN_DIGITAL_SIGNATURE
-                           | DPORT_PERI_EN_SECUREBOOT);
-    }
-    DPORT_STALL_OTHER_CPU_END();
+    /* Enable AES hardware */
+    DPORT_REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_AES);
+    /* Clear reset on digital signature & secure boot units,
+       otherwise AES unit is held in reset also. */
+    DPORT_REG_CLR_BIT(DPORT_PERI_RST_EN_REG,
+                       DPORT_PERI_EN_AES
+                       | DPORT_PERI_EN_DIGITAL_SIGNATURE
+                       | DPORT_PERI_EN_SECUREBOOT);
 }
 
 void esp_aes_release_hardware( void )
 {
-    DPORT_STALL_OTHER_CPU_START();
-    {
-        /* Disable AES hardware */
-        _DPORT_REG_SET_BIT(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_AES);
-        /* Don't return other units to reset, as this pulls
-           reset on RSA & SHA units, respectively. */
-        _DPORT_REG_CLR_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_AES);
-    }
-    DPORT_STALL_OTHER_CPU_END();
+    /* Disable AES hardware */
+    DPORT_REG_SET_BIT(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_AES);
+    /* Don't return other units to reset, as this pulls
+       reset on RSA & SHA units, respectively. */
+    DPORT_REG_CLR_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_AES);
 
     portEXIT_CRITICAL(&aes_spinlock);
 }
@@ -141,21 +133,14 @@ static inline void esp_aes_block(const void *input, void *output)
     }
 
     DPORT_REG_WRITE(AES_START_REG, 1);
-
-    DPORT_STALL_OTHER_CPU_START();
-    {
-        while (_DPORT_REG_READ(AES_IDLE_REG) != 1) { }
-        for (int i = 0; i < 4; i++) {
-            output_words[i] = mem_block[i];
-        }
-    }
-    DPORT_STALL_OTHER_CPU_END();
+    while (DPORT_REG_READ(AES_IDLE_REG) != 1) { }
+    esp_dport_access_read_buffer(output_words, (uint32_t)&mem_block[0], 4);
 }
 
 /*
  * AES-ECB block encryption
  */
-void esp_aes_encrypt( esp_aes_context *ctx,
+int esp_internal_aes_encrypt( esp_aes_context *ctx,
                       const unsigned char input[16],
                       unsigned char output[16] )
 {
@@ -163,13 +148,21 @@ void esp_aes_encrypt( esp_aes_context *ctx,
     esp_aes_setkey_hardware(ctx, ESP_AES_ENCRYPT);
     esp_aes_block(input, output);
     esp_aes_release_hardware();
+    return 0;
+}
+
+void esp_aes_encrypt( esp_aes_context *ctx,
+        const unsigned char input[16],
+        unsigned char output[16] )
+{
+    esp_internal_aes_encrypt(ctx, input, output);
 }
 
 /*
  * AES-ECB block decryption
  */
 
-void esp_aes_decrypt( esp_aes_context *ctx,
+int esp_internal_aes_decrypt( esp_aes_context *ctx,
                       const unsigned char input[16],
                       unsigned char output[16] )
 {
@@ -177,6 +170,14 @@ void esp_aes_decrypt( esp_aes_context *ctx,
     esp_aes_setkey_hardware(ctx, ESP_AES_DECRYPT);
     esp_aes_block(input, output);
     esp_aes_release_hardware();
+    return 0;
+}
+
+void esp_aes_decrypt( esp_aes_context *ctx,
+                      const unsigned char input[16],
+                      unsigned char output[16] )
+{
+    esp_internal_aes_decrypt(ctx, input, output);
 }
 
 

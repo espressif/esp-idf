@@ -650,6 +650,6 @@ INT32 BTA_DmPcmResample (void *p_src, UINT32 in_bytes, void *p_dst)
     APPL_TRACE_DEBUG("bta_pcm_resample : outsamples  %d",  out_sample);
 #endif
 
-    return (out_sample * bta_dm_pcm_cb.sample_size);
+    return (out_sample);
 }
 #endif

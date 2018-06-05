@@ -37,6 +37,7 @@
 #include "driver/periph_ctrl.h"
 
 #if CONFIG_SPIRAM_SUPPORT
+#include "soc/rtc.h"
 
 //Commands for PSRAM chip
 #define PSRAM_READ              0x03
@@ -79,15 +80,10 @@
 #define PSRAM_IO_MATRIX_DUMMY_40M   1
 #define PSRAM_IO_MATRIX_DUMMY_80M   2
 
-#if CONFIG_FLASHMODE_QIO
-#define SPI_CACHE_DUMMY    SPI0_R_QIO_DUMMY_CYCLELEN   //qio 3
-#elif CONFIG_FLASHMODE_QOUT
-#define SPI_CACHE_DUMMY    SPI0_R_FAST_DUMMY_CYCLELEN  //qout 7
-#elif CONFIG_FLASHMODE_DIO
-#define SPI_CACHE_DUMMY    SPI0_R_DIO_DUMMY_CYCLELEN   //dio 3
-#elif CONFIG_FLASHMODE_DOUT
-#define SPI_CACHE_DUMMY    SPI0_R_FAST_DUMMY_CYCLELEN  //dout 7
-#endif
+#define _SPI_CACHE_PORT   0
+#define _SPI_FLASH_PORT   1
+#define _SPI_80M_CLK_DIV  1
+#define _SPI_40M_CLK_DIV  2
 
 static const char* TAG = "psram";
 typedef enum {
@@ -101,9 +97,7 @@ static psram_cache_mode_t s_psram_mode = PSRAM_CACHE_MAX;
 
 /* dummy_len_plus values defined in ROM for SPI flash configuration */
 extern uint8_t g_rom_spiflash_dummy_len_plus[];
-
 static int extra_dummy = 0;
-
 typedef enum {
     PSRAM_CMD_QPI,
     PSRAM_CMD_SPI,
@@ -421,8 +415,23 @@ void IRAM_ATTR psram_spi_init(psram_spi_num_t spi_num, psram_cache_mode_t mode)
     memset((void*)SPI_W0_REG(spi_num), 0, 16 * 4);
 }
 
+/*
+ * Psram mode init will overwrite original flash speed mode, so that it is possible to change psram and flash speed after OTA.
+ * Flash read mode(QIO/QOUT/DIO/DOUT) will not be changed in app bin. It is decided by bootloader, OTA can not change this mode.
+ */
 static void IRAM_ATTR psram_gpio_config(psram_cache_mode_t mode)
 {
+    int spi_cache_dummy = 0;
+    uint32_t rd_mode_reg = READ_PERI_REG(SPI_CTRL_REG(0));
+    if (rd_mode_reg & (SPI_FREAD_QIO_M | SPI_FREAD_DIO_M)) {
+        spi_cache_dummy = SPI0_R_QIO_DUMMY_CYCLELEN;
+    } else if (rd_mode_reg & (SPI_FREAD_QUAD_M | SPI_FREAD_DUAL_M)) {
+        spi_cache_dummy = SPI0_R_FAST_DUMMY_CYCLELEN;
+    } else {
+        spi_cache_dummy = SPI0_R_FAST_DUMMY_CYCLELEN;
+    }
+    // In bootloader, all the signals are already configured,
+    // We keep the following code in case the bootloader is some older version.
     gpio_matrix_out(FLASH_CS_IO, SPICS0_OUT_IDX, 0, 0);
     gpio_matrix_out(PSRAM_SPIQ_IO, SPIQ_OUT_IDX, 0, 0);
     gpio_matrix_in(PSRAM_SPIQ_IO, SPIQ_IN_IDX, 0);
@@ -436,24 +445,33 @@ static void IRAM_ATTR psram_gpio_config(psram_cache_mode_t mode)
     switch (mode) {
         case PSRAM_CACHE_F80M_S40M:
             extra_dummy = PSRAM_IO_MATRIX_DUMMY_40M;
-            g_rom_spiflash_dummy_len_plus[1] = PSRAM_IO_MATRIX_DUMMY_40M;
-            SET_PERI_REG_BITS(SPI_USER1_REG(0), SPI_USR_DUMMY_CYCLELEN_V, SPI_CACHE_DUMMY + PSRAM_IO_MATRIX_DUMMY_80M, SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
+            g_rom_spiflash_dummy_len_plus[_SPI_CACHE_PORT] = PSRAM_IO_MATRIX_DUMMY_80M;
+            g_rom_spiflash_dummy_len_plus[_SPI_FLASH_PORT] = PSRAM_IO_MATRIX_DUMMY_40M;
+            SET_PERI_REG_BITS(SPI_USER1_REG(_SPI_CACHE_PORT), SPI_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + PSRAM_IO_MATRIX_DUMMY_80M, SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
+            esp_rom_spiflash_config_clk(_SPI_80M_CLK_DIV, _SPI_CACHE_PORT);
+            esp_rom_spiflash_config_clk(_SPI_40M_CLK_DIV, _SPI_FLASH_PORT);
             //set drive ability for clock
             SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, 3, FUN_DRV_S);
             SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[PSRAM_CLK_IO], FUN_DRV, 2, FUN_DRV_S);
             break;
         case PSRAM_CACHE_F80M_S80M:
             extra_dummy = PSRAM_IO_MATRIX_DUMMY_80M;
-            g_rom_spiflash_dummy_len_plus[1] = PSRAM_IO_MATRIX_DUMMY_80M;
-            SET_PERI_REG_BITS(SPI_USER1_REG(0), SPI_USR_DUMMY_CYCLELEN_V, SPI_CACHE_DUMMY + PSRAM_IO_MATRIX_DUMMY_80M, SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
+            g_rom_spiflash_dummy_len_plus[_SPI_CACHE_PORT] = PSRAM_IO_MATRIX_DUMMY_80M;
+            g_rom_spiflash_dummy_len_plus[_SPI_FLASH_PORT] = PSRAM_IO_MATRIX_DUMMY_80M;
+            SET_PERI_REG_BITS(SPI_USER1_REG(_SPI_CACHE_PORT), SPI_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + PSRAM_IO_MATRIX_DUMMY_80M, SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
+            esp_rom_spiflash_config_clk(_SPI_80M_CLK_DIV, _SPI_CACHE_PORT);
+            esp_rom_spiflash_config_clk(_SPI_80M_CLK_DIV, _SPI_FLASH_PORT);
             //set drive ability for clock
             SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, 3, FUN_DRV_S);
             SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[PSRAM_CLK_IO], FUN_DRV, 3, FUN_DRV_S);
             break;
         case PSRAM_CACHE_F40M_S40M:
             extra_dummy = PSRAM_IO_MATRIX_DUMMY_40M;
-            g_rom_spiflash_dummy_len_plus[1] = PSRAM_IO_MATRIX_DUMMY_40M;
-            SET_PERI_REG_BITS(SPI_USER1_REG(0), SPI_USR_DUMMY_CYCLELEN_V, SPI_CACHE_DUMMY + PSRAM_IO_MATRIX_DUMMY_40M, SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
+            g_rom_spiflash_dummy_len_plus[_SPI_CACHE_PORT] = PSRAM_IO_MATRIX_DUMMY_40M;
+            g_rom_spiflash_dummy_len_plus[_SPI_FLASH_PORT] = PSRAM_IO_MATRIX_DUMMY_40M;
+            SET_PERI_REG_BITS(SPI_USER1_REG(_SPI_CACHE_PORT), SPI_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + PSRAM_IO_MATRIX_DUMMY_40M, SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
+            esp_rom_spiflash_config_clk(_SPI_40M_CLK_DIV, _SPI_CACHE_PORT);
+            esp_rom_spiflash_config_clk(_SPI_40M_CLK_DIV, _SPI_FLASH_PORT);
             //set drive ability for clock
             SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, 2, FUN_DRV_S);
             SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[PSRAM_CLK_IO], FUN_DRV, 2, FUN_DRV_S);
@@ -525,7 +543,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
             while (1) {
                 spi_status = READ_PERI_REG(SPI_EXT2_REG(PSRAM_SPI_3));
                 if (spi_status != 0 && spi_status != 1) {
-                    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI_CLK_EN_2);
+                    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI3_CLK_EN);
                     break;
                 }
             }
@@ -549,11 +567,38 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
             gpio_matrix_out(PSRAM_CLK_IO, SIG_IN_FUNC225_IDX, 0, 0);
             break;
     }
+    #if CONFIG_BOOTLOADER_VDDSDIO_BOOST_1_9V
+        // For flash 80Mhz, we must update ldo voltage in case older version of bootloader didn't do this.
+        rtc_vddsdio_config_t cfg = rtc_vddsdio_get_config();
+        if (cfg.enable == 1 && cfg.tieh == RTC_VDDSDIO_TIEH_1_8V) {    // VDDSDIO regulator is enabled @ 1.8V
+            cfg.drefh = 3;
+            cfg.drefm = 3;
+            cfg.drefl = 3;
+            cfg.force = 1;
+            rtc_vddsdio_set_config(cfg);
+            ets_delay_us(10);                     // wait for regulator to become stable
+        }
+    #endif
     CLEAR_PERI_REG_MASK(SPI_USER_REG(PSRAM_SPI_1), SPI_CS_SETUP_M);
     psram_gpio_config(mode);
     WRITE_PERI_REG(GPIO_ENABLE_W1TS_REG, BIT(PSRAM_CS_IO)| BIT(PSRAM_CLK_IO));
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[PSRAM_CS_IO], PIN_FUNC_GPIO);
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[PSRAM_CLK_IO], PIN_FUNC_GPIO);
+
+    uint32_t flash_id = g_rom_flashchip.device_id;
+    if (flash_id == FLASH_ID_GD25LQ32C) {
+        #if CONFIG_SPIRAM_TYPE_ESPPSRAM32
+        // Set drive ability for 1.8v flash in 80Mhz.
+        SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_DATA0_U, FUN_DRV, 3, FUN_DRV_S);
+        SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_DATA1_U, FUN_DRV, 3, FUN_DRV_S);
+        SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_DATA2_U, FUN_DRV, 3, FUN_DRV_S);
+        SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_DATA3_U, FUN_DRV, 3, FUN_DRV_S);
+        SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CMD_U, FUN_DRV, 3, FUN_DRV_S);
+        SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_CLK_U, FUN_DRV, 3, FUN_DRV_S);
+        SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[PSRAM_CS_IO], FUN_DRV, 3, FUN_DRV_S);
+        SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[PSRAM_CLK_IO], FUN_DRV, 3, FUN_DRV_S);
+        #endif
+    }
     uint32_t id;
     psram_read_id(&id);
     if (((id >> PSRAM_MFG_ID_S) & PSRAM_MFG_ID_M) != PSRAM_MFG_ID_V) {

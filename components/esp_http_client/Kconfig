@@ -1,0 +1,10 @@
+menu "ESP HTTP client"
+
+
+config ESP_HTTP_CLIENT_ENABLE_HTTPS
+    bool "Enable https"
+    default y
+    help
+        This option will enable https protocol by linking mbedtls library and initializing SSL transport
+
+endmenu

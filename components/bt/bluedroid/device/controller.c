@@ -16,6 +16,7 @@
  *
  ******************************************************************************/
 #include <stdbool.h>
+#include "common/bt_target.h"
 #include "common/bt_trace.h"
 #include "device/bdaddr.h"
 #include "stack/bt_types.h"
@@ -61,6 +62,9 @@ static uint16_t acl_data_size_ble;
 static uint16_t acl_buffer_count_classic;
 static uint8_t acl_buffer_count_ble;
 
+static uint8_t sco_data_size;
+static uint16_t sco_buffer_count;
+
 static uint8_t ble_white_list_size;
 static uint8_t ble_resolving_list_max_size;
 static uint8_t ble_supported_states[BLE_SUPPORTED_STATES_SIZE];
@@ -88,7 +92,8 @@ static void start_up(void)
     // Request the classic buffer size next
     response = AWAIT_COMMAND(packet_factory->make_read_buffer_size());
     packet_parser->parse_read_buffer_size_response(
-        response, &acl_data_size_classic, &acl_buffer_count_classic);
+        response, &acl_data_size_classic, &acl_buffer_count_classic,
+        &sco_data_size, &sco_buffer_count);
 
     // Tell the controller about our buffer sizes and buffer counts next
     // TODO(zachoverflow): factor this out. eww l2cap contamination. And why just a hardcoded 10?
@@ -244,6 +249,10 @@ static void start_up(void)
         packet_parser->parse_generic_command_complete(response);
     }
 
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
+    response = AWAIT_COMMAND(packet_factory->make_write_sync_flow_control_enable(1));
+    packet_parser->parse_generic_command_complete(response);
+#endif
     readable = true;
     // return future_new_immediate(FUTURE_SUCCESS);
     return;
@@ -447,6 +456,20 @@ static void set_ble_resolving_list_max_size(int resolving_list_max_size)
     ble_resolving_list_max_size = resolving_list_max_size;
 }
 
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
+static uint8_t get_sco_data_size(void)
+{
+    assert(readable);
+    return sco_data_size;
+}
+
+static uint8_t get_sco_buffer_count(void)
+{
+    assert(readable);
+    return sco_buffer_count;
+}
+#endif /* (BTM_SCO_HCI_INCLUDED == TRUE) */
+
 static const controller_t interface = {
     start_up,
     shut_down,
@@ -489,7 +512,11 @@ static const controller_t interface = {
     get_ble_white_list_size,
 
     get_ble_resolving_list_max_size,
-    set_ble_resolving_list_max_size
+    set_ble_resolving_list_max_size,
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
+    get_sco_data_size,
+    get_sco_buffer_count,
+#endif /* (BTM_SCO_HCI_INCLUDED == TRUE) */
 };
 
 const controller_t *controller_get_interface()
