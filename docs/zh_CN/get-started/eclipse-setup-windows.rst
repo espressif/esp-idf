@@ -44,7 +44,7 @@ Windows 平台上的 Eclipse 配置
 
 * 点击 “C/C++ Build” 属性页。
 
-	* 取消选中 “Use default build command”，然后输入命令：``python${IDF_PATH}/tools/windows/eclipse_make.py``，开始自定义创建。
+	* 取消选中 “Use default build command”，然后输入命令：``python ${IDF_PATH}/tools/windows/eclipse_make.py``，开始自定义创建。
 
 * 点击 “C/C++ Build” 下的 “Environment” 属性页面。
 
