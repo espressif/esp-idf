@@ -958,7 +958,8 @@
 #define DPORT_CAN_CLK_EN   (BIT(19))
 #define DPORT_I2C_EXT1_CLK_EN   (BIT(18))
 #define DPORT_PWM0_CLK_EN   (BIT(17))
-#define DPORT_SPI_CLK_EN_2   (BIT(16))
+#define DPORT_SPI_CLK_EN_2   (BIT(16)) /** Deprecated, please use DPORT_SPI3_CLK_EN **/
+#define DPORT_SPI3_CLK_EN   (BIT(16))
 #define DPORT_TIMERGROUP1_CLK_EN   (BIT(15))
 #define DPORT_EFUSE_CLK_EN   (BIT(14))
 #define DPORT_TIMERGROUP_CLK_EN   (BIT(13))
@@ -968,12 +969,14 @@
 #define DPORT_RMT_CLK_EN   (BIT(9))
 #define DPORT_UHCI0_CLK_EN   (BIT(8))
 #define DPORT_I2C_EXT0_CLK_EN   (BIT(7))
-#define DPORT_SPI_CLK_EN   (BIT(6))
+#define DPORT_SPI_CLK_EN   (BIT(6)) /** Deprecated, please use DPORT_SPI2_CLK_EN **/
+#define DPORT_SPI2_CLK_EN   (BIT(6))
 #define DPORT_UART1_CLK_EN   (BIT(5))
 #define DPORT_I2S0_CLK_EN   (BIT(4))
 #define DPORT_WDG_CLK_EN   (BIT(3))
 #define DPORT_UART_CLK_EN   (BIT(2))
-#define DPORT_SPI_CLK_EN_1   (BIT(1))
+#define DPORT_SPI_CLK_EN_1   (BIT(1)) /** Deprecated, please use DPORT_SPI01_CLK_EN **/
+#define DPORT_SPI01_CLK_EN   (BIT(1))
 #define DPORT_TIMERS_CLK_EN   (BIT(0))
 #define DPORT_PERIP_RST_EN_REG          (DR_REG_DPORT_BASE + 0x0C4)
 /* DPORT_PERIP_RST : R/W ;bitpos:[31:0] ;default: 32'h0 ; */
@@ -992,7 +995,8 @@
 #define DPORT_CAN_RST   (BIT(19))
 #define DPORT_I2C_EXT1_RST   (BIT(18))
 #define DPORT_PWM0_RST   (BIT(17))
-#define DPORT_SPI_RST_2   (BIT(16))
+#define DPORT_SPI_RST_2   (BIT(16)) /** Deprecated, please use DPORT_SPI3_RST **/
+#define DPORT_SPI3_RST   (BIT(16))
 #define DPORT_TIMERGROUP1_RST   (BIT(15))
 #define DPORT_EFUSE_RST   (BIT(14))
 #define DPORT_TIMERGROUP_RST   (BIT(13))
@@ -1002,12 +1006,14 @@
 #define DPORT_RMT_RST   (BIT(9))
 #define DPORT_UHCI0_RST   (BIT(8))
 #define DPORT_I2C_EXT0_RST   (BIT(7))
-#define DPORT_SPI_RST   (BIT(6))
+#define DPORT_SPI_RST   (BIT(6)) /** Deprecated, please use DPORT_SPI2_RST **/
+#define DPORT_SPI2_RST   (BIT(6))
 #define DPORT_UART1_RST   (BIT(5))
 #define DPORT_I2S0_RST   (BIT(4))
 #define DPORT_WDG_RST   (BIT(3))
 #define DPORT_UART_RST   (BIT(2))
-#define DPORT_SPI_RST_1   (BIT(1))
+#define DPORT_SPI_RST_1   (BIT(1)) /** Deprecated, please use DPORT_SPI01_RST **/
+#define DPORT_SPI01_RST   (BIT(1))
 #define DPORT_TIMERS_RST   (BIT(0))
 #define DPORT_SLAVE_SPI_CONFIG_REG          (DR_REG_DPORT_BASE + 0x0C8)
 /* DPORT_SPI_DECRYPT_ENABLE : R/W ;bitpos:[12] ;default: 1'b0 ; */
@@ -1055,6 +1061,10 @@
 #define DPORT_WIFI_CLK_BT_EN_S  11
 /* Mask for clock bits used by both WIFI and Bluetooth, bit 0, 3, 6, 7, 8, 9 */
 #define DPORT_WIFI_CLK_WIFI_BT_COMMON_M 0x000003c9
+//bluetooth baseband bit11
+#define DPORT_BT_BASEBAND_EN  BIT(11)
+//bluetooth LC bit16 and bit17
+#define DPORT_BT_LC_EN  (BIT(16)|BIT(17))
 
 /* Remaining single bit clock masks */
 #define DPORT_WIFI_CLK_SDIOSLAVE_EN  BIT(4)

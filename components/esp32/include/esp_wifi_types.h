@@ -49,6 +49,7 @@ typedef struct {
     char                  cc[3];   /**< country code string */
     uint8_t               schan;   /**< start channel */
     uint8_t               nchan;   /**< total channel number */
+    int8_t                max_tx_power;   /**< maximum tx power */
     wifi_country_policy_t policy;  /**< country policy */
 } wifi_country_t;
 
@@ -139,7 +140,17 @@ typedef enum {
     WIFI_CIPHER_TYPE_UNKNOWN,    /**< the cipher type is unknown */
 } wifi_cipher_type_t;
 
-/** @brief Description of an WiFi AP */
+/**
+  * @brief WiFi antenna
+  *
+  */
+typedef enum {
+    WIFI_ANT_ANT0,          /**< WiFi antenna 0 */
+    WIFI_ANT_ANT1,          /**< WiFi antenna 1 */
+    WIFI_ANT_MAX,           /**< Invalid WiFi antenna */
+} wifi_ant_t;
+
+/** @brief Description of a WiFi AP */
 typedef struct {
     uint8_t bssid[6];                     /**< MAC address of AP */
     uint8_t ssid[33];                     /**< SSID of AP */
@@ -149,12 +160,14 @@ typedef struct {
     wifi_auth_mode_t authmode;            /**< authmode of AP */
     wifi_cipher_type_t pairwise_cipher;   /**< pairwise cipher of AP */
     wifi_cipher_type_t group_cipher;      /**< group cipher of AP */
+    wifi_ant_t ant;                       /**< antenna used to receive beacon from AP */
     uint32_t phy_11b:1;                   /**< bit: 0 flag to identify if 11b mode is enabled or not */
     uint32_t phy_11g:1;                   /**< bit: 1 flag to identify if 11g mode is enabled or not */
     uint32_t phy_11n:1;                   /**< bit: 2 flag to identify if 11n mode is enabled or not */
     uint32_t phy_lr:1;                    /**< bit: 3 flag to identify if low rate is enabled or not */
     uint32_t wps:1;                       /**< bit: 4 flag to identify if WPS is supported or not */
     uint32_t reserved:27;                 /**< bit: 5..31 reserved */
+    wifi_country_t country;               /**< country information of AP */
 } wifi_ap_record_t;
 
 typedef enum {
@@ -230,6 +243,7 @@ typedef union {
 /** @brief Description of STA associated with AP */
 typedef struct {
     uint8_t mac[6];  /**< mac address */
+    int8_t  rssi;    /**< current average rssi of sta connected */
     uint32_t phy_11b:1;      /**< bit: 0 flag to identify if 11b mode is enabled or not */
     uint32_t phy_11g:1;      /**< bit: 1 flag to identify if 11g mode is enabled or not */
     uint32_t phy_11n:1;      /**< bit: 2 flag to identify if 11n mode is enabled or not */
@@ -305,13 +319,15 @@ typedef struct {
     unsigned stbc:2;          /**< STBC */
     unsigned fec_coding:1;    /**< Flag is set for 11n packets which are LDPC */
     unsigned sgi:1;           /**< SGI */
-    unsigned noise_floor:8;   /**< noise floor */
+    signed noise_floor:8;     /**< noise floor */
     unsigned ampdu_cnt:8;     /**< ampdu cnt */
-    unsigned channel:4;       /**< which channel this packet in */
-    unsigned :12;             /**< reserve */
-    unsigned timestamp:32;    /**< timestamp */
+    unsigned channel:4;       /**< which primary channel this packet in */
+    unsigned second_channel:4;/**< which second channel this packet in */
+    unsigned :8;              /**< reserve */
+    unsigned timestamp:32;    /**< timestamp, unit: microsecond */
     unsigned :32;             /**< reserve */
-    unsigned :32;             /**< reserve */
+    unsigned :31;             /**< reserve */
+    unsigned ant:1;           /**< antenna number from which this packet is received */
     unsigned sig_len:12;      /**< length of packet */
     unsigned :12;             /**< reserve */
     unsigned rx_state:8;      /**< rx state */
@@ -332,6 +348,7 @@ typedef struct {
   */
 typedef enum {
     WIFI_PKT_MGMT,  /**< Management frame, indicates 'buf' argument is wifi_promiscuous_pkt_t */
+    WIFI_PKT_CTRL,  /**< Control frame, indicates 'buf' argument is wifi_promiscuous_pkt_t */
     WIFI_PKT_DATA,  /**< Data frame, indiciates 'buf' argument is wifi_promiscuous_pkt_t */
     WIFI_PKT_MISC,  /**< Other type, such as MIMO etc. 'buf' argument is wifi_promiscuous_pkt_t but the payload is zero length. */
 } wifi_promiscuous_pkt_type_t;
@@ -339,10 +356,22 @@ typedef enum {
 
 #define WIFI_PROMIS_FILTER_MASK_ALL         (0xFFFFFFFF)  /**< filter all packets */
 #define WIFI_PROMIS_FILTER_MASK_MGMT        (1)           /**< filter the packets with type of WIFI_PKT_MGMT */
-#define WIFI_PROMIS_FILTER_MASK_DATA        (1<<1)        /**< filter the packets with type of WIFI_PKT_DATA */
-#define WIFI_PROMIS_FILTER_MASK_MISC        (1<<2)        /**< filter the packets with type of WIFI_PKT_MISC */
-#define WIFI_PROMIS_FILTER_MASK_DATA_MPDU   (1<<3)        /**< filter the MPDU which is a kind of WIFI_PKT_DATA */
-#define WIFI_PROMIS_FILTER_MASK_DATA_AMPDU  (1<<4)        /**< filter the AMPDU which is a kind of WIFI_PKT_DATA */
+#define WIFI_PROMIS_FILTER_MASK_CTRL        (1<<1)        /**< filter the packets with type of WIFI_PKT_CTRL */
+#define WIFI_PROMIS_FILTER_MASK_DATA        (1<<2)        /**< filter the packets with type of WIFI_PKT_DATA */
+#define WIFI_PROMIS_FILTER_MASK_MISC        (1<<3)        /**< filter the packets with type of WIFI_PKT_MISC */
+#define WIFI_PROMIS_FILTER_MASK_DATA_MPDU   (1<<4)        /**< filter the MPDU which is a kind of WIFI_PKT_DATA */
+#define WIFI_PROMIS_FILTER_MASK_DATA_AMPDU  (1<<5)        /**< filter the AMPDU which is a kind of WIFI_PKT_DATA */
+
+#define WIFI_PROMIS_CTRL_FILTER_MASK_ALL         (0xFF800000)  /**< filter all control packets */
+#define WIFI_PROMIS_CTRL_FILTER_MASK_WRAPPER     (1<<23)       /**< filter the control packets with subtype of Control Wrapper */
+#define WIFI_PROMIS_CTRL_FILTER_MASK_BAR         (1<<24)       /**< filter the control packets with subtype of Block Ack Request */
+#define WIFI_PROMIS_CTRL_FILTER_MASK_BA          (1<<25)       /**< filter the control packets with subtype of Block Ack */
+#define WIFI_PROMIS_CTRL_FILTER_MASK_PSPOLL      (1<<26)       /**< filter the control packets with subtype of PS-Poll */
+#define WIFI_PROMIS_CTRL_FILTER_MASK_RTS         (1<<27)       /**< filter the control packets with subtype of RTS */
+#define WIFI_PROMIS_CTRL_FILTER_MASK_CTS         (1<<28)       /**< filter the control packets with subtype of CTS */
+#define WIFI_PROMIS_CTRL_FILTER_MASK_ACK         (1<<29)       /**< filter the control packets with subtype of ACK */
+#define WIFI_PROMIS_CTRL_FILTER_MASK_CFEND       (1<<30)       /**< filter the control packets with subtype of CF-END */
+#define WIFI_PROMIS_CTRL_FILTER_MASK_CFENDACK    (1<<31)       /**< filter the control packets with subtype of CF-END+CF-ACK */
 
 /** @brief Mask for filtering different packet types in promiscuous mode. */
 typedef struct {
@@ -352,6 +381,70 @@ typedef struct {
 #define WIFI_EVENT_MASK_ALL                 (0xFFFFFFFF)  /**< mask all WiFi events */
 #define WIFI_EVENT_MASK_NONE                (0)           /**< mask none of the WiFi events */
 #define WIFI_EVENT_MASK_AP_PROBEREQRECVED   (BIT(0))      /**< mask SYSTEM_EVENT_AP_PROBEREQRECVED event */
+
+/**
+  * @brief Channel state information(CSI) configuration type
+  *
+  */
+typedef struct {
+    bool lltf_en;           /**< enable to receive legacy long training field(lltf) data */
+    bool htltf_en;          /**< enable to receive HT long training field(htltf) data */
+    bool stbcltf2_en;       /**< enable to receive space time block code long training field(stbcltf2) data */
+    bool manu_scale;        /**< manually scale the CSI data by left shifting or automatically scale the CSI data. If set true, please set the shift bits. false: automatically. true: manually */ 
+    uint8_t shift;          /**< manually left shift bits of the scale of the CSI data. The range of the left shift bits is 0~15 */
+} wifi_csi_config_t;
+
+/**
+  * @brief CSI data type
+  *
+  */
+typedef struct {
+    wifi_pkt_rx_ctrl_t rx_ctrl;/**< received packet radio metadata header of the CSI data */
+    uint8_t mac[6];            /**< source MAC address of the CSI data */
+    bool last_word_invalid;    /**< last four bytes of the CSI data is invalid or not */
+    uint8_t *buf;              /**< buffer of CSI data */
+    uint16_t len;              /**< length of CSI data */
+} wifi_csi_info_t;
+
+/**
+  * @brief WiFi GPIO configuration for antenna selection
+  *
+  */
+typedef struct {
+    uint8_t gpio_select: 1,           /**< Whether this GPIO is connected to external antenna switch */
+            gpio_num: 7;              /**< The GPIO number that connects to external antenna switch */
+} wifi_ant_gpio_t;
+
+/**
+  * @brief WiFi GPIOs configuration for antenna selection
+  *
+  */
+typedef struct {
+    wifi_ant_gpio_t  gpio_cfg[4];  /**< The configurations of GPIOs that connect to external antenna switch */
+} wifi_ant_gpio_config_t;
+
+/**
+  * @brief WiFi antenna mode
+  *
+  */
+typedef enum {
+    WIFI_ANT_MODE_ANT0,          /**< Enable WiFi antenna 0 only */
+    WIFI_ANT_MODE_ANT1,          /**< Enable WiFi antenna 1 only */
+    WIFI_ANT_MODE_AUTO,          /**< Enable WiFi antenna 0 and 1, automatically select an antenna */
+    WIFI_ANT_MODE_MAX,           /**< Invalid WiFi enabled antenna */
+} wifi_ant_mode_t;
+
+/**
+  * @brief WiFi antenna configuration
+  *
+  */
+typedef struct {
+    wifi_ant_mode_t rx_ant_mode;          /**< WiFi antenna mode for receiving */
+    wifi_ant_t      rx_ant_default;       /**< Default antenna mode for receiving, it's ignored if rx_ant_mode is not WIFI_ANT_MODE_AUTO */
+    wifi_ant_mode_t tx_ant_mode;          /**< WiFi antenna mode for transmission, it can be set to WIFI_ANT_MODE_AUTO only if rx_ant_mode is set to WIFI_ANT_MODE_AUTO */
+    uint8_t         enabled_ant0: 4,      /**< Index (in antenna GPIO configuration) of enabled WIFI_ANT_MODE_ANT0 */
+                    enabled_ant1: 4;      /**< Index (in antenna GPIO configuration) of enabled WIFI_ANT_MODE_ANT1 */
+} wifi_ant_config_t;
 
 #ifdef __cplusplus
 }

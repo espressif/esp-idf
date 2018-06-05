@@ -18,12 +18,14 @@
 #include <sys/errno.h>
 #include <sys/lock.h>
 #include <sys/fcntl.h>
+#include <sys/param.h>
 #include "esp_vfs.h"
 #include "esp_vfs_dev.h"
 #include "esp_attr.h"
 #include "soc/uart_struct.h"
 #include "driver/uart.h"
 #include "sdkconfig.h"
+#include "driver/uart_select.h"
 
 // TODO: make the number of UARTs chip dependent
 #define UART_NUM 3
@@ -56,6 +58,17 @@ static int s_peek_char[UART_NUM] = { NONE, NONE, NONE };
 // driver is used.
 static bool s_non_blocking[UART_NUM];
 
+/* Lock ensuring that uart_select is used from only one task at the time */
+static _lock_t s_one_select_lock;
+
+static SemaphoreHandle_t *_signal_sem = NULL;
+static fd_set *_readfds = NULL;
+static fd_set *_writefds = NULL;
+static fd_set *_errorfds = NULL;
+static fd_set *_readfds_orig = NULL;
+static fd_set *_writefds_orig = NULL;
+static fd_set *_errorfds_orig = NULL;
+
 // Newline conversion mode when transmitting
 static esp_line_endings_t s_tx_mode =
 #if CONFIG_NEWLIB_STDOUT_LINE_ENDING_CRLF
@@ -75,6 +88,8 @@ static esp_line_endings_t s_rx_mode =
 #else
         ESP_LINE_ENDINGS_LF;
 #endif
+
+static void uart_end_select();
 
 // Functions used to write bytes to UART. Default to "basic" functions.
 static tx_func_t s_uart_tx_func[UART_NUM] = {
@@ -267,6 +282,144 @@ static int uart_fcntl(int fd, int cmd, va_list args)
     return result;
 }
 
+static int uart_access(const char *path, int amode)
+{
+    int ret = -1;
+
+    if (strcmp(path, "/0") == 0 || strcmp(path, "/1") == 0 || strcmp(path, "/2") == 0) {
+        if (F_OK == amode) {
+            ret = 0; //path exists
+        } else {
+            if ((((amode & R_OK) == R_OK) || ((amode & W_OK) == W_OK)) && ((amode & X_OK) != X_OK)) {
+                ret = 0; //path is readable and/or writable but not executable
+            } else {
+                errno = EACCES;
+            }
+        }
+    } else {
+        errno = ENOENT;
+    }
+
+    return ret;
+}
+
+static void select_notif_callback(uart_port_t uart_num, uart_select_notif_t uart_select_notif, BaseType_t *task_woken)
+{
+    switch (uart_select_notif) {
+        case UART_SELECT_READ_NOTIF:
+            if (FD_ISSET(uart_num, _readfds_orig)) {
+                FD_SET(uart_num, _readfds);
+                esp_vfs_select_triggered_isr(_signal_sem, task_woken);
+            }
+            break;
+        case UART_SELECT_WRITE_NOTIF:
+            if (FD_ISSET(uart_num, _writefds_orig)) {
+                FD_SET(uart_num, _writefds);
+                esp_vfs_select_triggered_isr(_signal_sem, task_woken);
+            }
+            break;
+        case UART_SELECT_ERROR_NOTIF:
+            if (FD_ISSET(uart_num, _errorfds_orig)) {
+                FD_SET(uart_num, _errorfds);
+                esp_vfs_select_triggered_isr(_signal_sem, task_woken);
+            }
+            break;
+    }
+}
+
+static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, SemaphoreHandle_t *signal_sem)
+{
+    if (_lock_try_acquire(&s_one_select_lock)) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    const int max_fds = MIN(nfds, UART_NUM);
+
+    taskENTER_CRITICAL(uart_get_selectlock());
+
+    if (_readfds || _writefds || _errorfds || _readfds_orig || _writefds_orig || _errorfds_orig || _signal_sem) {
+        taskEXIT_CRITICAL(uart_get_selectlock());
+        uart_end_select();
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if ((_readfds_orig = malloc(sizeof(fd_set))) == NULL) {
+        taskEXIT_CRITICAL(uart_get_selectlock());
+        uart_end_select();
+        return ESP_ERR_NO_MEM;
+    }
+
+    if ((_writefds_orig = malloc(sizeof(fd_set))) == NULL) {
+        taskEXIT_CRITICAL(uart_get_selectlock());
+        uart_end_select();
+        return ESP_ERR_NO_MEM;
+    }
+
+    if ((_errorfds_orig = malloc(sizeof(fd_set))) == NULL) {
+        taskEXIT_CRITICAL(uart_get_selectlock());
+        uart_end_select();
+        return ESP_ERR_NO_MEM;
+    }
+
+    //uart_set_select_notif_callback set the callbacks in UART ISR
+    for (int i = 0; i < max_fds; ++i) {
+        if (FD_ISSET(i, readfds) || FD_ISSET(i, writefds) || FD_ISSET(i, exceptfds)) {
+            uart_set_select_notif_callback(i, select_notif_callback);
+        }
+    }
+
+    _signal_sem = signal_sem;
+
+    _readfds = readfds;
+    _writefds = writefds;
+    _errorfds = exceptfds;
+
+    *_readfds_orig = *readfds;
+    *_writefds_orig = *writefds;
+    *_errorfds_orig = *exceptfds;
+
+    FD_ZERO(readfds);
+    FD_ZERO(writefds);
+    FD_ZERO(exceptfds);
+
+    taskEXIT_CRITICAL(uart_get_selectlock());
+    // s_one_select_lock is not released on successfull exit - will be
+    // released in uart_end_select()
+
+    return ESP_OK;
+}
+
+static void uart_end_select()
+{
+    taskENTER_CRITICAL(uart_get_selectlock());
+    for (int i = 0; i < UART_NUM; ++i) {
+        uart_set_select_notif_callback(i, NULL);
+    }
+
+    _signal_sem = NULL;
+
+    _readfds = NULL;
+    _writefds = NULL;
+    _errorfds = NULL;
+
+    if (_readfds_orig) {
+        free(_readfds_orig);
+        _readfds_orig = NULL;
+    }
+
+    if (_writefds_orig) {
+        free(_writefds_orig);
+        _writefds_orig = NULL;
+    }
+
+    if (_errorfds_orig) {
+        free(_errorfds_orig);
+        _errorfds_orig = NULL;
+    }
+    taskEXIT_CRITICAL(uart_get_selectlock());
+    _lock_release(&s_one_select_lock);
+}
+
 void esp_vfs_dev_uart_register()
 {
     esp_vfs_t vfs = {
@@ -276,7 +429,10 @@ void esp_vfs_dev_uart_register()
         .fstat = &uart_fstat,
         .close = &uart_close,
         .read = &uart_read,
-        .fcntl = &uart_fcntl
+        .fcntl = &uart_fcntl,
+        .access = &uart_access,
+        .start_select = &uart_start_select,
+        .end_select = &uart_end_select,
     };
     ESP_ERROR_CHECK(esp_vfs_register("/dev/uart", &vfs, NULL));
 }
@@ -291,22 +447,22 @@ void esp_vfs_dev_uart_set_tx_line_endings(esp_line_endings_t mode)
     s_tx_mode = mode;
 }
 
-void esp_vfs_dev_uart_use_nonblocking(int fd)
+void esp_vfs_dev_uart_use_nonblocking(int uart_num)
 {
-    _lock_acquire_recursive(&s_uart_read_locks[fd]);
-    _lock_acquire_recursive(&s_uart_write_locks[fd]);
-    s_uart_tx_func[fd] = uart_tx_char;
-    s_uart_rx_func[fd] = uart_rx_char;
-    _lock_release_recursive(&s_uart_write_locks[fd]);
-    _lock_release_recursive(&s_uart_read_locks[fd]);
+    _lock_acquire_recursive(&s_uart_read_locks[uart_num]);
+    _lock_acquire_recursive(&s_uart_write_locks[uart_num]);
+    s_uart_tx_func[uart_num] = uart_tx_char;
+    s_uart_rx_func[uart_num] = uart_rx_char;
+    _lock_release_recursive(&s_uart_write_locks[uart_num]);
+    _lock_release_recursive(&s_uart_read_locks[uart_num]);
 }
 
-void esp_vfs_dev_uart_use_driver(int fd)
+void esp_vfs_dev_uart_use_driver(int uart_num)
 {
-    _lock_acquire_recursive(&s_uart_read_locks[fd]);
-    _lock_acquire_recursive(&s_uart_write_locks[fd]);
-    s_uart_tx_func[fd] = uart_tx_char_via_driver;
-    s_uart_rx_func[fd] = uart_rx_char_via_driver;
-    _lock_release_recursive(&s_uart_write_locks[fd]);
-    _lock_release_recursive(&s_uart_read_locks[fd]);
+    _lock_acquire_recursive(&s_uart_read_locks[uart_num]);
+    _lock_acquire_recursive(&s_uart_write_locks[uart_num]);
+    s_uart_tx_func[uart_num] = uart_tx_char_via_driver;
+    s_uart_rx_func[uart_num] = uart_rx_char_via_driver;
+    _lock_release_recursive(&s_uart_write_locks[uart_num]);
+    _lock_release_recursive(&s_uart_read_locks[uart_num]);
 }

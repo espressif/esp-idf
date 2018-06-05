@@ -40,7 +40,6 @@
 #include "btm_int.h"
 #include "errno.h"
 
-#define LOG_TAG "bt_bta_gattc"
 // #include "osi/include/log.h"
 
 static void bta_gattc_char_dscpt_disc_cmpl(UINT16 conn_id, tBTA_GATTC_SERV *p_srvc_cb);
@@ -106,7 +105,7 @@ bool display_cache_attribute(void *data, void *context)
 bool display_cache_service(void *data, void *context) 
 {
     tBTA_GATTC_SERVICE    *p_cur_srvc = data;
-    LOG_INFO("Service: handle[%d ~ %d] %s[0x%04x] inst[%d]",
+    APPL_TRACE_API("Service: handle[%d ~ %d] %s[0x%04x] inst[%d]",
               p_cur_srvc->s_handle, p_cur_srvc->e_handle,
               ((p_cur_srvc->uuid.len == 2) ? "uuid16" : "uuid128"),
               p_cur_srvc->uuid.uu.uuid16,
@@ -611,7 +610,7 @@ static void bta_gattc_explore_srvc(UINT16 conn_id, tBTA_GATTC_SERV *p_srvc_cb)
         p_srvc_cb->update_sec_sev = false;
     }
     /* no service found at all, the end of server discovery*/
-    LOG_DEBUG("%s no more services found", __func__);
+    APPL_TRACE_DEBUG("%s no more services found", __func__);
 
 #if (defined BTA_GATT_DEBUG && BTA_GATT_DEBUG == TRUE)
     bta_gattc_display_cache_server(p_srvc_cb->p_srvc_cache);

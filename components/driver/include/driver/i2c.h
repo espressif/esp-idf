@@ -113,6 +113,10 @@ typedef void* i2c_cmd_handle_t;    /*!< I2C command handle  */
  *        Only slave mode will use this value, driver will ignore this value in master mode.
  * @param intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
  *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
+ *        @note
+ *        In master mode, if the cache is likely to be disabled(such as write flash) and the slave is time-sensitive,
+ *        `ESP_INTR_FLAG_IRAM` is suggested to be used. In this case, please use the memory allocated from internal RAM in i2c read and write function,
+ *        because we can not access the psram(if psram is enabled) in interrupt handle function when cache is disabled.
  *
  * @return
  *     - ESP_OK   Success
@@ -272,6 +276,8 @@ esp_err_t i2c_master_write_byte(i2c_cmd_handle_t cmd_handle, uint8_t data, bool 
  *
  * @param cmd_handle I2C cmd link
  * @param data data to send
+ *        @note
+ *        If the psram is enabled and intr_flag is `ESP_INTR_FLAG_IRAM`, please use the memory allocated from internal RAM.
  * @param data_len data length
  * @param ack_en enable ack check for master
  *
@@ -289,6 +295,8 @@ esp_err_t i2c_master_write(i2c_cmd_handle_t cmd_handle, uint8_t* data, size_t da
  *
  * @param cmd_handle I2C cmd link
  * @param data pointer accept the data byte
+ *        @note
+ *        If the psram is enabled and intr_flag is `ESP_INTR_FLAG_IRAM`, please use the memory allocated from internal RAM.
  * @param ack ack value for read command
  *
  * @return
@@ -305,6 +313,8 @@ esp_err_t i2c_master_read_byte(i2c_cmd_handle_t cmd_handle, uint8_t* data, i2c_a
  *
  * @param cmd_handle I2C cmd link
  * @param data data buffer to accept the data from bus
+ *        @note
+ *        If the psram is enabled and intr_flag is `ESP_INTR_FLAG_IRAM`, please use the memory allocated from internal RAM.
  * @param data_len read data length
  * @param ack ack value for read command
  *

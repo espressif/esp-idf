@@ -323,6 +323,7 @@ The following variables can be set inside ``component.mk`` to control the build 
   ``*.c``, ``*.S``). Set this to specify a list of directories which contain source files.
 - ``COMPONENT_SRCS``: Paths to individual source files to compile. Setting this causes ``COMPONENT_SRCDIRS`` to be ignored. Setting this variable instead gives you finer grained control over which files are compiled.
   If you don't set ``COMPONENT_SRCDIRS`` or ``COMPONENT_SRCS``, your component won't compile a library but it may still add include paths for use when compiling other components or the source files listed in ``MAIN_SRCS``.
+- ``COMPONENT_SRCEXCLUDE``: Paths to source files to exclude from component. Can be set in conjunction with ``COMPONENT_SRCDIRS`` if there is a directory with a large number of source files to include in the component but one or more source files which should not be. Paths can be specified relative to the component directory or absolute.
 
 Controlling Component Compilation
 ---------------------------------
@@ -835,6 +836,7 @@ Some features are significantly different or removed in the CMake-based system. 
 - ``COMPONENT_SUBMODULES``: No longer used, the build system will automatically enumerate all submodules in the ESP-IDF repo.
 - ``COMPONENT_EXTRA_INCLUDES``: Used to be an alternative to ``COMPONENT_PRIV_INCLUDEDIRS`` for absolute paths. Use ``COMPONENT_PRIV_INCLUDEDIRS`` for all cases now (can be relative or absolute).
 - ``COMPONENT_OBJS``: Previously, component sources could be specified as a list of object files. Now they can be specified as an list of source files via ``COMPONENT_SRCS``.
+- ``COMPONENT_OBJEXCLUDE``: Has been replaced with ``COMPONENT_SRCEXCLUDE``. Specify source files (as absolute paths or relative to component directory), instead.
 - ``COMPONENT_EXTRA_CLEAN``: Set property ``ADDITIONAL_MAKE_CLEAN_FILES`` instead but note :ref:`CMake has some restrictions around this functionality <ADDITIONAL_MAKE_CLEAN_FILES_note>`.
 - ``COMPONENT_OWNBUILDTARGET`` & ``COMPONENT_OWNCLEANTARGET``: Use CMake `ExternalProject`_ instead. See :ref:`component-build-full-override` for full details.
 - ``COMPONENT_CONFIG_ONLY``: Call ``register_config_only_component()`` instead. See `Configuration-Only Components`_.

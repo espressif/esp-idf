@@ -1,5 +1,6 @@
 ESP32-PICO-KIT V4 入门指南
 ============================
+:link_to_translation:`en:[English]`
 
 本指南介绍了如何开始使用 ESP32-PICO-KIT V4 迷你开发板。有关 ESP32-PICO-KIT 其他版本的介绍，请见 :doc:`../hw-reference/index`。
 

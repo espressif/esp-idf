@@ -137,7 +137,7 @@ static void mdns_print_results(mdns_result_t * results){
         if(r->txt_count){
             printf("  TXT : [%u] ", r->txt_count);
             for(t=0; t<r->txt_count; t++){
-                printf("%s=%s; ", r->txt[t].key, r->txt[t].value);
+                printf("%s=%s; ", r->txt[t].key, r->txt[t].value?r->txt[t].value:"NULL");
             }
             printf("\n");
         }

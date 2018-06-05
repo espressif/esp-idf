@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <string.h>
 
 #include "btc/btc_storage.h"
 #include "btc/btc_util.h"
@@ -41,7 +42,7 @@ bt_status_t btc_storage_add_bonded_device(bt_bdaddr_t *remote_bd_addr,
     bdstr_t bdstr;
 
     bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
-    LOG_DEBUG("add to storage: Remote device:%s\n", bdstr);
+    BTC_TRACE_DEBUG("add to storage: Remote device:%s\n", bdstr);
 
     btc_config_lock();
     int ret = btc_config_set_int(bdstr, BTC_STORAGE_LINK_KEY_TYPE_STR, (int)key_type);
@@ -51,7 +52,7 @@ bt_status_t btc_storage_add_bonded_device(bt_bdaddr_t *remote_bd_addr,
     btc_config_flush();
     btc_config_unlock();
 
-    LOG_DEBUG("Storage add rslt %d\n", ret);
+    BTC_TRACE_DEBUG("Storage add rslt %d\n", ret);
     return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
@@ -76,7 +77,7 @@ static bt_status_t btc_in_fetch_bonded_devices(int add)
             continue;
         }
 
-        LOG_DEBUG("Remote device:%s\n", name);
+        BTC_TRACE_DEBUG("Remote device:%s\n", name);
         LINK_KEY link_key;
         size_t size = sizeof(link_key);
         if (btc_config_get_bin(name, BTC_STORAGE_LINK_KEY_STR, link_key, &size)) {
@@ -99,11 +100,11 @@ static bt_status_t btc_in_fetch_bonded_devices(int add)
                 }
                 bt_linkkey_file_found = TRUE;
             } else {
-                LOG_ERROR("bounded device:%s, LinkKeyType or PinLength is invalid\n", name);
+                BTC_TRACE_ERROR("bounded device:%s, LinkKeyType or PinLength is invalid\n", name);
             }
         }
         if (!bt_linkkey_file_found) {
-            LOG_DEBUG("Remote device:%s, no link key\n", name);
+            BTC_TRACE_DEBUG("Remote device:%s, no link key\n", name);
         }
     }
     btc_config_unlock();
@@ -128,7 +129,7 @@ bt_status_t btc_storage_load_bonded_devices(void)
 {
     bt_status_t status;
     status = btc_in_fetch_bonded_devices(1);
-    LOG_DEBUG("Storage load rslt %d\n", status);
+    BTC_TRACE_DEBUG("Storage load rslt %d\n", status);
     return status;
 }
 
@@ -147,7 +148,7 @@ bt_status_t btc_storage_remove_bonded_device(bt_bdaddr_t *remote_bd_addr)
     bdstr_t bdstr;
     bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
     int ret = 1;
-    LOG_DEBUG("Add to storage: Remote device:%s\n", bdstr);
+    BTC_TRACE_DEBUG("Add to storage: Remote device:%s\n", bdstr);
 
     btc_config_lock();
     if (btc_config_exist(bdstr, BTC_STORAGE_LINK_KEY_TYPE_STR)) {
@@ -164,4 +165,71 @@ bt_status_t btc_storage_remove_bonded_device(bt_bdaddr_t *remote_bd_addr)
     btc_config_unlock();
 
     return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
+}
+
+/*******************************************************************************
+**
+** Function         btc_storage_get_num_bt_bond_devices
+**
+** Description      BTC storage API - get the num of the bonded device from NVRAM
+**
+** Returns          the num of the bonded device
+**
+*******************************************************************************/
+int btc_storage_get_num_bt_bond_devices(void)
+{
+    int num_dev = 0;
+
+    btc_config_lock();
+    for (const btc_config_section_iter_t *iter = btc_config_section_begin(); iter != btc_config_section_end();
+            iter = btc_config_section_next(iter)) {
+        const char *name = btc_config_section_name(iter);
+        if (string_is_bdaddr(name) &&
+            btc_config_exist(name, BTC_STORAGE_LINK_KEY_TYPE_STR) &&
+            btc_config_exist(name, BTC_STORAGE_PIN_LENGTH_STR) &&
+            btc_config_exist(name, BTC_STORAGE_LINK_KEY_STR)) {
+            num_dev++;
+        }
+    }
+    btc_config_unlock();
+
+    return num_dev;
+}
+
+/*******************************************************************************
+**
+** Function         btc_storage_get_bonded_bt_devices_list
+**
+** Description      BTC storage API - get the list of the bonded device from NVRAM
+**
+** Returns          BT_STATUS_SUCCESS if get the list successful,
+**                  BT_STATUS_FAIL otherwise
+**
+*******************************************************************************/
+bt_status_t btc_storage_get_bonded_bt_devices_list(bt_bdaddr_t *bond_dev, int dev_num)
+{
+    bt_bdaddr_t bd_addr;
+
+    btc_config_lock();
+    for (const btc_config_section_iter_t *iter = btc_config_section_begin(); iter != btc_config_section_end();
+            iter = btc_config_section_next(iter)) {
+
+        if (dev_num-- <= 0) {
+            break;
+        }
+
+        const char *name = btc_config_section_name(iter);
+
+        if (string_is_bdaddr(name) &&
+            btc_config_exist(name, BTC_STORAGE_LINK_KEY_TYPE_STR) &&
+            btc_config_exist(name, BTC_STORAGE_PIN_LENGTH_STR) &&
+            btc_config_exist(name, BTC_STORAGE_LINK_KEY_STR)) {
+            string_to_bdaddr(name, &bd_addr);
+            memcpy(bond_dev, &bd_addr, sizeof(bt_bdaddr_t));
+            bond_dev++;
+        }
+    }
+    btc_config_unlock();
+
+    return BT_STATUS_SUCCESS;
 }

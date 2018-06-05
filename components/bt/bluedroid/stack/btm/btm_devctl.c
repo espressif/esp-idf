@@ -170,6 +170,9 @@ static void reset_complete(void)
     btm_pm_reset();
 
     l2c_link_processs_num_bufs(controller->get_acl_buffer_count_classic());
+#if BTM_SCO_HCI_INCLUDED == TRUE
+    btm_sco_process_num_bufs(controller->get_sco_buffer_count());
+#endif
 #if (BLE_INCLUDED == TRUE)
 
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)

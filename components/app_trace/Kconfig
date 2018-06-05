@@ -190,4 +190,12 @@ config SYSVIEW_EVT_TIMER_EXIT_ENABLE
         Enables "Timer Exit" event.
 
 endmenu
+
+config ESP32_GCOV_ENABLE
+    bool "GCOV to Host Enable"
+    depends on ESP32_DEBUG_STUBS_ENABLE && ESP32_APPTRACE_ENABLE && !SYSVIEW_ENABLE
+    default y
+    help
+        Enables support for GCOV data transfer to host.
+
 endmenu

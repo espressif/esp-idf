@@ -66,6 +66,66 @@ typedef uint8_t   esp_ble_auth_req_t;         /*!< combination of the above bit 
 #define ESP_IO_CAP_IN                       2   /*!< KeyboardOnly */        /* relate to BTM_IO_CAP_IN in stack/btm_api.h */
 #define ESP_IO_CAP_NONE                     3   /*!< NoInputNoOutput */     /* relate to BTM_IO_CAP_NONE in stack/btm_api.h */
 #define ESP_IO_CAP_KBDISP                   4   /*!< Keyboard display */    /* relate to BTM_IO_CAP_KBDISP in stack/btm_api.h */
+
+#define ESP_BLE_APPEARANCE_UNKNOWN                 0x0000 /* relate to BTM_BLE_APPEARANCE_UNKNOWN in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_PHONE           0x0040 /* relate to BTM_BLE_APPEARANCE_GENERIC_PHONE in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_COMPUTER        0x0080 /* relate to BTM_BLE_APPEARANCE_GENERIC_COMPUTER in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_WATCH           0x00C0 /* relate to BTM_BLE_APPEARANCE_GENERIC_WATCH in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_SPORTS_WATCH            0x00C1 /* relate to BTM_BLE_APPEARANCE_SPORTS_WATCH in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_CLOCK           0x0100 /* relate to BTM_BLE_APPEARANCE_GENERIC_CLOCK in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_DISPLAY         0x0140 /* relate to BTM_BLE_APPEARANCE_GENERIC_DISPLAY in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_REMOTE          0x0180 /* relate to BTM_BLE_APPEARANCE_GENERIC_REMOTE in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_EYEGLASSES      0x01C0 /* relate to BTM_BLE_APPEARANCE_GENERIC_EYEGLASSES in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_TAG             0x0200 /* relate to BTM_BLE_APPEARANCE_GENERIC_TAG in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_KEYRING         0x0240 /* relate to BTM_BLE_APPEARANCE_GENERIC_KEYRING in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_MEDIA_PLAYER    0x0280 /* relate to BTM_BLE_APPEARANCE_GENERIC_MEDIA_PLAYER in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_BARCODE_SCANNER 0x02C0 /* relate to BTM_BLE_APPEARANCE_GENERIC_BARCODE_SCANNER in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_THERMOMETER     0x0300 /* relate to BTM_BLE_APPEARANCE_GENERIC_THERMOMETER in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_THERMOMETER_EAR         0x0301 /* relate to BTM_BLE_APPEARANCE_THERMOMETER_EAR in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_HEART_RATE      0x0340 /* relate to BTM_BLE_APPEARANCE_GENERIC_HEART_RATE in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_HEART_RATE_BELT         0x0341 /* relate to BTM_BLE_APPEARANCE_HEART_RATE_BELT in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_BLOOD_PRESSURE  0x0380 /* relate to BTM_BLE_APPEARANCE_GENERIC_BLOOD_PRESSURE in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_BLOOD_PRESSURE_ARM      0x0381 /* relate to BTM_BLE_APPEARANCE_BLOOD_PRESSURE_ARM in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_BLOOD_PRESSURE_WRIST    0x0382 /* relate to BTM_BLE_APPEARANCE_BLOOD_PRESSURE_WRIST in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_HID             0x03C0 /* relate to BTM_BLE_APPEARANCE_GENERIC_HID in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_HID_KEYBOARD            0x03C1 /* relate to BTM_BLE_APPEARANCE_HID_KEYBOARD in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_HID_MOUSE               0x03C2 /* relate to BTM_BLE_APPEARANCE_HID_MOUSE in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_HID_JOYSTICK            0x03C3 /* relate to BTM_BLE_APPEARANCE_HID_JOYSTICK in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_HID_GAMEPAD             0x03C4 /* relate to BTM_BLE_APPEARANCE_HID_GAMEPAD in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_HID_DIGITIZER_TABLET    0x03C5 /* relate to BTM_BLE_APPEARANCE_HID_DIGITIZER_TABLET in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_HID_CARD_READER         0x03C6 /* relate to BTM_BLE_APPEARANCE_HID_CARD_READER in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_HID_DIGITAL_PEN         0x03C7 /* relate to BTM_BLE_APPEARANCE_HID_DIGITAL_PEN in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_HID_BARCODE_SCANNER     0x03C8 /* relate to BTM_BLE_APPEARANCE_HID_BARCODE_SCANNER in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_GLUCOSE         0x0400 /* relate to BTM_BLE_APPEARANCE_GENERIC_GLUCOSE in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_WALKING         0x0440 /* relate to BTM_BLE_APPEARANCE_GENERIC_WALKING in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_WALKING_IN_SHOE         0x0441 /* relate to BTM_BLE_APPEARANCE_WALKING_IN_SHOE in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_WALKING_ON_SHOE         0x0442 /* relate to BTM_BLE_APPEARANCE_WALKING_ON_SHOE in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_WALKING_ON_HIP          0x0443 /* relate to BTM_BLE_APPEARANCE_WALKING_ON_HIP in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_CYCLING         0x0480 /* relate to BTM_BLE_APPEARANCE_GENERIC_CYCLING in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_CYCLING_COMPUTER        0x0481 /* relate to BTM_BLE_APPEARANCE_CYCLING_COMPUTER in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_CYCLING_SPEED           0x0482 /* relate to BTM_BLE_APPEARANCE_CYCLING_SPEED in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_CYCLING_CADENCE         0x0483 /* relate to BTM_BLE_APPEARANCE_CYCLING_CADENCE in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_CYCLING_POWER           0x0484 /* relate to BTM_BLE_APPEARANCE_CYCLING_POWER in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_CYCLING_SPEED_CADENCE   0x0485 /* relate to BTM_BLE_APPEARANCE_CYCLING_SPEED_CADENCE in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_PULSE_OXIMETER  0x0C40 /* relate to BTM_BLE_APPEARANCE_GENERIC_PULSE_OXIMETER in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_PULSE_OXIMETER_FINGERTIP 0x0C41 /* relate to BTM_BLE_APPEARANCE_PULSE_OXIMETER_FINGERTIP in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_PULSE_OXIMETER_WRIST    0x0C42 /* relate to BTM_BLE_APPEARANCE_PULSE_OXIMETER_WRIST in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_WEIGHT          0x0C80 /* relate to BTM_BLE_APPEARANCE_GENERIC_WEIGHT in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_PERSONAL_MOBILITY_DEVICE    0x0CC0 /* relate to BTM_BLE_APPEARANCE_GENERIC_PERSONAL_MOBILITY_DEVICE in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_POWERED_WHEELCHAIR                  0x0CC1 /* relate to BTM_BLE_APPEARANCE_POWERED_WHEELCHAIR in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_MOBILITY_SCOOTER                    0x0CC2 /* relate to BTM_BLE_APPEARANCE_MOBILITY_SCOOTER in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_CONTINUOUS_GLUCOSE_MONITOR  0x0D00 /* relate to BTM_BLE_APPEARANCE_GENERIC_CONTINUOUS_GLUCOSE_MONITOR in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_INSULIN_PUMP                0x0D40 /* relate to BTM_BLE_APPEARANCE_GENERIC_INSULIN_PUMP in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_INSULIN_PUMP_DURABLE_PUMP           0x0D41 /* relate to BTM_BLE_APPEARANCE_INSULIN_PUMP_DURABLE_PUMP in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_INSULIN_PUMP_PATCH_PUMP             0x0D44 /* relate to BTM_BLE_APPEARANCE_INSULIN_PUMP_PATCH_PUMP in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_INSULIN_PEN                         0x0D48 /* relate to BTM_BLE_APPEARANCE_INSULIN_PEN in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_MEDICATION_DELIVERY         0x0D80 /* relate to BTM_BLE_APPEARANCE_GENERIC_MEDICATION_DELIVERY in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_GENERIC_OUTDOOR_SPORTS  0x1440             /* relate to BTM_BLE_APPEARANCE_GENERIC_OUTDOOR_SPORTS in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_OUTDOOR_SPORTS_LOCATION 0x1441             /* relate to BTM_BLE_APPEARANCE_OUTDOOR_SPORTS_LOCATION in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_OUTDOOR_SPORTS_LOCATION_AND_NAV     0x1442 /* relate to BTM_BLE_APPEARANCE_OUTDOOR_SPORTS_LOCATION_AND_NAV in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_OUTDOOR_SPORTS_LOCATION_POD         0x1443 /* relate to BTM_BLE_APPEARANCE_OUTDOOR_SPORTS_LOCATION_POD in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_OUTDOOR_SPORTS_LOCATION_POD_AND_NAV 0x1444 /* relate to BTM_BLE_APPEARANCE_OUTDOOR_SPORTS_LOCATION_POD_AND_NAV in stack/btm_ble_api.h */
+
 typedef uint8_t esp_ble_io_cap_t;               /*!< combination of the io capability */
 
 /// GAP BLE callback event type
@@ -264,6 +324,13 @@ typedef enum {
                                                   3. directed advertising packets addressed to this device.*/
 } esp_ble_scan_filter_t;
 
+/// Ble scan duplicate type
+typedef enum {
+    BLE_SCAN_DUPLICATE_DISABLE           = 0x0,  /*!< the Link Layer should generate advertising reports to the host for each packet received */
+    BLE_SCAN_DUPLICATE_ENABLE            = 0x1,  /*!< the Link Layer should filter out duplicate advertising reports to the Host */
+    BLE_SCAN_DUPLICATE_MAX               = 0x2,  /*!< 0x02 – 0xFF, Reserved for future use */
+} esp_ble_scan_duplicate_t;
+
 /// Ble scan parameters
 typedef struct {
     esp_ble_scan_type_t     scan_type;              /*!< Scan type */
@@ -279,6 +346,9 @@ typedef struct {
                                                       Range: 0x0004 to 0x4000 Default: 0x0010 (10 ms)
                                                       Time = N * 0.625 msec
                                                       Time Range: 2.5 msec to 10240 msec */
+    esp_ble_scan_duplicate_t  scan_duplicate;       /*!< The Scan_Duplicates parameter controls whether the Link Layer should filter out 
+                                                        duplicate advertising reports (BLE_SCAN_DUPLICATE_ENABLE) to the Host, or if the Link Layer should generate 
+                                                        advertising reports for each packet received */
 } esp_ble_scan_params_t;
 
 /// Connection update parameters
@@ -777,11 +847,11 @@ esp_err_t esp_ble_gap_config_local_privacy (bool privacy_enable);
 
 /**
  * @brief           set local gap appearance icon
- *                  
  *
- * @param[in]       icon   - Appearance value, these vlues are Defined by the Bluetooth organization, please refer to 
+ *
+ * @param[in]       icon   - External appearance value, these values are defined by the Bluetooth SIG, please refer to
  *                  https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.gap.appearance.xml
- *                
+ *
  * @return
  *                  - ESP_OK : success
  *                  - other  : failed
@@ -996,7 +1066,7 @@ esp_err_t esp_ble_remove_bond_device(esp_bd_addr_t bd_addr);
 *                  It will return the device bonded number immediately.
 *
 * @return          - >= 0 : bonded devices number.
-*                  - < 0  : failed
+*                  - ESP_FAIL  : failed
 *
 */
 int esp_ble_get_bond_device_num(void);

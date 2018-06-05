@@ -16,6 +16,9 @@ of FreeRTOS v8.2.0. This guide outlines the major differences between vanilla
 FreeRTOS and ESP-IDF FreeRTOS. The API reference for vanilla FreeRTOS can be 
 found via http://www.freertos.org/a00106.html
 
+For information regarding features that are exclusive to ESP-IDF FreeRTOS,
+see :doc:`ESP-IDF FreeRTOS Additions<../api-reference/system/freertos_additions>`.
+
 :ref:`backported-features`: Although ESP-IDF FreeRTOS is based on the Xtensa 
 port of FreeRTOS v8.2.0, a number of FreeRTOS v9.0.0 features have been backported
 to ESP-IDF.
@@ -69,10 +72,6 @@ added. Deletion callbacks are called automatically during task deletion and are
 used to free memory pointed to by TLSP. Call 
 :cpp:func:`vTaskSetThreadLocalStoragePointerAndDelCallback()` to set TLSP and Deletion
 Callbacks.
-
-:ref:`FreeRTOS Hooks<hooks_api_reference>`: Vanilla FreeRTOS Hooks were not designed for SMP.
-ESP-IDF provides its own Idle and Tick Hooks in addition to the Vanilla FreeRTOS
-hooks. For full details, see the ESP-IDF Hooks API Reference.
 
 :ref:`esp-idf-freertos-configuration`: Several aspects of ESP-IDF FreeRTOS can be 
 configured using ``make meunconfig`` such as running ESP-IDF in Unicore Mode,

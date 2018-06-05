@@ -54,6 +54,9 @@ typedef enum {
     BTC_PID_A2DP,
     BTC_PID_AVRC,
     BTC_PID_SPP,
+#if BTC_HF_CLIENT_INCLUDED
+    BTC_PID_HF_CLIENT,
+#endif /* BTC_HF_CLIENT_INCLUDED */
 #endif  /* CONFIG_CLASSIC_BT_ENABLED */
     BTC_PID_NUM,
 } btc_pid_t; //btc profile id

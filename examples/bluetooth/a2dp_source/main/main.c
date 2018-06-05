@@ -244,6 +244,16 @@ void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
     }
     case ESP_BT_GAP_RMT_SRVCS_EVT:
     case ESP_BT_GAP_RMT_SRVC_REC_EVT:
+        break;
+    case ESP_BT_GAP_AUTH_CMPL_EVT:{
+        if (param->auth_cmpl.stat == ESP_BT_STATUS_SUCCESS) {
+            ESP_LOGI(BT_AV_TAG, "authentication success: %s", param->auth_cmpl.device_name);
+            esp_log_buffer_hex(BT_AV_TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
+        } else {
+            ESP_LOGI(BT_AV_TAG, "authentication failed, status:%d", param->auth_cmpl.stat);
+        }
+    }
+
     default: {
         ESP_LOGI(BT_AV_TAG, "event: %d", event);
         break;
@@ -376,7 +386,7 @@ static void bt_app_av_state_connecting(uint16_t event, void *param)
             ESP_LOGI(BT_AV_TAG, "a2dp connected");
             m_a2d_state =  APP_AV_STATE_CONNECTED;
             m_media_state = APP_AV_MEDIA_STATE_IDLE;
-
+            esp_bt_gap_set_scan_mode(ESP_BT_SCAN_MODE_NONE);
         } else if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_DISCONNECTED) {
             m_a2d_state =  APP_AV_STATE_UNCONNECTED;
         }
@@ -472,6 +482,7 @@ static void bt_app_av_state_connected(uint16_t event, void *param)
         if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_DISCONNECTED) {
             ESP_LOGI(BT_AV_TAG, "a2dp disconnected");
             m_a2d_state = APP_AV_STATE_UNCONNECTED;
+            esp_bt_gap_set_scan_mode(ESP_BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE);
         }
         break;
     }
@@ -505,6 +516,7 @@ static void bt_app_av_state_disconnecting(uint16_t event, void *param)
         if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_DISCONNECTED) {
             ESP_LOGI(BT_AV_TAG, "a2dp disconnected");
             m_a2d_state =  APP_AV_STATE_UNCONNECTED;
+            esp_bt_gap_set_scan_mode(ESP_BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE);
         }
         break;
     }

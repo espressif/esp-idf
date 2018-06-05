@@ -42,16 +42,18 @@ static void parse_generic_command_complete(BT_HDR *response)
 
 static void parse_read_buffer_size_response(
     BT_HDR *response,
-    uint16_t *data_size_ptr,
-    uint16_t *acl_buffer_count_ptr)
+    uint16_t *acl_data_size_ptr,
+    uint16_t *acl_buffer_count_ptr,
+    uint8_t *sco_data_size_ptr,
+    uint16_t *sco_buffer_count_ptr)
 {
 
-    uint8_t *stream = read_command_complete_header(response, HCI_READ_BUFFER_SIZE, 5 /* bytes after */);
+    uint8_t *stream = read_command_complete_header(response, HCI_READ_BUFFER_SIZE, 7 /* bytes after */);
     assert(stream != NULL);
-    STREAM_TO_UINT16(*data_size_ptr, stream);
-    STREAM_SKIP_UINT8(stream); // skip the sco packet length
+    STREAM_TO_UINT16(*acl_data_size_ptr, stream);
+    STREAM_TO_UINT8(*sco_data_size_ptr, stream);
     STREAM_TO_UINT16(*acl_buffer_count_ptr, stream);
-
+    STREAM_TO_UINT16(*sco_buffer_count_ptr, stream);
     buffer_allocator->free(response);
 }
 
@@ -112,7 +114,7 @@ static void parse_read_local_extended_features_response(
         assert(*page_number_ptr < feature_pages_count);
         STREAM_TO_ARRAY(feature_pages[*page_number_ptr].as_array, stream, (int)sizeof(bt_device_features_t));
     } else {
-        LOG_ERROR("%s() - WARNING: READING EXTENDED FEATURES FAILED. "
+        HCI_TRACE_ERROR("%s() - WARNING: READING EXTENDED FEATURES FAILED. "
                   "THIS MAY INDICATE A FIRMWARE/CONTROLLER ISSUE.", __func__);
     }
 

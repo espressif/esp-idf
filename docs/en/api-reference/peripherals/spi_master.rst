@@ -264,6 +264,13 @@ And if the host only writes, the *dummy bit workaround* is not used and the freq
 | 40          | 80                   |
 +-------------+----------------------+
 
+Thread Safety
+-------------
+
+The SPI driver API is thread safe when multiple SPI devices on the same bus are accessed from different tasks. However, the driver is not thread safe if the same SPI device is accessed from multiple tasks.
+
+In this case, it is recommended to either refactor your application so only a single task accesses each SPI device, or to add mutex locking around access of the shared device.
+
 .. _spi_known_issues:
 
 Known Issues

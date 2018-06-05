@@ -192,6 +192,10 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten);
 
 /**
  * @brief Take an ADC1 reading from a single channel.
+ * @note When the power switch of SARADC1, SARADC2, HALL sensor and AMP sensor is turned on,
+ *       the input of GPIO36 and GPIO39 will be pulled down for about 80ns.
+ *       When enabling power for any of these peripherals, ignore input from GPIO36 and GPIO39.
+ *       Please refer to section 3.11 of 'ECO_and_Workarounds_for_Bugs_in_ESP32' for the description of this issue.
  *
  * @note Call adc1_config_width() before the first time this
  * function is called.
@@ -210,6 +214,11 @@ int adc1_get_raw(adc1_channel_t channel);
 
 /** @cond */    //Doxygen command to hide deprecated function from API Reference
 /*
+ * @note When the power switch of SARADC1, SARADC2, HALL sensor and AMP sensor is turned on,
+ *       the input of GPIO36 and GPIO39 will be pulled down for about 80ns.
+ *       When enabling power for any of these peripherals, ignore input from GPIO36 and GPIO39.
+ *       Please refer to section 3.11 of 'ECO_and_Workarounds_for_Bugs_in_ESP32' for the description of this issue.
+ *       
  * @deprecated This function returns an ADC1 reading but is deprecated due to
  * a misleading name and has been changed to directly call the new function.
  * Use the new function adc1_get_raw() instead
@@ -288,6 +297,11 @@ void adc1_ulp_enable();
 /**
  * @brief Read Hall Sensor
  *
+ * @note When the power switch of SARADC1, SARADC2, HALL sensor and AMP sensor is turned on,
+ *       the input of GPIO36 and GPIO39 will be pulled down for about 80ns.
+ *       When enabling power for any of these peripherals, ignore input from GPIO36 and GPIO39.
+ *       Please refer to section 3.11 of 'ECO_and_Workarounds_for_Bugs_in_ESP32' for the description of this issue.
+ *
  * @note The Hall Sensor uses channels 0 and 3 of ADC1. Do not configure
  * these channels for use as ADC channels.
  *
@@ -348,6 +362,11 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten);
 
 /**
  * @brief Take an ADC2 reading on a single channel
+ *
+ * @note When the power switch of SARADC1, SARADC2, HALL sensor and AMP sensor is turned on,
+ *       the input of GPIO36 and GPIO39 will be pulled down for about 80ns.
+ *       When enabling power for any of these peripherals, ignore input from GPIO36 and GPIO39.
+ *       Please refer to section 3.11 of 'ECO_and_Workarounds_for_Bugs_in_ESP32' for the description of this issue.
  *
  * @note For a given channel, ``adc2_config_channel_atten()``
  * must be called before the first time this function is called. If Wi-Fi is started via ``esp_wifi_start()``, this

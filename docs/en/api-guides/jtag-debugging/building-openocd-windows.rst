@@ -13,7 +13,7 @@ Download Sources of OpenOCD
 The sources for the ESP32-enabled variant of OpenOCD are available from Espressif GitHub under https://github.com/espressif/openocd-esp32. To download the sources, use the following commands::
 
     cd ~/esp
-    git clone –recursive https://github.com/espressif/openocd-esp32.git
+    git clone --recursive https://github.com/espressif/openocd-esp32.git
 
 The clone of sources should be now saved in ``~/esp/openocd-esp32`` directory.
 

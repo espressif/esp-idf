@@ -102,7 +102,10 @@ void app_main()
     rtc_clk_cpu_freq_from_mhz(CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ, &max_freq);
     esp_pm_config_esp32_t pm_config = {
             .max_cpu_freq = max_freq,
-            .min_cpu_freq = RTC_CPU_FREQ_XTAL
+            .min_cpu_freq = RTC_CPU_FREQ_XTAL,
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+            .light_sleep_enable = true
+#endif
     };
     ESP_ERROR_CHECK( esp_pm_configure(&pm_config) );
 #endif // CONFIG_PM_ENABLE

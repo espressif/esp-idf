@@ -62,13 +62,13 @@ config_t *config_new_empty(void)
 {
     config_t *config = osi_calloc(sizeof(config_t));
     if (!config) {
-        LOG_ERROR("%s unable to allocate memory for config_t.\n", __func__);
+        OSI_TRACE_ERROR("%s unable to allocate memory for config_t.\n", __func__);
         goto error;
     }
 
     config->sections = list_new(section_free);
     if (!config->sections) {
-        LOG_ERROR("%s unable to allocate list for sections.\n", __func__);
+        OSI_TRACE_ERROR("%s unable to allocate list for sections.\n", __func__);
         goto error;
     }
 
@@ -93,10 +93,10 @@ config_t *config_new(const char *filename)
     err = nvs_open(filename, NVS_READWRITE, &fp);
     if (err != ESP_OK) {
         if (err == ESP_ERR_NVS_NOT_INITIALIZED) {
-            LOG_ERROR("%s: NVS not initialized. "
+            OSI_TRACE_ERROR("%s: NVS not initialized. "
                       "Call nvs_flash_init before initializing bluetooth.", __func__);
         } else {
-            LOG_ERROR("%s unable to open NVS namespace '%s'\n", __func__, filename);
+            OSI_TRACE_ERROR("%s unable to open NVS namespace '%s'\n", __func__, filename);
         }
         config_free(config);
         return NULL;
@@ -136,15 +136,15 @@ bool config_has_key(const config_t *config, const char *section, const char *key
 
 bool config_has_key_in_section(config_t *config, const char *key, char *key_value)
 {
-    LOG_DEBUG("key = %s, value = %s", key, key_value);
+    OSI_TRACE_DEBUG("key = %s, value = %s", key, key_value);
     for (const list_node_t *node = list_begin(config->sections); node != list_end(config->sections); node = list_next(node)) {
         const section_t *section = (const section_t *)list_node(node);
 
         for (const list_node_t *node = list_begin(section->entries); node != list_end(section->entries); node = list_next(node)) {
             entry_t *entry = list_node(node);
-            LOG_DEBUG("entry->key = %s, entry->value = %s", entry->key, entry->value);
+            OSI_TRACE_DEBUG("entry->key = %s, entry->value = %s", entry->key, entry->value);
             if (!strcmp(entry->key, key) && !strcmp(entry->value, key_value)) {
-                LOG_DEBUG("%s, the irk aready in the flash.", __func__);
+                OSI_TRACE_DEBUG("%s, the irk aready in the flash.", __func__);
                 return true;
             }
         }
@@ -338,7 +338,7 @@ static int get_config_size_from_flash(nvs_handle fp)
     esp_err_t err;
     char *keyname = osi_calloc(sizeof(CONFIG_KEY) + 1);
     if (!keyname){
-        LOG_ERROR("%s, malloc error\n", __func__);
+        OSI_TRACE_ERROR("%s, malloc error\n", __func__);
         return 0;
     }
     size_t length = CONFIG_FILE_DEFAULE_LENGTH;
@@ -351,7 +351,7 @@ static int get_config_size_from_flash(nvs_handle fp)
         return 0;
     }
     if (err != ESP_OK) {
-        LOG_ERROR("%s, error %d\n", __func__, err);
+        OSI_TRACE_ERROR("%s, error %d\n", __func__, err);
         osi_free(keyname);
         return 0;
     }
@@ -365,7 +365,7 @@ static int get_config_size_from_flash(nvs_handle fp)
             break;
         }
         if (err != ESP_OK) {
-            LOG_ERROR("%s, error %d\n", __func__, err);
+            OSI_TRACE_ERROR("%s, error %d\n", __func__, err);
             osi_free(keyname);
             return 0;
         }
@@ -396,7 +396,7 @@ bool config_save(const config_t *config, const char *filename)
     err = nvs_open(filename, NVS_READWRITE, &fp);
     if (err != ESP_OK) {
         if (err == ESP_ERR_NVS_NOT_INITIALIZED) {
-            LOG_ERROR("%s: NVS not initialized. "
+            OSI_TRACE_ERROR("%s: NVS not initialized. "
                       "Call nvs_flash_init before initializing bluetooth.", __func__);
         }
         err_code |= 0x02;
@@ -407,15 +407,15 @@ bool config_save(const config_t *config, const char *filename)
     for (const list_node_t *node = list_begin(config->sections); node != list_end(config->sections); node = list_next(node)) {
         const section_t *section = (const section_t *)list_node(node);
         w_cnt = snprintf(line, 1024, "[%s]\n", section->name);
-        LOG_DEBUG("section name: %s, w_cnt + w_cnt_total = %d\n", section->name, w_cnt + w_cnt_total);
+        OSI_TRACE_DEBUG("section name: %s, w_cnt + w_cnt_total = %d\n", section->name, w_cnt + w_cnt_total);
         memcpy(buf + w_cnt_total, line, w_cnt);
         w_cnt_total += w_cnt;
 
         for (const list_node_t *enode = list_begin(section->entries); enode != list_end(section->entries); enode = list_next(enode)) {
             const entry_t *entry = (const entry_t *)list_node(enode);
-            LOG_DEBUG("(key, val): (%s, %s)\n", entry->key, entry->value);
+            OSI_TRACE_DEBUG("(key, val): (%s, %s)\n", entry->key, entry->value);
             w_cnt = snprintf(line, 1024, "%s = %s\n", entry->key, entry->value);
-            LOG_DEBUG("%s, w_cnt + w_cnt_total = %d", __func__, w_cnt + w_cnt_total);
+            OSI_TRACE_DEBUG("%s, w_cnt + w_cnt_total = %d", __func__, w_cnt + w_cnt_total);
             memcpy(buf + w_cnt_total, line, w_cnt);
             w_cnt_total += w_cnt;
         }
@@ -444,10 +444,10 @@ bool config_save(const config_t *config, const char *filename)
             snprintf(keyname, sizeof(CONFIG_KEY)+1, "%s%d", CONFIG_KEY, i);
             if (i == count) {
                 err = nvs_set_blob(fp, keyname, buf + i*CONFIG_FILE_MAX_SIZE, w_cnt_total - i*CONFIG_FILE_MAX_SIZE);
-                LOG_DEBUG("save keyname = %s, i = %d, %d\n", keyname, i, w_cnt_total - i*CONFIG_FILE_MAX_SIZE);
+                OSI_TRACE_DEBUG("save keyname = %s, i = %d, %d\n", keyname, i, w_cnt_total - i*CONFIG_FILE_MAX_SIZE);
             }else {
                 err = nvs_set_blob(fp, keyname, buf + i*CONFIG_FILE_MAX_SIZE, CONFIG_FILE_MAX_SIZE);
-                LOG_DEBUG("save keyname = %s, i = %d, %d\n", keyname, i, CONFIG_FILE_MAX_SIZE);
+                OSI_TRACE_DEBUG("save keyname = %s, i = %d, %d\n", keyname, i, CONFIG_FILE_MAX_SIZE);
             }
             if (err != ESP_OK) {
                 nvs_close(fp);
@@ -481,7 +481,7 @@ error:
         osi_free(keyname);
     }
     if (err_code) {
-        LOG_ERROR("%s, err_code: 0x%x\n", __func__, err_code);
+        OSI_TRACE_ERROR("%s, err_code: 0x%x\n", __func__, err_code);
     }
     return false;
 }
@@ -558,7 +558,7 @@ static void config_parse(nvs_handle fp, config_t *config)
         // get one line
         int line_len = p_line_end - p_line_bgn;
         if (line_len > 1023) {
-            LOG_WARN("%s exceed max line length on line %d.\n", __func__, line_num);
+            OSI_TRACE_WARNING("%s exceed max line length on line %d.\n", __func__, line_num);
             break;
         }
         memcpy(line, p_line_bgn, line_len);
@@ -575,7 +575,7 @@ static void config_parse(nvs_handle fp, config_t *config)
         if (*line_ptr == '[') {
             size_t len = strlen(line_ptr);
             if (line_ptr[len - 1] != ']') {
-                LOG_WARN("%s unterminated section name on line %d.\n", __func__, line_num);
+                OSI_TRACE_WARNING("%s unterminated section name on line %d.\n", __func__, line_num);
                 continue;
             }
             strncpy(section, line_ptr + 1, len - 2);
@@ -583,7 +583,7 @@ static void config_parse(nvs_handle fp, config_t *config)
         } else {
             char *split = strchr(line_ptr, '=');
             if (!split) {
-                LOG_DEBUG("%s no key/value separator found on line %d.\n", __func__, line_num);
+                OSI_TRACE_DEBUG("%s no key/value separator found on line %d.\n", __func__, line_num);
                 continue;
             }
             *split = '\0';
@@ -605,7 +605,7 @@ error:
         osi_free(keyname);
     }
     if (err_code) {
-        LOG_ERROR("%s returned with err code: %d\n", __func__, err_code);
+        OSI_TRACE_ERROR("%s returned with err code: %d\n", __func__, err_code);
     }
 }
 

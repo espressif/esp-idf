@@ -17,6 +17,8 @@ import os
 import threading
 import functools
 
+import netifaces
+
 import EnvConfig
 
 
@@ -47,12 +49,12 @@ class Env(object):
                  dut=None,
                  env_tag=None,
                  env_config_file=None,
-                 test_name=None,
+                 test_suite_name=None,
                  **kwargs):
         self.app_cls = app
         self.default_dut_cls = dut
         self.config = EnvConfig.Config(env_config_file, env_tag)
-        self.log_path = self.app_cls.get_log_folder(test_name)
+        self.log_path = self.app_cls.get_log_folder(test_suite_name)
         if not os.path.exists(self.log_path):
             os.makedirs(self.log_path)
 
@@ -130,17 +132,34 @@ class Env(object):
         """
         return self.config.get_variable(variable_name)
 
+    PROTO_MAP = {
+        "ipv4": netifaces.AF_INET,
+        "ipv6": netifaces.AF_INET6,
+        "mac": netifaces.AF_LINK,
+    }
+
     @_synced
-    def get_pc_nic_info(self, nic_name="pc_nic"):
+    def get_pc_nic_info(self, nic_name="pc_nic", proto="ipv4"):
         """
         get_pc_nic_info(nic_name="pc_nic")
-        try to get nic info (ip address, ipv6 address, mac address)
+        try to get info of a specified NIC and protocol.
 
-        :param nic_name: pc nic name. allows passing variable name, nic name value or omitted (to get default nic info).
-        :return: a dict of address ("ipv4", "ipv6", "mac") if successfully found. otherwise None.
+        :param nic_name: pc nic name. allows passing variable name, nic name value.
+        :param proto: "ipv4", "ipv6" or "mac"
+        :return: a dict of nic info if successfully found. otherwise None.
+                 nic info keys could be different for different protocols.
+                 key "addr" is available for both mac, ipv4 and ipv6 pic info.
         """
-        # TODO: need to implement auto get nic info method
-        return self.config.get_variable("nic_info/" + nic_name)
+        interfaces = netifaces.interfaces()
+        if nic_name in interfaces:
+            # the name is in the interface list, we regard it as NIC name
+            if_addr = netifaces.ifaddresses(nic_name)
+        else:
+            # it's not in interface name list, we assume it's variable name
+            _nic_name = self.get_variable(nic_name)
+            if_addr = netifaces.ifaddresses(_nic_name)
+
+        return if_addr[self.PROTO_MAP[proto]][0]
 
     @_synced
     def close(self):
