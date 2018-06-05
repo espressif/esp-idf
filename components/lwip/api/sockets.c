@@ -1075,7 +1075,8 @@ lwip_recvfrom(int s, void *mem, size_t len, int flags,
 
     /* Check to see from where the data was.*/
     if (done) {
-#if !SOCKETS_DEBUG
+/* enabling the UDP fix for ESP32 below when SOCKET_DEBUG is off */
+#if !SOCKETS_DEBUG && !ESP_LWIP
       if (from && fromlen)
 #endif /* !SOCKETS_DEBUG */
       {
