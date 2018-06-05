@@ -299,7 +299,7 @@ float mcpwm_get_duty(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcpwm_oper
     MCPWM_CHECK(timer_num < MCPWM_TIMER_MAX, MCPWM_TIMER_ERROR, ESP_ERR_INVALID_ARG);
     MCPWM_CHECK(op_num < MCPWM_OPR_MAX, MCPWM_OP_ERROR, ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&mcpwm_spinlock);
-    duty = (MCPWM[mcpwm_num]->channel[timer_num].cmpr_value[op_num].cmpr_val) * 100 / (MCPWM[mcpwm_num]->timer[timer_num].period.period);
+    duty = 100.0 * (MCPWM[mcpwm_num]->channel[timer_num].cmpr_value[op_num].cmpr_val) / (MCPWM[mcpwm_num]->timer[timer_num].period.period);
     portEXIT_CRITICAL(&mcpwm_spinlock);
     return duty;
 }
@@ -394,7 +394,7 @@ esp_err_t mcpwm_carrier_set_duty_cycle(mcpwm_unit_t mcpwm_num, mcpwm_timer_t tim
     return ESP_OK;
 }
 
-esp_err_t mcpwm_carrier_enable_oneshot_mode(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, uint8_t pulse_width)
+esp_err_t mcpwm_carrier_oneshot_mode_enable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, uint8_t pulse_width)
 {
     MCPWM_CHECK(mcpwm_num < MCPWM_UNIT_MAX, MCPWM_UNIT_NUM_ERROR, ESP_ERR_INVALID_ARG);
     MCPWM_CHECK(timer_num < MCPWM_TIMER_MAX, MCPWM_TIMER_ERROR, ESP_ERR_INVALID_ARG);
@@ -404,7 +404,7 @@ esp_err_t mcpwm_carrier_enable_oneshot_mode(mcpwm_unit_t mcpwm_num, mcpwm_timer_
     return ESP_OK;
 }
 
-esp_err_t mcpwm_carrier_disable_oneshot_mode(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num)
+esp_err_t mcpwm_carrier_oneshot_mode_disable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num)
 {
     MCPWM_CHECK(mcpwm_num < MCPWM_UNIT_MAX, MCPWM_UNIT_NUM_ERROR, ESP_ERR_INVALID_ARG);
     MCPWM_CHECK(timer_num < MCPWM_TIMER_MAX, MCPWM_TIMER_ERROR, ESP_ERR_INVALID_ARG);
@@ -434,9 +434,9 @@ esp_err_t mcpwm_carrier_init(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, co
     mcpwm_carrier_set_period(mcpwm_num, timer_num, carrier_conf->carrier_period);
     mcpwm_carrier_set_duty_cycle(mcpwm_num, timer_num, carrier_conf->carrier_duty);
     if (carrier_conf->carrier_os_mode == MCPWM_ONESHOT_MODE_EN) {
-        mcpwm_carrier_enable_oneshot_mode(mcpwm_num, timer_num, carrier_conf->pulse_width_in_os);
+        mcpwm_carrier_oneshot_mode_enable(mcpwm_num, timer_num, carrier_conf->pulse_width_in_os);
     } else {
-        mcpwm_carrier_disable_oneshot_mode(mcpwm_num, timer_num);
+        mcpwm_carrier_oneshot_mode_disable(mcpwm_num, timer_num);
     }
     mcpwm_carrier_output_invert(mcpwm_num, timer_num, carrier_conf->carrier_ivt_mode);
     MCPWM[mcpwm_num]->channel[timer_num].carrier_cfg.in_invert = 0;
