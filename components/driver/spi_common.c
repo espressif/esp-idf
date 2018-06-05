@@ -65,12 +65,12 @@ typedef struct {
     const uint8_t spihd_in;
     const uint8_t spics_out[3];     // /CS GPIO output mux signals
     const uint8_t spics_in;
-    const uint8_t spiclk_native;    //IO pins of IO_MUX muxed signals
-    const uint8_t spid_native;
-    const uint8_t spiq_native;
-    const uint8_t spiwp_native;
-    const uint8_t spihd_native;
-    const uint8_t spics0_native;
+    const uint8_t spiclk_iomux_pin;    //IO pins of IO_MUX muxed signals
+    const uint8_t spid_iomux_pin;
+    const uint8_t spiq_iomux_pin;
+    const uint8_t spiwp_iomux_pin;
+    const uint8_t spihd_iomux_pin;
+    const uint8_t spics0_iomux_pin;
     const uint8_t irq;              //irq source for interrupt mux
     const uint8_t irq_dma;          //dma irq source for interrupt mux
     const periph_module_t module;   //peripheral module, for enabling clock etc
@@ -94,12 +94,12 @@ static const spi_signal_conn_t io_signal[3] = {
         .spihd_in = SPIHD_IN_IDX,
         .spics_out = {SPICS0_OUT_IDX, SPICS1_OUT_IDX, SPICS2_OUT_IDX},
         .spics_in = SPICS0_IN_IDX,
-        .spiclk_native = 6,
-        .spid_native = 8,
-        .spiq_native = 7,
-        .spiwp_native = 10,
-        .spihd_native = 9,
-        .spics0_native = 11,
+        .spiclk_iomux_pin = 6,
+        .spid_iomux_pin = 8,
+        .spiq_iomux_pin = 7,
+        .spiwp_iomux_pin = 10,
+        .spihd_iomux_pin = 9,
+        .spics0_iomux_pin = 11,
         .irq = ETS_SPI1_INTR_SOURCE,
         .irq_dma = ETS_SPI1_DMA_INTR_SOURCE,
         .module = PERIPH_SPI_MODULE,
@@ -117,12 +117,12 @@ static const spi_signal_conn_t io_signal[3] = {
         .spihd_in = HSPIHD_IN_IDX,
         .spics_out = {HSPICS0_OUT_IDX, HSPICS1_OUT_IDX, HSPICS2_OUT_IDX},
         .spics_in = HSPICS0_IN_IDX,
-        .spiclk_native = 14,
-        .spid_native = 13,
-        .spiq_native = 12,
-        .spiwp_native = 2,
-        .spihd_native = 4,
-        .spics0_native = 15,
+        .spiclk_iomux_pin = 14,
+        .spid_iomux_pin = 13,
+        .spiq_iomux_pin = 12,
+        .spiwp_iomux_pin = 2,
+        .spihd_iomux_pin = 4,
+        .spics0_iomux_pin = 15,
         .irq = ETS_SPI2_INTR_SOURCE,
         .irq_dma = ETS_SPI2_DMA_INTR_SOURCE,
         .module = PERIPH_HSPI_MODULE,
@@ -140,12 +140,12 @@ static const spi_signal_conn_t io_signal[3] = {
         .spihd_in = VSPIHD_IN_IDX,
         .spics_out = {VSPICS0_OUT_IDX, VSPICS1_OUT_IDX, VSPICS2_OUT_IDX},
         .spics_in = VSPICS0_IN_IDX,
-        .spiclk_native = 18,
-        .spid_native = 23,
-        .spiq_native = 19,
-        .spiwp_native = 22,
-        .spihd_native = 21,
-        .spics0_native = 5,
+        .spiclk_iomux_pin = 18,
+        .spid_iomux_pin = 23,
+        .spiq_iomux_pin = 19,
+        .spiwp_iomux_pin = 22,
+        .spihd_iomux_pin = 21,
+        .spics0_iomux_pin = 5,
         .irq = ETS_SPI3_INTR_SOURCE,
         .irq_dma = ETS_SPI3_DMA_INTR_SOURCE,
         .module = PERIPH_VSPI_MODULE,
@@ -228,7 +228,7 @@ it should be able to be initialized.
 */
 esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_config_t *bus_config, int dma_chan, uint32_t flags, uint32_t* flags_o)
 {
-    bool native = true;
+    bool use_iomux = true;
     uint32_t temp_flag=0;
     bool quad_pins_exist = true;
     //the MISO should be output capable in slave mode, or in DIO/QIO mode.
@@ -236,24 +236,24 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
     //the MOSI should be output capble in master mode, or in DIO/QIO mode.
     bool mosi_output = (flags&SPICOMMON_BUSFLAG_MASTER)!=0 || flags&SPICOMMON_BUSFLAG_DUAL;
 
-    //check pins existence and if the selected pins correspond to the native pins of the peripheral
+    //check pins existence and if the selected pins correspond to the iomux pins of the peripheral
     if (bus_config->sclk_io_num>=0) {
         temp_flag |= SPICOMMON_BUSFLAG_SCLK;
         SPI_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(bus_config->sclk_io_num), "sclk not valid", ESP_ERR_INVALID_ARG);
-        if (bus_config->sclk_io_num != io_signal[host].spiclk_native) native = false;
+        if (bus_config->sclk_io_num != io_signal[host].spiclk_iomux_pin) use_iomux = false;
     } else {
         SPI_CHECK((flags&SPICOMMON_BUSFLAG_SCLK)==0, "sclk pin required.", ESP_ERR_INVALID_ARG);
     }
     if (bus_config->quadwp_io_num>=0) {
         SPI_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(bus_config->quadwp_io_num), "spiwp not valid", ESP_ERR_INVALID_ARG);
-        if (bus_config->quadwp_io_num != io_signal[host].spiwp_native) native = false;
+        if (bus_config->quadwp_io_num != io_signal[host].spiwp_iomux_pin) use_iomux = false;
     } else {
         quad_pins_exist = false;
         SPI_CHECK((flags&SPICOMMON_BUSFLAG_WPHD)==0, "spiwp pin required.", ESP_ERR_INVALID_ARG);
     }
     if (bus_config->quadhd_io_num>=0) {
         SPI_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(bus_config->quadhd_io_num), "spihd not valid", ESP_ERR_INVALID_ARG);
-        if (bus_config->quadhd_io_num != io_signal[host].spihd_native) native = false;
+        if (bus_config->quadhd_io_num != io_signal[host].spihd_iomux_pin) use_iomux = false;
     } else {
         quad_pins_exist = false;
         SPI_CHECK((flags&SPICOMMON_BUSFLAG_WPHD)==0, "spihd pin required.", ESP_ERR_INVALID_ARG);
@@ -265,7 +265,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         } else {
             SPI_CHECK(GPIO_IS_VALID_GPIO(bus_config->mosi_io_num), "mosi not valid", ESP_ERR_INVALID_ARG);
         }
-        if (bus_config->mosi_io_num != io_signal[host].spid_native) native = false;
+        if (bus_config->mosi_io_num != io_signal[host].spid_iomux_pin) use_iomux = false;
     } else {
         SPI_CHECK((flags&SPICOMMON_BUSFLAG_MOSI)==0, "mosi pin required.", ESP_ERR_INVALID_ARG);
     }
@@ -276,7 +276,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         } else {
             SPI_CHECK(GPIO_IS_VALID_GPIO(bus_config->miso_io_num), "miso not valid", ESP_ERR_INVALID_ARG);
         }
-        if (bus_config->miso_io_num != io_signal[host].spiq_native) native = false;
+        if (bus_config->miso_io_num != io_signal[host].spiq_iomux_pin) use_iomux = false;
     } else {
         SPI_CHECK((flags&SPICOMMON_BUSFLAG_MISO)==0, "miso pin required.", ESP_ERR_INVALID_ARG);
     }
@@ -287,13 +287,13 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
     }
     //set flags for QUAD mode according to the existence of wp and hd
     if (quad_pins_exist) temp_flag |= SPICOMMON_BUSFLAG_WPHD;
-    //check native pins if required.
-    SPI_CHECK((flags&SPICOMMON_BUSFLAG_NATIVE_PINS)==0 || native, "not using native pins", ESP_ERR_INVALID_ARG);
+    //check iomux pins if required.
+    SPI_CHECK((flags&SPICOMMON_BUSFLAG_NATIVE_PINS)==0 || use_iomux, "not using iomux pins", ESP_ERR_INVALID_ARG);
 
-    if (native) {
-        //All SPI native pin selections resolve to 1, so we put that here instead of trying to figure
+    if (use_iomux) {
+        //All SPI iomux pin selections resolve to 1, so we put that here instead of trying to figure
         //out which FUNC_GPIOx_xSPIxx to grab; they all are defined to 1 anyway.
-        ESP_LOGD(SPI_TAG, "SPI%d use native pins.", host );
+        ESP_LOGD(SPI_TAG, "SPI%d use iomux pins.", host );
         if (bus_config->mosi_io_num >= 0) {
             gpio_iomux_in(bus_config->mosi_io_num, io_signal[host].spid_in);
             gpio_iomux_out(bus_config->mosi_io_num, FUNC_SPI, false);
@@ -378,11 +378,11 @@ static void reset_func_to_gpio(int func)
 
 esp_err_t spicommon_bus_free_io(spi_host_device_t host)
 {
-    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[io_signal[host].spid_native], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[io_signal[host].spid_native], PIN_FUNC_GPIO);
-    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[io_signal[host].spiq_native], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[io_signal[host].spiq_native], PIN_FUNC_GPIO);
-    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[io_signal[host].spiclk_native], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[io_signal[host].spiclk_native], PIN_FUNC_GPIO);
-    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[io_signal[host].spiwp_native], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[io_signal[host].spiwp_native], PIN_FUNC_GPIO);
-    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[io_signal[host].spihd_native], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[io_signal[host].spihd_native], PIN_FUNC_GPIO);
+    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[io_signal[host].spid_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[io_signal[host].spid_iomux_pin], PIN_FUNC_GPIO);
+    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[io_signal[host].spiq_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[io_signal[host].spiq_iomux_pin], PIN_FUNC_GPIO);
+    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[io_signal[host].spiclk_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[io_signal[host].spiclk_iomux_pin], PIN_FUNC_GPIO);
+    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[io_signal[host].spiwp_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[io_signal[host].spiwp_iomux_pin], PIN_FUNC_GPIO);
+    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[io_signal[host].spihd_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[io_signal[host].spihd_iomux_pin], PIN_FUNC_GPIO);
     reset_func_to_gpio(io_signal[host].spid_out);
     reset_func_to_gpio(io_signal[host].spiq_out);
     reset_func_to_gpio(io_signal[host].spiclk_out);
@@ -393,7 +393,7 @@ esp_err_t spicommon_bus_free_io(spi_host_device_t host)
 
 void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, int force_gpio_matrix)
 {
-    if (!force_gpio_matrix && cs_io_num == io_signal[host].spics0_native && cs_num == 0) {
+    if (!force_gpio_matrix && cs_io_num == io_signal[host].spics0_iomux_pin && cs_num == 0) {
         //The cs0s for all SPI peripherals map to pin mux source 1, so we use that instead of a define.
         gpio_iomux_in(cs_io_num, io_signal[host].spics_in);
         gpio_iomux_out(cs_io_num, FUNC_SPI, false);
@@ -407,8 +407,8 @@ void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, 
 
 void spicommon_cs_free(spi_host_device_t host, int cs_io_num)
 {
-    if (cs_io_num == 0 && REG_GET_FIELD(GPIO_PIN_MUX_REG[io_signal[host].spics0_native], MCU_SEL) == 1) {
-        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[io_signal[host].spics0_native], PIN_FUNC_GPIO);
+    if (cs_io_num == 0 && REG_GET_FIELD(GPIO_PIN_MUX_REG[io_signal[host].spics0_iomux_pin], MCU_SEL) == 1) {
+        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[io_signal[host].spics0_iomux_pin], PIN_FUNC_GPIO);
     }
     reset_func_to_gpio(io_signal[host].spics_out[cs_io_num]);
 }
