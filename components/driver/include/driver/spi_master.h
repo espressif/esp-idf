@@ -48,7 +48,7 @@ extern "C"
 #define SPI_DEVICE_POSITIVE_CS             (1<<3)  ///< Make CS positive during a transaction instead of negative
 #define SPI_DEVICE_HALFDUPLEX              (1<<4)  ///< Transmit data before receiving it, instead of simultaneously
 #define SPI_DEVICE_CLK_AS_CS               (1<<5)  ///< Output clock on CS line if CS is active
-/** There are timing issue when reading at high frequency (the frequency is related to whether native pins are used, valid time after slave sees the clock).
+/** There are timing issue when reading at high frequency (the frequency is related to whether iomux pins are used, valid time after slave sees the clock).
   *     - In half-duplex mode, the driver automatically inserts dummy bits before reading phase to fix the timing issue. Set this flag to disable this feature.
   *     - In full-duplex mode, however, the hardware cannot use dummy bits, so there is no way to prevent data being read from getting corrupted.
   *       Set this flag to confirm that you're going to work with output only, or read without dummy bits at your own risk.
@@ -274,7 +274,7 @@ int spi_cal_clock(int fapb, int hz, int duty_cycle, uint32_t* reg_o);
 /**
   * @brief Calculate the timing settings of specified frequency and settings.
   *
-  * @param gpio_is_used True if using GPIO matrix, or False if native pins are used.
+  * @param gpio_is_used True if using GPIO matrix, or False if iomux pins are used.
   * @param input_delay_ns Input delay from SCLK launch edge to MISO data valid.
   * @param eff_clk Effective clock frequency (in Hz) from spi_cal_clock.
   * @param dummy_o Address of dummy bits used output. Set to NULL if not needed.

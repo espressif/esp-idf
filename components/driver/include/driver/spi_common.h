@@ -100,11 +100,9 @@ bool spicommon_dma_chan_claim(int dma_chan);
  */
 bool spicommon_dma_chan_free(int dma_chan);
 
-
-
 #define SPICOMMON_BUSFLAG_SLAVE         0          ///< Initialize I/O in slave mode
 #define SPICOMMON_BUSFLAG_MASTER        (1<<0)     ///< Initialize I/O in master mode
-#define SPICOMMON_BUSFLAG_NATIVE_PINS   (1<<1)     ///< Check using native pins. Or indicates the pins are configured through the IO mux rather than GPIO matrix.
+#define SPICOMMON_BUSFLAG_NATIVE_PINS   (1<<1)     ///< Check using iomux pins. Or indicates the pins are configured through the IO mux rather than GPIO matrix.
 #define SPICOMMON_BUSFLAG_SCLK          (1<<2)     ///< Check existing of SCLK pin. Or indicates CLK line initialized.
 #define SPICOMMON_BUSFLAG_MISO          (1<<3)     ///< Check existing of MISO pin. Or indicates MISO line initialized.
 #define SPICOMMON_BUSFLAG_MOSI          (1<<4)     ///< Check existing of MOSI pin. Or indicates CLK line initialized.
@@ -125,7 +123,7 @@ bool spicommon_dma_chan_free(int dma_chan);
  * @param flags Combination of SPICOMMON_BUSFLAG_* flags, set to ensure the pins set are capable with some functions:
  *              - ``SPICOMMON_BUSFLAG_MASTER``: Initialize I/O in master mode
  *              - ``SPICOMMON_BUSFLAG_SLAVE``: Initialize I/O in slave mode
- *              - ``SPICOMMON_BUSFLAG_NATIVE_PINS``: Pins set should match the native pins of the controller.
+ *              - ``SPICOMMON_BUSFLAG_NATIVE_PINS``: Pins set should match the iomux pins of the controller.
  *              - ``SPICOMMON_BUSFLAG_SCLK``, ``SPICOMMON_BUSFLAG_MISO``, ``SPICOMMON_BUSFLAG_MOSI``: 
  *                  Make sure SCLK/MISO/MOSI is/are set to a valid GPIO. Also check output capability according to the mode.
  *              - ``SPICOMMON_BUSFLAG_DUAL``: Make sure both MISO and MOSI are output capable so that DIO mode is capable.
@@ -133,7 +131,7 @@ bool spicommon_dma_chan_free(int dma_chan);
  *              - ``SPICOMMON_BUSFLAG_QUAD``: Combination of ``SPICOMMON_BUSFLAG_DUAL`` and ``SPICOMMON_BUSFLAG_WPHD``.
  * @param[out] flags_o A SPICOMMON_BUSFLAG_* flag combination of bus abilities will be written to this address.
  *              Leave to NULL if not needed.
- *              - ``SPICOMMON_BUSFLAG_NATIVE_PINS``: The bus is connected to native pins.
+ *              - ``SPICOMMON_BUSFLAG_NATIVE_PINS``: The bus is connected to iomux pins.
  *              - ``SPICOMMON_BUSFLAG_SCLK``, ``SPICOMMON_BUSFLAG_MISO``, ``SPICOMMON_BUSFLAG_MOSI``: The bus has
  *                  CLK/MISO/MOSI connected.
  *              - ``SPICOMMON_BUSFLAG_DUAL``: The bus is capable with DIO mode.
