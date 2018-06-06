@@ -317,5 +317,5 @@ static void rs485_master()
 // of function pointers in unity macro expansion. These warnings may be treated as errors during compilation.
 #pragma GCC diagnostic push  // required for GCC
 #pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
-TEST_CASE_MULTIPLE_DEVICES("RS485 half duplex uart multiple devices test.", "[driver][ignore]", rs485_master, rs485_slave);
+TEST_CASE_MULTIPLE_DEVICES("RS485 half duplex uart multiple devices test.", "[driver]", rs485_master, rs485_slave);
 #pragma GCC diagnostic pop   // require GCC
