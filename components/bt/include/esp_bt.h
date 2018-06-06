@@ -291,7 +291,7 @@ void esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callback);
 
 /** @brief esp_bt_controller_mem_release
  * release the memory by mode, if never use the bluetooth mode
- * it can release the .bbs, .data and other section to heap.
+ * it can release the .bss, .data and other section to heap.
  * The total size is about 70k bytes.
  *
  * esp_bt_controller_mem_release(mode) should be called only before esp_bt_controller_init()
