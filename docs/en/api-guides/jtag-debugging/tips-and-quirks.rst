@@ -81,8 +81,8 @@ What is the meaning of debugger's startup commands?
 On startup, debugger is issuing sequence of commands to reset the chip and halt it at specific line of code. This sequence (shown below) is user defined to pick up at most convenient / appropriate line and start debugging. 
 
 * ``mon reset halt`` — reset the chip and keep the CPUs halted
+* ``flushregs`` — monitor (``mon``) command can not inform GDB that the target state has changed. GDB will assume that whatever stack the target had before ``mon reset halt`` will still be valid. In fact, after reset the target state will change, and executing ``flushregs`` is a way to force GDB to get new state from the target.
 * ``thb app_main`` — insert a temporary hardware breakpoint at ``app_main``, put here another function name if required
-* ``x $a1=0`` — this is the tricky part. As far as we can tell, there is no way for a ``mon`` command to tell GDB that the target state has changed. GDB will assume that whatever stack the target had before ``mon reset halt`` will still be valid. In fact, after reset the target state will change and executing ``x $a1=0`` is a way to force GDB to get new state from the target.
 * ``c`` — resume the program. It will then stop at breakpoint inserted at ``app_main``.
 
 
