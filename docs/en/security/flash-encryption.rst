@@ -196,7 +196,7 @@ Flash encryption keys are 32 bytes of random data. You can generate a random key
 
 Alternatively, if you're using :doc:`secure boot <secure-boot>` and have a secure boot signing key then you can generate a deterministic SHA-256 digest of the secure boot private signing key and use this as the flash encryption key::
 
-  espsecure.py digest_private-key --keyfile secure_boot_signing_key.pem my_flash_encryption_key.bin
+  espsecure.py digest_private_key --keyfile secure_boot_signing_key.pem my_flash_encryption_key.bin
 
 (The same 32 bytes is used as the secure boot digest key if you enable :ref:`reflashable mode<secure-boot-reflashable>` for secure boot.)
 
