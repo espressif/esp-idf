@@ -1751,19 +1751,31 @@ tcp_pcb_purge(struct tcp_pcb *pcb)
     if (pcb->state == SYN_RCVD) {
       /* Need to find the corresponding listen_pcb and decrease its accepts_pending */
       struct tcp_pcb_listen *lpcb;
-      LWIP_ASSERT("tcp_pcb_purge: pcb->state == SYN_RCVD but tcp_listen_pcbs is NULL",
-        tcp_listen_pcbs.listen_pcbs != NULL);
-      for (lpcb = tcp_listen_pcbs.listen_pcbs; lpcb != NULL; lpcb = lpcb->next) {
-        if ((lpcb->local_port == pcb->local_port) &&
-            (IP_IS_V6_VAL(pcb->local_ip) == IP_IS_V6_VAL(lpcb->local_ip)) &&
-            (ip_addr_isany(&lpcb->local_ip) ||
-             ip_addr_cmp(&pcb->local_ip, &lpcb->local_ip))) {
-            /* port and address of the listen pcb match the timed-out pcb */
-            LWIP_ASSERT("tcp_pcb_purge: listen pcb does not have accepts pending",
-              lpcb->accepts_pending > 0);
-            lpcb->accepts_pending--;
-            break;
+
+      /*
+       * The official LWIP will assert the system if tcp_listen_pcbs.listen_pcbs is NULL, it's a bug.
+       *
+       * Considering following scenario:
+       * 1. On TCP server side, one of TCP pcb is in SYNC_RECV state and is waiting for TCP ACK from TCP client.
+       * 2. The TCP server is closed by application, which causes the tcp_listen_pcbs.listen_pcbs to become NULL.
+       * 3. When SYNC_RECV state timeout (20s by default), tcp_pcb_purge() is called in tcp_slowtmr(), it asserts
+       *    the system.
+       * This is a normal scenario, should NOT assert the system. So just remove it.
+       * 
+       */
+      if (tcp_listen_pcbs.listen_pcbs) {
+        for (lpcb = tcp_listen_pcbs.listen_pcbs; lpcb != NULL; lpcb = lpcb->next) {
+          if ((lpcb->local_port == pcb->local_port) &&
+              (IP_IS_V6_VAL(pcb->local_ip) == IP_IS_V6_VAL(lpcb->local_ip)) &&
+              (ip_addr_isany(&lpcb->local_ip) ||
+               ip_addr_cmp(&pcb->local_ip, &lpcb->local_ip))) {
+              /* port and address of the listen pcb match the timed-out pcb */
+              LWIP_ASSERT("tcp_pcb_purge: listen pcb does not have accepts pending",
+                lpcb->accepts_pending > 0);
+              lpcb->accepts_pending--;
+              break;
           }
+        }
       }
     }
 #endif /* TCP_LISTEN_BACKLOG */
