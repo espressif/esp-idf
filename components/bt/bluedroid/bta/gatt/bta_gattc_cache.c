@@ -622,10 +622,11 @@ static void bta_gattc_explore_srvc(UINT16 conn_id, tBTA_GATTC_SERV *p_srvc_cb)
         L2CA_EnableUpdateBleConnParams(p_clcb->p_srcb->server_bda, TRUE);
     }
 #endif
+#if(GATTC_CACHE_NVS == TRUE)
     /* save cache to NV */
     p_clcb->p_srcb->state = BTA_GATTC_SERV_SAVE;
-
     bta_gattc_cache_save(p_clcb->p_srcb, p_clcb->bta_conn_id);
+#endif
     bta_gattc_reset_discover_st(p_clcb->p_srcb, BTA_GATT_OK);
 }
 /*******************************************************************************

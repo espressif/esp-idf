@@ -94,6 +94,10 @@
 #define CLASSIC_BT_INCLUDED         FALSE
 #endif /* CLASSIC_BT_INCLUDED */
 
+#ifndef CONFIG_GATTC_CACHE_NVS_FLASH
+#define CONFIG_GATTC_CACHE_NVS_FLASH         FALSE
+#endif /* CONFIG_GATTC_CACHE_NVS_FLASH */
+
 /******************************************************************************
 **
 ** BLE features
@@ -110,6 +114,12 @@
 #else
 #define GATTC_INCLUDED              FALSE
 #endif  /* CONFIG_GATTC_ENABLE */
+
+#if (CONFIG_GATTC_ENABLE && CONFIG_GATTC_CACHE_NVS_FLASH)
+#define GATTC_CACHE_NVS              TRUE
+#else
+#define GATTC_CACHE_NVS              FALSE
+#endif  /* CONFIG_GATTC_CACHE_NVS_FLASH */
 
 #if (CONFIG_SMP_ENABLE)
 #define SMP_INCLUDED              TRUE

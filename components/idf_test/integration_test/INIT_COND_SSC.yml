@@ -355,11 +355,11 @@ initial condition:
     - - R SSC2 C +BLEADV:OK
   - - SSC SSC2 gatts -S -z load -p 0xA0
     - - R SSC2 C +GATTS:StartService,OK,A000
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - - R SSC1 C +GATTC:OK
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
     - - R SSC1 C +BLE:GattcConnect,OK
       - P SSC2 C +BLE:GattsConnect
-  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
-    - - R SSC1 C +GATTC:OK
   force restore cmd set:
   - ''
   - - SSC SSC[1-2] reboot
@@ -383,11 +383,11 @@ initial condition:
     - - R SSC2 C +BLEADV:OK
   - - SSC SSC2 gatts -S -z load -p 0xA0
     - - R SSC2 C +GATTS:StartService,OK,A000
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - - R SSC1 C +GATTC:OK
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
     - - R SSC1 C +BLE:GattcConnect,OK
       - P SSC2 C +BLE:GattsConnect
-  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
-    - - R SSC1 C +GATTC:OK
   restore post cmd set:
   - ''
   - - SSC SSC1 ram
@@ -425,11 +425,11 @@ initial condition:
     - - R SSC2 C +BLEADV:OK
   - - SSC SSC2 gatts -S -z load -p 0xA2
     - - R SSC2 C +GATTS:StartService,OK,A002
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - - R SSC1 C +GATTC:OK
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
     - - R SSC1 C +BLE:GattcConnect,OK
       - P SSC2 C +BLE:GattsConnect
-  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
-    - - R SSC1 C +GATTC:OK
   force restore cmd set:
   - ''
   - - SSC SSC[1-2] reboot
@@ -453,11 +453,11 @@ initial condition:
     - - R SSC2 C +BLEADV:OK
   - - SSC SSC2 gatts -S -z load -p 0xA2
     - - R SSC2 C +GATTS:StartService,OK,A002
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - - R SSC1 C +GATTC:OK
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
     - - R SSC1 C +BLE:GattcConnect,OK
       - P SSC2 C +BLE:GattsConnect
-  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
-    - - R SSC1 C +GATTC:OK
   restore post cmd set:
   - ''
   - - SSC SSC1 ram
@@ -495,13 +495,13 @@ initial condition:
     - - R SSC2 C +BLEADV:OK
   - - SSC SSC[1-2] gatts -S -z load -p 0xA2
     - - R SSC[1-2] C +GATTS:StartService,OK,A002
+  - - SSC SSC[1-2] gattc -F -r <dut[2,1]_bt_mac>
+    - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
     - - R SSC1 C +BLE:GattcConnect,OK
       - P SSC2 C +BLE:GattsConnect
   - - SSC SSC2 bleconn -C -p 0x10 -a <dut1_bt_mac>
     - - R SSC2 C +BLE:GattcOpen,OK
-  - - SSC SSC[1-2] gattc -F -r <dut[2-1]_bt_mac>
-    - - R SSC[1-2] C +GATTC:OK
   force restore cmd set:
   - ''
   - - SSC SSC[1-2] reboot
@@ -525,13 +525,13 @@ initial condition:
     - - R SSC2 C +BLEADV:OK
   - - SSC SSC[1-2] gatts -S -z load -p 0xA2
     - - R SSC[1-2] C +GATTS:StartService,OK,A002
+  - - SSC SSC[1-2] gattc -F -r <dut[2,1]_bt_mac>
+    - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
     - - R SSC1 C +BLE:GattcConnect,OK
       - P SSC2 C +BLE:GattsConnect
   - - SSC SSC2 bleconn -C -p 0x10 -a <dut1_bt_mac>
     - - R SSC2 C +BLE:GattcOpen,OK
-  - - SSC SSC[1-2] gattc -F -r <dut[2-1]_bt_mac>
-    - - R SSC[1-2] C +GATTC:OK
   restore post cmd set:
   - ''
   - - SSC SSC1 ram
@@ -565,6 +565,8 @@ initial condition:
     - - P SSC[2-5] C +BLEADV:Start,OK
   - - SSC SSC[2-5] gatts -S -z load -p 0xA2
     - - P SSC[2-5] C +GATTS:StartService,OK,A002
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - - R SSC1 C +GATTC:OK
   - - LOOP 4 1 "[2,3,4,5]" "[2,3,4,5]" "[2,3,4,5]"
     - ''
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut{%d}_bt_mac>
@@ -593,13 +595,13 @@ initial condition:
     - - P SSC[2-5] C +BLEADV:Start,OK
   - - SSC SSC[2-5] gatts -S -z load -p 0xA2
     - - P SSC[2-5] C +GATTS:StartService,OK,A002
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - - R SSC1 C +GATTC:OK
   - - LOOP 4 1 "[2,3,4,5]" "[2,3,4,5]" "[2,3,4,5]"
     - ''
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut{%d}_bt_mac>
     - - R SSC1 RE "\+BLE:GattcConnect,OK,0010,%%s"%%(<dut{%d}_bt_mac>)
       - P SSC{%d} C +BLE:GattsConnect
-  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
-    - - R SSC1 C +GATTC:OK
   restore post cmd set:
   - ''
   - - SSC SSC1 ram
@@ -637,11 +639,11 @@ initial condition:
     - ''
   - - SSC SSC1 bleadv -D -z start
     - - P SSC1 C +BLEADV:Start,OK
+  - - SSC SSC[2-5] gattc -F -r <dut1_bt_mac>
+    - - R SSC[2-5] C +GATTC:OK
   - - SSC SSC{%d} bleconn -C -p 0x10 -a <dut1_bt_mac>
     - - R SSC{%d} RE "\+BLE:GattcConnect,OK,0010,%%s"%%(<dut1_bt_mac>)
       - P SSC1 C +BLE:GattsConnect
-  - - SSC SSC[2-5] gattc -F -r <dut1_bt_mac>
-    - - R SSC[2-5] C +GATTC:OK
   force restore cmd set:
   - ''
   - - SSC SSC[1-5] reboot
@@ -661,6 +663,8 @@ initial condition:
     - - R SSC[1-5] C +BLEADV:OK
   - - SSC SSC1 gatts -S -z load -p 0xA2
     - - R SSC1 C +GATTS:StartService,OK,A002
+  - - SSC SSC[2-5] gattc -F -r <dut1_bt_mac>
+    - - R SSC[2-5] C +GATTC:OK
   - - LOOP 4 2 "[2,3,4,5]" "[2,3,4,5]"
     - ''
   - - SSC SSC1 bleadv -D -z start
@@ -668,8 +672,6 @@ initial condition:
   - - SSC SSC{%d} bleconn -C -p 0x10 -a <dut1_bt_mac>
     - - R SSC{%d} RE "\+BLE:GattcConnect,OK,0010,%%s"%%(<dut1_bt_mac>)
       - P SSC1 C +BLE:GattsConnect
-  - - SSC SSC[2-5] gattc -F -r <dut1_bt_mac>
-    - - R SSC[2-5] C +GATTC:OK
   restore post cmd set:
   - ''
   - - SSC SSC1 ram
@@ -1045,6 +1047,8 @@ initial condition:
     - ["P SSC[2-5] C +GATTS:StartService,OK,A000"]
   - - SSC SSC[1-5] bleadv -D -z stop
     - - R SSC[1-5] C +BLEADV:OK
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - - R SSC1 C +GATTC:OK
   - - SSC SSC1 ram
     - - R SSC1 A <heap_size>:(\d+)
 - tag: BLE_INIT_SMP
@@ -1084,6 +1088,8 @@ initial condition:
     - - R SSC2 C +BLEADV:OK
   - - SSC SSC[1-2] blesmp -L -c [1,0]
     - - R SSC[1-2] C +BLESMP:OK
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - - R SSC1 C +GATTC:OK
   - - SSC SSC1 ram
     - - R SSC1 A <heap_size>:(\d+)
   restore post cmd set:
@@ -1111,6 +1117,8 @@ initial condition:
     - - R SSC2 C +BLEADV:OK
   - - SSC SSC[1-2] blesmp -L -c [1,0]
     - - R SSC[1-2] C +BLESMP:OK
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - - R SSC1 C +GATTC:OK
   - - SSC SSC1 ram
     - - R SSC1 A <heap_size>:(\d+)
 - tag: BLE_INIT_SMP5
@@ -1150,6 +1158,8 @@ initial condition:
     - - R SSC[2-5] C +BLEADV:OK
   - - SSC SSC[1-5] blesmp -L -c [1,0]
     - - R SSC[1-5] C +BLESMP:OK
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - - R SSC1 C +GATTC:OK
   restore post cmd set:
   - ''
   - - SSC SSC[1-5] ble -R
@@ -1175,6 +1185,8 @@ initial condition:
   # do wifi disconnect, to prevent wifi reconnect cause bad BLE performance
   - - SSC SSC[1-5] sta -D
     - []
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - - R SSC1 C +GATTC:OK
   - - SSC SSC1 ram
     - - R SSC1 A <heap_size>:(\d+)
 - tag: NOW1

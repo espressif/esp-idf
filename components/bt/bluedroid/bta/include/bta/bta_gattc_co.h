@@ -113,6 +113,8 @@ extern size_t bta_gattc_get_cache_attr_length(UINT8 index);
 
 extern void bta_gattc_co_cache_addr_init(void);
 
+extern void bta_gattc_co_cache_addr_deinit(void);
+
 extern BOOLEAN bta_gattc_co_addr_in_cache(BD_ADDR bda);
 
 extern uint8_t bta_gattc_co_find_addr_in_cache(BD_ADDR bda);

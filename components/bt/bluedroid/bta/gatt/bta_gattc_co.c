@@ -75,7 +75,7 @@ static void cacheReset(BD_ADDR bda)
 
 #else
 
-static const char *cache_key = "gattc_cahe_key";
+static const char *cache_key = "gattc_cache_key";
 static const char *cache_addr = "cache_addr_tab";
 nvs_handle nvs_fp;
 
@@ -144,7 +144,7 @@ static void cacheReset(BD_ADDR bda)
     char fname[255] = {0};
     getFilename(fname, bda);
     UINT8 index = 0;
-      //cache_env.cache_addr
+    //cache_env.cache_addr
     if ((index = bta_gattc_co_find_addr_in_cache(bda)) != INVALID_ADDR_NUM) {
         //clear the association address pending in the source address.
         bta_gattc_co_cache_clear_assoc_addr(bda);
@@ -152,7 +152,22 @@ static void cacheReset(BD_ADDR bda)
             nvs_erase_all(cache_env.cache_addr[index].cache_fp);
             nvs_close(cache_env.cache_addr[index].cache_fp);
             cache_env.cache_addr[index].is_open = FALSE;
+        } else {
+            cacheOpen(bda, false, &index);
+            if (cache_env.cache_addr[index].is_open) {
+                nvs_erase_all(cache_env.cache_addr[index].cache_fp);
+                nvs_close(cache_env.cache_addr[index].cache_fp);
+                cache_env.cache_addr[index].is_open = FALSE;
+            } else {
+                APPL_TRACE_ERROR("%s cacheOpen failed", __func__);
+                return;
+            }
         }
+        if(cache_env.num_addr == 0) {
+            APPL_TRACE_ERROR("%s cache addr list error", __func__);
+            return;
+        }
+
         UINT8 num = cache_env.num_addr;
         //delete the server_bda in the addr_info list.
         for(UINT8 i = index; i < (num - 1); i++) {
@@ -160,6 +175,40 @@ static void cacheReset(BD_ADDR bda)
         }
         //reduced the number address counter also
         cache_env.num_addr--;
+
+        //update addr list to nvs flash
+        if(cache_env.num_addr > 0) {
+            //update
+            UINT8 *p_buf = osi_malloc(MAX_ADDR_LIST_CACHE_BUF);
+            if(!p_buf) {
+                APPL_TRACE_ERROR("%s malloc error", __func__); 
+                return;  
+            }
+            UINT16 length = cache_env.num_addr*(sizeof(BD_ADDR) + sizeof(hash_key_t));
+            for (UINT8 i = 0; i < cache_env.num_addr; i++) {
+                //copy the address to the buffer.
+                memcpy(p_buf + i*(sizeof(BD_ADDR) + sizeof(hash_key_t)), cache_env.cache_addr[i].addr, sizeof(BD_ADDR));
+                //copy the hash key to the buffer.
+                memcpy(p_buf + i*(sizeof(BD_ADDR) + sizeof(hash_key_t)) + sizeof(BD_ADDR),
+                        cache_env.cache_addr[i].hash_key, sizeof(hash_key_t));
+            }
+            if (cache_env.is_open) {
+                if (nvs_set_blob(cache_env.addr_fp, cache_key, p_buf, length) != ESP_OK) {
+                    APPL_TRACE_WARNING("%s, nvs set blob failed", __func__);
+                }
+            }
+            osi_free(p_buf);
+        
+        } else {
+            //erase
+            if (cache_env.is_open) {
+                nvs_erase_all(cache_env.addr_fp);
+                nvs_close(cache_env.addr_fp);
+                cache_env.is_open = FALSE;
+            } else {
+                APPL_TRACE_WARNING("cache_env status is error");
+            }
+        }
     }
 }
 
@@ -325,10 +374,11 @@ void bta_gattc_co_cache_addr_init(void)
     esp_err_t err_code;
     UINT8 num_addr;
     UINT8 *p_buf = osi_malloc(MAX_ADDR_LIST_CACHE_BUF);
-    size_t length = 0;
+    size_t length = MAX_ADDR_LIST_CACHE_BUF;
 
     if ((err_code = nvs_open(cache_addr, NVS_READWRITE, &fp)) == ESP_OK) {
         cache_env.addr_fp = fp;
+        cache_env.is_open = TRUE;
         // Read previously saved blob if available
         if ((err_code = nvs_get_blob(fp, cache_key, p_buf, &length)) != ESP_OK) {
             if(err_code != ESP_ERR_NVS_NOT_FOUND) {
@@ -359,6 +409,26 @@ void bta_gattc_co_cache_addr_init(void)
 
     osi_free(p_buf);
     return;
+}
+
+void bta_gattc_co_cache_addr_deinit(void)
+{
+    if(!cache_env.is_open) {
+        return;
+    }  
+    nvs_close(cache_env.addr_fp);
+    cache_env.is_open = false;
+    
+    for(UINT8 i = 0; i< cache_env.num_addr; i++) {
+        cache_addr_info_t *addr_info = &cache_env.cache_addr[i];
+        if(addr_info) {
+            nvs_close(addr_info->cache_fp);
+            addr_info->is_open = false;
+            if(addr_info->assoc_addr) {
+                list_free(addr_info->assoc_addr);
+            }
+        }
+    }
 }
 
 BOOLEAN bta_gattc_co_addr_in_cache(BD_ADDR bda)

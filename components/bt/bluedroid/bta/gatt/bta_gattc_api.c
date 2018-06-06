@@ -912,12 +912,20 @@ tBTA_GATT_STATUS BTA_GATTC_DeregisterForNotifications (tBTA_GATTC_IF client_if,
 ** Description      Refresh the server cache of the remote device
 **
 ** Parameters       remote_bda: remote device BD address.
+**                  erase_flash: delete cache from nvs flash
 **
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_GATTC_Refresh(BD_ADDR remote_bda)
+void BTA_GATTC_Refresh(BD_ADDR remote_bda, bool erase_flash)
 {
+#if(GATTC_CACHE_NVS == TRUE)
+    if(erase_flash) {
+        /* used to reset cache in application */
+        bta_gattc_cache_reset(remote_bda);
+    }
+#endif
+
     tBTA_GATTC_API_OPEN  *p_buf;
 
     if ((p_buf = (tBTA_GATTC_API_OPEN *) osi_malloc(sizeof(tBTA_GATTC_API_OPEN))) != NULL) {

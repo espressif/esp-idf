@@ -220,6 +220,13 @@ config GATTC_ENABLE
     help
         This option can be close when the app work only on gatt server mode
 
+config GATTC_CACHE_NVS_FLASH
+    bool "Save gattc cache data to nvs flash"
+    depends on GATTC_ENABLE
+    default n
+    help
+        This select can save gattc cache data to nvs flash
+
 config BLE_SMP_ENABLE
    bool "Include BLE security module(SMP)"
    depends on BLUEDROID_ENABLED
