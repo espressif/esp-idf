@@ -1096,11 +1096,12 @@ extern void BTA_GATTC_ReadMultiple(UINT16 conn_id, tBTA_GATTC_MULTI *p_read_mult
 ** Description      Refresh the server cache of the remote device
 **
 ** Parameters       remote_bda: remote device BD address.
+**                  erase_flash: delete cache from nvs flash
 **
 ** Returns          void
 **
 *******************************************************************************/
-extern void BTA_GATTC_Refresh(BD_ADDR remote_bda);
+extern void BTA_GATTC_Refresh(BD_ADDR remote_bda, bool erase_flash);
 
 extern void BTA_GATTC_CacheAssoc(tBTA_GATTC_IF client_if, BD_ADDR src_addr, BD_ADDR assoc_addr, BOOLEAN is_assoc);
 

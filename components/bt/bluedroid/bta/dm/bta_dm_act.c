@@ -374,6 +374,12 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
         bta_sys_hw_unregister( BTA_SYS_HW_BLUETOOTH );
         /* notify BTA DM is now unactive */
         bta_dm_cb.is_bta_dm_active = FALSE;
+#if (defined BLE_INCLUDED && BLE_INCLUDED == TRUE)
+#if (GATTC_INCLUDED == TRUE && GATTC_CACHE_NVS == TRUE)
+        /* clear the gattc cache address list */
+        bta_gattc_co_cache_addr_deinit();
+#endif
+#endif
     } else if ( status == BTA_SYS_HW_ON_EVT ) {
         /* FIXME: We should not unregister as the SYS shall invoke this callback on a H/W error.
         * We need to revisit when this platform has more than one BLuetooth H/W chip */
@@ -403,7 +409,7 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
         BTM_SetDeviceClass (dev_class);
 
 #if (defined BLE_INCLUDED && BLE_INCLUDED == TRUE)
-#if (GATTC_INCLUDED == TRUE)
+#if (GATTC_INCLUDED == TRUE && GATTC_CACHE_NVS == TRUE)
         // load the gattc cache address list
         bta_gattc_co_cache_addr_init();
 #endif /* #if (GATTC_INCLUDED = TRUE) */
@@ -703,7 +709,7 @@ void bta_dm_process_remove_device(BD_ADDR bd_addr)
 
 #if (BLE_INCLUDED == TRUE && GATTC_INCLUDED == TRUE)
     /* remove all cached GATT information */
-    BTA_GATTC_Refresh(bd_addr);
+    BTA_GATTC_Refresh(bd_addr, false);
 #endif
 
     if (bta_dm_cb.p_sec_cback) {
@@ -887,7 +893,7 @@ void bta_dm_close_acl(tBTA_DM_MSG *p_data)
         /* need to remove all pending background connection if any */
         BTA_GATTC_CancelOpen(0, p_remove_acl->bd_addr, FALSE);
         /* remove all cached GATT information */
-        BTA_GATTC_Refresh(p_remove_acl->bd_addr);
+        BTA_GATTC_Refresh(p_remove_acl->bd_addr, false);
 #endif
     }
     /* otherwise, no action needed */
@@ -3336,7 +3342,7 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
             /* need to remove all pending background connection */
             BTA_GATTC_CancelOpen(0, p_bda, FALSE);
             /* remove all cached GATT information */
-            BTA_GATTC_Refresh(p_bda);
+            BTA_GATTC_Refresh(p_bda, false);
 #endif
         }
 
@@ -3510,7 +3516,7 @@ static void bta_dm_remove_sec_dev_entry(BD_ADDR remote_bd_addr)
         /* need to remove all pending background connection */
         BTA_GATTC_CancelOpen(0, remote_bd_addr, FALSE);
         /* remove all cached GATT information */
-        BTA_GATTC_Refresh(remote_bd_addr);
+        BTA_GATTC_Refresh(remote_bd_addr, false);
 #endif
     }
 }

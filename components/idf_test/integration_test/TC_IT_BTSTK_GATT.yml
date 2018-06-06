@@ -304,6 +304,7 @@ test cases:
   initial condition: BLE_CONN3
   cmd set:
   - ""
+  - *primary_service_discovery
   - - "SSC SSC2 gatts -V -c 0xC300 -p 0xA2 -z set -v 0x02"
     - ["R SSC2 C +GATTS:SetAttrVal,OK"]
   - - "SSC SSC1 gattc -R -z char -s 0xA002 -c 0xC300 -p 0x10"
@@ -499,6 +500,7 @@ test cases:
   initial condition: BLE_CONN3
   cmd set:
   - ""
+  - *primary_service_discovery
   - - "SSC SSC2 gatts -V -c 0xC300 -d 0x2901 -p 0xA2 -z set -v 0x02"
     - ["R SSC2 C +GATTS:SetAttrVal,OK"]
   - - "SSC SSC1 gattc -R -z descriptor -s 0xA002 -c 0xC300 -d 0x2901 -p 0x10"
