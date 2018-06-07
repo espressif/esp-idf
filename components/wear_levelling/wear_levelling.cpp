@@ -45,7 +45,7 @@
 #endif //WL_DEFAULT_START_ADDR
 
 #ifndef WL_CURRENT_VERSION
-#define WL_CURRENT_VERSION  1
+#define WL_CURRENT_VERSION  2
 #endif //WL_CURRENT_VERSION
 
 typedef struct {
