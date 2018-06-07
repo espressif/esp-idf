@@ -453,10 +453,10 @@ void
 netif_set_ipaddr(struct netif *netif, const ip4_addr_t *ipaddr)
 {
   ip4_addr_t new_addr = (ipaddr ? *ipaddr : *IP4_ADDR_ANY);
-#if ESP_LWIP
+#if ESP_TCP_KEEP_CONNECTION_WHEN_IP_CHANGES
   ip4_addr_t *last_addr = ip_2_ip4(&netif->last_ip_addr);
 #else
-  ip4_addr_t *last_addr = netif_ip4_addr(netif);
+  ip4_addr_t *last_addr = ip_2_ip4(&(netif->ip_addr));
 #endif
 
   /* address is actually being changed? */
