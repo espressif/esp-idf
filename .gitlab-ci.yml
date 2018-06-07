@@ -250,7 +250,7 @@ test_nvs_on_host:
   stage: test
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
-    - nvs_host_test
+    - host_test
   dependencies: []
   script:
     - cd components/nvs_flash/test_nvs_host
@@ -260,7 +260,7 @@ test_nvs_coverage:
   stage: test
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
-    - nvs_host_test
+    - host_test
   dependencies: []
   artifacts:
     paths:
@@ -288,7 +288,7 @@ test_wl_on_host:
   stage: test
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
-    - wl_host_test
+    - host_test
   artifacts:
     paths:
       - components/wear_levelling/test_wl_host/coverage_report.zip
@@ -301,16 +301,25 @@ test_multi_heap_on_host:
   stage: test
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
-    - wl_host_test
+    - host_test
   script:
     - cd components/heap/test_multi_heap_host
     - ./test_all_configs.sh
+
+test_confserver:
+  stage: test
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - host_test
+  script:
+    - cd tools/kconfig_new/test
+    - ./test_confserver.py
 
 test_build_system:
   stage: test
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
-    - build_test
+    - host_test
   dependencies: []
   script:
     - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
@@ -323,7 +332,7 @@ test_build_system_cmake:
   stage: test
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
-    - build_test
+    - host_test
   dependencies: []
   script:
     - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh

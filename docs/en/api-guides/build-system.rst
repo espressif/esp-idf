@@ -130,6 +130,8 @@ You can also use an IDE with CMake integration. The IDE will want to know the pa
 
 When adding custom non-build steps like "flash" to the IDE, it is recommended to execute ``idf.py`` for these "special" commands.
 
+For more detailed information about integrating ESP-IDF with CMake into an IDE, see `Build System Metadata`_.
+
 .. setting-python-interpreter:
 
 Setting the Python Interpreter
@@ -403,8 +405,8 @@ When creating a project
 Requirements in the build system implementation
 -----------------------------------------------
 
-- Very early in the cmake configuration process, the script ``expand_requirements.cmake`` is run. This script does a partial evaluation of all component CMakeLists.txt files and builds a graph of component requirements (this graph may have cycles). The graph is used to generate a file ``component_depends.cmake`` in the build directory.
-- The main cmake process then includes this file and uses it to determine the list of components to include in the build (internal ``BUILD_COMPONENTS`` variable).
+- Very early in the CMake configuration process, the script ``expand_requirements.cmake`` is run. This script does a partial evaluation of all component CMakeLists.txt files and builds a graph of component requirements (this graph may have cycles). The graph is used to generate a file ``component_depends.cmake`` in the build directory.
+- The main CMake process then includes this file and uses it to determine the list of components to include in the build (internal ``BUILD_COMPONENTS`` variable).
 - Configuration is then evaluated for the components included in the build.
 - Each component is included in the build normally and the CMakeLists.txt file is evaluated again to add the component libraries to the build.
 
@@ -427,12 +429,12 @@ The custom ``project()`` function performs the following steps:
 
 - Evaluates component dependencies and builds the ``BUILD_COMPONENTS`` list of components to include in the build (see :ref:`above<component-requirements-implementation>`).
 - Finds all components in the project (searching ``COMPONENT_DIRS`` and filtering by ``COMPONENTS`` if this is set).
-- Loads the project configuration from the ``sdkconfig`` file and produces a ``cmake`` include file and a C header file, to set config macros. If the project configuration changes, cmake will automatically be re-run to reconfigure the project.
+- Loads the project configuration from the ``sdkconfig`` file and produces a ``sdkconfig.cmake`` file and ``sdkconfig.h`` header, to define config values in CMake and C/C++, respectively. If the project configuration changes, cmake will automatically be re-run to reconfigure the project.
 - Sets the `CMAKE_TOOLCHAIN_FILE`_ variable to the ESP-IDF toolchain file with the Xtensa ESP32 toolchain.
 - Declare the actual cmake-level project by calling the `CMake project function <cmake project_>`_.
-- Load the git version. This includes some magic which will automatically re-run cmake if a new revision is checked out in git. See `File Globbing & Incremental Builds`_.
+- Load the git version. This includes some magic which will automatically re-run CMake if a new revision is checked out in git. See `File Globbing & Incremental Builds`_.
 - Include ``project_include.cmake`` files from any components which have them.
-- Add each component to the build. Each component CMakeLists file calls ``register_component``, calls the cmake `add_library <cmake add_library_>`_ function to add a library and then adds source files, compile options, etc.
+- Add each component to the build. Each component CMakeLists file calls ``register_component``, calls the CMake `add_library <cmake add_library_>`_ function to add a library and then adds source files, compile options, etc.
 - Add the final app executable to the build.
 - Go back and add inter-component dependencies between components (ie adding the public header directories of each component to each other component).
 
@@ -788,6 +790,58 @@ For integration into IDEs and other build systems, when CMake runs the build pro
 - ``flasher_args.json`` contains esptool.py arguments to flash the project's binary files. There are also ``flash_*_args`` files which can be used directly with esptool.py. See `Flash arguments`_.
 - ``CMakeCache.txt`` is the CMake cache file which contains other information about the CMake process, toolchain, etc.
 - ``config/sdkconfig.json`` is a JSON-formatted version of the project configuration values.
+- ``config/kconfig_menus.json`` is a JSON-formatted version of the menus shown in menuconfig, for use in external IDE UIs.
+
+JSON Configuration Server
+-------------------------
+
+.. highlight :: json
+
+A tool called ``confserver.py`` is provided to allow IDEs to easily integrate with the configuration system logic. ``confserver.py`` is designed to run in the background and interact with a calling process by reading and writing JSON over process stdin & stdout.
+
+You can run ``confserver.py`` from a project via ``idf.py confserver`` or ``ninja confserver``, or a similar target triggered from a different build generator.
+
+The config server outputs human-readable errors and warnings on stderr and JSON on stdout. On startup, it will output the full values of each configuration item in the system as a JSON dictionary, and the available ranges for values which are range constrained. The same information is contained in ``sdkconfig.json``::
+
+  {"version": 1, "values": { "ITEM": "value", "ITEM_2": 1024, "ITEM_3": false }, "ranges" : { "ITEM_2" : [ 0, 32768 ] } }
+
+Only visible configuration items are sent. Invisible/disabled items can be parsed from the static ``kconfig_menus.json`` file which also contains the menu structure and other metadata (descriptions, types, ranges, etc.)
+
+The Configuration Server will then wait for input from the client. The client passes a request to change one or more values, as a JSON object followed by a newline::
+
+   {"version": "1", "set": {"SOME_NAME": false, "OTHER_NAME": true } }
+
+The Configuration Server will parse this request, update the project ``sdkconfig`` file, and return a full list of changes::
+
+   {"version": 1, "values": {"SOME_NAME": false, "OTHER_NAME": true , "DEPENDS_ON_SOME_NAME": null}}
+
+Items which are now invisible/disabled will return value ``null``. Any item which is newly visible will return its newly visible current value.
+
+If the range of a config item changes, due to conditional range depending on another value, then this is also sent::
+
+   {"version": 1, "values": {"OTHER_NAME": true }, "ranges" : { "HAS_RANGE" : [ 3, 4 ] } }
+
+If invalid data is passed, an "error" field is present on the object::
+
+    {"version": 1, "values": {}, "error": ["The following config symbol(s) were not visible so were not updated: NOT_VISIBLE_ITEM"]}
+
+By default, no config changes are written to the sdkconfig file. Changes are held in memory until a "save" command is sent::
+
+    {"version": 1, "save": null }
+
+To reload the config values from a saved file, discarding any changes in memory, a "load" command can be sent::
+
+    {"version": 1, "load": null }
+
+The value for both "load" and "save" can be a new pathname, or "null" to load/save the previous pathname.
+
+The response to a "load" command is always the full set of config values and ranges, the same as when the server is initially started.
+
+Any combination of "load", "set", and "save" can be sent in a single command and commands are executed in that order. Therefore it's possible to load config from a file, set some config item values and then save to a file in a single command.
+
+.. note:: The configuration server does not automatically load any changes which are applied externally to the ``sdkconfig`` file. Send a "load" command or restart the server if the file is externally edited.
+
+.. note:: The configuration server does not re-run CMake to regenerate other build files or metadata files after ``sdkconfig`` is updated. This will happen automatically the next time ``CMake`` or ``idf.py`` is run.
 
 .. _gnu-make-to-cmake:
 
@@ -828,7 +882,7 @@ No Longer Available in CMake
 Some features are significantly different or removed in the CMake-based system. The following variables no longer exist in the CMake-based build system:
 
 - ``COMPONENT_BUILD_DIR``: Use ``CMAKE_CURRENT_BINARY_DIR`` instead.
-- ``COMPONENT_LIBRARY``: Defaulted to ``$(COMPONENT_NAME).a``, but the library name could be overriden by the user. The name of the component library can no longer be overriden by the user.
+- ``COMPONENT_LIBRARY``: Defaulted to ``$(COMPONENT_NAME).a``, but the library name could be overriden by the component. The name of the component library can no longer be overriden by the component.
 - ``CC``, ``LD``, ``AR``, ``OBJCOPY``: Full paths to each tool from the gcc xtensa cross-toolchain. Use ``CMAKE_C_COMPILER``, ``CMAKE_C_LINK_EXECUTABLE``, ``CMAKE_OBJCOPY``, etc instead. `Full list here <cmake language variables_>`_.
 - ``HOSTCC``, ``HOSTLD``, ``HOSTAR``: Full names of each tool from the host native toolchain. These are no longer provided, external projects should detect any required host toolchain manually.
 - ``COMPONENT_ADD_LDFLAGS``: Used to override linker flags. Use the CMake `target_link_libraries`_ command instead.
@@ -855,6 +909,7 @@ No Longer Necessary
 -------------------
 
 It is no longer necessary to set ``COMPONENT_SRCDIRS`` if setting ``COMPONENT_SRCS`` (in fact, in the CMake-based system ``COMPONENT_SRCDIRS`` is ignored if ``COMPONENT_SRCS`` is set).
+
 
 .. _esp-idf-template: https://github.com/espressif/esp-idf-template
 .. _cmake: https://cmake.org
