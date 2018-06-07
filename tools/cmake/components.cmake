@@ -46,7 +46,7 @@ function(register_component)
         foreach(src ${COMPONENT_SRCS})
             get_filename_component(abs_src "${src}" ABSOLUTE ${component_dir})
             if("${exclude}" STREQUAL "${abs_src}")  # compare as canonical paths
-                list(REMOVE_ITEM COMPONENT_SRCS src)
+                list(REMOVE_ITEM COMPONENT_SRCS "${src}")
             endif()
         endforeach()
     endforeach()
