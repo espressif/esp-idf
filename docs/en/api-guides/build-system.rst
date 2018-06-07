@@ -405,8 +405,8 @@ When creating a project
 Requirements in the build system implementation
 -----------------------------------------------
 
-- Very early in the cmake configuration process, the script ``expand_requirements.cmake`` is run. This script does a partial evaluation of all component CMakeLists.txt files and builds a graph of component requirements (this graph may have cycles). The graph is used to generate a file ``component_depends.cmake`` in the build directory.
-- The main cmake process then includes this file and uses it to determine the list of components to include in the build (internal ``BUILD_COMPONENTS`` variable).
+- Very early in the CMake configuration process, the script ``expand_requirements.cmake`` is run. This script does a partial evaluation of all component CMakeLists.txt files and builds a graph of component requirements (this graph may have cycles). The graph is used to generate a file ``component_depends.cmake`` in the build directory.
+- The main CMake process then includes this file and uses it to determine the list of components to include in the build (internal ``BUILD_COMPONENTS`` variable).
 - Configuration is then evaluated for the components included in the build.
 - Each component is included in the build normally and the CMakeLists.txt file is evaluated again to add the component libraries to the build.
 
@@ -429,12 +429,12 @@ The custom ``project()`` function performs the following steps:
 
 - Evaluates component dependencies and builds the ``BUILD_COMPONENTS`` list of components to include in the build (see :ref:`above<component-requirements-implementation>`).
 - Finds all components in the project (searching ``COMPONENT_DIRS`` and filtering by ``COMPONENTS`` if this is set).
-- Loads the project configuration from the ``sdkconfig`` file and produces a ``cmake`` include file and a C header file, to set config macros. If the project configuration changes, cmake will automatically be re-run to reconfigure the project.
+- Loads the project configuration from the ``sdkconfig`` file and produces a ``sdkconfig.cmake`` file and ``sdkconfig.h`` header, to define config values in CMake and C/C++, respectively. If the project configuration changes, cmake will automatically be re-run to reconfigure the project.
 - Sets the `CMAKE_TOOLCHAIN_FILE`_ variable to the ESP-IDF toolchain file with the Xtensa ESP32 toolchain.
 - Declare the actual cmake-level project by calling the `CMake project function <cmake project_>`_.
-- Load the git version. This includes some magic which will automatically re-run cmake if a new revision is checked out in git. See `File Globbing & Incremental Builds`_.
+- Load the git version. This includes some magic which will automatically re-run CMake if a new revision is checked out in git. See `File Globbing & Incremental Builds`_.
 - Include ``project_include.cmake`` files from any components which have them.
-- Add each component to the build. Each component CMakeLists file calls ``register_component``, calls the cmake `add_library <cmake add_library_>`_ function to add a library and then adds source files, compile options, etc.
+- Add each component to the build. Each component CMakeLists file calls ``register_component``, calls the CMake `add_library <cmake add_library_>`_ function to add a library and then adds source files, compile options, etc.
 - Add the final app executable to the build.
 - Go back and add inter-component dependencies between components (ie adding the public header directories of each component to each other component).
 
@@ -783,7 +783,7 @@ The best option will depend on your particular project and its users.
 Build System Metadata
 =====================
 
-For integration into IDEs and other build systems, when cmake runs the build process generates a number of metadata files in the ``build/`` directory. To regenerate these files, run ``cmake`` or ``idf.py reconfigure`` (or any other ``idf.py`` build command).
+For integration into IDEs and other build systems, when CMake runs the build process generates a number of metadata files in the ``build/`` directory. To regenerate these files, run ``cmake`` or ``idf.py reconfigure`` (or any other ``idf.py`` build command).
 
 - ``compile_commands.json`` is a standard format JSON file which describes every source file which is compiled in the project. A CMake feature generates this file, and many IDEs know how to parse it.
 - ``project_description.json`` contains some general information about the ESP-IDF project, configured paths, etc.
@@ -882,7 +882,7 @@ No Longer Available in CMake
 Some features are significantly different or removed in the CMake-based system. The following variables no longer exist in the CMake-based build system:
 
 - ``COMPONENT_BUILD_DIR``: Use ``CMAKE_CURRENT_BINARY_DIR`` instead.
-- ``COMPONENT_LIBRARY``: Defaulted to ``$(COMPONENT_NAME).a``, but the library name could be overriden by the user. The name of the component library can no longer be overriden by the user.
+- ``COMPONENT_LIBRARY``: Defaulted to ``$(COMPONENT_NAME).a``, but the library name could be overriden by the component. The name of the component library can no longer be overriden by the component.
 - ``CC``, ``LD``, ``AR``, ``OBJCOPY``: Full paths to each tool from the gcc xtensa cross-toolchain. Use ``CMAKE_C_COMPILER``, ``CMAKE_C_LINK_EXECUTABLE``, ``CMAKE_OBJCOPY``, etc instead. `Full list here <cmake language variables_>`_.
 - ``HOSTCC``, ``HOSTLD``, ``HOSTAR``: Full names of each tool from the host native toolchain. These are no longer provided, external projects should detect any required host toolchain manually.
 - ``COMPONENT_ADD_LDFLAGS``: Used to override linker flags. Use the CMake `target_link_libraries`_ command instead.
