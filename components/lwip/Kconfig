@@ -308,6 +308,16 @@ config TCP_QUEUE_OOSEQ
         Disable this option to save some RAM during TCP sessions, at the expense
         of increased retransmissions if segments arrive out of order.
 
+config ESP_TCP_KEEP_CONNECTION_WHEN_IP_CHANGES
+    bool "Keep TCP connections when IP changed"
+    default n
+    help
+        This option is enabled when the following scenario happen:
+        network dropped and reconnected, IP changes is like: 192.168.0.2->0.0.0.0->192.168.0.2
+        
+        Disable this option to keep consistent with the original LWIP code behavior.
+
+
 choice TCP_OVERSIZE
     prompt "Pre-allocate transmit PBUF size"
     default TCP_OVERSIZE_MSS
