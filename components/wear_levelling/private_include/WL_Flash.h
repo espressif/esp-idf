@@ -65,7 +65,6 @@ protected:
     uint32_t cfg_size;
     uint8_t *temp_buff = NULL;
     size_t dummy_addr;
-    uint8_t used_bits;
     uint32_t pos_data[4];
 
     esp_err_t initSections();

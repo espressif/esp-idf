@@ -37,6 +37,7 @@ public:
     uint32_t block_size;    /*!< size of move block*/
     uint32_t version;       /*!< state id used to identify the version of current libary implementaion*/
     uint32_t device_id;     /*!< ID of current WL instance*/
+    uint32_t reserved[7];   /*!< Reserved space for future use*/
     uint32_t crc;           /*!< CRC of structure*/
 } wl_state_t;
 

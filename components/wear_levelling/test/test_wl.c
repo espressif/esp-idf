@@ -31,7 +31,7 @@ TEST_CASE("wl_mount check partition parameters", "[wear_levelling][ignore]")
     size_t size_before, size_after;
     wl_unmount(WL_INVALID_HANDLE);
 
-    esp_partition_erase_range(test_partition, test_partition->address, test_partition->size);
+    esp_partition_erase_range(test_partition, 0, test_partition->size);
     // test small partition: result should be error
     for (int i=0 ; i< 5 ; i++)
     {
@@ -40,7 +40,6 @@ TEST_CASE("wl_mount check partition parameters", "[wear_levelling][ignore]")
         TEST_ESP_ERR(ESP_ERR_INVALID_ARG, wl_mount(&fake_partition, &handle));
         size_after = xPortGetFreeHeapSize();
         TEST_ASSERT_EQUAL_HEX32(size_before, size_after);
-        printf("Test for size 0x%08x passed\n", fake_partition.size);
         // currently this test leaks memory
     }
 
@@ -230,6 +229,57 @@ TEST_CASE("multiple write is correct", "[wear_levelling]")
         printf("loop %4i pass, time= %ims\n", m, ms);
         if (ms > 10000) {
             break;
+        }
+    }
+
+    free(buff);
+    wl_unmount(handle);
+}
+
+extern const uint8_t test_partition_v1_bin_start[] asm("_binary_test_partition_v1_bin_start");
+extern const uint8_t test_partition_v1_bin_end[]   asm("_binary_test_partition_v1_bin_end");
+
+#define COMPARE_START_CONST 0x12340000
+
+// We write to partition prepared image with V1
+// Then we convert image to new version and verifying the data 
+
+TEST_CASE("Version update test", "[wear_levelling]")
+{
+    const esp_partition_t *partition = get_test_data_partition();
+    esp_partition_t fake_partition;
+    memcpy(&fake_partition, partition, sizeof(fake_partition));
+
+    if (partition->encrypted)
+    {
+        printf("Update from V1 to V2 will not work.\n");    
+        return;
+    }
+    fake_partition.size = (size_t)(test_partition_v1_bin_end - test_partition_v1_bin_start);
+
+    printf("Data file size = %i, partition address = 0x%08x, file addr=0x%08x\n", (uint32_t)fake_partition.size, (uint32_t)fake_partition.address, (uint32_t)test_partition_v1_bin_start);
+
+    esp_partition_erase_range(&fake_partition, 0, fake_partition.size);
+
+    esp_partition_write(&fake_partition, 0, test_partition_v1_bin_start,  fake_partition.size);
+
+    wl_handle_t handle;
+    TEST_ESP_OK(wl_mount(&fake_partition, &handle));
+    size_t sector_size = wl_sector_size(handle);
+    uint32_t* buff = (uint32_t*)malloc(sector_size);
+
+    uint32_t init_val = COMPARE_START_CONST;
+    int test_count = fake_partition.size/sector_size - 4;
+
+    for (int m=0 ; m <  test_count; m++) {
+        TEST_ESP_OK(wl_read(handle, sector_size * m, buff, sector_size));
+        for (int i=0 ; i< sector_size/sizeof(uint32_t) ; i++) {
+            uint32_t compare_val = init_val + i +  m*sector_size;
+            if (buff[i] != compare_val)
+            {
+                printf("error compare: 0x%08x != 0x%08x \n", buff[i], compare_val);
+            }
+            TEST_ASSERT_EQUAL( buff[i], compare_val);
         }
     }
 
