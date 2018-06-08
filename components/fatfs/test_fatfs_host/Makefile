@@ -1,11 +1,16 @@
-COMPONENT=wear_levelling
+COMPONENT=fatfs
 
 TEST_PROGRAM=test_$(COMPONENT)
 
-# Expose as a library for FS components that require wear_levelling
+#Expose as a library
 COMPONENT_LIB=lib$(COMPONENT).a
 
-# Use simulated block device
+#Use wear levelling and flash simulation
+WEAR_LEVELLING=wear_levelling
+WEAR_LEVELLING_DIR=../../$(WEAR_LEVELLING)
+WEAR_LEVELLING_HOST_DIR=$(WEAR_LEVELLING_DIR)/test_wl_host
+WEAR_LEVELLING_LIB=lib$(WEAR_LEVELLING).a
+
 SPI_FLASH=spi_flash
 SPI_FLASH_DIR=../../$(SPI_FLASH)
 SPI_FLASH_SIM_DIR=$(SPI_FLASH_DIR)/sim
@@ -14,33 +19,31 @@ SPI_FLASH_LIB=lib$(SPI_FLASH).a
 all: $(TEST_PROGRAM)
 
 SOURCE_FILES = \
-	$(addprefix ../, \
-	wear_levelling.cpp \
-	crc32.cpp \
-	WL_Flash.cpp \
-	Partition.cpp \
+	$(addprefix ../src/, \
+	diskio.c \
+	ff.c \
+	ffsystem.c \
+	ffunicode.c \
+	diskio_spiflash.c \
 	) \
-	$(addprefix stubs/, \
-	newlib/lock.c \
-	log/log.c \
-	esp32/crc.cpp \
-	)
+	$(addprefix ./stubs/, log/log.c)
 
 TEST_SOURCE_FILES = \
-	test_wl.cpp \
+	test_fatfs.cpp \
 	main.cpp \
 	test_utils.c
 
 INCLUDE_FLAGS = $(addprefix -I,\
+	../src \
 	. \
-	../ \
-	../include \
-	../private_include \
-	$(addprefix stubs/, \
-	newlib/include \
+	$(addprefix ./stubs/, \
+	driver/include \
+	freertos/include \
+	sdmmc/include \
 	log/include \
 	) \
 	$(SPI_FLASH_DIR)/include \
+	$(WEAR_LEVELLING_DIR)/include \
 	../../esp32/include \
 	../../../tools/catch \
 )
@@ -55,27 +58,27 @@ LDFLAGS += -lstdc++ -fprofile-arcs -ftest-coverage
 OBJ_FILES = $(filter %.o, $(SOURCE_FILES:.cpp=.o) $(SOURCE_FILES:.c=.o))
 TEST_OBJ_FILES = $(filter %.o, $(TEST_SOURCE_FILES:.cpp=.o) $(TEST_SOURCE_FILES:.c=.o))
 
+$(WEAR_LEVELLING_HOST_DIR)/$(WEAR_LEVELLING_LIB): force
+	$(MAKE) -C $(WEAR_LEVELLING_HOST_DIR) lib
+
 $(SPI_FLASH_SIM_DIR)/$(SPI_FLASH_LIB): force
 	$(MAKE) -C $(SPI_FLASH_SIM_DIR) lib
+
+force:
 
 $(COMPONENT_LIB): $(OBJ_FILES)
 	$(AR) rcs $@ $^
 
-force:
-
 lib: $(COMPONENT_LIB)
 
 partition_table.bin: partition_table.csv
-	python ../../../components/partition_table/gen_esp32part.py --verify $< $@
+	python ../../partition_table/gen_esp32part.py --verify $< $@
 
-$(TEST_PROGRAM): lib $(TEST_OBJ_FILES) $(SPI_FLASH_SIM_DIR)/$(SPI_FLASH_LIB) partition_table.bin
-	g++ $(LDFLAGS) -o $@  $(TEST_OBJ_FILES) -L$(abspath .) -l:$(COMPONENT_LIB) -L$(SPI_FLASH_SIM_DIR) -l:$(SPI_FLASH_LIB) -g -m32
+$(TEST_PROGRAM): lib $(TEST_OBJ_FILES) $(SPI_FLASH_SIM_DIR)/$(SPI_FLASH_LIB) $(WEAR_LEVELLING_HOST_DIR)/$(WEAR_LEVELLING_LIB) partition_table.bin
+	g++ $(LDFLAGS) -o $(TEST_PROGRAM) $(TEST_OBJ_FILES) -L$(abspath .) -l:$(COMPONENT_LIB) -L$(SPI_FLASH_SIM_DIR) -l:$(SPI_FLASH_LIB) -L$(WEAR_LEVELLING_HOST_DIR) -l:$(WEAR_LEVELLING_LIB) -g -m32
 
 test: $(TEST_PROGRAM)
 	./$(TEST_PROGRAM)
-
-$(OUTPUT_DIR):
-	mkdir -p $(OUTPUT_DIR)
 
 COVERAGE_FILES = $(OBJ_FILES:.o=.gc*) $(TEST_OBJ_FILES:.o=.gc*)
 
@@ -90,8 +93,9 @@ coverage_report: coverage.info
 	@echo "Coverage report is in coverage_report/index.html"
 
 clean:
-	$(MAKE) -C $(SPI_FLASH_SIM_DIR) clean
 	rm -f $(OBJ_FILES) $(TEST_OBJ_FILES) $(TEST_PROGRAM) $(COMPONENT_LIB) partition_table.bin
+	$(MAKE) -C $(WEAR_LEVELLING_HOST_DIR) clean
+	$(MAKE) -C $(SPI_FLASH_SIM_DIR) clean
 	rm -f $(COVERAGE_FILES) *.gcov
 	rm -rf coverage_report/
 	rm -f coverage.info

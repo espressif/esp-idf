@@ -285,6 +285,26 @@ test_wl_on_host:
     - cd components/wear_levelling/test_wl_host
     - make test
 
+test_fatfs_on_host:
+  stage: test
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - wl_host_test
+  dependencies: []
+  script:
+    - cd components/fatfs/test_fatfs_host/
+    - make test
+
+test_spiffs_on_host:
+  stage: test
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - wl_host_test
+  dependencies: []
+  script:
+    - cd components/spiffs/test_spiffs_host/
+    - make test
+
 test_multi_heap_on_host:
   stage: test
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
