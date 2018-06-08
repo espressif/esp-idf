@@ -371,3 +371,11 @@ uint64_t system_get_rtc_time(void)
 #endif
 }
 
+void esp_sync_counters_rtc_and_frc()
+{
+#if defined( WITH_FRC ) && defined( WITH_RTC )
+    adjtime_corr_stop();
+    int64_t s_microseconds_offset_cur = get_rtc_time_us() - esp_timer_get_time();
+    set_boot_time(get_adjusted_boot_time() + ((int64_t)s_microseconds_offset - s_microseconds_offset_cur));
+#endif
+}
