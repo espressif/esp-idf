@@ -85,6 +85,7 @@ typedef struct {
     uint32_t flags;
     int dma_chan;
     int max_transfer_sz;
+    spi_bus_config_t bus_cfg;
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;
 #endif
@@ -146,6 +147,7 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
         goto cleanup;
     }
     memset(spihost[host], 0, sizeof(spi_host_t));
+    memcpy( &spihost[host]->bus_cfg, bus_config, sizeof(spi_bus_config_t));
 #ifdef CONFIG_PM_ENABLE
     err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "spi_master",
             &spihost[host]->pm_lock);
@@ -237,6 +239,7 @@ esp_err_t spi_bus_free(spi_host_device_t host)
     for (x=0; x<NO_CS; x++) {
         SPI_CHECK(spihost[host]->device[x]==NULL, "not all CSses freed", ESP_ERR_INVALID_STATE);
     }
+    spicommon_bus_free_io_cfg(&spihost[host]->bus_cfg);
 
     if ( spihost[host]->dma_chan > 0 ) {
         spicommon_dma_chan_free ( spihost[host]->dma_chan );
@@ -394,6 +397,10 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
     SPI_CHECK(uxQueueMessagesWaiting(handle->trans_queue)==0, "Have unfinished transactions", ESP_ERR_INVALID_STATE);
     SPI_CHECK(handle->host->cur_cs == NO_CS || handle->host->device[handle->host->cur_cs]!=handle, "Have unfinished transactions", ESP_ERR_INVALID_STATE);
     SPI_CHECK(uxQueueMessagesWaiting(handle->ret_queue)==0, "Have unfinished transactions", ESP_ERR_INVALID_STATE);
+
+    //return 
+    int spics_io_num = handle->cfg.spics_io_num;
+    if (spics_io_num >= 0) spicommon_cs_free_io(spics_io_num);
 
     //Kill queues
     vQueueDelete(handle->trans_queue);
