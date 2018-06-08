@@ -24,7 +24,7 @@ SOURCE_FILES = \
 	ff.c \
 	ffsystem.c \
 	ffunicode.c \
-	diskio_spiflash.c \
+	diskio_wl.c \
 	) \
 	$(addprefix ./stubs/, log/log.c)
 

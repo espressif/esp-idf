@@ -68,7 +68,7 @@ Unit test jobs will do reset before running each case (because some cases do not
 Gitlab CI do not support create jobs at runtime. We must maunally add all jobs to CI config file. To make test running in parallel, we limit the number of cases running on each job. When add new unit test cases, it could exceed the limitation that current unit test jobs support. In this case, assign test job will raise error, remind you to add jobs to `.gitlab-ci.yml`.
 
 ```
-Please add the following jobs to .gitlab-ci.yml with specific tags:
+Too many test cases vs jobs to run. Please add the following jobs to .gitlab-ci.yml with specific tags:
 * Add job with: UT_T1_1, ESP32_IDF, psram
 * Add job with: UT_T1_1, ESP32_IDF
 ```

@@ -30,7 +30,6 @@
         } \
     } while(0)
 
-
 const char* fatfs_test_hello_str;
 const char* fatfs_test_hello_str_utf;
 
