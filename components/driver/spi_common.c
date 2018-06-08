@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,8 @@
 
 #include <string.h>
 #include "driver/spi_master.h"
-#include "soc/gpio_sig_map.h"
-#include "soc/spi_reg.h"
 #include "soc/dport_reg.h"
-#include "soc/spi_struct.h"
+#include "soc/spi_periph.h"
 #include "rom/ets_sys.h"
 #include "esp_types.h"
 #include "esp_attr.h"
@@ -32,7 +30,6 @@
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
 #include "esp_heap_caps.h"
-
 #include "driver/spi_common.h"
 
 static const char *SPI_TAG = "spi";
@@ -49,109 +46,6 @@ typedef struct spi_device_t spi_device_t;
 #define FUNC_SPI    1   //all pins of HSPI and VSPI shares this function number
 #define FUNC_GPIO   PIN_FUNC_GPIO
 
-/*
- Stores a bunch of per-spi-peripheral data.
-*/
-typedef struct {
-    const uint8_t spiclk_out;       //GPIO mux output signals
-    const uint8_t spiclk_in;
-    const uint8_t spid_out;
-    const uint8_t spiq_out;
-    const uint8_t spiwp_out;
-    const uint8_t spihd_out;
-    const uint8_t spid_in;          //GPIO mux input signals
-    const uint8_t spiq_in;
-    const uint8_t spiwp_in;
-    const uint8_t spihd_in;
-    const uint8_t spics_out[3];     // /CS GPIO output mux signals
-    const uint8_t spics_in;
-    const uint8_t spiclk_iomux_pin;    //IO pins of IO_MUX muxed signals
-    const uint8_t spid_iomux_pin;
-    const uint8_t spiq_iomux_pin;
-    const uint8_t spiwp_iomux_pin;
-    const uint8_t spihd_iomux_pin;
-    const uint8_t spics0_iomux_pin;
-    const uint8_t irq;              //irq source for interrupt mux
-    const uint8_t irq_dma;          //dma irq source for interrupt mux
-    const periph_module_t module;   //peripheral module, for enabling clock etc
-    spi_dev_t *hw;              //Pointer to the hardware registers
-} spi_signal_conn_t;
-
-/*
- Bunch of constants for every SPI peripheral: GPIO signals, irqs, hw addr of registers etc
-*/
-static const spi_signal_conn_t io_signal[3] = {
-    {
-        .spiclk_out = SPICLK_OUT_IDX,
-        .spiclk_in = SPICLK_IN_IDX,
-        .spid_out = SPID_OUT_IDX,
-        .spiq_out = SPIQ_OUT_IDX,
-        .spiwp_out = SPIWP_OUT_IDX,
-        .spihd_out = SPIHD_OUT_IDX,
-        .spid_in = SPID_IN_IDX,
-        .spiq_in = SPIQ_IN_IDX,
-        .spiwp_in = SPIWP_IN_IDX,
-        .spihd_in = SPIHD_IN_IDX,
-        .spics_out = {SPICS0_OUT_IDX, SPICS1_OUT_IDX, SPICS2_OUT_IDX},
-        .spics_in = SPICS0_IN_IDX,
-        .spiclk_iomux_pin = 6,
-        .spid_iomux_pin = 8,
-        .spiq_iomux_pin = 7,
-        .spiwp_iomux_pin = 10,
-        .spihd_iomux_pin = 9,
-        .spics0_iomux_pin = 11,
-        .irq = ETS_SPI1_INTR_SOURCE,
-        .irq_dma = ETS_SPI1_DMA_INTR_SOURCE,
-        .module = PERIPH_SPI_MODULE,
-        .hw = &SPI1
-    }, {
-        .spiclk_out = HSPICLK_OUT_IDX,
-        .spiclk_in = HSPICLK_IN_IDX,
-        .spid_out = HSPID_OUT_IDX,
-        .spiq_out = HSPIQ_OUT_IDX,
-        .spiwp_out = HSPIWP_OUT_IDX,
-        .spihd_out = HSPIHD_OUT_IDX,
-        .spid_in = HSPID_IN_IDX,
-        .spiq_in = HSPIQ_IN_IDX,
-        .spiwp_in = HSPIWP_IN_IDX,
-        .spihd_in = HSPIHD_IN_IDX,
-        .spics_out = {HSPICS0_OUT_IDX, HSPICS1_OUT_IDX, HSPICS2_OUT_IDX},
-        .spics_in = HSPICS0_IN_IDX,
-        .spiclk_iomux_pin = 14,
-        .spid_iomux_pin = 13,
-        .spiq_iomux_pin = 12,
-        .spiwp_iomux_pin = 2,
-        .spihd_iomux_pin = 4,
-        .spics0_iomux_pin = 15,
-        .irq = ETS_SPI2_INTR_SOURCE,
-        .irq_dma = ETS_SPI2_DMA_INTR_SOURCE,
-        .module = PERIPH_HSPI_MODULE,
-        .hw = &SPI2
-    }, {
-        .spiclk_out = VSPICLK_OUT_IDX,
-        .spiclk_in = VSPICLK_IN_IDX,
-        .spid_out = VSPID_OUT_IDX,
-        .spiq_out = VSPIQ_OUT_IDX,
-        .spiwp_out = VSPIWP_OUT_IDX,
-        .spihd_out = VSPIHD_OUT_IDX,
-        .spid_in = VSPID_IN_IDX,
-        .spiq_in = VSPIQ_IN_IDX,
-        .spiwp_in = VSPIWP_IN_IDX,
-        .spihd_in = VSPIHD_IN_IDX,
-        .spics_out = {VSPICS0_OUT_IDX, VSPICS1_OUT_IDX, VSPICS2_OUT_IDX},
-        .spics_in = VSPICS0_IN_IDX,
-        .spiclk_iomux_pin = 18,
-        .spid_iomux_pin = 23,
-        .spiq_iomux_pin = 19,
-        .spiwp_iomux_pin = 22,
-        .spihd_iomux_pin = 21,
-        .spics0_iomux_pin = 5,
-        .irq = ETS_SPI3_INTR_SOURCE,
-        .irq_dma = ETS_SPI3_DMA_INTR_SOURCE,
-        .module = PERIPH_VSPI_MODULE,
-        .hw = &SPI3
-    }
-};
 
 #define DMA_CHANNEL_ENABLED(dma_chan)    (BIT(dma_chan-1))
 
@@ -165,7 +59,7 @@ static portMUX_TYPE spi_dma_spinlock = portMUX_INITIALIZER_UNLOCKED;
 bool spicommon_periph_claim(spi_host_device_t host)
 {
     bool ret = __sync_bool_compare_and_swap(&spi_periph_claimed[host], false, true);
-    if (ret) periph_module_enable(io_signal[host].module);
+    if (ret) periph_module_enable(spi_periph_signal[host].module);
     return ret;
 }
 
@@ -173,19 +67,19 @@ bool spicommon_periph_claim(spi_host_device_t host)
 bool spicommon_periph_free(spi_host_device_t host)
 {
     bool ret = __sync_bool_compare_and_swap(&spi_periph_claimed[host], true, false);
-    if (ret) periph_module_disable(io_signal[host].module);
+    if (ret) periph_module_disable(spi_periph_signal[host].module);
     return ret;
 }
 
 
 int spicommon_irqsource_for_host(spi_host_device_t host)
 {
-    return io_signal[host].irq;
+    return spi_periph_signal[host].irq;
 }
 
 spi_dev_t *spicommon_hw_for_host(spi_host_device_t host)
 {
-    return io_signal[host].hw;
+    return spi_periph_signal[host].hw;
 }
 
 bool spicommon_dma_chan_claim (int dma_chan)
@@ -240,20 +134,20 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
     if (bus_config->sclk_io_num>=0) {
         temp_flag |= SPICOMMON_BUSFLAG_SCLK;
         SPI_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(bus_config->sclk_io_num), "sclk not valid", ESP_ERR_INVALID_ARG);
-        if (bus_config->sclk_io_num != io_signal[host].spiclk_iomux_pin) use_iomux = false;
+        if (bus_config->sclk_io_num != spi_periph_signal[host].spiclk_iomux_pin) use_iomux = false;
     } else {
         SPI_CHECK((flags&SPICOMMON_BUSFLAG_SCLK)==0, "sclk pin required.", ESP_ERR_INVALID_ARG);
     }
     if (bus_config->quadwp_io_num>=0) {
         SPI_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(bus_config->quadwp_io_num), "spiwp not valid", ESP_ERR_INVALID_ARG);
-        if (bus_config->quadwp_io_num != io_signal[host].spiwp_iomux_pin) use_iomux = false;
+        if (bus_config->quadwp_io_num != spi_periph_signal[host].spiwp_iomux_pin) use_iomux = false;
     } else {
         quad_pins_exist = false;
         SPI_CHECK((flags&SPICOMMON_BUSFLAG_WPHD)==0, "spiwp pin required.", ESP_ERR_INVALID_ARG);
     }
     if (bus_config->quadhd_io_num>=0) {
         SPI_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(bus_config->quadhd_io_num), "spihd not valid", ESP_ERR_INVALID_ARG);
-        if (bus_config->quadhd_io_num != io_signal[host].spihd_iomux_pin) use_iomux = false;
+        if (bus_config->quadhd_io_num != spi_periph_signal[host].spihd_iomux_pin) use_iomux = false;
     } else {
         quad_pins_exist = false;
         SPI_CHECK((flags&SPICOMMON_BUSFLAG_WPHD)==0, "spihd pin required.", ESP_ERR_INVALID_ARG);
@@ -265,7 +159,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         } else {
             SPI_CHECK(GPIO_IS_VALID_GPIO(bus_config->mosi_io_num), "mosi not valid", ESP_ERR_INVALID_ARG);
         }
-        if (bus_config->mosi_io_num != io_signal[host].spid_iomux_pin) use_iomux = false;
+        if (bus_config->mosi_io_num != spi_periph_signal[host].spid_iomux_pin) use_iomux = false;
     } else {
         SPI_CHECK((flags&SPICOMMON_BUSFLAG_MOSI)==0, "mosi pin required.", ESP_ERR_INVALID_ARG);
     }
@@ -276,7 +170,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         } else {
             SPI_CHECK(GPIO_IS_VALID_GPIO(bus_config->miso_io_num), "miso not valid", ESP_ERR_INVALID_ARG);
         }
-        if (bus_config->miso_io_num != io_signal[host].spiq_iomux_pin) use_iomux = false;
+        if (bus_config->miso_io_num != spi_periph_signal[host].spiq_iomux_pin) use_iomux = false;
     } else {
         SPI_CHECK((flags&SPICOMMON_BUSFLAG_MISO)==0, "miso pin required.", ESP_ERR_INVALID_ARG);
     }
@@ -295,23 +189,23 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         //out which FUNC_GPIOx_xSPIxx to grab; they all are defined to 1 anyway.
         ESP_LOGD(SPI_TAG, "SPI%d use iomux pins.", host );
         if (bus_config->mosi_io_num >= 0) {
-            gpio_iomux_in(bus_config->mosi_io_num, io_signal[host].spid_in);
+            gpio_iomux_in(bus_config->mosi_io_num, spi_periph_signal[host].spid_in);
             gpio_iomux_out(bus_config->mosi_io_num, FUNC_SPI, false);
         }
         if (bus_config->miso_io_num >= 0) {
-            gpio_iomux_in(bus_config->miso_io_num, io_signal[host].spiq_in);
+            gpio_iomux_in(bus_config->miso_io_num, spi_periph_signal[host].spiq_in);
             gpio_iomux_out(bus_config->miso_io_num, FUNC_SPI, false);
         }
         if (bus_config->quadwp_io_num >= 0) {
-            gpio_iomux_in(bus_config->quadwp_io_num, io_signal[host].spiwp_in);
+            gpio_iomux_in(bus_config->quadwp_io_num, spi_periph_signal[host].spiwp_in);
             gpio_iomux_out(bus_config->quadwp_io_num, FUNC_SPI, false);
         }
         if (bus_config->quadhd_io_num >= 0) {
-            gpio_iomux_in(bus_config->quadhd_io_num, io_signal[host].spihd_in);
+            gpio_iomux_in(bus_config->quadhd_io_num, spi_periph_signal[host].spihd_in);
             gpio_iomux_out(bus_config->quadhd_io_num, FUNC_SPI, false);
         }
         if (bus_config->sclk_io_num >= 0) {
-            gpio_iomux_in(bus_config->sclk_io_num, io_signal[host].spiclk_in);
+            gpio_iomux_in(bus_config->sclk_io_num, spi_periph_signal[host].spiclk_in);
             gpio_iomux_out(bus_config->sclk_io_num, FUNC_SPI, false);
         }
         temp_flag |= SPICOMMON_BUSFLAG_NATIVE_PINS;
@@ -322,39 +216,39 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
             PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->mosi_io_num], FUNC_GPIO);
             if (mosi_output || (temp_flag&SPICOMMON_BUSFLAG_DUAL)) {
                 gpio_set_direction(bus_config->mosi_io_num, GPIO_MODE_INPUT_OUTPUT);
-                gpio_matrix_out(bus_config->mosi_io_num, io_signal[host].spid_out, false, false);
+                gpio_matrix_out(bus_config->mosi_io_num, spi_periph_signal[host].spid_out, false, false);
             } else {
                 gpio_set_direction(bus_config->mosi_io_num, GPIO_MODE_INPUT);
             }
-            gpio_matrix_in(bus_config->mosi_io_num, io_signal[host].spid_in, false);
+            gpio_matrix_in(bus_config->mosi_io_num, spi_periph_signal[host].spid_in, false);
         }
         if (bus_config->miso_io_num >= 0) {
             PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->miso_io_num], FUNC_GPIO);
             if (miso_output || (temp_flag&SPICOMMON_BUSFLAG_DUAL)) {
                 gpio_set_direction(bus_config->miso_io_num, GPIO_MODE_INPUT_OUTPUT);
-                gpio_matrix_out(bus_config->miso_io_num, io_signal[host].spiq_out, false, false);
+                gpio_matrix_out(bus_config->miso_io_num, spi_periph_signal[host].spiq_out, false, false);
             } else {
                 gpio_set_direction(bus_config->miso_io_num, GPIO_MODE_INPUT);
             }
-            gpio_matrix_in(bus_config->miso_io_num, io_signal[host].spiq_in, false);
+            gpio_matrix_in(bus_config->miso_io_num, spi_periph_signal[host].spiq_in, false);
         }
         if (bus_config->quadwp_io_num >= 0) {
             PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadwp_io_num], FUNC_GPIO);
             gpio_set_direction(bus_config->quadwp_io_num, GPIO_MODE_INPUT_OUTPUT);
-            gpio_matrix_out(bus_config->quadwp_io_num, io_signal[host].spiwp_out, false, false);
-            gpio_matrix_in(bus_config->quadwp_io_num, io_signal[host].spiwp_in, false);
+            gpio_matrix_out(bus_config->quadwp_io_num, spi_periph_signal[host].spiwp_out, false, false);
+            gpio_matrix_in(bus_config->quadwp_io_num, spi_periph_signal[host].spiwp_in, false);
         }
         if (bus_config->quadhd_io_num >= 0) {
             PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadhd_io_num], FUNC_GPIO);
             gpio_set_direction(bus_config->quadhd_io_num, GPIO_MODE_INPUT_OUTPUT);
-            gpio_matrix_out(bus_config->quadhd_io_num, io_signal[host].spihd_out, false, false);
-            gpio_matrix_in(bus_config->quadhd_io_num, io_signal[host].spihd_in, false);
+            gpio_matrix_out(bus_config->quadhd_io_num, spi_periph_signal[host].spihd_out, false, false);
+            gpio_matrix_in(bus_config->quadhd_io_num, spi_periph_signal[host].spihd_in, false);
         }
         if (bus_config->sclk_io_num >= 0) {
             PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->sclk_io_num], FUNC_GPIO);
             gpio_set_direction(bus_config->sclk_io_num, GPIO_MODE_INPUT_OUTPUT);
-            gpio_matrix_out(bus_config->sclk_io_num, io_signal[host].spiclk_out, false, false);
-            gpio_matrix_in(bus_config->sclk_io_num, io_signal[host].spiclk_in, false);
+            gpio_matrix_out(bus_config->sclk_io_num, spi_periph_signal[host].spiclk_out, false, false);
+            gpio_matrix_in(bus_config->sclk_io_num, spi_periph_signal[host].spiclk_in, false);
         }
     }
 
@@ -378,39 +272,39 @@ static void reset_func_to_gpio(int func)
 
 esp_err_t spicommon_bus_free_io(spi_host_device_t host)
 {
-    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[io_signal[host].spid_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[io_signal[host].spid_iomux_pin], PIN_FUNC_GPIO);
-    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[io_signal[host].spiq_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[io_signal[host].spiq_iomux_pin], PIN_FUNC_GPIO);
-    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[io_signal[host].spiclk_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[io_signal[host].spiclk_iomux_pin], PIN_FUNC_GPIO);
-    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[io_signal[host].spiwp_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[io_signal[host].spiwp_iomux_pin], PIN_FUNC_GPIO);
-    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[io_signal[host].spihd_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[io_signal[host].spihd_iomux_pin], PIN_FUNC_GPIO);
-    reset_func_to_gpio(io_signal[host].spid_out);
-    reset_func_to_gpio(io_signal[host].spiq_out);
-    reset_func_to_gpio(io_signal[host].spiclk_out);
-    reset_func_to_gpio(io_signal[host].spiwp_out);
-    reset_func_to_gpio(io_signal[host].spihd_out);
+    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[spi_periph_signal[host].spid_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[spi_periph_signal[host].spid_iomux_pin], PIN_FUNC_GPIO);
+    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[spi_periph_signal[host].spiq_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[spi_periph_signal[host].spiq_iomux_pin], PIN_FUNC_GPIO);
+    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[spi_periph_signal[host].spiclk_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[spi_periph_signal[host].spiclk_iomux_pin], PIN_FUNC_GPIO);
+    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[spi_periph_signal[host].spiwp_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[spi_periph_signal[host].spiwp_iomux_pin], PIN_FUNC_GPIO);
+    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[spi_periph_signal[host].spihd_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[spi_periph_signal[host].spihd_iomux_pin], PIN_FUNC_GPIO);
+    reset_func_to_gpio(spi_periph_signal[host].spid_out);
+    reset_func_to_gpio(spi_periph_signal[host].spiq_out);
+    reset_func_to_gpio(spi_periph_signal[host].spiclk_out);
+    reset_func_to_gpio(spi_periph_signal[host].spiwp_out);
+    reset_func_to_gpio(spi_periph_signal[host].spihd_out);
     return ESP_OK;
 }
 
 void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, int force_gpio_matrix)
 {
-    if (!force_gpio_matrix && cs_io_num == io_signal[host].spics0_iomux_pin && cs_num == 0) {
+    if (!force_gpio_matrix && cs_io_num == spi_periph_signal[host].spics0_iomux_pin && cs_num == 0) {
         //The cs0s for all SPI peripherals map to pin mux source 1, so we use that instead of a define.
-        gpio_iomux_in(cs_io_num, io_signal[host].spics_in);
+        gpio_iomux_in(cs_io_num, spi_periph_signal[host].spics_in);
         gpio_iomux_out(cs_io_num, FUNC_SPI, false);
     } else {
         //Use GPIO matrix
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[cs_io_num], FUNC_GPIO);
-        gpio_matrix_out(cs_io_num, io_signal[host].spics_out[cs_num], false, false);
-        if (cs_num == 0) gpio_matrix_in(cs_io_num, io_signal[host].spics_in, false);
+        gpio_matrix_out(cs_io_num, spi_periph_signal[host].spics_out[cs_num], false, false);
+        if (cs_num == 0) gpio_matrix_in(cs_io_num, spi_periph_signal[host].spics_in, false);
     }
 }
 
 void spicommon_cs_free(spi_host_device_t host, int cs_io_num)
 {
-    if (cs_io_num == 0 && REG_GET_FIELD(GPIO_PIN_MUX_REG[io_signal[host].spics0_iomux_pin], MCU_SEL) == 1) {
-        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[io_signal[host].spics0_iomux_pin], PIN_FUNC_GPIO);
+    if (cs_io_num == 0 && REG_GET_FIELD(GPIO_PIN_MUX_REG[spi_periph_signal[host].spics0_iomux_pin], MCU_SEL) == 1) {
+        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[spi_periph_signal[host].spics0_iomux_pin], PIN_FUNC_GPIO);
     }
-    reset_func_to_gpio(io_signal[host].spics_out[cs_io_num]);
+    reset_func_to_gpio(spi_periph_signal[host].spics_out[cs_io_num]);
 }
 
 //Set up a list of dma descriptors. dmadesc is an array of descriptors. Data is the buffer to point to.
