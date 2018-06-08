@@ -285,6 +285,22 @@ esp_err_t spicommon_bus_free_io(spi_host_device_t host)
     return ESP_OK;
 }
 
+esp_err_t spicommon_bus_free_io_cfg(const spi_bus_config_t *bus_cfg)
+{
+    int pin_array[] = {
+        bus_cfg->mosi_io_num,
+        bus_cfg->miso_io_num,
+        bus_cfg->sclk_io_num,
+        bus_cfg->quadwp_io_num,
+        bus_cfg->quadhd_io_num,
+    };
+    for (int i = 0; i < sizeof(pin_array)/sizeof(int); i ++) {
+        const int io = pin_array[i];
+        if (io >= 0 && GPIO_IS_VALID_GPIO(io)) gpio_reset_pin(io);
+    }
+    return ESP_OK;
+}
+
 void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, int force_gpio_matrix)
 {
     if (!force_gpio_matrix && cs_io_num == spi_periph_signal[host].spics0_iomux_pin && cs_num == 0) {
@@ -305,6 +321,12 @@ void spicommon_cs_free(spi_host_device_t host, int cs_io_num)
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[spi_periph_signal[host].spics0_iomux_pin], PIN_FUNC_GPIO);
     }
     reset_func_to_gpio(spi_periph_signal[host].spics_out[cs_io_num]);
+}
+
+void spicommon_cs_free_io(int cs_gpio_num)
+{
+    assert(cs_gpio_num>=0 && GPIO_IS_VALID_GPIO(cs_gpio_num));
+    gpio_reset_pin(cs_gpio_num);
 }
 
 //Set up a list of dma descriptors. dmadesc is an array of descriptors. Data is the buffer to point to.
