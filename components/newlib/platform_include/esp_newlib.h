@@ -38,4 +38,9 @@ void esp_setup_syscall_table();
  */
 void esp_set_time_from_rtc();
 
+/*
+ * Sync counters RTC and FRC. Update boot_time.
+ */
+void esp_sync_counters_rtc_and_frc();
+
 #endif //__ESP_NEWLIB_H__

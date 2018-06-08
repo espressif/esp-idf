@@ -203,7 +203,7 @@ void IRAM_ATTR esp_deep_sleep_start()
 {
     // record current RTC time
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
-
+    esp_sync_counters_rtc_and_frc();
     // Configure wake stub
     if (esp_get_deep_sleep_wake_stub() == NULL) {
         esp_set_deep_sleep_wake_stub(esp_wake_deep_sleep);
