@@ -1,4 +1,4 @@
-// Copyright 2010-2017 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2010-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,9 +19,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
-#include "soc/spi_struct.h"
 #include "rom/lldesc.h"
-
+#include "soc/spi_periph.h"
 
 #ifdef __cplusplus
 extern "C"
