@@ -17,7 +17,7 @@
 #include "ffconf.h"
 #include "ff.h"
 #include "esp_log.h"
-#include "diskio_spiflash.h"
+#include "diskio_wl.h"
 #include "wear_levelling.h"
 
 static const char* TAG = "ff_diskio_spiflash";
