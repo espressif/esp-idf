@@ -61,6 +61,10 @@ Windows 用户
 
 	* 从 “Providers” 列表中选择 “CDT GCC Build Output Parser”，然后在 “Compiler command pattern“ 输入框的起始位置输入 ``xtensa-esp32-elf-``，最终的完整编译器命令应为 ``xtensa-esp32-elf-(g?cc)|([gc]\+\+)|(clang)``。
 
+* 前往 “C/C++ General” -> “Indexer” 属性页面。
+
+	* 去除 "Allow heuristic resolution of includes" 勾选。启用此选项时，Eclipse 有时无法找到正确的头文件目录。
+
 .. _eclipse-build-project:
 
 在 Eclipse IDE 中创建项目
@@ -105,5 +109,3 @@ Windows 用户
 
 
 .. _eclipse.org: https://www.eclipse.org/
-
-
