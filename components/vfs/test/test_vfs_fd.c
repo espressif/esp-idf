@@ -243,7 +243,7 @@ TEST_CASE("Open & write & close through VFS passes performance test", "[vfs]")
     TEST_ESP_OK( esp_vfs_register(VFS_PREF1, &desc, NULL) );
 
     const int64_t begin = esp_timer_get_time();
-    const int iter_count = 1000;
+    const int iter_count = 5000;
 
     for (int i = 0; i < iter_count; ++i) {
         const int fd = open(VFS_PREF1 FILE1, 0, 0);

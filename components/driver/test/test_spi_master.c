@@ -1311,6 +1311,7 @@ TEST_CASE("spi_speed","[spi]")
     //record flight time by isr, with DMA
     t_flight_num = 0;
     for (int i = 0; i < TEST_TIMES; i++) {
+        spi_device_transmit(spi, &trans); // prime the flash cache
         RECORD_TIME_START();
         spi_device_transmit(spi, &trans);
         RECORD_TIME_END(&t_flight);
