@@ -31,11 +31,25 @@ variables:
   APPLY_BOT_FILTER_SCRIPT: "$CI_PROJECT_DIR/tools/ci/apply_bot_filter.py"
   CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
 
+# When 'fetch' strategy is used, Gitlab removes untracked files before checking out
+# new revision. However if the new revision doesn't include some of the submodules
+# which were present in the old revision, such submodule directories would not be
+# removed by the checkout. This extra step ensures that these stale submodules
+# are removed.
+.git_clean_stale_submodules:  &git_clean_stale_submodules >
+  find . -name '.git' -not -path './.git' -printf '%P\n'
+  | sed 's|/.git||' 
+  | xargs -I {} sh -c '
+  grep -q {} .gitmodules 
+  ||  (echo "Removing {}, has .git directory but not in .gitmodules file" 
+  && rm -rf {});'
+
 # before each job, we need to check if this job is filtered by bot stage/job filter
 .apply_bot_filter: &apply_bot_filter
   python $APPLY_BOT_FILTER_SCRIPT || exit 0
 
 before_script:
+  - *git_clean_stale_submodules
   # apply bot filter in before script
   - *apply_bot_filter
   # add gitlab ssh key
@@ -56,6 +70,7 @@ before_script:
 
 .do_nothing_before:
   before_script: &do_nothing_before
+    - *git_clean_stale_submodules
     # apply bot filter in before script
     - *apply_bot_filter
     - echo "Not setting up GitLab key, not fetching submodules"
@@ -63,6 +78,7 @@ before_script:
 
 .add_gitlab_key_before:
   before_script: &add_gitlab_key_before
+    - *git_clean_stale_submodules
     # apply bot filter in before script
     - *apply_bot_filter
     - echo "Not fetching submodules"
