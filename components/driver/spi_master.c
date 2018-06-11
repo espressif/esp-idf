@@ -66,6 +66,18 @@ typedef typeof(SPI1.clock) spi_clock_reg_t;
 
 #define NO_CS 3     //Number of CS pins per SPI host
 
+#ifdef CONFIG_SPI_MASTER_ISR_IN_IRAM
+#define SPI_MASTER_ISR_ATTR IRAM_ATTR
+#else
+#define SPI_MASTER_ISR_ATTR
+#endif
+
+#ifdef CONFIG_SPI_MASTER_IN_IRAM
+#define SPI_MASTER_ATTR IRAM_ATTR
+#else
+#define SPI_MASTER_ATTR
+#endif
+
 
 /// struct to hold private transaction data (like tx and rx buffer for DMA).
 typedef struct {
@@ -179,7 +191,11 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
         }
     }
 
-    err = esp_intr_alloc(spicommon_irqsource_for_host(host), ESP_INTR_FLAG_INTRDISABLED, spi_intr, (void*)spihost[host], &spihost[host]->intr);
+    int flags = ESP_INTR_FLAG_INTRDISABLED;
+#ifdef CONFIG_SPI_MASTER_ISR_IN_IRAM
+    flags |= ESP_INTR_FLAG_IRAM;
+#endif
+    err = esp_intr_alloc(spicommon_irqsource_for_host(host), flags, spi_intr, (void*)spihost[host], &spihost[host]->intr);
     if (err != ESP_OK) {
         ret = err;
         goto cleanup;
@@ -481,7 +497,7 @@ static inline void spi_set_clock(spi_dev_t *hw, spi_clock_reg_t reg) {
 //This is run in interrupt context and apart from initialization and destruction, this is the only code
 //touching the host (=spihost[x]) variable. The rest of the data arrives in queues. That is why there are
 //no muxes in this code.
-static void IRAM_ATTR spi_intr(void *arg)
+static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
 {
     int i;
     BaseType_t r;
@@ -730,7 +746,7 @@ static void IRAM_ATTR spi_intr(void *arg)
 }
 
 
-esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *trans_desc,  TickType_t ticks_to_wait)
+esp_err_t SPI_MASTER_ATTR spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *trans_desc,  TickType_t ticks_to_wait)
 {
     esp_err_t ret = ESP_OK;
     BaseType_t r;
@@ -822,7 +838,7 @@ clean_up:
     return ret;
 }
 
-esp_err_t spi_device_get_trans_result(spi_device_handle_t handle, spi_transaction_t **trans_desc, TickType_t ticks_to_wait)
+esp_err_t SPI_MASTER_ATTR spi_device_get_trans_result(spi_device_handle_t handle, spi_transaction_t **trans_desc, TickType_t ticks_to_wait)
 {
     BaseType_t r;
     spi_trans_priv trans_buf;
@@ -856,7 +872,7 @@ esp_err_t spi_device_get_trans_result(spi_device_handle_t handle, spi_transactio
 }
 
 //Porcelain to do one blocking transmission.
-esp_err_t spi_device_transmit(spi_device_handle_t handle, spi_transaction_t *trans_desc)
+esp_err_t SPI_MASTER_ATTR spi_device_transmit(spi_device_handle_t handle, spi_transaction_t *trans_desc)
 {
     esp_err_t ret;
     spi_transaction_t *ret_trans;
