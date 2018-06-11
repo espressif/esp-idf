@@ -213,7 +213,6 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         //Use GPIO matrix
         ESP_LOGD(SPI_TAG, "SPI%d use gpio matrix.", host );
         if (bus_config->mosi_io_num >= 0) {
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->mosi_io_num], FUNC_GPIO);
             if (mosi_output || (temp_flag&SPICOMMON_BUSFLAG_DUAL)) {
                 gpio_set_direction(bus_config->mosi_io_num, GPIO_MODE_INPUT_OUTPUT);
                 gpio_matrix_out(bus_config->mosi_io_num, spi_periph_signal[host].spid_out, false, false);
@@ -221,9 +220,9 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
                 gpio_set_direction(bus_config->mosi_io_num, GPIO_MODE_INPUT);
             }
             gpio_matrix_in(bus_config->mosi_io_num, spi_periph_signal[host].spid_in, false);
+            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->mosi_io_num], FUNC_GPIO);
         }
         if (bus_config->miso_io_num >= 0) {
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->miso_io_num], FUNC_GPIO);
             if (miso_output || (temp_flag&SPICOMMON_BUSFLAG_DUAL)) {
                 gpio_set_direction(bus_config->miso_io_num, GPIO_MODE_INPUT_OUTPUT);
                 gpio_matrix_out(bus_config->miso_io_num, spi_periph_signal[host].spiq_out, false, false);
@@ -231,24 +230,25 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
                 gpio_set_direction(bus_config->miso_io_num, GPIO_MODE_INPUT);
             }
             gpio_matrix_in(bus_config->miso_io_num, spi_periph_signal[host].spiq_in, false);
+            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->miso_io_num], FUNC_GPIO);
         }
         if (bus_config->quadwp_io_num >= 0) {
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadwp_io_num], FUNC_GPIO);
             gpio_set_direction(bus_config->quadwp_io_num, GPIO_MODE_INPUT_OUTPUT);
             gpio_matrix_out(bus_config->quadwp_io_num, spi_periph_signal[host].spiwp_out, false, false);
             gpio_matrix_in(bus_config->quadwp_io_num, spi_periph_signal[host].spiwp_in, false);
+            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadwp_io_num], FUNC_GPIO);
         }
         if (bus_config->quadhd_io_num >= 0) {
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadhd_io_num], FUNC_GPIO);
             gpio_set_direction(bus_config->quadhd_io_num, GPIO_MODE_INPUT_OUTPUT);
             gpio_matrix_out(bus_config->quadhd_io_num, spi_periph_signal[host].spihd_out, false, false);
             gpio_matrix_in(bus_config->quadhd_io_num, spi_periph_signal[host].spihd_in, false);
+            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadhd_io_num], FUNC_GPIO);
         }
         if (bus_config->sclk_io_num >= 0) {
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->sclk_io_num], FUNC_GPIO);
             gpio_set_direction(bus_config->sclk_io_num, GPIO_MODE_INPUT_OUTPUT);
             gpio_matrix_out(bus_config->sclk_io_num, spi_periph_signal[host].spiclk_out, false, false);
             gpio_matrix_in(bus_config->sclk_io_num, spi_periph_signal[host].spiclk_in, false);
+            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->sclk_io_num], FUNC_GPIO);
         }
     }
 
@@ -309,9 +309,9 @@ void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, 
         gpio_iomux_out(cs_io_num, FUNC_SPI, false);
     } else {
         //Use GPIO matrix
-        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[cs_io_num], FUNC_GPIO);
         gpio_matrix_out(cs_io_num, spi_periph_signal[host].spics_out[cs_num], false, false);
         if (cs_num == 0) gpio_matrix_in(cs_io_num, spi_periph_signal[host].spics_in, false);
+        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[cs_io_num], FUNC_GPIO);
     }
 }
 
