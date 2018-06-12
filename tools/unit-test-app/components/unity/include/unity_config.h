@@ -8,10 +8,12 @@
 // Adapt Unity to our environment, disable FP support
 
 #include <esp_err.h>
+#include <sdkconfig.h>
 
 /* Some definitions applicable to Unity running in FreeRTOS */
-#define UNITY_FREERTOS_PRIORITY 5
-#define UNITY_FREERTOS_CPU 0
+#define UNITY_FREERTOS_PRIORITY CONFIG_UNITY_FREERTOS_PRIORITY
+#define UNITY_FREERTOS_CPU CONFIG_UNITY_FREERTOS_CPU
+#define UNITY_FREERTOS_STACK_SIZE CONFIG_UNITY_FREERTOS_STACK_SIZE
 
 #define UNITY_EXCLUDE_FLOAT
 #define UNITY_EXCLUDE_DOUBLE
