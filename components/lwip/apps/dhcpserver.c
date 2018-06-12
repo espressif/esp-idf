@@ -373,13 +373,8 @@ static u8_t *add_offer_options(u8_t *optptr)
 
     *optptr++ = DHCP_OPTION_INTERFACE_MTU;
     *optptr++ = 2;
-#ifdef CLASS_B_NET
     *optptr++ = 0x05;
     *optptr++ = 0xdc;
-#else
-    *optptr++ = 0x02;
-    *optptr++ = 0x40;
-#endif
 
     *optptr++ = DHCP_OPTION_PERFORM_ROUTER_DISCOVERY;
     *optptr++ = 1;
