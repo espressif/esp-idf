@@ -60,7 +60,9 @@ esp_err_t WL_Flash::config(wl_config_t *cfg, Flash_Access *flash_drv)
     cfg->crc = crc32::crc32_le(WL_CFG_CRC_CONST, (const unsigned char *)cfg, offsetof(wl_config_t, crc));
     esp_err_t result = ESP_OK;
     memcpy(&this->cfg, cfg, sizeof(wl_config_t));
-    if (this->cfg.temp_buff_size < this->cfg.wr_size) this->cfg.temp_buff_size = this->cfg.wr_size;
+    if (this->cfg.temp_buff_size < this->cfg.wr_size) {
+        this->cfg.temp_buff_size = this->cfg.wr_size;
+    }
     this->configured = false;
     if (cfg == NULL) {
         result = ESP_ERR_INVALID_ARG;
@@ -355,13 +357,14 @@ esp_err_t WL_Flash::updateV1_V2()
         this->state.pos = 0;
         this->state.crc = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)&this->state, offsetof(wl_state_t, crc));
         this->state.device_id = esp_random();
+        memset(this->state.reserved, 0, sizeof(this->state.reserved));
 
         result = this->flash_drv->erase_range(this->addr_state1, this->state_size);
         WL_RESULT_CHECK(result);
         result = this->flash_drv->write(this->addr_state1, &this->state, sizeof(wl_state_t));
         WL_RESULT_CHECK(result);
 
-        memset(this->temp_buff,    0, this->cfg.wr_size);
+        memset(this->temp_buff, 0, this->cfg.wr_size);
         for (uint32_t i=0 ; i<= pos; i++) {
             this->fillOkBuff(i);
             result = this->flash_drv->write(this->addr_state1 + sizeof(wl_state_t) + i * this->cfg.wr_size, this->temp_buff, this->cfg.wr_size);
@@ -374,7 +377,7 @@ esp_err_t WL_Flash::updateV1_V2()
         WL_RESULT_CHECK(result);
         ESP_LOGD(TAG, "%s - move_count= 0x%08x, pos= 0x%08x", __func__, this->state.move_count, this->state.pos);
 
-        memset(this->temp_buff,    0, this->cfg.wr_size);
+        memset(this->temp_buff, 0, this->cfg.wr_size);
         for (uint32_t i=0 ; i<= pos; i++) {
             this->fillOkBuff(i);
             result = this->flash_drv->write(this->addr_state2 + sizeof(wl_state_t) + i * this->cfg.wr_size, this->temp_buff, this->cfg.wr_size);
