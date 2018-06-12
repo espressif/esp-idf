@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
+#include <sys/param.h>
 #include "unity.h"
 #include "esp_timer.h"
 #include "esp_heap_caps.h"
@@ -15,6 +16,20 @@
 #define WITH_PROFILING 1
 #endif
 
+extern uint32_t esp_timer_impl_get_overflow_val();
+extern void esp_timer_impl_set_overflow_val(uint32_t overflow_val);
+
+static uint32_t s_old_overflow_val;
+
+static void setup_overflow()
+{
+    s_old_overflow_val = esp_timer_impl_get_overflow_val();
+    esp_timer_impl_set_overflow_val(0x7fffff); /* overflow every ~0.1 sec */}
+
+static void teardown_overflow()
+{
+    esp_timer_impl_set_overflow_val(s_old_overflow_val);
+}
 
 TEST_CASE("esp_timer orders timers correctly", "[esp_timer]")
 {
@@ -27,6 +42,7 @@ TEST_CASE("esp_timer orders timers correctly", "[esp_timer]")
     const size_t num_timers = sizeof(timeouts)/sizeof(timeouts[0]);
     esp_timer_handle_t handles[num_timers];
     char* names[num_timers];
+    setup_overflow();
     for (size_t i = 0; i < num_timers; ++i) {
         asprintf(&names[i], "timer%d", i);
         esp_timer_create_args_t args = {
@@ -36,6 +52,7 @@ TEST_CASE("esp_timer orders timers correctly", "[esp_timer]")
         TEST_ESP_OK(esp_timer_create(&args, &handles[i]));
         TEST_ESP_OK(esp_timer_start_once(handles[i], timeouts[i] * 100));
     }
+    teardown_overflow();
     char* stream_str[1024];
     FILE* stream = fmemopen(stream_str, sizeof(stream_str), "r+");
     TEST_ESP_OK(esp_timer_dump(stream));
@@ -68,6 +85,42 @@ TEST_CASE("esp_timer orders timers correctly", "[esp_timer]")
     fclose(stream);
 }
 
+TEST_CASE("esp_timer_impl_set_alarm stress test", "[esp_timer]")
+{
+    const int test_time_sec = 10;
+
+    void set_alarm_task(void* arg)
+    {
+        SemaphoreHandle_t done = (SemaphoreHandle_t) arg;
+
+        uint64_t start = esp_timer_impl_get_time();
+        uint64_t now = start;
+        int count = 0;
+        const int delays[] = {50, 5000, 10000000};
+        const int delays_count = sizeof(delays)/sizeof(delays[0]);
+        while (now - start < test_time_sec * 1000000) {
+            now = esp_timer_impl_get_time();
+            esp_timer_impl_set_alarm(now + delays[count % delays_count]);
+            ++count;
+        }
+        xSemaphoreGive(done);
+        vTaskDelete(NULL);
+    }
+
+    SemaphoreHandle_t done = xSemaphoreCreateCounting(portNUM_PROCESSORS, 0);
+    setup_overflow();
+    xTaskCreatePinnedToCore(&set_alarm_task, "set_alarm_0", 4096, done, UNITY_FREERTOS_PRIORITY, NULL, 0);
+#if portNUM_PROCESSORS == 2
+    xTaskCreatePinnedToCore(&set_alarm_task, "set_alarm_1", 4096, done, UNITY_FREERTOS_PRIORITY, NULL, 1);
+#endif
+
+    TEST_ASSERT(xSemaphoreTake(done, test_time_sec * 2 * 1000 / portTICK_PERIOD_MS));
+#if portNUM_PROCESSORS == 2
+    TEST_ASSERT(xSemaphoreTake(done, test_time_sec * 2 * 1000 / portTICK_PERIOD_MS));
+#endif
+    teardown_overflow();
+    vSemaphoreDelete(done);
+}
 
 TEST_CASE("esp_timer produces correct delay", "[esp_timer]")
 {
@@ -90,6 +143,7 @@ TEST_CASE("esp_timer produces correct delay", "[esp_timer]")
     const size_t delays_count = sizeof(delays_ms)/sizeof(delays_ms[0]);
 
     ref_clock_init();
+    setup_overflow();
     for (size_t i = 0; i < delays_count; ++i) {
         t_end = 0;
         int64_t t_start = ref_clock_get();
@@ -103,6 +157,7 @@ TEST_CASE("esp_timer produces correct delay", "[esp_timer]")
 
         TEST_ASSERT_INT32_WITHIN(portTICK_PERIOD_MS, delays_ms[i], ms_diff);
     }
+    teardown_overflow();
     ref_clock_deinit();
 
     TEST_ESP_OK( esp_timer_dump(stdout) );
@@ -150,6 +205,7 @@ TEST_CASE("periodic esp_timer produces correct delays", "[esp_timer]")
     };
     TEST_ESP_OK(esp_timer_create(&create_args, &timer1));
     ref_clock_init();
+    setup_overflow();
     args.timer = timer1;
     args.t_start = ref_clock_get();
     args.done = xSemaphoreCreateBinary();
@@ -161,6 +217,7 @@ TEST_CASE("periodic esp_timer produces correct delays", "[esp_timer]")
     for (size_t i = 0; i < NUM_INTERVALS; ++i) {
         TEST_ASSERT_INT32_WITHIN(portTICK_PERIOD_MS, (i + 1) * delay_ms, args.intervals[i]);
     }
+    teardown_overflow();
     ref_clock_deinit();
     TEST_ESP_OK( esp_timer_dump(stdout) );
 
@@ -317,6 +374,7 @@ TEST_CASE("esp_timer for very short intervals", "[esp_timer]")
     esp_timer_handle_t timer1, timer2;
     ESP_ERROR_CHECK( esp_timer_create(&timer_args, &timer1) );
     ESP_ERROR_CHECK( esp_timer_create(&timer_args, &timer2) );
+    setup_overflow();
     const int timeout_ms = 10;
     for (int timeout_delta_us = -150; timeout_delta_us < 150; timeout_delta_us++) {
         printf("delta=%d", timeout_delta_us);
@@ -329,6 +387,7 @@ TEST_CASE("esp_timer for very short intervals", "[esp_timer]")
         TEST_ESP_ERR(ESP_ERR_INVALID_STATE, esp_timer_stop(timer2));
     }
 
+    teardown_overflow();
     vSemaphoreDelete(semaphore);
 }
 
@@ -345,40 +404,75 @@ TEST_CASE("esp_timer_get_time call takes less than 1us", "[esp_timer]")
     TEST_PERFORMANCE_LESS_THAN(ESP_TIMER_GET_TIME_PER_CALL, "%dns", ns_per_call);
 }
 
-/* This test runs for about 10 minutes and is disabled in CI.
- * Such run time is needed to have FRC2 timer overflow a few times.
- */
-TEST_CASE("esp_timer_get_time returns monotonic values", "[esp_timer][ignore]")
+TEST_CASE("esp_timer_get_time returns monotonic values", "[esp_timer]")
 {
-    void timer_test_task(void* arg) {
-        int64_t delta = esp_timer_get_time() - ref_clock_get();
+    typedef struct {
+        SemaphoreHandle_t done;
+        bool pass;
+        int test_cnt;
+        int error_cnt;
+        int64_t total_sq_error;
+        int64_t max_error;
+    } test_state_t;
 
-        const int iter_count = 1000000000;
-        for (int i = 0; i < iter_count; ++i) {
-            int64_t now = esp_timer_get_time();
-            int64_t ref_now = ref_clock_get();
-            int64_t diff = now - (ref_now + delta);
+    void timer_test_task(void* arg) {
+        test_state_t* state = (test_state_t*) arg;
+        state->pass = true;
+        int64_t start_time = ref_clock_get();
+        int64_t delta = esp_timer_get_time() - start_time;
+
+        int64_t now = start_time;
+        int error_repeat_cnt = 0;
+        while (now - start_time < 10000000) {  /* 10 seconds */
+            int64_t hs_now = esp_timer_get_time();
+            now = ref_clock_get();
+            int64_t diff = hs_now - (now + delta);
             /* Allow some difference due to rtos tick interrupting task between
              * getting 'now' and 'ref_now'.
              */
-            TEST_ASSERT_INT32_WITHIN(100, 0, (int) diff);
+            if (abs(diff) > 100) {
+                error_repeat_cnt++;
+                state->error_cnt++;
+            } else {
+                error_repeat_cnt = 0;
+            }
+            if (error_repeat_cnt > 2) {
+                printf("diff=%lld\n", diff);
+                state->pass = false;
+            }
+            state->max_error = MAX(state->max_error, abs(diff));
+            state->test_cnt++;
+            state->total_sq_error += diff * diff;
         }
-
-        xSemaphoreGive((SemaphoreHandle_t) arg);
+        xSemaphoreGive(state->done);
         vTaskDelete(NULL);
     }
+
     ref_clock_init();
-    SemaphoreHandle_t done_1 = xSemaphoreCreateBinary();
-    SemaphoreHandle_t done_2 = xSemaphoreCreateBinary();
+    setup_overflow();
 
-    xTaskCreatePinnedToCore(&timer_test_task, "t1", 4096, (void*) done_1, 6, NULL, 0);
-    xTaskCreatePinnedToCore(&timer_test_task, "t2", 4096, (void*) done_2, 6, NULL, 1);
+    test_state_t states[portNUM_PROCESSORS] = {0};
+    SemaphoreHandle_t done = xSemaphoreCreateCounting(portNUM_PROCESSORS, 0);
+    for (int i = 0; i < portNUM_PROCESSORS; ++i) {
+        states[i].done = done;
+        xTaskCreatePinnedToCore(&timer_test_task, "test", 4096, &states[i], 6, NULL, i);
+    }
 
-    TEST_ASSERT_TRUE( xSemaphoreTake(done_1, portMAX_DELAY) );
-    TEST_ASSERT_TRUE( xSemaphoreTake(done_2, portMAX_DELAY) );
-    vSemaphoreDelete(done_1);
-    vSemaphoreDelete(done_2);
+    for (int i = 0; i < portNUM_PROCESSORS; ++i) {
+        TEST_ASSERT_TRUE( xSemaphoreTake(done, portMAX_DELAY) );
+        printf("CPU%d: %s test_cnt=%d error_cnt=%d std_error=%d |max_error|=%d\n",
+                i, states[i].pass ? "PASS" : "FAIL",
+                states[i].test_cnt, states[i].error_cnt,
+                (int) sqrt(states[i].total_sq_error / states[i].test_cnt), (int) states[i].max_error);
+    }
+
+    vSemaphoreDelete(done);
+    teardown_overflow();
     ref_clock_deinit();
+
+    for (int i = 0; i < portNUM_PROCESSORS; ++i) {
+        TEST_ASSERT(states[i].pass);
+    }
 }
 
 TEST_CASE("Can dump esp_timer stats", "[esp_timer]")
