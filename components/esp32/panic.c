@@ -313,7 +313,7 @@ void xt_unhandled_exception(XtExcFrame *frame)
         } else {
             panicPutStr("Unknown");
         }
-        panicPutStr(")\r\n");
+        panicPutStr(")");
         if (esp_cpu_in_ocd_debug_mode()) {
             panicPutStr(" at pc=");
             panicPutHex(frame->pc);
