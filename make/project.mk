@@ -153,7 +153,8 @@ COMPONENTS := $(sort $(foreach comp,$(COMPONENTS),$(lastword $(subst /, ,$(comp)
 endif
 # After a full manifest of component names is determined, subtract the ones explicitly omitted by the project Makefile.
 ifdef EXCLUDE_COMPONENTS
-COMPONENTS := $(filter-out $(EXCLUDE_COMPONENTS), $(COMPONENTS))
+COMPONENTS := $(filter-out $(subst ",,$(EXCLUDE_COMPONENTS)), $(COMPONENTS)) 
+# to keep syntax highlighters happy: "))
 endif
 export COMPONENTS
 

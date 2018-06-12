@@ -161,11 +161,11 @@ build_esp_idf_tests:
     expire_in: 6 mos
   script:
     - cd tools/unit-test-app
-    - make help # make sure kconfig tools are built in single process
+    - MAKEFLAGS= make help # make sure kconfig tools are built in single process
     - make ut-clean-all-configs
     - export EXTRA_CFLAGS="-Werror -Werror=deprecated-declarations"
     - export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
-    - make ut-build-all-configs TESTS_ALL=1
+    - make ut-build-all-configs
     - python tools/UnitTestParser.py
 
 .build_examples_template: &build_examples_template
@@ -858,6 +858,18 @@ UT_001_26:
     - UT_T1_1
 
 UT_001_27:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+UT_001_28:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+UT_001_29:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
