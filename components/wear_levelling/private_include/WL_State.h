@@ -41,4 +41,9 @@ public:
     uint32_t crc;           /*!< CRC of structure*/
 } wl_state_t;
 
+#ifndef _MSC_VER // MSVS has different format for this define
+static_assert(sizeof(wl_state_t) % 16 == 0, "Size of wl_state_t structure should be compatible with flash encryption");
+#endif // _MSC_VER
+
+
 #endif // _WL_State_H_

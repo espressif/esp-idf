@@ -115,3 +115,12 @@ BYTE ff_diskio_get_pdrv_wl(wl_handle_t flash_handle)
     }
     return 0xff;
 }
+
+void ff_diskio_clear_pdrv_wl(wl_handle_t flash_handle)
+{
+    for (int i = 0; i < FF_VOLUMES; i++) {
+        if (flash_handle == ff_wl_handles[i]) {
+            ff_wl_handles[i] = WL_INVALID_HANDLE;
+        }
+    }
+}
