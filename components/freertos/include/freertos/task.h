@@ -233,7 +233,11 @@ typedef enum
  *
  * \ingroup SchedulerControl
  */
+#ifdef _ESP_FREERTOS_INTERNAL
 #define taskENTER_CRITICAL(mux)		portENTER_CRITICAL(mux)
+#else
+#define taskENTER_CRITICAL(mux) _Pragma("GCC warning \"'taskENTER_CRITICAL(mux)' is deprecated in ESP-IDF, consider using 'portENTER_CRITICAL(mux)'\"") portENTER_CRITICAL(mux)
+#endif
 #define taskENTER_CRITICAL_ISR(mux)		portENTER_CRITICAL_ISR(mux)
 
 /**
@@ -247,7 +251,11 @@ typedef enum
  *
  * \ingroup SchedulerControl
  */
+#ifdef _ESP_FREERTOS_INTERNAL
 #define taskEXIT_CRITICAL(mux)			portEXIT_CRITICAL(mux)
+#else
+#define taskEXIT_CRITICAL(mux) _Pragma("GCC warning \"'taskEXIT_CRITICAL(mux)' is deprecated in ESP-IDF, consider using 'portEXIT_CRITICAL(mux)'\"") portEXIT_CRITICAL(mux)
+#endif
 #define taskEXIT_CRITICAL_ISR(mux)		portEXIT_CRITICAL_ISR(mux)
 
 /**

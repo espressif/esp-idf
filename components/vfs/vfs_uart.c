@@ -335,28 +335,28 @@ static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, 
 
     const int max_fds = MIN(nfds, UART_NUM);
 
-    taskENTER_CRITICAL(uart_get_selectlock());
+    portENTER_CRITICAL(uart_get_selectlock());
 
     if (_readfds || _writefds || _errorfds || _readfds_orig || _writefds_orig || _errorfds_orig || _signal_sem) {
-        taskEXIT_CRITICAL(uart_get_selectlock());
+        portEXIT_CRITICAL(uart_get_selectlock());
         uart_end_select();
         return ESP_ERR_INVALID_STATE;
     }
 
     if ((_readfds_orig = malloc(sizeof(fd_set))) == NULL) {
-        taskEXIT_CRITICAL(uart_get_selectlock());
+        portEXIT_CRITICAL(uart_get_selectlock());
         uart_end_select();
         return ESP_ERR_NO_MEM;
     }
 
     if ((_writefds_orig = malloc(sizeof(fd_set))) == NULL) {
-        taskEXIT_CRITICAL(uart_get_selectlock());
+        portEXIT_CRITICAL(uart_get_selectlock());
         uart_end_select();
         return ESP_ERR_NO_MEM;
     }
 
     if ((_errorfds_orig = malloc(sizeof(fd_set))) == NULL) {
-        taskEXIT_CRITICAL(uart_get_selectlock());
+        portEXIT_CRITICAL(uart_get_selectlock());
         uart_end_select();
         return ESP_ERR_NO_MEM;
     }
@@ -382,7 +382,7 @@ static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, 
     FD_ZERO(writefds);
     FD_ZERO(exceptfds);
 
-    taskEXIT_CRITICAL(uart_get_selectlock());
+    portEXIT_CRITICAL(uart_get_selectlock());
     // s_one_select_lock is not released on successfull exit - will be
     // released in uart_end_select()
 
@@ -391,7 +391,7 @@ static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, 
 
 static void uart_end_select()
 {
-    taskENTER_CRITICAL(uart_get_selectlock());
+    portENTER_CRITICAL(uart_get_selectlock());
     for (int i = 0; i < UART_NUM; ++i) {
         uart_set_select_notif_callback(i, NULL);
     }
@@ -416,7 +416,7 @@ static void uart_end_select()
         free(_errorfds_orig);
         _errorfds_orig = NULL;
     }
-    taskEXIT_CRITICAL(uart_get_selectlock());
+    portEXIT_CRITICAL(uart_get_selectlock());
     _lock_release(&s_one_select_lock);
 }
 
