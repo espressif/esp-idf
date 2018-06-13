@@ -24,6 +24,7 @@
 #include "rom/gpio.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
+#include "soc/gpio_periph.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -121,10 +122,8 @@ extern "C" {
 #define GPIO_MODE_DEF_OD              (BIT2)
 
 
-#define GPIO_PIN_COUNT              40
 /** @endcond */
 
-extern const uint32_t GPIO_PIN_MUX_REG[GPIO_PIN_COUNT];
 #define GPIO_IS_VALID_GPIO(gpio_num)      ((gpio_num < GPIO_PIN_COUNT && GPIO_PIN_MUX_REG[gpio_num] != 0))   /*!< Check whether it is a valid GPIO number */
 #define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num)      ((GPIO_IS_VALID_GPIO(gpio_num)) && (gpio_num < 34))         /*!< Check whether it can be a valid GPIO number of output mode */
 

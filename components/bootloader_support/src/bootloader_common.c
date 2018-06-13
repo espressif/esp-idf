@@ -26,6 +26,7 @@
 #include "esp_flash_partitions.h"
 #include "bootloader_flash.h"
 #include "bootloader_common.h"
+#include "soc/gpio_periph.h"
 
 static const char* TAG = "boot_comm";
 
@@ -42,6 +43,9 @@ bool bootloader_common_ota_select_valid(const esp_ota_select_entry_t *s)
 esp_comm_gpio_hold_t bootloader_common_check_long_hold_gpio(uint32_t num_pin, uint32_t delay_sec)
 {
     gpio_pad_select_gpio(num_pin);
+    if (GPIO_PIN_MUX_REG[num_pin]) {
+        PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[num_pin]);
+    }
     gpio_pad_pullup(num_pin);
     uint32_t tm_start = esp_log_early_timestamp();
     if (GPIO_INPUT_GET(num_pin) == 1) {
