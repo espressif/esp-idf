@@ -14,4 +14,5 @@ API Reference
    Storage <storage/index>
    System <system/index>
    Configuration Options <kconfig>
+   Error Codes Reference <error-codes>
 

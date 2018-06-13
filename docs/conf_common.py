@@ -45,6 +45,11 @@ kconfig_inc_path = '{}/inc/kconfig.inc'.format(builddir)
 os.system('python ../gen-kconfig-doc.py > ' + kconfig_inc_path + '.in')
 copy_if_modified(kconfig_inc_path + '.in', kconfig_inc_path)
 
+# Generate 'esp_err_defs.inc' file with ESP_ERR_ error code definitions
+esp_err_inc_path = '{}/inc/esp_err_defs.inc'.format(builddir)
+os.system('python ../../tools/gen_esp_err_to_name.py --rst_output ' + esp_err_inc_path + '.in')
+copy_if_modified(esp_err_inc_path + '.in', esp_err_inc_path)
+
 # http://stackoverflow.com/questions/12772927/specifying-an-online-image-in-sphinx-restructuredtext-format
 # 
 suppress_warnings = ['image.nonlocal_uri']
