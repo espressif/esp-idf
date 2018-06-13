@@ -333,7 +333,7 @@ class Monitor(object):
                     self.handle_serial_input(data)
                     if self._invoke_processing_last_line_timer is not None:
                         self._invoke_processing_last_line_timer.cancel()
-                    self._invoke_processing_last_line_timer = threading.Timer(1, self.invoke_processing_last_line)
+                    self._invoke_processing_last_line_timer = threading.Timer(0.1, self.invoke_processing_last_line)
                     self._invoke_processing_last_line_timer.start()
                     # If no futher data is received in the next short period
                     # of time then the _invoke_processing_last_line_timer
