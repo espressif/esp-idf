@@ -204,7 +204,7 @@ def max_string_width():
                 max = x
     return max
 
-def generate_output(fin, fout):
+def generate_c_output(fin, fout):
     """
     Writes the output to fout based on th error dictionary err_dict and
     template file fin.
@@ -264,10 +264,23 @@ def generate_output(fin, fout):
         else:
             fout.write(line)
 
+def generate_rst_output(fout):
+    for k in sorted(err_dict.keys()):
+        v = err_dict[k][0]
+        fout.write(':c:macro:`{}` '.format(v.name))
+        if k > 0:
+            fout.write('**(0x{:x})**'.format(k))
+        else:
+            fout.write('({:d})'.format(k))
+        if len(v.comment) > 0:
+            fout.write(': {}'.format(v.comment))
+        fout.write('\n\n')
+
 def main():
     parser = argparse.ArgumentParser(description='ESP32 esp_err_to_name lookup generator for esp_err_t')
-    parser.add_argument('input', help='Path to the esp_err_to_name.c.in template input.', default=os.environ['IDF_PATH'] + '/components/esp32/esp_err_to_name.c.in', nargs='?')
-    parser.add_argument('output', help='Path to the esp_err_to_name.c output.', default=os.environ['IDF_PATH'] + '/components/esp32/esp_err_to_name.c', nargs='?')
+    parser.add_argument('--c_input', help='Path to the esp_err_to_name.c.in template input.', default=os.environ['IDF_PATH'] + '/components/esp32/esp_err_to_name.c.in')
+    parser.add_argument('--c_output', help='Path to the esp_err_to_name.c output.', default=os.environ['IDF_PATH'] + '/components/esp32/esp_err_to_name.c')
+    parser.add_argument('--rst_output', help='Generate .rst output and save it into this file')
     args = parser.parse_args()
 
     for root, dirnames, filenames in os.walk(os.environ['IDF_PATH']):
@@ -287,8 +300,12 @@ def main():
 
     process_remaining_errors()
 
-    with open(args.input, 'r') as fin, open(args.output, 'w') as fout:
-        generate_output(fin, fout)
+    if args.rst_output is not None:
+        with open(args.rst_output, 'w') as fout:
+            generate_rst_output(fout)
+    else:
+        with open(args.c_input, 'r') as fin, open(args.c_output, 'w') as fout:
+            generate_c_output(fin, fout)
 
 if __name__ == "__main__":
     main()
