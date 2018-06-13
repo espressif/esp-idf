@@ -699,7 +699,7 @@ Scenario:
         EVENT_TASK <-  WIFI_TASK [label="4.6 > SYSTEM_EVENT_STA_DISCONNECTED"];
         WIFI_TASK  ->  AP        [label="4.7 > 4/4 EAPOL"];
         EVENT_TASK <-  WIFI_TASK [label="4.8 > SYSTEM_EVENT_STA_DISCONNECTED"];
-        EVENT_TASK <-  WIFI_TASK [label="4.9 > SYSTEM_EVENT_STA_DISCONNECTED"];
+        EVENT_TASK <-  WIFI_TASK [label="4.9 > SYSTEM_EVENT_STA_CONNECTED"];
     }
 
 
