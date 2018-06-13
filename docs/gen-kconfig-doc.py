@@ -122,6 +122,9 @@ def print_all_components():
 
         process_kconfig_file(kconfig_file_path, heading_level, 'Component config')
         process_kconfig_file(kconfig_file_path + '.projbuild', heading_level, '')
+    
+    kconfig_file_path = os.path.join(os.path.curdir, '../..', 'Kconfig.compiler')
+    process_kconfig_file(kconfig_file_path, heading_level, '')
 
 if __name__ == '__main__':
     print_all_components()
