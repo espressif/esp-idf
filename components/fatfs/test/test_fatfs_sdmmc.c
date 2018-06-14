@@ -95,11 +95,17 @@ TEST_CASE("(SD) overwrite and append file", "[fatfs][sd][test_env=UT_T1_SDMODE]"
     test_teardown();
 }
 
-
 TEST_CASE("(SD) can lseek", "[fatfs][sd][test_env=UT_T1_SDMODE]")
 {
     test_setup();
     test_fatfs_lseek("/sdcard/seek.txt");
+    test_teardown();
+}
+
+TEST_CASE("(SD) can truncate", "[fatfs][sd][test_env=UT_T1_SDMODE]")
+{
+    test_setup();
+    test_fatfs_truncate_file("/sdcard/truncate.txt");
     test_teardown();
 }
 

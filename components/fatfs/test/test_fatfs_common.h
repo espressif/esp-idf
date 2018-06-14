@@ -46,6 +46,8 @@ void test_fatfs_open_max_files(const char* filename_prefix, size_t files_count);
 
 void test_fatfs_lseek(const char* filename);
 
+void test_fatfs_truncate_file(const char* path);
+
 void test_fatfs_stat(const char* filename, const char* root_dir);
 
 void test_fatfs_unlink(const char* filename);
@@ -63,3 +65,4 @@ void test_fatfs_opendir_readdir_rewinddir(const char* dir_prefix);
 void test_fatfs_opendir_readdir_rewinddir_utf_8(const char* dir_prefix);
 
 void test_fatfs_rw_speed(const char* filename, void* buf, size_t buf_size, size_t file_size, bool write);
+
