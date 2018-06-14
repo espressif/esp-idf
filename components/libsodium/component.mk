@@ -86,3 +86,7 @@ CFLAGS +=  -DNATIVE_LITTLE_ENDIAN -DHAVE_WEAK_SYMBOLS -D__STDC_LIMIT_MACROS -D__
 
 # randombytes.c needs to pull in platform-specific implementation
 $(LSRC)/randombytes/randombytes.o: CFLAGS+=-DRANDOMBYTES_DEFAULT_IMPLEMENTATION
+
+# Temporary suppress "fallthrough" warnings until they are fixed in libsodium repo
+$(LSRC)/crypto_shorthash/siphash24/ref/shorthash_siphashx24_ref.o: CFLAGS += -Wno-implicit-fallthrough
+$(LSRC)/crypto_shorthash/siphash24/ref/shorthash_siphash24_ref.o: CFLAGS += -Wno-implicit-fallthrough

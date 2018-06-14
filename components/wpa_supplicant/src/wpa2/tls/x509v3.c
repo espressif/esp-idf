@@ -494,20 +494,28 @@ static char * x509_name_attr_str(enum x509_name_attr_type type)
 	switch (type) {
         case X509_NAME_ATTR_NOT_USED:
             strcpy(name_attr, "[N/A]");
+            break;
         case X509_NAME_ATTR_DC:
             strcpy(name_attr, "DC");
+            break;
         case X509_NAME_ATTR_CN:
             strcpy(name_attr, "CN");
+            break;
         case X509_NAME_ATTR_C:
             strcpy(name_attr, "C");
+            break;
         case X509_NAME_ATTR_L:
             strcpy(name_attr, "L");
+            break;
         case X509_NAME_ATTR_ST:
             strcpy(name_attr, "ST");
+            break;
         case X509_NAME_ATTR_O:
             strcpy(name_attr, "O");
+            break;
         case X509_NAME_ATTR_OU:
             strcpy(name_attr, "OU");
+            break;
         default :
             strcpy(name_attr, "?");
 	}
