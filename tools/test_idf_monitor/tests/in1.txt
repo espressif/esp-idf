@@ -1,0 +1,91 @@
+ets Jun  8 2016 00:22:57
+
+rst:0x1 (POWERON_RESET),boot:0x33 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0018,len:4
+load:0x3fff001c,len:5728
+ho 0 tail 12 room 4
+load:0x40078000,len:0
+load:0x40078000,len:14944
+entry 0x4007862c
+[0;32mI (30) boot: ESP-IDF v3.1-dev-1320-gec1fb521b-dirty 2nd stage bootloader[0m
+[0;32mI (30) boot: compile time 09:31:02[0m
+[0;32mI (40) boot: Enabling RNG early entropy source...[0m
+[0;32mI (41) boot: SPI Speed      : 40MHz[0m
+[0;32mI (41) boot: SPI Mode       : DIO[0m
+[0;32mI (45) boot: SPI Flash Size : 4MB[0m
+[0;32mI (49) boot: Partition Table:[0m
+[0;32mI (53) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (60) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (68) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (75) boot:  2 factory          factory app      00 00 00010000 00100000[0m
+[0;32mI (83) boot: End of partition table[0m
+[0;32mI (87) esp_image: segment 0: paddr=0x00010020 vaddr=0x3f400020 size=0x058ac ( 22700) map[0m
+[0;32mI (104) esp_image: segment 1: paddr=0x000158d4 vaddr=0x3ffb0000 size=0x022a0 (  8864) load[0m
+[0;32mI (108) esp_image: segment 2: paddr=0x00017b7c vaddr=0x40080000 size=0x00400 (  1024) load[0m
+[0;33m0x40080000: _iram_start at /home/dragon/esp/esp-idf/components/freertos/xtensa_vectors.S:1685
+[0m
+[0;32mI (114) esp_image: segment 3: paddr=0x00017f84 vaddr=0x40080400 size=0x0808c ( 32908) load[0m
+[0;32mI (136) esp_image: segment 4: paddr=0x00020018 vaddr=0x400d0018 size=0x11e88 ( 73352) map[0m
+[0;33m0x400d0018: _flash_cache_start at ??:?
+[0m
+[0;32mI (162) esp_image: segment 5: paddr=0x00031ea8 vaddr=0x4008848c size=0x00670 (  1648) load[0m
+[0;33m0x4008848c: esp_rom_spiflash_program_page_internal at /home/dragon/esp/esp-idf/components/spi_flash/spi_flash_rom_patch.c:412
+[0m
+[0;32mI (163) esp_image: segment 6: paddr=0x00032520 vaddr=0x400c0000 size=0x00000 (     0) load[0m
+[0;32mI (174) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (175) boot: Disabling RNG early entropy source...[0m
+[0;32mI (180) cpu_start: Pro cpu up.[0m
+[0;32mI (184) cpu_start: Starting app cpu, entry point is 0x40080e54[0m
+[0;33m0x40080e54: call_start_cpu1 at /home/dragon/esp/esp-idf/components/esp32/cpu_start.c:225
+[0m
+[0;32mI (0) cpu_start: App cpu up.[0m
+[0;32mI (195) heap_init: Initializing. RAM available for dynamic allocation:[0m
+D (201) heap_init: New heap initialised at 0x3ffae6e0[0m
+[0;32mI (206) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM[0m
+D (212) heap_init: New heap initialised at 0x3ffb32f0[0m
+[0;32mI (218) heap_init: At 3FFB32F0 len 0002CD10 (179 KiB): DRAM[0m
+[0;32mI (224) heap_init: At 3FFE0440 len 00003BC0 (14 KiB): D/IRAM[0m
+[0;32mI (230) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM[0m
+D (237) heap_init: New heap initialised at 0x40088afc[0m
+[0;32mI (242) heap_init: At 40088AFC len 00017504 (93 KiB): IRAM[0m
+[0;32mI (248) cpu_start: Pro cpu start user code[0m
+D (260) clk: RTC_SLOW_CLK calibration value: 3181466[0m
+D (269) intr_alloc: Connected src 46 to int 2 (cpu 0)[0m
+D (270) intr_alloc: Connected src 57 to int 3 (cpu 0)[0m
+D (271) intr_alloc: Connected src 24 to int 9 (cpu 0)[0m
+[0;32mI (276) cpu_start: Starting scheduler on PRO CPU.[0m
+D (0) intr_alloc: Connected src 25 to int 2 (cpu 1)[0m
+[0;32mI (0) cpu_start: Starting scheduler on APP CPU.[0m
+D (291) heap_init: New heap initialised at 0x3ffe0440[0m
+D (301) heap_init: New heap initialised at 0x3ffe4350[0m
+D (311) intr_alloc: Connected src 16 to int 12 (cpu 0)[0m
+D (311) hello_world: debug1[0m
+
+[0;33mW (311) hello_world: warning1[0m
+V (321) hello_world: verbose1[0m
+[0;31mE (321) hello_world: error1[0m
+[0;32mI (321) hello_world: info1[0m
+
+regular printf
+D (331) another_world: another debug[0m
+
+[0;32mI (331) example: Periodic timer called, time since boot: 507065 us[0m
+V (341) another_world: another verbose another very long[0m
+[0;33mW (341) another_world: another warning very long[0m
+V (351) another_world: another verbose[0m
+[0;31mE (351) another_world: another error[0m
+[0;32mI (361) another_world: Register 0x40080000[0m
+[0;33m0x40080000: _iram_start at /home/dragon/esp/esp-idf/components/freertos/xtensa_vectors.S:1685
+[0m
+D (361) hello_world: debug2[0m
+[0;33mW (371) hello_world: warning2[0m
+
+V (371) hello_world: verbose2[0m
+[0;31mE (371) hello_world: error2[0m
+[0;32mI (381) hello_world: info2[0m
+noeol 0x40080000[0;33m0x40080000: _iram_start at /home/dragon/esp/esp-idf/components/freertos/xtensa_vectors.S:1685
+[0m
+[0m
