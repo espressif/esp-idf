@@ -258,6 +258,11 @@ esp_err_t esp_http_client_set_header(esp_http_client_handle_t client, const char
     return http_header_set(client->request->headers, key, value);
 }
 
+esp_err_t esp_http_client_get_header(esp_http_client_handle_t client, const char *key, char **value)
+{
+    return http_header_get(client->request->headers, key, value);
+}
+
 esp_err_t esp_http_client_delete_header(esp_http_client_handle_t client, const char *key)
 {
     return http_header_delete(client->request->headers, key);
@@ -952,7 +957,13 @@ esp_err_t esp_http_client_set_post_field(esp_http_client_handle_t client, const 
     client->post_len = len;
     ESP_LOGD(TAG, "set post file length = %d", len);
     if (client->post_data) {
-        err = esp_http_client_set_header(client, "Content-Type", "application/x-www-form-urlencoded");
+        char *value = NULL;
+        if ((err = esp_http_client_get_header(client, "Content-Type", &value)) != ESP_OK) {
+            return err;
+        }
+        if (value == NULL) {
+            err = esp_http_client_set_header(client, "Content-Type", "application/x-www-form-urlencoded");
+        }
     } else {
         client->post_len = 0;
         err = esp_http_client_set_header(client, "Content-Type", NULL);
