@@ -113,6 +113,9 @@ esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us);
  *       to be powered on (ESP_PD_OPTION_ON) or when ext0 wakeup
  *       source is used.
  *
+ * @note The FSM mode of the touch button should be configured
+ *       as the timer trigger mode.
+ *
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_STATE if wakeup triggers conflict
