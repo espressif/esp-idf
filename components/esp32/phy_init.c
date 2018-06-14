@@ -493,7 +493,6 @@ static esp_err_t load_cal_data_from_nvs_handle(nvs_handle handle,
         ESP_LOGD(TAG, "%s: invalid length of cal_data (%d)", __func__, length);
         return ESP_ERR_INVALID_SIZE;
     }
-    memcpy(out_cal_data->mac, sta_mac, 6);
     return ESP_OK;
 }
 
@@ -549,6 +548,7 @@ void esp_phy_load_cal_and_init(phy_rf_module_t module)
 
 #ifdef CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
     esp_phy_calibration_mode_t calibration_mode = PHY_RF_CAL_PARTIAL;
+    uint8_t sta_mac[6];
     if (rtc_get_reset_reason(0) == DEEPSLEEP_RESET) {
         calibration_mode = PHY_RF_CAL_NONE;
     }
@@ -558,6 +558,8 @@ void esp_phy_load_cal_and_init(phy_rf_module_t module)
         calibration_mode = PHY_RF_CAL_FULL;
     }
 
+    esp_efuse_mac_get_default(sta_mac);
+    memcpy(cal_data->mac, sta_mac, 6);
     esp_phy_rf_init(init_data, calibration_mode, cal_data, module);
 
     if (calibration_mode != PHY_RF_CAL_NONE && err != ESP_OK) {
