@@ -32,11 +32,11 @@ static void tp_example_read_task(void *pvParameter)
         for (int i = 0; i < TOUCH_PAD_MAX; i++) {
 #if TOUCH_FILTER_MODE_EN
             // If open the filter mode, please use this API to get the touch pad count.
-            ESP_ERROR_CHECK(touch_pad_read_raw_data(i, &touch_value));
-            ESP_ERROR_CHECK(touch_pad_read_filtered(i, &touch_filter_value));
+            touch_pad_read_raw_data(i, &touch_value);
+            touch_pad_read_filtered(i, &touch_filter_value);
             printf("T%d:[%4d,%4d] ", i, touch_value, touch_filter_value);
 #else
-            ESP_ERROR_CHECK(touch_pad_read(i, &touch_value));
+            touch_pad_read(i, &touch_value);
             printf("T%d:[%4d] ", i, touch_value);
 #endif
         }
@@ -62,10 +62,10 @@ void app_main()
     // The low reference voltage will be 0.5
     // The larger the range, the larger the pulse count value.
     touch_pad_set_voltage(TOUCH_HVOLT_2V7, TOUCH_LVOLT_0V5, TOUCH_HVOLT_ATTEN_1V);
+    tp_example_touch_pad_init();
 #if TOUCH_FILTER_MODE_EN
     touch_pad_filter_start(TOUCHPAD_FILTER_TOUCH_PERIOD);
 #endif
-    tp_example_touch_pad_init();
     // Start task to read values sensed by pads
     xTaskCreate(&tp_example_read_task, "touch_pad_read_task", 2048, NULL, 5, NULL);
 }
