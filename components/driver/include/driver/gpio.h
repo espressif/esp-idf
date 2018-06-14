@@ -248,6 +248,18 @@ typedef intr_handle_t gpio_isr_handle_t;
  */
 esp_err_t gpio_config(const gpio_config_t *pGPIOConfig);
 
+/**
+ * @brief Reset an gpio to default state (select gpio function, enable pullup and disable input and output).
+ * 
+ * @param gpio_num GPIO number.
+ * 
+ * @note This function also configures the IOMUX for this pin to the GPIO
+ *       function, and disconnects any other peripheral output configured via GPIO
+ *       Matrix.
+ * 
+ * @return Always return ESP_OK.
+ */
+esp_err_t gpio_reset_pin(gpio_num_t gpio_num);
 
 /**
  * @brief  GPIO set interrupt trigger type

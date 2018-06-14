@@ -339,6 +339,21 @@ esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
     return ESP_OK;
 }
 
+esp_err_t gpio_reset_pin(gpio_num_t gpio_num)
+{
+    assert(gpio_num >= 0 && GPIO_IS_VALID_GPIO(gpio_num));
+    gpio_config_t cfg = {
+        .pin_bit_mask = BIT(gpio_num),
+        .mode = GPIO_MODE_DISABLE,
+        //for powersave reasons, the GPIO should not be floating, select pullup
+        .pull_up_en = true,
+        .pull_down_en = false,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&cfg);
+    return ESP_OK;
+}
+
 void IRAM_ATTR gpio_intr_service(void* arg)
 {
     //GPIO intr process
