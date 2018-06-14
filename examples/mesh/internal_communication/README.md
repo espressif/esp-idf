@@ -1,4 +1,4 @@
-# Mesh Internal Transceiver Example
+# Mesh Internal Communication Example
 
 This example demonstrates how to use the mesh APIs to set up a mesh network, send and receive messages over the mesh network and etc.
 
