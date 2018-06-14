@@ -19,9 +19,9 @@ Type
 	Supported values are ``file``, ``data`` and ``namespace``.
 
 Encoding
-    Supported values are: ``u8``, ``i8``, ``u16``, ``u32``, ``i32``, ``string``, ``hex2bin`` and ``binary``. This specifies how actual data values are encoded in the resultant binary file. Difference between ``string`` and ``binary`` encoding is that ``string`` data is terminated with a NULL character, whereas ``binary`` data is not.
+    Supported values are: ``u8``, ``i8``, ``u16``, ``u32``, ``i32``, ``string``, ``hex2bin``, ``base64`` and ``binary``. This specifies how actual data values are encoded in the resultant binary file. Difference between ``string`` and ``binary`` encoding is that ``string`` data is terminated with a NULL character, whereas ``binary`` data is not.
 
-    .. note:: For ``file`` type, only ``hex2bin``, ``string`` and ``binary`` is supported as of now.
+    .. note:: For ``file`` type, only ``hex2bin``, ``base64``, ``string`` and ``binary`` is supported as of now.
 
 Value
 	Data value.
