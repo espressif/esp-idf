@@ -96,6 +96,13 @@ TEST_CASE("(WL) can lseek", "[fatfs][wear_levelling]")
     test_teardown();
 }
 
+TEST_CASE("(WL) can truncate", "[fatfs][wear_levelling]")
+{
+    test_setup();
+    test_fatfs_truncate_file("/spiflash/truncate.txt");
+    test_teardown();
+}
+
 TEST_CASE("(WL) stat returns correct values", "[fatfs][wear_levelling]")
 {
     test_setup();

@@ -18,6 +18,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/unistd.h>
+#include <errno.h>
 #include "unity.h"
 #include "esp_log.h"
 #include "esp_system.h"
@@ -133,6 +134,81 @@ void test_fatfs_lseek(const char* filename)
     TEST_ASSERT_EQUAL(18, fread(buf, 1, sizeof(buf), f));
     const char ref_buf[] = "0123456789\n\0\0\0abc\n";
     TEST_ASSERT_EQUAL_INT8_ARRAY(ref_buf, buf, sizeof(ref_buf) - 1);
+
+    TEST_ASSERT_EQUAL(0, fclose(f));
+}
+
+void test_fatfs_truncate_file(const char* filename)
+{
+    int read = 0;
+    int truncated_len = 0;
+
+    const char input[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    char output[sizeof(input)];
+
+    FILE* f = fopen(filename, "wb");
+
+    TEST_ASSERT_NOT_NULL(f);
+    TEST_ASSERT_EQUAL(strlen(input), fprintf(f, input));
+
+    TEST_ASSERT_EQUAL(0, fclose(f));
+
+
+    // Extending file beyond size is not supported
+    TEST_ASSERT_EQUAL(-1, truncate(filename, strlen(input) + 1));
+    TEST_ASSERT_EQUAL(errno, EPERM);
+
+    TEST_ASSERT_EQUAL(-1, truncate(filename, -1));
+    TEST_ASSERT_EQUAL(errno, EPERM);
+
+
+    // Truncating should succeed
+    const char truncated_1[] = "ABCDEFGHIJ";
+    truncated_len = strlen(truncated_1);
+
+    TEST_ASSERT_EQUAL(0, truncate(filename, truncated_len));
+
+    f = fopen(filename, "rb");
+    TEST_ASSERT_NOT_NULL(f);
+    
+    memset(output, 0, sizeof(output));
+    read = fread(output, 1, sizeof(output), f);
+    
+    TEST_ASSERT_EQUAL(truncated_len, read);
+    TEST_ASSERT_EQUAL_STRING_LEN(truncated_1, output, truncated_len);
+
+    TEST_ASSERT_EQUAL(0, fclose(f));
+
+
+    // Once truncated, the new file size should be the basis 
+    // whether truncation should succeed or not
+    TEST_ASSERT_EQUAL(-1, truncate(filename, truncated_len + 1));
+    TEST_ASSERT_EQUAL(EPERM, errno);
+
+    TEST_ASSERT_EQUAL(-1, truncate(filename, strlen(input)));
+    TEST_ASSERT_EQUAL(EPERM, errno);
+
+    TEST_ASSERT_EQUAL(-1, truncate(filename, strlen(input) + 1));
+    TEST_ASSERT_EQUAL(EPERM, errno);
+
+    TEST_ASSERT_EQUAL(-1, truncate(filename, -1));
+    TEST_ASSERT_EQUAL(EPERM, errno);
+
+
+    // Truncating a truncated file should succeed
+    const char truncated_2[] = "ABCDE";
+    truncated_len = strlen(truncated_2);
+
+    TEST_ASSERT_EQUAL(0, truncate(filename, truncated_len));
+
+    f = fopen(filename, "rb");
+    TEST_ASSERT_NOT_NULL(f);
+    
+    memset(output, 0, sizeof(output));
+    read = fread(output, 1, sizeof(output), f);
+    
+    TEST_ASSERT_EQUAL(truncated_len, read);
+    TEST_ASSERT_EQUAL_STRING_LEN(truncated_2, output, truncated_len);
 
     TEST_ASSERT_EQUAL(0, fclose(f));
 }
