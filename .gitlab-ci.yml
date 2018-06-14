@@ -328,6 +328,17 @@ test_build_system:
     - cd test_build_system
     - ${IDF_PATH}/tools/ci/test_build_system.sh
 
+test_idf_monitor:
+  <<: *host_test_template
+  artifacts:
+    when: on_failure
+    paths:
+      - tools/test_idf_monitor/outputs/*
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/tools/test_idf_monitor
+    - ./run_test_idf_monitor.py
+
 test_esp_err_to_name_on_host:
   <<: *host_test_template
   script:
