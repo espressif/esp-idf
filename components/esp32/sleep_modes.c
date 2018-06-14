@@ -465,8 +465,7 @@ static void ext0_wakeup_prepare()
         if (desc->rtc_num == rtc_gpio_num) {
             REG_SET_BIT(desc->reg, desc->mux);
             SET_PERI_REG_BITS(desc->reg, 0x3, 0, desc->func);
-            REG_SET_BIT(desc->reg, desc->slpsel);
-            REG_SET_BIT(desc->reg, desc->slpie);
+            REG_SET_BIT(desc->reg, desc->ie);
             break;
         }
     }
@@ -508,16 +507,13 @@ static void ext1_wakeup_prepare()
         // Route pad to RTC
         REG_SET_BIT(desc->reg, desc->mux);
         SET_PERI_REG_BITS(desc->reg, 0x3, 0, desc->func);
+        // set input enable in sleep mode
+        REG_SET_BIT(desc->reg, desc->ie);
         // Pad configuration depends on RTC_PERIPH state in sleep mode
-        if (s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] == ESP_PD_OPTION_ON) {
-            // set input enable in sleep mode
-            REG_SET_BIT(desc->reg, desc->slpie);
-            // allow sleep status signal to control IE/SLPIE mux
-            REG_SET_BIT(desc->reg, desc->slpsel);
-        } else {
-            // RTC_PERIPH will be disabled, so need to enable input and
-            // lock pad configuration. Pullups/pulldowns also need to be disabled.
-            REG_SET_BIT(desc->reg, desc->ie);
+        if (s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] != ESP_PD_OPTION_ON) {
+            // RTC_PERIPH will be powered down, so RTC_IO_ registers will
+            // loose their state. Lock pad configuration.
+            // Pullups/pulldowns also need to be disabled.
             REG_CLR_BIT(desc->reg, desc->pulldown);
             REG_CLR_BIT(desc->reg, desc->pullup);
             REG_SET_BIT(RTC_CNTL_HOLD_FORCE_REG, desc->hold_force);
