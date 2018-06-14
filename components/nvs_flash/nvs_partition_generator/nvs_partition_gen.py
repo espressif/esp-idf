@@ -132,7 +132,7 @@ class Page(object):
         # set Type
         if encoding == "string":
             entry_struct[1] = Page.SZ
-        elif encoding == "hex2bin" or encoding == "binary":
+        elif encoding in ["hex2bin", "binary", "base64"]:
             entry_struct[1] = Page.BLOB
 
         # compute CRC of data
@@ -248,11 +248,14 @@ class NVS(object):
                 raise InputError("%s: Invalid data length. Should be multiple of 2." % key)
             value = binascii.a2b_hex(value)
 
+        if encoding == "base64":
+            value = binascii.a2b_base64(value)
+
         if encoding == "string":
             value += '\0'
 
         encoding = encoding.lower()
-        varlen_encodings = ["string", "binary", "hex2bin"]
+        varlen_encodings = ["string", "binary", "hex2bin", "base64"]
         primitive_encodings = ["u8", "i8", "u16", "u32", "i32"]
         if encoding in varlen_encodings:
             try:
@@ -308,7 +311,7 @@ def write_entry(nvs_instance, key, datatype, encoding, value):
     :param nvs_instance: Instance of an NVS class returned by nvs_open()
     :param key: Key of the data
     :param datatype: Data type. Valid values are "file", "data" and "namespace"
-    :param encoding: Data encoding. Valid values are "u8", "i8", "u16", "u32", "i32", "string", "binary" and "hex2bin"
+    :param encoding: Data encoding. Valid values are "u8", "i8", "u16", "u32", "i32", "string", "binary", "hex2bin" and "base64"
     :param value: Data value in ascii encoded string format for "data" datatype and filepath for "file" datatype
     :return: None
     """
