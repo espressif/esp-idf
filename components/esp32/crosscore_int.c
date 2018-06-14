@@ -44,7 +44,7 @@ static volatile uint32_t reason[ portNUM_PROCESSORS ];
 ToDo: There is a small chance the CPU already has yielded when this ISR is serviced. In that case, it's running the intended task but
 the ISR will cause it to switch _away_ from it. portYIELD_FROM_ISR will probably just schedule the task again, but have to check that.
 */
-static void esp_crosscore_isr_handle_yield()
+static inline void IRAM_ATTR esp_crosscore_isr_handle_yield()
 {
     portYIELD_FROM_ISR();
 }
