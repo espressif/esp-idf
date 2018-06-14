@@ -277,7 +277,7 @@ static inline uint8_t* sdio_ringbuf_offset_ptr(sdio_ringbuf_t *buf, sdio_ringbuf
 static esp_err_t sdio_ringbuf_send(sdio_ringbuf_t* buf, esp_err_t (*copy_callback)(uint8_t*, void*), void* arg, TickType_t wait)
 {
     portBASE_TYPE ret = xSemaphoreTake(buf->remain_cnt, wait);
-    if (ret != pdTRUE) return NULL;
+    if (ret != pdTRUE) return ESP_ERR_TIMEOUT;
 
     portENTER_CRITICAL(&buf->write_spinlock);
     uint8_t* get_ptr = sdio_ringbuf_offset_ptr(buf, ringbuf_write_ptr, buf->item_size);
