@@ -17,11 +17,9 @@
 #include "driver/spi_master.h"
 #include "driver/spi_slave.h"
 #include "soc/dport_reg.h"
-#include "soc/spi_reg.h"
-#include "soc/spi_struct.h"
 #include "esp_heap_caps.h"
 #include "esp_log.h"
-#include "driver/spi_pins.h"
+#include "soc/spi_periph.h"
 #include "freertos/ringbuf.h"
 
 const static char TAG[] = "test_spi";

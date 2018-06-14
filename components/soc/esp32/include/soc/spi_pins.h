@@ -12,8 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _DRIVER_SPI_PINS_H_
-#define _DRIVER_SPI_PINS_H_
+#ifndef _SOC_SPI_PINS_H_
+#define _SOC_SPI_PINS_H_
+
+#define SPI_IOMUX_PIN_NUM_MISO  7
+#define SPI_IOMUX_PIN_NUM_MOSI  8
+#define SPI_IOMUX_PIN_NUM_CLK   6
+#define SPI_IOMUX_PIN_NUM_CS    11
+#define SPI_IOMUX_PIN_NUM_WP    10
+#define SPI_IOMUX_PIN_NUM_HD    9
 
 #define HSPI_IOMUX_PIN_NUM_MISO 12
 #define HSPI_IOMUX_PIN_NUM_MOSI 13
@@ -29,4 +36,4 @@
 #define VSPI_IOMUX_PIN_NUM_WP   22
 #define VSPI_IOMUX_PIN_NUM_HD   21
 
-#endif
+#endif /* _SOC_SPI_PINS_H_ */

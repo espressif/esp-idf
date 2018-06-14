@@ -1,4 +1,4 @@
-// Copyright 2010-2017 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2010-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,9 +19,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
-#include "soc/spi_struct.h"
 #include "rom/lldesc.h"
-
+#include "soc/spi_periph.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -145,14 +144,26 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
 
 /**
  * @brief Free the IO used by a SPI peripheral
- *
+ * @deprecated Use spicommon_bus_free_io_cfg instead.
+ * 
  * @param host SPI peripheral to be freed
+ * 
  * @return 
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_OK                on success
  */
+esp_err_t spicommon_bus_free_io(spi_host_device_t host) __attribute__((deprecated));
 
-esp_err_t spicommon_bus_free_io(spi_host_device_t host);
+/**
+ * @brief Free the IO used by a SPI peripheral
+ *
+ * @param bus_cfg Bus config struct which defines which pins to be used.
+ * 
+ * @return 
+ *         - ESP_ERR_INVALID_ARG   if parameter is invalid
+ *         - ESP_OK                on success
+ */
+esp_err_t spicommon_bus_free_io_cfg(const spi_bus_config_t *bus_cfg);
 
 /**
  * @brief Initialize a Chip Select pin for a specific SPI peripheral
@@ -169,12 +180,19 @@ void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, 
 
 /**
  * @brief Free a chip select line
+ * @deprecated Use spicommon_cs_io, which inputs the gpio num rather than the cs id instead.
  *
  * @param host SPI peripheral
  * @param cs_num CS id to free
  */
-void spicommon_cs_free(spi_host_device_t host, int cs_num);
+void spicommon_cs_free(spi_host_device_t host, int cs_num) __attribute__((deprecated));
 
+/**
+ * @brief Free a chip select line
+ *
+ * @param cs_gpio_num CS gpio num to free
+ */
+void spicommon_cs_free_io(int cs_gpio_num);
 
 /**
  * @brief Setup a DMA link chain
