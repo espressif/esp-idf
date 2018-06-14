@@ -1,4 +1,4 @@
-/* Mesh Internal Transceiver Example
+/* Mesh Internal Communication Example
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
 
@@ -20,7 +20,6 @@
  *                Macros
  *******************************************************/
 //#define MESH_P2P_TOS_OFF
-//#define MESH_ROOT_TO_GROUP
 
 /*******************************************************
  *                Constants
@@ -61,27 +60,6 @@ mesh_light_ctl_t light_off = {
 /*******************************************************
  *                Function Definitions
  *******************************************************/
-void mesh_send_to_group(const mesh_data_t *data, const mesh_addr_t *group, int seqno)
-{
-
-    esp_err_t err = esp_mesh_send(group, data,
-                                  MESH_DATA_P2P | MESH_DATA_GROUP,
-                                  NULL, 0);
-    if (err) {
-        ESP_LOGE(MESH_TAG,
-                 "[GROUP:%d][L:%d][rtableSize:%d]parent:"MACSTR" to "MACSTR", heap:%d[err:0x%x, proto:%d, tos:%d]",
-                 seqno, mesh_layer, esp_mesh_get_routing_table_size(),
-                 MAC2STR(mesh_parent_addr.addr), MAC2STR(group->addr),
-                 esp_get_free_heap_size(), err, data->proto, data->tos);
-    } else {
-        ESP_LOGW(MESH_TAG,
-                 "[GROUP:%d][L:%d][rtableSize:%d]parent:"MACSTR" to "MACSTR", heap:%d[err:0x%x, proto:%d, tos:%d]",
-                 seqno, mesh_layer, esp_mesh_get_routing_table_size(),
-                 MAC2STR(mesh_parent_addr.addr), MAC2STR(group->addr),
-                 esp_get_free_heap_size(), err, data->proto, data->tos);
-    }
-}
-
 void esp_mesh_p2p_tx_main(void *arg)
 {
     int i;
@@ -125,11 +103,6 @@ void esp_mesh_p2p_tx_main(void *arg)
             memcpy(tx_buf, (uint8_t *)&light_off, sizeof(light_off));
         }
 
-#ifdef MESH_ROOT_TO_GROUP
-        mesh_send_to_group(&data, (mesh_addr_t *)MESH_GROUP_ID, send_count);
-        vTaskDelay(1 * 1000 / portTICK_RATE_MS);
-        continue;
-#endif
         for (i = 0; i < route_table_size; i++) {
             err = esp_mesh_send(&route_table[i], &data, MESH_DATA_P2P, NULL, 0);
             if (err) {
@@ -206,22 +179,21 @@ esp_err_t esp_mesh_comm_p2p_start(void)
     return ESP_OK;
 }
 
-void esp_mesh_event_handler(mesh_event_t event)
+void mesh_event_handler(mesh_event_t event)
 {
-#ifdef MESH_ROOT_TO_GROUP
-    mesh_addr_t group;
-#endif
+    mesh_addr_t id = {0,};
     static uint8_t last_layer = 0;
     ESP_LOGD(MESH_TAG, "esp_event_handler:%d", event.id);
 
     switch (event.id) {
     case MESH_EVENT_STARTED:
-        ESP_LOGI(MESH_TAG, "<MESH_EVENT_STARTED>heap:%d", esp_get_free_heap_size());
+        esp_mesh_get_id(&id);
+        ESP_LOGI(MESH_TAG, "<MESH_EVENT_STARTED>ID:"MACSTR"", MAC2STR(id.addr));
         is_mesh_connected = false;
         mesh_layer = esp_mesh_get_layer();
         break;
     case MESH_EVENT_STOPPED:
-        ESP_LOGI(MESH_TAG, "<MESH_EVENT_STOPPED>heap:%d", esp_get_free_heap_size());
+        ESP_LOGI(MESH_TAG, "<MESH_EVENT_STOPPED>");
         is_mesh_connected = false;
         mesh_layer = esp_mesh_get_layer();
         break;
@@ -251,28 +223,20 @@ void esp_mesh_event_handler(mesh_event_t event)
         /* TODO handler for the failure */
         break;
     case MESH_EVENT_PARENT_CONNECTED:
+        esp_mesh_get_id(&id);
         mesh_layer = event.info.connected.self_layer;
         memcpy(&mesh_parent_addr.addr, event.info.connected.connected.bssid, 6);
         ESP_LOGI(MESH_TAG,
-                 "<MESH_EVENT_PARENT_CONNECTED>layer:%d-->%d, parent:"MACSTR"%s",
+                 "<MESH_EVENT_PARENT_CONNECTED>layer:%d-->%d, parent:"MACSTR"%s, ID:"MACSTR"",
                  last_layer, mesh_layer, MAC2STR(mesh_parent_addr.addr),
                  esp_mesh_is_root() ? "<ROOT>" :
-                 (mesh_layer == 2) ? "<layer2>" : "");
+                 (mesh_layer == 2) ? "<layer2>" : "", MAC2STR(id.addr));
         last_layer = mesh_layer;
         mesh_connected_indicator(mesh_layer);
         is_mesh_connected = true;
         if (esp_mesh_is_root()) {
             tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
         }
-#ifdef MESH_ROOT_TO_GROUP
-        if (mesh_layer == 3) {
-            ESP_ERROR_CHECK(
-                esp_mesh_set_group_id((mesh_addr_t * ) MESH_GROUP_ID, 1))
-            ESP_ERROR_CHECK(esp_mesh_get_group_list(&group, 1))
-            ESP_LOGI(MESH_TAG, "num:%d, group "MACSTR"\n",
-                     esp_mesh_get_group_num(), MAC2STR(group.addr));
-        }
-#endif
         esp_mesh_comm_p2p_start();
         break;
     case MESH_EVENT_PARENT_DISCONNECTED:
@@ -281,6 +245,7 @@ void esp_mesh_event_handler(mesh_event_t event)
                  event.info.disconnected.reason);
         is_mesh_connected = false;
         mesh_disconnected_indicator();
+        mesh_layer = esp_mesh_get_layer();
         break;
     case MESH_EVENT_LAYER_CHANGE:
         mesh_layer = event.info.layer_change.new_layer;
@@ -328,7 +293,6 @@ void esp_mesh_event_handler(mesh_event_t event)
         esp_mesh_get_parent_bssid(&mesh_parent_addr);
         ESP_LOGI(MESH_TAG, "<MESH_EVENT_ROOT_SWITCH_ACK>layer:%d, parent:"MACSTR"", mesh_layer, MAC2STR(mesh_parent_addr.addr));
         break;
-
     case MESH_EVENT_TODS_STATE:
         ESP_LOGI(MESH_TAG, "<MESH_EVENT_TODS_REACHABLE>state:%d",
                  event.info.toDS_state);
@@ -336,6 +300,20 @@ void esp_mesh_event_handler(mesh_event_t event)
     case MESH_EVENT_ROOT_FIXED:
         ESP_LOGI(MESH_TAG, "<MESH_EVENT_ROOT_FIXED>%s",
                  event.info.root_fixed.is_fixed ? "fixed" : "not fixed");
+        break;
+    case MESH_EVENT_ROOT_ASKED_YIELD:
+        ESP_LOGI(MESH_TAG,
+                 "<MESH_EVENT_ROOT_ASKED_YIELD>"MACSTR", rssi:%d, capacity:%d",
+                 MAC2STR(event.info.root_conflict.addr),
+                 event.info.root_conflict.rssi,
+                 event.info.root_conflict.capacity);
+        break;
+    case MESH_EVENT_CHANNEL_SWITCH:
+        ESP_LOGI(MESH_TAG, "<MESH_EVENT_CHANNEL_SWITCH>");
+        break;
+    case MESH_EVENT_SCAN_DONE:
+        ESP_LOGI(MESH_TAG, "<MESH_EVENT_SCAN_DONE>number:%d",
+                 event.info.scan_done.number);
         break;
     default:
         ESP_LOGI(MESH_TAG, "unknown id:%d", event.id);
@@ -382,7 +360,7 @@ void app_main(void)
     /* mesh ID */
     memcpy((uint8_t *) &cfg.mesh_id, MESH_ID, 6);
     /* mesh event callback */
-    cfg.event_cb = &esp_mesh_event_handler;
+    cfg.event_cb = &mesh_event_handler;
     /* router */
     cfg.channel = CONFIG_MESH_CHANNEL;
     cfg.router.ssid_len = strlen(CONFIG_MESH_ROUTER_SSID);
@@ -397,19 +375,11 @@ void app_main(void)
     /* set RSSI threshold for connecting to the root */
     mesh_switch_parent_t switch_paras ;
     ESP_ERROR_CHECK(esp_mesh_get_switch_parent_paras(&switch_paras));
-    switch_paras.backoff_rssi = -45;
+    switch_paras.select_rssi = -55;
+    switch_paras.cnx_rssi = -65;
+    switch_paras.duration_ms = 120 * 1000;
+    switch_paras.switch_rssi = -65;
     ESP_ERROR_CHECK(esp_mesh_set_switch_parent_paras(&switch_paras));
-
-#ifdef MESH_SET_PARENT
-    /* parent */
-    wifi_config_t parent = {
-        .sta = {
-            .ssid = CONFIG_MESH_PARENT_SSID,
-            .channel = CONFIG_MESH_CHANNEL,
-        },
-    };
-    ESP_ERROR_CHECK(esp_mesh_set_parent(&parent, MESH_ROOT, 1));
-#endif
     /* mesh start */
     ESP_ERROR_CHECK(esp_mesh_start());
     ESP_LOGI(MESH_TAG, "mesh starts successfully, heap:%d, %s\n",  esp_get_free_heap_size(),

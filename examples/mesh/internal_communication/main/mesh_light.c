@@ -1,4 +1,4 @@
-/* Mesh Internal Transceiver Example
+/* Mesh Internal Communication Example
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
 
@@ -26,28 +26,34 @@
 /*******************************************************
  *                Variable Definitions
  *******************************************************/
-static bool bool_light_inited = false;
+static bool s_light_inited = false;
 
 /*******************************************************
  *                Function Definitions
  *******************************************************/
 esp_err_t mesh_light_init(void)
 {
-    if (bool_light_inited == true) {
+    if (s_light_inited == true) {
         return ESP_OK;
     }
-    bool_light_inited = true;
+    s_light_inited = true;
 
     ledc_timer_config_t ledc_timer = {
-        .bit_num = LEDC_TIMER_13_BIT, .freq_hz = 5000, .speed_mode =
-        LEDC_HIGH_SPEED_MODE, .timer_num = LEDC_TIMER_0
+        .bit_num = LEDC_TIMER_13_BIT,
+        .freq_hz = 5000,
+        .speed_mode = LEDC_HIGH_SPEED_MODE,
+        .timer_num = LEDC_TIMER_0
     };
     ledc_timer_config(&ledc_timer);
 
-    ledc_channel_config_t ledc_channel = { .channel = LEDC_CHANNEL_0, .duty =
-            100, .gpio_num = LEDC_IO_0, .intr_type = LEDC_INTR_FADE_END,
-                                           .speed_mode = LEDC_HIGH_SPEED_MODE, .timer_sel = LEDC_TIMER_0
-                                         };
+    ledc_channel_config_t ledc_channel = {
+        .channel = LEDC_CHANNEL_0,
+        .duty = 100,
+        .gpio_num = LEDC_IO_0,
+        .intr_type = LEDC_INTR_FADE_END,
+        .speed_mode = LEDC_HIGH_SPEED_MODE,
+        .timer_sel = LEDC_TIMER_0
+    };
     ledc_channel_config(&ledc_channel);
     ledc_channel.channel = LEDC_CHANNEL_1;
     ledc_channel.gpio_num = LEDC_IO_1;
