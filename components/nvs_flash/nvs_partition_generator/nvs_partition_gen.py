@@ -333,29 +333,42 @@ def nvs_close(nvs_instance):
     """
     nvs_instance.__exit__(None, None, None)
 
-def main():
-    parser = argparse.ArgumentParser(description="ESP32 NVS partition generation utility")
-    parser.add_argument(
-            "input",
-            help="Path to CSV file to parse. Will use stdin if omitted",
-            type=argparse.FileType('rb'),
-            default=sys.stdin)
+def nvs_part_gen(input_filename=None, output_filename=None):
+    input_file = open(input_filename, 'rb')
+    output_file = open(output_filename, 'wb')
 
-    parser.add_argument(
-            "output",
-            help='Path to output converted binary file. Will use stdout if omitted',
-            type=argparse.FileType('wb'),
-            default=sys.stdout)
-
-    args = parser.parse_args()
-    with nvs_open(args.output) as nvs_obj:
-        reader = csv.DictReader(args.input, delimiter=',')
+    with nvs_open(output_file) as nvs_obj:
+        reader = csv.DictReader(input_file, delimiter=',')
         for row in reader:
             try:
                 write_entry(nvs_obj, row["key"], row["type"], row["encoding"], row["value"])
             except InputError as e:
                 print(e)
+                input_file.close()
+                output_file.close()
                 exit(-2)
+
+    input_file.close()
+    output_file.close()
+
+def main():
+    parser = argparse.ArgumentParser(description="ESP32 NVS partition generation utility")
+    parser.add_argument(
+            "input",
+            help="Path to CSV file to parse. Will use stdin if omitted",
+            default=sys.stdin)
+
+    parser.add_argument(
+            "output",
+            help='Path to output converted binary file. Will use stdout if omitted',
+            default=sys.stdout)
+
+    args = parser.parse_args()
+    input_filename = args.input
+    output_filename = args.output
+    nvs_part_gen(input_filename, output_filename)
+
+
 
 if __name__ == "__main__":
     main()
