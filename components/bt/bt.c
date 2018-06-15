@@ -41,10 +41,15 @@
 #include "driver/periph_ctrl.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
+#include "soc/soc_memory_layout.h"
 #include "esp_clk.h"
 
 
 #if CONFIG_BT_ENABLED
+
+/* Macro definition
+ ************************************************************************
+ */
 
 #define BTDM_LOG_TAG                        "BTDM_INIT"
 
@@ -56,65 +61,20 @@
 #define BTDM_CFG_CONTROLLER_RUN_APP_CPU     (1<<2)
 #define BTDM_CFG_SCAN_DUPLICATE_OPTIONS     (1<<3)
 #define BTDM_CFG_SEND_ADV_RESERVED_SIZE     (1<<4)
-/* Other reserved for future */
 
-/* not for user call, so don't put to include file */
-extern void btdm_osi_funcs_register(void *osi_funcs);
-extern int btdm_controller_init(uint32_t config_mask, esp_bt_controller_config_t *config_opts);
-extern void btdm_controller_deinit(void);
-extern int btdm_controller_enable(esp_bt_mode_t mode);
-extern void btdm_controller_disable(void);
-extern uint8_t btdm_controller_get_mode(void);
-extern const char *btdm_controller_get_compile_version(void);
-extern void btdm_rf_bb_init(void);
-extern void btdm_controller_enable_sleep(bool enable);
-
+/* Sleep mode */
 #define BTDM_MODEM_SLEEP_MODE_NONE          (0)
 #define BTDM_MODEM_SLEEP_MODE_ORIG          (1)
 #define BTDM_MODEM_SLEEP_MODE_EVED          (2)
-extern void btdm_controller_set_sleep_mode(uint8_t mode);
-extern uint8_t btdm_controller_get_sleep_mode(void);
-extern bool btdm_power_state_active(void);
-extern void btdm_wakeup_request(void);
 
+/* Low Power Clock Selection */
 #define BTDM_LPCLK_SEL_XTAL      (0)
 #define BTDM_LPCLK_SEL_XTAL32K   (1)
 #define BTDM_LPCLK_SEL_RTC_SLOW  (2)
 #define BTDM_LPCLK_SEL_8M        (3)
-extern bool btdm_lpclk_select_src(uint32_t sel);
-extern bool btdm_lpclk_set_div(uint32_t div);
 
+/* Sleep duration */
 #define BTDM_MIN_SLEEP_DURATION  (20)
-/* VHCI function interface */
-typedef struct vhci_host_callback {
-    void (*notify_host_send_available)(void);               /*!< callback used to notify that the host can send packet to controller */
-    int (*notify_host_recv)(uint8_t *data, uint16_t len);   /*!< callback used to notify that the controller has a packet to send to the host*/
-} vhci_host_callback_t;
-
-extern bool API_vhci_host_check_send_available(void);
-extern void API_vhci_host_send_packet(uint8_t *data, uint16_t len);
-extern void API_vhci_host_register_callback(const vhci_host_callback_t *callback);
-
-extern int ble_txpwr_set(int power_type, int power_level);
-extern int ble_txpwr_get(int power_type);
-extern int bredr_txpwr_set(int min_power_level, int max_power_level);
-extern int bredr_txpwr_get(int *min_power_level, int *max_power_level);
-extern void bredr_sco_datapath_set(uint8_t data_path);
-
-extern char _bss_start_btdm;
-extern char _bss_end_btdm;
-extern uint32_t _bt_bss_start;
-extern uint32_t _bt_bss_end;
-extern uint32_t _btdm_bss_start;
-extern uint32_t _btdm_bss_end;
-extern uint32_t _bt_data_start;
-extern uint32_t _bt_data_end;
-extern uint32_t _btdm_data_start;
-extern uint32_t _btdm_data_end;
-extern char _data_start_btdm;
-extern char _data_end_btdm;
-extern uint32_t _data_start_btdm_rom;
-extern uint32_t _data_end_btdm_rom;
 
 #define BT_DEBUG(...)
 #define BT_API_CALL_CHECK(info, api_call, ret) \
@@ -127,45 +87,43 @@ do{\
 } while(0)
 
 #define OSI_FUNCS_TIME_BLOCKING  0xffffffff
+#define OSI_VERSION              0x00010001
+#define OSI_MAGIC_VALUE          0xFADEBEAD
 
+/* SPIRAM Configuration */
+#if CONFIG_SPIRAM_USE_MALLOC
+#define BTDM_MAX_QUEUE_NUM       (5)
+#endif
+
+/* Types definition
+ ************************************************************************
+ */
+
+/* VHCI function interface */
+typedef struct vhci_host_callback {
+    void (*notify_host_send_available)(void);               /*!< callback used to notify that the host can send packet to controller */
+    int (*notify_host_recv)(uint8_t *data, uint16_t len);   /*!< callback used to notify that the controller has a packet to send to the host*/
+} vhci_host_callback_t;
+
+/* Dram region */
 typedef struct {
     esp_bt_mode_t mode;
     intptr_t start;
     intptr_t end;
 } btdm_dram_available_region_t;
 
-/* the mode column will be modified by release function to indicate the available region */
-static btdm_dram_available_region_t btdm_dram_available_region[] = {
-    //following is .data
-    {ESP_BT_MODE_BTDM,          0x3ffae6e0, 0x3ffaff10},
-    //following is memory which HW will use
-    {ESP_BT_MODE_BTDM,          0x3ffb0000, 0x3ffb09a8},
-    {ESP_BT_MODE_BLE,           0x3ffb09a8, 0x3ffb1ddc},
-    {ESP_BT_MODE_BTDM,          0x3ffb1ddc, 0x3ffb2730},
-    {ESP_BT_MODE_CLASSIC_BT,    0x3ffb2730, 0x3ffb8000},
-    //following is .bss
-    {ESP_BT_MODE_BTDM,          0x3ffb8000, 0x3ffbbb28},
-    {ESP_BT_MODE_CLASSIC_BT,    0x3ffbbb28, 0x3ffbdb28},
-    {ESP_BT_MODE_BTDM,          0x3ffbdb28, 0x3ffc0000},
-};
-
-/* Reserve the full memory region used by Bluetooth Controller,
-   some may be released later at runtime. */
-SOC_RESERVE_MEMORY_REGION(0x3ffb0000, 0x3ffc0000, bt_hardware_shared_mem);
-SOC_RESERVE_MEMORY_REGION(0x3ffae6e0, 0x3ffaff10, rom_bt_data);
-
+/* PSRAM configuration */
 #if CONFIG_SPIRAM_USE_MALLOC
 typedef struct {
     QueueHandle_t handle;
     void *storage;
     void *buffer;
 } btdm_queue_item_t;
-#define BTDM_MAX_QUEUE_NUM       (5)
-static btdm_queue_item_t btdm_queue_table[BTDM_MAX_QUEUE_NUM];
-SemaphoreHandle_t btdm_queue_table_mux = NULL;
-#endif /* #if CONFIG_SPIRAM_USE_MALLOC */
+#endif
 
+/* OSI function */
 struct osi_funcs_t {
+    uint32_t _version;
     xt_handler (*_set_isr)(int n, xt_handler f, void *arg);
     void (*_ints_on)(unsigned int mask);
     void (*_interrupt_disable)(void);
@@ -193,6 +151,7 @@ struct osi_funcs_t {
     bool (* _is_in_isr)(void);
     int (* _cause_sw_intr_to_core)(int core_id, int intr_no);
     void *(* _malloc)(uint32_t size);
+    void *(* _malloc_internal)(uint32_t size);
     void (* _free)(void *p);
     int32_t (* _read_efuse_mac)(uint8_t mac[6]);
     void (* _srand)(unsigned int seed);
@@ -202,8 +161,175 @@ struct osi_funcs_t {
     bool (* _btdm_sleep_check_duration)(uint32_t *slot_cnt);
     void (* _btdm_sleep_enter)(void);
     void (* _btdm_sleep_exit)(void);  /* called from ISR */
+    uint32_t _magic;
 };
 
+
+/* External functions or values
+ ************************************************************************
+ */
+
+/* not for user call, so don't put to include file */
+/* OSI */
+extern int btdm_osi_funcs_register(void *osi_funcs);
+/* Initialise and De-initialise */
+extern int btdm_controller_init(uint32_t config_mask, esp_bt_controller_config_t *config_opts);
+extern void btdm_controller_deinit(void);
+extern int btdm_controller_enable(esp_bt_mode_t mode);
+extern void btdm_controller_disable(void);
+extern uint8_t btdm_controller_get_mode(void);
+extern const char *btdm_controller_get_compile_version(void);
+extern void btdm_rf_bb_init(void);
+/* Sleep */
+extern void btdm_controller_enable_sleep(bool enable);
+extern void btdm_controller_set_sleep_mode(uint8_t mode);
+extern uint8_t btdm_controller_get_sleep_mode(void);
+extern bool btdm_power_state_active(void);
+extern void btdm_wakeup_request(void);
+/* Low Power Clock */
+extern bool btdm_lpclk_select_src(uint32_t sel);
+extern bool btdm_lpclk_set_div(uint32_t div);
+/* VHCI */
+extern bool API_vhci_host_check_send_available(void);
+extern void API_vhci_host_send_packet(uint8_t *data, uint16_t len);
+extern int API_vhci_host_register_callback(const vhci_host_callback_t *callback);
+/* TX power */
+extern int ble_txpwr_set(int power_type, int power_level);
+extern int ble_txpwr_get(int power_type);
+extern int bredr_txpwr_set(int min_power_level, int max_power_level);
+extern int bredr_txpwr_get(int *min_power_level, int *max_power_level);
+extern void bredr_sco_datapath_set(uint8_t data_path);
+
+extern char _bss_start_btdm;
+extern char _bss_end_btdm;
+extern char _data_start_btdm;
+extern char _data_end_btdm;
+extern uint32_t _data_start_btdm_rom;
+extern uint32_t _data_end_btdm_rom;
+
+extern uint32_t _bt_bss_start;
+extern uint32_t _bt_bss_end;
+extern uint32_t _btdm_bss_start;
+extern uint32_t _btdm_bss_end;
+extern uint32_t _bt_data_start;
+extern uint32_t _bt_data_end;
+extern uint32_t _btdm_data_start;
+extern uint32_t _btdm_data_end;
+
+/* Local Function Declare
+ *********************************************************************
+ */
+#if CONFIG_SPIRAM_USE_MALLOC
+static bool IRAM_ATTR btdm_queue_generic_register(const btdm_queue_item_t *queue);
+static bool IRAM_ATTR btdm_queue_generic_deregister(btdm_queue_item_t *queue);
+#endif /* CONFIG_SPIRAM_USE_MALLOC */
+static void IRAM_ATTR interrupt_disable(void);
+static void IRAM_ATTR interrupt_restore(void);
+static void IRAM_ATTR task_yield_from_isr(void);
+static void *IRAM_ATTR semphr_create_wrapper(uint32_t max, uint32_t init);
+static void IRAM_ATTR semphr_delete_wrapper(void *semphr);
+static int32_t IRAM_ATTR semphr_take_from_isr_wrapper(void *semphr, void *hptw);
+static int32_t IRAM_ATTR semphr_give_from_isr_wrapper(void *semphr, void *hptw);
+static int32_t IRAM_ATTR semphr_take_wrapper(void *semphr, uint32_t block_time_ms);
+static int32_t IRAM_ATTR semphr_give_wrapper(void *semphr);
+static void *IRAM_ATTR mutex_create_wrapper(void);
+static void IRAM_ATTR mutex_delete_wrapper(void *mutex);
+static int32_t IRAM_ATTR mutex_lock_wrapper(void *mutex);
+static int32_t IRAM_ATTR mutex_unlock_wrapper(void *mutex);
+static void *IRAM_ATTR queue_create_wrapper(uint32_t queue_len, uint32_t item_size);
+static void IRAM_ATTR queue_delete_wrapper(void *queue);
+static int32_t IRAM_ATTR queue_send_wrapper(void *queue, void *item, uint32_t block_time_ms);
+static int32_t IRAM_ATTR queue_send_from_isr_wrapper(void *queue, void *item, void *hptw);
+static int32_t IRAM_ATTR queue_recv_wrapper(void *queue, void *item, uint32_t block_time_ms);
+static int32_t IRAM_ATTR queue_recv_from_isr_wrapper(void *queue, void *item, void *hptw);
+static int32_t IRAM_ATTR task_create_wrapper(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id);
+static void IRAM_ATTR task_delete_wrapper(void *task_handle);
+static bool IRAM_ATTR is_in_isr_wrapper(void);
+static void IRAM_ATTR cause_sw_intr(void *arg);
+static int IRAM_ATTR cause_sw_intr_to_core_wrapper(int core_id, int intr_no);
+static void * IRAM_ATTR malloc_internal_wrapper(size_t size);
+static int32_t IRAM_ATTR read_mac_wrapper(uint8_t mac[6]);
+static void IRAM_ATTR srand_wrapper(unsigned int seed);
+static int IRAM_ATTR rand_wrapper(void);
+static uint32_t IRAM_ATTR btdm_lpcycles_2_us(uint32_t cycles);
+static uint32_t IRAM_ATTR btdm_us_2_lpcycles(uint32_t us);
+static bool IRAM_ATTR btdm_sleep_check_duration(uint32_t *slot_cnt);
+static void IRAM_ATTR btdm_sleep_enter_wrapper(void);
+static void IRAM_ATTR btdm_sleep_exit_wrapper(void);
+
+/* Local variable definition
+ ***************************************************************************
+ */
+/* OSI funcs */
+static const struct osi_funcs_t osi_funcs_ro = {
+    ._version = OSI_VERSION,
+    ._set_isr = xt_set_interrupt_handler,
+    ._ints_on = xt_ints_on,
+    ._interrupt_disable = interrupt_disable,
+    ._interrupt_restore = interrupt_restore,
+    ._task_yield = vPortYield,
+    ._task_yield_from_isr = task_yield_from_isr,
+    ._semphr_create = semphr_create_wrapper,
+    ._semphr_delete = semphr_delete_wrapper,
+    ._semphr_take_from_isr = semphr_take_from_isr_wrapper,
+    ._semphr_give_from_isr = semphr_give_from_isr_wrapper,
+    ._semphr_take = semphr_take_wrapper,
+    ._semphr_give = semphr_give_wrapper,
+    ._mutex_create = mutex_create_wrapper,
+    ._mutex_delete = mutex_delete_wrapper,
+    ._mutex_lock = mutex_lock_wrapper,
+    ._mutex_unlock = mutex_unlock_wrapper,
+    ._queue_create = queue_create_wrapper,
+    ._queue_delete = queue_delete_wrapper,
+    ._queue_send = queue_send_wrapper,
+    ._queue_send_from_isr = queue_send_from_isr_wrapper,
+    ._queue_recv = queue_recv_wrapper,
+    ._queue_recv_from_isr = queue_recv_from_isr_wrapper,
+    ._task_create = task_create_wrapper,
+    ._task_delete = task_delete_wrapper,
+    ._is_in_isr = is_in_isr_wrapper,
+    ._cause_sw_intr_to_core = cause_sw_intr_to_core_wrapper,
+    ._malloc = malloc,
+    ._malloc_internal = malloc_internal_wrapper,
+    ._free = free,
+    ._read_efuse_mac = read_mac_wrapper,
+    ._srand = srand_wrapper,
+    ._rand = rand_wrapper,
+    ._btdm_lpcycles_2_us = btdm_lpcycles_2_us,
+    ._btdm_us_2_lpcycles = btdm_us_2_lpcycles,
+    ._btdm_sleep_check_duration = btdm_sleep_check_duration,
+    ._btdm_sleep_enter = btdm_sleep_enter_wrapper,
+    ._btdm_sleep_exit = btdm_sleep_exit_wrapper,
+    ._magic = OSI_MAGIC_VALUE,
+};
+
+/* the mode column will be modified by release function to indicate the available region */
+static btdm_dram_available_region_t btdm_dram_available_region[] = {
+    //following is .data
+    {ESP_BT_MODE_BTDM,          SOC_MEM_BT_DATA_START,      SOC_MEM_BT_DATA_END         },
+    //following is memory which HW will use
+    {ESP_BT_MODE_BTDM,          SOC_MEM_BT_EM_BTDM0_START,  SOC_MEM_BT_EM_BTDM0_END     },
+    {ESP_BT_MODE_BLE,           SOC_MEM_BT_EM_BLE_START,    SOC_MEM_BT_EM_BLE_END      },
+    {ESP_BT_MODE_BTDM,          SOC_MEM_BT_EM_BTDM1_START,  SOC_MEM_BT_EM_BTDM1_END     },
+    {ESP_BT_MODE_CLASSIC_BT,    SOC_MEM_BT_EM_BREDR_START,  SOC_MEM_BT_EM_BREDR_REAL_END},
+    //following is .bss
+    {ESP_BT_MODE_BTDM,          SOC_MEM_BT_BSS_START,       SOC_MEM_BT_BSS_END          },
+    {ESP_BT_MODE_BTDM,          SOC_MEM_BT_MISC_START,      SOC_MEM_BT_MISC_END         },
+};
+
+/* Reserve the full memory region used by Bluetooth Controller,
+ *    some may be released later at runtime. */
+SOC_RESERVE_MEMORY_REGION(SOC_MEM_BT_EM_START,   SOC_MEM_BT_EM_BREDR_REAL_END,  rom_bt_em);
+SOC_RESERVE_MEMORY_REGION(SOC_MEM_BT_BSS_START,  SOC_MEM_BT_BSS_END,            rom_bt_bss);
+SOC_RESERVE_MEMORY_REGION(SOC_MEM_BT_MISC_START, SOC_MEM_BT_MISC_END,           rom_bt_misc);
+SOC_RESERVE_MEMORY_REGION(SOC_MEM_BT_DATA_START, SOC_MEM_BT_DATA_END,           rom_bt_data);
+
+static struct osi_funcs_t *osi_funcs_p;
+
+#if CONFIG_SPIRAM_USE_MALLOC
+static btdm_queue_item_t btdm_queue_table[BTDM_MAX_QUEUE_NUM];
+SemaphoreHandle_t btdm_queue_table_mux = NULL;
+#endif /* #if CONFIG_SPIRAM_USE_MALLOC */
 
 /* Static variable declare */
 static bool btdm_bb_init_flag = false;
@@ -220,7 +346,7 @@ static esp_pm_lock_handle_t s_pm_lock;
 #endif
 
 #if CONFIG_SPIRAM_USE_MALLOC
-bool IRAM_ATTR btdm_queue_generic_register(const btdm_queue_item_t *queue)
+static bool IRAM_ATTR btdm_queue_generic_register(const btdm_queue_item_t *queue)
 {
     if (!btdm_queue_table_mux || !queue) {
         return NULL;
@@ -241,7 +367,7 @@ bool IRAM_ATTR btdm_queue_generic_register(const btdm_queue_item_t *queue)
     return ret;
 }
 
-bool IRAM_ATTR btdm_queue_generic_deregister(btdm_queue_item_t *queue)
+static bool IRAM_ATTR btdm_queue_generic_deregister(btdm_queue_item_t *queue)
 {
     if (!btdm_queue_table_mux || !queue) {
         return false;
@@ -579,6 +705,11 @@ static int IRAM_ATTR cause_sw_intr_to_core_wrapper(int core_id, int intr_no)
     return err;
 }
 
+static void * IRAM_ATTR malloc_internal_wrapper(size_t size)
+{
+    return heap_caps_malloc(size, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
+}
+
 static int32_t IRAM_ATTR read_mac_wrapper(uint8_t mac[6])
 {
     return esp_read_mac(mac, ESP_MAC_BT);
@@ -650,45 +781,6 @@ static void IRAM_ATTR btdm_sleep_exit_wrapper(void)
     }
 }
 
-static struct osi_funcs_t osi_funcs = {
-    ._set_isr = xt_set_interrupt_handler,
-    ._ints_on = xt_ints_on,
-    ._interrupt_disable = interrupt_disable,
-    ._interrupt_restore = interrupt_restore,
-    ._task_yield = vPortYield,
-    ._task_yield_from_isr = task_yield_from_isr,
-    ._semphr_create = semphr_create_wrapper,
-    ._semphr_delete = semphr_delete_wrapper,
-    ._semphr_take_from_isr = semphr_take_from_isr_wrapper,
-    ._semphr_give_from_isr = semphr_give_from_isr_wrapper,
-    ._semphr_take = semphr_take_wrapper,
-    ._semphr_give = semphr_give_wrapper,
-    ._mutex_create = mutex_create_wrapper,
-    ._mutex_delete = mutex_delete_wrapper,
-    ._mutex_lock = mutex_lock_wrapper,
-    ._mutex_unlock = mutex_unlock_wrapper,
-    ._queue_create = queue_create_wrapper,
-    ._queue_delete = queue_delete_wrapper,
-    ._queue_send = queue_send_wrapper,
-    ._queue_send_from_isr = queue_send_from_isr_wrapper,
-    ._queue_recv = queue_recv_wrapper,
-    ._queue_recv_from_isr = queue_recv_from_isr_wrapper,
-    ._task_create = task_create_wrapper,
-    ._task_delete = task_delete_wrapper,
-    ._is_in_isr = is_in_isr_wrapper,
-    ._cause_sw_intr_to_core = cause_sw_intr_to_core_wrapper,
-    ._malloc = malloc,
-    ._free = free,
-    ._read_efuse_mac = read_mac_wrapper,
-    ._srand = srand_wrapper,
-    ._rand = rand_wrapper,
-    ._btdm_lpcycles_2_us = btdm_lpcycles_2_us,
-    ._btdm_us_2_lpcycles = btdm_us_2_lpcycles,
-    ._btdm_sleep_check_duration = btdm_sleep_check_duration,
-    ._btdm_sleep_enter = btdm_sleep_enter_wrapper,
-    ._btdm_sleep_exit = btdm_sleep_exit_wrapper,
-};
-
 bool esp_vhci_host_check_send_available(void)
 {
     return API_vhci_host_check_send_available();
@@ -702,18 +794,14 @@ void esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
     API_vhci_host_send_packet(data, len);
 }
 
-void esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callback)
+esp_err_t esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callback)
 {
-    API_vhci_host_register_callback((const vhci_host_callback_t *)callback);
+    return API_vhci_host_register_callback((const vhci_host_callback_t *)callback) == 0 ? ESP_OK : ESP_FAIL;
 }
 
 static uint32_t btdm_config_mask_load(void)
 {
     uint32_t mask = 0x0;
-
-    if (btdm_dram_available_region[0].mode == ESP_BT_MODE_BLE) {
-        mask |= BTDM_CFG_BT_DATA_RELEASE;
-    }
 
 #if CONFIG_BTDM_CONTROLLER_HCI_MODE_UART_H4
     mask |= BTDM_CFG_HCI_UART;
@@ -730,10 +818,11 @@ static uint32_t btdm_config_mask_load(void)
 
 static void btdm_controller_mem_init(void)
 {
-    /* initialise .bss, .data and .etc section */
+    /* initialise .data section */
     memcpy(&_data_start_btdm, (void *)_data_start_btdm_rom, &_data_end_btdm - &_data_start_btdm);
     ESP_LOGD(BTDM_LOG_TAG, ".data initialise [0x%08x] <== [0x%08x]\n", (uint32_t)&_data_start_btdm, _data_start_btdm_rom);
 
+    //initial em, .bss section
     for (int i = 1; i < sizeof(btdm_dram_available_region)/sizeof(btdm_dram_available_region_t); i++) {
         if (btdm_dram_available_region[i].mode != ESP_BT_MODE_IDLE) {
             memset((void *)btdm_dram_available_region[i].start, 0x0, btdm_dram_available_region[i].end - btdm_dram_available_region[i].start);
@@ -834,6 +923,16 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     BaseType_t ret;
     uint32_t btdm_cfg_mask = 0;
 
+    osi_funcs_p = (struct osi_funcs_t *)malloc_internal_wrapper(sizeof(struct osi_funcs_t));
+    if (osi_funcs_p == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    memcpy(osi_funcs_p, &osi_funcs_ro, sizeof(struct osi_funcs_t));
+    if (btdm_osi_funcs_register(osi_funcs_p) != 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
         return ESP_ERR_INVALID_STATE;
     }
@@ -849,6 +948,16 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     if (cfg->controller_task_prio != ESP_TASK_BT_CONTROLLER_PRIO
             || cfg->controller_task_stack_size < ESP_TASK_BT_CONTROLLER_STACK) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    //overwrite some parameters
+    cfg->bt_max_sync_conn = CONFIG_BTDM_CONTROLLER_BR_EDR_MAX_SYNC_CONN_EFF;
+    cfg->magic  = ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL;
+
+    if (((cfg->mode & ESP_BT_MODE_BLE) && (cfg->ble_max_conn <= 0 || cfg->ble_max_conn > BTDM_CONTROLLER_BLE_MAX_CONN_LIMIT))
+            || ((cfg->mode & ESP_BT_MODE_CLASSIC_BT) && (cfg->bt_max_acl_conn <= 0 || cfg->bt_max_acl_conn > BTDM_CONTROLLER_BR_EDR_MAX_ACL_CONN_LIMIT))
+            || ((cfg->mode & ESP_BT_MODE_CLASSIC_BT) && (cfg->bt_max_sync_conn > BTDM_CONTROLLER_BR_EDR_MAX_SYNC_CONN_LIMIT))) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -872,8 +981,6 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     }
     memset(btdm_queue_table, 0, sizeof(btdm_queue_item_t) * BTDM_MAX_QUEUE_NUM);
 #endif
-
-    btdm_osi_funcs_register(&osi_funcs);
 
     btdm_controller_mem_init();
 
@@ -936,6 +1043,9 @@ esp_err_t esp_bt_controller_deinit(void)
     memset(btdm_queue_table, 0, sizeof(btdm_queue_item_t) * BTDM_MAX_QUEUE_NUM);
 #endif
 
+    free(osi_funcs_p);
+    osi_funcs_p = NULL;
+
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
 
     btdm_lpcycle_us = 0;
@@ -956,8 +1066,8 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
         return ESP_ERR_INVALID_STATE;
     }
 
-    //check the mode is available mode
-    if (mode & ~btdm_dram_available_region[0].mode) {
+    //As the history reason, mode should be equal to the mode which set in esp_bt_controller_init()
+    if (mode != btdm_controller_get_mode()) {
         return ESP_ERR_INVALID_ARG;
     }
 
