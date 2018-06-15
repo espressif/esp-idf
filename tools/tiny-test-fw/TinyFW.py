@@ -154,6 +154,7 @@ def test_method(**kwargs):
             xunit_file = os.path.join(env_inst.app_cls.get_log_folder(env_config["test_suite_name"]),
                                       XUNIT_FILE_NAME)
             XUNIT_RECEIVER.begin_case(test_func.__name__, time.time(), test_func_file_name)
+            result = False
             try:
                 Utility.console_log("starting running test: " + test_func.__name__, color="green")
                 # execute test function
@@ -163,12 +164,11 @@ def test_method(**kwargs):
             except Exception as e:
                 # handle all the exceptions here
                 traceback.print_exc()
-                result = False
                 # log failure
                 XUNIT_RECEIVER.failure(str(e), test_func_file_name)
             finally:
-                # do close all DUTs
-                env_inst.close()
+                # do close all DUTs, if result is False then print DUT debug info
+                env_inst.close(dut_debug=(not result))
             # end case and output result
             XUNIT_RECEIVER.end_case(test_func.__name__, time.time())
             with open(xunit_file, "ab+") as f:
