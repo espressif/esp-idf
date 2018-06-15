@@ -3492,15 +3492,30 @@ tBTM_STATUS btm_ble_stop_adv(void)
     tBTM_STATUS rt = BTM_SUCCESS;
 
     if (p_cb->adv_mode == BTM_BLE_ADV_ENABLE) {
-        if (btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_DISABLE)) {
-            p_cb->fast_adv_on = FALSE;
-            p_cb->adv_mode = BTM_BLE_ADV_DISABLE;
-            p_cb->state = BTM_BLE_ADV_PENDING;
-            btm_cb.ble_ctr_cb.wl_state &= ~BTM_BLE_WL_ADV;
+        UINT8 temp_adv_mode = p_cb->adv_mode;
+        BOOLEAN temp_fast_adv_on = p_cb->fast_adv_on;
+        tBTM_BLE_GAP_STATE temp_state = p_cb->state;
+        tBTM_BLE_WL_STATE temp_wl_state = btm_cb.ble_ctr_cb.wl_state;
+        tBTM_BLE_STATE_MASK temp_mask = btm_ble_get_topology_mask ();
 
-            /* clear all adv states */
-            btm_ble_clear_topology_mask (BTM_BLE_STATE_ALL_ADV_MASK);
+        p_cb->fast_adv_on = FALSE;
+        p_cb->adv_mode = BTM_BLE_ADV_DISABLE;
+        p_cb->state = BTM_BLE_ADV_PENDING;
+        btm_cb.ble_ctr_cb.wl_state &= ~BTM_BLE_WL_ADV;
+
+        /* clear all adv states */
+        btm_ble_clear_topology_mask (BTM_BLE_STATE_ALL_ADV_MASK);
+
+        if (btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_DISABLE)) {
+
         } else {
+            // reset state
+            p_cb->fast_adv_on = temp_fast_adv_on;
+            p_cb->adv_mode = temp_adv_mode;
+            p_cb->state = temp_state;
+            btm_cb.ble_ctr_cb.wl_state = temp_wl_state;
+            btm_ble_set_topology_mask (temp_mask);
+
             rt = BTM_NO_RESOURCES;
         }
     }
@@ -3743,6 +3758,20 @@ BOOLEAN btm_ble_clear_topology_mask (tBTM_BLE_STATE_MASK request_state_mask)
     request_state_mask &= BTM_BLE_STATE_ALL_MASK;
     btm_cb.ble_ctr_cb.cur_states &= ~request_state_mask;
     return TRUE;
+}
+
+/*******************************************************************************
+**
+** Function         btm_ble_get_topology_mask
+**
+** Description      Get BLE topology bit mask
+**
+** Returns          state mask.   
+**
+*******************************************************************************/
+tBTM_BLE_STATE_MASK btm_ble_get_topology_mask (void)
+{
+    return btm_cb.ble_ctr_cb.cur_states;
 }
 
 /*******************************************************************************
