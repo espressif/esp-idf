@@ -481,6 +481,7 @@ void btm_ble_adv_filter_cleanup(void);
 BOOLEAN btm_ble_topology_check(tBTM_BLE_STATE_MASK request);
 BOOLEAN btm_ble_clear_topology_mask(tBTM_BLE_STATE_MASK request_state);
 BOOLEAN btm_ble_set_topology_mask(tBTM_BLE_STATE_MASK request_state);
+tBTM_BLE_STATE_MASK btm_ble_get_topology_mask(void);
 
 #if BTM_BLE_CONFORMANCE_TESTING == TRUE
 void btm_ble_set_no_disc_if_pair_fail (BOOLEAN disble_disc);
