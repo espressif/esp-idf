@@ -247,8 +247,9 @@ violated, leads to the failure of reading correctly.
 
 .. image:: /../_static/spi_miso.png
 
-""" wavedrom don't support rendering pdflatex till now(1.3.1), so we use the png here
-.. include:: /../_static/miso_timing_waveform.png
+.. wavedrom don't support rendering pdflatex till now(1.3.1), so we use the png here
+
+.. image:: /../_static/miso_timing_waveform.png
 
 The maximum frequency allowed is related to the *input delay* (maximum valid
 time after SCLK on the MISO bus), as well as the usage of GPIO matrix. The
@@ -291,8 +292,9 @@ the timing correctly by dummy bits in half duplex mode. You may find the maximum
 of SPI clocks in the AC characteristics chapter of the device specifications, or measure the time on a oscilloscope or 
 logic analyzer.
 
-""" wavedrom don't support rendering pdflatex till now(1.3.1), so we use the png here
-.. include:: /../_static/miso_timing_waveform_async.png
+.. wavedrom don't support rendering pdflatex till now(1.3.1), so we use the png here
+
+.. image:: /../_static/miso_timing_waveform_async.png
 
 As shown in the figure above, the input delay is usually:
 
