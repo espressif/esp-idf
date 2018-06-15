@@ -171,12 +171,46 @@ function run_tests()
     idf.py build
     take_build_snapshot
     # Need to actually change the build config, or CMake won't do anything
+    cp CMakeLists.txt CMakeLists.bak
     sed -i 's/^project(/add_compile_options("-DUSELESS_MACRO_DOES_NOTHING=1")\nproject\(/' CMakeLists.txt
-    idf.py build
+    idf.py build || failure "Build failed"
+    mv CMakeLists.bak CMakeLists.txt
     # similar to previous test
     assert_rebuilt newlib/CMakeFiles/newlib.dir/syscall_table.c.obj
     assert_rebuilt nvs_flash/CMakeFiles/nvs_flash.dir/src/nvs_api.cpp.obj
     assert_rebuilt freertos/CMakeFiles/freertos.dir/xtensa_vectors.S.obj
+
+    print_status "Can build with Ninja (no idf.py)"
+    clean_build_dir
+    (cd build && cmake -G Ninja .. && ninja)  || failure "Ninja build failed"
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
+
+    print_status "Can build with GNU Make (no idf.py)"
+    clean_build_dir
+    mkdir build
+    (cd build && cmake -G "Unix Makefiles" .. && make) || failure "Make build failed"
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
+
+    print_status "Can build with IDF_PATH set via cmake cache not environment"
+    clean_build_dir
+    cp CMakeLists.txt CMakeLists.bak
+    sed -i 's/ENV{IDF_PATH}/{IDF_PATH}/' CMakeLists.txt
+    export IDF_PATH_BACKUP="$IDF_PATH"
+    (unset IDF_PATH &&
+         cd build &&
+         cmake -G Ninja .. -DIDF_PATH=${IDF_PATH_BACKUP} &&
+         ninja) || failure "Ninja build failed"
+    mv CMakeLists.bak CMakeLists.txt
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
+
+    print_status "Can build with IDF_PATH unset and inferred by build system"
+    clean_build_dir
+    cp CMakeLists.txt CMakeLists.bak
+    sed -i "s%\$ENV{IDF_PATH}%${IDF_PATH}%" CMakeLists.txt  # expand to a hardcoded path
+    (unset IDF_PATH && cd build &&
+         cmake -G Ninja .. && ninja) || failure "Ninja build failed"
+    mv CMakeLists.bak CMakeLists.txt
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
 
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
