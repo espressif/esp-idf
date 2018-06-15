@@ -21,7 +21,7 @@ from IDF.IDFDUT import IDFDUT
 
 
 def idf_example_test(app=Example, dut=IDFDUT, chip="ESP32",
-                     module="examples", execution_time=1,
+                     module="examples", execution_time=1, level="example",
                      **kwargs):
     """
     decorator for testing idf examples (with default values for some keyword args).
@@ -31,12 +31,13 @@ def idf_example_test(app=Example, dut=IDFDUT, chip="ESP32",
     :param chip: chip supported, string or tuple
     :param module: module, string
     :param execution_time: execution time in minutes, int
+    :param level: test level, could be used to filter test cases, string
     :param kwargs: other keyword args
     :return: test method
     """
     # not use partial function as define as function support auto generating document
     return TinyFW.test_method(app=app, dut=dut, chip=chip, module=module,
-                              execution_time=execution_time, **kwargs)
+                              execution_time=execution_time, level=level, **kwargs)
 
 
 def log_performance(item, value):
