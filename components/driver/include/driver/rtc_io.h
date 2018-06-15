@@ -66,7 +66,7 @@ extern const rtc_gpio_desc_t rtc_gpio_desc[GPIO_PIN_COUNT];
  * @brief Determine if the specified GPIO is a valid RTC GPIO.
  *
  * @param gpio_num GPIO number
- * @return true if GPIO is valid for RTC GPIO use. talse otherwise.
+ * @return true if GPIO is valid for RTC GPIO use. false otherwise.
  */
 inline static bool rtc_gpio_is_valid_gpio(gpio_num_t gpio_num)
 {

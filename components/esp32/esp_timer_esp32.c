@@ -201,7 +201,7 @@ uint64_t IRAM_ATTR esp_timer_impl_get_time()
         ticks_per_us = s_timer_ticks_per_us;
 
         /* Read them again and compare */
-        /* In this function, do not call timer_count_reload() when overflow is ture.
+        /* In this function, do not call timer_count_reload() when overflow is true.
          * Because there's remain count enough to allow FRC_TIMER_COUNT_REG grow
          */
         if (REG_READ(FRC_TIMER_COUNT_REG(1)) > timer_val &&
