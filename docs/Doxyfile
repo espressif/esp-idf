@@ -174,7 +174,9 @@ INPUT = \
     ../../components/freertos/include/freertos/semphr.h \
     ../../components/freertos/include/freertos/timers.h \
     ../../components/freertos/include/freertos/event_groups.h \
-    ../../components/freertos/include/freertos/ringbuf.h
+    ../../components/freertos/include/freertos/ringbuf.h \
+    ### Helper functions for error codes
+    ../../components/esp32/include/esp_err.h
 
 
 
