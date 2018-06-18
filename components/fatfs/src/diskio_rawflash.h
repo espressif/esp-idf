@@ -1,4 +1,4 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,28 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _DISKIO_SPIFLASH_DEFINED
-#define _DISKIO_SPIFLASH_DEFINED
+#ifndef _DISKIO_RAWFLASH_DEFINED
+#define _DISKIO_RAWFLASH_DEFINED
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "integer.h"
-#include "wear_levelling.h"
-
+#include "esp_partition.h"
 
 /**
- * Register spi flash partition 
+ * Register spi flash partition
  *
  * @param pdrv  drive number
- * @param flash_handle  handle of the wear levelling partition.
+ * @param part_handle  pointer to raw flash partition.
  */
-esp_err_t ff_diskio_register_wl_partition(BYTE pdrv, wl_handle_t flash_handle);
-BYTE ff_diskio_get_pdrv_wl(wl_handle_t flash_handle);
+esp_err_t ff_diskio_register_raw_partition(BYTE pdrv, const esp_partition_t* part_handle);
+BYTE ff_diskio_get_pdrv_raw(const esp_partition_t* part_handle);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // _DISKIO_SPIFLASH_DEFINED
+#endif // _DISKIO_RAWFLASH_DEFINED
