@@ -1,4 +1,4 @@
-#menu "Driver configurations"
+menu "Driver configurations"
 
 menu "ADC configuration"
 
@@ -20,5 +20,30 @@ config ADC2_DISABLE_DAC
 
 endmenu  # ADC Configuration
 
-#endmenu  # Driver configurations
+menu "SPI master configuration"
 
+config SPI_MASTER_IN_IRAM
+    bool "Place transmitting functions of SPI master into IRAM"
+    default n
+    select SPI_MASTER_ISR_IN_IRAM
+    help
+        Normally only the ISR of SPI master is placed in the IRAM, so that it
+        can work without the flash when interrupt is triggered.
+        For other functions, there's some possibility that the flash cache
+        miss when running inside and out of SPI functions, which may increase
+        the interval of SPI transactions.
+        Enable this to put ``queue_trans``, ``get_trans_result`` and
+        ``transmit`` functions into the IRAM to avoid possible cache miss.
+
+        During unit test, this is enabled to measure the ideal case of api.
+
+config SPI_MASTER_ISR_IN_IRAM
+    bool "Place SPI master ISR function into IRAM"
+    default y
+    help
+        Place the SPI master ISR in to IRAM to avoid possibly cache miss, or
+        being disabled during flash writing access.
+
+endmenu # SPI Master Configuration
+
+endmenu  # Driver configurations
