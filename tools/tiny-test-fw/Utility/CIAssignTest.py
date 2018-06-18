@@ -207,7 +207,7 @@ class AssignTest(object):
             else:
                 failed_to_assign.append(group)
         if failed_to_assign:
-            console_log("Please add the following jobs to .gitlab-ci.yml with specific tags:", "R")
+            console_log("Too many test cases vs jobs to run. Please add the following jobs to .gitlab-ci.yml with specific tags:", "R")
             for group in failed_to_assign:
                 console_log("* Add job with: " + ",".join(group.ci_job_match_keys), "R")
             raise RuntimeError("Failed to assign test case to CI jobs")
