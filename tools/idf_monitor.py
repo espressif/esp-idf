@@ -393,8 +393,8 @@ class Monitor(object):
         # default we don't touch it and just wait for the arrival of the rest
         # of the line. But after some time when we didn't received it we need
         # to make a decision.
-        if finalize_line and self._last_line_part != b"":
-            if self._line_matcher.match(self._last_line_part):
+        if self._last_line_part != b"":
+            if self._force_line_print or (finalize_line and self._line_matcher.match(self._last_line_part)):
                 self._force_line_print = True;
                 if self._output_enabled:
                     self.console.write_bytes(self._last_line_part)
