@@ -305,12 +305,18 @@ IRAM_ATTR void *heap_caps_realloc( void *ptr, size_t size, int caps)
 
 IRAM_ATTR void *heap_caps_calloc( size_t n, size_t size, uint32_t caps)
 {
-    void *r;
-    r = heap_caps_malloc(n*size, caps);
-    if (r != NULL) {
-        bzero(r, n*size);
+    void *result;
+    size_t size_bytes;
+
+    if (__builtin_mul_overflow(n, size, &size_bytes)) {
+        return NULL;
     }
-    return r;
+
+    result = heap_caps_malloc(size_bytes, caps);
+    if (result != NULL) {
+        bzero(result, size_bytes);
+    }
+    return result;
 }
 
 size_t heap_caps_get_free_size( uint32_t caps )
