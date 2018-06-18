@@ -103,7 +103,7 @@ If you want to reproduce locally, you need to:
 2. Check the following print in CI job to get the config name: `Running unit test for config: config_name`. Then flash the binary of this config to your board.
 3. Run the failed case on your board (refer to Running Unit Tests section).
     * There're some special UT cases (multiple stages case, multiple devices cases) which requires user interaction:
-        * You can refer to [unit test document](https://esp-idf.readthedocs.io/en/latest/api-guides/unit-tests.html#running-unit-tests) to run test manually.
+        * You can refer to [unit test document](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/unit-tests.html#running-unit-tests) to run test manually.
         * Or, you can use `tools/unit-test-app/unit_test.py` to run the test cases:
             * read document of tiny-test-fw, set correct `TEST_FW_PATH` and `IDF_PATH`
             * modify `unit_test.py`, pass the test cases need to test as parameter (refer to test function doc string for supported parameter format) to test functions.

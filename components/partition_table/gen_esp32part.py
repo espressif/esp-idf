@@ -4,7 +4,7 @@
 #
 # Converts partition tables to/from CSV and binary formats.
 #
-# See http://esp-idf.readthedocs.io/en/latest/api-guides/partition-tables.html
+# See https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/partition-tables.html
 # for explanation of partition table structure and uses.
 #
 # Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
