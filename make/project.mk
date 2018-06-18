@@ -406,15 +406,15 @@ $(APP_ELF): $(foreach libcomp,$(COMPONENT_LIBRARIES),$(BUILD_DIR_BASE)/$(libcomp
 	$(summary) LD $(patsubst $(PWD)/%,%,$@)
 	$(CC) $(LDFLAGS) -o $@ -Wl,-Map=$(APP_MAP)
 
-app: $(APP_BIN)
+app: $(APP_BIN) partition_table_get_info
 ifeq ("$(CONFIG_SECURE_BOOT_ENABLED)$(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)","y") # secure boot enabled, but remote sign app image
 	@echo "App built but not signed. Signing step via espsecure.py:"
 	@echo "espsecure.py sign_data --keyfile KEYFILE $(APP_BIN)"
 	@echo "Then flash app command is:"
-	@echo $(ESPTOOLPY_WRITE_FLASH) $(CONFIG_APP_OFFSET) $(APP_BIN)
+	@echo $(ESPTOOLPY_WRITE_FLASH) $(APP_OFFSET) $(APP_BIN)
 else
 	@echo "App built. Default flash app command is:"
-	@echo $(ESPTOOLPY_WRITE_FLASH) $(CONFIG_APP_OFFSET) $(APP_BIN)
+	@echo $(ESPTOOLPY_WRITE_FLASH) $(APP_OFFSET) $(APP_BIN)
 endif
 
 all_binaries: $(APP_BIN)
@@ -544,7 +544,7 @@ list-components:
 	$(foreach cp,$(COMPONENT_PATHS),$(info $(cp)))
 
 # print flash command, so users can dump this to config files and download somewhere without idf
-print_flash_cmd:
+print_flash_cmd: partition_table_get_info
 	echo $(ESPTOOL_WRITE_FLASH_OPTIONS) $(ESPTOOL_ALL_FLASH_ARGS) | sed -e 's:'$(PWD)/build/'::g'
 
 # Check toolchain version using the output of xtensa-esp32-elf-gcc --version command.
