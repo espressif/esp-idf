@@ -372,14 +372,6 @@ void app_main(void)
     memcpy((uint8_t *) &cfg.mesh_ap.password, CONFIG_MESH_AP_PASSWD,
            strlen(CONFIG_MESH_AP_PASSWD));
     ESP_ERROR_CHECK(esp_mesh_set_config(&cfg));
-    /* set RSSI threshold for connecting to the root */
-    mesh_switch_parent_t switch_paras ;
-    ESP_ERROR_CHECK(esp_mesh_get_switch_parent_paras(&switch_paras));
-    switch_paras.select_rssi = -55;
-    switch_paras.cnx_rssi = -65;
-    switch_paras.duration_ms = 120 * 1000;
-    switch_paras.switch_rssi = -65;
-    ESP_ERROR_CHECK(esp_mesh_set_switch_parent_paras(&switch_paras));
     /* mesh start */
     ESP_ERROR_CHECK(esp_mesh_start());
     ESP_LOGI(MESH_TAG, "mesh starts successfully, heap:%d, %s\n",  esp_get_free_heap_size(),
