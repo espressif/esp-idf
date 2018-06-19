@@ -17,11 +17,12 @@
 #include "esp_err.h"
 #include "esp_flash_data_types.h"
 #include <stdbool.h>
+#include "sdkconfig.h"
 
 /* Pre-partition table fixed flash offsets */
 #define ESP_BOOTLOADER_DIGEST_OFFSET 0x0
 #define ESP_BOOTLOADER_OFFSET 0x1000 /* Offset of bootloader image. Has matching value in bootloader KConfig.projbuild file. */
-#define ESP_PARTITION_TABLE_OFFSET CONFIG_PARTITION_TABLE_OFFSET /* Offset of partition table. */
+#define ESP_PARTITION_TABLE_OFFSET CONFIG_PARTITION_TABLE_OFFSET /* Offset of partition table. Backwards-compatible name.*/
 
 #define ESP_PARTITION_TABLE_MAX_LEN 0xC00 /* Maximum length of partition table data */
 #define ESP_PARTITION_TABLE_MAX_ENTRIES (ESP_PARTITION_TABLE_MAX_LEN / sizeof(esp_partition_info_t)) /* Maximum length of partition table data, including terminating entry */

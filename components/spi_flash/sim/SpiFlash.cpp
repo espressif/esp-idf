@@ -22,6 +22,7 @@
 #include <vector>
 #include <string>
 
+#include "sdkconfig.h"
 #include "esp_flash_data_types.h"
 
 using namespace std;
@@ -59,7 +60,7 @@ void SpiFlash::init(size_t chip_size, size_t block_size, size_t sector_size, siz
 
     ifd.read(buffer.data(), size);
 
-    memcpy(&this->memory[ESP_PARTITION_TABLE_ADDR], buffer.data(), buffer.size());
+    memcpy(&this->memory[CONFIG_PARTITION_TABLE_OFFSET], buffer.data(), buffer.size());
 }
 
 void SpiFlash::deinit()
