@@ -384,6 +384,8 @@ Known Issues
 2. Full duplex mode is not compatible with the *dummy bit workaround*, hence the frequency is limited. See :ref:`dummy
    bit speed-up workaround <dummy_bit_workaround>`.
 
+3. ``cs_ena_pretrans`` is not compatible with command, address phases in full duplex mode.
+
 
 Application Example
 -------------------
