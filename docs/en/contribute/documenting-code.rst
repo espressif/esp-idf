@@ -247,7 +247,7 @@ You can setup environment to build documentation locally on your PC by installin
 5. Blockdiag - http://blockdiag.com/en/index.html
 6. Recommonmark - https://github.com/rtfd/recommonmark
 
-The package "sphinx_rtd_theme" is added to have the same "look and feel" of `ESP32 Programming Guide <https://esp-idf.readthedocs.io/en/latest/index.html>`_ documentation like on the "Read the Docs" hosting site.
+The package "sphinx_rtd_theme" is added to have the same "look and feel" of `ESP32 Programming Guide <https://docs.espressif.com/projects/esp-idf/en/latest/index.html>`_ documentation like on the "Read the Docs" hosting site.
 
 Do not worry about being confronted with several packages to install. Besides Doxygen, all remaining packages are written in Python. Therefore installation of all of them is combined into one simple step.
 
