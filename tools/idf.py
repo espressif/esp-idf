@@ -41,7 +41,7 @@ class FatalError(RuntimeError):
 PYTHON=sys.executable
 
 # note: os.environ changes don't automatically propagate to child processes,
-# you have to pass this in explicitly
+# you have to pass env=os.environ explicitly anywhere that we create a process
 os.environ["PYTHON"]=sys.executable
 
 # Make flavors, across the various kinds of Windows environments & POSIX...
@@ -95,6 +95,7 @@ def check_environment():
             print("WARNING: IDF_PATH environment variable is set to %s but idf.py path indicates IDF directory %s. Using the environment variable directory, but results may be unexpected..."
                   % (set_idf_path, detected_idf_path))
     else:
+        print("Setting IDF_PATH environment variable: %s" % detected_idf_path)
         os.environ["IDF_PATH"] = detected_idf_path
 
 def executable_exists(args):
