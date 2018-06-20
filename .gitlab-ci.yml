@@ -1032,6 +1032,31 @@ UT_006_04:
     - UT_T1_GPIO
     - psram
 
+UT_007_01:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_PCNT
+
+UT_007_02:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_PCNT
+
+UT_007_03:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_PCNT
+
+UT_007_04:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_PCNT
+    - psram
+
 UT_008_01:
   <<: *unit_test_template
   tags:
