@@ -19,7 +19,7 @@
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
-#include "soc/sdmmc_struct.h"
+#include "soc/sdmmc_periph.h"
 
 typedef struct {
     uint32_t sdmmc_status;      ///< masked SDMMC interrupt status
