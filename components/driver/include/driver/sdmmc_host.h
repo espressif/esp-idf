@@ -33,7 +33,7 @@ extern "C" {
  * Uses SDMMC peripheral, with 4-bit mode enabled, and max frequency set to 20MHz
  */
 #define SDMMC_HOST_DEFAULT() {\
-    .flags = (SDMMC_HOST_FLAG_4BIT | SDMMC_HOST_MEM_CARD), \
+    .flags = SDMMC_HOST_FLAG_4BIT, \
     .slot = SDMMC_HOST_SLOT_1, \
     .max_freq_khz = SDMMC_FREQ_DEFAULT, \
     .io_voltage = 3.3f, \

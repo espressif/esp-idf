@@ -57,6 +57,13 @@ typedef struct {
 } sdmmc_scr_t;
 
 /**
+ * Decoded values of Extended Card Specific Data
+ */
+typedef struct {
+    uint8_t power_class;    /*!< Power class used by the card */
+} sdmmc_ext_csd_t;
+
+/**
  * SD/MMC command response buffer
  */
 typedef uint32_t sdmmc_response_t[4];
@@ -125,8 +132,8 @@ typedef struct {
 #define SDMMC_FREQ_DEFAULT      20000       /*!< SD/MMC Default speed (limited by clock divider) */
 #define SDMMC_FREQ_HIGHSPEED    40000       /*!< SD High speed (limited by clock divider) */
 #define SDMMC_FREQ_PROBING      400         /*!< SD/MMC probing speed */
-#define SDMCC_FREQ_52M			52000		/*!< MMC 52Mhz speed */
-#define SDMCC_FREQ_26M            26000        /*!< MMC 26Mhz speed */
+#define SDMMC_FREQ_52M          52000       /*!< MMC 52MHz speed */
+#define SDMMC_FREQ_26M          26000       /*!< MMC 26MHz speed */
     float io_voltage;           /*!< I/O voltage used by the controller (voltage switching is not supported) */
     esp_err_t (*init)(void);    /*!< Host function to initialize the driver */
     esp_err_t (*set_bus_width)(int slot, size_t width);    /*!< host function to set bus width */
@@ -148,14 +155,15 @@ typedef struct {
     sdmmc_cid_t cid;            /*!< decoded CID (Card IDentification) register value */
     sdmmc_csd_t csd;            /*!< decoded CSD (Card-Specific Data) register value */
     sdmmc_scr_t scr;            /*!< decoded SCR (SD card Configuration Register) value */
+    sdmmc_ext_csd_t ext_csd;    /*!< decoded EXT_CSD (Extended Card Specific Data) register value */
     uint16_t rca;               /*!< RCA (Relative Card Address) */
-#define SDMMC_HOST_MMC_CARD     BIT(8)      /*!< card in MMC mode (SD otherwise) */
-#define SDMMC_HOST_IO_CARD      BIT(9)      /*!< card in IO mode (SD moe only) */
-#define SDMMC_HOST_MEM_CARD     BIT(10)     /*!< card in memory mode (SD or MMC) */    
+    uint16_t max_freq_khz;      /*!< Maximum frequency, in kHz, supported by the card */
     uint32_t is_mem : 1;        /*!< Bit indicates if the card is a memory card */
     uint32_t is_sdio : 1;       /*!< Bit indicates if the card is an IO card */
+    uint32_t is_mmc : 1;        /*!< Bit indicates if the card is MMC */
     uint32_t num_io_functions : 3;  /*!< If is_sdio is 1, contains the number of IO functions on the card */
-    uint32_t reserved : 27;     /*!< Reserved for future expansion */
+    uint32_t log_bus_width : 2; /*!< log2(bus width supported by card) */
+    uint32_t reserved : 24;     /*!< Reserved for future expansion */
 } sdmmc_card_t;
 
 
