@@ -444,11 +444,14 @@ class BaseDUT(object):
         start_time = time.time()
         while True:
             ret, index = method(data, pattern)
-            if ret is not None or time.time() - start_time > timeout:
+            if ret is not None:
                 self.data_cache.flush(index)
                 break
+            time_remaining = start_time + timeout - time.time()
+            if time_remaining < 0:
+                break
             # wait for new data from cache
-            data = self.data_cache.get_data(time.time() + timeout - start_time)
+            data = self.data_cache.get_data(time_remaining)
 
         if ret is None:
             pattern = _pattern_to_string(pattern)
@@ -501,10 +504,11 @@ class BaseDUT(object):
             else:
                 match_succeed = True if matched_expect_items else False
 
-            if time.time() - start_time > timeout or match_succeed:
+            time_remaining = start_time + timeout - time.time()
+            if time_remaining < 0 or match_succeed:
                 break
             else:
-                data = self.data_cache.get_data(time.time() + timeout - start_time)
+                data = self.data_cache.get_data(time_remaining)
 
         if match_succeed:
             # do callback and flush matched data cache
