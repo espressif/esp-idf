@@ -1281,6 +1281,12 @@ IT_010_01:
     - ESP32_IDF
     - SSC_T5_1
 
+IT_011_01:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T50_1
+
 IT_501_01:
   <<: *test_template
   tags:
