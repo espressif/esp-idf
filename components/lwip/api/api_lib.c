@@ -139,7 +139,7 @@ netconn_new_with_proto_and_callback(enum netconn_type t, u8_t proto, netconn_cal
 static inline bool is_created_by_socket(struct netconn *conn)
 {
 #if LWIP_SOCKET
-  if (conn && (conn->socket != -1)) {
+  if (conn && (conn->socket >= 0)) {
     return true;
   }
 #endif
