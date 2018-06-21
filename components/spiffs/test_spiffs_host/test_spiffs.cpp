@@ -9,11 +9,11 @@
 
 #include "catch.hpp"
 
-extern "C" void init_spi_flash(size_t chip_size, size_t block_size, size_t sector_size, size_t page_size, const char* partition_bin);
+extern "C" void init_spi_flash(const char* chip_size, size_t block_size, size_t sector_size, size_t page_size, const char* partition_bin);
 
 TEST_CASE("format disk, open file, write and read file", "[spiffs]")
 {
-    init_spi_flash(0x00400000, CONFIG_WL_SECTOR_SIZE * 16, CONFIG_WL_SECTOR_SIZE, CONFIG_WL_SECTOR_SIZE, "partitions_table.bin");
+    init_spi_flash(CONFIG_ESPTOOLPY_FLASHSIZE, CONFIG_WL_SECTOR_SIZE * 16, CONFIG_WL_SECTOR_SIZE, CONFIG_WL_SECTOR_SIZE, "partition_table.bin");
 
     spiffs fs;
     spiffs_config cfg;

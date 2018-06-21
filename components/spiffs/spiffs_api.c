@@ -19,7 +19,7 @@
 #include "esp_vfs.h"
 #include "spiffs_api.h"
 
-const char* TAG = "SPIFFS";
+static const char* TAG = "SPIFFS";
 
 void spiffs_api_lock(spiffs *fs)
 {

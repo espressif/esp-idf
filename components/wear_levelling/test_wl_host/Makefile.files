@@ -1,0 +1,31 @@
+SOURCE_FILES := \
+	$(addprefix ../, \
+	wear_levelling.cpp \
+	crc32.cpp \
+	WL_Flash.cpp \
+	Partition.cpp \
+	) 
+
+INCLUDE_DIRS := \
+	. \
+	../ \
+	../include \
+	../private_include \
+	../../spi_flash/sim \
+	$(addprefix ../../spi_flash/sim/stubs/, \
+	app_update/include \
+	driver/include \
+	esp32/include \
+	freertos/include \
+	log/include \
+	newlib/include \
+	sdmmc/include \
+	vfs/include \
+	) \
+	$(addprefix ../../../components/, \
+	soc/esp32/include \
+	esp32/include \
+	bootloader_support/include \
+	app_update/include \
+	spi_flash/include \
+	)
