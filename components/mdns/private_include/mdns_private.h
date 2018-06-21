@@ -20,6 +20,9 @@
 #define _mdns_dbg_printf(...) printf(__VA_ARGS__)
 #endif
 
+/** The maximum number of services */
+#define MDNS_MAX_SERVICES           CONFIG_MDNS_MAX_SERVICES
+
 #define MDNS_ANSWER_PTR_TTL         4500
 #define MDNS_ANSWER_TXT_TTL         4500
 #define MDNS_ANSWER_SRV_TTL         120
