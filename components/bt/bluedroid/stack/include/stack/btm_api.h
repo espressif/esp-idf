@@ -2811,8 +2811,8 @@ tBTM_STATUS BTM_SwitchRole (BD_ADDR remote_bd_addr,
 **
 ** Function         BTM_ReadRSSI
 **
-** Description      This function is called to read the link policy settings.
-**                  The address of link policy results are returned in the callback.
+** Description      This function is called to read the RSSI for a particular transport.
+**                  The RSSI of results are returned in the callback.
 **                  (tBTM_RSSI_RESULTS)
 **
 ** Returns          BTM_CMD_STARTED if command issued to controller.
@@ -2822,7 +2822,7 @@ tBTM_STATUS BTM_SwitchRole (BD_ADDR remote_bd_addr,
 **
 *******************************************************************************/
 //extern
-tBTM_STATUS BTM_ReadRSSI (BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb);
+tBTM_STATUS BTM_ReadRSSI (BD_ADDR remote_bda, tBT_TRANSPORT transport, tBTM_CMPL_CB *p_cb);
 
 
 /*******************************************************************************
