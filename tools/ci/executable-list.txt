@@ -37,3 +37,4 @@ tools/kconfig/mconf
 tools/windows/eclipse_make.sh
 tools/test_idf_monitor/run_test_idf_monitor.py
 tools/mass_mfg/mfg_gen.py
+tools/unit-test-app/unit_test.py
