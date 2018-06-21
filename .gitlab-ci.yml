@@ -701,6 +701,12 @@ example_test_002_01:
     - ESP32
     - Example_ShieldBox
 
+example_test_003_01:
+  <<: *example_test_template
+  tags:
+    - ESP32
+    - Example_SDIO
+
 UT_001_01:
   <<: *unit_test_template
   tags:

@@ -1,0 +1,19 @@
+menu "Example Configuration"
+
+choice EXAMPLE_SLAVE
+    prompt "Id of Slave used in Espressif master-slave board."
+    default EXAMPLE_SLAVE_NONE
+    help
+        If Espressif master-slave board is used, select which slave is used.
+
+config EXAMPLE_SLAVE_NONE
+    bool "Not using Espressif master-slave board."
+config EXAMPLE_SLAVE_B1
+    bool "Using slave B1"
+config EXAMPLE_SLAVE_B2
+    bool "Using slave B2"
+config EXAMPLE_SLAVE_B3
+    bool "Using slave B3"
+endchoice
+
+endmenu
