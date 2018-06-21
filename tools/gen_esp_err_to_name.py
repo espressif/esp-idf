@@ -277,24 +277,29 @@ def generate_rst_output(fout):
         fout.write('\n\n')
 
 def main():
+    if 'IDF_PATH' in os.environ:
+        idf_path = os.environ['IDF_PATH']
+    else:
+        idf_path = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+
     parser = argparse.ArgumentParser(description='ESP32 esp_err_to_name lookup generator for esp_err_t')
-    parser.add_argument('--c_input', help='Path to the esp_err_to_name.c.in template input.', default=os.environ['IDF_PATH'] + '/components/esp32/esp_err_to_name.c.in')
-    parser.add_argument('--c_output', help='Path to the esp_err_to_name.c output.', default=os.environ['IDF_PATH'] + '/components/esp32/esp_err_to_name.c')
+    parser.add_argument('--c_input', help='Path to the esp_err_to_name.c.in template input.', default=idf_path + '/components/esp32/esp_err_to_name.c.in')
+    parser.add_argument('--c_output', help='Path to the esp_err_to_name.c output.', default=idf_path + '/components/esp32/esp_err_to_name.c')
     parser.add_argument('--rst_output', help='Generate .rst output and save it into this file')
     args = parser.parse_args()
 
-    for root, dirnames, filenames in os.walk(os.environ['IDF_PATH']):
+    for root, dirnames, filenames in os.walk(idf_path):
         for filename in fnmatch.filter(filenames, '*.[ch]'):
             full_path = os.path.join(root, filename)
-            idf_path = os.path.relpath(full_path, os.environ['IDF_PATH'])
-            if idf_path in ignore_files:
+            path_in_idf = os.path.relpath(full_path, idf_path)
+            if path_in_idf in ignore_files:
                 continue
             with open(full_path, "r+") as f:
                 for line in f:
                     # match also ESP_OK and ESP_FAIL because some of ESP_ERRs are referencing them
                     if re.match(r"\s*#define\s+(ESP_ERR_|ESP_OK|ESP_FAIL)", line):
                         try:
-                            process(str.strip(line), idf_path)
+                            process(str.strip(line), path_in_idf)
                         except InputError as e:
                             print (e)
 
