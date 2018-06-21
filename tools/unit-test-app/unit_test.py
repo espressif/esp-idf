@@ -1,3 +1,19 @@
+#!/usr/bin/env python
+#
+# Copyright 2018 Espressif Systems (Shanghai) PTE LTD
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 Test script for unit test case.
 """
@@ -6,6 +22,7 @@ import re
 import os
 import sys
 import time
+import argparse
 
 import threading
 
@@ -18,6 +35,7 @@ if test_fw_path and test_fw_path not in sys.path:
 import TinyFW
 import IDF
 import Utility
+import Env
 from DUT import ExpectTimeout
 from IDF.IDFApp import UT
 
@@ -27,9 +45,16 @@ RESET_PATTERN = re.compile(r"(ets [\w]{3}\s+[\d]{1,2} [\d]{4} [\d]{2}:[\d]{2}:[\
 EXCEPTION_PATTERN = re.compile(r"(Guru Meditation Error: Core\s+\d panic'ed \([\w].*?\))")
 ABORT_PATTERN = re.compile(r"(abort\(\) was called at PC 0x[a-eA-E\d]{8} on core \d)")
 FINISH_PATTERN = re.compile(r"1 Tests (\d) Failures (\d) Ignored")
+END_LIST_STR = r'\r?\nEnter test for running'
+TEST_PATTERN = re.compile(r'\((\d+)\)\s+"([^"]+)" ([^\r]+)\r?\n(' + END_LIST_STR + r')?')
+TEST_SUBMENU_PATTERN = re.compile(r'\s+\((\d+)\)\s+"[^"]+"\r?\n(?=(?=\()|(' + END_LIST_STR + r'))')
+
+SIMPLE_TEST_ID = 0
+MULTI_STAGE_ID = 1
+MULTI_DEVICE_ID = 2
 
 STARTUP_TIMEOUT=10
-
+DEFAULT_TIMEOUT=20
 
 def format_test_case_config(test_case_data):
     """
@@ -104,6 +129,15 @@ def format_test_case_config(test_case_data):
 
     return case_config
 
+def replace_app_bin(dut, name, new_app_bin):
+    if new_app_bin is None:
+        return
+    search_pattern = '/{}.bin'.format(name)
+    for i, config in enumerate(dut.download_config):
+        if config.endswith(search_pattern):
+            dut.download_config[i] = new_app_bin
+            Utility.console_log("The replaced application binary is {}".format(new_app_bin), "O")
+            break
 
 @IDF.idf_unit_test(env_tag="UT_T1_1")
 def run_unit_test_cases(env, extra_data):
@@ -132,6 +166,8 @@ def run_unit_test_cases(env, extra_data):
     for ut_config in case_config:
         Utility.console_log("Running unit test for config: " + ut_config, "O")
         dut = env.get_dut("unit-test-app", app_path=ut_config)
+        if len(case_config[ut_config]) > 0:
+            replace_app_bin(dut, "unit-test-app", case_config[ut_config][0].get('app_bin'))
         dut.start_app()
 
         for one_case in case_config[ut_config]:
@@ -306,17 +342,18 @@ def get_case_info(one_case):
     return parent_case, child_case_num
 
 
-def get_dut(duts, env, name, ut_config):
+def get_dut(duts, env, name, ut_config, app_bin=None):
     if name in duts:
         dut = duts[name]
     else:
         dut = env.get_dut(name, app_path=ut_config)
         duts[name] = dut
+        replace_app_bin(dut, "unit-test-app", app_bin)
         dut.start_app()
     return dut
 
 
-def case_run(duts, ut_config, env, one_case, failed_cases):
+def case_run(duts, ut_config, env, one_case, failed_cases, app_bin):
     lock = threading.RLock()
     threads = []
     send_signal_list = []
@@ -327,7 +364,7 @@ def case_run(duts, ut_config, env, one_case, failed_cases):
     THREAD_TERMINATE_FLAG = False
 
     for i in range(case_num):
-        dut = get_dut(duts, env, "dut%d" % i, ut_config)
+        dut = get_dut(duts, env, "dut%d" % i, ut_config, app_bin)
         threads.append(Handler(dut, send_signal_list, lock,
                                parent_case, i, one_case["timeout"]))
     for thread in threads:
@@ -374,7 +411,7 @@ def run_multiple_devices_cases(env, extra_data):
     for ut_config in case_config:
         Utility.console_log("Running unit test for config: " + ut_config, "O")
         for one_case in case_config[ut_config]:
-            case_run(DUTS, ut_config, env, one_case, failed_cases)
+            case_run(DUTS, ut_config, env, one_case, failed_cases, one_case.get('app_bin'))
 
     if failed_cases:
         Utility.console_log("Failed Cases:", color="red")
@@ -405,6 +442,8 @@ def run_multiple_stage_cases(env, extra_data):
     for ut_config in case_config:
         Utility.console_log("Running unit test for config: " + ut_config, "O")
         dut = env.get_dut("unit-test-app", app_path=ut_config)
+        if len(case_config[ut_config]) > 0:
+            replace_app_bin(dut, "unit-test-app", case_config[ut_config][0].get('app_bin'))
         dut.start_app()
 
         for one_case in case_config[ut_config]:
@@ -512,9 +551,132 @@ def run_multiple_stage_cases(env, extra_data):
             Utility.console_log("\t" + _case_name, color="red")
         raise AssertionError("Unit Test Failed")
 
+def detect_update_unit_test_info(env, extra_data, app_bin):
+
+    case_config = format_test_case_config(extra_data)
+
+    for ut_config in case_config:
+        dut = env.get_dut("unit-test-app", app_path=ut_config)
+        replace_app_bin(dut, "unit-test-app", app_bin)
+        dut.start_app()
+
+        dut.write("-", flush=False)
+        dut.expect_any(UT_APP_BOOT_UP_DONE, "0 Tests 0 Failures 0 Ignored", timeout=STARTUP_TIMEOUT)
+
+        # get the list of test cases
+        dut.write("")
+        dut.expect("Here's the test menu, pick your combo:", timeout=DEFAULT_TIMEOUT)
+
+        def find_update_dic(name, t, timeout, child_case_num=None):
+            for dic in extra_data:
+                if dic['name'] == name:
+                    dic['type'] = t
+                    if 'timeout' not in dic:
+                        dic['timeout'] = timeout
+                    if child_case_num:
+                        dic['child case num'] = child_case_num
+
+        try:
+            while True:
+                data = dut.expect(TEST_PATTERN, timeout=DEFAULT_TIMEOUT)
+                test_case_name = data[1]
+                m = re.search(r'\[timeout=(\d+)\]', data[2])
+                if m:
+                    timeout = int(m.group(1))
+                else:
+                    timeout = 30
+                m = re.search(r'\[multi_stage\]', data[2])
+                if m:
+                    test_case_type = MULTI_STAGE_ID
+                else:
+                    m = re.search(r'\[multi_device\]', data[2])
+                    if m:
+                        test_case_type = MULTI_DEVICE_ID
+                    else:
+                        test_case_type = SIMPLE_TEST_ID
+                        find_update_dic(test_case_name, test_case_type, timeout)
+                        if data[3] and re.search(END_LIST_STR, data[3]):
+                            break
+                        continue
+                # find the last submenu item
+                data = dut.expect(TEST_SUBMENU_PATTERN, timeout=DEFAULT_TIMEOUT)
+                find_update_dic(test_case_name, test_case_type, timeout, child_case_num=int(data[0]))
+                if data[1] and re.search(END_LIST_STR, data[1]):
+                    break
+            # check if the unit test case names are correct, i.e. they could be found in the device
+            for dic in extra_data:
+                if 'type' not in dic:
+                    raise ValueError("Unit test \"{}\" doesn't exist in the flashed device!".format(dic.get('name')))
+        except ExpectTimeout:
+            Utility.console_log("Timeout during getting the test list", color="red")
+        finally:
+            dut.close()
+
+        # These options are the same for all configs, therefore there is no need to continue
+        break
 
 if __name__ == '__main__':
-    run_multiple_devices_cases(extra_data={"name":  "gpio master/slave test example",
-                                           "child case num": 2,
-                                           "config": "release",
-                                           "env_tag": "UT_T2_1"})
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--repeat', '-r',
+        help='Number of repetitions for the test(s). Default is 1.',
+        type=int,
+        default=1
+    )
+    parser.add_argument("--env_config_file", "-e",
+        help="test env config file",
+        default=None
+    )
+    parser.add_argument("--app_bin", "-b",
+        help="application binary file for flashing the chip",
+        default=None
+    )
+    parser.add_argument(
+        'test',
+        help='Comma separated list of <option>:<argument> where option can be "name" (default), "child case num", \
+                "config", "timeout".',
+        nargs='+'
+    )
+    args = parser.parse_args()
+    list_of_dicts = []
+    for test in args.test:
+        test_args = test.split(r',')
+        test_dict = dict()
+        for test_item in test_args:
+            if len(test_item) == 0:
+                continue
+            pair = test_item.split(r':')
+            if len(pair) == 1 or pair[0] is 'name':
+                test_dict['name'] = pair[0]
+            elif len(pair) == 2:
+                if pair[0] == 'timeout' or pair[0] == 'child case num':
+                    test_dict[pair[0]] = int(pair[1])
+                else:
+                    test_dict[pair[0]] = pair[1]
+            else:
+                raise ValueError('Error in argument item {} of {}'.format(test_item, test))
+        test_dict['app_bin'] = args.app_bin
+        list_of_dicts.append(test_dict)
+
+    TinyFW.set_default_config(env_config_file=args.env_config_file)
+
+    env_config = TinyFW.get_default_config()
+    env_config['app'] = UT
+    env_config['dut'] = IDF.IDFDUT
+    env_config['test_suite_name'] = 'unit_test_parsing'
+    env = Env.Env(**env_config)
+    detect_update_unit_test_info(env, extra_data=list_of_dicts, app_bin=args.app_bin)
+
+    for i in range(1, args.repeat+1):
+        if args.repeat > 1:
+            Utility.console_log("Repetition {}".format(i), color="green")
+        for dic in list_of_dicts:
+            t = dic.get('type', SIMPLE_TEST_ID)
+            if t == SIMPLE_TEST_ID:
+                run_unit_test_cases(extra_data=dic)
+            elif t == MULTI_STAGE_ID:
+                run_multiple_stage_cases(extra_data=dic)
+            elif t == MULTI_DEVICE_ID:
+                run_multiple_devices_cases(extra_data=dic)
+            else:
+                raise ValueError('Unknown type {} of {}'.format(t, dic.get('name')))
