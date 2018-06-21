@@ -196,6 +196,7 @@ typedef struct {
 typedef struct {
     BT_HDR        hdr;
     BD_ADDR       remote_addr;
+    tBTA_TRANSPORT  transport;
     tBTA_CMPL_CB  *read_rssi_cb;
 }tBTA_DM_API_READ_RSSI;
 
