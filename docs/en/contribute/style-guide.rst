@@ -183,9 +183,23 @@ Documenting code
 
 Please see the guide here: :doc:`documenting-code`.
 
-Structure and naming
---------------------
+.. _style-guide-naming:
 
+Naming
+------
+
+- Any variable or function which is only used in a single source file should be declared ``static``.
+
+- Public names (non-static variables and functions) should be namespaced with a per-component or per-unit prefix, to avoid naming collisions. ie ``esp_vfs_register()`` or ``esp_console_run()``. Starting the prefix with ``esp_`` for Espressif-specific names is optional, but should be consistent with any other names in the same component.
+
+- Static variables should be prefixed with ``s_`` for easy identification. For example, ``static bool s_invert``.
+
+- Avoid unnecessary abbreviations (ie shortening ``data`` to ``dat``), unless the resulting name would otherwise be very long.
+
+Structure
+---------
+
+To be written.
 
 
 Language features
