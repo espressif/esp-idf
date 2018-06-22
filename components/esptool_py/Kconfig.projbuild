@@ -212,4 +212,11 @@ config MONITOR_BAUD
     default 2000000 if MONITOR_BAUD_2MB
     default MONITOR_BAUD_OTHER_VAL if MONITOR_BAUD_OTHER
 
+config MONITOR_DTR
+		bool "DTR value of idf-monitor"
+
+
+config MONITOR_RST
+		bool "RST value of idf-monitor"
+
 endmenu

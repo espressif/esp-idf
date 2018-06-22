@@ -617,6 +617,22 @@ def main():
         help="Filtering string",
         default=DEFAULT_PRINT_FILTER)
 
+    parser.add_argument(
+        '--dtr',
+        help='Serial port DTR value',
+        const=False,
+        nargs='?',
+        type=bool
+    )
+
+    parser.add_argument(
+        '--rst',
+        help='Serial port RST value',
+        const=False,
+        nargs='?',
+        type=bool
+    )
+
     args = parser.parse_args()
 
     if args.port.startswith("/dev/tty."):
@@ -626,8 +642,8 @@ def main():
 
     serial_instance = serial.serial_for_url(args.port, args.baud,
                                             do_not_open=True)
-    serial_instance.dtr = False
-    serial_instance.rts = False
+    serial_instance.dtr = args.dtr
+    serial_instance.rts = args.rst
 
     args.elf_file.close()  # don't need this as a file
 
