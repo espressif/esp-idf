@@ -57,7 +57,7 @@ all_binaries: $(PARTITION_TABLE_BIN) partition_table_get_info
 
 partition_table_get_info: $(PARTITION_TABLE_BIN)
 	$(eval PHY_DATA_OFFSET:=$(shell $(GET_PART_INFO) --type data --subtype phy --offset $(PARTITION_TABLE_BIN)))
-	$(eval APP_OFFSET:=$(shell $(GET_PART_INFO) --type app --subtype factory --offset $(PARTITION_TABLE_BIN)))
+	$(eval APP_OFFSET:=$(shell $(GET_PART_INFO) --default-boot-partition --offset $(PARTITION_TABLE_BIN)))
 
 export APP_OFFSET
 export PHY_DATA_OFFSET

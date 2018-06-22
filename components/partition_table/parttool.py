@@ -48,16 +48,29 @@ def main():
     parser = argparse.ArgumentParser(description='Returns info about the required partition.')
 
     parser.add_argument('--quiet', '-q', help="Don't print status messages to stderr", action='store_true')
-    parser.add_argument('--partition-name', '-p', help='The name of the required partition', type=str, default=None)
-    parser.add_argument('--type', '-t', help='The type of the required partition', type=str, default=None)
+
+    search_type = parser.add_mutually_exclusive_group()
+    search_type.add_argument('--partition-name', '-p', help='The name of the required partition', type=str, default=None)
+    search_type.add_argument('--type', '-t', help='The type of the required partition', type=str, default=None)
+    search_type.add_argument('--default-boot-partition', help='Select the default boot partition, '+
+                             'using the same fallback logic as the IDF bootloader', action="store_true")
+
     parser.add_argument('--subtype', '-s', help='The subtype of the required partition', type=str, default=None)
-    
-    parser.add_argument('--offset', '-o', help='Return offset of required partition', action="store_true", default=None)
-    parser.add_argument('--size', help='Return size of required partition', action="store_true", default=None)
-    
-    parser.add_argument('input', help='Path to CSV or binary file to parse. Will use stdin if omitted.', type=argparse.FileType('rb'), default=sys.stdin)
+
+    parser.add_argument('--offset', '-o', help='Return offset of required partition', action="store_true")
+    parser.add_argument('--size', help='Return size of required partition', action="store_true")
+
+    parser.add_argument('input', help='Path to CSV or binary file to parse. Will use stdin if omitted.',
+                        type=argparse.FileType('rb'), default=sys.stdin)
 
     args = parser.parse_args()
+
+    if args.type is not None and args.subtype is None:
+        status("If --type is specified, --subtype is required")
+        return 2
+    if args.type is None and args.subtype is not None:
+        status("--subtype is only used with --type")
+        return 2
 
     quiet = args.quiet
 
@@ -71,36 +84,30 @@ def main():
         status("Parsing CSV input...")
         table = gen.PartitionTable.from_csv(input)
 
-    if args.partition_name is not None:
-        offset = 0
-        size = 0
-        for p in table:
-            if p.name == args.partition_name:
-                offset = p.offset
-                size = p.size
-                break;
-        if args.offset is not None:
-            print('0x%x ' % (offset))
-        if args.size is not None:
-            print('0x%x' % (size))
-        return 0
-    
-    if args.type is not None and args.subtype is not None:
-        offset = 0
-        size = 0
-        TYPES = gen.PartitionDefinition.TYPES
-        SUBTYPES = gen.PartitionDefinition.SUBTYPES
-        for p in table:
-            if p.type == TYPES[args.type]:
-                if p.subtype == SUBTYPES[TYPES[args.type]][args.subtype]:
-                    offset = p.offset
-                    size = p.size
-                    break;
-        if args.offset is not None:
-            print('0x%x ' % (offset))
-        if args.size is not None:
-            print('0x%x' % (size))
-        return 0
+    found_partition = None
+
+    if args.default_boot_partition:
+        search = [ "factory" ] + [ "ota_%d" % d for d in range(16) ]
+        for subtype in search:
+            found_partition = table.find_by_type("app", subtype)
+            if found_partition is not None:
+                break
+    elif args.partition_name is not None:
+        found_partition = table.find_by_name(args.partition_name)
+    elif args.type is not None:
+        found_partition = table.find_by_type(args.type, args.subtype)
+    else:
+        raise RuntimeError("invalid partition selection choice")
+
+    if found_partition is None:
+        return 1  # nothing found
+
+    if args.offset:
+        print('0x%x ' % (found_partition.offset))
+    if args.size:
+        print('0x%x' % (found_partition.size))
+
+    return 0
 
 class InputError(RuntimeError):
     def __init__(self, e):
@@ -115,7 +122,8 @@ class ValidationError(InputError):
 
 if __name__ == '__main__':
     try:
-        main()
+        r = main()
+        sys.exit(r)
     except InputError as e:
         print(e, file=sys.stderr)
         sys.exit(2)
