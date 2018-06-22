@@ -106,6 +106,38 @@ class PartitionTable(list):
         else:
             return super(PartitionTable, self).__getitem__(item)
 
+    def find_by_type(self, ptype, subtype):
+        """ Return a partition by type & subtype, returns
+        None if not found """
+        TYPES = PartitionDefinition.TYPES
+        SUBTYPES = PartitionDefinition.SUBTYPES
+        # convert ptype & subtypes names (if supplied this way) to integer values
+        try:
+            ptype = TYPES[ptype]
+        except KeyError:
+            try:
+                ptypes = int(ptype, 0)
+            except TypeError:
+                pass
+        try:
+            subtype = SUBTYPES[int(ptype)][subtype]
+        except KeyError:
+            try:
+                ptypes = int(ptype, 0)
+            except TypeError:
+                pass
+
+        for p in self:
+            if p.type == ptype and p.subtype == subtype:
+                return p
+        return None
+
+    def find_by_name(self, name):
+        for p in self:
+            if p.name == name:
+                return p
+        return None
+
     def verify(self):
         # verify each partition individually
         for p in self:
@@ -202,7 +234,7 @@ class PartitionDefinition(object):
         "encrypted" : 0
     }
 
-    # add subtypes for the 16 OTA slot values ("ota_XXX, etc.")
+    # add subtypes for the 16 OTA slot values ("ota_XX, etc.")
     for ota_slot in range(16):
         SUBTYPES[TYPES["app"]]["ota_%d" % ota_slot] = 0x10 + ota_slot
 
