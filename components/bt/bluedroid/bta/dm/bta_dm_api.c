@@ -569,7 +569,7 @@ void BTA_DmAddDevice(BD_ADDR bd_addr, DEV_CLASS dev_class, LINK_KEY link_key,
 ** Returns          void
 **
 *******************************************************************************/
-tBTA_STATUS BTA_DmRemoveDevice(BD_ADDR bd_addr)
+tBTA_STATUS BTA_DmRemoveDevice(BD_ADDR bd_addr, tBT_TRANSPORT transport)
 {
     tBTA_DM_API_REMOVE_DEVICE *p_msg;
 
@@ -578,6 +578,7 @@ tBTA_STATUS BTA_DmRemoveDevice(BD_ADDR bd_addr)
 
         p_msg->hdr.event = BTA_DM_API_REMOVE_DEVICE_EVT;
         bdcpy(p_msg->bd_addr, bd_addr);
+        p_msg->transport = transport;
         bta_sys_sendmsg(p_msg);
     } else {
         return BTA_FAILURE;

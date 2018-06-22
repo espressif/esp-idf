@@ -1108,7 +1108,7 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
     case BTC_GAP_BLE_REMOVE_BOND_DEV_EVT: {
         BD_ADDR bd_addr;
         memcpy(bd_addr, arg->remove_bond_device.bd_addr, sizeof(BD_ADDR));
-        BTA_DmRemoveDevice(bd_addr);
+        BTA_DmRemoveDevice(bd_addr, BT_TRANSPORT_LE);
         break;
     }
 #endif  ///SMP_INCLUDED == TRUE
