@@ -417,10 +417,9 @@ def main():
     parser.add_argument('--quiet', '-q', help="Don't print status messages to stderr", action='store_true')
     parser.add_argument('--offset', '-o', help='Set offset partition table', default='0x8000')
     
-    parser.add_argument('input', help='Path to CSV or binary file to parse. Will use stdin if omitted.', type=argparse.FileType('rb'), default=sys.stdin)
-    parser.add_argument('output', help='Path to output converted binary or CSV file. Will use stdout if omitted, unless the --display argument is also passed (in which case only the summary is printed.)',
-                        nargs='?',
-                        default='-')
+    parser.add_argument('input', help='Path to CSV or binary file to parse.', type=argparse.FileType('rb'))
+    parser.add_argument('output', help='Path to output converted binary or CSV file. Will use stdout if omitted.',
+                        nargs='?', default='-')
 
     args = parser.parse_args()
 
@@ -455,7 +454,11 @@ def main():
             f.write(output)
     else:
         output = table.to_binary()
-        with sys.stdout.buffer if args.output == '-' else open(args.output, 'wb') as f:
+        try:
+            stdout_binary = sys.stdout.buffer  # Python 3
+        except AttributeError:
+            stdout_binary = sys.stdout
+        with stdout_binary if args.output == '-' else open(args.output, 'wb') as f:
             f.write(output)
 
 
