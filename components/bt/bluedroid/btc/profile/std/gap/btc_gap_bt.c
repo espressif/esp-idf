@@ -639,8 +639,7 @@ esp_err_t btc_gap_bt_remove_bond_device(btc_gap_bt_args_t *arg)
 {
     BD_ADDR bd_addr;
     memcpy(bd_addr, arg->rm_bond_device.bda.address, sizeof(BD_ADDR));
-    if(BTA_DmRemoveDevice(bd_addr) == BTA_SUCCESS){
-        btc_storage_remove_bonded_device(&(arg->rm_bond_device.bda));
+    if(BTA_DmRemoveDevice(bd_addr, BT_TRANSPORT_BR_EDR) == BTA_SUCCESS){
         return ESP_BT_STATUS_SUCCESS;
     }
     return ESP_BT_STATUS_FAIL;
