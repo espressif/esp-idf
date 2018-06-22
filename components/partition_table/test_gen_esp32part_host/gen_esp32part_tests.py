@@ -7,6 +7,7 @@ import sys
 import subprocess
 import tempfile
 import os
+import StringIO
 sys.path.append("..")
 from gen_esp32part import *
 
@@ -236,10 +237,10 @@ class BinaryParserTests(unittest.TestCase):
         t.verify()
 
         self.assertEqual(3, len(t))
-        self.assertEqual(t[0].type, PartitionDefinition.APP_TYPE)
+        self.assertEqual(t[0].type, APP_TYPE)
         self.assertEqual(t[0].name, "factory")
 
-        self.assertEqual(t[1].type, PartitionDefinition.DATA_TYPE)
+        self.assertEqual(t[1].type, DATA_TYPE)
         self.assertEqual(t[1].name, "data")
 
         self.assertEqual(t[2].type, 0x10)
@@ -319,16 +320,18 @@ class CommandLineTests(unittest.TestCase):
                 f.write(LONGER_BINARY_TABLE)
 
             # run gen_esp32part.py to convert binary file to CSV
-            subprocess.check_call([sys.executable, "../gen_esp32part.py",
-                                   binpath, csvpath])
+            output = subprocess.check_output([sys.executable, "../gen_esp32part.py",
+                                   binpath, csvpath], stderr=subprocess.STDOUT)
             # reopen the CSV and check the generated binary is identical
+            self.assertNotIn("WARNING", output)
             with open(csvpath, 'r') as f:
                 from_csv = PartitionTable.from_csv(f.read())
             self.assertEqual(_strip_trailing_ffs(from_csv.to_binary()), LONGER_BINARY_TABLE)
 
             # run gen_esp32part.py to conver the CSV to binary again
-            subprocess.check_call([sys.executable, "../gen_esp32part.py",
-                                   csvpath, binpath])
+            output = subprocess.check_output([sys.executable, "../gen_esp32part.py",
+                                              csvpath, binpath], stderr=subprocess.STDOUT)
+            self.assertNotIn("WARNING", output)
             # assert that file reads back as identical
             with open(binpath, 'rb') as f:
                 binary_readback = f.read()
@@ -356,6 +359,24 @@ app,app, factory, 32K, 1M
             t.verify()
 
 
+    def test_warnings(self):
+        try:
+            sys.stderr = StringIO.StringIO()  # capture stderr
+
+            csv_1 = "app, 1, 2, 32K, 1M\n"
+            PartitionTable.from_csv(csv_1).verify()
+            self.assertIn("WARNING", sys.stderr.getvalue())
+            self.assertIn("partition type", sys.stderr.getvalue())
+
+            sys.stderr = StringIO.StringIO()
+            csv_2 = "ota_0, app, ota_1, , 1M\n"
+            PartitionTable.from_csv(csv_2).verify()
+            self.assertIn("WARNING", sys.stderr.getvalue())
+            self.assertIn("partition subtype", sys.stderr.getvalue())
+
+        finally:
+            sys.stderr = sys.__stderr__
+
 class PartToolTests(unittest.TestCase):
 
     def _run_parttool(self, csvcontents, args):
@@ -363,7 +384,11 @@ class PartToolTests(unittest.TestCase):
         with open(csvpath, "w") as f:
             f.write(csvcontents)
         try:
-            return subprocess.check_output([sys.executable, "../parttool.py"] + args.split(" ") + [ csvpath ]).strip()
+            output = subprocess.check_output([sys.executable, "../parttool.py"] + args.split(" ") + [ csvpath ],
+                                           stderr=subprocess.STDOUT)
+            self.assertNotIn("WARNING", output)
+            m = re.search("0x[0-9a-fA-F]+", output)
+            return m.group(0) if m else ""
         finally:
             os.remove(csvpath)
 
