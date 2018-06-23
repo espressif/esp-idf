@@ -76,6 +76,7 @@ typedef enum {
     HTTP_METHOD_PUT,        /*!< HTTP PUT Method */
     HTTP_METHOD_PATCH,      /*!< HTTP PATCH Method */
     HTTP_METHOD_DELETE,     /*!< HTTP DELETE Method */
+    HTTP_METHOD_HEAD,       /*!< HTTP HEAD Method */
     HTTP_METHOD_MAX,
 } esp_http_client_method_t;
 

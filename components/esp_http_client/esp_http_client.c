@@ -130,7 +130,8 @@ static const char *HTTP_METHOD_MAPPING[] = {
     "POST",
     "PUT",
     "PATCH",
-    "DELETE"
+    "DELETE",
+    "HEAD"
 };
 
 /**
@@ -695,6 +696,11 @@ static int esp_http_client_get_data(esp_http_client_handle_t client)
     if (client->state < HTTP_STATE_RES_COMPLETE_HEADER) {
         return ESP_FAIL;
     }
+
+    if (client->connection_info.method == HTTP_METHOD_HEAD) {
+        return 0;
+    }
+
     esp_http_buffer_t *res_buffer = client->response->buffer;
 
     ESP_LOGD(TAG, "data_process=%d, content_length=%d", client->response->data_process, client->response->content_length);
