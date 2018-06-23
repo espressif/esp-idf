@@ -32,6 +32,10 @@ extern "C" {
 
 #define I2C_APB_CLK_FREQ  APB_CLK_FREQ /*!< I2C source clock is APB clock, 80MHz */
 #define I2C_FIFO_LEN   (32)  /*!< I2C hardware fifo length */
+#define I2C_SLAVE_DRIVER_DELETED       (0xffffa5a5)
+#define I2C_SLAVE_MAX_BUFFER_LENGTH    (0x1000)
+#define I2C_SLAVE_MIN_BUFFER_LENGTH    (0x0080)
+
 typedef enum{
     I2C_MODE_SLAVE = 0,   /*!< I2C slave mode */
     I2C_MODE_MASTER,      /*!< I2C master mode */
@@ -98,6 +102,18 @@ typedef struct{
     };
 }i2c_config_t;
 
+typedef struct {
+    uint16_t rxaddr;      /*!< read address in slave buffer */
+    uint16_t rxptr;       /*!< slave buffer rx pointer */
+    uint16_t txaddr;      /*!< write address in slave buffer */
+    uint16_t txptr;       /*!< slave buffer tx pointer */
+    uint16_t rxovf;       /*!< slave buffer rx overflow count */
+    uint16_t txovf;       /*!< slave buffer tx overflow count */
+    uint16_t bufflen;     /*!< slave buffer length */
+    uint16_t ro_len;      /*!< slave buffer read-only area length */
+    uint8_t  status;      /*!< slave transaction status */
+} i2c_slave_state_t;
+
 typedef void* i2c_cmd_handle_t;    /*!< I2C command handle  */
 
 /**
@@ -105,10 +121,11 @@ typedef void* i2c_cmd_handle_t;    /*!< I2C command handle  */
  *
  * @param i2c_num I2C port number
  * @param mode I2C mode( master or slave )
- * @param slv_rx_buf_len receiving buffer size for slave mode
+ * @param slv_buf_len buffer size for slave mode
  *        @note
  *        Only slave mode will use this value, driver will ignore this value in master mode.
- * @param slv_tx_buf_len sending buffer size for slave mode
+ * @param slv_ro_buf_len the size of the read only area at the end of slave buffer
+ *            Master can only read from that area, writting to it will be ignored
  *        @note
  *        Only slave mode will use this value, driver will ignore this value in master mode.
  * @param intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
@@ -123,7 +140,7 @@ typedef void* i2c_cmd_handle_t;    /*!< I2C command handle  */
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_FAIL Driver install error
  */
-esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_buf_len, size_t slv_tx_buf_len, int intr_alloc_flags);
+esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_buf_len, size_t slv_ro_len, int intr_alloc_flags);
 
 /**
  * @brief I2C driver delete
@@ -361,38 +378,38 @@ esp_err_t i2c_master_stop(i2c_cmd_handle_t cmd_handle);
 esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, TickType_t ticks_to_wait);
 
 /**
- * @brief I2C slave write data to internal ringbuffer, when tx fifo empty, isr will fill the hardware
- *        fifo from the internal ringbuffer
+ * @brief Write data to the slave buffer
  *        @note
  *        Only call this function in I2C slave mode
  *
  * @param i2c_num I2C port number
- * @param data data pointer to write into internal buffer
- * @param size data size
+ * @param data pointer to write into slave buffer from
+ * @param addr slave buffer address
+ * @param size data size to write
  * @param ticks_to_wait Maximum waiting ticks
  *
  * @return
  *     - ESP_FAIL(-1) Parameter error
- *     - Others(>=0) The number of data bytes that pushed to the I2C slave buffer.
+ *     - Others(>=0) The number of data bytes that was pushed to the I2C slave buffer.
  */
-int i2c_slave_write_buffer(i2c_port_t i2c_num, uint8_t* data, int size, TickType_t ticks_to_wait);
+int i2c_slave_write_buffer(i2c_port_t i2c_num, uint8_t* data, int addr, int size, TickType_t ticks_to_wait);
 
 /**
- * @brief I2C slave read data from internal buffer. When I2C slave receive data, isr will copy received data
- *        from hardware rx fifo to internal ringbuffer. Then users can read from internal ringbuffer.
+ * @brief Read data from the slave buffer
  *        @note
  *        Only call this function in I2C slave mode
  *
  * @param i2c_num I2C port number
- * @param data data pointer to write into internal buffer
- * @param max_size Maximum data size to read
+ * @param data pointer to read from slave buffer into
+ * @param addr slave buffer address
+ * @param size data size to read
  * @param ticks_to_wait Maximum waiting ticks
  *
  * @return
  *     - ESP_FAIL(-1) Parameter error
- *     - Others(>=0) The number of data bytes that read from I2C slave buffer.
+ *     - Others(>=0) The number of data bytes that was read from I2C slave buffer.
  */
-int i2c_slave_read_buffer(i2c_port_t i2c_num, uint8_t* data, size_t max_size, TickType_t ticks_to_wait);
+int i2c_slave_read_buffer(i2c_port_t i2c_num, uint8_t* data, int addr, int size, TickType_t ticks_to_wait);
 
 /**
  * @brief set I2C master clock period
@@ -542,6 +559,30 @@ esp_err_t i2c_set_data_mode(i2c_port_t i2c_num, i2c_trans_mode_t tx_trans_mode, 
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
 esp_err_t i2c_get_data_mode(i2c_port_t i2c_num, i2c_trans_mode_t *tx_trans_mode, i2c_trans_mode_t *rx_trans_mode);
+
+/**
+ * @brief Add the pointer to the FreeRTOS task handling i2c slave events
+ *
+ * @param i2c_num I2C port number
+ * @param slv_task pointer to the i2c slave task function
+ * @param slave_state pointer to the i2c slave task's slave state structure
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+*/
+esp_err_t i2c_slave_add_task(i2c_port_t i2c_num, TaskHandle_t *slv_task, i2c_slave_state_t *slave_state);
+
+/**
+ * @brief Remove the pointer to the FreeRTOS task handling i2c slave events
+ *
+ * @param i2c_num I2C port number
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+*/
+esp_err_t i2c_slave_remove_task(i2c_port_t i2c_num);
 
 #ifdef __cplusplus
 }

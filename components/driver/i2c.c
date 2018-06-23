@@ -51,10 +51,10 @@ static DRAM_ATTR i2c_dev_t* const I2C[I2C_NUM_MAX] = { &I2C0, &I2C1 };
 #define I2C_TIMEING_VAL_ERR_STR        "i2c timing value error"
 #define I2C_ADDR_ERROR_STR             "i2c null address error"
 #define I2C_DRIVER_NOT_INSTALL_ERR_STR "i2c driver not installed"
-#define I2C_SLAVE_BUFFER_LEN_ERR_STR   "i2c buffer size too small for slave mode"
+#define I2C_SLAVE_BUFFER_LEN_ERR_STR   "i2c buffer size out of range for slave mode"
 #define I2C_EVT_QUEUE_ERR_STR          "i2c evt queue error"
 #define I2C_SEM_ERR_STR                "i2c semaphore error"
-#define I2C_BUF_ERR_STR                "i2c ringbuffer error"
+#define I2C_BUF_ERR_STR                "i2c allocate buffer error"
 #define I2C_MASTER_MODE_ERR_STR        "Only allowed in master mode"
 #define I2C_MODE_SLAVE_ERR_STR         "Only allowed in slave mode"
 #define I2C_CMD_MALLOC_ERR_STR         "i2c command link malloc error"
@@ -67,8 +67,9 @@ static DRAM_ATTR i2c_dev_t* const I2C[I2C_NUM_MAX] = { &I2C0, &I2C1 };
 #define I2C_ACK_TYPE_ERR_STR           "i2c ack type error"
 #define I2C_DATA_LEN_ERR_STR           "i2c data read length error"
 #define I2C_PSRAM_BUFFER_WARN_STR      "Using buffer allocated from psram"
-#define I2C_FIFO_FULL_THRESH_VAL       (28)
-#define I2C_FIFO_EMPTY_THRESH_VAL      (5)
+#define I2C_FIFO_FULL_THRESH_VAL       (28)        /* Threshold value while waiting for data */
+#define I2C_FIFO_FULL_THRESH_VAL_ADDR  (1)         /* Threshold value while waiting for address */
+#define I2C_FIFO_EMPTY_THRESH_VAL      (0)
 #define I2C_IO_INIT_LEVEL              (1)
 #define I2C_CMD_ALIVE_INTERVAL_TICK    (1000 / portTICK_PERIOD_MS)
 #define I2C_CMD_EVT_ALIVE              (0)
@@ -121,7 +122,6 @@ typedef struct {
     int cmd_idx;                     /*!< record current command index, for master mode */
     int status;                      /*!< record current command status, for master mode */
     int rx_cnt;                      /*!< record current read index, for master mode */
-    uint8_t data_buf[I2C_FIFO_LEN];  /*!< a buffer to store i2c fifo data */
 
     i2c_cmd_desc_t cmd_link;         /*!< I2C command link */
     QueueHandle_t cmd_evt_queue;     /*!< I2C command event queue */
@@ -134,32 +134,47 @@ typedef struct {
     size_t tx_fifo_remain;           /*!< tx fifo remain length, for master mode */
     size_t rx_fifo_remain;           /*!< rx fifo remain length, for master mode */
 
-    xSemaphoreHandle slv_rx_mux;     /*!< slave rx buffer mux */
-    xSemaphoreHandle slv_tx_mux;     /*!< slave tx buffer mux */
-    size_t rx_buf_length;            /*!< rx buffer length */
-    RingbufHandle_t rx_ring_buf;     /*!< rx ringbuffer handler of slave mode */
-    size_t tx_buf_length;            /*!< tx buffer length */
-    RingbufHandle_t tx_ring_buf;     /*!< tx ringbuffer handler of slave mode */
+    xSemaphoreHandle slv_mutex;      /*!< slave buffer mutex */
+
+    uint8_t *slave_buffer;           /*!< slave buffer */
+    TaskHandle_t *slave_task;        /*!< slave task ID, used for notifications */
+    i2c_slave_state_t *task_state;   /*!< slave task's state structure */
+    uint16_t slave_tmpaddr;          /*!< write address in slave buffer */
+    uint16_t slave_rxcount;          /*!< slave buffer rx pointer */
+    i2c_slave_state_t slave_state;   /*!< slave operations structure */
+
 } i2c_obj_t;
 
+static bool i2c_slave_trans_finished = false;
 static i2c_obj_t *p_i2c_obj[I2C_NUM_MAX] = {0};
 static void i2c_isr_handler_default(void* arg);
 static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num);
 static esp_err_t IRAM_ATTR i2c_hw_fsm_reset(i2c_port_t i2c_num);
 
 /*
-    For i2c master mode, we don't need to use a buffer for the data, the APIs will execute the master commands
-and return after all of the commands have been sent out or when error occurs. So when we send master commands,
-we should free or modify the source data only after the i2c_master_cmd_begin function returns.
-    For i2c slave mode, we need a data buffer to stash the sending and receiving data, because the hardware fifo
-has only 32 bytes.
+  For i2c master mode, we don't need to use a buffer for the data, the APIs will execute the master commands
+    and return after all of the commands have been sent out or when error occurs.
+  So when we send master commands, we should free or modify the source data only after the i2c_master_cmd_begin function returns.
 */
-esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_buf_len, size_t slv_tx_buf_len,
-    int intr_alloc_flags)
+
+/*
+  For i2c slave mode, we are using the slave buffer to send/receive data to/from master
+  I2C device with 128-4096 bytes of memory is emulated.
+  For buffer sizes of 128-256 bytes, 8-bit (1 byte) buffer addressing is used.
+  For buffer sizes of >256 bytes, 16-bit (2 bytes) buffer addressing is used.
+
+  Master can read from any memory location in the buffer by sending the 1 or 2 bytes address first.
+    After the address is received, master can read the data in the same transaction (issuing repeated start) or in the new transaction.
+  Master can write to any memory location, except for the optional RO area, in the buffer by sending the 1 or 2 bytes address first,
+    then continuing to write the data in the same transaction.
+
+  Functions for reading from/writing to the slave buffer from the main application are provided.
+*/
+esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_buf_len, size_t slv_ro_len, int intr_alloc_flags)
 {
     I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK(mode == I2C_MODE_MASTER || ( slv_rx_buf_len > 100 || slv_tx_buf_len > 100 ), I2C_SLAVE_BUFFER_LEN_ERR_STR,
-        ESP_ERR_INVALID_ARG);
+    I2C_CHECK(mode == I2C_MODE_MASTER || ( (slv_buf_len >= I2C_SLAVE_MIN_BUFFER_LENGTH) && (slv_buf_len <= I2C_SLAVE_MAX_BUFFER_LENGTH) ),
+        I2C_SLAVE_BUFFER_LEN_ERR_STR, ESP_ERR_INVALID_ARG);
     uint32_t intr_mask = 0;
     if (p_i2c_obj[i2c_num] == NULL) {
 
@@ -182,6 +197,11 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
         p_i2c->cmd_idx = 0;
         p_i2c->rx_cnt = 0;
         p_i2c->status = I2C_STATUS_IDLE;
+        p_i2c->slave_task = NULL;
+        p_i2c->task_state = NULL;
+        p_i2c->slave_buffer = NULL;
+        p_i2c->slave_tmpaddr = 0;
+        memset(&p_i2c->slave_state, 0, sizeof(i2c_slave_state_t));
 
 #if CONFIG_SPIRAM_USE_MALLOC
         p_i2c->intr_alloc_flags = intr_alloc_flags;
@@ -190,36 +210,22 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
         p_i2c->tx_fifo_remain = I2C_FIFO_LEN;
 
         if (mode == I2C_MODE_SLAVE) {
-            //we only use ringbuffer for slave mode.
-            if (slv_rx_buf_len > 0) {
-                p_i2c->rx_ring_buf = xRingbufferCreate(slv_rx_buf_len, RINGBUF_TYPE_BYTEBUF);
-                if (p_i2c->rx_ring_buf == NULL) {
-                    ESP_LOGE(I2C_TAG, I2C_BUF_ERR_STR);
-                    goto err;
-                }
-                p_i2c->rx_buf_length = slv_rx_buf_len;
-            } else {
-                p_i2c->rx_ring_buf = NULL;
-                p_i2c->rx_buf_length = 0;
+            //we only use buffer for slave mode.
+            p_i2c->slave_buffer = heap_caps_calloc(1, slv_buf_len, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+            if (p_i2c->slave_buffer == NULL) {
+                ESP_LOGE(I2C_TAG, I2C_BUF_ERR_STR);
+                goto err;
             }
-            if (slv_tx_buf_len > 0) {
-                p_i2c->tx_ring_buf = xRingbufferCreate(slv_tx_buf_len, RINGBUF_TYPE_BYTEBUF);
-                if (p_i2c->tx_ring_buf == NULL) {
-                    ESP_LOGE(I2C_TAG, I2C_BUF_ERR_STR);
-                    goto err;
-                }
-                p_i2c->tx_buf_length = slv_tx_buf_len;
-            } else {
-                p_i2c->tx_ring_buf = NULL;
-                p_i2c->tx_buf_length = 0;
-            }
-            p_i2c->slv_rx_mux = xSemaphoreCreateMutex();
-            p_i2c->slv_tx_mux = xSemaphoreCreateMutex();
-            if (p_i2c->slv_rx_mux == NULL || p_i2c->slv_tx_mux == NULL) {
+            p_i2c->slave_state.bufflen = slv_buf_len;
+            p_i2c->slave_state.ro_len = slv_ro_len;
+            p_i2c->slv_mutex = xSemaphoreCreateMutex();
+            if (p_i2c->slv_mutex == NULL) {
                 ESP_LOGE(I2C_TAG, I2C_SEM_ERR_STR);
                 goto err;
             }
             intr_mask |= ( I2C_RXFIFO_FULL_INT_ENA_M | I2C_TRANS_COMPLETE_INT_ENA_M);
+            I2C[i2c_num]->int_clr.tx_fifo_empty = 1;
+            I2C[i2c_num]->int_ena.tx_fifo_empty = 0;
         } else {
             //semaphore to sync sending process, because we only have 32 bytes for hardware fifo.
             p_i2c->cmd_mux = xSemaphoreCreateMutex();
@@ -247,10 +253,6 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
             p_i2c->cmd_link.head = NULL;
             p_i2c->cmd_link.free = NULL;
 
-            p_i2c->tx_ring_buf = NULL;
-            p_i2c->rx_buf_length = 0;
-            p_i2c->tx_ring_buf = NULL;
-            p_i2c->tx_buf_length = 0;
             intr_mask |= I2C_ARBITRATION_LOST_INT_ENA_M | I2C_TIME_OUT_INT_ST_M;
         }
     } else {
@@ -271,16 +273,8 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
     err:
     //Some error has happened. Free/destroy all allocated things and return ESP_FAIL.
     if (p_i2c_obj[i2c_num]) {
-        if (p_i2c_obj[i2c_num]->rx_ring_buf) {
-            vRingbufferDelete(p_i2c_obj[i2c_num]->rx_ring_buf);
-            p_i2c_obj[i2c_num]->rx_ring_buf = NULL;
-            p_i2c_obj[i2c_num]->rx_buf_length = 0;
-        }
-        if (p_i2c_obj[i2c_num]->tx_ring_buf) {
-            vRingbufferDelete(p_i2c_obj[i2c_num]->tx_ring_buf);
-            p_i2c_obj[i2c_num]->tx_ring_buf = NULL;
-            p_i2c_obj[i2c_num]->tx_buf_length = 0;
-        }
+        if (p_i2c_obj[i2c_num]->slave_buffer) free(p_i2c_obj[i2c_num]->slave_buffer);
+        p_i2c_obj[i2c_num]->slave_buffer = NULL;
         if (p_i2c_obj[i2c_num]->cmd_evt_queue) {
             vQueueDelete(p_i2c_obj[i2c_num]->cmd_evt_queue);
             p_i2c_obj[i2c_num]->cmd_evt_queue = NULL;
@@ -288,11 +282,8 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
         if (p_i2c_obj[i2c_num]->cmd_mux) {
             vSemaphoreDelete(p_i2c_obj[i2c_num]->cmd_mux);
         }
-        if (p_i2c_obj[i2c_num]->slv_rx_mux) {
-            vSemaphoreDelete(p_i2c_obj[i2c_num]->slv_rx_mux);
-        }
-        if (p_i2c_obj[i2c_num]->slv_tx_mux) {
-            vSemaphoreDelete(p_i2c_obj[i2c_num]->slv_tx_mux);
+        if (p_i2c_obj[i2c_num]->slv_mutex) {
+            vSemaphoreDelete(p_i2c_obj[i2c_num]->slv_mutex);
         }
 #if CONFIG_SPIRAM_USE_MALLOC
         if (p_i2c_obj[i2c_num]->evt_queue_storage) {
@@ -333,9 +324,15 @@ esp_err_t i2c_driver_delete(i2c_port_t i2c_num)
 
     i2c_obj_t* p_i2c = p_i2c_obj[i2c_num];
 
+    if ((p_i2c->slave_task) && (*p_i2c->slave_task)) {
+        // Send notification to I2C task (driver deleted)
+        xTaskNotify(*p_i2c->slave_task, I2C_SLAVE_DRIVER_DELETED, eSetValueWithOverwrite);
+    }
+
     I2C[i2c_num]->int_ena.val = 0;
     esp_intr_free(p_i2c->intr_handle);
     p_i2c->intr_handle = NULL;
+    p_i2c->slave_task = NULL;
 
     if (p_i2c->cmd_mux) {
         xSemaphoreTake(p_i2c->cmd_mux, portMAX_DELAY);
@@ -345,23 +342,12 @@ esp_err_t i2c_driver_delete(i2c_port_t i2c_num)
         vQueueDelete(p_i2c_obj[i2c_num]->cmd_evt_queue);
         p_i2c_obj[i2c_num]->cmd_evt_queue = NULL;
     }
-    if (p_i2c->slv_rx_mux) {
-        vSemaphoreDelete(p_i2c->slv_rx_mux);
-    }
-    if (p_i2c->slv_tx_mux) {
-        vSemaphoreDelete(p_i2c->slv_tx_mux);
+    if (p_i2c->slv_mutex) {
+        vSemaphoreDelete(p_i2c->slv_mutex);
     }
 
-    if (p_i2c->rx_ring_buf) {
-        vRingbufferDelete(p_i2c->rx_ring_buf);
-        p_i2c->rx_ring_buf = NULL;
-        p_i2c->rx_buf_length = 0;
-    }
-    if (p_i2c->tx_ring_buf) {
-        vRingbufferDelete(p_i2c->tx_ring_buf);
-        p_i2c->tx_ring_buf = NULL;
-        p_i2c->tx_buf_length = 0;
-    }
+    if (p_i2c->slave_buffer) free(p_i2c->slave_buffer);
+    p_i2c->slave_buffer = NULL;
 #if CONFIG_SPIRAM_USE_MALLOC
     if (p_i2c_obj[i2c_num]->evt_queue_storage) {
         free(p_i2c_obj[i2c_num]->evt_queue_storage);
@@ -396,16 +382,94 @@ esp_err_t i2c_reset_rx_fifo(i2c_port_t i2c_num)
     return ESP_OK;
 }
 
+/* Used from the interrupt routine in slave mode when address is detected
+ *
+ * Sets the slave state variables and prepares for
+ * data reception/transsmition to/from the slave buffer
+ */
+static void IRAM_ATTR slave_i2c_addr_setup(i2c_obj_t* p_i2c)
+{
+    int i2c_num = p_i2c->i2c_num;
+    p_i2c->slave_state.txaddr = p_i2c->slave_state.rxaddr;
+    p_i2c->slave_state.rxptr = 0;
+    p_i2c->slave_state.txptr = 0;
+    p_i2c->slave_state.status = 0;
+    p_i2c->slave_state.rxovf = 0;
+    p_i2c->slave_state.txovf = 0;
+    // empty tx fifo
+    I2C[i2c_num]->fifo_conf.tx_fifo_rst = 1;
+    I2C[i2c_num]->fifo_conf.tx_fifo_rst = 0;
+    // enable tx fifo tx fifo empty interrupt,
+    // the 1st data byte will be placed to the tx fifo on next interrupt
+    I2C[i2c_num]->int_clr.tx_fifo_empty = 1;
+    I2C[i2c_num]->int_ena.tx_fifo_empty = 1;
+    // use larger rx fifo threshold for data bytes
+    I2C[i2c_num]->fifo_conf.rx_fifo_full_thrhd = I2C_FIFO_FULL_THRESH_VAL;
+
+    I2C[i2c_num]->int_ena.end_detect = 1;
+    I2C[i2c_num]->int_clr.end_detect = 1;
+}
+
+/* Used from the interrupt routine in slave mode when data arrives from master
+ *
+ * First 1 (if buffer size <= 255) or 2 (if buffer size > 256) bytes
+ * are treated as the address in slave buffer.
+ * Other received bytes are placed at the requested address in buffer
+ */
+static void IRAM_ATTR i2c_set_addr_data(i2c_obj_t* p_i2c)
+{
+    int i2c_num = p_i2c->i2c_num;
+    uint8_t data_byte;
+    // get number of bytes in rx fifo
+    int rx_fifo_cnt = I2C[i2c_num]->status_reg.rx_fifo_cnt;
+
+    for (int idx = 0; idx < rx_fifo_cnt; idx++) {
+        data_byte = I2C[i2c_num]->fifo_data.data;
+        p_i2c->slave_rxcount++;
+        if (p_i2c->slave_rxcount == 1) {
+            // 1st address byte received
+            if (p_i2c->slave_state.bufflen > 256) {
+                // 2-byte address is expected, save high address byte
+                p_i2c->slave_tmpaddr = (uint16_t)data_byte << 8;
+                // set the buffer addresses outside buffer for now
+                p_i2c->slave_state.rxaddr = p_i2c->slave_state.bufflen;
+            }
+            else {
+                // 8-bit addressing, set the buffer address
+                p_i2c->slave_state.rxaddr = (uint16_t)data_byte;
+            }
+            slave_i2c_addr_setup(p_i2c);
+       }
+        else if ((p_i2c->slave_state.bufflen > 256) && (p_i2c->slave_rxcount == 2)) {
+            // 2nd address byte received, set the buffer address
+            p_i2c->slave_state.rxaddr = p_i2c->slave_tmpaddr | (uint16_t)data_byte;
+            slave_i2c_addr_setup(p_i2c);
+        }
+        else {
+            // data received, save to buffer
+            uint16_t addr = p_i2c->slave_state.rxaddr + p_i2c->slave_state.rxptr;
+            if (addr < (p_i2c->slave_state.bufflen - p_i2c->slave_state.ro_len)) {
+                p_i2c->slave_buffer[addr] = data_byte;
+                p_i2c->slave_state.rxptr++;
+            }
+            else {
+                p_i2c->slave_state.rxovf++;
+            }
+        }
+    }
+}
+
+//======================================================
 static void IRAM_ATTR i2c_isr_handler_default(void* arg)
 {
     i2c_obj_t* p_i2c = (i2c_obj_t*) arg;
     int i2c_num = p_i2c->i2c_num;
     uint32_t status = I2C[i2c_num]->int_status.val;
-    int idx = 0;
 
     portBASE_TYPE HPTaskAwoken = pdFALSE;
     while (status != 0) {
         status = I2C[i2c_num]->int_status.val;
+
         if (status & I2C_TX_SEND_EMPTY_INT_ST_M) {
             I2C[i2c_num]->int_clr.tx_send_empty = 1;
         } else if (status & I2C_RX_REC_FULL_INT_ST_M) {
@@ -429,14 +493,38 @@ static void IRAM_ATTR i2c_isr_handler_default(void* arg)
         } else if (status & I2C_TRANS_COMPLETE_INT_ST_M) {
             I2C[i2c_num]->int_clr.trans_complete = 1;
             if (p_i2c->mode == I2C_MODE_SLAVE) {
-                int rx_fifo_cnt = I2C[i2c_num]->status_reg.rx_fifo_cnt;
-                for (idx = 0; idx < rx_fifo_cnt; idx++) {
-                    p_i2c->data_buf[idx] = I2C[i2c_num]->fifo_data.data;
+                // The i2c transsaction is completed
+                i2c_set_addr_data(p_i2c);
+
+                if (i2c_slave_trans_finished) {
+                    i2c_slave_trans_finished = false;
+                    // addjust tx ptr&ovf
+                    if ((p_i2c->slave_state.txovf == 0) && (p_i2c->slave_state.txptr)) p_i2c->slave_state.txptr--;
+                    if (p_i2c->slave_state.txovf) p_i2c->slave_state.txovf--;
+
+                    if ((p_i2c->slave_task) && (*p_i2c->slave_task) && (p_i2c->task_state)) {
+                        // Send notification to I2C task
+                        p_i2c->slave_state.status = (uint8_t)(I2C[i2c_num]->status_reg.val & 0x7F);
+                        memcpy(p_i2c->task_state, &p_i2c->slave_state, sizeof(i2c_slave_state_t));
+                        xTaskNotifyFromISR(*p_i2c->slave_task, (uint32_t)p_i2c->slave_rxcount, eSetValueWithOverwrite, &HPTaskAwoken);
+                    }
+                    // Set fifo full threshold to 1, so that the next address can be detected
+                    I2C[i2c_num]->fifo_conf.rx_fifo_full_thrhd = I2C_FIFO_FULL_THRESH_VAL_ADDR;
+                    // next rx transaction will fetch address first
+                    p_i2c->slave_rxcount = 0;
+
+                    // prepare tx address & ptr for next transsaction
+                    if (p_i2c->slave_state.txptr) {
+                        p_i2c->slave_state.txaddr += p_i2c->slave_state.txptr;
+                        p_i2c->slave_state.txptr = 0;
+                    }
+                    // empty tx fifo
+                    I2C[i2c_num]->fifo_conf.tx_fifo_rst = 1;
+                    I2C[i2c_num]->fifo_conf.tx_fifo_rst = 0;
                 }
-                xRingbufferSendFromISR(p_i2c->rx_ring_buf, p_i2c->data_buf, rx_fifo_cnt, &HPTaskAwoken);
                 I2C[i2c_num]->int_clr.rx_fifo_full = 1;
             } else {
-                // add check for unexcepted situations caused by noise.
+                // add check for unexpected situations caused by noise.
                 if (p_i2c->status != I2C_STATUS_ACK_ERROR && p_i2c->status != I2C_STATUS_IDLE) {
                     i2c_master_cmd_begin_static(i2c_num);
                 }
@@ -449,33 +537,41 @@ static void IRAM_ATTR i2c_isr_handler_default(void* arg)
             i2c_master_cmd_begin_static(i2c_num);
         } else if (status & I2C_SLAVE_TRAN_COMP_INT_ST_M) {
             I2C[i2c_num]->int_clr.slave_tran_comp = 1;
+            i2c_slave_trans_finished = true;
         } else if (status & I2C_END_DETECT_INT_ST_M) {
             I2C[i2c_num]->int_ena.end_detect = 0;
             I2C[i2c_num]->int_clr.end_detect = 1;
-            i2c_master_cmd_begin_static(i2c_num);
+            if (p_i2c->mode == I2C_MODE_MASTER) {
+                i2c_master_cmd_begin_static(i2c_num);
+            }
         } else if (status & I2C_RXFIFO_OVF_INT_ST_M) {
             I2C[i2c_num]->int_clr.rx_fifo_ovf = 1;
         } else if (status & I2C_TXFIFO_EMPTY_INT_ST_M) {
-            int tx_fifo_rem = I2C_FIFO_LEN - I2C[i2c_num]->status_reg.tx_fifo_cnt;
-            size_t size = 0;
-            uint8_t *data = (uint8_t*) xRingbufferReceiveUpToFromISR(p_i2c->tx_ring_buf, &size, tx_fifo_rem);
-            if (data) {
-                for (idx = 0; idx < size; idx++) {
-                    WRITE_PERI_REG(I2C_DATA_APB_REG(i2c_num), data[idx]);
+            if (p_i2c->mode == I2C_MODE_SLAVE) {
+                // ** data requested by master
+                // push data byte from slave buffer at current address to tx fifo
+                uint16_t addr = p_i2c->slave_state.txaddr + p_i2c->slave_state.txptr;
+                if (addr < p_i2c->slave_state.bufflen) {
+                    WRITE_PERI_REG(I2C_DATA_APB_REG(i2c_num), p_i2c->slave_buffer[addr]);
+                    p_i2c->slave_state.txptr++;
                 }
-                vRingbufferReturnItemFromISR(p_i2c->tx_ring_buf, data, &HPTaskAwoken);
-                I2C[i2c_num]->int_ena.tx_fifo_empty = 1;
-                I2C[i2c_num]->int_clr.tx_fifo_empty = 1;
-            } else {
-                I2C[i2c_num]->int_ena.tx_fifo_empty = 0;
-                I2C[i2c_num]->int_clr.tx_fifo_empty = 1;
+                else {
+                    // address outside buffer, push dummy byte
+                    WRITE_PERI_REG(I2C_DATA_APB_REG(i2c_num), 0xFE);
+                    p_i2c->slave_state.txovf++;
+                }
+                // after sending the byte, tx fifo will become empty and
+                // the new interrupt will be generated,
+                // the txptr, if no overflow, will always be 1 byte larger than the number of the sent bytes
+                // the txovf, if occured, will always be 1 byte larger than the number of the overflow bytes sent
+                // we are correcting this when the transaction is finished
             }
+            I2C[i2c_num]->int_ena.tx_fifo_empty = 1;
+            I2C[i2c_num]->int_clr.tx_fifo_empty = 1;
         } else if (status & I2C_RXFIFO_FULL_INT_ST_M) {
-            int rx_fifo_cnt = I2C[i2c_num]->status_reg.rx_fifo_cnt;
-            for (idx = 0; idx < rx_fifo_cnt; idx++) {
-                p_i2c->data_buf[idx] = I2C[i2c_num]->fifo_data.data;
+            if (p_i2c->mode == I2C_MODE_SLAVE) {
+                i2c_set_addr_data(p_i2c);
             }
-            xRingbufferSendFromISR(p_i2c->rx_ring_buf, p_i2c->data_buf, rx_fifo_cnt, &HPTaskAwoken);
             I2C[i2c_num]->int_clr.rx_fifo_full = 1;
         } else {
             I2C[i2c_num]->int_clr.val = status;
@@ -486,7 +582,7 @@ static void IRAM_ATTR i2c_isr_handler_default(void* arg)
         evt.type = I2C_CMD_EVT_ALIVE;
         xQueueSendFromISR(p_i2c->cmd_evt_queue, &evt, &HPTaskAwoken);
     }
-    //We only need to check here if there is a high-priority task needs to be switched.
+    //We only need to check here if there is a high-priority task which needs to be switched.
     if(HPTaskAwoken == pdTRUE) {
         portYIELD_FROM_ISR();
     }
@@ -636,7 +732,7 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t* i2c_conf)
         I2C[i2c_num]->slave_addr.en_10bit = i2c_conf->slave.addr_10bit_en;
         I2C[i2c_num]->fifo_conf.nonfifo_en = 0;
         I2C[i2c_num]->fifo_conf.fifo_addr_cfg_en = 0;
-        I2C[i2c_num]->fifo_conf.rx_fifo_full_thrhd = I2C_FIFO_FULL_THRESH_VAL;
+        I2C[i2c_num]->fifo_conf.rx_fifo_full_thrhd = I2C_FIFO_FULL_THRESH_VAL_ADDR;
         I2C[i2c_num]->fifo_conf.tx_fifo_empty_thrhd = I2C_FIFO_EMPTY_THRESH_VAL;
         I2C[i2c_num]->ctr.trans_start = 0;
         I2C[i2c_num]->timeout.tout = I2C_SLAVE_TIMEOUT_DEFAULT;
@@ -1062,7 +1158,7 @@ esp_err_t i2c_master_read(i2c_cmd_handle_t cmd_handle, uint8_t* data, size_t dat
         return i2c_master_read_static(cmd_handle, data, data_len, ack);
     } else {
         if(data_len == 1) {
-            return i2c_master_read_byte(cmd_handle, data, I2C_MASTER_NACK);    
+            return i2c_master_read_byte(cmd_handle, data, I2C_MASTER_NACK);
         } else {
             esp_err_t ret;
             if((ret =  i2c_master_read_static(cmd_handle, data, data_len - 1, I2C_MASTER_ACK)) != ESP_OK) {
@@ -1070,7 +1166,7 @@ esp_err_t i2c_master_read(i2c_cmd_handle_t cmd_handle, uint8_t* data, size_t dat
             }
             return i2c_master_read_byte(cmd_handle, data + data_len - 1, I2C_MASTER_NACK);
         }
-    }   
+    }
 }
 
 static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num)
@@ -1281,7 +1377,7 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
                     clear_bus_cnt++;
                     if(clear_bus_cnt >= I2C_ACKERR_CNT_MAX) {
                         i2c_master_clear_bus(i2c_num);
-                        clear_bus_cnt = 0;   
+                        clear_bus_cnt = 0;
                     }
                     ret = ESP_FAIL;
                 } else {
@@ -1305,74 +1401,90 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
     return ret;
 }
 
-int i2c_slave_write_buffer(i2c_port_t i2c_num, uint8_t* data, int size, TickType_t ticks_to_wait)
+// write data to slave buffer
+int i2c_slave_write_buffer(i2c_port_t i2c_num, uint8_t* data, int addr, int size, TickType_t ticks_to_wait)
 {
     I2C_CHECK(( i2c_num < I2C_NUM_MAX ), I2C_NUM_ERROR_STR, ESP_FAIL);
     I2C_CHECK((data != NULL), I2C_ADDR_ERROR_STR, ESP_FAIL);
     I2C_CHECK(p_i2c_obj[i2c_num]->mode == I2C_MODE_SLAVE, I2C_MODE_SLAVE_ERR_STR, ESP_FAIL);
+
     i2c_obj_t* p_i2c = p_i2c_obj[i2c_num];
 
-    portBASE_TYPE res;
-    int cnt = 0;
-    portTickType ticks_end = xTaskGetTickCount() + ticks_to_wait;
+    if (addr > p_i2c->slave_state.bufflen) return 0;
+    // correct the size if necessary
+    if ((addr+size) >= p_i2c->slave_state.bufflen) size = p_i2c->slave_state.bufflen - addr;
 
-    res = xSemaphoreTake(p_i2c->slv_tx_mux, ticks_to_wait);
-    if (res == pdFALSE) {
-        return 0;
-    }
-    ticks_to_wait = ticks_end - xTaskGetTickCount();
-    res = xRingbufferSend(p_i2c->tx_ring_buf, data, size, ticks_to_wait);
-    if (res == pdFALSE) {
-        cnt = 0;
-    } else {
+    if (size > 0) {
+        portBASE_TYPE res = xSemaphoreTake(p_i2c->slv_mutex, ticks_to_wait);
+        if (res == pdFALSE) return 0;
+
         I2C_ENTER_CRITICAL(&i2c_spinlock[i2c_num]);
-        I2C[i2c_num]->int_clr.tx_fifo_empty = 1;
-        I2C[i2c_num]->int_ena.tx_fifo_empty = 1;
+        // Copy data to slave buffer
+        memcpy(p_i2c->slave_buffer + addr, data, size);
         I2C_EXIT_CRITICAL(&i2c_spinlock[i2c_num]);
-        cnt = size;
-    }
-    xSemaphoreGive(p_i2c->slv_tx_mux);
-    return cnt;
-}
 
-static int i2c_slave_read(i2c_port_t i2c_num, uint8_t* data, size_t max_size, TickType_t ticks_to_wait)
-{
-    i2c_obj_t* p_i2c = p_i2c_obj[i2c_num];
-    size_t size = 0;
-    uint8_t* pdata = (uint8_t*) xRingbufferReceiveUpTo(p_i2c->rx_ring_buf, &size, ticks_to_wait, max_size);
-    if (pdata && size > 0) {
-        memcpy(data, pdata, size);
-        vRingbufferReturnItem(p_i2c->rx_ring_buf, pdata);
+        xSemaphoreGive(p_i2c->slv_mutex);
     }
     return size;
 }
 
-int i2c_slave_read_buffer(i2c_port_t i2c_num, uint8_t* data, size_t max_size, TickType_t ticks_to_wait)
+// read data from slave buffer
+int i2c_slave_read_buffer(i2c_port_t i2c_num, uint8_t* data, int addr, int size, TickType_t ticks_to_wait)
 {
     I2C_CHECK(( i2c_num < I2C_NUM_MAX ), I2C_NUM_ERROR_STR, ESP_FAIL);
     I2C_CHECK((data != NULL), I2C_ADDR_ERROR_STR, ESP_FAIL);
     I2C_CHECK(p_i2c_obj[i2c_num]->mode == I2C_MODE_SLAVE, I2C_MODE_SLAVE_ERR_STR, ESP_FAIL);
 
     i2c_obj_t* p_i2c = p_i2c_obj[i2c_num];
-    portBASE_TYPE res;
-    portTickType ticks_end = xTaskGetTickCount() + ticks_to_wait;
-    res = xSemaphoreTake(p_i2c->slv_rx_mux, ticks_to_wait);
-    if (res == pdFALSE) {
-        return 0;
-    }
-    ticks_to_wait = ticks_end - xTaskGetTickCount();
-    int cnt = i2c_slave_read(i2c_num, data, max_size, ticks_to_wait);
-    if (cnt > 0) {
+
+    if (addr > p_i2c->slave_state.bufflen) return 0;
+    // correct the size if necessary
+    if ((addr+size) >= p_i2c->slave_state.bufflen) size = p_i2c->slave_state.bufflen - addr;
+
+    if (size > 0) {
+        portBASE_TYPE res = xSemaphoreTake(p_i2c->slv_mutex, ticks_to_wait);
+        if (res == pdFALSE) return 0;
+
         I2C_ENTER_CRITICAL(&i2c_spinlock[i2c_num]);
-        I2C[i2c_num]->int_ena.rx_fifo_full = 1;
+        // Copy data from slave buffer
+        memcpy(data, p_i2c->slave_buffer + addr, size);
         I2C_EXIT_CRITICAL(&i2c_spinlock[i2c_num]);
-        ticks_to_wait = ticks_end - xTaskGetTickCount();
-        if (cnt < max_size && ticks_to_wait > 0) {
-            cnt += i2c_slave_read(i2c_num, data + cnt, max_size - cnt, ticks_to_wait);
-        }
-    } else {
-        cnt = 0;
+
+        xSemaphoreGive(p_i2c->slv_mutex);
     }
-    xSemaphoreGive(p_i2c->slv_rx_mux);
-    return cnt;
+    return size;
+}
+
+esp_err_t i2c_slave_add_task(i2c_port_t i2c_num, TaskHandle_t *slv_task, i2c_slave_state_t *slave_state)
+{
+    if (p_i2c_obj[i2c_num]) {
+        I2C_CHECK(( i2c_num < I2C_NUM_MAX ), I2C_NUM_ERROR_STR, ESP_FAIL);
+        I2C_CHECK(p_i2c_obj[i2c_num]->mode == I2C_MODE_SLAVE, I2C_MODE_SLAVE_ERR_STR, ESP_FAIL);
+
+        i2c_obj_t* p_i2c = p_i2c_obj[i2c_num];
+        I2C_ENTER_CRITICAL(&i2c_spinlock[i2c_num]);
+        p_i2c->slave_task = slv_task;
+        p_i2c->task_state = slave_state;
+        I2C_EXIT_CRITICAL(&i2c_spinlock[i2c_num]);
+        vTaskDelay(2);
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t i2c_slave_remove_task(i2c_port_t i2c_num)
+{
+    if (p_i2c_obj[i2c_num]) {
+        I2C_CHECK(( i2c_num < I2C_NUM_MAX ), I2C_NUM_ERROR_STR, ESP_FAIL);
+        I2C_CHECK(p_i2c_obj[i2c_num]->mode == I2C_MODE_SLAVE, I2C_MODE_SLAVE_ERR_STR, ESP_FAIL);
+
+        i2c_obj_t* p_i2c = p_i2c_obj[i2c_num];
+        I2C_ENTER_CRITICAL(&i2c_spinlock[i2c_num]);
+        p_i2c->slave_task = NULL;
+        p_i2c->task_state = NULL;
+        I2C_EXIT_CRITICAL(&i2c_spinlock[i2c_num]);
+        vTaskDelay(2);
+    }
+
+    return ESP_OK;
 }
