@@ -35,6 +35,7 @@ def test_examples_protocol_esp_http_client(env, extra_data):
     dut1.expect(re.compile(r"HTTP PUT Status = 200, content_length = (\d)"))
     dut1.expect(re.compile(r"HTTP PATCH Status = 200, content_length = (\d)"))
     dut1.expect(re.compile(r"HTTP DELETE Status = 200, content_length = (\d)"))
+    dut1.expect(re.compile(r"HTTP HEAD Status = 200, content_length = (\d)"))
     dut1.expect(re.compile(r"HTTP Basic Auth Status = 200, content_length = (\d)"))
     dut1.expect(re.compile(r"HTTP Basic Auth redirect Status = 200, content_length = (\d)"))
     dut1.expect(re.compile(r"HTTP Digest Auth Status = 200, content_length = (\d)"))
