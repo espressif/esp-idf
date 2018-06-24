@@ -150,6 +150,8 @@ build_ssc_01:
 build_ssc_02:
   <<: *build_ssc_template
 
+# If you want to add new build ssc jobs, please add it into dependencies of `assign_test` and `.test_template`
+
 build_esp_idf_tests:
   <<: *build_template
   artifacts:
@@ -157,7 +159,7 @@ build_esp_idf_tests:
       - tools/unit-test-app/output
       - components/idf_test/unit_test/TestCaseAll.yml
       - components/idf_test/unit_test/CIConfigs/*.yml
-    expire_in: 6 mos
+    expire_in: 1 mos
   script:
     - cd tools/unit-test-app
     - MAKEFLAGS= make help # make sure kconfig tools are built in single process
@@ -217,6 +219,7 @@ build_examples_06:
 build_examples_07:
   <<: *build_examples_template
 
+# If you want to add new build example jobs, please add it into dependencies of `.example_test_template`
 
 build_docs:
   stage: build
@@ -529,14 +532,21 @@ assign_test:
     - /^v\d+\.\d+(\.\d+)?($|-)/
     - triggers
     - schedules
-  # gitlab ci do not support match job with RegEx or wildcard now in dependencies.
-  # we have a lot build example jobs and the binaries them exceed the limitation of artifacts.
-  # we can't artifact them in one job. For example test jobs, download all artifacts from previous stages.
+  dependencies:
+    - assign_test
+    - build_examples_00
+    - build_examples_01
+    - build_examples_02
+    - build_examples_03
+    - build_examples_04
+    - build_examples_05
+    - build_examples_06
+    - build_examples_07
   artifacts:
     when: always
     paths:
       - $LOG_PATH
-    expire_in: 6 mos
+    expire_in: 1 mos
   variables:
     TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     TEST_CASE_PATH: "$CI_PROJECT_DIR/examples"
@@ -585,7 +595,7 @@ assign_test:
     when: always
     paths:
       - $LOG_PATH
-    expire_in: 6 mos
+    expire_in: 1 mos
   variables:
     LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF"
     LOG_PATH: "$CI_PROJECT_DIR/$CI_COMMIT_SHA"
@@ -614,7 +624,7 @@ nvs_compatible_test:
     paths:
       - $LOG_PATH
       - nvs_wifi.bin
-    expire_in: 6 mos
+    expire_in: 1 mos
   tags:
     - ESP32_IDF
     - NVS_Compatible
