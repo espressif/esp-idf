@@ -202,6 +202,10 @@ esp_err_t esp_modem_sleep_exit(modem_sleep_module_t module);
 
 /**
  * @brief Register module to make it be able to require to enter/exit modem sleep
+ *        Although the module has no sleep function, as long as the module use RF,
+ *        it must call esp_modem_sleep_regsiter. Otherwise, other modules with sleep
+ *        function will disable RF without checking the module which doesn't call
+ *        esp_modem_sleep_regsiter.
  */
 esp_err_t esp_modem_sleep_register(modem_sleep_module_t module);
 
