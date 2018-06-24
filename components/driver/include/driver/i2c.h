@@ -1,4 +1,5 @@
 // Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright (c) 2018 LoBo (https://github.com/loboris)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -109,7 +110,6 @@ typedef struct {
     uint16_t txptr;       /*!< slave buffer tx pointer */
     uint16_t rxovf;       /*!< slave buffer rx overflow count */
     uint16_t txovf;       /*!< slave buffer tx overflow count */
-    uint16_t bufflen;     /*!< slave buffer length */
     uint16_t ro_len;      /*!< slave buffer read-only area length */
     uint8_t  status;      /*!< slave transaction status */
 } i2c_slave_state_t;
@@ -393,6 +393,21 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
  *     - Others(>=0) The number of data bytes that was pushed to the I2C slave buffer.
  */
 int i2c_slave_write_buffer(i2c_port_t i2c_num, uint8_t* data, int addr, int size, TickType_t ticks_to_wait);
+
+/**
+ * @brief Fill slave buffer
+ *        @note
+ *        Only call this function in I2C slave mode
+ *
+ * @param i2c_num I2C port number
+ * @param val value to fill the buffer with
+ * @param ticks_to_wait Maximum waiting ticks
+ *
+ * @return
+ *     - ESP_FAIL(-1) Parameter error
+ *     - Others(>=0) The number of data bytes that was pushed to the I2C slave buffer.
+ */
+int i2c_slave_set_buffer(i2c_port_t i2c_num, uint8_t val, TickType_t ticks_to_wait);
 
 /**
  * @brief Read data from the slave buffer

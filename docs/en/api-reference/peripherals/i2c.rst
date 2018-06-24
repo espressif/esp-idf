@@ -265,7 +265,160 @@ By similar token the command link to read from the slave looks as follows::
 Slave Mode
 """"""""""
 
-The API provides functions to read and write data by the slave - * :cpp:func:`i2c_slave_read_buffer` and :cpp:func:`i2c_slave_write_buffer`. An example of using these functions is provided in :example:`peripherals/i2c`.
+In **slave mode** i2c device with 128-4096 memory is emulated.
+
+Master can read from or write to the ESP32 i2c device, providing the memory address to read from or write to.
+
+For buffer sizes 128-265 bytes, 8-bit addressing is used, for buffer sizes >265 bytes, 16-bit addressing is used.
+
+.. blockdiag::
+    :scale: 100
+    :caption: I2C slave - master write example, buffer size <= 256, 8-bit addressing
+    :align: center
+
+    blockdiag i2c-slave-master-write-8bit-addr { 
+        # global properties
+        span_width = 5;
+        span_height = 5;
+        node_height = 25;
+        default_group_color = lightgrey;
+        class spacer [shape=none, colwidth=7];
+        class cjoint [shape=none, width=40];
+
+        L1 [label="Data (n) times", shape=note, color=yellow, colwidth=2];
+        S1 [class=spacer];
+        ms1 [label="", width=30, color="#e8e8e8", style=none];
+        ms2 [label="", width=30, color="#e8e8e8", style=none];
+        ms3 [label="", width=30, color="#e8e8e8", style=none];
+        ms4 [label="", width=30, color="#e8e8e8", style=none];
+        ss1 [shape=none]; ss2 [shape=none]; ss3 [shape=none]; ss4 [shape=none];
+        MASTER [label=Master, shape=note, color=lightyellow];
+        SLAVE  [label=Slave, shape=note, color=lightyellow];
+        mstart [label="START+WRbit"]; m2 [label="Slave Address"]; m3 [label="Buffer address"]; mstop [label=STOP];
+        md1 [label="DATA (n) times"];
+        ack1 [label=ACK, width=30]; ack2 [label=ACK, width=30]; ack3 [label=ACK, width=30]; ack4 [label=ACK, width=30];
+
+        S1 -- L1 [color=none]
+        MASTER -- mstart -- ms1 -- m2 -- ms2 -- m3 -- ms3 -- md1 -- ms4 -- mstop [color=none]
+        SLAVE -- ss1 -- ack1 -- ss2 -- ack2 -- ss3 -- ack3 -- ss4 -- ack4 [color=none]
+    }
+
+.. blockdiag::
+    :scale: 100
+    :caption: I2C slave - master write example, buffer size > 256, 16-bit addressing
+    :align: center
+
+    blockdiag i2c-slave-master-write-16bit-addr { 
+        # global properties
+        span_width = 5;
+        span_height = 5;
+        node_height = 25;
+        default_group_color = lightgrey;
+        class spacer [shape=none, colwidth=9];
+        class cjoint [shape=none, width=40];
+
+        L1 [label="Data (n) times", shape=note, color=yellow, colwidth=2];
+        S1 [class=spacer];
+        ms1 [label="", width=30, color="#e8e8e8", style=none];
+        ms2 [label="", width=30, color="#e8e8e8", style=none];
+        ms3 [label="", width=30, color="#e8e8e8", style=none];
+        ms4 [label="", width=30, color="#e8e8e8", style=none];
+        ms5 [label="", width=30, color="#e8e8e8", style=none];
+        ss1 [shape=none]; ss2 [shape=none]; ss3 [shape=none]; ss4 [shape=none]; ss5 [shape=none];
+        MASTER [label=Master, shape=note, color=lightyellow];
+        SLAVE  [label=Slave, shape=note, color=lightyellow];
+        mstart [label="START+WRbit"]; m2 [label="Slave Address"]; m3 [label="Buffer address HI"]; m4 [label="Buffer address LO"]; mstop [label=STOP];
+        md1 [label="DATA (n) times"];
+        ack1 [label=ACK, width=30]; ack2 [label=ACK, width=30]; ack3 [label=ACK, width=30]; ack4 [label=ACK, width=30]; ack5 [label=ACK, width=30];
+
+        S1 -- L1 [color=none]
+        MASTER -- mstart -- ms1 -- m2 -- ms2 -- m3 -- ms3 -- m4 -- ms4 -- md1 -- ms5 -- mstop [color=none]
+        SLAVE -- ss1 -- ack1 -- ss2 -- ack2 -- ss3 -- ack3 -- ss4 -- ack4 -- ss5 -- ack5 [color=none]
+    }
+
+.. blockdiag::
+    :scale: 100
+    :caption: I2C slave - master read example, buffer size <= 256, 8-bit addressing
+    :align: center
+
+    blockdiag i2c-slave-master-read-8bit-addr { 
+        # global properties
+        span_width = 5;
+        span_height = 5;
+        node_height = 25;
+        default_group_color = lightgrey;
+        class spacer [shape=none, colwidth=7];
+        class cjoint [shape=none, width=40];
+
+        L1 [label="Data (n-1) times", shape=note, color=yellow, colwidth=2];
+        L2 [label="LastData byte", shape=note, color=lightblue, colwidth=2];
+        S1 [class=spacer];
+        ms1 [label="", width=30, color="#e8e8e8", style=none];
+        ms2 [label="", width=30, color="#e8e8e8", style=none];
+        ms3 [shape=none];
+        ms4 [shape=none];
+        ss1 [shape=none]; ss2 [shape=none]; ss3 [shape=none]; ss4 [shape=none]; ss5 [label="", width=30, color="#e8e8e8", style=none];
+        MASTER [label=Master, shape=note, color=lightyellow];
+        SLAVE  [label=Slave, shape=note, color=lightyellow];
+        mstart [label="START+WRbit"]; m2 [label="Slave Address"]; m3 [label="Buffer address"]; mstop [label=STOP]; mrstart [label="START+RDbit"];
+        md1 [label="DATA (n-1) times"]; md2 [label="DATA"];
+        ack1 [label=ACK, width=30]; ack2 [label=ACK, width=30]; ack3 [label=ACK, width=30]; nack1 [label=NACK, width=30];
+
+        S1 -- L1 -- L2 [color=none]
+        MASTER -- mstart -- m2 -- ms1 -- m3 -- ms2 -- mrstart -- ms3 -- ack3 -- ms4 -- nack1 -- mstop [color=none]
+        SLAVE -- ss1 -- ss2 -- ack1 -- ss3 -- ack2 -- ss4 -- md1 -- ss5 -- md2 [color=none]
+    }
+
+.. blockdiag::
+    :scale: 100
+    :caption: I2C slave - master read example, buffer size > 256, 16-bit addressing
+    :align: center
+
+    blockdiag i2c-slave-master-read-16bit-addr { 
+        # global properties
+        span_width = 5;
+        span_height = 5;
+        node_height = 25;
+        default_group_color = lightgrey;
+        class spacer [shape=none, colwidth=9];
+        class cjoint [shape=none, width=40];
+
+        L1 [label="Data (n-1) times", shape=note, color=yellow, colwidth=2];
+        L2 [label="LastData byte", shape=note, color=lightblue, colwidth=2];
+        S1 [class=spacer];
+        ms1 [label="", width=30, color="#e8e8e8", style=none];
+        ms2 [label="", width=30, color="#e8e8e8", style=none];
+        ms5 [label="", width=30, color="#e8e8e8", style=none];
+        ms3 [shape=none];
+        ms4 [shape=none];
+        ss1 [shape=none]; ss2 [shape=none]; ss3 [shape=none]; ss4 [shape=none]; ss5 [shape=none];
+        ss6 [label="", width=30, color="#e8e8e8", style=none];
+        MASTER [label=Master, shape=note, color=lightyellow];
+        SLAVE  [label=Slave, shape=note, color=lightyellow];
+        mstart [label="START+WRbit"]; m2 [label="Slave Address"]; m3 [label="Buffer address HI"]; m4 [label="Buffer address LO"];
+        mstop [label=STOP]; mrstart [label="START+RDbit"];
+        md1 [label="DATA (n-1) times"]; md2 [label="DATA"];
+        ack1 [label=ACK, width=30]; ack2 [label=ACK, width=30]; ack3 [label=ACK, width=30]; ack4 [label=ACK, width=30];
+        nack1 [label=NACK, width=30];
+
+        S1 -- L1 -- L2 [color=none]
+        MASTER -- mstart -- m2  -- ms1  -- m3  -- ms2  -- m4  -- ms5  -- mrstart -- ms3 -- ack3 -- ms4 -- nack1 -- mstop [color=none]
+        SLAVE  -- ss1    -- ss2 -- ack1 -- ss3 -- ack2 -- ss4 -- ack4 -- ss5     -- md1 -- ss6  -- md2 [color=none]
+    }
+
+
+Optional **read only** area at the end of the slave buffer can be set. Master can only read from that area, writting to it will be ignored.
+
+It is up to the user to organize the slave buffer in a way most appropriate for the application.<br>
+Writting to some addresses can, for example, be treated by the slave task as commands with optional arguments.<br>
+Read only area can contain the slave ID, revision number, sensor data etc.
+
+
+The API provides functions to read and write data from/to the slave buffer at any time - * :cpp:func:`i2c_slave_read_buffer` and :cpp:func:`i2c_slave_write_buffer`.
+I2C slave **task** can be created which receives notifications from the i2c driver about the slave events: **address set**, **data sent to master**, **data received from master**.
+ Slave buffer address, number of bytes sent or received and overflow status are available to the slave task to take some action an slave events.
+
+An example of using these functions is provided in :example:`peripherals/i2c`.
 
 
 .. _i2c-api-interrupt-handling:

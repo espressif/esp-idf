@@ -1,4 +1,5 @@
 // Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright (c) 2018 LoBo (https://github.com/loboris)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -139,6 +140,7 @@ typedef struct {
     uint8_t *slave_buffer;           /*!< slave buffer */
     TaskHandle_t *slave_task;        /*!< slave task ID, used for notifications */
     i2c_slave_state_t *task_state;   /*!< slave task's state structure */
+    uint16_t bufflen;                /*!< slave buffer length */
     uint16_t slave_tmpaddr;          /*!< write address in slave buffer */
     uint16_t slave_rxcount;          /*!< slave buffer rx pointer */
     i2c_slave_state_t slave_state;   /*!< slave operations structure */
@@ -216,7 +218,7 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_buf
                 ESP_LOGE(I2C_TAG, I2C_BUF_ERR_STR);
                 goto err;
             }
-            p_i2c->slave_state.bufflen = slv_buf_len;
+            p_i2c->bufflen = slv_buf_len;
             p_i2c->slave_state.ro_len = slv_ro_len;
             p_i2c->slv_mutex = xSemaphoreCreateMutex();
             if (p_i2c->slv_mutex == NULL) {
@@ -428,11 +430,11 @@ static void IRAM_ATTR i2c_set_addr_data(i2c_obj_t* p_i2c)
         p_i2c->slave_rxcount++;
         if (p_i2c->slave_rxcount == 1) {
             // 1st address byte received
-            if (p_i2c->slave_state.bufflen > 256) {
+            if (p_i2c->bufflen > 256) {
                 // 2-byte address is expected, save high address byte
                 p_i2c->slave_tmpaddr = (uint16_t)data_byte << 8;
                 // set the buffer addresses outside buffer for now
-                p_i2c->slave_state.rxaddr = p_i2c->slave_state.bufflen;
+                p_i2c->slave_state.rxaddr = p_i2c->bufflen;
             }
             else {
                 // 8-bit addressing, set the buffer address
@@ -440,7 +442,7 @@ static void IRAM_ATTR i2c_set_addr_data(i2c_obj_t* p_i2c)
             }
             slave_i2c_addr_setup(p_i2c);
        }
-        else if ((p_i2c->slave_state.bufflen > 256) && (p_i2c->slave_rxcount == 2)) {
+        else if ((p_i2c->bufflen > 256) && (p_i2c->slave_rxcount == 2)) {
             // 2nd address byte received, set the buffer address
             p_i2c->slave_state.rxaddr = p_i2c->slave_tmpaddr | (uint16_t)data_byte;
             slave_i2c_addr_setup(p_i2c);
@@ -448,7 +450,7 @@ static void IRAM_ATTR i2c_set_addr_data(i2c_obj_t* p_i2c)
         else {
             // data received, save to buffer
             uint16_t addr = p_i2c->slave_state.rxaddr + p_i2c->slave_state.rxptr;
-            if (addr < (p_i2c->slave_state.bufflen - p_i2c->slave_state.ro_len)) {
+            if (addr < (p_i2c->bufflen - p_i2c->slave_state.ro_len)) {
                 p_i2c->slave_buffer[addr] = data_byte;
                 p_i2c->slave_state.rxptr++;
             }
@@ -551,7 +553,7 @@ static void IRAM_ATTR i2c_isr_handler_default(void* arg)
                 // ** data requested by master
                 // push data byte from slave buffer at current address to tx fifo
                 uint16_t addr = p_i2c->slave_state.txaddr + p_i2c->slave_state.txptr;
-                if (addr < p_i2c->slave_state.bufflen) {
+                if (addr < p_i2c->bufflen) {
                     WRITE_PERI_REG(I2C_DATA_APB_REG(i2c_num), p_i2c->slave_buffer[addr]);
                     p_i2c->slave_state.txptr++;
                 }
@@ -1401,7 +1403,6 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
     return ret;
 }
 
-// write data to slave buffer
 int i2c_slave_write_buffer(i2c_port_t i2c_num, uint8_t* data, int addr, int size, TickType_t ticks_to_wait)
 {
     I2C_CHECK(( i2c_num < I2C_NUM_MAX ), I2C_NUM_ERROR_STR, ESP_FAIL);
@@ -1410,9 +1411,9 @@ int i2c_slave_write_buffer(i2c_port_t i2c_num, uint8_t* data, int addr, int size
 
     i2c_obj_t* p_i2c = p_i2c_obj[i2c_num];
 
-    if (addr > p_i2c->slave_state.bufflen) return 0;
+    if (addr > p_i2c->bufflen) return 0;
     // correct the size if necessary
-    if ((addr+size) >= p_i2c->slave_state.bufflen) size = p_i2c->slave_state.bufflen - addr;
+    if ((addr+size) >= p_i2c->bufflen) size = p_i2c->bufflen - addr;
 
     if (size > 0) {
         portBASE_TYPE res = xSemaphoreTake(p_i2c->slv_mutex, ticks_to_wait);
@@ -1428,7 +1429,24 @@ int i2c_slave_write_buffer(i2c_port_t i2c_num, uint8_t* data, int addr, int size
     return size;
 }
 
-// read data from slave buffer
+int i2c_slave_set_buffer(i2c_port_t i2c_num, uint8_t val, TickType_t ticks_to_wait)
+{
+    I2C_CHECK(( i2c_num < I2C_NUM_MAX ), I2C_NUM_ERROR_STR, ESP_FAIL);
+    I2C_CHECK(p_i2c_obj[i2c_num]->mode == I2C_MODE_SLAVE, I2C_MODE_SLAVE_ERR_STR, ESP_FAIL);
+
+    i2c_obj_t* p_i2c = p_i2c_obj[i2c_num];
+
+    portBASE_TYPE res = xSemaphoreTake(p_i2c->slv_mutex, ticks_to_wait);
+    if (res == pdFALSE) return ESP_FAIL;
+
+    I2C_ENTER_CRITICAL(&i2c_spinlock[i2c_num]);
+    memset(p_i2c->slave_buffer, val, p_i2c->bufflen);
+    I2C_EXIT_CRITICAL(&i2c_spinlock[i2c_num]);
+
+    xSemaphoreGive(p_i2c->slv_mutex);
+    return ESP_OK;
+}
+
 int i2c_slave_read_buffer(i2c_port_t i2c_num, uint8_t* data, int addr, int size, TickType_t ticks_to_wait)
 {
     I2C_CHECK(( i2c_num < I2C_NUM_MAX ), I2C_NUM_ERROR_STR, ESP_FAIL);
@@ -1437,9 +1455,9 @@ int i2c_slave_read_buffer(i2c_port_t i2c_num, uint8_t* data, int addr, int size,
 
     i2c_obj_t* p_i2c = p_i2c_obj[i2c_num];
 
-    if (addr > p_i2c->slave_state.bufflen) return 0;
+    if (addr > p_i2c->bufflen) return 0;
     // correct the size if necessary
-    if ((addr+size) >= p_i2c->slave_state.bufflen) size = p_i2c->slave_state.bufflen - addr;
+    if ((addr+size) >= p_i2c->bufflen) size = p_i2c->bufflen - addr;
 
     if (size > 0) {
         portBASE_TYPE res = xSemaphoreTake(p_i2c->slv_mutex, ticks_to_wait);
