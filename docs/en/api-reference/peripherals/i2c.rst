@@ -265,11 +265,13 @@ By similar token the command link to read from the slave looks as follows::
 Slave Mode
 """"""""""
 
-In **slave mode** i2c device with 128-4096 memory is emulated.
+In **slave mode** i2c device with 128-4096 memory is emulated.<br>
+All master's read/write requests for data are handled by the driver's interrupt routine. The user only needs to provide the initial buffer content and, optionally, to handle the master's request from the slave task.
 
-Master can read from or write to the ESP32 i2c device, providing the memory address to read from or write to.
 
-For buffer sizes 128-265 bytes, 8-bit addressing is used, for buffer sizes >265 bytes, 16-bit addressing is used.
+Master can read from or write to the ESP32 i2c device, providing the memory (buffer) address to read from or write to.
+
+For buffer sizes 128-256 bytes, 8-bit addressing is used, for buffer sizes >256 bytes, 16-bit addressing is used.
 
 .. blockdiag::
     :scale: 100
@@ -407,16 +409,15 @@ For buffer sizes 128-265 bytes, 8-bit addressing is used, for buffer sizes >265 
     }
 
 
-Optional **read only** area at the end of the slave buffer can be set. Master can only read from that area, writting to it will be ignored.
-
-It is up to the user to organize the slave buffer in a way most appropriate for the application.<br>
-Writting to some addresses can, for example, be treated by the slave task as commands with optional arguments.<br>
-Read only area can contain the slave ID, revision number, sensor data etc.
-
+Optional **read only** area at the end of the slave buffer can be set. Master can only read from that area, writting to it by the master will be ignored.
 
 The API provides functions to read and write data from/to the slave buffer at any time - * :cpp:func:`i2c_slave_read_buffer` and :cpp:func:`i2c_slave_write_buffer`.
-I2C slave **task** can be created which receives notifications from the i2c driver about the slave events: **address set**, **data sent to master**, **data received from master**.
+I2C **slave task** can be created which receives notifications from the i2c driver about the slave events: **address set**, **data sent to master**, **data received from master**.
  Slave buffer address, number of bytes sent or received and overflow status are available to the slave task to take some action an slave events.
+
+It is up to the user to organize the slave buffer in a way most appropriate for the application.<br>
+Writting to some addresses can, for example, be treated by the **slave task** as commands with optional arguments.<br>
+Read only area can contain the slave ID, revision number, sensor data etc.
 
 An example of using these functions is provided in :example:`peripherals/i2c`.
 
