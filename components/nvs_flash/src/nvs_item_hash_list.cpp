@@ -60,7 +60,7 @@ void HashList::insert(const Item& item, size_t index)
     newBlock->mCount++;
 }
 
-void HashList::erase(size_t index)
+void HashList::erase(size_t index, bool itemShouldExist)
 {
     for (auto it = mBlockList.begin(); it != mBlockList.end();) {
         bool haveEntries = false;
@@ -82,7 +82,9 @@ void HashList::erase(size_t index)
             ++it;
         }
     }
-    assert(false && "item should have been present in cache");
+    if (itemShouldExist) {
+        assert(false && "item should have been present in cache");
+    }
 }
 
 size_t HashList::find(size_t start, const Item& item)
