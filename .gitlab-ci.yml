@@ -1,8 +1,9 @@
 stages:
   - build
   - assign_test
+  - host_test
   - unit_test
-  - test
+  - integration_test
   - deploy
 
 variables:
@@ -252,22 +253,21 @@ build_docs:
     - make html
     - ../check_doc_warnings.sh
 
-test_nvs_on_host:
-  stage: test
+.host_test_template: &host_test_template
+  stage: host_test
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - host_test
   dependencies: []
+    
+test_nvs_on_host:
+  <<: *host_test_template
   script:
     - cd components/nvs_flash/test_nvs_host
     - make test
 
 test_nvs_coverage:
-  stage: test
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - host_test
-  dependencies: []
+  <<: *host_test_template
   artifacts:
     paths:
       - components/nvs_flash/test_nvs_host/coverage_report
@@ -281,63 +281,46 @@ test_nvs_coverage:
     - make coverage_report
 
 test_partition_table_on_host:
-  stage: test
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  <<: *host_test_template
   tags:
     - build
-  dependencies: []
   script:
     - cd components/partition_table/test_gen_esp32part_host
     - ./gen_esp32part_tests.py
 
 test_wl_on_host:
-  stage: test
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - host_test
+  <<: *host_test_template
   artifacts:
     paths:
       - components/wear_levelling/test_wl_host/coverage_report.zip
-  dependencies: []
   script:
     - cd components/wear_levelling/test_wl_host
     - make test
 
 test_fatfs_on_host:
-  stage: test
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  <<: *host_test_template
   tags:
     - wl_host_test
-  dependencies: []
   script:
     - cd components/fatfs/test_fatfs_host/
     - make test
 
 test_spiffs_on_host:
-  stage: test
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  <<: *host_test_template
   tags:
     - wl_host_test
-  dependencies: []
   script:
     - cd components/spiffs/test_spiffs_host/
     - make test
 
 test_multi_heap_on_host:
-  stage: test
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - host_test
+  <<: *host_test_template
   script:
     - cd components/heap/test_multi_heap_host
     - ./test_all_configs.sh
 
 test_build_system:
-  stage: test
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - host_test
-  dependencies: []
+  <<: *host_test_template
   script:
     - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
     - rm -rf test_build_system
@@ -346,11 +329,7 @@ test_build_system:
     - ${IDF_PATH}/tools/ci/test_build_system.sh
 
 test_esp_err_to_name_on_host:
-  stage: test
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - host_test
-  dependencies: []
+  <<: *host_test_template
   script:
     - cd tools/
     - ./gen_esp_err_to_name.py
@@ -387,7 +366,7 @@ push_master_to_github:
 
 
 deploy_docs:
-  stage: assign_test
+  stage: host_test
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - deploy
@@ -422,7 +401,7 @@ deploy_docs:
     - echo "[document preview][zh_CN] $CI_DOCKER_REGISTRY/docs/esp-idf/zh_CN/${GIT_VER}/index.html"
 
 check_doc_links:
-  stage: test
+  stage: host_test
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - check_doc_links
@@ -524,7 +503,7 @@ assign_test:
     - python CIAssignTestCases.py -t $IDF_PATH/components/idf_test/integration_test -c $IDF_PATH/.gitlab-ci.yml -b $IDF_PATH/SSC/ssc_bin
 
 .example_test_template: &example_test_template
-  stage: test
+  stage: integration_test
   when: on_success
   only:
     - master
@@ -578,7 +557,7 @@ assign_test:
     ENV_FILE: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/EnvConfig.yml"
 
 .test_template: &test_template
-  stage: test
+  stage: integration_test
   when: on_success
   only:
     - master
