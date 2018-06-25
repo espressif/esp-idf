@@ -27,6 +27,11 @@
 #include "osi/thread.h"
 #include "esp_bt.h"
 
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+#include "l2c_int.h"
+#include "stack/hcimsgs.h"
+#endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
+
 #define HCI_HAL_SERIAL_BUFFER_SIZE 1026
 #define HCI_BLE_EVENT 0x3e
 #define PACKET_TYPE_TO_INBOUND_INDEX(type) ((type) - 2)
@@ -165,6 +170,7 @@ static void hci_hal_h4_rx_handler(void *arg)
         if (pdTRUE == xQueueReceive(xHciH4Queue, &e, (portTickType)portMAX_DELAY)) {
             if (e.sig == SIG_HCI_HAL_RECV_PACKET) {
                 fixed_queue_process(hci_hal_env.rx_q);
+
             }
         }
     }
@@ -185,6 +191,37 @@ task_post_status_t hci_hal_h4_task_post(task_post_t timeout)
     return TASK_POST_FAIL;
 }
 
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+static void hci_packet_complete(BT_HDR *packet){
+    uint8_t type, num_handle;
+    uint16_t handle;
+    uint16_t handles[MAX_L2CAP_LINKS + 4];
+    uint16_t num_packets[MAX_L2CAP_LINKS + 4];
+    uint8_t *stream = packet->data + packet->offset;
+    tL2C_LCB  *p_lcb = NULL;
+
+    STREAM_TO_UINT8(type, stream);
+    if (type == DATA_TYPE_ACL/* || type == DATA_TYPE_SCO*/) {
+        STREAM_TO_UINT16(handle, stream);
+        handle = handle & HCI_DATA_HANDLE_MASK;
+        p_lcb = l2cu_find_lcb_by_handle(handle);
+        if (p_lcb) {
+            p_lcb->completed_packets++;
+        }
+        if (esp_vhci_host_check_send_available()){
+            num_handle = l2cu_find_completed_packets(handles, num_packets);
+            if (num_handle > 0){
+                btsnd_hcic_host_num_xmitted_pkts (num_handle, handles, num_packets);
+            }
+        } else {
+            //Send HCI_Host_Number_of_Completed_Packets next time.
+        }
+
+    }
+}
+#endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
+
+
 static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
 {
     uint8_t type, hdr_size;
@@ -194,6 +231,11 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
     if (!packet) {
         return;
     }
+
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    hci_packet_complete(packet);
+#endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
+
     STREAM_TO_UINT8(type, stream);
     packet->offset++;
     packet->len--;

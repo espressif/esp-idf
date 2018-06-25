@@ -57,7 +57,7 @@ tL2C_LCB *l2cu_allocate_lcb (BD_ADDR p_bd_addr, BOOLEAN is_bonding, tBT_TRANSPOR
             btu_free_timer(&p_lcb->timer_entry);
             btu_free_timer(&p_lcb->info_timer_entry);
             btu_free_timer(&p_lcb->upda_con_timer);
-            
+
             memset (p_lcb, 0, sizeof (tL2C_LCB));
             memcpy (p_lcb->remote_bd_addr, p_bd_addr, BD_ADDR_LEN);
 
@@ -86,6 +86,9 @@ tL2C_LCB *l2cu_allocate_lcb (BD_ADDR p_bd_addr, BOOLEAN is_bonding, tBT_TRANSPOR
                 l2c_link_adjust_allocation();
             }
             p_lcb->link_xmit_data_q = list_new(NULL);
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+            p_lcb->completed_packets = 0;
+#endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
             return (p_lcb);
         }
     }
@@ -137,7 +140,7 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
     memset(&p_lcb->info_timer_entry, 0, sizeof(TIMER_LIST_ENT));
     btu_free_timer(&p_lcb->upda_con_timer);
     memset(&p_lcb->upda_con_timer, 0, sizeof(TIMER_LIST_ENT));
-        
+
     /* Release any unfinished L2CAP packet on this link */
     if (p_lcb->p_hcit_rcv_acl) {
         osi_free(p_lcb->p_hcit_rcv_acl);
@@ -250,6 +253,11 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
         fixed_queue_free(p_lcb->le_sec_pending_q, NULL);
         p_lcb->le_sec_pending_q = NULL;
     }
+
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    p_lcb->completed_packets = 0;
+#endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
+
 }
 
 
@@ -1488,7 +1496,7 @@ tL2C_CCB *l2cu_allocate_ccb (tL2C_LCB *p_lcb, UINT16 cid)
     btu_free_quick_timer(&p_ccb->fcrb.ack_timer);
     memset(&p_ccb->fcrb.ack_timer, 0, sizeof(TIMER_LIST_ENT));
     p_ccb->fcrb.ack_timer.param  = (TIMER_PARAM_TYPE)p_ccb;
-    
+
     btu_free_quick_timer(&p_ccb->fcrb.mon_retrans_timer);
     memset(&p_ccb->fcrb.mon_retrans_timer, 0, sizeof(TIMER_LIST_ENT));
     p_ccb->fcrb.mon_retrans_timer.param  = (TIMER_PARAM_TYPE)p_ccb;
@@ -3140,6 +3148,35 @@ void l2cu_send_peer_ble_credit_based_disconn_req(tL2C_CCB *p_ccb)
 
 #endif /* BLE_INCLUDED == TRUE */
 
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         l2cu_find_completed_packets
+**
+** Description      Find the completed packets,
+**                  Then set it to zero
+**
+** Returns          The num of handles
+**
+*******************************************************************************/
+UINT8 l2cu_find_completed_packets(UINT16 *handles, UINT16 *num_packets)
+{
+    int         xx;
+    UINT8       num = 0;
+    tL2C_LCB    *p_lcb = &l2cb.lcb_pool[0];
+
+    for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
+        if ((p_lcb->in_use) && (p_lcb->completed_packets > 0)) {
+            *(handles++) = p_lcb->handle;
+            *(num_packets++) = p_lcb->completed_packets;
+            num++;
+            p_lcb->completed_packets = 0;
+        }
+    }
+
+    return num;
+}
+#endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
 
 /*******************************************************************************
 ** Functions used by both Full and Light Stack
