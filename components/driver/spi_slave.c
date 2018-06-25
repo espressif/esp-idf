@@ -202,26 +202,62 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     spihost[host]->hw->slave.sync_reset = 1;
     spihost[host]->hw->slave.sync_reset = 0;
 
-
-    bool nodelay = true;
     spihost[host]->hw->ctrl.rd_bit_order = (slave_config->flags & SPI_SLAVE_RXBIT_LSBFIRST) ? 1 : 0;
     spihost[host]->hw->ctrl.wr_bit_order = (slave_config->flags & SPI_SLAVE_TXBIT_LSBFIRST) ? 1 : 0;
-    if (slave_config->mode == 0) {
-        spihost[host]->hw->pin.ck_idle_edge = 0;
-        spihost[host]->hw->user.ck_i_edge = 1;
-        spihost[host]->hw->ctrl2.miso_delay_mode = nodelay ? 0 : 2;
-    } else if (slave_config->mode == 1) {
-        spihost[host]->hw->pin.ck_idle_edge = 0;
-        spihost[host]->hw->user.ck_i_edge = 0;
-        spihost[host]->hw->ctrl2.miso_delay_mode = nodelay ? 0 : 1;
-    } else if (slave_config->mode == 2) {
+
+    const int mode = slave_config->mode;
+    if (mode == 0) {
+        //The timing needs to be fixed to meet the requirements of DMA
         spihost[host]->hw->pin.ck_idle_edge = 1;
         spihost[host]->hw->user.ck_i_edge = 0;
-        spihost[host]->hw->ctrl2.miso_delay_mode = nodelay ? 0 : 1;
-    } else if (slave_config->mode == 3) {
+        spihost[host]->hw->ctrl2.miso_delay_mode = 0;
+        spihost[host]->hw->ctrl2.miso_delay_num = 0;
+        spihost[host]->hw->ctrl2.mosi_delay_mode = 2;
+        spihost[host]->hw->ctrl2.mosi_delay_num = 2;
+    } else if (mode == 1) {
         spihost[host]->hw->pin.ck_idle_edge = 1;
         spihost[host]->hw->user.ck_i_edge = 1;
-        spihost[host]->hw->ctrl2.miso_delay_mode = nodelay ? 0 : 2;
+        spihost[host]->hw->ctrl2.miso_delay_mode = 2;
+        spihost[host]->hw->ctrl2.miso_delay_num = 0;
+        spihost[host]->hw->ctrl2.mosi_delay_mode = 0;
+        spihost[host]->hw->ctrl2.mosi_delay_num = 0;
+    } else if (mode == 2) {
+        //The timing needs to be fixed to meet the requirements of DMA
+        spihost[host]->hw->pin.ck_idle_edge = 0;
+        spihost[host]->hw->user.ck_i_edge = 1;
+        spihost[host]->hw->ctrl2.miso_delay_mode = 0;
+        spihost[host]->hw->ctrl2.miso_delay_num = 0;
+        spihost[host]->hw->ctrl2.mosi_delay_mode = 1;
+        spihost[host]->hw->ctrl2.mosi_delay_num = 2;
+    } else if (mode == 3) {
+        spihost[host]->hw->pin.ck_idle_edge = 0;
+        spihost[host]->hw->user.ck_i_edge = 0;
+        spihost[host]->hw->ctrl2.miso_delay_mode = 1;
+        spihost[host]->hw->ctrl2.miso_delay_num = 0;
+        spihost[host]->hw->ctrl2.mosi_delay_mode = 0;
+        spihost[host]->hw->ctrl2.mosi_delay_num = 0;
+    }
+
+    /* Silicon issues exists in mode 0 and 2 with DMA, change clock phase to
+     * avoid dma issue. This will cause slave output to appear at most half a
+     * spi clock before
+     */
+    if (dma_chan != 0) {
+        if (mode == 0) {
+            spihost[host]->hw->pin.ck_idle_edge = 0;
+            spihost[host]->hw->user.ck_i_edge = 1;
+            spihost[host]->hw->ctrl2.miso_delay_mode = 0;
+            spihost[host]->hw->ctrl2.miso_delay_num = 2;
+            spihost[host]->hw->ctrl2.mosi_delay_mode = 0;
+            spihost[host]->hw->ctrl2.mosi_delay_num = 3;
+        } else if (mode == 2) {
+            spihost[host]->hw->pin.ck_idle_edge = 1;
+            spihost[host]->hw->user.ck_i_edge = 0;
+            spihost[host]->hw->ctrl2.miso_delay_mode = 0;
+            spihost[host]->hw->ctrl2.miso_delay_num = 2;
+            spihost[host]->hw->ctrl2.mosi_delay_mode = 0;
+            spihost[host]->hw->ctrl2.mosi_delay_num = 3;
+        }
     }
 
     //Reset DMA
