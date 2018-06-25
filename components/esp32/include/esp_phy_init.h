@@ -58,6 +58,7 @@ typedef enum{
     MODEM_WIFI_STATION_MODULE,     //!< Wi-Fi Station used
     MODEM_WIFI_SOFTAP_MODULE,      //!< Wi-Fi SoftAP used
     MODEM_WIFI_SNIFFER_MODULE,     //!< Wi-Fi Sniffer used
+    MODEM_WIFI_NULL_MODULE,        //!< Wi-Fi Null mode used
     MODEM_USER_MODULE,             //!< User used
     MODEM_MODULE_COUNT             //!< Number of items
 }modem_sleep_module_t;
@@ -73,7 +74,8 @@ typedef enum{
  */
 #define MODEM_WIFI_MASK ((1<<MODEM_WIFI_STATION_MODULE) |   \
                          (1<<MODEM_WIFI_SOFTAP_MODULE)  |   \
-                         (1<<MODEM_WIFI_SNIFFER_MODULE))
+                         (1<<MODEM_WIFI_SNIFFER_MODULE) |   \
+                         (1<<MODEM_WIFI_NULL_MODULE))
 
 /**
  * @brief Modules needing to call phy_rf_init
