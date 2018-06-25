@@ -33,7 +33,7 @@
 #include "freertos/FreeRTOS.h"
 
 #define GATTC_TAG             "SEC_GATTC_DEMO"
-#define REMOTE_SERVICE_UUID   0x1809
+#define REMOTE_SERVICE_UUID   ESP_GATT_UUID_HEART_RATE_SVC
 #define REMOTE_NOTIFY_UUID    0x2A37
 
 static esp_gattc_char_elem_t *char_elem_result   = NULL;
