@@ -72,7 +72,7 @@ $(COMPONENT_LIB): $(OBJ_FILES)
 lib: $(COMPONENT_LIB)
 
 partition_table.bin: partition_table.csv
-	python ../../partition_table/gen_esp32part.py --verify $< $@
+	python ../../partition_table/gen_esp32part.py $< $@
 
 $(TEST_PROGRAM): lib $(TEST_OBJ_FILES) $(SPI_FLASH_SIM_DIR)/$(SPI_FLASH_LIB) $(WEAR_LEVELLING_HOST_DIR)/$(WEAR_LEVELLING_LIB) partition_table.bin
 	g++ $(LDFLAGS) -o $(TEST_PROGRAM) $(TEST_OBJ_FILES) -L$(abspath .) -l:$(COMPONENT_LIB) -L$(SPI_FLASH_SIM_DIR) -l:$(SPI_FLASH_LIB) -L$(WEAR_LEVELLING_HOST_DIR) -l:$(WEAR_LEVELLING_LIB) -g -m32
