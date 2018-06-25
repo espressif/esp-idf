@@ -380,3 +380,87 @@ void esp_sync_counters_rtc_and_frc()
     set_boot_time(get_adjusted_boot_time() + ((int64_t)s_microseconds_offset - s_microseconds_offset_cur));
 #endif
 }
+
+
+int clock_settime (clockid_t clock_id, const struct timespec *tp)
+{
+#if defined( WITH_FRC ) || defined( WITH_RTC )
+    if (tp == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    struct timeval tv;
+    switch (clock_id) {
+        case CLOCK_REALTIME:
+            tv.tv_sec = tp->tv_sec;
+            tv.tv_usec = tp->tv_nsec / 1000L;
+            settimeofday(&tv, NULL);
+            break;
+        default:
+            errno = EINVAL;
+            return -1;
+    }
+    return 0;
+#else
+    errno = ENOSYS;
+    return -1;
+#endif
+}
+
+int clock_gettime (clockid_t clock_id, struct timespec *tp)
+{
+#if defined( WITH_FRC ) || defined( WITH_RTC )
+    if (tp == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    struct timeval tv;
+    _gettimeofday_r(NULL, &tv, NULL);
+    uint64_t monotonic_time_us = 0;
+    switch (clock_id) {
+        case CLOCK_REALTIME:
+            tp->tv_sec = tv.tv_sec;
+            tp->tv_nsec = tv.tv_usec * 1000L;
+            break;
+        case CLOCK_MONOTONIC:
+#if defined( WITH_FRC )
+            monotonic_time_us = (uint64_t) esp_timer_get_time();
+#elif defined( WITH_RTC )
+            monotonic_time_us = get_rtc_time_us();
+#endif // WITH_FRC
+            tp->tv_sec = monotonic_time_us / 1000000LL;
+            tp->tv_nsec = (monotonic_time_us % 1000000LL) * 1000L;
+            break;
+        default:
+            errno = EINVAL;
+            return -1;
+    }
+    return 0;
+#else
+    errno = ENOSYS;
+    return -1;
+#endif
+}
+
+int clock_getres (clockid_t clock_id, struct timespec *res)
+{
+#if defined( WITH_FRC ) || defined( WITH_RTC )
+    if (res == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+#if defined( WITH_FRC )
+    res->tv_sec = 0;
+    res->tv_nsec = 1000L;
+#elif defined( WITH_RTC )
+    res->tv_sec = 0;
+    uint32_t rtc_freq = rtc_clk_slow_freq_get_hz();
+    assert(rtc_freq != 0);
+    res->tv_nsec = 1000000000L / rtc_freq;
+#endif // WITH_FRC
+    return 0;
+#else
+    errno = ENOSYS;
+    return -1;
+#endif
+}
