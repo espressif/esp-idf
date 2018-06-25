@@ -119,7 +119,7 @@ static struct gatts_profile_inst heart_rate_profile_tab[HEART_PROFILE_NUM] = {
  */
 
 /// Heart Rate Sensor Service
-static const uint16_t heart_rate_svc = ESP_GATT_UUID_HEALTH_THERMOM_SVC;
+static const uint16_t heart_rate_svc = ESP_GATT_UUID_HEART_RATE_SVC;
 
 #define CHAR_DECLARATION_SIZE   (sizeof(uint8_t))
 static const uint16_t primary_service_uuid = ESP_GATT_UUID_PRI_SERVICE;
