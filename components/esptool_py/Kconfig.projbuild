@@ -216,7 +216,7 @@ config MONITOR_DTR
 		bool "DTR value of idf-monitor"
 
 
-config MONITOR_RST
-		bool "RST value of idf-monitor"
+config MONITOR_RTS
+		bool "RTS value of idf-monitor"
 
 endmenu

@@ -626,8 +626,8 @@ def main():
     )
 
     parser.add_argument(
-        '--rst',
-        help='Serial port RST value',
+        '--rts',
+        help='Serial port RTS value',
         const=False,
         nargs='?',
         type=bool
@@ -643,7 +643,7 @@ def main():
     serial_instance = serial.serial_for_url(args.port, args.baud,
                                             do_not_open=True)
     serial_instance.dtr = args.dtr
-    serial_instance.rts = args.rst
+    serial_instance.rts = args.rts
 
     args.elf_file.close()  # don't need this as a file
 

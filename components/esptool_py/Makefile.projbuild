@@ -87,7 +87,7 @@ simple_monitor: $(call prereq_if_explicit,%flash)
 
 PRINT_FILTER ?=
 
-MONITOR_OPTS := --baud $(MONITORBAUD) --port $(ESPPORT) --toolchain-prefix $(CONFIG_TOOLPREFIX) --rst $(CONFIG_MONITOR_RST)  --dtr $(CONFIG_MONITOR_DTR) --make "$(MAKE)" --print_filter "$(PRINT_FILTER)"
+MONITOR_OPTS := --baud $(MONITORBAUD) --port $(ESPPORT) --toolchain-prefix $(CONFIG_TOOLPREFIX) --rts $(CONFIG_MONITOR_RTS)  --dtr $(CONFIG_MONITOR_DTR) --make "$(MAKE)" --print_filter "$(PRINT_FILTER)"
 
 monitor: $(call prereq_if_explicit,%flash)
 	$(summary) MONITOR
