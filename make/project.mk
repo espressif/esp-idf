@@ -34,6 +34,7 @@ help:
 	@echo "make size-components, size-files - Finer-grained memory footprints"
 	@echo "make size-symbols - Per symbol memory footprint. Requires COMPONENT=<component>"
 	@echo "make erase_flash - Erase entire flash contents"
+	@echo "make erase_ota - Erase ota_data partition. After that will boot first bootable partition (factory or OTAx)."
 	@echo "make monitor - Run idf_monitor tool to monitor serial output from app"
 	@echo "make simple_monitor - Monitor serial output on terminal console"
 	@echo "make list-components - List all components in the project"
@@ -547,7 +548,7 @@ list-components:
 	$(foreach cp,$(COMPONENT_PATHS),$(info $(cp)))
 
 # print flash command, so users can dump this to config files and download somewhere without idf
-print_flash_cmd: partition_table_get_info
+print_flash_cmd: partition_table_get_info blank_ota_data
 	echo $(ESPTOOL_WRITE_FLASH_OPTIONS) $(ESPTOOL_ALL_FLASH_ARGS) | sed -e 's:'$(PWD)/build/'::g'
 
 # Check toolchain version using the output of xtensa-esp32-elf-gcc --version command.
