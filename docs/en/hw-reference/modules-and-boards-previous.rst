@@ -35,7 +35,7 @@ Documentation
 ESP32 Core Board V2 / ESP32 DevKitC
 -----------------------------------
 
-Small and convenient development board with :ref:`esp-modules-and-boards-esp-wroom-32` module installed, break out pin headers and minimum additional components. Includes USB to serial programming interface, that also provides power supply for the board. Has pushbuttons to reset the board and put it in upload mode. 
+Small and convenient development board with ESP-WROOM-32 module installed, break out pin headers and minimum additional components. Includes USB to serial programming interface, that also provides power supply for the board. Has pushbuttons to reset the board and put it in upload mode. 
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-core-board-v2.png
     :align: center
@@ -61,7 +61,7 @@ The first version of ESP-WROVER-KIT development board. Shipped with ESP-WROOM-32
 
 ESP-WROVER-KIT has dual port USB to serial converter for programming and JTAG interface for debugging. Power supply is provided by USB interface or from standard 5 mm power supply jack. Power supply selection is done with a jumper and may be put on/off with a separate switch. The board has MicroSD card slot, 3.2” SPI LCD screen and dedicated header to connect a camera. It provides RGB diode for diagnostics. Includes 32.768 kHz XTAL for internal RTC to operate it in low power modes.
 
-All versions of ESP-WROVER-KIT are ready to accommodate an :ref:`esp-modules-and-boards-esp-wroom-32` or :ref:`esp-modules-and-boards-esp32-wrover` module.
+All versions of ESP-WROVER-KIT are ready to accommodate an ESP-WROOM-32 or ESP32-WROVER module.
 
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-devkitj-v1.jpg
