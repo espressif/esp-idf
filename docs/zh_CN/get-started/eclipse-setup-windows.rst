@@ -44,7 +44,7 @@ Windows 平台上的 Eclipse 配置
 
 * 点击 “C/C++ Build” 属性页。
 
-	* 取消选中 “Use default build command”，然后输入命令：``python ${IDF_PATH}/tools/windows/eclipse_make.py``，开始自定义创建。
+	* 取消选中 “Use default build command”，然后输入命令开始自定义创建：``python ${IDF_PATH}/tools/windows/eclipse_make.py``
 
 * 点击 “C/C++ Build” 下的 “Environment” 属性页面。
 
@@ -61,7 +61,7 @@ Windows 平台上的 Eclipse 配置
 
 		* 从 “Providers” 列表中选择 “CDT GCC Built-in Compiler Settings Cygwin”。在 “Command to get compiler specs” 输入框中，用 ``xtensa-esp32-elf-gcc`` 替换行首的 ``${COMMAND}``，最终完整的 ``Command to get compiler specs`` 应为 ``xtensa-esp32-elf-gcc ${FLAGS} -E -P -v -dD "${INPUTS}"``。
 		
-		* 从 “Providers” 列表中选择 “CDT GCC Build Output Parser”，将 “Compiler command pattern:” 修改为 ``xtensa-esp32-elf-(gcc|g\+\+|c\+\+|cc|cpp|clang)``。
+		* 从 “Providers” 列表中选择 “CDT GCC Build Output Parser”，将 “Compiler command pattern:” 修改为 ``xtensa-esp32-elf-(gcc|g\+\+|c\+\+|cc|cpp|clang)``
 
 点击 “C/C++ General" -> "Indexer” 属性页。
 
