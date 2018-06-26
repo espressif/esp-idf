@@ -365,7 +365,8 @@ typedef struct {
 typedef struct {
     BOOLEAN             in_use;
     BD_ADDR             remote_bda;
-    UINT16              svc_change_descr_handle; 
+    UINT16              svc_change_descr_handle;
+    BOOLEAN             write_remote_svc_change_ccc_done;
 } tBTA_GATTC_CONN;
 
 enum {
