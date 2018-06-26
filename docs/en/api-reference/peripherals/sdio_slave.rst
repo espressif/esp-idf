@@ -64,17 +64,17 @@ The SDIO slave driver uses the following terms:
 - Sending: slave to host transfers.
 - Receiving: host to slave transfers.
 
-.. note:: Register names in ESP Rechnical Reference Manual are oriented from the point of view of the host, i.e. 'rx' 
-  registers refer to sending, while 'tx' registers refer to receiving. We're not using `tx` or `rx` in the driver to 
+.. note:: Register names in ESP Rechnical Reference Manual are oriented from the point of view of the host, i.e. 'rx'
+  registers refer to sending, while 'tx' registers refer to receiving. We're not using `tx` or `rx` in the driver to
   avoid ambiguities.
 
 - FIFO: specific address in Function 1 that can be access by CMD53 to read/write large amount of data. The address is
   related to the length requested to read from/write to the slave in a single transfer:
   *requested length* = 0x1F800-address.
 - Ownership: When the driver takes ownership of a buffer, it means the driver can randomly read/write the buffer
-    (mostly by the hardware). The application should not read/write the buffer until the ownership is returned to the
-    application. If the application reads from a buffer owned by a receiving driver, the data read can be random; if
-    the application writes to a buffer owned by a sending driver, the data sent may be corrupted.
+  (usually via DMA). The application should not read/write the buffer until the ownership is returned to the
+  application. If the application reads from a buffer owned by a receiving driver, the data read can be random; if
+  the application writes to a buffer owned by a sending driver, the data sent may be corrupted.
 - Requested length: The length requested in one transfer determined by the FIFO address.
 - Transfer length: The length requested in one transfer determined by the CMD53 byte/block count field.
 
