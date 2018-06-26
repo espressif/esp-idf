@@ -59,7 +59,7 @@ Windows 用户
 
 	* 点击 “Providers” 选项卡。从 “Providers” 列表中选择 “CDT Cross GCC Built-in Compiler Settings”。在 “Command to get compiler specs” 输入框中，用 ``xtensa-esp32-elf-gcc`` 替换行首的 ``${COMMAND}``，最终的完整 “Command to get compiler specs” 应为 ``xtensa-esp32-elf-gcc ${FLAGS} -E -P -v -dD "${INPUTS}"``。
 
-	* 从 “Providers” 列表中选择 “CDT GCC Build Output Parser”，将 “Compiler command pattern:” 修改为 ``xtensa-esp32-elf-(gcc|g\+\+|c\+\+|cc|cpp|clang)``。
+	* 从 “Providers” 列表中选择 “CDT GCC Build Output Parser”，将 “Compiler command pattern:” 修改为 ``xtensa-esp32-elf-(gcc|g\+\+|c\+\+|cc|cpp|clang)``
 
 * 前往 “C/C++ General” -> “Indexer” 属性页面。
 
