@@ -254,7 +254,7 @@ class Handler(threading.Thread):
         def device_wait_action(data):
             start_time = time.time()
             expected_signal = data[0]
-            while 1:
+            while not THREAD_TERMINATE_FLAG:
                 if time.time() > start_time + self.timeout:
                     Utility.console_log("Timeout in device for function: %s"%self.child_case_name, color="orange")
                     break
@@ -279,12 +279,16 @@ class Handler(threading.Thread):
 
         self.dut.reset()
         self.dut.write("-", flush=False)
-        self.dut.expect_any(UT_APP_BOOT_UP_DONE, "0 Tests 0 Failures 0 Ignored")
-        time.sleep(1)
-        self.dut.write("\"{}\"".format(self.parent_case_name))
-        self.dut.expect("Running " + self.parent_case_name + "...")
+        try:
+            self.dut.expect_any(UT_APP_BOOT_UP_DONE, "0 Tests 0 Failures 0 Ignored")
+            time.sleep(1)
+            self.dut.write("\"{}\"".format(self.parent_case_name))
+            self.dut.expect("Running " + self.parent_case_name + "...")
+        except ExpectTimeout:
+            Utility.console_log("No case detected!", color="orange")
+            THREAD_TERMINATE_FLAG = True
 
-        while not self.finish:
+        while not self.finish and not THREAD_TERMINATE_FLAG:
             try:
                 self.dut.expect_any((re.compile('\(' + str(self.child_case_index) + '\)\s"(\w+)"'), get_child_case_name),
                                     (self.WAIT_SIGNAL_PATTERN, device_wait_action),  # wait signal pattern
@@ -317,9 +321,12 @@ def case_run(duts, ut_config, env, one_case, failed_cases):
     lock = threading.RLock()
     threads = []
     send_signal_list = []
-    failed_device = []
     result = True
     parent_case, case_num = get_case_info(one_case)
+
+    global THREAD_TERMINATE_FLAG
+    THREAD_TERMINATE_FLAG = False
+
     for i in range(case_num):
         dut = get_dut(duts, env, "dut%d" % i, ut_config)
         threads.append(Handler(dut, send_signal_list, lock,
@@ -331,7 +338,8 @@ def case_run(duts, ut_config, env, one_case, failed_cases):
         thread.join()
         result = result and thread.result
         if not thread.result:
-            failed_device.append(thread.fail_name)
+            THREAD_TERMINATE_FLAG = True
+
     if result:
         Utility.console_log("Success: " + one_case["name"], color="green")
     else:
