@@ -59,11 +59,17 @@ Windows 用户
 
 	* 点击 “Providers” 选项卡。从 “Providers” 列表中选择 “CDT Cross GCC Built-in Compiler Settings”。在 “Command to get compiler specs” 输入框中，用 ``xtensa-esp32-elf-gcc`` 替换行首的 ``${COMMAND}``，最终的完整 “Command to get compiler specs” 应为 ``xtensa-esp32-elf-gcc ${FLAGS} -E -P -v -dD "${INPUTS}"``。
 
-	* 从 “Providers” 列表中选择 “CDT GCC Build Output Parser”，然后在 “Compiler command pattern“ 输入框的起始位置输入 ``xtensa-esp32-elf-``，最终的完整编译器命令应为 ``xtensa-esp32-elf-(g?cc)|([gc]\+\+)|(clang)``。
+	* 从 “Providers” 列表中选择 “CDT GCC Build Output Parser”，将 “Compiler command pattern:” 修改为 ``xtensa-esp32-elf-(gcc|g\+\+|c\+\+|cc|cpp|clang)``。
 
 * 前往 “C/C++ General” -> “Indexer” 属性页面。
 
 	* 去除 "Allow heuristic resolution of includes" 勾选。启用此选项时，Eclipse 有时无法找到正确的头文件目录。
+
+点击 “C/C++ General" -> "Indexer” 属性页。
+
+    * 选择 “Enable project specific settings” 以启用本页上的其他设置。
+
+    * 取消选中 “Allow heuristic resolution of includes”。启用此选项时，有时会导致 Eclipse 无法找到正确的头文件目录。
 
 .. _eclipse-build-project:
 
