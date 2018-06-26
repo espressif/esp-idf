@@ -42,7 +42,7 @@ Project Properties
 
 * Click on the "C/C++ Build" properties page (top-level):
 
-  * Uncheck "Use default build command" and enter this for the custom build command: ``python ${IDF_PATH}/tools/windows/eclipse_make.py``.
+  * Uncheck "Use default build command" and enter this for the custom build command: ``python ${IDF_PATH}/tools/windows/eclipse_make.py``
 
 * Click on the "Environment" properties page under "C/C++ Build":
 
@@ -56,10 +56,15 @@ Project Properties
 
   * Click the "Providers" tab
 
-     * In the list of providers, click "CDT GCC Built-in Compiler Settings Cygwin". Under "Command to get compiler specs", replace the text ``${COMMAND}`` at the beginning of the line with ``xtensa-esp32-elf-gcc``. This means the full "Command to get compiler specs" should be ``xtensa-esp32-elf-gcc ${FLAGS} -E -P -v -dD "${INPUTS}"``.
+    * In the list of providers, click "CDT Cross GCC Built-in Compiler Settings". Change "Command to get compiler specs" to ``xtensa-esp32-elf-gcc ${FLAGS} -E -P -v -dD "${INPUTS}"``.
 
-     * In the list of providers, click "CDT GCC Build Output Parser" and type ``xtensa-esp32-elf-`` at the beginning of the Compiler command pattern, and wrap remaining part with brackets. This means the full Compiler command pattern should be ``xtensa-esp32-elf-((g?cc)|([gc]\+\+)|(clang))``
+     * In the list of providers, click "CDT GCC Build Output Parser" and change the "Compiler command pattern" to ``xtensa-esp32-elf-(gcc|g\+\+|c\+\+|cc|cpp|clang)``
 
+Navigate to "C/C++ General" -> "Indexer" property page:
+
+* Check "Enable project specific settings" to enable the rest of the settings on this page.
+
+* Uncheck "Allow heuristic resolution of includes". When this option is enabled Eclipse sometimes fails to find correct header directories.
 
 Building in Eclipse
 -------------------
