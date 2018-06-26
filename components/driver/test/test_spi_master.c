@@ -21,7 +21,6 @@
 #include "esp_log.h"
 #include "soc/spi_periph.h"
 #include "freertos/ringbuf.h"
-#include "soc/gpio_periph.h"
 
 const static char TAG[] = "test_spi";
 
@@ -44,6 +43,8 @@ const static char TAG[] = "test_spi";
     .input_delay_ns = 62.5,\
 }
 
+//steal register definition from gpio.c
+const uint32_t GPIO_PIN_MUX_REG[GPIO_PIN_COUNT];
 #define FUNC_SPI    1
 #define FUNC_GPIO   2
 
