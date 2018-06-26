@@ -274,6 +274,7 @@ static void transmit_command(
 
     fixed_queue_enqueue(hci_host_env.command_queue, wait_entry);
     hci_host_task_post(TASK_POST_BLOCKING);
+
 }
 
 static future_t *transmit_command_futured(BT_HDR *command)
@@ -317,8 +318,14 @@ static void event_command_ready(fixed_queue_t *queue)
     command_waiting_response_t *cmd_wait_q = &hci_host_env.cmd_waiting_q;
 
     wait_entry = fixed_queue_dequeue(queue);
-    hci_host_env.command_credits--;
 
+    if(wait_entry->opcode == HCI_HOST_NUM_PACKETS_DONE){
+        packet_fragmenter->fragment_and_dispatch(wait_entry->command);
+        buffer_allocator->free(wait_entry->command);
+        osi_free(wait_entry);
+        return;
+    }
+    hci_host_env.command_credits--;
     // Move it to the list of commands awaiting response
     osi_mutex_lock(&cmd_wait_q->commands_pending_response_lock, OSI_MUTEX_MAX_TIMEOUT);
     list_append(cmd_wait_q->commands_pending_response, wait_entry);
@@ -435,7 +442,6 @@ static bool filter_incoming_event(BT_HDR *packet)
     if (event_code == HCI_COMMAND_COMPLETE_EVT) {
         STREAM_TO_UINT8(hci_host_env.command_credits, stream);
         STREAM_TO_UINT16(opcode, stream);
-
         wait_entry = get_waiting_command(opcode);
         if (!wait_entry) {
             HCI_TRACE_WARNING("%s command complete event with no matching command. opcode: 0x%x.", __func__, opcode);

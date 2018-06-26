@@ -581,7 +581,7 @@
 #define BTM_DEFAULT_DISC_INTERVAL   0x0800
 #endif
 
-/* 
+/*
 * {SERVICE_CLASS, MAJOR_CLASS, MINOR_CLASS}
 *
 * SERVICE_CLASS:0x5A (Bit17 -Networking,Bit19 - Capturing,Bit20 -Object Transfer,Bit22 -Telephony)
@@ -753,6 +753,14 @@
 #ifndef BTM_BLE_CONFORMANCE_TESTING
 #define BTM_BLE_CONFORMANCE_TESTING           FALSE
 #endif
+
+/******************************************************************************
+**
+** CONTROLLER TO HOST FLOW CONTROL
+**
+******************************************************************************/
+
+#define C2H_FLOW_CONTROL_INCLUDED TRUE
 
 /******************************************************************************
 **
