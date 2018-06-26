@@ -238,3 +238,11 @@ test environment:
     PC has 1 wired NIC connected to AP.
     PC has 1 WiFi NIC.
     6 SSC target connect with PC by UART.
+- tag: SSC_T50_1
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 50
+  test environment detail: |-
+    PC has 1 wired NIC connected to AP.
+    PC has 1 WiFi NIC.
+    50 SSC target connect with PC by UART.

@@ -33,7 +33,32 @@ MAX_PARTITION_LENGTH = 0xC00   # 3K for partition data (96 entries) leaves 1K in
 MD5_PARTITION_BEGIN = b"\xEB\xEB" + b"\xFF" * 14 # The first 2 bytes are like magic numbers for MD5 sum
 PARTITION_TABLE_SIZE  = 0x1000  # Size of partition table
 
-__version__ = '1.1'
+__version__ = '1.2'
+
+APP_TYPE = 0x00
+DATA_TYPE = 0x01
+
+TYPES = {
+    "app" : APP_TYPE,
+    "data" : DATA_TYPE,
+}
+
+# Keep this map in sync with esp_partition_subtype_t enum in esp_partition.h
+SUBTYPES = {
+    APP_TYPE : {
+        "factory" : 0x00,
+        "test" : 0x20,
+    },
+    DATA_TYPE : {
+        "ota" : 0x00,
+        "phy" : 0x01,
+        "nvs" : 0x02,
+        "coredump" : 0x03,
+        "esphttpd" : 0x80,
+        "fat" : 0x81,
+        "spiffs" : 0x82,
+    },
+}
 
 quiet = False
 md5sum = True
@@ -46,9 +71,8 @@ def status(msg):
 
 def critical(msg):
     """ Print critical message to stderr """
-    if not quiet:
-        sys.stderr.write(msg)
-        sys.stderr.write('\n')
+    sys.stderr.write(msg)
+    sys.stderr.write('\n')
 
 class PartitionTable(list):
     def __init__(self):
@@ -85,7 +109,7 @@ class PartitionTable(list):
                 critical("WARNING: 0x%x address in the partition table is below 0x%x" % (e.offset, last_end))
                 e.offset = None
             if e.offset is None:
-                pad_to = 0x10000 if e.type == PartitionDefinition.APP_TYPE else 4
+                pad_to = 0x10000 if e.type == APP_TYPE else 4
                 if last_end % pad_to != 0:
                     last_end += pad_to - (last_end % pad_to)
                 e.offset = last_end
@@ -105,6 +129,36 @@ class PartitionTable(list):
             raise ValueError("No partition entry named '%s'" % item)
         else:
             return super(PartitionTable, self).__getitem__(item)
+
+    def find_by_type(self, ptype, subtype):
+        """ Return a partition by type & subtype, returns
+        None if not found """
+        # convert ptype & subtypes names (if supplied this way) to integer values
+        try:
+            ptype = TYPES[ptype]
+        except KeyError:
+            try:
+                ptypes = int(ptype, 0)
+            except TypeError:
+                pass
+        try:
+            subtype = SUBTYPES[int(ptype)][subtype]
+        except KeyError:
+            try:
+                ptypes = int(ptype, 0)
+            except TypeError:
+                pass
+
+        for p in self:
+            if p.type == ptype and p.subtype == subtype:
+                return p
+        return None
+
+    def find_by_name(self, name):
+        for p in self:
+            if p.name == name:
+                return p
+        return None
 
     def verify(self):
         # verify each partition individually
@@ -165,30 +219,6 @@ class PartitionTable(list):
         return "\n".join(rows) + "\n"
 
 class PartitionDefinition(object):
-    APP_TYPE = 0x00
-    DATA_TYPE = 0x01
-    TYPES = {
-        "app" : APP_TYPE,
-        "data" : DATA_TYPE,
-    }
-
-    # Keep this map in sync with esp_partition_subtype_t enum in esp_partition.h 
-    SUBTYPES = {
-        APP_TYPE : {
-            "factory" : 0x00,
-            "test" : 0x20,
-            },
-        DATA_TYPE : {
-            "ota" : 0x00,
-            "phy" : 0x01,
-            "nvs" : 0x02,
-            "coredump" : 0x03,
-            "esphttpd" : 0x80,
-            "fat" : 0x81,
-            "spiffs" : 0x82,
-            },
-    }
-
     MAGIC_BYTES = b"\xAA\x50"
 
     ALIGNMENT = {
@@ -202,7 +232,7 @@ class PartitionDefinition(object):
         "encrypted" : 0
     }
 
-    # add subtypes for the 16 OTA slot values ("ota_XXX, etc.")
+    # add subtypes for the 16 OTA slot values ("ota_XX, etc.")
     for ota_slot in range(16):
         SUBTYPES[TYPES["app"]]["ota_%d" % ota_slot] = 0x10 + ota_slot
 
@@ -270,12 +300,12 @@ class PartitionDefinition(object):
     def parse_type(self, strval):
         if strval == "":
             raise InputError("Field 'type' can't be left empty.")
-        return parse_int(strval, self.TYPES)
+        return parse_int(strval, TYPES)
 
     def parse_subtype(self, strval):
         if strval == "":
             return 0 # default
-        return parse_int(strval, self.SUBTYPES.get(self.type, {}))
+        return parse_int(strval, SUBTYPES.get(self.type, {}))
 
     def parse_address(self, strval):
         if strval == "":
@@ -294,6 +324,14 @@ class PartitionDefinition(object):
             raise ValidationError(self, "Offset 0x%x is not aligned to 0x%x" % (self.offset, align))
         if self.size is None:
             raise ValidationError(self, "Size field is not set")
+
+        if self.name in TYPES and TYPES.get(self.name, "") != self.type:
+            critical("WARNING: Partition has name '%s' which is a partition type, but does not match this partition's type (0x%x). Mistake in partition table?" % (self.name, self.type))
+        all_subtype_names = []
+        for names in (t.keys() for t in SUBTYPES.values()):
+            all_subtype_names += names
+        if self.name in all_subtype_names and SUBTYPES.get(self.type, {}).get(self.name, "") != self.subtype:
+            critical("WARNING: Partition has name '%s' which is a partition subtype, but this partition has non-matching type 0x%x and subtype 0x%x. Mistake in partition table?" % (self.name, self.type, self.subtype))
 
     STRUCT_FORMAT = "<2sBBLL16sL"
 
@@ -348,8 +386,8 @@ class PartitionDefinition(object):
             return ":".join(self.get_flags_list())
 
         return ",".join([ self.name,
-                          lookup_keyword(self.type, self.TYPES),
-                          lookup_keyword(self.subtype, self.SUBTYPES.get(self.type, {})),
+                          lookup_keyword(self.type, TYPES),
+                          lookup_keyword(self.subtype, SUBTYPES.get(self.type, {})),
                           addr_format(self.offset, False),
                           addr_format(self.size, True),
                           generate_text_flags()])
@@ -381,14 +419,14 @@ def main():
     parser.add_argument('--flash-size', help='Optional flash size limit, checks partition table fits in flash',
                         nargs='?', choices=[ '1MB', '2MB', '4MB', '8MB', '16MB' ])
     parser.add_argument('--disable-md5sum', help='Disable md5 checksum for the partition table', default=False, action='store_true')
-    parser.add_argument('--verify', '-v', help='Verify partition table fields', default=True, action='store_false')
-    parser.add_argument('--quiet', '-q', help="Don't print status messages to stderr", action='store_true')
+    parser.add_argument('--no-verify', help="Don't verify partition table fields", action='store_true')
+    parser.add_argument('--verify', '-v', help="Verify partition table fields (deprecated, this behaviour is enabled by default and this flag does nothing.", action='store_true')
+    parser.add_argument('--quiet', '-q', help="Don't print non-critical status messages to stderr", action='store_true')
     parser.add_argument('--offset', '-o', help='Set offset partition table', default='0x8000')
     
-    parser.add_argument('input', help='Path to CSV or binary file to parse. Will use stdin if omitted.', type=argparse.FileType('rb'), default=sys.stdin)
-    parser.add_argument('output', help='Path to output converted binary or CSV file. Will use stdout if omitted, unless the --display argument is also passed (in which case only the summary is printed.)',
-                        nargs='?',
-                        default='-')
+    parser.add_argument('input', help='Path to CSV or binary file to parse.', type=argparse.FileType('rb'))
+    parser.add_argument('output', help='Path to output converted binary or CSV file. Will use stdout if omitted.',
+                        nargs='?', default='-')
 
     args = parser.parse_args()
 
@@ -405,7 +443,7 @@ def main():
         status("Parsing CSV input...")
         table = PartitionTable.from_csv(input)
 
-    if args.verify:
+    if not args.no_verify:
         status("Verifying table...")
         table.verify()
 
@@ -423,7 +461,11 @@ def main():
             f.write(output)
     else:
         output = table.to_binary()
-        with sys.stdout.buffer if args.output == '-' else open(args.output, 'wb') as f:
+        try:
+            stdout_binary = sys.stdout.buffer  # Python 3
+        except AttributeError:
+            stdout_binary = sys.stdout
+        with stdout_binary if args.output == '-' else open(args.output, 'wb') as f:
             f.write(output)
 
 

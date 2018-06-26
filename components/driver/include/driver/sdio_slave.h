@@ -171,8 +171,8 @@ esp_err_t sdio_slave_recv_load_buf(sdio_slave_buf_handle_t handle);
 /** Get received data if exist. The driver returns the ownership of the buffer to the app.
  *
  * @param handle_ret Handle to the buffer holding received data. Use this handle in ``sdio_slave_recv_load_buf`` to receive in the same buffer again.
- * @param start_o Start address output, set to NULL if not needed.
- * @param len_o Actual length of the data in the buffer, set to NULL if not needed.
+ * @param[out] out_addr Output of the start address, set to NULL if not needed.
+ * @param[out] out_len Actual length of the data in the buffer, set to NULL if not needed.
  * @param wait Time to wait before data received.
  *
  * @note Call ``sdio_slave_load_buf`` with the handle to re-load the buffer onto the link list, and receive with the same buffer again.
@@ -183,7 +183,7 @@ esp_err_t sdio_slave_recv_load_buf(sdio_slave_buf_handle_t handle);
  *     - ESP_ERR_TIMEOUT        if timeout before receiving new data
  *     - ESP_OK if success
  */
-esp_err_t sdio_slave_recv(sdio_slave_buf_handle_t* handle_ret, uint8_t **start_o, size_t *len_o, TickType_t wait);
+esp_err_t sdio_slave_recv(sdio_slave_buf_handle_t* handle_ret, uint8_t **out_addr, size_t *out_len, TickType_t wait);
 
 /** Retrieve the buffer corresponding to a handle.
  *
@@ -192,7 +192,7 @@ esp_err_t sdio_slave_recv(sdio_slave_buf_handle_t* handle_ret, uint8_t **start_o
  *
  * @return buffer address if success, otherwise NULL.
  */
-uint8_t* sdio_slave_recv_get_buf( sdio_slave_buf_handle_t handle, size_t *len_o);
+uint8_t* sdio_slave_recv_get_buf(sdio_slave_buf_handle_t handle, size_t *len_o);
 
 /*---------------------------------------------------------------------------
  *                  Send
@@ -277,7 +277,7 @@ void sdio_slave_set_host_intena(sdio_slave_hostint_t ena);
  *     - ESP_ERR_INVALID_ARG if interrupt num error
  *     - ESP_OK otherwise
  */
-esp_err_t sdio_slave_send_host_int( uint8_t pos );
+esp_err_t sdio_slave_send_host_int(uint8_t pos);
 
 /** Clear general purpose interrupt to host.
  *

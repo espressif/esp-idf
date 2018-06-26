@@ -96,6 +96,21 @@ static mdns_srv_item_t * _mdns_get_service_item(const char * service, const char
     return NULL;
 }
 
+static bool _mdns_can_add_more_services(void)
+{
+    mdns_srv_item_t * s = _mdns_server->services;
+    uint16_t service_num = 0;
+    while (s) {
+        service_num ++;
+        s = s->next;
+        if (service_num >= MDNS_MAX_SERVICES) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 esp_err_t _mdns_send_rx_action(mdns_rx_packet_t * packet)
 {
     mdns_action_t * action = NULL;
@@ -4124,6 +4139,11 @@ esp_err_t mdns_service_add(const char * instance, const char * service, const ch
     if (!_mdns_server || _str_null_or_empty(service) || _str_null_or_empty(proto) || !port) {
         return ESP_ERR_INVALID_ARG;
     }
+
+    if (!_mdns_can_add_more_services()) {
+        return ESP_ERR_NO_MEM;
+    }
+
     mdns_srv_item_t * item = _mdns_get_service_item(service, proto);
     if (item) {
         return ESP_ERR_INVALID_ARG;

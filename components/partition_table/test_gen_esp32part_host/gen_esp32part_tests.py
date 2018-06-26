@@ -7,6 +7,7 @@ import sys
 import subprocess
 import tempfile
 import os
+import StringIO
 sys.path.append("..")
 from gen_esp32part import *
 
@@ -236,10 +237,10 @@ class BinaryParserTests(unittest.TestCase):
         t.verify()
 
         self.assertEqual(3, len(t))
-        self.assertEqual(t[0].type, PartitionDefinition.APP_TYPE)
+        self.assertEqual(t[0].type, APP_TYPE)
         self.assertEqual(t[0].name, "factory")
 
-        self.assertEqual(t[1].type, PartitionDefinition.DATA_TYPE)
+        self.assertEqual(t[1].type, DATA_TYPE)
         self.assertEqual(t[1].name, "data")
 
         self.assertEqual(t[2].type, 0x10)
@@ -319,16 +320,18 @@ class CommandLineTests(unittest.TestCase):
                 f.write(LONGER_BINARY_TABLE)
 
             # run gen_esp32part.py to convert binary file to CSV
-            subprocess.check_call([sys.executable, "../gen_esp32part.py",
-                                   binpath, csvpath])
+            output = subprocess.check_output([sys.executable, "../gen_esp32part.py",
+                                   binpath, csvpath], stderr=subprocess.STDOUT)
             # reopen the CSV and check the generated binary is identical
+            self.assertNotIn("WARNING", output)
             with open(csvpath, 'r') as f:
                 from_csv = PartitionTable.from_csv(f.read())
             self.assertEqual(_strip_trailing_ffs(from_csv.to_binary()), LONGER_BINARY_TABLE)
 
             # run gen_esp32part.py to conver the CSV to binary again
-            subprocess.check_call([sys.executable, "../gen_esp32part.py",
-                                   csvpath, binpath])
+            output = subprocess.check_output([sys.executable, "../gen_esp32part.py",
+                                              csvpath, binpath], stderr=subprocess.STDOUT)
+            self.assertNotIn("WARNING", output)
             # assert that file reads back as identical
             with open(binpath, 'rb') as f:
                 binary_readback = f.read()
@@ -355,6 +358,76 @@ app,app, factory, 32K, 1M
             t = PartitionTable.from_csv(csv)
             t.verify()
 
+
+    def test_warnings(self):
+        try:
+            sys.stderr = StringIO.StringIO()  # capture stderr
+
+            csv_1 = "app, 1, 2, 32K, 1M\n"
+            PartitionTable.from_csv(csv_1).verify()
+            self.assertIn("WARNING", sys.stderr.getvalue())
+            self.assertIn("partition type", sys.stderr.getvalue())
+
+            sys.stderr = StringIO.StringIO()
+            csv_2 = "ota_0, app, ota_1, , 1M\n"
+            PartitionTable.from_csv(csv_2).verify()
+            self.assertIn("WARNING", sys.stderr.getvalue())
+            self.assertIn("partition subtype", sys.stderr.getvalue())
+
+        finally:
+            sys.stderr = sys.__stderr__
+
+class PartToolTests(unittest.TestCase):
+
+    def _run_parttool(self, csvcontents, args):
+        csvpath = tempfile.mktemp()
+        with open(csvpath, "w") as f:
+            f.write(csvcontents)
+        try:
+            output = subprocess.check_output([sys.executable, "../parttool.py"] + args.split(" ") + [ csvpath ],
+                                           stderr=subprocess.STDOUT)
+            self.assertNotIn("WARNING", output)
+            m = re.search("0x[0-9a-fA-F]+", output)
+            return m.group(0) if m else ""
+        finally:
+            os.remove(csvpath)
+
+    def test_find_basic(self):
+        csv = """
+nvs,      data, nvs,     0x9000,  0x4000
+otadata,  data, ota,     0xd000,  0x2000
+phy_init, data, phy,     0xf000,  0x1000
+factory,  app, factory, 0x10000,  1M
+        """
+        rpt = lambda args: self._run_parttool(csv, args)
+
+        self.assertEqual(
+            rpt("--type data --subtype nvs --offset"), "0x9000")
+        self.assertEqual(
+            rpt("--type data --subtype nvs --size"), "0x4000")
+        self.assertEqual(
+            rpt("--partition-name otadata --offset"), "0xd000")
+        self.assertEqual(
+            rpt("--default-boot-partition --offset"), "0x10000")
+
+    def test_fallback(self):
+        csv = """
+nvs,      data, nvs,     0x9000,  0x4000
+otadata,  data, ota,     0xd000,  0x2000
+phy_init, data, phy,     0xf000,  0x1000
+ota_0,  app,    ota_0,   0x30000,  1M
+ota_1,  app,    ota_1,          ,  1M
+        """
+        rpt = lambda args: self._run_parttool(csv, args)
+
+        self.assertEqual(
+            rpt("--type app --subtype ota_1 --offset"), "0x130000")
+        self.assertEqual(
+            rpt("--default-boot-partition --offset"), "0x30000")  # ota_0
+        csv_mod = csv.replace("ota_0", "ota_2")
+        self.assertEqual(
+            self._run_parttool(csv_mod, "--default-boot-partition --offset"),
+            "0x130000")  # now default is ota_1
 
 if __name__ =="__main__":
     unittest.main()

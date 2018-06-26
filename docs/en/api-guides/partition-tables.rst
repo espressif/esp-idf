@@ -136,17 +136,15 @@ If you configure the partition table CSV name in ``make menuconfig`` and then ``
 
 To convert CSV to Binary manually::
 
-  python gen_esp32part.py --verify input_partitions.csv binary_partitions.bin
+  python gen_esp32part.py input_partitions.csv binary_partitions.bin
 
 To convert binary format back to CSV::
 
-  python gen_esp32part.py --verify binary_partitions.bin input_partitions.csv
+  python gen_esp32part.py binary_partitions.bin input_partitions.csv
 
 To display the contents of a binary partition table on stdout (this is how the summaries displayed when running `make partition_table` are generated::
 
   python gen_esp32part.py binary_partitions.bin
-
-``gen_esp32part.py`` takes one optional argument, ``--verify``, which will also verify the partition table during conversion (checking for overlapping partitions, unaligned partitions, etc.)
 
 MD5 checksum
 ~~~~~~~~~~~~
