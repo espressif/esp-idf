@@ -494,24 +494,24 @@ TEST_CASE("PCNT interrupt method test(control IO is high)", "[pcnt][test_env=UT_
 
     // test event
     event_calculate(&event);
-    TEST_ASSERT_INT_WITHIN(2, event.h_threshold, 1);
+    TEST_ASSERT_INT_WITHIN(2, event.h_threshold, 2);
     TEST_ASSERT_INT_WITHIN(2, event.l_threshold, 2);
-    TEST_ASSERT_INT_WITHIN(2, event.l_limit, 0);
-    TEST_ASSERT_INT_WITHIN(2, event.h_limit, 1);
-    TEST_ASSERT_INT_WITHIN(2, event.zero_times, 1);
-    TEST_ASSERT_INT_WITHIN(2, event.filter_time, 4);
+    TEST_ASSERT(event.l_limit == 0);
+    TEST_ASSERT_INT_WITHIN(2, event.h_limit, 2);
+    TEST_ASSERT_INT_WITHIN(2, event.zero_times, 2);
+    TEST_ASSERT_INT_WITHIN(3, event.filter_time, 4);
 
     // test interrupt disable
     TEST_ESP_OK(pcnt_intr_disable(PCNT_UNIT_0));
     TEST_ESP_OK(pcnt_counter_clear(PCNT_UNIT_0));
     // for the original control io disable interrupt status
     event_calculate(&event);
-    TEST_ASSERT_INT_WITHIN(2, event.h_threshold, 1);
+    TEST_ASSERT_INT_WITHIN(2, event.h_threshold, 2);
     TEST_ASSERT_INT_WITHIN(2, event.l_threshold, 2);
-    TEST_ASSERT_INT_WITHIN(2, event.l_limit, 0);
-    TEST_ASSERT_INT_WITHIN(2, event.h_limit, 1);
-    TEST_ASSERT_INT_WITHIN(2, event.zero_times, 1);
-    TEST_ASSERT_INT_WITHIN(2, event.filter_time, 4);
+    TEST_ASSERT(event.l_limit == 0);
+    TEST_ASSERT_INT_WITHIN(2, event.h_limit, 2);
+    TEST_ASSERT_INT_WITHIN(2, event.zero_times, 2);
+    TEST_ASSERT_INT_WITHIN(3, event.filter_time, 4);
 
     // enable the intr
     TEST_ESP_OK(pcnt_intr_enable(PCNT_UNIT_0));
@@ -519,24 +519,24 @@ TEST_CASE("PCNT interrupt method test(control IO is high)", "[pcnt][test_env=UT_
     TEST_ESP_OK(pcnt_counter_clear(PCNT_UNIT_0));
     TEST_ESP_OK(pcnt_counter_resume(PCNT_UNIT_0));
     event_calculate(&event);
-    TEST_ASSERT_INT_WITHIN(2, event.h_threshold, 2);
-    TEST_ASSERT_INT_WITHIN(2, event.l_threshold, 3);
-    TEST_ASSERT_INT_WITHIN(2, event.l_limit, 0);
-    TEST_ASSERT_INT_WITHIN(2, event.h_limit, 3);
-    TEST_ASSERT_INT_WITHIN(2, event.zero_times, 3);
-    TEST_ASSERT_INT_WITHIN(2, event.filter_time, 10);
+    TEST_ASSERT_INT_WITHIN(2, event.h_threshold, 4);
+    TEST_ASSERT_INT_WITHIN(2, event.l_threshold, 4);
+    TEST_ASSERT(event.l_limit == 0);
+    TEST_ASSERT_INT_WITHIN(2, event.h_limit, 4);
+    TEST_ASSERT_INT_WITHIN(2, event.zero_times, 4);
+    TEST_ASSERT_INT_WITHIN(3, event.filter_time, 10);
 
     // disable part of events
     TEST_ESP_OK(pcnt_event_disable(PCNT_UNIT_0, PCNT_EVT_ZERO));
     TEST_ESP_OK(pcnt_event_disable(PCNT_UNIT_0, PCNT_EVT_L_LIM));
     TEST_ESP_OK(pcnt_event_disable(PCNT_UNIT_0, PCNT_EVT_THRES_0));
     event_calculate(&event);
-    TEST_ASSERT_INT_WITHIN(2, event.h_threshold, 3);
+    TEST_ASSERT_INT_WITHIN(2, event.h_threshold, 5);
     TEST_ASSERT_INT_WITHIN(2, event.l_threshold, 4);
-    TEST_ASSERT_INT_WITHIN(2, event.l_limit, 0);
-    TEST_ASSERT_INT_WITHIN(2, event.h_limit, 4);
-    TEST_ASSERT_INT_WITHIN(2, event.zero_times, 3);
-    TEST_ASSERT_INT_WITHIN(2, event.filter_time, 12);
+    TEST_ASSERT(event.l_limit == 0);
+    TEST_ASSERT_INT_WITHIN(2, event.h_limit, 6);
+    TEST_ASSERT_INT_WITHIN(2, event.zero_times, 4);
+    TEST_ASSERT_INT_WITHIN(3, event.filter_time, 14);
 
     pcnt_isr_service_uninstall();
 }
