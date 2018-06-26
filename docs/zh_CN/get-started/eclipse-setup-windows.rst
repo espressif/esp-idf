@@ -61,7 +61,7 @@ Windows 平台上的 Eclipse 配置
 
 		* 从 “Providers” 列表中选择 “CDT GCC Built-in Compiler Settings Cygwin”。在 “Command to get compiler specs” 输入框中，用 ``xtensa-esp32-elf-gcc`` 替换行首的 ``${COMMAND}``，最终完整的 ``Command to get compiler specs`` 应为 ``xtensa-esp32-elf-gcc ${FLAGS} -E -P -v -dD "${INPUTS}"``。
 		
-		* 从 “Providers” 列表中选择 “CDT GCC Build Output Parser”，然后在 Compiler 命令模式的起始位置输入 ``xtensa-esp32-elf-``，并用括号把剩余部分扩起来。最终的完整 Compiler 命令模式应为 ``xtensa-esp32-elf-((g?cc)|([gc]\+\+)|(clang))``。
+		* 从 “Providers” 列表中选择 “CDT GCC Build Output Parser”，然后在 Compiler 命令模式的起始位置输入 ``xtensa-esp32-elf-``，并用括号把剩余部分扩起来。最终的完整 Compiler 命令模式应为 ``xtensa-esp32-elf-(gcc|g\+\+|c\+\+|cc|cpp|clang)``。
 
 
 在 Eclipse IDE 中创建项目
