@@ -28,10 +28,7 @@ bootloader_sha256_handle_t bootloader_sha256_start()
         return NULL;
     }
     mbedtls_sha256_init(ctx);
-    int ret = mbedtls_sha256_starts_ret(ctx, false);
-    if (ret != 0) {
-        return NULL;
-    }
+    assert(mbedtls_sha256_starts_ret(ctx, false) == 0);
     return ctx;
 }
 
@@ -39,8 +36,7 @@ void bootloader_sha256_data(bootloader_sha256_handle_t handle, const void *data,
 {
     assert(handle != NULL);
     mbedtls_sha256_context *ctx = (mbedtls_sha256_context *)handle;
-    int ret = mbedtls_sha256_update_ret(ctx, data, data_len);
-    assert(ret == 0);
+    assert(mbedtls_sha256_update_ret(ctx, data, data_len) == 0);
 }
 
 void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest)
@@ -48,8 +44,7 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
     assert(handle != NULL);
     mbedtls_sha256_context *ctx = (mbedtls_sha256_context *)handle;
     if (digest != NULL) {
-        int ret = mbedtls_sha256_finish_ret(ctx, digest);
-        assert(ret == 0);
+        assert(mbedtls_sha256_finish_ret(ctx, digest) == 0);
     }
     mbedtls_sha256_free(ctx);
     free(handle);

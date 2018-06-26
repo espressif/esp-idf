@@ -66,7 +66,7 @@ force:
 lib: $(COMPONENT_LIB)
 
 partition_table.bin: partition_table.csv
-	python ../../../components/partition_table/gen_esp32part.py $< $@
+	python ../../../components/partition_table/gen_esp32part.py --verify $< $@
 
 $(TEST_PROGRAM): lib $(TEST_OBJ_FILES) $(SPI_FLASH_SIM_DIR)/$(SPI_FLASH_LIB) partition_table.bin
 	g++ $(LDFLAGS) -o $@  $(TEST_OBJ_FILES) -L$(abspath .) -l:$(COMPONENT_LIB) -L$(SPI_FLASH_SIM_DIR) -l:$(SPI_FLASH_LIB) -g -m32
