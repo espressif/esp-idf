@@ -61,7 +61,13 @@ Windows 平台上的 Eclipse 配置
 
 		* 从 “Providers” 列表中选择 “CDT GCC Built-in Compiler Settings Cygwin”。在 “Command to get compiler specs” 输入框中，用 ``xtensa-esp32-elf-gcc`` 替换行首的 ``${COMMAND}``，最终完整的 ``Command to get compiler specs`` 应为 ``xtensa-esp32-elf-gcc ${FLAGS} -E -P -v -dD "${INPUTS}"``。
 		
-		* 从 “Providers” 列表中选择 “CDT GCC Build Output Parser”，然后在 Compiler 命令模式的起始位置输入 ``xtensa-esp32-elf-``，并用括号把剩余部分扩起来。最终的完整 Compiler 命令模式应为 ``xtensa-esp32-elf-((g?cc)|([gc]\+\+)|(clang))``。
+		* 从 “Providers” 列表中选择 “CDT GCC Build Output Parser”，将 “Compiler command pattern:” 修改为 ``xtensa-esp32-elf-(gcc|g\+\+|c\+\+|cc|cpp|clang)``。
+
+点击 “C/C++ General" -> "Indexer” 属性页。
+
+    * 选择 “Enable project specific settings” 以启用本页上的其他设置。
+
+    * 取消选中 “Allow heuristic resolution of includes”。启用此选项时，有时会导致 Eclipse 无法找到正确的头文件目录。
 
 
 在 Eclipse IDE 中创建项目
