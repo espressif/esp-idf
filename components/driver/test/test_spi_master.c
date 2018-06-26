@@ -759,7 +759,7 @@ static void task_slave(void* arg)
         do {
             TEST_ESP_OK( spi_slave_transmit( context->spi, &t, portMAX_DELAY ) );
         } while ( t.trans_len == 0 );
-        *(uint32_t*)recvbuf = t.trans_len;
+        memcpy(recvbuf, &t.trans_len, sizeof(uint32_t));
         *(uint8_t**)(recvbuf+4) = txdata.start;
         ESP_LOGI( SLAVE_TAG, "received: %d", t.trans_len );
         xRingbufferSend( ringbuf, recvbuf, 8+(t.trans_len+7)/8, portMAX_DELAY );
