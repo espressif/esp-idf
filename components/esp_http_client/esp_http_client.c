@@ -38,6 +38,7 @@ typedef struct {
     int len;
     char *raw_data;
     int raw_len;
+    char *output_ptr;
 } esp_http_buffer_t;
 /**
  * private HTTP Data structure
@@ -232,9 +233,14 @@ static int http_on_body(http_parser *parser, const char *at, size_t length)
 {
     esp_http_client_t *client = parser->data;
     ESP_LOGD(TAG, "http_on_body %d", length);
-    client->response->buffer->raw_data = (char*)at;
-    client->response->buffer->raw_len = length;
+    client->response->buffer->raw_data = (char *)at;
+    if (client->response->buffer->output_ptr) {
+        memcpy(client->response->buffer->output_ptr, (char *)at, length);
+        client->response->buffer->output_ptr += length;
+    }
+
     client->response->data_process += length;
+    client->response->buffer->raw_len += length;
     http_dispatch_event(client, HTTP_EVENT_ON_DATA, (void *)at, length);
     return 0;
 }
@@ -743,14 +749,13 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
         if (rlen <= 0) {
             return ridx;
         }
+        res_buffer->output_ptr = buffer + ridx;
         http_parser_execute(client->parser, client->parser_settings, res_buffer->data, rlen);
+        ridx += res_buffer->raw_len;
+        need_read -= res_buffer->raw_len;
 
-        if (res_buffer->raw_len) {
-            memcpy(buffer + ridx, res_buffer->raw_data, res_buffer->raw_len);
-            ridx += res_buffer->raw_len;
-            need_read -= res_buffer->raw_len;
-        }
         res_buffer->raw_len = 0; //clear
+        res_buffer->output_ptr = NULL;
     }
 
     return ridx;
