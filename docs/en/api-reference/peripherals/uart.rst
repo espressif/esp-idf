@@ -43,7 +43,7 @@ The alternate way is to configure specific parameters individually by calling de
 
 Configuration example: ::
 
-    const int uart_num = UART_NUM_1;
+    const int uart_num = UART_NUM_2;
     uart_config_t uart_config = {
         .baud_rate = 115200,
         .data_bits = UART_DATA_8_BITS,
@@ -68,8 +68,8 @@ In next step, after configuring communication parameters, we are setting physica
 
 Instead of GPIO pin number we can enter a macro :cpp:type:`UART_PIN_NO_CHANGE` and the currently allocated pin will not be changed. The same macro should be entered if certain pin will not be used. ::
 
-    // Set UART pins(TX: IO16, RX: IO17, RTS: IO18, CTS: IO19)
-    ESP_ERROR_CHECK(uart_set_pin(uart_num, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, 18, 19));
+    // Set UART pins(TX: IO16 (UART2 default), RX: IO17 (UART2 default), RTS: IO18, CTS: IO19)
+    ESP_ERROR_CHECK(uart_set_pin(UART_NUM_2, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, 18, 19));
 
 .. _uart-api-driver-installation:
 
@@ -89,7 +89,7 @@ Example: ::
     const int uart_buffer_size = (1024 * 2);
     QueueHandle_t uart_queue;
     // Install UART driver using an event queue here
-    ESP_ERROR_CHECK(uart_driver_install(uart_num, uart_buffer_size, \
+    ESP_ERROR_CHECK(uart_driver_install(UART_NUM_2, uart_buffer_size, \
                                             uart_buffer_size, 10, &uart_queue, 0));
 
 If all above steps have been complete, we are ready to connect the other UART device and check the communication.
@@ -111,7 +111,7 @@ The basic API function to write the data to Tx FIFO buffer is :cpp:func:`uart_tx
 There is a 'companion' function :cpp:func:`uart_wait_tx_done` that waits until all the data are transmitted out and the Tx FIFO is empty. ::
 
     // Wait for packet to be sent
-    const int uart_num = UART_NUM_1;
+    const int uart_num = UART_NUM_2;
     ESP_ERROR_CHECK(uart_wait_tx_done(uart_num, 100)); // wait timeout is 100 RTOS ticks (TickType_t)
 
 An easier to work with function is :cpp:func:`uart_write_bytes`. It sets up an intermediate ring buffer and exits after copying the data to this buffer. When there is an empty space in the FIFO, the data are moved from the ring buffer to the FIFO in the background by an ISR. The code below demonstrates using of this function. ::
@@ -132,7 +132,7 @@ Receiving
 To retrieve the data received by UART and saved in Rx FIFO, use function :cpp:func:`uart_read_bytes`. You can check in advance what is the number of bytes available in Rx FIFO by calling :cpp:func:`uart_get_buffered_data_len`. Below is the example of using this function::
 
     // Read data from UART.
-    const int uart_num = UART_NUM_1;
+    const int uart_num = UART_NUM_2;
     uint8_t data[128];
     int length = 0;
     ESP_ERROR_CHECK(uart_get_buffered_data_len(uart_num, (size_t*)&length));
@@ -188,7 +188,7 @@ If communication is established with :cpp:func:`uart_driver_install` for some sp
 Overview of RS485 specific communication options
 -------------------------------------------------
 
-Note: Here and below the notation UART_REGISTER.UART_OPTION_BIT will be used to describe register options of UART. See the ESP32 Technical Reference Manual for more information.
+.. note:: Here and below the notation UART_REGISTER.UART_OPTION_BIT will be used to describe register options of UART. See the ESP32 Technical Reference Manual for more information.
 
 - UART_RS485_CONF_REG.UART_RS485_EN = 1, enable RS485 communication mode support.
 - UART_RS485_CONF_REG.UART_RS485TX_RX_EN, transmitter's output signal loop back to the receiver's input signal when this bit is set.
@@ -202,8 +202,7 @@ The ESP32 UART hardware is not able to control automatically the RTS pin connect
 Overview of RS485 interface connection options
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Note: The example schematics below are prepared for just demonstration of basic aspects of RS485 interface connection for ESP32 and may not contain all required elements. 
-
+.. note:: The example schematics below are prepared for just demonstration of basic aspects of RS485 interface connection for ESP32 and may not contain all required elements. The Analog Devices ADM483 & ADM2483 are examples of common RS485 transceivers and other similar transceivers can also be used.
 
 The circuit A: Collision detection circuit 
 """"""""""""""""""""""""""""""""""""""""""

@@ -1441,7 +1441,7 @@ esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode)
 {
     UART_CHECK((p_uart_obj[uart_num]), "uart driver error", ESP_ERR_INVALID_STATE);
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_ERR_INVALID_ARG);
-    if ((mode == UART_MODE_RS485_A) || (mode == UART_MODE_RS485_B) 
+    if ((mode == UART_MODE_RS485_COLLISION_DETECT) || (mode == UART_MODE_RS485_APP_CTRL) 
             || (mode == UART_MODE_RS485_HALF_DUPLEX)) {
         UART_CHECK((UART[uart_num]->conf1.rx_flow_en != 1),
                 "disable hw flowctrl before using RS485 mode", ESP_ERR_INVALID_ARG);
@@ -1455,7 +1455,7 @@ esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode)
     switch (mode) {
     case UART_MODE_UART:
         break;
-    case UART_MODE_RS485_A:
+    case UART_MODE_RS485_COLLISION_DETECT:
         // This mode allows read while transmitting that allows collision detection
         p_uart_obj[uart_num]->coll_det_flg = false;
         // Transmitter’s output signal loop back to the receiver’s input signal
@@ -1470,7 +1470,7 @@ esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode)
                                         | UART_RS485_FRM_ERR_INT_ENA
                                         | UART_RS485_PARITY_ERR_INT_ENA);
         break;
-    case UART_MODE_RS485_B:
+    case UART_MODE_RS485_APP_CTRL:
         // Application software control, remove echo
         UART[uart_num]->rs485_conf.rx_busy_tx_en = 1;
         UART[uart_num]->rs485_conf.en = 1;
@@ -1488,7 +1488,7 @@ esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode)
         UART[uart_num]->conf0.irda_en = 1;
         break;
     default:
-        UART_CHECK(1, "unsupported uart mode", ESP_FAIL);
+        UART_CHECK(1, "unsupported uart mode", ESP_ERR_INVALID_ARG);
         break;
     }
     p_uart_obj[uart_num]->uart_mode = mode;
@@ -1498,8 +1498,8 @@ esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode)
 
 esp_err_t uart_set_rx_timeout(uart_port_t uart_num, const uint8_t tout_thresh) 
 {
-    UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
-    UART_CHECK((tout_thresh < 127), "tout_thresh max value is 126", ESP_FAIL);
+    UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_ERR_INVALID_ARG);
+    UART_CHECK((tout_thresh < 127), "tout_thresh max value is 126", ESP_ERR_INVALID_ARG);
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
     // The tout_thresh = 1, defines TOUT interrupt timeout equal to  
     // transmission time of one symbol (~11 bit) on current baudrate  
@@ -1515,10 +1515,11 @@ esp_err_t uart_set_rx_timeout(uart_port_t uart_num, const uint8_t tout_thresh)
 
 esp_err_t uart_get_collision_flag(uart_port_t uart_num, bool* collision_flag)
 {
-    UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
-    UART_CHECK((collision_flag != NULL), "wrong parameter pointer", ESP_FAIL);
+    UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_ERR_INVALID_ARG);
+    UART_CHECK((collision_flag != NULL), "wrong parameter pointer", ESP_ERR_INVALID_ARG);
     UART_CHECK((UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX) 
-                    || UART_IS_MODE_SET(uart_num, UART_MODE_RS485_A)), "wrong mode", ESP_FAIL);
+                    || UART_IS_MODE_SET(uart_num, UART_MODE_RS485_COLLISION_DETECT)), 
+                    "wrong mode", ESP_ERR_INVALID_ARG);
     *collision_flag = p_uart_obj[uart_num]->coll_det_flg;
     return ESP_OK;
 }

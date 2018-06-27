@@ -50,11 +50,11 @@ extern "C" {
  * @brief UART mode selection
  */
 typedef enum {
-    UART_MODE_UART = 0x0,               /*!< mode: regular UART mode*/
-    UART_MODE_RS485_A = 0x01,           /*!< mode: RS485 collision detection UART mode*/
-    UART_MODE_RS485_B = 0x02,           /*!< mode: application control RS485 UART mode*/
-    UART_MODE_RS485_HALF_DUPLEX = 0x03, /*!< mode: half duplex RS485 UART mode control by RTS pin */
-    UART_MODE_IRDA = 0x4,               /*!< mode: IRDA  UART mode*/
+    UART_MODE_UART = 0x00,                      /*!< mode: regular UART mode*/
+    UART_MODE_RS485_HALF_DUPLEX = 0x01,         /*!< mode: half duplex RS485 UART mode control by RTS pin */
+    UART_MODE_IRDA = 0x02,                      /*!< mode: IRDA  UART mode*/
+    UART_MODE_RS485_COLLISION_DETECT = 0x03,    /*!< mode: RS485 collision detection UART mode (used for test purposes)*/
+    UART_MODE_RS485_APP_CTRL = 0x04,            /*!< mode: application control RS485 UART mode (used for test purposes)*/
 } uart_mode_t;
 
 /**
@@ -84,7 +84,7 @@ typedef enum {
 typedef enum {
     UART_NUM_0 = 0x0,  /*!< UART base address 0x3ff40000*/
     UART_NUM_1 = 0x1,  /*!< UART base address 0x3ff50000*/
-    UART_NUM_2 = 0x2,  /*!< UART base address 0x3ff6E000*/
+    UART_NUM_2 = 0x2,  /*!< UART base address 0x3ff6e000*/
     UART_NUM_MAX,
 } uart_port_t;
 
@@ -756,8 +756,8 @@ esp_err_t uart_pattern_queue_reset(uart_port_t uart_num, int queue_length);
  * @param mode UART    UART mode to set 
  *
  * @return
- *     - ESP_OK   Success
- *     - ESP_FAIL Parameter error
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
  */
 esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode);
 
@@ -771,8 +771,9 @@ esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode);
  *        the TOUT feature is disabled.
  *
  * @return
- *     - ESP_OK   Success
- *     - ESP_FAIL Parameter error
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_INVALID_STATE Driver is not installed
  */
 esp_err_t uart_set_rx_timeout(uart_port_t uart_num, const uint8_t tout_thresh);
 
@@ -786,8 +787,8 @@ esp_err_t uart_set_rx_timeout(uart_port_t uart_num, const uint8_t tout_thresh);
  * @param collision_flag Pointer to variable of type bool to return collision flag.
  *
  * @return
- *     - ESP_OK   No collision 
- *     - ESP_FAIL Parameter error
+ *     - ESP_OK Success 
+ *     - ESP_ERR_INVALID_ARG Parameter error
  */
 esp_err_t uart_get_collision_flag(uart_port_t uart_num, bool* collision_flag);
 

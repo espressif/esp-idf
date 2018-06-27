@@ -30,10 +30,10 @@
  * 
  */
 
-// Note io16 , io17 does not work on wrover module 
+// Note: UART2 default pins IO16, IO17 do not work on ESP32-WROVER module 
 // because these pins connected to PSRAM
-#define ECHO_TEST_TXD   (23) //(17) 
-#define ECHO_TEST_RXD   (22) //(16)
+#define ECHO_TEST_TXD   (23)
+#define ECHO_TEST_RXD   (22)
 
 // RTS for RS485 Half-Duplex Mode manages DE/~RE
 #define ECHO_TEST_RTS   (18)
@@ -50,6 +50,8 @@
 #define ECHO_TASK_PRIO          (10)
 #define ECHO_UART_PORT          (UART_NUM_2)
 
+static const char *TAG = "RS485_ECHO_APP";
+
 // An example of echo test with hardware flow control on UART
 static void echo_task()
 {
@@ -63,13 +65,15 @@ static void echo_task()
         .rx_flow_ctrl_thresh = 122,
     };
     
-    printf("Start RS485 application test.\r\n");
-    printf("Configure UART.\r\n");
+    // Set UART log level
+    esp_log_level_set(TAG, ESP_LOG_INFO);
+    
+    ESP_LOGI(TAG, "Start RS485 application test and configure UART.");
 
     // Configure UART parameters
     uart_param_config(uart_num, &uart_config);
     
-    printf("UART set pins.\r\n");
+    ESP_LOGI(TAG, "UART set pins, mode and install driver.");
     // Set UART1 pins(TX: IO23, RX: I022, RTS: IO18, CTS: IO19)
     uart_set_pin(uart_num, ECHO_TEST_TXD, ECHO_TEST_RXD, ECHO_TEST_RTS, ECHO_TEST_CTS);
 
@@ -83,7 +87,7 @@ static void echo_task()
     // Allocate buffers for UART
     uint8_t* data = (uint8_t*) malloc(BUF_SIZE);
 
-    printf("Start recieve loop.\r\n");
+    ESP_LOGI(TAG, "UART start recieve loop.\r\n");
     uart_write_bytes(uart_num, "Start RS485 UART test.\r\n", 24);
 
     while(1) {
@@ -96,7 +100,8 @@ static void echo_task()
             char prefix[] = "RS485 Received: [";
             uart_write_bytes(uart_num, prefix, (sizeof(prefix) - 1));
             
-            printf("Received [ ");
+            ESP_LOGI(TAG, "Received %u bytes:", len);
+            printf("[ ");
             for (int i = 0; i < len; i++) {
                 printf("0x%.2X ", (uint8_t)data[i]);
                 uart_write_bytes(uart_num, (const char*)&data[i], 1);
