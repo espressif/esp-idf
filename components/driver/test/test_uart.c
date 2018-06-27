@@ -313,9 +313,5 @@ static void rs485_master()
  * correctness of RS485 interface channel communication. It requires
  * RS485 bus driver hardware to be connected to boards.
 */
-// The lines below are required to suppress GCC warnings about discarded const qualifiers
-// of function pointers in unity macro expansion. These warnings may be treated as errors during compilation.
-#pragma GCC diagnostic push  // required for GCC
-#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
 TEST_CASE_MULTIPLE_DEVICES("RS485 half duplex uart multiple devices test.", "[driver]", rs485_master, rs485_slave);
-#pragma GCC diagnostic pop   // require GCC
+
