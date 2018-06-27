@@ -701,12 +701,6 @@ example_test_002_01:
     - ESP32
     - Example_ShieldBox
 
-example_test_003_01:
-  <<: *example_test_template
-  tags:
-    - ESP32
-    - Example_SDIO
-
 UT_001_01:
   <<: *unit_test_template
   tags:
@@ -1038,31 +1032,6 @@ UT_006_04:
     - UT_T1_GPIO
     - psram
 
-UT_007_01:
-  <<: *unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_PCNT
-
-UT_007_02:
-  <<: *unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_PCNT
-
-UT_007_03:
-  <<: *unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_PCNT
-
-UT_007_04:
-  <<: *unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_PCNT
-    - psram
-
 UT_008_01:
   <<: *unit_test_template
   tags:
@@ -1280,12 +1249,6 @@ IT_010_01:
   tags:
     - ESP32_IDF
     - SSC_T5_1
-
-IT_011_01:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T50_1
 
 IT_501_01:
   <<: *test_template

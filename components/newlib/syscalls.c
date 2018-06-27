@@ -47,17 +47,11 @@ void* IRAM_ATTR _realloc_r(struct _reent *r, void* ptr, size_t size)
     return heap_caps_realloc_default( ptr, size );
 }
 
-void* IRAM_ATTR _calloc_r(struct _reent *r, size_t nmemb, size_t size)
+void* IRAM_ATTR _calloc_r(struct _reent *r, size_t count, size_t size)
 {
-    void *result;
-    size_t size_bytes;
-    if (__builtin_mul_overflow(nmemb, size, &size_bytes)) {
-        return NULL;
-    }
-
-    result = malloc(size_bytes);
-    if (result != NULL) {
-        bzero(result, size_bytes);
+    void* result = heap_caps_malloc_default(count * size);
+    if (result) {
+        bzero(result, count * size);
     }
     return result;
 }
