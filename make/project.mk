@@ -168,12 +168,13 @@ COMPONENT_PATHS := $(foreach comp,$(COMPONENTS),$(firstword $(foreach cd,$(COMPO
 export COMPONENT_PATHS
 
 TEST_COMPONENTS ?=
+TEST_EXCLUDE_COMPONENTS ?=
 TESTS_ALL ?=
 
 # If TESTS_ALL set to 1, set TEST_COMPONENTS_LIST to all components.
 # Otherwise, use the list supplied in TEST_COMPONENTS.
 ifeq ($(TESTS_ALL),1)
-TEST_COMPONENTS_LIST := $(COMPONENTS)
+TEST_COMPONENTS_LIST := $(filter-out $(TEST_EXCLUDE_COMPONENTS), $(COMPONENTS))
 else
 TEST_COMPONENTS_LIST := $(TEST_COMPONENTS)
 endif
@@ -534,11 +535,11 @@ list-components:
 	$(info COMPONENT_DIRS (components searched for here))
 	$(foreach cd,$(COMPONENT_DIRS),$(info $(cd)))
 	$(info $(call dequote,$(SEPARATOR)))
-	$(info COMPONENTS (list of component names))
-	$(info $(COMPONENTS))
+	$(info TEST_COMPONENTS (list of test component names))
+	$(info $(TEST_COMPONENTS_LIST))
 	$(info $(call dequote,$(SEPARATOR)))
-	$(info EXCLUDE_COMPONENTS (list of excluded names))
-	$(info $(if $(EXCLUDE_COMPONENTS),$(EXCLUDE_COMPONENTS),(none provided)))	
+	$(info TEST_EXCLUDE_COMPONENTS (list of test excluded names))
+	$(info $(if $(EXCLUDE_COMPONENTS) || $(TEST_EXCLUDE_COMPONENTS),$(EXCLUDE_COMPONENTS) $(TEST_EXCLUDE_COMPONENTS),(none provided)))	
 	$(info $(call dequote,$(SEPARATOR)))
 	$(info COMPONENT_PATHS (paths to all components):)
 	$(foreach cp,$(COMPONENT_PATHS),$(info $(cp)))
