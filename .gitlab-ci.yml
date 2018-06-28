@@ -1,9 +1,9 @@
 stages:
   - build
   - assign_test
+  - host_test
   - unit_test
-  - test
-  - test_report
+  - integration_test
   - deploy
 
 variables:
@@ -151,6 +151,8 @@ build_ssc_01:
 build_ssc_02:
   <<: *build_ssc_template
 
+# If you want to add new build ssc jobs, please add it into dependencies of `assign_test` and `.test_template`
+
 build_esp_idf_tests:
   <<: *build_template
   artifacts:
@@ -158,7 +160,7 @@ build_esp_idf_tests:
       - tools/unit-test-app/output
       - components/idf_test/unit_test/TestCaseAll.yml
       - components/idf_test/unit_test/CIConfigs/*.yml
-    expire_in: 6 mos
+    expire_in: 1 mos
   script:
     - cd tools/unit-test-app
     - MAKEFLAGS= make help # make sure kconfig tools are built in single process
@@ -218,6 +220,7 @@ build_examples_06:
 build_examples_07:
   <<: *build_examples_template
 
+# If you want to add new build example jobs, please add it into dependencies of `.example_test_template`
 
 build_docs:
   stage: build
@@ -250,22 +253,21 @@ build_docs:
     - make html
     - ../check_doc_warnings.sh
 
-test_nvs_on_host:
-  stage: test
+.host_test_template: &host_test_template
+  stage: host_test
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - host_test
   dependencies: []
+    
+test_nvs_on_host:
+  <<: *host_test_template
   script:
     - cd components/nvs_flash/test_nvs_host
     - make test
 
 test_nvs_coverage:
-  stage: test
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - host_test
-  dependencies: []
+  <<: *host_test_template
   artifacts:
     paths:
       - components/nvs_flash/test_nvs_host/coverage_report
@@ -279,63 +281,46 @@ test_nvs_coverage:
     - make coverage_report
 
 test_partition_table_on_host:
-  stage: test
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  <<: *host_test_template
   tags:
     - build
-  dependencies: []
   script:
     - cd components/partition_table/test_gen_esp32part_host
     - ./gen_esp32part_tests.py
 
 test_wl_on_host:
-  stage: test
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - host_test
+  <<: *host_test_template
   artifacts:
     paths:
       - components/wear_levelling/test_wl_host/coverage_report.zip
-  dependencies: []
   script:
     - cd components/wear_levelling/test_wl_host
     - make test
 
 test_fatfs_on_host:
-  stage: test
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  <<: *host_test_template
   tags:
     - wl_host_test
-  dependencies: []
   script:
     - cd components/fatfs/test_fatfs_host/
     - make test
 
 test_spiffs_on_host:
-  stage: test
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  <<: *host_test_template
   tags:
     - wl_host_test
-  dependencies: []
   script:
     - cd components/spiffs/test_spiffs_host/
     - make test
 
 test_multi_heap_on_host:
-  stage: test
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - host_test
+  <<: *host_test_template
   script:
     - cd components/heap/test_multi_heap_host
     - ./test_all_configs.sh
 
 test_build_system:
-  stage: test
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - host_test
-  dependencies: []
+  <<: *host_test_template
   script:
     - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
     - rm -rf test_build_system
@@ -343,67 +328,8 @@ test_build_system:
     - cd test_build_system
     - ${IDF_PATH}/tools/ci/test_build_system.sh
 
-test_report:
-  stage: test_report
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - report
-  only:
-    - master
-    - triggers
-    - schedules
-    - /^release\/v/
-    - /^v\d+\.\d+(\.\d+)?($|-)/
-  variables:
-    LOG_PATH: "$CI_PROJECT_DIR/$CI_COMMIT_SHA"
-    TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test"
-    REPORT_PATH: "$CI_PROJECT_DIR/CI_Test_Report"
-    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/tools/unit-test-app/tools/ModuleDefinition.yml"
-  #dependencies:
-  #We need all UT* and IT* artifacts except for only a few other
-  artifacts:
-    when: always
-    paths:
-      - $REPORT_PATH
-      - $LOG_PATH
-    expire_in: 12 mos
-  script:
-    # calc log path
-    - VER_NUM=`git rev-list HEAD | wc -l | awk '{print $1}'`
-    - SHA_ID=`echo $CI_COMMIT_SHA | cut -c 1-7`
-    - REVISION="${VER_NUM}_${SHA_ID}"
-    # replace / to _ in branch name
-    - ESCAPED_BRANCH_NAME=`echo $CI_COMMIT_REF_NAME | sed 's/\//___/g'`
-    # result path and artifacts path
-    - RESULT_PATH="$CI_PROJECT_NAME/$ESCAPED_BRANCH_NAME/$REVISION"
-    - ARTIFACTS_PATH="$GITLAB_HTTP_SERVER/idf/esp-idf/builds/$CI_JOB_ID/artifacts/browse/$CI_COMMIT_SHA"
-    # clone test bench
-    - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
-    - cd auto_test_script
-    - python $CHECKOUT_REF_SCRIPT auto_test_script
-    # generate report
-    - TEST_RESULT=Pass
-    - python CITestReport.py -l $LOG_PATH -t $TEST_CASE_FILE_PATH -p $REPORT_PATH -r $RESULT_PATH -a $ARTIFACTS_PATH -m $MODULE_UPDATE_FILE || TEST_RESULT=Fail
-    # commit to CI-test-result project
-    - git clone $GITLAB_SSH_SERVER/qa/CI-test-result.git
-    - rm -rf "CI-test-result/RawData/$RESULT_PATH"
-    - cp -R $CI_PROJECT_NAME CI-test-result/RawData
-    - cd CI-test-result
-    # config git user
-    - git config --global user.email "ci-test-result@espressif.com"
-    - git config --global user.name "ci-test-result"
-    # commit test result
-    - git add .
-    - git commit . -m "update test result for $CI_PROJECT_NAME/$CI_COMMIT_REF_NAME/$CI_COMMIT_SHA, pipeline ID $CI_PIPELINE_ID" || exit 0
-    - git push origin master
-    - test "${TEST_RESULT}" = "Pass" || exit 1
-
 test_esp_err_to_name_on_host:
-  stage: test
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - host_test
-  dependencies: []
+  <<: *host_test_template
   script:
     - cd tools/
     - ./gen_esp_err_to_name.py
@@ -440,7 +366,7 @@ push_master_to_github:
 
 
 deploy_docs:
-  stage: assign_test
+  stage: host_test
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - deploy
@@ -475,7 +401,7 @@ deploy_docs:
     - echo "[document preview][zh_CN] $CI_DOCKER_REGISTRY/docs/esp-idf/zh_CN/${GIT_VER}/index.html"
 
 check_doc_links:
-  stage: test
+  stage: host_test
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - check_doc_links
@@ -577,7 +503,7 @@ assign_test:
     - python CIAssignTestCases.py -t $IDF_PATH/components/idf_test/integration_test -c $IDF_PATH/.gitlab-ci.yml -b $IDF_PATH/SSC/ssc_bin
 
 .example_test_template: &example_test_template
-  stage: test
+  stage: integration_test
   when: on_success
   only:
     - master
@@ -585,14 +511,21 @@ assign_test:
     - /^v\d+\.\d+(\.\d+)?($|-)/
     - triggers
     - schedules
-  # gitlab ci do not support match job with RegEx or wildcard now in dependencies.
-  # we have a lot build example jobs and the binaries them exceed the limitation of artifacts.
-  # we can't artifact them in one job. For example test jobs, download all artifacts from previous stages.
+  dependencies:
+    - assign_test
+    - build_examples_00
+    - build_examples_01
+    - build_examples_02
+    - build_examples_03
+    - build_examples_04
+    - build_examples_05
+    - build_examples_06
+    - build_examples_07
   artifacts:
     when: always
     paths:
       - $LOG_PATH
-    expire_in: 6 mos
+    expire_in: 1 mos
   variables:
     TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     TEST_CASE_PATH: "$CI_PROJECT_DIR/examples"
@@ -624,7 +557,7 @@ assign_test:
     ENV_FILE: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/EnvConfig.yml"
 
 .test_template: &test_template
-  stage: test
+  stage: integration_test
   when: on_success
   only:
     - master
@@ -632,7 +565,6 @@ assign_test:
     - /^v\d+\.\d+(\.\d+)?($|-)/
     - triggers
     - schedules
-  allow_failure: true
   dependencies:
     - assign_test
     - build_ssc_00
@@ -642,7 +574,7 @@ assign_test:
     when: always
     paths:
       - $LOG_PATH
-    expire_in: 6 mos
+    expire_in: 1 mos
   variables:
     LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF"
     LOG_PATH: "$CI_PROJECT_DIR/$CI_COMMIT_SHA"
@@ -671,7 +603,7 @@ nvs_compatible_test:
     paths:
       - $LOG_PATH
       - nvs_wifi.bin
-    expire_in: 6 mos
+    expire_in: 1 mos
   tags:
     - ESP32_IDF
     - NVS_Compatible
