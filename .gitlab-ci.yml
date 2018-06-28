@@ -296,6 +296,7 @@ build_docs:
       - docs/en/sphinx-warning-log.txt
       - docs/en/sphinx-warning-log-sanitized.txt
       - docs/en/_build/html
+      - docs/sphinx-err-*
       # Chinese version of documentation
       - docs/zh_CN/doxygen-warning-log.txt
       - docs/zh_CN/sphinx-warning-log.txt
@@ -307,7 +308,7 @@ build_docs:
     - ./check_lang_folder_sync.sh
     - cd en
     - make gh-linkcheck
-    - make html
+    - make html || cat /tmp/sphinx-err*.log
     - ../check_doc_warnings.sh
     - cd ../zh_CN
     - make gh-linkcheck
