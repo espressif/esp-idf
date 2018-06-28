@@ -73,7 +73,7 @@ Windows 用户
 
 .. note::
 
-取消选中 “Allow heuristic resolution of includes”。因为启用此选项时，有时会导致 Eclipse 无法找到正确的头文件目录。
+    取消选中 “Allow heuristic resolution of includes”。因为启用此选项时，有时会导致 Eclipse 无法找到正确的头文件目录。
 
 .. _eclipse-build-project:
 
