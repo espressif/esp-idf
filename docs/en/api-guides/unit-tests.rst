@@ -120,6 +120,7 @@ Change into tools/unit-test-app directory to configure and build it:
 
 * `make TESTS_ALL=1` - build unit test app with tests for each component having tests in the ``test`` subdirectory.
 * `make TEST_COMPONENTS='xxx'` - build unit test app with tests for specific components. 
+* `make TESTS_ALL=1 TEST_EXCLUDE_COMPONENTS='xxx'` - build unit test app with all unit tests, except for unit tests of some components. (For instance: `make TESTS_ALL=1 TEST_EXCLUDE_COMPONENTS='ulp mbedtls'` - build all unit tests exludes ulp and mbedtls components).
 
 When the build finishes, it will print instructions for flashing the chip. You can simply run ``make flash`` to flash all build output.
 
