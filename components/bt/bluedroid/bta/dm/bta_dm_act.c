@@ -602,16 +602,16 @@ void bta_dm_ble_read_adv_tx_power(tBTA_DM_MSG *p_data)
     if (p_data->read_tx_power.read_tx_power_cb != NULL) {
         BTM_BleReadAdvTxPower(p_data->read_tx_power.read_tx_power_cb);
     } else {
-        APPL_TRACE_ERROR("%s(), the callback function cann't be NULL.", __func__);
+        APPL_TRACE_ERROR("%s(), the callback function can't be NULL.", __func__);
     }
 }
 
 void bta_dm_ble_read_rssi(tBTA_DM_MSG *p_data)
 {
     if (p_data->rssi.read_rssi_cb != NULL) {
-        BTM_ReadRSSI(p_data->rssi.remote_addr, p_data->rssi.read_rssi_cb);
+        BTM_ReadRSSI(p_data->rssi.remote_addr, p_data->rssi.transport, p_data->rssi.read_rssi_cb);
     } else {
-        APPL_TRACE_ERROR("%s(), the callback function cann't be NULL.", __func__);
+        APPL_TRACE_ERROR("%s(), the callback function can't be NULL.", __func__);
     }
 }
 
@@ -4665,7 +4665,7 @@ void bta_dm_ble_set_rand_address(tBTA_DM_MSG *p_data)
 void bta_dm_ble_stop_advertising(tBTA_DM_MSG *p_data)
 {
     if (p_data->hdr.event != BTA_DM_API_BLE_STOP_ADV_EVT) {
-        APPL_TRACE_ERROR("Invalid BTA event,cann't stop the BLE adverting\n");
+        APPL_TRACE_ERROR("Invalid BTA event,can't stop the BLE adverting\n");
     }
 
     btm_ble_stop_adv();

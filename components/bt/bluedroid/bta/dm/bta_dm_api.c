@@ -206,12 +206,13 @@ void BTA_DmBleReadAdvTxPower(tBTA_CMPL_CB *cmpl_cb)
     }
 }
 
-void BTA_DmBleReadRSSI(BD_ADDR remote_addr, tBTA_CMPL_CB *cmpl_cb)
+void BTA_DmBleReadRSSI(BD_ADDR remote_addr, tBTA_TRANSPORT transport, tBTA_CMPL_CB *cmpl_cb)
 {
     tBTA_DM_API_READ_RSSI *p_msg;
     if ((p_msg = (tBTA_DM_API_READ_RSSI *)osi_malloc(sizeof(tBTA_DM_API_READ_RSSI))) != NULL) {
         p_msg->hdr.event = BTA_DM_API_BLE_READ_RSSI_EVT;
         memcpy(p_msg->remote_addr, remote_addr, sizeof(BD_ADDR));
+        p_msg->transport = transport;
         p_msg->read_rssi_cb = cmpl_cb;
         bta_sys_sendmsg(p_msg);
     }
