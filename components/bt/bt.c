@@ -614,9 +614,6 @@ static void IRAM_ATTR btdm_sleep_enter_wrapper(void)
     if (btdm_controller_get_sleep_mode() == BTDM_MODEM_SLEEP_MODE_ORIG) {
         esp_modem_sleep_enter(MODEM_BLE_MODULE);
         esp_modem_sleep_enter(MODEM_CLASSIC_BT_MODULE);
-#ifdef CONFIG_PM_ENABLE
-        esp_pm_lock_release(s_pm_lock);
-#endif
     } else if (btdm_controller_get_sleep_mode() == BTDM_MODEM_SLEEP_MODE_EVED) {
         esp_modem_sleep_enter(MODEM_BLE_MODULE);
         // pause bluetooth baseband
@@ -627,9 +624,6 @@ static void IRAM_ATTR btdm_sleep_enter_wrapper(void)
 static void IRAM_ATTR btdm_sleep_exit_wrapper(void)
 {
     if (btdm_controller_get_sleep_mode() == BTDM_MODEM_SLEEP_MODE_ORIG) {
-#ifdef CONFIG_PM_ENABLE
-        esp_pm_lock_acquire(s_pm_lock);
-#endif
         esp_modem_sleep_exit(MODEM_BLE_MODULE);
         esp_modem_sleep_exit(MODEM_CLASSIC_BT_MODULE);
     } else if (btdm_controller_get_sleep_mode() == BTDM_MODEM_SLEEP_MODE_EVED) {
