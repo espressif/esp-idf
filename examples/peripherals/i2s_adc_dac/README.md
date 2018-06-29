@@ -1,53 +1,91 @@
-# I2S built-in ADC/DAC Example
+# I2S Built-in ADC/DAC Example
 
+(See the README.md file in the upper level 'examples' directory for more information about examples.)
 
----
+In this example, we configure I2S to work in I2S_ADC and I2S_DAC modes and then:
+* recording sound from ADC,
+* playing the recorded sound,
+* playing an audio file in flash via DAC.
 
-* This is an example of:
-    * Recording sound from ADC
-    * Replay the recorded sound via DAC
-    * Play an audio file in flash
-    
----
+#### Note:
+The `tools` directory contains `generate_audio_file.py` script for generating audio files:
 
-* Run this example
-	* Set partition table to "partitions_adc_dac_example.csv" in menuconfig, or rename sdkconfig.default to sdkconfig directly.
-	* Set IDF_PATH and run "make flash"
----
+    * The script provides an example of generating audio tables from `.wav` files.
+    * In this example, the `wav` file must be in 16k/16bit mono format.
+    * The script will bundle the `wav` files into a single table named `audio_example_file.h`.
+    * Since the ADC can only play 8-bit data, the script will scale each 16-bit value to a 8-bit value.
+    * The script will covert all signed values into unsigned values because only positive values will be output by the ADC.
 
-* This example will execute the following steps:
-    1. Erase flash
-    2. Record audio from ADC and save in flash
-    3. Read flash and replay the sound via DAC
-    4. Play an example audio file(file format: 8bit/8khz/single channel)
-    5. Loop back to step 3
-  
----
-  
-* Hardware connection:
+## How to Use Example
 
-  | ESP32 | Microphone + amplifier | amplifier + speaker |
-  |--|--|--|
-  | GPIO36(ADC1CH0 input) | data output pin |  |
-  | GPIO25(DAC1 output) |  | right channel speaker input|
-  | GPIO26(DAC2 output) |  | left channel speaker input|
+### Hardware Required
 
----
+* A development board with ESP32 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
+* A USB cable for power supply and programming
+* A microphone (with amplifier) and one or two speaker(s) for testing.
 
-* How to generate audio files:
-	
-	* tools/generate_audio_file.py is an example of generate audio table from .wav files.
-	* In this example, the wav file must be in 16k/16bit mono format.
-	* generate_audio_file.py will bundle the wav files into a single table named audio_example_file.h
-	* Since the ADC can only play 8-bit data, the script will scale each 16-bit value to a 8-bit value.
-	* Since the ADC can only output positive value, the script will turn a signed value into an unsigned value.
-	
----
+The following is the hardware connection:
 
-* Note:
-	* DAC can only play 8-bit data, so the wav file data are scaled to 8-bit data.
-	* I2S DMA can only output 16-bit/32-bit data to DAC, DAC will only take the highest 8-bit data and output accordingly. 
-	* Before I2S DMA can output data stream to DAC, the data format should be converted to 16-bit or 32-bit by padding zeros.
+|hardware|module|GPIO|
+|:---:|:---:|:---:|
+|Microphone|ADC1_CH0|GPIO36|
+|speaker(R)|DAC1|GPIO25|
+|speaker(L)|DAC2|GPIO26|
 
+### Configure the Project
 
+```
+make menuconfig
+```
 
+* Set serial port under Serial Flasher Options, the flash size should be set to 4 MB.
+* Select "Custom partition table CSV" and rename "Custom partition CSV file" to "partitions_adc_dac_example.csv".
+
+(Note that you can use `sdkconfig.defaults`)
+
+### Build and Flash
+
+Build the project and flash it to the board, then run monitor tool to view serial output:
+
+```
+make -j4 flash monitor
+```
+
+(To exit the serial monitor, type ``Ctrl-]``.)
+
+See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
+
+## Example Output
+
+Reset your development board. The application it will first record the sound through the microphone. Then it will play the recorded sound, and finally a piece of audio stored in the flash. The following is the output log:
+
+```
+partiton addr: 0x00110000; size: 2097152; label: storage
+Erasing flash
+partiton addr: 0x00110000; size: 2097152; label: storage
+Erase size: 323584 Bytes
+I2S: PLL_D2: Req RATE: 16000, real rate: 1004.000, BITS: 16, CLKM: 83, BCK: 60, MCLK: 83.333, SCLK: 32128.000000, diva: 64, divb: 21
+Sound recording 5%
+Sound recording 10%
+...
+Sound recording 97%
+Sound recording 102% 
+playing: 0 %
+playing: 1 %
+playing: 2 %
+...
+playing: 96 %
+playing: 97 %
+playing: 98 %
+Playing file example:
+I2S: PLL_D2: Req RATE: 16000, real rate: 1004.000, BITS: 16, CLKM: 83, BCK: 60, MCLK: 83.333, SCLK: 32128.000000, diva: 64, divb: 21
+```
+
+## Troubleshooting
+
+* Program upload failure
+
+    * Hardware connection is not correct: run `make monitor`, and reboot your board to see if there are any output logs.
+    * The baud rate for downloading is too high: lower your baud rate in the `menuconfig` menu, and try again.
+
+For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
