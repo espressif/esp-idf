@@ -104,7 +104,7 @@ config LWIP_STATS
 
 config LWIP_ETHARP_TRUST_IP_MAC
     bool "Enable LWIP ARP trust"
-    default y
+    default n
     help
         Enabling this option allows ARP table to be updated.
 
@@ -116,6 +116,17 @@ config LWIP_ETHARP_TRUST_IP_MAC
         the peer is not already in the ARP table, adding a little latency.
         The peer *is* in the ARP table if it requested our address before.
         Also notice that this slows down input processing of every IP packet!
+
+        There are two known issues in real application if this feature is enabled:
+         - The LAN peer may have bug to update the ARP table after the ARP entry is aged out.
+           If the ARP entry on the LAN peer is aged out but failed to be updated, all IP packets
+           sent from LWIP to the LAN peer will be dropped by LAN peer.
+         - The LAN peer may not be trustful, the LAN peer may send IP packets to LWIP with 
+           two different MACs, but the same IP address. If this happens, the LWIP has problem
+           to receive IP packets from LAN peer.
+
+        So the recommendation is to disable this option. 
+        Here the LAN peer means the other side to which the ESP station or soft-AP is connected.
 
 config TCPIP_RECVMBOX_SIZE
     int "TCPIP task receive mail box size"
