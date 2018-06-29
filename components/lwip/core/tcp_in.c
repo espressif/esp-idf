@@ -568,6 +568,7 @@ tcp_listen_input(struct tcp_pcb_listen *pcb)
     }
 #if TCP_LISTEN_BACKLOG
     pcb->accepts_pending++;
+    npcb->flags |= TF_BACKLOGPEND;
 #endif /* TCP_LISTEN_BACKLOG */
     /* Set up the new PCB. */
     ip_addr_copy(npcb->local_ip, *ip_current_dest_addr());
@@ -582,6 +583,10 @@ tcp_listen_input(struct tcp_pcb_listen *pcb)
 #if LWIP_CALLBACK_API
     npcb->accept = pcb->accept;
 #endif /* LWIP_CALLBACK_API */
+
+#if LWIP_CALLBACK_API || TCP_LISTEN_BACKLOG
+    npcb->listener = pcb;
+#endif
     /* inherit socket options */
     npcb->so_options = pcb->so_options & SOF_INHERITED;
     /* Register the new PCB so that we can begin receiving segments
@@ -785,11 +790,19 @@ tcp_process(struct tcp_pcb *pcb)
       if (TCP_SEQ_BETWEEN(ackno, pcb->lastack+1, pcb->snd_nxt)) {
         pcb->state = ESTABLISHED;
         LWIP_DEBUGF(TCP_DEBUG, ("TCP connection established %"U16_F" -> %"U16_F".\n", inseg.tcphdr->src, inseg.tcphdr->dest));
+#if LWIP_CALLBACK_API || TCP_LISTEN_BACKLOG
 #if LWIP_CALLBACK_API
         LWIP_ASSERT("pcb->accept != NULL", pcb->accept != NULL);
 #endif
-        /* Call the accept function. */
-        TCP_EVENT_ACCEPT(pcb, ERR_OK, err);
+
+        if (pcb->listener == NULL) {
+          err = ERR_VAL;
+        } else {
+#endif
+          tcp_backlog_accepted(pcb);
+          /* Call the accept function. */
+          TCP_EVENT_ACCEPT(pcb, ERR_OK, err);
+        }
         if (err != ERR_OK) {
           /* If the accept function returns with an error, we abort
            * the connection. */
