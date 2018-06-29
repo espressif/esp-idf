@@ -151,7 +151,7 @@ static void search_devices_copy_cb(btc_msg_t *msg, void *p_dest, void *p_src)
         switch (p_dest_data->event) {
         case BTA_DM_INQ_RES_EVT: {
             if (p_src_data->p_data->inq_res.p_eir) {
-                p_dest_data->p_data->inq_res.p_eir = (UINT8 *)(p_dest_data->p_data + sizeof(tBTA_DM_SEARCH));
+                p_dest_data->p_data->inq_res.p_eir = (UINT8 *)(p_dest_data->p_data) + sizeof(tBTA_DM_SEARCH);
                 memcpy(p_dest_data->p_data->inq_res.p_eir, p_src_data->p_data->inq_res.p_eir, HCI_EXT_INQ_RESPONSE_LEN);
             }
         }
@@ -159,7 +159,7 @@ static void search_devices_copy_cb(btc_msg_t *msg, void *p_dest, void *p_src)
 
         case BTA_DM_DISC_RES_EVT: {
             if (p_src_data->p_data->disc_res.raw_data_size && p_src_data->p_data->disc_res.p_raw_data) {
-                p_dest_data->p_data->disc_res.p_raw_data = (UINT8 *)(p_dest_data->p_data + sizeof(tBTA_DM_SEARCH));
+                p_dest_data->p_data->disc_res.p_raw_data = (UINT8 *)(p_dest_data->p_data) + sizeof(tBTA_DM_SEARCH);
                 memcpy(p_dest_data->p_data->disc_res.p_raw_data,
                        p_src_data->p_data->disc_res.p_raw_data,
                        p_src_data->p_data->disc_res.raw_data_size);
@@ -194,7 +194,7 @@ static void search_service_record_copy_cb(btc_msg_t *msg, void *p_dest, void *p_
         switch (p_dest_data->event) {
         case BTA_DM_DISC_RES_EVT: {
             if (p_src_data->p_data->disc_res.p_raw_data && p_src_data->p_data->disc_res.raw_data_size > 0) {
-                p_dest_data->p_data->disc_res.p_raw_data = (UINT8 *)(p_dest_data->p_data + sizeof(tBTA_DM_SEARCH));
+                p_dest_data->p_data->disc_res.p_raw_data = (UINT8 *)(p_dest_data->p_data) + sizeof(tBTA_DM_SEARCH);
                 memcpy(p_dest_data->p_data->disc_res.p_raw_data,
                        p_src_data->p_data->disc_res.p_raw_data,
                        p_src_data->p_data->disc_res.raw_data_size);
@@ -566,7 +566,7 @@ static void search_services_copy_cb(btc_msg_t *msg, void *p_dest, void *p_src)
         case BTA_DM_DISC_RES_EVT: {
             if (p_src_data->p_data->disc_res.result == BTA_SUCCESS) {
                 if (p_src_data->p_data->disc_res.num_uuids > 0) {
-                    p_dest_data->p_data->disc_res.p_uuid_list = (UINT8 *)(p_dest_data->p_data + sizeof(tBTA_DM_SEARCH));
+                    p_dest_data->p_data->disc_res.p_uuid_list = (UINT8 *)(p_dest_data->p_data) + sizeof(tBTA_DM_SEARCH);
                     memcpy(p_dest_data->p_data->disc_res.p_uuid_list, p_src_data->p_data->disc_res.p_uuid_list,
                            p_src_data->p_data->disc_res.num_uuids * MAX_UUID_SIZE);
                     osi_free(p_src_data->p_data->disc_res.p_uuid_list);
