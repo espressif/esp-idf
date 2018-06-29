@@ -232,6 +232,9 @@ void lwip_netconn_do_disconnect      (void *m);
 void lwip_netconn_do_listen          (void *m);
 void lwip_netconn_do_send            (void *m);
 void lwip_netconn_do_recv            (void *m);
+#if TCP_LISTEN_BACKLOG
+void lwip_netconn_do_accepted        (void *m);
+#endif
 void lwip_netconn_do_write           (void *m);
 void lwip_netconn_do_getaddr         (void *m);
 void lwip_netconn_do_close           (void *m);
