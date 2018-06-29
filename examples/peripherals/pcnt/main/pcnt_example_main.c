@@ -111,6 +111,7 @@ static void ledc_init(void)
     ledc_channel.intr_type  = LEDC_INTR_DISABLE;
     ledc_channel.gpio_num   = LEDC_OUTPUT_IO;
     ledc_channel.duty       = 100; // set duty at about 10%
+    ledc_channel.hpoint     = 0;
     ledc_channel_config(&ledc_channel);
 }
 
