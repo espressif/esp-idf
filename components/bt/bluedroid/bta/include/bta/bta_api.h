@@ -631,10 +631,11 @@ typedef UINT8 tBTA_SIG_STRENGTH_MASK;
 #define BTA_DM_SP_RMT_OOB_EXT_EVT       23      /* Simple Pairing Remote OOB Extended Data request. */
 #define BTA_DM_BLE_AUTH_CMPL_EVT        24      /* BLE Auth complete */
 // btla-specific --
-#define BTA_DM_DEV_UNPAIRED_EVT         25
+#define BTA_DM_DEV_UNPAIRED_EVT         25      /* BT unpair event */
 #define BTA_DM_HW_ERROR_EVT             26      /* BT Chip H/W error */
 #define BTA_DM_LE_FEATURES_READ         27      /* Cotroller specific LE features are read */
 #define BTA_DM_ENER_INFO_READ           28      /* Energy info read */
+#define BTA_DM_BLE_DEV_UNPAIRED_EVT     29      /* BLE unpair event */
 typedef UINT8 tBTA_DM_SEC_EVT;
 
 /* Structure associated with BTA_DM_ENABLE_EVT */
@@ -1632,7 +1633,7 @@ extern void BTA_DmAddDevice(BD_ADDR bd_addr, DEV_CLASS dev_class,
 **                  BTA_FAIL if operation failed.
 **
 *******************************************************************************/
-extern tBTA_STATUS BTA_DmRemoveDevice(BD_ADDR bd_addr);
+extern tBTA_STATUS BTA_DmRemoveDevice(BD_ADDR bd_addr, tBT_TRANSPORT transport);
 
 /*******************************************************************************
 **

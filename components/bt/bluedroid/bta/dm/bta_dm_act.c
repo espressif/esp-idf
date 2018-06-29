@@ -698,7 +698,7 @@ void bta_dm_set_visibility(tBTA_DM_MSG *p_data)
 ** Description      Removes device, Disconnects ACL link if required.
 ****
 *******************************************************************************/
-void bta_dm_process_remove_device(BD_ADDR bd_addr)
+static void bta_dm_process_remove_device(BD_ADDR bd_addr, tBT_TRANSPORT transport)
 {
 #if (BLE_INCLUDED == TRUE && GATTC_INCLUDED == TRUE)
     /* need to remove all pending background connection before unpair */
@@ -711,12 +711,16 @@ void bta_dm_process_remove_device(BD_ADDR bd_addr)
     /* remove all cached GATT information */
     BTA_GATTC_Refresh(bd_addr, false);
 #endif
-
     if (bta_dm_cb.p_sec_cback) {
         tBTA_DM_SEC sec_event;
         bdcpy(sec_event.link_down.bd_addr, bd_addr);
         sec_event.link_down.status = HCI_SUCCESS;
-        bta_dm_cb.p_sec_cback(BTA_DM_DEV_UNPAIRED_EVT, &sec_event);
+        if (transport == BT_TRANSPORT_LE){
+            bta_dm_cb.p_sec_cback(BTA_DM_BLE_DEV_UNPAIRED_EVT, &sec_event);
+        } else {
+            bta_dm_cb.p_sec_cback(BTA_DM_DEV_UNPAIRED_EVT, &sec_event);
+        }
+
     }
 }
 
@@ -734,15 +738,11 @@ void bta_dm_remove_device(tBTA_DM_MSG *p_data)
         return;
     }
 
-    BD_ADDR other_address;
-    bdcpy(other_address, p_dev->bd_addr);
-
     /* If ACL exists for the device in the remove_bond message*/
     BOOLEAN continue_delete_dev = FALSE;
-    UINT8 other_transport = BT_TRANSPORT_INVALID;
+    UINT8 transport = p_dev->transport;
 
-    if (BTM_IsAclConnectionUp(p_dev->bd_addr, BT_TRANSPORT_LE) ||
-            BTM_IsAclConnectionUp(p_dev->bd_addr, BT_TRANSPORT_BR_EDR)) {
+    if (BTM_IsAclConnectionUp(p_dev->bd_addr, transport)) {
         APPL_TRACE_DEBUG("%s: ACL Up count  %d", __func__, bta_dm_cb.device_list.count);
         continue_delete_dev = FALSE;
 
@@ -753,13 +753,6 @@ void bta_dm_remove_device(tBTA_DM_MSG *p_data)
                 btm_remove_acl( p_dev->bd_addr, bta_dm_cb.device_list.peer_device[i].transport);
                 APPL_TRACE_DEBUG("%s:transport = %d", __func__,
                                  bta_dm_cb.device_list.peer_device[i].transport);
-
-                /* save the other transport to check if device is connected on other_transport */
-                if (bta_dm_cb.device_list.peer_device[i].transport == BT_TRANSPORT_LE) {
-                    other_transport = BT_TRANSPORT_BR_EDR;
-                } else {
-                    other_transport = BT_TRANSPORT_LE;
-                }
                 break;
             }
         }
@@ -767,35 +760,9 @@ void bta_dm_remove_device(tBTA_DM_MSG *p_data)
         continue_delete_dev = TRUE;
     }
 
-    // If it is DUMO device and device is paired as different address, unpair that device
-    // if different address
-    BOOLEAN continue_delete_other_dev = FALSE;
-    if ((other_transport && (BTM_ReadConnectedTransportAddress(other_address, other_transport))) ||
-            (!other_transport && (BTM_ReadConnectedTransportAddress(other_address, BT_TRANSPORT_BR_EDR) ||
-                                  BTM_ReadConnectedTransportAddress(other_address, BT_TRANSPORT_LE)))) {
-        continue_delete_other_dev = FALSE;
-        /* Take the link down first, and mark the device for removal when disconnected */
-        for (int i = 0; i < bta_dm_cb.device_list.count; i++) {
-            if (!bdcmp(bta_dm_cb.device_list.peer_device[i].peer_bdaddr, other_address)) {
-                bta_dm_cb.device_list.peer_device[i].conn_state = BTA_DM_UNPAIRING;
-                btm_remove_acl(other_address, bta_dm_cb.device_list.peer_device[i].transport);
-                break;
-            }
-        }
-    } else {
-        APPL_TRACE_DEBUG("%s: continue to delete the other dev ", __func__);
-        continue_delete_other_dev = TRUE;
-    }
-
     /* Delete the device mentioned in the msg */
     if (continue_delete_dev) {
-        bta_dm_process_remove_device(p_dev->bd_addr);
-    }
-
-    /* Delete the other paired device too */
-    BD_ADDR dummy_bda = {0};
-    if (continue_delete_other_dev && (bdcmp(other_address, dummy_bda) != 0)) {
-        bta_dm_process_remove_device(other_address);
+        bta_dm_process_remove_device(p_dev->bd_addr, transport);
     }
 }
 
@@ -3351,7 +3318,11 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
         if ( bta_dm_cb.p_sec_cback ) {
             bta_dm_cb.p_sec_cback(BTA_DM_LINK_DOWN_EVT, &conn);
             if ( issue_unpair_cb ) {
-                bta_dm_cb.p_sec_cback(BTA_DM_DEV_UNPAIRED_EVT, &conn);
+                if (p_data->acl_change.transport == BT_TRANSPORT_LE) {
+                    bta_dm_cb.p_sec_cback(BTA_DM_BLE_DEV_UNPAIRED_EVT, &conn);
+                } else {
+                    bta_dm_cb.p_sec_cback(BTA_DM_DEV_UNPAIRED_EVT, &conn);
+                }
             }
         }
     }
