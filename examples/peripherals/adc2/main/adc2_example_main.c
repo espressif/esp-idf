@@ -28,8 +28,10 @@ void app_main(void)
 
     gpio_num_t adc_gpio_num, dac_gpio_num;
 
-    assert( adc2_pad_get_io_num( ADC2_EXAMPLE_CHANNEL, &adc_gpio_num ) == ESP_OK );
-    assert( dac_pad_get_io_num( DAC_EXAMPLE_CHANNEL, &dac_gpio_num ) == ESP_OK );
+    r = adc2_pad_get_io_num( ADC2_EXAMPLE_CHANNEL, &adc_gpio_num );
+    assert( r == ESP_OK );
+    r = dac_pad_get_io_num( DAC_EXAMPLE_CHANNEL, &dac_gpio_num );
+    assert( r == ESP_OK );
 
     printf("ADC channel %d @ GPIO %d, DAC channel %d @ GPIO %d.\n", ADC2_EXAMPLE_CHANNEL, adc_gpio_num,
                 DAC_EXAMPLE_CHANNEL, dac_gpio_num );
