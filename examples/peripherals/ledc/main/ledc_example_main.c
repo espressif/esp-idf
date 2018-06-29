@@ -92,6 +92,7 @@ void app_main()
             .duty       = 0,
             .gpio_num   = LEDC_HS_CH0_GPIO,
             .speed_mode = LEDC_HS_MODE,
+            .hpoint     = 0,
             .timer_sel  = LEDC_HS_TIMER
         },
         {
@@ -99,6 +100,7 @@ void app_main()
             .duty       = 0,
             .gpio_num   = LEDC_HS_CH1_GPIO,
             .speed_mode = LEDC_HS_MODE,
+            .hpoint     = 0,
             .timer_sel  = LEDC_HS_TIMER
         },
         {
@@ -106,6 +108,7 @@ void app_main()
             .duty       = 0,
             .gpio_num   = LEDC_LS_CH2_GPIO,
             .speed_mode = LEDC_LS_MODE,
+            .hpoint     = 0,
             .timer_sel  = LEDC_LS_TIMER
         },
         {
@@ -113,6 +116,7 @@ void app_main()
             .duty       = 0,
             .gpio_num   = LEDC_LS_CH3_GPIO,
             .speed_mode = LEDC_LS_MODE,
+            .hpoint     = 0,
             .timer_sel  = LEDC_LS_TIMER
         },
     };
