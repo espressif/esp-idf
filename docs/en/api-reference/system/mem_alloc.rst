@@ -40,6 +40,9 @@ which it can't do for a normal malloc() call. This can help to use all the avail
 Memory allocated with MALLOC_CAP_32BIT can *only* be accessed via 32-bit reads and writes, any other type of access will
 generate a fatal LoadStoreError exception.
 
+External SPI RAM under 4MiB in size can be allocated using standard ``malloc`` calls, if that is enabled in menuconfig. To
+use the region above the 4MiB limit, you can use the :doc:`himem API</api-reference/system/himem>`.
+
 API Reference - Heap Allocation
 -------------------------------
 

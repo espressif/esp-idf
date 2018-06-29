@@ -34,6 +34,7 @@ we add more types of external RAM memory, this can be made into a more intellige
 #include "soc/soc_memory_layout.h"
 #include "soc/dport_reg.h"
 #include "rom/cache.h"
+#include "esp_himem.h"
 
 #if CONFIG_FREERTOS_UNICORE
 #define PSRAM_MODE PSRAM_VADDR_MODE_NORMAL
@@ -65,6 +66,22 @@ extern int _ext_ram_bss_start, _ext_ram_bss_end;
 static bool spiram_inited=false;
 
 
+//If no function in esp_himem.c is used, this function will be linked into the
+//binary instead of the one in esp_himem.c, automatically making sure no memory
+//is reserved if no himem function is used.
+size_t __attribute__((weak)) esp_himem_reserved_area_size() {
+    return 0;
+}
+
+
+static int spiram_size_usable_for_malloc()
+{
+    int s=esp_spiram_get_size();
+    if (s>4*1024*1024) s=4*1024*1024; //we can map at most 4MiB
+    return s-esp_himem_reserved_area_size();
+}
+
+
 /*
  Simple RAM test. Writes a word every 32 bytes. Takes about a second to complete for 4MiB. Returns
  true when RAM seems OK, false when test fails. WARNING: Do not run this before the 2nd cpu has been
@@ -74,7 +91,7 @@ bool esp_spiram_test()
 {
     volatile int *spiram=(volatile int*)SOC_EXTRAM_DATA_LOW;
     size_t p;
-    size_t s=CONFIG_SPIRAM_SIZE;
+    size_t s=spiram_size_usable_for_malloc();
     int errct=0;
     int initial_err=-1;
     for (p=0; p<(s/sizeof(int)); p+=8) {
@@ -109,7 +126,7 @@ void IRAM_ATTR esp_spiram_init_cache()
 esp_spiram_size_t esp_spiram_get_chip_size()
 {
     if (!spiram_inited) {
-        ESP_LOGE(TAG, "SPI RAM not initialized");
+        ESP_EARLY_LOGE(TAG, "SPI RAM not initialized");
         return ESP_SPIRAM_SIZE_INVALID;
     }
     psram_size_t psram_size = psram_get_size();
@@ -134,6 +151,16 @@ esp_err_t esp_spiram_init()
         return r;
     }
 
+    spiram_inited=true; //note: this needs to be set before esp_spiram_get_chip_*/esp_spiram_get_size calls
+#if (CONFIG_SPIRAM_SIZE != -1)
+    if (esp_spiram_get_size()!=CONFIG_SPIRAM_SIZE) {
+        ESP_EARLY_LOGE(TAG, "Expected %dKiB chip but found %dKiB chip. Bailing out..", CONFIG_SPIRAM_SIZE/1024, esp_spiram_get_size()/1024);
+        return ESP_ERR_INVALID_SIZE;
+    }
+#endif
+
+    ESP_EARLY_LOGI(TAG, "Found %dMBit SPI RAM device", 
+                                          (esp_spiram_get_size()*8)/(1024*1024));
     ESP_EARLY_LOGI(TAG, "SPI RAM mode: %s", PSRAM_SPEED == PSRAM_CACHE_F40M_S40M ? "flash 40m sram 40m" : \
                                           PSRAM_SPEED == PSRAM_CACHE_F80M_S40M ? "flash 80m sram 40m" : \
                                           PSRAM_SPEED == PSRAM_CACHE_F80M_S80M ? "flash 80m sram 80m" : "ERROR");
@@ -141,21 +168,20 @@ esp_err_t esp_spiram_init()
                                           (PSRAM_MODE==PSRAM_VADDR_MODE_EVENODD)?"even/odd (2-core)": \
                                           (PSRAM_MODE==PSRAM_VADDR_MODE_LOWHIGH)?"low/high (2-core)": \
                                           (PSRAM_MODE==PSRAM_VADDR_MODE_NORMAL)?"normal (1-core)":"ERROR");
-    spiram_inited=true;
     return ESP_OK;
 }
 
 
 esp_err_t esp_spiram_add_to_heapalloc()
-{   
+{
     //Add entire external RAM region to heap allocator. Heap allocator knows the capabilities of this type of memory, so there's
     //no need to explicitly specify them.
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
-    ESP_EARLY_LOGI(TAG, "Adding pool of %dK of external SPI memory to heap allocator", (CONFIG_SPIRAM_SIZE - (&_ext_ram_bss_end - &_ext_ram_bss_start))/1024);
-    return heap_caps_add_region((intptr_t)&_ext_ram_bss_end, (intptr_t)SOC_EXTRAM_DATA_LOW + CONFIG_SPIRAM_SIZE-1);
+    ESP_EARLY_LOGI(TAG, "Adding pool of %dK of external SPI memory to heap allocator", (spiram_size_usable_for_malloc() - (&_ext_ram_bss_end - &_ext_ram_bss_start))/1024);
+    return heap_caps_add_region((intptr_t)&_ext_ram_bss_end, (intptr_t)SOC_EXTRAM_DATA_LOW + spiram_size_usable_for_malloc()-1);
 #else
-    ESP_EARLY_LOGI(TAG, "Adding pool of %dK of external SPI memory to heap allocator", CONFIG_SPIRAM_SIZE/1024);
-    return heap_caps_add_region((intptr_t)SOC_EXTRAM_DATA_LOW, (intptr_t)SOC_EXTRAM_DATA_LOW + CONFIG_SPIRAM_SIZE-1);
+    ESP_EARLY_LOGI(TAG, "Adding pool of %dK of external SPI memory to heap allocator", spiram_size_usable_for_malloc()/1024);
+    return heap_caps_add_region((intptr_t)SOC_EXTRAM_DATA_LOW, (intptr_t)SOC_EXTRAM_DATA_LOW + spiram_size_usable_for_malloc()-1);
 #endif
 }
 
@@ -187,12 +213,17 @@ esp_err_t esp_spiram_reserve_dma_pool(size_t size) {
 
 size_t esp_spiram_get_size()
 {
+    psram_size_t size=esp_spiram_get_chip_size();
+    if (size==PSRAM_SIZE_32MBITS) return 4*1024*1024;
+    if (size==PSRAM_SIZE_64MBITS) return 8*1024*1024;
     return CONFIG_SPIRAM_SIZE;
 }
 
 /*
  Before flushing the cache, if psram is enabled as a memory-mapped thing, we need to write back the data in the cache to the psram first,
  otherwise it will get lost. For now, we just read 64/128K of random PSRAM memory to do this.
+ Note that this routine assumes some unique mapping for the first 2 banks of the PSRAM memory range, as well as the
+ 2 banks after the 2 MiB mark.
 */
 void IRAM_ATTR esp_spiram_writeback_cache() 
 {
@@ -216,18 +247,24 @@ void IRAM_ATTR esp_spiram_writeback_cache()
     }
 #endif
 
-#if CONFIG_FREERTOS_UNICORE
+#if (PSRAM_MODE != PSRAM_VADDR_MODE_LOWHIGH)
+    /*
+    Single-core and even/odd mode only have 32K of cache evenly distributed over the address lines. We can clear
+    the cache by just reading 64K worth of cache lines.
+    */.
     for (x=0; x<1024*64; x+=32) {
         i+=psram[x];
     }
 #else
     /*
+    Low/high psram cache mode uses one 32K cache for the lowest 2MiB of SPI flash and another 32K for the highest 
+    2MiB. Clear this by reading from both regions.
     Note: this assumes the amount of external RAM is >2M. If it is 2M or less, what this code does is undefined. If 
     we ever support external RAM chips of 2M or smaller, this may need adjusting.
     */
     for (x=0; x<1024*64; x+=32) {
         i+=psram[x];
-        i+=psram[x+(1024*1024*2)+(1024*64)]; //address picked to also clear cache of app cpu in low/high mode
+        i+=psram[x+(1024*1024*2)];
     }
 #endif
 
@@ -242,7 +279,5 @@ void IRAM_ATTR esp_spiram_writeback_cache()
     }
 #endif
 }
-
-
 
 #endif
