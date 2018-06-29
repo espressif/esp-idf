@@ -575,9 +575,7 @@ static int IRAM_ATTR rand_wrapper(void)
 
 static uint32_t IRAM_ATTR btdm_lpcycles_2_us(uint32_t cycles)
 {
-    // Sanity check. The number of lp cycles should not be too high to avoid overflow. Thrs: 100s (for 32kHz freq)
-    assert(cycles < 3200000);
-
+    // The number of lp cycles should not lead to overflow. Thrs: 100s (for 32kHz freq)
     // clock measurement is conducted
     uint64_t us = (uint64_t)btdm_lpcycle_us * cycles;
     us = (us + (1 << (btdm_lpcycle_us_frac - 1))) >> btdm_lpcycle_us_frac;
@@ -589,9 +587,7 @@ static uint32_t IRAM_ATTR btdm_lpcycles_2_us(uint32_t cycles)
  */
 static uint32_t IRAM_ATTR btdm_us_2_lpcycles(uint32_t us)
 {
-    // Sanity check: the number of sleep duration(us) should not be too high to avoid overflow. Thrs: 100s
-    assert(us < 100000000);
-
+    // The number of sleep duration(us) should not lead to overflow. Thrs: 100s
     // Compute the sleep duration in us to low power clock cycles, with calibration result applied
     // clock measurement is conducted
     uint64_t cycles = ((uint64_t)(us) << btdm_lpcycle_us_frac) / btdm_lpcycle_us;
