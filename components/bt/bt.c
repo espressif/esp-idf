@@ -254,12 +254,20 @@ bool IRAM_ATTR btdm_queue_generic_deregister(btdm_queue_item_t *queue)
 
 static void IRAM_ATTR interrupt_disable(void)
 {
-    portENTER_CRITICAL(&global_int_mux);
+    if (xPortInIsrContext()) {
+        portENTER_CRITICAL_ISR(&global_int_mux);
+    } else {
+        portENTER_CRITICAL(&global_int_mux);
+    }
 }
 
 static void IRAM_ATTR interrupt_restore(void)
 {
-    portEXIT_CRITICAL(&global_int_mux);
+    if (xPortInIsrContext()) {
+        portEXIT_CRITICAL_ISR(&global_int_mux);
+    } else {
+        portEXIT_CRITICAL(&global_int_mux);
+    }
 }
 
 static void IRAM_ATTR task_yield_from_isr(void)
