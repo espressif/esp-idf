@@ -74,7 +74,7 @@ tL2C_LCB *l2cu_allocate_lcb (BD_ADDR p_bd_addr, BOOLEAN is_bonding, tBT_TRANSPOR
 #if (BLE_INCLUDED == TRUE)
             p_lcb->transport       = transport;
             p_lcb->tx_data_len     = controller_get_interface()->get_ble_default_data_packet_length();
-            p_lcb->le_sec_pending_q = fixed_queue_new(SIZE_MAX);
+            p_lcb->le_sec_pending_q = fixed_queue_new(QUEUE_SIZE_MAX);
 
             if (transport == BT_TRANSPORT_LE) {
                 l2cb.num_ble_links_active++;
@@ -1519,11 +1519,11 @@ tL2C_CCB *l2cu_allocate_ccb (tL2C_LCB *p_lcb, UINT16 cid)
     p_ccb->max_rx_mtu                = L2CAP_MTU_SIZE;
     p_ccb->tx_mps                    = L2CAP_FCR_TX_BUF_SIZE - 32;
 
-    p_ccb->xmit_hold_q  = fixed_queue_new(SIZE_MAX);
+    p_ccb->xmit_hold_q  = fixed_queue_new(QUEUE_SIZE_MAX);
 #if (CLASSIC_BT_INCLUDED == TRUE)
-    p_ccb->fcrb.srej_rcv_hold_q = fixed_queue_new(SIZE_MAX);
-    p_ccb->fcrb.retrans_q = fixed_queue_new(SIZE_MAX);
-    p_ccb->fcrb.waiting_for_ack_q = fixed_queue_new(SIZE_MAX);
+    p_ccb->fcrb.srej_rcv_hold_q = fixed_queue_new(QUEUE_SIZE_MAX);
+    p_ccb->fcrb.retrans_q = fixed_queue_new(QUEUE_SIZE_MAX);
+    p_ccb->fcrb.waiting_for_ack_q = fixed_queue_new(QUEUE_SIZE_MAX);
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
 
     p_ccb->cong_sent    = FALSE;

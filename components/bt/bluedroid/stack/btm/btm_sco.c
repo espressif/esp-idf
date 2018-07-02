@@ -113,7 +113,7 @@ void btm_sco_init (void)
 #endif
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
     for (int i = 0; i < BTM_MAX_SCO_LINKS; i++) {
-        btm_cb.sco_cb.sco_db[i].xmit_data_q = fixed_queue_new(SIZE_MAX);
+        btm_cb.sco_cb.sco_db[i].xmit_data_q = fixed_queue_new(QUEUE_SIZE_MAX);
     }
 #endif
     /* Initialize nonzero defaults */
