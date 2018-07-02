@@ -915,7 +915,14 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 
     esp_phy_load_cal_and_init(PHY_BT_MODULE);
 
-    if (btdm_controller_get_sleep_mode() == BTDM_MODEM_SLEEP_MODE_ORIG) {
+    if (btdm_controller_get_sleep_mode() == BTDM_MODEM_SLEEP_MODE_NONE) {
+        //Just register to sleep module, make the modem sleep modules check BT sleep status when sleep enter.
+        //Thus, it will prevent WIFI from disabling RF when BT is not in sleep but is using RF.
+        esp_modem_sleep_register(MODEM_BLE_MODULE);
+        esp_modem_sleep_register(MODEM_CLASSIC_BT_MODULE);
+        esp_modem_sleep_exit(MODEM_BLE_MODULE);
+        esp_modem_sleep_exit(MODEM_CLASSIC_BT_MODULE);
+    } else if (btdm_controller_get_sleep_mode() == BTDM_MODEM_SLEEP_MODE_ORIG) {
         esp_modem_sleep_register(MODEM_BLE_MODULE);
         esp_modem_sleep_register(MODEM_CLASSIC_BT_MODULE);
     } else if (btdm_controller_get_sleep_mode() == BTDM_MODEM_SLEEP_MODE_EVED) {
@@ -933,7 +940,8 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 
     ret = btdm_controller_enable(mode);
     if (ret) {
-        if (btdm_controller_get_sleep_mode() == BTDM_MODEM_SLEEP_MODE_ORIG) {
+        if (btdm_controller_get_sleep_mode() == BTDM_MODEM_SLEEP_MODE_NONE
+                || btdm_controller_get_sleep_mode() == BTDM_MODEM_SLEEP_MODE_ORIG) {
             esp_modem_sleep_deregister(MODEM_BLE_MODULE);
             esp_modem_sleep_deregister(MODEM_CLASSIC_BT_MODULE);
         } else if (btdm_controller_get_sleep_mode() == BTDM_MODEM_SLEEP_MODE_EVED) {
@@ -973,7 +981,8 @@ esp_err_t esp_bt_controller_disable(void)
     }
 
     if (ret == ESP_BT_MODE_IDLE) {
-        if (btdm_controller_get_sleep_mode() == BTDM_MODEM_SLEEP_MODE_ORIG) {
+        if (btdm_controller_get_sleep_mode() == BTDM_MODEM_SLEEP_MODE_NONE
+                || btdm_controller_get_sleep_mode() == BTDM_MODEM_SLEEP_MODE_ORIG) {
             esp_modem_sleep_deregister(MODEM_BLE_MODULE);
             esp_modem_sleep_deregister(MODEM_CLASSIC_BT_MODULE);
         } else if (btdm_controller_get_sleep_mode() == BTDM_MODEM_SLEEP_MODE_EVED) {
