@@ -594,7 +594,7 @@ int uart_write_bytes(uart_port_t uart_num, const char* src, size_t size);
 /**
  * @brief Send data to the UART port from a given buffer and length,
  *
-* If the UART driver's parameter 'tx_buffer_size' is set to zero:
+ * If the UART driver's parameter 'tx_buffer_size' is set to zero:
  * This function will not return until all the data and the break signal have been sent out.
  * After all data is sent out, send a break signal.
  *
