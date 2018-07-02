@@ -763,7 +763,7 @@ static void btc_a2dp_sink_thread_init(UNUSED_ATTR void *context)
 
     btc_a2dp_sink_state = BTC_A2DP_SINK_STATE_ON;
 
-    btc_aa_snk_cb.RxSbcQ = fixed_queue_new(SIZE_MAX);
+    btc_aa_snk_cb.RxSbcQ = fixed_queue_new(QUEUE_SIZE_MAX);
 
     btc_a2dp_control_init();
 }

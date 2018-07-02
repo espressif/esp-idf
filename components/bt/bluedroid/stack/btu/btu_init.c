@@ -236,3 +236,13 @@ UINT16 BTU_BleAclPktSize(void)
     return 0;
 #endif
 }
+#if SCAN_QUEUE_CONGEST_CHECK
+bool BTU_check_queue_is_congest(void)
+{
+    UBaseType_t wait_size = uxQueueMessagesWaiting(xBtuQueue);
+    if(wait_size >= QUEUE_CONGEST_SIZE ) {
+        return true;
+    }
+    return false;
+}
+#endif

@@ -376,8 +376,8 @@ tAVDT_CCB *avdt_ccb_alloc(BD_ADDR bd_addr)
         if (!p_ccb->allocated) {
             p_ccb->allocated = TRUE;
             memcpy(p_ccb->peer_addr, bd_addr, BD_ADDR_LEN);
-            p_ccb->cmd_q = fixed_queue_new(SIZE_MAX);
-            p_ccb->rsp_q = fixed_queue_new(SIZE_MAX);
+            p_ccb->cmd_q = fixed_queue_new(QUEUE_SIZE_MAX);
+            p_ccb->rsp_q = fixed_queue_new(QUEUE_SIZE_MAX);
             p_ccb->timer_entry.param = (UINT32) p_ccb;
             AVDT_TRACE_DEBUG("avdt_ccb_alloc %d\n", i);
             break;
