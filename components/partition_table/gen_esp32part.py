@@ -216,6 +216,7 @@ class PartitionDefinition(object):
             "phy" : 0x01,
             "nvs" : 0x02,
             "coredump" : 0x03,
+            "nvs_keys" : 0x04,
             "esphttpd" : 0x80,
             "fat" : 0x81,
             "spiffs" : 0x82,

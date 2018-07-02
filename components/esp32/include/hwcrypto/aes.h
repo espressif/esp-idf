@@ -51,6 +51,19 @@ typedef struct {
     uint8_t key[32];
 } esp_aes_context;
 
+
+/**
+ * \brief The AES XTS context-type definition.
+ */
+typedef struct
+{
+    esp_aes_context crypt; /*!< The AES context to use for AES block
+                                        encryption or decryption. */
+    esp_aes_context tweak; /*!< The AES context used for tweak
+                                        computation. */
+} esp_aes_xts_context;
+
+
 /**
  * \brief Lock access to AES hardware unit
  *
@@ -85,6 +98,23 @@ void esp_aes_init( esp_aes_context *ctx );
  * \param ctx      AES context to be cleared
  */
 void esp_aes_free( esp_aes_context *ctx );
+
+/**
+ * \brief          This function initializes the specified AES XTS context.
+ *
+ *                 It must be the first API called before using
+ *                 the context.
+ *
+ * \param ctx      The AES XTS context to initialize.
+ */
+void esp_aes_xts_init( esp_aes_xts_context *ctx );
+
+/**
+ * \brief          This function releases and clears the specified AES XTS context.
+ *
+ * \param ctx      The AES XTS context to clear.
+ */
+void esp_aes_xts_free( esp_aes_xts_context *ctx );
 
 /**
  * \brief          AES set key schedule (encryption or decryption)
@@ -232,6 +262,42 @@ int esp_aes_crypt_ctr( esp_aes_context *ctx,
                        unsigned char stream_block[16],
                        const unsigned char *input,
                        unsigned char *output );
+
+/**
+ * \brief          This function prepares an XTS context for encryption and
+ *                 sets the encryption key.
+ *
+ * \param ctx      The AES XTS context to which the key should be bound.
+ * \param key      The encryption key. This is comprised of the XTS key1
+ *                 concatenated with the XTS key2.
+ * \param keybits  The size of \p key passed in bits. Valid options are:
+ *                 <ul><li>256 bits (each of key1 and key2 is a 128-bit key)</li>
+ *                 <li>512 bits (each of key1 and key2 is a 256-bit key)</li></ul>
+ *
+ * \return         \c 0 on success.
+ * \return         #MBEDTLS_ERR_AES_INVALID_KEY_LENGTH on failure.
+ */
+int esp_aes_xts_setkey_enc( esp_aes_xts_context *ctx,
+                                const unsigned char *key,
+                                unsigned int keybits );
+
+/**
+ * \brief          This function prepares an XTS context for decryption and
+ *                 sets the decryption key.
+ *
+ * \param ctx      The AES XTS context to which the key should be bound.
+ * \param key      The decryption key. This is comprised of the XTS key1
+ *                 concatenated with the XTS key2.
+ * \param keybits  The size of \p key passed in bits. Valid options are:
+ *                 <ul><li>256 bits (each of key1 and key2 is a 128-bit key)</li>
+ *                 <li>512 bits (each of key1 and key2 is a 256-bit key)</li></ul>
+ *
+ * \return         \c 0 on success.
+ * \return         #MBEDTLS_ERR_AES_INVALID_KEY_LENGTH on failure.
+ */
+int esp_aes_xts_setkey_dec( esp_aes_xts_context *ctx,
+                                const unsigned char *key,
+                                unsigned int keybits );
 
 
 /**

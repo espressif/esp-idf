@@ -100,6 +100,10 @@ public:
     {
         return mPartitionName;
     }
+    uint32_t getBaseSector()
+    {
+        return mPageManager.getBaseSector();
+    }
 
     esp_err_t writeMultiPageBlob(uint8_t nsIndex, const char* key, const void* data, size_t dataSize, VerOffset chunkStart);
 

@@ -18,18 +18,28 @@
 #include "nvs_platform.hpp"
 #include "esp_partition.h"
 #include "sdkconfig.h"
+#ifdef CONFIG_NVS_ENCRYPTION
+#include "nvs_encr.hpp"
+#endif
 
 #ifdef ESP_PLATFORM
+#include <rom/crc.h>
+
 // Uncomment this line to force output from this module
 // #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 #include "esp_log.h"
 static const char* TAG = "nvs";
 #else
+#include "crc.h"
 #define ESP_LOGD(...)
 #endif
 
 extern "C" void nvs_dump(const char *partName);
 extern "C" esp_err_t nvs_flash_init_custom(const char *partName, uint32_t baseSector, uint32_t sectorCount);
+
+#ifdef CONFIG_NVS_ENCRYPTION
+extern "C" esp_err_t nvs_flash_secure_init_custom(const char *partName, uint32_t baseSector, uint32_t sectorCount, nvs_sec_cfg_t* cfg);
+#endif
 
 class HandleEntry : public intrusive_list_node<HandleEntry>
 {
@@ -91,6 +101,7 @@ extern "C" void nvs_dump(const char *partName)
 extern "C" esp_err_t nvs_flash_init_custom(const char *partName, uint32_t baseSector, uint32_t sectorCount)
 {
     ESP_LOGD(TAG, "nvs_flash_init_custom partition=%s start=%d count=%d", partName, baseSector, sectorCount);
+
     nvs::Storage* new_storage = NULL;
     nvs::Storage* storage = lookup_storage_from_name(partName);
     if (storage == NULL) {
@@ -108,6 +119,24 @@ extern "C" esp_err_t nvs_flash_init_custom(const char *partName, uint32_t baseSe
     }
     return err;
 }
+
+#ifdef CONFIG_NVS_ENCRYPTION
+extern "C" esp_err_t nvs_flash_secure_init_custom(const char *partName, uint32_t baseSector, uint32_t sectorCount, nvs_sec_cfg_t* cfg)
+{
+    ESP_LOGD(TAG, "nvs_flash_secure_init_custom partition=%s start=%d count=%d", partName, baseSector, sectorCount);
+
+    if(cfg) {
+        auto encrMgr = EncrMgr::getInstance();
+        auto err = encrMgr->setSecurityContext(baseSector, sectorCount, cfg);
+        if(err != ESP_OK) {
+            return err;
+        }
+    }
+
+    return nvs_flash_init_custom(partName, baseSector, sectorCount);
+}
+#endif
+
 
 #ifdef ESP_PLATFORM
 extern "C" esp_err_t nvs_flash_init_partition(const char *part_name)
@@ -136,6 +165,34 @@ extern "C" esp_err_t nvs_flash_init(void)
     return nvs_flash_init_partition(NVS_DEFAULT_PART_NAME);
 }
 
+#ifdef CONFIG_NVS_ENCRYPTION
+extern "C" esp_err_t nvs_flash_secure_init_partition(const char *part_name, nvs_sec_cfg_t* cfg)
+{
+    Lock::init();
+    Lock lock;
+    nvs::Storage* mStorage;
+
+    mStorage = lookup_storage_from_name(part_name);
+    if (mStorage) {
+        return ESP_OK;
+    }
+
+    const esp_partition_t* partition = esp_partition_find_first(
+            ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, part_name);
+    if (partition == NULL) {
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    return nvs_flash_secure_init_custom(part_name, partition->address / SPI_FLASH_SEC_SIZE,
+            partition->size / SPI_FLASH_SEC_SIZE, cfg);
+}
+
+extern "C" esp_err_t nvs_flash_secure_init(nvs_sec_cfg_t* cfg)
+{
+    return nvs_flash_secure_init_partition(NVS_DEFAULT_PART_NAME, cfg);
+}
+#endif
+
 extern "C" esp_err_t nvs_flash_erase_partition(const char *part_name)
 {
     const esp_partition_t* partition = esp_partition_find_first(
@@ -162,6 +219,13 @@ extern "C" esp_err_t nvs_flash_deinit_partition(const char* partition_name)
     if (!storage) {
         return ESP_ERR_NVS_NOT_INITIALIZED;
     }
+
+#ifdef CONFIG_NVS_ENCRYPTION
+    if(EncrMgr::isEncrActive()) {
+        auto encrMgr = EncrMgr::getInstance();
+        encrMgr->removeSecurityContext(storage->getBaseSector());
+    }
+#endif
 
     /* Clean up handles related to the storage being deinitialized */
     auto it = s_nvs_handles.begin();
@@ -507,3 +571,112 @@ extern "C" esp_err_t nvs_get_used_entry_count(nvs_handle handle, size_t* used_en
     }
     return err;
 }
+
+#if (defined CONFIG_NVS_ENCRYPTION) && (defined ESP_PLATFORM)
+
+extern "C" esp_err_t nvs_flash_generate_keys(const esp_partition_t* partition, nvs_sec_cfg_t* cfg)
+{
+    auto err = esp_partition_erase_range(partition, 0, partition->size);
+    if(err != ESP_OK) {
+        return err;
+    }
+
+    for(uint8_t cnt = 0; cnt < NVS_KEY_SIZE; cnt++) {
+        cfg->eky[cnt] = 0xff;
+        cfg->tky[cnt] = 0xee;
+    }
+
+    err = spi_flash_write(partition->address, cfg->eky, NVS_KEY_SIZE);
+    if(err != ESP_OK) { 
+        return err;
+    }
+
+    err = spi_flash_write(partition->address + NVS_KEY_SIZE, cfg->tky, NVS_KEY_SIZE);
+    if(err != ESP_OK) {
+        return err;
+    }
+
+    err = esp_partition_read(partition, 0, cfg->eky, NVS_KEY_SIZE);
+    if(err != ESP_OK) { 
+        return err;
+    }
+
+    err = esp_partition_read(partition, NVS_KEY_SIZE, cfg->tky, NVS_KEY_SIZE);
+    if(err != ESP_OK) { 
+        return err;
+    }
+
+    uint32_t crc_calc = crc32_le(0xffffffff, cfg->eky, NVS_KEY_SIZE);
+    crc_calc = crc32_le(crc_calc, cfg->tky, NVS_KEY_SIZE);
+
+    uint8_t crc_wr[16];
+    memset(crc_wr, 0xff, sizeof(crc_wr));
+    memcpy(crc_wr, &crc_calc, 4);
+
+    err = esp_partition_write(partition, 2 * NVS_KEY_SIZE, crc_wr, sizeof(crc_wr));
+    if(err != ESP_OK) { 
+        return err;
+    }
+    
+    return ESP_OK;
+
+}
+
+extern "C" esp_err_t nvs_flash_read_security_cfg(const esp_partition_t* partition, nvs_sec_cfg_t* cfg)
+{
+    uint8_t eky_raw[NVS_KEY_SIZE], tky_raw[NVS_KEY_SIZE];
+    uint32_t crc_raw, crc_read, crc_calc;
+
+    auto err = spi_flash_read(partition->address, eky_raw, NVS_KEY_SIZE);
+    if(err != ESP_OK) {
+        return err;
+    }
+
+    err = spi_flash_read(partition->address + NVS_KEY_SIZE, tky_raw, NVS_KEY_SIZE);
+    if(err != ESP_OK) {
+        return err;
+    }
+
+    err = spi_flash_read(partition->address + 2 * NVS_KEY_SIZE, &crc_raw, 4);
+    if(err != ESP_OK) {
+        return err;
+    }
+
+
+    uint8_t cnt = 0;
+
+    while(cnt < NVS_KEY_SIZE && eky_raw[cnt] == 0xff && tky_raw[cnt] == 0xff) cnt++;
+
+    if(cnt == NVS_KEY_SIZE && crc_raw == 0xffffffff) {
+        /* This is an uninitialized key partition*/
+        return ESP_ERR_NVS_KEYS_NOT_INITIALIZED;
+    }
+    
+    err = esp_partition_read(partition, 0, cfg->eky, NVS_KEY_SIZE);
+
+    if(err != ESP_OK) { 
+        return err;
+    }
+
+    err = esp_partition_read(partition, NVS_KEY_SIZE, cfg->tky, NVS_KEY_SIZE);
+    
+    if(err != ESP_OK) { 
+        return err;
+    }
+ 
+    err = esp_partition_read(partition, 2 * NVS_KEY_SIZE, &crc_read, 4);
+    
+    if(err != ESP_OK) { 
+        return err;
+    }
+    
+    crc_calc = crc32_le(0xffffffff, cfg->eky, NVS_KEY_SIZE);
+    crc_calc = crc32_le(crc_calc, cfg->tky, NVS_KEY_SIZE);
+
+    if(crc_calc != crc_read) { 
+        return ESP_ERR_NVS_CORRUPT_KEY_PART;
+    }
+
+    return ESP_OK;
+}
+#endif
