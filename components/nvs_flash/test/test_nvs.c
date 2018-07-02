@@ -7,9 +7,14 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "esp_partition.h"
+#include "esp_flash_encrypt.h"
 #include "esp_log.h"
 #include <string.h>
 #include "esp_system.h"
+
+#ifdef CONFIG_NVS_ENCRYPTION
+#include "mbedtls/aes.h"
+#endif
 
 static const char* TAG = "test_nvs";
 
@@ -239,3 +244,244 @@ TEST_CASE("check for memory leaks in nvs_set_blob", "[nvs]")
     printf("%d\n", esp_get_free_heap_size());
     /* heap leaks will be checked in unity_platform.c */
 }
+
+#ifdef CONFIG_NVS_ENCRYPTION
+TEST_CASE("check underlying xts code for 32-byte size sector encryption", "[nvs]")
+{
+    uint8_t eky_hex[2 * NVS_KEY_SIZE] = { 0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11, 
+        0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
+        0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
+        0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
+        /* Tweak key below*/
+        0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22, 
+        0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22,
+        0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22,
+        0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22 };
+
+    uint8_t ba_hex[16] = { 0x33,0x33,0x33,0x33,0x33,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00 };
+
+    uint8_t ptxt_hex[32] = { 0x44,0x44,0x44,0x44,0x44,0x44,0x44,0x44, 
+        0x44,0x44,0x44,0x44,0x44,0x44,0x44,0x44,
+        0x44,0x44,0x44,0x44,0x44,0x44,0x44,0x44,
+        0x44,0x44,0x44,0x44,0x44,0x44,0x44,0x44 };
+
+
+    uint8_t ctxt_hex[32] = { 0xe6,0x22,0x33,0x4f,0x18,0x4b,0xbc,0xe1,
+        0x29,0xa2,0x5b,0x2a,0xc7,0x6b,0x3d,0x92,
+        0xab,0xf9,0x8e,0x22,0xdf,0x5b,0xdd,0x15,
+        0xaf,0x47,0x1f,0x3d,0xb8,0x94,0x6a,0x85 };
+
+    mbedtls_aes_xts_context ectx[1];
+    mbedtls_aes_xts_context dctx[1];
+
+    mbedtls_aes_xts_init(ectx);
+    mbedtls_aes_xts_init(dctx);
+
+    TEST_ASSERT_TRUE(!mbedtls_aes_xts_setkey_enc(ectx, eky_hex, 2 * NVS_KEY_SIZE * 8));
+    TEST_ASSERT_TRUE(!mbedtls_aes_xts_setkey_enc(dctx, eky_hex, 2 * NVS_KEY_SIZE * 8));
+
+    TEST_ASSERT_TRUE(!mbedtls_aes_crypt_xts(ectx, MBEDTLS_AES_ENCRYPT, 32, ba_hex, ptxt_hex, ptxt_hex));
+
+    TEST_ASSERT_TRUE(!memcmp(ptxt_hex, ctxt_hex, 32));
+}
+
+TEST_CASE("Check nvs key partition APIs (read and generate keys)", "[nvs]")
+{
+    nvs_sec_cfg_t cfg, cfg2;
+    
+    const esp_partition_t* key_part = esp_partition_find_first(
+            ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS_KEYS, NULL);
+
+    if (!esp_flash_encryption_enabled()) {
+        TEST_IGNORE_MESSAGE("flash encryption disabled, skipping nvs_key partition related tests");
+    }
+
+    TEST_ESP_OK(esp_partition_erase_range(key_part, 0, key_part->size));
+    TEST_ESP_ERR(nvs_flash_read_security_cfg(key_part, &cfg), ESP_ERR_NVS_KEYS_NOT_INITIALIZED);
+    
+    TEST_ESP_OK(nvs_flash_generate_keys(key_part, &cfg));
+
+    TEST_ESP_OK(nvs_flash_read_security_cfg(key_part, &cfg2));
+
+    TEST_ASSERT_TRUE(!memcmp(&cfg, &cfg2, sizeof(nvs_sec_cfg_t)));
+}
+
+
+TEST_CASE("test nvs apis with encryption enabled", "[nvs]")
+{
+
+
+    if (!esp_flash_encryption_enabled()) {
+        TEST_IGNORE_MESSAGE("flash encryption disabled, skipping nvs_api tests with encryption enabled");
+    }
+    const esp_partition_t* key_part = esp_partition_find_first(
+            ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS_KEYS, NULL);
+
+    const esp_partition_t* nvs_partition = esp_partition_find_first(
+            ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
+    assert(nvs_partition && "partition table must have an NVS partition");
+
+    ESP_ERROR_CHECK( esp_partition_erase_range(nvs_partition, 0, nvs_partition->size) );
+
+    nvs_sec_cfg_t cfg;
+    esp_err_t err = nvs_flash_read_security_cfg(key_part, &cfg);
+
+    if(err == ESP_ERR_NVS_KEYS_NOT_INITIALIZED) {
+        TEST_ESP_OK(nvs_flash_generate_keys(key_part, &cfg));
+    } else {
+        ESP_ERROR_CHECK(err);
+    }
+    TEST_ESP_OK(nvs_flash_secure_init(&cfg));
+    
+    nvs_handle handle_1;
+
+    TEST_ESP_ERR(nvs_open("namespace1", NVS_READONLY, &handle_1), ESP_ERR_NVS_NOT_FOUND);
+
+
+    TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle_1));
+
+    TEST_ESP_OK(nvs_set_i32(handle_1, "foo", 0x12345678));
+    TEST_ESP_OK(nvs_set_i32(handle_1, "foo", 0x23456789));
+
+    nvs_handle handle_2;
+    TEST_ESP_OK(nvs_open("namespace2", NVS_READWRITE, &handle_2));
+    TEST_ESP_OK(nvs_set_i32(handle_2, "foo", 0x3456789a));
+    const char* str = "value 0123456789abcdef0123456789abcdef";
+    TEST_ESP_OK(nvs_set_str(handle_2, "key", str));
+
+    int32_t v1;
+    TEST_ESP_OK(nvs_get_i32(handle_1, "foo", &v1));
+    TEST_ASSERT_TRUE(0x23456789 == v1);
+
+    int32_t v2;
+    TEST_ESP_OK(nvs_get_i32(handle_2, "foo", &v2));
+    TEST_ASSERT_TRUE(0x3456789a == v2);
+
+    char buf[strlen(str) + 1];
+    size_t buf_len = sizeof(buf);
+
+    size_t buf_len_needed;
+    TEST_ESP_OK(nvs_get_str(handle_2, "key", NULL, &buf_len_needed));
+    TEST_ASSERT_TRUE(buf_len_needed == buf_len);
+
+    size_t buf_len_short = buf_len - 1;
+    TEST_ESP_ERR(ESP_ERR_NVS_INVALID_LENGTH, nvs_get_str(handle_2, "key", buf, &buf_len_short));
+    TEST_ASSERT_TRUE(buf_len_short == buf_len);
+
+    size_t buf_len_long = buf_len + 1;
+    TEST_ESP_OK(nvs_get_str(handle_2, "key", buf, &buf_len_long));
+    TEST_ASSERT_TRUE(buf_len_long == buf_len);
+
+    TEST_ESP_OK(nvs_get_str(handle_2, "key", buf, &buf_len));
+
+    TEST_ASSERT_TRUE(0 == strcmp(buf, str));
+
+    nvs_close(handle_1);
+    nvs_close(handle_2);
+
+    TEST_ESP_OK(nvs_flash_deinit());
+}
+
+TEST_CASE("test nvs apis for nvs partition generator utility with encryption enabled", "[nvs_part_gen]")
+{
+
+    if (!esp_flash_encryption_enabled()) {
+        TEST_IGNORE_MESSAGE("flash encryption disabled, skipping nvs_api tests with encryption enabled");
+    }
+
+    nvs_handle handle;
+    nvs_sec_cfg_t xts_cfg;
+
+    extern const char nvs_key_start[] asm("_binary_encryption_keys_bin_start");
+    extern const char nvs_key_end[]   asm("_binary_encryption_keys_bin_end");
+
+    extern const char nvs_data_start[] asm("_binary_partition_encrypted_bin_start");
+
+    extern const char sample_bin_start[] asm("_binary_sample_bin_start");
+
+    const esp_partition_t* key_part = esp_partition_find_first(
+            ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS_KEYS, NULL);
+
+    const esp_partition_t* nvs_part = esp_partition_find_first(
+            ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
+
+    assert(key_part && "partition table must have a KEY partition");
+    TEST_ASSERT_TRUE((nvs_key_end - nvs_key_start - 1) == SPI_FLASH_SEC_SIZE);
+
+    assert(nvs_part && "partition table must have an NVS partition");
+    printf("\n nvs_part size:%d\n", nvs_part->size);
+
+    ESP_ERROR_CHECK(esp_partition_erase_range(key_part, 0, key_part->size));
+    ESP_ERROR_CHECK( esp_partition_erase_range(nvs_part, 0, nvs_part->size) );
+
+    for (int i = 0; i < key_part->size; i+= SPI_FLASH_SEC_SIZE) {
+        ESP_ERROR_CHECK( esp_partition_write(key_part, i, nvs_key_start + i, SPI_FLASH_SEC_SIZE) );
+    }
+
+    for (int i = 0; i < nvs_part->size; i+= SPI_FLASH_SEC_SIZE) {
+        ESP_ERROR_CHECK( spi_flash_write(nvs_part->address + i, nvs_data_start + i, SPI_FLASH_SEC_SIZE) );
+    }
+
+    esp_err_t err = nvs_flash_read_security_cfg(key_part, &xts_cfg);
+    ESP_ERROR_CHECK(err);
+
+    TEST_ESP_OK(nvs_flash_secure_init(&xts_cfg));
+
+    TEST_ESP_OK(nvs_open("dummyNamespace", NVS_READONLY, &handle));
+    uint8_t u8v;
+    TEST_ESP_OK( nvs_get_u8(handle, "dummyU8Key", &u8v));
+    TEST_ASSERT_TRUE(u8v == 127);
+    int8_t i8v;
+    TEST_ESP_OK( nvs_get_i8(handle, "dummyI8Key", &i8v));
+    TEST_ASSERT_TRUE(i8v == -128);
+    uint16_t u16v;
+    TEST_ESP_OK( nvs_get_u16(handle, "dummyU16Key", &u16v));
+    TEST_ASSERT_TRUE(u16v == 32768);
+    uint32_t u32v;
+    TEST_ESP_OK( nvs_get_u32(handle, "dummyU32Key", &u32v));
+    TEST_ASSERT_TRUE(u32v == 4294967295);
+    int32_t i32v;
+    TEST_ESP_OK( nvs_get_i32(handle, "dummyI32Key", &i32v));
+    TEST_ASSERT_TRUE(i32v == -2147483648);
+
+    char buf[64] = {0};
+    size_t buflen = 64;
+    TEST_ESP_OK( nvs_get_str(handle, "dummyStringKey", buf, &buflen));
+    TEST_ASSERT_TRUE(strncmp(buf, "0A:0B:0C:0D:0E:0F", buflen) == 0);
+
+    uint8_t hexdata[] = {0x01, 0x02, 0x03, 0xab, 0xcd, 0xef};
+    buflen = 64;
+    TEST_ESP_OK( nvs_get_blob(handle, "dummyHex2BinKey", buf, &buflen));
+    TEST_ASSERT_TRUE(memcmp(buf, hexdata, buflen) == 0);
+
+    uint8_t base64data[] = {'1', '2', '3', 'a', 'b', 'c'};
+    buflen = 64;
+    TEST_ESP_OK( nvs_get_blob(handle, "dummyBase64Key", buf, &buflen));
+    TEST_ASSERT_TRUE(memcmp(buf, base64data, buflen) == 0);
+
+    uint8_t hexfiledata[] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef};
+    buflen = 64;
+    TEST_ESP_OK( nvs_get_blob(handle, "hexFileKey", buf, &buflen));
+    TEST_ASSERT_TRUE(memcmp(buf, hexfiledata, buflen) == 0);
+
+    uint8_t base64filedata[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0xab, 0xcd, 0xef};
+    buflen = 64;
+    TEST_ESP_OK( nvs_get_blob(handle, "base64FileKey", buf, &buflen));
+    TEST_ASSERT_TRUE(memcmp(buf, base64filedata, buflen) == 0);
+
+    uint8_t strfiledata[64] = "abcdefghijklmnopqrstuvwxyz\0";
+    buflen = 64;
+    TEST_ESP_OK( nvs_get_str(handle, "stringFileKey", buf, &buflen));
+    TEST_ASSERT_TRUE(memcmp(buf, strfiledata, buflen) == 0);
+
+    char bin_data[5120];
+    size_t bin_len = sizeof(bin_data);
+    TEST_ESP_OK( nvs_get_blob(handle, "binFileKey", bin_data, &bin_len));
+    TEST_ASSERT_TRUE(memcmp(bin_data, sample_bin_start, bin_len) == 0);
+
+    nvs_close(handle);
+    TEST_ESP_OK(nvs_flash_deinit());
+
+}
+#endif

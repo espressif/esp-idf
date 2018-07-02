@@ -22,13 +22,14 @@ from __future__ import print_function
 import sys
 import argparse
 import binascii
-import getopt
+import random
 import struct
 import os
 import array
 import csv
 import zlib
-from os import path
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
 
 """ Class for standard NVS page structure """
 class Page(object):
@@ -65,6 +66,8 @@ class Page(object):
 
     def __init__(self, page_num, is_rsrv_page=False):
         self.entry_num = 0
+        self.is_encrypt = False
+        self.encr_key = None
         self.bitmap_array = array.array('B')
         self.version = Page.VERSION2
         self.page_buf = bytearray(b'\xff')*Page.PAGE_PARAMS["max_size"]
@@ -92,12 +95,14 @@ class Page(object):
         page_header[28:32] = struct.pack('<I', crc & 0xFFFFFFFF)
         self.page_buf[0:len(page_header)] = page_header
 
+
     def create_bitmap_array(self):
         bitarray = array.array('B')
         charsize = 32 # bitmaparray has 256 bits, hence 32 bytes
         fill = 255 # Fill all 8 bits with 1's
         bitarray.extend((fill,) * charsize)
         return bitarray
+
 
     def write_bitmaparray(self):
         bitnum = self.entry_num * 2
@@ -109,15 +114,103 @@ class Page(object):
         end_idx = Page.BITMAPARRAY_OFFSET + Page.BITMAPARRAY_SIZE_IN_BYTES
         self.page_buf[start_idx:end_idx] = self.bitmap_array
 
-    def write_entry_to_buf(self, data, entrycount):
+
+    def encrypt_entry(self, data_arr, tweak_arr, encr_key):
+        # Encrypt 32 bytes of data using AES-XTS encryption
+        backend = default_backend()
+        plain_text = data_arr.decode('hex')
+        tweak = tweak_arr.decode('hex')
+        cipher = Cipher(algorithms.AES(encr_key), modes.XTS(tweak), backend=backend)
+        encryptor = cipher.encryptor()
+        encrypted_data = encryptor.update(plain_text)
+
+        return encrypted_data
+
+
+    def reverse_hexbytes(self, addr_tmp):
+        addr = []
+        reversed_bytes = ""
+        for i in range(0, len(addr_tmp), 2):
+            addr.append(addr_tmp[i:i+2])
+        reversed_bytes = "".join(reversed(addr))
+
+        return reversed_bytes
+
+
+    def encrypt_data(self, data_input, no_of_entries, nvs_obj):
+        # Set values needed for encryption and encrypt data byte wise
+        encr_data_to_write = ''
+        data_len_needed = 64 #in hex
+        tweak_len_needed = 32 #in hex
+        init_tweak_val = '0'
+        init_data_val = 'f'
+        tweak_tmp = ''
+        encr_key_input = None
+
+        # Extract encryption key and tweak key from given key input
+        encr_key_input = self.encr_key.decode('hex')
+
+        rel_addr = nvs_obj.page_num * Page.PAGE_PARAMS["max_size"] + Page.FIRST_ENTRY_OFFSET
+
+        if type(data_input) != bytearray:
+            byte_arr = bytearray('\xff') * 32
+            byte_arr[0:len(data_input)] = data_input
+            data_input = byte_arr
+
+        data_input = binascii.hexlify(bytearray(data_input))
+
+        entry_no = self.entry_num
+        start_idx = 0
+        end_idx = start_idx + 64
+
+        for _ in range(0, no_of_entries):
+            # Set tweak value
+            offset = entry_no * Page.SINGLE_ENTRY_SIZE
+            addr = hex(rel_addr + offset)[2:]
+            addr_len = len(addr)
+            if addr_len > 2:
+                if not addr_len % 2:
+                    addr_tmp = addr
+                    tweak_tmp = self.reverse_hexbytes(addr_tmp)
+                    tweak_val = tweak_tmp + (init_tweak_val * (tweak_len_needed - (len(tweak_tmp))))
+                else:
+                    addr_tmp = init_tweak_val + addr
+                    tweak_tmp = self.reverse_hexbytes(addr_tmp)
+                    tweak_val = tweak_tmp + (init_tweak_val * (tweak_len_needed - (len(tweak_tmp))))
+            else:
+                tweak_val = addr + (init_tweak_val * (tweak_len_needed - len(addr)))
+
+            # Encrypt data
+            data_bytes = data_input[start_idx:end_idx]
+            data_val = data_bytes + (init_data_val * (data_len_needed - len(data_bytes)))
+            encr_data_ret = self.encrypt_entry(data_val, tweak_val, encr_key_input)
+            encr_data_to_write = encr_data_to_write + encr_data_ret
+            # Update values for encrypting next set of data bytes
+            start_idx = end_idx
+            end_idx = start_idx + 64
+            entry_no += 1
+
+
+        return encr_data_to_write
+
+
+    def write_entry_to_buf(self, data, entrycount,nvs_obj):
+        encr_data = bytearray()
+        if self.is_encrypt:
+            encr_data_ret = self.encrypt_data(data, entrycount,nvs_obj)
+            encr_data[0:len(encr_data_ret)] = encr_data_ret
+            data = encr_data
+
         data_offset = Page.FIRST_ENTRY_OFFSET + (Page.SINGLE_ENTRY_SIZE * self.entry_num)
         start_idx = data_offset
         end_idx = data_offset + len(data)
         self.page_buf[start_idx:end_idx]  = data
+
         # Set bitmap array for entries in current page
         for i in range(0, entrycount):
             self.write_bitmaparray()
             self.entry_num += 1
+
 
     def set_crc_header(self, entry_struct):
         crc_data = bytearray(28)
@@ -177,9 +270,9 @@ class Page(object):
             entry_struct = self.set_crc_header(entry_struct)
 
             # write entry header
-            self.write_entry_to_buf(entry_struct, 1)
+            self.write_entry_to_buf(entry_struct, 1,nvs_obj)
             # write actual data
-            self.write_entry_to_buf(data_chunk, datachunk_entry_count)
+            self.write_entry_to_buf(data_chunk, datachunk_entry_count,nvs_obj)
 
             chunk_count = chunk_count + 1
 
@@ -192,8 +285,13 @@ class Page(object):
 
             offset = offset + chunk_size
 
+
             # All chunks are stored, now store the index
             if not remaining_size:
+                # Initialise data field to 0xff
+                data_array = bytearray('\xff')*8
+                entry_struct[24:32] = data_array
+
                 # change type of data to BLOB_IDX
                 entry_struct[1] = Page.BLOB_IDX
 
@@ -211,14 +309,14 @@ class Page(object):
                 # compute crc of entry header
                 entry_struct = self.set_crc_header(entry_struct)
 
-                # write entry header
-                self.write_entry_to_buf(entry_struct, 1)
+                # write last entry
+                self.write_entry_to_buf(entry_struct, 1,nvs_obj)
                 break
 
         return entry_struct
 
 
-    def write_single_page_entry(self, entry_struct, data, datalen, data_entry_count):
+    def write_single_page_entry(self, entry_struct, data, datalen, data_entry_count, nvs_obj):
         # compute CRC of data
         entry_struct[24:26] = struct.pack('<H', datalen)
         crc = zlib.crc32(data, 0xFFFFFFFF)
@@ -228,16 +326,16 @@ class Page(object):
         entry_struct = self.set_crc_header(entry_struct)
 
         # write entry header
-        self.write_entry_to_buf(entry_struct, 1)
+        self.write_entry_to_buf(entry_struct, 1, nvs_obj)
         # write actual data
-        self.write_entry_to_buf(data, data_entry_count)
+        self.write_entry_to_buf(data, data_entry_count, nvs_obj)
 
 
     """
     Low-level function to write variable length data into page buffer. Data should be formatted
     according to encoding specified.
     """
-    def write_varlen_data(self, key, data, encoding, ns_index, nvs_obj):
+    def write_varlen_data(self, key, data, encoding, ns_index,nvs_obj):
         # Set size of data
         datalen = len(data)
 
@@ -289,12 +387,12 @@ class Page(object):
                 entry_struct = self.write_varlen_binary_data(entry_struct,ns_index,key,data,\
                 datalen,total_entry_count, nvs_obj)
         else:
-            self.write_single_page_entry(entry_struct, data, datalen, data_entry_count)
+            self.write_single_page_entry(entry_struct, data, datalen, data_entry_count, nvs_obj)
 
 
 
     """ Low-level function to write data of primitive type into page buffer. """
-    def write_primitive_data(self, key, data, encoding, ns_index):
+    def write_primitive_data(self, key, data, encoding, ns_index,nvs_obj):
         # Check if entry exceeds max number of entries allowed per page
         if self.entry_num >= Page.PAGE_PARAMS["max_entries"]:
             raise PageFullError()
@@ -334,7 +432,7 @@ class Page(object):
         entry_struct[4:8] = struct.pack('<I', crc & 0xFFFFFFFF)
 
         # write to file
-        self.write_entry_to_buf(entry_struct, 1)
+        self.write_entry_to_buf(entry_struct, 1,nvs_obj)
 
     """ Get page buffer data of a given page """
     def get_data(self):
@@ -379,6 +477,8 @@ class NVS(object):
         self.page_num += 1
         new_page = Page(self.page_num, is_rsrv_page)
         new_page.version = version
+        new_page.is_encrypt = is_encrypt_data
+        new_page.encr_key = key_input
         self.pages.append(new_page)
         self.cur_page = new_page
         return new_page
@@ -390,10 +490,10 @@ class NVS(object):
     def write_namespace(self, key):
         self.namespace_idx += 1
         try:
-            self.cur_page.write_primitive_data(key, self.namespace_idx, "u8", 0)
+            self.cur_page.write_primitive_data(key, self.namespace_idx, "u8", 0,self)
         except PageFullError:
             new_page = self.create_new_page()
-            new_page.write_primitive_data(key, self.namespace_idx, "u8", 0)
+            new_page.write_primitive_data(key, self.namespace_idx, "u8", 0,self)
             pass
 
     """
@@ -419,17 +519,17 @@ class NVS(object):
         primitive_encodings = ["u8", "i8", "u16", "u32", "i32"]
         if encoding in varlen_encodings:
             try:
-                self.cur_page.write_varlen_data(key, value, encoding, self.namespace_idx, self)
+                self.cur_page.write_varlen_data(key, value, encoding, self.namespace_idx,self)
             except PageFullError:
                 new_page = self.create_new_page()
-                new_page.write_varlen_data(key, value, encoding, self.namespace_idx,  self)
+                new_page.write_varlen_data(key, value, encoding, self.namespace_idx,self)
                 pass
         elif encoding in primitive_encodings:
             try:
-                self.cur_page.write_primitive_data(key, int(value), encoding, self.namespace_idx)
+                self.cur_page.write_primitive_data(key, int(value), encoding, self.namespace_idx,self)
             except PageFullError:
                 new_page = self.create_new_page()
-                new_page.write_primitive_data(key, int(value), encoding, self.namespace_idx)
+                new_page.write_primitive_data(key, int(value), encoding, self.namespace_idx,self)
                 sys.exc_clear()
                 pass
         else:
@@ -469,6 +569,7 @@ def nvs_open(result_obj, input_size):
     """ Wrapper to create and NVS class object. This object can later be used to set key-value pairs
 
     :param result_obj: File/Stream object to dump resultant binary. If data is to be dumped into memory, one way is to use BytesIO object
+    :param input_size: Size of Partition
     :return: NVS class instance
     """
     return NVS(result_obj, input_size)
@@ -483,6 +584,7 @@ def write_entry(nvs_instance, key, datatype, encoding, value):
     :param value: Data value in ascii encoded string format for "data" datatype and filepath for "file" datatype
     :return: None
     """
+
     if datatype == "file":
         abs_file_path = value
         if os.path.isabs(value) == False:
@@ -504,16 +606,21 @@ def nvs_close(nvs_instance):
     """
     nvs_instance.__exit__(None, None, None)
 
-def nvs_part_gen(input_filename=None, output_filename=None, input_size=None, version_no=None):
+def nvs_part_gen(input_filename=None, output_filename=None, input_size=None, key_gen=None, encrypt_mode=None, key_file=None, version_no=None):
     """ Wrapper to generate nvs partition binary
 
     :param input_filename: Name of input file containing data
     :param output_filename: Name of output file to store generated binary
     :param input_size: Size of partition
+    :param key_gen: Enable encryption key generation in encryption mode
+    :param encryption_mode: Enable/Disable encryption mode
+    :param key_file: Input file having encryption keys in encryption mode
     :return: None
     """
-    global version
+    global version, is_encrypt_data, key_input
     version = version_no
+    key_input = None
+    is_encrypt_data = encrypt_mode
 
     # Set size
     input_size = int(input_size.split('KB')[0]) * 1024
@@ -532,6 +639,35 @@ def nvs_part_gen(input_filename=None, output_filename=None, input_size=None, ver
     if input_size == 0:
         sys.exit("Size parameter is insufficient.")
 
+    if is_encrypt_data == 'True':
+        is_encrypt_data = True
+    elif is_encrypt_data == 'False':
+        is_encrypt_data = False
+
+    if key_gen == 'True':
+        key_gen = True
+    elif key_gen == 'False':
+        key_gen = False
+
+    if is_encrypt_data and not key_gen and not key_file:
+        sys.exit("Missing parameter. Enter --keyfile or --keygen.")
+
+    if is_encrypt_data and key_gen and key_file:
+        sys.exit("Only one input allowed. Enter --keyfile or --keygen.")
+
+    if not is_encrypt_data and key_gen:
+        sys.exit("Invalid. Cannot give --key_gen as --encrypt is set to False.")
+
+    if not is_encrypt_data and key_file:
+        sys.exit("Invalid. Cannot give --key_file as --encrypt is set to False.")
+
+    if key_gen:
+        key_input = ''.join(random.choice('0123456789abcdef') for _ in xrange(128))
+    elif key_file:
+        with open(key_file) as key_f:
+            key_input = key_f.readline()
+            key_input = key_input.strip()
+
     input_file = open(input_filename, 'rb')
     output_file = open(output_filename, 'wb')
 
@@ -540,7 +676,7 @@ def nvs_part_gen(input_filename=None, output_filename=None, input_size=None, ver
         for row in reader:
             try:
                 write_entry(nvs_obj, row["key"], row["type"], row["encoding"], row["value"])
-            except (InputError, InsufficientSizeError) as e:
+            except (InputError) as e:
                 print(e)
                 input_file.close()
                 output_file.close()
@@ -548,6 +684,19 @@ def nvs_part_gen(input_filename=None, output_filename=None, input_size=None, ver
 
     input_file.close()
     output_file.close()
+
+    if is_encrypt_data:
+        output_keys_file = open("encryption_keys.bin",'wb')
+        keys_page_buf = bytearray(b'\xff')*Page.PAGE_PARAMS["max_size"]
+        key_bytes = key_input.decode('hex')
+        key_len = len(key_bytes)
+        keys_page_buf[0:key_len] = key_bytes
+        crc_data = keys_page_buf[0:key_len]
+        crc = zlib.crc32(buffer(crc_data), 0xFFFFFFFF)
+        keys_page_buf[64:68] = struct.pack('<I', crc & 0xFFFFFFFF)
+        output_keys_file.write(keys_page_buf)
+
+
 
 def main():
     parser = argparse.ArgumentParser(description="ESP32 NVS partition generation utility")
@@ -571,6 +720,22 @@ def main():
             choices=['v1','v2'],
             default='v2')
 
+    parser.add_argument(
+            "--keygen",
+            help='Generate keys for encryption. Default: False (Applicable only if encryption mode is true)',
+            choices=['True','False'],
+            default= 'False')
+
+    parser.add_argument(
+            "--encrypt",
+            help='Set encryption mode. Default: False',
+            choices=['True','False'],
+            default='False')
+
+    parser.add_argument(
+            "--keyfile",
+            help='File having key for encryption (Applicable only if encryption mode is true)',
+            default = None)
 
     args = parser.parse_args()
     input_filename = args.input
@@ -578,7 +743,11 @@ def main():
     input_size = args.size
     version_no = args.version
 
-    nvs_part_gen(input_filename, output_filename, input_size, version_no)
+    key_gen = args.keygen
+    is_encrypt_data = args.encrypt
+    key_file = args.keyfile
+
+    nvs_part_gen(input_filename, output_filename, input_size, key_gen, is_encrypt_data, key_file, version_no)
 
 
 
