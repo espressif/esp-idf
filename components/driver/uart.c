@@ -984,8 +984,6 @@ static void uart_rx_intr_handler_default(void *param)
             // reset RTS pin to start receiver driver
             if (UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
                 UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
-                uart_reg->conf0.rxfifo_rst = 1; // Workaround to clear phantom 00 characters
-                uart_reg->conf0.rxfifo_rst = 0; // received after transmission.
                 uart_reset_rx_fifo(uart_num); // Allows to avoid hardware issue with the RXFIFO reset
                 uart_reg->conf0.sw_rts = 1;
                 UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
