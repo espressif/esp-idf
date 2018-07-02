@@ -14,9 +14,12 @@
 
 """ DUT for IDF applications """
 import os
+import sys
 import re
 import subprocess
 import functools
+import serial
+from serial.tools import list_ports
 
 import DUT
 
@@ -124,3 +127,23 @@ class IDFDUT(DUT.SerialDUT):
              "--before", "default_reset", "--after", "hard_reset", "read_flash",
              _address, _size, output_file]
         )
+
+    @classmethod
+    def list_available_ports(cls):
+        ports = [x.device for x in list_ports.comports()]
+        port_hint = os.getenv('ESPPORT').decode('utf8')
+
+        # If $ESPPORT is a valid port, make it appear first in the list
+        if port_hint in ports:
+            ports.remove(port_hint)
+            return [port_hint] + ports
+
+        # On macOS, user may set ESPPORT to /dev/tty.xxx while
+        # pySerial lists only the corresponding /dev/cu.xxx port
+        if sys.platform == 'darwin' and 'tty.' in port_hint:
+            port_hint = port_hint.replace('tty.', 'cu.')
+            if port_hint in ports:
+                ports.remove(port_hint)
+                return [port_hint] + ports
+
+        return ports
