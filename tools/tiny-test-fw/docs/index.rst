@@ -9,33 +9,12 @@ Welcome to TinyTestFW's documentation!
 We have a lot of test which depends on interact with DUT via communication port.
 Usually we send command to the port and then check response to see if the test succeed.
 TinyTestFW is designed for such scenarios.
-It supports ESP-IDF applications and is able for other applications by writing new bundles.
-
-Test FW features
-----------------
-
-1. Test Environment:
-    1. DUT: DUT provides methods to interact with DUT
-        * read/write through port
-        * expect method which supports expect one or multiple string or RegEx
-        * tool methods provided by the tool bundle, like ``start_app``, ``reset``
-    2. App:
-        * provide some specific features to the test application of DUT, for example:
-            * SDK path
-            * SDK tools
-            * application information like partition table, download configs
-    3. Environment Configs:
-        * support get env configs from config file or auto-detect from current PC
-        * provide ``get_variable`` method to get variables
-2. allow to customize components (DUT, App) to support different devices
-3. Integrate to CI:
-    * provide interfaces for Gitlab-CI
-    * provide ``search case`` and ``runner`` interfaces, able to integrate with other CI
+It supports ESP-IDF applications and can be adapted to other applications by writing new bundles.
 
 Example
 -------
 
-Let's first check a simple simple::
+Let's first check a simple example::
 
     import re
     import os
@@ -76,23 +55,23 @@ Let's first check a simple simple::
 SOP for adding test cases
 -------------------------
 
-1. import test framework:
+1. Import test framework:
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* we assume ``TEST_FW_PATH`` is pre-defined before running the tests
+* We assume ``TEST_FW_PATH`` is pre-defined before running the tests
 * Then we can import python packages and files from ``TEST_FW_PATH``
 
-2. define test case:
+2. Define test case:
 ^^^^^^^^^^^^^^^^^^^^
 
-1. define test case ``test_xxx(env, extra_data)``
+1. Define test case ``test_xxx(env, extra_data)``
     * env: instance of test env, see :doc:`Test Env <Env>` for details
     * extra_data: extra data passed from test case caller
-2. add decorator for test case
+2. Add decorator for test case
     * add decorator ``TinyFW.test_method`` to test method
     * define default case configs and filters in decorator, see :doc:`TinyFW.test_method <TinyFW>`
 
-3. execute test cases:
+3. Execute test cases:
 ^^^^^^^^^^^^^^^^^^^^^^
 
 * define in ``main`` section and execute from this file
@@ -110,6 +89,86 @@ SOP for adding test cases
 
 * or, use ``runner`` to execute. see :doc:`runner <Runner>` for details
 
+Test FW features
+----------------
+
+1. Test Environment:
+    1. DUT: DUT class provides methods to interact with DUT
+        * read/write through port
+        * expect method which supports expect one or multiple string or RegEx
+        * tool methods provided by the tool bundle, like ``start_app``, ``reset``
+    2. App:
+        * provide some specific features to the test application of DUT, for example:
+            * SDK path
+            * SDK tools
+            * application information like partition table, download configs
+    3. Environment Configs:
+        * support get env configs from config file or auto-detect from current PC
+        * provide ``get_variable`` method to get variables
+2. Allow to customize components (DUT, App) to support different devices
+3. Integrate to CI:
+    * provide interfaces for Gitlab-CI
+    * provide ``search case`` and ``runner`` interfaces, able to integrate with other CI
+
+
+Class Diagram
+=============
+.. uml::
+
+   class BaseDUT {
+   {field} app
+   {method} expect
+   {method} expect_any
+   {method} expect_all
+   {method} read
+   {method} write
+   {method} open
+   {method} close
+   }
+   class SerialDUT {
+   {method} _port_read
+   {method} _port_write
+   {method} _port_open
+   {method} _port_close
+   }
+   class IDFDUT {
+   {method} reset
+   {method} start_app
+   }
+   class BaseApp {
+   {method} get_sdk_path
+   {method} get_tools
+   {method} process_app_info
+   {method} get_log_folder
+   }
+   class IDFApp {
+   {method} process_app_info
+   }
+   class Example {
+   {method} get_binary_path
+   }
+   class EnvConfig {
+   {method} get_variable
+   }
+   class Env {
+   {field} config
+   {field} allocated_duts
+   {field} app_cls
+   {method} get_dut
+   {method} close_dut
+   {method} get_variable
+   {method} get_pc_nic_info
+   {method} close
+   }
+
+   SerialDUT --|> BaseDUT
+   IDFDUT --|> SerialDUT
+   IDFApp --|> BaseApp
+   Example --|> IDFApp
+   Env *-- EnvConfig
+   Env *-- BaseDUT
+   Env o-- BaseApp
+   BaseDUT o-- BaseApp
 
 
 .. toctree::
@@ -118,8 +177,8 @@ SOP for adding test cases
 
    modules
 
-Dependency
-==========
+Dependencies
+============
 
 Support for both Python2 and Python3 (tested on python 2.7.13 and 3.6.2).
 
@@ -131,7 +190,10 @@ The following 3rd party lib is required:
     * netifaces
     * matplotlib (if use Utility.LineChart)
 
-To build document, we need to install ``Sphinx`` and ``sphinx-rtd-theme`` (you may replace this with your own theme).
+These libraries can be installed by running ``pip install -r requirements.txt`` in tiny-test-fw directory.
+
+To build document, we need to install ``Sphinx``, ``plantweb`` and ``sphinx-rtd-theme`` (you may replace this with your own theme). ``plantweb`` requires internet access during building document.
+
 
 Indices and tables
 ==================
