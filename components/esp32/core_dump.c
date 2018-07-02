@@ -127,6 +127,10 @@ static void esp_core_dump_write(XtExcFrame *frame, core_dump_write_config_t *wri
         if (tasks[i].pxTCB == xTaskGetCurrentTaskHandleForCPU(xPortGetCoreID())) {
             // set correct stack top for current task
             tasks[i].pxTopOfStack = (StackType_t *)frame;
+            // This field is not initialized for crashed task, but stack frame has the structure of interrupt one,
+            // so make workaround to allow espcoredump to parse it properly.
+            if (frame->exit == 0)
+                frame->exit = -1;
             ESP_COREDUMP_LOG_PROCESS("Current task EXIT/PC/PS/A0/SP %x %x %x %x %x",
                 frame->exit, frame->pc, frame->ps, frame->a0, frame->a1);
         }
