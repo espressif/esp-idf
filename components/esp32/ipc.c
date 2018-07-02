@@ -77,7 +77,7 @@ void esp_ipc_init()
 {
     s_ipc_mutex = xSemaphoreCreateMutex();
     s_ipc_ack = xSemaphoreCreateBinary();
-    char task_name[8];
+    char task_name[15];
     for (int i = 0; i < portNUM_PROCESSORS; ++i) {
         sprintf(task_name,"ipc%d",i);
         s_ipc_sem[i] = xSemaphoreCreateBinary();

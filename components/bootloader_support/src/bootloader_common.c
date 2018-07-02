@@ -134,7 +134,7 @@ bool bootloader_common_erase_part_type_data(const char *list_erase, bool ota_dat
                     fl_ota_data_erase = true;
                 }
                 // partition->label is not null-terminated string.
-                strncpy(label, (char *)&partition->label, sizeof(partition->label));
+                strncpy(label, (char *)&partition->label, sizeof(label) - 1);
                 if (fl_ota_data_erase == true || (bootloader_common_label_search(list_erase, label) == true)) {
                     err = esp_rom_spiflash_erase_area(partition->pos.offset, partition->pos.size);
                     if (err != ESP_OK) {
