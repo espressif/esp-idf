@@ -133,6 +133,9 @@ bool bootloader_utility_load_partition_table(bootloader_state_t* bs)
             case PART_SUBTYPE_DATA_WIFI:
                 partition_usage = "WiFi data";
                 break;
+            case PART_SUBTYPE_DATA_NVS_KEYS:
+                partition_usage = "NVS keys";
+                break;
             default:
                 partition_usage = "Unknown data";
                 break;

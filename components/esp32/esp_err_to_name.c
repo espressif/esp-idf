@@ -166,6 +166,27 @@ static const esp_err_msg_t esp_err_msg_table[] = {
                                                                             and cannot be recognized by this version of
                                                                             code */
 #   endif
+#   ifdef      ESP_ERR_NVS_XTS_ENCR_FAILED
+    ERR_TBL_IT(ESP_ERR_NVS_XTS_ENCR_FAILED),                /*  4369 0x1111 XTS encryption failed while writing NVS entry */
+#   endif
+#   ifdef      ESP_ERR_NVS_XTS_DECR_FAILED
+    ERR_TBL_IT(ESP_ERR_NVS_XTS_DECR_FAILED),                /*  4370 0x1112 XTS decryption failed while reading NVS entry */
+#   endif
+#   ifdef      ESP_ERR_NVS_XTS_CFG_FAILED
+    ERR_TBL_IT(ESP_ERR_NVS_XTS_CFG_FAILED),                 /*  4371 0x1113 XTS configuration setting failed */
+#   endif
+#   ifdef      ESP_ERR_NVS_XTS_CFG_NOT_FOUND
+    ERR_TBL_IT(ESP_ERR_NVS_XTS_CFG_NOT_FOUND),              /*  4372 0x1114 XTS configuration not found */
+#   endif
+#   ifdef      ESP_ERR_NVS_ENCR_NOT_SUPPORTED
+    ERR_TBL_IT(ESP_ERR_NVS_ENCR_NOT_SUPPORTED),             /*  4373 0x1115 NVS encryption is not supported in this version */
+#   endif
+#   ifdef      ESP_ERR_NVS_KEYS_NOT_INITIALIZED
+    ERR_TBL_IT(ESP_ERR_NVS_KEYS_NOT_INITIALIZED),           /*  4374 0x1116 NVS key partition is uninitialized */
+#   endif
+#   ifdef      ESP_ERR_NVS_CORRUPT_KEY_PART
+    ERR_TBL_IT(ESP_ERR_NVS_CORRUPT_KEY_PART),               /*  4375 0x1117 NVS key partition is corrupt */
+#   endif
     // components/ulp/include/esp32/ulp.h
 #   ifdef      ESP_ERR_ULP_BASE
     ERR_TBL_IT(ESP_ERR_ULP_BASE),                           /*  4608 0x1200 Offset for ULP-related error codes */

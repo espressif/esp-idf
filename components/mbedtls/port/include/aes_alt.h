@@ -47,6 +47,14 @@ typedef esp_aes_context mbedtls_aes_context;
 #if defined(MBEDTLS_CIPHER_MODE_CTR)
 #define mbedtls_aes_crypt_ctr       esp_aes_crypt_ctr
 #endif
+#if defined(MBEDTLS_CIPHER_MODE_XTS)
+typedef esp_aes_xts_context mbedtls_aes_xts_context;
+#define mbedtls_aes_xts_init            esp_aes_xts_init
+#define mbedtls_aes_xts_free            esp_aes_xts_free
+#define mbedtls_aes_xts_setkey_enc      esp_aes_xts_setkey_enc
+#define mbedtls_aes_xts_setkey_dec      esp_aes_xts_setkey_dec
+#define mbedtls_aes_crypt_xts       esp_aes_crypt_xts
+#endif
 #define mbedtls_internal_aes_encrypt         esp_internal_aes_encrypt
 #define mbedtls_internal_aes_decrypt         esp_internal_aes_decrypt
 #endif /* MBEDTLS_AES_ALT */
