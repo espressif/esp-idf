@@ -36,6 +36,7 @@
 #define HCI_BLE_EVENT 0x3e
 #define PACKET_TYPE_TO_INBOUND_INDEX(type) ((type) - 2)
 #define PACKET_TYPE_TO_INDEX(type) ((type) - 1)
+extern bool BTU_check_queue_is_congest(void);
 
 
 static const uint8_t preamble_sizes[] = {
@@ -105,7 +106,7 @@ static bool hal_open(const hci_hal_callbacks_t *upper_callbacks)
     assert(upper_callbacks != NULL);
     callbacks = upper_callbacks;
 
-    hci_hal_env_init(HCI_HAL_SERIAL_BUFFER_SIZE, SIZE_MAX);
+    hci_hal_env_init(HCI_HAL_SERIAL_BUFFER_SIZE, QUEUE_SIZE_MAX);
 
     xHciH4Queue = xQueueCreate(HCI_H4_QUEUE_LEN, sizeof(BtTaskEvt_t));
     xTaskCreatePinnedToCore(hci_hal_h4_rx_handler, HCI_H4_TASK_NAME, HCI_H4_TASK_STACK_SIZE, NULL, HCI_H4_TASK_PRIO, &xHciH4TaskHandle, HCI_H4_TASK_PINNED_TO_CORE);
@@ -185,7 +186,6 @@ task_post_status_t hci_hal_h4_task_post(task_post_t timeout)
     evt.par = 0;
 
     if (xQueueSend(xHciH4Queue, &evt, timeout) != pdTRUE) {
-        HCI_TRACE_ERROR("xHciH4Queue failed\n");
         return TASK_POST_SUCCESS;
     }
 
@@ -222,6 +222,14 @@ static void hci_packet_complete(BT_HDR *packet){
 }
 #endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
 
+bool host_recv_adv_packet(BT_HDR *packet)
+{
+    assert(packet);
+    if(packet->data[0] == DATA_TYPE_EVENT && packet->data[1] == HCI_BLE_EVENT && packet->data[3] ==  HCI_BLE_ADV_PKT_RPT_EVT) {
+        return true;
+    }
+    return false;
+}
 
 static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
 {
@@ -276,6 +284,13 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
         hci_hal_env.allocator->free(packet);
         return;
     }
+#if SCAN_QUEUE_CONGEST_CHECK
+    if(BTU_check_queue_is_congest() && host_recv_adv_packet(packet)) {
+        HCI_TRACE_ERROR("BtuQueue is congested");
+        hci_hal_env.allocator->free(packet);
+        return;
+    }
+#endif
 
     packet->event = outbound_event_types[PACKET_TYPE_TO_INDEX(type)];
     callbacks->packet_ready(packet);
@@ -318,7 +333,7 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
     pkt->layer_specific = 0;
     memcpy(pkt->data, data, len);
     fixed_queue_enqueue(hci_hal_env.rx_q, pkt);
-    hci_hal_h4_task_post(TASK_POST_BLOCKING);
+    hci_hal_h4_task_post(100 / portTICK_PERIOD_MS);
 
     BTTRC_DUMP_BUFFER("Recv Pkt", pkt->data, len);
 

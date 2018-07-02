@@ -128,8 +128,8 @@ void port_set_defaults (tPORT *p_port)
     memset (&p_port->rx, 0, sizeof (p_port->rx));
     memset (&p_port->tx, 0, sizeof (p_port->tx));
 
-    p_port->tx.queue = fixed_queue_new(SIZE_MAX);
-    p_port->rx.queue = fixed_queue_new(SIZE_MAX);
+    p_port->tx.queue = fixed_queue_new(QUEUE_SIZE_MAX);
+    p_port->rx.queue = fixed_queue_new(QUEUE_SIZE_MAX);
 }
 
 /*******************************************************************************

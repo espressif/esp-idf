@@ -28,9 +28,23 @@
 #include "btc/btc_ble_storage.h"
 #include "btc/btc_dm.h"
 #include "btc/btc_util.h"
+#include "osi/mutex.h"
 
 static tBTA_BLE_ADV_DATA gl_bta_adv_data;
 static tBTA_BLE_ADV_DATA gl_bta_scan_rsp_data;
+#if SCAN_QUEUE_CONGEST_CHECK
+static list_t *adv_filter_list;
+static osi_mutex_t adv_list_lock;
+bool btc_check_adv_list(uint8_t * addr, uint8_t addr_type);
+uint32_t btc_get_adv_list_length(void);
+void btc_adv_list_refresh(void);
+void btc_adv_list_lock(void);
+void btc_adv_list_unlock(void);
+static uint16_t btc_adv_list_count = 0;
+
+#define  BTC_ADV_LIST_MAX_LENGTH    50
+#define  BTC_ADV_LIST_MAX_COUNT     200
+#endif
 
 static inline void btc_gap_ble_cb_to_app(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
@@ -510,6 +524,19 @@ static void btc_search_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data
     param.scan_rst.search_evt = event;
     switch (event) {
     case BTA_DM_INQ_RES_EVT: {
+#if SCAN_QUEUE_CONGEST_CHECK
+        if(btc_check_queue_is_congest()) {
+            BTC_TRACE_DEBUG("BtcQueue is congested");
+            if(btc_get_adv_list_length() > BTC_ADV_LIST_MAX_LENGTH || btc_adv_list_count > BTC_ADV_LIST_MAX_COUNT) {
+                btc_adv_list_refresh();
+                btc_adv_list_count = 0;
+            }
+            if(btc_check_adv_list(p_data->inq_res.bd_addr, p_data->inq_res.ble_addr_type)) {
+                return;
+            }
+        }
+        btc_adv_list_count ++;
+#endif
         bdcpy(param.scan_rst.bda, p_data->inq_res.bd_addr);
         param.scan_rst.dev_type = p_data->inq_res.device_type;
         param.scan_rst.rssi = p_data->inq_res.rssi;
@@ -585,6 +612,9 @@ static void btc_stop_scan_callback(tBTA_STATUS status)
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
     }
+#if SCAN_QUEUE_CONGEST_CHECK
+    btc_adv_list_refresh();
+#endif
 }
 
 void btc_update_conn_param_callback (UINT8 status, BD_ADDR bd_addr, tBTM_LE_UPDATE_CONN_PRAMS *update_conn_params)
@@ -725,6 +755,9 @@ static void btc_ble_start_scanning(uint32_t duration,
                                    tBTA_START_STOP_SCAN_CMPL_CBACK *start_scan_cb)
 {
     if ((results_cb != NULL) && (start_scan_cb != NULL)) {
+#if SCAN_QUEUE_CONGEST_CHECK
+        btc_adv_list_refresh();
+#endif
         //Start scan the device
         BTA_DmBleScan(true, duration, results_cb, start_scan_cb);
     } else {
@@ -1134,3 +1167,99 @@ void btc_gap_ble_deinit(void)
     btc_cleanup_adv_data(&gl_bta_adv_data);
     btc_cleanup_adv_data(&gl_bta_scan_rsp_data);
 }
+
+#if SCAN_QUEUE_CONGEST_CHECK
+void btc_adv_list_free(void *data)
+{
+    osi_free(data);
+}
+
+void btc_adv_list_init(void)
+{
+    osi_mutex_new(&adv_list_lock);
+    adv_filter_list = list_new(btc_adv_list_free);
+}
+
+void btc_adv_list_deinit(void)
+{
+    osi_mutex_free(&adv_list_lock);
+    if(adv_filter_list) {
+        list_free(adv_filter_list);
+        adv_filter_list = NULL;
+    }
+}
+void btc_adv_list_add_packet(void * data)
+{
+    if(!data) {
+        BTC_TRACE_ERROR("%s data is NULL", __func__);
+        return;
+    }
+    btc_adv_list_lock();
+    list_prepend(adv_filter_list, data);
+    btc_adv_list_unlock();
+}
+
+uint32_t btc_get_adv_list_length(void)
+{
+    if(!adv_filter_list) {
+        BTC_TRACE_ERROR("%s adv_filter_list is NULL", __func__);
+        return 0;
+    }
+    btc_adv_list_lock();
+    size_t length = list_length(adv_filter_list);
+    btc_adv_list_unlock();
+
+    return length;
+}
+
+void btc_adv_list_refresh(void)
+{
+    if(!adv_filter_list) {
+        BTC_TRACE_ERROR("%s adv_filter_list is NULL", __func__);
+        return ;
+    }
+    btc_adv_list_lock();
+    list_clear(adv_filter_list);
+    btc_adv_list_unlock();
+}
+
+bool btc_check_adv_list(uint8_t * addr, uint8_t addr_type)
+{
+    bool found = false;
+    if(!adv_filter_list || !addr) {
+        BTC_TRACE_ERROR("%s adv_filter_list is NULL", __func__);
+        return found;
+    }
+
+    btc_adv_list_lock();
+    for (const list_node_t *node = list_begin(adv_filter_list); node != list_end(adv_filter_list); node = list_next(node)) {
+        btc_adv_packet_t *packet = (btc_adv_packet_t *)list_node(node);
+        if(!bdcmp(addr, packet->addr) && packet->addr_type == addr_type) {
+            found = true;
+            break;
+        }
+     }
+     btc_adv_list_unlock();
+     if(!found) {
+         btc_adv_packet_t *adv_packet = osi_malloc(sizeof(btc_adv_packet_t));
+         if(adv_packet) {
+             adv_packet->addr_type = addr_type;
+             bdcpy(adv_packet->addr, addr);
+             btc_adv_list_add_packet(adv_packet);
+         } else {
+             BTC_TRACE_ERROR("%s adv_packet malloc failed", __func__);
+         }
+     }
+    return found;
+}
+
+void btc_adv_list_lock(void)
+{
+    osi_mutex_lock(&adv_list_lock, OSI_MUTEX_MAX_TIMEOUT);
+}
+
+void btc_adv_list_unlock(void)
+{
+    osi_mutex_unlock(&adv_list_lock);
+}
+#endif

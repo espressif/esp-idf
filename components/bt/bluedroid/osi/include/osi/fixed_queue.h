@@ -22,6 +22,10 @@
 #include <stdbool.h>
 #include "osi/list.h"
 
+#ifndef QUEUE_SIZE_MAX
+#define QUEUE_SIZE_MAX                    254
+#endif
+
 struct fixed_queue_t;
 
 typedef struct fixed_queue_t fixed_queue_t;

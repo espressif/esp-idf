@@ -1120,8 +1120,8 @@ static tGAP_CCB *gap_allocate_ccb (void)
     for (xx = 0, p_ccb = gap_cb.conn.ccb_pool; xx < GAP_MAX_CONNECTIONS; xx++, p_ccb++) {
         if (p_ccb->con_state == GAP_CCB_STATE_IDLE) {
             memset (p_ccb, 0, sizeof (tGAP_CCB));
-            p_ccb->tx_queue = fixed_queue_new(SIZE_MAX);
-            p_ccb->rx_queue = fixed_queue_new(SIZE_MAX);
+            p_ccb->tx_queue = fixed_queue_new(QUEUE_SIZE_MAX);
+            p_ccb->rx_queue = fixed_queue_new(QUEUE_SIZE_MAX);
 
             p_ccb->gap_handle   = xx;
             p_ccb->rem_mtu_size = L2CAP_MTU_SIZE;
