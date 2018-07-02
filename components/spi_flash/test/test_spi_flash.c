@@ -167,3 +167,61 @@ TEST_CASE("spi flash functions can run along with IRAM interrupts", "[spi_flash]
     free(read_arg.buf);
 }
 
+
+#if portNUM_PROCESSORS > 1
+TEST_CASE("spi_flash deadlock with high priority busy-waiting task", "[spi_flash]")
+{
+    typedef struct {
+        QueueHandle_t queue;
+        volatile bool done;
+    } deadlock_test_arg_t;
+
+    /* Create two tasks: high-priority consumer on CPU0, low-priority producer on CPU1.
+     * Consumer polls the queue until it gets some data, then yields.
+     * Run flash operation on CPU0. Check that when IPC1 task blocks out the producer,
+     * the task which does flash operation does not get blocked by the consumer.
+     */
+
+    void producer_task(void* varg)
+    {
+        int dummy = 0;
+        deadlock_test_arg_t* arg = (deadlock_test_arg_t*) varg;
+        while (!arg->done) {
+            xQueueSend(arg->queue, &dummy, 0);
+            vTaskDelay(1);
+        }
+        vTaskDelete(NULL);
+    }
+
+    void consumer_task(void* varg)
+    {
+        int dummy;
+        deadlock_test_arg_t* arg = (deadlock_test_arg_t*) varg;
+        while (!arg->done) {
+            if (xQueueReceive(arg->queue, &dummy, 0) == pdTRUE) {
+                vTaskDelay(1);
+            }
+        }
+        vTaskDelete(NULL);
+    }
+    deadlock_test_arg_t arg = {
+        .queue = xQueueCreate(32, sizeof(int)),
+        .done = false
+    };
+
+    TEST_ASSERT(xTaskCreatePinnedToCore(&producer_task, "producer", 4096, &arg, 5, NULL, 1));
+    TEST_ASSERT(xTaskCreatePinnedToCore(&consumer_task, "consumer", 4096, &arg, 10, NULL, 0));
+
+    for (int i = 0; i < 1000; i++) {
+        uint32_t dummy;
+        TEST_ESP_OK(spi_flash_read(0, &dummy, sizeof(dummy)));
+    }
+
+    arg.done = true;
+    vTaskDelay(5);
+    vQueueDelete(arg.queue);
+
+    /* Check that current task priority is still correct */
+    TEST_ASSERT_EQUAL_INT(uxTaskPriorityGet(NULL), UNITY_FREERTOS_PRIORITY);
+}
+#endif // portNUM_PROCESSORS > 1
