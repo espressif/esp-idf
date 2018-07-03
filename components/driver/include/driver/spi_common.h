@@ -31,6 +31,34 @@ extern "C"
 //Maximum amount of bytes that can be put in one DMA descriptor
 #define SPI_MAX_DMA_LEN (4096-4)
 
+/**
+ * Transform unsigned integer of length <= 32 bits to the format which can be
+ * sent by the SPI driver directly.
+ *
+ * E.g. to send 9 bits of data, you can:
+ *
+ *      uint16_t data = SPI_SWAP_DATA_TX(0x145, 9);
+ *
+ * Then points tx_buffer to ``&data``.
+ *
+ * @param data Data to be sent, can be uint8_t, uint16_t or uint32_t. @param
+ *  len Length of data to be sent, since the SPI peripheral sends from the MSB,
+ *  this helps to shift the data to the MSB.
+ */
+#define SPI_SWAP_DATA_TX(data, len) __builtin_bswap32((uint32_t)data<<(32-len))
+
+/**
+ * Transform received data of length <= 32 bits to the format of an unsigned integer.
+ *
+ * E.g. to transform the data of 15 bits placed in a 4-byte array to integer:
+ *
+ *      uint16_t data = SPI_SWAP_DATA_RX(*(uint32_t*)t->rx_data, 15);
+ *
+ * @param data Data to be rearranged, can be uint8_t, uint16_t or uint32_t.
+ * @param len Length of data received, since the SPI peripheral writes from
+ *      the MSB, this helps to shift the data to the LSB.
+ */
+#define SPI_SWAP_DATA_RX(data, len) (__builtin_bswap32(data)>>(32-len))
 
 /**
  * @brief Enum with the three SPI peripherals that are software-accessible in it
@@ -45,7 +73,7 @@ typedef enum {
  * @brief This is a configuration structure for a SPI bus.
  *
  * You can use this structure to specify the GPIO pins of the bus. Normally, the driver will use the
- * GPIO matrix to route the signals. An exception is made when all signals either can be routed through 
+ * GPIO matrix to route the signals. An exception is made when all signals either can be routed through
  * the IO_MUX or are -1. In that case, the IO_MUX is used, allowing for >40MHz speeds.
  *
  * @note Be advised that the slave driver does not use the quadwp/quadhd lines and fields in spi_bus_config_t refering to these lines will be ignored and can thus safely be left uninitialized.
@@ -81,20 +109,20 @@ bool spicommon_periph_free(spi_host_device_t host);
 
 /**
  * @brief Try to claim a SPI DMA channel
- * 
+ *
  *  Call this if your driver wants to use SPI with a DMA channnel.
- * 
+ *
  * @param dma_chan channel to claim
- * 
+ *
  * @return True if success; false otherwise.
  */
 bool spicommon_dma_chan_claim(int dma_chan);
 
 /**
  * @brief Return the SPI DMA channel so other driver can claim it, or just to power down DMA.
- * 
+ *
  * @param dma_chan channel to return
- * 
+ *
  * @return True if success; false otherwise.
  */
 bool spicommon_dma_chan_free(int dma_chan);
@@ -113,7 +141,7 @@ bool spicommon_dma_chan_free(int dma_chan);
  * @brief Connect a SPI peripheral to GPIO pins
  *
  * This routine is used to connect a SPI peripheral to the IO-pads and DMA channel given in
- * the arguments. Depending on the IO-pads requested, the routing is done either using the 
+ * the arguments. Depending on the IO-pads requested, the routing is done either using the
  * IO_mux or using the GPIO matrix.
  *
  * @param host SPI peripheral to be routed
@@ -123,7 +151,7 @@ bool spicommon_dma_chan_free(int dma_chan);
  *              - ``SPICOMMON_BUSFLAG_MASTER``: Initialize I/O in master mode
  *              - ``SPICOMMON_BUSFLAG_SLAVE``: Initialize I/O in slave mode
  *              - ``SPICOMMON_BUSFLAG_NATIVE_PINS``: Pins set should match the iomux pins of the controller.
- *              - ``SPICOMMON_BUSFLAG_SCLK``, ``SPICOMMON_BUSFLAG_MISO``, ``SPICOMMON_BUSFLAG_MOSI``: 
+ *              - ``SPICOMMON_BUSFLAG_SCLK``, ``SPICOMMON_BUSFLAG_MISO``, ``SPICOMMON_BUSFLAG_MOSI``:
  *                  Make sure SCLK/MISO/MOSI is/are set to a valid GPIO. Also check output capability according to the mode.
  *              - ``SPICOMMON_BUSFLAG_DUAL``: Make sure both MISO and MOSI are output capable so that DIO mode is capable.
  *              - ``SPICOMMON_BUSFLAG_WPHD`` Make sure WP and HD are set to valid output GPIOs.
@@ -136,7 +164,7 @@ bool spicommon_dma_chan_free(int dma_chan);
  *              - ``SPICOMMON_BUSFLAG_DUAL``: The bus is capable with DIO mode.
  *              - ``SPICOMMON_BUSFLAG_WPHD`` The bus has WP and HD connected.
  *              - ``SPICOMMON_BUSFLAG_QUAD``: Combination of ``SPICOMMON_BUSFLAG_DUAL`` and ``SPICOMMON_BUSFLAG_WPHD``.
- * @return 
+ * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_OK                on success
  */
@@ -145,10 +173,10 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
 /**
  * @brief Free the IO used by a SPI peripheral
  * @deprecated Use spicommon_bus_free_io_cfg instead.
- * 
+ *
  * @param host SPI peripheral to be freed
- * 
- * @return 
+ *
+ * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_OK                on success
  */
@@ -158,8 +186,8 @@ esp_err_t spicommon_bus_free_io(spi_host_device_t host) __attribute__((deprecate
  * @brief Free the IO used by a SPI peripheral
  *
  * @param bus_cfg Bus config struct which defines which pins to be used.
- * 
- * @return 
+ *
+ * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_OK                on success
  */
@@ -240,10 +268,10 @@ typedef void(*dmaworkaround_cb_t)(void *arg);
  * @note In some (well-defined) cases in the ESP32 (at least rev v.0 and v.1), a SPI DMA channel will get confused. This can be remedied
  * by resetting the SPI DMA hardware in case this happens. Unfortunately, the reset knob used for thsi will reset _both_ DMA channels, and
  * as such can only done safely when both DMA channels are idle. These functions coordinate this.
- * 
+ *
  * Essentially, when a reset is needed, a driver can request this using spicommon_dmaworkaround_req_reset. This is supposed to be called
- * with an user-supplied function as an argument. If both DMA channels are idle, this call will reset the DMA subsystem and return true. 
- * If the other DMA channel is still busy, it will return false; as soon as the other DMA channel is done, however, it will reset the 
+ * with an user-supplied function as an argument. If both DMA channels are idle, this call will reset the DMA subsystem and return true.
+ * If the other DMA channel is still busy, it will return false; as soon as the other DMA channel is done, however, it will reset the
  * DMA subsystem and call the callback. The callback is then supposed to be used to continue the SPI drivers activity.
  *
  * @param dmachan DMA channel associated with the SPI host that needs a reset
