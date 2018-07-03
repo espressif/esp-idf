@@ -313,5 +313,5 @@ static void rs485_master()
  * correctness of RS485 interface channel communication. It requires
  * RS485 bus driver hardware to be connected to boards.
 */
-TEST_CASE_MULTIPLE_DEVICES("RS485 half duplex uart multiple devices test.", "[driver]", rs485_master, rs485_slave);
+TEST_CASE_MULTIPLE_DEVICES("RS485 half duplex uart multiple devices test.", "[driver][ignore]", rs485_master, rs485_slave);
 
