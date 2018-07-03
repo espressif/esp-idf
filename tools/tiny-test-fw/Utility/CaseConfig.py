@@ -68,11 +68,15 @@ def _convert_to_lower_case(item):
 def _filter_one_case(test_method, case_filter):
     """ Apply filter for one case (the filter logic is the same as described in ``filter_test_cases``) """
     filter_result = True
-    for key in case_filter:
+    # filter keys are lower case. Do map lower case keys with original keys.
+    key_mapping = {x.lower(): x for x in test_method.case_info.keys()}
+
+    for orig_key in case_filter:
+        key = key_mapping[orig_key]
         if key in test_method.case_info:
             # the filter key is both in case and filter
             # we need to check if they match
-            filter_item = _convert_to_lower_case(case_filter[key])
+            filter_item = _convert_to_lower_case(case_filter[orig_key])
             accepted_item = _convert_to_lower_case(test_method.case_info[key])
 
             if isinstance(filter_item, (tuple, list)) \

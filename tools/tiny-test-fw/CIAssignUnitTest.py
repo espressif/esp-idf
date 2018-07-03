@@ -109,16 +109,22 @@ class UnitTestAssignTest(CIAssignTest.AssignTest):
         with open(test_case_path, "r") as f:
             raw_data = yaml.load(f)
         test_cases = raw_data["test cases"]
+        # filter keys are lower case. Do map lower case keys with original keys.
+        try:
+            key_mapping = {x.lower(): x for x in test_cases[0].keys()}
+        except IndexError:
+            key_mapping = dict()
         if case_filter:
             for key in case_filter:
                 filtered_cases = []
                 for case in test_cases:
                     try:
+                        mapped_key = key_mapping[key]
                         # bot converts string to lower case
-                        if isinstance(case[key], str):
-                            _value = case[key].lower()
+                        if isinstance(case[mapped_key], str):
+                            _value = case[mapped_key].lower()
                         else:
-                            _value = case[key]
+                            _value = case[mapped_key]
                         if _value in case_filter[key]:
                             filtered_cases.append(case)
                     except KeyError:
