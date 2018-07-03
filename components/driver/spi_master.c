@@ -414,7 +414,7 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
     SPI_CHECK(handle->host->cur_cs == NO_CS || handle->host->device[handle->host->cur_cs]!=handle, "Have unfinished transactions", ESP_ERR_INVALID_STATE);
     SPI_CHECK(uxQueueMessagesWaiting(handle->ret_queue)==0, "Have unfinished transactions", ESP_ERR_INVALID_STATE);
 
-    //return 
+    //return
     int spics_io_num = handle->cfg.spics_io_num;
     if (spics_io_num >= 0) spicommon_cs_free_io(spics_io_num);
 
@@ -727,9 +727,12 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
         host->hw->user.usr_addr=addrlen?1:0;
         host->hw->user.usr_command=cmdlen?1:0;
 
-        // output command will be sent from bit 7 to 0 of command_value, and then bit 15 to 8 of the same register field.
-        uint16_t command = trans->cmd << (16-cmdlen);    //shift to MSB
-        host->hw->user2.usr_command_value = (command>>8)|(command<<8);  //swap the first and second byte
+        /* Output command will be sent from bit 7 to 0 of command_value, and
+         * then bit 15 to 8 of the same register field. Shift and swap to send
+         * more straightly.
+         */
+        host->hw->user2.usr_command_value = SPI_SWAP_DATA_TX(trans->cmd, cmdlen);
+
         // shift the address to MSB of addr (and maybe slv_wr_status) register.
         // output address will be sent from MSB to LSB of addr register, then comes the MSB to LSB of slv_wr_status register.
         if (addrlen>32) {

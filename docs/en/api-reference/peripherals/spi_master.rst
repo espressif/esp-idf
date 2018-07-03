@@ -167,12 +167,35 @@ memcpy of temporary buffers.
 .. note::  Half duplex transactions with both read and write phases are not supported when using DMA. See
   :ref:`spi_known_issues` for details and workarounds.
 
-Sometimes, the amount of data is very small making it less than optimal allocating a separate buffer
-for it. If the data to be transferred is 32 bits or less, it can be stored in the transaction struct
-itself. For transmitted data, use the ``tx_data`` member for this and set the ``SPI_USE_TXDATA`` flag
-on the transmission. For received data, use ``rx_data`` and set ``SPI_USE_RXDATA``. In both cases, do
-not touch the ``tx_buffer`` or ``rx_buffer`` members, because they use the same memory locations
-as ``tx_data`` and ``rx_data``.
+Tips
+""""
+
+1. Transactions with small amount of data:
+    Sometimes, the amount of data is very small making it less than optimal allocating a separate buffer
+    for it. If the data to be transferred is 32 bits or less, it can be stored in the transaction struct
+    itself. For transmitted data, use the ``tx_data`` member for this and set the ``SPI_USE_TXDATA`` flag
+    on the transmission. For received data, use ``rx_data`` and set ``SPI_USE_RXDATA``. In both cases, do
+    not touch the ``tx_buffer`` or ``rx_buffer`` members, because they use the same memory locations
+    as ``tx_data`` and ``rx_data``.
+
+2. Transactions with integers other than uint8_t
+    The SPI peripheral reads and writes the memory byte-by-byte. By default,
+    the SPI works at MSB first mode, each bytes are sent or received from the
+    MSB to the LSB. However, if you want to send data with length which is
+    not multiples of 8 bits, unused bits are sent.
+
+    E.g. you write ``uint8_t data = 0x15`` (00010101B), and set length to
+    only 5 bits, the sent data is ``00010B`` rather than expected ``10101B``.
+
+    Moreover, ESP32 is a little-endian chip whose lowest byte is stored at
+    the very beginning address for uint16_t and uint32_t variables. Hence if
+    a uint16_t is stored in the memory, it's bit 7 is first sent, then bit 6
+    to 0, then comes its bit 15 to bit 8.
+
+    To send data other than uint8_t arrays, macros ``SPI_SWAP_DATA_TX`` is
+    provided to shift your data to the MSB and swap the MSB to the lowest
+    address; while ``SPI_SWAP_DATA_RX`` can be used to swap received data
+    from the MSB to it's correct place.
 
 Speed and Timing Considerations
 -------------------------------
@@ -286,10 +309,10 @@ And if the host only writes, the *dummy bit workaround* is not used and the freq
 | 40                | 80               |
 +-------------------+------------------+
 
-The spi master driver can work even if the *input delay* in the ``spi_device_interface_config_t`` is set to 0. 
-However, setting a accurate value helps to: (1) calculate the frequency limit in full duplex mode, and (2) compensate 
-the timing correctly by dummy bits in half duplex mode. You may find the maximum data valid time after the launch edge 
-of SPI clocks in the AC characteristics chapter of the device specifications, or measure the time on a oscilloscope or 
+The spi master driver can work even if the *input delay* in the ``spi_device_interface_config_t`` is set to 0.
+However, setting a accurate value helps to: (1) calculate the frequency limit in full duplex mode, and (2) compensate
+the timing correctly by dummy bits in half duplex mode. You may find the maximum data valid time after the launch edge
+of SPI clocks in the AC characteristics chapter of the device specifications, or measure the time on a oscilloscope or
 logic analyzer.
 
 .. wavedrom don't support rendering pdflatex till now(1.3.1), so we use the png here
@@ -327,18 +350,18 @@ Some typical delays are shown in the following table:
 | chip, 12.5ns sample delay included.   |
 +---------------------------------------+
 
-The MISO path delay(tv), consists of slave *input delay* and master *GPIO matrix delay*, finally determines the 
-frequency limit, above which the full duplex mode will not work, or dummy bits are used in the half duplex mode. The 
+The MISO path delay(tv), consists of slave *input delay* and master *GPIO matrix delay*, finally determines the
+frequency limit, above which the full duplex mode will not work, or dummy bits are used in the half duplex mode. The
 frequency limit is:
 
     *Freq limit[MHz] = 80 / (floor(MISO delay[ns]/12.5) + 1)*
 
-The figure below shows the relations of frequency limit against the input delay. 2 extra apb clocks should be counted 
+The figure below shows the relations of frequency limit against the input delay. 2 extra apb clocks should be counted
 into the MISO delay if the GPIO matrix in the master is used.
 
 .. image:: /../_static/spi_master_freq_tv.png
 
-Corresponding frequency limit for different devices with different *input delay* are shown in the following 
+Corresponding frequency limit for different devices with different *input delay* are shown in the following
 table:
 
 +--------+------------------+----------------------+-------------------+
