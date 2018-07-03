@@ -131,7 +131,11 @@ class IDFDUT(DUT.SerialDUT):
     @classmethod
     def list_available_ports(cls):
         ports = [x.device for x in list_ports.comports()]
-        port_hint = os.getenv('ESPPORT').decode('utf8')
+        espport = os.getenv('ESPPORT')
+        if not espport:
+            return ports
+            
+        port_hint = espport.decode('utf8')
 
         # If $ESPPORT is a valid port, make it appear first in the list
         if port_hint in ports:
