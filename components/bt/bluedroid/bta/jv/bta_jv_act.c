@@ -959,6 +959,14 @@ static bool create_base_record(const uint32_t sdp_handle, const char *name, cons
         return FALSE;
     }
 
+    stage = "profile_descriptor_list";
+    if (!SDP_AddProfileDescriptorList(sdp_handle, UUID_SERVCLASS_SERIAL_PORT, SPP_VERSION)){
+        APPL_TRACE_ERROR("create_base_record: failed to create base service "
+                   "record, stage: %s, scn: %d, name: %s, with_obex: %d",
+                   stage, channel, name, with_obex);
+        return FALSE;
+    }
+
     // Add the name to the SDP record.
     if (name[0] != '\0') {
         stage = "service_name";
