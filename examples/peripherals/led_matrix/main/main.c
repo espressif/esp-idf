@@ -288,7 +288,7 @@ void http_polling()
 
             	}
 
-                /clear dynamic alocated memory
+                //clear dynamic alocated memory
                 free(substr);
 
 	    	  }
