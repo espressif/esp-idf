@@ -37,6 +37,9 @@
 #if __has_include("esp_wps.h")
 #include "esp_wps.h"
 #endif
+#if __has_include("http_server.h")
+#include "http_server.h"
+#endif
 #if __has_include("nvs.h")
 #include "nvs.h"
 #endif
@@ -420,6 +423,37 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_HTTP_INVALID_TRANSPORT
     ERR_TBL_IT(ESP_ERR_HTTP_INVALID_TRANSPORT),             /* 28677 0x7005 There are no transport support for the input
                                                                             scheme */
+#   endif
+    // components/http_server/include/http_server.h
+#   ifdef      ESP_ERR_HTTPD_BASE
+    ERR_TBL_IT(ESP_ERR_HTTPD_BASE),                         /* 32768 0x8000 Starting number of HTTPD error codes */
+#   endif
+#   ifdef      ESP_ERR_HTTPD_HANDLERS_FULL
+    ERR_TBL_IT(ESP_ERR_HTTPD_HANDLERS_FULL),                /* 32769 0x8001 All slots for registering URI handlers have
+                                                                            been consumed */
+#   endif
+#   ifdef      ESP_ERR_HTTPD_HANDLER_EXISTS
+    ERR_TBL_IT(ESP_ERR_HTTPD_HANDLER_EXISTS),               /* 32770 0x8002 URI handler with same method and target URI
+                                                                            already registered */
+#   endif
+#   ifdef      ESP_ERR_HTTPD_INVALID_REQ
+    ERR_TBL_IT(ESP_ERR_HTTPD_INVALID_REQ),                  /* 32771 0x8003 Invalid request pointer */
+#   endif
+#   ifdef      ESP_ERR_HTTPD_RESULT_TRUNC
+    ERR_TBL_IT(ESP_ERR_HTTPD_RESULT_TRUNC),                 /* 32772 0x8004 Result string truncated */
+#   endif
+#   ifdef      ESP_ERR_HTTPD_RESP_HDR
+    ERR_TBL_IT(ESP_ERR_HTTPD_RESP_HDR),                     /* 32773 0x8005 Response header field larger than supported */
+#   endif
+#   ifdef      ESP_ERR_HTTPD_RESP_SEND
+    ERR_TBL_IT(ESP_ERR_HTTPD_RESP_SEND),                    /* 32774 0x8006 Error occured while sending response packet */
+#   endif
+#   ifdef      ESP_ERR_HTTPD_ALLOC_MEM
+    ERR_TBL_IT(ESP_ERR_HTTPD_ALLOC_MEM),                    /* 32775 0x8007 Failed to dynamically allocate memory for
+                                                                            resource */
+#   endif
+#   ifdef      ESP_ERR_HTTPD_TASK
+    ERR_TBL_IT(ESP_ERR_HTTPD_TASK),                         /* 32776 0x8008 Failed to launch server task/thread */
 #   endif
     // components/spi_flash/include/esp_spi_flash.h
 #   ifdef      ESP_ERR_FLASH_BASE
