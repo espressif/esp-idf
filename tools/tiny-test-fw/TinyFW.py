@@ -130,7 +130,7 @@ def test_method(**kwargs):
         test_func_file_name = frame[1][1]
 
         case_info = MANDATORY_INFO.copy()
-        case_info["name"] = test_func.__name__
+        case_info["name"] = case_info["ID"] = test_func.__name__
         case_info.update(kwargs)
 
         @functools.wraps(test_func)
