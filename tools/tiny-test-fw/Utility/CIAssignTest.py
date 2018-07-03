@@ -188,6 +188,16 @@ class AssignTest(object):
             bot_filter = dict()
         return bot_filter
 
+    def _apply_bot_test_count(self):
+        """
+        Bot could also pass test count.
+        If filtered cases need to be tested for several times, then we do duplicate them here.
+        """
+        test_count = os.getenv("BOT_TEST_COUNT")
+        if test_count:
+            test_count = int(test_count)
+            self.test_cases *= test_count
+
     def assign_cases(self):
         """
         separate test cases to groups and assign test cases to CI jobs.
@@ -198,6 +208,7 @@ class AssignTest(object):
         failed_to_assign = []
         case_filter = self._apply_bot_filter()
         self.test_cases = self._search_cases(self.test_case_path, case_filter)
+        self._apply_bot_test_count()
         test_groups = self._group_cases()
         for group in test_groups:
             for job in self.jobs:
