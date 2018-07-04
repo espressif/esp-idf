@@ -152,7 +152,7 @@ esp_err_t slave_init(esp_slave_context_t *context)
 #ifdef CONFIG_SDIO_EXAMPLE_HIGHSPEED
     config.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
 #else
-    config.max_freq_khz = SDMMC_FREQ_PROBING;
+    config.max_freq_khz = SDMMC_FREQ_DEFAULT;
 #endif
 
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
@@ -209,14 +209,15 @@ void slave_power_on()
     };
     gpio_config(&cfg);
     gpio_set_level(SLAVE_PWR_GPIO, 0);  //low active
+    vTaskDelay(100);
 #endif
 }
+
+DMA_ATTR uint8_t rcv_buffer[READ_BUFFER_LEN];
 
 //try to get an interrupt from the slave and handle it, return if none.
 esp_err_t process_event(esp_slave_context_t *context)
 {
-    uint8_t buffer[READ_BUFFER_LEN];
-
     esp_err_t ret = esp_slave_wait_int(context, 0);
     if (ret == ESP_ERR_TIMEOUT) {
         return ret;
@@ -241,7 +242,7 @@ esp_err_t process_event(esp_slave_context_t *context)
         ESP_LOGD(TAG, "new packet coming");
         while (1) {
             size_t size_read = READ_BUFFER_LEN;
-            ret = esp_slave_get_packet(context, buffer, READ_BUFFER_LEN, &size_read, wait_ms);
+            ret = esp_slave_get_packet(context, rcv_buffer, READ_BUFFER_LEN, &size_read, wait_ms);
             if (ret == ESP_ERR_NOT_FOUND) {
                 ESP_LOGE(TAG, "interrupt but no data can be read");
                 break;
@@ -251,7 +252,7 @@ esp_err_t process_event(esp_slave_context_t *context)
             }
 
             ESP_LOGI(TAG, "receive data, size: %d", size_read);
-            ESP_LOG_BUFFER_HEXDUMP(TAG, buffer, size_read, ESP_LOG_INFO);
+            ESP_LOG_BUFFER_HEXDUMP(TAG, rcv_buffer, size_read, ESP_LOG_INFO);
             if (ret == ESP_OK) {
                 break;
             }
@@ -297,13 +298,13 @@ void job_write_reg(esp_slave_context_t *context, int value)
 //use 1+1+1+1+4+4=12 packets, 513 and 517 not sent
 int packet_len[] = {3, 6, 12, 128, 511, 512, 513, 517};
 //the sending buffer should be word aligned
-DMA_ATTR uint8_t buffer[1024];
+DMA_ATTR uint8_t send_buffer[READ_BUFFER_LEN];
 
 //send packets to the slave (they will return and be handled by the interrupt handler)
 void job_fifo(esp_slave_context_t *context)
 {
     for (int i = 0; i < 1024; i++) {
-        buffer[i] = 0x46 + i * 5;
+        send_buffer[i] = 0x46 + i * 5;
     }
 
     esp_err_t ret;
@@ -318,7 +319,7 @@ void job_fifo(esp_slave_context_t *context)
     for (int i = 0; i < sizeof(packet_len) / sizeof(int); i++) {
         const int wait_ms = 50;
         int length = packet_len[i];
-        ret = esp_slave_send_packet(context, buffer + pointer, length, wait_ms);
+        ret = esp_slave_send_packet(context, send_buffer + pointer, length, wait_ms);
         if (ret == ESP_ERR_TIMEOUT) {
             ESP_LOGD(TAG, "several packets are expected to timeout.");
         } else {
