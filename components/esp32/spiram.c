@@ -23,6 +23,7 @@ we add more types of external RAM memory, this can be made into a more intellige
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_err.h"
+#include "esp_spiram.h"
 #include "spiram_psram.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -102,6 +103,39 @@ void IRAM_ATTR esp_spiram_init_cache()
 #endif
 }
 
+esp_spiram_volt_t esp_spiram_get_chip_volt()
+{
+    if (!spiram_inited) {
+        ESP_LOGE(TAG, "SPI RAM not initialized");
+        return ESP_SPIRAM_VOLT_INVALID;
+    }
+    psram_volt_t volt = psram_get_volt();
+    switch (volt) {
+        case PSRAM_VOLT_1V8:
+            return ESP_SPIRAM_VOLT_1V8;
+        case PSRAM_VOLT_3V3:
+            return ESP_SPIRAM_VOLT_3V3;
+        default:
+            return ESP_SPIRAM_VOLT_INVALID;
+    }
+}
+
+esp_spiram_size_t esp_spiram_get_chip_size()
+{
+    if (!spiram_inited) {
+        ESP_LOGE(TAG, "SPI RAM not initialized");
+        return ESP_SPIRAM_SIZE_INVALID;
+    }
+    psram_size_t psram_size = psram_get_size();
+    switch (psram_size) {
+        case PSRAM_SIZE_32MBITS:
+            return ESP_SPIRAM_SIZE_32MBITS;
+        case PSRAM_SIZE_64MBITS:
+            return ESP_SPIRAM_SIZE_64MBITS;
+        default:
+            return ESP_SPIRAM_SIZE_INVALID;
+    }
+}
 
 esp_err_t esp_spiram_init()
 {
