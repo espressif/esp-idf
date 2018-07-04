@@ -7,6 +7,7 @@ components/partition_table/gen_esp32part.py
 components/partition_table/parttool.py
 components/partition_table/test_gen_esp32part_host/gen_esp32part_tests.py
 components/ulp/esp32ulp_mapgen.py
+components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py
 docs/check_doc_warnings.sh
 docs/check_lang_folder_sync.sh
 docs/gen-kconfig-doc.py
