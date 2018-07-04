@@ -141,6 +141,13 @@ void esp_deep_sleep(uint64_t time_in_us)
     esp_deep_sleep_start();
 }
 
+static void IRAM_ATTR flush_uarts()
+{
+    for (int i = 0; i < 3; ++i) {
+        uart_tx_wait_idle(i);
+    }
+}
+
 static void IRAM_ATTR suspend_uarts()
 {
     for (int i = 0; i < 3; ++i) {
@@ -160,8 +167,14 @@ static void IRAM_ATTR resume_uarts()
 
 static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 {
-    // Stop UART output so that output is not lost due to APB frequency change
-    suspend_uarts();
+    // Stop UART output so that output is not lost due to APB frequency change.
+    // For light sleep, suspend UART output — it will resume after wakeup.
+    // For deep sleep, wait for the contents of UART FIFO to be sent.
+    if (pd_flags & RTC_SLEEP_PD_DIG) {
+        flush_uarts();
+    } else {
+        suspend_uarts();
+    }
 
     // Save current frequency and switch to XTAL
     rtc_cpu_freq_t cpu_freq = rtc_clk_cpu_freq_get();
