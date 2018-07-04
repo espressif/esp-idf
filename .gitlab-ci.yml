@@ -639,6 +639,12 @@ example_test_003_01:
     - ESP32
     - Example_SDIO
 
+example_test_004_01:
+  <<: *example_test_template
+  tags:
+    - ESP32
+    - Example_CAN
+
 UT_001_01:
   <<: *unit_test_template
   tags:
