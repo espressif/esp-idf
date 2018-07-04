@@ -47,10 +47,12 @@ typedef enum {
 
 /// Timing of SDIO slave
 typedef enum {
-    SDIO_SLAVE_TIMING_NSEND_PSAMPLE = 0,///< Send at negedge, and sample at posedge. Default value for SD protocol.
-    SDIO_SLAVE_TIMING_NSEND_NSAMPLE,    ///< Send at negedge, and sample at negedge
-    SDIO_SLAVE_TIMING_PSEND_PSAMPLE,    ///< Send at posedge, and sample at posedge
+    SDIO_SLAVE_TIMING_PSEND_PSAMPLE = 0,/**< Send at posedge, and sample at posedge. Default value for HS mode.
+                                         *   Normally there's no problem using this to work in DS mode.
+                                         */
+    SDIO_SLAVE_TIMING_NSEND_PSAMPLE    ,///< Send at negedge, and sample at posedge. Default value for DS mode and below.
     SDIO_SLAVE_TIMING_PSEND_NSAMPLE,    ///< Send at posedge, and sample at negedge
+    SDIO_SLAVE_TIMING_NSEND_NSAMPLE,    ///< Send at negedge, and sample at negedge
 } sdio_slave_timing_t;
 
 /// Configuration of SDIO slave mode
