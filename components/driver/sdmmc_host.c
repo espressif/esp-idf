@@ -290,6 +290,8 @@ static void configure_pin(int pin)
     const int sdmmc_func = 3;
     const int drive_strength = 3;
     assert(pin!=-1);
+    gpio_pulldown_dis(pin);
+
     uint32_t reg = GPIO_PIN_MUX_REG[pin];
     assert(reg != UINT32_MAX);
     PIN_INPUT_ENABLE(reg);
@@ -586,26 +588,17 @@ esp_err_t sdmmc_host_pullup_en(int slot, int width)
     }
     //according to the spec, the host control the clk, we don't to pull it up here
     gpio_pullup_en(sdmmc_slot_info[slot].cmd_gpio);
-    gpio_pulldown_dis(sdmmc_slot_info[slot].cmd_gpio);
     gpio_pullup_en(sdmmc_slot_info[slot].d0_gpio);
-    gpio_pulldown_dis(sdmmc_slot_info[slot].d0_gpio);
     if (width >= 4) {
         gpio_pullup_en(sdmmc_slot_info[slot].d1_gpio);
-        gpio_pulldown_dis(sdmmc_slot_info[slot].d1_gpio);
         gpio_pullup_en(sdmmc_slot_info[slot].d2_gpio);
-        gpio_pulldown_dis(sdmmc_slot_info[slot].d2_gpio);
         gpio_pullup_en(sdmmc_slot_info[slot].d3_gpio);
-        gpio_pulldown_dis(sdmmc_slot_info[slot].d3_gpio);
     }
     if (width == 8) {
         gpio_pullup_en(sdmmc_slot_info[slot].d4_gpio);
-        gpio_pulldown_dis(sdmmc_slot_info[slot].d4_gpio);
         gpio_pullup_en(sdmmc_slot_info[slot].d5_gpio);
-        gpio_pulldown_dis(sdmmc_slot_info[slot].d5_gpio);
         gpio_pullup_en(sdmmc_slot_info[slot].d6_gpio);
-        gpio_pulldown_dis(sdmmc_slot_info[slot].d6_gpio);
         gpio_pullup_en(sdmmc_slot_info[slot].d7_gpio);
-        gpio_pulldown_dis(sdmmc_slot_info[slot].d7_gpio);
     }
     return ESP_OK;
 }
