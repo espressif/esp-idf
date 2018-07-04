@@ -136,6 +136,13 @@ Add the following code before :cpp:func:`esp_deep_sleep_start` to remove this ex
 rtc_gpio_isolate(GPIO_NUM_12);
 ```
 
+UART output handling
+--------------------
+
+Before entering sleep mode, :cpp:func:`esp_deep_sleep_start` will flush the contents of UART FIFOs.
+
+When entering light sleep mode using :cpp:func:`esp_light_sleep_start`, UART FIFOs will not be flushed. Instead, UART output will be suspended, and remaining characters in the FIFO will be sent out after wakeup from light sleep.
+
 Checking sleep wakeup cause
 ---------------------------
 
