@@ -26,6 +26,17 @@ typedef enum {
     PSRAM_CACHE_MAX,
 } psram_cache_mode_t;
 
+typedef enum {
+    PSRAM_VOLT_3V3 = 0,
+    PSRAM_VOLT_1V8 = 1,
+    PSRAM_VOLT_MAX,
+} psram_volt_t;
+
+typedef enum {
+    PSRAM_SIZE_32MBITS = 0,
+    PSRAM_SIZE_64MBITS = 1,
+    PSRAM_SIZE_MAX,
+} psram_size_t;
 
 /*
 See the TRM, chapter PID/MPU/MMU, header 'External RAM' for the definitions of these modes.
@@ -34,11 +45,28 @@ Important is that NORMAL works with the app CPU cache disabled, but gives huge c
 issues when both app and pro CPU are enabled. LOWHIGH and EVENODD do not have these coherency
 issues but cannot be used when the app CPU cache is disabled.
 */
+
 typedef enum {
     PSRAM_VADDR_MODE_NORMAL=0, ///< App and pro CPU use their own flash cache for external RAM access
     PSRAM_VADDR_MODE_LOWHIGH,  ///< App and pro CPU share external RAM caches: pro CPU has low 2M, app CPU has high 2M
     PSRAM_VADDR_MODE_EVENODD,  ///< App and pro CPU share external RAM caches: pro CPU does even 32yte ranges, app does odd ones.
 } psram_vaddr_mode_t;
+
+/**
+ * @brief get psram voltage
+ * @return
+ *     - PSRAM_VOLT_MAX if psram not enabled or not valid.
+ *     - PSRAM voltage
+ */
+psram_volt_t psram_get_volt();
+
+/**
+ * @brief get psram size
+ * @return
+ *     - PSRAM_SIZE_MAX if psram not enabled or not valid
+ *     - PSRAM size
+ */
+psram_size_t psram_get_size();
 
 /**
  * @brief psram cache enable function
