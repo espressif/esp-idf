@@ -550,6 +550,15 @@ esp_err_t touch_pad_filter_stop();
  */
 esp_err_t touch_pad_filter_delete();
 
+/**
+ * @brief Get the touch pad which caused wakeup from sleep
+ * @param pad_num pointer to touch pad which caused wakeup
+ * @return
+ *      - ESP_OK Success
+ *      - ESP_FAIL get status err
+ */
+esp_err_t touch_pad_get_wakeup_status(touch_pad_t *pad_num);
+
 #ifdef __cplusplus
 }
 #endif
