@@ -271,6 +271,16 @@ static esp_err_t handle_event(sdmmc_command_t* cmd, sdmmc_req_state_t* state,
     return ESP_OK;
 }
 
+static bool cmd_needs_auto_stop(const sdmmc_command_t* cmd)
+{
+    /* SDMMC host needs an "auto stop" flag for the following commands: */
+    return cmd->datalen > 0 &&
+           (cmd->opcode == MMC_WRITE_BLOCK_MULTIPLE ||
+            cmd->opcode == MMC_READ_BLOCK_MULTIPLE ||
+            cmd->opcode == MMC_WRITE_DAT_UNTIL_STOP ||
+            cmd->opcode == MMC_READ_DAT_UNTIL_STOP);
+}
+
 static sdmmc_hw_cmd_t make_hw_cmd(sdmmc_command_t* cmd)
 {
     sdmmc_hw_cmd_t res = { 0 };
@@ -302,12 +312,11 @@ static sdmmc_hw_cmd_t make_hw_cmd(sdmmc_command_t* cmd)
             res.rw = 1;
         }
         assert(cmd->datalen % cmd->blklen == 0);
-        if ((cmd->datalen / cmd->blklen) > 1) {
-            res.send_auto_stop = 1;
-        }
+        res.send_auto_stop = cmd_needs_auto_stop(cmd) ? 1 : 0;
     }
-    ESP_LOGV(TAG, "%s: opcode=%d, rexp=%d, crc=%d", __func__,
-            res.cmd_index, res.response_expect, res.check_response_crc);
+    ESP_LOGV(TAG, "%s: opcode=%d, rexp=%d, crc=%d, auto_stop=%d", __func__,
+            res.cmd_index, res.response_expect, res.check_response_crc,
+            res.send_auto_stop);
     return res;
 }
 
