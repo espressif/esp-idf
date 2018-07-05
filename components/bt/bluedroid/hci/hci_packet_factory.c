@@ -194,6 +194,16 @@ static BT_HDR *make_write_sync_flow_control_enable(uint8_t enable)
     UINT8_TO_STREAM(stream, enable);
     return packet;
 }
+
+static BT_HDR *make_write_default_erroneous_data_report(uint8_t enable)
+{
+    uint8_t *stream;
+    const uint8_t parameter_size = 1;
+    BT_HDR *packet = make_command(HCI_WRITE_ERRONEOUS_DATA_RPT, parameter_size, &stream);
+
+    UINT8_TO_STREAM(stream, enable);
+    return packet;
+}
 // Internal functions
 
 static BT_HDR *make_command_no_params(uint16_t opcode)
@@ -248,7 +258,8 @@ static const hci_packet_factory_t interface = {
     make_ble_read_suggested_default_data_length,
     make_ble_write_suggested_default_data_length,
     make_ble_set_event_mask,
-    make_write_sync_flow_control_enable
+    make_write_sync_flow_control_enable,
+    make_write_default_erroneous_data_report,
 };
 
 const hci_packet_factory_t *hci_packet_factory_get_interface()
