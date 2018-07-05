@@ -1002,6 +1002,16 @@ esp_err_t touch_pad_filter_delete()
     return ESP_OK;
 }
 
+esp_err_t touch_pad_get_wakeup_status(touch_pad_t *pad_num)
+{
+    uint32_t touch_mask = SENS.sar_touch_ctrl2.touch_meas_en;
+    if(touch_mask == 0) {
+        return ESP_FAIL;
+    }
+    *pad_num = touch_pad_num_wrap((touch_pad_t)(__builtin_ffs(touch_mask) - 1));
+    return ESP_OK;
+}
+
 /*---------------------------------------------------------------
                     ADC Common
 ---------------------------------------------------------------*/
