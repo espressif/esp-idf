@@ -17,6 +17,7 @@
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
+#include "assert.h"
 
 #define MHZ (1000000)
 
@@ -35,11 +36,12 @@
 /**
  * @brief Clock calibration function used by rtc_clk_cal and rtc_clk_cal_ratio
  * @param cal_clk which clock to calibrate
- * @param slowclk_cycles number of slow clock cycles to count
+ * @param slowclk_cycles number of slow clock cycles to count. Max value is 32766.
  * @return number of XTAL clock cycles within the given number of slow clock cycles
  */
 static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
+    assert(slowclk_cycles < 32767);
     /* Enable requested clock (150k clock is always on) */
     int dig_32k_xtal_state = REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN);
     if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_state) {
@@ -56,16 +58,21 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
     /* Figure out how long to wait for calibration to finish */
     uint32_t expected_freq;
     rtc_slow_freq_t slow_freq = REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ANA_CLK_RTC_SEL);
+    uint32_t us_timer_max = 0xFFFFFFFF;
     if (cal_clk == RTC_CAL_32K_XTAL ||
         (cal_clk == RTC_CAL_RTC_MUX && slow_freq == RTC_SLOW_FREQ_32K_XTAL)) {
         expected_freq = 32768; /* standard 32k XTAL */
+        us_timer_max = (uint32_t) (TIMG_RTC_CALI_VALUE / rtc_clk_xtal_freq_get());
     } else if (cal_clk == RTC_CAL_8MD256 ||
             (cal_clk == RTC_CAL_RTC_MUX && slow_freq == RTC_SLOW_FREQ_8MD256)) {
         expected_freq = RTC_FAST_CLK_FREQ_APPROX / 256;
     } else {
         expected_freq = 150000; /* 150k internal oscillator */
+        us_timer_max = (uint32_t) (TIMG_RTC_CALI_VALUE / rtc_clk_xtal_freq_get());
     }
     uint32_t us_time_estimate = (uint32_t) (((uint64_t) slowclk_cycles) * MHZ / expected_freq);
+    // The required amount of slowclk_cycles can produce in a counter TIMG a overflow error. Decrease the slowclk_cycles for fix it.
+    assert(us_time_estimate < us_timer_max);
     /* Start calibration */
     CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START);
     SET_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START);
