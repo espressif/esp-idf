@@ -952,9 +952,11 @@ esp_err_t sdio_slave_send_queue(uint8_t* addr, size_t len, void* arg, TickType_t
     return ESP_OK;
 }
 
-esp_err_t sdio_slave_send_get_finished(void** arg, TickType_t wait)
+esp_err_t sdio_slave_send_get_finished(void** out_arg, TickType_t wait)
 {
-    portBASE_TYPE err = xQueueReceive( context.ret_queue, arg, wait );
+    void* arg = NULL;
+    portBASE_TYPE err = xQueueReceive(context.ret_queue, &arg, wait);
+    if (out_arg) *out_arg = arg;
     if ( err != pdTRUE ) return ESP_ERR_TIMEOUT;
     return ESP_OK;
 }
