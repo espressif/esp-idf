@@ -277,7 +277,7 @@ static inline uint8_t* sdio_ringbuf_offset_ptr(sdio_ringbuf_t *buf, sdio_ringbuf
 static esp_err_t sdio_ringbuf_send(sdio_ringbuf_t* buf, esp_err_t (*copy_callback)(uint8_t*, void*), void* arg, TickType_t wait)
 {
     portBASE_TYPE ret = xSemaphoreTake(buf->remain_cnt, wait);
-    if (ret != pdTRUE) return NULL;
+    if (ret != pdTRUE) return ESP_ERR_TIMEOUT;
 
     portENTER_CRITICAL(&buf->write_spinlock);
     uint8_t* get_ptr = sdio_ringbuf_offset_ptr(buf, ringbuf_write_ptr, buf->item_size);
@@ -929,9 +929,11 @@ esp_err_t sdio_slave_send_queue(uint8_t* addr, size_t len, void* arg, TickType_t
     return ESP_OK;
 }
 
-esp_err_t sdio_slave_send_get_finished(void** arg, TickType_t wait)
+esp_err_t sdio_slave_send_get_finished(void** out_arg, TickType_t wait)
 {
-    portBASE_TYPE err = xQueueReceive(context.ret_queue, arg, wait);
+    void* arg = NULL;
+    portBASE_TYPE err = xQueueReceive(context.ret_queue, &arg, wait);
+    if (out_arg) *out_arg = arg;
     if (err != pdTRUE) return ESP_ERR_TIMEOUT;
     return ESP_OK;
 }
