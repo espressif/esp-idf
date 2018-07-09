@@ -88,7 +88,7 @@ void esp_clk_init(void)
             break;
         default:
             freq_mhz = 80;
-            /* no break */
+            /* falls through */
         case 80:
             freq = RTC_CPU_FREQ_80M;
             break;

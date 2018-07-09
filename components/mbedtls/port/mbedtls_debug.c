@@ -34,12 +34,16 @@ void mbedtls_esp_enable_debug_log(mbedtls_ssl_config *conf, int threshold)
     switch(threshold) {
     case 1:
         level = ESP_LOG_WARN;
+        break;
     case 2:
         level = ESP_LOG_INFO;
+        break;
     case 3:
         level = ESP_LOG_DEBUG;
+        break;
     case 4:
         level = ESP_LOG_VERBOSE;
+        break;
     }
     esp_log_level_set(TAG, level);
 }
@@ -76,6 +80,7 @@ static void mbedtls_esp_debug(void *ctx, int level,
         break;
     case 3:
         ESP_LOGD(TAG, "%s:%d %s", file, line, str);
+        break;
     case 4:
         ESP_LOGV(TAG, "%s:%d %s", file, line, str);
         break;
