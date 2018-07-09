@@ -1554,6 +1554,7 @@ XML_Parse(XML_Parser parser, const char *s, int len, int isFinal)
       errorCode = XML_ERROR_NO_MEMORY;
       return XML_STATUS_ERROR;
     }
+    /* falls through */
   default:
     ps_parsing = XML_PARSING;
   }
@@ -1680,6 +1681,7 @@ XML_ParseBuffer(XML_Parser parser, int len, int isFinal)
       errorCode = XML_ERROR_NO_MEMORY;
       return XML_STATUS_ERROR;
     }
+    /* falls through */
   default:
     ps_parsing = XML_PARSING;
   }
@@ -4266,8 +4268,8 @@ doProlog(XML_Parser parser,
           return XML_ERROR_NO_MEMORY;
         declEntity->publicId = NULL;
       }
-      /* fall through */
 #endif /* XML_DTD */
+      /* falls through */
     case XML_ROLE_ENTITY_SYSTEM_ID:
       if (dtd->keepProcessing && declEntity) {
         declEntity->systemId = poolStoreString(&dtd->pool, enc,

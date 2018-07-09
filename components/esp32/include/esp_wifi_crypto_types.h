@@ -607,7 +607,7 @@ typedef void (*esp_uuid_gen_mac_addr_t)(const unsigned char *mac_addr, unsigned 
  * @brief free the message after finish DH
  * 
  */
-typedef void * (*esp_dh5_free_t)(void *ctx);
+typedef void (*esp_dh5_free_t)(void *ctx);
 
 /**
  * @brief Build WPS IE for (Re)Association Request
