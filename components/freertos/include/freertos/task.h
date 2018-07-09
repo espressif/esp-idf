@@ -181,7 +181,9 @@ typedef struct xTASK_STATUS
 	uint32_t ulRunTimeCounter;		/*!< The total run time allocated to the task so far, as defined by the run time stats clock.  See http://www.freertos.org/rtos-run-time-stats.html.  Only valid when configGENERATE_RUN_TIME_STATS is defined as 1 in FreeRTOSConfig.h. */
 	StackType_t *pxStackBase;		/*!< Points to the lowest address of the task's stack area. */
 	uint32_t usStackHighWaterMark;	/*!< The minimum amount of stack space that has remained for the task since the task was created.  The closer this value is to zero the closer the task has come to overflowing its stack. */
-	BaseType_t xCoreID;				/*!< Core this task is pinned to */
+#if configTASKLIST_INCLUDE_COREID
+	BaseType_t xCoreID;				/*!< Core this task is pinned to. This field is present if CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID is set. */
+#endif
 } TaskStatus_t;
 
 /**
