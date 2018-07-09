@@ -328,14 +328,21 @@ esp_err_t WL_Flash::updateV1_V2()
     int check_size = offsetof(wl_state_t, device_id);
     // Chech CRC and recover state
     uint32_t crc1 = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)&this->state, check_size);
-    // For V1 crc in place of device_id and version
-    uint32_t v1_crc = this->state.device_id;
+    wl_state_t sa_copy;
+    wl_state_t *state_copy = &sa_copy;
+    result = this->flash_drv->read(this->addr_state2, state_copy, sizeof(wl_state_t));
+    WL_RESULT_CHECK(result);
+    uint32_t crc2 = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)state_copy, check_size);
     
-    ESP_LOGD(TAG, "%s - process crc1=0x%08x v1_crc=0x%08x, version=%i", __func__, crc1, v1_crc, this->state.version);
+    // For V1 crc in place of device_id and version
+    uint32_t v1_crc1 = this->state.device_id;
+    uint32_t v1_crc2 = state_copy->device_id;
+    
+    ESP_LOGD(TAG, "%s - process crc1=0x%08x, crc2=0x%08x, v1_crc1=0x%08x, v1_crc2=0x%08x, version=%i", __func__, crc1, crc2, v1_crc1, v1_crc2, this->state.version);
 
-    if ((crc1 == v1_crc) && (this->state.version == 1)){
+    if ((crc1 == v1_crc1) && (crc2 == v1_crc2) && (v1_crc1 == v1_crc2) && (this->state.version == 1)){
         // Here we have to update all internal structures
-        ESP_LOGI(TAG, "%s Update from V1 to V2", __func__);
+        ESP_LOGI(TAG, "%s Update from V1 to V2, crc=0x%08x, ", __func__, crc1);
         uint32_t pos = 0;
 
         for (size_t i = 0; i < this->state.max_pos; i++) {
