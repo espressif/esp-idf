@@ -252,7 +252,7 @@ class LineMatcher:
             self._dict[s[0]] = lev
     def match(self, line):
         try:
-            m = self._re.search(line)
+            m = self._re.search(str(line))
             if m:
                 lev = self.level[m.group(1)]
                 if m.group(2) in self._dict:
@@ -303,9 +303,9 @@ class Monitor(object):
         self.exit_key = CTRL_RBRACKET
 
         self.translate_eol = {
-            "CRLF": lambda c: c.replace(b"\n", b"\r\n"),
-            "CR":   lambda c: c.replace(b"\n", b"\r"),
-            "LF":   lambda c: c.replace(b"\r", b"\n"),
+            "CRLF": lambda c: c.replace("\n", "\r\n"),
+            "CR":   lambda c: c.replace("\n", "\r"),
+            "LF":   lambda c: c.replace("\r", "\n"),
         }[eol]
 
         # internal state
@@ -414,7 +414,7 @@ class Monitor(object):
         # handle_serial_input is invoked
 
     def handle_possible_pc_address_in_line(self, line):
-        line = self._pc_address_buffer + line
+        line = str(self._pc_address_buffer + line)
         self._pc_address_buffer = b""
         for m in re.finditer(MATCH_PCADDR, line):
             self.lookup_pc_address(m.group())
@@ -525,7 +525,7 @@ class Monitor(object):
             ["%saddr2line" % self.toolchain_prefix,
              "-pfiaC", "-e", self.elf_file, pc_addr],
             cwd=".")
-        if not "?? ??:0" in translation:
+        if not "?? ??:0" in str(translation):
             yellow_print(translation)
 
     def check_gdbstub_trigger(self, line):
