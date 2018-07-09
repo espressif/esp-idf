@@ -340,7 +340,7 @@ esp_err_t WL_Flash::updateV1_V2()
     
     ESP_LOGD(TAG, "%s - process crc1=0x%08x, crc2=0x%08x, v1_crc1=0x%08x, v1_crc2=0x%08x, version=%i", __func__, crc1, crc2, v1_crc1, v1_crc2, this->state.version);
 
-    if ((crc1 == v1_crc1) && (crc2 == v1_crc2) && (v1_crc1 == v1_crc2) && (this->state.version == 1)){
+    if ((crc1 == v1_crc1) && (crc2 == v1_crc2) && (v1_crc1 == v1_crc2) && (this->state.version == 1) && (state_copy->version == 1)){
         // Here we have to update all internal structures
         ESP_LOGI(TAG, "%s Update from V1 to V2, crc=0x%08x, ", __func__, crc1);
         uint32_t pos = 0;
@@ -355,6 +355,7 @@ esp_err_t WL_Flash::updateV1_V2()
                break; // we have found position
             }
         }
+        ESP_LOGI(TAG, "%s max_pos=%i, pos=%i, state.ver=%i, state2.ver=%i", __func__, (uint32_t)this->state.max_pos, (uint32_t)pos, (uint32_t)this->state.version, (uint32_t)state_copy->version);
         if (pos == this->state.max_pos) {
             pos--;
         }
