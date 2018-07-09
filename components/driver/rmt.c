@@ -137,7 +137,7 @@ esp_err_t rmt_get_rx_idle_thresh(rmt_channel_t channel, uint16_t *thresh)
 esp_err_t rmt_set_mem_block_num(rmt_channel_t channel, uint8_t rmt_mem_num)
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
-    RMT_CHECK(rmt_mem_num < 16, RMT_MEM_CNT_ERROR_STR, ESP_ERR_INVALID_ARG);
+    RMT_CHECK(rmt_mem_num <= RMT_CHANNEL_MAX - channel, RMT_MEM_CNT_ERROR_STR, ESP_ERR_INVALID_ARG);
     RMT.conf_ch[channel].conf0.mem_size = rmt_mem_num;
     return ESP_OK;
 }
@@ -669,7 +669,7 @@ esp_err_t rmt_driver_uninstall(rmt_channel_t channel)
     }
     //Avoid blocking here(when the interrupt is disabled and do not wait tx done).
     if(p_rmt_obj[channel]->wait_done) {
-        xSemaphoreTake(p_rmt_obj[channel]->tx_sem, portMAX_DELAY);  
+        xSemaphoreTake(p_rmt_obj[channel]->tx_sem, portMAX_DELAY);
     }
     rmt_set_rx_intr_en(channel, 0);
     rmt_set_err_intr_en(channel, 0);
