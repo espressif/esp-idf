@@ -319,9 +319,8 @@ void btm_sco_process_num_completed_pkts (UINT8 *p)
     STREAM_TO_UINT8 (num_handles, p);
     for (xx = 0; xx < num_handles; xx++) {
         STREAM_TO_UINT16 (handle, p);
-        handle &= 0x7ff; // walk around for bad handle bit mask from controller
         STREAM_TO_UINT16 (num_sent, p);
-        if ((sco_inx = btm_find_scb_by_handle(handle & 0x7ff)) == BTM_MAX_SCO_LINKS) {
+        if ((sco_inx = btm_find_scb_by_handle(handle)) == BTM_MAX_SCO_LINKS) {
             continue;
         }
         BTM_TRACE_DEBUG("%s, %d, %u", __FUNCTION__, handle, p_cb->xmit_window_size); //debug
