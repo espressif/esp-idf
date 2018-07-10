@@ -11,6 +11,25 @@
       overflow: visible !important;
    }
 }
+.a {
+    color: #429b9e !important;
+}    
 .wy-side-nav-search {
     background-color: #30A497 !important;
+}
+
+.toctree-l1 {
+    color: #ffffff !important;
+}
+
+.toctree-l2 {
+    background-color: #ededed !important;
+}
+
+.icon-home {
+    opacity: 1 !important;
+}
+
+#rtd-search-form {
+    border-radius: 0px !important;
 }
