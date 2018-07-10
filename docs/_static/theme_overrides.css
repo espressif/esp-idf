@@ -40,6 +40,10 @@
   color: #333333 !important;
 }
 
+.icon-home:hover:visited {
+  color: #333333 !important;
+}
+
 .wy-form {
   border-radius: 0px !important;
 }
