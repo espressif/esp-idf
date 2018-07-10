@@ -385,6 +385,12 @@ esp_err_t WL_Flash::updateV1_V2()
         WL_RESULT_CHECK(result);
         ESP_LOGD(TAG, "%s - move_count= 0x%08x, pos= 0x%08x", __func__, this->state.move_count, this->state.pos);
 
+        result = this->flash_drv->read(this->addr_state1, &this->state, sizeof(wl_state_t));
+        WL_RESULT_CHECK(result);
+        ESP_LOGI(TAG, "%s update result ver=%i, pos=%i", __func__, (uint32_t)this->state.version, (uint32_t)this->state.pos);
+        
+
+
         memset(this->temp_buff, 0, this->cfg.wr_size);
         for (uint32_t i=0 ; i<= pos; i++) {
             this->fillOkBuff(i);
