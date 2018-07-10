@@ -40,8 +40,13 @@
   color: #333333 !important;
 }
 
+.icon-home:visited {
+  color: #333333 !important;
+}
+
 .icon-home:hover:visited {
   color: #333333 !important;
+  background-color: #bd2c2a !important;
 }
 
 .wy-form {
