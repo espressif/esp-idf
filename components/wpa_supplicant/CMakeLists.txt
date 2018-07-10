@@ -1,4 +1,4 @@
-set(COMPONENT_SRCDIRS src/crypto port src/fast_crypto)
+set(COMPONENT_SRCDIRS src/crypto port src/fast_crypto src/wpa2/eap_peer src/wpa2/tls src/wpa2/utils src/wps)
 set(COMPONENT_ADD_INCLUDEDIRS include port/include)
 
 set(COMPONENT_REQUIRES "")
