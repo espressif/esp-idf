@@ -32,6 +32,20 @@
 
 /*******************************************************************************
 **
+** Function         bta_dm_co_bt_set_io_cap
+**
+** Description      This function is used to set IO capabilities
+**
+** Parameters       bt_io_cap  - IO capabilities
+**
+** @return          - ESP_BT_STATUS_SUCCESS : success
+**                  - other  : failed
+**
+*******************************************************************************/
+extern esp_err_t bta_dm_co_bt_set_io_cap(UINT8 bt_io_cap);
+
+/*******************************************************************************
+**
 ** Function         bta_dm_co_io_req
 **
 ** Description      This callout function is executed by DM to get IO capabilities

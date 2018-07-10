@@ -513,6 +513,29 @@ void BTA_DmConfirm(BD_ADDR bd_addr, BOOLEAN accept)
 
 /*******************************************************************************
 **
+** Function         BTA_DmPasskeyReqReply
+**
+** Description      This function is called to provide the passkey for
+**                  Simple Pairing in response to BTA_DM_SP_KEY_REQ_EVT
+**
+** Returns          void
+**
+*******************************************************************************/
+#if (BT_SSP_INCLUDED == TRUE)
+void BTA_DmPasskeyReqReply(BOOLEAN accept, BD_ADDR bd_addr, UINT32 passkey)
+{
+    tBTA_DM_API_KEY_REQ    *p_msg;
+    if ((p_msg = (tBTA_DM_API_KEY_REQ *) osi_malloc(sizeof(tBTA_DM_API_KEY_REQ))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_KEY_REQ_EVT;
+        bdcpy(p_msg->bd_addr, bd_addr);
+        p_msg->accept = accept;
+        p_msg->passkey = passkey;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+#endif ///BT_SSP_INCLUDED == TRUE
+/*******************************************************************************
+**
 ** Function         BTA_DmAddDevice
 **
 ** Description      This function adds a device to the security database list of
