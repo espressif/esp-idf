@@ -23,6 +23,7 @@
 #include "btc/btc_manage.h"
 #include "btc/btc_util.h"
 #include "osi/allocator.h"
+#include "bta/bta_dm_co.h"
 
 #if (BTC_GAP_BT_INCLUDED == TRUE)
 
@@ -635,7 +636,7 @@ static void btc_gap_bt_read_rssi_delta(btc_gap_bt_args_t *arg)
     BTA_DmBleReadRSSI(arg->read_rssi_delta.bda.address, BTA_TRANSPORT_BR_EDR, btc_gap_bt_read_rssi_delta_cmpl_callback);
 }
 
-esp_err_t btc_gap_bt_remove_bond_device(btc_gap_bt_args_t *arg)
+static esp_err_t btc_gap_bt_remove_bond_device(btc_gap_bt_args_t *arg)
 {
     BD_ADDR bd_addr;
     memcpy(bd_addr, arg->rm_bond_device.bda.address, sizeof(BD_ADDR));
@@ -643,6 +644,103 @@ esp_err_t btc_gap_bt_remove_bond_device(btc_gap_bt_args_t *arg)
         return ESP_BT_STATUS_SUCCESS;
     }
     return ESP_BT_STATUS_FAIL;
+}
+
+#if (BT_SSP_INCLUDED == TRUE)
+static esp_err_t btc_gap_bt_set_security_param(btc_gap_bt_args_t *arg)
+{
+    esp_err_t ret;
+    switch(arg->set_security_param.param_type) {
+    case ESP_BT_SP_IOCAP_MODE:{
+        uint8_t iocap = 0;
+        uint8_t *p = arg->set_security_param.value;
+        STREAM_TO_UINT8(iocap, p);
+        ret = bta_dm_co_bt_set_io_cap(iocap);
+        break;
+    }
+    default:
+        ret = ESP_BT_STATUS_FAIL;
+        break;
+    }
+    return ret;
+}
+
+static void btc_gap_bt_ssp_passkey_reply(btc_gap_bt_args_t *arg)
+{
+    BTA_DmPasskeyReqReply(arg->passkey_reply.accept, arg->passkey_reply.bda.address, arg->passkey_reply.passkey);
+}
+
+static void btc_gap_bt_ssp_confirm(btc_gap_bt_args_t *arg)
+{
+    BTA_DmConfirm(arg->confirm_reply.bda.address, arg->confirm_reply.accept);
+
+}
+
+#endif ///BT_SSP_INCLUDED == TRUE
+
+void btc_gap_bt_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
+{
+    switch (msg->act) {
+    case BTC_GAP_BT_ACT_SET_SCAN_MODE:
+    case BTC_GAP_BT_ACT_START_DISCOVERY:
+    case BTC_GAP_BT_ACT_CANCEL_DISCOVERY:
+    case BTC_GAP_BT_ACT_GET_REMOTE_SERVICES:
+    case BTC_GAP_BT_ACT_GET_REMOTE_SERVICE_RECORD:
+    case BTC_GAP_BT_ACT_SET_COD:
+    case BTC_GAP_BT_ACT_READ_RSSI_DELTA:
+    case BTC_GAP_BT_ACT_REMOVE_BOND_DEVICE:
+        break;
+#if (BT_SSP_INCLUDED == TRUE)
+    case BTC_GAP_BT_ACT_PASSKEY_REPLY:
+    case BTC_GAP_BT_ACT_CONFIRM_REPLY:
+        break;
+    case BTC_GAP_BT_ACT_SET_SECURITY_PARAM:{
+        btc_gap_bt_args_t *src = (btc_gap_bt_args_t *)p_src;
+        btc_gap_bt_args_t  *dst = (btc_gap_bt_args_t *) p_dest;
+        uint8_t length = 0;
+        if (src->set_security_param.value) {
+            length = dst->set_security_param.len;
+            dst->set_security_param.value = osi_malloc(length);
+            if (dst->set_security_param.value != NULL) {
+                memcpy(dst->set_security_param.value, src->set_security_param.value, length);
+            } else {
+                BTC_TRACE_ERROR("%s %d no mem\n",__func__, msg->act);
+            }
+        }
+        break;
+    }
+#endif ///BT_SSP_INCLUDED == TRUE
+    default:
+        BTC_TRACE_ERROR("Unhandled deep copy %d\n", msg->act);
+        break;
+    }
+}
+
+void btc_gap_bt_arg_deep_free(btc_msg_t *msg)
+{
+    btc_gap_bt_args_t *arg = (btc_gap_bt_args_t *)msg->arg;
+    switch (msg->act) {
+    case BTC_GAP_BT_ACT_SET_SCAN_MODE:
+    case BTC_GAP_BT_ACT_START_DISCOVERY:
+    case BTC_GAP_BT_ACT_CANCEL_DISCOVERY:
+    case BTC_GAP_BT_ACT_GET_REMOTE_SERVICES:
+    case BTC_GAP_BT_ACT_GET_REMOTE_SERVICE_RECORD:
+    case BTC_GAP_BT_ACT_SET_COD:
+    case BTC_GAP_BT_ACT_READ_RSSI_DELTA:
+    case BTC_GAP_BT_ACT_REMOVE_BOND_DEVICE:
+        break;
+#if (BT_SSP_INCLUDED == TRUE)
+    case BTC_GAP_BT_ACT_PASSKEY_REPLY:
+    case BTC_GAP_BT_ACT_CONFIRM_REPLY:
+        break;
+    case BTC_GAP_BT_ACT_SET_SECURITY_PARAM:
+        osi_free(arg->set_security_param.value);
+        break;
+#endif ///BT_SSP_INCLUDED == TRUE
+    default:
+        BTC_TRACE_ERROR("Unhandled deep copy %d\n", msg->act);
+        break;
+    }
 }
 
 void btc_gap_bt_call_handler(btc_msg_t *msg)
@@ -682,10 +780,25 @@ void btc_gap_bt_call_handler(btc_msg_t *msg)
         btc_gap_bt_remove_bond_device(msg->arg);
         break;
     }
+#if (BT_SSP_INCLUDED == TRUE)
+    case BTC_GAP_BT_ACT_SET_SECURITY_PARAM:{
+        btc_gap_bt_set_security_param(arg);
+        break;
+    }
+    case BTC_GAP_BT_ACT_PASSKEY_REPLY:{
+        btc_gap_bt_ssp_passkey_reply(arg);
+        break;
+    }
+    case BTC_GAP_BT_ACT_CONFIRM_REPLY:{
+        btc_gap_bt_ssp_confirm(arg);
+        break;
+    }
+#endif ///BT_SSP_INCLUDED == TRUE
+
     default:
         break;
     }
-
+    btc_gap_bt_arg_deep_free(msg);
     return;
 }
 
@@ -714,7 +827,12 @@ void btc_gap_bt_cb_deep_free(btc_msg_t *msg)
         osi_free(((tBTA_DM_SEARCH_PARAM *) (msg->arg)) ->p_data);
         break;
     case BTC_GAP_BT_READ_RSSI_DELTA_EVT:
+#if (BT_SSP_INCLUDED == TRUE)
     case BTC_GAP_BT_AUTH_CMPL_EVT:
+    case BTC_GAP_BT_CFM_REQ_EVT:
+    case BTC_GAP_BT_KEY_NOTIF_EVT:
+    case BTC_GAP_BT_KEY_REQ_EVT:
+#endif ///BT_SSP_INCLUDED == TRUE
         break;
     default:
         BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
@@ -741,10 +859,24 @@ void btc_gap_bt_cb_handler(btc_msg_t *msg)
         btc_gap_bt_cb_to_app(ESP_BT_GAP_READ_RSSI_DELTA_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
         break;
     }
+#if (BT_SSP_INCLUDED == TRUE)
     case BTC_GAP_BT_AUTH_CMPL_EVT:{
         btc_gap_bt_cb_to_app(ESP_BT_GAP_AUTH_CMPL_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
         break;
     }
+    case BTC_GAP_BT_CFM_REQ_EVT:{
+        btc_gap_bt_cb_to_app(ESP_BT_GAP_CFM_REQ_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
+        break;
+    }
+    case BTC_GAP_BT_KEY_NOTIF_EVT:{
+        btc_gap_bt_cb_to_app(ESP_BT_GAP_KEY_NOTIF_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
+        break;
+    }
+    case BTC_GAP_BT_KEY_REQ_EVT:{
+        btc_gap_bt_cb_to_app(ESP_BT_GAP_KEY_REQ_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
+        break;
+    }
+#endif ///BT_SSP_INCLUDED == TRUE
     default:
         BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
         break;

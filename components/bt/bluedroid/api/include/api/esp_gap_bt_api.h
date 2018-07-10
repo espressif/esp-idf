@@ -102,6 +102,19 @@ typedef enum {
     ESP_BT_COD_SRVC_INFORMATION              = 0x400,    /*!< Information, e.g., WEB-server, WAP-server */
 } esp_bt_cod_srvc_t;
 
+
+typedef enum {
+    ESP_BT_SP_IOCAP_MODE = 0,                            /*!< Set IO mode */
+    //ESP_BT_SP_OOB_DATA, //TODO                         /*!< Set OOB data */
+} esp_bt_sp_param_t;
+
+/* relate to BTM_IO_CAP_xxx in stack/btm_api.h */
+#define ESP_BT_IO_CAP_OUT                      0        /*!< DisplayOnly */         /* relate to BTM_IO_CAP_OUT in stack/btm_api.h */
+#define ESP_BT_IO_CAP_IO                       1        /*!< DisplayYesNo */        /* relate to BTM_IO_CAP_IO in stack/btm_api.h */
+#define ESP_BT_IO_CAP_IN                       2        /*!< KeyboardOnly */        /* relate to BTM_IO_CAP_IN in stack/btm_api.h */
+#define ESP_BT_IO_CAP_NONE                     3        /*!< NoInputNoOutput */     /* relate to BTM_IO_CAP_NONE in stack/btm_api.h */
+typedef uint8_t esp_bt_io_cap_t;                        /*!< combination of the io capability */
+
 /// Bits of major service class field
 #define ESP_BT_COD_SRVC_BIT_MASK              (0xffe000) /*!< Major service bit mask */
 #define ESP_BT_COD_SRVC_BIT_OFFSET            (13)       /*!< Major service bit offset */
@@ -149,6 +162,9 @@ typedef enum {
     ESP_BT_GAP_RMT_SRVCS_EVT,                       /*!< get remote services event */
     ESP_BT_GAP_RMT_SRVC_REC_EVT,                    /*!< get remote service record event */
     ESP_BT_GAP_AUTH_CMPL_EVT,                       /*!< AUTH complete event */
+    ESP_BT_GAP_CFM_REQ_EVT,                         /*!< Simple Pairing User Confirmation request. */
+    ESP_BT_GAP_KEY_NOTIF_EVT,                       /*!< Simple Pairing Passkey Notification */
+    ESP_BT_GAP_KEY_REQ_EVT,                         /*!< Simple Pairing Passkey request */
     ESP_BT_GAP_READ_RSSI_DELTA_EVT,                 /*!< read rssi event */
     ESP_BT_GAP_EVT_MAX,
 } esp_bt_gap_cb_event_t;
@@ -216,6 +232,29 @@ typedef union {
         esp_bt_status_t stat;                  /*!< authentication complete status */
         uint8_t device_name[ESP_BT_GAP_MAX_BDNAME_LEN + 1]; /*!< device name */
     } auth_cmpl;                               /*!< authentication complete parameter struct */
+
+    /**
+     * @brief ESP_BT_GAP_CFM_REQ_EVT
+     */
+    struct cfm_req_param {
+        esp_bd_addr_t bda;                     /*!< remote bluetooth device address*/
+        uint32_t num_val;                      /*!< the numeric value for comparison. */
+    } cfm_req;                                 /*!< confirm request parameter struct */
+
+    /**
+     * @brief ESP_BT_GAP_KEY_NOTIF_EVT
+     */
+    struct key_notif_param {
+        esp_bd_addr_t bda;                     /*!< remote bluetooth device address*/
+        uint32_t passkey;                      /*!< the numeric value for passkey entry. */
+    } key_notif;                               /*!< passkey notif parameter struct */
+
+    /**
+     * @brief ESP_BT_GAP_KEY_REQ_EVT
+     */
+    struct key_req_param {
+        esp_bd_addr_t bda;                     /*!< remote bluetooth device address*/
+    } key_req;                                 /*!< passkey request parameter struct */
 } esp_bt_gap_cb_param_t;
 
 /**
@@ -446,6 +485,53 @@ int esp_bt_gap_get_bond_device_num(void);
 *                  - ESP_FAIL: others
 */
 esp_err_t esp_bt_gap_get_bond_device_list(int *dev_num, esp_bd_addr_t *dev_list);
+
+#if (BT_SSP_INCLUDED == TRUE)
+/**
+* @brief            Set a GAP security parameter value. Overrides the default value.
+*
+* @param[in]        param_type : the type of the param which is to be set
+* @param[in]        value  : the param value
+* @param[in]        len : the length of the param value
+*
+* @return           - ESP_OK : success
+*                   - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+*                   - other  : failed
+*
+*/
+esp_err_t esp_bt_gap_set_security_param(esp_bt_sp_param_t param_type,
+                                        void *value, uint8_t len);
+
+/**
+* @brief            Reply the key value to the peer device in the legacy connection stage.
+*
+* @param[in]        bd_addr : BD address of the peer
+* @param[in]        accept : passkey entry sucessful or declined.
+* @param[in]        passkey : passkey value, must be a 6 digit number,
+*                                     can be lead by 0.
+*
+* @return           - ESP_OK : success
+*                   - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+*                   - other  : failed
+*
+*/
+esp_err_t esp_bt_gap_ssp_passkey_reply(esp_bd_addr_t bd_addr, bool accept, uint32_t passkey);
+
+
+/**
+* @brief            Reply the confirm value to the peer device in the legacy connection stage.
+*
+* @param[in]        bd_addr : BD address of the peer device
+* @param[in]        accept : numbers to compare are the same or different.
+*
+* @return           - ESP_OK : success
+*                   - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+*                   - other  : failed
+*
+*/
+esp_err_t esp_bt_gap_ssp_confirm_reply(esp_bd_addr_t bd_addr, bool accept);
+
+#endif /*(BT_SSP_INCLUDED == TRUE)*/
 
 #ifdef __cplusplus
 }
