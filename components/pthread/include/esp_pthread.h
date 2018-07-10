@@ -11,6 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+#pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <pthread.h>
 
 /** pthread configuration structure that influences pthread creation */
@@ -55,3 +62,6 @@ esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg);
  */
 esp_err_t esp_pthread_get_cfg(esp_pthread_cfg_t *p);
 
+#ifdef __cplusplus
+}
+#endif
