@@ -362,7 +362,7 @@ esp_err_t WL_Flash::updateV1_V2()
         WL_RESULT_CHECK(result);
 
         this->state.version = 2;
-        this->state.pos = 0;
+        //this->state.pos = 0;
         this->state.crc = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)&this->state, offsetof(wl_state_t, crc));
         this->state.device_id = esp_random();
         memset(this->state.reserved, 0, sizeof(this->state.reserved));
@@ -389,15 +389,12 @@ esp_err_t WL_Flash::updateV1_V2()
         WL_RESULT_CHECK(result);
         ESP_LOGI(TAG, "%s update result ver=%i, pos=%i", __func__, (uint32_t)this->state.version, (uint32_t)this->state.pos);
         
-
-
         memset(this->temp_buff, 0, this->cfg.wr_size);
         for (uint32_t i=0 ; i<= pos; i++) {
             this->fillOkBuff(i);
             result = this->flash_drv->write(this->addr_state2 + sizeof(wl_state_t) + i * this->cfg.wr_size, this->temp_buff, this->cfg.wr_size);
             WL_RESULT_CHECK(result);
         }
-        this->state.pos = pos;
         return result;
     }
 
