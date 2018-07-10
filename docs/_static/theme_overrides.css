@@ -11,3 +11,56 @@
       overflow: visible !important;
    }
 }
+.wy-side-nav-search {
+    background-color: #bd2c2a !important;
+}
+
+.wy-nav-top {
+    background-color: #bd2c2a !important;
+}
+
+.wy-side-nav-search input[type=text] {
+   border-radius: 0px !important;
+   border-color: #333333;
+}
+
+.toctree-l1 {
+    color: #ffffff !important;
+}
+
+.version {
+  color: #fff !important;
+}
+
+.search {
+  border-radius: 10px !important;
+}
+
+.icon-home:hover {
+  color: #333333 !important;
+}
+
+.icon-home:visited {
+  color: #333333 !important;
+}
+
+.icon-home:hover:visited {
+  color: #333333 !important;
+  background-color: #bd2c2a !important;
+}
+
+.wy-form {
+  border-radius: 0px !important;
+}
+
+a:hover {
+  color: #bd2c2a !important;
+}
+
+a:visited {
+  color: #429b9e !important;
+}
+
+a:visited:hover {
+    color: #bd2c2a !important;
+}
