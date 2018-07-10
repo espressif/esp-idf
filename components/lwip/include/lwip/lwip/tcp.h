@@ -138,7 +138,7 @@ typedef u16_t tcpflags_t;
 #define TCPWND16(x)             (x)
 #define TCP_WND_MAX(pcb)        TCP_WND(pcb)
 typedef u16_t tcpwnd_size_t;
-typedef u8_t tcpflags_t;
+typedef u16_t tcpflags_t;
 #endif
 
 enum tcp_state {
@@ -203,6 +203,9 @@ struct tcp_pcb {
 #define TF_NAGLEMEMERR 0x80U   /* nagle enabled, memerr, try to output to prevent delayed ACK to happen */
 #if LWIP_WND_SCALE
 #define TF_WND_SCALE   0x0100U /* Window Scale option enabled */
+#endif
+#if TCP_LISTEN_BACKLOG
+#define TF_BACKLOGPEND 0x0200U /* If this is set, a connection pcb has increased the backlog on its listener */
 #endif
 
   /* the rest of the fields are in host byte order
@@ -311,6 +314,10 @@ struct tcp_pcb {
   u8_t rcv_scale;
 #endif
 
+#if TCP_LISTEN_BACKLOG
+  struct tcp_pcb_listen *listener;
+#endif
+
 #if ESP_STATS_TCP
 #define ESP_STATS_TCP_ARRAY_SIZE 20
   u16_t retry_cnt[TCP_MAXRTX];
@@ -383,16 +390,17 @@ void             tcp_err     (struct tcp_pcb *pcb, tcp_err_fn err);
 #define          tcp_nagle_disabled(pcb)  (((pcb)->flags & TF_NODELAY) != 0)
 
 #if TCP_LISTEN_BACKLOG
-#define          tcp_accepted(pcb) do { \
-  LWIP_ASSERT("pcb->state == LISTEN (called for wrong pcb?)", pcb->state == LISTEN); \
-  (((struct tcp_pcb_listen *)(pcb))->accepts_pending--); } while(0)
 #define          tcp_backlog_set(pcb, new_backlog) do { \
   LWIP_ASSERT("pcb->state == LISTEN (called for wrong pcb?)", (pcb)->state == LISTEN); \
   ((struct tcp_pcb_listen *)(pcb))->backlog = ((new_backlog) ? (new_backlog) : 1); } while(0)
+void             tcp_backlog_delayed(struct tcp_pcb* pcb);
+void             tcp_backlog_accepted(struct tcp_pcb* pcb);
 #else  /* TCP_LISTEN_BACKLOG */
-#define          tcp_accepted(pcb) LWIP_ASSERT("pcb->state == LISTEN (called for wrong pcb?)", \
-                                               (pcb)->state == LISTEN)
+#define          tcp_backlog_set(pcb, new_backlog)
+#define          tcp_backlog_delayed(pcb)
+#define          tcp_backlog_accepted(pcb)
 #endif /* TCP_LISTEN_BACKLOG */
+#define          tcp_accepted(pcb) do { LWIP_UNUSED_ARG(pcb); } while(0) /* compatibility define, not needed any more */
 
 void             tcp_recved  (struct tcp_pcb *pcb, u16_t len);
 err_t            tcp_bind    (struct tcp_pcb *pcb, const ip_addr_t *ipaddr,
