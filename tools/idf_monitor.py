@@ -135,10 +135,11 @@ class ConsoleReader(StoppableThread):
     """ Read input keys from the console and push them to the queue,
     until stopped.
     """
-    def __init__(self, console, event_queue):
+    def __init__(self, console, event_queue, test_mode):
         super(ConsoleReader, self).__init__()
         self.console = console
         self.event_queue = event_queue
+        self.test_mode = test_mode
 
     def run(self):
         self.console.setup()
@@ -155,6 +156,13 @@ class ConsoleReader(StoppableThread):
                             time.sleep(0.1)
                         if not self.alive:
                             break
+                    elif self.test_mode:
+                        # In testing mode the stdin is connected to PTY but is not used for input anything. For PTY
+                        # the canceling by fcntl.ioctl isn't working and would hang in self.console.getkey().
+                        # Therefore, we avoid calling it.
+                        while self.alive:
+                            time.sleep(0.1)
+                        break
                     c = self.console.getkey()
                 except KeyboardInterrupt:
                     c = '\x03'
@@ -164,7 +172,7 @@ class ConsoleReader(StoppableThread):
             self.console.cleanup()
 
     def _cancel(self):
-        if os.name == 'posix':
+        if os.name == 'posix' and not self.test_mode:
             # this is the way cancel() is implemented in pyserial 3.3 or newer,
             # older pyserial (3.1+) has cancellation implemented via 'select',
             # which does not work when console sends an escape sequence response
@@ -175,6 +183,8 @@ class ConsoleReader(StoppableThread):
             #
             # note that TIOCSTI is not implemented in WSL / bash-on-Windows.
             # TODO: introduce some workaround to make it work there.
+            #
+            # Note: This would throw exception in testing mode when the stdin is connected to PTY.
             import fcntl, termios
             fcntl.ioctl(self.console.fd, termios.TIOCSTI, b'\0')
 
@@ -265,6 +275,12 @@ class LineMatcher:
         # We need something more than "*.N" for printing.
         return self._dict.get("*", self.LEVEL_N) > self.LEVEL_N
 
+class SerialStopException(Exception):
+    """
+    This exception is used for stopping the IDF monitor in testing mode.
+    """
+    pass
+
 class Monitor(object):
     """
     Monitor application main class.
@@ -293,8 +309,9 @@ class Monitor(object):
 
             self.console.getkey = types.MethodType(getkey_patched, self.console)
 
+        socket_mode = serial_instance.port.startswith("socket://") # testing hook - data from serial can make exit the monitor
         self.serial = serial_instance
-        self.console_reader = ConsoleReader(self.console, self.event_queue)
+        self.console_reader = ConsoleReader(self.console, self.event_queue, socket_mode)
         self.serial_reader = SerialReader(self.serial, self.event_queue)
         self.elf_file = elf_file
         self.make = make
@@ -317,6 +334,7 @@ class Monitor(object):
         self._invoke_processing_last_line_timer = None
         self._force_line_print = False
         self._output_enabled = True
+        self._serial_check_exit = socket_mode
 
     def invoke_processing_last_line(self):
         self.event_queue.put((TAG_SERIAL_FLUSH, b''), False)
@@ -344,6 +362,8 @@ class Monitor(object):
                     self.handle_serial_input(data, finalize_line=True)
                 else:
                     raise RuntimeError("Bad event data %r" % ((event_tag,data),))
+        except SerialStopException:
+            pass
         finally:
             try:
                 self.console_reader.stop()
@@ -384,6 +404,8 @@ class Monitor(object):
             self._last_line_part = sp.pop()
         for line in sp:
             if line != b"":
+                if self._serial_check_exit and line == self.exit_key:
+                    raise SerialStopException()
                 if self._output_enabled and (self._force_line_print or self._line_matcher.match(line)):
                     self.console.write_bytes(line + b'\n')
                     self.handle_possible_pc_address_in_line(line)
