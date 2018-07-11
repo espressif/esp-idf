@@ -44,6 +44,7 @@ typedef struct {
     BT_HDR *(*make_ble_write_suggested_default_data_length)(uint16_t SuggestedMaxTxOctets, uint16_t SuggestedMaxTxTime);
     BT_HDR *(*make_ble_set_event_mask)(const bt_event_mask_t *event_mask);
     BT_HDR *(*make_write_sync_flow_control_enable)(uint8_t enable);
+    BT_HDR *(*make_write_default_erroneous_data_report)(uint8_t enable);
 } hci_packet_factory_t;
 
 const hci_packet_factory_t *hci_packet_factory_get_interface();

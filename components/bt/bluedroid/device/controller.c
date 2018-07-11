@@ -258,6 +258,9 @@ static void start_up(void)
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
     response = AWAIT_COMMAND(packet_factory->make_write_sync_flow_control_enable(1));
     packet_parser->parse_generic_command_complete(response);
+
+    response = AWAIT_COMMAND(packet_factory->make_write_default_erroneous_data_report(1));
+    packet_parser->parse_generic_command_complete(response);
 #endif
     readable = true;
     // return future_new_immediate(FUTURE_SUCCESS);
