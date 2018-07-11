@@ -2458,8 +2458,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 	{
 	BaseType_t xReturn;
 
-//ToDo: figure out locking
-//		taskENTER_CRITICAL(&pxQueue->mux);
+		taskENTER_CRITICAL(&(((Queue_t * )xQueueOrSemaphore)->mux));
 		{
 			if( ( ( Queue_t * ) xQueueOrSemaphore )->pxQueueSetContainer != NULL )
 			{
@@ -2478,7 +2477,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 				xReturn = pdPASS;
 			}
 		}
-//		taskEXIT_CRITICAL(&pxQueue->mux);
+		taskEXIT_CRITICAL(&(((Queue_t * )xQueueOrSemaphore)->mux));
 
 		return xReturn;
 	}
@@ -2507,12 +2506,12 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 		}
 		else
 		{
-//			taskENTER_CRITICAL(&pxQueue->mux);
+			taskENTER_CRITICAL(&(pxQueueOrSemaphore->mux));
 			{
 				/* The queue is no longer contained in the set. */
 				pxQueueOrSemaphore->pxQueueSetContainer = NULL;
 			}
-//			taskEXIT_CRITICAL(&pxQueue->mux);
+			taskEXIT_CRITICAL(&(pxQueueOrSemaphore->mux));
 			xReturn = pdPASS;
 		}
 
@@ -2555,9 +2554,15 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 	Queue_t *pxQueueSetContainer = pxQueue->pxQueueSetContainer;
 	BaseType_t xReturn = pdFALSE;
 
-		/* This function must be called form a critical section. */
+		/*
+		 * This function is called with a Queue's / Semaphore's spinlock already
+		 * acquired. Acquiring the Queue set's spinlock is still necessary.
+		 */
 
 		configASSERT( pxQueueSetContainer );
+
+		//Acquire the Queue set's spinlock
+		portENTER_CRITICAL(&(pxQueueSetContainer->mux));
 		configASSERT( pxQueueSetContainer->uxMessagesWaiting < pxQueueSetContainer->uxLength );
 
 		if( pxQueueSetContainer->uxMessagesWaiting < pxQueueSetContainer->uxLength )
@@ -2587,6 +2592,9 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 		{
 			mtCOVERAGE_TEST_MARKER();
 		}
+
+		//Release the Queue set's spinlock
+		portEXIT_CRITICAL(&(pxQueueSetContainer->mux));
 
 		return xReturn;
 	}
