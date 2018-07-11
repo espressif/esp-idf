@@ -11,6 +11,7 @@
       overflow: visible !important;
    }
 }
+
 .wy-side-nav-search {
     background-color: #bd2c2a !important;
 }
@@ -19,9 +20,17 @@
     background-color: #bd2c2a !important;
 }
 
+.wy-nav-top a {
+  color: #fff !important;
+}
+
+.wy-nav-top a:visited {
+  color: #fff !important;
+}
+
 .wy-side-nav-search input[type=text] {
    border-radius: 0px !important;
-   border-color: #333333;
+   border-color: #333333 !important;
 }
 
 .toctree-l1 {
@@ -63,4 +72,8 @@ a:visited {
 
 a:visited:hover {
     color: #bd2c2a !important;
+}
+
+.wy-nav-top a:hover {
+  color: #333333 !important;
 }
