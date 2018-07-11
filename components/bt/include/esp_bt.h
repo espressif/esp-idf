@@ -298,32 +298,61 @@ void esp_vhci_host_send_packet(uint8_t *data, uint16_t len);
 void esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callback);
 
 /** @brief esp_bt_controller_mem_release
- * release the memory by mode, if never use the bluetooth mode
- * it can release the .bss, .data and other section to heap.
- * The total size is about 70k bytes.
+ * release the controller memory as per the mode
+ *
+ * This function releases the BSS, data and other sections of the controller to heap. The total size is about 70k bytes.
  *
  * esp_bt_controller_mem_release(mode) should be called only before esp_bt_controller_init()
  * or after esp_bt_controller_deinit().
  *
- * Note that once BT controller memory is released, the process cannot be reversed. It means you can not use the bluetooth
+ * Note that once BT controller memory is released, the process cannot be reversed. It means you cannot use the bluetooth
  * mode which you have released by this function.
  *
  * If your firmware will later upgrade the Bluetooth controller mode (BLE -> BT Classic or disabled -> enabled)
  * then do not call this function.
  *
  * If the app calls esp_bt_controller_enable(ESP_BT_MODE_BLE) to use BLE only then it is safe to call
- * esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT) at initialisation time to free unused BT Classic memory.
+ * esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT) at initialization time to free unused BT Classic memory.
  *
- * If user never use bluetooth controller, could call esp_bt_controller_mem_release(ESP_BT_MODE_BTDM)
- * before esp_bt_controller_init or after esp_bt_controller_deinit.
- *
- * For example, user only use bluetooth to config SSID and PASSWORD of WIFI, after config, will never use bluetooth.
- * Then, could call esp_bt_controller_mem_release(ESP_BT_MODE_BTDM) after esp_bt_controller_deinit.
+ * If the mode is ESP_BT_MODE_BTDM, then it may be useful to call API esp_bt_mem_release(ESP_BT_MODE_BTDM) instead,
+ * which internally calls esp_bt_controller_mem_release(ESP_BT_MODE_BTDM) and additionally releases the BSS and data
+ * consumed by the BT/BLE host stack to heap. For more details about usage please refer to the documentation of
+ * esp_bt_mem_release() function
  *
  * @param mode : the mode want to release memory
  * @return ESP_OK - success, other - failed
  */
 esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode);
+
+/** @brief esp_bt_mem_release
+ * release controller memory and BSS and data section of the BT/BLE host stack as per the mode
+ *
+ * This function first releases controller memory by internally calling esp_bt_controller_mem_release().
+ * Additionally, if the mode is set to ESP_BT_MODE_BTDM, it also releases the BSS and data consumed by the BT/BLE host stack to heap
+ *
+ * Note that once BT memory is released, the process cannot be reversed. It means you cannot use the bluetooth
+ * mode which you have released by this function.
+ *
+ * If your firmware will later upgrade the Bluetooth controller mode (BLE -> BT Classic or disabled -> enabled)
+ * then do not call this function.
+ *
+ * If you never intend to use bluetooth in a current boot-up cycle, you can call esp_bt_mem_release(ESP_BT_MODE_BTDM)
+ * before esp_bt_controller_init or after esp_bt_controller_deinit.
+ *
+ * For example, if a user only uses bluetooth for setting the WiFi configuration, and does not use bluetooth in the rest of the product operation".
+ * In such cases, after receiving the WiFi configuration, you can disable/deinit bluetooth and release its memory.
+ * Below is the sequence of APIs to be called for such scenarios:
+ *
+ *      esp_bluedroid_disable();
+ *      esp_bluedroid_deinit();
+ *      esp_bt_controller_disable();
+ *      esp_bt_controller_deinit();
+ *      esp_bt_mem_release(ESP_BT_MODE_BTDM);
+ *
+ * @param mode : the mode whose memory is to be released
+ * @return ESP_OK - success, other - failed
+ */
+esp_err_t esp_bt_mem_release(esp_bt_mode_t mode);
 
 /**
  * @brief enable bluetooth to enter modem sleep
