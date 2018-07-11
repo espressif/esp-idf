@@ -1983,6 +1983,7 @@ esp_err_t rtc_isr_deregister(intr_handler_t handler, void* handler_arg)
                 SLIST_REMOVE_AFTER(prev, next);
             }
             found = true;
+            free(it);
             break;
         }
         prev = it;
