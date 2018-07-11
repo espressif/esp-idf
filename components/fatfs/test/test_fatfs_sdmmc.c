@@ -214,6 +214,11 @@ TEST_CASE("(SD) mount two FAT partitions, SDMMC and WL, at the same time", "[fat
     const char* str_sd = "this is sd\n";
     const char* str_wl = "this is spiflash\n";
 
+    /* Erase flash before the firs use */
+    const esp_partition_t *test_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "flash_test");
+    esp_partition_erase_range(test_partition, 0, test_partition->size);
+    printf("Partition erased: addr- 0x%08x, size- 0x%08x\n", test_partition->address, test_partition->size);
+
     /* Mount FATFS in SD can WL at the same time. Create a file on each FS */
     wl_handle_t wl_handle = WL_INVALID_HANDLE;
     test_setup();
