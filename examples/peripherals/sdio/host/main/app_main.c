@@ -16,32 +16,11 @@
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 
-#include "lwip/sockets.h"
-#include "lwip/dns.h"
-#include "lwip/netdb.h"
-#include "lwip/igmp.h"
-
-#include "esp_wifi.h"
-#include "esp_system.h"
-#include "esp_event.h"
-#include "esp_event_loop.h"
-#include "nvs_flash.h"
-#include "soc/rtc_cntl_reg.h"
-#include "rom/cache.h"
-
 #include "soc/sdmmc_periph.h"
-#include "driver/periph_ctrl.h"
 #include "esp_log.h"
-
-#include "soc/gpio_reg.h"
-#include "driver/gpio.h"
-#include "esp_intr_alloc.h"
-
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "esp_attr.h"
-
 #include "esp_slave.h"
+#include "sdkconfig.h"
 
 /*
  * For SDIO master-slave board, we have 3 pins controlling power of 3 different

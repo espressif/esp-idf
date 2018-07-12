@@ -21,6 +21,7 @@
 #include "esp_err.h"
 #include "rom/lldesc.h"
 #include "soc/spi_periph.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C"
