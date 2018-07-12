@@ -472,9 +472,9 @@ static void configure_pin(int pin, uint32_t func, bool pullup)
     PIN_INPUT_ENABLE(reg);
     PIN_FUNC_SELECT(reg, sdmmc_func);
     PIN_SET_DRV(reg, drive_strength);
+    gpio_pulldown_dis(pin);
     if (pullup) {
         gpio_pullup_en(pin);
-        gpio_pulldown_dis(pin);
     }
 }
 
@@ -516,28 +516,28 @@ static inline esp_err_t sdio_slave_hw_init(sdio_slave_config_t *config)
 
     switch(config->timing) {
         case SDIO_SLAVE_TIMING_PSEND_PSAMPLE:
-            HOST.conf.frc_sdio20 = 0xf;
+            HOST.conf.frc_sdio20 = 0x1f;
             HOST.conf.frc_sdio11 = 0;
-            HOST.conf.frc_pos_samp = 0xf;
+            HOST.conf.frc_pos_samp = 0x1f;
             HOST.conf.frc_neg_samp = 0;
             break;
         case SDIO_SLAVE_TIMING_PSEND_NSAMPLE:
-            HOST.conf.frc_sdio20 = 0xf;
+            HOST.conf.frc_sdio20 = 0x1f;
             HOST.conf.frc_sdio11 = 0;
             HOST.conf.frc_pos_samp = 0;
-            HOST.conf.frc_neg_samp = 0xf;
+            HOST.conf.frc_neg_samp = 0x1f;
             break;
         case SDIO_SLAVE_TIMING_NSEND_PSAMPLE:
             HOST.conf.frc_sdio20 = 0;
-            HOST.conf.frc_sdio11 = 0xf;
-            HOST.conf.frc_pos_samp = 0xf;
+            HOST.conf.frc_sdio11 = 0x1f;
+            HOST.conf.frc_pos_samp = 0x1f;
             HOST.conf.frc_neg_samp = 0;
             break;
         case SDIO_SLAVE_TIMING_NSEND_NSAMPLE:
             HOST.conf.frc_sdio20 = 0;
-            HOST.conf.frc_sdio11 = 0xf;
+            HOST.conf.frc_sdio11 = 0x1f;
             HOST.conf.frc_pos_samp = 0;
-            HOST.conf.frc_neg_samp = 0xf;
+            HOST.conf.frc_neg_samp = 0x1f;
             break;
     }
 
@@ -929,9 +929,11 @@ esp_err_t sdio_slave_send_queue(uint8_t* addr, size_t len, void* arg, TickType_t
     return ESP_OK;
 }
 
-esp_err_t sdio_slave_send_get_finished(void** arg, TickType_t wait)
+esp_err_t sdio_slave_send_get_finished(void** out_arg, TickType_t wait)
 {
-    portBASE_TYPE err = xQueueReceive(context.ret_queue, arg, wait);
+    void* arg = NULL;
+    portBASE_TYPE err = xQueueReceive(context.ret_queue, &arg, wait);
+    if (out_arg) *out_arg = arg;
     if (err != pdTRUE) return ESP_ERR_TIMEOUT;
     return ESP_OK;
 }
