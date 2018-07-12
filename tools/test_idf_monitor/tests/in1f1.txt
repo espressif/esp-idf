@@ -1,5 +1,4 @@
 ets Jun  8 2016 00:22:57
-
 rst:0x1 (POWERON_RESET),boot:0x33 (SPI_FAST_FLASH_BOOT)
 configsip: 0, SPIWP:0xee
 clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
@@ -63,15 +62,12 @@ D (291) heap_init: New heap initialised at 0x3ffe0440[0m
 D (301) heap_init: New heap initialised at 0x3ffe4350[0m
 D (311) intr_alloc: Connected src 16 to int 12 (cpu 0)[0m
 D (311) hello_world: debug1[0m
-
 [0;33mW (311) hello_world: warning1[0m
 V (321) hello_world: verbose1[0m
 [0;31mE (321) hello_world: error1[0m
 [0;32mI (321) hello_world: info1[0m
-
 regular printf
 D (331) another_world: another debug[0m
-
 [0;32mI (331) example: Periodic timer called, time since boot: 507065 us[0m
 V (341) another_world: another verbose another very long[0m
 [0;33mW (341) another_world: another warning very long[0m
@@ -82,7 +78,6 @@ V (351) another_world: another verbose[0m
 [0m
 D (361) hello_world: debug2[0m
 [0;33mW (371) hello_world: warning2[0m
-
 V (371) hello_world: verbose2[0m
 [0;31mE (371) hello_world: error2[0m
 [0;32mI (381) hello_world: info2[0m
