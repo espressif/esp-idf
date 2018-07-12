@@ -4,7 +4,7 @@ Partition Tables
 Overview
 --------
 
-A single ESP32's flash can contain multiple apps, as well as many different kinds of data (calibration data, filesystems, parameter storage, etc). For this reason a partition table is flashed to offset 0x8000 in the flash.
+A single ESP32's flash can contain multiple apps, as well as many different kinds of data (calibration data, filesystems, parameter storage, etc). For this reason a partition table is flashed to (:envvar:`default offset <CONFIG_PARTITION_TABLE_OFFSET>`) 0x8000 in the flash.
 
 Partition table length is 0xC00 bytes (maximum 95 partition table entries). An MD5 checksum is appended after the table data. If the partition table is signed due to `secure boot`, the signature is appended after the partition table.
 
@@ -63,7 +63,7 @@ The CSV format is the same format as printed in the summaries shown above. Howev
 
 * Whitespace between fields is ignored, and so is any line starting with # (comments).
 * Each non-comment line in the CSV file is a partition definition.
-* Only the offset for the first partition is supplied. The gen_esp32part.py tool fills in each remaining offset to start after the preceding partition.
+* The "Offset" field for each partition is empty. The gen_esp32part.py tool fills in each blank offset, starting after the partition table and making sure each partition is aligned correctly.
 
 Name field
 ~~~~~~~~~~
@@ -121,11 +121,13 @@ Other data subtypes are reserved for future esp-idf uses.
 Offset & Size
 ~~~~~~~~~~~~~
 
-Only the first offset field is required (we recommend using 0x10000). Partitions with blank offsets will start after the previous partition.
+Partitions with blank offsets will start after the previous partition, or after the partition table in the case of the first partition.
 
 App partitions have to be at offsets aligned to 0x10000 (64K). If you leave the offset field blank, the tool will automatically align the partition. If you specify an unaligned offset for an app partition, the tool will return an error.
 
 Sizes and offsets can be specified as decimal numbers, hex numbers with the prefix 0x, or size multipliers K or M (1024 and 1024*1024 bytes).
+
+If you want the partitions in the partition table to work with any starting offset (:envvar:`CONFIG_PARTITION_TABLE_OFFSET`) of the table itself, leave the offset field (in CSV file) for all partitions blank. Similarly, if changing the partition table offset then be aware that all blank partition offsets may change to match, and that any fixed offsets may now collide with the partition table (causing an error).
 
 Generating Binary Partition Table
 ---------------------------------

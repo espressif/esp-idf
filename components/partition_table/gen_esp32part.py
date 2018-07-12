@@ -96,19 +96,23 @@ class PartitionTable(list):
             if line.startswith("#") or len(line) == 0:
                 continue
             try:
-                res.append(PartitionDefinition.from_csv(line))
+                res.append(PartitionDefinition.from_csv(line, line_no+1))
             except InputError as e:
                 raise InputError("Error at line %d: %s" % (line_no+1, e))
             except Exception:
-                critical("Unexpected error parsing line %d: %s" % (line_no+1, line))
+                critical("Unexpected error parsing CSV line %d: %s" % (line_no+1, line))
                 raise
 
         # fix up missing offsets & negative sizes
         last_end = offset_part_table + PARTITION_TABLE_SIZE # first offset after partition table
         for e in res:
-            if offset_part_table != 0 and e.offset is not None and e.offset < last_end:
-                critical("WARNING: 0x%x address in the partition table is below 0x%x" % (e.offset, last_end))
-                e.offset = None
+            if e.offset is not None and e.offset < last_end:
+                if e == res[0]:
+                    raise InputError("CSV Error: First partition offset 0x%x overlaps end of partition table 0x%x"
+                                     % (e.offset, last_end))
+                else:
+                    raise InputError("CSV Error: Partitions overlap. Partition at line %d sets offset 0x%x. Previous partition ends 0x%x"
+                                     % (e.line_no, e.offset, last_end))
             if e.offset is None:
                 pad_to = 0x10000 if e.type == APP_TYPE else 4
                 if last_end % pad_to != 0:
@@ -246,12 +250,13 @@ class PartitionDefinition(object):
         self.encrypted = False
 
     @classmethod
-    def from_csv(cls, line):
+    def from_csv(cls, line, line_no):
         """ Parse a line from the CSV """
         line_w_defaults = line + ",,,,"  # lazy way to support default fields
         fields = [ f.strip() for f in line_w_defaults.split(",") ]
 
         res = PartitionDefinition()
+        res.line_no = line_no
         res.name = fields[0]
         res.type = res.parse_type(fields[1])
         res.subtype = res.parse_subtype(fields[2])

@@ -45,7 +45,8 @@ config PARTITION_TABLE_OFFSET
 
         This number should be a multiple of 0x1000.
 
-        Note that partition offsets in the partition table CSV file may need to be changed if this value is set to a higher value.
+        Note that partition offsets in the partition table CSV file may need to be changed if this value is set to a higher value. To have
+        each partition offset adapt to the configured partition table offset, leave all partition offsets blank in the CSV file.
 
 config PARTITION_TABLE_MD5
     bool "Generate an MD5 checksum for the partition table"
