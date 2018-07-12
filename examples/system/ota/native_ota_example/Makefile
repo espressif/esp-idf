@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := ota
+PROJECT_NAME := native_ota
 
 include $(IDF_PATH)/make/project.mk
 

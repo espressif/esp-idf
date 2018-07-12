@@ -37,6 +37,7 @@ See also
 
 * :doc:`Partition Table documentation <../../api-guides/partition-tables>`
 * :doc:`Lower-Level SPI Flash/Partition API <../storage/spi_flash>`
+* :doc:`ESP HTTPS OTA <esp_https_ota>`
 
 Application Example
 -------------------
