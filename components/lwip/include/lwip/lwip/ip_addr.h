@@ -47,6 +47,8 @@ extern "C" {
 #define IPADDR_TYPE_V6                6U
 #define IPADDR_TYPE_ANY               46U
 
+#define IP_IS_V4_VAL(ipaddr)   (IP_GET_TYPE(&ipaddr) == IPADDR_TYPE_V4)
+
 #if LWIP_IPV4 && LWIP_IPV6
 /** A union struct for both IP version's addresses.
  * ATTENTION: watch out for its size when adding IPv6 address scope!
