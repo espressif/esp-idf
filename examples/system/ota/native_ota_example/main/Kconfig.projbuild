@@ -14,27 +14,12 @@ config WIFI_PASSWORD
 
 		Can be left blank if the network has no security set.
 
-config SERVER_IP
-    string "HTTP Server IP"
-	default "192.168.0.3"
+config FIRMWARE_UPG_URL
+    string "HTTP Server URL"
+    default "https://192.168.0.3:8070/hello-world.bin"
 	help
 		HTTP Server IP to download the image file from.
 
 		See example README.md for details.
-
-config SERVER_PORT
-	string "HTTP Server Port"
-	default "8070"
-	help
-		HTTP Server port to connect to.
-		Should be chosen not to conflict with any other port used
-		on the system.
-
-config EXAMPLE_FILENAME
-	string "HTTP GET Filename"
-	default "/hello-world.bin"
-	help
-		Filename of the app image file to download for
-		the OTA update.
 
 endmenu
