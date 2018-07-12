@@ -123,33 +123,34 @@ Documentation
 * `ESP32-WROVER Reference Design <https://www.espressif.com/en/support/download/documents?keys=ESP32-WROVER+Reference+Design>`_ containing OrCAD schematic, PCB layout, gerbers and BOM
 
 
-.. _esp-modules-and-boards-esp32-pico-pit-v4:
+.. _esp-modules-and-boards-esp32-pico-pit-v4.1:
 
-ESP32-PICO-KIT V4
-=================
+ESP32-PICO-KIT V4.1
+===================
 
-The smallest ESP32 development board with all the components required to connect it directly to a PC USB port, and pin headers to plug into a mini breadboard. It is equipped with ESP32-PICO-D4 chip that integrates 4MB flash memory, a crystal oscillator, filter capacitors and RF matching circuit in one single package. As result the fully functional development board requires only a few external components that can easy fit on a 20 x 52 mm PCB including antenna, LDO, USB-UART bridge and two buttons to reset it and put into download mode. 
+The smallest ESP32 development board with all the components required to connect it directly to a PC USB port, and pin headers to plug into a mini breadboard. It is equipped with ESP32-PICO-D4 module that integrates 4 MB flash memory, a crystal oscillator, filter capacitors and RF matching circuit in one single package. As result, the fully functional development board requires only a few external components that can easy fit on a 20 x 52 mm PCB including antenna, LDO, USB-UART bridge and two buttons to reset it and put into download mode. 
 
-.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-pico-kit-v4.jpeg
+.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-pico-kit-v4.1.jpg
     :align: center
-    :alt: ESP32-PICO-KIT V4 board
+    :alt: ESP32-PICO-KIT V4.1 board
     :width: 50%
 
-    ESP32-PICO-KIT V4 board
+    ESP32-PICO-KIT V4.1 board
 
-Comparing to ESP32-PICO-KIT V3, this version has revised printout and reduced number of exposed pins. Instead of 20, only 17 header pins are populated, so V4 can fit into a mini breadboard. 
-
+Comparing to ESP32-PICO-KIT V4, this version contains a more capable CP2102N USB-UART bridge that provides up to 3 Mbps transfers rates.
 
 Documentation
 -------------
 
 * :doc:`../get-started/get-started-pico-kit`
-* `ESP32-PICO-KIT V4 Schematic <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v4_schematic.pdf>`_ (PDF)
+* `ESP32-PICO-KIT V4.1 Schematic <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v4.1_schematic.pdf>`_ (PDF)
+* `ESP32-PICO-KIT Reference Design <https://www.espressif.com/en/support/download/documents?keys=ESP32-PICO-KIT+Reference+Design>`_ containing OrCAD schematic, PCB layout, gerbers and BOM
 * `ESP32-PICO-D4 Datasheet <http://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf>`_ (PDF)
 
 Previous Versions
 -----------------
 
+* :ref:`esp-modules-and-boards-esp32-pico-pit-v4`
 * :ref:`esp-modules-and-boards-esp32-pico-pit-v3`
 
 
