@@ -47,10 +47,12 @@ typedef enum {
 
 /// Timing of SDIO slave
 typedef enum {
-    SDIO_SLAVE_TIMING_NSEND_PSAMPLE = 0,///< Send at negedge, and sample at posedge. Default value for SD protocol.
-    SDIO_SLAVE_TIMING_NSEND_NSAMPLE,    ///< Send at negedge, and sample at negedge
-    SDIO_SLAVE_TIMING_PSEND_PSAMPLE,    ///< Send at posedge, and sample at posedge
+    SDIO_SLAVE_TIMING_PSEND_PSAMPLE = 0,/**< Send at posedge, and sample at posedge. Default value for HS mode.
+                                         *   Normally there's no problem using this to work in DS mode.
+                                         */
+    SDIO_SLAVE_TIMING_NSEND_PSAMPLE    ,///< Send at negedge, and sample at posedge. Default value for DS mode and below.
     SDIO_SLAVE_TIMING_PSEND_NSAMPLE,    ///< Send at posedge, and sample at negedge
+    SDIO_SLAVE_TIMING_NSEND_NSAMPLE,    ///< Send at negedge, and sample at negedge
 } sdio_slave_timing_t;
 
 /// Configuration of SDIO slave mode
@@ -72,20 +74,20 @@ typedef struct {
                             ///< Buffer size of the slave pre-defined between host and slave before communication. All receive buffer given to the driver should be larger than this.
     sdio_event_cb_t     event_cb;           ///< when the host interrupts slave, this callback will be called with interrupt number (0-7).
     uint32_t            flags; ///< Features to be enabled for the slave, combinations of ``SDIO_SLAVE_FLAG_*``.
-#define SDIO_SLAVE_FLAG_DAT2_DISABLED       BIT(0)      /**< It is required by the SD specification that all 4 data 
-        lines should be used and pulled up even in 1-bit mode or SPI mode. However, as a feature, the user can speicfy 
-        this flag to make use of DAT2 pin in 1-bit mode. Note that the host cannot read CCCR registers to know we don't 
+#define SDIO_SLAVE_FLAG_DAT2_DISABLED       BIT(0)      /**< It is required by the SD specification that all 4 data
+        lines should be used and pulled up even in 1-bit mode or SPI mode. However, as a feature, the user can specify
+        this flag to make use of DAT2 pin in 1-bit mode. Note that the host cannot read CCCR registers to know we don't
         support 4-bit mode anymore, please do this at your own risk.
         */
-#define SDIO_SLAVE_FLAG_HOST_INTR_DISABLED  BIT(1)      /**< The DAT1 line is used as the interrupt line in SDIO        
-        protocol. However, as a feature, the user can speicfy this flag to make use of DAT1 pin of the slave in 1-bit 
+#define SDIO_SLAVE_FLAG_HOST_INTR_DISABLED  BIT(1)      /**< The DAT1 line is used as the interrupt line in SDIO
+        protocol. However, as a feature, the user can specify this flag to make use of DAT1 pin of the slave in 1-bit
         mode. Note that the host has to do polling to the interrupt registers to know whether there are interrupts from
-        the slave. And it cannot read CCCR registers to know we don't support 4-bit mode anymore, please do this at 
+        the slave. And it cannot read CCCR registers to know we don't support 4-bit mode anymore, please do this at
         your own risk.
         */
-#define SDIO_SLAVE_FLAG_INTERNAL_PULLUP     BIT(2)      /**< Enable internal pullups for enabled pins. It is required 
-        by the SD specification that all the 4 data lines should be pulled up even in 1-bit mode or SPI mode. Note that 
-        the internal pull-ups are not sufficient for stable communication, please do connect external pull-ups on the 
+#define SDIO_SLAVE_FLAG_INTERNAL_PULLUP     BIT(2)      /**< Enable internal pullups for enabled pins. It is required
+        by the SD specification that all the 4 data lines should be pulled up even in 1-bit mode or SPI mode. Note that
+        the internal pull-ups are not sufficient for stable communication, please do connect external pull-ups on the
         bus. This is only for example and debug use.
         */
 } sdio_slave_config_t;
@@ -214,12 +216,12 @@ uint8_t* sdio_slave_recv_get_buf(sdio_slave_buf_handle_t handle, size_t *len_o);
 esp_err_t sdio_slave_send_queue(uint8_t* addr, size_t len, void* arg, TickType_t wait);
 
 /** Return the ownership of a finished transaction.
- * @param arg_o Argument of the finished transaction.
+ * @param out_arg Argument of the finished transaction. Set to NULL if unused.
  * @param wait Time to wait if there's no finished sending transaction.
  *
  * @return ESP_ERR_TIMEOUT if no transaction finished, or ESP_OK if succeed.
  */
-esp_err_t sdio_slave_send_get_finished(void** arg_o, TickType_t wait);
+esp_err_t sdio_slave_send_get_finished(void** out_arg, TickType_t wait);
 
 /** Start a new sending transfer, and wait for it (blocked) to be finished.
  *
