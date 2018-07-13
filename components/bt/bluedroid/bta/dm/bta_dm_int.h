@@ -485,6 +485,7 @@ typedef struct {
     UINT32 scan_window;
     tBLE_SCAN_MODE scan_mode;
     UINT8 addr_type_own;
+    UINT8 scan_duplicate_filter;
     UINT8 scan_filter_policy;
     tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_cback;
 } tBTA_DM_API_BLE_SCAN_FILTER_PARAMS;

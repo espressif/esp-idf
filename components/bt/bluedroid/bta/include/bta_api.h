@@ -1902,6 +1902,7 @@ extern void BTA_DmSetBleScanParams(tGATT_IF client_if, UINT32 scan_interval,
 **                  scan_interval - scan interval
 **                  scan_window - scan window
 **                  scan_mode - scan mode
+**                  scan_duplicate_filter - scan duplicate filter
 **                  scan_param_setup_status_cback - Set scan param status callback
 **
 ** Returns          void
@@ -1909,7 +1910,7 @@ extern void BTA_DmSetBleScanParams(tGATT_IF client_if, UINT32 scan_interval,
 *******************************************************************************/
 extern void BTA_DmSetBleScanFilterParams(tGATT_IF client_if, UINT32 scan_interval,
         UINT32 scan_window, tBLE_SCAN_MODE scan_mode, UINT8 scan_fil_poilcy,
-        UINT8 addr_type_own, tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_cback);
+        UINT8 addr_type_own, UINT8 scan_duplicate_filter, tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_cback);
 
 
 /*******************************************************************************

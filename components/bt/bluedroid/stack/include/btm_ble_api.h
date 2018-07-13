@@ -1050,6 +1050,7 @@ void BTM_BleSetScanParams(tGATT_IF client_if, UINT32 scan_interval,
 **                  scan_window - Scan window
 **                  scan_type - Scan type
 **                  addr_type_own - owner address type
+**                  scan_duplicate_filter - scan duplicate filter
 **                  scan_filter_policy - scan filter policy
 **                  scan_setup_status_cback - Scan setup status callback
 **
@@ -1057,7 +1058,7 @@ void BTM_BleSetScanParams(tGATT_IF client_if, UINT32 scan_interval,
 **
 *******************************************************************************/
 void BTM_BleSetScanFilterParams(tGATT_IF client_if, UINT32 scan_interval, UINT32 scan_window,
-                                tBLE_SCAN_MODE scan_mode, UINT8 addr_type_own, tBTM_BLE_SFP scan_filter_policy,
+                                tBLE_SCAN_MODE scan_mode, UINT8 addr_type_own, UINT8 scan_duplicate_filter, tBTM_BLE_SFP scan_filter_policy,
                                 tBLE_SCAN_PARAM_SETUP_CBACK scan_setup_status_cback);
 
 

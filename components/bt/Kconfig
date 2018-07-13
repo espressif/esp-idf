@@ -156,6 +156,38 @@ config BT_ACL_CONNECTIONS
     help 
         Maximum BT/BLE connection count
 
+config BLE_SCAN_DUPLICATE
+    bool "BLE Scan Duplicate Options "
+    depends on BLUEDROID_ENABLED
+    default y
+    help
+        This select enables parameters setting of BLE scan duplicate.
+
+config DUPLICATE_SCAN_CACHE_SIZE
+    int "Maximum number of devices in scan duplicate filter"
+    depends on BLE_SCAN_DUPLICATE
+    range 10 200
+    default 20
+    help
+        Maximum number of devices which can be recorded in scan duplicate filter.
+        When the maximum amount of device in the filter is reached, the cache will be refreshed.
+
+config BLE_MESH_SCAN_DUPLICATE_EN
+    bool "Special duplicate scan mechanism for BLE Mesh scan"
+    depends on BLE_SCAN_DUPLICATE
+    default n
+    help
+        This enables the BLE scan duplicate for special BLE Mesh scan.
+
+config MESH_DUPLICATE_SCAN_CACHE_SIZE
+    int "Maximum number of Mesh adv packets in scan duplicate filter"
+    depends on BLE_MESH_SCAN_DUPLICATE_EN
+    range 10 200
+    default 50
+    help
+        Maximum number of adv packets which can be recorded in duplicate scan cache for BLE Mesh.
+        When the maximum amount of device in the filter is reached, the cache will be refreshed.
+
 config SMP_ENABLE
    bool
    depends on BLUEDROID_ENABLED

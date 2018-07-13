@@ -671,7 +671,7 @@ void btc_gattc_call_handler(btc_msg_t *msg)
     btc_ble_gattc_args_t *arg = (btc_ble_gattc_args_t *)(msg->arg);
     switch (msg->act) {
     case BTC_GATTC_ACT_APP_REGISTER:
-        LOG_ERROR("%s()", __func__);
+        LOG_DEBUG("%s()", __func__);
         btc_gattc_app_register(arg);
         break;
     case BTC_GATTC_ACT_APP_UNREGISTER:

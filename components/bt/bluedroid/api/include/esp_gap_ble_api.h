@@ -264,6 +264,13 @@ typedef enum {
                                                   3. directed advertising packets addressed to this device.*/
 } esp_ble_scan_filter_t;
 
+/// Ble scan duplicate type
+typedef enum {
+    BLE_SCAN_DUPLICATE_DISABLE           = 0x0,  /*!< the Link Layer should generate advertising reports to the host for each packet received */
+    BLE_SCAN_DUPLICATE_ENABLE            = 0x1,  /*!< the Link Layer should filter out duplicate advertising reports to the Host */
+    BLE_SCAN_DUPLICATE_MAX               = 0x2,  /*!< 0x02 – 0xFF, Reserved for future use */
+} esp_ble_scan_duplicate_t;
+
 /// Ble scan parameters
 typedef struct {
     esp_ble_scan_type_t     scan_type;              /*!< Scan type */
@@ -279,6 +286,9 @@ typedef struct {
                                                       Range: 0x0004 to 0x4000 Default: 0x0010 (10 ms)
                                                       Time = N * 0.625 msec
                                                       Time Range: 2.5 msec to 10240 msec */
+    esp_ble_scan_duplicate_t  scan_duplicate;       /*!< The Scan_Duplicates parameter controls whether the Link Layer should filter out 
+                                                        duplicate advertising reports (BLE_SCAN_DUPLICATE_ENABLE) to the Host, or if the Link Layer should generate 
+                                                        advertising reports for each packet received */
 } esp_ble_scan_params_t;
 
 /// Connection update parameters
