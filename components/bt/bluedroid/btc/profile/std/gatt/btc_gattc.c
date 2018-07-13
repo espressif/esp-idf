@@ -331,6 +331,7 @@ esp_gatt_status_t btc_ble_gattc_get_service(uint16_t conn_id, esp_bt_uuid_t *svc
         if (bta_uuid) {
             osi_free(bta_uuid);
         }
+        *count = 0;
         return status;
     } else {
         btc_gattc_fill_gatt_db_conversion(*count, (uint16_t)svc_num, ESP_GATT_DB_PRIMARY_SERVICE, offset, (void *)result, db);
@@ -362,6 +363,7 @@ esp_gatt_status_t btc_ble_gattc_get_all_char(uint16_t conn_id,
         if (db) {
             osi_free(db);
         }
+        *count = 0;
         return status;
     } else {
         btc_gattc_fill_gatt_db_conversion(*count, (uint16_t)char_num, ESP_GATT_DB_CHARACTERISTIC, offset, (void *)result, db);
@@ -389,6 +391,7 @@ esp_gatt_status_t btc_ble_gattc_get_all_descr(uint16_t conn_id,
         if (db) {
             osi_free(db);
         }
+        *count = 0;
         return status;
     } else {
         btc_gattc_fill_gatt_db_conversion(*count, (uint16_t)descr_num, ESP_GATT_DB_DESCRIPTOR, offset, (void *)result, db);
@@ -420,6 +423,7 @@ esp_gatt_status_t btc_ble_gattc_get_char_by_uuid(uint16_t conn_id,
         if (db) {
             osi_free(db);
         }
+        *count = 0;
         return status;
     } else {
         btc_gattc_fill_gatt_db_conversion(*count, (uint16_t)char_num, ESP_GATT_DB_CHARACTERISTIC, 0, (void *)result, db);
@@ -456,6 +460,7 @@ esp_gatt_status_t btc_ble_gattc_get_descr_by_uuid(uint16_t conn_id,
         if (db) {
             osi_free(db);
         }
+        *count = 0;
         return status;
     } else {
         btc_gattc_fill_gatt_db_conversion(*count, (uint16_t)descr_num, ESP_GATT_DB_DESCRIPTOR, 0, (void *)result, db);
@@ -487,6 +492,7 @@ esp_gatt_status_t btc_ble_gattc_get_descr_by_char_handle(uint16_t conn_id,
         if (db) {
             osi_free(db);
         }
+        *count = 0;
         return status;
     } else {
         btc_gattc_fill_gatt_db_conversion(*count, (uint16_t)descr_num, ESP_GATT_DB_DESCRIPTOR, 0, (void *)result, db);
@@ -524,6 +530,7 @@ esp_gatt_status_t btc_ble_gattc_get_include_service(uint16_t conn_id,
         if (db) {
             osi_free(db);
         }
+        *count = 0;
         return status;
     }else {
         btc_gattc_fill_gatt_db_conversion(*count, (uint16_t)incl_num, ESP_GATT_DB_INCLUDED_SERVICE, 0, (void *)result, db);
@@ -566,6 +573,7 @@ esp_gatt_status_t btc_ble_gattc_get_db(uint16_t conn_id, uint16_t start_handle, 
         if (get_db) {
             osi_free(get_db);
         }
+        *count = 0;
         return ESP_GATT_NOT_FOUND;
     }
 
@@ -579,7 +587,7 @@ esp_gatt_status_t btc_ble_gattc_get_db(uint16_t conn_id, uint16_t start_handle, 
         btc128_to_bta_uuid(&bta_uuid, get_db[i].uuid.uu);
         bta_to_btc_uuid(&db[i].uuid, &bta_uuid);
     }
-    *count = num;
+    *count = db_size;
     //don't forget to free the db buffer after used.
     if (get_db) {
         osi_free(get_db);

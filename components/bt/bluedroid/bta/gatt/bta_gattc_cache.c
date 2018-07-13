@@ -376,14 +376,8 @@ static tBTA_GATT_STATUS bta_gattc_add_attr_to_cache(tBTA_GATTC_SERV *p_srvc_cb,
         isvc->included_service = bta_gattc_find_matching_service(
                                     p_srvc_cb->p_srvc_cache, incl_srvc_s_handle);
         if (!isvc->included_service) {
-            // if it is a secondary service, wait to update later
-            if(property == 0){
-                p_srvc_cb->update_sec_sev = true;   
-            } else {
-                APPL_TRACE_ERROR("%s: Illegal action to add non-existing included service!", __func__);
-                osi_free(isvc);
-                return GATT_WRONG_STATE;
-            }
+            // if can't find included service, wait to update later
+            p_srvc_cb->update_incl_srvc = true;
         }
 
         list_append(service->included_svc, isvc);
@@ -606,10 +600,10 @@ static void bta_gattc_explore_srvc(UINT16 conn_id, tBTA_GATTC_SERV *p_srvc_cb)
             return;
         }
     }
-    //update include service when have secondary service
-    if(p_srvc_cb->update_sec_sev) {
+    // if update_incl_srvc is true, update include service
+    if(p_srvc_cb->update_incl_srvc) {
         bta_gattc_update_include_service(p_srvc_cb->p_srvc_cache);
-        p_srvc_cb->update_sec_sev = false;
+        p_srvc_cb->update_incl_srvc = false;
     }
     /* no service found at all, the end of server discovery*/
     APPL_TRACE_DEBUG("%s no more services found", __func__);
@@ -1658,7 +1652,8 @@ void bta_gattc_get_db_size_handle(UINT16 conn_id, UINT16 start_handle, UINT16 en
     tBTA_GATTC_CLCB *p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
 
     if (p_clcb == NULL) {
-        return NULL;
+        *count = 0;
+        return;
     }
     
     tBTA_GATTC_SERV *p_srcb = p_clcb->p_srcb;
