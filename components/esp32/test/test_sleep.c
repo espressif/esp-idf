@@ -371,4 +371,4 @@ static void check_time_deepsleep(void)
     TEST_ASSERT_MESSAGE(dt_ms > 0, "Time in deep sleep is negative");
 }
 
-TEST_CASE_MULTIPLE_STAGES("check a time after wakeup from deep sleep", "[deepsleep][reset=DEEPSLEEP_RESET]", trigger_deepsleep, check_time_deepsleep);
+TEST_CASE_MULTIPLE_STAGES("check a time after wakeup from deep sleep", "[deepsleep][reset=DEEPSLEEP_RESET][timeout=60]", trigger_deepsleep, check_time_deepsleep);
