@@ -37,6 +37,7 @@ __version__ = '1.1'
 
 quiet = False
 md5sum = True
+secure = False
 offset_part_table = 0
 
 def status(msg):
@@ -324,6 +325,8 @@ class PartitionDefinition(object):
         align = self.ALIGNMENT.get(self.type, 4)
         if self.offset % align:
             raise ValidationError(self, "Offset 0x%x is not aligned to 0x%x" % (self.offset, align))
+        if self.size % align and secure:
+            raise ValidationError(self, "Size 0x%x is not aligned to 0x%x" % (self.size, align))
         if self.size is None:
             raise ValidationError(self, "Size field is not set")
 
@@ -408,6 +411,7 @@ def main():
     global quiet
     global md5sum
     global offset_part_table
+    global secure
     parser = argparse.ArgumentParser(description='ESP32 partition table utility')
 
     parser.add_argument('--flash-size', help='Optional flash size limit, checks partition table fits in flash',
@@ -416,7 +420,7 @@ def main():
     parser.add_argument('--verify', '-v', help='Verify partition table fields', default=True, action='store_false')
     parser.add_argument('--quiet', '-q', help="Don't print status messages to stderr", action='store_true')
     parser.add_argument('--offset', '-o', help='Set offset partition table', default='0x8000')
-    
+    parser.add_argument('--secure', help="Require app partitions to be suitable for secure boot", action='store_true')
     parser.add_argument('input', help='Path to CSV or binary file to parse. Will use stdin if omitted.', type=argparse.FileType('rb'), default=sys.stdin)
     parser.add_argument('output', help='Path to output converted binary or CSV file. Will use stdout if omitted, unless the --display argument is also passed (in which case only the summary is printed.)',
                         nargs='?',
@@ -426,6 +430,7 @@ def main():
 
     quiet = args.quiet
     md5sum = not args.disable_md5sum
+    secure = args.secure
     offset_part_table = int(args.offset, 0)
     input = args.input.read()
     input_is_binary = input[0:2] == PartitionDefinition.MAGIC_BYTES
