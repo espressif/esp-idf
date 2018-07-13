@@ -43,6 +43,10 @@ config PARTITION_TABLE_OFFSET
         Allows you to move the partition table, it gives more space for the bootloader.
         Note that the bootloader and app will both need to be compiled with the same PARTITION_TABLE_OFFSET value.
 
+        This number should be a multiple of 0x1000.
+
+        Note that partition offsets in the partition table CSV file may need to be changed if this value is set to a higher value.
+
 config PARTITION_TABLE_MD5
     bool "Generate an MD5 checksum for the partition table"
     default y
