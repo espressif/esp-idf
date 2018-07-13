@@ -1,4 +1,4 @@
-﻿About
+About
 =====
 
 This is documentation of `ESP-IDF <https://github.com/espressif/esp-idf>`_, the framework to develop applications for `ESP32 <https://espressif.com/en/products/hardware/esp32/overview>`_ chip by `Espressif <https://espressif.com>`_.

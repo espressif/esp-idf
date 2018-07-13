@@ -14,6 +14,7 @@ docs/gen-kconfig-doc.py
 tools/ci/apply_bot_filter.py
 tools/ci/build_examples.sh
 tools/ci/check-executable.sh
+tools/ci/check-line-endings.sh
 tools/ci/checkout_project_ref.py
 tools/ci/get-full-sources.sh
 tools/ci/mirror-submodule-update.sh

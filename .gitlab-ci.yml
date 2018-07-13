@@ -431,6 +431,20 @@ check_doc_links:
     - cd docs
     - make linkcheck
 
+check_line_endings:
+  stage: deploy
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - build
+  except:
+    - master
+    - /^release\/v/
+    - /^v\d+\.\d+(\.\d+)?($|-)/
+  dependencies: []
+  before_script: *do_nothing_before
+  script:
+    - tools/ci/check-line-endings.sh ${IDF_PATH}
+
 check_commit_msg:
   stage: deploy
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
