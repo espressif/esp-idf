@@ -55,7 +55,7 @@ extern void bta_gatts_co_update_handle_range(BOOLEAN is_add, tBTA_GATTS_HNDL_RAN
 **
 ** Returns          TRUE - if the request is processed successfully and
 **                         the response is returned in p_rsp.
-**                  FASLE - if the request can not be processed
+**                  FALSE - if the request can not be processed
 **
 *******************************************************************************/
 extern BOOLEAN bta_gatts_co_srv_chg(tBTA_GATTS_SRV_CHG_CMD cmd,

@@ -1105,7 +1105,7 @@ BOOLEAN btm_ble_get_enc_key_type(BD_ADDR bd_addr, UINT8 *p_key_types)
 **
 ** Description      This function is called to read the local DIV
 **
-** Returns          TURE - if a valid DIV is availavle
+** Returns          TRUE - if a valid DIV is availavle
 *******************************************************************************/
 BOOLEAN btm_get_local_div (BD_ADDR bd_addr, UINT16 *p_div)
 {
