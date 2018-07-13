@@ -77,7 +77,11 @@ def log_performance(item, value):
     :param item: performance item name
     :param value: performance value
     """
-    Utility.console_log("[Performance][{}]: {}".format(item, value), "orange")
+    performance_msg = "[Performance][{}]: {}".format(item, value)
+    Utility.console_log(performance_msg, "orange")
+    # update to junit test report
+    current_junit_case = TinyFW.JunitReport.get_current_test_case()
+    current_junit_case.stdout += performance_msg
 
 
 def check_performance(item, value):
