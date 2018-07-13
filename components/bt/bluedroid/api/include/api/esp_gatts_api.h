@@ -350,7 +350,8 @@ esp_err_t esp_ble_gatts_create_attr_tab(const esp_gatts_attr_db_t *gatts_attr_db
                                             uint8_t max_nb_attr,
                                             uint8_t srvc_inst_id);
 /**
- * @brief           This function is called to add an included service. After included
+ * @brief           This function is called to add an included service. This function have to be called between 
+ *                  'esp_ble_gatts_create_service' and 'esp_ble_gatts_add_char'.  After included
  *                  service is included, a callback event BTA_GATTS_ADD_INCL_SRVC_EVT
  *                  is reported the included service ID.
  *
