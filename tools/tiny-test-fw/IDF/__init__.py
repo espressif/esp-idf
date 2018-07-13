@@ -81,7 +81,7 @@ def log_performance(item, value):
     Utility.console_log(performance_msg, "orange")
     # update to junit test report
     current_junit_case = TinyFW.JunitReport.get_current_test_case()
-    current_junit_case.stdout += performance_msg
+    current_junit_case.stdout += performance_msg + "\r\n"
 
 
 def check_performance(item, value):
