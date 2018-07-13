@@ -254,7 +254,7 @@ static esp_err_t encrypt_and_load_partition_table(esp_partition_info_t *partitio
         ESP_LOGE(TAG, "Failed to read partition table data");
         return err;
     }
-    if (esp_partition_table_basic_verify(partition_table, false, num_partitions) == ESP_OK) {
+    if (esp_partition_table_verify(partition_table, false, num_partitions) == ESP_OK) {
         ESP_LOGD(TAG, "partition table is plaintext. Encrypting...");
         esp_err_t err = esp_flash_encrypt_region(ESP_PARTITION_TABLE_OFFSET,
                                                  FLASH_SECTOR_SIZE);
