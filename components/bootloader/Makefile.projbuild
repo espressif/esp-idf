@@ -116,7 +116,7 @@ bootloader:
 endif
 
 ifndef CONFIG_SECURE_BOOT_ENABLED
-# don't build bootloader by default is secure boot is enabled
+# don't build bootloader by default if secure boot is enabled
 all_binaries: $(BOOTLOADER_BIN)
 endif
 
