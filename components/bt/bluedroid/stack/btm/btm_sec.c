@@ -1524,7 +1524,7 @@ void BTM_ConfirmReqReply(tBTM_STATUS res, BD_ADDR bd_addr)
 **                  BTM_MIN_PASSKEY_VAL(0) - BTM_MAX_PASSKEY_VAL(999999(0xF423F)).
 **
 *******************************************************************************/
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE && SMP_INCLUDED == TRUE)
+#if (BT_SSP_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
 void BTM_PasskeyReqReply(tBTM_STATUS res, BD_ADDR bd_addr, UINT32 passkey)
 {
 #if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
@@ -1572,7 +1572,7 @@ void BTM_PasskeyReqReply(tBTM_STATUS res, BD_ADDR bd_addr, UINT32 passkey)
         btsnd_hcic_user_passkey_reply (bd_addr, passkey);
     }
 }
-#endif  ///BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE && SMP_INCLUDED == TRUE
+#endif  ///BT_SSP_INCLUDED == TRUE && SMP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -1588,7 +1588,7 @@ void BTM_PasskeyReqReply(tBTM_STATUS res, BD_ADDR bd_addr, UINT32 passkey)
 **                  type - notification type
 **
 *******************************************************************************/
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE && SMP_INCLUDED == TRUE)
+#if (BT_SSP_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
 void BTM_SendKeypressNotif(BD_ADDR bd_addr, tBTM_SP_KEY_TYPE type)
 {
     /* This API only make sense between PASSKEY_REQ and SP complete */
@@ -1596,7 +1596,7 @@ void BTM_SendKeypressNotif(BD_ADDR bd_addr, tBTM_SP_KEY_TYPE type)
         btsnd_hcic_send_keypress_notif (bd_addr, type);
     }
 }
-#endif  ///BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE && SMP_INCLUDED == TRUE
+#endif  ///BT_SSP_INCLUDED == TRUE && SMP_INCLUDED == TRUE
 
 #if BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE
 /*******************************************************************************
@@ -3504,7 +3504,7 @@ void btm_proc_sp_req_evt (tBTM_SP_EVT event, UINT8 *p)
             evt_data.cfm_req.just_works = TRUE;
 
             /* process user confirm req in association with the auth_req param */
-#if (BTM_LOCAL_IO_CAPS == BTM_IO_CAP_IO)
+// #if (BTM_LOCAL_IO_CAPS == BTM_IO_CAP_IO)
             if ( (p_dev_rec->rmt_io_caps == BTM_IO_CAP_IO)
                     &&  (btm_cb.devcb.loc_io_caps == BTM_IO_CAP_IO)
                     &&  ((p_dev_rec->rmt_auth_req & BTM_AUTH_SP_YES) || (btm_cb.devcb.loc_auth_req & BTM_AUTH_SP_YES)) ) {
@@ -3512,7 +3512,7 @@ void btm_proc_sp_req_evt (tBTM_SP_EVT event, UINT8 *p)
                    -> use authenticated link key */
                 evt_data.cfm_req.just_works = FALSE;
             }
-#endif
+// #endif
             BTM_TRACE_DEBUG ("btm_proc_sp_req_evt()  just_works:%d, io loc:%d, rmt:%d, auth loc:%d, rmt:%d\n",
                              evt_data.cfm_req.just_works, btm_cb.devcb.loc_io_caps, p_dev_rec->rmt_io_caps,
                              btm_cb.devcb.loc_auth_req, p_dev_rec->rmt_auth_req);
@@ -3532,7 +3532,7 @@ void btm_proc_sp_req_evt (tBTM_SP_EVT event, UINT8 *p)
             btm_sec_change_pairing_state (BTM_PAIR_STATE_WAIT_AUTH_COMPLETE);
             break;
 
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
+#if (BT_SSP_INCLUDED == TRUE)
         case BTM_SP_KEY_REQ_EVT:
             /* HCI_USER_PASSKEY_REQUEST_EVT */
             btm_sec_change_pairing_state (BTM_PAIR_STATE_KEY_ENTRY);
@@ -3555,14 +3555,13 @@ void btm_proc_sp_req_evt (tBTM_SP_EVT event, UINT8 *p)
             BTM_TRACE_DEBUG ("calling BTM_ConfirmReqReply with status: %d\n", status);
             BTM_ConfirmReqReply (status, p_bda);
         }
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
+#if (BT_SSP_INCLUDED == TRUE)
         else if (event == BTM_SP_KEY_REQ_EVT) {
             BTM_PasskeyReqReply(status, p_bda, 0);
         }
 #endif
         return;
     }
-
     /* Something bad. we can only fail this connection */
     btm_cb.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
 
@@ -3579,7 +3578,8 @@ void btm_proc_sp_req_evt (tBTM_SP_EVT event, UINT8 *p)
             btm_sec_disconnect (p_dev_rec->hci_handle, HCI_ERR_AUTH_FAILURE);
         }
     }
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
+
+#if (BT_SSP_INCLUDED == TRUE)
     else {
         btsnd_hcic_user_passkey_neg_reply(p_bda);
     }
@@ -4849,7 +4849,7 @@ static void btm_sec_pairing_timeout (TIMER_LIST_ENT *p_tle)
         /* btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE); */
         break;
 
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
+#if (BT_SSP_INCLUDED == TRUE)
     case BTM_PAIR_STATE_KEY_ENTRY:
         btsnd_hcic_user_passkey_neg_reply(p_cb->pairing_bda);
         /* btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE); */
