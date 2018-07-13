@@ -72,18 +72,6 @@ bool bootloader_utility_load_partition_table(bootloader_state_t* bs)
     esp_err_t err;
     int num_partitions;
 
-#ifdef CONFIG_SECURE_BOOT_ENABLED
-    if(esp_secure_boot_enabled()) {
-        ESP_LOGI(TAG, "Verifying partition table signature...");
-        err = esp_secure_boot_verify_signature(ESP_PARTITION_TABLE_OFFSET, ESP_PARTITION_TABLE_MAX_LEN);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to verify partition table signature.");
-            return false;
-        }
-        ESP_LOGD(TAG, "Partition table signature verified");
-    }
-#endif
-
     partitions = bootloader_mmap(ESP_PARTITION_TABLE_OFFSET, ESP_PARTITION_TABLE_MAX_LEN);
     if (!partitions) {
         ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", ESP_PARTITION_TABLE_OFFSET, ESP_PARTITION_TABLE_MAX_LEN);
@@ -91,7 +79,7 @@ bool bootloader_utility_load_partition_table(bootloader_state_t* bs)
     }
     ESP_LOGD(TAG, "mapped partition table 0x%x at 0x%x", ESP_PARTITION_TABLE_OFFSET, (intptr_t)partitions);
 
-    err = esp_partition_table_basic_verify(partitions, true, &num_partitions);
+    err = esp_partition_table_verify(partitions, true, &num_partitions);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to verify partition table");
         return false;
