@@ -55,6 +55,20 @@ The following keys are used by the secure boot process:
 
   - The private key from this key pair *must be securely kept private*, as anyone who has this key can authenticate to any bootloader that is configured with secure boot and the matching public key.
 
+.. _secure-boot-bootloader-size:
+
+Bootloader Size
+---------------
+
+When secure boot is enabled the bootloader app binary ``bootloader.bin`` may exceed the default bootloader size limit. This is especially likely if flash encryption is enabled as well. The default size limit is 0x7000 (28672) bytes (partition table offset 0x8000 - bootloader offset 0x1000).
+
+If the bootloader becomes too large, the ESP32 will fail to boot - errors will be logged about either invalid partition table or invalid bootloader checksum.
+
+Options to work around this are:
+
+- Reduce :envvar:`bootloader log level <CONFIG_LOG_BOOTLOADER_LEVEL>`. Setting log level to Warning, Error or None all significantly reduce the final binary size (but may make it harder to debug).
+- Set :envvar:`partition table offset <CONFIG_PARTITION_TABLE_OFFSET>` to a higher value than 0x8000, to place the partition table later in the flash. This increases the space available for the bootloader. If the :doc:`partition table </api-guides/partition-tables>` CSV file contains explicit partition offsets, they will need changing so no partition has an offset lower than ``CONFIG_PARTITION_TABLE_OFFSET + 0x1000``. (This includes the default partition CSV files supplied with ESP-IDF.)
+
 .. _secure-boot-howto:
 
 How To Enable Secure Boot

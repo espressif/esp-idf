@@ -55,6 +55,8 @@ Process to enable flash encryption:
 
 - Build and flash the bootloader, partition table and factory app image as normal. These partitions are initially written to the flash unencrypted.
 
+.. note:: The bootloader app binary ``bootloader.bin`` may become too large when both secure boot and flash encryption are enabled. See :ref:`secure-boot-bootloader-size`.
+
 - On first boot, the bootloader sees :ref:`FLASH_CRYPT_CNT` is set to 0 (factory default) so it generates a flash encryption key using the hardware random number generator. This key is stored in efuse. The key is read and write protected against further software access.
 
 - All of the encrypted partitions are then encrypted in-place by the bootloader. Encrypting in-place can take some time (up to a minute for large partitions.)
