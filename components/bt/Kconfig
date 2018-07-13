@@ -155,6 +155,11 @@ config CLASSIC_BT_ENABLED
     help
         For now this option needs "SMP_ENABLE" to be set to yes
 
+config BT_SSP_ENABLE
+   bool "Enable Secure Simple Pairing"
+   depends on CLASSIC_BT_ENABLED
+   default CLASSIC_BT_ENABLED
+
 config A2DP_ENABLE
     bool "A2DP"
     depends on CLASSIC_BT_ENABLED
