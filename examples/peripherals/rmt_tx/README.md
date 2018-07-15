@@ -1,4 +1,4 @@
-#  _RMT Transmit Example_
+# _RMT Transmit Example_
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
@@ -8,7 +8,24 @@ This example will shows how to configure and operate the remote control (RMT) pe
 
 ### Hardware Required
 
-To run this example, you need to prepare a development board with esp32 SoC(e.g., ESP32_Core_board, ESP-WORVER_KIT etc), a LED, a speaker or an earphone and a USB cable for power supply and programming.
+* A development board with ESP32 SoC (e.g., ESP32-DevKitC, ESP-WORVER-KIT, etc.)
+* A USB cable for Power supply and programming
+* A LED, a speaker or an earphone
+
+Connection :
+
+```
+             330R            LED     
+GPIO18 +----/\/\/\----+------|>|-----+ GND
+                      |    
+                      | /|
+                     +-+ |   Speaker
+                     | | |     or
+                     +-+ |  earphone
+                      | \|
+                      |
+                      +--------------+ GND
+```
 
 ### Configure the Project
 
@@ -34,20 +51,6 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 
 To be able to see and hear the message output by the RMT, connect a LED and a speaker or an earphone (be careful - it may be loud) to the GPIO18(the pin can be changed by modify the definition of `RMT_TX_GPIO` in `main/rmt_tx_main.c`).
 
-
-```
-             330R            LED     
-GPIO18 +----/\/\/\----+------|>|-----+ GND
-                      |    
-                      | /|
-                     +-+ |   Speaker
-                     | | |     or
-                     +-+ |  earphone
-                      | \|
-                      |
-                      +--------------+ GND
-```
-
 Run this example, you will see the following output log:
 ```
 RMT Tx: Transmission complete
@@ -58,7 +61,7 @@ RMT Tx: Sample transmission complete
 
 * Programming fail
 
-    * To check whether the hardware connection is correct, you can run `make monitor` and reboot your board to see if there are any output logs.
-    * Your download baud-rate is too high. please lower your download baud-rate in menuconfig and try again.
+    * Hardware connection is not correct: run `make monitor`, and reboot your board to see if there is any output logs.
+    * The baud rate for downloading is too high: lower your baud rate in the `menuconfig` menu, and try again.
 
-If any problems that can't be resolved, please open an issue in GitHub(https://github.com/espressif/esp-idf/issues), we will reply to you soon.
+For any technical queries, please open an [issue] (https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
