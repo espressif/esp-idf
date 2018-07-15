@@ -1,8 +1,4 @@
-# Example: rmt_nec_tx_rx
-
-This example uses the remote control (RMT) peripheral to transmit and receive codes for the NEC infrared remote protocol.
-
-#  _RMT NEC_TX_RX Example_
+# _RMT NEC_TX_RX Example_
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
@@ -12,7 +8,8 @@ This example uses the remote control (RMT) peripheral to transmit and receive co
 
 ### Hardware Required
 
-To run this example, you need to prepare a development board with esp32 SoC(e.g., ESP32_Core_board, ESP-WORVER_KIT etc) and a USB cable for power supply and programming.
+* A development board with ESP32 SoC (e.g., ESP32-DevKitC, ESP-WORVER-KIT, etc.)
+* A USB cable for Power supply and programming
 
 By default, this example runs a self test which assumes the TX pin (GPIO18) and RX pin (GPIO19) are _connected together_. 
 
@@ -77,7 +74,7 @@ NEC: RMT RCV --- addr: 0xda25 cmd: 0xeb14
 
 * Programming fail
 
-    * To check whether the hardware connection of UART is  correct, you can run `make monitor` and reboot your board to see if there are any output logs.
-    * Your download baud-rate is too high. please lower your download baud-rate in menuconfig and try again.
+    * Hardware connection is not correct: run `make monitor`, and reboot your board to see if there is any output logs.
+    * The baud rate for downloading is too high: lower your baud rate in the `menuconfig` menu, and try again.
 
-If any problems that can't be resolved, please open an issue in GitHub(https://github.com/espressif/esp-idf/issues), we will reply to you soon.
+For any technical queries, please open an [issue] (https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
