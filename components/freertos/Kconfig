@@ -305,6 +305,14 @@ config FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
         FreeRTOS. This will allow the usage of stats formatting functions such 
         as vTaskList().
 
+config FREERTOS_VTASKLIST_INCLUDE_COREID
+    bool "Enable display of xCoreID in vTaskList"
+    depends on FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
+    default n
+    help
+        If enabled, this will include an extra column when vTaskList is called
+        to display the CoreID the task is pinned to (0,1) or -1 if not pinned. 
+
 config FREERTOS_GENERATE_RUN_TIME_STATS
     bool "Enable FreeRTOS to collect run time stats"
     default n
