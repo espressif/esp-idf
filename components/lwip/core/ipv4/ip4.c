@@ -142,7 +142,7 @@ ip4_route_src_hook(const ip4_addr_t *dest, const ip4_addr_t *src)
   struct netif *netif = NULL;
 
   /* destination IP is broadcast IP? */
-  if ((src != NULL) && (dest->addr == IPADDR_BROADCAST)) {
+  if ((src != NULL) && (!ip4_addr_isany(src) || (dest->addr == IPADDR_BROADCAST))) {
     /* iterate through netifs */
     for (netif = netif_list; netif != NULL; netif = netif->next) {
       /* is the netif up, does it have a link and a valid address? */
