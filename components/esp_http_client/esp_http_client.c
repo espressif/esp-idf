@@ -33,13 +33,17 @@
 
 static const char *TAG = "HTTP_CLIENT";
 
+/**
+ * HTTP Buffer
+ */
 typedef struct {
-    char *data;
-    int len;
-    char *raw_data;
-    int raw_len;
-    char *output_ptr;
+    char *data;         /*!< The HTTP data received from the server */
+    int len;            /*!< The HTTP data len received from the server */
+    char *raw_data;     /*!< The HTTP data after decoding */
+    int raw_len;        /*!< The HTTP data len after decoding */
+    char *output_ptr;   /*!< The destination address of the data to be copied to after decoding */
 } esp_http_buffer_t;
+
 /**
  * private HTTP Data structure
  */
