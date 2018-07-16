@@ -143,6 +143,7 @@ class AssignTest(object):
         for job_name in ci_config:
             if self.CI_TEST_JOB_PATTERN.search(job_name) is not None:
                 job_list.append(GitlabCIJob.Job(ci_config[job_name], job_name))
+        job_list.sort(key=lambda x: x["name"])
         return job_list
 
     def _search_cases(self, test_case_path, case_filter=None):
