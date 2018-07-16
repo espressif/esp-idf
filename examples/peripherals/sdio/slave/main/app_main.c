@@ -14,6 +14,7 @@
 #include "soc/sdio_slave_periph.h"
 #include "freertos/task.h"
 #include "freertos/ringbuf.h"
+#include "sdkconfig.h"
 
 /*
    sdio slave example.
@@ -27,10 +28,10 @@
      *   IO4       D1
      *   IO12      D2
      *   IO13      D3
-    
-    This is the only pins that can be used in standard ESP modules. The other set of pins (6, 11, 7, 8, 9, 10) 
+
+    This is the only pins that can be used in standard ESP modules. The other set of pins (6, 11, 7, 8, 9, 10)
     are occupied by the spi bus communicating with the flash.
-   
+
     Protocol Above the ESP slave service:
         - Interrupts:
             0 is used to notify the slave to read the register 0.
@@ -48,7 +49,7 @@
             When the host writes something to slave recv FIFO, the slave should return it as is to the sending FIFO.
 
     The host works as following process:
-    
+
         1. reset the slave.
         2. tell the slave to write registers and read them back.
         3. tell the slave to send interrupts to the host.
@@ -160,7 +161,7 @@ DMA_ATTR uint8_t buffer[BUFFER_NUM][BUFFER_SIZE] = {};
 void app_main()
 {
     esp_err_t ret;
-   
+
     sdio_slave_config_t config = {
         .sending_mode       = SDIO_SLAVE_SEND_PACKET,
         .send_queue_size    = SDIO_SLAVE_QUEUE_SIZE,
@@ -197,20 +198,20 @@ void app_main()
     }
 
     sdio_slave_set_host_intena(SDIO_SLAVE_HOSTINT_SEND_NEW_PACKET |
-            SDIO_SLAVE_HOSTINT_BIT0 | 
-            SDIO_SLAVE_HOSTINT_BIT1 | 
-            SDIO_SLAVE_HOSTINT_BIT2 | 
-            SDIO_SLAVE_HOSTINT_BIT3 | 
-            SDIO_SLAVE_HOSTINT_BIT4 | 
-            SDIO_SLAVE_HOSTINT_BIT5 | 
-            SDIO_SLAVE_HOSTINT_BIT6 | 
-            SDIO_SLAVE_HOSTINT_BIT7 
+            SDIO_SLAVE_HOSTINT_BIT0 |
+            SDIO_SLAVE_HOSTINT_BIT1 |
+            SDIO_SLAVE_HOSTINT_BIT2 |
+            SDIO_SLAVE_HOSTINT_BIT3 |
+            SDIO_SLAVE_HOSTINT_BIT4 |
+            SDIO_SLAVE_HOSTINT_BIT5 |
+            SDIO_SLAVE_HOSTINT_BIT6 |
+            SDIO_SLAVE_HOSTINT_BIT7
       );
 
     sdio_slave_start();
 
     ESP_LOGI(TAG, EV_STR("slave ready"));
-    
+
     for(;;) {
         //receive data and send back to host.
         size_t length;
@@ -249,7 +250,7 @@ void app_main()
         if (s_job != 0) {
             for(int i = 0; i < 8; i++) {
                 if (s_job & BIT(i)) {
-                    ESP_LOGI(TAG, EV_STR("%s"), job_desc[i+1]);                
+                    ESP_LOGI(TAG, EV_STR("%s"), job_desc[i+1]);
                     s_job &= ~BIT(i);
 
                     switch(BIT(i)) {
@@ -263,7 +264,7 @@ void app_main()
                         break;
                     case JOB_WRITE_REG:
                         ret = task_write_reg();
-                        ESP_ERROR_CHECK(ret);                        
+                        ESP_ERROR_CHECK(ret);
                         break;
                     }
                 }
