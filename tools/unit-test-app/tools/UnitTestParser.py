@@ -282,7 +282,7 @@ class Parser(object):
             config_output_folder = os.path.join(output_folder, config)
             if os.path.exists(config_output_folder):
                 test_cases.extend(self.parse_test_cases_for_one_config(configs_folder, config_output_folder, config))
-
+        test_cases.sort(key=lambda x: x["config"] + x["summary"])
         self.dump_test_cases(test_cases)
 
 
