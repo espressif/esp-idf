@@ -133,16 +133,14 @@ bool ip4_netif_exist(const ip4_addr_t *src, const ip4_addr_t *dest)
   return false;
 }
 /**
- * Source based IPv4 routing hook function. This function works only
- * when destination IP is broadcast IP.
+ * Source based IPv4 routing hook function. 
  */
 struct netif * ESP_IRAM_ATTR
 ip4_route_src_hook(const ip4_addr_t *dest, const ip4_addr_t *src)
 {
   struct netif *netif = NULL;
 
-  /* destination IP is broadcast IP? */
-  if ((src != NULL) && (dest->addr == IPADDR_BROADCAST)) {
+  if ((src != NULL) && !ip4_addr_isany(src)) {
     /* iterate through netifs */
     for (netif = netif_list; netif != NULL; netif = netif->next) {
       /* is the netif up, does it have a link and a valid address? */
