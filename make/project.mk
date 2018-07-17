@@ -392,7 +392,7 @@ $(foreach componentpath,$(COMPONENT_PATHS), \
 # once we know component paths, we can include the config generation targets
 #
 # (bootloader build doesn't need this, config is exported from top-level)
-ifndef IS_BOOTLOADER_BUILD
+ifndef IS_SUBPROJECT_BUILD
 include $(IDF_PATH)/make/project_config.mk
 endif
 

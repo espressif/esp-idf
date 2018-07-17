@@ -22,11 +22,13 @@ CFLAGS += -I $(IDF_PATH)/components/esp32/include
 # IS_BOOTLOADER_BUILD tells the component Makefile.projbuild to be a no-op
 IS_BOOTLOADER_BUILD := 1
 export IS_BOOTLOADER_BUILD
+IS_SUBPROJECT_BUILD := 1
+export IS_SUBPROJECT_BUILD
 
 # BOOTLOADER_BUILD macro is the same, for source file changes
-CFLAGS += -D BOOTLOADER_BUILD=1
+CPPFLAGS += -DBOOTLOADER_BUILD=1
 
 # include the top-level "project" include directory, for sdkconfig.h
-CFLAGS += -I$(BUILD_DIR_BASE)/../include
+CPPFLAGS += -I$(BUILD_DIR_BASE)/../include
 
 include $(IDF_PATH)/make/project.mk
