@@ -97,6 +97,7 @@ static void hci_hal_env_init(
 static void hci_hal_env_deinit(void)
 {
     fixed_queue_free(hci_hal_env.rx_q, hci_hal_env.allocator->free);
+    hci_hal_env.rx_q = NULL;
 }
 
 static bool hal_open(const hci_hal_callbacks_t *upper_callbacks)
@@ -301,6 +302,10 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
     //Target has packet to host, malloc new buffer for packet
     BT_HDR *pkt;
     size_t pkt_size;
+
+    if (hci_hal_env.rx_q == NULL) {
+        return 0;
+    }
 
     pkt_size = BT_HDR_SIZE + len;
     pkt = (BT_HDR *)hci_hal_env.allocator->alloc(pkt_size);
