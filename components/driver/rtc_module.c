@@ -98,12 +98,12 @@ In ADC2, there're two locks used for different cases:
 adc2_spinlock should be acquired first, then adc2_wifi_lock or rtc_spinlock.
 */
 //prevent ADC2 being used by wifi and other tasks at the same time.
-static _lock_t adc2_wifi_lock = NULL;
+static _lock_t adc2_wifi_lock;
 //prevent ADC2 being used by tasks (regardless of WIFI)
 portMUX_TYPE adc2_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 //prevent ADC1 being used by I2S dma and other tasks at the same time.
-static _lock_t adc1_i2s_lock = NULL;
+static _lock_t adc1_i2s_lock;
 
 typedef struct {
     TimerHandle_t timer;
