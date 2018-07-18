@@ -25,6 +25,9 @@ import textwrap
 # list files here which should not be parsed
 ignore_files = [ 'components/mdns/test_afl_fuzz_host/esp32_compat.h' ]
 
+# add directories here which should not be parsed
+ignore_dirs = ( 'examples' )
+
 # macros from here have higher priorities in case of collisions
 priority_headers = [ 'components/esp32/include/esp_err.h' ]
 
@@ -292,7 +295,7 @@ def main():
         for filename in fnmatch.filter(filenames, '*.[ch]'):
             full_path = os.path.join(root, filename)
             path_in_idf = os.path.relpath(full_path, idf_path)
-            if path_in_idf in ignore_files:
+            if path_in_idf in ignore_files or path_in_idf.startswith(ignore_dirs):
                 continue
             with open(full_path, "r+") as f:
                 for line in f:
