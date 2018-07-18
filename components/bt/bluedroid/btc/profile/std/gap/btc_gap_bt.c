@@ -479,7 +479,7 @@ static void btc_gap_bt_search_services(char *p_param)
 
         param.rmt_srvcs.stat = ESP_BT_STATUS_FAIL;
         if (p_data->p_data->disc_res.result == BTA_SUCCESS) {
-            uuid_list = malloc(sizeof(esp_bt_uuid_t) * p_data->p_data->disc_res.num_uuids);
+            uuid_list = osi_malloc(sizeof(esp_bt_uuid_t) * p_data->p_data->disc_res.num_uuids);
             if (uuid_list) {
                 param.rmt_srvcs.stat = ESP_BT_STATUS_SUCCESS;
                 param.rmt_srvcs.num_uuids = p_data->p_data->disc_res.num_uuids;
