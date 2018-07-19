@@ -192,7 +192,7 @@ void set_rtc_memory_crc(void);
   *
   * @return None
   */
-void software_reset(void);
+void __attribute__((noreturn)) software_reset(void);
 
 /**
   * @brief Software Reset digital core.

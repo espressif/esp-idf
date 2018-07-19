@@ -52,3 +52,13 @@ int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
  * @param[in] start_index The index from which the search for images begins.
  */
 __attribute__((noreturn)) void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_index);
+
+
+/**
+ * @brief Software reset the ESP32
+ *
+ * Bootloader code should call this in the case that it cannot proceed.
+ *
+ * It is not recommended to call this function from an app (if called, the app will abort).
+ */
+__attribute__((noreturn)) void bootloader_reset(void);
