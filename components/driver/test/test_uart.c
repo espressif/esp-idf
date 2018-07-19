@@ -46,3 +46,21 @@ TEST_CASE("test uart get baud-rate","[uart]")
     TEST_ASSERT(UART_TOLERANCE_CHECK(baud_rate2, (1.0 + TOLERANCE)*UART_BAUD_115200, (1.0 - TOLERANCE)*UART_BAUD_115200))
     ESP_LOGI(UART_TAG, "get baud-rate test passed  ....\n");
 }
+
+TEST_CASE("test uart tx data with break","[uart]")
+{
+    const int buf_len = 200;
+    const int send_len = 128;
+    const int brk_len = 10;
+    char *psend = (char *)malloc(buf_len);
+    TEST_ASSERT( psend != NULL);
+    memset(psend, '0', buf_len);
+    uart_config(UART_BAUD_115200, false);
+    printf("Uart%d send %d bytes with break\n", UART_NUM1, send_len);
+    uart_write_bytes_with_break(UART_NUM1, (const char *)psend, send_len, brk_len);
+    uart_wait_tx_done(UART_NUM1, (portTickType)portMAX_DELAY);
+    //If the code is running here, it means the test passed, otherwise it will crash due to the interrupt wdt timeout.
+    printf("Send data with break test passed\n");
+    free(psend);
+}
+
