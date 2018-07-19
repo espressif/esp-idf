@@ -66,12 +66,29 @@ io_number:
 	.text
 	.global entry
 entry:
-	/* Read the value of lower 16 RTC IOs into R0 */
-	READ_RTC_FIELD(RTC_GPIO_IN_REG, RTC_GPIO_IN_NEXT)
-	/* Load io_number, extract the state of input */
+	/* Load io_number */
 	move r3, io_number
 	ld r3, r3, 0
+
+	/* Lower 16 IOs and higher need to be handled separately,
+	 * because r0-r3 registers are 16 bit wide.
+	 * Check which IO this is.
+	 */
+	move r0, r3
+	jumpr read_io_high, 16, ge
+
+	/* Read the value of lower 16 RTC IOs into R0 */
+	READ_RTC_REG(RTC_GPIO_IN_REG, RTC_GPIO_IN_NEXT_S, 16)
 	rsh r0, r0, r3
+	jump read_done
+
+	/* Read the value of RTC IOs 16-17, into R0 */
+read_io_high:
+	READ_RTC_REG(RTC_GPIO_IN_REG, RTC_GPIO_IN_NEXT_S + 16, 2)
+	sub r3, r3, 16
+	rsh r0, r0, r3
+
+read_done:
 	and r0, r0, 1
 	/* State of input changed? */
 	move r3, next_edge
