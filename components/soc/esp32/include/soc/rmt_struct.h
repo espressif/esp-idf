@@ -19,7 +19,9 @@ extern "C" {
 #endif
 
 typedef volatile struct {
-    uint32_t data_ch[8];                                /*The R/W ram address for channel0-7 by apb fifo access.*/
+    uint32_t data_ch[8];                                /*The R/W ram address for channel0-7 by apb fifo access.
+                                                        Note that in some circumstances, data read from the FIFO may get lost. As RMT memory area accesses using the RMTMEM method do not have this issue
+                                                        and provide all the functionality that the FIFO register has, it is encouraged to use that instead.*/
     struct{
         union {
             struct {
@@ -39,7 +41,7 @@ typedef volatile struct {
                 uint32_t rx_en:           1;            /*Set this bit to enable receiving data for channel0-7.*/
                 uint32_t mem_wr_rst:      1;            /*Set this bit to reset write ram address for channel0-7 by receiver access.*/
                 uint32_t mem_rd_rst:      1;            /*Set this bit to reset read ram address for channel0-7 by transmitter access.*/
-                uint32_t apb_mem_rst:     1;            /*Set this bit to reset W/R ram address for channel0-7 by apb fifo access*/
+                uint32_t apb_mem_rst:     1;            /*Set this bit to reset W/R ram address for channel0-7 by apb fifo access (using fifo is discouraged, please see the note above at data_ch[] item)*/
                 uint32_t mem_owner:       1;            /*This is the mark of channel0-7's ram usage right.1'b1：receiver uses the ram  0：transmitter uses the ram*/
                 uint32_t tx_conti_mode:   1;            /*Set this bit to continue sending  from the first data to the last data in channel0-7 again and again.*/
                 uint32_t rx_filter_en:    1;            /*This is the receive filter enable bit for channel0-7.*/
@@ -54,7 +56,7 @@ typedef volatile struct {
         } conf1;
     } conf_ch[8];
     uint32_t status_ch[8];                              /*The status for channel0-7*/
-    uint32_t apb_mem_addr_ch[8];                        /*The ram relative address in channel0-7 by apb fifo access*/
+    uint32_t apb_mem_addr_ch[8];                        /*The ram relative address in channel0-7 by apb fifo access (using fifo is discouraged, please see the note above at data_ch[] item)*/
     union {
         struct {
             uint32_t ch0_tx_end:       1;               /*The interrupt raw bit for channel 0 turns to high level when the transmit process is done.*/
@@ -219,7 +221,7 @@ typedef volatile struct {
     } tx_lim_ch[8];
     union {
         struct {
-            uint32_t fifo_mask:  1;                     /*Set this bit to disable apb fifo access*/
+            uint32_t fifo_mask:  1;                     /*Set this bit to enable RMTMEM and disable apb fifo access (using fifo is discouraged, please see the note above at data_ch[] item)*/
             uint32_t mem_tx_wrap_en: 1;                 /*when data need to be send is more than channel's mem can store  then set this bit to enable reuse of mem this bit is used together with reg_rmt_tx_lim_chn.*/
             uint32_t reserved2:     30;
         };
@@ -243,22 +245,11 @@ typedef struct {
     };
 } rmt_item32_t;
 
-typedef struct {
-    union {
-        struct {
-            uint16_t duration :15;
-            uint16_t level :1;
-        };
-        uint16_t val;
-    };
-} rmt_item16_t;
-
 //Allow access to RMT memory using RMTMEM.chan[0].data32[8]
 typedef volatile struct {
     struct {
         union {
             rmt_item32_t data32[64];
-            rmt_item16_t data16[128];
         };
     } chan[8];
 } rmt_mem_t;
