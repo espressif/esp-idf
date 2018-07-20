@@ -196,15 +196,15 @@ TEST_CASE("calculate used and free space", "[nvs]")
     uint32_t blob[12];
     TEST_ESP_OK(nvs_set_blob(handle_3, "bl1", &blob, sizeof(blob)));
     TEST_ESP_OK(nvs_get_stats(NULL, &stat1));
-    TEST_ASSERT_TRUE(stat1.free_entries + 3 == stat2.free_entries);
+    TEST_ASSERT_TRUE(stat1.free_entries + 4 == stat2.free_entries);
     TEST_ASSERT_TRUE(stat1.namespace_count == 3);
     TEST_ASSERT_TRUE(stat1.total_entries == stat2.total_entries);
-    TEST_ASSERT_TRUE(stat1.used_entries == 11);
+    TEST_ASSERT_TRUE(stat1.used_entries == 12);
 
     // amount valid pair in namespace 2
     size_t h3_count_entries;
     TEST_ESP_OK(nvs_get_used_entry_count(handle_3, &h3_count_entries));
-    TEST_ASSERT_TRUE(h3_count_entries == 3);
+    TEST_ASSERT_TRUE(h3_count_entries == 4);
 
     TEST_ASSERT_TRUE(stat1.used_entries == (h1_count_entries + h2_count_entries + h3_count_entries + stat1.namespace_count));
 
