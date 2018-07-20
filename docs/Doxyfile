@@ -199,7 +199,8 @@ PREDEFINED             = \
     configUSE_RECURSIVE_MUTEXES=1 \
     configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS=1 \
     configNUM_THREAD_LOCAL_STORAGE_POINTERS=1 \
-    configUSE_APPLICATION_TASK_TAG=1
+    configUSE_APPLICATION_TASK_TAG=1 \
+    configTASKLIST_INCLUDE_COREID=1
 
 ## Do not complain about not having dot
 ##
