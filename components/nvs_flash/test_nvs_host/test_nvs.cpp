@@ -1977,7 +1977,8 @@ TEST_CASE("check partition generation utility", "[nvs_part_gen]")
         exit(execlp("python", "python",
                 "../nvs_partition_generator/nvs_partition_gen.py",
                 "../nvs_partition_generator/sample.csv",
-                "../nvs_partition_generator/partition.bin", NULL));
+                "../nvs_partition_generator/partition.bin", 
+                "12KB",NULL));
     } else {
         CHECK(childpid > 0);
         int status;
