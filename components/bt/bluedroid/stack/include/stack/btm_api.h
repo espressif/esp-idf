@@ -3417,8 +3417,7 @@ BOOLEAN BTM_SecAddDevice (BD_ADDR bd_addr, DEV_CLASS dev_class,
 **
 *******************************************************************************/
 //extern
-BOOLEAN BTM_SecDeleteDevice (BD_ADDR bd_addr);
-
+BOOLEAN BTM_SecDeleteDevice (BD_ADDR bd_addr, tBT_TRANSPORT transport);
 
 /*******************************************************************************
 **
