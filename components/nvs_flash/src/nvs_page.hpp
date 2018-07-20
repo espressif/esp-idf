@@ -45,11 +45,13 @@ public:
     static const size_t ENTRY_SIZE  = 32;
     static const size_t ENTRY_COUNT = 126;
     static const uint32_t INVALID_ENTRY = 0xffffffff;
-    
-    static const size_t BLOB_MAX_SIZE = ENTRY_SIZE * (ENTRY_COUNT / 2 - 1);
+
+    static const size_t CHUNK_MAX_SIZE = ENTRY_SIZE * (ENTRY_COUNT - 1);
 
     static const uint8_t NS_INDEX = 0;
     static const uint8_t NS_ANY = 255;
+
+    static const uint8_t CHUNK_ANY = Item::CHUNK_ANY;
 
     enum class PageState : uint32_t {
         // All bits set, default state after flash erase. Page has not been initialized yet.
@@ -84,15 +86,15 @@ public:
 
     esp_err_t setSeqNumber(uint32_t seqNumber);
 
-    esp_err_t writeItem(uint8_t nsIndex, ItemType datatype, const char* key, const void* data, size_t dataSize);
+    esp_err_t writeItem(uint8_t nsIndex, ItemType datatype, const char* key, const void* data, size_t dataSize, uint8_t chunkIdx = CHUNK_ANY);
 
-    esp_err_t readItem(uint8_t nsIndex, ItemType datatype, const char* key, void* data, size_t dataSize);
+    esp_err_t readItem(uint8_t nsIndex, ItemType datatype, const char* key, void* data, size_t dataSize, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
 
-    esp_err_t eraseItem(uint8_t nsIndex, ItemType datatype, const char* key);
+    esp_err_t eraseItem(uint8_t nsIndex, ItemType datatype, const char* key, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
 
-    esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key);
+    esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
 
-    esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, size_t &itemIndex, Item& item);
+    esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, size_t &itemIndex, Item& item, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
 
     template<typename T>
     esp_err_t writeItem(uint8_t nsIndex, const char* key, const T& value)
@@ -121,7 +123,7 @@ public:
     {
         return mErasedEntryCount;
     }
-
+    size_t getVarDataTailroom() const ;
 
     esp_err_t markFull();
 

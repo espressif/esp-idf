@@ -229,14 +229,23 @@ public:
     {
         return mSize == 0;
     }
-    
-    
+
     void clear()
     {
         while (mFirst) {
             erase(mFirst);
         }
     }
+
+    void clearAndFreeNodes()
+    {
+        while (mFirst) {
+            auto tmp = mFirst;
+            erase(mFirst);
+            delete tmp;
+        }
+    }
+
 
 protected:
     T* mFirst = nullptr;
