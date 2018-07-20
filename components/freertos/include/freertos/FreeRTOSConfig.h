@@ -211,6 +211,10 @@ int xt_clock_freq(void) __attribute__((deprecated));
 #define configUSE_STATS_FORMATTING_FUNCTIONS    1   /* Used by vTaskList() */
 #endif
 
+#ifdef CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID
+#define configTASKLIST_INCLUDE_COREID   1
+#endif
+
 #ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
 #define configGENERATE_RUN_TIME_STATS   1       /* Used by vTaskGetRunTimeStats() */
 #endif
