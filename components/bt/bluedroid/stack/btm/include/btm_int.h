@@ -491,10 +491,10 @@ typedef struct {
     bool skip_update_conn_param;        /* skip update connection paraams or not*/
 #endif
 #if (BLE_PRIVACY_SPT == TRUE)
-    tBLE_ADDR_TYPE      current_addr_type; /* current adv addr type*/  
+    tBLE_ADDR_TYPE      current_addr_type; /* current adv addr type*/
     BD_ADDR             current_addr;      /* current adv addr*/
     bool                current_addr_valid; /* current addr info is valid or not*/
-#endif   
+#endif
 } tBTM_SEC_BLE;
 
 
@@ -1062,7 +1062,7 @@ void btm_report_device_status (tBTM_DEV_STATUS status);
 BOOLEAN btm_dev_support_switch (BD_ADDR bd_addr);
 
 tBTM_SEC_DEV_REC  *btm_sec_alloc_dev (BD_ADDR bd_addr);
-void               btm_sec_free_dev (tBTM_SEC_DEV_REC *p_dev_rec);
+void              btm_sec_free_dev (tBTM_SEC_DEV_REC *p_dev_rec, tBT_TRANSPORT transport);
 tBTM_SEC_DEV_REC  *btm_find_dev (BD_ADDR bd_addr);
 tBTM_SEC_DEV_REC  *btm_find_or_alloc_dev (BD_ADDR bd_addr);
 tBTM_SEC_DEV_REC  *btm_find_dev_by_handle (UINT16 handle);
