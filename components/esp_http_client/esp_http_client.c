@@ -759,6 +759,9 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
 esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
 {
     esp_err_t err;
+    if (client == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
     do {
         if ((err = esp_http_client_open(client, client->post_len)) != ESP_OK) {
             return err;
@@ -849,6 +852,11 @@ esp_err_t esp_http_client_open(esp_http_client_handle_t client, int write_len)
         client->transport = transport_list_get_transport(client->transport_list, client->connection_info.scheme);
         if (client->transport == NULL) {
             ESP_LOGE(TAG, "No transport found");
+#ifndef CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
+            if (strcasecmp(client->connection_info.scheme, "https") == 0) {
+                ESP_LOGE(TAG, "Please enable HTTPS at menuconfig to allow requesting via https");
+            }
+#endif
             return ESP_ERR_HTTP_INVALID_TRANSPORT;
         }
         if (transport_connect(client->transport, client->connection_info.host, client->connection_info.port, client->timeout_ms) < 0) {
