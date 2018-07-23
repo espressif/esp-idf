@@ -296,7 +296,7 @@ static void http_download_chunk()
 
 static void http_perform_as_stream_reader()
 {
-    char *buffer = malloc(MAX_HTTP_RECV_BUFFER);
+    char *buffer = malloc(MAX_HTTP_RECV_BUFFER + 1);
     if (buffer == NULL) {
         ESP_LOGE(TAG, "Cannot malloc http receive buffer");
         return;
