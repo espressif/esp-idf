@@ -119,7 +119,7 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
 
 static spi_device_handle_t setup_spi_bus(int clkspeed, bool dma) {
     spi_bus_config_t buscfg={
-        .mosi_io_num=4,
+        .mosi_io_num=26,
         .miso_io_num=26,
         .sclk_io_num=25,
         .quadwp_io_num=-1,
@@ -138,22 +138,24 @@ static spi_device_handle_t setup_spi_bus(int clkspeed, bool dma) {
     };
     esp_err_t ret;
     spi_device_handle_t handle;
-    printf("THIS TEST NEEDS A JUMPER BETWEEN IO4 AND IO26\n");
 
     ret=spi_bus_initialize(HSPI_HOST, &buscfg, dma?1:0);
     TEST_ASSERT(ret==ESP_OK);
     ret=spi_bus_add_device(HSPI_HOST, &devcfg, &handle);
     TEST_ASSERT(ret==ESP_OK);
+    //connect MOSI to two devices breaks the output, fix it.
+    gpio_output_sel(26, FUNC_GPIO, HSPID_OUT_IDX);
     printf("Bus/dev inited.\n");
     return handle;
 }
 
-static void spi_test(spi_device_handle_t handle, int num_bytes) {
+static int spi_test(spi_device_handle_t handle, int num_bytes) {
     esp_err_t ret;
     int x;
+    bool success = true;
     srand(num_bytes);
-    char *sendbuf=heap_caps_malloc(num_bytes, MALLOC_CAP_DMA);
-    char *recvbuf=heap_caps_malloc(num_bytes, MALLOC_CAP_DMA);
+    char *sendbuf=heap_caps_malloc((num_bytes+3)&(~3), MALLOC_CAP_DMA);
+    char *recvbuf=heap_caps_malloc((num_bytes+3)&(~3), MALLOC_CAP_DMA);
     for (x=0; x<num_bytes; x++) {
         sendbuf[x]=rand()&0xff;
         recvbuf[x]=0x55;
@@ -182,6 +184,7 @@ static void spi_test(spi_device_handle_t handle, int num_bytes) {
     if (x!=num_bytes) {
         int from=x-16;
         if (from<0) from=0;
+        success = false;
         printf("Error at %d! Sent vs recved: (starting from %d)\n" , x, from);
         for (int i=0; i<32; i++) {
             if (i+from<num_bytes) printf("%02X ", sendbuf[from+i]);
@@ -191,13 +194,12 @@ static void spi_test(spi_device_handle_t handle, int num_bytes) {
             if (i+from<num_bytes) printf("%02X ", recvbuf[from+i]);
         }
         printf("\n");
-//        TEST_ASSERT(0);
     }
 
-    printf("Success!\n");
-
+    if (success) printf("Success!\n");
     free(sendbuf);
     free(recvbuf);
+    return success;
 }
 
 static void destroy_spi_bus(spi_device_handle_t handle) {
@@ -211,26 +213,27 @@ static void destroy_spi_bus(spi_device_handle_t handle) {
 
 #define TEST_LEN 111
 
-TEST_CASE("SPI Master test", "[spi][ignore]")
+TEST_CASE("SPI Master test", "[spi]")
 {
+    bool success = true;
     printf("Testing bus at 80KHz\n");
     spi_device_handle_t handle=setup_spi_bus(80000, true);
-    spi_test(handle, 16); //small
-    spi_test(handle, 21); //small, unaligned
-    spi_test(handle, 36); //aligned
-    spi_test(handle, 128); //aligned
-    spi_test(handle, 129); //unaligned
-    spi_test(handle, 4096-2); //multiple descs, edge case 1
-    spi_test(handle, 4096-1); //multiple descs, edge case 2
-    spi_test(handle, 4096*3); //multiple descs
+    success &= spi_test(handle, 16); //small
+    success &= spi_test(handle, 21); //small, unaligned
+    success &= spi_test(handle, 36); //aligned
+    success &= spi_test(handle, 128); //aligned
+    success &= spi_test(handle, 129); //unaligned
+    success &= spi_test(handle, 4096-2); //multiple descs, edge case 1
+    success &= spi_test(handle, 4096-1); //multiple descs, edge case 2
+    success &= spi_test(handle, 4096*3); //multiple descs
 
     destroy_spi_bus(handle);
 
     printf("Testing bus at 80KHz, non-DMA\n");
     handle=setup_spi_bus(80000, false);
-    spi_test(handle, 4); //aligned
-    spi_test(handle, 16); //small
-    spi_test(handle, 21); //small, unaligned
+    success &= spi_test(handle, 4); //aligned
+    success &= spi_test(handle, 16); //small
+    success &= spi_test(handle, 21); //small, unaligned
 
     destroy_spi_bus(handle);
 
@@ -238,21 +241,23 @@ TEST_CASE("SPI Master test", "[spi][ignore]")
     printf("Testing bus at 26MHz\n");
     handle=setup_spi_bus(20000000, true);
 
-    spi_test(handle, 128); //DMA, aligned
-    spi_test(handle, 4096*3); //DMA, multiple descs
+    success &= spi_test(handle, 128); //DMA, aligned
+    success &= spi_test(handle, 4096*3); //DMA, multiple descs
     destroy_spi_bus(handle);
 
     printf("Testing bus at 900KHz\n");
     handle=setup_spi_bus(9000000, true);
 
-    spi_test(handle, 128); //DMA, aligned
-    spi_test(handle, 4096*3); //DMA, multiple descs
+    success &= spi_test(handle, 128); //DMA, aligned
+    success &= spi_test(handle, 4096*3); //DMA, multiple descs
     destroy_spi_bus(handle);
+    TEST_ASSERT(success);
 }
 
 
-TEST_CASE("SPI Master test, interaction of multiple devs", "[spi][ignore]") {
+TEST_CASE("SPI Master test, interaction of multiple devs", "[spi]") {
     esp_err_t ret;
+    bool success = true;
     spi_device_interface_config_t devcfg={
         .command_bits=0,
         .address_bits=0,
@@ -268,28 +273,29 @@ TEST_CASE("SPI Master test, interaction of multiple devs", "[spi][ignore]") {
     spi_bus_add_device(HSPI_HOST, &devcfg, &handle2);
 
     printf("Sending to dev 1\n");
-    spi_test(handle1, 7);
+    success &= spi_test(handle1, 7);
     printf("Sending to dev 1\n");
-    spi_test(handle1, 15);
+    success &= spi_test(handle1, 15);
     printf("Sending to dev 2\n");
-    spi_test(handle2, 15);
+    success &= spi_test(handle2, 15);
     printf("Sending to dev 1\n");
-    spi_test(handle1, 32);
+    success &= spi_test(handle1, 32);
     printf("Sending to dev 2\n");
-    spi_test(handle2, 32);
+    success &= spi_test(handle2, 32);
     printf("Sending to dev 1\n");
-    spi_test(handle1, 63);
+    success &= spi_test(handle1, 63);
     printf("Sending to dev 2\n");
-    spi_test(handle2, 63);
+    success &= spi_test(handle2, 63);
     printf("Sending to dev 1\n");
-    spi_test(handle1, 5000);
+    success &= spi_test(handle1, 5000);
     printf("Sending to dev 2\n");
-    spi_test(handle2, 5000);
+    success &= spi_test(handle2, 5000);
 
 
     ret=spi_bus_remove_device(handle2);
     TEST_ASSERT(ret==ESP_OK);
     destroy_spi_bus(handle1);
+    TEST_ASSERT(success);
 }
 
 TEST_CASE("spi bus setting with different pin configs", "[spi]")
