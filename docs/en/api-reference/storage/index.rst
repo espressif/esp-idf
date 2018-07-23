@@ -12,6 +12,7 @@ Storage API
    FAT Filesystem <fatfs>
    Wear Levelling <wear-levelling>
    SPIFFS Filesystem <spiffs>
+   Mass Manufacturing Utility <mass_mfg.rst>
 
 
 Example code for this API section is provided in :example:`storage` directory of ESP-IDF examples.
