@@ -305,6 +305,31 @@ test_fatfs_on_host:
     - cd components/fatfs/test_fatfs_host/
     - make test
 
+test_mdns_fuzzer_on_host:
+  stage: host_test
+  image: $CI_DOCKER_REGISTRY/afl-fuzzer-test$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - host_test
+  dependencies: []
+  artifacts:
+    when: always
+    paths:
+      - components/mdns/test_afl_fuzz_host/out/crashes
+    expire_in: 1 mos
+  only:
+    # can only be triggered
+    - triggers
+  variables:
+    BOT_NEEDS_TRIGGER_BY_NAME: 1
+  script:
+    - export AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 && export AFL_SKIP_CPUFREQ=1
+    - cd components/mdns/test_afl_fuzz_host/
+    # run AFL fuzzer for one hour
+    - ( make fuzz || pkill sleep ) &
+    - ( sleep 3600 || mkdir -p out/crashes/env_failed ) && pkill afl-fuz
+    # check no crashes found
+    - "[ -z `ls out/crashes/` ] || exit 1"
+
 test_spiffs_on_host:
   <<: *host_test_template
   tags:
