@@ -32,6 +32,7 @@
 #include "soc/spi_reg.h"
 #include "soc/sens_reg.h"
 #include "soc/dport_reg.h"
+#include "soc/rtc_wdt.h"
 #include "driver/rtc_io.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -238,27 +239,6 @@ void IRAM_ATTR esp_deep_sleep_start()
     }
 }
 
-static void rtc_wdt_enable(int time_ms)
-{
-    WRITE_PERI_REG(RTC_CNTL_WDTWPROTECT_REG, RTC_CNTL_WDT_WKEY_VALUE);
-    WRITE_PERI_REG(RTC_CNTL_WDTFEED_REG, 1);
-    REG_SET_FIELD(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_SYS_RESET_LENGTH, 7);
-    REG_SET_FIELD(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_CPU_RESET_LENGTH, 7);
-    REG_SET_FIELD(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_STG0, RTC_WDT_STG_SEL_RESET_RTC);
-    WRITE_PERI_REG(RTC_CNTL_WDTCONFIG1_REG, rtc_clk_slow_freq_get_hz() * time_ms / 1000);
-    SET_PERI_REG_MASK(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_EN | RTC_CNTL_WDT_PAUSE_IN_SLP);
-    WRITE_PERI_REG(RTC_CNTL_WDTWPROTECT_REG, 0);
-}
-
-static void rtc_wdt_disable()
-{
-    WRITE_PERI_REG(RTC_CNTL_WDTWPROTECT_REG, RTC_CNTL_WDT_WKEY_VALUE);
-    WRITE_PERI_REG(RTC_CNTL_WDTFEED_REG, 1);
-    REG_SET_FIELD(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_STG0, RTC_WDT_STG_SEL_OFF);
-    REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_EN);
-    WRITE_PERI_REG(RTC_CNTL_WDTWPROTECT_REG, 0);
-}
-
 /**
  * Helper function which handles entry to and exit from light sleep
  * Placed into IRAM as flash may need some time to be powered on.
@@ -326,7 +306,17 @@ esp_err_t esp_light_sleep_start()
     rtc_vddsdio_config_t vddsdio_config = rtc_vddsdio_get_config();
 
     // Safety net: enable WDT in case exit from light sleep fails
-    rtc_wdt_enable(1000);
+    bool wdt_was_enabled = rtc_wdt_is_on(); // If WDT was enabled in the user code, then do not change it here.
+    if (!wdt_was_enabled) {
+        rtc_wdt_protect_off();
+        rtc_wdt_disable();
+        rtc_wdt_set_length_of_reset_signal(RTC_WDT_SYS_RESET_SIG, RTC_WDT_LENGTH_3_2us);
+        rtc_wdt_set_length_of_reset_signal(RTC_WDT_CPU_RESET_SIG, RTC_WDT_LENGTH_3_2us);
+        rtc_wdt_set_stage(RTC_WDT_STAGE0, RTC_WDT_STAGE_ACTION_RESET_RTC);
+        rtc_wdt_set_time(RTC_WDT_STAGE0, 1000);
+        rtc_wdt_enable();
+        rtc_wdt_protect_on();
+    }
 
     // Enter sleep, then wait for flash to be ready on wakeup
     esp_err_t err = esp_light_sleep_inner(pd_flags,
@@ -352,7 +342,9 @@ esp_err_t esp_light_sleep_start()
 
     esp_timer_impl_unlock();
     DPORT_STALL_OTHER_CPU_END();
-    rtc_wdt_disable();
+    if (!wdt_was_enabled) {
+        rtc_wdt_disable();
+    }
     portEXIT_CRITICAL(&light_sleep_lock);
     return err;
 }

@@ -61,12 +61,6 @@ esp_err_t esp_set_watchpoint(int no, void *adr, int size, int flags);
  */
 void esp_clear_watchpoint(int no);
 
-
-/**
- * @brief Stops panic WDT
- */
-void esp_panic_wdt_stop(void);
-
 /**
  * @brief Checks stack pointer
  */
