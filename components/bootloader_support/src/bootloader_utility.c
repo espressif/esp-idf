@@ -49,6 +49,7 @@
 #include "bootloader_random.h"
 #include "bootloader_config.h"
 #include "bootloader_common.h"
+#include "bootloader_utility.h"
 
 static const char* TAG = "boot";
 
@@ -287,7 +288,7 @@ void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_
             load_image(&image_data);
         } else {
             ESP_LOGE(TAG, "No bootable test partition in the partition table");
-            return;
+            bootloader_reset();
         }
     }
 
@@ -324,6 +325,7 @@ void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_
 
     ESP_LOGE(TAG, "No bootable app partitions in the partition table");
     bzero(&image_data, sizeof(esp_image_metadata_t));
+    bootloader_reset();
 }
 
 // Copy loaded segments to RAM, set up caches for mapped segments, and start application.
@@ -360,8 +362,7 @@ static void load_image(const esp_image_metadata_t* image_data)
            so issue a system reset to ensure flash encryption
            cache resets properly */
         ESP_LOGI(TAG, "Resetting with flash encryption enabled...");
-        REG_WRITE(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);
-        return;
+        bootloader_reset();
     }
 #endif
 
@@ -461,4 +462,18 @@ static void set_cache_and_start_app(
     // TODO: we have used quite a bit of stack at this point.
     // use "movsp" instruction to reset stack back to where ROM stack starts.
     (*entry)();
+}
+
+
+void bootloader_reset(void)
+{
+#ifdef BOOTLOADER_BUILD
+    uart_tx_flush(0);    /* Ensure any buffered log output is displayed */
+    uart_tx_flush(1);
+    ets_delay_us(1000); /* Allow last byte to leave FIFO */
+    REG_WRITE(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);
+    while (1) { }       /* This line will never be reached, used to keep gcc happy */
+#else
+    abort();            /* This function should really not be called from application code */
+#endif
 }
