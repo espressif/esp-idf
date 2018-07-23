@@ -1,10 +1,10 @@
 COMPONENT_ADD_INCLUDEDIRS := include
-COMPONENT_PRIV_INCLUDEDIRS := include_priv
 
 ifdef IS_BOOTLOADER_BUILD
-# share "private" headers with the bootloader component
-# eventual goal: all functionality that needs this lives in bootloader_support
-COMPONENT_ADD_INCLUDEDIRS += include_priv
+# share "include_bootloader" headers with bootloader main component
+COMPONENT_ADD_INCLUDEDIRS += include_bootloader
+else
+COMPONENT_PRIV_INCLUDEDIRS := include_bootloader
 endif
 
 COMPONENT_SRCDIRS := src
