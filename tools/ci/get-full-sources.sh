@@ -30,16 +30,16 @@ die() {
 [ -z ${GITLAB_SSH_SERVER} ] && die "GITLAB_SSH_SERVER should be defined to run mirror-submodule-update.sh"
 [ -z ${CI_REPOSITORY_URL} ] && die "CI_REPOSITORY_URL should be defined to run mirror-submodule-update.sh"
 [ -z ${CI_COMMIT_SHA} ] && die "CI_COMMIT_SHA should be defined to run mirror-submodule-update.sh"
-[[ ( -z ${IS_PRIVATE} ) && ( -z ${IS_PUBLIC} ) ]] && die "IS_PRIVATE or IS_PUBLIC should be defined in the CI environment."
+DONT_USE_MIRROR=${DONT_USE_MIRROR:-"0"}
 
 ERR_CANNOT_UPDATE=13
 
 SCRIPT_DIR=$(dirname -- "${0}")
 update_submodules() {
-    if [ "${IS_PRIVATE}" ]; then
-        ${SCRIPT_DIR}/mirror-submodule-update.sh || return $?
-    else
+    if [ "${DONT_USE_MIRROR}" = "1" ]; then
         git submodule update --init --recursive
+    else
+        ${SCRIPT_DIR}/mirror-submodule-update.sh || return $?
     fi
 }
 
