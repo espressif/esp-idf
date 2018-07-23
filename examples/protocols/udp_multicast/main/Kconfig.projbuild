@@ -58,7 +58,7 @@ config EXAMPLE_MULTICAST_IPV6_ADDR
 config EXAMPLE_PORT
     int "Multicast port (send & receive)"
     range 0 65535
-    default 333
+    default 3333
     help
         Multicast port the example will both send & receive UDP packets on.
 
