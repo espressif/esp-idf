@@ -23,7 +23,7 @@
 #include "esp_system.h"
 #include "esp_err.h"
 
-#include "http_utils.h"
+#include "transport_utils.h"
 #include "transport.h"
 
 static const char *TAG = "TRANS_TCP";
@@ -31,6 +31,8 @@ static const char *TAG = "TRANS_TCP";
 typedef struct {
     int sock;
 } transport_tcp_t;
+
+transport_handle_t transport_get_handle(transport_handle_t t);
 
 static int resolve_dns(const char *host, struct sockaddr_in *ip) {
 
@@ -74,7 +76,7 @@ static int tcp_connect(transport_handle_t t, const char *host, int port, int tim
     remote_ip.sin_family = AF_INET;
     remote_ip.sin_port = htons(port);
 
-    http_utils_ms_to_timeval(timeout_ms, &tv);
+    transport_utils_ms_to_timeval(timeout_ms, &tv);
 
     setsockopt(tcp->sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
@@ -119,7 +121,7 @@ static int tcp_poll_read(transport_handle_t t, int timeout_ms)
     FD_ZERO(&readset);
     FD_SET(tcp->sock, &readset);
     struct timeval timeout;
-    http_utils_ms_to_timeval(timeout_ms, &timeout);
+    transport_utils_ms_to_timeval(timeout_ms, &timeout);
     return select(tcp->sock + 1, &readset, NULL, NULL, &timeout);
 }
 
@@ -130,7 +132,7 @@ static int tcp_poll_write(transport_handle_t t, int timeout_ms)
     FD_ZERO(&writeset);
     FD_SET(tcp->sock, &writeset);
     struct timeval timeout;
-    http_utils_ms_to_timeval(timeout_ms, &timeout);
+    transport_utils_ms_to_timeval(timeout_ms, &timeout);
     return select(tcp->sock + 1, NULL, &writeset, NULL, &timeout);
 }
 
@@ -157,9 +159,9 @@ transport_handle_t transport_tcp_init()
 {
     transport_handle_t t = transport_init();
     transport_tcp_t *tcp = calloc(1, sizeof(transport_tcp_t));
-    HTTP_MEM_CHECK(TAG, tcp, return NULL);
+    TRANSPORT_MEM_CHECK(TAG, tcp, return NULL);
     tcp->sock = -1;
-    transport_set_func(t, tcp_connect, tcp_read, tcp_write, tcp_close, tcp_poll_read, tcp_poll_write, tcp_destroy);
+    transport_set_func(t, tcp_connect, tcp_read, tcp_write, tcp_close, tcp_poll_read, tcp_poll_write, tcp_destroy, transport_get_handle);
     transport_set_context_data(t, tcp);
 
     return t;

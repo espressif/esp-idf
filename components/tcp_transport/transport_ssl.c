@@ -23,7 +23,7 @@
 
 #include "transport.h"
 #include "transport_ssl.h"
-#include "http_utils.h"
+#include "transport_utils.h"
 
 static const char *TAG = "TRANS_SSL";
 /**
@@ -36,6 +36,8 @@ typedef struct {
     bool                     ssl_initialized;
     bool                     verify_server;
 } transport_ssl_t;
+
+transport_handle_t transport_get_handle(transport_handle_t t);
 
 static int ssl_close(transport_handle_t t);
 
@@ -65,7 +67,7 @@ static int ssl_poll_read(transport_handle_t t, int timeout_ms)
     FD_ZERO(&readset);
     FD_SET(ssl->tls->sockfd, &readset);
     struct timeval timeout;
-    http_utils_ms_to_timeval(timeout_ms, &timeout);
+    transport_utils_ms_to_timeval(timeout_ms, &timeout);
 
     return select(ssl->tls->sockfd + 1, &readset, NULL, NULL, &timeout);
 }
@@ -77,7 +79,7 @@ static int ssl_poll_write(transport_handle_t t, int timeout_ms)
     FD_ZERO(&writeset);
     FD_SET(ssl->tls->sockfd, &writeset);
     struct timeval timeout;
-    http_utils_ms_to_timeval(timeout_ms, &timeout);
+    transport_utils_ms_to_timeval(timeout_ms, &timeout);
     return select(ssl->tls->sockfd + 1, NULL, &writeset, NULL, &timeout);
 }
 
@@ -147,9 +149,9 @@ transport_handle_t transport_ssl_init()
 {
     transport_handle_t t = transport_init();
     transport_ssl_t *ssl = calloc(1, sizeof(transport_ssl_t));
-    HTTP_MEM_CHECK(TAG, ssl, return NULL);
+    TRANSPORT_MEM_CHECK(TAG, ssl, return NULL);
     transport_set_context_data(t, ssl);
-    transport_set_func(t, ssl_connect, ssl_read, ssl_write, ssl_close, ssl_poll_read, ssl_poll_write, ssl_destroy);
+    transport_set_func(t, ssl_connect, ssl_read, ssl_write, ssl_close, ssl_poll_read, ssl_poll_write, ssl_destroy, transport_get_handle);
     return t;
 }
 

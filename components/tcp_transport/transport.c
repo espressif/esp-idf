@@ -20,7 +20,7 @@
 #include "esp_log.h"
 
 #include "transport.h"
-#include "http_utils.h"
+#include "transport_utils.h"
 
 static const char *TAG = "TRANSPORT";
 
@@ -40,6 +40,8 @@ struct transport_item_t {
     poll_func       _poll_read;     /*!< Poll and read */
     poll_func       _poll_write;    /*!< Poll and write */
     trans_func      _destroy;       /*!< Destroy and free transport */
+    payload_transfer_func  _parrent_transfer;       /*!< Function returning underlying transport layer */
+
     STAILQ_ENTRY(transport_item_t) next;
 };
 
@@ -53,7 +55,7 @@ STAILQ_HEAD(transport_list_t, transport_item_t);
 transport_list_handle_t transport_list_init()
 {
     transport_list_handle_t list = calloc(1, sizeof(struct transport_list_t));
-    HTTP_MEM_CHECK(TAG, list, return NULL);
+    TRANSPORT_MEM_CHECK(TAG, list, return NULL);
     STAILQ_INIT(list);
     return list;
 }
@@ -64,7 +66,7 @@ esp_err_t transport_list_add(transport_list_handle_t list, transport_handle_t t,
         return ESP_ERR_INVALID_ARG;
     }
     t->scheme = calloc(1, strlen(scheme) + 1);
-    HTTP_MEM_CHECK(TAG, t->scheme, return ESP_ERR_NO_MEM);
+    TRANSPORT_MEM_CHECK(TAG, t->scheme, return ESP_ERR_NO_MEM);
     strcpy(t->scheme, scheme);
     STAILQ_INSERT_TAIL(list, t, next);
     return ESP_OK;
@@ -113,8 +115,16 @@ esp_err_t transport_list_clean(transport_list_handle_t list)
 transport_handle_t transport_init()
 {
     transport_handle_t t = calloc(1, sizeof(struct transport_item_t));
-    HTTP_MEM_CHECK(TAG, t, return NULL);
+    TRANSPORT_MEM_CHECK(TAG, t, return NULL);
     return t;
+}
+
+transport_handle_t transport_get_payload_transport_handle(transport_handle_t t)
+{
+    if (t && t->_read) {
+        return t->_parrent_transfer(t);
+    }
+    return NULL;
 }
 
 esp_err_t transport_destroy(transport_handle_t t)
@@ -199,7 +209,8 @@ esp_err_t transport_set_func(transport_handle_t t,
                              trans_func _close,
                              poll_func _poll_read,
                              poll_func _poll_write,
-                             trans_func _destroy)
+                             trans_func _destroy,
+                             payload_transfer_func _parrent_transport)
 {
     if (t == NULL) {
         return ESP_FAIL;
@@ -211,6 +222,7 @@ esp_err_t transport_set_func(transport_handle_t t,
     t->_poll_read = _poll_read;
     t->_poll_write = _poll_write;
     t->_destroy = _destroy;
+    t->_parrent_transfer = _parrent_transport;
     return ESP_OK;
 }
 
@@ -229,4 +241,9 @@ esp_err_t transport_set_default_port(transport_handle_t t, int port)
     }
     t->port = port;
     return ESP_OK;
+}
+
+transport_handle_t transport_get_handle(transport_handle_t t)
+{
+    return t;
 }

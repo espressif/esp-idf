@@ -30,6 +30,7 @@ typedef int (*io_func)(transport_handle_t t, const char *buffer, int len, int ti
 typedef int (*io_read_func)(transport_handle_t t, char *buffer, int len, int timeout_ms);
 typedef int (*trans_func)(transport_handle_t t);
 typedef int (*poll_func)(transport_handle_t t, int timeout_ms);
+typedef transport_handle_t (*payload_transfer_func)(transport_handle_t);
 
 /**
  * @brief      Create transport list
@@ -212,6 +213,17 @@ int transport_close(transport_handle_t t);
 void *transport_get_context_data(transport_handle_t t);
 
 /**
+ * @brief      Get transport handle of underlying protocol
+ *             which can access this protocol payload directly
+ *             (used for receiving longer msg multiple times)
+ *
+ * @param[in]  t        The transport handle
+ *
+ * @return     Payload transport handle
+ */
+transport_handle_t transport_get_payload_transport_handle(transport_handle_t t);
+
+/**
  * @brief      Set the user context data for this transport
  *
  * @param[in]  t        The transport handle
@@ -233,6 +245,7 @@ esp_err_t transport_set_context_data(transport_handle_t t, void *data);
  * @param[in]  _poll_read   The poll read function pointer
  * @param[in]  _poll_write  The poll write function pointer
  * @param[in]  _destroy     The destroy function pointer
+ * @param[in]  _parrent_transport     The parrent transfer getter pointer
  *
  * @return
  *     - ESP_OK
@@ -244,7 +257,8 @@ esp_err_t transport_set_func(transport_handle_t t,
                              trans_func _close,
                              poll_func _poll_read,
                              poll_func _poll_write,
-                             trans_func _destroy);
+                             trans_func _destroy,
+                             payload_transfer_func _parrent_transport);
 #ifdef __cplusplus
 }
 #endif
