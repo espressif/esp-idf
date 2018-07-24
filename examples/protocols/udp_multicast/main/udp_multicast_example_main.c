@@ -499,13 +499,14 @@ static void mcast_example_task(void *pvParameters)
 #ifdef CONFIG_EXAMPLE_IPV4_ONLY
                 ((struct sockaddr_in *)res->ai_addr)->sin_port = htons(UDP_PORT);
                 inet_ntoa_r(((struct sockaddr_in *)res->ai_addr)->sin_addr, addrbuf, sizeof(addrbuf)-1);
-                ESP_LOGI(TAG, "Sending to IPV4 multicast address %s...",  addrbuf);
+                ESP_LOGI(TAG, "Sending to IPV4 multicast address %s:%d...",  addrbuf, UDP_PORT);
 #else
                 ((struct sockaddr_in6 *)res->ai_addr)->sin6_port = htons(UDP_PORT);
                 inet6_ntoa_r(((struct sockaddr_in6 *)res->ai_addr)->sin6_addr, addrbuf, sizeof(addrbuf)-1);
-                ESP_LOGI(TAG, "Sending to IPV6 (V4 mapped) multicast address %s (%s)...",  addrbuf, CONFIG_EXAMPLE_MULTICAST_IPV4_ADDR);
+                ESP_LOGI(TAG, "Sending to IPV6 (V4 mapped) multicast address %s port %d (%s)...",  addrbuf, UDP_PORT, CONFIG_EXAMPLE_MULTICAST_IPV4_ADDR);
 #endif
                 err = sendto(sock, sendbuf, len, 0, res->ai_addr, res->ai_addrlen);
+                freeaddrinfo(res);
                 if (err < 0) {
                     ESP_LOGE(TAG, "IPV4 sendto failed. errno: %d", errno);
                     break;
@@ -523,12 +524,12 @@ static void mcast_example_task(void *pvParameters)
                     break;
                 }
 
-
                 struct sockaddr_in6 *s6addr = (struct sockaddr_in6 *)res->ai_addr;
                 s6addr->sin6_port = htons(UDP_PORT);
                 inet6_ntoa_r(s6addr->sin6_addr, addrbuf, sizeof(addrbuf)-1);
-                ESP_LOGI(TAG, "Sending to IPV6 multicast address %s...",  addrbuf);
+                ESP_LOGI(TAG, "Sending to IPV6 multicast address %s port %d...",  addrbuf, UDP_PORT);
                 err = sendto(sock, sendbuf, len, 0, res->ai_addr, res->ai_addrlen);
+                freeaddrinfo(res);
                 if (err < 0) {
                     ESP_LOGE(TAG, "IPV6 sendto failed. errno: %d", errno);
                     break;
