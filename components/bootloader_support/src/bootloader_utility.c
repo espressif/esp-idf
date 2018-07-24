@@ -211,8 +211,8 @@ int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
         bootloader_munmap(ota_select_map);
 
         ESP_LOGD(TAG, "OTA sequence values A 0x%08x B 0x%08x", sa.ota_seq, sb.ota_seq);
-        if(sa.ota_seq == UINT32_MAX && sb.ota_seq == UINT32_MAX) {
-            ESP_LOGD(TAG, "OTA sequence numbers both empty (all-0xFF)");
+        if ((sa.ota_seq == UINT32_MAX && sb.ota_seq == UINT32_MAX) || (bs->app_count == 0)) {
+            ESP_LOGD(TAG, "OTA sequence numbers both empty (all-0xFF) or partition table does not have bootable ota_apps (app_count=%d)", bs->app_count);
             if (bs->factory.offset != 0) {
                 ESP_LOGI(TAG, "Defaulting to factory image");
                 return FACTORY_INDEX;
