@@ -49,7 +49,7 @@ extern SLIST_HEAD(registered_heap_ll, heap_t_) registered_heaps;
 bool heap_caps_match(const heap_t *heap, uint32_t caps);
 
 /* return all possible capabilities (across all priorities) for a given heap */
-inline static uint32_t get_all_caps(const heap_t *heap)
+inline static IRAM_ATTR uint32_t get_all_caps(const heap_t *heap)
 {
     if (heap->heap == NULL) {
         return 0;
