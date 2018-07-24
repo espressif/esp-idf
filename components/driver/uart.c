@@ -1464,7 +1464,7 @@ esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode)
     case UART_MODE_RS485_COLLISION_DETECT:
         // This mode allows read while transmitting that allows collision detection
         p_uart_obj[uart_num]->coll_det_flg = false;
-        // Transmitter’s output signal loop back to the receiver’s input signal
+        // TransmitterÂ’s output signal loop back to the receiverÂ’s input signal
         UART[uart_num]->rs485_conf.tx_rx_en = 0 ;
         // Transmitter should send data when its receiver is busy
         UART[uart_num]->rs485_conf.rx_busy_tx_en = 1;

@@ -47,21 +47,21 @@
 
 /* command type codes */
 #define AVRC_CMD_CTRL       0   /* Instruct a target to perform an operation */
-#define AVRC_CMD_STATUS     1   /* Check a device’s current status */
+#define AVRC_CMD_STATUS     1   /* Check a deviceÂ’s current status */
 #define AVRC_CMD_SPEC_INQ   2   /* Check whether a target supports a particular
                                    control command; all operands are included */
-#define AVRC_CMD_NOTIF      3   /* Used for receiving notification of a change in a device’s state */
+#define AVRC_CMD_NOTIF      3   /* Used for receiving notification of a change in a deviceÂ’s state */
 #define AVRC_CMD_GEN_INQ    4   /* Check whether a target supports a particular
                                    control command; operands are not included */
 
 /* response type codes */
 #define AVRC_RSP_NOT_IMPL   8   /* The target does not implement the command specified
                                    by the opcode and operand,
-                                   or doesn’t implement the specified subunit */
+                                   or doesnÂ’t implement the specified subunit */
 #define AVRC_RSP_ACCEPT     9   /* The target executed or is executing the command */
 #define AVRC_RSP_REJ        10  /* The target implements the command specified by the
                                    opcode but cannot respond because the current state
-                                   of the target doesn’t allow it */
+                                   of the target doesnÂ’t allow it */
 #define AVRC_RSP_IN_TRANS   11  /* The target implements the status command but it is
                                    in a state of transition; the status command may
                                    be retried at a future time */
@@ -70,7 +70,7 @@
                                    commands, the target returns stable and includes
                                    the status results */
 #define AVRC_RSP_CHANGED    13  /* The response frame contains a notification that the
-                                   target device’s state has changed */
+                                   target deviceÂ’s state has changed */
 #define AVRC_RSP_INTERIM    15  /* For control commands, the target has accepted the
                                    request but cannot return information within 100
                                    milliseconds; for notify commands, the target accepted
