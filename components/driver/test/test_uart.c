@@ -1,4 +1,5 @@
 #include <string.h>
+#include <sys/param.h>
 #include "unity.h"
 #include "test_utils.h"             // unity_send_signal
 #include "driver/uart.h"            // for the uart driver access
@@ -159,26 +160,19 @@ static uint16_t get_buffer_crc16( uint8_t * frame_ptr, uint16_t length )
 static uint16_t buffer_fill_random(uint8_t *buffer, size_t length)
 {
     TEST_ASSERT( buffer != NULL);
-    uint8_t *byte_buffer = (uint8_t *)buffer;
-    uint32_t random;
-    // Pcket is too short
+    // Packet is too short
     if (length < 4) {
         return 0;
     }
-    for (int i = 0; i < length; i++) {
-        if (i == 0 || i % 4 == 0) { 
-            // Generates random int32_t number
-            random = esp_random();
-        }
-
-        // Place each byte of the uint32_t random number into buffer
-        byte_buffer[i] = random >> ((i % 4) * 8);
+    for (int i = 0; i < length; i += 4) {
+        uint32_t random = esp_random();
+        memcpy(buffer + i, &random, MIN(length - i, 4));
     }
     // Get checksum of the buffer
-    uint16_t crc = get_buffer_crc16((uint8_t*)byte_buffer, (length - 2));
+    uint16_t crc = get_buffer_crc16((uint8_t*)buffer, (length - 2));
     // Apply checksum bytes into packet
-    byte_buffer[length - 2] = (uint8_t)(crc & 0xFF);         // Set Low byte CRC
-    byte_buffer[length - 1] = (uint8_t)(crc >> 8);           // Set High byte CRC
+    buffer[length - 2] = (uint8_t)(crc & 0xFF);         // Set Low byte CRC
+    buffer[length - 1] = (uint8_t)(crc >> 8);           // Set High byte CRC
     return crc;
 }
 
@@ -241,7 +235,7 @@ static void rs485_slave()
         if (len > 2) {
             esp_err_t status = print_packet_data("Received ", slave_data, len);
 
-            // If recieved packet is correct then send it back
+            // If received packet is correct then send it back
             if (status == ESP_OK) {
                 uart_write_bytes(UART_NUM1, (char*)slave_data, len);
                 good_count++;
