@@ -64,6 +64,11 @@ esp_err_t Page::load(uint32_t sectorNumber)
     } else {
         mState = header.mState;
         mSeqNumber = header.mSeqNumber;
+        if(header.mVersion < NVS_VERSION) {
+            return ESP_ERR_NVS_NEW_VERSION_FOUND;
+        } else {
+            mVersion = header.mVersion;
+        }
     }
 
     switch (mState) {
@@ -633,6 +638,7 @@ esp_err_t Page::initialize()
     Header header;
     header.mState = mState;
     header.mSeqNumber = mSeqNumber;
+    header.mVersion = mVersion;
     header.mCrc32 = header.calculateCrc32();
 
     auto rc = spi_flash_write(mBaseAddress, &header, sizeof(header));
@@ -823,6 +829,15 @@ esp_err_t Page::setSeqNumber(uint32_t seqNumber)
         return ESP_ERR_NVS_INVALID_STATE;
     }
     mSeqNumber = seqNumber;
+    return ESP_OK;
+}
+
+esp_err_t Page::setVersion(uint8_t ver)
+{
+    if (mState != PageState::UNINITIALIZED) {
+        return ESP_ERR_NVS_INVALID_STATE;
+    }
+    mVersion = ver;
     return ESP_OK;
 }
 

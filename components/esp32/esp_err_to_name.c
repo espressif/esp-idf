@@ -161,6 +161,11 @@ static const esp_err_msg_t esp_err_msg_table[] = {
     ERR_TBL_IT(ESP_ERR_NVS_PART_NOT_FOUND),                 /*  4367 0x110f Partition with specified name is not found
                                                                             in the partition table */
 #   endif
+#   ifdef      ESP_ERR_NVS_NEW_VERSION_FOUND
+    ERR_TBL_IT(ESP_ERR_NVS_NEW_VERSION_FOUND),              /*  4368 0x1110 NVS partition contains data in new format
+                                                                            and cannot be recognized by this version of
+                                                                            code */
+#   endif
     // components/ulp/include/esp32/ulp.h
 #   ifdef      ESP_ERR_ULP_BASE
     ERR_TBL_IT(ESP_ERR_ULP_BASE),                           /*  4608 0x1200 Offset for ULP-related error codes */
