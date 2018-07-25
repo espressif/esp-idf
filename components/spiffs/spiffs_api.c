@@ -23,7 +23,7 @@ const char* TAG = "SPIFFS";
 
 void spiffs_api_lock(spiffs *fs)
 {
-    xSemaphoreTake(((esp_spiffs_t *)(fs->user_data))->lock, portMAX_DELAY);
+    (void) xSemaphoreTake(((esp_spiffs_t *)(fs->user_data))->lock, portMAX_DELAY);
 }
 
 void spiffs_api_unlock(spiffs *fs)
