@@ -646,6 +646,14 @@ config BROWNOUT_DET_LVL
     default 7 if BROWNOUT_DET_LVL_SEL_7
 
 
+#Reduce PHY TX power when brownout reset
+config REDUCE_PHY_TX_POWER
+    bool "Reduce PHY TX power when brownout reset"
+    depends on BROWNOUT_DET
+    default y
+    help
+        When brownout reset occurs, reduce PHY TX power to keep the code running
+
 # Note about the use of "FRC1" name: currently FRC1 timer is not used for
 # high resolution timekeeping anymore. Instead the esp_timer API, implemented
 # using FRC2 timer, is used.
