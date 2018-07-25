@@ -131,7 +131,7 @@ typedef struct {
  *     - `esp_http_client_handle_t`
  *     - NULL if any errors
  */
-esp_http_client_handle_t esp_http_client_init(esp_http_client_config_t *config);
+esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *config);
 
 /**
  * @brief      Invoke this function after `esp_http_client_init` and all the options calls are made, and will perform the
@@ -350,6 +350,17 @@ esp_err_t esp_http_client_close(esp_http_client_handle_t client);
  */
 esp_err_t esp_http_client_cleanup(esp_http_client_handle_t client);
 
+/**
+ * @brief      Get transport type
+ *
+ * @param[in]  client   The esp_http_client handle
+ *
+ * @return
+ *     - HTTP_TRANSPORT_UNKNOWN
+ *     - HTTP_TRANSPORT_OVER_TCP
+ *     - HTTP_TRANSPORT_OVER_SSL
+ */
+esp_http_client_transport_t esp_http_client_get_transport_type(esp_http_client_handle_t client);
 
 
 #ifdef __cplusplus
