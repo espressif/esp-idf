@@ -43,7 +43,7 @@ TEST_CASE("Capabilities allocator test", "[heap]")
     //the following gives size of IRAM-only (not D/IRAM) memory.
     size_t free_iram = heap_caps_get_free_size(MALLOC_CAP_INTERNAL) -
                            heap_caps_get_free_size(MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
-    size_t alloc32 = MIN(free_iram / 2, 10*1024);
+    size_t alloc32 = MIN(free_iram / 2, 10*1024) & (~3);
     printf("Freeing; allocating %u bytes of 32K-capable RAM\n", alloc32);
     m1 = heap_caps_malloc(alloc32, MALLOC_CAP_32BIT);
     printf("--> %p\n", m1);
