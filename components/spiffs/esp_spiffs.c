@@ -32,6 +32,8 @@
 #include "rom/spi_flash.h"
 #include "spiffs_api.h"
 
+static const char* TAG = "SPIFFS";
+
 #ifdef CONFIG_SPIFFS_USE_MTIME
 _Static_assert(CONFIG_SPIFFS_META_LENGTH >= sizeof(time_t),
         "SPIFFS_META_LENGTH size should be >= sizeof(time_t)");

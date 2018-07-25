@@ -9,11 +9,11 @@
 
 #include "catch.hpp"
 
-extern "C" void init_spi_flash(size_t chip_size, size_t block_size, size_t sector_size, size_t page_size, const char* partition_bin);
+extern "C" void init_spi_flash(const char* chip_size, size_t block_size, size_t sector_size, size_t page_size, const char* partition_bin);
 
 TEST_CASE("create volume, open file, write and read back data", "[fatfs]")
 {
-    init_spi_flash(0x00400000, CONFIG_WL_SECTOR_SIZE * 16, CONFIG_WL_SECTOR_SIZE, CONFIG_WL_SECTOR_SIZE, "partition_table.bin");
+    init_spi_flash(CONFIG_ESPTOOLPY_FLASHSIZE, CONFIG_WL_SECTOR_SIZE * 16, CONFIG_WL_SECTOR_SIZE, CONFIG_WL_SECTOR_SIZE, "partition_table.bin");
 
     FRESULT fr_result;
     BYTE pdrv;
