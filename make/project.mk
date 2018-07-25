@@ -345,7 +345,9 @@ else
 CXXFLAGS += -fno-exceptions
 endif
 
-export CFLAGS CPPFLAGS CXXFLAGS
+ARFLAGS := cru
+
+export CFLAGS CPPFLAGS CXXFLAGS ARFLAGS
 
 # Set default values that were not previously defined
 CC ?= gcc

@@ -1,5 +1,5 @@
 ifndef COMPONENT
-COMPONENT := spi_flash
+COMPONENT := stubs
 endif
 
 COMPONENT_LIB := lib$(COMPONENT).a

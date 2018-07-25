@@ -299,8 +299,6 @@ test_wl_on_host:
 
 test_fatfs_on_host:
   <<: *host_test_template
-  tags:
-    - wl_host_test
   script:
     - cd components/fatfs/test_fatfs_host/
     - make test
@@ -332,8 +330,6 @@ test_mdns_fuzzer_on_host:
 
 test_spiffs_on_host:
   <<: *host_test_template
-  tags:
-    - wl_host_test
   script:
     - cd components/spiffs/test_spiffs_host/
     - make test
