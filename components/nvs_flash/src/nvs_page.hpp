@@ -53,6 +53,8 @@ public:
 
     static const uint8_t CHUNK_ANY = Item::CHUNK_ANY;
 
+    static const uint8_t NVS_VERSION = 0xfe; // Decrement to upgrade
+
     enum class PageState : uint32_t {
         // All bits set, default state after flash erase. Page has not been initialized yet.
         UNINITIALIZED = 0xffffffff,
