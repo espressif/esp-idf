@@ -83,8 +83,8 @@ TEST_CASE("wifi stop and deinit","[wifi]")
     //init nvs
     ESP_LOGI(TAG, EMPH_STR("nvs_flash_init"));
     esp_err_t r = nvs_flash_init();
-    if (r == ESP_ERR_NVS_NO_FREE_PAGES) {
-        ESP_LOGI(TAG, EMPH_STR("no free pages, erase.."));
+    if (r == ESP_ERR_NVS_NO_FREE_PAGES || r == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_LOGI(TAG, EMPH_STR("no free pages or nvs version mismatch, erase.."));
         TEST_ESP_OK(nvs_flash_erase());
         r = nvs_flash_init();
     } 

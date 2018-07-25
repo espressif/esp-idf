@@ -56,8 +56,8 @@ TEST_CASE("adc2 work with wifi","[adc]")
     //init wifi
     printf("nvs init\n");
     esp_err_t r = nvs_flash_init();
-    if (r == ESP_ERR_NVS_NO_FREE_PAGES) {
-        printf("no free pages, erase..\n");
+    if (r == ESP_ERR_NVS_NO_FREE_PAGES || r == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        printf("no free pages or nvs version mismatch, erase..\n");
         TEST_ESP_OK(nvs_flash_erase());
         r = nvs_flash_init();
     } 
