@@ -278,7 +278,7 @@ esp_err_t esp_http_client_delete_header(esp_http_client_handle_t client, const c
     return http_header_delete(client->request->headers, key);
 }
 
-static esp_err_t _set_config(esp_http_client_handle_t client, esp_http_client_config_t *config)
+static esp_err_t _set_config(esp_http_client_handle_t client, const esp_http_client_config_t *config)
 {
     client->connection_info.method = config->method;
     client->connection_info.port = config->port;
@@ -416,7 +416,7 @@ static esp_err_t esp_http_client_prepare(esp_http_client_handle_t client)
     return ESP_OK;
 }
 
-esp_http_client_handle_t esp_http_client_init(esp_http_client_config_t *config)
+esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *config)
 {
 
     esp_http_client_handle_t client;
@@ -1010,4 +1010,15 @@ int esp_http_client_get_content_length(esp_http_client_handle_t client)
 bool esp_http_client_is_chunked_response(esp_http_client_handle_t client)
 {
     return client->response->is_chunked;
+}
+
+esp_http_client_transport_t esp_http_client_get_transport_type(esp_http_client_handle_t client)
+{
+    if (!strcmp(client->connection_info.scheme, "https") ) {
+        return HTTP_TRANSPORT_OVER_SSL;
+    } else if (!strcmp(client->connection_info.scheme, "http")) {
+        return HTTP_TRANSPORT_OVER_TCP;
+    } else {
+        return HTTP_TRANSPORT_UNKNOWN;
+    }
 }
