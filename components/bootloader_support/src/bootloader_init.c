@@ -143,8 +143,21 @@ static esp_err_t bootloader_main()
     ESP_LOGI(TAG, "compile time " __TIME__ );
     ets_set_appcpu_boot_addr(0);
 
+#ifdef CONFIG_BOOTLOADER_WDT_ENABLE
+    ESP_LOGD(TAG, "Enabling RTCWDT(%d ms)", CONFIG_BOOTLOADER_WDT_TIME_MS);
+    rtc_wdt_protect_off();
+    rtc_wdt_disable();
+    rtc_wdt_set_length_of_reset_signal(RTC_WDT_SYS_RESET_SIG, RTC_WDT_LENGTH_3_2us);
+    rtc_wdt_set_length_of_reset_signal(RTC_WDT_CPU_RESET_SIG, RTC_WDT_LENGTH_3_2us);
+    rtc_wdt_set_stage(RTC_WDT_STAGE0, RTC_WDT_STAGE_ACTION_RESET_RTC);
+    rtc_wdt_set_time(RTC_WDT_STAGE0, CONFIG_BOOTLOADER_WDT_TIME_MS);
+    rtc_wdt_enable();
+    rtc_wdt_protect_on();
+#else
     /* disable watch dog here */
     rtc_wdt_disable();
+#endif
+    REG_SET_FIELD(TIMG_WDTWPROTECT_REG(0), TIMG_WDT_WKEY,  TIMG_WDT_WKEY_VALUE);
     REG_CLR_BIT( TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN );
 
 #ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH

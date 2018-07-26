@@ -137,7 +137,9 @@ void IRAM_ATTR call_start_cpu0()
         || rst_reas[1] == RTCWDT_SYS_RESET || rst_reas[1] == TG0WDT_SYS_RESET
 #endif
     ) {
+#ifndef CONFIG_BOOTLOADER_WDT_ENABLE
         rtc_wdt_disable();
+#endif
     }
 
     //Clear BSS. Please do not attempt to do any complex stuff (like early logging) before this.
@@ -427,9 +429,6 @@ static void do_global_ctors(void)
 
 static void main_task(void* args)
 {
-    // Now that the application is about to start, disable boot watchdogs
-    REG_CLR_BIT(TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN_S);
-    rtc_wdt_disable();
 #if !CONFIG_FREERTOS_UNICORE
     // Wait for FreeRTOS initialization to finish on APP CPU, before replacing its startup stack
     while (port_xSchedulerRunning[1] == 0) {
@@ -470,6 +469,10 @@ static void main_task(void* args)
     }
 #endif
 
+    // Now that the application is about to start, disable boot watchdog
+#ifndef CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE
+    rtc_wdt_disable();
+#endif
     app_main();
     vTaskDelete(NULL);
 }
