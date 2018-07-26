@@ -645,7 +645,7 @@ class BaseDUT(object):
         Utility.console_log("DUT debug info for DUT: {}:".format(self.name), color="orange")
 
         for failure in self.expect_failures:
-            Utility.console_log("\t[pattern]: {}\r\n\t[data]: {}\r\n\t[time]: {} - {}\r\n"
+            Utility.console_log(u"\t[pattern]: {}\r\n\t[data]: {}\r\n\t[time]: {} - {}\r\n"
                                 .format(failure["pattern"], failure["data"],
                                         self._format_ts(failure["start"]), self._format_ts(failure["end"])),
                                 color="orange")
