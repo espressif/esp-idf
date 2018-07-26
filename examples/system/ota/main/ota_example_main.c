@@ -256,7 +256,7 @@ static void ota_example_task(void *pvParameter)
             task_fatal_error();
         } else if (buff_len > 0 && !resp_body_start) {  /*deal with response header*/
             // only start ota when server response 200 state code
-            if (strstr(text, "200") == NULL && !http_200_flag) {
+            if (strstr(text, "200 OK") == NULL && !http_200_flag) {
                 ESP_LOGE(TAG, "ota url is invalid or bin is not exist");
                 task_fatal_error();
             }
