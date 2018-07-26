@@ -143,6 +143,18 @@ void rtc_wdt_feed();
 esp_err_t rtc_wdt_set_time(rtc_wdt_stage_t stage, unsigned int timeout_ms);
 
 /**
+ * @brief Get the timeout set for the required stage.
+ *
+ * @param[in]  stage Stage of rtc_wdt.
+ * @param[out] timeout_ms Timeout set for this stage. (not elapsed time).
+ *
+ * @return
+ *         - ESP_OK In case of success
+ *         - ESP_ERR_INVALID_ARG If stage has invalid value
+ */
+esp_err_t rtc_wdt_get_timeout(rtc_wdt_stage_t stage, unsigned int* timeout_ms);
+
+/**
  * @brief Set an action for required stage.
  *
  * @param[in] stage Stage of rtc_wdt.
