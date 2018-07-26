@@ -66,6 +66,13 @@ sys_thread_t g_lwip_task = NULL;
 sys_mutex_t lock_tcpip_core;
 #endif /* LWIP_TCPIP_CORE_LOCKING */
 
+#if LWIP_TIMERS
+/* wait for a message, timeouts are processed while waiting */
+#define TCPIP_MBOX_FETCH(mbox, msg) sys_timeouts_mbox_fetch(mbox, msg)
+#else /* LWIP_TIMERS */
+/* wait for a message with timers disabled (e.g. pass a timer-check trigger into tcpip_thread) */
+#define TCPIP_MBOX_FETCH(mbox, msg) sys_mbox_fetch(mbox, msg)
+#endif /* LWIP_TIMERS */
 
 /**
  * The main lwIP thread. This thread has exclusive access to lwIP core functions
@@ -99,7 +106,7 @@ tcpip_thread(void *arg)
     UNLOCK_TCPIP_CORE();
     LWIP_TCPIP_THREAD_ALIVE();
     /* wait for a message, timeouts are processed while waiting */
-    sys_timeouts_mbox_fetch(&mbox, (void **)&msg);
+    TCPIP_MBOX_FETCH(&mbox, (void **)&msg);
     LOCK_TCPIP_CORE();
     
 
