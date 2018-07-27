@@ -367,7 +367,7 @@ test_esp_err_to_name_on_host:
     - ./gen_esp_err_to_name.py
     - git diff --exit-code -- ../components/esp32/esp_err_to_name.c || (echo 'Differences found. Please run gen_esp_err_to_name.py and commit the changes.'; exit 1)
 
-push_master_to_github:
+push_to_github:
   stage: deploy
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
@@ -378,8 +378,6 @@ push_master_to_github:
     - /^v\d+\.\d+(\.\d+)?($|-)/
   when: on_success
   dependencies: []
-  variables:
-    GITHUB_PUSH_REFS: refs/remotes/origin/release refs/remotes/origin/master
   before_script: *do_nothing_before
   script:
     - mkdir -p ~/.ssh
@@ -390,12 +388,9 @@ push_master_to_github:
     - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
     - git remote remove github &>/dev/null || true
     - git remote add github git@github.com:espressif/esp-idf.git
-    # What the next line of script does: goes through the list of refs for all branches we push to github,
-    # generates a snippet of shell which is evaluated. The snippet checks CI_COMMIT_SHA against the SHA
-    # (aka objectname) at tip of each branch, and if any SHAs match then it checks out the local branch
-    # and then pushes that ref to a corresponding github branch
-    - eval $(git for-each-ref --shell bash --format 'if [ $CI_COMMIT_SHA == %(objectname) ]; then git checkout -B %(refname:strip=3); git push --follow-tags github %(refname:strip=3); fi;' $GITHUB_PUSH_REFS)
-
+    # Need separate push commands for tag builds and for branch builds
+    - "[ -n \"${CI_COMMIT_TAG}\" ] && git push github ${CI_COMMIT_TAG}"
+    - "[ -z \"${CI_COMMIT_TAG}\" ] && git push github ${CI_COMMIT_SHA}:/refs/heads/${CI_COMMIT_REF_NAME}"
 
 deploy_docs:
   stage: host_test
