@@ -1,10 +1,10 @@
-API Guides
+API 指南
 **********
 
 .. toctree::
    :maxdepth: 1
 
-   General Notes <general-notes>
+   一般注意事项 <general-notes>
    编译系统 <build-system>
    编译系统 (CMake) <build-system-cmake>
    错误处理 <error-handling>
