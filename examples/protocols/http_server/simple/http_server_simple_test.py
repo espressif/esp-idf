@@ -39,7 +39,7 @@ import IDF
 expath = os.path.dirname(os.path.realpath(__file__))
 client = imp.load_source("client", expath + "/scripts/client.py")
 
-@IDF.idf_example_test(env_tag="Example_WIFI")
+@IDF.idf_example_test(env_tag="Example_WIFI", ignore=True)
 def test_examples_protocol_http_server_simple(env, extra_data):
     # Acquire DUT
     dut1 = env.get_dut("http_server", "examples/protocols/http_server/simple")
