@@ -94,16 +94,16 @@ esp_err_t WL_Flash::config(wl_config_t *cfg, Flash_Access *flash_drv)
     ptrdiff_t flash_sz = ((this->cfg.full_mem_size - this->state_size * 2 - this->cfg_size) / this->cfg.page_size - 1) * this->cfg.page_size; // -1 remove dummy block
     this->flash_size = ((this->cfg.full_mem_size - this->state_size * 2 - this->cfg_size) / this->cfg.page_size - 1) * this->cfg.page_size; // -1 remove dummy block
 
-    ESP_LOGD(TAG, "%s - config result: state_size=0x%08x, cfg_size=0x%08x, addr_cfg=0x%08x, addr_state1=0x%08x, addr_state2=0x%08x, flash_size=0x%08x", __func__, 
-        (uint32_t) this->state_size,
-        (uint32_t) this->cfg_size,
-        (uint32_t) this->addr_cfg,
-        (uint32_t) this->addr_state1,
-        (uint32_t) this->addr_state2,
-        (uint32_t) this->flash_size
-    );
+    ESP_LOGD(TAG, "%s - config result: state_size=0x%08x, cfg_size=0x%08x, addr_cfg=0x%08x, addr_state1=0x%08x, addr_state2=0x%08x, flash_size=0x%08x", __func__,
+             (uint32_t) this->state_size,
+             (uint32_t) this->cfg_size,
+             (uint32_t) this->addr_cfg,
+             (uint32_t) this->addr_state1,
+             (uint32_t) this->addr_state2,
+             (uint32_t) this->flash_size
+            );
     if (flash_sz <= 0) {
-        result = ESP_ERR_INVALID_ARG;        
+        result = ESP_ERR_INVALID_ARG;
     }
     WL_RESULT_CHECK(result);
 
@@ -248,14 +248,14 @@ esp_err_t WL_Flash::recoverPos()
 {
     esp_err_t result = ESP_OK;
     size_t position = 0;
-    ESP_LOGV(TAG, "%s start", __func__); 
+    ESP_LOGV(TAG, "%s start", __func__);
     for (size_t i = 0; i < this->state.max_pos; i++) {
         bool pos_bits;
         position = i;
         result = this->flash_drv->read(this->addr_state1 + sizeof(wl_state_t) + i * this->cfg.wr_size, this->temp_buff, this->cfg.wr_size);
         pos_bits = this->OkBuffSet(i);
         WL_RESULT_CHECK(result);
-        ESP_LOGV(TAG, "%s - check pos: result=0x%08x, position= %i, pos_bits= 0x%08x", __func__, (uint32_t)result, (uint32_t)position, (uint32_t)pos_bits); 
+        ESP_LOGV(TAG, "%s - check pos: result=0x%08x, position= %i, pos_bits= 0x%08x", __func__, (uint32_t)result, (uint32_t)position, (uint32_t)pos_bits);
         if (pos_bits == false) {
             break; // we have found position
         }
@@ -315,9 +315,11 @@ esp_err_t WL_Flash::updateVersion()
     esp_err_t result = ESP_OK;
 
     result = this->updateV1_V2();
-    if (result == ESP_OK) return result;
+    if (result == ESP_OK) {
+        return result;
+    }
     // check next version
-    return result;    
+    return result;
 }
 
 esp_err_t WL_Flash::updateV1_V2()
@@ -333,14 +335,14 @@ esp_err_t WL_Flash::updateV1_V2()
     result = this->flash_drv->read(this->addr_state2, state_copy, sizeof(wl_state_t));
     WL_RESULT_CHECK(result);
     uint32_t crc2 = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)state_copy, check_size);
-    
+
     // For V1 crc in place of device_id and version
     uint32_t v1_crc1 = this->state.device_id;
     uint32_t v1_crc2 = state_copy->device_id;
-    
+
     ESP_LOGD(TAG, "%s - process crc1=0x%08x, crc2=0x%08x, v1_crc1=0x%08x, v1_crc2=0x%08x, version=%i", __func__, crc1, crc2, v1_crc1, v1_crc2, this->state.version);
 
-    if ((crc1 == v1_crc1) && (crc2 == v1_crc2) && (v1_crc1 == v1_crc2) && (this->state.version == 1) && (state_copy->version == 1)){
+    if ((crc1 == v1_crc1) && (crc2 == v1_crc2) && (v1_crc1 == v1_crc2) && (this->state.version == 1) && (state_copy->version == 1)) {
         // Here we have to update all internal structures
         ESP_LOGI(TAG, "%s Update from V1 to V2, crc=0x%08x, ", __func__, crc1);
         uint32_t pos = 0;
@@ -349,10 +351,10 @@ esp_err_t WL_Flash::updateV1_V2()
             uint8_t pos_bits;
             result = this->flash_drv->read(this->addr_state1 + sizeof(wl_state_t) + i * this->cfg.wr_size, &pos_bits, 1);
             WL_RESULT_CHECK(result);
-            ESP_LOGV(TAG, "%s- result= 0x%08x, pos= %i, pos_bits= 0x%08x", __func__, (uint32_t)result, (uint32_t)pos, (uint32_t)pos_bits); 
+            ESP_LOGV(TAG, "%s- result= 0x%08x, pos= %i, pos_bits= 0x%08x", __func__, (uint32_t)result, (uint32_t)pos, (uint32_t)pos_bits);
             pos = i;
             if (pos_bits == 0xff) {
-               break; // we have found position
+                break; // we have found position
             }
         }
         ESP_LOGI(TAG, "%s max_pos=%i, pos=%i, state.ver=%i, state2.ver=%i", __func__, (uint32_t)this->state.max_pos, (uint32_t)pos, (uint32_t)this->state.version, (uint32_t)state_copy->version);
@@ -373,7 +375,7 @@ esp_err_t WL_Flash::updateV1_V2()
         WL_RESULT_CHECK(result);
 
         memset(this->temp_buff, 0, this->cfg.wr_size);
-        for (uint32_t i=0 ; i<= pos; i++) {
+        for (uint32_t i = 0 ; i <= pos; i++) {
             this->fillOkBuff(i);
             result = this->flash_drv->write(this->addr_state1 + sizeof(wl_state_t) + i * this->cfg.wr_size, this->temp_buff, this->cfg.wr_size);
             WL_RESULT_CHECK(result);
@@ -386,7 +388,7 @@ esp_err_t WL_Flash::updateV1_V2()
         ESP_LOGD(TAG, "%s - move_count= 0x%08x, pos= 0x%08x", __func__, this->state.move_count, this->state.pos);
 
         memset(this->temp_buff, 0, this->cfg.wr_size);
-        for (uint32_t i=0 ; i<= pos; i++) {
+        for (uint32_t i = 0 ; i <= pos; i++) {
             this->fillOkBuff(i);
             result = this->flash_drv->write(this->addr_state2 + sizeof(wl_state_t) + i * this->cfg.wr_size, this->temp_buff, this->cfg.wr_size);
             WL_RESULT_CHECK(result);
@@ -396,14 +398,14 @@ esp_err_t WL_Flash::updateV1_V2()
     }
 
     return ESP_FAIL;
-}    
+}
 
 void WL_Flash::fillOkBuff(int n)
 {
-    uint32_t* buff = (uint32_t*)this->temp_buff;
+    uint32_t *buff = (uint32_t *)this->temp_buff;
 
-    for (int i=0 ; i< 4 ; i++) {
-        buff[i] = this->state.device_id + n*4 + i;
+    for (int i = 0 ; i < 4 ; i++) {
+        buff[i] = this->state.device_id + n * 4 + i;
         buff[i] = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)&buff[i], sizeof(uint32_t));
     }
 }
@@ -411,11 +413,13 @@ void WL_Flash::fillOkBuff(int n)
 bool WL_Flash::OkBuffSet(int n)
 {
     bool result = true;
-    uint32_t* data_buff = (uint32_t*)this->temp_buff; 
-    for (int i=0 ; i< 4 ; i++) {
-        uint32_t data = this->state.device_id + n*4 + i;
+    uint32_t *data_buff = (uint32_t *)this->temp_buff;
+    for (int i = 0 ; i < 4 ; i++) {
+        uint32_t data = this->state.device_id + n * 4 + i;
         uint32_t crc = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)&data, sizeof(uint32_t));
-        if (crc != data_buff[i]) result = false;
+        if (crc != data_buff[i]) {
+            result = false;
+        }
     }
     return result;
 }
