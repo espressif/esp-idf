@@ -1225,7 +1225,7 @@ void btm_sec_save_le_key(BD_ADDR bd_addr, tBTM_LE_KEY_TYPE key_type, tBTM_LE_KEY
 
             /* Set that link key is known since this shares field with BTM_SEC_FLAG_LKEY_KNOWN flag in stack/btm_api.h*/
             p_rec->sec_flags |=  BTM_SEC_LE_LINK_KEY_KNOWN;
-            if ( p_keys->pcsrk_key.sec_level == SMP_SEC_AUTHENTICATED) {
+            if ( p_keys->lenc_key.sec_level == SMP_SEC_AUTHENTICATED) {
                 p_rec->sec_flags |= BTM_SEC_LE_LINK_KEY_AUTHED;
             } else {
                 p_rec->sec_flags &= ~BTM_SEC_LE_LINK_KEY_AUTHED;
