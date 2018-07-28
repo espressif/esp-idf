@@ -41,3 +41,6 @@
 [submodule "components/mbedtls/mbedtls"]
 	path = components/mbedtls/mbedtls
 	url = https://github.com/espressif/mbedtls.git
+[submodule "components/espmqtt"]
+	path = components/espmqtt
+	url = https://github.com/tuanpmt/espmqtt.git
