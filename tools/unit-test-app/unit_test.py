@@ -105,8 +105,7 @@ def format_test_case_config(test_case_data):
     return case_config
 
 
-@TinyFW.test_method(app=UT, dut=IDF.IDFDUT, chip="ESP32", module="unit_test",
-                    execution_time=1, env_tag="UT_T1_1")
+@IDF.idf_unit_test(env_tag="UT_T1_1")
 def run_unit_test_cases(env, extra_data):
     """
     extra_data can be three types of value
@@ -347,8 +346,7 @@ def case_run(duts, ut_config, env, one_case, failed_cases):
         Utility.console_log("Failed: " + one_case["name"], color="red")
 
 
-@TinyFW.test_method(app=UT, dut=IDF.IDFDUT, chip="ESP32", module="master_slave_test_case", execution_time=1,
-                    env_tag="UT_T2_1")
+@IDF.idf_unit_test(env_tag="UT_T2_1")
 def run_multiple_devices_cases(env, extra_data):
     """
      extra_data can be two types of value
@@ -385,8 +383,7 @@ def run_multiple_devices_cases(env, extra_data):
         raise AssertionError("Unit Test Failed")
 
 
-@TinyFW.test_method(app=UT, dut=IDF.IDFDUT, chip="ESP32", module="unit_test",
-                    execution_time=1, env_tag="UT_T1_1")
+@IDF.idf_unit_test(env_tag="UT_T1_1")
 def run_multiple_stage_cases(env, extra_data):
     """
     extra_data can be 2 types of value
