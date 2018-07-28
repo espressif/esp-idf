@@ -125,6 +125,7 @@ class AssignTest(object):
     # by default we only run function in CI, as other tests could take long time
     DEFAULT_FILTER = {
         "category": "function",
+        "ignore": False,
     }
 
     def __init__(self, test_case_path, ci_config_file, case_group=Group):
