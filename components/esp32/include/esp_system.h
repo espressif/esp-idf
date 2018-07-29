@@ -35,6 +35,25 @@ typedef enum {
 #define FOUR_UNIVERSAL_MAC_ADDR 4
 #define UNIVERSAL_MAC_ADDR_NUM CONFIG_NUMBER_OF_UNIVERSAL_MAC_ADDRESS
 
+
+/**
+ * @brief Reset reasons
+ */
+typedef enum {
+    ESP_RST_UNKNOWN,    //!< Reset reason can not be determined
+    ESP_RST_POWERON,    //!< Reset due to power-on event
+    ESP_RST_EXT,        //!< Reset by external pin (not applicable for ESP32)
+    ESP_RST_SW,         //!< Software reset via esp_restart
+    ESP_RST_PANIC,      //!< Software reset due to exception/panic
+    ESP_RST_INT_WDT,    //!< Reset (software or hardware) due to interrupt watchdog
+    ESP_RST_TASK_WDT,   //!< Reset due to task watchdog
+    ESP_RST_WDT,        //!< Reset due to other watchdogs
+    ESP_RST_DEEPSLEEP,  //!< Reset after exiting deep sleep mode
+    ESP_RST_BROWNOUT,   //!< Brownout reset (software or hardware)
+    ESP_RST_SDIO,       //!< Reset over SDIO
+} esp_reset_reason_t;
+
+/** @cond */
 /**
   * @attention  application don't need to call this function anymore. It do nothing and will
   *             be removed in future version.
@@ -69,23 +88,18 @@ esp_err_t esp_register_shutdown_handler(shutdown_handler_t handle);
 void esp_restart(void) __attribute__ ((noreturn));
 
 /**
-  * @brief  Internal function to restart PRO and APP CPUs.
-  *
-  * @note This function should not be called from FreeRTOS applications.
-  *       Use esp_restart instead.
-  *
-  * This is an internal function called by esp_restart. It is called directly
-  * by the panic handler and brownout detector interrupt.
-  */
-void esp_restart_noos() __attribute__ ((noreturn));
-
-/**
   * @brief  Restart system.
   *
   * Function has been renamed to esp_restart.
   * This name will be removed in a future release.
   */
 void system_restart(void) __attribute__ ((deprecated, noreturn));
+
+/**
+ * @brief  Get reason of last reset
+ * @return See description of esp_reset_reason_t for explanation of each value.
+ */
+esp_reset_reason_t esp_reset_reason(void);
 
 /**
   * @brief  Get system time, unit: microsecond.
