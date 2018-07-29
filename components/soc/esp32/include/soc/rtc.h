@@ -417,6 +417,10 @@ uint32_t rtc_clk_cpu_freq_value(rtc_cpu_freq_t cpu_freq)  __attribute__((depreca
   * so it is less safe to use it e.g. from a panic handler (when memory might
   * be corrupted).
   *
+  * @note This function in not intended to be called by applications in FreeRTOS
+  * environment. This is because it does not adjust various timers based on the
+  * new CPU frequency.
+  *
   * @param config  CPU frequency configuration structure
   */
  void rtc_clk_cpu_freq_set_config_fast(const rtc_cpu_freq_config_t* config);
