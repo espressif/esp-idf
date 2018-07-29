@@ -333,7 +333,7 @@ void IRAM_ATTR esp_restart_noos()
     DPORT_REG_WRITE(DPORT_PERIP_RST_EN_REG, 0);
 
     // Set CPU back to XTAL source, no PLL, same as hard reset
-    rtc_clk_cpu_freq_set(RTC_CPU_FREQ_XTAL);
+    rtc_clk_cpu_freq_set_xtal();
 
     // Clear entry point for APP CPU
     DPORT_REG_WRITE(DPORT_APPCPU_CTRL_D_REG, 0);
