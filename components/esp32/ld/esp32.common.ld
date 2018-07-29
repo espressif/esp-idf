@@ -32,6 +32,7 @@ SECTIONS
     _rtc_bss_start = ABSOLUTE(.);
     *rtc_wake_stub*.o(.bss .bss.*)
     *rtc_wake_stub*.o(COMMON)
+    *(.rtc.bss)
     _rtc_bss_end = ABSOLUTE(.);
   } > rtc_slow_seg
 
