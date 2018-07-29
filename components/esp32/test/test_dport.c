@@ -1,11 +1,12 @@
-
-#include <esp_types.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "esp_types.h"
+#include "esp_clk.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "freertos/xtensa_timer.h"
 #include "soc/cpu.h"
 #include "unity.h"
 #include "rom/uart.h"
@@ -99,49 +100,52 @@ TEST_CASE("access DPORT and APB at same time", "[esp32]")
 {
     dport_test_result   = false;
     apb_test_result     = false;
-    printf("CPU_FREQ = %d MHz\n", rtc_clk_cpu_freq_value(rtc_clk_cpu_freq_get()) / MHZ);
+    printf("CPU_FREQ = %d MHz\n", esp_clk_cpu_freq());
     run_tasks("accessDPORT", accessDPORT, "accessAPB", accessAPB, 10000);
 }
 
-void run_tasks_with_change_freq_cpu (rtc_cpu_freq_t cpu_freq)
+void run_tasks_with_change_freq_cpu(int cpu_freq_mhz)
 {
-    dport_test_result   = false;
-    apb_test_result     = false;
-    rtc_cpu_freq_t cur_freq = rtc_clk_cpu_freq_get();
-    uint32_t freq_before_changed = rtc_clk_cpu_freq_value(cur_freq) / MHZ;
-    uint32_t freq_changed = freq_before_changed;
-    printf("CPU_FREQ = %d MHz\n", freq_before_changed);
-
-    if (cur_freq != cpu_freq) {
-        uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
-
-        rtc_clk_cpu_freq_set(cpu_freq);
-
-        const int uart_num = CONFIG_CONSOLE_UART_NUM;
-        const int uart_baud = CONFIG_CONSOLE_UART_BAUDRATE;
-        uart_div_modify(uart_num, (rtc_clk_apb_freq_get() << 4) / uart_baud);
-
-        freq_changed = rtc_clk_cpu_freq_value(rtc_clk_cpu_freq_get()) / MHZ;
-        printf("CPU_FREQ switching to %d MHz\n", freq_changed);
-    }
-    run_tasks("accessDPORT", accessDPORT, "accessAPB", accessAPB, 10000 / ((freq_before_changed <= freq_changed) ? 1 : (freq_before_changed / freq_changed)));
-
-    // return old freq.
-    uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
-    rtc_clk_cpu_freq_set(cur_freq);
     const int uart_num = CONFIG_CONSOLE_UART_NUM;
     const int uart_baud = CONFIG_CONSOLE_UART_BAUDRATE;
+    dport_test_result = false;
+    apb_test_result = false;
+    rtc_cpu_freq_config_t old_config;
+    rtc_clk_cpu_freq_get_config(&old_config);
+
+    printf("CPU_FREQ = %d MHz\n", old_config.freq_mhz);
+
+    if (cpu_freq_mhz != old_config.freq_mhz) {
+        rtc_cpu_freq_config_t new_config;
+        bool res = rtc_clk_cpu_freq_mhz_to_config(cpu_freq_mhz, &new_config);
+        assert(res && "invalid frequency value");
+
+        uart_tx_wait_idle(uart_num);
+        rtc_clk_cpu_freq_set_config(&new_config);
+        uart_div_modify(uart_num, (rtc_clk_apb_freq_get() << 4) / uart_baud);
+        /* adjust RTOS ticks */
+        _xt_tick_divisor = cpu_freq_mhz * 1000000 / XT_TICK_PER_SEC;
+        vTaskDelay(2);
+
+        printf("CPU_FREQ switched to %d MHz\n", cpu_freq_mhz);
+    }
+    run_tasks("accessDPORT", accessDPORT, "accessAPB", accessAPB, 10000);
+
+    // return old freq.
+    uart_tx_wait_idle(uart_num);
+    rtc_clk_cpu_freq_set_config(&old_config);
     uart_div_modify(uart_num, (rtc_clk_apb_freq_get() << 4) / uart_baud);
+    _xt_tick_divisor = old_config.freq_mhz * 1000000 / XT_TICK_PER_SEC;
 }
 
 TEST_CASE("access DPORT and APB at same time (Freq CPU and APB = 80 MHz)", "[esp32] [ignore]")
 {
-    run_tasks_with_change_freq_cpu(RTC_CPU_FREQ_80M);
+    run_tasks_with_change_freq_cpu(80);
 }
 
 TEST_CASE("access DPORT and APB at same time (Freq CPU and APB = 40 MHz (XTAL))", "[esp32]")
 {
-    run_tasks_with_change_freq_cpu(RTC_CPU_FREQ_XTAL);
+    run_tasks_with_change_freq_cpu((int) rtc_clk_xtal_freq_get());
 }
 
 static uint32_t stall_other_cpu_counter;

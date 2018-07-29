@@ -177,13 +177,16 @@ TEST_CASE("light sleep and frequency switching", "[deepsleep]")
     uart_div_modify(CONFIG_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
 #endif
 
+    rtc_cpu_freq_config_t config_xtal, config_default;
+    rtc_clk_cpu_freq_get_config(&config_default);
+    rtc_clk_cpu_freq_mhz_to_config((int) rtc_clk_xtal_freq_get(), &config_xtal);
+
     esp_sleep_enable_timer_wakeup(1000);
-    rtc_cpu_freq_t default_freq = rtc_clk_cpu_freq_get();
     for (int i = 0; i < 1000; ++i) {
         if (i % 2 == 0) {
-            rtc_clk_cpu_freq_set_fast(RTC_CPU_FREQ_XTAL);
+            rtc_clk_cpu_freq_set_config_fast(&config_xtal);
         } else {
-            rtc_clk_cpu_freq_set_fast(default_freq);
+            rtc_clk_cpu_freq_set_config_fast(&config_default);
         }
         printf("%d\n", i);
         fflush(stdout);
