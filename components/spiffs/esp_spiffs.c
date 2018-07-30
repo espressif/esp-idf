@@ -71,6 +71,7 @@ static int vfs_spiffs_mkdir(void* ctx, const char* name, mode_t mode);
 static int vfs_spiffs_rmdir(void* ctx, const char* name);
 static void vfs_spiffs_update_mtime(spiffs *fs, spiffs_file f);
 static time_t vfs_spiffs_get_mtime(const spiffs_stat* s);
+static int vfs_spiffs_truncate(void* ctx, const char *path, size_t length);
 
 static esp_spiffs_t * _efs[CONFIG_SPIFFS_MAX_PARTITIONS];
 
@@ -347,7 +348,8 @@ esp_err_t esp_vfs_spiffs_register(const esp_vfs_spiffs_conf_t * conf)
         .seekdir_p = &vfs_spiffs_seekdir,
         .telldir_p = &vfs_spiffs_telldir,
         .mkdir_p = &vfs_spiffs_mkdir,
-        .rmdir_p = &vfs_spiffs_rmdir
+        .rmdir_p = &vfs_spiffs_rmdir,
+        .truncate_p = &vfs_spiffs_truncate
     };
 
     esp_err_t err = esp_spiffs_init(conf);
@@ -743,4 +745,17 @@ static time_t vfs_spiffs_get_mtime(const spiffs_stat* s)
     memcpy(&t, s->meta, sizeof(t));
 #endif
     return t;
+}
+
+static int vfs_spiffs_truncate(void* ctx, const char *path, size_t length)
+{
+    assert(path);
+    esp_spiffs_t * efs = (esp_spiffs_t *)ctx;
+    int res = SPIFFS_truncate(efs->fs, path, length);
+    if (res < 0) {
+        errno = spiffs_res_to_errno(SPIFFS_errno(efs->fs));
+        SPIFFS_clearerr(efs->fs);
+        return -1;
+    }
+    return res;
 }
