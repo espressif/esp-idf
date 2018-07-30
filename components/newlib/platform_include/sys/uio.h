@@ -1,4 +1,4 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,15 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#ifndef _ESP_PLATFORM_SYS_UIO_H_
+#define _ESP_PLATFORM_SYS_UIO_H_
 
-#pragma once
+int writev(int s, const struct iovec *iov, int iovcnt);
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+ssize_t readv(int fd, const struct iovec *iov, int iovcnt);
 
-int ioctl(int fd, int request, ...);
-
-#ifdef __cplusplus
-}
-#endif
+#endif // _ESP_PLATFORM_SYS_UIO_H_
