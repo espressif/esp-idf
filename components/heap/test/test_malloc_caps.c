@@ -103,8 +103,11 @@ TEST_CASE("heap_caps metadata test", "[heap]")
 
     free(b);
     heap_caps_get_info(&after, MALLOC_CAP_8BIT);
-    TEST_ASSERT_EQUAL(after.total_free_bytes, original.total_free_bytes);
-    TEST_ASSERT_EQUAL(after.largest_free_block, original.largest_free_block);
+    /* Allow some leeway here, because LWIP sometimes allocates up to 144 bytes in the background
+       as part of timer management.
+    */
+    TEST_ASSERT_INT32_WITHIN(200, after.total_free_bytes, original.total_free_bytes);
+    TEST_ASSERT_INT32_WITHIN(200, after.largest_free_block, original.largest_free_block);
     TEST_ASSERT(after.minimum_free_bytes < original.total_free_bytes);
 }
 
