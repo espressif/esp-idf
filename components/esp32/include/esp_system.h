@@ -31,10 +31,11 @@ typedef enum {
     ESP_MAC_ETH,
 } esp_mac_type_t;
 
+/** @cond */
 #define TWO_UNIVERSAL_MAC_ADDR 2
 #define FOUR_UNIVERSAL_MAC_ADDR 4
 #define UNIVERSAL_MAC_ADDR_NUM CONFIG_NUMBER_OF_UNIVERSAL_MAC_ADDRESS
-
+/** @endcond */
 
 /**
  * @brief Reset reasons
@@ -55,7 +56,7 @@ typedef enum {
 
 /** @cond */
 /**
-  * @attention  application don't need to call this function anymore. It do nothing and will
+  * @attention  Applications don't need to call this function anymore. It does nothing and will
   *             be removed in future version.
   */
 void system_init(void) __attribute__ ((deprecated));
@@ -67,13 +68,18 @@ void system_init(void) __attribute__ ((deprecated));
   * This name will be removed in a future release.
   */
 void system_restore(void) __attribute__ ((deprecated));
+/** @endcond */
 
+/**
+ * Shutdown handler type
+ */
 typedef void (*shutdown_handler_t)(void);
+
 /**
   * @brief  Register shutdown handler
   *
-  * This function allows you to register a handler that gets invoked before a
-  * systematic shutdown of the chip.
+  * This function allows you to register a handler that gets invoked before
+  * the application is restarted using esp_restart function.
   */
 esp_err_t esp_register_shutdown_handler(shutdown_handler_t handle);
 
@@ -87,6 +93,7 @@ esp_err_t esp_register_shutdown_handler(shutdown_handler_t handle);
   */
 void esp_restart(void) __attribute__ ((noreturn));
 
+/** @cond */
 /**
   * @brief  Restart system.
   *
@@ -94,6 +101,7 @@ void esp_restart(void) __attribute__ ((noreturn));
   * This name will be removed in a future release.
   */
 void system_restart(void) __attribute__ ((deprecated, noreturn));
+/** @endcond */
 
 /**
  * @brief  Get reason of last reset
@@ -101,6 +109,7 @@ void system_restart(void) __attribute__ ((deprecated, noreturn));
  */
 esp_reset_reason_t esp_reset_reason(void);
 
+/** @cond */
 /**
   * @brief  Get system time, unit: microsecond.
   *
@@ -108,6 +117,7 @@ esp_reset_reason_t esp_reset_reason(void);
   * This definition will be removed in a future release.
   */
 uint32_t system_get_time(void)  __attribute__ ((deprecated));
+/** @endcond */
 
 /**
   * @brief  Get the size of available heap.
@@ -119,6 +129,7 @@ uint32_t system_get_time(void)  __attribute__ ((deprecated));
   */
 uint32_t esp_get_free_heap_size(void);
 
+/** @cond */
 /**
   * @brief  Get the size of available heap.
   *
@@ -128,6 +139,7 @@ uint32_t esp_get_free_heap_size(void);
   * @return Available heap size, in bytes.
   */
 uint32_t system_get_free_heap_size(void)  __attribute__ ((deprecated));
+/** @endcond */
 
 /**
   * @brief Get the minimum heap that has ever been available
@@ -201,6 +213,7 @@ esp_err_t esp_efuse_mac_get_custom(uint8_t *mac);
   */
 esp_err_t esp_efuse_mac_get_default(uint8_t *mac);
 
+/** @cond */
 /**
   * @brief  Read hardware MAC address from efuse.
   *
@@ -223,6 +236,7 @@ esp_err_t esp_efuse_read_mac(uint8_t *mac) __attribute__ ((deprecated));
   * @return ESP_OK on success
   */
 esp_err_t system_efuse_read_mac(uint8_t *mac) __attribute__ ((deprecated));
+/** @endcond */
 
 /**
   * @brief  Read base MAC address and set MAC address of the interface.
@@ -254,6 +268,7 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type);
   */
 esp_err_t esp_derive_local_mac(uint8_t* local_mac, const uint8_t* universal_mac);
 
+/** @cond */
 /**
  * Get SDK version
  *
@@ -262,6 +277,7 @@ esp_err_t esp_derive_local_mac(uint8_t* local_mac, const uint8_t* universal_mac)
  * @return constant string "master"
  */
 const char* system_get_sdk_version(void)  __attribute__ ((deprecated));
+/** @endcond */
 
 /**
  * Get IDF version
@@ -278,13 +294,11 @@ typedef enum {
     CHIP_ESP32 = 1, //!< ESP32
 } esp_chip_model_t;
 
-/**
- * Chip feature flags, used in esp_chip_info_t
- */
-#define CHIP_FEATURE_EMB_FLASH      BIT(0)
-#define CHIP_FEATURE_WIFI_BGN       BIT(1)
-#define CHIP_FEATURE_BLE            BIT(4)
-#define CHIP_FEATURE_BT             BIT(5)
+/* Chip feature flags, used in esp_chip_info_t */
+#define CHIP_FEATURE_EMB_FLASH      BIT(0)      //!< Chip has embedded flash memory
+#define CHIP_FEATURE_WIFI_BGN       BIT(1)      //!< Chip has 2.4GHz WiFi
+#define CHIP_FEATURE_BLE            BIT(4)      //!< Chip has Bluetooth LE
+#define CHIP_FEATURE_BT             BIT(5)      //!< Chip has Bluetooth Classic
 
 /**
  * @brief The structure represents information about the chip
