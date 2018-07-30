@@ -42,10 +42,10 @@ variables:
 # are removed.
 .git_clean_stale_submodules:  &git_clean_stale_submodules >
   find . -name '.git' -not -path './.git' -printf '%P\n'
-  | sed 's|/.git||' 
+  | sed 's|/.git||'
   | xargs -I {} sh -c '
-  grep -q {} .gitmodules 
-  ||  (echo "Removing {}, has .git directory but not in .gitmodules file" 
+  grep -q {} .gitmodules
+  ||  (echo "Removing {}, has .git directory but not in .gitmodules file"
   && rm -rf {});'
 
 # before each job, we need to check if this job is filtered by bot stage/job filter
@@ -326,7 +326,7 @@ verify_cmake_style:
   tags:
     - host_test
   dependencies: []
-    
+
 test_nvs_on_host:
   <<: *host_test_template
   script:
@@ -821,6 +821,12 @@ example_test_004_01:
   tags:
     - ESP32
     - Example_CAN
+
+example_test_005_01:
+  <<: *example_test_template
+  tags:
+    - ESP32
+    - Example_WIFI_BT
 
 UT_001_01:
   <<: *unit_test_template

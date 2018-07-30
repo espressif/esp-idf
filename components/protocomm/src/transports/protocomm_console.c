@@ -134,6 +134,10 @@ static void protocomm_console_task(void *arg)
 
 static int common_cmd_handler(int argc, char** argv)
 {
+    if (argc < 3) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     int i, ret;
 
     uint32_t cur_session_id = atoi(argv[1]);
