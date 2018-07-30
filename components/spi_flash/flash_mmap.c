@@ -127,25 +127,28 @@ esp_err_t IRAM_ATTR spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_
     // region which should be mapped
     int phys_page = src_addr / SPI_FLASH_MMU_PAGE_SIZE;
     int page_count = (size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE;
-    //prepare a linear pages array to feed into spi_flash_mmap_pages
-    int *pages=malloc(sizeof(int)*page_count);
-    if (pages==NULL) {
+    // prepare a linear pages array to feed into spi_flash_mmap_pages
+    int *pages = heap_caps_malloc(sizeof(int)*page_count, MALLOC_CAP_INTERNAL);
+    if (pages == NULL) {
         return ESP_ERR_NO_MEM;
     }
     for (int i = 0; i < page_count; i++) {
         pages[i] = phys_page+i;
     }
-    ret=spi_flash_mmap_pages(pages, page_count, memory, out_ptr, out_handle);
+    ret = spi_flash_mmap_pages(pages, page_count, memory, out_ptr, out_handle);
     free(pages);
     return ret;
 }
 
-esp_err_t IRAM_ATTR spi_flash_mmap_pages(int *pages, size_t page_count, spi_flash_mmap_memory_t memory,
+esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, spi_flash_mmap_memory_t memory,
                          const void** out_ptr, spi_flash_mmap_handle_t* out_handle)
 {
     esp_err_t ret;
     bool did_flush, need_flush = false;
     if (!page_count) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (!esp_ptr_internal(pages)) {
         return ESP_ERR_INVALID_ARG;
     }
     for (int i = 0; i < page_count; i++) {
