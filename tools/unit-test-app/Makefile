@@ -92,7 +92,7 @@ $(BINARIES_DIR)/%/$(PROJECT_NAME).bin: configs/%
 	cp $(BUILDS_DIR)/$*/$(PROJECT_NAME).elf $(BINARIES_DIR)/$*/
 	cp $(BUILDS_DIR)/$*/$(PROJECT_NAME).bin $(BINARIES_DIR)/$*/
 	cp $(BUILDS_DIR)/$*/$(PROJECT_NAME).map $(BINARIES_DIR)/$*/
-	cp $(BUILDS_DIR)/$*/partition_table*.bin $(BINARIES_DIR)/$*/
+	cp $(BUILDS_DIR)/$*/*.bin $(BINARIES_DIR)/$*/
 	cp $(BUILDS_DIR)/$*/sdkconfig $(BINARIES_DIR)/$*/
 
 
