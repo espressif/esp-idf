@@ -36,3 +36,7 @@
 a:hover {
   color: #bd2c2a !important;
 }
+
+.logo {
+  width: 240px !important;
+}
