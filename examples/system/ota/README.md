@@ -63,13 +63,15 @@ Save your changes, and type `make` to build the example.
 
 ## Step 4: Flash OTA Example
 
-When flashing, use the `erase_flash` target first to erase the entire flash (this deletes any leftover data in the ota_data partition). Then flash the factory image over serial:
+When flashing, use the `make flash` to flash the factory image. This command will find if partition table has ota_data partition (as in our case) then ota_data will erase to initial. 
+It allows to run the newly loaded app from a factory partition.
 
 ```
-make erase_flash flash
+make flash
 ```
 
-(The `make erase_flash flash` means "erase everything, then flash". `make flash` only erases the parts of flash which are being rewritten.)
+After first update, if you want to return back to factory app (or the first OTA partition, if factory partition is not present) then use the command `make erase_ota`. 
+It erases ota_data partition to initial.
 
 ## Step 5: Run the OTA Example
 
