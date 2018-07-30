@@ -20,9 +20,8 @@ from IDF.IDFApp import IDFApp, Example, UT
 from IDF.IDFDUT import IDFDUT
 
 
-def idf_example_test(app=Example, dut=IDFDUT, chip="ESP32",
-                     module="examples", execution_time=1,
-                     **kwargs):
+def idf_example_test(app=Example, dut=IDFDUT, chip="ESP32", module="examples", execution_time=1,
+                     level="example", erase_nvs=True, **kwargs):
     """
     decorator for testing idf examples (with default values for some keyword args).
 
@@ -31,12 +30,44 @@ def idf_example_test(app=Example, dut=IDFDUT, chip="ESP32",
     :param chip: chip supported, string or tuple
     :param module: module, string
     :param execution_time: execution time in minutes, int
+    :param level: test level, could be used to filter test cases, string
+    :param erase_nvs: if need to erase_nvs in DUT.start_app()
     :param kwargs: other keyword args
     :return: test method
     """
-    # not use partial function as define as function support auto generating document
+    try:
+        # try to config the default behavior of erase nvs
+        dut.ERASE_NVS = erase_nvs
+    except AttributeError:
+        pass
+
     return TinyFW.test_method(app=app, dut=dut, chip=chip, module=module,
-                              execution_time=execution_time, **kwargs)
+                              execution_time=execution_time, level=level, **kwargs)
+
+
+def idf_unit_test(app=UT, dut=IDFDUT, chip="ESP32", module="unit-test", execution_time=1,
+                  level="unit", erase_nvs=True, **kwargs):
+    """
+    decorator for testing idf unit tests (with default values for some keyword args).
+
+    :param app: test application class
+    :param dut: dut class
+    :param chip: chip supported, string or tuple
+    :param module: module, string
+    :param execution_time: execution time in minutes, int
+    :param level: test level, could be used to filter test cases, string
+    :param erase_nvs: if need to erase_nvs in DUT.start_app()
+    :param kwargs: other keyword args
+    :return: test method
+    """
+    try:
+        # try to config the default behavior of erase nvs
+        dut.ERASE_NVS = erase_nvs
+    except AttributeError:
+        pass
+
+    return TinyFW.test_method(app=app, dut=dut, chip=chip, module=module,
+                              execution_time=execution_time, level=level, **kwargs)
 
 
 def log_performance(item, value):

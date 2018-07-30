@@ -162,14 +162,17 @@ class Env(object):
         return if_addr[self.PROTO_MAP[proto]][0]
 
     @_synced
-    def close(self):
+    def close(self, dut_debug=False):
         """
         close()
         close all DUTs of the Env.
 
+        :param dut_debug: if dut_debug is True, then print all dut expect failures before close it
         :return: None
         """
         for dut_name in self.allocated_duts:
             dut = self.allocated_duts[dut_name]["dut"]
+            if dut_debug:
+                dut.print_debug_info()
             dut.close()
         self.allocated_duts = dict()

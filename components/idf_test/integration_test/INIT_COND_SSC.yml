@@ -7,6 +7,17 @@
   - - SSC SSC1 ram
     - - 'R SSC1 C +FREEHEAP:'
 
+.MESH_INIT_COND: &MESH_INIT_COND
+  test script: InitCondBase
+  restore post cmd set:
+  - ''
+  - - SSC SSC[1-<node_num>] mesh -Q -o 1
+    - - R SSC[1-<node_num>] C MESH_NETWORK
+  - - SSC SSC[1-<node_num>] mesh -Q -o 3
+    - - R SSC[1-<node_num>] C +MESH_CONFIG:ALL
+  - - SSC SSC[1-<node_num>] ram
+    - - R SSC[1-<node_num>] A <heap_size>:(\d+)
+
 initial condition:
 - tag: APM1
   <<: *SSC_INIT_COND
@@ -2038,3 +2049,209 @@ initial condition:
     - - R SSC[1-2] C +BLEADV:OK
   - - SSC SSC1 ram
     - - R SSC1 A <heap_size>:(\d+)
+- tag: ENABLED_1
+  <<: *MESH_INIT_COND
+  initial condition detail: if mesh tree not exist, start one node first, then start others, after mesh network
+    established, root connect server
+  check cmd set:
+  - ''
+  - - SSC SSC[1-<node_num>] mesh -Q -o 2
+    - - R SSC[1-<node_num>] T <node_num>
+  - - MESHTREE
+    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)
+  - - SOC SOC1 LISTEN <test_tcp_port1> <pc_ip>
+    - - R SOC_COM L OK
+  - - SSC MNODE(0) mesh -S -o 0 -i <pc_ip> -t <test_tcp_port1>
+    - - ''
+  - - SOC SOC1 MACCEPT GSOC1
+    - - P MNODE(0) C +CONNECT,OK
+      - R SOC_COM L OK
+  - - SSC SSC[1-<node_num>] mesh -F -o 4 -a 1
+    - - P SSC[1-<node_num>] C +MESHFLAG:OK
+  - - SSC SSC[1-<node_num>] mesh -F -o 5 -a 1
+    - - P SSC[1-<node_num>] C +MESHFLAG:OK
+  restore cmd set:
+  - ''
+  - - SSC SSC[1-<node_num>] reboot
+    - - P SSC[1-<node_num>] C !!!ready!!!
+  - - SSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INITED
+  - - SSC SSC[1-<node_num>] mesh -A -o 12 -t <duration_ms> -c <cnx_rssi> -l <select_rssi> -f <switch_rssi> -b <backoff_rssi>
+    - - P SSC[1-<node_num>] C +MESH_SET_PARENT_SWITCH:OK
+  - - SSC SSC[1-<node_num>] mesh -A -o 9 -t <auth_mode> -s <map_password>
+    - - P SSC[1-<node_num>] C +MESH_SET_AP_AUTH_MODE:OK C +MESH_SET_AP_AUTH_PWD:OK
+  - - SSC SSC[1-<node_num>] mesh -P -g <mesh_id> -s <ap_ssid> -p <ap_password> -n
+      <ap_channel> -m <max_connect> -y <max_layer>
+    - - P SSC[1-<node_num>] C +MESH:CONFIG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 10
+    - - ''
+  - - SSC SSC[2-<node_num>] mesh -T
+    - - P SSC[2-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - SSC SSC[1-<node_num>] mesh -Q -o 2
+    - - R SSC[1-<node_num>] T <node_num>
+  - - MESHTREE
+    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)
+  - - SSC MNODE(0) mesh -Q -o 1 -t <delay_time>
+    - - R MNODE(0) C NETWORK_TIME:PASS
+  - - SOC SOC1 LISTEN <test_tcp_port1> <pc_ip>
+    - - R SOC_COM L OK
+  - - SSC MNODE(0) mesh -S -o 0 -i <pc_ip> -t <test_tcp_port1>
+    - - ''
+  - - SOC SOC1 MACCEPT GSOC1
+    - - P MNODE(0) C +CONNECT,OK
+      - R SOC_COM L OK
+  - - SSC SSC[1-<node_num>] mesh -F -o 4 -a 1
+    - - P SSC[1-<node_num>] C +MESHFLAG:OK
+  - - SSC SSC[1-<node_num>] mesh -F -o 5 -a 1
+    - - P SSC[1-<node_num>] C +MESHFLAG:OK
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1-<node_num>] restore
+    - - P SSC[1-<node_num>] C !!!ready!!!
+  - - SSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INITED
+  - - SSC SSC[1-<node_num>] mesh -A -o 12 -t <duration_ms> -c <cnx_rssi> -l <select_rssi> -f <switch_rssi> -b <backoff_rssi>
+    - - P SSC[1-<node_num>] C +MESH_SET_PARENT_SWITCH:OK
+  - - SSC SSC[1-<node_num>] mesh -A -o 9 -t <auth_mode> -s <map_password>
+    - - P SSC[1-<node_num>] C +MESH_SET_AP_AUTH_MODE:OK C +MESH_SET_AP_AUTH_PWD:OK
+  - - SSC SSC[1-<node_num>] mesh -P -g <mesh_id> -s <ap_ssid> -p <ap_password> -n
+      <ap_channel> -m <max_connect> -y <max_layer>
+    - - P SSC[1-<node_num>] C +MESH:CONFIG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 10
+    - - ''
+  - - SSC SSC[2-<node_num>] mesh -T
+    - - P SSC[2-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - SSC SSC[1-<node_num>] mesh -Q -o 2
+    - - R SSC[1-<node_num>] T <node_num>
+  - - MESHTREE
+    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)
+  - - SSC MNODE(0) mesh -Q -o 1 -t <delay_time>
+    - - R MNODE(0) C NETWORK_TIME:PASS
+  - - SOC SOC1 LISTEN <test_tcp_port1> <pc_ip>
+    - - R SOC_COM L OK
+  - - SSC MNODE(0) mesh -S -o 0 -i <pc_ip> -t <test_tcp_port1>
+    - - ''
+  - - SOC SOC1 MACCEPT GSOC1
+    - - P MNODE(0) C +CONNECT,OK
+      - R SOC_COM L OK
+  - - SSC SSC[1-<node_num>] mesh -F -o 4 -a 1
+    - - P SSC[1-<node_num>] C +MESHFLAG:OK
+  - - SSC SSC[1-<node_num>] mesh -F -o 5 -a 1
+    - - P SSC[1-<node_num>] C +MESHFLAG:OK
+- tag: ENABLED_2
+  <<: *MESH_INIT_COND
+  initial condition detail: if mesh tree not exist, start all nodes together
+  check cmd set:
+  - ''
+  - - SSC SSC[1-<node_num>] mesh -Q -o 2
+    - - R SSC[1-<node_num>] T <node_num>
+  - - MESHTREE
+    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)
+  restore cmd set:
+  - ''
+  - - SSC SSC[1-<node_num>] reboot
+    - - P SSC[1-<node_num>] C !!!ready!!!
+  - - SSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INITED
+  - - SSC SSC[1-<node_num>] mesh -A -o 12 -t <duration_ms> -c <cnx_rssi> -l <select_rssi> -f <switch_rssi> -b <backoff_rssi>
+    - - P SSC[1-<node_num>] C +MESH_SET_PARENT_SWITCH:OK
+  - - SSC SSC[1-<node_num>] mesh -A -o 9 -t <auth_mode> -s <map_password>
+    - - P SSC[1-<node_num>] C +MESH_SET_AP_AUTH_MODE:OK C +MESH_SET_AP_AUTH_PWD:OK
+  - - SSC SSC[1-<node_num>] mesh -P -g <mesh_id> -s <ap_ssid> -p <ap_password> -n
+      <ap_channel> -m <max_connect> -y <max_layer>
+    - - P SSC[1-<node_num>] C +MESH:CONFIG,OK
+  - - SSC SSC[1-<node_num>] mesh -T
+    - - P SSC[1-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - SSC SSC[1-<node_num>] mesh -Q -o 2
+    - - R SSC[1-<node_num>] T <node_num>
+  - - MESHTREE
+    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)
+  - - SSC MNODE(0) mesh -Q -o 1 -t <delay_time>
+    - - R MNODE(0) C NETWORK_TIME:PASS
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1-<node_num>] restore
+    - - P SSC[1-<node_num>] C !!!ready!!!
+  - - SSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INITED
+  - - SSC SSC[1-<node_num>] mesh -A -o 12 -t <duration_ms> -c <cnx_rssi> -l <select_rssi> -f <switch_rssi> -b <backoff_rssi>
+    - - P SSC[1-<node_num>] C +MESH_SET_PARENT_SWITCH:OK
+  - - SSC SSC[1-<node_num>] mesh -A -o 9 -t <auth_mode> -s <map_password>
+    - - P SSC[1-<node_num>] C +MESH_SET_AP_AUTH_MODE:OK C +MESH_SET_AP_AUTH_PWD:OK
+  - - SSC SSC[1-<node_num>] mesh -P -g <mesh_id> -s <ap_ssid> -p <ap_password> -n
+      <ap_channel> -m <max_connect> -y <max_layer>
+    - - P SSC[1-<node_num>] C +MESH:CONFIG,OK
+  - - SSC SSC[1-<node_num>] mesh -T
+    - - P SSC[1-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - SSC SSC[1-<node_num>] mesh -Q -o 2
+    - - R SSC[1-<node_num>] T <node_num>
+  - - MESHTREE
+    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)
+  - - SSC MNODE(0) mesh -Q -o 1 -t <delay_time>
+    - - R MNODE(0) C NETWORK_TIME:PASS
+- tag: ENABLED_3
+  <<: *MESH_INIT_COND
+  initial condition detail: all mesh nodes in softap+sta mode, mesh configed but not started
+  check cmd set:
+  - ''
+  restore cmd set:
+  - ''
+  - - SSC SSC[1-<node_num>] reboot
+    - - P SSC[1-<node_num>] C !!!ready!!!
+  - - SSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INITED
+  - - SSC SSC[1-<node_num>] mesh -A -o 12 -t <duration_ms> -c <cnx_rssi> -l <select_rssi> -f <switch_rssi> -b <backoff_rssi>
+    - - P SSC[1-<node_num>] C +MESH_SET_PARENT_SWITCH:OK
+  - - SSC SSC[1-<node_num>] mesh -A -o 9 -t <auth_mode> -s <map_password>
+    - - P SSC[1-<node_num>] C +MESH_SET_AP_AUTH_MODE:OK C +MESH_SET_AP_AUTH_PWD:OK
+  - - SSC SSC[1-<node_num>] mesh -P -g <mesh_id> -s <ap_ssid> -p <ap_password> -n
+      <ap_channel> -m <max_connect> -y <max_layer>
+    - - P SSC[1-<node_num>] C +MESH:CONFIG,OK
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1-<node_num>] restore
+    - - P SSC[1-<node_num>] C !!!ready!!!
+  - - SSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INITED
+  - - SSC SSC[1-<node_num>] mesh -A -o 12 -t <duration_ms> -c <cnx_rssi> -l <select_rssi> -f <switch_rssi> -b <backoff_rssi>
+    - - P SSC[1-<node_num>] C +MESH_SET_PARENT_SWITCH:OK
+  - - SSC SSC[1-<node_num>] mesh -A -o 9 -t <auth_mode> -s <map_password>
+    - - P SSC[1-<node_num>] C +MESH_SET_AP_AUTH_MODE:OK C +MESH_SET_AP_AUTH_PWD:OK
+  - - SSC SSC[1-<node_num>] mesh -P -g <mesh_id> -s <ap_ssid> -p <ap_password> -n
+      <ap_channel> -m <max_connect> -y <max_layer>
+    - - P SSC[1-<node_num>] C +MESH:CONFIG,OK
+- tag: DISABLED_1
+  <<: *MESH_INIT_COND
+  initial condition detail: all mesh node in softap+sta mode, disable all mesh node
+  check cmd set:
+  - ''
+  - - ASSERT
+    - - ''
+  restore cmd set:
+  - ''
+  - - SSC SSC[1-<node_num>] reboot
+    - - P SSC[1-<node_num>] C !!!ready!!!
+  - - SSC SSC[1-<node_num>] op -Q
+    - - P SSC[1-<node_num>] C +CURMODE:3
+  - - SSC SSC[1-<node_num>] sta -D
+    - - P SSC[1-<node_num>] C +QAP:OK
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1-<node_num>] restore
+    - - P SSC[1-<node_num>] C !!!ready!!!
+  - - SSC SSC[1-<node_num>] op -S -o 3
+    - - P SSC[1-<node_num>] C +MODE:OK
+  - - SSC SSC[1-<node_num>] sta -D
+    - - P SSC[1-<node_num>] C +QAP:OK
