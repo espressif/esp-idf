@@ -2,7 +2,8 @@ SOURCE_FILES := \
 	app_update/esp_ota_eps.c \
 	log/log.c \
 	newlib/lock.c \
-	esp32/crc.cpp
+	esp32/crc.cpp \
+	esp32/esp_random.c 
 
 INCLUDE_DIRS := \
 	../include \
