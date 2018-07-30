@@ -1419,6 +1419,7 @@ static void _mdns_pcb_send_bye(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t i
     if (!packet) {
         return;
     }
+    packet->flags = MDNS_FLAGS_AUTHORITATIVE;
     size_t i;
     for (i=0; i<len; i++) {
         if (!_mdns_alloc_answer(&packet->answers, MDNS_TYPE_PTR, services[i]->service, true, true)) {

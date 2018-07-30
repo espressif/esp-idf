@@ -44,6 +44,8 @@ static const char* UART_TAG = "uart";
 #define UART_EMPTY_THRESH_DEFAULT  (10)
 #define UART_FULL_THRESH_DEFAULT  (120)
 #define UART_TOUT_THRESH_DEFAULT   (10)
+#define UART_CLKDIV_FRAG_BIT_WIDTH  (3)
+#define UART_TOUT_REF_FACTOR_DEFAULT (UART_CLK_FREQ/(REF_CLK_FREQ<<UART_CLKDIV_FRAG_BIT_WIDTH))
 #define UART_TX_IDLE_NUM_DEFAULT   (0)
 #define UART_PATTERN_DET_QLEN_DEFAULT (10)
 
@@ -670,7 +672,13 @@ esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
     UART[uart_num]->int_clr.val = UART_INTR_MASK;
     if(intr_conf->intr_enable_mask & UART_RXFIFO_TOUT_INT_ENA_M) {
-        UART[uart_num]->conf1.rx_tout_thrhd = ((intr_conf->rx_timeout_thresh) & UART_RX_TOUT_THRHD_V);
+        //Hardware issue workaround: when using ref_tick, the rx timeout threshold needs increase to 10 times.
+        //T_ref = T_apb * APB_CLK/(REF_TICK << CLKDIV_FRAG_BIT_WIDTH)
+        if(UART[uart_num]->conf0.tick_ref_always_on == 0) {
+            UART[uart_num]->conf1.rx_tout_thrhd = ((intr_conf->rx_timeout_thresh * UART_TOUT_REF_FACTOR_DEFAULT) & UART_RX_TOUT_THRHD_V);
+        } else {
+            UART[uart_num]->conf1.rx_tout_thrhd = ((intr_conf->rx_timeout_thresh) & UART_RX_TOUT_THRHD_V);
+        }
         UART[uart_num]->conf1.rx_tout_en = 1;
     } else {
         UART[uart_num]->conf1.rx_tout_en = 0;
@@ -1456,7 +1464,7 @@ esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode)
     case UART_MODE_RS485_COLLISION_DETECT:
         // This mode allows read while transmitting that allows collision detection
         p_uart_obj[uart_num]->coll_det_flg = false;
-        // Transmitter’s output signal loop back to the receiver’s input signal
+        // TransmitterÂ’s output signal loop back to the receiverÂ’s input signal
         UART[uart_num]->rs485_conf.tx_rx_en = 0 ;
         // Transmitter should send data when its receiver is busy
         UART[uart_num]->rs485_conf.rx_busy_tx_en = 1;

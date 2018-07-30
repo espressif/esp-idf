@@ -275,6 +275,13 @@ config SECURE_BOOT_ALLOW_JTAG
 
           Only set this option in testing environments.
 
+config SECURE_BOOT_ALLOW_SHORT_APP_PARTITION
+       bool "Allow app partition length not 64KB aligned"
+       depends on SECURE_BOOT_INSECURE
+       help
+           If not set (default), app partition size must be a multiple of 64KB. App images are padded to 64KB length, and the bootloader checks any trailing bytes after the signature (before the next 64KB boundary) have not been written. This is because flash cache maps entire 64KB pages into the address space. This prevents an attacker from appending unverified data after the app image in the flash, causing it to be mapped into the address space.
+
+           Setting this option allows the app partition length to be unaligned, and disables padding of the app image to this length. It is generally not recommended to set this option, unless you have a legacy partitioning scheme which doesn't support 64KB aligned partition lengths.
 
 config FLASH_ENCRYPTION_UART_BOOTLOADER_ALLOW_ENCRYPT
     bool "Leave UART bootloader encryption enabled"

@@ -106,16 +106,16 @@ esp_err_t Page::writeEntry(const Item& item)
 
     return ESP_OK;
 }
-    
+
 esp_err_t Page::writeEntryData(const uint8_t* data, size_t size)
 {
     assert(size % ENTRY_SIZE == 0);
     assert(mNextFreeEntry != INVALID_ENTRY);
     assert(mFirstUsedEntry != INVALID_ENTRY);
     const uint16_t count = size / ENTRY_SIZE;
-    
+
     const uint8_t* buf = data;
-    
+
 #ifdef ESP_PLATFORM
     /* On the ESP32, data can come from DROM, which is not accessible by spi_flash_write
      * function. To work around this, we copy the data to heap if it came from DROM.
@@ -151,15 +151,15 @@ esp_err_t Page::writeEntryData(const uint8_t* data, size_t size)
     return ESP_OK;
 }
 
-esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, const void* data, size_t dataSize)
+esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, const void* data, size_t dataSize, uint8_t chunkIdx)
 {
     Item item;
     esp_err_t err;
-    
+
     if (mState == PageState::INVALID) {
         return ESP_ERR_NVS_INVALID_STATE;
     }
-    
+
     if (mState == PageState::UNINITIALIZED) {
         err = initialize();
         if (err != ESP_OK) {
@@ -175,21 +175,22 @@ esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, c
     if (keySize > Item::MAX_KEY_LENGTH) {
         return ESP_ERR_NVS_KEY_TOO_LONG;
     }
-    
-    if (dataSize > Page::BLOB_MAX_SIZE) {
+
+    if (dataSize > Page::CHUNK_MAX_SIZE) {
         return ESP_ERR_NVS_VALUE_TOO_LONG;
     }
 
     size_t totalSize = ENTRY_SIZE;
     size_t entriesCount = 1;
-    if (datatype == ItemType::SZ || datatype == ItemType::BLOB) {
+    if (isVariableLengthType(datatype)) {
         size_t roundedSize = (dataSize + ENTRY_SIZE - 1) & ~(ENTRY_SIZE - 1);
         totalSize += roundedSize;
         entriesCount += roundedSize / ENTRY_SIZE;
     }
 
     // primitive types should fit into one entry
-    assert(totalSize == ENTRY_SIZE || datatype == ItemType::BLOB || datatype == ItemType::SZ);
+    assert(totalSize == ENTRY_SIZE ||
+       isVariableLengthType(datatype));
 
     if (mNextFreeEntry == INVALID_ENTRY || mNextFreeEntry + entriesCount > ENTRY_COUNT) {
         // page will not fit this amount of data
@@ -198,10 +199,10 @@ esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, c
 
     // write first item
     size_t span = (totalSize + ENTRY_SIZE - 1) / ENTRY_SIZE;
-    item = Item(nsIndex, datatype, span, key);
+    item = Item(nsIndex, datatype, span, key, chunkIdx);
     mHashList.insert(item, mNextFreeEntry);
 
-    if (datatype != ItemType::SZ && datatype != ItemType::BLOB) {
+    if (!isVariableLengthType(datatype)) {
         memcpy(item.data, data, dataSize);
         item.crc32 = item.calculateCrc32();
         err = writeEntry(item);
@@ -212,7 +213,7 @@ esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, c
         const uint8_t* src = reinterpret_cast<const uint8_t*>(data);
         item.varLength.dataCrc32 = Item::calculateCrc32(src, dataSize);
         item.varLength.dataSize = dataSize;
-        item.varLength.reserved2 = 0xffff;
+        item.varLength.reserved = 0xffff;
         item.crc32 = item.calculateCrc32();
         err = writeEntry(item);
         if (err != ESP_OK) {
@@ -226,7 +227,7 @@ esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, c
                 return err;
             }
         }
-        
+
         size_t tail = dataSize - left;
         if (tail > 0) {
             std::fill_n(item.rawData, ENTRY_SIZE / 4, 0xffffffff);
@@ -236,26 +237,26 @@ esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, c
                 return err;
             }
         }
-    
+
     }
     return ESP_OK;
 }
 
-esp_err_t Page::readItem(uint8_t nsIndex, ItemType datatype, const char* key, void* data, size_t dataSize)
+esp_err_t Page::readItem(uint8_t nsIndex, ItemType datatype, const char* key, void* data, size_t dataSize, uint8_t chunkIdx, VerOffset chunkStart)
 {
     size_t index = 0;
     Item item;
-    
+
     if (mState == PageState::INVALID) {
         return ESP_ERR_NVS_INVALID_STATE;
     }
-    
-    esp_err_t rc = findItem(nsIndex, datatype, key, index, item);
+
+    esp_err_t rc = findItem(nsIndex, datatype, key, index, item, chunkIdx, chunkStart);
     if (rc != ESP_OK) {
         return rc;
     }
 
-    if (datatype != ItemType::SZ && datatype != ItemType::BLOB) {
+    if (!isVariableLengthType(datatype)) {
         if (dataSize != getAlignmentForType(datatype)) {
             return ESP_ERR_NVS_TYPE_MISMATCH;
         }
@@ -292,22 +293,22 @@ esp_err_t Page::readItem(uint8_t nsIndex, ItemType datatype, const char* key, vo
     return ESP_OK;
 }
 
-esp_err_t Page::eraseItem(uint8_t nsIndex, ItemType datatype, const char* key)
+esp_err_t Page::eraseItem(uint8_t nsIndex, ItemType datatype, const char* key, uint8_t chunkIdx, VerOffset chunkStart)
 {
     size_t index = 0;
     Item item;
-    esp_err_t rc = findItem(nsIndex, datatype, key, index, item);
+    esp_err_t rc = findItem(nsIndex, datatype, key, index, item, chunkIdx, chunkStart);
     if (rc != ESP_OK) {
         return rc;
     }
     return eraseEntryAndSpan(index);
 }
 
-esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key)
+esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, uint8_t chunkIdx, VerOffset chunkStart)
 {
     size_t index = 0;
     Item item;
-    return findItem(nsIndex, datatype, key, index, item);
+    return findItem(nsIndex, datatype, key, index, item, chunkIdx, chunkStart);
 }
 
 esp_err_t Page::eraseEntryAndSpan(size_t index)
@@ -523,7 +524,7 @@ esp_err_t Page::mLoadEntryTable()
                 mState = PageState::INVALID;
                 return err;
             }
-            
+
             if (item.crc32 != item.calculateCrc32()) {
                 err = eraseEntryAndSpan(i);
                 if (err != ESP_OK) {
@@ -534,11 +535,11 @@ esp_err_t Page::mLoadEntryTable()
             }
 
             mHashList.insert(item, i);
-            
+
             // search for potential duplicate item
             size_t duplicateIndex = mHashList.find(0, item);
-            
-            if (item.datatype == ItemType::BLOB || item.datatype == ItemType::SZ) {
+
+            if (isVariableLengthType(item.datatype)) {
                 span = item.span;
                 bool needErase = false;
                 for (size_t j = i; j < i + span; ++j) {
@@ -553,7 +554,11 @@ esp_err_t Page::mLoadEntryTable()
                     continue;
                 }
             }
-            
+
+            /* Note that logic for duplicate detections works fine even 
+             * when old-format blob is present along with new-format blob-index 
+             * for same key on active page. Since datatype is not used in hash calculation, 
+             * old-format blob will be removed.*/
             if (duplicateIndex < i) {
                 eraseEntryAndSpan(duplicateIndex);
             }
@@ -603,7 +608,7 @@ esp_err_t Page::mLoadEntryTable()
 
             size_t span = item.span;
 
-            if (item.datatype == ItemType::BLOB || item.datatype == ItemType::SZ) {
+            if (isVariableLengthType(item.datatype)) {
                 for (size_t j = i + 1; j < i + span; ++j) {
                     if (mEntryTable.get(j) != EntryState::WRITTEN) {
                         eraseEntryAndSpan(i);
@@ -703,12 +708,12 @@ esp_err_t Page::readEntry(size_t index, Item& dst) const
     return ESP_OK;
 }
 
-esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, size_t &itemIndex, Item& item)
+esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, size_t &itemIndex, Item& item, uint8_t chunkIdx, VerOffset chunkStart)
 {
     if (mState == PageState::CORRUPT || mState == PageState::INVALID || mState == PageState::UNINITIALIZED) {
         return ESP_ERR_NVS_NOT_FOUND;
     }
-    
+
     size_t findBeginIndex = itemIndex;
     if (findBeginIndex >= ENTRY_COUNT) {
         return ESP_ERR_NVS_NOT_FOUND;
@@ -725,7 +730,7 @@ esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, si
     }
 
     if (nsIndex != NS_ANY && datatype != ItemType::ANY && key != NULL) {
-        size_t cachedIndex = mHashList.find(start, Item(nsIndex, datatype, 0, key));
+        size_t cachedIndex = mHashList.find(start, Item(nsIndex, datatype, 0, key, chunkIdx));
         if (cachedIndex < ENTRY_COUNT) {
             start = cachedIndex;
         } else {
@@ -756,7 +761,7 @@ esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, si
             continue;
         }
 
-        if (item.datatype == ItemType::BLOB || item.datatype == ItemType::SZ) {
+        if (isVariableLengthType(item.datatype)) {
             next = i + item.span;
         }
 
@@ -767,8 +772,30 @@ esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, si
         if (key != nullptr && strncmp(key, item.key, Item::MAX_KEY_LENGTH) != 0) {
             continue;
         }
+        /* For blob data, chunkIndex should match*/
+        if (chunkIdx != CHUNK_ANY
+                && datatype == ItemType::BLOB_DATA
+                && item.chunkIndex != chunkIdx) {
+            continue;
+        }
+        /* Blob-index will match the <ns,key> with blob data.
+         * Skip data chunks when searching for blob index*/
+        if (datatype == ItemType::BLOB_IDX
+                && item.chunkIndex != CHUNK_ANY) {
+            continue;
+        }
+        /* Match the version for blob-index*/
+        if (datatype == ItemType::BLOB_IDX
+                && chunkStart != VerOffset::VER_ANY
+                && item.blobIndex.chunkStart != chunkStart) {
+            continue;
+        }
+
 
         if (datatype != ItemType::ANY && item.datatype != datatype) {
+            if (key == nullptr && nsIndex == NS_ANY && chunkIdx == CHUNK_ANY) {
+                continue; // continue for bruteforce search on blob indices.
+            }
             return ESP_ERR_NVS_TYPE_MISMATCH;
         }
 
@@ -831,28 +858,39 @@ esp_err_t Page::markFull()
     }
     return alterPageState(PageState::FULL);
 }
-    
+
+size_t Page::getVarDataTailroom() const
+{
+    if (mState == PageState::UNINITIALIZED) {
+        return CHUNK_MAX_SIZE;
+    } else if (mState == PageState::FULL) {
+        return 0;
+    }
+    /* Skip one entry for header*/
+    return ((mNextFreeEntry < (ENTRY_COUNT-1)) ? ((ENTRY_COUNT - mNextFreeEntry - 1) * ENTRY_SIZE): 0);
+}
+
 const char* Page::pageStateToName(PageState ps)
 {
     switch (ps) {
         case PageState::CORRUPT:
             return "CORRUPT";
-            
+
         case PageState::ACTIVE:
             return "ACTIVE";
-            
+
         case PageState::FREEING:
             return "FREEING";
-            
+
         case PageState::FULL:
             return "FULL";
-            
+
         case PageState::INVALID:
             return "INVALID";
-            
+
         case PageState::UNINITIALIZED:
             return "UNINITIALIZED";
-            
+
         default:
             assert(0 && "invalid state value");
             return "";
@@ -874,7 +912,7 @@ void Page::debugDump() const
             Item item;
             readEntry(i, item);
             if (skip == 0) {
-                printf("W ns=%2u type=%2u span=%3u key=\"%s\" len=%d\n", item.nsIndex, static_cast<unsigned>(item.datatype), item.span, item.key, (item.span != 1)?((int)item.varLength.dataSize):-1);
+                printf("W ns=%2u type=%2u span=%3u key=\"%s\" chunkIdx=%d len=%d\n", item.nsIndex, static_cast<unsigned>(item.datatype), item.span, item.key, item.chunkIndex, (item.span != 1)?((int)item.varLength.dataSize):-1);
                 if (item.span > 0 && item.span <= ENTRY_COUNT - i) {
                     skip = item.span - 1;
                 } else {

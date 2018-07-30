@@ -1,14 +1,18 @@
-ESP32-PICO-KIT V4 Getting Started Guide
-=======================================
+ESP32-PICO-KIT V4 / V4.1 Getting Started Guide
+==============================================
 :link_to_translation:`zh_CN:[中文]`
 
-This user guide shows how to get started with the ESP32-PICO-KIT V4 mini development board. For description of other versions of the ESP32-PICO-KIT check :doc:`../hw-reference/index`.
+This user guide shows how to get started with the ESP32-PICO-KIT V4 / V4.1 mini development board. For description of other versions of the ESP32-PICO-KIT check :doc:`../hw-reference/index`.
+
+.. note::
+
+    This particular description covers ESP32-PICO-KIT V4 and V4.1. The difference is USB-UART bridge that has been changed from CP2102 in V4 to CP2102N in V4.1. The first provides up to 1 Mbps transfer rates, while the later up to 3 Mbps transfer rates.
 
 
 What You Need
 -------------
 
-* 1 × :ref:`ESP32-PICO-KIT V4 mini development board <get-started-pico-kit-v4-board-front>`
+* 1 × :ref:`ESP32-PICO-KIT mini development board <get-started-pico-kit-v4-board-front>`
 * 1 × USB A / Micro USB B cable
 * 1 × PC loaded with Windows, Linux or Mac OS
 
@@ -18,39 +22,39 @@ If you like to start using this board right now, go directly to section `Start A
 Overview
 --------
 
-ESP32-PICO-KIT V4 is a mini development board produced by `Espressif <https://espressif.com>`_. At the core of this board is the ESP32-PICO-D4, a System-in-Package (SIP) module with complete Wi-Fi and Bluetooth functionalities. Comparing to other ESP32 chips, the ESP32-PICO-D4 integrates several peripheral components in one single package, that otherwise would need to be installed separately. This includes a 40 MHz crystal oscillator, 4 MB flash, filter capacitors and RF matching links in. This greatly reduces quantity and costs of additional components, subsequent assembly and testing cost, as well as overall product complexity.
+ESP32-PICO-KIT is a mini development board produced by `Espressif <https://espressif.com>`_. At the core of this board is the ESP32-PICO-D4, a System-in-Package (SiP) module with complete Wi-Fi and Bluetooth functionalities. Comparing to other ESP32 modules, the ESP32-PICO-D4 integrates several peripheral components in one single package, that otherwise would need to be installed separately. This includes a 40 MHz crystal oscillator, a 4 MB flash, filter capacitors and RF matching links in. This greatly reduces quantity and costs of additional components, subsequent assembly and testing cost, as well as overall product complexity.
 
 The development board integrates a USB-UART Bridge circuit, allowing the developers to connect the board to a PC's USB port for downloads and debugging. 
 
-For easy interfacing, all the IO signals and system power on ESP32-PICO-D4 are led out through two rows of 20 x 0.1" pitch header pads on both sides of the development board. To make the ESP32-PICO-KIT V4 fit into mini breadboards, the header pads are populated with two rows of 17 pin headers. Remaining 2 x 3 pads grouped on each side of the board besides the antenna are not populated. The remaining 2 x 3 pin headers may be soldered later by the user. 
+For easy interfacing, all the IO signals and system power on ESP32-PICO-D4 are led out through two rows of 20 x 0.1" pitch header pads on both sides of the development board. To make the ESP32-PICO-KIT fit into mini breadboards, the header pads are populated with two rows of 17 pin headers. Remaining 2 x 3 pads grouped on each side of the board besides the antenna are not populated. The remaining 2 x 3 pin headers may be soldered later by the user. 
 
 .. note::
 
-    The 2 x 3 pads not populated with pin headers are internally connected to the flash memory embedded in the ESP32-PICO-D4 SIP module. For more details see module's datasheet in `Related Documents`_.
+    The 2 x 3 pads not populated with pin headers are internally connected to the flash memory embedded in the ESP32-PICO-D4 SiP module. For more details see module's datasheet in `Related Documents`_.
 
 The board dimensions are 52 x 20.3 x 10 mm (2.1" x 0.8" x 0.4"), see section `Board Dimensions`_. An overview functional block diagram is shown below.
 
 .. figure:: ../../_static/esp32-pico-kit-v4-functional-block-diagram.png
     :align: center
-    :alt: ESP32-PICO-KIT V4 functional block diagram
+    :alt: ESP32-PICO-KIT functional block diagram
     :figclass: align-center
 
-    ESP32-PICO-KIT V4 functional block diagram
+    ESP32-PICO-KIT functional block diagram
 
 
 Functional Description
 ----------------------
 
-The following list and figure below describe key components, interfaces and controls of ESP32-PICO-KIT V4 board.
+The following list and figure below describe key components, interfaces and controls of ESP32-PICO-KIT board.
 
 ESP32-PICO-D4
-    Standard ESP32-PICO-D4 module soldered to the ESP32-PICO-KIT V4 board. The complete system of the ESP32 chip has been integrated into the SIP module, requiring only external antenna with LC matching network, decoupling capacitors and pull-up resistors for EN signals to function properly.
+    Standard ESP32-PICO-D4 module soldered to the ESP32-PICO-KIT board. The complete system of the ESP32 chip has been integrated into the SiP module, requiring only external antenna with LC matching network, decoupling capacitors and pull-up resistors for EN signals to function properly.
 LDO
     5V-to-3.3V Low dropout voltage regulator (LDO).
 USB-UART Bridge
-    A single chip USB-UART bridge provides up to 1 Mbps transfers rates.
+    A single chip USB-UART bridge: CP2102 in V4 of the board and CP2102N in V4.1. The first provides up to 1 Mbps transfer rates, while the latter up to 3 Mbps transfers rates.
 Micro USB Port
-    USB interface. It functions as the power supply for the board and the communication interface between PC and ESP32-PICO-KIT V4.
+    USB interface. It functions as the power supply for the board and the communication interface between PC and ESP32-PICO-KIT.
 5V Power On LED
     This light emitting diode lits when the USB or an external 5V power supply is applied to the board. For details see schematic in `Related Documents`_.
 I/O
@@ -62,18 +66,18 @@ EN Button
 
 .. _get-started-pico-kit-v4-board-front:
 
-.. figure:: ../../_static/esp32-pico-kit-v4-layout.jpg
+.. figure:: ../../_static/esp32-pico-kit-v4.1-layout.jpg
     :align: center
-    :alt: ESP32-PICO-KIT V4 board layout
+    :alt: ESP32-PICO-KIT board layout
     :figclass: align-center
 
-    ESP32-PICO-KIT V4 board layout
+    ESP32-PICO-KIT board layout
 
 
 Power Supply Options
 --------------------
 
-There following options are available to provide power supply to the ESP32-PICO-KIT V4:
+The following options are available to provide power supply to the ESP32-PICO-KIT:
 
 1. Micro USB port, this is default power supply connection
 2. 5V / GND header pins
@@ -87,7 +91,7 @@ There following options are available to provide power supply to the ESP32-PICO-
 Start Application Development
 -----------------------------
 
-Before powering up the ESP32-PICO-KIT V4, please make sure that the board has been received in good condition with no obvious signs of damage.
+Before powering up the ESP32-PICO-KIT, please make sure that the board has been received in good condition with no obvious signs of damage.
 
 To start development of applications, proceed to section :doc:`index`, that will walk you through the following steps:
 
@@ -183,25 +187,29 @@ No.     Name               Type    Function
 Board Dimensions
 ----------------
 
-.. figure:: ../../_static/esp32-pico-kit-v4-dimensions-back.jpg
+.. figure:: ../../_static/esp32-pico-kit-v4.1-dimensions-back.jpg
     :align: center
-    :alt: ESP32-PICO-KIT V4 dimensions - back
+    :alt: ESP32-PICO-KIT dimensions - back
     :figclass: align-center
 
-    ESP32-PICO-KIT V4 dimensions - back
+    ESP32-PICO-KIT dimensions - back
 
 .. figure:: ../../_static/esp32-pico-kit-v4-dimensions-side.jpg
     :align: center
-    :alt: ESP32-PICO-KIT V4 dimensions - side
+    :alt: ESP32-PICO-KIT dimensions - side
     :figclass: align-center
 
-    ESP32-PICO-KIT V4 dimensions - side
+    ESP32-PICO-KIT dimensions - side
+
+For the board physical construction details please refer to Reference Design listed below.
 
 
 Related Documents
 -----------------
 
 * `ESP32-PICO-KIT V4 schematic <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v4_schematic.pdf>`_ (PDF)
+* `ESP32-PICO-KIT V4.1 schematic <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v4.1_schematic.pdf>`_ (PDF)
+* `ESP32-PICO-KIT Reference Design <https://www.espressif.com/en/support/download/documents?keys=ESP32-PICO-KIT+Reference+Design>`_ containing OrCAD schematic, PCB layout, gerbers and BOM
 * `ESP32-PICO-D4 Datasheet <http://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf>`_ (PDF)
 * :doc:`../hw-reference/index`
 

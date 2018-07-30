@@ -49,6 +49,7 @@
 #include "bootloader_random.h"
 #include "bootloader_config.h"
 #include "bootloader_common.h"
+#include "bootloader_utility.h"
 
 static const char* TAG = "boot";
 
@@ -72,18 +73,6 @@ bool bootloader_utility_load_partition_table(bootloader_state_t* bs)
     esp_err_t err;
     int num_partitions;
 
-#ifdef CONFIG_SECURE_BOOT_ENABLED
-    if(esp_secure_boot_enabled()) {
-        ESP_LOGI(TAG, "Verifying partition table signature...");
-        err = esp_secure_boot_verify_signature(ESP_PARTITION_TABLE_OFFSET, ESP_PARTITION_TABLE_MAX_LEN);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to verify partition table signature.");
-            return false;
-        }
-        ESP_LOGD(TAG, "Partition table signature verified");
-    }
-#endif
-
     partitions = bootloader_mmap(ESP_PARTITION_TABLE_OFFSET, ESP_PARTITION_TABLE_MAX_LEN);
     if (!partitions) {
         ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", ESP_PARTITION_TABLE_OFFSET, ESP_PARTITION_TABLE_MAX_LEN);
@@ -91,7 +80,7 @@ bool bootloader_utility_load_partition_table(bootloader_state_t* bs)
     }
     ESP_LOGD(TAG, "mapped partition table 0x%x at 0x%x", ESP_PARTITION_TABLE_OFFSET, (intptr_t)partitions);
 
-    err = esp_partition_table_basic_verify(partitions, true, &num_partitions);
+    err = esp_partition_table_verify(partitions, true, &num_partitions);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to verify partition table");
         return false;
@@ -222,8 +211,8 @@ int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
         bootloader_munmap(ota_select_map);
 
         ESP_LOGD(TAG, "OTA sequence values A 0x%08x B 0x%08x", sa.ota_seq, sb.ota_seq);
-        if(sa.ota_seq == UINT32_MAX && sb.ota_seq == UINT32_MAX) {
-            ESP_LOGD(TAG, "OTA sequence numbers both empty (all-0xFF)");
+        if ((sa.ota_seq == UINT32_MAX && sb.ota_seq == UINT32_MAX) || (bs->app_count == 0)) {
+            ESP_LOGD(TAG, "OTA sequence numbers both empty (all-0xFF) or partition table does not have bootable ota_apps (app_count=%d)", bs->app_count);
             if (bs->factory.offset != 0) {
                 ESP_LOGI(TAG, "Defaulting to factory image");
                 return FACTORY_INDEX;
@@ -299,7 +288,7 @@ void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_
             load_image(&image_data);
         } else {
             ESP_LOGE(TAG, "No bootable test partition in the partition table");
-            return;
+            bootloader_reset();
         }
     }
 
@@ -336,6 +325,7 @@ void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_
 
     ESP_LOGE(TAG, "No bootable app partitions in the partition table");
     bzero(&image_data, sizeof(esp_image_metadata_t));
+    bootloader_reset();
 }
 
 // Copy loaded segments to RAM, set up caches for mapped segments, and start application.
@@ -372,8 +362,7 @@ static void load_image(const esp_image_metadata_t* image_data)
            so issue a system reset to ensure flash encryption
            cache resets properly */
         ESP_LOGI(TAG, "Resetting with flash encryption enabled...");
-        REG_WRITE(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);
-        return;
+        bootloader_reset();
     }
 #endif
 
@@ -473,4 +462,18 @@ static void set_cache_and_start_app(
     // TODO: we have used quite a bit of stack at this point.
     // use "movsp" instruction to reset stack back to where ROM stack starts.
     (*entry)();
+}
+
+
+void bootloader_reset(void)
+{
+#ifdef BOOTLOADER_BUILD
+    uart_tx_flush(0);    /* Ensure any buffered log output is displayed */
+    uart_tx_flush(1);
+    ets_delay_us(1000); /* Allow last byte to leave FIFO */
+    REG_WRITE(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);
+    while (1) { }       /* This line will never be reached, used to keep gcc happy */
+#else
+    abort();            /* This function should really not be called from application code */
+#endif
 }

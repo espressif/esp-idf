@@ -55,6 +55,20 @@ The following keys are used by the secure boot process:
 
   - The private key from this key pair *must be securely kept private*, as anyone who has this key can authenticate to any bootloader that is configured with secure boot and the matching public key.
 
+.. _secure-boot-bootloader-size:
+
+Bootloader Size
+---------------
+
+When secure boot is enabled the bootloader app binary ``bootloader.bin`` may exceed the default bootloader size limit. This is especially likely if flash encryption is enabled as well. The default size limit is 0x7000 (28672) bytes (partition table offset 0x8000 - bootloader offset 0x1000).
+
+If the bootloader becomes too large, the ESP32 will fail to boot - errors will be logged about either invalid partition table or invalid bootloader checksum.
+
+Options to work around this are:
+
+- Reduce :envvar:`bootloader log level <CONFIG_LOG_BOOTLOADER_LEVEL>`. Setting log level to Warning, Error or None all significantly reduce the final binary size (but may make it harder to debug).
+- Set :envvar:`partition table offset <CONFIG_PARTITION_TABLE_OFFSET>` to a higher value than 0x8000, to place the partition table later in the flash. This increases the space available for the bootloader. If the :doc:`partition table </api-guides/partition-tables>` CSV file contains explicit partition offsets, they will need changing so no partition has an offset lower than ``CONFIG_PARTITION_TABLE_OFFSET + 0x1000``. (This includes the default partition CSV files supplied with ESP-IDF.)
+
 .. _secure-boot-howto:
 
 How To Enable Secure Boot
@@ -68,9 +82,11 @@ How To Enable Secure Boot
 
 4. The first time you run ``make``, if the signing key is not found then an error message will be printed with a command to generate a signing key via ``espsecure.py generate_signing_key``.
 
-   **IMPORTANT** A signing key generated this way will use the best random number source available to the OS and its Python installation (`/dev/urandom` on OSX/Linux and `CryptGenRandom()` on Windows). If this random number source is weak, then the private key will be weak.
+.. important::
+   A signing key generated this way will use the best random number source available to the OS and its Python installation (`/dev/urandom` on OSX/Linux and `CryptGenRandom()` on Windows). If this random number source is weak, then the private key will be weak.
 
-   **IMPORTANT** For production environments, we recommend generating the keypair using openssl or another industry standard encryption program. See :ref:`secure-boot-generate-key` for more details.
+.. important::
+   For production environments, we recommend generating the keypair using openssl or another industry standard encryption program. See :ref:`secure-boot-generate-key` for more details.
 
 5. Run ``make bootloader`` to build a secure boot enabled bootloader. The output of ``make`` will include a prompt for a flashing command, using ``esptool.py write_flash``.
 
@@ -80,11 +96,13 @@ How To Enable Secure Boot
 
 7. Run ``make flash`` to build and flash the partition table and the just-built app image. The app image will be signed using the signing key you generated in step 4.
 
-   *NOTE*: ``make flash`` doesn't flash the bootloader if secure boot is enabled.
+.. note:: ``make flash`` doesn't flash the bootloader if secure boot is enabled.
 
 8. Reset the ESP32 and it will boot the software bootloader you flashed. The software bootloader will enable secure boot on the chip, and then it verifies the app image signature and boots the app. You should watch the serial console output from the ESP32 to verify that secure boot is enabled and no errors have occurred due to the build configuration.
 
-**NOTE** Secure boot won't be enabled until after a valid partition table and app image have been flashed. This is to prevent accidents before the system is fully configured.
+.. note:: Secure boot won't be enabled until after a valid partition table and app image have been flashed. This is to prevent accidents before the system is fully configured.
+
+.. note:: If the ESP32 is reset or powered down during the first boot, it will start the process again on the next boot.
 
 9. On subsequent boots, the secure boot hardware will verify the software bootloader has not changed (using the secure bootloader key) and then the software bootloader will verify the signed partition table and app image (using the public key portion of the secure boot signing key).
 
@@ -95,11 +113,11 @@ Re-Flashable Software Bootloader
 
 Configuration "Secure Boot: One-Time Flash" is the recommended configuration for production devices. In this mode, each device gets a unique key that is never stored outside the device.
 
-However, an alternative mode "Secure Boot: Reflashable" is also available. This mode allows you to supply a 256-bit key file that is used for the secure bootloader key. As you have the key file, you can generate new bootloader images and secure boot digests for them.
+However, an alternative mode :envvar:`Secure Boot: Reflashable <CONFIG_SECURE_BOOTLOADER_REFLASHABLE>` is also available. This mode allows you to supply a 256-bit key file that is used for the secure bootloader key. As you have the key file, you can generate new bootloader images and secure boot digests for them.
 
 In the esp-idf build process, this 256-bit key file is derived from the app signing key generated during the generate_signing_key step above. The private key's SHA-256 digest is used as the 256-bit secure bootloader key. This is a convenience so you only need to generate/protect a single private key.
 
-**NOTE**: Although it's possible, we strongly recommend not generating one secure boot key and flashing it to every device in a production environment. The "One-Time Flash" option is recommended for production environments.
+.. note:: Although it's possible, we strongly recommend not generating one secure boot key and flashing it to every device in a production environment. The "One-Time Flash" option is recommended for production environments.
 
 To enable a reflashable bootloader:
 

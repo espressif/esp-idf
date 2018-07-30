@@ -1,0 +1,33 @@
+SOURCE_FILES := \
+	../spiffs_api.c \
+	$(addprefix ../spiffs/src/, \
+	spiffs_cache.c \
+	spiffs_check.c \
+	spiffs_gc.c \
+	spiffs_hydrogen.c \
+	spiffs_nucleus.c \
+	) 
+
+INCLUDE_DIRS := \
+	. \
+	.. \
+	../spiffs/src \
+	../include \
+	$(addprefix ../../spi_flash/sim/stubs/, \
+	app_update/include \
+	driver/include \
+	esp32/include \
+	freertos/include \
+	log/include \
+	newlib/include \
+	sdmmc/include \
+	vfs/include \
+	) \
+	$(addprefix ../../../components/, \
+	soc/esp32/include \
+	esp32/include \
+	bootloader_support/include \
+	app_update/include \
+	spi_flash/include \
+	wear_levelling/include \
+	)

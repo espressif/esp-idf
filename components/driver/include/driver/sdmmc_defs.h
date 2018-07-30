@@ -31,11 +31,13 @@
 #define MMC_SEND_EXT_CSD                8       /* R1 */
 #define MMC_SEND_CSD                    9       /* R2 */
 #define MMC_SEND_CID                    10      /* R1 */
+#define MMC_READ_DAT_UNTIL_STOP         11      /* R1 */
 #define MMC_STOP_TRANSMISSION           12      /* R1B */
 #define MMC_SEND_STATUS                 13      /* R1 */
 #define MMC_SET_BLOCKLEN                16      /* R1 */
 #define MMC_READ_BLOCK_SINGLE           17      /* R1 */
 #define MMC_READ_BLOCK_MULTIPLE         18      /* R1 */
+#define MMC_WRITE_DAT_UNTIL_STOP        20      /* R1 */
 #define MMC_SET_BLOCK_COUNT             23      /* R1 */
 #define MMC_WRITE_BLOCK_SINGLE          24      /* R1 */
 #define MMC_WRITE_BLOCK_MULTIPLE        25      /* R1 */

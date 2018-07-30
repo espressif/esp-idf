@@ -52,6 +52,11 @@
 #define X8_F  "02x"
 #endif /* X8_F */
 
+/** C++ const_cast<target_type>(val) equivalent to remove constness from a value (GCC -Wcast-qual) */
+#ifndef LWIP_CONST_CAST
+#define LWIP_CONST_CAST(target_type, val) ((target_type)((ptrdiff_t)val))
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

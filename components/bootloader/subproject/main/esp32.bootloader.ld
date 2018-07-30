@@ -41,19 +41,25 @@ SECTIONS
      *(.iram1 .iram1.*) /* catch stray IRAM_ATTR */
     *liblog.a:(.literal .text .literal.* .text.*)
     *libgcc.a:(.literal .text .literal.* .text.*)
-    *libbootloader_support.a:bootloader_utility.o(.literal .text .literal.* .text.*)
-    *libbootloader_support.a:esp_image_format.o(.literal .text .literal.* .text.*)
-    *libbootloader_support.a:bootloader_random.o(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_flash.o(.literal .text .literal.* .text.*)
-    *libbootloader_support.a:flash_partitions.o(.literal .text .literal.* .text.*)
+    *libbootloader_support.a:bootloader_random.o(.literal .text .literal.* .text.*)
+    *libbootloader_support.a:bootloader_utility.o(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_sha.o(.literal .text .literal.* .text.*)
+    *libbootloader_support.a:efuse.o(.literal .text .literal.* .text.*)
+    *libbootloader_support.a:esp_image_format.o(.literal .text .literal.* .text.*)
+    *libbootloader_support.a:flash_encrypt.o(.literal .text .literal.* .text.*)
+    *libbootloader_support.a:flash_partitions.o(.literal .text .literal.* .text.*)
+    *libbootloader_support.a:secure_boot.o(.literal .text .literal.* .text.*)
+    *libbootloader_support.a:secure_boot_signatures.o(.literal .text .literal.* .text.*)
+    *libmicro-ecc.a:*.o(.literal .text .literal.* .text.*)
+    *libspi_flash.a:*.o(.literal .text .literal.* .text.*)
     *(.fini.literal)
     *(.fini)
     *(.gnu.version)
     _text_end = ABSOLUTE(.);
     _etext = .;
   } > iram_loader_seg
-  
+
   .iram.text :
   {
     . = ALIGN (16);

@@ -26,8 +26,6 @@
 extern "C" {
 #endif
 
-extern const char* TAG;
-
 /**
  * @brief SPIFFS definition structure
  */

@@ -134,11 +134,11 @@ void app_main()
     /* Bluetooth device name, connection mode and profile set up */
     bt_app_work_dispatch(bt_av_hdl_stack_evt, BT_APP_EVT_STACK_UP, NULL, 0, NULL);
 
-#if (BT_SPP_INCLUDED)
+#ifdef CONFIG_BT_SSP_ENABLE
     esp_bt_sp_param_t param_type = ESP_BT_SP_IOCAP_MODE;
     esp_bt_io_cap_t iocap = ESP_BT_IO_CAP_IO;
     esp_bt_gap_set_security_param(param_type, &iocap, sizeof(uint8_t));
-#endif ///BT_SPP_INCLUDED
+#endif ///CONFIG_BT_SSP_ENABLE
 }
 
 static bool get_name_from_eir(uint8_t *eir, uint8_t *bdname, uint8_t *bdname_len)
@@ -251,7 +251,7 @@ void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
     case ESP_BT_GAP_RMT_SRVCS_EVT:
     case ESP_BT_GAP_RMT_SRVC_REC_EVT:
         break;
-#if (BT_SPP_INCLUDED)
+#ifdef CONFIG_BT_SSP_ENABLE
     case ESP_BT_GAP_AUTH_CMPL_EVT:{
         if (param->auth_cmpl.stat == ESP_BT_STATUS_SUCCESS) {
             ESP_LOGI(BT_AV_TAG, "authentication success: %s", param->auth_cmpl.device_name);
@@ -271,7 +271,7 @@ void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
     case ESP_BT_GAP_KEY_REQ_EVT:
         ESP_LOGI(BT_AV_TAG, "ESP_BT_GAP_KEY_REQ_EVT Please enter passkey!");
         break;
-#endif ///BT_SPP_INCLUDED
+#endif ///CONFIG_BT_SSP_ENABLE
     default: {
         ESP_LOGI(BT_AV_TAG, "event: %d", event);
         break;

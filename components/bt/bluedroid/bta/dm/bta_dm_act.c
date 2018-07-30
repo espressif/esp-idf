@@ -705,7 +705,7 @@ static void bta_dm_process_remove_device(BD_ADDR bd_addr, tBT_TRANSPORT transpor
     BTA_GATTC_CancelOpen(0, bd_addr, FALSE);
 #endif
 
-    BTM_SecDeleteDevice(bd_addr);
+    BTM_SecDeleteDevice(bd_addr, transport);
 
 #if (BLE_INCLUDED == TRUE && GATTC_INCLUDED == TRUE)
     /* remove all cached GATT information */
@@ -748,7 +748,8 @@ void bta_dm_remove_device(tBTA_DM_MSG *p_data)
 
         /* Take the link down first, and mark the device for removal when disconnected */
         for (int i = 0; i < bta_dm_cb.device_list.count; i++) {
-            if (!bdcmp(bta_dm_cb.device_list.peer_device[i].peer_bdaddr, p_dev->bd_addr)) {
+            if (!bdcmp(bta_dm_cb.device_list.peer_device[i].peer_bdaddr, p_dev->bd_addr)
+                && bta_dm_cb.device_list.peer_device[i].transport == transport) {
                 bta_dm_cb.device_list.peer_device[i].conn_state = BTA_DM_UNPAIRING;
                 btm_remove_acl( p_dev->bd_addr, bta_dm_cb.device_list.peer_device[i].transport);
                 APPL_TRACE_DEBUG("%s:transport = %d", __func__,
@@ -853,7 +854,7 @@ void bta_dm_close_acl(tBTA_DM_MSG *p_data)
     }
     /* if to remove the device from security database ? do it now */
     else if (p_remove_acl->remove_dev) {
-        if (!BTM_SecDeleteDevice(p_remove_acl->bd_addr)) {
+        if (!BTM_SecDeleteDevice(p_remove_acl->bd_addr, p_remove_acl->transport)) {
             APPL_TRACE_ERROR("delete device from security database failed.");
         }
 #if (BLE_INCLUDED == TRUE && GATTC_INCLUDED == TRUE)
@@ -3299,7 +3300,7 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
             }
 
             if ( bta_dm_cb.device_list.peer_device[i].conn_state == BTA_DM_UNPAIRING ) {
-                if (BTM_SecDeleteDevice(bta_dm_cb.device_list.peer_device[i].peer_bdaddr)) {
+                if (BTM_SecDeleteDevice(bta_dm_cb.device_list.peer_device[i].peer_bdaddr, bta_dm_cb.device_list.peer_device[i].transport)) {
                     issue_unpair_cb = TRUE;
                 }
 
@@ -3347,7 +3348,7 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
             }
         }
         if (conn.link_down.is_removed) {
-            BTM_SecDeleteDevice(p_bda);
+            BTM_SecDeleteDevice(p_bda, p_data->acl_change.transport);
 #if (BLE_INCLUDED == TRUE && GATTC_INCLUDED == TRUE)
             /* need to remove all pending background connection */
             BTA_GATTC_CancelOpen(0, p_bda, FALSE);
@@ -3525,7 +3526,7 @@ static void bta_dm_remove_sec_dev_entry(BD_ADDR remote_bd_addr)
             APPL_TRACE_ERROR(" %s Device does not exist in DB", __FUNCTION__);
         }
     } else {
-        BTM_SecDeleteDevice (remote_bd_addr);
+        BTM_SecDeleteDevice (remote_bd_addr, bta_dm_cb.device_list.peer_device[index].transport);
 #if (BLE_INCLUDED == TRUE && GATTC_INCLUDED == TRUE)
         /* need to remove all pending background connection */
         BTA_GATTC_CancelOpen(0, remote_bd_addr, FALSE);
