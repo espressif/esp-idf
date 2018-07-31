@@ -68,7 +68,7 @@ int _system_r(struct _reent *r, const char *str)
     return -1;
 }
 
-void _raise_r(struct _reent *r)
+int _raise_r(struct _reent *r, int sig)
 {
     abort();
 }
