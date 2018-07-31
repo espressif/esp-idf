@@ -63,8 +63,14 @@ char *http_utils_assign_string(char **str, const char *new_str, int len)
 
 void http_utils_trim_whitespace(char **str)
 {
-    char *end;
-    char *start = *str;
+    char *end, *start;
+    if (str == NULL) {
+        return;
+    }
+    start = *str;
+    if (start == NULL) {
+        return;
+    }
     // Trim leading space
     while (isspace((unsigned char)*start)) start ++;
 
