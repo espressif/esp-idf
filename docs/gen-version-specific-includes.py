@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
 # Python script to generate ReSTructured Text .inc snippets
 # with version-based content for this IDF version
@@ -28,7 +29,7 @@ ESP-IDF will be downloaded into ``~/esp/esp-idf``.
     %(zipfile_note)s
 """
             ,"master" : 'This command will clone the master branch, which has the latest development ("bleeding edge") version of ESP-IDF. It is fully functional and updated on weekly basis with the most recent features and bugfixes.'
-            ,"branch" : 'The ``git clone`` option ``-b %s`` tells git to clone the %s in the ESP-IDF repository corresponding to this version of the documentation.'
+            ,"branch" : 'The ``git clone`` option ``-b %(clone_arg)s`` tells git to clone the %(ver_type)s in the ESP-IDF repository corresponding to this version of the documentation.'
             ,"zipfile" : {
                 "stable" : 'As a fallback, it is also possible to download a zip file of this stable release from the `Releases page`_. Do not download the "Source code" zip file(s) generated automatically by GitHub, they do not work with ESP-IDF.'
                 ,"unstable" : 'GitHub\'s "Download zip file" feature does not work with ESP-IDF, a ``git clone`` is required. As a fallback, `Stable version`_ can be installed without Git.'
@@ -49,7 +50,47 @@ ESP-IDF will be downloaded into ``~/esp/esp-idf``.
 """
             },  # version-note
     }, # en
-    "zh_CN" : None  # TODO: translate these snippets to Chinese
+    "zh_CN" : {
+        "git-clone" : {
+            "template" : """
+获取本地副本：打开终端，切换到你要存放 ESP-IDF 的工作目录，使用 ``git clone`` 命令克隆远程仓库::
+
+    cd ~/esp
+    git clone %(clone_args)s--recursive https://github.com/espressif/esp-idf.git
+
+ESP-IDF 将会被下载到 ``~/esp/esp-idf`` 目录下。
+
+.. note::
+
+    %(extra_note)s
+
+.. note::
+
+    %(zipfile_note)s
+"""
+            ,"master" : '此命令将克隆 master 分支，该分支保存着 ESP-IDF 的最新版本，它功能齐全，每周都会更新一些新功能并修正一些错误。'
+            ,"branch" : '``git clone`` 命令的 ``-b %(clone_arg)s`` 选项告诉 git 从 ESP-IDF 仓库中克隆与此版本的文档对应的分支。'
+            ,"zipfile" : {
+                "stable" : '作为备份，还可以从 `Releases page`_ 下载此稳定版本的 zip 文件。不要下载由 GitHub 自动生成的"源代码"的 zip 文件，它们不适用于 ESP-IDF。'
+                ,"unstable" : 'GitHub 中"下载 zip 文档"的功能不适用于 ESP-IDF，所以需要使用 ``git clone`` 命令。作为备份，可以在没有安装 Git 的环境中下载 `Stable version`_ 的 zip 归档文件。'
+                },  # zipfile
+            },  # git-clone
+        "version-note" : {
+            "master" : """
+.. note::
+     这是ESP-IDF master 分支（最新版本）的文档，该版本在持续开发中。还有 `Stable version`_ 的文档，以及其他版本的文档 :doc:`/versions` 供参考。
+     This is documentation for the master branch (latest version) of ESP-IDF. This version is under continual development. `Stable version`_ documentation is available, as well as other :doc:`/versions`.
+"""
+            ,"stable" : """
+.. note::
+     这是ESP-IDF 稳定版本 %s 的文档，还有其他版本的文档 :doc:`/versions` 供参考。
+"""
+            ,"branch" : """
+.. note::
+     这是ESP-IDF %s ``%s`` 版本的文档，还有其他版本的文档 :doc:`/versions` 供参考。
+"""
+            },  # version-note
+    }# zh_CN
 }
 
 
@@ -84,7 +125,7 @@ def write_git_clone_inc(template, out_dir, version, ver_type, is_stable):
     else:
         args = {
             "clone_args" : "-b %s " % version,
-            "extra_note" : template["branch"] % (version, ver_type),
+            "extra_note" : template["branch"] % {"clone_arg" : version, "ver_type" : ver_type},
             "zipfile_note" : zipfile["stable"] if is_stable else zipfile["unstable"]
         }
     out_file = os.path.join(out_dir, "git-clone.inc")
