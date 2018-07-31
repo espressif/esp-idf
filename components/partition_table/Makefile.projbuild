@@ -65,9 +65,13 @@ all_binaries: $(PARTITION_TABLE_BIN) partition_table_get_info
 partition_table_get_info: $(PARTITION_TABLE_BIN)
 	$(eval PHY_DATA_OFFSET:=$(shell $(GET_PART_INFO) --type data --subtype phy --offset $(PARTITION_TABLE_BIN)))
 	$(eval APP_OFFSET:=$(shell $(GET_PART_INFO) --default-boot-partition --offset $(PARTITION_TABLE_BIN)))
+	$(eval OTA_DATA_SIZE := $(shell $(GET_PART_INFO) --type data --subtype ota --size $(PARTITION_TABLE_BIN) || echo 0) )
+	$(eval OTA_DATA_OFFSET := $(shell $(GET_PART_INFO) --type data --subtype ota --offset $(PARTITION_TABLE_BIN)) )
 
 export APP_OFFSET
 export PHY_DATA_OFFSET
+export OTA_DATA_OFFSET
+export OTA_DATA_SIZE
 
 PARTITION_TABLE_FLASH_CMD = $(ESPTOOLPY_SERIAL) write_flash $(PARTITION_TABLE_OFFSET) $(PARTITION_TABLE_BIN)
 ESPTOOL_ALL_FLASH_ARGS += $(PARTITION_TABLE_OFFSET) $(PARTITION_TABLE_BIN)

@@ -23,6 +23,7 @@ extern "C" {
 #include_next <sys/unistd.h>
 
 int     _EXFUN(truncate, (const char *, off_t __length));
+int     _EXFUN(gethostname, (char *__name, size_t __len));
 
 #ifdef __cplusplus
 }

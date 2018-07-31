@@ -309,6 +309,7 @@ static int print_test_menu(void)
             }
          }
      }
+     printf("\nEnter test for running.\n"); /* unit_test.py needs it for finding the end of test menu */
      return test_counter;
 }
 

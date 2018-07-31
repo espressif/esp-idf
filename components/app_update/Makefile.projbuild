@@ -1,0 +1,27 @@
+#
+# Generate partition binary
+#
+.PHONY: erase_ota blank_ota_data
+
+GEN_EMPTY_PART := $(PYTHON) $(COMPONENT_PATH)/gen_empty_partition.py
+BLANK_OTA_DATA_FILE = $(BUILD_DIR_BASE)/ota_data_initial.bin
+
+# If there is no otadata partition, both OTA_DATA_OFFSET and BLANK_OTA_DATA_FILE 
+# expand to empty values.
+ESPTOOL_ALL_FLASH_ARGS += $(OTA_DATA_OFFSET) $(BLANK_OTA_DATA_FILE)
+
+$(BLANK_OTA_DATA_FILE): partition_table_get_info
+	$(GEN_EMPTY_PART) --size $(OTA_DATA_SIZE) $(BLANK_OTA_DATA_FILE)
+	$(eval BLANK_OTA_DATA_FILE = $(shell if [ $(OTA_DATA_SIZE) != 0 ]; then echo $(BLANK_OTA_DATA_FILE); else echo " "; fi) )
+
+blank_ota_data: $(BLANK_OTA_DATA_FILE)
+
+erase_ota: partition_table_get_info
+	@echo $(if $(OTA_DATA_OFFSET), "Erase ota_data [addr=$(OTA_DATA_OFFSET) size=$(OTA_DATA_SIZE)] ...", $(error "ERROR: Partition table does not have ota_data partition."))
+	$(ESPTOOLPY_SERIAL) erase_region $(OTA_DATA_OFFSET) $(OTA_DATA_SIZE)
+
+all: blank_ota_data
+flash: blank_ota_data
+
+clean:
+	rm -f $(BLANK_OTA_DATA_FILE)
