@@ -147,6 +147,12 @@ static bool verify_fill_pattern(void *data, size_t size, bool print_errors, bool
                     MULTI_HEAP_STDERR_PRINTF("CORRUPT HEAP: Invalid data at %p. Expected 0x%08x got 0x%08x\n", p, EXPECT_WORD, *p);
                 }
                 valid = false;
+#ifndef NDEBUG
+                /* If an assertion is going to fail as soon as we're done verifying the pattern, leave the rest of the
+                   buffer contents as-is for better post-mortem analysis
+                */
+                swap_pattern = false;
+#endif
             }
             if (swap_pattern) {
                 *p = REPLACE_WORD;
@@ -164,6 +170,9 @@ static bool verify_fill_pattern(void *data, size_t size, bool print_errors, bool
                 MULTI_HEAP_STDERR_PRINTF("CORRUPT HEAP: Invalid data at %p. Expected 0x%02x got 0x%02x\n", p, (uint8_t)EXPECT_WORD, *p);
             }
             valid = false;
+#ifndef NDEBUG
+            swap_pattern = false; // same as above
+#endif
         }
         if (swap_pattern) {
             p[i] = (uint8_t)REPLACE_WORD;
