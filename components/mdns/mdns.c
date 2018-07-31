@@ -1195,7 +1195,7 @@ static void _mdns_create_answer_from_parsed_packet(mdns_parsed_packet_t * parsed
         }
         if (service) {
             if (q->type == MDNS_TYPE_PTR || q->type == MDNS_TYPE_ANY) {
-                if (q->type == MDNS_TYPE_PTR) {
+                if (q->type == MDNS_TYPE_PTR || !parsed_packet->probe) {
                     shared = true;
                 }
                 if (!_mdns_alloc_answer(&packet->answers, MDNS_TYPE_PTR, service->service, false, false)
@@ -2570,7 +2570,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                 continue;
             }
 
-            if (type == MDNS_TYPE_ANY) {
+            if (type == MDNS_TYPE_ANY && !_str_null_or_empty(name->host)) {
                 parsed_packet->probe = true;
             }
 
