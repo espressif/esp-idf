@@ -562,10 +562,10 @@ static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
             break;
         case HttpStatus_Unauthorized:
             auth_header = client->auth_header;
-            http_utils_trim_whitespace(&auth_header);
-            ESP_LOGI(TAG, "UNAUTHORIZED: %s", auth_header);
-            client->redirect_counter ++;
             if (auth_header) {
+                http_utils_trim_whitespace(&auth_header);
+                ESP_LOGD(TAG, "UNAUTHORIZED: %s", auth_header);
+                client->redirect_counter ++;
                 if (http_utils_str_starts_with(auth_header, "Digest") == 0) {
                     ESP_LOGD(TAG, "type = Digest");
                     client->connection_info.auth_type = HTTP_AUTH_TYPE_DIGEST;
@@ -574,7 +574,7 @@ static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
                     client->connection_info.auth_type = HTTP_AUTH_TYPE_BASIC;
                 } else {
                     client->connection_info.auth_type = HTTP_AUTH_TYPE_NONE;
-                    ESP_LOGE(TAG, "Unsupport Auth Type");
+                    ESP_LOGE(TAG, "This authentication method is not supported: %s", auth_header);
                     break;
                 }
 
@@ -589,6 +589,9 @@ static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
                 client->auth_data->nonce = http_utils_get_string_between(auth_header, "nonce=\"", "\"");
                 client->auth_data->opaque = http_utils_get_string_between(auth_header, "opaque=\"", "\"");
                 client->process_again = 1;
+            } else {
+                client->connection_info.auth_type = HTTP_AUTH_TYPE_NONE;
+                ESP_LOGW(TAG, "This request requires authentication, but does not provide header information for that");
             }
     }
     return ESP_OK;
