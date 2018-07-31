@@ -1,26 +1,20 @@
 menu "mbedTLS"
 
 config MBEDTLS_PLATFORM_MEMORY
-   bool "Enable mbedTLS memory allocation layer."
+   bool "Enable custom mbedTLS memory allocation layer."
    default n
    help
-      By default mbed TLS uses the system-provided calloc() and free().
-      This allows different allocators (self-implemented or provided) to be
-      provided to the platform abstraction layer.
+      If this option is disabled, mbed TLS uses the default system
+      calloc() and free() functions.
 
-      Enabling MBEDTLS_PLATFORM_MEMORY without the
-      MBEDTLS_PLATFORM_{FREE,CALLOC}_MACROs will provide
-      "mbedtls_platform_set_calloc_free()" allowing you to set an alternative calloc() and
-      free() function pointer at runtime.
+      If this option is enabled, the mbed TLS config macro
+      MBEDTLS_PLATFORM_MEMORY will be defined. The function
+      mbedtls_platform_set_calloc_free() must be called at
+      runtime to provide custom calloc() and free() function
+      pointers for use by mbedTLS.
 
-      Enabling MBEDTLS_PLATFORM_MEMORY and specifying
-      MBEDTLS_PLATFORM_{CALLOC,FREE}_MACROs will allow you to specify the
-      alternate function at compile time.
-
-      Requires: MBEDTLS_PLATFORM_C
-
-      Enable this layer to allow use of alternative memory allocators.
-
+      This option allows fine-grained control over how mbedTLS
+      allocates heap memory.
 
 config MBEDTLS_SSL_MAX_CONTENT_LEN
     int "TLS maximum message content length"
