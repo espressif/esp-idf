@@ -269,13 +269,6 @@ void start_cpu0_default(void)
             ESP_EARLY_LOGE(TAG, "External RAM could not be added to heap!");
             abort();
         }
-#if CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL
-        r=esp_spiram_reserve_dma_pool(CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL);
-        if (r != ESP_OK) {
-            ESP_EARLY_LOGE(TAG, "Could not reserve internal/DMA pool!");
-            abort();
-        }
-#endif
 #if CONFIG_SPIRAM_USE_MALLOC
         heap_caps_malloc_extmem_enable(CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL);
 #endif
@@ -444,6 +437,15 @@ static void main_task(void* args)
 #endif
     //Enable allocation in region where the startup stacks were located.
     heap_caps_enable_nonos_stack_heaps();
+
+    // Now we have startup stack RAM available for heap, enable any DMA pool memory
+#if CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL
+    esp_err_t r = esp_spiram_reserve_dma_pool(CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL);
+    if (r != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Could not reserve internal/DMA pool (error 0x%x)", r);
+        abort();
+    }
+#endif
 
     //Initialize task wdt if configured to do so
 #ifdef CONFIG_TASK_WDT_PANIC
