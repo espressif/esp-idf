@@ -6,6 +6,7 @@ components/esptool_py/esptool                       @GENERAL_MIRROR_SERVER@/idf/
 components/json/cJSON                               @GENERAL_MIRROR_SERVER@/idf/cJSON.git                           ALLOW_TO_SYNC_FROM_PUBLIC
 components/libsodium/libsodium                      @GENERAL_MIRROR_SERVER@/idf/libsodium.git                       ALLOW_TO_SYNC_FROM_PUBLIC
 components/mbedtls/mbedtls                          @GENERAL_MIRROR_SERVER@/idf/mbedtls.git                         ALLOW_TO_SYNC_FROM_PUBLIC
+components/expat/expat                              @GENERAL_MIRROR_SERVER@/idf/libexpat.git                        ALLOW_TO_SYNC_FROM_PUBLIC
 components/micro-ecc/micro-ecc                      @GENERAL_MIRROR_SERVER@/idf/micro-ecc.git                       ALLOW_TO_SYNC_FROM_PUBLIC
 components/nghttp/nghttp2                           @GENERAL_MIRROR_SERVER@/idf/nghttp2.git                         ALLOW_TO_SYNC_FROM_PUBLIC
 components/spiffs/spiffs                            @GENERAL_MIRROR_SERVER@/idf/spiffs.git                          ALLOW_TO_SYNC_FROM_PUBLIC
