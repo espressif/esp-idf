@@ -19,7 +19,15 @@
 * @brief This structure is used to store current state of flash access
 *
 */
-typedef struct WL_State_s {
+#if defined(_MSC_VER)
+#define ALIGNED_(x) __declspec(align(x))
+#else
+#if defined(__GNUC__)
+#define ALIGNED_(x) __attribute__ ((aligned(x)))
+#endif
+#endif
+
+typedef struct ALIGNED_(32) WL_State_s {
 public:
     uint32_t pos;           /*!< current dummy block position*/
     uint32_t max_pos;       /*!< maximum amount of positions*/
@@ -28,7 +36,14 @@ public:
     uint32_t max_count;     /*!< max access count when block will be moved*/
     uint32_t block_size;    /*!< size of move block*/
     uint32_t version;       /*!< state id used to identify the version of current libary implementaion*/
+    uint32_t device_id;     /*!< ID of current WL instance*/
+    uint32_t reserved[7];   /*!< Reserved space for future use*/
     uint32_t crc;           /*!< CRC of structure*/
 } wl_state_t;
+
+#ifndef _MSC_VER // MSVS has different format for this define
+static_assert(sizeof(wl_state_t) % 16 == 0, "Size of wl_state_t structure should be compatible with flash encryption");
+#endif // _MSC_VER
+
 
 #endif // _WL_State_H_
