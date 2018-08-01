@@ -124,6 +124,7 @@ esp_err_t esp_vfs_fat_spiflash_unmount(const char *base_path, wl_handle_t wl_han
 
     f_mount(0, drv, 0);
     ff_diskio_unregister(pdrv);
+    ff_diskio_clear_pdrv_wl(wl_handle);
     // release partition driver
     esp_err_t err_drv = wl_unmount(wl_handle);
     esp_err_t err = esp_vfs_fat_unregister_path(base_path);

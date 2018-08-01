@@ -5,6 +5,11 @@ Wear Levelling Component (WLC) it is a software component that is implemented to
 The WLC do not have internal cache. When write operation is finished, that means that data was really stored to the flash.
 As a parameter the WLC requires the driver to access the flash device. The driver has to implement Flash_Access interface.
 
+The WLC Versioning and Compatibility
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The WLC accept data formats from older version. Latest version of the WLC will update data format from older versions to the current one. 
+Current implementation of WLC has version 2. The data format from current version incompatible with data format from previous versions, and could not be 
+used with previous versions.
 
 The WLC Files
 ^^^^^^^^^^^^^^^
@@ -49,9 +54,9 @@ The wl_config_t contains configuration parameters for the WLC component.
 Internal Memory Organization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The WLC divide the memory that are define by start_addr and full_mem_size to three regions:
- - Configuration
  - Data
  - States
+ - Configuration
  
 The Configuration region used to store configuration information. The user can use it to recover the WLC from memory dump.
 The Data - is a region where user data stored. 
