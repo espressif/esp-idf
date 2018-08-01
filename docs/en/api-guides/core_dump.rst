@@ -65,6 +65,15 @@ Base64-encoded body of core dump will be between the following header and footer
 
 The `CORE DUMP START` and `CORE DUMP END` lines must not be included in core dump text file.
 
+ROM Functions in Backtraces
+---------------------------
+
+It is possible situation that at the moment of crash some tasks or/and crashed task itself have one or more ROM functions in their callstacks.
+Since ROM is not part of the program ELF it will be impossible for GDB to parse such callstacks, because it tries to analyse functions' prologues to acomplish that.
+In that case callstack printing will be broken with error message at the first ROM function.
+To overcome this issue you can use ROM ELF provided by Espressif (https://dl.espressif.com/dl/esp32_rom.elf) and pass it to 'espcoredump.py'.
+
+
 Running 'espcoredump.py'
 ------------------------------------
 
@@ -85,4 +94,5 @@ Generic command syntax:
     * --core-format,-t CORE_FORMAT. Specifies that file passed with "-c" is an ELF ("elf"), dumped raw binary ("raw") or base64-encoded ("b64") format.
     * --off,-o OFF.                 Ofsset of coredump partition in flash (type "make partition_table" to see it).
     * --save-core,-s SAVE_CORE.     Save core to file. Othwerwise temporary core file will be deleted. Ignored with "-c".
+    * --rom-elf,-r ROM_ELF.         Path to ROM ELF file to use (if skipped "esp32_rom.elf" is used).
     * --print-mem,-m                Print memory dump. Used only with "info_corefile".
