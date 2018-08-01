@@ -629,20 +629,23 @@ static int vfs_spiffs_readdir_r(void* ctx, DIR* pdir, struct dirent* entry,
     esp_spiffs_t * efs = (esp_spiffs_t *)ctx;
     vfs_spiffs_dir_t * dir = (vfs_spiffs_dir_t *)pdir;
     struct spiffs_dirent out;
-    if (SPIFFS_readdir(&dir->d, &out) == 0) {
-        errno = spiffs_res_to_errno(SPIFFS_errno(efs->fs));
-        SPIFFS_clearerr(efs->fs);
-        if (!errno) {
-            *out_dirent = NULL;
+    size_t plen;
+    char * item_name;
+    do {
+        if (SPIFFS_readdir(&dir->d, &out) == 0) {
+            errno = spiffs_res_to_errno(SPIFFS_errno(efs->fs));
+            SPIFFS_clearerr(efs->fs);
+            if (!errno) {
+                *out_dirent = NULL;
+            }
+            return errno;
         }
-        return errno;
-    }
-    const char * item_name = (const char *)out.name;
-    size_t plen = strlen(dir->path);
+        item_name = (char *)out.name;
+        plen = strlen(dir->path);
+
+    } while ((plen > 1) && (strncasecmp(dir->path, (const char*)out.name, plen) || out.name[plen] != '/' || !out.name[plen + 1]));
+
     if (plen > 1) {
-        if (strncasecmp(dir->path, (const char *)out.name, plen) || out.name[plen] != '/' || !out.name[plen+1]) {
-            return vfs_spiffs_readdir_r(ctx, pdir, entry, out_dirent);
-        }
         item_name += plen + 1;
     } else if (item_name[0] == '/') {
         item_name++;
