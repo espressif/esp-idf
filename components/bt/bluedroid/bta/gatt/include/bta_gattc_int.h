@@ -300,7 +300,7 @@ typedef struct {
     UINT16              attr_index;     /* cahce NV saving/loading attribute index */
 
     UINT16              mtu;
-    bool                update_sec_sev;
+    bool                update_incl_srvc;
 } tBTA_GATTC_SERV;
 
 #ifndef BTA_GATTC_NOTIF_REG_MAX
