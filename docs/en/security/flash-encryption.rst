@@ -23,7 +23,7 @@ Background
   - Secure boot bootloader digest (if secure boot is enabled)
   - Partition Table
   - All "app" type partitions
-  - Any partition marked with the "encrypt" flag in the partition table
+  - Any partition marked with the "encrypted" flag in the partition table
 
 	It may be desirable for some data partitions to remain unencrypted for ease of access, or to use flash-friendly update algorithms that are ineffective if the data is encrypted. "NVS" partitions for non-volatile storage cannot be encrypted.
 
