@@ -735,7 +735,7 @@
 
 /* Include Out-of-Band implementation for Simple Pairing */
 #ifndef BTM_OOB_INCLUDED
-#define BTM_OOB_INCLUDED                FALSE//TRUE
+#define BTM_OOB_INCLUDED                TRUE
 #endif
 
 /* TRUE to include Sniff Subrating */
