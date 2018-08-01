@@ -310,7 +310,7 @@ typedef struct {
     unsigned sig_mode:2;          /**< 0: non HT(11bg) packet; 1: HT(11n) packet; 3: VHT(11ac) packet */
     unsigned :16;                 /**< reserve */
     unsigned mcs:7;               /**< Modulation Coding Scheme. If is HT(11n) packet, shows the modulation, range from 0 to 76(MSC0 ~ MCS76) */
-    unsigned cwb:1;               /**< if is HT(11n) packet, shows if is HT40 packet or HT20 packet. 1: HT40 packet; 0: HT20 packet */
+    unsigned cwb:1;               /**< Channel Bandwidth of the packet. 0: 20MHz; 1: 40MHz */
     unsigned :16;                 /**< reserve */
     unsigned smoothing:1;         /**< reserve */
     unsigned not_sounding:1;      /**< reserve */

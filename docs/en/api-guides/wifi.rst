@@ -1449,33 +1449,30 @@ Wi-Fi Channel State Information
 
 Channel state information (CSI) refers to the channel information of a Wi-Fi connection. In ESP32, this information consists of channel frequency responses of sub-carriers and is estimated when packets are received from the transmitter. Each channel frequency response of sub-carrier is recorded by two bytes of signed characters. The first one is imaginary part and the second one is real part. There are up to three fields of channel frequency responses according to the type of received packet. They are legacy long training field (LLTF), high throughput LTF (HT-LTF) and space time block code HT-LTF (STBC-HT-LTF). For different types of packets which are received on channels with different state, the sub-carrier index and total bytes of signed characters of CSI is shown in the following table.
 
-+-------------+--------------------+--------------------------------+---------------------------------------------------------------------------------------------------------------------+
-| packet      | signal mode        |             non HT             |                                                          HT                                                         |
-+             +--------------------+--------------------------------+---------------------------------+-------------------------------------------------------+---------------------------+
-| information | channel bandwidth  |              20MHz             |             20MHz               |                         40MHz                         |          20MHz            |
-+             +--------------------+--------------------------------+----------------+----------------+---------------------------+---------------------------+-------------+-------------+
-|             | STBC               |            non STBC            |    non STBC    |     STBC       |         non STBC          |           STBC            |   non STBC  |     STBC    |
-+-------------+--------------------+------------------+-------------+----------------+----------------+---------------------------+---------------------------+-------------+-------------+
-| channel     | HT20/40            |       HT40       |     HT20    |                                           HT40                                          |            HT20           |
-+             +--------------------+----------+-------+-------------+--------+-------+--------+-------+-------------+-------------+-------------+-------------+---------------------------+
-| information | secondary channel  |  below   | above |    none     | below  | above | below  | above |    below    |    above    |    below    |    above    |           none            |
-+-------------+--------------------+----------+-------+-------------+--------+-------+--------+-------+-------------+-------------+-------------+-------------+-------------+-------------+
-| sub-carrier | LLTF               | -64~-1   |  0~63 | 0~31,-31~-1 | -64~-1 | 0~63  | -64~-1 |  0~63 |    -64~-1   |     0~63    |    -64~-1   |     0~63    | 0~31,-31~-1 | 0~31,-31~-1 |
-+             +--------------------+----------+-------+-------------+--------+-------+--------+-------+-------------+-------------+-------------+-------------+-------------+-------------+
-| index       | HT-LTF             |     -    |   -   |      -      | -64~-1 | 0~63  | -62~-1 |  0~62 | 0~63,-64~-1 | 0~63,-64~-1 | 0~60,-60~-1 | 0~60,-60~-1 | 0~31,-31~-1 | 0~31,-31~-1 |
-+             +--------------------+----------+-------+-------------+--------+-------+--------+-------+-------------+-------------+-------------+-------------+-------------+-------------+
-|             | STBC-HT-LTF        |     -    |   -   |      -      |   -    |  -    | -62~-1 |  0~62 |      -      |       -     | 0~60,-60~-1 | 0~60,-60~-1 |      -      | 0~31,-31~-1 |
-+-------------+--------------------+----------+-------+-------------+--------+-------+--------+-------+-------------+-------------+-------------+-------------+-------------+-------------+
-| total bytes                      |    128   |  128  |      128    |   256  |  256  |   376  |  380  |     384     |      384    |      612    |     612     |      256    |      384    |
-+----------------------------------+----------+-------+-------------+--------+-------+--------+-------+-------------+-------------+-------------+-------------+-------------+-------------+
++-------------+--------------------+-----------------------------------------+--------------------------------------------------------+----------------------------------------------------------+
+| channel     | secondary channel  |                   none                  |                           above                        |                            below                         |
++-------------+--------------------+-------------+---------------------------+----------+---------------------------------------------+----------+-----------------------------------------------+
+| packet      | signal mode        |   non HT    |            HT             |  non HT  |                      HT                     |  non HT  |                       HT                      |
++             +--------------------+-------------+---------------------------+----------+-----------------+---------------------------+----------+-------------------+---------------------------+
+| information | channel bandwidth  |    20MHz    |           20MHz           |   20MHz  |      20MHz      |            40MHz          |   20MHz  |       20MHz       |            40MHz          |
++             +--------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
+|             | STBC               |  non STBC   |  non STBC   |     STBC    | non STBC | non STBC | STBC |  non STBC   |     STBC    | non STBC | non STBC |  STBC  |  non STBC   |     STBC    |
++-------------+--------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
+| sub-carrier | LLTF               | 0~31,-31~-1 | 0~31,-31~-1 | 0~31,-31~-1 |   0~63   |   0~63   | 0~63 |     0~63    |     0~63    |  -64~-1  |  -64~-1  | -64~-1 |    -64~-1   |    -64~-1   |
++             +--------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
+| index       | HT-LTF             |      -      | 0~31,-31~-1 | 0~31,-31~-1 |     -    |   0~63   | 0~62 | 0~63,-64~-1 | 0~60,-60~-1 |     -    |  -64~-1  | -62~-1 | 0~63,-64~-1 | 0~60,-60~-1 |
++             +--------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
+|             | STBC-HT-LTF        |      -      |      -      | 0~31,-31~-1 |     -    |     -    | 0~62 |       -     | 0~60,-60~-1 |     -    |     -    | -62~-1 |       -     | 0~60,-60~-1 |
++-------------+--------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
+| total bytes                      |     128     |     256     |     384     |    128   |    256   | 380  |      384    |      612    |    128   |    256   |   376  |      384    |      612    |
++----------------------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
 
 All of the information in the table can be found in the structure wifi_csi_info_t. 
 
+    - Secondary channel refers to secondary_channel field of rx_ctrl field. 
     - Signal mode of packet refers to sig_mode field of rx_ctrl field. 
     - Channel bandwidth refers to cwb field of rx_ctrl field. 
     - STBC refers to stbc field of rx_ctrl field. 
-    - HT20/40 depends on secondary channel. If secondary channel is above or below primary channel, it is HT40. If secondary channel is none, it is HT20. 
-    - Secondary channel refers to secondary_channel field of rx_ctrl field. 
     - Total bytes refers to len field. 
     - The CSI data corresponding to each Long Training Field type is stored in a buffer starting from the buf field. Each item is stored as two bytes: imaginary part followed by real part. The order is: LLTF, HT-LTF, STBC-HT-LTF. However all 3 items may not be present, depending on the packet type (see above).
     - If last_word_invalid field of wifi_csi_info_t is true, it means that the last four bytes of CSI data is invalid due to a hardware limitation in ESP32. 
@@ -1484,7 +1481,7 @@ All of the information in the table can be found in the structure wifi_csi_info_
 .. note::
 
     - For STBC packet, CSI is provided for every space-time stream without CSD (cyclic shift delay). As each cyclic shift on the additional chains shall be -200ns, only the CSD angle of first space-time stream is recorded in sub-carrier 0 of HT-LTF and STBC-HT-LTF for there is no channel frequency response in sub-carrier 0. CSD[10:0] is 11 bits, ranging from -pi to pi.
-    - If LLTF, HT-LTF or STBC-HT-LTF is not enabled by calling API :cpp:func:`esp_wifi_set_csi_config`, the total bytes of CSI data will be fewer than that in the table. For example, if LLTF and HT-LTF is not enabled and STBC-HT-LTF is enabled, when a packet is received with the condition HT/HT40/40MHz/STBC/above, the total bytes of CSI data is 244 ((61 + 60) * 2 + 2 = 244, the result is aligned to four bytes and the last two bytes is invalid). 
+    - If LLTF, HT-LTF or STBC-HT-LTF is not enabled by calling API :cpp:func:`esp_wifi_set_csi_config`, the total bytes of CSI data will be fewer than that in the table. For example, if LLTF and HT-LTF is not enabled and STBC-HT-LTF is enabled, when a packet is received with the condition above/HT/40MHz/STBC, the total bytes of CSI data is 244 ((61 + 60) * 2 + 2 = 244, the result is aligned to four bytes and the last two bytes is invalid). 
 
 Wi-Fi Channel State Information Configure
 -------------------------------------------
