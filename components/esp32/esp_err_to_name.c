@@ -125,11 +125,11 @@ static const esp_err_msg_t esp_err_msg_table[] = {
     ERR_TBL_IT(ESP_ERR_NVS_INVALID_HANDLE),                 /*  4359 0x1107 Handle has been closed or is NULL */
 #   endif
 #   ifdef      ESP_ERR_NVS_REMOVE_FAILED
-    ERR_TBL_IT(ESP_ERR_NVS_REMOVE_FAILED),                  /*  4360 0x1108 The value wasn’t updated because flash
-                                                                            write operation has failed. The value was
-                                                                            written however, and update will be finished
-                                                                            after re-initialization of nvs, provided
-                                                                            that flash operation doesn’t fail again. */
+    ERR_TBL_IT(ESP_ERR_NVS_REMOVE_FAILED),                  /*  4360 0x1108 The value wasn’t updated because flash write
+                                                                            operation has failed. The value was written
+                                                                            however, and update will be finished after
+                                                                            re-initialization of nvs, provided that
+                                                                            flash operation doesn’t fail again. */
 #   endif
 #   ifdef      ESP_ERR_NVS_KEY_TOO_LONG
     ERR_TBL_IT(ESP_ERR_NVS_KEY_TOO_LONG),                   /*  4361 0x1109 Key name is too long */
