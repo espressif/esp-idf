@@ -390,7 +390,7 @@ push_to_github:
     - git remote add github git@github.com:espressif/esp-idf.git
     # Need separate push commands for tag builds and for branch builds
     - "[ -n \"${CI_COMMIT_TAG}\" ] && git push github ${CI_COMMIT_TAG}"
-    - "[ -z \"${CI_COMMIT_TAG}\" ] && git push github ${CI_COMMIT_SHA}:/refs/heads/${CI_COMMIT_REF_NAME}"
+    - "[ -z \"${CI_COMMIT_TAG}\" ] && git push github ${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"
 
 deploy_docs:
   stage: host_test
