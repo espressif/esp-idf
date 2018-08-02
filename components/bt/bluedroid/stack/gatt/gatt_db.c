@@ -64,7 +64,7 @@ BOOLEAN gatts_init_service_db (tGATT_SVC_DB *p_db, tBT_UUID *p_service,  BOOLEAN
                                UINT16 s_hdl, UINT16 num_handle)
 {
     if (p_db->svc_buffer == NULL) { //in case already alloc
-        p_db->svc_buffer = fixed_queue_new(SIZE_MAX);
+        p_db->svc_buffer = fixed_queue_new(QUEUE_SIZE_MAX);
     }
 
     if (!allocate_svc_db_buf(p_db)) {
