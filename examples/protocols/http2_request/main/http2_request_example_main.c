@@ -145,6 +145,7 @@ static void http2_task(void *args)
     }
 
     sh2lib_free(&hd);
+    vTaskDelete(NULL);
 }
 
 static esp_err_t event_handler(void *ctx, system_event_t *event)
