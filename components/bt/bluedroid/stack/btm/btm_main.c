@@ -56,8 +56,8 @@ void btm_init (void)
 #endif /* #if BTM_DYNAMIC_MEMORY */
     /* All fields are cleared; nonzero fields are reinitialized in appropriate function */
     memset(&btm_cb, 0, sizeof(tBTM_CB));
-    btm_cb.page_queue = fixed_queue_new(SIZE_MAX);
-    btm_cb.sec_pending_q = fixed_queue_new(SIZE_MAX);
+    btm_cb.page_queue = fixed_queue_new(QUEUE_SIZE_MAX);
+    btm_cb.sec_pending_q = fixed_queue_new(QUEUE_SIZE_MAX);
 
 #if defined(BTM_INITIAL_TRACE_LEVEL)
     btm_cb.trace_level = BTM_INITIAL_TRACE_LEVEL;

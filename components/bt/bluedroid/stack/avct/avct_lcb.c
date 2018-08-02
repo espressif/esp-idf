@@ -313,7 +313,7 @@ tAVCT_LCB *avct_lcb_alloc(BD_ADDR bd_addr)
             p_lcb->allocated = (UINT8)(i + 1);
             memcpy(p_lcb->peer_addr, bd_addr, BD_ADDR_LEN);
             AVCT_TRACE_DEBUG("avct_lcb_alloc %d", p_lcb->allocated);
-            p_lcb->tx_q = fixed_queue_new(SIZE_MAX);
+            p_lcb->tx_q = fixed_queue_new(QUEUE_SIZE_MAX);
             break;
         }
     }
