@@ -362,10 +362,21 @@ test_idf_monitor:
 
 test_esp_err_to_name_on_host:
   <<: *host_test_template
+  artifacts:
+    when: on_failure
+    paths:
+      - components/esp32/esp_err_to_name.c
+    expire_in: 1 week
   script:
     - cd tools/
+    - source /opt/pyenv/activate
+    - pyenv global 2.7.15
     - ./gen_esp_err_to_name.py
     - git diff --exit-code -- ../components/esp32/esp_err_to_name.c || (echo 'Differences found. Please run gen_esp_err_to_name.py and commit the changes.'; exit 1)
+    - pyenv global 3.4.8
+    - ./gen_esp_err_to_name.py
+    - git diff --exit-code -- ../components/esp32/esp_err_to_name.c || (echo 'Differences found between running under Python 2 and 3.'; exit 1)
+    - pyenv global system
 
 push_to_github:
   stage: deploy
