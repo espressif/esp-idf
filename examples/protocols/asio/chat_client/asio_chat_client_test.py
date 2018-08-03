@@ -75,7 +75,7 @@ def test_examples_protocol_asio_chat_client(env, extra_data):
     thread1.start()
     # 2. start the dut test and wait till client gets IP address
     dut1.start_app()
-    data = dut1.expect(re.compile(r" sta ip: ([^,]+),"))
+    data = dut1.expect(re.compile(r" sta ip: ([^,]+),"), timeout=30)
     # 3. send host's IP to the client i.e. the `dut1`
     dut1.write(host_ip)
     # 4. client `dut1` should receive a message
