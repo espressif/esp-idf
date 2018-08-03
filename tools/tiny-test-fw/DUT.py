@@ -259,7 +259,7 @@ class BaseDUT(object):
     :param kwargs: extra args for DUT to create ports
     """
 
-    DEFAULT_EXPECT_TIMEOUT = 5
+    DEFAULT_EXPECT_TIMEOUT = 10
     MAX_EXPECT_FAILURES_TO_SAVED = 10
 
     LOG_THREAD = _LogThread()
