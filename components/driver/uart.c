@@ -761,7 +761,6 @@ static void uart_rx_intr_handler_default(void *param)
                                 p_uart->tx_ptr = NULL;
                                 p_uart->tx_len_tot = p_uart->tx_head->tx_data.size;
                                 if(p_uart->tx_head->type == UART_DATA_BREAK) {
-                                    p_uart->tx_len_tot = p_uart->tx_head->tx_data.size;
                                     p_uart->tx_brk_flg = 1;
                                     p_uart->tx_brk_len = p_uart->tx_head->tx_data.brk_len;
                                 }
@@ -809,7 +808,7 @@ static void uart_rx_intr_handler_default(void *param)
                             p_uart->tx_ptr = NULL;
                             //Sending item done, now we need to send break if there is a record.
                             //Set TX break signal after FIFO is empty
-                            if(p_uart->tx_brk_flg == 1 && p_uart->tx_len_tot == 0) {
+                            if(p_uart->tx_len_tot == 0 && p_uart->tx_brk_flg == 1) {
                                 UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
                                 uart_reg->int_ena.tx_brk_done = 0;
                                 uart_reg->idle_conf.tx_brk_num = p_uart->tx_brk_len;
@@ -818,6 +817,8 @@ static void uart_rx_intr_handler_default(void *param)
                                 uart_reg->int_ena.tx_brk_done = 1;
                                 UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
                                 p_uart->tx_waiting_brk = 1;
+                                //do not enable TX empty interrupt
+                                en_tx_flg = false;
                             } else {
                                 //enable TX empty interrupt
                                 en_tx_flg = true;
