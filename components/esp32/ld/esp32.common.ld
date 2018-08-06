@@ -52,6 +52,7 @@ SECTIONS
   /* Send .iram0 code to iram */
   .iram0.vectors :
   {
+    _iram_start = ABSOLUTE(.);
     /* Vectors go to IRAM */
     _init_start = ABSOLUTE(.);
     /* Vectors according to builds/RF-2015.2-win32/esp108_v1_2_s5_512int_2/config.html */
@@ -85,11 +86,7 @@ SECTIONS
     *(.init.literal)
     *(.init)
     _init_end = ABSOLUTE(.);
-
-    /* This goes here, not at top of linker script, so addr2line finds it last,
-       and uses it in preference to the first symbol in IRAM */
-    _iram_start = ABSOLUTE(0);
-  } > iram0_0_seg
+} > iram0_0_seg
 
   .iram0.text :
   {
@@ -104,15 +101,17 @@ SECTIONS
     *libapp_trace.a:(.literal .text .literal.* .text.*)
     *libxtensa-debug-module.a:eri.o(.literal .text .literal.* .text.*)
     *librtc.a:(.literal .text .literal.* .text.*)
-    *libsoc.a:(.literal .text .literal.* .text.*)
+    *libsoc.a:rtc_*.o(.literal .text .literal.* .text.*)
+    *libsoc.a:cpu_util.o(.literal .text .literal.* .text.*)
     *libhal.a:(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.o(.literal .text .literal.* .text.*)
     *libspi_flash.a:spi_flash_rom_patch.o(.literal .text .literal.* .text.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
     INCLUDE esp32.spiram.rom-functions-iram.ld
     _iram_text_end = ABSOLUTE(.);
+    _iram_end = ABSOLUTE(.);
   } > iram0_0_seg
-  
+
   .dram0.data :
   {
     _data_start = ABSOLUTE(.);
@@ -231,6 +230,11 @@ SECTIONS
     *(.xt_except_desc_end)
     *(.dynamic)
     *(.gnu.version_d)
+    /* Addresses of memory regions reserved via
+       SOC_RESERVE_MEMORY_REGION() */
+    soc_reserved_memory_region_start = ABSOLUTE(.);
+    KEEP (*(.reserved_memory_address))
+    soc_reserved_memory_region_end = ABSOLUTE(.);
     _rodata_end = ABSOLUTE(.);
     /* Literals are also RO data. */
     _lit4_start = ABSOLUTE(.);
