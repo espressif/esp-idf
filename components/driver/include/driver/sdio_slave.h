@@ -47,10 +47,12 @@ typedef enum {
 
 /// Timing of SDIO slave
 typedef enum {
-    SDIO_SLAVE_TIMING_NSEND_PSAMPLE = 0,///< Send at negedge, and sample at posedge. Default value for SD protocol.
-    SDIO_SLAVE_TIMING_NSEND_NSAMPLE,    ///< Send at negedge, and sample at negedge
-    SDIO_SLAVE_TIMING_PSEND_PSAMPLE,    ///< Send at posedge, and sample at posedge
+    SDIO_SLAVE_TIMING_PSEND_PSAMPLE = 0,/**< Send at posedge, and sample at posedge. Default value for HS mode.
+                                         *   Normally there's no problem using this to work in DS mode.
+                                         */
+    SDIO_SLAVE_TIMING_NSEND_PSAMPLE    ,///< Send at negedge, and sample at posedge. Default value for DS mode and below.
     SDIO_SLAVE_TIMING_PSEND_NSAMPLE,    ///< Send at posedge, and sample at negedge
+    SDIO_SLAVE_TIMING_NSEND_NSAMPLE,    ///< Send at negedge, and sample at negedge
 } sdio_slave_timing_t;
 
 /// Configuration of SDIO slave mode
@@ -197,12 +199,12 @@ uint8_t* sdio_slave_recv_get_buf( sdio_slave_buf_handle_t handle, size_t *len_o)
 esp_err_t sdio_slave_send_queue(uint8_t* addr, size_t len, void* arg, TickType_t wait);
 
 /** Return the ownership of a finished transaction.
- * @param arg_o Argument of the finished transaction.
+ * @param out_arg Argument of the finished transaction. Set to NULL if unused.
  * @param wait Time to wait if there's no finished sending transaction.
  *
  * @return ESP_ERR_TIMEOUT if no transaction finished, or ESP_OK if succeed.
  */
-esp_err_t sdio_slave_send_get_finished(void** arg_o, TickType_t wait);
+esp_err_t sdio_slave_send_get_finished(void** out_arg, TickType_t wait);
 
 /** Start a new sending transfer, and wait for it (blocked) to be finished.
  *
