@@ -212,13 +212,6 @@ static int net_would_block( const mbedtls_net_context *ctx, int *errout )
         *errout = error;
     }
 
-    /*
-     * Never return 'WOULD BLOCK' on a non-blocking socket
-     */
-    if ( ( fcntl( ctx->fd, F_GETFL, 0) & O_NONBLOCK ) != O_NONBLOCK ) {
-        return ( 0 );
-    }
-
     switch ( error ) {
 #if defined EAGAIN
     case EAGAIN:
