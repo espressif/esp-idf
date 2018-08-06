@@ -149,6 +149,11 @@ static btdm_dram_available_region_t btdm_dram_available_region[] = {
     {ESP_BT_MODE_BTDM,          0x3ffbdb28, 0x3ffc0000},
 };
 
+/* Reserve the full memory region used by Bluetooth Controller,
+   some may be released later at runtime. */
+SOC_RESERVE_MEMORY_REGION(0x3ffb0000, 0x3ffc0000, bt_hardware_shared_mem);
+SOC_RESERVE_MEMORY_REGION(0x3ffae6e0, 0x3ffaff10, rom_bt_data);
+
 #if CONFIG_SPIRAM_USE_MALLOC
 typedef struct {
     QueueHandle_t handle;
