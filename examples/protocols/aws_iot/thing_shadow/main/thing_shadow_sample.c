@@ -200,12 +200,14 @@ void aws_iot_task(void *param) {
     windowActuator.pData = &windowOpen;
     windowActuator.pKey = "windowOpen";
     windowActuator.type = SHADOW_JSON_BOOL;
+    windowActuator.dataLength = sizeof(bool);
 
     jsonStruct_t temperatureHandler;
     temperatureHandler.cb = NULL;
     temperatureHandler.pKey = "temperature";
     temperatureHandler.pData = &temperature;
     temperatureHandler.type = SHADOW_JSON_FLOAT;
+    temperatureHandler.dataLength = sizeof(float);
 
     ESP_LOGI(TAG, "AWS IoT SDK Version %d.%d.%d-%s", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_TAG);
 
