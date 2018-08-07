@@ -22,6 +22,7 @@
 
 #include <http_parser.h>
 #include "esp_tls.h"
+#include <errno.h>
 
 static const char *TAG = "esp-tls";
 
@@ -32,7 +33,7 @@ static const char *TAG = "esp-tls";
 #define ESP_LOGE(TAG, ...) printf(__VA_ARGS__);
 #endif
 
-#define DEFAULT_TIMEOUT_MS -1
+#define DEFAULT_TIMEOUT_MS 0
 
 static struct addrinfo *resolve_host_name(const char *host, size_t hostlen)
 {
@@ -82,19 +83,20 @@ static void ms_to_timeval(int timeout_ms, struct timeval *tv)
     tv->tv_usec = (timeout_ms % 1000) * 1000;
 }
 
-static int esp_tcp_connect(const char *host, int hostlen, int port, int timeout_ms)
+static int esp_tcp_connect(const char *host, int hostlen, int port, int *sockfd, const esp_tls_cfg_t *cfg)
 {
+    int ret = -1;
     struct addrinfo *res = resolve_host_name(host, hostlen);
     if (!res) {
-        return -1;
+        return ret;
     }
 
-    int ret = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-    if (ret < 0) {
+    int fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    if (fd < 0) {
         ESP_LOGE(TAG, "Failed to create socket (family %d socktype %d protocol %d)", res->ai_family, res->ai_socktype, res->ai_protocol);
         goto err_freeaddr;
     }
-    int fd = ret;
+    *sockfd = fd;
 
     void *addr_ptr;
     if (res->ai_family == AF_INET) {
@@ -111,32 +113,39 @@ static int esp_tcp_connect(const char *host, int hostlen, int port, int timeout_
         goto err_freesocket;
     }
 
-    if (timeout_ms >= 0) {
-        struct timeval tv;
-        ms_to_timeval(timeout_ms, &tv);
-        setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    if (cfg) {
+        if (cfg->timeout_ms >= 0) {
+            struct timeval tv;
+            ms_to_timeval(cfg->timeout_ms, &tv);
+            setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+        }
+        if (cfg->non_block) {
+            int flags = fcntl(fd, F_GETFL, 0);
+            fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+        }
     }
 
     ret = connect(fd, addr_ptr, res->ai_addrlen);
-    if (ret < 0) {
+    if (ret < 0 && !(errno == EINPROGRESS && cfg->non_block)) {
+
         ESP_LOGE(TAG, "Failed to connnect to host (errno %d)", errno);
         goto err_freesocket;
     }
 
     freeaddrinfo(res);
-    return fd;
+    return 0;
 
 err_freesocket:
     close(fd);
 err_freeaddr:
     freeaddrinfo(res);
-    return -1;
+    return ret;
 }
 
 static void verify_certificate(esp_tls_t *tls)
 {
     int flags;
-    char buf[100]; 
+    char buf[100];
     if ((flags = mbedtls_ssl_get_verify_result(&tls->ssl)) != 0) {
         ESP_LOGI(TAG, "Failed to verify peer certificate!");
         bzero(buf, sizeof(buf));
@@ -225,20 +234,8 @@ static int create_ssl_handle(esp_tls_t *tls, const char *hostname, size_t hostle
         ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%x\n\n", -ret);
         goto exit;
     }
-
     mbedtls_ssl_set_bio(&tls->ssl, &tls->server_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
 
-    while ((ret = mbedtls_ssl_handshake(&tls->ssl)) != 0) {
-        if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
-            ESP_LOGE(TAG, "mbedtls_ssl_handshake returned -0x%x", -ret);
-            if (cfg->cacert_pem_buf != NULL) {
-                /* This is to check whether handshake failed due to invalid certificate*/
-                verify_certificate(tls);
-            }   
-            goto exit;
-        }
-    }
-    
     return 0;
 exit:
     mbedtls_cleanup(tls);
@@ -275,45 +272,134 @@ static ssize_t tls_write(esp_tls_t *tls, const char *data, size_t datalen)
     return ret;
 }
 
+static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_t *tls)
+{
+    if (!tls) {
+        ESP_LOGE(TAG, "empty esp_tls parameter");
+        return -1;
+    }
+    /* These states are used to keep a tab on connection progress in case of non-blocking connect,
+    and in case of blocking connect these cases will get executed one after the other */
+    switch (tls->conn_state) {
+        case ESP_TLS_INIT:
+            ;
+            int sockfd;
+            int ret = esp_tcp_connect(hostname, hostlen, port, &sockfd, cfg);
+            if (ret < 0) {
+                return -1;
+            }
+            tls->sockfd = sockfd;
+            if (!cfg) {
+                tls->read = tcp_read;
+                tls->write = tcp_write;
+                ESP_LOGD(TAG, "non-tls connection established");
+                return 1;
+            }
+            if (cfg->non_block) {
+                FD_ZERO(&tls->rset);
+                FD_SET(tls->sockfd, &tls->rset);
+                tls->wset = tls->rset;
+            }
+            tls->conn_state = ESP_TLS_CONNECTING;
+        case ESP_TLS_CONNECTING:                                            /* fall-through */
+            if (cfg->non_block) {
+                ESP_LOGD(TAG, "connecting...");
+                struct timeval tv;
+                if (cfg->timeout_ms) {
+                    ms_to_timeval(cfg->timeout_ms, &tv);
+                } else {
+                    ms_to_timeval(DEFAULT_TIMEOUT_MS, &tv);
+                }
+
+                /* In case of non-blocking I/O, we use the select() API to check whether
+                   connection has been estbalished or not*/
+                if (select(tls->sockfd + 1, &tls->rset, &tls->wset, NULL,
+                    cfg->timeout_ms ? &tv : NULL) == 0) {
+                    ESP_LOGD(TAG, "select() timed out");
+                    return 0;
+                }
+                if (FD_ISSET(tls->sockfd, &tls->rset) || FD_ISSET(tls->sockfd, &tls->wset)) {
+                    int error;
+                    unsigned int len = sizeof(error);
+                    /* pending error check */
+                    if (getsockopt(tls->sockfd, SOL_SOCKET, SO_ERROR, &error, &len) < 0) {
+                        ESP_LOGD(TAG, "Non blocking connect failed");
+                        tls->conn_state = ESP_TLS_FAIL;
+                        return -1;
+                    }
+                }
+            }
+            /* By now, the connection has been established */
+            ret = create_ssl_handle(tls, hostname, hostlen, cfg);
+            if (ret != 0) {
+                ESP_LOGD(TAG, "create_ssl_handshake failed");
+                tls->conn_state = ESP_TLS_FAIL;
+                return -1;
+            }
+            tls->read = tls_read;
+            tls->write = tls_write;
+            tls->conn_state = ESP_TLS_HANDSHAKE;
+        case ESP_TLS_HANDSHAKE:                                                  /* fall-through */
+            ESP_LOGD(TAG, "handshake in progress...");
+            ret = mbedtls_ssl_handshake(&tls->ssl);
+            if (ret == 0) {
+                tls->conn_state = ESP_TLS_DONE;
+                return 1;
+            } else {
+                if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+                    ESP_LOGE(TAG, "mbedtls_ssl_handshake returned -0x%x", -ret);
+                    if (cfg->cacert_pem_buf != NULL) {
+                        /* This is to check whether handshake failed due to invalid certificate*/
+                        verify_certificate(tls);
+                    }
+                    tls->conn_state = ESP_TLS_FAIL;
+                    return -1;
+                }
+                /* Irrespective of blocking or non-blocking I/O, we return on getting MBEDTLS_ERR_SSL_WANT_READ
+                   or MBEDTLS_ERR_SSL_WANT_WRITE during handshake */
+                return 0;
+            }
+            break;
+        case ESP_TLS_FAIL:
+            ESP_LOGE(TAG, "failed to open a new connection");;
+            break;
+        default:
+            ESP_LOGE(TAG, "invalid esp-tls state");
+            break;
+    }
+    return -1;
+}
+
 /**
  * @brief      Create a new TLS/SSL connection
  */
 esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg)
 {
-    int sockfd;
-    if (cfg) {
-        sockfd = esp_tcp_connect(hostname, hostlen, port, cfg->timeout_ms);
-    } else {
-        sockfd = esp_tcp_connect(hostname, hostlen, port, DEFAULT_TIMEOUT_MS);
-    }
-
-    if (sockfd < 0) {
-        return NULL;
-    }
-
     esp_tls_t *tls = (esp_tls_t *)calloc(1, sizeof(esp_tls_t));
     if (!tls) {
-        close(sockfd);
         return NULL;
     }
-    tls->sockfd = sockfd;
-    tls->read = tcp_read;
-    tls->write = tcp_write;
-
-    if (cfg) {
-        if (create_ssl_handle(tls, hostname, hostlen, cfg) != 0) {
+    /* esp_tls_conn_new() API establishes connection in a blocking manner thus this loop ensures that esp_tls_conn_new()
+       API returns only after connection is established unless there is an error*/
+    while (1) {
+        int ret = esp_tls_low_level_conn(hostname, hostlen, port, cfg, tls);
+        if (ret == 1) {
+            return tls;
+        } else if (ret == -1) {
             esp_tls_conn_delete(tls);
+            ESP_LOGE(TAG, "Failed to open new connection");
             return NULL;
         }
-    	tls->read = tls_read;
-    	tls->write = tls_write;
-        if (cfg->non_block == true) {
-            int flags = fcntl(tls->sockfd, F_GETFL, 0);
-            fcntl(tls->sockfd, F_SETFL, flags | O_NONBLOCK);
-        }
     }
+    return NULL;
+}
 
-    return tls;
+/*
+ * @brief      Create a new TLS/SSL non-blocking connection
+ */
+int esp_tls_conn_new_async(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg , esp_tls_t *tls)
+{
+    return esp_tls_low_level_conn(hostname, hostlen, port, cfg, tls);
 }
 
 static int get_port(const char *url, struct http_parser_url *u)
@@ -352,4 +438,19 @@ size_t esp_tls_get_bytes_avail(esp_tls_t *tls)
         return ESP_FAIL;
     }
     return mbedtls_ssl_get_bytes_avail(&tls->ssl);
+}
+
+/**
+ * @brief      Create a new non-blocking TLS/SSL connection with a given "HTTP" url
+ */
+int esp_tls_conn_http_new_async(const char *url, const esp_tls_cfg_t *cfg, esp_tls_t *tls)
+{
+    /* Parse URI */
+    struct http_parser_url u;
+    http_parser_url_init(&u);
+    http_parser_parse_url(url, strlen(url), 0, &u);
+
+    /* Connect to host */
+    return esp_tls_conn_new_async(&url[u.field_data[UF_HOST].off], u.field_data[UF_HOST].len,
+			    get_port(url, &u), cfg, tls);
 }

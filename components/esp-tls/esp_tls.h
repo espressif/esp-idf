@@ -32,6 +32,17 @@ extern "C" {
 #endif
 
 /**
+ *  @brief ESP-TLS Connection State
+ */
+typedef enum esp_tls_conn_state {
+    ESP_TLS_INIT = 0,
+    ESP_TLS_CONNECTING,
+    ESP_TLS_HANDSHAKE,
+    ESP_TLS_FAIL,
+    ESP_TLS_DONE,
+} esp_tls_conn_state_t;
+
+/**
  * @brief      ESP-TLS configuration parameters 
  */ 
 typedef struct esp_tls_cfg {
@@ -84,12 +95,18 @@ typedef struct esp_tls {
  
     ssize_t (*write)(struct esp_tls *tls, const char *data, size_t datalen);    /*!< Callback function for writing data to TLS/SSL
                                                                                      connection. */
+
+    esp_tls_conn_state_t  conn_state;                                           /*!< ESP-TLS Connection state */
+
+    fd_set rset;                                                                /*!< read file descriptors */
+
+    fd_set wset;                                                                /*!< write file descriptors */
 } esp_tls_t;
 
 /**
- * @brief      Create a new TLS/SSL connection
+ * @brief      Create a new blocking TLS/SSL connection
  *
- * This function establishes a TLS/SSL connection with the specified host.
+ * This function establishes a TLS/SSL connection with the specified host in blocking manner.
  * 
  * @param[in]  hostname  Hostname of the host.
  * @param[in]  hostlen   Length of hostname.
@@ -103,7 +120,7 @@ typedef struct esp_tls {
 esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg);
 
 /**
- * @brief      Create a new TLS/SSL connection with a given "HTTP" url    
+ * @brief      Create a new blocking TLS/SSL connection with a given "HTTP" url
  *
  * The behaviour is same as esp_tls_conn_new() API. However this API accepts host's url.
  * 
@@ -116,6 +133,40 @@ esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const e
  */
 esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg);
    
+/*
+ * @brief      Create a new non-blocking TLS/SSL connection
+ *
+ * This function initiates a non-blocking TLS/SSL connection with the specified host, but due to
+ * its non-blocking nature, it doesn't wait for the connection to get established.
+ *
+ * @param[in]  hostname  Hostname of the host.
+ * @param[in]  hostlen   Length of hostname.
+ * @param[in]  port      Port number of the host.
+ * @param[in]  cfg       TLS configuration as esp_tls_cfg_t. `non_block` member of
+ *                       this structure should be set to be true.
+ * @param[in]  tls       pointer to esp-tls as esp-tls handle.
+ *
+ * @return     - 1       If connection establishment fails.
+ *             - 0       If connection establishment is in progress.
+ *             - 1       If connection establishment is successful.
+ */
+int esp_tls_conn_new_async(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_t *tls);
+
+/**
+ * @brief      Create a new non-blocking TLS/SSL connection with a given "HTTP" url
+ *
+ * The behaviour is same as esp_tls_conn_new() API. However this API accepts host's url.
+ *
+ * @param[in]  url     url of host.
+ * @param[in]  tls     pointer to esp-tls as esp-tls handle.
+ * @param[in]  cfg     TLS configuration as esp_tls_cfg_t.
+ *
+ * @return     - 1     If connection establishment fails.
+ *             - 0     If connection establishment is in progress.
+ *             - 1     If connection establishment is successful.
+ */
+int esp_tls_conn_http_new_async(const char *url, const esp_tls_cfg_t *cfg, esp_tls_t *tls);
+
 /**
  * @brief      Write from buffer 'data' into specified tls connection.
  * 
@@ -144,13 +195,13 @@ static inline ssize_t esp_tls_conn_write(esp_tls_t *tls, const void *data, size_
  * @param[in]  datalen  Length of data buffer. 
  *
  * @return
-*             - >0  if read operation was successful, the return value is the number
-*                   of bytes actually read from the TLS/SSL connection.
-*             -  0  if read operation was not successful. The underlying
-*                   connection was closed.
-*             - <0  if read operation was not successful, because either an
-*                   error occured or an action must be taken by the calling process.
-*/
+ *             - >0  if read operation was successful, the return value is the number
+ *                   of bytes actually read from the TLS/SSL connection.
+ *             -  0  if read operation was not successful. The underlying
+ *                   connection was closed.
+ *             - <0  if read operation was not successful, because either an
+ *                   error occured or an action must be taken by the calling process.
+ */
 static inline ssize_t esp_tls_conn_read(esp_tls_t *tls, void  *data, size_t datalen)
 {
     return tls->read(tls, (char *)data, datalen);
@@ -180,6 +231,7 @@ void esp_tls_conn_delete(esp_tls_t *tls);
  *              record read buffer
  */
 size_t esp_tls_get_bytes_avail(esp_tls_t *tls);
+
 
 #ifdef __cplusplus
 }
