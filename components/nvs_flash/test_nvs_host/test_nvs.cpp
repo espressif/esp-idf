@@ -1710,6 +1710,20 @@ TEST_CASE("Check that orphaned blobs are erased during init", "[nvs]")
     TEST_ESP_OK(storage.writeItem(1, ItemType::BLOB, "key3", blob, sizeof(blob)));
 }
 
+
+TEST_CASE("Check for nvs version incompatibility", "[nvs]")
+{
+    SpiFlashEmulator emu(3);
+
+    int32_t val1 = 0x12345678;
+    Page p;
+    p.load(0);
+    TEST_ESP_OK(p.setVersion(Page::NVS_VERSION - 1));
+    TEST_ESP_OK(p.writeItem(1, ItemType::I32, "foo", &val1, sizeof(val1)));
+
+    TEST_ESP_ERR(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, 0, 3), ESP_ERR_NVS_NEW_VERSION_FOUND);
+}
+
 TEST_CASE("Check that NVS supports old blob format without blob index", "[nvs]")
 {
     SpiFlashEmulator emu("../nvs_partition_generator/part_old_blob_format.bin");
