@@ -40,6 +40,7 @@ struct transport_item_t {
     poll_func       _poll_read;     /*!< Poll and read */
     poll_func       _poll_write;    /*!< Poll and write */
     trans_func      _destroy;       /*!< Destroy and free transport */
+    connect_async_func _connect_async;      /*!< non-blocking connect function of this transport */
     payload_transfer_func  _parrent_transfer;       /*!< Function returning underlying transport layer */
 
     STAILQ_ENTRY(transport_item_t) next;
@@ -145,6 +146,15 @@ int transport_connect(transport_handle_t t, const char *host, int port, int time
     return ret;
 }
 
+int transport_connect_async(transport_handle_t t, const char *host, int port, int timeout_ms)
+{
+    int ret = -1;
+    if (t && t->_connect) {
+        return t->_connect_async(t, host, port, timeout_ms);
+    }
+    return ret;
+}
+
 int transport_read(transport_handle_t t, char *buffer, int len, int timeout_ms)
 {
     if (t && t->_read) {
@@ -222,6 +232,7 @@ esp_err_t transport_set_func(transport_handle_t t,
     t->_poll_read = _poll_read;
     t->_poll_write = _poll_write;
     t->_destroy = _destroy;
+    t->_connect_async = NULL;
     t->_parrent_transfer = _parrent_transport;
     return ESP_OK;
 }
@@ -246,4 +257,13 @@ esp_err_t transport_set_default_port(transport_handle_t t, int port)
 transport_handle_t transport_get_handle(transport_handle_t t)
 {
     return t;
+}
+
+esp_err_t transport_set_async_connect_func(transport_handle_t t, connect_async_func _connect_async_func)
+{
+    if (t == NULL) {
+        return ESP_FAIL;
+    }
+    t->_connect_async = _connect_async_func;
+    return ESP_OK;
 }
