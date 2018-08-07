@@ -861,7 +861,7 @@ esp_err_t ulp_process_macros_and_load(uint32_t load_addr, const ulp_insn_t* prog
  * 3. TEXT_SIZE, size of .text section (2 bytes)
  * 4. DATA_SIZE, size of .data section (2 bytes)
  * 5. BSS_SIZE, size of .bss section (2 bytes)
- * 6. (TEXT_OFFSET - 16) bytes of arbitrary data (will not be loaded into RTC memory)
+ * 6. (TEXT_OFFSET - 12) bytes of arbitrary data (will not be loaded into RTC memory)
  * 7. .text section
  * 8. .data section
  *
