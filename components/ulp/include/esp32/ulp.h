@@ -17,6 +17,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include "esp_err.h"
+#include "soc/soc.h"
 
 #ifdef __cplusplus
 extern "C" {
