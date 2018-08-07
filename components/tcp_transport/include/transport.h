@@ -30,6 +30,7 @@ typedef int (*io_func)(transport_handle_t t, const char *buffer, int len, int ti
 typedef int (*io_read_func)(transport_handle_t t, char *buffer, int len, int timeout_ms);
 typedef int (*trans_func)(transport_handle_t t);
 typedef int (*poll_func)(transport_handle_t t, int timeout_ms);
+typedef int (*connect_async_func)(transport_handle_t t, const char *host, int port, int timeout_ms);
 typedef transport_handle_t (*payload_transfer_func)(transport_handle_t);
 
 /**
@@ -137,6 +138,20 @@ esp_err_t transport_set_default_port(transport_handle_t t, int port);
  * - (-1) if there are any errors, should check errno
  */
 int transport_connect(transport_handle_t t, const char *host, int port, int timeout_ms);
+
+/**
+ * @brief      Non-blocking transport connection function, to make a connection to server
+ *
+ * @param      t           The transport handle
+ * @param[in]  host        Hostname
+ * @param[in]  port        Port
+ * @param[in]  timeout_ms  The timeout milliseconds
+ *
+ * @return
+ * - socket for will use by this transport
+ * - (-1) if there are any errors, should check errno
+ */
+int transport_connect_async(transport_handle_t t, const char *host, int port, int timeout_ms);
 
 /**
  * @brief      Transport read function
@@ -259,6 +274,20 @@ esp_err_t transport_set_func(transport_handle_t t,
                              poll_func _poll_write,
                              trans_func _destroy,
                              payload_transfer_func _parrent_transport);
+
+
+/**
+ * @brief      Set transport functions for the transport handle
+ *
+ * @param[in]  t                    The transport handle
+ * @param[in]  _connect_async_func  The connect_async function pointer
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_FAIL
+ */
+esp_err_t transport_set_async_connect_func(transport_handle_t t, connect_async_func _connect_async_func);
+
 #ifdef __cplusplus
 }
 #endif

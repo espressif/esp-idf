@@ -429,6 +429,12 @@ static const esp_err_msg_t esp_err_msg_table[] = {
     ERR_TBL_IT(ESP_ERR_HTTP_INVALID_TRANSPORT),             /* 28677 0x7005 There are no transport support for the input
                                                                             scheme */
 #   endif
+#   ifdef      ESP_ERR_HTTP_CONNECTING
+    ERR_TBL_IT(ESP_ERR_HTTP_CONNECTING),                    /* 28678 0x7006 HTTP connection hasn't been established yet */
+#   endif
+#   ifdef      ESP_ERR_HTTP_EAGAIN
+    ERR_TBL_IT(ESP_ERR_HTTP_EAGAIN),                        /* 28679 0x7007 Mapping of errno EAGAIN to esp_err_t */
+#   endif
     // components/http_server/include/http_server.h
 #   ifdef      ESP_ERR_HTTPD_BASE
     ERR_TBL_IT(ESP_ERR_HTTPD_BASE),                         /* 32768 0x8000 Starting number of HTTPD error codes */
