@@ -43,7 +43,7 @@ from IDF.IDFApp import UT
 UT_APP_BOOT_UP_DONE = "Press ENTER to see the list of tests."
 RESET_PATTERN = re.compile(r"(ets [\w]{3}\s+[\d]{1,2} [\d]{4} [\d]{2}:[\d]{2}:[\d]{2}[^()]*\([\w].*?\))")
 EXCEPTION_PATTERN = re.compile(r"(Guru Meditation Error: Core\s+\d panic'ed \([\w].*?\))")
-ABORT_PATTERN = re.compile(r"(abort\(\) was called at PC 0x[a-eA-E\d]{8} on core \d)")
+ABORT_PATTERN = re.compile(r"(abort\(\) was called at PC 0x[a-fA-F\d]{8} on core \d)")
 FINISH_PATTERN = re.compile(r"1 Tests (\d) Failures (\d) Ignored")
 END_LIST_STR = r'\r?\nEnter test for running'
 TEST_PATTERN = re.compile(r'\((\d+)\)\s+"([^"]+)" ([^\r]+)\r?\n(' + END_LIST_STR + r')?')
