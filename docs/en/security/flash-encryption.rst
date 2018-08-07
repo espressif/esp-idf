@@ -3,7 +3,7 @@ Flash Encryption
 
 Flash Encryption is a feature for encrypting the contents of the ESP32's attached SPI flash. When flash encryption is enabled, physical readout of the SPI flash is not sufficient to recover most flash contents.
 
-Flash Encryption is separate from the :doc:`Secure Boot <secure-boot>` feature, and you can use flash encryption without enabling secure boot. However we recommend using both features together for a secure environment.
+Flash Encryption is separate from the :doc:`Secure Boot <secure-boot>` feature, and you can use flash encryption without enabling secure boot. However we recommend using both features together for a secure environment. In absence of secure boot, additional configuration needs to be performed to ensure effectiveness of flash encryption. See :ref:`flash-encryption-without-secure-boot` for more details.
 
 **IMPORTANT: Enabling flash encryption limits your options for further updates of your ESP32. Make sure to read this document (including :ref:`flash-encryption-limitations`) and understand the implications of enabling flash encryption.**
 
@@ -271,6 +271,17 @@ Flash Encryption prevents plaintext readout of the encrypted flash, to protect f
 - For the same reason, an attacker can always tell when a pair of adjacent 16 byte blocks (32 byte aligned) contain identical content. Keep this in mind if storing sensitive data on the flash, design your flash storage so this doesn't happen (using a counter byte or some other non-identical value every 16 bytes is sufficient).
 
 - Flash encryption alone may not prevent an attacker from modifying the firmware of the device. To prevent unauthorised firmware from runningon the device, use flash encryption in combination with :doc:`Secure Boot <secure-boot>`.
+
+.. _flash-encryption-without-secure-boot:
+
+Using Flash Encryption without Secure Boot
+------------------------------------------
+
+If flash encryption is used without secure boot, it is possible to load unauthorised code using serial re-flashing. See :ref:`updating-encrypted-flash-serial` for details. This unauthorised code can then read all encrypted partitions (in decrypted form) making flash-encryption ineffective. This can be avoided by write-protecting :ref:`FLASH_CRYPT_CNT` and thereby disallowing serial re-flashing. :ref:`FLASH_CRYPT_CNT` can be write-protected using command::
+
+  espefuse.py --port PORT write_protect_efuse FLASH_CRYPT_CNT
+
+Alternatively, the app can call :func:`esp_flash_write_protect_crypt_cnt` during its startup process.
 
 .. _flash-encryption-advanced-features:
 
