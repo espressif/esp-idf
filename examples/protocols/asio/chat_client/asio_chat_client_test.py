@@ -34,10 +34,12 @@ def chat_server_sketch(my_ip):
     print("Starting the server on {}".format(my_ip))
     port=2222
     s=socket(AF_INET, SOCK_STREAM)
+    s.settimeout(600)
     s.bind((my_ip, port))
     s.listen(1)
     q,addr=s.accept()
     print("connection accepted")
+    q.settimeout(30)
     q.send(g_msg_to_client)
     data = q.recv(1024)
     # check if received initial empty message
@@ -86,7 +88,7 @@ def test_examples_protocol_asio_chat_client(env, extra_data):
         time.sleep(1)
     print(g_client_response)
     # 6. evaluate host_server received this message
-    if (g_client_response[4:] == test_msg):
+    if (g_client_response[4:7] == test_msg):
         print("PASS: Received correct message")
         pass
     else:
