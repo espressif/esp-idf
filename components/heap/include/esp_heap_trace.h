@@ -38,7 +38,7 @@ typedef enum {
  * @brief Trace record data type. Stores information about an allocated region of memory.
  */
 typedef struct {
-    uint32_t ccount; ///< CCOUNT of the CPU when the allocation was made. LSB (bit value 1) is the CPU number (0 or 1). */
+    uint32_t ccount; ///< CCOUNT of the CPU when the allocation was made. LSB (bit value 1) is the CPU number (0 or 1).
     void *address;   ///< Address which was allocated
     size_t size;     ///< Size of the allocation
     void *alloced_by[CONFIG_HEAP_TRACING_STACK_DEPTH]; ///< Call stack of the caller which allocated the memory.
