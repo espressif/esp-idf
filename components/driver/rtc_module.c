@@ -479,7 +479,7 @@ static void touch_pad_filter_cb(void *arg)
 {
     static uint32_t s_filtered_temp[TOUCH_PAD_MAX] = {0};
 
-    if (s_touch_pad_filter == NULL) {
+    if (s_touch_pad_filter == NULL || rtc_touch_mux == NULL) {
         return;
     }
     uint16_t val = 0;
@@ -828,14 +828,17 @@ esp_err_t touch_pad_init()
 
 esp_err_t touch_pad_deinit()
 {
-    if (rtc_touch_mux == NULL) {
-        return ESP_FAIL;
+    RTC_MODULE_CHECK(rtc_touch_mux != NULL, "Touch pad not initialized", ESP_FAIL);
+    if (s_touch_pad_filter != NULL) {
+        touch_pad_filter_stop();
+        touch_pad_filter_delete();
     }
+    xSemaphoreTake(rtc_touch_mux, portMAX_DELAY);
     s_touch_pad_init_bit = 0x0000;
-    touch_pad_filter_delete();
     touch_pad_set_fsm_mode(TOUCH_FSM_MODE_SW);
     touch_pad_clear_status();
     touch_pad_intr_disable();
+    xSemaphoreGive(rtc_touch_mux);
     vSemaphoreDelete(rtc_touch_mux);
     rtc_touch_mux = NULL;
     return ESP_OK;
@@ -975,7 +978,7 @@ esp_err_t touch_pad_filter_start(uint32_t filter_period_ms)
 esp_err_t touch_pad_filter_stop()
 {
     RTC_MODULE_CHECK(s_touch_pad_filter != NULL, "Touch pad filter not initialized", ESP_ERR_INVALID_STATE);
-
+    RTC_MODULE_CHECK(rtc_touch_mux != NULL, "Touch pad not initialized", ESP_ERR_INVALID_STATE);
     esp_err_t ret = ESP_OK;
     xSemaphoreTake(rtc_touch_mux, portMAX_DELAY);
     if (s_touch_pad_filter != NULL) {
@@ -991,6 +994,7 @@ esp_err_t touch_pad_filter_stop()
 esp_err_t touch_pad_filter_delete()
 {
     RTC_MODULE_CHECK(s_touch_pad_filter != NULL, "Touch pad filter not initialized", ESP_ERR_INVALID_STATE);
+    RTC_MODULE_CHECK(rtc_touch_mux != NULL, "Touch pad not initialized", ESP_ERR_INVALID_STATE);
     xSemaphoreTake(rtc_touch_mux, portMAX_DELAY);
     if (s_touch_pad_filter != NULL) {
         if (s_touch_pad_filter->timer != NULL) {
