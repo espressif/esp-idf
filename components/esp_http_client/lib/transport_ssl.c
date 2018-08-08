@@ -206,12 +206,14 @@ static int ssl_write(transport_handle_t t, const char *buffer, int len, int time
 
 static int ssl_read(transport_handle_t t, char *buffer, int len, int timeout_ms)
 {
-    int ret;
+    int poll = -1, ret;
     transport_ssl_t *ssl = transport_get_context_data(t);
-    ret = mbedtls_ssl_read(&ssl->ctx, (unsigned char *)buffer, len);
-    if (ret == 0) {
-        return -1;
+    if (mbedtls_ssl_get_bytes_avail(&ssl->ctx) <= 0) {
+        if ((poll = transport_poll_read(t, timeout_ms)) <= 0) {
+            return poll;
+        }
     }
+    ret = mbedtls_ssl_read(&ssl->ctx, (unsigned char *)buffer, len);
     return ret;
 }
 
