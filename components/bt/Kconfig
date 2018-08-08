@@ -27,31 +27,31 @@ config BTDM_CONTROLLER_MODE_BTDM
 endchoice
 
 config BTDM_CONTROLLER_BLE_MAX_CONN
-    int "BLE Max Connection Numbers"
+    int "BLE Max Connections"
     depends on BTDM_CONTROLLER_MODE_BLE_ONLY || BTDM_CONTROLLER_MODE_BTDM
     default 3
     range 1 9
     help
-        Maximum connection numbers of BLE controller.
-        Decrease the value will save the memory of DRAM. Each connection will save 1.2KB DRAM
+        BLE maximum connections of bluetooth controller.
+        Each connection uses 1KB static DRAM whenever the BT controller is enabled.
 
 config BTDM_CONTROLLER_BR_EDR_MAX_ACL_CONN
-    int "BR/EDR Max ACL Connection Numbers"
+    int "BR/EDR ACL Max Connections"
     depends on BTDM_CONTROLLER_MODE_BR_EDR_ONLY || BTDM_CONTROLLER_MODE_BTDM
     default 2
     range 1 7
     help
-        Maximum ACL connection numbers of BR/EDR controller.
-        Decrease the value will save the memory of DRAM. Each connection will save 1KB DRAM.
+        BR/EDR ACL maximum connections of bluetooth controller. 
+        Each connection uses 1.2KB static DRAM whenever the BT controller is enabled.
 
 config BTDM_CONTROLLER_BR_EDR_MAX_SYNC_CONN
-    int "BR/EDR Max Sync(SCO/eSCO) Connection Numbers"
+    int "BR/EDR Sync(SCO/eSCO) Max Connections"
     depends on BTDM_CONTROLLER_MODE_BR_EDR_ONLY || BTDM_CONTROLLER_MODE_BTDM
     default 0
     range 0 3
     help
-        Maximum Synchronize connection numbers of BR/EDR controller.
-        Decrease the value will save the memory of DRAM. Each connection will save 2KB DRAM.
+        BR/EDR Synchronize maximum connections of bluetooth controller.
+        Each connection uses 2KB static DRAM whenever the BT controller is enabled.
 
 config BTDM_CONTROLLER_BLE_MAX_CONN_EFF
     int
