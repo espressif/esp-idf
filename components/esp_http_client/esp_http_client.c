@@ -562,10 +562,10 @@ static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
             break;
         case HttpStatus_Unauthorized:
             auth_header = client->auth_header;
-            http_utils_trim_whitespace(&auth_header);
-            ESP_LOGI(TAG, "UNAUTHORIZED: %s", auth_header);
             client->redirect_counter ++;
             if (auth_header) {
+                http_utils_trim_whitespace(&auth_header);
+                ESP_LOGI(TAG, "UNAUTHORIZED: %s", auth_header);
                 if (http_utils_str_starts_with(auth_header, "Digest") == 0) {
                     ESP_LOGD(TAG, "type = Digest");
                     client->connection_info.auth_type = HTTP_AUTH_TYPE_DIGEST;
