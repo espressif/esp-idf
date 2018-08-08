@@ -41,11 +41,11 @@ copy_if_modified('xml/', 'xml_in/')
 os.system('python ../gen-dxd.py')
 
 # Generate 'kconfig.inc' file from components' Kconfig files
-print "Generating kconfig.inc from kconfig contents"
+print("Generating kconfig.inc from kconfig contents")
 kconfig_inc_path = '{}/inc/kconfig.inc'.format(builddir)
 temp_sdkconfig_path = '{}/sdkconfig.tmp'.format(builddir)
-kconfigs = subprocess.check_output(["find", "../../components", "-name", "Kconfig"])
-kconfig_projbuilds = subprocess.check_output(["find", "../../components", "-name", "Kconfig.projbuild"])
+kconfigs = subprocess.check_output(["find", "../../components", "-name", "Kconfig"]).decode()
+kconfig_projbuilds = subprocess.check_output(["find", "../../components", "-name", "Kconfig.projbuild"]).decode()
 confgen_args = ["python",
                 "../../tools/kconfig_new/confgen.py",
                 "--kconfig", "../../Kconfig",
