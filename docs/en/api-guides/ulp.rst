@@ -134,7 +134,7 @@ Each ULP program is embedded into the ESP-IDF application as a binary blob. Appl
 
 Once the program is loaded into RTC memory, application can start it, passing the address of the entry point to ``ulp_run`` function::
 
-    ESP_ERROR_CHECK( ulp_run((&ulp_entry - RTC_SLOW_MEM) / sizeof(uint32_t)) );
+    ESP_ERROR_CHECK( ulp_run(&ulp_entry - RTC_SLOW_MEM) );
 
 .. doxygenfunction:: ulp_run
 
