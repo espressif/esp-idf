@@ -33,6 +33,9 @@ import pprint
 
 __version__ = "0.1"
 
+if not "IDF_CMAKE" in os.environ:
+    os.environ["IDF_CMAKE"] = ""
+
 def main():
     parser = argparse.ArgumentParser(description='confgen.py v%s - Config Generation Tool' % __version__, prog=os.path.basename(sys.argv[0]))
 

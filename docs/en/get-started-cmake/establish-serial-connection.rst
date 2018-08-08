@@ -1,6 +1,6 @@
-Establish Serial Connection with ESP32
-======================================
-:link_to_translation:`zh_CN:[中文]`
+Establish Serial Connection with ESP32 (CMake)
+==============================================
+
 
 This section provides guidance how to establish serial connection between ESP32 and PC.
 
@@ -55,7 +55,9 @@ MacOS ::
     ls /dev/cu.*
 
 
-.. _linux-dialout-group:
+.. note: MacOS users: if you don't see the serial port then check you have the USB/serial drivers installed as shown in the Getting Started guide for your particular development board. For MacOS High Sierra (10.13), you may also have to explicitly allow the drivers to load. Open System Preferences -> Security & Privacy -> General and check if there is a message shown here about "System Software from developer ..." where the developer name is Silicon Labs or FTDI.
+
+.. _linux-dialout-group-cmake:
 
 Adding user to ``dialout`` on Linux
 -----------------------------------
@@ -124,7 +126,6 @@ If you see some legible log, it means serial connection is working and you are r
 
    Close serial terminal after verification that communication is working. In next step we are going to use another application to upload ESP32. This application will not be able to access serial port while it is open in terminal.
 
-If you got here from section :ref:`get-started-connect` when installing s/w for ESP32 development, then go back to section :ref:`get-started-configure`.
-
+If you got here from section :ref:`get-started-connect-cmake` when installing s/w for ESP32 development, then go back to section :ref:`get-started-configure-cmake`.
 
 .. _esptool documentation: https://github.com/espressif/esptool/wiki/ESP32-Boot-Mode-Selection#automatic-bootloader

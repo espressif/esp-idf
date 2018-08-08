@@ -346,7 +346,7 @@ def print_closing_message(args):
             args.port or "(PORT)",
             args.baud,
             cmd.strip()))
-        print("or run 'idf.py %s'" % (key + "-flash" if key != "project" else "flash",))
+        print("or run 'idf.py -p PORT %s'" % (key + "-flash" if key != "project" else "flash",))
 
     if "all" in args.actions or "build" in args.actions:
         print_flashing_message("Project", "project")
