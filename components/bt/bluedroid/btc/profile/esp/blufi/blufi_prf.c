@@ -208,10 +208,7 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         blufi_env.frag_size = p_data->req_data.p_data->mtu - BLUFI_MTU_RESERVED_SIZE;
         break;
     case BTA_GATTS_CONF_EVT:
-        LOG_DEBUG("CONIRM EVT\n");
-        if (p_data && p_data->req_data.value){
-            osi_free(p_data->req_data.value);
-        }
+        LOG_DEBUG("CONFIRM EVT\n");
         /* Nothing */
         break;
     case BTA_GATTS_CREATE_EVT:
