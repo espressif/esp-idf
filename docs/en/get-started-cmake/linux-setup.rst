@@ -1,7 +1,8 @@
-﻿*************************************
-Standard Setup of Toolchain for Linux
-*************************************
-:link_to_translation:`zh_CN:[中文]`
+﻿*********************************************
+Standard Setup of Toolchain for Linux (CMake)
+*********************************************
+
+.. include:: ../cmake-warning.rst
 
 Install Prerequisites
 =====================
@@ -10,16 +11,18 @@ To compile with ESP-IDF you need to get the following packages:
 
 - CentOS 7::
 
-    sudo yum install gcc git wget make ncurses-devel flex bison gperf python pyserial
+    sudo yum install git wget ncurses-devel flex bison gperf python pyserial cmake ninja-build ccache
 
 - Ubuntu and Debian::
 
-    sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-serial
+    sudo apt-get install git wget libncurses-dev flex bison gperf python python-serial cmake ninja-build ccache
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial
+    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial cmake ninja ccache
 
+.. note::
+    CMake version 3.5 or newer is required for use with ESP-IDF. Older Linux distributions may require updating, enabling of a "backports" repository, or installing of a "cmake3" package rather than "cmake".
 
 Toolchain Setup
 ===============
@@ -40,7 +43,7 @@ ESP32 toolchain for Linux is available for download from Espressif website:
         cd ~/esp
         tar -xzf ~/Downloads/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz
 
-.. _setup-linux-toolchain-add-it-to-path:
+.. _setup-linux-toolchain-add-it-to-path-cmake:
 
 2.  The toolchain will be extracted into ``~/esp/xtensa-esp32-elf/`` directory.
 
@@ -73,13 +76,13 @@ ESP32 toolchain for Linux is available for download from Espressif website:
 Permission issues /dev/ttyUSB0
 ------------------------------
 
-With some Linux distributions you may get the ``Failed to open port /dev/ttyUSB0`` error message when flashing the ESP32. :ref:`This can be solved by adding the current user to the dialout group<linux-dialout-group>`.
+With some Linux distributions you may get the ``Failed to open port /dev/ttyUSB0`` error message when flashing the ESP32. :ref:`This can be solved by adding the current user to the dialout group<linux-dialout-group-cmake>`.
 
 
 Arch Linux Users
 ----------------
 
-To run the precompiled gdb (xtensa-esp32-elf-gdb) in Arch Linux requires ncurses 5, but Arch uses ncurses 6. 
+To run the precompiled gdb (xtensa-esp32-elf-gdb) in Arch Linux requires ncurses 5, but Arch uses ncurses 6.
 
 Backwards compatibility libraries are available in AUR_ for native and lib32 configurations:
 
@@ -94,7 +97,7 @@ Alternatively, use crosstool-NG to compile a gdb that links against ncurses 6.
 Next Steps
 ==========
 
-To carry on with development environment setup, proceed to section :ref:`get-started-get-esp-idf`.
+To carry on with development environment setup, proceed to section :ref:`get-started-get-esp-idf-cmake`.
 
 
 Related Documents
