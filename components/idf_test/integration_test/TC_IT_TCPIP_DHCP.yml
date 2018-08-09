@@ -593,7 +593,7 @@ test cases:
     - - P SSC1 C +DHCP:AP,OK
       - P SSC2 C +JAP:DISCONNECTED
   - - SSC SSC2 sta -D
-    - - R SSC2 C +JAP:DISCONNECTED
+    - - R SSC2 C OK
   - - SSC SSC1 dhcp -E -o 2
     - - R SSC1 C +DHCP:AP,OK
   - - SSC SSC1 dhcp -S -o 2
