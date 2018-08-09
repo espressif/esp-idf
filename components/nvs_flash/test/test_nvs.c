@@ -9,6 +9,7 @@
 #include "esp_partition.h"
 #include "esp_log.h"
 #include <string.h>
+#include "esp_system.h"
 
 static const char* TAG = "test_nvs";
 
@@ -212,4 +213,29 @@ TEST_CASE("calculate used and free space", "[nvs]")
 
     TEST_ESP_OK(nvs_flash_erase());
     TEST_ESP_OK(nvs_flash_deinit());
+}
+
+TEST_CASE("check for memory leaks in nvs_set_blob", "[nvs]")
+{
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+    TEST_ESP_OK( err );
+
+    for (int i = 0; i < 500; ++i) {
+        nvs_handle my_handle;
+        uint8_t key[20] = {0};
+
+        TEST_ESP_OK( nvs_open("test_namespace1", NVS_READWRITE, &my_handle) );
+        TEST_ESP_OK( nvs_set_blob(my_handle, "key", key, sizeof(key)) );
+        TEST_ESP_OK( nvs_commit(my_handle) );
+        nvs_close(my_handle);
+        printf("%d\n", esp_get_free_heap_size());
+    }
+
+    nvs_flash_deinit();
+    printf("%d\n", esp_get_free_heap_size());
+    /* heap leaks will be checked in unity_platform.c */
 }
