@@ -127,8 +127,8 @@ class Page(object):
             chunk_size = 0
 
             # Get the size available in current page
-            if self.entry_num < (Page.PAGE_PARAMS["max_entries"] - 1):
-                tailroom = (Page.PAGE_PARAMS["max_entries"] - self.entry_num - 1) * Page.SINGLE_ENTRY_SIZE
+            tailroom = (Page.PAGE_PARAMS["max_entries"] - self.entry_num - 1) * Page.SINGLE_ENTRY_SIZE
+            assert tailroom >=0, "Page overflow!!"
 
             # Split the binary data into two and store a chunk of available size onto curr page
             if tailroom < remaining_size:
