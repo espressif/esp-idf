@@ -242,23 +242,6 @@ void btu_task_thread_handler(void *arg)
             case SIG_BTU_ONESHOT_ALARM: {
                 TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)e.par;
                 btu_general_alarm_process(p_tle);
-
-                switch (p_tle->event) {
-#if (defined(BLE_INCLUDED) && BLE_INCLUDED == TRUE)
-                    case BTU_TTYPE_BLE_RANDOM_ADDR:
-                        btm_ble_timeout(p_tle);
-                        break;
-#endif
-                    case BTU_TTYPE_USER_FUNC: {
-                        tUSER_TIMEOUT_FUNC  *p_uf = (tUSER_TIMEOUT_FUNC *)p_tle->param;
-                        (*p_uf)(p_tle);
-                        break;
-                    }
-                    default:
-                        // FAIL
-                        HCI_TRACE_ERROR("Received unexpected oneshot timer event:0x%x\n", p_tle->event);
-                        break;
-                }
                 break;
             }
             case SIG_BTU_L2CAP_ALARM:
