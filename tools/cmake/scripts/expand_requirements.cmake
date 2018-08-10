@@ -15,7 +15,7 @@
 #
 # TODO: Error out if a component requirement is missing
 cmake_minimum_required(VERSION 3.5)
-include("utilities.cmake")
+include("${IDF_PATH}/tools/cmake/utilities.cmake")
 
 if(NOT DEPENDENCIES_FILE)
     message(FATAL_ERROR "DEPENDENCIES_FILE must be set.")
@@ -91,8 +91,10 @@ function(components_find_all component_dirs component_paths component_names)
 
     # Look for a component in each component_dirs entry
     foreach(dir ${component_dirs})
+        debug("Looking for CMakeLists.txt in ${dir}")
         file(GLOB component "${dir}/CMakeLists.txt")
         if(component)
+            debug("CMakeLists.txt file ${component}")
             get_filename_component(component "${component}" DIRECTORY)
             get_filename_component(name "${component}" NAME)
             if(NOT name IN_LIST names)
