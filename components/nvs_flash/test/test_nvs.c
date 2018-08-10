@@ -16,7 +16,7 @@ TEST_CASE("various nvs tests", "[nvs]")
 {
     nvs_handle handle_1;
     esp_err_t err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_LOGW(TAG, "nvs_flash_init failed (0x%x), erasing partition and retrying", err);
         const esp_partition_t* nvs_partition = esp_partition_find_first(
                 ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
@@ -83,7 +83,7 @@ TEST_CASE("calculate used and free space", "[nvs]")
     TEST_ASSERT_TRUE(h_count_entries == 0);
 
     esp_err_t err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_LOGW(TAG, "nvs_flash_init failed (0x%x), erasing partition and retrying", err);
         const esp_partition_t* nvs_partition = esp_partition_find_first(
                 ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
