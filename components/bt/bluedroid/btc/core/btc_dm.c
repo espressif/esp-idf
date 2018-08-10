@@ -182,6 +182,10 @@ static void btc_dm_remove_ble_bonding_keys(void)
 
 static void btc_dm_save_ble_bonding_keys(void)
 {
+    if(!(pairing_cb.ble.is_penc_key_rcvd || pairing_cb.ble.is_pid_key_rcvd || pairing_cb.ble.is_pcsrk_key_rcvd || 
+         pairing_cb.ble.is_lenc_key_rcvd || pairing_cb.ble.is_lcsrk_key_rcvd || pairing_cb.ble.is_lidk_key_rcvd)) {
+        return ;
+    }
     bt_bdaddr_t bd_addr;
 
     bdcpy(bd_addr.address, pairing_cb.bd_addr);
