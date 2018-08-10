@@ -398,6 +398,11 @@ httpd_handle_t test_httpd_start()
     pre_start_mem = esp_get_free_heap_size();
     httpd_handle_t hd;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    config.server_port = 1234;
+
+    /* This check should be a part of http_server */
+    config.max_open_sockets = (CONFIG_LWIP_MAX_SOCKETS - 3);
+
     if (httpd_start(&hd, &config) == ESP_OK) {
         ESP_LOGI(TAG, "Started HTTP server on port: %d", config.server_port);
         ESP_LOGI(TAG, "Max URI handlers: %d", config.max_uri_handlers);
