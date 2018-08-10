@@ -134,6 +134,7 @@
 
 #ifndef __ASSEMBLER__
 #define BIT(nr)                 (1UL << (nr))
+#define BIT64(nr)               (1ULL << (nr))
 #else
 #define BIT(nr)                 (1 << (nr))
 #endif
