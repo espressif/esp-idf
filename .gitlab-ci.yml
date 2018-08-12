@@ -305,7 +305,7 @@ test_fatfs_on_host:
 
 test_mdns_fuzzer_on_host:
   stage: host_test
-  image: $CI_DOCKER_REGISTRY/afl-fuzzer-test$BOT_DOCKER_IMAGE_TAG
+  image: $CI_DOCKER_REGISTRY/afl-fuzzer-test
   tags:
     - host_test
   dependencies: []
@@ -512,7 +512,7 @@ check_submodule_sync:
 assign_test:
   tags:
     - assign_test
-  image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
+  image: $CI_DOCKER_REGISTRY/ubuntu-test-env
   stage: assign_test
   # gitlab ci do not support match job with RegEx or wildcard now in dependencies.
   # we have a lot build example jobs. now we don't use dependencies, just download all artificats of build stage.
