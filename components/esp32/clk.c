@@ -120,11 +120,7 @@ void IRAM_ATTR ets_update_cpu_frequency(uint32_t ticks_per_us)
 static void select_rtc_slow_clk(rtc_slow_freq_t slow_clk)
 {
     uint32_t cal_val = 0;
-    uint32_t wait = 0;
     uint32_t freq_hz = ((slow_clk == RTC_SLOW_FREQ_32K_XTAL) ? 32768 : 150000);
-    uint32_t warning_timeout = 3 /* sec */ * freq_hz /* Hz */ / (SLOW_CLK_CAL_CYCLES + 1);
-    warning_timeout = ((warning_timeout == 0) ? 3 /* sec */ : warning_timeout);
-    bool changing_clock_to_150k = false;
     do {
         if (slow_clk == RTC_SLOW_FREQ_32K_XTAL) {
             /* 32k XTAL oscillator needs to be enabled and running before it can
@@ -140,20 +136,12 @@ static void select_rtc_slow_clk(rtc_slow_freq_t slow_clk)
             if (SLOW_CLK_CAL_CYCLES > 0) {
                 cal_val = rtc_clk_cal(RTC_CAL_32K_XTAL, SLOW_CLK_CAL_CYCLES);
                 if (cal_val == 0 || cal_val < 15000000L) {
-                    ESP_EARLY_LOGE(TAG, "RTC: Not found External 32 kHz XTAL. Switching to Internal 150 kHz RC chain");
                     slow_clk = RTC_SLOW_FREQ_RTC;
-                    changing_clock_to_150k = true;
+                    ESP_EARLY_LOGW(TAG, "32 kHz XTAL not found, switching to internal 150 kHz oscillator");
                 }
             }
         }
         rtc_clk_slow_freq_set(slow_clk);
-        if (changing_clock_to_150k == true && wait > 1){
-            // This helps when there are errors when switching the clock from External 32 kHz XTAL to Internal 150 kHz RC chain.
-            rtc_clk_32k_enable(false);
-            uint32_t min_bootstrap = 5; // Min bootstrapping for continue switching the clock.
-            rtc_clk_32k_bootstrap(min_bootstrap);
-            rtc_clk_32k_enable(true);
-        }
 
         if (SLOW_CLK_CAL_CYCLES > 0) {
             /* TODO: 32k XTAL oscillator has some frequency drift at startup.
@@ -163,9 +151,6 @@ static void select_rtc_slow_clk(rtc_slow_freq_t slow_clk)
         } else {
             const uint64_t cal_dividend = (1ULL << RTC_CLK_CAL_FRACT) * 1000000ULL;
             cal_val = (uint32_t) (cal_dividend / rtc_clk_slow_freq_get_hz());
-        }
-        if (++wait % warning_timeout == 0) {
-            ESP_EARLY_LOGW(TAG, "still waiting for source selection RTC");
         }
     } while (cal_val == 0);
     ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK calibration value: %d", cal_val);
