@@ -12,6 +12,7 @@ components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py
 docs/check_doc_warnings.sh
 docs/check_lang_folder_sync.sh
 docs/gen-kconfig-doc.py
+docs/gen-version-specific-includes.py
 tools/ci/apply_bot_filter.py
 tools/ci/build_examples.sh
 tools/ci/check-executable.sh
