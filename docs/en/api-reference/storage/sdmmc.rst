@@ -4,7 +4,7 @@ SD/SDIO/MMC Driver
 Overview
 --------
 
-SD/SDIO/MMC driver currently supports SD memory and IO cards. Support for MCC/eMMC cards will be added in the future. This protocol level driver builds on top of SDMMC and SD SPI host drivers.
+SD/SDIO/MMC driver currently supports SD memory, SDIO cards, and eMMC chips. This protocol level driver builds on top of SDMMC and SD SPI host drivers.
 
 SDMMC and SD SPI host drivers (``driver/sdmmc_host.h``) provide APIs to send commands to the slave device(s), send and receive data, and handle error conditions on the bus.
     
@@ -29,10 +29,18 @@ Protocol layer is given :cpp:class:`sdmmc_host_t` structure which describes the 
 Usage with SD memory cards
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-1. Call the host driver functions to initialize the host (e.g. :cpp:func:`sdmmc_host_init`, :cpp:func:`sdmmc_host_init_slot`). 
+1. Call the host driver functions to initialize the host (e.g. :cpp:func:`sdmmc_host_init`, :cpp:func:`sdmmc_host_init_slot`).
 2. Call :cpp:func:`sdmmc_card_init` to initialize the card, passing it host driver information (``host``) and a pointer to :cpp:class:`sdmmc_card_t` structure which will be filled in (``card``).
 3. To read and write sectors of the card, use :cpp:func:`sdmmc_read_sectors` and :cpp:func:`sdmmc_write_sectors`, passing the pointer to card information structure (``card``).
 4. When card is not used anymore, call the host driver function to disable the host peripheral and free resources allocated by the driver (e.g. :cpp:func:`sdmmc_host_deinit`).
+
+Usage with eMMC chips
+^^^^^^^^^^^^^^^^^^^^^
+
+From the perspective of the protocol layer, eMMC memory chips behave the same way as SD memory cards. Because of similarity of the protocol, even though eMMC are chips don't have the "card" form factor, same terminology is used as for SD cards (`sdmmc_card_t`, `sdmmc_card_init`). Note that eMMC chips can not be used over SPI, therefore are incompatible with SD SPI host driver.
+
+To initialize eMMC memory and do read/write operations, follow the steps listed above for SD cards.
+
 
 Usage with SDIO cards
 ^^^^^^^^^^^^^^^^^^^^^
