@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//#include "wpa/includes.h"
+//#include "utils/includes.h"
 
-//#include "wpa/common.h"
-#include "crypto/common.h"
+//#include "utils/common.h"
+#include "utils/common.h"
 #include "crypto/crypto.h"
 #include "crypto/aes.h"
 #if defined(CONFIG_DES) || defined(CONFIG_DES3)
@@ -39,7 +39,7 @@ struct fast_crypto_cipher {
 #ifdef CONFIG_DES3
         struct {
             struct des3_key_s key;
-	    uint8_t cbc[8];
+            uint8_t cbc[8];
         } des3;
 #endif
 #ifdef CONFIG_DES

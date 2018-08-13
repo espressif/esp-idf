@@ -8,17 +8,13 @@
  * See README for more details.
  */
 
-#include "crypto/includes.h"
-#include "crypto/common.h"
+#include "utils/includes.h"
+#include "utils/common.h"
 #include "crypto/crypto.h"
 #include "crypto/sha1_i.h"
 #include "crypto/md5_i.h"
 #include "mbedtls/sha256.h"
 
-
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR = __FILE__;
-#endif
 
 struct fast_crypto_hash {
 	enum crypto_hash_alg alg;

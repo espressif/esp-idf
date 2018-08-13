@@ -27,7 +27,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include "esp_system.h"
-#include "crypto/common.h"
+#include "utils/common.h"
 
 int os_get_time(struct os_time *t)
 {

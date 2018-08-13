@@ -27,7 +27,7 @@
 #ifndef CRYPTO_H
 #define CRYPTO_H
 
-#include "common.h"
+#include "utils/common.h"
 
 /**
  * md4_vector - MD4 hash for data vector

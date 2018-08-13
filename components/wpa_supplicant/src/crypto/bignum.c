@@ -12,10 +12,10 @@
  * See README and COPYING for more details.
  */
 
-#include "crypto/includes.h"
-#include "crypto/common.h"
-#include "wpa/wpabuf.h"
-#include "wpa/wpa_debug.h"
+#include "utils/includes.h"
+#include "utils/common.h"
+#include "utils/wpabuf.h"
+#include "utils/wpa_debug.h"
 #include "bignum.h"
 
 #define CONFIG_INTERNAL_LIBTOMMATH 

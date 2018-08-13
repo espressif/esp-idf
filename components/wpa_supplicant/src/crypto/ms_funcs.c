@@ -7,9 +7,9 @@
  */
 
 
-#include "wpa/includes.h"
+#include "utils/includes.h"
 
-#include "wpa/common.h"
+#include "utils/common.h"
 #include "crypto/sha1.h"
 #include "crypto/ms_funcs.h"
 #include "crypto/crypto.h"
