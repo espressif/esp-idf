@@ -6,18 +6,11 @@
  * See README for more details.
  */
 
-#include "crypto/includes.h"
-#include "crypto/common.h"
-//#include "wpa/common.h"
+#include "utils/includes.h"
+#include "utils/common.h"
 #include "crypto/crypto.h"
-//#include "crypto/sha256_i.h"
 #include "crypto/sha1_i.h"
 #include "crypto/md5_i.h"
-
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR = __FILE__;
-#endif
-
 
 struct crypto_hash {
 	enum crypto_hash_alg alg;

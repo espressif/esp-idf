@@ -12,9 +12,9 @@
  * See README and COPYING for more details.
  */
 
-#include "crypto/includes.h"
+#include "utils/includes.h"
 
-#include "crypto/common.h"
+#include "utils/common.h"
 #include "bignum.h"
 #include "crypto/crypto.h"
 

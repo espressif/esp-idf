@@ -12,9 +12,9 @@
  * See README and COPYING for more details.
  */
 
-#include "crypto/includes.h"
+#include "utils/includes.h"
 
-#include "crypto/common.h"
+#include "utils/common.h"
 #include "crypto/sha1.h"
 #include "crypto/sha1_i.h"
 #include "crypto/md5.h"
