@@ -40,6 +40,7 @@ ESP-IDF 编程指南
    :hidden:
 
    快速入门 <get-started/index>
+   快速入门 (CMake 预览版本) <get-started-cmake/index>
    API 参考 <api-reference/index>
    H/W 参考 <hw-reference/index>
    API 指南 <api-guides/index>

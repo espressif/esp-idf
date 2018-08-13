@@ -6,6 +6,7 @@ API Guides
 
    General Notes <general-notes>
    Build System <build-system>
+   Build System (CMake) <build-system-cmake>
    Deep Sleep Wake Stubs <deep-sleep-stub>
    ESP32 Core Dump <core_dump>
    Flash Encryption <../security/flash-encryption>

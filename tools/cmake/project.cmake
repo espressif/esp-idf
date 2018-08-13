@@ -59,8 +59,10 @@ macro(project name)
         -D "DEPENDENCIES_FILE=${CMAKE_BINARY_DIR}/component_depends.cmake"
         -D "COMPONENT_DIRS=${COMPONENT_DIRS}"
         -D "BOOTLOADER_BUILD=${BOOTLOADER_BUILD}"
+        -D "IDF_PATH=${IDF_PATH}"
+        -D "DEBUG=${DEBUG}"
         -P "${IDF_PATH}/tools/cmake/scripts/expand_requirements.cmake"
-        WORKING_DIRECTORY "${IDF_PATH}/tools/cmake")
+        WORKING_DIRECTORY "${PROJECT_PATH}")
     include("${CMAKE_BINARY_DIR}/component_depends.cmake")
 
     # We now have the following component-related variables:
