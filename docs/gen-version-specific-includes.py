@@ -102,8 +102,8 @@ def main():
     language = sys.argv[1]
     out_dir = sys.argv[2]
     if not os.path.exists(out_dir):
-        print("Output directory %s not found" % out_dir)
-        sys.exit(1)
+        print("Creating directory %s" % out_dir)
+        os.mkdir(out_dir)
 
     template = TEMPLATES[language]
 
