@@ -359,27 +359,27 @@ esp_err_t gpio_set_direction(gpio_num_t gpio_num, gpio_mode_t mode);
 esp_err_t gpio_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull);
 
 /**
-  * @brief Enable GPIO wake-up function.
-  *
-  * @param gpio_num GPIO number.
-  *
-  * @param intr_type GPIO wake-up type. Only GPIO_INTR_LOW_LEVEL or GPIO_INTR_HIGH_LEVEL can be used.
-  *
-  * @return
-  *     - ESP_OK Success
-  *     - ESP_ERR_INVALID_ARG Parameter error
-  */
+ * @brief Enable GPIO wake-up function.
+ *
+ * @param gpio_num GPIO number.
+ *
+ * @param intr_type GPIO wake-up type. Only GPIO_INTR_LOW_LEVEL or GPIO_INTR_HIGH_LEVEL can be used.
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
 esp_err_t gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type);
 
 /**
-  * @brief Disable GPIO wake-up function.
-  *
-  * @param gpio_num GPIO number
-  *
-  * @return
-  *     - ESP_OK Success
-  *     - ESP_ERR_INVALID_ARG Parameter error
-  */
+ * @brief Disable GPIO wake-up function.
+ *
+ * @param gpio_num GPIO number
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
 esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num);
 
 /**
