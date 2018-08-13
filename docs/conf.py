@@ -32,6 +32,15 @@ os.system("python gen-dxd.py")
 # Generate 'kconfig.inc' file from components' Kconfig files
 os.system("python gen-kconfig-doc.py > _build/inc/kconfig.inc")
 
+# Generate version-related includes
+#
+# (Note: this is in a function as it needs to access configuration to get the language)
+def generate_version_specific_includes(app):
+    print("Generating version-specific includes...")
+    if os.system('python gen-version-specific-includes.py en _build/inc'):
+        raise RuntimeError('gen-version-specific-includes.py failed')
+
+
 # http://stackoverflow.com/questions/12772927/specifying-an-online-image-in-sphinx-restructuredtext-format
 # 
 suppress_warnings = ['image.nonlocal_uri']
@@ -313,4 +322,10 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # otherwise, readthedocs.org uses their theme by default, so no need to specify it
+
+# Override RTD CSS theme to introduce the theme corrections
+# https://github.com/rtfd/sphinx_rtd_theme/pull/432
+def setup(app):
+    app.add_stylesheet('theme_overrides.css')
+    generate_version_specific_includes(app)
 
