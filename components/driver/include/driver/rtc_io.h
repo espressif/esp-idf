@@ -223,28 +223,51 @@ esp_err_t rtc_gpio_isolate(gpio_num_t gpio_num);
 void rtc_gpio_force_hold_dis_all();
 
 /**
-  * @brief Set RTC GPIO pad drive capability
-  *
-  * @param gpio_num GPIO number, only support output GPIOs
-  * @param strength Drive capability of the pad
-  *
-  * @return
-  *     - ESP_OK Success
-  *     - ESP_ERR_INVALID_ARG Parameter error
-  */
+ * @brief Set RTC GPIO pad drive capability
+ *
+ * @param gpio_num GPIO number, only support output GPIOs
+ * @param strength Drive capability of the pad
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
 esp_err_t rtc_gpio_set_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t strength);
 
 /**
-  * @brief Get RTC GPIO pad drive capability
-  *
-  * @param gpio_num GPIO number, only support output GPIOs
-  * @param strength Pointer to accept drive capability of the pad
-  *
-  * @return
-  *     - ESP_OK Success
-  *     - ESP_ERR_INVALID_ARG Parameter error
-  */
+ * @brief Get RTC GPIO pad drive capability
+ *
+ * @param gpio_num GPIO number, only support output GPIOs
+ * @param strength Pointer to accept drive capability of the pad
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
 esp_err_t rtc_gpio_get_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t* strength);
+
+/**
+ * @brief Enable wakeup from sleep mode using specific GPIO
+ * @param gpio_num  GPIO number
+ * @param intr_type  Wakeup on high level (GPIO_INTR_HIGH_LEVEL) or low level
+ *                   (GPIO_INTR_LOW_LEVEL)
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if gpio_num is not an RTC IO, or intr_type is not
+ *        one of GPIO_INTR_HIGH_LEVEL, GPIO_INTR_LOW_LEVEL.
+ */
+esp_err_t rtc_gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type);
+
+/**
+ * @brief Disable wakeup from sleep mode using specific GPIO
+ * @param gpio_num  GPIO number
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if gpio_num is not an RTC IO
+ */
+esp_err_t rtc_gpio_wakeup_disable(gpio_num_t gpio_num);
+
+
 
 #ifdef __cplusplus
 }
