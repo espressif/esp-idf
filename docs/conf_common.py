@@ -56,6 +56,17 @@ if os.system('python ../../tools/gen_esp_err_to_name.py --rst_output ' + esp_err
     raise RuntimeError('gen_esp_err_to_name.py failed')
 copy_if_modified(esp_err_inc_path + '.in', esp_err_inc_path)
 
+# Generate version-related includes
+#
+# (Note: this is in a function as it needs to access configuration to get the language)
+def generate_version_specific_includes(app):
+    print("Generating version-specific includes...")
+    version_tmpdir = '{}/version_inc'.format(builddir)
+    if os.system('python ../gen-version-specific-includes.py {} {}'.format(app.config.language, version_tmpdir)):
+        raise RuntimeError('gen-version-specific-includes.py failed')
+    copy_if_modified(version_tmpdir, '{}/inc'.format(builddir))
+
+
 # http://stackoverflow.com/questions/12772927/specifying-an-online-image-in-sphinx-restructuredtext-format
 # 
 suppress_warnings = ['image.nonlocal_uri']
@@ -343,3 +354,4 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 # https://github.com/rtfd/sphinx_rtd_theme/pull/432
 def setup(app):
     app.add_stylesheet('theme_overrides.css')
+    generate_version_specific_includes(app)
