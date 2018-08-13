@@ -30,10 +30,10 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param);
 /* avrc event handler */
 static void bt_av_hdl_avrc_evt(uint16_t event, void *p_param);
 
-static uint32_t m_pkt_cnt = 0;
-static esp_a2d_audio_state_t m_audio_state = ESP_A2D_AUDIO_STATE_STOPPED;
-static const char *m_a2d_conn_state_str[] = {"Disconnected", "Connecting", "Connected", "Disconnecting"};
-static const char *m_a2d_audio_state_str[] = {"Suspended", "Stopped", "Started"};
+static uint32_t s_pkt_cnt = 0;
+static esp_a2d_audio_state_t s_audio_state = ESP_A2D_AUDIO_STATE_STOPPED;
+static const char *s_a2d_conn_state_str[] = {"Disconnected", "Connecting", "Connected", "Disconnecting"};
+static const char *s_a2d_audio_state_str[] = {"Suspended", "Stopped", "Started"};
 
 /* callback for A2DP sink */
 void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
@@ -55,8 +55,8 @@ void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len)
 {
     size_t bytes_written;
     i2s_write(0, data, len, &bytes_written, portMAX_DELAY);
-    if (++m_pkt_cnt % 100 == 0) {
-        ESP_LOGI(BT_AV_TAG, "Audio packet count %u", m_pkt_cnt);
+    if (++s_pkt_cnt % 100 == 0) {
+        ESP_LOGI(BT_AV_TAG, "Audio packet count %u", s_pkt_cnt);
     }
 }
 
@@ -97,7 +97,7 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
         a2d = (esp_a2d_cb_param_t *)(p_param);
         uint8_t *bda = a2d->conn_stat.remote_bda;
         ESP_LOGI(BT_AV_TAG, "A2DP connection state: %s, [%02x:%02x:%02x:%02x:%02x:%02x]",
-             m_a2d_conn_state_str[a2d->conn_stat.state], bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
+             s_a2d_conn_state_str[a2d->conn_stat.state], bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
         if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_DISCONNECTED) {
             esp_bt_gap_set_scan_mode(ESP_BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE);
         } else if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_CONNECTED){
@@ -107,10 +107,10 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
     }
     case ESP_A2D_AUDIO_STATE_EVT: {
         a2d = (esp_a2d_cb_param_t *)(p_param);
-        ESP_LOGI(BT_AV_TAG, "A2DP audio state: %s", m_a2d_audio_state_str[a2d->audio_stat.state]);
-        m_audio_state = a2d->audio_stat.state;
+        ESP_LOGI(BT_AV_TAG, "A2DP audio state: %s", s_a2d_audio_state_str[a2d->audio_stat.state]);
+        s_audio_state = a2d->audio_stat.state;
         if (ESP_A2D_AUDIO_STATE_STARTED == a2d->audio_stat.state) {
-            m_pkt_cnt = 0;
+            s_pkt_cnt = 0;
         }
         break;
     }
