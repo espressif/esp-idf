@@ -5,9 +5,10 @@
 
 PROJECT_NAME := unit-test-app
 
-include $(IDF_PATH)/make/project.mk
-
 ifeq ($(MAKELEVEL),0)
+# Set default target
+all:
+
 # Define helper targets only when not recursing
 
 # List of unit-test-app configurations.
@@ -22,8 +23,9 @@ CONFIG_CLEAN_TARGETS := $(addprefix ut-clean-,$(CONFIG_NAMES))
 CONFIG_APPLY_TARGETS := $(addprefix ut-apply-config-,$(CONFIG_NAMES))
 
 # Build (intermediate) and output (artifact) directories
-BUILDS_DIR := $(PROJECT_PATH)/builds
-BINARIES_DIR := $(PROJECT_PATH)/output
+PROJECT_DIR := $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
+BUILDS_DIR := $(PROJECT_DIR)/builds
+BINARIES_DIR := $(PROJECT_DIR)/output
 
 # This generates per-config targets (clean, build, apply-config).
 define GenerateConfigTargets
@@ -57,14 +59,14 @@ $(BINARIES_DIR)/%/$(PROJECT_NAME).bin: configs/%
 	mkdir -p $(BINARIES_DIR)/$*/bootloader
 	mkdir -p $(BUILDS_DIR)/$*
 	# Prepare configuration: top-level sdkconfig.defaults file plus the current configuration (configs/$*)
-	$(summary) CONFIG $(BUILDS_DIR)/$*/sdkconfig
+	echo CONFIG $(BUILDS_DIR)/$*/sdkconfig
 	rm -f $(BUILDS_DIR)/$*/sdkconfig
 	cat sdkconfig.defaults > $(BUILDS_DIR)/$*/sdkconfig.defaults
 	echo "" >> $(BUILDS_DIR)/$*/sdkconfig.defaults # in case there is no trailing newline in sdkconfig.defaults
 	cat configs/$* >> $(BUILDS_DIR)/$*/sdkconfig.defaults
 
 	# Build, tweaking paths to sdkconfig and sdkconfig.defaults
-	$(summary) BUILD_CONFIG $(BUILDS_DIR)/$*
+	echo BUILD_CONFIG $(BUILDS_DIR)/$*
 	# 'TEST_COMPONENTS=names' option can be added to configs/$* to limit the set
 	# of tests to build for given configuration.
 	# Build all tests if this option is not present.
@@ -78,7 +80,7 @@ $(BINARIES_DIR)/%/$(PROJECT_NAME).bin: configs/%
 		TEST_COMPONENTS="$${test_components}" \
 		TESTS_ALL=$${tests_all} \
 		EXCLUDE_COMPONENTS="$${exclude_components}"
-	$(MAKE) print_flash_cmd \
+	$(MAKE) --silent print_flash_cmd \
 		BUILD_DIR_BASE=$(BUILDS_DIR)/$* \
 		SDKCONFIG=$(BUILDS_DIR)/$*/sdkconfig \
 		| sed -e 's:'$(BUILDS_DIR)/$*/'::g' \
@@ -113,17 +115,29 @@ ut-help:
 
 help: ut-help
 
-.PHONY: ut-build-all-configs ut-clean-all-configs \
-		$(CONFIG_BUILD_TARGETS) $(CONFIG_CLEAN_TARGETS) $(CONFIG_APPLY_TARGETS) \
+LOCAL_TARGETS := ut-build-all-configs ut-clean-all-configs \
+		$(CONFIG_BUILD_TARGETS) $(CONFIG_CLEAN_TARGETS) \
 		ut-help
+
+.PHONY: $(LOCAL_TARGETS)
 
 NON_INTERACTIVE_TARGET += ut-apply-config-% ut-clean-% ut-build-% \
 						  ut-build-all-configs ut-clean-all-configs
 
-else # MAKELEVEL == 0
+endif # MAKELEVEL == 0
+
+
+# When targets defined in this makefile are built, don't need to include the main project makefile.
+# This prevents some variables which depend on build directory from being set erroneously.
+ifeq ($(filter $(LOCAL_TARGETS),$(MAKECMDGOALS)),)
+
+include $(IDF_PATH)/make/project.mk
+
+endif
 
 # If recursing, print the actual list of tests being built
+ifneq ($(MAKELEVEL),0)
 
 $(info TESTS $(foreach comp,$(TEST_COMPONENT_NAMES),$(patsubst %_test,%,$(comp))))
 
-endif # MAKELEVEL == 0
+endif # MAKELEVEL != 0
