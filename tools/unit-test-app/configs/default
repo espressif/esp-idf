@@ -1,1 +1,1 @@
-EXCLUDE_COMPONENTS=libsodium
+EXCLUDE_COMPONENTS=libsodium bt

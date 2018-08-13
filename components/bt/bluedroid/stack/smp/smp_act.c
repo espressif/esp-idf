@@ -22,6 +22,7 @@
 #include "btm_int.h"
 #include "stack/l2c_api.h"
 #include "smp_int.h"
+#include "p_256_ecc_pp.h"
 //#include "utils/include/bt_utils.h"
 
 #if SMP_INCLUDED == TRUE
@@ -668,6 +669,12 @@ void smp_process_pairing_public_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     STREAM_TO_ARRAY(p_cb->peer_publ_key.x, p, BT_OCTET32_LEN);
     STREAM_TO_ARRAY(p_cb->peer_publ_key.y, p, BT_OCTET32_LEN);
+    /* In order to prevent the x and y coordinates of the public key from being modified, 
+       we need to check whether the x and y coordinates are on the given elliptic curve. */
+    if (!ECC_CheckPointIsInElliCur_P256((Point *)&p_cb->peer_publ_key)) {
+        SMP_TRACE_ERROR("%s, Invalid Public key.", __func__);
+        smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+    }
     p_cb->flags |= SMP_PAIR_FLAG_HAVE_PEER_PUBL_KEY;
 
     smp_wait_for_both_public_keys(p_cb, NULL);
