@@ -61,6 +61,8 @@ typedef enum {
     ESP_SLEEP_WAKEUP_TIMER,        //!< Wakeup caused by timer
     ESP_SLEEP_WAKEUP_TOUCHPAD,     //!< Wakeup caused by touchpad
     ESP_SLEEP_WAKEUP_ULP,          //!< Wakeup caused by ULP program
+    ESP_SLEEP_WAKEUP_GPIO,         //!< Wakeup caused by GPIO (light sleep only)
+    ESP_SLEEP_WAKEUP_UART,         //!< Wakeup caused by UART (light sleep only)
 } esp_sleep_source_t;
 
 /* Leave this type define for compatibility */
@@ -189,6 +191,43 @@ esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
  */
 esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t mask, esp_sleep_ext1_wakeup_mode_t mode);
 
+/**
+ * @brief Enable wakeup from light sleep using GPIOs
+ *
+ * Each GPIO supports wakeup function, which can be triggered on either low level
+ * or high level. Unlike EXT0 and EXT1 wakeup sources, this method can be used
+ * both for all IOs: RTC IOs and digital IOs. It can only be used to wakeup from
+ * light sleep though.
+ *
+ * To enable wakeup, first call gpio_wakeup_enable, specifying gpio number and
+ * wakeup level, for each GPIO which is used for wakeup.
+ * Then call this function to enable wakeup feature.
+ *
+ * @note In revisions 0 and 1 of the ESP32, GPIO wakeup source
+ *       can not be used together with touch or ULP wakeup sources.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_STATE if wakeup triggers conflict
+ */
+esp_err_t esp_sleep_enable_gpio_wakeup();
+
+/**
+ * @brief Enable wakeup from light sleep using UART
+ *
+ * Use uart_set_wakeup_threshold function to configure UART wakeup threshold.
+ *
+ * Wakeup from light sleep takes some time, so not every character sent
+ * to the UART can be received by the application.
+ *
+ * @note ESP32 does not support wakeup from UART2.
+ *
+ * @param uart_num  UART port to wake up from
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if wakeup from given UART is not supported
+ */
+esp_err_t esp_sleep_enable_uart_wakeup(int uart_num);
 
 /**
  * @brief Get the bit mask of GPIOs which caused wakeup (ext1)
