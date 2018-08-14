@@ -2258,6 +2258,7 @@ void gatt_cleanup_upon_disc(BD_ADDR bda, UINT16 reason, tBT_TRANSPORT transport)
         GATT_TRACE_DEBUG ("exit gatt_cleanup_upon_disc ");
         BTM_Recovery_Pre_State();
     }
+    gatt_delete_dev_from_srv_chg_clt_list(bda);
 }
 /*******************************************************************************
 **

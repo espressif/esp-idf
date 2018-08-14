@@ -105,7 +105,10 @@ static void smp_connect_callback (UINT16 channel, BD_ADDR bd_addr, BOOLEAN conne
     if (transport == BT_TRANSPORT_BR_EDR || memcmp(bd_addr, dummy_bda, BD_ADDR_LEN) == 0) {
         return;
     }
-
+    if(!connected && &p_cb->rsp_timer_ent) {
+        //free timer
+        btu_free_timer(&p_cb->rsp_timer_ent);      
+    }
     if (memcmp(bd_addr, p_cb->pairing_bda, BD_ADDR_LEN) == 0) {
         SMP_TRACE_EVENT ("%s()  for pairing BDA: %08x%04x  Event: %s\n",
                          __FUNCTION__,
