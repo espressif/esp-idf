@@ -512,10 +512,29 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
    - *Condition*:
        - *EQ* (equal) – jump if value in stage_cnt == threshold
        - *LT* (less than) –  jump if value in stage_cnt < threshold
+       - *LE* (less or equal) - jump if value in stage_cnt <= threshold
        - *GT* (greater than) –  jump if value in stage_cnt > threshold
+       - *GE* (greater or equal) — jump if value in stage_cnt >= threshold
 
 **Cycles**
-  2 cycles to execute, 2 cycles to fetch next instruction
+  Conditions *LE*, *LT*, *GE*: 2 cycles to execute, 2 cycles to fetch next instruction
+
+  Conditions *EQ*, *GT* are implemented in the assembler using two **JUMPS** instructions::
+
+    // JUMPS target, threshold, EQ is implemented as:
+
+             JUMPS next, threshold, LT
+             JUMPS target, threshold, LE
+    next:
+
+    // JUMPS target, threshold, GT is implemented as:
+    
+             JUMPS next, threshold, LE
+             JUMPS target, threshold, GE
+    next:
+
+  Therefore the execution time will depend on the branches taken: either 2 cycles to execute + 2 cycles to fetch, or 4 cycles to execute + 4 cycles to fetch.
+
 
 **Description**
     The instruction makes a jump to a relative address if condition is true. Condition is the result of comparison of count register value and threshold value.
