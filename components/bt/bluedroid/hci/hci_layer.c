@@ -158,7 +158,7 @@ static int hci_layer_init_env(void)
     // as per the Bluetooth spec, Volume 2, Part E, 4.4 (Command Flow Control)
     // This value can change when you get a command complete or command status event.
     hci_host_env.command_credits = 1;
-    hci_host_env.command_queue = fixed_queue_new(SIZE_MAX);
+    hci_host_env.command_queue = fixed_queue_new(QUEUE_SIZE_MAX);
     if (hci_host_env.command_queue) {
         fixed_queue_register_dequeue(hci_host_env.command_queue, event_command_ready);
     } else {
@@ -166,7 +166,7 @@ static int hci_layer_init_env(void)
         return -1;
     }
 
-    hci_host_env.packet_queue = fixed_queue_new(SIZE_MAX);
+    hci_host_env.packet_queue = fixed_queue_new(QUEUE_SIZE_MAX);
     if (hci_host_env.packet_queue) {
         fixed_queue_register_dequeue(hci_host_env.packet_queue, event_packet_ready);
     } else {

@@ -122,6 +122,7 @@ esp_err_t touch_pad_init();
 
 /**
  * @brief Un-install touch pad driver.
+ * @note  After this function is called, other touch functions are prohibited from being called.
  * @return
  *     - ESP_OK   Success
  *     - ESP_FAIL Touch pad driver not initialized

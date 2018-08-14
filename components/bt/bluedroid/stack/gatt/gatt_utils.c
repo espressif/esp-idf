@@ -337,7 +337,7 @@ tGATT_HDL_LIST_ELEM *gatt_alloc_hdl_buffer(void)
         if (!p_cb->hdl_list[i].in_use) {
             memset(p_elem, 0, sizeof(tGATT_HDL_LIST_ELEM));
             p_elem->in_use = TRUE;
-            p_elem->svc_db.svc_buffer = fixed_queue_new(SIZE_MAX);
+            p_elem->svc_db.svc_buffer = fixed_queue_new(QUEUE_SIZE_MAX);
             return p_elem;
         }
     }
@@ -1007,8 +1007,8 @@ tGATT_TCB *gatt_allocate_tcb_by_bdaddr(BD_ADDR bda, tBT_TRANSPORT transport)
 
         if (allocated) {
             memset(p_tcb, 0, sizeof(tGATT_TCB));
-            p_tcb->pending_enc_clcb = fixed_queue_new(SIZE_MAX);
-            p_tcb->pending_ind_q = fixed_queue_new(SIZE_MAX);
+            p_tcb->pending_enc_clcb = fixed_queue_new(QUEUE_SIZE_MAX);
+            p_tcb->pending_ind_q = fixed_queue_new(QUEUE_SIZE_MAX);
             p_tcb->in_use = TRUE;
             p_tcb->tcb_idx = i;
             p_tcb->transport = transport;

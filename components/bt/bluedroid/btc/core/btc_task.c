@@ -170,6 +170,9 @@ int btc_init(void)
         return BT_STATUS_NOMEM;
     }
     btc_gap_callback_init();
+#if SCAN_QUEUE_CONGEST_CHECK
+    btc_adv_list_init();
+#endif
     /* TODO: initial the profile_tab */
     return BT_STATUS_SUCCESS;
 }
@@ -178,7 +181,18 @@ void btc_deinit(void)
 {
     vTaskDelete(xBtcTaskHandle);
     vQueueDelete(xBtcQueue);
-
+#if SCAN_QUEUE_CONGEST_CHECK
+    btc_adv_list_deinit();
+#endif
     xBtcTaskHandle = NULL;
     xBtcQueue = 0;
+}
+
+bool btc_check_queue_is_congest(void)
+{
+    UBaseType_t wait_size = uxQueueMessagesWaiting(xBtcQueue);
+    if(wait_size >= QUEUE_CONGEST_SIZE) {
+        return true;
+    }
+    return false;
 }

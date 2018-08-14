@@ -162,8 +162,8 @@ second, data, 0x15,         ,  1M
 first, app, factory, 0x100000, 2M
 second, app, ota_0,  0x200000, 1M
 """
-        t = PartitionTable.from_csv(csv)
         with self.assertRaisesRegexp(InputError, "overlap"):
+            t = PartitionTable.from_csv(csv)
             t.verify()
 
 class BinaryOutputTests(unittest.TestCase):

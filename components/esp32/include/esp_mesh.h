@@ -1312,6 +1312,14 @@ esp_err_t esp_mesh_scan_get_ap_ie_len(int *len);
  */
 esp_err_t esp_mesh_scan_get_ap_record(wifi_ap_record_t *ap_record, void *buffer);
 
+/**
+ * @brief     flush upstream packets pending in to_parent queue and to_parent_p2p queue
+ *
+ * @return
+ *    - ESP_OK
+ */
+esp_err_t esp_mesh_flush_upstream_packets(void);
+
 #ifdef __cplusplus
 }
 #endif

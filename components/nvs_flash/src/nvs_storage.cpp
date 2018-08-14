@@ -236,10 +236,9 @@ esp_err_t Storage::writeMultiPageBlob(uint8_t nsIndex, const char* key, const vo
         for (auto it = std::begin(usedPages); it != std::end(usedPages); it++) {
             it->mPage->eraseItem(nsIndex, ItemType::BLOB_DATA, key, ii++);
         }
-        usedPages.clearAndFreeNodes();
-        return err;
     }
-    return ESP_OK;
+    usedPages.clearAndFreeNodes();
+    return err;
 }
 
 esp_err_t Storage::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, const void* data, size_t dataSize)

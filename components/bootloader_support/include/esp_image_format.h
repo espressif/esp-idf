@@ -96,11 +96,12 @@ typedef struct {
   esp_image_segment_header_t segments[ESP_IMAGE_MAX_SEGMENTS]; /* Per-segment header data */
   uint32_t segment_data[ESP_IMAGE_MAX_SEGMENTS]; /* Data offsets for each segment */
   uint32_t image_len; /* Length of image on flash, in bytes */
+  uint8_t image_digest[32]; /* appended SHA-256 digest */
 } esp_image_metadata_t;
 
 /* Mode selection for esp_image_load() */
 typedef enum {
-    ESP_IMAGE_VERIFY,        /* Verify image contents, load metadata. Print errorsors. */
+    ESP_IMAGE_VERIFY,        /* Verify image contents, load metadata. Print errors. */
     ESP_IMAGE_VERIFY_SILENT, /* Verify image contents, load metadata. Don't print errors. */
 #ifdef BOOTLOADER_BUILD
     ESP_IMAGE_LOAD,          /* Verify image contents, load to memory. Print errors. */
@@ -109,6 +110,11 @@ typedef enum {
 
 /**
  * @brief Verify and (optionally, in bootloader mode) load an app image.
+ *
+ * This name is deprecated and is included for compatibility with the ESP-IDF v3.x API.
+ * It will be removed in V4.0 version.
+ * Function has been renamed to esp_image_verify().
+ * Use function esp_image_verify() to verify a image. And use function bootloader_load_image() to load image from a bootloader space.
  *
  * If encryption is enabled, data will be transparently decrypted.
  *
@@ -130,7 +136,60 @@ typedef enum {
  * - ESP_ERR_IMAGE_INVALID if the image appears invalid.
  * - ESP_ERR_INVALID_ARG if the partition or data pointers are invalid.
  */
-esp_err_t esp_image_load(esp_image_load_mode_t mode, const esp_partition_pos_t *part, esp_image_metadata_t *data);
+esp_err_t esp_image_load(esp_image_load_mode_t mode, const esp_partition_pos_t *part, esp_image_metadata_t *data) __attribute__((deprecated));
+
+/**
+ * @brief Verify an app image.
+ *
+ * If encryption is enabled, data will be transparently decrypted.
+ *
+ * @param mode Mode of operation (verify, silent verify, or load).
+ * @param part Partition to load the app from.
+ * @param[inout] data Pointer to the image metadata structure which is be filled in by this function.
+ *                    'start_addr' member should be set (to the start address of the image.)
+ *                    Other fields will all be initialised by this function.
+ *
+ * Image validation checks:
+ * - Magic byte.
+ * - Partition smaller than 16MB.
+ * - All segments & image fit in partition.
+ * - 8 bit image checksum is valid.
+ * - SHA-256 of image is valid (if image has this appended).
+ * - (Signature) if signature verification is enabled.
+ *
+ * @return
+ * - ESP_OK if verify or load was successful
+ * - ESP_ERR_IMAGE_FLASH_FAIL if a SPI flash error occurs
+ * - ESP_ERR_IMAGE_INVALID if the image appears invalid.
+ * - ESP_ERR_INVALID_ARG if the partition or data pointers are invalid.
+ */
+esp_err_t esp_image_verify(esp_image_load_mode_t mode, const esp_partition_pos_t *part, esp_image_metadata_t *data);
+
+/**
+ * @brief Verify and load an app image (available only in space of bootloader).
+ *
+ * If encryption is enabled, data will be transparently decrypted.
+ *
+ * @param part Partition to load the app from.
+ * @param[inout] data Pointer to the image metadata structure which is be filled in by this function.
+ *                    'start_addr' member should be set (to the start address of the image.)
+ *                    Other fields will all be initialised by this function.
+ *
+ * Image validation checks:
+ * - Magic byte.
+ * - Partition smaller than 16MB.
+ * - All segments & image fit in partition.
+ * - 8 bit image checksum is valid.
+ * - SHA-256 of image is valid (if image has this appended).
+ * - (Signature) if signature verification is enabled.
+ *
+ * @return
+ * - ESP_OK if verify or load was successful
+ * - ESP_ERR_IMAGE_FLASH_FAIL if a SPI flash error occurs
+ * - ESP_ERR_IMAGE_INVALID if the image appears invalid.
+ * - ESP_ERR_INVALID_ARG if the partition or data pointers are invalid.
+ */
+esp_err_t bootloader_load_image(const esp_partition_pos_t *part, esp_image_metadata_t *data);
 
 /**
  * @brief Verify the bootloader image.

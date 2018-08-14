@@ -186,6 +186,8 @@ typedef struct {
     wifi_auth_mode_t    authmode;         /**< The weakest authmode to accept in the fast scan mode */
 }wifi_fast_scan_threshold_t;
 
+typedef wifi_fast_scan_threshold_t wifi_scan_threshold_t;    /**< wifi_fast_scan_threshold_t only used in fast scan mode once, now it enabled in all channel scan, the wifi_fast_scan_threshold_t will be remove in version 4.0 */
+
 typedef enum {
     WIFI_PS_NONE,        /**< No power save */
     WIFI_PS_MIN_MODEM,   /**< Minimum modem power saving. In this mode, station wakes up to receive beacon every DTIM period */
@@ -226,7 +228,7 @@ typedef struct {
     uint8_t channel;       /**< channel of target AP. Set to 1~13 to scan starting from the specified channel before connecting to AP. If the channel of AP is unknown, set it to 0.*/
     uint16_t listen_interval;   /**< Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set. Units: AP beacon intervals. Defaults to 3 if set to 0. */
     wifi_sort_method_t sort_method;    /**< sort the connect AP in the list by rssi or security mode */
-    wifi_fast_scan_threshold_t  threshold;     /**< When scan_method is set to WIFI_FAST_SCAN, only APs which have an auth mode that is more secure than the selected auth mode and a signal stronger than the minimum RSSI will be used. */
+    wifi_scan_threshold_t  threshold;     /**< When scan_method is set, only APs which have an auth mode that is more secure than the selected auth mode and a signal stronger than the minimum RSSI will be used. */
 } wifi_sta_config_t;
 
 /** @brief Configuration data for ESP32 AP or STA.
@@ -310,7 +312,7 @@ typedef struct {
     unsigned sig_mode:2;          /**< 0: non HT(11bg) packet; 1: HT(11n) packet; 3: VHT(11ac) packet */
     unsigned :16;                 /**< reserve */
     unsigned mcs:7;               /**< Modulation Coding Scheme. If is HT(11n) packet, shows the modulation, range from 0 to 76(MSC0 ~ MCS76) */
-    unsigned cwb:1;               /**< if is HT(11n) packet, shows if is HT40 packet or HT20 packet. 1: HT40 packet; 0: HT20 packet */
+    unsigned cwb:1;               /**< Channel Bandwidth of the packet. 0: 20MHz; 1: 40MHz */
     unsigned :16;                 /**< reserve */
     unsigned smoothing:1;         /**< reserve */
     unsigned not_sounding:1;      /**< reserve */
@@ -445,6 +447,47 @@ typedef struct {
     uint8_t         enabled_ant0: 4,      /**< Index (in antenna GPIO configuration) of enabled WIFI_ANT_MODE_ANT0 */
                     enabled_ant1: 4;      /**< Index (in antenna GPIO configuration) of enabled WIFI_ANT_MODE_ANT1 */
 } wifi_ant_config_t;
+
+/**
+  * @brief WiFi PHY rate encodings
+  *
+  */
+typedef enum {
+    WIFI_PHY_RATE_1M_L      = 0x00, /**< 1 Mbps with long preamble */
+    WIFI_PHY_RATE_2M_L      = 0x01, /**< 2 Mbps with long preamble */
+    WIFI_PHY_RATE_5M_L      = 0x02, /**< 5.5 Mbps with long preamble */
+    WIFI_PHY_RATE_11M_L     = 0x03, /**< 11 Mbps with long preamble */
+    WIFI_PHY_RATE_2M_S      = 0x05, /**< 2 Mbps with short preamble */
+    WIFI_PHY_RATE_5M_S      = 0x06, /**< 5.5 Mbps with short preamble */
+    WIFI_PHY_RATE_11M_S     = 0x07, /**< 11 Mbps with short preamble */
+    WIFI_PHY_RATE_48M       = 0x08, /**< 48 Mbps */
+    WIFI_PHY_RATE_24M       = 0x09, /**< 24 Mbps */
+    WIFI_PHY_RATE_12M       = 0x0A, /**< 12 Mbps */
+    WIFI_PHY_RATE_6M        = 0x0B, /**< 6 Mbps */
+    WIFI_PHY_RATE_54M       = 0x0C, /**< 54 Mbps */
+    WIFI_PHY_RATE_36M       = 0x0D, /**< 36 Mbps */
+    WIFI_PHY_RATE_18M       = 0x0E, /**< 18 Mbps */
+    WIFI_PHY_RATE_9M        = 0x0F, /**< 9 Mbps */
+    WIFI_PHY_RATE_MCS0_LGI  = 0x10, /**< MCS0 with long GI, 6.5 Mbps for 20MHz, 13.5 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS1_LGI  = 0x11, /**< MCS1 with long GI, 13 Mbps for 20MHz, 27 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS2_LGI  = 0x12, /**< MCS2 with long GI, 19.5 Mbps for 20MHz, 40.5 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS3_LGI  = 0x13, /**< MCS3 with long GI, 26 Mbps for 20MHz, 54 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS4_LGI  = 0x14, /**< MCS4 with long GI, 39 Mbps for 20MHz, 81 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS5_LGI  = 0x15, /**< MCS5 with long GI, 52 Mbps for 20MHz, 108 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS6_LGI  = 0x16, /**< MCS6 with long GI, 58.5 Mbps for 20MHz, 121.5 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS7_LGI  = 0x17, /**< MCS7 with long GI, 65 Mbps for 20MHz, 135 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS0_SGI  = 0x18, /**< MCS0 with short GI, 7.2 Mbps for 20MHz, 15 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS1_SGI  = 0x19, /**< MCS1 with short GI, 14.4 Mbps for 20MHz, 30 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS2_SGI  = 0x1A, /**< MCS2 with short GI, 21.7 Mbps for 20MHz, 45 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS3_SGI  = 0x1B, /**< MCS3 with short GI, 28.9 Mbps for 20MHz, 60 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS4_SGI  = 0x1C, /**< MCS4 with short GI, 43.3 Mbps for 20MHz, 90 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS5_SGI  = 0x1D, /**< MCS5 with short GI, 57.8 Mbps for 20MHz, 120 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS6_SGI  = 0x1E, /**< MCS6 with short GI, 65 Mbps for 20MHz, 135 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS7_SGI  = 0x1F, /**< MCS7 with short GI, 72.2 Mbps for 20MHz, 150 Mbps for 40MHz */
+    WIFI_PHY_RATE_LORA_250K = 0x29, /**< 250 Kbps */
+    WIFI_PHY_RATE_LORA_500K = 0x2A, /**< 500 Kbps */
+    WIFI_PHY_RATE_MAX,
+} wifi_phy_rate_t;
 
 #ifdef __cplusplus
 }

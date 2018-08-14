@@ -144,6 +144,8 @@ INPUT = \
     ../../components/esp32/include/esp_ipc.h \
     ## Over The Air Updates (OTA)
     ../../components/app_update/include/esp_ota_ops.h \
+    ## ESP HTTPS OTA
+    ../../components/esp_https_ota/include/esp_https_ota.h \
     ## Sleep
     ## NOTE: for line below header_file.inc is not used
     ../../components/esp32/include/esp_sleep.h \

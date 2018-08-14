@@ -16,6 +16,7 @@ SPI_FLASH_SIM_LIB := libspi_flash.a
 include Makefile.files
 
 all: test
+	
 
 ifndef SDKCONFIG
 SDKCONFIG_DIR := $(dir $(realpath sdkconfig/sdkconfig.h))

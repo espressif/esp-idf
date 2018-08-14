@@ -33,24 +33,22 @@ extern "C" {
  *                Structures
  *******************************************************/
 typedef struct {
-    int scan;          /**< minimum scan times before being a root, default:10 */
-    int vote;          /**< max vote times in self-healing, default:10000 */
-    int fail;          /**< parent selection fail times, if the scan times reach this value,
-                            will disconnect with associated children and join self-healing. default:60 */
-    int monitor_ie;    /**< acceptable times of parent ie change before update self ie, default:3 */
+    int scan;          /**< minimum scan times before being a root, default:10. */
+    int vote;          /**< max vote times in self-healing, default:1000. */
+    int fail;          /**< parent selection fail times. If the scan times reach this value,
+                            device will disconnect with associated children and join self-healing, default:120. */
+    int monitor_ie;    /**< acceptable times of parent networking IE change before update self networking IE, default:10. */
 } mesh_attempts_t;
 
 typedef struct {
-    int duration_ms;   /* parent weak RSSI monitor duration, if the RSSI continues to be weak during this duration_ms,
-                          will switch to a better parent */
+    int duration_ms;   /* parent weak RSSI monitor duration. If the RSSI with current parent is less than cnx_rssi continuously
+                          within this duration_ms, device will search for a better parent. */
     int cnx_rssi;      /* RSSI threshold for keeping a good connection with parent.
-                          if set a value greater than -120 dBm, will arm a timer to monitor current RSSI at a period time of
-                          duration_ms. if keep the default value(-120 dBm), a timer at a random period(<3minutes) will
-                          be armed to switch a better parent if there does have one.
-                          The better parent must have RSSI greater than a high RSSI threshold(-78 dBm by default) and a top layer
-                          than current one. */
-    int select_rssi;   /* RSSI threshold for parent selection, should be a value greater than switch_rssi */
-    int switch_rssi;   /* Disassociate current parent and switch to a new parent when the RSSI is greater than this set threshold */
+                          If set a value greater than -120 dBm, device will arm a timer to monitor current RSSI at a period time of
+                          duration_ms. */
+    int select_rssi;   /* RSSI threshold for parent selection, should be a value greater than switch_rssi. */
+    int switch_rssi;   /* RSSI threshold for parent switch. Device will disassociate current parent and switch to a new parent when
+                          the RSSI with the new parent is greater than this set threshold. */
     int backoff_rssi;  /* RSSI threshold for connecting to the root */
 } mesh_switch_parent_t;
 
@@ -69,8 +67,8 @@ typedef struct {
     uint8_t len;             /**< element length */
     uint8_t oui[3];          /**< organization identifier */
     /**< mesh networking IE content */
-    uint8_t type;            /** mesh networking IE type */
-    uint8_t encryped : 1;    /**< if mesh networking IE is encrypted */
+    uint8_t type;            /** ESP defined IE type */
+    uint8_t encryped : 1;    /**< whether mesh networking IE is encrypted */
     uint8_t version : 7;     /**< mesh networking IE version */
     /**< content */
     uint8_t mesh_type;       /**< mesh device type */
@@ -126,9 +124,9 @@ esp_err_t esp_mesh_set_beacon_interval(int interval_ms);
 esp_err_t esp_mesh_get_beacon_interval(int *interval_ms);
 
 /**
- * @brief    set attempts for mesh self-organized networking
+ * @brief     set attempts for mesh self-organized networking
  *
- * @param    attempts
+ * @param     attempts
  *
  * @return
  *    - ESP_OK

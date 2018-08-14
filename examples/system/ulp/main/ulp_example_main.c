@@ -87,7 +87,7 @@ static void init_ulp_program()
     ulp_set_wakeup_period(0, 20000);
 
     /* Start the program */
-    err = ulp_run((&ulp_entry - RTC_SLOW_MEM) / sizeof(uint32_t));
+    err = ulp_run(&ulp_entry - RTC_SLOW_MEM);
     ESP_ERROR_CHECK(err);
 }
 

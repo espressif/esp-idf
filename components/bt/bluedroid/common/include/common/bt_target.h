@@ -313,6 +313,16 @@
 #define BTA_AV_CO_CP_SCMS_T  FALSE//FALSE
 #endif
 
+#ifndef QUEUE_CONGEST_SIZE
+#define  QUEUE_CONGEST_SIZE    40
+#endif
+
+#ifndef CONFIG_BLE_HOST_QUEUE_CONGESTION_CHECK
+#define SCAN_QUEUE_CONGEST_CHECK  FALSE
+#else
+#define SCAN_QUEUE_CONGEST_CHECK  CONFIG_BLE_HOST_QUEUE_CONGESTION_CHECK
+#endif
+
 /* This feature is used to eanble interleaved scan*/
 #ifndef BTA_HOST_INTERLEAVE_SEARCH
 #define BTA_HOST_INTERLEAVE_SEARCH FALSE//FALSE
@@ -735,7 +745,7 @@
 
 /* Include Out-of-Band implementation for Simple Pairing */
 #ifndef BTM_OOB_INCLUDED
-#define BTM_OOB_INCLUDED                FALSE//TRUE
+#define BTM_OOB_INCLUDED                TRUE
 #endif
 
 /* TRUE to include Sniff Subrating */

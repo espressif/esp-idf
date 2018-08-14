@@ -75,9 +75,16 @@ IRAM_ATTR void *heap_caps_malloc( size_t size, uint32_t caps )
         if ((caps & MALLOC_CAP_8BIT) || (caps & MALLOC_CAP_DMA)) {
             return NULL;
         }
-        //If any, EXEC memory should be 32-bit aligned, so round up to the next multiple of 4.
+        caps |= MALLOC_CAP_32BIT; // IRAM is 32-bit accessible RAM
+    }
+
+    if (caps & MALLOC_CAP_32BIT) {
+        /* 32-bit accessible RAM should allocated in 4 byte aligned sizes
+         * (Future versions of ESP-IDF should possibly fail if an invalid size is requested)
+         */
         size = (size + 3) & (~3);
     }
+
     for (int prio = 0; prio < SOC_MEMORY_TYPE_NO_PRIOS; prio++) {
         //Iterate over heaps and check capabilities at this priority
         heap_t *heap;

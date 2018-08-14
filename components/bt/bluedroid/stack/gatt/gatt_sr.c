@@ -167,7 +167,7 @@ static BOOLEAN process_read_multi_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS status,
     GATT_TRACE_DEBUG ("process_read_multi_rsp status=%d mtu=%d", status, mtu);
 
 	if (p_cmd->multi_rsp_q == NULL) {
-        p_cmd->multi_rsp_q = fixed_queue_new(SIZE_MAX);
+        p_cmd->multi_rsp_q = fixed_queue_new(QUEUE_SIZE_MAX);
 	}
 
     /* Enqueue the response */
@@ -1290,7 +1290,7 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
             queue_data->offset = offset;
             memcpy(queue_data->value, p, len);
             if (prepare_record->queue == NULL) {
-                prepare_record->queue = fixed_queue_new(SIZE_MAX);
+                prepare_record->queue = fixed_queue_new(QUEUE_SIZE_MAX);
             }
             fixed_queue_enqueue(prepare_record->queue, queue_data);
         }

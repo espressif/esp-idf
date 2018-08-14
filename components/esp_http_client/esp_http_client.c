@@ -33,12 +33,17 @@
 
 static const char *TAG = "HTTP_CLIENT";
 
+/**
+ * HTTP Buffer
+ */
 typedef struct {
-    char *data;
-    int len;
-    char *raw_data;
-    int raw_len;
+    char *data;         /*!< The HTTP data received from the server */
+    int len;            /*!< The HTTP data len received from the server */
+    char *raw_data;     /*!< The HTTP data after decoding */
+    int raw_len;        /*!< The HTTP data len after decoding */
+    char *output_ptr;   /*!< The destination address of the data to be copied to after decoding */
 } esp_http_buffer_t;
+
 /**
  * private HTTP Data structure
  */
@@ -130,7 +135,8 @@ static const char *HTTP_METHOD_MAPPING[] = {
     "POST",
     "PUT",
     "PATCH",
-    "DELETE"
+    "DELETE",
+    "HEAD"
 };
 
 /**
@@ -232,9 +238,14 @@ static int http_on_body(http_parser *parser, const char *at, size_t length)
 {
     esp_http_client_t *client = parser->data;
     ESP_LOGD(TAG, "http_on_body %d", length);
-    client->response->buffer->raw_data = (char*)at;
-    client->response->buffer->raw_len = length;
+    client->response->buffer->raw_data = (char *)at;
+    if (client->response->buffer->output_ptr) {
+        memcpy(client->response->buffer->output_ptr, (char *)at, length);
+        client->response->buffer->output_ptr += length;
+    }
+
     client->response->data_process += length;
+    client->response->buffer->raw_len += length;
     http_dispatch_event(client, HTTP_EVENT_ON_DATA, (void *)at, length);
     return 0;
 }
@@ -268,7 +279,7 @@ esp_err_t esp_http_client_delete_header(esp_http_client_handle_t client, const c
     return http_header_delete(client->request->headers, key);
 }
 
-static esp_err_t _set_config(esp_http_client_handle_t client, esp_http_client_config_t *config)
+static esp_err_t _set_config(esp_http_client_handle_t client, const esp_http_client_config_t *config)
 {
     client->connection_info.method = config->method;
     client->connection_info.port = config->port;
@@ -406,7 +417,7 @@ static esp_err_t esp_http_client_prepare(esp_http_client_handle_t client)
     return ESP_OK;
 }
 
-esp_http_client_handle_t esp_http_client_init(esp_http_client_config_t *config)
+esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *config)
 {
 
     esp_http_client_handle_t client;
@@ -552,10 +563,10 @@ static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
             break;
         case HttpStatus_Unauthorized:
             auth_header = client->auth_header;
-            http_utils_trim_whitespace(&auth_header);
-            ESP_LOGI(TAG, "UNAUTHORIZED: %s", auth_header);
-            client->redirect_counter ++;
             if (auth_header) {
+                http_utils_trim_whitespace(&auth_header);
+                ESP_LOGD(TAG, "UNAUTHORIZED: %s", auth_header);
+                client->redirect_counter ++;
                 if (http_utils_str_starts_with(auth_header, "Digest") == 0) {
                     ESP_LOGD(TAG, "type = Digest");
                     client->connection_info.auth_type = HTTP_AUTH_TYPE_DIGEST;
@@ -564,7 +575,7 @@ static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
                     client->connection_info.auth_type = HTTP_AUTH_TYPE_BASIC;
                 } else {
                     client->connection_info.auth_type = HTTP_AUTH_TYPE_NONE;
-                    ESP_LOGE(TAG, "Unsupport Auth Type");
+                    ESP_LOGE(TAG, "This authentication method is not supported: %s", auth_header);
                     break;
                 }
 
@@ -579,6 +590,9 @@ static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
                 client->auth_data->nonce = http_utils_get_string_between(auth_header, "nonce=\"", "\"");
                 client->auth_data->opaque = http_utils_get_string_between(auth_header, "opaque=\"", "\"");
                 client->process_again = 1;
+            } else {
+                client->connection_info.auth_type = HTTP_AUTH_TYPE_NONE;
+                ESP_LOGW(TAG, "This request requires authentication, but does not provide header information for that");
             }
     }
     return ESP_OK;
@@ -695,6 +709,11 @@ static int esp_http_client_get_data(esp_http_client_handle_t client)
     if (client->state < HTTP_STATE_RES_COMPLETE_HEADER) {
         return ESP_FAIL;
     }
+
+    if (client->connection_info.method == HTTP_METHOD_HEAD) {
+        return 0;
+    }
+
     esp_http_buffer_t *res_buffer = client->response->buffer;
 
     ESP_LOGD(TAG, "data_process=%d, content_length=%d", client->response->data_process, client->response->content_length);
@@ -743,14 +762,13 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
         if (rlen <= 0) {
             return ridx;
         }
+        res_buffer->output_ptr = buffer + ridx;
         http_parser_execute(client->parser, client->parser_settings, res_buffer->data, rlen);
+        ridx += res_buffer->raw_len;
+        need_read -= res_buffer->raw_len;
 
-        if (res_buffer->raw_len) {
-            memcpy(buffer + ridx, res_buffer->raw_data, res_buffer->raw_len);
-            ridx += res_buffer->raw_len;
-            need_read -= res_buffer->raw_len;
-        }
         res_buffer->raw_len = 0; //clear
+        res_buffer->output_ptr = NULL;
     }
 
     return ridx;
@@ -1001,4 +1019,15 @@ int esp_http_client_get_content_length(esp_http_client_handle_t client)
 bool esp_http_client_is_chunked_response(esp_http_client_handle_t client)
 {
     return client->response->is_chunked;
+}
+
+esp_http_client_transport_t esp_http_client_get_transport_type(esp_http_client_handle_t client)
+{
+    if (!strcmp(client->connection_info.scheme, "https") ) {
+        return HTTP_TRANSPORT_OVER_SSL;
+    } else if (!strcmp(client->connection_info.scheme, "http")) {
+        return HTTP_TRANSPORT_OVER_TCP;
+    } else {
+        return HTTP_TRANSPORT_UNKNOWN;
+    }
 }
