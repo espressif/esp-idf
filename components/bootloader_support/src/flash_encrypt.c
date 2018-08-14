@@ -281,7 +281,7 @@ static esp_err_t encrypt_partition(int index, const esp_partition_info_t *partit
     if (partition->type == PART_TYPE_APP) {
       /* check if the partition holds a valid unencrypted app */
       esp_image_metadata_t data_ignored;
-      err = esp_image_load(ESP_IMAGE_VERIFY,
+      err = esp_image_verify(ESP_IMAGE_VERIFY,
                            &partition->pos,
                            &data_ignored);
       should_encrypt = (err == ESP_OK);

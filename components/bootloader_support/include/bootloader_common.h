@@ -68,3 +68,26 @@ bool bootloader_common_erase_part_type_data(const char *list_erase, bool ota_dat
  * @return    Returns true if the list contains the label, false otherwise.
  */
 bool bootloader_common_label_search(const char *list, char *label);
+
+/**
+ * @brief Calculates a sha-256 for a given partition or returns a appended digest.
+ *
+ * This function can be used to return the SHA-256 digest of application, bootloader and data partitions.
+ * For apps with SHA-256 appended to the app image, the result is the appended SHA-256 value for the app image content.
+ * The hash is verified before returning, if app content is invalid then the function returns ESP_ERR_IMAGE_INVALID.
+ * For apps without SHA-256 appended to the image, the result is the SHA-256 of all bytes in the app image.
+ * For other partition types, the result is the SHA-256 of the entire partition.
+ *
+ * @param[in]  address      Address of partition.
+ * @param[in]  size         Size of partition.
+ * @param[in]  type         Type of partition. For applications the type is 0, otherwise type is data.
+ * @param[out] out_sha_256  Returned SHA-256 digest for a given partition.
+ *
+ * @return
+ *          - ESP_OK: In case of successful operation.
+ *          - ESP_ERR_INVALID_ARG: The size was 0 or the sha_256 was NULL.
+ *          - ESP_ERR_NO_MEM: Cannot allocate memory for sha256 operation.
+ *          - ESP_ERR_IMAGE_INVALID: App partition doesn't contain a valid app image.
+ *          - ESP_FAIL: An allocation error occurred.
+ */
+esp_err_t bootloader_common_get_sha256_of_partition(uint32_t address, uint32_t size, int type, uint8_t *out_sha_256);
