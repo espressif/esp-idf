@@ -48,6 +48,7 @@ static const char* UART_TAG = "uart";
 #define UART_TOUT_REF_FACTOR_DEFAULT (UART_CLK_FREQ/(REF_CLK_FREQ<<UART_CLKDIV_FRAG_BIT_WIDTH))
 #define UART_TX_IDLE_NUM_DEFAULT   (0)
 #define UART_PATTERN_DET_QLEN_DEFAULT (10)
+#define UART_MIN_WAKEUP_THRESH      (2)
 
 #define UART_ENTER_CRITICAL_ISR(mux)    portENTER_CRITICAL_ISR(mux)
 #define UART_EXIT_CRITICAL_ISR(mux)     portEXIT_CRITICAL_ISR(mux)
@@ -1528,5 +1529,25 @@ esp_err_t uart_get_collision_flag(uart_port_t uart_num, bool* collision_flag)
                     || UART_IS_MODE_SET(uart_num, UART_MODE_RS485_COLLISION_DETECT)), 
                     "wrong mode", ESP_ERR_INVALID_ARG);
     *collision_flag = p_uart_obj[uart_num]->coll_det_flg;
+    return ESP_OK;
+}
+
+esp_err_t uart_set_wakeup_threshold(uart_port_t uart_num, int wakeup_threshold)
+{
+    UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_ERR_INVALID_ARG);
+    UART_CHECK((wakeup_threshold <= UART_ACTIVE_THRESHOLD_V &&
+                wakeup_threshold > UART_MIN_WAKEUP_THRESH),
+                "wakeup_threshold out of bounds", ESP_ERR_INVALID_ARG);
+
+    UART[uart_num]->sleep_conf.active_threshold = wakeup_threshold - UART_MIN_WAKEUP_THRESH;
+    return ESP_OK;
+}
+
+esp_err_t uart_get_wakeup_threshold(uart_port_t uart_num, int* out_wakeup_threshold)
+{
+    UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_ERR_INVALID_ARG);
+    UART_CHECK((out_wakeup_threshold != NULL), "argument is NULL", ESP_ERR_INVALID_ARG);
+
+    *out_wakeup_threshold = UART[uart_num]->sleep_conf.active_threshold + UART_MIN_WAKEUP_THRESH;
     return ESP_OK;
 }
