@@ -361,7 +361,9 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
     // For most of sources it is enough to set trigger mask in local
     // configuration structure. The actual RTC wake up options
     // will be updated by esp_sleep_start().
-    if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_TIMER, RTC_TIMER_TRIG_EN)) {
+    if (source == ESP_SLEEP_WAKEUP_ALL) {
+        s_config.wakeup_triggers = 0;
+    } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_TIMER, RTC_TIMER_TRIG_EN)) {
         s_config.wakeup_triggers &= ~RTC_TIMER_TRIG_EN;
         s_config.sleep_duration = 0;
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_EXT0, RTC_EXT0_TRIG_EN)) {
