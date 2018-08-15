@@ -61,11 +61,7 @@ static struct blufi_security *blufi_sec;
 
 static int myrand( void *rng_state, unsigned char *output, size_t len )
 {
-    size_t i;
-
-    for( i = 0; i < len; ++i )
-        output[i] = esp_random();
-
+    esp_fill_random(output, len);
     return( 0 );
 }
 
