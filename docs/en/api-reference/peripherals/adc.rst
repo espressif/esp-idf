@@ -4,16 +4,15 @@ Analog to Digital Converter
 Overview
 --------
 
-ESP32 integrates two 12-bit SAR (`Successive Approximation Register <https://en.wikipedia.org/wiki/Successive_approximation_ADC>`_) ADCs (Analog to Digital Converters) and supports measurements on 18 channels (analog enabled pins). Some of these pins can be used to build a programmable gain amplifier which is used for the measurement of small analog signals.
+The ESP32 integrates two 12-bit SAR (`Successive Approximation Register <https://en.wikipedia.org/wiki/Successive_approximation_ADC>`_) ADCs supporting a total of 18 measurement channels (analog enabled pins).
 
-The ADC driver API supports ADC1 (8 channels, attached to GPIOs 32 - 39), and ADC2 (10 channels, attached to GPIOs 0, 2, 4, 12 - 15 and 25 - 27).
-However, there're some restrictions for the application to use ADC2:
+The ADC driver API supports ADC1 (8 channels, attached to GPIOs 32 - 39), and ADC2 (10 channels, attached to GPIOs 0, 2, 4, 12 - 15 and 25 - 27). However, the usage of ADC2 has some restrictions for the application:
 
-1. The application can use ADC2 only when Wi-Fi driver is not started, since the ADC is also used by the Wi-Fi driver, which has higher priority.
-2. Some of the ADC2 pins are used as strapping pins (GPIO 0, 2, 15), so they cannot be used freely. For examples, for official Develop Kits:
+1. ADC2 is used by the Wi-Fi driver. Therefore the application can only use ADC2 when the Wi-Fi driver has not started.
+2. Some of the ADC2 pins are used as strapping pins (GPIO 0, 2, 15) thus cannot be used freely. Such is the case in the following official Development Kits:
 
-  - :ref:`ESP32 Core Board V2 / ESP32 DevKitC <esp-modules-and-boards-esp32-devkitc>`: GPIO 0 cannot be used due to external auto program circuits.
-  - :ref:`ESP-WROVER-KIT V3 <esp-modules-and-boards-esp-wrover-kit-v3>`: GPIO 0, 2, 4 and 15 cannot be used due to external connections for different purposes.
+  - :ref:`ESP32 DevKitC <esp-modules-and-boards-esp32-devkitc>`: GPIO 0 cannot be used due to external auto program circuits.
+  - :ref:`ESP-WROVER-KIT <esp-modules-and-boards-esp-wrover-kit>`: GPIO 0, 2, 4 and 15 cannot be used due to external connections for different purposes.
 
 Configuration and Reading ADC
 -----------------------------
@@ -29,7 +28,7 @@ Then it is possible to read ADC conversion result with :cpp:func:`adc1_get_raw` 
 
 .. note:: Since the ADC2 is shared with the WIFI module, which has higher priority, reading operation of :cpp:func:`adc2_get_raw` will fail between :cpp:func:`esp_wifi_start()` and :cpp:func:`esp_wifi_stop()`. Use the return code to see whether the reading is successful.
 
-It is also possible to read the internal hall effect sensor via ADC1 by calling dedicated function :cpp:func:`hall_sensor_read`. Note that even the hall sensor is internal to ESP32, reading from it uses channels 0 and 3 of ADC1 (GPIO 36 and 39). Do not connect anything else to these pins and do not change their configuration. Otherwise it may affect the measurement of low value signal from the sesnor.
+It is also possible to read the internal hall effect sensor via ADC1 by calling dedicated function :cpp:func:`hall_sensor_read`. Note that even the hall sensor is internal to ESP32, reading from it uses channels 0 and 3 of ADC1 (GPIO 36 and 39). Do not connect anything else to these pins and do not change their configuration. Otherwise it may affect the measurement of low value signal from the sensor.
 
 This API provides convenient way to configure ADC1 for reading from :doc:`ULP <../../api-guides/ulp>`. To do so, call function :cpp:func:`adc1_ulp_enable` and then set precision and attenuation as discussed above.
 

@@ -8,8 +8,7 @@ This sections contains overview and links to documentation of previous version E
 
 To see the latest development boards, please refer to section :ref:`esp-modules-and-boards`.
 
-
-.. _esp-modules-and-boards-esp32-pico-pit-v4:
+.. _esp-modules-and-boards-esp32-pico-kit-v4:
 
 ESP32-PICO-KIT V4
 =================
@@ -32,7 +31,7 @@ Documentation
 * `ESP32-PICO-KIT V4 Schematic <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v4_schematic.pdf>`_ (PDF)
 * `ESP32-PICO-D4 Datasheet <http://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf>`_ (PDF)
 
-.. _esp-modules-and-boards-esp32-pico-pit-v3:
+.. _esp-modules-and-boards-esp32-pico-kit-v3:
 
 ESP32-PICO-KIT V3
 =================
@@ -130,7 +129,7 @@ Documentation
 * `FTDI Virtual COM Port Drivers`_
 
 
-.. _esp-modules-and-boards-esp32-demo-board-v2:
+.. _esp-modules-and-boards-esp32-demo-board:
 
 ESP32 Demo Board V2
 ===================

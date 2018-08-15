@@ -123,7 +123,7 @@ Documentation
 * `ESP32-WROVER Reference Design <https://www.espressif.com/en/support/download/documents?keys=ESP32-WROVER+Reference+Design>`_ containing OrCAD schematic, PCB layout, gerbers and BOM
 
 
-.. _esp-modules-and-boards-esp32-pico-pit-v4.1:
+.. _esp-modules-and-boards-esp32-pico-kit:
 
 ESP32-PICO-KIT V4.1
 ===================
@@ -150,8 +150,8 @@ Documentation
 Previous Versions
 -----------------
 
-* :ref:`esp-modules-and-boards-esp32-pico-pit-v4`
-* :ref:`esp-modules-and-boards-esp32-pico-pit-v3`
+* :ref:`esp-modules-and-boards-esp32-pico-kit-v4`
+* :ref:`esp-modules-and-boards-esp32-pico-kit-v3`
 
 
 .. _esp-modules-and-boards-esp32-devkitc:
@@ -182,7 +182,7 @@ Previous Versions
 * :ref:`esp-modules-and-boards-esp32-devkitc-v2`
 
 
-.. _esp-modules-and-boards-esp-wrover-kit-v3:
+.. _esp-modules-and-boards-esp-wrover-kit:
 
 ESP-WROVER-KIT V3
 =================
