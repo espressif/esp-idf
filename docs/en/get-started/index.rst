@@ -136,6 +136,18 @@ Setup Path to ESP-IDF
 
 The toolchain programs access ESP-IDF using ``IDF_PATH`` environment variable. This variable should be set up on your PC, otherwise projects will not build. Setting may be done manually, each time PC is restarted. Another option is to set up it permanently by defining ``IDF_PATH`` in user profile. To do so, follow instructions specific to :ref:`Windows <add-idf_path-to-profile-windows>` , :ref:`Linux and MacOS <add-idf_path-to-profile-linux-macos>` in section :doc:`add-idf_path-to-profile`.
 
+.. _get-started-get-packages:
+
+Install the Required Python Packages
+====================================
+
+Python packages required by ESP-IDF are located in the ``$IDF_PATH/requirements.txt`` file. You can install them by running::
+
+    sudo pip install -r $IDF_PATH/requirements.txt
+
+or you can use the following command for installing them into the user install directory on systems where you don't have administrator rights::
+
+    pip install --user -r $IDF_PATH/requirements.txt
 
 .. _get-started-start-project:
 

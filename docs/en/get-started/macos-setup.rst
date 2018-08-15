@@ -10,10 +10,9 @@ Install Prerequisites
 
     sudo easy_install pip
 
-- install pyserial::
+.. note::
 
-    sudo pip install pyserial
-
+    ``pip`` will be used later for installing :ref:`the required Python packages <get-started-get-packages>`.
 
 Toolchain Setup
 ===============

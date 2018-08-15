@@ -1,0 +1,5 @@
+# This is a list of python packages needed for IDF. This file is used with pip:
+# pip install -r requirements.txt
+#
+pyserial>=3.0
+future>=0.16.0
