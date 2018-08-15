@@ -35,12 +35,11 @@ typedef struct hash_map_t {
     hash_index_fn hash_fn;
     key_free_fn key_fn;
     data_free_fn data_fn;
-    const allocator_t *allocator;
     key_equality_fn keys_are_equal;
 } hash_map_t;
 
 // Hidden constructor for list, only to be used by us.
-list_t *list_new_internal(list_free_cb callback, const allocator_t *zeroed_allocator);
+list_t *list_new_internal(list_free_cb callback);
 
 static void bucket_free_(void *data);
 static bool default_key_equality(const void *x, const void *y);
@@ -54,14 +53,11 @@ hash_map_t *hash_map_new_internal(
     hash_index_fn hash_fn,
     key_free_fn key_fn,
     data_free_fn data_fn,
-    key_equality_fn equality_fn,
-    const allocator_t *zeroed_allocator)
+    key_equality_fn equality_fn)
 {
     assert(hash_fn != NULL);
     assert(num_bucket > 0);
-    assert(zeroed_allocator != NULL);
-
-    hash_map_t *hash_map = zeroed_allocator->alloc(sizeof(hash_map_t));
+    hash_map_t *hash_map = osi_calloc(sizeof(hash_map_t));
     if (hash_map == NULL) {
         return NULL;
     }
@@ -69,13 +65,12 @@ hash_map_t *hash_map_new_internal(
     hash_map->hash_fn = hash_fn;
     hash_map->key_fn = key_fn;
     hash_map->data_fn = data_fn;
-    hash_map->allocator = zeroed_allocator;
     hash_map->keys_are_equal = equality_fn ? equality_fn : default_key_equality;
 
     hash_map->num_bucket = num_bucket;
-    hash_map->bucket = zeroed_allocator->alloc(sizeof(hash_map_bucket_t) * num_bucket);
+    hash_map->bucket = osi_calloc(sizeof(hash_map_bucket_t) * num_bucket);
     if (hash_map->bucket == NULL) {
-        zeroed_allocator->free(hash_map);
+        osi_free(hash_map);
         return NULL;
     }
     return hash_map;
@@ -88,7 +83,7 @@ hash_map_t *hash_map_new(
     data_free_fn data_fn,
     key_equality_fn equality_fn)
 {
-    return hash_map_new_internal(num_bucket, hash_fn, key_fn, data_fn, equality_fn, &allocator_calloc);
+    return hash_map_new_internal(num_bucket, hash_fn, key_fn, data_fn, equality_fn);
 }
 
 void hash_map_free(hash_map_t *hash_map)
@@ -97,8 +92,8 @@ void hash_map_free(hash_map_t *hash_map)
         return;
     }
     hash_map_clear(hash_map);
-    hash_map->allocator->free(hash_map->bucket);
-    hash_map->allocator->free(hash_map);
+    osi_free(hash_map->bucket);
+    osi_free(hash_map);
 }
 
 /*
@@ -137,7 +132,7 @@ bool hash_map_set(hash_map_t *hash_map, const void *key, void *data)
     hash_index_t hash_key = hash_map->hash_fn(key) % hash_map->num_bucket;
 
     if (hash_map->bucket[hash_key].list == NULL) {
-        hash_map->bucket[hash_key].list = list_new_internal(bucket_free_, hash_map->allocator);
+        hash_map->bucket[hash_key].list = list_new_internal(bucket_free_);
         if (hash_map->bucket[hash_key].list == NULL) {
             return false;
         }
@@ -153,7 +148,7 @@ bool hash_map_set(hash_map_t *hash_map, const void *key, void *data)
     } else {
         hash_map->hash_size++;
     }
-    hash_map_entry = hash_map->allocator->alloc(sizeof(hash_map_entry_t));
+    hash_map_entry = osi_calloc(sizeof(hash_map_entry_t));
     if (hash_map_entry == NULL) {
         return false;
     }
@@ -178,8 +173,13 @@ bool hash_map_erase(hash_map_t *hash_map, const void *key)
     }
 
     hash_map->hash_size--;
-
-    return list_remove(hash_bucket_list, hash_map_entry);
+    bool remove = list_remove(hash_bucket_list, hash_map_entry);
+    if(list_is_empty(hash_map->bucket[hash_key].list)) {
+        list_free(hash_map->bucket[hash_key].list);
+        hash_map->bucket[hash_key].list = NULL;
+    }
+                
+    return remove;
 }
 
 void *hash_map_get(const hash_map_t *hash_map, const void *key)
@@ -242,7 +242,7 @@ static void bucket_free_(void *data)
     if (hash_map->data_fn) {
         hash_map->data_fn(hash_map_entry->data);
     }
-    hash_map->allocator->free(hash_map_entry);
+    osi_free(hash_map_entry);
 }
 
 static hash_map_entry_t *find_bucket_entry_(list_t *hash_bucket_list,
