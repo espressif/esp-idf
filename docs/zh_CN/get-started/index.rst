@@ -133,6 +133,12 @@ ESP32 是一套 Wi-Fi (2.4 GHz) 和蓝牙 (4.2) 双模解决方案，集成了�
 
 工具链程序使用环境变量 ``IDF_PATH`` 来访问 ESP-IDF。这个变量应该设置在你的 PC 中，否则工程将不能编译。你可以在每次 PC 重启时手工设置，也可以通过在用户配置文件中定义 ``IDF_PATH`` 变量来永久性设置。要永久性设置，请参考 :doc:`add-idf_path-to-profile` 文档中 :ref:`Windows <add-idf_path-to-profile-windows>` 或 :ref:`Linux and MacOS <add-idf_path-to-profile-linux-macos>` 相关的指导进行操作。
 
+.. _get-started-get-packages:
+
+Install the Required Python Packages
+====================================
+
+TODO
 
 .. _get-started-start-project:
 
