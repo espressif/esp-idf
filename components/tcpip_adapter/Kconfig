@@ -1,4 +1,4 @@
-menu "tcpip adapter"
+menu "TCP/IP Adapter"
 
 config IP_LOST_TIMER_INTERVAL
     int "IP Address lost timer interval (seconds)"
@@ -12,5 +12,16 @@ config IP_LOST_TIMER_INTERVAL
         be started everytime the IP is lost. Event SYSTEM_EVENT_STA_LOST_IP will be raised if
         the timer expires. The IP lost timer is stopped if the station get the IP again before
         the timer expires.
+
+choice USE_TCPIP_STACK_LIB
+    prompt "TCP/IP Stack Library"
+    default TCPIP_LWIP
+    help
+        Choose the TCP/IP Stack to work, for example, LwIP, uIP, etc.
+config TCPIP_LWIP
+    bool "LwIP"
+        help
+            lwIP is a small independent implementation of the TCP/IP protocol suite.
+endchoice
 
 endmenu
