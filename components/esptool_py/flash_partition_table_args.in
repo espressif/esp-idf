@@ -1,1 +1,1 @@
-0x8000 partition_table/partition-table.bin
+${PARTITION_TABLE_OFFSET} partition_table/partition-table.bin

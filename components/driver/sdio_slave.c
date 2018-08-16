@@ -96,6 +96,7 @@ The driver of FIFOs works as below:
 #include "freertos/FreeRTOS.h"
 #include "soc/dport_access.h"
 #include "soc/dport_reg.h"
+#include "soc/io_mux_reg.h"
 #include "freertos/semphr.h"
 #include "xtensa/core-macros.h"
 #include "driver/periph_ctrl.h"
@@ -119,12 +120,12 @@ typedef enum {
 } send_state_t;
 
 typedef struct {
-    uint32_t clk;
-    uint32_t cmd;
-    uint32_t d0;
-    uint32_t d1;
-    uint32_t d2;
-    uint32_t d3;
+    uint32_t clk_gpio;
+    uint32_t cmd_gpio;
+    uint32_t d0_gpio;
+    uint32_t d1_gpio;
+    uint32_t d2_gpio;
+    uint32_t d3_gpio;
     int      func;
 } sdio_slave_slot_info_t ;
 
@@ -135,20 +136,20 @@ typedef struct {
 // currently slot 0 is occupied by SPI for flash
 static const sdio_slave_slot_info_t s_slot_info[2]  = {
     {
-        .clk = PERIPHS_IO_MUX_SD_CLK_U,
-        .cmd = PERIPHS_IO_MUX_SD_CMD_U,
-        .d0 = PERIPHS_IO_MUX_SD_DATA0_U,
-        .d1 = PERIPHS_IO_MUX_SD_DATA1_U,
-        .d2 = PERIPHS_IO_MUX_SD_DATA2_U,
-        .d3 = PERIPHS_IO_MUX_SD_DATA3_U,
+        .clk_gpio = 6,
+        .cmd_gpio = 11,
+        .d0_gpio = 7,
+        .d1_gpio = 8,
+        .d2_gpio = 9,
+        .d3_gpio = 10,
         .func = 0,
     }, {
-        .clk = PERIPHS_IO_MUX_MTMS_U,
-        .cmd = PERIPHS_IO_MUX_MTDO_U,
-        .d0 = PERIPHS_IO_MUX_GPIO2_U,
-        .d1 = PERIPHS_IO_MUX_GPIO4_U,
-        .d2 = PERIPHS_IO_MUX_MTDI_U,
-        .d3 = PERIPHS_IO_MUX_MTCK_U,
+        .clk_gpio = 14,
+        .cmd_gpio = 15,
+        .d0_gpio = 2,
+        .d1_gpio = 4,
+        .d2_gpio = 12,
+        .d3_gpio = 13,
         .func = 4,
     },
 };
@@ -192,7 +193,7 @@ typedef struct {
     SemaphoreHandle_t remain_cnt;
 } sdio_ringbuf_t;
 
-#define offset_of(type, field) ( (unsigned int)&(((type *)(0))->field) )  
+#define offset_of(type, field) ( (unsigned int)&(((type *)(0))->field) )
 typedef enum {
     ringbuf_write_ptr = offset_of(sdio_ringbuf_t, write_ptr),
     ringbuf_read_ptr = offset_of(sdio_ringbuf_t, read_ptr),
@@ -224,7 +225,7 @@ typedef struct {
     /*------- receiving ---------------*/
     buf_stailq_t    recv_link_list; // now ready to/already hold data
     buf_tailq_t     recv_reg_list;  // removed from the link list, registered but not used now
-    buf_desc_t*     recv_cur_ret;
+    volatile buf_desc_t*     recv_cur_ret;   // next desc to return, NULL if all loaded descriptors are returned
     portMUX_TYPE    recv_spinlock;
 } sdio_context_t;
 
@@ -303,7 +304,7 @@ no_mem:
 }
 
 //calculate a pointer with offset to a original pointer of the specific ringbuffer
-static inline uint8_t* sdio_ringbuf_offset_ptr( sdio_ringbuf_t *buf, sdio_ringbuf_pointer_t ptr, uint32_t offset ) 
+static inline uint8_t* sdio_ringbuf_offset_ptr( sdio_ringbuf_t *buf, sdio_ringbuf_pointer_t ptr, uint32_t offset )
 {
     uint8_t *buf_ptr = (uint8_t*)*(uint32_t*)(((uint8_t*)buf)+ptr);   //get the specific pointer of the buffer
     uint8_t *offset_ptr=buf_ptr+offset;
@@ -314,7 +315,7 @@ static inline uint8_t* sdio_ringbuf_offset_ptr( sdio_ringbuf_t *buf, sdio_ringbu
 static esp_err_t sdio_ringbuf_send( sdio_ringbuf_t* buf, esp_err_t (*copy_callback)(uint8_t*, void*), void* arg, TickType_t wait )
 {
     portBASE_TYPE ret = xSemaphoreTake(buf->remain_cnt, wait);
-    if ( ret != pdTRUE ) return NULL;
+    if (ret != pdTRUE) return ESP_ERR_TIMEOUT;
 
     portENTER_CRITICAL( &buf->write_spinlock );
     uint8_t* get_ptr = sdio_ringbuf_offset_ptr( buf, ringbuf_write_ptr, buf->item_size );
@@ -498,13 +499,18 @@ no_mem:
     return ESP_ERR_NO_MEM;
 }
 
-static inline void configure_pin(uint32_t io_mux_reg, uint32_t func)
+static void configure_pin(int pin, uint32_t func, bool pullup)
 {
     const int sdmmc_func = func;
     const int drive_strength = 3;
-    PIN_INPUT_ENABLE(io_mux_reg);
-    PIN_FUNC_SELECT(io_mux_reg, sdmmc_func);
-    PIN_SET_DRV(io_mux_reg, drive_strength);
+    assert(pin!=-1);
+    uint32_t reg = GPIO_PIN_MUX_REG[pin];
+    assert(reg!=0);
+
+    PIN_INPUT_ENABLE(reg);
+    PIN_FUNC_SELECT(reg, sdmmc_func);
+    PIN_SET_DRV(reg, drive_strength);
+    gpio_pulldown_dis(pin);
 }
 
 static inline esp_err_t sdio_slave_hw_init(sdio_slave_config_t *config)
@@ -514,12 +520,13 @@ static inline esp_err_t sdio_slave_hw_init(sdio_slave_config_t *config)
 
     //initialize pin
     const sdio_slave_slot_info_t *slot = &s_slot_info[1];
-    configure_pin(slot->clk, slot->func);
-    configure_pin(slot->cmd, slot->func);
-    configure_pin(slot->d0, slot->func);
-    configure_pin(slot->d1, slot->func);
-    configure_pin(slot->d2, slot->func);
-    configure_pin(slot->d3, slot->func);
+    configure_pin(slot->clk_gpio, slot->func, false);   //clk doesn't need a pullup
+    configure_pin(slot->cmd_gpio, slot->func, false);
+    configure_pin(slot->d0_gpio, slot->func, false);
+    configure_pin(slot->d1_gpio, slot->func, false);
+    configure_pin(slot->d2_gpio, slot->func, false);
+    configure_pin(slot->d3_gpio, slot->func, false);
+
     //enable module and config
     periph_module_reset(PERIPH_SDIO_SLAVE_MODULE);
     periph_module_enable(PERIPH_SDIO_SLAVE_MODULE);
@@ -538,28 +545,28 @@ static inline esp_err_t sdio_slave_hw_init(sdio_slave_config_t *config)
 
     switch( config->timing ) {
         case SDIO_SLAVE_TIMING_PSEND_PSAMPLE:
-            HOST.conf.frc_sdio20 = 0xf;
+            HOST.conf.frc_sdio20 = 0x1f;
             HOST.conf.frc_sdio11 = 0;
-            HOST.conf.frc_pos_samp = 0xf;
+            HOST.conf.frc_pos_samp = 0x1f;
             HOST.conf.frc_neg_samp = 0;
             break;
         case SDIO_SLAVE_TIMING_PSEND_NSAMPLE:
-            HOST.conf.frc_sdio20 = 0xf;
+            HOST.conf.frc_sdio20 = 0x1f;
             HOST.conf.frc_sdio11 = 0;
             HOST.conf.frc_pos_samp = 0;
-            HOST.conf.frc_neg_samp = 0xf;
+            HOST.conf.frc_neg_samp = 0x1f;
             break;
         case SDIO_SLAVE_TIMING_NSEND_PSAMPLE:
             HOST.conf.frc_sdio20 = 0;
-            HOST.conf.frc_sdio11 = 0xf;
-            HOST.conf.frc_pos_samp = 0xf;
+            HOST.conf.frc_sdio11 = 0x1f;
+            HOST.conf.frc_pos_samp = 0x1f;
             HOST.conf.frc_neg_samp = 0;
             break;
         case SDIO_SLAVE_TIMING_NSEND_NSAMPLE:
             HOST.conf.frc_sdio20 = 0;
-            HOST.conf.frc_sdio11 = 0xf;
+            HOST.conf.frc_sdio11 = 0x1f;
             HOST.conf.frc_pos_samp = 0;
-            HOST.conf.frc_neg_samp = 0xf;
+            HOST.conf.frc_neg_samp = 0x1f;
             break;
     }
 
@@ -951,9 +958,11 @@ esp_err_t sdio_slave_send_queue(uint8_t* addr, size_t len, void* arg, TickType_t
     return ESP_OK;
 }
 
-esp_err_t sdio_slave_send_get_finished(void** arg, TickType_t wait)
+esp_err_t sdio_slave_send_get_finished(void** out_arg, TickType_t wait)
 {
-    portBASE_TYPE err = xQueueReceive( context.ret_queue, arg, wait );
+    void* arg = NULL;
+    portBASE_TYPE err = xQueueReceive(context.ret_queue, &arg, wait);
+    if (out_arg) *out_arg = arg;
     if ( err != pdTRUE ) return ESP_ERR_TIMEOUT;
     return ESP_OK;
 }
@@ -1159,8 +1168,6 @@ static void sdio_intr_recv(void* arg)
     portBASE_TYPE yield = 0;
     if ( SLC.slc0_int_raw.tx_done ) {
         SLC.slc0_int_clr.tx_done = 1;
-        assert( context.recv_cur_ret != NULL );
-
         while ( context.recv_cur_ret && context.recv_cur_ret->owner == 0 ) {
             // This may cause the ``cur_ret`` pointer to be NULL, indicating the list is empty,
             // in this case the ``tx_done`` should happen no longer until new desc is appended.
@@ -1185,15 +1192,24 @@ esp_err_t sdio_slave_recv_load_buf(sdio_slave_buf_handle_t handle)
     desc->owner = 1;
     desc->not_receiving = 0; //manually remove the prev link (by set not_receiving=0), to indicate this is in the queue
 
-    // 1. If all desc are returned in the ISR, the pointer is moved to NULL. The pointer is set to the newly appended desc here.
-    // 2. If the pointer is move to some not-returned desc (maybe the one appended here), do nothing.
-    // The ``cur_ret`` pointer must be checked and set after new desc appended to the list, or the pointer setting may fail.
+    buf_desc_t *const tail = STAILQ_LAST(queue, buf_desc_s, qe);
+
     STAILQ_INSERT_TAIL( queue, desc, qe );
-    if ( context.recv_cur_ret == NULL ) {
+    if (tail == NULL || (tail->owner == 0)) {
+        //in this case we have to set the ret pointer
+        if (tail != NULL) {
+            /* if the owner of the tail is returned to the software, the ISR is
+             * expect to write this pointer to NULL in a short time, wait until
+             * that and set new value for this pointer
+             */
+            while (context.recv_cur_ret != NULL) {}
+        }
+        assert(context.recv_cur_ret == NULL);
         context.recv_cur_ret = desc;
     }
+    assert(context.recv_cur_ret != NULL);
 
-    if ( desc == STAILQ_FIRST(queue) ) {
+    if (tail == NULL) {
         //no one in the ll, start new ll operation.
         SLC.slc0_tx_link.addr = (uint32_t)desc;
         SLC.slc0_tx_link.start = 1;

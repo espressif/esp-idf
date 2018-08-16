@@ -32,13 +32,16 @@ if 'BUILDDIR' in os.environ:
 
 # Call Doxygen to get XML files from the header files
 print("Calling Doxygen to generate latest XML files")
-os.system("doxygen ../Doxyfile")
+if os.system("doxygen ../Doxyfile") != 0:
+    raise RuntimeError('Doxygen call failed')
+
 # Doxygen has generated XML files in 'xml' directory.
 # Copy them to 'xml_in', only touching the files which have changed.
 copy_if_modified('xml/', 'xml_in/')
 
 # Generate 'api_name.inc' files using the XML files by Doxygen
-os.system('python ../gen-dxd.py')
+if os.system('python ../gen-dxd.py') != 0:
+    raise RuntimeError('gen-dxd.py failed')
 
 # Generate 'kconfig.inc' file from components' Kconfig files
 print("Generating kconfig.inc from kconfig contents")
@@ -53,9 +56,27 @@ confgen_args = ["python",
                 "--create-config-if-missing",
                 "--env", "COMPONENT_KCONFIGS={}".format(kconfigs),
                 "--env", "COMPONENT_KCONFIGS_PROJBUILD={}".format(kconfig_projbuilds),
-                "--output", "docs", kconfig_inc_path
+                "--output", "docs", kconfig_inc_path + '.in'
 ]
 subprocess.check_call(confgen_args)
+copy_if_modified(kconfig_inc_path + '.in', kconfig_inc_path)
+
+# Generate 'esp_err_defs.inc' file with ESP_ERR_ error code definitions
+esp_err_inc_path = '{}/inc/esp_err_defs.inc'.format(builddir)
+if os.system('python ../../tools/gen_esp_err_to_name.py --rst_output ' + esp_err_inc_path + '.in') != 0:
+    raise RuntimeError('gen_esp_err_to_name.py failed')
+copy_if_modified(esp_err_inc_path + '.in', esp_err_inc_path)
+
+# Generate version-related includes
+#
+# (Note: this is in a function as it needs to access configuration to get the language)
+def generate_version_specific_includes(app):
+    print("Generating version-specific includes...")
+    version_tmpdir = '{}/version_inc'.format(builddir)
+    if os.system('python ../gen-version-specific-includes.py {} {}'.format(app.config.language, version_tmpdir)):
+        raise RuntimeError('gen-version-specific-includes.py failed')
+    copy_if_modified(version_tmpdir, '{}/inc'.format(builddir))
+
 
 # http://stackoverflow.com/questions/12772927/specifying-an-online-image-in-sphinx-restructuredtext-format
 # 
@@ -344,3 +365,4 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 # https://github.com/rtfd/sphinx_rtd_theme/pull/432
 def setup(app):
     app.add_stylesheet('theme_overrides.css')
+    generate_version_specific_includes(app)

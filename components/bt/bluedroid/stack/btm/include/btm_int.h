@@ -618,7 +618,7 @@ typedef struct {
 // btla-specific --
 #define BTM_SEC_NO_LAST_SERVICE_ID      0
     UINT8           last_author_service_id;         /* ID of last serviced authorized: Reset after each l2cap connection */
-
+    BOOLEAN         enc_init_by_we;
 } tBTM_SEC_DEV_REC;
 
 #define BTM_SEC_IS_SM4(sm) ((BOOLEAN)(BTM_SM4_TRUE == ((sm)&BTM_SM4_TRUE)))

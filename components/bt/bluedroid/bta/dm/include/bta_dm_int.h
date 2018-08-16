@@ -196,6 +196,7 @@ typedef struct {
 typedef struct {
     BT_HDR        hdr;
     BD_ADDR       remote_addr;
+    tBTA_TRANSPORT  transport;
     tBTA_CMPL_CB  *read_rssi_cb;
 }tBTA_DM_API_READ_RSSI;
 
@@ -391,6 +392,7 @@ typedef struct {
 typedef struct {
     BT_HDR              hdr;
     BD_ADDR             bd_addr;
+    UINT8               transport;
 } tBTA_DM_API_REMOVE_DEVICE;
 
 /* data type for BTA_DM_API_EXECUTE_CBACK_EVT */

@@ -13,3 +13,6 @@ set_source_files_properties(
     PROPERTIES COMPILE_FLAGS
     -Wno-unused-function
     )
+
+# Temporary suppress "fallthrough" warnings until they are fixed in expat repo
+component_compile_options(-Wno-implicit-fallthrough)

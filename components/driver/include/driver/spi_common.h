@@ -1,4 +1,4 @@
-// Copyright 2010-2017 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2010-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,9 +19,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
-#include "soc/spi_struct.h"
 #include "rom/lldesc.h"
-
+#include "soc/spi_periph.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -100,11 +99,9 @@ bool spicommon_dma_chan_claim(int dma_chan);
  */
 bool spicommon_dma_chan_free(int dma_chan);
 
-
-
 #define SPICOMMON_BUSFLAG_SLAVE         0          ///< Initialize I/O in slave mode
 #define SPICOMMON_BUSFLAG_MASTER        (1<<0)     ///< Initialize I/O in master mode
-#define SPICOMMON_BUSFLAG_NATIVE_PINS   (1<<1)     ///< Check using native pins. Or indicates the pins are configured through the IO mux rather than GPIO matrix.
+#define SPICOMMON_BUSFLAG_NATIVE_PINS   (1<<1)     ///< Check using iomux pins. Or indicates the pins are configured through the IO mux rather than GPIO matrix.
 #define SPICOMMON_BUSFLAG_SCLK          (1<<2)     ///< Check existing of SCLK pin. Or indicates CLK line initialized.
 #define SPICOMMON_BUSFLAG_MISO          (1<<3)     ///< Check existing of MISO pin. Or indicates MISO line initialized.
 #define SPICOMMON_BUSFLAG_MOSI          (1<<4)     ///< Check existing of MOSI pin. Or indicates CLK line initialized.
@@ -125,7 +122,7 @@ bool spicommon_dma_chan_free(int dma_chan);
  * @param flags Combination of SPICOMMON_BUSFLAG_* flags, set to ensure the pins set are capable with some functions:
  *              - ``SPICOMMON_BUSFLAG_MASTER``: Initialize I/O in master mode
  *              - ``SPICOMMON_BUSFLAG_SLAVE``: Initialize I/O in slave mode
- *              - ``SPICOMMON_BUSFLAG_NATIVE_PINS``: Pins set should match the native pins of the controller.
+ *              - ``SPICOMMON_BUSFLAG_NATIVE_PINS``: Pins set should match the iomux pins of the controller.
  *              - ``SPICOMMON_BUSFLAG_SCLK``, ``SPICOMMON_BUSFLAG_MISO``, ``SPICOMMON_BUSFLAG_MOSI``: 
  *                  Make sure SCLK/MISO/MOSI is/are set to a valid GPIO. Also check output capability according to the mode.
  *              - ``SPICOMMON_BUSFLAG_DUAL``: Make sure both MISO and MOSI are output capable so that DIO mode is capable.
@@ -133,7 +130,7 @@ bool spicommon_dma_chan_free(int dma_chan);
  *              - ``SPICOMMON_BUSFLAG_QUAD``: Combination of ``SPICOMMON_BUSFLAG_DUAL`` and ``SPICOMMON_BUSFLAG_WPHD``.
  * @param[out] flags_o A SPICOMMON_BUSFLAG_* flag combination of bus abilities will be written to this address.
  *              Leave to NULL if not needed.
- *              - ``SPICOMMON_BUSFLAG_NATIVE_PINS``: The bus is connected to native pins.
+ *              - ``SPICOMMON_BUSFLAG_NATIVE_PINS``: The bus is connected to iomux pins.
  *              - ``SPICOMMON_BUSFLAG_SCLK``, ``SPICOMMON_BUSFLAG_MISO``, ``SPICOMMON_BUSFLAG_MOSI``: The bus has
  *                  CLK/MISO/MOSI connected.
  *              - ``SPICOMMON_BUSFLAG_DUAL``: The bus is capable with DIO mode.
@@ -147,14 +144,26 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
 
 /**
  * @brief Free the IO used by a SPI peripheral
- *
+ * @deprecated Use spicommon_bus_free_io_cfg instead.
+ * 
  * @param host SPI peripheral to be freed
+ * 
  * @return 
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_OK                on success
  */
+esp_err_t spicommon_bus_free_io(spi_host_device_t host) __attribute__((deprecated));
 
-esp_err_t spicommon_bus_free_io(spi_host_device_t host);
+/**
+ * @brief Free the IO used by a SPI peripheral
+ *
+ * @param bus_cfg Bus config struct which defines which pins to be used.
+ * 
+ * @return 
+ *         - ESP_ERR_INVALID_ARG   if parameter is invalid
+ *         - ESP_OK                on success
+ */
+esp_err_t spicommon_bus_free_io_cfg(const spi_bus_config_t *bus_cfg);
 
 /**
  * @brief Initialize a Chip Select pin for a specific SPI peripheral
@@ -171,12 +180,19 @@ void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, 
 
 /**
  * @brief Free a chip select line
+ * @deprecated Use spicommon_cs_io, which inputs the gpio num rather than the cs id instead.
  *
  * @param host SPI peripheral
  * @param cs_num CS id to free
  */
-void spicommon_cs_free(spi_host_device_t host, int cs_num);
+void spicommon_cs_free(spi_host_device_t host, int cs_num) __attribute__((deprecated));
 
+/**
+ * @brief Free a chip select line
+ *
+ * @param cs_gpio_num CS gpio num to free
+ */
+void spicommon_cs_free_io(int cs_gpio_num);
 
 /**
  * @brief Setup a DMA link chain

@@ -19,6 +19,6 @@ void app_main()
 
     // Note: if unpinning this task, change the way run times are calculated in
     // unity_platform
-    xTaskCreatePinnedToCore(unityTask, "unityTask", 8192, NULL,
+    xTaskCreatePinnedToCore(unityTask, "unityTask", UNITY_FREERTOS_STACK_SIZE, NULL,
                             UNITY_FREERTOS_PRIORITY, NULL, UNITY_FREERTOS_CPU);
 }

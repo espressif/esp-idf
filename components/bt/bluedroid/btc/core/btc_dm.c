@@ -182,6 +182,10 @@ static void btc_dm_remove_ble_bonding_keys(void)
 
 static void btc_dm_save_ble_bonding_keys(void)
 {
+    if(!(pairing_cb.ble.is_penc_key_rcvd || pairing_cb.ble.is_pid_key_rcvd || pairing_cb.ble.is_pcsrk_key_rcvd || 
+         pairing_cb.ble.is_lenc_key_rcvd || pairing_cb.ble.is_lcsrk_key_rcvd || pairing_cb.ble.is_lidk_key_rcvd)) {
+        return ;
+    }
     bt_bdaddr_t bd_addr;
 
     bdcpy(bd_addr.address, pairing_cb.bd_addr);
@@ -495,8 +499,21 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     case BTA_DM_DEV_UNPAIRED_EVT: {
 #if (SMP_INCLUDED == TRUE)
         bt_bdaddr_t bd_addr;
-        rsp_app = true;
         BTC_TRACE_DEBUG("BTA_DM_DEV_UNPAIRED_EVT");
+        memcpy(bd_addr.address, p_data->link_down.bd_addr, sizeof(BD_ADDR));
+        btm_set_bond_type_dev(p_data->link_down.bd_addr, BOND_TYPE_UNKNOWN);
+        if (p_data->link_down.status == HCI_SUCCESS) {
+            //remove the bonded key in the config and nvs flash.
+            btc_storage_remove_bonded_device(&bd_addr);
+        }
+#endif /* #if (SMP_INCLUDED == TRUE) */
+        break;
+    }
+    case BTA_DM_BLE_DEV_UNPAIRED_EVT: {
+#if (SMP_INCLUDED == TRUE)
+        bt_bdaddr_t bd_addr;
+        rsp_app = true;
+        BTC_TRACE_DEBUG("BTA_DM_BLE_DEV_UNPAIRED_EVT");
         memcpy(bd_addr.address, p_data->link_down.bd_addr, sizeof(BD_ADDR));
         btm_set_bond_type_dev(p_data->link_down.bd_addr, BOND_TYPE_UNKNOWN);
         param.remove_bond_dev_cmpl.status = ESP_BT_STATUS_FAIL;

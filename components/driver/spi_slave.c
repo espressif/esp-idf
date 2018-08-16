@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,8 @@
 #include <string.h>
 #include "driver/spi_common.h"
 #include "driver/spi_slave.h"
-#include "soc/gpio_sig_map.h"
-#include "soc/spi_reg.h"
 #include "soc/dport_reg.h"
-#include "soc/spi_struct.h"
+#include "soc/spi_periph.h"
 #include "rom/ets_sys.h"
 #include "esp_types.h"
 #include "esp_attr.h"

@@ -1180,7 +1180,7 @@ static void _mdns_create_answer_from_parsed_packet(mdns_parsed_packet_t * parsed
         }
         if (service) {
             if (q->type == MDNS_TYPE_PTR || q->type == MDNS_TYPE_ANY) {
-                if (q->type == MDNS_TYPE_PTR) {
+                if (q->type == MDNS_TYPE_PTR || !parsed_packet->probe) {
                     shared = true;
                 }
                 if (!_mdns_alloc_answer(&packet->answers, MDNS_TYPE_PTR, service->service, false, false)
@@ -1404,6 +1404,7 @@ static void _mdns_pcb_send_bye(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t i
     if (!packet) {
         return;
     }
+    packet->flags = MDNS_FLAGS_AUTHORITATIVE;
     size_t i;
     for (i=0; i<len; i++) {
         if (!_mdns_alloc_answer(&packet->answers, MDNS_TYPE_PTR, services[i]->service, true, true)) {
@@ -2554,7 +2555,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                 continue;
             }
 
-            if (type == MDNS_TYPE_ANY) {
+            if (type == MDNS_TYPE_ANY && !_str_null_or_empty(name->host)) {
                 parsed_packet->probe = true;
             }
 
@@ -3703,7 +3704,7 @@ static void _mdns_execute_action(mdns_action_t * action)
                 a = a->next;
             }
             if (a->next == action->data.srv_del.service) {
-                mdns_srv_item_t * b = a;
+                mdns_srv_item_t * b = a->next;
                 a->next = a->next->next;
                 _mdns_send_bye(&b, 1, false);
                 _mdns_free_service(b->service);

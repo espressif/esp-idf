@@ -305,7 +305,7 @@ struct wpabuf * eap_sm_build_nak(struct eap_sm *sm, EapType type, u8 id)
 			wpabuf_put_be24(resp, m->vendor);
 			wpabuf_put_be32(resp, m->method);
 		} else
-			wpabuf_put_u8(resp, EAP_TYPE_NONE);
+			wpabuf_put_u8(resp, m->method);
 		found++;
 	}
 	if (!found) {

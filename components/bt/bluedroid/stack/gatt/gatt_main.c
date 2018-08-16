@@ -108,9 +108,9 @@ void gatt_init (void)
     gatt_cb.trace_level = BT_TRACE_LEVEL_NONE;    /* No traces */
 #endif
     gatt_cb.def_mtu_size = GATT_DEF_BLE_MTU_SIZE;
-    gatt_cb.sign_op_queue = fixed_queue_new(SIZE_MAX);
-    gatt_cb.srv_chg_clt_q = fixed_queue_new(SIZE_MAX);
-    gatt_cb.pending_new_srv_start_q = fixed_queue_new(SIZE_MAX);
+    gatt_cb.sign_op_queue = fixed_queue_new(QUEUE_SIZE_MAX);
+    gatt_cb.srv_chg_clt_q = fixed_queue_new(QUEUE_SIZE_MAX);
+    gatt_cb.pending_new_srv_start_q = fixed_queue_new(QUEUE_SIZE_MAX);
     /* First, register fixed L2CAP channel for ATT over BLE */
     fixed_reg.fixed_chnl_opts.mode         = L2CAP_FCR_BASIC_MODE;
     fixed_reg.fixed_chnl_opts.max_transmit = 0xFF;
@@ -179,7 +179,7 @@ void gatt_free(void)
 
         btu_free_timer(&gatt_cb.tcb[i].ind_ack_timer_ent);
         memset(&gatt_cb.tcb[i].ind_ack_timer_ent, 0, sizeof(TIMER_LIST_ENT));
-    
+
 #if (GATTS_INCLUDED == TRUE)
         fixed_queue_free(gatt_cb.tcb[i].sr_cmd.multi_rsp_q, NULL);
         gatt_cb.tcb[i].sr_cmd.multi_rsp_q = NULL;
@@ -979,7 +979,12 @@ void gatt_data_process (tGATT_TCB *p_tcb, BT_HDR *p_buf)
                 }
             }
         } else {
-            GATT_TRACE_ERROR ("ATT - Rcvd L2CAP data, unknown cmd: 0x%x\n", op_code);
+            if (op_code & GATT_COMMAND_FLAG) {
+                GATT_TRACE_ERROR ("ATT - Rcvd L2CAP data, unknown cmd: 0x%x\n", op_code);
+            } else {
+                GATT_TRACE_ERROR ("ATT - Rcvd L2CAP data, unknown req: 0x%x\n", op_code);
+                gatt_send_error_rsp (p_tcb, GATT_REQ_NOT_SUPPORTED, op_code, 0, FALSE);
+            }
         }
     } else {
         GATT_TRACE_ERROR ("invalid data length, ignore\n");

@@ -1548,6 +1548,9 @@ TEST_CASE("read data from partition generated via partition generation utility",
     uint8_t hexdata[] = {0x01, 0x02, 0x03, 0xab, 0xcd, 0xef};
     TEST_ESP_OK( nvs_get_blob(handle, "dummyHex2BinKey", buf, &buflen));
     CHECK(memcmp(buf, hexdata, buflen) == 0);
+    uint8_t base64data[] = {'1', '2', '3', 'a', 'b', 'c'};
+    TEST_ESP_OK( nvs_get_blob(handle, "dummyBase64Key", buf, &buflen));
+    CHECK(memcmp(buf, base64data, buflen) == 0);
 }
 
 TEST_CASE("dump all performance data", "[nvs]")

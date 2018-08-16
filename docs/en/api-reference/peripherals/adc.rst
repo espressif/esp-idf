@@ -12,8 +12,8 @@ However, there're some restrictions for the application to use ADC2:
 1. The application can use ADC2 only when Wi-Fi driver is not started, since the ADC is also used by the Wi-Fi driver, which has higher priority.
 2. Some of the ADC2 pins are used as strapping pins (GPIO 0, 2, 15), so they cannot be used freely. For examples, for official Develop Kits:
 
-  - `ESP32 Core Board V2 / ESP32 DevKitC <http://esp-idf.readthedocs.io/en/latest/hw-reference/modules-and-boards.html#esp32-core-board-v2-esp32-devkitc>`_: GPIO 0 cannot be used due to external auto program circuits.
-  - `ESP-WROVER-KIT V3 <http://esp-idf.readthedocs.io/en/latest/hw-reference/modules-and-boards.html#esp-wrover-kit-v3>`_: GPIO 0, 2, 4 and 15 cannot be used due to external connections for different purposes.
+  - :ref:`ESP32 Core Board V2 / ESP32 DevKitC <esp-modules-and-boards-esp32-devkitc>`: GPIO 0 cannot be used due to external auto program circuits.
+  - :ref:`ESP-WROVER-KIT V3 <esp-modules-and-boards-esp-wrover-kit-v3>`: GPIO 0, 2, 4 and 15 cannot be used due to external connections for different purposes.
 
 Configuration and Reading ADC
 -----------------------------

@@ -7,7 +7,7 @@ ESP-IDF unit tests are run using Unit Test App. The app can be built with the un
 * Follow the setup instructions in the top-level esp-idf README.
 * Set IDF_PATH environment variable to point to the path to the esp-idf top-level directory.
 * Change into `tools/unit-test-app` directory
-* `idf.py menuconfig` to configure the Unit Test App.
+* `make menuconfig` to configure the Unit Test App.
 * `make TEST_COMPONENTS=` with `TEST_COMPONENTS` set to names of the components to be included in the test app. Or `make TESTS_ALL=1` to build the test app with all the tests for components having `test` subdirectory.
 * Follow the printed instructions to flash, or run `make flash`.
 * Unit test have a few preset sdkconfigs. It provides command `make ut-clean-config_name` and `make ut-build-config_name` (where `config_name` is the file name under `unit-test-app/configs` folder) to build with preset configs. For example, you can use `make ut-build-default TESTS_ALL=1` to build with config file `unit-test-app/configs/default`. Built binary for this config will be copied to `unit-test-app/output/config_name` folder.
@@ -68,7 +68,7 @@ Unit test jobs will do reset before running each case (because some cases do not
 Gitlab CI do not support create jobs at runtime. We must maunally add all jobs to CI config file. To make test running in parallel, we limit the number of cases running on each job. When add new unit test cases, it could exceed the limitation that current unit test jobs support. In this case, assign test job will raise error, remind you to add jobs to `.gitlab-ci.yml`.
 
 ```
-Please add the following jobs to .gitlab-ci.yml with specific tags:
+Too many test cases vs jobs to run. Please add the following jobs to .gitlab-ci.yml with specific tags:
 * Add job with: UT_T1_1, ESP32_IDF, psram
 * Add job with: UT_T1_1, ESP32_IDF
 ```
@@ -103,7 +103,7 @@ If you want to reproduce locally, you need to:
 2. Check the following print in CI job to get the config name: `Running unit test for config: config_name`. Then flash the binary of this config to your board.
 3. Run the failed case on your board (refer to Running Unit Tests section).
     * There're some special UT cases (multiple stages case, multiple devices cases) which requires user interaction:
-        * You can refer to [unit test document](https://esp-idf.readthedocs.io/en/latest/api-guides/unit-tests.html#running-unit-tests) to run test manually.
+        * You can refer to [unit test document](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/unit-tests.html#running-unit-tests) to run test manually.
         * Or, you can use `tools/unit-test-app/unit_test.py` to run the test cases:
             * read document of tiny-test-fw, set correct `TEST_FW_PATH` and `IDF_PATH`
             * modify `unit_test.py`, pass the test cases need to test as parameter (refer to test function doc string for supported parameter format) to test functions.

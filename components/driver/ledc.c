@@ -449,6 +449,7 @@ esp_err_t ledc_set_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num, uint32_t
         ret = ESP_FAIL;
     }
     LEDC.timer_group[speed_mode].timer[timer_num].conf.clock_divider = clock_divider;
+    ledc_ls_timer_update(speed_mode, timer_num);
     portEXIT_CRITICAL(&ledc_spinlock);
     return ret;
 }
@@ -587,7 +588,7 @@ static esp_err_t _ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t
 {
     portENTER_CRITICAL(&ledc_spinlock);
     uint32_t duty_cur = LEDC.channel_group[speed_mode].channel[channel].duty_rd.duty_read >> LEDC_DUTY_DECIMAL_BIT_NUM;
-    // if duty == max_duty and scale and fade_down == 1, counter would overflow.
+    // When duty == max_duty, meanwhile, if scale == 1 and fade_down == 1, counter would overflow.
     if (duty_cur == ledc_get_max_duty(speed_mode, channel)) {
         duty_cur -= 1;
     }
@@ -609,6 +610,7 @@ static esp_err_t _ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t
             step_num = step_num > LEDC_STEP_NUM_MAX ? LEDC_STEP_NUM_MAX : step_num;
         }
     }
+
     portEXIT_CRITICAL(&ledc_spinlock);
     if (scale > 0 && step_num > 0) {
         ledc_duty_config(speed_mode, channel, LEDC_VAL_NO_CHANGE, duty_cur << 4, dir, step_num, cycle_num, scale);
@@ -736,18 +738,16 @@ esp_err_t ledc_set_duty_and_update(ledc_mode_t speed_mode, ledc_channel_t channe
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
     LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
     LEDC_ARG_CHECK(duty <= ledc_get_max_duty(speed_mode, channel), "target_duty");
+    LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK , LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
+    uint32_t cur_duty = ledc_get_duty(speed_mode, channel);
+    if (duty == cur_duty) {
+        return ESP_OK;
+    }
     _ledc_op_lock_acquire(speed_mode, channel);
     _ledc_fade_hw_acquire(speed_mode, channel);
-    ledc_duty_config(speed_mode,
-                     channel,         //uint32_t chan_num,
-                     hpoint,          //uint32_t hpoint_val,
-                     duty << 4,       //uint32_t duty_val,the least 4 bits are decimal part
-                     1,               //uint32_t increase,
-                     1,               //uint32_t duty_num,
-                     1,               //uint32_t duty_cycle,
-                     0                //uint32_t duty_scale
-                     );
-    ledc_update_duty(speed_mode, channel);
+    int scale = cur_duty > duty ? cur_duty - duty : duty - cur_duty;
+    _ledc_set_fade_with_step(speed_mode, channel, duty, scale, 1);
+    _ledc_fade_start(speed_mode, channel, LEDC_FADE_WAIT_DONE);
     _ledc_fade_hw_release(speed_mode, channel);
     _ledc_op_lock_release(speed_mode, channel);
     return ESP_OK;

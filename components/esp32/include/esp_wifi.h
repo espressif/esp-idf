@@ -428,24 +428,24 @@ esp_err_t esp_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_re
 esp_err_t esp_wifi_sta_get_ap_info(wifi_ap_record_t *ap_info);
 
 /**
-  * @brief     Set current power save type
+  * @brief     Set current WiFi power save type
   *
-  * @attention Default power save type is WIFI_PS_NONE.
+  * @attention Default power save type is WIFI_PS_MIN_MODEM.
   *
   * @param     type  power save type
   *
-  * @return    ESP_ERR_NOT_SUPPORTED: not supported yet
+  * @return    ESP_OK: succeed
   */
 esp_err_t esp_wifi_set_ps(wifi_ps_type_t type);
 
 /**
-  * @brief     Get current power save type
+  * @brief     Get current WiFi power save type
   *
-  * @attention Default power save type is WIFI_PS_NONE.
+  * @attention Default power save type is WIFI_PS_MIN_MODEM.
   *
   * @param[out]  type: store current power save type
   *
-  * @return    ESP_ERR_NOT_SUPPORTED: not supported yet
+  * @return    ESP_OK: succeed
   */
 esp_err_t esp_wifi_get_ps(wifi_ps_type_t *type);
 
@@ -981,7 +981,7 @@ esp_err_t esp_wifi_80211_tx(wifi_interface_t ifx, const void *buffer, int len, b
   *        Each time a CSI data is received, the callback function will be called.
   *
   * @param ctx context argument, passed to esp_wifi_set_csi_rx_cb() when registering callback function. 
-  * @param data CSI data received. 
+  * @param data CSI data received. The memory that it points to will be deallocated after callback function returns. 
   *
   */
 typedef void (* wifi_csi_cb_t)(void *ctx, wifi_csi_info_t *data);

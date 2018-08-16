@@ -275,7 +275,7 @@ static void emac_set_user_config_data(eth_config_t *config )
     emac_config.emac_flow_ctrl_enable = config->flow_ctrl_enable;
 #else
     if(config->flow_ctrl_enable == true) {
-        ESP_LOGE(TAG, "eth flow ctrl init err!!! Please run idf.py menuconfig and make sure DMA_RX_BUF_NUM > 9 .");
+        ESP_LOGE(TAG, "eth flow ctrl init err!!! Please run menuconfig and make sure DMA_RX_BUF_NUM > 9 .");
     }
     emac_config.emac_flow_ctrl_enable = false;
 #endif

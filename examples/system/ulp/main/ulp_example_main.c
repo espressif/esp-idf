@@ -13,6 +13,7 @@
 #include "nvs_flash.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/sens_reg.h"
+#include "soc/rtc_periph.h"
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"
 #include "esp32/ulp.h"
@@ -46,6 +47,10 @@ static void init_ulp_program()
             (ulp_main_bin_end - ulp_main_bin_start) / sizeof(uint32_t));
     ESP_ERROR_CHECK(err);
 
+    /* GPIO used for pulse counting. */
+    gpio_num_t gpio_num = GPIO_NUM_0;
+    assert(rtc_gpio_desc[gpio_num].reg && "GPIO used for pulse counting must be an RTC IO");
+
     /* Initialize some variables used by ULP program.
      * Each 'ulp_xyz' variable corresponds to 'xyz' variable in the ULP program.
      * These variables are declared in an auto generated header file,
@@ -58,11 +63,11 @@ static void init_ulp_program()
     ulp_debounce_counter = 3;
     ulp_debounce_max_count = 3;
     ulp_next_edge = 0;
-    ulp_io_number = 11; /* GPIO0 is RTC_IO 11 */
+    ulp_io_number = rtc_gpio_desc[gpio_num].rtc_num; /* map from GPIO# to RTC_IO# */
     ulp_edge_count_to_wake_up = 10;
 
-    /* Initialize GPIO0 as RTC IO, input, disable pullup and pulldown */
-    gpio_num_t gpio_num = GPIO_NUM_0;
+    /* Initialize selected GPIO as RTC IO, enable input, disable pullup and pulldown */
+    rtc_gpio_init(gpio_num);
     rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_INPUT_ONLY);
     rtc_gpio_pulldown_dis(gpio_num);
     rtc_gpio_pullup_dis(gpio_num);
@@ -76,13 +81,13 @@ static void init_ulp_program()
     rtc_gpio_isolate(GPIO_NUM_12);
     rtc_gpio_isolate(GPIO_NUM_15);
 
-    /* Set ULP wake up period to T = 20ms (3095 cycles of RTC_SLOW_CLK clock).
+    /* Set ULP wake up period to T = 20ms.
      * Minimum pulse width has to be T * (ulp_debounce_counter + 1) = 80ms.
      */
-    REG_SET_FIELD(SENS_ULP_CP_SLEEP_CYC0_REG, SENS_SLEEP_CYCLES_S0, 3095);
+    ulp_set_wakeup_period(0, 20000);
 
     /* Start the program */
-    err = ulp_run((&ulp_entry - RTC_SLOW_MEM) / sizeof(uint32_t));
+    err = ulp_run(&ulp_entry - RTC_SLOW_MEM);
     ESP_ERROR_CHECK(err);
 }
 

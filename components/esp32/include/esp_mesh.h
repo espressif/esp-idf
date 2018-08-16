@@ -936,7 +936,7 @@ bool esp_mesh_get_self_organized(void);
  *            be expected to find to replace the current one.
  *            If no desired root candidate, the vote will try a specified attempts(at least 10 times), if no better
  *            root candidate is found, keep the current one. If a better candidate is found, the new better one will
- *            send a root switch request to the current root, current root will respond with a root switch acknowledgement.
+ *            send a root switch request to the current root, current root will respond with a root switch acknowledgment.
  *            After that, the new candidate will connect to the router to be a new root, the previous root will disconnect
  *            with the router and choose another parent instead.
  *            So far, root switch is completed with minimal disruption to the whole mesh network.
@@ -951,6 +951,8 @@ bool esp_mesh_get_self_organized(void);
  *
  * @return
  *    - ESP_OK
+ *    - ESP_ERR_MESH_QUEUE_FULL
+ *    - ESP_ERR_MESH_DISCARD
  *    - ESP_FAIL
  */
 esp_err_t esp_mesh_waive_root(const mesh_vote_t *vote, int reason);
@@ -1309,6 +1311,14 @@ esp_err_t esp_mesh_scan_get_ap_ie_len(int *len);
  *    - ESP_ERR_WIFI_FAIL
  */
 esp_err_t esp_mesh_scan_get_ap_record(wifi_ap_record_t *ap_record, void *buffer);
+
+/**
+ * @brief     flush upstream packets pending in to_parent queue and to_parent_p2p queue
+ *
+ * @return
+ *    - ESP_OK
+ */
+esp_err_t esp_mesh_flush_upstream_packets(void);
 
 #ifdef __cplusplus
 }

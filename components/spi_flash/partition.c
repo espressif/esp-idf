@@ -17,7 +17,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/lock.h>
-
+#include "esp_flash_partitions.h"
 #include "esp_attr.h"
 #include "esp_flash_data_types.h"
 #include "esp_spi_flash.h"
@@ -145,14 +145,14 @@ static esp_err_t load_partitions()
     const uint32_t* ptr;
     spi_flash_mmap_handle_t handle;
     // map 64kB block where partition table is located
-    esp_err_t err = spi_flash_mmap(ESP_PARTITION_TABLE_ADDR & 0xffff0000,
+    esp_err_t err = spi_flash_mmap(ESP_PARTITION_TABLE_OFFSET & 0xffff0000,
             SPI_FLASH_SEC_SIZE, SPI_FLASH_MMAP_DATA, (const void**) &ptr, &handle);
     if (err != ESP_OK) {
         return err;
     }
     // calculate partition address within mmap-ed region
     const esp_partition_info_t* it = (const esp_partition_info_t*)
-            (ptr + (ESP_PARTITION_TABLE_ADDR & 0xffff) / sizeof(*ptr));
+            (ptr + (ESP_PARTITION_TABLE_OFFSET & 0xffff) / sizeof(*ptr));
     const esp_partition_info_t* end = it + SPI_FLASH_SEC_SIZE / sizeof(*it);
     // tail of the linked list of partitions
     partition_list_item_t* last = NULL;

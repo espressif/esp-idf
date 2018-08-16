@@ -51,6 +51,8 @@ public:
     static const uint8_t NS_INDEX = 0;
     static const uint8_t NS_ANY = 255;
 
+    static const uint8_t NVS_VERSION = 0xff; // Decrement to upgrade
+
     enum class PageState : uint32_t {
         // All bits set, default state after flash erase. Page has not been initialized yet.
         UNINITIALIZED = 0xffffffff,
@@ -83,6 +85,8 @@ public:
     esp_err_t getSeqNumber(uint32_t& seqNumber) const;
 
     esp_err_t setSeqNumber(uint32_t seqNumber);
+ 
+    esp_err_t setVersion(uint8_t version);
 
     esp_err_t writeItem(uint8_t nsIndex, ItemType datatype, const char* key, const void* data, size_t dataSize);
 
@@ -142,12 +146,13 @@ protected:
     public:
         Header()
         {
-            std::fill_n(mReserved, sizeof(mReserved)/sizeof(mReserved[0]), UINT32_MAX);
+            std::fill_n(mReserved, sizeof(mReserved)/sizeof(mReserved[0]), UINT8_MAX);
         }
 
         PageState mState;       // page state
         uint32_t mSeqNumber;    // sequence number of this page
-        uint32_t mReserved[5];  // unused, must be 0xffffffff
+        uint8_t mVersion;       // nvs format version
+        uint8_t mReserved[19];  // unused, must be 0xff
         uint32_t mCrc32;        // crc of everything except mState
 
         uint32_t calculateCrc32();
@@ -198,6 +203,7 @@ protected:
     uint32_t mBaseAddress = 0;
     PageState mState = PageState::INVALID;
     uint32_t mSeqNumber = UINT32_MAX;
+    uint8_t mVersion = NVS_VERSION;
     typedef CompressedEnumTable<EntryState, 2, ENTRY_COUNT> TEntryTable;
     TEntryTable mEntryTable;
     size_t mNextFreeEntry = INVALID_ENTRY;

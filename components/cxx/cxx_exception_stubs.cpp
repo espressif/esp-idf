@@ -13,10 +13,21 @@ extern "C" void __cxx_fatal_exception(void)
     abort();
 }
 
+extern "C" bool __cxx_fatal_exception_bool(void)
+{
+    __cxx_fatal_exception();
+    return false;
+}
+
 extern "C" void __cxx_fatal_exception_message(const char *msg)
 {
     printf("%s%s\n", FATAL_EXCEPTION, msg);
     abort();
+}
+
+extern "C" void __cxx_fatal_exception_message_va(const char *msg, ...)
+{
+    __cxx_fatal_exception_message(msg);
 }
 
 extern "C" void __cxx_fatal_exception_int(int i)
@@ -43,7 +54,7 @@ void std::__throw_length_error(const char*) __attribute__((alias("__cxx_fatal_ex
 
 void std::__throw_out_of_range(const char*) __attribute__((alias("__cxx_fatal_exception_message")));
 
-void std::__throw_out_of_range_fmt(const char*, ...) __attribute__((alias("__cxx_fatal_exception_message")));
+void std::__throw_out_of_range_fmt(const char*, ...) __attribute__((alias("__cxx_fatal_exception_message_va")));
 
 void std::__throw_runtime_error(const char*) __attribute__((alias("__cxx_fatal_exception_message")));
 
@@ -84,6 +95,6 @@ extern "C" void __cxa_rethrow(void) __attribute__((alias("__cxx_fatal_exception"
 extern "C" void __cxa_throw(void) __attribute__((alias("__cxx_fatal_exception")));
 extern "C" void __cxa_call_terminate(void) __attribute__((alias("__cxx_fatal_exception")));
 
-bool std::uncaught_exception() __attribute__((alias("__cxx_fatal_exception")));
+bool std::uncaught_exception() __attribute__((alias("__cxx_fatal_exception_bool")));
 
 #endif // CONFIG_CXX_EXCEPTIONS

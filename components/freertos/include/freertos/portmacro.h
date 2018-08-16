@@ -74,7 +74,6 @@ extern "C" {
 
 #include <stdint.h>
 
-#include <xtensa/tie/xt_core.h>
 #include <xtensa/hal.h>
 #include <xtensa/config/core.h>
 #include <xtensa/config/system.h>	/* required for XSHAL_CLIB */

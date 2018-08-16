@@ -40,25 +40,15 @@ bool bootloader_utility_load_partition_table(bootloader_state_t* bs);
 int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs);
 
 /**
- * @brief Load the app image for booting.
+ * @brief Load the selected partition and start application.
  *
  * Start from partition 'start_index', if not bootable then work backwards to FACTORY_INDEX
  * (ie try any OTA slots in descending order and then the factory partition).
  * If still nothing, start from 'start_index + 1' and work up to highest numbered OTA partition.
  * If still nothing, try TEST_APP_INDEX.
+ * Everything this function calls must be located in the iram_loader_seg segment.
  *
  * @param[in] bs Bootloader state structure.
  * @param[in] start_index The index from which the search for images begins.
- * @param[out] result The image found.
- * @return    Returns true on success, false if there's no bootable app in the partition table.
  */
-bool bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_index, esp_image_metadata_t *result);
-
-/**
- * @brief Loading the selected image.
- *
- * Copy loaded segments to RAM, set up caches for mapped segments, and start application.
- *
- * @param[in] data Structure to hold on-flash image metadata.
- */
-void bootloader_utility_load_image(const esp_image_metadata_t* image_data);
+__attribute__((noreturn)) void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_index);

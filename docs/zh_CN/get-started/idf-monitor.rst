@@ -65,7 +65,7 @@ IDF Monitor 为转储补充如下信息::
 
 您可以选择配置 panic 处理函数，使其运行串行的 "gdb stub"。该程序可以与 gdb 调试器通信，提供内存，变量，栈帧读取的功能。虽然这不像 JTAG 调试那样通用，但您不需要使用特殊硬件。
 
-要启用 gdbstub，运行 ``make menuconfig`` 并将 :ref:`CONFIG_ESP32_PANIC` 选项设置为 ``Invoke GDBStub``。
+要启用 gdbstub，运行 ``make menuconfig`` 并将 :envvar:`CONFIG_ESP32_PANIC` 选项设置为 ``Invoke GDBStub``。
 
 如果启用此选项并且 IDF Monitor 发现 gdbstub 已加载，它将自动暂停串口监控并使用正确的参数运行 GDB。GDB 退出后，电路板将通过 RTS 串行线路复位（如果已连接）。
 

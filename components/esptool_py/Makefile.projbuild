@@ -31,9 +31,17 @@ endif
 
 ESPTOOL_ELF2IMAGE_OPTIONS :=
 
+ifdef CONFIG_SECURE_BOOT_ENABLED
+ifndef CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION
+ifndef IS_BOOTLOADER_BUILD
+ESPTOOL_ELF2IMAGE_OPTIONS += --secure-pad
+endif
+endif
+endif
+
 ESPTOOLPY_WRITE_FLASH=$(ESPTOOLPY_SERIAL) write_flash $(if $(CONFIG_ESPTOOLPY_COMPRESSED),-z,-u) $(ESPTOOL_WRITE_FLASH_OPTIONS)
 
-ESPTOOL_ALL_FLASH_ARGS += $(CONFIG_APP_OFFSET) $(APP_BIN)
+ESPTOOL_ALL_FLASH_ARGS += $(APP_OFFSET) $(APP_BIN)
 
 ifdef CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES
 ifndef IS_BOOTLOADER_BUILD
@@ -50,16 +58,16 @@ APP_BIN_UNSIGNED ?= $(APP_BIN)
 $(APP_BIN_UNSIGNED): $(APP_ELF) $(ESPTOOLPY_SRC)
 	$(ESPTOOLPY) elf2image $(ESPTOOL_FLASH_OPTIONS) $(ESPTOOL_ELF2IMAGE_OPTIONS) -o $@ $<
 
-flash: all_binaries $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash)
-	@echo "Flashing binaries to serial port $(ESPPORT) (app at offset $(CONFIG_APP_OFFSET))..."
+flash: all_binaries $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info
+	@echo "Flashing binaries to serial port $(ESPPORT) (app at offset $(APP_OFFSET))..."
 ifdef CONFIG_SECURE_BOOT_ENABLED
 	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
 endif
 	$(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
 
-app-flash: $(APP_BIN) $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash)
-	@echo "Flashing app to serial port $(ESPPORT), offset $(CONFIG_APP_OFFSET)..."
-	$(ESPTOOLPY_WRITE_FLASH) $(CONFIG_APP_OFFSET) $(APP_BIN)
+app-flash: $(APP_BIN) $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info
+	@echo "Flashing app to serial port $(ESPPORT), offset $(APP_OFFSET)..."
+	$(ESPTOOLPY_WRITE_FLASH) $(APP_OFFSET) $(APP_BIN)
 
 # Submodules normally added in component.mk, but can be added
 # at the project level as long as qualified path
@@ -85,7 +93,9 @@ endif
 simple_monitor: $(call prereq_if_explicit,%flash)
 	$(MONITOR_PYTHON) -m serial.tools.miniterm --rts 0 --dtr 0 --raw $(ESPPORT) $(MONITORBAUD)
 
-MONITOR_OPTS := --baud $(MONITORBAUD) --port $(ESPPORT) --toolchain-prefix $(CONFIG_TOOLPREFIX) --make "$(MAKE)"
+PRINT_FILTER ?=
+
+MONITOR_OPTS := --baud $(MONITORBAUD) --port $(ESPPORT) --toolchain-prefix $(CONFIG_TOOLPREFIX) --make "$(MAKE)" --print_filter "$(PRINT_FILTER)"
 
 monitor: $(call prereq_if_explicit,%flash)
 	$(summary) MONITOR

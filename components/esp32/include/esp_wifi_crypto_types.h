@@ -27,6 +27,8 @@
 extern "C" {
 #endif
 
+#define ESP_WIFI_CRYPTO_VERSION 0x00000001
+
 /*
  * Enumeration for hash operations.
  * When WPA2 is connecting, this enum is used to
@@ -605,7 +607,7 @@ typedef void (*esp_uuid_gen_mac_addr_t)(const unsigned char *mac_addr, unsigned 
  * @brief free the message after finish DH
  * 
  */
-typedef void * (*esp_dh5_free_t)(void *ctx);
+typedef void (*esp_dh5_free_t)(void *ctx);
 
 /**
  * @brief Build WPS IE for (Re)Association Request
@@ -697,6 +699,8 @@ typedef int (*esp_wps_is_selected_pbc_registrar_t)(const void *msg, unsigned cha
   *        hardware.
   */
 typedef struct {
+    uint32_t size;
+    uint32_t version;
     esp_aes_wrap_t aes_wrap;                         /**< station connect function used when send EAPOL frame */
     esp_aes_unwrap_t aes_unwrap;                     /**< station connect function used when decrypt key data */
     esp_hmac_sha256_vector_t hmac_sha256_vector;     /**< station connect function used when check MIC */
@@ -724,6 +728,8 @@ typedef struct {
   *        hardware.
   */
 typedef struct{
+    uint32_t size;
+    uint32_t version;
     esp_aes_128_encrypt_t aes_128_encrypt;          /**< function used to process message when do WPS */
     esp_aes_128_decrypt_t aes_128_decrypt;          /**< function used to process message when do WPS */
     esp_crypto_mod_exp_t crypto_mod_exp;            /**< function used to calculate public key and private key */
@@ -750,6 +756,8 @@ typedef struct{
   *        hardware.
   */
 typedef struct {
+    uint32_t size;
+    uint32_t version;
     esp_crypto_hash_init_t crypto_hash_init;                  /**< function used to initialize a crypto_hash structure when use TLSV1 */
     esp_crypto_hash_update_t crypto_hash_update;              /**< function used to calculate hash data when use TLSV1 */
     esp_crypto_hash_finish_t crypto_hash_finish;              /**< function used to finish the hash calculate when use TLSV1 */
@@ -765,6 +773,8 @@ typedef struct {
     esp_eap_peer_blob_deinit_t eap_peer_blob_deinit;
     esp_eap_peer_config_init_t eap_peer_config_init;
     esp_eap_peer_config_deinit_t eap_peer_config_deinit;
+    esp_eap_peer_register_methods_t eap_peer_register_methods;
+    esp_eap_peer_unregister_methods_t eap_peer_unregister_methods;
     esp_eap_deinit_prev_method_t eap_deinit_prev_method;
     esp_eap_peer_get_eap_method_t eap_peer_get_eap_method;
     esp_eap_sm_abort_t eap_sm_abort;

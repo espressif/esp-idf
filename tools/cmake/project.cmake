@@ -108,7 +108,9 @@ macro(project name)
 
     # Include any top-level project_include.cmake files from components
     foreach(component ${BUILD_COMPONENT_PATHS})
+        set(COMPONENT_PATH "${component}")
         include_if_exists("${component}/project_include.cmake")
+        unset(COMPONENT_PATH)
     endforeach()
 
     #

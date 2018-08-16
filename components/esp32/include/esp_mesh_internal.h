@@ -33,21 +33,30 @@ extern "C" {
  *                Structures
  *******************************************************/
 typedef struct {
-    int scan;          /**< minimum scan times before being a root, default:10 */
-    int vote;          /**< max vote times in self-healing, default:10000 */
-    int fail;          /**< parent selection fail times, if the scan times reach this value,
-                            will disconnect with associated children and join self-healing. default:60 */
-    int monitor_ie;    /**< acceptable times of parent ie change before update self ie, default:3 */
+    int scan;          /**< minimum scan times before being a root, default:10. */
+    int vote;          /**< max vote times in self-healing, default:1000. */
+    int fail;          /**< parent selection fail times. If the scan times reach this value,
+                            device will disconnect with associated children and join self-healing, default:120. */
+    int monitor_ie;    /**< acceptable times of parent networking IE change before update self networking IE, default:10. */
 } mesh_attempts_t;
 
 typedef struct {
-    int duration_ms;   /* parent weak RSSI monitor duration, if the RSSI continues to be weak during this duration_ms,
-                          will switch to a better parent */
-    int cnx_rssi;      /* RSSI threshold for keeping a good connection with parent */
-    int select_rssi;   /* RSSI threshold for parent selection, should be a value greater than switch_rssi */
-    int switch_rssi;   /* RSSI threshold for action to reselect a better parent */
+    int duration_ms;   /* parent weak RSSI monitor duration. If the RSSI with current parent is less than cnx_rssi continuously
+                          within this duration_ms, device will search for a better parent. */
+    int cnx_rssi;      /* RSSI threshold for keeping a good connection with parent.
+                          If set a value greater than -120 dBm, device will arm a timer to monitor current RSSI at a period time of
+                          duration_ms. */
+    int select_rssi;   /* RSSI threshold for parent selection, should be a value greater than switch_rssi. */
+    int switch_rssi;   /* RSSI threshold for parent switch. Device will disassociate current parent and switch to a new parent when
+                          the RSSI with the new parent is greater than this set threshold. */
     int backoff_rssi;  /* RSSI threshold for connecting to the root */
 } mesh_switch_parent_t;
+
+typedef struct {
+    int high;
+    int medium;
+    int low;
+} mesh_rssi_threshold_t;
 
 /**
  * @brief mesh networking IE
@@ -58,8 +67,8 @@ typedef struct {
     uint8_t len;             /**< element length */
     uint8_t oui[3];          /**< organization identifier */
     /**< mesh networking IE content */
-    uint8_t type;            /** mesh networking IE type */
-    uint8_t encryped : 1;    /**< if mesh networking IE is encrypted */
+    uint8_t type;            /** ESP defined IE type */
+    uint8_t encryped : 1;    /**< whether mesh networking IE is encrypted */
     uint8_t version : 7;     /**< mesh networking IE version */
     /**< content */
     uint8_t mesh_type;       /**< mesh device type */
@@ -74,13 +83,13 @@ typedef struct {
     uint16_t self_cap;       /**< self capacity */
     uint16_t layer2_cap;     /**< layer2 capacity */
     uint16_t scan_ap_num;    /**< the number of scanned APs */
-    int8_t rssi;             /**< rssi of the parent */
-    int8_t router_rssi;      /**< rssi of the router */
+    int8_t rssi;             /**< RSSI of the parent */
+    int8_t router_rssi;      /**< RSSI of the router */
     uint8_t flag;            /**< flag of networking */
     uint8_t rc_addr[6];      /**< root address */
-    int8_t rc_rssi;          /**< root rssi */
+    int8_t rc_rssi;          /**< root RSSI */
     uint8_t vote_addr[6];    /**< voter address */
-    int8_t vote_rssi;        /**< vote rssi of the router */
+    int8_t vote_rssi;        /**< vote RSSI of the router */
     uint8_t vote_ttl;        /**< vote ttl */
     uint16_t votes;          /**< votes */
     uint16_t my_votes;       /**< my votes */
@@ -115,9 +124,9 @@ esp_err_t esp_mesh_set_beacon_interval(int interval_ms);
 esp_err_t esp_mesh_get_beacon_interval(int *interval_ms);
 
 /**
- * @brief    set attempts for mesh self-organized networking
+ * @brief     set attempts for mesh self-organized networking
  *
- * @param    attempts
+ * @param     attempts
  *
  * @return
  *    - ESP_OK
@@ -132,7 +141,7 @@ esp_err_t esp_mesh_set_attempts(mesh_attempts_t *attempts);
  *
  * @return
  *    - ESP_OK
- *    - ESP_FAIL
+ *    - ESP_ERR_MESH_ARGUMENT
  */
 esp_err_t esp_mesh_get_attempts(mesh_attempts_t *attempts);
 
@@ -143,7 +152,7 @@ esp_err_t esp_mesh_get_attempts(mesh_attempts_t *attempts);
  *
  * @return
  *    - ESP_OK
- *    - ESP_FAIL
+ *    - ESP_ERR_MESH_ARGUMENT
  */
 esp_err_t esp_mesh_set_switch_parent_paras(mesh_switch_parent_t *paras);
 
@@ -154,9 +163,45 @@ esp_err_t esp_mesh_set_switch_parent_paras(mesh_switch_parent_t *paras);
  *
  * @return
  *    - ESP_OK
- *    - ESP_FAIL
+ *    - ESP_ERR_MESH_ARGUMENT
  */
 esp_err_t esp_mesh_get_switch_parent_paras(mesh_switch_parent_t *paras);
+
+/**
+ * @brief     set RSSI threshold
+ *            The default high RSSI threshold value is -78 dBm.
+ *            The default medium RSSI threshold value is -82 dBm.
+ *            The default low RSSI threshold value is -85 dBm.
+ *
+ * @param     threshold  RSSI threshold
+ *
+ * @return
+ *    - ESP_OK
+ *    - ESP_ERR_MESH_ARGUMENT
+ */
+esp_err_t esp_mesh_set_rssi_threshold(const mesh_rssi_threshold_t *threshold);
+
+/**
+ * @brief     get RSSI threshold
+ * @param     threshold  RSSI threshold
+ *
+ * @return
+ *    - ESP_OK
+ *    - ESP_ERR_MESH_ARGUMENT
+ */
+esp_err_t esp_mesh_get_rssi_threshold(mesh_rssi_threshold_t *threshold);
+
+/**
+ * @brief     enable the minimum rate to 6Mbps
+ *
+ * @attention This API shall be called before WiFi start.
+ *
+ * @param     is_6m  enable or not
+ *
+ * @return
+ *    - ESP_OK
+ */
+esp_err_t esp_mesh_set_6m_rate(bool is_6m);
 
 /**
  * @brief     print the number of txQ waiting
@@ -195,6 +240,29 @@ esp_err_t esp_mesh_set_passive_scan_time(int time_ms);
  */
 int esp_mesh_get_passive_scan_time(void);
 
+/**
+ * @brief     set announce interval
+ *            The default short interval is 500 milliseconds.
+ *            The default long interval is 3000 milliseconds.
+ *
+ * @param     short_ms  shall be greater than the default value
+ * @param     long_ms  shall be greater than the default value
+ *
+ * @return
+ *    - ESP_OK
+ */
+esp_err_t esp_mesh_set_announce_interval(int short_ms, int long_ms);
+
+/**
+ * @brief     get announce interval
+ *
+ * @param     short_ms  short interval
+ * @param     long_ms  long interval
+ *
+ * @return
+ *    - ESP_OK
+ */
+esp_err_t esp_mesh_get_announce_interval(int *short_ms, int *long_ms);
 
 #ifdef __cplusplus
 }

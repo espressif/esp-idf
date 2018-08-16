@@ -2,6 +2,6 @@
 --flash_size ${ESPFLASHSIZE}
 --flash_freq ${ESPFLASHFREQ}
 0x1000 bootloader/bootloader.bin
-0x8000 partition_table/partition-table.bin
-${CONFIG_APP_OFFSET} ${PROJECT_NAME}.bin
+${PARTITION_TABLE_OFFSET} partition_table/partition-table.bin
+${APP_PARTITION_OFFSET} ${PROJECT_NAME}.bin
 ${PHY_PARTITION_OFFSET} ${PHY_PARTITION_BIN_FILE}

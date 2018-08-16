@@ -26,6 +26,7 @@
 #include "esp_flash_partitions.h"
 #include "bootloader_flash.h"
 #include "bootloader_common.h"
+#include "soc/gpio_periph.h"
 
 static const char* TAG = "boot_comm";
 
@@ -42,6 +43,9 @@ bool bootloader_common_ota_select_valid(const esp_ota_select_entry_t *s)
 esp_comm_gpio_hold_t bootloader_common_check_long_hold_gpio(uint32_t num_pin, uint32_t delay_sec)
 {
     gpio_pad_select_gpio(num_pin);
+    if (GPIO_PIN_MUX_REG[num_pin]) {
+        PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[num_pin]);
+    }
     gpio_pad_pullup(num_pin);
     uint32_t tm_start = esp_log_early_timestamp();
     if (GPIO_INPUT_GET(num_pin) == 1) {
@@ -96,26 +100,14 @@ bool bootloader_common_erase_part_type_data(const char *list_erase, bool ota_dat
     int num_partitions;
     bool ret = true;
 
-#ifdef CONFIG_SECURE_BOOT_ENABLED
-    if (esp_secure_boot_enabled()) {
-        ESP_LOGI(TAG, "Verifying partition table signature...");
-        err = esp_secure_boot_verify_signature(ESP_PARTITION_TABLE_ADDR, ESP_PARTITION_TABLE_MAX_LEN);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to verify partition table signature.");
-            return false;
-        }
-        ESP_LOGD(TAG, "Partition table signature verified");
-    }
-#endif
-
-    partitions = bootloader_mmap(ESP_PARTITION_TABLE_ADDR, ESP_PARTITION_TABLE_MAX_LEN);
+    partitions = bootloader_mmap(ESP_PARTITION_TABLE_OFFSET, ESP_PARTITION_TABLE_MAX_LEN);
     if (!partitions) {
-            ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", ESP_PARTITION_TABLE_ADDR, ESP_PARTITION_TABLE_MAX_LEN);
+            ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", ESP_PARTITION_TABLE_OFFSET, ESP_PARTITION_TABLE_MAX_LEN);
             return false;
     }
-    ESP_LOGD(TAG, "mapped partition table 0x%x at 0x%x", ESP_PARTITION_TABLE_ADDR, (intptr_t)partitions);
+    ESP_LOGD(TAG, "mapped partition table 0x%x at 0x%x", ESP_PARTITION_TABLE_OFFSET, (intptr_t)partitions);
 
-    err = esp_partition_table_basic_verify(partitions, true, &num_partitions);
+    err = esp_partition_table_verify(partitions, true, &num_partitions);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to verify partition table");
         ret = false;

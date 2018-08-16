@@ -142,6 +142,8 @@ INPUT = \
     ../../components/esp32/include/esp_ipc.h \
     ## Over The Air Updates (OTA)
     ../../components/app_update/include/esp_ota_ops.h \
+    ## ESP HTTPS OTA
+    ../../components/esp_https_ota/include/esp_https_ota.h \
     ## Sleep
     ## NOTE: for line below header_file.inc is not used
     ../../components/esp32/include/esp_sleep.h \
@@ -174,7 +176,9 @@ INPUT = \
     ../../components/freertos/include/freertos/semphr.h \
     ../../components/freertos/include/freertos/timers.h \
     ../../components/freertos/include/freertos/event_groups.h \
-    ../../components/freertos/include/freertos/ringbuf.h
+    ../../components/freertos/include/freertos/ringbuf.h \
+    ### Helper functions for error codes
+    ../../components/esp32/include/esp_err.h
 
 
 

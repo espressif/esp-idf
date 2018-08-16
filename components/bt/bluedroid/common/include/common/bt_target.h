@@ -94,6 +94,10 @@
 #define CLASSIC_BT_INCLUDED         FALSE
 #endif /* CLASSIC_BT_INCLUDED */
 
+#ifndef CONFIG_GATTC_CACHE_NVS_FLASH
+#define CONFIG_GATTC_CACHE_NVS_FLASH         FALSE
+#endif /* CONFIG_GATTC_CACHE_NVS_FLASH */
+
 /******************************************************************************
 **
 ** BLE features
@@ -110,6 +114,12 @@
 #else
 #define GATTC_INCLUDED              FALSE
 #endif  /* CONFIG_GATTC_ENABLE */
+
+#if (CONFIG_GATTC_ENABLE && CONFIG_GATTC_CACHE_NVS_FLASH)
+#define GATTC_CACHE_NVS              TRUE
+#else
+#define GATTC_CACHE_NVS              FALSE
+#endif  /* CONFIG_GATTC_CACHE_NVS_FLASH */
 
 #if (CONFIG_SMP_ENABLE)
 #define SMP_INCLUDED              TRUE
@@ -295,6 +305,16 @@
 
 #ifndef BTA_AV_CO_CP_SCMS_T
 #define BTA_AV_CO_CP_SCMS_T  FALSE//FALSE
+#endif
+
+#ifndef QUEUE_CONGEST_SIZE
+#define  QUEUE_CONGEST_SIZE    40
+#endif
+
+#ifndef CONFIG_BLE_HOST_QUEUE_CONGESTION_CHECK
+#define SCAN_QUEUE_CONGEST_CHECK  FALSE
+#else
+#define SCAN_QUEUE_CONGEST_CHECK  CONFIG_BLE_HOST_QUEUE_CONGESTION_CHECK
 #endif
 
 /* This feature is used to eanble interleaved scan*/
@@ -571,7 +591,7 @@
 #define BTM_DEFAULT_DISC_INTERVAL   0x0800
 #endif
 
-/* 
+/*
 * {SERVICE_CLASS, MAJOR_CLASS, MINOR_CLASS}
 *
 * SERVICE_CLASS:0x5A (Bit17 -Networking,Bit19 - Capturing,Bit20 -Object Transfer,Bit22 -Telephony)
@@ -743,6 +763,14 @@
 #ifndef BTM_BLE_CONFORMANCE_TESTING
 #define BTM_BLE_CONFORMANCE_TESTING           FALSE
 #endif
+
+/******************************************************************************
+**
+** CONTROLLER TO HOST FLOW CONTROL
+**
+******************************************************************************/
+
+#define C2H_FLOW_CONTROL_INCLUDED TRUE
 
 /******************************************************************************
 **
