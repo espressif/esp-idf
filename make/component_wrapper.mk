@@ -212,7 +212,7 @@ build: $(COMPONENT_LIBRARY)
 $(COMPONENT_LIBRARY): $(COMPONENT_OBJS) $(COMPONENT_EMBED_OBJS)
 	$(summary) AR $(patsubst $(PWD)/%,%,$(CURDIR))/$@
 	rm -f $@
-	$(AR) cru $@ $^
+	$(AR) $(ARFLAGS) $@ $^
 endif
 
 # If COMPONENT_OWNCLEANTARGET is not set, define a phony clean target

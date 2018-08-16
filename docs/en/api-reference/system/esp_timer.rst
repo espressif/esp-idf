@@ -43,6 +43,11 @@ Unlike `gettimeofday` function, values returned by :cpp:func:`esp_timer_get_time
 - Start from zero after the chip wakes up from deep sleep
 - Do not have timezone or DST adjustments applied
 
+Application Example
+-------------------
+
+The following example illustrates usage of ``esp_timer`` APIs: :example:`system/esp_timer`.
+
 
 API Reference
 -------------

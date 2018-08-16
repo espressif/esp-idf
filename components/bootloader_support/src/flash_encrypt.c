@@ -254,7 +254,7 @@ static esp_err_t encrypt_and_load_partition_table(esp_partition_info_t *partitio
         ESP_LOGE(TAG, "Failed to read partition table data");
         return err;
     }
-    if (esp_partition_table_basic_verify(partition_table, false, num_partitions) == ESP_OK) {
+    if (esp_partition_table_verify(partition_table, false, num_partitions) == ESP_OK) {
         ESP_LOGD(TAG, "partition table is plaintext. Encrypting...");
         esp_err_t err = esp_flash_encrypt_region(ESP_PARTITION_TABLE_OFFSET,
                                                  FLASH_SECTOR_SIZE);
@@ -281,7 +281,7 @@ static esp_err_t encrypt_partition(int index, const esp_partition_info_t *partit
     if (partition->type == PART_TYPE_APP) {
       /* check if the partition holds a valid unencrypted app */
       esp_image_metadata_t data_ignored;
-      err = esp_image_load(ESP_IMAGE_VERIFY,
+      err = esp_image_verify(ESP_IMAGE_VERIFY,
                            &partition->pos,
                            &data_ignored);
       should_encrypt = (err == ESP_OK);

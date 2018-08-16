@@ -82,7 +82,18 @@
  * ISR happens follow set_alarm, so change the ALARM_OVERFLOW_VAL to resolve this problem.
  * Set it to 0xefffffffUL. The remain 0x10000000UL(about 3 second) is enough to handle ISR.
  */
-#define ALARM_OVERFLOW_VAL  0xefffffffUL
+#define DEFAULT_ALARM_OVERFLOW_VAL 0xefffffffUL
+
+/* Provision to set lower overflow value for unit testing. Lowering the
+ * overflow value helps check for race conditions which occur near overflow
+ * moment.
+ */
+#ifndef ESP_TIMER_DYNAMIC_OVERFLOW_VAL
+#define ALARM_OVERFLOW_VAL  DEFAULT_ALARM_OVERFLOW_VAL
+#else
+static uint32_t s_alarm_overflow_val = DEFAULT_ALARM_OVERFLOW_VAL;
+#define ALARM_OVERFLOW_VAL (s_alarm_overflow_val)
+#endif
 
 static const char* TAG = "esp_timer_impl";
 
@@ -190,7 +201,7 @@ uint64_t IRAM_ATTR esp_timer_impl_get_time()
         ticks_per_us = s_timer_ticks_per_us;
 
         /* Read them again and compare */
-        /* In this function, do not call timer_count_reload() when overflow is ture.
+        /* In this function, do not call timer_count_reload() when overflow is true.
          * Because there's remain count enough to allow FRC_TIMER_COUNT_REG grow
          */
         if (REG_READ(FRC_TIMER_COUNT_REG(1)) > timer_val &&
@@ -216,18 +227,6 @@ void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
     // Adjust current time if overflow has happened
     bool overflow = timer_overflow_happened();
     uint64_t cur_count = REG_READ(FRC_TIMER_COUNT_REG(1));
-    uint32_t offset = s_timer_ticks_per_us * 2; //remain 2us for more safe
-
-    //If overflow is going to happen in 1us, let's wait until it happens,
-    //else we think it will not happen before new alarm set.
-    //And we should wait current timer count less than ALARM_OVERFLOW_VAL,
-    //maybe equals to 0.
-    if (cur_count + offset >= ALARM_OVERFLOW_VAL) {
-        do {
-            overflow = timer_overflow_happened();
-            cur_count = REG_READ(FRC_TIMER_COUNT_REG(1));
-        } while(!overflow || cur_count == ALARM_OVERFLOW_VAL);
-    }
 
     if (overflow) {
         assert(time_after_timebase_us > s_timer_us_per_overflow);
@@ -237,13 +236,17 @@ void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
     // Calculate desired timer compare value (may exceed 2^32-1)
     uint64_t compare_val = time_after_timebase_us * s_timer_ticks_per_us;
     uint32_t alarm_reg_val = ALARM_OVERFLOW_VAL;
-    // Use calculated alarm value if it is less than 2^32-1
+    // Use calculated alarm value if it is less than ALARM_OVERFLOW_VAL.
+    // Note that if by the time we update ALARM_REG, COUNT_REG value is higher,
+    // interrupt will not happen for another ALARM_OVERFLOW_VAL timer ticks,
+    // so need to check if alarm value is too close in the future (e.g. <2 us away).
+    const uint32_t offset = s_timer_ticks_per_us * 2;
     if (compare_val < ALARM_OVERFLOW_VAL) {
-        // If we by the time we update ALARM_REG, COUNT_REG value is higher,
-        // interrupt will not happen for another 2^32 timer ticks, so need to
-        // check if alarm value is too close in the future (e.g. <1 us away).
         if (compare_val < cur_count + offset) {
             compare_val = cur_count + offset;
+            if (compare_val > ALARM_OVERFLOW_VAL) {
+                compare_val = ALARM_OVERFLOW_VAL;
+            }
         }
         alarm_reg_val = (uint32_t) compare_val;
     }
@@ -387,3 +390,17 @@ uint64_t IRAM_ATTR esp_timer_impl_get_min_period_us()
 {
     return 50;
 }
+
+#ifdef ESP_TIMER_DYNAMIC_OVERFLOW_VAL
+uint32_t esp_timer_impl_get_overflow_val()
+{
+    return s_alarm_overflow_val;
+}
+
+void esp_timer_impl_set_overflow_val(uint32_t overflow_val)
+{
+    s_alarm_overflow_val = overflow_val;
+    /* update alarm value */
+    esp_timer_impl_update_apb_freq(esp_clk_apb_freq() / 1000000);
+}
+#endif // ESP_TIMER_DYNAMIC_OVERFLOW_VAL

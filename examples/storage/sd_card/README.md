@@ -31,7 +31,10 @@ N/C           | WP          |         | optional, not used in the example
 
 This example doesn't utilize card detect (CD) and write protect (WP) signals from SD card slot.
 
-With the given pinout for SPI mode, same connections between the SD card and ESP32 can be used to test both SD and SPI modes, provided that the appropriate pullups are in place. In SPI mode, pins can be customized. See the initialization of ``sdspi_slot_config_t`` structure in the example code.
+With the given pinout for SPI mode, same connections between the SD card and ESP32 can be used to test both SD and SPI modes, provided that the appropriate pullups are in place. 
+See document `sd_pullup_requirements.rst` in `docs/en/api-reference/peripherals/` for more details about pullup support and compatiblities about modules and devkits. 
+
+In SPI mode, pins can be customized. See the initialization of ``sdspi_slot_config_t`` structure in the example code.
 
 ### Note about GPIO2
 

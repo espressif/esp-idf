@@ -10,7 +10,7 @@
     },
     "bootloader" :      { "offset" : "0x1000",
                           "file" : "bootloader/bootloader.bin" },
-    "app" :             { "offset" : "${CONFIG_APP_OFFSET}",
+    "app" :             { "offset" : "${APP_PARTITION_OFFSET}",
                           "file" : "${PROJECT_NAME}.bin" },
     "partition_table" : { "offset" : "${PARTITION_TABLE_OFFSET}",
                           "file" : "partition_table/partition-table.bin" }

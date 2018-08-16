@@ -51,7 +51,7 @@ struct syscall_stub_table
     int (*_rename_r)(struct _reent *r, const char*, const char*);
     clock_t (*_times_r)(struct _reent *r, struct tms *);
     int (*_gettimeofday_r) (struct _reent *r, struct timeval *, void *);
-    void (*_raise_r)(struct _reent *r);
+    void (*_raise_r)(struct _reent *r); /* function signature is incorrect in ROM */
     int (*_unlink_r)(struct _reent *r, const char*);
     int (*_link_r)(struct _reent *r, const char*, const char*);
     int (*_stat_r)(struct _reent *r, const char*, struct stat *);

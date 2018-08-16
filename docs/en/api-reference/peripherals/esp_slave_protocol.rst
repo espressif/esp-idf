@@ -35,12 +35,28 @@ FIFO (sending and receiving)
 
 0x090 - 0x1F7FF are reserved for FIFOs.
 
-.. note:: This includes the CMD52 and CMD53 (block mode or byte mode).
+The address of CMD53 is related to the length requested to read from/write to
+the slave in a single transfer:
+
+    *requested length = 0x1F800-address*
+
+The slave will respond with the length according to the length field in
+CMD53, with the data longer than *requested length* filled with 0 (sending)
+or discard (receiving).
+
+.. note:: This includes both the block and the byte mode of CMD53.
 
     The function number should be set to 1, OP Code should be set to 1 (for CMD53).
 
-    The slave will respond with the length according to the length field in CMD53 (1 of CMD52), with the data longer
-    than *requested length* filled with 0 (sending) or discard (receiving).
+    It is allowed to use CMD53 mode combination of block+byte to get higher
+    effeciency when accessing the FIFO by arbitrary length. E.g. The block
+    size is set to 512 by default, you can write/get 1031 bytes of data
+    to/from the FIFO by:
+
+    1. Send CMD53 in block mode, block count=2 (1024 bytes) to address
+       0x1F3F9=0x1F800-**1031**.
+    2. Then send CMD53 in byte mode, byte count=8 (or 7 if your controller
+       supports that) to address 0x1F7F9=0x1F800-**7**.
 
 Interrupts
 ----------

@@ -76,6 +76,7 @@ typedef enum {
     HTTP_METHOD_PUT,        /*!< HTTP PUT Method */
     HTTP_METHOD_PATCH,      /*!< HTTP PATCH Method */
     HTTP_METHOD_DELETE,     /*!< HTTP DELETE Method */
+    HTTP_METHOD_HEAD,       /*!< HTTP HEAD Method */
     HTTP_METHOD_MAX,
 } esp_http_client_method_t;
 
@@ -131,7 +132,7 @@ typedef struct {
  *     - `esp_http_client_handle_t`
  *     - NULL if any errors
  */
-esp_http_client_handle_t esp_http_client_init(esp_http_client_config_t *config);
+esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *config);
 
 /**
  * @brief      Invoke this function after `esp_http_client_init` and all the options calls are made, and will perform the
@@ -168,7 +169,7 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client);
 esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *url);
 
 /**
- * @brief      Set post data, this function must be called before `esp_http_client_finalize_open` or perform
+ * @brief      Set post data, this function must be called before `esp_http_client_perform`.
  *             Note: The data parameter passed to this function is a pointer and this function will not copy the data
  *
  * @param[in]  client  The esp_http_client handle
@@ -204,6 +205,22 @@ int esp_http_client_get_post_field(esp_http_client_handle_t client, char **data)
  *  - ESP_FAIL
  */
 esp_err_t esp_http_client_set_header(esp_http_client_handle_t client, const char *key, const char *value);
+
+/**
+ * @brief      Get http request header.
+ *             The value parameter will be set to NULL if there is no header which is same as
+ *             the key specified, otherwise the address of header value will be assigned to value parameter.
+ *             This function must be called after `esp_http_client_init`.
+ *
+ * @param[in]  client  The esp_http_client handle
+ * @param[in]  key     The header key
+ * @param[out] value   The header value
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_FAIL
+ */
+esp_err_t esp_http_client_get_header(esp_http_client_handle_t client, const char *key, char **value);
 
 /**
  * @brief      Set http request method
@@ -266,7 +283,7 @@ int esp_http_client_fetch_headers(esp_http_client_handle_t client);
 
 
 /**
- * @brief      Check response data is chunked, must call after `esp_http_client_finalize_open`
+ * @brief      Check response data is chunked
  *
  * @param[in]  client  The esp_http_client handle
  *
@@ -289,7 +306,7 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
 
 
 /**
- * @brief      Get http response status code, the valid value if this function invoke after `esp_http_client_perform` or `esp_http_client_finalize_open`
+ * @brief      Get http response status code, the valid value if this function invoke after `esp_http_client_perform`
  *
  * @param[in]  client  The esp_http_client handle
  *
@@ -299,7 +316,7 @@ int esp_http_client_get_status_code(esp_http_client_handle_t client);
 
 /**
  * @brief      Get http response content length (from header Content-Length)
- *             the valid value if this function invoke after `esp_http_client_perform` or `esp_http_client_finalize_open`
+ *             the valid value if this function invoke after `esp_http_client_perform`
  *
  * @param[in]  client  The esp_http_client handle
  *
@@ -334,6 +351,17 @@ esp_err_t esp_http_client_close(esp_http_client_handle_t client);
  */
 esp_err_t esp_http_client_cleanup(esp_http_client_handle_t client);
 
+/**
+ * @brief      Get transport type
+ *
+ * @param[in]  client   The esp_http_client handle
+ *
+ * @return
+ *     - HTTP_TRANSPORT_UNKNOWN
+ *     - HTTP_TRANSPORT_OVER_TCP
+ *     - HTTP_TRANSPORT_OVER_SSL
+ */
+esp_http_client_transport_t esp_http_client_get_transport_type(esp_http_client_handle_t client);
 
 
 #ifdef __cplusplus

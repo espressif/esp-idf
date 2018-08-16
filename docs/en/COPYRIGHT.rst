@@ -35,7 +35,7 @@ These third party libraries can be included into the application (firmware) prod
 
 * `libcoap`_ COAP library Copyright (c) 2010-2017 Olaf Bergmann and others, is licensed under 2-clause BSD license.
 
-* `libexpat`_ XML parsing library Copyright (c) 1998-2000 Thai Open Source Software Center Ltd and Clark Cooper, Copyright (c) 2001-2016 Expat maintainers, is licensed under MIT license.
+* `libexpat`_ XML parsing library Copyright (c) 1998-2000 Thai Open Source Software Center Ltd and Clark Cooper, Copyright (c) 2001-2017 Expat maintainers, is licensed under MIT license.
 
 * `FatFS`_ library, Copyright (C) 2017 ChaN, is licensed under :component_file:`a BSD-style license <fatfs/src/ff.h#L1-L18>`.
 
@@ -52,6 +52,8 @@ These third party libraries can be included into the application (firmware) prod
 * `SPIFFS`_ library, Copyright (c) 2013-2017 Peter Andersson, is licensed under MIT license.
 
 * :component_file:`SD/MMC driver <sdmmc/sdmmc_cmd.c>` is derived from `OpenBSD SD/MMC driver`_, Copyright (c) 2006 Uwe Stuehler, and is licensed under BSD license.
+
+* :component:`Asio <asio>`, Copyright (c) 2003-2018 Christopher M. Kohlhoff is licensed under the Boost Software License.
 
 Build Tools
 -----------
@@ -152,4 +154,4 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _OpenBSD SD/MMC driver: https://github.com/openbsd/src/blob/f303646/sys/dev/sdmmc/sdmmc.c
 .. _Mbed TLS: https://github.com/ARMmbed/mbedtls
 .. _spiffs: https://github.com/pellepl/spiffs
-
+.. _asio: https://github.com/chriskohlhoff/asio

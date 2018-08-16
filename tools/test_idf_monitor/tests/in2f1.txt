@@ -1,0 +1,54 @@
+[0;31mE (39) boot: Factory app partition is not bootable[0m
+[0;32mI (730) mdf_device_handle: [mdf_device_init_handle, 897]:******************* SYSTEM INFO *******************[0m
+[0;32mI (740) mdf_device_handle: [mdf_device_init_handle, 898]:idf version      : v3.1-dev-1188-g0c43ac8[0m
+[0;32mI (749) mdf_device_handle: [mdf_device_init_handle, 901]:device version   : light_004384-0.5.25.1-1[0m
+[0;32mI (759) mdf_device_handle: [mdf_device_init_handle, 902]:compile time     : May 26 2018 00:22:11[0m
+[0;32mI (769) mdf_device_handle: [mdf_device_init_handle, 903]:free heap        : 120948 B[0m
+[0;32mI (777) mdf_device_handle: [mdf_device_init_handle, 904]:CPU cores        : 2[0m
+[0;32mI (785) mdf_device_handle: [mdf_device_init_handle, 907]:function         : WiFi/BT/BLE[0m
+[0;32mI (793) mdf_device_handle: [mdf_device_init_handle, 908]:silicon revision : 0[0m
+[0;32mI (801) mdf_device_handle: [mdf_device_init_handle, 910]:flash            : 4 MB external[0m
+[0;32mI (810) mdf_device_handle: [mdf_device_init_handle, 911]:***************************************************[0m
+E (45488) mesh: [esp_mesh_push_to_nwk_queue,5360] null args
+[0;32mI (50495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 00:00:00:00:00:00, mac:30:ae:a4:00:43:84, layer: -1, free heap: 87712, compile time: May 26 2018 00:22:11[0m
+[0;32mI (55495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 88452, compile time: May 26 2018 00:22:11[0m
+[0;32mI (60495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 71792, compile time: May 26 2018 00:22:11[0m
+[0;32mI (65495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 71792, compile time: May 26 2018 00:22:11[0m
+[0;32mI (70495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 71680, compile time: May 26 2018 00:22:11[0m
+[0;32mI (75495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 71680, compile time: May 26 2018 00:22:11[0m
+[0;32mI (80495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 71680, compile time: May 26 2018 00:22:11[0m
+[0;32mI (85495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 71680, compile time: May 26 2018 00:22:11[0m
+[0;32mI (90495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 71680, compile time: May 26 2018 00:22:11[0m
+[0;32mI (95498) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 71468, compile time: May 26 2018 00:22:11[0m
+[0;32mI (100495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 71264, compile time: May 26 2018 00:22:11[0m
+[0;32mI (105495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 69120, compile time: May 26 2018 00:22:11[0m
+[0;32mI (110495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 64408, compile time: May 26 2018 00:22:11[0m
+[0;32mI (115495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 64408, compile time: May 26 2018 00:22:11[0m
+[0;32mI (120495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 64408, compile time: May 26 2018 00:22:11[0m
+[0;32mI (125495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 64408, compile time: May 26 2018 00:22:11[0m
+[0;32mI (130495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 64408, compile time: May 26 2018 00:22:11[0m
+[0;32mI (135495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 64408, compile time: May 26 2018 00:22:11[0m
+[0;32mI (140495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 62196, compile time: May 26 2018 00:22:11[0m
+[0;32mI (145495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 62196, compile time: May 26 2018 00:22:11[0m
+[0;32mI (150495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 62196, compile time: May 26 2018 00:22:11[0m
+[0;32mI (155495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 62196, compile time: May 26 2018 00:22:11[0m
+[0;32mI (160495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 62196, compile time: May 26 2018 00:22:11[0m
+[0;32mI (165495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 62196, compile time: May 26 2018 00:22:11[0m
+[0;32mI (170495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60008, compile time: May 26 2018 00:22:11[0m
+[0;32mI (175495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60008, compile time: May 26 2018 00:22:11[0m
+[0;32mI (180495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60008, compile time: May 26 2018 00:22:11[0m
+[0;32mI (185495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60008, compile time: May 26 2018 00:22:11[0m
+[0;32mI (190495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60008, compile time: May 26 2018 00:22:11[0m
+[0;32mI (195495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60008, compile time: May 26 2018 00:22:11[0m
+[0;32mI (200495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m
+[0;32mI (205495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m
+[0;32mI (210495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m
+[0;32mI (215495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m
+[0;32mI (220495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m
+[0;32mI (225495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m
+[0;32mI (230495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m
+[0;32mI (235495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m
+[0;32mI (240495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m
+[0;32mI (245495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m
+[0;32mI (250495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m
+[0;32mI (255495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m

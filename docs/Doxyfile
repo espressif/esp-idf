@@ -64,6 +64,7 @@ INPUT = \
     ## Peripherals - API Reference
     ##
     ../../components/driver/include/driver/adc.h \
+    ../../components/driver/include/driver/can.h \
     ../../components/driver/include/driver/dac.h \
     ../../components/driver/include/driver/gpio.h \
     ../../components/driver/include/driver/rtc_io.h \
@@ -91,9 +92,10 @@ INPUT = \
     ##
     ## ESP-TLS
     ../../components/esp-tls/esp_tls.h \
-    ## mDNS    
+    ## mDNS
     ../../components/mdns/include/mdns.h \
     ../../components/esp_http_client/include/esp_http_client.h \
+    ../../components/http_server/include/http_server.h \
     ##
     ## Storage - API Reference
     ##
@@ -108,7 +110,7 @@ INPUT = \
     ../../components/driver/include/driver/sdmmc_host.h \
     ../../components/driver/include/driver/sdmmc_types.h \
     ../../components/driver/include/driver/sdspi_host.h \
-    ## SDIO slave 
+    ## SDIO slave
     ../../components/driver/include/driver/sdio_slave.h \
     ## Non-Volatile Storage
     ../../components/nvs_flash/include/nvs.h \
@@ -142,6 +144,8 @@ INPUT = \
     ../../components/esp32/include/esp_ipc.h \
     ## Over The Air Updates (OTA)
     ../../components/app_update/include/esp_ota_ops.h \
+    ## ESP HTTPS OTA
+    ../../components/esp_https_ota/include/esp_https_ota.h \
     ## Sleep
     ## NOTE: for line below header_file.inc is not used
     ../../components/esp32/include/esp_sleep.h \
@@ -174,7 +178,9 @@ INPUT = \
     ../../components/freertos/include/freertos/semphr.h \
     ../../components/freertos/include/freertos/timers.h \
     ../../components/freertos/include/freertos/event_groups.h \
-    ../../components/freertos/include/freertos/ringbuf.h
+    ../../components/freertos/include/freertos/ringbuf.h \
+    ### Helper functions for error codes
+    ../../components/esp32/include/esp_err.h
 
 
 
@@ -196,7 +202,8 @@ PREDEFINED             = \
     configUSE_RECURSIVE_MUTEXES=1 \
     configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS=1 \
     configNUM_THREAD_LOCAL_STORAGE_POINTERS=1 \
-    configUSE_APPLICATION_TASK_TAG=1
+    configUSE_APPLICATION_TASK_TAG=1 \
+    configTASKLIST_INCLUDE_COREID=1
 
 ## Do not complain about not having dot
 ##

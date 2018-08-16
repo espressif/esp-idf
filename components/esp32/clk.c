@@ -88,7 +88,7 @@ void esp_clk_init(void)
             break;
         default:
             freq_mhz = 80;
-            /* no break */
+            /* falls through */
         case 80:
             freq = RTC_CPU_FREQ_80M;
             break;
@@ -128,7 +128,9 @@ static void select_rtc_slow_clk(rtc_slow_freq_t slow_clk)
 {
     uint32_t cal_val = 0;
     uint32_t wait = 0;
-    const uint32_t warning_timeout = 3 /* sec */ * 32768 /* Hz */ / (2 * SLOW_CLK_CAL_CYCLES);
+    uint32_t freq_hz = ((slow_clk == RTC_SLOW_FREQ_32K_XTAL) ? 32768 : 150000);
+    uint32_t warning_timeout = 3 /* sec */ * freq_hz /* Hz */ / (SLOW_CLK_CAL_CYCLES + 1);
+    warning_timeout = ((warning_timeout == 0) ? 3 /* sec */ : warning_timeout);
     bool changing_clock_to_150k = false;
     do {
         if (slow_clk == RTC_SLOW_FREQ_32K_XTAL) {
@@ -141,11 +143,14 @@ static void select_rtc_slow_clk(rtc_slow_freq_t slow_clk)
              */
             ESP_EARLY_LOGD(TAG, "waiting for 32k oscillator to start up");
             rtc_clk_32k_enable(true);
-            cal_val = rtc_clk_cal(RTC_CAL_32K_XTAL, SLOW_CLK_CAL_CYCLES);
-            if(cal_val == 0 || cal_val < 15000000L){
-                ESP_EARLY_LOGE(TAG, "RTC: Not found External 32 kHz XTAL. Switching to Internal 150 kHz RC chain");
-                slow_clk = RTC_SLOW_FREQ_RTC;
-                changing_clock_to_150k = true;
+            // When SLOW_CLK_CAL_CYCLES is set to 0, clock calibration will not be performed at startup.
+            if (SLOW_CLK_CAL_CYCLES > 0) {
+                cal_val = rtc_clk_cal(RTC_CAL_32K_XTAL, SLOW_CLK_CAL_CYCLES);
+                if (cal_val == 0 || cal_val < 15000000L) {
+                    ESP_EARLY_LOGE(TAG, "RTC: Not found External 32 kHz XTAL. Switching to Internal 150 kHz RC chain");
+                    slow_clk = RTC_SLOW_FREQ_RTC;
+                    changing_clock_to_150k = true;
+                }
             }
         }
         rtc_clk_slow_freq_set(slow_clk);

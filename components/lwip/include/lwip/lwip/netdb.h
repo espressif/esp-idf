@@ -125,12 +125,27 @@ int lwip_getaddrinfo(const char *nodename,
        struct addrinfo **res);
 
 #if LWIP_COMPAT_SOCKETS
+#if LWIP_COMPAT_SOCKET_ADDR == 1
+/* Some libraries have problems with inet_... being macros, so please use this define 
+    to declare normal functions */
+static inline int gethostbyname_r(const char *name, struct hostent *ret, char *buf, size_t buflen, struct hostent **result, int *h_errnop)
+{ return lwip_gethostbyname_r(name, ret, buf, buflen, result, h_errnop); }
+static inline struct hostent *gethostbyname(const char *name)
+{ return lwip_gethostbyname(name); }
+static inline void freeaddrinfo(struct addrinfo *ai)
+{ lwip_freeaddrinfo(ai); }
+static inline int getaddrinfo(const char *nodename, const char *servname, const struct addrinfo *hints, struct addrinfo **res)
+{ return lwip_getaddrinfo(nodename, servname, hints, res); }
+#else
+/* By default fall back to original inet_... macros */
+
 #define gethostbyname(name) lwip_gethostbyname(name)
 #define gethostbyname_r(name, ret, buf, buflen, result, h_errnop) \
        lwip_gethostbyname_r(name, ret, buf, buflen, result, h_errnop)
 #define freeaddrinfo(addrinfo) lwip_freeaddrinfo(addrinfo)
 #define getaddrinfo(nodname, servname, hints, res) \
        lwip_getaddrinfo(nodname, servname, hints, res)
+#endif /* LWIP_COMPAT_SOCKET_ADDR == 1 */
 #endif /* LWIP_COMPAT_SOCKETS */
 
 #ifdef __cplusplus

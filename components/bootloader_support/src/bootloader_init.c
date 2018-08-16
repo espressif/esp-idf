@@ -39,6 +39,7 @@
 #include "soc/timer_group_reg.h"
 #include "soc/gpio_reg.h"
 #include "soc/gpio_sig_map.h"
+#include "soc/rtc_wdt.h"
 
 #include "sdkconfig.h"
 #include "esp_image_format.h"
@@ -143,7 +144,7 @@ static esp_err_t bootloader_main()
     ets_set_appcpu_boot_addr(0);
 
     /* disable watch dog here */
-    REG_CLR_BIT( RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN );
+    rtc_wdt_disable();
     REG_CLR_BIT( TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN );
 
 #ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH

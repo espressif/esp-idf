@@ -46,7 +46,7 @@ static const tBTM_ESCO_PARAMS bta_hf_client_esco_params[] = {
         BTM_SCO_PKT_TYPES_MASK_NO_3_EV3 |
         BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 |
         BTM_SCO_PKT_TYPES_MASK_NO_3_EV5),
-        .retrans_effort = BTM_ESCO_RETRANS_POWER,
+        .retrans_effort = BTM_ESCO_RETRANS_OFF,
     },
     /* ESCO CVSD */
     {

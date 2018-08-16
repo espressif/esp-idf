@@ -111,6 +111,12 @@ Constant data may also be placed into DRAM, for example if it is used in an ISR 
 
 Needless to say, it is not advised to use ``printf`` and other output functions in ISRs. For debugging purposes, use ``ESP_EARLY_LOGx`` macros when logging from ISRs. Make sure that both ``TAG`` and format string are placed into ``DRAM`` in that case.
 
+The macro ``__NOINIT_ATTR`` can be used as attribute to place data into ``.noinit`` section. The values placed into this section will not be initialized at startup and keep its value after software restart.
+
+Example::
+
+    __NOINIT_ATTR uint32_t noinit_data;
+
 DROM (data stored in Flash)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -120,6 +126,12 @@ RTC slow memory
 ^^^^^^^^^^^^^^^
 
 Global and static variables used by code which runs from RTC memory (i.e. deep sleep stub code) must be placed into RTC slow memory. Please check detailed description in :doc:`deep sleep <deep-sleep-stub>` documentation.
+
+The attribute macro named ``RTC_NOINIT_ATTR`` can be used to place data into this type of memory. The values placed into this section keep their value after waking from deep sleep.
+
+Example::
+
+    RTC_NOINIT_ATTR uint32_t rtc_noinit_data;
 
 DMA Capable Requirement
 -----------------------

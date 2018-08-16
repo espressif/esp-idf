@@ -16,7 +16,7 @@
 #if (CONFIG_FREERTOS_QUEUE_REGISTRY_SIZE > 0)
 #define NO_OF_QUEUES_PER_CORE  ((int)((CONFIG_FREERTOS_QUEUE_REGISTRY_SIZE - 3)/portNUM_PROCESSORS))     //Save space for some preallocated tasks
 #define NO_OF_QUEUES_TOTAL    (NO_OF_QUEUES_PER_CORE * portNUM_PROCESSORS)
-#define QUEUE_NAME_MAX_LENGTH    10
+#define QUEUE_NAME_MAX_LENGTH    30
 
 static SemaphoreHandle_t start_sem[portNUM_PROCESSORS];
 static SemaphoreHandle_t done_sem = NULL;

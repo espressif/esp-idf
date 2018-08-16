@@ -1,0 +1,30 @@
+SOURCE_FILES := \
+	SpiFlash.cpp \
+	flash_mock.cpp \
+	flash_mock_util.c \
+	$(addprefix ../, \
+	partition.c \
+	flash_ops.c \
+	) \
+
+INCLUDE_DIRS := \
+	. \
+	../include \
+	../private_include \
+	$(addprefix stubs/, \
+	app_update/include \
+	driver/include \
+	esp32/include \
+	freertos/include \
+	log/include \
+	newlib/include \
+	sdmmc/include \
+	vfs/include \
+	) \
+	$(addprefix ../../../components/, \
+	soc/esp32/include \
+	esp32/include \
+	bootloader_support/include \
+	app_update/include \
+	spi_flash/include \
+	)

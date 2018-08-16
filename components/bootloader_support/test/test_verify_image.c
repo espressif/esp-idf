@@ -25,7 +25,7 @@ TEST_CASE("Verify bootloader image in flash", "[bootloader_support]")
         .size = ESP_PARTITION_TABLE_OFFSET - ESP_BOOTLOADER_OFFSET,
     };
     esp_image_metadata_t data = { 0 };
-    TEST_ASSERT_EQUAL_HEX(ESP_OK, esp_image_load(ESP_IMAGE_VERIFY, &fake_bootloader_partition, &data));
+    TEST_ASSERT_EQUAL_HEX(ESP_OK, esp_image_verify(ESP_IMAGE_VERIFY, &fake_bootloader_partition, &data));
     TEST_ASSERT_NOT_EQUAL(0, data.image_len);
 
     uint32_t bootloader_length = 0;
@@ -43,7 +43,7 @@ TEST_CASE("Verify unit test app image", "[bootloader_support]")
         .size = running->size,
     };
 
-    TEST_ASSERT_EQUAL_HEX(ESP_OK, esp_image_load(ESP_IMAGE_VERIFY, &running_pos, &data));
+    TEST_ASSERT_EQUAL_HEX(ESP_OK, esp_image_verify(ESP_IMAGE_VERIFY, &running_pos, &data));
     TEST_ASSERT_NOT_EQUAL(0, data.image_len);
     TEST_ASSERT_TRUE(data.image_len <= running->size);
 }

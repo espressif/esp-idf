@@ -98,3 +98,10 @@ set_source_files_properties(
     PROPERTIES COMPILE_FLAGS
     -Wno-unused-variable
     )
+
+# Temporary suppress "fallthrough" warnings until they are fixed in libsodium repo
+set_source_files_properties(
+    ${SRC}/crypto_shorthash/siphash24/ref/shorthash_siphashx24_ref.c
+    ${SRC}/crypto_shorthash/siphash24/ref/shorthash_siphash24_ref.c
+    PROPERTIES COMPILE_FLAGS
+    -Wno-implicit-fallthrough)

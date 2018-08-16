@@ -4,7 +4,7 @@ Heap Memory Debugging
 Overview
 --------
 
-ESP-IDF integrates tools for requesting `heap information`_, `detecting heap corruption <heap corruption detection>`_, and `tracing memory leaks <heap tracing>`_. These can help track down memory-related bugs.
+ESP-IDF integrates tools for requesting :ref:`heap information <heap-information>`, :ref:`detecting heap corruption <heap-corruption>`, and :ref:`tracing memory leaks <heap-tracing>`. These can help track down memory-related bugs.
 
 For general information about the heap memory allocator, see the :doc:`Heap Memory Allocation </api-reference/system/mem_alloc>` page.
 
@@ -62,7 +62,7 @@ Configuration
 
 Temporarily increasing the heap corruption detection level can give more detailed information about heap corruption errors.
 
-In ``make menuconfig``, under ``Component config`` there is a menu ``Heap memory debugging``. The setting :ref:`CONFIG_HEAP_CORRUPTION_DETECTION` can be set to one of three levels:
+In ``make menuconfig``, under ``Component config`` there is a menu ``Heap memory debugging``. The setting :envvar:`CONFIG_HEAP_CORRUPTION_DETECTION` can be set to one of three levels:
 
 Basic (no poisoning)
 ++++++++++++++++++++
@@ -136,11 +136,11 @@ Heap tracing can perform two functions:
 How To Diagnose Memory Leaks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you suspect a memory leak, the first step is to figure out which part of the program is leaking memory. Use the :cpp:func:`xPortGetFreeHeapSize`, :cpp:func:`heap_caps_get_free`, and related functions to track memory use over the life of the application. Try to narrow the leak down to a single function or sequence of functions where free memory always decreases and never recovers.
+If you suspect a memory leak, the first step is to figure out which part of the program is leaking memory. Use the :cpp:func:`xPortGetFreeHeapSize`, :cpp:func:`heap_caps_get_free_size`, or :ref:`related functions <heap-information>` to track memory use over the life of the application. Try to narrow the leak down to a single function or sequence of functions where free memory always decreases and never recovers.
 
 Once you've identified the code which you think is leaking:
 
-- Under ``make menuconfig``, navigate to ``Component settings`` -> ``Heap Memory Debugging`` and set :ref:`CONFIG_HEAP_TRACING`.
+- Under ``make menuconfig``, navigate to ``Component settings`` -> ``Heap Memory Debugging`` and set :envvar:`CONFIG_HEAP_TRACING`.
 - Call the function :cpp:func:`heap_trace_init_standalone` early in the program, to register a buffer which can be used to record the memory trace.
 - Call the function :cpp:func:`heap_trace_start` to begin recording all mallocs/frees in the system. Call this immediately before the piece of code which you suspect is leaking memory.
 - Call the function :cpp:func:`heap_trace_stop` to stop the trace once the suspect piece of code has finished executing.
@@ -211,13 +211,11 @@ A warning will be printed if the trace buffer was not large enough to hold all t
 Heap Tracing To Find Heap Corruption
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When a region in heap is corrupted, it may be from some other part of the program which allocated memory at a nearby address.
+Heap tracing can also be used to help track down heap corruption. When a region in heap is corrupted, it may be from some other part of the program which allocated memory at a nearby address.
 
-If you have some idea at what time the corruption occured, enabling heap tracing in ``HEAP_TRACE_ALL`` mode allows you to record all of the functions which allocated memory, and the addresses where they were corrupted.
+If you have some idea at what time the corruption occurred, enabling heap tracing in ``HEAP_TRACE_ALL`` mode allows you to record all of the functions which allocated memory, and the addresses of the allocations.
 
-Using heap tracing in this way is very similar to memory leak detection as described above. For memory which is allocated and not freed, the output 
-
-Heap tracing can also be used to help track down heap corruption. By using 
+Using heap tracing in this way is very similar to memory leak detection as described above. For memory which is allocated and not freed, the output is the same. However, records will also be shown for memory which has been freed.
 
 Performance Impact
 ^^^^^^^^^^^^^^^^^^
@@ -234,6 +232,7 @@ Not everything printed by :cpp:func:`heap_trace_dump` is necessarily a memory le
 - Any memory which is allocated after :cpp:func:`heap_trace_start` but then freed after :cpp:func:`heap_trace_stop` will appear in the leak dump.
 - Allocations may be made by other tasks in the system. Depending on the timing of these tasks, it's quite possible this memory is freed after :cpp:func:`heap_trace_stop` is called.
 - The first time a task uses stdio - for example, when it calls ``printf()`` - a lock (RTOS mutex semaphore) is allocated by the libc. This allocation lasts until the task is deleted.
+- Certain uses of ``printf()``, such as printing floating point numbers, will allocate some memory from the heap on demand. These allocations last until the task is deleted.
 - The Bluetooth, WiFi, and TCP/IP libraries will allocate heap memory buffers to handle incoming or outgoing data. These memory buffers are usually short lived, but some may be shown in the heap leak trace if the data was received/transmitted by the lower levels of the network while the leak trace was running.
 - TCP connections will continue to use some memory after they are closed, because of the ``TIME_WAIT`` state. After the ``TIME_WAIT`` period has completed, this memory will be freed.
 

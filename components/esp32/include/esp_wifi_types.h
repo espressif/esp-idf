@@ -97,8 +97,8 @@ typedef enum {
 
 typedef enum {
     WIFI_SECOND_CHAN_NONE = 0,  /**< the channel width is HT20 */
-    WIFI_SECOND_CHAN_ABOVE,     /**< the channel width is HT40 and the second channel is above the primary channel */
-    WIFI_SECOND_CHAN_BELOW,     /**< the channel width is HT40 and the second channel is below the primary channel */
+    WIFI_SECOND_CHAN_ABOVE,     /**< the channel width is HT40 and the secondary channel is above the primary channel */
+    WIFI_SECOND_CHAN_BELOW,     /**< the channel width is HT40 and the secondary channel is below the primary channel */
 } wifi_second_chan_t;
 
 typedef enum {
@@ -155,7 +155,7 @@ typedef struct {
     uint8_t bssid[6];                     /**< MAC address of AP */
     uint8_t ssid[33];                     /**< SSID of AP */
     uint8_t primary;                      /**< channel of AP */
-    wifi_second_chan_t second;            /**< second channel of AP */
+    wifi_second_chan_t second;            /**< secondary channel of AP */
     int8_t  rssi;                         /**< signal strength of AP */
     wifi_auth_mode_t authmode;            /**< authmode of AP */
     wifi_cipher_type_t pairwise_cipher;   /**< pairwise cipher of AP */
@@ -185,6 +185,8 @@ typedef struct {
     int8_t              rssi;             /**< The minimum rssi to accept in the fast scan mode */
     wifi_auth_mode_t    authmode;         /**< The weakest authmode to accept in the fast scan mode */
 }wifi_fast_scan_threshold_t;
+
+typedef wifi_fast_scan_threshold_t wifi_scan_threshold_t;    /**< wifi_fast_scan_threshold_t only used in fast scan mode once, now it enabled in all channel scan, the wifi_fast_scan_threshold_t will be remove in version 4.0 */
 
 typedef enum {
     WIFI_PS_NONE,        /**< No power save */
@@ -226,7 +228,7 @@ typedef struct {
     uint8_t channel;       /**< channel of target AP. Set to 1~13 to scan starting from the specified channel before connecting to AP. If the channel of AP is unknown, set it to 0.*/
     uint16_t listen_interval;   /**< Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set. Units: AP beacon intervals. Defaults to 3 if set to 0. */
     wifi_sort_method_t sort_method;    /**< sort the connect AP in the list by rssi or security mode */
-    wifi_fast_scan_threshold_t  threshold;     /**< When scan_method is set to WIFI_FAST_SCAN, only APs which have an auth mode that is more secure than the selected auth mode and a signal stronger than the minimum RSSI will be used. */
+    wifi_scan_threshold_t  threshold;     /**< When scan_method is set, only APs which have an auth mode that is more secure than the selected auth mode and a signal stronger than the minimum RSSI will be used. */
 } wifi_sta_config_t;
 
 /** @brief Configuration data for ESP32 AP or STA.
@@ -304,33 +306,33 @@ typedef struct {
 
 /** @brief Received packet radio metadata header, this is the common header at the beginning of all promiscuous mode RX callback buffers */
 typedef struct {
-    signed rssi:8;            /**< signal intensity of packet */
-    unsigned rate:5;          /**< data rate */
-    unsigned :1;              /**< reserve */
-    unsigned sig_mode:2;      /**< 0:is not 11n packet; 1:is 11n packet */
-    unsigned :16;             /**< reserve */
-    unsigned mcs:7;           /**< if is 11n packet, shows the modulation(range from 0 to 76) */
-    unsigned cwb:1;           /**< if is 11n packet, shows if is HT40 packet or not */
-    unsigned :16;             /**< reserve */
-    unsigned smoothing:1;     /**< reserve */
-    unsigned not_sounding:1;  /**< reserve */
-    unsigned :1;              /**< reserve */
-    unsigned aggregation:1;   /**< Aggregation */
-    unsigned stbc:2;          /**< STBC */
-    unsigned fec_coding:1;    /**< Flag is set for 11n packets which are LDPC */
-    unsigned sgi:1;           /**< SGI */
-    signed noise_floor:8;     /**< noise floor */
-    unsigned ampdu_cnt:8;     /**< ampdu cnt */
-    unsigned channel:4;       /**< which primary channel this packet in */
-    unsigned second_channel:4;/**< which second channel this packet in */
-    unsigned :8;              /**< reserve */
-    unsigned timestamp:32;    /**< timestamp, unit: microsecond */
-    unsigned :32;             /**< reserve */
-    unsigned :31;             /**< reserve */
-    unsigned ant:1;           /**< antenna number from which this packet is received */
-    unsigned sig_len:12;      /**< length of packet */
-    unsigned :12;             /**< reserve */
-    unsigned rx_state:8;      /**< rx state */
+    signed rssi:8;                /**< Received Signal Strength Indicator(RSSI) of packet. unit: dBm */
+    unsigned rate:5;              /**< PHY rate encoding of the packet. Only valid for non HT(11bg) packet */
+    unsigned :1;                  /**< reserve */
+    unsigned sig_mode:2;          /**< 0: non HT(11bg) packet; 1: HT(11n) packet; 3: VHT(11ac) packet */
+    unsigned :16;                 /**< reserve */
+    unsigned mcs:7;               /**< Modulation Coding Scheme. If is HT(11n) packet, shows the modulation, range from 0 to 76(MSC0 ~ MCS76) */
+    unsigned cwb:1;               /**< Channel Bandwidth of the packet. 0: 20MHz; 1: 40MHz */
+    unsigned :16;                 /**< reserve */
+    unsigned smoothing:1;         /**< reserve */
+    unsigned not_sounding:1;      /**< reserve */
+    unsigned :1;                  /**< reserve */
+    unsigned aggregation:1;       /**< Aggregation. 0: MPDU packet; 1: AMPDU packet */
+    unsigned stbc:2;              /**< Space Time Block Code(STBC). 0: non STBC packet; 1: STBC packet */
+    unsigned fec_coding:1;        /**< Flag is set for 11n packets which are LDPC */
+    unsigned sgi:1;               /**< Short Guide Interval(SGI). 0: Long GI; 1: Short GI */
+    signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: 0.25dBm*/
+    unsigned ampdu_cnt:8;         /**< ampdu cnt */
+    unsigned channel:4;           /**< primary channel on which this packet is received */
+    unsigned secondary_channel:4; /**< secondary channel on which this packet is received. 0: none; 1: above; 2: below */
+    unsigned :8;                  /**< reserve */
+    unsigned timestamp:32;        /**< timestamp. The local time when this packet is received. It is precise only if modem sleep or light sleep is not enabled. unit: microsecond */
+    unsigned :32;                 /**< reserve */
+    unsigned :31;                 /**< reserve */
+    unsigned ant:1;               /**< antenna number from which this packet is received. 0: WiFi antenna 0; 1: WiFi antenna 1 */
+    unsigned sig_len:12;          /**< length of packet including Frame Check Sequence(FCS) */
+    unsigned :12;                 /**< reserve */
+    unsigned rx_state:8;          /**< state of the packet. 0: no error; others: error numbers which are not public */
 } wifi_pkt_rx_ctrl_t;
 
 /** @brief Payload passed to 'buf' parameter of promiscuous mode RX callback.
@@ -387,10 +389,10 @@ typedef struct {
   *
   */
 typedef struct {
-    bool lltf_en;           /**< enable to receive legacy long training field(lltf) data */
-    bool htltf_en;          /**< enable to receive HT long training field(htltf) data */
-    bool stbcltf2_en;       /**< enable to receive space time block code long training field(stbcltf2) data */
-    bool manu_scale;        /**< manually scale the CSI data by left shifting or automatically scale the CSI data. If set true, please set the shift bits. false: automatically. true: manually */ 
+    bool lltf_en;           /**< enable to receive legacy long training field(lltf) data. Default enabled */
+    bool htltf_en;          /**< enable to receive HT long training field(htltf) data. Default enabled */
+    bool stbc_htltf2_en;    /**< enable to receive space time block code HT long training field(stbc-htltf2) data. Default enabled */
+    bool manu_scale;        /**< manually scale the CSI data by left shifting or automatically scale the CSI data. If set true, please set the shift bits. false: automatically. true: manually. Default false */ 
     uint8_t shift;          /**< manually left shift bits of the scale of the CSI data. The range of the left shift bits is 0~15 */
 } wifi_csi_config_t;
 
@@ -402,7 +404,7 @@ typedef struct {
     wifi_pkt_rx_ctrl_t rx_ctrl;/**< received packet radio metadata header of the CSI data */
     uint8_t mac[6];            /**< source MAC address of the CSI data */
     bool last_word_invalid;    /**< last four bytes of the CSI data is invalid or not */
-    uint8_t *buf;              /**< buffer of CSI data */
+    int8_t *buf;               /**< buffer of CSI data */
     uint16_t len;              /**< length of CSI data */
 } wifi_csi_info_t;
 
@@ -445,6 +447,47 @@ typedef struct {
     uint8_t         enabled_ant0: 4,      /**< Index (in antenna GPIO configuration) of enabled WIFI_ANT_MODE_ANT0 */
                     enabled_ant1: 4;      /**< Index (in antenna GPIO configuration) of enabled WIFI_ANT_MODE_ANT1 */
 } wifi_ant_config_t;
+
+/**
+  * @brief WiFi PHY rate encodings
+  *
+  */
+typedef enum {
+    WIFI_PHY_RATE_1M_L      = 0x00, /**< 1 Mbps with long preamble */
+    WIFI_PHY_RATE_2M_L      = 0x01, /**< 2 Mbps with long preamble */
+    WIFI_PHY_RATE_5M_L      = 0x02, /**< 5.5 Mbps with long preamble */
+    WIFI_PHY_RATE_11M_L     = 0x03, /**< 11 Mbps with long preamble */
+    WIFI_PHY_RATE_2M_S      = 0x05, /**< 2 Mbps with short preamble */
+    WIFI_PHY_RATE_5M_S      = 0x06, /**< 5.5 Mbps with short preamble */
+    WIFI_PHY_RATE_11M_S     = 0x07, /**< 11 Mbps with short preamble */
+    WIFI_PHY_RATE_48M       = 0x08, /**< 48 Mbps */
+    WIFI_PHY_RATE_24M       = 0x09, /**< 24 Mbps */
+    WIFI_PHY_RATE_12M       = 0x0A, /**< 12 Mbps */
+    WIFI_PHY_RATE_6M        = 0x0B, /**< 6 Mbps */
+    WIFI_PHY_RATE_54M       = 0x0C, /**< 54 Mbps */
+    WIFI_PHY_RATE_36M       = 0x0D, /**< 36 Mbps */
+    WIFI_PHY_RATE_18M       = 0x0E, /**< 18 Mbps */
+    WIFI_PHY_RATE_9M        = 0x0F, /**< 9 Mbps */
+    WIFI_PHY_RATE_MCS0_LGI  = 0x10, /**< MCS0 with long GI, 6.5 Mbps for 20MHz, 13.5 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS1_LGI  = 0x11, /**< MCS1 with long GI, 13 Mbps for 20MHz, 27 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS2_LGI  = 0x12, /**< MCS2 with long GI, 19.5 Mbps for 20MHz, 40.5 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS3_LGI  = 0x13, /**< MCS3 with long GI, 26 Mbps for 20MHz, 54 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS4_LGI  = 0x14, /**< MCS4 with long GI, 39 Mbps for 20MHz, 81 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS5_LGI  = 0x15, /**< MCS5 with long GI, 52 Mbps for 20MHz, 108 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS6_LGI  = 0x16, /**< MCS6 with long GI, 58.5 Mbps for 20MHz, 121.5 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS7_LGI  = 0x17, /**< MCS7 with long GI, 65 Mbps for 20MHz, 135 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS0_SGI  = 0x18, /**< MCS0 with short GI, 7.2 Mbps for 20MHz, 15 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS1_SGI  = 0x19, /**< MCS1 with short GI, 14.4 Mbps for 20MHz, 30 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS2_SGI  = 0x1A, /**< MCS2 with short GI, 21.7 Mbps for 20MHz, 45 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS3_SGI  = 0x1B, /**< MCS3 with short GI, 28.9 Mbps for 20MHz, 60 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS4_SGI  = 0x1C, /**< MCS4 with short GI, 43.3 Mbps for 20MHz, 90 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS5_SGI  = 0x1D, /**< MCS5 with short GI, 57.8 Mbps for 20MHz, 120 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS6_SGI  = 0x1E, /**< MCS6 with short GI, 65 Mbps for 20MHz, 135 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS7_SGI  = 0x1F, /**< MCS7 with short GI, 72.2 Mbps for 20MHz, 150 Mbps for 40MHz */
+    WIFI_PHY_RATE_LORA_250K = 0x29, /**< 250 Kbps */
+    WIFI_PHY_RATE_LORA_500K = 0x2A, /**< 500 Kbps */
+    WIFI_PHY_RATE_MAX,
+} wifi_phy_rate_t;
 
 #ifdef __cplusplus
 }

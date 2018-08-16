@@ -40,17 +40,17 @@ Windows 平台上的 Eclipse 配置
 项目属性 
 ----------
 
-* 新项目将出现在 “Project Explorer” 下。请右键选择该项目，并在菜单中选择顶层 “Properties”。
+* 新项目将出现在 “Project Explorer” 下。请右键选择该项目，并在菜单中选 “Properties”。
 
 * 点击 “C/C++ Build” 属性页。
 
-	* 取消选中 “Use default build command”，然后输入命令：``python${IDF_PATH}/tools/windows/eclipse_make.py``，开始自定义创建。
+	* 取消选中 “Use default build command”，然后输入命令开始自定义创建：``python ${IDF_PATH}/tools/windows/eclipse_make.py``
 
 * 点击 “C/C++ Build” 下的 “Environment” 属性页面。
 
 	* 选择 “Add...”，并在对应位置输入 ``BATCH_BUILD`` 和 ``1``。
 
-	* 再次点击 “Add...”，输入名称 ``IDF_PATH``，并填写 ESP-IDF 的完整安装路径。``IDF_PATH`` 目录路径应使用正斜杠，而非反斜线，即 ``C:/Users/user-name/Development/esp-idf``。
+	* 再次点击 “Add...”，输入名称 ``IDF_PATH``，并填写 ESP-IDF 的完整安装路径。``IDF_PATH`` 目录路径应使用正斜杠，而非反斜线，例如 ``C:/Users/user-name/Development/esp-idf``。
 
 	* 选择 PATH 环境变量，删除默认值，并将其替换为 ``C:\msys32\usr\bin;C:\msys32\mingw32\bin;C:\msys32\opt\xtensa-esp32-elf\bin`` （如果您已经将 msys32 安装到其他目​​录，这里请自行调整）。
 
@@ -58,11 +58,18 @@ Windows 平台上的 Eclipse 配置
 * 点击 “C/C++ General” -> “Preprocessor Include Paths, Macros, etc.” 属性页。
 
 	* 点击 “Providers” 选项卡。
-
-		* 从 “Providers” 列表中选择 “CDT GCC Built-in Compiler Settings Cygwin”。在 “Command to get compiler specs” 输入框中，用 ``xtensa-esp32-elf-gcc`` 替换行首的 ``${COMMAND}``，最终完整的 ``Command to get compiler specs`` 应为 ``xtensa-esp32-elf-gcc ${FLAGS} -E -P -v -dD "${INPUTS}"``。
+	
+		* 从 “Providers” 列表中选择 “CDT Cross GCC Built-in Compiler Settings”，将 “Command to get compiler specs” 修改为 ``xtensa-esp32-elf-gcc ${FLAGS} -E -P -v -dD "${INPUTS}"``
 		
-		* 从 “Providers” 列表中选择 “CDT GCC Build Output Parser”，然后在 Compiler 命令模式的起始位置输入 ``xtensa-esp32-elf-``，并用括号把剩余部分扩起来。最终的完整 Compiler 命令模式应为 ``xtensa-esp32-elf-((g?cc)|([gc]\+\+)|(clang))``。
+		* 从 “Providers” 列表中选择 “CDT GCC Build Output Parser”，将 “Compiler command pattern” 修改为 ``xtensa-esp32-elf-(gcc|g\+\+|c\+\+|cc|cpp|clang)``
 
+点击 “C/C++ General" -> "Indexer” 属性页。
+
+    * 选择 “Enable project specific settings” 以启用本页上的其他设置。
+
+.. note::
+
+    取消选中 “Allow heuristic resolution of includes”。因为启用此选项时，有时会导致 Eclipse 无法找到正确的头文件目录。
 
 在 Eclipse IDE 中创建项目
 ---------------------------

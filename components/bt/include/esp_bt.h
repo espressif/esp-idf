@@ -46,7 +46,7 @@ typedef struct {
 /* While scanning, if the free memory value in controller is less than SCAN_SEND_ADV_RESERVED_SIZE, 
 the adv packet will be discarded until the memory is restored. */
 #define SCAN_SEND_ADV_RESERVED_SIZE        1000
-/* open controller log debug when adv lost */
+/* enable controller log debug when adv lost */
 #define CONTROLLER_ADV_LOST_DEBUG_BIT      (0<<0)
 
 #ifdef CONFIG_BT_HCI_UART_NO
@@ -132,7 +132,7 @@ typedef enum {
  *        ESP_BLE_PWR_TYPE_SCAN : for scan.
  *        ESP_BLE_PWR_TYPE_DEFAULT : if each connection's TX power is not set, it will use this default value.
  *                                   if neither in scan mode nor in adv mode, it will use this default value.
- *        If none of power type is set, system will use ESP_PWR_LVL_P1 as default for ADV/SCAN/CONN0-9.
+ *        If none of power type is set, system will use ESP_PWR_LVL_P3 as default for ADV/SCAN/CONN0-9.
  */
 typedef enum {
     ESP_BLE_PWR_TYPE_CONN_HDL0  = 0,            /*!< For connection handle 0 */
@@ -154,14 +154,22 @@ typedef enum {
  * @brief Bluetooth TX power level(index), it's just a index corresponding to power(dbm).
  */
 typedef enum {
-    ESP_PWR_LVL_N14 = 0,            /*!< Corresponding to -14dbm */
-    ESP_PWR_LVL_N11 = 1,            /*!< Corresponding to -11dbm */
-    ESP_PWR_LVL_N8  = 2,            /*!< Corresponding to  -8dbm */
-    ESP_PWR_LVL_N5  = 3,            /*!< Corresponding to  -5dbm */
-    ESP_PWR_LVL_N2  = 4,            /*!< Corresponding to  -2dbm */
-    ESP_PWR_LVL_P1  = 5,            /*!< Corresponding to   1dbm */
-    ESP_PWR_LVL_P4  = 6,            /*!< Corresponding to   4dbm */
-    ESP_PWR_LVL_P7  = 7,            /*!< Corresponding to   7dbm */
+    ESP_PWR_LVL_N12 = 0,                /*!< Corresponding to -12dbm */
+    ESP_PWR_LVL_N9  = 1,                /*!< Corresponding to  -9dbm */
+    ESP_PWR_LVL_N6  = 2,                /*!< Corresponding to  -6dbm */
+    ESP_PWR_LVL_N3  = 3,                /*!< Corresponding to  -3dbm */
+    ESP_PWR_LVL_N0  = 4,                /*!< Corresponding to   0dbm */
+    ESP_PWR_LVL_P3  = 5,                /*!< Corresponding to  +3dbm */
+    ESP_PWR_LVL_P6  = 6,                /*!< Corresponding to  +6dbm */
+    ESP_PWR_LVL_P9  = 7,                /*!< Corresponding to  +9dbm */
+    ESP_PWR_LVL_N14 = ESP_PWR_LVL_N12,  /*!< Backward compatibility! Setting to -14dbm will actually result to -12dbm */
+    ESP_PWR_LVL_N11 = ESP_PWR_LVL_N9,   /*!< Backward compatibility! Setting to -11dbm will actually result to  -9dbm */
+    ESP_PWR_LVL_N8  = ESP_PWR_LVL_N6,   /*!< Backward compatibility! Setting to  -8dbm will actually result to  -6dbm */
+    ESP_PWR_LVL_N5  = ESP_PWR_LVL_N3,   /*!< Backward compatibility! Setting to  -5dbm will actually result to  -3dbm */
+    ESP_PWR_LVL_N2  = ESP_PWR_LVL_N0,   /*!< Backward compatibility! Setting to  -2dbm will actually result to   0dbm */
+    ESP_PWR_LVL_P1  = ESP_PWR_LVL_P3,   /*!< Backward compatibility! Setting to  +1dbm will actually result to  +3dbm */
+    ESP_PWR_LVL_P4  = ESP_PWR_LVL_P6,   /*!< Backward compatibility! Setting to  +4dbm will actually result to  +6dbm */
+    ESP_PWR_LVL_P7  = ESP_PWR_LVL_P9,   /*!< Backward compatibility! Setting to  +7dbm will actually result to  +9dbm */
 } esp_power_level_t;
 
 /**
@@ -198,7 +206,7 @@ esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type);
  *         For example, if you want BR/EDR use the new TX power to do inquire, you should call
  *         this function before inquire. Another word, If call this function when BR/EDR is in inquire(ING),
  *         please do inquire again after call this function.
- *         Default minimum power level is ESP_PWR_LVL_N2, and maximum power level is ESP_PWR_LVL_P1.
+ *         Default minimum power level is ESP_PWR_LVL_N0, and maximum power level is ESP_PWR_LVL_P3.
  * @param  min_power_level: The minimum power level
  * @param  max_power_level: The maximum power level
  * @return              ESP_OK - success, other - failed
@@ -290,32 +298,61 @@ void esp_vhci_host_send_packet(uint8_t *data, uint16_t len);
 void esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callback);
 
 /** @brief esp_bt_controller_mem_release
- * release the memory by mode, if never use the bluetooth mode
- * it can release the .bbs, .data and other section to heap.
- * The total size is about 70k bytes.
+ * release the controller memory as per the mode
+ *
+ * This function releases the BSS, data and other sections of the controller to heap. The total size is about 70k bytes.
  *
  * esp_bt_controller_mem_release(mode) should be called only before esp_bt_controller_init()
  * or after esp_bt_controller_deinit().
  *
- * Note that once BT controller memory is released, the process cannot be reversed. It means you can not use the bluetooth
+ * Note that once BT controller memory is released, the process cannot be reversed. It means you cannot use the bluetooth
  * mode which you have released by this function.
  *
  * If your firmware will later upgrade the Bluetooth controller mode (BLE -> BT Classic or disabled -> enabled)
  * then do not call this function.
  *
  * If the app calls esp_bt_controller_enable(ESP_BT_MODE_BLE) to use BLE only then it is safe to call
- * esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT) at initialisation time to free unused BT Classic memory.
+ * esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT) at initialization time to free unused BT Classic memory.
  *
- * If user never use bluetooth controller, could call esp_bt_controller_mem_release(ESP_BT_MODE_BTDM)
- * before esp_bt_controller_init or after esp_bt_controller_deinit.
- *
- * For example, user only use bluetooth to config SSID and PASSWORD of WIFI, after config, will never use bluetooth.
- * Then, could call esp_bt_controller_mem_release(ESP_BT_MODE_BTDM) after esp_bt_controller_deinit.
+ * If the mode is ESP_BT_MODE_BTDM, then it may be useful to call API esp_bt_mem_release(ESP_BT_MODE_BTDM) instead,
+ * which internally calls esp_bt_controller_mem_release(ESP_BT_MODE_BTDM) and additionally releases the BSS and data
+ * consumed by the BT/BLE host stack to heap. For more details about usage please refer to the documentation of
+ * esp_bt_mem_release() function
  *
  * @param mode : the mode want to release memory
  * @return ESP_OK - success, other - failed
  */
 esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode);
+
+/** @brief esp_bt_mem_release
+ * release controller memory and BSS and data section of the BT/BLE host stack as per the mode
+ *
+ * This function first releases controller memory by internally calling esp_bt_controller_mem_release().
+ * Additionally, if the mode is set to ESP_BT_MODE_BTDM, it also releases the BSS and data consumed by the BT/BLE host stack to heap
+ *
+ * Note that once BT memory is released, the process cannot be reversed. It means you cannot use the bluetooth
+ * mode which you have released by this function.
+ *
+ * If your firmware will later upgrade the Bluetooth controller mode (BLE -> BT Classic or disabled -> enabled)
+ * then do not call this function.
+ *
+ * If you never intend to use bluetooth in a current boot-up cycle, you can call esp_bt_mem_release(ESP_BT_MODE_BTDM)
+ * before esp_bt_controller_init or after esp_bt_controller_deinit.
+ *
+ * For example, if a user only uses bluetooth for setting the WiFi configuration, and does not use bluetooth in the rest of the product operation".
+ * In such cases, after receiving the WiFi configuration, you can disable/deinit bluetooth and release its memory.
+ * Below is the sequence of APIs to be called for such scenarios:
+ *
+ *      esp_bluedroid_disable();
+ *      esp_bluedroid_deinit();
+ *      esp_bt_controller_disable();
+ *      esp_bt_controller_deinit();
+ *      esp_bt_mem_release(ESP_BT_MODE_BTDM);
+ *
+ * @param mode : the mode whose memory is to be released
+ * @return ESP_OK - success, other - failed
+ */
+esp_err_t esp_bt_mem_release(esp_bt_mode_t mode);
 
 /**
  * @brief enable bluetooth to enter modem sleep

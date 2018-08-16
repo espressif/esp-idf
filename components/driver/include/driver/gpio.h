@@ -24,6 +24,7 @@
 #include "rom/gpio.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
+#include "soc/gpio_periph.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -121,10 +122,8 @@ extern "C" {
 #define GPIO_MODE_DEF_OD              (BIT2)
 
 
-#define GPIO_PIN_COUNT              40
 /** @endcond */
 
-extern const uint32_t GPIO_PIN_MUX_REG[GPIO_PIN_COUNT];
 #define GPIO_IS_VALID_GPIO(gpio_num)      ((gpio_num < GPIO_PIN_COUNT && GPIO_PIN_MUX_REG[gpio_num] != 0))   /*!< Check whether it is a valid GPIO number */
 #define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num)      ((GPIO_IS_VALID_GPIO(gpio_num)) && (gpio_num < 34))         /*!< Check whether it can be a valid GPIO number of output mode */
 
@@ -248,6 +247,18 @@ typedef intr_handle_t gpio_isr_handle_t;
  */
 esp_err_t gpio_config(const gpio_config_t *pGPIOConfig);
 
+/**
+ * @brief Reset an gpio to default state (select gpio function, enable pullup and disable input and output).
+ *
+ * @param gpio_num GPIO number.
+ *
+ * @note This function also configures the IOMUX for this pin to the GPIO
+ *       function, and disconnects any other peripheral output configured via GPIO
+ *       Matrix.
+ *
+ * @return Always return ESP_OK.
+ */
+esp_err_t gpio_reset_pin(gpio_num_t gpio_num);
 
 /**
  * @brief  GPIO set interrupt trigger type

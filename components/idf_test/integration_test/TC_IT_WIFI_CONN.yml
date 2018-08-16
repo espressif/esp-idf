@@ -810,12 +810,6 @@ test cases:
     - - R PC_COM NC ERROR C +WIFICONN:OK
   - - SSC SSC2 sta -C -s <random_string> -p <random_string>
     - - R SSC2 RE JAP:DISCONNECTED,\d+,5
-  - - WIFI <pc_wifi_nic> DISCONN
-    - - P PC_COM C OK
-      - R SSC2 C +JAP:CONNECTED
-  - - SSC SSC1 ap -S -s <random_string> -p <random_string> -t 3 -m 1
-    - - P SSC1 C +SAP:OK
-      - P SSC2 RE JAP:DISCONNECTED,\d+,4
   execution time: 0.0
   expected result: |-
     1. succeed
@@ -823,8 +817,6 @@ test cases:
     3. succeed
     4. succeed
     5. disconnect event REASON_ASSOC_TOOMANY
-    6. succeed, target2 connect succeed
-    7. disconnect event REASON_ASSOC_EXPIRE
   initial condition: T2_1
   level: Integration
   module: WIFI MAC
@@ -834,11 +826,8 @@ test cases:
     3. target2 disconnect
     4. PC WIFI NIC connect to target1
     5. target2 connect to target1 with correct password
-    6. PC WIFI NIC disconnect
-    7. reconfig softap
   sub module: WIFI Connect
-  summary: test wifi disconnect reason REASON_ASSOC_TOOMANY, REASON_HANDSHAKE_TIMEOUT,
-    REASON_ASSOC_EXPIRE
+  summary: test wifi disconnect reason REASON_ASSOC_TOOMANY, REASON_HANDSHAKE_TIMEOUT
   test environment: SSC_T2_1
   test point 1: basic function
   test point 2: wifi disconnect reason test

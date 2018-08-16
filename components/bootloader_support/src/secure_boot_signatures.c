@@ -84,10 +84,13 @@ esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block
         return ESP_FAIL;
     }
 
+    ESP_LOGD(TAG, "Verifying secure boot signature");
+
     is_valid = uECC_verify(signature_verification_key_start,
                                 image_digest,
                                 DIGEST_LEN,
                                 sig_block->signature,
                                 uECC_secp256r1());
+    ESP_LOGD(TAG, "Verification result %d", is_valid);
     return is_valid ? ESP_OK : ESP_ERR_IMAGE_INVALID;
 }

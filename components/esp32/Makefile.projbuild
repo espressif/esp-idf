@@ -4,8 +4,8 @@ PHY_INIT_DATA_OBJ = $(BUILD_DIR_BASE)/phy_init_data.o
 PHY_INIT_DATA_BIN = $(BUILD_DIR_BASE)/phy_init_data.bin
 
 # Command to flash PHY init data partition
-PHY_INIT_DATA_FLASH_CMD = $(ESPTOOLPY_SERIAL) write_flash $(CONFIG_PHY_DATA_OFFSET) $(PHY_INIT_DATA_BIN)
-ESPTOOL_ALL_FLASH_ARGS += $(CONFIG_PHY_DATA_OFFSET) $(PHY_INIT_DATA_BIN)
+PHY_INIT_DATA_FLASH_CMD = $(ESPTOOLPY_SERIAL) write_flash $(PHY_DATA_OFFSET) $(PHY_INIT_DATA_BIN)
+ESPTOOL_ALL_FLASH_ARGS += $(PHY_DATA_OFFSET) $(PHY_INIT_DATA_BIN)
 
 ESP32_COMPONENT_PATH := $(COMPONENT_PATH)
 
@@ -38,3 +38,7 @@ CFLAGS+=-mfix-esp32-psram-cache-issue
 CXXFLAGS+=-mfix-esp32-psram-cache-issue
 endif
 
+# Enable dynamic esp_timer overflow value if building unit tests 
+ifneq ("$(TEST_COMPONENTS_LIST)","")
+CPPFLAGS += -DESP_TIMER_DYNAMIC_OVERFLOW_VAL
+endif

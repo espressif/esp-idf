@@ -41,3 +41,11 @@
 [submodule "components/mbedtls/mbedtls"]
 	path = components/mbedtls/mbedtls
 	url = https://github.com/espressif/mbedtls.git
+
+[submodule "components/asio/asio"]
+	path = components/asio/asio
+	url = https://github.com/espressif/asio.git
+
+[submodule "components/expat/expat"]
+	path = components/expat/expat
+	url = https://github.com/libexpat/libexpat.git

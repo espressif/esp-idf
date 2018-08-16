@@ -95,6 +95,12 @@ static void start_up(void)
         response, &acl_data_size_classic, &acl_buffer_count_classic,
         &sco_data_size, &sco_buffer_count);
 
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    // Enable controller to host flow control
+    response = AWAIT_COMMAND(packet_factory->make_set_c2h_flow_control(HCI_HOST_FLOW_CTRL_ACL_ON));
+    packet_parser->parse_generic_command_complete(response);
+#endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
+
     // Tell the controller about our buffer sizes and buffer counts next
     // TODO(zachoverflow): factor this out. eww l2cap contamination. And why just a hardcoded 10?
     response = AWAIT_COMMAND(
@@ -251,6 +257,9 @@ static void start_up(void)
 
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
     response = AWAIT_COMMAND(packet_factory->make_write_sync_flow_control_enable(1));
+    packet_parser->parse_generic_command_complete(response);
+
+    response = AWAIT_COMMAND(packet_factory->make_write_default_erroneous_data_report(1));
     packet_parser->parse_generic_command_complete(response);
 #endif
     readable = true;

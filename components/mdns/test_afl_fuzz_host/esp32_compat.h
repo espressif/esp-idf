@@ -34,6 +34,7 @@
 #include <signal.h>
 #include <sys/time.h>
 
+#define CONFIG_MDNS_MAX_SERVICES    25
 
 #define ERR_OK                      0
 #define ESP_OK                      0

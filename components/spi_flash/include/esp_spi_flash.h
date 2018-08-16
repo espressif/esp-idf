@@ -185,8 +185,8 @@ typedef uint32_t spi_flash_mmap_handle_t;
  * @param size  Size of region to be mapped. This size will be rounded
  *              up to a 64kB boundary
  * @param memory  Address space where the region should be mapped (data or instruction)
- * @param out_ptr  Output, pointer to the mapped memory region
- * @param out_handle  Output, handle which should be used for spi_flash_munmap call
+ * @param[out] out_ptr  Output, pointer to the mapped memory region
+ * @param[out] out_handle  Output, handle which should be used for spi_flash_munmap call
  *
  * @return  ESP_OK on success, ESP_ERR_NO_MEM if pages can not be allocated
  */
@@ -204,14 +204,19 @@ esp_err_t spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_memory_t m
  * @param pages An array of numbers indicating the 64kB pages in flash to be mapped
  *              contiguously into memory. These indicate the indexes of the 64kB pages,
  *              not the byte-size addresses as used in other functions.
- * @param pagecount  Number of entries in the pages array
+ *              Array must be located in internal memory.
+ * @param page_count  Number of entries in the pages array
  * @param memory  Address space where the region should be mapped (instruction or data)
- * @param out_ptr  Output, pointer to the mapped memory region
- * @param out_handle  Output, handle which should be used for spi_flash_munmap call
+ * @param[out] out_ptr  Output, pointer to the mapped memory region
+ * @param[out] out_handle  Output, handle which should be used for spi_flash_munmap call
  *
- * @return  ESP_OK on success, ESP_ERR_NO_MEM if pages can not be allocated
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NO_MEM if pages can not be allocated
+ *      - ESP_ERR_INVALID_ARG if pagecount is zero or pages array is not in
+ *        internal memory
  */
-esp_err_t spi_flash_mmap_pages(int *pages, size_t pagecount, spi_flash_mmap_memory_t memory,
+esp_err_t spi_flash_mmap_pages(const int *pages, size_t page_count, spi_flash_mmap_memory_t memory,
                          const void** out_ptr, spi_flash_mmap_handle_t* out_handle);
 
 

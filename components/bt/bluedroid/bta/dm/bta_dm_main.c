@@ -74,12 +74,15 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     /* simple pairing events */
 #if (SMP_INCLUDED == TRUE)
     bta_dm_confirm,                         /* 18 BTA_DM_API_CONFIRM_EVT */
+#if (BT_SSP_INCLUDED == TRUE)
+    bta_dm_key_req,                         /* 19 BTA_DM_API_KEY_REQ_EVT */
+#endif ///BT_SSP_INCLUDED == TRUE
     bta_dm_set_encryption,                  /* BTA_DM_API_SET_ENCRYPTION_EVT */
 #endif  ///SMP_INCLUDED == TRUE
 #if (BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
-    bta_dm_loc_oob,                         /* 20 BTA_DM_API_LOC_OOB_EVT */
-    bta_dm_ci_io_req_act,                   /* 21 BTA_DM_CI_IO_REQ_EVT */
-    bta_dm_ci_rmt_oob_act,                  /* 22 BTA_DM_CI_RMT_OOB_EVT */
+    bta_dm_loc_oob,                         /* 21 BTA_DM_API_LOC_OOB_EVT */
+    bta_dm_ci_io_req_act,                   /* 22 BTA_DM_CI_IO_REQ_EVT */
+    bta_dm_ci_rmt_oob_act,                  /* 23 BTA_DM_CI_RMT_OOB_EVT */
 #endif /* BTM_OOB_INCLUDED */
 
 
@@ -119,7 +122,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
        data to HCI */
     bta_dm_ble_set_adv_config_raw,          /* BTA_DM_API_BLE_SET_ADV_CONFIG_RAW_EVT */
     bta_dm_ble_set_scan_rsp,                /* BTA_DM_API_BLE_SET_SCAN_RSP_EVT */
-    /* New function to allow set raw scan 
+    /* New function to allow set raw scan
        response data to HCI */
     bta_dm_ble_set_scan_rsp_raw,            /* BTA_DM_API_BLE_SET_SCAN_RSP_RAW_EVT */
     bta_dm_ble_broadcast,                   /* BTA_DM_API_BLE_BROADCAST_EVT */

@@ -60,6 +60,8 @@ See :doc:`SD/SDIO/MMC Driver <../storage/sdmmc>` for the higher level driver whi
 
 See :doc:`SD SPI Host Driver <sdspi_host>` for a similar driver which uses SPI controller and is limited to SPI mode of SD protocol.
 
+See :doc:`sd_pullup_requirements` for pullup support and compatiblities about modules and devkits.
+
 API Reference
 -------------
 

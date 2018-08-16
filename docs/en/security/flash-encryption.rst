@@ -5,7 +5,8 @@ Flash Encryption is a feature for encrypting the contents of the ESP32's attache
 
 Flash Encryption is separate from the :doc:`Secure Boot <secure-boot>` feature, and you can use flash encryption without enabling secure boot. However we recommend using both features together for a secure environment.
 
-**IMPORTANT: Enabling flash encryption limits your options for further updates of your ESP32. Make sure to read this document (including :ref:`flash-encryption-limitations`) and understand the implications of enabling flash encryption.**
+.. important::
+  Enabling flash encryption limits your options for further updates of your ESP32. Make sure to read this document (including :ref:`flash-encryption-limitations`) and understand the implications of enabling flash encryption.
 
 Background
 ----------
@@ -22,7 +23,7 @@ Background
   - Secure boot bootloader digest (if secure boot is enabled)
   - Partition Table
   - All "app" type partitions
-  - Any partition marked with the "encrypt" flag in the partition table
+  - Any partition marked with the "encrypted" flag in the partition table
 
 	It may be desirable for some data partitions to remain unencrypted for ease of access, or to use flash-friendly update algorithms that are ineffective if the data is encrypted. "NVS" partitions for non-volatile storage cannot be encrypted.
 
@@ -41,9 +42,10 @@ Flash Encryption Initialisation
 
 This is the default (and recommended) flash encryption initialisation process. It is possible to customise this process for development or other purposes, see :ref:`flash-encryption-advanced-features` for details.
 
-**IMPORTANT: Once flash encryption is enabled on first boot, the hardware allows a maximum of 3 subsequent flash updates via serial re-flashing.** A special procedure (documented in :ref:`updating-encrypted-flash-serial`) must be followed to perform these updates.
+.. important::
+    Once flash encryption is enabled on first boot, the hardware allows a maximum of 3 subsequent flash updates via serial re-flashing. A special procedure (documented in :ref:`updating-encrypted-flash-serial`) must be followed to perform these updates.
 
-- If secure boot is enabled, no physical re-flashes are possible.
+- If secure boot is enabled, physical reflashing with plaintext data requires a "Reflashable" secure boot digest (see :ref:`flash-encryption-and-secure-boot`).
 - OTA updates can be used to update flash content without counting towards this limit.
 - When enabling flash encryption in development, use a `pregenerated flash encryption key` to allow physically re-flashing an unlimited number of times with pre-encrypted data.**
 
@@ -55,11 +57,14 @@ Process to enable flash encryption:
 
 - Build and flash the bootloader, partition table and factory app image as normal. These partitions are initially written to the flash unencrypted.
 
+.. note:: The bootloader app binary ``bootloader.bin`` may become too large when both secure boot and flash encryption are enabled. See :ref:`secure-boot-bootloader-size`.
+
 - On first boot, the bootloader sees :ref:`FLASH_CRYPT_CNT` is set to 0 (factory default) so it generates a flash encryption key using the hardware random number generator. This key is stored in efuse. The key is read and write protected against further software access.
 
 - All of the encrypted partitions are then encrypted in-place by the bootloader. Encrypting in-place can take some time (up to a minute for large partitions.)
 
-**IMPORTANT: Do not interrupt power to the ESP32 while the first boot encryption pass is running. If power is interrupted, the flash contents will be corrupted and require flashing with unencrypted data again. A  reflash like this will not count towards the flashing limit.**
+.. important::
+   Do not interrupt power to the ESP32 while the first boot encryption pass is running. If power is interrupted, the flash contents will be corrupted and require flashing with unencrypted data again. A reflash like this will not count towards the flashing limit.
 
 - Once flashing is complete. efuses are blown (by default) to disable encrypted flash access while the UART bootloader is running. See :ref:`uart-bootloader-encryption` for advanced details.
 
@@ -88,7 +93,8 @@ Whenever the :ref:`FLASH_CRYPT_CNT` is set to a value with an odd number of bits
 - Any data accessed via :func:`esp_spi_flash_mmap`.
 - The software bootloader image when it is read by the ROM bootloader.
 
-**IMPORTANT: The MMU flash cache unconditionally decrypts all data. Data which is stored unencrypted in the flash will be "transparently decrypted" via the flash cache and appear to software like random garbage.**
+.. important::
+   The MMU flash cache unconditionally decrypts all data. Data which is stored unencrypted in the flash will be "transparently decrypted" via the flash cache and appear to software like random garbage.
 
 Reading Encrypted Flash
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -129,14 +135,14 @@ OTA updates to encrypted partitions will automatically write encrypted, as long 
 Serial Flashing
 ^^^^^^^^^^^^^^^
 
-Provided secure boot is not used, the :ref:`FLASH_CRYPT_CNT` allows the flash to be updated with new plaintext data via serial flashing (or other physical methods), up to 3 additional times.
+The :ref:`FLASH_CRYPT_CNT` allows the flash to be updated with new plaintext data via serial flashing (or other physical methods), up to 3 additional times.
 
 The process involves flashing plaintext data, and then bumping the value of :ref:`FLASH_CRYPT_CNT` which causes the bootloader to re-encrypt this data.
 
 Limited Updates
 ~~~~~~~~~~~~~~~
 
-Only 4 serial flash update cycles of this kind are possible, including the initial encrypted flash.
+Only 4 plaintext serial update cycles of this kind are possible, including the initial encrypted flash.
 
 After the fourth time encryption is disabled, :ref:`FLASH_CRYPT_CNT` has the maximum value `0xFF` and encryption is permanently disabled.
 
@@ -149,7 +155,7 @@ Cautions With Serial Flashing
 
   - Using ``make flash`` should flash all partitions which need to be flashed.
 
-- If secure boot is enabled, you can't reflash via serial at all unless you used the "Reflashable" option for Secure Boot, pre-generated a key and burned it to the ESP32 (refer to :doc:`Secure Boot <secure-boot>` docs.). In this case you can re-flash a plaintext secure boot digest and bootloader image at offset 0x0. It is necessary to re-flash this digest before flashing other plaintext data.
+- If secure boot is enabled, you can't reflash plaintext data via serial at all unless you used the "Reflashable" option for Secure Boot. See  :ref:`flash-encryption-and-secure-boot`.
 
 Serial Re-Flashing Procedure
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -181,9 +187,10 @@ Reflashing via Pregenerated Flash Encryption Key
 
 It is possible to pregenerate a flash encryption key on the host computer and burn it into the ESP32's efuse key block. This allows data to be pre-encrypted on the host and flashed to the ESP32 without needing a plaintext flash update.
 
-This is useful for development, because it removes the 4 time reflashing limit. It also allows reflashing with secure boot enabled, because the bootloader doesn't need to be reflashed each time.
+This is useful for development, because it removes the 4 time reflashing limit. It also allows reflashing the app with secure boot enabled, because the bootloader doesn't need to be reflashed each time.
 
-**IMPORTANT This method is intended to assist with development only, not for production devices. If pre-generating flash encryption for production, ensure the keys are generated from a high quality random number source and do not share the same flash encryption key across multiple devices.**
+.. important::
+   This method is intended to assist with development only, not for production devices. If pre-generating flash encryption for production, ensure the keys are generated from a high quality random number source and do not share the same flash encryption key across multiple devices.
 
 Pregenerating a Flash Encryption Key
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -194,9 +201,9 @@ Flash encryption keys are 32 bytes of random data. You can generate a random key
 
 (The randomness of this data is only as good as the OS and it's Python installation's random data source.)
 
-Alternatively, if you're using :doc:`secure boot <secure-boot>` and have a secure boot signing key then you can generate a deterministic SHA-256 digest of the secure boot private signing key and use this as the flash encryption key::
+Alternatively, if you're using :doc:`secure boot <secure-boot>` and have a :ref:`secure boot signing key <secure-boot-generate-key>` then you can generate a deterministic SHA-256 digest of the secure boot private signing key and use this as the flash encryption key::
 
-  espsecure.py digest_private-key --keyfile secure_boot_signing_key.pem my_flash_encryption_key.bin
+  espsecure.py digest_private_key --keyfile secure_boot_signing_key.pem my_flash_encryption_key.bin
 
 (The same 32 bytes is used as the secure boot digest key if you enable :ref:`reflashable mode<secure-boot-reflashable>` for secure boot.)
 
@@ -268,7 +275,18 @@ Flash Encryption prevents plaintext readout of the encrypted flash, to protect f
 
 - For the same reason, an attacker can always tell when a pair of adjacent 16 byte blocks (32 byte aligned) contain identical content. Keep this in mind if storing sensitive data on the flash, design your flash storage so this doesn't happen (using a counter byte or some other non-identical value every 16 bytes is sufficient).
 
-- Flash encryption alone may not prevent an attacker from modifying the firmware of the device. To prevent unauthorised firmware from runningon the device, use flash encryption in combination with :doc:`Secure Boot <secure-boot>`.
+- Flash encryption alone may not prevent an attacker from modifying the firmware of the device. To prevent unauthorised firmware from running on the device, use flash encryption in combination with :doc:`Secure Boot <secure-boot>`.
+
+.. _flash-encryption-and-secure-boot:
+
+Flash Encryption & Secure Boot
+------------------------------
+
+It is recommended to use flash encryption and secure boot together. However, if Secure Boot is enabled then additional restrictions apply to reflashing the device:
+
+- :ref:`updating-encrypted-flash-ota` are not restricted (provided the new app is signed correctly with the Secure Boot signing key).
+- :ref:`Plaintext serial flash updates <updating-encrypted-flash-serial>` are only possible if the :envvar:`Reflashable <CONFIG_SECURE_BOOTLOADER_REFLASHABLE>` Secure Boot mode is selected and a Secure Boot key was pre-generated and burned to the ESP32 (refer to :ref:`Secure Boot <secure-boot-reflashable>` docs.). In this configuration, ``make bootloader`` will produce a pre-digested bootloader and secure boot digest file for flashing at offset 0x0. When following the plaintext serial reflashing steps it is necessary to re-flash this file before flashing other plaintext data.
+- :ref:`pregenerated-flash-encryption-key` is still possible, provided the bootloader is not reflashed. Reflashing the bootloader requires the same :envvar:`Reflashable <CONFIG_SECURE_BOOTLOADER_REFLASHABLE>` option to be enabled in the Secure Boot config.
 
 .. _flash-encryption-advanced-features:
 
@@ -320,9 +338,11 @@ It is possible to burn only some of these efuses, and write-protect the rest (wi
 
 (Note that all 3 of these efuses are disabled via one write protect bit, so write protecting one will write protect all of them. For this reason, it's necessary to set any bits before write-protecting.)
 
-**IMPORTANT**: Write protecting these efuses to keep them unset is not currently very useful, as ``esptool.py`` does not support writing or reading encrypted flash.
+.. important::
+   Write protecting these efuses to keep them unset is not currently very useful, as ``esptool.py`` does not support writing or reading encrypted flash.
 
-**IMPORTANT**: If ``DISABLE_DL_DECRYPT`` is left unset (0) this effectively makes flash encryption useless, as an attacker with physical access can use UART bootloader mode (with custom stub code) to read out the flash contents.
+.. important::
+   If ``DISABLE_DL_DECRYPT`` is left unset (0) this effectively makes flash encryption useless, as an attacker with physical access can use UART bootloader mode (with custom stub code) to read out the flash contents.
 
 .. _setting-flash-crypt-config:
 

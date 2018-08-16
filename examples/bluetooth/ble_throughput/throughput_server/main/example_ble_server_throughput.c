@@ -541,9 +541,6 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         break;
     case ESP_GATTS_CONF_EVT:
         ESP_LOGI(GATTS_TAG, "ESP_GATTS_CONF_EVT, status %d", param->conf.status);
-        if (param->conf.status != ESP_GATT_OK){
-            esp_log_buffer_hex(GATTS_TAG, param->conf.value, param->conf.len);
-        }
 #if (CONFIG_GATTC_WRITE_THROUGHPUT)
         start_time = false;
         current_time = 0;
@@ -611,7 +608,6 @@ void throughput_server_task(void *param)
     while(1) {
 #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) 
         if (!can_send_notify) {
-            ESP_LOGI(GATTS_TAG, "===");
             int res = xSemaphoreTake(gatts_semaphore, portMAX_DELAY);
             assert(res == pdTRUE);
         } else {
@@ -645,7 +641,7 @@ void app_main()
 
     // Initialize NVS.
     ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
     }

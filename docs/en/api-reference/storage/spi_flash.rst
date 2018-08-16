@@ -40,7 +40,7 @@ CPU A as well and returns control to the calling code.
 
 Additionally, all API functions are protected with a mutex (s_flash_op_mutex).
 
-In a single core environment (:ref:`CONFIG_FREERTOS_UNICORE` enabled), we simply
+In a single core environment (:envvar:`CONFIG_FREERTOS_UNICORE` enabled), we simply
 disable both caches, no inter-CPU communication takes place.
 
 API Reference - SPI Flash

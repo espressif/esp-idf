@@ -132,7 +132,7 @@ esp_err_t esp_ota_set_boot_partition(const esp_partition_t* partition);
  * If the OTA data partition is not present or not valid then the result is the first app partition found in the
  * partition table. In priority order, this means: the factory app, the first OTA app slot, or the test app partition.
  *
- * Note that there is no guarantee the returned partition is a valid app. Use esp_image_load(ESP_IMAGE_VERIFY, ...) to verify if the
+ * Note that there is no guarantee the returned partition is a valid app. Use esp_image_verify(ESP_IMAGE_VERIFY, ...) to verify if the
  * returned partition contains a bootable image.
  *
  * @return Pointer to info for partition structure, or NULL if partition table is invalid or a flash read operation failed. Any returned pointer is valid for the lifetime of the application.

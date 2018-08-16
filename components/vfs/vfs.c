@@ -717,6 +717,20 @@ int access(const char *path, int amode)
     return ret;
 }
 
+int truncate(const char *path, off_t length)
+{
+    int ret;
+    const vfs_entry_t* vfs = get_vfs_for_path(path);
+    struct _reent* r = __getreent();
+    if (vfs == NULL) {
+        __errno_r(r) = ENOENT;
+        return -1;
+    }
+    const char* path_within_vfs = translate_path(vfs, path);
+    CHECK_AND_CALL(ret, r, vfs, truncate, path_within_vfs, length);
+    return ret;
+}
+
 static void call_end_selects(int end_index, const fds_triple_t *vfs_fds_triple)
 {
     for (int i = 0; i < end_index; ++i) {

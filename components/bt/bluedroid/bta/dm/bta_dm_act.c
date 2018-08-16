@@ -72,9 +72,9 @@ static void bta_dm_bl_change_cback (tBTM_BL_EVENT_DATA *p_data);
 static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id, BD_ADDR peer_addr);
 
 /* Extended Inquiry Response */
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE && SMP_INCLUDED == TRUE)
+#if (BT_SSP_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
 static UINT8 bta_dm_sp_cback (tBTM_SP_EVT event, tBTM_SP_EVT_DATA *p_data);
-#endif /* (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE) */
+#endif /* (BT_SSP_INCLUDED == TRUE) */
 
 static void bta_dm_set_eir (char *local_name);
 #if (SDP_INCLUDED == TRUE)
@@ -218,7 +218,7 @@ const tBTM_APPL_INFO bta_security = {
     &bta_dm_new_link_key_cback,
     &bta_dm_authentication_complete_cback,
     &bta_dm_bond_cancel_complete_cback,
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
+#if (BT_SSP_INCLUDED == TRUE)
     &bta_dm_sp_cback,
 #else
     NULL,
@@ -374,6 +374,12 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
         bta_sys_hw_unregister( BTA_SYS_HW_BLUETOOTH );
         /* notify BTA DM is now unactive */
         bta_dm_cb.is_bta_dm_active = FALSE;
+#if (defined BLE_INCLUDED && BLE_INCLUDED == TRUE)
+#if (GATTC_INCLUDED == TRUE && GATTC_CACHE_NVS == TRUE)
+        /* clear the gattc cache address list */
+        bta_gattc_co_cache_addr_deinit();
+#endif
+#endif
     } else if ( status == BTA_SYS_HW_ON_EVT ) {
         /* FIXME: We should not unregister as the SYS shall invoke this callback on a H/W error.
         * We need to revisit when this platform has more than one BLuetooth H/W chip */
@@ -403,7 +409,7 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
         BTM_SetDeviceClass (dev_class);
 
 #if (defined BLE_INCLUDED && BLE_INCLUDED == TRUE)
-#if (GATTC_INCLUDED == TRUE)
+#if (GATTC_INCLUDED == TRUE && GATTC_CACHE_NVS == TRUE)
         // load the gattc cache address list
         bta_gattc_co_cache_addr_init();
 #endif /* #if (GATTC_INCLUDED = TRUE) */
@@ -596,16 +602,16 @@ void bta_dm_ble_read_adv_tx_power(tBTA_DM_MSG *p_data)
     if (p_data->read_tx_power.read_tx_power_cb != NULL) {
         BTM_BleReadAdvTxPower(p_data->read_tx_power.read_tx_power_cb);
     } else {
-        APPL_TRACE_ERROR("%s(), the callback function cann't be NULL.", __func__);
+        APPL_TRACE_ERROR("%s(), the callback function can't be NULL.", __func__);
     }
 }
 
 void bta_dm_ble_read_rssi(tBTA_DM_MSG *p_data)
 {
     if (p_data->rssi.read_rssi_cb != NULL) {
-        BTM_ReadRSSI(p_data->rssi.remote_addr, p_data->rssi.read_rssi_cb);
+        BTM_ReadRSSI(p_data->rssi.remote_addr, p_data->rssi.transport, p_data->rssi.read_rssi_cb);
     } else {
-        APPL_TRACE_ERROR("%s(), the callback function cann't be NULL.", __func__);
+        APPL_TRACE_ERROR("%s(), the callback function can't be NULL.", __func__);
     }
 }
 
@@ -692,25 +698,29 @@ void bta_dm_set_visibility(tBTA_DM_MSG *p_data)
 ** Description      Removes device, Disconnects ACL link if required.
 ****
 *******************************************************************************/
-void bta_dm_process_remove_device(BD_ADDR bd_addr)
+static void bta_dm_process_remove_device(BD_ADDR bd_addr, tBT_TRANSPORT transport)
 {
 #if (BLE_INCLUDED == TRUE && GATTC_INCLUDED == TRUE)
     /* need to remove all pending background connection before unpair */
     BTA_GATTC_CancelOpen(0, bd_addr, FALSE);
 #endif
 
-    BTM_SecDeleteDevice(bd_addr);
+    BTM_SecDeleteDevice(bd_addr, transport);
 
 #if (BLE_INCLUDED == TRUE && GATTC_INCLUDED == TRUE)
     /* remove all cached GATT information */
-    BTA_GATTC_Refresh(bd_addr);
+    BTA_GATTC_Refresh(bd_addr, false);
 #endif
-
     if (bta_dm_cb.p_sec_cback) {
         tBTA_DM_SEC sec_event;
         bdcpy(sec_event.link_down.bd_addr, bd_addr);
         sec_event.link_down.status = HCI_SUCCESS;
-        bta_dm_cb.p_sec_cback(BTA_DM_DEV_UNPAIRED_EVT, &sec_event);
+        if (transport == BT_TRANSPORT_LE){
+            bta_dm_cb.p_sec_cback(BTA_DM_BLE_DEV_UNPAIRED_EVT, &sec_event);
+        } else {
+            bta_dm_cb.p_sec_cback(BTA_DM_DEV_UNPAIRED_EVT, &sec_event);
+        }
+
     }
 }
 
@@ -728,32 +738,22 @@ void bta_dm_remove_device(tBTA_DM_MSG *p_data)
         return;
     }
 
-    BD_ADDR other_address;
-    bdcpy(other_address, p_dev->bd_addr);
-
     /* If ACL exists for the device in the remove_bond message*/
     BOOLEAN continue_delete_dev = FALSE;
-    UINT8 other_transport = BT_TRANSPORT_INVALID;
+    UINT8 transport = p_dev->transport;
 
-    if (BTM_IsAclConnectionUp(p_dev->bd_addr, BT_TRANSPORT_LE) ||
-            BTM_IsAclConnectionUp(p_dev->bd_addr, BT_TRANSPORT_BR_EDR)) {
+    if (BTM_IsAclConnectionUp(p_dev->bd_addr, transport)) {
         APPL_TRACE_DEBUG("%s: ACL Up count  %d", __func__, bta_dm_cb.device_list.count);
         continue_delete_dev = FALSE;
 
         /* Take the link down first, and mark the device for removal when disconnected */
         for (int i = 0; i < bta_dm_cb.device_list.count; i++) {
-            if (!bdcmp(bta_dm_cb.device_list.peer_device[i].peer_bdaddr, p_dev->bd_addr)) {
+            if (!bdcmp(bta_dm_cb.device_list.peer_device[i].peer_bdaddr, p_dev->bd_addr)
+                && bta_dm_cb.device_list.peer_device[i].transport == transport) {
                 bta_dm_cb.device_list.peer_device[i].conn_state = BTA_DM_UNPAIRING;
                 btm_remove_acl( p_dev->bd_addr, bta_dm_cb.device_list.peer_device[i].transport);
                 APPL_TRACE_DEBUG("%s:transport = %d", __func__,
                                  bta_dm_cb.device_list.peer_device[i].transport);
-
-                /* save the other transport to check if device is connected on other_transport */
-                if (bta_dm_cb.device_list.peer_device[i].transport == BT_TRANSPORT_LE) {
-                    other_transport = BT_TRANSPORT_BR_EDR;
-                } else {
-                    other_transport = BT_TRANSPORT_LE;
-                }
                 break;
             }
         }
@@ -761,35 +761,9 @@ void bta_dm_remove_device(tBTA_DM_MSG *p_data)
         continue_delete_dev = TRUE;
     }
 
-    // If it is DUMO device and device is paired as different address, unpair that device
-    // if different address
-    BOOLEAN continue_delete_other_dev = FALSE;
-    if ((other_transport && (BTM_ReadConnectedTransportAddress(other_address, other_transport))) ||
-            (!other_transport && (BTM_ReadConnectedTransportAddress(other_address, BT_TRANSPORT_BR_EDR) ||
-                                  BTM_ReadConnectedTransportAddress(other_address, BT_TRANSPORT_LE)))) {
-        continue_delete_other_dev = FALSE;
-        /* Take the link down first, and mark the device for removal when disconnected */
-        for (int i = 0; i < bta_dm_cb.device_list.count; i++) {
-            if (!bdcmp(bta_dm_cb.device_list.peer_device[i].peer_bdaddr, other_address)) {
-                bta_dm_cb.device_list.peer_device[i].conn_state = BTA_DM_UNPAIRING;
-                btm_remove_acl(other_address, bta_dm_cb.device_list.peer_device[i].transport);
-                break;
-            }
-        }
-    } else {
-        APPL_TRACE_DEBUG("%s: continue to delete the other dev ", __func__);
-        continue_delete_other_dev = TRUE;
-    }
-
     /* Delete the device mentioned in the msg */
     if (continue_delete_dev) {
-        bta_dm_process_remove_device(p_dev->bd_addr);
-    }
-
-    /* Delete the other paired device too */
-    BD_ADDR dummy_bda = {0};
-    if (continue_delete_other_dev && (bdcmp(other_address, dummy_bda) != 0)) {
-        bta_dm_process_remove_device(other_address);
+        bta_dm_process_remove_device(p_dev->bd_addr, transport);
     }
 }
 
@@ -880,14 +854,14 @@ void bta_dm_close_acl(tBTA_DM_MSG *p_data)
     }
     /* if to remove the device from security database ? do it now */
     else if (p_remove_acl->remove_dev) {
-        if (!BTM_SecDeleteDevice(p_remove_acl->bd_addr)) {
+        if (!BTM_SecDeleteDevice(p_remove_acl->bd_addr, p_remove_acl->transport)) {
             APPL_TRACE_ERROR("delete device from security database failed.");
         }
 #if (BLE_INCLUDED == TRUE && GATTC_INCLUDED == TRUE)
         /* need to remove all pending background connection if any */
         BTA_GATTC_CancelOpen(0, p_remove_acl->bd_addr, FALSE);
         /* remove all cached GATT information */
-        BTA_GATTC_Refresh(p_remove_acl->bd_addr);
+        BTA_GATTC_Refresh(p_remove_acl->bd_addr, false);
 #endif
     }
     /* otherwise, no action needed */
@@ -1120,6 +1094,28 @@ void bta_dm_confirm(tBTA_DM_MSG *p_data)
     BTM_ConfirmReqReply(res, p_data->confirm.bd_addr);
 }
 #endif  ///SMP_INCLUDED == TRUE
+
+/*******************************************************************************
+**
+** Function         bta_dm_key_req
+**
+** Description      Send the user passkey request reply in response to a
+**                  request from BTM
+**
+** Returns          void
+**
+*******************************************************************************/
+#if (SMP_INCLUDED == TRUE && BT_SSP_INCLUDED)
+void bta_dm_key_req(tBTA_DM_MSG *p_data)
+{
+    tBTM_STATUS res = BTM_NOT_AUTHORIZED;
+
+    if (p_data->key_req.accept == TRUE) {
+        res = BTM_SUCCESS;
+    }
+    BTM_PasskeyReqReply(res, p_data->key_req.bd_addr, p_data->key_req.passkey);
+}
+#endif  ///SMP_INCLUDED == TRUE && BT_SSP_INCLUDED
 
 /*******************************************************************************
 **
@@ -2841,7 +2837,7 @@ static UINT8 bta_dm_authentication_complete_cback(BD_ADDR bd_addr, DEV_CLASS dev
     return BTM_SUCCESS;
 }
 
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
+#if (BT_SSP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_sp_cback
@@ -2865,7 +2861,7 @@ static UINT8 bta_dm_sp_cback (tBTM_SP_EVT event, tBTM_SP_EVT_DATA *p_data)
     /* TODO_SP */
     switch (event) {
     case BTM_SP_IO_REQ_EVT:
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
+#if (BT_SSP_INCLUDED == TRUE)
         /* translate auth_req */
         bta_dm_co_io_req(p_data->io_req.bd_addr, &p_data->io_req.io_cap,
                          &p_data->io_req.oob_data, &p_data->io_req.auth_req, p_data->io_req.is_orig);
@@ -2877,7 +2873,7 @@ static UINT8 bta_dm_sp_cback (tBTM_SP_EVT event, tBTM_SP_EVT_DATA *p_data)
         APPL_TRACE_EVENT("io mitm: %d oob_data:%d", p_data->io_req.auth_req, p_data->io_req.oob_data);
         break;
     case BTM_SP_IO_RSP_EVT:
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
+#if (BT_SSP_INCLUDED == TRUE)
         bta_dm_co_io_rsp(p_data->io_rsp.bd_addr, p_data->io_rsp.io_cap,
                          p_data->io_rsp.oob_data, p_data->io_rsp.auth_req );
 #endif
@@ -2892,10 +2888,10 @@ static UINT8 bta_dm_sp_cback (tBTM_SP_EVT event, tBTM_SP_EVT_DATA *p_data)
         sec_event.cfm_req.rmt_io_caps = p_data->cfm_req.rmt_io_caps;
 
         /* continue to next case */
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
+#if (BT_SSP_INCLUDED == TRUE)
     /* Passkey entry mode, mobile device with output capability is very
         unlikely to receive key request, so skip this event */
-    /*case BTM_SP_KEY_REQ_EVT: */
+    case BTM_SP_KEY_REQ_EVT:
     case BTM_SP_KEY_NOTIF_EVT:
 #endif
         if (BTM_SP_CFM_REQ_EVT == event) {
@@ -2943,6 +2939,27 @@ static UINT8 bta_dm_sp_cback (tBTM_SP_EVT event, tBTM_SP_EVT_DATA *p_data)
             }
         }
 
+        if (BTM_SP_KEY_REQ_EVT == event) {
+            pin_evt = BTA_DM_SP_KEY_REQ_EVT;
+            /* If the device name is not known, save bdaddr and devclass
+               and initiate a name request with values from key_notif */
+            if (p_data->key_notif.bd_name[0] == 0) {
+                bta_dm_cb.pin_evt = pin_evt;
+                bdcpy(bta_dm_cb.pin_bd_addr, p_data->key_notif.bd_addr);
+                BTA_COPY_DEVICE_CLASS(bta_dm_cb.pin_dev_class, p_data->key_notif.dev_class);
+                if ((BTM_ReadRemoteDeviceName(p_data->key_notif.bd_addr, bta_dm_pinname_cback,
+                                              BT_TRANSPORT_BR_EDR)) == BTM_CMD_STARTED) {
+                    return BTM_CMD_STARTED;
+                }
+                APPL_TRACE_WARNING(" bta_dm_sp_cback() -> Failed to start Remote Name Request  ");
+            } else {
+                bdcpy(sec_event.key_notif.bd_addr, p_data->key_notif.bd_addr);
+                BTA_COPY_DEVICE_CLASS(sec_event.key_notif.dev_class, p_data->key_notif.dev_class);
+                BCM_STRNCPY_S((char *)sec_event.key_notif.bd_name, sizeof(BD_NAME),
+                              (char *)p_data->key_notif.bd_name, (BD_NAME_LEN - 1));
+                sec_event.key_notif.bd_name[BD_NAME_LEN - 1] = 0;
+            }
+        }
         bta_dm_cb.p_sec_cback(pin_evt, &sec_event);
 
         break;
@@ -2996,7 +3013,7 @@ static UINT8 bta_dm_sp_cback (tBTM_SP_EVT event, tBTM_SP_EVT_DATA *p_data)
     APPL_TRACE_EVENT("dm status: %d", status);
     return status;
 }
-#endif /* (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE) */
+#endif /* (BT_SSP_INCLUDED == TRUE) */
 
 #endif  ///SMP_INCLUDED == TRUE
 
@@ -3283,7 +3300,7 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
             }
 
             if ( bta_dm_cb.device_list.peer_device[i].conn_state == BTA_DM_UNPAIRING ) {
-                if (BTM_SecDeleteDevice(bta_dm_cb.device_list.peer_device[i].peer_bdaddr)) {
+                if (BTM_SecDeleteDevice(bta_dm_cb.device_list.peer_device[i].peer_bdaddr, bta_dm_cb.device_list.peer_device[i].transport)) {
                     issue_unpair_cb = TRUE;
                 }
 
@@ -3331,12 +3348,12 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
             }
         }
         if (conn.link_down.is_removed) {
-            BTM_SecDeleteDevice(p_bda);
+            BTM_SecDeleteDevice(p_bda, p_data->acl_change.transport);
 #if (BLE_INCLUDED == TRUE && GATTC_INCLUDED == TRUE)
             /* need to remove all pending background connection */
             BTA_GATTC_CancelOpen(0, p_bda, FALSE);
             /* remove all cached GATT information */
-            BTA_GATTC_Refresh(p_bda);
+            BTA_GATTC_Refresh(p_bda, false);
 #endif
         }
 
@@ -3345,7 +3362,11 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
         if ( bta_dm_cb.p_sec_cback ) {
             bta_dm_cb.p_sec_cback(BTA_DM_LINK_DOWN_EVT, &conn);
             if ( issue_unpair_cb ) {
-                bta_dm_cb.p_sec_cback(BTA_DM_DEV_UNPAIRED_EVT, &conn);
+                if (p_data->acl_change.transport == BT_TRANSPORT_LE) {
+                    bta_dm_cb.p_sec_cback(BTA_DM_BLE_DEV_UNPAIRED_EVT, &conn);
+                } else {
+                    bta_dm_cb.p_sec_cback(BTA_DM_DEV_UNPAIRED_EVT, &conn);
+                }
             }
         }
     }
@@ -3505,12 +3526,12 @@ static void bta_dm_remove_sec_dev_entry(BD_ADDR remote_bd_addr)
             APPL_TRACE_ERROR(" %s Device does not exist in DB", __FUNCTION__);
         }
     } else {
-        BTM_SecDeleteDevice (remote_bd_addr);
+        BTM_SecDeleteDevice (remote_bd_addr, bta_dm_cb.device_list.peer_device[index].transport);
 #if (BLE_INCLUDED == TRUE && GATTC_INCLUDED == TRUE)
         /* need to remove all pending background connection */
         BTA_GATTC_CancelOpen(0, remote_bd_addr, FALSE);
         /* remove all cached GATT information */
-        BTA_GATTC_Refresh(remote_bd_addr);
+        BTA_GATTC_Refresh(remote_bd_addr, false);
 #endif
     }
 }
@@ -4257,7 +4278,7 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
     memset(&sec_event, 0, sizeof(tBTA_DM_SEC));
     switch (event) {
     case BTM_LE_IO_REQ_EVT:
-        // #if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
+        // #if (BT_SSP_INCLUDED == TRUE)
 
         bta_dm_co_ble_io_req(bda,
                              &p_data->io_req.io_cap,
@@ -4659,7 +4680,7 @@ void bta_dm_ble_set_rand_address(tBTA_DM_MSG *p_data)
 void bta_dm_ble_stop_advertising(tBTA_DM_MSG *p_data)
 {
     if (p_data->hdr.event != BTA_DM_API_BLE_STOP_ADV_EVT) {
-        APPL_TRACE_ERROR("Invalid BTA event,cann't stop the BLE adverting\n");
+        APPL_TRACE_ERROR("Invalid BTA event,can't stop the BLE adverting\n");
     }
 
     btm_ble_stop_adv();

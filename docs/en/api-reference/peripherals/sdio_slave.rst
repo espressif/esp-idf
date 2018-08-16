@@ -4,9 +4,6 @@ SDIO Card Slave Driver
 Overview
 --------
 
-.. note:: At the moment, this code has been proven to work on the Wrover-Kit V3. Earlier versions of the Wrover-Kit
-    and other development kits are electrically incompatible with this code. Functionality on other devboards is untested.
-
 The ESP32 SDIO Card peripherals (Host, Slave) shares two sets of pins as below table.
 The first set is usually occupied by SPI0 bus which is responsible for the SPI flash holding the code to run.
 This means SDIO slave driver can only runs on the second set of pins while SDIO host is not using it.
@@ -29,15 +26,33 @@ This means SDIO slave driver can only runs on the second set of pins while SDIO 
 | DAT3     | 10    | 13    |
 +----------+-------+-------+
 
-The SDIO slave can run under 3 modes: SPI, 1-bit SD and 4-bit SD modes, which is detected automatically by the
-hardware. According to the SDIO specification, the host initialize the slave into SD mode by first sending CMD0 with
-DAT3 pin high, while initialize the slave into SPI mode by sending CMD0 with CS pin (the same pin as DAT3) low. After the
-initialization, the host can enable the 4-bit SD mode by writing CCCR register 0x07 by CMD52. All the bus detection
-process are handled by the slave peripheral.
+The SDIO slave can run under 3 modes: SPI, 1-bit SD and 4-bit SD modes, which
+is detected automatically by the hardware. According to the SDIO
+specification, CMD and DAT0-3 lines should be pulled up no matter in 1-bit,
+4-bit or SPI mode. Then the host initialize the slave into SD mode by first
+sending CMD0 with DAT3 pin high, while initialize the slave into SPI mode by
+sending CMD0 with CS pin (the same pin as DAT3) low.
 
-The host has to communicate with the slave by an ESP-slave-specific protocol. The slave driver offers 3 services over
-Function 1 access by CMD52 and CMD53: (1) a sending FIFO and a receiving FIFO, (2) 52 8-bit R/W registers shared by
-host and slave, (3) 16 interrupt sources (8 from host to slave, and 8 from slave to host).
+.. note:: CMD and DATA lines D0-D3 of the card should be pulled up by 50KOhm resistor
+  even in 1-bit mode or SPI mode. Most official devkits don't meet the pullup
+  requirements by default, and there are conflicts on strapping pins as well.
+  Please refer to :doc:`sd_pullup_requirements` to see how to setup your
+  system correctly.
+
+.. toctree::
+    :hidden:
+
+    sd_pullup_requirements
+
+After the initialization, the host can enable the 4-bit SD mode by writing
+CCCR register 0x07 by CMD52. All the bus detection process are handled by the
+slave peripheral.
+
+The host has to communicate with the slave by an ESP-slave-specific protocol.
+The slave driver offers 3 services over Function 1 access by CMD52 and CMD53:
+(1) a sending FIFO and a receiving FIFO, (2) 52 8-bit R/W registers shared by
+host and slave, (3) 16 interrupt sources (8 from host to slave, and 8 from
+slave to host).
 
 Terminology
 ^^^^^^^^^^^
@@ -49,17 +64,17 @@ The SDIO slave driver uses the following terms:
 - Sending: slave to host transfers.
 - Receiving: host to slave transfers.
 
-.. note:: Register names in ESP Rechnical Reference Manual are oriented from the point of view of the host, i.e. 'rx' 
-  registers refer to sending, while 'tx' registers refer to receiving. We're not using `tx` or `rx` in the driver to 
+.. note:: Register names in ESP Rechnical Reference Manual are oriented from the point of view of the host, i.e. 'rx'
+  registers refer to sending, while 'tx' registers refer to receiving. We're not using `tx` or `rx` in the driver to
   avoid ambiguities.
 
 - FIFO: specific address in Function 1 that can be access by CMD53 to read/write large amount of data. The address is
   related to the length requested to read from/write to the slave in a single transfer:
   *requested length* = 0x1F800-address.
 - Ownership: When the driver takes ownership of a buffer, it means the driver can randomly read/write the buffer
-    (mostly by the hardware). The application should not read/write the buffer until the ownership is returned to the
-    application. If the application reads from a buffer owned by a receiving driver, the data read can be random; if
-    the application writes to a buffer owned by a sending driver, the data sent may be corrupted.
+  (usually via DMA). The application should not read/write the buffer until the ownership is returned to the
+  application. If the application reads from a buffer owned by a receiving driver, the data read can be random; if
+  the application writes to a buffer owned by a sending driver, the data sent may be corrupted.
 - Requested length: The length requested in one transfer determined by the FIFO address.
 - Transfer length: The length requested in one transfer determined by the CMD53 byte/block count field.
 
@@ -214,6 +229,7 @@ There are several ways to use the ``arg`` in the queue parameter:
            sdio_slave_recv_load_buf(handle);
 
        More about this, see :example:`peripherals/sdio`.
+
 
 Application Example
 -------------------

@@ -56,6 +56,7 @@ config ESP32_APPTRACE_PENDING_DATA_SIZE_MAX
         events will be discarded when main HW buffer is full.
 
 menu "FreeRTOS SystemView Tracing"
+    depends on ESP32_APPTRACE_ENABLE
 config SYSVIEW_ENABLE
     bool "SystemView Tracing Enable"
     depends on ESP32_APPTRACE_ENABLE

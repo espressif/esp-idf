@@ -47,6 +47,17 @@ extern "C" {
 #define UART_INVERSE_RTS   (UART_RTS_INV_M)    /*!< UART RTS output inverse*/
 
 /**
+ * @brief UART mode selection
+ */
+typedef enum {
+    UART_MODE_UART = 0x00,                      /*!< mode: regular UART mode*/
+    UART_MODE_RS485_HALF_DUPLEX = 0x01,         /*!< mode: half duplex RS485 UART mode control by RTS pin */
+    UART_MODE_IRDA = 0x02,                      /*!< mode: IRDA  UART mode*/
+    UART_MODE_RS485_COLLISION_DETECT = 0x03,    /*!< mode: RS485 collision detection UART mode (used for test purposes)*/
+    UART_MODE_RS485_APP_CTRL = 0x04,            /*!< mode: application control RS485 UART mode (used for test purposes)*/
+} uart_mode_t;
+
+/**
  * @brief UART word length constants
  */
 typedef enum {
@@ -54,7 +65,7 @@ typedef enum {
     UART_DATA_6_BITS = 0x1,    /*!< word length: 6bits*/
     UART_DATA_7_BITS = 0x2,    /*!< word length: 7bits*/
     UART_DATA_8_BITS = 0x3,    /*!< word length: 8bits*/
-    UART_DATA_BITS_MAX = 0X4,
+    UART_DATA_BITS_MAX = 0x4,
 } uart_word_length_t;
 
 /**
@@ -249,8 +260,8 @@ esp_err_t uart_get_baudrate(uart_port_t uart_num, uint32_t* baudrate);
  * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
  * @param inverse_mask Choose the wires that need to be inverted.
  *        Inverse_mask should be chosen from 
-          UART_INVERSE_RXD / UART_INVERSE_TXD / UART_INVERSE_RTS / UART_INVERSE_CTS,
-          combined with OR operation.
+ *        UART_INVERSE_RXD / UART_INVERSE_TXD / UART_INVERSE_RTS / UART_INVERSE_CTS,
+ *        combined with OR operation.
  *
  * @return
  *     - ESP_OK   Success
@@ -474,7 +485,7 @@ esp_err_t uart_set_dtr(uart_port_t uart_num, int level);
 esp_err_t uart_set_tx_idle_num(uart_port_t uart_num, uint16_t idle_num);
 
 /**
-* @brief Set UART configuration parameters.
+ * @brief Set UART configuration parameters.
  *
  * @param uart_num    UART_NUM_0, UART_NUM_1 or UART_NUM_2
  * @param uart_config UART parameter settings
@@ -486,7 +497,7 @@ esp_err_t uart_set_tx_idle_num(uart_port_t uart_num, uint16_t idle_num);
 esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_config);
 
 /**
-* @brief Configure UART interrupts.
+ * @brief Configure UART interrupts.
  *
  * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
  * @param intr_conf UART interrupt settings
@@ -552,8 +563,8 @@ esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait);
  * @note This function should only be used when UART TX buffer is not enabled.
  *
  * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
- * @param buffer   data buffer address
- * @param len      data length to send
+ * @param buffer data buffer address
+ * @param len    data length to send
  *
  * @return
  *     - (-1)  Parameter error
@@ -571,8 +582,8 @@ int uart_tx_chars(uart_port_t uart_num, const char* buffer, uint32_t len);
  * UART ISR will then move data from the ring buffer to TX FIFO gradually.
  *
  * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
- * @param src      data buffer address
- * @param size     data length to send
+ * @param src   data buffer address
+ * @param size  data length to send
  *
  * @return
  *     - (-1) Parameter error
@@ -581,7 +592,7 @@ int uart_tx_chars(uart_port_t uart_num, const char* buffer, uint32_t len);
 int uart_write_bytes(uart_port_t uart_num, const char* src, size_t size);
 
 /**
- * @brief Send data to the UART port from a given buffer and length.
+ * @brief Send data to the UART port from a given buffer and length,
  *
  * If the UART driver's parameter 'tx_buffer_size' is set to zero:
  * This function will not return until all the data and the break signal have been sent out.
@@ -641,9 +652,10 @@ esp_err_t uart_flush(uart_port_t uart_num);
 esp_err_t uart_flush_input(uart_port_t uart_num);
 
 /**
- * @brief UART get RX ring buffer cached data length
- * @param uart_num UART port number.
- * @param size Pointer of size_t to accept cached data length
+ * @brief   UART get RX ring buffer cached data length
+ *
+ * @param   uart_num UART port number.
+ * @param   size Pointer of size_t to accept cached data length
  *
  * @return
  *     - ESP_OK Success
@@ -652,9 +664,9 @@ esp_err_t uart_flush_input(uart_port_t uart_num);
 esp_err_t uart_get_buffered_data_len(uart_port_t uart_num, size_t* size);
 
 /**
- * @brief UART disable pattern detect function.
- *        Designed for applications like 'AT commands'.
- *        When the hardware detects a series of one same character, the interrupt will be triggered.
+ * @brief   UART disable pattern detect function.
+ *          Designed for applications like 'AT commands'.
+ *          When the hardware detects a series of one same character, the interrupt will be triggered.
  *
  * @param uart_num UART port number.
  *
@@ -736,6 +748,49 @@ int uart_pattern_get_pos(uart_port_t uart_num);
  *     - ESP_OK Success
  */
 esp_err_t uart_pattern_queue_reset(uart_port_t uart_num, int queue_length);
+
+/**
+ * @brief UART set communication mode 
+ * @note  This function must be executed after uart_driver_install(), when the driver object is initialized.
+ * @param uart_num     Uart number to configure
+ * @param mode UART    UART mode to set 
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode);
+
+/**
+ * @brief UART set threshold timeout for TOUT feature
+ *
+ * @param uart_num     Uart number to configure
+ * @param tout_thresh  This parameter defines timeout threshold in uart symbol periods. The maximum value of threshold is 126. 
+ *        tout_thresh = 1, defines TOUT interrupt timeout equal to transmission time of one symbol (~11 bit) on current baudrate. 
+ *        If the time is expired the UART_RXFIFO_TOUT_INT interrupt is triggered. If tout_thresh == 0,
+ *        the TOUT feature is disabled.
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_INVALID_STATE Driver is not installed
+ */
+esp_err_t uart_set_rx_timeout(uart_port_t uart_num, const uint8_t tout_thresh);
+
+/**
+ * @brief Returns collision detection flag for RS485 mode
+ *        Function returns the collision detection flag into variable pointed by collision_flag.
+ *        *collision_flag = true, if collision detected else it is equal to false.
+ *        This function should be executed when actual transmission is completed (after uart_write_bytes()).
+ *
+ * @param uart_num       Uart number to configure
+ * @param collision_flag Pointer to variable of type bool to return collision flag.
+ *
+ * @return
+ *     - ESP_OK Success 
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t uart_get_collision_flag(uart_port_t uart_num, bool* collision_flag);
 
 #ifdef __cplusplus
 }

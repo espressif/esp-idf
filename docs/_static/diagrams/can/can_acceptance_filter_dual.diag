@@ -1,0 +1,19 @@
+#Diagram of CAN Controller Acceptance Filter (Dual) Configuration
+
+packetdiag can_acceptance_filter_dual {
+    node_width = 30
+    node_height = 35
+    default_fontsize = 15
+    colwidth = 32
+
+    0-3: "F1 DB1[0:3]" [color = lightyellow];
+    4: "F2\nRTR" [color = lightyellow];
+    5-15: "F2 11-bit ID" [color = lightyellow];
+    16-19: "F1 DB1[4:7]" [color = lightyellow];
+    20: "F1\nRTR" [color = lightyellow];
+    21-31: "F1 11-bit ID" [color = lightyellow];
+
+    32-47: "F2 29-bit ID [13:28]" [color = lightblue];
+    48-63: "F1 29-bit ID [13:28]" [color = lightblue];
+
+}
