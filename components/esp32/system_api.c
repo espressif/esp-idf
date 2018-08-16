@@ -31,6 +31,7 @@
 #include "soc/timer_group_struct.h"
 #include "soc/cpu.h"
 #include "soc/rtc.h"
+#include "soc/rtc_wdt.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/xtensa_api.h"
@@ -270,14 +271,15 @@ void IRAM_ATTR esp_restart_noos()
     xt_ints_off(0xFFFFFFFF);
 
     // Enable RTC watchdog for 1 second
-    REG_WRITE(RTC_CNTL_WDTWPROTECT_REG, RTC_CNTL_WDT_WKEY_VALUE);
-    REG_WRITE(RTC_CNTL_WDTCONFIG0_REG,
-            RTC_CNTL_WDT_FLASHBOOT_MOD_EN_M |
-            (RTC_WDT_STG_SEL_RESET_SYSTEM << RTC_CNTL_WDT_STG0_S) |
-            (RTC_WDT_STG_SEL_RESET_RTC << RTC_CNTL_WDT_STG1_S) |
-            (1 << RTC_CNTL_WDT_SYS_RESET_LENGTH_S) |
-            (1 << RTC_CNTL_WDT_CPU_RESET_LENGTH_S) );
-    REG_WRITE(RTC_CNTL_WDTCONFIG1_REG, rtc_clk_slow_freq_get_hz() * 1);
+    rtc_wdt_protect_off();
+    rtc_wdt_disable();
+    rtc_wdt_set_stage(RTC_WDT_STAGE0, RTC_WDT_STAGE_ACTION_RESET_RTC);
+    rtc_wdt_set_stage(RTC_WDT_STAGE1, RTC_WDT_STAGE_ACTION_RESET_SYSTEM);
+    rtc_wdt_set_length_of_reset_signal(RTC_WDT_SYS_RESET_SIG, RTC_WDT_LENGTH_200ns);
+    rtc_wdt_set_length_of_reset_signal(RTC_WDT_CPU_RESET_SIG, RTC_WDT_LENGTH_200ns);
+    rtc_wdt_set_time(RTC_WDT_STAGE0, 1000);
+    rtc_wdt_enable();
+    rtc_wdt_protect_on();
 
     // Reset and stall the other CPU.
     // CPU must be reset before stalling, in case it was running a s32c1i

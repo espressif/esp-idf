@@ -29,6 +29,7 @@
 #include "soc/io_mux_reg.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
+#include "soc/rtc_wdt.h"
 
 #include "driver/rtc_io.h"
 
@@ -136,7 +137,7 @@ void IRAM_ATTR call_start_cpu0()
         || rst_reas[1] == RTCWDT_SYS_RESET || rst_reas[1] == TG0WDT_SYS_RESET
 #endif
     ) {
-        esp_panic_wdt_stop();
+        rtc_wdt_disable();
     }
 
     //Clear BSS. Please do not attempt to do any complex stuff (like early logging) before this.
@@ -435,7 +436,7 @@ static void main_task(void* args)
 {
     // Now that the application is about to start, disable boot watchdogs
     REG_CLR_BIT(TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN_S);
-    REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN);
+    rtc_wdt_disable();
 #if !CONFIG_FREERTOS_UNICORE
     // Wait for FreeRTOS initialization to finish on APP CPU, before replacing its startup stack
     while (port_xSchedulerRunning[1] == 0) {
