@@ -217,7 +217,7 @@ speed a lot if small transactions are used.
             2.  When the DMA is enabled, it needs about 2us per transaction to setup the linked list. When the master is
                 transferring, it automatically read data from the linked list. If the DMA is not enabled,
                 CPU has to write/read each byte to/from the FIFO by itself. Usually this is faster than 2us, but the
-                transaction length is limited to 32 bytes for both write and read.
+                transaction length is limited to 64 bytes for both write and read.
 
        Typical transaction interval with one byte data is as below:
 
@@ -401,7 +401,7 @@ Known Issues
    2. disable the DMA by setting the last parameter to 0 in bus initialization function just as below:
       ``ret=spi_bus_initialize(VSPI_HOST, &buscfg, 0);``
 
-      this may prohibit you from transmitting and receiving data longer than 32 bytes.
+      this may prohibit you from transmitting and receiving data longer than 64 bytes.
    3. try to use command and address field to replace the write phase.
 
 2. Full duplex mode is not compatible with the *dummy bit workaround*, hence the frequency is limited. See :ref:`dummy
