@@ -177,7 +177,7 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
 
     spihost[host]->dma_chan=dma_chan;
     if (dma_chan == 0) {
-        spihost[host]->max_transfer_sz = 32;
+        spihost[host]->max_transfer_sz = 64;
     } else {
         //See how many dma descriptors we need and allocate them
         int dma_desc_ct=(bus_config->max_transfer_sz+SPI_MAX_DMA_LEN-1)/SPI_MAX_DMA_LEN;
@@ -212,6 +212,10 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
     spihost[host]->hw->dma_conf.val&=~(SPI_OUT_RST|SPI_IN_RST|SPI_AHBM_RST|SPI_AHBM_FIFO_RST);
     //Reset timing
     spihost[host]->hw->ctrl2.val=0;
+
+    //master use all 64 bytes of the buffer
+    spihost[host]->hw->user.usr_miso_highpart=0;
+    spihost[host]->hw->user.usr_mosi_highpart=0;
 
     //Disable unneeded ints
     spihost[host]->hw->slave.rd_buf_done=0;
@@ -633,7 +637,6 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
         //Fill DMA descriptors
         int extra_dummy=0;
         if (trans_buf->buffer_to_rcv) {
-            host->hw->user.usr_miso_highpart=0;
             if (host->dma_chan == 0) {
                 //No need to setup anything; we'll copy the result out of the work registers directly later.
             } else {
@@ -662,16 +665,13 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
                     //Use memcpy to get around alignment issues for txdata
                     uint32_t word;
                     memcpy(&word, &trans_buf->buffer_to_send[x/32], 4);
-                    host->hw->data_buf[(x/32)+8]=word;
+                    host->hw->data_buf[(x/32)]=word;
                 }
-                host->hw->user.usr_mosi_highpart=1;
             } else {
                 spicommon_dmaworkaround_transfer_active(host->dma_chan); //mark channel as active
                 spicommon_setup_dma_desc_links(host->dmadesc_tx, (trans->length+7)/8, (uint8_t*)trans_buf->buffer_to_send, false);
-                host->hw->user.usr_mosi_highpart=0;
                 host->hw->dma_out_link.addr=(int)(&host->dmadesc_tx[0]) & 0xFFFFF;
                 host->hw->dma_out_link.start=1;
-                host->hw->user.usr_mosi_highpart=0;
             }
         }
 
