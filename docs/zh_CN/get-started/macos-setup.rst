@@ -10,10 +10,9 @@
 
     sudo easy_install pip
 
-- 安装 pyserial::
+.. note::
 
-    sudo pip install pyserial
-
+    ``pip`` 稍后将用于安装 :ref:`必要的 Python 软件包 <get-started-get-packages>`。
 
 安装工具链
 ===============
