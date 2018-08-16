@@ -135,10 +135,20 @@ ESP32 是一套 Wi-Fi (2.4 GHz) 和蓝牙 (4.2) 双模解决方案，集成了�
 
 .. _get-started-get-packages:
 
-Install the Required Python Packages
+安装依赖的 Python 软件包
 ====================================
 
-TODO
+ESP-IDF 所依赖的 Python 软件包位于 ``$IDF_PATH/requirements.txt`` 文件中，您可以通过运行以下命令来安装它们：
+
+.. code:: bash
+
+    sudo pip install -r $IDF_PATH/requirements.txt
+
+如果您没有系统的管理员权限，那么可以使用如下命令来将软件包安装到用户目录中：
+
+.. code:: bash
+
+    pip install --user -r $IDF_PATH/requirements.txt
 
 .. _get-started-start-project:
 
