@@ -175,6 +175,9 @@ static bool verify_fill_pattern(void *data, size_t size, bool print_errors, bool
 
 void *multi_heap_malloc(multi_heap_handle_t heap, size_t size)
 {
+    if(size > SIZE_MAX - POISON_OVERHEAD) {
+        return NULL;
+    }
     multi_heap_internal_lock(heap);
     poison_head_t *head = multi_heap_malloc_impl(heap, size + POISON_OVERHEAD);
     uint8_t *data = NULL;
@@ -182,7 +185,8 @@ void *multi_heap_malloc(multi_heap_handle_t heap, size_t size)
         data = poison_allocated_region(head, size);
 #ifdef SLOW
         /* check everything we got back is FREE_FILL_PATTERN & swap for MALLOC_FILL_PATTERN */
-        assert( verify_fill_pattern(data, size, true, true, true) );
+        bool ret = verify_fill_pattern(data, size, true, true, true);
+        assert( ret );
 #endif
     }
 
@@ -216,6 +220,9 @@ void *multi_heap_realloc(multi_heap_handle_t heap, void *p, size_t size)
     poison_head_t *new_head;
     void *result = NULL;
 
+    if(size > SIZE_MAX - POISON_OVERHEAD) {
+        return NULL;
+    }
     if (p == NULL) {
         return multi_heap_malloc(heap, size);
     }

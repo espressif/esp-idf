@@ -128,6 +128,26 @@ esp_err_t esp_wifi_internal_reg_rxcb(wifi_interface_t ifx, wifi_rxcb_t fn);
 esp_err_t esp_wifi_internal_set_sta_ip(void);
 
 /**
+  * @brief  enable or disable transmitting WiFi MAC frame with fixed rate
+  *
+  * @attention 1. If fixed rate is enabled, both management and data frame are transmitted with fixed rate
+  * @attention 2. Make sure that the receiver is able to receive the frame with the fixed rate if you want the frame to be received
+  *
+  * @param  ifx : wifi interface
+  * @param  en : false - disable, true - enable
+  * @param  rate : PHY rate
+  *
+  * @return
+  *    - ERR_OK  : succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi was not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_IF : invalid WiFi interface
+  *    - ESP_ERR_INVALID_ARG : invalid rate
+  *    - ESP_ERR_NOT_SUPPORTED : do not support to set fixed rate if TX AMPDU is enabled
+  */
+esp_err_t esp_wifi_internal_set_fix_rate(wifi_interface_t ifx, bool en, wifi_phy_rate_t rate);
+
+/**
   * @brief     Check the MD5 values of the OS adapter header files in IDF and WiFi library
   *
   * @attention 1. It is used for internal CI version check
@@ -137,6 +157,28 @@ esp_err_t esp_wifi_internal_set_sta_ip(void);
   *     - ESP_WIFI_INVALID_ARG : MD5 check fail
   */
 esp_err_t esp_wifi_internal_osi_funcs_md5_check(const char *md5);
+
+/**
+  * @brief     Check the MD5 values of the crypto types header files in IDF and WiFi library
+  *
+  * @attention 1. It is used for internal CI version check
+  *
+  * @return
+  *     - ESP_OK : succeed
+  *     - ESP_WIFI_INVALID_ARG : MD5 check fail
+  */
+esp_err_t esp_wifi_internal_crypto_funcs_md5_check(const char *md5);
+
+/**
+  * @brief     Check the git commit id of WiFi library
+  *
+  * @attention 1. It is used for internal CI WiFi library check
+  *
+  * @return
+  *     - ESP_OK : succeed
+  *     - ESP_FAIL : fail
+  */
+esp_err_t esp_wifi_internal_git_commit_id_check(void);
 
 /**
   * @brief     Allocate a chunk of memory for WiFi driver

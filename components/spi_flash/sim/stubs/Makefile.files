@@ -1,0 +1,27 @@
+SOURCE_FILES := \
+	app_update/esp_ota_eps.c \
+	log/log.c \
+	newlib/lock.c \
+	esp32/crc.cpp \
+	esp32/esp_random.c \
+	bootloader_support/src/bootloader_common.c 
+
+INCLUDE_DIRS := \
+	../include \
+	../private_include \
+	app_update/include \
+	driver/include \
+	esp32/include \
+	freertos/include \
+	log/include \
+	newlib/include \
+	sdmmc/include \
+	vfs/include \
+	$(addprefix ../../../../components/, \
+	soc/esp32/include \
+	esp32/include \
+	bootloader_support/include \
+	app_update/include \
+	spi_flash/include \
+	)
+

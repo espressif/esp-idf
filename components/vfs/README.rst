@@ -94,7 +94,7 @@ are the :example:`peripherals/uart_select` and the :example:`system/select`
 examples.
 
 If :cpp:func:`select` is used for socket file descriptors only then one can
-enable the :ref:`CONFIG_USE_ONLY_LWIP_SELECT` option which can reduce the code
+enable the :envvar:`CONFIG_USE_ONLY_LWIP_SELECT` option which can reduce the code
 size and improve performance.
 
 Paths

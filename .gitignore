@@ -43,6 +43,11 @@ tools/unit-test-app/build
 tools/unit-test-app/builds
 tools/unit-test-app/output
 
+# IDF monitor test
+tools/test_idf_monitor/outputs
+
+TEST_LOGS
+
 # AWS IoT Examples require device-specific certs/keys
 examples/protocols/aws_iot/*/main/certs/*.pem.*
 

@@ -45,7 +45,7 @@
 #endif //WL_DEFAULT_START_ADDR
 
 #ifndef WL_CURRENT_VERSION
-#define WL_CURRENT_VERSION  1
+#define WL_CURRENT_VERSION  2
 #endif //WL_CURRENT_VERSION
 
 typedef struct {
@@ -174,7 +174,6 @@ esp_err_t wl_unmount(wl_handle_t handle)
     _lock_acquire(&s_instances_lock);
     result = check_handle(handle, __func__);
     if (result == ESP_OK) {
-        ESP_LOGV(TAG, "deleting handle 0x%08x", handle);
         // We have to flush state of the component
         result = s_instances[handle].instance->flush();
         // We use placement new in wl_mount, so call destructor directly

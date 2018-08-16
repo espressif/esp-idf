@@ -28,6 +28,9 @@ static const char* TAG = "nvs";
 #define ESP_LOGD(...)
 #endif
 
+extern "C" void nvs_dump(const char *partName);
+extern "C" esp_err_t nvs_flash_init_custom(const char *partName, uint32_t baseSector, uint32_t sectorCount);
+
 class HandleEntry : public intrusive_list_node<HandleEntry>
 {
     static uint32_t s_nvs_next_handle;

@@ -174,6 +174,10 @@ typedef struct
         int (*access_p)(void* ctx, const char *path, int amode);
         int (*access)(const char *path, int amode);
     };
+    union {
+        int (*truncate_p)(void* ctx, const char *path, off_t length);
+        int (*truncate)(const char *path, off_t length);
+    };
     /** start_select is called for setting up synchronous I/O multiplexing of the desired file descriptors in the given VFS */
     esp_err_t (*start_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, SemaphoreHandle_t *signal_sem);
     /** socket select function for socket FDs with the functionality of POSIX select(); this should be set only for the socket VFS */

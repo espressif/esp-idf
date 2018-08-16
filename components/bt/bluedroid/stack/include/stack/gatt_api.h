@@ -64,7 +64,7 @@
 #define  GATT_NOT_ENCRYPTED                  0x8e
 #define  GATT_CONGESTED                      0x8f
 
-#define  GATT_DUP_REG                        0x90 
+#define  GATT_DUP_REG                        0x90
 #define  GATT_ALREADY_OPEN                   0x91
 #define  GATT_CANCEL                         0x92
 
@@ -111,6 +111,7 @@ typedef UINT8 tGATT_STATUS;
 #define  GATT_SIGN_CMD_WRITE                 0xD2 /* changed in V4.0 1101-0010 (signed write)  see write cmd above*/
 #define  GATT_OP_CODE_MAX                    GATT_HANDLE_VALUE_CONF + 1 /* 0x1E = 30 + 1 = 31*/
 
+#define  GATT_COMMAND_FLAG                   0x40 /* Command Flag: set to one means commond */
 
 #define  GATT_HANDLE_IS_VALID(x) ((x) != 0)
 
@@ -766,7 +767,7 @@ extern UINT16 GATTS_AddIncludeService (UINT16 service_handle,
 **
 *******************************************************************************/
 extern UINT16 GATTS_AddCharacteristic (UINT16 service_handle, tBT_UUID *p_char_uuid,
-                                tGATT_PERM perm, tGATT_CHAR_PROP property, 
+                                tGATT_PERM perm, tGATT_CHAR_PROP property,
                                 tGATT_ATTR_VAL *attr_val, tGATTS_ATTR_CONTROL *control);
 
 /*******************************************************************************

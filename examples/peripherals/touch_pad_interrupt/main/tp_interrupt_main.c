@@ -35,14 +35,11 @@ static uint32_t s_pad_init_val[TOUCH_PAD_MAX];
 static void tp_example_set_thresholds(void)
 {
     uint16_t touch_value;
-    //delay some time in order to make the filter work and get a initial value
-    vTaskDelay(500/portTICK_PERIOD_MS);
-
     for (int i = 0; i<TOUCH_PAD_MAX; i++) {
         //read filtered value
         touch_pad_read_filtered(i, &touch_value);
         s_pad_init_val[i] = touch_value;
-        ESP_LOGI(TAG, "test init touch val: %d", touch_value);
+        ESP_LOGI(TAG, "test init: touch pad [%d] val is %d", i, touch_value);
         //set interrupt threshold.
         ESP_ERROR_CHECK(touch_pad_set_thresh(i, touch_value * 2 / 3));
 
@@ -159,10 +156,10 @@ void app_main()
     // For most usage scenarios, we recommend using the following combination:
     // the high reference valtage will be 2.7V - 1V = 1.7V, The low reference voltage will be 0.5V.
     touch_pad_set_voltage(TOUCH_HVOLT_2V7, TOUCH_LVOLT_0V5, TOUCH_HVOLT_ATTEN_1V);
-    // Initialize and start a software filter to detect slight change of capacitance.
-    touch_pad_filter_start(TOUCHPAD_FILTER_TOUCH_PERIOD);
     // Init touch pad IO
     tp_example_touch_pad_init();
+    // Initialize and start a software filter to detect slight change of capacitance.
+    touch_pad_filter_start(TOUCHPAD_FILTER_TOUCH_PERIOD);
     // Set thresh hold
     tp_example_set_thresholds();
     // Register touch interrupt ISR

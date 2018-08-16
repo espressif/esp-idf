@@ -136,15 +136,15 @@ char *http_auth_basic(const char *username, const char *password)
 {
     int out;
     char *user_info = NULL;
-    char *digest = calloc(1, MD5_MAX_LEN + 7);
-    HTTP_MEM_CHECK(TAG, digest, goto _basic_exit);
+    char *digest = NULL;
+    size_t n = 0;
     asprintf(&user_info, "%s:%s", username, password);
-    HTTP_MEM_CHECK(TAG, user_info, goto _basic_exit);
-    if (user_info == NULL) {
-        goto _basic_exit;
-    }
+    HTTP_MEM_CHECK(TAG, user_info, return NULL);
+    mbedtls_base64_encode(NULL, 0, &n, (const unsigned char *)user_info, strlen(user_info));
+    digest = calloc(1, 6 + n + 1);
+    HTTP_MEM_CHECK(TAG, digest, goto _basic_exit);
     strcpy(digest, "Basic ");
-    mbedtls_base64_encode((unsigned char *)digest + 6, MD5_MAX_LEN, (size_t *)&out, (const unsigned char *)user_info, strlen(user_info));
+    mbedtls_base64_encode((unsigned char *)digest + 6, n, (size_t *)&out, (const unsigned char *)user_info, strlen(user_info));
 _basic_exit:
     free(user_info);
     return digest;

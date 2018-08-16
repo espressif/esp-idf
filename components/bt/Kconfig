@@ -70,7 +70,7 @@ menu "MODEM SLEEP Options"
 config BTDM_CONTROLLER_MODEM_SLEEP
     bool "Bluetooth modem sleep"
     depends on BT_ENABLED
-    default y
+    default n
     help
         Enable/disable bluetooth controller low power mode.
         Note that currently there is problem in the combination use of bluetooth modem sleep and Dynamic Frequency Scaling(DFS). So do not enable DFS if bluetooth modem sleep is in use.
@@ -155,6 +155,11 @@ config CLASSIC_BT_ENABLED
     help
         For now this option needs "SMP_ENABLE" to be set to yes
 
+config BT_SSP_ENABLE
+   bool "Enable Secure Simple Pairing"
+   depends on CLASSIC_BT_ENABLED
+   default CLASSIC_BT_ENABLED
+
 config A2DP_ENABLE
     bool "A2DP"
     depends on CLASSIC_BT_ENABLED
@@ -219,6 +224,13 @@ config GATTC_ENABLE
     default y
     help
         This option can be close when the app work only on gatt server mode
+
+config GATTC_CACHE_NVS_FLASH
+    bool "Save gattc cache data to nvs flash"
+    depends on GATTC_ENABLE
+    default n
+    help
+        This select can save gattc cache data to nvs flash
 
 config BLE_SMP_ENABLE
    bool "Include BLE security module(SMP)"
@@ -997,6 +1009,15 @@ config BT_BLE_DYNAMIC_ENV_MEMORY
     help
         This select can make the allocation of memory will become more flexible
 
+config BLE_HOST_QUEUE_CONGESTION_CHECK
+    bool "BLE queue congestion check"
+    depends on BLUEDROID_ENABLED
+    default n
+    help
+        When scanning and scan duplicate is not enabled, if there are a lot of adv packets around or application layer 
+        handling adv packets is slow, it will cause the controller memory to run out. if enabled, adv packets will be 
+        lost when host queue is congested.
+
 config BLE_SCAN_DUPLICATE
     bool "BLE Scan Duplicate Options"
     depends on BLUEDROID_ENABLED
@@ -1007,8 +1028,8 @@ config BLE_SCAN_DUPLICATE
 config DUPLICATE_SCAN_CACHE_SIZE
     int "Maximum number of devices in scan duplicate filter"
     depends on BLE_SCAN_DUPLICATE
-    range 10 200
-    default 20
+    range 10 1000
+    default 50
     help
         Maximum number of devices which can be recorded in scan duplicate filter.
         When the maximum amount of device in the filter is reached, the cache will be refreshed.
@@ -1023,8 +1044,8 @@ config BLE_MESH_SCAN_DUPLICATE_EN
 config MESH_DUPLICATE_SCAN_CACHE_SIZE
     int "Maximum number of Mesh adv packets in scan duplicate filter"
     depends on BLE_MESH_SCAN_DUPLICATE_EN
-    range 10 200
-    default 50
+    range 10 1000
+    default 100
     help
         Maximum number of adv packets which can be recorded in duplicate scan cache for BLE Mesh.
         When the maximum amount of device in the filter is reached, the cache will be refreshed.

@@ -231,7 +231,7 @@ TEST_CASE("Can allocate IRAM int only with an IRAM handler", "[esp32]")
 }
 
 
-#include "soc/spi_struct.h"
+#include "soc/spi_periph.h"
 typedef struct {
     bool flag1;
     bool flag2;

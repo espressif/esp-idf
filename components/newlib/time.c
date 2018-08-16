@@ -36,6 +36,7 @@
 #include "freertos/xtensa_api.h"
 #include "freertos/task.h"
 #include "sdkconfig.h"
+#include "limits.h"
 
 #if defined( CONFIG_ESP32_TIME_SYSCALL_USE_RTC ) || defined( CONFIG_ESP32_TIME_SYSCALL_USE_RTC_FRC1 )
 #define WITH_RTC 1
@@ -80,9 +81,9 @@ static uint64_t s_boot_time;
 static _lock_t s_boot_time_lock;
 static _lock_t s_adjust_time_lock;
 // stores the start time of the slew
-RTC_DATA_ATTR static uint64_t adjtime_start = 0;
+static uint64_t adjtime_start = 0;
 // is how many microseconds total to slew
-RTC_DATA_ATTR static int64_t adjtime_total_correction = 0;
+static int64_t adjtime_total_correction = 0;
 #define ADJTIME_CORRECTION_FACTOR 6
 static uint64_t get_time_since_boot();
 #endif
@@ -371,3 +372,95 @@ uint64_t system_get_rtc_time(void)
 #endif
 }
 
+void esp_sync_counters_rtc_and_frc()
+{
+#if defined( WITH_FRC ) && defined( WITH_RTC )
+    adjtime_corr_stop();
+    int64_t s_microseconds_offset_cur = get_rtc_time_us() - esp_timer_get_time();
+    set_boot_time(get_adjusted_boot_time() + ((int64_t)s_microseconds_offset - s_microseconds_offset_cur));
+#endif
+}
+
+
+int clock_settime (clockid_t clock_id, const struct timespec *tp)
+{
+#if defined( WITH_FRC ) || defined( WITH_RTC )
+    if (tp == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    struct timeval tv;
+    switch (clock_id) {
+        case CLOCK_REALTIME:
+            tv.tv_sec = tp->tv_sec;
+            tv.tv_usec = tp->tv_nsec / 1000L;
+            settimeofday(&tv, NULL);
+            break;
+        default:
+            errno = EINVAL;
+            return -1;
+    }
+    return 0;
+#else
+    errno = ENOSYS;
+    return -1;
+#endif
+}
+
+int clock_gettime (clockid_t clock_id, struct timespec *tp)
+{
+#if defined( WITH_FRC ) || defined( WITH_RTC )
+    if (tp == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    struct timeval tv;
+    _gettimeofday_r(NULL, &tv, NULL);
+    uint64_t monotonic_time_us = 0;
+    switch (clock_id) {
+        case CLOCK_REALTIME:
+            tp->tv_sec = tv.tv_sec;
+            tp->tv_nsec = tv.tv_usec * 1000L;
+            break;
+        case CLOCK_MONOTONIC:
+#if defined( WITH_FRC )
+            monotonic_time_us = (uint64_t) esp_timer_get_time();
+#elif defined( WITH_RTC )
+            monotonic_time_us = get_rtc_time_us();
+#endif // WITH_FRC
+            tp->tv_sec = monotonic_time_us / 1000000LL;
+            tp->tv_nsec = (monotonic_time_us % 1000000LL) * 1000L;
+            break;
+        default:
+            errno = EINVAL;
+            return -1;
+    }
+    return 0;
+#else
+    errno = ENOSYS;
+    return -1;
+#endif
+}
+
+int clock_getres (clockid_t clock_id, struct timespec *res)
+{
+#if defined( WITH_FRC ) || defined( WITH_RTC )
+    if (res == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+#if defined( WITH_FRC )
+    res->tv_sec = 0;
+    res->tv_nsec = 1000L;
+#elif defined( WITH_RTC )
+    res->tv_sec = 0;
+    uint32_t rtc_freq = rtc_clk_slow_freq_get_hz();
+    assert(rtc_freq != 0);
+    res->tv_nsec = 1000000000L / rtc_freq;
+#endif // WITH_FRC
+    return 0;
+#else
+    errno = ENOSYS;
+    return -1;
+#endif
+}

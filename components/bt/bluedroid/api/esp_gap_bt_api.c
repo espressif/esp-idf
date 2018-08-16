@@ -240,4 +240,65 @@ esp_err_t esp_bt_gap_get_bond_device_list(int *dev_num, esp_bd_addr_t *dev_list)
     return (ret == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+#if (BT_SSP_INCLUDED == TRUE)
+esp_err_t esp_bt_gap_set_security_param(esp_bt_sp_param_t param_type,
+        void *value, uint8_t len)
+{
+    btc_msg_t msg;
+    btc_gap_bt_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_ACT_SET_SECURITY_PARAM;
+    arg.set_security_param.param_type = param_type;
+    arg.set_security_param.len = len;
+    arg.set_security_param.value = value;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), btc_gap_bt_arg_deep_copy)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_bt_gap_ssp_passkey_reply(esp_bd_addr_t bd_addr, bool accept, uint32_t passkey)
+{
+    btc_msg_t msg;
+    btc_gap_bt_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_ACT_PASSKEY_REPLY;
+    arg.passkey_reply.accept = accept;
+    arg.passkey_reply.passkey = passkey;
+    memcpy(arg.passkey_reply.bda.address, bd_addr, sizeof(esp_bd_addr_t));
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), btc_gap_bt_arg_deep_copy)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_bt_gap_ssp_confirm_reply(esp_bd_addr_t bd_addr, bool accept)
+{
+    btc_msg_t msg;
+    btc_gap_bt_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_ACT_CONFIRM_REPLY;
+    arg.confirm_reply.accept = accept;
+    memcpy(arg.confirm_reply.bda.address, bd_addr, sizeof(esp_bd_addr_t));
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), btc_gap_bt_arg_deep_copy)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+#endif /*(BT_SSP_INCLUDED == TRUE)*/
+
 #endif /* #if BTC_GAP_BT_INCLUDED == TRUE */

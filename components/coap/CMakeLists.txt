@@ -28,3 +28,14 @@ register_component()
 # TODO: find a way to move this to a port header
 target_compile_definitions(coap PUBLIC WITH_POSIX)
 
+set_source_files_properties(
+    libcoap/src/debug.c
+    libcoap/src/pdu.c
+    PROPERTIES COMPILE_FLAGS
+    -Wno-write-strings)
+
+# Temporary suppress "fallthrough" warnings until they are fixed in libcoap repo
+set_source_files_properties(
+    libcoap/src/option.c
+    PROPERTIES COMPILE_FLAGS
+    -Wno-implicit-fallthrough)

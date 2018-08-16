@@ -261,7 +261,7 @@ esp_err_t esp_ble_gatts_send_indicate(esp_gatt_if_t gatts_if, uint16_t conn_id, 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
     
     if (L2CA_CheckIsCongest(L2CAP_ATT_CID, conn_id)) {
-        LOG_ERROR("%s, the l2cap chanel is congest.", __func__);
+        LOG_DEBUG("%s, the l2cap chanel is congest.", __func__);
         return ESP_FAIL;
     }
     

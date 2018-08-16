@@ -7,7 +7,7 @@ INSTRUCTIONS
 
 Before submitting a new issue, please follow the checklist and try to find the answer.
 
-- [ ] I have read the documentation [ESP-IDF Programming Guide](http://esp-idf.readthedocs.io/en/latest/) and the issue is not addressed there.
+- [ ] I have read the documentation [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/) and the issue is not addressed there.
 - [ ] I have updated my IDF branch (master or release) to the latest version and checked that the issue is present there.
 - [ ] I have searched the issue tracker for a similar issue and not found a similar issue.
 
@@ -15,7 +15,7 @@ If the issue cannot be solved after the steps before, please follow these instru
 
 1. Fill in all the fields under **Environment** marked with [ ] by picking the correct option for you in each case and deleting the others.
 2. Describe your problem.
-3. Include [debug logs on the monitor](http://esp-idf.readthedocs.io/en/latest/get-started/idf-monitor.html#automatically-decoding-addresses) or the [coredump](http://esp-idf.readthedocs.io/en/latest/api-guides/core_dump.html).
+3. Include [debug logs on the monitor](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html#automatically-decoding-addresses) or the [coredump](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/core_dump.html).
 4. Provide more items under **Other items if possible** can help us better locate your problem.
 5. Use markup (buttons above) and the Preview tab to check what the issue will look like.
 6. Delete these instructions from the above to the below marker lines before submitting this issue.

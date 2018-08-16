@@ -44,6 +44,8 @@ static const char* UART_TAG = "uart";
 #define UART_EMPTY_THRESH_DEFAULT  (10)
 #define UART_FULL_THRESH_DEFAULT  (120)
 #define UART_TOUT_THRESH_DEFAULT   (10)
+#define UART_CLKDIV_FRAG_BIT_WIDTH  (3)
+#define UART_TOUT_REF_FACTOR_DEFAULT (UART_CLK_FREQ/(REF_CLK_FREQ<<UART_CLKDIV_FRAG_BIT_WIDTH))
 #define UART_TX_IDLE_NUM_DEFAULT   (0)
 #define UART_PATTERN_DET_QLEN_DEFAULT (10)
 
@@ -51,6 +53,9 @@ static const char* UART_TAG = "uart";
 #define UART_EXIT_CRITICAL_ISR(mux)     portEXIT_CRITICAL_ISR(mux)
 #define UART_ENTER_CRITICAL(mux)    portENTER_CRITICAL(mux)
 #define UART_EXIT_CRITICAL(mux)     portEXIT_CRITICAL(mux)
+
+// Check actual UART mode set
+#define UART_IS_MODE_SET(uart_number, mode) ((p_uart_obj[uart_number]->uart_mode == mode))
 
 typedef struct {
     uart_event_type_t type;        /*!< UART TX data type */
@@ -73,6 +78,9 @@ typedef struct {
     int queue_size;                     /*!< UART event queue size*/
     QueueHandle_t xQueueUart;           /*!< UART queue handler*/
     intr_handle_t intr_handle;          /*!< UART interrupt handle*/
+    uart_mode_t uart_mode;              /*!< UART controller actual mode set by uart_set_mode() */
+    bool coll_det_flg;                  /*!< UART collision detection flag */
+    
     //rx parameters
     int rx_buffered_len;                  /*!< UART cached data length */
     SemaphoreHandle_t rx_mux;           /*!< UART RX data mutex*/
@@ -664,7 +672,13 @@ esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
     UART[uart_num]->int_clr.val = UART_INTR_MASK;
     if(intr_conf->intr_enable_mask & UART_RXFIFO_TOUT_INT_ENA_M) {
-        UART[uart_num]->conf1.rx_tout_thrhd = ((intr_conf->rx_timeout_thresh) & UART_RX_TOUT_THRHD_V);
+        //Hardware issue workaround: when using ref_tick, the rx timeout threshold needs increase to 10 times.
+        //T_ref = T_apb * APB_CLK/(REF_TICK << CLKDIV_FRAG_BIT_WIDTH)
+        if(UART[uart_num]->conf0.tick_ref_always_on == 0) {
+            UART[uart_num]->conf1.rx_tout_thrhd = ((intr_conf->rx_timeout_thresh * UART_TOUT_REF_FACTOR_DEFAULT) & UART_RX_TOUT_THRHD_V);
+        } else {
+            UART[uart_num]->conf1.rx_tout_thrhd = ((intr_conf->rx_timeout_thresh) & UART_RX_TOUT_THRHD_V);
+        }
         UART[uart_num]->conf1.rx_tout_en = 1;
     } else {
         UART[uart_num]->conf1.rx_tout_en = 0;
@@ -724,7 +738,7 @@ static void uart_rx_intr_handler_default(void *param)
                 p_uart->tx_waiting_fifo = false;
                 xSemaphoreGiveFromISR(p_uart->tx_fifo_sem, &HPTaskAwoken);
                 if(HPTaskAwoken == pdTRUE) {
-                    portYIELD_FROM_ISR() ;
+                    portYIELD_FROM_ISR();
                 }
             } else {
                 //We don't use TX ring buffer, because the size is zero.
@@ -747,14 +761,13 @@ static void uart_rx_intr_handler_default(void *param)
                                 p_uart->tx_ptr = NULL;
                                 p_uart->tx_len_tot = p_uart->tx_head->tx_data.size;
                                 if(p_uart->tx_head->type == UART_DATA_BREAK) {
-                                    p_uart->tx_len_tot = p_uart->tx_head->tx_data.size;
                                     p_uart->tx_brk_flg = 1;
                                     p_uart->tx_brk_len = p_uart->tx_head->tx_data.brk_len;
                                 }
                                 //We have saved the data description from the 1st item, return buffer.
                                 vRingbufferReturnItemFromISR(p_uart->tx_ring_buf, p_uart->tx_head, &HPTaskAwoken);
                                 if(HPTaskAwoken == pdTRUE) {
-                                    portYIELD_FROM_ISR() ;
+                                    portYIELD_FROM_ISR();
                                 }
                             }else if(p_uart->tx_ptr == NULL) {
                                 //Update the TX item pointer, we will need this to return item to buffer.
@@ -771,8 +784,16 @@ static void uart_rx_intr_handler_default(void *param)
                     if (p_uart->tx_len_tot > 0 && p_uart->tx_ptr && p_uart->tx_len_cur > 0) {
                         //To fill the TX FIFO.
                         int send_len = p_uart->tx_len_cur > tx_fifo_rem ? tx_fifo_rem : p_uart->tx_len_cur;
-                        for(buf_idx = 0; buf_idx < send_len; buf_idx++) {
-                            WRITE_PERI_REG(UART_FIFO_AHB_REG(uart_num), *(p_uart->tx_ptr++) & 0xff);
+                        // Set RS485 RTS pin before transmission if the half duplex mode is enabled
+                        if (UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
+                            UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
+                            uart_reg->conf0.sw_rts = 0;
+                            uart_reg->int_ena.tx_done = 1;
+                            UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
+                        }
+                        for (buf_idx = 0; buf_idx < send_len; buf_idx++) {
+                            WRITE_PERI_REG(UART_FIFO_AHB_REG(uart_num),
+                                    *(p_uart->tx_ptr++) & 0xff);
                         }
                         p_uart->tx_len_tot -= send_len;
                         p_uart->tx_len_cur -= send_len;
@@ -781,13 +802,13 @@ static void uart_rx_intr_handler_default(void *param)
                             //Return item to ring buffer.
                             vRingbufferReturnItemFromISR(p_uart->tx_ring_buf, p_uart->tx_head, &HPTaskAwoken);
                             if(HPTaskAwoken == pdTRUE) {
-                                portYIELD_FROM_ISR() ;
+                                portYIELD_FROM_ISR();
                             }
                             p_uart->tx_head = NULL;
                             p_uart->tx_ptr = NULL;
                             //Sending item done, now we need to send break if there is a record.
                             //Set TX break signal after FIFO is empty
-                            if(p_uart->tx_brk_flg == 1 && p_uart->tx_len_tot == 0) {
+                            if(p_uart->tx_len_tot == 0 && p_uart->tx_brk_flg == 1) {
                                 UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
                                 uart_reg->int_ena.tx_brk_done = 0;
                                 uart_reg->idle_conf.tx_brk_num = p_uart->tx_brk_len;
@@ -796,6 +817,8 @@ static void uart_rx_intr_handler_default(void *param)
                                 uart_reg->int_ena.tx_brk_done = 1;
                                 UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
                                 p_uart->tx_waiting_brk = 1;
+                                //do not enable TX empty interrupt
+                                en_tx_flg = false;
                             } else {
                                 //enable TX empty interrupt
                                 en_tx_flg = true;
@@ -885,7 +908,7 @@ static void uart_rx_intr_handler_default(void *param)
                     UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
                 }
                 if(HPTaskAwoken == pdTRUE) {
-                    portYIELD_FROM_ISR() ;
+                    portYIELD_FROM_ISR();
                 }
             } else {
                 uart_disable_intr_mask(uart_num, UART_RXFIFO_FULL_INT_ENA_M | UART_RXFIFO_TOUT_INT_ENA_M);
@@ -943,7 +966,7 @@ static void uart_rx_intr_handler_default(void *param)
             } else {
                 xSemaphoreGiveFromISR(p_uart->tx_brk_sem, &HPTaskAwoken);
                 if(HPTaskAwoken == pdTRUE) {
-                    portYIELD_FROM_ISR() ;
+                    portYIELD_FROM_ISR();
                 }
             }
         } else if(uart_intr_status & UART_TX_BRK_IDLE_DONE_INT_ST_M) {
@@ -952,12 +975,31 @@ static void uart_rx_intr_handler_default(void *param)
         } else if(uart_intr_status & UART_AT_CMD_CHAR_DET_INT_ST_M) {
             uart_reg->int_clr.at_cmd_char_det = 1;
             uart_event.type = UART_PATTERN_DET;
+        } else if ((uart_intr_status & UART_RS485_CLASH_INT_ST_M)
+                || (uart_intr_status & UART_RS485_FRM_ERR_INT_ENA)
+                || (uart_intr_status & UART_RS485_PARITY_ERR_INT_ENA)) {
+            // RS485 collision or frame error interrupt triggered
+            uart_clear_intr_status(uart_num, UART_RS485_CLASH_INT_CLR_M);
+            UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
+            uart_reset_rx_fifo(uart_num);
+            // Set collision detection flag
+            p_uart_obj[uart_num]->coll_det_flg = true; 
+            UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
+            uart_event.type = UART_EVENT_MAX;
         } else if(uart_intr_status & UART_TX_DONE_INT_ST_M) {
             uart_disable_intr_mask(uart_num, UART_TX_DONE_INT_ENA_M);
             uart_clear_intr_status(uart_num, UART_TX_DONE_INT_CLR_M);
+            // If RS485 half duplex mode is enable then reset FIFO and 
+            // reset RTS pin to start receiver driver
+            if (UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
+                UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
+                uart_reset_rx_fifo(uart_num); // Allows to avoid hardware issue with the RXFIFO reset
+                uart_reg->conf0.sw_rts = 1;
+                UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
+            }
             xSemaphoreGiveFromISR(p_uart_obj[uart_num]->tx_done_sem, &HPTaskAwoken);
-            if(HPTaskAwoken == pdTRUE) {
-                portYIELD_FROM_ISR() ;
+            if (HPTaskAwoken == pdTRUE) {
+                portYIELD_FROM_ISR();
             }
         } else {
             uart_reg->int_clr.val = uart_intr_status; /*simply clear all other intr status*/
@@ -969,7 +1011,7 @@ static void uart_rx_intr_handler_default(void *param)
                 ESP_EARLY_LOGV(UART_TAG, "UART event queue full");
             }
             if(HPTaskAwoken == pdTRUE) {
-                portYIELD_FROM_ISR() ;
+                portYIELD_FROM_ISR();
             }
         }
         uart_intr_status = uart_reg->int_st.val;
@@ -1026,7 +1068,12 @@ static int uart_fill_fifo(uart_port_t uart_num, const char* buffer, uint32_t len
     uint8_t tx_fifo_cnt = UART[uart_num]->status.txfifo_cnt;
     uint8_t tx_remain_fifo_cnt = (UART_FIFO_LEN - tx_fifo_cnt);
     uint8_t copy_cnt = (len >= tx_remain_fifo_cnt ? tx_remain_fifo_cnt : len);
-    for(i = 0; i < copy_cnt; i++) {
+    // Set the RTS pin if RS485 mode is enabled
+    if (UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
+        UART[uart_num]->conf0.sw_rts = 0;
+        UART[uart_num]->int_ena.tx_done = 1;
+    }
+    for (i = 0; i < copy_cnt; i++) {
         WRITE_PERI_REG(UART_FIFO_AHB_REG(uart_num), buffer[i]);
     }
     return copy_cnt;
@@ -1055,6 +1102,7 @@ static int uart_tx_all(uart_port_t uart_num, const char* src, size_t size, bool 
 
     //lock for uart_tx
     xSemaphoreTake(p_uart_obj[uart_num]->tx_mux, (portTickType)portMAX_DELAY);
+    p_uart_obj[uart_num]->coll_det_flg = false;
     if(p_uart_obj[uart_num]->tx_buf_size > 0) {
         int max_size = xRingbufferGetMaxItemSize(p_uart_obj[uart_num]->tx_ring_buf);
         int offset = 0;
@@ -1257,6 +1305,8 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
             return ESP_FAIL;
         }
         p_uart_obj[uart_num]->uart_num = uart_num;
+        p_uart_obj[uart_num]->uart_mode = UART_MODE_UART;
+        p_uart_obj[uart_num]->coll_det_flg = false;
         p_uart_obj[uart_num]->tx_fifo_sem = xSemaphoreCreateBinary();
         xSemaphoreGive(p_uart_obj[uart_num]->tx_fifo_sem);
         p_uart_obj[uart_num]->tx_done_sem = xSemaphoreCreateBinary();
@@ -1392,4 +1442,91 @@ void uart_set_select_notif_callback(uart_port_t uart_num, uart_select_notif_call
 portMUX_TYPE *uart_get_selectlock()
 {
     return &uart_selectlock;
+}
+// Set UART mode
+esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode) 
+{
+    UART_CHECK((p_uart_obj[uart_num]), "uart driver error", ESP_ERR_INVALID_STATE);
+    UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_ERR_INVALID_ARG);
+    if ((mode == UART_MODE_RS485_COLLISION_DETECT) || (mode == UART_MODE_RS485_APP_CTRL) 
+            || (mode == UART_MODE_RS485_HALF_DUPLEX)) {
+        UART_CHECK((UART[uart_num]->conf1.rx_flow_en != 1),
+                "disable hw flowctrl before using RS485 mode", ESP_ERR_INVALID_ARG);
+    }
+    UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
+    UART[uart_num]->rs485_conf.en = 0;
+    UART[uart_num]->rs485_conf.tx_rx_en = 0;
+    UART[uart_num]->rs485_conf.rx_busy_tx_en = 0;
+    UART[uart_num]->conf0.irda_en = 0;
+    UART[uart_num]->conf0.sw_rts = 0;
+    switch (mode) {
+    case UART_MODE_UART:
+        break;
+    case UART_MODE_RS485_COLLISION_DETECT:
+        // This mode allows read while transmitting that allows collision detection
+        p_uart_obj[uart_num]->coll_det_flg = false;
+        // Transmitters output signal loop back to the receivers input signal
+        UART[uart_num]->rs485_conf.tx_rx_en = 0 ;
+        // Transmitter should send data when its receiver is busy
+        UART[uart_num]->rs485_conf.rx_busy_tx_en = 1;
+        UART[uart_num]->rs485_conf.en = 1;
+        // Enable collision detection interrupts
+        uart_enable_intr_mask(uart_num, UART_RXFIFO_TOUT_INT_ENA
+                                        | UART_RXFIFO_FULL_INT_ENA
+                                        | UART_RS485_CLASH_INT_ENA
+                                        | UART_RS485_FRM_ERR_INT_ENA
+                                        | UART_RS485_PARITY_ERR_INT_ENA);
+        break;
+    case UART_MODE_RS485_APP_CTRL:
+        // Application software control, remove echo
+        UART[uart_num]->rs485_conf.rx_busy_tx_en = 1;
+        UART[uart_num]->rs485_conf.en = 1;
+        break;
+    case UART_MODE_RS485_HALF_DUPLEX:
+        // Enable receiver, sw_rts = 1  generates low level on RTS pin
+        UART[uart_num]->conf0.sw_rts = 1;
+        UART[uart_num]->rs485_conf.en = 1;
+        // Must be set to 0 to automatically remove echo
+        UART[uart_num]->rs485_conf.tx_rx_en = 0;
+        // This is to void collision
+        UART[uart_num]->rs485_conf.rx_busy_tx_en = 1;
+        break;
+    case UART_MODE_IRDA:
+        UART[uart_num]->conf0.irda_en = 1;
+        break;
+    default:
+        UART_CHECK(1, "unsupported uart mode", ESP_ERR_INVALID_ARG);
+        break;
+    }
+    p_uart_obj[uart_num]->uart_mode = mode;
+    UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
+    return ESP_OK;
+}
+
+esp_err_t uart_set_rx_timeout(uart_port_t uart_num, const uint8_t tout_thresh) 
+{
+    UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_ERR_INVALID_ARG);
+    UART_CHECK((tout_thresh < 127), "tout_thresh max value is 126", ESP_ERR_INVALID_ARG);
+    UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
+    // The tout_thresh = 1, defines TOUT interrupt timeout equal to  
+    // transmission time of one symbol (~11 bit) on current baudrate  
+    if (tout_thresh > 0) {
+        UART[uart_num]->conf1.rx_tout_thrhd = (tout_thresh & UART_RX_TOUT_THRHD_V);
+        UART[uart_num]->conf1.rx_tout_en = 1;
+    } else {
+        UART[uart_num]->conf1.rx_tout_en = 0;
+    }
+    UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
+    return ESP_OK;
+}
+
+esp_err_t uart_get_collision_flag(uart_port_t uart_num, bool* collision_flag)
+{
+    UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_ERR_INVALID_ARG);
+    UART_CHECK((collision_flag != NULL), "wrong parameter pointer", ESP_ERR_INVALID_ARG);
+    UART_CHECK((UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX) 
+                    || UART_IS_MODE_SET(uart_num, UART_MODE_RS485_COLLISION_DETECT)), 
+                    "wrong mode", ESP_ERR_INVALID_ARG);
+    *collision_flag = p_uart_obj[uart_num]->coll_det_flg;
+    return ESP_OK;
 }

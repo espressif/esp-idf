@@ -149,6 +149,22 @@ tcp_tmr(void)
   }
 }
 
+#if LWIP_CALLBACK_API || TCP_LISTEN_BACKLOG
+/** Called when a listen pcb is closed. Iterates one pcb list and removes the
+ * closed listener pcb from pcb->listener if matching.
+ */
+static void
+tcp_remove_listener(struct tcp_pcb *list, struct tcp_pcb_listen *lpcb)
+{
+  struct tcp_pcb *pcb;
+  for (pcb = list; pcb != NULL; pcb = pcb->next) {
+    if (pcb->listener == lpcb) {
+      pcb->listener = NULL;
+    }
+  }
+}
+#endif
+
 void
 tcp_set_fin_wait_1(struct tcp_pcb *pcb)
 {
@@ -157,6 +173,70 @@ tcp_set_fin_wait_1(struct tcp_pcb *pcb)
   pcb->tmr = tcp_ticks;
 #endif
 }
+
+/** Called when a listen pcb is closed. Iterates all pcb lists and removes the
+ * closed listener pcb from pcb->listener if matching.
+ */
+static void
+tcp_listen_closed(struct tcp_pcb *pcb)
+{
+#if LWIP_CALLBACK_API || TCP_LISTEN_BACKLOG
+  size_t i;
+  LWIP_ASSERT("pcb != NULL", pcb != NULL);
+  LWIP_ASSERT("pcb->state == LISTEN", pcb->state == LISTEN);
+  for (i = 1; i < LWIP_ARRAYSIZE(tcp_pcb_lists); i++) {
+    tcp_remove_listener(*tcp_pcb_lists[i], (struct tcp_pcb_listen *)pcb);
+  }
+#endif
+  LWIP_UNUSED_ARG(pcb);
+}
+
+#if TCP_LISTEN_BACKLOG
+/** @ingroup tcp_raw
+ * Delay accepting a connection in respect to the listen backlog:
+ * the number of outstanding connections is increased until
+ * tcp_backlog_accepted() is called.
+ *
+ * ATTENTION: the caller is responsible for calling tcp_backlog_accepted()
+ * or else the backlog feature will get out of sync!
+ *
+ * @param pcb the connection pcb which is not fully accepted yet
+ */
+void
+tcp_backlog_delayed(struct tcp_pcb *pcb)
+{
+  LWIP_ASSERT("pcb != NULL", pcb != NULL);
+  if ((pcb->flags & TF_BACKLOGPEND) == 0) { 
+    if (pcb->listener != NULL) {
+      pcb->listener->accepts_pending++;
+      LWIP_ASSERT("accepts_pending != 0", pcb->listener->accepts_pending != 0);
+      pcb->flags |= TF_BACKLOGPEND;
+    }    
+  }
+}
+
+/** @ingroup tcp_raw
+ * A delayed-accept a connection is accepted (or closed/aborted): decreases
+ * the number of outstanding connections after calling tcp_backlog_delayed().
+ *
+ * ATTENTION: the caller is responsible for calling tcp_backlog_accepted()
+ * or else the backlog feature will get out of sync!
+ *
+ * @param pcb the connection pcb which is now fully accepted (or closed/aborted)
+ */
+void
+tcp_backlog_accepted(struct tcp_pcb *pcb)
+{
+  LWIP_ASSERT("pcb != NULL", pcb != NULL);
+  if ((pcb->flags & TF_BACKLOGPEND) != 0) {
+    if (pcb->listener != NULL) {
+      LWIP_ASSERT("accepts_pending != 0", pcb->listener->accepts_pending != 0);
+      pcb->listener->accepts_pending--;
+      pcb->flags &= ~TF_BACKLOGPEND;
+    }
+  }
+}
+#endif /* TCP_LISTEN_BACKLOG */
 
 /**
  * Closes the TX side of a connection held by the PCB.
@@ -227,6 +307,7 @@ tcp_close_shutdown(struct tcp_pcb *pcb, u8_t rst_on_unacked_data)
     break;
   case LISTEN:
     err = ERR_OK;
+    tcp_listen_closed(pcb);
     tcp_pcb_remove(&tcp_listen_pcbs.pcbs, pcb);
     memp_free(MEMP_TCP_PCB_LISTEN, pcb);
     pcb = NULL;
@@ -241,6 +322,7 @@ tcp_close_shutdown(struct tcp_pcb *pcb, u8_t rst_on_unacked_data)
   case SYN_RCVD:
     err = tcp_send_fin(pcb);
     if (err == ERR_OK) {
+      tcp_backlog_accepted(pcb);
       MIB2_STATS_INC(mib2.tcpattemptfails);
       tcp_set_fin_wait_1(pcb);
     }
@@ -408,6 +490,7 @@ tcp_abandon(struct tcp_pcb *pcb, int reset)
       pcb->ooseq = NULL;
     }
 #endif /* TCP_QUEUE_OOSEQ */
+    tcp_backlog_accepted(pcb);
     if (send_rst) {
       LWIP_DEBUGF(TCP_RST_DEBUG, ("tcp_abandon: sending RST\n"));
       tcp_rst(seqno, ackno, &pcb->local_ip, &pcb->remote_ip, local_port, pcb->remote_port);
@@ -1747,27 +1830,7 @@ tcp_pcb_purge(struct tcp_pcb *pcb)
 
     LWIP_DEBUGF(TCP_DEBUG, ("tcp_pcb_purge\n"));
 
-#if TCP_LISTEN_BACKLOG
-    if (pcb->state == SYN_RCVD) {
-      /* Need to find the corresponding listen_pcb and decrease its accepts_pending */
-      struct tcp_pcb_listen *lpcb;
-      LWIP_ASSERT("tcp_pcb_purge: pcb->state == SYN_RCVD but tcp_listen_pcbs is NULL",
-        tcp_listen_pcbs.listen_pcbs != NULL);
-      for (lpcb = tcp_listen_pcbs.listen_pcbs; lpcb != NULL; lpcb = lpcb->next) {
-        if ((lpcb->local_port == pcb->local_port) &&
-            (IP_IS_V6_VAL(pcb->local_ip) == IP_IS_V6_VAL(lpcb->local_ip)) &&
-            (ip_addr_isany(&lpcb->local_ip) ||
-             ip_addr_cmp(&pcb->local_ip, &lpcb->local_ip))) {
-            /* port and address of the listen pcb match the timed-out pcb */
-            LWIP_ASSERT("tcp_pcb_purge: listen pcb does not have accepts pending",
-              lpcb->accepts_pending > 0);
-            lpcb->accepts_pending--;
-            break;
-          }
-      }
-    }
-#endif /* TCP_LISTEN_BACKLOG */
-
+    tcp_backlog_accepted(pcb);
 
     if (pcb->refused_data != NULL) {
       LWIP_DEBUGF(TCP_DEBUG, ("tcp_pcb_purge: data left on ->refused_data\n"));
@@ -1917,6 +1980,31 @@ tcp_eff_send_mss_impl(u16_t sendmss, const ip_addr_t *dest
 }
 #endif /* TCP_CALCULATE_EFF_SEND_MSS */
 
+/** Helper function for tcp_netif_ip4_addr_changed() that iterates a pcb list */
+static void
+tcp_netif_ip_addr_changed_pcblist(const ip4_addr_t* old_addr, struct tcp_pcb* pcb_list)
+{
+  struct tcp_pcb *pcb;
+  pcb = pcb_list;
+  while (pcb != NULL) {
+    /* PCB bound to current local interface address? */
+    if (ip4_addr_cmp(ip_2_ip4(&pcb->local_ip), old_addr)
+#if LWIP_AUTOIP
+      /* connections to link-local addresses must persist (RFC3927 ch. 1.9) */
+      && (!IP_IS_V4_VAL(pcb->local_ip) || !ip4_addr_islinklocal(ip_2_ip4(&pcb->local_ip)))
+#endif /* LWIP_AUTOIP */
+      ) {
+        /* this connection must be aborted */
+        struct tcp_pcb *next = pcb->next;
+        LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_STATE, ("netif_set_ipaddr: aborting TCP pcb %p\n", (void *)pcb));
+        tcp_abort(pcb);
+        pcb = next;
+    } else {
+      pcb = pcb->next;
+    }
+  }
+}
+
 #if LWIP_IPV4
 /** This function is called from netif.c when address is changed or netif is removed
  *
@@ -1927,18 +2015,29 @@ void tcp_netif_ipv4_addr_changed(const ip4_addr_t* old_addr, const ip4_addr_t* n
 {
   struct tcp_pcb_listen *lpcb, *next;
 
-  if (!ip4_addr_isany(new_addr)) {
-    /* PCB bound to current local interface address? */
-    for (lpcb = tcp_listen_pcbs.listen_pcbs; lpcb != NULL; lpcb = next) {
-      next = lpcb->next;
-      /* Is this an IPv4 pcb? */
-      if (!IP_IS_V6_VAL(lpcb->local_ip)) {
-        /* PCB bound to current local interface address? */
-        if ((!(ip4_addr_isany(ip_2_ip4(&lpcb->local_ip)))) &&
-            (ip4_addr_cmp(ip_2_ip4(&lpcb->local_ip), old_addr))) {
-          /* The PCB is listening to the old ipaddr and
-           * is set to listen to the new one instead */
-              ip_addr_copy_from_ip4(lpcb->local_ip, *new_addr);
+  if (!ip4_addr_isany(old_addr)) {
+#if ESP_TCP_KEEP_CONNECTION_WHEN_IP_CHANGES
+    if ((new_addr == NULL) || ((!ip4_addr_isany_val(*new_addr)) && (!ip4_addr_cmp(old_addr, new_addr)))) {
+#endif
+      tcp_netif_ip_addr_changed_pcblist(old_addr, tcp_active_pcbs);
+      tcp_netif_ip_addr_changed_pcblist(old_addr, tcp_bound_pcbs);
+#if ESP_TCP_KEEP_CONNECTION_WHEN_IP_CHANGES
+    }
+#endif
+
+    if (!ip4_addr_isany(new_addr)) {
+      /* PCB bound to current local interface address? */
+      for (lpcb = tcp_listen_pcbs.listen_pcbs; lpcb != NULL; lpcb = next) {
+        next = lpcb->next;
+        /* Is this an IPv4 pcb? */
+        if (!IP_IS_V6_VAL(lpcb->local_ip)) {
+          /* PCB bound to current local interface address? */
+          if ((!(ip4_addr_isany(ip_2_ip4(&lpcb->local_ip)))) &&
+              (ip4_addr_cmp(ip_2_ip4(&lpcb->local_ip), old_addr))) {
+            /* The PCB is listening to the old ipaddr and
+             * is set to listen to the new one instead */
+            ip_addr_copy_from_ip4(lpcb->local_ip, *new_addr);
+          }
         }
       }
     }

@@ -18,7 +18,36 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include "esp_err.h"
+
+typedef enum {
+    ESP_SPIRAM_VOLT_3V3 = 0,       /*!< SPI RAM voltage is 3.3v */
+    ESP_SPIRAM_VOLT_1V8 = 1,       /*!< SPI RAM voltage is 1.8v */
+    ESP_SPIRAM_VOLT_INVALID,       /*!< SPI RAM voltage is invalid*/
+} esp_spiram_volt_t;
+
+typedef enum {
+    ESP_SPIRAM_SIZE_32MBITS = 0,   /*!< SPI RAM size is 32 MBits */
+    ESP_SPIRAM_SIZE_64MBITS = 1,   /*!< SPI RAM size is 64 MBits */
+    ESP_SPIRAM_SIZE_INVALID,       /*!< SPI RAM size is invalid */
+} esp_spiram_size_t;
+
+/**
+ * @brief get SPI RAM voltage
+ * @return
+ *     - ESP_SPIRAM_VOLT_INVALID if SPI RAM not enabled or not valid.
+ *     - SPI RAM voltage
+ */
+esp_spiram_volt_t esp_spiram_get_chip_volt();
+
+/**
+ * @brief get SPI RAM size
+ * @return
+ *     - ESP_SPIRAM_SIZE_INVALID if SPI RAM not enabled or not valid
+ *     - SPI RAM size
+ */
+esp_spiram_size_t esp_spiram_get_chip_size();
 
 /**
  * @brief Initialize spiram interface/hardware. Normally called from cpu_start.c.

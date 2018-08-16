@@ -119,7 +119,7 @@ static struct gatts_profile_inst heart_rate_profile_tab[HEART_PROFILE_NUM] = {
  */
 
 /// Heart Rate Sensor Service
-static const uint16_t heart_rate_svc = ESP_GATT_UUID_HEALTH_THERMOM_SVC;
+static const uint16_t heart_rate_svc = ESP_GATT_UUID_HEART_RATE_SVC;
 
 #define CHAR_DECLARATION_SIZE   (sizeof(uint8_t))
 static const uint16_t primary_service_uuid = ESP_GATT_UUID_PRI_SERVICE;
@@ -320,6 +320,9 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                 (bd_addr[4] << 8) + bd_addr[5]);
         ESP_LOGI(GATTS_TABLE_TAG, "address type = %d", param->ble_security.auth_cmpl.addr_type);
         ESP_LOGI(GATTS_TABLE_TAG, "pair status = %s",param->ble_security.auth_cmpl.success ? "success" : "fail");
+        if(!param->ble_security.auth_cmpl.success) {
+            ESP_LOGI(GATTS_TABLE_TAG, "fail reason = 0x%x",param->ble_security.auth_cmpl.fail_reason);
+        }
         show_bonded_devices();
         break;
     }
@@ -466,7 +469,7 @@ void app_main()
 
     // Initialize NVS.
     ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
     }

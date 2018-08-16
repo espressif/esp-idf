@@ -1,14 +1,8 @@
 register_config_only_component()
 
-# Set partition_csv to the configured partition source file
-#
-if(CONFIG_PARTITION_TABLE_CUSTOM)
-    # Custom filename expands any path relative to the project
-    get_filename_component(partition_csv "${CONFIG_PARTITION_TABLE_FILENAME}" ABSOLUTE BASE_DIR "${PROJECT_PATH}")
-else()
-    # Other .csv files are always in the component directory
-    set(partition_csv "${CMAKE_CURRENT_SOURCE_DIR}/${CONFIG_PARTITION_TABLE_FILENAME}")
-endif()
+if(NOT BOOTLOADER_BUILD)
+
+set(partition_csv "${PARTITION_CSV_PATH}")
 
 if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
     set(unsigned_partition_bin "partition-table-unsigned.bin")
@@ -56,3 +50,4 @@ set_property(GLOBAL APPEND_STRING PROPERTY
     ESPTOOL_WRITE_FLASH_ARGS
     "${PARTITION_TABLE_OFFSET} ${final_partition_bin} ")
 
+endif()

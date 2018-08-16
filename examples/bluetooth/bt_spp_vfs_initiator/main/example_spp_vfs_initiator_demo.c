@@ -41,7 +41,7 @@
 
 static const esp_spp_mode_t esp_spp_mode = ESP_SPP_MODE_VFS;
 
-static const esp_spp_sec_t sec_mask = ESP_SPP_SEC_NONE;
+static const esp_spp_sec_t sec_mask = ESP_SPP_SEC_AUTHENTICATE;
 static const esp_spp_role_t role_master = ESP_SPP_ROLE_MASTER;
 
 static esp_bd_addr_t peer_bd_addr;
@@ -170,6 +170,27 @@ static void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
         case ESP_BT_GAP_RMT_SRVC_REC_EVT:
             ESP_LOGI(SPP_TAG, "ESP_BT_GAP_RMT_SRVC_REC_EVT");
             break;
+#ifdef CONFIG_BT_SSP_ENABLE
+        case ESP_BT_GAP_AUTH_CMPL_EVT:{
+            if (param->auth_cmpl.stat == ESP_BT_STATUS_SUCCESS) {
+                ESP_LOGI(SPP_TAG, "authentication success: %s", param->auth_cmpl.device_name);
+                esp_log_buffer_hex(SPP_TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
+            } else {
+                ESP_LOGE(SPP_TAG, "authentication failed, status:%d", param->auth_cmpl.stat);
+            }
+            break;
+        }
+        case ESP_BT_GAP_CFM_REQ_EVT:
+            ESP_LOGI(SPP_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %d", param->cfm_req.num_val);
+            esp_bt_gap_ssp_confirm_reply(param->cfm_req.bda, true);
+            break;
+        case ESP_BT_GAP_KEY_NOTIF_EVT:
+            ESP_LOGI(SPP_TAG, "ESP_BT_GAP_KEY_NOTIF_EVT passkey:%d", param->key_notif.passkey);
+            break;
+        case ESP_BT_GAP_KEY_REQ_EVT:
+            ESP_LOGI(SPP_TAG, "ESP_BT_GAP_KEY_REQ_EVT Please enter passkey!");
+            break;
+#endif ///CONFIG_BT_SSP_ENABLE
         default:
             break;
     }
@@ -187,7 +208,7 @@ void app_main()
     }
 
     esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
     }
@@ -230,5 +251,11 @@ void app_main()
         ESP_LOGE(SPP_TAG, "%s spp init failed", __func__);
         return;
     }
+
+#ifdef CONFIG_BT_SSP_ENABLE
+    esp_bt_sp_param_t param_type = ESP_BT_SP_IOCAP_MODE;
+    esp_bt_io_cap_t iocap = ESP_BT_IO_CAP_IO;
+    esp_bt_gap_set_security_param(param_type, &iocap, sizeof(uint8_t));
+#endif ///CONFIG_BT_SSP_ENABLE
 }
 

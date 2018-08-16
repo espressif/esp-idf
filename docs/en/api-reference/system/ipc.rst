@@ -29,7 +29,7 @@ until the IPC Task has completed execution of the given function.
 Functions executed by IPCs must be functions of type 
 `void func(void *arg)`. To run more complex functions which require a larger 
 stack, the IPC tasks' stack size can be configured by modifying 
-:ref:`CONFIG_IPC_TASK_STACK_SIZE` in `menuconfig`. The IPC API is protected by a
+:envvar:`CONFIG_IPC_TASK_STACK_SIZE` in `menuconfig`. The IPC API is protected by a
 mutex hence simultaneous IPC calls are not possible.
 
 Care should taken to avoid deadlock when writing functions to be executed by

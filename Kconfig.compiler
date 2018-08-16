@@ -1,0 +1,135 @@
+menu "Compiler options"
+
+choice OPTIMIZATION_COMPILER
+    prompt "Optimization Level"
+    default OPTIMIZATION_LEVEL_DEBUG
+    help
+        This option sets compiler optimization level (gcc -O argument).
+
+        - for "Release" setting, -Os flag is added to CFLAGS.
+        - for "Debug" setting, -Og flag is added to CFLAGS.
+
+        "Release" with -Os produces smaller & faster compiled code but it
+        may be harder to correlated code addresses to source files when debugging.
+
+        To add custom optimization settings, set CFLAGS and/or CPPFLAGS
+        in project makefile, before including $(IDF_PATH)/make/project.mk. Note that
+        custom optimization levels may be unsupported.
+
+config OPTIMIZATION_LEVEL_DEBUG
+    bool "Debug (-Og)"
+config OPTIMIZATION_LEVEL_RELEASE
+    bool "Release (-Os)"
+endchoice
+
+choice OPTIMIZATION_ASSERTION_LEVEL
+    prompt "Assertion level"
+    default OPTIMIZATION_ASSERTIONS_ENABLED
+    help
+        Assertions can be:
+
+        - Enabled. Failure will print verbose assertion details. This is the default.
+
+        - Set to "silent" to save code size (failed assertions will abort() but user
+          needs to use the aborting address to find the line number with the failed assertion.)
+
+        - Disabled entirely (not recommended for most configurations.) -DNDEBUG is added
+          to CPPFLAGS in this case.
+
+config OPTIMIZATION_ASSERTIONS_ENABLED
+    prompt "Enabled"
+    bool
+    help
+        Enable assertions. Assertion content and line number will be printed on failure.
+
+config OPTIMIZATION_ASSERTIONS_SILENT
+    prompt "Silent (saves code size)"
+    bool
+    help
+        Enable silent assertions. Failed assertions will abort(), user needs to
+        use the aborting address to find the line number with the failed assertion.
+
+config OPTIMIZATION_ASSERTIONS_DISABLED
+    prompt "Disabled (sets -DNDEBUG)"
+    bool
+    help
+        If assertions are disabled, -DNDEBUG is added to CPPFLAGS.
+
+endchoice # assertions
+
+menuconfig CXX_EXCEPTIONS
+   bool "Enable C++ exceptions"
+   default n
+   help
+       Enabling this option compiles all IDF C++ files with exception support enabled.
+
+       Disabling this option disables C++ exception support in all compiled files, and any libstdc++ code which throws
+       an exception will abort instead.
+
+       Enabling this option currently adds an additional ~500 bytes of heap overhead
+       when an exception is thrown in user code for the first time.
+
+config CXX_EXCEPTIONS_EMG_POOL_SIZE
+    int "Emergency Pool Size"
+    default 0
+    depends on CXX_EXCEPTIONS
+    help
+       Size (in bytes) of the emergency memory pool for C++ exceptions. This pool will be used to allocate
+       memory for thrown exceptions when there is not enough memory on the heap.
+
+choice STACK_CHECK_MODE
+    prompt "Stack smashing protection mode"
+    default STACK_CHECK_NONE
+    help
+        Stack smashing protection mode. Emit extra code to check for buffer overflows, such as stack
+        smashing attacks. This is done by adding a guard variable to functions with vulnerable objects.
+        The guards are initialized when a function is entered and then checked when the function exits.
+        If a guard check fails, program is halted. Protection has the following modes:
+
+        - In NORMAL mode (GCC flag: -fstack-protector) only functions that call alloca,
+          and functions with buffers larger than 8 bytes are protected.
+        
+        - STRONG mode (GCC flag: -fstack-protector-strong) is like NORMAL, but includes
+          additional functions to be protected -- those that have local array definitions,
+          or have references to local frame addresses.
+        
+        - In OVERALL mode (GCC flag: -fstack-protector-all) all functions are protected.
+
+        Modes have the following impact on code performance and coverage:
+
+        - performance: NORMAL > STRONG > OVERALL
+        
+        - coverage: NORMAL < STRONG < OVERALL
+
+
+config STACK_CHECK_NONE
+    bool "None"
+config STACK_CHECK_NORM
+    bool "Normal"
+config STACK_CHECK_STRONG
+    bool "Strong"
+config STACK_CHECK_ALL
+    bool "Overall"
+endchoice
+
+config STACK_CHECK
+    bool
+    default !STACK_CHECK_NONE
+    help
+        Stack smashing protection.
+
+config WARN_WRITE_STRINGS
+    bool "Enable -Wwrite-strings warning flag"
+    default "n"
+    help
+        Adds -Wwrite-strings flag for the C/C++ compilers.
+
+        For C, this gives string constants the type ``const char[]`` so that
+        copying the address of one into a non-const ``char *`` pointer
+        produces a warning. This warning helps to find at compile time code
+        that tries to write into a string constant.
+
+        For C++, this warns about the deprecated conversion from string
+        literals to ``char *``.
+
+endmenu # Compiler Options

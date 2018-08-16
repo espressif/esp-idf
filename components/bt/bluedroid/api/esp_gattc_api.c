@@ -164,6 +164,7 @@ esp_gatt_status_t esp_ble_gattc_get_all_char(esp_gatt_if_t gattc_if,
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if ((start_handle == 0) && (end_handle == 0)) {
+        *count = 0;
         return ESP_GATT_INVALID_HANDLE;
     }
 
@@ -206,6 +207,7 @@ esp_gatt_status_t esp_ble_gattc_get_char_by_uuid(esp_gatt_if_t gattc_if,
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (start_handle == 0 && end_handle == 0) {
+        *count = 0;
         return ESP_GATT_INVALID_HANDLE;
     }
 
@@ -247,6 +249,7 @@ esp_gatt_status_t esp_ble_gattc_get_descr_by_char_handle(esp_gatt_if_t gattc_if,
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (char_handle == 0) {
+        *count = 0;
         return ESP_GATT_INVALID_HANDLE;
     }
     
@@ -269,6 +272,7 @@ esp_gatt_status_t esp_ble_gattc_get_include_service(esp_gatt_if_t gattc_if,
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (start_handle == 0 && end_handle == 0) {
+        *count = 0;
         return ESP_GATT_INVALID_HANDLE;
     }
 
@@ -291,6 +295,7 @@ esp_gatt_status_t esp_ble_gattc_get_attr_count(esp_gatt_if_t gattc_if,
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if ((start_handle == 0 && end_handle == 0) && (type != ESP_GATT_DB_DESCRIPTOR)) {
+        *count = 0;
         return ESP_GATT_INVALID_HANDLE;
     }
 
@@ -308,6 +313,7 @@ esp_gatt_status_t esp_ble_gattc_get_db(esp_gatt_if_t gattc_if, uint16_t conn_id,
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (start_handle == 0 && end_handle == 0) {
+        *count = 0;
         return ESP_GATT_INVALID_HANDLE;
     }
 

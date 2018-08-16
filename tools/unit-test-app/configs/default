@@ -1,1 +1,1 @@
-# default config — nothing to set here
+EXCLUDE_COMPONENTS=libsodium bt

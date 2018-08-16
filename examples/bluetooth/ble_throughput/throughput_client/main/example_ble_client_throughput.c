@@ -482,14 +482,16 @@ static void throughput_client_task(void *param)
     while(1) {
 #if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
         vTaskDelay(2000 / portTICK_PERIOD_MS);
-        uint32_t bit_rate = 0;
-        if (start_time) {
-            current_time = esp_timer_get_time();
-            bit_rate = notify_len * SECOND_TO_USECOND / (current_time - start_time);
-            ESP_LOGI(GATTC_TAG, "Notify Bit rate = %d Btye/s, = %d bit/s, time = %ds", 
-                     bit_rate, bit_rate<<3, (int)((current_time - start_time) / SECOND_TO_USECOND));
-        } else {
-            ESP_LOGI(GATTC_TAG, "Notify Bit rate = 0 Btye/s, = 0 bit/s");
+        if(is_connecet){
+            uint32_t bit_rate = 0;
+            if (start_time) {
+                current_time = esp_timer_get_time();
+                bit_rate = notify_len * SECOND_TO_USECOND / (current_time - start_time);
+                ESP_LOGI(GATTC_TAG, "Notify Bit rate = %d Btye/s, = %d bit/s, time = %ds", 
+                        bit_rate, bit_rate<<3, (int)((current_time - start_time) / SECOND_TO_USECOND));
+            } else {
+                ESP_LOGI(GATTC_TAG, "Notify Bit rate = 0 Btye/s, = 0 bit/s");
+            }
         }
 #endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
 #if (CONFIG_GATTC_WRITE_THROUGHPUT)        
@@ -517,7 +519,7 @@ void app_main()
 {
     // Initialize NVS.
     esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
     }

@@ -34,12 +34,6 @@
 #define LWIP_HDR_TIMERS_H
 
 #include "lwip/opt.h"
-
-/* Timers are not supported when NO_SYS==1 and NO_SYS_NO_TIMERS==1 */
-#define LWIP_TIMERS (!NO_SYS || (NO_SYS && !NO_SYS_NO_TIMERS))
-
-#if LWIP_TIMERS
-
 #include "lwip/err.h"
 #if !NO_SYS
 #include "lwip/sys.h"
@@ -56,6 +50,26 @@ extern "C" {
 #define LWIP_DEBUG_TIMERNAMES 0
 #endif /* LWIP_DEBUG*/
 #endif
+
+/** Function prototype for a stack-internal timer function that has to be
+ * called at a defined interval */
+typedef void (* lwip_cyclic_timer_handler)(void);
+
+/** This struct contains information about a stack-internal timer function
+ *  that has to be called at a defined interval */
+struct lwip_cyclic_timer {
+  u32_t interval_ms;
+  lwip_cyclic_timer_handler handler;
+#if LWIP_DEBUG_TIMERNAMES
+  const char* handler_name;
+#endif /* LWIP_DEBUG_TIMERNAMES */
+};
+
+/** This array contains all stack-internal cyclic timers. To get the number of
+ * timers, use LWIP_ARRAYSIZE() */
+extern const struct lwip_cyclic_timer lwip_cyclic_timers[];
+
+#if LWIP_TIMERS
 
 /** Function prototype for a timeout callback function. Register such a function
  * using sys_timeout().
@@ -84,18 +98,20 @@ void sys_timeout(u32_t msecs, sys_timeout_handler handler, void *arg);
 #endif /* LWIP_DEBUG_TIMERNAMES */
 
 void sys_untimeout(sys_timeout_handler handler, void *arg);
+void sys_restart_timeouts(void);
 #if NO_SYS
 void sys_check_timeouts(void);
-void sys_restart_timeouts(void);
 u32_t sys_timeouts_sleeptime(void);
 #else /* NO_SYS */
 void sys_timeouts_mbox_fetch(sys_mbox_t *mbox, void **msg);
 #endif /* NO_SYS */
 
 
+#endif /* LWIP_TIMERS */
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* LWIP_TIMERS */
 #endif /* LWIP_HDR_TIMERS_H */
+

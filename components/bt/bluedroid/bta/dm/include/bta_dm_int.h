@@ -71,7 +71,9 @@ enum {
 #if (SMP_INCLUDED == TRUE)
     /* simple pairing events */
     BTA_DM_API_CONFIRM_EVT,
-
+#if (BT_SSP_INCLUDED == TRUE)
+    BTA_DM_API_KEY_REQ_EVT,
+#endif ///BT_SSP_INCLUDED == TRUE
     BTA_DM_API_SET_ENCRYPTION_EVT,
 #endif  ///SMP_INCLUDED == TRUE
 #if (BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
@@ -196,6 +198,7 @@ typedef struct {
 typedef struct {
     BT_HDR        hdr;
     BD_ADDR       remote_addr;
+    tBTA_TRANSPORT  transport;
     tBTA_CMPL_CB  *read_rssi_cb;
 }tBTA_DM_API_READ_RSSI;
 
@@ -290,6 +293,14 @@ typedef struct {
     BD_ADDR     bd_addr;
     BOOLEAN     accept;
 } tBTA_DM_API_CONFIRM;
+
+/* data type for BTA_DM_API_KEY_REQ_EVT */
+typedef struct {
+    BT_HDR      hdr;
+    BD_ADDR     bd_addr;
+    BOOLEAN     accept;
+    UINT32      passkey;
+} tBTA_DM_API_KEY_REQ;
 
 /* data type for BTA_DM_CI_IO_REQ_EVT */
 typedef struct {
@@ -391,6 +402,7 @@ typedef struct {
 typedef struct {
     BT_HDR              hdr;
     BD_ADDR             bd_addr;
+    UINT8               transport;
 } tBTA_DM_API_REMOVE_DEVICE;
 
 /* data type for BTA_DM_API_EXECUTE_CBACK_EVT */
@@ -746,6 +758,7 @@ typedef union {
 
     tBTA_DM_API_LOC_OOB     loc_oob;
     tBTA_DM_API_CONFIRM     confirm;
+    tBTA_DM_API_KEY_REQ     key_req;
     tBTA_DM_CI_IO_REQ       ci_io_req;
     tBTA_DM_CI_RMT_OOB      ci_rmt_oob;
 
@@ -1223,6 +1236,7 @@ extern void bta_dm_ble_get_energy_info(tBTA_DM_MSG *p_data);
 #endif
 extern void bta_dm_set_encryption(tBTA_DM_MSG *p_data);
 extern void bta_dm_confirm(tBTA_DM_MSG *p_data);
+extern void bta_dm_key_req(tBTA_DM_MSG *p_data);
 #if (BTM_OOB_INCLUDED == TRUE)
 extern void bta_dm_loc_oob(tBTA_DM_MSG *p_data);
 extern void bta_dm_ci_io_req_act(tBTA_DM_MSG *p_data);

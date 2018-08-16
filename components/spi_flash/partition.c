@@ -17,14 +17,16 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/lock.h>
-
+#include "esp_flash_partitions.h"
 #include "esp_attr.h"
 #include "esp_flash_data_types.h"
 #include "esp_spi_flash.h"
 #include "esp_partition.h"
 #include "esp_flash_encrypt.h"
 #include "esp_log.h"
+#include "bootloader_common.h"
 
+#define HASH_LEN 32 /* SHA-256 digest length */
 
 #ifndef NDEBUG
 // Enable built-in checks in queue.h in debug builds
@@ -145,14 +147,14 @@ static esp_err_t load_partitions()
     const uint32_t* ptr;
     spi_flash_mmap_handle_t handle;
     // map 64kB block where partition table is located
-    esp_err_t err = spi_flash_mmap(ESP_PARTITION_TABLE_ADDR & 0xffff0000,
+    esp_err_t err = spi_flash_mmap(ESP_PARTITION_TABLE_OFFSET & 0xffff0000,
             SPI_FLASH_SEC_SIZE, SPI_FLASH_MMAP_DATA, (const void**) &ptr, &handle);
     if (err != ESP_OK) {
         return err;
     }
     // calculate partition address within mmap-ed region
     const esp_partition_info_t* it = (const esp_partition_info_t*)
-            (ptr + (ESP_PARTITION_TABLE_ADDR & 0xffff) / sizeof(*ptr));
+            (ptr + (ESP_PARTITION_TABLE_OFFSET & 0xffff) / sizeof(*ptr));
     const esp_partition_info_t* end = it + SPI_FLASH_SEC_SIZE / sizeof(*it);
     // tail of the linked list of partitions
     partition_list_item_t* last = NULL;
@@ -176,7 +178,7 @@ static esp_err_t load_partitions()
         }
 
         // it->label may not be zero-terminated
-        strncpy(item->info.label, (const char*) it->label, sizeof(it->label));
+        strncpy(item->info.label, (const char*) it->label, sizeof(item->info.label) - 1);
         item->info.label[sizeof(it->label)] = 0;
         // add it to the list
         if (last == NULL) {
@@ -321,4 +323,24 @@ esp_err_t esp_partition_mmap(const esp_partition_t* partition, uint32_t offset, 
         *out_ptr = (void*) (((ptrdiff_t) *out_ptr) + region_offset);
     }
     return rc;
+}
+
+esp_err_t esp_partition_get_sha256(const esp_partition_t *partition, uint8_t *sha_256)
+{
+    return bootloader_common_get_sha256_of_partition(partition->address, partition->size, partition->type, sha_256);
+}
+
+bool esp_partition_check_identity(const esp_partition_t *partition_1, const esp_partition_t *partition_2)
+{
+    uint8_t sha_256[2][HASH_LEN] = { 0 };
+
+    if (esp_partition_get_sha256(partition_1, sha_256[0]) == ESP_OK &&
+        esp_partition_get_sha256(partition_2, sha_256[1]) == ESP_OK) {
+
+        if (memcmp(sha_256[0], sha_256[1], HASH_LEN) == 0) {
+            // The partitions are identity
+            return true;
+        }
+    }
+    return false;
 }

@@ -18,7 +18,9 @@ System API
    Sleep Modes <sleep_modes>
    Base MAC address <base_mac_address>
    Over The Air Updates (OTA) <ota>
+   ESP HTTPS OTA <esp_https_ota>
    ESP pthread <esp_pthread>
+   Error Codes and Helper Functions <esp_err>
 
 
 Example code for this API section is provided in :example:`system` directory of ESP-IDF examples.

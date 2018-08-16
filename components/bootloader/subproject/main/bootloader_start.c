@@ -27,51 +27,42 @@
 
 static const char* TAG = "boot";
 
-static esp_err_t select_image (esp_image_metadata_t *image_data);
+static int select_partition_number (bootloader_state_t *bs);
 static int selected_boot_partition(const bootloader_state_t *bs);
 /*
  * We arrive here after the ROM bootloader finished loading this second stage bootloader from flash.
  * The hardware is mostly uninitialized, flash cache is down and the app CPU is in reset.
  * We do have a stack, so we can do the initialization in C.
  */
-void call_start_cpu0()
+void __attribute__((noreturn)) call_start_cpu0()
 {
     // 1. Hardware initialization
-    if(bootloader_init() != ESP_OK){
-        return;
+    if (bootloader_init() != ESP_OK) {
+        bootloader_reset();
     }
 
-    // 2. Select image to boot
-    esp_image_metadata_t image_data;
-    if(select_image(&image_data) != ESP_OK){
-        return;
-    }
-
-    // 3. Loading the selected image
-    bootloader_utility_load_image(&image_data);
-}
-
-// Selects image to boot
-static esp_err_t select_image (esp_image_metadata_t *image_data)
-{
-    // 1. Load partition table
+    // 2. Select the number of boot partition
     bootloader_state_t bs = { 0 };
-    if (!bootloader_utility_load_partition_table(&bs)) {
-        ESP_LOGE(TAG, "load partition table error!");
-        return ESP_FAIL;
-    }
-
-    // 2. Select boot partition
-    int boot_index = selected_boot_partition(&bs);
-    if(boot_index == INVALID_INDEX) {
-        return ESP_FAIL; // Unrecoverable failure (not due to corrupt ota data or bad partition contents)
+    int boot_index = select_partition_number(&bs);
+    if (boot_index == INVALID_INDEX) {
+        bootloader_reset();
     }
 
     // 3. Load the app image for booting
-    if (!bootloader_utility_load_boot_image(&bs, boot_index, image_data)) {
-        return ESP_FAIL;
+    bootloader_utility_load_boot_image(&bs, boot_index);
+}
+
+// Select the number of boot partition
+static int select_partition_number (bootloader_state_t *bs)
+{
+    // 1. Load partition table
+    if (!bootloader_utility_load_partition_table(bs)) {
+        ESP_LOGE(TAG, "load partition table error!");
+        return INVALID_INDEX;
     }
-    return ESP_OK;
+
+    // 2. Select the number of boot partition
+    return selected_boot_partition(bs);
 }
 
 /*

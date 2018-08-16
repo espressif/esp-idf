@@ -1,0 +1,5 @@
+pyserial
+pyyaml
+xunitgen
+netifaces
+matplotlib

@@ -1,6 +1,9 @@
+// Copyright 2016-2018 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -22,6 +25,7 @@
 #include "soc/rtc_cntl_struct.h"
 #include "soc/syscon_reg.h"
 #include "soc/syscon_struct.h"
+#include "soc/rtc.h"
 #include "rtc_io.h"
 #include "touch_pad.h"
 #include "adc.h"
@@ -97,12 +101,12 @@ In ADC2, there're two locks used for different cases:
 adc2_spinlock should be acquired first, then adc2_wifi_lock or rtc_spinlock.
 */
 //prevent ADC2 being used by wifi and other tasks at the same time.
-static _lock_t adc2_wifi_lock = NULL;
+static _lock_t adc2_wifi_lock;
 //prevent ADC2 being used by tasks (regardless of WIFI)
 portMUX_TYPE adc2_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 //prevent ADC1 being used by I2S dma and other tasks at the same time.
-static _lock_t adc1_i2s_lock = NULL;
+static _lock_t adc1_i2s_lock;
 
 typedef struct {
     TimerHandle_t timer;
@@ -116,50 +120,6 @@ static touch_pad_filter_t *s_touch_pad_filter = NULL;
 // check if touch pad be inited.
 static uint16_t s_touch_pad_init_bit = 0x0000;
 static filter_cb_t s_filter_cb = NULL;
-
-//Reg,Mux,Fun,IE,Up,Down,Rtc_number
-const rtc_gpio_desc_t rtc_gpio_desc[GPIO_PIN_COUNT] = {
-    {RTC_IO_TOUCH_PAD1_REG, RTC_IO_TOUCH_PAD1_MUX_SEL_M, RTC_IO_TOUCH_PAD1_FUN_SEL_S, RTC_IO_TOUCH_PAD1_FUN_IE_M, RTC_IO_TOUCH_PAD1_RUE_M, RTC_IO_TOUCH_PAD1_RDE_M, RTC_IO_TOUCH_PAD1_SLP_SEL_M, RTC_IO_TOUCH_PAD1_SLP_IE_M, RTC_IO_TOUCH_PAD1_HOLD_M, RTC_CNTL_TOUCH_PAD1_HOLD_FORCE_M, RTC_IO_TOUCH_PAD1_DRV_V, RTC_IO_TOUCH_PAD1_DRV_S, RTCIO_GPIO0_CHANNEL}, //0
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1},                                                                                                                                            //1
-    {RTC_IO_TOUCH_PAD2_REG, RTC_IO_TOUCH_PAD2_MUX_SEL_M, RTC_IO_TOUCH_PAD2_FUN_SEL_S, RTC_IO_TOUCH_PAD2_FUN_IE_M, RTC_IO_TOUCH_PAD2_RUE_M, RTC_IO_TOUCH_PAD2_RDE_M, RTC_IO_TOUCH_PAD2_SLP_SEL_M, RTC_IO_TOUCH_PAD2_SLP_IE_M, RTC_IO_TOUCH_PAD2_HOLD_M, RTC_CNTL_TOUCH_PAD2_HOLD_FORCE_M, RTC_IO_TOUCH_PAD2_DRV_V, RTC_IO_TOUCH_PAD2_DRV_S, RTCIO_GPIO2_CHANNEL}, //2
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1},                                                                                                                                            //3
-    {RTC_IO_TOUCH_PAD0_REG, RTC_IO_TOUCH_PAD0_MUX_SEL_M, RTC_IO_TOUCH_PAD0_FUN_SEL_S, RTC_IO_TOUCH_PAD0_FUN_IE_M, RTC_IO_TOUCH_PAD0_RUE_M, RTC_IO_TOUCH_PAD0_RDE_M, RTC_IO_TOUCH_PAD0_SLP_SEL_M, RTC_IO_TOUCH_PAD0_SLP_IE_M, RTC_IO_TOUCH_PAD0_HOLD_M,  RTC_CNTL_TOUCH_PAD0_HOLD_FORCE_M, RTC_IO_TOUCH_PAD0_DRV_V, RTC_IO_TOUCH_PAD0_DRV_S, RTCIO_GPIO4_CHANNEL}, //4
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1},                                                                                                                                            //5
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1},                                                                                                                                            //6
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1},                                                                                                                                            //7
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1},                                                                                                                                            //8
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1},                                                                                                                                            //9
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1},                                                                                                                                            //10
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1},                                                                                                                                            //11
-    {RTC_IO_TOUCH_PAD5_REG, RTC_IO_TOUCH_PAD5_MUX_SEL_M, RTC_IO_TOUCH_PAD5_FUN_SEL_S, RTC_IO_TOUCH_PAD5_FUN_IE_M, RTC_IO_TOUCH_PAD5_RUE_M, RTC_IO_TOUCH_PAD5_RDE_M, RTC_IO_TOUCH_PAD5_SLP_SEL_M, RTC_IO_TOUCH_PAD5_SLP_IE_M, RTC_IO_TOUCH_PAD5_HOLD_M, RTC_CNTL_TOUCH_PAD5_HOLD_FORCE_M, RTC_IO_TOUCH_PAD5_DRV_V, RTC_IO_TOUCH_PAD5_DRV_S, RTCIO_GPIO12_CHANNEL}, //12
-    {RTC_IO_TOUCH_PAD4_REG, RTC_IO_TOUCH_PAD4_MUX_SEL_M, RTC_IO_TOUCH_PAD4_FUN_SEL_S, RTC_IO_TOUCH_PAD4_FUN_IE_M, RTC_IO_TOUCH_PAD4_RUE_M, RTC_IO_TOUCH_PAD4_RDE_M, RTC_IO_TOUCH_PAD4_SLP_SEL_M, RTC_IO_TOUCH_PAD4_SLP_IE_M, RTC_IO_TOUCH_PAD4_HOLD_M, RTC_CNTL_TOUCH_PAD4_HOLD_FORCE_M, RTC_IO_TOUCH_PAD4_DRV_V, RTC_IO_TOUCH_PAD4_DRV_S, RTCIO_GPIO13_CHANNEL}, //13
-    {RTC_IO_TOUCH_PAD6_REG, RTC_IO_TOUCH_PAD6_MUX_SEL_M, RTC_IO_TOUCH_PAD6_FUN_SEL_S, RTC_IO_TOUCH_PAD6_FUN_IE_M, RTC_IO_TOUCH_PAD6_RUE_M, RTC_IO_TOUCH_PAD6_RDE_M, RTC_IO_TOUCH_PAD6_SLP_SEL_M, RTC_IO_TOUCH_PAD6_SLP_IE_M, RTC_IO_TOUCH_PAD6_HOLD_M, RTC_CNTL_TOUCH_PAD6_HOLD_FORCE_M, RTC_IO_TOUCH_PAD6_DRV_V, RTC_IO_TOUCH_PAD6_DRV_S, RTCIO_GPIO14_CHANNEL}, //14
-    {RTC_IO_TOUCH_PAD3_REG, RTC_IO_TOUCH_PAD3_MUX_SEL_M, RTC_IO_TOUCH_PAD3_FUN_SEL_S, RTC_IO_TOUCH_PAD3_FUN_IE_M, RTC_IO_TOUCH_PAD3_RUE_M, RTC_IO_TOUCH_PAD3_RDE_M, RTC_IO_TOUCH_PAD3_SLP_SEL_M, RTC_IO_TOUCH_PAD3_SLP_IE_M, RTC_IO_TOUCH_PAD3_HOLD_M, RTC_CNTL_TOUCH_PAD3_HOLD_FORCE_M, RTC_IO_TOUCH_PAD3_DRV_V, RTC_IO_TOUCH_PAD3_DRV_S, RTCIO_GPIO15_CHANNEL}, //15
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1},                                                                                                                                            //16
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1},                                                                                                                                            //17
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1},                                                                                                                                            //18
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1},                                                                                                                                            //19
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1},                                                                                                                                            //20
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1},                                                                                                                                            //21
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1},                                                                                                                                            //22
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1},                                                                                                                                            //23
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1},                                                                                                                                            //24
-    {RTC_IO_PAD_DAC1_REG, RTC_IO_PDAC1_MUX_SEL_M, RTC_IO_PDAC1_FUN_SEL_S, RTC_IO_PDAC1_FUN_IE_M, RTC_IO_PDAC1_RUE_M, RTC_IO_PDAC1_RDE_M, RTC_IO_PDAC1_SLP_SEL_M, RTC_IO_PDAC1_SLP_IE_M, RTC_IO_PDAC1_HOLD_M, RTC_CNTL_PDAC1_HOLD_FORCE_M, RTC_IO_PDAC1_DRV_V, RTC_IO_PDAC1_DRV_S, RTCIO_GPIO25_CHANNEL},                           //25
-    {RTC_IO_PAD_DAC2_REG, RTC_IO_PDAC2_MUX_SEL_M, RTC_IO_PDAC2_FUN_SEL_S, RTC_IO_PDAC2_FUN_IE_M, RTC_IO_PDAC2_RUE_M, RTC_IO_PDAC2_RDE_M, RTC_IO_PDAC2_SLP_SEL_M, RTC_IO_PDAC2_SLP_IE_M, RTC_IO_PDAC2_HOLD_M, RTC_CNTL_PDAC2_HOLD_FORCE_M, RTC_IO_PDAC2_DRV_V, RTC_IO_PDAC2_DRV_S, RTCIO_GPIO26_CHANNEL},                           //26
-    {RTC_IO_TOUCH_PAD7_REG, RTC_IO_TOUCH_PAD7_MUX_SEL_M, RTC_IO_TOUCH_PAD7_FUN_SEL_S, RTC_IO_TOUCH_PAD7_FUN_IE_M, RTC_IO_TOUCH_PAD7_RUE_M, RTC_IO_TOUCH_PAD7_RDE_M, RTC_IO_TOUCH_PAD7_SLP_SEL_M, RTC_IO_TOUCH_PAD7_SLP_IE_M, RTC_IO_TOUCH_PAD7_HOLD_M, RTC_CNTL_TOUCH_PAD7_HOLD_FORCE_M, RTC_IO_TOUCH_PAD7_DRV_V, RTC_IO_TOUCH_PAD7_DRV_S, RTCIO_GPIO27_CHANNEL}, //27
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1},                                                                                                                                            //28
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1},                                                                                                                                            //29
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1},                                                                                                                                            //30
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1},                                                                                                                                            //31
-    {RTC_IO_XTAL_32K_PAD_REG, RTC_IO_X32P_MUX_SEL_M, RTC_IO_X32P_FUN_SEL_S, RTC_IO_X32P_FUN_IE_M, RTC_IO_X32P_RUE_M, RTC_IO_X32P_RDE_M, RTC_IO_X32P_SLP_SEL_M, RTC_IO_X32P_SLP_IE_M, RTC_IO_X32P_HOLD_M, RTC_CNTL_X32P_HOLD_FORCE_M, RTC_IO_X32P_DRV_V, RTC_IO_X32P_DRV_S, RTCIO_GPIO32_CHANNEL},                            //32
-    {RTC_IO_XTAL_32K_PAD_REG, RTC_IO_X32N_MUX_SEL_M, RTC_IO_X32N_FUN_SEL_S, RTC_IO_X32N_FUN_IE_M, RTC_IO_X32N_RUE_M, RTC_IO_X32N_RDE_M, RTC_IO_X32N_SLP_SEL_M, RTC_IO_X32N_SLP_IE_M, RTC_IO_X32N_HOLD_M, RTC_CNTL_X32N_HOLD_FORCE_M, RTC_IO_X32N_DRV_V, RTC_IO_X32N_DRV_S, RTCIO_GPIO33_CHANNEL},                            //33
-    {RTC_IO_ADC_PAD_REG, RTC_IO_ADC1_MUX_SEL_M, RTC_IO_ADC1_FUN_SEL_S, RTC_IO_ADC1_FUN_IE_M, 0, 0, RTC_IO_ADC1_SLP_SEL_M, RTC_IO_ADC1_SLP_IE_M, RTC_IO_ADC1_HOLD_M, RTC_CNTL_ADC1_HOLD_FORCE_M, 0, 0, RTCIO_GPIO34_CHANNEL},                                                                //34
-    {RTC_IO_ADC_PAD_REG, RTC_IO_ADC2_MUX_SEL_M, RTC_IO_ADC2_FUN_SEL_S, RTC_IO_ADC2_FUN_IE_M, 0, 0, RTC_IO_ADC2_SLP_SEL_M, RTC_IO_ADC2_SLP_IE_M, RTC_IO_ADC1_HOLD_M, RTC_CNTL_ADC2_HOLD_FORCE_M, 0, 0, RTCIO_GPIO35_CHANNEL},                                                                //35
-    {RTC_IO_SENSOR_PADS_REG, RTC_IO_SENSE1_MUX_SEL_M, RTC_IO_SENSE1_FUN_SEL_S, RTC_IO_SENSE1_FUN_IE_M, 0, 0, RTC_IO_SENSE1_SLP_SEL_M, RTC_IO_SENSE1_SLP_IE_M, RTC_IO_SENSE1_HOLD_M, RTC_CNTL_SENSE1_HOLD_FORCE_M, 0, 0, RTCIO_GPIO36_CHANNEL},                                                      //36
-    {RTC_IO_SENSOR_PADS_REG, RTC_IO_SENSE2_MUX_SEL_M, RTC_IO_SENSE2_FUN_SEL_S, RTC_IO_SENSE2_FUN_IE_M, 0, 0, RTC_IO_SENSE2_SLP_SEL_M, RTC_IO_SENSE2_SLP_IE_M, RTC_IO_SENSE1_HOLD_M, RTC_CNTL_SENSE2_HOLD_FORCE_M, 0, 0, RTCIO_GPIO37_CHANNEL},                                                      //37
-    {RTC_IO_SENSOR_PADS_REG, RTC_IO_SENSE3_MUX_SEL_M, RTC_IO_SENSE3_FUN_SEL_S, RTC_IO_SENSE3_FUN_IE_M, 0, 0, RTC_IO_SENSE3_SLP_SEL_M, RTC_IO_SENSE3_SLP_IE_M, RTC_IO_SENSE1_HOLD_M, RTC_CNTL_SENSE3_HOLD_FORCE_M, 0, 0, RTCIO_GPIO38_CHANNEL},                                                       //38
-    {RTC_IO_SENSOR_PADS_REG, RTC_IO_SENSE4_MUX_SEL_M, RTC_IO_SENSE4_FUN_SEL_S, RTC_IO_SENSE4_FUN_IE_M, 0, 0, RTC_IO_SENSE4_SLP_SEL_M, RTC_IO_SENSE4_SLP_IE_M, RTC_IO_SENSE1_HOLD_M, RTC_CNTL_SENSE4_HOLD_FORCE_M, 0, 0, RTCIO_GPIO39_CHANNEL},                                                      //39
-};
 
 typedef enum {
     ADC_CTRL_RTC = 0,
@@ -519,7 +479,7 @@ static void touch_pad_filter_cb(void *arg)
 {
     static uint32_t s_filtered_temp[TOUCH_PAD_MAX] = {0};
 
-    if (s_touch_pad_filter == NULL) {
+    if (s_touch_pad_filter == NULL || rtc_touch_mux == NULL) {
         return;
     }
     uint16_t val = 0;
@@ -820,16 +780,28 @@ esp_err_t touch_pad_config(touch_pad_t touch_num, uint16_t threshold)
 {
     RTC_MODULE_CHECK(rtc_touch_mux != NULL, "Touch pad not initialized", ESP_FAIL);
     RTC_MODULE_CHECK(touch_num < TOUCH_PAD_MAX, "Touch_Pad Num Err", ESP_ERR_INVALID_ARG);
-    s_touch_pad_init_bit |= (1 << touch_num);
+    touch_fsm_mode_t mode;
     touch_pad_set_thresh(touch_num, threshold);
     touch_pad_io_init(touch_num);
     touch_pad_set_cnt_mode(touch_num, TOUCH_PAD_SLOPE_7, TOUCH_PAD_TIE_OPT_LOW);
-    touch_fsm_mode_t mode;
     touch_pad_get_fsm_mode(&mode);
     if (TOUCH_FSM_MODE_SW == mode) {
         touch_pad_clear_group_mask((1 << touch_num), (1 << touch_num), (1 << touch_num));
+        s_touch_pad_init_bit |= (1 << touch_num);
     } else if (TOUCH_FSM_MODE_TIMER == mode){
+        uint16_t sleep_time = 0;
+        uint16_t meas_cycle = 0;
+        uint32_t wait_time_ms = 0;
+        uint32_t wait_tick = 0;
+        uint32_t rtc_clk = rtc_clk_slow_freq_get_hz();
         touch_pad_set_group_mask((1 << touch_num), (1 << touch_num), (1 << touch_num));
+        touch_pad_get_meas_time(&sleep_time, &meas_cycle);
+        //If the FSM mode is 'TOUCH_FSM_MODE_TIMER', The data will be ready after one measurement cycle
+        //after this function is executed, otherwise, the "touch_value" by "touch_pad_read" is 0.
+        wait_time_ms = sleep_time/(rtc_clk/1000) + meas_cycle/(RTC_FAST_CLK_FREQ_APPROX/1000);
+        wait_tick = wait_time_ms/portTICK_RATE_MS;
+        vTaskDelay(wait_tick ? wait_tick : 1);
+        s_touch_pad_init_bit |= (1 << touch_num);
     } else {
         return ESP_FAIL;
     }
@@ -846,24 +818,27 @@ esp_err_t touch_pad_init()
     }
     touch_pad_intr_disable();
     touch_pad_clear_group_mask(TOUCH_PAD_BIT_MASK_MAX, TOUCH_PAD_BIT_MASK_MAX, TOUCH_PAD_BIT_MASK_MAX);
-    touch_pad_set_fsm_mode(TOUCH_FSM_MODE_DEFAULT);
     touch_pad_set_trigger_mode(TOUCH_TRIGGER_MODE_DEFAULT);
     touch_pad_set_trigger_source(TOUCH_TRIGGER_SOURCE_DEFAULT);
     touch_pad_clear_status();
     touch_pad_set_meas_time(TOUCH_PAD_SLEEP_CYCLE_DEFAULT, TOUCH_PAD_MEASURE_CYCLE_DEFAULT);
+    touch_pad_set_fsm_mode(TOUCH_FSM_MODE_DEFAULT);
     return ESP_OK;
 }
 
 esp_err_t touch_pad_deinit()
 {
-    if (rtc_touch_mux == NULL) {
-        return ESP_FAIL;
+    RTC_MODULE_CHECK(rtc_touch_mux != NULL, "Touch pad not initialized", ESP_FAIL);
+    if (s_touch_pad_filter != NULL) {
+        touch_pad_filter_stop();
+        touch_pad_filter_delete();
     }
+    xSemaphoreTake(rtc_touch_mux, portMAX_DELAY);
     s_touch_pad_init_bit = 0x0000;
-    touch_pad_filter_delete();
     touch_pad_set_fsm_mode(TOUCH_FSM_MODE_SW);
     touch_pad_clear_status();
     touch_pad_intr_disable();
+    xSemaphoreGive(rtc_touch_mux);
     vSemaphoreDelete(rtc_touch_mux);
     rtc_touch_mux = NULL;
     return ESP_OK;
@@ -890,6 +865,9 @@ static esp_err_t _touch_pad_read(touch_pad_t touch_num, uint16_t *touch_value, t
     } else {
         res = ESP_FAIL;
     }
+    if (*touch_value == 0) {
+        res = ESP_ERR_INVALID_STATE;
+    }
     return res;
 }
 
@@ -913,8 +891,11 @@ IRAM_ATTR esp_err_t touch_pad_read_raw_data(touch_pad_t touch_num, uint16_t *tou
     RTC_MODULE_CHECK(rtc_touch_mux != NULL, "Touch pad not initialized", ESP_FAIL);
     RTC_MODULE_CHECK(touch_num < TOUCH_PAD_MAX, "Touch_Pad Num Err", ESP_ERR_INVALID_ARG);
     RTC_MODULE_CHECK(touch_value != NULL, "touch_value", ESP_ERR_INVALID_ARG);
-    RTC_MODULE_CHECK(s_touch_pad_filter != NULL, "Touch pad filter not initialized", ESP_ERR_INVALID_STATE);
+    RTC_MODULE_CHECK(s_touch_pad_filter != NULL, "Touch pad filter not initialized", ESP_FAIL);
     *touch_value = s_touch_pad_filter->raw_val[touch_num];
+    if (*touch_value == 0) {
+        return ESP_ERR_INVALID_STATE;
+    }
     return ESP_OK;
 }
 
@@ -923,8 +904,11 @@ IRAM_ATTR esp_err_t touch_pad_read_filtered(touch_pad_t touch_num, uint16_t *tou
     RTC_MODULE_CHECK(rtc_touch_mux != NULL, "Touch pad not initialized", ESP_FAIL);
     RTC_MODULE_CHECK(touch_num < TOUCH_PAD_MAX, "Touch_Pad Num Err", ESP_ERR_INVALID_ARG);
     RTC_MODULE_CHECK(touch_value != NULL, "touch_value", ESP_ERR_INVALID_ARG);
-    RTC_MODULE_CHECK(s_touch_pad_filter != NULL, "Touch pad filter not initialized", ESP_ERR_INVALID_STATE);
+    RTC_MODULE_CHECK(s_touch_pad_filter != NULL, "Touch pad filter not initialized", ESP_FAIL);
     *touch_value = (s_touch_pad_filter->filtered_val[touch_num]);
+    if (*touch_value == 0) {
+        return ESP_ERR_INVALID_STATE;
+    }
     return ESP_OK;
 }
 
@@ -984,20 +968,17 @@ esp_err_t touch_pad_filter_start(uint32_t filter_period_ms)
         if (s_touch_pad_filter->timer == NULL) {
             ret = ESP_ERR_NO_MEM;
         }
-        xTimerStart(s_touch_pad_filter->timer, portMAX_DELAY);
-    } else {
-        xTimerChangePeriod(s_touch_pad_filter->timer, filter_period_ms / portTICK_PERIOD_MS, portMAX_DELAY);
         s_touch_pad_filter->period = filter_period_ms;
-        xTimerStart(s_touch_pad_filter->timer, portMAX_DELAY);
     }
     xSemaphoreGive(rtc_touch_mux);
+    touch_pad_filter_cb(NULL);
     return ret;
 }
 
 esp_err_t touch_pad_filter_stop()
 {
     RTC_MODULE_CHECK(s_touch_pad_filter != NULL, "Touch pad filter not initialized", ESP_ERR_INVALID_STATE);
-
+    RTC_MODULE_CHECK(rtc_touch_mux != NULL, "Touch pad not initialized", ESP_ERR_INVALID_STATE);
     esp_err_t ret = ESP_OK;
     xSemaphoreTake(rtc_touch_mux, portMAX_DELAY);
     if (s_touch_pad_filter != NULL) {
@@ -1013,6 +994,7 @@ esp_err_t touch_pad_filter_stop()
 esp_err_t touch_pad_filter_delete()
 {
     RTC_MODULE_CHECK(s_touch_pad_filter != NULL, "Touch pad filter not initialized", ESP_ERR_INVALID_STATE);
+    RTC_MODULE_CHECK(rtc_touch_mux != NULL, "Touch pad not initialized", ESP_ERR_INVALID_STATE);
     xSemaphoreTake(rtc_touch_mux, portMAX_DELAY);
     if (s_touch_pad_filter != NULL) {
         if (s_touch_pad_filter->timer != NULL) {
@@ -1024,6 +1006,16 @@ esp_err_t touch_pad_filter_delete()
         s_touch_pad_filter = NULL;
     }
     xSemaphoreGive(rtc_touch_mux);
+    return ESP_OK;
+}
+
+esp_err_t touch_pad_get_wakeup_status(touch_pad_t *pad_num)
+{
+    uint32_t touch_mask = SENS.sar_touch_ctrl2.touch_meas_en;
+    if(touch_mask == 0) {
+        return ESP_FAIL;
+    }
+    *pad_num = touch_pad_num_wrap((touch_pad_t)(__builtin_ffs(touch_mask) - 1));
     return ESP_OK;
 }
 
@@ -2008,6 +2000,7 @@ esp_err_t rtc_isr_deregister(intr_handler_t handler, void* handler_arg)
                 SLIST_REMOVE_AFTER(prev, next);
             }
             found = true;
+            free(it);
             break;
         }
         prev = it;

@@ -282,7 +282,8 @@ typedef struct {
     UINT8       id;
     UINT8       prop;       /* used when attribute type is characteristic */
     BOOLEAN     is_primary; /* used when attribute type is service */
-    UINT16      incl_srvc_handle; /* used when attribute type is included service */
+    UINT16      incl_srvc_s_handle; /* used when attribute type is included service */
+    UINT16      incl_srvc_e_handle; /* used when attribute type is included service */
 }tBTA_GATTC_NV_ATTR;
 
 /* callback data structure */
@@ -691,6 +692,7 @@ typedef struct
     tBT_UUID                uuid;
     UINT16                  handle;
     UINT16                  incl_srvc_s_handle;
+    UINT16                  incl_srvc_e_handle;
     tBTA_GATTC_SERVICE     *owning_service; /* owning service*/
     tBTA_GATTC_SERVICE     *included_service;
 } __attribute__((packed)) tBTA_GATTC_INCLUDED_SVC;
@@ -1096,11 +1098,12 @@ extern void BTA_GATTC_ReadMultiple(UINT16 conn_id, tBTA_GATTC_MULTI *p_read_mult
 ** Description      Refresh the server cache of the remote device
 **
 ** Parameters       remote_bda: remote device BD address.
+**                  erase_flash: delete cache from nvs flash
 **
 ** Returns          void
 **
 *******************************************************************************/
-extern void BTA_GATTC_Refresh(BD_ADDR remote_bda);
+extern void BTA_GATTC_Refresh(BD_ADDR remote_bda, bool erase_flash);
 
 extern void BTA_GATTC_CacheAssoc(tBTA_GATTC_IF client_if, BD_ADDR src_addr, BD_ADDR assoc_addr, BOOLEAN is_assoc);
 

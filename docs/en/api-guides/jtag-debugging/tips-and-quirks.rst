@@ -9,7 +9,7 @@ This section provides collection of all tips and quirks referred to from various
 Breakpoints and watchpoints available
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The ESP32 supports 2 hardware breakpoints. It also supports two watchpoints, so two variables can be watched for change or read by the GDB command ``watch myVariable``. Note that menuconfig option :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` uses the 2nd watchpoint and will not provide expected results, if you also try to use it within OpenOCD / GDB. See menuconfig's help for detailed description.
+ESP32 debugger supports 2 hardware implemented breakpoints and 64 software ones. Hardware breakpoints are implemented by ESP32 chip's logic and can be set anywhere in the code: either in flash or IRAM program's regions. Additionally there are 2 types of software breakpoints implemented by OpenOCD: flash (up to 32) and IRAM (up to 32) breakpoints. Currently GDB can not set software breakpoints in flash. So until this limitation is removed those breakpoints have to be emulated by OpenOCD as hardware ones (see :ref:`below <jtag-debugging-tip-where-breakpoints>` for details). ESP32 also supports two watchpoints, so two variables can be watched for change or read by the GDB command ``watch myVariable``. Note that menuconfig option :envvar:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` uses the 2nd watchpoint and will not provide expected results, if you also try to use it within OpenOCD / GDB. See menuconfig's help for detailed description.
 
 
 .. _jtag-debugging-tip-where-breakpoints:
@@ -17,7 +17,7 @@ The ESP32 supports 2 hardware breakpoints. It also supports two watchpoints, so 
 What else should I know about breakpoints?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Normal GDB breakpoints (``b myFunction``) can only be set in IRAM, because that memory is writable. Setting these types of breakpoints in code in flash will not work. Instead, use a hardware breakpoint (``hb myFunction``). 
+Emulating part of hardware breakpoints using software flash ones means that the GDB command ``hb myFunction`` which is invoked for function in flash will use pure hardware breakpoint if it is avalable otherwise one of the 32 software flash breakpoints is used. The same rule applies to ``b myFunction``-like commands. In this case GDB will decide what type of breakpoint to set itself. If ``myFunction`` is resided in writable region (IRAM) software IRAM breakpoint will be used otherwise hardware or software flash breakpoint is used as it is done for ``hb`` command.
 
 
 .. _jtag-debugging-tip-why-next-works-as-step:
@@ -35,8 +35,8 @@ Support options for OpenOCD at compile time
 
 ESP-IDF has some support options for OpenOCD debugging which can be set at compile time:
 
-* :ref:`CONFIG_ESP32_DEBUG_OCDAWARE` is enabled by default. If a panic or unhandled exception is thrown and a JTAG debugger is connected (ie openocd is running), ESP-IDF will break into the debugger.
-* :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` (disabled by default) sets watchpoint index 1 (the second of two) at the end of any task stack. This is the most accurate way to debug task stack overflows. Click the link for more details.
+* :envvar:`CONFIG_ESP32_DEBUG_OCDAWARE` is enabled by default. If a panic or unhandled exception is thrown and a JTAG debugger is connected (ie openocd is running), ESP-IDF will break into the debugger.
+* :envvar:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` (disabled by default) sets watchpoint index 1 (the second of two) at the end of any task stack. This is the most accurate way to debug task stack overflows. Click the link for more details.
 
 Please see the :ref:`make menuconfig <get-started-configure>` menu for more details on setting compile-time options.
 
@@ -55,7 +55,7 @@ Why to set SPI flash voltage in OpenOCD configuration?
 
 The MTDI pin of ESP32, being among four pins used for JTAG communication, is also one of ESP32's bootstrapping pins. On power up ESP32 is sampling binary level on MTDI to set it's internal voltage regulator used to supply power to external SPI flash chip. If binary level on MDTI pin on power up is low, the voltage regulator is set to deliver 3.3V, if it is high, then the voltage is set to 1.8V. The MTDI pin should have a pull-up or may rely on internal weak pull down resistor (see ESP32 Datasheet for details), depending on the type of SPI chip used. Once JTAG is connected, it overrides the pull-up or pull-down resistor that is supposed to do the bootstrapping. 
 
-To handle this issue OpenOCD's board configuration file (e.g. ``boards\esp-wroom-32.cfg`` for ESP-WROOM-32 module) provides ``ESP32_FLASH_VOLTAGE`` parameter to set the idle state of the ``TDO`` line to a specified binary level, therefore reducing the chance of a bad bootup of application due to incorrect flash voltage.
+To handle this issue OpenOCD's board configuration file (e.g. ``boards\esp-wroom-32.cfg`` for ESP32-WROOM-32 module) provides ``ESP32_FLASH_VOLTAGE`` parameter to set the idle state of the ``TDO`` line to a specified binary level, therefore reducing the chance of a bad bootup of application due to incorrect flash voltage.
 
 Check specification of ESP32 module connected to JTAG, what is the power supply voltage of SPI flash chip. Then set ``ESP32_FLASH_VOLTAGE`` accordingly. Most WROOM modules use 3.3V flash, while WROVER modules use 1.8V flash. 
 
@@ -81,8 +81,8 @@ What is the meaning of debugger's startup commands?
 On startup, debugger is issuing sequence of commands to reset the chip and halt it at specific line of code. This sequence (shown below) is user defined to pick up at most convenient / appropriate line and start debugging. 
 
 * ``mon reset halt`` — reset the chip and keep the CPUs halted
+* ``flushregs`` — monitor (``mon``) command can not inform GDB that the target state has changed. GDB will assume that whatever stack the target had before ``mon reset halt`` will still be valid. In fact, after reset the target state will change, and executing ``flushregs`` is a way to force GDB to get new state from the target.
 * ``thb app_main`` — insert a temporary hardware breakpoint at ``app_main``, put here another function name if required
-* ``x $a1=0`` — this is the tricky part. As far as we can tell, there is no way for a ``mon`` command to tell GDB that the target state has changed. GDB will assume that whatever stack the target had before ``mon reset halt`` will still be valid. In fact, after reset the target state will change and executing ``x $a1=0`` is a way to force GDB to get new state from the target.
 * ``c`` — resume the program. It will then stop at breakpoint inserted at ``app_main``.
 
 
@@ -93,7 +93,7 @@ Configuration of OpenOCD for specific target
 
 OpenOCD needs to be told what JTAG adapter **interface** to use, as well as what type of **board** and processor the JTAG adapter is connected to. To do so, use existing configuration files located in OpenOCD's ``share/openocd/scripts/interface`` and ``share/openocd/scripts/board`` folders. 
 
-For example, if you connect to ESP-WROVER-KIT with ESP-WROOM-32 module installed (see section :doc:`ESP32 WROVER KIT <../../hw-reference/modules-and-boards>`), use the following configuration files:
+For example, if you connect to ESP-WROVER-KIT with ESP-WROOM-32 module installed (see section :ref:`esp-modules-and-boards-esp-wrover-kit-v1`), use the following configuration files:
 
 * ``interface/ftdi/esp32_devkitj_v1.cfg``
 * ``board/esp-wroom-32.cfg``

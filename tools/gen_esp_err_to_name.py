@@ -25,6 +25,9 @@ import textwrap
 # list files here which should not be parsed
 ignore_files = [ 'components/mdns/test_afl_fuzz_host/esp32_compat.h' ]
 
+# add directories here which should not be parsed
+ignore_dirs = ( 'examples' )
+
 # macros from here have higher priorities in case of collisions
 priority_headers = [ 'components/esp32/include/esp_err.h' ]
 
@@ -204,7 +207,7 @@ def max_string_width():
                 max = x
     return max
 
-def generate_output(fin, fout):
+def generate_c_output(fin, fout):
     """
     Writes the output to fout based on th error dictionary err_dict and
     template file fin.
@@ -264,31 +267,53 @@ def generate_output(fin, fout):
         else:
             fout.write(line)
 
+def generate_rst_output(fout):
+    for k in sorted(err_dict.keys()):
+        v = err_dict[k][0]
+        fout.write(':c:macro:`{}` '.format(v.name))
+        if k > 0:
+            fout.write('**(0x{:x})**'.format(k))
+        else:
+            fout.write('({:d})'.format(k))
+        if len(v.comment) > 0:
+            fout.write(': {}'.format(v.comment))
+        fout.write('\n\n')
+
 def main():
+    if 'IDF_PATH' in os.environ:
+        idf_path = os.environ['IDF_PATH']
+    else:
+        idf_path = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+
     parser = argparse.ArgumentParser(description='ESP32 esp_err_to_name lookup generator for esp_err_t')
-    parser.add_argument('input', help='Path to the esp_err_to_name.c.in template input.', default=os.environ['IDF_PATH'] + '/components/esp32/esp_err_to_name.c.in', nargs='?')
-    parser.add_argument('output', help='Path to the esp_err_to_name.c output.', default=os.environ['IDF_PATH'] + '/components/esp32/esp_err_to_name.c', nargs='?')
+    parser.add_argument('--c_input', help='Path to the esp_err_to_name.c.in template input.', default=idf_path + '/components/esp32/esp_err_to_name.c.in')
+    parser.add_argument('--c_output', help='Path to the esp_err_to_name.c output.', default=idf_path + '/components/esp32/esp_err_to_name.c')
+    parser.add_argument('--rst_output', help='Generate .rst output and save it into this file')
     args = parser.parse_args()
 
-    for root, dirnames, filenames in os.walk(os.environ['IDF_PATH']):
+    for root, dirnames, filenames in os.walk(idf_path):
         for filename in fnmatch.filter(filenames, '*.[ch]'):
             full_path = os.path.join(root, filename)
-            idf_path = os.path.relpath(full_path, os.environ['IDF_PATH'])
-            if idf_path in ignore_files:
+            path_in_idf = os.path.relpath(full_path, idf_path)
+            if path_in_idf in ignore_files or path_in_idf.startswith(ignore_dirs):
                 continue
             with open(full_path, "r+") as f:
                 for line in f:
                     # match also ESP_OK and ESP_FAIL because some of ESP_ERRs are referencing them
                     if re.match(r"\s*#define\s+(ESP_ERR_|ESP_OK|ESP_FAIL)", line):
                         try:
-                            process(str.strip(line), idf_path)
+                            process(str.strip(line), path_in_idf)
                         except InputError as e:
                             print (e)
 
     process_remaining_errors()
 
-    with open(args.input, 'r') as fin, open(args.output, 'w') as fout:
-        generate_output(fin, fout)
+    if args.rst_output is not None:
+        with open(args.rst_output, 'w') as fout:
+            generate_rst_output(fout)
+    else:
+        with open(args.c_input, 'r') as fin, open(args.c_output, 'w') as fout:
+            generate_c_output(fin, fout)
 
 if __name__ == "__main__":
     main()

@@ -85,6 +85,7 @@ static int vfs_fat_closedir(void* ctx, DIR* pdir);
 static int vfs_fat_mkdir(void* ctx, const char* name, mode_t mode);
 static int vfs_fat_rmdir(void* ctx, const char* name);
 static int vfs_fat_access(void* ctx, const char *path, int amode);
+static int vfs_fat_truncate(void* ctx, const char *path, off_t length);
 
 static vfs_fat_ctx_t* s_fat_ctxs[FF_VOLUMES] = { NULL, NULL };
 //backwards-compatibility with esp_vfs_fat_unregister()
@@ -144,6 +145,7 @@ esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive, siz
         .mkdir_p = &vfs_fat_mkdir,
         .rmdir_p = &vfs_fat_rmdir,
         .access_p = &vfs_fat_access,
+        .truncate_p = &vfs_fat_truncate,
     };
     size_t ctx_size = sizeof(vfs_fat_ctx_t) + max_files * sizeof(FIL);
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) calloc(1, ctx_size);
@@ -749,5 +751,76 @@ static int vfs_fat_access(void* ctx, const char *path, int amode)
         errno = ENOENT;
     }
 
+    return ret;
+}
+
+static int vfs_fat_truncate(void* ctx, const char *path, off_t length)
+{
+    FRESULT res;
+    FIL* file;
+
+    int ret = 0;
+    
+    vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
+
+    _lock_acquire(&fat_ctx->lock);
+    prepend_drive_to_path(fat_ctx, &path, NULL);
+
+    file = (FIL*) calloc(1, sizeof(FIL));
+    if (file == NULL) {
+        ESP_LOGD(TAG, "truncate alloc failed");
+        errno = ENOMEM;
+        ret = -1;
+        goto out;
+    }
+
+    res = f_open(file, path, FA_WRITE);
+
+    if (res != FR_OK) {
+        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+        errno = fresult_to_errno(res);
+        ret = -1;
+        goto out;
+    }
+
+    res = f_size(file);
+
+    if (res < length) {
+        ESP_LOGD(TAG, "truncate does not support extending size");
+        errno = EPERM;
+        ret = -1;
+        goto close;
+    }
+
+    res = f_lseek(file, length);
+    if (res != FR_OK) {
+        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+        errno = fresult_to_errno(res);
+        ret = -1;
+        goto close;
+    }
+
+    res = f_truncate(file);
+
+    if (res != FR_OK) {
+        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+        errno = fresult_to_errno(res);
+        ret = -1;
+    }
+
+close:
+    res = f_close(file);
+
+    if (res != FR_OK) {
+        ESP_LOGE(TAG, "closing file opened for truncate failed");
+        // Overwrite previous errors, since not being able to close
+        // an opened file is a more critical issue.
+        errno = fresult_to_errno(res);
+        ret = -1;
+    }
+
+out:
+    free(file);
+    _lock_release(&fat_ctx->lock);
     return ret;
 }

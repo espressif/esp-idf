@@ -1616,7 +1616,7 @@ static void btc_a2dp_source_thread_init(UNUSED_ATTR void *context)
 
     btc_a2dp_source_state = BTC_A2DP_SOURCE_STATE_ON;
 
-    btc_aa_src_cb.TxAaQ = fixed_queue_new(SIZE_MAX);
+    btc_aa_src_cb.TxAaQ = fixed_queue_new(QUEUE_SIZE_MAX);
 
     btc_a2dp_control_init();
 }

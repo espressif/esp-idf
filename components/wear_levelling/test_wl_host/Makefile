@@ -1,68 +1,99 @@
-TEST_PROGRAM=test_wl
-all: $(TEST_PROGRAM)
+ifndef COMPONENT
+COMPONENT := wl
+endif
 
-SOURCE_FILES = \
-	esp_error_check_stub.cpp \
-	$(addprefix ../, \
-		crc32.cpp \
-		WL_Flash.cpp \
-		../nvs_flash/test_nvs_host/crc.cpp\
-	) \
-	Flash_Emulator.cpp \
-	wl_tests_host.cpp  \
-	TestPowerDown.cpp  \
-	esp_log_stub.cpp \
-	main.cpp
+COMPONENT_LIB := lib$(COMPONENT).a
+TEST_PROGRAM := test_$(COMPONENT)
 
+STUBS_LIB_DIR := ../../../components/spi_flash/sim/stubs
+STUBS_LIB_BUILD_DIR := $(STUBS_LIB_DIR)/build
+STUBS_LIB := libstubs.a
 
-INCLUDE_FLAGS = $(addprefix -I,\
-	../ \
-	../include \
-	../private_include \
-	../../esp32/include \
-	../../soc/esp32/include \
-	../../log/include \
-	../../spi_flash/include \
-	../../nvs_flash/test_nvs_host \
-	../../../tools/catch \
-) 
+SPI_FLASH_SIM_DIR := ../../../components/spi_flash/sim
+SPI_FLASH_SIM_BUILD_DIR := $(SPI_FLASH_SIM_DIR)/build
+SPI_FLASH_SIM_LIB := libspi_flash.a
 
-GCOV ?= gcov
+include Makefile.files
 
-CPPFLAGS += $(INCLUDE_FLAGS) -D CONFIG_LOG_DEFAULT_LEVEL
-CFLAGS += -fprofile-arcs -ftest-coverage
-CXXFLAGS += -std=c++11 -Wall -Werror  -fprofile-arcs -ftest-coverage
-LDFLAGS += -lstdc++ -fprofile-arcs -ftest-coverage
+all: test
+	
 
-OBJ_FILES = $(SOURCE_FILES:.cpp=.o)
+ifndef SDKCONFIG
+SDKCONFIG_DIR := $(dir $(realpath sdkconfig/sdkconfig.h))
+SDKCONFIG := $(SDKCONFIG_DIR)sdkconfig.h
+else
+SDKCONFIG_DIR := $(dir $(realpath $(SDKCONFIG)))
+endif
 
-COVERAGE_FILES = $(OBJ_FILES:.o=.gc*)
+INCLUDE_FLAGS := $(addprefix -I, $(INCLUDE_DIRS) $(SDKCONFIG_DIR) ../../../tools/catch)
 
-$(OBJ_FILES): %.o: %.cpp
+CPPFLAGS += $(INCLUDE_FLAGS) -g -m32
+CXXFLAGS += $(INCLUDE_FLAGS) -std=c++11 -g -m32
 
-$(TEST_PROGRAM): $(OBJ_FILES)
-	g++ $(LDFLAGS) -o $(TEST_PROGRAM) $(OBJ_FILES)
+# Build libraries that this component is dependent on
+$(STUBS_LIB_BUILD_DIR)/$(STUBS_LIB): force
+	$(MAKE) -C $(STUBS_LIB_DIR) lib SDKCONFIG=$(SDKCONFIG)
 
-$(OUTPUT_DIR):
-	mkdir -p $(OUTPUT_DIR)
+$(SPI_FLASH_SIM_BUILD_DIR)/$(SPI_FLASH_SIM_LIB): force
+	$(MAKE) -C $(SPI_FLASH_SIM_DIR) lib SDKCONFIG=$(SDKCONFIG)
+
+# Create target for building this component as a library
+CFILES := $(filter %.c, $(SOURCE_FILES))
+CPPFILES := $(filter %.cpp, $(SOURCE_FILES))
+
+CTARGET = ${2}/$(patsubst %.c,%.o,$(notdir ${1}))
+CPPTARGET = ${2}/$(patsubst %.cpp,%.o,$(notdir ${1}))
+
+ifndef BUILD_DIR
+BUILD_DIR := build
+endif
+
+OBJ_FILES := $(addprefix $(BUILD_DIR)/, $(filter %.o, $(notdir $(SOURCE_FILES:.cpp=.o) $(SOURCE_FILES:.c=.o))))
+
+define COMPILE_C
+$(call CTARGET, ${1}, $(BUILD_DIR)) : ${1} $(SDKCONFIG)
+	mkdir -p $(BUILD_DIR)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $(call CTARGET, ${1}, $(BUILD_DIR)) ${1}
+endef
+
+define COMPILE_CPP
+$(call CPPTARGET, ${1}, $(BUILD_DIR)) : ${1} $(SDKCONFIG)
+	mkdir -p $(BUILD_DIR)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $(call CPPTARGET, ${1}, $(BUILD_DIR)) ${1}
+endef
+
+$(BUILD_DIR)/$(COMPONENT_LIB): $(OBJ_FILES) $(SDKCONFIG)
+	mkdir -p $(BUILD_DIR)
+	$(AR) rcs $@ $^
+
+clean:
+	$(MAKE) -C $(STUBS_LIB_DIR) clean
+	$(MAKE) -C $(SPI_FLASH_SIM_DIR) clean
+	rm -f $(OBJ_FILES) $(TEST_OBJ_FILES) $(TEST_PROGRAM) $(COMPONENT_LIB) partition_table.bin
+
+lib: $(BUILD_DIR)/$(COMPONENT_LIB)
+
+$(foreach cfile, $(CFILES), $(eval $(call COMPILE_C, $(cfile))))
+$(foreach cxxfile, $(CPPFILES), $(eval $(call COMPILE_CPP, $(cxxfile))))
+
+# Create target for building this component as a test
+TEST_SOURCE_FILES = \
+	test_wl.cpp \
+	main.cpp \
+	test_utils.c
+
+TEST_OBJ_FILES = $(filter %.o, $(TEST_SOURCE_FILES:.cpp=.o) $(TEST_SOURCE_FILES:.c=.o))
+
+$(TEST_PROGRAM): lib $(TEST_OBJ_FILES) $(SPI_FLASH_SIM_BUILD_DIR)/$(SPI_FLASH_SIM_LIB) $(STUBS_LIB_BUILD_DIR)/$(STUBS_LIB) partition_table.bin $(SDKCONFIG)
+	g++ $(LDFLAGS) $(CXXFLAGS) -o $@  $(TEST_OBJ_FILES) -L$(BUILD_DIR) -l:$(COMPONENT_LIB) -L$(SPI_FLASH_SIM_BUILD_DIR) -l:$(SPI_FLASH_SIM_LIB) -L$(STUBS_LIB_BUILD_DIR) -l:$(STUBS_LIB)
 
 test: $(TEST_PROGRAM)
 	./$(TEST_PROGRAM)
 
-$(COVERAGE_FILES): $(TEST_PROGRAM) test
+# Create other necessary targets
+partition_table.bin: partition_table.csv
+	python ../../../components/partition_table/gen_esp32part.py --verify $< $@
 
-coverage.info: $(COVERAGE_FILES)
-	find ../ -name "*.gcno" -exec $(GCOV) -r -pb {} +
-	lcov --capture --directory ../ --no-external --output-file coverage.info --gcov-tool $(GCOV)
+force:
 
-coverage_report: coverage.info
-	genhtml coverage.info --output-directory coverage_report
-	@echo "Coverage report is in coverage_report/index.html"
-
-clean:
-	rm -f $(OBJ_FILES) $(TEST_PROGRAM)
-	rm -f $(COVERAGE_FILES) *.gcov
-	rm -rf coverage_report/
-	rm -f coverage.info
-
-.PHONY: clean all test
+.PHONY: all lib test clean force

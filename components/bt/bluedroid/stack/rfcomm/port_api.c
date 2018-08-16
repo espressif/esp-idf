@@ -1459,30 +1459,6 @@ int PORT_WriteDataCO (UINT16 handle, int *p_len, int len, UINT8 *p_data)
     length = RFCOMM_DATA_BUF_SIZE -
              (UINT16)(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + RFCOMM_DATA_OVERHEAD);
 
-    /* If there are buffers scheduled for transmission check if requested */
-    /* data fits into the end of the queue */
-    osi_mutex_global_lock();
-
-    if (((p_buf = (BT_HDR *)fixed_queue_try_peek_last(p_port->tx.queue)) != NULL)
-            && (((int)p_buf->len + available) <= (int)p_port->peer_mtu)
-            && (((int)p_buf->len + available) <= (int)length)) {
-        memcpy ((UINT8 *)(p_buf + 1) + p_buf->offset + p_buf->len, p_data, available);
-        p_port->tx.queue_size += (UINT16)available;
-
-        *p_len = available;
-        p_buf->len += (UINT16)available;
-
-        osi_mutex_global_unlock();
-
-        return (PORT_SUCCESS);
-    }
-
-    osi_mutex_global_unlock();
-
-    //int max_read = length < p_port->peer_mtu ? length : p_port->peer_mtu;
-
-    //max_read = available < max_read ? available : max_read;
-
     while (available) {
         /* if we're over buffer high water mark, we're done */
         if ((p_port->tx.queue_size  > PORT_TX_HIGH_WM)
@@ -1495,20 +1471,24 @@ int PORT_WriteDataCO (UINT16 handle, int *p_len, int len, UINT8 *p_data)
         }
 
         /* continue with rfcomm data write */
-        p_buf = (BT_HDR *)osi_malloc(RFCOMM_DATA_BUF_SIZE);
+        if (p_port->peer_mtu < length) {
+            length = p_port->peer_mtu;
+        }
+
+        if (available < (int)length) {
+            length = (UINT16)available;
+        }
+
+        UINT16 alloc_size = (UINT16)(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + RFCOMM_DATA_OVERHEAD+length);
+        p_buf = (BT_HDR *)osi_malloc(alloc_size);
         if (!p_buf) {
+            RFCOMM_TRACE_EVENT ("PORT_WriteDataCO: out of heap.");
             break;
         }
 
         p_buf->offset         = L2CAP_MIN_OFFSET + RFCOMM_MIN_OFFSET;
         p_buf->layer_specific = handle;
 
-        if (p_port->peer_mtu < length) {
-            length = p_port->peer_mtu;
-        }
-        if (available < (int)length) {
-            length = (UINT16)available;
-        }
         p_buf->len = length;
         p_buf->event          = BT_EVT_TO_BTU_SP_DATA;
 
@@ -1518,7 +1498,7 @@ int PORT_WriteDataCO (UINT16 handle, int *p_len, int len, UINT8 *p_data)
 
         rc = port_write (p_port, p_buf);
 
-        /* If queue went below the threashold need to send flow control */
+        /* If queue went below the threshold need to send flow control */
         event |= port_flow_control_user (p_port);
 
         if (rc == PORT_SUCCESS) {
@@ -1531,6 +1511,7 @@ int PORT_WriteDataCO (UINT16 handle, int *p_len, int len, UINT8 *p_data)
 
         *p_len  += length;
         available -= (int)length;
+        p_data += length;
     }
     if (!available && (rc != PORT_CMD_PENDING) && (rc != PORT_TX_QUEUE_DISABLED)) {
         event |= PORT_EV_TXEMPTY;

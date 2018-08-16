@@ -38,7 +38,9 @@ else()
     target_linker_script(esp32
         "ld/esp32.common.ld"
         "ld/esp32.rom.ld"
-        "ld/esp32.peripherals.ld")
+        "ld/esp32.peripherals.ld"
+        "ld/esp32.rom.libgcc.ld"
+        )
 
     if(CONFIG_SPIRAM_CACHE_WORKAROUND)
         add_compile_options(-mfix-esp32-psram-cache-issue)

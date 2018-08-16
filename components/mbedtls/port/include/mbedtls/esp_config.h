@@ -114,7 +114,9 @@
  *
  * Enable this layer to allow use of alternative memory allocators.
  */
-//#define MBEDTLS_PLATFORM_MEMORY
+#ifdef CONFIG_MBEDTLS_PLATFORM_MEMORY
+#define MBEDTLS_PLATFORM_MEMORY
+#endif
 
 /**
  * \def MBEDTLS_PLATFORM_NO_STD_FUNCTIONS
