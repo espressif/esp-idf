@@ -96,7 +96,7 @@ typedef struct esp_partition_iterator_opaque_* esp_partition_iterator_t;
  * However, this is the format used by this API.
  */
 typedef struct {
-    uint8_t type;			            /*!< partition type (app/data) */
+    uint8_t type;                       /*!< partition type (app/data) */
     esp_partition_subtype_t subtype;    /*!< partition subtype */
     uint32_t address;                   /*!< starting address of the partition in flash */
     uint32_t size;                      /*!< size of the partition, in bytes */
