@@ -1620,6 +1620,7 @@ PROVIDE ( hci_tl_env = 0x3ffb8154 );
 PROVIDE ( ld_acl_env = 0x3ffb8258 );
 PROVIDE ( ea_env = 0x3ffb80ec );
 PROVIDE ( lc_sco_data_path_config = 0x3ffb81f8 );
+PROVIDE ( lc_sco_env = 0x3ffb81fc );
 PROVIDE ( ld_active_ch_map = 0x3ffb8334 );
 PROVIDE ( ld_bcst_acl_env = 0x3ffb8274 );
 PROVIDE ( ld_csb_rx_env = 0x3ffb8278 );
