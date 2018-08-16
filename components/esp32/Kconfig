@@ -143,7 +143,7 @@ config SPIRAM_MALLOC_RESERVE_INTERNAL
     int "Reserve this amount of bytes for data that specifically needs to be in DMA or internal memory"
     depends on SPIRAM_USE_MALLOC
     default 32768
-    range 0 131072
+    range 0 262144
     help
         Because the external/internal RAM allocation strategy is not always perfect, it sometimes may happen
         that the internal memory is entirely filled up. This causes allocations that are specifically done in
@@ -155,6 +155,10 @@ config SPIRAM_MALLOC_RESERVE_INTERNAL
         
         Note that because FreeRTOS stacks are forced to internal memory, they will also use this memory pool;
         be sure to keep this in mind when adjusting this value.
+
+        Note also that the DMA reserved pool may not be one single contiguous memory region, depending on the
+        configured size and the static memory usage of the app.
+
 
 config SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
     bool "Allow external memory as an argument to xTaskCreateStatic"
