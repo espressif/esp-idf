@@ -1,0 +1,11 @@
+# Special partition table for unit test app_update
+# Name,     Type, SubType, Offset,   Size, Flags
+nvs,        data, nvs,     ,        0x4000
+otadata,    data, ota,     ,        0x2000
+phy_init,   data, phy,     ,        0x1000
+factory,    0,    0,       ,        0xB0000
+ota_0,      0,    ota_0,   ,        0xB0000
+ota_1,      0,    ota_1,   ,        0xB0000
+test,       0,    test,    ,        0xB0000
+# flash_test partition used for SPI flash tests, WL FAT tests, and SPIFFS tests
+flash_test, data, fat,     ,        528K
