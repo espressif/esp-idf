@@ -27,10 +27,10 @@ import kconfiglib
 INDENT = '    '
 
 # Characters used when underlining section heading
-HEADING_SYMBOLS = '#*=-^"+'
+HEADING_SYMBOLS = '*=-^#'
 
 # Keep the heading level in sync with api-reference/kconfig.rst
-INITIAL_HEADING_LEVEL = 3
+INITIAL_HEADING_LEVEL = 2
 MAX_HEADING_LEVEL = len(HEADING_SYMBOLS)-1
 
 def write_docs(config, filename):
@@ -46,7 +46,7 @@ def get_breadcrumbs(node):
     result = []
     node = node.parent
     while node.parent:
-        if node.prompt:
+        if node_is_menu(node) and node.prompt:
             result = [ node.prompt[0] ] + result
         node = node.parent
     return " > ".join(result)
@@ -56,7 +56,10 @@ def get_heading_level(node):
     result = INITIAL_HEADING_LEVEL
     node = node.parent
     while node.parent:
-        result += 1
+        # Test for 'Component config' is a hack so component config doesn't bury all
+        # the components under it in the hierarchy
+        if node_is_menu(node) and node.prompt[0] != "Component config":
+            result += 1
         if result == MAX_HEADING_LEVEL:
             return MAX_HEADING_LEVEL
         node = node.parent
@@ -71,6 +74,27 @@ def format_rest_text(text, indent):
     text += '\n'
     return text
 
+def node_is_menu(node):
+    try:
+        return node.item == kconfiglib.MENU or node.is_menuconfig
+    except AttributeError:
+        return False  # not all MenuNodes have is_menuconfig for some reason
+
+def should_print_preview_links(node):
+    """
+    Return True if we should print the preview links. For each menu,
+    the menu with the preview links is the top menu which contains
+    actual configuration items.
+    """
+    child = node.list
+    while child:
+        if not node_is_menu(child) and child.prompt:
+            # we have a non-menu child, so return true if we don't have
+            # a parent which already returned true
+            return node.parent is None or not should_print_preview_links(node.parent)
+        child = child.next
+    return False
+
 def write_menu_item(f, node):
     if not node.prompt:
         return  # Don't do anything for invisible menu items
@@ -83,30 +107,35 @@ def write_menu_item(f, node):
     except AttributeError:
         name = None
 
-    try:
-        is_menu = node.item == kconfiglib.MENU or node.is_menuconfig
-    except AttributeError:
-        is_menu = False  # not all MenuNodes have is_menuconfig for some reason
+    is_menu = node_is_menu(node)
 
     ## Heading
     if name:
-        title = name
-        # add link target so we can use :ref:`CONFIG_FOO`
-        f.write('.. _CONFIG_%s:\n\n' % name)
-    else:
-        title = node.prompt[0]
+        f.write('.. envvar:: CONFIG_%s\n\n' % name)
 
-    # if no symbol name, use the prompt as the heading
-    if True or is_menu:
+    # menus get a proper heading
+    if is_menu:
+        title = node.prompt[0]
         f.write('%s\n' % title)
         f.write(HEADING_SYMBOLS[get_heading_level(node)] * len(title))
         f.write('\n\n')
-    else:
-        f.write('**%s**\n\n\n' % title)
+        if should_print_preview_links(node):
+            # print preview links to all items in this menu
+            # for the first menu which contains at least one non-menu item
+            # (ie per component, or per top-level KConfig.projbuild menu)
+            def print_previews(parent):
+                child = parent.list
+                while child:
+                    if not node_is_menu(child):
+                        f.write('- :envvar:`CONFIG_%s`\n' % child.item.name)
+                    if child.list and not isinstance(child.item, kconfiglib.Choice):
+                        print_previews(child)
+                    child = child.next
+            print_previews(node)
+            f.write('\n\n')
 
     if name:
         f.write('%s%s\n\n' % (INDENT, node.prompt[0]))
-        f.write('%s:emphasis:`Found in: %s`\n\n' % (INDENT, get_breadcrumbs(node)))
 
     try:
         if node.help:
@@ -117,12 +146,16 @@ def write_menu_item(f, node):
     except AttributeError:
         pass  # No help
 
+    if node.parent is not None and not is_menu:
+        f.write('%sFound in\n%s%s\n\n' % (INDENT, INDENT * 2,
+                                           get_breadcrumbs(node)))
+
     if isinstance(node.item, kconfiglib.Choice):
         f.write('%sAvailable options:\n' % INDENT)
         choice_node = node.list
         while choice_node:
             # Format available options as a list
-            f.write('%s- %-20s (%s)\n' % (INDENT * 2, choice_node.prompt[0], choice_node.item.name))
+            f.write('%s- %-20s (`CONFIG_%s`)\n' % (INDENT * 2, choice_node.prompt[0], choice_node.item.name))
             if choice_node.help:
                 HELP_INDENT = INDENT * 2
                 fmt_help = format_rest_text(choice_node.help, '  ' + HELP_INDENT)
@@ -130,7 +163,6 @@ def write_menu_item(f, node):
             choice_node = choice_node.next
 
         f.write('\n\n')
-
 
 if __name__ == '__main__':
     print("Run this via 'confgen.py --output doc FILENAME'")

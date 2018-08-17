@@ -373,7 +373,7 @@ To exit the monitor use shortcut ``Ctrl+]``.
         e���)(Xn@�y.!��(�PW+)��Hn9a؅/9�!�t5��P�~�k��e�ea�5�jA
         ~zY��Y(1�,1�� e���)(Xn@�y.!Dr�zY(�jpi�|�+z5Ymvp
 
-    or monitor fails shortly after upload, your board is likely using 26MHz crystal. Most development board designs use 40MHz and the ESP-IDF uses this default value. Exit the monitor, go back to the :ref:`menuconfig <get-started-configure-cmake>`, change :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` to 26MHz, then :ref:`build and flash <get-started-flash-cmake>` the application again. This is found under ``idf.py menuconfig`` under Component config --> ESP32-specific --> Main XTAL frequency.
+    or monitor fails shortly after upload, your board is likely using 26MHz crystal. Most development board designs use 40MHz and the ESP-IDF uses this default value. Exit the monitor, go back to the :ref:`menuconfig <get-started-configure-cmake>`, change :envvar:`CONFIG_ESP32_XTAL_FREQ_SEL` to 26MHz, then :ref:`build and flash <get-started-flash-cmake>` the application again. This is found under ``idf.py menuconfig`` under Component config --> ESP32-specific --> Main XTAL frequency.
 
 .. note::
 
