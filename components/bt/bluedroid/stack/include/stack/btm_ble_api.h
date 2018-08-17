@@ -582,6 +582,12 @@ typedef struct {
     tBTM_BLE_REF_VALUE             ref_value;
 } tBTM_BLE_BATCH_SCAN_CB;
 
+/// Ble scan duplicate type
+enum {
+    BTM_BLE_SCAN_DUPLICATE_DISABLE           = 0x0,  /*!< the Link Layer should generate advertising reports to the host for each packet received */
+    BTM_BLE_SCAN_DUPLICATE_ENABLE            = 0x1,  /*!< the Link Layer should filter out duplicate advertising reports to the Host */
+    BTM_BLE_SCAN_DUPLICATE_MAX               = 0x2,  /*!< 0x02 – 0xFF, Reserved for future use */
+};
 /* filter selection bit index  */
 #define BTM_BLE_PF_ADDR_FILTER          0
 #define BTM_BLE_PF_SRVC_DATA            1
