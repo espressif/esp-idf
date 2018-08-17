@@ -890,6 +890,18 @@ UT_001_34:
     - ESP32_IDF
     - UT_T1_1
 
+UT_001_35:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+UT_001_36:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
 UT_002_01:
   <<: *unit_test_template
   tags:
