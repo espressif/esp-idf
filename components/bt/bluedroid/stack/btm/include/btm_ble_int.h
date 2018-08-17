@@ -162,7 +162,7 @@ typedef struct {
 
     UINT8 adv_len;
     UINT8 adv_data_cache[BTM_BLE_CACHE_ADV_DATA_MAX];
-
+    BD_ADDR adv_addr;
     /* inquiry BD addr database */
     UINT8 num_bd_entries;
     UINT8 max_bd_entries;

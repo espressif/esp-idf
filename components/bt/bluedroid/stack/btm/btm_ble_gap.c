@@ -1439,7 +1439,8 @@ void BTM_BleSetScanFilterParams(tGATT_IF client_if, UINT32 scan_interval, UINT32
 
     if (BTM_BLE_ISVALID_PARAM(scan_interval, BTM_BLE_SCAN_INT_MIN, max_scan_interval) &&
             BTM_BLE_ISVALID_PARAM(scan_window, BTM_BLE_SCAN_WIN_MIN, max_scan_window) &&
-            (scan_mode == BTM_BLE_SCAN_MODE_ACTI || scan_mode == BTM_BLE_SCAN_MODE_PASS)) {
+            (scan_mode == BTM_BLE_SCAN_MODE_ACTI || scan_mode == BTM_BLE_SCAN_MODE_PASS) &&
+            (scan_duplicate_filter < BTM_BLE_SCAN_DUPLICATE_MAX)) {
         p_cb->scan_type = scan_mode;
         p_cb->scan_interval = scan_interval;
         p_cb->scan_window = scan_window;
@@ -2637,7 +2638,7 @@ static void btm_ble_parse_adv_data(tBTM_INQ_INFO *p_info, UINT8 *p_data,
 ** Returns          void
 **
 *******************************************************************************/
-void btm_ble_cache_adv_data(tBTM_INQ_RESULTS *p_cur, UINT8 data_len, UINT8 *p, UINT8 evt_type)
+void btm_ble_cache_adv_data(BD_ADDR bda, tBTM_INQ_RESULTS *p_cur, UINT8 data_len, UINT8 *p, UINT8 evt_type)
 {
     tBTM_BLE_INQ_CB     *p_le_inq_cb = &btm_cb.ble_ctr_cb.inq_var;
     UINT8 *p_cache;
@@ -2646,6 +2647,15 @@ void btm_ble_cache_adv_data(tBTM_INQ_RESULTS *p_cur, UINT8 data_len, UINT8 *p, U
     /* cache adv report/scan response data */
     if (evt_type != BTM_BLE_SCAN_RSP_EVT) {
         p_le_inq_cb->adv_len = 0;
+        memset(p_le_inq_cb->adv_data_cache, 0, BTM_BLE_CACHE_ADV_DATA_MAX);
+        p_cur->adv_data_len = 0;
+        p_cur->scan_rsp_len = 0;
+    } 
+
+    //Clear the adv cache if the addresses are not equal
+    if(memcmp(bda, p_le_inq_cb->adv_addr, BD_ADDR_LEN) != 0) {
+        p_le_inq_cb->adv_len = 0;
+        memcpy(p_le_inq_cb->adv_addr, bda, BD_ADDR_LEN);
         memset(p_le_inq_cb->adv_data_cache, 0, BTM_BLE_CACHE_ADV_DATA_MAX);
         p_cur->adv_data_len = 0;
         p_cur->scan_rsp_len = 0;
@@ -2878,7 +2888,7 @@ static void btm_ble_appearance_to_cod(UINT16 appearance, UINT8 *dev_class)
 ** Returns          void
 **
 *******************************************************************************/
-BOOLEAN btm_ble_update_inq_result(tINQ_DB_ENT *p_i, UINT8 addr_type, UINT8 evt_type, UINT8 *p)
+BOOLEAN btm_ble_update_inq_result(BD_ADDR bda, tINQ_DB_ENT *p_i, UINT8 addr_type, UINT8 evt_type, UINT8 *p)
 {
     BOOLEAN             to_report = TRUE;
     tBTM_INQ_RESULTS     *p_cur = &p_i->inq_info.results;
@@ -2896,7 +2906,7 @@ BOOLEAN btm_ble_update_inq_result(tINQ_DB_ENT *p_i, UINT8 addr_type, UINT8 evt_t
         BTM_TRACE_WARNING("EIR data too long %d. discard", data_len);
         return FALSE;
     }
-    btm_ble_cache_adv_data(p_cur, data_len, p, evt_type);
+    btm_ble_cache_adv_data(bda, p_cur, data_len, p, evt_type);
 
     p1 = (p + data_len);
     STREAM_TO_UINT8 (rssi, p1);
@@ -3122,6 +3132,71 @@ void btm_ble_process_adv_pkt (UINT8 *p_data)
 
 /*******************************************************************************
 **
+** Function         btm_ble_process_last_adv_pkt
+**
+** Description      This function is called to report last adv packet
+**
+** Parameters
+**
+** Returns          void
+**
+*******************************************************************************/
+
+static void btm_ble_process_last_adv_pkt(void)
+{
+    UINT8       result = 0;
+    UINT8       null_bda[6] = {0};
+    tBTM_INQUIRY_VAR_ST  *p_inq = &btm_cb.btm_inq_vars;
+    tBTM_INQ_RESULTS_CB  *p_inq_results_cb = p_inq->p_inq_results_cb;
+    tBTM_INQ_RESULTS_CB  *p_obs_results_cb = btm_cb.ble_ctr_cb.p_obs_results_cb;
+    tBTM_INQ_RESULTS_CB  *p_scan_results_cb = btm_cb.ble_ctr_cb.p_scan_results_cb;
+    tBTM_BLE_INQ_CB      *p_le_inq_cb = &btm_cb.ble_ctr_cb.inq_var;
+    tINQ_DB_ENT          *p_i = btm_inq_db_find (p_le_inq_cb->adv_addr);
+
+    if(memcmp(null_bda, p_le_inq_cb->adv_addr, BD_ADDR_LEN) == 0) {
+        return;
+    }
+
+    if(p_i == NULL) {
+        BTM_TRACE_DEBUG("no last adv");
+        return;
+    }
+
+    if ((result = btm_ble_is_discoverable(p_le_inq_cb->adv_addr, p_i->inq_info.results.ble_evt_type, NULL)) == 0) {
+        BTM_TRACE_WARNING("%s device is no longer discoverable so discarding advertising packet pkt",
+                 __func__);
+        return;
+    }
+    /* background connection in selective connection mode */
+    if (btm_cb.ble_ctr_cb.bg_conn_type == BTM_BLE_CONN_SELECTIVE) {
+        //do nothing
+    } else {
+        if (p_inq_results_cb && (result & BTM_BLE_INQ_RESULT)) {
+            (p_inq_results_cb)((tBTM_INQ_RESULTS *) &p_i->inq_info.results, p_le_inq_cb->adv_data_cache);
+            p_le_inq_cb->adv_len = 0;
+            memset(p_le_inq_cb->adv_addr, 0, BD_ADDR_LEN);
+            p_i->inq_info.results.adv_data_len = 0;
+            p_i->inq_info.results.scan_rsp_len = 0;
+        }
+        if (p_obs_results_cb && (result & BTM_BLE_OBS_RESULT)) {
+            (p_obs_results_cb)((tBTM_INQ_RESULTS *) &p_i->inq_info.results, p_le_inq_cb->adv_data_cache);
+            p_le_inq_cb->adv_len = 0;
+            memset(p_le_inq_cb->adv_addr, 0, BD_ADDR_LEN);
+            p_i->inq_info.results.adv_data_len = 0;
+            p_i->inq_info.results.scan_rsp_len = 0;
+        }
+        if (p_scan_results_cb && (result & BTM_BLE_DISCO_RESULT)) {
+            (p_scan_results_cb)((tBTM_INQ_RESULTS *) &p_i->inq_info.results, p_le_inq_cb->adv_data_cache);
+            p_le_inq_cb->adv_len = 0;
+            memset(p_le_inq_cb->adv_addr, 0, BD_ADDR_LEN);
+            p_i->inq_info.results.adv_data_len = 0;
+            p_i->inq_info.results.scan_rsp_len = 0;
+        }
+    }
+}
+
+/*******************************************************************************
+**
 ** Function         btm_ble_process_adv_pkt_cont
 **
 ** Description      This function is called after random address resolution is
@@ -3143,6 +3218,13 @@ static void btm_ble_process_adv_pkt_cont(BD_ADDR bda, UINT8 addr_type, UINT8 evt
     tBTM_BLE_INQ_CB      *p_le_inq_cb = &btm_cb.ble_ctr_cb.inq_var;
     BOOLEAN     update = TRUE;
     UINT8       result = 0;
+
+   //if scan duplicate is enabled, the adv packet without scan response is allowed to report to higgher layer
+   if(p_le_inq_cb->scan_duplicate_filter == BTM_BLE_SCAN_DUPLICATE_ENABLE) {
+       if(memcmp(bda, p_le_inq_cb->adv_addr, BD_ADDR_LEN) != 0) {
+            btm_ble_process_last_adv_pkt();
+       }
+   }
 
     p_i = btm_inq_db_find (bda);
 
@@ -3172,7 +3254,7 @@ static void btm_ble_process_adv_pkt_cont(BD_ADDR bda, UINT8 addr_type, UINT8 evt
         p_inq->inq_cmpl_info.num_resp++;
     }
     /* update the LE device information in inquiry database */
-    if (!btm_ble_update_inq_result(p_i, addr_type, evt_type, p)) {
+    if (!btm_ble_update_inq_result(bda, p_i, addr_type, evt_type, p)) {
         return;
     }
 
@@ -3216,12 +3298,24 @@ static void btm_ble_process_adv_pkt_cont(BD_ADDR bda, UINT8 addr_type, UINT8 evt
     } else {
         if (p_inq_results_cb && (result & BTM_BLE_INQ_RESULT)) {
             (p_inq_results_cb)((tBTM_INQ_RESULTS *) &p_i->inq_info.results, p_le_inq_cb->adv_data_cache);
+            p_le_inq_cb->adv_len = 0;
+            memset(p_le_inq_cb->adv_addr, 0, BD_ADDR_LEN);
+            p_i->inq_info.results.adv_data_len = 0;
+            p_i->inq_info.results.scan_rsp_len = 0;
         }
         if (p_obs_results_cb && (result & BTM_BLE_OBS_RESULT)) {
             (p_obs_results_cb)((tBTM_INQ_RESULTS *) &p_i->inq_info.results, p_le_inq_cb->adv_data_cache);
+            p_le_inq_cb->adv_len = 0;
+            memset(p_le_inq_cb->adv_addr, 0, BD_ADDR_LEN);
+            p_i->inq_info.results.adv_data_len = 0;
+            p_i->inq_info.results.scan_rsp_len = 0;
         }
         if (p_scan_results_cb && (result & BTM_BLE_DISCO_RESULT)) {
             (p_scan_results_cb)((tBTM_INQ_RESULTS *) &p_i->inq_info.results, p_le_inq_cb->adv_data_cache);
+            p_le_inq_cb->adv_len = 0;
+            memset(p_le_inq_cb->adv_addr, 0, BD_ADDR_LEN);
+            p_i->inq_info.results.adv_data_len = 0;
+            p_i->inq_info.results.scan_rsp_len = 0;
         }
     }
 }
