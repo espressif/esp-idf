@@ -426,7 +426,9 @@ endif
 
 # Notify users when some of the required python packages are not installed
 check_python_dependencies:
+ifndef IS_BOOTLOADER_BUILD
 	$(PYTHON) $(IDF_PATH)/tools/check_python_dependencies.py
+endif
 
 all_binaries: $(APP_BIN)
 
