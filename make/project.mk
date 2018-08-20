@@ -422,13 +422,11 @@ else
 	@echo $(ESPTOOLPY_WRITE_FLASH) $(APP_OFFSET) $(APP_BIN)
 endif
 
-CHECK_PYTHON_DEPENDENCIES_CMD := $(PYTHON) $(IDF_PATH)/tools/check_python_dependencies.py
-
 .PHONY: check_python_dependencies
 
 # Notify users when some of the required python packages are not installed
 check_python_dependencies:
-	$(CHECK_PYTHON_DEPENDENCIES_CMD)
+	$(PYTHON) $(IDF_PATH)/tools/check_python_dependencies.py
 
 all_binaries: $(APP_BIN)
 
