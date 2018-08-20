@@ -49,6 +49,8 @@ def main():
 
     parser.add_argument('--quiet', '-q', help="Don't print status messages to stderr", action='store_true')
 
+    parser.add_argument('--partition-table-offset', help='The offset of the partition table in flash. Only consulted if partition table is in CSV format.', type=str, default='0x8000')
+
     search_type = parser.add_mutually_exclusive_group()
     search_type.add_argument('--partition-name', '-p', help='The name of the required partition', type=str, default=None)
     search_type.add_argument('--type', '-t', help='The type of the required partition', type=str, default=None)
@@ -73,6 +75,8 @@ def main():
         return 2
 
     quiet = args.quiet
+
+    gen.offset_part_table = int(args.partition_table_offset, 0)
 
     input = args.input.read()
     input_is_binary = input[0:2] == gen.PartitionDefinition.MAGIC_BYTES
