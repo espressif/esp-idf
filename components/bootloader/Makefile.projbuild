@@ -49,7 +49,7 @@ ifndef CONFIG_SECURE_BOOT_ENABLED
 # If secure boot disabled, bootloader flashing is integrated
 # with 'make flash' and no warnings are printed.
 
-bootloader: $(BOOTLOADER_BIN) check_python_dependencies
+bootloader: $(BOOTLOADER_BIN) | check_python_dependencies
 	@echo $(SEPARATOR)
 	@echo "Bootloader built. Default flash command is:"
 	@echo "$(ESPTOOLPY_WRITE_FLASH) $(BOOTLOADER_OFFSET) $^"
@@ -67,7 +67,7 @@ else ifdef CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH
 # The flashing command is deliberately printed without an auto-reset
 # step, so the device doesn't immediately reset to flash itself.
 
-bootloader: $(BOOTLOADER_BIN) check_python_dependencies
+bootloader: $(BOOTLOADER_BIN) | check_python_dependencies
 	@echo $(SEPARATOR)
 	@echo "Bootloader built. One-time flash command is:"
 	@echo "$(subst hard_reset,no_reset,$(ESPTOOLPY_WRITE_FLASH)) $(BOOTLOADER_OFFSET) $(BOOTLOADER_BIN)"
