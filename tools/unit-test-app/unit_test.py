@@ -257,6 +257,7 @@ def run_unit_test_cases(env, extra_data):
         raise AssertionError("Unit Test Failed")
 
 
+
 class Handler(threading.Thread):
 
     WAIT_SIGNAL_PATTERN = re.compile(r'Waiting for signal: \[(.+)\]!')
@@ -275,6 +276,7 @@ class Handler(threading.Thread):
         self.output = ""
         self.fail_name = None
         self.timeout = timeout
+        self.force_stop = threading.Event()  # it show the running status
         threading.Thread.__init__(self, name="{} Handler".format(dut))
 
     def run(self):
@@ -323,12 +325,14 @@ class Handler(threading.Thread):
 
         self.dut.reset()
         self.dut.write("-", flush=False)
-        self.dut.expect_any(UT_APP_BOOT_UP_DONE, "0 Tests 0 Failures 0 Ignored")
-        time.sleep(1)
-        self.dut.write("\"{}\"".format(self.parent_case_name))
-        self.dut.expect("Running " + self.parent_case_name + "...")
-
-        while not self.finish:
+        try:
+            self.dut.expect_any(UT_APP_BOOT_UP_DONE, "0 Tests 0 Failures 0 Ignored")
+            time.sleep(1)
+            self.dut.write("\"{}\"".format(self.parent_case_name))
+            self.dut.expect("Running " + self.parent_case_name + "...")
+        except ExpectTimeout:
+            Utility.console_log("No case detected!", color="orange")
+        while not self.finish and not self.force_stop.isSet():
             try:
                 self.dut.expect_any((re.compile('\(' + str(self.child_case_index) + '\)\s"(\w+)"'), get_child_case_name),
                                     (self.WAIT_SIGNAL_PATTERN, device_wait_action),  # wait signal pattern
@@ -339,6 +343,9 @@ class Handler(threading.Thread):
                 Utility.console_log("Timeout in expect", color="orange")
                 one_device_case_finish(False)
                 break
+
+    def stop(self):
+        self.force_stop.set()
 
 
 def get_case_info(one_case):
@@ -364,6 +371,7 @@ def run_one_multiple_devices_case(duts, ut_config, env, one_case, failed_cases, 
     failed_device = []
     result = True
     parent_case, case_num = get_case_info(one_case)
+
     for i in range(case_num):
         dut = get_dut(duts, env, "dut%d" % i, ut_config)
         threads.append(Handler(dut, send_signal_list, lock,
@@ -377,7 +385,8 @@ def run_one_multiple_devices_case(duts, ut_config, env, one_case, failed_cases, 
         result = result and thread.result
         output += thread.output
         if not thread.result:
-            failed_device.append(thread.fail_name)
+            [thd.stop() for thd in threads]
+
     if result:
         Utility.console_log("Success: " + one_case["name"], color="green")
     else:
