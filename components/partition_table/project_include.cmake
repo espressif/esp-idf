@@ -9,7 +9,8 @@ if(CONFIG_PARTITION_TABLE_CUSTOM)
     get_filename_component(PARTITION_CSV_PATH "${CONFIG_PARTITION_TABLE_FILENAME}" ABSOLUTE BASE_DIR "${PROJECT_PATH}")
 
     if(NOT EXISTS "${PARTITION_CSV_PATH}")
-        message(FATAL_ERROR "Partition table CSV file ${PARTITION_CSV_PATH} not found. Change custom partition CSV path in menuconfig.")
+        message(WARNING "Partition table CSV file ${PARTITION_CSV_PATH} not found. "
+            "Change custom partition CSV path in menuconfig.")
     endif()
 else()
     # Other .csv files are always in the component directory
@@ -27,9 +28,17 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${PARTITION_CSV_P
 function(get_partition_info variable get_part_info_args)
     separate_arguments(get_part_info_args)
     execute_process(COMMAND
-        ${COMPONENT_PATH}/parttool.py -q ${get_part_info_args} ${PARTITION_CSV_PATH}
+        ${COMPONENT_PATH}/parttool.py -q
+        --partition-table-offset ${PARTITION_TABLE_OFFSET}
+        ${get_part_info_args}
+        ${PARTITION_CSV_PATH}
         OUTPUT_VARIABLE result
+        RESULT_VARIABLE exit_code
         OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(NOT ${exit_code} EQUAL 0 AND NOT ${exit_code} EQUAL 1)
+        # can't fail here as it would prevent the user from running 'menuconfig' again
+        message(WARNING "parttool.py execution failed (${result}), problem with partition CSV file (see above)")
+    endif()
     set(${variable} ${result} PARENT_SCOPE)
 endfunction()
 
