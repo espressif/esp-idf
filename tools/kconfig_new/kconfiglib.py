@@ -754,6 +754,9 @@ class Kconfig(object):
                         continue
 
                     if sym.orig_type in (BOOL, TRISTATE):
+                        if val == "":
+                            val = "n"  # C implementation allows 'blank' for 'no'
+
                         # The C implementation only checks the first character
                         # to the right of '=', for whatever reason
                         if not ((sym.orig_type == BOOL and
