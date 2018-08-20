@@ -82,10 +82,7 @@ if(CONFIG_BT_ENABLED)
 endif()
 
 # requirements can't depend on config
-set(COMPONENT_PRIV_REQUIRES lwip nvs_flash)
-
-# currently uses libcoap's hash table in hashkey.h
-set(COMPONENT_REQUIRES coap)
+set(COMPONENT_PRIV_REQUIRES nvs_flash)
 
 register_component()
 
