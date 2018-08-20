@@ -23,7 +23,7 @@ if(CONFIG_ESPTOOLPY_FLASHSIZE)
 endif()
 
 add_custom_command(OUTPUT "${unsigned_partition_bin}"
-    COMMAND "${PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py" -q ${md5_opt} ${flashsize_opt}
+    COMMAND "${PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py" -q --offset ${PARTITION_TABLE_OFFSET} ${md5_opt} ${flashsize_opt}
     ${partition_csv} ${unsigned_partition_bin}
     DEPENDS ${partition_csv} "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py"
     VERBATIM)
