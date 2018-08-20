@@ -25,12 +25,14 @@ endif()
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${PARTITION_CSV_PATH})
 
 # Parse the partition table to get variable partition offsets & sizes which must be known at CMake runtime
-macro(get_partition_info variable get_part_info_args)
+function(get_partition_info variable get_part_info_args)
+    separate_arguments(get_part_info_args)
     execute_process(COMMAND
-        get_part_info ${COMPONENT_PATH}/parttool.py -q ${get_part_info_args} ${PARTITION_CSV_PATH}
-        OUTPUT_VARIABLE ${variable}
+        ${COMPONENT_PATH}/parttool.py -q ${get_part_info_args} ${PARTITION_CSV_PATH}
+        OUTPUT_VARIABLE result
         OUTPUT_STRIP_TRAILING_WHITESPACE)
-endmacro()
+    set(${variable} ${result} PARENT_SCOPE)
+endfunction()
 
 if(CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION)
     get_partition_info(PHY_PARTITION_OFFSET "--type data --subtype phy --offset")
