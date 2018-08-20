@@ -24,25 +24,24 @@ endif()
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${PARTITION_CSV_PATH})
 
 # Parse the partition table to get variable partition offsets & sizes which must be known at CMake runtime
-set(get_part_info ${COMPONENT_PATH}/parttool.py -q)
+function(get_partition_info variable get_part_info_args)
+    separate_arguments(get_part_info_args)
+    execute_process(COMMAND
+        ${COMPONENT_PATH}/parttool.py -q ${get_part_info_args} ${PARTITION_CSV_PATH}
+        OUTPUT_VARIABLE result
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    set(${variable} ${result} PARENT_SCOPE)
+endfunction()
 
 if(CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION)
-    execute_process(COMMAND
-        ${get_part_info} --type data --subtype phy --offset ${PARTITION_CSV_PATH}
-        OUTPUT_VARIABLE PHY_PARTITION_OFFSET)
+    get_partition_info(PHY_PARTITION_OFFSET "--type data --subtype phy --offset")
     set(PHY_PARTITION_BIN_FILE "${CMAKE_BINARY_DIR}/esp32/phy_init_data.bin")
 endif()
 
-execute_process(COMMAND
-    ${get_part_info} --default-boot-partition --offset ${PARTITION_CSV_PATH}
-    OUTPUT_VARIABLE APP_PARTITION_OFFSET)
+get_partition_info(APP_PARTITION_OFFSET "--default-boot-partition --offset")
 
-execute_process(COMMAND
-    ${get_part_info} --type data --subtype ota --offset ${PARTITION_CSV_PATH}
-    OUTPUT_VARIABLE OTADATA_PARTITION_OFFSET)
+get_partition_info(OTADATA_PARTITION_OFFSET "--type data --subtype ota --offset")
 
-execute_process(COMMAND
-    ${get_part_info} --type data --subtype ota --size ${PARTITION_CSV_PATH}
-    OUTPUT_VARIABLE OTADATA_PARTITION_SIZE)
+get_partition_info(OTADATA_PARTITION_SIZE "--type data --subtype ota --size")
 
 endif()
