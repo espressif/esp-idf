@@ -161,7 +161,7 @@ static esp_err_t tcpip_adapter_update_default_netif(void)
     return ESP_OK;
 }
 
-esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, tcpip_adapter_ip_info_t *ip_info)
+static esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, tcpip_adapter_ip_info_t *ip_info)
 {
     netif_init_fn netif_init;
 
