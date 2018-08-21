@@ -234,6 +234,10 @@ TEST_CASE("SPI Master test", "[spi]")
     success &= spi_test(handle, 4); //aligned
     success &= spi_test(handle, 16); //small
     success &= spi_test(handle, 21); //small, unaligned
+    success &= spi_test(handle, 32); //small
+    success &= spi_test(handle, 47); //small, unaligned
+    success &= spi_test(handle, 63); //small
+    success &= spi_test(handle, 64); //small, unaligned
 
     destroy_spi_bus(handle);
 
@@ -693,8 +697,22 @@ TEST_CASE("SPI Master DMA test: length, start, not aligned", "[spi]")
 
 static const char MASTER_TAG[] = "test_master";
 static const char SLAVE_TAG[] = "test_slave";
-DRAM_ATTR static uint8_t master_send[] = {0x93, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0xaa, 0xcc, 0xff, 0xee, 0x55, 0x77, 0x88, 0x43};
-DRAM_ATTR static uint8_t slave_send[] = { 0xaa, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10, 0x13, 0x57, 0x9b, 0xdf, 0x24, 0x68, 0xac, 0xe0 };
+DRAM_ATTR static uint8_t master_send[] = {
+    0x93, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0xaa, 0xcc, 0xff, 0xee, 0x55, 0x77, 0x88, 0x43,
+    0x74,
+    0x93, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0xaa, 0xcc, 0xff, 0xee, 0x55, 0x77, 0x88, 0x43,
+    0x74,
+    0x93, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0xaa, 0xcc, 0xff, 0xee, 0x55, 0x77, 0x88, 0x43,
+    0x74,
+    };
+DRAM_ATTR static uint8_t slave_send[] = {
+    0xaa, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10, 0x13, 0x57, 0x9b, 0xdf, 0x24, 0x68, 0xac, 0xe0,
+    0xda,
+    0xaa, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10, 0x13, 0x57, 0x9b, 0xdf, 0x24, 0x68, 0xac, 0xe0,
+    0xda,
+    0xaa, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10, 0x13, 0x57, 0x9b, 0xdf, 0x24, 0x68, 0xac, 0xe0,
+    0xda,
+    };
 
 
 static void master_deinit(spi_device_handle_t spi)
@@ -1006,6 +1024,8 @@ esp_err_t check_data(spi_transaction_t *t, spi_dup_t dup, slave_rxdata_t *slave_
     return ESP_OK;
 }
 
+int test_len[] = {1, 3, 5, 7, 9, 11, 33, 64};
+
 static void timing_init_transactions(spi_dup_t dup, timing_context_t* context)
 {
     spi_transaction_t* trans = context->master_trans;
@@ -1014,7 +1034,7 @@ static void timing_init_transactions(spi_dup_t dup, timing_context_t* context)
         for (int i = 0; i < 8; i++ ) {
             trans[i] = (spi_transaction_t) {
                 .flags = 0,
-                .rxlength = 8*(i*2+1),
+                .rxlength = 8*test_len[i],
                 .rx_buffer = rx_buf_ptr,
             };
             rx_buf_ptr += ((context->master_trans[i].rxlength + 31)/8)&(~3);
@@ -1023,7 +1043,7 @@ static void timing_init_transactions(spi_dup_t dup, timing_context_t* context)
         for (int i = 0; i < 8; i++ ) {
             trans[i] = (spi_transaction_t) {
                 .flags = 0,
-                .length = 8*(i*2+1),
+                .length = 8*test_len[i],
                 .tx_buffer = master_send+i,
             };
         }
@@ -1031,7 +1051,7 @@ static void timing_init_transactions(spi_dup_t dup, timing_context_t* context)
         for (int i = 0; i < 8; i++ ) {
             trans[i] = (spi_transaction_t) {
                 .flags = 0,
-                .length = 8*(i*2+1),
+                .length = 8*test_len[i],
                 .tx_buffer = master_send+i,
                 .rx_buffer = rx_buf_ptr,
             };
@@ -1042,7 +1062,7 @@ static void timing_init_transactions(spi_dup_t dup, timing_context_t* context)
     for (int i = 0; i < 8; i ++) {
         context->slave_trans[i] = (slave_txdata_t) {
             .start = slave_send + 4*(i%3),
-            .len = 256,
+            .len = 512,
         };
     }
 }
@@ -1073,7 +1093,7 @@ typedef struct {
 #define ESP_SPI_SLAVE_MAX_FREQ_SYNC SPI_MASTER_FREQ_40M
 
 
-static test_timing_config_t timing_master_conf_t[] = {/**/
+static test_timing_config_t timing_master_conf_t[] = {
     { .cfg_name = "FULL_DUP, MASTER IOMUX",
       .freq_limit = SPI_MASTER_FREQ_13M,
       .dup = FULL_DUPLEX,
