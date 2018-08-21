@@ -329,16 +329,17 @@ def print_closing_message(args):
         def flasher_path(f):
             return os.path.relpath(os.path.join(args.build_dir, f))
 
-        if key != "project":
+        if key != "project":  # flashing a single item
             cmd = ""
-            if key == "bootloader":
+            if key == "bootloader":  # bootloader needs --flash-mode, etc to be passed in
                 cmd = " ".join(flasher_args["write_flash_args"]) + " "
 
             cmd += flasher_args[key]["offset"] + " "
             cmd += flasher_path(flasher_args[key]["file"])
-        else:
+        else:  # flashing the whole project
             cmd = " ".join(flasher_args["write_flash_args"]) + " "
-            for o,f in flasher_args["flash_files"].items():
+            flash_items = sorted((o,f) for (o,f) in flasher_args["flash_files"].items() if len(o) > 0)
+            for o,f in flash_items:
                 cmd += o + " " + flasher_path(f) + " "
 
         print("%s -p %s -b %s write_flash %s" % (
@@ -346,7 +347,7 @@ def print_closing_message(args):
             args.port or "(PORT)",
             args.baud,
             cmd.strip()))
-        print("or run 'idf.py -p PORT %s'" % (key + "-flash" if key != "project" else "flash",))
+        print("or run 'idf.py -p %s %s'" % (args.port or "(PORT)", key + "-flash" if key != "project" else "flash",))
 
     if "all" in args.actions or "build" in args.actions:
         print_flashing_message("Project", "project")
