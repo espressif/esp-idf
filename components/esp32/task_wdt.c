@@ -35,6 +35,7 @@
 #include "driver/timer.h"
 #include "driver/periph_ctrl.h"
 #include "esp_task_wdt.h"
+#include "esp_system_internal.h"
 
 //Assertion macro where, if 'cond' is false, will exit the critical section and return 'ret'
 #define ASSERT_EXIT_CRIT_RETURN(cond, ret)  ({                              \
@@ -155,6 +156,7 @@ static void task_wdt_isr(void *arg)
     if (twdt_config->panic){     //Trigger Panic if configured to do so
         ets_printf("Aborting.\n");
         portEXIT_CRITICAL(&twdt_spinlock);
+        esp_reset_reason_set_hint(ESP_RST_TASK_WDT);
         abort();
     }
 

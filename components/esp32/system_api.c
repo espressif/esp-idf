@@ -36,6 +36,7 @@
 #include "freertos/task.h"
 #include "freertos/xtensa_api.h"
 #include "esp_heap_caps.h"
+#include "esp_system_internal.h"
 
 static const char* TAG = "system_api";
 
