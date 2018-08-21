@@ -611,6 +611,8 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
         host->hw->dma_in_link.start=0;
         host->hw->dma_conf.val &= ~(SPI_OUT_RST|SPI_IN_RST|SPI_AHBM_RST|SPI_AHBM_FIFO_RST);
         host->hw->dma_conf.out_data_burst_en=1;
+        host->hw->dma_conf.indscr_burst_en=1;
+        host->hw->dma_conf.outdscr_burst_en=1;
         //Set up QIO/DIO if needed
         host->hw->ctrl.val &= ~(SPI_FREAD_DUAL|SPI_FREAD_QUAD|SPI_FREAD_DIO|SPI_FREAD_QIO);
         host->hw->user.val &= ~(SPI_FWRITE_DUAL|SPI_FWRITE_QUAD|SPI_FWRITE_DIO|SPI_FWRITE_QIO);
