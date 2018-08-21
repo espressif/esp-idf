@@ -37,6 +37,8 @@
 #include "esp_task_wdt.h"
 #include "esp_system_internal.h"
 
+static const char *TAG = "task_wdt";
+
 //Assertion macro where, if 'cond' is false, will exit the critical section and return 'ret'
 #define ASSERT_EXIT_CRIT_RETURN(cond, ret)  ({                              \
             if(!(cond)){                                                    \
@@ -142,7 +144,7 @@ static void task_wdt_isr(void *arg)
     TIMERG0.wdt_wprotect=0;
     //Acknowledge interrupt
     TIMERG0.int_clr_timers.wdt=1;
-    //We are taking a spinlock while doing I/O (ets_printf) here. Normally, that is a pretty
+    //We are taking a spinlock while doing I/O (ESP_EARLY_LOGE) here. Normally, that is a pretty
     //bad thing, possibly (temporarily) hanging up the 2nd core and stopping FreeRTOS. In this case,
     //something bad already happened and reporting this is considered more important
     //than the badness caused by a spinlock here.
@@ -151,22 +153,22 @@ static void task_wdt_isr(void *arg)
     ASSERT_EXIT_CRIT_RETURN((twdt_config->list != NULL), VOID_RETURN);
 
     //Watchdog got triggered because at least one task did not reset in time.
-    ets_printf("Task watchdog got triggered. The following tasks did not reset the watchdog in time:\n");
+    ESP_EARLY_LOGE(TAG, "Task watchdog got triggered. The following tasks did not reset the watchdog in time:");
     for (twdttask=twdt_config->list; twdttask!=NULL; twdttask=twdttask->next) {
         if (!twdttask->has_reset) {
             cpu=xTaskGetAffinity(twdttask->task_handle)==0?DRAM_STR("CPU 0"):DRAM_STR("CPU 1");
             if (xTaskGetAffinity(twdttask->task_handle)==tskNO_AFFINITY) cpu=DRAM_STR("CPU 0/1");
-            ets_printf(" - %s (%s)\n", pcTaskGetTaskName(twdttask->task_handle), cpu);
+            ESP_EARLY_LOGE(TAG, " - %s (%s)", pcTaskGetTaskName(twdttask->task_handle), cpu);
         }
     }
-    ets_printf(DRAM_STR("Tasks currently running:\n"));
+    ESP_EARLY_LOGE(TAG, "%s", DRAM_STR("Tasks currently running:"));
     for (int x=0; x<portNUM_PROCESSORS; x++) {
-        ets_printf("CPU %d: %s\n", x, pcTaskGetTaskName(xTaskGetCurrentTaskHandleForCPU(x)));
+        ESP_EARLY_LOGE(TAG, "CPU %d: %s", x, pcTaskGetTaskName(xTaskGetCurrentTaskHandleForCPU(x)));
     }
 
     esp_task_wdt_isr_user_handler();
     if (twdt_config->panic){     //Trigger Panic if configured to do so
-        ets_printf("Aborting.\n");
+        ESP_EARLY_LOGE(TAG, "Aborting.");
         portEXIT_CRITICAL(&twdt_spinlock);
         esp_reset_reason_set_hint(ESP_RST_TASK_WDT);
         abort();
