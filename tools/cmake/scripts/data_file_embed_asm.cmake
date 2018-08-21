@@ -67,6 +67,7 @@ endif()
 append_line(" */")
 
 append_line(".data")
+append_line(".section .rodata.embedded")
 append_identifier("${varname}")
 append_identifier("_binary_${varname}_start" "for objcopy compatibility")
 append("${data}")
