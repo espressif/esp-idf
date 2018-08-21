@@ -21,7 +21,7 @@
 #include "soc/cpu.h"
 #include "soc/rtc_cntl_reg.h"
 #include "rom/ets_sys.h"
-#include "esp_system.h"
+#include "esp_system_internal.h"
 #include "driver/rtc_cntl.h"
 #include "freertos/FreeRTOS.h"
 
@@ -42,6 +42,7 @@ static void rtc_brownout_isr_handler()
      * at the same time as the following ets_printf.
      */
     esp_cpu_stall(!xPortGetCoreID());
+    esp_reset_reason_set_hint(ESP_RST_BROWNOUT);
     ets_printf("\r\nBrownout detector was triggered\r\n\r\n");
     esp_restart_noos();
 }
