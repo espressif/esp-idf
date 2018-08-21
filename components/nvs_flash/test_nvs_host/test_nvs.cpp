@@ -1710,6 +1710,27 @@ TEST_CASE("Check that orphaned blobs are erased during init", "[nvs]")
     TEST_ESP_OK(storage.writeItem(1, ItemType::BLOB, "key3", blob, sizeof(blob)));
 }
 
+TEST_CASE("nvs code handles errors properly when partition is near to full", "[nvs]")
+{
+    const size_t blob_size = Page::CHUNK_MAX_SIZE * 0.3 ;
+    uint8_t blob[blob_size] = {0x11};
+    SpiFlashEmulator emu(5);
+    Storage storage;
+    char nvs_key[16] = "";
+    
+    TEST_ESP_OK(storage.init(0, 5));
+
+    /* Four pages should fit roughly 12 blobs*/
+    for(uint8_t count = 1; count <= 12; count++) {
+        sprintf(nvs_key, "key:%u", count);
+        TEST_ESP_OK(storage.writeItem(1, ItemType::BLOB, nvs_key, blob, sizeof(blob)));
+    }
+    
+    for(uint8_t count = 13; count <= 20; count++) {
+        sprintf(nvs_key, "key:%u", count);
+        TEST_ESP_ERR(storage.writeItem(1, ItemType::BLOB, nvs_key, blob, sizeof(blob)), ESP_ERR_NVS_NOT_ENOUGH_SPACE);
+    }
+}
 
 TEST_CASE("Check for nvs version incompatibility", "[nvs]")
 {
