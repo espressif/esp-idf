@@ -1361,7 +1361,7 @@ tBTM_STATUS BTM_SetEncryption (BD_ADDR bd_addr, tBT_TRANSPORT transport, tBTM_SE
 
         return (BTM_SUCCESS);
     }
-
+    p_dev_rec->enc_init_by_we = TRUE;
     /* enqueue security request if security is active */
     if (p_dev_rec->p_callback || (p_dev_rec->sec_state != BTM_SEC_STATE_IDLE)) {
         BTM_TRACE_WARNING ("Security Manager: BTM_SetEncryption busy, enqueue request\n");
@@ -4537,7 +4537,7 @@ void btm_sec_disconnected (UINT16 handle, UINT8 reason)
     if (!p_dev_rec) {
         return;
     }
-
+    p_dev_rec->enc_init_by_we = FALSE;
     transport  = (handle == p_dev_rec->hci_handle) ? BT_TRANSPORT_BR_EDR : BT_TRANSPORT_LE;
 
     p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING;     /* reset flag */
