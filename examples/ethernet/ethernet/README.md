@@ -25,7 +25,6 @@ Possible configurations of the 50MHz clock signal:
 | Mode     | GPIO Pin | Signal name    | Notes                                                                                              |
 | -------- | -------- | -------------- | -------------------------------------------------------------------------------------------------- |
 | external | `GPIO0`  | `EMAC_TX_CLK`  | Input of 50MHz PHY clock                                                                           |
-| internal | `GPIO0`  | `CLK_OUT1`     | Output of 50MHz APLL clock. Signal quality might be an issue.                                      |
 | internal | `GPIO16` | `EMAC_CLK_OUT` | Output of 50MHz APLL clock.                                                                        |
 | internal | `GPIO17` | `EMAC_CLK_180` | Inverted output of 50MHz APLL clock. Found to be best suitable for LAN8720 with long signal lines. |
 
@@ -35,8 +34,6 @@ The external reference clock of 50MHz must be supplied on `GPIO0`. See note abou
 
 #### Internal PHY Clock
 The ESP32 can generate a 50MHz clock using its APLL. When the APLL is already used as clock source for other purposes (most likely I²S) external PHY has to be used.
-
-On different test setups clock output on `GPIO0` was found unstable because in most designs the signal path is not ideal for this high frequency (the PCB trace has several devices added to it and therefore the capacitive load is relatively high)
 
 The inverted clock signal `EMAC_CLK_180` was found working best with a LAN8720 PHY.
 
