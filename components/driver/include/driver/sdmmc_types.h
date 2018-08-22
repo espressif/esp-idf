@@ -110,6 +110,8 @@ typedef struct {
 #define SCF_RSP_R5B      (SCF_RSP_PRESENT|SCF_RSP_CRC|SCF_RSP_IDX|SCF_RSP_BSY)
 #define SCF_RSP_R6       (SCF_RSP_PRESENT|SCF_RSP_CRC|SCF_RSP_IDX)
 #define SCF_RSP_R7       (SCF_RSP_PRESENT|SCF_RSP_CRC|SCF_RSP_IDX)
+/* special flags */
+#define SCF_WAIT_BUSY    0x2000     /*!< Wait for completion of card busy signal before returning */
 /** @endcond */
         esp_err_t error;            /*!< error returned from transfer */
         int timeout_ms;             /*!< response timeout, in milliseconds */
@@ -127,6 +129,7 @@ typedef struct {
 #define SDMMC_HOST_FLAG_4BIT    BIT(1)      /*!< host supports 4-line SD and MMC protocol */
 #define SDMMC_HOST_FLAG_8BIT    BIT(2)      /*!< host supports 8-line MMC protocol */
 #define SDMMC_HOST_FLAG_SPI     BIT(3)      /*!< host supports SPI protocol */
+#define SDMMC_HOST_FLAG_DDR     BIT(4)      /*!< host supports DDR mode for SD/MMC */
     int slot;                   /*!< slot number, to be passed to host functions */
     int max_freq_khz;           /*!< max frequency supported by the host */
 #define SDMMC_FREQ_DEFAULT      20000       /*!< SD/MMC Default speed (limited by clock divider) */
@@ -138,6 +141,7 @@ typedef struct {
     esp_err_t (*init)(void);    /*!< Host function to initialize the driver */
     esp_err_t (*set_bus_width)(int slot, size_t width);    /*!< host function to set bus width */
     size_t (*get_bus_width)(int slot); /*!< host function to get bus width */
+    esp_err_t (*set_bus_ddr_mode)(int slot, bool ddr_enable); /*!< host function to set DDR mode */
     esp_err_t (*set_card_clk)(int slot, uint32_t freq_khz); /*!< host function to set card clock frequency */
     esp_err_t (*do_transaction)(int slot, sdmmc_command_t* cmdinfo);    /*!< host function to do a transaction */
     esp_err_t (*deinit)(void);  /*!< host function to deinitialize the driver */
@@ -163,7 +167,8 @@ typedef struct {
     uint32_t is_mmc : 1;        /*!< Bit indicates if the card is MMC */
     uint32_t num_io_functions : 3;  /*!< If is_sdio is 1, contains the number of IO functions on the card */
     uint32_t log_bus_width : 2; /*!< log2(bus width supported by card) */
-    uint32_t reserved : 24;     /*!< Reserved for future expansion */
+    uint32_t is_ddr : 1;        /*!< Card supports DDR mode */
+    uint32_t reserved : 23;     /*!< Reserved for future expansion */
 } sdmmc_card_t;
 
 

@@ -71,6 +71,7 @@
 #define SDMMC_INTMASK_EBE       BIT(15)
 #define SDMMC_INTMASK_ACD       BIT(14)
 #define SDMMC_INTMASK_SBE       BIT(13)
+#define SDMMC_INTMASK_BCI       BIT(13)
 #define SDMMC_INTMASK_HLE       BIT(12)
 #define SDMMC_INTMASK_FRUN      BIT(11)
 #define SDMMC_INTMASK_HTO       BIT(10)

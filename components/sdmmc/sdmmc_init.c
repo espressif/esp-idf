@@ -93,6 +93,11 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
     /* MMC cards: read CXD */
     SDMMC_INIT_STEP(is_mmc, sdmmc_init_mmc_read_ext_csd);
 
+    /* Try to switch card to HS mode if the card supports it.
+     * Set card->max_freq_khz value accordingly.
+     */
+    SDMMC_INIT_STEP(always, sdmmc_init_card_hs_mode);
+
     /* Set bus width. One call for every kind of card, then one for the host */
     if (!is_spi) {
         SDMMC_INIT_STEP(is_sdmem, sdmmc_init_sd_bus_width);
@@ -101,19 +106,10 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
         SDMMC_INIT_STEP(always, sdmmc_init_host_bus_width);
     }
 
-    SDMMC_INIT_STEP(is_sdmem, sdmmc_check_scr);
-
-    /* Try to switch card to HS mode if the card supports it.
-     * Set card->max_freq_khz value accordingly.
-     */
-    SDMMC_INIT_STEP(always, sdmmc_init_card_hs_mode);
-
-    /* So far initialization has been done at probing frequency.
-     * Switch to the host to use card->max_freq_khz frequency.
-     */
+    /* Switch to the host to use card->max_freq_khz frequency. */
     SDMMC_INIT_STEP(always, sdmmc_init_host_frequency);
 
-    /* Sanity check after switching the frequency */
+    /* Sanity check after switching the bus mode and frequency */
     SDMMC_INIT_STEP(is_sdmem, sdmmc_check_scr);
     /* TODO: add similar checks for eMMC and SDIO */
 

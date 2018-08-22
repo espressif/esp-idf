@@ -33,13 +33,17 @@ extern "C" {
  * Uses SDMMC peripheral, with 4-bit mode enabled, and max frequency set to 20MHz
  */
 #define SDMMC_HOST_DEFAULT() {\
-    .flags = SDMMC_HOST_FLAG_4BIT, \
+    .flags = SDMMC_HOST_FLAG_8BIT | \
+             SDMMC_HOST_FLAG_4BIT | \
+             SDMMC_HOST_FLAG_1BIT | \
+             SDMMC_HOST_FLAG_DDR, \
     .slot = SDMMC_HOST_SLOT_1, \
     .max_freq_khz = SDMMC_FREQ_DEFAULT, \
     .io_voltage = 3.3f, \
     .init = &sdmmc_host_init, \
     .set_bus_width = &sdmmc_host_set_bus_width, \
     .get_bus_width = &sdmmc_host_get_slot_width, \
+    .set_bus_ddr_mode = &sdmmc_host_set_bus_ddr_mode, \
     .set_card_clk = &sdmmc_host_set_card_clk, \
     .do_transaction = &sdmmc_host_do_transaction, \
     .deinit = &sdmmc_host_deinit, \
@@ -149,6 +153,16 @@ size_t sdmmc_host_get_slot_width(int slot);
  *      - other error codes may be returned in the future
  */
 esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz);
+
+/**
+ * @brief Enable or disable DDR mode of SD interface
+ * @param slot  slot number (SDMMC_HOST_SLOT_0 or SDMMC_HOST_SLOT_1)
+ * @param ddr_enabled  enable or disable DDR mode
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_SUPPORTED if DDR mode is not supported on this slot
+ */
+esp_err_t sdmmc_host_set_bus_ddr_mode(int slot, bool ddr_enabled);
 
 /**
  * @brief Send command to the card and get response

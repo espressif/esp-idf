@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006 Uwe Stuehler <uwe@openbsd.org>
- * Adaptations to ESP-IDF Copyright (c) 2016 Espressif Systems (Shanghai) PTE LTD
+ * Adaptations to ESP-IDF Copyright (c) 2016-2018 Espressif Systems (Shanghai) PTE LTD
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -214,6 +214,18 @@ esp_err_t sdmmc_init_host_frequency(sdmmc_card_t* card)
             return err;
         }
     }
+
+    if (card->is_ddr) {
+        if (card->host.set_bus_ddr_mode == NULL) {
+            ESP_LOGE(TAG, "host doesn't support DDR mode or voltage switching");
+            return ESP_ERR_NOT_SUPPORTED;
+        }
+        esp_err_t err = (*card->host.set_bus_ddr_mode)(card->host.slot, true);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "failed to switch bus to DDR mode (0x%x)", err);
+            return err;
+        }
+    }
     return ESP_OK;
 }
 
@@ -246,7 +258,12 @@ void sdmmc_card_print_info(FILE* stream, const sdmmc_card_t* card)
         type = (card->ocr & SD_OCR_SDHC_CAP) ? "SDHC/SDXC" : "SDSC";
     }
     fprintf(stream, "Type: %s\n", type);
-    fprintf(stream, "Speed: %s\n", (card->max_freq_khz > SDMMC_FREQ_26M) ? "high speed" : "default speed");
+    if (card->max_freq_khz < 1000) {
+        fprintf(stream, "Speed: %d kHz\n", card->max_freq_khz);
+    } else {
+        fprintf(stream, "Speed: %d MHz%s\n", card->max_freq_khz / 1000,
+                card->is_ddr ? ", DDR" : "");
+    }
     fprintf(stream, "Size: %lluMB\n", ((uint64_t) card->csd.capacity) * card->csd.sector_size / (1024 * 1024));
 
     if (print_csd) {
@@ -269,13 +286,17 @@ esp_err_t sdmmc_fix_host_flags(sdmmc_card_t* card)
     int slot_bit_width = card->host.get_bus_width(card->host.slot);
     if (slot_bit_width == 1 &&
             (card->host.flags & (width_4bit | width_8bit))) {
-        ESP_LOGW(TAG, "host slot is configured in 1-bit mode");
         card->host.flags &= ~width_mask;
-        card->host.flags |= ~(width_1bit);
-    } else if (slot_bit_width == 4 && (card->host.flags & width_8bit)){
-        ESP_LOGW(TAG, "host slot is configured in 4-bit mode");
-        card->host.flags &= ~width_mask;
-        card->host.flags |= width_4bit;
+        card->host.flags |= width_1bit;
+    } else if (slot_bit_width == 4 && (card->host.flags & width_8bit)) {
+        if ((card->host.flags & width_4bit) == 0) {
+            ESP_LOGW(TAG, "slot width set to 4, but host flags don't have 4 line mode enabled; using 1 line mode");
+            card->host.flags &= ~width_mask;
+            card->host.flags |= width_1bit;
+        } else {
+            card->host.flags &= ~width_mask;
+            card->host.flags |= width_4bit;
+        }
     }
     return ESP_OK;
 }

@@ -41,6 +41,7 @@ extern "C" {
     .init = &sdspi_host_init, \
     .set_bus_width = NULL, \
     .get_bus_width = NULL, \
+    .set_bus_ddr_mode = NULL, \
     .set_card_clk = &sdspi_host_set_card_clk, \
     .do_transaction = &sdspi_host_do_transaction, \
     .deinit = &sdspi_host_deinit, \

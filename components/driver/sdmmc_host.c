@@ -267,6 +267,9 @@ esp_err_t sdmmc_host_init()
             SDMMC_INTMASK_RESP_ERR | SDMMC_INTMASK_HLE; //sdio is enabled only when use.
     SDMMC.ctrl.int_enable = 1;
 
+    // Disable generation of Busy Clear Interrupt
+    SDMMC.cardthrctl.busy_clr_int_en = 0;
+
     // Enable DMA
     sdmmc_host_dma_init();
 
@@ -465,6 +468,28 @@ size_t sdmmc_host_get_slot_width(int slot)
     return s_slot_width[slot];
 }
 
+esp_err_t sdmmc_host_set_bus_ddr_mode(int slot, bool ddr_enabled)
+{
+    if (!(slot == 0 || slot == 1)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (s_slot_width[slot] == 8 && ddr_enabled) {
+        ESP_LOGW(TAG, "DDR mode with 8-bit bus width is not supported yet");
+        // requires reconfiguring controller clock for 2x card frequency
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    uint32_t mask = BIT(slot);
+    if (ddr_enabled) {
+        SDMMC.uhs.ddr |= mask;
+        SDMMC.emmc_ddr_reg |= mask;
+    } else {
+        SDMMC.uhs.ddr &= ~mask;
+        SDMMC.emmc_ddr_reg &= ~mask;
+    }
+    ESP_LOGD(TAG, "slot=%d ddr=%d", slot, ddr_enabled ? 1 : 0);
+    return ESP_OK;
+}
+
 static void sdmmc_host_dma_init()
 {
     SDMMC.ctrl.dma_enable = 1;
@@ -502,6 +527,11 @@ void sdmmc_host_dma_prepare(sdmmc_desc_t* desc, size_t block_size, size_t data_s
 void sdmmc_host_dma_resume()
 {
     SDMMC.pldmnd = 1;
+}
+
+bool sdmmc_host_card_busy()
+{
+    return SDMMC.status.data_busy == 1;
 }
 
 esp_err_t sdmmc_host_io_int_enable(int slot)
