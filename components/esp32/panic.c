@@ -407,7 +407,7 @@ static void esp_panic_dig_reset()
     // make sure all the panic handler output is sent from UART FIFO
     uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
     // switch to XTAL (otherwise we will keep running from the PLL)
-    rtc_clk_cpu_freq_set(RTC_CPU_FREQ_XTAL);
+    rtc_clk_cpu_freq_set_xtal();
     // reset the digital part
     esp_cpu_unstall(PRO_CPU_NUM);
     SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);

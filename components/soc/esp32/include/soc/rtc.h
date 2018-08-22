@@ -76,6 +76,26 @@ typedef enum {
 } rtc_cpu_freq_t;
 
 /**
+ * @brief CPU clock source
+ */
+typedef enum {
+    RTC_CPU_FREQ_SRC_XTAL,  //!< XTAL
+    RTC_CPU_FREQ_SRC_PLL,   //!< PLL (480M or 320M)
+    RTC_CPU_FREQ_SRC_8M,    //!< Internal 8M RTC oscillator
+    RTC_CPU_FREQ_SRC_APLL   //!< APLL
+} rtc_cpu_freq_src_t;
+
+/**
+ * @brief CPU clock configuration structure
+ */
+typedef struct {
+    rtc_cpu_freq_src_t source;      //!< The clock from which CPU clock is derived
+    uint32_t source_freq_mhz;       //!< Source clock frequency
+    uint32_t div;                   //!< Divider, freq_mhz = source_freq_mhz / div
+    uint32_t freq_mhz;              //!< CPU clock frequency
+} rtc_cpu_freq_config_t;
+
+/**
  * @brief RTC SLOW_CLK frequency values
  */
 typedef enum {
@@ -108,13 +128,13 @@ typedef enum {
  * Initialization parameters for rtc_clk_init
  */
 typedef struct {
-    rtc_xtal_freq_t xtal_freq : 8;  //!< Main XTAL frequency
-    rtc_cpu_freq_t cpu_freq : 3;    //!< CPU frequency to set
-    rtc_fast_freq_t fast_freq : 1;  //!< RTC_FAST_CLK frequency to set
-    rtc_slow_freq_t slow_freq : 2;  //!< RTC_SLOW_CLK frequency to set
-    uint32_t clk_8m_div : 3;        //!< RTC 8M clock divider (division is by clk_8m_div+1, i.e. 0 means 8MHz frequency)
-    uint32_t slow_clk_dcap : 8;     //!< RTC 150k clock adjustment parameter (higher value leads to lower frequency)
-    uint32_t clk_8m_dfreq : 8;      //!< RTC 8m clock adjustment parameter (higher value leads to higher frequency)
+    rtc_xtal_freq_t xtal_freq : 8;      //!< Main XTAL frequency
+    rtc_cpu_freq_t cpu_freq_mhz : 10;   //!< CPU frequency to set, in MHz
+    rtc_fast_freq_t fast_freq : 1;      //!< RTC_FAST_CLK frequency to set
+    rtc_slow_freq_t slow_freq : 2;      //!< RTC_SLOW_CLK frequency to set
+    uint32_t clk_8m_div : 3;            //!< RTC 8M clock divider (division is by clk_8m_div+1, i.e. 0 means 8MHz frequency)
+    uint32_t slow_clk_dcap : 8;         //!< RTC 150k clock adjustment parameter (higher value leads to lower frequency)
+    uint32_t clk_8m_dfreq : 8;          //!< RTC 8m clock adjustment parameter (higher value leads to higher frequency)
 } rtc_clk_config_t;
 
 /**
@@ -122,7 +142,7 @@ typedef struct {
  */
 #define RTC_CLK_CONFIG_DEFAULT() { \
     .xtal_freq = RTC_XTAL_FREQ_AUTO, \
-    .cpu_freq = RTC_CPU_FREQ_80M, \
+    .cpu_freq_mhz = 80, \
     .fast_freq = RTC_FAST_FREQ_8M, \
     .slow_freq = RTC_SLOW_FREQ_RTC, \
     .clk_8m_div = 0, \
@@ -281,6 +301,9 @@ rtc_fast_freq_t rtc_clk_fast_freq_get();
 /**
  * @brief Switch CPU frequency
  *
+ * @note This function is deprecated and will be removed.
+ *       See rtc_clk_cpu_freq_config_set instead.
+ *
  * If a PLL-derived frequency is requested (80, 160, 240 MHz), this function
  * will enable the PLL. Otherwise, PLL will be disabled.
  * Note: this function is not optimized for switching speed. It may take several
@@ -288,10 +311,13 @@ rtc_fast_freq_t rtc_clk_fast_freq_get();
  *
  * @param cpu_freq  new CPU frequency
  */
-void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq);
+void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq) __attribute__((deprecated));
 
 /**
  * @brief Switch CPU frequency
+ *
+ * @note This function is deprecated and will be removed.
+ *       See rtc_clk_cpu_freq_set_config_fast instead.
  *
  * This is a faster version of rtc_clk_cpu_freq_set, which can handle some of
  * the frequency switch paths (XTAL -> PLL, PLL -> XTAL).
@@ -307,10 +333,13 @@ void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq);
  *
  * @param cpu_freq  new CPU frequency
  */
-void rtc_clk_cpu_freq_set_fast(rtc_cpu_freq_t cpu_freq);
+void rtc_clk_cpu_freq_set_fast(rtc_cpu_freq_t cpu_freq) __attribute__((deprecated));
 
 /**
  * @brief Get the currently selected CPU frequency
+ *
+ * @note This function is deprecated and will be removed.
+ *       See rtc_clk_cpu_freq_get_config instead.
  *
  * Although CPU can be clocked by APLL and RTC 8M sources, such support is not
  * exposed through this library. As such, this function will not return
@@ -320,22 +349,97 @@ void rtc_clk_cpu_freq_set_fast(rtc_cpu_freq_t cpu_freq);
  *
  * @return CPU frequency (one of rtc_cpu_freq_t values)
  */
-rtc_cpu_freq_t rtc_clk_cpu_freq_get();
+rtc_cpu_freq_t rtc_clk_cpu_freq_get()  __attribute__((deprecated));
 
 /**
  * @brief Get corresponding frequency value for rtc_cpu_freq_t enum value
+ *
+ * @note This function is deprecated and will be removed.
+ *       See rtc_clk_cpu_freq_get/set_config instead.
+ *
  * @param cpu_freq  CPU frequency, on of rtc_cpu_freq_t values
  * @return CPU frequency, in HZ
  */
-uint32_t rtc_clk_cpu_freq_value(rtc_cpu_freq_t cpu_freq);
+uint32_t rtc_clk_cpu_freq_value(rtc_cpu_freq_t cpu_freq)  __attribute__((deprecated));
 
 /**
  * @brief Get rtc_cpu_freq_t enum value for given CPU frequency
+ *
+ * @note This function is deprecated and will be removed.
+ *       See rtc_clk_cpu_freq_mhz_to_config instead.
+ *
  * @param cpu_freq_mhz  CPU frequency, one of 80, 160, 240, 2, and XTAL frequency
  * @param[out] out_val output, rtc_cpu_freq_t value corresponding to the frequency
  * @return true if the given frequency value matches one of enum values
  */
- bool rtc_clk_cpu_freq_from_mhz(int cpu_freq_mhz, rtc_cpu_freq_t* out_val);
+ bool rtc_clk_cpu_freq_from_mhz(int cpu_freq_mhz, rtc_cpu_freq_t* out_val) __attribute__((deprecated));
+
+/**
+ * @brief Get CPU frequency config corresponding to a rtc_cpu_freq_t value
+ * @param cpu_freq CPU frequency enumeration value
+ * @param[out] out_config  Output, CPU frequency configuration structure
+ */
+ void rtc_clk_cpu_freq_to_config(rtc_cpu_freq_t cpu_freq, rtc_cpu_freq_config_t* out_config);
+
+ /**
+  * @brief Get CPU frequency config for a given frequency
+  * @param freq_mhz  Frequency in MHz
+  * @param[out] out_config Output, CPU frequency configuration structure
+  * @return true if frequency can be obtained, false otherwise
+  */
+ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t* out_config);
+
+ /**
+  * @brief Switch CPU frequency
+  *
+  * This function sets CPU frequency according to the given configuration
+  * structure. It enables PLLs, if necessary.
+  *
+  * @note This function in not intended to be called by applications in FreeRTOS
+  * environment. This is because it does not adjust various timers based on the
+  * new CPU frequency.
+  *
+  * @param config  CPU frequency configuration structure
+  */
+ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t* config);
+
+ /**
+  * @brief Switch CPU frequency (optimized for speed)
+  *
+  * This function is a faster equivalent of rtc_clk_cpu_freq_set_config.
+  * It works faster because it does not disable PLLs when switching from PLL to
+  * XTAL and does not enabled them when switching back. If PLL is not already
+  * enabled when this function is called to switch from XTAL to PLL frequency,
+  * or the PLL which is enabled is the wrong one, this function will fall back
+  * to calling rtc_clk_cpu_freq_set_config.
+  *
+  * Unlike rtc_clk_cpu_freq_set_config, this function relies on static data,
+  * so it is less safe to use it e.g. from a panic handler (when memory might
+  * be corrupted).
+  *
+  * @note This function in not intended to be called by applications in FreeRTOS
+  * environment. This is because it does not adjust various timers based on the
+  * new CPU frequency.
+  *
+  * @param config  CPU frequency configuration structure
+  */
+ void rtc_clk_cpu_freq_set_config_fast(const rtc_cpu_freq_config_t* config);
+
+ /**
+  * @brief Get the currently used CPU frequency configuration
+  * @param[out] out_config  Output, CPU frequency configuration structure
+  */
+ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t* out_config);
+
+ /**
+  * @brief Switch CPU clock source to XTAL
+  *
+  * Short form for filling in rtc_cpu_freq_config_t structure and calling
+  * rtc_clk_cpu_freq_set_config when a switch to XTAL is needed.
+  * Assumes that XTAL frequency has been determined — don't call in startup code.
+  */
+ void rtc_clk_cpu_freq_set_xtal();
+
 
 /**
  * @brief Store new APB frequency value into RTC_APB_FREQ_REG

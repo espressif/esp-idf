@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
+#include <sys/param.h>
 #include "unity.h"
 #include "esp_pm.h"
 #include "esp_clk.h"
@@ -25,19 +26,17 @@ TEST_CASE("Can dump power management lock stats", "[pm]")
 
 static void switch_freq(int mhz)
 {
-    rtc_cpu_freq_t max_freq;
-    assert(rtc_clk_cpu_freq_from_mhz(mhz, &max_freq));
+    int xtal_freq = rtc_clk_xtal_freq_get();
     esp_pm_config_esp32_t pm_config = {
-        .max_cpu_freq = max_freq,
-        .min_cpu_freq = RTC_CPU_FREQ_XTAL,
+        .max_freq_mhz = mhz,
+        .min_freq_mhz = MIN(mhz, xtal_freq),
     };
     ESP_ERROR_CHECK( esp_pm_configure(&pm_config) );
-    printf("Waiting for frequency to be set to %d (%d MHz)...\n", max_freq, mhz);
+    printf("Waiting for frequency to be set to %d MHz...\n", mhz);
     while (esp_clk_cpu_freq() / 1000000 != mhz) {
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        printf("Frequency is %d MHz\n", esp_clk_cpu_freq());
+        vTaskDelay(pdMS_TO_TICKS(200));
+        printf("Frequency is %d MHz\n", esp_clk_cpu_freq() / 1000000);
     }
-    printf("Frequency is set to %d MHz\n", mhz);
 }
 
 TEST_CASE("Can switch frequency using esp_pm_configure", "[pm]")
@@ -52,6 +51,10 @@ TEST_CASE("Can switch frequency using esp_pm_configure", "[pm]")
     switch_freq(240);
     switch_freq(40);
     switch_freq(80);
+    switch_freq(10);
+    switch_freq(80);
+    switch_freq(20);
+    switch_freq(40);
     switch_freq(orig_freq_mhz);
 }
 
