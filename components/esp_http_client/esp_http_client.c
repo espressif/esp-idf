@@ -878,7 +878,7 @@ esp_err_t esp_http_client_open(esp_http_client_handle_t client, int write_len)
             return ESP_ERR_HTTP_INVALID_TRANSPORT;
         }
         if (transport_connect(client->transport, client->connection_info.host, client->connection_info.port, client->timeout_ms) < 0) {
-            ESP_LOGE(TAG, "Connection failed, sock < 0");
+            ESP_LOGE(TAG, "Connection failed");
             return ESP_ERR_HTTP_CONNECT;
         }
         http_dispatch_event(client, HTTP_EVENT_ON_CONNECTED, NULL, 0);

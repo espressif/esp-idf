@@ -32,6 +32,8 @@ static const char *TAG = "esp-tls";
 #define ESP_LOGE(TAG, ...) printf(__VA_ARGS__);
 #endif
 
+#define DEFAULT_TIMEOUT_MS -1
+
 static struct addrinfo *resolve_host_name(const char *host, size_t hostlen)
 {
     struct addrinfo hints;
@@ -74,7 +76,13 @@ static ssize_t tls_read(esp_tls_t *tls, char *data, size_t datalen)
     return ret;
 }
 
-static int esp_tcp_connect(const char *host, int hostlen, int port)
+static void ms_to_timeval(int timeout_ms, struct timeval *tv)
+{
+    tv->tv_sec = timeout_ms / 1000;
+    tv->tv_usec = (timeout_ms % 1000) * 1000;
+}
+
+static int esp_tcp_connect(const char *host, int hostlen, int port, int timeout_ms)
 {
     struct addrinfo *res = resolve_host_name(host, hostlen);
     if (!res) {
@@ -101,6 +109,12 @@ static int esp_tcp_connect(const char *host, int hostlen, int port)
     } else {
         ESP_LOGE(TAG, "Unsupported protocol family %d", res->ai_family);
         goto err_freesocket;
+    }
+
+    if (timeout_ms >= 0) {
+        struct timeval tv;
+        ms_to_timeval(timeout_ms, &tv);
+        setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
     }
 
     ret = connect(fd, addr_ptr, res->ai_addrlen);
@@ -266,7 +280,13 @@ static ssize_t tls_write(esp_tls_t *tls, const char *data, size_t datalen)
  */
 esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg)
 {
-    int sockfd = esp_tcp_connect(hostname, hostlen, port);
+    int sockfd;
+    if (cfg) {
+        sockfd = esp_tcp_connect(hostname, hostlen, port, cfg->timeout_ms);
+    } else {
+        sockfd = esp_tcp_connect(hostname, hostlen, port, DEFAULT_TIMEOUT_MS);
+    }
+
     if (sockfd < 0) {
         return NULL;
     }
@@ -323,4 +343,13 @@ esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg)
     /* Connect to host */
     return esp_tls_conn_new(&url[u.field_data[UF_HOST].off], u.field_data[UF_HOST].len,
 			    get_port(url, &u), cfg);
+}
+
+size_t esp_tls_get_bytes_avail(esp_tls_t *tls)
+{
+    if (!tls) {
+        ESP_LOGE(TAG, "empty arg passed to esp_tls_get_bytes_avail()");
+        return ESP_FAIL;
+    }
+    return mbedtls_ssl_get_bytes_avail(&tls->ssl);
 }
