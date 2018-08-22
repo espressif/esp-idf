@@ -161,10 +161,10 @@
 /* EXT_CSD_CARD_TYPE */
 /* The only currently valid values for this field are 0x01, 0x03, 0x07,
  * 0x0B and 0x0F. */
-#define EXT_CSD_CARD_TYPE_F_26M         (1 << 0)
-#define EXT_CSD_CARD_TYPE_F_52M         (1 << 1)
-#define EXT_CSD_CARD_TYPE_F_52M_1_8V    (1 << 2)
-#define EXT_CSD_CARD_TYPE_F_52M_1_2V    (1 << 3)
+#define EXT_CSD_CARD_TYPE_F_26M         (1 << 0)        /* SDR at "rated voltages */
+#define EXT_CSD_CARD_TYPE_F_52M         (1 << 1)        /* SDR at "rated voltages */
+#define EXT_CSD_CARD_TYPE_F_52M_1_8V    (1 << 2)        /* DDR, 1.8V or 3.3V I/O */
+#define EXT_CSD_CARD_TYPE_F_52M_1_2V    (1 << 3)        /* DDR, 1.2V I/O */
 #define EXT_CSD_CARD_TYPE_26M           0x01
 #define EXT_CSD_CARD_TYPE_52M           0x03
 #define EXT_CSD_CARD_TYPE_52M_V18       0x07

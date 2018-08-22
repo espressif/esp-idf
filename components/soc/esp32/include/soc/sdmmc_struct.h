@@ -283,7 +283,12 @@ typedef volatile struct {
     uint32_t usrid;     ///< user ID
     uint32_t verid;     ///< IP block version
     uint32_t hcon;      ///< compile-time IP configuration
-    uint32_t uhs;       ///< TBD
+    union {
+        struct {
+            uint32_t voltage: 16;           ///< voltage control for slots; no-op on ESP32.
+            uint32_t ddr: 16;                ///< bit N enables DDR mode for card N
+        };
+    } uhs;              ///< UHS related settings
 
     union {
         struct {
@@ -348,7 +353,16 @@ typedef volatile struct {
     uint32_t bufaddrl;      ///< unused
     uint32_t bufaddru;      ///< unused
     uint32_t reserved_a8[22];
-    uint32_t cardthrctl;
+    union {
+        struct {
+            uint32_t read_thr_en : 1;       ///< initiate transfer only if FIFO has more space than the read threshold
+            uint32_t busy_clr_int_en : 1;   ///< enable generation of busy clear interrupts
+            uint32_t write_thr_en : 1;      ///< equivalent of read_thr_en for writes
+            uint32_t reserved1 : 13;
+            uint32_t card_threshold : 12;   ///< threshold value for reads/writes, in bytes
+        };
+        uint32_t val;
+    } cardthrctl;
     uint32_t back_end_power;
     uint32_t uhs_reg_ext;
     uint32_t emmc_ddr_reg;

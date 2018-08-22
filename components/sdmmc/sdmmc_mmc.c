@@ -48,9 +48,15 @@ esp_err_t sdmmc_init_mmc_read_ext_csd(sdmmc_card_t* card)
     }
     card_type = ext_csd[EXT_CSD_CARD_TYPE];
 
-    /* TODO: add DDR support */
+    card->is_ddr = 0;
     if (card_type & EXT_CSD_CARD_TYPE_F_52M_1_8V) {
         card->max_freq_khz = SDMMC_FREQ_52M;
+        if ((card->host.flags & SDMMC_HOST_FLAG_DDR) &&
+                card->host.max_freq_khz >= SDMMC_FREQ_26M &&
+                card->host.get_bus_width(card->host.slot) == 4) {
+            ESP_LOGD(TAG, "card and host support DDR mode");
+            card->is_ddr = 1;
+        }
     } else if (card_type & EXT_CSD_CARD_TYPE_F_52M) {
         card->max_freq_khz = SDMMC_FREQ_52M;
     } else if (card_type & EXT_CSD_CARD_TYPE_F_26M) {
@@ -60,7 +66,7 @@ esp_err_t sdmmc_init_mmc_read_ext_csd(sdmmc_card_t* card)
     }
     /* For MMC cards, use speed value from EXT_CSD */
     card->csd.tr_speed = card->max_freq_khz * 1000;
-    ESP_LOGD(TAG, "MMC card supports %d khz bus frequency", card->max_freq_khz);
+    ESP_LOGD(TAG, "MMC card type %d, max_freq_khz=%d, is_ddr=%d", card_type, card->max_freq_khz, card->is_ddr);
     card->max_freq_khz = MIN(card->max_freq_khz, card->host.max_freq_khz);
 
     if (card->host.flags & SDMMC_HOST_FLAG_8BIT) {
@@ -104,13 +110,21 @@ esp_err_t sdmmc_init_mmc_bus_width(sdmmc_card_t* card)
     }
 
     if (card->log_bus_width > 0) {
-        int csd_bus_width_value = 0;
+        int csd_bus_width_value = EXT_CSD_BUS_WIDTH_1;
         int bus_width = 1;
         if (card->log_bus_width == 2) {
-            csd_bus_width_value = EXT_CSD_BUS_WIDTH_4;
+            if (card->is_ddr) {
+                csd_bus_width_value = EXT_CSD_BUS_WIDTH_4_DDR;
+            } else {
+                csd_bus_width_value = EXT_CSD_BUS_WIDTH_4;
+            }
             bus_width = 4;
         } else if (card->log_bus_width == 3) {
-            csd_bus_width_value = EXT_CSD_BUS_WIDTH_8;
+            if (card->is_ddr) {
+                csd_bus_width_value = EXT_CSD_BUS_WIDTH_8_DDR;
+            } else {
+                csd_bus_width_value = EXT_CSD_BUS_WIDTH_8;
+            }
             bus_width = 8;
         }
         err = sdmmc_mmc_switch(card, EXT_CSD_CMD_SET_NORMAL,
@@ -205,7 +219,7 @@ esp_err_t sdmmc_mmc_switch(sdmmc_card_t* card, uint8_t set, uint8_t index, uint8
     sdmmc_command_t cmd = {
             .opcode = MMC_SWITCH,
             .arg = (MMC_SWITCH_MODE_WRITE_BYTE << 24) | (index << 16) | (value << 8) | set,
-            .flags = SCF_RSP_R1B | SCF_CMD_AC,
+            .flags = SCF_RSP_R1B | SCF_CMD_AC | SCF_WAIT_BUSY,
     };
     esp_err_t err = sdmmc_send_cmd(card, &cmd);
     if (err == ESP_OK) {
