@@ -1,8 +1,16 @@
 menu "Example Configuration"
 
+    config SDIO_EXAMPLE_OVER_SPI
+        bool "Host use SPI bus to communicate with slave"
+        default n
+        help
+            If this is set, the host tries using SPI bus to communicate with slave.
+            Otherwise, the standarad SD bus is used.
+
     config SDIO_EXAMPLE_4BIT
         bool "Host tries using 4-bit mode to communicate with slave"
         default n
+        depends on !SDIO_EXAMPLE_OVER_SPI
         help
             If this is set, the host tries using 4-bit mode to communicate with
             slave. If failed, the communication falls back to 1-bit mode.
@@ -39,5 +47,12 @@ menu "Example Configuration"
         config EXAMPLE_SLAVE_B3
             bool "Using slave B3"
     endchoice
+
+    config EXAMPLE_SLAVE_PWR_NEGTIVE_ACTIVE
+        bool "Slave power control pin is negtive active, otherwise postive active"
+        depends on !EXAMPLE_SLAVE_NONE
+        default y
+        help
+            Slave power control pin is negtive active, otherwise postive active
 
 endmenu
