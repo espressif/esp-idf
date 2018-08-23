@@ -62,6 +62,10 @@
 #define XTAL_32K_BOOTSTRAP_DBIAS_VAL    0
 #define XTAL_32K_BOOTSTRAP_TIME_US      7
 
+#define XTAL_32K_EXT_DAC_VAL    2
+#define XTAL_32K_EXT_DRES_VAL   3
+#define XTAL_32K_EXT_DBIAS_VAL  1
+
 /* Delays for various clock sources to be enabled/switched.
  * All values are in microseconds.
  * TODO: some of these are excessive, and should be reduced.
@@ -98,7 +102,7 @@ static bool rtc_clk_cpu_freq_from_mhz_internal(int mhz, rtc_cpu_freq_t* out_val)
 // Current PLL frequency, in MHZ (320 or 480). Zero if PLL is not enabled.
 static int s_cur_pll_freq;
 
-static void rtc_clk_32k_enable_internal(int dac, int dres, int dbias)
+static void rtc_clk_32k_enable_common(int dac, int dres, int dbias)
 {
     SET_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_X32N_MUX_SEL | RTC_IO_X32P_MUX_SEL);
     CLEAR_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG,
@@ -113,10 +117,15 @@ static void rtc_clk_32k_enable_internal(int dac, int dres, int dbias)
 void rtc_clk_32k_enable(bool enable)
 {
     if (enable) {
-        rtc_clk_32k_enable_internal(XTAL_32K_DAC_VAL, XTAL_32K_DRES_VAL, XTAL_32K_DBIAS_VAL);
+        rtc_clk_32k_enable_common(XTAL_32K_DAC_VAL, XTAL_32K_DRES_VAL, XTAL_32K_DBIAS_VAL);
     } else {
         CLEAR_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_XPD_XTAL_32K);
     }
+}
+
+void rtc_clk_32k_enable_external()
+{
+    rtc_clk_32k_enable_common(XTAL_32K_EXT_DAC_VAL, XTAL_32K_EXT_DRES_VAL, XTAL_32K_EXT_DBIAS_VAL);
 }
 
 /* Helping external 32kHz crystal to start up.
@@ -150,7 +159,7 @@ void rtc_clk_32k_bootstrap(uint32_t cycle)
     SET_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_X32P_RUE | RTC_IO_X32N_RDE);
     ets_delay_us(XTAL_32K_BOOTSTRAP_TIME_US);
 
-    rtc_clk_32k_enable_internal(XTAL_32K_BOOTSTRAP_DAC_VAL,
+    rtc_clk_32k_enable_common(XTAL_32K_BOOTSTRAP_DAC_VAL,
             XTAL_32K_BOOTSTRAP_DRES_VAL, XTAL_32K_BOOTSTRAP_DBIAS_VAL);
 }
 
