@@ -142,13 +142,21 @@ ESP-IDF 所依赖的 Python 软件包位于 ``$IDF_PATH/requirements.txt`` 文�
 
 .. code:: bash
 
-    sudo pip install -r $IDF_PATH/requirements.txt
+    sudo python -m pip install -r $IDF_PATH/requirements.txt
 
 如果您没有系统的管理员权限，那么可以使用如下命令来将软件包安装到用户目录中：
 
 .. code:: bash
 
-    pip install --user -r $IDF_PATH/requirements.txt
+    python -m pip install --user -r $IDF_PATH/requirements.txt
+
+.. note::
+
+    Please invoke that version of the Python interpreter which you will be using with ESP-IDF. The version of the
+    interpreter can be checked by running command ``python --version`` and depending on the result, you might want to
+    use ``python2``, ``python2.7`` or similar instead of ``python``, e.g.::
+
+        sudo python2.7 -m pip install -r $IDF_PATH/requirements.txt
 
 .. _get-started-start-project:
 
