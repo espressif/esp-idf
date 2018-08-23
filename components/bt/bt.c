@@ -885,12 +885,16 @@ esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
     if (mode == ESP_BT_MODE_BTDM) {
         mem_start = (intptr_t)&_btdm_bss_start;
         mem_end = (intptr_t)&_btdm_bss_end;
-        ESP_LOGD(BTDM_LOG_TAG, "Release BTDM BSS [0x%08x] - [0x%08x]\n", mem_start, mem_end);
-        ESP_ERROR_CHECK(heap_caps_add_region(mem_start, mem_end));
+        if (mem_start != mem_end) {
+            ESP_LOGD(BTDM_LOG_TAG, "Release BTDM BSS [0x%08x] - [0x%08x]\n", mem_start, mem_end);
+            ESP_ERROR_CHECK(heap_caps_add_region(mem_start, mem_end));
+        }
         mem_start = (intptr_t)&_btdm_data_start;
         mem_end = (intptr_t)&_btdm_data_end;
-        ESP_LOGD(BTDM_LOG_TAG, "Release BTDM Data [0x%08x] - [0x%08x]\n", mem_start, mem_end);
-        ESP_ERROR_CHECK(heap_caps_add_region(mem_start, mem_end));
+        if (mem_start != mem_end) {
+            ESP_LOGD(BTDM_LOG_TAG, "Release BTDM Data [0x%08x] - [0x%08x]\n", mem_start, mem_end);
+            ESP_ERROR_CHECK(heap_caps_add_region(mem_start, mem_end));
+        }
     }
     return ESP_OK;
 }
@@ -908,12 +912,16 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
     if (mode == ESP_BT_MODE_BTDM) {
         mem_start = (intptr_t)&_bt_bss_start;
         mem_end = (intptr_t)&_bt_bss_end;
-        ESP_LOGD(BTDM_LOG_TAG, "Release BT BSS [0x%08x] - [0x%08x]\n", mem_start, mem_end);
-        ESP_ERROR_CHECK(heap_caps_add_region(mem_start, mem_end));
+        if (mem_start != mem_end) {
+            ESP_LOGD(BTDM_LOG_TAG, "Release BT BSS [0x%08x] - [0x%08x]\n", mem_start, mem_end);
+            ESP_ERROR_CHECK(heap_caps_add_region(mem_start, mem_end));
+        }
         mem_start = (intptr_t)&_bt_data_start;
         mem_end = (intptr_t)&_bt_data_end;
-        ESP_LOGD(BTDM_LOG_TAG, "Release BT Data [0x%08x] - [0x%08x]\n", mem_start, mem_end);
-        ESP_ERROR_CHECK(heap_caps_add_region(mem_start, mem_end));
+        if (mem_start != mem_end) {
+            ESP_LOGD(BTDM_LOG_TAG, "Release BT Data [0x%08x] - [0x%08x]\n", mem_start, mem_end);
+            ESP_ERROR_CHECK(heap_caps_add_region(mem_start, mem_end));
+        }
     }
     return ESP_OK;
 }
