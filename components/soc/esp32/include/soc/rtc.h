@@ -194,6 +194,11 @@ void rtc_clk_xtal_freq_update(rtc_xtal_freq_t xtal_freq);
 void rtc_clk_32k_enable(bool en);
 
 /**
+ * @brief Configure 32 kHz XTAL oscillator to accept external clock signal
+ */
+void rtc_clk_32k_enable_external();
+
+/**
  * @brief Get the state of 32k XTAL oscillator
  * @return true if 32k XTAL oscillator has been enabled
  */
