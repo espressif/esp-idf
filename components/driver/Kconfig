@@ -6,8 +6,8 @@ config ADC_FORCE_XPD_FSM
     bool "Use the FSM to control ADC power"
     default n
     help
-        ADC power can be controlled by the FSM instead of software. This allows the ADC to 
-        be shut off when it is not working leading to lower power consumption. However 
+        ADC power can be controlled by the FSM instead of software. This allows the ADC to
+        be shut off when it is not working leading to lower power consumption. However
         using the FSM control ADC power will increase the noise of ADC.
 
 config ADC2_DISABLE_DAC
@@ -20,7 +20,7 @@ config ADC2_DISABLE_DAC
 
 endmenu  # ADC Configuration
 
-menu "SPI master configuration"
+menu "SPI configuration"
 
 config SPI_MASTER_IN_IRAM
     bool "Place transmitting functions of SPI master into IRAM"
@@ -44,6 +44,26 @@ config SPI_MASTER_ISR_IN_IRAM
         Place the SPI master ISR in to IRAM to avoid possibly cache miss, or
         being disabled during flash writing access.
 
-endmenu # SPI Master Configuration
+config SPI_SLAVE_IN_IRAM
+    bool "Place transmitting functions of SPI slave into IRAM"
+    default n
+    select SPI_SLAVE_ISR_IN_IRAM
+    help
+        Normally only the ISR of SPI slave is placed in the IRAM, so that it
+        can work without the flash when interrupt is triggered.
+        For other functions, there's some possibility that the flash cache
+        miss when running inside and out of SPI functions, which may increase
+        the interval of SPI transactions.
+        Enable this to put ``queue_trans``, ``get_trans_result`` and
+        ``transmit`` functions into the IRAM to avoid possible cache miss.
+
+config SPI_SLAVE_ISR_IN_IRAM
+    bool "Place SPI slave ISR function into IRAM"
+    default y
+    help
+        Place the SPI slave ISR in to IRAM to avoid possibly cache miss, or
+        being disabled during flash writing access.
+
+endmenu # SPI Configuration
 
 endmenu  # Driver configurations
