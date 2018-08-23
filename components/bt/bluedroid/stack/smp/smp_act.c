@@ -59,7 +59,7 @@ static bool lmp_version_below(BD_ADDR bda, uint8_t version)
         SMP_TRACE_WARNING("%s cannot retrieve LMP version...", __func__);
         return false;
     }
-    SMP_TRACE_WARNING("%s LMP version %d < %d", __func__, acl->lmp_version, version);
+    SMP_TRACE_DEBUG("%s LMP version %d < %d", __func__, acl->lmp_version, version);
     return acl->lmp_version < version;
 }
 
