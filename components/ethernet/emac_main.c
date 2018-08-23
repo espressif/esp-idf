@@ -79,6 +79,7 @@ static bool pause_send = false;
 #ifdef CONFIG_PM_ENABLE
 static esp_pm_lock_handle_t s_pm_lock;
 #endif
+ESP_EVENT_DEFINE_BASE(ETH_EVENT);
 
 static esp_err_t emac_ioctl(emac_sig_t sig, emac_par_t par);
 esp_err_t emac_post(emac_sig_t sig, emac_par_t par);
