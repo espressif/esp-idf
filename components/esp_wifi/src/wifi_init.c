@@ -22,6 +22,7 @@
 
 /* mesh event callback handler */
 mesh_event_cb_t g_mesh_event_cb = NULL;
+ESP_EVENT_DEFINE_BASE(WIFI_EVENT);
 
 #ifdef CONFIG_PM_ENABLE
 static esp_pm_lock_handle_t s_wifi_modem_sleep_lock;
