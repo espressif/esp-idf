@@ -35,6 +35,7 @@ SECTIONS
      *(.iram1 .iram1.*) /* catch stray IRAM_ATTR */
     *liblog.a:(.literal .text .literal.* .text.*)
     *libgcc.a:(.literal .text .literal.* .text.*)
+    *libbootloader_support.a:bootloader_common.o(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_flash.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_random.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_utility.*(.literal .text .literal.* .text.*)
