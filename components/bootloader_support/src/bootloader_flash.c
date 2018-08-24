@@ -73,6 +73,11 @@ esp_err_t bootloader_flash_erase_sector(size_t sector)
     return spi_flash_erase_sector(sector);
 }
 
+esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
+{
+    return spi_flash_erase_range(start_addr, size);
+}
+
 #else
 /* Bootloader version, uses ROM functions only */
 #include <soc/dport_reg.h>
@@ -247,4 +252,28 @@ esp_err_t bootloader_flash_erase_sector(size_t sector)
     return spi_to_esp_err(esp_rom_spiflash_erase_sector(sector));
 }
 
+esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
+{
+    if (start_addr % FLASH_SECTOR_SIZE != 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (size % FLASH_SECTOR_SIZE != 0) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+    size_t start = start_addr / FLASH_SECTOR_SIZE;
+    size_t end = start + size / FLASH_SECTOR_SIZE;
+    const size_t sectors_per_block = FLASH_BLOCK_SIZE / FLASH_SECTOR_SIZE;
+
+    esp_rom_spiflash_result_t rc = ESP_ROM_SPIFLASH_RESULT_OK;
+    for (size_t sector = start; sector != end && rc == ESP_ROM_SPIFLASH_RESULT_OK; ) {
+        if (sector % sectors_per_block == 0 && end - sector >= sectors_per_block) {
+            rc = esp_rom_spiflash_erase_block(sector / sectors_per_block);
+            sector += sectors_per_block;
+        } else {
+            rc = esp_rom_spiflash_erase_sector(sector);
+            ++sector;
+        }
+    }
+    return spi_to_esp_err(rc);
+}
 #endif

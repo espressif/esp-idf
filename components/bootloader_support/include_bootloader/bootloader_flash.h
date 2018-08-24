@@ -21,6 +21,7 @@
 #include "esp_spi_flash.h"
 
 #define FLASH_SECTOR_SIZE 0x1000
+#define FLASH_BLOCK_SIZE 0x10000
 
 /* Provide a Flash API for bootloader_support code,
    that can be used from bootloader or app code.
@@ -99,5 +100,15 @@ esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool 
  * @return esp_err_t
  */
 esp_err_t bootloader_flash_erase_sector(size_t sector);
+
+/**
+ * @brief  Erase the Flash range.
+ *
+ * @param  start_addr start address of flash offset
+ * @param  size       sector aligned size to be erased
+ *
+ * @return esp_err_t
+ */
+esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size);
 
 #endif
