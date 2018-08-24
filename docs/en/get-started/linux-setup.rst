@@ -21,6 +21,11 @@ To compile with ESP-IDF you need to get the following packages:
 
     sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial
 
+.. note::
+
+    Some older (pre-2014) Linux distributions may use ``pyserial`` version 2.x which is not supported by ESP-IDF.
+    In this case please install a supported version via ``pip`` as it is described in section
+    :ref:`get-started-get-packages`.
 
 Toolchain Setup
 ===============

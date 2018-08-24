@@ -56,7 +56,7 @@ else
 PARTITION_TABLE_BIN_UNSIGNED := $(PARTITION_TABLE_BIN)
 endif
 
-$(PARTITION_TABLE_BIN_UNSIGNED): $(PARTITION_TABLE_CSV_PATH) $(SDKCONFIG_MAKEFILE)
+$(PARTITION_TABLE_BIN_UNSIGNED): $(PARTITION_TABLE_CSV_PATH) $(SDKCONFIG_MAKEFILE) | check_python_dependencies
 	@echo "Building partitions from $(PARTITION_TABLE_CSV_PATH)..."
 	$(GEN_ESP32PART) $< $@
 
@@ -76,7 +76,7 @@ export OTA_DATA_SIZE
 PARTITION_TABLE_FLASH_CMD = $(ESPTOOLPY_SERIAL) write_flash $(PARTITION_TABLE_OFFSET) $(PARTITION_TABLE_BIN)
 ESPTOOL_ALL_FLASH_ARGS += $(PARTITION_TABLE_OFFSET) $(PARTITION_TABLE_BIN)
 
-partition_table: $(PARTITION_TABLE_BIN) partition_table_get_info
+partition_table: $(PARTITION_TABLE_BIN) partition_table_get_info check_python_dependencies
 	@echo "Partition table binary generated. Contents:"
 	@echo $(SEPARATOR)
 	$(GEN_ESP32PART) $<
@@ -84,7 +84,7 @@ partition_table: $(PARTITION_TABLE_BIN) partition_table_get_info
 	@echo "Partition flashing command:"
 	@echo "$(PARTITION_TABLE_FLASH_CMD)"
 
-partition_table-flash: $(PARTITION_TABLE_BIN)
+partition_table-flash: $(PARTITION_TABLE_BIN) check_python_dependencies
 	@echo "Flashing partition table..."
 	$(PARTITION_TABLE_FLASH_CMD)
 
