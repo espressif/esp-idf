@@ -49,7 +49,7 @@ $(BLANK_OTA_DATA_FILE): partition_table_get_info
 
 blank_ota_data: $(BLANK_OTA_DATA_FILE)
 
-erase_ota: partition_table_get_info
+erase_ota: partition_table_get_info check_python_dependencies
 	@echo $(if $(OTA_DATA_OFFSET), "Erase ota_data [addr=$(OTA_DATA_OFFSET) size=$(OTA_DATA_SIZE)] ...", $(error "ERROR: Partition table does not have ota_data partition."))
 	$(ESPTOOLPY_SERIAL) erase_region $(OTA_DATA_OFFSET) $(OTA_DATA_SIZE)
 
