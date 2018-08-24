@@ -2577,7 +2577,7 @@ test cases:
 - ID: BTSTK_GAP_14007
   <<: *GAP_CASE
   test point 2: BLE set random address test
-  summary: BLE set random address as resolvable private address
+  summary: BLE set random address as resolvable private address and cannot be scan
   initial condition: BLE_INIT_SMP
   steps: |
     1. SSC1 set adv params and config local privacy as true
@@ -2604,7 +2604,7 @@ test cases:
 - ID: BTSTK_GAP_14008
   <<: *GAP_CASE
   test point 2: BLE set random address test
-  summary: BLE set random address as resolvable private address
+  summary: disconnect after encryption and set random address as resolvable private address and reconnect
   steps: |
     1. SSC2 set AuthReqMode and IOCAP,set RspKey as Enc and IRK
     2. pairing
@@ -2651,7 +2651,7 @@ test cases:
 - ID: BTSTK_GAP_14009
   <<: *GAP_CASE
   test point 2: BLE set random address test
-  summary: BLE set random address as resolvable private address
+  summary: reboot after BLE DUT encryption and set random address as resolvable private address
   steps: |
     1. SSC2 set AuthReqMode and IOCAP,set RspKey as Enc and IRK
     2. pairing
