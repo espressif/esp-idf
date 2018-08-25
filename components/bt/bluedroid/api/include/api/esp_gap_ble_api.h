@@ -151,7 +151,7 @@ typedef enum {
     ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT,                     /*!< When stop scan complete, the event comes */
     ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT,                   /*!< When set the static rand address complete, the event comes */
     ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT,                     /*!< When update connection parameters complete, the event comes */
-    ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT,                /*!< When set pkt lenght complete, the event comes */
+    ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT,                /*!< When set pkt length complete, the event comes */
     ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT,             /*!< When  Enable/disable privacy on the local device complete, the event comes */
     ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT,               /*!< When remove the bond device complete, the event comes */
     ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT,                /*!< When clear the bond device clear complete, the event comes */
@@ -455,7 +455,7 @@ typedef union
 } esp_ble_key_value_t;                    /*!< ble key value type*/
 
 /**
-* @brief  struct type of the bond key informatuon value
+* @brief  struct type of the bond key information value
 */
 typedef struct
 {
@@ -508,7 +508,7 @@ typedef struct
     uint8_t               fail_reason;           /*!< The HCI reason/error code for when success=FALSE */
     esp_ble_addr_type_t   addr_type;             /*!< Peer device address type */
     esp_bt_dev_type_t     dev_type;              /*!< Device type */
-} esp_ble_auth_cmpl_t;                           /*!< The ble authentication complite cb type */
+} esp_ble_auth_cmpl_t;                           /*!< The ble authentication complete cb type */
 
 /**
   * @brief union associated with ble security
@@ -520,7 +520,7 @@ typedef union
     esp_ble_key_t              ble_key;        /*!< BLE SMP keys used when pairing */
     esp_ble_local_id_keys_t    ble_id_keys;    /*!< BLE IR event */
     esp_ble_auth_cmpl_t        auth_cmpl;      /*!< Authentication complete indication. */
-} esp_ble_sec_t;                               /*!< Ble  secutity type */
+} esp_ble_sec_t;                               /*!< BLE security type */
 
 /// Sub Event of ESP_GAP_BLE_SCAN_RESULT_EVT
 typedef enum {
@@ -1023,10 +1023,10 @@ esp_err_t esp_ble_gap_security_rsp(esp_bd_addr_t bd_addr,  bool accept);
 esp_err_t esp_ble_set_encryption(esp_bd_addr_t bd_addr, esp_ble_sec_act_t sec_act);
 
 /**
-* @brief          Reply the key value to the peer device in the lagecy connection stage.
+* @brief          Reply the key value to the peer device in the legacy connection stage.
 *
 * @param[in]      bd_addr : BD address of the peer
-* @param[in]      accept : passkey entry sucessful or declined.
+* @param[in]      accept : passkey entry successful or declined.
 * @param[in]      passkey : passkey value, must be a 6 digit number,
 *                                     can be lead by 0.
 *
@@ -1038,7 +1038,7 @@ esp_err_t esp_ble_passkey_reply(esp_bd_addr_t bd_addr, bool accept, uint32_t pas
 
 
 /**
-* @brief           Reply the comfirm value to the peer device in the lagecy connection stage.
+* @brief           Reply the confirm value to the peer device in the legacy connection stage.
 *
 * @param[in]       bd_addr : BD address of the peer device
 * @param[in]       accept : numbers to compare are the same or different.
@@ -1091,7 +1091,7 @@ esp_err_t esp_ble_get_bond_device_list(int *dev_num, esp_ble_bond_dev_t *dev_lis
 
 /**
 * @brief           This function is to disconnect the physical connection of the peer device
-*                  gattc maybe have multiple virtual GATT server connections when multiple app_id registed.
+*                  gattc may have multiple virtual GATT server connections when multiple app_id registered.
 *                  esp_ble_gattc_close (esp_gatt_if_t gattc_if, uint16_t conn_id) only close one virtual GATT server connection.
 *                  if there exist other virtual GATT server connections, it does not disconnect the physical connection.
 *                  esp_ble_gap_disconnect(esp_bd_addr_t remote_device) disconnect the physical connection directly.

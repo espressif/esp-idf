@@ -224,7 +224,7 @@ typedef enum {
     ESP_GATT_CONN_L2C_FAILURE = 1,                  /*!< General L2cap failure  */                /* relate to BTA_GATT_CONN_L2C_FAILURE in bta/bta_gatt_api.h */
     ESP_GATT_CONN_TIMEOUT = 0x08,                   /*!< Connection timeout  */                   /* relate to BTA_GATT_CONN_TIMEOUT in bta/bta_gatt_api.h */
     ESP_GATT_CONN_TERMINATE_PEER_USER = 0x13,       /*!< Connection terminate by peer user  */    /* relate to BTA_GATT_CONN_TERMINATE_PEER_USER in bta/bta_gatt_api.h */
-    ESP_GATT_CONN_TERMINATE_LOCAL_HOST = 0x16,      /*!< Connectionterminated by local host */    /* relate to BTA_GATT_CONN_TERMINATE_LOCAL_HOST in bta/bta_gatt_api.h */
+    ESP_GATT_CONN_TERMINATE_LOCAL_HOST = 0x16,      /*!< Connection terminated by local host */    /* relate to BTA_GATT_CONN_TERMINATE_LOCAL_HOST in bta/bta_gatt_api.h */
     ESP_GATT_CONN_FAIL_ESTABLISH = 0x3e,            /*!< Connection fail to establish  */         /* relate to BTA_GATT_CONN_FAIL_ESTABLISH in bta/bta_gatt_api.h */
     ESP_GATT_CONN_LMP_TIMEOUT = 0x22,               /*!< Connection fail for LMP response tout */ /* relate to BTA_GATT_CONN_LMP_TIMEOUT in bta/bta_gatt_api.h */
     ESP_GATT_CONN_CONN_CANCEL = 0x0100,             /*!< L2CAP connection cancelled  */           /* relate to BTA_GATT_CONN_CONN_CANCEL in bta/bta_gatt_api.h */
@@ -453,7 +453,7 @@ typedef struct {
     uint16_t                   incl_srvc_s_handle;          /*!< The start handle of the service which has been included */
     uint16_t                   incl_srvc_e_handle;          /*!< The end handle of the service which has been included */
     esp_bt_uuid_t              uuid;                        /*!< The include service uuid */
-} esp_gattc_incl_svc_elem_t;                                /*!< The gattc inclue service element */
+} esp_gattc_incl_svc_elem_t;                                /*!< The gattc include service element */
 
 
 #ifdef __cplusplus

@@ -111,7 +111,7 @@ typedef enum {
 /// AVRC shuffle modes
 typedef enum {
     ESP_AVRC_PS_SHUFFLE_OFF = 0x1,                /*<! shuffle off */
-    ESP_AVRC_PS_SHUFFLE_ALL = 0x2,                /*<! all trackes shuffle */
+    ESP_AVRC_PS_SHUFFLE_ALL = 0x2,                /*<! shuffle all tracks */
     ESP_AVRC_PS_SHUFFLE_GROUP = 0x3               /*<! group shuffle */
 } esp_avrc_ps_shf_value_ids_t;
 
