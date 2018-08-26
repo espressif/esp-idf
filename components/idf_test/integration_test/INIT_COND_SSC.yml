@@ -7,16 +7,12 @@
   - - SSC SSC1 ram
     - - 'R SSC1 C +FREEHEAP:'
 
-.MESH_INIT_COND: &MESH_INIT_COND
-  test script: InitCondBase
-  restore post cmd set:
-  - ''
-  - - SSC SSC[1-<node_num>] mesh -Q -o 1
-    - - R SSC[1-<node_num>] C MESH_NETWORK
-  - - SSC SSC[1-<node_num>] mesh -Q -o 3
-    - - R SSC[1-<node_num>] C +MESH_CONFIG:ALL
-  - - SSC SSC[1-<node_num>] ram
-    - - R SSC[1-<node_num>] A <heap_size>:(\d+)
+.dut1_start_wifi: &dut1_start_wifi
+  LIST_MERGE:
+    - - SSC SSC1 op -W -a init
+      - - R SSC1 C +MODE
+    - - SSC SSC1 op -W -a start
+      - - R SSC1 C +MODE
 
 initial condition:
 - tag: APM1
@@ -25,6 +21,7 @@ initial condition:
     APSTA1
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:2
   - - SSC SSC1 ap -Q
@@ -61,6 +58,7 @@ initial condition:
     condition APSTA2
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:2
   - - SSC SSC1 ap -Q
@@ -105,6 +103,7 @@ initial condition:
     APSTA1
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:2
   - - SSC SSC1 ap -Q
@@ -141,6 +140,7 @@ initial condition:
     APSTA2
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:2
   - - SSC SSC1 ap -Q
@@ -182,6 +182,7 @@ initial condition:
 - <<: *SSC_INIT_COND
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 upgrade -Q -t 1
     - - R SSC1 C BIN_ID,0
   - - SSC SSC1 upgrade -Q -t 2 -b 0
@@ -225,6 +226,7 @@ initial condition:
   initial condition detail: testing ap on sta + ap mode (autogen by APM1)
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:3
   - - SSC SSC1 ap -Q
@@ -260,6 +262,7 @@ initial condition:
   initial condition detail: testing ap on sta + ap mode,  PC join AP (autogen by APM2)
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:3
   - - SSC SSC1 ap -Q
@@ -978,7 +981,7 @@ initial condition:
 - tag: BLE_INIT2
   <<: *SSC_INIT_COND
   initial condition detail: 2 DUT which BLE is enabled, no active connection, DUT2
-    start adv
+    load service 0xA0 and start adv
   check cmd set:
   - ''
   - - SSC SSC[1-2] bt -Q
@@ -1012,6 +1015,49 @@ initial condition:
     - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC2 gatts -S -z load -p 0xA0
     - - R SSC2 C +GATTS:StartService,OK,A000
+  - - SSC SSC[1-2] bleadv -D -z stop
+    - - R SSC[1-2] C +BLEADV:OK
+  - - SSC SSC2 bleadv -L -c 0 -t 3
+    - - R SSC2 C +BLEADV:SetAdv,OK
+  - - SSC SSC2 bleadv -D -z start
+    - - R SSC2 C +BLEADV:OK
+
+  - - SSC SSC1 ram
+    - - R SSC1 A <heap_size>:(\d+)
+- tag: BLE_INIT3
+  <<: *SSC_INIT_COND
+  initial condition detail: 2 DUT which BLE is enabled, no active connection, DUT2
+    load service 0xA2 and start adv
+  check cmd set:
+  - ''
+  - - SSC SSC[1-2] bt -Q
+    - - R SSC[1-2] C +BT:status,ENABLE
+  restore cmd set:
+  - ''
+  - - SSC SSC[1-2] bt -D -z init
+    - - 'R SSC[1-2] C +BT:'
+  - - SSC SSC[1-2] bt -D -z enable
+    - - 'R SSC[1-2] C +BT:'
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1-2] reboot
+    - - R SSC[1-2] C !!!ready!!!
+  - - SSC SSC[1-2] bt -D -z init
+    - - 'R SSC[1-2] C +BT:'
+  - - SSC SSC[1-2] bt -D -z enable
+    - - 'R SSC[1-2] C +BT:'
+  restore post cmd set:
+  - ''
+  - - SSC SSC[1-2] ble -R
+    - - 'R SSC[1-2] C +BLE:'
+  - - SSC SSC[1-2] bleconn -D -z all
+    - - 'R SSC[1-2] C +BLECONN:'
+  - - SSC SSC[1-2] gatts -S -z delete
+    - - 'R SSC[1-2] C +GATTS:'
+  - - SSC SSC[1-2] gattc -U -z all
+    - - R SSC[1-2] C +GATTC:OK
+  - - SSC SSC2 gatts -S -z load -p 0xA2
+    - - R SSC2 C +GATTS:StartService,OK,A002
   - - SSC SSC[1-2] bleadv -D -z stop
     - - R SSC[1-2] C +BLEADV:OK
   - - SSC SSC2 bleadv -L -c 0 -t 3
@@ -1065,7 +1111,7 @@ initial condition:
 - tag: BLE_INIT_SMP
   <<: *SSC_INIT_COND
   initial condition detail: 2 DUT which BLE is enabled, no active connection, DUT2
-    create GATT service 0xA000, DUT2 start adv, SMP enabled on both DUT and DUT1 load
+    create GATT service 0xA002, DUT2 start adv, SMP enabled on both DUT and DUT1 load
     default initiator param, DUT2 load default responder param
   check cmd set:
   - ''
@@ -1091,8 +1137,8 @@ initial condition:
     - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC[1-2] bleadv -D -z stop
     - - R SSC[1-2] C +BLEADV:OK
-  - - SSC SSC2 gatts -S -z load -p 0xA0
-    - - R SSC2 C +GATTS:StartService,OK,A000
+  - - SSC SSC2 gatts -S -z load -p 0xA2
+    - - R SSC2 C +GATTS:StartService,OK,A002
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
@@ -1120,8 +1166,8 @@ initial condition:
     - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC[1-2] bleadv -D -z stop
     - - R SSC[1-2] C +BLEADV:OK
-  - - SSC SSC2 gatts -S -z load -p 0xA0
-    - - R SSC2 C +GATTS:StartService,OK,A000
+  - - SSC SSC2 gatts -S -z load -p 0xA2
+    - - R SSC2 C +GATTS:StartService,OK,A002
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
@@ -1171,6 +1217,8 @@ initial condition:
     - - R SSC[1-5] C +BLESMP:OK
   - - SSC SSC1 gattc -F -r <dut2_bt_mac>
     - - R SSC1 C +GATTC:OK
+  - - SSC SSC1 ram
+    - - R SSC1 A <heap_size>:(\d+)
   restore post cmd set:
   - ''
   - - SSC SSC[1-5] ble -R
@@ -1205,6 +1253,7 @@ initial condition:
   initial condition detail: one target in AP mode and espnow is de-initialized
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:2
   - - SSC SSC1 mac -Q -o 2
@@ -1239,6 +1288,7 @@ initial condition:
     with self role slave
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC[1-<dev_num>] op -Q
     - - R SSC[1-<dev_num>] C +CURMODE:2
   - - SSC SSC[1-<dev_num>] mac -Q -o 3
@@ -1422,6 +1472,7 @@ initial condition:
   initial condition detail: testing sta on sta + ap mode, quit AP (autogen by STAM1)
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:3
   - - SSC SSC1 sta -D
@@ -1458,6 +1509,7 @@ initial condition:
     by STAM2)
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:3
   - - SSC SSC1 sta -Q
@@ -1494,6 +1546,7 @@ initial condition:
     condition STAAP1
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:1
   - - SSC SSC1 sta -D
@@ -1530,6 +1583,7 @@ initial condition:
     condition STAAP2
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:1
   - - SSC SSC1 sta -Q
@@ -1566,6 +1620,7 @@ initial condition:
     condition STAAP1
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:1
   - - SSC SSC1 sta -D
@@ -1602,6 +1657,7 @@ initial condition:
     initial condition STAAP2
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:1
   - - SSC SSC1 sta -Q
@@ -1704,6 +1760,7 @@ initial condition:
     T2_2
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:2
   - - SSC SSC2 op -Q
@@ -1766,6 +1823,7 @@ initial condition:
     with initial condition T2_2
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:2
   - - SSC SSC2 op -Q
@@ -1827,6 +1885,7 @@ initial condition:
   initial condition detail: target 1 as AP+STA, target 2 as AP+STA (autogen)
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:3
   - - SSC SSC2 op -Q
@@ -2049,209 +2108,44 @@ initial condition:
     - - R SSC[1-2] C +BLEADV:OK
   - - SSC SSC1 ram
     - - R SSC1 A <heap_size>:(\d+)
-- tag: ENABLED_1
-  <<: *MESH_INIT_COND
-  initial condition detail: if mesh tree not exist, start one node first, then start others, after mesh network
-    established, root connect server
+- tag: T3_1
+  <<: *SSC_INIT_COND
+  initial condition detail: target 1 as SoftAP + STA, target 2 as SoftAP, target 3 as STA
+      with initial condition T2_2
   check cmd set:
   - ''
-  - - SSC SSC[1-<node_num>] mesh -Q -o 2
-    - - R SSC[1-<node_num>] T <node_num>
-  - - MESHTREE
-    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)
-  - - SOC SOC1 LISTEN <test_tcp_port1> <pc_ip>
-    - - R SOC_COM L OK
-  - - SSC MNODE(0) mesh -S -o 0 -i <pc_ip> -t <test_tcp_port1>
-    - - ''
-  - - SOC SOC1 MACCEPT GSOC1
-    - - P MNODE(0) C +CONNECT,OK
-      - R SOC_COM L OK
-  - - SSC SSC[1-<node_num>] mesh -F -o 4 -a 1
-    - - P SSC[1-<node_num>] C +MESHFLAG:OK
-  - - SSC SSC[1-<node_num>] mesh -F -o 5 -a 1
-    - - P SSC[1-<node_num>] C +MESHFLAG:OK
+  - *dut1_start_wifi
+  - - SSC SSC1 op -Q
+    - - R SSC1 C +CURMODE:3
+  - - SSC SSC2 op -Q
+    - - R SSC2 C +CURMODE:2
+  - - SSC SSC3 op -Q
+    - - R SSC3 C +CURMODE:1
+  - - SSC SSC3 sta -D
+    - - 'R SSC3 C +QAP:'
   restore cmd set:
   - ''
-  - - SSC SSC[1-<node_num>] reboot
-    - - P SSC[1-<node_num>] C !!!ready!!!
-  - - SSC SSC[1-<node_num>] mesh -I
-    - - P SSC[1-<node_num>] C +MESH:INITED
-  - - SSC SSC[1-<node_num>] mesh -A -o 12 -t <duration_ms> -c <cnx_rssi> -l <select_rssi> -f <switch_rssi> -b <backoff_rssi>
-    - - P SSC[1-<node_num>] C +MESH_SET_PARENT_SWITCH:OK
-  - - SSC SSC[1-<node_num>] mesh -A -o 9 -t <auth_mode> -s <map_password>
-    - - P SSC[1-<node_num>] C +MESH_SET_AP_AUTH_MODE:OK C +MESH_SET_AP_AUTH_PWD:OK
-  - - SSC SSC[1-<node_num>] mesh -P -g <mesh_id> -s <ap_ssid> -p <ap_password> -n
-      <ap_channel> -m <max_connect> -y <max_layer>
-    - - P SSC[1-<node_num>] C +MESH:CONFIG,OK
-  - - SSC SSC1 mesh -T
-    - - P SSC1 C +MESH:START,OK
-  - - DELAY 10
-    - - ''
-  - - SSC SSC[2-<node_num>] mesh -T
-    - - P SSC[2-<node_num>] C +MESH:START,OK
-  - - DELAY <delay_time>
-    - - ''
-  - - SSC SSC[1-<node_num>] mesh -Q -o 2
-    - - R SSC[1-<node_num>] T <node_num>
-  - - MESHTREE
-    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)
-  - - SSC MNODE(0) mesh -Q -o 1 -t <delay_time>
-    - - R MNODE(0) C NETWORK_TIME:PASS
-  - - SOC SOC1 LISTEN <test_tcp_port1> <pc_ip>
-    - - R SOC_COM L OK
-  - - SSC MNODE(0) mesh -S -o 0 -i <pc_ip> -t <test_tcp_port1>
-    - - ''
-  - - SOC SOC1 MACCEPT GSOC1
-    - - P MNODE(0) C +CONNECT,OK
-      - R SOC_COM L OK
-  - - SSC SSC[1-<node_num>] mesh -F -o 4 -a 1
-    - - P SSC[1-<node_num>] C +MESHFLAG:OK
-  - - SSC SSC[1-<node_num>] mesh -F -o 5 -a 1
-    - - P SSC[1-<node_num>] C +MESHFLAG:OK
+  - - SSC SSC1 op -S -o 3
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC2 op -S -o 2
+    - - R SSC2 C +MODE:OK
+  - - SSC SSC3 op -S -o 1
+    - - R SSC3 C +MODE:OK
+  - - SSC SSC3 sta -D
+    - - 'R SSC3 C +QAP:'
   force restore cmd set:
   - ''
-  - - SSC SSC[1-<node_num>] restore
-    - - P SSC[1-<node_num>] C !!!ready!!!
-  - - SSC SSC[1-<node_num>] mesh -I
-    - - P SSC[1-<node_num>] C +MESH:INITED
-  - - SSC SSC[1-<node_num>] mesh -A -o 12 -t <duration_ms> -c <cnx_rssi> -l <select_rssi> -f <switch_rssi> -b <backoff_rssi>
-    - - P SSC[1-<node_num>] C +MESH_SET_PARENT_SWITCH:OK
-  - - SSC SSC[1-<node_num>] mesh -A -o 9 -t <auth_mode> -s <map_password>
-    - - P SSC[1-<node_num>] C +MESH_SET_AP_AUTH_MODE:OK C +MESH_SET_AP_AUTH_PWD:OK
-  - - SSC SSC[1-<node_num>] mesh -P -g <mesh_id> -s <ap_ssid> -p <ap_password> -n
-      <ap_channel> -m <max_connect> -y <max_layer>
-    - - P SSC[1-<node_num>] C +MESH:CONFIG,OK
-  - - SSC SSC1 mesh -T
-    - - P SSC1 C +MESH:START,OK
-  - - DELAY 10
-    - - ''
-  - - SSC SSC[2-<node_num>] mesh -T
-    - - P SSC[2-<node_num>] C +MESH:START,OK
-  - - DELAY <delay_time>
-    - - ''
-  - - SSC SSC[1-<node_num>] mesh -Q -o 2
-    - - R SSC[1-<node_num>] T <node_num>
-  - - MESHTREE
-    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)
-  - - SSC MNODE(0) mesh -Q -o 1 -t <delay_time>
-    - - R MNODE(0) C NETWORK_TIME:PASS
-  - - SOC SOC1 LISTEN <test_tcp_port1> <pc_ip>
-    - - R SOC_COM L OK
-  - - SSC MNODE(0) mesh -S -o 0 -i <pc_ip> -t <test_tcp_port1>
-    - - ''
-  - - SOC SOC1 MACCEPT GSOC1
-    - - P MNODE(0) C +CONNECT,OK
-      - R SOC_COM L OK
-  - - SSC SSC[1-<node_num>] mesh -F -o 4 -a 1
-    - - P SSC[1-<node_num>] C +MESHFLAG:OK
-  - - SSC SSC[1-<node_num>] mesh -F -o 5 -a 1
-    - - P SSC[1-<node_num>] C +MESHFLAG:OK
-- tag: ENABLED_2
-  <<: *MESH_INIT_COND
-  initial condition detail: if mesh tree not exist, start all nodes together
-  check cmd set:
-  - ''
-  - - SSC SSC[1-<node_num>] mesh -Q -o 2
-    - - R SSC[1-<node_num>] T <node_num>
-  - - MESHTREE
-    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)
-  restore cmd set:
-  - ''
-  - - SSC SSC[1-<node_num>] reboot
-    - - P SSC[1-<node_num>] C !!!ready!!!
-  - - SSC SSC[1-<node_num>] mesh -I
-    - - P SSC[1-<node_num>] C +MESH:INITED
-  - - SSC SSC[1-<node_num>] mesh -A -o 12 -t <duration_ms> -c <cnx_rssi> -l <select_rssi> -f <switch_rssi> -b <backoff_rssi>
-    - - P SSC[1-<node_num>] C +MESH_SET_PARENT_SWITCH:OK
-  - - SSC SSC[1-<node_num>] mesh -A -o 9 -t <auth_mode> -s <map_password>
-    - - P SSC[1-<node_num>] C +MESH_SET_AP_AUTH_MODE:OK C +MESH_SET_AP_AUTH_PWD:OK
-  - - SSC SSC[1-<node_num>] mesh -P -g <mesh_id> -s <ap_ssid> -p <ap_password> -n
-      <ap_channel> -m <max_connect> -y <max_layer>
-    - - P SSC[1-<node_num>] C +MESH:CONFIG,OK
-  - - SSC SSC[1-<node_num>] mesh -T
-    - - P SSC[1-<node_num>] C +MESH:START,OK
-  - - DELAY <delay_time>
-    - - ''
-  - - SSC SSC[1-<node_num>] mesh -Q -o 2
-    - - R SSC[1-<node_num>] T <node_num>
-  - - MESHTREE
-    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)
-  - - SSC MNODE(0) mesh -Q -o 1 -t <delay_time>
-    - - R MNODE(0) C NETWORK_TIME:PASS
-  force restore cmd set:
-  - ''
-  - - SSC SSC[1-<node_num>] restore
-    - - P SSC[1-<node_num>] C !!!ready!!!
-  - - SSC SSC[1-<node_num>] mesh -I
-    - - P SSC[1-<node_num>] C +MESH:INITED
-  - - SSC SSC[1-<node_num>] mesh -A -o 12 -t <duration_ms> -c <cnx_rssi> -l <select_rssi> -f <switch_rssi> -b <backoff_rssi>
-    - - P SSC[1-<node_num>] C +MESH_SET_PARENT_SWITCH:OK
-  - - SSC SSC[1-<node_num>] mesh -A -o 9 -t <auth_mode> -s <map_password>
-    - - P SSC[1-<node_num>] C +MESH_SET_AP_AUTH_MODE:OK C +MESH_SET_AP_AUTH_PWD:OK
-  - - SSC SSC[1-<node_num>] mesh -P -g <mesh_id> -s <ap_ssid> -p <ap_password> -n
-      <ap_channel> -m <max_connect> -y <max_layer>
-    - - P SSC[1-<node_num>] C +MESH:CONFIG,OK
-  - - SSC SSC[1-<node_num>] mesh -T
-    - - P SSC[1-<node_num>] C +MESH:START,OK
-  - - DELAY <delay_time>
-    - - ''
-  - - SSC SSC[1-<node_num>] mesh -Q -o 2
-    - - R SSC[1-<node_num>] T <node_num>
-  - - MESHTREE
-    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)
-  - - SSC MNODE(0) mesh -Q -o 1 -t <delay_time>
-    - - R MNODE(0) C NETWORK_TIME:PASS
-- tag: ENABLED_3
-  <<: *MESH_INIT_COND
-  initial condition detail: all mesh nodes in softap+sta mode, mesh configed but not started
-  check cmd set:
-  - ''
-  restore cmd set:
-  - ''
-  - - SSC SSC[1-<node_num>] reboot
-    - - P SSC[1-<node_num>] C !!!ready!!!
-  - - SSC SSC[1-<node_num>] mesh -I
-    - - P SSC[1-<node_num>] C +MESH:INITED
-  - - SSC SSC[1-<node_num>] mesh -A -o 12 -t <duration_ms> -c <cnx_rssi> -l <select_rssi> -f <switch_rssi> -b <backoff_rssi>
-    - - P SSC[1-<node_num>] C +MESH_SET_PARENT_SWITCH:OK
-  - - SSC SSC[1-<node_num>] mesh -A -o 9 -t <auth_mode> -s <map_password>
-    - - P SSC[1-<node_num>] C +MESH_SET_AP_AUTH_MODE:OK C +MESH_SET_AP_AUTH_PWD:OK
-  - - SSC SSC[1-<node_num>] mesh -P -g <mesh_id> -s <ap_ssid> -p <ap_password> -n
-      <ap_channel> -m <max_connect> -y <max_layer>
-    - - P SSC[1-<node_num>] C +MESH:CONFIG,OK
-  force restore cmd set:
-  - ''
-  - - SSC SSC[1-<node_num>] restore
-    - - P SSC[1-<node_num>] C !!!ready!!!
-  - - SSC SSC[1-<node_num>] mesh -I
-    - - P SSC[1-<node_num>] C +MESH:INITED
-  - - SSC SSC[1-<node_num>] mesh -A -o 12 -t <duration_ms> -c <cnx_rssi> -l <select_rssi> -f <switch_rssi> -b <backoff_rssi>
-    - - P SSC[1-<node_num>] C +MESH_SET_PARENT_SWITCH:OK
-  - - SSC SSC[1-<node_num>] mesh -A -o 9 -t <auth_mode> -s <map_password>
-    - - P SSC[1-<node_num>] C +MESH_SET_AP_AUTH_MODE:OK C +MESH_SET_AP_AUTH_PWD:OK
-  - - SSC SSC[1-<node_num>] mesh -P -g <mesh_id> -s <ap_ssid> -p <ap_password> -n
-      <ap_channel> -m <max_connect> -y <max_layer>
-    - - P SSC[1-<node_num>] C +MESH:CONFIG,OK
-- tag: DISABLED_1
-  <<: *MESH_INIT_COND
-  initial condition detail: all mesh node in softap+sta mode, disable all mesh node
-  check cmd set:
-  - ''
-  - - ASSERT
-    - - ''
-  restore cmd set:
-  - ''
-  - - SSC SSC[1-<node_num>] reboot
-    - - P SSC[1-<node_num>] C !!!ready!!!
-  - - SSC SSC[1-<node_num>] op -Q
-    - - P SSC[1-<node_num>] C +CURMODE:3
-  - - SSC SSC[1-<node_num>] sta -D
-    - - P SSC[1-<node_num>] C +QAP:OK
-  force restore cmd set:
-  - ''
-  - - SSC SSC[1-<node_num>] restore
-    - - P SSC[1-<node_num>] C !!!ready!!!
-  - - SSC SSC[1-<node_num>] op -S -o 3
-    - - P SSC[1-<node_num>] C +MODE:OK
-  - - SSC SSC[1-<node_num>] sta -D
-    - - P SSC[1-<node_num>] C +QAP:OK
+  - - SSC SSC1 reboot
+    - - R SSC1 C !!!ready!!!
+  - - SSC SSC2 reboot
+    - - R SSC2 C !!!ready!!!
+  - - SSC SSC3 reboot
+    - - R SSC3 C !!!ready!!!
+  - - SSC SSC1 op -S -o 3
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC2 op -S -o 2
+    - - R SSC2 C +MODE:OK
+  - - SSC SSC3 op -S -o 1
+    - - R SSC3 C +MODE:OK
+  - - SSC SSC3 sta -D
+    - - 'R SSC3 C +QAP:'

@@ -38,7 +38,7 @@ test cases:
     打开DHCP OK\n5.查询到sta ip \n6.target1 连接AP ok\n7.查询到sta ip 为target_ip"
   sub module: DHCP
   summary: dhcp client function test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_5
   test point 1: basic function
   test point 2: DHCP client function test
   version: v2 (2016-10-19)
@@ -90,7 +90,7 @@ test cases:
     7.target1 查询 DHCP 状态
   sub module: DHCP
   summary: dhcp status query
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: DHCP client function test
   version: v1 (2016-8-15)
@@ -136,7 +136,7 @@ test cases:
     打开DHCP ok"
   sub module: DHCP
   summary: server dhcp lease test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: DHCP server function test
   version: v1 (2016-8-15)
@@ -185,7 +185,7 @@ test cases:
     4. Loop step3
   sub module: DHCP
   summary: dhcp server ip pool
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: basic function
   test point 2: DHCP server function test
   version: v1 (2016-8-15)
@@ -242,7 +242,7 @@ test cases:
     4. Loop step3 twice
   sub module: DHCP
   summary: dhcp server ip pool empty
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: basic function
   test point 2: DHCP server function test
   version: v1 (2016-8-15)
@@ -306,7 +306,7 @@ test cases:
     8. target2 change mac and connect to target1
   sub module: DHCP
   summary: dhcp server timeout test
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: basic function
   test point 2: DHCP server function test
   version: v1 (2016-8-15)
@@ -347,7 +347,7 @@ test cases:
     3. disable DHCP server, do config and enable
   sub module: DHCP
   summary: disconnect STA if config dhcp server
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: basic function
   test point 2: DHCP server function test
   version: v1 (2016-8-15)
@@ -398,7 +398,7 @@ test cases:
     5. change to first mac, connect to softap
   sub module: DHCP
   summary: dhcp server assign same IP to same MAC when it's not released
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: basic function
   test point 2: DHCP server function test
   version: v1 (2016-8-15)
@@ -455,7 +455,7 @@ test cases:
     6. target2 change mac and connect to target1
   sub module: DHCP
   summary: dhcp server prefer assign released IP to new client
-  test environment: SSC_T2_1
+  test environment: SSC_T2_2
   test point 1: basic function
   test point 2: DHCP server function test
   version: v1 (2016-8-15)
@@ -516,7 +516,7 @@ test cases:
     7. target2 change mac and connect to target1
   sub module: DHCP
   summary: dhcp server prefer assign released IP to new client
-  test environment: SSC_T2_1
+  test environment: SSC_T2_2
   test point 1: basic function
   test point 2: DHCP server function test
   version: v1 (2016-8-15)
@@ -568,7 +568,7 @@ test cases:
     5. softap list connected station
   sub module: DHCP
   summary: dhcp server reconfig and new client able to get first IP in pool
-  test environment: SSC_T2_1
+  test environment: SSC_T2_2
   test point 1: basic function
   test point 2: DHCP server function test
   version: v1 (2016-8-15)
@@ -624,7 +624,7 @@ test cases:
     7. softap list connected station
   sub module: DHCP
   summary: dhcp server reconfig and new client able to get first IP in pool
-  test environment: SSC_T2_1
+  test environment: SSC_T2_2
   test point 1: basic function
   test point 2: DHCP server function test
   version: v1 (2016-8-15)
@@ -674,7 +674,7 @@ test cases:
     5. softap list connected station
   sub module: DHCP
   summary: dhcp server reconfig, old client and new client able to get IP
-  test environment: SSC_T2_1
+  test environment: SSC_T2_2
   test point 1: basic function
   test point 2: DHCP server function test
   version: v1 (2016-8-15)
@@ -723,7 +723,7 @@ test cases:
   sub module: DHCP
   summary: dhcp server reconfig, old client able to get IP (discover with requested
     IP)
-  test environment: SSC_T2_1
+  test environment: SSC_T2_2
   test point 1: basic function
   test point 2: DHCP server function test
   version: v1 (2016-8-15)
@@ -749,6 +749,8 @@ test cases:
     - - R SSC1 C +DHCP:LEASE,OK
   - - SSC SSC1 dhcp -S -o 2
     - - R SSC1 C +DHCP:AP,OK
+  - - WIFI <pc_wifi_nic> CONN <random_string> <random_string> 192.168.4.2
+    - - R PC_COM NC ERROR C +WIFICONN:OK
   - - SSC SSC2 sta -C -s <random_string> -p <random_string>
     - - R SSC2 C +JAP:CONNECTED
   - - DELAY 30
@@ -773,7 +775,7 @@ test cases:
     5. softap list connected station
   sub module: DHCP
   summary: dhcp server reconfig, old client able to renew IP (direct send request)
-  test environment: SSC_T2_1
+  test environment: SSC_T2_2
   test point 1: basic function
   test point 2: DHCP server function test
   version: v1 (2016-8-15)
@@ -812,7 +814,7 @@ test cases:
     打开DHCP OK\n5.target2 jap target 1,ok"
   sub module: DHCP
   summary: dhcp server function test
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: basic function
   test point 2: DHCP server function test
   version: v2 (2016-10-19)
@@ -859,7 +861,7 @@ test cases:
     6.target1 jap AP
   sub module: DHCP
   summary: sta dhcp static ip interaction
-  test environment: SSC_T1_1
+  test environment: SSC_T1_5
   test point 1: interaction
   test point 2: static IP and DHCP interaction test
   version: v2 (2016-10-19)
@@ -914,7 +916,7 @@ test cases:
     设置正确的地址池\n9.target2 连接target1 "
   sub module: DHCP
   summary: ap dhcp static ip interaction
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: interaction
   test point 2: static IP and DHCP interaction test
   version: v1 (2016-8-15)
