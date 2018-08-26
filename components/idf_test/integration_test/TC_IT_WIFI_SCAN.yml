@@ -33,7 +33,7 @@ test cases:
     3.target2  scan <target_tmp_ssid>
   sub module: WIFI Scan
   summary: scan with scan config ssid
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: basic function
   test point 2: scan with different config
   version: v1 (2016-8-15)
@@ -66,7 +66,7 @@ test cases:
     2.target2上查询<target_ap_mac>
   sub module: WIFI Scan
   summary: scan with scan config bssid
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: basic function
   test point 2: scan with different config
   version: v1 (2016-8-15)
@@ -107,7 +107,7 @@ test cases:
     4.target2 上查询channel 6的<target_tmp_ssid>
   sub module: WIFI Scan
   summary: scan with scan config channel
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: basic function
   test point 2: scan with different config
   version: v1 (2016-8-15)
@@ -157,7 +157,7 @@ test cases:
     6.target 2上查询<target_ap_mac>
   sub module: WIFI Scan
   summary: scan with scan config show hidden
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: basic function
   test point 2: scan with different config
   version: v1 (2016-8-15)
@@ -207,10 +207,60 @@ test cases:
     6.target2 上查询不到<target_tmp_ssid>
   sub module: WIFI Scan
   summary: scan with several configs
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: basic function
   test point 2: scan with different config
   version: v1 (2016-8-15)
+- CI ready: 'No'
+  ID: WIFI_SCAN_0201
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m b
+    - - R SSC1 C +SPHY:protocol
+  - - SSC SSC1 sta -S
+    - - R SSC1 P <ap_ssid_11b> P <ap_ssid_11g> P <ap_ssid_11n_20> P <ap_ssid_11n_40>
+  - - SSC SSC1 phy -S -o 1 -m g
+    - - R SSC1 C +SPHY:protocol
+  - - SSC SSC1 sta -S
+    - - R SSC1 P <ap_ssid_11b> P <ap_ssid_11g> P <ap_ssid_11n_20> P <ap_ssid_11n_40>
+  - - SSC SSC1 phy -S -o 1 -m n -b 20
+    - - R SSC1 C +SPHY:protocol
+  - - SSC SSC1 sta -S
+    - - R SSC1 P <ap_ssid_11b> P <ap_ssid_11g> P <ap_ssid_11n_20> P <ap_ssid_11n_40>
+  - - SSC SSC1 phy -S -o 1 -m n -b 40
+    - - R SSC1 C +SPHY:protocol
+  - - SSC SSC1 sta -S
+    - - R SSC1 P <ap_ssid_11b> P <ap_ssid_11g> P <ap_ssid_11n_20> P <ap_ssid_11n_40>
+  execution time: 0.0
+  expected result: |-
+    3. find all 3 ext APs
+    5. find all 3 ext APs
+    7. find all 3 ext APs
+    9. find all 3 ext APs
+  initial condition: STAM1
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1. 3 ext APs in 11b, 11g, 11n mode
+    2. STA in 11b mode
+    3. do all channel scan
+    4. STA in 11g mode
+    5. do all channel scan
+    6. STA in 11n ht20 mode
+    7. do all channel scan
+    8. STA in 11n ht40 mode
+    9. do all channel scan
+  sub module: WIFI Scan
+  summary: STA in differnt PHY mode to scan AP in different PHY mode
+  test environment: SSC_T2_PhyMode
+  test point 1: basic function
+  test point 2: Scan in different mode and channel
+  version: v1 (2015-8-15)
 - CI ready: 'No'
   ID: WIFI_SCAN_0202
   SDK: |-
@@ -242,8 +292,8 @@ test cases:
     2.target2 jap
     3.target2 conn target1 by bssid
   sub module: WIFI Scan
-  summary: do scan/JAP/SAP
-  test environment: SSC_T2_1
+  summary: do scan/JAP/SAP with bssid set config
+  test environment: SSC_T2_5
   test point 1: basic function
   test point 2: scan function test
   version: v1 (2016-8-15)
@@ -311,8 +361,8 @@ test cases:
     11.target2 scan all channel jap target1
     12.target2 jap target1
   sub module: WIFI Scan
-  summary: do scan/JAP/SAP
-  test environment: SSC_T2_1
+  summary: do scan/JAP/SAP with scan method and weakest auth mode
+  test environment: SSC_T2_5
   test point 1: basic function
   test point 2: scan function test
   version: v1 (2016-8-15)
@@ -363,8 +413,8 @@ test cases:
     6.target2 scan all channel and jap rssi > -1
     7.target2 scan all channel and jap target1 rssi > -80
   sub module: WIFI Scan
-  summary: do scan/JAP/SAP
-  test environment: SSC_T2_1
+  summary: do scan/JAP/SAP with scan method and weakest rssi
+  test environment: SSC_T2_5
   test point 1: basic function
   test point 2: scan function test
   version: v1 (2016-8-15)
@@ -403,8 +453,8 @@ test cases:
     3.target2 scan ap all channel and jap target1 by auth
     4.target2 scan ap all channel jap target1 by auth
   sub module: WIFI Scan
-  summary: do scan/JAP/SAP
-  test environment: SSC_T2_1
+  summary: do scan/JAP/SAP with scan method and sort method
+  test environment: SSC_T2_5
   test point 1: basic function
   test point 2: scan function test
   version: v1 (2016-8-15)
@@ -456,7 +506,7 @@ test cases:
     7.target1 scan type set to 5
   sub module: WIFI Scan
   summary: do active/passive scan
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: scan function test
   version: v1 (2016-8-15)
@@ -487,7 +537,7 @@ test cases:
     2. do scan before scan finished
   sub module: WIFI Scan
   summary: reject scan request before scan finished
-  test environment: SSC_T1_1
+  test environment: SSC_T1_5
   test point 1: interaction
   test point 2: Scan interact with other WiFi operation
   version: v1 (2015-8-15)
@@ -533,7 +583,7 @@ test cases:
     3. target 2 scan in AP channel in 11b.g,n,ht40 mode
   sub module: WIFI Scan
   summary: scan in congest channel
-  test environment: SSC_T2_1
+  test environment: SSC_T2_4
   test point 1: interaction
   test point 2: Scan interact with other WiFi operation
   version: v1 (2015-8-15)
@@ -573,7 +623,7 @@ test cases:
     5. target 1 JAP before scan succeed
   sub module: WIFI Scan
   summary: scan during JAP
-  test environment: SSC_T1_1
+  test environment: SSC_T1_5
   test point 1: interaction
   test point 2: Scan interact with other WiFi operation
   version: v1 (2015-8-15)
@@ -617,7 +667,7 @@ test cases:
     5. target 2 STA JAP before target 1 STA scan succeed
   sub module: WIFI Scan
   summary: scan during ext STA join SoftAP
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: interaction
   test point 2: Scan interact with other WiFi operation
   version: v1 (2015-8-15)
@@ -669,14 +719,17 @@ test cases:
     - - ''
   - - test_mode = "conn_by_bssid"
     - - ''
-  execution time: 5.0
-  expected result: 2. connect success
+  execution time: 0.2
+  expected result: |-
+    1. all routers configure correctly
+    3. connect success
   initial condition: None
   level: Integration
   module: WIFI MAC
   steps: |-
-    1. 1 SSC target connect PC by Uart.
-    2. SSC target connect ap by bssid
+    1. Manually configure the two routers with the same ssid ,password and security mode
+    2. SSC1 target connect PC by Uart.
+    3. SSC target connect ap by the specified bssid
   sub module: WIFI Scan
   summary: connect specify ap test
   test environment: SSC_T1_SCANSPECIFIED
@@ -695,14 +748,19 @@ test cases:
     - - ''
   - - test_mode = "conn_max_rssi_ap"
     - - ''
-  execution time: 5.0
-  expected result: 2. connect success
+  execution time: 0.2
+  expected result: |-
+    1. configure ap right
+    3. connect success
+    4. rssi value is the largest of the four routers
   initial condition: None
   level: Integration
   module: WIFI MAC
   steps: |-
-    1. 1 SSC target connect PC by Uart.
-    2. SSC connect max rssi ap.
+    1. Manually configure the four routers with the same ssid ,password and security mode
+    2. 1 SSC target connect PC by Uart.
+    3. SSC connect max rssi ap.
+    4. check connection ap's rssi value
   sub module: WIFI Scan
   summary: connect max rssi ap
   test environment: SSC_T1_SCANSPECIFIED
@@ -721,14 +779,19 @@ test cases:
     - - ''
   - - test_mode = "conn_most_security_ap"
     - - ''
-  execution time: 5.0
-  expected result: 2. connect success
+  execution time: 0.2
+  expected result: |-
+    1. the routers are configured correctly
+    3. connect success
+    4. encryption mode is the highest in four routers
   initial condition: None
   level: Integration
   module: WIFI MAC
   steps: |-
-    1. 1 SSC target connect PC by Uart.
-    2. SSC connect max rssi ap
+    1. Manually configure the four routers with the same ssid ,password and different security mode
+    2. target1 connect PC by Uart.
+    3. target1 connect the highest encryption mode ap
+    4. check connection ap's security mode
   sub module: WIFI Scan
   summary: connect most security ap
   test environment: SSC_T1_SCANSPECIFIED
@@ -747,14 +810,17 @@ test cases:
     - - ''
   - - test_mode = "conn_setting_ap"
     - - ''
-  execution time: 5.0
-  expected result: 2. connect success
+  execution time: 0.2
+  expected result: |-
+    1. the routers are configured correctly
+    3. connect success
   initial condition: None
   level: Integration
   module: WIFI MAC
   steps: |-
-    1. 1 SSC target connect PC by Uart.
-    2. SSC connect setting ap
+    1. Manually configure the four routers with the same ssid different password
+    2. target1 connect PC by Uart.
+    3. target1 connect setting ap
   sub module: WIFI Scan
   summary: connect setting ap
   test environment: SSC_T1_SCANSPECIFIED
@@ -775,17 +841,23 @@ test cases:
     - - ''
   - - apc_num_list = [1,3]
     - - ''
-  execution time: 5.0
-  expected result: 2. connect success
+  execution time: 0.5
+  expected result: |-
+    1. the routers are configured correctly
+    3. ap1 power on
+    4. connect success
+    5. ap2 power on and ap1 power off
+    6. connect success
   initial condition: None
   level: Integration
   module: WIFI MAC
   steps: |-
-    1. 1 SSC target connect PC by Uart.
-    2. ap1 power on by apc
-    3. SSC connect ap
-    4. ap1 power off and ap2 power on
-    5. SSC auto connect ap2.
+    1. Manually configure the two routers with the same ssid ,password different security mode
+    2. target1 connect PC by Uart.
+    3. ap1 power on by apc
+    4. atrget1 connect ap
+    5. ap1 power off and ap2 power on
+    6. atrget1 auto connect ap2.
   sub module: WIFI Scan
   summary: reconnect same ssid ap
   test environment: SSC_T1_SCANSPECIFIED
@@ -806,14 +878,21 @@ test cases:
     - - ''
   - - rssi_threshold = 60
     - - ''
-  execution time: 5.0
-  expected result: 2. connect success
+  - - low_rssi_num = 1
+    - - ''
+  execution time: 0.3
+  expected result: |-
+    1. the routers are configured correctly
+    3. connect success
+    4. connect to the correct ap
   initial condition: None
   level: Integration
   module: WIFI MAC
   steps: |-
-    1. 1 SSC target connect PC by Uart.
-    2. SSC1 connect ap
+    1. manuall configure two routers with the same ssid password and below rssi_threshold ap's channel at the front
+    2. target1 connect PC by Uart.
+    3. atrget1 connect ap
+    4. check connection ap's bssid
   sub module: WIFI Scan
   summary: quick connect ap
   test environment: SSC_T1_SCANSPECIFIED
@@ -824,22 +903,26 @@ test cases:
   ID: WIFI_SCAN_5207
   SDK: ESP32_IDF
   Test App: SSC
-  auto test: 'Yes'
+  auto test: 'No'
   category: Stress
-  cmd set:
-  - WiFiStress/WifiScanOptimize
-  - - test_times = 10
-    - - ''
-  execution time: 5.0
-  expected result: 2. connect success
+  cmd set: ''
+  execution time: 0.3
+  expected result: |-
+    1. the routers are configured correctly
+    3. set suc
+    5. burn suc
+    6. set mode ok and SSC connected to the open security mode ap auto
   initial condition: None
   level: Integration
   module: WIFI MAC
   steps: |-
-    1. 1 SSC target connect PC by Uart.
-    2. make menuconfig
-    3. write ap ssid
-    4. connect ap auto
+    1. configure four router with the same ssid and one of them security mode is open
+    2. target1 connect PC by Uart.
+    3. set the ssid of the router in the manuconfig but not the password
+    4. save the setting and compile
+    5. burn bin files
+    6. set target1 to sta mode
+    7. loop 1,2,3,4 ten times
   sub module: WIFI Scan
   summary: connect open security ap
   test environment: SSC_T1_SCANSPECIFIED
