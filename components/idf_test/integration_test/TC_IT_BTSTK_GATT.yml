@@ -5,7 +5,7 @@
   category: Function
   test point 1: basic function
   initial condition: BLE_CONN2
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   execution time: 0
   module: BT Stack
   sub module: GATT
@@ -19,14 +19,47 @@
     - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
       - ["R SSC1 C +GATTC:Discover,OK"]
 
-.included_service_connection: &included_service_connection
+.included_service_connection: &included_primary_service_connection
   LIST_MERGE:
     - - "SSC SSC2 gatts -S -z load -p 0xA1"
-      - ["R SSC2 C +GATTS:StartService,OK,A001"]
-    - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-      - ["R SSC1 C +BLE:GattcConnect,OK,0010", "R SSC2 C +BLE:GattsConnect"]
+      - ["R SSC2 C +GATTS:LoadProfile,OK,A001", "R SSC2 C +GATTS:StartService,OK,A001"]
+    - - "SSC SSC2 gatts -S -z include -p 0xA1 -i 0xA0"
+      - ["R SSC2 C +GATTS:AddIncludedService,OK"]
     - - SSC SSC1 gattc -F -r <dut2_bt_mac>
       - ['R SSC1 C +GATTC:OK']
+    - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+      - ["R SSC1 C +BLE:GattcConnect,OK,0010", "R SSC2 C +BLE:GattsConnect"]
+
+.included_second_service_connection: &included_second_service_connection
+  LIST_MERGE:
+    - - "SSC SSC2 gatts -S -z load -p 0xA4"
+      - ["R SSC2 C +GATTS:StartService,OK,A004"]
+    - - "SSC SSC2 gatts -S -z load -p 0xA1"
+      - ["R SSC2 C +GATTS:LoadProfile,OK,A001", "R SSC2 C +GATTS:StartService,OK,A001"]
+    - - "SSC SSC2 gatts -S -z include -p 0xA1 -i 0xA4"
+      - ["R SSC2 C +GATTS:AddIncludedService,OK"]
+    - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+      - ['R SSC1 C +GATTC:OK']
+    - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+      - ["R SSC1 C +BLE:GattcConnect,OK,0010", "R SSC2 C +BLE:GattsConnect"]
+
+.table_include_table_service: &table_include_table_service
+  LIST_MERGE:
+    - - "SSC SSC2 gatts -S -z load -p 0xA5 -i 0xA2"
+      - ["R SSC2 C +GATTS:StartService,OK,A005"]
+    - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+      - ['R SSC1 C +GATTC:OK']
+    - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+      - ["R SSC1 C +BLE:GattcConnect,OK,0010", "R SSC2 C +BLE:GattsConnect"]
+
+.table_include_service: &table_include_service
+  LIST_MERGE:
+    - - "SSC SSC2 gatts -S -z load -p 0xA5 -i 0xA0"
+      - ["R SSC2 C +GATTS:StartService,OK,A005"]
+    - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+      - ['R SSC1 C +GATTC:OK']
+    - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+      - ["R SSC1 C +BLE:GattcConnect,OK,0010", "R SSC2 C +BLE:GattsConnect"]
 
 .register_notify_c107: &register_notify_c107
   LIST_MERGE:
@@ -47,7 +80,7 @@ test cases:
   expected result: |
     1. succeed
   initial condition: BLE_INIT1
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   cmd set:
   - ""
   - - "SSC SSC1 gatts -S -z load -p 0xA0"
@@ -63,7 +96,7 @@ test cases:
     1. succeed
     2. succeed
   initial condition: BLE_INIT1
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   cmd set:
   - ""
   - - "SSC SSC1 gatts -S -z load -p 0xA0"
@@ -73,7 +106,7 @@ test cases:
 - ID: BTSTK_GATT_20001
   <<: *GATT_CASE
   test point 2: BLE GATT client service / char discovery
-  summary: GATT client discover primary service
+  summary: GATT client discover manual primary service
   steps: |
     1. DUT2 create preset service 0xA000
     2. DUT2 create preset service 0xA001
@@ -87,14 +120,13 @@ test cases:
   initial condition: BLE_INIT2
   cmd set:
   - ""
-  - *included_service_connection
+  - *included_primary_service_connection
   - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
     - ["R SSC1 C +GATTC:DiscoverService,A000 C +GATTC:DiscoverService,A001"]
 - ID: BTSTK_GATT_20002
   <<: *GATT_CASE
   test point 2: BLE GATT client service / char discovery
-  summary: GATT client get included service
-  allow fail: 1/2
+  summary: GATT client get manual included service
   steps: |
     1. DUT2 create preset service 0xA000
     2. DUT2 create preset service 0xA001
@@ -110,11 +142,99 @@ test cases:
   initial condition: BLE_INIT2
   cmd set:
   - ""
-  - *included_service_connection
+  - *included_primary_service_connection
   - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
     - ["R SSC1 C +GATTC:DiscoverService,A000 A <handle_range>:GATTC:DiscoverService,A001,(\\d+-\\d+)"]
   - - "SSC SSC1 gattc -D -z includedService -p 0x10 -s 0xA001 -i 0xA000 -q <handle_range> -k 1"
     - ["R SSC1 C +GATTC:IncludedService,0010,A001,A000"]
+- ID: BTSTK_GATT_20003
+  <<: *GATT_CASE
+  test point 2: BLE GATT client service / char discovery
+  summary: GATT client discover table primary service (table service include table service)
+  steps: |
+    1. DUT2 create preset service 0xA002
+    2. DUT2 create preset service 0xA005
+    3. DUT1 connect to DUT2
+    4. DUT1 do primary service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. found service 0xA002 and 0xA005
+  initial condition: BLE_INIT3
+  cmd set:
+  - ""
+  - *table_include_table_service
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:DiscoverService,A002 C +GATTC:DiscoverService,A005"]
+- ID: BTSTK_GATT_20004
+  <<: *GATT_CASE
+  test point 2: BLE GATT client service / char discovery
+  summary: GATT client get table included service
+  steps: |
+    1. DUT2 create preset service 0xA002
+    2. DUT2 create preset service 0xA005
+    3. DUT1 connect to DUT2
+    4. DUT1 do primary service discovery
+    5. DUT1 get included service 0xA002 from service 0xA005
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. get included service 0xA002 from service 0xA005
+  initial condition: BLE_INIT3
+  cmd set:
+  - ""
+  - *table_include_table_service
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:DiscoverService,A002 A <handle_range>:GATTC:DiscoverService,A005,(\\d+-\\d+)"]
+  - - "SSC SSC1 gattc -D -z includedService -p 0x10 -s 0xA005 -i 0xA002 -q <handle_range> -k 1"
+    - ["R SSC1 C +GATTC:IncludedService,0010,A005,A002"]
+- ID: BTSTK_GATT_20005
+  <<: *GATT_CASE
+  test point 2: BLE GATT client service / char discovery
+  summary: GATT client discover table primary service (table service include manual service)
+  steps: |
+    1. DUT2 create preset service 0xA000
+    2. DUT2 create preset service 0xA005
+    3. DUT1 connect to DUT2
+    4. DUT1 do primary service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. found service 0xA000 and 0xA005
+  initial condition: BLE_INIT2
+  cmd set:
+  - ""
+  - *table_include_service
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:DiscoverService,A000 C +GATTC:DiscoverService,A005"]
+- ID: BTSTK_GATT_20006
+  <<: *GATT_CASE
+  test point 2: BLE GATT client service / char discovery
+  summary: GATT client get table included manual service
+  steps: |
+    1. DUT2 create preset service 0xA000
+    2. DUT2 create preset service 0xA005
+    3. DUT1 connect to DUT2
+    4. DUT1 do primary service discovery
+    5. DUT1 get included service 0xA000 from service 0xA005
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. get included service 0xA000 from service 0xA005
+  initial condition: BLE_INIT2
+  cmd set:
+  - ""
+  - *table_include_service
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:DiscoverService,A000 A <handle_range>:GATTC:DiscoverService,A005,(\\d+-\\d+)"]
+  - - "SSC SSC1 gattc -D -z includedService -p 0x10 -s 0xA005 -i 0xA000 -q <handle_range> -k 1"
+    - ["R SSC1 C +GATTC:IncludedService,0010,A005,A000"]
 - ID: BTSTK_GATT_60001
   <<: *GATT_CASE
   test point 2: BLE GATT server get and set value
@@ -594,10 +714,10 @@ test cases:
   - ""
   - - "SSC SSC2 gatts -S -z load -p 0xA1"
     - ["R SSC2 C +GATTS:StartService,OK,A001"]
-  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ["R SSC1 C +BLE:GattcConnect,OK,0010", "R SSC2 C +BLE:GattsConnect"]
   - - SSC SSC1 gattc -F -r <dut2_bt_mac>
     - ['R SSC1 C +GATTC:OK']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ["R SSC1 C +BLE:GattcConnect,OK,0010", "R SSC2 C +BLE:GattsConnect"]
   - *primary_service_discovery
   - - "SSC SSC1 gattc -R -z char -s 0xA000 -c 0xC100 -p 0x10"
     - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C100,1", "R SSC1 C +GATTC:Read,OK,0010,A000,C100"]
@@ -623,10 +743,10 @@ test cases:
   - ""
   - - "SSC SSC2 gatts -S -z load -p 0xA1"
     - ["R SSC2 C +GATTS:StartService,OK,A001"]
-  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ["R SSC1 C +BLE:GattcConnect,OK,0010", "R SSC2 C +BLE:GattsConnect"]
   - - SSC SSC1 gattc -F -r <dut2_bt_mac>
     - ['R SSC1 C +GATTC:OK']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ["R SSC1 C +BLE:GattcConnect,OK,0010", "R SSC2 C +BLE:GattsConnect"]
   - *primary_service_discovery
   - - "SSC SSC1 gattc -R -z descriptor -s 0xA000 -c 0xC107 -d 0x2902 -p 0x10"
     - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C107,2902,2", "R SSC1 C +GATTC:ReadDescriptor,OK,0010,A000,C107,2902"]
@@ -889,10 +1009,10 @@ test cases:
   - ""
   - - "SSC SSC2 gatts -S -z load -p 0xA1"
     - ["R SSC2 C +GATTS:StartService,OK,A001"]
-  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ["R SSC1 C +BLE:GattcConnect,OK,0010", "R SSC2 C +BLE:GattsConnect"]
   - - SSC SSC1 gattc -F -r <dut2_bt_mac>
     - ['R SSC1 C +GATTC:OK']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ["R SSC1 C +BLE:GattcConnect,OK,0010", "R SSC2 C +BLE:GattsConnect"]
   - *primary_service_discovery
   - - "SSC SSC1 gattc -W -z char -s 0xA000 -c 0xC102 -p 0x10 -v 0x01"
     - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C102", "R SSC1 C +GATTC:Write,OK,0010,A000,C102"]
@@ -917,10 +1037,10 @@ test cases:
   - ""
   - - "SSC SSC2 gatts -S -z load -p 0xA1"
     - ["R SSC2 C +GATTS:StartService,OK,A001"]
-  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ["R SSC1 C +BLE:GattcConnect,OK,0010", "R SSC2 C +BLE:GattsConnect"]
   - - SSC SSC1 gattc -F -r <dut2_bt_mac>
     - ['R SSC1 C +GATTC:OK']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ["R SSC1 C +BLE:GattcConnect,OK,0010", "R SSC2 C +BLE:GattsConnect"]
   - *primary_service_discovery
   - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC107 -d 0x2902 -p 0x10 -v 0x0100"
     - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C107,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C107,2902"]
@@ -1217,7 +1337,7 @@ test cases:
 - ID: BTSTK_GATT_23004
   <<: *GATT_CASE
   test point 2: BLE GATT client receive notify and indication
-  summary: GATT client can't receive notification/indication without write to CCC
+  summary: GATT client can't receive notification/indication without write to CCC (manual service)
   steps: |
     1. DUT1 do service discovery
     2. DUT1 register notify on notify and inidcation char
@@ -1284,7 +1404,7 @@ test cases:
 - ID: BTSTK_GATT_23007
   <<: *GATT_CASE
   test point 2: BLE GATT client receive notify and indication
-  summary: GATT client can't receive notification/indication without write to CCC
+  summary: GATT client can't receive notification/indication without write to CCC (auto service auto reply)
   steps: |
     1. DUT1 do service discovery
     2. DUT1 register notify on notify and inidcation char
@@ -1352,7 +1472,7 @@ test cases:
 - ID: BTSTK_GATT_23010
   <<: *GATT_CASE
   test point 2: BLE GATT client receive notify and indication
-  summary: GATT client can't receive notification/indication without write to CCC
+  summary: GATT client can't receive notification/indication without write to CCC (auto service manual reply)
   steps: |
     1. DUT1 do service discovery
     2. DUT1 register notify on notify and inidcation char
@@ -1685,9 +1805,9 @@ test cases:
   cmd set:
   - ""
   - *primary_service_discovery
-  - - "SSC SSC1 gattc -W -z char -s 0xA002 -c 0xC302 -p 0x10 -v 0x01 -w 1"
+  - - "SSC SSC1 gattc -W -z char -s 0xA002 -c 0xC302 -p 0x10 -v -x01 -w 1"
     - ["R SSC1 C +GATTC:Write,OK"]
-  - - "SSC SSC1 gattc -W -z char -s 0xA002 -c 0xC302 -p 0x10 -v 0x01 -w 1"
+  - - "SSC SSC1 gattc -W -z char -s 0xA002 -c 0xC302 -p 0x10 -v -x01 -w 1"
     - ["R SSC1 C +GATTC:Write,OK"]
 - ID: BTSTK_GATT_25015
   <<: *GATT_CASE
@@ -1880,6 +2000,61 @@ test cases:
     - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C109"]
   - - "SSC SSC1 gattc -W -z char -p 0x10 -s 0xA000 -c 0xC109 -l 512"
     - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C109"]
+- ID: BTSTK_GATT_27001
+  <<: *GATT_CASE
+  test point 2: BLE GATT read multiple
+  summary: GATT client read 2 char and 11 char of same service
+  steps: |
+    1. DUT1 do discover
+    2. GATT client read 2 char
+    3. GATT client read 11 char
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -R -z multiple -u #0xC100##0xC101# -s 0xA000"
+    - ['R SSC1 C +GATTC:ReadOnce,22', 'R SSC1 C +GATTC:ReadMultiple,OK']
+  - - "SSC SSC1 gattc -R -z multiple -u #0xC100##0xC101##0xC107##0xC108##0xC109##0xC110##0xC100##0xC101##0xC107##0xC108##0xC109# -s 0xA000"
+    - ['R SSC1 C +GATTC:Read,ERROR']
+- ID: BTSTK_GATT_27002
+  <<: *GATT_CASE
+  test point 2: BLE GATT read multiple
+  summary: GATT client read char and descriptor
+  steps: |
+    1. DUT1 do discover
+    2. GATT client read all char and descriptor
+  expected result: |
+    1. succeed
+    2. succeed
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -R -z multiple -u 0xA00xC100#0xA00xC101#0xA00xC1000x29010xA00xC1070x2902"
+    - ['R SSC1 C +GATTC:ReadOnce', 'R SSC1 C +GATTC:ReadMultiple,OK']
+- ID: BTSTK_GATT_27003
+  <<: *GATT_CASE
+  test point 2: BLE GATT read multiple
+  summary: GATT client read char and descriptor of included service and table service
+  initial condition: BLE_INIT2
+  steps: |
+    1. DUT2 load service included service and table service
+    2. DUT1 search service
+    3. GATT client read all char and descriptor of different services
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC2 gatts -S -z load -p 0xA2"
+    - ['R SSC2 C +GATTS:StartService,OK,A002']
+  - *included_primary_service_connection
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -R -z multiple -u 0xA10xC200#0xA00xC100#0xA00xC101#0xA20xC300#0xA20xC301#"
+    - ['R SSC1 C +GATTC:ReadOnce', 'R SSC1 C +GATTC:ReadMultiple,OK']
 - ID: BTSTK_GATT_30001
   <<: *GATT_CASE
   test point 2: BLE GATT multi connection service discovery test
@@ -2071,7 +2246,7 @@ test cases:
 - ID: BTSTK_GATT_32002
   <<: *GATT_CASE
   test point 2: BLE GATT multi connection write test
-  summary: do read when DUT1 is slave, connected by 4 masters
+  summary: do write when DUT1 is slave, connected by 4 masters
   steps: |
     1. do primary service discovery on DUT[2-5]
   expected result: |
@@ -2121,7 +2296,7 @@ test cases:
 - ID: BTSTK_GATT_32004
   <<: *GATT_CASE
   test point 2: BLE GATT multi connection write test
-  summary: do read when master and slave both create GATTC and GATTS
+  summary: do write when master and slave both create GATTC and GATTS
   steps: |
     1. DUT1 do primary service discovery for DUT2
     2. DUT2 do primary service discovery for DUT1
@@ -2230,7 +2405,7 @@ test cases:
 - ID: BTSTK_GATT_33004
   <<: *GATT_CASE
   test point 2: BLE GATT multi connection notify test
-  summary: do read when master and slave both create GATTC and GATTS
+  summary: do notify when master and slave both create GATTC and GATTS
   steps: |
     1. DUT1 do primary service discovery for DUT2
     2. DUT2 do primary service discovery for DUT1
@@ -2253,7 +2428,7 @@ test cases:
 - ID: BTSTK_GATT_34001
   <<: *GATT_CASE
   test point 2: BLE GATT multi connection indicate test
-  summary: do notify when DUT1 role is master, connected with 4 slaves
+  summary: do indicate when DUT1 role is master, connected with 4 slaves
   steps: |
     1. do primary service discovery
     2. do register indication for char
@@ -2277,7 +2452,7 @@ test cases:
 - ID: BTSTK_GATT_34002
   <<: *GATT_CASE
   test point 2: BLE GATT multi connection indicate test
-  summary: do notify when DUT1 is slave, connected by 4 masters
+  summary: do indicate when DUT1 is slave, connected by 4 masters
   steps: |
     1. do primary service discovery on DUT[2-5]
     2. DUT[2-5] do register indication
@@ -2301,7 +2476,7 @@ test cases:
 - ID: BTSTK_GATT_34003
   <<: *GATT_CASE
   test point 2: BLE GATT multi connection indicate test
-  summary: do notify when DUT1 connect to DUT[2-3] and connected by DUT[4-5]
+  summary: do indicate when DUT1 connect to DUT[2-3] and connected by DUT[4-5]
   steps: |
     1. DUT1 do primary service discovery for DUT[2-3]
     2. DUT1 register indication
@@ -2339,7 +2514,7 @@ test cases:
 - ID: BTSTK_GATT_34004
   <<: *GATT_CASE
   test point 2: BLE GATT multi connection indicate test
-  summary: do read when master and slave both create GATTC and GATTS
+  summary: do indicate when master and slave both create GATTC and GATTS
   steps: |
     1. DUT1 do primary service discovery for DUT2
     2. DUT2 do primary service discovery for DUT1
@@ -2533,7 +2708,7 @@ test cases:
     - ""
   - - gatt_op = "write"
     - ""
-  - - op_char = "0xC304"
+  - - op_char = "0xC317"
     - ""
   - - op_len = 490
     - ""
@@ -2564,7 +2739,7 @@ test cases:
     - ""
   - - op_char = "0xC305"
     - ""
-  - - op_len = 256
+  - - op_len = 490
     - ""
 - ID: BTSTK_GATT_50004
   <<: *GATT_CASE
@@ -2594,4 +2769,268 @@ test cases:
   - - op_char = "0xC306"
     - ""
   - - op_len = 256
+    - ""
+- ID: BTSTK_GATT_50005
+  <<: *GATT_CASE
+  category: Performance
+  test point 1: performance + stress
+  test point 2: BLE GATT performance test
+  summary: GATT master connect 4 slave and read char performance test
+  initial condition: BLE_CONN5
+  test environment: SSC_T5_1
+  steps: |
+    1. update connection parameter
+    2. do primary service discovery
+    3. do write char for some time
+  expected result: |
+    1. succeed
+    2. succeed
+    3. calculate throughput
+  execution time: 2
+  cmd set:
+  - "BLEStress/BLEMultiPerformance"
+  - - test_time = 120
+    - ""
+  - - mtu = 512
+    - ""
+  - - gatt_op = "read"
+    - ""
+  - - op_char = "0xC301"
+    - ""
+  - - op_len = 256
+    - ""
+  - - master_duts = ["SSC1"]
+    - ""
+  - - slave_duts = ["SSC2", "SSC3", "SSC4", "SSC5"]
+    - ""
+- ID: BTSTK_GATT_50006
+  <<: *GATT_CASE
+  category: Performance
+  test point 1: performance + stress
+  test point 2: BLE GATT performance test
+  summary: GATT 4 master connect 1 slave and read char performance test
+  initial condition: BLE_CONN6
+  test environment: SSC_T5_1
+  steps: |
+    1. update connection parameter
+    2. do primary service discovery
+    3. do write char for some time
+  expected result: |
+    1. succeed
+    2. succeed
+    3. calculate throughput
+  execution time: 2
+  cmd set:
+  - "BLEStress/BLEMultiPerformance"
+  - - test_time = 120
+    - ""
+  - - mtu = 512
+    - ""
+  - - gatt_op = "read"
+    - ""
+  - - op_char = "0xC301"
+    - ""
+  - - op_len = 256
+    - ""
+  - - master_duts = ["SSC2", "SSC3", "SSC4", "SSC5"]
+    - ""
+  - - slave_duts = ["SSC1"]
+    - ""
+- ID: BTSTK_GATT_50007
+  <<: *GATT_CASE
+  category: Performance
+  test point 1: performance + stress
+  test point 2: BLE GATT performance test
+  summary: GATT master connect 4 slave and write char performance test
+  initial condition: BLE_CONN5
+  test environment: SSC_T5_1
+  steps: |
+    1. update connection parameter
+    2. do primary service discovery
+    3. do write char for some time
+  expected result: |
+    1. succeed
+    2. succeed
+    3. calculate throughput
+  execution time: 2
+  cmd set:
+  - "BLEStress/BLEMultiPerformance"
+  - - test_time = 120
+    - ""
+  - - mtu = 512
+    - ""
+  - - gatt_op = "write"
+    - ""
+  - - op_char = "0xC304"
+    - ""
+  - - op_len = 256
+    - ""
+  - - master_duts = ["SSC1"]
+    - ""
+  - - slave_duts = ["SSC2", "SSC3", "SSC4", "SSC5"]
+    - ""
+- ID: BTSTK_GATT_50008
+  <<: *GATT_CASE
+  category: Performance
+  test point 1: performance + stress
+  test point 2: BLE GATT performance test
+  summary: GATT 4 master connect 1 slave and write char performance test
+  initial condition: BLE_CONN6
+  test environment: SSC_T5_1
+  steps: |
+    1. update connection parameter
+    2. do primary service discovery
+    3. do write char for some time
+  expected result: |
+    1. succeed
+    2. succeed
+    3. calculate throughput
+  execution time: 2
+  cmd set:
+  - "BLEStress/BLEMultiPerformance"
+  - - test_time = 120
+    - ""
+  - - mtu = 512
+    - ""
+  - - gatt_op = "write"
+    - ""
+  - - op_char = "0xC304"
+    - ""
+  - - op_len = 256
+    - ""
+  - - master_duts = ["SSC2", "SSC3", "SSC4", "SSC5"]
+    - ""
+  - - slave_duts = ["SSC1"]
+    - ""
+- ID: BTSTK_GATT_50009
+  <<: *GATT_CASE
+  category: Performance
+  test point 1: performance + stress
+  test point 2: BLE GATT performance test
+  summary: notify performance test when GATT master connects to 4 slaves
+  initial condition: BLE_CONN5
+  test environment: SSC_T5_1
+  steps: |
+    1. update connection parameter
+    2. do primary service discovery
+    3. do write char for some time
+  expected result: |
+    1. succeed
+    2. succeed
+    3. calculate throughput
+  execution time: 2
+  cmd set:
+  - "BLEStress/BLEMultiPerformance"
+  - - test_time = 120
+    - ""
+  - - mtu = 512
+    - ""
+  - - gatt_op = "notify"
+    - ""
+  - - op_char = "0xC305"
+    - ""
+  - - op_len = 256
+    - ""
+  - - master_duts = ["SSC1"]
+    - ""
+  - - slave_duts = ["SSC2", "SSC3", "SSC4", "SSC5"]
+    - ""
+- ID: BTSTK_GATT_50010
+  <<: *GATT_CASE
+  category: Performance
+  test point 1: performance + stress
+  test point 2: BLE GATT performance test
+  summary: notify performance test when GATT 4 masters connect to 1 slave
+  initial condition: BLE_CONN6
+  test environment: SSC_T5_1
+  steps: |
+    1. update connection parameter
+    2. do primary service discovery
+    3. do write char for some time
+  expected result: |
+    1. succeed
+    2. succeed
+    3. calculate throughput
+  execution time: 2
+  cmd set:
+  - "BLEStress/BLEMultiPerformance"
+  - - test_time = 120
+    - ""
+  - - mtu = 512
+    - ""
+  - - gatt_op = "notify"
+    - ""
+  - - op_char = "0xC305"
+    - ""
+  - - op_len = 256
+    - ""
+  - - master_duts = ["SSC2", "SSC3", "SSC4", "SSC5"]
+    - ""
+  - - slave_duts = ["SSC1"]
+    - ""
+- ID: BTSTK_GATT_50011
+  <<: *GATT_CASE
+  category: Performance
+  test point 1: performance + stress
+  test point 2: BLE GATT performance test
+  summary: indicate performance test when GATT master connects 4 slaves
+  initial condition: BLE_CONN5
+  test environment: SSC_T5_1
+  steps: |
+    1. update connection parameter
+    2. do primary service discovery
+    3. do write char for some time
+  expected result: |
+    1. succeed
+    2. succeed
+    3. calculate throughput
+  execution time: 2
+  cmd set:
+  - "BLEStress/BLEMultiPerformance"
+  - - test_time = 120
+    - ""
+  - - mtu = 512
+    - ""
+  - - gatt_op = "indicate"
+    - ""
+  - - op_char = "0xC306"
+    - ""
+  - - op_len = 256
+    - ""
+  - - master_duts = ["SSC1"]
+    - ""
+  - - slave_duts = ["SSC2", "SSC3", "SSC4", "SSC5"]
+    - ""
+- ID: BTSTK_GATT_50012
+  <<: *GATT_CASE
+  category: Performance
+  test point 1: performance + stress
+  test point 2: BLE GATT performance test
+  summary: indicate performance test when GATT 4 masters connect 1 slave
+  initial condition: BLE_CONN6
+  test environment: SSC_T5_1
+  steps: |
+    1. update connection parameter
+    2. do primary service discovery
+    3. do write char for some time
+  expected result: |
+    1. succeed
+    2. succeed
+    3. calculate throughput
+  execution time: 2
+  cmd set:
+  - "BLEStress/BLEMultiPerformance"
+  - - test_time = 120
+    - ""
+  - - mtu = 512
+    - ""
+  - - gatt_op = "indicate"
+    - ""
+  - - op_char = "0xC306"
+    - ""
+  - - op_len = 256
+    - ""
+  - - master_duts = ["SSC2", "SSC3", "SSC4", "SSC5"]
+    - ""
+  - - slave_duts = ["SSC1"]
     - ""
