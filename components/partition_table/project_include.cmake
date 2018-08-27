@@ -29,7 +29,7 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${PARTITION_CSV_P
 # Parse the partition table to get variable partition offsets & sizes which must be known at CMake runtime
 function(get_partition_info variable get_part_info_args)
     separate_arguments(get_part_info_args)
-    execute_process(COMMAND
+    execute_process(COMMAND ${PYTHON}
         ${COMPONENT_PATH}/parttool.py -q
         --partition-table-offset ${PARTITION_TABLE_OFFSET}
         ${get_part_info_args}
