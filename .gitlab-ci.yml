@@ -24,6 +24,7 @@ variables:
   GIT_STRATEGY: fetch
   GIT_SUBMODULE_STRATEGY: none
 
+  UNIT_TEST_BUILD_SYSTEM: make
 # IDF environment
 
   IDF_PATH: "$CI_PROJECT_DIR"
@@ -172,11 +173,24 @@ build_esp_idf_tests:
       - components/idf_test/unit_test/CIConfigs/*.yml
     expire_in: 2 days
   script:
-    - cd tools/unit-test-app
-    - MAKEFLAGS= make help # make sure kconfig tools are built in single process
-    - make ut-clean-all-configs
+    - export PATH="$IDF_PATH/tools:$PATH"
+    - cd $CI_PROJECT_DIR/tools/unit-test-app
     - export EXTRA_CFLAGS="-Werror -Werror=deprecated-declarations"
     - export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
+    # Build with CMake first
+    - idf.py ut-clean-all-configs
+    - idf.py ut-build-all-configs
+    - python tools/UnitTestParser.py
+    # Check if test demands CMake or Make built binaries. If CMake leave the built artifacts as is then exit.
+    - if [ "$UNIT_TEST_BUILD_SYSTEM" == "cmake" ]; then exit 0; fi
+    # If Make, delete the CMake built artifacts
+    - rm -rf builds output sdkconfig
+    - rm -rf components/idf_test/unit_test/TestCaseAll.yml
+    - rm -rf components/idf_test/unit_test/CIConfigs/*.yml
+    # Then build with Make
+    - cd $CI_PROJECT_DIR/tools/unit-test-app
+    - MAKEFLAGS= make help # make sure kconfig tools are built in single process
+    - make ut-clean-all-configs
     - make ut-build-all-configs
     - python tools/UnitTestParser.py
 
@@ -622,6 +636,20 @@ check_examples_cmake_make:
   before_script: *do_nothing_before
   script:
     - tools/ci/check_examples_cmake_make.sh
+
+check_ut_cmake_make:
+  stage: check
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - build
+  except:
+    - master
+    - /^release\/v/
+    - /^v\d+\.\d+(\.\d+)?($|-)/
+  dependencies: []
+  before_script: *do_nothing_before
+  script:
+    - tools/ci/check_ut_cmake_make.sh
 
 check_submodule_sync:
   <<: *check_job_template
