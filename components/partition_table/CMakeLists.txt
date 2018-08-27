@@ -42,7 +42,24 @@ if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
 
 endif()
 
-add_custom_target(partition_table ALL DEPENDS "${final_partition_bin}")
+if(EXISTS ${partition_csv})
+    add_custom_target(partition_table ALL DEPENDS "${final_partition_bin}")
+else()
+    # This is a bit of a hack: If the partition input CSV is not found, create a phony partition_table target that
+    # fails the build. Have it also touch CMakeCache.txt to cause a cmake run next time
+    # (to pick up a new CSV if one exists, etc.)
+    #
+    # This is because partition CSV is required at CMake runtime (to generate metadata files with flashing data, etc) but we can't
+    # fail the build if it is not found, because the "menuconfig" target may be required to fix the problem. CMAKE_CONFIGURE_DEPENDS
+    # only works for files which exist at CMake runtime.
+    add_custom_target(partition_table ALL
+        COMMAND ${CMAKE_COMMAND} -E echo "Partition table CSV ${partition_csv} does not exist. Either change partition table in menuconfig or create this input file."
+        COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_BINARY_DIR}/CMakeCache.txt"
+        COMMAND ${CMAKE_COMMAND} -P ${IDF_PATH}/tools/cmake/scripts/fail.cmake)
+endif()
+
+add_dependencies(bootloader partition_table)
+add_dependencies(app partition_table)
 
 # Use global properties ESPTOOL_WRITE_FLASH_ARGS to pass this info to build
 # the list of esptool write arguments for flashing

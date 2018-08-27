@@ -11,6 +11,8 @@ if(CONFIG_PARTITION_TABLE_CUSTOM)
     if(NOT EXISTS "${PARTITION_CSV_PATH}")
         message(WARNING "Partition table CSV file ${PARTITION_CSV_PATH} not found. "
             "Change custom partition CSV path in menuconfig.")
+        # Note: partition_table CMakeLists.txt contains some logic to create a dummy
+        # partition_table target in this case, see comments in that file.
     endif()
 else()
     # Other .csv files are always in the component directory
