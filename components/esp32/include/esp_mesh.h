@@ -166,7 +166,7 @@ typedef enum {
     MESH_EVENT_ROUTING_TABLE_REMOVE,    /**< routing table is changed by removing leave children */
     MESH_EVENT_PARENT_CONNECTED,        /**< parent is connected on station interface */
     MESH_EVENT_PARENT_DISCONNECTED,     /**< parent is disconnected on station interface */
-    MESH_EVENT_NO_PARNET_FOUND,         /**< no parent found */
+    MESH_EVENT_NO_PARENT_FOUND,         /**< no parent found */
     MESH_EVENT_LAYER_CHANGE,            /**< layer changes over the mesh network */
     MESH_EVENT_TODS_STATE,              /**< state represents if root is able to access external IP network */
     MESH_EVENT_VOTE_STARTED,            /**< the process of voting a new root is started either by children or by root */
@@ -771,9 +771,13 @@ esp_err_t esp_mesh_set_id(const mesh_addr_t *id);
 esp_err_t esp_mesh_get_id(mesh_addr_t *id);
 
 /**
- * @brief     set device type over the mesh network(Unimplemented)
+ * @brief     specify device type over the mesh network
+ *            - MESH_ROOT: designates the root node for a mesh network
+ *            - MESH_LEAF: designates a device as a standalone Wi-Fi station
  *
- * @param     type  device type
+ * @attention This API shall be called before esp_mesh_start().
+ *
+ * @param     type  device type (only support MESH_ROOT, MESH_LEAF)
  *
  * @return
  *    - ESP_OK
@@ -782,9 +786,7 @@ esp_err_t esp_mesh_get_id(mesh_addr_t *id);
 esp_err_t esp_mesh_set_type(mesh_type_t type);
 
 /**
- * @brief     get device type over mesh network
- *
- * @attention This API shall be called after having received the event MESH_EVENT_PARENT_CONNECTED.
+ * @brief     get device type over the mesh network
  *
  * @return    mesh type
  *
@@ -792,7 +794,7 @@ esp_err_t esp_mesh_set_type(mesh_type_t type);
 mesh_type_t esp_mesh_get_type(void);
 
 /**
- * @brief     set max layer configuration(max:15, default:15)
+ * @brief     set max layer configuration(max:25, default:25)
  *
  * @attention This API shall be called before esp_mesh_start().
  *
@@ -1319,6 +1321,33 @@ esp_err_t esp_mesh_scan_get_ap_record(wifi_ap_record_t *ap_record, void *buffer)
  *    - ESP_OK
  */
 esp_err_t esp_mesh_flush_upstream_packets(void);
+
+/**
+ * @brief     get the number of nodes in the subnet of a specific child
+ *
+ * @param     child_mac  an associated child address of this device
+ * @param     nodes_num  pointer to the number of nodes in the subnet of a specific child
+ *
+ * @return
+ *    - ESP_OK
+ *    - ESP_ERR_MESH_NOT_START
+ *    - ESP_ERR_MESH_ARGUMENT
+ */
+esp_err_t esp_mesh_get_subnet_nodes_num(const mesh_addr_t *child_mac, int *nodes_num);
+
+/**
+ * @brief     get nodes in the subnet of a specific child
+ *
+ * @param     child_mac  an associated child address of this device
+ * @param     nodes  pointer to nodes in the subnet of a specific child
+ * @param     nodes_num  the number of nodes in the subnet of a specific child
+ *
+ * @return
+ *    - ESP_OK
+ *    - ESP_ERR_MESH_NOT_START
+ *    - ESP_ERR_MESH_ARGUMENT
+ */
+esp_err_t esp_mesh_get_subnet_nodes_list(const mesh_addr_t *child_mac, mesh_addr_t *nodes, int nodes_num);
 
 #ifdef __cplusplus
 }
