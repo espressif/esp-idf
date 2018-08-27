@@ -562,27 +562,42 @@ print_flash_cmd: partition_table_get_info blank_ota_data
 
 # Check toolchain version using the output of xtensa-esp32-elf-gcc --version command.
 # The output normally looks as follows
-#     xtensa-esp32-elf-gcc (crosstool-NG crosstool-ng-1.22.0-59-ga194053) 4.8.5
+#     xtensa-esp32-elf-gcc (crosstool-NG crosstool-ng-1.22.0-80-g6c4433a) 5.2.0
 # The part in brackets is extracted into TOOLCHAIN_COMMIT_DESC variable,
 # the part after the brackets is extracted into TOOLCHAIN_GCC_VER.
 ifdef CONFIG_TOOLPREFIX
 ifndef MAKE_RESTARTS
+
+TOOLCHAIN_HEADER := $(shell $(CC) --version | head -1)
+TOOLCHAIN_PATH := $(shell which $(CC))
 TOOLCHAIN_COMMIT_DESC := $(shell $(CC) --version | sed -E -n 's|.*\(crosstool-NG (.*)\).*|\1|gp')
 TOOLCHAIN_GCC_VER := $(shell $(CC) --version | sed -E -n 's|xtensa-esp32-elf-gcc.*\ \(.*\)\ (.*)|\1|gp')
 
 # Officially supported version(s)
 include $(IDF_PATH)/tools/toolchain_versions.mk
 
+ifndef IS_BOOTLOADER_BUILD
+$(info Toolchain path: $(TOOLCHAIN_PATH))
+endif
+
 ifdef TOOLCHAIN_COMMIT_DESC
 ifneq ($(TOOLCHAIN_COMMIT_DESC), $(SUPPORTED_TOOLCHAIN_COMMIT_DESC))
 $(info WARNING: Toolchain version is not supported: $(TOOLCHAIN_COMMIT_DESC))
 $(info Expected to see version: $(SUPPORTED_TOOLCHAIN_COMMIT_DESC))
 $(info Please check ESP-IDF setup instructions and update the toolchain, or proceed at your own risk.)
+else
+ifndef IS_BOOTLOADER_BUILD
+$(info Toolchain version: $(TOOLCHAIN_COMMIT_DESC))
+endif
 endif
 ifeq (,$(findstring $(TOOLCHAIN_GCC_VER), $(SUPPORTED_TOOLCHAIN_GCC_VERSIONS)))
 $(info WARNING: Compiler version is not supported: $(TOOLCHAIN_GCC_VER))
 $(info Expected to see version(s): $(SUPPORTED_TOOLCHAIN_GCC_VERSIONS))
 $(info Please check ESP-IDF setup instructions and update the toolchain, or proceed at your own risk.)
+else
+ifndef IS_BOOTLOADER_BUILD
+$(info Compiler version: $(TOOLCHAIN_GCC_VER))
+endif
 endif
 else
 $(info WARNING: Failed to find Xtensa toolchain, may need to alter PATH or set one in the configuration menu)
