@@ -181,9 +181,15 @@ typedef void (tBTM_BLE_RESOLVE_CBACK) (void *match_rec, void *p);
 
 typedef void (tBTM_BLE_ADDR_CBACK) (BD_ADDR_PTR static_random, void *p);
 
+#define BTM_BLE_GAP_ADDR_BIT_RANDOM      (1<<0)
+#define BTM_BLE_GAP_ADDR_BIT_RESOLVABLE  (1<<1)
+
 /* random address management control block */
 typedef struct {
     tBLE_ADDR_TYPE              own_addr_type;         /* local device LE address type */
+    UINT8                       exist_addr_bit;
+    BD_ADDR                     static_rand_addr;
+    BD_ADDR                     resolvale_addr;
     BD_ADDR                     private_addr;
     BD_ADDR                     random_bda;
     BOOLEAN                     busy;
