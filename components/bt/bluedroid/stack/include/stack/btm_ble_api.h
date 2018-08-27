@@ -996,6 +996,8 @@ tBTM_STATUS BTM_BleWriteAdvDataRaw(UINT8 *p_raw_adv, UINT32 raw_adv_len);
 
 tBTM_STATUS BTM_BleSetRandAddress(BD_ADDR rand_addr);
 
+void BTM_BleClearRandAddress(void);
+
 
 /*******************************************************************************
 **

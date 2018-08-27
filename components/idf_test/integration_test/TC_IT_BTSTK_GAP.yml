@@ -808,9 +808,7 @@ test cases:
   - - "SSC SSC2 bleadv -D -z start -t 0 -o 2"
     - ["R SSC2 C +BLEADV:OK"]
   - - "SSC SSC1 blescan -D -z start"
-    - ["R SSC1 P <dut2_bt_mac> C Complete"]
-  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ["R SSC1 C +BLE:GattcConnect,OK", "R SSC2 C +BLE:GattsConnect"]
+    - ["R SSC1 NP <dut2_bt_mac> C Complete"]
 - ID: BTSTK_GAP_03009
   <<: *GAP_CASE
   test point 2: BLE GAP set advertise param
@@ -860,7 +858,6 @@ test cases:
     - ["R SSC1 C +BLE:GattcConnect,OK", "R SSC2 C +BLE:GattsConnect"]
 - ID: BTSTK_GAP_03010
   <<: *GAP_CASE
-  CI ready: "No"  # can't restore to use public address after set to use private address
   test point 2: BLE GAP set advertise param
   summary: ble adv with privacy address and RPA_RANDOM
   initial condition: BLE_INIT_SMP
@@ -881,12 +878,9 @@ test cases:
   - - "SSC SSC2 bleadv -D -z start -t 0 -o 3"
     - ["R SSC2 C +BLEADV:OK"]
   - - "SSC SSC1 blescan -D -z start"
-    - ["R SSC1 P <dut2_bt_mac> C Complete"]
-  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ["R SSC1 C +BLE:GattcConnect,OK", "R SSC2 C +BLE:GattsConnect"]
+    - ["R SSC1 NP <dut2_bt_mac> C Complete"]
 - ID: BTSTK_GAP_03011
   <<: *GAP_CASE
-  CI ready: "No"  # can't restore to use public address after set to use private address
   test point 2: BLE GAP set advertise param
   summary: ble set adv owner address type as RPA_RANDOM
   initial condition: BLE_INIT_SMP

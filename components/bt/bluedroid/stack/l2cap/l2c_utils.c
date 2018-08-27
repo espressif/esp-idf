@@ -2211,13 +2211,17 @@ BOOLEAN l2cu_create_conn (tL2C_LCB *p_lcb, tBT_TRANSPORT transport)
 #if (BLE_INCLUDED == TRUE)
     tBT_DEVICE_TYPE     dev_type;
     tBLE_ADDR_TYPE      addr_type = p_lcb->open_addr_type;
-    BTM_ReadDevInfo(p_lcb->remote_bd_addr, &dev_type, &addr_type);
+    if(addr_type == BLE_ADDR_UNKNOWN_TYPE) {
+        BTM_ReadDevInfo(p_lcb->remote_bd_addr, &dev_type, &addr_type);
+    }
 
     if (transport == BT_TRANSPORT_LE) {
         if (!controller_get_interface()->supports_ble()) {
             return FALSE;
         }
-
+        if(addr_type > BLE_ADDR_TYPE_MAX) {
+            addr_type = BLE_ADDR_PUBLIC;
+        }
         p_lcb->ble_addr_type = addr_type;
         p_lcb->transport = BT_TRANSPORT_LE;
 
