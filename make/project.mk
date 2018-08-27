@@ -273,9 +273,27 @@ COMMON_WARNING_FLAGS = -Wall -Werror=all \
 	-Wno-error=unused-function \
 	-Wno-error=unused-but-set-variable \
 	-Wno-error=unused-variable \
+	-Wno-error=unused-const-variable \
 	-Wno-error=deprecated-declarations \
 	-Wextra \
 	-Wno-unused-parameter -Wno-sign-compare
+
+ifdef CONFIG_DISABLE_GCC8_WARNINGS
+COMMON_WARNING_FLAGS += -Wno-parentheses \
+	-Wno-sizeof-pointer-memaccess \
+	-Wno-clobbered \
+	-Wno-format-overflow \
+	-Wno-stringop-truncation \
+	-Wno-misleading-indentation \
+	-Wno-cast-function-type \
+	-Wno-implicit-fallthrough \
+	-Wno-unused-const-variable \
+	-Wno-switch-unreachable \
+	-Wno-format-truncation \
+	-Wno-memset-elt-size \
+	-Wno-int-in-bool-context
+endif
+
 
 ifdef CONFIG_WARN_WRITE_STRINGS
 COMMON_WARNING_FLAGS += -Wwrite-strings
