@@ -48,6 +48,7 @@ static void copy_app_partition(esp_ota_handle_t update_handle, const esp_partiti
     spi_flash_munmap(data_map);
 }
 
+#if defined(CONFIG_BOOTLOADER_FACTORY_RESET) || defined(CONFIG_BOOTLOADER_APP_TEST)
 /* @brief Copies partition from source partition to destination partition.
  *
  * Partitions can be of any types and subtypes.
@@ -63,6 +64,7 @@ static void copy_partition(const esp_partition_t *dst_partition, const esp_parti
     TEST_ESP_OK(esp_partition_write(dst_partition, 0, (const void *)partition_bin, dst_partition->size));
     spi_flash_munmap(data_map);
 }
+#endif
 
 /* @brief Get the next partition of OTA for the update.
  *
@@ -202,6 +204,7 @@ static void corrupt_ota_data(corrupt_ota_data_t err)
     write_ota_data(otadata_partition, &ota_data[1], 1);
 }
 
+#if defined(CONFIG_BOOTLOADER_FACTORY_RESET) || defined(CONFIG_BOOTLOADER_APP_TEST)
 /* @brief Sets the pin number to output and sets output level as low. After reboot (deep sleep) this pin keep the same level.
  *
  * The output level of the pad will be force locked and can not be changed.
@@ -232,7 +235,7 @@ static void reset_output_pin(uint32_t num_pin)
     TEST_ESP_OK(gpio_hold_dis(num_pin));
     TEST_ESP_OK(gpio_reset_pin(num_pin));
 }
-
+#endif
 
 
 /* @brief Checks and prepares the partition so that the factory app is launched after that.
@@ -363,6 +366,7 @@ static void test_flow3(void)
 // 4 Stage: run OTA0    -> check it -> erase OTA_DATA for next tests    -> PASS
 TEST_CASE_MULTIPLE_STAGES("Switching between factory, OTA0, OTA1, currupt ota_sec2, OTA0", "[app_update][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow3, test_flow3, test_flow3, test_flow3);
 
+#ifdef CONFIG_BOOTLOADER_FACTORY_RESET
 #define STORAGE_NAMESPACE "update_ota"
 
 static void test_flow4(void)
@@ -423,13 +427,14 @@ static void test_flow4(void)
             break;
     }
 }
-
 // 1 Stage: After POWER_RESET erase OTA_DATA for this test           -> reboot through deep sleep.
 // 2 Stage: run factory -> check it -> copy factory to OTA0          -> reboot  --//--
 // 3 Stage: run OTA0    -> check it -> set_pin_factory_reset         -> reboot  --//--
 // 4 Stage: run factory -> check it -> erase OTA_DATA for next tests -> PASS
 TEST_CASE_MULTIPLE_STAGES("Switching between factory, OTA0, sets pin_factory_reset, factory", "[app_update][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow4, test_flow4, test_flow4);
+#endif
 
+#ifdef CONFIG_BOOTLOADER_APP_TEST
 static void test_flow5(void)
 {
     boot_count++;
@@ -470,3 +475,4 @@ static void test_flow5(void)
 // 3 Stage: run test       -> check it -> reset pin_test_app                        -> reboot  --//--
 // 4 Stage: run factory    -> check it -> erase OTA_DATA for next tests             -> PASS
 TEST_CASE_MULTIPLE_STAGES("Switching between factory, test, factory", "[app_update][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow5, test_flow5, test_flow5);
+#endif
