@@ -218,7 +218,7 @@ esp_err_t IRAM_ATTR spi_flash_erase_range(uint32_t start_addr, uint32_t size)
     if (rc == ESP_ROM_SPIFLASH_RESULT_OK) {
         for (size_t sector = start; sector != end && rc == ESP_ROM_SPIFLASH_RESULT_OK; ) {
             spi_flash_guard_start();
-            if (sector % sectors_per_block == 0 && end - sector > sectors_per_block) {
+            if (sector % sectors_per_block == 0 && end - sector >= sectors_per_block) {
                 rc = esp_rom_spiflash_erase_block(sector / sectors_per_block);
                 sector += sectors_per_block;
                 COUNTER_ADD_BYTES(erase, sectors_per_block * SPI_FLASH_SEC_SIZE);
