@@ -103,11 +103,14 @@ esp_deep_sleep_wake_stub_fn_t esp_get_deep_sleep_wake_stub(void)
     REG_WRITE(RTC_MEMORY_CRC_REG, stored_crc);
     _lock_release(&lock_rtc_memory_crc);
 
-    if(stored_crc == calc_crc) {
-        return (esp_deep_sleep_wake_stub_fn_t)REG_READ(RTC_ENTRY_ADDR_REG);
-    } else {
+    if(stored_crc != calc_crc) {
         return NULL;
     }
+    esp_deep_sleep_wake_stub_fn_t stub_ptr = (esp_deep_sleep_wake_stub_fn_t) REG_READ(RTC_ENTRY_ADDR_REG);
+    if (!esp_ptr_executable(stub_ptr)) {
+        return NULL;
+    }
+    return stub_ptr;
 }
 
 void esp_set_deep_sleep_wake_stub(esp_deep_sleep_wake_stub_fn_t new_stub)
