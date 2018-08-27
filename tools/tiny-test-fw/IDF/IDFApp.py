@@ -32,7 +32,12 @@ class IDFApp(App.BaseApp):
         self.idf_path = self.get_sdk_path()
         self.binary_path = self.get_binary_path(app_path)
         assert os.path.exists(self.binary_path)
-        assert self.IDF_DOWNLOAD_CONFIG_FILE in os.listdir(self.binary_path)
+        try:
+            assert self.IDF_DOWNLOAD_CONFIG_FILE in os.listdir(self.binary_path)
+        except AssertionError as e:
+            e.args += ("{} doesn't exist. Try to run 'make print_flash_cmd | tail -n 1 > {}/{}' for resolving the issue"
+                       "".format(self.IDF_DOWNLOAD_CONFIG_FILE, self.binary_path, self.IDF_DOWNLOAD_CONFIG_FILE),)
+            raise
         self.esptool, self.partition_tool = self.get_tools()
 
     @classmethod
