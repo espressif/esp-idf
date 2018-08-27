@@ -318,8 +318,6 @@ test_fatfs_on_host:
   only:
     # can only be triggered
     - triggers
-  variables:
-    BOT_NEEDS_TRIGGER_BY_NAME: 1
   script:
     - export AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 && export AFL_SKIP_CPUFREQ=1
     - cd ${FUZZER_TEST_DIR}
@@ -332,23 +330,27 @@ test_fatfs_on_host:
 test_mdns_fuzzer_on_host:
   <<: *host_fuzzer_test_template
   variables:
+    BOT_NEEDS_TRIGGER_BY_NAME: 1
     FUZZER_TEST_DIR: components/mdns/test_afl_fuzz_host
 
 test_lwip_dns_fuzzer_on_host:
   <<: *host_fuzzer_test_template
   variables:
+    BOT_NEEDS_TRIGGER_BY_NAME: 1
     FUZZER_TEST_DIR: components/lwip/test_afl_host
     FUZZER_PARAMS: MODE=dns
 
 test_lwip_dhcp_fuzzer_on_host:
   <<: *host_fuzzer_test_template
   variables:
+    BOT_NEEDS_TRIGGER_BY_NAME: 1
     FUZZER_TEST_DIR: components/lwip/test_afl_host
     FUZZER_PARAMS: MODE=dhcp_client
 
 test_lwip_dhcps_fuzzer_on_host:
   <<: *host_fuzzer_test_template
   variables:
+    BOT_NEEDS_TRIGGER_BY_NAME: 1
     FUZZER_TEST_DIR: components/lwip/test_afl_host
     FUZZER_PARAMS: MODE=dhcp_server
 
