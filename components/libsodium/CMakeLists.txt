@@ -167,3 +167,9 @@ if(GCC_NOT_5_2_0)
         -Wno-implicit-fallthrough
         )
 endif()
+
+set_source_files_properties(
+    ${SRC}/randombytes/randombytes.c
+    PROPERTIES COMPILE_FLAGS
+    -DRANDOMBYTES_DEFAULT_IMPLEMENTATION
+)

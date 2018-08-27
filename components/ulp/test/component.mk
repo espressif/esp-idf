@@ -1,4 +1,4 @@
-ULP_APP_NAME = ulp_test
+ULP_APP_NAME = ulp_test_app
 
 ULP_S_SOURCES = $(addprefix $(COMPONENT_PATH)/ulp/, \
 	test_jumps.S \
