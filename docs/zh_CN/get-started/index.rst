@@ -152,9 +152,7 @@ ESP-IDF 所依赖的 Python 软件包位于 ``$IDF_PATH/requirements.txt`` 文�
 
 .. note::
 
-    Please invoke that version of the Python interpreter which you will be using with ESP-IDF. The version of the
-    interpreter can be checked by running command ``python --version`` and depending on the result, you might want to
-    use ``python2``, ``python2.7`` or similar instead of ``python``, e.g.::
+    请调用 ESP-IDF 使用的相同版本的 Python 解释器，解释器的版本号可以通过运行命令 ``python --version`` 来获得，根据结果，您可能要使用 ``python2``, ``python2.7`` 或者类似的名字而不是 ``python``,例如::
 
         sudo python2.7 -m pip install -r $IDF_PATH/requirements.txt
 
