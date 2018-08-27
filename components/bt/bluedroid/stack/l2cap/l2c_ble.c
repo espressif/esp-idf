@@ -805,7 +805,7 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
     memcpy(peer_addr, p_lcb->remote_bd_addr, BD_ADDR_LEN);
 
 #if ( (defined BLE_PRIVACY_SPT) && (BLE_PRIVACY_SPT == TRUE))
-    own_addr_type = btm_cb.ble_ctr_cb.privacy_mode ? BLE_ADDR_RANDOM : BLE_ADDR_PUBLIC;
+    own_addr_type = btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type;
     if(dev_rec_exist) {
         // if the current address information is valid, get the real address information
         if(p_dev_rec->ble.current_addr_valid) {

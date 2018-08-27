@@ -765,6 +765,8 @@ void bta_dm_remove_device(tBTA_DM_MSG *p_data)
     if (continue_delete_dev) {
         bta_dm_process_remove_device(p_dev->bd_addr, transport);
     }
+
+    BTM_ClearInqDb (p_dev->bd_addr);
 }
 
 /*******************************************************************************
@@ -4685,6 +4687,12 @@ void bta_dm_ble_set_rand_address(tBTA_DM_MSG *p_data)
         (*p_data->set_addr.p_set_rand_addr_cback)(status);
     }
 
+}
+
+void bta_dm_ble_clear_rand_address(tBTA_DM_MSG *p_data)
+{
+    UNUSED(p_data);
+    BTM_BleClearRandAddress();
 }
 
 /*******************************************************************************
