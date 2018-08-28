@@ -176,6 +176,7 @@ PROVIDE ( lld_evt_elt_wait_get = 0x400468e4 );
 PROVIDE ( lld_evt_get_next_free_slot = 0x4004692c );
 PROVIDE ( lld_pdu_adv_pk_desc_tab = 0x3ff98c70 );
 PROVIDE ( lld_pdu_llcp_pk_desc_tab = 0x3ff98b68 );
+PROVIDE ( lld_pdu_tx_flush_list = 0x4004a760 );
 PROVIDE ( lld_pdu_pack = 0x4004ab14 );
 PROVIDE ( LLM_AA_CT1 = 0x3ff98d8a );
 PROVIDE ( LLM_AA_CT2 = 0x3ff98d88 );
