@@ -42,6 +42,8 @@ extern "C" {
  * @brief Initializer macros for timing configuration structure
  *
  * The following initializer macros offer commonly found bit rates.
+ *
+ * @note These timing values are based on the assumption APB clock is at 80MHz
  */
 #define CAN_TIMING_CONFIG_25KBITS()     {.brp = 128, .tseg_1 = 16, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
 #define CAN_TIMING_CONFIG_50KBITS()     {.brp = 80, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}

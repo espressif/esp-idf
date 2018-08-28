@@ -120,7 +120,7 @@ void app_main()
     xTaskCreatePinnedToCore(can_transmit_task, "CAN_tx", 4096, NULL, TX_TASK_PRIO, NULL, tskNO_AFFINITY);
 
     //Install CAN driver
-    ESP_ERROR_CHECK(can_driver_install(&g_config, & t_config, &f_config));
+    ESP_ERROR_CHECK(can_driver_install(&g_config, &t_config, &f_config));
     ESP_LOGI(EXAMPLE_TAG, "Driver installed");
 
     //Start control task
