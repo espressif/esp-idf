@@ -223,7 +223,9 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config);
   *
   * @attention 1. This API should be called if you want to remove WiFi driver from the system
   *
-  * @return ESP_OK: succeed
+  * @return 
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
   */
 esp_err_t esp_wifi_deinit(void);
 
