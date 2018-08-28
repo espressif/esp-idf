@@ -31,13 +31,13 @@ struct dma_desc {
     uint32_t desc3;
 };
 
-struct dma_extended_desc {
+typedef struct dma_extended_desc {
     struct dma_desc basic;
     uint32_t desc4;
     uint32_t desc5;
     uint32_t desc6;
     uint32_t desc7;
-};
+}dma_extended_desc_t;
 
 void emac_enable_clk(bool enable);
 void emac_reset(void);
