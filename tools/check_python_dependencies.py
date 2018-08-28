@@ -16,6 +16,7 @@
 
 import os
 import sys
+import argparse
 try:
     import pkg_resources
 except:
@@ -24,11 +25,17 @@ except:
            'setting up the required packages.')
     sys.exit(1)
 
-req_file = '{}/requirements.txt'.format(os.getenv("IDF_PATH"))
-
 if __name__ == "__main__":
+    idf_path = os.getenv("IDF_PATH")
+
+    parser = argparse.ArgumentParser(description='ESP32 Python package dependency checker')
+    parser.add_argument('--requirements', '-r',
+            help='Path to the requrements file',
+            default=idf_path + '/requirements.txt')
+    args = parser.parse_args()
+
     not_satisfied = []
-    with open(req_file) as f:
+    with open(args.requirements) as f:
         for line in f:
             line = line.strip()
             try:
@@ -40,7 +47,7 @@ if __name__ == "__main__":
         print('The following Python requirements are not satisfied:')
         for requirement in not_satisfied:
             print(requirement)
-        print('Please run "{} -m pip install -r {}" for resolving the issue.'.format(sys.executable, req_file))
+        print('Please run "{} -m pip install -r {}" for resolving the issue.'.format(sys.executable, args.requirements))
         sys.exit(1)
 
-    print('Python requirements are satisfied.')
+    print('Python requirements from {} are satisfied.'.format(args.requirements))

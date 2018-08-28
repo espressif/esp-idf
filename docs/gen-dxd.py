@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+#
 # gen-dxd.py - Generate Doxygen Directives
 #
 # This code is in the Public Domain (or CC0 licensed, at your option.)

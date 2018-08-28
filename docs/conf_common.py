@@ -30,6 +30,11 @@ builddir = builddir
 if 'BUILDDIR' in os.environ:
     builddir = os.environ['BUILDDIR']
 
+def call_with_python(cmd):
+    # using sys.executable ensures that the scripts are called with the same Python interpreter
+    if os.system('{} {}'.format(sys.executable, cmd)) != 0:
+        raise RuntimeError('{} failed'.format(cmd))
+
 # Call Doxygen to get XML files from the header files
 print("Calling Doxygen to generate latest XML files")
 if os.system("doxygen ../Doxyfile") != 0:
@@ -40,20 +45,17 @@ if os.system("doxygen ../Doxyfile") != 0:
 copy_if_modified('xml/', 'xml_in/')
 
 # Generate 'api_name.inc' files using the XML files by Doxygen
-if os.system('python ../gen-dxd.py') != 0:
-    raise RuntimeError('gen-dxd.py failed')
+call_with_python('../gen-dxd.py')
 
 # Generate 'kconfig.inc' file from components' Kconfig files
 kconfig_inc_path = '{}/inc/kconfig.inc'.format(builddir)
-if os.system('python ../gen-kconfig-doc.py > ' + kconfig_inc_path + '.in') != 0:
-    raise RuntimeError('gen-kconfig-doc.py failed')
+call_with_python('../gen-kconfig-doc.py > ' + kconfig_inc_path + '.in')
 
 copy_if_modified(kconfig_inc_path + '.in', kconfig_inc_path)
 
 # Generate 'esp_err_defs.inc' file with ESP_ERR_ error code definitions
 esp_err_inc_path = '{}/inc/esp_err_defs.inc'.format(builddir)
-if os.system('python ../../tools/gen_esp_err_to_name.py --rst_output ' + esp_err_inc_path + '.in') != 0:
-    raise RuntimeError('gen_esp_err_to_name.py failed')
+call_with_python('../../tools/gen_esp_err_to_name.py --rst_output ' + esp_err_inc_path + '.in')
 copy_if_modified(esp_err_inc_path + '.in', esp_err_inc_path)
 
 # Generate version-related includes
@@ -62,8 +64,7 @@ copy_if_modified(esp_err_inc_path + '.in', esp_err_inc_path)
 def generate_version_specific_includes(app):
     print("Generating version-specific includes...")
     version_tmpdir = '{}/version_inc'.format(builddir)
-    if os.system('python ../gen-version-specific-includes.py {} {}'.format(app.config.language, version_tmpdir)):
-        raise RuntimeError('gen-version-specific-includes.py failed')
+    call_with_python('../gen-version-specific-includes.py {} {}'.format(app.config.language, version_tmpdir))
     copy_if_modified(version_tmpdir, '{}/inc'.format(builddir))
 
 

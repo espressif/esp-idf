@@ -16,9 +16,20 @@
 
 from __future__ import print_function
 from __future__ import unicode_literals
-from builtins import str
-from builtins import range
-from builtins import object
+import sys
+try:
+    from builtins import str
+    from builtins import range
+    from builtins import object
+except ImportError:
+    # This should not happen because the Python packages are checked before invoking this script. However, here is
+    # some output which should help if we missed something.
+    print('Import has failed probably because of the missing "future" package. Please install all the packages for '
+          'interpreter {} from the requirements.txt file.'.format(sys.executable))
+    # The path to requirements.txt is not provided because this script could be invoked from an IDF project (then the
+    # requirements.txt from the IDF_PATH should be used) or from the documentation project (then the requirements.txt
+    # for the documentation directory should be used).
+    sys.exit(1)
 from io import open
 import os
 import argparse
