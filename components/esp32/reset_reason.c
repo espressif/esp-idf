@@ -17,6 +17,8 @@
 #include "rom/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 
+static void esp_reset_reason_clear_hint();
+
 static esp_reset_reason_t s_reset_reason;
 
 static esp_reset_reason_t get_reset_reason(RESET_REASON rtc_reset_reason, esp_reset_reason_t reset_reason_hint)
@@ -69,9 +71,12 @@ static esp_reset_reason_t get_reset_reason(RESET_REASON rtc_reset_reason, esp_re
 
 static void __attribute__((constructor)) esp_reset_reason_init(void)
 {
+    esp_reset_reason_t hint = esp_reset_reason_get_hint();
     s_reset_reason = get_reset_reason(rtc_get_reset_reason(PRO_CPU_NUM),
-                                      esp_reset_reason_get_hint());
-    esp_reset_reason_set_hint(ESP_RST_UNKNOWN);
+                                      hint);
+    if (hint != ESP_RST_UNKNOWN) {
+        esp_reset_reason_clear_hint();
+    }
 }
 
 esp_reset_reason_t esp_reset_reason(void)
@@ -114,3 +119,8 @@ esp_reset_reason_t IRAM_ATTR esp_reset_reason_get_hint(void)
     }
     return (esp_reset_reason_t) low;
 }
+static void esp_reset_reason_clear_hint()
+{
+    REG_WRITE(RTC_RESET_CAUSE_REG, 0);
+}
+
