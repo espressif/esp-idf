@@ -579,7 +579,7 @@ TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
     ESP_LOGI(TAG, "iram: %p, dram: %p", data_iram, data_dram);
     ESP_LOGI(TAG, "drom: %p, malloc: %p", data_drom, data_malloc);
 
-    memset(trans, 0, 6*sizeof(spi_transaction_t));
+    memset(trans, 0, sizeof(trans));
 
     trans[0].length = 320*8,
     trans[0].tx_buffer = data_iram;
