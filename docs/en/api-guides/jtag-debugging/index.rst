@@ -281,6 +281,7 @@ This section provides collection of links to all tips and quirks referred to fro
 
 * :ref:`jtag-debugging-tip-breakpoints`
 * :ref:`jtag-debugging-tip-where-breakpoints`
+* :ref:`jtag-debugging-tip-flash-mappings`
 * :ref:`jtag-debugging-tip-why-next-works-as-step`
 * :ref:`jtag-debugging-tip-code-options`
 * :ref:`jtag-debugging-tip-freertos-support`
