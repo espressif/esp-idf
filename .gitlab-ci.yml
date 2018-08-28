@@ -519,6 +519,20 @@ check_permissions:
   script:
     - tools/ci/check-executable.sh
 
+check_examples_cmake_make:
+  stage: deploy
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - build
+  except:
+    - master
+    - /^release\/v/
+    - /^v\d+\.\d+(\.\d+)?($|-)/
+  dependencies: []
+  before_script: *do_nothing_before
+  script:
+    - tools/ci/check_examples_cmake_make.sh
+
 check_submodule_sync:
   stage: deploy
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG

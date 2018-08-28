@@ -49,6 +49,7 @@ tools/unit-test-app/unit_test.py
 tools/windows/eclipse_make.sh
 tools/ci/build_examples_cmake.sh
 tools/ci/test_build_system_cmake.sh
+tools/ci/check_examples_cmake_make.sh
 tools/cmake/convert_to_cmake.py
 tools/cmake/run_cmake_lint.sh
 tools/idf.py
