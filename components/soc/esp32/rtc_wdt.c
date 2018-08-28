@@ -73,7 +73,7 @@ esp_err_t rtc_wdt_set_time(rtc_wdt_stage_t stage, unsigned int timeout_ms)
     if (stage > 3) {
         return ESP_ERR_INVALID_ARG;
     }
-    uint32_t timeout = rtc_clk_slow_freq_get_hz() * timeout_ms / 1000;
+    uint32_t timeout = (uint32_t) ((uint64_t) rtc_clk_slow_freq_get_hz() * timeout_ms / 1000);
     if (stage == RTC_WDT_STAGE0) {
         WRITE_PERI_REG(RTC_CNTL_WDTCONFIG1_REG, timeout);
     } else if (stage == RTC_WDT_STAGE1) {
