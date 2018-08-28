@@ -67,8 +67,11 @@ static void spp_read_handle(void * param)
     spp_wr_task_shut_down();
 }
 
-static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
+static void esp_spp_cb(uint16_t e, void *p)
 {
+    esp_spp_cb_event_t event = e;
+    esp_spp_cb_param_t *param = p;
+
     switch (event) {
     case ESP_SPP_INIT_EVT:
         ESP_LOGI(SPP_TAG, "ESP_SPP_INIT_EVT");
@@ -102,7 +105,7 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
 
 static void esp_spp_stack_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
 {
-    spp_task_work_dispatch((spp_task_cb_t)esp_spp_cb, event, param, sizeof(esp_spp_cb_param_t), NULL);
+    spp_task_work_dispatch(esp_spp_cb, event, param, sizeof(esp_spp_cb_param_t), NULL);
 }
 
 void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
