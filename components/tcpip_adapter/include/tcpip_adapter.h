@@ -96,6 +96,7 @@ typedef enum {
     TCPIP_ADAPTER_IF_STA = 0,     /**< Wi-Fi STA (station) interface */
     TCPIP_ADAPTER_IF_AP,          /**< Wi-Fi soft-AP interface */
     TCPIP_ADAPTER_IF_ETH,         /**< Ethernet interface */
+    TCPIP_ADAPTER_IF_TEST,        /**< tcpip stack test interface */
     TCPIP_ADAPTER_IF_MAX
 } tcpip_adapter_if_t;
 
@@ -692,6 +693,19 @@ esp_err_t tcpip_adapter_get_netif(tcpip_adapter_if_t tcpip_if, void ** netif);
  */
 bool tcpip_adapter_is_netif_up(tcpip_adapter_if_t tcpip_if);
 
+/**
+ * @brief  Cause the TCP/IP stack to start the test interface with specified MAC and IP.
+ * Test interface is used to exercise network stack with injected packets from SW.
+ *
+ * @param[in]  mac Set MAC address of this interface
+ * @param[in]  ip_info Set IP address of this interface
+ *
+ * @return
+ *         - ESP_OK
+ *         - ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
+ *         - ESP_ERR_NO_MEM
+ */
+esp_err_t tcpip_adapter_test_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info);
 
 /**
  * @brief  Install default event handlers for Ethernet interface
