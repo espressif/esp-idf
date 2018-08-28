@@ -2,7 +2,7 @@
 # in this exact order for cmake to work correctly
 cmake_minimum_required(VERSION 3.5)
 
-set(MAIN_SRCS main/ota_example_main.c)
+set(MAIN_SRCS main/app_main.c)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(ota)
+project(spi-slave-sender)
