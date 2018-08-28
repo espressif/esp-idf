@@ -17,6 +17,9 @@ COMPONENT_ADD_LINKER_DEPS := $(patsubst %,$(COMPONENT_PATH)/lib/lib%.a,$(LIBS))
 
 COMPONENT_SUBMODULES += lib
 
+# TODO: annotate fallthroughs in Bluedroid code with comments
+CFLAGS += -Wno-implicit-fallthrough
+
 endif
 
 
