@@ -114,4 +114,10 @@ COMPONENT_SRCDIRS +=    bluedroid/bta/dm                      \
                         bluedroid/utils                       \
                         bluedroid/api                         \
                         bluedroid
+
+bluedroid/bta/sdp/bta_sdp_act.o: CFLAGS += -Wno-unused-const-variable
+bluedroid/btc/core/btc_config.o: CFLAGS += -Wno-unused-const-variable
+bluedroid/stack/btm/btm_sec.o: CFLAGS += -Wno-unused-const-variable
+bluedroid/stack/smp/smp_keys.o: CFLAGS += -Wno-unused-const-variable
+
 endif
