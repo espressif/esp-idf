@@ -1,0 +1,11 @@
+module esp32_netsuite {
+import from tcp_suite all;
+
+control {
+    execute(tc_tcp_002());
+    execute(tc_tcp_003());
+    execute(tc_tcp_004());
+    execute(tc_tcp_005());
+}
+
+}
