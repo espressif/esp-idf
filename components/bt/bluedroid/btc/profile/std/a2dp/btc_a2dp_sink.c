@@ -586,7 +586,7 @@ static void btc_a2dp_sink_handle_inc_media(tBT_SBC_HDR *p_msg)
     OI_STATUS status;
     int num_sbc_frames = p_msg->num_frames_to_be_processed;
     UINT32 sbc_frame_len = p_msg->len - 1;
-    availPcmBytes = 2 * sizeof(pcmData);
+    availPcmBytes = sizeof(pcmData);
 
     /* XXX: Check if the below check is correct, we are checking for peer to be sink when we are sink */
     if (btc_av_get_peer_sep() == AVDT_TSEP_SNK || (btc_aa_snk_cb.rx_flush)) {
@@ -617,7 +617,7 @@ static void btc_a2dp_sink_handle_inc_media(tBT_SBC_HDR *p_msg)
         p_msg->len = sbc_frame_len + 1;
     }
 
-    btc_a2d_data_cb_to_app((uint8_t *)pcmData, (2 * sizeof(pcmData) - availPcmBytes));
+    btc_a2d_data_cb_to_app((uint8_t *)pcmData, (sizeof(pcmData) - availPcmBytes));
 }
 
 /*******************************************************************************
