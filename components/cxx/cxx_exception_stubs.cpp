@@ -36,42 +36,26 @@ extern "C" void __cxx_fatal_exception_int(int i)
     abort();
 }
 
+#if !GCC_NOT_5_2_0
 void std::__throw_bad_exception(void) __attribute__((alias("__cxx_fatal_exception")));
-
 void std::__throw_bad_alloc(void) __attribute__((alias("__cxx_fatal_exception")));
-
 void std::__throw_bad_cast(void) __attribute__((alias("__cxx_fatal_exception")));
-
 void std::__throw_bad_typeid(void) __attribute__((alias("__cxx_fatal_exception")));
-
 void std::__throw_logic_error(const char*) __attribute__((alias("__cxx_fatal_exception_message")));
-
 void std::__throw_domain_error(const char*) __attribute__((alias("__cxx_fatal_exception_message")));
-
 void std::__throw_invalid_argument(const char*) __attribute__((alias("__cxx_fatal_exception_message")));
-
 void std::__throw_length_error(const char*) __attribute__((alias("__cxx_fatal_exception_message")));
-
 void std::__throw_out_of_range(const char*) __attribute__((alias("__cxx_fatal_exception_message")));
-
 void std::__throw_out_of_range_fmt(const char*, ...) __attribute__((alias("__cxx_fatal_exception_message_va")));
-
 void std::__throw_runtime_error(const char*) __attribute__((alias("__cxx_fatal_exception_message")));
-
 void std::__throw_range_error(const char*) __attribute__((alias("__cxx_fatal_exception_message")));
-
 void std::__throw_overflow_error(const char*) __attribute__((alias("__cxx_fatal_exception_message")));
-
 void std::__throw_underflow_error(const char*) __attribute__((alias("__cxx_fatal_exception_message")));
-
 void std::__throw_ios_failure(const char*) __attribute__((alias("__cxx_fatal_exception_message")));
-
 void std::__throw_system_error(int) __attribute__((alias("__cxx_fatal_exception_int")));
-
 void std::__throw_bad_function_call(void) __attribute__((alias("__cxx_fatal_exception")));
-
 void std::__throw_future_error(int) __attribute__((alias("__cxx_fatal_exception_int")));
-
+#endif
 
 /* The following definitions are needed because libstdc++ is also compiled with
    __throw_exception_again defined to throw, and some other exception code in a few places.
