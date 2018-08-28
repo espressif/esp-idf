@@ -1291,7 +1291,9 @@ void bta_gattc_get_db_with_opration(UINT16 conn_id,
     tBTA_GATTC_CLCB *p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
 
     if (p_clcb == NULL) {
-        return NULL;
+        *count = 0;
+        *char_db = NULL;
+        return;
     }
 
     tBTA_GATTC_SERV *p_srcb = p_clcb->p_srcb;
@@ -1671,7 +1673,8 @@ void bta_gattc_get_db_size_with_type_handle(UINT16 conn_id, bt_gatt_db_attribute
     tBTA_GATTC_CLCB *p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
 
     if (p_clcb == NULL) {
-        return NULL;
+        *count = 0;
+        return;
     }
     
     tBTA_GATTC_SERV *p_srcb = p_clcb->p_srcb;
