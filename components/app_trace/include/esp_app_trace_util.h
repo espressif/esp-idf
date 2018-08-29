@@ -41,6 +41,7 @@ static inline void esp_apptrace_tmo_init(esp_apptrace_tmo_t *tmo, uint32_t user_
 {
     tmo->start = portGET_RUN_TIME_COUNTER_VALUE();
     tmo->tmo = user_tmo;
+    tmo->elapsed = 0;
 }
 
 /**

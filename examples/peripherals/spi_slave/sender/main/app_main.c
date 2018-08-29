@@ -118,8 +118,8 @@ void app_main()
     };
 
     int n=0;
-    char sendbuf[128]="";
-    char recvbuf[128]="";
+    char sendbuf[128] = {0};
+    char recvbuf[128] = {0};
     spi_transaction_t t;
     memset(&t, 0, sizeof(t));
 
@@ -143,8 +143,12 @@ void app_main()
     xSemaphoreGive(rdySem);
 
     while(1) {
-        snprintf(sendbuf, 128, "Sender, transmission no. %04i. Last time, I received: \"%s\"", n, recvbuf);
-        t.length=128*8; //128 bytes
+        int res = snprintf(sendbuf, sizeof(sendbuf),
+                "Sender, transmission no. %04i. Last time, I received: \"%s\"", n, recvbuf);
+        if (res >= sizeof(sendbuf)) {
+            printf("Data truncated\n");
+        }
+        t.length=sizeof(sendbuf)*8;
         t.tx_buffer=sendbuf;
         t.rx_buffer=recvbuf;
         //Wait for slave to be ready for next byte before sending
