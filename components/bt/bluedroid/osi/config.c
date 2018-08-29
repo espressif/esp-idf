@@ -336,7 +336,8 @@ static int get_config_size_from_flash(nvs_handle fp)
     assert(fp != 0);
 
     esp_err_t err;
-    char *keyname = osi_calloc(sizeof(CONFIG_KEY) + 1);
+    const size_t keyname_bufsz = sizeof(CONFIG_KEY) + 5 + 1; // including log10(sizeof(i))
+    char *keyname = osi_calloc(keyname_bufsz);
     if (!keyname){
         OSI_TRACE_ERROR("%s, malloc error\n", __func__);
         return 0;
@@ -344,7 +345,7 @@ static int get_config_size_from_flash(nvs_handle fp)
     size_t length = CONFIG_FILE_DEFAULE_LENGTH;
     size_t total_length = 0;
     uint16_t i = 0;
-    snprintf(keyname, sizeof(CONFIG_KEY) + 1, "%s%d", CONFIG_KEY, 0);
+    snprintf(keyname, keyname_bufsz, "%s%d", CONFIG_KEY, 0);
     err = nvs_get_blob(fp, keyname, NULL, &length);
     if (err == ESP_ERR_NVS_NOT_FOUND) {
         osi_free(keyname);
@@ -358,7 +359,7 @@ static int get_config_size_from_flash(nvs_handle fp)
     total_length += length;
     while (length == CONFIG_FILE_MAX_SIZE) {
         length = CONFIG_FILE_DEFAULE_LENGTH;
-        snprintf(keyname, sizeof(CONFIG_KEY) + 1, "%s%d", CONFIG_KEY, ++i);
+        snprintf(keyname, keyname_bufsz, "%s%d", CONFIG_KEY, ++i);
         err = nvs_get_blob(fp, keyname, NULL, &length);
 
         if (err == ESP_ERR_NVS_NOT_FOUND) {
@@ -385,7 +386,8 @@ bool config_save(const config_t *config, const char *filename)
     int err_code = 0;
     nvs_handle fp;
     char *line = osi_calloc(1024);
-    char *keyname = osi_calloc(sizeof(CONFIG_KEY) + 1);
+    const size_t keyname_bufsz = sizeof(CONFIG_KEY) + 5 + 1; // including log10(sizeof(i))
+    char *keyname = osi_calloc(keyname_bufsz);
     int config_size = get_config_size(config);
     char *buf = osi_calloc(config_size + 100);
     if (!line || !buf || !keyname) {
@@ -430,7 +432,7 @@ bool config_save(const config_t *config, const char *filename)
     }
     buf[w_cnt_total] = '\0';
     if (w_cnt_total < CONFIG_FILE_MAX_SIZE) {
-        snprintf(keyname, sizeof(CONFIG_KEY)+1, "%s%d", CONFIG_KEY, 0);
+        snprintf(keyname, keyname_bufsz, "%s%d", CONFIG_KEY, 0);
         err = nvs_set_blob(fp, keyname, buf, w_cnt_total);
         if (err != ESP_OK) {
             nvs_close(fp);
@@ -441,7 +443,7 @@ bool config_save(const config_t *config, const char *filename)
         uint count = (w_cnt_total / CONFIG_FILE_MAX_SIZE);
         for (int i = 0; i <= count; i++)
         {
-            snprintf(keyname, sizeof(CONFIG_KEY)+1, "%s%d", CONFIG_KEY, i);
+            snprintf(keyname, keyname_bufsz, "%s%d", CONFIG_KEY, i);
             if (i == count) {
                 err = nvs_set_blob(fp, keyname, buf + i*CONFIG_FILE_MAX_SIZE, w_cnt_total - i*CONFIG_FILE_MAX_SIZE);
                 OSI_TRACE_DEBUG("save keyname = %s, i = %d, %d\n", keyname, i, w_cnt_total - i*CONFIG_FILE_MAX_SIZE);
@@ -518,14 +520,15 @@ static void config_parse(nvs_handle fp, config_t *config)
     size_t total_length = 0;
     char *line = osi_calloc(1024);
     char *section = osi_calloc(1024);
-    char *keyname = osi_calloc(sizeof(CONFIG_KEY) + 1);
+    const size_t keyname_bufsz = sizeof(CONFIG_KEY) + 5 + 1; // including log10(sizeof(i))
+    char *keyname = osi_calloc(keyname_bufsz);
     int buf_size = get_config_size_from_flash(fp);
     char *buf = osi_calloc(buf_size + 100);
     if (!line || !section || !buf || !keyname) {
         err_code |= 0x01;
         goto error;
     }
-    snprintf(keyname, sizeof(CONFIG_KEY)+1, "%s%d", CONFIG_KEY, 0);
+    snprintf(keyname, keyname_bufsz, "%s%d", CONFIG_KEY, 0);
     err = nvs_get_blob(fp, keyname, buf, &length);
     if (err == ESP_ERR_NVS_NOT_FOUND) {
         goto error;
@@ -537,7 +540,7 @@ static void config_parse(nvs_handle fp, config_t *config)
     total_length += length;
     while (length == CONFIG_FILE_MAX_SIZE) {
         length = CONFIG_FILE_DEFAULE_LENGTH;
-        snprintf(keyname, sizeof(CONFIG_KEY) + 1, "%s%d", CONFIG_KEY, ++i);
+        snprintf(keyname, keyname_bufsz, "%s%d", CONFIG_KEY, ++i);
         err = nvs_get_blob(fp, keyname, buf + CONFIG_FILE_MAX_SIZE * i, &length);
 
         if (err == ESP_ERR_NVS_NOT_FOUND) {
