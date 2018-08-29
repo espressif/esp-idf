@@ -173,8 +173,8 @@ void mesh_event_handler(mesh_event_t event)
                  event.info.routing_table.rt_size_change,
                  event.info.routing_table.rt_size_new);
         break;
-    case MESH_EVENT_NO_PARNET_FOUND:
-        ESP_LOGI(MESH_TAG, "<MESH_EVENT_NO_PARNET_FOUND>scan times:%d",
+    case MESH_EVENT_NO_PARENT_FOUND:
+        ESP_LOGI(MESH_TAG, "<MESH_EVENT_NO_PARENT_FOUND>scan times:%d",
                  event.info.no_parent.scan_times);
         /* TODO handler for the failure */
         break;

@@ -21,7 +21,7 @@ config MESH_ROUTER_PASSWD
 
 choice
     bool "Mesh AP Authentication Mode"
-        default MAP_AUTH_MODE_OPEN
+        default WIFI_AUTH_WPA2_PSK
         help
             Authentication mode.
 
