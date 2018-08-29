@@ -1,16 +1,39 @@
 # smartconfig Example
 
-This example shows how ESP32 connects to AP with ESPTOUCH. Example does the following steps:
+This example shows how ESP32 connects to a target AP with ESPTOUCH.
 
-* Download ESPTOUCH APP from app store. [Android source code](https://github.com/EspressifApp/EsptouchForAndroid) and [iOS source code](https://github.com/EspressifApp/EsptouchForIOS) is available.
+## How to use example
 
-* Compile this example and upload it to an ESP32.
+### Hardware Required
 
-* Make sure your phone connect to target AP (2.4GHz).
+Download ESPTOUCH APP from app store: 
+[Android source code](https://github.com/EspressifApp/EsptouchForAndroid)
+[iOS source code](https://github.com/EspressifApp/EsptouchForIOS) is available.
 
+### Configure the project
+
+```
+make menuconfig
+```
+
+* Set serial port under Serial Flasher Options.
+
+### Build and Flash
+
+Build the project and flash it to the board, then run monitor tool to view serial output:
+
+```
+make -j4 flash monitor
+```
+
+(To exit the serial monitor, type ``Ctrl-]``.)
+
+See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
+
+## Example output
+
+* Make sure your phone connect to the target AP (2.4GHz).
 * Open ESPTOUCH app and input password. There will be success message after few sec.
-
-### Example output
 
 Here is an example of smartconfig console output.
 ```
