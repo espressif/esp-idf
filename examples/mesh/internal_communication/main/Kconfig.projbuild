@@ -21,7 +21,7 @@ config MESH_ROUTER_PASSWD
 
 choice
     bool "Mesh AP Authentication Mode"
-        default MAP_AUTH_MODE_OPEN
+        default WIFI_AUTH_WPA2_PSK
         help
             Authentication mode.
 
@@ -70,11 +70,5 @@ config MESH_ROUTE_TABLE_SIZE
         default 50
         help
             The number of devices over the network(max: 300).
-
-config MESH_PARENT_SSID
-    string "Parent SSID"
-        default "PARENT_SSID"
-        help
-            Parent SSID.
 endmenu
 
