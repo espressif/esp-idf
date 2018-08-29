@@ -105,3 +105,31 @@ TEST_CASE("ble_smp_public_key_check", "[ble_smp]")
         TEST_ASSERT(ECC_CheckPointIsInElliCur_P256(&public_key));
     }
 }
+
+TEST_CASE("ble_smp_set_clear_static_passkey", "[ble_smp]")
+{
+    /* We wait init finish 200ms here */
+    vTaskDelay(200 / portTICK_PERIOD_MS);
+    esp_ble_auth_req_t auth_req = ESP_LE_AUTH_BOND;
+    uint32_t passkey = 123456;
+    /* test len = 0 when type != ESP_BLE_SM_CLEAR_STATIC_PASSKEY */
+    TEST_ASSERT(esp_ble_gap_set_security_param(ESP_BLE_SM_AUTHEN_REQ_MODE, &auth_req, 0) == ESP_ERR_INVALID_ARG);
+    /* test function */
+    TEST_ASSERT(esp_ble_gap_set_security_param(ESP_BLE_SM_AUTHEN_REQ_MODE, &auth_req, sizeof(esp_ble_auth_req_t)) != ESP_ERR_INVALID_ARG);
+    /* test type >= ESP_BLE_SM_MAX_PARAM */
+    TEST_ASSERT(esp_ble_gap_set_security_param(ESP_BLE_SM_MAX_PARAM, &passkey, sizeof(uint32_t)) == ESP_ERR_INVALID_ARG);
+    /* test len < sizeof(uint32_t) when type is ESP_BLE_SM_SET_STATIC_PASSKEY */
+    TEST_ASSERT(esp_ble_gap_set_security_param(ESP_BLE_SM_SET_STATIC_PASSKEY, &passkey, sizeof(uint8_t)) != ESP_ERR_INVALID_ARG);
+    /* test value is NULL when type != ESP_BLE_SM_CLEAR_STATIC_PASSKEY */
+    TEST_ASSERT(esp_ble_gap_set_security_param(ESP_BLE_SM_SET_STATIC_PASSKEY, NULL, sizeof(uint8_t)) == ESP_ERR_INVALID_ARG);
+    /* test value is NULL and len is 0 when type != ESP_BLE_SM_CLEAR_STATIC_PASSKEY */
+    TEST_ASSERT(esp_ble_gap_set_security_param(ESP_BLE_SM_SET_STATIC_PASSKEY, NULL, 0) == ESP_ERR_INVALID_ARG);
+    /* test function */
+    TEST_ASSERT(esp_ble_gap_set_security_param(ESP_BLE_SM_SET_STATIC_PASSKEY, &passkey, sizeof(uint32_t)) != ESP_ERR_INVALID_ARG);
+    /* test function */
+    TEST_ASSERT(esp_ble_gap_set_security_param(ESP_BLE_SM_CLEAR_STATIC_PASSKEY, &passkey, sizeof(uint32_t)) != ESP_ERR_INVALID_ARG);
+    /* test function */
+    TEST_ASSERT(esp_ble_gap_set_security_param(ESP_BLE_SM_CLEAR_STATIC_PASSKEY, NULL, sizeof(uint32_t)) != ESP_ERR_INVALID_ARG);
+    /* test function */
+    TEST_ASSERT(esp_ble_gap_set_security_param(ESP_BLE_SM_CLEAR_STATIC_PASSKEY, NULL, 0) != ESP_ERR_INVALID_ARG);
+}

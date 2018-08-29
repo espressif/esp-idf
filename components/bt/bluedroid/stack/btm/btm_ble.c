@@ -423,6 +423,12 @@ void BTM_BlePasskeyReply (BD_ADDR bd_addr, UINT8 res, UINT32 passkey)
 #endif
 }
 
+void BTM_BleSetStaticPasskey(BOOLEAN add, UINT32 passkey)
+{
+#if SMP_INCLUDED == TRUE
+    SMP_SetStaticPasskey(add, passkey);
+#endif
+}
 /*******************************************************************************
 **
 ** Function         BTM_BleConfirmReply
