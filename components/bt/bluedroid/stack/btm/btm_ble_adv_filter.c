@@ -331,8 +331,8 @@ void btm_ble_scan_pf_cmpl_cback(tBTM_VSC_CMPL *p_params)
         break;
     }
 
+    BTM_TRACE_DEBUG("btm_ble_scan_pf_cmpl_cback: calling the cback: %d", cb_evt);
     switch (cb_evt) {
-        BTM_TRACE_DEBUG("btm_ble_scan_pf_cmpl_cback: calling the cback: %d", cb_evt);
     case BTM_BLE_FILT_CFG:
         if (NULL != p_scan_cfg_cback) {
             p_scan_cfg_cback(action, cond_type, num_avail, status, ref_value);

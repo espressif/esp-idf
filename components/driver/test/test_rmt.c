@@ -88,7 +88,7 @@ static void fill_item_end(rmt_item32_t* item)
 /**
  * @brief Check whether duration is around target_us
  */
-inline bool check_in_range(int duration_ticks, int target_us, int margin_us)
+static inline bool check_in_range(int duration_ticks, int target_us, int margin_us)
 {
     if(( ITEM_DURATION(duration_ticks) < (target_us + margin_us))
         && ( ITEM_DURATION(duration_ticks) > (target_us - margin_us))) {
