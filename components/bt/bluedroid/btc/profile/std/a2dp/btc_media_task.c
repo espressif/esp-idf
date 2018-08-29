@@ -641,7 +641,7 @@ static void btc_media_task_handle_inc_media(tBT_SBC_HDR *p_msg)
     OI_STATUS status;
     int num_sbc_frames = p_msg->num_frames_to_be_processed;
     UINT32 sbc_frame_len = p_msg->len - 1;
-    availPcmBytes = 2 * sizeof(pcmData);
+    availPcmBytes = sizeof(pcmData);
 
     if ((btc_media_cb.peer_sep == AVDT_TSEP_SNK) || (btc_media_cb.rx_flush)) {
         APPL_TRACE_DEBUG(" State Changed happened in this tick ");
@@ -671,7 +671,7 @@ static void btc_media_task_handle_inc_media(tBT_SBC_HDR *p_msg)
         p_msg->len = sbc_frame_len + 1;
     }
 
-    btc_a2d_data_cb_to_app((uint8_t *)pcmData, (2 * sizeof(pcmData) - availPcmBytes));
+    btc_a2d_data_cb_to_app((uint8_t *)pcmData, (sizeof(pcmData) - availPcmBytes));
 }
 
 /*******************************************************************************
