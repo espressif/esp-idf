@@ -89,6 +89,12 @@ def generate_version_specific_includes(app):
     call_with_python('../gen-version-specific-includes.py {} {}'.format(app.config.language, version_tmpdir))
     copy_if_modified(version_tmpdir, '{}/inc'.format(builddir))
 
+# Generate toolchain download links
+print("Generating toolchain download links")
+base_url = 'https://dl.espressif.com/dl/'
+toolchain_tmpdir = '{}/toolchain_inc'.format(builddir)
+call_with_python('../gen-toolchain-links.py ../../tools/toolchain_versions.mk {} {}'.format(base_url, toolchain_tmpdir))
+copy_if_modified(toolchain_tmpdir, '{}/inc'.format(builddir))
 
 # http://stackoverflow.com/questions/12772927/specifying-an-online-image-in-sphinx-restructuredtext-format
 # 

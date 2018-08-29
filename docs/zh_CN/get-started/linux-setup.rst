@@ -30,21 +30,27 @@ Linux 平台工具链的标准设置
 工具链的设置
 ===============
 
+.. include:: /_build/inc/download-links.inc
+
 Linux 版的 ESP32 工具链可以从 Espressif 的网站下载：
 
 - 64-bit Linux：
 
-  https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz
+  |download_link_linux64|
 
 - 32-bit Linux：
 
-  https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-80-g6c4433a-5.2.0.tar.gz
+  |download_link_linux32|
 
-1. 下载完成后，将它解压到 ``~/esp`` 目录： ::
+1. 下载完成后，将它解压到 ``~/esp`` 目录： :
 
-        mkdir -p ~/esp
-        cd ~/esp
-        tar -xzf ~/Downloads/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz
+    - 64-bit Linux:
+
+      .. include:: /_build/inc/unpack-code-linux64.inc
+
+    - 32-bit Linux:
+
+      .. include:: /_build/inc/unpack-code-linux32.inc
 
 .. _setup-linux-toolchain-add-it-to-path:  
 

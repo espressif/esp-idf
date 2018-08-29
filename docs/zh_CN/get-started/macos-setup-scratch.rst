@@ -44,12 +44,9 @@
     cd ~/esp
     ln -s /Volumes/ctng crosstool-NG
 
-下载 ``crosstool-NG`` 然后编译::
+下载 ``crosstool-NG`` 然后编译:
 
-    cd ~/esp
-    git clone -b xtensa-1.22.x https://github.com/espressif/crosstool-NG.git
-    cd crosstool-NG
-    ./bootstrap && ./configure --enable-local && make install
+.. include:: /_build/inc/scratch-build-code.inc
 
 编译工具链::
 
