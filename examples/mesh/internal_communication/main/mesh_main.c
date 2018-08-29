@@ -217,8 +217,8 @@ void mesh_event_handler(mesh_event_t event)
                  event.info.routing_table.rt_size_change,
                  event.info.routing_table.rt_size_new);
         break;
-    case MESH_EVENT_NO_PARNET_FOUND:
-        ESP_LOGI(MESH_TAG, "<MESH_EVENT_NO_PARNET_FOUND>scan times:%d",
+    case MESH_EVENT_NO_PARENT_FOUND:
+        ESP_LOGI(MESH_TAG, "<MESH_EVENT_NO_PARENT_FOUND>scan times:%d",
                  event.info.no_parent.scan_times);
         /* TODO handler for the failure */
         break;
@@ -350,7 +350,6 @@ void app_main(void)
     /*  mesh initialization */
     ESP_ERROR_CHECK(esp_mesh_init());
     ESP_ERROR_CHECK(esp_mesh_set_max_layer(CONFIG_MESH_MAX_LAYER));
-    ESP_ERROR_CHECK(esp_mesh_set_ap_authmode(CONFIG_MESH_AP_AUTHMODE));
     ESP_ERROR_CHECK(esp_mesh_set_vote_percentage(1));
     ESP_ERROR_CHECK(esp_mesh_set_ap_assoc_expire(10));
 #ifdef MESH_FIX_ROOT
@@ -368,6 +367,7 @@ void app_main(void)
     memcpy((uint8_t *) &cfg.router.password, CONFIG_MESH_ROUTER_PASSWD,
            strlen(CONFIG_MESH_ROUTER_PASSWD));
     /* mesh softAP */
+    ESP_ERROR_CHECK(esp_mesh_set_ap_authmode(CONFIG_MESH_AP_AUTHMODE));
     cfg.mesh_ap.max_connection = CONFIG_MESH_AP_CONNECTIONS;
     memcpy((uint8_t *) &cfg.mesh_ap.password, CONFIG_MESH_AP_PASSWD,
            strlen(CONFIG_MESH_AP_PASSWD));
