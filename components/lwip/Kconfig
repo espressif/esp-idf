@@ -160,6 +160,14 @@ config LWIP_DHCP_DOES_ARP_CHECK
         Enabling this option performs a check (via ARP request) if the offered IP address
         is not already in use by another host on the network.
 
+config LWIP_DHCP_RESTORE_LAST_IP
+    bool "DHCP: Restore last IP obtained from DHCP server"
+    default n
+    help
+        When this option is enabled, DHCP client tries to re-obtain last valid IP address obtained from DHCP server.
+        Last valid DHCP configuration is stored in nvs and restored afrer reset/power-up. If IP is still available,
+        there is no need for sending discovery message to DHCP server and save some time.
+
 menu "DHCP server"
 
 config LWIP_DHCPS_LEASE_UNIT
