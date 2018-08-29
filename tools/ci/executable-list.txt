@@ -34,3 +34,13 @@ tools/kconfig/streamline_config.pl
 tools/kconfig/conf
 tools/kconfig/mconf
 tools/windows/eclipse_make.sh
+tools/ci/build_examples_cmake.sh
+tools/ci/test_build_system_cmake.sh
+tools/ci/check_examples_cmake_make.sh
+tools/cmake/convert_to_cmake.py
+tools/cmake/run_cmake_lint.sh
+tools/idf.py
+tools/kconfig_new/confgen.py
+tools/kconfig_new/confserver.py
+tools/kconfig_new/test/test_confserver.py
+tools/windows/tool_setup/build_installer.sh

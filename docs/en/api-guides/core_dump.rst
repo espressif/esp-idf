@@ -83,6 +83,6 @@ Generic command syntax:
     * --gdb,-g GDB.                 Path to gdb to use for data retrieval.
     * --core,-c CORE.               Path to core dump file to use (if skipped core dump will be read from flash).
     * --core-format,-t CORE_FORMAT. Specifies that file passed with "-c" is an ELF ("elf"), dumped raw binary ("raw") or base64-encoded ("b64") format.
-    * --off,-o OFF.                 Ofsset of coredump partition in flash (type "make partition_table" to see it).
-    * --save-core,-s SAVE_CORE.     Save core to file. Othwerwise temporary core file will be deleted. Ignored with "-c".
+    * --off,-o OFF.                 Offset of coredump partition in flash (type `make partition_table` to see it).
+    * --save-core,-s SAVE_CORE.     Save core to file. Otherwise temporary core file will be deleted. Ignored with "-c".
     * --print-mem,-m                Print memory dump. Used only with "info_corefile".

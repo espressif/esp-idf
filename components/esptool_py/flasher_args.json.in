@@ -1,0 +1,17 @@
+{
+    "write_flash_args" : [ "--flash_mode", "${ESPFLASHMODE}",
+                           "--flash_size", "${ESPFLASHSIZE}",
+                           "--flash_freq", "${ESPFLASHFREQ}" ],
+    "flash_files" : {
+        "0x1000" : "bootloader/bootloader.bin",
+        "${PARTITION_TABLE_OFFSET}" : "partition_table/partition-table.bin",
+        "${APP_PARTITION_OFFSET}" : "${PROJECT_NAME}.bin",
+        "${PHY_PARTITION_OFFSET}" : "${PHY_PARTITION_BIN_FILE}"
+    },
+    "bootloader" :      { "offset" : "0x1000",
+                          "file" : "bootloader/bootloader.bin" },
+    "app" :             { "offset" : "${APP_PARTITION_OFFSET}",
+                          "file" : "${PROJECT_NAME}.bin" },
+    "partition_table" : { "offset" : "${PARTITION_TABLE_OFFSET}",
+                          "file" : "partition_table/partition-table.bin" }
+}

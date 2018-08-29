@@ -3,7 +3,6 @@ Standard Setup of Toolchain for Linux
 *************************************
 :link_to_translation:`zh_CN:[中文]`
 
-
 Install Prerequisites
 =====================
 

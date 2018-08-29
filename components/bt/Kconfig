@@ -1014,7 +1014,7 @@ config BLE_HOST_QUEUE_CONGESTION_CHECK
         lost when host queue is congested.
 
 config BLE_SCAN_DUPLICATE
-    bool "BLE Scan Duplicate Options "
+    bool "BLE Scan Duplicate Options"
     depends on BLUEDROID_ENABLED
     default y
     help

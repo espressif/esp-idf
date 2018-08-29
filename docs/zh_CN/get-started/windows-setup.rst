@@ -3,6 +3,8 @@ Windows 平台工具链的标准设置
 ***************************************
 :link_to_translation:`en:[English]`
 
+.. important:: 对不起，CMake-based Build System Preview 还没有中文翻译。
+
 引言
 ============
 
@@ -53,8 +55,6 @@ https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain-20180110
 - 如果你不再需要 ``C:\msys32_old`` 可以将它删除。
 
 你可以在系统上拥有独立的不同的 MSYS2 环境，前提是在不同的目录中。
-
-或者，:ref:`你也可以更新现有的环境而不是下载新环境 <updating-existing-windows-environment>`，但是这样更复杂。
 
 相关文档
 =================
