@@ -530,9 +530,6 @@ static void btc_gatts_cb_param_copy_free(btc_msg_t *msg, tBTA_GATTS *p_data)
         }
         break;
     case BTA_GATTS_CONF_EVT:
-        if (p_data && p_data->req_data.value){
-            osi_free(p_data->req_data.value);
-        }
         break;
     default:
         break;
