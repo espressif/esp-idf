@@ -79,6 +79,7 @@ void bt_app_rc_ct_cb(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t *param
     switch (event) {
     case ESP_AVRC_CT_METADATA_RSP_EVT:
         bt_app_alloc_meta_buffer(param);
+        /* fall through */
     case ESP_AVRC_CT_CONNECTION_STATE_EVT:
     case ESP_AVRC_CT_PASSTHROUGH_RSP_EVT:
     case ESP_AVRC_CT_CHANGE_NOTIFY_EVT:
