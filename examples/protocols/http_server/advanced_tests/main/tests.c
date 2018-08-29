@@ -500,10 +500,10 @@ bool leak_test(void)
 
 httpd_handle_t start_tests()
 {
-    leak_test();
+//     leak_test();
     httpd_handle_t hd = test_httpd_start();
     if (hd) {
-        test_handler_limit(hd);
+//         test_handler_limit(hd);
         register_basic_handlers(hd);
     }
     return hd;

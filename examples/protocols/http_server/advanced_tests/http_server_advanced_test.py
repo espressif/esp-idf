@@ -64,10 +64,10 @@ def test_examples_protocol_http_server_advanced(env, extra_data):
     print "Waiting to connect with AP"
     got_ip = dut1.expect(re.compile(r"(?:[\s\S]*)Got IP: (\d+.\d+.\d+.\d+)"), timeout=30)[0]
 
-    print "Leak Tests..."
-    # Expected Leak test Logs
-    dut1.expect("Leak Test Started...", timeout=15);
-    dut1.expect("Leak Test Passed", timeout=15);
+    #print "Leak Tests..."
+    ## Expected Leak test Logs
+    #dut1.expect("Leak Test Started...", timeout=15);
+    #dut1.expect("Leak Test Passed", timeout=15);
 
     got_port = dut1.expect(re.compile(r"(?:[\s\S]*)Started HTTP server on port: (\d+)"), timeout=15)[0]
     result = dut1.expect(re.compile(r"(?:[\s\S]*)Max URI handlers: (\d+)(?:[\s\S]*)Max Open Sessions: (\d+)(?:[\s\S]*)Max Header Length: (\d+)(?:[\s\S]*)Max URI Length: (\d+)(?:[\s\S]*)Max Stack Size: (\d+)"), timeout=15)
@@ -80,30 +80,30 @@ def test_examples_protocol_http_server_advanced(env, extra_data):
     print "Got IP   : " + got_ip
     print "Got Port : " + got_port
 
-    print "Handler Tests..."
-    # Expected Handler Test Logs
-    dut1.expect("Test: Register Max URI handlers", timeout=15)
-    dut1.expect("Success", timeout=15)
-    dut1.expect("Test: Register Max URI + 1 handlers", timeout=15)
-    dut1.expect("no slots left for registering handler", timeout=15)
-    dut1.expect("Success", timeout=15)
-    dut1.expect("Test: Unregister 0th handler", timeout=15)
-    dut1.expect("Success", timeout=15)
-    dut1.expect("Test: Again unregister 0th handler not registered", timeout=15)
-    dut1.expect("handler 0 with method 1 not found", timeout=15)
-    dut1.expect("Success", timeout=15)
-    dut1.expect("Test: Register back 0th handler", timeout=15)
-    dut1.expect("Success", timeout=15)
-    dut1.expect("Test: Register 0th handler again after registering", timeout=15)
-    dut1.expect("handler 0 with method 1 already registered", timeout=15)
-    dut1.expect("Success", timeout=15)
-    dut1.expect("Test: Register 1 more handler", timeout=15)
-    dut1.expect("no slots left for registering handler", timeout=15)
-    dut1.expect("Success")
-    dut1.expect("Test: Unregister all handlers", timeout=15)
-    dut1.expect("Success", timeout=15)
-    dut1.expect("Registering basic handlers", timeout=15)
-    dut1.expect("Success", timeout=15)
+    #print "Handler Tests..."
+    ## Expected Handler Test Logs
+    #dut1.expect("Test: Register Max URI handlers", timeout=15)
+    #dut1.expect("Success", timeout=15)
+    #dut1.expect("Test: Register Max URI + 1 handlers", timeout=15)
+    #dut1.expect("no slots left for registering handler", timeout=15)
+    #dut1.expect("Success", timeout=15)
+    #dut1.expect("Test: Unregister 0th handler", timeout=15)
+    #dut1.expect("Success", timeout=15)
+    #dut1.expect("Test: Again unregister 0th handler not registered", timeout=15)
+    #dut1.expect("handler 0 with method 1 not found", timeout=15)
+    #dut1.expect("Success", timeout=15)
+    #dut1.expect("Test: Register back 0th handler", timeout=15)
+    #dut1.expect("Success", timeout=15)
+    #dut1.expect("Test: Register 0th handler again after registering", timeout=15)
+    #dut1.expect("handler 0 with method 1 already registered", timeout=15)
+    #dut1.expect("Success", timeout=15)
+    #dut1.expect("Test: Register 1 more handler", timeout=15)
+    #dut1.expect("no slots left for registering handler", timeout=15)
+    #dut1.expect("Success")
+    #dut1.expect("Test: Unregister all handlers", timeout=15)
+    #dut1.expect("Success", timeout=15)
+    #dut1.expect("Registering basic handlers", timeout=15)
+    #dut1.expect("Success", timeout=15)
 
     # Run test script
     # If failed raise appropriate exception
