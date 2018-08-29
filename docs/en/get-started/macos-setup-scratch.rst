@@ -44,12 +44,9 @@ Create a symlink to your work directory::
     cd ~/esp
     ln -s /Volumes/ctng crosstool-NG
 
-Download ``crosstool-NG`` and build it::
+Download ``crosstool-NG`` and build it:
 
-    cd ~/esp
-    git clone -b xtensa-1.22.x https://github.com/espressif/crosstool-NG.git
-    cd crosstool-NG
-    ./bootstrap && ./configure --enable-local && make install
+.. include:: /_build/inc/scratch-build-code.inc
 
 Build the toolchain::
 

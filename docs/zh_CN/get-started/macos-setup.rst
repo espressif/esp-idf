@@ -19,15 +19,15 @@
 安装工具链
 ===============
 
+.. include:: /_build/inc/download-links.inc
+
 Mac OS 版本的 ESP32 工具链可以从以下地址下载：
 
-https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-75-gbaf03c2-5.2.0.tar.gz
+|download_link_osx|
 
-下载压缩文件之后，解压到 ``~/esp`` 目录中::
+下载压缩文件之后，解压到 ``~/esp`` 目录中:
 
-    mkdir -p ~/esp
-    cd ~/esp
-    tar -xzf ~/Downloads/xtensa-esp32-elf-osx-1.22.0-75-gbaf03c2-5.2.0.tar.gz
+.. include:: /_build/inc/unpack-code-osx.inc
 
 .. _setup-macos-toolchain-add-it-to-path:
 

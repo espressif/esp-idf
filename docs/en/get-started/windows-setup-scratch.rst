@@ -76,9 +76,11 @@ Add this line to ``/etc/profile`` in the MSYS directory in order to permanently 
 Alternative Setup: Just download a toolchain
 ============================================
 
+.. include:: /_build/inc/download-links.inc
+
 If you already have an MSYS2 install or want to do things differently, you can download just the toolchain here:
 
-https://dl.espressif.com/dl/xtensa-esp32-elf-win32-1.22.0-80-g6c4433a-5.2.0.zip
+|download_link_win32|
 
 .. note::
 
