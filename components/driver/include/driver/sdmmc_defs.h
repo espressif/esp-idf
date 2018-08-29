@@ -91,6 +91,7 @@
 /* SD mode R1 response type bits */
 #define MMC_R1_READY_FOR_DATA           (1<<8)  /* ready for next transfer */
 #define MMC_R1_APP_CMD                  (1<<5)  /* app. commands supported */
+#define MMC_R1_SWITCH_ERROR             (1<<7)  /* switch command did not succeed */
 
 /* SPI mode R1 response type bits */
 #define SD_SPI_R1_IDLE_STATE            (1<<0)
@@ -131,6 +132,13 @@
 #define EXT_CSD_STRUCTURE               194     /* RO */
 #define EXT_CSD_CARD_TYPE               196     /* RO */
 #define EXT_CSD_SEC_COUNT               212     /* RO */
+#define EXT_CSD_PWR_CL_26_360           203     /* RO */
+#define EXT_CSD_PWR_CL_52_360           202     /* RO */
+#define EXT_CSD_PWR_CL_26_195           201     /* RO */
+#define EXT_CSD_PWR_CL_52_195           200     /* RO */
+#define EXT_CSD_POWER_CLASS             187     /* R/W */
+#define EXT_CSD_CMD_SET                 191     /* R/W */
+#define EXT_CSD_S_CMD_SET               504     /* RO */
 
 /* EXT_CSD field definitions */
 #define EXT_CSD_CMD_SET_NORMAL          (1U << 0)
@@ -162,6 +170,9 @@
 #define EXT_CSD_CARD_TYPE_52M_V18       0x07
 #define EXT_CSD_CARD_TYPE_52M_V12       0x0b
 #define EXT_CSD_CARD_TYPE_52M_V12_18    0x0f
+
+/* EXT_CSD MMC */
+#define EXT_CSD_MMC_SIZE 512
 
 /* MMC_SWITCH access mode */
 #define MMC_SWITCH_MODE_CMD_SET         0x00    /* Change the command set */
@@ -447,5 +458,9 @@ static inline uint32_t MMC_RSP_BITS(uint32_t *src, int start, int len)
 /* CISTPL_FUNCID codes */
 #define TPLFID_FUNCTION_SDIO        0x0c
 
+/* Timing */
+#define SDMMC_TIMING_LEGACY 0
+#define SDMMC_TIMING_HIGHSPEED 1
+#define SDMMC_TIMING_MMC_DDR52 2
 
 #endif //_SDMMC_DEFS_H_
