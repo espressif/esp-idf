@@ -74,6 +74,7 @@ typedef enum {
     ESP_PARTITION_SUBTYPE_DATA_ESPHTTPD = 0x80,                               //!< ESPHTTPD partition
     ESP_PARTITION_SUBTYPE_DATA_FAT = 0x81,                                    //!< FAT partition
     ESP_PARTITION_SUBTYPE_DATA_SPIFFS = 0x82,                                 //!< SPIFFS partition
+    ESP_PARTITION_SUBTYPE_DATA_DEFAULT = 0xfe,                                 //!< default (or unspecified) data partition
 
     ESP_PARTITION_SUBTYPE_ANY = 0xff,                                         //!< Used to search for partitions with any subtype
 } esp_partition_subtype_t;

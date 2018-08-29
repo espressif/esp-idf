@@ -57,6 +57,7 @@ SUBTYPES = {
         "esphttpd" : 0x80,
         "fat" : 0x81,
         "spiffs" : 0x82,
+        "default" : 0xFE,
     },
 }
 
@@ -143,14 +144,14 @@ class PartitionTable(list):
             ptype = TYPES[ptype]
         except KeyError:
             try:
-                ptypes = int(ptype, 0)
+                ptype = int(ptype, 0)
             except TypeError:
                 pass
         try:
             subtype = SUBTYPES[int(ptype)][subtype]
         except KeyError:
             try:
-                ptypes = int(ptype, 0)
+                subtype = int(subtype, 0)
             except TypeError:
                 pass
 
@@ -310,7 +311,7 @@ class PartitionDefinition(object):
 
     def parse_subtype(self, strval):
         if strval == "":
-            return 0 # default
+            return  SUBTYPES.get(self.type, {}).get("default", 0) # default
         return parse_int(strval, SUBTYPES.get(self.type, {}))
 
     def parse_address(self, strval):
