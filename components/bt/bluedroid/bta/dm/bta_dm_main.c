@@ -89,10 +89,11 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 
 #if BLE_INCLUDED == TRUE
 #if SMP_INCLUDED == TRUE
-    bta_dm_add_blekey,                      /* BTA_DM_API_ADD_BLEKEY_EVT */
-    bta_dm_add_ble_device,                  /* BTA_DM_API_ADD_BLEDEVICE_EVT */
-    bta_dm_ble_passkey_reply,               /* BTA_DM_API_BLE_PASSKEY_REPLY_EVT */
-    bta_dm_ble_confirm_reply,               /* BTA_DM_API_BLE_CONFIRM_REPLY_EVT */
+    bta_dm_add_blekey,                      /*  BTA_DM_API_ADD_BLEKEY_EVT           */
+    bta_dm_add_ble_device,                  /*  BTA_DM_API_ADD_BLEDEVICE_EVT        */
+    bta_dm_ble_passkey_reply,               /*  BTA_DM_API_BLE_PASSKEY_REPLY_EVT    */
+    bta_dm_ble_set_static_passkey,          /* BTA_DM_API_BLE_SET_STATIC_PASSKEY_EVT */
+    bta_dm_ble_confirm_reply,               /*  BTA_DM_API_BLE_CONFIRM_REPLY_EVT    */
     bta_dm_security_grant,
 #endif  ///SMP_INCLUDED == TRUE
     bta_dm_ble_set_bg_conn_type,

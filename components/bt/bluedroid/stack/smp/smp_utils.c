@@ -877,16 +877,21 @@ void smp_xor_128(BT_OCTET16 a, BT_OCTET16 b)
 ** Returns          void
 **
 *******************************************************************************/
-void smp_cb_cleanup(tSMP_CB   *p_cb)
+void smp_cb_cleanup(tSMP_CB *p_cb)
 {
     tSMP_CALLBACK   *p_callback = p_cb->p_callback;
     UINT8           trace_level = p_cb->trace_level;
-
+    UINT32          static_passkey = p_cb->static_passkey;
+    BOOLEAN         use_static_passkey = p_cb->use_static_passkey;
     SMP_TRACE_EVENT("smp_cb_cleanup\n");
 
     memset(p_cb, 0, sizeof(tSMP_CB));
     p_cb->p_callback = p_callback;
     p_cb->trace_level = trace_level;
+    if(use_static_passkey) {
+        p_cb->use_static_passkey = use_static_passkey;
+        p_cb->static_passkey = static_passkey;
+    }
 }
 
 /*******************************************************************************
