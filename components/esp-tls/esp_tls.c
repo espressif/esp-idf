@@ -33,8 +33,6 @@ static const char *TAG = "esp-tls";
 #define ESP_LOGE(TAG, ...) printf(__VA_ARGS__);
 #endif
 
-#define DEFAULT_TIMEOUT_MS 0
-
 static struct addrinfo *resolve_host_name(const char *host, size_t hostlen)
 {
     struct addrinfo hints;
@@ -301,15 +299,12 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
                 tls->wset = tls->rset;
             }
             tls->conn_state = ESP_TLS_CONNECTING;
-        case ESP_TLS_CONNECTING:                                            /* fall-through */
+            /* falls through */
+        case ESP_TLS_CONNECTING:
             if (cfg->non_block) {
                 ESP_LOGD(TAG, "connecting...");
                 struct timeval tv;
-                if (cfg->timeout_ms) {
-                    ms_to_timeval(cfg->timeout_ms, &tv);
-                } else {
-                    ms_to_timeval(DEFAULT_TIMEOUT_MS, &tv);
-                }
+                ms_to_timeval(cfg->timeout_ms, &tv);
 
                 /* In case of non-blocking I/O, we use the select() API to check whether
                    connection has been estbalished or not*/
@@ -339,7 +334,8 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
             tls->read = tls_read;
             tls->write = tls_write;
             tls->conn_state = ESP_TLS_HANDSHAKE;
-        case ESP_TLS_HANDSHAKE:                                                  /* fall-through */
+            /* falls through */
+        case ESP_TLS_HANDSHAKE:
             ESP_LOGD(TAG, "handshake in progress...");
             ret = mbedtls_ssl_handshake(&tls->ssl);
             if (ret == 0) {
