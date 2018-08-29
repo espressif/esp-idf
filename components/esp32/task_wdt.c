@@ -135,7 +135,7 @@ void __attribute__((weak)) esp_task_wdt_isr_user_handler(void)
  */
 static void task_wdt_isr(void *arg)
 {
-    portENTER_CRITICAL(&twdt_spinlock);
+    portENTER_CRITICAL_ISR(&twdt_spinlock);
     twdt_task_t *twdttask;
     const char *cpu;
     //Reset hardware timer so that 2nd stage timeout is not reached (will trigger system reset)
@@ -169,12 +169,12 @@ static void task_wdt_isr(void *arg)
     esp_task_wdt_isr_user_handler();
     if (twdt_config->panic){     //Trigger Panic if configured to do so
         ESP_EARLY_LOGE(TAG, "Aborting.");
-        portEXIT_CRITICAL(&twdt_spinlock);
+        portEXIT_CRITICAL_ISR(&twdt_spinlock);
         esp_reset_reason_set_hint(ESP_RST_TASK_WDT);
         abort();
     }
 
-    portEXIT_CRITICAL(&twdt_spinlock);
+    portEXIT_CRITICAL_ISR(&twdt_spinlock);
 }
 
 /*
