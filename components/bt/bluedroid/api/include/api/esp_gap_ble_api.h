@@ -264,6 +264,9 @@ typedef enum {
     ESP_BLE_SM_SET_INIT_KEY,
     ESP_BLE_SM_SET_RSP_KEY,
     ESP_BLE_SM_MAX_KEY_SIZE,
+    ESP_BLE_SM_SET_STATIC_PASSKEY,
+    ESP_BLE_SM_CLEAR_STATIC_PASSKEY,
+    ESP_BLE_SM_MAX_PARAM,
 } esp_ble_sm_param_t;
 
 /// Advertising parameters
