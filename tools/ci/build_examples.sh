@@ -157,8 +157,17 @@ echo -e "\nFound issues:"
 #       Ignore the next messages:
 # "error.o" or "-Werror" in compiler's command line
 # "reassigning to symbol" or "changes choice state" in sdkconfig
-sort -u "${LOG_SUSPECTED}" | \
-grep -v "library/error\.o\|\ -Werror\|error\.d\|reassigning to symbol\|changes choice state" \
+# Compiler and toochain versions is not supported from make/project.mk
+IGNORE_WARNS="\
+library/error\.o\
+\|\ -Werror\|error\.d\
+\|reassigning to symbol\
+\|changes choice state\
+\|Compiler version is not supported\
+\|Toolchain version is not supported\
+"
+
+sort -u "${LOG_SUSPECTED}" | grep -v "${IGNORE_WARNS}" \
     && RESULT=$RESULT_ISSUES \
     || echo -e "\tNone"
 
