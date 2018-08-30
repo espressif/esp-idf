@@ -1,0 +1,383 @@
+Total sizes:
+ DRAM .data size:    9324 bytes
+ DRAM .bss  size:    8296 bytes
+Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)
+Used static IRAM:   38932 bytes (  92140 available, 29.7% used)
+      Flash code:  146944 bytes
+    Flash rodata:   39580 bytes
+Total image size:~ 234780 bytes (.bin may be padded larger)
+Total sizes:
+ DRAM .data size:    9324 bytes
+ DRAM .bss  size:    8296 bytes
+Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)
+Used static IRAM:   38932 bytes (  92140 available, 29.7% used)
+      Flash code:  146944 bytes
+    Flash rodata:   39580 bytes
+Total image size:~ 234780 bytes (.bin may be padded larger)
+Per-archive contributions to ELF file:
+            Archive File DRAM .data & .bss   IRAM Flash code & rodata   Total
+               liblwip.a         14   3751      0      66978    13936   84679
+                  libc.a          0      0      0      55583     3889   59472
+              libesp32.a       2635   2375   7758       4814     8133   25715
+           libfreertos.a       4156    832  12853          0     1545   19386
+          libspi_flash.a         36    359   7004        886     1624    9909
+                libsoc.a        660      8   3887          0     3456    8011
+               libheap.a       1331      4   4376       1218      980    7909
+                libgcc.a          4     20    104       5488      888    6504
+                libvfs.a        232    103      0       3770      403    4508
+              libunity.a          0    121      0       2316      830    3267
+             libstdc++.a          8     16      0       1827     1062    2913
+             libnewlib.a        152    272    853        803       86    2166
+            libpthread.a         16     12    174        774      638    1614
+             libdriver.a         40     20      0        961      537    1558
+                liblog.a          8    268    456        396      166    1294
+         libapp_update.a          0      0      0        123      717     840
+      libtcpip_adapter.a          0     81      0        180      359     620
+                libhal.a          0      0    515          0       32     547
+                  libm.a          0      0     92          0        0      92
+               libmain.a          0      0      0         53       10      63
+                libcxx.a          0      0      0         11        0      11
+libxtensa-debug-module.a          0      0      8          0        0       8
+ libbootloader_support.a          0      0      0          0        0       0
+            libcoexist.a          0      0      0          0        0       0
+               libcore.a          0      0      0          0        0       0
+           libethernet.a          0      0      0          0        0       0
+            libmbedtls.a          0      0      0          0        0       0
+               libmesh.a          0      0      0          0        0       0
+           libnet80211.a          0      0      0          0        0       0
+          libnvs_flash.a          0      0      0          0        0       0
+                libphy.a          0      0      0          0        0       0
+                 libpp.a          0      0      0          0        0       0
+                librtc.a          0      0      0          0        0       0
+    libsmartconfig_ack.a          0      0      0          0        0       0
+                libwpa.a          0      0      0          0        0       0
+               libwpa2.a          0      0      0          0        0       0
+     libwpa_supplicant.a          0      0      0          0        0       0
+                libwps.a          0      0      0          0        0       0
+Total sizes:
+ DRAM .data size:    9324 bytes
+ DRAM .bss  size:    8296 bytes
+Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)
+Used static IRAM:   38932 bytes (  92140 available, 29.7% used)
+      Flash code:  146944 bytes
+    Flash rodata:   39580 bytes
+Total image size:~ 234780 bytes (.bin may be padded larger)
+Per-file contributions to ELF file:
+             Object File DRAM .data & .bss   IRAM Flash code & rodata   Total
+        lib_a-vfprintf.o          0      0      0      14193      756   14949
+       lib_a-svfprintf.o          0      0      0      13834      756   14590
+      lib_a-svfiprintf.o          0      0      0       9642     1210   10852
+       lib_a-vfiprintf.o          0      0      0       9933      738   10671
+                   nd6.o          8   1027      0       8427      136    9598
+                tcp_in.o          0     54      0       8127      916    9097
+                 tasks.o         20    700   5667          0      503    6890
+               tcp_out.o          0      0      0       5060     1124    6184
+               sockets.o          0    728      0       4627      824    6179
+                   tcp.o          4     23      0       4290     1384    5701
+               api_msg.o          0      0      0       3763     1366    5129
+                  dhcp.o          0      8      0       3456     1401    4865
+                 panic.o       2579      5   2145          0        0    4729
+       esp_err_to_name.o          0      0      0         50     4091    4141
+        unwind-dw2-fde.o          4     20      0       3316      404    3744
+                  pbuf.o          0      1      0       2453     1161    3615
+               portasm.o       3084      0    480          0        0    3564
+            lib_a-dtoa.o          0      0      0       3522       13    3535
+                etharp.o          0    241      0       2618      658    3517
+                   ip6.o          0      0      0       3212      124    3336
+                   dns.o          0   1292      0       1809      206    3307
+   spi_flash_rom_patch.o          0      0   2518          0      766    3284
+                   udp.o          2      4      0       3020      216    3242
+            intr_alloc.o          8     22    726       1749      710    3215
+            multi_heap.o        857      0   2217          0        0    3074
+                 queue.o          8     56   2569          0      369    3002
+             flash_ops.o         32     41   2352         99        0    2524
+     unwind-dw2-xtensa.o          0      0      0       2172      324    2496
+               rtc_clk.o        660      8   1794          0        0    2462
+           lib_a-mprec.o          0      0      0       2134      296    2430
+                   vfs.o        192     40      0       1995      132    2359
+              ip6_frag.o          0      6      0       1905      442    2353
+               api_lib.o          0      0      0       1425      919    2344
+                  igmp.o          0     12      0       1604      707    2323
+             dbg_stubs.o          0   2072     32        100        0    2204
+              vfs_uart.o         40     63      0       1775      271    2149
+        unity_platform.o          0     13      0       1511      600    2124
+       esp_timer_esp32.o          8     26   1295        254      526    2109
+            rtc_periph.o          0      0      0          0     2080    2080
+            flash_mmap.o          0    296   1298        124      327    2045
+             heap_caps.o          4      0   1195        188      593    1980
+        eh_personality.o          0      0      0       1561      384    1945
+                   ip4.o          0      6      0       1664      139    1809
+                 netif.o          0    241      0       1239      287    1767
+        xtensa_vectors.o          8      0   1697          0       36    1741
+             cpu_start.o          0      1    806        277      486    1570
+                   clk.o          0      0     67        581      893    1541
+                timers.o          8     56   1149          0      233    1446
+              sys_arch.o          0      8      0       1216      222    1446
+  multi_heap_poisoning.o        470      0    964          0        0    1434
+        heap_caps_init.o          0      4      0       1030      387    1421
+                  mld6.o          0      4      0       1334        0    1338
+           cache_utils.o          4     14    836         81      390    1325
+                   raw.o          0      4      0       1087      223    1314
+             esp_timer.o          8     20    702        429      142    1301
+                   log.o          8    268    456        396      166    1294
+            system_api.o          0      8    589          0      662    1259
+     soc_memory_layout.o          0      0      0          0     1239    1239
+                  icmp.o          0      0      0        769      371    1140
+       xtensa_intr_asm.o       1024      0     51          0        0    1075
+                  port.o          0     16    617          0      369    1002
+               pthread.o          8      8    174        298      512    1000
+                 icmp6.o          0      0      0        863      127     990
+              rtc_init.o          0      0    980          0        0     980
+                 unity.o          0    108      0        767       90     965
+              rtc_time.o          0      0    803          0      137     940
+          dport_access.o          8     40    539        189      129     905
+          lib_a-fseeko.o          0      0      0        862        0     862
+                  time.o          0     32    139        691        0     862
+                 tcpip.o          0     16      0        644      191     851
+           esp_ota_ops.o          0      0      0        123      717     840
+           periph_ctrl.o          8      0      0        520      256     784
+                timers.o          0     12      0        638      131     781
+             partition.o          0      8      0        582      141     731
+                 locks.o          8      0    552          0       84     644
+                   ipc.o          0     36    159        329      104     628
+    tcpip_adapter_lwip.o          0     81      0        180      359     620
+ pthread_local_storage.o          8      4      0        476      126     614
+           inet_chksum.o          0      0      0        580        0     580
+         crosscore_int.o          8      8    204        126      148     494
+                netbuf.o          0      0      0        154      326     480
+              vfs_lwip.o          0      0      0        307      155     462
+         syscall_table.o        144    240      0         67        0     451
+                 timer.o         16      0      0        112      281     409
+               int_wdt.o          0      1     87        301        0     389
+            eh_globals.o          0     16      0        149      193     358
+              brownout.o          0      0      0        145      191     336
+        freertos_hooks.o          8    128     43        137        0     316
+       windowspill_asm.o          0      0    311          0        0     311
+              cpu_util.o          0      0    310          0        0     310
+            rtc_module.o          8      8      0        291        0     307
+        xtensa_context.o          0      0    299          0        0     299
+          eh_terminate.o          0      0      0        117      141     258
+              ethernet.o          0      0      0        244       12     256
+            lib_a-puts.o          0      0      0        182       60     242
+dport_panic_highint_hdl.          8      0    234          0        0     242
+           lib_a-reent.o          0      0      0        232        0     232
+           lib_a-fopen.o          0      0      0        228        0     228
+            dhcpserver.o          0      4      0        203        0     207
+            test_utils.o          0      0      0         38      140     178
+         lib_a-sprintf.o          0      0      0        167        0     167
+         cache_err_int.o          0      0     56         98        0     154
+                  list.o          0      0    142          0        0     142
+           xtensa_intr.o          0      0    104          0       35     139
+              syscalls.o          0      0     94         45        0     139
+    si_class_type_info.o          0      0      0          0      136     136
+          lib_a-assert.o          0      0      0         68       60     128
+           lib_a-flags.o          0      0      0        127        0     127
+          lib_a-printf.o          0      0      0        116        0     116
+              ip4_addr.o          0      0      0         72       40     112
+       class_type_info.o          0      0      0          0      112     112
+         lib_a-s_frexp.o          0      0      0        110        0     110
+                    ip.o          0     60      0         50        0     110
+                  memp.o          0      0      0          0      108     108
+             lib2funcs.o          0      0    104          0        0     104
+         lib_a-vprintf.o          0      0      0         94        0      94
+    lib_a-s_fpclassify.o          0      0     92          0        0      92
+                   def.o          0      0      0         91        0      91
+        lib_a-fiprintf.o          0      0      0         84        0      84
+             hw_random.o          0      4     74          0        0      78
+           stack_check.o          0      4      0         32       42      78
+                 clock.o          0      0     72          0        0      72
+            reent_init.o          0      0     68          0        2      70
+              app_main.o          0      0      0         53       10      63
+state_asm--restore_extra          0      0     62          0        0      62
+state_asm--save_extra_nw          0      0     62          0        0      62
+                  uart.o          8     12      0         38        0      58
+               new_opv.o          0      0      0          0       56      56
+xtensa_vector_defaults.o          0      0     46          0        0      46
+           lib_a-fseek.o          0      0      0         45        0      45
+               _divdi3.o          0      0      0          0       40      40
+               _moddi3.o          0      0      0          0       40      40
+              _udivdi3.o          0      0      0          0       40      40
+              _umoddi3.o          0      0      0          0       40      40
+                new_op.o          0      0      0          0       40      40
+           xtensa_init.o          0      4     32          0        0      36
+  interrupts--intlevel.o          0      0      0          0       32      32
+                  init.o          0      0      0         27        0      27
+             wifi_init.o          0      0      0         17        9      26
+              ip6_addr.o          0      0      0          0       20      20
+           lib_a-errno.o          0      0      0         10        0      10
+ int_asm--set_intclear.o          0      0      8          0        0       8
+                   eri.o          0      0      8          0        0       8
+   cxx_exception_stubs.o          0      0      0          6        0       6
+            cxx_guards.o          0      0      0          5        0       5
+      FreeRTOS-openocd.o          4      0      0          0        0       4
+       eh_term_handler.o          4      0      0          0        0       4
+       eh_unex_handler.o          4      0      0          0        0       4
+      bootloader_flash.o          0      0      0          0        0       0
+        bootloader_sha.o          0      0      0          0        0       0
+      esp_image_format.o          0      0      0          0        0       0
+           lib_a-fputs.o          0      0      0          0        0       0
+        lib_a-snprintf.o          0      0      0          0        0       0
+        lib_a-strerror.o          0      0      0          0        0       0
+       lib_a-sysgettod.o          0      0      0          0        0       0
+        lib_a-u_strerr.o          0      0      0          0        0       0
+       lib_a-vsnprintf.o          0      0      0          0        0       0
+  lib_a-xpg_strerror_r.o          0      0      0          0        0       0
+           coexist_api.o          0      0      0          0        0       0
+         coexist_arbit.o          0      0      0          0        0       0
+          coexist_core.o          0      0      0          0        0       0
+           coexist_dbg.o          0      0      0          0        0       0
+            coexist_hw.o          0      0      0          0        0       0
+         coexist_param.o          0      0      0          0        0       0
+         coexist_timer.o          0      0      0          0        0       0
+              misc_nvs.o          0      0      0          0        0       0
+                  gpio.o          0      0      0          0        0       0
+      ets_timer_legacy.o          0      0      0          0        0       0
+event_default_handlers.o          0      0      0          0        0       0
+            event_loop.o          0      0      0          0        0       0
+            lib_printf.o          0      0      0          0        0       0
+              phy_init.o          0      0      0          0        0       0
+                   sha.o          0      0      0          0        0       0
+       wifi_os_adapter.o          0      0      0          0        0       0
+              emac_dev.o          0      0      0          0        0       0
+             emac_main.o          0      0      0          0        0       0
+          event_groups.o          0      0      0          0        0       0
+               ringbuf.o          0      0      0          0        0       0
+            _addsubdf3.o          0      0      0          0        0       0
+               _cmpdf2.o          0      0      0          0        0       0
+               _divdf3.o          0      0      0          0        0       0
+               _divsf3.o          0      0      0          0        0       0
+          _extendsfdf2.o          0      0      0          0        0       0
+              _fixdfsi.o          0      0      0          0        0       0
+            _floatdidf.o          0      0      0          0        0       0
+            _floatdisf.o          0      0      0          0        0       0
+            _floatsidf.o          0      0      0          0        0       0
+               _muldf3.o          0      0      0          0        0       0
+          _popcountsi2.o          0      0      0          0        0       0
+            ethernetif.o          0      0      0          0        0       0
+                ethip6.o          0      0      0          0        0       0
+                wlanif.o          0      0      0          0        0       0
+            esp_sha256.o          0      0      0          0        0       0
+                  mesh.o          0      0      0          0        0       0
+           mesh_common.o          0      0      0          0        0       0
+           mesh_config.o          0      0      0          0        0       0
+             mesh_main.o          0      0      0          0        0       0
+           mesh_parent.o          0      0      0          0        0       0
+            mesh_route.o          0      0      0          0        0       0
+         mesh_schedule.o          0      0      0          0        0       0
+            mesh_timer.o          0      0      0          0        0       0
+        mesh_utilities.o          0      0      0          0        0       0
+             mesh_wifi.o          0      0      0          0        0       0
+             ieee80211.o          0      0      0          0        0       0
+      ieee80211_action.o          0      0      0          0        0       0
+ieee80211_action_vendor.          0      0      0          0        0       0
+         ieee80211_api.o          0      0      0          0        0       0
+      ieee80211_crypto.o          0      0      0          0        0       0
+ ieee80211_crypto_ccmp.o          0      0      0          0        0       0
+ ieee80211_crypto_tkip.o          0      0      0          0        0       0
+  ieee80211_crypto_wep.o          0      0      0          0        0       0
+       ieee80211_debug.o          0      0      0          0        0       0
+         ieee80211_ets.o          0      0      0          0        0       0
+      ieee80211_hostap.o          0      0      0          0        0       0
+          ieee80211_ht.o          0      0      0          0        0       0
+   ieee80211_ie_vendor.o          0      0      0          0        0       0
+       ieee80211_input.o          0      0      0          0        0       0
+       ieee80211_ioctl.o          0      0      0          0        0       0
+  ieee80211_mesh_quick.o          0      0      0          0        0       0
+        ieee80211_misc.o          0      0      0          0        0       0
+         ieee80211_nvs.o          0      0      0          0        0       0
+      ieee80211_output.o          0      0      0          0        0       0
+         ieee80211_phy.o          0      0      0          0        0       0
+       ieee80211_power.o          0      0      0          0        0       0
+       ieee80211_proto.o          0      0      0          0        0       0
+   ieee80211_regdomain.o          0      0      0          0        0       0
+        ieee80211_rfid.o          0      0      0          0        0       0
+        ieee80211_scan.o          0      0      0          0        0       0
+         ieee80211_sta.o          0      0      0          0        0       0
+       ieee80211_timer.o          0      0      0          0        0       0
+                wl_chm.o          0      0      0          0        0       0
+                wl_cnx.o          0      0      0          0        0       0
+               nvs_api.o          0      0      0          0        0       0
+    nvs_item_hash_list.o          0      0      0          0        0       0
+              nvs_page.o          0      0      0          0        0       0
+       nvs_pagemanager.o          0      0      0          0        0       0
+           nvs_storage.o          0      0      0          0        0       0
+             nvs_types.o          0      0      0          0        0       0
+                   phy.o          0      0      0          0        0       0
+           phy_chip_v7.o          0      0      0          0        0       0
+       phy_chip_v7_ana.o          0      0      0          0        0       0
+       phy_chip_v7_cal.o          0      0      0          0        0       0
+               esf_buf.o          0      0      0          0        0       0
+             if_hwctrl.o          0      0      0          0        0       0
+                  lmac.o          0      0      0          0        0       0
+                    pm.o          0      0      0          0        0       0
+  pm_for_bcn_only_mode.o          0      0      0          0        0       0
+                    pp.o          0      0      0          0        0       0
+              pp_debug.o          0      0      0          0        0       0
+              pp_timer.o          0      0      0          0        0       0
+          rate_control.o          0      0      0          0        0       0
+                   trc.o          0      0      0          0        0       0
+                  wdev.o          0      0      0          0        0       0
+                 bt_bb.o          0      0      0          0        0       0
+                    pm.o          0      0      0          0        0       0
+                   rtc.o          0      0      0          0        0       0
+            rtc_analog.o          0      0      0          0        0       0
+       smartconfig_ack.o          0      0      0          0        0       0
+           gpio_periph.o          0      0      0          0        0       0
+             rtc_sleep.o          0      0      0          0        0       0
+             bad_alloc.o          0      0      0          0        0       0
+                del_op.o          0      0      0          0        0       0
+               del_opv.o          0      0      0          0        0       0
+          eh_exception.o          0      0      0          0        0       0
+           new_handler.o          0      0      0          0        0       0
+                  pure.o          0      0      0          0        0       0
+                 tinfo.o          0      0      0          0        0       0
+             ap_config.o          0      0      0          0        0       0
+                common.o          0      0      0          0        0       0
+                   wpa.o          0      0      0          0        0       0
+              wpa_auth.o          0      0      0          0        0       0
+           wpa_auth_ie.o          0      0      0          0        0       0
+            wpa_common.o          0      0      0          0        0       0
+             wpa_debug.o          0      0      0          0        0       0
+                wpa_ie.o          0      0      0          0        0       0
+              wpa_main.o          0      0      0          0        0       0
+                wpabuf.o          0      0      0          0        0       0
+             wpas_glue.o          0      0      0          0        0       0
+         wpa2_internal.o          0      0      0          0        0       0
+             os_xtensa.o          0      0      0          0        0       0
+          wps_internal.o          0      0      0          0        0       0
+Total sizes:
+ DRAM .data size:    9324 bytes
+ DRAM .bss  size:    8296 bytes
+Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)
+Used static IRAM:   38932 bytes (  92140 available, 29.7% used)
+      Flash code:  146944 bytes
+    Flash rodata:   39580 bytes
+Total image size:~ 234780 bytes (.bin may be padded larger)
+Symbols within the archive: libdriver.a (Not all symbols may be reported)
+
+Symbols from section: .dram0.data
+timer_spinlock(16) periph_spinlock(8) s_rtc_isr_handler_list_lock(8) uart_selectlock(8) 
+Section total: 40
+
+Symbols from section: .dram0.bss
+p_uart_obj(12) s_rtc_isr_handle(4) s_rtc_isr_handler_list(4) 
+Section total: 20
+
+Symbols from section: .iram0.text
+
+Section total: 0
+
+Symbols from section: .iram0.vectors
+
+Section total: 0
+
+Symbols from section: .flash.text
+get_clk_en_mask(211) get_rst_en_mask(157) timer_group_intr_enable(112) rtc_isr(86) periph_module_enable(78) rtc_isr_ensure_installed(75) rtc_gpio_force_hold_dis_all(65) rtc_isr_register(65) is_wifi_clk_peripheral(28) uart_set_select_notif_callback(26) get_rst_en_reg(25) get_clk_en_reg(21) uart_get_selectlock(12) 
+Section total: 961
+
+Symbols from section: .flash.rodata
+str1.4(249) get_clk_en_mask(128) get_rst_en_mask(128) __FUNCTION__$5441(24) TG(8) 
+Section total: 537
+Total sizes:
+ DRAM .data size:       0 bytes
+ DRAM .bss  size:       0 bytes
