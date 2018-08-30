@@ -17,8 +17,10 @@ COMPONENT_ADD_LINKER_DEPS := $(patsubst %,$(COMPONENT_PATH)/lib/lib%.a,$(LIBS))
 
 COMPONENT_SUBMODULES += lib
 
+ifeq ($(GCC_NOT_5_2_0), 1)
 # TODO: annotate fallthroughs in Bluedroid code with comments
 CFLAGS += -Wno-implicit-fallthrough
+endif
 
 endif
 
@@ -118,9 +120,11 @@ COMPONENT_SRCDIRS +=    bluedroid/bta/dm                      \
                         bluedroid/api                         \
                         bluedroid
 
+ifeq ($(GCC_NOT_5_2_0), 1)
 bluedroid/bta/sdp/bta_sdp_act.o: CFLAGS += -Wno-unused-const-variable
 bluedroid/btc/core/btc_config.o: CFLAGS += -Wno-unused-const-variable
 bluedroid/stack/btm/btm_sec.o: CFLAGS += -Wno-unused-const-variable
 bluedroid/stack/smp/smp_keys.o: CFLAGS += -Wno-unused-const-variable
+endif
 
 endif

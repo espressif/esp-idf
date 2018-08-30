@@ -28,3 +28,8 @@ ifdef CONFIG_PPP_SUPPORT
 endif
 
 CFLAGS += -Wno-address  # lots of LWIP source files evaluate macros that check address of stack variables
+
+ifeq ($(GCC_NOT_5_2_0), 1)
+else
+netif/ppp/pppos.o: CFLAGS += -Wno-type-limits
+endif

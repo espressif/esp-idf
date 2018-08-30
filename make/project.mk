@@ -273,7 +273,6 @@ COMMON_WARNING_FLAGS = -Wall -Werror=all \
 	-Wno-error=unused-function \
 	-Wno-error=unused-but-set-variable \
 	-Wno-error=unused-variable \
-	-Wno-error=unused-const-variable \
 	-Wno-error=deprecated-declarations \
 	-Wextra \
 	-Wno-unused-parameter -Wno-sign-compare
@@ -293,7 +292,6 @@ COMMON_WARNING_FLAGS += -Wno-parentheses \
 	-Wno-memset-elt-size \
 	-Wno-int-in-bool-context
 endif
-
 
 ifdef CONFIG_WARN_WRITE_STRINGS
 COMMON_WARNING_FLAGS += -Wwrite-strings
@@ -393,6 +391,14 @@ AR := $(call dequote,$(CONFIG_TOOLPREFIX))ar
 OBJCOPY := $(call dequote,$(CONFIG_TOOLPREFIX))objcopy
 SIZE := $(call dequote,$(CONFIG_TOOLPREFIX))size
 export CC CXX LD AR OBJCOPY SIZE
+
+COMPILER_VERSION_STR := $(shell $(CC) -dumpversion)
+COMPILER_VERSION_NUM := $(subst .,,$(COMPILER_VERSION_STR))
+GCC_NOT_5_2_0 := $(shell expr $(COMPILER_VERSION_STR) != "5.2.0")
+export COMPILER_VERSION_STR COMPILER_VERSION_NUM GCC_NOT_5_2_0
+
+CPPFLAGS += -DGCC_NOT_5_2_0=$(GCC_NOT_5_2_0)
+export CPPFLAGS
 
 PYTHON=$(call dequote,$(CONFIG_PYTHON))
 
@@ -581,15 +587,14 @@ print_flash_cmd: partition_table_get_info blank_ota_data
 # Check toolchain version using the output of xtensa-esp32-elf-gcc --version command.
 # The output normally looks as follows
 #     xtensa-esp32-elf-gcc (crosstool-NG crosstool-ng-1.22.0-80-g6c4433a) 5.2.0
-# The part in brackets is extracted into TOOLCHAIN_COMMIT_DESC variable,
-# the part after the brackets is extracted into TOOLCHAIN_GCC_VER.
+# The part in brackets is extracted into TOOLCHAIN_COMMIT_DESC variable
 ifdef CONFIG_TOOLPREFIX
 ifndef MAKE_RESTARTS
 
 TOOLCHAIN_HEADER := $(shell $(CC) --version | head -1)
 TOOLCHAIN_PATH := $(shell which $(CC))
 TOOLCHAIN_COMMIT_DESC := $(shell $(CC) --version | sed -E -n 's|.*\(crosstool-NG (.*)\).*|\1|gp')
-TOOLCHAIN_GCC_VER := $(shell $(CC) --version | sed -E -n 's|xtensa-esp32-elf-gcc.*\ \(.*\)\ (.*)|\1|gp')
+TOOLCHAIN_GCC_VER := $(COMPILER_VERSION_STR)
 
 # Officially supported version(s)
 include $(IDF_PATH)/tools/toolchain_versions.mk
