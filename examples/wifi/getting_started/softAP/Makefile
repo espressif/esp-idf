@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := simple_wifi
+PROJECT_NAME := wifi_softAP
 
 include $(IDF_PATH)/make/project.mk
 
