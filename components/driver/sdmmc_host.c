@@ -267,6 +267,9 @@ esp_err_t sdmmc_host_init()
             SDMMC_INTMASK_RESP_ERR | SDMMC_INTMASK_HLE; //sdio is enabled only when use.
     SDMMC.ctrl.int_enable = 1;
 
+    // Disable generation of Busy Clear Interrupt
+    SDMMC.cardthrctl.busy_clr_int_en = 0;
+
     // Enable DMA
     sdmmc_host_dma_init();
 
@@ -336,7 +339,8 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config)
     if (slot_width >= 4) {
         configure_pin(pslot->d1_gpio);
         configure_pin(pslot->d2_gpio);
-        //force pull-up D3 to make slave detect SD mode. connect to peripheral after width configuration.
+        // Force D3 high to make slave enter SD mode.
+        // Connect to peripheral after width configuration.
         gpio_config_t gpio_conf = {
             .pin_bit_mask = BIT(pslot->d3_gpio),
             .mode = GPIO_MODE_OUTPUT ,
@@ -344,8 +348,8 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config)
             .pull_down_en = 0,
             .intr_type = GPIO_INTR_DISABLE,
         };
-        gpio_config( &gpio_conf );
-        gpio_set_level( pslot->d3_gpio, 1 );
+        gpio_config(&gpio_conf);
+        gpio_set_level(pslot->d3_gpio, 1);
         if (slot_width == 8) {
             configure_pin(pslot->d4_gpio);
             configure_pin(pslot->d5_gpio);
@@ -445,10 +449,12 @@ esp_err_t sdmmc_host_set_bus_width(int slot, size_t width)
     } else if (width == 4) {
         SDMMC.ctype.card_width_8 &= ~mask;
         SDMMC.ctype.card_width |= mask;
-        configure_pin(sdmmc_slot_info[slot].d3_gpio);   // D3 was set to GPIO high to force slave into SD 1-bit mode, until 4-bit mode is set
-    } else if (width == 8){
+        // D3 was set to GPIO high to force slave into SD mode, until 4-bit mode is set
+        configure_pin(sdmmc_slot_info[slot].d3_gpio);
+    } else if (width == 8) {
         SDMMC.ctype.card_width_8 |= mask;
-        configure_pin(sdmmc_slot_info[slot].d3_gpio);   // D3 was set to GPIO high to force slave into SD 1-bit mode, until 4-bit mode is set
+        // D3 was set to GPIO high to force slave into SD mode, until 4-bit mode is set
+        configure_pin(sdmmc_slot_info[slot].d3_gpio);
     } else {
         return ESP_ERR_INVALID_ARG;
     }
@@ -460,6 +466,28 @@ size_t sdmmc_host_get_slot_width(int slot)
 {
     assert( slot == 0 || slot == 1 );
     return s_slot_width[slot];
+}
+
+esp_err_t sdmmc_host_set_bus_ddr_mode(int slot, bool ddr_enabled)
+{
+    if (!(slot == 0 || slot == 1)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (s_slot_width[slot] == 8 && ddr_enabled) {
+        ESP_LOGW(TAG, "DDR mode with 8-bit bus width is not supported yet");
+        // requires reconfiguring controller clock for 2x card frequency
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    uint32_t mask = BIT(slot);
+    if (ddr_enabled) {
+        SDMMC.uhs.ddr |= mask;
+        SDMMC.emmc_ddr_reg |= mask;
+    } else {
+        SDMMC.uhs.ddr &= ~mask;
+        SDMMC.emmc_ddr_reg &= ~mask;
+    }
+    ESP_LOGD(TAG, "slot=%d ddr=%d", slot, ddr_enabled ? 1 : 0);
+    return ESP_OK;
 }
 
 static void sdmmc_host_dma_init()
@@ -499,6 +527,11 @@ void sdmmc_host_dma_prepare(sdmmc_desc_t* desc, size_t block_size, size_t data_s
 void sdmmc_host_dma_resume()
 {
     SDMMC.pldmnd = 1;
+}
+
+bool sdmmc_host_card_busy()
+{
+    return SDMMC.status.data_busy == 1;
 }
 
 esp_err_t sdmmc_host_io_int_enable(int slot)
