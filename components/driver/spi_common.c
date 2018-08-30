@@ -330,7 +330,7 @@ void spicommon_cs_free_io(int cs_gpio_num)
 }
 
 //Set up a list of dma descriptors. dmadesc is an array of descriptors. Data is the buffer to point to.
-void spicommon_setup_dma_desc_links(lldesc_t *dmadesc, int len, const uint8_t *data, bool isrx)
+void IRAM_ATTR spicommon_setup_dma_desc_links(lldesc_t *dmadesc, int len, const uint8_t *data, bool isrx)
 {
     int n = 0;
     while (len) {

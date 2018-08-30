@@ -3,7 +3,7 @@ Secure Boot
 
 Secure Boot is a feature for ensuring only your code can run on the chip. Data loaded from flash is verified on each reset.
 
-Secure Boot is separate from the :doc:`Flash Encryption <flash-encryption>` feature, and you can use secure boot without encrypting the flash contents. However we recommend using both features together for a secure environment.
+Secure Boot is separate from the :doc:`Flash Encryption <flash-encryption>` feature, and you can use secure boot without encrypting the flash contents. However we recommend using both features together for a secure environment. See :ref:`secure-boot-and-flash-encr` for more details.
 
 .. important::
 
@@ -253,3 +253,10 @@ Keyfile is the 32 byte raw secure boot key for the device. To flash this digest 
 
   esptool.py write_flash 0x0 bootloader-digest.bin
 
+
+.. _secure-boot-and-flash-encr:
+
+Secure Boot & Flash Encryption
+------------------------------
+
+If secure boot is used without :doc:`Flash Encryption <flash-encryption>`, it is possible to launch "time-of-check to time-of-use" attack, where flash contents are swapped after the image is verified and running. Therefore, it is recommended to use both the features together.

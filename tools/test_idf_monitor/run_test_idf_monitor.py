@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import object
+from io import open
 import os
 import signal
 import time
@@ -34,11 +38,11 @@ test_list = (
 in_dir = 'tests/'       # tests are in this directory
 out_dir = 'outputs/'    # test results are written to this directory (kept only for debugging purposes)
 socat_in = './socatfile'# temporary socat file (deleted after run)
-monitor_error_output = out_dir + 'monitor_error_output'
+err_out = out_dir + 'monitor_error_output'
 elf_file = './dummy.elf'  # ELF file used for starting the monitor
 idf_monitor = '{}/tools/idf_monitor.py'.format(os.getenv("IDF_PATH"))
 
-class SocatRunner:
+class SocatRunner(object):
     """
     Runs socat in the background for creating a socket.
     """
@@ -54,7 +58,7 @@ class SocatRunner:
                 '-U', # unidirectional pipe from file to port
                 'TCP4-LISTEN:2399,reuseaddr,fork',
                 'exec:"tail -c 1GB -F ' + socat_in + '"']
-        print ' '.join(socat_cmd)
+        print(' '.join(socat_cmd))
         self._socat_process = subprocess.Popen(socat_cmd, preexec_fn=os.setsid) # See __exit__ for os.setsid
         return self
 
@@ -82,38 +86,38 @@ def main():
             # another reason while the temporary socat_in file is used instead of directly reading the test files).
             time.sleep(1)
             for t in test_list:
-                print 'Running test on {} with filter "{}" and expecting {}'.format(t[0], t[1], t[2])
-                with open(in_dir + t[0], "r") as input_file, open(socat_in, "w") as socat_file:
-                    print 'cat {} > {}'.format(input_file.name, socat_file.name)
-                    for line in input_file:
-                        socat_file.write(line)
+                print('Running test on {} with filter "{}" and expecting {}'.format(t[0], t[1], t[2]))
+                with open(in_dir + t[0], "r", encoding='utf-8') as i_f, open(socat_in, "w", encoding='utf-8') as s_f:
+                    print('cat {} > {}'.format(i_f.name, s_f.name))
+                    for line in i_f:
+                        s_f.write(line)
                     idf_exit_sequence = b'\x1d\n'
-                    print 'echo "<exit>" >> {}'.format(socat_file.name)
-                    socat_file.write(idf_exit_sequence)
+                    print('echo "<exit>" >> {}'.format(s_f.name))
+                    s_f.write(idf_exit_sequence.decode())
                 monitor_cmd = [idf_monitor,
                         '--port', 'socket://localhost:2399',
                         '--print_filter', t[1],
                         elf_file]
-                with open(out_dir + t[2], "w") as mon_out_f, open(monitor_error_output, "w") as mon_err_f:
+                with open(out_dir + t[2], "w", encoding='utf-8') as o_f, open(err_out, "w", encoding='utf-8') as e_f:
                     try:
                         (master_fd, slave_fd) = pty.openpty()
-                        print ' '.join(monitor_cmd),
-                        print ' > {} 2> {} < {}'.format(mon_out_f.name, mon_err_f.name, os.ttyname(slave_fd))
-                        proc = subprocess.Popen(monitor_cmd, stdin=slave_fd, stdout=mon_out_f, stderr=mon_err_f,
+                        print(' '.join(monitor_cmd), end=' ')
+                        print(' > {} 2> {} < {}'.format(o_f.name, e_f.name, os.ttyname(slave_fd)))
+                        proc = subprocess.Popen(monitor_cmd, stdin=slave_fd, stdout=o_f, stderr=e_f,
                                 close_fds=True)
                         proc.wait()
                     finally:
                         os.close(slave_fd)
                         os.close(master_fd)
                 diff_cmd = ['diff', in_dir + t[2], out_dir + t[2]]
-                print ' '.join(diff_cmd)
+                print(' '.join(diff_cmd))
                 subprocess.check_call(diff_cmd)
-                print 'Test has passed'
+                print('Test has passed')
     finally:
         cleanup()
 
     end = time.time()
-    print 'Execution took {:.2f} seconds'.format(end - start)
+    print('Execution took {:.2f} seconds'.format(end - start))
 
 if __name__ == "__main__":
     main()

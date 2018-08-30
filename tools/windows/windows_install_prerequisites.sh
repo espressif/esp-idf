@@ -41,8 +41,6 @@ rm -f /mingw32/bin/envsubst.exe
 
 python -m pip install --upgrade pip
 
-pip install pyserial
-
 # Automatically download precompiled toolchain, unpack at /opt/xtensa-esp32-elf/
 TOOLCHAIN_ZIP=xtensa-esp32-elf-win32-1.22.0-80-g6c4433a-5.2.0.zip
 echo "Downloading precompiled toolchain ${TOOLCHAIN_ZIP}..."

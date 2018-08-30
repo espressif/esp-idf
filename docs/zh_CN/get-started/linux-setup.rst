@@ -22,6 +22,11 @@ Linux 平台工具链的标准设置
 
     sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial
 
+.. note::
+
+    一些旧的（2014年之前）Linux 发行版中使用的 ``pyserial`` 版本可能是 2.x ， ESP-IDF并不支持。
+    在这种情况下，请参考 :ref:`安装依赖的 Python 软件包 <get-started-get-packages>` 章节，通过 ``pip`` 工具来安装支持的版本。
+
 工具链的设置
 ===============
 

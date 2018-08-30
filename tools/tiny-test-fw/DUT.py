@@ -576,7 +576,10 @@ class BaseDUT(object):
                 data = self.data_cache.get_data(time_remaining)
 
         if match_succeed:
-            # do callback and flush matched data cache
+            # sort matched items according to order of appearance in the input data,
+            # so that the callbacks are invoked in correct order
+            matched_expect_items = sorted(matched_expect_items, key=lambda it: it["index"])
+            # invoke callbacks and flush matched data cache
             slice_index = -1
             for expect_item in matched_expect_items:
                 # trigger callback

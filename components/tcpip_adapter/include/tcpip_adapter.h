@@ -33,15 +33,13 @@
  * get free station list APIs in application side. Other APIs are used in esp-idf internal,
  * otherwise the state maybe wrong.
  *
- * TODO: ipv6 support will be added, use menuconfig to disable CONFIG_TCPIP_LWIP
+ * TODO: ipv6 support will be added
  */
 
 #include <stdint.h>
 #include "rom/queue.h"
 #include "esp_wifi_types.h"
-
-#define CONFIG_TCPIP_LWIP 1
-#define CONFIG_DHCP_STA_LIST 1
+#include "sdkconfig.h"
 
 #if CONFIG_TCPIP_LWIP
 #include "lwip/ip_addr.h"
@@ -81,7 +79,6 @@ typedef struct {
 
 typedef dhcps_lease_t tcpip_adapter_dhcps_lease_t;
 
-#if CONFIG_DHCP_STA_LIST 
 typedef struct {
     uint8_t mac[6];
     ip4_addr_t ip;
@@ -91,12 +88,10 @@ typedef struct {
     tcpip_adapter_sta_info_t sta[ESP_WIFI_MAX_CONN_NUM];
     int num;
 } tcpip_adapter_sta_list_t;
-#endif
 
 #endif
 
-#define ESP_ERR_TCPIP_ADAPTER_BASE      0x5000      // TODO: move base address to esp_err.h
-
+#define ESP_ERR_TCPIP_ADAPTER_BASE                  0x5000
 #define ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS        ESP_ERR_TCPIP_ADAPTER_BASE + 0x01
 #define ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY          ESP_ERR_TCPIP_ADAPTER_BASE + 0x02
 #define ESP_ERR_TCPIP_ADAPTER_DHCPC_START_FAILED    ESP_ERR_TCPIP_ADAPTER_BASE + 0x03
@@ -105,7 +100,6 @@ typedef struct {
 #define ESP_ERR_TCPIP_ADAPTER_NO_MEM                ESP_ERR_TCPIP_ADAPTER_BASE + 0x06
 #define ESP_ERR_TCPIP_ADAPTER_DHCP_NOT_STOPPED      ESP_ERR_TCPIP_ADAPTER_BASE + 0x07
 
-/* TODO: add Ethernet interface */
 typedef enum {
     TCPIP_ADAPTER_IF_STA = 0,     /**< ESP32 station interface */
     TCPIP_ADAPTER_IF_AP,          /**< ESP32 soft-AP interface */
@@ -522,8 +516,17 @@ esp_err_t tcpip_adapter_dhcpc_start(tcpip_adapter_if_t tcpip_if);
  */
 esp_err_t tcpip_adapter_dhcpc_stop(tcpip_adapter_if_t tcpip_if);
 
-
-
+/**
+ * @brief  Get data from ethernet interface
+ *
+ * This function should be installed by esp_eth_init, so Ethernet packets will be forward to TCPIP stack.
+ *
+ * @param[in]  void *buffer: the received data point
+ * @param[in]  uint16_t len: the received data length
+ * @param[in]  void *eb: parameter
+ *
+ * @return ESP_OK
+ */
 esp_err_t tcpip_adapter_eth_input(void *buffer, uint16_t len, void *eb);
 
 /**
@@ -561,7 +564,7 @@ esp_err_t tcpip_adapter_ap_input(void *buffer, uint16_t len, void *eb);
  *
  * @return ESP_IF_WIFI_STA
  *         ESP_IF_WIFI_AP
-           ESP_IF_ETH
+ *         ESP_IF_ETH
  *         ESP_IF_MAX
  */
 esp_interface_t tcpip_adapter_get_esp_if(void *dev);

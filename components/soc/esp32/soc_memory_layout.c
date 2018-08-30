@@ -156,9 +156,9 @@ SOC_RESERVE_MEMORY_REGION(0x3ffae000, 0x3ffae6e0, rom_data);
 
 #if CONFIG_MEMMAP_TRACEMEM
 #if CONFIG_MEMMAP_TRACEMEM_TWOBANKS
-SOC_RESERVE_MEMORY_REGION(0x3fff8000, 0x40000000, trace_mem); //Reserve trace mem region
+SOC_RESERVE_MEMORY_REGION(0x3fff8000, 0x40000000, trace_mem); //Reserve trace mem region, 32K for both cpu
 #else
-SOC_RESERVE_MEMORY_REGION(0x3fff8000, 0x3fffc000, trace_mem); //Reserve trace mem region
+SOC_RESERVE_MEMORY_REGION(0x3fffc000, 0x40000000, trace_mem); //Reserve trace mem region, 16K (upper-half) for pro cpu
 #endif
 #endif
 

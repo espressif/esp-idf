@@ -128,7 +128,7 @@ test cases:
   test point 1: basic function
   test point 2: mesh network establish
   version: v1 (2017-7-20)
-- CI ready: 'Yes'
+- CI ready: 'No'
   ID: MESH_EST_0404
   SDK: ESP32_IDF
   Test App: SSC_MESH
@@ -177,7 +177,7 @@ test cases:
   test point 1: basic function
   test point 2: mesh network re-establish
   version: v1 (2017-7-20)
-- CI ready: 'Yes'
+- CI ready: 'No'
   ID: MESH_EST_0405
   SDK: ESP32_IDF
   Test App: SSC_MESH

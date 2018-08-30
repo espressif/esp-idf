@@ -103,11 +103,14 @@ esp_deep_sleep_wake_stub_fn_t esp_get_deep_sleep_wake_stub(void)
     REG_WRITE(RTC_MEMORY_CRC_REG, stored_crc);
     _lock_release(&lock_rtc_memory_crc);
 
-    if(stored_crc == calc_crc) {
-        return (esp_deep_sleep_wake_stub_fn_t)REG_READ(RTC_ENTRY_ADDR_REG);
-    } else {
+    if(stored_crc != calc_crc) {
         return NULL;
     }
+    esp_deep_sleep_wake_stub_fn_t stub_ptr = (esp_deep_sleep_wake_stub_fn_t) REG_READ(RTC_ENTRY_ADDR_REG);
+    if (!esp_ptr_executable(stub_ptr)) {
+        return NULL;
+    }
+    return stub_ptr;
 }
 
 void esp_set_deep_sleep_wake_stub(esp_deep_sleep_wake_stub_fn_t new_stub)
@@ -178,8 +181,9 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     }
 
     // Save current frequency and switch to XTAL
-    rtc_cpu_freq_t cpu_freq = rtc_clk_cpu_freq_get();
-    rtc_clk_cpu_freq_set(RTC_CPU_FREQ_XTAL);
+    rtc_cpu_freq_config_t cpu_freq_config;
+    rtc_clk_cpu_freq_get_config(&cpu_freq_config);
+    rtc_clk_cpu_freq_set_xtal();
 
     // Configure pins for external wakeup
     if (s_config.wakeup_triggers & RTC_EXT0_TRIG_EN) {
@@ -205,7 +209,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     uint32_t result = rtc_sleep_start(s_config.wakeup_triggers, 0);
 
     // Restore CPU frequency
-    rtc_clk_cpu_freq_set(cpu_freq);
+    rtc_clk_cpu_freq_set_config(&cpu_freq_config);
 
     // re-enable UART output
     resume_uarts();

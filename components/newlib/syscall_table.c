@@ -41,6 +41,10 @@ extern int _scanf_float(struct _reent *rptr,
               FILE *fp,
               va_list *ap);
 
+static void raise_r_stub(struct _reent *rptr)
+{
+    _raise_r(rptr, 0);
+}
 
 static struct syscall_stub_table s_stub_table = {
     .__getreent = &__getreent,
@@ -53,7 +57,7 @@ static struct syscall_stub_table s_stub_table = {
     ._rename_r = &esp_vfs_rename,
     ._times_r = &_times_r,
     ._gettimeofday_r = &_gettimeofday_r,
-    ._raise_r = (void (*)(struct _reent *r)) &_raise_r,
+    ._raise_r = &raise_r_stub,
     ._unlink_r = &esp_vfs_unlink,
     ._link_r = &esp_vfs_link,
     ._stat_r = &esp_vfs_stat,

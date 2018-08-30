@@ -315,7 +315,7 @@ test_fatfs_on_host:
     - cd components/fatfs/test_fatfs_host/
     - make test
 
-test_mdns_fuzzer_on_host:
+.host_fuzzer_test_template: &host_fuzzer_test_template
   stage: host_test
   image: $CI_DOCKER_REGISTRY/afl-fuzzer-test
   tags:
@@ -324,21 +324,47 @@ test_mdns_fuzzer_on_host:
   artifacts:
     when: always
     paths:
-      - components/mdns/test_afl_fuzz_host/out/crashes
+      - ${FUZZER_TEST_DIR}/out/crashes
+      - ${FUZZER_TEST_DIR}/fuzz_output.log
     expire_in: 1 mos
   only:
     # can only be triggered
     - triggers
-  variables:
-    BOT_NEEDS_TRIGGER_BY_NAME: 1
   script:
     - export AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 && export AFL_SKIP_CPUFREQ=1
-    - cd components/mdns/test_afl_fuzz_host/
+    - cd ${FUZZER_TEST_DIR}
     # run AFL fuzzer for one hour
-    - ( make fuzz || pkill sleep ) &
+    - ( ( make ${FUZZER_PARAMS} fuzz | tee fuzz_output.log | grep -v '\(Fuzzing test case\|Entering queue cycle\)' ) || pkill sleep ) &
     - ( sleep 3600 || mkdir -p out/crashes/env_failed ) && pkill afl-fuz
     # check no crashes found
-    - "[ -z `ls out/crashes/` ] || exit 1"
+    - test -z "$(ls out/crashes/)" || exit 1
+
+test_mdns_fuzzer_on_host:
+  <<: *host_fuzzer_test_template
+  variables:
+    BOT_NEEDS_TRIGGER_BY_NAME: 1
+    FUZZER_TEST_DIR: components/mdns/test_afl_fuzz_host
+
+test_lwip_dns_fuzzer_on_host:
+  <<: *host_fuzzer_test_template
+  variables:
+    BOT_NEEDS_TRIGGER_BY_NAME: 1
+    FUZZER_TEST_DIR: components/lwip/test_afl_host
+    FUZZER_PARAMS: MODE=dns
+
+test_lwip_dhcp_fuzzer_on_host:
+  <<: *host_fuzzer_test_template
+  variables:
+    BOT_NEEDS_TRIGGER_BY_NAME: 1
+    FUZZER_TEST_DIR: components/lwip/test_afl_host
+    FUZZER_PARAMS: MODE=dhcp_client
+
+test_lwip_dhcps_fuzzer_on_host:
+  <<: *host_fuzzer_test_template
+  variables:
+    BOT_NEEDS_TRIGGER_BY_NAME: 1
+    FUZZER_TEST_DIR: components/lwip/test_afl_host
+    FUZZER_PARAMS: MODE=dhcp_server
 
 test_spiffs_on_host:
   <<: *host_test_template
@@ -385,14 +411,30 @@ test_idf_monitor:
     expire_in: 1 week
   script:
     - cd ${IDF_PATH}/tools/test_idf_monitor
+    - source /opt/pyenv/activate
+    - pyenv global 2.7.15
     - ./run_test_idf_monitor.py
+    - pyenv global 3.4.8
+    - ./run_test_idf_monitor.py
+    - pyenv global system
 
 test_esp_err_to_name_on_host:
   <<: *host_test_template
+  artifacts:
+    when: on_failure
+    paths:
+      - components/esp32/esp_err_to_name.c
+    expire_in: 1 week
   script:
     - cd tools/
+    - source /opt/pyenv/activate
+    - pyenv global 2.7.15
     - ./gen_esp_err_to_name.py
     - git diff --exit-code -- ../components/esp32/esp_err_to_name.c || (echo 'Differences found. Please run gen_esp_err_to_name.py and commit the changes.'; exit 1)
+    - pyenv global 3.4.8
+    - ./gen_esp_err_to_name.py
+    - git diff --exit-code -- ../components/esp32/esp_err_to_name.c || (echo 'Differences found between running under Python 2 and 3.'; exit 1)
+    - pyenv global system
 
 push_to_github:
   stage: deploy
@@ -926,6 +968,18 @@ UT_001_33:
     - UT_T1_1
     
 UT_001_34:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+UT_001_35:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+UT_001_36:
   <<: *unit_test_template
   tags:
     - ESP32_IDF

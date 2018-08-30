@@ -18,7 +18,6 @@
 #include <sys/socket.h>
 #include <fcntl.h>
 
-
 #include "mbedtls/platform.h"
 #include "mbedtls/net_sockets.h"
 #include "mbedtls/esp_debug.h"
@@ -48,12 +47,14 @@ typedef struct esp_tls_cfg {
  
     const unsigned char *cacert_pem_buf;    /*!< Certificate Authority's certificate in a buffer */
  
-    const unsigned int cacert_pem_bytes;    /*!< Size of Certificate Authority certificate 
+    unsigned int cacert_pem_bytes;          /*!< Size of Certificate Authority certificate
                                                  pointed to by cacert_pem_buf */
  
     bool non_block;                         /*!< Configure non-blocking mode. If set to true the 
                                                  underneath socket will be configured in non 
                                                  blocking mode after tls session is established */
+
+    int timeout_ms;                         /*!< Network timeout in milliseconds */
 } esp_tls_cfg_t;
 
 /**
@@ -164,6 +165,21 @@ static inline ssize_t esp_tls_conn_read(esp_tls_t *tls, void  *data, size_t data
  * @param[in]  tls  pointer to esp-tls as esp-tls handle.    
  */
 void esp_tls_conn_delete(esp_tls_t *tls);
+
+/**
+ * @brief      Return the number of application data bytes remaining to be
+ *             read from the current record
+ *
+ * This API is a wrapper over mbedtls's mbedtls_ssl_get_bytes_avail() API.
+ *
+ * @param[in]  tls  pointer to esp-tls as esp-tls handle.
+ *
+ * @return
+ *            - -1  in case of invalid arg
+ *            - bytes available in the application data
+ *              record read buffer
+ */
+size_t esp_tls_get_bytes_avail(esp_tls_t *tls);
 
 #ifdef __cplusplus
 }

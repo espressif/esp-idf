@@ -58,12 +58,13 @@ class Page(object):
     ACTIVE = 0xFFFFFFFE
     FULL = 0xFFFFFFFC
 
-    def __init__(self, page_num):
+    def __init__(self, page_num, is_rsrv_page=False):
         self.entry_num = 0
         self.bitmap_array = array.array('B')
         self.page_buf = bytearray(b'\xff')*Page.PAGE_PARAMS["max_size"]
-        self.bitmap_array = self.create_bitmap_array()
-        self.set_header(page_num)
+        if not is_rsrv_page:
+            self.bitmap_array = self.create_bitmap_array()
+            self.set_header(page_num)
 
     def set_header(self, page_num):
         global page_header
@@ -127,8 +128,8 @@ class Page(object):
             chunk_size = 0
 
             # Get the size available in current page
-            if self.entry_num < (Page.PAGE_PARAMS["max_entries"] - 1):
-                tailroom = (Page.PAGE_PARAMS["max_entries"] - self.entry_num - 1) * Page.SINGLE_ENTRY_SIZE
+            tailroom = (Page.PAGE_PARAMS["max_entries"] - self.entry_num - 1) * Page.SINGLE_ENTRY_SIZE
+            assert tailroom >=0, "Page overflow!!"
 
             # Split the binary data into two and store a chunk of available size onto curr page
             if tailroom < remaining_size:
@@ -322,7 +323,8 @@ class Page(object):
 NVS class encapsulates all NVS specific operations to create a binary with given key-value pairs. Binary can later be flashed onto device via a flashing utility.
 """
 class NVS(object):
-    def __init__(self, fout):
+    def __init__(self, fout, input_size):
+        self.size = input_size
         self.namespace_idx = 0
         self.page_num = -1
         self.pages = []
@@ -334,12 +336,27 @@ class NVS(object):
 
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type == None and exc_value == None:
+            # Create pages for remaining available size
+            while True:
+                try:
+                    new_page = self.create_new_page()
+                except InsufficientSizeError:
+                    self.size = None
+                    # Creating the last reserved page
+                    self.create_new_page(True)
+                    break
+
             result = self.get_binary_data()
             self.fout.write(result)
 
-    def create_new_page(self):
+    def create_new_page(self, is_rsrv_page=False):
+        # Update available size as each page is created
+        if self.size == 0:
+            raise InsufficientSizeError("Size parameter is is less than the size of data in csv.Please increase size.")
+        if not is_rsrv_page:
+            self.size = self.size - Page.PAGE_PARAMS["max_size"]
         self.page_num += 1
-        new_page = Page(self.page_num)
+        new_page = Page(self.page_num, is_rsrv_page)
         self.pages.append(new_page)
         self.cur_page = new_page
         return new_page
@@ -418,13 +435,21 @@ class InputError(RuntimeError):
     def __init__(self, e):
         super(InputError, self).__init__(e)
 
-def nvs_open(result_obj):
+class InsufficientSizeError(RuntimeError):
+    """
+    Represents error when NVS Partition size given is insufficient
+    to accomodate the data in the given csv file
+    """
+    def __init__(self, e):
+       super(InsufficientSizeError, self).__init__(e)
+
+def nvs_open(result_obj, input_size):
     """ Wrapper to create and NVS class object. This object can later be used to set key-value pairs
 
     :param result_obj: File/Stream object to dump resultant binary. If data is to be dumped into memory, one way is to use BytesIO object
     :return: NVS class instance
     """
-    return NVS(result_obj)
+    return NVS(result_obj, input_size)
 
 def write_entry(nvs_instance, key, datatype, encoding, value):
     """ Wrapper to set key-value pair in NVS format
@@ -457,16 +482,34 @@ def nvs_close(nvs_instance):
     """
     nvs_instance.__exit__(None, None, None)
 
-def nvs_part_gen(input_filename=None, output_filename=None):
+def nvs_part_gen(input_filename=None, output_filename=None, input_size=None):
+    """ Wrapper to generate nvs partition binary
+
+    :param input_filename: Name of input file containing data
+    :param output_filename: Name of output file to store generated binary
+    :param input_size: Size of partition
+    :return: None
+    """
+    if input_size % 4096 !=0:
+        sys.exit("Size parameter should be a multiple of 4KB.")
+
+    # Update size as a page needs to be reserved of size 4KB
+    input_size = input_size - Page.PAGE_PARAMS["max_size"]
+
+    if input_size == 0:
+        sys.exit("Size parameter is insufficient.")
+
     input_file = open(input_filename, 'rb')
     output_file = open(output_filename, 'wb')
 
-    with nvs_open(output_file) as nvs_obj:
+    with nvs_open(output_file, input_size) as nvs_obj:
+        # Update size as one page is created
+        #nvs_obj.size = input_size - Page.PAGE_PARAMS["max_size"]
         reader = csv.DictReader(input_file, delimiter=',')
         for row in reader:
             try:
                 write_entry(nvs_obj, row["key"], row["type"], row["encoding"], row["value"])
-            except InputError as e:
+            except (InputError, InsufficientSizeError) as e:
                 print(e)
                 input_file.close()
                 output_file.close()
@@ -487,10 +530,17 @@ def main():
             help='Path to output converted binary file. Will use stdout if omitted',
             default=sys.stdout)
 
+    parser.add_argument(
+            "size",
+            help='Size of NVS Partition in KB. Eg. 12KB')
+
     args = parser.parse_args()
     input_filename = args.input
     output_filename = args.output
-    nvs_part_gen(input_filename, output_filename)
+
+    # Set size
+    input_size = int(args.size.split('KB')[0]) * 1024
+    nvs_part_gen(input_filename, output_filename, input_size)
 
 
 

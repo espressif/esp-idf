@@ -135,6 +135,28 @@ ESP32 是一套 Wi-Fi (2.4 GHz) 和蓝牙 (4.2) 双模解决方案，集成了�
 
 工具链程序使用环境变量 ``IDF_PATH`` 来访问 ESP-IDF。这个变量应该设置在你的 PC 中，否则工程将不能编译。你可以在每次 PC 重启时手工设置，也可以通过在用户配置文件中定义 ``IDF_PATH`` 变量来永久性设置。要永久性设置，请参考 :doc:`add-idf_path-to-profile` 文档中 :ref:`Windows <add-idf_path-to-profile-windows>` 或 :ref:`Linux and MacOS <add-idf_path-to-profile-linux-macos>` 相关的指导进行操作。
 
+.. _get-started-get-packages:
+
+安装依赖的 Python 软件包
+====================================
+
+ESP-IDF 所依赖的 Python 软件包位于 ``$IDF_PATH/requirements.txt`` 文件中，您可以通过运行以下命令来安装它们：
+
+.. code:: bash
+
+    sudo python -m pip install -r $IDF_PATH/requirements.txt
+
+如果您没有系统的管理员权限，那么可以使用如下命令来将软件包安装到用户目录中：
+
+.. code:: bash
+
+    python -m pip install --user -r $IDF_PATH/requirements.txt
+
+.. note::
+
+    请调用 ESP-IDF 使用的相同版本的 Python 解释器，解释器的版本号可以通过运行命令 ``python --version`` 来获得，根据结果，您可能要使用 ``python2``, ``python2.7`` 或者类似的名字而不是 ``python``,例如::
+
+        sudo python2.7 -m pip install -r $IDF_PATH/requirements.txt
 
 .. _get-started-start-project:
 

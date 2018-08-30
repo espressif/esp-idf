@@ -43,7 +43,7 @@ from IDF.IDFApp import UT
 UT_APP_BOOT_UP_DONE = "Press ENTER to see the list of tests."
 RESET_PATTERN = re.compile(r"(ets [\w]{3}\s+[\d]{1,2} [\d]{4} [\d]{2}:[\d]{2}:[\d]{2}[^()]*\([\w].*?\))")
 EXCEPTION_PATTERN = re.compile(r"(Guru Meditation Error: Core\s+\d panic'ed \([\w].*?\))")
-ABORT_PATTERN = re.compile(r"(abort\(\) was called at PC 0x[a-eA-E\d]{8} on core \d)")
+ABORT_PATTERN = re.compile(r"(abort\(\) was called at PC 0x[a-fA-F\d]{8} on core \d)")
 FINISH_PATTERN = re.compile(r"1 Tests (\d) Failures (\d) Ignored")
 END_LIST_STR = r'\r?\nEnter test for running'
 TEST_PATTERN = re.compile(r'\((\d+)\)\s+"([^"]+)" ([^\r]+)\r?\n(' + END_LIST_STR + r')?')
@@ -254,6 +254,7 @@ def run_unit_test_cases(env, extra_data):
         raise AssertionError("Unit Test Failed")
 
 
+
 class Handler(threading.Thread):
 
     WAIT_SIGNAL_PATTERN = re.compile(r'Waiting for signal: \[(.+)\]!')
@@ -271,6 +272,7 @@ class Handler(threading.Thread):
         self.result = False
         self.fail_name = None
         self.timeout = timeout
+        self.force_stop = threading.Event()  # it show the running status
         threading.Thread.__init__(self, name="{} Handler".format(dut))
 
     def run(self):
@@ -289,7 +291,7 @@ class Handler(threading.Thread):
         def device_wait_action(data):
             start_time = time.time()
             expected_signal = data[0]
-            while not THREAD_TERMINATE_FLAG:
+            while 1:
                 if time.time() > start_time + self.timeout:
                     Utility.console_log("Timeout in device for function: %s"%self.child_case_name, color="orange")
                     break
@@ -321,9 +323,7 @@ class Handler(threading.Thread):
             self.dut.expect("Running " + self.parent_case_name + "...")
         except ExpectTimeout:
             Utility.console_log("No case detected!", color="orange")
-            THREAD_TERMINATE_FLAG = True
-
-        while not self.finish and not THREAD_TERMINATE_FLAG:
+        while not self.finish and not self.force_stop.isSet():
             try:
                 self.dut.expect_any((re.compile('\(' + str(self.child_case_index) + '\)\s"(\w+)"'), get_child_case_name),
                                     (self.WAIT_SIGNAL_PATTERN, device_wait_action),  # wait signal pattern
@@ -334,6 +334,9 @@ class Handler(threading.Thread):
                 Utility.console_log("Timeout in expect", color="orange")
                 one_device_case_finish(False)
                 break
+
+    def stop(self):
+        self.force_stop.set()
 
 
 def get_case_info(one_case):
@@ -360,9 +363,6 @@ def case_run(duts, ut_config, env, one_case, failed_cases, app_bin):
     result = True
     parent_case, case_num = get_case_info(one_case)
 
-    global THREAD_TERMINATE_FLAG
-    THREAD_TERMINATE_FLAG = False
-
     for i in range(case_num):
         dut = get_dut(duts, env, "dut%d" % i, ut_config, app_bin)
         threads.append(Handler(dut, send_signal_list, lock,
@@ -374,7 +374,7 @@ def case_run(duts, ut_config, env, one_case, failed_cases, app_bin):
         thread.join()
         result = result and thread.result
         if not thread.result:
-            THREAD_TERMINATE_FLAG = True
+            [thd.stop() for thd in threads]
 
     if result:
         Utility.console_log("Success: " + one_case["name"], color="green")

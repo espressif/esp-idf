@@ -5,7 +5,7 @@ Introduction
 ------------
 
 :component_file:`nvs_flash/nvs_partition_generator/nvs_partition_gen.py` utility is designed to help create a binary file, compatible with NVS architecture defined in :doc:`Non-Volatile Storage </api-reference/storage/nvs_flash>`, based on user provided key-value pairs in a CSV file.
-Utility is ideally suited for generating a binary blob, containing data specific to ODM/OEM, which can be flashed externally at the time of device manufacturing. This helps manufacturers set unique value for various parameters for each device, e.g. serial number, while using same application firmaware for all devices.
+Utility is ideally suited for generating a binary blob, containing data specific to ODM/OEM, which can be flashed externally at the time of device manufacturing. This helps manufacturers set unique value for various parameters for each device, e.g. serial number, while using same application firmware for all devices.
 
 CSV file format
 ---------------
@@ -49,9 +49,19 @@ When a new namespace entry is encountered in the CSV file, each follow-up entrie
 Running the utility
 -------------------
 
-A sample CSV file provided with the utility. You can run the utility using below command::
+You can run the utility using below command::
 
-    python nvs_partition_generator.py sample.csv sample.bin
+	python nvs_partition_gen.py [-h] input output size
+
+
+Positional arguments:
+
+| Arguments 					| Description
+|	---		  					| 	---
+|  input          			| Path to CSV file to parse. Will use stdin if omitted (a sample.csv is provided)
+|  output         			| Path to output converted binary file. Will use stdout if omitted
+|  size    	    		    | Size of NVS Partition in KB. E.g. 12KB
+
 
 Caveats
 -------
