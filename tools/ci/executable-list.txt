@@ -59,3 +59,5 @@ tools/kconfig_new/confgen.py
 tools/kconfig_new/confserver.py
 tools/kconfig_new/test/test_confserver.py
 tools/windows/tool_setup/build_installer.sh
+tools/test_idf_size/test.sh
+

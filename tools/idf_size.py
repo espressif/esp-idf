@@ -6,7 +6,7 @@
 # Includes information which is not shown in "xtensa-esp32-elf-size",
 # or easy to parse from "xtensa-esp32-elf-objdump" or raw map files.
 #
-# Copyright 2017 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,6 +20,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import dict
 import argparse, sys, subprocess, re
 import os.path
 import pprint
@@ -47,12 +50,6 @@ def load_map_data(map_file):
     memory_config = load_memory_config(map_file)
     sections  = load_sections(map_file)
     return memory_config, sections
-
-def output_section_for_address(memory_config, address):
-    for m in memory_config.values():
-        if m["origin"] <= address and m["origin"] + m["length"] > address:
-            return m["name"]
-    return None
 
 def load_memory_config(map_file):
     """ Memory Configuration section is the total size of each output section """
@@ -183,7 +180,7 @@ def main():
         print("Per-file contributions to ELF file:")
         print_detailed_sizes(sections, "file", "Object File")
     if args.archive_details:
-        print "Symbols within the archive:", args.archive_details, "(Not all symbols may be reported)"
+        print("Symbols within the archive:", args.archive_details, "(Not all symbols may be reported)")
         print_archive_symbols(sections, args.archive_details)
 
 def print_summary(memory_config, sections):
@@ -199,7 +196,7 @@ def print_summary(memory_config, sections):
     used_data = get_size(".dram0.data")
     used_bss = get_size(".dram0.bss")
     used_dram = used_data + used_bss
-    used_iram = sum( get_size(s) for s in sections.keys() if s.startswith(".iram0") )
+    used_iram = sum( get_size(s) for s in sections if s.startswith(".iram0") )
     flash_code = get_size(".flash.text")
     flash_rodata = get_size(".flash.rodata")
     total_size = used_data + used_iram + flash_code + flash_rodata
@@ -230,7 +227,7 @@ def print_detailed_sizes(sections, key, header):
                 "Total")
     print("%24s %10s %6s %6s %10s %8s %7s" % headings)
     result = {}
-    for k in (sizes.keys()):
+    for k in sizes:
         v = sizes[k]
         result[k] = {}
         result[k]["data"] = v.get(".dram0.data", 0)
@@ -243,7 +240,11 @@ def print_detailed_sizes(sections, key, header):
     def return_total_size(elem):
         val = elem[1]
         return val["total"]
-    for k,v in sorted(result.items(), key=return_total_size, reverse=True):
+    def return_header(elem):
+        return elem[0]
+    s = sorted(list(result.items()), key=return_header)
+    # do a secondary sort in order to have consistent order (for diff-ing the output)
+    for k,v in sorted(s, key=return_total_size, reverse=True):
         if ":" in k:  # print subheadings for key of format archive:file
             sh,k = k.split(":")
         print("%24s %10d %6d %6d %10d %8d %7d" % (k[:24],
@@ -269,12 +270,14 @@ def print_archive_symbols(sections, archive):
             s["sym_name"] = re.sub("(.text.|.literal.|.data.|.bss.|.rodata.)", "", s["sym_name"]);
             result[section_name][s["sym_name"]] = result[section_name].get(s["sym_name"], 0) + s["size"]
     for t in interested_sections:
-        print "\nSymbols from section:", t
+        print("\nSymbols from section:", t)
         section_total = 0
-        for key,val in sorted(result[t].items(), key=lambda (k,v): v, reverse=True):
-            print("%s(%d)"% (key.replace(t + ".", ""), val)),
+        s = sorted(list(result[t].items()), key=lambda k_v: k_v[0])
+        # do a secondary sort in order to have consistent order (for diff-ing the output)
+        for key,val in sorted(s, key=lambda k_v: k_v[1], reverse=True):
+            print(("%s(%d)"% (key.replace(t + ".", ""), val)), end=' ')
             section_total += val
-        print "\nSection total:",section_total
+        print("\nSection total:",section_total)
 
 if __name__ == "__main__":
     main()

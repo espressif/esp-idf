@@ -28,9 +28,9 @@ if test_fw_path and test_fw_path not in sys.path:
     sys.path.insert(0, test_fw_path)
 
 # When running on local machine execute the following before running this script
-# > export TEST_FW_PATH='~/esp/esp-idf/tools/tiny-test-fw'
-# > make print_flash_cmd | tail -n 1 > build/download.config
 # > make app bootloader
+# > make print_flash_cmd | tail -n 1 > build/download.config
+# > export TEST_FW_PATH=~/esp/esp-idf/tools/tiny-test-fw
 
 import TinyFW
 import IDF
@@ -47,21 +47,23 @@ def test_examples_protocol_http_server_persistence(env, extra_data):
     # Get binary file
     binary_file = os.path.join(dut1.app.binary_path, "persistent_sockets.bin")
     bin_size = os.path.getsize(binary_file)
-    IDF.log_performance("http_server_bin_size", "{}KB".format(bin_size//1024))
-    IDF.check_performance("http_server_bin_size", bin_size//1024)
+    IDF.log_performance("http_server_bin_size", "{}KB".format(bin_size/1024))
+    IDF.check_performance("http_server_bin_size", bin_size/1024)
 
     # Upload binary and start testing
+    print "Starting http_server persistance test app"
     dut1.start_app()
 
     # Parse IP address of STA
-    got_ip   = dut1.expect(re.compile(r"(?:[\s\S]*)Got IP: (\d+.\d+.\d+.\d+)"), timeout=30)[0]
-    got_port = dut1.expect(re.compile(r"(?:[\s\S]*)Starting server on port: (\d+)"))[0]
+    print "Waiting to connect with AP"
+    got_ip   = dut1.expect(re.compile(r"(?:[\s\S]*)Got IP: (\d+.\d+.\d+.\d+)"), timeout=120)[0]
+    got_port = dut1.expect(re.compile(r"(?:[\s\S]*)Starting server on port: (\d+)"), timeout=30)[0]
 
     print "Got IP   : " + got_ip
     print "Got Port : " + got_port
 
     # Expected Logs
-    dut1.expect("Registering URI handlers")
+    dut1.expect("Registering URI handlers", timeout=30)
 
     # Run test script
     conn = client.start_session(got_ip, got_port)
@@ -72,9 +74,9 @@ def test_examples_protocol_http_server_persistence(env, extra_data):
     num = random.randint(0,100)
     client.putreq(conn, "/adder", str(num))
     visitor += 1
-    dut1.expect("/adder visitor count = " + str(visitor))
-    dut1.expect("/adder PUT handler read " + str(num))
-    dut1.expect("PUT allocating new session")
+    dut1.expect("/adder visitor count = " + str(visitor), timeout=30)
+    dut1.expect("/adder PUT handler read " + str(num), timeout=30)
+    dut1.expect("PUT allocating new session", timeout=30)
 
     # Retest PUT request and change session context value
     num = random.randint(0,100)
@@ -82,11 +84,11 @@ def test_examples_protocol_http_server_persistence(env, extra_data):
     client.putreq(conn, "/adder", str(num))
     visitor += 1
     adder += num
-    dut1.expect("/adder visitor count = " + str(visitor))
-    dut1.expect("/adder PUT handler read " + str(num))
+    dut1.expect("/adder visitor count = " + str(visitor), timeout=30)
+    dut1.expect("/adder PUT handler read " + str(num), timeout=30)
     try:
         # Re allocation shouldn't happen
-        dut1.expect("PUT allocating new session")
+        dut1.expect("PUT allocating new session", timeout=30)
         # Not expected
         raise RuntimeError
     except:
@@ -100,21 +102,21 @@ def test_examples_protocol_http_server_persistence(env, extra_data):
         client.postreq(conn, "/adder", str(num))
         visitor += 1
         adder += num
-        dut1.expect("/adder visitor count = " + str(visitor))
-        dut1.expect("/adder handler read " + str(num))
+        dut1.expect("/adder visitor count = " + str(visitor), timeout=30)
+        dut1.expect("/adder handler read " + str(num), timeout=30)
 
     # Test GET request and session persistence
     print "Matching final sum :", adder
     if client.getreq(conn, "/adder") != str(adder):
         raise RuntimeError
     visitor += 1
-    dut1.expect("/adder visitor count = " + str(visitor))
-    dut1.expect("/adder GET handler send " + str(adder))
+    dut1.expect("/adder visitor count = " + str(visitor), timeout=30)
+    dut1.expect("/adder GET handler send " + str(adder), timeout=30)
 
     print "Ending session"
     # Close connection and check for invocation of context "Free" function
     client.end_session(conn)
-    dut1.expect("/adder Free Context function called")
+    dut1.expect("/adder Free Context function called", timeout=30)
 
     print "Validating user context data"
     # Start another session to check user context data
@@ -122,11 +124,11 @@ def test_examples_protocol_http_server_persistence(env, extra_data):
     num = random.randint(0,100)
     client.putreq(conn, "/adder", str(num))
     visitor += 1
-    dut1.expect("/adder visitor count = " + str(visitor))
-    dut1.expect("/adder PUT handler read " + str(num))
-    dut1.expect("PUT allocating new session")
+    dut1.expect("/adder visitor count = " + str(visitor), timeout=30)
+    dut1.expect("/adder PUT handler read " + str(num), timeout=30)
+    dut1.expect("PUT allocating new session", timeout=30)
     client.end_session(conn)
-    dut1.expect("/adder Free Context function called")
+    dut1.expect("/adder Free Context function called", timeout=30)
 
 if __name__ == '__main__':
     test_examples_protocol_http_server_persistence()

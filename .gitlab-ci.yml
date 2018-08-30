@@ -418,6 +418,23 @@ test_idf_monitor:
     - ./run_test_idf_monitor.py
     - pyenv global system
 
+test_idf_size:
+  <<: *host_test_template
+  artifacts:
+    when: on_failure
+    paths:
+      - tools/test_idf_size/output
+      - tools/test_idf_size/.coverage
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/tools/test_idf_size
+    - source /opt/pyenv/activate
+    - pyenv global 2.7.15
+    - ./test.sh
+    - pyenv global 3.4.8
+    - ./test.sh
+    - pyenv global system
+
 test_esp_err_to_name_on_host:
   <<: *host_test_template
   artifacts:
@@ -1211,6 +1228,24 @@ UT_010_04:
     - ESP32_IDF
     - UT_T1_RMT
     - psram
+
+UT_011_01:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - EMMC
+
+UT_011_02:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - EMMC
+
+UT_011_03:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - EMMC
 
 UT_601_01:
   <<: *unit_test_template

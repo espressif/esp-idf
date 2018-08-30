@@ -38,6 +38,8 @@ void sdmmc_host_dma_stop();
 
 void sdmmc_host_dma_resume();
 
+bool sdmmc_host_card_busy();
+
 esp_err_t sdmmc_host_transaction_handler_init();
 
 void sdmmc_host_transaction_handler_deinit();
