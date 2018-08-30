@@ -23,6 +23,6 @@ set(COMPONENT_SRCS "can.c"
 set(COMPONENT_ADD_INCLUDEDIRS "include")
 set(COMPONENT_PRIV_INCLUDEDIRS "include/driver")
 
-set(COMPONENT_REQUIRES)
+set(COMPONENT_REQUIRES esp_ringbuf)
 
 register_component()
