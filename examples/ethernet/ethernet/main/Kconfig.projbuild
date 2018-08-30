@@ -41,11 +41,6 @@ config PHY_CLOCK_GPIO0_IN
     help
         Input of 50MHz refclock on GPIO0
 
-config PHY_CLOCK_GPIO0_OUT
-    bool "GPIO0 output"
-    help
-        Output the internal 50MHz APLL clock on GPIO0
-
 config PHY_CLOCK_GPIO16_OUT
     bool "GPIO16 output"
     help
@@ -61,7 +56,6 @@ endchoice
 config PHY_CLOCK_MODE
     int
     default 0 if PHY_CLOCK_GPIO0_IN
-    default 1 if PHY_CLOCK_GPIO0_OUT
     default 2 if PHY_CLOCK_GPIO16_OUT
     default 3 if PHY_CLOCK_GPIO17_OUT
 

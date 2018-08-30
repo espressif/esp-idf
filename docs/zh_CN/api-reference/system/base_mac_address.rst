@@ -1,1 +1,0 @@
-.. include:: ../../../en/api-reference/system/base_mac_address.rst

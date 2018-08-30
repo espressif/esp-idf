@@ -878,7 +878,7 @@ esp_err_t esp_http_client_open(esp_http_client_handle_t client, int write_len)
             return ESP_ERR_HTTP_INVALID_TRANSPORT;
         }
         if (transport_connect(client->transport, client->connection_info.host, client->connection_info.port, client->timeout_ms) < 0) {
-            ESP_LOGE(TAG, "Connection failed, sock < 0");
+            ESP_LOGE(TAG, "Connection failed");
             return ESP_ERR_HTTP_CONNECT;
         }
         http_dispatch_event(client, HTTP_EVENT_ON_CONNECTED, NULL, 0);
@@ -932,10 +932,17 @@ esp_err_t esp_http_client_open(esp_http_client_handle_t client, int write_len)
         }
         client->request->buffer->data[wlen] = 0;
         ESP_LOGD(TAG, "Write header[%d]: %s", header_index, client->request->buffer->data);
-        if (transport_write(client->transport, client->request->buffer->data, wlen, client->timeout_ms) <= 0) {
-            ESP_LOGE(TAG, "Error write request");
-            esp_http_client_close(client);
-            return ESP_ERR_HTTP_WRITE_DATA;
+
+        int widx = 0, wret = 0;
+        while (wlen > 0) {
+            wret = transport_write(client->transport, client->request->buffer->data + widx, wlen, client->timeout_ms);
+            if (wret <= 0) {
+                ESP_LOGE(TAG, "Error write request");
+                esp_http_client_close(client);
+                return ESP_ERR_HTTP_WRITE_DATA;
+            }
+            widx += wret;
+            wlen -= wret;
         }
         wlen = client->buffer_size;
     }
@@ -949,14 +956,10 @@ int esp_http_client_write(esp_http_client_handle_t client, const char *buffer, i
     if (client->state < HTTP_STATE_REQ_COMPLETE_HEADER) {
         return ESP_FAIL;
     }
-    int need_write;
+
     int wlen = 0, widx = 0;
     while (len > 0) {
-        need_write = len;
-        if (need_write > client->buffer_size) {
-            need_write = client->buffer_size;
-        }
-        wlen = transport_write(client->transport, buffer + widx, need_write, client->timeout_ms);
+        wlen = transport_write(client->transport, buffer + widx, len, client->timeout_ms);
         if (wlen <= 0) {
             return wlen;
         }

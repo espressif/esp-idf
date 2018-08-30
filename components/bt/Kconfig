@@ -6,6 +6,68 @@ config BT_ENABLED
     help
         Select this option to enable Bluetooth and show the submenu with Bluetooth configuration choices.
 
+menu "Bluetooth controller"
+    visible if BT_ENABLED
+
+choice BTDM_CONTROLLER_MODE
+    prompt "Bluetooth controller mode (BR/EDR/BLE/DUALMODE)"
+    depends on BT_ENABLED
+    help
+        Specify the bluetooth controller mode (BR/EDR, BLE or dual mode).
+
+config BTDM_CONTROLLER_MODE_BLE_ONLY
+    bool "BLE Only"
+
+config BTDM_CONTROLLER_MODE_BR_EDR_ONLY
+    bool "BR/EDR Only"
+
+config BTDM_CONTROLLER_MODE_BTDM
+    bool "Bluetooth Dual Mode"
+
+endchoice
+
+config BTDM_CONTROLLER_BLE_MAX_CONN
+    int "BLE Max Connections"
+    depends on BTDM_CONTROLLER_MODE_BLE_ONLY || BTDM_CONTROLLER_MODE_BTDM
+    default 3
+    range 1 9
+    help
+        BLE maximum connections of bluetooth controller.
+        Each connection uses 1KB static DRAM whenever the BT controller is enabled.
+
+config BTDM_CONTROLLER_BR_EDR_MAX_ACL_CONN
+    int "BR/EDR ACL Max Connections"
+    depends on BTDM_CONTROLLER_MODE_BR_EDR_ONLY || BTDM_CONTROLLER_MODE_BTDM
+    default 2
+    range 1 7
+    help
+        BR/EDR ACL maximum connections of bluetooth controller. 
+        Each connection uses 1.2KB static DRAM whenever the BT controller is enabled.
+
+config BTDM_CONTROLLER_BR_EDR_MAX_SYNC_CONN
+    int "BR/EDR Sync(SCO/eSCO) Max Connections"
+    depends on BTDM_CONTROLLER_MODE_BR_EDR_ONLY || BTDM_CONTROLLER_MODE_BTDM
+    default 0
+    range 0 3
+    help
+        BR/EDR Synchronize maximum connections of bluetooth controller.
+        Each connection uses 2KB static DRAM whenever the BT controller is enabled.
+
+config BTDM_CONTROLLER_BLE_MAX_CONN_EFF
+    int
+    default BTDM_CONTROLLER_BLE_MAX_CONN if BTDM_CONTROLLER_MODE_BLE_ONLY || BTDM_CONTROLLER_MODE_BTDM
+    default 0
+
+config BTDM_CONTROLLER_BR_EDR_MAX_ACL_CONN_EFF
+    int
+    default BTDM_CONTROLLER_BR_EDR_MAX_ACL_CONN if BTDM_CONTROLLER_MODE_BR_EDR_ONLY || BTDM_CONTROLLER_MODE_BTDM
+    default 0
+
+config BTDM_CONTROLLER_BR_EDR_MAX_SYNC_CONN_EFF
+    int
+    default BTDM_CONTROLLER_BR_EDR_MAX_SYNC_CONN if BTDM_CONTROLLER_MODE_BR_EDR_ONLY || BTDM_CONTROLLER_MODE_BTDM
+    default 0
+
 choice BTDM_CONTROLLER_PINNED_TO_CORE_CHOICE
     prompt "The cpu core which bluetooth controller run"
     depends on BT_ENABLED && !FREERTOS_UNICORE
@@ -103,6 +165,42 @@ config BTDM_LPCLK_SEL_EXT_32K_XTAL
     bool "External 32kHz crystal"
     depends on ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
 endchoice
+
+endmenu
+
+config BLE_SCAN_DUPLICATE
+    bool "BLE Scan Duplicate Options"
+    depends on (BTDM_CONTROLLER_MODE_BTDM || BTDM_CONTROLLER_MODE_BLE_ONLY)
+    default y
+    help
+        This select enables parameters setting of BLE scan duplicate.
+
+config DUPLICATE_SCAN_CACHE_SIZE
+    int "Maximum number of devices in scan duplicate filter"
+    depends on BLE_SCAN_DUPLICATE
+    range 10 200
+    default 20
+    help
+        Maximum number of devices which can be recorded in scan duplicate filter.
+        When the maximum amount of device in the filter is reached, the cache will be refreshed.
+
+config BLE_MESH_SCAN_DUPLICATE_EN
+    bool "Special duplicate scan mechanism for BLE Mesh scan"
+    depends on BLE_SCAN_DUPLICATE
+    default n
+    help
+        This enables the BLE scan duplicate for special BLE Mesh scan.
+
+config MESH_DUPLICATE_SCAN_CACHE_SIZE
+    int "Maximum number of Mesh adv packets in scan duplicate filter"
+    depends on BLE_MESH_SCAN_DUPLICATE_EN
+    range 10 200
+    default 50
+    help
+        Maximum number of adv packets which can be recorded in duplicate scan cache for BLE Mesh.
+        When the maximum amount of device in the filter is reached, the cache will be refreshed.
+
+
 
 endmenu
 
@@ -213,28 +311,28 @@ endchoice
 
 config GATTS_ENABLE
     bool "Include GATT server module(GATTS)"
-    depends on BLUEDROID_ENABLED
+    depends on BLUEDROID_ENABLED && (BTDM_CONTROLLER_MODE_BTDM || BTDM_CONTROLLER_MODE_BLE_ONLY)
     default y
     help
         This option can be disabled when the app work only on gatt client mode
 
 config GATTC_ENABLE
     bool "Include GATT client module(GATTC)"
-    depends on BLUEDROID_ENABLED
+    depends on BLUEDROID_ENABLED && (BTDM_CONTROLLER_MODE_BTDM || BTDM_CONTROLLER_MODE_BLE_ONLY)
     default y
     help
         This option can be close when the app work only on gatt server mode
 
 config GATTC_CACHE_NVS_FLASH
     bool "Save gattc cache data to nvs flash"
-    depends on GATTC_ENABLE
+    depends on GATTC_ENABLE && (BTDM_CONTROLLER_MODE_BTDM || BTDM_CONTROLLER_MODE_BLE_ONLY)
     default n
     help
         This select can save gattc cache data to nvs flash
 
 config BLE_SMP_ENABLE
    bool "Include BLE security module(SMP)"
-   depends on BLUEDROID_ENABLED
+   depends on BLUEDROID_ENABLED && (BTDM_CONTROLLER_MODE_BTDM || BTDM_CONTROLLER_MODE_BLE_ONLY)
    default y
    help
        This option can be close when the app not used the ble security connect.
@@ -1018,38 +1116,6 @@ config BLE_HOST_QUEUE_CONGESTION_CHECK
         handling adv packets is slow, it will cause the controller memory to run out. if enabled, adv packets will be 
         lost when host queue is congested.
 
-config BLE_SCAN_DUPLICATE
-    bool "BLE Scan Duplicate Options"
-    depends on BLUEDROID_ENABLED
-    default y
-    help
-        This select enables parameters setting of BLE scan duplicate.
-
-config DUPLICATE_SCAN_CACHE_SIZE
-    int "Maximum number of devices in scan duplicate filter"
-    depends on BLE_SCAN_DUPLICATE
-    range 10 1000
-    default 50
-    help
-        Maximum number of devices which can be recorded in scan duplicate filter.
-        When the maximum amount of device in the filter is reached, the cache will be refreshed.
-
-config BLE_MESH_SCAN_DUPLICATE_EN
-    bool "Special duplicate scan mechanism for BLE Mesh scan"
-    depends on BLE_SCAN_DUPLICATE
-    default n
-    help
-        This enables the BLE scan duplicate for special BLE Mesh scan.
-
-config MESH_DUPLICATE_SCAN_CACHE_SIZE
-    int "Maximum number of Mesh adv packets in scan duplicate filter"
-    depends on BLE_MESH_SCAN_DUPLICATE_EN
-    range 10 1000
-    default 100
-    help
-        Maximum number of adv packets which can be recorded in duplicate scan cache for BLE Mesh.
-        When the maximum amount of device in the filter is reached, the cache will be refreshed.
-
 config SMP_ENABLE
    bool
    depends on BLUEDROID_ENABLED
@@ -1058,7 +1124,7 @@ config SMP_ENABLE
 # Memory reserved at start of DRAM for Bluetooth stack
 config BT_RESERVE_DRAM
     hex
-    default 0x10000 if BT_ENABLED
+    default 0xdb5c if BT_ENABLED
     default 0
 
 endmenu

@@ -23,7 +23,8 @@
 
 #define NO_OF_TSKS  3
 #define DELAY_TICKS 2
-#define HEAP_CAPS   (MALLOC_CAP_INTERNAL|MALLOC_CAP_DEFAULT)
+/* Caps of all memory which is allocated from when a task is created */
+#define HEAP_CAPS   (portTcbMemoryCaps | portStackMemoryCaps)
 
 #define DELAY_US_ITERATIONS	1000
 

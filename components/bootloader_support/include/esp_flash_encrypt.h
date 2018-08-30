@@ -101,4 +101,14 @@ esp_err_t esp_flash_encrypt_check_and_update(void);
  */
 esp_err_t esp_flash_encrypt_region(uint32_t src_addr, size_t data_length);
 
+/** @brief Write protect FLASH_CRYPT_CNT
+ *
+ * Intended to be called as a part of boot process if flash encryption
+ * is enabled but secure boot is not used. This should protect against
+ * serial re-flashing of an unauthorised code in absence of secure boot.
+ *
+ * @return 
+ */
+void esp_flash_write_protect_crypt_cnt();
+
 #endif

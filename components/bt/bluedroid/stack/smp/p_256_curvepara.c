@@ -41,8 +41,8 @@ void p_256_init_curve(UINT32 keyLength)
         ec->p[1] = 0xFFFFFFFF;
         ec->p[0] = 0xFFFFFFFF;
 
-        memset(ec->omega, 0, KEY_LENGTH_DWORDS_P256);
-        memset(ec->a, 0, KEY_LENGTH_DWORDS_P256);
+        memset(ec->omega, 0, KEY_LENGTH_DWORDS_P256 * sizeof(ec->omega[0]));
+        memset(ec->a, 0, KEY_LENGTH_DWORDS_P256 * sizeof(ec->a[0]));
 
         ec->a_minus3 = TRUE;
 

@@ -5,7 +5,8 @@ API Guides
    :maxdepth: 1
 
    General Notes <general-notes>
-   Build System <build-system>
+   编译系统 <build-system>
+   编译系统 (CMake) <build-system-cmake>
    Error Handling <error-handling>
    Fatal Errors <fatal-errors>
    Deep Sleep Wake Stubs <deep-sleep-stub>
@@ -19,7 +20,7 @@ API Guides
    Partition Tables <partition-tables>
    Secure Boot <../security/secure-boot>
    ULP Coprocessor <ulp>
-   Unit Testing <unit-tests>
+   单元测试 <unit-tests>
    Application Level Tracing <app_trace>
    Console Component <console>
    ROM debug console <romconsole>

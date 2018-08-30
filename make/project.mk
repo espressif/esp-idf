@@ -13,7 +13,7 @@
 .PHONY: build-components menuconfig defconfig all build clean all_binaries check-submodules size size-components size-files size-symbols list-components
 
 MAKECMDGOALS ?= all
-all: all_binaries
+all: all_binaries check_python_dependencies
 # see below for recipe of 'all' target
 #
 # # other components will add dependencies to 'all_binaries'. The
@@ -43,12 +43,13 @@ help:
 	@echo "make app-flash - Flash just the app"
 	@echo "make app-clean - Clean just the app"
 	@echo "make print_flash_cmd - Print the arguments for esptool when flash"
+	@echo "make check_python_dependencies - Check that the required python packages are installed"
 	@echo ""
 	@echo "See also 'make bootloader', 'make bootloader-flash', 'make bootloader-clean', "
 	@echo "'make partition_table', etc, etc."
 
 # Non-interactive targets. Mostly, those for which you do not need to build a binary
-NON_INTERACTIVE_TARGET += defconfig clean% %clean help list-components print_flash_cmd
+NON_INTERACTIVE_TARGET += defconfig clean% %clean help list-components print_flash_cmd check_python_dependencies
 
 # dependency checks
 ifndef MAKE_RESTARTS
@@ -421,6 +422,14 @@ else
 	@echo $(ESPTOOLPY_WRITE_FLASH) $(APP_OFFSET) $(APP_BIN)
 endif
 
+.PHONY: check_python_dependencies
+
+# Notify users when some of the required python packages are not installed
+check_python_dependencies:
+ifndef IS_BOOTLOADER_BUILD
+	$(PYTHON) $(IDF_PATH)/tools/check_python_dependencies.py
+endif
+
 all_binaries: $(APP_BIN)
 
 $(BUILD_DIR_BASE):
@@ -476,16 +485,16 @@ app-clean: $(addprefix component-,$(addsuffix -clean,$(notdir $(COMPONENT_PATHS)
 	$(summary) RM $(APP_ELF)
 	rm -f $(APP_ELF) $(APP_BIN) $(APP_MAP)
 
-size: $(APP_ELF)
+size: check_python_dependencies $(APP_ELF)
 	$(PYTHON) $(IDF_PATH)/tools/idf_size.py $(APP_MAP)
 
-size-files: $(APP_ELF)
+size-files: check_python_dependencies $(APP_ELF)
 	$(PYTHON) $(IDF_PATH)/tools/idf_size.py --files $(APP_MAP)
 
-size-components: $(APP_ELF)
+size-components: check_python_dependencies $(APP_ELF)
 	$(PYTHON) $(IDF_PATH)/tools/idf_size.py --archives $(APP_MAP)
 
-size-symbols: $(APP_ELF)
+size-symbols: check_python_dependencies $(APP_ELF)
 ifndef COMPONENT
 	$(error "ERROR: Please enter the component to look symbols for, e.g. COMPONENT=heap")
 else

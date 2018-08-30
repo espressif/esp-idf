@@ -14,13 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from builtins import object
+from io import open
 import os
 import argparse
 import re
 import fnmatch
-import string
 import collections
 import textwrap
+import functools
 
 # list files here which should not be parsed
 ignore_files = [ 'components/mdns/test_afl_fuzz_host/esp32_compat.h' ]
@@ -35,7 +41,7 @@ err_dict = collections.defaultdict(list) #identified errors are stored here; map
 rev_err_dict = dict() #map of error string to error code
 unproc_list = list() #errors with unknown codes which depend on other errors
 
-class ErrItem:
+class ErrItem(object):
     """
     Contains information about the error:
     - name - error string
@@ -99,7 +105,7 @@ def process(line, idf_path):
     words = re.split(r' +', line, 2)
     # words[1] is the error name
     # words[2] is the rest of the line (value, base + value, comment)
-    if len(words) < 2:
+    if len(words) < 3:
         raise InputError(idf_path, "Error at line %s" % line)
 
     line = ""
@@ -109,8 +115,8 @@ def process(line, idf_path):
     # identify possible comment
     m = re.search(r'/\*!<(.+?(?=\*/))', todo_str)
     if m:
-        comment = string.strip(m.group(1))
-        todo_str = string.strip(todo_str[:m.start()]) # keep just the part before the comment
+        comment = m.group(1).strip()
+        todo_str = todo_str[:m.start()].strip() # keep just the part before the comment
 
     # identify possible parentheses ()
     m = re.search(r'\((.+)\)', todo_str)
@@ -181,14 +187,14 @@ def path_to_include(path):
     are inside the "include" directory. Other special cases need to be handled
     here when the compiler gives an unknown header file error message.
     """
-    spl_path = string.split(path, os.sep)
+    spl_path = path.split(os.sep)
     try:
         i = spl_path.index('include')
     except ValueError:
         # no include in the path -> use just the filename
         return os.path.basename(path)
     else:
-        return str(os.sep).join(spl_path[i+1:]) # subdirectories and filename in "include"
+        return os.sep.join(spl_path[i+1:]) # subdirectories and filename in "include"
 
 def print_warning(error_list, error_code):
     """
@@ -200,7 +206,7 @@ def print_warning(error_list, error_code):
 
 def max_string_width():
     max = 0
-    for k in err_dict.keys():
+    for k in err_dict:
         for e in err_dict[k]:
             x = len(e.name)
             if x > max:
@@ -214,7 +220,7 @@ def generate_c_output(fin, fout):
     """
     # make includes unique by using a set
     includes = set()
-    for k in err_dict.keys():
+    for k in err_dict:
         for e in err_dict[k]:
             includes.add(path_to_include(e.file))
 
@@ -226,7 +232,7 @@ def generate_c_output(fin, fout):
     include_list.sort()
 
     max_width = max_string_width() + 17 + 1 # length of "    ERR_TBL_IT()," with spaces is 17
-    max_decdig = max(len(str(k)) for k in err_dict.keys())
+    max_decdig = max(len(str(k)) for k in err_dict)
 
     for line in fin:
         if re.match(r'@COMMENT@', line):
@@ -239,7 +245,7 @@ def generate_c_output(fin, fout):
             last_file = ""
             for k in sorted(err_dict.keys()):
                 if len(err_dict[k]) > 1:
-                    err_dict[k].sort()
+                    err_dict[k].sort(key=functools.cmp_to_key(ErrItem.__cmp__))
                     print_warning(err_dict[k], k)
                 for e in err_dict[k]:
                     if e.file != last_file:
@@ -297,22 +303,25 @@ def main():
             path_in_idf = os.path.relpath(full_path, idf_path)
             if path_in_idf in ignore_files or path_in_idf.startswith(ignore_dirs):
                 continue
-            with open(full_path, "r+") as f:
-                for line in f:
-                    # match also ESP_OK and ESP_FAIL because some of ESP_ERRs are referencing them
-                    if re.match(r"\s*#define\s+(ESP_ERR_|ESP_OK|ESP_FAIL)", line):
-                        try:
-                            process(str.strip(line), path_in_idf)
-                        except InputError as e:
-                            print (e)
+            with open(full_path, encoding='utf-8') as f:
+                try:
+                    for line in f:
+                        # match also ESP_OK and ESP_FAIL because some of ESP_ERRs are referencing them
+                        if re.match(r"\s*#define\s+(ESP_ERR_|ESP_OK|ESP_FAIL)", line):
+                            try:
+                                process(line.strip(), path_in_idf)
+                            except InputError as e:
+                                print (e)
+                except UnicodeDecodeError:
+                    raise ValueError("The encoding of {} is not Unicode.".format(path_in_idf))
 
     process_remaining_errors()
 
     if args.rst_output is not None:
-        with open(args.rst_output, 'w') as fout:
+        with open(args.rst_output, 'w', encoding='utf-8') as fout:
             generate_rst_output(fout)
     else:
-        with open(args.c_input, 'r') as fin, open(args.c_output, 'w') as fout:
+        with open(args.c_input, 'r', encoding='utf-8') as fin, open(args.c_output, 'w', encoding='utf-8') as fout:
             generate_c_output(fin, fout)
 
 if __name__ == "__main__":

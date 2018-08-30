@@ -1,14 +1,47 @@
-#
 # Generate partition binary
 #
-.PHONY: erase_ota blank_ota_data
+.PHONY: dump_otadata erase_ota blank_ota_data
 
 GEN_EMPTY_PART := $(PYTHON) $(COMPONENT_PATH)/gen_empty_partition.py
 BLANK_OTA_DATA_FILE = $(BUILD_DIR_BASE)/ota_data_initial.bin
 
+PARTITION_TABLE_LEN := 0xC00
+OTADATA_LEN := 0x2000
+
+PARTITION_TABLE_ONCHIP_BIN_PATH := $(call dequote,$(abspath $(BUILD_DIR_BASE)))
+PARTITION_TABLE_ONCHIP_BIN_NAME := "onchip_partition.bin"
+OTADATA_ONCHIP_BIN_NAME := "onchip_otadata.bin"
+
+PARTITION_TABLE_ONCHIP_BIN := $(PARTITION_TABLE_ONCHIP_BIN_PATH)/$(call dequote,$(PARTITION_TABLE_ONCHIP_BIN_NAME)) 
+OTADATA_ONCHIP_BIN := $(PARTITION_TABLE_ONCHIP_BIN_PATH)/$(call dequote,$(OTADATA_ONCHIP_BIN_NAME))
+
+PARTITION_TABLE_GET_BIN_CMD = $(ESPTOOLPY_SERIAL) read_flash $(PARTITION_TABLE_OFFSET) $(PARTITION_TABLE_LEN) $(PARTITION_TABLE_ONCHIP_BIN)
+OTADATA_GET_BIN_CMD = $(ESPTOOLPY_SERIAL) read_flash $(OTADATA_OFFSET) $(OTADATA_LEN) $(OTADATA_ONCHIP_BIN)
+
+GEN_OTADATA = $(IDF_PATH)/components/app_update/dump_otadata.py
+ERASE_OTADATA_CMD = $(ESPTOOLPY_SERIAL) erase_region $(OTADATA_OFFSET) $(OTADATA_LEN)
+
 # If there is no otadata partition, both OTA_DATA_OFFSET and BLANK_OTA_DATA_FILE 
 # expand to empty values.
 ESPTOOL_ALL_FLASH_ARGS += $(OTA_DATA_OFFSET) $(BLANK_OTA_DATA_FILE)
+
+$(PARTITION_TABLE_ONCHIP_BIN):
+	$(PARTITION_TABLE_GET_BIN_CMD)
+
+onchip_otadata_get_info: $(PARTITION_TABLE_ONCHIP_BIN) 
+	$(eval OTADATA_OFFSET:=$(shell $(GET_PART_INFO) --type data --subtype ota --offset $(PARTITION_TABLE_ONCHIP_BIN)))
+	@echo $(if $(OTADATA_OFFSET), $(shell export OTADATA_OFFSET), $(shell rm -f $(PARTITION_TABLE_ONCHIP_BIN));$(error "ERROR: ESP32 does not have otadata partition."))
+
+$(OTADATA_ONCHIP_BIN):
+	$(OTADATA_GET_BIN_CMD)
+
+dump_otadata: onchip_otadata_get_info $(OTADATA_ONCHIP_BIN) $(PARTITION_TABLE_ONCHIP_BIN) 
+	@echo "otadata retrieved. Contents:"
+	@echo $(SEPARATOR)
+	$(GEN_OTADATA) $(OTADATA_ONCHIP_BIN)
+	@echo $(SEPARATOR)
+	rm -f $(PARTITION_TABLE_ONCHIP_BIN)
+	rm -f $(OTADATA_ONCHIP_BIN)
 
 $(BLANK_OTA_DATA_FILE): partition_table_get_info
 	$(GEN_EMPTY_PART) --size $(OTA_DATA_SIZE) $(BLANK_OTA_DATA_FILE)
@@ -16,7 +49,7 @@ $(BLANK_OTA_DATA_FILE): partition_table_get_info
 
 blank_ota_data: $(BLANK_OTA_DATA_FILE)
 
-erase_ota: partition_table_get_info
+erase_ota: partition_table_get_info check_python_dependencies
 	@echo $(if $(OTA_DATA_OFFSET), "Erase ota_data [addr=$(OTA_DATA_OFFSET) size=$(OTA_DATA_SIZE)] ...", $(error "ERROR: Partition table does not have ota_data partition."))
 	$(ESPTOOLPY_SERIAL) erase_region $(OTA_DATA_OFFSET) $(OTA_DATA_SIZE)
 

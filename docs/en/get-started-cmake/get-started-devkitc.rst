@@ -17,7 +17,7 @@ Overview
 
 ESP32-DevKitC V4 is a small-sized ESP32-based development board produced by `Espressif <https://espressif.com>`_. Most of the I/O pins are broken out to the pin headers on both sides for easy interfacing. Developers can connect these pins to peripherals as needed. Standard headers also make development easy and convenient when using a breadboard. 
 
-The board comes in two versions, either with :ref:`esp-modules-and-boards-esp-wroom-32` or :ref:`esp-modules-and-boards-esp32-wrover` module soldered.
+The board supports various ESP32 modules, including :ref:`esp-modules-and-boards-esp32-wroom-32`, :ref:`ESP32-WROOM-32U <esp-modules-and-boards-esp32-wroom-32d-and-u>`, :ref:`ESP32-WROOM-32D <esp-modules-and-boards-esp32-wroom-32d-and-u>` and :ref:`esp-modules-and-boards-esp32-solo-1`.
 
 
 Functional Description
@@ -26,9 +26,7 @@ Functional Description
 The following list and figure below describe key components, interfaces and controls of ESP32-DevKitC V4 board.
 
 ESP-WROOM-32
-    :ref:`esp-modules-and-boards-esp-wroom-32` module soldered to the ESP32-DevKitC V4 board.
-ESP32-WROVER
-    Optionally :ref:`esp-modules-and-boards-esp32-wrover` module may be soldered instead of the ESP-WROOM-32.
+    :ref:`esp-modules-and-boards-esp32-wroom-32` module soldered to the ESP32-DevKitC V4 board. Optionally ESP32-WROOM-32D, ESP32-WROOM-32U or ESP32-SOLO-1 module may be soldered instead of the ESP32-WROOM-32.
 USB-UART Bridge
     A single chip USB-UART bridge provides up to 3 Mbps transfers rates.
 Boot

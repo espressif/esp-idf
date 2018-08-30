@@ -40,7 +40,7 @@
 #include "esp_spi_flash.h"
 #include "esp_cache_err_int.h"
 #include "esp_app_trace.h"
-#include "esp_system.h"
+#include "esp_system_internal.h"
 #include "sdkconfig.h"
 #if CONFIG_SYSVIEW_ENABLE
 #include "SEGGER_RTT.h"
@@ -121,6 +121,20 @@ void  __attribute__((weak)) vApplicationStackOverflowHook( TaskHandle_t xTask, s
     abort();
 }
 
+/* These two weak stubs for esp_reset_reason_{get,set}_hint are used when
+ * the application does not call esp_reset_reason() function, and
+ * reset_reason.c is not linked into the output file.
+ */
+void __attribute__((weak)) esp_reset_reason_set_hint(esp_reset_reason_t hint)
+{
+}
+
+esp_reset_reason_t __attribute__((weak)) esp_reset_reason_get_hint(void)
+{
+    return ESP_RST_UNKNOWN;
+}
+
+
 static bool abort_called;
 
 static __attribute__((noreturn)) inline void invoke_abort()
@@ -147,6 +161,12 @@ void abort()
 #if !CONFIG_ESP32_PANIC_SILENT_REBOOT
     ets_printf("abort() was called at PC 0x%08x on core %d\r\n", (intptr_t)__builtin_return_address(0) - 3, xPortGetCoreID());
 #endif
+    /* Calling code might have set other reset reason hint (such as Task WDT),
+     * don't overwrite that.
+     */
+    if (esp_reset_reason_get_hint() == ESP_RST_UNKNOWN) {
+        esp_reset_reason_set_hint(ESP_RST_PANIC);
+    }
     invoke_abort();
 }
 
@@ -233,6 +253,10 @@ void panicHandler(XtExcFrame *frame)
         while (1);
     }
 #endif //!CONFIG_FREERTOS_UNICORE
+
+    if (frame->exccause == PANIC_RSN_INTWDT_CPU0 || frame->exccause == PANIC_RSN_INTWDT_CPU1) {
+        esp_reset_reason_set_hint(ESP_RST_INT_WDT);
+    }
 
     haltOtherCore();
     esp_dport_access_int_abort();
@@ -333,6 +357,7 @@ void xt_unhandled_exception(XtExcFrame *frame)
             return;
         }
         panicPutStr(". Exception was unhandled.\r\n");
+        esp_reset_reason_set_hint(ESP_RST_PANIC);
     }
     commonErrorHandler(frame);
 }
@@ -382,7 +407,7 @@ static void esp_panic_dig_reset()
     // make sure all the panic handler output is sent from UART FIFO
     uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
     // switch to XTAL (otherwise we will keep running from the PLL)
-    rtc_clk_cpu_freq_set(RTC_CPU_FREQ_XTAL);
+    rtc_clk_cpu_freq_set_xtal();
     // reset the digital part
     esp_cpu_unstall(PRO_CPU_NUM);
     SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);

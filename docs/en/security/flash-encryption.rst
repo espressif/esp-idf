@@ -3,7 +3,7 @@ Flash Encryption
 
 Flash Encryption is a feature for encrypting the contents of the ESP32's attached SPI flash. When flash encryption is enabled, physical readout of the SPI flash is not sufficient to recover most flash contents.
 
-Flash Encryption is separate from the :doc:`Secure Boot <secure-boot>` feature, and you can use flash encryption without enabling secure boot. However we recommend using both features together for a secure environment.
+Flash Encryption is separate from the :doc:`Secure Boot <secure-boot>` feature, and you can use flash encryption without enabling secure boot. However we recommend using both features together for a secure environment. In absence of secure boot, additional configuration needs to be performed to ensure effectiveness of flash encryption. See :ref:`flash-encryption-without-secure-boot` for more details.
 
 .. important::
   Enabling flash encryption limits your options for further updates of your ESP32. Make sure to read this document (including :ref:`flash-encryption-limitations`) and understand the implications of enabling flash encryption.
@@ -287,6 +287,17 @@ It is recommended to use flash encryption and secure boot together. However, if 
 - :ref:`updating-encrypted-flash-ota` are not restricted (provided the new app is signed correctly with the Secure Boot signing key).
 - :ref:`Plaintext serial flash updates <updating-encrypted-flash-serial>` are only possible if the :envvar:`Reflashable <CONFIG_SECURE_BOOTLOADER_REFLASHABLE>` Secure Boot mode is selected and a Secure Boot key was pre-generated and burned to the ESP32 (refer to :ref:`Secure Boot <secure-boot-reflashable>` docs.). In this configuration, ``make bootloader`` will produce a pre-digested bootloader and secure boot digest file for flashing at offset 0x0. When following the plaintext serial reflashing steps it is necessary to re-flash this file before flashing other plaintext data.
 - :ref:`pregenerated-flash-encryption-key` is still possible, provided the bootloader is not reflashed. Reflashing the bootloader requires the same :envvar:`Reflashable <CONFIG_SECURE_BOOTLOADER_REFLASHABLE>` option to be enabled in the Secure Boot config.
+
+.. _flash-encryption-without-secure-boot:
+
+Using Flash Encryption without Secure Boot
+------------------------------------------
+
+If flash encryption is used without secure boot, it is possible to load unauthorised code using serial re-flashing. See :ref:`updating-encrypted-flash-serial` for details. This unauthorised code can then read all encrypted partitions (in decrypted form) making flash-encryption ineffective. This can be avoided by write-protecting :ref:`FLASH_CRYPT_CNT` and thereby disallowing serial re-flashing. :ref:`FLASH_CRYPT_CNT` can be write-protected using command::
+
+  espefuse.py --port PORT write_protect_efuse FLASH_CRYPT_CNT
+
+Alternatively, the app can call :func:`esp_flash_write_protect_crypt_cnt` during its startup process.
 
 .. _flash-encryption-advanced-features:
 

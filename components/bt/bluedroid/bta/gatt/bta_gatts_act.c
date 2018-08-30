@@ -702,6 +702,10 @@ void bta_gatts_indicate_handle (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
                 APPL_TRACE_ERROR("%s, malloc failed", __func__);
             }
             (*p_rcb->p_cback)(BTA_GATTS_CONF_EVT, &cb_data);
+            if (cb_data.req_data.value != NULL) {
+                osi_free(cb_data.req_data.value);
+                cb_data.req_data.value = NULL;
+            }
         }
     } else {
         APPL_TRACE_ERROR("Not an registered servce attribute ID: 0x%04x",

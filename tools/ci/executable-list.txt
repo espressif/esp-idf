@@ -7,6 +7,8 @@ components/idf_test/unit_test/TestCaseScript/IDFUnitTest/__init__.py
 components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py
 components/partition_table/gen_esp32part.py
 components/partition_table/parttool.py
+components/app_update/gen_empty_partition.py
+components/app_update/dump_otadata.py
 components/partition_table/test_gen_esp32part_host/gen_esp32part_tests.py
 components/ulp/esp32ulp_mapgen.py
 docs/check_doc_warnings.sh
