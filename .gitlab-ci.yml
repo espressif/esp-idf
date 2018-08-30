@@ -1188,6 +1188,24 @@ UT_010_04:
     - UT_T1_RMT
     - psram
 
+UT_011_01:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - EMMC
+
+UT_011_02:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - EMMC
+
+UT_011_03:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - EMMC
+
 UT_601_01:
   <<: *unit_test_template
   tags:
