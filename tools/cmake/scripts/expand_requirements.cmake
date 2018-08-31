@@ -4,6 +4,8 @@
 # Parameters:
 # - COMPONENTS = Space-separated list of initial components to include in the build.
 #   Can be empty, in which case all components are in the build.
+# - COMPONENT_REQUIRES_COMMON = Components to always include in the build, and treated as dependencies
+#   of all other components.
 # - DEPENDENCIES_FILE = Path of generated cmake file which will contain the expanded dependencies for these
 #   components.
 # - COMPONENT_DIRS = List of paths to search for all components.
@@ -12,6 +14,19 @@
 # If successful, DEPENDENCIES_FILE can be expanded to set BUILD_COMPONENTS & BUILD_COMPONENT_PATHS with all
 # components required for the build, and the get_component_requirements() function to return each component's
 # recursively expanded requirements.
+#
+# BUILD_COMPONENTS & BUILD_COMPONENT_PATHS will be ordered in a best-effort way so that dependencies are listed first.
+# (Note that IDF supports cyclic dependencies, and dependencies in a cycle have ordering guarantees.)
+#
+# Determinism:
+#
+# Given the the same list of names in COMPONENTS (regardless of order), and an identical value of
+# COMPONENT_REQUIRES_COMMON, and all the same COMPONENT_REQUIRES & COMPONENT_PRIV_REQUIRES values in
+# each component, then the output of BUILD_COMPONENTS should always be in the same
+# order.
+#
+# BUILD_COMPONENT_PATHS will be in the same component order as BUILD_COMPONENTS, even if the
+# actual component paths are different due to different paths.
 #
 # TODO: Error out if a component requirement is missing
 cmake_minimum_required(VERSION 3.5)
@@ -25,6 +40,8 @@ if(NOT COMPONENT_DIRS)
     message(FATAL_ERROR "COMPONENT_DIRS variable must be set")
 endif()
 spaces2list(COMPONENT_DIRS)
+
+spaces2list(COMPONENT_REQUIRES_COMMON)
 
 function(debug message)
     if(DEBUG)
@@ -123,10 +140,11 @@ endfunction()
 # also invoking the components to call register_component() above,
 # which will add per-component global properties with dependencies, etc.
 function(expand_component_requirements component)
-    get_property(build_components GLOBAL PROPERTY BUILD_COMPONENTS)
-    if(${component} IN_LIST build_components)
-        return()  # already added this component
+    get_property(seen_components GLOBAL PROPERTY SEEN_COMPONENTS)
+    if(${component} IN_LIST seen_components)
+        return()  # already added, or in process of adding, this component
     endif()
+    set_property(GLOBAL APPEND PROPERTY SEEN_COMPONENTS ${component})
 
     find_component_path("${component}" "${ALL_COMPONENT_PATHS}" component_path)
     debug("Expanding dependencies of ${component} @ ${component_path}")
@@ -142,14 +160,17 @@ function(expand_component_requirements component)
     set(COMPONENT ${component})
     include(${component_path}/CMakeLists.txt)
 
-    set_property(GLOBAL APPEND PROPERTY BUILD_COMPONENT_PATHS ${component_path})
-    set_property(GLOBAL APPEND PROPERTY BUILD_COMPONENTS ${component})
-
     get_property(requires GLOBAL PROPERTY "${component}_REQUIRES")
     get_property(requires_priv GLOBAL PROPERTY "${component}_PRIV_REQUIRES")
-    foreach(req ${requires} ${requires_priv})
+
+    # Recurse dependencies first, so that they appear first in the list (when possible)
+    foreach(req ${COMPONENT_REQUIRES_COMMON} ${requires} ${requires_priv})
         expand_component_requirements(${req})
     endforeach()
+
+    # Now append this component to the full list (after its dependencies)
+    set_property(GLOBAL APPEND PROPERTY BUILD_COMPONENT_PATHS ${component_path})
+    set_property(GLOBAL APPEND PROPERTY BUILD_COMPONENTS ${component})
 endfunction()
 
 
@@ -166,6 +187,7 @@ spaces2list(COMPONENTS)
 debug("ALL_COMPONENT_PATHS ${ALL_COMPONENT_PATHS}")
 debug("ALL_COMPONENTS ${ALL_COMPONENTS}")
 
+set_property(GLOBAL PROPERTY SEEN_COMPONENTS "")  # anti-infinite-recursion
 set_property(GLOBAL PROPERTY BUILD_COMPONENTS "")
 set_property(GLOBAL PROPERTY BUILD_COMPONENT_PATHS "")
 set_property(GLOBAL PROPERTY COMPONENTS_NOT_FOUND "")
