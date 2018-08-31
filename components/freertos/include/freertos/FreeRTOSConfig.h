@@ -159,9 +159,8 @@ int xt_clock_freq(void) __attribute__((deprecated));
  *----------------------------------------------------------*/
 
 #define configUSE_PREEMPTION			1
-#define configUSE_IDLE_HOOK				( CONFIG_FREERTOS_LEGACY_IDLE_HOOK )
-
-#define configUSE_TICK_HOOK				( CONFIG_FREERTOS_LEGACY_TICK_HOOK )
+#define configUSE_IDLE_HOOK				1
+#define configUSE_TICK_HOOK				1
 
 #define configTICK_RATE_HZ				( CONFIG_FREERTOS_HZ )
 

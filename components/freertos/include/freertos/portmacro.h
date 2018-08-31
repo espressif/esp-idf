@@ -368,10 +368,15 @@ typedef struct {
 #endif
 
 extern void esp_vApplicationIdleHook( void );
-extern void esp_vApplicationWaitiHook( void );
+extern void esp_vApplicationTickHook( void );
+
+#ifndef CONFIG_FREERTOS_LEGACY_HOOKS
+#define vApplicationIdleHook    esp_vApplicationIdleHook
+#define vApplicationTickHook    esp_vApplicationTickHook
+#endif /* !CONFIG_FREERTOS_LEGACY_HOOKS */
 
 void _xt_coproc_release(volatile void * coproc_sa_base);
-bool vApplicationSleep( TickType_t xExpectedIdleTime );
+void vApplicationSleep( TickType_t xExpectedIdleTime );
 
 #define portSUPPRESS_TICKS_AND_SLEEP( idleTime ) vApplicationSleep( idleTime )
 
