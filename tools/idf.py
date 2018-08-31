@@ -338,7 +338,8 @@ def print_closing_message(args):
             cmd += flasher_path(flasher_args[key]["file"])
         else:  # flashing the whole project
             cmd = " ".join(flasher_args["write_flash_args"]) + " "
-            flash_items = sorted((o,f) for (o,f) in flasher_args["flash_files"].items() if len(o) > 0)
+            flash_items = sorted(((o,f) for (o,f) in flasher_args["flash_files"].items() if len(o) > 0),
+                                 key = lambda (o,_): int(o, 0))
             for o,f in flash_items:
                 cmd += o + " " + flasher_path(f) + " "
 
