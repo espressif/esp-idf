@@ -4,6 +4,7 @@ stages:
   - host_test
   - unit_test
   - integration_test
+  - check
   - deploy
 
 variables:
@@ -68,6 +69,12 @@ before_script:
   # fetch the submodules (& if necessary re-fetch repo) from gitlab
   - time ./tools/ci/get-full-sources.sh
 
+# used for check scripts which we want to run unconditionally
+.do_nothing_before_no_filter:
+  before_script: &do_nothing_before_no_filter
+    - *git_clean_stale_submodules
+
+# used for everything else where we want to do no prep, except for bot filter
 .do_nothing_before:
   before_script: &do_nothing_before
     - *git_clean_stale_submodules
@@ -507,30 +514,22 @@ check_doc_links:
     - make linkcheck
 
 check_line_endings:
-  stage: deploy
+  stage: check
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - build
-  except:
-    - master
-    - /^release\/v/
-    - /^v\d+\.\d+(\.\d+)?($|-)/
   dependencies: []
-  before_script: *do_nothing_before
+  before_script: *do_nothing_before_no_filter
   script:
     - tools/ci/check-line-endings.sh ${IDF_PATH}
 
 check_commit_msg:
-  stage: deploy
+  stage: check
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - build
-  except:
-    - master
-    - /^release\/v/
-    - /^v\d+\.\d+(\.\d+)?($|-)/
   dependencies: []
-  before_script: *do_nothing_before
+  before_script: *do_nothing_before_no_filter
   script:
     - git status
     - git log -n10 --oneline
@@ -538,32 +537,24 @@ check_commit_msg:
     - 'git log --pretty=%s master.. -- | grep "^WIP: " && exit 1 || exit 0'
 
 check_permissions:
-  stage: deploy
+  stage: check
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - build
-  except:
-    - master
-    - /^release\/v/
-    - /^v\d+\.\d+(\.\d+)?($|-)/
   dependencies: []
-  before_script: *do_nothing_before
+  before_script: *do_nothing_before_no_filter
   script:
     - tools/ci/check-executable.sh
 
 check_submodule_sync:
-  stage: deploy
+  stage: check
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - build
-  except:
-    - master
-    - /^release\/v/
-    - /^v\d+\.\d+(\.\d+)?($|-)/
   dependencies: []
   variables:
     GIT_STRATEGY: clone
-  before_script: *do_nothing_before
+  before_script: *do_nothing_before_no_filter
   script:
     # check if all submodules are correctly synced to public repostory
     - git submodule update --init --recursive
