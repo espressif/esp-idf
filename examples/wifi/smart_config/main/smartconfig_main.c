@@ -22,7 +22,7 @@
 #include "esp_smartconfig.h"
 
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
-static EventGroupHandle_t wifi_event_group;
+static EventGroupHandle_t s_wifi_event_group;
 
 /* The event group allows multiple bits for each event,
    but we only care about one event - are we connected
@@ -40,11 +40,11 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
         xTaskCreate(smartconfig_example_task, "smartconfig_example_task", 4096, NULL, 3, NULL);
         break;
     case SYSTEM_EVENT_STA_GOT_IP:
-        xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
+        xEventGroupSetBits(s_wifi_event_group, CONNECTED_BIT);
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
         esp_wifi_connect();
-        xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
+        xEventGroupClearBits(s_wifi_event_group, CONNECTED_BIT);
         break;
     default:
         break;
@@ -55,7 +55,7 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
 static void initialise_wifi(void)
 {
     tcpip_adapter_init();
-    wifi_event_group = xEventGroupCreate();
+    s_wifi_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK( esp_event_loop_init(event_handler, NULL) );
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
@@ -93,7 +93,7 @@ static void sc_callback(smartconfig_status_t status, void *pdata)
                 memcpy(phone_ip, (uint8_t* )pdata, 4);
                 ESP_LOGI(TAG, "Phone ip: %d.%d.%d.%d\n", phone_ip[0], phone_ip[1], phone_ip[2], phone_ip[3]);
             }
-            xEventGroupSetBits(wifi_event_group, ESPTOUCH_DONE_BIT);
+            xEventGroupSetBits(s_wifi_event_group, ESPTOUCH_DONE_BIT);
             break;
         default:
             break;
@@ -106,7 +106,7 @@ void smartconfig_example_task(void * parm)
     ESP_ERROR_CHECK( esp_smartconfig_set_type(SC_TYPE_ESPTOUCH) );
     ESP_ERROR_CHECK( esp_smartconfig_start(sc_callback) );
     while (1) {
-        uxBits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT | ESPTOUCH_DONE_BIT, true, false, portMAX_DELAY); 
+        uxBits = xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT | ESPTOUCH_DONE_BIT, true, false, portMAX_DELAY); 
         if(uxBits & CONNECTED_BIT) {
             ESP_LOGI(TAG, "WiFi Connected to ap");
         }
