@@ -120,7 +120,7 @@ typedef enum {
 
 /// response indication codes for AT commands
 typedef enum {
-    ESP_HF_AT_RESPONSE_CODE_OK = 0,         /*!< acknoweledges execution of a command line */
+    ESP_HF_AT_RESPONSE_CODE_OK = 0,         /*!< acknowledges execution of a command line */
     ESP_HF_AT_RESPONSE_CODE_ERR,            /*!< command not accepted */
     ESP_HF_AT_RESPONSE_CODE_NO_CARRIER,     /*!< connection terminated */
     ESP_HF_AT_RESPONSE_CODE_BUSY,           /*!< busy signal detected */

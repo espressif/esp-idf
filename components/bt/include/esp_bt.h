@@ -141,7 +141,7 @@ typedef struct {
      * It will be overwrite with a constant value which in menuconfig or from a macro.
      * So, do not modify the value when esp_bt_controller_init()
      */
-    uint8_t bt_max_sync_conn;               /*!< BR/EDR maxium ACL connection numbers. Effective in menuconfig */
+    uint8_t bt_max_sync_conn;               /*!< BR/EDR maximum ACL connection numbers. Effective in menuconfig */
     uint32_t magic;                         /*!< Magic number */
 } esp_bt_controller_config_t;
 
@@ -233,7 +233,7 @@ esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type);
  *         BR/EDR power control will use the power in range of minimum value and maximum value.
  *         The power level will effect the global BR/EDR TX power, such inquire, page, connection and so on.
  *         Please call the function after esp_bt_controller_enable and before any function which cause RF do TX.
- *         So you can call the function can before do discover, beofre profile init and so on.
+ *         So you can call the function before doing discovery, profile init and so on.
  *         For example, if you want BR/EDR use the new TX power to do inquire, you should call
  *         this function before inquire. Another word, If call this function when BR/EDR is in inquire(ING),
  *         please do inquire again after call this function.
@@ -324,7 +324,7 @@ bool esp_vhci_host_check_send_available(void);
 void esp_vhci_host_send_packet(uint8_t *data, uint16_t len);
 
 /** @brief esp_vhci_host_register_callback
- * register the vhci referece callback, the call back
+ * register the vhci reference callback
  * struct defined by vhci_host_callback structure.
  * @param callback esp_vhci_host_callback type variable
  * @return ESP_OK - success, ESP_FAIL - failed
@@ -440,7 +440,7 @@ bool esp_bt_controller_is_sleeping(void);
  * Note that after this request, bluetooth controller may again enter sleep as long as the modem sleep is enabled
  *
  * Profiling shows that it takes several milliseconds to wakeup from modem sleep after this request.
- * Generally it takes longer if 32kHz XTAL is used than the main XTAL, due to the lower frequncy of the former as the bluetooth low power clock source.
+ * Generally it takes longer if 32kHz XTAL is used than the main XTAL, due to the lower frequency of the former as the bluetooth low power clock source.
  */
 void esp_bt_controller_wakeup_request(void);
 
