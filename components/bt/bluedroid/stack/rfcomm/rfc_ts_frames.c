@@ -23,6 +23,7 @@
  ******************************************************************************/
 
 #include <stddef.h>
+#include <string.h>
 #include "common/bt_target.h"
 #include "stack/rfcdefs.h"
 #include "stack/port_api.h"
@@ -513,6 +514,13 @@ void rfc_send_test (tRFC_MCB *p_mcb, BOOLEAN is_command, BT_HDR *p_buf)
     UINT16   xx;
     UINT8    *p_src, *p_dest;
 
+    BT_HDR *p_buf_new;
+    if ((p_buf_new = (BT_HDR *)osi_malloc(RFCOMM_CMD_BUF_SIZE)) == NULL) {
+        return;
+    }
+    memcpy(p_buf_new, p_buf, sizeof(BT_HDR) + p_buf->offset + p_buf->len);
+    osi_free(p_buf);
+    p_buf = p_buf_new;
     /* Shift buffer to give space for header */
     if (p_buf->offset < (L2CAP_MIN_OFFSET + RFCOMM_MIN_OFFSET + 2)) {
         p_src  = (UINT8 *) (p_buf + 1) + p_buf->offset + p_buf->len - 1;
