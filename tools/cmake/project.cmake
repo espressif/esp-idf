@@ -47,15 +47,13 @@ macro(project name)
     # Set global variables used by rest of the build
     idf_set_global_variables()
 
-    # Establish dependencies for components in the build
-    # (this happens before we even generate config...)
-    if(COMPONENTS)
-        # Make sure if an explicit list of COMPONENTS is given, it contains the "common" component requirements
-        # (otherwise, if COMPONENTS is empty then all components will be included in the build.)
-        set(COMPONENTS "${COMPONENTS} ${COMPONENT_REQUIRES_COMMON}")
-    endif()
+    # Sort the components list, as it may be found via filesystem
+    # traversal and therefore in a non-deterministic order
+    list(SORT COMPONENTS)
+
     execute_process(COMMAND "${CMAKE_COMMAND}"
         -D "COMPONENTS=${COMPONENTS}"
+        -D "COMPONENT_REQUIRES_COMMON=${COMPONENT_REQUIRES_COMMON}"
         -D "DEPENDENCIES_FILE=${CMAKE_BINARY_DIR}/component_depends.cmake"
         -D "COMPONENT_DIRS=${COMPONENT_DIRS}"
         -D "BOOTLOADER_BUILD=${BOOTLOADER_BUILD}"
