@@ -5,13 +5,16 @@
     "flash_files" : {
         "0x1000" : "bootloader/bootloader.bin",
         "${PARTITION_TABLE_OFFSET}" : "partition_table/partition-table.bin",
-        "${APP_PARTITION_OFFSET}" : "${PROJECT_NAME}.bin",
-        "${PHY_PARTITION_OFFSET}" : "${PHY_PARTITION_BIN_FILE}"
+        "${PHY_PARTITION_OFFSET}" : "${PHY_PARTITION_BIN_FILE}",
+        "${OTADATA_PARTITION_OFFSET}" : "${BLANK_OTADATA_FILE}",
+        "${APP_PARTITION_OFFSET}" : "${PROJECT_NAME}.bin"
     },
     "bootloader" :      { "offset" : "0x1000",
                           "file" : "bootloader/bootloader.bin" },
-    "app" :             { "offset" : "${APP_PARTITION_OFFSET}",
-                          "file" : "${PROJECT_NAME}.bin" },
     "partition_table" : { "offset" : "${PARTITION_TABLE_OFFSET}",
-                          "file" : "partition_table/partition-table.bin" }
+                          "file" : "partition_table/partition-table.bin" },
+    "otadata" : { "offset" : "${OTADATA_PARTITION_OFFSET}",
+                  "file" : "${BLANK_OTADATA_FILE}" },
+    "app" :             { "offset" : "${APP_PARTITION.py_OFFSET}",
+                          "file" : "${PROJECT_NAME}.bin" }
 }
