@@ -489,7 +489,6 @@ to its original value when it is released. */
 #if configUSE_TICK_HOOK > 0
 	extern void vApplicationTickHook( void );
 #endif
-extern void esp_vApplicationTickHook( void );
 
 #if  portFIRST_TASK_HOOK
 	extern void vPortFirstTaskHook(TaskFunction_t taskfn);
@@ -2497,7 +2496,9 @@ BaseType_t xSwitchRequired = pdFALSE;
 		#if ( configUSE_TICK_HOOK == 1 )
 		vApplicationTickHook();
 		#endif /* configUSE_TICK_HOOK */
+		#if ( CONFIG_FREERTOS_LEGACY_HOOKS == 1 )
 		esp_vApplicationTickHook();
+		#endif /* CONFIG_FREERTOS_LEGACY_HOOKS */
 
 		/*
 		  We can't really calculate what we need, that's done on core 0... just assume we need a switch.
@@ -2640,7 +2641,9 @@ BaseType_t xSwitchRequired = pdFALSE;
 				#if ( configUSE_TICK_HOOK == 1 )
 				vApplicationTickHook();
 				#endif /* configUSE_TICK_HOOK */
+				#if ( CONFIG_FREERTOS_LEGACY_HOOKS == 1 )
 				esp_vApplicationTickHook();
+				#endif /* CONFIG_FREERTOS_LEGACY_HOOKS */
 			}
 			else
 			{
@@ -2660,7 +2663,9 @@ BaseType_t xSwitchRequired = pdFALSE;
 			vApplicationTickHook();
 		}
 		#endif
+		#if ( CONFIG_FREERTOS_LEGACY_HOOKS == 1 )
 		esp_vApplicationTickHook();
+		#endif /* CONFIG_FREERTOS_LEGACY_HOOKS */
 	}
 
 	#if ( configUSE_PREEMPTION == 1 )
@@ -3434,10 +3439,12 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 			vApplicationIdleHook();
 		}
 		#endif /* configUSE_IDLE_HOOK */
+		#if ( CONFIG_FREERTOS_LEGACY_HOOKS == 1 )
 		{
 			/* Call the esp-idf hook system */
 			esp_vApplicationIdleHook();
 		}
+		#endif /* CONFIG_FREERTOS_LEGACY_HOOKS */
 
 
 		/* This conditional compilation should use inequality to 0, not equality
@@ -3447,7 +3454,6 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 		#if ( configUSE_TICKLESS_IDLE != 0 )
 		{
 		TickType_t xExpectedIdleTime;
-		BaseType_t xEnteredSleep = pdFALSE;
 
 			/* It is not desirable to suspend then resume the scheduler on
 			each iteration of the idle task.  Therefore, a preliminary
@@ -3469,7 +3475,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 					if( xExpectedIdleTime >= configEXPECTED_IDLE_TIME_BEFORE_SLEEP )
 					{
 						traceLOW_POWER_IDLE_BEGIN();
-						xEnteredSleep = portSUPPRESS_TICKS_AND_SLEEP( xExpectedIdleTime );
+						portSUPPRESS_TICKS_AND_SLEEP( xExpectedIdleTime );
 						traceLOW_POWER_IDLE_END();
 					}
 					else
@@ -3483,16 +3489,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 			{
 				mtCOVERAGE_TEST_MARKER();
 			}
-			/* It might be possible to enter tickless idle again, so skip
-			 * the fallback sleep hook if tickless idle was successful
-			 */
-			if ( !xEnteredSleep )
-			{
-				esp_vApplicationWaitiHook();
-			}
 		}
-		#else
-		esp_vApplicationWaitiHook();
 		#endif /* configUSE_TICKLESS_IDLE */
 	}
 }

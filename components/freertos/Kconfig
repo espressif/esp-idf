@@ -173,24 +173,6 @@ config FREERTOS_LEGACY_HOOKS
         hooks can also still be enabled. Please enable this only if you have code that for some
         reason can't be migrated to the esp_register_freertos_xxx_hook system.
 
-if FREERTOS_LEGACY_HOOKS
-
-config FREERTOS_LEGACY_IDLE_HOOK
-    bool "Enable legacy idle hook"
-    default n
-    help
-        If enabled, FreeRTOS will call a function called vApplicationIdleHook when the idle thread
-        on a CPU is running. Please make sure your code defines such a function.
-
-config FREERTOS_LEGACY_TICK_HOOK
-    bool "Enable legacy tick hook"
-    default n
-    help
-        If enabled, FreeRTOS will call a function called vApplicationTickHook when a FreeRTOS
-        tick is executed. Please make sure your code defines such a function.
-
-endif #FREERTOS_LEGACY_HOOKS
-
 config FREERTOS_MAX_TASK_NAME_LEN
     int "Maximum task name length"
     range 1 256

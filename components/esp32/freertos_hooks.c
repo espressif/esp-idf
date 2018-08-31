@@ -59,11 +59,10 @@ void esp_vApplicationIdleHook()
 #ifdef CONFIG_PM_ENABLE
     esp_pm_impl_idle_hook();
 #endif
-}
 
-extern void esp_vApplicationWaitiHook( void )
-{
+#ifndef CONFIG_FREERTOS_USE_TICKLESS_IDLE
     asm("waiti 0");
+#endif
 }
 
 esp_err_t esp_register_freertos_idle_hook_for_cpu(esp_freertos_idle_cb_t new_idle_cb, UBaseType_t cpuid)
