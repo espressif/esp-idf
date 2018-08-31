@@ -21,6 +21,11 @@
 
 #define PHY_INIT_MAGIC "PHYINIT"
 
+// define the lowest tx power as LOWEST_PHY_TX_POWER
+#define PHY_TX_POWER_LOWEST LIMIT(CONFIG_ESP32_PHY_MAX_TX_POWER * 4, 0, 52)
+#define PHY_TX_POWER_OFFSET 44
+#define PHY_TX_POWER_NUM    5
+
 static const char phy_init_magic_pre[] = PHY_INIT_MAGIC;
 
 /**
