@@ -116,7 +116,7 @@ typedef union {
     struct a2d_audio_cfg_param {
         esp_bd_addr_t remote_bda;              /*!< remote bluetooth device address */
         esp_a2d_mcc_t mcc;                     /*!< A2DP media codec capability information */
-    } audio_cfg;                               /*!< media codec configuration infomation */
+    } audio_cfg;                               /*!< media codec configuration information */
 
     /**
      * @brief ESP_A2D_MEDIA_CTRL_ACK_EVT
@@ -147,12 +147,12 @@ typedef void (* esp_a2d_sink_data_cb_t)(const uint8_t *buf, uint32_t len);
 /**
  * @brief           A2DP source data read callback function
  *
- * @param[in]       buf : buffer to be filled with PCM data stream from higer layer
+ * @param[in]       buf : buffer to be filled with PCM data stream from higher layer
  *
  * @param[in]       len : size(in bytes) of data block to be copied to buf. -1 is an indication to user
  *                  that data buffer shall be flushed
  *
- * @return          size of bytes read successfully, if the argumetn len is -1, this value is ignored.
+ * @return          size of bytes read successfully, if the argument len is -1, this value is ignored.
  *
  */
 typedef int32_t (* esp_a2d_source_data_cb_t)(uint8_t *buf, int32_t len);
