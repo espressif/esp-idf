@@ -130,7 +130,6 @@
 
 
 import threading
-from multiprocessing import Process, Queue
 import socket
 import time
 import argparse
@@ -142,9 +141,8 @@ import random
 _verbose_ = False
 
 class Session:
-    def __init__(self, addr, port):
-        self.client = socket.create_connection((addr, int(port)))
-        self.client.settimeout(15)
+    def __init__(self, addr, port, timeout = 15):
+        self.client = socket.create_connection((addr, int(port)), timeout = timeout)
         self.target = addr
         self.status = 0
         self.encoding = ''
@@ -326,7 +324,7 @@ class adder_thread (threading.Thread):
 def get_hello(dut, port):
     # GET /hello should return 'Hello World!'
     print "[test] GET /hello returns 'Hello World!' =>",
-    conn = httplib.HTTPConnection(dut, int(port))
+    conn = httplib.HTTPConnection(dut, int(port), timeout=15)
     conn.request("GET", "/hello")
     resp = conn.getresponse()
     if not test_val("status_code", 200, resp.status):
@@ -345,7 +343,7 @@ def get_hello(dut, port):
 def put_hello(dut, port):
     # PUT /hello returns 405'
     print "[test] PUT /hello returns 405' =>",
-    conn = httplib.HTTPConnection(dut, int(port))
+    conn = httplib.HTTPConnection(dut, int(port), timeout=15)
     conn.request("PUT", "/hello", "Hello")
     resp = conn.getresponse()
     if not test_val("status_code", 405, resp.status):
@@ -358,7 +356,7 @@ def put_hello(dut, port):
 def post_hello(dut, port):
     # POST /hello returns 405'
     print "[test] POST /hello returns 404' =>",
-    conn = httplib.HTTPConnection(dut, int(port))
+    conn = httplib.HTTPConnection(dut, int(port), timeout=15)
     conn.request("POST", "/hello", "Hello")
     resp = conn.getresponse()
     if not test_val("status_code", 405, resp.status):
@@ -371,7 +369,7 @@ def post_hello(dut, port):
 def post_echo(dut, port):
     # POST /echo echoes data'
     print "[test] POST /echo echoes data' =>",
-    conn = httplib.HTTPConnection(dut, int(port))
+    conn = httplib.HTTPConnection(dut, int(port), timeout=15)
     conn.request("POST", "/echo", "Hello")
     resp = conn.getresponse()
     if not test_val("status_code", 200, resp.status):
@@ -387,7 +385,7 @@ def post_echo(dut, port):
 def put_echo(dut, port):
     # PUT /echo echoes data'
     print "[test] PUT /echo echoes data' =>",
-    conn = httplib.HTTPConnection(dut, int(port))
+    conn = httplib.HTTPConnection(dut, int(port), timeout=15)
     conn.request("PUT", "/echo", "Hello")
     resp = conn.getresponse()
     if not test_val("status_code", 200, resp.status):
@@ -403,7 +401,7 @@ def put_echo(dut, port):
 def get_echo(dut, port):
     # GET /echo returns 404'
     print "[test] GET /echo returns 405' =>",
-    conn = httplib.HTTPConnection(dut, int(port))
+    conn = httplib.HTTPConnection(dut, int(port), timeout=15)
     conn.request("GET", "/echo")
     resp = conn.getresponse()
     if not test_val("status_code", 405, resp.status):
@@ -416,7 +414,7 @@ def get_echo(dut, port):
 def get_hello_type(dut, port):
     # GET /hello/type_html returns text/html as Content-Type'
     print "[test] GET /hello/type_html has Content-Type of text/html =>",
-    conn = httplib.HTTPConnection(dut, int(port))
+    conn = httplib.HTTPConnection(dut, int(port), timeout=15)
     conn.request("GET", "/hello/type_html")
     resp = conn.getresponse()
     if not test_val("status_code", 200, resp.status):
@@ -435,7 +433,7 @@ def get_hello_type(dut, port):
 def get_hello_status(dut, port):
     # GET /hello/status_500 returns status 500'
     print "[test] GET /hello/status_500 returns status 500 =>",
-    conn = httplib.HTTPConnection(dut, int(port))
+    conn = httplib.HTTPConnection(dut, int(port), timeout=15)
     conn.request("GET", "/hello/status_500")
     resp = conn.getresponse()
     if not test_val("status_code", 500, resp.status):
@@ -448,7 +446,7 @@ def get_hello_status(dut, port):
 def get_false_uri(dut, port):
     # GET /false_uri returns status 404'
     print "[test] GET /false_uri returns status 404 =>",
-    conn = httplib.HTTPConnection(dut, int(port))
+    conn = httplib.HTTPConnection(dut, int(port), timeout=15)
     conn.request("GET", "/false_uri")
     resp = conn.getresponse()
     if not test_val("status_code", 404, resp.status):
@@ -503,7 +501,7 @@ def async_response_test(dut, port):
 def leftover_data_test(dut, port):
     # Leftover data in POST is purged (valid and invalid URIs)
     print "[test] Leftover data in POST is purged (valid and invalid URIs) =>",
-    s = httplib.HTTPConnection(dut + ":" + port)
+    s = httplib.HTTPConnection(dut + ":" + port, timeout=15)
 
     s.request("POST", url='/leftover_data', body="abcdefghijklmnopqrstuvwxyz\r\nabcdefghijklmnopqrstuvwxyz")
     resp = s.getresponse()
@@ -543,7 +541,7 @@ def spillover_session(dut, port, max_sess):
         if (_verbose_):
             print "Executing " + str(i)
         try:
-            a = httplib.HTTPConnection(dut + ":" + port)
+            a = httplib.HTTPConnection(dut + ":" + port, timeout=15)
             a.request("GET", url='/hello')
             resp = a.getresponse()
             if not test_val("Connection " + str(i), "Hello World!", resp.read()):
@@ -583,7 +581,7 @@ def packet_size_limit_test(dut, port, test_size):
     while (retry):
         retry -= 1
         print "data size = ", test_size
-        s = httplib.HTTPConnection(dut + ":" + port)
+        s = httplib.HTTPConnection(dut + ":" + port, timeout=15)
         random_data = ''.join(string.printable[random.randint(0,len(string.printable))-1] for _ in range(test_size))
         path = "/echo"
         s.request("POST", url=path, body=random_data)
