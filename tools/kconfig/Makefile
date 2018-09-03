@@ -161,7 +161,7 @@ check-lxdialog  := lxdialog/check-lxdialog.sh
 # Use recursively expanded variables so we do not call gcc unless
 # we really need to do so. (Do not call gcc as part of make mrproper)
 CFLAGS += $(shell $(CONFIG_SHELL) $(check-lxdialog) -ccflags) \
-                    -DLOCALE -MD
+                    -DLOCALE -MMD
 
 # ===========================================================================
 # Shared Makefile for the various kconfig executables:
