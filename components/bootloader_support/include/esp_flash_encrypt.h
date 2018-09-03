@@ -83,6 +83,8 @@ static inline /** @cond */ IRAM_ATTR /** @endcond */ bool esp_flash_encryption_e
  * @note Take care not to power off the device while this function
  * is running, or the partition currently being encrypted will be lost.
  *
+ * @note RTC_WDT will reset while encryption operations will be performed (if RTC_WDT is configured).
+ *
  * @return ESP_OK if all operations succeeded, ESP_ERR_INVALID_STATE
  * if a fatal error occured during encryption of all partitions.
  */
@@ -91,6 +93,7 @@ esp_err_t esp_flash_encrypt_check_and_update(void);
 
 /** @brief Encrypt-in-place a block of flash sectors
  *
+ * @note This function resets RTC_WDT between operations with sectors.
  * @param src_addr Source offset in flash. Should be multiple of 4096 bytes.
  * @param data_length Length of data to encrypt in bytes. Will be rounded up to next multiple of 4096 bytes.
  *
