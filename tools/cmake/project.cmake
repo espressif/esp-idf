@@ -29,6 +29,15 @@ include(idf_functions)
 
 set_default(PYTHON "python")
 
+if(NOT PYTHON_DEPS_CHECKED AND NOT BOOTLOADER_BUILD)
+    message(STATUS "Checking Python dependencies...")
+    execute_process(COMMAND "${PYTHON}" "${IDF_PATH}/tools/check_python_dependencies.py"
+        RESULT_VARIABLE result)
+    if(NOT result EQUAL 0)
+        message(FATAL_ERROR "Some Python dependencies must be installed. Check above message for details.")
+    endif()
+endif()
+
 # project
 #
 # This macro wraps the cmake 'project' command to add
