@@ -117,6 +117,17 @@ static void reset_hw_timer()
 }
 
 /*
+ * This function is called by task_wdt_isr function (ISR for when TWDT times out).
+ * It can be redefined in user code to handle twdt events.
+ * Note: It has the same limitations as the interrupt function.
+ *       Do not use ESP_LOGI functions inside.
+ */
+void __attribute__((weak)) esp_task_wdt_isr_user_handler(void)
+{
+
+}
+
+/*
  * ISR for when TWDT times out. Checks for which tasks have not reset. Also
  * triggers panic if configured to do so
  */
@@ -153,6 +164,7 @@ static void task_wdt_isr(void *arg)
         ets_printf("CPU %d: %s\n", x, pcTaskGetTaskName(xTaskGetCurrentTaskHandleForCPU(x)));
     }
 
+    esp_task_wdt_isr_user_handler();
     if (twdt_config->panic){     //Trigger Panic if configured to do so
         ets_printf("Aborting.\n");
         portEXIT_CRITICAL(&twdt_spinlock);
