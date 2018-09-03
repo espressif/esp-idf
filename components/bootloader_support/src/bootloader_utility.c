@@ -389,7 +389,7 @@ static void unpack_load_app(const esp_image_metadata_t* data)
     // Find DROM & IROM addresses, to configure cache mappings
     for (int i = 0; i < data->image.segment_count; i++) {
         const esp_image_segment_header_t *header = &data->segments[i];
-        if (header->load_addr >= SOC_IROM_LOW && header->load_addr < SOC_IROM_HIGH) {
+        if (header->load_addr >= SOC_DROM_LOW && header->load_addr < SOC_DROM_HIGH) {
             if (drom_addr != 0) {
                 ESP_LOGE(TAG, MAP_ERR_MSG, "DROM");
             } else {
@@ -399,7 +399,7 @@ static void unpack_load_app(const esp_image_metadata_t* data)
             drom_load_addr = header->load_addr;
             drom_size = header->data_len;
         }
-        if (header->load_addr >= SOC_DROM_LOW && header->load_addr < SOC_DROM_HIGH) {
+        if (header->load_addr >= SOC_IROM_LOW && header->load_addr < SOC_IROM_HIGH) {
             if (irom_addr != 0) {
                 ESP_LOGE(TAG, MAP_ERR_MSG, "IROM");
             } else {
