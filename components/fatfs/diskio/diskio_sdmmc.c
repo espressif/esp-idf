@@ -89,3 +89,12 @@ void ff_diskio_register_sdmmc(BYTE pdrv, sdmmc_card_t* card)
     ff_diskio_register(pdrv, &sdmmc_impl);
 }
 
+BYTE ff_diskio_get_pdrv_card(const sdmmc_card_t* card)
+{
+    for (int i = 0; i < FF_VOLUMES; i++) {
+        if (card == s_cards[i]) {
+            return i;
+        }
+    }
+    return 0xff;
+}

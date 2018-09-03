@@ -193,24 +193,33 @@ esp_err_t slave_init(essl_handle_t* handle)
     err = sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config);
     ESP_ERROR_CHECK(err);
 #else   //over SPI
-    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
-
-    sdspi_slot_config_t slot_config = SDSPI_SLOT_CONFIG_DEFAULT();
-    slot_config.gpio_miso = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D0;
-    slot_config.gpio_mosi = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_CMD;
-    slot_config.gpio_sck  = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_CLK;
-    slot_config.gpio_cs   = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D3;
-    slot_config.gpio_int = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D1;
+    sdspi_device_config_t dev_config = SDSPI_DEVICE_CONFIG_DEFAULT();
+    dev_config.gpio_cs   = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D3;
+    dev_config.gpio_int = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D1;
 
     err = gpio_install_isr_service(0);
     ESP_ERROR_CHECK(err);
-    err = sdspi_host_init();
+
+    spi_bus_config_t bus_config = {
+        .mosi_io_num = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_CMD,
+        .miso_io_num = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D0,
+        .sclk_io_num = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_CLK,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1,
+        .max_transfer_sz = 4000,
+    };
+    err = spi_bus_initialize(dev_config.host_id, &bus_config, 1);
     ESP_ERROR_CHECK(err);
 
-    err = sdspi_host_init_slot(HSPI_HOST, &slot_config);
+    sdspi_device_handle_t sdspi_handle;
+    err = sdspi_host_init();
+    ESP_ERROR_CHECK(err);
+    err = sdspi_host_init_device(&slot_config, &sdspi_handle);
     ESP_ERROR_CHECK(err);
     ESP_LOGI(TAG, "Probe using SPI...\n");
 
+    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
+    config.slot = sdspi_handle;
     //we have to pull up all the slave pins even when the pin is not used
     gpio_d2_set_high();
 #endif  //over SPI

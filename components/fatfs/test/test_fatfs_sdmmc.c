@@ -31,8 +31,16 @@
 #include "test_fatfs_common.h"
 #include "soc/soc_caps.h"
 
+#define SDSPI_MOSI_PIN  15
+#define SDSPI_MISO_PIN  2
+#define SDSPI_CS_PIN    13
+#define SDSPI_CLK_PIN   14
+#define SDSPI_HOST_ID   HSPI_HOST
+
+
 #ifdef SOC_SDMMC_HOST_SUPPORTED
 #include "driver/sdmmc_host.h"
+
 
 static void test_setup(void)
 {
@@ -180,7 +188,7 @@ TEST_CASE("(SD) multiple tasks can use same volume", "[fatfs][test_env=UT_T1_SDM
     test_teardown();
 }
 
-static void speed_test(void* buf, size_t buf_size, size_t file_size, bool write);
+static void sdmmc_speed_test(void *buf, size_t buf_size, size_t file_size, bool write);
 
 TEST_CASE("(SD) write/read speed test", "[fatfs][sd][test_env=UT_T1_SDMODE][timeout=60]")
 {
@@ -192,20 +200,20 @@ TEST_CASE("(SD) write/read speed test", "[fatfs][sd][test_env=UT_T1_SDMODE][time
     esp_fill_random(buf, buf_size);
     const size_t file_size = 1 * 1024 * 1024;
 
-    speed_test(buf, 4 * 1024, file_size, true);
-    speed_test(buf, 8 * 1024, file_size, true);
-    speed_test(buf, 16 * 1024, file_size, true);
+    sdmmc_speed_test(buf, 4 * 1024, file_size, true);
+    sdmmc_speed_test(buf, 8 * 1024, file_size, true);
+    sdmmc_speed_test(buf, 16 * 1024, file_size, true);
 
-    speed_test(buf, 4 * 1024, file_size, false);
-    speed_test(buf, 8 * 1024, file_size, false);
-    speed_test(buf, 16 * 1024, file_size, false);
+    sdmmc_speed_test(buf, 4 * 1024, file_size, false);
+    sdmmc_speed_test(buf, 8 * 1024, file_size, false);
+    sdmmc_speed_test(buf, 16 * 1024, file_size, false);
 
     free(buf);
 
     HEAP_SIZE_CHECK(heap_size, 0);
 }
 
-static void speed_test(void* buf, size_t buf_size, size_t file_size, bool write)
+static void sdmmc_speed_test(void *buf, size_t buf_size, size_t file_size, bool write)
 {
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
     host.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
@@ -296,5 +304,73 @@ TEST_CASE("(SD) opendir, readdir, rewinddir, seekdir work as expected using UTF-
     test_teardown();
 }
 #endif // CONFIG_FATFS_API_ENCODING_UTF_8 && CONFIG_FATFS_CODEPAGE == 936
+
+#endif  //SDMMC HOST SUPPORTED
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+
+static void sdspi_speed_test(void *buf, size_t buf_size, size_t file_size, bool write);
+
+TEST_CASE("(SDSPI) write/read speed test", "[fatfs][sd][test_env=UT_T1_SPIMODE][timeout=60]")
+{
+    size_t heap_size;
+    HEAP_SIZE_CAPTURE(heap_size);
+
+    const size_t buf_size = 16 * 1024;
+    uint32_t* buf = (uint32_t*) calloc(1, buf_size);
+    esp_fill_random(buf, buf_size);
+    const size_t file_size = 1 * 1024 * 1024;
+
+    spi_bus_config_t bus_cfg = {
+        .mosi_io_num = SDSPI_MOSI_PIN,
+        .miso_io_num = SDSPI_MISO_PIN,
+        .sclk_io_num = SDSPI_CLK_PIN,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1,
+        .max_transfer_sz = 4000,
+    };
+    esp_err_t err = spi_bus_initialize(SDSPI_HOST_ID, &bus_cfg, 1);
+    TEST_ESP_OK(err);
+
+    sdspi_speed_test(buf, 4 * 1024, file_size, true);
+    sdspi_speed_test(buf, 8 * 1024, file_size, true);
+    sdspi_speed_test(buf, 16 * 1024, file_size, true);
+
+    sdspi_speed_test(buf, 4 * 1024, file_size, false);
+    sdspi_speed_test(buf, 8 * 1024, file_size, false);
+    sdspi_speed_test(buf, 16 * 1024, file_size, false);
+
+    free(buf);
+    spi_bus_free(SDSPI_HOST_ID);
+
+    HEAP_SIZE_CHECK(heap_size, 0);
+}
+
+static void sdspi_speed_test(void *buf, size_t buf_size, size_t file_size, bool write)
+{
+    const char path[] = "/sdcard";
+    sdmmc_card_t *card;
+    card = NULL;
+    sdspi_device_config_t device_cfg = {
+        .gpio_cs = SDSPI_CS_PIN,
+        .host_id = SDSPI_HOST_ID,
+        .gpio_cd = SDSPI_SLOT_NO_CD,
+        .gpio_wp = SDSPI_SLOT_NO_WP,
+        .gpio_int = SDSPI_SLOT_NO_INT,
+    };
+
+    sdmmc_host_t host = SDSPI_HOST_DEFAULT();
+    host.slot = SDSPI_HOST_ID;
+    esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+        .format_if_mount_failed = write,
+        .max_files = 5,
+        .allocation_unit_size = 64 * 1024
+    };
+    TEST_ESP_OK(esp_vfs_fat_sdspi_mount(path, &host, &device_cfg, &mount_config, &card));
+
+    test_fatfs_rw_speed("/sdcard/4mb.bin", buf, buf_size, file_size, write);
+
+    TEST_ESP_OK(esp_vfs_fat_sdcard_unmount(path, card));
+}
 
 #endif
