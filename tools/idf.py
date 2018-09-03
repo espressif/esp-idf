@@ -21,6 +21,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+# Note: we don't check for Python build-time dependencies until
+# check_environment() function below. If possible, avoid importing
+# any external libraries here - put in external script, or import in
+# their specific function instead.
 import sys
 import argparse
 import os
@@ -98,6 +103,15 @@ def check_environment():
         print("Setting IDF_PATH environment variable: %s" % detected_idf_path)
         os.environ["IDF_PATH"] = detected_idf_path
 
+    # check Python dependencies
+    print("Checking Python dependencies...")
+    try:
+        subprocess.check_call([ os.environ["PYTHON"],
+                                os.path.join(os.environ["IDF_PATH"], "tools", "check_python_dependencies.py")],
+                              env=os.environ)
+    except subprocess.CalledProcessError:
+        raise SystemExit(1)
+
 def executable_exists(args):
     try:
         subprocess.check_output(args)
@@ -143,7 +157,7 @@ def _ensure_build_directory(args, always_run_cmake=False):
         if args.generator is None:
             args.generator = detect_cmake_generator()
         try:
-            cmake_args = ["cmake", "-G", args.generator]
+            cmake_args = ["cmake", "-G", args.generator, "-DPYTHON_DEPS_CHECKED=1"]
             if not args.no_warnings:
                 cmake_args += [ "--warn-uninitialized" ]
             if args.no_ccache:
