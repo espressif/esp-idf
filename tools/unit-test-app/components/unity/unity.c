@@ -5,6 +5,7 @@
 ============================================================================ */
 
 #include "unity.h"
+#include "unity_platform.h"
 #include <stddef.h>
 
 /* If omitted from header, declare overrideable prototypes here so they're ready for use */
@@ -1268,12 +1269,14 @@ void UnityDefaultTestRun(UnityTestFunction Func, const char* FuncName, const int
     UNITY_CLR_DETAILS();
     if (TEST_PROTECT())
     {
+        setUp_Platform();
         setUp();
         Func();
     }
     if (TEST_PROTECT() && !(Unity.CurrentTestIgnored))
     {
         tearDown();
+        tearDown_Platform();
     }
     UnityConcludeTest();
 }
