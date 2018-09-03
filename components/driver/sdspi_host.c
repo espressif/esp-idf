@@ -28,6 +28,7 @@
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "soc/soc_memory_layout.h"
 
 
 /// Max number of transactions in flight (used in start_command_write_blocks)
@@ -56,13 +57,9 @@ typedef struct {
     uint8_t gpio_int;            //!< Write protect GPIO, or GPIO_UNUSED
     /// Set to 1 if the higher layer has asked the card to enable CRC checks
     uint8_t data_crc_enabled : 1;
-    /// Number of transactions in 'transactions' array which are in use
-    uint8_t used_transaction_count: 3;
     /// Intermediate buffer used when application buffer is not in DMA memory;
     /// allocated on demand, SDSPI_BLOCK_BUF_SIZE bytes long. May be zero.
     uint8_t* block_buf;
-    /// array with SDSPI_TRANSACTION_COUNT transaction structures
-    spi_transaction_t* transactions;
     /// semaphore of gpio interrupt
     SemaphoreHandle_t   semphr_int;
 } slot_info_t;
@@ -70,6 +67,10 @@ typedef struct {
 // Reserved for old API to be back-compatible
 static slot_info_t *s_slots[SOC_SPI_PERIPH_NUM] = {};
 static const char *TAG = "sdspi_host";
+
+static const bool use_polling = true;
+static const bool no_use_polling = true;
+
 
 /// Functions to send out different kinds of commands
 static esp_err_t start_command_read_blocks(slot_info_t *slot, sdspi_hw_cmd_t *cmd,
@@ -166,30 +167,6 @@ static esp_err_t get_block_buf(slot_info_t *slot, uint8_t **out_buf)
     return ESP_OK;
 }
 
-static spi_transaction_t* get_transaction(slot_info_t *slot)
-{
-    size_t used_transaction_count = slot->used_transaction_count;
-    assert(used_transaction_count < SDSPI_TRANSACTION_COUNT);
-    spi_transaction_t* ret = &slot->transactions[used_transaction_count];
-    ++slot->used_transaction_count;
-    return ret;
-}
-
-static void release_transaction(slot_info_t *slot)
-{
-    --slot->used_transaction_count;
-}
-
-static void wait_for_transactions(slot_info_t *slot)
-{
-    size_t used_transaction_count = slot->used_transaction_count;
-    for (size_t i = 0; i < used_transaction_count; ++i) {
-        spi_transaction_t* t_out;
-        spi_device_get_trans_result(slot->spi_handle, &t_out, portMAX_DELAY);
-        release_transaction(slot);
-    }
-}
-
 /// Clock out one byte (CS has to be high) to make the card release MISO
 /// (clocking one bit would work as well, but that triggers a bug in SPI DMA)
 static void release_bus(slot_info_t *slot)
@@ -199,7 +176,7 @@ static void release_bus(slot_info_t *slot)
         .length = 8,
         .tx_data = {0xff}
     };
-    spi_device_transmit(slot->spi_handle, &t);
+    spi_device_polling_transmit(slot->spi_handle, &t);
     // don't care if this failed
 }
 
@@ -214,16 +191,8 @@ static void go_idle_clockout(slot_info_t *slot)
         .tx_buffer = data,
         .rx_buffer = data,
     };
-    spi_device_transmit(slot->spi_handle, &t);
+    spi_device_polling_transmit(slot->spi_handle, &t);
     // don't care if this failed
-}
-
-
-/// Return true if the pointer can be used for DMA
-static bool ptr_dma_compatible(const void* ptr)
-{
-    return (uintptr_t) ptr >= 0x3FFAE000 &&
-           (uintptr_t) ptr < 0x40000000;
 }
 
 /**
@@ -264,8 +233,7 @@ static esp_err_t deinit_slot(slot_info_t *slot)
         free(slot->block_buf);
         slot->block_buf = NULL;
     }
-    free(slot->transactions);
-    slot->transactions = NULL;
+
     uint64_t pin_bit_mask = 0;
     if (slot->gpio_cs != GPIO_UNUSED) {
         pin_bit_mask |= BIT64(slot->gpio_cs);
@@ -439,11 +407,6 @@ esp_err_t sdspi_host_init_device(const sdspi_device_config_t* slot_config, sdspi
     } else {
         slot->gpio_int = GPIO_UNUSED;
     }
-    slot->transactions = calloc(SDSPI_TRANSACTION_COUNT, sizeof(spi_transaction_t));
-    if (slot->transactions == NULL) {
-        ret = ESP_ERR_NO_MEM;
-        goto cleanup;
-    }
     //Initialization finished, store the store information if possible
     //Then return corresponding handle
     *out_handle = store_slot_info(slot);
@@ -545,13 +508,13 @@ static esp_err_t start_command_default(slot_info_t *slot, int flags, sdspi_hw_cm
         .tx_buffer = cmd,
         .rx_buffer = cmd,
     };
-    esp_err_t ret = spi_device_transmit(slot->spi_handle, &t);
+    esp_err_t ret = spi_device_polling_transmit(slot->spi_handle, &t);
     if (cmd->cmd_index == MMC_STOP_TRANSMISSION) {
         /* response is a stuff byte from previous transfer, ignore it */
         cmd->r1 = 0xff;
     }
     if (ret != ESP_OK) {
-        ESP_LOGD(TAG, "%s: spi_device_transmit returned 0x%x", __func__, ret);
+        ESP_LOGD(TAG, "%s: spi_device_polling_transmit returned 0x%x", __func__, ret);
         return ret;
     }
     if (flags & SDSPI_CMD_FLAG_NORSP) {
@@ -568,10 +531,10 @@ static esp_err_t start_command_default(slot_info_t *slot, int flags, sdspi_hw_cm
 }
 
 // Wait until MISO goes high
-static esp_err_t poll_busy(slot_info_t *slot, spi_transaction_t* t, int timeout_ms)
+static esp_err_t poll_busy(slot_info_t *slot, int timeout_ms, bool polling)
 {
     uint8_t t_rx;
-    *t = (spi_transaction_t) {
+    spi_transaction_t t = {
         .tx_buffer = &t_rx,
         .flags = SPI_TRANS_USE_RXDATA,  //data stored in rx_data
         .length = 8,
@@ -582,12 +545,16 @@ static esp_err_t poll_busy(slot_info_t *slot, spi_transaction_t* t, int timeout_
     int nonzero_count = 0;
     do {
         t_rx = SDSPI_MOSI_IDLE_VAL;
-        t->rx_data[0] = 0;
-        ret = spi_device_transmit(slot->spi_handle, t);
+        t.rx_data[0] = 0;
+        if (polling) {
+            ret = spi_device_polling_transmit(slot->spi_handle, &t);
+        } else {
+            ret = spi_device_transmit(slot->spi_handle, &t);
+        }
         if (ret != ESP_OK) {
             return ret;
         }
-        if (t->rx_data[0] != 0) {
+        if (t.rx_data[0] != 0) {
             if (++nonzero_count == 2) {
                 return ESP_OK;
             }
@@ -600,11 +567,10 @@ static esp_err_t poll_busy(slot_info_t *slot, spi_transaction_t* t, int timeout_
 // Wait for data token, reading 8 bytes at a time.
 // If the token is found, write all subsequent bytes to extra_ptr,
 // and store the number of bytes written to extra_size.
-static esp_err_t poll_data_token(slot_info_t *slot, spi_transaction_t* t,
-        uint8_t* extra_ptr, size_t* extra_size, int timeout_ms)
+static esp_err_t poll_data_token(slot_info_t *slot, uint8_t *extra_ptr, size_t *extra_size, int timeout_ms)
 {
     uint8_t t_rx[8];
-    *t = (spi_transaction_t) {
+    spi_transaction_t t = {
         .tx_buffer = &t_rx,
         .rx_buffer = &t_rx,
         .length = sizeof(t_rx) * 8,
@@ -613,7 +579,7 @@ static esp_err_t poll_data_token(slot_info_t *slot, spi_transaction_t* t,
     uint64_t t_end = esp_timer_get_time() + timeout_ms * 1000;
     do {
         memset(t_rx, SDSPI_MOSI_IDLE_VAL, sizeof(t_rx));
-        ret = spi_device_transmit(slot->spi_handle, t);
+        ret = spi_device_polling_transmit(slot->spi_handle, &t);
         if (ret != ESP_OK) {
             return ret;
         }
@@ -706,17 +672,15 @@ static esp_err_t shift_cmd_response(sdspi_hw_cmd_t* cmd, int sent_bytes)
 static esp_err_t start_command_read_blocks(slot_info_t *slot, sdspi_hw_cmd_t *cmd,
         uint8_t *data, uint32_t rx_length, bool need_stop_command)
 {
-    spi_transaction_t* t_command = get_transaction(slot);
-    *t_command = (spi_transaction_t) {
+    spi_transaction_t t_command = {
         .length = (SDSPI_CMD_R1_SIZE + SDSPI_RESPONSE_MAX_DELAY) * 8,
         .tx_buffer = cmd,
         .rx_buffer = cmd,
     };
-    esp_err_t ret = spi_device_transmit(slot->spi_handle, t_command);
+    esp_err_t ret = spi_device_polling_transmit(slot->spi_handle, &t_command);
     if (ret != ESP_OK) {
         return ret;
     }
-    release_transaction(slot);
 
     uint8_t* cmd_u8 = (uint8_t*) cmd;
     size_t pre_scan_data_size = SDSPI_RESPONSE_MAX_DELAY;
@@ -751,9 +715,7 @@ static esp_err_t start_command_read_blocks(slot_info_t *slot, sdspi_hw_cmd_t *cm
 
         if (need_poll) {
             // Wait for data to be ready
-            spi_transaction_t* t_poll = get_transaction(slot);
-            ret = poll_data_token(slot, t_poll, cmd_u8 + SDSPI_CMD_R1_SIZE, &extra_data_size, cmd->timeout_ms);
-            release_transaction(slot);
+            ret = poll_data_token(slot, cmd_u8 + SDSPI_CMD_R1_SIZE, &extra_data_size, cmd->timeout_ms);
             if (ret != ESP_OK) {
                 return ret;
             }
@@ -773,18 +735,16 @@ static esp_err_t start_command_read_blocks(slot_info_t *slot, sdspi_hw_cmd_t *cm
         // receive actual data
         const size_t receive_extra_bytes = (rx_length > SDSPI_MAX_DATA_LEN) ? 4 : 2;
         memset(rx_data, 0xff, will_receive + receive_extra_bytes);
-        spi_transaction_t* t_data = get_transaction(slot);
-        *t_data = (spi_transaction_t) {
+        spi_transaction_t t_data = {
             .length = (will_receive + receive_extra_bytes) * 8,
             .rx_buffer = rx_data,
             .tx_buffer = rx_data
         };
 
-        ret = spi_device_transmit(slot->spi_handle, t_data);
+        ret = spi_device_transmit(slot->spi_handle, &t_data);
         if (ret != ESP_OK) {
             return ret;
         }
-        release_transaction(slot);
 
         // CRC bytes need to be received even if CRC is not enabled
         uint16_t crc = UINT16_MAX;
@@ -829,9 +789,7 @@ static esp_err_t start_command_read_blocks(slot_info_t *slot, sdspi_hw_cmd_t *cm
         if (stop_cmd.r1 != 0) {
             ESP_LOGD(TAG, "%s: STOP_TRANSMISSION response 0x%02x", __func__, stop_cmd.r1);
         }
-        spi_transaction_t* t_poll = get_transaction(slot);
-        ret = poll_busy(slot, t_poll, cmd->timeout_ms);
-        release_transaction(slot);
+        ret = poll_busy(slot, cmd->timeout_ms, use_polling);
         if (ret != ESP_OK) {
             return ret;
         }
@@ -855,17 +813,15 @@ static esp_err_t start_command_write_blocks(slot_info_t *slot, sdspi_hw_cmd_t *c
     // SD cards always return R1 (1bytes), SDIO returns R5 (2 bytes)
     const int send_bytes = SDSPI_CMD_R5_SIZE+SDSPI_NCR_MAX_SIZE-SDSPI_NCR_MIN_SIZE;
 
-    spi_transaction_t* t_command = get_transaction(slot);
-    *t_command = (spi_transaction_t) {
+    spi_transaction_t t_command = {
         .length = send_bytes * 8,
         .tx_buffer = cmd,
         .rx_buffer = cmd,
     };
-    esp_err_t ret = spi_device_queue_trans(slot->spi_handle, t_command, 0);
+    esp_err_t ret = spi_device_polling_transmit(slot->spi_handle, &t_command);
     if (ret != ESP_OK) {
         return ret;
     }
-    wait_for_transactions(slot);
 
     // check if command response valid
     ret = shift_cmd_response(cmd, send_bytes);
@@ -879,12 +835,11 @@ static esp_err_t start_command_write_blocks(slot_info_t *slot, sdspi_hw_cmd_t *c
 
     while (tx_length > 0) {
         // Write block start token
-        spi_transaction_t* t_start_token = get_transaction(slot);
-        *t_start_token = (spi_transaction_t) {
+        spi_transaction_t t_start_token = {
             .length = sizeof(start_token) * 8,
             .tx_buffer = &start_token
         };
-        ret = spi_device_queue_trans(slot->spi_handle, t_start_token, 0);
+        ret = spi_device_polling_transmit(slot->spi_handle, &t_start_token);
         if (ret != ESP_OK) {
             return ret;
         }
@@ -892,7 +847,7 @@ static esp_err_t start_command_write_blocks(slot_info_t *slot, sdspi_hw_cmd_t *c
         // Prepare data to be sent
         size_t will_send = MIN(tx_length, SDSPI_MAX_DATA_LEN);
         const uint8_t* tx_data = data;
-        if (!ptr_dma_compatible(tx_data)) {
+        if (!esp_ptr_in_dram(tx_data)) {
             // If the pointer can't be used with DMA, copy data into a new buffer
             uint8_t* tmp;
             ret = get_block_buf(slot, &tmp);
@@ -904,12 +859,11 @@ static esp_err_t start_command_write_blocks(slot_info_t *slot, sdspi_hw_cmd_t *c
         }
 
         // Write data
-        spi_transaction_t* t_data = get_transaction(slot);
-        *t_data = (spi_transaction_t) {
+        spi_transaction_t t_data = {
             .length = will_send * 8,
             .tx_buffer = tx_data,
         };
-        ret = spi_device_queue_trans(slot->spi_handle, t_data, 0);
+        ret = spi_device_transmit(slot->spi_handle, &t_data);
         if (ret != ESP_OK) {
             return ret;
         }
@@ -918,23 +872,19 @@ static esp_err_t start_command_write_blocks(slot_info_t *slot, sdspi_hw_cmd_t *c
         uint16_t crc = sdspi_crc16(data, will_send);
         const int size_crc_response = sizeof(crc) + 1;
 
-        spi_transaction_t* t_crc_rsp = get_transaction(slot);
-        *t_crc_rsp = (spi_transaction_t) {
+        spi_transaction_t t_crc_rsp = {
             .length = size_crc_response * 8,
             .flags = SPI_TRANS_USE_TXDATA|SPI_TRANS_USE_RXDATA,
         };
-        memset(t_crc_rsp->tx_data, 0xff, 4);
-        memcpy(t_crc_rsp->tx_data, &crc, sizeof(crc));
+        memset(t_crc_rsp.tx_data, 0xff, 4);
+        memcpy(t_crc_rsp.tx_data, &crc, sizeof(crc));
 
-        ret = spi_device_queue_trans(slot->spi_handle, t_crc_rsp, 0);
+        ret = spi_device_polling_transmit(slot->spi_handle, &t_crc_rsp);
         if (ret != ESP_OK) {
             return ret;
         }
 
-        // Wait for data to be sent
-        wait_for_transactions(slot);
-
-        uint8_t data_rsp = t_crc_rsp->rx_data[2];
+        uint8_t data_rsp = t_crc_rsp.rx_data[2];
         if (!SD_SPI_DATA_RSP_VALID(data_rsp)) return ESP_ERR_INVALID_RESPONSE;
         switch (SD_SPI_DATA_RSP(data_rsp)) {
         case SD_SPI_DATA_ACCEPTED:
@@ -948,9 +898,7 @@ static esp_err_t start_command_write_blocks(slot_info_t *slot, sdspi_hw_cmd_t *c
         }
 
         // Wait for the card to finish writing data
-        spi_transaction_t* t_poll = get_transaction(slot);
-        ret = poll_busy(slot, t_poll, cmd->timeout_ms);
-        release_transaction(slot);
+        ret = poll_busy(slot, cmd->timeout_ms, no_use_polling);
         if (ret != ESP_OK) {
             return ret;
         }
@@ -964,20 +912,16 @@ static esp_err_t start_command_write_blocks(slot_info_t *slot, sdspi_hw_cmd_t *c
             TOKEN_BLOCK_STOP_WRITE_MULTI,
             SDSPI_MOSI_IDLE_VAL
         };
-        spi_transaction_t *t_stop_token = get_transaction(slot);
-        *t_stop_token = (spi_transaction_t) {
+        spi_transaction_t t_stop_token = {
             .length = sizeof(stop_token) * 8,
             .tx_buffer = &stop_token,
         };
-        ret = spi_device_queue_trans(slot->spi_handle, t_stop_token, 0);
+        ret = spi_device_polling_transmit(slot->spi_handle, &t_stop_token);
         if (ret != ESP_OK) {
             return ret;
         }
-        wait_for_transactions(slot);
 
-        spi_transaction_t *t_poll = get_transaction(slot);
-        ret = poll_busy(slot, t_poll, cmd->timeout_ms);
-        release_transaction(slot);
+        ret = poll_busy(slot, cmd->timeout_ms, use_polling);
         if (ret != ESP_OK) {
             return ret;
         }
