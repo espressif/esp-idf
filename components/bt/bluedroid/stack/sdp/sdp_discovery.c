@@ -354,15 +354,17 @@ static void sdp_copy_raw_data (tCONN_CB *p_ccb, BOOLEAN offset)
             type = *p++;
             p = sdpu_get_len_from_type (p, type, &list_len);
         }
-        if (list_len && list_len < cpy_len ) {
+        if (list_len < cpy_len ) {
             cpy_len = list_len;
         }
 #if (SDP_DEBUG_RAW == TRUE)
-        SDP_TRACE_WARNING("list_len :%d cpy_len:%d raw_size:%d raw_used:%d\n",
+        SDP_TRACE_DEBUG("list_len :%d cpy_len:%d raw_size:%d raw_used:%d\n",
                           list_len, cpy_len, p_ccb->p_db->raw_size, p_ccb->p_db->raw_used);
 #endif
-        memcpy (&p_ccb->p_db->raw_data[p_ccb->p_db->raw_used], p, cpy_len);
-        p_ccb->p_db->raw_used += cpy_len;
+        if (cpy_len != 0){
+            memcpy (&p_ccb->p_db->raw_data[p_ccb->p_db->raw_used], p, cpy_len);
+            p_ccb->p_db->raw_used += cpy_len;
+        }
     }
 }
 #endif
