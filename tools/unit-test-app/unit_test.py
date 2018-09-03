@@ -139,6 +139,19 @@ def replace_app_bin(dut, name, new_app_bin):
             Utility.console_log("The replaced application binary is {}".format(new_app_bin), "O")
             break
 
+
+def reset_dut(dut):
+    dut.reset()
+    # esptool ``run`` cmd takes quite long time.
+    # before reset finish, serial port is closed. therefore DUT could already bootup before serial port opened.
+    # this could cause checking bootup print failed.
+    # now we input cmd `-`, and check either bootup print or test history,
+    # to determine if DUT is ready to test.
+    dut.write("-", flush=False)
+    dut.expect_any(UT_APP_BOOT_UP_DONE,
+                   "0 Tests 0 Failures 0 Ignored", timeout=STARTUP_TIMEOUT)
+
+
 @IDF.idf_unit_test(env_tag="UT_T1_1")
 def run_unit_test_cases(env, extra_data):
     """
@@ -171,15 +184,7 @@ def run_unit_test_cases(env, extra_data):
         dut.start_app()
 
         for one_case in case_config[ut_config]:
-            dut.reset()
-            # esptool ``run`` cmd takes quite long time.
-            # before reset finish, serial port is closed. therefore DUT could already bootup before serial port opened.
-            # this could cause checking bootup print failed.
-            # now we input cmd `-`, and check either bootup print or test history,
-            # to determine if DUT is ready to test.
-            dut.write("-", flush=False)
-            dut.expect_any(UT_APP_BOOT_UP_DONE,
-                           "0 Tests 0 Failures 0 Ignored", timeout=STARTUP_TIMEOUT)
+            reset_dut(dut)
 
             # run test case
             dut.write("\"{}\"".format(one_case["name"]))
@@ -273,6 +278,9 @@ class Handler(threading.Thread):
         self.fail_name = None
         self.timeout = timeout
         self.force_stop = threading.Event()  # it show the running status
+
+        reset_dut(self.dut)  # reset the board to make it start from begining
+
         threading.Thread.__init__(self, name="{} Handler".format(dut))
 
     def run(self):
@@ -314,10 +322,8 @@ class Handler(threading.Thread):
                 Utility.console_log("Ignored: " + self.child_case_name, color="orange")
             one_device_case_finish(not int(data[0]))
 
-        self.dut.reset()
-        self.dut.write("-", flush=False)
+
         try:
-            self.dut.expect_any(UT_APP_BOOT_UP_DONE, "0 Tests 0 Failures 0 Ignored")
             time.sleep(1)
             self.dut.write("\"{}\"".format(self.parent_case_name))
             self.dut.expect("Running " + self.parent_case_name + "...")
@@ -352,7 +358,7 @@ def get_dut(duts, env, name, ut_config, app_bin=None):
         dut = env.get_dut(name, app_path=ut_config)
         duts[name] = dut
         replace_app_bin(dut, "unit-test-app", app_bin)
-        dut.start_app()
+        dut.start_app() # download bin to board
     return dut
 
 
@@ -447,11 +453,7 @@ def run_multiple_stage_cases(env, extra_data):
         dut.start_app()
 
         for one_case in case_config[ut_config]:
-            dut.reset()
-            dut.write("-", flush=False)
-            dut.expect_any(UT_APP_BOOT_UP_DONE,
-                           "0 Tests 0 Failures 0 Ignored")
-
+            reset_dut(dut)
             exception_reset_list = []
 
             for test_stage in range(one_case["child case num"]):
@@ -560,8 +562,7 @@ def detect_update_unit_test_info(env, extra_data, app_bin):
         replace_app_bin(dut, "unit-test-app", app_bin)
         dut.start_app()
 
-        dut.write("-", flush=False)
-        dut.expect_any(UT_APP_BOOT_UP_DONE, "0 Tests 0 Failures 0 Ignored", timeout=STARTUP_TIMEOUT)
+        reset_dut(dut)
 
         # get the list of test cases
         dut.write("")
