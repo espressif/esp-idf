@@ -430,6 +430,7 @@ static void set_cache_and_start_app(
     uint32_t irom_size,
     uint32_t entry_addr)
 {
+    int rc;
     ESP_LOGD(TAG, "configure drom and irom and start");
     Cache_Read_Disable( 0 );
     Cache_Flush( 0 );
@@ -441,20 +442,34 @@ static void set_cache_and_start_app(
         DPORT_PRO_FLASH_MMU_TABLE[i] = DPORT_FLASH_MMU_TABLE_INVALID_VAL;
     }
 
-    uint32_t drom_page_count = (drom_size + 64*1024 - 1) / (64*1024); // round up to 64k
-    ESP_LOGV(TAG, "d mmu set paddr=%08x vaddr=%08x size=%d n=%d", drom_addr & 0xffff0000, drom_load_addr & 0xffff0000, drom_size, drom_page_count );
-    int rc = cache_flash_mmu_set( 0, 0, drom_load_addr & 0xffff0000, drom_addr & 0xffff0000, 64, drom_page_count );
-    ESP_LOGV(TAG, "rc=%d", rc );
-    rc = cache_flash_mmu_set( 1, 0, drom_load_addr & 0xffff0000, drom_addr & 0xffff0000, 64, drom_page_count );
-    ESP_LOGV(TAG, "rc=%d", rc );
-    uint32_t irom_page_count = (irom_size + 64*1024 - 1) / (64*1024); // round up to 64k
-    ESP_LOGV(TAG, "i mmu set paddr=%08x vaddr=%08x size=%d n=%d", irom_addr & 0xffff0000, irom_load_addr & 0xffff0000, irom_size, irom_page_count );
-    rc = cache_flash_mmu_set( 0, 0, irom_load_addr & 0xffff0000, irom_addr & 0xffff0000, 64, irom_page_count );
-    ESP_LOGV(TAG, "rc=%d", rc );
-    rc = cache_flash_mmu_set( 1, 0, irom_load_addr & 0xffff0000, irom_addr & 0xffff0000, 64, irom_page_count );
-    ESP_LOGV(TAG, "rc=%d", rc );
-    DPORT_REG_CLR_BIT( DPORT_PRO_CACHE_CTRL1_REG, (DPORT_PRO_CACHE_MASK_IRAM0) | (DPORT_PRO_CACHE_MASK_IRAM1 & 0) | (DPORT_PRO_CACHE_MASK_IROM0 & 0) | DPORT_PRO_CACHE_MASK_DROM0 | DPORT_PRO_CACHE_MASK_DRAM1 );
-    DPORT_REG_CLR_BIT( DPORT_APP_CACHE_CTRL1_REG, (DPORT_APP_CACHE_MASK_IRAM0) | (DPORT_APP_CACHE_MASK_IRAM1 & 0) | (DPORT_APP_CACHE_MASK_IROM0 & 0) | DPORT_APP_CACHE_MASK_DROM0 | DPORT_APP_CACHE_MASK_DRAM1 );
+    uint32_t drom_load_addr_aligned = drom_load_addr & MMU_FLASH_MASK;
+    uint32_t drom_page_count = bootloader_cache_pages_to_map(drom_size, drom_load_addr);
+    ESP_LOGV(TAG, "d mmu set paddr=%08x vaddr=%08x size=%d n=%d",
+            drom_addr & MMU_FLASH_MASK, drom_load_addr_aligned, drom_size, drom_page_count);
+    rc = cache_flash_mmu_set(0, 0, drom_load_addr_aligned, drom_addr & MMU_FLASH_MASK, 64, drom_page_count);
+    ESP_LOGV(TAG, "rc=%d", rc);
+    rc = cache_flash_mmu_set(1, 0, drom_load_addr_aligned, drom_addr & MMU_FLASH_MASK, 64, drom_page_count);
+    ESP_LOGV(TAG, "rc=%d", rc);
+
+    uint32_t irom_load_addr_aligned = irom_load_addr & MMU_FLASH_MASK;
+    uint32_t irom_page_count = bootloader_cache_pages_to_map(irom_size, irom_load_addr);
+    ESP_LOGV(TAG, "i mmu set paddr=%08x vaddr=%08x size=%d n=%d",
+            irom_addr & MMU_FLASH_MASK, irom_load_addr_aligned, irom_size, irom_page_count);
+    rc = cache_flash_mmu_set(0, 0, irom_load_addr_aligned, irom_addr & MMU_FLASH_MASK, 64, irom_page_count);
+    ESP_LOGV(TAG, "rc=%d", rc);
+    rc = cache_flash_mmu_set(1, 0, irom_load_addr_aligned, irom_addr & MMU_FLASH_MASK, 64, irom_page_count);
+    ESP_LOGV(TAG, "rc=%d", rc);
+
+    DPORT_REG_CLR_BIT( DPORT_PRO_CACHE_CTRL1_REG,
+            (DPORT_PRO_CACHE_MASK_IRAM0) | (DPORT_PRO_CACHE_MASK_IRAM1 & 0) |
+            (DPORT_PRO_CACHE_MASK_IROM0 & 0) | DPORT_PRO_CACHE_MASK_DROM0 |
+            DPORT_PRO_CACHE_MASK_DRAM1 );
+
+    DPORT_REG_CLR_BIT( DPORT_APP_CACHE_CTRL1_REG,
+            (DPORT_APP_CACHE_MASK_IRAM0) | (DPORT_APP_CACHE_MASK_IRAM1 & 0) |
+            (DPORT_APP_CACHE_MASK_IROM0 & 0) | DPORT_APP_CACHE_MASK_DROM0 |
+            DPORT_APP_CACHE_MASK_DRAM1 );
+
     Cache_Read_Enable( 0 );
 
     // Application will need to do Cache_Flush(1) and Cache_Read_Enable(1)
