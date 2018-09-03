@@ -257,7 +257,6 @@ def run_unit_test_cases(env, extra_data):
         raise AssertionError("Unit Test Failed")
 
 
-
 class Handler(threading.Thread):
 
     WAIT_SIGNAL_PATTERN = re.compile(r'Waiting for signal: \[(.+)\]!')
@@ -277,6 +276,9 @@ class Handler(threading.Thread):
         self.fail_name = None
         self.timeout = timeout
         self.force_stop = threading.Event()  # it show the running status
+
+        reset_dut(self.dut)  # reset the board to make it start from begining
+
         threading.Thread.__init__(self, name="{} Handler".format(dut))
 
     def run(self):
@@ -323,10 +325,7 @@ class Handler(threading.Thread):
                 Utility.console_log("Ignored: " + self.child_case_name, color="orange")
             one_device_case_finish(not int(data[0]))
 
-        self.dut.reset()
-        self.dut.write("-", flush=False)
         try:
-            self.dut.expect_any(UT_APP_BOOT_UP_DONE, "0 Tests 0 Failures 0 Ignored")
             time.sleep(1)
             self.dut.write("\"{}\"".format(self.parent_case_name))
             self.dut.expect("Running " + self.parent_case_name + "...")
@@ -368,7 +367,6 @@ def run_one_multiple_devices_case(duts, ut_config, env, one_case, failed_cases, 
     lock = threading.RLock()
     threads = []
     send_signal_list = []
-    failed_device = []
     result = True
     parent_case, case_num = get_case_info(one_case)
 
