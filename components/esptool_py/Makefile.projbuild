@@ -58,14 +58,14 @@ APP_BIN_UNSIGNED ?= $(APP_BIN)
 $(APP_BIN_UNSIGNED): $(APP_ELF) $(ESPTOOLPY_SRC) | check_python_dependencies
 	$(ESPTOOLPY) elf2image $(ESPTOOL_FLASH_OPTIONS) $(ESPTOOL_ELF2IMAGE_OPTIONS) -o $@ $<
 
-flash: all_binaries $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info check_python_dependencies
+flash: all_binaries $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info | check_python_dependencies
 	@echo "Flashing binaries to serial port $(ESPPORT) (app at offset $(APP_OFFSET))..."
 ifdef CONFIG_SECURE_BOOT_ENABLED
 	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
 endif
 	$(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
 
-app-flash: $(APP_BIN) $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info check_python_dependencies
+app-flash: $(APP_BIN) $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info | check_python_dependencies
 	@echo "Flashing app to serial port $(ESPPORT), offset $(APP_OFFSET)..."
 	$(ESPTOOLPY_WRITE_FLASH) $(APP_OFFSET) $(APP_BIN)
 
@@ -73,7 +73,7 @@ app-flash: $(APP_BIN) $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) pa
 # at the project level as long as qualified path
 COMPONENT_SUBMODULES += $(COMPONENT_PATH)/esptool
 
-erase_flash: check_python_dependencies
+erase_flash: | check_python_dependencies
 	@echo "Erasing entire flash..."
 	$(ESPTOOLPY_SERIAL) erase_flash
 
@@ -90,14 +90,14 @@ endif
 # note: if you want to run miniterm from command line, can simply run
 # miniterm.py on the console. The '$(PYTHON) -m serial.tools.miniterm'
 # is to allow for the $(PYTHON) variable overriding the python path.
-simple_monitor: check_python_dependencies $(call prereq_if_explicit,%flash)
+simple_monitor: $(call prereq_if_explicit,%flash) | check_python_dependencies
 	$(MONITOR_PYTHON) -m serial.tools.miniterm --rts 0 --dtr 0 --raw $(ESPPORT) $(MONITORBAUD)
 
 PRINT_FILTER ?=
 
 MONITOR_OPTS := --baud $(MONITORBAUD) --port $(ESPPORT) --toolchain-prefix $(CONFIG_TOOLPREFIX) --make "$(MAKE)" --print_filter "$(PRINT_FILTER)"
 
-monitor: check_python_dependencies $(call prereq_if_explicit,%flash)
+monitor: $(call prereq_if_explicit,%flash) | check_python_dependencies
 	$(summary) MONITOR
 	[ -f $(APP_ELF) ] || echo "*** 'make monitor' target requires an app to be compiled and flashed first."
 	[ -f $(APP_ELF) ] || echo "*** Run 'make flash monitor' to build, flash and monitor"
