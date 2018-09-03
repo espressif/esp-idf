@@ -106,8 +106,8 @@ bool bootloader_common_erase_part_type_data(const char *list_erase, bool ota_dat
 
     partitions = bootloader_mmap(ESP_PARTITION_TABLE_OFFSET, ESP_PARTITION_TABLE_MAX_LEN);
     if (!partitions) {
-            ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", ESP_PARTITION_TABLE_OFFSET, ESP_PARTITION_TABLE_MAX_LEN);
-            return false;
+        ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", ESP_PARTITION_TABLE_OFFSET, ESP_PARTITION_TABLE_MAX_LEN);
+        return false;
     }
     ESP_LOGD(TAG, "mapped partition table 0x%x at 0x%x", ESP_PARTITION_TABLE_OFFSET, (intptr_t)partitions);
 
@@ -128,7 +128,7 @@ bool bootloader_common_erase_part_type_data(const char *list_erase, bool ota_dat
                 // partition->label is not null-terminated string.
                 strncpy(label, (char *)&partition->label, sizeof(label) - 1);
                 if (fl_ota_data_erase == true || (bootloader_common_label_search(list_erase, label) == true)) {
-                    err = esp_rom_spiflash_erase_area(partition->pos.offset, partition->pos.size);
+                    err = bootloader_flash_erase_range(partition->pos.offset, partition->pos.size);
                     if (err != ESP_OK) {
                         ret = false;
                         marker = "err";
