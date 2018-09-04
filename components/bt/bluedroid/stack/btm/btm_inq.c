@@ -170,16 +170,6 @@ tBTM_STATUS BTM_SetDiscoverability (UINT16 inq_mode, UINT16 window, UINT16 inter
     BOOLEAN      cod_limited;
 
     BTM_TRACE_API ("BTM_SetDiscoverability\n");
-#if (BLE_INCLUDED == TRUE && BLE_INCLUDED == TRUE)
-    if (controller_get_interface()->supports_ble()) {
-        if (btm_ble_set_discoverability((UINT16)(inq_mode))
-                == BTM_SUCCESS) {
-            btm_cb.btm_inq_vars.discoverable_mode &= (~BTM_BLE_DISCOVERABLE_MASK);
-            btm_cb.btm_inq_vars.discoverable_mode |= (inq_mode & BTM_BLE_DISCOVERABLE_MASK);
-        }
-    }
-    inq_mode &= ~BTM_BLE_DISCOVERABLE_MASK;
-#endif
 
     /*** Check mode parameter ***/
     if (inq_mode > BTM_MAX_DISCOVERABLE) {
@@ -600,17 +590,6 @@ tBTM_STATUS BTM_SetConnectability (UINT16 page_mode, UINT16 window, UINT16 inter
     tBTM_INQUIRY_VAR_ST *p_inq = &btm_cb.btm_inq_vars;
 
     BTM_TRACE_API ("BTM_SetConnectability\n");
-
-#if (BLE_INCLUDED == TRUE && BLE_INCLUDED == TRUE)
-    if (controller_get_interface()->supports_ble()) {
-        if (btm_ble_set_connectability(page_mode) != BTM_SUCCESS) {
-            return BTM_NO_RESOURCES;
-        }
-        p_inq->connectable_mode &= (~BTM_BLE_CONNECTABLE_MASK);
-        p_inq->connectable_mode |= (page_mode & BTM_BLE_CONNECTABLE_MASK);
-    }
-    page_mode &= ~BTM_BLE_CONNECTABLE_MASK;
-#endif
 
     /*** Check mode parameter ***/
     if (page_mode != BTM_NON_CONNECTABLE && page_mode != BTM_CONNECTABLE) {
