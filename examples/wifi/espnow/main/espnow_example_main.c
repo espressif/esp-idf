@@ -144,7 +144,6 @@ int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, 
 void example_espnow_data_prepare(example_espnow_send_param_t *send_param)
 {
     example_espnow_data_t *buf = (example_espnow_data_t *)send_param->buffer;
-    int i = 0;
 
     assert(send_param->len >= sizeof(example_espnow_data_t));
 
@@ -153,9 +152,8 @@ void example_espnow_data_prepare(example_espnow_send_param_t *send_param)
     buf->seq_num = s_example_espnow_seq[buf->type]++;
     buf->crc = 0;
     buf->magic = send_param->magic;
-    for (i = 0; i < send_param->len - sizeof(example_espnow_data_t); i++) {
-        buf->payload[i] = (uint8_t)esp_random();
-    }
+    /* Fill all remaining bytes after the data with random values */
+    esp_fill_random(buf->payload, send_param->len - sizeof(example_espnow_data_t));
     buf->crc = crc16_le(UINT16_MAX, (uint8_t const *)buf, send_param->len);
 }
 

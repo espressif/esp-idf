@@ -36,17 +36,8 @@ ssize_t getrandom(void *buf, size_t buflen, unsigned int flags)
         return -1;
     }
 
-    uint8_t *dst = (uint8_t *) buf;
-    ssize_t ret = 0;
+    esp_fill_random(buf, buflen);
 
-    while (ret < buflen) {
-        const uint32_t random = esp_random();
-        const int needed = buflen - ret;
-        const int copy_len = MIN(sizeof(random), needed);
-        memcpy(dst + ret, &random, copy_len);
-        ret += copy_len;
-    }
-
-    ESP_LOGD(TAG, "getrandom returns %d", ret);
-    return ret;
+    ESP_LOGD(TAG, "getrandom returns %d", buflen);
+    return buflen;
 }
