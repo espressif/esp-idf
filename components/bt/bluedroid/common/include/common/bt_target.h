@@ -992,7 +992,7 @@
 #endif
 
 #ifndef BTM_BLE_ADV_TX_POWER
-#define BTM_BLE_ADV_TX_POWER {-21, -15, -7, 1, 9}
+#define BTM_BLE_ADV_TX_POWER {-12, -9, -6, -3, 0, 3, 6, 9}
 #endif
 
 
