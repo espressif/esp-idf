@@ -27,6 +27,7 @@ typedef enum {
     BTC_GAP_BT_SEARCH_SERVICES_EVT,
     BTC_GAP_BT_SEARCH_SERVICE_RECORD_EVT,
     BTC_GAP_BT_AUTH_CMPL_EVT,
+    BTC_GAP_BT_PIN_REQ_EVT,
     BTC_GAP_BT_CFM_REQ_EVT,
     BTC_GAP_BT_KEY_NOTIF_EVT,
     BTC_GAP_BT_KEY_REQ_EVT,
@@ -42,6 +43,8 @@ typedef enum {
     BTC_GAP_BT_ACT_SET_COD,
     BTC_GAP_BT_ACT_READ_RSSI_DELTA,
     BTC_GAP_BT_ACT_REMOVE_BOND_DEVICE,
+    BTC_GAP_BT_ACT_SET_PIN_TYPE,
+    BTC_GAP_BT_ACT_PIN_REPLY,
     BTC_GAP_BT_ACT_SET_SECURITY_PARAM,
     BTC_GAP_BT_ACT_PASSKEY_REPLY,
     BTC_GAP_BT_ACT_CONFIRM_REPLY,
@@ -85,6 +88,21 @@ typedef union {
     struct rm_bond_device_args {
        bt_bdaddr_t bda;
     } rm_bond_device;
+
+    // BTC_GAP_BT_ACT_SET_PIN_TYPE
+    struct set_pin_type_args {
+        esp_bt_pin_type_t pin_type;
+        uint8_t pin_code_len;
+        esp_bt_pin_code_t pin_code;
+    } set_pin_type;
+
+    // BTC_GAP_BT_ACT_PIN_REPLY
+    struct pin_reply_args {
+        bt_bdaddr_t bda;
+        bool accept;
+        uint8_t pin_code_len;
+        esp_bt_pin_code_t pin_code;
+    } pin_reply;
 
     // BTC_GAP_BT_ACT_SET_SECURITY_PARAM
     struct set_sec_param_args {
