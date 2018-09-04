@@ -1,0 +1,19 @@
+syntax = "proto3";
+package espressif;
+
+import "sec0.proto";
+import "sec1.proto";
+
+enum SecSchemeVersion {
+    SecScheme0 = 0; /* Unsecured - plaintext communication */
+    SecScheme1 = 1; /* Security scheme 1 - Curve25519 + AES-256-CTR*/
+}
+
+message SessionData {
+    SecSchemeVersion sec_ver = 2;
+    oneof proto {
+        Sec0Payload sec0 = 10;
+        Sec1Payload sec1 = 11;
+    }
+}
+

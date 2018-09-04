@@ -1,0 +1,90 @@
+apply plugin: 'com.android.application'
+apply plugin: 'com.google.protobuf'
+
+android {
+    compileSdkVersion 27
+    defaultConfig {
+        applicationId "com.espressif.provision"
+        minSdkVersion 21
+        targetSdkVersion 27
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            resValue "string", "proof_of_possesion", "abcd1234"
+            resValue "string", "wifi_base_url", "192.168.4.1:80"
+            resValue "string", "wifi_network_name_prefix", "mysoftap"
+            resValue "string", "ble_service_uuid", "0000ffff-0000-1000-8000-00805f9b34fb"
+            resValue "string", "ble_session_uuid", "0000ff51-0000-1000-8000-00805f9b34fb"
+            resValue "string", "ble_config_uuid", "0000ff52-0000-1000-8000-00805f9b34fb"
+            resValue "string", "ble_device_name_prefix", "PROV_"
+        }
+
+        debug {
+            debuggable true
+            resValue "string", "proof_of_possesion", "abcd1234"
+            resValue "string", "wifi_base_url", "192.168.4.1:80"
+            resValue "string", "wifi_network_name_prefix", "mysoftap"
+            resValue "string", "ble_service_uuid", "0000ffff-0000-1000-8000-00805f9b34fb"
+            resValue "string", "ble_session_uuid", "0000ff51-0000-1000-8000-00805f9b34fb"
+            resValue "string", "ble_config_uuid", "0000ff52-0000-1000-8000-00805f9b34fb"
+            resValue "string", "ble_device_name_prefix", "PROV_"
+        }
+    }
+
+    flavorDimensions "transport", "security"
+    productFlavors {
+        wifi {
+            dimension "transport"
+        }
+
+        ble {
+            dimension "transport"
+        }
+
+        sec0 {
+            dimension "security"
+        }
+
+        sec1 {
+            dimension "security"
+        }
+    }
+}
+
+protobuf {
+    protoc {
+        artifact = 'com.google.protobuf:protoc:3.5.1'
+    }
+    plugins {
+        javalite {
+            artifact = 'com.google.protobuf:protoc-gen-javalite:3.0.0'
+        }
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.builtins {
+                remove java
+            }
+            task.plugins {
+                javalite {}
+            }
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation 'com.android.support:appcompat-v7:27.1.1'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.0'
+    implementation 'com.android.support:design:27.1.1'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+    implementation 'com.google.protobuf:protobuf-lite:3.0.1'
+    compile 'com.google.crypto.tink:tink-android:1.1.0'
+}

@@ -1,0 +1,33 @@
+<resources>
+    <string name="app_name">Espressif</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_provision_landing">Connect to device</string>
+    <string name="connect_to_device_instructions">To provision your new device, please make sure that your device is turned on and the Wifi symbol blinks green. Now connect your phone to the Wifi network with a name like</string>
+    <string name="connected_to_device_instructions">You are now connected to the device. To provision the device, please enter your Network credentials on the next page.</string>
+    <string name="no_internet_note">To make sure you are really connected to the device, please make sure you accept the system dialog informing you that network has no internet access.</string>
+    <string name="connect_to_device_action">Connect</string>
+    <string name="connected_to_device_action">Provision Network</string>
+    <string name="title_activity_provision_instructions">Provision Instructions</string>
+    <string name="setup_instructions">To complete setup of your device, please provide your home Network\'s credentials.</string>
+    <string name="proceed_to_provisioning">Let\'s Go !</string>
+    <string name="connect_to_device_title">Connect to Device</string>
+    <string name="provision_instructions_title">Instructions</string>
+    <string name="provision_activity_title">Provision</string>
+    <string name="ssid_hint_text">Network Name</string>
+    <string name="password_hint_text">Passphrase</string>
+    <string name="provision">Provision</string>
+    <string name="start_provisioning">Start Provisioning</string>
+
+    <string name="title_activity_provision_success">ProvisionSuccessActivity</string>
+
+    <string name="success_text">Device successfully provisioned!</string>
+    <string name="wifi_disconnected_text">Please check the device indicators for provisioning status.</string>
+    <string name="done">Done</string>
+
+    <string name="title_activity_bleprovision_landing">BLEProvisionLanding</string>
+    <string name="enable_bluetooth_instructions">To provision your new device, please make sure that your Phone\'s Bluetooth is turned on and within range of your new device.</string>
+    <string name="enabled_bluetooth_instructions">To provision the device, please enter your Network credentials on the next page.</string>
+    <string name="enable_bluetooth_action">Enable</string>
+    <string name="enabled_bluetooth_action">Provision Network</string>
+    <string name="rescan_ble">Scan again</string>
+</resources>

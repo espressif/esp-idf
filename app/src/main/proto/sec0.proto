@@ -1,0 +1,25 @@
+syntax = "proto3";
+package espressif;
+
+import "constants.proto";
+
+message S0SessionCmd {
+
+}
+
+message S0SessionResp {
+    Status status = 1;
+}
+
+enum Sec0MsgType {
+    S0_Session_Command = 0;
+    S0_Session_Response = 1;
+}
+
+message Sec0Payload {
+    Sec0MsgType msg = 1;
+    oneof payload {
+        S0SessionCmd sc = 20;
+        S0SessionResp sr = 21;
+    }
+}
