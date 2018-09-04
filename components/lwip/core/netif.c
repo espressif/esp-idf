@@ -333,6 +333,16 @@ netif_set_addr(struct netif *netif, const ip4_addr_t *ipaddr, const ip4_addr_t *
 #endif /* LWIP_IPV4*/
 
 /**
+ * Set the netif flags for GARP
+ */
+#if ESP_GRATUITOUS_ARP
+void netif_set_garp_flag(struct netif *netif)
+{
+  netif->flags |= NETIF_FLAG_GARP;
+}
+#endif
+
+/**
  * Remove a network interface from the list of lwIP netifs.
  *
  * @param netif the network interface to remove
