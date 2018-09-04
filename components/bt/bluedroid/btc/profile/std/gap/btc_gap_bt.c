@@ -645,6 +645,14 @@ esp_err_t btc_gap_bt_remove_bond_device(btc_gap_bt_args_t *arg)
     return ESP_BT_STATUS_FAIL;
 }
 
+static void btc_gap_bt_set_pin_type(btc_gap_bt_args_t *arg){
+    BTA_DMSetPinType (arg->set_pin_type.pin_type, arg->set_pin_type.pin_code, arg->set_pin_type.pin_code_len);
+}
+
+static void btc_gap_bt_pin_reply(btc_gap_bt_args_t *arg){
+    BTA_DmPinReply(arg->pin_reply.bda.address, arg->pin_reply.accept, arg->pin_reply.pin_code_len, arg->pin_reply.pin_code);
+}
+
 void btc_gap_bt_call_handler(btc_msg_t *msg)
 {
     btc_gap_bt_args_t *arg = (btc_gap_bt_args_t *)msg->arg;
@@ -682,6 +690,14 @@ void btc_gap_bt_call_handler(btc_msg_t *msg)
         btc_gap_bt_remove_bond_device(msg->arg);
         break;
     }
+    case BTC_GAP_BT_ACT_SET_PIN_TYPE:{
+        btc_gap_bt_set_pin_type(arg);
+        break;
+    }
+    case BTC_GAP_BT_ACT_PIN_REPLY: {
+        btc_gap_bt_pin_reply(arg);
+        break;
+    }
     default:
         break;
     }
@@ -715,6 +731,7 @@ void btc_gap_bt_cb_deep_free(btc_msg_t *msg)
         break;
     case BTC_GAP_BT_READ_RSSI_DELTA_EVT:
     case BTC_GAP_BT_AUTH_CMPL_EVT:
+    case BTC_GAP_BT_PIN_REQ_EVT:
         break;
     default:
         BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
@@ -743,6 +760,10 @@ void btc_gap_bt_cb_handler(btc_msg_t *msg)
     }
     case BTC_GAP_BT_AUTH_CMPL_EVT:{
         btc_gap_bt_cb_to_app(ESP_BT_GAP_AUTH_CMPL_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
+        break;
+    }
+    case BTC_GAP_BT_PIN_REQ_EVT:{
+        btc_gap_bt_cb_to_app(ESP_BT_GAP_PIN_REQ_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
         break;
     }
     default:
