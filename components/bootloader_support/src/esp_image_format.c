@@ -24,6 +24,20 @@
 #include <bootloader_random.h>
 #include <bootloader_sha.h>
 
+/* Checking signatures as part of verifying images is necessary:
+   - Always if secure boot is enabled
+   - Differently in bootloader and/or app, depending on kconfig
+*/
+#ifdef BOOTLOADER_BUILD
+#ifdef CONFIG_SECURE_SIGNED_ON_BOOT
+#define SECURE_BOOT_CHECK_SIGNATURE
+#endif
+#else /* !BOOTLOADER_BUILD */
+#ifdef CONFIG_SECURE_SIGNED_ON_UPDATE
+#define SECURE_BOOT_CHECK_SIGNATURE
+#endif
+#endif
+
 static const char *TAG = "esp_image";
 
 #define HASH_LEN 32 /* SHA-256 digest length */
@@ -107,7 +121,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
     }
 
     // Calculate SHA-256 of image if secure boot is on, or if image has a hash appended
-#ifdef CONFIG_SECURE_BOOT_ENABLED
+#ifdef SECURE_BOOT_CHECK_SIGNATURE
     if (1) {
 #else
     if (data->image.hash_appended) {
@@ -174,7 +188,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
        rewritten the header - rely on esptool.py having verified the bootloader at flashing time, instead.
     */
     if (!is_bootloader) {
-#ifdef CONFIG_SECURE_BOOT_ENABLED
+#ifdef SECURE_BOOT_CHECK_SIGNATURE
         // secure boot images have a signature appended
         err = verify_secure_boot_signature(sha_handle, data);
 #else
@@ -182,7 +196,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
         if (sha_handle != NULL && !esp_cpu_in_ocd_debug_mode()) {
             err = verify_simple_hash(sha_handle, data);
         }
-#endif // CONFIG_SECURE_BOOT_ENABLED
+#endif // SECURE_BOOT_CHECK_SIGNATURE
     } else { // is_bootloader
         // bootloader may still have a sha256 digest handle open
         if (sha_handle != NULL) {
@@ -518,6 +532,8 @@ static void debug_log_hash(const uint8_t *image_hash, const char *caption);
 static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_handle, esp_image_metadata_t *data)
 {
     uint8_t image_hash[HASH_LEN] = { 0 };
+
+    ESP_LOGI(TAG, "Verifying image signature...");
 
     // For secure boot, we calculate the signature hash over the whole file, which includes any "simple" hash
     // appended to the image for corruption detection
