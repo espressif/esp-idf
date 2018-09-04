@@ -127,7 +127,7 @@ esp_err_t nvs_open_from_partition(const char *part_name, const char* name, nvs_o
  *                     15 characters. Shouldn't be empty.
  * @param[in]  value   The value to set.
  *                     For strings, the maximum length (including null character) is
- *                     1984 bytes.
+ *                     4000 bytes.
  *
  * @return
  *             - ESP_OK if value was set successfully
@@ -164,7 +164,8 @@ esp_err_t nvs_set_str (nvs_handle handle, const char* key, const char* value);
  * @param[in]  key     Key name. Maximal length is 15 characters. Shouldn't be empty.
  * @param[in]  value   The value to set.
  * @param[in]  length  length of binary value to set, in bytes; Maximum length is
- *                     1984 bytes.
+ *                     508000 bytes or (97.6% of the partition size - 4000) bytes
+ *                     whichever is lower.
  *
  * @return
  *             - ESP_OK if value was set successfully
