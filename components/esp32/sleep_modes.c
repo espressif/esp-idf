@@ -81,6 +81,8 @@ static sleep_config_t s_config = {
     .wakeup_triggers = 0
 };
 
+bool s_light_sleep_wakeup = false;
+
 /* Updating RTC_MEMORY_CRC_REG register via set_rtc_memory_crc()
    is not thread-safe. */
 static _lock_t lock_rtc_memory_crc;
@@ -326,6 +328,8 @@ esp_err_t esp_light_sleep_start()
     // Enter sleep, then wait for flash to be ready on wakeup
     esp_err_t err = esp_light_sleep_inner(pd_flags,
             flash_enable_time_us, vddsdio_config);
+
+    s_light_sleep_wakeup = true;
 
     // FRC1 has been clock gated for the duration of the sleep, correct for that.
     uint64_t rtc_ticks_at_end = rtc_time_get();
@@ -590,7 +594,7 @@ esp_err_t esp_sleep_enable_uart_wakeup(int uart_num)
 
 esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause()
 {
-    if (rtc_get_reset_reason(0) != DEEPSLEEP_RESET) {
+    if (rtc_get_reset_reason(0) != DEEPSLEEP_RESET && !s_light_sleep_wakeup) {
         return ESP_SLEEP_WAKEUP_UNDEFINED;
     }
 

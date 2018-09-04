@@ -305,9 +305,9 @@ void system_deep_sleep(uint64_t time_in_us) __attribute__((noreturn, deprecated)
 
 
 /**
- * @brief Get the source which caused wakeup from sleep
+ * @brief Get the wakeup source which caused wakeup from sleep
  *
- * @return wakeup cause, or ESP_DEEP_SLEEP_WAKEUP_UNDEFINED if reset happened for reason other than deep sleep wakeup
+ * @return cause of wake up from last sleep (deep sleep or light sleep)
  */
 esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause();
 
