@@ -55,7 +55,7 @@ extern "C" {
   *     RTC_CNTL_STORE1_REG     RTC_SLOW_CLK calibration value
   *     RTC_CNTL_STORE2_REG     Boot time, low word
   *     RTC_CNTL_STORE3_REG     Boot time, high word
-  *     RTC_CNTL_STORE4_REG     External XTAL frequency
+  *     RTC_CNTL_STORE4_REG     External XTAL frequency. The frequency must necessarily be even, otherwise there will be a conflict with the low bit, which is used to disable logs in the ROM code.
   *     RTC_CNTL_STORE5_REG     APB bus frequency
   *     RTC_CNTL_STORE6_REG     FAST_RTC_MEMORY_ENTRY
   *     RTC_CNTL_STORE7_REG     FAST_RTC_MEMORY_CRC
@@ -71,6 +71,7 @@ extern "C" {
 #define RTC_RESET_CAUSE_REG     RTC_CNTL_STORE6_REG
 #define RTC_MEMORY_CRC_REG      RTC_CNTL_STORE7_REG
 
+#define RTC_DISABLE_ROM_LOG ((1 << 0) | (1 << 16)) //!< Disable logging from the ROM code.
 
 typedef enum {
     AWAKE = 0,             //<CPU ON
