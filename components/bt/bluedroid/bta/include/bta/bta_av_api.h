@@ -98,7 +98,7 @@ typedef UINT8 tBTA_AV_HNDL;
 #endif
 
 #ifndef BTA_AV_MAX_SEPS
-#define BTA_AV_MAX_SEPS         2
+#define BTA_AV_MAX_SEPS         1
 #endif
 
 #ifndef BTA_AV_MAX_A2DP_MTU
@@ -259,7 +259,7 @@ typedef UINT8 tBTA_AV_ERR;
 
 /* function types for call-out functions */
 typedef BOOLEAN (*tBTA_AV_CO_INIT) (UINT8 *p_codec_type, UINT8 *p_codec_info,
-                                    UINT8 *p_num_protect, UINT8 *p_protect_info, UINT8 index);
+                                    UINT8 *p_num_protect, UINT8 *p_protect_info, UINT8 tsep);
 typedef void (*tBTA_AV_CO_DISC_RES) (tBTA_AV_HNDL hndl, UINT8 num_seps,
                                      UINT8 num_snk, UINT8 num_src, BD_ADDR addr, UINT16 uuid_local);
 typedef UINT8 (*tBTA_AV_CO_GETCFG) (tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
@@ -580,7 +580,7 @@ void BTA_AvDisable(void);
 **
 *******************************************************************************/
 void BTA_AvRegister(tBTA_AV_CHNL chnl, const char *p_service_name,
-                    UINT8 app_id, tBTA_AV_DATA_CBACK  *p_data_cback, tBTA_AV_CO_FUNCTS *bta_av_cos);
+                    UINT8 app_id, tBTA_AV_DATA_CBACK  *p_data_cback, tBTA_AV_CO_FUNCTS *bta_av_cos, UINT8 tsep);
 
 /*******************************************************************************
 **

@@ -54,7 +54,7 @@ static btc_dm_local_key_cb_t ble_local_key_cb;
 **  Externs
 ******************************************************************************/
 #if BTC_AV_INCLUDED
-extern bt_status_t btc_av_execute_service(BOOLEAN b_enable);
+extern bt_status_t btc_av_source_execute_service(BOOLEAN b_enable);
 extern bt_status_t btc_av_sink_execute_service(BOOLEAN b_enable);
 #endif
 #if BTC_HF_CLIENT_INCLUDED
@@ -488,7 +488,7 @@ static bt_status_t btc_in_execute_service_request(tBTA_SERVICE_ID service_id,
     switch (service_id) {
 #if BTC_AV_INCLUDED
     case BTA_A2DP_SOURCE_SERVICE_ID:
-        btc_av_execute_service(b_enable);
+        btc_av_source_execute_service(b_enable);
         break;
     case BTA_A2DP_SINK_SERVICE_ID:
         btc_av_sink_execute_service(b_enable);

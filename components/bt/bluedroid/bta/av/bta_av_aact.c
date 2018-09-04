@@ -1544,6 +1544,17 @@ void bta_av_disc_results (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     /* store number of stream endpoints returned */
     p_scb->num_seps = p_data->str_msg.msg.discover_cfm.num_seps;
 
+    UINT8 num_seps = (p_scb->num_seps < BTA_AV_NUM_SEPS) ? p_scb->num_seps : BTA_AV_NUM_SEPS;
+    memcpy(p_scb->sep_info, p_data->str_msg.msg.discover_cfm.p_sep_info, sizeof(tAVDT_SEP_INFO) * num_seps);
+    for (i = 0; i < p_data->str_msg.msg.discover_cfm.num_seps; i++) {
+        APPL_TRACE_DEBUG("peer sep %d, in use %d, seid %d, media type %d,  tsep %d",
+                           i,
+                           p_data->str_msg.msg.discover_cfm.p_sep_info[i].in_use,
+                           p_data->str_msg.msg.discover_cfm.p_sep_info[i].seid,
+                           p_data->str_msg.msg.discover_cfm.p_sep_info[i].media_type,
+                           p_data->str_msg.msg.discover_cfm.p_sep_info[i].tsep
+                           );
+    }
     for (i = 0; i < p_scb->num_seps; i++) {
         /* steam not in use, is a sink, and is audio */
         if ((p_scb->sep_info[i].in_use == FALSE) &&
@@ -1557,7 +1568,7 @@ void bta_av_disc_results (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
                     (uuid_int == UUID_SERVCLASS_AUDIO_SINK)) {
                 num_srcs++;
             }
-
+            APPL_TRACE_DEBUG("num srcs: %d, num_snks: %d\n", num_snks, num_srcs);
         }
     }
 

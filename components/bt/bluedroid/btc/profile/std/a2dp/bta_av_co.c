@@ -267,11 +267,11 @@ static tBTA_AV_CO_PEER *bta_av_co_get_peer(tBTA_AV_HNDL hndl)
  **
  *******************************************************************************/
 BOOLEAN bta_av_co_audio_init(UINT8 *p_codec_type, UINT8 *p_codec_info, UINT8 *p_num_protect,
-                             UINT8 *p_protect_info, UINT8 index)
+                             UINT8 *p_protect_info, UINT8 tsep)
 {
     FUNC_TRACE();
 
-    APPL_TRACE_DEBUG("bta_av_co_audio_init: %d", index);
+    APPL_TRACE_DEBUG("bta_av_co_audio_init: %d", tsep);
 
     /* By default - no content protection info */
     *p_num_protect = 0;
@@ -280,29 +280,24 @@ BOOLEAN bta_av_co_audio_init(UINT8 *p_codec_type, UINT8 *p_codec_info, UINT8 *p_
     /* reset remote preference through setconfig */
     bta_av_co_cb.codec_cfg_setconfig.id = BTC_AV_CODEC_NONE;
 
-    switch (index) {
-    case BTC_SV_AV_AA_SBC_INDEX:
+    if (tsep == AVDT_TSEP_SRC) {
 #if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
-    {
-        UINT8 *p = p_protect_info;
+        do {
+            UINT8 *p = p_protect_info;
 
-        /* Content protection info - support SCMS-T */
-        *p_num_protect = 1;
-        *p++ = BTA_AV_CP_LOSC;
-        UINT16_TO_STREAM(p, BTA_AV_CP_SCMS_T_ID);
-
-    }
+            /* Content protection info - support SCMS-T */
+            *p_num_protect = 1;
+            *p++ = BTA_AV_CP_LOSC;
+            UINT16_TO_STREAM(p, BTA_AV_CP_SCMS_T_ID);
+        } while (0);
 #endif
         /* Set up for SBC codec  for SRC*/
-    *p_codec_type = BTA_AV_CODEC_SBC;
+        *p_codec_type = BTA_AV_CODEC_SBC;
 
         /* This should not fail because we are using constants for parameters */
-    A2D_BldSbcInfo(AVDT_MEDIA_AUDIO, (tA2D_SBC_CIE *) &bta_av_co_sbc_caps, p_codec_info);
-
-        /* Codec is valid */
-    return TRUE;
-#if (BTA_AV_SINK_INCLUDED == TRUE)
-    case BTC_SV_AV_AA_SBC_SINK_INDEX:
+        A2D_BldSbcInfo(AVDT_MEDIA_AUDIO, (tA2D_SBC_CIE *) &bta_av_co_sbc_caps, p_codec_info);
+        return TRUE;
+    } else if (tsep == AVDT_TSEP_SNK) {
         *p_codec_type = BTA_AV_CODEC_SBC;
 
         /* This should not fail because we are using constants for parameters */
@@ -310,9 +305,8 @@ BOOLEAN bta_av_co_audio_init(UINT8 *p_codec_type, UINT8 *p_codec_info, UINT8 *p_
 
         /* Codec is valid */
         return TRUE;
-#endif
-    default:
-        /* Not valid */
+    } else {
+        APPL_TRACE_WARNING("invalid SEP type %d", tsep);
         return FALSE;
     }
 }
