@@ -52,6 +52,7 @@
 #define BTA_SDP_INCLUDED            TRUE
 #define BTA_DM_PM_INCLUDED          TRUE
 #define SDP_INCLUDED                TRUE
+#define BT_SSP_INCLUDED             TRUE
 
 #if CONFIG_A2DP_ENABLE
 #define BTA_AR_INCLUDED             TRUE
@@ -128,12 +129,6 @@
 #define SMP_INCLUDED              FALSE
 #define BLE_PRIVACY_SPT           FALSE
 #endif  /* CONFIG_SMP_ENABLE */
-
-#if (CONFIG_BT_SSP_ENABLE)
-#define BT_SSP_INCLUDED              TRUE
-#else
-#define BT_SSP_INCLUDED              FALSE
-#endif  /* CONFIG_BT_SSP_ENABLE */
 
 #if (CONFIG_BT_ACL_CONNECTIONS)
 #define MAX_ACL_CONNECTIONS  CONFIG_BT_ACL_CONNECTIONS

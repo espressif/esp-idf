@@ -646,6 +646,14 @@ static esp_err_t btc_gap_bt_remove_bond_device(btc_gap_bt_args_t *arg)
     return ESP_BT_STATUS_FAIL;
 }
 
+static void btc_gap_bt_set_pin_type(btc_gap_bt_args_t *arg){
+    BTA_DMSetPinType (arg->set_pin_type.pin_type, arg->set_pin_type.pin_code, arg->set_pin_type.pin_code_len);
+}
+
+static void btc_gap_bt_pin_reply(btc_gap_bt_args_t *arg){
+    BTA_DmPinReply(arg->pin_reply.bda.address, arg->pin_reply.accept, arg->pin_reply.pin_code_len, arg->pin_reply.pin_code);
+}
+
 #if (BT_SSP_INCLUDED == TRUE)
 static esp_err_t btc_gap_bt_set_security_param(btc_gap_bt_args_t *arg)
 {
@@ -689,6 +697,8 @@ void btc_gap_bt_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     case BTC_GAP_BT_ACT_SET_COD:
     case BTC_GAP_BT_ACT_READ_RSSI_DELTA:
     case BTC_GAP_BT_ACT_REMOVE_BOND_DEVICE:
+    case BTC_GAP_BT_ACT_PIN_REPLY:
+    case BTC_GAP_BT_ACT_SET_PIN_TYPE:
         break;
 #if (BT_SSP_INCLUDED == TRUE)
     case BTC_GAP_BT_ACT_PASSKEY_REPLY:
@@ -728,6 +738,8 @@ void btc_gap_bt_arg_deep_free(btc_msg_t *msg)
     case BTC_GAP_BT_ACT_SET_COD:
     case BTC_GAP_BT_ACT_READ_RSSI_DELTA:
     case BTC_GAP_BT_ACT_REMOVE_BOND_DEVICE:
+    case BTC_GAP_BT_ACT_PIN_REPLY:
+    case BTC_GAP_BT_ACT_SET_PIN_TYPE:
         break;
 #if (BT_SSP_INCLUDED == TRUE)
     case BTC_GAP_BT_ACT_PASSKEY_REPLY:
@@ -780,6 +792,14 @@ void btc_gap_bt_call_handler(btc_msg_t *msg)
         btc_gap_bt_remove_bond_device(msg->arg);
         break;
     }
+    case BTC_GAP_BT_ACT_SET_PIN_TYPE:{
+        btc_gap_bt_set_pin_type(arg);
+        break;
+    }
+    case BTC_GAP_BT_ACT_PIN_REPLY: {
+        btc_gap_bt_pin_reply(arg);
+        break;
+    }
 #if (BT_SSP_INCLUDED == TRUE)
     case BTC_GAP_BT_ACT_SET_SECURITY_PARAM:{
         btc_gap_bt_set_security_param(arg);
@@ -827,8 +847,9 @@ void btc_gap_bt_cb_deep_free(btc_msg_t *msg)
         osi_free(((tBTA_DM_SEARCH_PARAM *) (msg->arg)) ->p_data);
         break;
     case BTC_GAP_BT_READ_RSSI_DELTA_EVT:
-#if (BT_SSP_INCLUDED == TRUE)
     case BTC_GAP_BT_AUTH_CMPL_EVT:
+    case BTC_GAP_BT_PIN_REQ_EVT:
+#if (BT_SSP_INCLUDED == TRUE)
     case BTC_GAP_BT_CFM_REQ_EVT:
     case BTC_GAP_BT_KEY_NOTIF_EVT:
     case BTC_GAP_BT_KEY_REQ_EVT:
@@ -859,11 +880,15 @@ void btc_gap_bt_cb_handler(btc_msg_t *msg)
         btc_gap_bt_cb_to_app(ESP_BT_GAP_READ_RSSI_DELTA_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
         break;
     }
-#if (BT_SSP_INCLUDED == TRUE)
     case BTC_GAP_BT_AUTH_CMPL_EVT:{
         btc_gap_bt_cb_to_app(ESP_BT_GAP_AUTH_CMPL_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
         break;
     }
+    case BTC_GAP_BT_PIN_REQ_EVT:{
+        btc_gap_bt_cb_to_app(ESP_BT_GAP_PIN_REQ_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
+        break;
+    }
+#if (BT_SSP_INCLUDED == TRUE)
     case BTC_GAP_BT_CFM_REQ_EVT:{
         btc_gap_bt_cb_to_app(ESP_BT_GAP_CFM_REQ_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
         break;

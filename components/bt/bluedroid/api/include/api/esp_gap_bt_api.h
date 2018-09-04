@@ -102,6 +102,13 @@ typedef enum {
     ESP_BT_COD_SRVC_INFORMATION              = 0x400,    /*!< Information, e.g., WEB-server, WAP-server */
 } esp_bt_cod_srvc_t;
 
+typedef enum{
+    ESP_BT_PIN_TYPE_VARIABLE = 0,                       /*!< Refer to BTM_PIN_TYPE_VARIABLE */
+    ESP_BT_PIN_TYPE_FIXED    = 1,                       /*!< Refer to BTM_PIN_TYPE_FIXED */
+} esp_bt_pin_type_t;
+
+#define ESP_BT_PIN_CODE_LEN        16                   /*!< Max pin code length */
+typedef uint8_t esp_bt_pin_code_t[ESP_BT_PIN_CODE_LEN]; /*!< Pin Code (upto 128 bits) MSB is 0 */
 
 typedef enum {
     ESP_BT_SP_IOCAP_MODE = 0,                            /*!< Set IO mode */
@@ -162,6 +169,7 @@ typedef enum {
     ESP_BT_GAP_RMT_SRVCS_EVT,                       /*!< get remote services event */
     ESP_BT_GAP_RMT_SRVC_REC_EVT,                    /*!< get remote service record event */
     ESP_BT_GAP_AUTH_CMPL_EVT,                       /*!< AUTH complete event */
+    ESP_BT_GAP_PIN_REQ_EVT,                         /*!< Legacy Pairing Pin code request */
     ESP_BT_GAP_CFM_REQ_EVT,                         /*!< Simple Pairing User Confirmation request. */
     ESP_BT_GAP_KEY_NOTIF_EVT,                       /*!< Simple Pairing Passkey Notification */
     ESP_BT_GAP_KEY_REQ_EVT,                         /*!< Simple Pairing Passkey request */
@@ -232,6 +240,14 @@ typedef union {
         esp_bt_status_t stat;                  /*!< authentication complete status */
         uint8_t device_name[ESP_BT_GAP_MAX_BDNAME_LEN + 1]; /*!< device name */
     } auth_cmpl;                               /*!< authentication complete parameter struct */
+
+    /**
+     * @brief ESP_BT_GAP_PIN_REQ_EVT
+     */
+    struct pin_req_param {
+        esp_bd_addr_t bda;                     /*!< remote bluetooth device address*/
+        bool min_16_digit;                     /*!< TRUE if the pin returned must be at least 16 digits */
+    } pin_req;                                 /*!< pin request parameter struct */
 
     /**
      * @brief ESP_BT_GAP_CFM_REQ_EVT
@@ -485,6 +501,38 @@ int esp_bt_gap_get_bond_device_num(void);
 *                  - ESP_FAIL: others
 */
 esp_err_t esp_bt_gap_get_bond_device_list(int *dev_num, esp_bd_addr_t *dev_list);
+
+/**
+* @brief            Set pin type and default pin code for legacy pairing.
+*
+* @param[in]        pin_type:       Use variable or fixed pin.
+*                                   If pin_type is ESP_BT_PIN_TYPE_VARIABLE, pin_code and pin_code_len
+*                                   will be ignored, and ESP_BT_GAP_PIN_REQ_EVT will come when control
+*                                   requests for pin code.
+*                                   Else, will use fixed pin code and not callback to users.
+* @param[in]        pin_code_len:   Length of pin_code
+* @param[in]        pin_code:       Pin_code
+*
+* @return           - ESP_OK : success
+*                   - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+*                   - other  : failed
+*/
+esp_err_t esp_bt_gap_set_pin(esp_bt_pin_type_t pin_type, uint8_t pin_code_len, esp_bt_pin_code_t pin_code);
+
+/**
+* @brief            Reply the pin_code to the peer device for legacy pairing
+*                   when ESP_BT_GAP_PIN_REQ_EVT is coming.
+*
+* @param[in]        bd_addr:        BD address of the peer
+* @param[in]        accept:         Pin_code reply successful or declined.
+* @param[in]        pin_code_len:   Length of pin_code
+* @param[in]        pin_code:       Pin_code
+*
+* @return           - ESP_OK : success
+*                   - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+*                   - other  : failed
+*/
+esp_err_t esp_bt_gap_pin_reply(esp_bd_addr_t bd_addr, bool accept, uint8_t pin_code_len, esp_bt_pin_code_t pin_code);
 
 #if (BT_SSP_INCLUDED == TRUE)
 /**

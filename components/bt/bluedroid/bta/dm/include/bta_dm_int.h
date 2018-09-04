@@ -61,6 +61,7 @@ enum {
     /* security API events */
     BTA_DM_API_BOND_EVT,
     BTA_DM_API_BOND_CANCEL_EVT,
+    BTA_DM_API_SET_PIN_TYPE_EVT,
     BTA_DM_API_PIN_REPLY_EVT,
 #endif  ///SMP_INCLUDED == TRUE
 #if (BTA_DM_PM_INCLUDED == TRUE)
@@ -272,6 +273,14 @@ typedef struct {
     BD_ADDR         bd_addr;
     tBTA_TRANSPORT  transport;
 } tBTA_DM_API_BOND_CANCEL;
+
+/* data type for BTA_DM_API_SET_PIN_TYPE_EVT */
+typedef struct {
+    BT_HDR      hdr;
+    UINT8       pin_type;
+    UINT8       pin_len;
+    UINT8       p_pin[PIN_CODE_LEN];
+} tBTA_DM_API_SET_PIN_TYPE;
 
 /* data type for BTA_DM_API_PIN_REPLY_EVT */
 typedef struct {
@@ -754,6 +763,7 @@ typedef union {
 
     tBTA_DM_API_BOND_CANCEL bond_cancel;
 
+    tBTA_DM_API_SET_PIN_TYPE set_pin_type;
     tBTA_DM_API_PIN_REPLY pin_reply;
 
     tBTA_DM_API_LOC_OOB     loc_oob;
@@ -1177,6 +1187,7 @@ extern void bta_dm_set_scan_config(tBTA_DM_MSG *p_data);
 extern void bta_dm_vendor_spec_command(tBTA_DM_MSG *p_data);
 extern void bta_dm_bond (tBTA_DM_MSG *p_data);
 extern void bta_dm_bond_cancel (tBTA_DM_MSG *p_data);
+extern void bta_dm_set_pin_type (tBTA_DM_MSG *p_data);
 extern void bta_dm_pin_reply (tBTA_DM_MSG *p_data);
 extern void bta_dm_acl_change(tBTA_DM_MSG *p_data);
 extern void bta_dm_add_device (tBTA_DM_MSG *p_data);
