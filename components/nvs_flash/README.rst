@@ -107,26 +107,28 @@ Page consists of three parts: header, entry state bitmap, and entries themselves
 
 The following diagram illustrates page structure. Numbers in parentheses indicate size of each part in bytes. ::
 
-    +-----------+--------------+-------------+-----------+
-    | State (4) | Seq. no. (4) | Unused (20) | CRC32 (4) | Header (32)
-    +-----------+--------------+-------------+-----------+
-    |                Entry state bitmap (32)             |
-    +----------------------------------------------------+
-    |                       Entry 0 (32)                 |
-    +----------------------------------------------------+
-    |                       Entry 1 (32)                 |
-    +----------------------------------------------------+
-    /                                                    /
-    /                                                    /
-    +----------------------------------------------------+
-    |                       Entry 125 (32)               |
-    +----------------------------------------------------+
+    +-----------+--------------+-------------+-------------------------+
+    | State (4) | Seq. no. (4) | version (1) | Unused (19) | CRC32 (4) |   Header (32)
+    +-----------+--------------+-------------+-------------------------+
+    |                Entry state bitmap (32)                           |
+    +------------------------------------------------------------------+
+    |                       Entry 0 (32)                               |
+    +------------------------------------------------------------------+
+    |                       Entry 1 (32)                               |
+    +------------------------------------------------------------------+
+    /                                                                  /
+    /                                                                  /
+    +------------------------------------------------------------------+
+    |                       Entry 125 (32)                             |
+    +------------------------------------------------------------------+
 
 Page header and entry state bitmap are always written to flash unencrypted. Entries are encrypted if flash encryption feature of the ESP32 is used.
 
 Page state values are defined in such a way that changing state is possible by writing 0 into some of the bits. Therefore it not necessary to erase the page to change page state, unless that is a change to *erased* state.
 
-CRC32 value in header is calculated over the part which doesn't include state value (bytes 4 to 28). Unused part is currently filled with ``0xff`` bytes. Future versions of the library may store format version there.
+The version field in the header reflects NVS format version used. For backward compatibility reasons, it is decremented for every version upgrade starting at 0xff (i.e. 0xff for version-1, 0xfe for version-2 and so on).
+
+CRC32 value in header is calculated over the part which doesn't include state value (bytes 4 to 28). Unused part is currently filled with ``0xff`` bytes.
 
 The following sections describe structure of entry state bitmap and entry itself.
 
