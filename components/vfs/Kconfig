@@ -9,4 +9,10 @@ config SUPPRESS_SELECT_DEBUG_OUTPUT
         It is possible to suppress these debug outputs by enabling this
         option.
 
+config SUPPORT_TERMIOS
+    bool "Add support for termios.h"
+    default y
+    help
+        Disabling this option can save memory when the support for termios.h is not required.
+
 endmenu

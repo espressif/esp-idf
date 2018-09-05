@@ -60,4 +60,6 @@ tools/kconfig_new/confserver.py
 tools/kconfig_new/test/test_confserver.py
 tools/windows/tool_setup/build_installer.sh
 tools/test_idf_size/test.sh
+tools/check_python_dependencies.py
+docs/gen-dxd.py
 

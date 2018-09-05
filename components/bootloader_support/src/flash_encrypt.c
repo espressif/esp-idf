@@ -24,6 +24,7 @@
 #include "esp_efuse.h"
 #include "esp_log.h"
 #include "rom/secure_boot.h"
+#include "soc/rtc_wdt.h"
 
 #include "rom/cache.h"
 #include "rom/spi_flash.h"   /* TODO: Remove this */
@@ -317,6 +318,7 @@ esp_err_t esp_flash_encrypt_region(uint32_t src_addr, size_t data_length)
     }
 
     for (size_t i = 0; i < data_length; i += FLASH_SECTOR_SIZE) {
+        rtc_wdt_feed();
         uint32_t sec_start = i + src_addr;
         err = bootloader_flash_read(sec_start, buf, FLASH_SECTOR_SIZE, false);
         if (err != ESP_OK) {

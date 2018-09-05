@@ -739,8 +739,10 @@ if os.name == 'nt':
                 pass
 
         def write(self, data):
-            if type(data) is not bytes:
-                data = data.encode('latin-1')
+            if isinstance(data, bytes):
+                data = bytearray(data)
+            else:
+                data = bytearray(data, 'utf-8')
             for b in data:
                 b = bytes([b])
                 l = len(self.matched)

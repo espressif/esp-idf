@@ -162,9 +162,7 @@ TEST_CASE("(WL) write/read speed test", "[fatfs][wear_levelling][timeout=60]")
 
     const size_t buf_size = 16 * 1024;
     uint32_t* buf = (uint32_t*) calloc(1, buf_size);
-    for (size_t i = 0; i < buf_size / 4; ++i) {
-        buf[i] = esp_random();
-    }
+    esp_fill_random(buf, buf_size);
     const size_t file_size = 256 * 1024;
     const char* file = "/spiflash/256k.bin";
 
