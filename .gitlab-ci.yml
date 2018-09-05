@@ -454,9 +454,7 @@ push_to_github:
     - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
     - git remote remove github &>/dev/null || true
     - git remote add github git@github.com:espressif/esp-idf.git
-    # Need separate push commands for tag builds and for branch builds
-    - "[ -n \"${CI_COMMIT_TAG}\" ] && git push github ${CI_COMMIT_TAG}"
-    - "[ -z \"${CI_COMMIT_TAG}\" ] && git push github ${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"
+    - tools/ci/push_to_github.sh
 
 deploy_docs:
   stage: host_test
