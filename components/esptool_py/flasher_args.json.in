@@ -15,6 +15,6 @@
                           "file" : "partition_table/partition-table.bin" },
     "otadata" : { "offset" : "${OTADATA_PARTITION_OFFSET}",
                   "file" : "${BLANK_OTADATA_FILE}" },
-    "app" :             { "offset" : "${APP_PARTITION.py_OFFSET}",
+    "app" :             { "offset" : "${APP_PARTITION_OFFSET}",
                           "file" : "${PROJECT_NAME}.bin" }
 }

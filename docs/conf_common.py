@@ -53,14 +53,16 @@ kconfig_inc_path = '{}/inc/kconfig.inc'.format(builddir)
 temp_sdkconfig_path = '{}/sdkconfig.tmp'.format(builddir)
 kconfigs = subprocess.check_output(["find", "../../components", "-name", "Kconfig"]).decode()
 kconfig_projbuilds = subprocess.check_output(["find", "../../components", "-name", "Kconfig.projbuild"]).decode()
-call_with_python(" ".join(
+confgen_args = [sys.executable,
                 "../../tools/kconfig_new/confgen.py",
                 "--kconfig", "../../Kconfig",
                 "--config", temp_sdkconfig_path,
                 "--create-config-if-missing",
                 "--env", "COMPONENT_KCONFIGS={}".format(kconfigs),
                 "--env", "COMPONENT_KCONFIGS_PROJBUILD={}".format(kconfig_projbuilds),
-                "--output", "docs", kconfig_inc_path + '.in'))
+                "--output", "docs", kconfig_inc_path + '.in'
+]
+subprocess.check_call(confgen_args)
 copy_if_modified(kconfig_inc_path + '.in', kconfig_inc_path)
 
 # Generate 'esp_err_defs.inc' file with ESP_ERR_ error code definitions
