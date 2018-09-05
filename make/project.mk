@@ -13,7 +13,7 @@
 .PHONY: build-components menuconfig defconfig all build clean all_binaries check-submodules size size-components size-files size-symbols list-components
 
 MAKECMDGOALS ?= all
-all: all_binaries check_python_dependencies
+all: all_binaries | check_python_dependencies
 # see below for recipe of 'all' target
 #
 # # other components will add dependencies to 'all_binaries'. The
@@ -485,16 +485,16 @@ app-clean: $(addprefix component-,$(addsuffix -clean,$(notdir $(COMPONENT_PATHS)
 	$(summary) RM $(APP_ELF)
 	rm -f $(APP_ELF) $(APP_BIN) $(APP_MAP)
 
-size: check_python_dependencies $(APP_ELF)
+size: $(APP_ELF) | check_python_dependencies
 	$(PYTHON) $(IDF_PATH)/tools/idf_size.py $(APP_MAP)
 
-size-files: check_python_dependencies $(APP_ELF)
+size-files: $(APP_ELF) | check_python_dependencies
 	$(PYTHON) $(IDF_PATH)/tools/idf_size.py --files $(APP_MAP)
 
-size-components: check_python_dependencies $(APP_ELF)
+size-components: $(APP_ELF) | check_python_dependencies
 	$(PYTHON) $(IDF_PATH)/tools/idf_size.py --archives $(APP_MAP)
 
-size-symbols: check_python_dependencies $(APP_ELF)
+size-symbols: $(APP_ELF) | check_python_dependencies
 ifndef COMPONENT
 	$(error "ERROR: Please enter the component to look symbols for, e.g. COMPONENT=heap")
 else

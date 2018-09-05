@@ -62,9 +62,9 @@ typedef enum {
     ESP_SPP_CLOSE_EVT                   = 27,               /*!< When SPP connection closed, the event comes */
     ESP_SPP_START_EVT                   = 28,               /*!< When SPP server started, the event comes */
     ESP_SPP_CL_INIT_EVT                 = 29,               /*!< When SPP client initiated a connection, the event comes */
-    ESP_SPP_DATA_IND_EVT                = 30,               /*!< When SPP connection received data, the event comes, olny for ESP_SPP_MODE_CB */
-    ESP_SPP_CONG_EVT                    = 31,               /*!< When SPP connection congestion status changed, the event comes, olny for ESP_SPP_MODE_CB */
-    ESP_SPP_WRITE_EVT                   = 33,               /*!< When SPP write operation completes, the event comes, olny for ESP_SPP_MODE_CB */
+    ESP_SPP_DATA_IND_EVT                = 30,               /*!< When SPP connection received data, the event comes, only for ESP_SPP_MODE_CB */
+    ESP_SPP_CONG_EVT                    = 31,               /*!< When SPP connection congestion status changed, the event comes, only for ESP_SPP_MODE_CB */
+    ESP_SPP_WRITE_EVT                   = 33,               /*!< When SPP write operation completes, the event comes, only for ESP_SPP_MODE_CB */
     ESP_SPP_SRV_OPEN_EVT                = 34,               /*!< When SPP Server connection open, the event comes */
 } esp_spp_cb_event_t;
 
@@ -95,7 +95,7 @@ typedef union {
     struct spp_open_evt_param {
         esp_spp_status_t    status;         /*!< status */
         uint32_t            handle;         /*!< The connection handle */
-        int                 fd;             /*!< The file descriptor olny for ESP_SPP_MODE_VFS*/
+        int                 fd;             /*!< The file descriptor only for ESP_SPP_MODE_VFS */
         esp_bd_addr_t       rem_bda;        /*!< The peer address */
     } open;                                 /*!< SPP callback param of ESP_SPP_OPEN_EVT */
 
@@ -106,7 +106,7 @@ typedef union {
         esp_spp_status_t    status;         /*!< status */
         uint32_t            handle;         /*!< The connection handle */
         uint32_t            new_listen_handle;  /*!< The new listen handle */
-        int                 fd;             /*!< The file descriptor olny for ESP_SPP_MODE_VFS*/
+        int                 fd;             /*!< The file descriptor only for ESP_SPP_MODE_VFS */
         esp_bd_addr_t       rem_bda;        /*!< The peer address */
     } srv_open;                             /*!< SPP callback param of ESP_SPP_SRV_OPEN_EVT */
     /**
@@ -155,7 +155,7 @@ typedef union {
         esp_spp_status_t    status;         /*!< status */
         uint32_t            handle;         /*!< The connection handle */
         uint16_t            len;            /*!< The length of data */
-        uint8_t             *data;          /*!< The data recived */
+        uint8_t             *data;          /*!< The data received */
     } data_ind;                             /*!< SPP callback param of ESP_SPP_DATA_IND_EVT */
 
     /**
@@ -224,14 +224,14 @@ esp_err_t esp_spp_deinit();
 esp_err_t esp_spp_start_discovery(esp_bd_addr_t bd_addr);
 
 /**
- * @brief       This function makes an SPP conection to a remote BD Address.
+ * @brief       This function makes an SPP connection to a remote BD Address.
  *              When the connection is initiated or failed to initiate,
  *              the callback is called with ESP_SPP_CL_INIT_EVT.
  *              When the connection is established or failed,
  *              the callback is called with ESP_SPP_OPEN_EVT.
  *
  * @param[in]   sec_mask:     Security Setting Mask .
- * @param[in]   role:         Msater or slave.
+ * @param[in]   role:         Master or slave.
  * @param[in]   remote_scn:   Remote device bluetooth device SCN.
  * @param[in]   peer_bd_addr: Remote device bluetooth device address.
  *
@@ -262,7 +262,7 @@ esp_err_t esp_spp_disconnect(uint32_t handle);
  *              with ESP_SPP_SRV_OPEN_EVT.
  *
  * @param[in]   sec_mask:     Security Setting Mask .
- * @param[in]   role:         Msater or slave.
+ * @param[in]   role:         Master or slave.
  * @param[in]   local_scn:    The specific channel you want to get.
  *                            If channel is 0, means get any channel.
  * @param[in]   name:         Server's name.
@@ -276,7 +276,7 @@ esp_err_t esp_spp_start_srv(esp_spp_sec_t sec_mask,
 
 
 /**
- * @brief       This function is used to write data, olny for ESP_SPP_MODE_CB.
+ * @brief       This function is used to write data, only for ESP_SPP_MODE_CB.
  *
  * @param[in]   handle: The connection handle.
  * @param[in]   len:    The length of the data written.

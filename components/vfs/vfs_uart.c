@@ -80,14 +80,15 @@ static esp_line_endings_t s_tx_mode =
 #endif
 
 // Newline conversion mode when receiving
-static esp_line_endings_t s_rx_mode =
+static esp_line_endings_t s_rx_mode[UART_NUM] = { [0 ... UART_NUM-1] =
 #if CONFIG_NEWLIB_STDIN_LINE_ENDING_CRLF
-        ESP_LINE_ENDINGS_CRLF;
+        ESP_LINE_ENDINGS_CRLF
 #elif CONFIG_NEWLIB_STDIN_LINE_ENDING_CR
-        ESP_LINE_ENDINGS_CR;
+        ESP_LINE_ENDINGS_CR
 #else
-        ESP_LINE_ENDINGS_LF;
+        ESP_LINE_ENDINGS_LF
 #endif
+};
 
 static void uart_end_select();
 
@@ -213,9 +214,9 @@ static ssize_t uart_read(int fd, void* data, size_t size)
     while (received < size) {
         int c = uart_read_char(fd);
         if (c == '\r') {
-            if (s_rx_mode == ESP_LINE_ENDINGS_CR) {
+            if (s_rx_mode[fd] == ESP_LINE_ENDINGS_CR) {
                 c = '\n';
-            } else if (s_rx_mode == ESP_LINE_ENDINGS_CRLF) {
+            } else if (s_rx_mode[fd] == ESP_LINE_ENDINGS_CRLF) {
                 /* look ahead */
                 int c2 = uart_read_char(fd);
                 if (c2 == NONE) {
@@ -420,6 +421,456 @@ static void uart_end_select()
     _lock_release(&s_one_select_lock);
 }
 
+#ifdef CONFIG_SUPPORT_TERMIOS
+static int uart_tcsetattr(int fd, int optional_actions, const struct termios *p)
+{
+    if (fd < 0 || fd >= UART_NUM) {
+        errno = EBADF;
+        return -1;
+    }
+
+    if (p == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    switch (optional_actions) {
+        case TCSANOW:
+            // nothing to do
+            break;
+        case TCSADRAIN:
+            if (uart_wait_tx_done(fd, portMAX_DELAY) != ESP_OK) {
+                errno = EINVAL;
+                return -1;
+            }
+            // intentional fall-through to the next case
+        case TCSAFLUSH:
+            if (uart_flush_input(fd) != ESP_OK) {
+                errno = EINVAL;
+                return -1;
+            }
+            break;
+        default:
+            errno = EINVAL;
+            return -1;
+    }
+
+    if (p->c_iflag & IGNCR) {
+        s_rx_mode[fd] = ESP_LINE_ENDINGS_CRLF;
+    } else if (p->c_iflag & ICRNL) {
+        s_rx_mode[fd] = ESP_LINE_ENDINGS_CR;
+    } else {
+        s_rx_mode[fd] = ESP_LINE_ENDINGS_LF;
+    }
+
+    // output line endings are not supported because there is no alternative in termios for converting LF to CR
+
+    {
+        uart_word_length_t data_bits;
+        const tcflag_t csize_bits = p->c_cflag & CSIZE;
+
+        switch (csize_bits) {
+            case CS5:
+                data_bits = UART_DATA_5_BITS;
+                break;
+            case CS6:
+                data_bits = UART_DATA_6_BITS;
+                break;
+            case CS7:
+                data_bits = UART_DATA_7_BITS;
+                break;
+            case CS8:
+                data_bits = UART_DATA_8_BITS;
+                break;
+            default:
+                errno = EINVAL;
+                return -1;
+        }
+
+        if (uart_set_word_length(fd, data_bits) != ESP_OK) {
+            errno = EINVAL;
+            return -1;
+        }
+    }
+
+    if (uart_set_stop_bits(fd, (p->c_cflag & CSTOPB) ? UART_STOP_BITS_2 : UART_STOP_BITS_1) != ESP_OK) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (uart_set_parity(fd, (p->c_cflag & PARENB) ?
+                ((p->c_cflag & PARODD) ? UART_PARITY_ODD : UART_PARITY_EVEN)
+                :
+                UART_PARITY_DISABLE) != ESP_OK) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (p->c_cflag & (CBAUD | CBAUDEX)) {
+        if (p->c_ispeed != p->c_ospeed) {
+            errno = EINVAL;
+            return -1;
+        } else {
+            uint32_t b;
+            if (p->c_cflag & BOTHER) {
+                b = p->c_ispeed;
+            } else {
+                switch (p->c_ispeed) {
+                    case B0:
+                        b = 0;
+                        break;
+                    case B50:
+                        b = 50;
+                        break;
+                    case B75:
+                        b = 75;
+                        break;
+                    case B110:
+                        b = 110;
+                        break;
+                    case B134:
+                        b = 134;
+                        break;
+                    case B150:
+                        b = 150;
+                        break;
+                    case B200:
+                        b = 200;
+                        break;
+                    case B300:
+                        b = 300;
+                        break;
+                    case B600:
+                        b = 600;
+                        break;
+                    case B1200:
+                        b = 1200;
+                        break;
+                    case B1800:
+                        b = 1800;
+                        break;
+                    case B2400:
+                        b = 2400;
+                        break;
+                    case B4800:
+                        b = 4800;
+                        break;
+                    case B9600:
+                        b = 9600;
+                        break;
+                    case B19200:
+                        b = 19200;
+                        break;
+                    case B38400:
+                        b = 38400;
+                        break;
+                    case B57600:
+                        b = 57600;
+                        break;
+                    case B115200:
+                        b = 115200;
+                        break;
+                    case B230400:
+                        b = 230400;
+                        break;
+                    case B460800:
+                        b = 460800;
+                        break;
+                    case B500000:
+                        b = 500000;
+                        break;
+                    case B576000:
+                        b = 576000;
+                        break;
+                    case B921600:
+                        b = 921600;
+                        break;
+                    case B1000000:
+                        b = 1000000;
+                        break;
+                    case B1152000:
+                        b = 1152000;
+                        break;
+                    case B1500000:
+                        b = 1500000;
+                        break;
+                    case B2000000:
+                        b = 2000000;
+                        break;
+                    case B2500000:
+                        b = 2500000;
+                        break;
+                    case B3000000:
+                        b = 3000000;
+                        break;
+                    case B3500000:
+                        b = 3500000;
+                        break;
+                    case B4000000:
+                        b = 4000000;
+                        break;
+                    default:
+                        errno = EINVAL;
+                        return -1;
+                }
+            }
+
+            if (uart_set_baudrate(fd, b) != ESP_OK) {
+                errno = EINVAL;
+                return -1;
+            }
+        }
+    }
+
+    return 0;
+}
+
+static int uart_tcgetattr(int fd, struct termios *p)
+{
+    if (fd < 0 || fd >= UART_NUM) {
+        errno = EBADF;
+        return -1;
+    }
+
+    if (p == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    memset(p, 0, sizeof(struct termios));
+
+    if (s_rx_mode[fd] == ESP_LINE_ENDINGS_CRLF) {
+        p->c_iflag |= IGNCR;
+    } else if (s_rx_mode[fd] == ESP_LINE_ENDINGS_CR) {
+        p->c_iflag |= ICRNL;
+    }
+
+    {
+        uart_word_length_t data_bits;
+
+        if (uart_get_word_length(fd, &data_bits) != ESP_OK) {
+            errno = EINVAL;
+            return -1;
+        }
+
+        p->c_cflag &= (~CSIZE);
+
+        switch (data_bits) {
+            case UART_DATA_5_BITS:
+                p->c_cflag |= CS5;
+                break;
+            case UART_DATA_6_BITS:
+                p->c_cflag |= CS6;
+                break;
+            case UART_DATA_7_BITS:
+                p->c_cflag |= CS7;
+                break;
+            case UART_DATA_8_BITS:
+                p->c_cflag |= CS8;
+                break;
+            default:
+                errno = ENOSYS;
+                return -1;
+        }
+    }
+
+    {
+        uart_stop_bits_t stop_bits;
+        if (uart_get_stop_bits(fd, &stop_bits) != ESP_OK) {
+            errno = EINVAL;
+            return -1;
+        }
+
+        switch (stop_bits) {
+            case UART_STOP_BITS_1:
+                // nothing to do
+                break;
+            case UART_STOP_BITS_2:
+                p->c_cflag |= CSTOPB;
+                break;
+            default:
+                // UART_STOP_BITS_1_5 is unsupported by termios
+                errno = ENOSYS;
+                return -1;
+        }
+    }
+
+    {
+        uart_parity_t parity_mode;
+        if (uart_get_parity(fd, &parity_mode) != ESP_OK) {
+            errno = EINVAL;
+            return -1;
+        }
+
+        switch (parity_mode) {
+            case UART_PARITY_EVEN:
+                p->c_cflag |= PARENB;
+                break;
+            case UART_PARITY_ODD:
+                p->c_cflag |= (PARENB | PARODD);
+                break;
+            case UART_PARITY_DISABLE:
+                // nothing to do
+                break;
+            default:
+                errno = ENOSYS;
+                return -1;
+        }
+    }
+
+    {
+        uint32_t baudrate;
+        if (uart_get_baudrate(fd, &baudrate) != ESP_OK) {
+            errno = EINVAL;
+            return -1;
+        }
+
+        p->c_cflag |= (CBAUD | CBAUDEX);
+
+        speed_t sp;
+        switch (baudrate) {
+            case 0:
+                sp = B0;
+                break;
+            case 50:
+                sp = B50;
+                break;
+            case 75:
+                sp = B75;
+                break;
+            case 110:
+                sp = B110;
+                break;
+            case 134:
+                sp = B134;
+                break;
+            case 150:
+                sp = B150;
+                break;
+            case 200:
+                sp = B200;
+                break;
+            case 300:
+                sp = B300;
+                break;
+            case 600:
+                sp = B600;
+                break;
+            case 1200:
+                sp = B1200;
+                break;
+            case 1800:
+                sp = B1800;
+                break;
+            case 2400:
+                sp = B2400;
+                break;
+            case 4800:
+                sp = B4800;
+                break;
+            case 9600:
+                sp = B9600;
+                break;
+            case 19200:
+                sp = B19200;
+                break;
+            case 38400:
+                sp = B38400;
+                break;
+            case 57600:
+                sp = B57600;
+                break;
+            case 115200:
+                sp = B115200;
+                break;
+            case 230400:
+                sp = B230400;
+                break;
+            case 460800:
+                sp = B460800;
+                break;
+            case 500000:
+                sp = B500000;
+                break;
+            case 576000:
+                sp = B576000;
+                break;
+            case 921600:
+                sp = B921600;
+                break;
+            case 1000000:
+                sp = B1000000;
+                break;
+            case 1152000:
+                sp = B1152000;
+                break;
+            case 1500000:
+                sp = B1500000;
+                break;
+            case 2000000:
+                sp = B2000000;
+                break;
+            case 2500000:
+                sp = B2500000;
+                break;
+            case 3000000:
+                sp = B3000000;
+                break;
+            case 3500000:
+                sp = B3500000;
+                break;
+            case 4000000:
+                sp = B4000000;
+                break;
+            default:
+                p->c_cflag |= BOTHER;
+                sp = baudrate;
+                break;
+        }
+
+        p->c_ispeed = p->c_ospeed = sp;
+    }
+
+    return 0;
+}
+
+static int uart_tcdrain(int fd)
+{
+    if (fd < 0 || fd >= UART_NUM) {
+        errno = EBADF;
+        return -1;
+    }
+
+    if (uart_wait_tx_done(fd, portMAX_DELAY) != ESP_OK) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    return 0;
+}
+
+static int uart_tcflush(int fd, int select)
+{
+    if (fd < 0 || fd >= UART_NUM) {
+        errno = EBADF;
+        return -1;
+    }
+
+    if (select == TCIFLUSH) {
+        if (uart_flush_input(fd) != ESP_OK) {
+            errno = EINVAL;
+            return -1;
+        }
+    } else {
+        // output flushing is not supported
+        errno = EINVAL;
+        return -1;
+    }
+
+    return 0;
+}
+#endif // CONFIG_SUPPORT_TERMIOS
+
 void esp_vfs_dev_uart_register()
 {
     esp_vfs_t vfs = {
@@ -433,13 +884,21 @@ void esp_vfs_dev_uart_register()
         .access = &uart_access,
         .start_select = &uart_start_select,
         .end_select = &uart_end_select,
+#ifdef CONFIG_SUPPORT_TERMIOS
+        .tcsetattr = &uart_tcsetattr,
+        .tcgetattr = &uart_tcgetattr,
+        .tcdrain = &uart_tcdrain,
+        .tcflush = &uart_tcflush,
+#endif // CONFIG_SUPPORT_TERMIOS
     };
     ESP_ERROR_CHECK(esp_vfs_register("/dev/uart", &vfs, NULL));
 }
 
 void esp_vfs_dev_uart_set_rx_line_endings(esp_line_endings_t mode)
 {
-    s_rx_mode = mode;
+    for (int i = 0; i < UART_NUM; ++i) {
+        s_rx_mode[i] = mode;
+    }
 }
 
 void esp_vfs_dev_uart_set_tx_line_endings(esp_line_endings_t mode)

@@ -206,7 +206,7 @@ esp_err_t heap_caps_add_region_with_caps(const uint32_t caps[], intptr_t start, 
         }
     }
 
-    heap_t *p_new = malloc(sizeof(heap_t));
+    heap_t *p_new = heap_caps_malloc(sizeof(heap_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
     if (p_new == NULL) {
         err = ESP_ERR_NO_MEM;
         goto done;
@@ -218,7 +218,7 @@ esp_err_t heap_caps_add_region_with_caps(const uint32_t caps[], intptr_t start, 
     p_new->heap = multi_heap_register((void *)start, end - start);
     SLIST_NEXT(p_new, next) = NULL;
     if (p_new->heap == NULL) {
-        err = ESP_FAIL;
+        err = ESP_ERR_INVALID_SIZE;
         goto done;
     }
     multi_heap_set_lock(p_new->heap, &p_new->heap_mux);

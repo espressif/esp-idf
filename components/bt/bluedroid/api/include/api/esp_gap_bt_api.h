@@ -70,7 +70,7 @@ typedef enum {
 typedef struct {
     esp_bt_gap_dev_prop_type_t type;                /*!< device property type */
     int len;                                        /*!< device property value length */
-    void *val;                                      /*!< devlice prpoerty value */
+    void *val;                                      /*!< device property value */
 } esp_bt_gap_dev_prop_t;
 
 /// Extended Inquiry Response data type
@@ -97,7 +97,7 @@ typedef enum {
     ESP_BT_COD_SRVC_RENDERING                =  0x20,    /*!< Rendering, e.g. Printing, Speakers */
     ESP_BT_COD_SRVC_CAPTURING                =  0x40,    /*!< Capturing, e.g. Scanner, Microphone */
     ESP_BT_COD_SRVC_OBJ_TRANSFER             =  0x80,    /*!< Object Transfer, e.g. v-Inbox, v-Folder */
-    ESP_BT_COD_SRVC_AUDIO                    = 0x100,    /*!< Audio, e.g. Speaker, Microphone, Headerset service */
+    ESP_BT_COD_SRVC_AUDIO                    = 0x100,    /*!< Audio, e.g. Speaker, Microphone, Headset service */
     ESP_BT_COD_SRVC_TELEPHONY                = 0x200,    /*!< Telephony, e.g. Cordless telephony, Modem, Headset service */
     ESP_BT_COD_SRVC_INFORMATION              = 0x400,    /*!< Information, e.g., WEB-server, WAP-server */
 } esp_bt_cod_srvc_t;
@@ -188,7 +188,7 @@ typedef union {
         esp_bd_addr_t bda;                     /*!< remote bluetooth device address*/
         int num_prop;                          /*!< number of properties got */
         esp_bt_gap_dev_prop_t *prop;           /*!< properties discovered from the new device */
-    } disc_res;                                /*!< discovery result paramter struct */
+    } disc_res;                                /*!< discovery result parameter struct */
 
     /**
      * @brief  ESP_BT_GAP_DISC_STATE_CHANGED_EVT
@@ -506,7 +506,7 @@ esp_err_t esp_bt_gap_set_security_param(esp_bt_sp_param_t param_type,
 * @brief            Reply the key value to the peer device in the legacy connection stage.
 *
 * @param[in]        bd_addr : BD address of the peer
-* @param[in]        accept : passkey entry sucessful or declined.
+* @param[in]        accept : passkey entry successful or declined.
 * @param[in]        passkey : passkey value, must be a 6 digit number,
 *                                     can be lead by 0.
 *

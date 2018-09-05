@@ -151,17 +151,30 @@ uint32_t esp_get_minimum_free_heap_size( void );
 /**
  * @brief  Get one random 32-bit word from hardware RNG
  *
- * The hardware RNG is fully functional whenever an RF subsystem is running (ie Bluetooth or WiFi is enabled). For secure
+ * The hardware RNG is fully functional whenever an RF subsystem is running (ie Bluetooth or WiFi is enabled). For
  * random values, call this function after WiFi or Bluetooth are started.
  *
- * When the app is running without an RF subsystem enabled, it should be considered a PRNG. To help improve this
- * situation, the RNG is pre-seeded with entropy while the IDF bootloader is running. However no new entropy is
- * available during the window of time between when the bootloader exits and an RF subsystem starts. It may be possible
- * to discern a non-random pattern in a very large amount of output captured during this window of time.
+ * If the RF subsystem is not used by the program, the function bootloader_random_enable() can be called to enable an
+ * entropy source. bootloader_random_disable() must be called before RF subsystem or I2S peripheral are used. See these functions'
+ * documentation for more details.
+ *
+ * Any time the app is running without an RF subsystem (or bootloader_random) enabled, RNG hardware should be
+ * considered a PRNG. A very small amount of entropy is available due to pre-seeding while the IDF
+ * bootloader is running, but this should not be relied upon for any use.
  *
  * @return Random value between 0 and UINT32_MAX
  */
 uint32_t esp_random(void);
+
+/**
+ * @brief Fill a buffer with random bytes from hardware RNG
+ *
+ * @note This function has the same restrictions regarding available entropy as esp_random()
+ *
+ * @param buf Pointer to buffer to fill with random numbers.
+ * @param len Length of buffer in bytes
+ */
+void esp_fill_random(void *buf, size_t len);
 
 /**
   * @brief  Set base MAC address with the MAC address which is stored in BLK3 of EFUSE or

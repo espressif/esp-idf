@@ -6,6 +6,7 @@
 #include "esp_system.h"
 #include "esp_event_loop.h"
 #include "esp_wifi.h"
+#include "esp_wifi_types.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
 
@@ -42,6 +43,11 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
 
 static void test_wifi_init_deinit(wifi_init_config_t *cfg, wifi_config_t* wifi_config)
 {
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit"));
+    TEST_ESP_ERR(ESP_ERR_WIFI_NOT_INIT, esp_wifi_deinit());
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_get_mode"));
+    wifi_mode_t mode_get;
+    TEST_ESP_ERR(ESP_ERR_WIFI_NOT_INIT, esp_wifi_get_mode(&mode_get));
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_init"));
     TEST_ESP_OK(esp_wifi_init(cfg));
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_set_mode"));
@@ -54,6 +60,8 @@ static void test_wifi_init_deinit(wifi_init_config_t *cfg, wifi_config_t* wifi_c
 
 static void test_wifi_start_stop(wifi_init_config_t *cfg, wifi_config_t* wifi_config)
 {
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_stop"));
+    TEST_ESP_ERR(ESP_ERR_WIFI_NOT_INIT, esp_wifi_stop());
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_init"));
     TEST_ESP_OK(esp_wifi_init(cfg));
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_set_mode"));

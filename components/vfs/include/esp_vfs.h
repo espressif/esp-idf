@@ -26,8 +26,10 @@
 #include <sys/reent.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/termios.h>
 #include <dirent.h>
 #include <string.h>
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -178,6 +180,37 @@ typedef struct
         int (*truncate_p)(void* ctx, const char *path, off_t length);
         int (*truncate)(const char *path, off_t length);
     };
+#ifdef CONFIG_SUPPORT_TERMIOS
+    union {
+        int (*tcsetattr_p)(void *ctx, int fd, int optional_actions, const struct termios *p);
+        int (*tcsetattr)(int fd, int optional_actions, const struct termios *p);
+    };
+    union {
+        int (*tcgetattr_p)(void *ctx, int fd, struct termios *p);
+        int (*tcgetattr)(int fd, struct termios *p);
+    };
+    union {
+        int (*tcdrain_p)(void *ctx, int fd);
+        int (*tcdrain)(int fd);
+    };
+    union {
+        int (*tcflush_p)(void *ctx, int fd, int select);
+        int (*tcflush)(int fd, int select);
+    };
+    union {
+        int (*tcflow_p)(void *ctx, int fd, int action);
+        int (*tcflow)(int fd, int action);
+    };
+    union {
+        pid_t (*tcgetsid_p)(void *ctx, int fd);
+        pid_t (*tcgetsid)(int fd);
+    };
+    union {
+        int (*tcsendbreak_p)(void *ctx, int fd, int duration);
+        int (*tcsendbreak)(int fd, int duration);
+    };
+#endif // CONFIG_SUPPORT_TERMIOS
+
     /** start_select is called for setting up synchronous I/O multiplexing of the desired file descriptors in the given VFS */
     esp_err_t (*start_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, SemaphoreHandle_t *signal_sem);
     /** socket select function for socket FDs with the functionality of POSIX select(); this should be set only for the socket VFS */

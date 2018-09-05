@@ -20,6 +20,7 @@
 #include "esp_types.h"
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
+#include "esp_pm.h"
 #include "soc/dport_reg.h"
 #include "soc/can_struct.h"
 #include "driver/gpio.h"
@@ -128,6 +129,10 @@ typedef struct {
     SemaphoreHandle_t alert_semphr;
     uint32_t alerts_enabled;
     uint32_t alerts_triggered;
+#ifdef CONFIG_PM_ENABLE
+    //Power Management
+    esp_pm_lock_handle_t pm_lock;
+#endif
 } can_obj_t;
 
 static can_obj_t *p_can_obj = NULL;
@@ -591,6 +596,7 @@ static void can_configure_gpio(gpio_num_t tx, gpio_num_t rx, gpio_num_t clkout, 
     gpio_set_pull_mode(rx, GPIO_FLOATING);
     gpio_matrix_in(rx, CAN_RX_IDX, false);
     gpio_pad_select_gpio(rx);
+    gpio_set_direction(rx, GPIO_MODE_INPUT);
 
     //Configure output clock pin (Optional)
     if (clkout >= 0 && clkout < GPIO_NUM_MAX) {
@@ -611,41 +617,61 @@ static void can_configure_gpio(gpio_num_t tx, gpio_num_t rx, gpio_num_t clkout, 
 
 esp_err_t can_driver_install(const can_general_config_t *g_config, const can_timing_config_t *t_config, const can_filter_config_t *f_config)
 {
-    //Check arguments and state
-    CAN_CHECK(p_can_obj == NULL, ESP_ERR_INVALID_STATE);     //Check is driver is already installed
+    //Check arguments
     CAN_CHECK(g_config != NULL, ESP_ERR_INVALID_ARG);
     CAN_CHECK(t_config != NULL, ESP_ERR_INVALID_ARG);
     CAN_CHECK(f_config != NULL, ESP_ERR_INVALID_ARG);
     CAN_CHECK(g_config->rx_queue_len > 0, ESP_ERR_INVALID_ARG);
     CAN_CHECK(g_config->tx_io >= 0 && g_config->tx_io < GPIO_NUM_MAX, ESP_ERR_INVALID_ARG);
     CAN_CHECK(g_config->rx_io >= 0 && g_config->rx_io < GPIO_NUM_MAX, ESP_ERR_INVALID_ARG);
-    esp_err_t ret;
 
-    //Initialize CAN object
-    p_can_obj = calloc(1, sizeof(can_obj_t));
-    CAN_CHECK(p_can_obj != NULL, ESP_ERR_NO_MEM);
-    p_can_obj->tx_queue = (g_config->tx_queue_len > 0) ? xQueueCreate(g_config->tx_queue_len, sizeof(can_frame_t)) : NULL;
-    p_can_obj->rx_queue = xQueueCreate(g_config->rx_queue_len, sizeof(can_frame_t));
-    p_can_obj->alert_semphr = xSemaphoreCreateBinary();
-    if ((g_config->tx_queue_len > 0 && p_can_obj->tx_queue == NULL) ||
-        p_can_obj->rx_queue == NULL || p_can_obj->alert_semphr == NULL) {
+    esp_err_t ret;
+    can_obj_t *p_can_obj_dummy;
+
+    //Create a CAN object
+    p_can_obj_dummy = calloc(1, sizeof(can_obj_t));
+    CAN_CHECK(p_can_obj_dummy != NULL, ESP_ERR_NO_MEM);
+
+    //Initialize queues, semaphores, and power management locks
+    p_can_obj_dummy->tx_queue = (g_config->tx_queue_len > 0) ? xQueueCreate(g_config->tx_queue_len, sizeof(can_frame_t)) : NULL;
+    p_can_obj_dummy->rx_queue = xQueueCreate(g_config->rx_queue_len, sizeof(can_frame_t));
+    p_can_obj_dummy->alert_semphr = xSemaphoreCreateBinary();
+    if ((g_config->tx_queue_len > 0 && p_can_obj_dummy->tx_queue == NULL) ||
+        p_can_obj_dummy->rx_queue == NULL || p_can_obj_dummy->alert_semphr == NULL) {
         ret = ESP_ERR_NO_MEM;
         goto err;
     }
-    p_can_obj->control_flags = CTRL_FLAG_STOPPED;
-    p_can_obj->control_flags |= (g_config->mode == CAN_MODE_NO_ACK) ? CTRL_FLAG_SELF_TEST : 0;
-    p_can_obj->control_flags |= (g_config->mode == CAN_MODE_LISTEN_ONLY) ? CTRL_FLAG_LISTEN_ONLY : 0;
-    p_can_obj->tx_msg_count = 0;
-    p_can_obj->rx_msg_count = 0;
-    p_can_obj->tx_failed_count = 0;
-    p_can_obj->rx_missed_count = 0;
-    p_can_obj->arb_lost_count = 0;
-    p_can_obj->bus_error_count = 0;
-    p_can_obj->alerts_enabled = g_config->alerts_enabled;
-    p_can_obj->alerts_triggered = 0;
+#ifdef CONFIG_PM_ENABLE
+    esp_err_t pm_err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "can", &(p_can_obj_dummy->pm_lock));
+    if (pm_err != ESP_OK ) {
+        ret = pm_err;
+        goto err;
+    }
+#endif
 
+    //Initialize flags and variables
+    p_can_obj_dummy->control_flags = CTRL_FLAG_STOPPED;
+    p_can_obj_dummy->control_flags |= (g_config->mode == CAN_MODE_NO_ACK) ? CTRL_FLAG_SELF_TEST : 0;
+    p_can_obj_dummy->control_flags |= (g_config->mode == CAN_MODE_LISTEN_ONLY) ? CTRL_FLAG_LISTEN_ONLY : 0;
+    p_can_obj_dummy->tx_msg_count = 0;
+    p_can_obj_dummy->rx_msg_count = 0;
+    p_can_obj_dummy->tx_failed_count = 0;
+    p_can_obj_dummy->rx_missed_count = 0;
+    p_can_obj_dummy->arb_lost_count = 0;
+    p_can_obj_dummy->bus_error_count = 0;
+    p_can_obj_dummy->alerts_enabled = g_config->alerts_enabled;
+    p_can_obj_dummy->alerts_triggered = 0;
+
+    //Initialize CAN peripheral registers, and allocate interrupt
     CAN_ENTER_CRITICAL();
-    //Initialize CAN peripheral
+    if (p_can_obj == NULL) {
+        p_can_obj = p_can_obj_dummy;
+    } else {
+        //Check if driver is already installed
+        CAN_EXIT_CRITICAL();
+        ret = ESP_ERR_INVALID_STATE;
+        goto err;
+    }
     periph_module_enable(PERIPH_CAN_MODULE);            //Enable APB CLK to CAN peripheral
     configASSERT(can_enter_reset_mode() == ESP_OK);     //Must enter reset mode to write to config registers
     can_config_pelican();                               //Use PeliCAN addresses
@@ -661,55 +687,71 @@ esp_err_t can_driver_install(const can_general_config_t *g_config, const can_tim
     can_configure_gpio(g_config->tx_io, g_config->rx_io, g_config->clkout_io, g_config->bus_off_io);
     (void) can_get_interrupt_reason();                  //Read interrupt reg to clear it before allocating ISR
     ESP_ERROR_CHECK(esp_intr_alloc(ETS_CAN_INTR_SOURCE, 0, can_intr_handler_main, NULL, &p_can_obj->isr_handle));
-    CAN_EXIT_CRITICAL();
     //Todo: Allow interrupt to be registered to specified CPU
+    CAN_EXIT_CRITICAL();
 
-    //CAN module is still in reset mode, users need to call can_start() afterwards
-    return ESP_OK;
+#ifdef CONFIG_PM_ENABLE
+    ESP_ERROR_CHECK(esp_pm_lock_acquire(p_can_obj->pm_lock));     //Acquire pm_lock to keep APB clock at 80MHz
+#endif
+    return ESP_OK;      //CAN module is still in reset mode, users need to call can_start() afterwards
 
     err:
-    //Cleanup and return error
-    if (p_can_obj != NULL) {
-        if (p_can_obj->tx_queue != NULL) {
-            vQueueDelete(p_can_obj->tx_queue);
-            p_can_obj->tx_queue = NULL;
+    //Cleanup CAN object and return error
+    if (p_can_obj_dummy != NULL) {
+        if (p_can_obj_dummy->tx_queue != NULL) {
+            vQueueDelete(p_can_obj_dummy->tx_queue);
+            p_can_obj_dummy->tx_queue = NULL;
         }
-        if (p_can_obj->rx_queue != NULL) {
-            vQueueDelete(p_can_obj->rx_queue);
-            p_can_obj->rx_queue = NULL;
+        if (p_can_obj_dummy->rx_queue != NULL) {
+            vQueueDelete(p_can_obj_dummy->rx_queue);
+            p_can_obj_dummy->rx_queue = NULL;
         }
-        if (p_can_obj->alert_semphr != NULL) {
-            vSemaphoreDelete(p_can_obj->alert_semphr);
-            p_can_obj->alert_semphr = NULL;
+        if (p_can_obj_dummy->alert_semphr != NULL) {
+            vSemaphoreDelete(p_can_obj_dummy->alert_semphr);
+            p_can_obj_dummy->alert_semphr = NULL;
         }
-        free(p_can_obj);
+#ifdef CONFIG_PM_ENABLE
+        if (p_can_obj_dummy->pm_lock != NULL) {
+            ESP_ERROR_CHECK(esp_pm_lock_delete(p_can_obj_dummy->pm_lock));
+        }
+#endif
+        free(p_can_obj_dummy);
     }
     return ret;
 }
 
 esp_err_t can_driver_uninstall()
 {
-    //Check state
+    can_obj_t *p_can_obj_dummy;
+
     CAN_ENTER_CRITICAL();
+    //Check state
     CAN_CHECK_FROM_CRIT(p_can_obj != NULL, ESP_ERR_INVALID_STATE);
     CAN_CHECK_FROM_CRIT(p_can_obj->control_flags & (CTRL_FLAG_STOPPED | CTRL_FLAG_BUS_OFF), ESP_ERR_INVALID_STATE);
-
-    //Clear registers
     configASSERT(can_enter_reset_mode() == ESP_OK); //Enter reset mode to stop any CAN bus activity
+    //Clear registers by reading
     (void) can_get_interrupt_reason();
     (void) can_get_arbitration_lost_capture();
     (void) can_get_error_code_capture();
 
     ESP_ERROR_CHECK(esp_intr_free(p_can_obj->isr_handle));  //Free interrupt
     periph_module_disable(PERIPH_CAN_MODULE);               //Disable CAN peripheral
-    //Delete queues, semaphores
-    if (p_can_obj->tx_queue != NULL) {
-        vQueueDelete(p_can_obj->tx_queue);
-    }
-    vQueueDelete(p_can_obj->rx_queue);
-    vSemaphoreDelete(p_can_obj->alert_semphr);
-    free(p_can_obj);        //Free can driver object
+    p_can_obj_dummy = p_can_obj;        //Use dummy to shorten critical section
+    p_can_obj = NULL;
     CAN_EXIT_CRITICAL();
+
+    //Delete queues, semaphores, and power management locks
+    if (p_can_obj_dummy->tx_queue != NULL) {
+        vQueueDelete(p_can_obj_dummy->tx_queue);
+    }
+    vQueueDelete(p_can_obj_dummy->rx_queue);
+    vSemaphoreDelete(p_can_obj_dummy->alert_semphr);
+#ifdef CONFIG_PM_ENABLE
+    //Release and delete power management lock
+    ESP_ERROR_CHECK(esp_pm_lock_release(p_can_obj_dummy->pm_lock));
+    ESP_ERROR_CHECK(esp_pm_lock_delete(p_can_obj_dummy->pm_lock));
+#endif
+    free(p_can_obj_dummy);        //Free can driver object
 
     return ESP_OK;
 }
@@ -801,7 +843,7 @@ esp_err_t can_transmit(const can_message_t *message, TickType_t ticks_to_wait)
         } else if (xQueueSend(p_can_obj->tx_queue, &tx_frame, ticks_to_wait) == pdTRUE) {
             //Copied to TX Queue
             CAN_ENTER_CRITICAL();
-            if (p_can_obj->control_flags & (CTRL_FLAG_STOPPED | CTRL_FLAG_STOPPED)) {
+            if (p_can_obj->control_flags & (CTRL_FLAG_STOPPED | CTRL_FLAG_BUS_OFF)) {
                 //TX queue was reset (due to stop/bus_off), remove copied frame from queue to prevent transmission
                 configASSERT(xQueueReceive(p_can_obj->tx_queue, &tx_frame, 0) == pdTRUE);
                 ret = ESP_ERR_INVALID_STATE;

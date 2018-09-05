@@ -2040,16 +2040,19 @@ BaseType_t i;
 
 	/* Add the per-core idle tasks at the lowest priority. */
 	for ( i=0; i<portNUM_PROCESSORS; i++) {
+		//Generate idle task name
+		char cIdleName[configMAX_TASK_NAME_LEN];
+		snprintf(cIdleName, configMAX_TASK_NAME_LEN, "IDLE%d", i);
 		#if ( INCLUDE_xTaskGetIdleTaskHandle == 1 )
 		{
 			/* Create the idle task, storing its handle in xIdleTaskHandle so it can
 			be returned by the xTaskGetIdleTaskHandle() function. */
-			xReturn = xTaskCreatePinnedToCore( prvIdleTask, "IDLE", tskIDLE_STACK_SIZE, ( void * ) NULL, ( tskIDLE_PRIORITY | portPRIVILEGE_BIT ), &xIdleTaskHandle[i], i ); /*lint !e961 MISRA exception, justified as it is not a redundant explicit cast to all supported compilers. */
+			xReturn = xTaskCreatePinnedToCore( prvIdleTask, cIdleName, tskIDLE_STACK_SIZE, ( void * ) NULL, ( tskIDLE_PRIORITY | portPRIVILEGE_BIT ), &xIdleTaskHandle[i], i ); /*lint !e961 MISRA exception, justified as it is not a redundant explicit cast to all supported compilers. */
 		}
 		#else
 		{
 			/* Create the idle task without storing its handle. */
-			xReturn = xTaskCreatePinnedToCore( prvIdleTask, "IDLE", tskIDLE_STACK_SIZE, ( void * ) NULL, ( tskIDLE_PRIORITY | portPRIVILEGE_BIT ), NULL, i);  /*lint !e961 MISRA exception, justified as it is not a redundant explicit cast to all supported compilers. */
+			xReturn = xTaskCreatePinnedToCore( prvIdleTask, cIdleName, tskIDLE_STACK_SIZE, ( void * ) NULL, ( tskIDLE_PRIORITY | portPRIVILEGE_BIT ), NULL, i);  /*lint !e961 MISRA exception, justified as it is not a redundant explicit cast to all supported compilers. */
 		}
 		#endif /* INCLUDE_xTaskGetIdleTaskHandle */
 	}
