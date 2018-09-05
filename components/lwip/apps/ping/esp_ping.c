@@ -22,7 +22,9 @@ typedef struct _ping_option {
     uint32_t ping_count;
     uint32_t ping_rcv_timeout;
     uint32_t ping_delay;
+    size_t ping_data_len;
     uint16_t ping_id;
+    u8_t ping_tos;
     esp_ping_found_fn ping_res_fn;
     esp_ping_found    ping_res;
     void    *ping_reserve;
@@ -55,9 +57,17 @@ esp_err_t esp_ping_set_target(ping_target_id_t opt_id, void *opt_val, uint32_t o
         ESP_PING_CHECK_OPTLEN(opt_len, uint32_t);
         ping_option_info->ping_delay = (*(uint32_t *)opt_val);
         break;
+    case PING_TARGET_DATA_LEN:
+        ESP_PING_CHECK_OPTLEN(opt_len, size_t);
+        ping_option_info->ping_data_len = (*(size_t *)opt_val);
+        break;
     case PING_TARGET_ID:
         ESP_PING_CHECK_OPTLEN(opt_len, uint16_t);
         ping_option_info->ping_id = *(uint16_t *)opt_val;
+        break;
+    case PING_TARGET_IP_TOS:
+        ESP_PING_CHECK_OPTLEN(opt_len, u8_t);
+        ping_option_info->ping_tos = *(u8_t *)opt_val;
         break;
     case PING_TARGET_RES_FN:
         ping_option_info->ping_res_fn = opt_val;
@@ -98,9 +108,17 @@ esp_err_t esp_ping_get_target(ping_target_id_t opt_id, void *opt_val, uint32_t o
         ESP_PING_CHECK_OPTLEN(opt_len, uint32_t);
         *(uint32_t *)opt_val = ping_option_info->ping_delay;
         break;
+    case PING_TARGET_DATA_LEN:
+        ESP_PING_CHECK_OPTLEN(opt_len, size_t);
+        *(size_t *)opt_val = ping_option_info->ping_data_len;
+        break;
     case PING_TARGET_ID:
         ESP_PING_CHECK_OPTLEN(opt_len, uint16_t);
         *(uint16_t *)opt_val = ping_option_info->ping_id;
+        break;
+    case PING_TARGET_IP_TOS:
+        ESP_PING_CHECK_OPTLEN(opt_len, uint16_t);
+        *(uint16_t *)opt_val = ping_option_info->ping_tos;
         break;
     default:
         ret = ESP_ERR_PING_INVALID_PARAMS;
