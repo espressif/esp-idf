@@ -149,7 +149,7 @@ esp_err_t esp_efuse_mac_get_default(uint8_t* mac)
 esp_err_t system_efuse_read_mac(uint8_t *mac) __attribute__((alias("esp_efuse_mac_get_default")));
 esp_err_t esp_efuse_read_mac(uint8_t *mac) __attribute__((alias("esp_efuse_mac_get_default")));
 
-esp_err_t esp_derive_mac(uint8_t* local_mac, const uint8_t* universal_mac)
+esp_err_t esp_derive_local_mac(uint8_t* local_mac, const uint8_t* universal_mac)
 {
     uint8_t idx;
 
@@ -203,7 +203,7 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
             mac[5] += 1;
         }
         else if (UNIVERSAL_MAC_ADDR_NUM == TWO_UNIVERSAL_MAC_ADDR) {
-            esp_derive_mac(mac, efuse_mac);
+            esp_derive_local_mac(mac, efuse_mac);
         }
         break;
     case ESP_MAC_BT:
@@ -222,7 +222,7 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
         }
         else if (UNIVERSAL_MAC_ADDR_NUM == TWO_UNIVERSAL_MAC_ADDR) {
             efuse_mac[5] += 1;
-            esp_derive_mac(mac, efuse_mac);
+            esp_derive_local_mac(mac, efuse_mac);
         }
         break;
     default:
