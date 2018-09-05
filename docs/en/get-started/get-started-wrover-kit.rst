@@ -51,6 +51,8 @@ ESP32-WROVER
 
         GPIO16 and GPIO17 are used as the CS and clock signal for PSRAM. To ensure reliable performance, the two GPIOs are not broken out.
 
+Diagnostic LEDs
+    Four red LEDs connected to GPIO pins of the FT2232 chip. Intended for future use.
 UART
     Serial port: the serial TX/RX signals on the FT2232HL and the ESP32 are broken out to each side of JP2. By default, the two signals are connected with jumpers. To use the ESP32 module serial interface only, the jumpers may be removed and the module can be connected to another external serial device.
 SPI
@@ -71,6 +73,8 @@ Power Selector
     Power supply selection interface: the ESP-WROVER-KIT can be powered through the USB interface or the 5V Input interface. The user can select the power supply with a jumper. More details can be found in section :ref:`get-started-esp-wrover-kit-setup-options`, jumper header JP7.
 5V Input
     The 5V power supply interface is used as a backup power supply in case of full-load operation.
+5V Power On LED
+    This red LED indicates that a power supply (either from **USB** or **5V Input**) is applied to the board.
 LDO
     NCP1117(1A). 5V-to-3.3V LDO. (There is an alternative pin-compatible LDO — LM317DCY, with an output current of up to 1.5A). NCP1117 can provide a maximum current of 1A. The LDO solutions are available with both fixed output voltage and variable output voltage. For details please refer to `ESP-WROVER-KIT V4.1 schematic`_.
 Camera Connector
@@ -291,6 +295,8 @@ Camera / JP4
 | 18 | n/a          | PWDN / Camera Power Down     |
 +----+--------------+------------------------------+
 
+* Signals D0 .. D7 denote camera data bus
+
 
 .. _get-started-esp-wrover-kit-v4.1-rgb-led-connections:
 
@@ -367,7 +373,7 @@ Before powering up the ESP-WROVER-KIT, please make sure that the board has been 
 Initial Setup
 ^^^^^^^^^^^^^
 
-Select the source of power supply for the board by setting jumper JP7. The options are either USB port or an external power supply. For this application selection of USB port is sufficient. Enable UART communication by installing jumpers on JP2. Both selections are shown in table below.
+Select the source of power supply for the board by setting jumper JP7. The options are either **USB** port or an external **5V Input**. For this application, the selection of the ​USB port is sufficient. Enable UART communication by installing jumpers on JP2. Both selections are shown in table below. 
 
 +----------------------+----------------------+
 | Power up             | Enable UART          |
@@ -378,6 +384,7 @@ Select the source of power supply for the board by setting jumper JP7. The optio
 
 Do not install any other jumpers.
 
+Turn the **Power Switch** on. The **5V Power On LED** should turn on.
 
 Now to Development
 ^^^^^^^^^^^^^^^^^^
