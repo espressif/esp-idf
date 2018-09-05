@@ -816,6 +816,7 @@ static void emac_start(void *param)
     emac_enable_clk(true);
 
     emac_reset();
+    emac_dma_init();
 
     emac_set_macaddr_reg();
 
@@ -1155,8 +1156,8 @@ esp_err_t esp_eth_init_internal(eth_config_t *config)
     emac_rx_xMutex = xSemaphoreCreateRecursiveMutex();
     emac_tx_xMutex = xSemaphoreCreateRecursiveMutex();
     emac_xqueue = xQueueCreate(EMAC_EVT_QNUM, sizeof(emac_event_t));
-    xTaskCreate(emac_task, "emacT", 2048, NULL, EMAC_TASK_PRIORITY,
-                &emac_task_hdl);
+    xTaskCreate(emac_task, "emacT", EMAC_TASK_STACK_SIZE, NULL,
+                EMAC_TASK_PRIORITY, &emac_task_hdl);
 
     emac_enable_clk(false);
     esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, 0, emac_process_intr, NULL, NULL);

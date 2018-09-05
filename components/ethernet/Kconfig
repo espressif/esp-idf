@@ -50,4 +50,11 @@ config EMAC_TASK_PRIORITY
     help
         Ethernet MAC task priority.
 
+config EMAC_TASK_STACK_SIZE
+    int "Stack Size of EMAC Task"
+    default 3072
+    range 2000 8000
+    help
+        Stack Size of Ethernet MAC task.
+
 endmenu
