@@ -169,6 +169,19 @@ class PartitionTable(list):
         # verify each partition individually
         for p in self:
             p.verify()
+        
+        # check on duplicate name
+        names = [ p.name for p in self ]
+        duplicates = set( n for n in names if names.count(n) > 1 )
+        
+        # print sorted duplicate partitions by name
+        if len(duplicates) != 0:
+            print("A list of partitions that have the same name:")
+            for p in sorted(self, key=lambda x:x.name):
+                if len(duplicates.intersection([p.name])) != 0:
+                    print("%s" % (p.to_csv()))
+            raise InputError("Partition names must be unique")
+        
         # check for overlaps
         last = None
         for p in sorted(self, key=lambda x:x.offset):

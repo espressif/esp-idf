@@ -166,6 +166,15 @@ second, app, ota_0,  0x200000, 1M
             t = PartitionTable.from_csv(csv)
             t.verify()
 
+    def test_unique_name_fail(self):
+        csv = """
+first, app, factory, 0x100000, 1M
+first, app, ota_0,  0x200000, 1M
+"""
+        with self.assertRaisesRegexp(InputError, "Partition names must be unique"):
+            t = PartitionTable.from_csv(csv)
+            t.verify()
+            
 class BinaryOutputTests(unittest.TestCase):
     def test_binary_entry(self):
         csv = """
