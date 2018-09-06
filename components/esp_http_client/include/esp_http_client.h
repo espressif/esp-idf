@@ -77,6 +77,10 @@ typedef enum {
     HTTP_METHOD_PATCH,      /*!< HTTP PATCH Method */
     HTTP_METHOD_DELETE,     /*!< HTTP DELETE Method */
     HTTP_METHOD_HEAD,       /*!< HTTP HEAD Method */
+    HTTP_METHOD_NOTIFY,     /*!< HTTP NOTIFY Method */
+    HTTP_METHOD_SUBSCRIBE,  /*!< HTTP SUBSCRIBE Method */
+    HTTP_METHOD_UNSUBSCRIBE,/*!< HTTP UNSUBSCRIBE Method */
+    HTTP_METHOD_OPTIONS,    /*!< HTTP OPTIONS Method */
     HTTP_METHOD_MAX,
 } esp_http_client_method_t;
 
