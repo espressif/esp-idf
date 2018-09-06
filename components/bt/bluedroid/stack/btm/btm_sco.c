@@ -431,12 +431,13 @@ tBTM_STATUS BTM_WriteScoData (UINT16 sco_inx, BT_HDR *p_buf)
             /* only sent the first BTM_SCO_DATA_SIZE_MAX bytes data if more than max,
                and set warning status */
             if (p_buf->len > BTM_SCO_DATA_SIZE_MAX) {
+                BTM_TRACE_WARNING ("BTM SCO hdl %x, bad len %u", p_ccb->hci_handle, p_buf->len);
                 p_buf->len = BTM_SCO_DATA_SIZE_MAX;
                 status = BTM_SCO_BAD_LENGTH;
             }
 
             UINT8_TO_STREAM (p, (UINT8)p_buf->len);
-            BTM_TRACE_DEBUG ("BTM SCO hdl %x, len %u", p_ccb->hci_handle, p_buf->len);
+
             p_buf->len += HCI_SCO_PREAMBLE_SIZE;
 
             if (fixed_queue_length(p_ccb->xmit_data_q) < BTM_SCO_XMIT_QUEUE_THRS) {
@@ -453,7 +454,7 @@ tBTM_STATUS BTM_WriteScoData (UINT16 sco_inx, BT_HDR *p_buf)
         status = BTM_UNKNOWN_ADDR;
     }
 
-    if (status != BTM_SUCCESS && status != BTM_SCO_BAD_LENGTH) {
+    if (status != BTM_SUCCESS) {
         BTM_TRACE_WARNING ("stat %d", status);
         osi_free(p_buf);
     }
