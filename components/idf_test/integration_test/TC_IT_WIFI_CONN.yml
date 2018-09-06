@@ -51,7 +51,7 @@ test cases:
     和pwd,加密方式 t 5 错误的加密方式\n12.target2上查询 target_ssid"
   sub module: WIFI Connect
   summary: station SAP+JAP test, different encryption
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: basic function
   test point 2: SAP/JAP with different config
   version: v1 (2016-8-15)
@@ -101,7 +101,7 @@ test cases:
     6.target 2 上查询target_ssid
   sub module: WIFI Connect
   summary: station SAP+JAP test, different channel
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: basic function
   test point 2: SAP/JAP with different config
   version: v1 (2016-8-15)
@@ -150,7 +150,7 @@ test cases:
     4.target 2上scan target_ap_mac
   sub module: WIFI Connect
   summary: station SAP+JAP test, ssid hidden
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: basic function
   test point 2: SAP/JAP with different config
   version: v1 (2016-8-15)
@@ -192,7 +192,7 @@ test cases:
     4.PC WIFI CONNECT target1
   sub module: WIFI Connect
   summary: station SAP test, max allowed sta
-  test environment: SSC_T2_1
+  test environment: SSC_T2_2
   test point 1: basic function
   test point 2: SAP/JAP with different config
   version: v1 (2016-8-15)
@@ -232,7 +232,7 @@ test cases:
     4.查询target1 JAP 是DISCONN
   sub module: WIFI Connect
   summary: JAP query test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_5
   test point 1: basic function
   test point 2: query JAP status
   version: v1 (2016-8-15)
@@ -265,9 +265,92 @@ test cases:
     2.target 1上查询到跟设置AP时一致
   sub module: WIFI Connect
   summary: AP config query test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: query AP config
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_0302
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 sta -S
+    - - R SSC1 C +SCAN_DONE:OK
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - - P SSC1 C +JAP:CONNECTED
+      - P SSC1 C +SCANDONE
+  - - SSC SSC1 sta -D
+    - - R SSC1 C +QAP:OK
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - - ''
+  - - SSC SSC1 sta -S
+    - - P SSC1 C +JAP:CONNECTED
+      - P SSC1 C +SCANDONE
+  execution time: 0.0
+  expected result: |
+    2. scan succeed, JAP succeed
+    5. JAP succeed, scan succeed
+  initial condition: STAM1
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. target 1 STA join AP
+    2. target 1 STA scan before JAP succeed
+    3. target 1 quite AP
+    4. target 1 scan
+    5. target 1 JAP before scan succeed
+  sub module: WIFI Connect
+  summary: JAP during scan
+  test environment: SSC_T1_5
+  test point 1: interaction
+  test point 2: Conn interact with other WiFi operation
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_0302
+  SDK: |-
+    ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 sta -S
+    - - R SSC1 C +SCAN_DONE:OK
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - - P SSC1 C +JAP:CONNECTED
+      - P SSC1 C +SCANFAIL
+  - - SSC SSC1 sta -D
+    - - R SSC1 C +QAP:OK
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - - ''
+  - - SSC SSC1 sta -S
+    - - P SSC1 C +JAP:CONNECTED
+      - P SSC1 C +SCAN:ERROR
+  execution time: 0.0
+  expected result: |
+    2. scan failed, JAP succeed
+    5. JAP succeed, scan failed
+  initial condition: STAM1
+  level: Integration
+  module: WIFI MAC
+  steps: |
+    1. target 1 STA join AP
+    2. target 1 STA scan before JAP succeed
+    3. target 1 quite AP
+    4. target 1 scan
+    5. target 1 JAP before scan succeed
+  sub module: WIFI Connect
+  summary: JAP during scan
+  test environment: SSC_T1_5
+  test point 1: interaction
+  test point 2: Conn interact with other WiFi operation
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
   ID: WIFI_CONN_0401
@@ -319,7 +402,7 @@ test cases:
     7.系统重启后target1 自动重连AP
   sub module: WIFI Connect
   summary: auto reconnect test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_5
   test point 1: basic function
   test point 2: power on auto reconnect test
   version: v1 (2016-8-15)
@@ -383,7 +466,7 @@ test cases:
     修改mode 为sta mode\n9.等待15s，target1 修改mode 为softAP mode"
   sub module: WIFI Connect
   summary: reconnect policy test
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: basic function
   test point 2: reconnect policy test
   version: v1 (2016-8-15)
@@ -438,7 +521,7 @@ test cases:
     6.target2 断开target1 连接
   sub module: WIFI Connect
   summary: will not do reconnect after manually disconnected
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: abnormal/special use
   test point 2: reconnect policy test
   version: v1 (2016-8-15)
@@ -528,7 +611,7 @@ test cases:
     4.查询到两个sta 连接到target1 上
   sub module: WIFI Connect
   summary: list stations connected to soft ap test
-  test environment: SSC_T2_1
+  test environment: SSC_T2_2
   test point 1: basic function
   test point 2: list SoftAP connected station
   version: v1 (2016-8-15)
@@ -686,7 +769,7 @@ test cases:
     6. set target1 softap auth mode 0, wait sta connected
   sub module: WIFI Connect
   summary: test auth change event
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: basic function
   test point 2: wifi auth changed event test
   version: v1 (2016-8-15)
@@ -828,7 +911,7 @@ test cases:
     5. target2 connect to target1 with correct password
   sub module: WIFI Connect
   summary: test wifi disconnect reason REASON_ASSOC_TOOMANY, REASON_HANDSHAKE_TIMEOUT
-  test environment: SSC_T2_1
+  test environment: SSC_T2_2
   test point 1: basic function
   test point 2: wifi disconnect reason test
   version: v1 (2016-8-15)
@@ -892,7 +975,7 @@ test cases:
     4. check heap size
   sub module: WIFI Connect
   summary: wifi start and stop, heap size unchanged
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: wifi start and stop, heap size unchanged
   version: v1 (2016-12-31)
@@ -917,7 +1000,7 @@ test cases:
     1. sta connect
   sub module: WIFI Connect
   summary: sta connect after WiFi stop
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: use WiFi API after WiFi stop
   version: v1 (2016-12-31)
@@ -946,7 +1029,7 @@ test cases:
     2. query sta state
   sub module: WIFI Connect
   summary: sta reconnect start and connect fail after WiFi stop
-  test environment: SSC_T1_1
+  test environment: SSC_T1_5
   test point 1: basic function
   test point 2: use WiFi API after WiFi stop
   version: v1 (2016-12-31)
@@ -971,7 +1054,7 @@ test cases:
     1. sta disconnect
   sub module: WIFI Connect
   summary: station disconnect after WiFi stop
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: use WiFi API after WiFi stop
   version: v1 (2016-12-31)
@@ -996,7 +1079,7 @@ test cases:
     1. query sta state
   sub module: WIFI Connect
   summary: query sta state after WiFi stop
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: use WiFi API after WiFi stop
   version: v1 (2016-12-31)
@@ -1021,7 +1104,7 @@ test cases:
     1. sta scan ssid and pwd
   sub module: WIFI Connect
   summary: sta scan after WiFi stop
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: use WiFi API after WiFi stop
   version: v1 (2016-12-31)
@@ -1046,7 +1129,7 @@ test cases:
     1. ap connect ssid and pwd
   sub module: WIFI Connect
   summary: ap connect after WiFi stop
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: use WiFi API after WiFi stop
   version: v1 (2016-12-31)
@@ -1071,7 +1154,7 @@ test cases:
     1. ap disconnect
   sub module: WIFI Connect
   summary: ap disconnect after WiFi stop
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: use WiFi API after WiFi stop
   version: v1 (2016-12-31)
@@ -1096,7 +1179,7 @@ test cases:
     1. ap list station
   sub module: WIFI Connect
   summary: ap list station after WiFi stop
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: use WiFi API after WiFi stop
   version: v1 (2016-12-31)
@@ -1121,7 +1204,7 @@ test cases:
     1. query ap config
   sub module: WIFI Connect
   summary: query ap config after WiFi stop
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: use WiFi API after WiFi stop
   version: v1 (2016-12-31)
@@ -1158,7 +1241,7 @@ test cases:
     4. ap set ssid and pwd
   sub module: WIFI Connect
   summary: ap set ssid and pwd after WiFi stop
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: use WiFi API after WiFi stop
   version: v1 (2016-12-31)
@@ -1183,7 +1266,7 @@ test cases:
     1. query mac
   sub module: WIFI Connect
   summary: query mac after WiFi stop
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: use WiFi API after WiFi stop
   version: v1 (2016-12-31)
@@ -1215,8 +1298,8 @@ test cases:
     2. set ap mac
     3. set station mac
   sub module: WIFI Connect
-  summary: set mac after WiFi stop
-  test environment: SSC_T1_1
+  summary: enable AP mode after WiFi stop and set AP mac
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: use WiFi API after WiFi stop
   version: v1 (2016-12-31)
@@ -1248,8 +1331,8 @@ test cases:
     2. set station mac
     3. query station mac
   sub module: WIFI Connect
-  summary: query mac after WiFi stop
-  test environment: SSC_T1_1
+  summary: enable STA mode after WiFi stop and set STA mac
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: use WiFi API after WiFi stop
   version: v1 (2016-12-31)
@@ -1281,8 +1364,8 @@ test cases:
     2. set station mac
     3. set ap mac
   sub module: WIFI Connect
-  summary: set mac after WiFi stop
-  test environment: SSC_T1_1
+  summary: enable STA mode after WiFi stop and set AP mac
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: use WiFi API after WiFi stop
   version: v1 (2016-12-31)
@@ -1307,7 +1390,7 @@ test cases:
     1. set channel
   sub module: WIFI Connect
   summary: set channel after WiFi stop
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: use WiFi API after WiFi stop
   version: v1 (2016-12-31)
@@ -1336,7 +1419,7 @@ test cases:
     2. query channel
   sub module: WIFI Connect
   summary: query channel after WiFi stop
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: use WiFi API after WiFi stop
   version: v1 (2016-12-31)
@@ -1361,7 +1444,7 @@ test cases:
     1. query current mode
   sub module: WIFI Connect
   summary: be AP mode after WiFi stop
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: use WiFi API after WiFi stop
   version: v1 (2016-12-31)
@@ -1386,7 +1469,7 @@ test cases:
     1. set STA mode
   sub module: WIFI Connect
   summary: set STA mode after WiFi stop
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: use WiFi API after WiFi stop
   version: v1 (2016-12-31)
@@ -1411,7 +1494,7 @@ test cases:
     1. set AP mode
   sub module: WIFI Connect
   summary: set ap mode after WiFi stop
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: use WiFi API after WiFi stop
   version: v1 (2016-12-31)
@@ -1448,7 +1531,7 @@ test cases:
     4. wifi stop
   sub module: WIFI Connect
   summary: incorrect deinit stop flow
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: WiFi deinit and stop
   version: v1 (2016-12-31)
@@ -1485,7 +1568,7 @@ test cases:
     4. wifi stop
   sub module: WIFI Connect
   summary: incorrect deinit start flow
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: WiFi deinit and start
   version: v1 (2016-12-31)
@@ -1537,8 +1620,8 @@ test cases:
     7. wifi deinit
     8. wifi start
   sub module: WIFI Connect
-  summary: incorrect deinit stop flow
-  test environment: SSC_T1_1
+  summary: incorrect init start flow
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: WiFi deinit and stop
   version: v1 (2016-12-31)
@@ -1782,7 +1865,7 @@ test cases:
     2. 1 SSC connect with AP
     3. check connection status within 24 hours
   sub module: WIFI Connect
-  summary: connection stable
+  summary: WiFi STA connection stable test
   test environment: SSC_T1_1
   test point 1: stress + function
   test point 2: connection keep alive stress test
@@ -1819,7 +1902,7 @@ test cases:
     3. SSC stop send pkt
     4. SSC connect ap
   sub module: WIFI Connect
-  summary: connection stable
+  summary: Switch channel when sending WiFi packets
   test environment: SSC_T1_1
   test point 1: stress
   test point 2: connect ap
@@ -1965,8 +2048,65 @@ test cases:
   module: WIFI MAC
   steps: 1. set sta mode 2. disconnect sta 3. sta connect ap
   sub module: WIFI Connect
-  summary: sta connect ap
+  summary: STA connect to AP compatibility test
   test environment: SSC_T1_IOT1
   test point 1: Compatibility Test test point
   test point 2: WIFI compatibility test
+  version: v1 (2016-10-23)
+- CI ready: 'No'
+  ID: WIFI_CONN_0704
+  SDK: All
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 sta -C -s <wep_ap_ssid> -p <wep_ap_password>
+    - - R SSC1 C +JAP:OK
+      - R SSC1 NC +JAPAUTHCHANGED C +JAP:CONNECTED
+  execution time: 0
+  expected result: 1. sta connect ap suc and no +JAPAUTHCHANGED found
+  initial condition: STAM1
+  level: Integration
+  module: WIFI MAC
+  steps: 1. sta JAP
+  sub module: WIFI Connect
+  summary: sta connect wep encrypt ap
+  test environment: SSC_T1_WEP
+  test point 1: basic function
+  test point 2: ap connect test
+  version: v1 (2016-10-23)
+- CI ready: 'No'
+  ID: WIFI_CONN_9902
+  SDK: All
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Performance
+  cmd set:
+  - WiFiStress/WifiStaConnectionHolder
+  - - test_count = 10
+    - - ''
+  - - retry_count = 1
+    - - ''
+  execution time: 1
+  expected result: |-
+    1. set SSC1 AP+STA mode, SSC2 AP mode, SSC3 STA mode
+    2. SSC3 connect SSC1
+    3. SSC2 random set ap channel
+    4. SSC1 connect SSC2
+  initial condition: T3_1
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1. set mode suc
+    2. connect suc
+    3. set channel suc
+    4. connect suc
+  sub module: WIFI Connect
+  summary: STA keep connected with AP stable test
+  test environment: SSC_T3_1
+  test point 1: AP switch channel dut Connection holder Test test point
+  test point 2: WIFI Connection holder test
   version: v1 (2016-10-23)

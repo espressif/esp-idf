@@ -418,12 +418,7 @@ test_idf_monitor:
     expire_in: 1 week
   script:
     - cd ${IDF_PATH}/tools/test_idf_monitor
-    - source /opt/pyenv/activate
-    - pyenv global 2.7.15
-    - ./run_test_idf_monitor.py
-    - pyenv global 3.4.8
-    - ./run_test_idf_monitor.py
-    - pyenv global system
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./run_test_idf_monitor.py
 
 test_idf_size:
   <<: *host_test_template
@@ -435,12 +430,7 @@ test_idf_size:
     expire_in: 1 week
   script:
     - cd ${IDF_PATH}/tools/test_idf_size
-    - source /opt/pyenv/activate
-    - pyenv global 2.7.15
-    - ./test.sh
-    - pyenv global 3.4.8
-    - ./test.sh
-    - pyenv global system
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test.sh
 
 test_esp_err_to_name_on_host:
   <<: *host_test_template
@@ -450,15 +440,11 @@ test_esp_err_to_name_on_host:
       - components/esp32/esp_err_to_name.c
     expire_in: 1 week
   script:
-    - cd tools/
-    - source /opt/pyenv/activate
-    - pyenv global 2.7.15
-    - ./gen_esp_err_to_name.py
+    - cd ${IDF_PATH}/tools/
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 2.7.15 ./gen_esp_err_to_name.py
     - git diff --exit-code -- ../components/esp32/esp_err_to_name.c || (echo 'Differences found. Please run gen_esp_err_to_name.py and commit the changes.'; exit 1)
-    - pyenv global 3.4.8
-    - ./gen_esp_err_to_name.py
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 ./gen_esp_err_to_name.py
     - git diff --exit-code -- ../components/esp32/esp_err_to_name.c || (echo 'Differences found between running under Python 2 and 3.'; exit 1)
-    - pyenv global system
 
 push_to_github:
   stage: deploy
@@ -481,9 +467,7 @@ push_to_github:
     - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
     - git remote remove github &>/dev/null || true
     - git remote add github git@github.com:espressif/esp-idf.git
-    # Need separate push commands for tag builds and for branch builds
-    - "[ -n \"${CI_COMMIT_TAG}\" ] && git push github ${CI_COMMIT_TAG}"
-    - "[ -z \"${CI_COMMIT_TAG}\" ] && git push github ${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"
+    - tools/ci/push_to_github.sh
 
 deploy_docs:
   stage: host_test
@@ -926,7 +910,7 @@ UT_001_25:
   tags:
     - ESP32_IDF
     - UT_T1_1
-    
+
 UT_001_26:
   <<: *unit_test_template
   tags:
@@ -962,7 +946,7 @@ UT_001_31:
   tags:
     - ESP32_IDF
     - UT_T1_1
-    
+
 UT_001_32:
   <<: *unit_test_template
   tags:
@@ -974,7 +958,7 @@ UT_001_33:
   tags:
     - ESP32_IDF
     - UT_T1_1
-    
+
 UT_001_34:
   <<: *unit_test_template
   tags:
@@ -1098,14 +1082,14 @@ UT_004_10:
     - ESP32_IDF
     - UT_T1_1
     - psram
-    
+
 UT_004_11:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_1
     - psram
-    
+
 UT_005_01:
   <<: *unit_test_template
   tags:
@@ -1248,55 +1232,19 @@ IT_001_01:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T1_1
+    - SSC_T1_4
 
 IT_001_02:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T1_1
+    - SSC_T1_4
 
 IT_001_03:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T1_1
-
-IT_001_04:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T1_1
-
-IT_001_05:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T1_1
-
-IT_001_06:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T1_1
-
-IT_001_07:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T1_1
-
-IT_001_08:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T1_1
-
-IT_001_09:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T1_1
+    - SSC_T1_4
 
 IT_002_01:
   <<: *test_template
@@ -1308,85 +1256,79 @@ IT_003_01:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_02:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_03:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_04:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_05:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_06:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_07:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_08:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_09:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_10:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_11:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_12:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_13:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
-
-IT_003_14:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_004_01:
   <<: *test_template
@@ -1398,7 +1340,61 @@ IT_005_01:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T1_WEP
+    - SSC_T1_5
+
+IT_005_02:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_5
+
+IT_006_01:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_6
+
+IT_006_02:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_6
+
+IT_006_03:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_6
+
+IT_006_04:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_6
+
+IT_006_05:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_6
+
+IT_007_01:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_7
+
+IT_007_02:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_7
+
+IT_008_01:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_8
 
 IT_009_01:
   <<: *test_template
@@ -1418,58 +1414,32 @@ IT_011_01:
     - ESP32_IDF
     - SSC_T50_1
 
-IT_501_01:
+IT_012_01:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T1_1
-    - stress_test
+    - SSC_T1_9
 
-IT_501_02:
+IT_013_01:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T1_1
-    - stress_test
+    - SSC_T2_2
 
-IT_501_03:
+IT_013_02:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T1_1
-    - stress_test
+    - SSC_T2_2
 
-IT_502_01:
+IT_014_01:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
-    - stress_test
+    - SSC_T2_3
 
-IT_502_02:
+IT_015_01:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
-    - stress_test
-
-IT_503_01:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T5_1
-    - stress_test
-
-IT_503_02:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T5_1
-    - stress_test
-
-IT_503_03:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T5_1
-    - stress_test
+    - SSC_T2_4

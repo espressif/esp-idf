@@ -25,7 +25,7 @@ def test_get_handler(ip, port, verbosity = False):
     verbose_print(verbosity, "========  GET HANDLER TEST =============")
     # Establish HTTP connection
     verbose_print(verbosity, "Connecting to => " + ip + ":" + port)
-    sess = httplib.HTTPConnection(ip + ":" + port)
+    sess = httplib.HTTPConnection(ip + ":" + port, timeout = 15)
 
     uri = "/hello?query1=value1&query2=value2&query3=value3"
     # GET hello response
@@ -62,7 +62,7 @@ def test_post_handler(ip, port, msg, verbosity = False):
     verbose_print(verbosity, "========  POST HANDLER TEST ============")
     # Establish HTTP connection
     verbose_print(verbosity, "Connecting to => " + ip + ":" + port)
-    sess = httplib.HTTPConnection(ip + ":" + port)
+    sess = httplib.HTTPConnection(ip + ":" + port, timeout = 15)
 
     # POST message to /echo and get back response
     sess.request("POST", url="/echo", body=msg)
@@ -81,7 +81,7 @@ def test_put_handler(ip, port, verbosity = False):
     verbose_print(verbosity, "========  PUT HANDLER TEST =============")
     # Establish HTTP connection
     verbose_print(verbosity, "Connecting to => " + ip + ":" + port)
-    sess = httplib.HTTPConnection(ip + ":" + port)
+    sess = httplib.HTTPConnection(ip + ":" + port, timeout = 15)
 
     # PUT message to /ctrl to disable /hello URI handler
     verbose_print(verbosity, "Disabling /hello handler")
@@ -113,7 +113,7 @@ def test_custom_uri_query(ip, port, query, verbosity = False):
     verbose_print(verbosity, "========  GET HANDLER TEST =============")
     # Establish HTTP connection
     verbose_print(verbosity, "Connecting to => " + ip + ":" + port)
-    sess = httplib.HTTPConnection(ip + ":" + port)
+    sess = httplib.HTTPConnection(ip + ":" + port, timeout = 15)
 
     uri = "/hello?" + query
     # GET hello response

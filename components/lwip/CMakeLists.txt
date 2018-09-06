@@ -1,41 +1,37 @@
 set(COMPONENT_ADD_INCLUDEDIRS
-    include/lwip
-    include/lwip/port
-    include/lwip/posix
-    apps/ping
+    include/apps
+    lwip/src/include
+    port/esp32/include
+    port/esp32/include/arch
+    )
+
+set(COMPONENT_SRCDIRS
+    apps/dhcpserver
+	apps/ping
+	lwip/src/api
+	lwip/src/apps/sntp
+	lwip/src/core
+	lwip/src/core/ipv4
+	lwip/src/core/ipv6
+	lwip/src/netif
+	lwip/src/netif/ppp
+	port/esp32
+	port/esp32/freertos
+	port/esp32/netif
+	port/esp32/debug
     )
 
 if(CONFIG_PPP_SUPPORT)
-    set(LWIP_PPP_DIRS netif/ppp/polarssl netif/ppp)
+    list(APPEND COMPONENT_SRCDIRS
+        lwip/src/netif/ppp
+        lwip/src/netif/ppp/polarssl
+        )
 endif()
-
-set(COMPONENT_SRCDIRS
-    api
-    apps apps/sntp apps/ping
-    core core/ipv4 core/ipv6
-    ${LWIP_PPP_DIRS} netif
-    port/freertos port/netif port/debug port)
 
 set(COMPONENT_REQUIRES vfs)
 set(COMPONENT_PRIV_REQUIRES ethernet tcpip_adapter)
 
 register_component()
 
+# lots of LWIP source files evaluate macros that check address of stack variables
 component_compile_options(-Wno-address)
-
-# patch around warnings in third-party files
-set_source_files_properties(api/tcpip.c
-    PROPERTIES COMPILE_FLAGS
-    -Wno-unused-variable
-    )
-set_source_files_properties(core/pbuf.c core/tcp_in.c
-    PROPERTIES COMPILE_FLAGS
-    -Wno-unused-but-set-variable
-    )
-set_source_files_properties(apps/dhcpserver.c
-    PROPERTIES COMPILE_FLAGS
-    "-Wno-unused-variable -Wno-unused-but-set-variable -Wno-type-limits"
-    )
-set_source_files_properties(netif/ppp/pppos.c
-    PROPERTIES COMPILE_FLAGS
-    -Wno-type-limits)

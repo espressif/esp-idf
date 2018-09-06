@@ -17,8 +17,8 @@
 test cases:
 - ID: BTSTK_MISC_0101
   <<: *MISC_CASE
-  test point 2: bt init and enable
-  summary: correct init and deinit flow
+  test point 2: bt host init and enable
+  summary: correct host init and deinit flow
   steps: |
     1. disable and deinit bt
     2. init bt
@@ -45,8 +45,8 @@ test cases:
     - ["R SSC1 C +BT:OK"]
 - ID: BTSTK_MISC_0102
   <<: *MISC_CASE
-  test point 2: bt init and enable
-  summary: incorrect deinit disable flow
+  test point 2: bt host init and enable
+  summary: incorrect host deinit disable flow
   steps: |
     1. disable and deinit bt
     2. init and enable bt
@@ -85,8 +85,8 @@ test cases:
     - ["R SSC1 C +BT:ERROR"]
 - ID: BTSTK_MISC_0103
   <<: *MISC_CASE
-  test point 2: bt init and enable
-  summary: incorrect init enable flow
+  test point 2: bt host init and enable
+  summary: incorrect host init enable flow
   steps: |
     1. disable and deinit bt
     2. enable bt
@@ -247,7 +247,7 @@ test cases:
 - ID: BTSTK_MISC_0401
   <<: *MISC_CASE
   test point 2: bt controller init and enable
-  summary: incorrect init enable flow
+  summary: incorrect controller init enable flow
   steps: |
     1. disable and deinit btc
     2. enable btc
@@ -284,7 +284,7 @@ test cases:
 - ID: BTSTK_MISC_0402
   <<: *MISC_CASE
   test point 2: bt controller init and enable
-  summary: correct init and deinit flow
+  summary: correct controller init and deinit flow
   steps: |
     1. disable and deinit btc
     2. init btc
@@ -312,7 +312,7 @@ test cases:
 - ID: BTSTK_MISC_0403
   <<: *MISC_CASE
   test point 2: bt controller init and enable
-  summary: incorrect deinit disable flow
+  summary: incorrect controller deinit disable flow
   steps: |
     1. disable and deinit btc
     2. init and enable btc

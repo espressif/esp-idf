@@ -42,14 +42,14 @@
 
 #if LWIP_IPV4 && LWIP_RAW /* don't build if not configured for use in lwipopts.h */
 
-#include "ping.h"
+#include "ping/ping.h"
 
 #include "lwip/mem.h"
 #include "lwip/raw.h"
 #include "lwip/icmp.h"
 #include "lwip/netif.h"
 #include "lwip/sys.h"
-#include "lwip/timers.h"
+#include "lwip/timeouts.h"
 #include "lwip/inet_chksum.h"
 
 #if PING_USE_SOCKETS
@@ -58,7 +58,7 @@
 #endif /* PING_USE_SOCKETS */
 
 #ifdef ESP_PING
-#include "esp_ping.h"
+#include "ping/esp_ping.h"
 #include "lwip/ip_addr.h"
 #endif
 /**
@@ -155,7 +155,7 @@ ping_send(int s, ip_addr_t *addr)
 
   to.sin_len = sizeof(to);
   to.sin_family = AF_INET;
-  inet_addr_from_ipaddr(&to.sin_addr, ip_2_ip4(addr));
+  inet_addr_from_ip4addr(&to.sin_addr, ip_2_ip4(addr));
 
   err = sendto(s, iecho, ping_size, 0, (struct sockaddr*)&to, sizeof(to));
 
@@ -182,7 +182,7 @@ ping_recv(int s)
         LWIP_DEBUGF( PING_DEBUG, ("ping: invalid sin_family\n"));
       } else {
         ip4_addr_t fromaddr;
-        inet_addr_to_ipaddr(&fromaddr, &from.sin_addr);
+        inet_addr_to_ip4addr(&fromaddr, &from.sin_addr);
         iphdr = (struct ip_hdr *)buf;
         iecho = (struct icmp_echo_hdr *)(buf + (IPH_HL(iphdr) * 4));
  

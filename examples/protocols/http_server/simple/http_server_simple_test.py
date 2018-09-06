@@ -56,8 +56,8 @@ def test_examples_protocol_http_server_simple(env, extra_data):
 
     # Parse IP address of STA
     print "Waiting to connect with AP"
-    got_ip   = dut1.expect(re.compile(r"(?:[\s\S]*)Got IP: (\d+.\d+.\d+.\d+)"), timeout=120)[0]
-    got_port = dut1.expect(re.compile(r"(?:[\s\S]*)Starting server on port: (\d+)"), timeout=30)[0]
+    got_ip   = dut1.expect(re.compile(r"(?:[\s\S]*)Got IP: '(\d+.\d+.\d+.\d+)'"), timeout=120)[0]
+    got_port = dut1.expect(re.compile(r"(?:[\s\S]*)Starting server on port: '(\d+)'"), timeout=30)[0]
 
     print "Got IP   : " + got_ip
     print "Got Port : " + got_port

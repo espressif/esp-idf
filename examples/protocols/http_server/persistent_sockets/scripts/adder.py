@@ -18,7 +18,7 @@ import httplib
 import argparse
 
 def start_session (ip, port):
-    return httplib.HTTPConnection(ip, int(port))
+    return httplib.HTTPConnection(ip, int(port), timeout=15)
 
 def end_session (conn):
     conn.close()

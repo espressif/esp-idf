@@ -4,6 +4,9 @@
 #if __has_include("soc/soc.h")
 #include "soc/soc.h"
 #endif
+#if __has_include("apps/ping/esp_ping.h")
+#include "apps/ping/esp_ping.h"
+#endif
 #if __has_include("esp32/ulp.h")
 #include "esp32/ulp.h"
 #endif
@@ -24,9 +27,6 @@
 #endif
 #if __has_include("esp_ota_ops.h")
 #include "esp_ota_ops.h"
-#endif
-#if __has_include("esp_ping.h")
-#include "esp_ping.h"
 #endif
 #if __has_include("esp_spi_flash.h")
 #include "esp_spi_flash.h"
@@ -399,7 +399,7 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_TCPIP_ADAPTER_DHCP_NOT_STOPPED
     ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_DHCP_NOT_STOPPED),     /* 20487 0x5007 */
 #   endif
-    // components/lwip/apps/ping/esp_ping.h
+    // components/lwip/include/apps/ping/esp_ping.h
 #   ifdef      ESP_ERR_PING_BASE
     ERR_TBL_IT(ESP_ERR_PING_BASE),                          /* 24576 0x6000 */
 #   endif

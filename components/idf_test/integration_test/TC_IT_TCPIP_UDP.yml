@@ -35,7 +35,7 @@ test cases:
     4.target1上创建TCP socket3, target_udp_port1
   sub module: UDP
   summary: STA mode, udp bind test. use different ip, port
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: use UDP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -81,7 +81,7 @@ test cases:
     5.target1上使用步骤3创建的socket1，往pc_ip2，test_tcp_port2上发送10字节数据
   sub module: UDP
   summary: STA mode, sendto test. use different ip, port
-  test environment: SSC_T1_1
+  test environment: SSC_T1_9
   test point 1: basic function
   test point 2: use UDP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -132,7 +132,7 @@ test cases:
     6.target1上使用步骤2创建的socket1，往pc_ip，test_tcp_port1上发送1472*10字节数据
   sub module: UDP
   summary: STA mode, sendto test with different length
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: use UDP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -176,7 +176,7 @@ test cases:
     5.target1上使用步骤2创建的socket1，往pc_ip，test_tcp_port1上发送1473字节数据
   sub module: UDP
   summary: STA mode, sendto test with different length
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: use UDP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -229,7 +229,7 @@ test cases:
     7.PC往8266上发送1472字节数据
   sub module: UDP
   summary: STA mode, recvfrom basic test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_9
   test point 1: basic function
   test point 2: use UDP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -261,7 +261,7 @@ test cases:
     2.关闭socket1
   sub module: UDP
   summary: STA mode, close UDP sockets test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: use UDP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -305,7 +305,7 @@ test cases:
     5.target1上UDP传输，Bind socket5,本地ip target_udp_port5
   sub module: UDP
   summary: STA mode, create max udp socket test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: use UDP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -336,8 +336,8 @@ test cases:
     1.target1上UDP传输，Bind socket1,本地ip target_udp_port1
     2.target1上查询创建socket信息
   sub module: UDP
-  summary: STA mode, get active socket info test
-  test environment: SSC_T1_1
+  summary: STA mode, UDP get active socket info test
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: use UDP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -377,7 +377,7 @@ test cases:
     4.target1上创建TCP socket3, target_udp_port1
   sub module: UDP
   summary: AP mode, udp bind test. use different ip, port
-  test environment: SSC_T1_1
+  test environment: SSC_T1_8
   test point 1: basic function
   test point 2: use UDP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -430,7 +430,7 @@ test cases:
     5.target1上使用步骤3创建的socket1，往pc_ip2，test_tcp_port2上发送10字节数据
   sub module: UDP
   summary: AP mode, sendto test. use different ip, port
-  test environment: SSC_T2_1
+  test environment: SSC_T2_2
   test point 1: basic function
   test point 2: use UDP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -482,7 +482,7 @@ test cases:
     6.target1上使用步骤2创建的socket1，往pc_ip，test_tcp_port1上发送1472*10字节数据
   sub module: UDP
   summary: AP mode, sendto test with different length
-  test environment: SSC_T1_1
+  test environment: SSC_T1_7
   test point 1: basic function
   test point 2: use UDP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -526,7 +526,7 @@ test cases:
     5.target1上使用步骤2创建的socket1，往pc_ip，test_tcp_port1上发送1473字节数据
   sub module: UDP
   summary: AP mode, sendto test with different length
-  test environment: SSC_T1_1
+  test environment: SSC_T1_7
   test point 1: basic function
   test point 2: use UDP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -583,7 +583,7 @@ test cases:
     7.PC往8266上发送1472字节数据
   sub module: UDP
   summary: AP mode, recvfrom basic test
-  test environment: SSC_T2_1
+  test environment: SSC_T2_2
   test point 1: basic function
   test point 2: use UDP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -615,7 +615,7 @@ test cases:
     2.关闭socket1
   sub module: UDP
   summary: AP mode, close UDP sockets test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_8
   test point 1: basic function
   test point 2: use UDP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -659,7 +659,7 @@ test cases:
     5.target1上UDP传输，Bind socket5,本地ip target_udp_port5
   sub module: UDP
   summary: AP mode, create max udp socket test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_8
   test point 1: basic function
   test point 2: use UDP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -690,8 +690,8 @@ test cases:
     1.target1上UDP传输，Bind socket1,本地ip target_udp_port1
     2.target1上查询创建socket信息
   sub module: UDP
-  summary: AP mode, get active socket info test
-  test environment: SSC_T1_1
+  summary: AP mode, UDP get active socket info test
+  test environment: SSC_T1_8
   test point 1: basic function
   test point 2: use UDP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -744,8 +744,8 @@ test cases:
     7.PC往8266上发送1472字节数据
     8.PC往8266上发送1472字节数据
   sub module: UDP
-  summary: STA mode, recv buffer test
-  test environment: SSC_T1_1
+  summary: STA mode, UDP recv buffer test
+  test environment: SSC_T1_6
   test point 1: abnormal/special use
   test point 2: use UDP SAP (socket/espconn API) in different state
   version: v2 (2016-10-19)
@@ -800,8 +800,8 @@ test cases:
     7.PC往8266上发送1472字节数据
     8.PC往8266上发送1472字节数据
   sub module: UDP
-  summary: AP mode, recv buffer test
-  test environment: SSC_T1_1
+  summary: AP mode, UDP recv buffer test
+  test environment: SSC_T1_7
   test point 1: abnormal/special use
   test point 2: use UDP SAP (socket/espconn API) in different state
   version: v2 (2016-10-19)
@@ -846,7 +846,7 @@ test cases:
     5.target1上使用步骤2创建的socket1，往pc_ip，test_tcp_port1上发送5字节数据
   sub module: UDP
   summary: do UDP send after WIFI disconnected
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: abnormal/special use
   test point 2: UDP handling abnormal event
   version: v1 (2016-8-15)
@@ -891,7 +891,7 @@ test cases:
     5.关闭建立的socket1连接
   sub module: UDP
   summary: "close UDP  socket after WIFI \ndisconnected"
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: abnormal/special use
   test point 2: UDP handling abnormal event
   version: v1 (2016-8-15)
@@ -933,7 +933,7 @@ test cases:
     mode \n5.8266往PC上发送5字节数据"
   sub module: UDP
   summary: do UDP  send after mode changed
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: abnormal/special use
   test point 2: UDP handling abnormal event
   version: v1 (2016-8-15)
@@ -975,7 +975,7 @@ test cases:
     mode \n5.关闭建立的socket1连接"
   sub module: UDP
   summary: close UDP  socket after mode changed
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: abnormal/special use
   test point 2: UDP handling abnormal event
   version: v1 (2016-8-15)
@@ -1017,7 +1017,7 @@ test cases:
     \n5.关闭建立的socket1连接"
   sub module: UDP
   summary: close UDP socket after PC NIC disabled
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: abnormal/special use
   test point 2: UDP handling abnormal event
   version: v1 (2016-8-15)
@@ -1065,7 +1065,7 @@ test cases:
     1\n5.设置sta ip \n6.查询sta ip 地址是否生效\n7.8266往PC上发送5字节数据"
   sub module: UDP
   summary: do UDP send after IP changed
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: abnormal/special use
   test point 2: UDP handling abnormal event
   version: v1 (2016-8-15)
@@ -1113,7 +1113,7 @@ test cases:
     1\n5.设置sta ip \n6.查询sta ip 地址是否生效\n7.关闭建立的socket1连接"
   sub module: UDP
   summary: close UDP  socket after IP changed
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: abnormal/special use
   test point 2: UDP handling abnormal event
   version: v1 (2016-8-15)
@@ -1144,7 +1144,7 @@ test cases:
     2.target1上创建UDP socket,bind test_udp_port1
   sub module: UDP
   summary: Test socket with so_reuseaddr option closed on UDP submodule
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket test with different option
   version: v1 (2016-8-15)
@@ -1176,7 +1176,7 @@ test cases:
   sub module: UDP
   summary: Test socket with so_reuseaddr option opened that build two udp sockets
     by binding same port on ESP32
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket test with different option
   version: v1 (2016-8-15)
@@ -1209,7 +1209,7 @@ test cases:
   sub module: UDP
   summary: Test socket with so_reuseaddr option opened that build two udp sockets
     by binding same port on 8266_RTOS
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket test with different option
   version: v1 (2016-8-15)
@@ -1248,7 +1248,7 @@ test cases:
     3. do send/recv on all udp
   sub module: UDP
   summary: UDP send/recv stress test
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: stress
   test point 2: UDP stress test
   version: v2 (2016-11-15)
@@ -1285,7 +1285,7 @@ test cases:
     2. create UDP and recv data for several seconds
   sub module: UDP
   summary: UDP loss rate on DUT Rx
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: Performance test
   test point 2: UDP stress test
   version: v1 (2016-10-18)
@@ -1322,7 +1322,7 @@ test cases:
     2. create UDP and recv data for several seconds
   sub module: UDP
   summary: UDP loss rate on DUT Tx
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: Performance test
   test point 2: UDP stress test
   version: v1 (2016-10-18)
@@ -1337,7 +1337,7 @@ test cases:
   category: Stress
   cmd set:
   - UDPStress/UDPBroadcast
-  - - test_time = 0.2
+  - - test_time = 30
     - - dummy
   - - send_len = 20
     - - ''
@@ -1359,7 +1359,7 @@ test cases:
     2. create UDP and recv data for several seconds
   sub module: UDP
   summary: UDP broadcase loss rate on DUT Rx
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: Performance test
   test point 2: UDP stress test
   version: v1 (2016-10-18)
@@ -1480,7 +1480,7 @@ test cases:
   sub module: UDP
   summary: STA connect to softAP, STA send UDP to softAP, calculate the UDP lose on
     softAP
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: Performance test
   test point 2: UDP stress test
   version: v1 (2016-10-18)
@@ -1520,7 +1520,7 @@ test cases:
   sub module: UDP
   summary: STA connect to softAP, softAP send UDP to STA, calculate the UDP lose on
     STA
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: Performance test
   test point 2: UDP stress test
   version: v1 (2016-10-18)
@@ -1634,7 +1634,7 @@ test cases:
     Loop for step 1-2
   sub module: UDP
   summary: UDP throughput Tx for Ethernet
-  test environment: SSC_T1_1
+  test environment: ETH_T1_1
   test point 1: stress
   test point 2: UDP stress test
   version: v1 (2016-8-15)
@@ -1672,7 +1672,7 @@ test cases:
     Loop for step 1-2
   sub module: UDP
   summary: UDP throughput Rx for Ethernet
-  test environment: SSC_T1_1
+  test environment: ETH_T1_1
   test point 1: stress
   test point 2: UDP stress test
   version: v1 (2016-8-15)
@@ -1710,7 +1710,7 @@ test cases:
     3. DUT calculate the packet lose rate
   sub module: UDP
   summary: UDP loss rate on DUT Rx for Eth
-  test environment: SSC_T1_1
+  test environment: ETH_T1_1
   test point 1: Performance test
   test point 2: UDP stress test
   version: v1 (2016-10-18)
@@ -1748,7 +1748,7 @@ test cases:
     3. send UDP packet
     4. calculate the troughput
   sub module: UDP
-  summary: STA UDP throughput while connecting with softAP
+  summary: STA UDP throughput Tx while connected with softAP
   test environment: SSC_T2_ShieldBox2
   test point 1: Performance test
   test point 2: UDP throughput
@@ -1787,7 +1787,7 @@ test cases:
     3. send UDP packet
     4. calculate the troughput
   sub module: UDP
-  summary: STA UDP throughput while connecting with softAP
+  summary: STA UDP throughput Rx while connected with softAP
   test environment: SSC_T2_ShieldBox2
   test point 1: Performance test
   test point 2: UDP throughput

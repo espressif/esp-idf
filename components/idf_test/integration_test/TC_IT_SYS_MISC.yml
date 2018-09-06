@@ -21,7 +21,7 @@ test cases:
   steps: 系统重启
   sub module: Misc
   summary: test reboot function
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: sw reboot
   version: v1 (2016-8-15)
@@ -49,7 +49,7 @@ test cases:
   steps: 查询空闲ram
   sub module: Misc
   summary: get heap size test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   test point 1: basic function
   test point 2: 'get heap size '
   version: v1 (2016-8-15)
