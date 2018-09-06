@@ -11,5 +11,6 @@ components/micro-ecc/micro-ecc                      @GENERAL_MIRROR_SERVER@/idf/
 components/nghttp/nghttp2                           @GENERAL_MIRROR_SERVER@/idf/nghttp2.git                         ALLOW_TO_SYNC_FROM_PUBLIC
 components/spiffs/spiffs                            @GENERAL_MIRROR_SERVER@/idf/spiffs.git                          ALLOW_TO_SYNC_FROM_PUBLIC
 components/asio/asio                                @GENERAL_MIRROR_SERVER@/idf/asio.git
+components/lwip/lwip                                @GENERAL_MIRROR_SERVER@/idf/esp-lwip.git
 third-party/mruby                                   @GENERAL_MIRROR_SERVER@/idf/mruby.git                           ALLOW_TO_SYNC_FROM_PUBLIC
 third-party/neverbleed                              @GENERAL_MIRROR_SERVER@/idf/neverbleed.git                      ALLOW_TO_SYNC_FROM_PUBLIC

@@ -207,7 +207,7 @@ static esp_err_t _udp_pcb_init(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t i
 }
 
 typedef struct {
-    struct tcpip_api_call call;
+    struct tcpip_api_call_data call;
     tcpip_adapter_if_t tcpip_if;
     mdns_ip_protocol_t ip_protocol;
     esp_err_t err;
@@ -216,7 +216,7 @@ typedef struct {
 /**
  * @brief  Start PCB from LwIP thread
  */
-static err_t _mdns_pcb_init_api(struct tcpip_api_call *api_call_msg)
+static err_t _mdns_pcb_init_api(struct tcpip_api_call_data *api_call_msg)
 {
     mdns_api_call_t * msg = (mdns_api_call_t *)api_call_msg;
     msg->err = _udp_pcb_init(msg->tcpip_if, msg->ip_protocol);
@@ -226,7 +226,7 @@ static err_t _mdns_pcb_init_api(struct tcpip_api_call *api_call_msg)
 /**
  * @brief  Stop PCB from LwIP thread
  */
-static err_t _mdns_pcb_deinit_api(struct tcpip_api_call *api_call_msg)
+static err_t _mdns_pcb_deinit_api(struct tcpip_api_call_data *api_call_msg)
 {
     mdns_api_call_t * msg = (mdns_api_call_t *)api_call_msg;
     _udp_pcb_deinit(msg->tcpip_if, msg->ip_protocol);
@@ -245,7 +245,7 @@ esp_err_t _mdns_pcb_init(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_prot
         .tcpip_if = tcpip_if,
         .ip_protocol = ip_protocol
     };
-    tcpip_api_call(_mdns_pcb_init_api, (struct tcpip_api_call*)&msg);
+    tcpip_api_call(_mdns_pcb_init_api, (struct tcpip_api_call_data*)&msg);
     return msg.err;
 }
 
@@ -255,7 +255,7 @@ esp_err_t _mdns_pcb_deinit(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_pr
         .tcpip_if = tcpip_if,
         .ip_protocol = ip_protocol
     };
-    tcpip_api_call(_mdns_pcb_deinit_api, (struct tcpip_api_call*)&msg);
+    tcpip_api_call(_mdns_pcb_deinit_api, (struct tcpip_api_call_data*)&msg);
     return msg.err;
 }
 
