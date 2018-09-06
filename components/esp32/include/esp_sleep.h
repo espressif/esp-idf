@@ -319,6 +319,12 @@ esp_deep_sleep_wake_stub_fn_t esp_get_deep_sleep_wake_stub(void);
  */
 void esp_default_wake_deep_sleep(void);
 
+/**
+ *  @brief Disable logging from the ROM code after deep sleep.
+ *
+ *  Using LSB of RTC_STORE4.
+ */
+void esp_deep_sleep_disable_rom_logging(void);
 
 #ifdef __cplusplus
 }
