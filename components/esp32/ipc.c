@@ -25,9 +25,8 @@
 #include "freertos/semphr.h"
 
 
-static TaskHandle_t s_ipc_tasks[portNUM_PROCESSORS];         // Two high priority tasks, one for each CPU
 static SemaphoreHandle_t s_ipc_mutex;                        // This mutex is used as a global lock for esp_ipc_* APIs
-static SemaphoreHandle_t s_ipc_sem[portNUM_PROCESSORS];      // Two semaphores used to wake each of s_ipc_tasks
+static SemaphoreHandle_t s_ipc_sem[portNUM_PROCESSORS];      // Two semaphores used to wake each of ipc tasks
 static SemaphoreHandle_t s_ipc_ack;                          // Semaphore used to acknowledge that task was woken up,
                                                              //   or function has finished running
 static volatile esp_ipc_func_t s_func;                       // Function which should be called by high priority task
@@ -79,10 +78,10 @@ void esp_ipc_init()
     s_ipc_ack = xSemaphoreCreateBinary();
     char task_name[15];
     for (int i = 0; i < portNUM_PROCESSORS; ++i) {
-        sprintf(task_name,"ipc%d",i);
+        snprintf(task_name, sizeof(task_name), "ipc%d", i);
         s_ipc_sem[i] = xSemaphoreCreateBinary();
         portBASE_TYPE res = xTaskCreatePinnedToCore(ipc_task, task_name, CONFIG_IPC_TASK_STACK_SIZE, (void*) i,
-                                                    configMAX_PRIORITIES - 1, &s_ipc_tasks[i], i);
+                                                    configMAX_PRIORITIES - 1, NULL, i);
         assert(res == pdTRUE);
     }
 }
@@ -100,7 +99,7 @@ static esp_err_t esp_ipc_call_and_wait(uint32_t cpu_id, esp_ipc_func_t func, voi
 
     s_func = func;
     s_func_arg = arg;
-    s_ipc_wait = IPC_WAIT_FOR_START;
+    s_ipc_wait = wait_for;
     xSemaphoreGive(s_ipc_sem[cpu_id]);
     xSemaphoreTake(s_ipc_ack, portMAX_DELAY);
     xSemaphoreGive(s_ipc_mutex);
