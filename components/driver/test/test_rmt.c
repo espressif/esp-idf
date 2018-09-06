@@ -710,4 +710,61 @@ TEST_CASE("RMT TX stop test", "[rmt][test_env=UT_T1_RMT]")
     TEST_ESP_OK(rmt_driver_uninstall(RMT_RX_CHANNEL));
 }
 
+TEST_CASE("RMT loop_en test", "[rmt][test_env=UT_T1_RMT][ignore]")
+{
+    rmt_tx_config_t tx_cfg = {
+        .loop_en = true,  // set it as true
+        .carrier_duty_percent = 50,
+        .carrier_freq_hz = 38000,
+        .carrier_level = 1,
+        .carrier_en = RMT_TX_CARRIER_EN,
+        .idle_level = 0,
+        .idle_output_en = true,
+    };
+    rmt_config_t rmt_tx = {
+        .channel = RMT_TX_CHANNEL,
+        .gpio_num = RMT_TX_GPIO_NUM,
+        .mem_block_num = 1,
+        .clk_div = RMT_CLK_DIV,
+        .tx_config = tx_cfg,
+        .rmt_mode = 0,
+    };
+    rmt_config(&rmt_tx);
+    rmt_driver_install(rmt_tx.channel, 0, 0);
+    TEST_ESP_OK(rmt_driver_uninstall(RMT_TX_CHANNEL));
+
+    int rx_channel = RMT_RX_CHANNEL;
+    rx_init();
+    RingbufHandle_t rb = NULL;
+    rmt_get_ringbuf_handle(rx_channel, &rb);
+    rmt_rx_start(rx_channel, 1);
+    vTaskDelay(10);
+    tx_init();
+    int tx_channel = RMT_TX_CHANNEL;
+    int tx_num = RMT_TX_DATA_NUM;
+
+    ESP_LOGI(TAG, "RMT TX DATA");
+    size_t size = (sizeof(rmt_item32_t) * DATA_ITEM_NUM * tx_num);
+    rmt_item32_t* item = (rmt_item32_t*) malloc(size);
+    int item_num = DATA_ITEM_NUM * tx_num;
+    memset((void*) item, 0, size);
+    int offset = 0;
+    uint16_t cmd = 0x0;
+    uint16_t addr = 0x11;
+
+    // send data
+    set_tx_data(tx_channel, cmd, addr, item_num, item, offset);
+    rmt_write_items(tx_channel, item, item_num, 0);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    rmt_tx_stop(tx_channel);
+    free(item);
+
+    // receive data
+    uint16_t tmp = get_rx_data(rb);
+    TEST_ASSERT(tmp < 100);
+
+    TEST_ESP_OK(rmt_driver_uninstall(RMT_TX_CHANNEL));
+    TEST_ESP_OK(rmt_driver_uninstall(RMT_RX_CHANNEL));
+}
+
 
