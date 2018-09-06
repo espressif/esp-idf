@@ -727,11 +727,15 @@ rtc_xtal_freq_t rtc_clk_xtal_freq_get()
     if (!clk_val_is_valid(xtal_freq_reg)) {
         return RTC_XTAL_FREQ_AUTO;
     }
-    return reg_val_to_clk_val(xtal_freq_reg);
+    return reg_val_to_clk_val(xtal_freq_reg & ~RTC_DISABLE_ROM_LOG);
 }
 
 void rtc_clk_xtal_freq_update(rtc_xtal_freq_t xtal_freq)
 {
+    uint32_t reg = READ_PERI_REG(RTC_XTAL_FREQ_REG) & RTC_DISABLE_ROM_LOG;
+    if (reg == RTC_DISABLE_ROM_LOG) {
+        xtal_freq |= 1;
+    }
     WRITE_PERI_REG(RTC_XTAL_FREQ_REG, clk_val_to_reg_val(xtal_freq));
 }
 

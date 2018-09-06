@@ -14,8 +14,6 @@ In this example the input signal is connected to GPIO0. Note that this pin was c
 
 ## Example output
 
-Note: GPIO15 is connected to GND to disable ROM bootloader output.
-
 ```
 Not ULP wakeup, initializing ULP
 Entering deep sleep

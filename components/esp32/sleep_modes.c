@@ -658,3 +658,13 @@ static uint32_t get_power_down_flags()
     }
     return pd_flags;
 }
+
+void esp_deep_sleep_disable_rom_logging(void)
+{
+    /* To disable logging in the ROM, only the least significant bit of the register is used,
+     * but since this register is also used to store the frequency of the main crystal (RTC_XTAL_FREQ_REG),
+     * you need to write to this register in the same format.
+     * Namely, the upper 16 bits and lower should be the same.
+     */
+    REG_SET_BIT(RTC_CNTL_STORE4_REG, RTC_DISABLE_ROM_LOG);
+}
