@@ -39,7 +39,7 @@ test cases:
     为target1_mac\n6.target1 设置softAP mode 下的mac 为target1_ap_mac\n"
   sub module: MAC Address
   summary: set mac, query mac
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: basic function
   test point 2: mac address function test
   version: v1 (2016-8-15)
@@ -93,7 +93,7 @@ test cases:
     jap target1\n8.target1 查询连接到的sta \n9.target2 设置sta mode 下的mac 为 target2_mac\n"
   sub module: MAC Address
   summary: set mac and do scan/JAP/SAP
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: basic function
   test point 2: mac address function test
   version: v1 (2016-8-15)

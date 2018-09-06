@@ -19,12 +19,12 @@
 #include "driver/uart.h"
 
 #include "netif/ppp/pppos.h"
+#include "netif/ppp/pppapi.h"
 #include "lwip/err.h"
 #include "lwip/sockets.h"
 #include "lwip/sys.h"
 #include "lwip/netdb.h"
 #include "lwip/dns.h"
-#include "lwip/pppapi.h"
 
 /* The examples use simple GSM configuration that you can set via
    'make menuconfig'.

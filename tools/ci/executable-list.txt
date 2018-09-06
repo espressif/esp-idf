@@ -24,6 +24,7 @@ tools/ci/checkout_project_ref.py
 tools/ci/get-full-sources.sh
 tools/ci/mirror-submodule-update.sh
 tools/ci/mirror-synchronize.sh
+tools/ci/push_to_github.sh
 tools/ci/test_build_system.sh
 tools/ci/test_build_system_cmake.sh
 tools/ci/test_configure_ci_environment.sh
@@ -62,4 +63,5 @@ tools/windows/tool_setup/build_installer.sh
 tools/test_idf_size/test.sh
 tools/check_python_dependencies.py
 docs/gen-dxd.py
+tools/ci/multirun_with_pyenv.sh
 
