@@ -44,3 +44,4 @@ tools/unit-test-app/unit_test.py
 tools/test_idf_size/test.sh
 tools/check_python_dependencies.py
 docs/gen-dxd.py
+tools/ci/multirun_with_pyenv.sh
