@@ -43,7 +43,7 @@ test cases:
     6.target1断开AP
   sub module: WIFI Mode
   summary: mode switch test (sta mode)
-  test environment: SSC_T2_1
+  test environment: SSC_T2_3
   test point 1: basic function
   test point 2: wifi mode fucntion
   version: v1 (2016-8-15)
@@ -84,7 +84,7 @@ test cases:
     4.target1 DISCONN AP
   sub module: WIFI Mode
   summary: mode switch test (AP mode)
-  test environment: SSC_T2_1
+  test environment: SSC_T2_3
   test point 1: basic function
   test point 2: wifi mode fucntion
   version: v1 (2016-8-15)
@@ -129,7 +129,7 @@ test cases:
     5.target2 上查询target_ssid
   sub module: WIFI Mode
   summary: mode switch test (STA+AP mode)
-  test environment: SSC_T2_1
+  test environment: SSC_T2_3
   test point 1: basic function
   test point 2: wifi mode fucntion
   version: v1 (2016-8-15)

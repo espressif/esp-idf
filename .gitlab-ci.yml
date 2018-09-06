@@ -883,7 +883,7 @@ UT_001_25:
   tags:
     - ESP32_IDF
     - UT_T1_1
-    
+
 UT_001_26:
   <<: *unit_test_template
   tags:
@@ -919,7 +919,7 @@ UT_001_31:
   tags:
     - ESP32_IDF
     - UT_T1_1
-    
+
 UT_001_32:
   <<: *unit_test_template
   tags:
@@ -931,7 +931,7 @@ UT_001_33:
   tags:
     - ESP32_IDF
     - UT_T1_1
-    
+
 UT_001_34:
   <<: *unit_test_template
   tags:
@@ -1055,14 +1055,14 @@ UT_004_10:
     - ESP32_IDF
     - UT_T1_1
     - psram
-    
+
 UT_004_11:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_1
     - psram
-    
+
 UT_005_01:
   <<: *unit_test_template
   tags:
@@ -1205,55 +1205,19 @@ IT_001_01:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T1_1
+    - SSC_T1_4
 
 IT_001_02:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T1_1
+    - SSC_T1_4
 
 IT_001_03:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T1_1
-
-IT_001_04:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T1_1
-
-IT_001_05:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T1_1
-
-IT_001_06:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T1_1
-
-IT_001_07:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T1_1
-
-IT_001_08:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T1_1
-
-IT_001_09:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T1_1
+    - SSC_T1_4
 
 IT_002_01:
   <<: *test_template
@@ -1265,85 +1229,79 @@ IT_003_01:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_02:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_03:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_04:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_05:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_06:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_07:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_08:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_09:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_10:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_11:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_12:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_003_13:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
-
-IT_003_14:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T2_1
+    - SSC_T2_5
 
 IT_004_01:
   <<: *test_template
@@ -1355,7 +1313,61 @@ IT_005_01:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T1_WEP
+    - SSC_T1_5
+
+IT_005_02:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_5
+
+IT_006_01:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_6
+
+IT_006_02:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_6
+
+IT_006_03:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_6
+
+IT_006_04:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_6
+
+IT_006_05:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_6
+
+IT_007_01:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_7
+
+IT_007_02:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_7
+
+IT_008_01:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_8
 
 IT_009_01:
   <<: *test_template
@@ -1375,58 +1387,32 @@ IT_011_01:
     - ESP32_IDF
     - SSC_T50_1
 
-IT_501_01:
+IT_012_01:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T1_1
-    - stress_test
+    - SSC_T1_9
 
-IT_501_02:
+IT_013_01:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T1_1
-    - stress_test
+    - SSC_T2_2
 
-IT_501_03:
+IT_013_02:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T1_1
-    - stress_test
+    - SSC_T2_2
 
-IT_502_01:
+IT_014_01:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
-    - stress_test
+    - SSC_T2_3
 
-IT_502_02:
+IT_015_01:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_1
-    - stress_test
-
-IT_503_01:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T5_1
-    - stress_test
-
-IT_503_02:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T5_1
-    - stress_test
-
-IT_503_03:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T5_1
-    - stress_test
+    - SSC_T2_4

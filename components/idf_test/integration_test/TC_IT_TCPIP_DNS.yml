@@ -18,7 +18,7 @@ test cases:
   initial condition: STAM2
   level: Integration
   module: TCPIP
-  steps: 1. get host name "espressif.cn"
+  steps: 1. get host name "gbot.espressif.cn"
   sub module: DNS
   summary: get host by name test
   test environment: SSC_T1_2
@@ -54,7 +54,7 @@ test cases:
   level: Integration
   module: TCPIP
   steps: |-
-    1. get host name "espressif.cn"
+    1. get host name "gbot.espressif.cn"
     2. connect, send, recv
   sub module: DNS
   summary: TCP connect to gbot.espressif.cn
@@ -147,3 +147,301 @@ test cases:
   test point 1: abnormal/special use
   test point 2: use special DNS server config
   version: v1 (2016-8-15)
+- CI ready: 'No'
+  ID: TCPIP_DNS_0301
+  SDK: ESP32_IDF
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stable
+  cmd set:
+  - DNSTest/DNSTest
+  - - test_mode = "fallback_main_backup_dns_all_error"
+    - ['']
+  - - fallback_dns_option = "error"
+    - ['']
+  - - test_option = "main_backup_error"
+    - ['']
+  - - test_count = 20
+    - [dummy]
+  - - fallback_dns = "1.1.1.1"
+    - ['']
+  - - website_dns = "www.baidu.com"
+    - ['']
+  execution time: 0.3
+  expected result: |-
+    2.mode set ok
+    3.connect ap sucess
+    4.set fallback dns ok
+    5.get dns ip fail
+  initial condition: None
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1.AP main,backup DNS all error
+    2.set SSC1 to sta mode
+    3.SSC1 connect to ap
+    4.set SSC1 fallback DNS
+    5.SSC1 get website dns IP
+  sub module: DNS
+  summary: DNS fallback main backup DNS all error test
+  test environment: SSC_T1_DNS
+  test point 1: stress + function
+  test point 2: DNS stress test
+  version: v2 (2016-10-23)
+- CI ready: 'No'
+  ID: TCPIP_DNS_0302
+  SDK: ESP32_IDF
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stable
+  cmd set:
+  - DNSTest/DNSTest
+  - - test_mode = "fallback_dns_error_mian_backup_dns_right"
+    - ['']
+  - - fallback_dns_option = "error"
+    - ['']
+  - - test_option = "main_backup_right"
+    - ['']
+  - - test_count = 20
+    - [dummy]
+  - - fallback_dns = "2.2.2.2"
+    - ['']
+  - - website_dns = "www.baidu.com"
+    - ['']
+  execution time: 0.3
+  expected result: |-
+    2.mode set ok
+    3.connect ap sucess
+    4.set fallback dns ok
+    5.get dns ip ok
+  initial condition: None
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1.AP main,backup DNS all right
+    2.set SSC1 to sta mode
+    3.SSC1 connect to ap
+    4.set SSC1 fallback DNS
+    5.SSC1 get website dns IP
+  sub module: DNS
+  summary: DNS fallback DNS error main backup DNS right test
+  test environment: SSC_T1_DNS
+  test point 1: stress + function
+  test point 2: DNS stress test
+  version: v2 (2016-10-23)
+- CI ready: 'No'
+  ID: TCPIP_DNS_0303
+  SDK: ESP32_IDF
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stable
+  cmd set:
+  - DNSTest/DNSTest
+  - - test_mode = "fallback_main_dns_error_backup_dns_right"
+    - ['']
+  - - fallback_dns_option = "error"
+    - ['']
+  - - test_option = "backup_right"
+    - ['']
+  - - test_count = 20
+    - [dummy]
+  - - fallback_dns = "1.1.1.1"
+    - ['']
+  - - website_dns = "www.baidu.com"
+    - ['']
+  execution time: 0.3
+  expected result: |-
+    2.mode set ok
+    3.connect ap sucess
+    4.set fallback dns ok
+    5.get dns ip ok
+  initial condition: None
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1.AP main DNS error,backup DNS right
+    2.SSC1 set as sta mode
+    3.SSC1 connect to ap
+    4.set SSC1 fallback DNS
+    5.SSC1 get website dns IP
+  sub module: DNS
+  summary: DNS fallback main DNS error backup DNS right test
+  test environment: SSC_T1_DNS
+  test point 1: stress + function
+  test point 2: DNS stress test
+  version: v2 (2016-10-23)
+- CI ready: 'No'
+  ID: TCPIP_DNS_0304
+  SDK: ESP32_IDF
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stable
+  cmd set:
+  - DNSTest/DNSTest
+  - - test_mode = "fallback_main_backup_dns_all_right"
+    - ['']
+  - - fallback_dns_option = "right"
+    - ['']
+  - - test_option = "main_backup_right"
+    - ['']
+  - - test_count = 20
+    - [dummy]
+  - - fallback_dns = "208.67.222.222"
+    - ['']
+  - - website_dns = "www.baidu.com"
+    - ['']
+  execution time: 0.3
+  expected result: |-
+    2.mode set ok
+    3.connect ap sucess
+    4.set fallback dns ok
+    5.get dns IP ok
+  initial condition: None
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1.AP main ,backup DNS right
+    2.SSC1 set as sta mode
+    3.SSC1 connect to ap
+    4.set SSC1 fallback DNS
+    5.SSC1 get website dns IP
+  sub module: DNS
+  summary: DNS fallback main backup DNS all right test
+  test environment: SSC_T1_DNS
+  test point 1: stress + function
+  test point 2: DNS stress test
+  version: v2 (2016-10-23)
+- CI ready: 'No'
+  ID: TCPIP_DNS_0305
+  SDK: ESP32_IDF
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stable
+  cmd set:
+  - DNSTest/DNSTest
+  - - test_mode = "fallback_dns_right_main_backup_error"
+    - ['']
+  - - fallback_dns_set = "right"
+    - ['']
+  - - fallback_dns_option = "right"
+    - ['']
+  - - test_option = "main_backup_error"
+    - ['']
+  - - test_count = 20
+    - [dummy]
+  - - fallback_dns = "208.67.222.222"
+    - ['']
+  - - website_dns = "www.baidu.com"
+    - ['']
+  execution time: 0.3
+  expected result: |-
+    2.mode set ok
+    3.connect ap sucess
+    4.set fallback dns ok
+    5.get dns IP ok
+  initial condition: None
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1.AP main ,backup DNS all error
+    2.SSC1 set as mode
+    3.SSC1 connect to ap
+    4.set SSC1 fallback DNS
+    5.SSC1 get website dns IP
+  sub module: DNS
+  summary: DNS fallback DNS right main backup error test
+  test environment: SSC_T1_DNS
+  test point 1: stress + function
+  test point 2: DNS stress test
+  version: v2 (2016-10-23)
+- CI ready: 'No'
+  ID: TCPIP_DNS_0306
+  SDK: ESP32_IDF
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stable
+  cmd set:
+  - DNSTest/DNSTest
+  - - test_mode = "dns_dhcp_option"
+    - ['']
+  - - test_count = 20
+    - [dummy]
+  - - fallback_dns = "208.67.222.222"
+    - ['']
+  - - website_dns = "www.baidu.com"
+    - ['']
+  execution time: 0.3
+  expected result: |-
+    1.ap set ok
+    2.set sta mode ok
+    3.jap ok
+    4.disable dhcp ok
+    5.set static ip addr suc
+    6.set fallback dns suc
+    7.get dns ip suc
+    8.dhcp start suc
+    9.get dns ip ok
+    11.jap ok
+    12.get dns ip ok
+  initial condition: None
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1.AP main ,backup DNS all right
+    2.set SSC1 to sta mode
+    3.SSC1 connect to ap
+    4.SSC1 disable dhcp
+    5.SSC1 set static ip addr
+    6.SSC1 set fallback dns
+    7.SSC1 get website dns IP
+    8.SSC1 start dhcp
+    9.SSC1 get website dns IP
+    10.SSC1 disconnect with ap
+    11.SSC1 reconnet ap
+    12.SSC1 get website dns IP
+  sub module: DNS
+  summary: DNS DHCP option test
+  test environment: SSC_T1_DNS
+  test point 1: stress + function
+  test point 2: DNS stress test
+  version: v2 (2016-10-23)
+- CI ready: 'No'
+  ID: TCPIP_DNS_0307
+  SDK: ESP32_IDF
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stable
+  cmd set:
+  - DNSTest/DNSTest
+  - - test_mode = "softap_dns_test"
+    - ['']
+  - - test_count = 20
+    - [dummy]
+  - - main_dns = "208.67.222.222"
+    - ['']
+  execution time: 0.3
+  expected result: |-
+    1.set mode ok
+    2.set mode ok
+    3.sta connect softap suc
+    4.disable dhcp ok
+    5.set dns server suc
+    6.set main dns suc
+    7.SSC2 main dns must the same as SSC1
+  initial condition: None
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1.SSC1 set as softap
+    2.SSC2 set as sta
+    3.SSC2 connected softap
+    4.SSC1 disable dhcp
+    5.SSC1 dhcp action dns server
+    6.SSC1 set main dns
+    7.check SSC2 main dns server
+  sub module: DNS
+  summary: DNS softap DNS test
+  test environment: SSC_T2_1
+  test point 1: stress + function
+  test point 2: DNS stress test
+  version: v2 (2016-10-23)
