@@ -21,7 +21,7 @@
 #include "nvs_flash.h"
 
 #include "lwip/err.h"
-#include "apps/sntp/sntp.h"
+#include "lwip/apps/sntp.h"
 
 /* The examples use simple WiFi configuration that you can set via
    'make menuconfig'.

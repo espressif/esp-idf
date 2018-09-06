@@ -125,7 +125,7 @@ static int socket_add_ipv4_multicast_group(int sock, bool assign_source_if)
         ESP_LOGE(V4TAG, "Failed to get IP address info. Error 0x%x", err);
         goto err;
     }
-    inet_addr_from_ipaddr(&iaddr, &ip_info.ip);
+    inet_addr_from_ip4addr(&iaddr, &ip_info.ip);
 #endif
     // Configure multicast address to listen to
     err = inet_aton(MULTICAST_IPV4_ADDR, &imreq.imr_multiaddr.s_addr);

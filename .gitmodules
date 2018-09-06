@@ -49,3 +49,7 @@
 [submodule "components/expat/expat"]
 	path = components/expat/expat
 	url = https://github.com/libexpat/libexpat.git
+
+[submodule "components/lwip/lwip"]
+	path = components/lwip/lwip
+	url = https://github.com/espressif/esp-lwip.git
