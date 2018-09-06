@@ -534,6 +534,35 @@ TEST_CASE("RMT memory test", "[rmt][test_env=UT_T1_RMT]")
     }
 }
 
+// RMT channel num and memory block relationship
+TEST_CASE("RMT memory block test", "[rmt][test_env=UT_T1_RMT]")
+{
+    rmt_channel_t channel = 0;
+    rmt_config_t rmt_rx;
+    rmt_rx.channel = channel;
+    rmt_rx.gpio_num = RMT_RX_GPIO_NUM;
+    rmt_rx.clk_div = RMT_CLK_DIV;
+    rmt_rx.mem_block_num = 1;
+    rmt_rx.rmt_mode = RMT_MODE_RX;
+    rmt_rx.rx_config.filter_en = true;
+    rmt_rx.rx_config.filter_ticks_thresh = 100;
+    rmt_rx.rx_config.idle_threshold = RMT_ITEM32_TIMEOUT_US / 10 * (RMT_TICK_10_US);
+    TEST_ESP_OK(rmt_config(&rmt_rx));
+    TEST_ESP_OK(rmt_driver_install(rmt_rx.channel, 1000, 0));
+
+    TEST_ESP_OK(rmt_set_mem_block_num(channel, 8));
+    TEST_ASSERT(rmt_set_mem_block_num(channel, 9)==ESP_ERR_INVALID_ARG);
+    TEST_ASSERT(rmt_set_mem_block_num(channel, -1)==ESP_ERR_INVALID_ARG);
+    TEST_ESP_OK(rmt_driver_uninstall(rmt_rx.channel));
+
+    rmt_rx.channel = 7;
+    TEST_ESP_OK(rmt_config(&rmt_rx));
+    TEST_ESP_OK(rmt_driver_install(rmt_rx.channel, 1000, 0));
+    TEST_ASSERT(rmt_set_mem_block_num(rmt_rx.channel, 2)==ESP_ERR_INVALID_ARG);
+    TEST_ASSERT(rmt_set_mem_block_num(rmt_rx.channel, -1)==ESP_ERR_INVALID_ARG);
+    TEST_ESP_OK(rmt_driver_uninstall(rmt_rx.channel));
+}
+
 TEST_CASE("RMT send waveform(logic analyzer)", "[rmt][test_env=UT_T1_RMT][ignore]")
 {
     tx_init();
@@ -680,3 +709,5 @@ TEST_CASE("RMT TX stop test", "[rmt][test_env=UT_T1_RMT]")
     TEST_ESP_OK(rmt_driver_uninstall(RMT_TX_CHANNEL));
     TEST_ESP_OK(rmt_driver_uninstall(RMT_RX_CHANNEL));
 }
+
+
