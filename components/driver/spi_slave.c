@@ -60,6 +60,7 @@ static const char *SPI_TAG = "spi_slave";
 #endif
 
 typedef struct {
+    int id;
     spi_slave_interface_config_t cfg;
     intr_handle_t intr;
     spi_dev_t *hw;
@@ -79,6 +80,27 @@ typedef struct {
 static spi_slave_t *spihost[3];
 
 static void IRAM_ATTR spi_intr(void *arg);
+
+static inline bool bus_is_iomux(spi_slave_t *host)
+{
+    return host->flags&SPICOMMON_BUSFLAG_NATIVE_PINS;
+}
+
+static void freeze_cs(spi_slave_t *host)
+{
+    gpio_matrix_in(GPIO_FUNC_IN_HIGH, spi_periph_signal[host->id].spics_in, false);
+}
+
+// Use this function instead of cs_initial to avoid overwrite the output config
+// This is used in test by internal gpio matrix connections
+static inline void restore_cs(spi_slave_t *host)
+{
+    if (bus_is_iomux(host)) {
+        gpio_iomux_in(host->cfg.spics_io_num, spi_periph_signal[host->id].spics_in);
+    } else {
+        gpio_matrix_in(host->cfg.spics_io_num, spi_periph_signal[host->id].spics_in, false);
+    }
+}
 
 esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, const spi_slave_interface_config_t *slave_config, int dma_chan)
 {
@@ -107,6 +129,7 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     }
     memset(spihost[host], 0, sizeof(spi_slave_t));
     memcpy(&spihost[host]->cfg, slave_config, sizeof(spi_slave_interface_config_t));
+    spihost[host]->id = host;
 
     err = spicommon_bus_initialize_io(host, bus_config, dma_chan, SPICOMMON_BUSFLAG_SLAVE|bus_config->flags, &spihost[host]->flags);
     if (err!=ESP_OK) {
@@ -114,7 +137,10 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
         goto cleanup;
     }
     gpio_set_direction(slave_config->spics_io_num, GPIO_MODE_INPUT);
-    spicommon_cs_initialize(host, slave_config->spics_io_num, 0, !(spihost[host]->flags&SPICOMMON_BUSFLAG_NATIVE_PINS));
+    spicommon_cs_initialize(host, slave_config->spics_io_num, 0, !bus_is_iomux(spihost[host]));
+    // The slave DMA suffers from unexpected transactions. Forbid reading if DMA is enabled by disabling the CS line.
+    if (dma_chan != 0) freeze_cs(spihost[host]);
+
     spihost[host]->dma_chan = dma_chan;
     if (dma_chan != 0) {
         //See how many dma descriptors we need and allocate them
@@ -357,11 +383,14 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
     if (!host->hw->slave.trans_done) return;
 
     if (host->cur_trans) {
+        // When DMA is enabled, the slave rx dma suffers from unexpected transactions. Forbid reading until transaction ready.
+        if (host->dma_chan != 0) freeze_cs(host);
+
         //when data of cur_trans->length are all sent, the slv_rdata_bit
         //will be the length sent-1 (i.e. cur_trans->length-1 ), otherwise
         //the length sent.
         host->cur_trans->trans_len = host->hw->slv_rd_bit.slv_rdata_bit;
-        if ( host->cur_trans->trans_len == host->cur_trans->length - 1 ) {
+        if (host->cur_trans->trans_len == host->cur_trans->length - 1) {
             host->cur_trans->trans_len++;
         }
 
@@ -464,6 +493,9 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
         host->hw->miso_dlen.usr_miso_dbitlen = trans->length - 1;
         host->hw->user.usr_mosi = (trans->tx_buffer == NULL) ? 0 : 1;
         host->hw->user.usr_miso = (trans->rx_buffer == NULL) ? 0 : 1;
+
+        //The slave rx dma get disturbed by unexpected transaction. Only connect the CS when slave is ready.
+        if (host->dma_chan != 0) restore_cs(host);
 
         //Kick off transfer
         host->hw->cmd.usr = 1;
