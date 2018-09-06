@@ -371,6 +371,26 @@ void IRAM_ATTR spicommon_setup_dma_desc_links(lldesc_t *dmadesc, int len, const 
     dmadesc[n - 1].qe.stqe_next = NULL;
 }
 
+void spicommon_freeze_cs(spi_host_device_t host)
+{
+    gpio_matrix_in(0x38, io_signal[host].spics_in, false);
+}
+
+static void IOMUX_IN(uint32_t gpio, uint32_t signal_idx)
+{
+    GPIO.func_in_sel_cfg[signal_idx].sig_in_sel = 0;
+    PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[gpio]);
+}
+
+void spicommon_restore_cs(spi_host_device_t host, int cs_io_num, bool iomux)
+{
+    if (iomux) {
+        IOMUX_IN(cs_io_num, io_signal[host].spics_in);
+    } else {
+        gpio_matrix_in(cs_io_num, io_signal[host].spics_in, false);
+    }
+}
+
 
 /*
 Code for workaround for DMA issue in ESP32 v0/v1 silicon
