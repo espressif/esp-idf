@@ -162,7 +162,7 @@ httpd_handle_t start_webserver(void)
 {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     // Start the httpd server
-    ESP_LOGI(TAG, "Starting server on port: %d", config.server_port);
+    ESP_LOGI(TAG, "Starting server on port: '%d'", config.server_port);
     httpd_handle_t server;
 
     if (httpd_start(&server, &config) == ESP_OK) {
@@ -195,7 +195,7 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
         break;
     case SYSTEM_EVENT_STA_GOT_IP:
         ESP_LOGI(TAG, "SYSTEM_EVENT_STA_GOT_IP");
-        ESP_LOGI(TAG, "Got IP: %s",
+        ESP_LOGI(TAG, "Got IP: '%s'",
                  ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
 
         /* Start the web server */
