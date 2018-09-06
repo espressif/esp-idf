@@ -67,6 +67,12 @@ Navigate to "C/C++ General" -> "Indexer" property page:
 
 * Uncheck "Allow heuristic resolution of includes". When this option is enabled Eclipse sometimes fails to find correct header directories.
 
+Navigate to "C/C++ Build" -> "Behavior" property page:
+
+* Check "Enable parallel build" to enable multiple build jobs in parallel.
+
+* Setting the number of jobs slightly higher than the "optimal" may give the absolute fastest builds under Windows, depending on the specific hardware being used.
+
 Building in Eclipse
 -------------------
 
