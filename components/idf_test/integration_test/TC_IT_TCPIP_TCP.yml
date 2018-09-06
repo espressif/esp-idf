@@ -1138,7 +1138,6 @@ test cases:
     - - R SSC1 A <sock4>:ACCEPT:(\d+),\d+,.+,\d+
   - - SSC SSC1 soc -I
     - - P SSC1 RE "SOCINFO:%%s,2,%%s,\d+,%%s,%%d"%%(<sock1>,<target_ip>,<pc_ip>,<test_tcp_port1>)
-      - P SSC1 RE "SOCINFO:%%s,2,.+,\d+,.+,\d+"%%(<sock2>)
       - P SSC1 RE "SOCINFO:%%s,82,.+,%%d"%%(<sock3>,<random_port>)
       - P SSC1 RE "SOCINFO:%%s,2,%%s,%%d,%%s,\d+"%%(<sock4>,<target_ip>,<random_port>,<pc_ip>)
   execution time: 0.0
@@ -1385,7 +1384,6 @@ test cases:
     - - R SSC1 A <sock4>:ACCEPT:(\d+),\d+,.+,\d+
   - - SSC SSC1 soc -I
     - - P SSC1 RE "SOCINFO:%%s,2,%%s,\d+,%%s,%%d"%%(<sock1>,<target_ap_ip>,<pc_ip_wifi>,<test_tcp_port1>)
-      - P SSC1 RE "SOCINFO:%%s,2,.+,\d+,.+,\d+"%%(<sock2>)
       - P SSC1 RE "SOCINFO:%%s,82,.+,%%d"%%(<sock3>,<random_port>)
       - P SSC1 RE "SOCINFO:%%s,2,%%s,%%d,%%s,\d+"%%(<sock4>,<target_ap_ip>,<random_port>,<pc_ip_wifi>)
   execution time: 0.0

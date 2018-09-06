@@ -43,7 +43,7 @@
 
 #if CONFIG_TCPIP_LWIP
 #include "lwip/ip_addr.h"
-#include "apps/dhcpserver.h"
+#include "dhcpserver/dhcpserver.h"
 
 #ifdef __cplusplus
 extern "C" {

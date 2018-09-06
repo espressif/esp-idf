@@ -32,8 +32,8 @@
 #include "netif/wlanif.h"
 #include "netif/ethernetif.h"
 
-#include "apps/dhcpserver.h"
-#include "apps/dhcpserver_options.h"
+#include "dhcpserver/dhcpserver.h"
+#include "dhcpserver/dhcpserver_options.h"
 
 #include "esp_event.h"
 #include "esp_log.h"
@@ -139,7 +139,7 @@ static int tcpip_adapter_ipc_check(tcpip_adapter_api_msg_t *msg)
     }
 
     sys_arch_sem_wait(&api_lock_sem, 0);
-    tcpip_send_api_msg((tcpip_callback_fn)tcpip_adapter_api_cb, msg, &api_sync_sem);
+    tcpip_send_msg_wait_sem((tcpip_callback_fn)tcpip_adapter_api_cb, msg, &api_sync_sem);
     sys_sem_signal(&api_lock_sem);
 
     return TCPIP_ADAPTER_IPC_REMOTE;
@@ -316,7 +316,7 @@ esp_err_t tcpip_adapter_down(tcpip_adapter_if_t tcpip_if)
             tcpip_adapter_reset_ip_info(tcpip_if);
         }
 
-        netif_set_addr(esp_netif[tcpip_if], IP4_ADDR_ANY, IP4_ADDR_ANY, IP4_ADDR_ANY);
+        netif_set_addr(esp_netif[tcpip_if], IP4_ADDR_ANY4, IP4_ADDR_ANY4, IP4_ADDR_ANY4);
         netif_set_down(esp_netif[tcpip_if]);
         tcpip_adapter_start_ip_lost_timer(tcpip_if);
     }
@@ -882,12 +882,12 @@ static void tcpip_adapter_dhcpc_cb(struct netif *netif)
     ip_info = &esp_ip[tcpip_if];
     ip_info_old = &esp_ip_old[tcpip_if];
 
-    if ( !ip4_addr_cmp(ip_2_ip4(&netif->ip_addr), IP4_ADDR_ANY) ) {
+    if ( !ip4_addr_cmp(ip_2_ip4(&netif->ip_addr), IP4_ADDR_ANY4) ) {
         
         //check whether IP is changed
-        if ( !ip4_addr_cmp(ip_2_ip4(&netif->ip_addr), &ip_info->ip) ||
-                !ip4_addr_cmp(ip_2_ip4(&netif->netmask), &ip_info->netmask) ||
-                !ip4_addr_cmp(ip_2_ip4(&netif->gw), &ip_info->gw) ) {
+        if ( !ip4_addr_cmp(ip_2_ip4(&netif->ip_addr), (&ip_info->ip)) ||
+                !ip4_addr_cmp(ip_2_ip4(&netif->netmask), (&ip_info->netmask)) ||
+                !ip4_addr_cmp(ip_2_ip4(&netif->gw), (&ip_info->gw)) ) {
             system_event_t evt;
 
             ip4_addr_set(&ip_info->ip, ip_2_ip4(&netif->ip_addr));
@@ -915,7 +915,7 @@ static void tcpip_adapter_dhcpc_cb(struct netif *netif)
             ESP_LOGD(TAG, "if%d ip unchanged", tcpip_if);
         }
     } else {
-        if (!ip4_addr_cmp(&ip_info->ip, IP4_ADDR_ANY)) {
+        if (!ip4_addr_cmp(&ip_info->ip, IP4_ADDR_ANY4)) {
             tcpip_adapter_start_ip_lost_timer(tcpip_if);
         }
     }
@@ -962,7 +962,7 @@ static void tcpip_adapter_ip_lost_timer(void *arg)
     if (tcpip_if == TCPIP_ADAPTER_IF_STA) {
         struct netif *netif = esp_netif[tcpip_if];
 
-        if ( (!netif) || (netif && ip4_addr_cmp(ip_2_ip4(&netif->ip_addr), IP4_ADDR_ANY))){
+        if ( (!netif) || (netif && ip4_addr_cmp(ip_2_ip4(&netif->ip_addr), IP4_ADDR_ANY4))){
             system_event_t evt;
 
             ESP_LOGD(TAG, "if%d ip lost tmr: raise ip lost event", tcpip_if);
