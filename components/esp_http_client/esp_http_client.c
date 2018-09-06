@@ -136,7 +136,11 @@ static const char *HTTP_METHOD_MAPPING[] = {
     "PUT",
     "PATCH",
     "DELETE",
-    "HEAD"
+    "HEAD",
+    "NOTIFY",
+    "SUBSCRIBE",
+    "UNSUBSCRIBE",
+    "OPTIONS"
 };
 
 /**
