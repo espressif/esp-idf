@@ -35,6 +35,7 @@ import multiprocessing
 import re
 import shutil
 import json
+import serial.tools.list_ports
 
 class FatalError(RuntimeError):
     """
@@ -236,9 +237,10 @@ def build_target(target_name, args):
 
 def _get_esptool_args(args):
     esptool_path = os.path.join(os.environ["IDF_PATH"], "components/esptool_py/esptool/esptool.py")
+    if args.port is None:
+        args.port = get_default_serial_port()
     result = [ PYTHON, esptool_path ]
-    if args.port is not None:
-        result += [ "-p", args.port ]
+    result += [ "-p", args.port ]
     result += [ "-b", str(args.baud) ]
     return result
 
@@ -267,6 +269,8 @@ def monitor(action, args):
     """
     Run idf_monitor.py to watch build output
     """
+    if args.port is None:
+        args.port = get_default_serial_port()
     desc_path = os.path.join(args.build_dir, "project_description.json")
     if not os.path.exists(desc_path):
         _ensure_build_directory(args)
@@ -408,6 +412,21 @@ def get_commandline_options():
         else:
             result.append(a)
     return result
+
+def get_default_serial_port():
+    """ Return a default serial port. esptool can do this (smarter), but it can create
+    inconsistencies where esptool.py uses one port and idf_monitor uses another.
+
+    Same logic as esptool.py search order, reverse sort by name and choose the first port.
+    """
+    ports = list(reversed(sorted(
+        p.device for p in serial.tools.list_ports.comports() )))
+    try:
+        print ("Choosing default port %s (use '-p PORT' option to set a specific serial port)" % ports[0])
+        return ports[0]
+    except IndexError:
+        raise RuntimeError("No serial ports found. Connect a device, or use '-p PORT' option to set a specific port.")
+
 
 def main():
     if sys.version_info[0] != 2 or sys.version_info[1] != 7:
