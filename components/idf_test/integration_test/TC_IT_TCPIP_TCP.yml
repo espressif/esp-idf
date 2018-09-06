@@ -44,7 +44,7 @@ test cases:
     6.target1上使用步骤2创建的socket，去连接 PC的ip，远端端口不存在。
   sub module: TCP
   summary: STA mode, connect test. use different ip, port
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -86,7 +86,7 @@ test cases:
     4.PC tcp 连接到不存在的port ,<target_ip>
   sub module: TCP
   summary: STA mode, server listen test. use different kinds of port
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -133,14 +133,14 @@ test cases:
   steps: |
     1. PC上建立TCP 监听 test_tcp_port1
     2.target1上创建TCP socket
-    3.target1上使用步骤2创建的socket，去连接PC的ip，test_tcp_port1
+    3.target1上使用步骤2创建的socket，去连接 PC的ip，test_tcp_port1
     4.PC与target1 创建好TCP 连接，有ACCEPT
     5.PC send 5 bytes to 8266
     6.8266 send 5 bytes to PC
     7.8266 send 1460 to PC.
   sub module: TCP
   summary: STA mode, send/recv basic test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -204,7 +204,7 @@ test cases:
     10.target1 shutdown socket3 R
   sub module: TCP
   summary: STA mode, shutdown basic test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -278,7 +278,7 @@ test cases:
     socket1\n15.target1关闭socket1"
   sub module: TCP
   summary: STA mode, close for different types of TCP sockets test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -346,7 +346,7 @@ test cases:
     11.target1上使用步骤10创建的socket5，去连接 PC的ip，test_tcp_port1,PC有ACCEPT
   sub module: TCP
   summary: STA mode, create max TCP sockets test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -395,7 +395,7 @@ test cases:
     \   "
   sub module: TCP
   summary: STA mode, accept max TCP client by server test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -459,7 +459,7 @@ test cases:
     11.target1 abort socket1
   sub module: TCP
   summary: STA mode, espconn abort test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -508,7 +508,7 @@ test cases:
     6.target1上使用步骤2创建的socket，去连接 PC的ip，远端端口不存在。
   sub module: TCP
   summary: AP mode, connect test. use different ip, port
-  test environment: SSC_T1_1
+  test environment: SSC_T1_7
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -550,7 +550,7 @@ test cases:
     4.PC tcp 连接到不存在的port ,<target_ip>
   sub module: TCP
   summary: AP mode, server listen test. use different kinds of port
-  test environment: SSC_T1_1
+  test environment: SSC_T1_7
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -595,7 +595,7 @@ test cases:
   level: Integration
   module: TCPIP
   steps: |
-    1. PC上建立TCP 监听 test_tcp_port1
+    1.PC上建立TCP 监听 test_tcp_port1
     2.target1上创建TCP socket
     3.target1上使用步骤2创建的socket，去连接PC的ip，test_tcp_port1
     4.PC与target1 创建好TCP 连接，有ACCEPT
@@ -604,7 +604,7 @@ test cases:
     7.8266 send 100 * 1460 to PC.
   sub module: TCP
   summary: AP mode, send/recv basic test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_7
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -668,7 +668,7 @@ test cases:
     10.target1 shutdown socket3 R
   sub module: TCP
   summary: AP mode, shutdown basic test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_7
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -742,7 +742,7 @@ test cases:
     socket1\n15.target1关闭socket1"
   sub module: TCP
   summary: AP mode, close for different types of TCP sockets test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_7
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -810,7 +810,7 @@ test cases:
     11.target1上使用步骤10创建的socket5，去连接 PC的ip，test_tcp_port1,PC有ACCEPT
   sub module: TCP
   summary: AP mode, create max TCP sockets test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_7
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -859,7 +859,7 @@ test cases:
     \   "
   sub module: TCP
   summary: AP mode, accept max TCP client by server test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_7
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -931,7 +931,7 @@ test cases:
     12.target1上使用步骤2创建的socket，去连接 PC的ip，<test_tcp_port1>
   sub module: TCP
   summary: STA mode, connect test. use socket in state that can't connect
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) in different state
   version: v1 (2016-8-15)
@@ -991,7 +991,7 @@ test cases:
     9.target1上使用不存在socket,创建TCP 监听
   sub module: TCP
   summary: STA mode, server listen test. use socket in state that can't listen
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) in different state
   version: v1 (2016-8-15)
@@ -1051,7 +1051,7 @@ test cases:
     9.target1上不指定socket往上发送数据
   sub module: TCP
   summary: send test. use socket in state that can't send
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) in different state
   version: v1 (2016-8-15)
@@ -1101,8 +1101,8 @@ test cases:
     6.PC send 100 * 1460 data to target,
     7.在target上开始recv
   sub module: TCP
-  summary: STA mode, recv buffer test
-  test environment: SSC_T1_1
+  summary: STA mode, TCP recv buffer test
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) in different state
   version: v2 (2016-10-19)
@@ -1166,8 +1166,8 @@ test cases:
     CONNECT<random_port>,<target_ip> ,tcp 连接创建成功，创建socket4  \n10.target1 查询the socket
     information"
   sub module: TCP
-  summary: STA mode, get active socket info test
-  test environment: SSC_T1_1
+  summary: STA mode, TCP get active socket info test
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) in different state
   version: v1 (2016-8-15)
@@ -1239,7 +1239,7 @@ test cases:
     12.target1上使用步骤2创建的socket，去连接 PC的ip，<test_tcp_port1>
   sub module: TCP
   summary: AP mode, connect test. use socket in state that can't connect
-  test environment: SSC_T1_1
+  test environment: SSC_T1_7
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) in different state
   version: v1 (2016-8-15)
@@ -1299,7 +1299,7 @@ test cases:
     9.target1上使用不存在socket,创建TCP 监听
   sub module: TCP
   summary: AP mode, server listen test. use socket in state that can't listen
-  test environment: SSC_T1_1
+  test environment: SSC_T1_7
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) in different state
   version: v1 (2016-8-15)
@@ -1348,8 +1348,8 @@ test cases:
     6.PC send 100 * 1460 data to 8266,
     7.target重新调用recv
   sub module: TCP
-  summary: AP mode, recv buffer test
-  test environment: SSC_T1_1
+  summary: AP mode, TCP recv buffer test
+  test environment: SSC_T1_7
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) in different state
   version: v2 (2016-10-19)
@@ -1413,8 +1413,8 @@ test cases:
     CONNECT<random_port>,<target_ip> ,tcp 连接创建成功，创建socket4  \n10.target1 查询the socket
     information"
   sub module: TCP
-  summary: AP mode, get active socket info test
-  test environment: SSC_T1_1
+  summary: AP mode, TCP get active socket info test
+  test environment: SSC_T1_7
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) in different state
   version: v1 (2016-8-15)
@@ -1478,7 +1478,7 @@ test cases:
     11.target1 abort socket1
   sub module: TCP
   summary: AP mode, espconn abort test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_7
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) in different state
   version: v1 (2016-8-15)
@@ -1501,7 +1501,7 @@ test cases:
   steps: 1.lev -N -t GET
   sub module: TCP
   summary: STA mode, max connections number query
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket option test
   version: v1 (2016-8-15)
@@ -1542,7 +1542,7 @@ test cases:
     5.lev -N -t SET -n 8
   sub module: TCP
   summary: STA mode, max connections number set
-  test environment: SSC_T1_1
+  test environment: SSC_T1_5
   test point 1: basic function
   test point 2: socket option test
   version: v1 (2016-8-15)
@@ -1613,7 +1613,7 @@ test cases:
     10.target1上使用步骤5创建的socket4，去连接 pc_ip_wifi的ip，test_tcp_port1,未连接成功
   sub module: TCP
   summary: STA mode, max connections fucntion verify
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket option test
   version: v1 (2016-8-15)
@@ -1674,7 +1674,7 @@ test cases:
     9.target1上lev -N -t SET -n 8
   sub module: TCP
   summary: STA mode, max connections set interact with TCP connect and send
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket option test
   version: v1 (2016-8-15)
@@ -1716,7 +1716,7 @@ test cases:
     5.target1上lev -A -s <sock1> -t SET -n 4
   sub module: TCP
   summary: STA mode, max TCP connection allowed by server test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket option test
   version: v1 (2016-8-15)
@@ -1761,7 +1761,7 @@ test cases:
     -K -s <sock1> -t GET \n6.lev -K -s <sock1> -t SET -i 30 -d 3 -c 2\n7.等待30s"
   sub module: TCP
   summary: STA mode, keep alive test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket option test
   version: v1 (2016-8-15)
@@ -1820,7 +1820,7 @@ test cases:
     -K -s <sock1> -t GET \n6.lev -K -s <sock1> -t SET -i 30 -d 3 -c 2\n7.PC往8266发送数据\n8.8266往PC上发送数据\n9.PC往8266发送146000数据\n10.8266往PC上发送1460*100数据\n11.等待30s"
   sub module: TCP
   summary: STA mode, keep alive interact with TCP send
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket option test
   version: v1 (2016-8-15)
@@ -1843,7 +1843,7 @@ test cases:
   steps: 1.lev -N -t GET
   sub module: TCP
   summary: AP mode, max connections number query
-  test environment: SSC_T1_1
+  test environment: SSC_T1_7
   test point 1: basic function
   test point 2: socket option test
   version: v1 (2016-8-15)
@@ -1884,7 +1884,7 @@ test cases:
     5.lev -N -t SET -n 8
   sub module: TCP
   summary: AP mode, max connections number set
-  test environment: SSC_T1_1
+  test environment: SSC_T1_7
   test point 1: basic function
   test point 2: socket option test
   version: v1 (2016-8-15)
@@ -1955,7 +1955,7 @@ test cases:
     10.target1上使用步骤5创建的socket4，去连接 pc_ip_wifi的ip，test_tcp_port1,未连接成功
   sub module: TCP
   summary: AP mode, max connections fucntion verify
-  test environment: SSC_T1_1
+  test environment: SSC_T1_7
   test point 1: basic function
   test point 2: socket option test
   version: v1 (2016-8-15)
@@ -2016,7 +2016,7 @@ test cases:
     9.target1上lev -N -t SET -n 8
   sub module: TCP
   summary: AP mode, max connections set interact with TCP connect and send
-  test environment: SSC_T1_1
+  test environment: SSC_T1_7
   test point 1: basic function
   test point 2: socket option test
   version: v1 (2016-8-15)
@@ -2059,7 +2059,7 @@ test cases:
     5.target1上lev -A -s <sock1> -t SET -n 4
   sub module: TCP
   summary: AP mode, max TCP connection allowed by server test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_7
   test point 1: basic function
   test point 2: socket option test
   version: v1 (2016-8-15)
@@ -2105,7 +2105,7 @@ test cases:
     -K -s <sock1> -t GET \n6.lev -K -s <sock1> -t SET -i 30 -d 3 -c 2\n7.等待30s"
   sub module: TCP
   summary: AP mode, keep alive test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_7
   test point 1: basic function
   test point 2: socket option test
   version: v1 (2016-8-15)
@@ -2165,7 +2165,7 @@ test cases:
     -K -s <sock1> -t GET \n6.lev -K -s <sock1> -t SET -i 30 -d 3 -c 2\n7.PC往8266发送数据\n8.8266往PC上发送数据\n9.PC往8266发送146000数据\n10.8266往PC上发送1460*100数据\n11.等待30s"
   sub module: TCP
   summary: AP mode, keep alive interact with TCP send
-  test environment: SSC_T1_1
+  test environment: SSC_T1_7
   test point 1: basic function
   test point 2: socket option test
   version: v1 (2016-8-15)
@@ -2213,7 +2213,7 @@ test cases:
     6.8266往PC上发送5字节数据
   sub module: TCP
   summary: do TCP send after WIFI disconnected
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: abnormal/special use
   test point 2: TCP handling abnormal event
   version: v1 (2016-8-15)
@@ -2261,7 +2261,7 @@ test cases:
     6.关闭建立的socket1连接
   sub module: TCP
   summary: "close TCP socket after WIFI \ndisconnected"
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: abnormal/special use
   test point 2: TCP handling abnormal event
   version: v1 (2016-8-15)
@@ -2305,7 +2305,7 @@ test cases:
     \n6.8266往PC上发送5字节数据"
   sub module: TCP
   summary: do TCP send after mode changed
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: abnormal/special use
   test point 2: TCP handling abnormal event
   version: v1 (2016-8-15)
@@ -2349,7 +2349,7 @@ test cases:
     \n6.关闭建立的socket1连接"
   sub module: TCP
   summary: close TCP socket after mode changed
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: abnormal/special use
   test point 2: TCP handling abnormal event
   version: v1 (2016-8-15)
@@ -2399,7 +2399,7 @@ test cases:
     6.target1上使用socket1发送数据，等待 90 分钟
   sub module: TCP
   summary: do TCP send after PC NIC disabled
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: abnormal/special use
   test point 2: TCP handling abnormal event
   version: v1 (2016-8-15)
@@ -2442,7 +2442,7 @@ test cases:
     PC的ip，test_tcp_port1\n4.PC与target1创建好TCP 连接，有ACCEPT\n5.PC上网卡禁止掉 \n6.关闭建立的socket1连接"
   sub module: TCP
   summary: close TCP socket after PC NIC disabled
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: abnormal/special use
   test point 2: TCP handling abnormal event
   version: v1 (2016-8-15)
@@ -2492,7 +2492,7 @@ test cases:
     ip \n7.查询sta ip 地址是否生效\n8.8266往PC上发送5字节数据"
   sub module: TCP
   summary: do TCP send after IP changed
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: abnormal/special use
   test point 2: TCP handling abnormal event
   version: v1 (2016-8-15)
@@ -2542,7 +2542,7 @@ test cases:
     ip \n7.查询sta ip 地址是否生效\n8.关闭建立的socket1连接"
   sub module: TCP
   summary: close TCP socket after IP changed
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: abnormal/special use
   test point 2: TCP handling abnormal event
   version: v1 (2016-8-15)
@@ -2594,7 +2594,7 @@ test cases:
     7.8266往PC socket1上发送5字节数据
   sub module: TCP
   summary: do TCP send after socket changed
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: abnormal/special use
   test point 2: TCP handling abnormal event
   version: v1 (2016-8-15)
@@ -2646,7 +2646,7 @@ test cases:
     7.关闭socket2连接
   sub module: TCP
   summary: close TCP send after socket changed
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: abnormal/special use
   test point 2: TCP handling abnormal event
   version: v1 (2016-8-15)
@@ -2683,7 +2683,7 @@ test cases:
     2. target try to connect to TCP server with PC NIC IP
   sub module: TCP
   summary: PC do not reply TCP SYN of target
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: abnormal/special use
   test point 2: TCP connect and disconnect abnormal case
   version: v1 (2015-8-15)
@@ -2747,7 +2747,7 @@ test cases:
     10.等待30s
   sub module: TCP
   summary: Test socket with so_keepalive option
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket test with different option
   version: v1 (2016-8-15)
@@ -2778,7 +2778,7 @@ test cases:
     2.target1上创建TCP socket,bind test_udp_port1
   sub module: TCP
   summary: Test socket with so_reuseaddr option closed on TCP submodule
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket test with different option
   version: v1 (2016-8-15)
@@ -2830,7 +2830,7 @@ test cases:
   sub module: TCP
   summary: Test socket with so_reuseaddr option opened that close TCP connection not
     react immediately on ESP32
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket test with different option
   version: v1 (2016-8-15)
@@ -2862,7 +2862,7 @@ test cases:
   sub module: TCP
   summary: Test socket with so_reuseaddr option opened that build two tcp sockets
     by binding same ip and port on ESP32
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket test with different option
   version: v1 (2016-8-15)
@@ -2893,7 +2893,7 @@ test cases:
     - - R PC_COM C OK
   - - SSC SSC1 soc -S -s <sock1> -l 5000
     - - P SSC1 RE SEND:\d+,OK
-  - - SSC SSC1 soc -S -s <sock1> -l 5000
+  - - SSC SSC1 soc -S -s <sock1> -l 5000 -n 4
     - - P SSC1 RE SEND:\d+,ERROR,11
   execution time: 0.0
   expected result: |-
@@ -2923,7 +2923,7 @@ test cases:
     10.target1 send 5000 bytes to PC
   sub module: TCP
   summary: Test socket with so_sndtimeo option on ESP32
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket test with different option
   version: v1 (2016-8-15)
@@ -2978,7 +2978,7 @@ test cases:
     8.PC send 5 bytes to target1
   sub module: TCP
   summary: Test socket with so_rcvtimeo option
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket test with different option
   version: v1 (2016-8-15)
@@ -3017,7 +3017,7 @@ test cases:
     4.target1上使用步骤2创建的socket，去连接 PC的ip，random_port, 获取 error code
   sub module: TCP
   summary: Test socket with so_error option
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket test with different option
   version: v1 (2016-8-15)
@@ -3066,7 +3066,7 @@ test cases:
     7.查询空闲ram
   sub module: TCP
   summary: Test socket with so_linger option
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket test with different option
   version: v1 (2016-8-15)
@@ -3115,7 +3115,7 @@ test cases:
   sub module: TCP
   summary: Test socket with so_reuseaddr option opened that close TCP connection not
     react immediately on 8266_RTOS
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket test with different option
   version: v1 (2016-8-15)
@@ -3148,7 +3148,7 @@ test cases:
   sub module: TCP
   summary: Test socket with so_reuseaddr option opened that build two tcp sockets
     by binding same ip and port on 8266_RTOS
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket test with different option
   version: v1 (2016-8-15)
@@ -3209,7 +3209,7 @@ test cases:
     10.target1 send 1500 bytes to PC
   sub module: TCP
   summary: Test socket with so_sndtimeo option on 8266_RTOS
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket test with different option
   version: v1 (2016-8-15)
@@ -3262,7 +3262,7 @@ test cases:
     8.关闭socket
   sub module: TCP
   summary: Test socket with Maxconnect option
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket test with different option
   version: v1 (2016-8-15)
@@ -3311,7 +3311,7 @@ test cases:
     7.关闭socket
   sub module: TCP
   summary: Test socket with MaxConnectNum option
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket test with different option
   version: v1 (2016-8-15)
@@ -3356,7 +3356,7 @@ test cases:
     6.等待30s
   sub module: TCP
   summary: Test socket with Registtime option
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket test with different option
   version: v1 (2016-8-15)
@@ -3393,7 +3393,7 @@ test cases:
     4.target1上对步骤2创建的socket设置 Abort 属性
   sub module: TCP
   summary: Test socket with Abort option
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket test with different option
   version: v1 (2016-8-15)
@@ -3439,7 +3439,7 @@ test cases:
   sub module: TCP
   summary: Test socket with so_reuseaddr option opened that close TCP connection not
     react immediately on 8266_NonOS
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket test with different option
   version: v1 (2016-8-15)
@@ -3469,7 +3469,7 @@ test cases:
   sub module: TCP
   summary: Test socket with so_reuseaddr option opened that build two tcp sockets
     by binding same ip and port on 8266_NonOS
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: basic function
   test point 2: socket test with different option
   version: v1 (2016-8-15)
@@ -3506,7 +3506,7 @@ test cases:
     Loop executing step 1
   sub module: TCP
   summary: test possible TCP connect/disconnect method
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: function + stress
   test point 2: TCP connect and disconnect test
   version: v2 (2016-11-15)
@@ -3584,7 +3584,7 @@ test cases:
     2. PC send random length data to target
   sub module: TCP
   summary: send random length segment to target
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: stable
   test point 2: TCP stable test
   version: v2 (2016-11-15)
@@ -3717,6 +3717,39 @@ test cases:
   test point 2: TCP stress test
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: TCPIP_TCP_5106
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stable
+  cmd set:
+  - TCPStress/TCPRandomSend
+  - - delay_config = [0, 0.01, 0.1, 0.5, 1]
+    - - dummy
+  - - send_count = 1000
+    - - ''
+  - - test_time = 300
+    - - ''
+  execution time: 12.0
+  expected result: |-
+    1. succeed
+    2. succeed
+  initial condition: T1_ETH
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1. create TCP connection
+    2. PC send random length data to target
+  sub module: TCP
+  summary: send random length segment to target for Ethernet
+  test environment: ETH_T1_1
+  test point 1: stable
+  test point 2: TCP stable test
+  version: v2 (2016-11-15)
+- CI ready: 'Yes'
   ID: TCPIP_TCP_5201
   SDK: |-
     8266_NonOS
@@ -3751,7 +3784,7 @@ test cases:
     3. do send/recv on all tcp connections
   sub module: TCP
   summary: TCP send/recv stress test
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: stress
   test point 2: TCP stress test
   version: v2 (2016-11-15)
@@ -3788,7 +3821,7 @@ test cases:
     2. send specified pattern on both direction
   sub module: TCP
   summary: TCP send/recv data validation
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: stress
   test point 2: TCP stress test
   version: v2 (2016-11-15)
@@ -3827,6 +3860,43 @@ test cases:
   test point 1: stress
   test point 2: TCP stress test
   version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: TCPIP_TCP_5204
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stress
+  cmd set:
+  - TCPStress/TCPDataValidation
+  - - test_time = 1440
+    - - dummy
+  - - tx_enable = True
+    - - ''
+  - - rx_enable = True
+    - - ''
+  - - conn_num = 1
+    - - ''
+  - - send_len = 1024
+    - - ''
+  execution time: 24.0
+  expected result: |-
+    1. succeed
+    2. verify reciveid data on target and PC succeed
+  initial condition: T1_ETH
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1. create TCP connection
+    2. send specified pattern on both direction
+  sub module: TCP
+  summary: TCP send/recv data validation for Ethernet
+  test environment: ETH_T1_1
+  test point 1: stress
+  test point 2: TCP stress test
+  version: v2 (2016-11-15)
 - CI ready: 'No'
   ID: TCPIP_TCP_5301
   SDK: |-
@@ -3937,7 +4007,7 @@ test cases:
     Loop for step 1-2
   sub module: TCP
   summary: TCP throughput Tx for Ethernet
-  test environment: SSC_T1_1
+  test environment: ETH_T1_1
   test point 1: stress
   test point 2: TCP stress test
   version: v1 (2016-8-15)
@@ -3975,7 +4045,7 @@ test cases:
     Loop for step 1-2
   sub module: TCP
   summary: TCP throughput Rx for Ethernet
-  test environment: SSC_T1_1
+  test environment: ETH_T1_1
   test point 1: stress
   test point 2: TCP stress test
   version: v1 (2016-8-15)
@@ -4013,7 +4083,7 @@ test cases:
     Loop for step 1-3
   sub module: TCP
   summary: Eth random close while sending packets
-  test environment: SSC_T1_1
+  test environment: ETH_T1_1
   test point 1: stress
   test point 2: TCP stress test
   version: v1 (2016-8-15)
@@ -4051,7 +4121,7 @@ test cases:
     3. send TCP packet
     4. calculate the troughput
   sub module: TCP
-  summary: STA TCP throughput while connecting with softAP
+  summary: STA TCP throughput Tx while connected with softAP
   test environment: SSC_T2_ShieldBox2
   test point 1: Performance test
   test point 2: TCP throughput
@@ -4090,11 +4160,51 @@ test cases:
     3. send TCP packet
     4. calculate the troughput
   sub module: TCP
-  summary: STA TCP throughput while connecting with softAP
+  summary: STA TCP throughput Rx while connected with softAP
   test environment: SSC_T2_ShieldBox2
   test point 1: Performance test
   test point 2: TCP throughput
   version: v1 (2016-10-18)
+- CI ready: 'No'
+  ID: TCPIP_TCP_5701
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stress
+  cmd set:
+  - StableTest/EthGetIP
+  - - test_count = 5000
+    - [dummy]
+  comment: ''
+  execution time: 5.0
+  expected result: '1. succeed
+
+    2. succeed
+
+    3. succeed
+
+    4. succeed'
+  initial condition: None
+  initial condition description (auto): none
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1. reboot
+
+    2. open eth
+
+    3. delay 10s
+
+    4. ip query
+  sub module: TCP
+  summary: Eth get ip test
+  test environment: ETH_T1_1
+  test point 1: stress
+  test point 2: TCP stress test
+  version: v1 (2016-8-15)
 - CI ready: 'No'
   ID: TCPIP_TCP_6001
   SDK: ESP32_IDF, 8266_NonOS, 8266_RTOS
