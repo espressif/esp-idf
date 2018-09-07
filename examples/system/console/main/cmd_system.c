@@ -15,11 +15,13 @@
 #include "esp_system.h"
 #include "esp_sleep.h"
 #include "driver/rtc_io.h"
+#include "driver/uart.h"
 #include "argtable3/argtable3.h"
 #include "cmd_decl.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "soc/rtc_cntl_reg.h"
+#include "rom/uart.h"
 #include "sdkconfig.h"
 
 #ifdef CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
@@ -29,6 +31,7 @@
 static void register_free();
 static void register_restart();
 static void register_deep_sleep();
+static void register_light_sleep();
 static void register_make();
 #if WITH_TASKS_INFO
 static void register_tasks();
@@ -39,6 +42,7 @@ void register_system()
     register_free();
     register_restart();
     register_deep_sleep();
+    register_light_sleep();
     register_make();
 #if WITH_TASKS_INFO
     register_tasks();
@@ -182,6 +186,101 @@ static void register_deep_sleep()
         .hint = NULL,
         .func = &deep_sleep,
         .argtable = &deep_sleep_args
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+}
+
+/** 'light_sleep' command puts the chip into light sleep mode */
+
+static struct {
+    struct arg_int *wakeup_time;
+    struct arg_int *wakeup_gpio_num;
+    struct arg_int *wakeup_gpio_level;
+    struct arg_end *end;
+} light_sleep_args;
+
+static int light_sleep(int argc, char** argv)
+{
+    int nerrors = arg_parse(argc, argv, (void**) &light_sleep_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, light_sleep_args.end, argv[0]);
+        return 1;
+    }
+    esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
+    if (light_sleep_args.wakeup_time->count) {
+        uint64_t timeout = 1000ULL * light_sleep_args.wakeup_time->ival[0];
+        ESP_LOGI(__func__, "Enabling timer wakeup, timeout=%lluus", timeout);
+        ESP_ERROR_CHECK( esp_sleep_enable_timer_wakeup(timeout) );
+    }
+    int io_count = light_sleep_args.wakeup_gpio_num->count;
+    if (io_count != light_sleep_args.wakeup_gpio_level->count) {
+        ESP_LOGE(__func__, "Should have same number of 'io' and 'io_level' arguments");
+        return 1;
+    }
+    for (int i = 0; i < io_count; ++i) {
+        int io_num = light_sleep_args.wakeup_gpio_num->ival[i];
+        int level = light_sleep_args.wakeup_gpio_level->ival[i];
+        if (level != 0 && level != 1) {
+            ESP_LOGE(__func__, "Invalid wakeup level: %d", level);
+            return 1;
+        }
+        ESP_LOGI(__func__, "Enabling wakeup on GPIO%d, wakeup on %s level",
+                io_num, level ? "HIGH" : "LOW");
+
+        ESP_ERROR_CHECK( gpio_wakeup_enable(io_num, level ? GPIO_INTR_HIGH_LEVEL : GPIO_INTR_LOW_LEVEL) );
+    }
+    if (io_count > 0) {
+        ESP_ERROR_CHECK( esp_sleep_enable_gpio_wakeup() );
+    }
+    if (CONFIG_CONSOLE_UART_NUM <= UART_NUM_1) {
+        ESP_LOGI(__func__, "Enabling UART wakeup (press ENTER to exit light sleep)");
+        ESP_ERROR_CHECK( uart_set_wakeup_threshold(CONFIG_CONSOLE_UART_NUM, 3) );
+        ESP_ERROR_CHECK( esp_sleep_enable_uart_wakeup(CONFIG_CONSOLE_UART_NUM) );
+    }
+    fflush(stdout);
+    uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
+    esp_light_sleep_start();
+    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
+    const char* cause_str;
+    switch (cause) {
+        case ESP_SLEEP_WAKEUP_GPIO:
+            cause_str = "GPIO";
+            break;
+        case ESP_SLEEP_WAKEUP_UART:
+            cause_str = "UART";
+            break;
+        case ESP_SLEEP_WAKEUP_TIMER:
+            cause_str = "timer";
+            break;
+        default:
+            cause_str = "unknown";
+            printf("%d\n", cause);
+    }
+    ESP_LOGI(__func__, "Woke up from: %s", cause_str);
+    return 0;
+}
+
+static void register_light_sleep()
+{
+    light_sleep_args.wakeup_time =
+            arg_int0("t", "time", "<t>", "Wake up time, ms");
+    light_sleep_args.wakeup_gpio_num =
+            arg_intn(NULL, "io", "<n>", 0, 8,
+                     "If specified, wakeup using GPIO with given number");
+    light_sleep_args.wakeup_gpio_level =
+            arg_intn(NULL, "io_level", "<0|1>", 0, 8, "GPIO level to trigger wakeup");
+    light_sleep_args.end = arg_end(3);
+
+    const esp_console_cmd_t cmd = {
+        .command = "light_sleep",
+        .help = "Enter light sleep mode. "
+                "Two wakeup modes are supported: timer and GPIO. "
+                "Multiple GPIO pins can be specified using pairs of "
+                "'io' and 'io_level' arguments. "
+                "Will also wake up on UART input.",
+        .hint = NULL,
+        .func = &light_sleep,
+        .argtable = &light_sleep_args
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 }
