@@ -143,10 +143,6 @@ Install the Required Python Packages
 
 Python packages required by ESP-IDF are located in the ``$IDF_PATH/requirements.txt`` file. You can install them by running::
 
-    sudo python -m pip install -r $IDF_PATH/requirements.txt
-
-or you can use the following command for installing them into the user install directory on systems where you don't have administrator rights::
-
     python -m pip install --user -r $IDF_PATH/requirements.txt
 
 .. note::
@@ -155,7 +151,7 @@ or you can use the following command for installing them into the user install d
     interpreter can be checked by running command ``python --version`` and depending on the result, you might want to
     use ``python2``, ``python2.7`` or similar instead of ``python``, e.g.::
 
-        sudo python2.7 -m pip install -r $IDF_PATH/requirements.txt
+        python2.7 -m pip install --user -r $IDF_PATH/requirements.txt
 
 .. _get-started-start-project:
 

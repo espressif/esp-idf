@@ -298,7 +298,7 @@ All remaining applications are `Python <https://www.python.org/>`_ packages and 
 ::
 
 	cd ~/esp/esp-idf/docs
-	pip install -r requirements.txt
+	pip install --user -r requirements.txt
 
 .. note::
 
