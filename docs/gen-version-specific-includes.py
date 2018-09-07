@@ -4,6 +4,9 @@
 # Python script to generate ReSTructured Text .inc snippets
 # with version-based content for this IDF version
 
+from __future__ import print_function
+from __future__ import unicode_literals
+from io import open
 import subprocess
 import os
 import sys
@@ -129,7 +132,7 @@ def write_git_clone_inc(template, out_dir, version, ver_type, is_stable):
             "zipfile_note" : zipfile["stable"] if is_stable else zipfile["unstable"]
         }
     out_file = os.path.join(out_dir, "git-clone.inc")
-    with open(out_file, "w") as f:
+    with open(out_file, "w", encoding='utf-8') as f:
         f.write(template["template"] % args)
     print("%s written" % out_file)
 
@@ -142,7 +145,7 @@ def write_version_note(template, out_dir, version, ver_type, is_stable):
     else:
         content = template["branch"] % (ver_type, version)
     out_file = os.path.join(out_dir, "version-note.inc")
-    with open(out_file, "w") as f:
+    with open(out_file, "w", encoding='utf-8') as f:
         f.write(content)
     print("%s written" % out_file)
 
