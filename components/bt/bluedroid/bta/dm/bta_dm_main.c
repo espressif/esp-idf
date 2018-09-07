@@ -53,45 +53,46 @@ typedef void (*tBTA_DM_ACTION)(tBTA_DM_MSG *p_data);
 const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 
     /* device manager local device API events */
-    bta_dm_enable,                          /* 0  BTA_DM_API_ENABLE_EVT */
-    bta_dm_disable,                         /* 1  BTA_DM_API_DISABLE_EVT */
-    bta_dm_set_dev_name,                    /* 2  BTA_DM_API_SET_NAME_EVT */
-    bta_dm_set_visibility,                  /* 3  BTA_DM_API_SET_VISIBILITY_EVT */
-    bta_dm_acl_change,                      /* 8  BTA_DM_ACL_CHANGE_EVT */
-    bta_dm_add_device,                      /* 9  BTA_DM_API_ADD_DEVICE_EVT */
-    bta_dm_close_acl,                       /* 10  BTA_DM_API_REMOVE_ACL_EVT */
+    bta_dm_enable,                          /* BTA_DM_API_ENABLE_EVT */
+    bta_dm_disable,                         /* BTA_DM_API_DISABLE_EVT */
+    bta_dm_set_dev_name,                    /* BTA_DM_API_SET_NAME_EVT */
+    bta_dm_set_visibility,                  /* BTA_DM_API_SET_VISIBILITY_EVT */
+    bta_dm_acl_change,                      /* BTA_DM_ACL_CHANGE_EVT */
+    bta_dm_add_device,                      /* BTA_DM_API_ADD_DEVICE_EVT */
+    bta_dm_close_acl,                       /* BTA_DM_API_REMOVE_ACL_EVT */
 #if (SMP_INCLUDED == TRUE)
     /* security API events */
-    bta_dm_bond,                            /* 11  BTA_DM_API_BOND_EVT */
-    bta_dm_bond_cancel,                     /* 12  BTA_DM_API_BOND_CANCEL_EVT */
-    bta_dm_pin_reply,                       /* 13 BTA_DM_API_PIN_REPLY_EVT */
+    bta_dm_bond,                            /* BTA_DM_API_BOND_EVT */
+    bta_dm_bond_cancel,                     /* BTA_DM_API_BOND_CANCEL_EVT */
+    bta_dm_set_pin_type,                    /* BTA_DM_API_SET_PIN_TYPE_EVT */
+    bta_dm_pin_reply,                       /* BTA_DM_API_PIN_REPLY_EVT */
 #endif  ///SMP_INCLUDED == TRUE
 #if (BTA_DM_PM_INCLUDED == TRUE)
     /* power manger events */
-    bta_dm_pm_btm_status,                   /* 16 BTA_DM_PM_BTM_STATUS_EVT */
-    bta_dm_pm_timer,                        /* 17 BTA_DM_PM_TIMER_EVT*/
+    bta_dm_pm_btm_status,                   /* BTA_DM_PM_BTM_STATUS_EVT */
+    bta_dm_pm_timer,                        /* BTA_DM_PM_TIMER_EVT */
 #endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
     /* simple pairing events */
 #if (SMP_INCLUDED == TRUE)
-    bta_dm_confirm,                         /* 18 BTA_DM_API_CONFIRM_EVT */
+    bta_dm_confirm,                         /* BTA_DM_API_CONFIRM_EVT */
 #if (BT_SSP_INCLUDED == TRUE)
-    bta_dm_key_req,                         /* 19 BTA_DM_API_KEY_REQ_EVT */
+    bta_dm_key_req,                         /* BTA_DM_API_KEY_REQ_EVT */
 #endif ///BT_SSP_INCLUDED == TRUE
     bta_dm_set_encryption,                  /* BTA_DM_API_SET_ENCRYPTION_EVT */
 #endif  ///SMP_INCLUDED == TRUE
 #if (BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
-    bta_dm_loc_oob,                         /* 21 BTA_DM_API_LOC_OOB_EVT */
-    bta_dm_ci_io_req_act,                   /* 22 BTA_DM_CI_IO_REQ_EVT */
-    bta_dm_ci_rmt_oob_act,                  /* 23 BTA_DM_CI_RMT_OOB_EVT */
+    bta_dm_loc_oob,                         /* BTA_DM_API_LOC_OOB_EVT */
+    bta_dm_ci_io_req_act,                   /* BTA_DM_CI_IO_REQ_EVT */
+    bta_dm_ci_rmt_oob_act,                  /* BTA_DM_CI_RMT_OOB_EVT */
 #endif /* BTM_OOB_INCLUDED */
 
 
 #if BLE_INCLUDED == TRUE
 #if SMP_INCLUDED == TRUE
-    bta_dm_add_blekey,                      /*  BTA_DM_API_ADD_BLEKEY_EVT           */
-    bta_dm_add_ble_device,                  /*  BTA_DM_API_ADD_BLEDEVICE_EVT        */
-    bta_dm_ble_passkey_reply,               /*  BTA_DM_API_BLE_PASSKEY_REPLY_EVT    */
-    bta_dm_ble_confirm_reply,               /*  BTA_DM_API_BLE_CONFIRM_REPLY_EVT    */
+    bta_dm_add_blekey,                      /* BTA_DM_API_ADD_BLEKEY_EVT */
+    bta_dm_add_ble_device,                  /* BTA_DM_API_ADD_BLEDEVICE_EVT */
+    bta_dm_ble_passkey_reply,               /* BTA_DM_API_BLE_PASSKEY_REPLY_EVT */
+    bta_dm_ble_confirm_reply,               /* BTA_DM_API_BLE_CONFIRM_REPLY_EVT */
     bta_dm_security_grant,
 #endif  ///SMP_INCLUDED == TRUE
     bta_dm_ble_set_bg_conn_type,
@@ -99,18 +100,18 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_set_conn_scan_params,        /* BTA_DM_API_BLE_CONN_SCAN_PARAM_EVT */
     bta_dm_ble_set_scan_params,             /* BTA_DM_API_BLE_SCAN_PARAM_EVT */
     bta_dm_ble_set_scan_fil_params,         /* BTA_DM_API_BLE_SCAN_FIL_PARAM_EVT */
-    bta_dm_ble_observe,                     /* BTA_DM_API_BLE_OBSERVE_EVT*/
+    bta_dm_ble_observe,                     /* BTA_DM_API_BLE_OBSERVE_EVT */
     bta_dm_ble_scan,                        /* BTA_DM_API_BLE_SCAN_EVT */
     bta_dm_ble_update_conn_params,          /* BTA_DM_API_UPDATE_CONN_PARAM_EVT */
     /* This handler function added by
        Yulong at 2016/9/9 to support the
        random address setting for the APP */
-    bta_dm_ble_set_rand_address,            /* BTA_DM_API_SET_RAND_ADDR_EVT*/
+    bta_dm_ble_set_rand_address,            /* BTA_DM_API_SET_RAND_ADDR_EVT */
     /* This handler function added by
        Yulong at 2016/10/19 to support
        stop the ble advertising setting
        by the APP */
-    bta_dm_ble_stop_advertising,            /* BTA_DM_API_BLE_STOP_ADV_EVT*/
+    bta_dm_ble_stop_advertising,            /* BTA_DM_API_BLE_STOP_ADV_EVT */
 #if BLE_PRIVACY_SPT == TRUE
     bta_dm_ble_config_local_privacy,        /* BTA_DM_API_LOCAL_PRIVACY_EVT */
 #endif
@@ -132,10 +133,10 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_scan_filter_param_setup,         /* BTA_DM_API_SCAN_FILTER_SETUP_EVT */
     bta_dm_enable_scan_filter,              /* BTA_DM_API_SCAN_FILTER_ENABLE_EVT */
 #endif
-    bta_dm_ble_multi_adv_enb,               /*  BTA_DM_API_BLE_MULTI_ADV_ENB_EVT*/
-    bta_dm_ble_multi_adv_upd_param,         /*  BTA_DM_API_BLE_MULTI_ADV_PARAM_UPD_EVT */
-    bta_dm_ble_multi_adv_data,              /*  BTA_DM_API_BLE_MULTI_ADV_DATA_EVT */
-    btm_dm_ble_multi_adv_disable,           /*  BTA_DM_API_BLE_MULTI_ADV_DISABLE_EVT */
+    bta_dm_ble_multi_adv_enb,               /* BTA_DM_API_BLE_MULTI_ADV_ENB_EVT */
+    bta_dm_ble_multi_adv_upd_param,         /* BTA_DM_API_BLE_MULTI_ADV_PARAM_UPD_EVT */
+    bta_dm_ble_multi_adv_data,              /* BTA_DM_API_BLE_MULTI_ADV_DATA_EVT */
+    btm_dm_ble_multi_adv_disable,           /* BTA_DM_API_BLE_MULTI_ADV_DISABLE_EVT */
     bta_dm_ble_setup_storage,               /* BTA_DM_API_BLE_SETUP_STORAGE_EVT */
     bta_dm_ble_enable_batch_scan,           /* BTA_DM_API_BLE_ENABLE_BATCH_SCAN_EVT */
     bta_dm_ble_disable_batch_scan,          /* BTA_DM_API_BLE_DISABLE_BATCH_SCAN_EVT */
@@ -145,9 +146,9 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_disconnect,                  /* BTA_DM_API_BLE_DISCONNECT_EVT */
 #endif
 
-    bta_dm_enable_test_mode,                /*  BTA_DM_API_ENABLE_TEST_MODE_EVT     */
-    bta_dm_disable_test_mode,               /*  BTA_DM_API_DISABLE_TEST_MODE_EVT    */
-    bta_dm_execute_callback,                /*  BTA_DM_API_EXECUTE_CBACK_EVT        */
+    bta_dm_enable_test_mode,                /* BTA_DM_API_ENABLE_TEST_MODE_EVT */
+    bta_dm_disable_test_mode,               /* BTA_DM_API_DISABLE_TEST_MODE_EVT */
+    bta_dm_execute_callback,                /* BTA_DM_API_EXECUTE_CBACK_EVT */
 
     bta_dm_remove_all_acl,                  /* BTA_DM_API_REMOVE_ALL_ACL_EVT */
     bta_dm_remove_device,                   /* BTA_DM_API_REMOVE_DEVICE_EVT */

@@ -976,6 +976,21 @@ void bta_dm_bond_cancel (tBTA_DM_MSG *p_data)
 
 /*******************************************************************************
 **
+** Function         bta_dm_set_pin_type
+**
+** Description      Set the pin type and fixed pin
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_dm_set_pin_type (tBTA_DM_MSG *p_data)
+{
+    BTM_SetPinType (p_data->set_pin_type.pin_type, p_data->set_pin_type.p_pin, p_data->set_pin_type.pin_len);
+}
+
+/*******************************************************************************
+**
 ** Function         bta_dm_pin_reply
 **
 ** Description      Send the pin_reply to a request from BTM
