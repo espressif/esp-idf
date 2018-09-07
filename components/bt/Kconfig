@@ -41,7 +41,7 @@ config BTDM_CONTROLLER_BR_EDR_MAX_ACL_CONN
     default 2
     range 1 7
     help
-        BR/EDR ACL maximum connections of bluetooth controller. 
+        BR/EDR ACL maximum connections of bluetooth controller.
         Each connection uses 1.2KB static DRAM whenever the BT controller is enabled.
 
 config BTDM_CONTROLLER_BR_EDR_MAX_SYNC_CONN
@@ -252,11 +252,6 @@ config CLASSIC_BT_ENABLED
     default n
     help
         For now this option needs "SMP_ENABLE" to be set to yes
-
-config BT_SSP_ENABLE
-   bool "Enable Secure Simple Pairing"
-   depends on CLASSIC_BT_ENABLED
-   default CLASSIC_BT_ENABLED
 
 config A2DP_ENABLE
     bool "A2DP"
@@ -1112,8 +1107,8 @@ config BLE_HOST_QUEUE_CONGESTION_CHECK
     depends on BLUEDROID_ENABLED
     default n
     help
-        When scanning and scan duplicate is not enabled, if there are a lot of adv packets around or application layer 
-        handling adv packets is slow, it will cause the controller memory to run out. if enabled, adv packets will be 
+        When scanning and scan duplicate is not enabled, if there are a lot of adv packets around or application layer
+        handling adv packets is slow, it will cause the controller memory to run out. if enabled, adv packets will be
         lost when host queue is congested.
 
 config SMP_ENABLE
