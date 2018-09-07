@@ -182,7 +182,7 @@ static void btc_dm_remove_ble_bonding_keys(void)
 
 static void btc_dm_save_ble_bonding_keys(void)
 {
-    if(!(pairing_cb.ble.is_penc_key_rcvd || pairing_cb.ble.is_pid_key_rcvd || pairing_cb.ble.is_pcsrk_key_rcvd || 
+    if (!(pairing_cb.ble.is_penc_key_rcvd || pairing_cb.ble.is_pid_key_rcvd || pairing_cb.ble.is_pcsrk_key_rcvd ||
          pairing_cb.ble.is_lenc_key_rcvd || pairing_cb.ble.is_lcsrk_key_rcvd || pairing_cb.ble.is_lidk_key_rcvd)) {
         return ;
     }
@@ -379,6 +379,27 @@ static void btc_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
     (void) status;
 }
 
+static void btc_dm_pin_req_evt(tBTA_DM_PIN_REQ *p_pin_req)
+{
+#if (BTC_GAP_BT_INCLUDED == TRUE)
+    esp_bt_gap_cb_param_t param;
+    bt_status_t ret;
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_PIN_REQ_EVT;
+    param.pin_req.min_16_digit = p_pin_req->min_16_digit;
+    memcpy(param.pin_req.bda, p_pin_req->bd_addr, ESP_BD_ADDR_LEN);
+
+    ret = btc_transfer_context(&msg, &param,
+                               sizeof(esp_bt_gap_cb_param_t), NULL);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
+    }
+#endif /// BTC_GAP_BT_INCLUDED == TRUE
+}
+
 tBTA_SERVICE_MASK btc_get_enabled_services_mask(void)
 {
     return btc_enabled_services;
@@ -488,6 +509,8 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         break;
     }
     case BTA_DM_PIN_REQ_EVT:
+        BTC_TRACE_DEBUG("BTA_DM_PIN_REQ_EVT");
+        btc_dm_pin_req_evt(&p_data->pin_req);
         break;
     case BTA_DM_AUTH_CMPL_EVT:
         btc_dm_auth_cmpl_evt(&p_data->auth_cmpl);

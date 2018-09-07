@@ -28,6 +28,7 @@ typedef enum {
     BTC_GAP_BT_SEARCH_SERVICE_RECORD_EVT,
     BTC_GAP_BT_READ_RSSI_DELTA_EVT,
     BTC_GAP_BT_AUTH_CMPL_EVT,
+    BTC_GAP_BT_PIN_REQ_EVT,
 }btc_gap_bt_evt_t;
 
 typedef enum {
@@ -39,6 +40,8 @@ typedef enum {
     BTC_GAP_BT_ACT_SET_COD,
     BTC_GAP_BT_ACT_READ_RSSI_DELTA,
     BTC_GAP_BT_ACT_REMOVE_BOND_DEVICE,
+    BTC_GAP_BT_ACT_SET_PIN_TYPE,
+    BTC_GAP_BT_ACT_PIN_REPLY,
 } btc_gap_bt_act_t;
 
 /* btc_bt_gap_args_t */
@@ -79,6 +82,22 @@ typedef union {
     struct rm_bond_device_args {
        bt_bdaddr_t bda;
     } rm_bond_device;
+
+    // BTC_GAP_BT_ACT_SET_PIN_TYPE
+    struct set_pin_type_args {
+        esp_bt_pin_type_t pin_type;
+        uint8_t pin_code_len;
+        esp_bt_pin_code_t pin_code;
+    } set_pin_type;
+
+    // BTC_GAP_BT_ACT_PIN_REPLY
+    struct pin_reply_args {
+        bt_bdaddr_t bda;
+        bool accept;
+        uint8_t pin_code_len;
+        esp_bt_pin_code_t pin_code;
+    } pin_reply;
+
 } btc_gap_bt_args_t;
 
 void btc_gap_bt_call_handler(btc_msg_t *msg);

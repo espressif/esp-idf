@@ -59,7 +59,7 @@ void app_main()
         .mode = I2S_MODE_MASTER | I2S_MODE_TX,                                  // Only TX
 #endif
         .sample_rate = 44100,
-        .bits_per_sample = 16,                                              
+        .bits_per_sample = 16,
         .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,                           //2-channels
         .communication_format = I2S_COMM_FORMAT_I2S_MSB,
         .dma_buf_count = 6,
@@ -113,8 +113,39 @@ void app_main()
 
     /* Bluetooth device name, connection mode and profile set up */
     bt_app_work_dispatch(bt_av_hdl_stack_evt, BT_APP_EVT_STACK_UP, NULL, 0, NULL);
+
+    /*
+     * Set default parameters for Legacy Pairing
+     * Use fixed pin code
+     */
+    esp_bt_pin_type_t pin_type = ESP_BT_PIN_TYPE_FIXED;
+    esp_bt_pin_code_t pin_code;
+    pin_code[0] = '1';
+    pin_code[1] = '2';
+    pin_code[2] = '3';
+    pin_code[3] = '4';
+    esp_bt_gap_set_pin(pin_type, 4, pin_code);
 }
 
+void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
+{
+    switch (event) {
+    case ESP_BT_GAP_AUTH_CMPL_EVT:{
+        if (param->auth_cmpl.stat == ESP_BT_STATUS_SUCCESS) {
+            ESP_LOGI(BT_AV_TAG, "authentication success: %s", param->auth_cmpl.device_name);
+            esp_log_buffer_hex(BT_AV_TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
+        } else {
+            ESP_LOGE(BT_AV_TAG, "authentication failed, status:%d", param->auth_cmpl.stat);
+        }
+        break;
+    }
+    default: {
+        ESP_LOGI(BT_AV_TAG, "event: %d", event);
+        break;
+    }
+    }
+    return;
+}
 
 static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
 {
@@ -124,6 +155,9 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
         /* set up device name */
         char *dev_name = "ESP_SPEAKER";
         esp_bt_dev_set_device_name(dev_name);
+
+        /* register GAP callback function */
+        esp_bt_gap_register_callback(bt_app_gap_cb);
 
         /* initialize A2DP sink */
         esp_a2d_register_callback(&bt_app_a2d_cb);
