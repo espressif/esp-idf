@@ -77,9 +77,9 @@ struct crypto_cipher *  fast_crypto_cipher_init(enum crypto_cipher_alg alg,
             break;
         case CRYPTO_CIPHER_ALG_AES:                
             mbedtls_aes_init(&(ctx->u.aes.ctx_enc));
-            mbedtls_aes_setkey_enc(&(ctx->u.aes.ctx_enc), key, 256);
+            mbedtls_aes_setkey_enc(&(ctx->u.aes.ctx_enc), key, key_len * 8);
             mbedtls_aes_init(&(ctx->u.aes.ctx_dec));
-            mbedtls_aes_setkey_dec(&(ctx->u.aes.ctx_dec), key, 256);               
+            mbedtls_aes_setkey_dec(&(ctx->u.aes.ctx_dec), key, key_len * 8);               
             os_memcpy(ctx->u.aes.cbc, iv, AES_BLOCK_SIZE);
             break;
 #ifdef CONFIG_DES3
