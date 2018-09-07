@@ -40,6 +40,7 @@ The documentation has different language versions (:link_to_translation:`en:Engl
    :hidden:
 
    Get Started <get-started/index>
+   Get Started (CMake Preview) <get-started-cmake/index>
    API Reference <api-reference/index>
    H/W Reference <hw-reference/index>
    API Guides <api-guides/index>

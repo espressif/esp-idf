@@ -15,11 +15,11 @@ SDKCONFIG ?= $(PROJECT_PATH)/sdkconfig
 # overrides (usually used for esp-idf examples)
 SDKCONFIG_DEFAULTS ?= $(PROJECT_PATH)/sdkconfig.defaults
 
-# Workaround to run make parallel (-j). mconf and conf cannot be made simultaneously
-$(KCONFIG_TOOL_DIR)/mconf: $(KCONFIG_TOOL_DIR)/conf
+# Workaround to run make parallel (-j). mconf-idf and conf-idf cannot be made simultaneously
+$(KCONFIG_TOOL_DIR)/mconf-idf: $(KCONFIG_TOOL_DIR)/conf-idf
 
 # reset MAKEFLAGS as the menuconfig makefile uses implicit compile rules
-$(KCONFIG_TOOL_DIR)/mconf $(KCONFIG_TOOL_DIR)/conf: $(wildcard $(KCONFIG_TOOL_DIR)/*.c)
+$(KCONFIG_TOOL_DIR)/mconf-idf $(KCONFIG_TOOL_DIR)/conf-idf: $(wildcard $(KCONFIG_TOOL_DIR)/*.c)
 	MAKEFLAGS="" CC=$(HOSTCC) LD=$(HOSTLD) \
 	$(MAKE) -C $(KCONFIG_TOOL_DIR)
 
@@ -36,13 +36,14 @@ $(SDKCONFIG): defconfig
 endif
 endif
 
-# macro for the commands to run kconfig tools conf or mconf.
+# macro for the commands to run kconfig tools conf-idf or mconf-idf.
 # $1 is the name (& args) of the conf tool to run
 define RunConf
 	mkdir -p $(BUILD_DIR_BASE)/include/config
 	cd $(BUILD_DIR_BASE); KCONFIG_AUTOHEADER=$(abspath $(BUILD_DIR_BASE)/include/sdkconfig.h) \
 	COMPONENT_KCONFIGS="$(COMPONENT_KCONFIGS)" KCONFIG_CONFIG=$(SDKCONFIG) \
 	COMPONENT_KCONFIGS_PROJBUILD="$(COMPONENT_KCONFIGS_PROJBUILD)" \
+	IDF_CMAKE=n \
 	$(KCONFIG_TOOL_DIR)/$1 $(IDF_PATH)/Kconfig
 endef
 
@@ -58,7 +59,7 @@ ifndef MAKE_RESTARTS
 # depend on any prerequisite that may cause a make restart as part of
 # the prerequisite's own recipe.
 
-menuconfig: $(KCONFIG_TOOL_DIR)/mconf
+menuconfig: $(KCONFIG_TOOL_DIR)/mconf-idf
 	$(summary) MENUCONFIG
 ifdef BATCH_BUILD
 	@echo "Can't run interactive configuration inside non-interactive build process."
@@ -67,25 +68,25 @@ ifdef BATCH_BUILD
 	@echo "See esp-idf documentation for more details."
 	@exit 1
 else
-	$(call RunConf,mconf)
+	$(call RunConf,mconf-idf)
 endif
 
 # defconfig creates a default config, based on SDKCONFIG_DEFAULTS if present
-defconfig: $(KCONFIG_TOOL_DIR)/conf
+defconfig: $(KCONFIG_TOOL_DIR)/conf-idf
 	$(summary) DEFCONFIG
 ifneq ("$(wildcard $(SDKCONFIG_DEFAULTS))","")
 	cat $(SDKCONFIG_DEFAULTS) >> $(SDKCONFIG)  # append defaults to sdkconfig, will override existing values
 endif
-	$(call RunConf,conf --olddefconfig)
+	$(call RunConf,conf-idf --olddefconfig)
 
 # if neither defconfig or menuconfig are requested, use the GENCONFIG rule to
 # ensure generated config files are up to date
-$(SDKCONFIG_MAKEFILE) $(BUILD_DIR_BASE)/include/sdkconfig.h: $(KCONFIG_TOOL_DIR)/conf $(SDKCONFIG) $(COMPONENT_KCONFIGS) $(COMPONENT_KCONFIGS_PROJBUILD) | $(call prereq_if_explicit,defconfig) $(call prereq_if_explicit,menuconfig)
+$(SDKCONFIG_MAKEFILE) $(BUILD_DIR_BASE)/include/sdkconfig.h: $(KCONFIG_TOOL_DIR)/conf-idf $(SDKCONFIG) $(COMPONENT_KCONFIGS) $(COMPONENT_KCONFIGS_PROJBUILD) | $(call prereq_if_explicit,defconfig) $(call prereq_if_explicit,menuconfig)
 	$(summary) GENCONFIG
 ifdef BATCH_BUILD  # can't prompt for new config values like on terminal
-	$(call RunConf,conf --olddefconfig)
+	$(call RunConf,conf-idf --olddefconfig)
 endif
-	$(call RunConf,conf --silentoldconfig)
+	$(call RunConf,conf-idf --silentoldconfig)
 	touch $(SDKCONFIG_MAKEFILE) $(BUILD_DIR_BASE)/include/sdkconfig.h  # ensure newer than sdkconfig
 
 else  # "$(MAKE_RESTARTS)" != ""

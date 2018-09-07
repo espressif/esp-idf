@@ -57,4 +57,11 @@ examples/protocols/aws_iot/*/main/certs/*.pem.*
 coverage.info
 coverage_report/
 
+# Windows tools installer build
+tools/windows/tool_setup/.*
+tools/windows/tool_setup/input
+tools/windows/tool_setup/dl
+tools/windows/tool_setup/Output
+
 test_multi_heap_host
+

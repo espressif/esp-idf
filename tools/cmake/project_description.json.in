@@ -1,0 +1,18 @@
+{
+    "project_name":       "${PROJECT_NAME}",
+    "project_path":       "${PROJECT_PATH}",
+    "build_dir":          "${CMAKE_BINARY_DIR}",
+    "config_file":        "${SDKCONFIG}",
+    "config_defaults":    "${SDKCONFIG_DEFAULTS}",
+    "app_elf":            "${PROJECT_NAME}.elf",
+    "app_bin":            "${PROJECT_NAME}.bin",
+    "git_revision":       "${IDF_VER}",
+    "phy_data_partition": "${CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION}",
+    "monitor_baud" : "${CONFIG_MONITOR_BAUD}",
+    "config_environment" : {
+        "COMPONENT_KCONFIGS" : "${COMPONENT_KCONFIGS}",
+        "COMPONENT_KCONFIGS_PROJBUILD" : "${COMPONENT_KCONFIGS_PROJBUILD}"
+    },
+    "build_components" : ${build_components_json},
+    "build_component_paths" : ${build_component_paths_json}
+}

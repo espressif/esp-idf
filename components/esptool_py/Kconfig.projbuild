@@ -1,127 +1,135 @@
 menu "Serial flasher config"
 
 config ESPTOOLPY_PORT
-	string "Default serial port"
-	default "/dev/ttyUSB0"
-	help
-		The serial port that's connected to the ESP chip. This can be overridden by setting the ESPPORT
-		environment variable.
+    string "Default serial port"
+    depends on !IDF_CMAKE
+    default "/dev/ttyUSB0"
+    help
+        The serial port that's connected to the ESP chip. This can be overridden by setting the ESPPORT
+        environment variable.
+
+        This value is ignored when using the CMake-based build system or idf.py.
 
 choice ESPTOOLPY_BAUD
-	prompt "Default baud rate"
-	default ESPTOOLPY_BAUD_115200B
-	help
-		Default baud rate to use while communicating with the ESP chip. Can be overridden by
-		setting the ESPBAUD variable.
+    prompt "Default baud rate"
+    depends on !IDF_CMAKE
+    default ESPTOOLPY_BAUD_115200B
+    help
+        Default baud rate to use while communicating with the ESP chip. Can be overridden by
+        setting the ESPBAUD variable.
+
+        This value is ignored when using the CMake-based build system or idf.py.
 
 config ESPTOOLPY_BAUD_115200B
-	bool "115200 baud"
+    bool "115200 baud"
 config ESPTOOLPY_BAUD_230400B
-	bool "230400 baud"
+    bool "230400 baud"
 config ESPTOOLPY_BAUD_921600B
-	bool "921600 baud"
+    bool "921600 baud"
 config ESPTOOLPY_BAUD_2MB
-	bool "2Mbaud"
+    bool "2Mbaud"
 config ESPTOOLPY_BAUD_OTHER
     bool "Other baud rate"
 endchoice
 
 config ESPTOOLPY_BAUD_OTHER_VAL
-	int "Other baud rate value" if ESPTOOLPY_BAUD_OTHER
-	default 115200
+    int "Other baud rate value" if ESPTOOLPY_BAUD_OTHER
+    default 115200
 
 config ESPTOOLPY_BAUD
-	int
-	default 115200 if ESPTOOLPY_BAUD_115200B
-	default 230400 if ESPTOOLPY_BAUD_230400B
-	default 921600 if ESPTOOLPY_BAUD_921600B
-	default 2000000 if ESPTOOLPY_BAUD_2MB
-	default ESPTOOLPY_BAUD_OTHER_VAL if ESPTOOLPY_BAUD_OTHER
+    int
+    depends on !IDF_CMAKE
+    default 115200 if ESPTOOLPY_BAUD_115200B
+    default 230400 if ESPTOOLPY_BAUD_230400B
+    default 921600 if ESPTOOLPY_BAUD_921600B
+    default 2000000 if ESPTOOLPY_BAUD_2MB
+    default ESPTOOLPY_BAUD_OTHER_VAL if ESPTOOLPY_BAUD_OTHER
 
 config ESPTOOLPY_COMPRESSED
-	bool "Use compressed upload"
-	default "y"
-	help
-		The flasher tool can send data compressed using zlib, letting the ROM on the ESP chip
-		decompress it on the fly before flashing it. For most payloads, this should result in a
-		speed increase.
+    bool "Use compressed upload"
+    depends on !IDF_CMAKE
+    default "y"
+    help
+        The flasher tool can send data compressed using zlib, letting the ROM on the ESP chip
+        decompress it on the fly before flashing it. For most payloads, this should result in a
+        speed increase.
 
 choice FLASHMODE
-	prompt "Flash SPI mode"
-	default FLASHMODE_DIO
-	help
-		Mode the flash chip is flashed in, as well as the default mode for the
-		binary to run in.
+    prompt "Flash SPI mode"
+    default FLASHMODE_DIO
+    help
+        Mode the flash chip is flashed in, as well as the default mode for the
+        binary to run in.
 
 config FLASHMODE_QIO
-	bool "QIO"
+    bool "QIO"
 config FLASHMODE_QOUT
-	bool "QOUT"
+    bool "QOUT"
 config FLASHMODE_DIO
-	bool "DIO"
+    bool "DIO"
 config FLASHMODE_DOUT
-	bool "DOUT"
+    bool "DOUT"
 endchoice
 
 # Note: we use esptool.py to flash bootloader in
 # dio mode for QIO/QOUT, bootloader then upgrades
 # itself to quad mode during initialisation
 config ESPTOOLPY_FLASHMODE
-	string
-	default "dio" if FLASHMODE_QIO
-	default "dio" if FLASHMODE_QOUT
-	default "dio" if FLASHMODE_DIO
-	default "dout" if FLASHMODE_DOUT
+    string
+    default "dio" if FLASHMODE_QIO
+    default "dio" if FLASHMODE_QOUT
+    default "dio" if FLASHMODE_DIO
+    default "dout" if FLASHMODE_DOUT
 
 choice ESPTOOLPY_FLASHFREQ
-	prompt "Flash SPI speed"
-	default ESPTOOLPY_FLASHFREQ_40M
-	help
-		The SPI flash frequency to be used.
+    prompt "Flash SPI speed"
+    default ESPTOOLPY_FLASHFREQ_40M
+    help
+        The SPI flash frequency to be used.
 
 config ESPTOOLPY_FLASHFREQ_80M
-	bool "80 MHz"
+    bool "80 MHz"
 config ESPTOOLPY_FLASHFREQ_40M
-	bool "40 MHz"
+    bool "40 MHz"
 config ESPTOOLPY_FLASHFREQ_26M
-	bool "26 MHz"
+    bool "26 MHz"
 config ESPTOOLPY_FLASHFREQ_20M
-	bool "20 MHz"
+    bool "20 MHz"
 endchoice
 
 config ESPTOOLPY_FLASHFREQ
-	string
-	default "80m" if ESPTOOLPY_FLASHFREQ_80M
-	default "40m" if ESPTOOLPY_FLASHFREQ_40M
-	default "26m" if ESPTOOLPY_FLASHFREQ_26M
-	default "20m" if ESPTOOLPY_FLASHFREQ_20M
+    string
+    default "80m" if ESPTOOLPY_FLASHFREQ_80M
+    default "40m" if ESPTOOLPY_FLASHFREQ_40M
+    default "26m" if ESPTOOLPY_FLASHFREQ_26M
+    default "20m" if ESPTOOLPY_FLASHFREQ_20M
 
 
 choice ESPTOOLPY_FLASHSIZE
-	prompt "Flash size"
-	default ESPTOOLPY_FLASHSIZE_2MB
-	help
-		SPI flash size, in megabytes
+    prompt "Flash size"
+    default ESPTOOLPY_FLASHSIZE_2MB
+    help
+        SPI flash size, in megabytes
 
 config ESPTOOLPY_FLASHSIZE_1MB
-	bool "1 MB"
+    bool "1 MB"
 config ESPTOOLPY_FLASHSIZE_2MB
-	bool "2 MB"
+    bool "2 MB"
 config ESPTOOLPY_FLASHSIZE_4MB
-	bool "4 MB"
+    bool "4 MB"
 config ESPTOOLPY_FLASHSIZE_8MB
-	bool "8 MB"
+    bool "8 MB"
 config ESPTOOLPY_FLASHSIZE_16MB
-	bool "16 MB"
+    bool "16 MB"
 endchoice
 
 config ESPTOOLPY_FLASHSIZE
-	string
-	default "1MB" if ESPTOOLPY_FLASHSIZE_1MB
-	default "2MB" if ESPTOOLPY_FLASHSIZE_2MB
-	default "4MB" if ESPTOOLPY_FLASHSIZE_4MB
-	default "8MB" if ESPTOOLPY_FLASHSIZE_8MB
-	default "16MB" if ESPTOOLPY_FLASHSIZE_16MB
+    string
+    default "1MB" if ESPTOOLPY_FLASHSIZE_1MB
+    default "2MB" if ESPTOOLPY_FLASHSIZE_2MB
+    default "4MB" if ESPTOOLPY_FLASHSIZE_4MB
+    default "8MB" if ESPTOOLPY_FLASHSIZE_8MB
+    default "16MB" if ESPTOOLPY_FLASHSIZE_16MB
 
 config ESPTOOLPY_FLASHSIZE_DETECT
     bool "Detect flash size when flashing bootloader"

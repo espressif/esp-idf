@@ -6,6 +6,7 @@ API Guides
 
    General Notes <general-notes>
    编译系统 <build-system>
+   编译系统 (CMake) <build-system-cmake>
    Error Handling <error-handling>
    Fatal Errors <fatal-errors>
    Deep Sleep Wake Stubs <deep-sleep-stub>

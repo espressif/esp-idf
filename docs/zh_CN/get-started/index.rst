@@ -3,6 +3,8 @@
 ***********
 :link_to_translation:`en:[English]`
 
+.. important:: 对不起，CMake-based Build System Preview 还没有中文翻译。
+
 本文档旨在指导用户创建 ESP32 的软件环境。本文将通过一个简单的例子来说明如何使用 ESP-IDF (Espressif IoT Development Framework)，包括配置、编译、下载固件到开发板等步骤。
 
 .. include:: /_build/inc/version-note.inc
