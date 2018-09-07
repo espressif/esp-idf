@@ -383,6 +383,37 @@ void rtc_gpio_force_hold_dis_all()
     }
 }
 
+esp_err_t rtc_gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
+{
+    int rtc_num = rtc_gpio_desc[gpio_num].rtc_num;
+    if (rtc_num < 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (( intr_type != GPIO_INTR_LOW_LEVEL ) && ( intr_type != GPIO_INTR_HIGH_LEVEL )) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    uint32_t reg = RTC_GPIO_PIN0_REG + rtc_num * sizeof(uint32_t);
+    /* each pin has its own register, spinlock not needed */
+    REG_SET_BIT(reg, RTC_GPIO_PIN0_WAKEUP_ENABLE);
+    REG_SET_FIELD(reg, RTC_GPIO_PIN0_INT_TYPE, intr_type);
+    return ESP_OK;
+}
+
+esp_err_t rtc_gpio_wakeup_disable(gpio_num_t gpio_num)
+{
+    int rtc_num = rtc_gpio_desc[gpio_num].rtc_num;
+    if (rtc_num < 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    uint32_t reg = RTC_GPIO_PIN0_REG + rtc_num * sizeof(uint32_t);
+    /* each pin has its own register, spinlock not needed */
+    REG_CLR_BIT(reg, RTC_GPIO_PIN0_WAKEUP_ENABLE);
+    REG_SET_FIELD(reg, RTC_GPIO_PIN0_INT_TYPE, 0);
+    return ESP_OK;
+}
+
 
 /*---------------------------------------------------------------
                     Touch Pad

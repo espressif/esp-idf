@@ -792,6 +792,53 @@ esp_err_t uart_set_rx_timeout(uart_port_t uart_num, const uint8_t tout_thresh);
  */
 esp_err_t uart_get_collision_flag(uart_port_t uart_num, bool* collision_flag);
 
+/**
+ * @brief Set the number of RX pin signal edges for light sleep wakeup
+ *
+ * UART can be used to wake up the system from light sleep. This feature works
+ * by counting the number of positive edges on RX pin and comparing the count to
+ * the threshold. When the count exceeds the threshold, system is woken up from
+ * light sleep. This function allows setting the threshold value.
+ *
+ * Stop bit and parity bits (if enabled) also contribute to the number of edges.
+ * For example, letter 'a' with ASCII code 97 is encoded as 010001101 on the wire
+ * (with 8n1 configuration), start and stop bits included. This sequence has 3
+ * positive edges (transitions from 0 to 1). Therefore, to wake up the system
+ * when 'a' is sent, set wakeup_threshold=3.
+ *
+ * The character that triggers wakeup is not received by UART (i.e. it can not
+ * be obtained from UART FIFO). Depending on the baud rate, a few characters
+ * after that will also not be received. Note that when the chip enters and exits
+ * light sleep mode, APB frequency will be changing. To make sure that UART has
+ * correct baud rate all the time, select REF_TICK as UART clock source,
+ * by setting use_ref_tick field in uart_config_t to true.
+ *
+ * @note in ESP32, UART2 does not support light sleep wakeup feature.
+ *
+ * @param uart_num  UART number
+ * @param wakeup_threshold  number of RX edges for light sleep wakeup, value is 3 .. 0x3ff.
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if uart_num is incorrect or wakeup_threshold is
+ *        outside of [3, 0x3ff] range.
+ */
+esp_err_t uart_set_wakeup_threshold(uart_port_t uart_num, int wakeup_threshold);
+
+/**
+ * @brief Get the number of RX pin signal edges for light sleep wakeup.
+ *
+ * See description of uart_set_wakeup_threshold for the explanation of UART
+ * wakeup feature.
+ *
+ * @param uart_num  UART number
+ * @param[out] out_wakeup_threshold  output, set to the current value of wakeup
+ *                                   threshold for the given UART.
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if out_wakeup_threshold is NULL
+ */
+esp_err_t uart_get_wakeup_threshold(uart_port_t uart_num, int* out_wakeup_threshold);
+
 #ifdef __cplusplus
 }
 #endif
