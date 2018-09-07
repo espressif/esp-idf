@@ -75,6 +75,10 @@ Windows 用户
 
     取消选中 “Allow heuristic resolution of includes”。因为启用此选项时，有时会导致 Eclipse 无法找到正确的头文件目录。
 
+点击 “C/C++ Build” -> “Behavior” 属性页。
+
+* 选中 “Enable parallel build” 以启用多任务并行构建。
+
 .. _eclipse-build-project:
 
 在 Eclipse IDE 中创建项目

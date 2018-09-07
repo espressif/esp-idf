@@ -69,6 +69,10 @@ Navigate to "C/C++ General" -> "Indexer" property page:
 
 * Uncheck "Allow heuristic resolution of includes". When this option is enabled Eclipse sometimes fails to find correct header directories.
 
+Navigate to "C/C++ Build" -> "Behavior" property page:
+
+* Check "Enable parallel build" to enable multiple build jobs in parallel.
+
 .. _eclipse-build-project:
 
 Building in Eclipse
