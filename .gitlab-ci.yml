@@ -202,6 +202,12 @@ build_esp_idf_tests:
     # build some of examples
     - mkdir -p ${LOG_PATH}
     - ${IDF_PATH}/tools/ci/build_examples.sh "${CI_JOB_NAME}"
+    # and again, with cmake!
+    - rm -rf ../build_examples_cmake
+    - mkdir ../build_examples_cmake
+    - cd ../build_examples_cmake
+    - mkdir -p ${LOG_PATH}_cmake
+    - LOG_PATH=${LOG_PATH}_cmake ${IDF_PATH}/tools/ci/build_examples_cmake.sh "${CI_JOB_NAME}"
 
 build_examples_00:
   <<: *build_examples_template
@@ -259,6 +265,12 @@ build_docs:
     - make gh-linkcheck
     - make html
     - ../check_doc_warnings.sh
+
+verify_cmake_style:
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  script:
+    tools/cmake/run_cmake_lint.sh
 
 .host_test_template: &host_test_template
   stage: host_test
@@ -373,6 +385,12 @@ test_multi_heap_on_host:
     - cd components/heap/test_multi_heap_host
     - ./test_all_configs.sh
 
+test_confserver:
+  <<: *host_test_template
+  script:
+    - cd tools/kconfig_new/test
+    - ./test_confserver.py
+
 test_build_system:
   <<: *host_test_template
   script:
@@ -381,6 +399,15 @@ test_build_system:
     - mkdir test_build_system
     - cd test_build_system
     - ${IDF_PATH}/tools/ci/test_build_system.sh
+
+test_build_system_cmake:
+  <<: *host_test_template
+  script:
+    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
+    - rm -rf test_build_system
+    - mkdir test_build_system
+    - cd test_build_system
+    - ${IDF_PATH}/tools/ci/test_build_system_cmake.sh
 
 test_idf_monitor:
   <<: *host_test_template
@@ -529,6 +556,20 @@ check_permissions:
   before_script: *do_nothing_before_no_filter
   script:
     - tools/ci/check-executable.sh
+
+check_examples_cmake_make:
+  stage: deploy
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - build
+  except:
+    - master
+    - /^release\/v/
+    - /^v\d+\.\d+(\.\d+)?($|-)/
+  dependencies: []
+  before_script: *do_nothing_before
+  script:
+    - tools/ci/check_examples_cmake_make.sh
 
 check_submodule_sync:
   stage: check

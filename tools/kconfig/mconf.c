@@ -980,11 +980,17 @@ static int handle_exit(void)
 		}
 		/* fall through */
 	case -1:
-		if (!silent)
+		if (!silent) {
+			const char *is_cmake = getenv("IDF_CMAKE");
+			const char *build_msg;
+			if (is_cmake && is_cmake[0] == 'y')
+				build_msg = _("Ready to use CMake (or 'idf.py build') to build the project.");
+			else
+				build_msg = _("Execute 'make' to start the build or try 'make help'.");
 			printf(_("\n\n"
-				 "*** End of the configuration.\n"
-				 "*** Execute 'make' to start the build or try 'make help'."
-				 "\n\n"));
+					 "*** End of the configuration.\n"
+					 "*** %s\n\n"), build_msg);
+		}
 		res = 0;
 		break;
 	default:

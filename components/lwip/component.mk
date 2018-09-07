@@ -18,15 +18,13 @@ COMPONENT_SRCDIRS := \
 	lwip/src/core/ipv4 \
 	lwip/src/core/ipv6 \
 	lwip/src/netif \
-	lwip/src/netif/ppp \
 	port/esp32 \
 	port/esp32/freertos \
 	port/esp32/netif \
-	port/esp32/debug 
+	port/esp32/debug
+
+ifdef CONFIG_PPP_SUPPORT
+    COMPONENT_SRCDIRS += lwip/src/netif/ppp lwip/src/netif/ppp/polarssl
+endif
 
 CFLAGS += -Wno-address  # lots of LWIP source files evaluate macros that check address of stack variables
-
-api/tcpip.o apps/dhcpserver.o: CFLAGS += -Wno-unused-variable
-apps/dhcpserver.o core/pbuf.o core/tcp_in.o: CFLAGS += -Wno-unused-but-set-variable
-netif/ppp/pppos.o: CFLAGS += -Wno-type-limits
-

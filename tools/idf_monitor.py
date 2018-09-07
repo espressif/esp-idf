@@ -3,8 +3,8 @@
 # esp-idf serial output monitor tool. Does some helpful things:
 # - Looks up hex addresses in ELF file with addr2line
 # - Reset ESP32 via serial RTS line (Ctrl-T Ctrl-R)
-# - Run "make flash" (Ctrl-T Ctrl-F)
-# - Run "make app-flash" (Ctrl-T Ctrl-A)
+# - Run "make (or idf.py) flash" (Ctrl-T Ctrl-F)
+# - Run "make (or idf.py) app-flash" (Ctrl-T Ctrl-A)
 # - If gdbstub output is detected, gdb is automatically loaded
 #
 # Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
@@ -43,6 +43,7 @@ try:
     import queue
 except ImportError:
     import Queue as queue
+import shlex
 import time
 import sys
 import serial
@@ -320,7 +321,10 @@ class Monitor(object):
         self.console_reader = ConsoleReader(self.console, self.event_queue, socket_mode)
         self.serial_reader = SerialReader(self.serial, self.event_queue)
         self.elf_file = elf_file
-        self.make = make
+        if not os.path.exists(make):
+            self.make = shlex.split(make)  # allow for possibility the "make" arg is a list of arguments (for idf.py)
+        else:
+            self.make = make
         self.toolchain_prefix = toolchain_prefix
         self.menu_key = CTRL_T
         self.exit_key = CTRL_RBRACKET
@@ -487,19 +491,18 @@ class Monitor(object):
 ---    {menu:7} Send the menu character itself to remote
 ---    {exit:7} Send the exit character itself to remote
 ---    {reset:7} Reset target board via RTS line
----    {make:7} Run 'make flash' to build & flash
----    {appmake:7} Run 'make app-flash to build & flash app
+---    {makecmd:7} Build & flash project
+---    {appmake:7} Build & flash app only
 ---    {output:7} Toggle output display
 ---    {pause:7} Reset target into bootloader to pause app via RTS line
 """.format(version=__version__,
            exit=key_description(self.exit_key),
            menu=key_description(self.menu_key),
            reset=key_description(CTRL_R),
-           make=key_description(CTRL_F),
+           makecmd=key_description(CTRL_F),
            appmake=key_description(CTRL_A),
            output=key_description(CTRL_Y),
-           pause=key_description(CTRL_P),
-           )
+           pause=key_description(CTRL_P) )
 
     def __enter__(self):
         """ Use 'with self' to temporarily disable monitoring behaviour """
@@ -517,12 +520,12 @@ class Monitor(object):
             red_print("""
 --- {}
 --- Press {} to exit monitor.
---- Press {} to run 'make flash'.
---- Press {} to run 'make app-flash'.
+--- Press {} to build & flash project.
+--- Press {} to build & flash app.
 --- Press any other key to resume monitor (resets target).""".format(reason,
                                                                      key_description(self.exit_key),
                                                                      key_description(CTRL_F),
-                                                                     key_description(CTRL_A)))
+                                                                     key_description(CTRL_A) ))
             k = CTRL_T  # ignore CTRL-T here, so people can muscle-memory Ctrl-T Ctrl-F, etc.
             while k == CTRL_T:
                 k = self.console.getkey()
@@ -536,9 +539,12 @@ class Monitor(object):
 
     def run_make(self, target):
         with self:
-            yellow_print("Running make %s..." % target)
-            p = subprocess.Popen([self.make,
-                                  target ])
+            if isinstance(self.make, list):
+                popen_args = self.make + [ target ]
+            else:
+                popen_args = [ self.make, target ]
+            yellow_print("Running %s..." % " ".join(popen_args))
+            p = subprocess.Popen(popen_args)
             try:
                 p.wait()
             except KeyboardInterrupt:

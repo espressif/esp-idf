@@ -169,7 +169,7 @@ endchoice
 endmenu
 
 config BLE_SCAN_DUPLICATE
-    bool "BLE Scan Duplicate Options "
+    bool "BLE Scan Duplicate Options"
     depends on (BTDM_CONTROLLER_MODE_BTDM || BTDM_CONTROLLER_MODE_BLE_ONLY)
     default y
     help

@@ -49,7 +49,7 @@ NOTE: The `-j4` option causes `make` to run 4 parallel jobs. This is much faster
 
 ## Flashing the Project
 
-When `make all` finishes, it will print a command line to use esptool.py to flash the chip. However you can also do this from make by running:
+When the build finishes, it will print a command line to use esptool.py to flash the chip. However you can also do this automatically by running:
 
 `make -j4 flash`
 
@@ -87,6 +87,7 @@ Multiple make functions can be combined into one. For example: to build the app 
 ```
 make -j5 flash monitor
 ```
+
 
 ## The Partition Table
 

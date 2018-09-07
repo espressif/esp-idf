@@ -3,6 +3,8 @@
 **************************************
 :link_to_translation:`en:[English]`
 
+.. important:: 对不起，CMake-based Build System Preview 还没有中文翻译。
+
 安装准备
 ================
 

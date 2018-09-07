@@ -185,6 +185,19 @@ To re-format a file, run::
     tools/format.sh components/my_component/file.c
 
 
+CMake Code Style
+----------------
+
+- Indent with four spaces.
+- Maximum line length 120 characters. When splitting lines, try to
+  focus on readability where possible (for example, by pairing up
+  keyword/argument pairs on individual lines).
+- Don't put anything in the optional parentheses after ``endforeach()``, ``endif()``, etc.
+- Use lowercase (``with_underscores``) for command, function, and macro names.
+- For locally scoped variables, use lowercase (``with_underscores``).
+- For globally scoped variables, use uppercase (``WITH_UNDERSCORES``).
+- Otherwise follow the defaults of the cmake-lint_ project.
+
 Configuring the code style for a project using EditorConfig
 -----------------------------------------------------------
 
@@ -222,3 +235,4 @@ Language features
 
 To be written.
 
+.. _cmake-lint: https://github.com/richq/cmake-lint

@@ -3,6 +3,8 @@ Linux 平台工具链的标准设置
 *****************************
 :link_to_translation:`en:[English]`
 
+.. important:: 对不起，CMake-based Build System Preview 还没有中文翻译。
+
 安装前提
 =====================
 
