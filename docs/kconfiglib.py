@@ -65,7 +65,13 @@ Credits: Written by Ulf "Ulfalizer" Magnusson
 Send bug reports, suggestions and other feedback to ulfalizer a.t Google's
 email service. Don't wrestle with internal APIs. Tell me what you need and I
 might add it in a safe way as a client API instead."""
+from __future__ import unicode_literals
 
+from builtins import str
+from builtins import hex
+from builtins import range
+from builtins import object
+from io import open
 import os
 import re
 import sys
@@ -518,7 +524,7 @@ class Config(object):
         for sym in self.syms_iter():
             sym.already_written = False
 
-        with open(filename, "w") as f:
+        with open(filename, "w", encoding='utf-8') as f:
             # Write header
             if header is not None:
                 f.write(_comment(header))
@@ -3099,7 +3105,7 @@ class _FileFeed(object):
 
     def __init__(self, filename):
         self.filename = _clean_up_path(filename)
-        with open(filename, "r") as f:
+        with open(filename, "r", encoding='utf-8') as f:
             # No interleaving of I/O and processing yet. Don't know if it would
             # help.
             self.lines = f.readlines()
@@ -3392,7 +3398,7 @@ def _internal_error(msg):
  T_BOOL, T_TRISTATE, T_HEX, T_INT, T_STRING,
  T_DEF_BOOL, T_DEF_TRISTATE,
  T_SELECT, T_RANGE, T_OPTION, T_ALLNOCONFIG_Y, T_ENV,
- T_DEFCONFIG_LIST, T_MODULES, T_VISIBLE) = range(39)
+ T_DEFCONFIG_LIST, T_MODULES, T_VISIBLE) = list(range(39))
 
 # The leading underscore before the function assignments below prevent pydoc
 # from listing them. The constants could be hidden too, but they're fairly
@@ -3433,7 +3439,7 @@ _id_keyword_re_match = re.compile(r"\s*([\w./-]+)\s*").match
 _sym_ref_re_search = re.compile(r"\$[A-Za-z0-9_]+").search
 
 # Integers representing symbol types
-UNKNOWN, BOOL, TRISTATE, STRING, HEX, INT = range(6)
+UNKNOWN, BOOL, TRISTATE, STRING, HEX, INT = list(range(6))
 
 # Strings to use for types
 TYPENAME = {UNKNOWN: "unknown", BOOL: "bool", TRISTATE: "tristate",
@@ -3451,7 +3457,7 @@ DEFAULT_VALUE = {BOOL: "n", TRISTATE: "n", STRING: "", INT: "", HEX: ""}
 NO_SELECTION = 0
 
 # Integers representing expression types
-AND, OR, NOT, EQUAL, UNEQUAL = range(5)
+AND, OR, NOT, EQUAL, UNEQUAL = list(range(5))
 
 # Map from tristate values to integers
 TRI_TO_INT = {"n": 0, "m": 1, "y": 2}
