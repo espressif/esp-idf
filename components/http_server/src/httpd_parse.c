@@ -650,7 +650,7 @@ esp_err_t httpd_query_key_value(const char *qry_str, const char *key, char *val,
          * Compare lengths first as key from url is not
          * null terminated (has '=' in the end) */
         if ((offset != strlen(key)) ||
-            (strncmp(qry_ptr, key, offset))) {
+            (strncasecmp(qry_ptr, key, offset))) {
             /* Get the name=val string. Multiple name=value pairs
              * are separated by '&' */
             qry_ptr = strchr(val_ptr, '&');
@@ -764,7 +764,7 @@ size_t httpd_req_get_hdr_value_len(httpd_req_t *r, const char *field)
          * null terminated (has ':' in the end).
          */
         if ((val_ptr - hdr_ptr != strlen(field)) ||
-            (strncmp(hdr_ptr, field, strlen(field)))) {
+            (strncasecmp(hdr_ptr, field, strlen(field)))) {
             hdr_ptr += strlen(hdr_ptr) + strlen("\r\n");
             continue;
         }
@@ -810,7 +810,7 @@ esp_err_t httpd_req_get_hdr_value_str(httpd_req_t *r, const char *field, char *v
          * null terminated (has ':' in the end).
          */
         if ((val_ptr - hdr_ptr != strlen(field)) ||
-            (strncmp(hdr_ptr, field, strlen(field)))) {
+            (strncasecmp(hdr_ptr, field, strlen(field)))) {
             hdr_ptr += strlen(hdr_ptr) + strlen("\r\n");
             continue;
         }
