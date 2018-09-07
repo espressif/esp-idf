@@ -143,6 +143,7 @@ const tBTA_AV_SACT bta_av_a2d_action[] = {
     bta_av_role_res,        /* BTA_AV_ROLE_RES */
     bta_av_delay_co,        /* BTA_AV_DELAY_CO */
     bta_av_open_at_inc,     /* BTA_AV_OPEN_AT_INC */
+    bta_av_open_fail_sdp,   /* BTA_AV_OPEN_FAIL_SDP */
     NULL
 };
 
@@ -1058,6 +1059,35 @@ void bta_av_free_sdb(tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
 {
     UNUSED(p_data);
     utl_freebuf((void **) &p_scb->p_disc_db);
+}
+
+/*******************************************************************************
+**
+** Function         bta_av_open_fail_sdp
+**
+** Description      report BTA_AV_OPEN_EVT with service discovery failed status
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_av_open_fail_sdp(tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
+{
+    tBTA_AV_OPEN open;
+
+    bdcpy(open.bd_addr, p_scb->peer_addr);
+    open.chnl   = p_scb->chnl;
+    open.hndl   = p_scb->hndl;
+    open.status = BTA_AV_FAIL_SDP;
+
+    if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SRC ) {
+        open.sep = AVDT_TSEP_SNK;
+    } else if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SNK ) {
+        open.sep = AVDT_TSEP_SRC;
+    }
+
+    (*bta_av_cb.p_cback)(BTA_AV_OPEN_EVT, (tBTA_AV *) &open);
+
+    UNUSED(p_data);
 }
 
 /*******************************************************************************
