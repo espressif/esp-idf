@@ -430,7 +430,8 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *p_data)
             btc_rc_check_handle_pending_play(p_bta_data->open.bd_addr,
                                              (p_bta_data->open.status == BTA_AV_SUCCESS));
             */
-        } else if (btc_av_cb.peer_sep == AVDT_TSEP_SRC) {
+        } else if (btc_av_cb.peer_sep == AVDT_TSEP_SRC &&
+                   (p_bta_data->open.status == BTA_AV_SUCCESS)) {
             /* Bring up AVRCP connection too */
             BTA_AvOpenRc(btc_av_cb.bta_handle);
         }
