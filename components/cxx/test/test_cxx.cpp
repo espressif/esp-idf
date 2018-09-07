@@ -1,5 +1,7 @@
 #include <vector>
-#include <algorithm>
+#include <numeric>
+#include <stdexcept>
+#include <string>
 #include "unity.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -269,6 +271,22 @@ TEST_CASE("c++ exceptions emergency pool", "[cxx] [ignore]")
     // expect abort() due to lack of memory for new exception
     TEST_ASSERT_TRUE(0 == 1);
 #endif
+}
+
+#else // !CONFIG_CXX_EXCEPTIONS
+
+TEST_CASE("std::out_of_range exception when -fno-exceptions", "[cxx][reset=abort,SW_CPU_RESET]")
+{
+    std::vector<int> v(10);
+    v.at(20) = 42;
+    TEST_FAIL_MESSAGE("Unreachable because we are aborted on the line above");
+}
+
+TEST_CASE("std::bad_alloc exception when -fno-exceptions", "[cxx][reset=abort,SW_CPU_RESET]")
+{
+    std::string s = std::string(2000000000, 'a');
+    (void)s;
+    TEST_FAIL_MESSAGE("Unreachable because we are aborted on the line above");
 }
 
 #endif
