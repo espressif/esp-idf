@@ -534,6 +534,35 @@ TEST_CASE("RMT memory test", "[rmt][test_env=UT_T1_RMT]")
     }
 }
 
+// RMT channel num and memory block relationship
+TEST_CASE("RMT memory block test", "[rmt][test_env=UT_T1_RMT]")
+{
+    rmt_channel_t channel = 0;
+    rmt_config_t rmt_rx;
+    rmt_rx.channel = channel;
+    rmt_rx.gpio_num = RMT_RX_GPIO_NUM;
+    rmt_rx.clk_div = RMT_CLK_DIV;
+    rmt_rx.mem_block_num = 1;
+    rmt_rx.rmt_mode = RMT_MODE_RX;
+    rmt_rx.rx_config.filter_en = true;
+    rmt_rx.rx_config.filter_ticks_thresh = 100;
+    rmt_rx.rx_config.idle_threshold = RMT_ITEM32_TIMEOUT_US / 10 * (RMT_TICK_10_US);
+    TEST_ESP_OK(rmt_config(&rmt_rx));
+    TEST_ESP_OK(rmt_driver_install(rmt_rx.channel, 1000, 0));
+
+    TEST_ESP_OK(rmt_set_mem_block_num(channel, 8));
+    TEST_ASSERT(rmt_set_mem_block_num(channel, 9)==ESP_ERR_INVALID_ARG);
+    TEST_ASSERT(rmt_set_mem_block_num(channel, -1)==ESP_ERR_INVALID_ARG);
+    TEST_ESP_OK(rmt_driver_uninstall(rmt_rx.channel));
+
+    rmt_rx.channel = 7;
+    TEST_ESP_OK(rmt_config(&rmt_rx));
+    TEST_ESP_OK(rmt_driver_install(rmt_rx.channel, 1000, 0));
+    TEST_ASSERT(rmt_set_mem_block_num(rmt_rx.channel, 2)==ESP_ERR_INVALID_ARG);
+    TEST_ASSERT(rmt_set_mem_block_num(rmt_rx.channel, -1)==ESP_ERR_INVALID_ARG);
+    TEST_ESP_OK(rmt_driver_uninstall(rmt_rx.channel));
+}
+
 TEST_CASE("RMT send waveform(logic analyzer)", "[rmt][test_env=UT_T1_RMT][ignore]")
 {
     tx_init();
@@ -680,3 +709,99 @@ TEST_CASE("RMT TX stop test", "[rmt][test_env=UT_T1_RMT]")
     TEST_ESP_OK(rmt_driver_uninstall(RMT_TX_CHANNEL));
     TEST_ESP_OK(rmt_driver_uninstall(RMT_RX_CHANNEL));
 }
+
+TEST_CASE("RMT loop_en test", "[rmt][test_env=UT_T1_RMT][ignore]")
+{
+    rmt_tx_config_t tx_cfg = {
+        .loop_en = true,  // set it as true
+        .carrier_duty_percent = 50,
+        .carrier_freq_hz = 38000,
+        .carrier_level = 1,
+        .carrier_en = RMT_TX_CARRIER_EN,
+        .idle_level = 0,
+        .idle_output_en = true,
+    };
+    rmt_config_t rmt_tx = {
+        .channel = RMT_TX_CHANNEL,
+        .gpio_num = RMT_TX_GPIO_NUM,
+        .mem_block_num = 1,
+        .clk_div = RMT_CLK_DIV,
+        .tx_config = tx_cfg,
+        .rmt_mode = 0,
+    };
+    rmt_config(&rmt_tx);
+    rmt_driver_install(rmt_tx.channel, 0, 0);
+    TEST_ESP_OK(rmt_driver_uninstall(RMT_TX_CHANNEL));
+
+    int rx_channel = RMT_RX_CHANNEL;
+    rx_init();
+    RingbufHandle_t rb = NULL;
+    rmt_get_ringbuf_handle(rx_channel, &rb);
+    rmt_rx_start(rx_channel, 1);
+    vTaskDelay(10);
+    tx_init();
+    int tx_channel = RMT_TX_CHANNEL;
+    int tx_num = RMT_TX_DATA_NUM;
+
+    ESP_LOGI(TAG, "RMT TX DATA");
+    size_t size = (sizeof(rmt_item32_t) * DATA_ITEM_NUM * tx_num);
+    rmt_item32_t* item = (rmt_item32_t*) malloc(size);
+    int item_num = DATA_ITEM_NUM * tx_num;
+    memset((void*) item, 0, size);
+    int offset = 0;
+    uint16_t cmd = 0x0;
+    uint16_t addr = 0x11;
+
+    // send data
+    set_tx_data(tx_channel, cmd, addr, item_num, item, offset);
+    rmt_write_items(tx_channel, item, item_num, 0);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    rmt_tx_stop(tx_channel);
+    free(item);
+
+    // receive data
+    uint16_t tmp = get_rx_data(rb);
+    TEST_ASSERT(tmp < 100);
+
+    TEST_ESP_OK(rmt_driver_uninstall(RMT_TX_CHANNEL));
+    TEST_ESP_OK(rmt_driver_uninstall(RMT_RX_CHANNEL));
+}
+
+TEST_CASE("RMT use multi channel", "[rmt][test_env=UT_T1_RMT]")
+{
+    rmt_tx_config_t tx_cfg = {
+        .loop_en = true,  // set it as true
+        .carrier_duty_percent = 50,
+        .carrier_freq_hz = 38000,
+        .carrier_level = 1,
+        .carrier_en = RMT_TX_CARRIER_EN,
+        .idle_level = 0,
+        .idle_output_en = true,
+    };
+    rmt_config_t rmt_tx1 = {
+        .channel = RMT_TX_CHANNEL,
+        .gpio_num = RMT_TX_GPIO_NUM,
+        .mem_block_num = 4,
+        .clk_div = RMT_CLK_DIV,
+        .tx_config = tx_cfg,
+        .rmt_mode = 0,
+    };
+    rmt_config(&rmt_tx1);
+    rmt_driver_install(rmt_tx1.channel, 0, 0);
+
+    rmt_config_t rmt_tx2 = rmt_tx1;
+    rmt_tx2.channel = 2;
+    rmt_config(&rmt_tx2);
+    rmt_driver_install(rmt_tx2.channel, 0, 0);
+
+    rmt_config_t rmt_tx3 = rmt_tx1;
+    rmt_tx3.channel = 7;
+    rmt_tx3.mem_block_num = 1;
+    rmt_config(&rmt_tx3);
+    rmt_driver_install(rmt_tx3.channel, 0, 0);
+
+    TEST_ESP_OK(rmt_driver_uninstall(RMT_TX_CHANNEL));
+    TEST_ESP_OK(rmt_driver_uninstall(2));
+    TEST_ESP_OK(rmt_driver_uninstall(7));
+}
+
