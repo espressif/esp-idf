@@ -463,7 +463,9 @@ struct tlsv1_client * tlsv1_client_init(void)
 	suites[count++] = TLS_RSA_WITH_AES_256_CBC_SHA;
 	suites[count++] = TLS_RSA_WITH_AES_128_CBC_SHA256;
 	suites[count++] = TLS_RSA_WITH_AES_128_CBC_SHA;
+#ifdef CONFIG_DES3
 	suites[count++] = TLS_RSA_WITH_3DES_EDE_CBC_SHA;
+#endif
 	suites[count++] = TLS_RSA_WITH_RC4_128_SHA;
 	suites[count++] = TLS_RSA_WITH_RC4_128_MD5;
 	conn->num_cipher_suites = count;
@@ -560,12 +562,16 @@ int tlsv1_client_get_cipher(struct tlsv1_client *conn, char *buf,
 	case TLS_RSA_WITH_RC4_128_SHA:
 		cipher = "RC4-SHA";
 		break;
+#ifdef CONFIG_DES
 	case TLS_RSA_WITH_DES_CBC_SHA:
 		cipher = "DES-CBC-SHA";
 		break;
+#endif
+#ifdef CONFIG_DES3
 	case TLS_RSA_WITH_3DES_EDE_CBC_SHA:
 		cipher = "DES-CBC3-SHA";
 		break;
+#endif
 	case TLS_DH_anon_WITH_AES_128_CBC_SHA256:
 		cipher = "ADH-AES-128-SHA256";
 		break;
@@ -601,12 +607,16 @@ int tlsv1_client_get_cipher(struct tlsv1_client *conn, char *buf,
         case TLS_RSA_WITH_RC4_128_SHA:
             strcpy(cipher, "RC4-SHA");
             break;
+#ifdef CONFIG_DES
         case TLS_RSA_WITH_DES_CBC_SHA:
             strcpy(cipher, "DES-CBC-SHA");
             break;
+#endif
+#ifdef CONFIG_DES3
         case TLS_RSA_WITH_3DES_EDE_CBC_SHA:
             strcpy(cipher, "DES-CBC3-SHA");
             break;
+#endif
         case TLS_DH_anon_WITH_AES_128_CBC_SHA256:
             strcpy(cipher, "ADH-AES-128-SHA256");
             break;
@@ -780,9 +790,13 @@ int tlsv1_client_set_cipher_list(struct tlsv1_client *conn, u8 *ciphers)
 		suites[count++] = TLS_DH_anon_WITH_AES_256_CBC_SHA;
 		suites[count++] = TLS_DH_anon_WITH_AES_128_CBC_SHA256;
 		suites[count++] = TLS_DH_anon_WITH_AES_128_CBC_SHA;
+#ifdef CONFIG_DES3
 		suites[count++] = TLS_DH_anon_WITH_3DES_EDE_CBC_SHA;
+#endif
 		suites[count++] = TLS_DH_anon_WITH_RC4_128_MD5;
+#ifdef CONFIG_DES
 		suites[count++] = TLS_DH_anon_WITH_DES_CBC_SHA;
+#endif
 
 		/*
 		 * Cisco AP (at least 350 and 1200 series) local authentication
