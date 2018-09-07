@@ -443,7 +443,9 @@ static int uart_tcsetattr(int fd, int optional_actions, const struct termios *p)
                 errno = EINVAL;
                 return -1;
             }
-            // intentional fall-through to the next case
+
+            /* FALLTHRU */
+
         case TCSAFLUSH:
             if (uart_flush_input(fd) != ESP_OK) {
                 errno = EINVAL;
