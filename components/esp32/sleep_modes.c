@@ -638,11 +638,15 @@ static uint32_t get_power_down_flags()
     // RTC_SLOW_MEM is Auto, keep it powered up as well.
 
     // These labels are defined in the linker script:
-    extern int _rtc_data_start, _rtc_data_end, _rtc_bss_start, _rtc_bss_end;
+    extern int _rtc_data_start, _rtc_data_end,
+               _rtc_bss_start, _rtc_bss_end,
+               _rtc_noinit_start, _rtc_noinit_end;
 
     if ((s_config.pd_options[ESP_PD_DOMAIN_RTC_SLOW_MEM] == ESP_PD_OPTION_AUTO) &&
-            (&_rtc_data_end > &_rtc_data_start || &_rtc_bss_end > &_rtc_bss_start ||
-            (s_config.wakeup_triggers & RTC_ULP_TRIG_EN))) {
+            (&_rtc_data_end > &_rtc_data_start ||
+             &_rtc_bss_end > &_rtc_bss_start ||
+             &_rtc_noinit_end > &_rtc_noinit_start ||
+             (s_config.wakeup_triggers & RTC_ULP_TRIG_EN))) {
         s_config.pd_options[ESP_PD_DOMAIN_RTC_SLOW_MEM] = ESP_PD_OPTION_ON;
     }
 
