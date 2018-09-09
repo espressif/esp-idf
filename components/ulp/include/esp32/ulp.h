@@ -23,6 +23,8 @@
 extern "C" {
 #endif
 
+#define ULP_FSM_PREPARE_SLEEP_CYCLES 2    /*!< Cycles spent by FSM preparing ULP for sleep */
+#define ULP_FSM_WAKEUP_SLEEP_CYCLES  2    /*!< Cycles spent by FSM waking up ULP from sleep */
 
 /**
  * @defgroup ulp_registers ULP coprocessor registers
@@ -898,6 +900,13 @@ esp_err_t ulp_run(uint32_t entry_point);
  *
  * @param period_index wakeup period setting number (0 - 4)
  * @param period_us wakeup period, us
+ * @note  The ULP FSM requires some time to wakeup before being able to run the program.
+ *        Then additional time is reserved after wakeup waiting until the 8M clock is stable.
+ *        The FSM also requires time to go to sleep after the program execution is halted.
+ *        The minimum wakeup period that may be set up for the ULP
+ *        is the total time spent on the above internal tasks.
+ *        For a default configuration of the ULP running at 150kHz
+ *        the minimum wakeup period is about 160us.
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_ARG if period_index is out of range
