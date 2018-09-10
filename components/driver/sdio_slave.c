@@ -155,7 +155,7 @@ typedef struct {
     SemaphoreHandle_t remain_cnt;
 } sdio_ringbuf_t;
 
-#define offset_of(type, field) ((unsigned int)&(((type *)(0))->field))  
+#define offset_of(type, field) ((unsigned int)&(((type *)(0))->field))
 typedef enum {
     ringbuf_write_ptr = offset_of(sdio_ringbuf_t, write_ptr),
     ringbuf_read_ptr = offset_of(sdio_ringbuf_t, read_ptr),
@@ -266,7 +266,7 @@ no_mem:
 }
 
 //calculate a pointer with offset to a original pointer of the specific ringbuffer
-static inline uint8_t* sdio_ringbuf_offset_ptr(sdio_ringbuf_t *buf, sdio_ringbuf_pointer_t ptr, uint32_t offset) 
+static inline uint8_t* sdio_ringbuf_offset_ptr(sdio_ringbuf_t *buf, sdio_ringbuf_pointer_t ptr, uint32_t offset)
 {
     uint8_t *buf_ptr = (uint8_t*)*(uint32_t*)(((uint8_t*)buf)+ptr);   //get the specific pointer of the buffer
     uint8_t *offset_ptr=buf_ptr+offset;
@@ -492,9 +492,9 @@ static inline esp_err_t sdio_slave_hw_init(sdio_slave_config_t *config)
     configure_pin(slot->d0_gpio, slot->func, pullup);
     if ((config->flags & SDIO_SLAVE_FLAG_HOST_INTR_DISABLED)==0) {
         configure_pin(slot->d1_gpio, slot->func, pullup);
-    } 
+    }
     if ((config->flags & SDIO_SLAVE_FLAG_DAT2_DISABLED)==0) {
-       configure_pin(slot->d2_gpio, slot->func, pullup); 
+       configure_pin(slot->d2_gpio, slot->func, pullup);
     }
     configure_pin(slot->d3_gpio, slot->func, pullup);
 
@@ -1143,9 +1143,12 @@ static void sdio_intr_recv(void* arg)
             // This may cause the ``cur_ret`` pointer to be NULL, indicating the list is empty,
             // in this case the ``tx_done`` should happen no longer until new desc is appended.
             // The app is responsible to place the pointer to the right place again when appending new desc.
+            critical_enter_recv();
             context.recv_cur_ret = STAILQ_NEXT(context.recv_cur_ret, qe);
+            critical_exit_recv();
             ESP_EARLY_LOGV(TAG, "intr_recv: Give");
             xSemaphoreGiveFromISR(context.recv_event, &yield);
+            SLC.slc0_int_clr.tx_done = 1;
         };
     }
     if (yield) portYIELD_FROM_ISR();
@@ -1166,19 +1169,9 @@ esp_err_t sdio_slave_recv_load_buf(sdio_slave_buf_handle_t handle)
     buf_desc_t *const tail = STAILQ_LAST(queue, buf_desc_s, qe);
 
     STAILQ_INSERT_TAIL(queue, desc, qe);
-    if (tail == NULL || (tail->owner == 0)) {
-        //in this case we have to set the ret pointer
-        if (tail != NULL) {
-            /* if the owner of the tail is returned to the software, the ISR is
-             * expect to write this pointer to NULL in a short time, wait until
-             * that and set new value for this pointer
-             */
-            while (context.recv_cur_ret != NULL) {}
-        }
-        assert(context.recv_cur_ret == NULL);
+    if (context.recv_cur_ret == NULL) {
         context.recv_cur_ret = desc;
     }
-    assert(context.recv_cur_ret != NULL);
 
     if (tail == NULL) {
         //no one in the ll, start new ll operation.
