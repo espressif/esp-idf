@@ -132,6 +132,8 @@ typedef UINT8 tSMP_EVENT;
 /* Assumption it's only using the low 8 bits, if bigger than that, need to expand it to 16 bits */
 #define SMP_SEC_KEY_MASK                    0x00ff
 
+#define SMP_PASSKEY_MASK    0xfff00000
+
 /* SMP pairing state */
 enum {
     SMP_STATE_IDLE,
@@ -331,6 +333,8 @@ typedef struct {
     UINT8           rcvd_cmd_len;
     UINT16          total_tx_unacked;
     BOOLEAN         wait_for_authorization_complete;
+    BOOLEAN         use_static_passkey;
+    UINT32          static_passkey;
 } tSMP_CB;
 
 /* Server Action functions are of this type */
