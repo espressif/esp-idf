@@ -1826,6 +1826,22 @@ extern void BTA_DmBlePasskeyReply(BD_ADDR bd_addr, BOOLEAN accept, UINT32 passke
 
 /*******************************************************************************
 **
+** Function         BTA_DmBleSetStaticPasskey
+**
+** Description      Set BLE SMP static passkey.
+**
+** Parameters:      add              - add static passkey when add is true
+**                                     clear static passkey when add is false
+**                  passkey          - static passkey value
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_DmBleSetStaticPasskey(bool add, uint32_t passkey);
+
+/*******************************************************************************
+**
 ** Function         BTA_DmBleConfirmReply
 **
 ** Description      Send BLE SMP SC user confirmation reply.

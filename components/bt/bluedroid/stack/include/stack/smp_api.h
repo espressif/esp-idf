@@ -403,6 +403,21 @@ extern void SMP_PasskeyReply (BD_ADDR bd_addr, UINT8 res, UINT32 passkey);
 
 /*******************************************************************************
 **
+** Function         SMP_SetStaticPasskey
+**
+** Description      This function is called to set static passkey
+**
+**
+** Parameters:      add          - set static passkey when add is TRUE
+**                                 clear static passkey when add is FALSE
+**                  passkey      - static passkey
+**
+**
+*******************************************************************************/
+extern void SMP_SetStaticPasskey (BOOLEAN add, UINT32 passkey);
+
+/*******************************************************************************
+**
 ** Function         SMP_ConfirmReply
 **
 ** Description      This function is called after Security Manager submitted

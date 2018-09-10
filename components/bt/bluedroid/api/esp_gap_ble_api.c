@@ -441,6 +441,23 @@ esp_err_t esp_ble_gap_config_scan_rsp_data_raw(uint8_t *raw_data, uint32_t raw_d
 esp_err_t esp_ble_gap_set_security_param(esp_ble_sm_param_t param_type,
         void *value, uint8_t len)
 {
+    if(param_type >= ESP_BLE_SM_MAX_PARAM) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if((param_type != ESP_BLE_SM_CLEAR_STATIC_PASSKEY) && ( value == NULL || len < sizeof(uint8_t) || len > sizeof(uint32_t))) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if((param_type == ESP_BLE_SM_SET_STATIC_PASSKEY)) {
+        uint32_t passkey = 0;
+        for(uint8_t i = 0; i < len; i++)
+        {
+            passkey += (((uint8_t *)value)[i]<<(8*i));
+        }
+        if(passkey > 999999) {
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+
     btc_msg_t msg;
     btc_ble_gap_args_t arg;
 
