@@ -261,14 +261,6 @@ static inline esp_err_t esp_eth_smi_wait_set(uint32_t reg_num, uint16_t value_ma
 void esp_eth_free_rx_buf(void *buf);
 
 /**
- * @brief  Get mac of ethernet interface.
- *
- * @param[out] mac: store mac of the interface.
- *
- */
-void esp_eth_get_mac(uint8_t mac[6]);
-
-/**
  * @brief  Set mac of ethernet interface.
  *
  * @note user can call this function after emac_init,and the new mac address will be enabled after emac_enable.
