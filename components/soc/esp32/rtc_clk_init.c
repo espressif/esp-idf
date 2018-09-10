@@ -119,6 +119,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
 
     bool res = rtc_clk_cpu_freq_mhz_to_config(cfg.cpu_freq_mhz, &new_config);
     assert(res && "invalid CPU frequency value");
+    rtc_clk_cpu_freq_set_config(&new_config);
 
     /* Configure REF_TICK */
     REG_WRITE(APB_CTRL_XTAL_TICK_CONF_REG, xtal_freq - 1);
