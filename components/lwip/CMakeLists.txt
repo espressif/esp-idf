@@ -3,6 +3,7 @@ set(COMPONENT_ADD_INCLUDEDIRS
     lwip/src/include
     port/esp32/include
     port/esp32/include/arch
+    include_compat
     )
 
 set(COMPONENT_SRCS "apps/dhcpserver/dhcpserver.c"
