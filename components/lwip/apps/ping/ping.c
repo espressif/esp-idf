@@ -58,7 +58,7 @@
 #endif /* PING_USE_SOCKETS */
 
 #ifdef ESP_PING
-#include "ping/esp_ping.h"
+#include "esp_ping.h"
 #include "lwip/ip_addr.h"
 #endif
 /**
