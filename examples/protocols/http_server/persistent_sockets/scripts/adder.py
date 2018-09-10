@@ -14,11 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import httplib
+from __future__ import print_function
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+import http.client
 import argparse
 
 def start_session (ip, port):
-    return httplib.HTTPConnection(ip, int(port), timeout=15)
+    return http.client.HTTPConnection(ip, int(port), timeout=15)
 
 def end_session (conn):
     conn.close()
@@ -28,11 +34,11 @@ def getreq (conn, path, verbose = False):
     resp = conn.getresponse()
     data = resp.read()
     if verbose:
-        print "GET : ", path
-        print "Status : ", resp.status
-        print "Reason : ", resp.reason
-        print "Data length  : ", len(data)
-        print "Data content : ", data
+        print("GET : ", path)
+        print("Status : ", resp.status)
+        print("Reason : ", resp.reason)
+        print("Data length  : ", len(data))
+        print("Data content : ", data)
     return data
 
 def postreq (conn, path, data, verbose = False):
@@ -40,11 +46,11 @@ def postreq (conn, path, data, verbose = False):
     resp = conn.getresponse()
     data = resp.read()
     if verbose:
-        print "POST : ", data
-        print "Status : ", resp.status
-        print "Reason : ", resp.reason
-        print "Data length  : ", len(data)
-        print "Data content : ", data
+        print("POST : ", data)
+        print("Status : ", resp.status)
+        print("Reason : ", resp.reason)
+        print("Data length  : ", len(data))
+        print("Data content : ", data)
     return data
 
 def putreq (conn, path, body, verbose = False):
@@ -52,11 +58,11 @@ def putreq (conn, path, body, verbose = False):
     resp = conn.getresponse()
     data = resp.read()
     if verbose:
-        print "PUT : ", path, body
-        print "Status : ", resp.status
-        print "Reason : ", resp.reason
-        print "Data length  : ", len(data)
-        print "Data content : ", data
+        print("PUT : ", path, body)
+        print("Status : ", resp.status)
+        print("Reason : ", resp.reason)
+        print("Data length  : ", len(data))
+        print("Data content : ", data)
     return data
 
 if __name__ == '__main__':
@@ -73,22 +79,22 @@ if __name__ == '__main__':
     N    = args['N']
 
     # Establish HTTP connection
-    print "Connecting to => " + ip + ":" + port
+    print("Connecting to => " + ip + ":" + port)
     conn = start_session (ip, port)
 
     # Reset adder context to specified value(0)
     # -- Not needed as new connection will always
     # -- have zero value of the accumulator
-    print "Reset the accumulator to 0"
+    print("Reset the accumulator to 0")
     putreq (conn, "/adder", str(0))
 
     # Sum numbers from 1 to specified value(N)
-    print "Summing numbers from 1 to " + str(N)
-    for i in xrange(1, N+1):
+    print("Summing numbers from 1 to " + str(N))
+    for i in range(1, N+1):
         postreq (conn, "/adder", str(i))
 
     # Fetch the result
-    print "Result :", getreq  (conn, "/adder")
+    print("Result :", getreq  (conn, "/adder"))
 
     # Close HTTP connection
     end_session (conn)
