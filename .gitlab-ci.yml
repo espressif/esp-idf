@@ -558,7 +558,7 @@ check_permissions:
     - tools/ci/check-executable.sh
 
 check_examples_cmake_make:
-  stage: deploy
+  stage: check
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - build
