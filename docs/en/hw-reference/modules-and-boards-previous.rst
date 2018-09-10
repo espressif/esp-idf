@@ -74,6 +74,57 @@ Documentation
 * `ESP32 DevKitC V2 Schematic <https://dl.espressif.com/dl/schematics/ESP32-Core-Board-V2_sch.pdf>`__ (PDF)
 * `CP210x USB to UART Bridge VCP Drivers <https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers>`_
 
+.. _esp-modules-and-boards-esp-wrover-kit-v3:
+
+ESP-WROVER-KIT V3
+=================
+
+The ESP-WROVER-KIT V3 development board has dual port USB to serial converter for programming and JTAG interface for debugging. Power supply is provided by USB interface or from standard 5 mm power supply jack. Power supply selection is done with a jumper and may be put on/off with a separate switch. This board has MicroSD card slot, 3.2” SPI LCD screen and dedicated header to connect a camera. It provides RGB diode for diagnostics. Includes 32.768 kHz XTAL for internal RTC to operate it in low power modes.
+
+As all previous versions of ESP-WROVER-KIT boards, it is ready to accommodate an :ref:`esp-modules-and-boards-esp32-wroom-32` or :ref:`esp-modules-and-boards-esp32-wrover` module.
+
+This is the first release of ESP-WROVER-KIT shipped with :ref:`esp-modules-and-boards-esp32-wrover` module installed by default. This release also introduced several design changes to conditioning and interlocking of signals to the bootstrapping pins. Also, a zero Ohm resistor (R166) has been added between WROVER/WROOM module and VDD33 net, which can be desoldered, or replaced with a shunt resistor, for current measurement. This is intended to facilitate power consumption analysis in various operation modes of ESP32. Refer to schematic - the changes are enclosed in green border. 
+
+.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-wrover-kit-v3.jpg
+   :align: center
+   :alt: ESP-WROVER-KIT V3 board
+   :width: 90%
+
+   ESP-WROVER-KIT V3 board
+
+The camera header has been changed from male back to female. The board soldermask is matte black. The board on picture above has :ref:`esp-modules-and-boards-esp32-wrover` is installed.
+
+Documentation
+-------------
+
+* :doc:`../get-started/get-started-wrover-kit-v3`
+* `ESP-WROVER-KIT V3 Schematic <https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_SCH-3.pdf>`__ (PDF)
+* :doc:`../api-guides/jtag-debugging/index`
+* `FTDI Virtual COM Port Drivers`_
+
+.. _esp-modules-and-boards-esp-wrover-kit-v2:
+
+ESP-WROVER-KIT V2
+=================
+
+This is updated version of ESP32 DevKitJ V1 described above with design improvements identified when DevKitJ was in use, e.g. improved support for SD card. By default board has ESP-WROOM-32 module installed.
+
+.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-wrover-kit-v2.jpg
+   :align: center
+   :alt: ESP-WROVER-KIT V2 board
+   :width: 90%
+
+   ESP-WROVER-KIT V2 board
+
+Comparing to previous version, this board has a shiny black finish and a male camera header.
+
+Documentation
+-------------
+
+* :doc:`../get-started/get-started-wrover-kit-v2`
+* `ESP-WROVER-KIT V2 Schematic <https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_SCH-2.pdf>`__ (PDF)
+* :doc:`../api-guides/jtag-debugging/index`
+* `FTDI Virtual COM Port Drivers`_
 
 .. _esp-modules-and-boards-esp-wrover-kit-v1:
 
@@ -102,32 +153,6 @@ Documentation
 * `ESP-WROVER-KIT V1 Schematic <https://dl.espressif.com/dl/schematics/ESP32-DevKitJ-v1_sch.pdf>`__ (PDF)
 * :doc:`../api-guides/jtag-debugging/index`
 * `FTDI Virtual COM Port Drivers`_
-
-
-.. _esp-modules-and-boards-esp-wrover-kit-v2:
-
-ESP-WROVER-KIT V2
-=================
-
-This is updated version of ESP32 DevKitJ V1 described above with design improvements identified when DevKitJ was in use, e.g. improved support for SD card. By default board has ESP-WROOM-32 module installed.
-
-.. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-wrover-kit-v2.jpg
-   :align: center
-   :alt: ESP-WROVER-KIT V2 board
-   :width: 90%
-
-   ESP-WROVER-KIT V2 board
-
-Comparing to previous version, this board has a shiny black finish and a male camera header.
-
-Documentation
--------------
-
-* :doc:`../get-started/get-started-wrover-kit-v2`
-* `ESP-WROVER-KIT V2 Schematic <https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_SCH-2.pdf>`__ (PDF)
-* :doc:`../api-guides/jtag-debugging/index`
-* `FTDI Virtual COM Port Drivers`_
-
 
 .. _esp-modules-and-boards-esp32-demo-board:
 
