@@ -308,7 +308,7 @@ file_identifier=None,output_dir_path=None):
                                 dest='part_size',
                                 required=True,
                                 help='Size of NVS Partition in hex (must be multiple of 4096). Eg. 0x1000')
-
+            
             parser.add_argument('--conf',
                                 dest='config_file',
                                 required=True,
