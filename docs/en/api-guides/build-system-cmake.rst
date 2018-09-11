@@ -170,14 +170,14 @@ An example project directory tree might look like this::
 
 This example "myProject" contains the following elements:
 
-- A top-level project CMakeLists.txt file. This is the primary file which CMake uses to learn how to build the project. The project CMakeLists.txt file sets the ``MAIN_SRCS`` variable which lists all of the source files in the "main" directory (part of this project's executable). It may set other project-wide CMake variables, as well. Then it includes the file :idf_file:`/tools/cmake/project.cmake` which
+- A top-level project CMakeLists.txt file. This is the primary file which CMake uses to learn how to build the project; and may set project-wide CMake variables. It includes the file :idf_file:`/tools/cmake/project.cmake` which
   implements the rest of the build system. Finally, it sets the project name and defines the project.
 
 - "sdkconfig" project configuration file. This file is created/updated when ``idf.py menuconfig`` runs, and holds configuration for all of the components in the project (including ESP-IDF itself). The "sdkconfig" file may or may not be added to the source control system of the project.
 
 - Optional "components" directory contains components that are part of the project. A project does not have to contain custom components of this kind, but it can be useful for structuring reusable code or including third party components that aren't part of ESP-IDF.
 
-- "main" directory is a special "by convention" directory that contains source code for the project executable itself. These source files are listed in the project's CMakeLists file. You don't need to name this directory "main", but we recommend you follow this convention. If you have a lot of source files in your project, we recommend grouping most into components instead of putting them all in "main".
+- "main" directory is a special "pseudo-component" that contains source code for the project itself. "main" is a default name, the CMake variable ``COMPONENT_DIRS`` includes this component but you can modify this variable (or set ``EXTRA_COMPONENT_DIRS`` in the top-level CMakeLists.txt) to look for components in other places. If you have a lot of source files in your project, we recommend grouping most into components instead of putting them all in "main".
 
 - "build" directory is where build output is created. This directory is created by ``idf.py`` if it doesn't already exist. CMake configures the project and generates interim build files in this directory. Then, after the main build process is run, this directory will also contain interim object files and libraries as well as final binary output files. This directory is usually not added to source control or distributed with the project source code.
 
@@ -200,8 +200,6 @@ Minimal project::
 
       cmake_minimum_required(VERSION 3.5)
 
-      set(MAIN_SRCS main/src1.c main/src2.c)
-
       include($ENV{IDF_PATH}/tools/cmake/project.cmake)
       project(myProject)
 
@@ -214,11 +212,6 @@ Mandatory Parts
 The inclusion of these four lines, in the order shown above, is necessary for every project:
 
 - ``cmake_minimum_required(VERSION 3.5)`` tells CMake what version is required to build the project. ESP-IDF is designed to work with CMake 3.5 or newer. This line must be the first line in the CMakeLists.txt file.
-- ``set(MAIN_SRCS xxx)`` sets a variable - ``MAIN_SRCS`` to be a list of the "main" source files in the project. Paths are relative to the CMakeLists. They don't specifically need to be under the "main" sub-directory, but this structure is encouraged.
-
-  It is *strongly recommended not to add a lot of files to the MAIN_SRCS list*. If you have a lot of source files then it recommended to organise them functionally into individual components under the project "components" directory. This will make your project more maintainable, reusable, and easier to configure. Components are further explained below.
-
-  ``MAIN_SRCS`` must name at least one source file (although that file doesn't need to necessarily include an ``app_main()`` function or anything else).
 - ``include($ENV{IDF_PATH}/tools/cmake/project.cmake)`` pulls in the rest of the CMake functionality to configure the project, discover all the components, etc.
 - ``project(myProject)`` creates the project itself, and specifies the project name. The project name is used for the final binary output files of the app - ie ``myProject.elf``, ``myProject.bin``. Only one project can be defined per CMakeLists file.
 
@@ -268,11 +261,11 @@ Minimal Component CMakeLists
 
 The minimal component ``CMakeLists.txt`` file is as follows::
 
-  set(COMPONENT_SRCDIRS ".")
+  set(COMPONENT_SRCS "foo.c")
   set(COMPONENT_ADD_INCLUDEDIRS "include")
   register_component()
 
-- ``COMPONENT_SRCDIRS`` is a (space-separated) list of directories to search for source files. Source files (``*.c``, ``*.cpp``, ``*.cc``, ``*.S``) in these directories will be compiled into the component library.
+- ``COMPONENT_SRCS`` is a (space-separated) list of source files (``*.c``, ``*.cpp``, ``*.cc``, ``*.S``). These source files will be compiled into the component library.
 - ``COMPONENT_ADD_INCLUDEDIRS`` is a (space-separated) list of directories to add to the global include search path for any component which requires this component, and also the main source files.
 - ``register_component()`` is required to add the component (using the variables set above) to the build. A library with the name of the component will be built and linked into the final app. If this step is skipped (perhaps due to use of a CMake `if function <cmake if_>`_ or similar), this component will not be part of the build.
 
@@ -320,11 +313,16 @@ The following variables can be set inside ``component.mk`` to control the build 
   the component directory, which will be added to the include search
   path for this component's source files only.
 - ``COMPONENT_PRIV_REQUIRES`` is a (space-separated) list of components that are required to either compile or link this component's source files. These components' header paths do not propagate to other components which require it, they are only used to compile this component's sources. See `Component Requirements`_ for more details.
+- ``COMPONENT_SRCS``: Paths to individual source files to compile as part of the component. This is the recommended way of adding source files to the build.
 - ``COMPONENT_SRCDIRS``: Directory paths, must be relative to the component directory, which will be searched for source files (``*.cpp``,
-  ``*.c``, ``*.S``). Set this to specify a list of directories which contain source files.
-- ``COMPONENT_SRCS``: Paths to individual source files to compile. Setting this causes ``COMPONENT_SRCDIRS`` to be ignored. Setting this variable instead gives you finer grained control over which files are compiled.
-  If you don't set ``COMPONENT_SRCDIRS`` or ``COMPONENT_SRCS``, your component won't compile a library but it may still add include paths for use when compiling other components or the source files listed in ``MAIN_SRCS``.
+  ``*.c``, ``*.S``). Source files are globbed from the listed directories and compiled as part of the component in place of ``COMPONENT_SRCS``, i.e. setting this will cause ``COMPONENT_SRCS`` to be ignored.
+  This can be a convenient way of including source files to the components en masse, but is generally not recommended due to caveats attached to CMake globbing (see `File Globbing & Incremental Builds`).
 - ``COMPONENT_SRCEXCLUDE``: Paths to source files to exclude from component. Can be set in conjunction with ``COMPONENT_SRCDIRS`` if there is a directory with a large number of source files to include in the component but one or more source files which should not be. Paths can be specified relative to the component directory or absolute.
+
+.. note::
+
+  If you don't set ``COMPONENT_SRCDIRS`` or ``COMPONENT_SRCS``, your component won't compile a library but it may still add include paths for use when compiling other components.
+
 
 Controlling Component Compilation
 ---------------------------------
@@ -399,7 +397,6 @@ When creating a project
   - Those components' requirements (evaluated recursively).
   - The "common" components that every component depends on.
 - Setting ``COMPONENTS`` to the minimal list of required components can significantly reduce compile times.
-- When compiling the project's source files (``MAIN_SRCS``), the public header directories (``COMPONENT_ADD_INCLUDEDIRS`` list) of all components included in the build are available.
 
 .. _component-requirements-implementation:
 
@@ -777,21 +774,19 @@ File Globbing & Incremental Builds
 
 .. highlight:: cmake
 
-The preferred way to include source files in an ESP-IDF component is to set ``COMPONENT_SRC_DIRS``::
-
-  set(COMPONENT_SRCDIRS library platform)
-
-The build system will automatically find (via "file globbing") all source files in this directory. Alternatively, files can be specified individually::
+The preferred way to include source files in an ESP-IDF component is to list them manually in COMPONENT_SRCS::
 
   set(COMPONENT_SRCS library/a.c library/b.c platform/platform.c)
 
-CMake_ recommends always to name all files individually (ie ``COMPONENT_SRCS``). This is because CMake is automatically re-run whenever a CMakeLists file changes. If a new source file is added and file globbing is used, then CMake won't know to automatically re-run and this file won't be added to the build.
+This preference reflects the `CMake best practice <https://gist.github.com/mbinna/c61dbb39bca0e4fb7d1f73b0d66a4fd1/>`_ of manually listing source files. This could, however, be inconvenient when there are lots of source files to add to the build. The ESP-IDF build system provides an alternative way for specifying source files using ``COMPONENT_SRCDIRS``::
+
+  set(COMPONENT_SRCDIRS library platform)
+
+This uses globbing behind the scenes to find source files in the specified directories. Be aware, however, that if a new source file is added and this method is used, then CMake won't know to automatically re-run and this file won't be added to the build. 
 
 The trade-off is acceptable when you're adding the file yourself, because you can trigger a clean build or run ``idf.py reconfigure`` to manually re-run CMake_. However, the problem gets harder when you share your project with others who may check out a new version using a source control tool like Git...
 
 For components which are part of ESP-IDF, we use a third party Git CMake integration module (:idf_file:`/tools/cmake/third_party/GetGitRevisionDescription.cmake`) which automatically re-runs CMake any time the repository commit changes. This means if you check out a new ESP-IDF version, CMake will automatically rerun.
-
-For project CMakeLists files, ``MAIN_SRCS`` is a list of source files. Therefore if a new file is added, CMakeLists will change and this triggers a re-run of CMake. (This is the approach which CMake_ recommends.)
 
 For project components (not part of ESP-IDF), there are a few different options:
 
@@ -889,15 +884,6 @@ It does so by running ``make`` to expand the ESP-IDF build system variables whic
 
 The conversion tool is not capable of dealing with complex Makefile logic or unusual targets. These will need to be converted by hand.
 
-'main' is no longer a component
--------------------------------
-
-In the GNU Make build system ``main`` is a component with a ``component.mk`` file like other components.
-
-Due to CMake requirements for building executables, ``main`` source files are now linked directly into the final binary. The source files in ``main`` must be listed in the ``MAIN_SRCS`` variable (see :ref:`project mandatory variables <project-mandatory-parts>` for more details). At least one source file has to be listed here (although it doesn't need to contain anything in particular).
-
-In general, it's better not to have too many source files in ``MAIN_SRCS``. If you find that you are adding many source files here, see if you can reorganize and group some into project components (see the :ref:`example project structure <example-project-structure>`, above).
-
 No Longer Available in CMake
 ----------------------------
 
@@ -930,8 +916,7 @@ The following variables no longer have default values:
 No Longer Necessary
 -------------------
 
-It is no longer necessary to set ``COMPONENT_SRCDIRS`` if setting ``COMPONENT_SRCS`` (in fact, in the CMake-based system ``COMPONENT_SRCDIRS`` is ignored if ``COMPONENT_SRCS`` is set).
-
+It is no longer necessary to set ``COMPONENT_SRCDIRS`` if setting ``COMPONENT_SRCS`` (in fact, in the CMake-based system ``COMPONENT_SRCS`` is ignored if ``COMPONENT_SRCDIRS`` is set).
 
 .. _esp-idf-template: https://github.com/espressif/esp-idf-template
 .. _cmake: https://cmake.org

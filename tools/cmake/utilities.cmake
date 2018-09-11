@@ -179,3 +179,14 @@ function(make_json_list list variable)
     string(REPLACE ";" "\", \"" result "[ \"${list}\" ]")
     set("${variable}" "${result}" PARENT_SCOPE)
 endfunction()
+
+# add_prefix
+#
+# Adds a prefix to each item in the specified list.
+#
+function(add_prefix var prefix)
+    foreach(elm ${ARGN})
+        list(APPEND newlist "${prefix}${elm}")
+    endforeach()
+    set(${var} "${newlist}" PARENT_SCOPE)
+endfunction()

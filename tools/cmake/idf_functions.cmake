@@ -22,8 +22,15 @@ macro(idf_set_global_variables)
     # (cmake calls this CMAKE_SOURCE_DIR, keeping old name for compatibility.)
     set(PROJECT_PATH "${CMAKE_SOURCE_DIR}")
 
-    # Note: Unlike older build system, "main" is no longer a component. See build docs for details.
-    set_default(COMPONENT_DIRS "${PROJECT_PATH}/components ${EXTRA_COMPONENT_DIRS} ${IDF_PATH}/components")
+    if(MAIN_SRCS)
+        message(WARNING "main is now a component, use of MAIN_SRCS is deprecated")
+        set_default(COMPONENT_DIRS "${PROJECT_PATH}/components ${EXTRA_COMPONENT_DIRS} \
+                                    ${IDF_PATH}/components")
+    else()
+        set_default(COMPONENT_DIRS "${PROJECT_PATH}/components ${EXTRA_COMPONENT_DIRS} \
+                                    ${IDF_PATH}/components ${PROJECT_PATH}/main")
+    endif()
+
     spaces2list(COMPONENT_DIRS)
 
     spaces2list(COMPONENTS)
@@ -140,8 +147,22 @@ endfunction()
 function(idf_add_executable)
     set(exe_target ${PROJECT_NAME}.elf)
 
-    spaces2list(MAIN_SRCS)
-    add_executable(${exe_target} "${MAIN_SRCS}")
+    if(MAIN_SRCS)
+        spaces2list(MAIN_SRCS)
+        add_executable(${exe_target} ${MAIN_SRCS})
+    else()
+        # Create a dummy file to work around CMake requirement of having a source
+        # file while adding an executable
+        add_executable(${exe_target} "${CMAKE_CURRENT_BINARY_DIR}/dummy_main_src.c")
+        add_custom_command(OUTPUT dummy_main_src.c
+                        COMMAND echo "" > dummy_main_src.c
+                        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                        VERBATIM)
+
+        add_custom_target(dummy_main_src DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/dummy_main_src.c)
+
+        add_dependencies(${exe_target} dummy_main_src)
+    endif()
 
     add_map_file(${exe_target})
 endfunction()
