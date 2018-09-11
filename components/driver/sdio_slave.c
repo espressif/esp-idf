@@ -1172,9 +1172,12 @@ static void sdio_intr_recv(void* arg)
             // This may cause the ``cur_ret`` pointer to be NULL, indicating the list is empty,
             // in this case the ``tx_done`` should happen no longer until new desc is appended.
             // The app is responsible to place the pointer to the right place again when appending new desc.
+            critical_enter_recv();
             context.recv_cur_ret = STAILQ_NEXT( context.recv_cur_ret, qe );
+            critical_exit_recv();
             ESP_EARLY_LOGV( TAG, "intr_recv: Give");
             xSemaphoreGiveFromISR( context.recv_event, &yield );
+            SLC.slc0_int_clr.tx_done = 1;
         };
     }
     if ( yield ) portYIELD_FROM_ISR();
@@ -1195,19 +1198,9 @@ esp_err_t sdio_slave_recv_load_buf(sdio_slave_buf_handle_t handle)
     buf_desc_t *const tail = STAILQ_LAST(queue, buf_desc_s, qe);
 
     STAILQ_INSERT_TAIL( queue, desc, qe );
-    if (tail == NULL || (tail->owner == 0)) {
-        //in this case we have to set the ret pointer
-        if (tail != NULL) {
-            /* if the owner of the tail is returned to the software, the ISR is
-             * expect to write this pointer to NULL in a short time, wait until
-             * that and set new value for this pointer
-             */
-            while (context.recv_cur_ret != NULL) {}
-        }
-        assert(context.recv_cur_ret == NULL);
+    if (context.recv_cur_ret == NULL) {
         context.recv_cur_ret = desc;
     }
-    assert(context.recv_cur_ret != NULL);
 
     if (tail == NULL) {
         //no one in the ll, start new ll operation.
