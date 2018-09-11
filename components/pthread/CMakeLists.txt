@@ -1,4 +1,6 @@
-set(COMPONENT_SRCDIRS ".")
+set(COMPONENT_SRCS "pthread.c"
+                   "pthread_cond_var.c"
+                   "pthread_local_storage.c")
 set(COMPONENT_ADD_INCLUDEDIRS "include")
 set(COMPONENT_REQUIRES)
 register_component()

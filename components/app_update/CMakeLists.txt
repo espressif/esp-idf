@@ -1,4 +1,4 @@
-set(COMPONENT_SRCDIRS ".")
+set(COMPONENT_SRCS "esp_ota_ops.c")
 set(COMPONENT_ADD_INCLUDEDIRS "include")
 
 set(COMPONENT_REQUIRES spi_flash partition_table)
