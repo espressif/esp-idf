@@ -1,4 +1,5 @@
-set(COMPONENT_SRCDIRS ".")
+set(COMPONENT_SRCS "cxx_exception_stubs.cpp"
+                   "cxx_guards.cpp")
 set(COMPONENT_REQUIRES)
 register_component()
 

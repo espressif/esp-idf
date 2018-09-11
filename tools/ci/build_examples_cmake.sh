@@ -65,7 +65,7 @@ RESULT_ISSUES=22  # magic number result code for issues found
 LOG_SUSPECTED=${LOG_PATH}/common_log.txt
 touch ${LOG_SUSPECTED}
 
-EXAMPLE_PATHS=$( find ${IDF_PATH}/examples/ -type f -name CMakeLists.txt | grep -v "/components/" | sort )
+EXAMPLE_PATHS=$( find ${IDF_PATH}/examples/ -type f -name CMakeLists.txt | grep -v "/components/" | grep -v "/main/" | sort )
 
 if [ $# -eq 0 ]
 then

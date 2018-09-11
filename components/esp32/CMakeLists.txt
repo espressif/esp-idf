@@ -2,7 +2,7 @@ if(BOOTLOADER_BUILD)
     # For bootloader, all we need from esp32 is headers
     set(COMPONENT_ADD_INCLUDEDIRS include)
     set(COMPONENT_REQUIRES ${COMPONENTS})
-    set(COMPONENT_SRCDIRS "")
+    set(COMPONENT_SRCS )
     register_component(esp32)
 
     # as cmake won't attach linker args to a header-only library, attach
@@ -17,7 +17,47 @@ if(BOOTLOADER_BUILD)
 else()
     # Regular app build
 
-    set(COMPONENT_SRCDIRS ". hwcrypto")
+    set(COMPONENT_SRCS "brownout.c"
+                   "cache_err_int.c"
+                   "clk.c"
+                   "coexist.c"
+                   "core_dump.c"
+                   "cpu_start.c"
+                   "crosscore_int.c"
+                   "dbg_stubs.c"
+                   "dport_access.c"
+                   "dport_panic_highint_hdl.S"
+                   "esp_err_to_name.c"
+                   "esp_timer.c"
+                   "esp_timer_esp32.c"
+                   "ets_timer_legacy.c"
+                   "event_default_handlers.c"
+                   "event_loop.c"
+                   "fast_crypto_ops.c"
+                   "freertos_hooks.c"
+                   "gdbstub.c"
+                   "hw_random.c"
+                   "hwcrypto/aes.c"
+                   "hwcrypto/sha.c"
+                   "int_wdt.c"
+                   "intr_alloc.c"
+                   "ipc.c"
+                   "lib_printf.c"
+                   "panic.c"
+                   "phy_init.c"
+                   "pm_esp32.c"
+                   "pm_locks.c"
+                   "pm_trace.c"
+                   "reset_reason.c"
+                   "restore.c"
+                   "sleep_modes.c"
+                   "spiram.c"
+                   "spiram_psram.c"
+                   "stack_check.c"
+                   "system_api.c"
+                   "task_wdt.c"
+                   "wifi_init.c"
+                   "wifi_os_adapter.c")
     set(COMPONENT_ADD_INCLUDEDIRS "include")
 
     set(COMPONENT_REQUIRES driver tcpip_adapter)

@@ -1,6 +1,22 @@
 set(COMPONENT_ADD_INCLUDEDIRS include)
 set(COMPONENT_PRIV_INCLUDEDIRS include/freertos)
-set(COMPONENT_SRCDIRS ".")
+set(COMPONENT_SRCS "FreeRTOS-openocd.c"
+                   "croutine.c"
+                   "event_groups.c"
+                   "list.c"
+                   "port.c"
+                   "portasm.S"
+                   "queue.c"
+                   "ringbuf.c"
+                   "tasks.c"
+                   "timers.c"
+                   "xtensa_context.S"
+                   "xtensa_init.c"
+                   "xtensa_intr.c"
+                   "xtensa_intr_asm.S"
+                   "xtensa_overlay_os_hook.c"
+                   "xtensa_vector_defaults.S"
+                   "xtensa_vectors.S")
 set(COMPONENT_REQUIRES)
 
 register_component()
