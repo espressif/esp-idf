@@ -284,6 +284,11 @@ file_identifier=None,output_dir_path=None):
                                              description="Create binary files from input config and values file",
                                              formatter_class=argparse.RawDescriptionHelpFormatter)
 
+            parser.add_argument("--size",
+                                dest='part_size',
+                                required=True,
+                                help='Size of NVS Partition in KB. Eg. 12KB')
+            
             parser.add_argument('--conf',
                                 dest='config_file',
                                 required=True,
@@ -320,6 +325,7 @@ file_identifier=None,output_dir_path=None):
             if not args.outdir.endswith('/'):
                 args.outdir = args.outdir + '/'
 
+            input_part_size = args.part_size
             input_config_file = args.config_file
             input_values_file = args.values_file
             target_file_name_prefix = args.prefix
@@ -472,7 +478,8 @@ file_identifier=None,output_dir_path=None):
 
                 # Create output csv and bin file
                 print "CSV Generated: " + str(output_csv_file)
-                nvs_partition_gen.nvs_part_gen(input_filename = output_csv_file, output_filename = output_bin_file)
+                nvs_partition_gen.nvs_part_gen(input_filename = output_csv_file, output_filename = output_bin_file,\
+                                               input_size=input_part_size)
                 print "NVS Flash Binary Generated: " + str(output_bin_file)
 
                 files_created = True
