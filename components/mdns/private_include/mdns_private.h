@@ -364,8 +364,7 @@ typedef struct {
         } srv_port;
         struct {
             mdns_srv_item_t * service;
-            uint8_t num_items;
-            mdns_txt_item_t * txt;
+            mdns_txt_linked_item_t * txt;
         } srv_txt_replace;
         struct {
             mdns_srv_item_t * service;
