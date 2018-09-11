@@ -739,6 +739,7 @@
 #define ESP_PING                        1
 #define ESP_HAS_SELECT                  1
 #define ESP_AUTO_RECV                   1
+#define ESP_GRATUITOUS_ARP              CONFIG_ESP_GRATUITOUS_ARP
 
 #if CONFIG_LWIP_IRAM_OPTIMIZATION
 #define ESP_IRAM_ATTR                   IRAM_ATTR
