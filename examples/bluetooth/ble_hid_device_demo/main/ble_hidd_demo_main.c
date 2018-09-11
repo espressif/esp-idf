@@ -278,7 +278,7 @@ void app_main()
         return;
     }
 
-    ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
+    ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
     if (ret) {
         ESP_LOGE(HID_DEMO_TAG, "%s enable controller failed\n", __func__);
         return;
