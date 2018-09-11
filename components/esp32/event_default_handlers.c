@@ -103,7 +103,7 @@ esp_err_t system_event_eth_connected_handle_default(system_event_t *event)
 
         tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_ETH, &eth_ip);
 
-        if (!(ip4_addr_isany_val(eth_ip.ip) || ip4_addr_isany_val(eth_ip.netmask) || ip4_addr_isany_val(eth_ip.gw))) {
+        if (!(ip4_addr_isany_val(eth_ip.ip) || ip4_addr_isany_val(eth_ip.netmask))) {
             system_event_t evt;
 
             //notify event
@@ -214,7 +214,7 @@ esp_err_t system_event_sta_connected_handle_default(system_event_t *event)
         tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &sta_ip);
         tcpip_adapter_get_old_ip_info(TCPIP_ADAPTER_IF_STA, &sta_old_ip);
 
-        if (!(ip4_addr_isany_val(sta_ip.ip) || ip4_addr_isany_val(sta_ip.netmask) || ip4_addr_isany_val(sta_ip.gw))) {
+        if (!(ip4_addr_isany_val(sta_ip.ip) || ip4_addr_isany_val(sta_ip.netmask))) {
             system_event_t evt;
 
             evt.event_id = SYSTEM_EVENT_STA_GOT_IP;
