@@ -1,5 +1,7 @@
 # based on http://protips.readthedocs.io/link-roles.html
 
+from __future__ import print_function
+from __future__ import unicode_literals
 import re
 import os
 from docutils import nodes
@@ -8,9 +10,9 @@ from local_util import run_cmd_get_output
 def get_github_rev():
     path = run_cmd_get_output('git rev-parse --short HEAD')
     tag = run_cmd_get_output('git describe --exact-match')
-    print ('Git commit ID: ', path)
+    print('Git commit ID: ', path)
     if len(tag):
-        print ('Git tag: ', tag)
+        print('Git tag: ', tag)
         path = tag
     return path
 
