@@ -732,6 +732,7 @@
 #define ESP_DHCP_TIMER                  1
 #define ESP_LWIP_LOGI(...)              ESP_LOGI("lwip", __VA_ARGS__)
 #define ESP_PING                        1
+#define ESP_GRATUITOUS_ARP              CONFIG_ESP_GRATUITOUS_ARP
 
 #define TCP_WND_DEFAULT                 CONFIG_TCP_WND_DEFAULT
 #define TCP_SND_BUF_DEFAULT             CONFIG_TCP_SND_BUF_DEFAULT

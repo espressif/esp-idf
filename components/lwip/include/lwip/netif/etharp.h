@@ -102,6 +102,11 @@ struct etharp_q_entry {
 };
 #endif /* ARP_QUEUEING */
 
+#if ESP_GRATUITOUS_ARP
+#define GARP_TMR_INTERVAL (CONFIG_GARP_TMR_INTERVAL*1000UL)
+void garp_tmr(void);
+#endif
+
 #define etharp_init() /* Compatibility define, no init needed. */
 void etharp_tmr(void);
 s8_t etharp_find_addr(struct netif *netif, const ip4_addr_t *ipaddr,

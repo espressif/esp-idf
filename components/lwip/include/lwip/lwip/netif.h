@@ -99,6 +99,11 @@ extern "C" {
  * Set by the netif driver in its init function. */
 #define NETIF_FLAG_MLD6         0x40U
 
+#if ESP_GRATUITOUS_ARP
+/** If set, the netif will send gratuitous ARP periodically */
+#define NETIF_FLAG_GARP         0x80U
+#endif
+
 #if LWIP_CHECKSUM_CTRL_PER_NETIF
 #define NETIF_CHECKSUM_GEN_IP       0x0001
 #define NETIF_CHECKSUM_GEN_UDP      0x0002
@@ -362,6 +367,11 @@ struct netif *netif_add(struct netif *netif,
 void netif_set_addr(struct netif *netif, const ip4_addr_t *ipaddr, const ip4_addr_t *netmask,
                     const ip4_addr_t *gw);
 #endif /* LWIP_IPV4 */
+
+#if ESP_GRATUITOUS_ARP
+void netif_set_garp_flag(struct netif *netif);
+#endif
+
 void netif_remove(struct netif * netif);
 
 /* Returns a network interface given its name. The name is of the form
