@@ -54,8 +54,16 @@ endfunction()
 # (expand_component_requirements() includes the component CMakeLists.txt, which then sets its component variables,
 # calls this dummy macro, and immediately exits again.)
 macro(register_component)
-    spaces2list(COMPONENT_REQUIRES)
-    set_property(GLOBAL PROPERTY "${COMPONENT}_REQUIRES" "${COMPONENT_REQUIRES}")
+    if(COMPONENT STREQUAL main AND NOT COMPONENT_REQUIRES)
+        set(main_component_requires ${COMPONENTS})
+        list(REMOVE_ITEM main_component_requires "main")
+
+        set_property(GLOBAL PROPERTY "${COMPONENT}_REQUIRES" "${main_component_requires}")
+    else()
+        spaces2list(COMPONENT_REQUIRES)
+        set_property(GLOBAL PROPERTY "${COMPONENT}_REQUIRES" "${COMPONENT_REQUIRES}")
+    endif()
+
     spaces2list(COMPONENT_PRIV_REQUIRES)
     set_property(GLOBAL PROPERTY "${COMPONENT}_PRIV_REQUIRES" "${COMPONENT_PRIV_REQUIRES}")
 

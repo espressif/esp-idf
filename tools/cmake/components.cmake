@@ -22,8 +22,14 @@ function(register_component)
     spaces2list(COMPONENT_ADD_INCLUDEDIRS)
     spaces2list(COMPONENT_SRCEXCLUDE)
 
-    # Add to COMPONENT_SRCS by globbing in COMPONENT_SRCDIRS
-    if(NOT COMPONENT_SRCS)
+    if(COMPONENT_SRCDIRS)
+        # Warn user if both COMPONENT_SRCDIRS and COMPONENT_SRCS are set
+        if(COMPONENT_SRCS)
+            message(WARNING "COMPONENT_SRCDIRS and COMPONENT_SRCS are both set, COMPONENT_SRCS will be ignored")
+        endif()
+
+        set(COMPONENT_SRCS "")
+
         foreach(dir ${COMPONENT_SRCDIRS})
             get_filename_component(abs_dir ${dir} ABSOLUTE BASE_DIR ${component_dir})
             if(NOT IS_DIRECTORY ${abs_dir})

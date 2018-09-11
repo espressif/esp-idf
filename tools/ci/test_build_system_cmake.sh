@@ -78,7 +78,7 @@ function run_tests()
     take_build_snapshot
     touch ${IDF_PATH}/components/bootloader/subproject/main/bootloader_start.c
     idf.py build || failure "Failed to partial build bootloader"
-    assert_rebuilt ${BOOTLOADER_BINS} bootloader/CMakeFiles/bootloader.elf.dir/main/bootloader_start.c.obj
+    assert_rebuilt ${BOOTLOADER_BINS} bootloader/main/CMakeFiles/main.dir/bootloader_start.c.obj
     assert_not_rebuilt ${APP_BINS} ${PARTITION_BIN}
 
     print_status "Partition CSV file rebuilds partitions"

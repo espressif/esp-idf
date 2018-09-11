@@ -2,9 +2,5 @@
 # CMakeLists in this exact order for cmake to work correctly
 cmake_minimum_required(VERSION 3.5)
 
-set(MAIN_SRCS
-    main/example_ble_server_throughput.c
-    )
-
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(throughput_server_demo)
