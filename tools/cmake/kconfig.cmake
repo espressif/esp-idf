@@ -78,7 +78,7 @@ function(kconfig_process_config)
 
     # Find Kconfig and Kconfig.projbuild for each component as applicable
     # if any of these change, cmake should rerun
-    foreach(dir ${BUILD_COMPONENT_PATHS} "${CMAKE_SOURCE_DIR}/main")
+    foreach(dir ${BUILD_COMPONENT_PATHS})
         file(GLOB kconfig "${dir}/Kconfig")
         if(kconfig)
             set(kconfigs "${kconfigs} ${kconfig}")
