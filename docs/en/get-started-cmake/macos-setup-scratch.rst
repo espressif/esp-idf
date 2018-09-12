@@ -23,7 +23,7 @@ Install Prerequisites
 
 - install pyserial::
 
-    sudo pip install pyserial
+    pip install --user pyserial
 
 - install CMake & Ninja build:
 

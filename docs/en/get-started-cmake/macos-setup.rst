@@ -15,7 +15,7 @@ ESP-IDF will use the version of Python installed by default on Mac OS.
 
 - install pyserial::
 
-    sudo pip install pyserial
+    pip install --user pyserial
 
 - install CMake & Ninja build:
 
