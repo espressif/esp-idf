@@ -67,10 +67,10 @@ def test_examples_protocol_asio_chat_client(env, extra_data):
     test_msg="ABC"
     dut1 = env.get_dut("chat_client", "examples/protocols/asio/chat_client")
     # check and log bin size
-    binary_file = os.path.join(dut1.app.binary_path, "asio_chatclient.bin")
+    binary_file = os.path.join(dut1.app.binary_path, "asio_chat_client.bin")
     bin_size = os.path.getsize(binary_file)
-    IDF.log_performance("asio_chatclient_size", "{}KB".format(bin_size//1024))
-    IDF.check_performance("asio_chatclient_size", bin_size//1024)
+    IDF.log_performance("asio_chat_client_size", "{}KB".format(bin_size//1024))
+    IDF.check_performance("asio_chat_client_size", bin_size//1024)
     # 1. start a tcp server on the host
     host_ip = get_my_ip()
     thread1 = Thread(target = chat_server_sketch, args = (host_ip,))

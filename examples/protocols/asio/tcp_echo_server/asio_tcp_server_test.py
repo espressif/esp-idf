@@ -31,10 +31,10 @@ def test_examples_protocol_asio_tcp_server(env, extra_data):
     test_msg="echo message from client to server"
     dut1 = env.get_dut("tcp_echo_server", "examples/protocols/asio/tcp_echo_server")
     # check and log bin size
-    binary_file = os.path.join(dut1.app.binary_path, "asio_tcp_echoserver.bin")
+    binary_file = os.path.join(dut1.app.binary_path, "asio_tcp_echo_server.bin")
     bin_size = os.path.getsize(binary_file)
-    IDF.log_performance("asio_tcp_echoserver_bin_size", "{}KB".format(bin_size//1024))
-    IDF.check_performance("asio_tcp_echoserver_size", bin_size//1024)
+    IDF.log_performance("asio_tcp_echo_server_bin_size", "{}KB".format(bin_size//1024))
+    IDF.check_performance("asio_tcp_echo_server_size", bin_size//1024)
     # 1. start test
     dut1.start_app()
     # 2. get the server IP address

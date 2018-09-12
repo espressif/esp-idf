@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := aws_iot_thing_shadow
+PROJECT_NAME := thing_shadow
 
 include $(IDF_PATH)/make/project.mk
 
