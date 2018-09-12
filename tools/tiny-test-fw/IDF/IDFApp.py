@@ -26,18 +26,23 @@ class IDFApp(App.BaseApp):
     """
 
     IDF_DOWNLOAD_CONFIG_FILE = "download.config"
+    IDF_FLASH_ARGS_FILE = "flash_project_args"
 
     def __init__(self, app_path):
         super(IDFApp, self).__init__(app_path)
         self.idf_path = self.get_sdk_path()
         self.binary_path = self.get_binary_path(app_path)
         assert os.path.exists(self.binary_path)
-        try:
-            assert self.IDF_DOWNLOAD_CONFIG_FILE in os.listdir(self.binary_path)
-        except AssertionError as e:
-            e.args += ("{} doesn't exist. Try to run 'make print_flash_cmd | tail -n 1 > {}/{}' for resolving the issue"
-                       "".format(self.IDF_DOWNLOAD_CONFIG_FILE, self.binary_path, self.IDF_DOWNLOAD_CONFIG_FILE),)
-            raise
+        if self.IDF_DOWNLOAD_CONFIG_FILE not in os.listdir(self.binary_path):
+            if self.IDF_FLASH_ARGS_FILE not in os.listdir(self.binary_path):
+                msg = ("Neither {} nor {} exists. "
+                       "Try to run 'make print_flash_cmd | tail -n 1 > {}/{}' "
+                       "or 'idf.py build' "
+                       "for resolving the issue."
+                       "").format(self.IDF_DOWNLOAD_CONFIG_FILE, self.IDF_FLASH_ARGS_FILE,
+                             self.binary_path, self.IDF_DOWNLOAD_CONFIG_FILE)
+                raise AssertionError(msg)
+
         self.esptool, self.partition_tool = self.get_tools()
 
     @classmethod
@@ -85,8 +90,17 @@ class IDFApp(App.BaseApp):
 
         :return: download config, partition info
         """
-        with open(os.path.join(self.binary_path, self.IDF_DOWNLOAD_CONFIG_FILE), "r") as f:
-            configs = f.read().split(" ")
+
+        if self.IDF_FLASH_ARGS_FILE in os.listdir(self.binary_path):
+            with open(os.path.join(self.binary_path, self.IDF_FLASH_ARGS_FILE), "r") as f:
+                configs = []
+                for line in f:
+                    line = line.strip()
+                    if len(line) > 0:
+                        configs += line.split()
+        else:
+            with open(os.path.join(self.binary_path, self.IDF_DOWNLOAD_CONFIG_FILE), "r") as f:
+                configs = f.read().split(" ")
 
         download_configs = ["--chip", "auto", "--before", "default_reset",
                             "--after", "hard_reset", "write_flash", "-z"]
