@@ -2232,14 +2232,14 @@ test cases:
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - *dut1_start_adv
   - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
-    - - 'P SSC2 RE "\+BTSCANEXT:%%s,txp,0xEB"%%(<dut1_bt_mac>)'
+    - - 'P SSC2 RE "\+BTSCANEXT:%%s,txp,0x03"%%(<dut1_bt_mac>)'
       - 'R SSC2 C Complete'
   - *dut1_stop_adv
   - - "SSC SSC1 bleadv -L -c 0 -x 0 -t 3"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - *dut1_start_adv
   - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
-    - - 'R SSC2 NRE "\+BTSCANEXT:%%s,txp,0xEB"%%(<dut1_bt_mac>)'
+    - - 'R SSC2 NRE "\+BTSCANEXT:%%s,txp,0x03"%%(<dut1_bt_mac>)'
       - 'R SSC2 C Complete'
 - ID: BTSTK_GAP_09007
   <<: *GAP_CASE
