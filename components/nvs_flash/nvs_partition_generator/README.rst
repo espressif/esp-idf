@@ -46,21 +46,58 @@ When a new namespace entry is encountered in the CSV file, each follow-up entrie
 
 .. note:: First entry in a CSV file should always be ``namespace`` entry.
 
+Multipage Blob Support
+----------------------
+
+By default, binary blobs are allowed to span over multiple pages and written in the format mentioned in section :ref:`structure_of_entry`. 
+If older format is intended to be used, the utility provides an option to disable this feature.
+
 Running the utility
 -------------------
 
-You can run the utility using below command::
+You can run the utility in two modes using below command:
+    - Multipage Blob Support Enabled (v2)
+    - Multipage Blob Support Disabled (v1)
 
-	python nvs_partition_gen.py [-h] input output size
+
+*Usage*::
+
+    python nvs_partition_gen.py [--version {v1,v2}] input output
 
 
 Positional arguments:
 
-| Arguments 					| Description
-|	---		  					| 	---
-|  input          			| Path to CSV file to parse. Will use stdin if omitted (a sample.csv is provided)
-|  output         			| Path to output converted binary file. Will use stdout if omitted
-|  size    	    		    | Size of NVS Partition in KB. E.g. 12KB
++------------------------+----------------------------------------------------------------------------------------------+
+|   Arguments            |                                     Description                                              |
++========================+==============================================================================================+
+| input                  |  Path to CSV file to parse. Will use stdin if omitted (sample files are provided)            |
++------------------------+----------------------------------------------------------------------------------------------+
+| output                 |  Path to output converted binary file. Will use stdout if omitted                            |
++------------------------+----------------------------------------------------------------------------------------------+
+
+Optional arguments:
+
++-------------------------------+---------------------------------------------------------------------------------------+
+|   Arguments                   |                                     Description                                       |
++===============================+=======================================================================================+
+| --version {v1,v2}             |  Set version. Default: v2                                                             |
++-------------------------------+---------------------------------------------------------------------------------------+
+
+
+*Multipage Blob Support Enabled Mode:*
+
+You can run the utility in this mode by setting the version parameter to v2, as shown below.
+A sample CSV file is provided with the utility::
+
+    python nvs_partition_gen.py sample_multipage_blob.csv partition_multipage_blob.bin --version v2
+
+
+*Multipage Blob Support Disabled Mode:*
+
+You can run the utility in this mode by setting the version parameter to v1, as shown below.
+A sample CSV file is provided with the utility::
+
+    python nvs_partition_gen.py sample_singlepage_blob.csv partition_single_page.bin --version v1
 
 
 Caveats

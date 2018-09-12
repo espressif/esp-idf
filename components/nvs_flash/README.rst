@@ -147,6 +147,8 @@ Erased (2'b00)
     A key-value pair in this entry has been discarded. Contents of this entry will not be parsed anymore.
 
 
+.. _structure_of_entry:
+
 Structure of entry
 ^^^^^^^^^^^^^^^^^^
 
