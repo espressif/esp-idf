@@ -197,6 +197,7 @@ static void btc_dm_save_ble_bonding_keys(void)
                                         (char *) &pairing_cb.ble.penc_key,
                                         BTM_LE_KEY_PENC,
                                         sizeof(tBTM_LE_PENC_KEYS));
+        pairing_cb.ble.is_penc_key_rcvd = false;
     }
 
     if (pairing_cb.ble.is_pid_key_rcvd) {
@@ -204,6 +205,7 @@ static void btc_dm_save_ble_bonding_keys(void)
                                         (char *) &pairing_cb.ble.pid_key,
                                         BTM_LE_KEY_PID,
                                         sizeof(tBTM_LE_PID_KEYS));
+        pairing_cb.ble.is_pid_key_rcvd = false;
     }
 
 
@@ -212,6 +214,7 @@ static void btc_dm_save_ble_bonding_keys(void)
                                         (char *) &pairing_cb.ble.pcsrk_key,
                                         BTM_LE_KEY_PCSRK,
                                         sizeof(tBTM_LE_PCSRK_KEYS));
+        pairing_cb.ble.is_pcsrk_key_rcvd = false;
     }
 
 
@@ -220,6 +223,7 @@ static void btc_dm_save_ble_bonding_keys(void)
                                         (char *) &pairing_cb.ble.lenc_key,
                                         BTM_LE_KEY_LENC,
                                         sizeof(tBTM_LE_LENC_KEYS));
+        pairing_cb.ble.is_lenc_key_rcvd = false;
     }
 
     if (pairing_cb.ble.is_lcsrk_key_rcvd) {
@@ -227,6 +231,7 @@ static void btc_dm_save_ble_bonding_keys(void)
                                         (char *) &pairing_cb.ble.lcsrk_key,
                                         BTM_LE_KEY_LCSRK,
                                         sizeof(tBTM_LE_LCSRK_KEYS));
+        pairing_cb.ble.is_lcsrk_key_rcvd = false;
     }
 
     if (pairing_cb.ble.is_lidk_key_rcvd) {
@@ -234,6 +239,7 @@ static void btc_dm_save_ble_bonding_keys(void)
                                         NULL,
                                         BTM_LE_KEY_LID,
                                         0);
+        pairing_cb.ble.is_lidk_key_rcvd = false;
     }
 }
 
