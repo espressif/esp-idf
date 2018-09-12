@@ -190,7 +190,7 @@ The following 3rd party lib is required:
     * netifaces
     * matplotlib (if use Utility.LineChart)
 
-These libraries can be installed by running ``pip install -r requirements.txt`` in tiny-test-fw directory.
+These libraries can be installed by running ``pip install --user -r requirements.txt`` in tiny-test-fw directory.
 
 To build document, we need to install ``Sphinx``, ``plantweb`` and ``sphinx-rtd-theme`` (you may replace this with your own theme). ``plantweb`` requires internet access during building document.
 

@@ -12,7 +12,7 @@
 
 - Ubuntu 和 Debian::
 
-    sudo apt-get install git wget make libncurses-dev flex bison gperf python python-serial
+    sudo apt-get install git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial
 
 - Arch::
 

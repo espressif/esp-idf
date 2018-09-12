@@ -42,7 +42,7 @@ The "Customise" step of the Python installer gives a list of options. The last o
 
 Once Python is installed, open a Windows Command Prompt from the Start menu and run the following command::
 
-  pip install pyserial
+  pip install --user pyserial
 
 MConf for IDF
 ^^^^^^^^^^^^^

@@ -15,7 +15,7 @@ To compile with ESP-IDF you need to get the following packages:
 
 - Ubuntu and Debian::
 
-    sudo apt-get install git wget libncurses-dev flex bison gperf python python-serial cmake ninja-build ccache
+    sudo apt-get install git wget libncurses-dev flex bison gperf python python-pip python-setuptools python-serial cmake ninja-build ccache
 
 - Arch::
 
