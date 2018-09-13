@@ -27,10 +27,17 @@ import shlex
 
 from local_util import run_cmd_get_output, copy_if_modified
 
-builddir = '_build'
-builddir = builddir
-if 'BUILDDIR' in os.environ:
+
+try:
     builddir = os.environ['BUILDDIR']
+except KeyError:
+    builddir = '_build'
+
+# Fill in a default IDF_PATH if it's missing (ie when Read The Docs is building the docs)
+try:
+    idf_path = os.environ['IDF_PATH']
+except KeyError:
+    idf_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 
 def call_with_python(cmd):
     # using sys.executable ensures that the scripts are called with the same Python interpreter
@@ -62,6 +69,7 @@ confgen_args = [sys.executable,
                 "--create-config-if-missing",
                 "--env", "COMPONENT_KCONFIGS={}".format(kconfigs),
                 "--env", "COMPONENT_KCONFIGS_PROJBUILD={}".format(kconfig_projbuilds),
+                "--env", "IDF_PATH={}".format(idf_path),
                 "--output", "docs", kconfig_inc_path + '.in'
 ]
 subprocess.check_call(confgen_args)
