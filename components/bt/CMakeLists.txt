@@ -154,7 +154,6 @@ if(CONFIG_BT_ENABLED)
                    "bluedroid/external/sbc/encoder/srce/sbc_enc_coeffs.c"
                    "bluedroid/external/sbc/encoder/srce/sbc_encoder.c"
                    "bluedroid/external/sbc/encoder/srce/sbc_packing.c"
-                   "bluedroid/hci/buffer_allocator.c"
                    "bluedroid/hci/hci_audio.c"
                    "bluedroid/hci/hci_hal_h4.c"
                    "bluedroid/hci/hci_layer.c"
