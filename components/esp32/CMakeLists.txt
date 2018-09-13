@@ -37,8 +37,6 @@ else()
                    "freertos_hooks.c"
                    "gdbstub.c"
                    "hw_random.c"
-                   "hwcrypto/aes.c"
-                   "hwcrypto/sha.c"
                    "int_wdt.c"
                    "intr_alloc.c"
                    "ipc.c"
@@ -57,7 +55,9 @@ else()
                    "system_api.c"
                    "task_wdt.c"
                    "wifi_init.c"
-                   "wifi_os_adapter.c")
+                   "wifi_os_adapter.c"
+                   "hwcrypto/aes.c"
+                   "hwcrypto/sha.c")
     set(COMPONENT_ADD_INCLUDEDIRS "include")
 
     set(COMPONENT_REQUIRES driver tcpip_adapter)

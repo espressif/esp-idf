@@ -4,7 +4,7 @@ set(COMPONENT_SRCS "heap_caps.c"
                    "multi_heap.c")
 
 if(NOT CONFIG_HEAP_POISONING_DISABLED)
-    set(COMPONENT_SRCS ${COMPONENT_SRCS} multi_heap_poisoning.c)
+    list(APPEND COMPONENT_SRCS "multi_heap_poisoning.c")
 endif()
 
 set(COMPONENT_ADD_INCLUDEDIRS "include")

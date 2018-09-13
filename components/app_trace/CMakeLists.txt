@@ -1,7 +1,7 @@
 set(COMPONENT_SRCS "app_trace.c"
                    "app_trace_util.c"
-                   "gcov/gcov_rtio.c"
-                   "host_file_io.c")
+                   "host_file_io.c"
+                   "gcov/gcov_rtio.c")
 set(COMPONENT_ADD_INCLUDEDIRS "include")
 
 if(CONFIG_SYSVIEW_ENABLE)
@@ -10,10 +10,10 @@ if(CONFIG_SYSVIEW_ENABLE)
         sys_view/SEGGER
         sys_view/Sample/OS)
 
-    set(COMPONENT_SRCS "SEGGER/SEGGER_SYSVIEW.c"
-                    "esp32/SEGGER_RTT_esp32.c"
-                    "Sample/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c"
-                    "Sample/OS/SEGGER_SYSVIEW_FreeRTOS.c")
+    list(APPEND COMPONENT_SRCS "sys_view/SEGGER/SEGGER_SYSVIEW.c"
+                   "sys_view/Sample/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c"
+                   "sys_view/Sample/OS/SEGGER_SYSVIEW_FreeRTOS.c"
+                   "sys_view/esp32/SEGGER_RTT_esp32.c")
 endif()
 
 set(COMPONENT_REQUIRES)
