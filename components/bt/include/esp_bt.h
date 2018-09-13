@@ -56,6 +56,12 @@ the adv packet will be discarded until the memory is restored. */
 #define BT_HCI_UART_BAUDRATE_DEFAULT                921600
 #endif /* BT_HCI_UART_BAUDRATE_DEFAULT */
 
+#ifdef CONFIG_SCAN_DUPLICATE_TYPE
+#define SCAN_DUPLICATE_TYPE_VALUE  CONFIG_SCAN_DUPLICATE_TYPE
+#else
+#define SCAN_DUPLICATE_TYPE_VALUE  0
+#endif
+
 /* normal adv cache size */
 #ifdef CONFIG_DUPLICATE_SCAN_CACHE_SIZE
 #define NORMAL_SCAN_DUPLICATE_CACHE_SIZE            CONFIG_DUPLICATE_SCAN_CACHE_SIZE
@@ -100,6 +106,7 @@ the adv packet will be discarded until the memory is restored. */
     .hci_uart_no = BT_HCI_UART_NO_DEFAULT,                                 \
     .hci_uart_baudrate = BT_HCI_UART_BAUDRATE_DEFAULT,                     \
     .scan_duplicate_mode = SCAN_DUPLICATE_MODE,                            \
+    .scan_duplicate_type = SCAN_DUPLICATE_TYPE_VALUE,                     \
     .normal_adv_size = NORMAL_SCAN_DUPLICATE_CACHE_SIZE,                   \
     .mesh_adv_size = MESH_DUPLICATE_SCAN_CACHE_SIZE,                       \
     .send_adv_reserved_size = SCAN_SEND_ADV_RESERVED_SIZE,                 \
@@ -128,7 +135,8 @@ typedef struct {
     uint8_t controller_task_prio;           /*!< Bluetooth controller task priority */
     uint8_t hci_uart_no;                    /*!< If use UART1/2 as HCI IO interface, indicate UART number */
     uint32_t hci_uart_baudrate;             /*!< If use UART1/2 as HCI IO interface, indicate UART baudrate */
-    uint8_t scan_duplicate_mode;            /*!< If use UART1/2 as HCI IO interface, indicate UART baudrate */
+    uint8_t scan_duplicate_mode;            /*!< scan duplicate mode */
+    uint8_t scan_duplicate_type;            /*!< scan duplicate type */
     uint16_t normal_adv_size;               /*!< Normal adv size for scan duplicate */
     uint16_t mesh_adv_size;                 /*!< Mesh adv size for scan duplicate */
     uint16_t send_adv_reserved_size;        /*!< Controller minimum memory value */
@@ -443,6 +451,19 @@ bool esp_bt_controller_is_sleeping(void);
  * Generally it takes longer if 32kHz XTAL is used than the main XTAL, due to the lower frequency of the former as the bluetooth low power clock source.
  */
 void esp_bt_controller_wakeup_request(void);
+
+/**
+ * @brief Manually clear scan duplicate list
+ * 
+ * Note that scan duplicate list will be automatically cleared when the maximum amount of device in the filter is reached
+ * the amount of device in the filter can be configured in menuconfig.
+ * 
+ * 
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_scan_dupilcate_list_flush(void);
 
 #ifdef __cplusplus
 }
