@@ -175,11 +175,49 @@ config BLE_SCAN_DUPLICATE
     help
         This select enables parameters setting of BLE scan duplicate.
 
+choice SCAN_DUPLICATE_TYPE
+    prompt "Scan Duplicate Type"
+    default SCAN_DUPLICATE_BY_DEVICE_ADDR
+    depends on BLE_SCAN_DUPLICATE
+    help
+        Scan duplicate have three ways. one is "Scan Duplicate By Device Address", This way is to use advertiser address 
+        filtering. The adv packet of the same address is only allowed to be reported once. Another way is "Scan Duplicate 
+        By Device Address And Advertising Data". This way is to use advertising data and device address filtering. All 
+        different adv packets with the same address are allowed to be reported. The last way is "Scan Duplicate By Advertising 
+        Data". This way is to use advertising data filtering. All same advertising data only allow to be reported once even though
+        they are from different devices.
+
+config SCAN_DUPLICATE_BY_DEVICE_ADDR
+    bool "Scan Duplicate By Device Address"
+    help 
+        This way is to use advertiser address filtering. The adv packet of the same address is only allowed to be reported once
+
+config SCAN_DUPLICATE_BY_ADV_DATA
+    bool "Scan Duplicate By Advertising Data"
+    help
+    This way is to use advertising data filtering. All same advertising data only allow to be reported once even though
+    they are from different devices.
+
+config SCAN_DUPLICATE_BY_ADV_DATA_AND_DEVICE_ADDR
+    bool "Scan Duplicate By Device Address And Advertising Data"
+    help
+    This way is to use advertising data and device address filtering. All different adv packets with the same address are 
+    allowed to be reported.
+endchoice
+
+config SCAN_DUPLICATE_TYPE
+    int
+    depends on BLE_SCAN_DUPLICATE
+    default 0 if SCAN_DUPLICATE_BY_DEVICE_ADDR
+    default 1 if SCAN_DUPLICATE_BY_ADV_DATA
+    default 2 if SCAN_DUPLICATE_BY_ADV_DATA_AND_DEVICE_ADDR
+    default 0
+
 config DUPLICATE_SCAN_CACHE_SIZE
     int "Maximum number of devices in scan duplicate filter"
     depends on BLE_SCAN_DUPLICATE
-    range 10 200
-    default 20
+    range 10 1000
+    default 200
     help
         Maximum number of devices which can be recorded in scan duplicate filter.
         When the maximum amount of device in the filter is reached, the cache will be refreshed.
@@ -194,8 +232,8 @@ config BLE_MESH_SCAN_DUPLICATE_EN
 config MESH_DUPLICATE_SCAN_CACHE_SIZE
     int "Maximum number of Mesh adv packets in scan duplicate filter"
     depends on BLE_MESH_SCAN_DUPLICATE_EN
-    range 10 200
-    default 50
+    range 10 1000
+    default 200
     help
         Maximum number of adv packets which can be recorded in duplicate scan cache for BLE Mesh.
         When the maximum amount of device in the filter is reached, the cache will be refreshed.

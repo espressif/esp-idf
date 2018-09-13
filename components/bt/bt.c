@@ -199,6 +199,7 @@ extern int ble_txpwr_get(int power_type);
 extern int bredr_txpwr_set(int min_power_level, int max_power_level);
 extern int bredr_txpwr_get(int *min_power_level, int *max_power_level);
 extern void bredr_sco_datapath_set(uint8_t data_path);
+extern void btdm_controller_scan_duplicate_list_clear(void);
 
 extern char _bss_start_btdm;
 extern char _bss_end_btdm;
@@ -1296,6 +1297,15 @@ esp_err_t esp_bredr_sco_datapath_set(esp_sco_data_path_t data_path)
         return ESP_ERR_INVALID_STATE;
     }
     bredr_sco_datapath_set(data_path);
+    return ESP_OK;
+}
+
+esp_err_t esp_ble_scan_dupilcate_list_flush(void)
+{
+    if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    btdm_controller_scan_duplicate_list_clear();
     return ESP_OK;
 }
 
