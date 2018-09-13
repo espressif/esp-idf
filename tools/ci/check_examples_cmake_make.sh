@@ -2,7 +2,7 @@
 
 # While we support GNU Make & CMake together, check the same examples are present for both
 
-CMAKE_EXAMPLE_PATHS=$( find ${IDF_PATH}/examples/ -type f -name CMakeLists.txt | grep -v "/components/")
+CMAKE_EXAMPLE_PATHS=$( find ${IDF_PATH}/examples/ -type f -name CMakeLists.txt | grep -v "/components/" | grep -v "/main/")
 MAKE_EXAMPLE_PATHS=$( find ${IDF_PATH}/examples/ -type f -name Makefile )
 
 # temporary: ignore ULP examples as no ULP toolchain support

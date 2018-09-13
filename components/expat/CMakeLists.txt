@@ -1,5 +1,12 @@
 set(COMPONENT_ADD_INCLUDEDIRS port/include include/expat)
-set(COMPONENT_SRCDIRS library port)
+set(COMPONENT_SRCS "library/xmlparse.c"
+                   "library/xmlrole.c"
+                   "library/xmltok.c"
+                   "library/xmltok_impl.c"
+                   "library/xmltok_ns.c"
+                   "port/chardata.c"
+                   "port/expat_element.c"
+                   "port/minicheck.c")
 
 set(COMPONENT_REQUIRES)
 
