@@ -27,7 +27,6 @@
 #include "hci/hci_layer.h"
 #include "osi/allocator.h"
 #include "hci/packet_fragmenter.h"
-#include "hci/buffer_allocator.h"
 #include "osi/list.h"
 #include "osi/alarm.h"
 #include "osi/thread.h"
@@ -78,7 +77,6 @@ static xQueueHandle xHciHostQueue;
 static bool hci_host_startup_flag;
 
 // Modules we import and callbacks we export
-static const allocator_t *buffer_allocator;
 static const hci_hal_t *hal;
 static const hci_hal_callbacks_t hal_callbacks;
 static const packet_fragmenter_t *packet_fragmenter;
@@ -197,10 +195,10 @@ static void hci_layer_deinit_env(void)
     command_waiting_response_t *cmd_wait_q;
 
     if (hci_host_env.command_queue) {
-        fixed_queue_free(hci_host_env.command_queue, allocator_calloc.free);
+        fixed_queue_free(hci_host_env.command_queue, osi_free_func);
     }
     if (hci_host_env.packet_queue) {
-        fixed_queue_free(hci_host_env.packet_queue, buffer_allocator->free);
+        fixed_queue_free(hci_host_env.packet_queue, osi_free_func);
     }
 
     cmd_wait_q = &hci_host_env.cmd_waiting_q;
@@ -321,7 +319,7 @@ static void event_command_ready(fixed_queue_t *queue)
 
     if(wait_entry->opcode == HCI_HOST_NUM_PACKETS_DONE){
         packet_fragmenter->fragment_and_dispatch(wait_entry->command);
-        buffer_allocator->free(wait_entry->command);
+        osi_free(wait_entry->command);
         osi_free(wait_entry);
         return;
     }
@@ -354,19 +352,19 @@ static void transmit_fragment(BT_HDR *packet, bool send_transmit_finished)
     hal->transmit_data(type, packet->data + packet->offset, packet->len);
 
     if (event != MSG_STACK_TO_HC_HCI_CMD && send_transmit_finished) {
-        buffer_allocator->free(packet);
+        osi_free(packet);
     }
 }
 
 static void fragmenter_transmit_finished(BT_HDR *packet, bool all_fragments_sent)
 {
     if (all_fragments_sent) {
-        buffer_allocator->free(packet);
+        osi_free(packet);
     } else {
         // This is kind of a weird case, since we're dispatching a partially sent packet
         // up to a higher layer.
         // TODO(zachoverflow): rework upper layer so this isn't necessary.
-        //buffer_allocator->free(packet);
+        //osi_free(packet);
 
         /* dispatch_reassembled(packet) will send the packet back to the higher layer
            when controller buffer is not enough. hci will send the remain packet back
@@ -484,17 +482,17 @@ intercepted:
         // If it has a callback, it's responsible for freeing the packet
         if (event_code == HCI_COMMAND_STATUS_EVT ||
                 (!wait_entry->complete_callback && !wait_entry->complete_future)) {
-            buffer_allocator->free(packet);
+            osi_free(packet);
         }
 
         // If it has a callback, it's responsible for freeing the command
         if (event_code == HCI_COMMAND_COMPLETE_EVT || !wait_entry->status_callback) {
-            buffer_allocator->free(wait_entry->command);
+            osi_free(wait_entry->command);
         }
 
         osi_free(wait_entry);
     } else {
-        buffer_allocator->free(packet);
+        osi_free(packet);
     }
 
     return true;
@@ -506,7 +504,7 @@ static void dispatch_reassembled(BT_HDR *packet)
     // Events should already have been dispatched before this point
     //Tell Up-layer received packet.
     if (btu_task_post(SIG_BTU_HCI_MSG, packet, TASK_POST_BLOCKING) != TASK_POST_SUCCESS) {
-        buffer_allocator->free(packet);
+        osi_free(packet);
     }
 }
 
@@ -573,7 +571,6 @@ static const packet_fragmenter_callbacks_t packet_fragmenter_callbacks = {
 
 const hci_t *hci_layer_get_interface()
 {
-    buffer_allocator = buffer_allocator_get_interface();
     hal = hci_hal_h4_get_interface();
     packet_fragmenter = packet_fragmenter_get_interface();
 
