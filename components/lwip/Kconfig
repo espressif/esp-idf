@@ -409,7 +409,7 @@ endmenu # UDP
 
 config TCPIP_TASK_STACK_SIZE
     int "TCP/IP Task Stack Size"
-    default 2048
+    default 3072
     # for high log levels, tcpip_adapter API calls can end up
     # a few calls deep and logging there can trigger a stack overflow
     range 2048 65536 if LOG_DEFAULT_LEVEL < 4
