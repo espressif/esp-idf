@@ -1,7 +1,10 @@
-set(COMPONENT_SRCS heap_caps_init.c heap_caps.c multi_heap.c heap_trace.c)
+set(COMPONENT_SRCS "heap_caps.c"
+                   "heap_caps_init.c"
+                   "heap_trace.c"
+                   "multi_heap.c")
 
 if(NOT CONFIG_HEAP_POISONING_DISABLED)
-    set(COMPONENT_SRCS ${COMPONENT_SRCS} multi_heap_poisoning.c)
+    list(APPEND COMPONENT_SRCS "multi_heap_poisoning.c")
 endif()
 
 set(COMPONENT_ADD_INCLUDEDIRS "include")
