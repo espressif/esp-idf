@@ -20,6 +20,7 @@ API Guides
    Partition Tables <partition-tables>
    Secure Boot <../security/secure-boot>
    ULP Coprocessor <ulp>
+   ULP Coprocessor (CMake) <ulp-cmake>
    Unit Testing <unit-tests>
    Application Level Tracing <app_trace>
    Console Component <console>

@@ -181,7 +181,6 @@ function(expand_component_requirements component)
     set_property(GLOBAL APPEND PROPERTY BUILD_COMPONENTS ${component})
 endfunction()
 
-
 # Main functionality goes here
 
 # Find every available component in COMPONENT_DIRS, save as ALL_COMPONENT_PATHS and ALL_COMPONENTS
@@ -200,10 +199,14 @@ set_property(GLOBAL PROPERTY BUILD_COMPONENTS "")
 set_property(GLOBAL PROPERTY BUILD_COMPONENT_PATHS "")
 set_property(GLOBAL PROPERTY COMPONENTS_NOT_FOUND "")
 
+# Indicate that the component CMakeLists.txt is being included in the early expansion phase of the build,
+# and might not want to execute particular operations.
+set(CMAKE_BUILD_EARLY_EXPANSION 1)
 foreach(component ${COMPONENTS})
     debug("Expanding initial component ${component}")
     expand_component_requirements(${component})
 endforeach()
+unset(CMAKE_BUILD_EARLY_EXPANSION)
 
 get_property(build_components GLOBAL PROPERTY BUILD_COMPONENTS)
 get_property(build_component_paths GLOBAL PROPERTY BUILD_COMPONENT_PATHS)
