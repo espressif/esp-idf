@@ -1,0 +1,1 @@
+source "$IDF_PATH/components/mqtt/esp-mqtt/Kconfig.included"
