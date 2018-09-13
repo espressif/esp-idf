@@ -71,6 +71,12 @@ Windows 平台上的 Eclipse 配置
 
     取消选中 “Allow heuristic resolution of includes”。因为启用此选项时，有时会导致 Eclipse 无法找到正确的头文件目录。
 
+点击 “C/C++ Build” -> “Behavior” 属性页。
+
+* 选中 “Enable parallel build” 以启用多任务并行构建。
+
+* 将作业数设置为略高于“最佳”的推荐值，能够使得在 Windows 下的构建速度达到最快，不过这还要取决于您具体使用的硬件的配置。
+
 在 Eclipse IDE 中创建项目
 ---------------------------
 
