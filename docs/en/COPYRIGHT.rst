@@ -55,6 +55,8 @@ These third party libraries can be included into the application (firmware) prod
 
 * :component:`Asio <asio>`, Copyright (c) 2003-2018 Christopher M. Kohlhoff is licensed under the Boost Software License.
 
+* :component:`ESP-MQTT <mqtt>` MQTT Package (contiki-mqtt) - Copyright (c) 2014, Stephen Robinson, MQTT-ESP - Tuan PM <tuanpm at live dot com> is licensed under Apache License 2.0.
+
 Build Tools
 -----------
 
@@ -155,3 +157,4 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _Mbed TLS: https://github.com/ARMmbed/mbedtls
 .. _spiffs: https://github.com/pellepl/spiffs
 .. _asio: https://github.com/chriskohlhoff/asio
+.. _mqtt: https://github.com/espressif/esp-mqtt

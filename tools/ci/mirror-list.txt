@@ -14,3 +14,4 @@ components/asio/asio                                @GENERAL_MIRROR_SERVER@/idf/
 components/lwip/lwip                                @GENERAL_MIRROR_SERVER@/idf/esp-lwip.git
 third-party/mruby                                   @GENERAL_MIRROR_SERVER@/idf/mruby.git                           ALLOW_TO_SYNC_FROM_PUBLIC
 third-party/neverbleed                              @GENERAL_MIRROR_SERVER@/idf/neverbleed.git                      ALLOW_TO_SYNC_FROM_PUBLIC
+components/mqtt/esp-mqtt                            @GENERAL_MIRROR_SERVER@/idf/esp-mqtt.git                        ALLOW_TO_SYNC_FROM_PUBLIC
