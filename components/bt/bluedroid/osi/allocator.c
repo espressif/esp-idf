@@ -26,7 +26,7 @@ extern void vPortFree(void *pv);
 
 #ifdef CONFIG_BLUEDROID_MEM_DEBUG
 
-#define OSI_MEM_DBG_INFO_MAX    1024
+#define OSI_MEM_DBG_INFO_MAX    1024*3
 typedef struct {
     void *p;
     int size;
@@ -175,13 +175,3 @@ void osi_free_func(void *ptr)
 #endif
     free(ptr);
 }
-
-const allocator_t allocator_malloc = {
-    osi_malloc_func,
-    osi_free_func
-};
-
-const allocator_t allocator_calloc = {
-    osi_calloc_func,
-    osi_free_func
-};
