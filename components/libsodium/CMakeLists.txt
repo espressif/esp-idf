@@ -79,11 +79,11 @@ set(COMPONENT_SRCS "${SRC}/crypto_aead/chacha20poly1305/sodium/aead_chacha20poly
                    "port/randombytes_esp32.c")
 
 if(CONFIG_LIBSODIUM_USE_MBEDTLS_SHA)
-    set(COMPONENT_SRCS "port/crypto_hash_mbedtls/crypto_hash_sha256_mbedtls.c"
+    list(APPEND COMPONENT_SRCS "port/crypto_hash_mbedtls/crypto_hash_sha256_mbedtls.c"
                    "port/crypto_hash_mbedtls/crypto_hash_sha512_mbedtls.c")
 else()
-    set(COMPONENT_SRCS "port/crypto_hash_mbedtls/crypto_hash_sha256_mbedtls.c"
-                   "port/crypto_hash_mbedtls/crypto_hash_sha512_mbedtls.c")
+    list(APPEND COMPONENT_SRCS "${SRC}/crypto_hash/sha256/cp/hash_sha256_cp.c"
+                   "${SRC}/crypto_hash/sha512/cp/hash_sha512_cp.c")
 endif()
 
 set(COMPONENT_ADD_INCLUDEDIRS ${SRC}/include port_include)
