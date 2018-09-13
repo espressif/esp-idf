@@ -5,10 +5,6 @@
 CMAKE_EXAMPLE_PATHS=$( find ${IDF_PATH}/examples/ -type f -name CMakeLists.txt | grep -v "/components/" | grep -v "/main/")
 MAKE_EXAMPLE_PATHS=$( find ${IDF_PATH}/examples/ -type f -name Makefile )
 
-# temporary: ignore ULP examples as no ULP toolchain support
-CMAKE_EXAMPLE_PATHS=$( echo "$CMAKE_EXAMPLE_PATHS" | grep -v "/system/ulp")
-MAKE_EXAMPLE_PATHS=$( echo "$MAKE_EXAMPLE_PATHS" | grep -v "/system/ulp")
-
 CMAKE_EXAMPLE_PATHS="$(/usr/bin/dirname $CMAKE_EXAMPLE_PATHS | sort -n)"
 MAKE_EXAMPLE_PATHS="$(/usr/bin/dirname $MAKE_EXAMPLE_PATHS | sort -n)"
 

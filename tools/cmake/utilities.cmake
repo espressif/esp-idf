@@ -31,7 +31,6 @@ function(spaces2list variable_name)
     set("${variable_name}" "${tmp}" PARENT_SCOPE)
 endfunction()
 
-
 # lines2list
 #
 # Take a variable with multiple lines of output in it, convert it
