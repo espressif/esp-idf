@@ -222,10 +222,10 @@ tBTM_STATUS btm_ble_enable_multi_adv (BOOLEAN enable, UINT8 inst_id, UINT8 cb_ev
 ** Returns          tx power in dBm
 **
 *******************************************************************************/
-int btm_ble_tx_power[BTM_BLE_ADV_TX_POWER_MAX + 1] = BTM_BLE_ADV_TX_POWER;
+static const int btm_ble_tx_power[BTM_BLE_ADV_TX_POWER_MAX + 1] = BTM_BLE_ADV_TX_POWER;
 char btm_ble_map_adv_tx_power(int tx_power_index)
 {
-    if (0 <= tx_power_index && tx_power_index < BTM_BLE_ADV_TX_POWER_MAX) {
+    if (0 <= tx_power_index && tx_power_index <= BTM_BLE_ADV_TX_POWER_MAX) {
         return (char)btm_ble_tx_power[tx_power_index];
     }
     return 0;
