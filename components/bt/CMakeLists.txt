@@ -189,6 +189,7 @@ if(CONFIG_BT_ENABLED)
                    "bluedroid/osi/mutex.c"
                    "bluedroid/osi/osi.c"
                    "bluedroid/osi/semaphore.c"
+                   "bluedroid/osi/thread.c"
                    "bluedroid/stack/a2dp/a2d_api.c"
                    "bluedroid/stack/a2dp/a2d_sbc.c"
                    "bluedroid/stack/avct/avct_api.c"

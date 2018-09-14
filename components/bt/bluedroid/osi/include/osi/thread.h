@@ -25,91 +25,33 @@
 
 #define portBASE_TYPE int
 
-struct bt_task_evt {
-    uint32_t    sig;    //task sig
-    void       *par;    //point to task param
-    void       *cb;     //point to function cb
-    void       *arg;    //point to function arg
-};
-typedef struct bt_task_evt BtTaskEvt_t;
+struct osi_thread;
 
-typedef bt_status_t (* BtTaskCb_t)(void *arg);
+typedef struct osi_thread osi_thread_t;
+
+typedef void (*osi_thread_func_t)(void *context);
 
 typedef enum {
-    SIG_HCI_HAL_RECV_PACKET = 0,
-    SIG_HCI_HAL_NUM,
-} SIG_HCI_HAL_t;
-
-
-typedef enum {
-    SIG_HCI_HOST_SEND_AVAILABLE = 0,
-    SIG_HCI_HOST_NUM,
-} SIG_HCI_HOST_t;
+    OSI_THREAD_CORE_0 = 0,
+    OSI_THREAD_CORE_1,
+    OSI_THREAD_CORE_AFFINITY,
+} osi_thread_core_t;
 
 typedef enum {
-    SIG_BTU_START_UP = 0,
-    SIG_BTU_HCI_MSG,
-    SIG_BTU_BTA_MSG,
-    SIG_BTU_BTA_ALARM,
-    SIG_BTU_GENERAL_ALARM,
-    SIG_BTU_ONESHOT_ALARM,
-    SIG_BTU_L2CAP_ALARM,
-    SIG_BTU_NUM,
-} SIG_BTU_t;
+    OSI_THREAD_NON_BLOCKING = 0,
+    OSI_THREAD_BLOCKING,
+} osi_thread_blocking_t;
 
-#define TASK_PINNED_TO_CORE             (CONFIG_BT_BLUEDROID_PINNED_TO_CORE < portNUM_PROCESSORS ? CONFIG_BT_BLUEDROID_PINNED_TO_CORE : tskNO_AFFINITY)
+osi_thread_t *osi_thread_create(const char *name, size_t stack_size, int priority, osi_thread_core_t core, uint8_t work_queue_num);
 
-#define HCI_HOST_TASK_PINNED_TO_CORE    (TASK_PINNED_TO_CORE)
-#define HCI_HOST_TASK_STACK_SIZE        (2048 + BT_TASK_EXTRA_STACK_SIZE)
-#define HCI_HOST_TASK_PRIO              (configMAX_PRIORITIES - 3)
-#define HCI_HOST_TASK_NAME              "hciHostT"
-#define HCI_HOST_QUEUE_LEN              40
+void osi_thread_free(osi_thread_t *thread);
 
-#define HCI_H4_TASK_PINNED_TO_CORE      (TASK_PINNED_TO_CORE)
-#define HCI_H4_TASK_STACK_SIZE          (2048 + BT_TASK_EXTRA_STACK_SIZE)
-#define HCI_H4_TASK_PRIO                (configMAX_PRIORITIES - 4)
-#define HCI_H4_TASK_NAME                "hciH4T"
-#define HCI_H4_QUEUE_LEN                1
+bool osi_thread_post(osi_thread_t *thread, osi_thread_func_t func, void *context, int queue_idx, osi_thread_blocking_t blocking);
 
-#define BTU_TASK_PINNED_TO_CORE         (TASK_PINNED_TO_CORE)
-#define BTU_TASK_STACK_SIZE             (CONFIG_BT_BTU_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE)
-#define BTU_TASK_PRIO                   (configMAX_PRIORITIES - 5)
-#define BTU_TASK_NAME                   "btuT"
-#define BTU_QUEUE_LEN                   50
+bool osi_thread_set_priority(osi_thread_t *thread, int priority);
 
-#define BTC_TASK_PINNED_TO_CORE         (TASK_PINNED_TO_CORE)
-#define BTC_TASK_STACK_SIZE             (CONFIG_BT_BTC_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE)	//by menuconfig
-#define BTC_TASK_NAME                   "btcT"
-#define BTC_TASK_PRIO                   (configMAX_PRIORITIES - 6)
-#define BTC_TASK_QUEUE_LEN              60
+const char *osi_thread_name(osi_thread_t *thread);
 
-#define BTC_A2DP_SINK_TASK_PINNED_TO_CORE     (TASK_PINNED_TO_CORE)
-#define BTC_A2DP_SINK_TASK_STACK_SIZE         (CONFIG_BT_A2DP_SINK_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE) // by menuconfig
-#define BTC_A2DP_SINK_TASK_NAME               "BtA2dSinkT"
-#define BTC_A2DP_SINK_TASK_PRIO               (configMAX_PRIORITIES - 3)
-#define BTC_A2DP_SINK_DATA_QUEUE_LEN          (3)
-#define BTC_A2DP_SINK_CTRL_QUEUE_LEN          (5)
-#define BTC_A2DP_SINK_TASK_QUEUE_SET_LEN      (BTC_A2DP_SINK_DATA_QUEUE_LEN + BTC_A2DP_SINK_CTRL_QUEUE_LEN)
-
-#define BTC_A2DP_SOURCE_TASK_PINNED_TO_CORE   (TASK_PINNED_TO_CORE)
-#define BTC_A2DP_SOURCE_TASK_STACK_SIZE       (CONFIG_BT_A2DP_SOURCE_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE) // by menuconfig
-#define BTC_A2DP_SOURCE_TASK_NAME             "BtA2dSourceT"
-#define BTC_A2DP_SOURCE_TASK_PRIO             (configMAX_PRIORITIES - 3)
-#define BTC_A2DP_SOURCE_DATA_QUEUE_LEN        (1)
-#define BTC_A2DP_SOURCE_CTRL_QUEUE_LEN        (5)
-#define BTC_A2DP_SOURCE_TASK_QUEUE_SET_LEN    (BTC_A2DP_SOURCE_DATA_QUEUE_LEN + BTC_A2DP_SOURCE_CTRL_QUEUE_LEN)
-
-#define TASK_POST_NON_BLOCKING          (0)
-#define TASK_POST_BLOCKING              (portMAX_DELAY)
-typedef uint32_t task_post_t;           /* Timeout of task post return, unit TICK */
-
-typedef enum {
-    TASK_POST_SUCCESS = 0,
-    TASK_POST_FAIL,
-} task_post_status_t;
-
-task_post_status_t btu_task_post(uint32_t sig, void *param, task_post_t timeout);
-task_post_status_t hci_host_task_post(task_post_t timeout);
-task_post_status_t hci_hal_h4_task_post(task_post_t timeout);
+int osi_thread_queue_wait_size(osi_thread_t *thread, int wq_idx);
 
 #endif /* __THREAD_H__ */
