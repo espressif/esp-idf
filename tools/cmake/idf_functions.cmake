@@ -213,7 +213,11 @@ endfunction()
 # Running git_describe() here automatically triggers rebuilds
 # if the ESP-IDF git version changes
 function(idf_get_git_revision)
-    git_describe(IDF_VER "${IDF_PATH}")
+    if(EXISTS "${IDF_PATH}/version.txt")
+        file(STRINGS "${IDF_PATH}/version.txt" IDF_VER)
+    else()
+        git_describe(IDF_VER "${IDF_PATH}")
+    endif()
     add_definitions(-DIDF_VER=\"${IDF_VER}\")
     git_submodule_check("${IDF_PATH}")
     set(IDF_VER ${IDF_VER} PARENT_SCOPE)
