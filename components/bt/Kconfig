@@ -132,7 +132,7 @@ menu "MODEM SLEEP Options"
 config BTDM_CONTROLLER_MODEM_SLEEP
     bool "Bluetooth modem sleep"
     depends on BT_ENABLED
-    default n
+    default y
     help
         Enable/disable bluetooth controller low power mode.
         Note that currently there is problem in the combination use of bluetooth modem sleep and Dynamic Frequency Scaling(DFS). So do not enable DFS if bluetooth modem sleep is in use.
