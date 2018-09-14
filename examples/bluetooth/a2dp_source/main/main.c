@@ -106,6 +106,8 @@ void app_main()
     }
     ESP_ERROR_CHECK( ret );
 
+    ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_BLE));
+
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
 
     if (esp_bt_controller_init(&bt_cfg) != ESP_OK) {
@@ -113,7 +115,7 @@ void app_main()
         return;
     }
 
-    if (esp_bt_controller_enable(ESP_BT_MODE_BTDM) != ESP_OK) {
+    if (esp_bt_controller_enable(ESP_BT_MODE_CLASSIC_BT) != ESP_OK) {
         ESP_LOGE(BT_AV_TAG, "%s enable controller failed\n", __func__);
         return;
     }
