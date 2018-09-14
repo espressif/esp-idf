@@ -143,6 +143,7 @@ const tBTA_AV_SACT bta_av_a2d_action[] = {
     bta_av_role_res,        /* BTA_AV_ROLE_RES */
     bta_av_delay_co,        /* BTA_AV_DELAY_CO */
     bta_av_open_at_inc,     /* BTA_AV_OPEN_AT_INC */
+    bta_av_open_fail_sdp,   /* BTA_AV_OPEN_FAIL_SDP */
     NULL
 };
 
@@ -1062,6 +1063,35 @@ void bta_av_free_sdb(tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
 
 /*******************************************************************************
 **
+** Function         bta_av_open_fail_sdp
+**
+** Description      report BTA_AV_OPEN_EVT with service discovery failed status
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_av_open_fail_sdp(tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
+{
+    tBTA_AV_OPEN open;
+
+    bdcpy(open.bd_addr, p_scb->peer_addr);
+    open.chnl   = p_scb->chnl;
+    open.hndl   = p_scb->hndl;
+    open.status = BTA_AV_FAIL_SDP;
+
+    if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SRC ) {
+        open.sep = AVDT_TSEP_SNK;
+    } else if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SNK ) {
+        open.sep = AVDT_TSEP_SRC;
+    }
+
+    (*bta_av_cb.p_cback)(BTA_AV_OPEN_EVT, (tBTA_AV *) &open);
+
+    UNUSED(p_data);
+}
+
+/*******************************************************************************
+**
 ** Function         bta_av_config_ind
 **
 ** Description      Handle a stream configuration indication from the peer.
@@ -1544,6 +1574,17 @@ void bta_av_disc_results (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     /* store number of stream endpoints returned */
     p_scb->num_seps = p_data->str_msg.msg.discover_cfm.num_seps;
 
+    UINT8 num_seps = (p_scb->num_seps < BTA_AV_NUM_SEPS) ? p_scb->num_seps : BTA_AV_NUM_SEPS;
+    memcpy(p_scb->sep_info, p_data->str_msg.msg.discover_cfm.p_sep_info, sizeof(tAVDT_SEP_INFO) * num_seps);
+    for (i = 0; i < p_data->str_msg.msg.discover_cfm.num_seps; i++) {
+        APPL_TRACE_DEBUG("peer sep %d, in use %d, seid %d, media type %d,  tsep %d",
+                           i,
+                           p_data->str_msg.msg.discover_cfm.p_sep_info[i].in_use,
+                           p_data->str_msg.msg.discover_cfm.p_sep_info[i].seid,
+                           p_data->str_msg.msg.discover_cfm.p_sep_info[i].media_type,
+                           p_data->str_msg.msg.discover_cfm.p_sep_info[i].tsep
+                           );
+    }
     for (i = 0; i < p_scb->num_seps; i++) {
         /* steam not in use, is a sink, and is audio */
         if ((p_scb->sep_info[i].in_use == FALSE) &&
@@ -1557,7 +1598,7 @@ void bta_av_disc_results (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
                     (uuid_int == UUID_SERVCLASS_AUDIO_SINK)) {
                 num_srcs++;
             }
-
+            APPL_TRACE_DEBUG("num srcs: %d, num_snks: %d\n", num_snks, num_srcs);
         }
     }
 

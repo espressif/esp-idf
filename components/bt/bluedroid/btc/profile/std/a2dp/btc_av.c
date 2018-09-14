@@ -315,8 +315,10 @@ static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data)
                        TRUE, BTA_SEC_AUTHENTICATE, ((btc_av_connect_req_t *)p_data)->uuid);
         } else if (event == BTA_AV_PENDING_EVT) {
             bdcpy(btc_av_cb.peer_bda.address, ((tBTA_AV *)p_data)->pend.bd_addr);
+            UINT16 uuid = (btc_av_cb.service_id == BTA_A2DP_SOURCE_SERVICE_ID) ? UUID_SERVCLASS_AUDIO_SOURCE :
+                UUID_SERVCLASS_AUDIO_SINK;
             BTA_AvOpen(btc_av_cb.peer_bda.address, btc_av_cb.bta_handle,
-                       TRUE, BTA_SEC_AUTHENTICATE, UUID_SERVCLASS_AUDIO_SOURCE);
+                       TRUE, BTA_SEC_AUTHENTICATE, uuid);
         }
         btc_sm_change_state(btc_av_cb.sm_handle, BTC_AV_STATE_OPENING);
     } break;
@@ -402,8 +404,8 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *p_data)
         tBTA_AV *p_bta_data = (tBTA_AV *)p_data;
         esp_a2d_connection_state_t state;
         btc_sm_state_t av_state;
-        BTC_TRACE_DEBUG("status:%d, edr 0x%x\n", p_bta_data->open.status,
-                  p_bta_data->open.edr);
+        BTC_TRACE_DEBUG("status:%d, edr 0x%x, peer sep %d\n", p_bta_data->open.status,
+                        p_bta_data->open.edr, p_bta_data->open.sep);
 
         if (p_bta_data->open.status == BTA_AV_SUCCESS) {
             state = ESP_A2D_CONNECTION_STATE_CONNECTED;
@@ -428,7 +430,8 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *p_data)
             btc_rc_check_handle_pending_play(p_bta_data->open.bd_addr,
                                              (p_bta_data->open.status == BTA_AV_SUCCESS));
             */
-        } else if (btc_av_cb.peer_sep == AVDT_TSEP_SRC) {
+        } else if (btc_av_cb.peer_sep == AVDT_TSEP_SRC &&
+                   (p_bta_data->open.status == BTA_AV_SUCCESS)) {
             /* Bring up AVRCP connection too */
             BTA_AvOpenRc(btc_av_cb.bta_handle);
         }
@@ -978,10 +981,10 @@ static bt_status_t btc_av_init(int service_id)
         btc_av_cb.sm_handle =
             btc_sm_init((const btc_sm_handler_t *)btc_av_state_handlers, BTC_AV_STATE_IDLE);
 
-        btc_dm_enable_service(BTA_A2DP_SOURCE_SERVICE_ID);
-
         if (service_id == BTA_A2DP_SINK_SERVICE_ID) {
             btc_dm_enable_service(BTA_A2DP_SINK_SERVICE_ID);
+        } else {
+            btc_dm_enable_service(BTA_A2DP_SOURCE_SERVICE_ID);
         }
 
         btc_a2dp_on_init();
@@ -1213,7 +1216,7 @@ static void bte_av_media_callback(tBTA_AV_EVT event, tBTA_AV_MEDIA *p_data)
 ** Returns          BT_STATUS_SUCCESS on success, BT_STATUS_FAIL otherwise
 **
 *******************************************************************************/
-bt_status_t btc_av_execute_service(BOOLEAN b_enable)
+bt_status_t btc_av_execute_service(BOOLEAN b_enable, UINT8 tsep)
 {
     if (b_enable) {
         /* TODO: Removed BTA_SEC_AUTHORIZE since the Java/App does not
@@ -1227,12 +1230,26 @@ bt_status_t btc_av_execute_service(BOOLEAN b_enable)
                      | BTA_AV_FEAT_RCTG | BTA_AV_FEAT_METADATA | BTA_AV_FEAT_VENDOR
                      | BTA_AV_FEAT_RCCT | BTA_AV_FEAT_ADV_CTRL,
                      bte_av_callback);
-        BTA_AvRegister(BTA_AV_CHNL_AUDIO, BTC_AV_SERVICE_NAME, 0, bte_av_media_callback, &bta_av_a2d_cos);
+        BTA_AvRegister(BTA_AV_CHNL_AUDIO, BTC_AV_SERVICE_NAME, 0, bte_av_media_callback, &bta_av_a2d_cos, tsep);
     } else {
         BTA_AvDeregister(btc_av_cb.bta_handle);
         BTA_AvDisable();
     }
     return BT_STATUS_SUCCESS;
+}
+
+/*******************************************************************************
+**
+** Function         btc_av_source_execute_service
+**
+** Description      Initializes/Shuts down the A2DP source service
+**
+** Returns          BT_STATUS_SUCCESS on success, BT_STATUS_FAIL otherwise
+**
+*******************************************************************************/
+bt_status_t btc_av_source_execute_service(BOOLEAN b_enable)
+{
+    return btc_av_execute_service(b_enable, AVDT_TSEP_SRC);
 }
 
 /*******************************************************************************
@@ -1246,6 +1263,10 @@ bt_status_t btc_av_execute_service(BOOLEAN b_enable)
 *******************************************************************************/
 bt_status_t btc_av_sink_execute_service(BOOLEAN b_enable)
 {
+    bt_status_t ret = btc_av_execute_service(b_enable, AVDT_TSEP_SNK);
+    if (ret != BT_STATUS_SUCCESS) {
+        return ret;
+    }
 #if (BTA_AV_SINK_INCLUDED == TRUE)
     BTA_AvEnable_Sink(b_enable);
 #endif
