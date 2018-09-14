@@ -29,6 +29,7 @@
 #include "btc/btc_dm.h"
 #include "btc/btc_util.h"
 #include "osi/mutex.h"
+#include "esp_bt.h"
 
 static tBTA_BLE_ADV_DATA gl_bta_adv_data;
 static tBTA_BLE_ADV_DATA gl_bta_scan_rsp_data;
@@ -142,6 +143,7 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
 
     if (p_adv_data->include_txpower) {
         mask |= BTM_BLE_AD_BIT_TX_PWR;
+        bta_adv_data->tx_power = esp_ble_tx_power_get(ESP_BLE_PWR_TYPE_ADV);
     }
 
     if (p_adv_data->min_interval > 0 && p_adv_data->max_interval > 0 &&
