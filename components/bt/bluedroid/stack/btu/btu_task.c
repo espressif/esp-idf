@@ -81,6 +81,11 @@ extern void avdt_rcv_sync_info (BT_HDR *p_buf);
 #include "btm_ble_int.h"
 #endif
 
+typedef struct {
+    uint32_t sig;
+    void *param;
+} btu_thread_evt_t;
+
 //#if (defined(BT_APP_DEMO) && BT_APP_DEMO == TRUE)
 //#include "bt_app_common.h"
 //#endif
@@ -107,8 +112,8 @@ extern osi_mutex_t btu_oneshot_alarm_lock;
 extern hash_map_t *btu_l2cap_alarm_hash_map;
 extern osi_mutex_t btu_l2cap_alarm_lock;
 
-extern xTaskHandle  xBtuTaskHandle;
-extern xQueueHandle xBtuQueue;
+extern void *btu_thread;
+
 extern bluedroid_init_done_cb_t bluedroid_init_done_cb;
 
 /* Define a function prototype to allow a generic timeout handler */
@@ -208,66 +213,52 @@ static void btu_bta_alarm_process(TIMER_LIST_ENT *p_tle)
 }
 #endif
 
-/*****************************************************************************
-**
-** Function         btu_task_thread_handler
-**
-** Description      Process BTU Task Thread.
-******************************************************************************/
-void btu_task_thread_handler(void *arg)
+void btu_thread_handler(void *arg)
 {
-    BtTaskEvt_t e;
+    btu_thread_evt_t *evt = (btu_thread_evt_t *)arg;
 
-    for (;;) {
-        if (pdTRUE == xQueueReceive(xBtuQueue, &e, (portTickType)portMAX_DELAY)) {
-
-            switch (e.sig) {
-            case SIG_BTU_START_UP:
-                btu_task_start_up();
-                break;
-            case SIG_BTU_HCI_MSG:
-                btu_hci_msg_process((BT_HDR *)e.par);
-                break;
+    switch (evt->sig) {
+        case SIG_BTU_START_UP:
+            btu_task_start_up();
+            break;
+        case SIG_BTU_HCI_MSG:
+            btu_hci_msg_process((BT_HDR *)evt->param);
+            break;
 #if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)
-            case SIG_BTU_BTA_MSG:
-                bta_sys_event((BT_HDR *)e.par);
-                break;
-            case SIG_BTU_BTA_ALARM:
-                btu_bta_alarm_process((TIMER_LIST_ENT *)e.par);
-                break;
+        case SIG_BTU_BTA_MSG:
+            bta_sys_event((BT_HDR *)evt->param);
+            break;
+        case SIG_BTU_BTA_ALARM:
+            btu_bta_alarm_process((TIMER_LIST_ENT *)evt->param);
+            break;
 #endif
-            case SIG_BTU_GENERAL_ALARM:
-                btu_general_alarm_process((TIMER_LIST_ENT *)e.par);
-                break;
-            case SIG_BTU_ONESHOT_ALARM: {
-                TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)e.par;
-                btu_general_alarm_process(p_tle);
-                break;
-            }
-            case SIG_BTU_L2CAP_ALARM:
-                btu_l2cap_alarm_process((TIMER_LIST_ENT *)e.par);
-                break;
-            default:
-                break;
-            }
-        }
+        case SIG_BTU_GENERAL_ALARM:
+        case SIG_BTU_ONESHOT_ALARM:
+            btu_general_alarm_process((TIMER_LIST_ENT *)evt->param);
+            break;
+        case SIG_BTU_L2CAP_ALARM:
+            btu_l2cap_alarm_process((TIMER_LIST_ENT *)evt->param);
+            break;
+        default:
+            break;
     }
+
+    osi_free(evt);
 }
 
-
-task_post_status_t btu_task_post(uint32_t sig, void *param, task_post_t timeout)
+bool btu_task_post(uint32_t sig, void *param, osi_thread_blocking_t blocking)
 {
-    BtTaskEvt_t evt;
+    btu_thread_evt_t *evt;
 
-    evt.sig = sig;
-    evt.par = param;
-
-    if (xQueueSend(xBtuQueue, &evt, timeout) != pdTRUE) {
-        HCI_TRACE_ERROR("xBtuQueue failed\n");
-        return TASK_POST_FAIL;
+    evt = (btu_thread_evt_t *)osi_malloc(sizeof(btu_thread_evt_t));
+    if (evt == NULL) {
+        return false;
     }
 
-    return TASK_POST_SUCCESS;
+    evt->sig = sig;
+    evt->param = param;
+
+    return osi_thread_post(btu_thread, btu_thread_handler, evt, 0, blocking);
 }
 
 void btu_task_start_up(void)
@@ -426,7 +417,7 @@ void btu_general_alarm_cb(void *data)
     assert(data != NULL);
     TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)data;
 
-    btu_task_post(SIG_BTU_GENERAL_ALARM, p_tle, TASK_POST_BLOCKING);
+    btu_task_post(SIG_BTU_GENERAL_ALARM, p_tle, OSI_THREAD_BLOCKING);
 }
 
 void btu_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_sec)
@@ -540,7 +531,7 @@ static void btu_l2cap_alarm_cb(void *data)
     assert(data != NULL);
     TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)data;
 
-    btu_task_post(SIG_BTU_L2CAP_ALARM, p_tle, TASK_POST_BLOCKING);
+    btu_task_post(SIG_BTU_L2CAP_ALARM, p_tle, OSI_THREAD_BLOCKING);
 }
 
 void btu_start_quick_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_ticks)
@@ -623,7 +614,7 @@ void btu_oneshot_alarm_cb(void *data)
 
     btu_stop_timer_oneshot(p_tle);
 
-    btu_task_post(SIG_BTU_ONESHOT_ALARM, p_tle, TASK_POST_BLOCKING);
+    btu_task_post(SIG_BTU_ONESHOT_ALARM, p_tle, OSI_THREAD_BLOCKING);
 }
 
 /*

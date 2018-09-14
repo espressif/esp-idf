@@ -50,6 +50,13 @@
 
 #if BTC_AV_SRC_INCLUDED
 
+/* Macro */
+#define BTC_A2DP_SOURCE_TASK_PINNED_TO_CORE   (TASK_PINNED_TO_CORE)
+#define BTC_A2DP_SOURCE_TASK_STACK_SIZE       (CONFIG_A2DP_SOURCE_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE) // by menuconfig
+#define BTC_A2DP_SOURCE_TASK_NAME             "BtA2dSourceT"
+#define BTC_A2DP_SOURCE_TASK_PRIO             (configMAX_PRIORITIES - 3)
+
+
 /*****************************************************************************
  **  Constants
  *****************************************************************************/
@@ -72,9 +79,6 @@ enum {
     BTC_A2DP_SOURCE_STATE_SHUTTING_DOWN = 2
 };
 
-enum {
-    BTC_A2DP_SOURCE_DATA_EVT = 1,
-};
 
 /* Media task tick in milliseconds, must be set to multiple of
    (1000/TICKS_PER_SEC) */
@@ -128,6 +132,11 @@ enum {
 #define MAX_OUTPUT_A2DP_SRC_FRAME_QUEUE_SZ     (27) // 18 for 20ms tick
 
 typedef struct {
+    uint32_t sig;
+    void *param;
+} a2dp_src_task_evt_t;
+
+typedef struct {
     UINT16 num_frames_to_be_processed;
     UINT16 len;
     UINT16 offset;
@@ -174,15 +183,12 @@ static void btc_a2dp_source_aa_tx_flush(void);
 static void btc_a2dp_source_prep_2_send(UINT8 nb_frame);
 static void btc_a2dp_source_handle_timer(UNUSED_ATTR void *context);
 static void btc_a2dp_source_encoder_init(void);
+static void btc_a2dp_source_ctrl_handler(void *arg);
 
 static tBTC_A2DP_SOURCE_CB btc_aa_src_cb;
 static int btc_a2dp_source_state = BTC_A2DP_SOURCE_STATE_OFF;
 static future_t *btc_a2dp_source_future = NULL;
-static xTaskHandle  btc_aa_src_task_hdl = NULL;
-static QueueHandle_t btc_aa_src_data_queue = NULL;
-static QueueHandle_t btc_aa_src_ctrl_queue = NULL;
-static QueueSetHandle_t btc_aa_src_queue_set;
-
+static osi_thread_t *btc_aa_src_task_hdl = NULL;
 static esp_a2d_source_data_cb_t btc_aa_src_data_cb = NULL;
 static UINT64 last_frame_us = 0;
 
@@ -234,26 +240,28 @@ bool btc_a2dp_source_is_task_shutting_down(void)
     return btc_a2dp_source_state == BTC_A2DP_SOURCE_STATE_SHUTTING_DOWN;
 }
 
-static void btc_a2dp_source_ctrl_post(uint32_t sig, void *par)
+static void btc_a2dp_source_ctrl_post(uint32_t sig, void *param)
 {
-    BtTaskEvt_t *evt = (BtTaskEvt_t *)osi_malloc(sizeof(BtTaskEvt_t));
+    a2dp_src_task_evt_t *evt = (a2dp_src_task_evt_t *)osi_malloc(sizeof(a2dp_src_task_evt_t));
+
     if (evt == NULL) {
         return;
     }
 
     evt->sig = sig;
-    evt->par = par;
+    evt->param = param;
 
-    if (xQueueSend(btc_aa_src_ctrl_queue, &evt, portMAX_DELAY) != pdTRUE) {
-        APPL_TRACE_WARNING("btc_aa_src_ctrl_queue failed, sig 0x%x\n", sig);
-    }
+    osi_thread_post(btc_aa_src_task_hdl, btc_a2dp_source_ctrl_handler, evt, 0, OSI_THREAD_BLOCKING);
 }
 
-static void btc_a2dp_source_ctrl_handler(BtTaskEvt_t *e)
+static void btc_a2dp_source_ctrl_handler(void *arg)
 {
+    a2dp_src_task_evt_t *e = (a2dp_src_task_evt_t *)arg;
+
     if (e == NULL) {
         return;
     }
+
     switch (e->sig) {
     case BTC_MEDIA_TASK_INIT:
         btc_a2dp_source_thread_init(NULL);
@@ -268,13 +276,13 @@ static void btc_a2dp_source_ctrl_handler(BtTaskEvt_t *e)
         btc_a2dp_source_aa_stop_tx();
         break;
     case BTC_MEDIA_SBC_ENC_INIT:
-        btc_a2dp_source_enc_init(e->par);
+        btc_a2dp_source_enc_init(e->param);
         break;
     case BTC_MEDIA_SBC_ENC_UPDATE:
-        btc_a2dp_source_enc_update(e->par);
+        btc_a2dp_source_enc_update(e->param);
         break;
     case BTC_MEDIA_AUDIO_FEEDING_INIT:
-        btc_a2dp_source_audio_feeding_init(e->par);
+        btc_a2dp_source_audio_feeding_init(e->param);
         break;
     case BTC_MEDIA_FLUSH_AA_TX:
         btc_a2dp_source_aa_tx_flush();
@@ -282,29 +290,12 @@ static void btc_a2dp_source_ctrl_handler(BtTaskEvt_t *e)
     default:
         APPL_TRACE_WARNING("media task unhandled evt: 0x%x\n", e->sig);
     }
-    if (e->par != NULL) {
-        osi_free(e->par);
-    }
-}
 
-static void btc_a2dp_source_task_handler(void *arg)
-{
-    QueueSetMemberHandle_t xActivatedMember;
-    BtTaskEvt_t *e = NULL;
-    for (;;) {
-        xActivatedMember = xQueueSelectFromSet(btc_aa_src_queue_set, portMAX_DELAY);
-        if (xActivatedMember == btc_aa_src_data_queue) {
-            int32_t data_evt;
-            xQueueReceive(xActivatedMember, &data_evt, 0);
-            if (data_evt == BTC_A2DP_SOURCE_DATA_EVT) {
-                btc_a2dp_source_handle_timer(NULL);
-            }
-        } else if (xActivatedMember == btc_aa_src_ctrl_queue) {
-            xQueueReceive(xActivatedMember, &e, 0);
-            btc_a2dp_source_ctrl_handler(e);
-            osi_free(e);
-        }
+    if (e->param != NULL) {
+        osi_free(e->param);
     }
+
+    osi_free(e);
 }
 
 bool btc_a2dp_source_startup(void)
@@ -324,57 +315,28 @@ bool btc_a2dp_source_startup(void)
     }
 #endif /* #if BTC_SBC_ENC_DYNAMIC_MEMORY == TRUE */
 
-    btc_aa_src_queue_set = xQueueCreateSet(BTC_A2DP_SOURCE_TASK_QUEUE_SET_LEN);
-    configASSERT(btc_aa_src_queue_set);
-    btc_aa_src_data_queue = xQueueCreate(BTC_A2DP_SOURCE_DATA_QUEUE_LEN, sizeof(void *));
-    configASSERT(btc_aa_src_data_queue);
-    xQueueAddToSet(btc_aa_src_data_queue, btc_aa_src_queue_set);
-
-    btc_aa_src_ctrl_queue = xQueueCreate(BTC_A2DP_SOURCE_CTRL_QUEUE_LEN, sizeof(void *));
-    configASSERT(btc_aa_src_ctrl_queue);
-    xQueueAddToSet(btc_aa_src_ctrl_queue, btc_aa_src_queue_set);
-
-    if (!btc_aa_src_data_queue || !btc_aa_src_ctrl_queue || !btc_aa_src_queue_set ) {
-        goto error_exit;
-    }
-
-    xTaskCreatePinnedToCore(btc_a2dp_source_task_handler, BTC_A2DP_SOURCE_TASK_NAME, BTC_A2DP_SOURCE_TASK_STACK_SIZE, NULL, BTC_A2DP_SOURCE_TASK_PRIO, &btc_aa_src_task_hdl, BTC_A2DP_SOURCE_TASK_PINNED_TO_CORE);
+    btc_aa_src_task_hdl = osi_thread_create(BTC_A2DP_SOURCE_TASK_NAME, BTC_A2DP_SOURCE_TASK_STACK_SIZE, BTC_A2DP_SOURCE_TASK_PRIO, BTC_A2DP_SOURCE_TASK_PINNED_TO_CORE, 2);
     if (btc_aa_src_task_hdl == NULL) {
         goto error_exit;
     }
 
     btc_a2dp_source_ctrl_post(BTC_MEDIA_TASK_INIT, NULL);
-
     APPL_TRACE_EVENT("## A2DP SOURCE MEDIA THREAD STARTED ##\n");
 
     return true;
 
 error_exit:;
     APPL_TRACE_ERROR("%s unable to start up media thread\n", __func__);
+    osi_thread_free(btc_aa_src_task_hdl);
+    btc_aa_src_task_hdl = NULL;
 
-    if (btc_aa_src_task_hdl != NULL) {
-        vTaskDelete(btc_aa_src_task_hdl);
-        btc_aa_src_task_hdl = NULL;
-    }
-
-    if (btc_aa_src_data_queue) {
-        vQueueDelete(btc_aa_src_data_queue);
-        btc_aa_src_data_queue = NULL;
-    }
-    if (btc_aa_src_ctrl_queue) {
-        vQueueDelete(btc_aa_src_ctrl_queue);
-        btc_aa_src_ctrl_queue = NULL;
-    }
-    if (btc_aa_src_queue_set) {
-        vQueueDelete(btc_aa_src_queue_set);
-        btc_aa_src_queue_set = NULL;
-    }
 #if (BTC_SBC_ENC_DYNAMIC_MEMORY == TRUE)
     if (btc_sbc_encoder_ptr) {
         osi_free(btc_sbc_encoder_ptr);
         btc_sbc_encoder_ptr = NULL;
     }
 #endif /* #if BTC_SBC_ENC_DYNAMIC_MEMORY == TRUE */
+
     return false;
 }
 
@@ -390,17 +352,8 @@ void btc_a2dp_source_shutdown(void)
     future_await(btc_a2dp_source_future);
     btc_a2dp_source_future = NULL;
 
-    vTaskDelete(btc_aa_src_task_hdl);
+    osi_thread_free(btc_aa_src_task_hdl);
     btc_aa_src_task_hdl = NULL;
-
-    vQueueDelete(btc_aa_src_data_queue);
-    btc_aa_src_data_queue = NULL;
-
-    vQueueDelete(btc_aa_src_ctrl_queue);
-    btc_aa_src_ctrl_queue = NULL;
-
-    vQueueDelete(btc_aa_src_queue_set);
-    btc_aa_src_queue_set = NULL;
 
 #if (BTC_SBC_ENC_DYNAMIC_MEMORY == TRUE)
     osi_free(btc_sbc_encoder_ptr);
@@ -472,11 +425,9 @@ void btc_a2dp_source_on_suspended(tBTA_AV_SUSPEND *p_av)
     btc_a2dp_source_stop_audio_req();
 }
 
-static void btc_a2dp_source_data_post(int32_t data_type)
+static void btc_a2dp_source_data_post(void)
 {
-    if (xQueueSend(btc_aa_src_data_queue, &data_type, 0) != pdTRUE) {
-        APPL_TRACE_DEBUG("Media data Q filled\n");
-    }
+    osi_thread_post(btc_aa_src_task_hdl, btc_a2dp_source_handle_timer, NULL, 1, OSI_THREAD_BLOCKING);
 }
 
 static UINT64 time_now_us()
@@ -604,9 +555,13 @@ BOOLEAN btc_a2dp_source_stop_audio_req(void)
      * the "cleanup() -> btc_a2dp_stop_media_task()" processing during
      * the shutdown of the Bluetooth stack.
      */
+#if 0
     if (btc_aa_src_ctrl_queue != NULL) {
+#endif
         btc_a2dp_source_ctrl_post(BTC_MEDIA_STOP_AA_TX, NULL);
+#if 0
     }
+#endif
     return TRUE;
 }
 
@@ -696,9 +651,13 @@ BOOLEAN btc_a2dp_source_tx_flush_req(void)
      * the "cleanup() -> btc_a2dp_stop_media_task()" processing during
      * the shutdown of the Bluetooth stack.
      */
+#if 0
     if (btc_aa_src_ctrl_queue != NULL) {
+#endif
         btc_a2dp_source_ctrl_post(BTC_MEDIA_FLUSH_AA_TX, NULL);
+#if 0
     }
+#endif
 
     return TRUE;
 }
@@ -1515,7 +1474,7 @@ static void btc_a2dp_source_handle_timer(UNUSED_ATTR void *context)
 
 static void btc_a2dp_source_alarm_cb(UNUSED_ATTR void *context)
 {
-    btc_a2dp_source_data_post(BTC_A2DP_SOURCE_DATA_EVT);
+    btc_a2dp_source_data_post();
 }
 
 /*******************************************************************************

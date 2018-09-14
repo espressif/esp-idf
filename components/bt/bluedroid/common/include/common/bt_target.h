@@ -39,6 +39,14 @@
 
 #include "stack/dyn_mem.h"    /* defines static and/or dynamic memory for components */
 
+
+/* OS Configuration from User config (eg: sdkconfig) */
+#if CONFIG_BLUEDROID_PINNED_TO_CORE
+#define TASK_PINNED_TO_CORE         (CONFIG_BLUEDROID_PINNED_TO_CORE < portNUM_PROCESSORS ? CONFIG_BLUEDROID_PINNED_TO_CORE : tskNO_AFFINITY)
+#else
+#define TASK_PINNED_TO_CORE         (0)
+#endif
+
 /******************************************************************************
 **
 ** Classic BT features

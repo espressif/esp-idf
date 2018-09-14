@@ -29,6 +29,7 @@
 #include "osi/alarm.h"
 #include "osi/thread.h"
 #include "stack/btm_api.h"
+#include "stack/btu.h"
 #include "bta/bta_api.h"
 #include "bta/bta_sys.h"
 #include "bta_sys_int.h"
@@ -571,7 +572,7 @@ void bta_sys_sendmsg(void *p_msg)
     // there is a procedure in progress that can schedule a task via this
     // message queue. This causes |btu_bta_msg_queue| to get cleaned up before
     // it gets used here; hence we check for NULL before using it.
-    if (btu_task_post(SIG_BTU_BTA_MSG, p_msg,  TASK_POST_BLOCKING) != TASK_POST_SUCCESS) {
+    if (btu_task_post(SIG_BTU_BTA_MSG, p_msg, OSI_THREAD_BLOCKING) == false) {
         osi_free(p_msg);
     }
 }
@@ -591,7 +592,7 @@ void bta_alarm_cb(void *data)
     assert(data != NULL);
     TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)data;
 
-    btu_task_post(SIG_BTU_BTA_ALARM, p_tle, TASK_POST_BLOCKING);
+    btu_task_post(SIG_BTU_BTA_ALARM, p_tle, OSI_THREAD_BLOCKING);
 }
 
 void bta_sys_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, INT32 timeout_ms)

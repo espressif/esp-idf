@@ -21,6 +21,7 @@
 #include "common/bt_trace.h"
 #include "stack/hcidefs.h"
 #include "stack/hcimsgs.h"
+#include "stack/btu.h"
 #include "common/bt_vendor_lib.h"
 #include "hci/hci_internals.h"
 #include "hci/hci_hal.h"
@@ -32,6 +33,12 @@
 #include "osi/thread.h"
 #include "osi/mutex.h"
 #include "osi/fixed_queue.h"
+
+#define HCI_HOST_TASK_PINNED_TO_CORE    (TASK_PINNED_TO_CORE)
+#define HCI_HOST_TASK_STACK_SIZE        (2048 + BT_TASK_EXTRA_STACK_SIZE)
+#define HCI_HOST_TASK_PRIO              (configMAX_PRIORITIES - 3)
+#define HCI_HOST_TASK_NAME              "hciHostT"
+#define HCI_HOST_QUEUE_LEN              40
 
 typedef struct {
     uint16_t opcode;
@@ -70,10 +77,7 @@ static const uint32_t COMMAND_PENDING_TIMEOUT = 8000;
 static bool interface_created;
 static hci_t interface;
 static hci_host_env_t hci_host_env;
-
-static xTaskHandle  xHciHostTaskHandle;
-static xQueueHandle xHciHostQueue;
-
+static osi_thread_t *hci_host_thread;
 static bool hci_host_startup_flag;
 
 // Modules we import and callbacks we export
@@ -102,8 +106,10 @@ int hci_start_up(void)
         goto error;
     }
 
-    xHciHostQueue = xQueueCreate(HCI_HOST_QUEUE_LEN, sizeof(BtTaskEvt_t));
-    xTaskCreatePinnedToCore(hci_host_thread_handler, HCI_HOST_TASK_NAME, HCI_HOST_TASK_STACK_SIZE, NULL, HCI_HOST_TASK_PRIO, &xHciHostTaskHandle, HCI_HOST_TASK_PINNED_TO_CORE);
+    hci_host_thread = osi_thread_create(HCI_HOST_TASK_NAME, HCI_HOST_TASK_STACK_SIZE, HCI_HOST_TASK_PRIO, HCI_HOST_TASK_PINNED_TO_CORE, 1);
+    if (hci_host_thread == NULL) {
+        return -2;
+    }
 
     packet_fragmenter->init(&packet_fragmenter_callbacks);
     hal->open(&hal_callbacks);
@@ -124,28 +130,15 @@ void hci_shut_down(void)
 
     //low_power_manager->cleanup();
     hal->close();
-    vTaskDelete(xHciHostTaskHandle);
-    vQueueDelete(xHciHostQueue);
+
+    osi_thread_free(hci_host_thread);
+    hci_host_thread = NULL;
 }
 
 
-task_post_status_t hci_host_task_post(task_post_t timeout)
+bool hci_host_task_post(osi_thread_blocking_t blocking)
 {
-    BtTaskEvt_t evt;
-
-    if (hci_host_startup_flag == false) {
-        return TASK_POST_FAIL;
-    }
-
-    evt.sig = SIG_HCI_HOST_SEND_AVAILABLE;
-    evt.par = 0;
-
-    if (xQueueSend(xHciHostQueue, &evt, timeout) != pdTRUE) {
-        HCI_TRACE_ERROR("xHciHostQueue failed\n");
-        return TASK_POST_FAIL;
-    }
-
-    return TASK_POST_SUCCESS;
+    return osi_thread_post(hci_host_thread, hci_host_thread_handler, NULL, 0, blocking);
 }
 
 static int hci_layer_init_env(void)
@@ -218,27 +211,17 @@ static void hci_host_thread_handler(void *arg)
      * All packets will be directly copied to single queue in driver layer with
      * H4 type header added (1 byte).
      */
-
-    BtTaskEvt_t e;
-
-    for (;;) {
-        if (pdTRUE == xQueueReceive(xHciHostQueue, &e, (portTickType)portMAX_DELAY)) {
-
-            if (e.sig == SIG_HCI_HOST_SEND_AVAILABLE) {
-                if (esp_vhci_host_check_send_available()) {
-                    /*Now Target only allowed one packet per TX*/
-                    BT_HDR *pkt = packet_fragmenter->fragment_current_packet();
-                    if (pkt != NULL) {
-                        packet_fragmenter->fragment_and_dispatch(pkt);
-                    } else {
-                        if (!fixed_queue_is_empty(hci_host_env.command_queue) &&
-                                hci_host_env.command_credits > 0) {
-                            fixed_queue_process(hci_host_env.command_queue);
-                        } else if (!fixed_queue_is_empty(hci_host_env.packet_queue)) {
-                            fixed_queue_process(hci_host_env.packet_queue);
-                        }
-                    }
-                }
+    if (esp_vhci_host_check_send_available()) {
+        /*Now Target only allowed one packet per TX*/
+        BT_HDR *pkt = packet_fragmenter->fragment_current_packet();
+        if (pkt != NULL) {
+            packet_fragmenter->fragment_and_dispatch(pkt);
+        } else {
+            if (!fixed_queue_is_empty(hci_host_env.command_queue) &&
+                    hci_host_env.command_credits > 0) {
+                fixed_queue_process(hci_host_env.command_queue);
+            } else if (!fixed_queue_is_empty(hci_host_env.packet_queue)) {
+                fixed_queue_process(hci_host_env.packet_queue);
             }
         }
     }
@@ -271,7 +254,7 @@ static void transmit_command(
     BTTRC_DUMP_BUFFER(NULL, command->data + command->offset, command->len);
 
     fixed_queue_enqueue(hci_host_env.command_queue, wait_entry);
-    hci_host_task_post(TASK_POST_BLOCKING);
+    hci_host_task_post(OSI_THREAD_BLOCKING);
 
 }
 
@@ -292,7 +275,7 @@ static future_t *transmit_command_futured(BT_HDR *command)
     command->event = MSG_STACK_TO_HC_HCI_CMD;
 
     fixed_queue_enqueue(hci_host_env.command_queue, wait_entry);
-    hci_host_task_post(TASK_POST_BLOCKING);
+    hci_host_task_post(OSI_THREAD_BLOCKING);
     return future;
 }
 
@@ -305,7 +288,7 @@ static void transmit_downward(uint16_t type, void *data)
         fixed_queue_enqueue(hci_host_env.packet_queue, data);
     }
 
-    hci_host_task_post(TASK_POST_BLOCKING);
+    hci_host_task_post(OSI_THREAD_BLOCKING);
 }
 
 
@@ -479,7 +462,7 @@ intercepted:
     /*Tell HCI Host Task to continue TX Pending commands*/
     if (hci_host_env.command_credits &&
             !fixed_queue_is_empty(hci_host_env.command_queue)) {
-        hci_host_task_post(TASK_POST_BLOCKING);
+        hci_host_task_post(OSI_THREAD_BLOCKING);
     }
 
     if (wait_entry) {
@@ -507,7 +490,7 @@ static void dispatch_reassembled(BT_HDR *packet)
 {
     // Events should already have been dispatched before this point
     //Tell Up-layer received packet.
-    if (btu_task_post(SIG_BTU_HCI_MSG, packet, TASK_POST_BLOCKING) != TASK_POST_SUCCESS) {
+    if (btu_task_post(SIG_BTU_HCI_MSG, packet, OSI_THREAD_BLOCKING) == false) {
         osi_free(packet);
     }
 }

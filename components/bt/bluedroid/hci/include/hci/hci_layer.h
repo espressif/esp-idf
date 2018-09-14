@@ -23,6 +23,8 @@
 #include "osi/allocator.h"
 #include "osi/osi.h"
 #include "osi/future.h"
+#include "osi/thread.h"
+
 ///// LEGACY DEFINITIONS /////
 
 /* Message event mask across Host/Controller lib and stack */
@@ -95,5 +97,6 @@ const hci_t *hci_layer_get_interface();
 int hci_start_up(void);
 void hci_shut_down(void);
 
+bool hci_host_task_post(osi_thread_blocking_t blocking);
 
 #endif /* _HCI_LAYER_H_ */

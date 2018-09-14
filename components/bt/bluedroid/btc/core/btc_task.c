@@ -47,9 +47,13 @@
 #endif  /* #if BTC_HF_CLIENT_INCLUDED */
 #endif /* #if CONFIG_BT_CLASSIC_ENABLED */
 
+#define BTC_TASK_PINNED_TO_CORE         (TASK_PINNED_TO_CORE)
+#define BTC_TASK_STACK_SIZE             (CONFIG_BTC_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE)	//by menuconfig
+#define BTC_TASK_NAME                   "btcT"
+#define BTC_TASK_PRIO                   (configMAX_PRIORITIES - 6)
+#define BTC_TASK_QUEUE_LEN              60
 
-static xTaskHandle  xBtcTaskHandle = NULL;
-static xQueueHandle xBtcQueue = 0;
+static osi_thread_t *btc_thread;
 
 static btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_MAIN_INIT]   = {btc_main_call_handler,       NULL                    },
@@ -96,38 +100,40 @@ static btc_func_t profile_tab[BTC_PID_NUM] = {
 **
 ** Description      Process profile Task Thread.
 ******************************************************************************/
-static void btc_task(void *arg)
+static void btc_thread_handler(void *arg)
 {
-    btc_msg_t msg;
+    btc_msg_t *msg = (btc_msg_t *)arg;
 
-    for (;;) {
-        if (pdTRUE == xQueueReceive(xBtcQueue, &msg, (portTickType)portMAX_DELAY)) {
-            BTC_TRACE_DEBUG("%s msg %u %u %u %p\n", __func__, msg.sig, msg.pid, msg.act, msg.arg);
-            switch (msg.sig) {
-            case BTC_SIG_API_CALL:
-                profile_tab[msg.pid].btc_call(&msg);
-                break;
-            case BTC_SIG_API_CB:
-                profile_tab[msg.pid].btc_cb(&msg);
-                break;
-            default:
-                break;
-            }
-            if (msg.arg) {
-                osi_free(msg.arg);
-            }
-        }
+    BTC_TRACE_DEBUG("%s msg %u %u %u %p\n", __func__, msg->sig, msg->pid, msg->act, msg->arg);
+    switch (msg->sig) {
+    case BTC_SIG_API_CALL:
+        profile_tab[msg->pid].btc_call(msg);
+        break;
+    case BTC_SIG_API_CB:
+        profile_tab[msg->pid].btc_cb(msg);
+        break;
+    default:
+        break;
     }
+
+    if (msg->arg) {
+        osi_free(msg->arg);
+    }
+    osi_free(msg);
 }
 
-static bt_status_t btc_task_post(btc_msg_t *msg, task_post_t timeout)
+static bt_status_t btc_task_post(btc_msg_t *msg, osi_thread_blocking_t blocking) 
 {
-    if (msg == NULL) {
-        return BT_STATUS_PARM_INVALID;
+    btc_msg_t *lmsg;
+
+    lmsg = (btc_msg_t *)osi_malloc(sizeof(btc_msg_t));
+    if (lmsg == NULL) {
+        return BT_STATUS_NOMEM;
     }
 
-    if (xQueueSend(xBtcQueue, msg, timeout) != pdTRUE) {
-        BTC_TRACE_ERROR("Btc Post failed\n");
+    memcpy(lmsg, msg, sizeof(btc_msg_t));
+
+    if (osi_thread_post(btc_thread, btc_thread_handler, lmsg, 0, blocking) == false) {
         return BT_STATUS_BUSY;
     }
 
@@ -159,17 +165,18 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
         lmsg.arg = NULL;
     }
 
-    return btc_task_post(&lmsg, TASK_POST_BLOCKING);
+    return btc_task_post(&lmsg, OSI_THREAD_BLOCKING);
+
 }
 
 
 int btc_init(void)
 {
-    xBtcQueue = xQueueCreate(BTC_TASK_QUEUE_LEN, sizeof(btc_msg_t));
-    xTaskCreatePinnedToCore(btc_task, "Btc_task", BTC_TASK_STACK_SIZE, NULL, BTC_TASK_PRIO, &xBtcTaskHandle, BTC_TASK_PINNED_TO_CORE);
-    if (xBtcTaskHandle == NULL || xBtcQueue == 0){
+    btc_thread = osi_thread_create("BTC_TASK", BTC_TASK_STACK_SIZE, BTC_TASK_PRIO, BTC_TASK_PINNED_TO_CORE, 1);
+    if (btc_thread == NULL) {
         return BT_STATUS_NOMEM;
     }
+
     btc_gap_callback_init();
 #if SCAN_QUEUE_CONGEST_CHECK
     btc_adv_list_init();
@@ -180,20 +187,18 @@ int btc_init(void)
 
 void btc_deinit(void)
 {
-    vTaskDelete(xBtcTaskHandle);
-    vQueueDelete(xBtcQueue);
+    osi_thread_free(btc_thread);
+    btc_thread = NULL;
 #if SCAN_QUEUE_CONGEST_CHECK
     btc_adv_list_deinit();
 #endif
-    xBtcTaskHandle = NULL;
-    xBtcQueue = 0;
 }
 
 bool btc_check_queue_is_congest(void)
 {
-    UBaseType_t wait_size = uxQueueMessagesWaiting(xBtcQueue);
-    if(wait_size >= QUEUE_CONGEST_SIZE) {
+    if (osi_thread_queue_wait_size(btc_thread, 0) >= QUEUE_CONGEST_SIZE) {
         return true;
     }
+
     return false;
 }
