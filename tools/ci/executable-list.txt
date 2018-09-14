@@ -64,4 +64,5 @@ tools/test_idf_size/test.sh
 tools/check_python_dependencies.py
 docs/gen-dxd.py
 tools/ci/multirun_with_pyenv.sh
-
+components/espcoredump/test/test_espcoredump.py
+components/espcoredump/test/test_espcoredump.sh

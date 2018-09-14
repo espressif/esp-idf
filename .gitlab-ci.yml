@@ -446,6 +446,18 @@ test_esp_err_to_name_on_host:
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 ./gen_esp_err_to_name.py
     - git diff --exit-code -- ../components/esp32/esp_err_to_name.c || (echo 'Differences found between running under Python 2 and 3.'; exit 1)
 
+test_espcoredump:
+  <<: *host_test_template
+  artifacts:
+    when: always
+    paths:
+      - components/espcoredump/test/.coverage
+      - components/espcoredump/test/output
+    expire_in: 1 week
+  script:
+    - cd components/espcoredump/test/
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_espcoredump.sh
+
 push_to_github:
   stage: deploy
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
