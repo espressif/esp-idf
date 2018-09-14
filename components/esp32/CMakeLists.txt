@@ -74,9 +74,9 @@ else()
         target_link_libraries(esp32 coexist core espnow mesh net80211 phy pp rtc smartconfig wpa2 wpa wps)
     endif()
     target_linker_script(esp32 "${CMAKE_CURRENT_BINARY_DIR}/esp32_out.ld")
+    target_linker_script(esp32 "${CMAKE_CURRENT_BINARY_DIR}/esp32.common_out.ld")
 
     target_linker_script(esp32
-        "ld/esp32.common.ld"
         "ld/esp32.rom.ld"
         "ld/esp32.peripherals.ld"
         "ld/esp32.rom.libgcc.ld"
@@ -113,7 +113,15 @@ else()
         MAIN_DEPENDENCY ${LD_DIR}/esp32.ld ${SDKCONFIG_H}
         COMMENT "Generating linker script..."
         VERBATIM)
-    add_custom_target(esp32_linker_script DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/esp32_out.ld)
+
+    # Preprocess esp32.common.ld linker script to include configuration, becomes esp32.common_out.ld
+    add_custom_command(
+        OUTPUT esp32.common_out.ld
+        COMMAND "${CMAKE_C_COMPILER}" -C -P -x c -E -o esp32.common_out.ld -I ${CONFIG_DIR} ${LD_DIR}/esp32.common.ld
+        MAIN_DEPENDENCY ${LD_DIR}/esp32.common.ld ${SDKCONFIG_H}
+        COMMENT "Generating linker script..."
+        VERBATIM)
+    add_custom_target(esp32_linker_script DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/esp32_out.ld ${CMAKE_CURRENT_BINARY_DIR}/esp32.common_out.ld)
     add_dependencies(esp32 esp32_linker_script)
 
     if(CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION)
