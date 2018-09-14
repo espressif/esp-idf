@@ -59,7 +59,9 @@ static const char* TAG = "spiram";
 #error "FLASH speed can only be equal to or higher than SRAM speed while SRAM is enabled!"
 #endif
 
-
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+extern int _ext_ram_bss_start, _ext_ram_bss_end;
+#endif
 static bool spiram_inited=false;
 
 
@@ -162,11 +164,16 @@ esp_err_t esp_spiram_init()
 
 
 esp_err_t esp_spiram_add_to_heapalloc()
-{
-    ESP_EARLY_LOGI(TAG, "Adding pool of %dK of external SPI memory to heap allocator", CONFIG_SPIRAM_SIZE/1024);
+{   
     //Add entire external RAM region to heap allocator. Heap allocator knows the capabilities of this type of memory, so there's
     //no need to explicitly specify them.
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+    ESP_EARLY_LOGI(TAG, "Adding pool of %dK of external SPI memory to heap allocator", (CONFIG_SPIRAM_SIZE - (&_ext_ram_bss_end - &_ext_ram_bss_start))/1024);
+    return heap_caps_add_region((intptr_t)&_ext_ram_bss_end, (intptr_t)SOC_EXTRAM_DATA_LOW + CONFIG_SPIRAM_SIZE-1);
+#else
+    ESP_EARLY_LOGI(TAG, "Adding pool of %dK of external SPI memory to heap allocator", CONFIG_SPIRAM_SIZE/1024);
     return heap_caps_add_region((intptr_t)SOC_EXTRAM_DATA_LOW, (intptr_t)SOC_EXTRAM_DATA_LOW + CONFIG_SPIRAM_SIZE-1);
+#endif
 }
 
 

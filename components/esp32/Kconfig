@@ -172,6 +172,14 @@ config SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
         ROM code in any way (no direct calls, but also no Bluetooth/WiFi), you can try to disable this and use
         xTaskCreateStatic to create the tasks stack in external memory.
 
+config SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+    bool "Allow .bss segment placed in external memory"
+    default n
+    depends on SPIRAM_SUPPORT
+    help
+        If enabled the option,and add EXT_RAM_ATTR defined your variable,then your variable will be placed
+        in PSRAM instead of internal memory. 
+
 endmenu
 
 config MEMMAP_TRACEMEM

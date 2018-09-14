@@ -11,7 +11,8 @@ endif
 #Linker scripts used to link the final application.
 #Warning: These linker scripts are only used when the normal app is compiled; the bootloader
 #specifies its own scripts.
-LINKER_SCRIPTS += esp32.common.ld esp32.rom.ld esp32.peripherals.ld
+
+LINKER_SCRIPTS += esp32.rom.ld esp32.peripherals.ld
 
 #Force pure functions from libgcc.a to be linked from ROM
 LINKER_SCRIPTS += esp32.rom.libgcc.ld
@@ -38,6 +39,7 @@ COMPONENT_ADD_LDFLAGS += $(COMPONENT_PATH)/libhal.a \
                          $(addprefix -l,$(LIBS)) \
                          -L $(COMPONENT_PATH)/ld \
                          -T esp32_out.ld \
+                         -T esp32.common_out.ld \
                          -u ld_include_panic_highint_hdl \
                          $(addprefix -T ,$(LINKER_SCRIPTS))
 
@@ -53,12 +55,17 @@ COMPONENT_ADD_LINKER_DEPS := $(ALL_LIB_FILES) $(addprefix ld/,$(LINKER_SCRIPTS))
 #
 # The library doesn't really depend on esp32_out.ld, but it
 # saves us from having to add the target to a Makefile.projbuild
-$(COMPONENT_LIBRARY): esp32_out.ld
+$(COMPONENT_LIBRARY): esp32_out.ld esp32.common_out.ld
 
 esp32_out.ld: $(COMPONENT_PATH)/ld/esp32.ld ../include/sdkconfig.h
 	$(CC) -I ../include -C -P -x c -E $< -o $@
 
-COMPONENT_EXTRA_CLEAN := esp32_out.ld
+# Preprocess esp32.common.ld linker script to include configuration, becomes esp32.common_out.ld
+esp32.common_out.ld: $(COMPONENT_PATH)/ld/esp32.common.ld ../include/sdkconfig.h
+	$(CC) -I ../include -C -P -x c -E $< -o $@
+
+COMPONENT_EXTRA_CLEAN := esp32_out.ld 
+COMPONENT_EXTRA_CLEAN += esp32.common_out.ld
 
 # disable stack protection in files which are involved in initialization of that feature
 stack_check.o: CFLAGS := $(filter-out -fstack-protector%, $(CFLAGS))

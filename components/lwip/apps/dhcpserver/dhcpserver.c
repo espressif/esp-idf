@@ -81,21 +81,31 @@ typedef struct _list_node {
 
 static const u32_t magic_cookie  = 0x63538263;
 
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+static struct udp_pcb EXT_RAM_ATTR *pcb_dhcps;
+static ip4_addr_t  EXT_RAM_ATTR broadcast_dhcps;
+static ip4_addr_t EXT_RAM_ATTR server_address;
+static ip4_addr_t EXT_RAM_ATTR dns_server;
+static ip4_addr_t EXT_RAM_ATTR client_address;        //added
+static ip4_addr_t EXT_RAM_ATTR client_address_plus;
+static dhcps_lease_t EXT_RAM_ATTR dhcps_poll;
+static dhcps_offer_t EXT_RAM_ATTR dhcps_dns;
+#else
 static struct udp_pcb *pcb_dhcps = NULL;
 static ip4_addr_t  broadcast_dhcps;
 static ip4_addr_t server_address;
 static ip4_addr_t dns_server = {0};
 static ip4_addr_t client_address;        //added
 static ip4_addr_t client_address_plus;
-
+static dhcps_lease_t dhcps_poll;
+static dhcps_offer_t dhcps_dns = 0x00;
+#endif
+static dhcps_cb_t dhcps_cb;
 static list_node *plist = NULL;
 static bool renew = false;
 
-static dhcps_lease_t dhcps_poll;
 static dhcps_time_t dhcps_lease_time = DHCPS_LEASE_TIME_DEF;  //minute
 static dhcps_offer_t dhcps_offer = 0xFF;
-static dhcps_offer_t dhcps_dns = 0x00;
-static dhcps_cb_t dhcps_cb;
 
 /******************************************************************************
  * FunctionName : dhcps_option_info

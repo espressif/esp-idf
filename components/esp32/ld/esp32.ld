@@ -68,6 +68,10 @@ MEMORY
   */
   rtc_slow_seg(RW)  :                org = 0x50000000 + CONFIG_ULP_COPROC_RESERVE_MEM,
                                      len = 0x1000 - CONFIG_ULP_COPROC_RESERVE_MEM
+
+  /* external memory ,including data and text */
+  extern_ram_seg(RWX)  :             org = 0x3F800000,
+                                     len = 0x400000
 }
 
 /* Heap ends at top of dram0_0_seg */
