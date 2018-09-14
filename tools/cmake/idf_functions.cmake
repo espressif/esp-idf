@@ -154,10 +154,7 @@ function(idf_add_executable)
         # Create a dummy file to work around CMake requirement of having a source
         # file while adding an executable
         add_executable(${exe_target} "${CMAKE_CURRENT_BINARY_DIR}/dummy_main_src.c")
-        add_custom_command(OUTPUT dummy_main_src.c
-                        COMMAND echo "" > dummy_main_src.c
-                        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                        VERBATIM)
+        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/dummy_main_src.c)
 
         add_custom_target(dummy_main_src DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/dummy_main_src.c)
 
