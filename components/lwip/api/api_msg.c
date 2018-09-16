@@ -945,38 +945,33 @@ lwip_netconn_do_close_internal(struct netconn *conn  WRITE_DELAYED_PARAM SIG_CLO
 #endif /* LWIP_SO_LINGER */
   } else {
     if (err == ERR_MEM) {
-      /* Closing failed because of memory shortage */
-      if (netconn_is_nonblocking(conn)) {
-        /* Nonblocking close failed */
-        close_finished = 1;
-        err = ERR_WOULDBLOCK;
-      } else {
-        /* Blocking close, check the timeout */
+      /* Closing failed because of memory shortage, try again later. Even for
+         nonblocking netconns, we have to wait since no standard socket application
+         is prepared for close failing because of resource shortage.
+         Check the timeout: this is kind of an lwip addition to the standard sockets:
+         we wait for some time when failing to allocate a segment for the FIN */
 #if LWIP_SO_SNDTIMEO || LWIP_SO_LINGER
-        s32_t close_timeout = LWIP_TCP_CLOSE_TIMEOUT_MS_DEFAULT;
-        /* this is kind of an lwip addition to the standard sockets: we wait
-           for some time when failing to allocate a segment for the FIN */
+      s32_t close_timeout = LWIP_TCP_CLOSE_TIMEOUT_MS_DEFAULT;
 #if LWIP_SO_SNDTIMEO
-        if (conn->send_timeout > 0) {
-          close_timeout = conn->send_timeout;
-        }
+      if (conn->send_timeout > 0) {
+        close_timeout = conn->send_timeout;
+      }
 #endif /* LWIP_SO_SNDTIMEO */
 #if LWIP_SO_LINGER
-        if (conn->linger >= 0) {
-          /* use linger timeout (seconds) */
-          close_timeout = conn->linger * 1000U;
-        }
+      if (conn->linger >= 0) {
+        /* use linger timeout (seconds) */
+        close_timeout = conn->linger * 1000U;
+      }
 #endif
-        if ((s32_t)(sys_now() - conn->current_msg->msg.sd.time_started) >= close_timeout) {
+      if ((s32_t)(sys_now() - conn->current_msg->msg.sd.time_started) >= close_timeout) {
 #else /* LWIP_SO_SNDTIMEO || LWIP_SO_LINGER */
-        if (conn->current_msg->msg.sd.polls_left == 0) {
+      if (conn->current_msg->msg.sd.polls_left == 0) {
 #endif /* LWIP_SO_SNDTIMEO || LWIP_SO_LINGER */
-          close_finished = 1;
-          if (close) {
-            /* in this case, we want to RST the connection */
-            tcp_abort(tpcb);
-            err = ERR_OK;
-          }
+        close_finished = 1;
+        if (close) {
+          /* in this case, we want to RST the connection */
+          tcp_abort(tpcb);
+          err = ERR_OK;
         }
       }
     } else {
