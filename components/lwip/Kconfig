@@ -128,6 +128,23 @@ config LWIP_ETHARP_TRUST_IP_MAC
         So the recommendation is to disable this option. 
         Here the LAN peer means the other side to which the ESP station or soft-AP is connected.
 
+config ESP_GRATUITOUS_ARP
+    bool "Send gratuitous ARP periodically"
+    default y
+    help 
+        Enable this option allows to send gratuitous ARP periodically.
+
+        This option solve the compatibility issues.If the ARP table of the AP is old, and the AP
+        doesn't send ARP request to update it's ARP table, this will lead to the STA sending IP packet fail.
+        Thus we send gratuitous ARP periodically to let AP update it's ARP table.
+
+config GARP_TMR_INTERVAL
+    int "GARP timer interval(seconds)"
+    default 60
+    depends on ESP_GRATUITOUS_ARP
+    help
+        Set the timer interval for gratuitous ARP. The default value is 60s
+
 config TCPIP_RECVMBOX_SIZE
     int "TCPIP task receive mail box size"
     default 32
