@@ -3565,7 +3565,7 @@ static void _mdns_free_action(mdns_action_t * action)
         free(action->data.srv_instance.instance);
         break;
     case ACTION_SERVICE_TXT_REPLACE:
-        free(action->data.srv_txt_replace.txt);
+        _mdns_free_linked_txt(action->data.srv_txt_replace.txt);
         break;
     case ACTION_SERVICE_TXT_SET:
         free(action->data.srv_txt_set.key);
