@@ -26,6 +26,7 @@
 #include "lwip/ip6_addr.h"
 #include "lwip/nd6.h"
 #include "lwip/priv/tcpip_priv.h"
+#include "lwip/netif.h"
 #if LWIP_DNS /* don't build if not configured for use in lwipopts.h */
 #include "lwip/dns.h"
 #endif
@@ -184,6 +185,12 @@ static esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, 
         netif_init = tcpip_if_to_netif_init_fn(tcpip_if);
         assert(netif_init != NULL);
         netif_add(esp_netif[tcpip_if], &ip_info->ip, &ip_info->netmask, &ip_info->gw, NULL, netif_init, tcpip_input);
+#if ESP_GRATUITOUS_ARP
+        if (tcpip_if == TCPIP_ADAPTER_IF_STA || tcpip_if == TCPIP_ADAPTER_IF_ETH) {
+            netif_set_garp_flag(esp_netif[tcpip_if]);
+        }
+#endif
+
     }
 
     if (tcpip_if == TCPIP_ADAPTER_IF_AP) {
