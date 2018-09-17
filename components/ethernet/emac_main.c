@@ -104,9 +104,6 @@ esp_err_t esp_eth_set_mac(const uint8_t mac[6])
 static void emac_setup_tx_desc(struct dma_extended_desc *tx_desc, uint32_t size)
 {
     tx_desc->basic.desc1 = size & 0xfff;
-    tx_desc->basic.desc0 = EMAC_DESC_INT_COMPL | EMAC_DESC_LAST_SEGMENT |
-                           EMAC_DESC_FIRST_SEGMENT |
-                           EMAC_DESC_SECOND_ADDR_CHAIN;
     tx_desc->basic.desc0 = EMAC_DESC_TX_OWN | EMAC_DESC_INT_COMPL |
                            EMAC_DESC_LAST_SEGMENT | EMAC_DESC_FIRST_SEGMENT |
                            EMAC_DESC_SECOND_ADDR_CHAIN;
@@ -292,7 +289,7 @@ static void emac_set_user_config_data(eth_config_t *config)
 #if DMA_RX_BUF_NUM > 9
     emac_config.emac_flow_ctrl_enable = config->flow_ctrl_enable;
 #else
-    if(config->flow_ctrl_enable == true) {
+    if (config->flow_ctrl_enable == true) {
         ESP_LOGE(TAG, "Can only configure flow_ctrl_enable==true if DMA_RX_BUF_NUM in menuconfig is >9. Disabling flow control.");
     }
     emac_config.emac_flow_ctrl_enable = false;
@@ -630,10 +627,10 @@ static void IRAM_ATTR emac_process_intr(void *arg)
 
 static void emac_set_macaddr_reg(void)
 {
-    REG_SET_FIELD(EMAC_ADDR0HIGH_REG, EMAC_ADDRESS0_HI, (emac_config.macaddr[0] << 8) | (emac_config.macaddr[1]));
-    REG_WRITE(EMAC_ADDR0LOW_REG, (emac_config.macaddr[2] << 24) |
-              (emac_config.macaddr[3] << 16) | (emac_config.macaddr[4] << 8) |
-              (emac_config.macaddr[5]));
+    REG_SET_FIELD(EMAC_ADDR0HIGH_REG, EMAC_ADDRESS0_HI, (emac_config.macaddr[5] << 8) | (emac_config.macaddr[4]));
+    REG_WRITE(EMAC_ADDR0LOW_REG, (emac_config.macaddr[3] << 24) |
+              (emac_config.macaddr[2] << 16) | (emac_config.macaddr[1] << 8) |
+              (emac_config.macaddr[0]));
 }
 
 static void emac_check_phy_init(void)
