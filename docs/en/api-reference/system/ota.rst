@@ -32,6 +32,13 @@ The OTA data partition is two flash sectors (0x2000 bytes) in size, to prevent p
 while it is being written. Sectors are independently erased and written with matching data, and if they disagree a
 counter field is used to determine which sector was written more recently.
 
+.. _secure-ota-updates:
+
+Secure OTA Updates Without Secure boot
+--------------------------------------
+
+The verification of signed OTA updates can be performed even without enabling hardware secure boot. For doing so, refer :ref:`signed-app-verify`
+
 See also
 --------
 
