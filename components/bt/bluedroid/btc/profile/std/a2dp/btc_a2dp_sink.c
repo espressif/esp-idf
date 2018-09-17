@@ -47,9 +47,9 @@
 
 /* Macro */
 #define BTC_A2DP_SINK_TASK_PINNED_TO_CORE     (TASK_PINNED_TO_CORE)
-#define BTC_A2DP_SINK_TASK_STACK_SIZE         (CONFIG_A2DP_SINK_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE) // by menuconfig
+#define BTC_A2DP_SINK_TASK_STACK_SIZE         (A2DP_SINK_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE) // by menuconfig
 #define BTC_A2DP_SINK_TASK_NAME               "BtA2dSinkT"
-#define BTC_A2DP_SINK_TASK_PRIO               (configMAX_PRIORITIES - 3)
+#define BTC_A2DP_SINK_TASK_PRIO               (BT_TASK_MAX_PRIORITIES - 3)
 
 
 /*****************************************************************************

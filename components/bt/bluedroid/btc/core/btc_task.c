@@ -30,7 +30,7 @@
 #include "btc/btc_dm.h"
 #include "btc/btc_alarm.h"
 #include "bta/bta_gatt_api.h"
-#if CONFIG_BT_CLASSIC_ENABLED
+#if CLASSIC_BT_INCLUDED
 #include "btc/btc_profile_queue.h"
 #if (BTC_GAP_BT_INCLUDED == TRUE)
 #include "btc_gap_bt.h"
@@ -39,19 +39,18 @@
 #include "btc_av.h"
 #include "btc_avrc.h"
 #endif /* #if BTC_AV_INCLUDED */
-#if CONFIG_BT_SPP_ENABLED
+#if (BTC_SPP_INCLUDED == TRUE)
 #include "btc_spp.h"
-#endif /* #if CONFIG_BT_SPP_ENABLED */
+#endif /* #if (BTC_SPP_INCLUDED == TRUE) */
 #if BTC_HF_CLIENT_INCLUDED
 #include "btc_hf_client.h"
 #endif  /* #if BTC_HF_CLIENT_INCLUDED */
-#endif /* #if CONFIG_BT_CLASSIC_ENABLED */
+#endif /* #if CLASSIC_BT_INCLUDED */
 
 #define BTC_TASK_PINNED_TO_CORE         (TASK_PINNED_TO_CORE)
-#define BTC_TASK_STACK_SIZE             (CONFIG_BTC_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE)	//by menuconfig
+#define BTC_TASK_STACK_SIZE             (BT_BTC_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE)	//by menuconfig
 #define BTC_TASK_NAME                   "btcT"
-#define BTC_TASK_PRIO                   (configMAX_PRIORITIES - 6)
-#define BTC_TASK_QUEUE_LEN              60
+#define BTC_TASK_PRIO                   (BT_TASK_MAX_PRIORITIES - 6)
 
 static osi_thread_t *btc_thread;
 
@@ -75,7 +74,7 @@ static btc_func_t profile_tab[BTC_PID_NUM] = {
 #endif  ///GATTS_INCLUDED == TRUE
     [BTC_PID_DM_SEC]      = {NULL,                        btc_dm_sec_cb_handler   },
     [BTC_PID_ALARM]       = {btc_alarm_handler,           NULL                    },
-#if CONFIG_BT_CLASSIC_ENABLED
+#if CLASSIC_BT_INCLUDED
 #if (BTC_GAP_BT_INCLUDED == TRUE)
     [BTC_PID_GAP_BT]    = {btc_gap_bt_call_handler,     btc_gap_bt_cb_handler   },
 #endif /* (BTC_GAP_BT_INCLUDED == TRUE) */
@@ -85,13 +84,13 @@ static btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_AVRC_CT]     = {btc_avrc_ct_call_handler,    NULL                    },
     [BTC_PID_AVRC_TG]     = {btc_avrc_tg_call_handler,    NULL                    },
 #endif /* #if BTC_AV_INCLUDED */
-#if CONFIG_BT_SPP_ENABLED
+#if (BTC_SPP_INCLUDED == TRUE)
     [BTC_PID_SPP]         = {btc_spp_call_handler,        btc_spp_cb_handler      },
-#endif /* #if CONFIG_BT_SPP_ENABLED */
+#endif /* #if (BTC_SPP_INCLUDED == TRUE) */
 #if BTC_HF_CLIENT_INCLUDED
     [BTC_PID_HF_CLIENT]   = {btc_hf_client_call_handler,  btc_hf_client_cb_handler},
 #endif  /* #if BTC_HF_CLIENT_INCLUDED */
-#endif /* #if CONFIG_BT_CLASSIC_ENABLED */
+#endif /* #if CLASSIC_BT_INCLUDED */
 };
 
 /*****************************************************************************
@@ -122,7 +121,7 @@ static void btc_thread_handler(void *arg)
     osi_free(msg);
 }
 
-static bt_status_t btc_task_post(btc_msg_t *msg, osi_thread_blocking_t blocking) 
+static bt_status_t btc_task_post(btc_msg_t *msg, osi_thread_blocking_t blocking)
 {
     btc_msg_t *lmsg;
 

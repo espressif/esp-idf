@@ -46,9 +46,8 @@
 
 #define BTU_TASK_PINNED_TO_CORE         (TASK_PINNED_TO_CORE)
 #define BTU_TASK_STACK_SIZE             (4096 + BT_TASK_EXTRA_STACK_SIZE)
-#define BTU_TASK_PRIO                   (configMAX_PRIORITIES - 5)
+#define BTU_TASK_PRIO                   (BT_TASK_MAX_PRIORITIES - 5)
 #define BTU_TASK_NAME                   "btuT"
-#define BTU_QUEUE_LEN                   50
 
 hash_map_t *btu_general_alarm_hash_map;
 osi_mutex_t btu_general_alarm_lock;
@@ -219,7 +218,7 @@ void BTU_ShutDown(void)
         btu_thread = NULL;
     }
 
-    btu_general_alarm_hash_map = NULL; 
+    btu_general_alarm_hash_map = NULL;
     btu_oneshot_alarm_hash_map = NULL;
     btu_l2cap_alarm_hash_map = NULL;
 }

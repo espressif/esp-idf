@@ -18,8 +18,8 @@
 #ifndef DYN_MEM_H
 #define DYN_MEM_H
 
-#include "sdkconfig.h"
-#if CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY
+#include "common/bt_target.h"
+#if BT_BLE_DYNAMIC_ENV_MEMORY
 #define BTU_DYNAMIC_MEMORY         TRUE
 #define BTM_DYNAMIC_MEMORY         TRUE
 #define L2C_DYNAMIC_MEMORY         TRUE
@@ -53,7 +53,7 @@
 #define BTC_SBC_DEC_DYNAMIC_MEMORY TRUE
 #define BTC_SBC_ENC_DYNAMIC_MEMORY TRUE
 
-#else  /* #if CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY */
+#else  /* #if BT_BLE_DYNAMIC_ENV_MEMORY */
 
 #define SDP_DYNAMIC_MEMORY         FALSE
 #define RFC_DYNAMIC_MEMORY         FALSE
@@ -82,7 +82,7 @@
 #define BTC_SBC_DEC_DYNAMIC_MEMORY FALSE
 #define BTC_SBC_ENC_DYNAMIC_MEMORY FALSE
 
-#endif /* #if CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY */
+#endif /* #if BT_BLE_DYNAMIC_ENV_MEMORY */
 /****************************************************************************
 ** Define memory usage for each CORE component (if not defined in bdroid_buildcfg.h)
 **  The default for each component is to use static memory allocations.

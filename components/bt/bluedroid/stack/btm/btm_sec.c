@@ -1791,53 +1791,6 @@ UINT16 BTM_BuildOobData(UINT8 *p_data, UINT16 max_len, BT_OCTET16 c,
 
 /*******************************************************************************
 **
-** Function         BTM_BothEndsSupportSecureConnections
-**
-** Description      This function is called to check if both the local device and the peer device
-**                  specified by bd_addr support BR/EDR Secure Connections.
-**
-** Parameters:      bd_addr - address of the peer
-**
-** Returns          TRUE if BR/EDR Secure Connections are supported by both local
-**                  and the remote device.
-**                  else FALSE.
-**
-*******************************************************************************/
-BOOLEAN BTM_BothEndsSupportSecureConnections(BD_ADDR bd_addr)
-{
-    return ((controller_get_interface()->supports_secure_connections()) &&
-            (BTM_PeerSupportsSecureConnections(bd_addr)));
-}
-
-/*******************************************************************************
-**
-** Function         BTM_PeerSupportsSecureConnections
-**
-** Description      This function is called to check if the peer supports
-**                  BR/EDR Secure Connections.
-**
-** Parameters:      bd_addr - address of the peer
-**
-** Returns          TRUE if BR/EDR Secure Connections are supported by the peer,
-**                  else FALSE.
-**
-*******************************************************************************/
-BOOLEAN BTM_PeerSupportsSecureConnections(BD_ADDR bd_addr)
-{
-    tBTM_SEC_DEV_REC    *p_dev_rec;
-
-    if ((p_dev_rec = btm_find_dev(bd_addr)) == NULL) {
-        BTM_TRACE_WARNING("%s: unknown BDA: %08x%04x\n", __FUNCTION__,
-                          (bd_addr[0] << 24) + (bd_addr[1] << 16) + (bd_addr[2] << 8) + bd_addr[3],
-                          (bd_addr[4] << 8) + bd_addr[5]);
-        return FALSE;
-    }
-
-    return (p_dev_rec->remote_supports_secure_connections);
-}
-
-/*******************************************************************************
-**
 ** Function         BTM_ReadOobData
 **
 ** Description      This function is called to parse the OOB data payload
@@ -1899,6 +1852,54 @@ UINT8 *BTM_ReadOobData(UINT8 *p_data, UINT8 eir_tag, UINT8 *p_len)
 }
 #endif  ///BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         BTM_BothEndsSupportSecureConnections
+**
+** Description      This function is called to check if both the local device and the peer device
+**                  specified by bd_addr support BR/EDR Secure Connections.
+**
+** Parameters:      bd_addr - address of the peer
+**
+** Returns          TRUE if BR/EDR Secure Connections are supported by both local
+**                  and the remote device.
+**                  else FALSE.
+**
+*******************************************************************************/
+BOOLEAN BTM_BothEndsSupportSecureConnections(BD_ADDR bd_addr)
+{
+    return ((controller_get_interface()->supports_secure_connections()) &&
+            (BTM_PeerSupportsSecureConnections(bd_addr)));
+}
+
+/*******************************************************************************
+**
+** Function         BTM_PeerSupportsSecureConnections
+**
+** Description      This function is called to check if the peer supports
+**                  BR/EDR Secure Connections.
+**
+** Parameters:      bd_addr - address of the peer
+**
+** Returns          TRUE if BR/EDR Secure Connections are supported by the peer,
+**                  else FALSE.
+**
+*******************************************************************************/
+BOOLEAN BTM_PeerSupportsSecureConnections(BD_ADDR bd_addr)
+{
+    tBTM_SEC_DEV_REC    *p_dev_rec;
+
+    if ((p_dev_rec = btm_find_dev(bd_addr)) == NULL) {
+        BTM_TRACE_WARNING("%s: unknown BDA: %08x%04x\n", __FUNCTION__,
+                          (bd_addr[0] << 24) + (bd_addr[1] << 16) + (bd_addr[2] << 8) + bd_addr[3],
+                          (bd_addr[4] << 8) + bd_addr[5]);
+        return FALSE;
+    }
+
+    return (p_dev_rec->remote_supports_secure_connections);
+}
+
 /*******************************************************************************
 **
 ** Function         BTM_SetOutService
@@ -1913,7 +1914,6 @@ UINT8 *BTM_ReadOobData(UINT8 *p_data, UINT8 eir_tag, UINT8 *p_len)
 ** Returns          void
 **
 *******************************************************************************/
-#if (CLASSIC_BT_INCLUDED == TRUE)
 void BTM_SetOutService(BD_ADDR bd_addr, UINT8 service_id, UINT32 mx_chan_id)
 {
     tBTM_SEC_DEV_REC *p_dev_rec;
