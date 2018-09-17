@@ -10,6 +10,12 @@ config FREERTOS_UNICORE
         This is needed when e.g. another process needs complete control
         over the second core.
 
+# This invisible config value sets the value of tskNO_AFFINITY in task.h.
+# Intended to be used as a constant from other Kconfig files.
+# Value is (32-bit) INT_MAX.
+config FREERTOS_NO_AFFINITY
+	hex
+	default 0x7FFFFFFF
 
 choice FREERTOS_CORETIMER
     prompt "Xtensa timer to use as the FreeRTOS tick source"
