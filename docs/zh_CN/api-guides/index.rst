@@ -7,7 +7,7 @@ API Guides
    General Notes <general-notes>
    编译系统 <build-system>
    编译系统 (CMake) <build-system-cmake>
-   Error Handling <error-handling>
+   错误处理 <error-handling>
    Fatal Errors <fatal-errors>
    Deep Sleep Wake Stubs <deep-sleep-stub>
    ESP32 Core Dump <core_dump>
