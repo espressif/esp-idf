@@ -43,9 +43,14 @@ add_custom_target(app ALL DEPENDS "${PROJECT_NAME}.bin")
 #
 function(esptool_py_custom_target target_name flasher_filename dependencies)
     add_custom_target(${target_name} DEPENDS ${dependencies}
-        COMMAND ${ESPTOOLPY} -p ${CONFIG_ESPTOOLPY_PORT} -b ${CONFIG_ESPTOOLPY_BAUD}
-        write_flash @flash_${flasher_filename}_args
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMAND ${CMAKE_COMMAND}
+        -D IDF_PATH="${IDF_PATH}"
+        -D ESPTOOLPY="${ESPTOOLPY}"
+        -D ESPTOOL_ARGS="write_flash;@flash_${flasher_filename}_args"
+        -D ESPTOOL_WORKING_DIR="${CMAKE_CURRENT_BINARY_DIR}"
+        -P run_esptool.cmake
+        WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+        USES_TERMINAL
         )
 endfunction()
 
