@@ -419,4 +419,15 @@ endif #FREERTOS_UNICORE
 
 endif # FREERTOS_DEBUG_INTERNALS
 
+config FREERTOS_TASK_FUNCTION_WRAPPER
+    bool "Enclose all task functions in a wrapper function"
+    depends on OPTIMIZATION_LEVEL_DEBUG
+    default y
+    help
+        If enabled, all FreeRTOS task functions will be enclosed in a wrapper function.
+        If a task function mistakenly returns (i.e. does not delete), the call flow will 
+        return to the wrapper function. The wrapper function will then log an error and 
+        abort the application. This option is also required for GDB backtraces and C++ 
+        exceptions to work correctly inside top-level task functions.
+
 endmenu

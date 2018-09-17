@@ -496,3 +496,11 @@ functionality of :cpp:func:`xTaskCreateStaticPinnedToCore` in ESP-IDF FreeRTOS
 particular functions in ESP-IDF FreeRTOS which have not been fully tested
 in an SMP context.
 
+:envvar:`CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER` will enclose all task functions 
+within a wrapper function. In the case that a task function mistakenly returns 
+(i.e. does not call :cpp:func:`vTaskDelete`), the call flow will return to the 
+wrapper function. The wrapper function will then log an error and abort the 
+application, as illustrated below::
+
+    E (25) FreeRTOS: FreeRTOS task should not return. Aborting now!
+    abort() was called at PC 0x40085c53 on core 0
