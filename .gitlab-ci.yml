@@ -305,7 +305,7 @@ test_partition_table_on_host:
     - build
   script:
     - cd components/partition_table/test_gen_esp32part_host
-    - ./gen_esp32part_tests.py
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./gen_esp32part_tests.py
 
 test_wl_on_host:
   <<: *host_test_template
