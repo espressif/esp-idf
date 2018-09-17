@@ -120,6 +120,34 @@ If using CMake with ``ninja`` or ``make``, there are also targets for more of th
 .. note::
    If you're already familiar with CMake_, you may find the ESP-IDF CMake-based build system unusual because it wraps a lot of CMake's functionality to reduce boilerplate. See `writing pure CMake components`_ for some information about writing more "CMake style" components.
 
+.. _flash-with-ninja-or-make:
+
+Flashing with ninja or make
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It's possible to build and flash directly from ninja or make by running a target like::
+
+  ninja flash
+
+Or::
+
+  make app-flash
+
+Available targets are: ``flash``, ``app-flash`` (app only), ``bootloader-flash`` (bootloader only).
+
+When flashing this way, optionally set the ``ESPPORT`` and ``ESPBAUD`` environment variables to specify the serial port and baud rate. You can set environment variables in your operating system or IDE project. Alternatively, set them directly on the command line::
+
+  ESPPORT=/dev/ttyUSB0 ninja flash
+
+.. note:: Providing environment variables at the start of the command like this is Bash shell Syntax. It will work on Linux and macOS. It won't work when using Windows Command Prompt, but it will work when using Bash-like shells on Windows.
+
+Or::
+
+  make -j3 app-flash ESPPORT=COM4 ESPBAUD=2000000
+
+.. note:: Providing variables at the end of the command line is ``make`` syntax, and works for ``make`` on all platforms.
+
+
 Using CMake in an IDE
 ---------------------
 
@@ -917,6 +945,11 @@ No Longer Necessary
 -------------------
 
 It is no longer necessary to set ``COMPONENT_SRCDIRS`` if setting ``COMPONENT_SRCS`` (in fact, in the CMake-based system ``COMPONENT_SRCS`` is ignored if ``COMPONENT_SRCDIRS`` is set).
+
+Flashing from make
+------------------
+
+``make flash`` and similar targets still work to build and flash. However, project ``sdkconfig`` no longer specifies serial port and baud rate. Environment variables can be used to override these. See :ref:`flash-with-ninja-or-make` for more details.
 
 .. _esp-idf-template: https://github.com/espressif/esp-idf-template
 .. _cmake: https://cmake.org
