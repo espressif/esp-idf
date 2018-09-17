@@ -174,7 +174,7 @@ bt_status_t btc_hf_client_init(void)
 
     btc_hf_client_cb.initialized = true;
 
-#if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI
+#if BTM_SCO_HCI_INCLUDED
     data_path = ESP_SCO_DATA_PATH_HCI;
 #else
     data_path = ESP_SCO_DATA_PATH_PCM;

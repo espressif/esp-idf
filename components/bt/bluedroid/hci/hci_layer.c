@@ -36,9 +36,8 @@
 
 #define HCI_HOST_TASK_PINNED_TO_CORE    (TASK_PINNED_TO_CORE)
 #define HCI_HOST_TASK_STACK_SIZE        (2048 + BT_TASK_EXTRA_STACK_SIZE)
-#define HCI_HOST_TASK_PRIO              (configMAX_PRIORITIES - 3)
+#define HCI_HOST_TASK_PRIO              (BT_TASK_MAX_PRIORITIES - 3)
 #define HCI_HOST_TASK_NAME              "hciHostT"
-#define HCI_HOST_QUEUE_LEN              40
 
 typedef struct {
     uint16_t opcode;

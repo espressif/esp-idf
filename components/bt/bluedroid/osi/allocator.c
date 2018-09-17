@@ -24,7 +24,8 @@
 extern void *pvPortZalloc(size_t size);
 extern void vPortFree(void *pv);
 
-#ifdef CONFIG_BT_BLUEDROID_MEM_DEBUG
+
+#if HEAP_MEMORY_DEBUG
 
 #define OSI_MEM_DBG_INFO_MAX    1024*3
 typedef struct {
@@ -130,48 +131,48 @@ char *osi_strdup(const char *str)
 
 void *osi_malloc_func(size_t size)
 {
-#ifdef CONFIG_BT_BLUEDROID_MEM_DEBUG
+#if HEAP_MEMORY_DEBUG
     void *p;
-#if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST
+#if HEAP_ALLOCATION_FROM_SPIRAM_FIRST
     p = heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
 #else
     p = malloc(size);
-#endif /* #if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST */
+#endif /* #if HEAP_ALLOCATION_FROM_SPIRAM_FIRST */
     osi_mem_dbg_record(p, size, __func__, __LINE__);
     return p;
 #else
-#if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST
+#if HEAP_ALLOCATION_FROM_SPIRAM_FIRST
     return heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
 #else
     return malloc(size);
-#endif /* #if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST */
-#endif /* #ifdef CONFIG_BT_BLUEDROID_MEM_DEBUG */
+#endif /* #if HEAP_ALLOCATION_FROM_SPIRAM_FIRST */
+#endif /* #if HEAP_MEMORY_DEBUG */
 }
 
 void *osi_calloc_func(size_t size)
 {
-#ifdef CONFIG_BT_BLUEDROID_MEM_DEBUG
+#if HEAP_MEMORY_DEBUG
     void *p;
-#if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST
+#if HEAP_ALLOCATION_FROM_SPIRAM_FIRST
     p = heap_caps_calloc_prefer(1, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
 #else
     p = calloc(1, size);
-#endif /* #if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST */
+#endif /* #if HEAP_ALLOCATION_FROM_SPIRAM_FIRST */
     osi_mem_dbg_record(p, size, __func__, __LINE__);
     return p;
 #else
-#if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST
+#if HEAP_ALLOCATION_FROM_SPIRAM_FIRST
     return heap_caps_calloc_prefer(1, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
 #else
     return calloc(1, size);
-#endif /* #if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST */ 
-#endif /* #ifdef CONFIG_BT_BLUEDROID_MEM_DEBUG */
+#endif /* #if HEAP_ALLOCATION_FROM_SPIRAM_FIRST */
+#endif /* #if HEAP_MEMORY_DEBUG */
 }
 
 void osi_free_func(void *ptr)
 {
-#ifdef CONFIG_BT_BLUEDROID_MEM_DEBUG
-    osi_mem_dbg_clean(ptr, __func__, __LINE__); 
+#if HEAP_MEMORY_DEBUG
+    osi_mem_dbg_clean(ptr, __func__, __LINE__);
 #endif
     free(ptr);
 }

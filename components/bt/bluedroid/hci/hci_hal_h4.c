@@ -29,9 +29,8 @@
 
 #define HCI_H4_TASK_PINNED_TO_CORE      (TASK_PINNED_TO_CORE)
 #define HCI_H4_TASK_STACK_SIZE          (2048 + BT_TASK_EXTRA_STACK_SIZE)
-#define HCI_H4_TASK_PRIO                (configMAX_PRIORITIES - 4)
+#define HCI_H4_TASK_PRIO                (BT_TASK_MAX_PRIORITIES - 4)
 #define HCI_H4_TASK_NAME                "hciH4T"
-#define HCI_H4_QUEUE_LEN                1
 
 
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)

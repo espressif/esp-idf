@@ -128,7 +128,7 @@ esp_err_t esp_bluedroid_init(void)
         return ESP_ERR_INVALID_STATE;
     }
 
-#ifdef CONFIG_BT_BLUEDROID_MEM_DEBUG
+#if HEAP_MEMORY_DEBUG
     osi_mem_dbg_init();
 #endif
 
