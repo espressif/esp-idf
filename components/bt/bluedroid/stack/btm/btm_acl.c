@@ -1522,11 +1522,10 @@ UINT8 BTM_AllocateSCN(void)
 {
     UINT8   x;
     BTM_TRACE_DEBUG ("BTM_AllocateSCN\n");
-    // stack reserves scn 1 for HFP, HSP we still do the correct way
     for (x = 1; x < BTM_MAX_SCN; x++) {
-        if (!btm_cb.btm_scn[x]) {
-            btm_cb.btm_scn[x] = TRUE;
-            return (x + 1);
+        if (!btm_cb.btm_scn[x - 1]) {
+            btm_cb.btm_scn[x - 1] = TRUE;
+            return x;
         }
     }
     return (0);    /* No free ports */
@@ -1545,10 +1544,7 @@ UINT8 BTM_AllocateSCN(void)
 #if (CLASSIC_BT_INCLUDED == TRUE)
 BOOLEAN BTM_TryAllocateSCN(UINT8 scn)
 {
-    /* Make sure we don't exceed max port range.
-     * Stack reserves scn 1 for HFP, HSP we still do the correct way.
-     */
-    if ( (scn >= BTM_MAX_SCN) || (scn == 1) ) {
+    if (scn >= BTM_MAX_SCN) {
         return FALSE;
     }
 
