@@ -6,9 +6,9 @@
 
 /*
  * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
- * All rights reserved. 
- * 
- * Redistribution and use in source and binary forms, with or without modification, 
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
  *
  * 1. Redistributions of source code must retain the above copyright notice,
@@ -17,21 +17,21 @@
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
  * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission. 
+ *    derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED 
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT 
- * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT 
- * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING 
- * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+ * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+ * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+ * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
  * OF SUCH DAMAGE.
  *
  * This file is part of the lwIP TCP/IP stack.
- * 
+ *
  * Author: Adam Dunkels <adam@sics.se>
  *
  */
@@ -64,7 +64,7 @@
  */
 static void
 ethernet_low_level_init(struct netif *netif)
-{ 
+{
   /* set MAC hardware address length */
   netif->hwaddr_len = ETHARP_HWADDR_LEN;
 
@@ -103,40 +103,35 @@ ethernet_low_level_init(struct netif *netif)
  *       to become availale since the stack doesn't retry to send a packet
  *       dropped because of memory failure (except for the TCP timers).
  */
-static err_t
+static err_t ESP_IRAM_ATTR
 ethernet_low_level_output(struct netif *netif, struct pbuf *p)
 {
-  struct pbuf *q;
+  struct pbuf *q = p;
   esp_interface_t eth_if = tcpip_adapter_get_esp_if(netif);
+  err_t ret;
 
   if (eth_if != ESP_IF_ETH) {
-    LWIP_DEBUGF(NETIF_DEBUG,("eth_if=%d netif=%p pbuf=%p len=%d\n", eth_if, netif, p, p->len)); 
+    LWIP_DEBUGF(NETIF_DEBUG, ("eth_if=%d netif=%p pbuf=%p len=%d\n", eth_if, netif, p, p->len));
 
     return ERR_IF;
   }
 
-#if ESP_LWIP
-  q = p;
-  u16_t pbuf_x_len = 0;
-  pbuf_x_len = q->len;
-  if(q->next !=NULL) {
-    //char cnt = 0;
-    struct pbuf *tmp = q->next;
-    while(tmp != NULL) {
-      memcpy( (u8_t *)( (u8_t *)(q->payload) + pbuf_x_len), (u8_t *)tmp->payload , tmp->len );
-      pbuf_x_len += tmp->len;
-      //cnt++;
-      tmp = tmp->next;
+  if (q->next == NULL) {
+    ret = esp_eth_tx(q->payload, q->len);
+  } else {
+    LWIP_DEBUGF(PBUF_DEBUG, ("low_level_output: pbuf is a list, application may has bug"));
+    q = pbuf_alloc(PBUF_RAW_TX, p->tot_len, PBUF_RAM);
+    if (q != NULL) {
+      q->l2_owner = NULL;
+      pbuf_copy(q, p);
+    } else {
+      return ERR_MEM;
     }
+    ret = esp_eth_tx(q->payload, q->len);
+    pbuf_free(q);
   }
 
-  return esp_eth_tx(q->payload, pbuf_x_len);
-#else
-  for(q = p; q != NULL; q = q->next) {
-    return esp_emac_tx(q->payload, q->len);
-  }
-  return ERR_OK;
-#endif
+  return ret;
 }
 
 /**
@@ -152,10 +147,10 @@ ethernet_low_level_output(struct netif *netif, struct pbuf *p)
  *
  * @note When CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE is enabled, a copy of buffer
  *       will be made for high layer (LWIP) and ethernet is responsible for
- *       freeing the buffer. Otherwise, high layer and ethernet share the 
+ *       freeing the buffer. Otherwise, high layer and ethernet share the
  *       same buffer and high layer is responsible for freeing the buffer.
  */
-void
+void ESP_IRAM_ATTR
 ethernetif_input(struct netif *netif, void *buffer, uint16_t len)
 {
   struct pbuf *p;
