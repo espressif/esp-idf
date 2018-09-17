@@ -44,6 +44,8 @@
 #include "esp_system.h"
 #include "sdkconfig.h"
 
+#include "netif/dhcp_state.h"
+
 /* Enable all Espressif-only options */
 
 /*
@@ -219,6 +221,19 @@
  * DHCP_DOES_ARP_CHECK==1: Do an ARP check on the offered address.
  */
 #define DHCP_DOES_ARP_CHECK             CONFIG_LWIP_DHCP_DOES_ARP_CHECK
+
+
+/**
+ * CONFIG_LWIP_DHCP_RESTORE_LAST_IP==1: Last valid IP address obtained from DHCP server
+ * is restored after reset/power-up.
+ */
+#if CONFIG_LWIP_DHCP_RESTORE_LAST_IP
+
+#define LWIP_DHCP_IP_ADDR_RESTORE()     dhcp_ip_addr_restore(netif)
+#define LWIP_DHCP_IP_ADDR_STORE()       dhcp_ip_addr_store(netif)
+#define LWIP_DHCP_IP_ADDR_ERASE()       dhcp_ip_addr_erase(esp_netif[tcpip_if])
+
+#endif
 
 /*
    ------------------------------------
