@@ -93,6 +93,9 @@ extern "C" {
 #define tskKERNEL_VERSION_MINOR 2
 #define tskKERNEL_VERSION_BUILD 0
 
+/**
+ * @brief Argument of xTaskCreatePinnedToCore indicating that task has no affinity
+ */
 #define tskNO_AFFINITY INT_MAX
 
 /**
