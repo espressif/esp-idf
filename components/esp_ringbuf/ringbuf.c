@@ -14,10 +14,10 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "FreeRTOS.h"
-#include "task.h"
-#include "semphr.h"
-#include "ringbuf.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
+#include "freertos/ringbuf.h"
 
 //32-bit alignment macros
 #define rbALIGN_SIZE( xSize )       ( ( xSize + portBYTE_ALIGNMENT_MASK ) & ~portBYTE_ALIGNMENT_MASK )
@@ -566,7 +566,7 @@ static BaseType_t prvReceiveGeneric(Ringbuffer_t *pxRingbuffer, void **pvItem1, 
         }
 
         //Semaphore obtained, check if item can be retrieved
-        taskENTER_CRITICAL(&pxRingbuffer->mux);
+        portENTER_CRITICAL(&pxRingbuffer->mux);
         if (prvCheckItemAvail(pxRingbuffer) == pdTRUE) {
             //Item is available for retrieval
             BaseType_t xIsSplit;
@@ -591,14 +591,14 @@ static BaseType_t prvReceiveGeneric(Ringbuffer_t *pxRingbuffer, void **pvItem1, 
             if (pxRingbuffer->xItemsWaiting > 0) {
                 xReturnSemaphore = pdTRUE;
             }
-            taskEXIT_CRITICAL(&pxRingbuffer->mux);
+            portEXIT_CRITICAL(&pxRingbuffer->mux);
             break;
         }
         //No item available for retrieval, adjust ticks and take the semaphore again
         if (xTicksToWait != portMAX_DELAY) {
             xTicksRemaining = xTicksEnd - xTaskGetTickCount();
         }
-        taskEXIT_CRITICAL(&pxRingbuffer->mux);
+        portEXIT_CRITICAL(&pxRingbuffer->mux);
         /*
          * Gap between critical section and re-acquiring of the semaphore. If
          * semaphore is given now, priority inversion might occur (see docs)
@@ -616,7 +616,7 @@ static BaseType_t prvReceiveGenericFromISR(Ringbuffer_t *pxRingbuffer, void **pv
     BaseType_t xReturn = pdFALSE;
     BaseType_t xReturnSemaphore = pdFALSE;
 
-    taskENTER_CRITICAL_ISR(&pxRingbuffer->mux);
+    portENTER_CRITICAL_ISR(&pxRingbuffer->mux);
     if(prvCheckItemAvail(pxRingbuffer) == pdTRUE) {
         BaseType_t xIsSplit;
         if (pxRingbuffer->uxRingbufferFlags & rbBYTE_BUFFER_FLAG) {
@@ -641,7 +641,7 @@ static BaseType_t prvReceiveGenericFromISR(Ringbuffer_t *pxRingbuffer, void **pv
             xReturnSemaphore = pdTRUE;
         }
     }
-    taskEXIT_CRITICAL_ISR(&pxRingbuffer->mux);
+    portEXIT_CRITICAL_ISR(&pxRingbuffer->mux);
 
     if (xReturnSemaphore == pdTRUE) {
         xSemaphoreGiveFromISR(pxRingbuffer->xItemsBufferedSemaphore, NULL);  //Give semaphore back so other tasks can retrieve
@@ -766,7 +766,7 @@ BaseType_t xRingbufferSend(RingbufHandle_t xRingbuffer, const void *pvItem, size
             break;
         }
         //Semaphore obtained, check if item can fit
-        taskENTER_CRITICAL(&pxRingbuffer->mux);
+        portENTER_CRITICAL(&pxRingbuffer->mux);
         if(pxRingbuffer->xCheckItemFits(pxRingbuffer, xItemSize) == pdTRUE) {
             //Item will fit, copy item
             pxRingbuffer->vCopyItem(pxRingbuffer, pvItem, xItemSize);
@@ -775,14 +775,14 @@ BaseType_t xRingbufferSend(RingbufHandle_t xRingbuffer, const void *pvItem, size
             if (prvGetFreeSize(pxRingbuffer) > 0) {
                 xReturnSemaphore = pdTRUE;
             }
-            taskEXIT_CRITICAL(&pxRingbuffer->mux);
+            portEXIT_CRITICAL(&pxRingbuffer->mux);
             break;
         }
         //Item doesn't fit, adjust ticks and take the semaphore again
         if (xTicksToWait != portMAX_DELAY) {
             xTicksRemaining = xTicksEnd - xTaskGetTickCount();
         }
-        taskEXIT_CRITICAL(&pxRingbuffer->mux);
+        portEXIT_CRITICAL(&pxRingbuffer->mux);
         /*
          * Gap between critical section and re-acquiring of the semaphore. If
          * semaphore is given now, priority inversion might occur (see docs)
@@ -815,7 +815,7 @@ BaseType_t xRingbufferSendFromISR(RingbufHandle_t xRingbuffer, const void *pvIte
     //Attempt to send an item
     BaseType_t xReturn;
     BaseType_t xReturnSemaphore = pdFALSE;
-    taskENTER_CRITICAL_ISR(&pxRingbuffer->mux);
+    portENTER_CRITICAL_ISR(&pxRingbuffer->mux);
     if (pxRingbuffer->xCheckItemFits(xRingbuffer, xItemSize) == pdTRUE) {
         pxRingbuffer->vCopyItem(xRingbuffer, pvItem, xItemSize);
         xReturn = pdTRUE;
@@ -826,7 +826,7 @@ BaseType_t xRingbufferSendFromISR(RingbufHandle_t xRingbuffer, const void *pvIte
     } else {
         xReturn = pdFALSE;
     }
-    taskEXIT_CRITICAL_ISR(&pxRingbuffer->mux);
+    portEXIT_CRITICAL_ISR(&pxRingbuffer->mux);
 
     if (xReturn == pdTRUE) {
         //Indicate item was successfully sent
@@ -997,9 +997,9 @@ void vRingbufferReturnItem(RingbufHandle_t xRingbuffer, void *pvItem)
     configASSERT(pxRingbuffer);
     configASSERT(pvItem != NULL);
 
-    taskENTER_CRITICAL(&pxRingbuffer->mux);
+    portENTER_CRITICAL(&pxRingbuffer->mux);
     pxRingbuffer->vReturnItem(pxRingbuffer, (uint8_t *)pvItem);
-    taskEXIT_CRITICAL(&pxRingbuffer->mux);
+    portEXIT_CRITICAL(&pxRingbuffer->mux);
     xSemaphoreGive(pxRingbuffer->xFreeSpaceSemaphore);
 }
 
@@ -1009,9 +1009,9 @@ void vRingbufferReturnItemFromISR(RingbufHandle_t xRingbuffer, void *pvItem, Bas
     configASSERT(pxRingbuffer);
     configASSERT(pvItem != NULL);
 
-    taskENTER_CRITICAL_ISR(&pxRingbuffer->mux);
+    portENTER_CRITICAL_ISR(&pxRingbuffer->mux);
     pxRingbuffer->vReturnItem(pxRingbuffer, (uint8_t *)pvItem);
-    taskEXIT_CRITICAL_ISR(&pxRingbuffer->mux);
+    portEXIT_CRITICAL_ISR(&pxRingbuffer->mux);
     xSemaphoreGiveFromISR(pxRingbuffer->xFreeSpaceSemaphore, pxHigherPriorityTaskWoken);
 }
 
@@ -1045,9 +1045,9 @@ size_t xRingbufferGetCurFreeSize(RingbufHandle_t xRingbuffer)
     configASSERT(pxRingbuffer);
 
     size_t xFreeSize;
-    taskENTER_CRITICAL(&pxRingbuffer->mux);
+    portENTER_CRITICAL(&pxRingbuffer->mux);
     xFreeSize = pxRingbuffer->xGetCurMaxSize(pxRingbuffer);
-    taskEXIT_CRITICAL(&pxRingbuffer->mux);
+    portEXIT_CRITICAL(&pxRingbuffer->mux);
     return xFreeSize;
 }
 
@@ -1057,7 +1057,7 @@ BaseType_t xRingbufferAddToQueueSetRead(RingbufHandle_t xRingbuffer, QueueSetHan
     configASSERT(pxRingbuffer);
 
     BaseType_t xReturn;
-    taskENTER_CRITICAL(&pxRingbuffer->mux);
+    portENTER_CRITICAL(&pxRingbuffer->mux);
     //Cannot add semaphore to queue set if semaphore is not empty. Temporarily hold semaphore
     BaseType_t xHoldSemaphore = xSemaphoreTake(pxRingbuffer->xItemsBufferedSemaphore, 0);
     xReturn = xQueueAddToSet(pxRingbuffer->xItemsBufferedSemaphore, xQueueSet);
@@ -1065,7 +1065,7 @@ BaseType_t xRingbufferAddToQueueSetRead(RingbufHandle_t xRingbuffer, QueueSetHan
         //Return semaphore if temporarily held
         configASSERT(xSemaphoreGive(pxRingbuffer->xItemsBufferedSemaphore) == pdTRUE);
     }
-    taskEXIT_CRITICAL(&pxRingbuffer->mux);
+    portEXIT_CRITICAL(&pxRingbuffer->mux);
     return xReturn;
 }
 
@@ -1083,7 +1083,7 @@ BaseType_t xRingbufferRemoveFromQueueSetRead(RingbufHandle_t xRingbuffer, QueueS
     configASSERT(pxRingbuffer);
 
     BaseType_t xReturn;
-    taskENTER_CRITICAL(&pxRingbuffer->mux);
+    portENTER_CRITICAL(&pxRingbuffer->mux);
     //Cannot remove semaphore from queue set if semaphore is not empty. Temporarily hold semaphore
     BaseType_t xHoldSemaphore = xSemaphoreTake(pxRingbuffer->xItemsBufferedSemaphore, 0);
     xReturn = xQueueRemoveFromSet(pxRingbuffer->xItemsBufferedSemaphore, xQueueSet);
@@ -1091,7 +1091,7 @@ BaseType_t xRingbufferRemoveFromQueueSetRead(RingbufHandle_t xRingbuffer, QueueS
         //Return semaphore if temporarily held
         configASSERT(xSemaphoreGive(pxRingbuffer->xItemsBufferedSemaphore) == pdTRUE);
     }
-    taskEXIT_CRITICAL(&pxRingbuffer->mux);
+    portEXIT_CRITICAL(&pxRingbuffer->mux);
     return xReturn;
 }
 
@@ -1100,7 +1100,7 @@ void vRingbufferGetInfo(RingbufHandle_t xRingbuffer, UBaseType_t *uxFree, UBaseT
     Ringbuffer_t *pxRingbuffer = (Ringbuffer_t *)xRingbuffer;
     configASSERT(pxRingbuffer);
 
-    taskENTER_CRITICAL(&pxRingbuffer->mux);
+    portENTER_CRITICAL(&pxRingbuffer->mux);
     if (uxFree != NULL) {
         *uxFree = (UBaseType_t)(pxRingbuffer->pucFree - pxRingbuffer->pucHead);
     }
@@ -1113,7 +1113,7 @@ void vRingbufferGetInfo(RingbufHandle_t xRingbuffer, UBaseType_t *uxFree, UBaseT
     if (uxItemsWaiting != NULL) {
         *uxItemsWaiting = (UBaseType_t)(pxRingbuffer->xItemsWaiting);
     }
-    taskEXIT_CRITICAL(&pxRingbuffer->mux);
+    portEXIT_CRITICAL(&pxRingbuffer->mux);
 }
 
 void xRingbufferPrintInfo(RingbufHandle_t xRingbuffer)
