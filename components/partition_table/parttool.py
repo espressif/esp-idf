@@ -107,7 +107,7 @@ def main():
         return 1  # nothing found
 
     if args.offset:
-        print('0x%x ' % (found_partition.offset))
+        print('0x%x' % (found_partition.offset))
     if args.size:
         print('0x%x' % (found_partition.size))
 
