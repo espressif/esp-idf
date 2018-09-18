@@ -351,7 +351,6 @@ void start_cpu0_default(void)
     esp_cache_err_int_init();
     esp_crosscore_int_init();
 #ifndef CONFIG_FREERTOS_UNICORE
-    esp_ipc_init();
     esp_dport_access_int_init();
 #endif
     spi_flash_init();

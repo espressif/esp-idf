@@ -72,7 +72,19 @@ static void IRAM_ATTR ipc_task(void* arg)
     vTaskDelete(NULL);
 }
 
-void esp_ipc_init()
+/*
+ * Initialize inter-processor call module. This function is called automatically
+ * on CPU start and should not be called from the application.
+ *
+ * This function start two tasks, one on each CPU. These tasks are started
+ * with high priority. These tasks are normally inactive, waiting until one of
+ * the esp_ipc_call_* functions to be used. One of these tasks will be
+ * woken up to execute the callback provided to esp_ipc_call_nonblocking or
+ * esp_ipc_call_blocking.
+ */
+static void esp_ipc_init() __attribute__((constructor));
+
+static void esp_ipc_init()
 {
     s_ipc_mutex = xSemaphoreCreateMutex();
     s_ipc_ack = xSemaphoreCreateBinary();
