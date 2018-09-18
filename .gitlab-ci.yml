@@ -389,7 +389,7 @@ test_confserver:
   <<: *host_test_template
   script:
     - cd tools/kconfig_new/test
-    - ./test_confserver.py
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_confserver.py
 
 test_build_system:
   <<: *host_test_template
