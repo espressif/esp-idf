@@ -361,6 +361,27 @@ esp_err_t esp_ble_gatts_close(esp_gatt_if_t gatts_if, uint16_t conn_id)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+esp_err_t esp_ble_gatts_send_service_change_indication(esp_gatt_if_t gatts_if, esp_bd_addr_t remote_bda)
+{
+    btc_msg_t msg;
+    btc_ble_gatts_args_t arg;
+
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GATTS;
+    msg.act = BTC_GATTS_ACT_SEND_SERVICE_CHANGE;
+    arg.send_service_change.gatts_if = gatts_if;
+    if(remote_bda) {
+        memcpy(&arg.send_service_change.remote_bda, remote_bda, sizeof(esp_bd_addr_t));   
+    } else {
+        memset(arg.send_service_change.remote_bda, 0, sizeof(esp_bd_addr_t));
+    }
+    
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
 
 static esp_err_t esp_ble_gatts_add_char_desc_param_check(esp_attr_value_t *char_val, esp_attr_control_t *control)
 {
