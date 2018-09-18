@@ -141,6 +141,8 @@ def replace_app_bin(dut, name, new_app_bin):
 
 
 def reset_dut(dut):
+    # We do flush before test, in case we already have bootup pattern in data cache
+    dut.write("", flush=True)
     dut.reset()
     # esptool ``run`` cmd takes quite long time.
     # before reset finish, serial port is closed. therefore DUT could already bootup before serial port opened.
