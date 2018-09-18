@@ -38,7 +38,7 @@ const size_t WARN_LEAK_THRESHOLD = 256;
 const size_t CRITICAL_LEAK_THRESHOLD = 4096;
 
 /* setUp runs before every test */
-void setUp(void)
+void setUp_Platform(void)
 {
 // If heap tracing is enabled in kconfig, leak trace the test
 #ifdef CONFIG_HEAP_TRACING
@@ -81,7 +81,7 @@ static void check_leak(size_t before_free, size_t after_free, const char *type)
 }
 
 /* tearDown runs after every test */
-void tearDown(void)
+void tearDown_Platform(void)
 {
     /* some FreeRTOS stuff is cleaned up by idle task */
     vTaskDelay(5);
