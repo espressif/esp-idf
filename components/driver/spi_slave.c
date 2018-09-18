@@ -50,6 +50,7 @@ static const char *SPI_TAG = "spi_slave";
 #define VALID_HOST(x) (x>SPI_HOST && x<=VSPI_HOST)
 
 typedef struct {
+    int id;
     spi_slave_interface_config_t cfg;
     intr_handle_t intr;
     spi_dev_t *hw;
@@ -79,7 +80,7 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
 
     spi_chan_claimed=spicommon_periph_claim(host);
     SPI_CHECK(spi_chan_claimed, "host already in use", ESP_ERR_INVALID_STATE);
-    
+
     if ( dma_chan != 0 ) {
         dma_chan_claimed=spicommon_dma_chan_claim(dma_chan);
         if ( !dma_chan_claimed ) {
@@ -92,10 +93,13 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     if (spihost[host] == NULL) goto nomem;
     memset(spihost[host], 0, sizeof(spi_slave_t));
     memcpy(&spihost[host]->cfg, slave_config, sizeof(spi_slave_interface_config_t));
+    spihost[host]->id = host;
 
     spicommon_bus_initialize_io(host, bus_config, dma_chan, SPICOMMON_BUSFLAG_SLAVE, &native);
     gpio_set_direction(slave_config->spics_io_num, GPIO_MODE_INPUT);
-    spicommon_cs_initialize(host, slave_config->spics_io_num, 0, native == false);
+    spicommon_cs_initialize(host, slave_config->spics_io_num, 0, native==false);
+    // The slave DMA suffers from unexpected transactions. Forbid reading if DMA is enabled by disabling the CS line.
+    if (dma_chan != 0) spicommon_freeze_cs(host);
     spihost[host]->no_gpio_matrix = native;
     spihost[host]->dma_chan = dma_chan;
     if (dma_chan != 0) {
@@ -239,9 +243,9 @@ esp_err_t spi_slave_queue_trans(spi_host_device_t host, const spi_slave_transact
     BaseType_t r;
     SPI_CHECK(VALID_HOST(host), "invalid host", ESP_ERR_INVALID_ARG);
     SPI_CHECK(spihost[host], "host not slave", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(spihost[host]->dma_chan == 0 || trans_desc->tx_buffer==NULL || esp_ptr_dma_capable(trans_desc->tx_buffer), 
+    SPI_CHECK(spihost[host]->dma_chan == 0 || trans_desc->tx_buffer==NULL || esp_ptr_dma_capable(trans_desc->tx_buffer),
 			"txdata not in DMA-capable memory", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(spihost[host]->dma_chan == 0 || trans_desc->rx_buffer==NULL || esp_ptr_dma_capable(trans_desc->rx_buffer), 
+    SPI_CHECK(spihost[host]->dma_chan == 0 || trans_desc->rx_buffer==NULL || esp_ptr_dma_capable(trans_desc->rx_buffer),
 			"rxdata not in DMA-capable memory", ESP_ERR_INVALID_ARG);
 
     SPI_CHECK(trans_desc->length <= spihost[host]->max_transfer_sz * 8, "data transfer > host maximum", ESP_ERR_INVALID_ARG);
@@ -325,8 +329,11 @@ static void IRAM_ATTR spi_intr(void *arg)
     if (!host->hw->slave.trans_done) return;
 
     if (host->cur_trans) {
+        // When DMA is enabled, the slave rx dma suffers from unexpected transactions. Forbid reading until transaction ready.
+        if (host->dma_chan != 0) spicommon_freeze_cs(host->id);
+
         //when data of cur_trans->length are all sent, the slv_rdata_bit
-        //will be the length sent-1 (i.e. cur_trans->length-1 ), otherwise 
+        //will be the length sent-1 (i.e. cur_trans->length-1 ), otherwise
         //the length sent.
         host->cur_trans->trans_len = host->hw->slv_rd_bit.slv_rdata_bit;
         if ( host->cur_trans->trans_len == host->cur_trans->length - 1 ) {
@@ -432,6 +439,9 @@ static void IRAM_ATTR spi_intr(void *arg)
         host->hw->miso_dlen.usr_miso_dbitlen = trans->length - 1;
         host->hw->user.usr_mosi = (trans->tx_buffer == NULL) ? 0 : 1;
         host->hw->user.usr_miso = (trans->rx_buffer == NULL) ? 0 : 1;
+
+        //The slave rx dma get disturbed by unexpected transaction. Only connect the CS when slave is ready.
+        if (host->dma_chan != 0) spicommon_restore_cs(host->id, host->cfg.spics_io_num, host->no_gpio_matrix);
 
         //Kick off transfer
         host->hw->cmd.usr = 1;
