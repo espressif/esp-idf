@@ -14,4 +14,6 @@ component_compile_definitions(HAVE_EXPAT_CONFIG_H)
 component_compile_definitions(HAVE_GETRANDOM)
 
 # Temporary suppress "fallthrough" warnings until they are fixed in expat repo
-component_compile_options(-Wno-implicit-fallthrough)
+if(GCC_NOT_5_2_0)
+    component_compile_options(-Wno-implicit-fallthrough)
+endif()
