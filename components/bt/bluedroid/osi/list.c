@@ -97,13 +97,13 @@ list_node_t *list_back_node(const list_t *list) {
 }
 
 bool list_insert_after(list_t *list, list_node_t *prev_node, void *data) {
-  assert(list != NULL);
-  assert(prev_node != NULL);
-  assert(data != NULL);
-  list_node_t *node = (list_node_t *) osi_calloc(sizeof(list_node_t));
-  if (!node)
-    return false;
-
+    assert(list != NULL);
+    assert(prev_node != NULL);
+    assert(data != NULL);
+    list_node_t *node = (list_node_t *)osi_calloc(sizeof(list_node_t));
+    if (!node) {
+        return false;
+    }
     node->next = prev_node->next;
     node->data = data;
     prev_node->next = node;
