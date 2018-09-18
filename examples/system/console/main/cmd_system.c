@@ -302,7 +302,7 @@ esptool.py v2.1-beta1
 )";
 
     const char* flash_output[] = {
-R"(Flashing binaries to serial port )" CONFIG_ESPTOOLPY_PORT R"( (app at offset 0x10000)...
+R"(Flashing binaries to serial port (*) (app at offset 0x10000)...
 esptool.py v2.1-beta1
 Connecting....
 )",
@@ -334,7 +334,7 @@ Hard resetting...
 
     const char* monitor_output =
 R"(MONITOR
-)" LOG_COLOR_W R"(--- idf_monitor on )" CONFIG_ESPTOOLPY_PORT R"( 115200 ---
+)" LOG_COLOR_W R"(--- idf_monitor on (*) 115200 ---
 --- Quit: Ctrl+] | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H --
 )" LOG_RESET_COLOR;
 
