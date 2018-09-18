@@ -426,16 +426,17 @@ sys_mbox_free(sys_mbox_t *mbox)
 sys_thread_t
 sys_thread_new(const char *name, lwip_thread_fn thread, void *arg, int stacksize, int prio)
 {
-  xTaskHandle CreatedTask;
+  xTaskHandle created_task;
   portBASE_TYPE result;
 
-  result = xTaskCreate(thread, name, stacksize, arg, prio, &CreatedTask);
+  result = xTaskCreatePinnedToCore(thread, name, stacksize, arg, prio, &created_task,
+          CONFIG_TCPIP_TASK_AFFINITY);
 
-  if (result == pdPASS) {
-    return CreatedTask;
-  } else {
+  if (result != pdPASS) {
     return NULL;
   }
+
+  return created_task;
 }
 
 /*-----------------------------------------------------------------------------------*/
