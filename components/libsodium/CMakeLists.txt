@@ -139,11 +139,8 @@ component_compile_definitions(
     __STDC_CONSTANT_MACROS
     )
 
-component_compile_options(-Wno-unknown-pragmas)
-
 # patch around warnings in third-party files
 set_source_files_properties(
-    ${SRC}/crypto_pwhash/argon2/argon2-fill-block-ref.c
     ${SRC}/crypto_pwhash/argon2/pwhash_argon2i.c
     ${SRC}/crypto_pwhash/argon2/argon2-core.c
     ${SRC}/crypto_pwhash/scryptsalsa208sha256/pwhash_scryptsalsa208sha256.c
@@ -155,10 +152,18 @@ set_source_files_properties(
     PROPERTIES COMPILE_FLAGS
     -Wno-unused-variable
     )
+set_source_files_properties(
+    ${SRC}/crypto_pwhash/argon2/argon2-fill-block-ref.c
+    PROPERTIES COMPILE_FLAGS
+    -Wno-unknown-pragmas
+    )
 
 # Temporary suppress "fallthrough" warnings until they are fixed in libsodium repo
-set_source_files_properties(
-    ${SRC}/crypto_shorthash/siphash24/ref/shorthash_siphashx24_ref.c
-    ${SRC}/crypto_shorthash/siphash24/ref/shorthash_siphash24_ref.c
-    PROPERTIES COMPILE_FLAGS
-    -Wno-implicit-fallthrough)
+if(GCC_NOT_5_2_0)
+    set_source_files_properties(
+        ${SRC}/crypto_shorthash/siphash24/ref/shorthash_siphashx24_ref.c
+        ${SRC}/crypto_shorthash/siphash24/ref/shorthash_siphash24_ref.c
+        PROPERTIES COMPILE_FLAGS
+        -Wno-implicit-fallthrough
+        )
+endif()

@@ -32,8 +32,10 @@ set_source_files_properties(
     PROPERTIES COMPILE_FLAGS
     -Wno-write-strings)
 
-# Temporary suppress "fallthrough" warnings until they are fixed in libcoap repo
-set_source_files_properties(
-    libcoap/src/option.c
-    PROPERTIES COMPILE_FLAGS
-    -Wno-implicit-fallthrough)
+if(GCC_NOT_5_2_0)
+    # Temporary suppress "fallthrough" warnings until they are fixed in libcoap repo
+    set_source_files_properties(
+        libcoap/src/option.c
+        PROPERTIES COMPILE_FLAGS
+        -Wno-implicit-fallthrough)
+endif()
