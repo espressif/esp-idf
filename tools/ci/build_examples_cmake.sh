@@ -160,8 +160,17 @@ echo -e "\nFound issues:"
 #       Ignore the next messages:
 # "error.o" or "-Werror" in compiler's command line
 # "reassigning to symbol" or "changes choice state" in sdkconfig
-sort -u "${LOG_SUSPECTED}" | \
-grep -v "library/error.o\|\ -Werror\|reassigning to symbol\|changes choice state" \
+# 'Compiler and toochain versions is not supported' from crosstool_version_check.cmake
+IGNORE_WARNS="\
+library/error\.o\
+\|\ -Werror\
+\|error\.d\
+\|reassigning to symbol\
+\|changes choice state\
+\|crosstool_version_check\.cmake\
+"
+
+sort -u "${LOG_SUSPECTED}" | grep -v "${IGNORE_WARNS}" \
     && RESULT=$RESULT_ISSUES \
     || echo -e "\tNone"
 

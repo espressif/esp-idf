@@ -157,10 +157,11 @@ echo -e "\nFound issues:"
 #       Ignore the next messages:
 # "error.o" or "-Werror" in compiler's command line
 # "reassigning to symbol" or "changes choice state" in sdkconfig
-# Compiler and toochain versions is not supported from make/project.mk
+# 'Compiler and toochain versions is not supported' from make/project.mk
 IGNORE_WARNS="\
 library/error\.o\
-\|\ -Werror\|error\.d\
+\|\ -Werror\
+\|error\.d\
 \|reassigning to symbol\
 \|changes choice state\
 \|Compiler version is not supported\
