@@ -443,6 +443,31 @@ config TCPIP_TASK_STACK_SIZE
        Configure TCP/IP task stack size, used by LWIP to process multi-threaded TCP/IP operations.
        Setting this stack too small will result in stack overflow crashes.
 
+choice TCPIP_TASK_AFFINITY
+    prompt "TCP/IP task affinity"
+    default TCPIP_TASK_AFFINITY_NO_AFFINITY
+    help
+        Allows setting LwIP tasks affinity, i.e. whether the task is pinned to
+        CPU0, pinned to CPU1, or allowed to run on any CPU.
+        Currently this applies to "TCP/IP" task and "Ping" task.
+
+config TCPIP_TASK_AFFINITY_NO_AFFINITY
+    bool "No affinity"
+config TCPIP_TASK_AFFINITY_CPU0
+    bool "CPU0"
+config TCPIP_TASK_AFFINITY_CPU1
+    bool "CPU1"
+    depends on !FREERTOS_UNICORE
+
+endchoice
+
+config TCPIP_TASK_AFFINITY
+    hex
+    default FREERTOS_NO_AFFINITY if TCPIP_TASK_AFFINITY_NO_AFFINITY
+    default 0x0 if TCPIP_TASK_AFFINITY_CPU0
+    default 0x1 if TCPIP_TASK_AFFINITY_CPU1
+
+
 menuconfig PPP_SUPPORT
     bool "Enable PPP support (new/experimental)"
     default n
