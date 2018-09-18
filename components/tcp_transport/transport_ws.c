@@ -69,14 +69,17 @@ static int ws_connect(transport_handle_t t, const char *host, int port, int time
     if (transport_connect(ws->parent, host, port, timeout_ms) < 0) {
         ESP_LOGE(TAG, "Error connect to ther server");
     }
-    unsigned char random_key[16] = { 0 }, client_key[32] = {0};
+
+    unsigned char random_key[16] = {0};
+    // Size of base64 coded string is equal '((input_size * 4) / 3) + (input_size / 96) + 6' including Z-term
+    unsigned char client_key[28] = {0};
     int i;
     for (i = 0; i < sizeof(random_key); i++) {
         random_key[i] = rand() & 0xFF;
     }
     size_t outlen = 0;
-    mbedtls_base64_encode(client_key, 32,  &outlen, random_key, 16);
-    int len =   snprintf(ws->buffer, DEFAULT_WS_BUFFER,
+    mbedtls_base64_encode(client_key, sizeof(client_key), &outlen, random_key, sizeof(random_key));
+    int len = snprintf(ws->buffer, DEFAULT_WS_BUFFER,
                          "GET %s HTTP/1.1\r\n"
                          "Connection: Upgrade\r\n"
                          "Host: %s:%d\r\n"
@@ -88,6 +91,10 @@ static int ws_connect(transport_handle_t t, const char *host, int port, int time
                          ws->path,
                          host, port,
                          client_key);
+    if (len <= 0 || len >= DEFAULT_WS_BUFFER) {
+        ESP_LOGE(TAG, "Error in request generation, %d", len);
+        return -1;
+    }
     ESP_LOGD(TAG, "Write upgrate request\r\n%s", ws->buffer);
     if (transport_write(ws->parent, ws->buffer, len, timeout_ms) <= 0) {
         ESP_LOGE(TAG, "Error write Upgrade header %s", ws->buffer);
@@ -103,13 +110,22 @@ static int ws_connect(transport_handle_t t, const char *host, int port, int time
         return -1;
     }
 
-    unsigned char client_key_b64[64], valid_client_key[20], accept_key[32] = {0};
-    int key_len = sprintf((char*)client_key_b64, "%s258EAFA5-E914-47DA-95CA-C5AB0DC85B11", (char*)client_key);
-    mbedtls_sha1_ret(client_key_b64, (size_t)key_len, valid_client_key);
-    mbedtls_base64_encode(accept_key, 32,  &outlen, valid_client_key, 20);
-    accept_key[outlen] = 0;
-    ESP_LOGD(TAG, "server key=%s, send_key=%s, accept_key=%s", (char *)server_key, (char*)client_key, accept_key);
-    if (strcmp((char*)accept_key, (char*)server_key) != 0) {
+    // See mbedtls_sha1_ret() arg size
+    unsigned char expected_server_sha1[20];
+    // Size of base64 coded string see above
+    unsigned char expected_server_key[33] = {0};
+    // If you are interested, see https://tools.ietf.org/html/rfc6455
+    const char expected_server_magic[] = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+    unsigned char expected_server_text[sizeof(client_key) + sizeof(expected_server_magic) + 1];
+    strcpy((char*)expected_server_text, (char*)client_key);
+    strcat((char*)expected_server_text, expected_server_magic);
+
+    size_t key_len = strlen((char*)expected_server_text);
+    mbedtls_sha1_ret(expected_server_text, key_len, expected_server_sha1);
+    mbedtls_base64_encode(expected_server_key, sizeof(expected_server_key),  &outlen, expected_server_sha1, sizeof(expected_server_sha1));
+    expected_server_key[ (outlen < sizeof(expected_server_key)) ? outlen : (sizeof(expected_server_key) - 1) ] = 0;
+    ESP_LOGD(TAG, "server key=%s, send_key=%s, expected_server_key=%s", (char *)server_key, (char*)client_key, expected_server_key);
+    if (strcmp((char*)expected_server_key, (char*)server_key) != 0) {
         ESP_LOGE(TAG, "Invalid websocket key");
         return -1;
     }
