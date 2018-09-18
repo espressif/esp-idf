@@ -455,7 +455,7 @@ void IRAM_ATTR esp_pm_impl_isr_hook()
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
-bool IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
+void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
 {
     bool result = false;
     portENTER_CRITICAL(&s_switch_lock);
@@ -499,7 +499,11 @@ bool IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
         }
     }
     portEXIT_CRITICAL(&s_switch_lock);
-    return result;
+
+    /* Tick less idle was not successful, can block till next interrupt here */
+    if (!result) {
+        asm("waiti 0");
+    }
 }
 #endif //CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
