@@ -1141,7 +1141,18 @@ extern BOOLEAN GATT_CancelConnect (tGATT_IF gatt_if, BD_ADDR bd_addr,
 *******************************************************************************/
 extern tGATT_STATUS GATT_Disconnect (UINT16 conn_id);
 
-
+/*******************************************************************************
+**
+** Function         GATT_SendServiceChangeIndication
+**
+** Description      This function is to send a service change indication
+**
+** Parameters       bd_addr: peer device address.
+**
+** Returns          status.
+**
+*******************************************************************************/
+extern tGATT_STATUS GATT_SendServiceChangeIndication (BD_ADDR bd_addr);
 
 /*******************************************************************************
 **

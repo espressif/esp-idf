@@ -102,6 +102,9 @@ typedef UINT8 tGATT_SEC_FLAG;
 #define GATT_INFO_TYPE_PAIR_16      0x01
 #define GATT_INFO_TYPE_PAIR_128     0x02
 
+#define GATTS_SEND_SERVICE_CHANGE_AUTO   0
+#define GATTS_SEND_SERVICE_CHANGE_MANUAL 1
+
 /*  GATT client FIND_TYPE_VALUE_Request data */
 typedef struct {
     tBT_UUID        uuid;           /* type of attribute to be found */
@@ -582,7 +585,7 @@ extern void gatt_set_ch_state(tGATT_TCB *p_tcb, tGATT_CH_STATE ch_state);
 extern tGATT_CH_STATE gatt_get_ch_state(tGATT_TCB *p_tcb);
 extern void gatt_init_srv_chg(void);
 extern void gatt_proc_srv_chg (void);
-extern void gatt_send_srv_chg_ind (BD_ADDR peer_bda);
+extern tGATT_STATUS gatt_send_srv_chg_ind (BD_ADDR peer_bda);
 extern void gatt_chk_srv_chg(tGATTS_SRV_CHG *p_srv_chg_clt);
 extern void gatt_add_a_bonded_dev_for_srv_chg (BD_ADDR bda);
 

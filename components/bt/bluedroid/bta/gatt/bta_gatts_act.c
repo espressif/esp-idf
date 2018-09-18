@@ -829,6 +829,36 @@ void bta_gatts_close (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
     }
 
 }
+
+/*******************************************************************************
+**
+** Function         bta_gatts_send_service_change_indication
+**
+** Description      gatts send service change indication
+**
+** Returns          none.
+**
+*******************************************************************************/
+void bta_gatts_send_service_change_indication (tBTA_GATTS_DATA *p_msg)
+{
+    tBTA_GATTS_RCB     *p_rcb = bta_gatts_find_app_rcb_by_app_if(p_msg->api_send_service_change.server_if);
+    tBTA_GATTS_SERVICE_CHANGE    service_change;
+    tBTA_GATT_STATUS status = BTA_GATT_OK;
+    UINT16 addr[BD_ADDR_LEN] = {0};
+    if(memcmp(p_msg->api_send_service_change.remote_bda, addr, BD_ADDR_LEN) != 0) {
+        BD_ADDR bd_addr;
+        memcpy(bd_addr, p_msg->api_send_service_change.remote_bda, BD_ADDR_LEN);
+        status = GATT_SendServiceChangeIndication(bd_addr);
+    } else {
+        status = GATT_SendServiceChangeIndication(NULL);    
+    }
+    if (p_rcb && p_rcb->p_cback) {
+        service_change.status = status;
+        service_change.server_if = p_msg->api_send_service_change.server_if;
+        (*p_rcb->p_cback)(BTA_GATTS_SEND_SERVICE_CHANGE_EVT,  (tBTA_GATTS *)&service_change);
+    }   
+}
+
 /*******************************************************************************
 **
 ** Function         bta_gatts_listen
