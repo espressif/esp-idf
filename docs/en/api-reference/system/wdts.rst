@@ -63,10 +63,10 @@ longer call :cpp:func:`esp_task_wdt_reset`. Once all tasks have unsubscribed
 form the TWDT, the TWDT can be deinitialized by calling 
 :cpp:func:`esp_task_wdt_deinit()`.
 
-By default :envvar:`CONFIG_TASK_WDT` in ``make menuconfig`` will be enabled causing
+By default :ref:`CONFIG_TASK_WDT` in ``make menuconfig`` will be enabled causing
 the TWDT to be initialized automatically during startup. Likewise
-:envvar:`CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU0` and 
-:envvar:`CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU1` are also enabled by default causing
+:ref:`CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU0` and 
+:ref:`CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU1` are also enabled by default causing
 the two Idle Tasks to be subscribed to the TWDT during startup.
 
 JTAG and watchdogs

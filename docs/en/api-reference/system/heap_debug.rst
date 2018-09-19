@@ -62,7 +62,7 @@ Configuration
 
 Temporarily increasing the heap corruption detection level can give more detailed information about heap corruption errors.
 
-In ``make menuconfig``, under ``Component config`` there is a menu ``Heap memory debugging``. The setting :envvar:`CONFIG_HEAP_CORRUPTION_DETECTION` can be set to one of three levels:
+In ``make menuconfig``, under ``Component config`` there is a menu ``Heap memory debugging``. The setting :ref:`CONFIG_HEAP_CORRUPTION_DETECTION` can be set to one of three levels:
 
 Basic (no poisoning)
 ++++++++++++++++++++
@@ -140,7 +140,7 @@ If you suspect a memory leak, the first step is to figure out which part of the 
 
 Once you've identified the code which you think is leaking:
 
-- Under ``make menuconfig``, navigate to ``Component settings`` -> ``Heap Memory Debugging`` and set :envvar:`CONFIG_HEAP_TRACING`.
+- Under ``make menuconfig``, navigate to ``Component settings`` -> ``Heap Memory Debugging`` and set :ref:`CONFIG_HEAP_TRACING`.
 - Call the function :cpp:func:`heap_trace_init_standalone` early in the program, to register a buffer which can be used to record the memory trace.
 - Call the function :cpp:func:`heap_trace_start` to begin recording all mallocs/frees in the system. Call this immediately before the piece of code which you suspect is leaking memory.
 - Call the function :cpp:func:`heap_trace_stop` to stop the trace once the suspect piece of code has finished executing.
