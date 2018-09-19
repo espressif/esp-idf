@@ -101,6 +101,11 @@ esp_err_t esp_eth_set_mac(const uint8_t mac[6])
     }
 }
 
+eth_speed_mode_t esp_eth_get_speed(void)
+{
+    return emac_config.emac_phy_get_speed_mode();
+}
+
 static void emac_setup_tx_desc(struct dma_extended_desc *tx_desc, uint32_t size)
 {
     tx_desc->basic.desc1 = size & 0xfff;
@@ -274,6 +279,33 @@ esp_err_t esp_eth_smi_wait_value(uint32_t reg_num, uint16_t value,
     return ESP_ERR_TIMEOUT;
 }
 
+esp_err_t emac_reset(void)
+{
+    REG_SET_BIT(EMAC_DMABUSMODE_REG, EMAC_SW_RST);
+    if (emac_config.reset_timeout_ms) {
+        int start = xTaskGetTickCount();
+        uint32_t timeout_ticks = (emac_config.reset_timeout_ms + portTICK_PERIOD_MS - 1) / portTICK_PERIOD_MS;
+        while (timeout_ticks == 0 || (xTaskGetTickCount() - start < timeout_ticks)) {
+            if (REG_GET_BIT(EMAC_DMABUSMODE_REG, EMAC_SW_RST) != EMAC_SW_RST) {
+                goto reset_ok;
+            }
+            vTaskDelay(1);
+        }
+        ESP_LOGE(TAG, "Reset EMAC Timeout");
+        return ESP_ERR_TIMEOUT;
+    }
+    /* infinite wait loop */
+    else {
+        while (REG_GET_BIT(EMAC_DMABUSMODE_REG, EMAC_SW_RST) == EMAC_SW_RST) {
+            //nothing to do ,if stop here,maybe emac have not clk input.
+            ESP_LOGI(TAG, "emac resetting ....");
+        }
+    }
+reset_ok:
+    ESP_LOGI(TAG, "emac reset done");
+    return ESP_OK;
+}
+
 static void emac_set_user_config_data(eth_config_t *config)
 {
     emac_config.phy_addr = config->phy_addr;
@@ -286,6 +318,7 @@ static void emac_set_user_config_data(eth_config_t *config)
     emac_config.emac_phy_check_init = config->phy_check_init;
     emac_config.emac_phy_get_speed_mode = config->phy_get_speed_mode;
     emac_config.emac_phy_get_duplex_mode = config->phy_get_duplex_mode;
+    emac_config.reset_timeout_ms = config->reset_timeout_ms;
 #if DMA_RX_BUF_NUM > 9
     emac_config.emac_flow_ctrl_enable = config->flow_ctrl_enable;
 #else
@@ -710,14 +743,14 @@ esp_err_t esp_eth_tx(uint8_t *buf, uint16_t size)
     if (emac_config.emac_status != EMAC_RUNTIME_START) {
         ESP_LOGE(TAG, "tx netif is not ready, emac_status=%d",
                  emac_config.emac_status);
-        ret = ERR_IF;
+        ret = ESP_ERR_INVALID_STATE;
         return ret;
     }
 
     xSemaphoreTakeRecursive(emac_tx_xMutex, portMAX_DELAY);
     if (emac_config.cnt_tx == DMA_TX_BUF_NUM - 1) {
         ESP_LOGD(TAG, "tx buf full");
-        ret = ERR_MEM;
+        ret = ESP_ERR_NO_MEM;
         goto _exit;
     }
 
@@ -812,7 +845,10 @@ static void emac_start(void *param)
     cmd->err = EMAC_CMD_OK;
     emac_enable_clk(true);
 
-    emac_reset();
+    if (emac_reset() != ESP_OK) {
+        return;
+    }
+    emac_reset_dma_chain();
     emac_dma_init();
 
     emac_set_macaddr_reg();
@@ -821,8 +857,6 @@ static void emac_start(void *param)
     emac_set_rx_base_reg();
 
     emac_mac_init();
-
-    emac_config.phy_init();
 
     //ptp TODO
 
@@ -872,6 +906,12 @@ esp_err_t esp_eth_enable(void)
     esp_pm_lock_acquire(s_pm_lock);
 #endif //CONFIG_PM_ENABLE
 
+    /* init phy device */
+    if (emac_config.phy_init() != ESP_OK) {
+        ESP_LOGE(TAG, "Initialise PHY device Timeout");
+        return ESP_FAIL;
+    }
+
     if (emac_config.emac_status != EMAC_RUNTIME_NOT_INIT) {
         if (emac_ioctl(SIG_EMAC_START, (emac_par_t)(&post_cmd)) != 0) {
             open_cmd.err = EMAC_CMD_FAIL;
@@ -903,8 +943,6 @@ static void emac_stop(void *param)
     emac_process_link_updown(false);
 
     emac_disable_intr();
-    emac_reset_dma_chain();
-    emac_reset();
     emac_enable_clk(false);
 
     emac_config.emac_status = EMAC_RUNTIME_STOP;
@@ -1156,7 +1194,6 @@ esp_err_t esp_eth_init_internal(eth_config_t *config)
     xTaskCreate(emac_task, "emacT", EMAC_TASK_STACK_SIZE, NULL,
                 EMAC_TASK_PRIORITY, &emac_task_hdl);
 
-    emac_enable_clk(false);
     esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, 0, emac_process_intr, NULL, NULL);
 
     emac_config.emac_status = EMAC_RUNTIME_INIT;
