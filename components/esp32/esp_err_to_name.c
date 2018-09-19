@@ -4,9 +4,6 @@
 #if __has_include("soc/soc.h")
 #include "soc/soc.h"
 #endif
-#if __has_include("apps/esp_ping.h")
-#include "apps/esp_ping.h"
-#endif
 #if __has_include("esp32/ulp.h")
 #include "esp32/ulp.h"
 #endif
@@ -27,6 +24,9 @@
 #endif
 #if __has_include("esp_ota_ops.h")
 #include "esp_ota_ops.h"
+#endif
+#if __has_include("esp_ping.h")
+#include "esp_ping.h"
 #endif
 #if __has_include("esp_spi_flash.h")
 #include "esp_spi_flash.h"
