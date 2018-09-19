@@ -40,7 +40,7 @@ typedef struct dma_extended_desc {
 }dma_extended_desc_t;
 
 void emac_enable_clk(bool enable);
-void emac_reset(void);
+esp_err_t emac_reset(void);
 void emac_set_gpio_pin_rmii(void);
 void emac_set_gpio_pin_mii(void);
 uint32_t emac_read_mac_version(void);
