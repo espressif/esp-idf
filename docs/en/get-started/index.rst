@@ -220,6 +220,11 @@ Here are couple of tips on navigation and use of ``menuconfig``:
     If you are **Arch Linux** user, navigate to ``SDK tool configuration`` and change the name of ``Python 2 interpreter`` from ``python`` to ``python2``.
 
 
+.. attention::
+
+    When using ESP32-DevKitC board with ESP32-SOLO-1 module, enable single core mode (:ref:`CONFIG_FREERTOS_UNICORE`) in menuconfig before flashing example applications.
+
+
 .. _get-started-build-flash:
 
 Build and Flash
