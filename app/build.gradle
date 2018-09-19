@@ -17,7 +17,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             resValue "string", "proof_of_possesion", "abcd1234"
             resValue "string", "wifi_base_url", "192.168.4.1:80"
-            resValue "string", "wifi_network_name_prefix", "mysoftap"
+            resValue "string", "wifi_network_name_prefix", "PROV_"
             resValue "string", "ble_service_uuid", "0000ffff-0000-1000-8000-00805f9b34fb"
             resValue "string", "ble_session_uuid", "0000ff51-0000-1000-8000-00805f9b34fb"
             resValue "string", "ble_config_uuid", "0000ff52-0000-1000-8000-00805f9b34fb"
@@ -28,7 +28,7 @@ android {
             debuggable true
             resValue "string", "proof_of_possesion", "abcd1234"
             resValue "string", "wifi_base_url", "192.168.4.1:80"
-            resValue "string", "wifi_network_name_prefix", "mysoftap"
+            resValue "string", "wifi_network_name_prefix", "PROV_"
             resValue "string", "ble_service_uuid", "0000ffff-0000-1000-8000-00805f9b34fb"
             resValue "string", "ble_session_uuid", "0000ff51-0000-1000-8000-00805f9b34fb"
             resValue "string", "ble_config_uuid", "0000ff52-0000-1000-8000-00805f9b34fb"
