@@ -30,6 +30,7 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
 #include "soc/rtc_wdt.h"
+#include "soc/efuse_reg.h"
 
 #include "driver/rtc_io.h"
 
@@ -166,6 +167,11 @@ void IRAM_ATTR call_start_cpu0()
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
 
 #if !CONFIG_FREERTOS_UNICORE
+    if (REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_DIS_APP_CPU)) {
+        ESP_EARLY_LOGE(TAG, "Running on single core chip, but application is built with dual core support.");
+        ESP_EARLY_LOGE(TAG, "Please enable CONFIG_FREERTOS_UNICORE option in menuconfig.");
+        abort();
+    }
     ESP_EARLY_LOGI(TAG, "Starting app cpu, entry point is %p", call_start_cpu1);
     //Flush and enable icache for APP CPU
     Cache_Flush(1);
