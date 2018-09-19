@@ -1117,7 +1117,7 @@ test cases:
   category: Function
   cmd set:
   - ''
-  - - SSC SSC1 ap -C -s <target_ssid> -p <target_password>
+  - - SSC SSC1 sta -C -s <target_ssid> -p <target_password>
     - - R SSC1 C +JAP:ERROR
   execution time: 0
   expected result: |
