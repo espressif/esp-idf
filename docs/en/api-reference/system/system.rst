@@ -91,7 +91,7 @@ If the universally administered MAC addresses are not enough for all of the netw
 
 See `this article <https://en.wikipedia.org/wiki/MAC_address#Universal_vs._local>`_ for the definition of local and universally administered MAC addresses.
 
-The number of universally administered MAC address can be configured using :envvar:`CONFIG_NUMBER_OF_UNIVERSAL_MAC_ADDRESS`.
+The number of universally administered MAC address can be configured using :ref:`CONFIG_NUMBER_OF_UNIVERSAL_MAC_ADDRESS`.
 
 If the number of universal MAC addresses is two, only two interfaces (Wi-Fi Station and Bluetooth) receive a universally administered MAC address. These are generated sequentially by adding 0 and 1 (respectively) to the base MAC address. The remaining two interfaces (Wi-Fi SoftAP and Ethernet) receive local MAC addresses. These are derived from the universal Wi-Fi station and Bluetooth MAC addresses, respectively.
 

@@ -39,7 +39,7 @@ ESP-IDF 中大多数函数会返回 :cpp:type:`esp_err_t` 类型的错误码， 
 
 此外，如果出现找不到匹配的 ``ESP_ERR_`` 值的情况，函数 :cpp:func:`esp_err_to_name_r` 则会尝试将错误码作为一种 `标准 POSIX 错误代码 <http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/errno.h.html>`_ 进行解释。具体过程为：POSIX 错误代码（例如 ``ENOENT``， ``ENOMEM``）定义在 ``errno.h`` 文件中，可以通过 ``errno`` 变量获得，进而调用 ``strerror_r`` 函数实现。在 ESP-IDF 中，``errno`` 是一个基于线程的局部变量，即每个 FreeRTOS 任务都有自己的 ``errno`` 副本，通过函数修改 ``errno`` 也只会作用于当前任务中的 ``errno`` 变量值。
 
-该功能（即在无法匹配 ``ESP_ERR_`` 值时，尝试用标准 POSIX 解释错误码）默认启用。用户也可以禁用该功能，从而减小应用程序的二进制文件大小，详情可见 :envvar:`CONFIG_ESP_ERR_TO_NAME_LOOKUP`。注意，该功能对禁用并不影响 :cpp:func:`esp_err_to_name` 和 :cpp:func:`esp_err_to_name_r` 函数的定义，用户仍可调用这两个函数转化错误码。在这种情况下， :cpp:func:`esp_err_to_name` 函数在遇到无法匹配错误码的情况会返回 ``UNKNOWN ERROR``，而 :cpp:func:`esp_err_to_name_r` 函数会返回 ``Unknown error 0xXXXX(YYYYY)``，其中 ``0xXXXX`` 和 ``YYYYY`` 分别代表错误代码的十六进制和十进制表示。
+该功能（即在无法匹配 ``ESP_ERR_`` 值时，尝试用标准 POSIX 解释错误码）默认启用。用户也可以禁用该功能，从而减小应用程序的二进制文件大小，详情可见 :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP`。注意，该功能对禁用并不影响 :cpp:func:`esp_err_to_name` 和 :cpp:func:`esp_err_to_name_r` 函数的定义，用户仍可调用这两个函数转化错误码。在这种情况下， :cpp:func:`esp_err_to_name` 函数在遇到无法匹配错误码的情况会返回 ``UNKNOWN ERROR``，而 :cpp:func:`esp_err_to_name_r` 函数会返回 ``Unknown error 0xXXXX(YYYYY)``，其中 ``0xXXXX`` 和 ``YYYYY`` 分别代表错误代码的十六进制和十进制表示。
 
 .. _esp-error-check-macro:
 
@@ -60,7 +60,7 @@ ESP-IDF 中大多数函数会返回 :cpp:type:`esp_err_t` 类型的错误码， 
 
    Backtrace: 0x40086e7c:0x3ffb4ff0 0x40087328:0x3ffb5010 0x400d1fdf:0x3ffb5030 0x400d0816:0x3ffb5050
 
--  第一行打印错误代码的十六进制表示，及该错误在源代码中的标识符。这个标识符取决于 :envvar:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` 选项的设定。最后，第一行还会打印程序中该错误发生的具体位置。
+-  第一行打印错误代码的十六进制表示，及该错误在源代码中的标识符。这个标识符取决于 :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` 选项的设定。最后，第一行还会打印程序中该错误发生的具体位置。
 
 -  下面几行显示了程序中调用 :cpp:func:`ESP_ERROR_CHECK` 宏的具体位置，以及传递给该宏的参数。
 
@@ -125,8 +125,8 @@ ESP-IDF 中大多数函数会返回 :cpp:type:`esp_err_t` 类型的错误码， 
 C++ 异常
 --------
 
-默认情况下，ESP-IDF 会禁用对 C++ 异常的支持，但是可以通过 :envvar:`CONFIG_CXX_EXCEPTIONS` 选项启用。
+默认情况下，ESP-IDF 会禁用对 C++ 异常的支持，但是可以通过 :ref:`CONFIG_CXX_EXCEPTIONS` 选项启用。
 
-通常情况下，启用异常处理会让应用程序的二进制文件增加几 kB。此外，启用该功能时还应为异常事故池预留一定内存。当应用程序无法从堆中分配异常对象时，就可以使用这个池中的内存。该内存池的大小可以通过 :envvar:`CONFIG_CXX_EXCEPTIONS_EMG_POOL_SIZE` 来设定。
+通常情况下，启用异常处理会让应用程序的二进制文件增加几 kB。此外，启用该功能时还应为异常事故池预留一定内存。当应用程序无法从堆中分配异常对象时，就可以使用这个池中的内存。该内存池的大小可以通过 :ref:`CONFIG_CXX_EXCEPTIONS_EMG_POOL_SIZE` 来设定。
 
 如果 C++ 程序抛出了异常，但是程序中并没有 ``catch`` 代码块来捕获该异常，那么程序的运行就会被 ``abort`` 函数中止，然后打印回溯信息。有关回溯的更多信息，请参阅 :doc:`不可恢复错误 <fatal-errors>` 。

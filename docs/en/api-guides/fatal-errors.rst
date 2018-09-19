@@ -11,7 +11,7 @@ In certain situations, execution of the program can not be continued in a well d
 - System level checks and safeguards:
 
   - :doc:`Interrupt watchdog <../api-reference/system/wdts>` timeout
-  - :doc:`Task watchdog <../api-reference/system/wdts>` timeout (only fatal if :envvar:`CONFIG_TASK_WDT_PANIC` is set)
+  - :doc:`Task watchdog <../api-reference/system/wdts>` timeout (only fatal if :ref:`CONFIG_TASK_WDT_PANIC` is set)
   - Cache access error
   - Brownout detection event
   - Stack overflow
@@ -37,7 +37,7 @@ For some of the system level checks (interrupt watchdog, cache access error), th
 
 In all cases, error cause will be printed in parens. See `Guru Meditation Errors`_ for a list of possible error causes.
 
-Subsequent behavior of the panic handler can be set using :envvar:`CONFIG_ESP32_PANIC` configuration choice. The available options are:
+Subsequent behavior of the panic handler can be set using :ref:`CONFIG_ESP32_PANIC` configuration choice. The available options are:
 
 - Print registers and reboot (``CONFIG_ESP32_PANIC_PRINT_REBOOT``) — default option.
   
@@ -57,7 +57,7 @@ Subsequent behavior of the panic handler can be set using :envvar:`CONFIG_ESP32_
 
 Behavior of panic handler is affected by two other configuration options.
 
-- If :envvar:`CONFIG_ESP32_DEBUG_OCDAWARE` is enabled (which is the default), panic handler will detect whether a JTAG debugger is connected. If it is, execution will be halted and control will be passed to the debugger. In this case registers and backtrace are not dumped to the console, and GDBStub / Core Dump functions are not used.
+- If :ref:`CONFIG_ESP32_DEBUG_OCDAWARE` is enabled (which is the default), panic handler will detect whether a JTAG debugger is connected. If it is, execution will be halted and control will be passed to the debugger. In this case registers and backtrace are not dumped to the console, and GDBStub / Core Dump functions are not used.
 
 - If :doc:`Core Dump <core_dump>` feature is enabled (``CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH`` or ``CONFIG_ESP32_ENABLE_COREDUMP_TO_UART`` options), then system state (task stacks and registers) will be dumped either to Flash or UART, for later analysis.
 
@@ -257,7 +257,7 @@ Other Fatal Errors
 Brownout
 ^^^^^^^^
 
-ESP32 has a built-in brownout detector, which is enabled by default. Brownout detector can trigger system reset if supply voltage goes below safe level. Brownout detector can be configured using :envvar:`CONFIG_BROWNOUT_DET` and :envvar:`CONFIG_BROWNOUT_DET_LVL_SEL` options.
+ESP32 has a built-in brownout detector, which is enabled by default. Brownout detector can trigger system reset if supply voltage goes below safe level. Brownout detector can be configured using :ref:`CONFIG_BROWNOUT_DET` and :ref:`CONFIG_BROWNOUT_DET_LVL_SEL` options.
 When brownout detector triggers, the following message is printed::
 
     Brownout detector was triggered
@@ -280,7 +280,7 @@ Consult :doc:`Heap Memory Debugging <../api-reference/system/heap_debug>` docume
 Stack Smashing
 ^^^^^^^^^^^^^^
 
-Stack smashing protection (based on GCC ``-fstack-protector*`` flags) can be enabled in ESP-IDF using :envvar:`CONFIG_STACK_CHECK_MODE` option. If stack smashing is detected, message similar to the following will be printed::
+Stack smashing protection (based on GCC ``-fstack-protector*`` flags) can be enabled in ESP-IDF using :ref:`CONFIG_STACK_CHECK_MODE` option. If stack smashing is detected, message similar to the following will be printed::
 
     Stack smashing protect failure!
 
