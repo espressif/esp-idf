@@ -1,3 +1,4 @@
+from __future__ import print_function
 import yaml
 import os
 import re
@@ -264,7 +265,7 @@ def main():
     parser.copy_module_def_file()
     if len(parser.parsing_errors) > 0:
         for error in parser.parsing_errors:
-            print error
+            print(error)
         exit(-1)
 
 
