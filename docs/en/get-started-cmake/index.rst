@@ -248,6 +248,11 @@ Here are couple of tips on navigation and use of ``menuconfig``:
 * Pressing ``?`` while highlighting a configuration item displays help about that item.
 * Type ``/`` to search the configuration items.
 
+.. attention::
+
+    When using ESP32-DevKitC board with ESP32-SOLO-1 module, enable single core mode (:ref:`CONFIG_FREERTOS_UNICORE`) in menuconfig before flashing example applications.
+
+
 .. _get-started-build-cmake:
 
 Build The Project

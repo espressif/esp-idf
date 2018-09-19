@@ -216,6 +216,10 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
 
     如果你是 **Arch Linux** 用户，需要进入 ``SDK tool configuration`` 将 ``Python 2 interpreter`` 从 ``python`` 修改为 ``python2``。
 
+.. attention::
+
+    如果 ESP32-DevKitC 板载的是 ESP32-SOLO-1 模组，请务必在烧写示例程序之前在 menuconfig 中使能单核模式（:ref:CONFIG_FREERTOS_UNICORE）。
+
 
 .. _get-started-build-flash:
 
