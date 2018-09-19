@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <sys/random.h>
 
 #include "esp_log.h"
 #include "esp_transport.h"
@@ -70,13 +71,12 @@ static int ws_connect(transport_handle_t t, const char *host, int port, int time
         ESP_LOGE(TAG, "Error connect to ther server");
     }
 
-    unsigned char random_key[16] = {0};
+    unsigned char random_key[16];
+    getrandom(random_key, sizeof(random_key), 0);
+
     // Size of base64 coded string is equal '((input_size * 4) / 3) + (input_size / 96) + 6' including Z-term
     unsigned char client_key[28] = {0};
-    int i;
-    for (i = 0; i < sizeof(random_key); i++) {
-        random_key[i] = rand() & 0xFF;
-    }
+
     size_t outlen = 0;
     mbedtls_base64_encode(client_key, sizeof(client_key), &outlen, random_key, sizeof(random_key));
     int len = snprintf(ws->buffer, DEFAULT_WS_BUFFER,
@@ -155,10 +155,8 @@ static int ws_write(transport_handle_t t, const char *buff, int len, int timeout
         ws_header[header_len++] = (uint8_t)(len | WS_MASK);
     }
     mask = &ws_header[header_len];
-    ws_header[header_len++] = rand() & 0xFF;
-    ws_header[header_len++] = rand() & 0xFF;
-    ws_header[header_len++] = rand() & 0xFF;
-    ws_header[header_len++] = rand() & 0xFF;
+    getrandom(ws_header + header_len, 4, 0);
+    header_len += 4;
 
     for (i = 0; i < len; ++i) {
         buffer[i] = (buffer[i] ^ mask[i % 4]);
