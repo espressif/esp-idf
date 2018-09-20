@@ -47,7 +47,7 @@ static wifi_args_t sta_args;
 static wifi_scan_arg_t scan_args;
 static wifi_args_t ap_args;
 static bool reconnect = true;
-static const char *TAG="iperf";
+static const char *TAG="cmd_wifi";
 
 static EventGroupHandle_t wifi_event_group;
 const int CONNECTED_BIT = BIT0;
@@ -145,7 +145,7 @@ static bool wifi_cmd_sta_join(const char* ssid, const char* pass)
     ESP_ERROR_CHECK( esp_wifi_connect() );
 
     xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, 0, 1, 5000/portTICK_RATE_MS);
-    
+
     return true;
 }
 
@@ -205,7 +205,7 @@ static bool wifi_cmd_ap_set(const char* ssid, const char* pass)
         },
     };
 
-    reconnect = false; 
+    reconnect = false;
     strncpy((char*) wifi_config.ap.ssid, ssid, sizeof(wifi_config.ap.ssid));
     if (pass) {
         if (strlen(pass) != 0 && strlen(pass) < 8) {
@@ -366,23 +366,10 @@ static int wifi_cmd_iperf(int argc, char** argv)
             cfg.interval, cfg.time);
 
     iperf_start(&cfg);
-    
+
     return 0;
 }
 
-static int restart(int argc, char** argv)
-{
-    ESP_LOGI(TAG, "Restarting");
-    esp_restart();
-}
-
-static int heap_size(int argc, char** argv)
-{
-    uint32_t heap_size = heap_caps_get_minimum_free_size(MALLOC_CAP_DEFAULT);
-    ESP_LOGI(TAG, "min heap size: %u", heap_size);
-    return 0;
-}
- 
 void register_wifi()
 {
     sta_args.ssid = arg_str1(NULL, NULL, "<ssid>", "SSID of AP");
@@ -435,14 +422,6 @@ void register_wifi()
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&query_cmd) );
 
-    const esp_console_cmd_t restart_cmd = {
-        .command = "restart",
-        .help = "Restart the program",
-        .hint = NULL,
-        .func = &restart,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&restart_cmd) );
-
     iperf_args.ip = arg_str0("c", "client", "<ip>", "run in client mode, connecting to <host>");
     iperf_args.server = arg_lit0("s", "server", "run in server mode");
     iperf_args.udp = arg_lit0("u", "udp", "use UDP rather than TCP");
@@ -460,12 +439,4 @@ void register_wifi()
     };
 
     ESP_ERROR_CHECK( esp_console_cmd_register(&iperf_cmd) );
-
-    const esp_console_cmd_t heap_cmd = {
-        .command = "heap",
-        .help = "get min free heap size druing test",
-        .hint = NULL,
-        .func = &heap_size,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&heap_cmd) );
 }
