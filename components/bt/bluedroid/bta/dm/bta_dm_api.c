@@ -2392,6 +2392,16 @@ extern void BTA_DmSetRandAddress(BD_ADDR rand_addr, tBTA_SET_RAND_ADDR_CBACK *p_
     }
 }
 
+void BTA_DmClearRandAddress(void)
+{
+    tBTA_DM_APT_CLEAR_ADDR *p_msg;
+    if ((p_msg = (tBTA_DM_APT_CLEAR_ADDR *) osi_malloc(sizeof(tBTA_DM_APT_CLEAR_ADDR))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_APT_CLEAR_ADDR));
+        p_msg->hdr.event = BTA_DM_API_CLEAR_RAND_ADDR_EVT;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
 /*******************************************************************************
 **
 ** Function         BTA_VendorInit

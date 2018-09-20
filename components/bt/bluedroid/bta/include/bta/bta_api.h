@@ -2121,6 +2121,7 @@ extern void BTA_DmBleScan(BOOLEAN start, UINT32 duration,
 extern void BTA_DmBleStopAdvertising(void);
 
 extern void BTA_DmSetRandAddress(BD_ADDR rand_addr, tBTA_SET_RAND_ADDR_CBACK *p_set_rand_addr_cback);
+extern void BTA_DmClearRandAddress(void);
 
 #endif
 
