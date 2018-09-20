@@ -24,7 +24,6 @@
 #include "tcpip_adapter.h"
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
-#include "esp_wifi.h"
 
 #include "eth_phy/phy_tlk110.h"
 

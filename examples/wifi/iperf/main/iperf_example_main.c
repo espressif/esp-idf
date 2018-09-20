@@ -39,17 +39,17 @@ static void initialize_console()
 
     /* Install UART driver for interrupt-driven reads and writes */
     ESP_ERROR_CHECK( uart_driver_install(CONFIG_CONSOLE_UART_NUM,
-            256, 0, 0, NULL, 0) );
+                                         256, 0, 0, NULL, 0) );
 
     /* Tell VFS to use UART driver */
     esp_vfs_dev_uart_use_driver(CONFIG_CONSOLE_UART_NUM);
 
     /* Initialize the console */
     esp_console_config_t console_config = {
-            .max_cmdline_args = 32,
-            .max_cmdline_length = 256,
+        .max_cmdline_args = 32,
+        .max_cmdline_length = 256,
 #if CONFIG_LOG_COLORS
-            .hint_color = atoi(LOG_COLOR_CYAN)
+        .hint_color = atoi(LOG_COLOR_CYAN)
 #endif
     };
     ESP_ERROR_CHECK( esp_console_init(&console_config) );
@@ -62,7 +62,7 @@ static void initialize_console()
 
     /* Tell linenoise where to get command completions and hints */
     linenoiseSetCompletionCallback(&esp_console_get_completion);
-    linenoiseSetHintsCallback((linenoiseHintsCallback*) &esp_console_get_hint);
+    linenoiseSetHintsCallback((linenoiseHintsCallback *) &esp_console_get_hint);
 
     /* Set command history size */
     linenoiseHistorySetMaxLen(100);
@@ -76,18 +76,19 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK( ret );
- 
+
     initialise_wifi();
     initialize_console();
 
     /* Register commands */
     esp_console_register_help_command();
+    register_system();
     register_wifi();
 
     /* Prompt to be printed before each line.
      * This can be customized, made dynamic, etc.
      */
-    const char* prompt = LOG_COLOR_I "esp32> " LOG_RESET_COLOR;
+    const char *prompt = LOG_COLOR_I "esp32> " LOG_RESET_COLOR;
 
     printf("\n ==================================================\n");
     printf(" |       Steps to test WiFi throughput            |\n");
@@ -116,11 +117,11 @@ void app_main(void)
     }
 
     /* Main loop */
-    while(true) {
+    while (true) {
         /* Get a line using linenoise.
          * The line is returned when ENTER is pressed.
          */
-        char* line = linenoise(prompt);
+        char *line = linenoise(prompt);
         if (line == NULL) { /* Ignore empty lines */
             continue;
         }
