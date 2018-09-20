@@ -17,7 +17,7 @@ externalproject_add(bootloader
     # TODO: support overriding the bootloader in COMPONENT_PATHS
     SOURCE_DIR "${IDF_PATH}/components/bootloader/subproject"
     BINARY_DIR "${bootloader_build_dir}"
-    CMAKE_ARGS -DSDKCONFIG=${SDKCONFIG} -DIDF_PATH=${IDF_PATH}
+    CMAKE_ARGS -DSDKCONFIG=${SDKCONFIG} -DIDF_PATH=${IDF_PATH} -DCMAKE_ASM_COMPILER=${CMAKE_ASM_COMPILER} -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
     INSTALL_COMMAND ""
     BUILD_ALWAYS 1  # no easy way around this...
     BUILD_BYPRODUCTS ${bootloader_binary_files}
