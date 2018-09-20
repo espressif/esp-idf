@@ -53,7 +53,7 @@ def get_breadcrumbs(node):
     node = node.parent
     while node.parent:
         if node.prompt:
-            result = [ node.prompt[0] ] + result
+            result = [ ":ref:`%s`" % get_link_anchor(node) ] + result
         node = node.parent
     return " > ".join(result)
 
@@ -63,12 +63,16 @@ def get_link_anchor(node):
     except AttributeError:
         assert(node_is_menu(node))  # only menus should have no item.name
 
-    result = "%s-%s" % (get_breadcrumbs(node), node.prompt[0])
-    result = re.sub(r"[^a-zA-z0-9]+", "-", result).lower()
+    # for menus, build a link anchor out of the parents
+    result = []
+    while node.parent:
+        if node.prompt:
+            result = [ re.sub(r"[^a-zA-z0-9]+", "-", node.prompt[0]) ] + result
+        node = node.parent
+    result = "-".join(result).lower()
     return result
 
 def get_heading_level(node):
-    # bit wasteful also
     result = INITIAL_HEADING_LEVEL
     node = node.parent
     while node.parent:
@@ -109,7 +113,7 @@ def write_menu_item(f, node):
 
     ## Heading
     if name:
-        title = name
+        title = 'CONFIG_%s' % name
     else:
         # if no symbol name, use the prompt as the heading
         title = node.prompt[0]
@@ -121,7 +125,7 @@ def write_menu_item(f, node):
 
     if name:
         f.write('%s%s\n\n' % (INDENT, node.prompt[0]))
-        f.write('%s:emphasis:`Found in: %s`\n\n' % (INDENT, get_breadcrumbs(node)))
+        f.write('%s:emphasis:`Found in:` %s\n\n' % (INDENT, get_breadcrumbs(node)))
 
     try:
         if node.help:
@@ -154,6 +158,7 @@ def write_menu_item(f, node):
             try:
                 if node_should_write(child):
                     if first:
+                        f.write("Contains:\n\n")
                         first = False
                     f.write('- :ref:`%s`\n' % get_link_anchor(child))
             except AttributeError:
