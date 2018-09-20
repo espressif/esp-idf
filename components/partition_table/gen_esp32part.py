@@ -355,7 +355,7 @@ class PartitionDefinition(object):
         if self.name in all_subtype_names and SUBTYPES.get(self.type, {}).get(self.name, "") != self.subtype:
             critical("WARNING: Partition has name '%s' which is a partition subtype, but this partition has non-matching type 0x%x and subtype 0x%x. Mistake in partition table?" % (self.name, self.type, self.subtype))
 
-    STRUCT_FORMAT = "<2sBBLL16sL"
+    STRUCT_FORMAT = b"<2sBBLL16sL"
 
     @classmethod
     def from_binary(cls, b):
