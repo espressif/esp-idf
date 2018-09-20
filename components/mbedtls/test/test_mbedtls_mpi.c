@@ -140,6 +140,11 @@ static void test_bignum_modexp(const char *z_str, const char *x_str, const char 
 
     mbedtls_mpi_write_string(&Z, 16, z_buf, sizeof(z_buf)-1, &z_buf_len);
     TEST_ASSERT_EQUAL_STRING_MESSAGE(z_str, z_buf, "mbedtls_mpi_exp_mod incorrect");
+    
+    mbedtls_mpi_free(&Z);
+    mbedtls_mpi_free(&X);
+    mbedtls_mpi_free(&Y);
+    mbedtls_mpi_free(&M);
 }
 
 TEST_CASE("test MPI modexp", "[bignum]")

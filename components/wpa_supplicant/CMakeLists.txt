@@ -6,6 +6,7 @@ set(COMPONENT_SRCS "port/os_xtensa.c"
                    "src/crypto/aes-unwrap.c"
                    "src/crypto/aes-wrap.c"
                    "src/crypto/bignum.c"
+                   "src/crypto/crypto_mbedtls.c"
                    "src/crypto/crypto_internal-cipher.c"
                    "src/crypto/crypto_internal-modexp.c"
                    "src/crypto/crypto_internal-rsa.c"
@@ -94,4 +95,5 @@ component_compile_definitions(
     USE_WPS_TASK
     ESPRESSIF_USE
     ESP32_WORKAROUND
+    CONFIG_ECC
     )
