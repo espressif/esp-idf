@@ -25,6 +25,9 @@ It will enable coverage info for all source files of your component. If you need
 `gcov_example.o: CFLAGS += --coverage`
 Replace `gcov_example.o` with path to your file.
 
+  For CMake-based build system, use `component_compile_options(--coverage)` or: `  set_source_files_properties(gcov_example.c PROPERTIES COMPILE_FLAGS --coverage`
+
+
 ### Hard-coded Dump Call
 
 This method requires `esp_gcov_dump` to be called from your application's code. Below are additional steps which should be performed after the generic ones to obtain coverage info via hard-coded call. Step 1 is already done for this example project.

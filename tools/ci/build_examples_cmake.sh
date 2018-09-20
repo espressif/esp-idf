@@ -88,8 +88,8 @@ else
     [ -z ${NUM_OF_JOBS} ] && die "NUM_OF_JOBS is bad"
 
     # count number of examples
-    NUM_OF_EXAMPLES=$(echo ${EXAMPLE_PATHS} | wc -l )
-    [ -z ${NUM_OF_EXAMPLES} ] && die "NUM_OF_EXAMPLES is bad"
+    NUM_OF_EXAMPLES=$( echo "${EXAMPLE_PATHS}" | wc -l )
+    [ ${NUM_OF_EXAMPLES} -lt 100 ] && die "NUM_OF_EXAMPLES is bad"
 
     # separate intervals
     #57 / 5 == 12
