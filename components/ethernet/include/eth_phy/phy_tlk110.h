@@ -50,7 +50,7 @@ void phy_tlk110_power_enable(bool);
 
 /** @brief Default TLK110 phy_init function.
  */
-void phy_tlk110_init(void);
+esp_err_t phy_tlk110_init(void);
 
 /** @brief Default TLK110 PHY configuration
  *

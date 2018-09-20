@@ -108,7 +108,7 @@ ethernet_low_level_output(struct netif *netif, struct pbuf *p)
 {
   struct pbuf *q = p;
   esp_interface_t eth_if = tcpip_adapter_get_esp_if(netif);
-  err_t ret;
+  esp_err_t ret;
 
   if (eth_if != ESP_IF_ETH) {
     LWIP_DEBUGF(NETIF_DEBUG, ("eth_if=%d netif=%p pbuf=%p len=%d\n", eth_if, netif, p, p->len));
@@ -130,8 +130,13 @@ ethernet_low_level_output(struct netif *netif, struct pbuf *p)
     ret = esp_eth_tx(q->payload, q->len);
     pbuf_free(q);
   }
-
-  return ret;
+  /* error occured when no memory or peripheral wrong state */
+  if (ret != ESP_OK)
+  {
+    return ERR_ABRT;
+  } else {
+    return ERR_OK;
+  }
 }
 
 /**
@@ -230,7 +235,11 @@ ethernetif_init(struct netif *netif)
    * The last argument should be replaced with your link speed, in units
    * of bits per second.
    */
-  NETIF_INIT_SNMP(netif, snmp_ifType_ethernet_csmacd, LINK_SPEED_OF_YOUR_NETIF_IN_BPS);
+  if(esp_eth_get_speed() == ETH_SPEED_MODE_100M){
+    NETIF_INIT_SNMP(netif, snmp_ifType_ethernet_csmacd, 100000000);
+  } else {
+    NETIF_INIT_SNMP(netif, snmp_ifType_ethernet_csmacd, 10000000);
+  }
 
   netif->name[0] = IFNAME0;
   netif->name[1] = IFNAME1;

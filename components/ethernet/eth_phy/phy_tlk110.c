@@ -64,7 +64,7 @@ void phy_tlk110_check_phy_init(void)
 
 eth_speed_mode_t phy_tlk110_get_speed_mode(void)
 {
-    if((esp_eth_smi_read(PHY_STATUS_REG) & SPEED_STATUS ) != SPEED_STATUS) {
+    if ((esp_eth_smi_read(PHY_STATUS_REG) & SPEED_STATUS ) != SPEED_STATUS) {
         ESP_LOGD(TAG, "phy_tlk110_get_speed_mode(100)");
         return ETH_SPEED_MODE_100M;
     } else {
@@ -75,7 +75,7 @@ eth_speed_mode_t phy_tlk110_get_speed_mode(void)
 
 eth_duplex_mode_t phy_tlk110_get_duplex_mode(void)
 {
-    if((esp_eth_smi_read(PHY_STATUS_REG) & DUPLEX_STATUS ) == DUPLEX_STATUS) {
+    if ((esp_eth_smi_read(PHY_STATUS_REG) & DUPLEX_STATUS ) == DUPLEX_STATUS) {
         ESP_LOGD(TAG, "phy_tlk110_get_duplex_mode(FULL)");
         return ETH_MODE_FULLDUPLEX;
     } else {
@@ -94,7 +94,7 @@ void phy_tlk110_power_enable(bool enable)
     }
 }
 
-void phy_tlk110_init(void)
+esp_err_t phy_tlk110_init(void)
 {
     ESP_LOGD(TAG, "phy_tlk110_init()");
     phy_tlk110_dump_registers();
@@ -102,11 +102,9 @@ void phy_tlk110_init(void)
     esp_eth_smi_write(PHY_RESET_CONTROL_REG, SOFTWARE_RESET);
 
     esp_err_t res1, res2;
-    do {
-        // Call esp_eth_smi_wait_value() with a timeout so it prints an error periodically
-        res1 = esp_eth_smi_wait_value(MII_PHY_IDENTIFIER_1_REG, TLK110_PHY_ID1, UINT16_MAX, 1000);
-        res2 = esp_eth_smi_wait_value(MII_PHY_IDENTIFIER_2_REG, TLK110_PHY_ID2, TLK110_PHY_ID2_MASK, 1000);
-    } while(res1 != ESP_OK || res2 != ESP_OK);
+    // Call esp_eth_smi_wait_value() with a timeout so it prints an error periodically
+    res1 = esp_eth_smi_wait_value(MII_PHY_IDENTIFIER_1_REG, TLK110_PHY_ID1, UINT16_MAX, 1000);
+    res2 = esp_eth_smi_wait_value(MII_PHY_IDENTIFIER_2_REG, TLK110_PHY_ID2, TLK110_PHY_ID2_MASK, 1000);
 
     esp_eth_smi_write(SW_STRAP_CONTROL_REG,
                       DEFAULT_STRAP_CONFIG | SW_STRAP_CONFIG_DONE);
@@ -115,6 +113,12 @@ void phy_tlk110_init(void)
 
     // TODO: only do this if config.flow_ctrl_enable == true
     phy_mii_enable_flow_ctrl();
+
+    if (res1 == ESP_OK && res2 == ESP_OK) {
+        return ESP_OK;
+    } else {
+        return ESP_ERR_TIMEOUT;
+    }
 }
 
 const eth_config_t phy_tlk110_default_ethernet_config = {
@@ -132,6 +136,7 @@ const eth_config_t phy_tlk110_default_ethernet_config = {
     .phy_get_duplex_mode = phy_tlk110_get_duplex_mode,
     .phy_get_partner_pause_enable = phy_mii_get_partner_pause_enable,
     .phy_power_enable = phy_tlk110_power_enable,
+    .reset_timeout_ms = 1000
 };
 
 void phy_tlk110_dump_registers()

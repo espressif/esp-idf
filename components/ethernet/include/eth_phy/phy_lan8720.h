@@ -51,7 +51,7 @@ void phy_lan8720_power_enable(bool);
 
 /** @brief Default LAN8720 phy_init function.
  */
-void phy_lan8720_init(void);
+esp_err_t phy_lan8720_init(void);
 
 /** @brief Default LAN8720 PHY configuration
  *
