@@ -839,6 +839,11 @@ static void btc_ble_set_rand_addr (BD_ADDR rand_addr, tBTA_SET_RAND_ADDR_CBACK *
     }
 }
 
+static void btc_ble_clear_rand_addr (void)
+{
+    BTA_DmClearRandAddress();
+}
+
 static void btc_ble_config_local_privacy(bool privacy_enable, tBTA_SET_LOCAL_PRIVACY_CBACK *set_local_privacy_cback)
 {
     BTA_DmBleConfigLocalPrivacy(privacy_enable, set_local_privacy_cback);
@@ -1041,6 +1046,10 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
         BD_ADDR bd_addr;
         memcpy(bd_addr, arg->set_rand_addr.rand_addr, sizeof(BD_ADDR));
         btc_ble_set_rand_addr(bd_addr, btc_set_rand_addr_callback);
+        break;
+    }
+    case BTC_GAP_BLE_ACT_CLEAR_RAND_ADDRESS: {
+        btc_ble_clear_rand_addr();
         break;
     }
     case BTC_GAP_BLE_ACT_CONFIG_LOCAL_PRIVACY:
