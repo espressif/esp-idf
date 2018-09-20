@@ -72,6 +72,7 @@ typedef struct blufi_frag_hdr blufi_frag_hdr_t;
 #define BLUFI_DATA_SEC_MODE_ENC_MASK    0x02  
 #define BLUFI_CTRL_SEC_MODE_CHECK_MASK  0x10  
 #define BLUFI_CTRL_SEC_MODE_ENC_MASK    0x20
+#define BLUFI_MAX_DATA_LEN              255
 
 // packet type
 #define BLUFI_TYPE_MASK         0x03
