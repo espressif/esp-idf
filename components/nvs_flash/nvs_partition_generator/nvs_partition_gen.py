@@ -17,6 +17,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from __future__ import division
+from __future__ import print_function
 import sys
 import argparse
 import binascii
@@ -90,7 +92,7 @@ class Page(object):
 
     def write_bitmaparray(self):
         bitnum = self.entry_num * 2
-        byte_idx = bitnum / 8 # Find byte index in the array
+        byte_idx = bitnum // 8 # Find byte index in the array
         bit_offset = bitnum & 7 # Find bit offset in given byte index
         mask = ~(1 << bit_offset)
         self.bitmap_array[byte_idx] &= mask
@@ -144,7 +146,7 @@ class Page(object):
 
             # Calculate no. of entries data chunk will require
             datachunk_rounded_size = (chunk_size + 31) & ~31
-            datachunk_entry_count = datachunk_rounded_size / 32
+            datachunk_entry_count = datachunk_rounded_size // 32
             datachunk_total_entry_count = datachunk_entry_count + 1 # +1 for the entry header
 
             # Set Span
@@ -224,7 +226,7 @@ class Page(object):
 
         # Calculate no. of entries data will require
         rounded_size = (datalen + 31) & ~31
-        data_entry_count = rounded_size / 32
+        data_entry_count = rounded_size // 32
         total_entry_count = data_entry_count + 1 # +1 for the entry header
 
         # Check if page is already full and new page is needed to be created right away
