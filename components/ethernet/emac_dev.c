@@ -14,7 +14,8 @@
 
 #include <stdio.h>
 #include <string.h>
-
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "rom/ets_sys.h"
 #include "rom/gpio.h"
 
@@ -31,8 +32,6 @@
 #include "sdkconfig.h"
 
 #include "emac_common.h"
-
-static const char *TAG = "emac";
 
 void emac_enable_flowctrl(void)
 {
@@ -70,18 +69,6 @@ void emac_disable_dma_tx(void)
 void emac_disable_dma_rx(void)
 {
     REG_CLR_BIT(EMAC_DMAOPERATION_MODE_REG, EMAC_START_STOP_RX);
-}
-
-void emac_reset(void)
-{
-    REG_SET_BIT(EMAC_DMABUSMODE_REG, EMAC_SW_RST);
-
-    while (REG_GET_BIT(EMAC_DMABUSMODE_REG, EMAC_SW_RST) == 1) {
-        //nothing to do ,if stop here,maybe emac have not clk input.
-        ESP_LOGI(TAG, "emac resetting ....");
-    }
-
-    ESP_LOGI(TAG, "emac reset done");
 }
 
 void emac_enable_clk(bool enable)

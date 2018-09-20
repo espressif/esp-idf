@@ -59,7 +59,7 @@ void phy_lan8720_check_phy_init(void)
 
 eth_speed_mode_t phy_lan8720_get_speed_mode(void)
 {
-    if(esp_eth_smi_read(PHY_SPECIAL_CONTROL_STATUS_REG) & SPEED_INDICATION_100T) {
+    if (esp_eth_smi_read(PHY_SPECIAL_CONTROL_STATUS_REG) & SPEED_INDICATION_100T) {
         ESP_LOGD(TAG, "phy_lan8720_get_speed_mode(100)");
         return ETH_SPEED_MODE_100M;
     } else {
@@ -70,7 +70,7 @@ eth_speed_mode_t phy_lan8720_get_speed_mode(void)
 
 eth_duplex_mode_t phy_lan8720_get_duplex_mode(void)
 {
-    if(esp_eth_smi_read(PHY_SPECIAL_CONTROL_STATUS_REG) & DUPLEX_INDICATION_FULL) {
+    if (esp_eth_smi_read(PHY_SPECIAL_CONTROL_STATUS_REG) & DUPLEX_INDICATION_FULL) {
         ESP_LOGD(TAG, "phy_lan8720_get_duplex_mode(FULL)");
         return ETH_MODE_FULLDUPLEX;
     } else {
@@ -88,7 +88,7 @@ void phy_lan8720_power_enable(bool enable)
     }
 }
 
-void phy_lan8720_init(void)
+esp_err_t phy_lan8720_init(void)
 {
     ESP_LOGD(TAG, "phy_lan8720_init()");
     phy_lan8720_dump_registers();
@@ -96,20 +96,23 @@ void phy_lan8720_init(void)
     esp_eth_smi_write(MII_BASIC_MODE_CONTROL_REG, MII_SOFTWARE_RESET);
 
     esp_err_t res1, res2;
-    do {
-        // Call esp_eth_smi_wait_value() with a timeout so it prints an error periodically
-        res1 = esp_eth_smi_wait_value(MII_PHY_IDENTIFIER_1_REG, LAN8720_PHY_ID1, UINT16_MAX, 1000);
-        res2 = esp_eth_smi_wait_value(MII_PHY_IDENTIFIER_2_REG, LAN8720_PHY_ID2, LAN8720_PHY_ID2_MASK, 1000);
-    } while(res1 != ESP_OK || res2 != ESP_OK);
+    // Call esp_eth_smi_wait_value() with a timeout so it prints an error periodically
+    res1 = esp_eth_smi_wait_value(MII_PHY_IDENTIFIER_1_REG, LAN8720_PHY_ID1, UINT16_MAX, 1000);
+    res2 = esp_eth_smi_wait_value(MII_PHY_IDENTIFIER_2_REG, LAN8720_PHY_ID2, LAN8720_PHY_ID2_MASK, 1000);
 
     esp_eth_smi_write(SW_STRAP_CONTROL_REG,
                       DEFAULT_STRAP_CONFIG | SW_STRAP_CONFIG_DONE);
-
 
     ets_delay_us(300);
 
     // TODO: only enable if config.flow_ctrl_enable == true
     phy_mii_enable_flow_ctrl();
+
+    if (res1 == ESP_OK && res2 == ESP_OK) {
+        return ESP_OK;
+    } else {
+        return ESP_ERR_TIMEOUT;
+    }
 }
 
 const eth_config_t phy_lan8720_default_ethernet_config = {
@@ -128,6 +131,7 @@ const eth_config_t phy_lan8720_default_ethernet_config = {
     .phy_get_speed_mode = phy_lan8720_get_speed_mode,
     .phy_get_duplex_mode = phy_lan8720_get_duplex_mode,
     .phy_get_partner_pause_enable = phy_mii_get_partner_pause_enable,
+    .reset_timeout_ms = 1000
 };
 
 void phy_lan8720_dump_registers()

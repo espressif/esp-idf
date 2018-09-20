@@ -83,7 +83,7 @@ typedef bool (*eth_phy_check_link_func)(void);
 typedef void (*eth_phy_check_init_func)(void);
 typedef eth_speed_mode_t (*eth_phy_get_speed_mode_func)(void);
 typedef eth_duplex_mode_t (*eth_phy_get_duplex_mode_func)(void);
-typedef void (*eth_phy_func)(void);
+typedef esp_err_t (*eth_phy_func)(void);
 typedef esp_err_t (*eth_tcpip_input_func)(void *buffer, uint16_t len, void *eb);
 typedef void (*eth_gpio_config_func)(void);
 typedef bool (*eth_phy_get_partner_pause_enable_func)(void);
@@ -107,6 +107,7 @@ typedef struct {
     bool flow_ctrl_enable;                      /*!< flag of flow ctrl enable */
     eth_phy_get_partner_pause_enable_func  phy_get_partner_pause_enable; /*!< get partner pause enable */
     eth_phy_power_enable_func  phy_power_enable;  /*!< enable or disable phy power */
+    uint32_t reset_timeout_ms;                  /*!< timeout value for reset emac */
 
 } eth_config_t;
 
@@ -272,6 +273,14 @@ void esp_eth_free_rx_buf(void *buf);
  *    - ESP_ERR_INVALID_MAC: invalid mac address
  */
 esp_err_t esp_eth_set_mac(const uint8_t mac[6]);
+
+/**
+ * @brief Get Ethernet link speed
+ *
+ * @return eth_speed_mode_t ETH_SPEED_MODE_10M when link speed is 10Mbps
+ *                          ETH_SPEED_MODE_100M when link speed is 100Mbps
+ */
+eth_speed_mode_t esp_eth_get_speed(void);
 
 #ifdef __cplusplus
 }
