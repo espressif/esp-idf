@@ -1629,6 +1629,31 @@ UT_012_05:
     - UT_T1_1
     - 8Mpsram
 
+UT_013_01:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - Example_SPI_Multi_device
+
+UT_013_02:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - Example_SPI_Multi_device
+
+UT_013_03:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - Example_SPI_Multi_device
+
+UT_013_04:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - Example_SPI_Multi_device
+    - psram
+
 UT_014_01:
   <<: *unit_test_template
   tags:
