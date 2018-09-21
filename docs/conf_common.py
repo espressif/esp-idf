@@ -60,8 +60,14 @@ call_with_python('../gen-dxd.py')
 print("Generating kconfig.inc from kconfig contents")
 kconfig_inc_path = '{}/inc/kconfig.inc'.format(builddir)
 temp_sdkconfig_path = '{}/sdkconfig.tmp'.format(builddir)
-kconfigs = subprocess.check_output(["find", "../../components", "-name", "Kconfig"]).decode()
-kconfig_projbuilds = subprocess.check_output(["find", "../../components", "-name", "Kconfig.projbuild"]).decode()
+# note: trimming "examples" dir from KConfig/KConfig.projbuild as MQTT submodule
+# has its own examples in the submodule.
+kconfigs = subprocess.check_output(["find", "../../components",
+                                    "-name", "examples", "-prune",
+                                    "-o", "-name", "Kconfig", "-print"]).decode()
+kconfig_projbuilds = subprocess.check_output(["find", "../../components",
+                                              "-name", "examples", "-prune",
+                                              "-o", "-name", "Kconfig.projbuild", "-print"]).decode()
 confgen_args = [sys.executable,
                 "../../tools/kconfig_new/confgen.py",
                 "--kconfig", "../../Kconfig",
