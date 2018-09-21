@@ -158,7 +158,7 @@ void IRAM_ATTR call_start_cpu0()
     esp_spiram_init_cache();
     if (esp_spiram_init() != ESP_OK) {
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
-        ESP_EARLY_LOGE(TAG, "Failed to init external RAM and place some block started symbol in it");
+        ESP_EARLY_LOGE(TAG, "Failed to init external RAM, needed for external .bss segment");
         abort();
 #endif
 

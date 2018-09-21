@@ -41,7 +41,7 @@ config SPIRAM_BOOT_INIT
 config SPIRAM_IGNORE_NOTFOUND
     bool "Ignore PSRAM when not found"
     default "n"
-    depends on SPIRAM_BOOT_INIT
+    depends on SPIRAM_BOOT_INIT && !SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
     help
         Normally, if psram initialization is enabled during compile time but not found at runtime, it
         is seen as an error making the ESP32 panic. If this is enabled, the ESP32 will keep on
@@ -178,7 +178,8 @@ config SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
     depends on SPIRAM_SUPPORT
     help
         If enabled the option,and add EXT_RAM_ATTR defined your variable,then your variable will be placed
-        in PSRAM instead of internal memory. 
+        in PSRAM instead of internal memory, and placed most of variables of lwip,net802.11,pp,bluedroid library
+        to external memory defaultly. 
 
 endmenu
 

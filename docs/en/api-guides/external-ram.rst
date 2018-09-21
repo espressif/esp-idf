@@ -46,6 +46,9 @@ ESP-IDF fully supports integrating external memory use into your applications. E
    ``heap_caps_malloc(size, MALLOC_CAP_SPIRAM)``. This memory can be used and subsequently freed using a normal ``free()`` call.
  * Initialize RAM, add it to the capability allocator and add memory to the pool of RAM that can be returned by ``malloc()``. This allows
    any application to use the external RAM without having to rewrite the code to use ``heap_caps_malloc``.
+ * Initialize RAM, use a region start from 0x3F800000 for storing zero initialized data(BSS segment) of lwip,net802.11,pp,bluedroid library
+   by enabling :ref: `CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` in menuconfig,this way can save some internal memory，because the BSS segment 
+   originally stored in internal memory，and the rest of external RAM can be add the capability allocator and add memory to the pool of RAM as above way 
 
 All these options can be selected from the menuconfig menu.
 
@@ -67,7 +70,11 @@ The use of external RAM has a few restrictions:
    for stack and task TCBs and xTaskCreateStatic-type functions will check if the buffers passed are internal. However, for tasks not calling
    on code in ROM in any way, directly or indirectly, the menuconfig option :envvar:`CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY` will eliminate
    the check in xTaskCreateStatic, allowing task stack in external RAM. Using this is not advised, however.
-
+ * External RAM initialized failed can not be ignored if enabled :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`; because of this, some BSS segment
+   can not be placed into external memory if PSRAM can't work normally and can not be moved to internal memory at runtime because the address of 
+   them is defined by linkfile, the :ref:`CONFIG_SPIRAM_IGNORE_NOTFOUND` can't handle this situation,if you want to enable :ref:
+   `CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` the :ref:`CONFIG_SPIRAM_IGNORE_NOTFOUND` will be disabled, and if initialize SPIRAM failed,the system 
+   will invoke abort.
 
 Because there are a fair few situations that have a specific need for internal memory, but it is also possible to use malloc() to exhaust
 internal memory, there is a pool reserved specifically for requests that cannot be resolved from external memory; allocating task
