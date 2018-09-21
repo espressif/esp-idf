@@ -29,21 +29,27 @@ To compile with ESP-IDF you need to get the following packages:
 Toolchain Setup
 ===============
 
+.. include:: /_build/inc/download-links.inc
+
 ESP32 toolchain for Linux is available for download from Espressif website:
 
 - for 64-bit Linux:
 
-  https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz
+  |download_link_linux64|
 
 - for 32-bit Linux:
 
-  https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-80-g6c4433a-5.2.0.tar.gz
+  |download_link_linux32|
 
-1.  Download this file, then extract it in ``~/esp`` directory::
+1.  Download this file, then extract it in ``~/esp`` directory:
 
-        mkdir -p ~/esp
-        cd ~/esp
-        tar -xzf ~/Downloads/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz
+    - for 64-bit Linux:
+
+      .. include:: /_build/inc/unpack-code-linux64.inc
+
+    - for 32-bit Linux:
+
+      .. include:: /_build/inc/unpack-code-linux32.inc
 
 .. _setup-linux-toolchain-add-it-to-path:
 

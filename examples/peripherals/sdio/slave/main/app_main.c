@@ -130,7 +130,7 @@ static esp_err_t task_write_reg()
         if (i >= 28 && i <= 31) continue;
         sdio_slave_write_reg(i, read+3*i);
     }
-    uint8_t reg[64];
+    uint8_t reg[64] = {0};
     for (int i = 0; i < 64; i++) {
         //skip interrupt regs.
         if (i >= 28 && i <= 31) continue;

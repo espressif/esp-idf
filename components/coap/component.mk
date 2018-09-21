@@ -12,5 +12,7 @@ COMPONENT_SUBMODULES += libcoap
 
 libcoap/src/debug.o: CFLAGS += -Wno-write-strings
 libcoap/src/pdu.o: CFLAGS += -Wno-write-strings
+ifeq ($(GCC_NOT_5_2_0), 1)
 # Temporary suppress "fallthrough" warnings until they are fixed in libcoap repo
 libcoap/src/option.o: CFLAGS += -Wno-implicit-fallthrough
+endif

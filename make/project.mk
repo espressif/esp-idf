@@ -277,6 +277,22 @@ COMMON_WARNING_FLAGS = -Wall -Werror=all \
 	-Wextra \
 	-Wno-unused-parameter -Wno-sign-compare
 
+ifdef CONFIG_DISABLE_GCC8_WARNINGS
+COMMON_WARNING_FLAGS += -Wno-parentheses \
+	-Wno-sizeof-pointer-memaccess \
+	-Wno-clobbered \
+	-Wno-format-overflow \
+	-Wno-stringop-truncation \
+	-Wno-misleading-indentation \
+	-Wno-cast-function-type \
+	-Wno-implicit-fallthrough \
+	-Wno-unused-const-variable \
+	-Wno-switch-unreachable \
+	-Wno-format-truncation \
+	-Wno-memset-elt-size \
+	-Wno-int-in-bool-context
+endif
+
 ifdef CONFIG_WARN_WRITE_STRINGS
 COMMON_WARNING_FLAGS += -Wwrite-strings
 endif #CONFIG_WARN_WRITE_STRINGS
@@ -375,6 +391,14 @@ AR := $(call dequote,$(CONFIG_TOOLPREFIX))ar
 OBJCOPY := $(call dequote,$(CONFIG_TOOLPREFIX))objcopy
 SIZE := $(call dequote,$(CONFIG_TOOLPREFIX))size
 export CC CXX LD AR OBJCOPY SIZE
+
+COMPILER_VERSION_STR := $(shell $(CC) -dumpversion)
+COMPILER_VERSION_NUM := $(subst .,,$(COMPILER_VERSION_STR))
+GCC_NOT_5_2_0 := $(shell expr $(COMPILER_VERSION_STR) != "5.2.0")
+export COMPILER_VERSION_STR COMPILER_VERSION_NUM GCC_NOT_5_2_0
+
+CPPFLAGS += -DGCC_NOT_5_2_0=$(GCC_NOT_5_2_0)
+export CPPFLAGS
 
 PYTHON=$(call dequote,$(CONFIG_PYTHON))
 
@@ -562,28 +586,41 @@ print_flash_cmd: partition_table_get_info blank_ota_data
 
 # Check toolchain version using the output of xtensa-esp32-elf-gcc --version command.
 # The output normally looks as follows
-#     xtensa-esp32-elf-gcc (crosstool-NG crosstool-ng-1.22.0-59-ga194053) 4.8.5
-# The part in brackets is extracted into TOOLCHAIN_COMMIT_DESC variable,
-# the part after the brackets is extracted into TOOLCHAIN_GCC_VER.
+#     xtensa-esp32-elf-gcc (crosstool-NG crosstool-ng-1.22.0-80-g6c4433a) 5.2.0
+# The part in brackets is extracted into TOOLCHAIN_COMMIT_DESC variable
 ifdef CONFIG_TOOLPREFIX
 ifndef MAKE_RESTARTS
-TOOLCHAIN_COMMIT_DESC := $(shell $(CC) --version | sed -E -n 's|.*crosstool-ng-([0-9]+).([0-9]+).([0-9]+)-([0-9]+)-g([0-9a-f]{7}).*|\1.\2.\3-\4-g\5|gp')
-TOOLCHAIN_GCC_VER := $(shell $(CC) --version | sed -E -n 's|xtensa-esp32-elf-gcc.*\ \(.*\)\ (.*)|\1|gp')
+
+TOOLCHAIN_HEADER := $(shell $(CC) --version | head -1)
+TOOLCHAIN_PATH := $(shell which $(CC))
+TOOLCHAIN_COMMIT_DESC := $(shell $(CC) --version | sed -E -n 's|.*\(crosstool-NG (.*)\).*|\1|gp')
+TOOLCHAIN_GCC_VER := $(COMPILER_VERSION_STR)
 
 # Officially supported version(s)
-SUPPORTED_TOOLCHAIN_COMMIT_DESC := 1.22.0-80-g6c4433a
-SUPPORTED_TOOLCHAIN_GCC_VERSIONS := 5.2.0
+include $(IDF_PATH)/tools/toolchain_versions.mk
+
+ifndef IS_BOOTLOADER_BUILD
+$(info Toolchain path: $(TOOLCHAIN_PATH))
+endif
 
 ifdef TOOLCHAIN_COMMIT_DESC
 ifneq ($(TOOLCHAIN_COMMIT_DESC), $(SUPPORTED_TOOLCHAIN_COMMIT_DESC))
 $(info WARNING: Toolchain version is not supported: $(TOOLCHAIN_COMMIT_DESC))
 $(info Expected to see version: $(SUPPORTED_TOOLCHAIN_COMMIT_DESC))
 $(info Please check ESP-IDF setup instructions and update the toolchain, or proceed at your own risk.)
+else
+ifndef IS_BOOTLOADER_BUILD
+$(info Toolchain version: $(TOOLCHAIN_COMMIT_DESC))
+endif
 endif
 ifeq (,$(findstring $(TOOLCHAIN_GCC_VER), $(SUPPORTED_TOOLCHAIN_GCC_VERSIONS)))
 $(info WARNING: Compiler version is not supported: $(TOOLCHAIN_GCC_VER))
 $(info Expected to see version(s): $(SUPPORTED_TOOLCHAIN_GCC_VERSIONS))
 $(info Please check ESP-IDF setup instructions and update the toolchain, or proceed at your own risk.)
+else
+ifndef IS_BOOTLOADER_BUILD
+$(info Compiler version: $(TOOLCHAIN_GCC_VER))
+endif
 endif
 else
 $(info WARNING: Failed to find Xtensa toolchain, may need to alter PATH or set one in the configuration menu)

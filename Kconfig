@@ -176,6 +176,13 @@ config WARN_WRITE_STRINGS
         For C++, this warns about the deprecated conversion from string
         literals to ``char *``.
 
+config DISABLE_GCC8_WARNINGS
+    bool "Disable new warnings introduced in GCC 6 - 8"
+    default "n"
+    help
+        Enable this option if using GCC 6 or newer, and wanting to disable warnings which don't appear with GCC 5.
+
+
 endmenu # Compiler Options
 
 menu "Component config"

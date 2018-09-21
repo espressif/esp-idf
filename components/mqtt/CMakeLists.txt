@@ -9,3 +9,11 @@ set(COMPONENT_SRCS "esp-mqtt/mqtt_client.c"
 set(COMPONENT_REQUIRES lwip nghttp mbedtls tcp_transport)
 
 register_component()
+
+if(GCC_NOT_5_2_0)
+    # Temporary suppress "format-overflow" warning until we are fixed in esp-mqtt repo
+    set_source_files_properties(
+        esp-mqtt/lib/transport_ws.c
+        PROPERTIES COMPILE_FLAGS
+        -Wno-format-overflow)
+endif()
