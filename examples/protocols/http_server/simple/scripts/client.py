@@ -24,7 +24,7 @@ import argparse
 
 def verbose_print(verbosity, *args):
     if (verbosity):
-        print(''.join(str(elems) for elems in args))
+        Utility.console_log(''.join(str(elems) for elems in args))
 
 def test_get_handler(ip, port, verbosity = False):
     verbose_print(verbosity, "========  GET HANDLER TEST =============")
@@ -150,8 +150,8 @@ if __name__ == '__main__':
     msg  = args['msg']
 
     if not test_get_handler (ip, port, True):
-        print("Failed!")
+        Utility.console_log("Failed!")
     if not test_post_handler(ip, port, msg, True):
-        print("Failed!")
+        Utility.console_log("Failed!")
     if not test_put_handler (ip, port, True):
-        print("Failed!")
+        Utility.console_log("Failed!")
