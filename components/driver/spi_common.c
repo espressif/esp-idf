@@ -31,6 +31,7 @@
 #include "driver/periph_ctrl.h"
 #include "esp_heap_caps.h"
 #include "driver/spi_common.h"
+#include "stdatomic.h"
 
 static const char *SPI_TAG = "spi";
 
@@ -50,7 +51,7 @@ typedef struct spi_device_t spi_device_t;
 #define DMA_CHANNEL_ENABLED(dma_chan)    (BIT(dma_chan-1))
 
 //Periph 1 is 'claimed' by SPI flash code.
-static bool spi_periph_claimed[3] = {true, false, false};
+static atomic_bool spi_periph_claimed[3] = { ATOMIC_VAR_INIT(true), ATOMIC_VAR_INIT(false), ATOMIC_VAR_INIT(false)};
 static uint8_t spi_dma_chan_enabled = 0;
 static portMUX_TYPE spi_dma_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
@@ -58,7 +59,8 @@ static portMUX_TYPE spi_dma_spinlock = portMUX_INITIALIZER_UNLOCKED;
 //Returns true if this peripheral is successfully claimed, false if otherwise.
 bool spicommon_periph_claim(spi_host_device_t host)
 {
-    bool ret = __sync_bool_compare_and_swap(&spi_periph_claimed[host], false, true);
+    bool false_var = false;
+    bool ret = atomic_compare_exchange_strong(&spi_periph_claimed[host], &false_var, true);
     if (ret) periph_module_enable(spi_periph_signal[host].module);
     return ret;
 }
@@ -66,7 +68,8 @@ bool spicommon_periph_claim(spi_host_device_t host)
 //Returns true if this peripheral is successfully freed, false if otherwise.
 bool spicommon_periph_free(spi_host_device_t host)
 {
-    bool ret = __sync_bool_compare_and_swap(&spi_periph_claimed[host], true, false);
+    bool true_var = true;
+    bool ret = atomic_compare_exchange_strong(&spi_periph_claimed[host], &true_var, false);
     if (ret) periph_module_disable(spi_periph_signal[host].module);
     return ret;
 }

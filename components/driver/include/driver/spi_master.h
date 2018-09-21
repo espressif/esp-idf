@@ -71,9 +71,9 @@ typedef struct {
     uint8_t cs_ena_pretrans;        ///< Amount of SPI bit-cycles the cs should be activated before the transmission (0-16). This only works on half-duplex transactions.
     uint8_t cs_ena_posttrans;       ///< Amount of SPI bit-cycles the cs should stay active after the transmission (0-16)
     int clock_speed_hz;             ///< Clock speed, divisors of 80MHz, in Hz. See ``SPI_MASTER_FREQ_*``.
-    int input_delay_ns;             /**< Maximum data valid time of slave. The time required between SCLK and MISO 
-        valid, including the possible clock delay from slave to master. The driver uses this value to give an extra 
-        delay before the MISO is ready on the line. Leave at 0 unless you know you need a delay. For better timing 
+    int input_delay_ns;             /**< Maximum data valid time of slave. The time required between SCLK and MISO
+        valid, including the possible clock delay from slave to master. The driver uses this value to give an extra
+        delay before the MISO is ready on the line. Leave at 0 unless you know you need a delay. For better timing
         performance at high frequency (over 8MHz), it's suggest to have the right value.
         */
     int spics_io_num;               ///< CS GPIO pin for this device, or -1 if not used
@@ -206,7 +206,10 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle);
 
 
 /**
- * @brief Queue a SPI transaction for execution
+ * @brief Queue a SPI transaction for interrupt transaction execution. Get the result by ``spi_device_get_trans_result``.
+ *
+ * @note Normally a device cannot start (queue) polling and interrupt
+ *      transactions simultaneously.
  *
  * @param handle Device handle obtained using spi_host_add_dev
  * @param trans_desc Description of transaction to execute
@@ -216,16 +219,17 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle);
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_ERR_TIMEOUT       if there was no room in the queue before ticks_to_wait expired
  *         - ESP_ERR_NO_MEM        if allocating DMA-capable temporary buffer failed
+ *         - ESP_ERR_INVALID_STATE if previous transactions are not finished
  *         - ESP_OK                on success
  */
 esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *trans_desc, TickType_t ticks_to_wait);
 
 
 /**
- * @brief Get the result of a SPI transaction queued earlier
+ * @brief Get the result of a SPI transaction queued earlier by ``spi_device_queue_trans``.
  *
- * This routine will wait until a transaction to the given device (queued earlier with
- * spi_device_queue_trans) has succesfully completed. It will then return the description of the
+ * This routine will wait until a transaction to the given device
+ * succesfully completed. It will then return the description of the
  * completed transaction so software can inspect the result and e.g. free the memory or
  * re-use the buffers.
  *
@@ -247,10 +251,11 @@ esp_err_t spi_device_get_trans_result(spi_device_handle_t handle, spi_transactio
  * @brief Send a SPI transaction, wait for it to complete, and return the result
  *
  * This function is the equivalent of calling spi_device_queue_trans() followed by spi_device_get_trans_result().
- * Do not use this when there is still a transaction separately queued from spi_device_queue_trans() that hasn't been finalized
- * using spi_device_get_trans_result().
+ * Do not use this when there is still a transaction separately queued (started) from spi_device_queue_trans() or polling_start/transmit that hasn't been finalized.
  *
  * @note This function is not thread safe when multiple tasks access the same SPI device.
+ *      Normally a device cannot start (queue) polling and interrupt
+ *      transactions simutanuously.
  *
  * @param handle Device handle obtained using spi_host_add_dev
  * @param trans_desc Description of transaction to execute
@@ -259,6 +264,90 @@ esp_err_t spi_device_get_trans_result(spi_device_handle_t handle, spi_transactio
  *         - ESP_OK                on success
  */
 esp_err_t spi_device_transmit(spi_device_handle_t handle, spi_transaction_t *trans_desc);
+
+
+/**
+ * @brief Immediately start a polling transaction.
+ *
+ * @note Normally a device cannot start (queue) polling and interrupt
+ *      transactions simutanuously. Moreover, a device cannot start a new polling
+ *      transaction if another polling transaction is not finished.
+ *
+ * @param handle Device handle obtained using spi_host_add_dev
+ * @param trans_desc Description of transaction to execute
+ * @param ticks_to_wait Ticks to wait until there's room in the queue;
+ *              currently only portMAX_DELAY is supported.
+ *
+ * @return
+ *         - ESP_ERR_INVALID_ARG   if parameter is invalid
+ *         - ESP_ERR_TIMEOUT       if the device cannot get control of the bus before ``ticks_to_wait`` expired
+ *         - ESP_ERR_NO_MEM        if allocating DMA-capable temporary buffer failed
+ *         - ESP_ERR_INVALID_STATE if previous transactions are not finished
+ *         - ESP_OK                on success
+ */
+esp_err_t spi_device_polling_start(spi_device_handle_t handle, spi_transaction_t *trans_desc, TickType_t ticks_to_wait);
+
+
+/**
+ * @brief Poll until the polling transaction ends.
+ *
+ * This routine will not return until the transaction to the given device has
+ * succesfully completed. The task is not blocked, but actively busy-spins for
+ * the transaction to be completed.
+ *
+ * @param handle Device handle obtained using spi_host_add_dev
+ * @param ticks_to_wait Ticks to wait until there's a returned item; use portMAX_DELAY to never time
+                        out.
+ * @return
+ *         - ESP_ERR_INVALID_ARG   if parameter is invalid
+ *         - ESP_ERR_TIMEOUT       if the transaction cannot finish before ticks_to_wait expired
+ *         - ESP_OK                on success
+ */
+esp_err_t spi_device_polling_end(spi_device_handle_t handle, TickType_t ticks_to_wait);
+
+
+/**
+ * @brief Send a polling transaction, wait for it to complete, and return the result
+ *
+ * This function is the equivalent of calling spi_device_polling_start() followed by spi_device_polling_end().
+ * Do not use this when there is still a transaction that hasn't been finalized.
+ *
+ * @note This function is not thread safe when multiple tasks access the same SPI device.
+ *      Normally a device cannot start (queue) polling and interrupt
+ *      transactions simutanuously.
+ *
+ * @param handle Device handle obtained using spi_host_add_dev
+ * @param trans_desc Description of transaction to execute
+ * @return
+ *         - ESP_ERR_INVALID_ARG   if parameter is invalid
+ *         - ESP_OK                on success
+ */
+esp_err_t spi_device_polling_transmit(spi_device_handle_t handle, spi_transaction_t *trans_desc);
+
+
+/**
+ * @brief Occupy the SPI bus for a device to do continuous transactions.
+ *
+ * Transactions to all other devices will be put off until ``spi_device_release_bus`` is called.
+ *
+ * @note The function will wait until all the existing transactions have been sent.
+ *
+ * @param device The device to occupy the bus.
+ * @param wait Time to wait before the the bus is occupied by the device. Currently MUST set to portMAX_DELAY.
+ *
+ * @return
+ *      - ESP_ERR_INVALID_ARG : ``wait`` is not set to portMAX_DELAY.
+ *      - ESP_OK : Success.
+ */
+esp_err_t spi_device_acquire_bus(spi_device_handle_t device, TickType_t wait);
+
+/**
+ * @brief Release the SPI bus occupied by the device. All other devices can start sending transactions.
+ *
+ * @param dev The device to release the bus.
+ */
+void spi_device_release_bus(spi_device_handle_t dev);
+
 
 /**
  * @brief Calculate the working frequency that is most close to desired frequency, and also the register value.
@@ -282,6 +371,7 @@ int spi_cal_clock(int fapb, int hz, int duty_cycle, uint32_t* reg_o);
   *         - -1 If too many cycles remaining, suggest to compensate half a clock.
   *         - 0 If no remaining cycles or dummy bits are not used.
   *         - positive value: cycles suggest to compensate.
+  *
   * @note If **dummy_o* is not zero, it means dummy bits should be applied in half duplex mode, and full duplex mode may not work.
   */
 void spi_get_timing(bool gpio_is_used, int input_delay_ns, int eff_clk, int* dummy_o, int* cycles_remain_o);
@@ -290,6 +380,7 @@ void spi_get_timing(bool gpio_is_used, int input_delay_ns, int eff_clk, int* dum
   * @brief Get the frequency limit of current configurations.
   *         SPI master working at this limit is OK, while above the limit, full duplex mode and DMA will not work,
   *         and dummy bits will be aplied in the half duplex mode.
+  *
   * @param gpio_is_used True if using GPIO matrix, or False if native pins are used.
   * @param input_delay_ns Input delay from SCLK launch edge to MISO data valid.
   * @return Frequency limit of current configurations.
