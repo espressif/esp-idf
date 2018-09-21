@@ -158,3 +158,6 @@ Overall coverage rate:
   lines......: 90.0% (18 of 20 lines)
   functions..: 100.0% (3 of 3 functions)
 ```
+
+NOTE: Since `lcov` tool is not part of GCC bundle it can happen that format of GCOV binary data has been changed and your local version of `lcov` fails to understand it.
+So it always better to use the latest `lcov` version from [LCOV repo](https://github.com/linux-test-project/lcov).

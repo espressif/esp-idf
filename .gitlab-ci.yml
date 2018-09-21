@@ -32,6 +32,9 @@ variables:
   APPLY_BOT_FILTER_SCRIPT: "$CI_PROJECT_DIR/tools/ci/apply_bot_filter.py"
   CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
 
+# Docker images
+  BOT_DOCKER_IMAGE_TAG: ":latest"
+
 # When 'fetch' strategy is used, Gitlab removes untracked files before checking out
 # new revision. However if the new revision doesn't include some of the submodules
 # which were present in the old revision, such submodule directories would not be
@@ -644,7 +647,7 @@ check_submodule_sync:
 assign_test:
   tags:
     - assign_test
-  image: $CI_DOCKER_REGISTRY/ubuntu-test-env
+  image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
   stage: assign_test
   # gitlab ci do not support match job with RegEx or wildcard now in dependencies.
   # we have a lot build example jobs. now we don't use dependencies, just download all artificats of build stage.
@@ -810,6 +813,7 @@ example_test_001_01:
 
 example_test_002_01:
   <<: *example_test_template
+  image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - ESP32
     - Example_ShieldBox

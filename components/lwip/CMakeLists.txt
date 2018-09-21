@@ -126,3 +126,16 @@ register_component()
 
 # lots of LWIP source files evaluate macros that check address of stack variables
 component_compile_options(-Wno-address)
+
+if(GCC_NOT_5_2_0)
+    set_source_files_properties(
+        lwip/src/netif/ppp/ppp.c
+        PROPERTIES COMPILE_FLAGS
+        -Wno-uninitialized
+        )
+    set_source_files_properties(
+        lwip/src/netif/ppp/pppos.c
+        PROPERTIES COMPILE_FLAGS
+        -Wno-implicit-fallthrough
+        )
+endif()
