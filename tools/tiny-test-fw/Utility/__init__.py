@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 
 
@@ -17,7 +18,7 @@ _COLOR_CODES = {
 }
 
 
-def console_log(data, color="white"):
+def console_log(data, color="white", end="\n"):
     """
     log data to console.
     (if not flush console log, Gitlab-CI won't update logs during job execution)
@@ -28,7 +29,7 @@ def console_log(data, color="white"):
     if color not in _COLOR_CODES:
         color = "white"
     color_codes = _COLOR_CODES[color]
-    print(color_codes + data)
+    print(color_codes + data, end=end)
     if color not in ["white", "W"]:
         # reset color to white for later logs
         print(_COLOR_CODES["white"] + "\r")
