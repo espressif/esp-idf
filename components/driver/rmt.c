@@ -803,12 +803,15 @@ esp_err_t rmt_write_items(rmt_channel_t channel, const rmt_item32_t* rmt_item, i
     xSemaphoreTake(p_rmt->tx_sem, portMAX_DELAY);
     // fill the memory block first
     if(item_num >= item_block_len) {
+        esp_err_t err = 0;
         rmt_fill_memory(channel, rmt_item, item_block_len, 0);
-        RMT.tx_lim_ch[channel].limit = item_sub_len;
-        RMT.apb_conf.mem_tx_wrap_en = 1;
         len_rem -= item_block_len;
-        RMT.conf_ch[channel].conf1.tx_conti_mode = 0;
-        rmt_set_tx_thr_intr_en(channel, 1, item_sub_len);
+        if (!(err=rmt_set_tx_loop_mode(channel, false)))
+            return err;
+        // As a side effect - rmt_set_tx_wrap_en and interrupt 
+        // enable are also set to true.
+        if (!(err=rmt_set_tx_thr_intr_en(channel, 1, item_sub_len)))
+            return err;
         p_rmt->tx_data = rmt_item + item_block_len;
         p_rmt->tx_len_rem = len_rem;
         p_rmt->tx_offset = 0;
