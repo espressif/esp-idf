@@ -296,7 +296,7 @@ esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, size_t buf_len)
     }
 
     struct httpd_req_aux *ra = r->aux;
-    const char *httpd_chunked_hdr_str = "HTTP/1.1 %s\r\nContent-Type: %s\r\nContent-Length: 0\r\nTransfer-Encoding: chunked\r\n";
+    const char *httpd_chunked_hdr_str = "HTTP/1.1 %s\r\nContent-Type: %s\r\nTransfer-Encoding: chunked\r\n";
     const char *colon_separator = ": ";
     const char *cr_lf_seperator = "\r\n";
 
