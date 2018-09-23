@@ -132,6 +132,9 @@ nwdiag_fontpath = '../_static/DejaVuSans.ttf'
 rackdiag_fontpath = '../_static/DejaVuSans.ttf'
 packetdiag_fontpath = '../_static/DejaVuSans.ttf'
 
+# Enabling this fixes cropping of blockdiag edge labels
+seqdiag_antialias = True
+
 # Breathe extension variables
 
 # Doxygen regenerates files in 'xml/' directory every time,
