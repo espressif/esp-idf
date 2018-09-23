@@ -1059,6 +1059,25 @@ config ESP32_WIFI_TASK_PINNED_TO_CORE_1
     bool "Core 1"
 endchoice
 
+config ESP32_WIFI_SOFTAP_BEACON_MAX_LEN
+    int "Max length of WiFi SoftAP Beacon"
+    range 752 1256
+    default 752
+    help
+        ESP-MESH utilizes beacon frames to detect and resolve root node conflicts (see documentation). However the default
+        length of a beacon frame can simultaneously hold only five root node identifier structures, meaning that a root node
+        conflict of up to five nodes can be detected at one time. In the occurence of more root nodes conflict involving more
+        than five root nodes, the conflict resolution process will detect five of the root nodes, resolve the conflict, and 
+        re-detect more root nodes. This process will repeat until all root node conflicts are resolved. However this process
+        can generally take a very long time.
+        
+        To counter this situation, the beacon frame length can be increased such that more root nodes can be detected simultaneously.
+        Each additional root node will require 36 bytes and should be added ontop of the default beacon frame length of
+        752 bytes. For example, if you want to detect 10 root nodes simultaneously, you need to set the beacon frame length as 
+        932 (752+36*5).
+        
+        Setting a longer beacon length also assists with debugging as the conflicting root nodes can be identified more quickly.
+        
 endmenu  # Wi-Fi
 
 menu PHY

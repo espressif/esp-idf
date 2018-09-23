@@ -59,22 +59,35 @@ config MESH_AP_CONNECTIONS
 
 config MESH_MAX_LAYER
     int "Mesh Max Layer"
-        range 1 15
+        range 1 25
         default 6
         help
             Max layer allowed in mesh network.
 
-config MESH_ROUTE_TABLE_SIZE
-    int "Mesh Routing Table Size"
-        range 1 300
-        default 50
+config MESH_IE_CRYPTO_KEY
+    string "Mesh IE Crypto Key"
+        default "hello, esp-mesh."
         help
-            The number of devices over the network(max: 300).
+            Mesh IE ASCII crypto key, length in bytes, range:8~64.
 
-config MESH_PARENT_SSID
-    string "Parent SSID"
-        default "PARENT_SSID"
+choice
+    bool "Mesh IE Crypto Funcs"
+        default IE_CRYPTO_ENABLE
         help
-            Parent SSID.
+            Mesh IE crypto funcs.
+
+config IE_CRYPTO_ENABLE
+    bool "IE_CRYPTO_ENABLE"
+config IE_CRYPTO_DISABLE
+    bool "IE_CRYPTO_DISABLE"
+endchoice
+
+config MESH_IE_CRYPTO_FUNCS
+    int
+        default 1 if IE_CRYPTO_ENABLE
+        default 0 if IE_CRYPTO_DISABLE
+        help
+             Mesh IE crypto enable/disable.
+
 endmenu
 
