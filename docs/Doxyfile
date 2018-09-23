@@ -99,6 +99,19 @@ INPUT = \
     ../../components/esp_http_client/include/esp_http_client.h \
     ../../components/http_server/include/http_server.h \
     ##
+    ## Provisioning - API Reference
+    ##
+    ## Protocol Communication
+    ../../components/protocomm/include/common/protocomm.h \
+    ../../components/protocomm/include/security/protocomm_security.h \
+    ../../components/protocomm/include/security/protocomm_security0.h \
+    ../../components/protocomm/include/security/protocomm_security1.h \
+    ../../components/protocomm/include/transports/protocomm_ble.h \
+    ../../components/protocomm/include/transports/protocomm_console.h \
+    ../../components/protocomm/include/transports/protocomm_httpd.h \
+    ## WiFi Provisioning
+    ../../components/wifi_provisioning/include/wifi_provisioning/wifi_config.h \
+    ##
     ## Storage - API Reference
     ##
     ## SPI Flash and Partition APIs
