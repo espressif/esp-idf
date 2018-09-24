@@ -34,7 +34,8 @@ from os import path
 class Page(object):
     PAGE_PARAMS = {
         "max_size": 4096,
-        "max_blob_size": 4000,
+        "max_old_blob_size": 1984,
+        "max_new_blob_size": 4000,
         "max_entries": 126
     }
 
@@ -59,10 +60,13 @@ class Page(object):
     CHUNK_ANY = 0xFF
     ACTIVE = 0xFFFFFFFE
     FULL = 0xFFFFFFFC
+    VERSION1=0xFF
+    VERSION2=0xFE
 
     def __init__(self, page_num, is_rsrv_page=False):
         self.entry_num = 0
         self.bitmap_array = array.array('B')
+        self.version = Page.VERSION2
         self.page_buf = bytearray(b'\xff')*Page.PAGE_PARAMS["max_size"]
         if not is_rsrv_page:
             self.bitmap_array = self.create_bitmap_array()
@@ -77,6 +81,11 @@ class Page(object):
         page_header[0:4] = struct.pack('<I', page_state_active_seq)
         # set page sequence number
         page_header[4:8] = struct.pack('<I', page_num)
+        # set version
+        if version == Page.VERSION2:
+            page_header[8] = Page.VERSION2
+        elif version == Page.VERSION1:
+            page_header[8] = Page.VERSION1
         # set header's CRC
         crc_data = page_header[4:28]
         crc = zlib.crc32(buffer(crc_data), 0xFFFFFFFF)
@@ -118,7 +127,7 @@ class Page(object):
         entry_struct[4:8] = struct.pack('<I', crc & 0xFFFFFFFF)
         return entry_struct
 
-    def write_varlen_binary_data(self, entry_struct, ns_index, key, data, data_size, total_entry_count, nvs_obj):
+    def write_varlen_binary_data(self, entry_struct, ns_index, key, data, data_size, total_entry_count,nvs_obj):
         chunk_start = 0
         chunk_count = 0
         chunk_index = Page.CHUNK_ANY
@@ -206,10 +215,22 @@ class Page(object):
                 self.write_entry_to_buf(entry_struct, 1)
                 break
 
-
-
         return entry_struct
 
+
+    def write_single_page_entry(self, entry_struct, data, datalen, data_entry_count):
+        # compute CRC of data
+        entry_struct[24:26] = struct.pack('<H', datalen)
+        crc = zlib.crc32(data, 0xFFFFFFFF)
+        entry_struct[28:32] = struct.pack('<I', crc & 0xFFFFFFFF)
+
+        # compute crc of entry header
+        entry_struct = self.set_crc_header(entry_struct)
+
+        # write entry header
+        self.write_entry_to_buf(entry_struct, 1)
+        # write actual data
+        self.write_entry_to_buf(data, data_entry_count)
 
 
     """
@@ -220,9 +241,14 @@ class Page(object):
         # Set size of data
         datalen = len(data)
 
-        if encoding == "string":
-            if datalen > Page.PAGE_PARAMS["max_blob_size"]:
+        if version == Page.VERSION1:
+            if datalen > Page.PAGE_PARAMS["max_old_blob_size"]:
                 raise InputError("%s: Size exceeds max allowed length." % key)
+
+        if version == Page.VERSION2:
+            if encoding == "string":
+                if datalen > Page.PAGE_PARAMS["max_new_blob_size"]:
+                    raise InputError("%s: Size exceeds max allowed length." % key)
 
         # Calculate no. of entries data will require
         rounded_size = (datalen + 31) & ~31
@@ -239,11 +265,14 @@ class Page(object):
         # Set Namespace Index
         entry_struct[0] = ns_index
         # Set Span
-        if encoding == "string":
+        if version == Page.VERSION2:
+            if encoding == "string":
+                entry_struct[2] = data_entry_count + 1
+            # Set Chunk Index
+            chunk_index = Page.CHUNK_ANY
+            entry_struct[3] = chunk_index
+        else:
             entry_struct[2] = data_entry_count + 1
-        # Set Chunk Index
-        chunk_index = Page.CHUNK_ANY
-        entry_struct[3] = chunk_index
 
         # set key
         key_array = bytearray('\x00')*16
@@ -256,22 +285,12 @@ class Page(object):
         elif encoding in ["hex2bin", "binary", "base64"]:
             entry_struct[1] = Page.BLOB
 
-        if encoding == "binary" or encoding == "hex2bin" or encoding == "base64":
-            entry_struct = self.write_varlen_binary_data(entry_struct,ns_index,key,data,\
-            datalen,total_entry_count,nvs_obj)
+        if version == Page.VERSION2 and encoding == "binary" or encoding == "hex2bin" or encoding == "base64":
+                entry_struct = self.write_varlen_binary_data(entry_struct,ns_index,key,data,\
+                datalen,total_entry_count, nvs_obj)
         else:
-            # compute CRC of data
-            entry_struct[24:26] = struct.pack('<H', datalen)
-            crc = zlib.crc32(data, 0xFFFFFFFF)
-            entry_struct[28:32] = struct.pack('<I', crc & 0xFFFFFFFF)
+            self.write_single_page_entry(entry_struct, data, datalen, data_entry_count)
 
-            # compute crc of entry header
-            entry_struct = self.set_crc_header(entry_struct)
-
-            # write entry header
-            self.write_entry_to_buf(entry_struct, 1)
-            # write actual data
-            self.write_entry_to_buf(data, data_entry_count)
 
 
     """ Low-level function to write data of primitive type into page buffer. """
@@ -345,7 +364,7 @@ class NVS(object):
                 except InsufficientSizeError:
                     self.size = None
                     # Creating the last reserved page
-                    self.create_new_page(True)
+                    self.create_new_page(is_rsrv_page=True)
                     break
 
             result = self.get_binary_data()
@@ -359,6 +378,7 @@ class NVS(object):
             self.size = self.size - Page.PAGE_PARAMS["max_size"]
         self.page_num += 1
         new_page = Page(self.page_num, is_rsrv_page)
+        new_page.version = version
         self.pages.append(new_page)
         self.cur_page = new_page
         return new_page
@@ -402,7 +422,7 @@ class NVS(object):
                 self.cur_page.write_varlen_data(key, value, encoding, self.namespace_idx, self)
             except PageFullError:
                 new_page = self.create_new_page()
-                new_page.write_varlen_data(key, value, encoding, self.namespace_idx, self)
+                new_page.write_varlen_data(key, value, encoding, self.namespace_idx,  self)
                 pass
         elif encoding in primitive_encodings:
             try:
@@ -484,7 +504,7 @@ def nvs_close(nvs_instance):
     """
     nvs_instance.__exit__(None, None, None)
 
-def nvs_part_gen(input_filename=None, output_filename=None, input_size=None):
+def nvs_part_gen(input_filename=None, output_filename=None, input_size=None, version_no=None):
     """ Wrapper to generate nvs partition binary
 
     :param input_filename: Name of input file containing data
@@ -492,9 +512,20 @@ def nvs_part_gen(input_filename=None, output_filename=None, input_size=None):
     :param input_size: Size of partition
     :return: None
     """
+    global version
+    version = version_no
+
+    # Set size
+    input_size = int(input_size.split('KB')[0]) * 1024
+
     if input_size % 4096 !=0:
         sys.exit("Size parameter should be a multiple of 4KB.")
 
+    if version == 'v1':
+        version = Page.VERSION1
+    elif version == 'v2':
+        version = Page.VERSION2
+    
     # Update size as a page needs to be reserved of size 4KB
     input_size = input_size - Page.PAGE_PARAMS["max_size"]
 
@@ -505,8 +536,6 @@ def nvs_part_gen(input_filename=None, output_filename=None, input_size=None):
     output_file = open(output_filename, 'wb')
 
     with nvs_open(output_file, input_size) as nvs_obj:
-        # Update size as one page is created
-        #nvs_obj.size = input_size - Page.PAGE_PARAMS["max_size"]
         reader = csv.DictReader(input_file, delimiter=',')
         for row in reader:
             try:
@@ -515,7 +544,7 @@ def nvs_part_gen(input_filename=None, output_filename=None, input_size=None):
                 print(e)
                 input_file.close()
                 output_file.close()
-                exit(-2)
+                sys.exit(-2)
 
     input_file.close()
     output_file.close()
@@ -536,13 +565,20 @@ def main():
             "size",
             help='Size of NVS Partition in KB. Eg. 12KB')
 
+    parser.add_argument(
+            "--version",
+            help='Set version. Default: v2',
+            choices=['v1','v2'],
+            default='v2')
+
+
     args = parser.parse_args()
     input_filename = args.input
     output_filename = args.output
+    input_size = args.size
+    version_no = args.version
 
-    # Set size
-    input_size = int(args.size.split('KB')[0]) * 1024
-    nvs_part_gen(input_filename, output_filename, input_size)
+    nvs_part_gen(input_filename, output_filename, input_size, version_no)
 
 
 

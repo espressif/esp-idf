@@ -1991,15 +1991,17 @@ TEST_CASE("Recovery from power-off during modification of blob present in old-fo
 /* Add new tests above */
 /* This test has to be the final one */
 
-TEST_CASE("check partition generation utility", "[nvs_part_gen]")
+TEST_CASE("check partition generation utility with multipage blob support disabled", "[nvs_part_gen]")
 {
     int childpid = fork();
     if (childpid == 0) {
         exit(execlp("python", "python",
                 "../nvs_partition_generator/nvs_partition_gen.py",
-                "../nvs_partition_generator/sample.csv",
-                "../nvs_partition_generator/partition.bin", 
-                "12KB",NULL));
+                "../nvs_partition_generator/sample_singlepage_blob.csv",
+                "../nvs_partition_generator/partition_single_page.bin", 
+                "12KB",
+                "--version",
+                "v1",NULL));
     } else {
         CHECK(childpid > 0);
         int status;
@@ -2008,9 +2010,9 @@ TEST_CASE("check partition generation utility", "[nvs_part_gen]")
     }
 }
 
-TEST_CASE("read data from partition generated via partition generation utility", "[nvs_part_gen]")
+TEST_CASE("read data from partition generated via partition generation utility with multipage blob support disabled", "[nvs_part_gen]")
 {
-    SpiFlashEmulator emu("../nvs_partition_generator/partition.bin");
+    SpiFlashEmulator emu("../nvs_partition_generator/partition_single_page.bin");
     nvs_handle handle;
     TEST_ESP_OK( nvs_flash_init_custom("test", 0, 3) );
     TEST_ESP_OK( nvs_open_from_partition("test", "dummyNamespace", NVS_READONLY, &handle));
@@ -2059,7 +2061,7 @@ TEST_CASE("read data from partition generated via partition generation utility",
     size_t bin_len = sizeof(bin_data);
     char binfiledata[5200];
     ifstream file;
-    file.open("../nvs_partition_generator/testdata/sample.bin");
+    file.open("../nvs_partition_generator/testdata/sample_singlepage_blob.bin");
     file.read(binfiledata,5200);
     TEST_ESP_OK( nvs_get_blob(handle, "binFileKey", bin_data, &bin_len));
     CHECK(memcmp(bin_data, binfiledata, bin_len) == 0);
@@ -2067,6 +2069,86 @@ TEST_CASE("read data from partition generated via partition generation utility",
     file.close();
 
 }
+
+TEST_CASE("check partition generation utility with multipage blob support enabled", "[nvs_part_gen]")
+{
+    int childpid = fork();
+    if (childpid == 0) {
+        exit(execlp("python", "python",
+                "../nvs_partition_generator/nvs_partition_gen.py",
+                "../nvs_partition_generator/sample_multipage_blob.csv",
+                "../nvs_partition_generator/partition_multipage_blob.bin", 
+                "12KB",
+                "--version",
+                "v2",NULL));
+    } else {
+        CHECK(childpid > 0);
+        int status;
+        waitpid(childpid, &status, 0);
+        CHECK(WEXITSTATUS(status) != -1);
+    }
+}
+
+TEST_CASE("read data from partition generated via partition generation utility with multipage blob support enabled", "[nvs_part_gen]")
+{
+    SpiFlashEmulator emu("../nvs_partition_generator/partition_multipage_blob.bin");
+    nvs_handle handle;
+    TEST_ESP_OK( nvs_flash_init_custom("test", 0, 3) );
+    TEST_ESP_OK( nvs_open_from_partition("test", "dummyNamespace", NVS_READONLY, &handle));
+    uint8_t u8v;
+    TEST_ESP_OK( nvs_get_u8(handle, "dummyU8Key", &u8v));
+    CHECK(u8v == 127);
+    int8_t i8v;
+    TEST_ESP_OK( nvs_get_i8(handle, "dummyI8Key", &i8v));
+    CHECK(i8v == -128);
+    uint16_t u16v;
+    TEST_ESP_OK( nvs_get_u16(handle, "dummyU16Key", &u16v));
+    CHECK(u16v == 32768);
+    uint32_t u32v;
+    TEST_ESP_OK( nvs_get_u32(handle, "dummyU32Key", &u32v));
+    CHECK(u32v == 4294967295);
+    int32_t i32v;
+    TEST_ESP_OK( nvs_get_i32(handle, "dummyI32Key", &i32v));
+    CHECK(i32v == -2147483648);
+
+    char buf[64] = {0};
+    size_t buflen = 64;
+    TEST_ESP_OK( nvs_get_str(handle, "dummyStringKey", buf, &buflen));
+    CHECK(strncmp(buf, "0A:0B:0C:0D:0E:0F", buflen) == 0);
+
+    uint8_t hexdata[] = {0x01, 0x02, 0x03, 0xab, 0xcd, 0xef};
+    buflen = 64;
+    int j;
+    TEST_ESP_OK( nvs_get_blob(handle, "dummyHex2BinKey", buf, &buflen));
+    CHECK(memcmp(buf, hexdata, buflen) == 0);
+    
+    uint8_t base64data[] = {'1', '2', '3', 'a', 'b', 'c'};
+    TEST_ESP_OK( nvs_get_blob(handle, "dummyBase64Key", buf, &buflen));
+    CHECK(memcmp(buf, base64data, buflen) == 0);
+
+    buflen = 64;
+    uint8_t hexfiledata[] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef};
+    TEST_ESP_OK( nvs_get_blob(handle, "hexFileKey", buf, &buflen));
+    CHECK(memcmp(buf, hexfiledata, buflen) == 0);
+
+    buflen = 64;
+    uint8_t strfiledata[64] = "abcdefghijklmnopqrstuvwxyz\0";
+    TEST_ESP_OK( nvs_get_str(handle, "stringFileKey", buf, &buflen));
+    CHECK(memcmp(buf, strfiledata, buflen) == 0);
+
+    char bin_data[5200];
+    size_t bin_len = sizeof(bin_data);
+    char binfiledata[5200];
+    ifstream file;
+    file.open("../nvs_partition_generator/testdata/sample_multipage_blob.bin");
+    file.read(binfiledata,5200);
+    TEST_ESP_OK( nvs_get_blob(handle, "binFileKey", bin_data, &bin_len));
+    CHECK(memcmp(bin_data, binfiledata, bin_len) == 0);
+
+    file.close();
+
+}
+
 
 TEST_CASE("dump all performance data", "[nvs]")
 {
