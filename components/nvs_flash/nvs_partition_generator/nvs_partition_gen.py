@@ -285,7 +285,7 @@ class Page(object):
         elif encoding in ["hex2bin", "binary", "base64"]:
             entry_struct[1] = Page.BLOB
 
-        if version == Page.VERSION2 and encoding == "binary" or encoding == "hex2bin" or encoding == "base64":
+        if version == Page.VERSION2 and (encoding in ["hex2bin", "binary", "base64"]):
                 entry_struct = self.write_varlen_binary_data(entry_struct,ns_index,key,data,\
                 datalen,total_entry_count, nvs_obj)
         else:
