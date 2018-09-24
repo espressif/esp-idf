@@ -491,6 +491,21 @@ esp_err_t rmt_get_source_clk(rmt_channel_t channel, rmt_source_clk_t* src_clk);
 esp_err_t rmt_set_idle_level(rmt_channel_t channel, bool idle_out_en, rmt_idle_level_t level);
 
 /**
+ * @brief Get RMT idle output level for transmitter
+ *
+ * @param channel RMT channel (0-7)
+ *
+ * @param idle_out_en Pointer to accept value of enable idle.
+ *
+ * @param level Pointer to accept value of output signal's level in idle state for specified channel.
+ *
+ * @return
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_OK Success
+ */
+esp_err_t rmt_get_idle_level(rmt_channel_t channel, bool* idle_out_en, rmt_idle_level_t* level);
+
+/**
  * @brief Get RMT status
  *
  * @param channel RMT channel (0-7)
@@ -715,7 +730,7 @@ esp_err_t rmt_write_items(rmt_channel_t channel, const rmt_item32_t* rmt_item, i
  *
  * @param channel RMT channel (0 - 7)
  *
- * @param wait_time Maximum time in ticks to wait for transmission to be complete 
+ * @param wait_time Maximum time in ticks to wait for transmission to be complete.  If set 0, return immediately with ESP_ERR_TIMEOUT if TX is busy (polling).
  *
  * @return
  *     - ESP_OK RMT Tx done successfully
