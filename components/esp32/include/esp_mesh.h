@@ -541,7 +541,7 @@ esp_err_t esp_mesh_deinit(void);
  *             - Create TX and RX queues according to the configuration.
  *             - Register mesh packets receive callback.
  *
- * @attention  This API shall be called after esp_mesh_init() and esp_mesh_set_config().
+ * @attention　　This API shall be called after mesh initialization and configuration.
  *
  * @return
  *    - ESP_OK
@@ -711,10 +711,10 @@ esp_err_t esp_mesh_recv_toDS(mesh_addr_t *from, mesh_addr_t *to,
  *             Root conflict function could eliminate redundant roots connected with the same BSSID, but couldn't handle roots
  *             connected with different BSSID. Because users might have such requirements of setting up routers with same SSID
  *             for the future replacement. But in that case, if the above situations happen, please make sure applications
- *             implement forward functions on the root to guarantee devices in different mesh network can communicate with each other.
+ *             implement forward functions on the root to guarantee devices in different mesh networks can communicate with each other.
  *             max_connection of mesh softAP is limited by the max number of Wi-Fi softAP supported (max:10).
  *
- * @attention  This API shall be called between esp_mesh_init() and esp_mesh_start().
+ * @attention  This API shall be called before mesh is started after mesh is initialized.
  *
  * @param[in]  config  pointer to mesh stack configuration
  *
@@ -739,7 +739,7 @@ esp_err_t esp_mesh_get_config(mesh_cfg_t *config);
 /**
  * @brief      Get router configuration
  *
- * @attention  This API shall be called between esp_mesh_init() and esp_mesh_start().
+ * @attention  This API is used to dynamically modify the router configuration after mesh is configured.
  *
  * @param[in]  router  pointer to router configuration
  *
@@ -763,7 +763,7 @@ esp_err_t esp_mesh_get_router(mesh_router_t *router);
 /**
  * @brief      Set mesh network ID
  *
- * @attention  This API could be called either before esp_mesh_start() or after esp_mesh_start().
+ * @attention  This API is used to dynamically modify the mesh network ID.
  *
  * @param[in]  id  pointer to mesh network ID
  *
@@ -786,6 +786,8 @@ esp_err_t esp_mesh_get_id(mesh_addr_t *id);
 
 /**
  * @brief      Designate device type over the mesh network
+ *            - MESH_ROOT: designates the root node for a mesh network
+ *            - MESH_LEAF: designates a device as a standalone Wi-Fi station
  *
  * @param[in]  type  device type
  *
@@ -806,10 +808,10 @@ esp_err_t esp_mesh_set_type(mesh_type_t type);
 mesh_type_t esp_mesh_get_type(void);
 
 /**
- * @brief      Set network max layer value (max:25, default:15)
+ * @brief      Set network max layer value (max:25, default:25)
  *             - Network max layer limits the max hop count.
  *
- * @attention  This API shall be called before esp_mesh_start().
+ * @attention  This API shall be called before mesh is started.
  *
  * @param[in]  max_layer  max layer value
  *
@@ -830,7 +832,7 @@ int esp_mesh_get_max_layer(void);
 /**
  * @brief      Set mesh softAP password
  *
- * @attention  This API shall be called before esp_mesh_start().
+ * @attention  This API shall be called before mesh is started.
  *
  * @param[in]  pwd  pointer to the password
  * @param[in]  len  password length
@@ -845,7 +847,7 @@ esp_err_t esp_mesh_set_ap_password(const uint8_t *pwd, int len);
 /**
  * @brief      Set mesh softAP authentication mode
  *
- * @attention  This API shall be called before esp_mesh_start().
+ * @attention  This API shall be called before mesh is started.
  *
  * @param[in]  authmode  authentication mode
  *
@@ -866,7 +868,7 @@ wifi_auth_mode_t esp_mesh_get_ap_authmode(void);
 /**
  * @brief      Set mesh softAP max connection value
  *
- * @attention  This API shall be called before esp_mesh_start().
+ * @attention  This API shall be called before mesh is started.
  *
  * @param[in]  connections  the number of max connections
  *
@@ -914,11 +916,15 @@ esp_err_t esp_mesh_get_parent_bssid(mesh_addr_t *bssid);
 bool esp_mesh_is_root(void);
 
 /**
- * @brief      Enable/disable mesh networking self-organized, self-organized by default
- *             - If self-organized is disabled, users shall set a parent for the device via
- *             esp_mesh_set_parent();
+ * @brief      Enable/disable self-organized networking
+ *             - Self-organized networking has three main functions:
+ *             select the root node;
+ *             find a preferred parent;
+ *             initiate reconnection if a disconnection is detected.
+ *             - Self-organized networking is enabled by default.
+ *             - If self-organized is disabled, users should set a parent for the device via esp_mesh_set_parent().
  *
- * @attention  This API could be called either before esp_mesh_start() or after esp_mesh_start().
+ * @attention  This API is used to dynamically modify whether to enable the self organizing.
  *
  * @param[in]  enable  enable or disable self-organized networking
  * @param[in]  select_parent
@@ -976,7 +982,7 @@ esp_err_t esp_mesh_waive_root(const mesh_vote_t *vote, int reason);
  *             - During the networking, only obtaining vote percentage reaches this threshold,
  *             the device could be a root.
  *
- * @attention  This API shall be called before esp_mesh_start().
+ * @attention  This API shall be called before mesh is started.
  *
  * @param[in]  percentage  vote percentage threshold
  *
@@ -1090,7 +1096,7 @@ int esp_mesh_available_txupQ_num(const mesh_addr_t *addr, uint32_t *xseqno_in);
 /**
  * @brief      Set the number of queue
  *
- * @attention  This API shall be called before esp_mesh_start().
+ * @attention  This API shall be called before mesh is started.
  *
  * @param[in]  qsize  default:32 (min:16)
  *
@@ -1179,7 +1185,7 @@ bool esp_mesh_is_my_group(const mesh_addr_t *addr);
 /**
  * @brief      Set mesh network capacity
  *
- * @attention  This API shall be called before esp_mesh_start().
+ * @attention  This API shall be called before mesh is started.
  *
  * @param[in]  num  mesh network capacity
  *
@@ -1191,17 +1197,19 @@ bool esp_mesh_is_my_group(const mesh_addr_t *addr);
 esp_err_t esp_mesh_set_capacity_num(int num);
 
 /**
- * @brief     Get mesh network capacity
+ * @brief      Get mesh network capacity
  *
- * @return    mesh network capacity
+ * @return     mesh network capacity
  */
 int esp_mesh_get_capacity_num(void);
 
 /**
- * @brief     Set mesh IE crypto functions
+ * @brief      Set mesh IE crypto functions
  *
- * @param[in] crypto_funcs  crypto functions for mesh IE
+ * @attention  This API can be called at any time after mesh is initialized.
  *
+ * @param[in]  crypto_funcs  crypto functions for mesh IE
+ *           - If crypto_funcs is set to NULL, mesh IE is no longer encrypted.
  * @return
  *    - ESP_OK
  */
@@ -1210,15 +1218,13 @@ esp_err_t esp_mesh_set_ie_crypto_funcs(const mesh_crypto_funcs_t *crypto_funcs);
 /**
  * @brief      Set mesh IE crypto key
  *
- * @attention  This API shall be called after esp_mesh_set_config() and before esp_mesh_start().
+ * @attention  This API can be called at any time after mesh is initialized.
  *
  * @param[in]  key  ASCII crypto key
  * @param[in]  len  length in bytes, range:8~64
  *
  * @return
  *    - ESP_OK
- *    - ESP_ERR_MESH_NOT_ALLOWED
- *    - ESP_ERR_MESH_NOT_CONFIG
  *    - ESP_MESH_ERR_ARGUMENT
  */
 esp_err_t esp_mesh_set_ie_crypto_key(const char *key, int len);
@@ -1236,9 +1242,9 @@ esp_err_t esp_mesh_set_ie_crypto_key(const char *key, int len);
 esp_err_t esp_mesh_get_ie_crypto_key(char *key, int len);
 
 /**
- * @brief     Set delay time before network starts root healing
+ * @brief      Set delay time before starting root healing
  *
- * @param[in] delay_ms  delay time in milliseconds
+ * @param[in]  delay_ms  delay time in milliseconds
  *
  * @return
  *    - ESP_OK
@@ -1253,9 +1259,9 @@ esp_err_t esp_mesh_set_root_healing_delay(int delay_ms);
 int esp_mesh_get_root_healing_delay(void);
 
 /**
- * @brief     Set mesh event callback
+ * @brief      Set mesh event callback
  *
- * @param[in] event_cb  mesh event call back
+ * @param[in]  event_cb  mesh event call back
  *
  * @return
  *    - ESP_OK
@@ -1285,12 +1291,23 @@ esp_err_t esp_mesh_fix_root(bool enable);
 bool esp_mesh_is_root_fixed(void);
 
 /**
- * @brief      Specify a parent for the device
+ * @brief      Set a specified parent for the device
+ *
+ * @attention  This API can be called at any time after mesh is configured.
  *
  * @param[in]  parent  parent configuration, the SSID and the channel of the parent are mandatory.
- * @param[in]  parent_mesh_id  parent mesh ID, if not set, use the device default one.
- * @param[in]  my_type  my mesh type
- * @param[in]  my_layer  my mesh layer
+ *             - If the BSSID is set, make sure that the SSID and BSSID represent the same parent,
+ *             otherwise the device will never find this specified parent.
+ * @param[in]  parent_mesh_id  parent mesh ID,
+ *             - If this value is not set, the original mesh ID is used.
+ * @param[in]  my_type  mesh type
+ *             - If the parent set for the device is the same as the router in the network configuration,
+ *            then my_type shall set MESH_ROOT and my_layer shall set MESH_ROOT_LAYER.
+ * @param[in]  my_layer  mesh layer
+ *             - my_layer of the device may change after joining the network.
+ *             - If my_type is set MESH_NODE, my_layer shall be greater than MESH_ROOT_LAYER.
+ *             - If my_type is set MESH_LEAF, the device becomes a standalone Wi-Fi station and no longer
+ *             has the ability to extend the network.
  *
  * @return
  *    - ESP_OK
@@ -1330,7 +1347,7 @@ esp_err_t esp_mesh_scan_get_ap_ie_len(int *len);
 esp_err_t esp_mesh_scan_get_ap_record(wifi_ap_record_t *ap_record, void *buffer);
 
 /**
- * @brief     flush upstream packets pending in to_parent queue and to_parent_p2p queue
+ * @brief      Flush upstream packets pending in to_parent queue and to_parent_p2p queue
  *
  * @return
  *    - ESP_OK
@@ -1338,10 +1355,10 @@ esp_err_t esp_mesh_scan_get_ap_record(wifi_ap_record_t *ap_record, void *buffer)
 esp_err_t esp_mesh_flush_upstream_packets(void);
 
 /**
- * @brief     get the number of nodes in the subnet of a specific child
+ * @brief      Get the number of nodes in the subnet of a specific child
  *
- * @param     child_mac  an associated child address of this device
- * @param     nodes_num  pointer to the number of nodes in the subnet of a specific child
+ * @param[in]  child_mac  an associated child address of this device
+ * @param[out] nodes_num  pointer to the number of nodes in the subnet of a specific child
  *
  * @return
  *    - ESP_OK
@@ -1351,11 +1368,11 @@ esp_err_t esp_mesh_flush_upstream_packets(void);
 esp_err_t esp_mesh_get_subnet_nodes_num(const mesh_addr_t *child_mac, int *nodes_num);
 
 /**
- * @brief     get nodes in the subnet of a specific child
+ * @brief      Get nodes in the subnet of a specific child
  *
- * @param     child_mac  an associated child address of this device
- * @param     nodes  pointer to nodes in the subnet of a specific child
- * @param     nodes_num  the number of nodes in the subnet of a specific child
+ * @param[in]  child_mac  an associated child address of this device
+ * @param[out] nodes  pointer to nodes in the subnet of a specific child
+ * @param[in]  nodes_num  the number of nodes in the subnet of a specific child
  *
  * @return
  *    - ESP_OK
