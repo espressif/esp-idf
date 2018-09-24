@@ -66,7 +66,7 @@ typedef struct {
     uint8_t oui[3];          /**< organization identifier */
     /**< mesh networking IE content */
     uint8_t type;            /** ESP defined IE type */
-    uint8_t encryped : 1;    /**< whether mesh networking IE is encrypted */
+    uint8_t encrypted : 1;   /**< whether mesh networking IE is encrypted */
     uint8_t version : 7;     /**< mesh networking IE version */
     /**< content */
     uint8_t mesh_type;       /**< mesh device type */

@@ -57,16 +57,18 @@ void mesh_scan_done_handler(int num)
     bool parent_found = false;
     mesh_type_t my_type = MESH_IDLE;
     int my_layer = -1;
+    wifi_config_t parent = { 0, };
+    wifi_scan_config_t scan_config = { 0 };
 
     for (i = 0; i < num; i++) {
         esp_mesh_scan_get_ap_ie_len(&ie_len);
         esp_mesh_scan_get_ap_record(&record, &assoc);
         if (ie_len == sizeof(assoc)) {
             ESP_LOGW(MESH_TAG,
-                     "<MESH>[%d]%s, layer:%d/%d, assoc:%d/%d, %d, "MACSTR", channel:%u, rssi:%d, ID<"MACSTR">",
+                     "<MESH>[%d]%s, layer:%d/%d, assoc:%d/%d, %d, "MACSTR", channel:%u, rssi:%d, ID<"MACSTR"><%s>",
                      i, record.ssid, assoc.layer, assoc.layer_cap, assoc.assoc,
                      assoc.assoc_cap, assoc.layer2_cap, MAC2STR(record.bssid),
-                     record.primary, record.rssi, MAC2STR(assoc.mesh_id));
+                     record.primary, record.rssi, MAC2STR(assoc.mesh_id), assoc.encrypted ? "IE Encrypted" : "IE Unencrypted");
 #ifdef MESH_SET_NODE
             if (assoc.mesh_type != MESH_IDLE && assoc.layer_cap
                     && assoc.assoc < assoc.assoc_cap && record.rssi > -70) {
@@ -101,9 +103,8 @@ void mesh_scan_done_handler(int num)
     if (parent_found) {
         /*
          * parent
-         * Both channel and ssid of the parent are mandatory.
+         * Both channel and SSID of the parent are mandatory.
          */
-        wifi_config_t parent = { 0, };
         parent.sta.channel = parent_record.primary;
         memcpy(&parent.sta.ssid, &parent_record.ssid,
                sizeof(parent_record.ssid));
@@ -122,24 +123,36 @@ void mesh_scan_done_handler(int num)
                      MAC2STR(parent_record.bssid), parent_record.primary,
                      parent_record.rssi);
         }
-        ESP_ERROR_CHECK(esp_mesh_set_parent(&parent, (mesh_addr_t*)&parent_assoc.mesh_id, my_type, my_layer));
+        ESP_ERROR_CHECK(esp_mesh_set_parent(&parent, (mesh_addr_t *)&parent_assoc.mesh_id, my_type, my_layer));
 
     } else {
         ESP_LOGW(MESH_TAG,
-                 "no parent found, enable self-organized networking.");
-        ESP_ERROR_CHECK(esp_mesh_set_self_organized(1, 1));
+                 "<Warning>no parent found, modify IE crypto configuration and scan");
+        if (CONFIG_MESH_IE_CRYPTO_FUNCS) {
+            /* modify IE crypto key */
+            ESP_LOGW(MESH_TAG, "<Config>modify IE crypto key to %s", CONFIG_MESH_IE_CRYPTO_KEY);
+            ESP_ERROR_CHECK(esp_mesh_set_ie_crypto_key(CONFIG_MESH_IE_CRYPTO_KEY, strlen(CONFIG_MESH_IE_CRYPTO_KEY)));
+        } else {
+            /* disable IE crypto */
+            ESP_LOGW(MESH_TAG, "<Config>disable IE crypto");
+            ESP_ERROR_CHECK(esp_mesh_set_ie_crypto_funcs(NULL));
+        }
+        ESP_ERROR_CHECK(esp_wifi_scan_stop());
+        scan_config.show_hidden = 1;
+        scan_config.scan_type = WIFI_SCAN_TYPE_PASSIVE;
+        ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, 0));
     }
 }
 
 void mesh_event_handler(mesh_event_t event)
 {
-	mesh_addr_t id = {0,};
+    mesh_addr_t id = {0,};
     static uint8_t last_layer = 0;
     ESP_LOGD(MESH_TAG, "esp_event_handler:%d", event.id);
 
     switch (event.id) {
     case MESH_EVENT_STARTED:
-    	esp_mesh_get_id(&id);
+        esp_mesh_get_id(&id);
         ESP_LOGI(MESH_TAG, "<MESH_EVENT_STARTED>ID:"MACSTR"", MAC2STR(id.addr));
         mesh_layer = esp_mesh_get_layer();
         ESP_ERROR_CHECK(esp_mesh_set_self_organized(0, 0));
@@ -147,6 +160,7 @@ void mesh_event_handler(mesh_event_t event)
         wifi_scan_config_t scan_config = { 0 };
         /* mesh softAP is hidden */
         scan_config.show_hidden = 1;
+        scan_config.scan_type = WIFI_SCAN_TYPE_PASSIVE;
         ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, 0));
         break;
     case MESH_EVENT_STOPPED:
@@ -179,7 +193,7 @@ void mesh_event_handler(mesh_event_t event)
         /* TODO handler for the failure */
         break;
     case MESH_EVENT_PARENT_CONNECTED:
-    	esp_mesh_get_id(&id);
+        esp_mesh_get_id(&id);
         mesh_layer = event.info.connected.self_layer;
         memcpy(&mesh_parent_addr.addr, event.info.connected.connected.bssid, 6);
         ESP_LOGI(MESH_TAG,
@@ -199,6 +213,12 @@ void mesh_event_handler(mesh_event_t event)
                  event.info.disconnected.reason);
         mesh_disconnected_indicator();
         mesh_layer = esp_mesh_get_layer();
+        if (event.info.disconnected.reason == WIFI_REASON_ASSOC_TOOMANY) {
+            ESP_ERROR_CHECK(esp_wifi_scan_stop());
+            scan_config.show_hidden = 1;
+            scan_config.scan_type = WIFI_SCAN_TYPE_PASSIVE;
+            ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, 0));
+        }
         break;
     case MESH_EVENT_LAYER_CHANGE:
         mesh_layer = event.info.layer_change.new_layer;
@@ -224,45 +244,9 @@ void mesh_event_handler(mesh_event_t event)
     case MESH_EVENT_ROOT_LOST_IP:
         ESP_LOGI(MESH_TAG, "<MESH_EVENT_ROOT_LOST_IP>");
         break;
-    case MESH_EVENT_VOTE_STARTED:
-        ESP_LOGI(MESH_TAG,
-                 "<MESH_EVENT_VOTE_STARTED>attempts:%d, reason:%d, rc_addr:"MACSTR"",
-                 event.info.vote_started.attempts,
-                 event.info.vote_started.reason,
-                 MAC2STR(event.info.vote_started.rc_addr.addr));
-        break;
-    case MESH_EVENT_VOTE_STOPPED:
-        ESP_LOGI(MESH_TAG, "<MESH_EVENT_VOTE_STOPPED>");
-        break;
-    case MESH_EVENT_ROOT_SWITCH_REQ:
-        ESP_LOGI(MESH_TAG,
-                 "<MESH_EVENT_ROOT_SWITCH_REQ>reason:%d, rc_addr:"MACSTR"",
-                 event.info.switch_req.reason,
-                 MAC2STR( event.info.switch_req.rc_addr.addr));
-        break;
-    case MESH_EVENT_ROOT_SWITCH_ACK:
-        /* new root */
-        mesh_layer = esp_mesh_get_layer();
-        esp_mesh_get_parent_bssid(&mesh_parent_addr);
-        ESP_LOGI(MESH_TAG, "<MESH_EVENT_ROOT_SWITCH_ACK>layer:%d, parent:"MACSTR"", mesh_layer, MAC2STR(mesh_parent_addr.addr));
-        break;
-    case MESH_EVENT_TODS_STATE:
-        ESP_LOGI(MESH_TAG, "<MESH_EVENT_TODS_REACHABLE>state:%d",
-                 event.info.toDS_state);
-        break;
     case MESH_EVENT_ROOT_FIXED:
         ESP_LOGI(MESH_TAG, "<MESH_EVENT_ROOT_FIXED>%s",
                  event.info.root_fixed.is_fixed ? "fixed" : "not fixed");
-        break;
-    case MESH_EVENT_ROOT_ASKED_YIELD:
-        ESP_LOGI(MESH_TAG,
-                 "<MESH_EVENT_ROOT_ASKED_YIELD>"MACSTR", rssi:%d, capacity:%d",
-                 MAC2STR(event.info.root_conflict.addr),
-                 event.info.root_conflict.rssi,
-                 event.info.root_conflict.capacity);
-        break;
-    case MESH_EVENT_CHANNEL_SWITCH:
-        ESP_LOGI(MESH_TAG, "<MESH_EVENT_CHANNEL_SWITCH>");
         break;
     case MESH_EVENT_SCAN_DONE:
         ESP_LOGI(MESH_TAG, "<MESH_EVENT_SCAN_DONE>number:%d",
@@ -303,7 +287,7 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_wifi_start());
     /*  mesh initialization */
     ESP_ERROR_CHECK(esp_mesh_init());
-    ESP_ERROR_CHECK(esp_mesh_set_ap_authmode(WIFI_AUTH_OPEN));
+    /* mesh enable IE crypto */
     mesh_cfg_t cfg = MESH_INIT_CONFIG_DEFAULT();
     /* mesh ID */
     memcpy((uint8_t *) &cfg.mesh_id, MESH_ID, 6);
@@ -316,12 +300,12 @@ void app_main(void)
     memcpy((uint8_t *) &cfg.router.password, CONFIG_MESH_ROUTER_PASSWD,
            strlen(CONFIG_MESH_ROUTER_PASSWD));
     /* mesh softAP */
+    ESP_ERROR_CHECK(esp_mesh_set_ap_authmode(CONFIG_MESH_AP_AUTHMODE));
     cfg.mesh_ap.max_connection = CONFIG_MESH_AP_CONNECTIONS;
     memcpy((uint8_t *) &cfg.mesh_ap.password, CONFIG_MESH_AP_PASSWD,
            strlen(CONFIG_MESH_AP_PASSWD));
     ESP_ERROR_CHECK(esp_mesh_set_config(&cfg));
     /* mesh start */
     ESP_ERROR_CHECK(esp_mesh_start());
-    ESP_LOGI(MESH_TAG, "mesh starts successfully, heap:%d, %s\n",  esp_get_free_heap_size(),
-             esp_mesh_is_root_fixed() ? "root fixed" : "root not fixed");
+    ESP_LOGI(MESH_TAG, "mesh starts successfully, heap:%d\n",  esp_get_free_heap_size());
 }
