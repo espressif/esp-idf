@@ -7,6 +7,13 @@ Introduction
 :component_file:`nvs_flash/nvs_partition_generator/nvs_partition_gen.py` utility is designed to help create a binary file, compatible with NVS architecture defined in :doc:`Non-Volatile Storage </api-reference/storage/nvs_flash>`, based on user provided key-value pairs in a CSV file.
 Utility is ideally suited for generating a binary blob, containing data specific to ODM/OEM, which can be flashed externally at the time of device manufacturing. This helps manufacturers set unique value for various parameters for each device, e.g. serial number, while using same application firmware for all devices.
 
+Prerequisites
+-------------
+To use this utility in encryption mode, the following packages need to be installed:
+    - cryptography package
+
+This dependency is already captured by including these packages in `requirement.txt` in top level IDF directory.
+
 CSV file format
 ---------------
 
@@ -52,53 +59,81 @@ Multipage Blob Support
 By default, binary blobs are allowed to span over multiple pages and written in the format mentioned in section :ref:`structure_of_entry`. 
 If older format is intended to be used, the utility provides an option to disable this feature.
 
+Encryption Support
+-------------------
+This utility allows you to create an enrypted binary file also. Encryption used is AES-XTS encryption. Refer to :ref:`nvs_encryption` for more details.
+
 Running the utility
 -------------------
-
-You can run the utility in two modes using below command:
-    - Multipage Blob Support Enabled (v2)
-    - Multipage Blob Support Disabled (v1)
-
 
 *Usage*::
 
     python nvs_partition_gen.py [--version {v1,v2}] input output
 
+You can run this utility in two modes:
+    -   Normal mode - Binary generated in this mode is an unencrypted binary file.
+    -   Encryption mode - Binary generated in this mode is an encrypted binary file.
 
-Positional arguments:
+*In normal mode:*
 
-+------------------------+----------------------------------------------------------------------------------------------+
-|   Arguments            |                                     Description                                              |
-+========================+==============================================================================================+
-| input                  |  Path to CSV file to parse. Will use stdin if omitted (sample files are provided)            |
-+------------------------+----------------------------------------------------------------------------------------------+
-| output                 |  Path to output converted binary file. Will use stdout if omitted                            |
-+------------------------+----------------------------------------------------------------------------------------------+
+    A sample CSV file is provided with the utility. You can run the utility using below command::
 
-Optional arguments:
+        python nvs_partition_generator.py sample.csv sample.bin
 
-+-------------------------------+---------------------------------------------------------------------------------------+
-|   Arguments                   |                                     Description                                       |
-+===============================+=======================================================================================+
-| --version {v1,v2}             |  Set version. Default: v2                                                             |
-+-------------------------------+---------------------------------------------------------------------------------------+
+*In encryption mode:*
+
+    You can run the utility using below commands:
+
+            -   By taking encryption keys as an input file. A sample encryption keys file is provided with the utility::
+
+                   python nvs_partition_gen.py sample.csv sample_encrypted.bin --encrypt True --keyfile testdata/keys.txt
+
+            -   By enabling generation of encryption keys::
+
+                   python nvs_partition_gen.py sample.csv sample_encrypted.bin --encrypt True --keygen True
 
 
-*Multipage Blob Support Enabled Mode:*
+.. note:: In encryption mode, this utility creates a binary file named `encryption_keys.bin` containing the encryption keys used. This binary file is compatible with NVS key-partition structure. Refer to :ref:`nvs_key_partition` for more details.
 
-You can run the utility in this mode by setting the version parameter to v2, as shown below.
+
+You can also provide the format version number while running this utility:
+    - Multipage Blob Support Enabled (v2)
+    - Multipage Blob Support Disabled (v1)
+
+
+*Multipage Blob Support Enabled (v2):*
+
+You can run the utility in this format by setting the version parameter to v2, as shown below.
 A sample CSV file is provided with the utility::
 
     python nvs_partition_gen.py sample_multipage_blob.csv partition_multipage_blob.bin --version v2
 
 
-*Multipage Blob Support Disabled Mode:*
+*Multipage Blob Support Disabled (v1):*
 
-You can run the utility in this mode by setting the version parameter to v1, as shown below.
+You can run the utility in this format by setting the version parameter to v1, as shown below.
 A sample CSV file is provided with the utility::
 
     python nvs_partition_gen.py sample_singlepage_blob.csv partition_single_page.bin --version v1
 
++------------------------+----------------------------------------------------------------------------------------------+
+|   Arguments            |                                     Description                                              |
++========================+==============================================================================================+
+| input                  | Path to CSV file to parse. Will use stdin if omitted                                         |
++------------------------+----------------------------------------------------------------------------------------------+
+| output                 | Path to output converted binary file. Will use stdout if omitted                             |
++------------------------+----------------------------------------------------------------------------------------------+
+| size                   | Size of NVS Partition in KB. Eg. 12KB                                                        |
++------------------------+----------------------------------------------------------------------------------------------+
+| --version {v1,v2}      |  Set version. Default: v2                                                                    |
++-------------------------------+---------------------------------------------------------------------------------------+
+| --keygen {True,False}  |  Generate keys for encryption. Default: False                                                |
+|                        |  (Applicable only if encryption mode is true)                                                |
++------------------------+----------------------------------------------------------------------------------------------+
+| --encrypt {True,False} |  Set encryption mode. Default: False                                                         |
++------------------------+----------------------------------------------------------------------------------------------+
+| --keyfile KEYFILE      | File having key for encryption (Applicable only if encryption mode is true)                  |
++------------------------+----------------------------------------------------------------------------------------------+
 
 Caveats
 -------

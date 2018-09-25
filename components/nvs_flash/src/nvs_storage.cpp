@@ -223,6 +223,7 @@ esp_err_t Storage::writeMultiPageBlob(uint8_t nsIndex, const char* key, const vo
         if (!remainingSize) {
             /* All pages are stored. Now store the index.*/
             Item item;
+            std::fill_n(item.data, sizeof(item.data), 0xff);
             item.blobIndex.dataSize = dataSize;
             item.blobIndex.chunkCount = chunkCount;
             item.blobIndex.chunkStart = chunkStart;

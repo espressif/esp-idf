@@ -20,6 +20,8 @@
 #include <cstdio>
 #include <cstring>
 
+#include "nvs_ops.hpp"
+
 namespace nvs
 {
 
@@ -91,13 +93,16 @@ esp_err_t Page::load(uint32_t sectorNumber)
 
 esp_err_t Page::writeEntry(const Item& item)
 {
-    auto rc = spi_flash_write(getEntryAddress(mNextFreeEntry), &item, sizeof(item));
-    if (rc != ESP_OK) {
+    esp_err_t err;
+
+    err = nvs_flash_write(getEntryAddress(mNextFreeEntry), &item, sizeof(item));
+
+    if (err != ESP_OK) {
         mState = PageState::INVALID;
-        return rc;
+        return err;
     }
 
-    auto err = alterEntryState(mNextFreeEntry, EntryState::WRITTEN);
+    err = alterEntryState(mNextFreeEntry, EntryState::WRITTEN);
     if (err != ESP_OK) {
         return err;
     }
@@ -137,7 +142,9 @@ esp_err_t Page::writeEntryData(const uint8_t* data, size_t size)
         memcpy((void*)buf, data, size);
     }
 #endif //ESP_PLATFORM
-    auto rc = spi_flash_write(getEntryAddress(mNextFreeEntry), buf, size);
+
+    auto rc = nvs_flash_write(getEntryAddress(mNextFreeEntry), buf, size);
+
 #ifdef ESP_PLATFORM
     if (buf != data) {
         free((void*)buf);
@@ -235,7 +242,7 @@ esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, c
 
         size_t tail = dataSize - left;
         if (tail > 0) {
-            std::fill_n(item.rawData, ENTRY_SIZE / 4, 0xffffffff);
+            std::fill_n(item.rawData, ENTRY_SIZE, 0xff);
             memcpy(item.rawData, static_cast<const uint8_t*>(data) + left, tail);
             err = writeEntry(item);
             if (err != ESP_OK) {
@@ -707,7 +714,7 @@ esp_err_t Page::alterPageState(PageState state)
 
 esp_err_t Page::readEntry(size_t index, Item& dst) const
 {
-    auto rc = spi_flash_read(getEntryAddress(index), &dst, sizeof(dst));
+    auto rc = nvs_flash_read(getEntryAddress(index), &dst, sizeof(dst));
     if (rc != ESP_OK) {
         return rc;
     }
