@@ -53,13 +53,14 @@ If you choose "Custom partition table CSV" in menuconfig then you can also enter
 
 The CSV format is the same format as printed in the summaries shown above. However, not all fields are required in the CSV. For example, here is the "input" CSV for the OTA partition table::
 
-  # Name,   Type, SubType, Offset, Size, Flags
-  nvs,      data, nvs,     ,       0x4000,
-  otadata,  data, ota,     ,       0x2000,
-  phy_init, data, phy,     ,       0x1000,
-  factory,  app,  factory, ,       1M,
-  ota_0,    app,  ota_0,   ,       1M,
-  ota_1,    app,  ota_1,   ,       1M,
+  # Name,   Type, SubType,  Offset,   Size,  Flags
+  nvs,      data, nvs,      0x9000,  0x4000
+  otadata,  data, ota,      0xd000,  0x2000
+  phy_init, data, phy,      0xf000,  0x1000
+  factory,  app,  factory,  0x10000,  1M
+  ota_0,    app,  ota_0,    ,         1M
+  ota_1,    app,  ota_1,    ,         1M
+  nvs_key,  data, nvs_keys, ,        0x1000
 
 * Whitespace between fields is ignored, and so is any line starting with # (comments).
 * Each non-comment line in the CSV file is a partition definition.
@@ -115,6 +116,9 @@ When type is "data", the subtype field can be specified as ota (0), phy (1), nvs
   - The NVS API can also be used for other application data.
   - It is strongly recommended that you include an NVS partition of at least 0x3000 bytes in your project.
   - If using NVS API to store a lot of data, increase the NVS partition size from the default 0x6000 bytes.
+- keys (4) is for the NVS key partition. See :doc:`Non-Volatile Storage (NVS) API <../api-reference/storage/nvs_flash>` for more details.
+  - It is used to store NVS encryption keys when `NVS Encryption` feature is enabled.
+  - The size of this partition should be 4096 bytes (minimum partition size).
 
 Other data subtypes are reserved for future esp-idf uses.
 

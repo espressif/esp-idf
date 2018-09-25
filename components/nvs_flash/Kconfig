@@ -1,0 +1,12 @@
+menu NVS
+
+config NVS_ENCRYPTION
+   bool "Enable NVS encryption"
+   default n
+   depends on FLASH_ENCRYPTION_ENABLED
+   help
+      This option enables encryption for NVS. When enabled, AES-XTS is used to encrypt
+      the complete NVS data, except the page headers. It requires XTS encryption keys 
+      to be stored in an encrypted partition. This means enabling flash encryption is 
+      a pre-requisite for this feature. 
+endmenu

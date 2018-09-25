@@ -286,7 +286,8 @@ static esp_err_t encrypt_partition(int index, const esp_partition_info_t *partit
                            &partition->pos,
                            &data_ignored);
       should_encrypt = (err == ESP_OK);
-    } else if (partition->type == PART_TYPE_DATA && partition->subtype == PART_SUBTYPE_DATA_OTA) {
+    } else if ((partition->type == PART_TYPE_DATA && partition->subtype == PART_SUBTYPE_DATA_OTA)
+                || (partition->type == PART_TYPE_DATA && partition->subtype == PART_SUBTYPE_DATA_NVS_KEYS)) {
         /* check if we have ota data partition and the partition should be encrypted unconditionally */
         should_encrypt = true;
     }
