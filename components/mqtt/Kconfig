@@ -84,7 +84,7 @@ config MQTT_TASK_CORE_SELECTION_ENABLED
     help
         This will enable core selection
 
-choice
+choice MQTT_TASK_CORE_SELECTION
     depends on MQTT_TASK_CORE_SELECTION_ENABLED
     prompt "Core to use ?"
     config MQTT_USE_CORE_0

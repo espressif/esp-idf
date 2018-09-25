@@ -285,8 +285,8 @@ Flash Encryption & Secure Boot
 It is recommended to use flash encryption and secure boot together. However, if Secure Boot is enabled then additional restrictions apply to reflashing the device:
 
 - :ref:`updating-encrypted-flash-ota` are not restricted (provided the new app is signed correctly with the Secure Boot signing key).
-- :ref:`Plaintext serial flash updates <updating-encrypted-flash-serial>` are only possible if the :envvar:`Reflashable <CONFIG_SECURE_BOOTLOADER_REFLASHABLE>` Secure Boot mode is selected and a Secure Boot key was pre-generated and burned to the ESP32 (refer to :ref:`Secure Boot <secure-boot-reflashable>` docs.). In this configuration, ``make bootloader`` will produce a pre-digested bootloader and secure boot digest file for flashing at offset 0x0. When following the plaintext serial reflashing steps it is necessary to re-flash this file before flashing other plaintext data.
-- :ref:`pregenerated-flash-encryption-key` is still possible, provided the bootloader is not reflashed. Reflashing the bootloader requires the same :envvar:`Reflashable <CONFIG_SECURE_BOOTLOADER_REFLASHABLE>` option to be enabled in the Secure Boot config.
+- :ref:`Plaintext serial flash updates <updating-encrypted-flash-serial>` are only possible if the :ref:`Reflashable <CONFIG_SECURE_BOOTLOADER_MODE>` Secure Boot mode is selected and a Secure Boot key was pre-generated and burned to the ESP32 (refer to :ref:`Secure Boot <secure-boot-reflashable>` docs.). In this configuration, ``make bootloader`` will produce a pre-digested bootloader and secure boot digest file for flashing at offset 0x0. When following the plaintext serial reflashing steps it is necessary to re-flash this file before flashing other plaintext data.
+- :ref:`pregenerated-flash-encryption-key` is still possible, provided the bootloader is not reflashed. Reflashing the bootloader requires the same :ref:`Reflashable <CONFIG_SECURE_BOOTLOADER_MODE>` option to be enabled in the Secure Boot config.
 
 .. _flash-encryption-without-secure-boot:
 

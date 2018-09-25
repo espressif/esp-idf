@@ -40,7 +40,7 @@ For each error code defined in ESP-IDF components, :cpp:type:`esp_err_t` value c
 
 Additionally, :cpp:func:`esp_err_to_name_r` function will attempt to interpret the error code as a `standard POSIX error code <http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/errno.h.html>`_, if no matching ``ESP_ERR_`` value is found. This is done using ``strerror_r`` function. POSIX error codes (such as ``ENOENT``, ``ENOMEM``) are defined in ``errno.h`` and are typically obtained from ``errno`` variable. In ESP-IDF this variable is thread-local: multiple FreeRTOS tasks have their own copies of ``errno``. Functions which set ``errno`` only modify its value for the task they run in.
 
-This feature is enabled by default, but can be disabled to reduce application binary size. See :envvar:`CONFIG_ESP_ERR_TO_NAME_LOOKUP`. When this feature is disabled, :cpp:func:`esp_err_to_name` and :cpp:func:`esp_err_to_name_r` are still defined and can be called. In this case, :cpp:func:`esp_err_to_name` will return ``UNKNOWN ERROR``, and :cpp:func:`esp_err_to_name_r` will return ``Unknown error 0xXXXX(YYYYY)``, where ``0xXXXX`` and ``YYYYY`` are the hexadecimal and decimal representations of the error code, respectively.
+This feature is enabled by default, but can be disabled to reduce application binary size. See :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP`. When this feature is disabled, :cpp:func:`esp_err_to_name` and :cpp:func:`esp_err_to_name_r` are still defined and can be called. In this case, :cpp:func:`esp_err_to_name` will return ``UNKNOWN ERROR``, and :cpp:func:`esp_err_to_name_r` will return ``Unknown error 0xXXXX(YYYYY)``, where ``0xXXXX`` and ``YYYYY`` are the hexadecimal and decimal representations of the error code, respectively.
 
 ``ESP_ERROR_CHECK`` macro
 -------------------------
@@ -59,7 +59,7 @@ Error message will typically look like this::
 
 .. note:: If :doc:`IDF monitor <../get-started/idf-monitor>` is used, addresses in the backtrace will be converted to file names and line numbers.
 
-- The first line mentions the error code as a hexadecimal value, and the identifier used for this error in source code. The latter depends on :envvar:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` option being set. Address in the program where error has occured is printed as well.
+- The first line mentions the error code as a hexadecimal value, and the identifier used for this error in source code. The latter depends on :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` option being set. Address in the program where error has occured is printed as well.
 
 - Subsequent lines show the location in the program where :cpp:func:`ESP_ERROR_CHECK` macro was called, and the expression which was passed to the macro as an argument.
 
@@ -113,9 +113,9 @@ Error handling patterns
 C++ Exceptions
 --------------
 
-Support for C++ Exceptions in ESP-IDF is disabled by default, but can be enabled using :envvar:`CONFIG_CXX_EXCEPTIONS` option.
+Support for C++ Exceptions in ESP-IDF is disabled by default, but can be enabled using :ref:`CONFIG_CXX_EXCEPTIONS` option.
 
-Enabling exception handling normally increases application binary size by a few kB. Additionally it may be necessary to reserve some amount of RAM for exception emergency pool. Memory from this pool will be used if it is not possible to allocate exception object from the heap. Amount of memory in the emergency pool can be set using :envvar:`CONFIG_CXX_EXCEPTIONS_EMG_POOL_SIZE` variable.
+Enabling exception handling normally increases application binary size by a few kB. Additionally it may be necessary to reserve some amount of RAM for exception emergency pool. Memory from this pool will be used if it is not possible to allocate exception object from the heap. Amount of memory in the emergency pool can be set using :ref:`CONFIG_CXX_EXCEPTIONS_EMG_POOL_SIZE` variable.
 
 If an exception is thrown, but there is no ``catch`` block, the program will be terminated by ``abort`` function, and backtrace will be printed. See :doc:`Fatal Errors <fatal-errors>` for more information about backtraces.
 
