@@ -17,9 +17,11 @@
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
-#include "assert.h"
+#include "soc_log.h"
 
 #define MHZ (1000000)
+
+static const char* TAG = "rtc_time";
 
 /* Calibration of RTC_SLOW_CLK is performed using a special feature of TIMG0.
  * This feature counts the number of XTAL clock cycles within a given number of
@@ -58,21 +60,27 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
     /* Figure out how long to wait for calibration to finish */
     uint32_t expected_freq;
     rtc_slow_freq_t slow_freq = REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ANA_CLK_RTC_SEL);
-    uint32_t us_timer_max = 0xFFFFFFFF;
     if (cal_clk == RTC_CAL_32K_XTAL ||
         (cal_clk == RTC_CAL_RTC_MUX && slow_freq == RTC_SLOW_FREQ_32K_XTAL)) {
         expected_freq = 32768; /* standard 32k XTAL */
-        us_timer_max = (uint32_t) (TIMG_RTC_CALI_VALUE / rtc_clk_xtal_freq_get());
     } else if (cal_clk == RTC_CAL_8MD256 ||
             (cal_clk == RTC_CAL_RTC_MUX && slow_freq == RTC_SLOW_FREQ_8MD256)) {
         expected_freq = RTC_FAST_CLK_FREQ_APPROX / 256;
     } else {
         expected_freq = 150000; /* 150k internal oscillator */
-        us_timer_max = (uint32_t) (TIMG_RTC_CALI_VALUE / rtc_clk_xtal_freq_get());
     }
     uint32_t us_time_estimate = (uint32_t) (((uint64_t) slowclk_cycles) * MHZ / expected_freq);
-    // The required amount of slowclk_cycles can produce in a counter TIMG a overflow error. Decrease the slowclk_cycles for fix it.
-    assert(us_time_estimate < us_timer_max);
+    /* Check if the required number of slowclk_cycles may result in an overflow of TIMG_RTC_CALI_VALUE */
+    rtc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
+    if (xtal_freq == RTC_XTAL_FREQ_AUTO) {
+        /* XTAL frequency is not known yet; assume worst case (40 MHz) */
+        xtal_freq = RTC_XTAL_FREQ_40M;
+    }
+    const uint32_t us_timer_max =  TIMG_RTC_CALI_VALUE / (uint32_t) xtal_freq;
+    if (us_time_estimate >= us_timer_max) {
+        SOC_LOGE(TAG, "slowclk_cycles value too large, possible overflow");
+        return 0;
+    }
     /* Start calibration */
     CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START);
     SET_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START);
