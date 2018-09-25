@@ -53,6 +53,7 @@ variables:
   python $APPLY_BOT_FILTER_SCRIPT || exit 0
 
 before_script:
+  - source tools/ci/setup_python.sh
   - *git_clean_stale_submodules
   # apply bot filter in before script
   - *apply_bot_filter
@@ -75,11 +76,13 @@ before_script:
 # used for check scripts which we want to run unconditionally
 .do_nothing_before_no_filter:
   before_script: &do_nothing_before_no_filter
+    - source tools/ci/setup_python.sh
     - *git_clean_stale_submodules
 
 # used for everything else where we want to do no prep, except for bot filter
 .do_nothing_before:
   before_script: &do_nothing_before
+    - source tools/ci/setup_python.sh
     - *git_clean_stale_submodules
     # apply bot filter in before script
     - *apply_bot_filter
@@ -88,6 +91,7 @@ before_script:
 
 .add_gitlab_key_before:
   before_script: &add_gitlab_key_before
+    - source tools/ci/setup_python.sh
     - *git_clean_stale_submodules
     # apply bot filter in before script
     - *apply_bot_filter
