@@ -1,25 +1,44 @@
 menu "mbedTLS"
 
-config MBEDTLS_PLATFORM_MEMORY
-   bool "Enable custom mbedTLS memory allocation layer."
-   default n
-   help
-      If this option is disabled, mbed TLS uses the default system
-      calloc() and free() functions.
+choice MBEDTLS_MEM_ALLOC_MODE
+    prompt "Memory allocation strategy"
+    default MBEDTLS_INTERNAL_MEM_ALLOC
+    help
+        Allocation strategy for mbedTLS, essentially provides ability to
+        allocate all required dynamic allocations from,
 
-      If this option is enabled, the mbed TLS config macro
-      MBEDTLS_PLATFORM_MEMORY will be defined. The function
-      mbedtls_platform_set_calloc_free() must be called at
-      runtime to provide custom calloc() and free() function
-      pointers for use by mbedTLS.
+            - Internal DRAM memory only
+            - External SPIRAM memory only
+            - Either internal or external memory based on default malloc()
+              behavior in ESP-IDF
+            - Custom allocation mode, by overwriting calloc()/free() using
+              mbedtls_platform_set_calloc_free() function
 
-      This option allows fine-grained control over how mbedTLS
-      allocates heap memory.
+        Recommended mode here is always internal, since that is most preferred
+        from security perspective. But if application requirement does not
+        allow sufficient free internal memory then alternate mode can be
+        selected.
+
+config MBEDTLS_INTERNAL_MEM_ALLOC
+    bool "Internal memory"
+
+config MBEDTLS_EXTERNAL_MEM_ALLOC
+    bool "External SPIRAM"
+    depends on SPIRAM_SUPPORT
+
+config MBEDTLS_DEFAULT_MEM_ALLOC
+    bool "Default alloc mode"
+
+config MBEDTLS_CUSTOM_MEM_ALLOC
+    bool "Custom alloc mode"
+
+endchoice #MBEDTLS_MEM_ALLOC_MODE
 
 config MBEDTLS_SSL_MAX_CONTENT_LEN
     int "TLS maximum message content length"
     default 16384
     range 512 16384
+    depends on !MBEDTLS_ASYMMETRIC_CONTENT_LEN
     help
         Maximum TLS message length (in bytes) supported by mbedTLS.
         
@@ -35,6 +54,32 @@ config MBEDTLS_SSL_MAX_CONTENT_LEN
         If the value is set too low, symptoms are a failed TLS
         handshake or a return value of MBEDTLS_ERR_SSL_INVALID_RECORD
         (-0x7200).
+
+config MBEDTLS_ASYMMETRIC_CONTENT_LEN
+    bool "Asymmetric in/out fragment length"
+    default n
+    help
+       If enabled, this option allows customizing TLS in/out fragment length
+       in asymmetric way. Please note that enabling this with default values
+       saves 12KB of dynamic memory per TLS connection.
+
+config MBEDTLS_SSL_IN_CONTENT_LEN
+    int "TLS maximum incoming fragment length"
+    default 16384
+    range 512 16384
+    depends on MBEDTLS_ASYMMETRIC_CONTENT_LEN
+    help
+        This defines maximum incoming fragment length, overriding default
+        maximum content length (MBEDTLS_SSL_MAX_CONTENT_LEN).
+
+config MBEDTLS_SSL_OUT_CONTENT_LEN
+    int "TLS maximum outgoing fragment length"
+    default 4096
+    range 512 16384
+    depends on MBEDTLS_ASYMMETRIC_CONTENT_LEN
+    help
+        This defines maximum outgoing fragment length, overriding default
+        maximum content length (MBEDTLS_SSL_MAX_CONTENT_LEN).
 
 config MBEDTLS_DEBUG
    bool "Enable mbedTLS debugging"
@@ -101,7 +146,7 @@ config MBEDTLS_HAVE_TIME
        The time does not need to be correct, only time differences are used,
 
 config MBEDTLS_HAVE_TIME_DATE
-   bool "Enable mbedtls time data"
+   bool "Enable mbedtls certificate expiry check"
    depends on MBEDTLS_HAVE_TIME
    default n
    help
