@@ -89,7 +89,7 @@ Static Alocation
 ^^^^^^^^^^^^^^^^^
 
 This feature has been backported from FreeRTOS v9.0.0 to ESP-IDF. The 
-:envvar:`CONFIG_SUPPORT_STATIC_ALLOCATION` option must be enabled in `menuconfig`
+:ref:`CONFIG_SUPPORT_STATIC_ALLOCATION` option must be enabled in `menuconfig`
 in order for static allocation functions to be available. Once enabled, the 
 following functions can be called...
 
@@ -462,7 +462,7 @@ called for that TLSP during task deletion. If a deletion callback is `NULL`,
 users should manually free the memory pointed to by the associated TLSP before 
 task deletion in order to avoid memory leak.
 
-:envvar:`CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS` in menuconfig can be used
+:ref:`CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS` in menuconfig can be used
 to configure the number TLSP and Deletion Callbacks a TCB will have.
 
 For more details see :doc:`FreeRTOS API reference<../api-reference/system/freertos>`.
@@ -478,25 +478,25 @@ The ESP-IDF FreeRTOS can be configured using ``make menuconfig`` under
 ESP-IDF FreeRTOS configuration options. For a full list of ESP-IDF
 FreeRTOS configurations, see :doc:`FreeRTOS <../api-reference/kconfig>`
 
-:envvar:`CONFIG_FREERTOS_UNICORE` will run ESP-IDF FreeRTOS only
+:ref:`CONFIG_FREERTOS_UNICORE` will run ESP-IDF FreeRTOS only
 on **PRO_CPU**. Note that this is **not equivalent to running vanilla 
 FreeRTOS**. Behaviors of multiple components in ESP-IDF will be modified such 
 as :component_file:`esp32/cpu_start.c`. For more details regarding the 
 effects of running ESP-IDF FreeRTOS on a single core, search for 
 occurences of ``CONFIG_FREERTOS_UNICORE`` in the ESP-IDF components.
     
-:envvar:`CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS` will define the 
+:ref:`CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS` will define the 
 number of Thread Local Storage Pointers each task will have in ESP-IDF 
 FreeRTOS.
 
-:envvar:`CONFIG_SUPPORT_STATIC_ALLOCATION` will enable the backported
+:ref:`CONFIG_SUPPORT_STATIC_ALLOCATION` will enable the backported
 functionality of :cpp:func:`xTaskCreateStaticPinnedToCore` in ESP-IDF FreeRTOS
     
-:envvar:`CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION` will trigger a halt in
+:ref:`CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION` will trigger a halt in
 particular functions in ESP-IDF FreeRTOS which have not been fully tested
 in an SMP context.
 
-:envvar:`CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER` will enclose all task functions 
+:ref:`CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER` will enclose all task functions 
 within a wrapper function. In the case that a task function mistakenly returns 
 (i.e. does not call :cpp:func:`vTaskDelete`), the call flow will return to the 
 wrapper function. The wrapper function will then log an error and abort the 

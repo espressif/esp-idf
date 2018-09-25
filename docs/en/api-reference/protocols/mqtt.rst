@@ -99,11 +99,11 @@ Change settings in ``menuconfig``
     -> Component config -> ESP-MQTT Configuration 
 
 
-- :envvar:`CONFIG_MQTT_PROTOCOL_311`: Enables 3.1.1 version of MQTT protocol
+- :ref:`CONFIG_MQTT_PROTOCOL_311`: Enables 3.1.1 version of MQTT protocol
 
-- :envvar:`MQTT_TRANSPORT_%TRANSPORT%`: Enables specific MQTT transport layer, such as SSL, WEBSOCKET, WEBSOCKET_SECURE
+- :ref:`CONFIG_MQTT_TRANSPORT_SSL`, :ref:`CONFIG_MQTT_TRANSPORT_WEBSOCKET`: Enables specific MQTT transport layer, such as SSL, WEBSOCKET, WEBSOCKET_SECURE
 
-- :envvar:`MQTT_CUSTOM_OUTBOX`: Disables default implementation of mqtt_outbox, so a specific implementaion can be supplied
+- :ref:`CONFIG_MQTT_CUSTOM_OUTBOX`: Disables default implementation of mqtt_outbox, so a specific implementaion can be supplied
 
 
 API Reference

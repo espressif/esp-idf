@@ -14,7 +14,6 @@ This is the documentation for Espressif IoT Development Framework (`esp-idf <htt
 `API Guides`_       `Contribute`_       `Resources`_
 ==================  ==================  ==================
 
-
 .. |Get Started| image:: ../_static/get-started.gif
 .. _Get Started: get-started/index.html
 

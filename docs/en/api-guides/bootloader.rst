@@ -13,22 +13,22 @@ FACTORY reset
 ---------------------------
 The user can write a basic working firmware and load it into the factory partition. 
 Next, update the firmware via OTA (over the air). The updated firmware will be loaded into an OTA app partition slot and the OTA data partition is updated to boot from this partition. 
-If you want to be able to roll back to the factory firmware and clear the settings, then you need to set :envvar:`CONFIG_BOOTLOADER_FACTORY_RESET`.
+If you want to be able to roll back to the factory firmware and clear the settings, then you need to set :ref:`CONFIG_BOOTLOADER_FACTORY_RESET`.
 The factory reset mechanism allows to reset the device to factory settings:
 
 - Clear one or more data partitions. 
 - Boot from "factory" partition. 
 
-:envvar:`CONFIG_BOOTLOADER_DATA_FACTORY_RESET` allows customers to select which data partitions will be erased when the factory reset is executed. 
+:ref:`CONFIG_BOOTLOADER_DATA_FACTORY_RESET` allows customers to select which data partitions will be erased when the factory reset is executed. 
 Can specify the names of partitions through comma-delimited with optional spaces for readability. (Like this: "nvs, phy_init, nvs_custom, ..."). 
 Make sure that the name specified in the partition table and here are the same. 
 Partitions of type "app" cannot be specified here.
 
-:envvar:`CONFIG_BOOTLOADER_OTA_DATA_ERASE` - the device will boot from "factory" partition after a factory reset. The OTA data partition will be cleared.
+:ref:`CONFIG_BOOTLOADER_OTA_DATA_ERASE` - the device will boot from "factory" partition after a factory reset. The OTA data partition will be cleared.
 
-:envvar:`CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET`- number of the GPIO input for factory reset uses to trigger a factory reset, this GPIO must be pulled low on reset to trigger this. 
+:ref:`CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET`- number of the GPIO input for factory reset uses to trigger a factory reset, this GPIO must be pulled low on reset to trigger this. 
 
-:envvar:`CONFIG_BOOTLOADER_HOLD_TIME_GPIO`- this is hold time of GPIO for reset/test mode (by default 5 seconds). The GPIO must be held low continuously for this period of time after reset before a factory reset or test partition boot (as applicable) is performed.
+:ref:`CONFIG_BOOTLOADER_HOLD_TIME_GPIO`- this is hold time of GPIO for reset/test mode (by default 5 seconds). The GPIO must be held low continuously for this period of time after reset before a factory reset or test partition boot (as applicable) is performed.
 
 Partition table.::
 
@@ -45,12 +45,12 @@ Partition table.::
 Boot from TEST firmware
 ------------------------
 The user can write a special firmware for testing in production, and run it as needed. The partition table also needs a dedicated partition for this testing firmware (See `partition table`). 
-To trigger a test app you need to set :envvar:`CONFIG_BOOTLOADER_APP_TEST`. 
+To trigger a test app you need to set :ref:`CONFIG_BOOTLOADER_APP_TEST`. 
 
-:envvar:`CONFIG_BOOTLOADER_NUM_PIN_APP_TEST` - number of the GPIO input to boot TEST partition. The selected GPIO will be configured as an input with internal pull-up enabled. To trigger a test app, this GPIO must be pulled low on reset. 
+:ref:`CONFIG_BOOTLOADER_NUM_PIN_APP_TEST` - number of the GPIO input to boot TEST partition. The selected GPIO will be configured as an input with internal pull-up enabled. To trigger a test app, this GPIO must be pulled low on reset. 
 After the GPIO input is deactivated and the device reboots, the old application will boot (factory or any OTA slot). 
 
-:envvar:`CONFIG_BOOTLOADER_HOLD_TIME_GPIO` - this is hold time of GPIO for reset/test mode (by default 5 seconds). The GPIO must be held low continuously for this period of time after reset before a factory reset or test partition boot (as applicable) is performed.
+:ref:`CONFIG_BOOTLOADER_HOLD_TIME_GPIO` - this is hold time of GPIO for reset/test mode (by default 5 seconds). The GPIO must be held low continuously for this period of time after reset before a factory reset or test partition boot (as applicable) is performed.
 
 Customer bootloader
 ---------------------

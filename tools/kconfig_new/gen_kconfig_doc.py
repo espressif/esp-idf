@@ -21,6 +21,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import re
 import kconfiglib
 
 # Indentation to be used in the generated file
@@ -40,6 +41,11 @@ def write_docs(config, filename):
     with open(filename, "w") as f:
         config.walk_menu(lambda node: write_menu_item(f, node))
 
+def node_is_menu(node):
+    try:
+        return node.item == kconfiglib.MENU or node.is_menuconfig
+    except AttributeError:
+        return False  # not all MenuNodes have is_menuconfig for some reason
 
 def get_breadcrumbs(node):
     # this is a bit wasteful as it recalculates each time, but still...
@@ -47,12 +53,26 @@ def get_breadcrumbs(node):
     node = node.parent
     while node.parent:
         if node.prompt:
-            result = [ node.prompt[0] ] + result
+            result = [ ":ref:`%s`" % get_link_anchor(node) ] + result
         node = node.parent
     return " > ".join(result)
 
+def get_link_anchor(node):
+    try:
+        return "CONFIG_%s" % node.item.name
+    except AttributeError:
+        assert(node_is_menu(node))  # only menus should have no item.name
+
+    # for menus, build a link anchor out of the parents
+    result = []
+    while node.parent:
+        if node.prompt:
+            result = [ re.sub(r"[^a-zA-z0-9]+", "-", node.prompt[0]) ] + result
+        node = node.parent
+    result = "-".join(result).lower()
+    return result
+
 def get_heading_level(node):
-    # bit wasteful also
     result = INITIAL_HEADING_LEVEL
     node = node.parent
     while node.parent:
@@ -71,42 +91,41 @@ def format_rest_text(text, indent):
     text += '\n'
     return text
 
-def write_menu_item(f, node):
+def node_should_write(node):
     if not node.prompt:
-        return  # Don't do anything for invisible menu items
+        return False  # Don't do anything for invisible menu items
 
     if isinstance(node.parent.item, kconfiglib.Choice):
-        return  # Skip choice nodes, they are handled as part of the parent (see below)
+        return False  # Skip choice nodes, they are handled as part of the parent (see below)
+
+    return True
+
+def write_menu_item(f, node):
+    if not node_should_write(node):
+        return
 
     try:
         name = node.item.name
     except AttributeError:
         name = None
 
-    try:
-        is_menu = node.item == kconfiglib.MENU or node.is_menuconfig
-    except AttributeError:
-        is_menu = False  # not all MenuNodes have is_menuconfig for some reason
+    is_menu = node_is_menu(node)
 
     ## Heading
     if name:
-        title = name
-        # add link target so we can use :ref:`CONFIG_FOO`
-        f.write('.. _CONFIG_%s:\n\n' % name)
+        title = 'CONFIG_%s' % name
     else:
+        # if no symbol name, use the prompt as the heading
         title = node.prompt[0]
 
-    # if no symbol name, use the prompt as the heading
-    if True or is_menu:
-        f.write('%s\n' % title)
-        f.write(HEADING_SYMBOLS[get_heading_level(node)] * len(title))
-        f.write('\n\n')
-    else:
-        f.write('**%s**\n\n\n' % title)
+    f.write(".. _%s:\n\n" % get_link_anchor(node))
+    f.write('%s\n' % title)
+    f.write(HEADING_SYMBOLS[get_heading_level(node)] * len(title))
+    f.write('\n\n')
 
     if name:
         f.write('%s%s\n\n' % (INDENT, node.prompt[0]))
-        f.write('%s:emphasis:`Found in: %s`\n\n' % (INDENT, get_breadcrumbs(node)))
+        f.write('%s:emphasis:`Found in:` %s\n\n' % (INDENT, get_breadcrumbs(node)))
 
     try:
         if node.help:
@@ -131,6 +150,21 @@ def write_menu_item(f, node):
 
         f.write('\n\n')
 
+    if is_menu:
+        # enumerate links to child items
+        first = True
+        child = node.list
+        while child:
+            try:
+                if node_should_write(child):
+                    if first:
+                        f.write("Contains:\n\n")
+                        first = False
+                    f.write('- :ref:`%s`\n' % get_link_anchor(child))
+            except AttributeError:
+                pass
+            child = child.next
+        f.write('\n')
 
 if __name__ == '__main__':
     print("Run this via 'confgen.py --output doc FILENAME'")
