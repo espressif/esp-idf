@@ -114,6 +114,7 @@ typedef struct {
     esp_http_client_transport_t transport_type;           /*!< HTTP transport type, see `esp_http_client_transport_t` */
     int                         buffer_size;              /*!< HTTP buffer size (both send and receive) */
     void                        *user_data;               /*!< HTTP user_data context */
+    bool                        is_async;                 /*!< Set asynchronous mode */
 } esp_http_client_config_t;
 
 
@@ -123,6 +124,8 @@ typedef struct {
 #define ESP_ERR_HTTP_WRITE_DATA         (ESP_ERR_HTTP_BASE + 3)     /*!< Error write HTTP data */
 #define ESP_ERR_HTTP_FETCH_HEADER       (ESP_ERR_HTTP_BASE + 4)     /*!< Error read HTTP header from server */
 #define ESP_ERR_HTTP_INVALID_TRANSPORT  (ESP_ERR_HTTP_BASE + 5)     /*!< There are no transport support for the input scheme */
+#define ESP_ERR_HTTP_CONNECTING         (ESP_ERR_HTTP_BASE + 6)     /*!< HTTP connection hasn't been established yet */
+#define ESP_ERR_HTTP_EAGAIN             (ESP_ERR_HTTP_BASE + 7)     /*!< Mapping of errno EAGAIN to esp_err_t */
 
 /**
  * @brief      Start a HTTP session
@@ -141,7 +144,10 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 /**
  * @brief      Invoke this function after `esp_http_client_init` and all the options calls are made, and will perform the
  *             transfer as described in the options. It must be called with the same esp_http_client_handle_t as input as the esp_http_client_init call returned.
- *             esp_http_client_perform performs the entire request in a blocking manner and returns when done, or if it failed.
+ *             esp_http_client_perform performs the entire request in either blocking or non-blocking manner. By default, the API performs request in a blocking manner and returns when done,
+ *             or if it failed, and in non-blocking manner, it returns if EAGAIN/EWOULDBLOCK or EINPROGRESS is encountered, or if it failed. And in case of non-blocking request,
+ *             the user may call this API multiple times unless request & response is complete or there is a failure. To enable non-blocking esp_http_client_perform(), `is_async` member of esp_http_client_config_t
+ *             must be set while making a call to esp_http_client_init() API.
  *             You can do any amount of calls to esp_http_client_perform while using the same esp_http_client_handle_t. The underlying connection may be kept open if the server allows it.
  *             If you intend to transfer more than one file, you are even encouraged to do so.
  *             esp_http_client will then attempt to re-use the same connection for the following transfers, thus making the operations faster, less CPU intense and using less network resources.
