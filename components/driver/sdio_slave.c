@@ -965,7 +965,7 @@ static esp_err_t send_flush_data()
     if (context.in_flight) {
         buf_desc_t *desc = context.in_flight;
         while(desc != NULL) {
-            xQueueSend(context.ret_queue, desc->arg, portMAX_DELAY);
+            xQueueSend(context.ret_queue, &desc->arg, portMAX_DELAY);
             last = desc;
             desc = STAILQ_NEXT(desc, qe);
         }
@@ -980,7 +980,7 @@ static esp_err_t send_flush_data()
     if (ret == ESP_OK) {
         buf_desc_t *desc = head;
         while(desc != NULL) {
-            xQueueSend(context.ret_queue, desc->arg, portMAX_DELAY);
+            xQueueSend(context.ret_queue, &desc->arg, portMAX_DELAY);
             last = desc;
             desc = STAILQ_NEXT(desc, qe);
         }
