@@ -604,7 +604,7 @@ $(info Toolchain path: $(TOOLCHAIN_PATH))
 endif
 
 ifdef TOOLCHAIN_COMMIT_DESC
-ifneq ($(TOOLCHAIN_COMMIT_DESC), $(SUPPORTED_TOOLCHAIN_COMMIT_DESC))
+ifeq (,$(findstring $(SUPPORTED_TOOLCHAIN_COMMIT_DESC),$(TOOLCHAIN_COMMIT_DESC)))
 $(info WARNING: Toolchain version is not supported: $(TOOLCHAIN_COMMIT_DESC))
 $(info Expected to see version: $(SUPPORTED_TOOLCHAIN_COMMIT_DESC))
 $(info Please check ESP-IDF setup instructions and update the toolchain, or proceed at your own risk.)
