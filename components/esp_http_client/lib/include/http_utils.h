@@ -16,7 +16,7 @@
 #ifndef _HTTP_UTILS_H_
 #define _HTTP_UTILS_H_
 #include <sys/time.h>
-#include "transport_utils.h"
+#include "esp_transport_utils.h"
 /**
  * @brief      Assign new_str to *str pointer, and realloc *str if it not NULL
  *

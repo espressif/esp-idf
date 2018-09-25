@@ -15,7 +15,7 @@
 #ifndef _TRANSPORT_TCP_H_
 #define _TRANSPORT_TCP_H_
 
-#include "transport.h"
+#include "esp_transport.h"
 
 #ifdef __cplusplus
 extern "C" {
