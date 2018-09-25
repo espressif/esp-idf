@@ -214,6 +214,17 @@ static void btc_ble_mesh_copy_req_data(btc_msg_t *msg, void *p_dest, void *p_src
         }
         break;
     }
+    case ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT: {
+        if (p_src_data->client_send_timeout.ctx) {
+            p_dest_data->client_send_timeout.ctx = osi_malloc(sizeof(esp_ble_mesh_msg_ctx_t));
+            if (p_dest_data->client_send_timeout.ctx) {
+                memcpy(p_dest_data->client_send_timeout.ctx, p_src_data->client_send_timeout.ctx, sizeof(esp_ble_mesh_msg_ctx_t));
+            } else {
+                LOG_ERROR("%s %d no mem", __func__, msg->act);
+            }
+        }
+        break;
+    }
     default:
         break;
     }
@@ -252,6 +263,12 @@ static void btc_ble_mesh_free_req_data(btc_msg_t *msg)
     case ESP_BLE_MESH_MODEL_SEND_COMP_EVT: {
         if (arg->model_send_comp.ctx) {
             osi_free(arg->model_send_comp.ctx);
+        }
+        break;
+    }
+    case ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT: {
+        if (arg->client_send_timeout.ctx) {
+            osi_free(arg->client_send_timeout.ctx);
         }
         break;
     }
@@ -561,14 +578,14 @@ static void btc_client_model_timeout_cb(struct k_work *work)
     data = (bt_mesh_internal_data_t *)client_op->internal_data;
     __ASSERT(client_op && data, "Invalid client user data or internal data.");
     esp_ble_mesh_model_cb_param_t mesh_param = {0};
-    mesh_param.client_send_timeout.opcode = node->op_pending;
+    mesh_param.client_send_timeout.opcode = node->opcode;
     mesh_param.client_send_timeout.model = (esp_ble_mesh_model_t *)node->ctx.model;
     mesh_param.client_send_timeout.ctx   = (esp_ble_mesh_msg_ctx_t *)&node->ctx;
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_MODEL;
     msg.act = ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT;
     ret = btc_transfer_context(&msg, &mesh_param,
-                               sizeof(esp_ble_mesh_model_cb_param_t), NULL);
+                               sizeof(esp_ble_mesh_model_cb_param_t), btc_ble_mesh_copy_req_data);
 
     if (ret != BT_STATUS_SUCCESS) {
         LOG_ERROR("%s btc_transfer_context failed\n", __func__);
@@ -716,7 +733,11 @@ static void btc_reset_cb(void)
 int btc_ble_mesh_client_init(esp_ble_mesh_model_t *model)
 {
     __ASSERT(model && model->op, "The client model or operation is invalid(NULL).");
-    model->op->param_cb = (esp_ble_mesh_cb_t)btc_ble_mesh_client_model_op_cb;
+    esp_ble_mesh_model_op_t *op = model->op;
+    while (op != NULL && op->opcode != 0) {
+        op->param_cb = (esp_ble_mesh_cb_t)btc_ble_mesh_client_model_op_cb;
+        op++;
+    }
     return bt_mesh_client_init((struct bt_mesh_model *)model);
 }
 
