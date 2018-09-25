@@ -15,7 +15,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
-#include <assert.h>
 #include <stdlib.h>
 #include "rom/ets_sys.h"
 #include "rom/rtc.h"
@@ -101,6 +100,8 @@ static bool rtc_clk_cpu_freq_from_mhz_internal(int mhz, rtc_cpu_freq_t* out_val)
 
 // Current PLL frequency, in MHZ (320 or 480). Zero if PLL is not enabled.
 static int s_cur_pll_freq;
+
+static const char* TAG = "rtc_clk";
 
 static void rtc_clk_32k_enable_common(int dac, int dres, int dbias)
 {
@@ -447,7 +448,8 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
         dbias = DIG_DBIAS_240M;
         per_conf = 2;
     } else {
-        assert(false && "invalid frequency");
+        SOC_LOGE(TAG, "invalid frequency");
+        abort();
     }
     DPORT_REG_WRITE(DPORT_CPU_PER_CONF_REG, per_conf);
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, dbias);
@@ -504,7 +506,7 @@ uint32_t rtc_clk_cpu_freq_value(rtc_cpu_freq_t cpu_freq)
         case RTC_CPU_FREQ_240M:
             return 240 * MHZ;
         default:
-            assert(false && "invalid rtc_cpu_freq_t value");
+            SOC_LOGE(TAG, "invalid rtc_cpu_freq_t value");
             return 0;
     }
 }
@@ -571,7 +573,7 @@ void rtc_clk_cpu_freq_to_config(rtc_cpu_freq_t cpu_freq, rtc_cpu_freq_config_t* 
             freq_mhz = 240;
             break;
         default:
-            assert(false && "invalid rtc_cpu_freq_t value");
+            SOC_LOGE(TAG, "invalid rtc_cpu_freq_t value");
             abort();
     }
 
@@ -685,7 +687,8 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t* out_config)
                 div = 2;
                 freq_mhz = 240;
             } else {
-                assert(false && "unsupported frequency configuration");
+                SOC_LOGE(TAG, "unsupported frequency configuration");
+                abort();
             }
             break;
         }
@@ -697,7 +700,8 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t* out_config)
             break;
         case RTC_CNTL_SOC_CLK_SEL_APLL:
         default:
-            assert(false && "unsupported frequency configuration");
+            SOC_LOGE(TAG, "unsupported frequency configuration");
+            abort();
     }
     *out_config = (rtc_cpu_freq_config_t) {
         .source = source,
