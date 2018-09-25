@@ -18,6 +18,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from __future__ import print_function, division
+from __future__ import unicode_literals
 import argparse
 import os
 import re
@@ -42,9 +43,7 @@ def critical(msg):
         sys.stderr.write('\n')
 
 def generate_blanked_file(size, output_path):
-    output = ""
-    for i in range(size):
-        output += b"\xFF"
+    output = b"\xFF" * size
     try:
         stdout_binary = sys.stdout.buffer  # Python 3
     except AttributeError:
