@@ -21,9 +21,9 @@
 #include "esp_log.h"
 #include "esp_system.h"
 
-#include "transport.h"
-#include "transport_ssl.h"
-#include "transport_utils.h"
+#include "esp_transport.h"
+#include "esp_transport_ssl.h"
+#include "esp_transport_utils.h"
 
 static const char *TAG = "TRANS_SSL";
 

@@ -19,17 +19,16 @@
 #include "esp_log.h"
 
 #include "http_header.h"
-#include "transport.h"
-#include "transport_tcp.h"
+#include "esp_transport.h"
+#include "esp_transport_tcp.h"
 #include "http_utils.h"
 #include "http_auth.h"
 #include "sdkconfig.h"
-#include "transport.h"
 #include "esp_http_client.h"
 #include "errno.h"
 
 #ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
-#include "transport_ssl.h"
+#include "esp_transport_ssl.h"
 #endif
 
 static const char *TAG = "HTTP_CLIENT";

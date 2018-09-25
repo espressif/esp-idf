@@ -23,8 +23,8 @@
 #include "esp_system.h"
 #include "esp_err.h"
 
-#include "transport_utils.h"
-#include "transport.h"
+#include "esp_transport_utils.h"
+#include "esp_transport.h"
 
 static const char *TAG = "TRANS_TCP";
 

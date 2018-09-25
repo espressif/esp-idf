@@ -19,8 +19,8 @@
 #include "rom/queue.h"
 #include "esp_log.h"
 
-#include "transport.h"
-#include "transport_utils.h"
+#include "esp_transport.h"
+#include "esp_transport_utils.h"
 
 static const char *TAG = "TRANSPORT";
 
