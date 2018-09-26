@@ -172,22 +172,23 @@ BOOLEAN BTM_SecAddDevice (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name,
 ** Description      Free resources associated with the device.
 **
 ** Parameters:      bd_addr          - BD address of the peer
+**                  transport        - BT_TRANSPORT_BR_EDR or BT_TRANSPORT_LE
 **
 ** Returns          TRUE if removed OK, FALSE if not found or ACL link is active
 **
 *******************************************************************************/
-BOOLEAN BTM_SecDeleteDevice (BD_ADDR bd_addr)
+BOOLEAN BTM_SecDeleteDevice (BD_ADDR bd_addr, tBT_TRANSPORT transport)
 {
+
     tBTM_SEC_DEV_REC *p_dev_rec;
 
-    if (BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE) ||
-            BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_BR_EDR)) {
+    if (BTM_IsAclConnectionUp(bd_addr, transport)) {
         BTM_TRACE_WARNING("%s FAILED: Cannot Delete when connection is active\n", __func__);
         return FALSE;
     }
-
     if ((p_dev_rec = btm_find_dev(bd_addr)) != NULL) {
-        btm_sec_free_dev(p_dev_rec);
+        btm_sec_free_dev(p_dev_rec, transport);
+
         /* Tell controller to get rid of the link key, if it has one stored */
         BTM_DeleteStoredLinkKey (p_dev_rec->bd_addr, NULL);
     }
@@ -340,17 +341,33 @@ tBTM_SEC_DEV_REC *btm_sec_alloc_dev (BD_ADDR bd_addr)
 ** Description      Mark device record as not used
 **
 *******************************************************************************/
-void btm_sec_free_dev (tBTM_SEC_DEV_REC *p_dev_rec)
+void btm_sec_free_dev (tBTM_SEC_DEV_REC *p_dev_rec, tBT_TRANSPORT transport)
 {
-    p_dev_rec->bond_type = BOND_TYPE_UNKNOWN;
-    p_dev_rec->sec_flags = 0;
+    if (transport == BT_TRANSPORT_BR_EDR) {
+        memset(p_dev_rec->link_key, 0, LINK_KEY_LEN);
+        p_dev_rec->sec_flags &= ~(BTM_SEC_AUTHORIZED | BTM_SEC_AUTHENTICATED
+                                | BTM_SEC_ENCRYPTED | BTM_SEC_NAME_KNOWN
+                                | BTM_SEC_LINK_KEY_KNOWN | BTM_SEC_LINK_KEY_AUTHED
+                                | BTM_SEC_ROLE_SWITCHED | BTM_SEC_16_DIGIT_PIN_AUTHED);
+    } else if (transport == BT_TRANSPORT_LE) {
+        p_dev_rec->bond_type = BOND_TYPE_UNKNOWN;
+        p_dev_rec->sec_flags &= ~(BTM_SEC_LE_AUTHENTICATED | BTM_SEC_LE_ENCRYPTED
+                                | BTM_SEC_LE_NAME_KNOWN | BTM_SEC_LE_LINK_KEY_KNOWN
+                                | BTM_SEC_LE_LINK_KEY_AUTHED | BTM_SEC_ROLE_SWITCHED);
+#if BLE_INCLUDED == TRUE
+        /* Clear out any saved BLE keys */
+        btm_sec_clear_ble_keys (p_dev_rec);
+#endif
+    } else {
+        p_dev_rec->bond_type = BOND_TYPE_UNKNOWN;
+        memset(p_dev_rec->link_key, 0, LINK_KEY_LEN);
+        p_dev_rec->sec_flags = 0;
 
 #if BLE_INCLUDED == TRUE
-    /* Clear out any saved BLE keys */
-    btm_sec_clear_ble_keys (p_dev_rec);
+        /* Clear out any saved BLE keys */
+        btm_sec_clear_ble_keys (p_dev_rec);
 #endif
-
-
+    }
 }
 
 /*******************************************************************************
