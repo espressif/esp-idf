@@ -463,6 +463,7 @@ typedef void (tBTA_GATTC_CBACK)(tBTA_GATTC_EVT event, tBTA_GATTC *p_data);
 #define BTA_GATTS_LISTEN_EVT                            19
 #define BTA_GATTS_CONGEST_EVT                           20
 #define BTA_GATTS_SET_ATTR_VAL_EVT                      23
+#define BTA_GATTS_SEND_SERVICE_CHANGE_EVT               24
 
 typedef UINT8  tBTA_GATTS_EVT;
 typedef tGATT_IF tBTA_GATTS_IF;
@@ -621,6 +622,11 @@ typedef struct {
 typedef struct {
     tBTA_GATT_STATUS    status;
     tBTA_GATTS_IF       server_if;
+} tBTA_GATTS_SERVICE_CHANGE;
+
+typedef struct {
+    tBTA_GATT_STATUS    status;
+    tBTA_GATTS_IF       server_if;
 } tBTA_GATTS_OPEN;
 
 typedef struct {
@@ -644,6 +650,7 @@ typedef union {
     tBTA_GATTS_CLOSE            close;          /* BTA_GATTS_CLOSE_EVT callback data */
     tBTA_GATTS_OPEN             open;           /* BTA_GATTS_OPEN_EVT callback data */
     tBTA_GATTS_CANCEL_OPEN      cancel_open;    /* tBTA_GATTS_CANCEL_OPEN callback data */
+    tBTA_GATTS_SERVICE_CHANGE   service_change;
 
 } tBTA_GATTS;
 
@@ -1453,6 +1460,18 @@ extern void BTA_GATTS_CancelOpen(tBTA_GATTS_IF server_if, BD_ADDR remote_bda, BO
 **
 *******************************************************************************/
 extern void BTA_GATTS_Close(UINT16 conn_id);
+
+/*******************************************************************************
+**
+** Function         BTA_GATTS_SendServiceChangeIndication
+**
+** Description     send a service change indication.
+**
+** Returns          void
+**
+*******************************************************************************/
+
+void BTA_GATTS_SendServiceChangeIndication(tBTA_GATTS_IF server_if, BD_ADDR remote_bda);
 
 /*******************************************************************************
 **

@@ -349,6 +349,32 @@ config GATTS_ENABLE
     help
         This option can be disabled when the app work only on gatt client mode
 
+choice GATTS_SEND_SERVICE_CHANGE_MODE
+    prompt "GATTS Service Change Mode"
+    default GATTS_SEND_SERVICE_CHANGE_AUTO
+    depends on GATTS_ENABLE
+    help
+        Service change indication mode for GATT Server.
+
+config GATTS_SEND_SERVICE_CHANGE_MANUAL
+    bool "GATTS manually send service change indication"
+    help
+        Manually send service change indication through API esp_ble_gatts_send_service_change_indication()
+
+config GATTS_SEND_SERVICE_CHANGE_AUTO
+    bool "GATTS automatically send service change indication"
+    help
+        Let Bluedroid handle the service change indication internally
+
+endchoice
+
+config GATTS_SEND_SERVICE_CHANGE_MODE
+    int
+    depends on GATTS_ENABLE
+    default 0 if GATTS_SEND_SERVICE_CHANGE_AUTO
+    default 1 if GATTS_SEND_SERVICE_CHANGE_MANUAL
+    default 0
+
 config GATTC_ENABLE
     bool "Include GATT client module(GATTC)"
     depends on BLUEDROID_ENABLED && (BTDM_CONTROLLER_MODE_BTDM || BTDM_CONTROLLER_MODE_BLE_ONLY)
