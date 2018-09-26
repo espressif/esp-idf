@@ -37,6 +37,7 @@ User should implement their DUTTool classes.
 If they using different port then need to implement their DUTPort class as well.
 """
 
+from __future__ import print_function
 import time
 import re
 import threading
@@ -402,6 +403,21 @@ class BaseDUT(object):
         self._port_close()
         self.LOG_THREAD.flush_data()
 
+    @staticmethod
+    def u_to_bytearray(data):
+        """
+        if data is not bytearray then it tries to convert it
+
+        :param data: data which needs to be checked and maybe transformed
+        """
+        if type(data) is type(u''):
+            try:
+                data = data.encode('utf-8')
+            except:
+                print(u'Cannot encode {} of type {}'.format(data, type(data)))
+                raise
+        return data
+
     def write(self, data, eol="\r\n", flush=True):
         """
         :param data: data
@@ -416,7 +432,7 @@ class BaseDUT(object):
             self.data_cache.flush()
         # do write if cache
         if data is not None:
-            self._port_write(data + eol if eol else data)
+            self._port_write(self.u_to_bytearray(data) + self.u_to_bytearray(eol) if eol else self.u_to_bytearray(data))
 
     @_expect_lock
     def read(self, size=0xFFFFFFFF):
@@ -461,9 +477,13 @@ class BaseDUT(object):
         :return: match groups if match succeed otherwise None
         """
         ret = None
+        if type(pattern.pattern) is type(u''):
+            pattern = re.compile(BaseDUT.u_to_bytearray(pattern.pattern))
+        if type(data) is type(u''):
+            data = BaseDUT.u_to_bytearray(data)
         match = pattern.search(data)
         if match:
-            ret = match.groups()
+            ret = tuple(x.decode() for x in match.groups())
             index = match.end()
         else:
             index = -1
@@ -471,7 +491,8 @@ class BaseDUT(object):
 
     EXPECT_METHOD = [
         [type(re.compile("")), "_expect_re"],
-        [str, "_expect_str"],
+        [type(b''), "_expect_str"], # Python 2 & 3 hook to work without 'from builtins import str' from future
+        [type(u''), "_expect_str"],
     ]
 
     def _get_expect_method(self, pattern):

@@ -89,7 +89,7 @@ class IDFDUT(DUT.SerialDUT):
             address = self.partition_table["nvs"]["offset"]
             size = self.partition_table["nvs"]["size"]
             nvs_file = tempfile.NamedTemporaryFile()
-            nvs_file.write(chr(0xFF) * size)
+            nvs_file.write(b'\xff' * size)
             nvs_file.flush()
             download_config = self.download_config + [address, nvs_file.name]
         else:

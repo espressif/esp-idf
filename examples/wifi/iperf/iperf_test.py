@@ -19,6 +19,11 @@ The test env Example_ShieldBox do need the following config::
     apc_ip: "192.168.1.88"
     pc_nic: "eth0"
 """
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from builtins import object
 import re
 import os
 import sys
@@ -75,7 +80,7 @@ class TestResult(object):
     BAD_POINT_PERCENTAGE_THRESHOLD = 0.3
 
     # we need at least 1/2 valid points to qualify the test result
-    THROUGHPUT_QUALIFY_COUNT = TEST_TIME / 2
+    THROUGHPUT_QUALIFY_COUNT = TEST_TIME//2
 
     def __init__(self, proto, direction, config_name):
         self.proto = proto
@@ -169,7 +174,7 @@ class TestResult(object):
         def analysis_bad_point(data, index_type):
             for ap_ssid in data:
                 result_dict = data[ap_ssid]
-                index_list = result_dict.keys()
+                index_list = list(result_dict.keys())
                 index_list.sort()
                 if index_type == "att":
                     index_list.reverse()

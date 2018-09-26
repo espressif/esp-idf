@@ -14,30 +14,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import httplib
+from __future__ import print_function
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+import http.client
 import argparse
 
 def verbose_print(verbosity, *args):
     if (verbosity):
-        print ''.join(str(elems) for elems in args)
+        Utility.console_log(''.join(str(elems) for elems in args))
 
 def test_get_handler(ip, port, verbosity = False):
     verbose_print(verbosity, "========  GET HANDLER TEST =============")
     # Establish HTTP connection
     verbose_print(verbosity, "Connecting to => " + ip + ":" + port)
-    sess = httplib.HTTPConnection(ip + ":" + port, timeout = 15)
+    sess = http.client.HTTPConnection(ip + ":" + port, timeout = 15)
 
     uri = "/hello?query1=value1&query2=value2&query3=value3"
     # GET hello response
     test_headers = {"Test-Header-1":"Test-Value-1", "Test-Header-2":"Test-Value-2"}
     verbose_print(verbosity, "Sending GET to URI : ", uri)
     verbose_print(verbosity, "Sending additional headers : ")
-    for k, v in test_headers.iteritems():
+    for k, v in test_headers.items():
         verbose_print(verbosity, "\t", k, ": ", v)
     sess.request("GET", url=uri, headers=test_headers)
     resp = sess.getresponse()
     resp_hdrs = resp.getheaders()
-    resp_data = resp.read()
+    resp_data = resp.read().decode()
     try:
         if resp.getheader("Custom-Header-1") != "Custom-Value-1":
             return False
@@ -62,12 +67,12 @@ def test_post_handler(ip, port, msg, verbosity = False):
     verbose_print(verbosity, "========  POST HANDLER TEST ============")
     # Establish HTTP connection
     verbose_print(verbosity, "Connecting to => " + ip + ":" + port)
-    sess = httplib.HTTPConnection(ip + ":" + port, timeout = 15)
+    sess = http.client.HTTPConnection(ip + ":" + port, timeout = 15)
 
     # POST message to /echo and get back response
     sess.request("POST", url="/echo", body=msg)
     resp = sess.getresponse()
-    resp_data = resp.read()
+    resp_data = resp.read().decode()
     verbose_print(verbosity, "Server response to POST /echo (" + msg + ")")
     verbose_print(verbosity, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv")
     verbose_print(verbosity, resp_data)
@@ -81,7 +86,7 @@ def test_put_handler(ip, port, verbosity = False):
     verbose_print(verbosity, "========  PUT HANDLER TEST =============")
     # Establish HTTP connection
     verbose_print(verbosity, "Connecting to => " + ip + ":" + port)
-    sess = httplib.HTTPConnection(ip + ":" + port, timeout = 15)
+    sess = http.client.HTTPConnection(ip + ":" + port, timeout = 15)
 
     # PUT message to /ctrl to disable /hello URI handler
     verbose_print(verbosity, "Disabling /hello handler")
@@ -91,7 +96,7 @@ def test_put_handler(ip, port, verbosity = False):
 
     sess.request("GET", url="/hello")
     resp = sess.getresponse()
-    resp_data1 = resp.read()
+    resp_data1 = resp.read().decode()
     verbose_print(verbosity, "Response on GET /hello : " + resp_data1)
 
     # PUT message to /ctrl to enable /hello URI handler
@@ -102,7 +107,7 @@ def test_put_handler(ip, port, verbosity = False):
 
     sess.request("GET", url="/hello")
     resp = sess.getresponse()
-    resp_data2 = resp.read()
+    resp_data2 = resp.read().decode()
     verbose_print(verbosity, "Response on GET /hello : " + resp_data2)
 
     # Close HTTP connection
@@ -113,14 +118,14 @@ def test_custom_uri_query(ip, port, query, verbosity = False):
     verbose_print(verbosity, "========  GET HANDLER TEST =============")
     # Establish HTTP connection
     verbose_print(verbosity, "Connecting to => " + ip + ":" + port)
-    sess = httplib.HTTPConnection(ip + ":" + port, timeout = 15)
+    sess = http.client.HTTPConnection(ip + ":" + port, timeout = 15)
 
     uri = "/hello?" + query
     # GET hello response
     verbose_print(verbosity, "Sending GET to URI : ", uri)
     sess.request("GET", url=uri, headers={})
     resp = sess.getresponse()
-    resp_data = resp.read()
+    resp_data = resp.read().decode()
 
     verbose_print(verbosity, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv")
     verbose_print(verbosity, "Server response to GET /hello")
@@ -145,8 +150,8 @@ if __name__ == '__main__':
     msg  = args['msg']
 
     if not test_get_handler (ip, port, True):
-        print "Failed!"
+        Utility.console_log("Failed!")
     if not test_post_handler(ip, port, msg, True):
-        print "Failed!"
+        Utility.console_log("Failed!")
     if not test_put_handler (ip, port, True):
-        print "Failed!"
+        Utility.console_log("Failed!")
