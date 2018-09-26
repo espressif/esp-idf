@@ -37,6 +37,16 @@ static size_t before_free_32bit;
 const size_t WARN_LEAK_THRESHOLD = 256;
 const size_t CRITICAL_LEAK_THRESHOLD = 4096;
 
+void unity_reset_leak_checks(void)
+{
+    before_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+    before_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
+
+#ifdef CONFIG_HEAP_TRACING
+    heap_trace_start(HEAP_TRACE_LEAKS);
+#endif
+}
+
 /* setUp runs before every test */
 void setUp(void)
 {
@@ -54,12 +64,7 @@ void setUp(void)
     printf("%s", ""); /* sneakily lazy-allocate the reent structure for this test task */
     get_test_data_partition();  /* allocate persistent partition table structures */
 
-    before_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
-    before_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
-
-#ifdef CONFIG_HEAP_TRACING
-    heap_trace_start(HEAP_TRACE_LEAKS);
-#endif
+    unity_reset_leak_checks();
 }
 
 static void check_leak(size_t before_free, size_t after_free, const char *type)
