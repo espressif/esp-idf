@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _TRANSPORT_UTILS_H_
-#define _TRANSPORT_UTILS_H_
+#ifndef _ESP_TRANSPORT_UTILS_H_
+#define _ESP_TRANSPORT_UTILS_H_
 #include <sys/time.h>
 
 #ifdef __cplusplus
@@ -26,10 +26,10 @@ extern "C" {
  * @param[in]  timeout_ms  The timeout milliseconds
  * @param[out] tv          Timeval struct
  */
-void transport_utils_ms_to_timeval(int timeout_ms, struct timeval *tv);
+void esp_transport_utils_ms_to_timeval(int timeout_ms, struct timeval *tv);
 
 
-#define TRANSPORT_MEM_CHECK(TAG, a, action) if (!(a)) {                                                      \
+#define ESP_TRANSPORT_MEM_CHECK(TAG, a, action) if (!(a)) {                                                      \
         ESP_LOGE(TAG,"%s:%d (%s): %s", __FILE__, __LINE__, __FUNCTION__, "Memory exhausted");       \
         action;                                                                                         \
         }
@@ -37,4 +37,4 @@ void transport_utils_ms_to_timeval(int timeout_ms, struct timeval *tv);
 #ifdef __cplusplus
 }
 #endif
-#endif /* _TRANSPORT_UTILS_H_ */
+#endif /* _ESP_TRANSPORT_UTILS_H_ */

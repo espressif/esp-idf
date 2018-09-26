@@ -43,13 +43,13 @@ typedef struct {
     transport_ssl_conn_state_t conn_state;
 } transport_ssl_t;
 
-transport_handle_t transport_get_handle(transport_handle_t t);
+esp_transport_handle_t transport_get_handle(esp_transport_handle_t t);
 
-static int ssl_close(transport_handle_t t);
+static int ssl_close(esp_transport_handle_t t);
 
-static int ssl_connect_async(transport_handle_t t, const char *host, int port, int timeout_ms)
+static int ssl_connect_async(esp_transport_handle_t t, const char *host, int port, int timeout_ms)
 {
-    transport_ssl_t *ssl = transport_get_context_data(t);
+    transport_ssl_t *ssl = esp_transport_get_context_data(t);
     if (ssl->conn_state == TRANS_SSL_INIT) {
         if (ssl->cfg.cacert_pem_buf) {
             ssl->verify_server = true;
@@ -69,9 +69,9 @@ static int ssl_connect_async(transport_handle_t t, const char *host, int port, i
     return 0;
 }
 
-static int ssl_connect(transport_handle_t t, const char *host, int port, int timeout_ms)
+static int ssl_connect(esp_transport_handle_t t, const char *host, int port, int timeout_ms)
 {
-    transport_ssl_t *ssl = transport_get_context_data(t);
+    transport_ssl_t *ssl = esp_transport_get_context_data(t);
     if (ssl->cfg.cacert_pem_buf) {
         ssl->verify_server = true;
     }
@@ -85,35 +85,35 @@ static int ssl_connect(transport_handle_t t, const char *host, int port, int tim
     return 0;
 }
 
-static int ssl_poll_read(transport_handle_t t, int timeout_ms)
+static int ssl_poll_read(esp_transport_handle_t t, int timeout_ms)
 {
-    transport_ssl_t *ssl = transport_get_context_data(t);
+    transport_ssl_t *ssl = esp_transport_get_context_data(t);
     fd_set readset;
     FD_ZERO(&readset);
     FD_SET(ssl->tls->sockfd, &readset);
     struct timeval timeout;
-    transport_utils_ms_to_timeval(timeout_ms, &timeout);
+    esp_transport_utils_ms_to_timeval(timeout_ms, &timeout);
 
     return select(ssl->tls->sockfd + 1, &readset, NULL, NULL, &timeout);
 }
 
-static int ssl_poll_write(transport_handle_t t, int timeout_ms)
+static int ssl_poll_write(esp_transport_handle_t t, int timeout_ms)
 {
-    transport_ssl_t *ssl = transport_get_context_data(t);
+    transport_ssl_t *ssl = esp_transport_get_context_data(t);
     fd_set writeset;
     FD_ZERO(&writeset);
     FD_SET(ssl->tls->sockfd, &writeset);
     struct timeval timeout;
-    transport_utils_ms_to_timeval(timeout_ms, &timeout);
+    esp_transport_utils_ms_to_timeval(timeout_ms, &timeout);
     return select(ssl->tls->sockfd + 1, NULL, &writeset, NULL, &timeout);
 }
 
-static int ssl_write(transport_handle_t t, const char *buffer, int len, int timeout_ms)
+static int ssl_write(esp_transport_handle_t t, const char *buffer, int len, int timeout_ms)
 {
     int poll, ret;
-    transport_ssl_t *ssl = transport_get_context_data(t);
+    transport_ssl_t *ssl = esp_transport_get_context_data(t);
 
-    if ((poll = transport_poll_write(t, timeout_ms)) <= 0) {
+    if ((poll = esp_transport_poll_write(t, timeout_ms)) <= 0) {
         ESP_LOGW(TAG, "Poll timeout or error, errno=%s, fd=%d, timeout_ms=%d", strerror(errno), ssl->tls->sockfd, timeout_ms);
         return poll;
     }
@@ -124,13 +124,13 @@ static int ssl_write(transport_handle_t t, const char *buffer, int len, int time
     return ret;
 }
 
-static int ssl_read(transport_handle_t t, char *buffer, int len, int timeout_ms)
+static int ssl_read(esp_transport_handle_t t, char *buffer, int len, int timeout_ms)
 {
     int poll, ret;
-    transport_ssl_t *ssl = transport_get_context_data(t);
+    transport_ssl_t *ssl = esp_transport_get_context_data(t);
 
     if (esp_tls_get_bytes_avail(ssl->tls) <= 0) {
-        if ((poll = transport_poll_read(t, timeout_ms)) <= 0) {
+        if ((poll = esp_transport_poll_read(t, timeout_ms)) <= 0) {
             return poll;
         }
     }
@@ -141,10 +141,10 @@ static int ssl_read(transport_handle_t t, char *buffer, int len, int timeout_ms)
     return ret;
 }
 
-static int ssl_close(transport_handle_t t)
+static int ssl_close(esp_transport_handle_t t)
 {
     int ret = -1;
-    transport_ssl_t *ssl = transport_get_context_data(t);
+    transport_ssl_t *ssl = esp_transport_get_context_data(t);
     if (ssl->ssl_initialized) {
         esp_tls_conn_delete(ssl->tls);
         ssl->ssl_initialized = false;
@@ -153,31 +153,31 @@ static int ssl_close(transport_handle_t t)
     return ret;
 }
 
-static int ssl_destroy(transport_handle_t t)
+static int ssl_destroy(esp_transport_handle_t t)
 {
-    transport_ssl_t *ssl = transport_get_context_data(t);
-    transport_close(t);
+    transport_ssl_t *ssl = esp_transport_get_context_data(t);
+    esp_transport_close(t);
     free(ssl);
     return 0;
 }
 
-void transport_ssl_set_cert_data(transport_handle_t t, const char *data, int len)
+void esp_transport_ssl_set_cert_data(esp_transport_handle_t t, const char *data, int len)
 {
-    transport_ssl_t *ssl = transport_get_context_data(t);
+    transport_ssl_t *ssl = esp_transport_get_context_data(t);
     if (t && ssl) {
         ssl->cfg.cacert_pem_buf = (void *)data;
         ssl->cfg.cacert_pem_bytes = len + 1;
     }
 }
 
-transport_handle_t transport_ssl_init()
+esp_transport_handle_t esp_transport_ssl_init()
 {
-    transport_handle_t t = transport_init();
+    esp_transport_handle_t t = esp_transport_init();
     transport_ssl_t *ssl = calloc(1, sizeof(transport_ssl_t));
-    TRANSPORT_MEM_CHECK(TAG, ssl, return NULL);
-    transport_set_context_data(t, ssl);
-    transport_set_func(t, ssl_connect, ssl_read, ssl_write, ssl_close, ssl_poll_read, ssl_poll_write, ssl_destroy, transport_get_handle);
-    transport_set_async_connect_func(t, ssl_connect_async);
+    ESP_TRANSPORT_MEM_CHECK(TAG, ssl, return NULL);
+    esp_transport_set_context_data(t, ssl);
+    esp_transport_set_func(t, ssl_connect, ssl_read, ssl_write, ssl_close, ssl_poll_read, ssl_poll_write, ssl_destroy, transport_get_handle);
+    esp_transport_set_async_connect_func(t, ssl_connect_async);
     return t;
 }
 
