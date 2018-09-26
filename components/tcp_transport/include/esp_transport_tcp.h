@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _TRANSPORT_TCP_H_
-#define _TRANSPORT_TCP_H_
+#ifndef _ESP_TRANSPORT_TCP_H_
+#define _ESP_TRANSPORT_TCP_H_
 
 #include "esp_transport.h"
 
@@ -22,15 +22,15 @@ extern "C" {
 #endif
 
 /**
- * @brief      Create TCP transport, the transport handle must be release transport_destroy callback
+ * @brief      Create TCP transport, the transport handle must be release esp_transport_destroy callback
  *
- * @return  the allocated transport_handle_t, or NULL if the handle can not be allocated
+ * @return  the allocated esp_transport_handle_t, or NULL if the handle can not be allocated
  */
-transport_handle_t transport_tcp_init();
+esp_transport_handle_t esp_transport_tcp_init();
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* _ESP_TRANSPORT_TCP_H_ */

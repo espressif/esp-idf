@@ -14,16 +14,28 @@
 static const char *TAG = "TRANSPORT_WS";
 
 #define DEFAULT_WS_BUFFER (1024)
+#define WS_FIN            0x80
+#define WS_OPCODE_TEXT    0x01
+#define WS_OPCODE_BINARY  0x02
+#define WS_OPCODE_CLOSE   0x08
+#define WS_OPCODE_PING    0x09
+#define WS_OPCODE_PONG    0x0a
+// Second byte
+#define WS_MASK           0x80
+#define WS_SIZE16         126
+#define WS_SIZE64         127
+#define MAX_WEBSOCKET_HEADER_SIZE 10
+#define WS_RESPONSE_OK    101
 
 typedef struct {
     char *path;
     char *buffer;
-    transport_handle_t parent;
+    esp_transport_handle_t parent;
 } transport_ws_t;
 
-transport_handle_t ws_transport_get_payload_transport_handle(transport_handle_t t)
+static esp_transport_handle_t ws_get_payload_transport_handle(esp_transport_handle_t t)
 {
-    transport_ws_t *ws = transport_get_context_data(t);
+    transport_ws_t *ws = esp_transport_get_context_data(t);
     return ws->parent;
 }
 
@@ -64,10 +76,10 @@ static char *get_http_header(const char *buffer, const char *key)
     return NULL;
 }
 
-static int ws_connect(transport_handle_t t, const char *host, int port, int timeout_ms)
+static int ws_connect(esp_transport_handle_t t, const char *host, int port, int timeout_ms)
 {
-    transport_ws_t *ws = transport_get_context_data(t);
-    if (transport_connect(ws->parent, host, port, timeout_ms) < 0) {
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    if (esp_transport_connect(ws->parent, host, port, timeout_ms) < 0) {
         ESP_LOGE(TAG, "Error connect to ther server");
     }
 
@@ -96,11 +108,11 @@ static int ws_connect(transport_handle_t t, const char *host, int port, int time
         return -1;
     }
     ESP_LOGD(TAG, "Write upgrate request\r\n%s", ws->buffer);
-    if (transport_write(ws->parent, ws->buffer, len, timeout_ms) <= 0) {
+    if (esp_transport_write(ws->parent, ws->buffer, len, timeout_ms) <= 0) {
         ESP_LOGE(TAG, "Error write Upgrade header %s", ws->buffer);
         return -1;
     }
-    if ((len = transport_read(ws->parent, ws->buffer, DEFAULT_WS_BUFFER, timeout_ms)) <= 0) {
+    if ((len = esp_transport_read(ws->parent, ws->buffer, DEFAULT_WS_BUFFER, timeout_ms)) <= 0) {
         ESP_LOGE(TAG, "Error read response for Upgrade header %s", ws->buffer);
         return -1;
     }
@@ -132,15 +144,15 @@ static int ws_connect(transport_handle_t t, const char *host, int port, int time
     return 0;
 }
 
-static int ws_write(transport_handle_t t, const char *buff, int len, int timeout_ms)
+static int ws_write(esp_transport_handle_t t, const char *buff, int len, int timeout_ms)
 {
-    transport_ws_t *ws = transport_get_context_data(t);
+    transport_ws_t *ws = esp_transport_get_context_data(t);
     char ws_header[MAX_WEBSOCKET_HEADER_SIZE];
     char *mask;
     int header_len = 0, i;
     char *buffer = (char *)buff;
     int poll_write;
-    if ((poll_write = transport_poll_write(ws->parent, timeout_ms)) <= 0) {
+    if ((poll_write = esp_transport_poll_write(ws->parent, timeout_ms)) <= 0) {
         return poll_write;
     }
 
@@ -161,25 +173,25 @@ static int ws_write(transport_handle_t t, const char *buff, int len, int timeout
     for (i = 0; i < len; ++i) {
         buffer[i] = (buffer[i] ^ mask[i % 4]);
     }
-    if (transport_write(ws->parent, ws_header, header_len, timeout_ms) != header_len) {
+    if (esp_transport_write(ws->parent, ws_header, header_len, timeout_ms) != header_len) {
         ESP_LOGE(TAG, "Error write header");
         return -1;
     }
-    return transport_write(ws->parent, buffer, len, timeout_ms);
+    return esp_transport_write(ws->parent, buffer, len, timeout_ms);
 }
 
-static int ws_read(transport_handle_t t, char *buffer, int len, int timeout_ms)
+static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_ms)
 {
-    transport_ws_t *ws = transport_get_context_data(t);
+    transport_ws_t *ws = esp_transport_get_context_data(t);
     int payload_len;
     int payload_len_buff = len;
     char *data_ptr = buffer, opcode, mask, *mask_key = NULL;
     int rlen;
     int poll_read;
-    if ((poll_read = transport_poll_read(ws->parent, timeout_ms)) <= 0) {
+    if ((poll_read = esp_transport_poll_read(ws->parent, timeout_ms)) <= 0) {
         return poll_read;
     }
-    if ((rlen = transport_read(ws->parent, buffer, len, timeout_ms)) <= 0) {
+    if ((rlen = esp_transport_read(ws->parent, buffer, len, timeout_ms)) <= 0) {
         ESP_LOGE(TAG, "Error read data");
         return rlen;
     }
@@ -223,56 +235,56 @@ static int ws_read(transport_handle_t t, char *buffer, int len, int timeout_ms)
     return payload_len;
 }
 
-static int ws_poll_read(transport_handle_t t, int timeout_ms)
+static int ws_poll_read(esp_transport_handle_t t, int timeout_ms)
 {
-    transport_ws_t *ws = transport_get_context_data(t);
-    return transport_poll_read(ws->parent, timeout_ms);
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    return esp_transport_poll_read(ws->parent, timeout_ms);
 }
 
-static int ws_poll_write(transport_handle_t t, int timeout_ms)
+static int ws_poll_write(esp_transport_handle_t t, int timeout_ms)
 {
-    transport_ws_t *ws = transport_get_context_data(t);
-    return transport_poll_write(ws->parent, timeout_ms);;
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    return esp_transport_poll_write(ws->parent, timeout_ms);;
 }
 
-static int ws_close(transport_handle_t t)
+static int ws_close(esp_transport_handle_t t)
 {
-    transport_ws_t *ws = transport_get_context_data(t);
-    return transport_close(ws->parent);
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    return esp_transport_close(ws->parent);
 }
 
-static esp_err_t ws_destroy(transport_handle_t t)
+static esp_err_t ws_destroy(esp_transport_handle_t t)
 {
-    transport_ws_t *ws = transport_get_context_data(t);
+    transport_ws_t *ws = esp_transport_get_context_data(t);
     free(ws->buffer);
     free(ws->path);
     free(ws);
     return 0;
 }
-void transport_ws_set_path(transport_handle_t t, const char *path)
+void esp_transport_ws_set_path(esp_transport_handle_t t, const char *path)
 {
-    transport_ws_t *ws = transport_get_context_data(t);
+    transport_ws_t *ws = esp_transport_get_context_data(t);
     ws->path = realloc(ws->path, strlen(path) + 1);
     strcpy(ws->path, path);
 }
-transport_handle_t transport_ws_init(transport_handle_t parent_handle)
+esp_transport_handle_t esp_transport_ws_init(esp_transport_handle_t parent_handle)
 {
-    transport_handle_t t = transport_init();
+    esp_transport_handle_t t = esp_transport_init();
     transport_ws_t *ws = calloc(1, sizeof(transport_ws_t));
-    TRANSPORT_MEM_CHECK(TAG, ws, return NULL);
+    ESP_TRANSPORT_MEM_CHECK(TAG, ws, return NULL);
     ws->parent = parent_handle;
 
     ws->path = strdup("/");
-    TRANSPORT_MEM_CHECK(TAG, ws->path, return NULL);
+    ESP_TRANSPORT_MEM_CHECK(TAG, ws->path, return NULL);
     ws->buffer = malloc(DEFAULT_WS_BUFFER);
-    TRANSPORT_MEM_CHECK(TAG, ws->buffer, {
+    ESP_TRANSPORT_MEM_CHECK(TAG, ws->buffer, {
         free(ws->path);
         free(ws);
         return NULL;
     });
 
-    transport_set_func(t, ws_connect, ws_read, ws_write, ws_close, ws_poll_read, ws_poll_write, ws_destroy, ws_transport_get_payload_transport_handle);
-    transport_set_context_data(t, ws);
+    esp_transport_set_func(t, ws_connect, ws_read, ws_write, ws_close, ws_poll_read, ws_poll_write, ws_destroy, ws_get_payload_transport_handle);
+    esp_transport_set_context_data(t, ws);
     return t;
 }
 

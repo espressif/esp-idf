@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _TRANSPORT_SSL_H_
-#define _TRANSPORT_SSL_H_
+#ifndef _ESP_TRANSPORT_SSL_H_
+#define _ESP_TRANSPORT_SSL_H_
 
 #include "esp_transport.h"
 
@@ -23,11 +23,11 @@ extern "C" {
 
 
 /**
- * @brief       Create new SSL transport, the transport handle must be release transport_destroy callback
+ * @brief       Create new SSL transport, the transport handle must be release esp_transport_destroy callback
  *
- * @return      the allocated transport_handle_t, or NULL if the handle can not be allocated
+ * @return      the allocated esp_transport_handle_t, or NULL if the handle can not be allocated
  */
-transport_handle_t transport_ssl_init();
+esp_transport_handle_t esp_transport_ssl_init();
 
 /**
  * @brief      Set SSL certificate data (as PEM format).
@@ -38,11 +38,11 @@ transport_handle_t transport_ssl_init();
  * @param[in]  data  The pem data
  * @param[in]  len   The length
  */
-void transport_ssl_set_cert_data(transport_handle_t t, const char *data, int len);
+void esp_transport_ssl_set_cert_data(esp_transport_handle_t t, const char *data, int len);
 
 
 #ifdef __cplusplus
 }
 #endif
-#endif
+#endif /* _ESP_TRANSPORT_SSL_H_ */
 

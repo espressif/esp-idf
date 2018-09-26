@@ -80,7 +80,7 @@ char *http_utils_join_string(const char *first_str, int len_first, const char *s
 int http_utils_str_starts_with(const char *str, const char *start);
 
 
-#define HTTP_MEM_CHECK(TAG, a, action) TRANSPORT_MEM_CHECK(TAG, a, action)
+#define HTTP_MEM_CHECK(TAG, a, action) ESP_TRANSPORT_MEM_CHECK(TAG, a, action)
 
 
 #endif

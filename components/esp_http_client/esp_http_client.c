@@ -93,8 +93,8 @@ struct esp_http_client {
     int                         process_again;
     struct http_parser          *parser;
     struct http_parser_settings *parser_settings;
-    transport_list_handle_t     transport_list;
-    transport_handle_t          transport;
+    esp_transport_list_handle_t     transport_list;
+    esp_transport_handle_t          transport;
     esp_http_data_t                 *request;
     esp_http_data_t                 *response;
     void                        *user_data;
@@ -443,7 +443,7 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 {
 
     esp_http_client_handle_t client;
-    transport_handle_t tcp;
+    esp_transport_handle_t tcp;
     bool _success;
 
     _success = (
@@ -466,10 +466,10 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
     }
 
     _success = (
-                   (client->transport_list = transport_list_init()) &&
-                   (tcp = transport_tcp_init()) &&
-                   (transport_set_default_port(tcp, DEFAULT_HTTP_PORT) == ESP_OK) &&
-                   (transport_list_add(client->transport_list, tcp, "http") == ESP_OK)
+                   (client->transport_list = esp_transport_list_init()) &&
+                   (tcp = esp_transport_tcp_init()) &&
+                   (esp_transport_set_default_port(tcp, DEFAULT_HTTP_PORT) == ESP_OK) &&
+                   (esp_transport_list_add(client->transport_list, tcp, "http") == ESP_OK)
                );
     if (!_success) {
         ESP_LOGE(TAG, "Error initialize transport");
@@ -477,11 +477,11 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
         return NULL;
     }
 #ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
-    transport_handle_t ssl;
+    esp_transport_handle_t ssl;
     _success = (
-                   (ssl = transport_ssl_init()) &&
-                   (transport_set_default_port(ssl, DEFAULT_HTTPS_PORT) == ESP_OK) &&
-                   (transport_list_add(client->transport_list, ssl, "https") == ESP_OK)
+                   (ssl = esp_transport_ssl_init()) &&
+                   (esp_transport_set_default_port(ssl, DEFAULT_HTTPS_PORT) == ESP_OK) &&
+                   (esp_transport_list_add(client->transport_list, ssl, "https") == ESP_OK)
                );
 
     if (!_success) {
@@ -491,7 +491,7 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
     }
 
     if (config->cert_pem) {
-        transport_ssl_set_cert_data(ssl, config->cert_pem, strlen(config->cert_pem));
+        esp_transport_ssl_set_cert_data(ssl, config->cert_pem, strlen(config->cert_pem));
     }
 #endif
 
@@ -545,7 +545,7 @@ esp_err_t esp_http_client_cleanup(esp_http_client_handle_t client)
         return ESP_FAIL;
     }
     esp_http_client_close(client);
-    transport_list_destroy(client->transport_list);
+    esp_transport_list_destroy(client->transport_list);
     http_header_destroy(client->request->headers);
     free(client->request->buffer->data);
     free(client->request->buffer);
@@ -740,7 +740,7 @@ static int esp_http_client_get_data(esp_http_client_handle_t client)
 
     ESP_LOGD(TAG, "data_process=%d, content_length=%d", client->response->data_process, client->response->content_length);
 
-    int rlen = transport_read(client->transport, res_buffer->data, client->buffer_size, client->timeout_ms);
+    int rlen = esp_transport_read(client->transport, res_buffer->data, client->buffer_size, client->timeout_ms);
     if (rlen >= 0) {
         http_parser_execute(client->parser, client->parser_settings, res_buffer->data, rlen);
     }
@@ -778,7 +778,7 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
         if (byte_to_read > client->buffer_size) {
             byte_to_read = client->buffer_size;
         }
-        rlen = transport_read(client->transport, res_buffer->data, byte_to_read, client->timeout_ms);
+        rlen = esp_transport_read(client->transport, res_buffer->data, byte_to_read, client->timeout_ms);
         ESP_LOGD(TAG, "need_read=%d, byte_to_read=%d, rlen=%d, ridx=%d", need_read, byte_to_read, rlen, ridx);
 
         if (rlen <= 0) {
@@ -893,7 +893,7 @@ int esp_http_client_fetch_headers(esp_http_client_handle_t client)
     client->response->status_code = -1;
 
     while (client->state < HTTP_STATE_RES_COMPLETE_HEADER) {
-        buffer->len = transport_read(client->transport, buffer->data, client->buffer_size, client->timeout_ms);
+        buffer->len = esp_transport_read(client->transport, buffer->data, client->buffer_size, client->timeout_ms);
         if (buffer->len < 0) {
             return ESP_FAIL;
         }
@@ -924,7 +924,7 @@ static esp_err_t esp_http_client_connect(esp_http_client_handle_t client)
 
     if (client->state < HTTP_STATE_CONNECTED) {
         ESP_LOGD(TAG, "Begin connect to: %s://%s:%d", client->connection_info.scheme, client->connection_info.host, client->connection_info.port);
-        client->transport = transport_list_get_transport(client->transport_list, client->connection_info.scheme);
+        client->transport = esp_transport_list_get_transport(client->transport_list, client->connection_info.scheme);
         if (client->transport == NULL) {
             ESP_LOGE(TAG, "No transport found");
 #ifndef CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
@@ -935,12 +935,12 @@ static esp_err_t esp_http_client_connect(esp_http_client_handle_t client)
             return ESP_ERR_HTTP_INVALID_TRANSPORT;
         }
         if (!client->is_async) {
-            if (transport_connect(client->transport, client->connection_info.host, client->connection_info.port, client->timeout_ms) < 0) {
+            if (esp_transport_connect(client->transport, client->connection_info.host, client->connection_info.port, client->timeout_ms) < 0) {
                 ESP_LOGE(TAG, "Connection failed, sock < 0");
                 return ESP_ERR_HTTP_CONNECT;
             }
         } else {
-            int ret = transport_connect_async(client->transport, client->connection_info.host, client->connection_info.port, client->timeout_ms);
+            int ret = esp_transport_connect_async(client->transport, client->connection_info.host, client->connection_info.port, client->timeout_ms);
             if (ret == ASYNC_TRANS_CONNECT_FAIL) {
                 ESP_LOGE(TAG, "Connection failed");
                 return ESP_ERR_HTTP_CONNECT;
@@ -1036,7 +1036,7 @@ static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client)
         client->data_write_left = wlen;
         client->data_written_index = 0;
         while (client->data_write_left > 0) {
-            int wret = transport_write(client->transport, client->request->buffer->data + client->data_written_index, client->data_write_left, client->timeout_ms);
+            int wret = esp_transport_write(client->transport, client->request->buffer->data + client->data_written_index, client->data_write_left, client->timeout_ms);
             if (wret <= 0) {
                 ESP_LOGE(TAG, "Error write request");
                 esp_http_client_close(client);
@@ -1102,9 +1102,9 @@ int esp_http_client_write(esp_http_client_handle_t client, const char *buffer, i
 
     int wlen = 0, widx = 0;
     while (len > 0) {
-        wlen = transport_write(client->transport, buffer + widx, len, client->timeout_ms);
+        wlen = esp_transport_write(client->transport, buffer + widx, len, client->timeout_ms);
         /* client->async_block is initialised in case of non-blocking IO, and in this case we return how
-           much ever data was written by the transport_write() API. */
+           much ever data was written by the esp_transport_write() API. */
         if (client->is_async || wlen <= 0) {
             return wlen;
         }
@@ -1119,7 +1119,7 @@ esp_err_t esp_http_client_close(esp_http_client_handle_t client)
     if (client->state >= HTTP_STATE_INIT) {
         http_dispatch_event(client, HTTP_EVENT_DISCONNECTED, NULL, 0);
         client->state = HTTP_STATE_INIT;
-        return transport_close(client->transport);
+        return esp_transport_close(client->transport);
     }
     return ESP_OK;
 }
