@@ -29,6 +29,8 @@
 static void _btc_storage_save(void)
 {
     uint16_t addr_section_count = 0;
+    bt_bdaddr_t bd_addr;
+    uint32_t device_type = 0;
     const btc_config_section_iter_t *need_remove_iter = NULL;
     const btc_config_section_iter_t *iter = btc_config_section_begin();
 
@@ -36,7 +38,9 @@ static void _btc_storage_save(void)
         //store the next iter, if remove section, then will not loss the point
 
         const char *section = btc_config_section_name(iter);
-        if (!string_is_bdaddr(section)) {
+        if (!string_is_bdaddr(section) ||
+            !btc_config_get_int(section, BTC_BLE_STORAGE_DEV_TYPE_STR, (int *)&device_type) ||
+            ((device_type & BT_DEVICE_TYPE_BLE) != BT_DEVICE_TYPE_BLE)) {
             iter = btc_config_section_next(iter);
             continue;
         }
@@ -63,13 +67,20 @@ static void _btc_storage_save(void)
     if (need_remove_iter) {
         while(need_remove_iter != btc_config_section_end()) {
             const char *need_remove_section = btc_config_section_name(need_remove_iter);
-            if (!string_is_bdaddr(need_remove_section)) {
+            if (!string_is_bdaddr(need_remove_section) ||
+                !btc_config_get_int(need_remove_section, BTC_BLE_STORAGE_DEV_TYPE_STR, (int *)&device_type) ||
+                ((device_type & BT_DEVICE_TYPE_BLE) != BT_DEVICE_TYPE_BLE)) {
                 need_remove_iter = btc_config_section_next(need_remove_iter);
                 continue;
             }
             need_remove_iter = btc_config_section_next(need_remove_iter);
-            BTIF_TRACE_WARNING("exceeded the maximum nubmer of bonded devices, delete the last device info : %s", need_remove_section);
-            btc_config_remove_section(need_remove_section);
+            //delete device info
+            string_to_bdaddr(need_remove_section, &bd_addr);
+            BTM_SecDeleteDevice(bd_addr.address, BT_TRANSPORT_LE);
+            //delet config info
+            if(btc_config_remove_section(need_remove_section)) {
+                BTIF_TRACE_WARNING("exceeded the maximum nubmer of bonded devices, delete the last device info : %s", need_remove_section);
+            }
         }
     }
     btc_config_flush();
