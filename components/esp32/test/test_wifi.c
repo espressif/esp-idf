@@ -9,6 +9,7 @@
 #include "esp_wifi_types.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
+#include "test_utils.h"
 
 static const char* TAG = "test_wifi";
 
@@ -79,7 +80,9 @@ static void test_wifi_start_stop(wifi_init_config_t *cfg, wifi_config_t* wifi_co
 }
 
 TEST_CASE("wifi stop and deinit","[wifi]")
-{    
+{
+    test_case_uses_tcpip();
+
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     wifi_config_t wifi_config = {
         .sta = {
