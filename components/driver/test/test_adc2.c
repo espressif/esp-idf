@@ -10,6 +10,7 @@
 #include "esp_wifi.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
+#include "test_utils.h"
 
 static const char* TAG = "test_adc2";
 
@@ -44,7 +45,9 @@ TEST_CASE("adc2 work with wifi","[adc]")
 {
     int     read_raw;
     int     target_value;
-    
+
+    test_case_uses_tcpip();
+
     //adc and dac init
     TEST_ESP_OK( dac_output_enable( DAC_CHANNEL_1 ));
     TEST_ESP_OK( dac_output_enable( DAC_CHANNEL_2 ));
