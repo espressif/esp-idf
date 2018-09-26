@@ -7,8 +7,8 @@ Support for external RAM
 Introduction
 ============
 
-The ESP32 has a few hundred KiB of internal RAM, residing on the same die as the rest of the ESP32. For some purposes, this is insufficient, 
-and therefore the ESP32 incorporates the ability to also use up to 4MiB of external SPI RAM memory as memory. The external memory is incorporated 
+The ESP32 has a few hundred KiB of internal RAM, residing on the same die as the rest of the ESP32. For some purposes, this is insufficient,
+and therefore the ESP32 incorporates the ability to also use up to 4MiB of external SPI RAM memory as memory. The external memory is incorporated
 in the memory map and is, within certain restrictions, usable in the same way internal data RAM is.
 
 Hardware
@@ -17,7 +17,7 @@ Hardware
 The ESP32 supports SPI (P)SRAM connected in parallel with the SPI flash chip. While the ESP32 is capable of supporting several types
 of RAM chips, the ESP32 SDK at the moment only supports the ESP-PSRAM32 chip.
 
-The ESP-PSRAM32 chip is an 1.8V device, and can only be used in parallel with an 1.8V flash part. Make sure to either set the MTDI 
+The ESP-PSRAM32 chip is an 1.8V device, and can only be used in parallel with an 1.8V flash part. Make sure to either set the MTDI
 pin to a high signal level on bootup, or program the fuses in the ESP32 to always use a VDD_SIO level of 1.8V. Not doing this risks
 damaging the PSRAM and/or flash chip.
 
@@ -47,8 +47,8 @@ ESP-IDF fully supports integrating external memory use into your applications. E
  * Initialize RAM, add it to the capability allocator and add memory to the pool of RAM that can be returned by ``malloc()``. This allows
    any application to use the external RAM without having to rewrite the code to use ``heap_caps_malloc``.
  * Initialize RAM, use a region start from 0x3F800000 for storing zero initialized data(BSS segment) of lwip,net802.11,pp,bluedroid library
-   by enabling :ref: `CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` in menuconfig,this way can save some internal memory，because the BSS segment 
-   originally stored in internal memory，and the rest of external RAM can be add the capability allocator and add memory to the pool of RAM as above way 
+   by enabling :ref: `CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` in menuconfig, this way can save some internal memory，because the BSS segment
+   originally stored in internal memory，and the rest of external RAM can be add the capability allocator and add memory to the pool of RAM as above way
 
 All these options can be selected from the menuconfig menu.
 
@@ -62,19 +62,20 @@ The use of external RAM has a few restrictions:
  * External RAM cannot be used as a place to store DMA transaction descriptors or as a buffer for a DMA transfer to read from or write into. Any
    buffers that will be used in combination with DMA must be allocated using ``heap_caps_malloc(size, MALLOC_CAP_DMA)`` (and can be freed using a
    standard ``free()`` call.)
- * External RAM uses the same cache region as the external flash. This means that often accessed variables in external RAM can be read and 
-   modified almost as quickly as in internal ram. However, when accessing large chunks of data (>32K), the cache can be insufficient and speeds 
-   will fall back to the access speed of the external RAM. Moreover, accessing large chunks of data can 'push out' cached flash, possibly making 
+ * External RAM uses the same cache region as the external flash. This means that often accessed variables in external RAM can be read and
+   modified almost as quickly as in internal ram. However, when accessing large chunks of data (>32K), the cache can be insufficient and speeds
+   will fall back to the access speed of the external RAM. Moreover, accessing large chunks of data can 'push out' cached flash, possibly making
    execution of code afterwards slower.
  * External RAM cannot be used as task stack memory; because of this, xTaskCreate and similar functions will always allocate internal memory
    for stack and task TCBs and xTaskCreateStatic-type functions will check if the buffers passed are internal. However, for tasks not calling
    on code in ROM in any way, directly or indirectly, the menuconfig option :ref:`CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY` will eliminate
    the check in xTaskCreateStatic, allowing task stack in external RAM. Using this is not advised, however.
  * External RAM initialized failed can not be ignored if enabled :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`; because of this, some BSS segment
-   can not be placed into external memory if PSRAM can't work normally and can not be moved to internal memory at runtime because the address of 
+   can not be placed into external memory if PSRAM can't work normally and can not be moved to internal memory at runtime because the address of
    them is defined by linkfile, the :ref:`CONFIG_SPIRAM_IGNORE_NOTFOUND` can't handle this situation,if you want to enable :ref:
-   `CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` the :ref:`CONFIG_SPIRAM_IGNORE_NOTFOUND` will be disabled, and if initialize SPIRAM failed,the system 
+   `CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` the :ref:`CONFIG_SPIRAM_IGNORE_NOTFOUND` will be disabled, and if initialize SPIRAM failed,the system
    will invoke abort.
+ * External RAM of 4MBit (test up to know) has to be used with one of HSPI/VSPI occupied under 80MHz. Select which SPI host to be used by :ref:`CONFIG_SPIRAM_OCCUPY_SPI_HOST`.
 
 Because there are a fair few situations that have a specific need for internal memory, but it is also possible to use malloc() to exhaust
 internal memory, there is a pool reserved specifically for requests that cannot be resolved from external memory; allocating task
@@ -85,7 +86,7 @@ in menuconfig.
 Chip revisions
 ==============
 
-There are some issues with certain revisions of the ESP32 that have repercussions for use with external RAM. These are documented in the ESP32 
+There are some issues with certain revisions of the ESP32 that have repercussions for use with external RAM. These are documented in the ESP32
 ECO_ document. In particular, ESP-IDF handles the bugs mentioned in the following ways:
 
 ESP32 rev v0
@@ -94,8 +95,8 @@ ESP-IDF has no workaround for the bugs in this revision of silicon, and it canno
 
 ESP32 rev v1
 ------------
-The bugs in this silicon revision introduce a hazard when certain sequences of machine instructions operate on external memory locations (ESP32 ECO 3.2). 
-To work around this, the gcc compiler to compile ESP-IDF has been expanded with a flag: ``-mfix-esp32-psram-cache-issue``. With this flag passed to gcc 
+The bugs in this silicon revision introduce a hazard when certain sequences of machine instructions operate on external memory locations (ESP32 ECO 3.2).
+To work around this, the gcc compiler to compile ESP-IDF has been expanded with a flag: ``-mfix-esp32-psram-cache-issue``. With this flag passed to gcc
 on the command line, the compiler works around these sequences and only outputs code that can safely be executed.
 
 In ESP-IDF, this flag is enabled when you select :ref:`CONFIG_SPIRAM_CACHE_WORKAROUND`. ESP-IDF also takes other measures to make
