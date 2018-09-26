@@ -130,6 +130,9 @@ BOOLEAN bta_gatts_hdl_event(BT_HDR *p_msg)
             APPL_TRACE_ERROR("service not created\n");
         }
         break;
+    case BTA_GATTS_API_SEND_SERVICE_CHANGE_EVT:
+        bta_gatts_send_service_change_indication((tBTA_GATTS_DATA *) p_msg);
+        break;
     default:
         break;
     }
