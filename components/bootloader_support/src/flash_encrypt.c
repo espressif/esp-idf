@@ -63,6 +63,11 @@ esp_err_t esp_flash_encrypt_check_and_update(void)
 
 static esp_err_t initialise_flash_encryption(void)
 {
+    if (REG_READ(EFUSE_BLK0_RDATA6_REG) & EFUSE_CODING_SCHEME_M) {
+        ESP_LOGE(TAG, "Flash Encryption is currently not supported on hardware with 3/4 Coding Scheme (CODING_SCHEME efuse set)");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
     /* Before first flash encryption pass, need to initialise key & crypto config */
 
     /* Generate key */
