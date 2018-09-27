@@ -16,7 +16,10 @@ set(COMPONENT_SRCS "FreeRTOS-openocd.c"
                    "xtensa_overlay_os_hook.c"
                    "xtensa_vector_defaults.S"
                    "xtensa_vectors.S")
-set(COMPONENT_REQUIRES)
+
+# app_trace is required by FreeRTOS headers only when CONFIG_SYSVIEW_ENABLE=y,
+# but requirements can't depend on config options, so always require it.
+set(COMPONENT_REQUIRES app_trace)
 
 register_component()
 
