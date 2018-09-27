@@ -13,7 +13,7 @@ else
 	IDF_ADD_PATHS_EXTRAS="${IDF_ADD_PATHS_EXTRAS}:${IDF_PATH}/components/espcoredump"
 	IDF_ADD_PATHS_EXTRAS="${IDF_ADD_PATHS_EXTRAS}:${IDF_PATH}/components/partition_table/"
 	IDF_ADD_PATHS_EXTRAS="${IDF_ADD_PATHS_EXTRAS}:${IDF_PATH}/tools/"
-	export PATH="${PATH}:${IDF_ADD_PATHS_EXTRAS}"
+	export PATH="${IDF_ADD_PATHS_EXTRAS}:${PATH}"
 	echo "Added to PATH: ${IDF_ADD_PATHS_EXTRAS}"
 fi
 
