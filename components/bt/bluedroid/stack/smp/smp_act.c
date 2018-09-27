@@ -551,6 +551,14 @@ void smp_proc_pair_cmd(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
                 smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
                 return;
             }
+            if(p_cb->accept_specified_sec_auth) {
+                if((p_cb->origin_loc_auth_req & p_cb->peer_auth_req & p_cb->loc_auth_req) != p_cb->origin_loc_auth_req ) {
+                    SMP_TRACE_ERROR("%s pairing failed - slave requires 0x%x auth but peer auth req 0x%x local auth req 0x%x",
+                                    __func__, p_cb->origin_loc_auth_req, p_cb->peer_auth_req, p_cb->loc_auth_req);
+                    reason = SMP_PAIR_AUTH_FAIL;
+                    smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+                }
+            }
 
             if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_OOB) {
                 if (smp_request_oob_data(p_cb)) {
@@ -571,6 +579,15 @@ void smp_proc_pair_cmd(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
             reason = SMP_PAIR_AUTH_FAIL;
             smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
             return;
+        }
+
+        if (p_cb->accept_specified_sec_auth) {
+            if ((p_cb->origin_loc_auth_req & p_cb->peer_auth_req & p_cb->loc_auth_req) != p_cb->origin_loc_auth_req ) {
+                SMP_TRACE_ERROR("%s pairing failed - master requires 0x%x auth but peer auth req 0x%x local auth req 0x%x",
+                                    __func__, p_cb->origin_loc_auth_req, p_cb->peer_auth_req, p_cb->loc_auth_req);
+                reason = SMP_PAIR_AUTH_FAIL;
+                smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+            }
         }
 
         if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_OOB) {
