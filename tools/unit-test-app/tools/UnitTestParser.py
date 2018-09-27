@@ -4,7 +4,6 @@ import os
 import re
 import shutil
 import subprocess
-import hashlib
 
 from copy import deepcopy
 import CreateSectionTable
@@ -31,6 +30,7 @@ class Parser(object):
 
     TAG_PATTERN = re.compile("([^=]+)(=)?(.+)?")
     DESCRIPTION_PATTERN = re.compile("\[([^]\[]+)\]")
+    CONFIG_PATTERN = re.compile(r"{([^}]+)}")
 
     # file path (relative to idf path)
     TAG_DEF_FILE = os.path.join("tools", "unit-test-app", "tools", "TagDefinition.yml")
@@ -49,7 +49,7 @@ class Parser(object):
         self.idf_path = idf_path
         self.tag_def = yaml.load(open(os.path.join(idf_path, self.TAG_DEF_FILE), "r"))
         self.module_map = yaml.load(open(os.path.join(idf_path, self.MODULE_DEF_FILE), "r"))
-        self.config_dependency = yaml.load(open(os.path.join(idf_path, self.CONFIG_DEPENDENCY_FILE), "r"))
+        self.config_dependencies = yaml.load(open(os.path.join(idf_path, self.CONFIG_DEPENDENCY_FILE), "r"))
         # used to check if duplicated test case names
         self.test_case_names = set()
         self.parsing_errors = []
@@ -150,23 +150,56 @@ class Parser(object):
                 pass
         return p
 
+    @staticmethod
+    def parse_tags_internal(sdkconfig, config_dependencies, config_pattern):
+        required_tags = []
+
+        def compare_config(config):
+            return config in sdkconfig
+
+        def process_condition(condition):
+            matches = config_pattern.findall(condition)
+            if matches:
+                for config in matches:
+                    compare_result = compare_config(config)
+                    # replace all configs in condition with True or False according to compare result
+                    condition = re.sub(config_pattern, str(compare_result), condition, count=1)
+                # Now the condition is a python condition, we can use eval to compute its value
+                ret = eval(condition)
+            else:
+                # didn't use complex condition. only defined one condition for the tag
+                ret = compare_config(condition)
+            return ret
+
+        for tag in config_dependencies:
+            if process_condition(config_dependencies[tag]):
+                required_tags.append(tag)
+
+        return required_tags
+
     def parse_tags(self, sdkconfig_file):
         """
         Some test configs could requires different DUTs.
         For example, if CONFIG_SPIRAM_SUPPORT is enabled, we need WROVER-Kit to run test.
         This method will get tags for runners according to ConfigDependency.yml(maps tags to sdkconfig).
 
-        :param sdkconfig_file: sdkconfig file of the unit test config
+        We support to the following syntax::
+
+            # define the config which requires the tag
+            'tag_a': 'config_a="value_a"'
+            # define the condition for the tag
+            'tag_b': '{config A} and (not {config B} or (not {config C} and {config D}))'
+
+        :param sdkconfig_file: sdk config file of the unit test config
         :return: required tags for runners
         """
-        required_tags = []
+
         with open(sdkconfig_file, "r") as f:
             configs_raw_data = f.read()
+
         configs = configs_raw_data.splitlines(False)
-        for tag in self.config_dependency:
-            if self.config_dependency[tag] in configs:
-                required_tags.append(tag)
-        return required_tags
+
+        return self.parse_tags_internal(configs, self.config_dependencies, self.CONFIG_PATTERN)
 
     def parse_one_test_case(self, name, description, file_name, config_name, tags):
         """
@@ -253,6 +286,18 @@ def test_parser():
     # skip mis-paired []
     prop = parser.parse_case_properities("[esp32][[ignore=b]][]][test_env=AAA]]")
     assert prop["module"] == "esp32" and prop["ignore"] == "b" and prop["test_env"] == "AAA"
+
+    config_dependency = {
+        'a': '123',
+        'b': '456',
+        'c': 'not {123}',
+        'd': '{123} and not {456}',
+        'e': '{123} and not {789}',
+        'f': '({123} and {456}) or ({123} and {789})'
+    }
+    sdkconfig = ["123", "789"]
+    tags = parser.parse_tags_internal(sdkconfig, config_dependency, parser.CONFIG_PATTERN)
+    assert tags == ['a', 'd', 'f']
 
 
 def main():
