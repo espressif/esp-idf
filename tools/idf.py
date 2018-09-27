@@ -430,7 +430,9 @@ def get_default_serial_port():
 
 def main():
     if sys.version_info[0] != 2 or sys.version_info[1] != 7:
-        raise FatalError("ESP-IDF currently only supports Python 2.7, and this is Python %d.%d.%d. Search for 'Setting the Python Interpreter' in the ESP-IDF docs for some tips to handle this." % sys.version_info[:3])
+        print("Note: You are using Python %d.%d.%d. Python 3 support is new, please report any problems "
+              "you encounter. Search for 'Setting the Python Interpreter' in the ESP-IDF docs if you want to use "
+              "Python 2.7." % sys.version_info[:3])
 
     parser = argparse.ArgumentParser(description='ESP-IDF build management tool')
     parser.add_argument('-p', '--port', help="Serial port",

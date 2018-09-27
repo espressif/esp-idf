@@ -43,9 +43,6 @@ tools/kconfig/lxdialog/check-lxdialog.sh
 tools/kconfig/mconf
 tools/kconfig/merge_config.sh
 tools/kconfig/streamline_config.pl
-tools/kconfig_new/confgen.py
-tools/kconfig_new/confserver.py
-tools/kconfig_new/test/test_confserver.py
 tools/mass_mfg/mfg_gen.py
 tools/test_idf_monitor/run_test_idf_monitor.py
 tools/unit-test-app/unit_test.py
