@@ -1,0 +1,44 @@
+menu "Example Configuration"
+
+config STORE_HISTORY
+    bool "Store command history in flash"
+    default y
+    help
+        Linenoise line editing library provides functions to save and load
+        command history. If this option is enabled, initalizes a FAT filesystem
+        and uses it to store command history.
+
+config SNIFFER_MOUNT_POINT
+    string "Mount Point in your filesystem to store pcap files"
+    default "/sdcard"
+    help
+        Here you need to specify the mount point in the VFS (Virtual File System) where the pcap would be saved.
+
+config SNIFFER_WORK_QUEUE_LENGTH
+    int "Length of sniffer work queue"
+    default 128
+    help
+        The sniffer callback function should not do heavy work, so we put all heavy IO operation to another task.
+        The task gets some basic info of sniffer packet via queue.
+        Here you should specify the length of queue.
+
+config SNIFFER_TASK_STACK_SIZE
+    int "Stack size of sniffer task"
+    default 2560
+    help
+        The stack size of sniffer task.
+
+config SNIFFER_TASK_PRIORITY
+    int "Priority of sniffer task"
+    default 2
+    help
+        Priority of sniffer task.
+
+config PCAP_FILE_MAX_PACKETS
+    int "Max packets in a pcap file"
+    default 2000
+    help
+        To avoid the pcap file being very large, we should save packets into multiple fiiles.
+        Here you should specify the max number of packets that should be save in one pcap file.
+
+endmenu
