@@ -57,13 +57,15 @@ class ErrItem(object):
     Contains information about the error:
     - name - error string
     - file - relative path inside the IDF project to the file which defines this error
+    - include_as - (optional) overwrites the include determined from file
     - comment - (optional) comment for the error
     - rel_str - (optional) error string which is a base for the error
     - rel_off - (optional) offset in relation to the base error
     """
-    def __init__(self, name, file, comment, rel_str = "", rel_off = 0):
+    def __init__(self, name, file, include_as = None, comment = "", rel_str = "", rel_off = 0):
         self.name = name
         self.file = file
+        self.include_as = include_as
         self.comment = comment
         self.rel_str = rel_str
         self.rel_off = rel_off
@@ -104,7 +106,7 @@ class InputError(RuntimeError):
     def __init__(self, p, e):
         super(InputError, self).__init__(p + ": " + e)
 
-def process(line, idf_path):
+def process(line, idf_path, include_as):
     """
     Process a line of text from file idf_path (relative to IDF project).
     Fills the global list unproc_list and dictionaries err_dict, rev_err_dict
@@ -160,11 +162,11 @@ def process(line, idf_path):
         related
     except NameError:
         # The value of the error is known at this moment because it do not depends on some other BASE error code
-        err_dict[num].append(ErrItem(words[1], idf_path, comment))
+        err_dict[num].append(ErrItem(words[1], idf_path, include_as, comment))
         rev_err_dict[words[1]] = num
     else:
         # Store the information available now and compute the error code later
-        unproc_list.append(ErrItem(words[1], idf_path, comment, related, num))
+        unproc_list.append(ErrItem(words[1], idf_path, include_as, comment, related, num))
 
 def process_remaining_errors():
     """
@@ -180,7 +182,7 @@ def process_remaining_errors():
             base_num = rev_err_dict[item.rel_str]
             base = err_dict[base_num][0]
             num = base_num + item.rel_off
-            err_dict[num].append(ErrItem(item.name, item.file, item.comment))
+            err_dict[num].append(ErrItem(item.name, item.file, item.include_as, item.comment))
             rev_err_dict[item.name] = num
         else:
             print(item.rel_str + " referenced by " + item.name + " in " + item.file + " is unknown")
@@ -233,7 +235,10 @@ def generate_c_output(fin, fout):
     includes = set()
     for k in err_dict:
         for e in err_dict[k]:
-            includes.add(path_to_include(e.file))
+            if e.include_as:
+                includes.add(e.include_as)
+            else:
+                includes.add(path_to_include(e.file))
 
     # The order in a set in non-deterministic therefore it could happen that the
     # include order will be different in other machines and false difference
@@ -308,6 +313,9 @@ def main():
     parser.add_argument('--rst_output', help='Generate .rst output and save it into this file')
     args = parser.parse_args()
 
+    include_as_pattern = re.compile(r'\s*//\s*{}: [^"]* "([^"]+)"'.format(os.path.basename(__file__)))
+    define_pattern = re.compile(r'\s*#define\s+(ESP_ERR_|ESP_OK|ESP_FAIL)')
+
     for root, dirnames, filenames in os.walk(idf_path):
         for filename in fnmatch.filter(filenames, '*.[ch]'):
             full_path = os.path.join(root, filename)
@@ -316,13 +324,18 @@ def main():
                 continue
             with open(full_path, encoding='utf-8') as f:
                 try:
+                    include_as = None
                     for line in f:
+                        line = line.strip()
+                        m = include_as_pattern.search(line)
+                        if m:
+                            include_as = m.group(1)
                         # match also ESP_OK and ESP_FAIL because some of ESP_ERRs are referencing them
-                        if re.match(r"\s*#define\s+(ESP_ERR_|ESP_OK|ESP_FAIL)", line):
+                        elif define_pattern.match(line):
                             try:
-                                process(line.strip(), path_in_idf)
+                                process(line, path_in_idf, include_as)
                             except InputError as e:
-                                print (e)
+                                print(e)
                 except UnicodeDecodeError:
                     raise ValueError("The encoding of {} is not Unicode.".format(path_in_idf))
 

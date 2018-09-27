@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <string.h>
-#include "ping/esp_ping.h"
+#include "esp_ping.h"
 
 #include "lwip/ip_addr.h"
 
