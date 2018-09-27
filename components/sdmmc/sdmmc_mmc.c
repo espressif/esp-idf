@@ -231,3 +231,33 @@ esp_err_t sdmmc_mmc_switch(sdmmc_card_t* card, uint8_t set, uint8_t index, uint8
     return err;
 }
 
+esp_err_t sdmmc_init_mmc_check_csd(sdmmc_card_t* card)
+{
+    esp_err_t err;
+    assert(card->is_mem == 1);
+    assert(card->rca != 0);
+    //The card will not respond to send_csd command in the transfer state.
+    //Deselect it first.
+    err = sdmmc_send_cmd_select_card(card, 0);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: select_card returned 0x%x", __func__, err);
+        return err;
+    }
+
+    sdmmc_csd_t csd;
+    /* Get the contents of CSD register to verify the communication over CMD line
+       is OK. */
+    err = sdmmc_send_cmd_send_csd(card, &csd);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: send_csd returned 0x%x", __func__, err);
+        return err;
+    }
+
+    //Select the card again
+    err = sdmmc_send_cmd_select_card(card, card->rca);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: select_card returned 0x%x", __func__, err);
+        return err;
+    }
+    return ESP_OK;
+}
