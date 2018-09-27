@@ -7,7 +7,8 @@ COMPONENT_ADD_INCLUDEDIRS := \
 	include/apps \
 	lwip/src/include \
 	port/esp32/include \
-	port/esp32/include/arch
+	port/esp32/include/arch \
+	include_compat
 
 COMPONENT_SRCDIRS := \
 	apps/dhcpserver \
