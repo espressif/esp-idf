@@ -42,6 +42,22 @@ class Storage : public intrusive_list_node<Storage>
 
     typedef intrusive_list<NamespaceEntry> TNamespaces;
 
+    struct UsedPageNode: public intrusive_list_node<UsedPageNode> {
+        public: Page* mPage;
+    };
+
+    typedef intrusive_list<UsedPageNode> TUsedPageList;
+
+    struct BlobIndexNode: public intrusive_list_node<BlobIndexNode> {
+        public:
+            char key[Item::MAX_KEY_LENGTH + 1];
+            uint8_t nsIndex;
+            uint8_t chunkCount; 
+            VerOffset chunkStart; 
+    };
+
+    typedef intrusive_list<BlobIndexNode> TBlobIndexList;
+
 public:
     ~Storage();
 
@@ -85,6 +101,12 @@ public:
         return mPartitionName;
     }
 
+    esp_err_t writeMultiPageBlob(uint8_t nsIndex, const char* key, const void* data, size_t dataSize, VerOffset chunkStart);
+
+    esp_err_t readMultiPageBlob(uint8_t nsIndex, const char* key, void* data, size_t dataSize);
+
+    esp_err_t eraseMultiPageBlob(uint8_t nsIndex, const char* key, VerOffset chunkStart = VerOffset::VER_ANY);
+
     void debugDump();
     
     void debugCheck();
@@ -102,7 +124,12 @@ protected:
 
     void clearNamespaces();
 
-    esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, Page* &page, Item& item);
+    void populateBlobIndices(TBlobIndexList&);
+
+    void eraseOrphanDataBlobs(TBlobIndexList&);
+
+
+    esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, Page* &page, Item& item, uint8_t chunkIdx = Page::CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
 
 protected:
     const char *mPartitionName;
