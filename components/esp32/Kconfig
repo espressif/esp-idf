@@ -867,6 +867,16 @@ config ESP_ERR_TO_NAME_LOOKUP
         order to save memory but this comes at the price of sacrificing
         distinguishable (meaningful) output string representations.
 
+config ESP32_RTCDATA_IN_FAST_MEM
+    bool "Place RTC_DATA_ATTR and RTC_RODATA_ATTR variables into RTC fast memory segment"
+    default n
+    depends on FREERTOS_UNICORE
+    help
+        This option allows to place .rtc_data and .rtc_rodata sections into
+        RTC fast memory segment to free the slow memory region for ULP programs.
+        This option depends on the CONFIG_FREERTOS_UNICORE option because RTC fast memory 
+        can be accessed only by PRO_CPU core.
+
 endmenu  # ESP32-Specific
 
 menu Wi-Fi
