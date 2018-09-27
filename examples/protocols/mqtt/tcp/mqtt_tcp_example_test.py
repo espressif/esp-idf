@@ -3,9 +3,10 @@ import os
 import sys
 from socket import *
 from threading import Thread
+import struct
 import time
 
-global msgid
+msgid=-1
 
 def get_my_ip():
     s1 = socket(AF_INET, SOCK_DGRAM)
@@ -17,14 +18,20 @@ def get_my_ip():
 def mqqt_server_sketch(my_ip, port):
     global msgid
     print("Starting the server on {}".format(my_ip))
-    s=socket(AF_INET, SOCK_STREAM)
-    s.settimeout(60)
-    s.bind((my_ip, port))
-    s.listen(1)
-    q,addr=s.accept()
-    q.settimeout(30)
-    print("connection accepted")
-    # q.send(g_msg_to_client)
+    s = None
+    try:
+        s=socket(AF_INET, SOCK_STREAM)
+        s.settimeout(60)
+        s.bind((my_ip, port))
+        s.listen(1)
+        q,addr=s.accept()
+        q.settimeout(30)
+        print("connection accepted")
+    except:
+        print("Local server on {}:{} listening/accepting failure: {}"
+                "Possibly check permissions or firewall settings"
+                "to accept connections on this address".format(my_ip, port, sys.exc_info()[0]))
+        raise
     data = q.recv(1024)
     # check if received initial empty message
     print("received from client {}".format(data))
@@ -32,7 +39,7 @@ def mqqt_server_sketch(my_ip, port):
     q.send(data)
     # try to receive qos1
     data = q.recv(1024)
-    msgid = ord(data[15])*256+ord(data[16])
+    msgid = struct.unpack(">H", data[15:17])[0]
     print("received from client {}, msgid: {}".format(data, msgid))
     data = bytearray([0x40, 0x02, data[15], data[16]])
     q.send(data)
@@ -50,6 +57,7 @@ if test_fw_path and test_fw_path not in sys.path:
 
 import TinyFW
 import IDF
+import DUT
 
 
 
@@ -75,21 +83,21 @@ def test_examples_protocol_mqtt_qos1(env, extra_data):
     thread1 = Thread(target = mqqt_server_sketch, args = (host_ip,1883))
     thread1.start()
     # 2. start the dut test and wait till client gets IP address
-    dut1.start_app()
+    dut1.start_app()    
     # waiting for getting the IP address
-    data = dut1.expect(re.compile(r" sta ip: ([^,]+),"), timeout=30)
-    # time.sleep(15)
+    try:
+        ip_address = dut1.expect(re.compile(r" sta ip: ([^,]+),"), timeout=30)
+        print("Connected to AP with IP: {}".format(ip_address))
+    except DUT.ExpectTimeout:
+        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+
     print ("writing to device: {}".format("mqtt://" + host_ip + "\n"))
     dut1.write("mqtt://" + host_ip + "\n")
     thread1.join()
     print ("Message id received from server: {}".format(msgid))
     # 3. check the message id was enqueued and then deleted
     msgid_enqueued = dut1.expect(re.compile(r"OUTBOX: ENQUEUE msgid=([0-9]+)"), timeout=30)
-    # expect_txt="OUTBOX: ENQUEUE msgid=" + str(msgid)
-    # dut1.expect(re.compile(expect_txt), timeout=30)
     msgid_deleted = dut1.expect(re.compile(r"OUTBOX: DELETED msgid=([0-9]+)"), timeout=30)
-    # expect_txt="OUTBOX: DELETED msgid=" + str(msgid)
-    # dut1.expect(re.compile(expect_txt), timeout=30)
     # 4. check the msgid of received data are the same as that of enqueued and deleted from outbox
     if (msgid_enqueued[0] == str(msgid) and msgid_deleted[0] == str(msgid)):
         print("PASS: Received correct msg id")
