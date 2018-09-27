@@ -328,6 +328,19 @@ void SMP_PasskeyReply (BD_ADDR bd_addr, UINT8 res, UINT32 passkey)
     return;
 }
 
+/*******************************************************************************
+**
+** Function         SMP_SetStaticPasskey
+**
+** Description      This function is called to set static passkey
+**
+**
+** Parameters:      add          - set static passkey when add is TRUE
+**                                 clear static passkey when add is FALSE
+**                  passkey      - static passkey
+**
+**
+*******************************************************************************/
 void SMP_SetStaticPasskey (BOOLEAN add, UINT32 passkey)
 {
     SMP_TRACE_DEBUG("static passkey %6d", passkey);
@@ -339,6 +352,28 @@ void SMP_SetStaticPasskey (BOOLEAN add, UINT32 passkey)
         p_cb->static_passkey = 0;
         p_cb->use_static_passkey = false;
     }
+}
+
+/*******************************************************************************
+**
+** Function         SMP_SetAcceptAuthMode
+**
+** Description      This function is called to set only accept specified Authentication
+**
+**
+** Parameters:      enable         - Whether to enable this function
+**
+**                  auth_mode      - Authentication mode
+**
+**
+*******************************************************************************/
+void SMP_SetAcceptAuthMode (UINT8 enable, UINT8 auth_mode)
+{
+    tSMP_CB *p_cb = & smp_cb;
+
+    p_cb->accept_specified_sec_auth = enable;
+    p_cb->origin_loc_auth_req = auth_mode;
+    
 }
 /*******************************************************************************
 **

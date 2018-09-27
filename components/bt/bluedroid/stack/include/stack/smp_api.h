@@ -224,6 +224,7 @@ typedef struct {
     tSMP_SEC_LEVEL sec_level;
     BOOLEAN is_pair_cancel;
     BOOLEAN smp_over_br;
+    tSMP_AUTH_REQ auth_mode;
 } tSMP_CMPL;
 
 typedef struct {
@@ -415,6 +416,8 @@ extern void SMP_PasskeyReply (BD_ADDR bd_addr, UINT8 res, UINT32 passkey);
 **
 *******************************************************************************/
 extern void SMP_SetStaticPasskey (BOOLEAN add, UINT32 passkey);
+
+extern void SMP_SetAcceptAuthMode (UINT8 enable, UINT8 auth_mode);
 
 /*******************************************************************************
 **

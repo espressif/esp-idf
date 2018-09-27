@@ -335,6 +335,8 @@ typedef struct {
     BOOLEAN         wait_for_authorization_complete;
     BOOLEAN         use_static_passkey;
     UINT32          static_passkey;
+    BOOLEAN         accept_specified_sec_auth;
+    tSMP_AUTH_REQ   origin_loc_auth_req;
 } tSMP_CB;
 
 /* Server Action functions are of this type */

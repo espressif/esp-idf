@@ -423,10 +423,43 @@ void BTM_BlePasskeyReply (BD_ADDR bd_addr, UINT8 res, UINT32 passkey)
 #endif
 }
 
+/*******************************************************************************
+**
+** Function         BTM_BleSetStaticPasskey
+**
+** Description      This function is called to set static passkey
+**
+**
+** Parameters:      add          - set static passkey when add is TRUE
+**                                 clear static passkey when add is FALSE
+**                  passkey      - static passkey
+**
+**
+*******************************************************************************/
 void BTM_BleSetStaticPasskey(BOOLEAN add, UINT32 passkey)
 {
 #if SMP_INCLUDED == TRUE
     SMP_SetStaticPasskey(add, passkey);
+#endif
+}
+
+/*******************************************************************************
+**
+** Function         BTM_BleSetAcceptAuthMode
+**
+** Description      This function is called to set only accept specified Authentication
+**
+**
+** Parameters:      enable         - Whether to enable this function
+**
+**                  auth_mode      - Authentication mode
+**
+**
+*******************************************************************************/
+void BTM_BleSetAcceptAuthMode(UINT8 enable, UINT8 auth_mode)
+{
+#if SMP_INCLUDED == TRUE
+    SMP_SetAcceptAuthMode(enable, auth_mode);
 #endif
 }
 /*******************************************************************************
