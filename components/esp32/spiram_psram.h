@@ -27,12 +27,6 @@ typedef enum {
 } psram_cache_mode_t;
 
 typedef enum {
-    PSRAM_VOLT_3V3 = 0,
-    PSRAM_VOLT_1V8 = 1,
-    PSRAM_VOLT_MAX,
-} psram_volt_t;
-
-typedef enum {
     PSRAM_SIZE_32MBITS = 0,
     PSRAM_SIZE_64MBITS = 1,
     PSRAM_SIZE_MAX,
@@ -51,14 +45,6 @@ typedef enum {
     PSRAM_VADDR_MODE_LOWHIGH,  ///< App and pro CPU share external RAM caches: pro CPU has low 2M, app CPU has high 2M
     PSRAM_VADDR_MODE_EVENODD,  ///< App and pro CPU share external RAM caches: pro CPU does even 32yte ranges, app does odd ones.
 } psram_vaddr_mode_t;
-
-/**
- * @brief get psram voltage
- * @return
- *     - PSRAM_VOLT_MAX if psram not enabled or not valid.
- *     - PSRAM voltage
- */
-psram_volt_t psram_get_volt();
 
 /**
  * @brief get psram size
