@@ -2761,9 +2761,9 @@ void btm_sec_check_pending_reqs (void)
 
         /* Now, re-submit anything in the mux queue */
         bq = btm_cb.sec_pending_q;
-        if (!btm_cb.sec_pending_q) {
-            btm_cb.sec_pending_q = fixed_queue_new(QUEUE_SIZE_MAX);
-        }
+
+        btm_cb.sec_pending_q = fixed_queue_new(QUEUE_SIZE_MAX);
+
 
         while ((p_e = (tBTM_SEC_QUEUE_ENTRY *)fixed_queue_try_dequeue(bq)) != NULL) {
             /* Check that the ACL is still up before starting security procedures */
@@ -2784,6 +2784,7 @@ void btm_sec_check_pending_reqs (void)
 
             osi_free (p_e);
         }
+        fixed_queue_free(bq, NULL);
     }
 }
 #endif  ///SMP_INCLUDED == TRUE
