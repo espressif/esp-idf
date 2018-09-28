@@ -934,19 +934,36 @@ static void SPI_MASTER_ISR_ATTR spi_new_trans(spi_device_t *dev, spi_trans_priv_
     host->hw->user.usr_addr=addrlen ? 1 : 0;
     host->hw->user.usr_command=cmdlen ? 1 : 0;
 
-    /* Output command will be sent from bit 7 to 0 of command_value, and
-     * then bit 15 to 8 of the same register field. Shift and swap to send
-     * more straightly.
-     */
-    host->hw->user2.usr_command_value = SPI_SWAP_DATA_TX(trans->cmd, cmdlen);
+    if ((dev->cfg.flags & SPI_DEVICE_TXBIT_LSBFIRST)==0) {
+        /* Output command will be sent from bit 7 to 0 of command_value, and
+         * then bit 15 to 8 of the same register field. Shift and swap to send
+         * more straightly.
+         */
+        host->hw->user2.usr_command_value = SPI_SWAP_DATA_TX(trans->cmd, cmdlen);
 
-    // shift the address to MSB of addr (and maybe slv_wr_status) register.
-    // output address will be sent from MSB to LSB of addr register, then comes the MSB to LSB of slv_wr_status register.
-    if (addrlen>32) {
-        host->hw->addr = trans->addr >> (addrlen- 32);
-        host->hw->slv_wr_status = trans->addr << (64 - addrlen);
+        // shift the address to MSB of addr (and maybe slv_wr_status) register.
+        // output address will be sent from MSB to LSB of addr register, then comes the MSB to LSB of slv_wr_status register.
+        if (addrlen > 32) {
+            host->hw->addr = trans->addr >> (addrlen - 32);
+            host->hw->slv_wr_status = trans->addr << (64 - addrlen);
+        } else {
+            host->hw->addr = trans->addr << (32 - addrlen);
+        }
     } else {
-        host->hw->addr = trans->addr << (32 - addrlen);
+        /* The output command start from bit0 to bit 15, kept as is.
+         * The output address start from the LSB of the highest byte, i.e.
+         * addr[24] -> addr[31]
+         * ...
+         * addr[0] -> addr[7]
+         * slv_wr_status[24] -> slv_wr_status[31]
+         * ...
+         * slv_wr_status[0] -> slv_wr_status[7]
+         * So swap the byte order to let the LSB sent first.
+         */
+        host->hw->user2.usr_command_value = trans->cmd;
+        uint64_t addr = __builtin_bswap64(trans->addr);
+        host->hw->addr = addr>>32;
+        host->hw->slv_wr_status = addr;
     }
 
     if ((!(dev->cfg.flags & SPI_DEVICE_HALFDUPLEX) && trans_buf->buffer_to_rcv) ||
