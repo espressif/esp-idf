@@ -983,6 +983,7 @@ void bta_gattc_start_discover(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
             } else {
                 p_clcb->disc_active = TRUE;
             }
+            p_clcb->searched_service_source = BTA_GATTC_SERVICE_INFO_FROM_REMOTE_DEVICE;
         } else {
             APPL_TRACE_ERROR("unknown device, can not start discovery");
         }
@@ -1471,6 +1472,7 @@ void bta_gattc_search(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
     }
     cb_data.search_cmpl.status  = status;
     cb_data.search_cmpl.conn_id = p_clcb->bta_conn_id;
+    cb_data.search_cmpl.searched_service_source = p_clcb->searched_service_source;
 
     /* end of search or no server cache available */
     ( *p_clcb->p_rcb->p_cback)(BTA_GATTC_SEARCH_CMPL_EVT,  &cb_data);

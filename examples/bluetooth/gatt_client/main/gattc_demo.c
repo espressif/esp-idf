@@ -150,6 +150,13 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
             ESP_LOGE(GATTC_TAG, "search service failed, error status = %x", p_data->search_cmpl.status);
             break;
         }
+        if(p_data->search_cmpl.searched_service_source == ESP_GATT_SERVICE_FROM_REMOTE_DEVICE) {
+            ESP_LOGI(GATTC_TAG, "Get service information from remote device");
+        } else if (p_data->search_cmpl.searched_service_source == ESP_GATT_SERVICE_FROM_NVS_FLASH) {
+            ESP_LOGI(GATTC_TAG, "Get service information from flash");
+        } else {
+            ESP_LOGI(GATTC_TAG, "unknown service source");
+        }
         ESP_LOGI(GATTC_TAG, "ESP_GATTC_SEARCH_CMPL_EVT");
         if (get_server){
             uint16_t count = 0;
