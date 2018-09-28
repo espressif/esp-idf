@@ -9,14 +9,14 @@ This example uses the sigma-delta driver to generate modulated output on a GPIO.
 
 ### Hardware Required
 
-Besides the ESP32 board you need a LED and a resister to limit the LED current. Connect them as below:
+Besides the [ESP32 development board](https://www.espressif.com/en/products/hardware/development-boards) you need a LED and a resistor to limit the LED current. Connect them as below:
 
 ```
              330R            LED     
 GPIO4 +----/\/\/\----+------|>|-----+ GND
 ```
 
-A resistor in range from 100 Ohm to 1 kOhm should usually be fine.
+A resistor in range from 100 Ohm to 1 kOhm should usually be fine. You may use ESP32 development board by other vendors as well, provided they have at least one GPIO output pin exposed.
 
 By default the GPIO output is 4. To change it, edit the line with `GPIO_NUM_4` in `sigmadelta_init()` function inside `main/sigmadelta_test.c`. For example to use GPIO 25, modify the line to contain `GPIO_NUM_25` instead.
 
@@ -58,7 +58,7 @@ Immediately after that the LED should start brightening and dimming.
 
 ## Troubleshooting
 
-If you are using [ESP-WROVER-KIT](https://www.espressif.com/en/products/hardware/esp-wrover-kit/overview) then this board has a RGB LED already installed. GPIO4 is driving blue color of the LED. The brightening and dimming effect of the blue LED may not be distinctly visible because red and green LEDs are not actively driven and will slightly lit. To resolve this issue you can switch both diodes off by adding the following code at the end of `sigmadelta_example_init()` function:
+If you are using [ESP-WROVER-KIT](https://www.espressif.com/en/products/hardware/esp-wrover-kit/overview) then this board has an RGB LED already installed. GPIO4 is driving blue color of the LED. The brightening and dimming effect of the blue LED may not be distinctly visible because red and green LEDs are not actively driven by this example and will slightly lit. To resolve this issue you can switch both diodes off by adding the following code at the end of `sigmadelta_example_init()` function:
 
 ```c
 gpio_pad_select_gpio(GPIO_NUM_0);
