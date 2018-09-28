@@ -80,6 +80,14 @@ static uint32_t s_mode_mask;
 static uint32_t s_ccount_div;
 static uint32_t s_ccount_mul;
 
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+/* Indicates if light sleep entry was successful for given CPU.
+ * This in turn gets used in IDLE hook to decide if `waiti` needs
+ * to be invoked or not.
+ */
+static bool s_entered_light_sleep[portNUM_PROCESSORS];
+#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
+
 /* Indicates to the ISR hook that CCOMPARE needs to be updated on the given CPU.
  * Used in conjunction with cross-core interrupt to update CCOMPARE on the other CPU.
  */
@@ -453,11 +461,24 @@ void IRAM_ATTR esp_pm_impl_isr_hook()
     ESP_PM_TRACE_EXIT(ISR_HOOK, core_id);
 }
 
+void esp_pm_impl_waiti()
+{
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+    int core_id = xPortGetCoreID();
+    if (!s_entered_light_sleep[core_id]) {
+        asm("waiti 0");
+    } else {
+        s_entered_light_sleep[core_id] = false;
+    }
+#else
+    asm("waiti 0");
+#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
+}
+
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
 void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
 {
-    bool result = false;
     portENTER_CRITICAL(&s_switch_lock);
     if (s_mode == PM_MODE_LIGHT_SLEEP && !s_is_switching) {
         /* Calculate how much we can sleep */
@@ -495,15 +516,10 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
                     ;
                 }
             }
-            result = true;
+            s_entered_light_sleep[core_id] = true;
         }
     }
     portEXIT_CRITICAL(&s_switch_lock);
-
-    /* Tick less idle was not successful, can block till next interrupt here */
-    if (!result) {
-        asm("waiti 0");
-    }
 }
 #endif //CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
