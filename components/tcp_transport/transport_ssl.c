@@ -40,6 +40,7 @@ typedef struct {
     esp_tls_cfg_t            cfg;
     bool                     ssl_initialized;
     bool                     verify_server;
+    bool                     mutual_authentication;
     transport_ssl_conn_state_t conn_state;
 } transport_ssl_t;
 
@@ -51,6 +52,9 @@ static int ssl_connect_async(esp_transport_handle_t t, const char *host, int por
     if (ssl->conn_state == TRANS_SSL_INIT) {
         if (ssl->cfg.cacert_pem_buf) {
             ssl->verify_server = true;
+        }
+        if (ssl->cfg.clientcert_pem_buf && ssl->cfg.clientkey_pem_buf) {
+            ssl->mutual_authentication = true;
         }
         ssl->cfg.timeout_ms = timeout_ms;
         ssl->cfg.non_block = true;
@@ -72,6 +76,9 @@ static int ssl_connect(esp_transport_handle_t t, const char *host, int port, int
     transport_ssl_t *ssl = esp_transport_get_context_data(t);
     if (ssl->cfg.cacert_pem_buf) {
         ssl->verify_server = true;
+    }
+    if (ssl->cfg.clientcert_pem_buf && ssl->cfg.clientkey_pem_buf) {
+        ssl->mutual_authentication = true;
     }
     ssl->cfg.timeout_ms = timeout_ms;
     ssl->ssl_initialized = true;
@@ -147,6 +154,7 @@ static int ssl_close(esp_transport_handle_t t)
         esp_tls_conn_delete(ssl->tls);
         ssl->ssl_initialized = false;
         ssl->verify_server = false;
+        ssl->mutual_authentication = false;
     }
     return ret;
 }
@@ -165,6 +173,24 @@ void esp_transport_ssl_set_cert_data(esp_transport_handle_t t, const char *data,
     if (t && ssl) {
         ssl->cfg.cacert_pem_buf = (void *)data;
         ssl->cfg.cacert_pem_bytes = len + 1;
+    }
+}
+
+void esp_transport_ssl_set_client_cert_data(esp_transport_handle_t t, const char *data, int len)
+{
+    transport_ssl_t *ssl = esp_transport_get_context_data(t);
+    if (t && ssl) {
+        ssl->cfg.clientcert_pem_buf = (void *)data;
+        ssl->cfg.clientcert_pem_bytes = len + 1;
+    }
+}
+
+void esp_transport_ssl_set_client_key_data(esp_transport_handle_t t, const char *data, int len)
+{
+    transport_ssl_t *ssl = esp_transport_get_context_data(t);
+    if (t && ssl) {
+        ssl->cfg.clientkey_pem_buf = (void *)data;
+        ssl->cfg.clientkey_pem_bytes = len + 1;
     }
 }
 
