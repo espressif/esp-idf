@@ -68,4 +68,7 @@
 // after restart or during a deep sleep / wake cycle.
 #define RTC_NOINIT_ATTR  __attribute__((section(".rtc_noinit")))
 
+// Forces to not inline function
+#define NOINLINE_ATTR __attribute__((noinline))
+
 #endif /* __ESP_ATTR_H__ */
