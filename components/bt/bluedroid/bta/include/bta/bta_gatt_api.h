@@ -315,6 +315,7 @@ typedef struct {
 typedef struct {
     UINT16              conn_id;
     tBTA_GATT_STATUS    status;
+    UINT8               searched_service_source;
 } tBTA_GATTC_SEARCH_CMPL;
 
 typedef struct {
