@@ -136,7 +136,7 @@ typedef struct {
 
     /* LE GAP attribute database */
 #if BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE
-    tGAP_ATTR               gatt_attr[GAP_MAX_CHAR_NUM];
+    tGAP_ATTR               gap_attr[GAP_MAX_CHAR_NUM];
     tGAP_CLCB               clcb[GAP_MAX_CL]; /* connection link*/
     tGATT_IF                gatt_if;
 #endif
