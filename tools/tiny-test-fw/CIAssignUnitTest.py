@@ -106,9 +106,13 @@ class UnitTestAssignTest(CIAssignTest.AssignTest):
         The unit test cases is stored in a yaml file which is created in job build-idf-test.
         """
 
-        with open(test_case_path, "r") as f:
-            raw_data = yaml.load(f)
-        test_cases = raw_data["test cases"]
+        try:
+            with open(test_case_path, "r") as f:
+                raw_data = yaml.load(f)
+            test_cases = raw_data["test cases"]
+        except IOError:
+            print("Test case path is invalid. Should only happen when use @bot to skip unit test.")
+            test_cases = []
         # filter keys are lower case. Do map lower case keys with original keys.
         try:
             key_mapping = {x.lower(): x for x in test_cases[0].keys()}

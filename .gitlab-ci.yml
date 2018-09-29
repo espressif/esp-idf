@@ -5,6 +5,7 @@ stages:
   - unit_test
   - integration_test
   - deploy
+  - post_check
 
 variables:
 # System environment
@@ -102,6 +103,11 @@ build_template_app:
   variables:
     BATCH_BUILD: "1"
     IDF_CI_BUILD: "1"
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_REGULAR_TEST
   script:
     - git clone https://github.com/espressif/esp-idf-template.git
     - cd esp-idf-template
@@ -138,6 +144,12 @@ build_template_app:
     expire_in: 1 mos
   variables:
     SSC_CONFIG_FOLDER: "$CI_PROJECT_DIR/SSC/configs/ESP32_IDF"
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_INTEGRATION_TEST
+      - $BOT_LABEL_REGULAR_TEST
   script:
     - git clone $SSC_REPOSITORY
     - cd SSC
@@ -164,6 +176,12 @@ build_esp_idf_tests:
       - components/idf_test/unit_test/TestCaseAll.yml
       - components/idf_test/unit_test/CIConfigs/*.yml
     expire_in: 1 mos
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_UNIT_TEST
+      - $BOT_LABEL_REGULAR_TEST
   script:
     - cd tools/unit-test-app
     - MAKEFLAGS= make help # make sure kconfig tools are built in single process
@@ -189,6 +207,12 @@ build_esp_idf_tests:
   variables:
     IDF_CI_BUILD: "1"
     LOG_PATH: "$CI_PROJECT_DIR/log_examples"
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_EXAMPLE_TEST
+      - $BOT_LABEL_REGULAR_TEST
   script:
     # it's not possible to build 100% out-of-tree and have the "artifacts"
     # mechanism work, but this is the next best thing
@@ -250,6 +274,12 @@ build_docs:
       - docs/zh_CN/sphinx-warning-log-sanitized.txt
       - docs/zh_CN/_build/html
     expire_in: 1 mos
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_BUILD_DOCS
+      - $BOT_LABEL_REGULAR_TEST
   script:
     - cd docs
     - ./check_lang_folder_sync.sh
@@ -265,6 +295,11 @@ build_docs:
 verify_cmake_style:
   stage: build
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_REGULAR_TEST
   script:
     tools/cmake/run_cmake_lint.sh
 
@@ -274,6 +309,11 @@ verify_cmake_style:
   tags:
     - host_test
   dependencies: []
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_HOST_TEST
+      - $BOT_LABEL_REGULAR_TEST
 
 test_nvs_on_host:
   <<: *host_test_template
@@ -287,10 +327,10 @@ test_nvs_coverage:
     paths:
       - components/nvs_flash/test_nvs_host/coverage_report
   only:
-    - triggers
-  # This job takes a few hours to finish, so only run it on demand
-  variables:
-    BOT_NEEDS_TRIGGER_BY_NAME: 1
+    refs:
+      - triggers
+    variables:
+      - $BOT_LABEL_NVS_COVERAGE
   script:
     - cd components/nvs_flash/test_nvs_host
     - make coverage_report
@@ -389,15 +429,19 @@ push_to_github:
     - tools/ci/push_to_github.sh
 
 deploy_docs:
-  stage: host_test
+  stage: deploy
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - deploy
   only:
-   - master
-   - /^release\/v/
-   - /^v\d+\.\d+(\.\d+)?($|-)/
-   - triggers
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+      - triggers
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD_DOCS
   dependencies:
     - build_docs
   before_script: *do_nothing_before
@@ -429,8 +473,12 @@ check_doc_links:
   tags:
     - check_doc_links
   only:
-    # can only be triggered
-    - triggers
+    refs:
+      # can only be triggered
+      - triggers
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD_DOCS
   artifacts:
     paths:
       - docs/_build/linkcheck
@@ -505,6 +553,21 @@ check_submodule_sync:
     # check if all submodules are correctly synced to public repostory
     - git submodule update --init --recursive
 
+check_pipeline_triggered_by_label:
+  stage: post_check
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  dependencies: []
+  before_script: *do_nothing_before
+  tags:
+    - build
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL
+  script:
+    # If the pipeline is triggered with label, the pipeline will only succeeded if "regular_test" label is added.
+    # We want to make sure some jobs are always executed to detect regression.
+    - test "$BOT_LABEL_REGULAR_TEST" = "true" || exit -1
+
 assign_test:
   tags:
     - assign_test
@@ -526,6 +589,12 @@ assign_test:
       - components/idf_test/*/TC.sqlite
       - $EXAMPLE_CONFIG_OUTPUT_PATH
     expire_in: 1 mos
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_UNIT_TEST
+      - $BOT_LABEL_INTEGRATION_TEST
+      - $BOT_LABEL_EXAMPLE_TEST
   before_script: *add_gitlab_key_before
   script:
     # assign example tests
@@ -543,11 +612,15 @@ assign_test:
   stage: integration_test
   when: on_success
   only:
-    - master
-    - /^release\/v/
-    - /^v\d+\.\d+(\.\d+)?($|-)/
-    - triggers
-    - schedules
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+      - triggers
+      - schedules
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_EXAMPLE_TEST
   dependencies:
     - assign_test
     - build_examples_00
@@ -586,6 +659,16 @@ assign_test:
   dependencies:
     - assign_test
     - build_esp_idf_tests
+  only:
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+      - triggers
+      - schedules
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_UNIT_TEST
   variables:
     TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     TEST_CASE_PATH: "$CI_PROJECT_DIR/tools/unit-test-app"
@@ -597,11 +680,15 @@ assign_test:
   stage: integration_test
   when: on_success
   only:
-    - master
-    - /^release\/v/
-    - /^v\d+\.\d+(\.\d+)?($|-)/
-    - triggers
-    - schedules
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+      - triggers
+      - schedules
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_INTEGRATION_TEST
   dependencies:
     - assign_test
     - build_ssc_00
