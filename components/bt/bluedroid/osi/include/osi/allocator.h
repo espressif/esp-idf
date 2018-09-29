@@ -35,6 +35,8 @@ void osi_mem_dbg_init(void);
 void osi_mem_dbg_record(void *p, int size, const char *func, int line);
 void osi_mem_dbg_clean(void *p, const char *func, int line);
 void osi_mem_dbg_show(void);
+uint32_t osi_mem_dbg_get_max_size(void);
+uint32_t osi_mem_dbg_get_total_size(void);
 
 #if HEAP_ALLOCATION_FROM_SPIRAM_FIRST
 #define osi_malloc(size)                                \
@@ -67,9 +69,9 @@ void osi_mem_dbg_show(void);
     (void *)p;                                          \
 })
 
-#define osi_calloc(size)                               \
-({                                                    \
-    void *p;                                           \
+#define osi_calloc(size)                                \
+({                                                      \
+    void *p;                                            \
     p = calloc(1, (size));                              \
     osi_mem_dbg_record(p, size, __func__, __LINE__);    \
     (void *)p;                                          \
