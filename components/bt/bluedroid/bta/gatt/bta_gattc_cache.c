@@ -2116,7 +2116,7 @@ bool bta_gattc_cache_load(tBTA_GATTC_CLCB *p_clcb)
         APPL_TRACE_DEBUG("%s(), gattc cache load fail, status = %x", __func__, status);
         return false;
     }
-
+    p_clcb->searched_service_source = BTA_GATTC_SERVICE_INFO_FROM_NVS_FLASH;
     bta_gattc_rebuild_cache(p_clcb->p_srcb, num_attr, attr);
     //free the attr buffer after used.
     osi_free(attr);

@@ -229,7 +229,7 @@ tBTA_GATTC_CLCB *bta_gattc_clcb_alloc(tBTA_GATTC_IF client_if, BD_ADDR remote_bd
             p_clcb->status          = BTA_GATT_OK;
             p_clcb->transport       = transport;
             bdcpy(p_clcb->bda, remote_bda);
-
+            p_clcb->searched_service_source = BTA_GATTC_SERVICE_INFO_FROM_UNKNOWN;
             p_clcb->p_rcb = bta_gattc_cl_get_regcb(client_if);
             if (p_clcb->p_cmd_list == NULL) {
                 p_clcb->p_cmd_list = list_new(osi_free_func);

@@ -73,6 +73,12 @@ typedef UINT16 tBTA_GATTC_INT_EVT;
 
 #define BTA_GATTC_SERVICE_CHANGED_LEN    4
 
+typedef enum {
+    BTA_GATTC_SERVICE_INFO_FROM_REMOTE_DEVICE         = 0, 
+    BTA_GATTC_SERVICE_INFO_FROM_NVS_FLASH             = 1,
+    BTA_GATTC_SERVICE_INFO_FROM_UNKNOWN               = 2,
+} tBTA_SERVICE_SOURCE_t;
+
 /* max client application GATTC can support */
 #ifndef     BTA_GATTC_CL_MAX
 #if (GATT_MAX_PHY_CHANNEL > 3)
@@ -343,6 +349,7 @@ typedef struct {
     tBTA_GATTC_STATE    state;
     tBTA_GATT_STATUS    status;
     UINT16              reason;
+    UINT8               searched_service_source;
 } tBTA_GATTC_CLCB;
 
 /* background connection tracking information */

@@ -826,6 +826,7 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
         gattc_if = BTC_GATT_GET_GATT_IF(search_cmpl->conn_id);
         param.search_cmpl.conn_id = BTC_GATT_GET_CONN_ID(search_cmpl->conn_id);
         param.search_cmpl.status = search_cmpl->status;
+        param.search_cmpl.searched_service_source = search_cmpl->searched_service_source;
         btc_gattc_cb_to_app(ESP_GATTC_SEARCH_CMPL_EVT, gattc_if, &param);
         break;
     }
