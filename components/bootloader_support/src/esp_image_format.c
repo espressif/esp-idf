@@ -468,11 +468,15 @@ static bool should_load(uint32_t load_addr)
 
     if (!load_rtc_memory) {
         if (load_addr >= SOC_RTC_IRAM_LOW && load_addr < SOC_RTC_IRAM_HIGH) {
-            ESP_LOGD(TAG, "Skipping RTC code segment at 0x%08x\n", load_addr);
+            ESP_LOGD(TAG, "Skipping RTC fast memory segment at 0x%08x\n", load_addr);
+            return false;
+        }
+        if (load_addr >= SOC_RTC_DRAM_LOW && load_addr < SOC_RTC_DRAM_HIGH) {
+            ESP_LOGD(TAG, "Skipping RTC fast memory segment at 0x%08x\n", load_addr);
             return false;
         }
         if (load_addr >= SOC_RTC_DATA_LOW && load_addr < SOC_RTC_DATA_HIGH) {
-            ESP_LOGD(TAG, "Skipping RTC data segment at 0x%08x\n", load_addr);
+            ESP_LOGD(TAG, "Skipping RTC slow memory segment at 0x%08x\n", load_addr);
             return false;
         }
     }
