@@ -173,6 +173,59 @@ void gatt_profile_clcb_dealloc (tGATT_PROFILE_CLCB *p_clcb)
 
 /*******************************************************************************
 **
+** Function         gatt_proc_read
+**
+** Description      GATT Attributes Database Read/Read Blob Request process
+**
+** Returns          GATT_SUCCESS if successfully sent; otherwise error code.
+**
+*******************************************************************************/
+tGATT_STATUS gatt_proc_read (tGATTS_REQ_TYPE type, tGATT_READ_REQ *p_data, tGATTS_RSP *p_rsp)
+{
+    tGATT_STATUS    status = GATT_NO_RESOURCES;
+    UNUSED(type);
+
+    if (p_data->is_long) {
+        p_rsp->attr_value.offset = p_data->offset;
+    }
+
+    p_rsp->attr_value.handle = p_data->handle;
+    UINT16 len = 0;
+    uint8_t *value;
+    status = GATTS_GetAttributeValue(p_data->handle, &len, &value);
+    if(status == GATT_SUCCESS && len > 0 && value) {
+        if(len > GATT_MAX_ATTR_LEN) {
+            len = GATT_MAX_ATTR_LEN;
+        }
+        p_rsp->attr_value.len = len;
+        memcpy(p_rsp->attr_value.value, value, len);
+    }
+
+    return status;
+}
+
+/******************************************************************************
+**
+** Function         gatt_proc_write_req
+**
+** Description      GATT server process a write request.
+**
+** Returns          GATT_SUCCESS if successfully sent; otherwise error code.
+**
+*******************************************************************************/
+tGATT_STATUS gatt_proc_write_req( tGATTS_REQ_TYPE type, tGATT_WRITE_REQ *p_data)
+{
+    if(p_data->len > GATT_MAX_ATTR_LEN) {
+        p_data->len = GATT_MAX_ATTR_LEN;
+    }
+   return GATTS_SetAttributeValue(p_data->handle,
+                           p_data->len,
+                           p_data->value);
+
+}
+
+/*******************************************************************************
+**
 ** Function         gatt_request_cback
 **
 ** Description      GATT profile attribute access request callback.
@@ -191,11 +244,14 @@ static void gatt_request_cback (UINT16 conn_id, UINT32 trans_id, tGATTS_REQ_TYPE
 
     switch (type) {
     case GATTS_REQ_TYPE_READ:
-        status = GATT_READ_NOT_PERMIT;
+        status = gatt_proc_read(type, &p_data->read_req, &rsp_msg);
         break;
 
     case GATTS_REQ_TYPE_WRITE:
-        status = GATT_WRITE_NOT_PERMIT;
+        if (!p_data->write_req.need_rsp) {
+            ignore = TRUE;
+        }
+        status = gatt_proc_write_req(type, &p_data->write_req);
         break;
 
     case GATTS_REQ_TYPE_WRITE_EXEC:
@@ -306,7 +362,6 @@ void gatt_profile_db_init (void)
     
     tBT_UUID descr_uuid = {LEN_UUID_16, {GATT_UUID_CHAR_CLIENT_CONFIG}};
     uint8_t ccc_value[2] ={ 0x00, 0x00};
-    tGATTS_ATTR_CONTROL control ={1};
 
     tGATT_ATTR_VAL  attr_val = {
         .attr_max_len = sizeof(UINT16),
@@ -314,8 +369,7 @@ void gatt_profile_db_init (void)
         .attr_val = ccc_value,
     };
 
-    GATTS_AddCharDescriptor (service_handle, GATT_PERM_READ | GATT_PERM_WRITE , &descr_uuid, &attr_val, &control);
-
+    GATTS_AddCharDescriptor (service_handle, GATT_PERM_READ | GATT_PERM_WRITE , &descr_uuid, &attr_val, NULL);
     /* start service
     */
     status = GATTS_StartService (gatt_cb.gatt_if, service_handle, GATTP_TRANSPORT_SUPPORTED );
