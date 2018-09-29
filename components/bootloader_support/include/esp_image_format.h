@@ -81,6 +81,8 @@ typedef struct {
 
 _Static_assert(sizeof(esp_image_header_t) == 24, "binary image header should be 24 bytes");
 
+#define ESP_IMAGE_HASH_LEN 32 /* Length of the appended SHA-256 digest */
+
 /* Header of binary image segment */
 typedef struct {
     uint32_t load_addr;
@@ -200,6 +202,16 @@ esp_err_t bootloader_load_image(const esp_partition_pos_t *part, esp_image_metad
  * @return As per esp_image_load_metadata().
  */
 esp_err_t esp_image_verify_bootloader(uint32_t *length);
+
+/**
+ * @brief Verify the bootloader image.
+ *
+ * @param[out] Metadata for the image. Only valid if result is ESP_OK.
+ *
+ * @return As per esp_image_load_metadata().
+ */
+esp_err_t esp_image_verify_bootloader_data(esp_image_metadata_t *data);
+
 
 typedef struct {
     uint32_t drom_addr;
