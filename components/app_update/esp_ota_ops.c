@@ -292,7 +292,7 @@ static esp_err_t esp_rewrite_ota_data(esp_partition_subtype_t subtype)
     uint16_t ota_app_count = 0;
     uint32_t i = 0;
     uint32_t seq;
-    static spi_flash_mmap_memory_t ota_data_map;
+    spi_flash_mmap_handle_t ota_data_map;
     const void *result = NULL;
 
     find_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_OTA, NULL);
@@ -438,7 +438,7 @@ const esp_partition_t *esp_ota_get_boot_partition(void)
 {
     esp_err_t ret;
     const esp_partition_t *find_partition = NULL;
-    static spi_flash_mmap_memory_t ota_data_map;
+    spi_flash_mmap_handle_t ota_data_map;
     const void *result = NULL;
     uint16_t ota_app_count = 0;
     find_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_OTA, NULL);
