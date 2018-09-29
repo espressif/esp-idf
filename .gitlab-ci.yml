@@ -142,7 +142,7 @@ build_template_app:
   artifacts:
     paths:
       - SSC/ssc_bin
-    expire_in: 1 mos
+    expire_in: 1 week
   variables:
     SSC_CONFIG_FOLDER: "$CI_PROJECT_DIR/SSC/configs/ESP32_IDF"
   script:
@@ -170,7 +170,7 @@ build_esp_idf_tests:
       - tools/unit-test-app/output
       - components/idf_test/unit_test/TestCaseAll.yml
       - components/idf_test/unit_test/CIConfigs/*.yml
-    expire_in: 1 mos
+    expire_in: 2 days
   script:
     - cd tools/unit-test-app
     - MAKEFLAGS= make help # make sure kconfig tools are built in single process
@@ -192,7 +192,7 @@ build_esp_idf_tests:
       - build_examples/*/*/*/build/download.config
       - build_examples/*/*/*/build/bootloader/*.bin
       - $LOG_PATH
-    expire_in: 1 week
+    expire_in: 2 days
   variables:
     IDF_CI_BUILD: "1"
     LOG_PATH: "$CI_PROJECT_DIR/log_examples_make"
@@ -219,7 +219,7 @@ build_esp_idf_tests:
       - build_examples_cmake/*/*/*/build/download.config
       - build_examples_cmake/*/*/*/build/bootloader/*.bin
       - $LOG_PATH
-    expire_in: 1 week
+    expire_in: 2 days
   variables:
     IDF_CI_BUILD: "1"
     LOG_PATH: "$CI_PROJECT_DIR/log_examples_cmake"
@@ -301,7 +301,7 @@ build_docs:
       - docs/zh_CN/sphinx-warning-log.txt
       - docs/zh_CN/sphinx-warning-log-sanitized.txt
       - docs/zh_CN/_build/html
-    expire_in: 1 mos
+    expire_in: 1 day
   script:
     - cd docs
     - ./check_lang_folder_sync.sh
@@ -338,6 +338,7 @@ test_nvs_coverage:
   artifacts:
     paths:
       - components/nvs_flash/test_nvs_host/coverage_report
+    expire_in: 1 week
   only:
     - triggers
   # This job takes a few hours to finish, so only run it on demand
@@ -360,6 +361,7 @@ test_wl_on_host:
   artifacts:
     paths:
       - components/wear_levelling/test_wl_host/coverage_report.zip
+    expire_in: 1 week
   script:
     - cd components/wear_levelling/test_wl_host
     - make test
@@ -381,7 +383,7 @@ test_fatfs_on_host:
     paths:
       - ${FUZZER_TEST_DIR}/out/crashes
       - ${FUZZER_TEST_DIR}/fuzz_output.log
-    expire_in: 1 mos
+    expire_in: 1 week
   only:
     # can only be triggered
     - triggers
@@ -575,7 +577,7 @@ check_doc_links:
   artifacts:
     paths:
       - docs/_build/linkcheck
-    expire_in: 1 mos
+    expire_in: 1 week
   script:
     # must be triggered with CHECK_LINKS=Yes, otherwise exit without test
     - test "$CHECK_LINKS" = "Yes" || exit 0
@@ -584,23 +586,21 @@ check_doc_links:
     - cd docs
     - make linkcheck
 
-check_line_endings:
+.check_job_template: &check_job_template
   stage: check
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - build
   dependencies: []
   before_script: *do_nothing_before_no_filter
+
+check_line_endings:
+  <<: *check_job_template
   script:
     - tools/ci/check-line-endings.sh ${IDF_PATH}
 
 check_commit_msg:
-  stage: check
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - build
-  dependencies: []
-  before_script: *do_nothing_before_no_filter
+  <<: *check_job_template
   script:
     - git status
     - git log -n10 --oneline
@@ -608,41 +608,33 @@ check_commit_msg:
     - 'git log --pretty=%s master.. -- | grep "^WIP: " && exit 1 || exit 0'
 
 check_permissions:
-  stage: check
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - build
-  dependencies: []
-  before_script: *do_nothing_before_no_filter
+  <<: *check_job_template
   script:
     - tools/ci/check-executable.sh
 
 check_examples_cmake_make:
-  stage: check
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - build
+  <<: *check_job_template
   except:
     - master
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
-  dependencies: []
   before_script: *do_nothing_before
   script:
     - tools/ci/check_examples_cmake_make.sh
 
 check_submodule_sync:
-  stage: check
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - build
-  dependencies: []
+  <<: *check_job_template
   variables:
     GIT_STRATEGY: clone
-  before_script: *do_nothing_before_no_filter
   script:
     # check if all submodules are correctly synced to public repostory
     - git submodule update --init --recursive
+
+check_artifacts_expire_time:
+  <<: *check_job_template
+  script:
+    # check if we have set expire time for all artifacts
+    - python tools/ci/check_artifacts_expire_time.py
 
 assign_test:
   tags:
@@ -664,7 +656,7 @@ assign_test:
       - components/idf_test/*/CIConfigs
       - components/idf_test/*/TC.sqlite
       - $EXAMPLE_CONFIG_OUTPUT_PATH
-    expire_in: 1 mos
+    expire_in: 1 week
   before_script: *add_gitlab_key_before
   script:
     # assign example tests
@@ -709,7 +701,7 @@ assign_test:
     when: always
     paths:
       - $LOG_PATH
-    expire_in: 1 mos
+    expire_in: 1 week
   variables:
     TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     TEST_CASE_PATH: "$CI_PROJECT_DIR/examples"
@@ -758,7 +750,7 @@ assign_test:
     when: always
     paths:
       - $LOG_PATH
-    expire_in: 1 mos
+    expire_in: 1 week
   variables:
     LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF"
     LOG_PATH: "$CI_PROJECT_DIR/$CI_COMMIT_SHA"
