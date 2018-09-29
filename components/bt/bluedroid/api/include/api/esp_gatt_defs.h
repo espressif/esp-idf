@@ -289,6 +289,11 @@ typedef uint8_t esp_gatt_char_prop_t;
 /// GATT maximum attribute length
 #define ESP_GATT_MAX_ATTR_LEN   600 //as same as GATT_MAX_ATTR_LEN
 
+typedef enum {
+    ESP_GATT_SERVICE_FROM_REMOTE_DEVICE         = 0,                                       /* relate to BTA_GATTC_SERVICE_INFO_FROM_REMOTE_DEVICE in bta_gattc_int.h */
+    ESP_GATT_SERVICE_FROM_NVS_FLASH             = 1,                                       /* relate to BTA_GATTC_SERVICE_INFO_FROM_NVS_FLASH in bta_gattc_int.h */
+    ESP_GATT_SERVICE_FROM_UNKNOWN               = 2,                                       /* relate to BTA_GATTC_SERVICE_INFO_FROM_UNKNOWN in bta_gattc_int.h */
+} esp_service_source_t;
 
 /**
  * @brief Attribute description (used to create database)

@@ -115,9 +115,10 @@ typedef union {
      * @brief ESP_GATTC_SEARCH_CMPL_EVT
      */
     struct gattc_search_cmpl_evt_param {
-        esp_gatt_status_t status;       /*!< Operation status */
-        uint16_t conn_id;               /*!< Connection id */
-    } search_cmpl;                      /*!< Gatt client callback param of ESP_GATTC_SEARCH_CMPL_EVT */
+        esp_gatt_status_t status;                     /*!< Operation status */
+        uint16_t conn_id;                             /*!< Connection id */
+        esp_service_source_t searched_service_source; /*!< The source of the service information */
+    } search_cmpl;                                    /*!< Gatt client callback param of ESP_GATTC_SEARCH_CMPL_EVT */
 
     /**
      * @brief ESP_GATTC_SEARCH_RES_EVT
