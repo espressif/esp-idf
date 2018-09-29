@@ -296,8 +296,21 @@ typedef struct {
     bool                    set_scan_rsp;           /*!< Set this advertising data as scan response or not*/
     bool                    include_name;           /*!< Advertising data include device name or not */
     bool                    include_txpower;        /*!< Advertising data include TX power */
-    int                     min_interval;           /*!< Advertising data show advertising min interval */
-    int                     max_interval;           /*!< Advertising data show advertising max interval */
+    int                     min_interval;           /*!< Advertising data show slave preferred connection min interval.
+                                                    The connection interval in the following manner:
+                                                    connIntervalmin = Conn_Interval_Min * 1.25 ms
+                                                    Conn_Interval_Min range: 0x0006 to 0x0C80
+                                                    Value of 0xFFFF indicates no specific minimum.
+                                                    Values not defined above are reserved for future use.*/
+
+    int                     max_interval;           /*!< Advertising data show slave preferred connection max interval. 
+                                                    The connection interval in the following manner:
+                                                    connIntervalmax = Conn_Interval_Max * 1.25 ms 
+                                                    Conn_Interval_Max range: 0x0006 to 0x0C80
+                                                    Conn_Interval_Max shall be equal to or greater than the Conn_Interval_Min.
+                                                    Value of 0xFFFF indicates no specific maximum.
+                                                    Values not defined above are reserved for future use.*/
+
     int                     appearance;             /*!< External appearance of device */
     uint16_t                manufacturer_len;       /*!< Manufacturer data length */
     uint8_t                 *p_manufacturer_data;   /*!< Manufacturer data point */

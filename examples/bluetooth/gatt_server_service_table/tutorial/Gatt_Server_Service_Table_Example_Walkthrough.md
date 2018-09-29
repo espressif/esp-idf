@@ -173,8 +173,8 @@ typedef struct {
     bool set_scan_rsp;    /*!< Set this advertising data as scan response or not*/
     bool include_name;    /*!< Advertising data include device name or not */
     bool include_txpower; /*!< Advertising data include TX power */
-    int min_interval;     /*!< Advertising data show advertising min interval */
-    int max_interval;     /*!< Advertising data show advertising max interval */
+    int min_interval;     /*!< Advertising data show slave preferred connection min interval */
+    int max_interval;     /*!< Advertising data show slave preferred connection max interval */
     int appearance;       /*!< External appearance of device */
     uint16_t manufacturer_len; /*!< Manufacturer data length */
     uint8_t *p_manufacturer_data; /*!< Manufacturer data point */
@@ -193,8 +193,8 @@ static esp_ble_adv_data_t heart_rate_adv_config = {
     .set_scan_rsp = false,
     .include_name = true,
     .include_txpower = true,
-    .min_interval = 0x20,
-    .max_interval = 0x40,
+    .min_interval = 0x0006,
+    .max_interval = 0x0010,
     .appearance = 0x00,
     .manufacturer_len = 0, //TEST_MANUFACTURER_DATA_LEN,
     .p_manufacturer_data =  NULL, //&test_manufacturer[0],
@@ -206,7 +206,7 @@ static esp_ble_adv_data_t heart_rate_adv_config = {
 };
 ```
 
-The minimum and maximum advertisement intervals are set in units of 0.625 ms. In this example, the minimum advertisement interval is defined as 0x20 * 0.625 ms = 20 ms and the maximum advertisement interval is initialized as 0x40 * 0.625 ms = 40 ms.
+The minimum and maximum slave preferred connection intervals are set in units of 1.25 ms. In this example, the minimum slave preferred connection interval is defined as 0x0006 * 1.25 ms = 7.5 ms and the maximum slave preferred connection interval is initialized as 0x0010 * 1.25 ms = 20 ms.
 
 An advertising payload can be up to 31 bytes of data. It is possible that some of the parameters surpass the 31-byte advertisement packet limit which causes the stack to cut the message and leave some of the parameters out. To solve this, usually the longer parameters are stored in the scan response, which can be configured using the same ``esp_ble_gap_config_adv_data()`` function and an additional esp_ble_adv_data_t type structure with the .set_scan_rsp parameter is set to true. Finally, to set the device name the ``esp_ble_gap_set_device_name()`` function is used. The registering event handler is shown as follows:
 
