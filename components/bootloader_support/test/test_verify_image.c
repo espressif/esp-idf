@@ -13,6 +13,7 @@
 #include "freertos/xtensa_api.h"
 #include "unity.h"
 
+#include "bootloader_util.h"
 #include "esp_partition.h"
 #include "esp_ota_ops.h"
 #include "esp_image_format.h"
@@ -47,3 +48,21 @@ TEST_CASE("Verify unit test app image", "[bootloader_support]")
     TEST_ASSERT_TRUE(data.image_len <= running->size);
 }
 
+TEST_CASE("Test regions_overlap", "[bootloader_support]")
+{
+    TEST_ASSERT( bootloader_util_regions_overlap(1, 2, 1, 2) );
+
+    TEST_ASSERT( bootloader_util_regions_overlap(1, 2, 0, 2) );
+    TEST_ASSERT( bootloader_util_regions_overlap(1, 2, 1, 3) );
+    TEST_ASSERT( bootloader_util_regions_overlap(1, 2, 0, 3) );
+
+    TEST_ASSERT( bootloader_util_regions_overlap(0, 2, 1, 2) );
+    TEST_ASSERT( bootloader_util_regions_overlap(1, 3, 1, 2) );
+    TEST_ASSERT( bootloader_util_regions_overlap(0, 3, 1, 2) );
+
+    TEST_ASSERT( !bootloader_util_regions_overlap(2, 3, 1, 2) );
+    TEST_ASSERT( !bootloader_util_regions_overlap(1, 2, 2, 3) );
+
+    TEST_ASSERT( !bootloader_util_regions_overlap(3, 4, 1, 2) );
+    TEST_ASSERT( !bootloader_util_regions_overlap(1, 2, 3, 4) );
+}
