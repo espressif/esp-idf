@@ -30,8 +30,7 @@ SECTIONS
   .iram_loader.text :
   {
     . = ALIGN (16);
-    _stext = .;
-    _text_start = ABSOLUTE(.);
+    _loader_text_start = ABSOLUTE(.);
     *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
      *(.iram1 .iram1.*) /* catch stray IRAM_ATTR */
     *liblog.a:(.literal .text .literal.* .text.*)
@@ -51,8 +50,7 @@ SECTIONS
     *(.fini.literal)
     *(.fini)
     *(.gnu.version)
-    _text_end = ABSOLUTE(.);
-    _etext = .;
+    _loader_text_end = ABSOLUTE(.);
   } > iram_loader_seg
 
   .iram.text :
