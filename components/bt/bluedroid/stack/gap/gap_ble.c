@@ -207,7 +207,7 @@ BOOLEAN gap_ble_dequeue_request (tGAP_CLCB *p_clcb, UINT16 *p_uuid, tGAP_BLE_CMP
 *******************************************************************************/
 tGATT_STATUS gap_read_attr_value (UINT16 handle, tGATT_VALUE *p_value, BOOLEAN is_long)
 {
-    tGAP_ATTR   *p_db_attr = gap_cb.gatt_attr;
+    tGAP_ATTR   *p_db_attr = gap_cb.gap_attr;
     UINT8       *p = p_value->value, i;
     UINT16      offset = p_value->offset;
     UINT8       *p_dev_name = NULL;
@@ -293,7 +293,7 @@ tGATT_STATUS gap_proc_read (tGATTS_REQ_TYPE type, tGATT_READ_REQ *p_data, tGATTS
 *******************************************************************************/
 UINT8 gap_proc_write_req( tGATTS_REQ_TYPE type, tGATT_WRITE_REQ *p_data)
 {
-    tGAP_ATTR   *p_db_attr = gap_cb.gatt_attr;
+    tGAP_ATTR   *p_db_attr = gap_cb.gap_attr;
     UINT8   i;
     UNUSED(type);
 
@@ -373,12 +373,12 @@ void gap_attr_db_init(void)
     tBT_UUID        app_uuid = {LEN_UUID_128, {0}};
     tBT_UUID        uuid     = {LEN_UUID_16, {UUID_SERVCLASS_GAP_SERVER}};
     UINT16          service_handle;
-    tGAP_ATTR       *p_db_attr = &gap_cb.gatt_attr[0];
+    tGAP_ATTR       *p_db_attr = &gap_cb.gap_attr[0];
     tGATT_STATUS    status;
 
     /* Fill our internal UUID with a fixed pattern 0x82 */
     memset (&app_uuid.uu.uuid128, 0x82, LEN_UUID_128);
-    memset(gap_cb.gatt_attr, 0, sizeof(tGAP_ATTR) *GAP_MAX_CHAR_NUM);
+    memset(gap_cb.gap_attr, 0, sizeof(tGAP_ATTR) *GAP_MAX_CHAR_NUM);
 
     gap_cb.gatt_if = GATT_Register(&app_uuid, &gap_cback);
 
@@ -456,7 +456,7 @@ void gap_attr_db_init(void)
 *******************************************************************************/
 void GAP_BleAttrDBUpdate(UINT16 attr_uuid, tGAP_BLE_ATTR_VALUE *p_value)
 {
-    tGAP_ATTR  *p_db_attr = gap_cb.gatt_attr;
+    tGAP_ATTR  *p_db_attr = gap_cb.gap_attr;
     UINT8       i = 0;
 
     GAP_TRACE_EVENT("GAP_BleAttrDBUpdate attr_uuid=0x%04x\n", attr_uuid);
