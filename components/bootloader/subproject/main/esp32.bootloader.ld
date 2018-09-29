@@ -35,7 +35,6 @@ SECTIONS
   .iram_loader.text :
   {
     . = ALIGN (16);
-    _stext = .;
     _loader_text_start = ABSOLUTE(.);
     *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
      *(.iram1 .iram1.*) /* catch stray IRAM_ATTR */
@@ -59,7 +58,6 @@ SECTIONS
     *(.fini)
     *(.gnu.version)
     _loader_text_end = ABSOLUTE(.);
-    _etext = .;
   } > iram_loader_seg
 
   .iram.text :
