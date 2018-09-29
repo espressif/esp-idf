@@ -214,8 +214,8 @@ typedef struct {
     bool set_scan_rsp;            /*!< Set this advertising data as scan response or not*/
     bool include_name;            /*!< Advertising data include device name or not */
     bool include_txpower;         /*!< Advertising data include TX power */
-    int min_interval;             /*!< Advertising data show advertising min interval */
-    int max_interval;             /*!< Advertising data show advertising max interval */
+    int min_interval;             /*!< Advertising data show slave preferred connection min interval */
+    int max_interval;             /*!< Advertising data show slave preferred connection max interval */
     int appearance;               /*!< External appearance of device */
     uint16_t manufacturer_len;    /*!< Manufacturer data length */
     uint8_t *p_manufacturer_data; /*!< Manufacturer data point */
@@ -233,8 +233,8 @@ static esp_ble_adv_data_t adv_data = {
     .set_scan_rsp = false,
     .include_name = true,
     .include_txpower = true,
-    .min_interval = 0x20,
-    .max_interval = 0x40,
+    .min_interval = 0x0006,
+    .max_interval = 0x0010,
     .appearance = 0x00,
     .manufacturer_len = 0, //TEST_MANUFACTURER_DATA_LEN,
     .p_manufacturer_data =  NULL, //&test_manufacturer[0],
@@ -245,7 +245,7 @@ static esp_ble_adv_data_t adv_data = {
     .flag = (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT),
 };
 ```
-The minimum and maximum advertisement intervals are set as multiples of 1.25 ms. In this example, the minimum advertisement interval is defined as 0x20 * 1.25 ms = 40 ms, and the maximum advertisement interval is initialized as 0x40 * 1.25 ms = 80 ms.
+The minimum and maximum slave preferred connection intervals are set in units of 1.25 ms. In this example, the minimum slave preferred connection interval is defined as 0x0006 * 1.25 ms = 7.5 ms, and the maximum slave preferred connection interval is initialized as 0x0010 * 1.25 ms = 20 ms.
 
 An advertising payload can be up to 31 bytes of data. It is possible the parameter data is large enough to surpass the 31-byte advertisement packet limit, which causes the stack to cut the advertisement packet and leave some of the parameters out. This behavior can be demonstrated in this example if the manufacturer length and data are uncommented, which makes the services to not be advertised after recompiling and testing.
 
