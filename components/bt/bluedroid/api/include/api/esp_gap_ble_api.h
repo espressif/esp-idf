@@ -60,6 +60,9 @@ typedef uint8_t esp_ble_key_type_t;
 #define ESP_LE_AUTH_REQ_SC_MITM_BOND        (ESP_LE_AUTH_REQ_MITM | ESP_LE_AUTH_REQ_SC_ONLY | ESP_LE_AUTH_BOND)   /*!< 1101 */  /* relate to BTM_LE_AUTH_REQ_SC_MITM_BOND in stack/btm_api.h */
 typedef uint8_t   esp_ble_auth_req_t;         /*!< combination of the above bit pattern */
 
+#define ESP_BLE_ONLY_ACCEPT_SPECIFIED_AUTH_DISABLE 0
+#define ESP_BLE_ONLY_ACCEPT_SPECIFIED_AUTH_ENABLE  1
+
 /* relate to BTM_IO_CAP_xxx in stack/btm_api.h */
 #define ESP_IO_CAP_OUT                      0   /*!< DisplayOnly */         /* relate to BTM_IO_CAP_OUT in stack/btm_api.h */
 #define ESP_IO_CAP_IO                       1   /*!< DisplayYesNo */        /* relate to BTM_IO_CAP_IO in stack/btm_api.h */
@@ -266,6 +269,7 @@ typedef enum {
     ESP_BLE_SM_MAX_KEY_SIZE,
     ESP_BLE_SM_SET_STATIC_PASSKEY,
     ESP_BLE_SM_CLEAR_STATIC_PASSKEY,
+    ESP_BLE_SM_ONLY_ACCEPT_SPECIFIED_SEC_AUTH,
     ESP_BLE_SM_MAX_PARAM,
 } esp_ble_sm_param_t;
 
@@ -511,6 +515,7 @@ typedef struct
     uint8_t               fail_reason;           /*!< The HCI reason/error code for when success=FALSE */
     esp_ble_addr_type_t   addr_type;             /*!< Peer device address type */
     esp_bt_dev_type_t     dev_type;              /*!< Device type */
+    esp_ble_auth_req_t    auth_mode;             /*!< authentication mode */
 } esp_ble_auth_cmpl_t;                           /*!< The ble authentication complete cb type */
 
 /**

@@ -1642,6 +1642,7 @@ typedef struct {
     UINT8 sec_level;
     BOOLEAN is_pair_cancel;
     BOOLEAN smp_over_br;
+    tSMP_AUTH_REQ auth_mode;
 } tBTM_LE_COMPLT;
 #endif
 

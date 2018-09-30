@@ -970,9 +970,10 @@ void smp_proc_pairing_cmpl(tSMP_CB *p_cb)
 
     evt_data.cmplt.reason = p_cb->status;
     evt_data.cmplt.smp_over_br = p_cb->smp_over_br;
-
+    evt_data.cmplt.auth_mode = 0;
     if (p_cb->status == SMP_SUCCESS) {
         evt_data.cmplt.sec_level = p_cb->sec_level;
+        evt_data.cmplt.auth_mode = (p_cb->peer_auth_req & p_cb->loc_auth_req);
     }
 
     evt_data.cmplt.is_pair_cancel  = FALSE;

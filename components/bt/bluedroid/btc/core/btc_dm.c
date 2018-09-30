@@ -671,6 +671,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         param.ble_security.auth_cmpl.key_present = p_data->auth_cmpl.key_present;
         memcpy(param.ble_security.auth_cmpl.bd_addr, p_data->auth_cmpl.bd_addr, sizeof(BD_ADDR));
         memcpy(param.ble_security.auth_cmpl.key, p_data->auth_cmpl.key, sizeof(LINK_KEY));
+        param.ble_security.auth_cmpl.auth_mode = p_data->auth_cmpl.auth_mode;
         btc_dm_ble_auth_cmpl_evt(&p_data->auth_cmpl);
         break;
     }

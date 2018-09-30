@@ -1334,6 +1334,21 @@ void BTM_BleSetStaticPasskey(BOOLEAN add, UINT32 passkey);
 
 /*******************************************************************************
 **
+** Function         BTM_BleSetAcceptAuthMode
+**
+** Description      This function is called to set only accept specified Authentication
+**
+**
+** Parameters:      enable         - Whether to enable this function
+**
+**                  auth_mode      - Authentication mode
+**
+**
+*******************************************************************************/
+void BTM_BleSetAcceptAuthMode(UINT8 enable, UINT8 auth_mode);
+
+/*******************************************************************************
+**
 ** Function         BTM_BleConfirmReply
 **
 ** Description      This function is called after Security Manager submitted
