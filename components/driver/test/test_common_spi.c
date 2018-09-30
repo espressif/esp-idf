@@ -44,7 +44,7 @@ esp_err_t init_slave_context(spi_slave_task_context_t *context)
     if ( context->data_received == NULL ) {
         return ESP_ERR_NO_MEM;
     }
-    context->spi=VSPI_HOST;
+    context->spi=TEST_SLAVE_HOST;
     return ESP_OK;
 }
 
