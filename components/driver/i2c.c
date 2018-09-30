@@ -543,16 +543,21 @@ static esp_err_t i2c_master_clear_bus(i2c_port_t i2c_num)
     // period. If the slave is sending a stream of ZERO bytes, it will only release SDA during the ACK bit period.
     // So, this reset code needs to synchronize the bit stream with, Either, the ACK bit, Or a 1 bit to correctly generate
     // a STOP condition.
+    int scl_half_period = 5; // use standard 100kHz data rate
     gpio_set_level(scl_io, 0);
     gpio_set_level(sda_io, 1);
+    ets_delay_us(scl_half_period);
     int i=0;
     while( !gpio_get_level(sda_id) && (i<9)){ // cycle SCL until SDA is HIGH
         gpio_set_level(scl_io, 1);
+        ets_delay_us(scl_half_period);
         gpio_set_level(scl_io, 0);
+        ets_delay_us(scl_half_period);
         i++;
     }
     gpio_set_level(sda_io,0); // setup for STOP
     gpio_set_level(scl_io,1);
+    ets_delay_us(scl_half_period);
     gpio_set_level(sda_io, 1); // STOP, SDA low -> high while SCL is HIGH
     i2c_set_pin(i2c_num, sda_io, scl_io, 1, 1, I2C_MODE_MASTER);
     return ESP_OK;
