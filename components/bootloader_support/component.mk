@@ -9,6 +9,10 @@ endif
 
 COMPONENT_SRCDIRS := src
 
+ifndef IS_BOOTLOADER_BUILD
+COMPONENT_OBJEXCLUDE := src/bootloader_init.o
+endif
+
 #
 # Secure boot signing key support
 #
