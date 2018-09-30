@@ -541,14 +541,23 @@ static esp_err_t i2c_master_clear_bus(i2c_port_t i2c_num)
     // because after some serious interference, the bus may keep high all the time and the i2c bus is out of service.
     gpio_set_direction(scl_io, GPIO_MODE_OUTPUT_OD);
     gpio_set_direction(sda_io, GPIO_MODE_OUTPUT_OD);
-    gpio_set_level(scl_io, 1);
+
+    int scl_half_period = 5; // use standard 100kHz data rate
     gpio_set_level(sda_io, 1);
-    gpio_set_level(sda_io, 0);
+    ets_delay_us(scl_half_period);
+    gpio_set_level(scl_io, 1);
+    ets_delay_us(scl_half_period);
     for (int i = 0; i < 9; i++) {
         gpio_set_level(scl_io, 0);
+        ets_delay_us(scl_half_period);
         gpio_set_level(scl_io, 1);
+        ets_delay_us(scl_half_period);
     }
-    gpio_set_level(sda_io, 1);
+    gpio_set_level(sda_io, 0); // setup stop condition (this is an implicit start condition)
+    ets_delay_us(scl_half_period);
+    gpio_set_level(sda_io, 1); // generate stop condition
+    ets_delay_us(scl_half_period);
+
     i2c_set_pin(i2c_num, sda_io, scl_io, 1, 1, I2C_MODE_MASTER);
     return ESP_OK;
 }
