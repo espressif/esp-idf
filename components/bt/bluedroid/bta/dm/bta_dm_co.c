@@ -31,6 +31,10 @@
 #endif /* #if (defined(BTIF_INCLUDED) && BTIF_INCLUDED == TRUE) */
 #if (defined BLE_INCLUDED && BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
 #include "common/bte_appl.h"
+
+#define BTM_BLE_ONLY_ACCEPT_SPECIFIED_SEC_AUTH_DISABLE 0
+#define BTM_BLE_ONLY_ACCEPT_SPECIFIED_SEC_AUTH_ENABLE  1
+
 tBTE_APPL_CFG bte_appl_cfg = {
 #if SMP_INCLUDED == TRUE
     BTA_LE_AUTH_REQ_SC_MITM_BOND, // Authentication requirements
@@ -40,7 +44,8 @@ tBTE_APPL_CFG bte_appl_cfg = {
     BTM_LOCAL_IO_CAPS_BLE,
     BTM_BLE_INITIATOR_KEY_SIZE,
     BTM_BLE_RESPONDER_KEY_SIZE,
-    BTM_BLE_MAX_KEY_SIZE
+    BTM_BLE_MAX_KEY_SIZE,
+    BTM_BLE_ONLY_ACCEPT_SPECIFIED_SEC_AUTH_DISABLE
 };
 #endif
 
@@ -357,7 +362,7 @@ void bta_dm_co_ble_io_req(BD_ADDR bd_addr,  tBTA_IO_CAP *p_io_cap,
 #endif  ///SMP_INCLUDED == TRUE
 }
 
-void bta_dm_co_ble_set_io_cap(UINT8   ble_io_cap)
+void bta_dm_co_ble_set_io_cap(UINT8 ble_io_cap)
 {
 #if (SMP_INCLUDED == TRUE)
     if(ble_io_cap < BTM_IO_CAP_MAX ) {
@@ -368,7 +373,7 @@ void bta_dm_co_ble_set_io_cap(UINT8   ble_io_cap)
 #endif  ///SMP_INCLUDED == TRUE
 }
 
-void bta_dm_co_ble_set_auth_req(UINT8   ble_auth_req)
+void bta_dm_co_ble_set_auth_req(UINT8 ble_auth_req)
 {
 #if (SMP_INCLUDED == TRUE)
     bte_appl_cfg.ble_auth_req = ble_auth_req;
@@ -401,5 +406,32 @@ void bta_dm_co_ble_set_max_key_size(UINT8 ble_key_size)
     }
 #endif  ///SMP_INCLUDED == TRUE
 }
+
+void bta_dm_co_ble_set_accept_auth_enable(UINT8 enable)
+{
+#if (SMP_INCLUDED == TRUE)
+    if (enable) {
+        enable = BTM_BLE_ONLY_ACCEPT_SPECIFIED_SEC_AUTH_ENABLE;
+    }
+    bte_appl_cfg.ble_accept_auth_enable = enable;
+#endif  ///SMP_INCLUDED == TRUE
+}
+
+UINT8 bta_dm_co_ble_get_accept_auth_enable(void)
+{
+#if (SMP_INCLUDED == TRUE)
+    return bte_appl_cfg.ble_accept_auth_enable;
+#endif  ///SMP_INCLUDED == TRUE
+    return 0;
+}
+
+UINT8 bta_dm_co_ble_get_auth_req(void)
+{
+#if (SMP_INCLUDED == TRUE)
+    return bte_appl_cfg.ble_auth_req;
+#endif  ///SMP_INCLUDED == TRUE
+    return 0;
+}
+
 #endif
 

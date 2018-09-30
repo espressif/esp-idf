@@ -4294,9 +4294,11 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
 
     memset(&sec_event, 0, sizeof(tBTA_DM_SEC));
     switch (event) {
-    case BTM_LE_IO_REQ_EVT:
+    case BTM_LE_IO_REQ_EVT: {
         // #if (BT_SSP_INCLUDED == TRUE)
-
+        UINT8 enable = bta_dm_co_ble_get_accept_auth_enable();
+        UINT8 origin_auth = bta_dm_co_ble_get_auth_req();
+        BTM_BleSetAcceptAuthMode(enable, origin_auth);
         bta_dm_co_ble_io_req(bda,
                              &p_data->io_req.io_cap,
                              &p_data->io_req.oob_data,
@@ -4311,6 +4313,7 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
         APPL_TRACE_EVENT("io mitm: %d oob_data:%d\n", p_data->io_req.auth_req, p_data->io_req.oob_data);
 
         break;
+    }
 
     case BTM_LE_SEC_REQUEST_EVT:
         bdcpy(sec_event.ble_req.bd_addr, bda);
@@ -4386,7 +4389,7 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
 
             }
         }
-
+        sec_event.auth_cmpl.auth_mode = p_data->complt.auth_mode;
         if (bta_dm_cb.p_sec_cback) {
             //bta_dm_cb.p_sec_cback(BTA_DM_AUTH_CMPL_EVT, &sec_event);
             bta_dm_cb.p_sec_cback(BTA_DM_BLE_AUTH_CMPL_EVT, &sec_event);

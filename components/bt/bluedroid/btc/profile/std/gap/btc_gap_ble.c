@@ -1138,6 +1138,12 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
                 BTA_DmBleSetStaticPasskey(false, 0);
                 break;
             }
+            case ESP_BLE_SM_ONLY_ACCEPT_SPECIFIED_SEC_AUTH: {
+                uint8_t enable = 0;
+                STREAM_TO_UINT8(enable, value);
+                bta_dm_co_ble_set_accept_auth_enable(enable);
+                break;
+            }
             default:
                 break;
         }
