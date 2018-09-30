@@ -194,18 +194,19 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
 /**
  * @brief Disable and free an interrupt.
  *
- * Use an interrupt handle to disable the interrupt and release the resources
- * associated with it.
+ * Use an interrupt handle to disable the interrupt and release the resources associated with it.
+ * If the current core is not the core that registered this interrupt, this routine will be assigned to
+ * the core that allocated this interrupt, blocking and waiting until the resource is successfully released.
  *
  * @note 
  * When the handler shares its source with other handlers, the interrupt status 
  * bits it's responsible for should be managed properly before freeing it. see 
- * ``esp_intr_disable`` for more details.
+ * ``esp_intr_disable`` for more details. Please do not call this function in ``esp_ipc_call_blocking``.
  *
  * @param handle The handle, as obtained by esp_intr_alloc or esp_intr_alloc_intrstatus
  *
- * @return ESP_ERR_INVALID_ARG if handle is invalid, or esp_intr_free runs on another core than
- *                             where the interrupt is allocated on.
+ * @return ESP_ERR_INVALID_ARG the handle is NULL
+ *         ESP_FAIL failed to release this handle
  *         ESP_OK otherwise
  */
 esp_err_t esp_intr_free(intr_handle_t handle);
