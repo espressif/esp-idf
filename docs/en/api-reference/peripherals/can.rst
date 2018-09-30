@@ -1,19 +1,6 @@
 Controller Area Network (CAN)
 =============================
 
-.. _CAN Protocol License Conditions: http://www.bosch-semiconductors.com/media/ip_modules/pdf_2/can_protocol/bosch_can_protocol_license_conditions.pdf
-
-.. warning::
-    Please note that the ESP32 includes a CAN peripheral. The CAN Protocol is 
-    protected by the intellectual property rights of Robert Bosch GmbH. Therefore 
-    a license is required for any implementation of the CAN Protocol
-    (see `CAN Protocol License Conditions`_). **Since the selling price of the 
-    ESP32 includes no such royalty fee, Espressif hereby disclaims any liability or 
-    obligation regarding the CAN Protocol license. Users of the CAN Protocol via
-    the ESP32's CAN peripheral should contact Robert Bosch GmbH directly for the
-    necessary license.**
-
-
 .. -------------------------------- Overview -----------------------------------
 
 Overview
