@@ -450,6 +450,26 @@ UINT16 gatts_add_included_service (tGATT_SVC_DB *p_db, UINT16 s_handle, UINT16 e
         return 0;
     }
 
+    BOOLEAN is_include_service_allowed = TRUE;
+    // service declaration
+    tGATT_ATTR16 *first_attr = (tGATT_ATTR16 *)p_db->p_attr_list;
+    if (p_db->p_attr_list != NULL) {
+        tGATT_ATTR16 *next_attr = (tGATT_ATTR16 *)first_attr->p_next;
+        /* This service already has other attributes */
+        while (next_attr != NULL) {
+            if (!(next_attr->uuid_type == GATT_ATTR_UUID_TYPE_16 && next_attr->uuid == GATT_UUID_INCLUDE_SERVICE)) {
+                is_include_service_allowed = FALSE;
+                break;
+            }
+            next_attr = (tGATT_ATTR16 *)next_attr->p_next;
+        }
+
+    }
+    if (!is_include_service_allowed) {
+        GATT_TRACE_ERROR("%s error, The include service should be added before adding the characteristics", __func__);
+        return 0;
+    }
+
     if ((p_attr = (tGATT_ATTR16 *) allocate_attr_in_db(p_db, &uuid, GATT_PERM_READ)) != NULL) {
         if (copy_extra_byte_in_db(p_db, (void **)&p_attr->p_value, sizeof(tGATT_INCL_SRVC))) {
             p_attr->p_value->incl_handle.s_handle = s_handle;
