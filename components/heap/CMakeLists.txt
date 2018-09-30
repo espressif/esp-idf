@@ -7,6 +7,10 @@ if(NOT CONFIG_HEAP_POISONING_DISABLED)
     list(APPEND COMPONENT_SRCS "multi_heap_poisoning.c")
 endif()
 
+if(CONFIG_HEAP_TASK_TRACKING)
+    list(APPEND COMPONENT_SRCS "heap_task_info.c")
+endif()
+
 set(COMPONENT_ADD_INCLUDEDIRS "include")
 
 set(COMPONENT_REQUIRES "")
