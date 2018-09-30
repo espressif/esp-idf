@@ -22,9 +22,11 @@
 .included_service_connection: &included_primary_service_connection
   LIST_MERGE:
     - - "SSC SSC2 gatts -S -z load -p 0xA1"
-      - ["R SSC2 C +GATTS:LoadProfile,OK,A001", "R SSC2 C +GATTS:StartService,OK,A001"]
+      - ["R SSC2 C +GATTS:CreateService,OK,A001"]
     - - "SSC SSC2 gatts -S -z include -p 0xA1 -i 0xA0"
       - ["R SSC2 C +GATTS:AddIncludedService,OK"]
+    - - "SSC SSC2 gatts -S -z add -p 0xA1"
+      - ["R SSC2 C +GATTS:StartService,OK,A001"]
     - - SSC SSC1 gattc -F -r <dut2_bt_mac>
       - ['R SSC1 C +GATTC:OK']
     - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
@@ -35,7 +37,9 @@
     - - "SSC SSC2 gatts -S -z load -p 0xA4"
       - ["R SSC2 C +GATTS:StartService,OK,A004"]
     - - "SSC SSC2 gatts -S -z load -p 0xA1"
-      - ["R SSC2 C +GATTS:LoadProfile,OK,A001", "R SSC2 C +GATTS:StartService,OK,A001"]
+      - ["R SSC2 C +GATTS:CreateService,OK,A001"]
+    - - "SSC SSC1 gatts -S -z add -p 0xA1"
+      - ["R SSC1 C +GATTS:StartService,OK,A001"]
     - - "SSC SSC2 gatts -S -z include -p 0xA1 -i 0xA4"
       - ["R SSC2 C +GATTS:AddIncludedService,OK"]
     - - SSC SSC1 gattc -F -r <dut2_bt_mac>
@@ -102,6 +106,8 @@ test cases:
   - - "SSC SSC1 gatts -S -z load -p 0xA0"
     - ["R SSC1 C +GATTS:StartService,OK,A000"]
   - - "SSC SSC1 gatts -S -z load -p 0xA1"
+    - ["R SSC1 C +GATTS:CreateService,OK,A001"]
+  - - "SSC SSC1 gatts -S -z add -p 0xA1"
     - ["R SSC1 C +GATTS:StartService,OK,A001"]
 - ID: BTSTK_GATT_20001
   <<: *GATT_CASE
@@ -123,6 +129,8 @@ test cases:
   - *included_primary_service_connection
   - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
     - ["R SSC1 C +GATTC:DiscoverService,A000 C +GATTC:DiscoverService,A001"]
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - ['R SSC1 C +GATTC:OK']
 - ID: BTSTK_GATT_20002
   <<: *GATT_CASE
   test point 2: BLE GATT client service / char discovery
@@ -147,6 +155,8 @@ test cases:
     - ["R SSC1 C +GATTC:DiscoverService,A000 A <handle_range>:GATTC:DiscoverService,A001,(\\d+-\\d+)"]
   - - "SSC SSC1 gattc -D -z includedService -p 0x10 -s 0xA001 -i 0xA000 -q <handle_range> -k 1"
     - ["R SSC1 C +GATTC:IncludedService,0010,A001,A000"]
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - ['R SSC1 C +GATTC:OK']
 - ID: BTSTK_GATT_20003
   <<: *GATT_CASE
   test point 2: BLE GATT client service / char discovery
@@ -713,7 +723,7 @@ test cases:
   cmd set:
   - ""
   - - "SSC SSC2 gatts -S -z load -p 0xA1"
-    - ["R SSC2 C +GATTS:StartService,OK,A001"]
+    - ["R SSC2 C +GATTS:CreateService,OK,A001"]
   - - SSC SSC1 gattc -F -r <dut2_bt_mac>
     - ['R SSC1 C +GATTC:OK']
   - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
@@ -742,7 +752,7 @@ test cases:
   cmd set:
   - ""
   - - "SSC SSC2 gatts -S -z load -p 0xA1"
-    - ["R SSC2 C +GATTS:StartService,OK,A001"]
+    - ["R SSC2 C +GATTS:CreateService,OK,A001"]
   - - SSC SSC1 gattc -F -r <dut2_bt_mac>
     - ['R SSC1 C +GATTC:OK']
   - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
@@ -1008,7 +1018,7 @@ test cases:
   cmd set:
   - ""
   - - "SSC SSC2 gatts -S -z load -p 0xA1"
-    - ["R SSC2 C +GATTS:StartService,OK,A001"]
+    - ["R SSC2 C +GATTS:CreateService,OK,A001"]
   - - SSC SSC1 gattc -F -r <dut2_bt_mac>
     - ['R SSC1 C +GATTC:OK']
   - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
@@ -1036,7 +1046,7 @@ test cases:
   cmd set:
   - ""
   - - "SSC SSC2 gatts -S -z load -p 0xA1"
-    - ["R SSC2 C +GATTS:StartService,OK,A001"]
+    - ["R SSC2 C +GATTS:CreateService,OK,A001"]
   - - SSC SSC1 gattc -F -r <dut2_bt_mac>
     - ['R SSC1 C +GATTC:OK']
   - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
