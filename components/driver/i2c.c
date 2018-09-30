@@ -536,18 +536,24 @@ static esp_err_t i2c_master_clear_bus(i2c_port_t i2c_num)
     int sda_io = GPIO.func_in_sel_cfg[sda_in_sig].func_sel;
     I2C_CHECK((GPIO_IS_VALID_OUTPUT_GPIO(scl_io)), I2C_SCL_IO_ERR_STR, ESP_ERR_INVALID_ARG);
     I2C_CHECK((GPIO_IS_VALID_GPIO(sda_io)), I2C_SDA_IO_ERR_STR, ESP_ERR_INVALID_ARG);
-    // We do not check whether the SDA line is low
-    // because after some serious interference, the bus may keep high all the time and the i2c bus is out of service.
     gpio_set_direction(scl_io, GPIO_MODE_OUTPUT_OD);
     gpio_set_direction(sda_io, GPIO_MODE_OUTPUT_OD);
-    gpio_set_level(scl_io, 1);
+    // If a SLAVE device was in a read operation when the bus was interrupted, the SLAVE device is controlling SDA.
+    // The only bit during the 9 clock cycles of a READ byte the MASTER(ESP32) is guaranteed control over is during the ACK bit
+    // period. If the slave is sending a stream of ZERO bytes, it will only release SDA during the ACK bit period.
+    // So, this reset code needs to synchronize the bit stream with, Either, the ACK bit, Or a 1 bit to correctly generate
+    // a STOP condition.
+    gpio_set_level(scl_io, 0);
     gpio_set_level(sda_io, 1);
-    gpio_set_level(sda_io, 0);
-    for (int i = 0; i < 9; i++) {
-        gpio_set_level(scl_io, 0);
+    int i=0;
+    while( !gpio_get_level(sda_id) && (i<9)){ // cycle SCL until SDA is HIGH
         gpio_set_level(scl_io, 1);
+        gpio_set_level(scl_io, 0);
+        i++;
     }
-    gpio_set_level(sda_io, 1);
+    gpio_set_level(sda_io,0); // setup for STOP
+    gpio_set_level(scl_io,1);
+    gpio_set_level(sda_io, 1); // STOP, SDA low -> high while SCL is HIGH
     i2c_set_pin(i2c_num, sda_io, scl_io, 1, 1, I2C_MODE_MASTER);
     return ESP_OK;
 }
