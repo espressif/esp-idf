@@ -22,7 +22,7 @@ ESP-IDF Tools Installer
 
 The easiest way to install ESP-IDF's prerequisites is to download the ESP-IDF Tools installer from this URL:
 
-https://dl.espressif.com/dl/esp-idf-tools-setup-1.1.exe
+https://dl.espressif.com/dl/esp-idf-tools-setup-1.2.exe
 
 The installer will automatically install the ESP32 Xtensa gcc toolchain, Ninja_ build tool, and a configuration tool called mconf-idf_. The installer can also download and run installers for CMake_ and Python_ 2.7 if these are not already installed on the computer.
 
