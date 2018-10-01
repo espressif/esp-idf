@@ -102,6 +102,13 @@ void _esp_error_check_failed(esp_err_t rc, const char *file, int line, const cha
         esp_err_t __err_rc = (x);                                       \
         (void) sizeof(__err_rc);                                        \
     } while(0);
+#elif defined(CONFIG_OPTIMIZATION_ASSERTIONS_SILENT)
+#define ESP_ERROR_CHECK(x) do {                                         \
+        esp_err_t __err_rc = (x);                                       \
+        if (__err_rc != ESP_OK) {                                       \
+            abort();                                                    \
+        }                                                               \
+    } while(0);
 #else
 #define ESP_ERROR_CHECK(x) do {                                         \
         esp_err_t __err_rc = (x);                                       \
