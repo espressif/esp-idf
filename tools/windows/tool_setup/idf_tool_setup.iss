@@ -2,8 +2,8 @@
 
 [Setup]
 AppName=ESP-IDF Tools
-AppVersion=1.1
 OutputBaseFilename=esp-idf-tools-setup-1.1
+AppVersion=1.2
 
 DefaultDirName={pf}\Espressif\ESP-IDF Tools
 DefaultGroupName=ESP-IDF Tools
@@ -21,8 +21,10 @@ Name: "full"; Description: "Default installation"
 Name: "custom"; Description: "Custom installation"; Flags: iscustom
 
 [Components]
-Name: toolchain; Description: ESP32 Xtensa GCC Cross-Toolchain; Types: full custom;
+Name: xtensa_esp32; Description: ESP32 Xtensa GCC Cross-Toolchain; Types: full custom;
 Name: mconf_idf; Description: ESP-IDF console menuconfig tool; Types: full custom;
+Name: openocd_esp32; Description: openocd debug interface for ESP32; Types: full custom;
+Name: esp32ulp_elf_binutils; Description: ULP binutils toolchain for ESP32; Types: full custom;
 Name: ninja; Description: Install Ninja build v1.8.2; Types: full custom
 
 [Tasks]
@@ -37,29 +39,35 @@ Name: addpath\user; Description: "For the current user only"; GroupDescription: 
 ; The tasks won't appear if CMake/Python27 already appear to be installed on this system
 Name: cmake32; Description: Download and Run CMake 3.11.1 Installer; GroupDescription: "Other Required Tools:"; Check: not IsWin64 and not CMakeInstalled
 Name: cmake64; Description: Download and Run CMake 3.11.1 Installer; GroupDescription: "Other Required Tools:"; Check: IsWin64 and not CMakeInstalled
-Name: python32; Description: Download and Run Python 2.7.14 Installer and install pyserial; GroupDescription: "Other Required Tools:"; Check: not IsWin64 and not Python27Installed
-Name: python64; Description: Download and Run Python 2.7.14 Installer and install pyserial; GroupDescription: "Other Required Tools:"; Check: IsWin64 and not Python27Installed
+Name: python32; Description: Download and Run Python 2.7.14 Installer and install Python dependencies; GroupDescription: "Other Required Tools:"; Check: not IsWin64 and not Python27Installed
+Name: python64; Description: Download and Run Python 2.7.14 Installer and install Python dependencies; GroupDescription: "Other Required Tools:"; Check: IsWin64 and not Python27Installed
+Name: python_requirements; Description: Install any missing Python dependencies; GroupDescription: "Other Required Tools:"; Check: Python27Installed
 
 [Files]
-Components: toolchain; Source: "input\xtensa-esp32-elf\*"; DestDir: "{app}\toolchain\"; Flags: recursesubdirs;
+Components: xtensa_esp32; Source: "input\xtensa-esp32-elf\*"; DestDir: "{app}\tools\"; Flags: recursesubdirs;
 Components: mconf_idf; Source: "input\mconf-v4.6.0.0-idf-20180525-win32\*"; DestDir: "{app}\mconf-idf\";
-Components: ninja; Source: "input\ninja.exe"; DestDir: "{app}";
+Components: esp32ulp_elf_binutils; Source: "input\esp32ulp-elf-binutils\*"; DestDir: "{app}\tools\"; Flags: recursesubdirs;
+; Excludes for openocd are because some config files contain Cyrillic characters and inno can't encode them
+Components: openocd_esp32; Source: "input\openocd-esp32\*"; DestDir: "{app}\tools\"; Flags: recursesubdirs; Excludes: "target\1986*.cfg,target\*1879*.cfg"
+Components: ninja; Source: "input\ninja.exe"; DestDir: "{app}\tools\bin\";
+Tasks: python32 python64 python_requirements; Source: "..\..\..\requirements.txt"; DestDir: "{tmp}"; Flags: deleteafterinstall;
 
 [Run]
 Tasks: cmake32 cmake64; Filename: "msiexec.exe"; Parameters: "/i ""{tmp}\cmake.msi"" /qb! {code:GetCMakeInstallerArgs}"; StatusMsg: Running CMake installer...;
 Tasks: python32 python64; Filename: "msiexec.exe"; Parameters: "/i ""{tmp}\python.msi"" /qb! {code:GetPythonInstallerArgs} REBOOT=Supress"; StatusMsg: Running Python installer...;
-Tasks: python32 python64; Filename: "C:\Python27\Scripts\pip.exe"; Parameters: "install pyserial"; StatusMsg: Installing pyserial...;
+Tasks: python32 python64; Filename: "C:\Python27\Scripts\pip.exe"; Parameters: "install -r ""{tmp}\requirements.txt"""; StatusMsg: Installing Python modules...;
+Tasks: python_requirements; Filename: "{code:Python27InstallPathInclude}\Scripts\pip.exe"; Parameters: "install -r ""{tmp}\requirements.txt"""; StatusMsg: Installing Python modules...;
 
 [Registry]
 ; Prepend various entries to Path in the registry. Can either be HKLM (all users) or HKCU (single user only)
 
-; ninja path (in root app directory)
+; "tools" bin dir (ninja, xtensa & ULP toolchains, openocd all in this dir)
 Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; \
-    ValueType: expandsz; ValueName: "Path"; ValueData: "{app};{olddata}"; Check: not IsInPath('{app}'); \
-    Components: ninja; Tasks: addpath\allusers
+    ValueType: expandsz; ValueName: "Path"; ValueData: "{app}\tools\bin;{olddata}"; Check: not IsInPath('{app}'); \
+    Components: xtensa_esp32 esp32ulp_elf_binutils openocd_esp32 ninja; Tasks: addpath\allusers
 Root: HKCU; Subkey: "Environment"; \
-    ValueType: expandsz; ValueName: "Path"; ValueData: "{app};{olddata}"; Check: not IsInPath('{app}'); \
-    Components: ninja; Tasks: addpath\user
+    ValueType: expandsz; ValueName: "Path"; ValueData: "{app}\tools\bin;{olddata}"; Check: not IsInPath('{app}'); \
+    Components: xtensa_esp32 esp32ulp_elf_binutils openocd_esp32 ninja; Tasks: addpath\user
 
 ; mconf-idf path
 Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; \
@@ -69,13 +77,15 @@ Root: HKCU; Subkey: "Environment"; \
     ValueType: expandsz; ValueName: "Path"; ValueData: "{app}\mconf-idf;{olddata}"; Check: not IsInPath('{app}\mconf-idf'); \
     Components: mconf_idf; Tasks: addpath\user
 
-; toolchain path
+; set OPENOCD_SCRIPTS environment variable
+[Registry]
 Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; \
-    ValueType: expandsz; ValueName: "Path"; ValueData: "{app}\toolchain\bin;{olddata}"; Check: not IsInPath('{app}\toolchain\bin'); \
-    Components: toolchain; Tasks: addpath\allusers
-Root: HKCU; Subkey: "Environment"; \
-    ValueType: expandsz; ValueName: "Path"; ValueData: "{app}\toolchain\bin;{olddata}"; Check: not IsInPath('{app}\toolchain\bin'); \
-    Components: toolchain; Tasks: addpath\user
+    ValueType:string; ValueName: "OPENOCD_SCRIPTS"; \
+    ValueData: "{app}\tools\share\openocd\scripts"; Flags: preservestringtype createvalueifdoesntexist; \
+    Components: openocd_esp32; Tasks: addpath\allusers
+Root: HKCU; Subkey: "Environment"; ValueType:string; ValueName: "OPENOCD_SCRIPTS"; \
+    ValueData: "{app}\tools\share\openocd\scripts"; Flags: preservestringtype createvalueifdoesntexist; \
+    Components: openocd_esp32; Tasks: addpath\user
 
 
 [Code]
@@ -144,6 +154,12 @@ end;
 function Python27InstallPath() : Variant;
 begin
   Result := GetInstallPath('SOFTWARE\Python\PythonCore\2.7\InstallPath', '');
+end;
+
+{ Return the path where Python 2.7 is installed, suitable for including in code: tag }
+function Python27InstallPathInclude(Ignored : String) : String;
+begin
+  Result := Python27InstallPath();
 end;
 
 { Return True if Python 2.7 is installed }

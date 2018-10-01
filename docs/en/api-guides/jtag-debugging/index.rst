@@ -165,6 +165,8 @@ Open terminal, go to directory where OpenOCD is installed and start it up::
 
     The files provided after ``-f`` above, are specific for ESP-WROVER-KIT with :ref:`esp-modules-and-boards-esp32-wroom-32` module. You may need to provide different files depending on used hardware, For guidance see :ref:`jtag-debugging-tip-openocd-configure-target`.
 
+.. include:: ./windows-openocd-note.rst
+
 .. highlight:: none
 
 You should now see similar output (this log is for ESP32 WROVER KIT)::
@@ -200,6 +202,8 @@ Another option is to write application image to flash using OpenOCD via JTAG wit
 
     cd ~/esp/openocd-esp32
     bin/openocd -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg -c "program_esp32 filename.bin 0x10000 verify exit"
+
+.. include:: ./windows-openocd-note.rst
 
 OpenOCD flashing command ``program_esp32`` has the following format:
 

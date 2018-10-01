@@ -2,6 +2,12 @@
 Set up OpenOCD for Windows
 **************************
 
+IDF Tools Installer
+===================
+
+If you are using CMake build system and followed the :doc:`/get-started-cmake/windows-setup` with the ``ESP-IDF Tools Installer`` V1.2 or newer, then by default you will already have ``openocd`` installed.
+
+``ESP-IDF Tools Installer`` adds ``openocd` to the ``PATH`` so that it can be run from any directory.
 
 Set up OpenOCD
 ==============
