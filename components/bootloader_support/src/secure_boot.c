@@ -111,6 +111,11 @@ esp_err_t esp_secure_boot_permanently_enable(void) {
         return ESP_OK;
     }
 
+    if (REG_READ(EFUSE_BLK0_RDATA6_REG) & EFUSE_CODING_SCHEME_M) {
+        ESP_LOGE(TAG, "Secure Boot is currently not supported on hardware with 3/4 Coding Scheme (CODING_SCHEME efuse set)");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
     err = esp_image_verify_bootloader(&image_len);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "bootloader image appears invalid! error %d", err);
