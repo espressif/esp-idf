@@ -132,8 +132,11 @@ Manually unloading the driver
 
     sudo kextload -b com.FTDI.driver.FTDIUSBSerialDriver
 
+.. include:: ./windows-openocd-note.rst
 
-Note that if you need to restart OpenOCD, there is no need to unload FTDI driver again — just stop OpenOCD and start it again. The driver only needs to be unloaded if WROVER KIT was reconnected or power was toggled.
+.. note::
+
+   If you need to restart OpenOCD, there is no need to unload FTDI driver again — just stop OpenOCD and start it again. The driver only needs to be unloaded if WROVER KIT was reconnected or power was toggled.
 
 This procedure can be wrapped into a shell script, if desired.
 
