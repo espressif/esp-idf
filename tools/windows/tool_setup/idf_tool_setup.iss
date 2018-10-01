@@ -2,8 +2,8 @@
 
 [Setup]
 AppName=ESP-IDF Tools
-OutputBaseFilename=esp-idf-tools-setup-1.1
 AppVersion=1.2
+OutputBaseFilename=esp-idf-tools-setup-unsigned
 
 DefaultDirName={pf}\Espressif\ESP-IDF Tools
 DefaultGroupName=ESP-IDF Tools
