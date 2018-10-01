@@ -6,12 +6,20 @@
 
 #define RTC_BSS_ATTR __attribute__((section(".rtc.bss")))
 
+#define CHECK_VALUE 0x89abcdef
+
 static __NOINIT_ATTR uint32_t s_noinit_val;
 static RTC_NOINIT_ATTR uint32_t s_rtc_noinit_val;
 static RTC_DATA_ATTR uint32_t s_rtc_data_val;
 static RTC_BSS_ATTR uint32_t s_rtc_bss_val;
+/* There is no practical difference between placing something into RTC_DATA and
+ * RTC_RODATA. This only checks a usage pattern where the variable has a non-zero
+ * initializer (should be initialized by the bootloader).
+ */
+static RTC_RODATA_ATTR uint32_t s_rtc_rodata_val = CHECK_VALUE;
+static RTC_FAST_ATTR uint32_t s_rtc_force_fast_val;
+static RTC_SLOW_ATTR uint32_t s_rtc_force_slow_val;
 
-#define CHECK_VALUE 0x89abcdef
 
 static void setup_values()
 {
@@ -19,6 +27,10 @@ static void setup_values()
     s_rtc_noinit_val = CHECK_VALUE;
     s_rtc_data_val = CHECK_VALUE;
     s_rtc_bss_val = CHECK_VALUE;
+    TEST_ASSERT_EQUAL_HEX32_MESSAGE(CHECK_VALUE, s_rtc_rodata_val,
+            "s_rtc_rodata_val should already be set up");
+    s_rtc_force_fast_val = CHECK_VALUE;
+    s_rtc_force_slow_val = CHECK_VALUE;
 }
 
 /* This test needs special test runners: rev1 silicon, and SPI flash with
@@ -43,6 +55,9 @@ static void check_reset_reason_deep_sleep()
     TEST_ASSERT_EQUAL_HEX32(CHECK_VALUE, s_rtc_noinit_val);
     TEST_ASSERT_EQUAL_HEX32(CHECK_VALUE, s_rtc_data_val);
     TEST_ASSERT_EQUAL_HEX32(CHECK_VALUE, s_rtc_bss_val);
+    TEST_ASSERT_EQUAL_HEX32(CHECK_VALUE, s_rtc_rodata_val);
+    TEST_ASSERT_EQUAL_HEX32(CHECK_VALUE, s_rtc_force_fast_val);
+    TEST_ASSERT_EQUAL_HEX32(CHECK_VALUE, s_rtc_force_slow_val);
 }
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_DEEPSLEEP", "[reset_reason][reset=DEEPSLEEP_RESET]",
@@ -69,6 +84,9 @@ static void check_reset_reason_panic()
     TEST_ASSERT_EQUAL_HEX32(CHECK_VALUE, s_rtc_noinit_val);
     TEST_ASSERT_EQUAL_HEX32(0, s_rtc_data_val);
     TEST_ASSERT_EQUAL_HEX32(0, s_rtc_bss_val);
+    TEST_ASSERT_EQUAL_HEX32(CHECK_VALUE, s_rtc_rodata_val);
+    TEST_ASSERT_EQUAL_HEX32(0, s_rtc_force_fast_val);
+    TEST_ASSERT_EQUAL_HEX32(0, s_rtc_force_slow_val);
 }
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_PANIC after exception", "[reset_reason][reset=LoadStoreError,SW_CPU_RESET]",
@@ -102,6 +120,9 @@ static void check_reset_reason_sw()
     TEST_ASSERT_EQUAL_HEX32(CHECK_VALUE, s_rtc_noinit_val);
     TEST_ASSERT_EQUAL_HEX32(0, s_rtc_data_val);
     TEST_ASSERT_EQUAL_HEX32(0, s_rtc_bss_val);
+    TEST_ASSERT_EQUAL_HEX32(CHECK_VALUE, s_rtc_rodata_val);
+    TEST_ASSERT_EQUAL_HEX32(0, s_rtc_force_fast_val);
+    TEST_ASSERT_EQUAL_HEX32(0, s_rtc_force_slow_val);
 }
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart", "[reset_reason][reset=SW_CPU_RESET]",
@@ -158,6 +179,9 @@ static void check_reset_reason_task_wdt()
     TEST_ASSERT_EQUAL_HEX32(CHECK_VALUE, s_rtc_noinit_val);
     TEST_ASSERT_EQUAL_HEX32(0, s_rtc_data_val);
     TEST_ASSERT_EQUAL_HEX32(0, s_rtc_bss_val);
+    TEST_ASSERT_EQUAL_HEX32(CHECK_VALUE, s_rtc_rodata_val);
+    TEST_ASSERT_EQUAL_HEX32(0, s_rtc_force_fast_val);
+    TEST_ASSERT_EQUAL_HEX32(0, s_rtc_force_slow_val);
 }
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_TASK_WDT after task watchdog",
@@ -201,6 +225,9 @@ static void check_reset_reason_brownout()
     TEST_ASSERT_EQUAL_HEX32(CHECK_VALUE, s_rtc_noinit_val);
     TEST_ASSERT_EQUAL_HEX32(0, s_rtc_data_val);
     TEST_ASSERT_EQUAL_HEX32(0, s_rtc_bss_val);
+    TEST_ASSERT_EQUAL_HEX32(CHECK_VALUE, s_rtc_rodata_val);
+    TEST_ASSERT_EQUAL_HEX32(0, s_rtc_force_fast_val);
+    TEST_ASSERT_EQUAL_HEX32(0, s_rtc_force_slow_val);
 }
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_BROWNOUT after brownout event",

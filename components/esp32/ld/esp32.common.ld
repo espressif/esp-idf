@@ -43,7 +43,7 @@ SECTIONS
      data/rodata, including from any source file
      named rtc_wake_stub*.c and the data marked with
      RTC_DATA_ATTR, RTC_RODATA_ATTR attributes.
-     The memory location of the data dependent on 
+     The memory location of the data is dependent on 
      CONFIG_ESP32_RTCDATA_IN_FAST_MEM option.
   */
   .rtc.data :
@@ -65,6 +65,22 @@ SECTIONS
     _rtc_bss_end = ABSOLUTE(.);
   } > rtc_data_location
 
+  /* This section holds data that should not be initialized at power up 
+     and will be retained during deep sleep.
+     User data marked with RTC_NOINIT_ATTR will be placed
+     into this section. See the file "esp_attr.h" for more information. 
+	 The memory location of the data is dependent on 
+     CONFIG_ESP32_RTCDATA_IN_FAST_MEM option.
+  */
+  .rtc_noinit (NOLOAD):
+  {
+    . = ALIGN(4);
+    _rtc_noinit_start = ABSOLUTE(.);
+    *(.rtc_noinit .rtc_noinit.*)
+    . = ALIGN(4) ;
+    _rtc_noinit_end = ABSOLUTE(.);
+  } > rtc_data_location
+
   /* This section located in RTC SLOW Memory area. 
      It holds data marked with RTC_SLOW_ATTR attribute. 
      See the file "esp_attr.h" for more information.
@@ -78,28 +94,14 @@ SECTIONS
     _rtc_force_slow_end = ABSOLUTE(.);
   } > rtc_slow_seg
 
-  /* This section holds data that should not be initialized at power up 
-     and will be retained during deep sleep. The section located in 
-     RTC SLOW Memory area. User data marked with RTC_NOINIT_ATTR will be placed
-     into this section. See the file "esp_attr.h" for more information.
-  */
-  .rtc_noinit (NOLOAD):
-  {
-    . = ALIGN(4);
-    _rtc_noinit_start = ABSOLUTE(.);
-    *(.rtc_noinit .rtc_noinit.*)
-    . = ALIGN(4) ;
-    _rtc_noinit_end = ABSOLUTE(.);
-  } > rtc_slow_seg
-
   /* Get size of rtc slow data based on rtc_data_location alias */
   _rtc_slow_length = (ORIGIN(rtc_slow_seg) == ORIGIN(rtc_data_location)) 
-                        ? (_rtc_noinit_end - _rtc_data_start) 
-                        : (_rtc_noinit_end - _rtc_force_slow_start);
+                        ? (_rtc_force_slow_end - _rtc_data_start) 
+                        : (_rtc_force_slow_end - _rtc_force_slow_start);
 
   _rtc_fast_length = (ORIGIN(rtc_slow_seg) == ORIGIN(rtc_data_location)) 
                         ? (_rtc_force_fast_end - _rtc_fast_start) 
-                        : (_rtc_bss_end - _rtc_fast_start);
+                        : (_rtc_noinit_end - _rtc_fast_start);
   
   ASSERT((_rtc_slow_length <= LENGTH(rtc_slow_seg)),
           "RTC_SLOW segment data does not fit.")
