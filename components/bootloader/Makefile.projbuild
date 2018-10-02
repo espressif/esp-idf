@@ -78,12 +78,18 @@ else ifdef CONFIG_SECURE_BOOTLOADER_REFLASHABLE
 # Reflashable secure bootloader
 # generates a digest binary (bootloader + digest)
 
+ifdef CONFIG_SECURE_BOOTLOADER_KEY_ENCODING_192BIT
+KEY_DIGEST_LEN=192
+else
+KEY_DIGEST_LEN=256
+endif
+
 BOOTLOADER_DIGEST_BIN := $(BOOTLOADER_BUILD_DIR)/bootloader-reflash-digest.bin
-SECURE_BOOTLOADER_KEY := $(BOOTLOADER_BUILD_DIR)/secure-bootloader-key.bin
+SECURE_BOOTLOADER_KEY := $(BOOTLOADER_BUILD_DIR)/secure-bootloader-key-$(KEY_DIGEST_LEN).bin
 
 ifdef CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES
 $(SECURE_BOOTLOADER_KEY): $(SECURE_BOOT_SIGNING_KEY) | check_python_dependencies
-	$(ESPSECUREPY) digest_private_key -k $< $@
+	$(ESPSECUREPY) digest_private_key --keylen $(KEY_DIGEST_LEN) -k $< $@
 else
 $(SECURE_BOOTLOADER_KEY):
 	@echo "No pre-generated key for a reflashable secure bootloader is available, due to signing configuration."

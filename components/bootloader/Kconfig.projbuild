@@ -290,6 +290,27 @@ config SECURE_BOOT_VERIFICATION_KEY
 
        Refer to https://docs.espressif.com/projects/esp-idf/en/latest/security/secure-boot.html before enabling.
 
+choice SECURE_BOOTLOADER_KEY_ENCODING
+    bool "Hardware Key Encoding"
+    depends on SECURE_BOOTLOADER_REFLASHABLE
+    default SECURE_BOOTLOADER_NO_ENCODING
+    help
+
+    In reflashable secure bootloader mode, a hardware key is derived from the signing key (with SHA-256) and can be written to efuse
+    with espefuse.py.
+
+    Normally this is a 256-bit key, but if 3/4 Coding Scheme is used on the device then the efuse key is truncated to 192 bits.
+
+    This configuration item doesn't change any firmware code, it only changes the size of key binary which is generated at build time.
+
+config SECURE_BOOTLOADER_KEY_ENCODING_256BIT
+       bool "No encoding (256 bit key)"
+
+config SECURE_BOOTLOADER_KEY_ENCODING_192BIT
+       bool "3/4 encoding (192 bit key)"
+
+endchoice
+
 config SECURE_BOOT_INSECURE
     bool "Allow potentially insecure options"
     depends on SECURE_BOOT_ENABLED

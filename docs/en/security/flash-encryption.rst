@@ -11,7 +11,7 @@ Flash Encryption is separate from the :doc:`Secure Boot <secure-boot>` feature, 
 Background
 ----------
 
-- The contents of the flash are encrypted using AES with a 256 bit key. The flash encryption key is stored in efuse internal to the chip, and is (by default) protected from software access.
+- The contents of the flash are encrypted using AES-256. The flash encryption key is stored in efuse internal to the chip, and is (by default) protected from software access.
 
 - Flash access is transparent via the flash cache mapping feature of ESP32 - any flash regions which are mapped to the address space will be transparently decrypted when read.
 
@@ -28,6 +28,8 @@ Background
 	It may be desirable for some data partitions to remain unencrypted for ease of access, or to use flash-friendly update algorithms that are ineffective if the data is encrypted. NVS partitions for non-volatile storage cannot be encrypted since NVS library is not directly compatible with flash encryption. Refer to :ref:`NVS Encryption <nvs_encryption>` for more details.
 
 - The flash encryption key is stored in efuse key block 1, internal to the ESP32 chip. By default, this key is read- and write-protected so software cannot access it or change it.
+
+- By default, the Efuse Block 1 Coding Scheme is "None" and a 256 bit key is stored in this block. On some ESP32s, the Coding Scheme is set to 3/4 Encoding (CODING_SCHEME efuse has value 1) and a 192 bit key must be stored in this block. See ESP32 Technical Reference Manual section 20.3.1.3 *System Parameter coding_scheme* for more details. The algorithm operates on a 256 bit key in all cases, 192 bit keys are extended by repeating some bits (:ref:`details <flash-encryption-algorithm>`). The coding scheme is shown in the ``Features`` line when ``esptool.py`` connects to the chip, or in the ``espefuse.py summary`` output.
 
 - The `flash encryption algorithm` is AES-256, where the key is "tweaked" with the offset address of each 32 byte block of flash. This means every 32 byte block (two consecutive 16 byte AES blocks) is encrypted with a unique key derived from the flash encryption key.
 
@@ -203,7 +205,7 @@ Flash encryption keys are 32 bytes of random data. You can generate a random key
 
 Alternatively, if you're using :doc:`secure boot <secure-boot>` and have a :ref:`secure boot signing key <secure-boot-generate-key>` then you can generate a deterministic SHA-256 digest of the secure boot private signing key and use this as the flash encryption key::
 
-  espsecure.py digest_private_key --keyfile secure_boot_signing_key.pem my_flash_encryption_key.bin
+  espsecure.py digest_private_key --keyfile secure_boot_signing_key.pem --keylen 256 my_flash_encryption_key.bin
 
 (The same 32 bytes is used as the secure boot digest key if you enable :ref:`reflashable mode<secure-boot-reflashable>` for secure boot.)
 
@@ -402,9 +404,13 @@ Flash Encryption Algorithm
 
 - AES-256 operates on 16 byte blocks of data. The flash encryption engine encrypts and decrypts data in 32 byte blocks, two AES blocks in series.
 
-- AES algorithm is used inverted in flash encryption, so the flash encryption "encrypt" operation is AES decrypt and the "decrypt" operation is AES encrypt. This is for performance reasons and does not alter the effectiveness of the algorithm.
-
 - The main flash encryption key is stored in efuse (BLOCK1) and by default is protected from further writes or software readout.
+
+- AES-256 key size is 256 bits (32 bytes), read from efuse block 1. The hardware AES engine uses the key in reversed byte order to the order stored in the efuse block.
+  - If ``CODING_SCHEME`` efuse is set to 0 (default "None" Coding Scheme) then the efuse key block is 256 bits and the key is stored as-is (in reversed byte order).
+  - If ``CODING_SCHEME`` efuse is set to 1 (3/4 Encoding) then the efuse key block is 192 bits (in reversed byte order), so overall entropy is reduced. The hardware flash encryption still operates on a 256-bit key, after being read (and un-reversed), the key is extended by as ``key = key[0:255] + key[64:127]``.
+
+- AES algorithm is used inverted in flash encryption, so the flash encryption "encrypt" operation is AES decrypt and the "decrypt" operation is AES encrypt. This is for performance reasons and does not alter the effectiveness of the algorithm.
 
 - Each 32 byte block (two adjacent 16 byte AES blocks) is encrypted with a unique key. The key is derived from the main flash encryption key in efuse, XORed with the offset of this block in the flash (a "key tweak").
 
@@ -419,7 +425,6 @@ Flash Encryption Algorithm
 
 - The high 19 bits of the block offset (bit 5 to bit 23) are XORed with the main flash encryption key. This range is chosen for two reasons: the maximum flash size is 16MB (24 bits), and each block is 32 bytes so the least significant 5 bits are always zero.
 
-- There is a particular mapping from each of the 19 block offset bits to the 256 bits of the flash encryption key, to determine which bit is XORed with which. See the variable ``_FLASH_ENCRYPTION_TWEAK_PATTERN`` in the espsecure.py source code for the complete mapping.
+- There is a particular mapping from each of the 19 block offset bits to the 256 bits of the flash encryption key, to determine which bit is XORed with which. See the variable ``_FLASH_ENCRYPTION_TWEAK_PATTERN`` in the ``espsecure.py`` source code for the complete mapping.
 
-- To see the full flash encryption algorithm implemented in Python, refer to the `_flash_encryption_operation()` function in the espsecure.py source code.
-
+- To see the full flash encryption algorithm implemented in Python, refer to the `_flash_encryption_operation()` function in the ``espsecure.py`` source code.
