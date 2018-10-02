@@ -1,0 +1,36 @@
+menu "Example Configuration"
+
+config WIFI_SSID
+    string "WiFi SSID"
+	default "myssid"
+	help
+		SSID (network name) for the example to connect to.
+
+config WIFI_PASSWORD
+    string "WiFi Password"
+	default "mypassword"
+	help
+		WiFi password (WPA or WPA2) for the example to use.
+		Can be left blank if the network has no security set.
+
+choice EXAMPLE_IP_MODE
+    prompt "IP Version"
+    help
+       Example can use either IPV4 or IPV6.
+
+config EXAMPLE_IPV4
+    bool "IPV4"
+
+config EXAMPLE_IPV6
+   bool "IPV6"
+
+endchoice
+
+config EXAMPLE_PORT
+    int "Port"
+    range 0 65535
+    default 3333
+    help
+        Local port the example server will listen on.
+
+endmenu
