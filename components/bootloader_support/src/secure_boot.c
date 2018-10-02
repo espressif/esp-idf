@@ -50,7 +50,7 @@ static bool secure_boot_generate(uint32_t image_len){
     const uint32_t *image;
 
     /* hardware secure boot engine only takes full blocks, so round up the
-       image length. The additional data should all be 0xFF.
+       image length. The additional data should all be 0xFF (or the appended SHA, if it falls in the same block).
     */
     if (image_len % sizeof(digest.iv) != 0) {
         image_len = (image_len / sizeof(digest.iv) + 1) * sizeof(digest.iv);
@@ -104,7 +104,6 @@ static inline void burn_efuses()
 
 esp_err_t esp_secure_boot_permanently_enable(void) {
     esp_err_t err;
-    uint32_t image_len = 0;
     if (esp_secure_boot_enabled())
     {
         ESP_LOGI(TAG, "bootloader secure boot is already enabled, continuing..");
@@ -116,7 +115,9 @@ esp_err_t esp_secure_boot_permanently_enable(void) {
         return ESP_ERR_NOT_SUPPORTED;
     }
 
-    err = esp_image_verify_bootloader(&image_len);
+    /* Verify the bootloader */
+    esp_image_metadata_t bootloader_data = { 0 };
+    err = esp_image_verify_bootloader_data(&bootloader_data);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "bootloader image appears invalid! error %d", err);
         return err;
@@ -155,6 +156,11 @@ esp_err_t esp_secure_boot_permanently_enable(void) {
     }
 
     ESP_LOGI(TAG, "Generating secure boot digest...");
+    uint32_t image_len = bootloader_data.image_len;
+    if(bootloader_data.image.hash_appended) {
+        /* Secure boot digest doesn't cover the hash */
+        image_len -= ESP_IMAGE_HASH_LEN;
+    }
     if (false == secure_boot_generate(image_len)){
         ESP_LOGE(TAG, "secure boot generation failed");
         return ESP_FAIL;
