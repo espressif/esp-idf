@@ -32,8 +32,6 @@ typedef struct {
     int sock;
 } transport_tcp_t;
 
-esp_transport_handle_t transport_get_handle(esp_transport_handle_t t);
-
 static int resolve_dns(const char *host, struct sockaddr_in *ip) {
 
     struct hostent *he;
@@ -161,7 +159,7 @@ esp_transport_handle_t esp_transport_tcp_init()
     transport_tcp_t *tcp = calloc(1, sizeof(transport_tcp_t));
     ESP_TRANSPORT_MEM_CHECK(TAG, tcp, return NULL);
     tcp->sock = -1;
-    esp_transport_set_func(t, tcp_connect, tcp_read, tcp_write, tcp_close, tcp_poll_read, tcp_poll_write, tcp_destroy, transport_get_handle);
+    esp_transport_set_func(t, tcp_connect, tcp_read, tcp_write, tcp_close, tcp_poll_read, tcp_poll_write, tcp_destroy);
     esp_transport_set_context_data(t, tcp);
 
     return t;

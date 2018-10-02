@@ -41,7 +41,7 @@ struct esp_transport_item_t {
     poll_func       _poll_write;    /*!< Poll and write */
     trans_func      _destroy;       /*!< Destroy and free transport */
     connect_async_func _connect_async;      /*!< non-blocking connect function of this transport */
-    payload_transfer_func  _parrent_transfer;       /*!< Function returning underlying transport layer */
+    payload_transfer_func  _parent_transfer;       /*!< Function returning underlying transport layer */
 
     STAILQ_ENTRY(esp_transport_item_t) next;
 };
@@ -52,6 +52,13 @@ struct esp_transport_item_t {
  */
 STAILQ_HEAD(esp_transport_list_t, esp_transport_item_t);
 
+static esp_transport_handle_t esp_transport_get_default_parent(esp_transport_handle_t t)
+{
+    /*
+    * By default, the underlying transport layer handle is the handle itself
+    */
+    return t;
+}
 
 esp_transport_list_handle_t esp_transport_list_init()
 {
@@ -123,7 +130,7 @@ esp_transport_handle_t esp_transport_init()
 esp_transport_handle_t esp_transport_get_payload_transport_handle(esp_transport_handle_t t)
 {
     if (t && t->_read) {
-        return t->_parrent_transfer(t);
+        return t->_parent_transfer(t);
     }
     return NULL;
 }
@@ -219,8 +226,7 @@ esp_err_t esp_transport_set_func(esp_transport_handle_t t,
                              trans_func _close,
                              poll_func _poll_read,
                              poll_func _poll_write,
-                             trans_func _destroy,
-                             payload_transfer_func _parrent_transport)
+                             trans_func _destroy)
 {
     if (t == NULL) {
         return ESP_FAIL;
@@ -233,7 +239,7 @@ esp_err_t esp_transport_set_func(esp_transport_handle_t t,
     t->_poll_write = _poll_write;
     t->_destroy = _destroy;
     t->_connect_async = NULL;
-    t->_parrent_transfer = _parrent_transport;
+    t->_parent_transfer = esp_transport_get_default_parent;
     return ESP_OK;
 }
 
@@ -254,16 +260,20 @@ esp_err_t esp_transport_set_default_port(esp_transport_handle_t t, int port)
     return ESP_OK;
 }
 
-esp_transport_handle_t transport_get_handle(esp_transport_handle_t t)
-{
-    return t;
-}
-
 esp_err_t esp_transport_set_async_connect_func(esp_transport_handle_t t, connect_async_func _connect_async_func)
 {
     if (t == NULL) {
         return ESP_FAIL;
     }
     t->_connect_async = _connect_async_func;
+    return ESP_OK;
+}
+
+esp_err_t esp_transport_set_parent_transport_func(esp_transport_handle_t t, payload_transfer_func _parent_transport)
+{
+    if (t == NULL) {
+        return ESP_FAIL;
+    }
+    t->_parent_transfer = _parent_transport;
     return ESP_OK;
 }
