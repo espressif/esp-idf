@@ -43,8 +43,6 @@ typedef struct {
     transport_ssl_conn_state_t conn_state;
 } transport_ssl_t;
 
-esp_transport_handle_t transport_get_handle(esp_transport_handle_t t);
-
 static int ssl_close(esp_transport_handle_t t);
 
 static int ssl_connect_async(esp_transport_handle_t t, const char *host, int port, int timeout_ms)
@@ -176,7 +174,7 @@ esp_transport_handle_t esp_transport_ssl_init()
     transport_ssl_t *ssl = calloc(1, sizeof(transport_ssl_t));
     ESP_TRANSPORT_MEM_CHECK(TAG, ssl, return NULL);
     esp_transport_set_context_data(t, ssl);
-    esp_transport_set_func(t, ssl_connect, ssl_read, ssl_write, ssl_close, ssl_poll_read, ssl_poll_write, ssl_destroy, transport_get_handle);
+    esp_transport_set_func(t, ssl_connect, ssl_read, ssl_write, ssl_close, ssl_poll_read, ssl_poll_write, ssl_destroy);
     esp_transport_set_async_connect_func(t, ssl_connect_async);
     return t;
 }

@@ -260,7 +260,6 @@ esp_err_t esp_transport_set_context_data(esp_transport_handle_t t, void *data);
  * @param[in]  _poll_read   The poll read function pointer
  * @param[in]  _poll_write  The poll write function pointer
  * @param[in]  _destroy     The destroy function pointer
- * @param[in]  _parrent_transport     The parrent transfer getter pointer
  *
  * @return
  *     - ESP_OK
@@ -272,8 +271,7 @@ esp_err_t esp_transport_set_func(esp_transport_handle_t t,
                              trans_func _close,
                              poll_func _poll_read,
                              poll_func _poll_write,
-                             trans_func _destroy,
-                             payload_transfer_func _parrent_transport);
+                             trans_func _destroy);
 
 
 /**
@@ -287,6 +285,18 @@ esp_err_t esp_transport_set_func(esp_transport_handle_t t,
  *     - ESP_FAIL
  */
 esp_err_t esp_transport_set_async_connect_func(esp_transport_handle_t t, connect_async_func _connect_async_func);
+
+/**
+ * @brief      Set parent transport function to the handle
+ *
+ * @param[in]  t                    The transport handle
+ * @param[in]  _parent_transport    The underlying transport getter pointer
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_FAIL
+ */
+esp_err_t esp_transport_set_parent_transport_func(esp_transport_handle_t t, payload_transfer_func _parent_transport);
 
 #ifdef __cplusplus
 }
