@@ -271,7 +271,6 @@ esp_err_t spi_bus_add_device(spi_host_device_t host, spi_device_interface_config
 
     //Set CS pin, CS options
     if (dev_config->spics_io_num >= 0) {
-        gpio_set_direction(dev_config->spics_io_num, GPIO_MODE_OUTPUT);
         spicommon_cs_initialize(host, dev_config->spics_io_num, freecs, spihost[host]->no_gpio_matrix == false);
     }
     if (dev_config->flags&SPI_DEVICE_CLK_AS_CS) {

@@ -96,7 +96,6 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     spihost[host]->id = host;
 
     spicommon_bus_initialize_io(host, bus_config, dma_chan, SPICOMMON_BUSFLAG_SLAVE, &native);
-    gpio_set_direction(slave_config->spics_io_num, GPIO_MODE_INPUT);
     spicommon_cs_initialize(host, slave_config->spics_io_num, 0, native==false);
     // The slave DMA suffers from unexpected transactions. Forbid reading if DMA is enabled by disabling the CS line.
     if (dma_chan != 0) spicommon_freeze_cs(host);
