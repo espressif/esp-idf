@@ -484,7 +484,6 @@ Specify ``SPI_DEVICE_NO_DUMMY`` to ignore this checking. Then you can output dat
 
     //Set CS pin, CS options
     if (dev_config->spics_io_num >= 0) {
-        gpio_set_direction(dev_config->spics_io_num, GPIO_MODE_OUTPUT);
         spicommon_cs_initialize(host, dev_config->spics_io_num, freecs, !(spihost[host]->flags&SPICOMMON_BUSFLAG_NATIVE_PINS));
     }
     if (dev_config->flags&SPI_DEVICE_CLK_AS_CS) {
