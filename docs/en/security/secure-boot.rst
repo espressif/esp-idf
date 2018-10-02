@@ -49,6 +49,8 @@ The following keys are used by the secure boot process:
 
 - "secure bootloader key" is a 256-bit AES key that is stored in Efuse block 2. The bootloader can generate this key itself from the internal hardware random number generator, the user does not need to supply it (it is optionally possible to supply this key, see :ref:`secure-boot-reflashable`). The Efuse holding this key is read & write protected (preventing software access) before secure boot is enabled.
 
+  - By default, the Efuse Block 2 Coding Scheme is "None" and a 256 bit key is stored in this block. On some ESP32s, the Coding Scheme is set to 3/4 Encoding (CODING_SCHEME efuse has value 1) and a 192 bit key must be stored in this block. See ESP32 Technical Reference Manual section 20.3.1.3 *System Parameter coding_scheme* for more details. The algorithm operates on a 256 bit key in all cases, 192 bit keys are extended by repeating some bits (:ref:`details<secure-bootloader-digest-algorithm>`).
+
 - "secure boot signing key" is a standard ECDSA public/private key pair (see :ref:`secure-boot-image-signing-algorithm`) in PEM format.
 
   - The public key from this key pair (for signature verification but not signature creation) is compiled into the software bootloader and used to verify the second stage of booting (partition table, app image) before booting continues. The public key can be freely distributed, it does not need to be kept secret.
@@ -113,19 +115,21 @@ Re-Flashable Software Bootloader
 
 Configuration "Secure Boot: One-Time Flash" is the recommended configuration for production devices. In this mode, each device gets a unique key that is never stored outside the device.
 
-However, an alternative mode :ref:`Secure Boot: Reflashable <CONFIG_SECURE_BOOTLOADER_MODE>` is also available. This mode allows you to supply a 256-bit key file that is used for the secure bootloader key. As you have the key file, you can generate new bootloader images and secure boot digests for them.
+However, an alternative mode :ref:`Secure Boot: Reflashable <CONFIG_SECURE_BOOTLOADER_MODE>` is also available. This mode allows you to supply a binary key file that is used for the secure bootloader key. As you have the key file, you can generate new bootloader images and secure boot digests for them.
 
-In the esp-idf build process, this 256-bit key file is derived from the app signing key generated during the generate_signing_key step above. The private key's SHA-256 digest is used as the 256-bit secure bootloader key. This is a convenience so you only need to generate/protect a single private key.
+In the esp-idf build process, this 256-bit key file is derived from the app signing key generated during the generate_signing_key step above. The private key's SHA-256 digest is used as the secure bootloader key (as-is for Coding Scheme None, or truncate to 192 bytes for 3/4 Encoding). This is a convenience so you only need to generate/protect a single private key.
 
 .. note:: Although it's possible, we strongly recommend not generating one secure boot key and flashing it to every device in a production environment. The "One-Time Flash" option is recommended for production environments.
 
 To enable a reflashable bootloader:
 
-1. In the ``make menuconfig`` step, select "Bootloader Config" -> "Secure Boot" -> "Reflashable".
+1. In the ``make menuconfig`` step, select "Bootloader Config" -> :ref:`CONFIG_SECURE_BOOT_ENABLED` ->  :ref:`CONFIG_SECURE_BOOTLOADER_MODE` -> Reflashable.
+
+2. If necessary, set the :ref:`CONFIG_SECURE_BOOTLOADER_KEY_ENCODING` based on the coding scheme used by the device. The coding scheme is shown in the ``Features`` line when ``esptool.py`` connects to the chip, or in the ``espefuse.py summary`` output.
 
 2. Follow the steps shown above to choose a signing key file, and generate the key file.
 
-3. Run ``make bootloader``. A 256-bit key file will be created, derived from the private key that is used for signing. Two sets of flashing steps will be printed - the first set of steps includes an ``espefuse.py burn_key`` command which is used to write the bootloader key to efuse. (Flashing this key is a one-time-only process.) The second set of steps can be used to reflash the bootloader with a pre-calculated digest (generated during the build process).
+3. Run ``make bootloader``. A binary key file will be created, derived from the private key that is used for signing. Two sets of flashing steps will be printed - the first set of steps includes an ``espefuse.py burn_key`` command which is used to write the bootloader key to efuse. (Flashing this key is a one-time-only process.) The second set of steps can be used to reflash the bootloader with a pre-calculated digest (generated during the build process).
 
 4. Resume from :ref:`Step 6 of the one-time flashing process <secure-boot-resume-normal-flashing>`, to flash the bootloader and enable secure boot. Watch the console log output closely to ensure there were no errors in the secure boot configuration.
 
@@ -198,6 +202,8 @@ The first stage of secure boot verification (checking the software bootloader) i
 
 3. Generate a digest from data (usually the bootloader image from flash) using the same algorithm as step 2 and compare it to a pre-calculated digest supplied in a buffer (usually read from flash offset 0x0). The hardware returns a true/false comparison without making the digest available to software. This function is available even when Efuse ABS_DONE_0 is burned.
 
+.. _secure-bootloader-digest-algorithm:
+
 Secure Bootloader Digest Algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -207,15 +213,16 @@ For a Python version of this algorithm, see the ``espsecure.py`` tool in the com
 
 Items marked with (^) are to fulfill hardware restrictions, as opposed to cryptographic restrictions.
 
-1. Prefix the image with a 128 byte randomly generated IV.
-2. If the image length is not modulo 128, pad the image to a 128 byte boundary with 0xFF. (^)
-3. For each 16 byte plaintext block of the input image:
+1. Read the AES key from efuse block 2, in reversed byte order. If Coding Scheme is set to 3/4 Encoding, extend the 192 bit key to 256 bits using the same algorithm described in :ref:`flash-encryption-algorithm`.
+2. Prefix the image with a 128 byte randomly generated IV.
+3. If the image length is not modulo 128, pad the image to a 128 byte boundary with 0xFF. (^)
+4. For each 16 byte plaintext block of the input image:
    - Reverse the byte order of the plaintext input block (^)
    - Apply AES256 in ECB mode to the plaintext block.
    - Reverse the byte order of the ciphertext output block. (^)
    - Append to the overall ciphertext output.
-4. Byte-swap each 4 byte word of the ciphertext (^)
-5. Calculate SHA-512 of the ciphertext.
+5. Byte-swap each 4 byte word of the ciphertext (^)
+6. Calculate SHA-512 of the ciphertext.
 
 Output digest is 192 bytes of data: The 128 byte IV, followed by the 64 byte SHA-512 digest.
 
