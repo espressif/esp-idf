@@ -15,15 +15,16 @@
 # limitations under the License.
 #
 
+from __future__ import print_function
 import sys
 import os
 import csv
 import argparse
 import shutil
 import distutils.dir_util
+from itertools import zip_longest
 sys.path.insert(0, os.getenv('IDF_PATH') + "/components/nvs_flash/nvs_partition_generator/")
 import nvs_partition_gen
-
 
 def verify_values_exist(input_values_file, keys_in_values_file):
     """ Verify all keys have corresponding values in values file
@@ -31,9 +32,15 @@ def verify_values_exist(input_values_file, keys_in_values_file):
     line_no = 1
     key_count_in_values_file = len(keys_in_values_file)
 
-    values_file = open(input_values_file,'rb')
+    if sys.version_info[0] < 3:
+        values_file = open(input_values_file, 'rb')
+    else:
+        values_file = open(input_values_file, 'r', newline='')
     values_file_reader = csv.reader(values_file, delimiter=',')
-    keys = values_file_reader.next()
+    if sys.version_info[0] < 3:
+        keys = values_file_reader.next()
+    else:
+        keys = next(values_file_reader)
 
     for values_data in values_file_reader:
         line_no +=1
@@ -59,12 +66,11 @@ def verify_keys_exist(values_file_keys, input_config_file):
             else:
                 keys_missing.append([config_data[0], line_no])
 
-    
+
     if keys_missing:
-        print "Oops..."
         for key, line_no in keys_missing:
-            print "Key:`" + str(key) + "` at line no:" + str(line_no) + \
-            " in config file is not found in values file..."
+            print("Key:`", str(key), "` at line no:", str(line_no),\
+            " in config file is not found in values file.")
         config_file.close()
         raise SystemExit(1)
 
@@ -131,7 +137,7 @@ def verify_data_in_file(input_config_file, input_values_file, config_file_keys, 
         verify_values_exist(input_values_file, keys_in_values_file)
 
     except StandardError as std_err:
-        print  std_err
+        print(std_err)
     except:
         raise
 
@@ -203,6 +209,7 @@ def add_data_to_file(config_data_to_write, key_value_pair, output_csv_file):
     data_to_write = []
 
     target_csv_file = open(output_csv_file, 'w')
+
     output_file_writer = csv.writer(target_csv_file, delimiter=',')
     output_file_writer.writerow(header)
 
@@ -246,9 +253,17 @@ def set_repeat_value(total_keys_repeat, keys, csv_file):
     target_filename = filename + "_created" + file_ext
     with open(csv_file, 'r') as read_from, open(target_filename,'w') as write_to:
         csv_file_reader = csv.reader(read_from, delimiter=',')
-        headers = csv_file_reader.next()
-        values = csv_file_reader.next()
-        total_keys_values = map(None, keys, values)
+        if sys.version_info[0] < 3:
+            headers = csv_file_reader.next()
+            values = csv_file_reader.next()
+        else:
+            headers = next(csv_file_reader)
+            values = next(csv_file_reader)
+
+        if sys.version_info[0] < 3:
+            total_keys_values = map(None, keys, values)
+        else:
+            total_keys_values = list(zip_longest(keys, values))
 
         csv_file_writer = csv.writer(write_to, delimiter=',')
         csv_file_writer.writerow(headers)
@@ -257,7 +272,11 @@ def set_repeat_value(total_keys_repeat, keys, csv_file):
         # read new data, add value if key has repeat tag, write to new file
         for row in csv_file_reader:
             index = -1
-            key_val_new = map(None, keys, row)
+            if sys.version_info[0] < 3:
+                key_val_new = map(None, keys, row)
+            else:
+                key_val_new = list(zip_longest(keys, row))
+
             key_val_pair = total_keys_values[:]
             key_repeated = total_keys_repeat[:]
             while key_val_new and key_repeated:
@@ -270,7 +289,7 @@ def set_repeat_value(total_keys_repeat, keys, csv_file):
                     del key_repeated[0]
                 del key_val_new[0]
                 del key_val_pair[0]
-           
+
 
     return target_filename
 
@@ -288,7 +307,7 @@ file_identifier=None,output_dir_path=None):
                                 dest='part_size',
                                 required=True,
                                 help='Size of NVS Partition in KB. Eg. 12KB')
-            
+
             parser.add_argument('--conf',
                                 dest='config_file',
                                 required=True,
@@ -387,7 +406,7 @@ file_identifier=None,output_dir_path=None):
 
             csv_config_file.close()
         except Exception as e:
-            print e
+            print(e)
         finally:
             csv_config_file.close()
 
@@ -395,7 +414,10 @@ file_identifier=None,output_dir_path=None):
 
 
         # Verify values file does not have empty lines
-        csv_values_file = open(input_values_file,'rb')
+        if sys.version_info[0] < 3:
+            csv_values_file = open(input_values_file,'rb')
+        else:
+            csv_values_file = open(input_values_file,'r', newline='')
         try:
             values_file_reader = csv.reader(csv_values_file, delimiter=',')
             for values_data in values_file_reader:
@@ -414,11 +436,14 @@ file_identifier=None,output_dir_path=None):
             csv_values_file.seek(0)
 
             # Extract keys from values file
-            keys_in_values_file = values_file_reader.next()
+            if sys.version_info[0] < 3:
+                keys_in_values_file = values_file_reader.next()
+            else:
+                keys_in_values_file = next(values_file_reader)
 
             csv_values_file.close()
         except Exception as e:
-            print e
+            print(e)
             exit(1)
         finally:
             csv_values_file.close()
@@ -437,16 +462,35 @@ file_identifier=None,output_dir_path=None):
         config_data_to_write = add_config_data_per_namespace(input_config_file)
 
         try:
-            with open(input_values_file,'rb') as csv_values_file:
-                values_file_reader = csv.reader(csv_values_file, delimiter=',')
-                keys = values_file_reader.next()
+            if sys.version_info[0] < 3:
+                with open(input_values_file,'rb') as csv_values_file:
+                    values_file_reader = csv.reader(csv_values_file, delimiter=',')
+                    keys = values_file_reader.next()
+            else:
+                with open(input_values_file,'r', newline='') as csv_values_file:
+                    values_file_reader = csv.reader(csv_values_file, delimiter=',')
+                    keys = next(values_file_reader)
+
             target_values_file = set_repeat_value(keys_repeat, keys, input_values_file)
-            csv_values_file = open(target_values_file, 'rb')
+
+            if sys.version_info[0] < 3:
+                csv_values_file = open(target_values_file, 'rb')
+            else:
+                csv_values_file = open(target_values_file, 'r', newline='')
+
             values_file_reader = csv.reader(csv_values_file, delimiter=',')
-            values_file_reader.next()
+            if sys.version_info[0] < 3:
+                values_file_reader.next()
+            else:
+                next(values_file_reader)
+
 
             for values_data_line in values_file_reader:
-                key_value_data = map(None,keys_in_values_file,values_data_line)
+                if sys.version_info[0] < 3:
+                    key_value_data = map(None,keys_in_values_file,values_data_line)
+                else:
+                    key_value_data = list(zip_longest(keys_in_values_file,values_data_line))
+
 
                 # Get file identifier value from values file
                 file_identifier_value = get_fileid_val(file_identifier, keys_in_config_file, \
@@ -477,16 +521,16 @@ file_identifier=None,output_dir_path=None):
                     raise SystemExit("Target csv file: `" + output_bin_file + "` already exists...")
 
                 # Create output csv and bin file
-                print "CSV Generated: " + str(output_csv_file)
+                print("CSV Generated: ", str(output_csv_file))
                 nvs_partition_gen.nvs_part_gen(input_filename = output_csv_file, output_filename = output_bin_file,\
                                                input_size=input_part_size)
-                print "NVS Flash Binary Generated: " + str(output_bin_file)
+                print("NVS Flash Binary Generated: ", str(output_bin_file))
 
                 files_created = True
 
             csv_values_file.close()
         except Exception as e:
-            print e
+            print(e)
             exit(1)
         finally:
             csv_values_file.close()
@@ -494,8 +538,8 @@ file_identifier=None,output_dir_path=None):
 
         return csv_file_list, files_created
 
-    except StandardError as std_err:
-        print std_err
+    except ValueError as err:
+        print(err)
     except:
         raise
 
