@@ -26,7 +26,7 @@ static void sigmadelta_example_init(void)
         .channel = SIGMADELTA_CHANNEL_0,
         .sigmadelta_prescale = 80,
         .sigmadelta_duty = 0,
-        .sigmadelta_gpio = 4,
+        .sigmadelta_gpio = GPIO_NUM_4,
     };
     sigmadelta_config(&sigmadelta_cfg);
 }
