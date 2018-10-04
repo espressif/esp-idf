@@ -25,7 +25,7 @@ Background
   - All "app" type partitions
   - Any partition marked with the "encrypted" flag in the partition table
 
-	It may be desirable for some data partitions to remain unencrypted for ease of access, or to use flash-friendly update algorithms that are ineffective if the data is encrypted. "NVS" partitions for non-volatile storage cannot be encrypted.
+	It may be desirable for some data partitions to remain unencrypted for ease of access, or to use flash-friendly update algorithms that are ineffective if the data is encrypted. NVS partitions for non-volatile storage cannot be encrypted since NVS library is not directly compatible with flash encryption. Refer to :ref:`NVS Encryption <nvs_encryption>` for more details.
 
 - The flash encryption key is stored in efuse key block 1, internal to the ESP32 chip. By default, this key is read- and write-protected so software cannot access it or change it.
 
@@ -104,7 +104,7 @@ Data which is read via other SPI read APIs are not decrypted:
 
 - Data read via :func:`esp_spi_flash_read` is not decrypted
 - Data read via ROM function :func:`SPIRead` is not decrypted (this function is not supported in esp-idf apps).
-- Data stored using the Non-Volatile Storage (NVS) API is always stored and read decrypted.
+- Data stored using the Non-Volatile Storage (NVS) API is always stored and read decrypted from the perspective of Flash Encryption. It is up to the library to provide encryption feature if required. Refer to :ref:`NVS Encryption <nvs_encryption>` for more details.
 
 
 Writing Encrypted Flash
