@@ -25,6 +25,7 @@
 #include <errno.h>
 
 static const char *TAG = "esp-tls";
+static mbedtls_x509_crt *global_cacert = NULL;
 
 #ifdef ESP_PLATFORM
 #include <esp_log.h>
@@ -140,6 +141,46 @@ err_freeaddr:
     return ret;
 }
 
+esp_err_t esp_tls_set_global_ca_store(const unsigned char *cacert_pem_buf, const unsigned int cacert_pem_bytes)
+{
+    if (cacert_pem_buf == NULL) {
+        ESP_LOGE(TAG, "cacert_pem_buf is null");
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (global_cacert != NULL) {
+        mbedtls_x509_crt_free(global_cacert);
+    }
+    global_cacert = (mbedtls_x509_crt *)calloc(1, sizeof(mbedtls_x509_crt));
+    if (global_cacert == NULL) {
+        ESP_LOGE(TAG, "global_cacert not allocated");
+        return ESP_ERR_NO_MEM;
+    }
+    mbedtls_x509_crt_init(global_cacert);
+    int ret = mbedtls_x509_crt_parse(global_cacert, cacert_pem_buf, cacert_pem_bytes);
+    if (ret < 0) {
+        ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
+        mbedtls_x509_crt_free(global_cacert);
+        global_cacert = NULL;
+        return ESP_FAIL;
+    } else if (ret > 0) {
+        ESP_LOGE(TAG, "mbedtls_x509_crt_parse was partly successful. No. of failed certificates: %d", ret);
+    }
+    return ESP_OK;
+}
+
+mbedtls_x509_crt *esp_tls_get_global_ca_store()
+{
+    return global_cacert;
+}
+
+void esp_tls_free_global_ca_store()
+{
+    if (global_cacert) {
+        mbedtls_x509_crt_free(global_cacert);
+        global_cacert = NULL;
+    }
+}
+
 static void verify_certificate(esp_tls_t *tls)
 {
     int flags;
@@ -159,7 +200,10 @@ static void mbedtls_cleanup(esp_tls_t *tls)
     if (!tls) {
         return;
     }
-    mbedtls_x509_crt_free(&tls->cacert);
+    if (tls->cacert_ptr != global_cacert) {
+        mbedtls_x509_crt_free(tls->cacert_ptr);
+    }
+    tls->cacert_ptr = NULL;
     mbedtls_entropy_free(&tls->entropy);
     mbedtls_ssl_config_free(&tls->conf);
     mbedtls_ctr_drbg_free(&tls->ctr_drbg);
@@ -209,15 +253,24 @@ static int create_ssl_handle(esp_tls_t *tls, const char *hostname, size_t hostle
         mbedtls_ssl_conf_alpn_protocols(&tls->conf, cfg->alpn_protos);
     }
 
-    if (cfg->cacert_pem_buf != NULL) {
-        mbedtls_x509_crt_init(&tls->cacert);
-        ret = mbedtls_x509_crt_parse(&tls->cacert, cfg->cacert_pem_buf, cfg->cacert_pem_bytes);
+    if (cfg->use_global_ca_store == true) {
+        if (global_cacert == NULL) {
+            ESP_LOGE(TAG, "global_cacert is NULL");
+            goto exit;
+        }
+        tls->cacert_ptr = global_cacert;
+        mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
+        mbedtls_ssl_conf_ca_chain(&tls->conf, tls->cacert_ptr, NULL);
+    } else if (cfg->cacert_pem_buf != NULL) {
+        tls->cacert_ptr = &tls->cacert;
+        mbedtls_x509_crt_init(tls->cacert_ptr);
+        ret = mbedtls_x509_crt_parse(tls->cacert_ptr, cfg->cacert_pem_buf, cfg->cacert_pem_bytes);
         if (ret < 0) {
             ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
             goto exit;
         }
         mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
-        mbedtls_ssl_conf_ca_chain(&tls->conf, &tls->cacert, NULL);
+        mbedtls_ssl_conf_ca_chain(&tls->conf, tls->cacert_ptr, NULL);
     } else {
         mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_NONE);
     }
@@ -344,7 +397,7 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
             } else {
                 if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
                     ESP_LOGE(TAG, "mbedtls_ssl_handshake returned -0x%x", -ret);
-                    if (cfg->cacert_pem_buf != NULL) {
+                    if (cfg->cacert_pem_buf != NULL || cfg->use_global_ca_store == true) {
                         /* This is to check whether handshake failed due to invalid certificate*/
                         verify_certificate(tls);
                     }
