@@ -10,6 +10,7 @@ DefaultGroupName=ESP-IDF Tools
 Compression=lzma2
 SolidCompression=yes
 ChangesEnvironment=yes
+LicenseFile=license.txt
 ; Note: the rest of the installer setup is written to work cleanly on win32 also, *however*
 ; Ninja doesn't ship a 32-bit binary so there's no way yet to install on win32 :(
 ; See https://github.com/ninja-build/ninja/issues/1339
