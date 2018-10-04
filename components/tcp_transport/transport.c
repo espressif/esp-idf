@@ -19,15 +19,15 @@
 #include "rom/queue.h"
 #include "esp_log.h"
 
-#include "transport.h"
-#include "transport_utils.h"
+#include "esp_transport.h"
+#include "esp_transport_utils.h"
 
 static const char *TAG = "TRANSPORT";
 
 /**
  * Transport layer structure, which will provide functions, basic properties for transport types
  */
-struct transport_item_t {
+struct esp_transport_item_t {
     int             port;
     int             socket;         /*!< Socket to use in this transport */
     char            *scheme;        /*!< Tag name */
@@ -41,39 +41,46 @@ struct transport_item_t {
     poll_func       _poll_write;    /*!< Poll and write */
     trans_func      _destroy;       /*!< Destroy and free transport */
     connect_async_func _connect_async;      /*!< non-blocking connect function of this transport */
-    payload_transfer_func  _parrent_transfer;       /*!< Function returning underlying transport layer */
+    payload_transfer_func  _parent_transfer;       /*!< Function returning underlying transport layer */
 
-    STAILQ_ENTRY(transport_item_t) next;
+    STAILQ_ENTRY(esp_transport_item_t) next;
 };
 
 
 /**
  * This list will hold all transport available
  */
-STAILQ_HEAD(transport_list_t, transport_item_t);
+STAILQ_HEAD(esp_transport_list_t, esp_transport_item_t);
 
-
-transport_list_handle_t transport_list_init()
+static esp_transport_handle_t esp_transport_get_default_parent(esp_transport_handle_t t)
 {
-    transport_list_handle_t list = calloc(1, sizeof(struct transport_list_t));
-    TRANSPORT_MEM_CHECK(TAG, list, return NULL);
+    /*
+    * By default, the underlying transport layer handle is the handle itself
+    */
+    return t;
+}
+
+esp_transport_list_handle_t esp_transport_list_init()
+{
+    esp_transport_list_handle_t list = calloc(1, sizeof(struct esp_transport_list_t));
+    ESP_TRANSPORT_MEM_CHECK(TAG, list, return NULL);
     STAILQ_INIT(list);
     return list;
 }
 
-esp_err_t transport_list_add(transport_list_handle_t list, transport_handle_t t, const char *scheme)
+esp_err_t esp_transport_list_add(esp_transport_list_handle_t list, esp_transport_handle_t t, const char *scheme)
 {
     if (list == NULL || t == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
     t->scheme = calloc(1, strlen(scheme) + 1);
-    TRANSPORT_MEM_CHECK(TAG, t->scheme, return ESP_ERR_NO_MEM);
+    ESP_TRANSPORT_MEM_CHECK(TAG, t->scheme, return ESP_ERR_NO_MEM);
     strcpy(t->scheme, scheme);
     STAILQ_INSERT_TAIL(list, t, next);
     return ESP_OK;
 }
 
-transport_handle_t transport_list_get_transport(transport_list_handle_t list, const char *scheme)
+esp_transport_handle_t esp_transport_list_get_transport(esp_transport_list_handle_t list, const char *scheme)
 {
     if (!list) {
         return NULL;
@@ -81,7 +88,7 @@ transport_handle_t transport_list_get_transport(transport_list_handle_t list, co
     if (scheme == NULL) {
         return STAILQ_FIRST(list);
     }
-    transport_handle_t item;
+    esp_transport_handle_t item;
     STAILQ_FOREACH(item, list, next) {
         if (strcasecmp(item->scheme, scheme) == 0) {
             return item;
@@ -90,45 +97,45 @@ transport_handle_t transport_list_get_transport(transport_list_handle_t list, co
     return NULL;
 }
 
-esp_err_t transport_list_destroy(transport_list_handle_t list)
+esp_err_t esp_transport_list_destroy(esp_transport_list_handle_t list)
 {
-    transport_list_clean(list);
+    esp_transport_list_clean(list);
     free(list);
     return ESP_OK;
 }
 
-esp_err_t transport_list_clean(transport_list_handle_t list)
+esp_err_t esp_transport_list_clean(esp_transport_list_handle_t list)
 {
-    transport_handle_t item = STAILQ_FIRST(list);
-    transport_handle_t tmp;
+    esp_transport_handle_t item = STAILQ_FIRST(list);
+    esp_transport_handle_t tmp;
     while (item != NULL) {
         tmp = STAILQ_NEXT(item, next);
         if (item->_destroy) {
             item->_destroy(item);
         }
-        transport_destroy(item);
+        esp_transport_destroy(item);
         item = tmp;
     }
     STAILQ_INIT(list);
     return ESP_OK;
 }
 
-transport_handle_t transport_init()
+esp_transport_handle_t esp_transport_init()
 {
-    transport_handle_t t = calloc(1, sizeof(struct transport_item_t));
-    TRANSPORT_MEM_CHECK(TAG, t, return NULL);
+    esp_transport_handle_t t = calloc(1, sizeof(struct esp_transport_item_t));
+    ESP_TRANSPORT_MEM_CHECK(TAG, t, return NULL);
     return t;
 }
 
-transport_handle_t transport_get_payload_transport_handle(transport_handle_t t)
+esp_transport_handle_t esp_transport_get_payload_transport_handle(esp_transport_handle_t t)
 {
     if (t && t->_read) {
-        return t->_parrent_transfer(t);
+        return t->_parent_transfer(t);
     }
     return NULL;
 }
 
-esp_err_t transport_destroy(transport_handle_t t)
+esp_err_t esp_transport_destroy(esp_transport_handle_t t)
 {
     if (t->scheme) {
         free(t->scheme);
@@ -137,7 +144,7 @@ esp_err_t transport_destroy(transport_handle_t t)
     return ESP_OK;
 }
 
-int transport_connect(transport_handle_t t, const char *host, int port, int timeout_ms)
+int esp_transport_connect(esp_transport_handle_t t, const char *host, int port, int timeout_ms)
 {
     int ret = -1;
     if (t && t->_connect) {
@@ -146,7 +153,7 @@ int transport_connect(transport_handle_t t, const char *host, int port, int time
     return ret;
 }
 
-int transport_connect_async(transport_handle_t t, const char *host, int port, int timeout_ms)
+int esp_transport_connect_async(esp_transport_handle_t t, const char *host, int port, int timeout_ms)
 {
     int ret = -1;
     if (t && t->_connect) {
@@ -155,7 +162,7 @@ int transport_connect_async(transport_handle_t t, const char *host, int port, in
     return ret;
 }
 
-int transport_read(transport_handle_t t, char *buffer, int len, int timeout_ms)
+int esp_transport_read(esp_transport_handle_t t, char *buffer, int len, int timeout_ms)
 {
     if (t && t->_read) {
         return t->_read(t, buffer, len, timeout_ms);
@@ -163,7 +170,7 @@ int transport_read(transport_handle_t t, char *buffer, int len, int timeout_ms)
     return -1;
 }
 
-int transport_write(transport_handle_t t, const char *buffer, int len, int timeout_ms)
+int esp_transport_write(esp_transport_handle_t t, const char *buffer, int len, int timeout_ms)
 {
     if (t && t->_write) {
         return t->_write(t, buffer, len, timeout_ms);
@@ -171,7 +178,7 @@ int transport_write(transport_handle_t t, const char *buffer, int len, int timeo
     return -1;
 }
 
-int transport_poll_read(transport_handle_t t, int timeout_ms)
+int esp_transport_poll_read(esp_transport_handle_t t, int timeout_ms)
 {
     if (t && t->_poll_read) {
         return t->_poll_read(t, timeout_ms);
@@ -179,7 +186,7 @@ int transport_poll_read(transport_handle_t t, int timeout_ms)
     return -1;
 }
 
-int transport_poll_write(transport_handle_t t, int timeout_ms)
+int esp_transport_poll_write(esp_transport_handle_t t, int timeout_ms)
 {
     if (t && t->_poll_write) {
         return t->_poll_write(t, timeout_ms);
@@ -187,7 +194,7 @@ int transport_poll_write(transport_handle_t t, int timeout_ms)
     return -1;
 }
 
-int transport_close(transport_handle_t t)
+int esp_transport_close(esp_transport_handle_t t)
 {
     if (t && t->_close) {
         return t->_close(t);
@@ -195,7 +202,7 @@ int transport_close(transport_handle_t t)
     return 0;
 }
 
-void *transport_get_context_data(transport_handle_t t)
+void *esp_transport_get_context_data(esp_transport_handle_t t)
 {
     if (t) {
         return t->data;
@@ -203,7 +210,7 @@ void *transport_get_context_data(transport_handle_t t)
     return NULL;
 }
 
-esp_err_t transport_set_context_data(transport_handle_t t, void *data)
+esp_err_t esp_transport_set_context_data(esp_transport_handle_t t, void *data)
 {
     if (t) {
         t->data = data;
@@ -212,15 +219,14 @@ esp_err_t transport_set_context_data(transport_handle_t t, void *data)
     return ESP_FAIL;
 }
 
-esp_err_t transport_set_func(transport_handle_t t,
+esp_err_t esp_transport_set_func(esp_transport_handle_t t,
                              connect_func _connect,
                              io_read_func _read,
                              io_func _write,
                              trans_func _close,
                              poll_func _poll_read,
                              poll_func _poll_write,
-                             trans_func _destroy,
-                             payload_transfer_func _parrent_transport)
+                             trans_func _destroy)
 {
     if (t == NULL) {
         return ESP_FAIL;
@@ -233,11 +239,11 @@ esp_err_t transport_set_func(transport_handle_t t,
     t->_poll_write = _poll_write;
     t->_destroy = _destroy;
     t->_connect_async = NULL;
-    t->_parrent_transfer = _parrent_transport;
+    t->_parent_transfer = esp_transport_get_default_parent;
     return ESP_OK;
 }
 
-int transport_get_default_port(transport_handle_t t)
+int esp_transport_get_default_port(esp_transport_handle_t t)
 {
     if (t == NULL) {
         return -1;
@@ -245,7 +251,7 @@ int transport_get_default_port(transport_handle_t t)
     return t->port;
 }
 
-esp_err_t transport_set_default_port(transport_handle_t t, int port)
+esp_err_t esp_transport_set_default_port(esp_transport_handle_t t, int port)
 {
     if (t == NULL) {
         return ESP_FAIL;
@@ -254,16 +260,20 @@ esp_err_t transport_set_default_port(transport_handle_t t, int port)
     return ESP_OK;
 }
 
-transport_handle_t transport_get_handle(transport_handle_t t)
-{
-    return t;
-}
-
-esp_err_t transport_set_async_connect_func(transport_handle_t t, connect_async_func _connect_async_func)
+esp_err_t esp_transport_set_async_connect_func(esp_transport_handle_t t, connect_async_func _connect_async_func)
 {
     if (t == NULL) {
         return ESP_FAIL;
     }
     t->_connect_async = _connect_async_func;
+    return ESP_OK;
+}
+
+esp_err_t esp_transport_set_parent_transport_func(esp_transport_handle_t t, payload_transfer_func _parent_transport)
+{
+    if (t == NULL) {
+        return ESP_FAIL;
+    }
+    t->_parent_transfer = _parent_transport;
     return ESP_OK;
 }
