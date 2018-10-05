@@ -74,8 +74,8 @@ idf_get_git_revision()
 # Check that the targets set in cache, sdkconfig, and in environment all match
 idf_check_config_target()
 
-## if project uses git, retrieve revision
-git_describe(PROJECT_VER "${CMAKE_CURRENT_SOURCE_DIR}")
+## get PROJECT_VER
+app_get_revision("${CMAKE_SOURCE_DIR}")
 
 # Add some idf-wide definitions
 idf_set_global_compile_options()
