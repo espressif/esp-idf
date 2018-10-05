@@ -1,0 +1,12 @@
+menu "Application manager"
+
+config APP_COMPILE_TIME_DATE
+    bool "Use time/date stamp for app"
+    default y
+	help
+        If set, then the app will be built with the current time/date stamp. It is stored in the app description structure.
+        If not set, time/date stamp will be excluded from app image.
+        This can be useful for getting the same binary image files made from the same source, 
+        but at different times.
+
+endmenu # "Application manager"

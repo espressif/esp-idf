@@ -20,6 +20,7 @@
 #include <stddef.h>
 #include "esp_err.h"
 #include "esp_partition.h"
+#include "esp_image_format.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -40,6 +41,14 @@ extern "C"
  * calls to esp_ota_write() and esp_ota_end().
  */
 typedef uint32_t esp_ota_handle_t;
+
+/**
+ * @brief   Return esp_app_desc structure. This structure includes app version.
+ * 
+ * Return description for running app.
+ * @return Pointer to esp_app_desc structure.
+ */
+const esp_app_desc_t *esp_ota_get_app_description(void);
 
 /**
  * @brief   Commence an OTA update writing to the specified partition.
@@ -169,6 +178,22 @@ const esp_partition_t* esp_ota_get_running_partition(void);
  *
  */
 const esp_partition_t* esp_ota_get_next_update_partition(const esp_partition_t *start_from);
+
+/**
+ * @brief Returns esp_app_desc structure for app partition. This structure includes app version.
+ * 
+ * Returns a description for the requested app partition.
+ * @param[in] partition     Pointer to app partition. (only app partition)
+ * @param[out] app_desc     Structure of info about app.
+ * @return
+ *  - ESP_OK                Successful.
+ *  - ESP_ERR_NOT_FOUND     app_desc structure is not found. Magic word is incorrect.
+ *  - ESP_ERR_NOT_SUPPORTED Partition is not application.
+ *  - ESP_ERR_INVALID_ARG   Arguments is NULL or if partition's offset exceeds partition size.
+ *  - ESP_ERR_INVALID_SIZE  Read would go out of bounds of the partition.
+ *  - or one of error codes from lower-level flash driver.
+ */
+esp_err_t esp_ota_get_partition_description(const esp_partition_t *partition, esp_app_desc_t *app_desc);
 
 #ifdef __cplusplus
 }

@@ -224,6 +224,7 @@ function run_tests()
     clean_build_dir
     # Make provision for getting IDF version
     echo "custom-version-x.y" > ${IDF_PATH}/version.txt
+    echo "project-version-w.z" > ${TESTDIR}/template/version.txt
     # Hide .gitmodules so that submodule check is avoided
     [ -f ${IDF_PATH}/.gitmodules ] && mv ${IDF_PATH}/.gitmodules ${IDF_PATH}/.gitmodules_backup
     # Overload `git` command
@@ -234,9 +235,24 @@ function run_tests()
     make
     [ -f ${IDF_PATH}/git_invoked ] && rm ${IDF_PATH}/git_invoked && failure "git should not have been invoked in this case"
     rm -f ${IDF_PATH}/version.txt git
+    rm -f ${TESTDIR}/template/version.txt
     [ -f ${IDF_PATH}/.gitmodules_backup ] && mv ${IDF_PATH}/.gitmodules_backup ${IDF_PATH}/.gitmodules
     export PATH=$OLD_PATH
 
+    print_status "Rebuild when app version was changed"
+    take_build_snapshot
+    # App version
+    echo "project-version-1.0" > ${TESTDIR}/template/version.txt
+    make
+    assert_rebuilt ${APP_BINS}
+    print_status "Change app version"
+    take_build_snapshot
+	echo "project-version-2.0" > ${TESTDIR}/template/version.txt
+	make
+    assert_rebuilt ${APP_BINS}
+    assert_not_rebuilt ${BOOTLOADER_BINS} esp32/libesp32.a
+    rm -f ${TESTDIR}/template/version.txt
+    
     print_status "Build fails if partitions don't fit in flash"
     cp sdkconfig sdkconfig.bak
     sed -i "s/CONFIG_ESPTOOLPY_FLASHSIZE.\+//" sdkconfig  # remove all flashsize config
@@ -277,7 +293,6 @@ mkdir -p ${TESTDIR}
 
 SNAPSHOT=${TESTDIR}/snapshot
 BUILD=${TESTDIR}/template/build
-
 
 # copy all the build output to a snapshot directory
 function take_build_snapshot()

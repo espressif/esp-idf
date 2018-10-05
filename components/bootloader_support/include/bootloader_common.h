@@ -14,6 +14,7 @@
 
 #pragma once
 #include "esp_flash_data_types.h"
+#include "esp_image_format.h"
 
 /// Type of hold a GPIO in low state
 typedef enum {
@@ -91,3 +92,17 @@ bool bootloader_common_label_search(const char *list, char *label);
  *          - ESP_FAIL: An allocation error occurred.
  */
 esp_err_t bootloader_common_get_sha256_of_partition(uint32_t address, uint32_t size, int type, uint8_t *out_sha_256);
+
+/**
+ * @brief Returns esp_app_desc structure for app partition. This structure includes app version.
+ * 
+ * Returns a description for the requested app partition.
+ * @param[in] partition      App partition description.
+ * @param[out] app_desc      Structure of info about app.
+ * @return
+ *  - ESP_OK:                Successful.
+ *  - ESP_ERR_INVALID_ARG:   The arguments passed are not valid.
+ *  - ESP_ERR_NOT_FOUND:     app_desc structure is not found. Magic word is incorrect.
+ *  - ESP_FAIL:              mapping is fail.
+ */
+esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t *partition, esp_app_desc_t *app_desc);
