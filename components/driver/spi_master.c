@@ -234,7 +234,7 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
     SPI_CHECK(host>=SPI_HOST && host<=VSPI_HOST, "invalid host", ESP_ERR_INVALID_ARG);
     SPI_CHECK( dma_chan >= 0 && dma_chan <= 2, "invalid dma channel", ESP_ERR_INVALID_ARG );
 
-    spi_chan_claimed=spicommon_periph_claim(host);
+    spi_chan_claimed=spicommon_periph_claim(host, "spi master");
     SPI_CHECK(spi_chan_claimed, "host already in use", ESP_ERR_INVALID_STATE);
 
     if ( dma_chan != 0 ) {
@@ -498,7 +498,7 @@ Specify ``SPI_DEVICE_NO_DUMMY`` to ignore this checking. Then you can output dat
     spihost[host]->hw->ctrl2.mosi_delay_mode = 0;
     spihost[host]->hw->ctrl2.mosi_delay_num = 0;
     *handle=dev;
-    ESP_LOGD(SPI_TAG, "SPI%d: New device added to CS%d, effective clock: %dkHz", host, freecs, dev->clk_cfg.eff_clk/1000);
+    ESP_LOGD(SPI_TAG, "SPI%d: New device added to CS%d, effective clock: %dkHz", host+1, freecs, dev->clk_cfg.eff_clk/1000);
     return ESP_OK;
 
 nomem:
