@@ -58,11 +58,11 @@ Linux 版的 ESP32 工具链可以从 Espressif 的网站下载：
 
    要使用工具链，你还需要在 ``~/.profile`` 文件中更新环境变量 ``PATH``。要使 ``xtensa-esp32-elf`` 在所有的终端会话中都有效，需要将下面这一行代码添加到你的 ``~/.profile`` 文件中： ::
 
-    export PATH="$PATH:$HOME/esp/xtensa-esp32-elf/bin"
+    export PATH="$HOME/esp/xtensa-esp32-elf/bin:$PATH"
 
    或者你也可以给上面的命令创建一个别名。这样做的好处是，你只在需要使用它的时候才获取工具链。将下面这行代码添加到 ``~/.profile`` 文件中即可： ::
 
-    alias get_esp32='export PATH="$PATH:$HOME/esp/xtensa-esp32-elf/bin"'
+    alias get_esp32='export PATH="$HOME/esp/xtensa-esp32-elf/bin:$PATH"'
 
    然后，当你需要使用工具链时，在命令行输入 ``get_esp32``，然后工具链会自动添加到你的 ``PATH`` 中。
 
