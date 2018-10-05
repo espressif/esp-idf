@@ -33,13 +33,13 @@ set -e
 
 pacman --noconfirm -Syu # This step may require the terminal to be closed and restarted
 
-pacman --noconfirm -S --needed gettext-devel gcc git make ncurses-devel flex bison gperf vim mingw-w64-i686-python2-pip unzip winpty
+pacman --noconfirm -S --needed gettext-devel gcc git make ncurses-devel flex bison gperf vim \
+       mingw-w64-i686-python2-pip mingw-w64-i686-python2-cryptography unzip winpty
 
-# Workaround for errors when running "git submodule" commands
-# See https://github.com/Alexpux/MSYS2-packages/issues/735
-rm -f /mingw32/bin/envsubst.exe
-
-python -m pip install --upgrade pip
+# if IDF_PATH is set, install requirements now as well
+if [ -n $IDF_PATH ]; then
+	python -m pip install -r $IDF_PATH/requirements.txt
+fi
 
 # Automatically download precompiled toolchain, unpack at /opt/xtensa-esp32-elf/
 TOOLCHAIN_ZIP=xtensa-esp32-elf-win32-1.22.0-80-g6c4433a-5.2.0.zip

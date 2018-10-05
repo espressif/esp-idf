@@ -15,7 +15,7 @@ Windows 没有内置的 "make" 环境，因此如果要安装工具链，你需�
 
 快速设置的方法是从 dl.espressif.com 下载集成在一起的工具链和 MSYS2 压缩文件：
 
-https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain-20180110.zip
+https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain-20181001.zip
 
 将 zip 压缩文件解压到 ``C:\`` (或其它路径，这里假设是 ``C:\``)，它会使用预先准备的环境创建一个 ``msys32`` 目录。
 
