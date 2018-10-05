@@ -34,6 +34,27 @@ if __name__ == "__main__":
             default=idf_path + '/requirements.txt')
     args = parser.parse_args()
 
+    # Special case for MINGW32 Python, needs some packages
+    # via MSYS2 not via pip or system breaks...
+    if sys.platform == "win32" and \
+       os.environ.get("MSYSTEM", None) == "MINGW32" and \
+       "/mingw32/bin/python" in sys.executable:
+        failed = False
+        try:
+            import cryptography
+        except ImportError:
+            print("Please run the following command to install MSYS2's MINGW Python cryptography package:")
+            print("pacman -S mingw-w64-i686-python%d-cryptography" % (sys.version_info[0],))
+            failed = True
+        try:
+            import setuptools
+        except ImportError:
+            print("Please run the following command to install MSYS2's MINGW Python setuptools package:")
+            print("pacman -S mingw-w64-i686-python%d-setuptools" % (sys.version_info[0],))
+            failed = True
+        if failed:
+            sys.exit(1)
+
     not_satisfied = []
     with open(args.requirements) as f:
         for line in f:
