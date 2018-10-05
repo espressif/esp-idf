@@ -626,7 +626,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
                  Application code should never touch VSPI hardware in this case.  We try to stop applications
                  from doing this using the drivers by claiming the port for ourselves */
             periph_module_enable(PERIPH_VSPI_MODULE);
-            bool r=spicommon_periph_claim(VSPI_HOST);
+            bool r=spicommon_periph_claim(VSPI_HOST, "psram");
             if (!r) {
                 return ESP_ERR_INVALID_STATE;
             }
