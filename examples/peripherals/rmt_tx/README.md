@@ -8,7 +8,7 @@ This example will shows how to configure and operate the remote control (RMT) pe
 
 ### Hardware Required
 
-* A development board with ESP32 SoC (e.g., ESP32-DevKitC, ESP-WORVER-KIT, etc.)
+* A development board with ESP32 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
 * A USB cable for Power supply and programming
 * A LED, a speaker or an earphone
 
