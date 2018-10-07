@@ -8,7 +8,7 @@ This example uses the remote control (RMT) peripheral to transmit and receive co
 
 ### Hardware Required
 
-* A development board with ESP32 SoC (e.g., ESP32-DevKitC, ESP-WORVER-KIT, etc.)
+* A development board with ESP32 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
 * A USB cable for Power supply and programming
 
 By default, this example runs a self test which assumes the TX pin (GPIO18) and RX pin (GPIO19) are _connected together_. 
