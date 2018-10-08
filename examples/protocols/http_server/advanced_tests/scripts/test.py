@@ -341,7 +341,7 @@ def get_hello(dut, port):
     if not test_val("data", "Hello World!", resp.read().decode()):
         conn.close()
         return False
-    if not test_val("data", "application/json", resp.getheader('Content-Type')):
+    if not test_val("data", "text/html", resp.getheader('Content-Type')):
         conn.close()
         return False
     Utility.console_log("Success")
