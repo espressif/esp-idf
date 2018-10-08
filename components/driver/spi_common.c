@@ -312,6 +312,7 @@ void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, 
         gpio_iomux_out(cs_io_num, FUNC_SPI, false);
     } else {
         //Use GPIO matrix
+        gpio_set_direction(cs_io_num, GPIO_MODE_INPUT_OUTPUT);
         gpio_matrix_out(cs_io_num, spi_periph_signal[host].spics_out[cs_num], false, false);
         if (cs_num == 0) gpio_matrix_in(cs_io_num, spi_periph_signal[host].spics_in, false);
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[cs_io_num], FUNC_GPIO);
