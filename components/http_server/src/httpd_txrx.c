@@ -55,18 +55,18 @@ esp_err_t httpd_set_recv_override(httpd_req_t *r, httpd_recv_func_t recv_func)
 int httpd_send(httpd_req_t *r, const char *buf, size_t buf_len)
 {
     if (r == NULL || buf == NULL) {
-        return -1;
+        return HTTPD_SOCK_ERR_INVALID;
     }
 
     if (!httpd_valid_req(r)) {
-        return -1;
+        return HTTPD_SOCK_ERR_INVALID;
     }
 
     struct httpd_req_aux *ra = r->aux;
     int ret = ra->sd->send_fn(ra->sd->fd, buf, buf_len, 0);
     if (ret < 0) {
         ESP_LOGD(TAG, LOG_FMT("error in send_fn"));
-        return -1;
+        return ret;
     }
     return ret;
 }
@@ -128,7 +128,7 @@ int httpd_recv_with_opt(httpd_req_t *r, char *buf, size_t buf_len, bool halt_aft
     int ret = ra->sd->recv_fn(ra->sd->fd, buf, buf_len, 0);
     if (ret < 0) {
         ESP_LOGD(TAG, LOG_FMT("error in recv_fn"));
-        return -1;
+        return ret;
     }
 
     ESP_LOGD(TAG, LOG_FMT("received length = %d"), ret + pending_len);
@@ -429,12 +429,12 @@ esp_err_t httpd_resp_send_err(httpd_req_t *req, httpd_err_resp_t error)
 int httpd_req_recv(httpd_req_t *r, char *buf, size_t buf_len)
 {
     if (r == NULL || buf == NULL) {
-        return -1;
+        return HTTPD_SOCK_ERR_INVALID;
     }
 
     if (!httpd_valid_req(r)) {
         ESP_LOGW(TAG, LOG_FMT("invalid request"));
-        return -1;
+        return HTTPD_SOCK_ERR_INVALID;
     }
 
     struct httpd_req_aux *ra = r->aux;
@@ -450,8 +450,7 @@ int httpd_req_recv(httpd_req_t *r, char *buf, size_t buf_len)
     int ret = httpd_recv(r, buf, buf_len);
     if (ret < 0) {
         ESP_LOGD(TAG, LOG_FMT("error in httpd_recv"));
-        ra->remaining_len = 0;
-        return -1;
+        return ret;
     }
     ra->remaining_len -= ret;
     ESP_LOGD(TAG, LOG_FMT("received length = %d"), ret);
@@ -473,15 +472,38 @@ int httpd_req_to_sockfd(httpd_req_t *r)
     return ra->sd->fd;
 }
 
+static int httpd_sock_err(const char *ctx)
+{
+    int errval;
+
+    ESP_LOGW(TAG, LOG_FMT("errno in %s : %d"), ctx, errno);
+
+    switch(errno) {
+    case EAGAIN:
+    case EINTR:
+        errval = HTTPD_SOCK_ERR_TIMEOUT;
+        break;
+    case EINVAL:
+    case EBADF:
+    case EFAULT:
+    case ENOTSOCK:
+        errval = HTTPD_SOCK_ERR_INVALID;
+        break;
+    default:
+        errval = HTTPD_SOCK_ERR_FAIL;
+    }
+    return errval;
+}
+
 int httpd_default_send(int sockfd, const char *buf, size_t buf_len, int flags)
 {
     if (buf == NULL) {
-        return ESP_ERR_INVALID_ARG;
+        return HTTPD_SOCK_ERR_INVALID;
     }
 
     int ret = send(sockfd, buf, buf_len, flags);
     if (ret < 0) {
-        ESP_LOGW(TAG, LOG_FMT("error in send = %d"), errno);
+        return httpd_sock_err("send");
     }
     return ret;
 }
@@ -489,12 +511,12 @@ int httpd_default_send(int sockfd, const char *buf, size_t buf_len, int flags)
 int httpd_default_recv(int sockfd, char *buf, size_t buf_len, int flags)
 {
     if (buf == NULL) {
-        return ESP_ERR_INVALID_ARG;
+        return HTTPD_SOCK_ERR_INVALID;
     }
 
     int ret = recv(sockfd, buf, buf_len, flags);
     if (ret < 0) {
-        ESP_LOGW(TAG, LOG_FMT("error in recv = %d"), errno);
+        return httpd_sock_err("recv");
     }
     return ret;
 }
