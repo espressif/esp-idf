@@ -1,56 +1,53 @@
 menu "Example Configuration"
 
+config STORE_HISTORY
+    bool "Store command history in flash"
+    default y
+    help
+        Linenoise line editing library provides functions to save and load
+        command history. If this option is enabled, initalizes a FAT filesystem
+        and uses it to store command history.
+
+menu "Etherent PHY Device"
 choice PHY_MODEL
     prompt "Ethernet PHY"
     default CONFIG_PHY_TLK110
     help
         Select the PHY driver to use for the example.
-
 config PHY_TLK110
     bool "TI TLK110 PHY"
     help
         Select this to use the TI TLK110 PHY
-
 config PHY_LAN8720
     bool "Microchip LAN8720 PHY"
     help
         Select this to use the Microchip LAN8720 PHY
-
 endchoice
-
 
 config PHY_ADDRESS
     int "PHY Address (0-31)"
     default 31
     range 0 31
     help
-        Select the PHY Address (0-31) for the hardware configuration and PHY model.
-        TLK110 default 31
-        LAN8720 default 1 or 0
-
+        Set the PHY Address (0-31) for the hardware configuration.
 
 choice PHY_CLOCK_MODE
     prompt "EMAC clock mode"
     default PHY_CLOCK_GPIO0_IN
     help
         Select external (input on GPIO0) or internal (output on GPIO16 or GPIO17) clock
-
-
 config PHY_CLOCK_GPIO0_IN
     bool "GPIO0 input"
     help
         Input of 50MHz refclock on GPIO0
-
 config PHY_CLOCK_GPIO16_OUT
     bool "GPIO16 output"
     help
         Output the internal 50MHz APLL clock on GPIO16
-
 config PHY_CLOCK_GPIO17_OUT
     bool "GPIO17 output (inverted)"
     help
         Output the internal 50MHz APLL clock on GPIO17 (inverted signal)
-
 endchoice
 
 config PHY_CLOCK_MODE
@@ -59,22 +56,23 @@ config PHY_CLOCK_MODE
     default 2 if PHY_CLOCK_GPIO16_OUT
     default 3 if PHY_CLOCK_GPIO17_OUT
 
-
 config PHY_USE_POWER_PIN
     bool "Use PHY Power (enable/disable) pin"
     default y
     help
         Use a GPIO "power pin" to power the PHY on/off during operation.
-        Consult the example README for more details
 
+if PHY_USE_POWER_PIN
 config PHY_POWER_PIN
     int "PHY Power GPIO"
     default 17
     range 0 33
-    depends on PHY_USE_POWER_PIN
     help
         GPIO number to use for powering on/off the PHY.
+endif
+endmenu
 
+menu "Etherent SMI interface"
 config PHY_SMI_MDC_PIN
     int "SMI MDC Pin"
     default 23
@@ -88,5 +86,6 @@ config PHY_SMI_MDIO_PIN
     range 0 33
     help
        GPIO number to use for SMI data pin MDIO to/from PHY.
+endmenu
 
 endmenu
