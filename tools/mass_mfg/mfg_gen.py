@@ -22,9 +22,10 @@ import csv
 import argparse
 import shutil
 import distutils.dir_util
-from itertools import zip_longest
 sys.path.insert(0, os.getenv('IDF_PATH') + "/components/nvs_flash/nvs_partition_generator/")
 import nvs_partition_gen
+if not sys.version_info[0] < 3:
+    from itertools import zip_longest
 
 def verify_values_exist(input_values_file, keys_in_values_file):
     """ Verify all keys have corresponding values in values file
@@ -306,7 +307,7 @@ file_identifier=None,output_dir_path=None):
             parser.add_argument("--size",
                                 dest='part_size',
                                 required=True,
-                                help='Size of NVS Partition in KB. Eg. 12KB')
+                                help='Size of NVS Partition in hex (must be multiple of 4096). Eg. 0x1000')
 
             parser.add_argument('--conf',
                                 dest='config_file',

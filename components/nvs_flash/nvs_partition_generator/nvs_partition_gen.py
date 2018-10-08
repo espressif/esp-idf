@@ -179,7 +179,7 @@ class Page(object):
 
             data_input = byte_arr
 
-        
+
         if sys.version_info[0] < 3:
             data_input = binascii.hexlify(bytearray(data_input))
         else:
@@ -214,7 +214,6 @@ class Page(object):
                 data_val = str(data_bytes) + (init_data_val * (data_len_needed - len(data_bytes)))
 
             encr_data_ret = self.encrypt_entry(data_val, tweak_val, encr_key_input)
-            #print("\n<<<\n")
             encr_data_to_write = encr_data_to_write + encr_data_ret
             # Update values for encrypting next set of data bytes
             start_idx = end_idx
@@ -233,7 +232,7 @@ class Page(object):
                 encr_data[0:len(encr_data_ret)] = encr_data_ret
             else:
                 encr_data[0:len(encr_data_ret)] = encr_data_ret
-            
+
             data = encr_data
 
         data_offset = Page.FIRST_ENTRY_OFFSET + (Page.SINGLE_ENTRY_SIZE * self.entry_num)
@@ -311,7 +310,7 @@ class Page(object):
             if not sys.version_info[0] < 3:
                 if type(data_chunk) == str:
                     data_chunk = codecs.encode(data_chunk, 'utf8')
-            
+
             crc = zlib.crc32(data_chunk, 0xFFFFFFFF)
             struct.pack_into('<I', entry_struct, 28, crc & 0xFFFFFFFF)
 
@@ -466,7 +465,7 @@ class Page(object):
         # write key
         key_array = bytearray(b'\x00')*16
         entry_struct[8:24] = key_array
-        
+
         if sys.version_info[0] < 3:
             entry_struct[8:8 + len(key)] = key
         else:
@@ -748,7 +747,7 @@ def nvs_part_gen(input_filename=None, output_filename=None, input_size=None, key
         input_file = open(input_filename, 'rb')
     else:
         input_file = open(input_filename, 'r', newline='')
-    
+
     output_file = open(output_filename, 'wb')
 
     with nvs_open(output_file, input_size) as nvs_obj:
@@ -768,24 +767,24 @@ def nvs_part_gen(input_filename=None, output_filename=None, input_size=None, key
     if is_encrypt_data:
         output_keys_file = open("encryption_keys.bin",'wb')
         keys_page_buf = bytearray(b'\xff')*Page.PAGE_PARAMS["max_size"]
-        
+
         if sys.version_info[0] < 3:
             key_bytes = key_input.decode('hex')
         else:
             key_bytes = bytearray()
-            key_bytes = codecs.decode(key_input, 'hex') 
+            key_bytes = codecs.decode(key_input, 'hex')
 
-        
+
         key_len = len(key_bytes)
         keys_page_buf[0:key_len] = key_bytes
-        
+
         crc_data = keys_page_buf[0:key_len]
-        
+
         if sys.version_info[0] < 3:
             crc = zlib.crc32(buffer(crc_data), 0xFFFFFFFF)
         else:
             crc = zlib.crc32(memoryview(crc_data), 0xFFFFFFFF)
-        
+
         struct.pack_into('<I', keys_page_buf, key_len,  crc & 0xFFFFFFFF)
         output_keys_file.write(keys_page_buf)
 
