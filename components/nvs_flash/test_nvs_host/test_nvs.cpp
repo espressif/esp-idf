@@ -2003,7 +2003,7 @@ TEST_CASE("check partition generation utility with multipage blob support disabl
                 "../nvs_partition_generator/nvs_partition_gen.py",
                 "../nvs_partition_generator/sample_singlepage_blob.csv",
                 "../nvs_partition_generator/partition_single_page.bin", 
-                "12KB",
+                "0x3000",
                 "--version",
                 "v1",NULL));
     } else {
@@ -2071,6 +2071,7 @@ TEST_CASE("read data from partition generated via partition generation utility w
     CHECK(memcmp(bin_data, binfiledata, bin_len) == 0);
 
     file.close();
+    
     nvs_close(handle);
 }
 
@@ -2082,7 +2083,7 @@ TEST_CASE("check partition generation utility with multipage blob support enable
                 "../nvs_partition_generator/nvs_partition_gen.py",
                 "../nvs_partition_generator/sample_multipage_blob.csv",
                 "../nvs_partition_generator/partition_multipage_blob.bin", 
-                "12KB",
+                "0x3000",
                 "--version",
                 "v2",NULL));
     } else {
@@ -2148,8 +2149,9 @@ TEST_CASE("read data from partition generated via partition generation utility w
     file.read(binfiledata,5200);
     TEST_ESP_OK( nvs_get_blob(handle, "binFileKey", bin_data, &bin_len));
     CHECK(memcmp(bin_data, binfiledata, bin_len) == 0);
-
     file.close();
+    
+    nvs_close(handle);
 
 }
 
@@ -2300,7 +2302,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
                 "../nvs_partition_generator/nvs_partition_gen.py",
                 "../nvs_partition_generator/sample_multipage_blob.csv",
                 "../nvs_partition_generator/partition_encrypted.bin",
-                "12KB",
+                "0x3000",
                 "--encrypt",
                 "True",
                 "--keyfile",
@@ -2329,6 +2331,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
     uint8_t u8v;
     TEST_ESP_OK( nvs_get_u8(handle, "dummyU8Key", &u8v));
     CHECK(u8v == 127);
+    
     int8_t i8v;
     TEST_ESP_OK( nvs_get_i8(handle, "dummyI8Key", &i8v));
     CHECK(i8v == -128);
@@ -2380,7 +2383,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
     file.read(binfiledata,5120);
     TEST_ESP_OK( nvs_get_blob(handle, "binFileKey", bin_data, &bin_len));
     CHECK(memcmp(bin_data, binfiledata, bin_len) == 0);
-
+    
     nvs_close(handle);
     TEST_ESP_OK(nvs_flash_deinit());
 
