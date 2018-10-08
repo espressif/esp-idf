@@ -66,6 +66,9 @@ typedef struct esp_tls_cfg {
                                                  blocking mode after tls session is established */
 
     int timeout_ms;                         /*!< Network timeout in milliseconds */
+
+    bool use_global_ca_store;               /*!< Use a global ca_store for all the connections in which
+                                                 this bool is set. */
 } esp_tls_cfg_t;
 
 /**
@@ -88,6 +91,8 @@ typedef struct esp_tls {
  
     mbedtls_x509_crt cacert;                                                    /*!< Container for an X.509 certificate */
  
+    mbedtls_x509_crt *cacert_ptr;                                               /*!< Pointer to the cacert being used. */
+
     int sockfd;                                                                 /*!< Underlying socket file descriptor. */
  
     ssize_t (*read)(struct esp_tls  *tls, char *data, size_t datalen);          /*!< Callback function for reading data from TLS/SSL
@@ -231,6 +236,45 @@ void esp_tls_conn_delete(esp_tls_t *tls);
  *              record read buffer
  */
 size_t esp_tls_get_bytes_avail(esp_tls_t *tls);
+
+/**
+ * @brief      Create a global CA store with the buffer provided in cfg.
+ *
+ * This function should be called if the application wants to use the same CA store for
+ * multiple connections. The application must call this function before calling esp_tls_conn_new().
+ *
+ * @param[in]  cacert_pem_buf    Buffer which has certificates in pem format. This buffer
+ *                               is used for creating a global CA store, which can be used
+ *                               by other tls connections.
+ * @param[in]  cacert_pem_bytes  Length of the buffer.
+ *
+ * @return
+ *             - ESP_OK  if creating global CA store was successful.
+ *             - Other   if an error occured or an action must be taken by the calling process.
+ */
+esp_err_t esp_tls_set_global_ca_store(const unsigned char *cacert_pem_buf, const unsigned int cacert_pem_bytes);
+
+/**
+ * @brief      Get the pointer to the global CA store currently being used.
+ *
+ * The application must first call esp_tls_set_global_ca_store(). Then the same
+ * CA store could be used by the application for APIs other than esp_tls.
+ *
+ * @note       Modifying the pointer might cause a failure in verifying the certificates.
+ *
+ * @return
+ *             - Pointer to the global CA store currently being used    if successful.
+ *             - NULL                                                   if there is no global CA store set.
+ */
+mbedtls_x509_crt *esp_tls_get_global_ca_store();
+
+/**
+ * @brief      Free the global CA store currently being used.
+ *
+ * The memory being used by the global CA store to store all the parsed certificates is
+ * freed up. The application can call this API if it no longer needs the global CA store.
+ */
+void esp_tls_free_global_ca_store();
 
 
 #ifdef __cplusplus
