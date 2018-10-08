@@ -7,6 +7,7 @@
 #include "driver/spi_master.h"
 #include "driver/spi_slave.h"
 #include "esp_log.h"
+#include "sdkconfig.h"
 
 #define PIN_NUM_MISO 25
 #define PIN_NUM_MOSI 23
@@ -19,7 +20,7 @@ static const char SLAVE_TAG[] = "test_slave";
 #define MASTER_SEND {0x93, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0xaa, 0xcc, 0xff, 0xee, 0x55, 0x77, 0x88, 0x43}
 #define SLAVE_SEND { 0xaa, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10, 0x13, 0x57, 0x9b, 0xdf, 0x24, 0x68, 0xac, 0xe0 }
 
-static inline void int_connect( uint32_t gpio, uint32_t sigo, uint32_t sigi ) 
+static inline void int_connect( uint32_t gpio, uint32_t sigo, uint32_t sigi )
 {
     gpio_matrix_out( gpio, sigo, false, false );
     gpio_matrix_in( gpio, sigi, false );
@@ -29,7 +30,7 @@ static void master_init_nodma( spi_device_handle_t* spi)
 {
     esp_err_t ret;
     spi_bus_config_t buscfg={
-        .miso_io_num=PIN_NUM_MISO, 
+        .miso_io_num=PIN_NUM_MISO,
         .mosi_io_num=PIN_NUM_MOSI,
         .sclk_io_num=PIN_NUM_CLK,
         .quadwp_io_num=-1,
@@ -40,7 +41,7 @@ static void master_init_nodma( spi_device_handle_t* spi)
         .mode=0,                                //SPI mode 0
         .spics_io_num=PIN_NUM_CS,               //CS pin
         .queue_size=7,                          //We want to be able to queue 7 transactions at a time
-        .pre_cb=NULL,  
+        .pre_cb=NULL,
         .cs_ena_posttrans=1,
     };
     //Initialize the SPI bus
@@ -73,6 +74,9 @@ static void slave_init()
     //Initialize SPI slave interface
     TEST_ESP_OK( spi_slave_initialize(VSPI_HOST, &buscfg, &slvcfg, 2) );
 }
+
+#ifndef CONFIG_SPIRAM_SUPPORT
+//This test should be removed once the timing test is merged.
 
 TEST_CASE("test slave startup","[spi]")
 {
@@ -107,7 +111,7 @@ TEST_CASE("test slave startup","[spi]")
         spi_transaction_t t = {};
         t.length = 32*(i+1);
         if ( t.length != 0 ) {
-            t.tx_buffer = master_txbuf+i;  
+            t.tx_buffer = master_txbuf+i;
             t.rx_buffer = master_rxbuf+i;
         }
         spi_device_transmit( spi, (spi_transaction_t*)&t );
@@ -131,11 +135,13 @@ TEST_CASE("test slave startup","[spi]")
         memset( master_rxbuf, 0x66, sizeof(master_rxbuf));
         memset( slave_rxbuf, 0x66, sizeof(slave_rxbuf));
     }
-    
+
     TEST_ASSERT(spi_slave_free(VSPI_HOST) == ESP_OK);
-  
+
     TEST_ASSERT(spi_bus_remove_device(spi) == ESP_OK);
     TEST_ASSERT(spi_bus_free(HSPI_HOST) == ESP_OK);
 
     ESP_LOGI(MASTER_TAG, "test passed.");
 }
+
+#endif
