@@ -567,7 +567,7 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd)
     ra->sd = sd;
     /* Set defaults */
     ra->status = (char *)HTTPD_200;
-    ra->content_type = (char *)HTTPD_TYPE_JSON;
+    ra->content_type = (char *)HTTPD_TYPE_TEXT;
     ra->first_chunk_sent = false;
     /* Copy session info to the request */
     r->sess_ctx = sd->ctx;
