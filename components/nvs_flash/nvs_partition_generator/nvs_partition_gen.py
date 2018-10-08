@@ -193,6 +193,7 @@ class Page(object):
 
             data_val = data_bytes + (init_data_val * (data_len_needed - len(data_bytes)))
             encr_data_ret = self.encrypt_entry(data_val, tweak_val, encr_key_input)
+            #print("\n<<<\n")
             encr_data_to_write = encr_data_to_write + encr_data_ret
             # Update values for encrypting next set of data bytes
             start_idx = end_idx
@@ -207,13 +208,24 @@ class Page(object):
 
         if self.is_encrypt:
             encr_data_ret = self.encrypt_data(data, entrycount,nvs_obj)
-            encr_data[0:len(encr_data_ret)] = encr_data_ret
+            if sys.version_info[0] < 3:
+                encr_data[0:len(encr_data_ret)] = encr_data_ret
+            else:
+                encr_data[0:len(encr_data_ret)] = encr_data_ret
+            
             data = encr_data
 
         data_offset = Page.FIRST_ENTRY_OFFSET + (Page.SINGLE_ENTRY_SIZE * self.entry_num)
         start_idx = data_offset
         end_idx = data_offset + len(data)
-        self.page_buf[start_idx:end_idx]  = data
+        if not sys.version_info[0] < 3:
+            if type(data) == str:
+                self.page_buf[start_idx:end_idx]  = data
+            else:
+                self.page_buf[start_idx:end_idx]  = data
+        else:
+            self.page_buf[start_idx:end_idx]  = data
+
 
         # Set bitmap array for entries in current page
         for i in range(0, entrycount):
