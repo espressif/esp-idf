@@ -894,7 +894,7 @@ int esp_http_client_fetch_headers(esp_http_client_handle_t client)
 
     while (client->state < HTTP_STATE_RES_COMPLETE_HEADER) {
         buffer->len = esp_transport_read(client->transport, buffer->data, client->buffer_size, client->timeout_ms);
-        if (buffer->len < 0) {
+        if (buffer->len <= 0) {
             return ESP_FAIL;
         }
         http_parser_execute(client->parser, client->parser_settings, buffer->data, buffer->len);
