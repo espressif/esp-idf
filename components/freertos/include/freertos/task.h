@@ -308,9 +308,7 @@ is used in assert() statements. */
  * is 16.
  *
  * @param usStackDepth The size of the task stack specified as the number of
- * variables the stack can hold - not the number of bytes.  For example, if
- * the stack is 16 bits wide and usStackDepth is defined as 100, 200 bytes
- * will be allocated for stack storage.
+ * bytes. Note that this differs from vanilla FreeRTOS.
  *
  * @param pvParameters Pointer that will be used as the parameter for the task
  * being created.
@@ -375,9 +373,7 @@ is used in assert() statements. */
  * is 16.
  *
  * @param usStackDepth The size of the task stack specified as the number of
- * variables the stack can hold - not the number of bytes.  For example, if
- * the stack is 16 bits wide and usStackDepth is defined as 100, 200 bytes
- * will be allocated for stack storage.
+ * bytes. Note that this differs from vanilla FreeRTOS.
  *
  * @param pvParameters Pointer that will be used as the parameter for the task
  * being created.
@@ -463,9 +459,7 @@ is used in assert() statements. */
  * configMAX_TASK_NAME_LEN in FreeRTOSConfig.h.
  *
  * @param ulStackDepth The size of the task stack specified as the number of
- * variables the stack can hold - not the number of bytes.  For example, if
- * the stack is 32-bits wide and ulStackDepth is defined as 100 then 400 bytes
- * will be allocated for stack storage.
+ * bytes. Note that this differs from vanilla FreeRTOS.
  *
  * @param pvParameters Pointer that will be used as the parameter for the task
  * being created.
@@ -525,9 +519,7 @@ is used in assert() statements. */
  * configMAX_TASK_NAME_LEN in FreeRTOSConfig.h.
  *
  * @param ulStackDepth The size of the task stack specified as the number of
- * variables the stack can hold - not the number of bytes.  For example, if
- * the stack is 32-bits wide and ulStackDepth is defined as 100 then 400 bytes
- * will be allocated for stack storage.
+ * bytes. Note that this differs from vanilla FreeRTOS.
  *
  * @param pvParameters Pointer that will be used as the parameter for the task
  * being created.
@@ -554,9 +546,8 @@ is used in assert() statements. */
  * @code{c}
  *
  *     // Dimensions the buffer that the task being created will use as its stack.
- *     // NOTE:  This is the number of words the stack will hold, not the number of
- *     // bytes.  For example, if each stack item is 32-bits, and this is set to 100,
- *     // then 400 bytes (100 * 32-bits) will be allocated.
+ *     // NOTE:  This is the number of bytes the stack will hold, not the number of
+ *     // words as found in vanilla FreeRTOS.
  *     #define STACK_SIZE 200
  *
  *     // Structure that will hold the TCB of the task being created.
@@ -589,7 +580,7 @@ is used in assert() statements. */
  *         xHandle = xTaskCreateStatic(
  *                       vTaskCode,       // Function that implements the task.
  *                       "NAME",          // Text name for the task.
- *                       STACK_SIZE,      // Stack size in words, not bytes.
+ *                       STACK_SIZE,      // Stack size in bytes, not words.
  *                       ( void * ) 1,    // Parameter passed into the task.
  *                       tskIDLE_PRIORITY,// Priority at which the task is created.
  *                       xStack,          // Array to use as the task's stack.
@@ -645,7 +636,7 @@ is used in assert() statements. */
  * {
  * 	vATask,		// pvTaskCode - the function that implements the task.
  * 	"ATask",	// pcName - just a text name for the task to assist debugging.
- * 	100,		// usStackDepth	- the stack size DEFINED IN WORDS.
+ * 	100,		// usStackDepth	- the stack size DEFINED IN BYTES.
  * 	NULL,		// pvParameters - passed into the task function as the function parameters.
  * 	( 1UL | portPRIVILEGE_BIT ),// uxPriority - task priority, set the portPRIVILEGE_BIT if the task should run in a privileged state.
  * 	cStackBuffer,// puxStackBuffer - the buffer to be used as the task stack.
@@ -1342,15 +1333,15 @@ char *pcTaskGetTaskName( TaskHandle_t xTaskToQuery ) PRIVILEGED_FUNCTION; /*lint
  * INCLUDE_uxTaskGetStackHighWaterMark must be set to 1 in FreeRTOSConfig.h for
  * this function to be available.
  *
- * High water mark is the minimum free stack space there has been (in words,
- * so on a 32 bit machine a value of 1 means 4 bytes) since the task started.
+ * High water mark is the minimum free stack space there has been (in bytes
+ * rather than words as found in vanilla FreeRTOS) since the task started.
  * The smaller the returned number the closer the task has come to overflowing its stack.
  *
  * @param xTask Handle of the task associated with the stack to be checked.
  * Set xTask to NULL to check the stack of the calling task.
  *
- * @return The smallest amount of free stack space there has been (in words, so
- * actual spaces on the stack rather than bytes) since the task referenced by
+ * @return The smallest amount of free stack space there has been (in bytes
+ * rather than words as found in vanilla FreeRTOS) since the task referenced by
  * xTask was created.
  */
 UBaseType_t uxTaskGetStackHighWaterMark( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
