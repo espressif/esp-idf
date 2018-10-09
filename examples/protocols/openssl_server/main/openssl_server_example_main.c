@@ -37,7 +37,7 @@ const static char *TAG = "Openssl_example";
 
 #define OPENSSL_EXAMPLE_SERVER_ACK "HTTP/1.1 200 OK\r\n" \
                                 "Content-Type: text/html\r\n" \
-                                "Content-Length: 98\r\n\r\n" \
+                                "Content-Length: 106\r\n\r\n" \
                                 "<html>\r\n" \
                                 "<head>\r\n" \
                                 "<title>OpenSSL example</title></head><body>\r\n" \
