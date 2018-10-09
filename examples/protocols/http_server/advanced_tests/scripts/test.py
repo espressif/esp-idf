@@ -350,7 +350,7 @@ def get_hello(dut, port):
 
 def put_hello(dut, port):
     # PUT /hello returns 405'
-    Utility.console_log("[test] PUT /hello returns 405' =>", end=' ')
+    Utility.console_log("[test] PUT /hello returns 405 =>", end=' ')
     conn = http.client.HTTPConnection(dut, int(port), timeout=15)
     conn.request("PUT", "/hello", "Hello")
     resp = conn.getresponse()
@@ -363,7 +363,7 @@ def put_hello(dut, port):
 
 def post_hello(dut, port):
     # POST /hello returns 405'
-    Utility.console_log("[test] POST /hello returns 404' =>", end=' ')
+    Utility.console_log("[test] POST /hello returns 404 =>", end=' ')
     conn = http.client.HTTPConnection(dut, int(port), timeout=15)
     conn.request("POST", "/hello", "Hello")
     resp = conn.getresponse()
@@ -376,7 +376,7 @@ def post_hello(dut, port):
 
 def post_echo(dut, port):
     # POST /echo echoes data'
-    Utility.console_log("[test] POST /echo echoes data' =>", end=' ')
+    Utility.console_log("[test] POST /echo echoes data =>", end=' ')
     conn = http.client.HTTPConnection(dut, int(port), timeout=15)
     conn.request("POST", "/echo", "Hello")
     resp = conn.getresponse()
@@ -392,7 +392,7 @@ def post_echo(dut, port):
 
 def put_echo(dut, port):
     # PUT /echo echoes data'
-    Utility.console_log("[test] PUT /echo echoes data' =>", end=' ')
+    Utility.console_log("[test] PUT /echo echoes data =>", end=' ')
     conn = http.client.HTTPConnection(dut, int(port), timeout=15)
     conn.request("PUT", "/echo", "Hello")
     resp = conn.getresponse()
@@ -408,7 +408,7 @@ def put_echo(dut, port):
 
 def get_echo(dut, port):
     # GET /echo returns 404'
-    Utility.console_log("[test] GET /echo returns 405' =>", end=' ')
+    Utility.console_log("[test] GET /echo returns 405 =>", end=' ')
     conn = http.client.HTTPConnection(dut, int(port), timeout=15)
     conn.request("GET", "/echo")
     resp = conn.getresponse()
@@ -595,7 +595,7 @@ def packet_size_limit_test(dut, port, test_size):
         s.request("POST", url=path, body=random_data)
         resp = s.getresponse()
         if not test_val("Error", "200", str(resp.status)):
-            if test_val("Error", "408", str(resp.status)):
+            if test_val("Error", "500", str(resp.status)):
                 Utility.console_log("Data too large to be allocated")
                 test_size = test_size//10
             else:
@@ -619,14 +619,12 @@ def packet_size_limit_test(dut, port, test_size):
 def code_500_server_error_test(dut, port):
     Utility.console_log("[test] 500 Server Error test =>", end=' ')
     s = Session(dut, port)
-    s.client.sendall(b"abcdefgh\0")
+    # Sending a very large content length will cause malloc to fail
+    content_len = 2**31
+    s.client.sendall(("POST /echo HTTP/1.1\r\nHost: " + dut + "\r\nContent-Length: " + str(content_len) + "\r\n\r\nABCD").encode())
     s.read_resp_hdrs()
     resp = s.read_resp_data()
-    # Presently server sends back 400 Bad Request
-    #if not test_val("Server Error", "500", s.status):
-        #s.close()
-        #return False
-    if not test_val("Server Error", "400", s.status):
+    if not test_val("Server Error", "500", s.status):
         s.close()
         return False
     s.close()
