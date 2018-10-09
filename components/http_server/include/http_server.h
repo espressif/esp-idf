@@ -378,6 +378,7 @@ typedef int (*httpd_send_func_t)(int sockfd, const char *buf, size_t buf_len, in
  *
  * @return
  *  - Bytes : The number of bytes received successfully
+ *  - 0     : Buffer length parameter is zero / connection closed by peer
  *  - HTTPD_SOCK_ERR_INVALID  : Invalid arguments
  *  - HTTPD_SOCK_ERR_TIMEOUT  : Timeout/interrupted while calling socket recv()
  *  - HTTPD_SOCK_ERR_FAIL     : Unrecoverable error while calling socket recv()
@@ -480,8 +481,8 @@ int httpd_req_to_sockfd(httpd_req_t *r);
  * @param[in] buf_len   Length of the buffer
  *
  * @return
- *  - Bytes    : Number of bytes read into the buffer successfully
- *  - Zero     : When no more data is left for read
+ *  - Bytes : Number of bytes read into the buffer successfully
+ *  - 0     : Buffer length parameter is zero / connection closed by peer
  *  - HTTPD_SOCK_ERR_INVALID  : Invalid arguments
  *  - HTTPD_SOCK_ERR_TIMEOUT  : Timeout/interrupted while calling socket recv()
  *  - HTTPD_SOCK_ERR_FAIL     : Unrecoverable error while calling socket recv()

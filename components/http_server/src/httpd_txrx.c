@@ -128,6 +128,15 @@ int httpd_recv_with_opt(httpd_req_t *r, char *buf, size_t buf_len, bool halt_aft
     int ret = ra->sd->recv_fn(ra->sd->fd, buf, buf_len, 0);
     if (ret < 0) {
         ESP_LOGD(TAG, LOG_FMT("error in recv_fn"));
+        if ((ret == HTTPD_SOCK_ERR_TIMEOUT) && (pending_len != 0)) {
+            /* If recv() timeout occurred, but pending data is
+             * present, return length of pending data.
+             * This behavior is similar to that of socket recv()
+             * function, which, in case has only partially read the
+             * requested length, due to timeout, returns with read
+             * length, rather than error */
+            return pending_len;
+        }
         return ret;
     }
 
