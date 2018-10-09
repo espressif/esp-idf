@@ -86,7 +86,7 @@ static esp_err_t verify_url (http_parser *parser)
     }
 
     /* Keep URI with terminating null character. Note URI string pointed
-     * by 'at' is not NULL terminated, therfore use length provided by
+     * by 'at' is not NULL terminated, therefore use length provided by
      * parser while copying the URI to buffer */
     strlcpy((char *)r->uri, at, (length + 1));
     ESP_LOGD(TAG, LOG_FMT("received URI = %s"), r->uri);
@@ -291,7 +291,7 @@ static esp_err_t cb_headers_complete(http_parser *parser)
         return ESP_FAIL;
     }
 
-    /* In absence of body/chunked enoding, http_parser sets content_len to -1 */
+    /* In absence of body/chunked encoding, http_parser sets content_len to -1 */
     r->content_len = ((int)parser->content_length != -1 ?
                       parser->content_length : 0);
 
@@ -391,14 +391,14 @@ static int read_block(httpd_req_t *req, size_t offset, size_t length)
     }
 
     /* Receive data into buffer. If data is pending (from unrecv) then return
-     * immediatly after receiving pending data, as pending data may just complete
+     * immediately after receiving pending data, as pending data may just complete
      * this request packet. */
     int nbytes = httpd_recv_with_opt(req, raux->scratch + offset, buf_len, true);
     if (nbytes < 0) {
         ESP_LOGD(TAG, LOG_FMT("error in httpd_recv"));
-        /* Connection error. Notify Timeout in all cases.
-         * Need some way to check errno for ETIMEDOUT. */
-        httpd_resp_send_err(req, HTTPD_408_REQ_TIMEOUT);
+        if (nbytes == HTTPD_SOCK_ERR_TIMEOUT) {
+            httpd_resp_send_err(req, HTTPD_408_REQ_TIMEOUT);
+        }
         return -1;
     } else if (nbytes == 0) {
         ESP_LOGD(TAG, LOG_FMT("connection closed"));
@@ -500,7 +500,7 @@ static esp_err_t httpd_parse_req(struct httpd_data *hd)
     http_parser   parser;
     parser_data_t parser_data;
 
-    /* Initilaize parser */
+    /* Initialize parser */
     parse_init(r, &parser, &parser_data);
 
     /* Set offset to start of scratch buffer */
