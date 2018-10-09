@@ -376,7 +376,6 @@ Specify ``SPI_DEVICE_NO_DUMMY`` to ignore this checking. Then you can output dat
 
     //Set CS pin, CS options
     if (dev_config->spics_io_num >= 0) {
-        gpio_set_direction(dev_config->spics_io_num, GPIO_MODE_OUTPUT);
         spicommon_cs_initialize(host, dev_config->spics_io_num, freecs, !(spihost[host]->flags&SPICOMMON_BUSFLAG_NATIVE_PINS));
     }
     if (dev_config->flags&SPI_DEVICE_CLK_AS_CS) {
@@ -727,7 +726,11 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
         host->hw->user.usr_addr=addrlen?1:0;
         host->hw->user.usr_command=cmdlen?1:0;
 
-        // output command will be sent from bit 7 to 0 of command_value, and then bit 15 to 8 of the same register field.
+    if ((dev->cfg.flags & SPI_DEVICE_TXBIT_LSBFIRST)==0) {
+        /* Output command will be sent from bit 7 to 0 of command_value, and
+         * then bit 15 to 8 of the same register field. Shift and swap to send
+         * more straightly.
+         */
         uint16_t command = trans->cmd << (16-cmdlen);    //shift to MSB
         host->hw->user2.usr_command_value = (command>>8)|(command<<8);  //swap the first and second byte
         // shift the address to MSB of addr (and maybe slv_wr_status) register.
@@ -737,6 +740,22 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
             host->hw->slv_wr_status = trans->addr << (64 - addrlen);
         } else {
             host->hw->addr = trans->addr << (32 - addrlen);
+        }
+    } else {
+        /* The output command start from bit0 to bit 15, kept as is.
+         * The output address start from the LSB of the highest byte, i.e.
+         * addr[24] -> addr[31]
+         * ...
+         * addr[0] -> addr[7]
+         * slv_wr_status[24] -> slv_wr_status[31]
+         * ...
+         * slv_wr_status[0] -> slv_wr_status[7]
+         * So swap the byte order to let the LSB sent first.
+         */
+        host->hw->user2.usr_command_value = trans->cmd;
+        uint64_t addr = __builtin_bswap64(trans->addr);
+        host->hw->addr = addr>>32;
+        host->hw->slv_wr_status = addr;
         }
 
         host->hw->user.usr_mosi=( (!(dev->cfg.flags & SPI_DEVICE_HALFDUPLEX) && trans_buf->buffer_to_rcv) || trans_buf->buffer_to_send)?1:0;
