@@ -48,7 +48,10 @@ esp_err_t adder_post_handler(httpd_req_t *req)
 
     /* Read data received in the request */
     ret = httpd_req_recv(req, buf, sizeof(buf));
-    if (ret < 0) {
+    if (ret <= 0) {
+        if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+            httpd_resp_send_408(req);
+        }
         return ESP_FAIL;
     }
 
@@ -111,7 +114,10 @@ esp_err_t adder_put_handler(httpd_req_t *req)
 
     /* Read data received in the request */
     ret = httpd_req_recv(req, buf, sizeof(buf));
-    if (ret < 0) {
+    if (ret <= 0) {
+        if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+            httpd_resp_send_408(req);
+        }
         return ESP_FAIL;
     }
 
