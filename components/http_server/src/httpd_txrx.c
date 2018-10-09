@@ -376,6 +376,16 @@ esp_err_t httpd_resp_send_404(httpd_req_t *r)
     return httpd_resp_send_err(r, HTTPD_404_NOT_FOUND);
 }
 
+esp_err_t httpd_resp_send_408(httpd_req_t *r)
+{
+    return httpd_resp_send_err(r, HTTPD_408_REQ_TIMEOUT);
+}
+
+esp_err_t httpd_resp_send_500(httpd_req_t *r)
+{
+    return httpd_resp_send_err(r, HTTPD_500_SERVER_ERROR);
+}
+
 esp_err_t httpd_resp_send_err(httpd_req_t *req, httpd_err_resp_t error)
 {
     const char *msg;

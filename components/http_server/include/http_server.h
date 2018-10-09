@@ -687,6 +687,7 @@ esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, size_t buf_len)
 #define HTTPD_207      "207 Multi-Status"           /*!< HTTP Response 207 */
 #define HTTPD_400      "400 Bad Request"            /*!< HTTP Response 400 */
 #define HTTPD_404      "404 Not Found"              /*!< HTTP Response 404 */
+#define HTTPD_408      "408 Request Timeout"        /*!< HTTP Response 408 */
 #define HTTPD_500      "500 Internal Server Error"  /*!< HTTP Response 500 */
 
 /**
@@ -790,6 +791,52 @@ esp_err_t httpd_resp_set_hdr(httpd_req_t *r, const char *field, const char *valu
  *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request pointer
  */
 esp_err_t httpd_resp_send_404(httpd_req_t *r);
+
+/**
+ * @brief   Helper function for HTTP 408
+ *
+ * Send HTTP 408 message. If you wish to send additional data in the body of the
+ * response, please use the lower-level functions directly.
+ *
+ * @note
+ *  - This API is supposed to be called only from the context of
+ *    a URI handler where httpd_req_t* request pointer is valid.
+ *  - Once this API is called, all request headers are purged, so
+ *    request headers need be copied into separate buffers if
+ *    they are required later.
+ *
+ * @param[in] r The request being responded to
+ *
+ * @return
+ *  - ESP_OK : On successfully sending the response packet
+ *  - ESP_ERR_INVALID_ARG : Null arguments
+ *  - ESP_ERR_HTTPD_RESP_SEND   : Error in raw send
+ *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request pointer
+ */
+esp_err_t httpd_resp_send_408(httpd_req_t *r);
+
+/**
+ * @brief   Helper function for HTTP 500
+ *
+ * Send HTTP 500 message. If you wish to send additional data in the body of the
+ * response, please use the lower-level functions directly.
+ *
+ * @note
+ *  - This API is supposed to be called only from the context of
+ *    a URI handler where httpd_req_t* request pointer is valid.
+ *  - Once this API is called, all request headers are purged, so
+ *    request headers need be copied into separate buffers if
+ *    they are required later.
+ *
+ * @param[in] r The request being responded to
+ *
+ * @return
+ *  - ESP_OK : On successfully sending the response packet
+ *  - ESP_ERR_INVALID_ARG : Null arguments
+ *  - ESP_ERR_HTTPD_RESP_SEND   : Error in raw send
+ *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request pointer
+ */
+esp_err_t httpd_resp_send_500(httpd_req_t *r);
 
 /**
  * @brief   Raw HTTP send
