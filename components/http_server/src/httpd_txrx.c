@@ -472,13 +472,19 @@ int httpd_req_to_sockfd(httpd_req_t *r)
     return ra->sd->fd;
 }
 
-static int httpd_sock_err(const char *ctx)
+static int httpd_sock_err(const char *ctx, int sockfd)
 {
     int errval;
+    int sock_err;
+    size_t sock_err_len = sizeof(sock_err);
 
-    ESP_LOGW(TAG, LOG_FMT("errno in %s : %d"), ctx, errno);
+    if (getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &sock_err, &sock_err_len) < 0) {
+        ESP_LOGE(TAG, LOG_FMT("error calling getsockopt : %d"), errno);
+        return HTTPD_SOCK_ERR_FAIL;
+    }
+    ESP_LOGW(TAG, LOG_FMT("error in %s : %d"), ctx, sock_err);
 
-    switch(errno) {
+    switch(sock_err) {
     case EAGAIN:
     case EINTR:
         errval = HTTPD_SOCK_ERR_TIMEOUT;
@@ -503,7 +509,7 @@ int httpd_default_send(int sockfd, const char *buf, size_t buf_len, int flags)
 
     int ret = send(sockfd, buf, buf_len, flags);
     if (ret < 0) {
-        return httpd_sock_err("send");
+        return httpd_sock_err("send", sockfd);
     }
     return ret;
 }
@@ -516,7 +522,7 @@ int httpd_default_recv(int sockfd, char *buf, size_t buf_len, int flags)
 
     int ret = recv(sockfd, buf, buf_len, flags);
     if (ret < 0) {
-        return httpd_sock_err("recv");
+        return httpd_sock_err("recv", sockfd);
     }
     return ret;
 }
