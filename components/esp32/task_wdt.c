@@ -196,7 +196,7 @@ esp_err_t esp_task_wdt_init(uint32_t timeout, bool panic)
         twdt_config->panic = panic;
 
         //Register Interrupt and ISR
-        ESP_ERROR_CHECK(esp_intr_alloc(ETS_TG0_WDT_LEVEL_INTR_SOURCE, 0, task_wdt_isr, NULL, &twdt_config->intr_handle))
+        ESP_ERROR_CHECK(esp_intr_alloc(ETS_TG0_WDT_LEVEL_INTR_SOURCE, 0, task_wdt_isr, NULL, &twdt_config->intr_handle));
 
         //Configure hardware timer
         periph_module_enable(PERIPH_TIMG0_MODULE);
@@ -244,7 +244,7 @@ esp_err_t esp_task_wdt_deinit()
     TIMERG0.wdt_config0.en=0;                   //Disable timer
     TIMERG0.wdt_wprotect=0;                     //Enable write protection
 
-    ESP_ERROR_CHECK(esp_intr_free(twdt_config->intr_handle))  //Unregister interrupt
+    ESP_ERROR_CHECK(esp_intr_free(twdt_config->intr_handle));  //Unregister interrupt
     free(twdt_config);                      //Free twdt_config
     twdt_config = NULL;
     portEXIT_CRITICAL(&twdt_spinlock);
@@ -286,7 +286,7 @@ esp_err_t esp_task_wdt_add(TaskHandle_t handle)
     //If idle task, register the idle hook callback to appropriate core
     for(int i = 0; i < portNUM_PROCESSORS; i++){
         if(handle == xTaskGetIdleTaskHandleForCPU(i)){
-            ESP_ERROR_CHECK(esp_register_freertos_idle_hook_for_cpu(idle_hook_cb, i))
+            ESP_ERROR_CHECK(esp_register_freertos_idle_hook_for_cpu(idle_hook_cb, i));
             break;
         }
     }

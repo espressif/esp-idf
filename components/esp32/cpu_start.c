@@ -455,23 +455,23 @@ static void main_task(void* args)
 
     //Initialize task wdt if configured to do so
 #ifdef CONFIG_TASK_WDT_PANIC
-    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_TASK_WDT_TIMEOUT_S, true))
+    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_TASK_WDT_TIMEOUT_S, true));
 #elif CONFIG_TASK_WDT
-    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_TASK_WDT_TIMEOUT_S, false))
+    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_TASK_WDT_TIMEOUT_S, false));
 #endif
 
     //Add IDLE 0 to task wdt
 #ifdef CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU0
     TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
     if(idle_0 != NULL){
-        ESP_ERROR_CHECK(esp_task_wdt_add(idle_0))
+        ESP_ERROR_CHECK(esp_task_wdt_add(idle_0));
     }
 #endif
     //Add IDLE 1 to task wdt
 #ifdef CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU1
     TaskHandle_t idle_1 = xTaskGetIdleTaskHandleForCPU(1);
     if(idle_1 != NULL){
-        ESP_ERROR_CHECK(esp_task_wdt_add(idle_1))
+        ESP_ERROR_CHECK(esp_task_wdt_add(idle_1));
     }
 #endif
 

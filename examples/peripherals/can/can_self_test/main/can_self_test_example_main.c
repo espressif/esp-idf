@@ -77,7 +77,7 @@ static void can_receive_task(void *arg)
         xSemaphoreTake(rx_sem, portMAX_DELAY);
         for (int i = 0; i < NO_OF_MSGS; i++) {
             //Receive message and print message data
-            ESP_ERROR_CHECK(can_receive(&rx_message, portMAX_DELAY))
+            ESP_ERROR_CHECK(can_receive(&rx_message, portMAX_DELAY));
             ESP_LOGI(EXAMPLE_TAG, "Msg received - Data = %d", rx_message.data[0]);
         }
         //Indicate to control task all messages received for this iteration
