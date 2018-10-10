@@ -6,7 +6,7 @@ Overview
 
 A single ESP32's flash can contain multiple apps, as well as many different kinds of data (calibration data, filesystems, parameter storage, etc). For this reason a partition table is flashed to (:ref:`default offset <CONFIG_PARTITION_TABLE_OFFSET>`) 0x8000 in the flash.
 
-Partition table length is 0xC00 bytes (maximum 95 partition table entries). An MD5 checksum is appended after the table data. If the partition table is signed due to `secure boot`, the signature is appended after the partition table.
+Partition table length is 0xC00 bytes (maximum 95 partition table entries). An MD5 checksum, which is used for checking the integrity of the partition table is appended after the table data. If the partition table is signed due to `secure boot`, the signature is appended after the partition table.
 
 Each entry in the partition table has a name (label), type (app, data, or something else), subtype and the offset in flash where the partition is loaded.
 
@@ -42,8 +42,7 @@ Here is the summary printed for the "Factory app, two OTA definitions" configura
   ota_0,    0,    ota_0,  0x110000, 1M,
   ota_1,    0,    ota_1,  0x210000, 1M,
 
-* There are now three app partition definitions.
-* The type of all three are set as "app", but the subtype varies between the factory app at 0x10000 and the next two "OTA" apps.
+* There are now three app partition definitions. The type of the factory app (at 0x10000) and the next two "OTA" apps are all set to "app", but their subtypes are different.
 * There is also a new "ota data" slot, which holds the data for OTA updates. The bootloader consults this data in order to know which app to execute. If "ota data" is empty, it will execute the factory app.
 
 Creating Custom Tables
@@ -102,7 +101,7 @@ When type is "app", the subtype field can be specified as factory (0), ota_0 (0x
 Data Subtypes
 ~~~~~~~~~~~~~
 
-When type is "data", the subtype field can be specified as ota (0), phy (1), nvs (2).
+When type is "data", the subtype field can be specified as ota (0), phy (1), nvs (2) or nvs_keys (4).
 
 - ota (0) is the :ref:`OTA data partition <ota_data_partition>` which stores information about the currently selected OTA application. This partition should be 0x2000 bytes in size. Refer to the :ref:`OTA documentation <ota_data_partition>` for more details.
 - phy (1) is for storing PHY initialisation data. This allows PHY to be configured per-device, instead of in firmware.
@@ -116,7 +115,8 @@ When type is "data", the subtype field can be specified as ota (0), phy (1), nvs
   - The NVS API can also be used for other application data.
   - It is strongly recommended that you include an NVS partition of at least 0x3000 bytes in your project.
   - If using NVS API to store a lot of data, increase the NVS partition size from the default 0x6000 bytes.
-- keys (4) is for the NVS key partition. See :doc:`Non-Volatile Storage (NVS) API <../api-reference/storage/nvs_flash>` for more details.
+- nvs_keys (4) is for the NVS key partition. See :doc:`Non-Volatile Storage (NVS) API <../api-reference/storage/nvs_flash>` for more details.
+
   - It is used to store NVS encryption keys when `NVS Encryption` feature is enabled.
   - The size of this partition should be 4096 bytes (minimum partition size).
 
