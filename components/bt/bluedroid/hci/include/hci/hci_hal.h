@@ -51,7 +51,7 @@ typedef struct hci_hal_t {
     //bool (*init)(const hci_hal_callbacks_t *upper_callbacks);
 
     // Connect to the underlying hardware, and let data start flowing.
-    bool (*open)(const hci_hal_callbacks_t *upper_callbacks);
+    bool (*open)(const hci_hal_callbacks_t *upper_callbacks,  void *task_thread);
     // Disconnect from the underlying hardware, and close the HAL.
     // "Daisy, Daisy..."
     void (*close)(void);

@@ -27,12 +27,6 @@
 #include "esp_bt.h"
 #include "stack/hcimsgs.h"
 
-#define HCI_H4_TASK_PINNED_TO_CORE      (TASK_PINNED_TO_CORE)
-#define HCI_H4_TASK_STACK_SIZE          (2048 + BT_TASK_EXTRA_STACK_SIZE)
-#define HCI_H4_TASK_PRIO                (BT_TASK_MAX_PRIORITIES - 4)
-#define HCI_H4_TASK_NAME                "hciH4T"
-
-
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
 #include "l2c_int.h"
 #endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
@@ -105,9 +99,11 @@ static void hci_hal_env_deinit(void)
     hci_hal_env.rx_q = NULL;
 }
 
-static bool hal_open(const hci_hal_callbacks_t *upper_callbacks)
+static bool hal_open(const hci_hal_callbacks_t *upper_callbacks, void *task_thread)
 {
     assert(upper_callbacks != NULL);
+    assert(task_thread != NULL);
+
     callbacks = upper_callbacks;
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
     hci_hal_env_init(HCI_HAL_SERIAL_BUFFER_SIZE, BLE_ADV_REPORT_FLOW_CONTROL_NUM + L2CAP_HOST_FC_ACL_BUFS + QUEUE_SIZE_MAX); // adv flow control num + ACL flow control num + hci cmd numeber
@@ -115,10 +111,7 @@ static bool hal_open(const hci_hal_callbacks_t *upper_callbacks)
     hci_hal_env_init(HCI_HAL_SERIAL_BUFFER_SIZE, QUEUE_SIZE_MAX);
 #endif
 
-    hci_h4_thread = osi_thread_create(HCI_H4_TASK_NAME, HCI_H4_TASK_STACK_SIZE, HCI_H4_TASK_PRIO, HCI_H4_TASK_PINNED_TO_CORE, 1);
-    if (hci_h4_thread == NULL) {
-        return false;
-    }
+    hci_h4_thread = (osi_thread_t *)task_thread;
 
     //register vhci host cb
     if (esp_vhci_host_register_callback(&vhci_host_cb) != ESP_OK) {
@@ -132,7 +125,6 @@ static void hal_close()
 {
     hci_hal_env_deinit();
 
-    osi_thread_free(hci_h4_thread);
     hci_h4_thread = NULL;
 }
 
@@ -180,7 +172,7 @@ static void hci_hal_h4_rx_handler(void *arg)
 
 bool hci_hal_h4_task_post(osi_thread_blocking_t blocking)
 {
-    return osi_thread_post(hci_h4_thread, hci_hal_h4_rx_handler, NULL, 0, blocking);
+    return osi_thread_post(hci_h4_thread, hci_hal_h4_rx_handler, NULL, 1, blocking);
 }
 
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
