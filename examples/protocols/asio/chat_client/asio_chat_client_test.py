@@ -19,8 +19,8 @@ import IDF
 global g_client_response;
 global g_msg_to_client;
 
-g_client_response = ""
-g_msg_to_client = "   3XYZ"
+g_client_response = b""
+g_msg_to_client = b"   3XYZ"
 
 def get_my_ip():
     s1 = socket(AF_INET, SOCK_DGRAM)
@@ -81,11 +81,12 @@ def test_examples_protocol_asio_chat_client(env, extra_data):
     # 3. send host's IP to the client i.e. the `dut1`
     dut1.write(host_ip)
     # 4. client `dut1` should receive a message
-    dut1.expect(g_msg_to_client[4:]) # Strip out the front 4 bytes of message len (see chat_message protocol)
+    dut1.expect(g_msg_to_client[4:].decode()) # Strip out the front 4 bytes of message len (see chat_message protocol)
     # 5. write test message from `dut1` chat_client to the server
     dut1.write(test_msg)
-    while g_client_response == "":
+    while len(g_client_response) == 0:
         time.sleep(1)
+    g_client_response = g_client_response.decode()
     print(g_client_response)
     # 6. evaluate host_server received this message
     if (g_client_response[4:7] == test_msg):
@@ -93,7 +94,7 @@ def test_examples_protocol_asio_chat_client(env, extra_data):
         pass
     else:
         print("Failure!")
-        raise ValueError('Wrong data received from asi tcp server: {} (expected:{})'.format(g_client_response, test_msg))
+        raise ValueError('Wrong data received from asi tcp server: {} (expected:{})'.format(g_client_response[4:7], test_msg))
     thread1.join()
 
 if __name__ == '__main__':

@@ -6,8 +6,8 @@ class Section(object):
     """
     One Section of section table. contains info about section name, address and raw data
     """
-    SECTION_START_PATTERN = re.compile("Contents of section (.+?):")
-    DATA_PATTERN = re.compile("([0-9a-f]{4,8})")
+    SECTION_START_PATTERN = re.compile(b"Contents of section (.+?):")
+    DATA_PATTERN = re.compile(b"([0-9a-f]{4,8})")
 
     def __init__(self, name, start_address, data):
         self.name = name
@@ -52,7 +52,7 @@ class Section(object):
         start_address = 0
         # first find start line
         for i, line in enumerate(raw_data):
-            if "Contents of section " in line:  # do strcmp first to speed up
+            if b"Contents of section " in line:  # do strcmp first to speed up
                 match = cls.SECTION_START_PATTERN.search(line)
                 if match is not None:
                     name = match.group(1)
@@ -60,11 +60,11 @@ class Section(object):
                     break
         else:
             # do some error handling
-            raw_data = [""]  # add a dummy first data line
+            raw_data = [b""]  # add a dummy first data line
 
         def process_data_line(line_to_process):
             # first remove the ascii part
-            hex_part = line_to_process.split("  ")[0]
+            hex_part = line_to_process.split(b"  ")[0]
             # process rest part
             data_list = cls.DATA_PATTERN.findall(hex_part)
             try:
@@ -74,7 +74,7 @@ class Section(object):
 
             def hex_to_str(hex_data):
                 if len(hex_data) % 2 == 1:
-                    hex_data = "0" + hex_data  # append zero at the beginning
+                    hex_data = b"0" + hex_data  # append zero at the beginning
                 _length = len(hex_data)
                 return "".join([chr(int(hex_data[_i:_i + 2], base=16))
                                 for _i in range(0, _length, 2)])

@@ -27,6 +27,8 @@ import shlex
 
 from local_util import run_cmd_get_output, copy_if_modified
 
+# build_docs on the CI server sometimes fails under Python3. This is a workaround:
+sys.setrecursionlimit(3500)
 
 try:
     builddir = os.environ['BUILDDIR']
