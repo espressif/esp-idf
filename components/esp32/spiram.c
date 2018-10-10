@@ -104,23 +104,6 @@ void IRAM_ATTR esp_spiram_init_cache()
 #endif
 }
 
-esp_spiram_volt_t esp_spiram_get_chip_volt()
-{
-    if (!spiram_inited) {
-        ESP_LOGE(TAG, "SPI RAM not initialized");
-        return ESP_SPIRAM_VOLT_INVALID;
-    }
-    psram_volt_t volt = psram_get_volt();
-    switch (volt) {
-        case PSRAM_VOLT_1V8:
-            return ESP_SPIRAM_VOLT_1V8;
-        case PSRAM_VOLT_3V3:
-            return ESP_SPIRAM_VOLT_3V3;
-        default:
-            return ESP_SPIRAM_VOLT_INVALID;
-    }
-}
-
 esp_spiram_size_t esp_spiram_get_chip_size()
 {
     if (!spiram_inited) {

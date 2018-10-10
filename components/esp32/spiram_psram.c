@@ -55,12 +55,6 @@
 #define PSRAM_DEVICE_ID            0x9F
 
 typedef enum {
-    PSRAM_EID_32MBIT_1V8 = 0x20,    /*!< psram EID for 32MBit 1.8V */
-    PSRAM_EID_64MBIT_1V8 = 0x26,    /*!< psram EID for 64MBit 1.8V */
-    PSRAM_EID_64MBIT_3V3 = 0x46,    /*!< psram EID for 64MBit 3.3V */
-} psram_type_t;
-
-typedef enum {
     PSRAM_CLK_MODE_NORM = 0,    /*!< Normal SPI mode */
     PSRAM_CLK_MODE_DCLK = 1,    /*!< Two extra clock cycles after CS is set high level */
 } psram_clk_mode_t;
@@ -74,10 +68,11 @@ typedef enum {
 #define PSRAM_KGD(id)          (((id) >> PSRAM_ID_KGD_S) & PSRAM_ID_KGD_M)
 #define PSRAM_EID(id)          (((id) >> PSRAM_ID_EID_S) & PSRAM_ID_EID_M)
 #define PSRAM_IS_VALID(id)     (PSRAM_KGD(id) == PSRAM_ID_KGD)
-#define PSRAM_IS_1V8(id)       ((PSRAM_EID(id) == PSRAM_EID_32MBIT_1V8) || (PSRAM_EID(id) == PSRAM_EID_64MBIT_1V8))
-#define PSRAM_IS_3V3(id)       (PSRAM_EID(id) == PSRAM_EID_64MBIT_3V3)
-#define PSRAM_IS_64MBIT(id)    ((PSRAM_EID(id) == PSRAM_EID_64MBIT_3V3) || (PSRAM_EID(id) == PSRAM_EID_64MBIT_1V8))
-#define PSRAM_IS_32MBIT(id)    (PSRAM_EID(id) == PSRAM_EID_32MBIT_1V8)
+
+// PSRAM_EID = 0x26 or 0x4x ----> 64MBit psram
+// PSRAM_EID = 0x20 ------------> 32MBit psram
+#define PSRAM_IS_64MBIT(id)       ((PSRAM_EID(id) == 0x26) || ((PSRAM_EID(id) & 0xf0) == 0x40))
+#define PSRAM_IS_32MBIT_VER0(id)  (PSRAM_EID(id) == 0x20)
 
 // IO-pins for PSRAM. These need to be in the VDD_SIO power domain because all chips we
 // currently support are 1.8V parts.
@@ -521,20 +516,9 @@ static void IRAM_ATTR psram_gpio_config(psram_cache_mode_t mode)
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_CLK_U, FUNC_SD_CLK_SPICLK);
 }
 
-psram_volt_t psram_get_volt()
-{
-    if (PSRAM_IS_1V8(s_psram_id)) {
-        return PSRAM_VOLT_1V8;
-    } else if (PSRAM_IS_3V3(s_psram_id)) {
-        return PSRAM_VOLT_3V3;
-    } else {
-        return PSRAM_VOLT_MAX;
-    }
-}
-
 psram_size_t psram_get_size()
 {
-    if (PSRAM_IS_32MBIT(s_psram_id)) {
+    if (PSRAM_IS_32MBIT_VER0(s_psram_id)) {
         return PSRAM_SIZE_32MBITS;
     } else if (PSRAM_IS_64MBIT(s_psram_id)) {
         return PSRAM_SIZE_64MBITS;
@@ -617,7 +601,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
         return ESP_FAIL;
     }
     uint32_t flash_id = g_rom_flashchip.device_id;
-    if (flash_id == FLASH_ID_GD25LQ32C && PSRAM_IS_1V8(s_psram_id)) {
+    if (flash_id == FLASH_ID_GD25LQ32C) {
         // Set drive ability for 1.8v flash in 80Mhz.
         SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_DATA0_U,      FUN_DRV_V, 3, FUN_DRV_S);
         SET_PERI_REG_BITS(PERIPHS_IO_MUX_SD_DATA1_U,      FUN_DRV_V, 3, FUN_DRV_S);
@@ -628,19 +612,19 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
         SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[PSRAM_CS_IO],  FUN_DRV_V, 3, FUN_DRV_S);
         SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[PSRAM_CLK_IO], FUN_DRV_V, 3, FUN_DRV_S);
     }
-    if (PSRAM_EID(s_psram_id) == PSRAM_EID_64MBIT_1V8) {
+    if (PSRAM_IS_64MBIT(s_psram_id)) {
         // For this psram, we don't need any extra clock cycles after cs get back to high level
         s_clk_mode = PSRAM_CLK_MODE_NORM;
         gpio_matrix_out(PSRAM_INTERNAL_IO_28, SIG_GPIO_OUT_IDX, 0, 0);
         gpio_matrix_out(PSRAM_INTERNAL_IO_29, SIG_GPIO_OUT_IDX, 0, 0);
         gpio_matrix_out(PSRAM_CLK_IO, SPICLK_OUT_IDX, 0, 0);
-    } else if (PSRAM_EID(s_psram_id) == PSRAM_EID_32MBIT_1V8 || PSRAM_EID(s_psram_id) == PSRAM_EID_64MBIT_3V3) {
+    } else if (PSRAM_IS_32MBIT_VER0(s_psram_id)) {
         s_clk_mode = PSRAM_CLK_MODE_DCLK;
         if (mode == PSRAM_CACHE_F80M_S80M) {
-            /*   note: If the third mode(80Mhz+80Mhz) is enabled for 32MBit 1V8 psram and 64MBit 3.3v psram,
-                 VSPI port will be occupied by the system.
+            /*   note: If the third mode(80Mhz+80Mhz) is enabled for 32MBit 1V8 psram, VSPI port will be 
+                 occupied by the system.
                  Application code should never touch VSPI hardware in this case.  We try to stop applications
-                 from doing this using the drivers by claiming the port for ourselves*/
+                 from doing this using the drivers by claiming the port for ourselves */
             periph_module_enable(PERIPH_VSPI_MODULE);
             bool r=spicommon_periph_claim(VSPI_HOST);
             if (!r) {
@@ -755,7 +739,7 @@ static void IRAM_ATTR psram_cache_init(psram_cache_mode_t psram_cache_mode, psra
     if (s_clk_mode == PSRAM_CLK_MODE_NORM) {    //different
         SET_PERI_REG_MASK(SPI_USER_REG(0), SPI_CS_HOLD);
         // Set cs time.
-        SET_PERI_REG_BITS(SPI_CTRL2_REG(0), SPI_SETUP_TIME_V, 1, SPI_SETUP_TIME_S);
+        SET_PERI_REG_BITS(SPI_CTRL2_REG(0), SPI_HOLD_TIME_V, 1, SPI_HOLD_TIME_S);
     }
 }
 
