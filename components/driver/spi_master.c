@@ -21,13 +21,13 @@ is a combination of SPI port and CS pin, plus some information about the specifi
 
 The essence of the interface to a device is a set of queues; one per device. The idea is that to send something to a SPI
 device, you allocate a transaction descriptor. It contains some information about the transfer like the lenghth, address,
-command etc, plus pointers to transmit and receive buffer. The address of this block gets pushed into the transmit queue. 
-The SPI driver does its magic, and sends and retrieves the data eventually. The data gets written to the receive buffers, 
+command etc, plus pointers to transmit and receive buffer. The address of this block gets pushed into the transmit queue.
+The SPI driver does its magic, and sends and retrieves the data eventually. The data gets written to the receive buffers,
 if needed the transaction descriptor is modified to indicate returned parameters and the entire thing goes into the return
 queue, where whatever software initiated the transaction can retrieve it.
 
-The entire thing is run from the SPI interrupt handler. If SPI is done transmitting/receiving but nothing is in the queue, 
-it will not clear the SPI interrupt but just disable it. This way, when a new thing is sent, pushing the packet into the send 
+The entire thing is run from the SPI interrupt handler. If SPI is done transmitting/receiving but nothing is in the queue,
+it will not clear the SPI interrupt but just disable it. This way, when a new thing is sent, pushing the packet into the send
 queue and re-enabling the interrupt will trigger the interrupt again, which can then take care of the sending.
 */
 
@@ -67,8 +67,8 @@ typedef struct spi_device_t spi_device_t;
 
 
 /// struct to hold private transaction data (like tx and rx buffer for DMA).
-typedef struct {        
-    spi_transaction_t   *trans; 
+typedef struct {
+    spi_transaction_t   *trans;
     uint32_t *buffer_to_send;   //equals to tx_data, if SPI_TRANS_USE_RXDATA is applied; otherwise if original buffer wasn't in DMA-capable memory, this gets the address of a temporary buffer that is;
                                 //otherwise sets to the original buffer or NULL if no buffer is assigned.
     uint32_t *buffer_to_rcv;    // similar to buffer_to_send
@@ -140,10 +140,10 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
         goto nomem;
     }
 #endif //CONFIG_PM_ENABLE
-    
+
     spicommon_bus_initialize_io(host, bus_config, dma_chan, SPICOMMON_BUSFLAG_MASTER|SPICOMMON_BUSFLAG_QUAD, &native);
     spihost[host]->no_gpio_matrix=native;
-    
+
     spihost[host]->dma_chan=dma_chan;
     if (dma_chan == 0) {
         spihost[host]->max_transfer_sz = 32;
@@ -180,7 +180,7 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
     spihost[host]->hw->slave.wr_sta_inten=0;
 
     //Force a transaction done interrupt. This interrupt won't fire yet because we initialized the SPI interrupt as
-    //disabled.  This way, we can just enable the SPI interrupt and the interrupt handler will kick in, handling 
+    //disabled.  This way, we can just enable the SPI interrupt and the interrupt handler will kick in, handling
     //any transactions that are queued.
     spihost[host]->hw->slave.trans_inten=1;
     spihost[host]->hw->slave.trans_done=1;
@@ -271,7 +271,6 @@ esp_err_t spi_bus_add_device(spi_host_device_t host, spi_device_interface_config
 
     //Set CS pin, CS options
     if (dev_config->spics_io_num >= 0) {
-        gpio_set_direction(dev_config->spics_io_num, GPIO_MODE_OUTPUT);
         spicommon_cs_initialize(host, dev_config->spics_io_num, freecs, spihost[host]->no_gpio_matrix == false);
     }
     if (dev_config->flags&SPI_DEVICE_CLK_AS_CS) {
@@ -397,7 +396,7 @@ static void IRAM_ATTR spi_intr(void *arg)
     /*------------ deal with the in-flight transaction -----------------*/
     if (host->cur_cs != NO_CS) {
         spi_transaction_t *cur_trans = host->cur_trans_buf.trans;
-        //Okay, transaction is done. 
+        //Okay, transaction is done.
         if (host->cur_trans_buf.buffer_to_rcv && host->dma_chan == 0 ) {
             //Need to copy from SPI regs to result buffer.
             for (int x=0; x < cur_trans->rxlength; x+=32) {
@@ -411,7 +410,7 @@ static void IRAM_ATTR spi_intr(void *arg)
         //Call post-transaction callback, if any
         if (host->device[host->cur_cs]->cfg.post_cb) host->device[host->cur_cs]->cfg.post_cb(cur_trans);
         //Return transaction descriptor.
-        xQueueSendFromISR(host->device[host->cur_cs]->ret_queue, &host->cur_trans_buf, &do_yield); 
+        xQueueSendFromISR(host->device[host->cur_cs]->ret_queue, &host->cur_trans_buf, &do_yield);
         prevCs=host->cur_cs;
         host->cur_cs = NO_CS;
     }
@@ -443,7 +442,7 @@ static void IRAM_ATTR spi_intr(void *arg)
         host->cur_cs=i;
         //We should be done with the transmission.
         assert(host->hw->cmd.usr == 0);
-        
+
         //Reconfigure according to device settings, but only if we change CSses.
         if (i!=prevCs) {
             //Assumes a hardcoded 80MHz Fapb for now. ToDo: figure out something better once we have
@@ -453,7 +452,7 @@ static void IRAM_ATTR spi_intr(void *arg)
             //Configure bit order
             host->hw->ctrl.rd_bit_order=(dev->cfg.flags & SPI_DEVICE_RXBIT_LSBFIRST)?1:0;
             host->hw->ctrl.wr_bit_order=(dev->cfg.flags & SPI_DEVICE_TXBIT_LSBFIRST)?1:0;
-            
+
             //Configure polarity
             //SPI iface needs to be configured for a delay in some cases.
             int nodelay=0;
@@ -548,7 +547,7 @@ static void IRAM_ATTR spi_intr(void *arg)
                 host->hw->dma_in_link.start=1;
             }
         } else {
-            //DMA temporary workaround: let RX DMA work somehow to avoid the issue in ESP32 v0/v1 silicon 
+            //DMA temporary workaround: let RX DMA work somehow to avoid the issue in ESP32 v0/v1 silicon
             if (host->dma_chan != 0 ) {
                 host->hw->dma_in_link.addr=0;
                 host->hw->dma_in_link.start=1;
@@ -601,16 +600,37 @@ static void IRAM_ATTR spi_intr(void *arg)
         host->hw->user.usr_addr=addrlen?1:0;
         host->hw->user.usr_command=cmdlen?1:0;
 
-        // output command will be sent from bit 7 to 0 of command_value, and then bit 15 to 8 of the same register field.
+    if ((dev->cfg.flags & SPI_DEVICE_TXBIT_LSBFIRST)==0) {
+        /* Output command will be sent from bit 7 to 0 of command_value, and
+         * then bit 15 to 8 of the same register field. Shift and swap to send
+         * more straightly.
+         */
         uint16_t command = trans->cmd << (16-cmdlen);    //shift to MSB
         host->hw->user2.usr_command_value = (command>>8)|(command<<8);  //swap the first and second byte
-        // shift the address to MSB of addr (and maybe slv_wr_status) register. 
-        // output address will be sent from MSB to LSB of addr register, then comes the MSB to LSB of slv_wr_status register. 
-        if (addrlen>32) {
-            host->hw->addr = trans->addr >> (addrlen- 32);
+
+        // shift the address to MSB of addr (and maybe slv_wr_status) register.
+        // output address will be sent from MSB to LSB of addr register, then comes the MSB to LSB of slv_wr_status register.
+        if (addrlen > 32) {
+            host->hw->addr = trans->addr >> (addrlen - 32);
             host->hw->slv_wr_status = trans->addr << (64 - addrlen);
         } else {
             host->hw->addr = trans->addr << (32 - addrlen);
+        }
+    } else {
+        /* The output command start from bit0 to bit 15, kept as is.
+         * The output address start from the LSB of the highest byte, i.e.
+         * addr[24] -> addr[31]
+         * ...
+         * addr[0] -> addr[7]
+         * slv_wr_status[24] -> slv_wr_status[31]
+         * ...
+         * slv_wr_status[0] -> slv_wr_status[7]
+         * So swap the byte order to let the LSB sent first.
+         */
+        host->hw->user2.usr_command_value = trans->cmd;
+        uint64_t addr = __builtin_bswap64(trans->addr);
+        host->hw->addr = addr>>32;
+        host->hw->slv_wr_status = addr;
         }
 
         host->hw->user.usr_mosi=( (!(dev->cfg.flags & SPI_DEVICE_HALFDUPLEX) && trans_buf->buffer_to_rcv) || trans_buf->buffer_to_send)?1:0;
@@ -630,13 +650,13 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
     esp_err_t ret = ESP_OK;
     BaseType_t r;
     SPI_CHECK(handle!=NULL, "invalid dev handle", ESP_ERR_INVALID_ARG);
-    //check transmission length 
+    //check transmission length
     SPI_CHECK((trans_desc->flags & SPI_TRANS_USE_RXDATA)==0 ||trans_desc->rxlength <= 32, "rxdata transfer > 32 bits without configured DMA", ESP_ERR_INVALID_ARG);
     SPI_CHECK((trans_desc->flags & SPI_TRANS_USE_TXDATA)==0 ||trans_desc->length <= 32, "txdata transfer > 32 bits without configured DMA", ESP_ERR_INVALID_ARG);
     SPI_CHECK(trans_desc->length <= handle->host->max_transfer_sz*8, "txdata transfer > host maximum", ESP_ERR_INVALID_ARG);
     SPI_CHECK(trans_desc->rxlength <= handle->host->max_transfer_sz*8, "rxdata transfer > host maximum", ESP_ERR_INVALID_ARG);
     SPI_CHECK((handle->cfg.flags & SPI_DEVICE_HALFDUPLEX) || trans_desc->rxlength <= trans_desc->length, "rx length > tx length in full duplex mode", ESP_ERR_INVALID_ARG);
-    //check working mode    
+    //check working mode
     SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO|SPI_TRANS_MODE_QIO)) && (handle->cfg.flags & SPI_DEVICE_3WIRE)), "incompatible iface params", ESP_ERR_INVALID_ARG);
     SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO|SPI_TRANS_MODE_QIO)) && (!(handle->cfg.flags & SPI_DEVICE_HALFDUPLEX))), "incompatible iface params", ESP_ERR_INVALID_ARG);
     SPI_CHECK( !(handle->cfg.flags & SPI_DEVICE_HALFDUPLEX) || handle->host->dma_chan == 0 || !(trans_desc->flags & SPI_TRANS_USE_RXDATA || trans_desc->rx_buffer != NULL)
@@ -655,7 +675,7 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
     // rx memory assign
     if ( trans_desc->flags & SPI_TRANS_USE_RXDATA ) {
         trans_buf.buffer_to_rcv = (uint32_t*)&trans_desc->rx_data[0];
-    } else { 
+    } else {
         //if not use RXDATA neither rx_buffer, buffer_to_rcv assigned to NULL
         trans_buf.buffer_to_rcv = trans_desc->rx_buffer;
     }
@@ -668,12 +688,12 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
             goto clean_up;
         }
     }
-    
+
     const uint32_t *txdata;
     // tx memory assign
     if ( trans_desc->flags & SPI_TRANS_USE_TXDATA ) {
         txdata = (uint32_t*)&trans_desc->tx_data[0];
-    } else { 
+    } else {
         //if not use TXDATA neither tx_buffer, tx data assigned to NULL
         txdata = trans_desc->tx_buffer ;
     }
@@ -686,11 +706,11 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
             goto clean_up;
         }
         memcpy( trans_buf.buffer_to_send, txdata, (trans_desc->length+7)/8 );
-    } else { 
+    } else {
         // else use the original buffer (forced-conversion) or assign to NULL
         trans_buf.buffer_to_send = (uint32_t*)txdata;
     }
-    
+
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_acquire(handle->host->pm_lock);
 #endif
@@ -710,10 +730,10 @@ clean_up:
     // free malloc-ed buffer (if needed) before return.
     if ( (void*)trans_buf.buffer_to_rcv != trans_desc->rx_buffer && (void*)trans_buf.buffer_to_rcv != &trans_desc->rx_data[0] ) {
         free( trans_buf.buffer_to_rcv );
-    }   
+    }
     if ( (void*)trans_buf.buffer_to_send!= trans_desc->tx_buffer && (void*)trans_buf.buffer_to_send != &trans_desc->tx_data[0] ) {
         free( trans_buf.buffer_to_send );
-    }   
+    }
     assert( ret != ESP_OK );
     return ret;
 }
@@ -722,12 +742,12 @@ esp_err_t spi_device_get_trans_result(spi_device_handle_t handle, spi_transactio
 {
     BaseType_t r;
     spi_trans_priv trans_buf;
-    
+
     SPI_CHECK(handle!=NULL, "invalid dev handle", ESP_ERR_INVALID_ARG);
     r=xQueueReceive(handle->ret_queue, (void*)&trans_buf, ticks_to_wait);
     if (!r) {
         // The memory occupied by rx and tx DMA buffer destroyed only when receiving from the queue (transaction finished).
-        // If timeout, wait and retry. 
+        // If timeout, wait and retry.
         // Every on-flight transaction request occupies internal memory as DMA buffer if needed.
         return ESP_ERR_TIMEOUT;
     }
@@ -736,12 +756,12 @@ esp_err_t spi_device_get_trans_result(spi_device_handle_t handle, spi_transactio
 
     if ( (void*)trans_buf.buffer_to_send != &(*trans_desc)->tx_data[0] && trans_buf.buffer_to_send != (*trans_desc)->tx_buffer ) {
         free( trans_buf.buffer_to_send );
-    }   
+    }
 
     //copy data from temporary DMA-capable buffer back to IRAM buffer and free the temporary one.
     if ( (void*)trans_buf.buffer_to_rcv != &(*trans_desc)->rx_data[0] && trans_buf.buffer_to_rcv != (*trans_desc)->rx_buffer ) {
         if ( (*trans_desc)->flags & SPI_TRANS_USE_RXDATA ) {
-            memcpy( (uint8_t*)&(*trans_desc)->rx_data[0], trans_buf.buffer_to_rcv, ((*trans_desc)->rxlength+7)/8 );   
+            memcpy( (uint8_t*)&(*trans_desc)->rx_data[0], trans_buf.buffer_to_rcv, ((*trans_desc)->rxlength+7)/8 );
         } else {
             memcpy( (*trans_desc)->rx_buffer, trans_buf.buffer_to_rcv, ((*trans_desc)->rxlength+7)/8 );
         }
