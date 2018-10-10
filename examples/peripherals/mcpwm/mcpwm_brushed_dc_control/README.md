@@ -8,7 +8,7 @@ Motor first moves forward, then backward and then stops for 2 Secs each countinu
 
 
 ## Step 1: Pin assignment
-* GPIO15 is assigned as the enable/input 1 for motor driver    
+* GPIO15 is assigned as the enable/input 1 for motor driver
 * GPIO16 is assigned as the enable/input 2 for motor driver
 
 
@@ -19,4 +19,4 @@ Motor first moves forward, then backward and then stops for 2 Secs each countinu
 
 ## Step 3: Initialize MCPWM
 * You need to set the frequency and duty cycle of MCPWM timer
-* You need to set the MCPWM channel you want to use, and bind the channel with one of the timers
+* You need to set the MCPWM unit you want to use, and bind the unit with one of the timers
