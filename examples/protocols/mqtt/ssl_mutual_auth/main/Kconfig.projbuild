@@ -1,4 +1,4 @@
-menu "MQTT Application sample"
+menu "Example Configuration"
 
 config WIFI_SSID
     string "WiFi SSID"

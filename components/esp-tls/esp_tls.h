@@ -106,12 +106,12 @@ typedef struct esp_tls {
  
     mbedtls_x509_crt cacert;                                                    /*!< Container for the X.509 CA certificate */
 
+    mbedtls_x509_crt *cacert_ptr;                                               /*!< Pointer to the cacert being used. */
+
     mbedtls_x509_crt clientcert;                                                /*!< Container for the X.509 client certificate */
 
     mbedtls_pk_context clientkey;                                               /*!< Container for the private key of the client
                                                                                      certificate */
- 
-    mbedtls_x509_crt *cacert_ptr;                                               /*!< Pointer to the cacert being used. */
 
     int sockfd;                                                                 /*!< Underlying socket file descriptor. */
  
