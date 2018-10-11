@@ -207,24 +207,13 @@ class Page(object):
 
         if self.is_encrypt:
             encr_data_ret = self.encrypt_data(data, entrycount,nvs_obj)
-            if sys.version_info[0] < 3:
-                encr_data[0:len(encr_data_ret)] = encr_data_ret
-            else:
-                encr_data[0:len(encr_data_ret)] = encr_data_ret
-
+            encr_data[0:len(encr_data_ret)] = encr_data_ret
             data = encr_data
 
         data_offset = Page.FIRST_ENTRY_OFFSET + (Page.SINGLE_ENTRY_SIZE * self.entry_num)
         start_idx = data_offset
         end_idx = data_offset + len(data)
-        if not sys.version_info[0] < 3:
-            if type(data) == str:
-                self.page_buf[start_idx:end_idx]  = data
-            else:
-                self.page_buf[start_idx:end_idx]  = data
-        else:
-            self.page_buf[start_idx:end_idx]  = data
-
+        self.page_buf[start_idx:end_idx]  = data
 
         # Set bitmap array for entries in current page
         for i in range(0, entrycount):
