@@ -32,7 +32,7 @@ esp_transport_handle_t esp_transport_ssl_init();
 /**
  * @brief      Set SSL certificate data (as PEM format).
  *             Note that, this function stores the pointer to data, rather than making a copy.
- *             So we need to make sure to keep the data lifetime before cleanup the connection
+ *             So this data must remain valid until after the connection is cleaned up
  *
  * @param      t     ssl transport
  * @param[in]  data  The pem data
@@ -43,7 +43,7 @@ void esp_transport_ssl_set_cert_data(esp_transport_handle_t t, const char *data,
 /**
  * @brief      Set SSL client certificate data for mutual authentication (as PEM format).
  *             Note that, this function stores the pointer to data, rather than making a copy.
- *             So we need to make sure to keep the data lifetime before cleanup the connection
+ *             So this data must remain valid until after the connection is cleaned up
  *
  * @param      t     ssl transport
  * @param[in]  data  The pem data
@@ -54,7 +54,7 @@ void esp_transport_ssl_set_client_cert_data(esp_transport_handle_t t, const char
 /**
  * @brief      Set SSL client key data for mutual authentication (as PEM format).
  *             Note that, this function stores the pointer to data, rather than making a copy.
- *             So we need to make sure to keep the data lifetime before cleanup the connection
+ *             So this data must remain valid until after the connection is cleaned up
  *
  * @param      t     ssl transport
  * @param[in]  data  The pem data
