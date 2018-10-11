@@ -16,6 +16,8 @@
 #
 
 from __future__ import print_function
+from builtins import map, range
+from future.moves.itertools import zip_longest
 import sys
 import os
 import csv
@@ -24,8 +26,6 @@ import shutil
 import distutils.dir_util
 sys.path.insert(0, os.getenv('IDF_PATH') + "/components/nvs_flash/nvs_partition_generator/")
 import nvs_partition_gen
-if not sys.version_info[0] < 3:
-    from itertools import zip_longest
 
 def verify_values_exist(input_values_file, keys_in_values_file):
     """ Verify all keys have corresponding values in values file
@@ -33,21 +33,15 @@ def verify_values_exist(input_values_file, keys_in_values_file):
     line_no = 1
     key_count_in_values_file = len(keys_in_values_file)
 
-    if sys.version_info[0] < 3:
-        values_file = open(input_values_file, 'rb')
-    else:
-        values_file = open(input_values_file, 'r', newline='')
+    values_file = open(input_values_file, 'r')
     values_file_reader = csv.reader(values_file, delimiter=',')
-    if sys.version_info[0] < 3:
-        keys = values_file_reader.next()
-    else:
-        keys = next(values_file_reader)
+    keys = next(values_file_reader)
 
     for values_data in values_file_reader:
         line_no +=1
         if len(values_data) != key_count_in_values_file:
-            raise SystemExit("\nOops...Number of values is not equal to number of keys in file: '" + \
-            str(input_values_file) + "' at line No:" + str(line_no) )
+            raise SystemExit("\nOops...Number of values is not equal to number of keys in file: %s at line No:%s\n"\
+            % (str(input_values_file), str(line_no)))
 
 
 def verify_keys_exist(values_file_keys, input_config_file):
@@ -91,12 +85,12 @@ def verify_datatype_encoding(input_config_file):
     for config_data in config_file_reader:
         line_no+=1
         if config_data[1] not in valid_datatypes:
-            raise SystemExit("Oops...config file: `" + str(input_config_file) + \
-            "` has invalid datatype at line no:" + str(line_no))
+            raise SystemExit("Oops...config file: %s has invalid datatype at line no:%s\n`" \
+            % (str(input_config_file), str(line_no)))
         if 'namespace' not in config_data:
             if config_data[2] not in valid_encodings:
-                raise SystemExit("Oops...config file: `" + str(input_config_file) + \
-                "` has invalid encoding at line no:" + str(line_no))
+                raise SystemExit("Oops...config file: %s has invalid encoding at line no:%s\n`" \
+                % (str(input_config_file), str(line_no)))
 
 
 
@@ -110,9 +104,8 @@ def verify_file_data_count(input_config_file, keys_repeat):
     for line in config_file_reader:
         line_no += 1
         if len(line) != 3 and line[0] not in keys_repeat:
-            raise SystemExit("Oops...data missing in config file at line no: " + str(line_no) + \
-            " <format needed:key,type,encoding>")
-
+            raise SystemExit("Oops...data missing in config file at line no:%s <format needed:key,type,encoding>\n" \
+            % str(line_no) )
     config_file.close()
 
 
@@ -254,29 +247,17 @@ def set_repeat_value(total_keys_repeat, keys, csv_file):
     target_filename = filename + "_created" + file_ext
     with open(csv_file, 'r') as read_from, open(target_filename,'w') as write_to:
         csv_file_reader = csv.reader(read_from, delimiter=',')
-        if sys.version_info[0] < 3:
-            headers = csv_file_reader.next()
-            values = csv_file_reader.next()
-        else:
-            headers = next(csv_file_reader)
-            values = next(csv_file_reader)
-
-        if sys.version_info[0] < 3:
-            total_keys_values = map(None, keys, values)
-        else:
-            total_keys_values = list(zip_longest(keys, values))
-
+        headers = next(csv_file_reader)
+        values = next(csv_file_reader)
         csv_file_writer = csv.writer(write_to, delimiter=',')
         csv_file_writer.writerow(headers)
         csv_file_writer.writerow(values)
+        total_keys_values = list(zip_longest(keys, values))
 
         # read new data, add value if key has repeat tag, write to new file
         for row in csv_file_reader:
             index = -1
-            if sys.version_info[0] < 3:
-                key_val_new = map(None, keys, row)
-            else:
-                key_val_new = list(zip_longest(keys, row))
+            key_val_new = list(zip_longest(keys, row))
 
             key_val_pair = total_keys_values[:]
             key_repeated = total_keys_repeat[:]
@@ -371,11 +352,11 @@ file_identifier=None,output_dir_path=None):
 
         # Verify config file is not empty
         if os.stat(input_config_file).st_size == 0:
-            raise SystemExit("Oops...config file: " + input_config_file + " is empty...")
+            raise SystemExit("Oops...config file: %s is empty." % input_config_file)
 
         # Verify values file is not empty
         if os.stat(input_values_file).st_size == 0:
-            raise SystemExit("Oops...values file: " + input_values_file + " is empty...")
+            raise SystemExit("Oops...values file: %s is empty." % input_values_file )
 
         # Verify config file does not have empty lines
         csv_config_file = open(input_config_file,'r')
@@ -390,9 +371,9 @@ file_identifier=None,output_dir_path=None):
                         is_empty_line = False
                         break
                 if is_empty_line:
-                    raise SystemExit("Oops...config file: " + input_config_file + " cannot have empty lines...")
+                    raise SystemExit("Oops...config file: %s cannot have empty lines. " % input_config_file )
                 if not config_data:
-                    raise SystemExit("Oops...config file: " + input_config_file + " cannot have empty lines...")
+                    raise SystemExit("Oops...config file: %s cannot have empty lines." % input_config_file )
 
             csv_config_file.seek(0)
 
@@ -415,10 +396,7 @@ file_identifier=None,output_dir_path=None):
 
 
         # Verify values file does not have empty lines
-        if sys.version_info[0] < 3:
-            csv_values_file = open(input_values_file,'rb')
-        else:
-            csv_values_file = open(input_values_file,'r', newline='')
+        csv_values_file = open(input_values_file, 'r')
         try:
             values_file_reader = csv.reader(csv_values_file, delimiter=',')
             for values_data in values_file_reader:
@@ -430,17 +408,14 @@ file_identifier=None,output_dir_path=None):
                         is_empty_line = False
                         break
                 if is_empty_line:
-                    raise SystemExit("Oops...values file: " + input_values_file + " cannot have empty lines...")
+                    raise SystemExit("Oops...values file: %s cannot have empty lines." % input_values_file )
                 if not values_data:
-                    raise SystemExit("Oops...values file: " + input_values_file + " cannot have empty lines...")
+                    raise SystemExit("Oops...values file: %s cannot have empty lines." % input_values_file )
 
             csv_values_file.seek(0)
 
             # Extract keys from values file
-            if sys.version_info[0] < 3:
-                keys_in_values_file = values_file_reader.next()
-            else:
-                keys_in_values_file = next(values_file_reader)
+            keys_in_values_file = next(values_file_reader)
 
             csv_values_file.close()
         except Exception as e:
@@ -452,8 +427,8 @@ file_identifier=None,output_dir_path=None):
         # Verify file identifier exists in values file
         if file_identifier:
             if file_identifier not in keys_in_values_file:
-                raise SystemExit('Oops...target_file_identifier: ' + file_identifier + \
-                ' does not exist in values file...\n')
+                raise SystemExit('Oops...target_file_identifier: %s does not exist in values file.\n' % file_identifier )
+
 
         # Verify data in the input_config_file and input_values_file
         verify_data_in_file(input_config_file, input_values_file, keys_in_config_file,\
@@ -463,35 +438,20 @@ file_identifier=None,output_dir_path=None):
         config_data_to_write = add_config_data_per_namespace(input_config_file)
 
         try:
-            if sys.version_info[0] < 3:
-                with open(input_values_file,'rb') as csv_values_file:
-                    values_file_reader = csv.reader(csv_values_file, delimiter=',')
-                    keys = values_file_reader.next()
-            else:
-                with open(input_values_file,'r', newline='') as csv_values_file:
-                    values_file_reader = csv.reader(csv_values_file, delimiter=',')
-                    keys = next(values_file_reader)
+            with open(input_values_file, 'r') as csv_values_file:
+                values_file_reader = csv.reader(csv_values_file, delimiter=',')
+                keys = next(values_file_reader)
 
             target_values_file = set_repeat_value(keys_repeat, keys, input_values_file)
 
-            if sys.version_info[0] < 3:
-                csv_values_file = open(target_values_file, 'rb')
-            else:
-                csv_values_file = open(target_values_file, 'r', newline='')
+            csv_values_file = open(target_values_file, 'r')
 
             values_file_reader = csv.reader(csv_values_file, delimiter=',')
-            if sys.version_info[0] < 3:
-                values_file_reader.next()
-            else:
-                next(values_file_reader)
+            next(values_file_reader)
 
 
             for values_data_line in values_file_reader:
-                if sys.version_info[0] < 3:
-                    key_value_data = map(None,keys_in_values_file,values_data_line)
-                else:
-                    key_value_data = list(zip_longest(keys_in_values_file,values_data_line))
-
+                key_value_data = list(zip_longest(keys_in_values_file,values_data_line))
 
                 # Get file identifier value from values file
                 file_identifier_value = get_fileid_val(file_identifier, keys_in_config_file, \
@@ -507,7 +467,7 @@ file_identifier=None,output_dir_path=None):
                 csv_file_list.append(csv_filename)
                 output_csv_file = output_target_dir + csv_filename
                 if os.path.isfile(output_csv_file):
-                    raise SystemExit("Target csv file: `" + output_csv_file + "` already exists...")
+                    raise SystemExit("Target csv file: %s already exists.`" % output_csv_file )
 
                 # Add values corresponding to each key to csv target file
                 add_data_to_file(config_data_to_write, key_value_pair, output_csv_file)
@@ -519,7 +479,7 @@ file_identifier=None,output_dir_path=None):
                 output_bin_file = output_target_dir + target_file_name_prefix + "-" +\
                 file_identifier_value + ".bin"
                 if os.path.isfile(output_bin_file):
-                    raise SystemExit("Target csv file: `" + output_bin_file + "` already exists...")
+                    raise SystemExit("Target csv file: %s already exists.`" % output_bin_file )
 
                 # Create output csv and bin file
                 print("CSV Generated: ", str(output_csv_file))
