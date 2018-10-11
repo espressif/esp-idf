@@ -139,6 +139,9 @@ static char *esp_auth_req_to_str(esp_ble_auth_req_t auth_req)
     case ESP_LE_AUTH_REQ_MITM:
         auth_str = "ESP_LE_AUTH_REQ_MITM";
         break;
+    case ESP_LE_AUTH_REQ_BOND_MITM:
+        auth_str = "ESP_LE_AUTH_REQ_BOND_MITM";
+        break;
     case ESP_LE_AUTH_REQ_SC_ONLY:
         auth_str = "ESP_LE_AUTH_REQ_SC_ONLY";
         break;

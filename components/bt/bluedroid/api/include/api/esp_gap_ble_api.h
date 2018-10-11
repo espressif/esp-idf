@@ -54,6 +54,7 @@ typedef uint8_t esp_ble_key_type_t;
 #define ESP_LE_AUTH_NO_BOND                 0x00                                     /*!< 0*/                     /* relate to BTM_LE_AUTH_NO_BOND in stack/btm_api.h */
 #define ESP_LE_AUTH_BOND                    0x01                                     /*!< 1 << 0 */               /* relate to BTM_LE_AUTH_BOND in stack/btm_api.h */
 #define ESP_LE_AUTH_REQ_MITM                (1 << 2)                                 /*!< 1 << 2 */               /* relate to BTM_LE_AUTH_REQ_MITM in stack/btm_api.h */
+#define ESP_LE_AUTH_REQ_BOND_MITM           (ESP_LE_AUTH_BOND | ESP_LE_AUTH_REQ_MITM)/*!< 0101*/
 #define ESP_LE_AUTH_REQ_SC_ONLY             (1 << 3)                                 /*!< 1 << 3 */               /* relate to BTM_LE_AUTH_REQ_SC_ONLY in stack/btm_api.h */
 #define ESP_LE_AUTH_REQ_SC_BOND             (ESP_LE_AUTH_BOND | ESP_LE_AUTH_REQ_SC_ONLY)            /*!< 1001 */  /* relate to BTM_LE_AUTH_REQ_SC_BOND in stack/btm_api.h */
 #define ESP_LE_AUTH_REQ_SC_MITM             (ESP_LE_AUTH_REQ_MITM | ESP_LE_AUTH_REQ_SC_ONLY)        /*!< 1100 */  /* relate to BTM_LE_AUTH_REQ_SC_MITM in stack/btm_api.h */
