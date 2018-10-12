@@ -18,7 +18,22 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include "esp_err.h"
+
+typedef enum {
+    ESP_SPIRAM_SIZE_32MBITS = 0,   /*!< SPI RAM size is 32 MBits */
+    ESP_SPIRAM_SIZE_64MBITS = 1,   /*!< SPI RAM size is 64 MBits */
+    ESP_SPIRAM_SIZE_INVALID,       /*!< SPI RAM size is invalid */
+} esp_spiram_size_t;
+
+/**
+ * @brief get SPI RAM size
+ * @return
+ *     - ESP_SPIRAM_SIZE_INVALID if SPI RAM not enabled or not valid
+ *     - SPI RAM size
+ */
+esp_spiram_size_t esp_spiram_get_chip_size();
 
 /**
  * @brief Initialize spiram interface/hardware. Normally called from cpu_start.c.
