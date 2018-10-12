@@ -16,7 +16,7 @@
 #
 
 from __future__ import print_function
-from builtins import map, range
+from builtins import range
 from future.moves.itertools import zip_longest
 import sys
 import os
@@ -26,6 +26,7 @@ import shutil
 import distutils.dir_util
 sys.path.insert(0, os.getenv('IDF_PATH') + "/components/nvs_flash/nvs_partition_generator/")
 import nvs_partition_gen
+
 
 def verify_values_exist(input_values_file, keys_in_values_file):
     """ Verify all keys have corresponding values in values file
@@ -288,7 +289,7 @@ file_identifier=None,output_dir_path=None):
             parser.add_argument("--size",
                                 dest='part_size',
                                 required=True,
-                                help='Size of NVS Partition in hex (must be multiple of 4096). Eg. 0x1000')
+                                help='Size of NVS Partition in bytes (must be multiple of 4096)')
 
             parser.add_argument('--conf',
                                 dest='config_file',
