@@ -204,6 +204,7 @@ static void *btc_spp_rfcomm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *u
         slot->connected = TRUE;
         slot->rfc_handle = p_data->rfc_srv_open.handle;
         slot->rfc_port_handle = BTA_JvRfcommGetPortHdl(p_data->rfc_srv_open.handle);
+        BTA_JvSetPmProfile(p_data->rfc_srv_open.handle, BTA_JV_PM_ALL, BTA_JV_CONN_OPEN);
         break;
     case BTA_JV_RFCOMM_OPEN_EVT:
         slot = spp_find_slot_by_id(id);
@@ -214,6 +215,7 @@ static void *btc_spp_rfcomm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *u
         slot->connected = TRUE;
         slot->rfc_handle = p_data->rfc_open.handle;
         slot->rfc_port_handle = BTA_JvRfcommGetPortHdl(p_data->rfc_open.handle);
+        BTA_JvSetPmProfile(p_data->rfc_open.handle, BTA_JV_PM_ID_1, BTA_JV_CONN_OPEN);
         break;
     case BTA_JV_RFCOMM_CLOSE_EVT:
         slot = spp_find_slot_by_id(id);

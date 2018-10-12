@@ -181,6 +181,7 @@ typedef UINT16 tBTA_SEC;
 /* Ignore for Discoverable, Connectable only for LE modes */
 #define BTA_DM_LE_IGNORE           0xFF00
 
+#define BTA_APP_ID_1               1    /* PM example profile 1 */
 #define BTA_APP_ID_PAN_MULTI    0xFE    /* app id for pan multiple connection */
 #define BTA_ALL_APP_ID          0xFF
 
@@ -1216,6 +1217,10 @@ typedef UINT8 tBTA_DM_PM_ACTION;
 
 #ifndef BTA_DM_PM_SNIFF_A2DP_IDX
 #define BTA_DM_PM_SNIFF_A2DP_IDX      BTA_DM_PM_SNIFF
+#endif
+
+#ifndef BTA_DM_PM_SNIFF_JV_IDX
+#define BTA_DM_PM_SNIFF_JV_IDX      BTA_DM_PM_SNIFF
 #endif
 
 #ifndef BTA_DM_PM_SNIFF_HD_IDLE_IDX
