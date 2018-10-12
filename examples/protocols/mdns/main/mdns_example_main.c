@@ -29,11 +29,12 @@
 #define EXAMPLE_WIFI_SSID CONFIG_WIFI_SSID
 #define EXAMPLE_WIFI_PASS CONFIG_WIFI_PASSWORD
 
-#define EXAMPLE_MDNS_HOSTNAME CONFIG_MDNS_HOSTNAME
 #define EXAMPLE_MDNS_INSTANCE CONFIG_MDNS_INSTANCE
+
 
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 static EventGroupHandle_t wifi_event_group;
+static const char c_config_hostname[] = CONFIG_MDNS_HOSTNAME;
 
 /* The event group allows multiple bits for each event,
    but we only care about one event - are we connected
@@ -97,10 +98,20 @@ static void initialise_wifi(void)
 
 static void initialise_mdns(void)
 {
+    _Static_assert(sizeof(c_config_hostname) < CONFIG_MAIN_TASK_STACK_SIZE/2, "Configured mDNS name consumes more than half of the stack. Please select a shorter host name or extend the main stack size please.");
+    const size_t config_hostname_len = sizeof(c_config_hostname) - 1; // without term char
+    char hostname[config_hostname_len + 1 + 3*2 + 1]; // adding underscore + 3 digits + term char
+    uint8_t mac[6];
+
+    // adding 3 LSBs from mac addr to setup a board specific name
+    esp_read_mac(mac, ESP_MAC_WIFI_STA);
+    snprintf(hostname, sizeof(hostname), "%s_%02x%02X%02X", c_config_hostname, mac[3], mac[4], mac[5]);
+
     //initialize mDNS
     ESP_ERROR_CHECK( mdns_init() );
     //set mDNS hostname (required if you want to advertise services)
-    ESP_ERROR_CHECK( mdns_hostname_set(EXAMPLE_MDNS_HOSTNAME) );
+    ESP_ERROR_CHECK( mdns_hostname_set(hostname) );
+    ESP_LOGI(TAG, "mdns hostname set to: [%s]", hostname);
     //set default mDNS instance name
     ESP_ERROR_CHECK( mdns_instance_name_set(EXAMPLE_MDNS_INSTANCE) );
 
@@ -191,7 +202,7 @@ static void query_mdns_host(const char * host_name)
         return;
     }
 
-    ESP_LOGI(TAG, IPSTR, IP2STR(&addr));
+    ESP_LOGI(TAG, "Query A: %s.local resolved to: " IPSTR, host_name, IP2STR(&addr));
 }
 
 static void initialise_button(void)
@@ -228,6 +239,12 @@ static void mdns_example_task(void *pvParameters)
     /* Wait for the callback to set the CONNECTED_BIT in the event group. */
     xEventGroupWaitBits(wifi_event_group, IP4_CONNECTED_BIT | IP6_CONNECTED_BIT,
                      false, true, portMAX_DELAY);
+
+#if CONFIG_RESOLVE_TEST_SERVICES == 1
+    /* Send initial queries that are started by CI tester */
+    query_mdns_host("tinytester");
+#endif
+
     while(1) {
         check_button();
         vTaskDelay(50 / portTICK_PERIOD_MS);
