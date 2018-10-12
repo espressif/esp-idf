@@ -18,7 +18,7 @@
 # limitations under the License.
 #
 
-from __future__ import division, print_function #, unicode_literals
+from __future__ import division, print_function
 from builtins import int, range
 from io import open
 import sys
@@ -732,7 +732,7 @@ def main():
 
     parser.add_argument(
             "size",
-            help='Size of NVS Partition in hex (must be multiple of 4096). Eg. 0x1000')
+            help='Size of NVS Partition in bytes (must be multiple of 4096)')
 
     parser.add_argument(
             "--version",
