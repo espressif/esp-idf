@@ -120,7 +120,7 @@ The mfg\_gen.py utility is using the generated CSV Configuration file and Master
 +------------------------+----------------------------------------------------------------------------------------------+
 |   Arguments            |                                     Description                                              |                                   
 +========================+==============================================================================================+
-| --size PART_SIZE       |  Size of NVS Partition in hex (must be multiple of 4096). Eg. 0x1000                         |
+| --size PART_SIZE       |  Size of NVS Partition in bytes (must be multiple of 4096)                                   |
 +------------------------+----------------------------------------------------------------------------------------------+
 | --conf CONFIG_FILE     |  the input configuration csv file                                                            |
 +------------------------+----------------------------------------------------------------------------------------------+
