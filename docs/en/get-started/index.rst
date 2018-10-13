@@ -326,7 +326,7 @@ Some environment variables can be specified whilst calling ``make`` allowing use
 +=================+==============================================================+
 | ``ESPPORT``     | Overrides the serial port used in ``flash`` and ``monitor``. |
 |                 |                                                              |
-|                 | Examples: ``make flash ESPPORT=/dev/tty/USB0``,              |
+|                 | Examples: ``make flash ESPPORT=/dev/ttyUSB1``,               |
 |                 | ``make monitor ESPPORT=COM1``                                |
 +-----------------+--------------------------------------------------------------+
 | ``ESPBAUD``     | Overrides the serial baud rate when flashing the ESP32.      |
@@ -339,7 +339,7 @@ Some environment variables can be specified whilst calling ``make`` allowing use
 +-----------------+--------------------------------------------------------------+
 
 .. note::
-    Users can export environment variables (e.g. ``export ESPPORT=/dev/tty/USB0``).
+    Users can export environment variables (e.g. ``export ESPPORT=/dev/ttyUSB1``).
     All subsequent calls of ``make`` within the same terminal session will use 
     the exported value given that the variable is not simultaneously overridden.
 
