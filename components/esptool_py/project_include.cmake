@@ -28,15 +28,50 @@ if(CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION)
     set(PHY_PARTITION_BIN_FILE "esp32/phy_init_data.bin")
 endif()
 
+
+
 #
-# Add 'app.bin' target - generates with elf2image
+#  App Signing
 #
-add_custom_command(OUTPUT "${PROJECT_NAME}.bin"
-    COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS} -o "${PROJECT_NAME}.bin" "${PROJECT_NAME}.elf"
-    DEPENDS ${PROJECT_NAME}.elf
-    VERBATIM
-    )
+if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES AND NOT BOOTLOADER_BUILD)
+
+    #
+    # Add 'unsinged_app.bid' output to be signed later
+    #
+    add_custom_command(OUTPUT "UNSIGNED_${PROJECT_NAME}.bin"
+            COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS} -o "UNSIGNED_${PROJECT_NAME}.bin" "${PROJECT_NAME}.elf"
+            DEPENDS ${PROJECT_NAME}.elf
+            VERBATIM
+            )
+
+    # get signing key
+    get_filename_component(secure_boot_signing_key
+            "${CONFIG_SECURE_BOOT_SIGNING_KEY}"
+            ABSOLUTE BASE_DIR "${PROJECT_PATH}")
+
+    # sign to bin
+    add_custom_command(OUTPUT "${PROJECT_NAME}.bin"
+            COMMAND "${PYTHON}" "${ESPSECUREPY}" sign_data --keyfile "${secure_boot_signing_key}"
+            -o "${PROJECT_NAME}.bin" "UNSIGNED_${PROJECT_NAME}.bin"
+            DEPENDS "UNSIGNED_${PROJECT_NAME}.bin"
+            VERBATIM
+            )
+
+else()
+    #
+    #  generates with elf2image directly, no signing
+    #
+    add_custom_command(OUTPUT "${PROJECT_NAME}.bin"
+            COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS} -o "${PROJECT_NAME}.bin" "${PROJECT_NAME}.elf"
+            DEPENDS ${PROJECT_NAME}.elf
+            VERBATIM
+            )
+endif()
+
+# Add 'app.bin' target
 add_custom_target(app ALL DEPENDS "${PROJECT_NAME}.bin")
+
+
 
 #
 # Add 'flash' target - not all build systems can run this directly
