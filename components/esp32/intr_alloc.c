@@ -706,13 +706,18 @@ esp_err_t IRAM_ATTR esp_intr_set_in_iram(intr_handle_t handle, bool is_in_iram)
     return ESP_OK;
 }
 
+static void esp_intr_free_cb(void *arg)
+{
+    (void)esp_intr_free((intr_handle_t)arg);
+}
+
 esp_err_t esp_intr_free(intr_handle_t handle)
 {
     bool free_shared_vector=false;
     if (!handle) return ESP_ERR_INVALID_ARG;
     //Assign this routine to the core where this interrupt is allocated on.
     if (handle->vector_desc->cpu!=xPortGetCoreID()) {
-        esp_err_t ret = esp_ipc_call_blocking(handle->vector_desc->cpu, (esp_ipc_func_t)&esp_intr_free, (void *)handle);
+        esp_err_t ret = esp_ipc_call_blocking(handle->vector_desc->cpu, &esp_intr_free_cb, (void *)handle);
         return ret == ESP_OK ? ESP_OK : ESP_FAIL;
     }
     portENTER_CRITICAL(&spinlock);
