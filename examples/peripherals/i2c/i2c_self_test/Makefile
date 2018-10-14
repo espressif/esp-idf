@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := i2c
+PROJECT_NAME := i2c-example
 
 include $(IDF_PATH)/make/project.mk
 
