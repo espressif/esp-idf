@@ -48,7 +48,7 @@ ESP-IDF 编程指南
    版权 <COPYRIGHT>
    关于 <about>
    Languages/语言 <languages>
-   下载 <https://readthedocs.com/projects/espressif-esp-idf/downloads/>
+   指南下载 <https://readthedocs.com/projects/espressif-esp-idf/downloads/>
 
 
 * :ref:`genindex`

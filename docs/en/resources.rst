@@ -16,4 +16,4 @@ Resources
 
 * For additional ESP32 product related information, please refer to `documentation <https://espressif.com/en/support/download/documents>`_ section of `Espressif <https://espressif.com/en/support/download/documents>`__ site.
 
-* Mirror of this documentation is available under: https://espressif-docs.readthedocs-hosted.com/projects/esp-idf/en/latest/ and https://dl.espressif.com/doc/esp-idf/latest/.
+* `Download <https://readthedocs.com/projects/espressif-esp-idf/downloads/>`_ latest and previous versions of this documentation in PDF and HTML format.
