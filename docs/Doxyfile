@@ -147,6 +147,8 @@ INPUT = \
     ../../components/heap/include/esp_heap_trace.h \
     ../../components/heap/include/esp_heap_caps_init.h \
     ../../components/heap/include/multi_heap.h \
+    ## Himem
+    ../../components/esp32/include/esp_himem.h \
     ## Interrupt Allocation
     ../../components/esp32/include/esp_intr_alloc.h \
     ## Watchdogs

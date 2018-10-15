@@ -8,6 +8,7 @@ System API
    FreeRTOS Additions <freertos_additions>
    Heap Memory Allocation <mem_alloc>
    Heap Memory Debugging <heap_debug>
+   Himem (large external SPI RAM) API <himem>
    Interrupt Allocation <intr_alloc>
    Watchdogs <wdts>
    Inter-Processor Call <ipc>
