@@ -26,26 +26,16 @@
 #define LAN8720_PHY_ID2_MASK 0xFFF0
 
 /* LAN8720-specific registers */
-#define SW_STRAP_CONTROL_REG       (0x9)
-#define SW_STRAP_CONFIG_DONE               BIT(15)
-#define AUTO_MDIX_ENABLE                   BIT(14)
-#define AUTO_NEGOTIATION_ENABLE            BIT(13)
-#define AN_1                               BIT(12)
-#define AN_0                               BIT(11)
-#define LED_CFG                            BIT(10)
-#define RMII_ENHANCED_MODE                 BIT(9)
 
-#define DEFAULT_STRAP_CONFIG (AUTO_MDIX_ENABLE|AUTO_NEGOTIATION_ENABLE|AN_1|AN_0|LED_CFG)
-
-#define PHY_SPECIAL_CONTROL_STATUS_REG    (0x1f)
+#define PHY_SPECIAL_CONTROL_STATUS_REG     (0x1f)
 #define AUTO_NEGOTIATION_DONE              BIT(12)
+#define DUPLEX_INDICATION_FULL             BIT(4)
+#define SPEED_INDICATION_100T              BIT(3)
+#define SPEED_INDICATION_10T               BIT(2)
 #define SPEED_DUPLEX_INDICATION_10T_HALF   0x04
 #define SPEED_DUPLEX_INDICATION_10T_FULL   0x14
 #define SPEED_DUPLEX_INDICATION_100T_HALF  0x08
 #define SPEED_DUPLEX_INDICATION_100T_FULL  0x18
-#define SPEED_INDICATION_100T              BIT(3)
-#define SPEED_INDICATION_10T               BIT(2)
-#define DUPLEX_INDICATION_FULL             BIT(4)
 
 static const char *TAG = "lan8720";
 
@@ -82,7 +72,9 @@ eth_duplex_mode_t phy_lan8720_get_duplex_mode(void)
 void phy_lan8720_power_enable(bool enable)
 {
     if (enable) {
-        esp_eth_smi_write(SW_STRAP_CONTROL_REG, DEFAULT_STRAP_CONFIG | SW_STRAP_CONFIG_DONE);
+        uint32_t data = esp_eth_smi_read(MII_BASIC_MODE_CONTROL_REG);
+        data |= MII_AUTO_NEGOTIATION_ENABLE | MII_RESTART_AUTO_NEGOTIATION;
+        esp_eth_smi_write(MII_BASIC_MODE_CONTROL_REG, data);
         // TODO: only enable if config.flow_ctrl_enable == true
         phy_mii_enable_flow_ctrl();
     }
@@ -100,8 +92,9 @@ esp_err_t phy_lan8720_init(void)
     res1 = esp_eth_smi_wait_value(MII_PHY_IDENTIFIER_1_REG, LAN8720_PHY_ID1, UINT16_MAX, 1000);
     res2 = esp_eth_smi_wait_value(MII_PHY_IDENTIFIER_2_REG, LAN8720_PHY_ID2, LAN8720_PHY_ID2_MASK, 1000);
 
-    esp_eth_smi_write(SW_STRAP_CONTROL_REG,
-                      DEFAULT_STRAP_CONFIG | SW_STRAP_CONFIG_DONE);
+    uint32_t data = esp_eth_smi_read(MII_BASIC_MODE_CONTROL_REG);
+    data |= MII_AUTO_NEGOTIATION_ENABLE | MII_RESTART_AUTO_NEGOTIATION;
+    esp_eth_smi_write(MII_BASIC_MODE_CONTROL_REG, data);
 
     ets_delay_us(300);
 
