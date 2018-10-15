@@ -56,7 +56,7 @@ void esp_spiram_init_cache();
 
 /**
  * @brief Memory test for SPI RAM. Should be called after SPI RAM is initialized and
- * (in case of a dual-core system) the app CPU is online. This test overwrites the 
+ * (in case of a dual-core system) the app CPU is online. This test overwrites the
  * memory with crap, so do not call after e.g. the heap allocator has stored important
  * stuff in SPI RAM.
  *
@@ -100,6 +100,16 @@ void esp_spiram_writeback_cache();
  *          - ESP_ERR_NO_MEM when no memory available for pool
  */
 esp_err_t esp_spiram_reserve_dma_pool(size_t size);
+
+
+/**
+ * @brief If SPI RAM(PSRAM) has been initialized
+ *
+ * @return
+ *          - true SPI RAM has been initialized successfully
+ *          - false SPI RAM hasn't been initialized or initialized failed
+ */
+bool esp_spiram_is_initialized(void);
 
 
 #endif

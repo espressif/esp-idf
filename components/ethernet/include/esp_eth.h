@@ -28,10 +28,10 @@ typedef enum {
     ETH_MODE_MII,
 } eth_mode_t;
 
-typedef enum  {
+typedef enum {
     ETH_CLOCK_GPIO0_IN = 0,
     ETH_CLOCK_GPIO16_OUT = 2,
-    ETH_CLOCK_GPIO17_OUT = 3,
+    ETH_CLOCK_GPIO17_OUT = 3
 } eth_clock_mode_t;
 
 typedef enum {
@@ -94,23 +94,21 @@ typedef void (*eth_phy_power_enable_func)(bool enable);
  *
  */
 typedef struct {
-    eth_phy_base_t  phy_addr;                   /*!< phy base addr (0~31) */
-    eth_mode_t mac_mode;                        /*!< mac mode only support RMII now */
-    eth_clock_mode_t clock_mode;                /*!< external/internal clock mode selecton */
-    eth_tcpip_input_func tcpip_input;           /*!< tcpip input func  */
-    eth_phy_func phy_init;                      /*!< phy init func  */
-    eth_phy_check_link_func phy_check_link;     /*!< phy check link func  */
-    eth_phy_check_init_func phy_check_init;     /*!< phy check init func  */
-    eth_phy_get_speed_mode_func phy_get_speed_mode;     /*!< phy check init func  */
-    eth_phy_get_duplex_mode_func phy_get_duplex_mode;     /*!< phy check init func  */
-    eth_gpio_config_func gpio_config;           /*!< gpio config func  */
-    bool flow_ctrl_enable;                      /*!< flag of flow ctrl enable */
-    eth_phy_get_partner_pause_enable_func  phy_get_partner_pause_enable; /*!< get partner pause enable */
-    eth_phy_power_enable_func  phy_power_enable;  /*!< enable or disable phy power */
-    uint32_t reset_timeout_ms;                  /*!< timeout value for reset emac */
-
+    eth_phy_base_t phy_addr;                                            /*!< phy base addr (0~31) */
+    eth_mode_t mac_mode;                                                /*!< mac mode only support RMII now */
+    eth_clock_mode_t clock_mode;                                        /*!< external/internal clock mode selecton */
+    eth_tcpip_input_func tcpip_input;                                   /*!< tcpip input func  */
+    eth_phy_func phy_init;                                              /*!< phy init func  */
+    eth_phy_check_link_func phy_check_link;                             /*!< phy check link func  */
+    eth_phy_check_init_func phy_check_init;                             /*!< phy check init func  */
+    eth_phy_get_speed_mode_func phy_get_speed_mode;                     /*!< phy check init func  */
+    eth_phy_get_duplex_mode_func phy_get_duplex_mode;                   /*!< phy check init func  */
+    eth_gpio_config_func gpio_config;                                   /*!< gpio config func  */
+    bool flow_ctrl_enable;                                              /*!< flag of flow ctrl enable */
+    eth_phy_get_partner_pause_enable_func phy_get_partner_pause_enable; /*!< get partner pause enable */
+    eth_phy_power_enable_func phy_power_enable;                         /*!< enable or disable phy power */
+    uint32_t reset_timeout_ms;                                          /*!< timeout value for reset emac */
 } eth_config_t;
-
 
 /**
  * @brief  Init ethernet mac
