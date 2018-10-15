@@ -159,7 +159,9 @@ static void IRAM_ATTR suspend_uarts()
 {
     for (int i = 0; i < 3; ++i) {
         REG_SET_BIT(UART_FLOW_CONF_REG(i), UART_FORCE_XOFF);
-        uart_tx_wait_idle(i);
+        while (REG_GET_FIELD(UART_STATUS_REG(i), UART_ST_UTX_OUT) != 0) {
+            ;
+        }
     }
 }
 

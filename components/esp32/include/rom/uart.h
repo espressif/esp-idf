@@ -267,9 +267,11 @@ void uart_tx_flush(uint8_t uart_no);
   * here for compatibility.
   */
 static inline void IRAM_ATTR uart_tx_wait_idle(uint8_t uart_no) {
-    while(REG_GET_FIELD(UART_STATUS_REG(uart_no), UART_ST_UTX_OUT)) {
-        ;
-    }
+    uint32_t status;
+    do {
+        status = READ_PERI_REG(UART_STATUS_REG(uart_no));
+        /* either tx count or state is non-zero */
+    } while ((status & (UART_ST_UTX_OUT_M | UART_TXFIFO_CNT_M)) != 0);
 }
 
 /**
