@@ -19,6 +19,7 @@ else()
 
     set(COMPONENT_SRCS "brownout.c"
                    "cache_err_int.c"
+                   "cache_sram_mmu.c"
                    "clk.c"
                    "coexist.c"
                    "core_dump.c"
@@ -30,6 +31,7 @@ else()
                    "esp_err_to_name.c"
                    "esp_timer.c"
                    "esp_timer_esp32.c"
+                   "esp_himem.c"
                    "ets_timer_legacy.c"
                    "event_default_handlers.c"
                    "event_loop.c"
