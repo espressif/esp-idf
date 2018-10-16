@@ -90,6 +90,7 @@ public class BLEProvisionLanding extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 progressBar.setVisibility(View.VISIBLE);
+                bluetoothDevices.clear();
                 adapter.clear();
                 bleTransport.scan(transportListener);
             }
@@ -104,10 +105,19 @@ public class BLEProvisionLanding extends AppCompatActivity {
         transportListener = new BLETransport.BLETransportListener() {
             @Override
             public void onPeripheralsFound(ArrayList<BluetoothDevice> devices) {
-
+                boolean deviceExists = false;
                 for(BluetoothDevice device:devices) {
-                    bluetoothDevices.add(device);
-                    adapter.add(device.getName());
+                    for(BluetoothDevice alreadyHere: bluetoothDevices) {
+                        if (device.equals(alreadyHere)) {
+                            deviceExists = true;
+                            break;
+                        }
+                    }
+                    if (!deviceExists) {
+                        bluetoothDevices.add(device);
+                        adapter.add(device.getName());
+                    }
+                    deviceExists = false;
                 }
                 progressBar.setVisibility(View.GONE);
             }

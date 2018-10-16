@@ -288,17 +288,17 @@ public class BLETransport implements Transport {
             final ScanCallback scanCallback = new ScanCallback() {
                 @Override
                 public void onScanResult(int callbackType, ScanResult result) {
+                    boolean deviceExists = false;
                     Log.d(TAG, "Got scan result");
-                    if(bluetoothDevices.size() > 0) {
-                        for(BluetoothDevice device:bluetoothDevices) {
-                            if(!device.equals(result.getDevice())) {
-                                String deviceName = result.getDevice().getName();
-                                if(deviceName != null && deviceName.startsWith(deviceNamePrefix)) {
-                                    bluetoothDevices.add(result.getDevice());
-                                }
-                            }
+
+                    for(BluetoothDevice device:bluetoothDevices) {
+                        if(device.equals(result.getDevice())) {
+                            deviceExists = true;
+                            break;
                         }
-                    } else {
+                    }
+
+                    if (!deviceExists) {
                         String deviceName = result.getDevice().getName();
                         if(deviceName != null && deviceName.startsWith(deviceNamePrefix)) {
                             bluetoothDevices.add(result.getDevice());
