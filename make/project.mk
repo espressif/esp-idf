@@ -310,6 +310,15 @@ COMPONENT_INCLUDES += $(abspath $(BUILD_DIR_BASE)/include/)
 
 export COMPONENT_INCLUDES
 
+# Create the component list preprocessor definition
+COMPONENT_DECLARATION := 
+COMPONENT_DECLARATION += $(addprefix -D_DECL_, $(COMPONENT_LIBRARIES))
+export COMPONENT_DECLARATION
+ 
+
+# Set variables common to both project & component
+include $(IDF_PATH)/make/common.mk
+
 all:
 ifdef CONFIG_SECURE_BOOT_ENABLED
 	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
@@ -444,6 +453,7 @@ CFLAGS := $(strip \
 	$(COMMON_FLAGS) \
 	$(COMMON_WARNING_FLAGS) -Wno-old-style-declaration \
 	$(CFLAGS) \
+	$(COMPONENT_DECLARATION) \
 	$(EXTRA_CFLAGS))
 
 # List of flags to pass to C++ compiler
@@ -457,6 +467,7 @@ CXXFLAGS := $(strip \
 	$(COMMON_FLAGS) \
 	$(COMMON_WARNING_FLAGS) \
 	$(CXXFLAGS) \
+	$(COMPONENT_DECLARATION) \
 	$(EXTRA_CXXFLAGS))
 
 ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
