@@ -11,6 +11,8 @@
 #include "lwip/dns.h"
 #include "netif/etharp.h"
 
+#ifndef BUILDING_DEF
+
 void __assert_func(const char *file, int line, const char *func, const char *expr)
 {
     printf("Assert failed in %s, %s:%d (%s)", func, file, line, expr);
@@ -30,3 +32,5 @@ void dhcp_test_dhcp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const i
 {
     dhcp_test_static_dhcp_recv(arg, pcb, p, addr, port);
 }
+
+#endif /* BUILDING_DEF */

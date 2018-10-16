@@ -19,69 +19,68 @@ uint32_t g_random_numbers_cnt = 0;
 
 struct pbuf* pbuf_skip(struct pbuf* in, u16_t in_offset, u16_t* out_offset)
 {
-  u16_t offset_left = in_offset;
-  struct pbuf* q = in;
+    u16_t offset_left = in_offset;
+    struct pbuf* q = in;
 
-  /* get the correct pbuf */
-  while ((q != NULL) && (q->len <= offset_left)) {
-    offset_left -= q->len;
-    q = q->next;
-  }
-  if (out_offset != NULL) {
-    *out_offset = offset_left;
-  }
-  return q;
+    /* get the correct pbuf */
+    while ((q != NULL) && (q->len <= offset_left)) {
+        offset_left -= q->len;
+        q = q->next;
+    }
+    if (out_offset != NULL) {
+        *out_offset = offset_left;
+    }
+    return q;
+}
+
+int pbuf_try_get_at(const struct pbuf* p, u16_t offset)
+{
+    u16_t q_idx;
+    struct pbuf* q = pbuf_skip(p, offset, &q_idx);
+
+    /* return requested data if pbuf is OK */
+    if ((q != NULL) && (q->len > q_idx)) {
+        return ((u8_t*)q->payload)[q_idx];
+    }
+    return -1;
 }
 
 void pbuf_put_at(struct pbuf* p, u16_t offset, u8_t data)
 {
-  u16_t q_idx;
-  struct pbuf* q = pbuf_skip(p, offset, &q_idx);
+    u16_t q_idx;
+    struct pbuf* q = pbuf_skip(p, offset, &q_idx);
 
-  /* write requested data if pbuf is OK */
-  if ((q != NULL) && (q->len > q_idx)) {
-    ((u8_t*)q->payload)[q_idx] = data;
-  }
+    /* write requested data if pbuf is OK */
+    if ((q != NULL) && (q->len > q_idx)) {
+        ((u8_t*)q->payload)[q_idx] = data;
+    }
 }
 
-u8_t pbuf_get_at(struct pbuf* p, u16_t offset)
+u8_t pbuf_get_at(const struct pbuf* p, u16_t offset)
 {
-  u16_t q_idx;
-  struct pbuf* q = pbuf_skip(p, offset, &q_idx);
+    u16_t q_idx;
+    struct pbuf* q = pbuf_skip(p, offset, &q_idx);
 
-  /* return requested data if pbuf is OK */
-  if ((q != NULL) && (q->len > q_idx)) {
-    return ((u8_t*)q->payload)[q_idx];
-  }
-  return 0;
+    /* return requested data if pbuf is OK */
+    if ((q != NULL) && (q->len > q_idx)) {
+        return ((u8_t*)q->payload)[q_idx];
+    }
+    return 0;
 }
 
 err_t pbuf_take(struct pbuf *buf, const void *dataptr, u16_t len)
 {
-  return ERR_OK;
+    return ERR_OK;
 }
 
 err_t pbuf_take_at(struct pbuf *buf, const void *dataptr, u16_t len, u16_t offset)
 {
-  return ERR_OK;
+    return ERR_OK;
 }
 
 struct udp_pcb * udp_new_ip_type(u8_t type)
 {
- return &mock_pcb;
-}
-
-u16_t lwip_htons(u16_t n)
-{
-    return ((n & 0xff) << 8) | ((n & 0xff00) >> 8);
-}
-
-u32_t lwip_htonl(u32_t n)
-{
-return ((n & 0xff) << 24) |
-    ((n & 0xff00) << 8) |
-    ((n & 0xff0000UL) >> 8) |
-    ((n & 0xff000000UL) >> 24);
+    return &mock_pcb;
 }
 
 esp_err_t tcpip_adapter_get_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_ip_info_t *ip_info)
@@ -123,7 +122,7 @@ void udp_remove(struct udp_pcb *pcb)
 {
     if (pcb == NULL)
     {
-        free(pcb);
+       free(pcb);
     }
 }
 
@@ -162,11 +161,6 @@ err_t etharp_query(struct netif *netif, const ip4_addr_t *ipaddr, struct pbuf *q
     return ESP_OK;
 }
 
-u32_t lwip_ntohl(u32_t x)
-{
-    return lwip_htonl(x);
-}
-
 void netif_set_addr(struct netif *netif, const ip4_addr_t *ipaddr, const ip4_addr_t *netmask,
                     const ip4_addr_t *gw)
 {
@@ -184,41 +178,41 @@ void pbuf_realloc(struct pbuf *p, u16_t size)
     }
 }
 
-u16_t pbuf_copy_partial(struct pbuf *buf, void *dataptr, u16_t len, u16_t offset)
+u16_t pbuf_copy_partial(const struct pbuf *buf, void *dataptr, u16_t len, u16_t offset)
 {
-  struct pbuf *p;
-  u16_t left;
-  u16_t buf_copy_len;
-  u16_t copied_total = 0;
+    struct pbuf *p;
+    u16_t left;
+    u16_t buf_copy_len;
+    u16_t copied_total = 0;
 
-  LWIP_ERROR("pbuf_copy_partial: invalid buf", (buf != NULL), return 0;);
-  LWIP_ERROR("pbuf_copy_partial: invalid dataptr", (dataptr != NULL), return 0;);
+    LWIP_ERROR("pbuf_copy_partial: invalid buf", (buf != NULL), return 0;);
+    LWIP_ERROR("pbuf_copy_partial: invalid dataptr", (dataptr != NULL), return 0;);
 
-  left = 0;
+    left = 0;
 
-  if ((buf == NULL) || (dataptr == NULL)) {
-    return 0;
-  }
-
-  /* Note some systems use byte copy if dataptr or one of the pbuf payload pointers are unaligned. */
-  for (p = buf; len != 0 && p != NULL; p = p->next) {
-    if ((offset != 0) && (offset >= p->len)) {
-      /* don't copy from this buffer -> on to the next */
-      offset -= p->len;
-    } else {
-      /* copy from this buffer. maybe only partially. */
-      buf_copy_len = p->len - offset;
-      if (buf_copy_len > len)
-          buf_copy_len = len;
-      /* copy the necessary parts of the buffer */
-      MEMCPY(&((char*)dataptr)[left], &((char*)p->payload)[offset], buf_copy_len);
-      copied_total += buf_copy_len;
-      left += buf_copy_len;
-      len -= buf_copy_len;
-      offset = 0;
+    if ((buf == NULL) || (dataptr == NULL)) {
+        return 0;
     }
-  }
-  return copied_total;
+
+    /* Note some systems use byte copy if dataptr or one of the pbuf payload pointers are unaligned. */
+    for (p = buf; len != 0 && p != NULL; p = p->next) {
+        if ((offset != 0) && (offset >= p->len)) {
+        /* don't copy from this buffer -> on to the next */
+        offset -= p->len;
+        } else {
+        /* copy from this buffer. maybe only partially. */
+        buf_copy_len = p->len - offset;
+        if (buf_copy_len > len)
+            buf_copy_len = len;
+        /* copy the necessary parts of the buffer */
+        MEMCPY(&((char*)dataptr)[left], &((char*)p->payload)[offset], buf_copy_len);
+        copied_total += buf_copy_len;
+        left += buf_copy_len;
+        len -= buf_copy_len;
+        offset = 0;
+        }
+    }
+    return copied_total;
 }
 
 err_t udp_connect(struct udp_pcb *pcb, const ip_addr_t *ipaddr, u16_t port)
@@ -234,4 +228,14 @@ err_t udp_sendto_if(struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *dst_ip
 err_t udp_sendto_if_src(struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *dst_ip, u16_t dst_port, struct netif *netif, const ip_addr_t *src_ip)
 {
     return ESP_OK;
+}
+
+void * mem_malloc(mem_size_t size)
+{
+    return malloc(size);
+}
+
+void mem_free(void *rmem)
+{
+    free(rmem);
 }
