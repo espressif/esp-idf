@@ -16,6 +16,8 @@
 extern uint32_t g_random_numbers[8];
 extern uint32_t g_random_numbers_cnt;
 
+#ifndef BUILDING_DEF
+
 void __assert_func(const char *file, int line, const char *func, const char *expr)
 {
     printf("Assert failed in %s, %s:%d (%s)", func, file, line, expr);
@@ -33,12 +35,12 @@ static void dns_recv(void *s, struct udp_pcb *pcb, struct pbuf *p, const ip_addr
 void (*dns_test_static_dns_recv)(void *s, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port) = NULL;
 err_t (*dns_test_static_dns_enqueue)(const char *name, size_t hostnamelen, dns_found_callback found, void *callback_arg, u8_t dns_addrtype) = NULL;
 
-
 void dns_test_init_di()
 {
     dns_test_static_dns_recv = dns_recv;
     dns_test_static_dns_enqueue = dns_enqueue;
 }
+
 
 err_t dns_test_dns_enqueue(const char *name, size_t hostnamelen, dns_found_callback found, void *callback_arg, u8_t dns_addrtype)
 {
@@ -57,3 +59,4 @@ void dns_test_inject_port_and_txid(int port, int txid)
     g_random_numbers[1] = txid; //for txid
     g_random_numbers_cnt = 0;   // let's start with the port
 }
+#endif
