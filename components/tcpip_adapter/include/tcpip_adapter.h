@@ -95,7 +95,9 @@ typedef struct {
 typedef enum {
     TCPIP_ADAPTER_IF_STA = 0,     /**< Wi-Fi STA (station) interface */
     TCPIP_ADAPTER_IF_AP,          /**< Wi-Fi soft-AP interface */
+#ifdef _DECL_ethernet
     TCPIP_ADAPTER_IF_ETH,         /**< Ethernet interface */
+#endif
     TCPIP_ADAPTER_IF_TEST,        /**< tcpip stack test interface */
     TCPIP_ADAPTER_IF_MAX
 } tcpip_adapter_if_t;
@@ -182,6 +184,7 @@ typedef struct {
  */
 void tcpip_adapter_init(void);
 
+#ifdef _DECL_ethernet
 /**
  * @brief  Cause the TCP/IP stack to start the Ethernet interface with specified MAC and IP
  *
@@ -197,6 +200,7 @@ void tcpip_adapter_init(void);
  *         - ESP_ERR_NO_MEM
  */
 esp_err_t tcpip_adapter_eth_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info, void *args);
+#endif
 
 /**
  * @brief  Cause the TCP/IP stack to start the Wi-Fi station interface with specified MAC and IP
@@ -561,6 +565,7 @@ esp_err_t tcpip_adapter_dhcpc_start(tcpip_adapter_if_t tcpip_if);
  */
 esp_err_t tcpip_adapter_dhcpc_stop(tcpip_adapter_if_t tcpip_if);
 
+#ifdef _DECL_ethernet
 /**
  * @brief  Receive an Ethernet frame from the Ethernet interface
  *
@@ -576,6 +581,7 @@ esp_err_t tcpip_adapter_dhcpc_stop(tcpip_adapter_if_t tcpip_if);
  *         - ESP_OK
  */
 esp_err_t tcpip_adapter_eth_input(void *buffer, uint16_t len, void *eb);
+#endif
 
 /**
  * @brief  Receive an 802.11 data frame from the Wi-Fi Station interface

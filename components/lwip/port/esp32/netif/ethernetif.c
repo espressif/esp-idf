@@ -48,6 +48,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef _DECL_ethernet
 #include "esp_eth.h"
 #include "tcpip_adapter.h"
 
@@ -227,3 +228,5 @@ err_t ethernetif_init(struct netif *netif)
 
     return ERR_OK;
 }
+#endif
+

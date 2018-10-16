@@ -60,9 +60,17 @@
 #include "esp_coexist_internal.h"
 #include "esp_core_dump.h"
 #include "esp_app_trace.h"
+<<<<<<< HEAD
 #include "esp_private/dbg_stubs.h"
 #include "esp_flash_encrypt.h"
 #include "esp32/spiram.h"
+=======
+#include "esp_dbg_stubs.h"
+#ifdef _DECL_bootloader_support
+#include "esp_efuse.h"
+#endif
+#include "esp_spiram.h"
+>>>>>>> Step 2: Fix inter-component dependencies errors so it can be build faster and smaller without useless components
 #include "esp_clk_internal.h"
 #include "esp_timer.h"
 #include "esp_pm.h"

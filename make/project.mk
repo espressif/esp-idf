@@ -312,7 +312,7 @@ export COMPONENT_INCLUDES
 
 # Create the component list preprocessor definition
 COMPONENT_DECLARATION := 
-COMPONENT_DECLARATION += $(addprefix -D_DECL_, $(COMPONENT_LIBRARIES))
+COMPONENT_DECLARATION += $(addprefix -D_DECL_, $(subst -,_,$(COMPONENT_LIBRARIES)))
 export COMPONENT_DECLARATION
  
 

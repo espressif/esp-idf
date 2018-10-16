@@ -32,8 +32,10 @@
 #include "soc/i2s_periph.h"
 #include "driver/periph_ctrl.h"
 #include "xtensa/core-macros.h"
+#ifdef _DECL_bootloader_support
 #include "bootloader_clock.h"
 #include "driver/spi_common.h"
+#endif
 
 /* Number of cycles to wait from the 32k XTAL oscillator to consider it running.
  * Larger values increase startup delay. Smaller values may cause false positive

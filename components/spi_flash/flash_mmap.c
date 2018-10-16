@@ -29,7 +29,9 @@
 #include "esp_ipc.h"
 #include "esp_attr.h"
 #include "esp_spi_flash.h"
+#ifdef _DECL_bootloader_support
 #include "esp_flash_encrypt.h"
+#endif
 #include "esp_log.h"
 #include "cache_utils.h"
 #include "esp32/spiram.h"

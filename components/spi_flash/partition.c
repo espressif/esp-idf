@@ -17,16 +17,20 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/lock.h>
-#include "esp_flash_partitions.h"
 #include "esp_attr.h"
 #include "esp_flash.h"
 #include "esp_spi_flash.h"
 #include "esp_partition.h"
-#include "esp_flash_encrypt.h"
 #include "esp_log.h"
+#ifdef _DECL_bootloader_support
+#include "esp_flash_partitions.h"
+#include "esp_flash_encrypt.h"
 #include "bootloader_common.h"
 #include "bootloader_util.h"
 #include "esp_ota_ops.h"
+#else
+  #pragma message "Disabling bootloader_support component prevents accessing partitions and checking their hash" 
+#endif
 
 #define HASH_LEN 32 /* SHA-256 digest length */
 
@@ -148,6 +152,9 @@ static esp_partition_iterator_opaque_t* iterator_create(esp_partition_type_t typ
 // This function is called only once, with s_partition_list_lock taken.
 static esp_err_t load_partitions(void)
 {
+#ifndef _DECL_bootloader_support
+        return ESP_ERR_INVALID_ARG;
+#else
     const uint32_t* ptr;
     spi_flash_mmap_handle_t handle;
     // map 64kB block where partition table is located
@@ -204,6 +211,7 @@ static esp_err_t load_partitions(void)
     }
     spi_flash_munmap(handle);
     return err;
+#endif
 }
 
 void esp_partition_iterator_release(esp_partition_iterator_t iterator)
@@ -445,11 +453,16 @@ esp_err_t esp_partition_mmap(const esp_partition_t* partition, size_t offset, si
 
 esp_err_t esp_partition_get_sha256(const esp_partition_t *partition, uint8_t *sha_256)
 {
+#ifdef _DECL_bootloader_support
     return bootloader_common_get_sha256_of_partition(partition->address, partition->size, partition->type, sha_256);
+#else
+    return ESP_ERR_INVALID_ARG;
+#endif
 }
 
 bool esp_partition_check_identity(const esp_partition_t *partition_1, const esp_partition_t *partition_2)
 {
+#ifdef _DECL_bootloader_support
     uint8_t sha_256[2][HASH_LEN] = { 0 };
 
     if (esp_partition_get_sha256(partition_1, sha_256[0]) == ESP_OK &&
@@ -460,6 +473,7 @@ bool esp_partition_check_identity(const esp_partition_t *partition_1, const esp_
             return true;
         }
     }
+#endif
     return false;
 }
 

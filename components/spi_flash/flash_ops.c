@@ -32,9 +32,19 @@
 #include "esp_spi_flash.h"
 #include "esp_log.h"
 #include "esp32/clk.h"
+#ifdef _DECL_bootloader_support
 #include "esp_flash_partitions.h"
+#else
+  #pragma message "Not using bootloader_support component disable SPI flash write operations"
+#endif
+#ifdef _DECL_app_update
+#include "esp_ota_ops.h"
+#else
+  #pragma message "Not using app_update component disable OTA operations"
+#endif
 #include "cache_utils.h"
 #include "esp_flash.h"
+
 
 /* bytes erased by SPIEraseBlock() ROM function */
 #define BLOCK_ERASE_SIZE 65536
@@ -116,6 +126,7 @@ static const spi_flash_guard_funcs_t *s_flash_guard_ops;
 
 static __attribute__((unused)) bool is_safe_write_address(size_t addr, size_t size)
 {
+#if defined(_DECL_bootloader_support) && defined(_DECL_app_update)
     if (!esp_partition_main_flash_region_safe(addr, size)) {
         UNSAFE_WRITE_ADDRESS;
     }
