@@ -1152,6 +1152,21 @@ void bta_dm_loc_oob(tBTA_DM_MSG *p_data)
 
 /*******************************************************************************
 **
+** Function         bta_dm_oob_reply
+**
+** Description      This function is called to provide the OOB data for
+**                  SMP in response to BLE OOB request.
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_dm_oob_reply(tBTA_DM_MSG *p_data) 
+{
+    BTM_BleOobDataReply(p_data->oob_reply.bd_addr, BTM_SUCCESS, p_data->oob_reply.len, p_data->oob_reply.value);
+}
+
+/*******************************************************************************
+**
 ** Function         bta_dm_ci_io_req_act
 **
 ** Description      respond to the IO capabilities request from BTM
