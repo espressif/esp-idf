@@ -110,8 +110,9 @@ esp_err_t esp_secure_boot_permanently_enable(void) {
         return ESP_OK;
     }
 
-    if (REG_READ(EFUSE_BLK0_RDATA6_REG) & EFUSE_CODING_SCHEME_M) {
-        ESP_LOGE(TAG, "Secure Boot is currently not supported on hardware with 3/4 Coding Scheme (CODING_SCHEME efuse set)");
+    uint32_t coding_scheme = REG_GET_FIELD(EFUSE_BLK0_RDATA6_REG, EFUSE_CODING_SCHEME);
+    if (coding_scheme != EFUSE_CODING_SCHEME_VAL_NONE && coding_scheme != EFUSE_CODING_SCHEME_VAL_34) {
+        ESP_LOGE(TAG, "Unknown/unsupported CODING_SCHEME value 0x%x", coding_scheme);
         return ESP_ERR_NOT_SUPPORTED;
     }
 
@@ -137,13 +138,7 @@ esp_err_t esp_secure_boot_permanently_enable(void) {
         && REG_READ(EFUSE_BLK2_RDATA6_REG) == 0
         && REG_READ(EFUSE_BLK2_RDATA7_REG) == 0) {
         ESP_LOGI(TAG, "Generating new secure boot key...");
-        uint32_t buf[8];
-        bootloader_fill_random(buf, sizeof(buf));
-        for (int i = 0; i < 8; i++) {
-            ESP_LOGV(TAG, "EFUSE_BLK2_WDATA%d_REG = 0x%08x", i, buf[i]);
-            REG_WRITE(EFUSE_BLK2_WDATA0_REG + 4*i, buf[i]);
-        }
-        bzero(buf, sizeof(buf));
+        esp_efuse_write_random_key(EFUSE_BLK2_WDATA0_REG);
         burn_efuses();
         ESP_LOGI(TAG, "Read & write protecting new key...");
         REG_WRITE(EFUSE_BLK0_WDATA0_REG, EFUSE_WR_DIS_BLK2 | EFUSE_RD_DIS_BLK2);
