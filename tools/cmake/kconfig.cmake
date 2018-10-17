@@ -18,7 +18,11 @@ endmacro()
 
 if(CMAKE_HOST_WIN32)
     # Prefer a prebuilt mconf-idf on Windows
-    find_program(WINPTY winpty)
+    if(DEFINED ENV{MSYSTEM})
+        find_program(WINPTY winpty)
+    else()
+        unset(WINPTY CACHE)  # in case previous CMake run was in a tty and this one is not
+    endif()
     find_program(MCONF mconf-idf)
 
     # Fall back to the old binary which was called 'mconf' not 'mconf-idf'
