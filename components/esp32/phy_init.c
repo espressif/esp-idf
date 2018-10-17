@@ -36,6 +36,7 @@
 #include "phy_init_data.h"
 #include "esp_coexist.h"
 #include "driver/periph_ctrl.h"
+#include "esp_wifi_internal.h"
 
 static const char* TAG = "phy_init";
 
@@ -44,6 +45,24 @@ static int s_phy_rf_init_count = 0;
 
 static _lock_t s_phy_rf_init_lock;
 
+static inline void phy_update_wifi_mac_time(bool en_clock_stopped)
+{
+    static uint32_t s_common_clock_disable_time = 0;
+
+    if (en_clock_stopped) {
+        s_common_clock_disable_time = esp_timer_get_time();
+    } else {
+        if (s_common_clock_disable_time) {
+            uint64_t now = esp_timer_get_time();
+            uint32_t diff = now - s_common_clock_disable_time;
+
+            esp_wifi_internal_update_mac_time(diff);
+            s_common_clock_disable_time = 0;
+            ESP_LOGD(TAG, "wifi mac time delta: %u", diff);
+        }
+    }
+}
+
 esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data,
         esp_phy_calibration_mode_t mode, esp_phy_calibration_data_t* calibration_data)
 {
@@ -51,6 +70,8 @@ esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data,
 
     _lock_acquire(&s_phy_rf_init_lock);
     if (s_phy_rf_init_count == 0) {
+        // Update WiFi MAC time before WiFi/BT common clock is enabled
+        phy_update_wifi_mac_time( false );
         // Enable WiFi/BT common peripheral clock
         periph_module_enable(PERIPH_WIFI_BT_COMMON_MODULE);
         ESP_LOGV(TAG, "register_chipv7_phy, init_data=%p, cal_data=%p, mode=%d",
@@ -76,6 +97,8 @@ esp_err_t esp_phy_rf_deinit(void)
     if (s_phy_rf_init_count == 1) {
         // Disable PHY and RF.
         phy_close_rf();
+        // Update WiFi MAC time before disalbe WiFi/BT common peripheral clock
+        phy_update_wifi_mac_time(true);
         // Disable WiFi/BT common peripheral clock. Do not disable clock for hardware RNG
         periph_module_disable(PERIPH_WIFI_BT_COMMON_MODULE);
     } else {
