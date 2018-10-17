@@ -348,19 +348,40 @@ esp_err_t httpd_unregister_uri(httpd_handle_t handle, const char* uri);
  * @{
  */
 
+#define HTTPD_SOCK_ERR_FAIL      -1
+#define HTTPD_SOCK_ERR_INVALID   -2
+#define HTTPD_SOCK_ERR_TIMEOUT   -3
+
 /**
  * @brief  Prototype for HTTPDs low-level send function
+ *
+ * @note   User specified send function must handle errors internally,
+ *         depending upon the set value of errno, and return specific
+ *         HTTPD_SOCK_ERR_ codes, which will eventually be conveyed as
+ *         return value of httpd_send() function
+ *
  * @return
  *  - Bytes : The number of bytes sent successfully
- *  - -VE   : In case of error
+ *  - HTTPD_SOCK_ERR_INVALID  : Invalid arguments
+ *  - HTTPD_SOCK_ERR_TIMEOUT  : Timeout/interrupted while calling socket send()
+ *  - HTTPD_SOCK_ERR_FAIL     : Unrecoverable error while calling socket send()
  */
 typedef int (*httpd_send_func_t)(int sockfd, const char *buf, size_t buf_len, int flags);
 
 /**
  * @brief  Prototype for HTTPDs low-level recv function
+ *
+ * @note   User specified recv function must handle errors internally,
+ *         depending upon the set value of errno, and return specific
+ *         HTTPD_SOCK_ERR_ codes, which will eventually be conveyed as
+ *         return value of httpd_req_recv() function
+ *
  * @return
  *  - Bytes : The number of bytes received successfully
- *  - -VE   : In case of error
+ *  - 0     : Buffer length parameter is zero / connection closed by peer
+ *  - HTTPD_SOCK_ERR_INVALID  : Invalid arguments
+ *  - HTTPD_SOCK_ERR_TIMEOUT  : Timeout/interrupted while calling socket recv()
+ *  - HTTPD_SOCK_ERR_FAIL     : Unrecoverable error while calling socket recv()
  */
 typedef int (*httpd_recv_func_t)(int sockfd, char *buf, size_t buf_len, int flags);
 
@@ -460,9 +481,11 @@ int httpd_req_to_sockfd(httpd_req_t *r);
  * @param[in] buf_len   Length of the buffer
  *
  * @return
- *  - Bytes    : Number of bytes read into the buffer successfully
- *  - Zero     : When no more data is left for read
- *  - -1       : On raw recv error / Null arguments / Request pointer is invalid
+ *  - Bytes : Number of bytes read into the buffer successfully
+ *  - 0     : Buffer length parameter is zero / connection closed by peer
+ *  - HTTPD_SOCK_ERR_INVALID  : Invalid arguments
+ *  - HTTPD_SOCK_ERR_TIMEOUT  : Timeout/interrupted while calling socket recv()
+ *  - HTTPD_SOCK_ERR_FAIL     : Unrecoverable error while calling socket recv()
  */
 int httpd_req_recv(httpd_req_t *r, char *buf, size_t buf_len);
 
@@ -664,6 +687,7 @@ esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, size_t buf_len)
 #define HTTPD_207      "207 Multi-Status"           /*!< HTTP Response 207 */
 #define HTTPD_400      "400 Bad Request"            /*!< HTTP Response 400 */
 #define HTTPD_404      "404 Not Found"              /*!< HTTP Response 404 */
+#define HTTPD_408      "408 Request Timeout"        /*!< HTTP Response 408 */
 #define HTTPD_500      "500 Internal Server Error"  /*!< HTTP Response 500 */
 
 /**
@@ -769,6 +793,52 @@ esp_err_t httpd_resp_set_hdr(httpd_req_t *r, const char *field, const char *valu
 esp_err_t httpd_resp_send_404(httpd_req_t *r);
 
 /**
+ * @brief   Helper function for HTTP 408
+ *
+ * Send HTTP 408 message. If you wish to send additional data in the body of the
+ * response, please use the lower-level functions directly.
+ *
+ * @note
+ *  - This API is supposed to be called only from the context of
+ *    a URI handler where httpd_req_t* request pointer is valid.
+ *  - Once this API is called, all request headers are purged, so
+ *    request headers need be copied into separate buffers if
+ *    they are required later.
+ *
+ * @param[in] r The request being responded to
+ *
+ * @return
+ *  - ESP_OK : On successfully sending the response packet
+ *  - ESP_ERR_INVALID_ARG : Null arguments
+ *  - ESP_ERR_HTTPD_RESP_SEND   : Error in raw send
+ *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request pointer
+ */
+esp_err_t httpd_resp_send_408(httpd_req_t *r);
+
+/**
+ * @brief   Helper function for HTTP 500
+ *
+ * Send HTTP 500 message. If you wish to send additional data in the body of the
+ * response, please use the lower-level functions directly.
+ *
+ * @note
+ *  - This API is supposed to be called only from the context of
+ *    a URI handler where httpd_req_t* request pointer is valid.
+ *  - Once this API is called, all request headers are purged, so
+ *    request headers need be copied into separate buffers if
+ *    they are required later.
+ *
+ * @param[in] r The request being responded to
+ *
+ * @return
+ *  - ESP_OK : On successfully sending the response packet
+ *  - ESP_ERR_INVALID_ARG : Null arguments
+ *  - ESP_ERR_HTTPD_RESP_SEND   : Error in raw send
+ *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request pointer
+ */
+esp_err_t httpd_resp_send_500(httpd_req_t *r);
+
+/**
  * @brief   Raw HTTP send
  *
  * Call this API if you wish to construct your custom response packet.
@@ -796,7 +866,9 @@ esp_err_t httpd_resp_send_404(httpd_req_t *r);
  *
  * @return
  *  - Bytes : Number of bytes that were sent successfully
- *  - -1    : Error in raw send / Invalid request / Null arguments
+ *  - HTTPD_SOCK_ERR_INVALID  : Invalid arguments
+ *  - HTTPD_SOCK_ERR_TIMEOUT  : Timeout/interrupted while calling socket send()
+ *  - HTTPD_SOCK_ERR_FAIL     : Unrecoverable error while calling socket send()
  */
 int httpd_send(httpd_req_t *r, const char *buf, size_t buf_len);
 
