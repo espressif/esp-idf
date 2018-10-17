@@ -48,14 +48,19 @@ Once installation is complete, configure debugging session following steps below
 
         Configuration of GDB Hardware Debugging - Debugger tab
 
-8.  The last tab to that requires changing of default configuration is "Startup". Under "Initialization Commands" uncheck "Reset and Delay (seconds)" and "Halt"". Then, in entry field below, type ``mon reset halt`` and ``flushregs`` (in two separate lines).
+8.  The last tab to that requires changing of default configuration is "Startup". Under "Initialization Commands" uncheck "Reset and Delay (seconds)" and "Halt"". Then, in entry field below, enter the following lines:
+
+    ::
+
+        mon reset halt
+        flushregs
+        set remote hardware-watchpoint-limit 2
 
     .. note::
         If you want to update image in the flash automatically before starting new debug session add the following lines of commands at the beginning of "Initialization Commands" textbox::
 
             mon reset halt
             mon program_esp32 ${workspace_loc:blink/build/blink.bin} 0x10000 verify
-
 
     For description of ``program_esp32`` command see :ref:`jtag-upload-app-debug`.
 
@@ -112,6 +117,7 @@ Command Line
     ::
 
         target remote :3333
+        set remote hardware-watchpoint-limit 2
         mon reset halt
         flushregs
         thb app_main
