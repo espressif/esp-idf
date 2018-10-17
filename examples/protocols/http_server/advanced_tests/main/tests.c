@@ -50,13 +50,17 @@ esp_err_t echo_post_handler(httpd_req_t *req)
     int    ret;
 
     if (!buf) {
+        httpd_resp_send_500(req);
         return ESP_FAIL;
     }
 
     while (off < req->content_len) {
         /* Read data received in the request */
         ret = httpd_req_recv(req, buf + off, req->content_len - off);
-        if (ret < 0) {
+        if (ret <= 0) {
+            if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+                httpd_resp_send_408(req);
+            }
             free (buf);
             return ESP_FAIL;
         }
@@ -105,7 +109,10 @@ esp_err_t adder_post_handler(httpd_req_t *req)
 
     /* Read data received in the request */
     ret = httpd_req_recv(req, buf, sizeof(buf));
-    if (ret < 0) {
+    if (ret <= 0) {
+        if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+            httpd_resp_send_408(req);
+        }
         return ESP_FAIL;
     }
 
@@ -137,7 +144,10 @@ esp_err_t leftover_data_post_handler(httpd_req_t *req)
 
     /* Read data received in the request */
     ret = httpd_req_recv(req, buf, sizeof(buf) - 1);
-    if (ret < 0) {
+    if (ret <= 0) {
+        if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+            httpd_resp_send_408(req);
+        }
         return ESP_FAIL;
     }
 

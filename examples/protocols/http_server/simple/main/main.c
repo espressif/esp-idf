@@ -122,7 +122,11 @@ esp_err_t echo_post_handler(httpd_req_t *req)
     while (remaining > 0) {
         /* Read the data for the request */
         if ((ret = httpd_req_recv(req, buf,
-                        MIN(remaining, sizeof(buf)))) < 0) {
+                        MIN(remaining, sizeof(buf)))) <= 0) {
+            if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+                /* Retry receiving if timeout occurred */
+                continue;
+            }
             return ESP_FAIL;
         }
 
@@ -156,7 +160,10 @@ esp_err_t ctrl_put_handler(httpd_req_t *req)
     char buf;
     int ret;
 
-    if ((ret = httpd_req_recv(req, &buf, 1)) < 0) {
+    if ((ret = httpd_req_recv(req, &buf, 1)) <= 0) {
+        if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+            httpd_resp_send_408(req);
+        }
         return ESP_FAIL;
     }
 

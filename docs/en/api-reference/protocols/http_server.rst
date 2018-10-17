@@ -29,15 +29,26 @@ Application Example
         /* Our URI handler function to be called during POST /uri request */
         esp_err_t post_handler(httpd_req_t *req)
         {
-            /* Read request content */
+            /* Destination buffer for content of HTTP POST request.
+             * httpd_req_recv() accepts char* only, but content could
+             * as well be any binary data (needs type casting).
+             * In case of string data, null termination will be absent, and
+             * content length would give length of string */
             char[100] content;
 
             /* Truncate if content length larger than the buffer */
             size_t recv_size = MIN(req->content_len, sizeof(content));
 
             int ret = httpd_req_recv(req, content, recv_size);
-            if (ret < 0) {
-                /* In case of recv error, returning ESP_FAIL will 
+            if (ret <= 0) {  /* 0 return value indicates connection closed */
+                /* Check if timeout occurred */
+                if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+                    /* In case of timeout one can choose to retry calling
+                     * httpd_req_recv(), but to keep it simple, here we
+                     * respond with an HTTP 408 (Request Timeout) error */
+                    httpd_resp_send_408(req);
+                }
+                /* In case of error, returning ESP_FAIL will
                  * ensure that the underlying socket is closed */
                 return ESP_FAIL;
             }
