@@ -19,7 +19,7 @@
 #
 
 from __future__ import division, print_function
-from builtins import int, range
+from builtins import int, range, bytes
 from io import open
 import sys
 import argparse
@@ -33,6 +33,10 @@ import zlib
 import codecs
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
+
+VERSION1_PRINT = "v1 - Multipage Blob Support Disabled"
+VERSION2_PRINT = "v2 - Multipage Blob Support Enabled"
+
 
 """ Class for standard NVS page structure """
 class Page(object):
@@ -153,7 +157,10 @@ class Page(object):
 
 
         # Extract encryption key and tweak key from given key input
-        encr_key_input = codecs.decode(self.encr_key, 'hex')
+        if len(self.encr_key) == key_len_needed:
+            encr_key_input = self.encr_key
+        else:
+            encr_key_input = codecs.decode(self.encr_key, 'hex')
 
         rel_addr = nvs_obj.page_num * Page.PAGE_PARAMS["max_size"] + Page.FIRST_ENTRY_OFFSET
 
@@ -230,7 +237,7 @@ class Page(object):
         return entry_struct
 
 
-    def write_varlen_binary_data(self, entry_struct, ns_index, key, data, data_size, total_entry_count,nvs_obj):
+    def write_varlen_binary_data(self, entry_struct, ns_index, key, data, data_size, total_entry_count, encoding, nvs_obj):
         chunk_start = 0
         chunk_count = 0
         chunk_index = Page.CHUNK_ANY
@@ -273,7 +280,10 @@ class Page(object):
 
             # Compute CRC of data chunk
             struct.pack_into('<H', entry_struct, 24, chunk_size)
-            data_chunk = bytes(data_chunk)
+
+            if type(data) != bytes:
+                data_chunk = bytes(data_chunk, encoding='utf8')
+
             crc = zlib.crc32(data_chunk, 0xFFFFFFFF)
             struct.pack_into('<I', entry_struct, 28, crc & 0xFFFFFFFF)
 
@@ -330,8 +340,10 @@ class Page(object):
     def write_single_page_entry(self, entry_struct, data, datalen, data_entry_count, nvs_obj):
         # compute CRC of data
         struct.pack_into('<H', entry_struct, 24, datalen)
-        if not type(data) == bytes:
-            data = data.encode()
+
+        if type(data) != bytes:
+            data = bytes(data, encoding='utf8')
+
         crc = zlib.crc32(data, 0xFFFFFFFF)
         struct.pack_into('<I', entry_struct, 28, crc & 0xFFFFFFFF)
 
@@ -354,12 +366,12 @@ class Page(object):
 
         if version == Page.VERSION1:
             if datalen > Page.PAGE_PARAMS["max_old_blob_size"]:
-                raise InputError("%s: Size exceeds max allowed length." % key)
+                raise InputError("Version %s\n%s: Size exceeds max allowed length." % (VERSION1_PRINT,key))
 
         if version == Page.VERSION2:
             if encoding == "string":
                 if datalen > Page.PAGE_PARAMS["max_new_blob_size"]:
-                    raise InputError("%s: Size exceeds max allowed length." % key)
+                    raise InputError("Version %s\n%s: Size exceeds max allowed length." % (VERSION2_PRINT,key))
 
         # Calculate no. of entries data will require
         rounded_size = (datalen + 31) & ~31
@@ -398,7 +410,7 @@ class Page(object):
 
         if version == Page.VERSION2 and (encoding in ["hex2bin", "binary", "base64"]):
                 entry_struct = self.write_varlen_binary_data(entry_struct,ns_index,key,data,\
-                datalen,total_entry_count, nvs_obj)
+                datalen,total_entry_count, encoding, nvs_obj)
         else:
             self.write_single_page_entry(entry_struct, data, datalen, data_entry_count, nvs_obj)
 
@@ -480,6 +492,10 @@ class NVS(object):
                     break
 
             result = self.get_binary_data()
+            if version == Page.VERSION1:
+                print("Version: ", VERSION1_PRINT)
+            else:
+                print("Version: ", VERSION2_PRINT)
             self.fout.write(result)
 
     def create_new_page(self, is_rsrv_page=False):
@@ -533,6 +549,7 @@ class NVS(object):
         encoding = encoding.lower()
         varlen_encodings = ["string", "binary", "hex2bin", "base64"]
         primitive_encodings = ["u8", "i8", "u16", "u32", "i32"]
+
         if encoding in varlen_encodings:
             try:
                 self.cur_page.write_varlen_data(key, value, encoding, self.namespace_idx,self)
@@ -620,154 +637,193 @@ def nvs_close(nvs_instance):
     """
     nvs_instance.__exit__(None, None, None)
 
-def nvs_part_gen(input_filename=None, output_filename=None, input_size=None, key_gen=None, encrypt_mode=None, key_file=None, version_no=None):
-    """ Wrapper to generate nvs partition binary
 
-    :param input_filename: Name of input file containing data
-    :param output_filename: Name of output file to store generated binary
-    :param input_size: Size of partition in bytes (must be multiple of 4096)
-    :param key_gen: Enable encryption key generation in encryption mode
-    :param encrypt_mode: Enable/Disable encryption mode
-    :param key_file: Input file having encryption keys in encryption mode
-    :return: None
-    """
-    global version, is_encrypt_data, key_input
+def check_input_args(input_filename=None, output_filename=None, input_part_size=None, is_key_gen=None,\
+encrypt_mode=None, key_file=None, version_no=None, print_arg_str=None, print_encrypt_arg_str=None):
+
+    global version, is_encrypt_data, input_size, key_gen
+
     version = version_no
-    key_input = None
     is_encrypt_data = encrypt_mode
+    key_gen = is_key_gen
+    input_size = input_part_size
 
-    # Set size
-    input_size = int(input_size, 0)
+    if is_encrypt_data.lower() == 'true':
+        is_encrypt_data = True
+    elif is_encrypt_data.lower() == 'false':
+        is_encrypt_data = False
 
-    if input_size % 4096 !=0:
-        sys.exit("Size of partition (must be multiple of 4096)")
 
     if version == 'v1':
         version = Page.VERSION1
     elif version == 'v2':
         version = Page.VERSION2
 
-    # Update size as a page needs to be reserved of size 4KB
-    input_size = input_size - Page.PAGE_PARAMS["max_size"]
-
-    if input_size == 0:
-        sys.exit("Size parameter is insufficient.")
-
-    if is_encrypt_data == 'True':
-        is_encrypt_data = True
-    elif is_encrypt_data == 'False':
-        is_encrypt_data = False
-
-    if key_gen == 'True':
+    if key_gen.lower() == 'true':
         key_gen = True
-    elif key_gen == 'False':
+    elif key_gen.lower() == 'false':
         key_gen = False
 
+
+    if key_gen:
+        if all(arg is not None for arg in [input_filename, output_filename, input_size]):
+            if not is_encrypt_data:
+                sys.exit("--encrypt argument is missing or set to false.")
+        elif any(arg is not None for arg in [input_filename, output_filename, input_size]):
+            sys.exit(print_arg_str)
+    else:
+        if not input_size:
+            if not all(arg is not None for arg in [input_filename, output_filename]):
+                sys.exit(print_arg_str)
+
+
     if is_encrypt_data and not key_gen and not key_file:
-        sys.exit("Missing parameter. Enter --keyfile or --keygen.")
+        sys.exit(print_encrypt_arg_str)
 
     if is_encrypt_data and key_gen and key_file:
-        sys.exit("Only one input allowed. Enter --keyfile or --keygen.")
-
-    if not is_encrypt_data and key_gen:
-        sys.exit("Invalid. Cannot give --key_gen as --encrypt is set to False.")
+        sys.exit(print_encrypt_arg_str)
 
     if not is_encrypt_data and key_file:
-        sys.exit("Invalid. Cannot give --key_file as --encrypt is set to False.")
+        sys.exit("Invalid. Cannot give --keyfile as --encrypt is set to false.")
+
+    if input_size:
+        # Set size
+        input_size = int(input_size, 0)
+
+        if input_size % 4096 !=0:
+            sys.exit("Size of partition (must be multiple of 4096)")
+
+        # Update size as a page needs to be reserved of size 4KB
+        input_size = input_size - Page.PAGE_PARAMS["max_size"]
+
+        if input_size == 0:
+            sys.exit("Size parameter is insufficient.")
+
+
+
+
+def nvs_part_gen(input_filename=None, output_filename=None, input_part_size=None, is_key_gen=None, encrypt_mode=None, key_file=None, version_no=None):
+    """ Wrapper to generate nvs partition binary
+
+    :param input_filename: Name of input file containing data
+    :param output_filename: Name of output file to store generated binary
+    :param input_part_size: Size of partition in bytes (must be multiple of 4096)
+    :param is_key_gen: Enable encryption key generation in encryption mode
+    :param encrypt_mode: Enable/Disable encryption mode
+    :param key_file: Input file having encryption keys in encryption mode
+    :param version_no: Format Version number
+    :return: None
+    """
+
+    global key_input, key_len_needed
+
+    key_len_needed = 64
+    key_input = bytearray()
 
     if key_gen:
         key_input = ''.join(random.choice('0123456789abcdef') for _ in range(128)).strip()
     elif key_file:
-        with open(key_file, 'rt', encoding='utf8') as key_f:
-            key_input = key_f.readline()
-            key_input = key_input.strip()
+        with open(key_file, 'rb') as key_f:
+            key_input = key_f.read(64)
 
-    input_file = open(input_filename, 'rt', encoding='utf8')
-    output_file = open(output_filename, 'wb')
+    if all(arg is not None for arg in [input_filename, output_filename, input_size]):
+        input_file = open(input_filename, 'rt', encoding='utf8')
+        output_file = open(output_filename, 'wb')
 
-    with nvs_open(output_file, input_size) as nvs_obj:
-        reader = csv.DictReader(input_file, delimiter=',')
-        for row in reader:
-            try:
-                write_entry(nvs_obj, row["key"], row["type"], row["encoding"], row["value"])
-            except (InputError) as e:
-                print(e)
-                input_file.close()
-                output_file.close()
-                sys.exit(-2)
+        with nvs_open(output_file, input_size) as nvs_obj:
+            reader = csv.DictReader(input_file, delimiter=',')
+            for row in reader:
+                try:
+                    write_entry(nvs_obj, row["key"], row["type"], row["encoding"], row["value"])
+                except (InputError) as e:
+                    print(e)
+                    input_file.close()
+                    output_file.close()
+                    sys.exit(-2)
 
-    input_file.close()
-    output_file.close()
+        input_file.close()
+        output_file.close()
 
-    if is_encrypt_data:
+
+    if key_gen:
         keys_page_buf = bytearray(b'\xff')*Page.PAGE_PARAMS["max_size"]
         key_bytes = bytearray()
-
-        key_bytes = codecs.decode(key_input, 'hex')
+        if len(key_input) == key_len_needed:
+            key_bytes = key_input
+        else:
+            key_bytes = codecs.decode(key_input, 'hex')
         key_len = len(key_bytes)
         keys_page_buf[0:key_len] = key_bytes
-
         crc_data = keys_page_buf[0:key_len]
         crc_data = bytes(crc_data)
         crc = zlib.crc32(crc_data, 0xFFFFFFFF)
-
         struct.pack_into('<I', keys_page_buf, key_len,  crc & 0xFFFFFFFF)
-
         with open("encryption_keys.bin",'wb') as output_keys_file:
             output_keys_file.write(keys_page_buf)
 
+    print("Binary created.")
 
 
 def main():
     parser = argparse.ArgumentParser(description="ESP32 NVS partition generation utility")
-    parser.add_argument(
-            "input",
-            help="Path to CSV file to parse. Will use stdin if omitted",
-            default=sys.stdin)
+    nvs_part_gen_group = parser.add_argument_group('To generate NVS partition')
+    nvs_part_gen_group.add_argument(
+            "--input",
+            help="Path to CSV file to parse.",
+            default=None)
 
-    parser.add_argument(
-            "output",
-            help='Path to output converted binary file. Will use stdout if omitted',
-            default=sys.stdout)
+    nvs_part_gen_group.add_argument(
+            "--output",
+            help='Path to output converted binary file.',
+            default=None)
 
-    parser.add_argument(
-            "size",
+    nvs_part_gen_group.add_argument(
+            "--size",
             help='Size of NVS Partition in bytes (must be multiple of 4096)')
 
-    parser.add_argument(
+    nvs_part_gen_group.add_argument(
             "--version",
             help='Set version. Default: v2',
             choices=['v1','v2'],
-            default='v2')
+            default='v2',
+            type=str.lower)
 
-    parser.add_argument(
+    keygen_action=nvs_part_gen_group.add_argument(
             "--keygen",
-            help='Generate keys for encryption. Default: False (Applicable only if encryption mode is true)',
-            choices=['True','False'],
-            default= 'False')
+            help='Generate keys for encryption. Creates an `encryption_keys.bin` file. Default: false',
+            choices=['true','false'],
+            default= 'false',
+            type=str.lower)
 
-    parser.add_argument(
+    nvs_part_gen_group.add_argument(
             "--encrypt",
-            help='Set encryption mode. Default: False',
-            choices=['True','False'],
-            default='False')
+            help='Set encryption mode. Default: false',
+            choices=['true','false'],
+            default='false',
+            type=str.lower)
 
-    parser.add_argument(
+    nvs_part_gen_group.add_argument(
             "--keyfile",
             help='File having key for encryption (Applicable only if encryption mode is true)',
             default = None)
 
+    key_gen_group = parser.add_argument_group('To generate encryption keys')
+    key_gen_group._group_actions.append(keygen_action)
+
     args = parser.parse_args()
     input_filename = args.input
     output_filename = args.output
-    input_size = args.size
+    part_size = args.size
     version_no = args.version
-
-    key_gen = args.keygen
+    is_key_gen = args.keygen
     is_encrypt_data = args.encrypt
     key_file = args.keyfile
 
-    nvs_part_gen(input_filename, output_filename, input_size, key_gen, is_encrypt_data, key_file, version_no)
+    print_arg_str = "Invalid.\nTo generate nvs partition binary --input, --output and --size arguments are mandatory.\nTo generate encryption keys --keygen argument is mandatory."
+    print_encrypt_arg_str = "Missing parameter. Enter --keyfile or --keygen."
+
+    check_input_args(input_filename,output_filename, part_size, is_key_gen, is_encrypt_data, key_file, version_no, print_arg_str, print_encrypt_arg_str)
+    nvs_part_gen(input_filename, output_filename, part_size, is_key_gen, is_encrypt_data, key_file, version_no)
 
 
 
