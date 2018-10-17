@@ -23,6 +23,73 @@
 
 static const char *TAG = "httpd_uri";
 
+
+/**
+ * @brief Test if a URI matches the given template.
+ *
+ * Template may end with "?" to make the previous character optional (typically a slash),
+ * "*" for a wildcard match, and "?*" to make the previous character optional, and if present,
+ * allow anything to follow.
+ *
+ * Example:
+ *   - * matches everything
+ *   - /foo/? matches /foo and /foo/
+ *   - /foo/\* (sans the backslash) matches /foo/ and /foo/bar, but not /foo or /fo
+ *   - /foo/?* or /foo/\*?  (sans the backslash) matches /foo/, /foo/bar, and also /foo, but not /foox or /fo
+ *
+ * The special characters "?" and "*" anywhere else in the template will be taken literally.
+ *
+ * @param[in] template - URI template (pattern)
+ * @param[in] uri      - tested URI
+ * @param[in] template - how many characters of the URI buffer to test
+ *                       (there may be trailing query string etc.)
+ *
+ * @return true if a match was found
+ */
+static bool uri_matches(const char *template, const char *uri, const unsigned int len)
+{
+    const size_t tpl_len = strlen(template);
+    size_t exact_match_chars = tpl_len;
+
+    /* Check for trailing question mark and asterisk */
+    const char last = (const char) (tpl_len > 0 ? template[tpl_len - 1] : 0);
+    const char prevlast = (const char) (tpl_len > 1 ? template[tpl_len - 2] : 0);
+    const bool asterisk = last == '*' || (prevlast == '*' && last == '?');
+    const bool quest = last == '?' || (prevlast == '?' && last == '*');
+
+    /* abort in cases such as "?" with no preceding character (invalid template) */
+    if (exact_match_chars < asterisk + quest*2) return false;
+    /* account for special characters and the optional character if "?" is used */
+    exact_match_chars -= asterisk + quest*2;
+
+    if (len < exact_match_chars) return false;
+
+    if (!quest) {
+        if (!asterisk && len != exact_match_chars) {
+            /* no special characters and different length - strncmp would return false */
+            return false;
+        }
+        /* asterisk allows arbitrary trailing characters, we ignore these using
+         * exact_match_chars as the length limit */
+        return 0 == strncmp(template, uri, exact_match_chars);
+    } else {
+        /* question mark present */
+        if (len > exact_match_chars && template[exact_match_chars] != uri[exact_match_chars]) {
+            /* the optional character is present, but different */
+            return false;
+        }
+        if (0 != strncmp(template, uri, exact_match_chars)) {
+            /* the mandatory part differs */
+            return false;
+        }
+        /* Now we know the URI is longer than the required part of template,
+         * the mandatory part matches, and if the optional character is present, it is correct.
+         * Match is OK if we have asterisk, i.e. any trailing characters are OK, or if
+         * there are no characters beyond the optional character. */
+        return asterisk || len <= exact_match_chars + 1;
+    }
+}
+
 static int httpd_find_uri_handler(struct httpd_data *hd,
                                   const char* uri,
                                   httpd_method_t method)
@@ -31,7 +98,7 @@ static int httpd_find_uri_handler(struct httpd_data *hd,
         if (hd->hd_calls[i]) {
             ESP_LOGD(TAG, LOG_FMT("[%d] = %s"), i, hd->hd_calls[i]->uri);
             if ((hd->hd_calls[i]->method == method) &&          // First match methods
-                (strcmp(hd->hd_calls[i]->uri, uri) == 0)) {     // Then match uri strings
+                uri_matches(hd->hd_calls[i]->uri, uri, strlen(uri))) {     // Then match uri strings
                 return i;
             }
         }
@@ -161,9 +228,8 @@ static httpd_uri_t* httpd_find_uri_handler2(httpd_err_resp_t *err,
     for (int i = 0; i < hd->config.max_uri_handlers; i++) {
         if (hd->hd_calls[i]) {
             ESP_LOGD(TAG, LOG_FMT("[%d] = %s"), i, hd->hd_calls[i]->uri);
-            if ((strlen(hd->hd_calls[i]->uri) == uri_len) &&            // First match uri length
-                (strncmp(hd->hd_calls[i]->uri, uri, uri_len) == 0))  {  // Then match uri strings
-                if (hd->hd_calls[i]->method == method)  {               // Finally match methods
+            if (uri_matches(hd->hd_calls[i]->uri, uri, uri_len))  {
+                if (hd->hd_calls[i]->method == method)  { // Match methods
                     return hd->hd_calls[i];
                 }
                 /* URI found but method not allowed.
