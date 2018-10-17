@@ -115,11 +115,13 @@ The mfg\_gen.py utility is using the generated CSV Configuration file and Master
 
 **Usage**::
 
-    $ ./mfg_gen.py [-h] --conf CONFIG_FILE --values VALUES_FILE --prefix PREFIX [--fileid FILEID] [--outdir OUTDIR]
+    $ ./mfg_gen.py [-h] --size PART_SIZE --conf CONFIG_FILE --values VALUES_FILE --prefix PREFIX [--fileid FILEID] [--outdir OUTDIR]
 
 +------------------------+----------------------------------------------------------------------------------------------+
 |   Arguments            |                                     Description                                              |                                   
 +========================+==============================================================================================+
+| --size PART_SIZE       |  Size of NVS Partition in bytes (must be multiple of 4096)                                   |
++------------------------+----------------------------------------------------------------------------------------------+
 | --conf CONFIG_FILE     |  the input configuration csv file                                                            |
 +------------------------+----------------------------------------------------------------------------------------------+
 | --values VALUES_FILE   |  the input values csv file                                                                   |
@@ -134,7 +136,7 @@ The mfg\_gen.py utility is using the generated CSV Configuration file and Master
 
 **You can use the below command to run this utility with the sample files provided**::
    
-   $ ./mfg_gen.py --conf sample_config.csv --values sample_values.csv --prefix Fan
+   $ ./mfg_gen.py --size 0x3000 --conf samples/sample_config.csv --values samples/sample_values.csv --prefix Fan
 
 
 .. note:: The default numeric value: 1,2,3... of ``fileid`` argument, corresponds to each row having device instance values in master csv values file.
