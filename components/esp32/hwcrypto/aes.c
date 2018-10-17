@@ -431,7 +431,7 @@ static int esp_aes_xts_decode_keys( const unsigned char *key,
     return 0;
 }
 
-int esp_aes_xts_setkey_enc( mbedtls_aes_xts_context *ctx,
+int esp_aes_xts_setkey_enc( esp_aes_xts_context *ctx,
                                 const unsigned char *key,
                                 unsigned int keybits)
 {
@@ -453,7 +453,7 @@ int esp_aes_xts_setkey_enc( mbedtls_aes_xts_context *ctx,
     return esp_aes_setkey( &ctx->crypt, key1, key1bits );
 }
 
-int esp_aes_xts_setkey_dec( mbedtls_aes_xts_context *ctx,
+int esp_aes_xts_setkey_dec( esp_aes_xts_context *ctx,
                                 const unsigned char *key,
                                 unsigned int keybits)
 {
@@ -532,7 +532,7 @@ static void esp_gf128mul_x_ble( unsigned char r[16],
 /*
  * AES-XTS buffer encryption/decryption
  */
-int esp_aes_crypt_xts( mbedtls_aes_xts_context *ctx,
+int esp_aes_crypt_xts( esp_aes_xts_context *ctx,
                            int mode,
                            size_t length,
                            const unsigned char data_unit[16],
