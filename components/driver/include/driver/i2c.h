@@ -27,7 +27,6 @@ extern "C" {
 #include "freertos/xtensa_api.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
-#include "freertos/ringbuf.h"
 #include "driver/gpio.h"
 
 #define I2C_APB_CLK_FREQ  APB_CLK_FREQ /*!< I2C source clock is APB clock, 80MHz */

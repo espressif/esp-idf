@@ -26,7 +26,15 @@
 #define VALID_NETIF_ID(id) ((id < ESP_IF_MAX) && (id != ESP_IF_WIFI_AP))
 
 static uint32_t restored_ip_addr[TCPIP_ADAPTER_IF_MAX];
-static const char *interface_key[] = {"IF_STA", "IF_AP", "IF_ETH", "IF_TEST"};
+static const char *interface_key[] = 
+{
+    "IF_STA", 
+    "IF_AP",
+#ifdef _DECL_ethernet
+    "IF_ETH",
+#endif
+    "IF_TEST",
+};
 
 _Static_assert(sizeof(interface_key) / sizeof(char*) == TCPIP_ADAPTER_IF_MAX,
                "Number interface keys differs from number of interfaces");

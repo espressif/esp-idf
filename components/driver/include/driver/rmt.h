@@ -19,7 +19,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
+#ifdef _DECL_esp_ringbuf
 #include "freertos/ringbuf.h"
+#endif
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
 
@@ -717,6 +719,7 @@ esp_err_t rmt_write_items(rmt_channel_t channel, const rmt_item32_t* rmt_item, i
  */
 esp_err_t rmt_wait_tx_done(rmt_channel_t channel, TickType_t wait_time);
 
+#ifdef _DECL_esp_ringbuf
 /**
  * @brief Get ringbuffer from RMT.
  *
@@ -730,6 +733,7 @@ esp_err_t rmt_wait_tx_done(rmt_channel_t channel, TickType_t wait_time);
  *     - ESP_OK Success
  */
 esp_err_t rmt_get_ringbuf_handle(rmt_channel_t channel, RingbufHandle_t* buf_handle);
+#endif
 
 /**
  * @brief Init rmt translator and register user callback.

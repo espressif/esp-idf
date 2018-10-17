@@ -28,7 +28,9 @@ extern "C" {
 #include "freertos/xtensa_api.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#ifdef _DECL_esp_ringbuf
 #include "freertos/ringbuf.h"
+#endif
 #include <esp_types.h>
 
 #define UART_FIFO_LEN           (128)        /*!< Length of the hardware FIFO buffers */

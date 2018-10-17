@@ -16,6 +16,9 @@
 #ifndef _HTTP_UTILS_H_
 #define _HTTP_UTILS_H_
 #include <sys/time.h>
+#ifndef _DECL_tcp_transport
+#error "This component requires tcp_transport to be enabled"
+#endif
 
 /**
  * @brief      Assign new_str to *str pointer, and realloc *str if it not NULL

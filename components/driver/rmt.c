@@ -17,7 +17,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
+#if defined(CONFIG_RMT_RECEIVE) 
+#if !defined(_DECL_esp_ringbuf)
+#error "Could not use RMT receive code without esp_ringbuf component, please add the latter or disable the former"
+#else
 #include "freertos/ringbuf.h"
+#endif
+#endif
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp_err.h"
@@ -79,7 +85,9 @@ typedef struct {
     StaticSemaphore_t tx_sem_buffer;
 #endif
     rmt_item32_t* tx_buf;
+#if CONFIG_RMT_RECEIVE
     RingbufHandle_t rx_buf;
+#endif
     sample_to_rmt_t sample_to_rmt;
     size_t sample_size_remain;
     const uint8_t *sample_cur;
@@ -541,6 +549,7 @@ esp_err_t rmt_isr_deregister(rmt_isr_handle_t handle)
     return esp_intr_free(handle);
 }
 
+#if CONFIG_RMT_RECEIVE
 static int IRAM_ATTR rmt_get_mem_len(rmt_channel_t channel)
 {
     int block_num = RMT.conf_ch[channel].conf0.mem_size;
@@ -556,6 +565,7 @@ static int IRAM_ATTR rmt_get_mem_len(rmt_channel_t channel)
     }
     return idx;
 }
+#endif
 
 static void IRAM_ATTR rmt_driver_isr_default(void* arg)
 {
@@ -591,6 +601,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
                     //RX_END
                 case 1:
                     RMT.conf_ch[channel].conf1.rx_en = 0;
+#if CONFIG_RMT_RECEIVE
                     int item_len = rmt_get_mem_len(channel);
                     //change memory owner to protect data.
                     RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_TX;
@@ -600,6 +611,13 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
                             ESP_EARLY_LOGE(RMT_TAG, "RMT RX BUFFER FULL");
                         } else {
 
+                            }
+                        } else
+#else
+                            ESP_EARLY_LOGE(RMT_TAG, "RMT RX disabled in config\n");
+#endif 
+                        {
+                            ESP_EARLY_LOGE(RMT_TAG, "RMT RX BUFFER ERROR\n");
                         }
                     } else {
                         ESP_EARLY_LOGE(RMT_TAG, "RMT RX BUFFER ERROR\n");
@@ -705,10 +723,12 @@ esp_err_t rmt_driver_uninstall(rmt_channel_t channel)
         vSemaphoreDelete(p_rmt_obj[channel]->tx_sem);
         p_rmt_obj[channel]->tx_sem = NULL;
     }
+#if CONFIG_RMT_RECEIVE
     if(p_rmt_obj[channel]->rx_buf) {
         vRingbufferDelete(p_rmt_obj[channel]->rx_buf);
         p_rmt_obj[channel]->rx_buf = NULL;
     }
+#endif
     if(p_rmt_obj[channel]->tx_buf) {
         free(p_rmt_obj[channel]->tx_buf);
         p_rmt_obj[channel]->tx_buf = NULL;
@@ -733,6 +753,12 @@ esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr
         ESP_LOGD(RMT_TAG, "RMT driver already installed");
         return ESP_ERR_INVALID_STATE;
     }
+#if !CONFIG_RMT_RECEIVE
+    if (rx_buf_size > 0) {
+	ESP_LOGE(RMT_TAG, "RX disabled due to missing esp_ringbuf component");
+        return ESP_ERR_INVALID_STATE;
+    }
+#endif
 
 #if !CONFIG_SPIRAM_USE_MALLOC
     p_rmt_obj[channel] = (rmt_obj_t*) malloc(sizeof(rmt_obj_t));
@@ -771,11 +797,13 @@ esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr
 #endif
         xSemaphoreGive(p_rmt_obj[channel]->tx_sem);
     }
+#if CONFIG_RMT_RECEIVE
     if(p_rmt_obj[channel]->rx_buf == NULL && rx_buf_size > 0) {
         p_rmt_obj[channel]->rx_buf = xRingbufferCreate(rx_buf_size, RINGBUF_TYPE_NOSPLIT);
         rmt_set_rx_intr_en(channel, 1);
         rmt_set_err_intr_en(channel, 1);
     }
+#endif
 
     _lock_acquire_recursive(&rmt_driver_isr_lock);
 
@@ -853,6 +881,7 @@ esp_err_t rmt_wait_tx_done(rmt_channel_t channel, TickType_t wait_time)
     }
 }
 
+#if CONFIG_RMT_RECEIVE
 esp_err_t rmt_get_ringbuf_handle(rmt_channel_t channel, RingbufHandle_t* buf_handle)
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
@@ -861,6 +890,7 @@ esp_err_t rmt_get_ringbuf_handle(rmt_channel_t channel, RingbufHandle_t* buf_han
     *buf_handle = p_rmt_obj[channel]->rx_buf;
     return ESP_OK;
 }
+#endif
 
 rmt_tx_end_callback_t rmt_register_tx_end_callback(rmt_tx_end_fn_t function, void *arg)
 {

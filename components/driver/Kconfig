@@ -21,6 +21,27 @@ menu "Driver configurations"
 
     endmenu  # ADC Configuration
 
+    menu "I2C configuration"
+
+        config I2C_SLAVE_MODE
+            bool "Enable I2C slave mode"
+            default y
+            help
+                If this is set, the I2C driver will include support for being used as a slave I2C device.
+
+    endmenu # I2C Configuration
+
+    menu "RMT configuration"
+
+        config RMT_RECEIVE
+            bool "Enable RMT receive code"
+            default y
+            help
+                If this is set, the RMT driver will include support for receiving data.
+
+    endmenu # RMT Configuration
+
+
     menu "SPI configuration"
 
         config SPI_MASTER_IN_IRAM

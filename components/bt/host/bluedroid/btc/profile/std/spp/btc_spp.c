@@ -22,7 +22,6 @@
 #include "osi/allocator.h"
 #include "esp_spp_api.h"
 #include "osi/list.h"
-#include "freertos/ringbuf.h"
 #include "osi/mutex.h"
 #include <sys/errno.h>
 #include <sys/lock.h>
@@ -31,6 +30,10 @@
 #include "esp_vfs_dev.h"
 
 #if (defined BTC_SPP_INCLUDED && BTC_SPP_INCLUDED == TRUE)
+#ifndef _DECL_esp_ringbuf
+#error "BTC_SPP_INCLUDED requires esp_ringbuf component"
+#endif
+#include "freertos/ringbuf.h"
 
 typedef struct {
     uint8_t serial;
