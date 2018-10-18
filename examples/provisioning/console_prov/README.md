@@ -25,7 +25,7 @@ Example should be able to run on any commonly available ESP32 development board.
 
 ### Application Required
 
-To provision the device running this example, the `esp_prov.py` script needs to be run (found under `$IDF_PATH/tools/esp_prov`). This feature of `esp_prov` should work on all platforms as long long as all Python dependencies are satisfied.
+To provision the device running this example, the `esp_prov.py` script needs to be run (found under `$IDF_PATH/tools/esp_prov`). This feature of `esp_prov` should work on all platforms, given the dependencies are satisfied.
 
 ### Configure the project
 
