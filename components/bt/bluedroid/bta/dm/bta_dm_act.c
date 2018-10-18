@@ -4619,14 +4619,25 @@ void bta_dm_ble_set_scan_params(tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_ble_set_scan_fil_params(tBTA_DM_MSG *p_data)
 {
-    BTM_BleSetScanFilterParams (p_data->ble_set_scan_fil_params.client_if,
+    tBTA_STATUS status = BTA_FAILURE;
+
+    if (BTM_BleSetScanFilterParams (p_data->ble_set_scan_fil_params.client_if,
                                 p_data->ble_set_scan_fil_params.scan_int,
                                 p_data->ble_set_scan_fil_params.scan_window,
                                 p_data->ble_set_scan_fil_params.scan_mode,
                                 p_data->ble_set_scan_fil_params.addr_type_own,
                                 p_data->ble_set_scan_fil_params.scan_duplicate_filter,
                                 p_data->ble_set_scan_fil_params.scan_filter_policy,
-                                p_data->ble_set_scan_fil_params.scan_param_setup_cback);
+                                p_data->ble_set_scan_fil_params.scan_param_setup_cback) == BTM_SUCCESS) {
+        status = BTA_SUCCESS;
+
+    } else {
+        APPL_TRACE_ERROR("%s(), fail to set scan params.", __func__); 
+    }
+    if (p_data->ble_set_scan_fil_params.scan_param_setup_cback != NULL) {
+        p_data->ble_set_scan_fil_params.scan_param_setup_cback(p_data->ble_set_scan_fil_params.client_if, status);
+    }
+    
 }
 
 
@@ -4869,7 +4880,8 @@ void bta_dm_ble_set_adv_params (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_ble_set_adv_params_all  (tBTA_DM_MSG *p_data)
 {
-    if (BTM_BleSetAdvParamsStartAdv(p_data->ble_set_adv_params_all.adv_int_min,
+    tBTA_STATUS status = BTA_FAILURE;
+    if (BTM_BleSetAdvParamsAll(p_data->ble_set_adv_params_all.adv_int_min,
                                 p_data->ble_set_adv_params_all.adv_int_max,
                                 p_data->ble_set_adv_params_all.adv_type,
                                 p_data->ble_set_adv_params_all.addr_type_own,
@@ -4877,10 +4889,20 @@ void bta_dm_ble_set_adv_params_all  (tBTA_DM_MSG *p_data)
                                 p_data->ble_set_adv_params_all.channel_map,
                                 p_data->ble_set_adv_params_all.adv_filter_policy,
                                 p_data->ble_set_adv_params_all.p_start_adv_cback) == BTM_SUCCESS) {
-        APPL_TRACE_DEBUG("%s(), success to start ble adv.", __func__);
+        APPL_TRACE_DEBUG("%s(), success to set ble adv params.", __func__);
     } else {
-        APPL_TRACE_ERROR("%s(), fail to start ble adv.", __func__);
+        APPL_TRACE_ERROR("%s(), fail to set ble adv params.", __func__);
+        if(p_data->ble_set_adv_params_all.p_start_adv_cback) {
+            (*p_data->ble_set_adv_params_all.p_start_adv_cback)(status);
+        }
+        return;
     }
+    if(BTM_BleStartAdv() == BTM_SUCCESS) {
+        status = BTA_SUCCESS;
+    }
+    if(p_data->ble_set_adv_params_all.p_start_adv_cback) {
+        (*p_data->ble_set_adv_params_all.p_start_adv_cback)(status);
+    }     
 }
 
 /*******************************************************************************
@@ -5021,16 +5043,17 @@ void bta_dm_ble_set_data_length(tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_ble_broadcast (tBTA_DM_MSG *p_data)
 {
-    tBTM_STATUS status = 0;
+    tBTA_STATUS status = BTA_FAILURE;
     BOOLEAN start = p_data->ble_observe.start;
 
-    status = BTM_BleBroadcast(start, p_data->ble_observe.p_stop_adv_cback);
+    if (BTM_BleBroadcast(start, p_data->ble_observe.p_stop_adv_cback) == BTM_SUCCESS) {
+        status = BTA_SUCCESS;
+    } else {
+        APPL_TRACE_ERROR("%s failed\n", __FUNCTION__);
+    }
 
     if (p_data->ble_observe.p_stop_adv_cback){
-        if (status != BTM_SUCCESS){
-            APPL_TRACE_WARNING("%s, %s, status=0x%x\n", __func__,\
-                    (start == TRUE) ? "start adv failed" : "stop adv failed", status);
-        }
+        (*p_data->ble_observe.p_stop_adv_cback)(status);
     }
 
 }
