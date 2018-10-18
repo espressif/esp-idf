@@ -949,7 +949,7 @@ tBTM_STATUS BTM_BleSetAdvParams(UINT16 adv_int_min, UINT16 adv_int_max,
 
 /*******************************************************************************
 **
-** Function         BTM_BleSetAdvParamsStartAdv
+** Function         BTM_BleSetAdvParamsAll
 **
 ** Description      This function is called to set all of the advertising parameters.
 **
@@ -958,9 +958,22 @@ tBTM_STATUS BTM_BleSetAdvParams(UINT16 adv_int_min, UINT16 adv_int_max,
 ** Returns          void
 **
 *******************************************************************************/
-tBTM_STATUS BTM_BleSetAdvParamsStartAdv(UINT16 adv_int_min, UINT16 adv_int_max, UINT8 adv_type,
+tBTM_STATUS BTM_BleSetAdvParamsAll(UINT16 adv_int_min, UINT16 adv_int_max, UINT8 adv_type,
                                         tBLE_ADDR_TYPE own_bda_type, tBLE_BD_ADDR *p_dir_bda,
                                         tBTM_BLE_ADV_CHNL_MAP chnl_map, tBTM_BLE_AFP afp, tBTM_START_ADV_CMPL_CBACK *adv_cb);
+
+/*******************************************************************************
+**
+** Function         BTM_BleStartAdv
+**
+** Description      This function is called to start adv.
+**
+** Parameters:       None.
+**
+** Returns          status
+**
+*******************************************************************************/
+tBTM_STATUS BTM_BleStartAdv(void);
 
 
 /*******************************************************************************
@@ -1071,9 +1084,9 @@ void BTM_BleSetScanParams(tGATT_IF client_if, UINT32 scan_interval,
 ** Returns          void
 **
 *******************************************************************************/
-void BTM_BleSetScanFilterParams(tGATT_IF client_if, UINT32 scan_interval, UINT32 scan_window,
-                                tBLE_SCAN_MODE scan_mode, UINT8 addr_type_own, UINT8 scan_duplicate_filter, tBTM_BLE_SFP scan_filter_policy,
-                                tBLE_SCAN_PARAM_SETUP_CBACK scan_setup_status_cback);
+tBTM_STATUS BTM_BleSetScanFilterParams(tGATT_IF client_if, UINT32 scan_interval, UINT32 scan_window,
+                                    tBLE_SCAN_MODE scan_mode, UINT8 addr_type_own, UINT8 scan_duplicate_filter, tBTM_BLE_SFP scan_filter_policy,
+                                    tBLE_SCAN_PARAM_SETUP_CBACK scan_setup_status_cback);
 
 
 /*******************************************************************************
