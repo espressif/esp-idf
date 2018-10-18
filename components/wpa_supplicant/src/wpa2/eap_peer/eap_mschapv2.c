@@ -95,6 +95,11 @@ static void *
 eap_mschapv2_init(struct eap_sm *sm)
 {
 	struct eap_mschapv2_data *data;
+
+	//Do not init insecure unencapsulated MSCHAPv2 as Phase 1 method, only init if Phase 2
+	if(!sm->init_phase2)
+		return NULL;
+
 	data = (struct eap_mschapv2_data *)os_zalloc(sizeof(*data));
 	if (data == NULL)
 		return NULL;

@@ -300,6 +300,17 @@ struct wpabuf * eap_sm_build_nak(struct eap_sm *sm, EapType type, u8 id)
 	}
 
 	for (m = methods; m; m = m->next) {
+		//do not propose insecure unencapsulated MSCHAPv2 as Phase 1 Method
+		if(m->vendor == EAP_VENDOR_IETF && m->method == EAP_TYPE_MSCHAPV2)
+			continue;
+
+		//do not propose EAP_TYPE_TLS if no client cert/key are configured
+		if(m->vendor == EAP_VENDOR_IETF && m->method == EAP_TYPE_TLS) {
+			struct eap_peer_config *config = eap_get_config(sm);
+			if (config == NULL || config->private_key == 0 || config->client_cert == 0)
+				continue;
+		}
+
 		if (type == EAP_TYPE_EXPANDED) {
 			wpabuf_put_u8(resp, EAP_TYPE_EXPANDED);
 			wpabuf_put_be24(resp, m->vendor);
