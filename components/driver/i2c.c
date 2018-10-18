@@ -1087,7 +1087,7 @@ esp_err_t i2c_master_read(i2c_cmd_handle_t cmd_handle, uint8_t* data, size_t dat
         return i2c_master_read_static(cmd_handle, data, data_len, ack);
     } else {
         if(data_len == 1) {
-            return i2c_master_read_byte(cmd_handle, data, I2C_MASTER_NACK);    
+            return i2c_master_read_byte(cmd_handle, data, I2C_MASTER_NACK);
         } else {
             esp_err_t ret;
             if((ret =  i2c_master_read_static(cmd_handle, data, data_len - 1, I2C_MASTER_ACK)) != ESP_OK) {
@@ -1095,7 +1095,7 @@ esp_err_t i2c_master_read(i2c_cmd_handle_t cmd_handle, uint8_t* data, size_t dat
             }
             return i2c_master_read_byte(cmd_handle, data + data_len - 1, I2C_MASTER_NACK);
         }
-    }   
+    }
 }
 
 static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num)
@@ -1306,7 +1306,7 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
                     clear_bus_cnt++;
                     if(clear_bus_cnt >= I2C_ACKERR_CNT_MAX) {
                         i2c_master_clear_bus(i2c_num);
-                        clear_bus_cnt = 0;   
+                        clear_bus_cnt = 0;
                     }
                     ret = ESP_FAIL;
                 } else {
