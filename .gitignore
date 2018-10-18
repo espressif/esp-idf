@@ -61,6 +61,7 @@ coverage_report/
 tools/windows/tool_setup/.*
 tools/windows/tool_setup/input
 tools/windows/tool_setup/dl
+tools/windows/tool_setup/keys
 tools/windows/tool_setup/Output
 
 test_multi_heap_host

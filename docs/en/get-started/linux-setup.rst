@@ -10,21 +10,19 @@ To compile with ESP-IDF you need to get the following packages:
 
 - CentOS 7::
 
-    sudo yum install gcc git wget make ncurses-devel flex bison gperf python pyserial
+    sudo yum install gcc git wget make ncurses-devel flex bison gperf python python2-cryptography
 
 - Ubuntu and Debian::
 
-    sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial
+    sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial python-cryptography python-future
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial
+    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial python2-cryptography python2-future
 
 .. note::
 
-    Some older (pre-2014) Linux distributions may use ``pyserial`` version 2.x which is not supported by ESP-IDF.
-    In this case please install a supported version via ``pip`` as it is described in section
-    :ref:`get-started-get-packages`.
+    Some older Linux distributions may be missing some of the Python packages listed above (or may use ``pyserial`` version 2.x which is not supported by ESP-IDF). It is possible to install these packages via ``pip`` instead - as described in section :ref:`get-started-get-packages`.
 
 Toolchain Setup
 ===============
