@@ -6,6 +6,7 @@
 #include "freertos/semphr.h"
 #include "freertos/ringbuf.h"
 #include "driver/timer.h"
+#include "esp_spi_flash.h"
 #include "unity.h"
 
 //Definitions used in multiple test cases
@@ -603,4 +604,23 @@ TEST_CASE("Test ring buffer SMP", "[freertos]")
     vSemaphoreDelete(tx_done);
     vSemaphoreDelete(rx_done);
     vSemaphoreDelete(tasks_done);
+}
+
+static IRAM_ATTR __attribute__((noinline)) bool iram_ringbuf_test()
+{
+    bool result = true;
+
+    spi_flash_guard_get()->start(); // Disables flash cache
+    RingbufHandle_t handle = xRingbufferCreate(CONT_DATA_TEST_BUFF_LEN, RINGBUF_TYPE_NOSPLIT);
+    result = result && (handle != NULL);
+    xRingbufferGetMaxItemSize(handle);
+    vRingbufferDelete(handle);
+    spi_flash_guard_get()->end(); // Re-enables flash cache
+
+    return result;
+}
+
+TEST_CASE("Test ringbuffer functions work with flash cache disabled", "[freertos]")
+{
+    TEST_ASSERT( iram_ringbuf_test() );
 }

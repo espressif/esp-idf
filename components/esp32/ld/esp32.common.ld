@@ -153,6 +153,7 @@ SECTIONS
     /* Code marked as runnning out of IRAM */
     _iram_text_start = ABSOLUTE(.);
     *(.iram1 .iram1.*)
+    *libesp_ringbuf.a:(.literal .text .literal.* .text.*)
     *libfreertos.a:(.literal .text .literal.* .text.*)
     *libheap.a:multi_heap.*(.literal .text .literal.* .text.*)
     *libheap.a:multi_heap_poisoning.*(.literal .text .literal.* .text.*)
