@@ -166,10 +166,11 @@ Revision: $Rev: 5927 $
   #define SEGGER_SYSVIEW_GET_INTERRUPT_ID()   SEGGER_SYSVIEW_X_GetInterruptId() // Get the currently active interrupt Id from the user-provided function.
 #endif
 
-void SEGGER_SYSVIEW_X_SysView_Lock();
-void SEGGER_SYSVIEW_X_SysView_Unlock();
-#define SEGGER_SYSVIEW_LOCK()   SEGGER_SYSVIEW_X_SysView_Lock()
-#define SEGGER_SYSVIEW_UNLOCK() SEGGER_SYSVIEW_X_SysView_Unlock()
+unsigned SEGGER_SYSVIEW_X_SysView_Lock();
+void SEGGER_SYSVIEW_X_SysView_Unlock(unsigned int_state);
+// to be recursive save IRQ status on the stack of the caller
+#define SEGGER_SYSVIEW_LOCK()   unsigned _SYSVIEW_int_state = SEGGER_SYSVIEW_X_SysView_Lock()
+#define SEGGER_SYSVIEW_UNLOCK() SEGGER_SYSVIEW_X_SysView_Unlock(_SYSVIEW_int_state)
 
 #endif  // SEGGER_SYSVIEW_CONF_H
 
