@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := throughput_server_demos
+PROJECT_NAME := throughput_server_demo
 
 COMPONENT_ADD_INCLUDEDIRS := components/include
 
