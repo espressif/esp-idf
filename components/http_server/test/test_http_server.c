@@ -18,6 +18,7 @@
 #include <http_server.h>
 
 #include "unity.h"
+#include "test_utils.h"
 
 int pre_start_mem, post_stop_mem, post_stop_min_mem;
 bool basic_sanity = true;
@@ -115,24 +116,39 @@ httpd_handle_t test_httpd_start(uint16_t id)
 TEST_CASE("Leak Test", "[HTTP SERVER]")
 {
     httpd_handle_t hd[SERVER_INSTANCES];
-    unsigned task_count = uxTaskGetNumberOfTasks();
-    pre_start_mem = esp_get_free_heap_size();
+    unsigned task_count;
     bool res = true;
+
+    test_case_uses_tcpip();
+
+    task_count = uxTaskGetNumberOfTasks();
+    printf("Initial task count: %d\n", task_count);
+
+    pre_start_mem = esp_get_free_heap_size();
 
     for (int i = 0; i < SERVER_INSTANCES; i++) {
         hd[i] = test_httpd_start(i);
         vTaskDelay(10);
-        if (uxTaskGetNumberOfTasks() != ++task_count) {
+        unsigned num_tasks = uxTaskGetNumberOfTasks();
+        task_count++;
+        if (num_tasks != task_count) {
+            printf("Incorrect task count (starting): %d expected %d\n",
+                   num_tasks, task_count);
             res = false;
         }
     }
 
     for (int i = 0; i < SERVER_INSTANCES; i++) {
         if (httpd_stop(hd[i]) != ESP_OK) {
+            printf("Failed to stop httpd task %d\n", i);
             res = false;
         }
         vTaskDelay(10);
-        if (uxTaskGetNumberOfTasks() != --task_count) {
+        unsigned num_tasks = uxTaskGetNumberOfTasks();
+        task_count--;
+        if (num_tasks != task_count) {
+            printf("Incorrect task count (stopping): %d expected %d\n",
+                   num_tasks, task_count);
             res = false;
         }
     }
@@ -144,6 +160,9 @@ TEST_CASE("Basic Functionality Tests", "[HTTP SERVER]")
 {
     httpd_handle_t hd;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+
+    test_case_uses_tcpip();
+
     TEST_ASSERT(httpd_start(&hd, &config) == ESP_OK);
     test_handler_limit(hd);
     TEST_ASSERT(httpd_stop(hd) == ESP_OK);
