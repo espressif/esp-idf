@@ -52,7 +52,9 @@ typedef enum {
     PING_TARGET_DELAY_TIME          = 53,   /**< delay time in milliseconds */
     PING_TARGET_ID                  = 54,   /**< identifier */
     PING_TARGET_RES_FN              = 55,   /**< ping result callback function */
-    PING_TARGET_RES_RESET           = 56    /**< ping result statistic reset */
+    PING_TARGET_RES_RESET           = 56,   /**< ping result statistic reset */
+    PING_TARGET_DATA_LEN            = 57,   /**< ping data length*/
+    PING_TARGET_IP_TOS              = 58    /**< ping QOS*/
 } ping_target_id_t;
 
 typedef enum {
