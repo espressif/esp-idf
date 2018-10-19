@@ -30,10 +30,10 @@ def test_examples_protocol_asio_chat_server(env, extra_data):
     test_msg="   4ABC\n"
     dut1 = env.get_dut("chat_server", "examples/protocols/asio/chat_server")
     # check and log bin size
-    binary_file = os.path.join(dut1.app.binary_path, "asio_chatserver.bin")
+    binary_file = os.path.join(dut1.app.binary_path, "asio_chat_server.bin")
     bin_size = os.path.getsize(binary_file)
-    IDF.log_performance("asio_chatserver_bin_size", "{}KB".format(bin_size//1024))
-    IDF.check_performance("asio_chatserver_size", bin_size//1024)
+    IDF.log_performance("asio_chat_server_bin_size", "{}KB".format(bin_size//1024))
+    IDF.check_performance("asio_chat_server_size", bin_size//1024)
     # 1. start test
     dut1.start_app()
     # 2. get the server IP address
