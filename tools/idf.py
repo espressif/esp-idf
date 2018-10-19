@@ -244,6 +244,12 @@ def _get_esptool_args(args):
     result = [ PYTHON, esptool_path ]
     result += [ "-p", args.port ]
     result += [ "-b", str(args.baud) ]
+
+    with open(os.path.join(args.build_dir, "flasher_args.json")) as f:
+        flasher_args = json.load(f)
+
+    extra_esptool_args = flasher_args["extra_esptool_args"]
+    result += [ "--after", extra_esptool_args["after"] ]
     return result
 
 def flash(action, args):
@@ -360,10 +366,11 @@ def print_closing_message(args):
             for o,f in flash_items:
                 cmd += o + " " + flasher_path(f) + " "
 
-        print("%s -p %s -b %s write_flash %s" % (
+        print("%s -p %s -b %s --after %s write_flash %s" % (
             os.path.relpath("%s/components/esptool_py/esptool/esptool.py" % os.environ["IDF_PATH"]),
             args.port or "(PORT)",
             args.baud,
+            flasher_args["extra_esptool_args"]["after"],
             cmd.strip()))
         print("or run 'idf.py -p %s %s'" % (args.port or "(PORT)", key + "-flash" if key != "project" else "flash",))
 

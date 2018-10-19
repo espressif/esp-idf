@@ -1,20 +1,52 @@
 # Set some global esptool.py variables
 #
 # Many of these are read when generating flash_app_args & flash_project_args
-set(ESPTOOLPY "${PYTHON}" "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip esp32)
-set(ESPSECUREPY "${PYTHON}" "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
+set(ESPTOOLPY "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip esp32)
+set(ESPSECUREPY "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
+set(ESPEFUSEPY "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")
 
 set(ESPFLASHMODE ${CONFIG_ESPTOOLPY_FLASHMODE})
 set(ESPFLASHFREQ ${CONFIG_ESPTOOLPY_FLASHFREQ})
 set(ESPFLASHSIZE ${CONFIG_ESPTOOLPY_FLASHSIZE})
 
-set(ESPTOOLPY_SERIAL "${ESPTOOLPY}" --port "${ESPPORT}" --baud ${ESPBAUD})
+set(ESPTOOLPY_BEFORE "${CONFIG_ESPTOOLPY_BEFORE}")
+set(ESPTOOLPY_AFTER  "${CONFIG_ESPTOOLPY_AFTER}")
+
+if(CONFIG_SECURE_BOOT_ENABLED OR CONFIG_FLASH_ENCRYPTION_ENABLED)
+    # If security enabled then override post flash option
+    set(ESPTOOLPY_AFTER "no_reset")
+endif()
+
+set(ESPTOOLPY_SERIAL "${ESPTOOLPY}"
+    --port "${ESPPORT}"
+    --baud ${ESPBAUD}
+    --before "${ESPTOOLPY_BEFORE}"
+    --after "${ESPTOOLPY_AFTER}"
+    )
+
+if(CONFIG_ESPTOOLPY_COMPRESSED)
+    set(ESPTOOLPY_COMPRESSED_OPT -z)
+else()
+    set(ESPTOOLPY_COMPRESSED_OPT -u)
+endif()
 
 set(ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS
     --flash_mode ${ESPFLASHMODE}
     --flash_freq ${ESPFLASHFREQ}
     --flash_size ${ESPFLASHSIZE}
     )
+
+# String for printing flash command
+string(REPLACE ";" " " ESPTOOLPY_WRITE_FLASH_STR
+    "${ESPTOOLPY} --port (PORT) --baud (BAUD) --before ${ESPTOOLPY_BEFORE} --after ${ESPTOOLPY_AFTER} "
+    "write_flash ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS} ${ESPTOOLPY_EXTRA_FLASH_OPTIONS} ${ESPTOOLPY_COMPRESSED_OPT}")
+
+if(CONFIG_SECURE_BOOT_ENABLED AND
+    NOT CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION AND
+    NOT BOOTLOADER_BUILD)
+    set(ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS
+        ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS} --secure-pad)
+endif()
 
 if(CONFIG_ESPTOOLPY_FLASHSIZE_DETECT)
     # Set ESPFLASHSIZE to 'detect' *after* elf2image options are generated,
@@ -28,15 +60,50 @@ if(CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION)
     set(PHY_PARTITION_BIN_FILE "esp32/phy_init_data.bin")
 endif()
 
+if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES AND NOT BOOTLOADER_BUILD)
+    set(unsigned_project_binary "${PROJECT_NAME}-unsigned.bin")
+else()
+    set(unsigned_project_binary "${PROJECT_NAME}.bin")
+endif()
+
 #
 # Add 'app.bin' target - generates with elf2image
 #
-add_custom_command(OUTPUT "${PROJECT_NAME}.bin"
-    COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS} -o "${PROJECT_NAME}.bin" "${PROJECT_NAME}.elf"
+add_custom_command(OUTPUT "${unsigned_project_binary}"
+    COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS}
+        -o "${unsigned_project_binary}" "${PROJECT_NAME}.elf"
     DEPENDS ${PROJECT_NAME}.elf
     VERBATIM
     )
-add_custom_target(app ALL DEPENDS "${PROJECT_NAME}.bin")
+
+if(NOT BOOTLOADER_BUILD AND
+    CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+    # for locally signed secure boot image, add a signing step to get from unsigned app to signed app
+    add_custom_target(gen_unsigned_project_binary ALL DEPENDS "${unsigned_project_binary}")
+    add_custom_command(OUTPUT "${PROJECT_NAME}.bin"
+        COMMAND ${ESPSECUREPY} sign_data --keyfile ${secure_boot_signing_key}
+            -o "${PROJECT_NAME}.bin" "${unsigned_project_binary}"
+        DEPENDS gen_unsigned_project_binary
+        VERBATIM
+        )
+endif()
+
+if(NOT BOOTLOADER_BUILD)
+    add_custom_target(app ALL DEPENDS "${PROJECT_NAME}.bin")
+else()
+    add_custom_target(bootloader ALL DEPENDS "${PROJECT_NAME}.bin")
+endif()
+
+if(NOT BOOTLOADER_BUILD AND
+    CONFIG_SECURE_BOOT_ENABLED AND
+    NOT CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+    add_custom_command(TARGET app POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E echo
+            "App built but not signed. Sign app before flashing"
+        COMMAND ${CMAKE_COMMAND} -E echo
+            "\t${ESPSECUREPY} sign_data --keyfile KEYFILE ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.bin"
+        VERBATIM)
+endif()
 
 #
 # Add 'flash' target - not all build systems can run this directly
