@@ -59,16 +59,18 @@
 #define APP_CPU_NUM (1)
 
 /* Overall memory map */
-#define SOC_IROM_LOW    0x400D0000
-#define SOC_IROM_HIGH   0x40400000
-#define SOC_DROM_LOW    0x3F400000
-#define SOC_DROM_HIGH   0x3F800000
-#define SOC_RTC_IRAM_LOW  0x400C0000
-#define SOC_RTC_IRAM_HIGH 0x400C2000
-#define SOC_RTC_DATA_LOW  0x50000000
-#define SOC_RTC_DATA_HIGH 0x50002000
-#define SOC_EXTRAM_DATA_LOW 0x3F800000
-#define SOC_EXTRAM_DATA_HIGH 0x3FC00000
+#define SOC_IROM_LOW            0x400D0000
+#define SOC_IROM_HIGH           0x40400000
+#define SOC_DROM_LOW            0x3F400000
+#define SOC_DROM_HIGH           0x3F800000
+#define SOC_DRAM_LOW            0x3FAE0000
+#define SOC_DRAM_HIGH           0x40000000
+#define SOC_RTC_IRAM_LOW        0x400C0000
+#define SOC_RTC_IRAM_HIGH       0x400C2000
+#define SOC_RTC_DATA_LOW        0x50000000
+#define SOC_RTC_DATA_HIGH       0x50002000
+#define SOC_EXTRAM_DATA_LOW     0x3F800000
+#define SOC_EXTRAM_DATA_HIGH    0x3FC00000
 
 
 #define DR_REG_DPORT_BASE                       0x3ff00000
@@ -130,7 +132,7 @@
 
 //Registers Operation {{
 #define ETS_UNCACHED_ADDR(addr) (addr)
-#define ETS_CACHED_ADDR(addr) (addr) 
+#define ETS_CACHED_ADDR(addr) (addr)
 
 #ifndef __ASSEMBLER__
 #define BIT(nr)                 (1UL << (nr))

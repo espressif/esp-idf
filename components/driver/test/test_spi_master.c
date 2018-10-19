@@ -507,7 +507,6 @@ TEST_CASE("SPI Master no response when switch from host1 (HSPI) to host2 (VSPI)"
     TEST_ASSERT(spi_bus_free(host) == ESP_OK);
 }
 
-IRAM_ATTR  static uint32_t data_iram[80];
 DRAM_ATTR  static uint32_t data_dram[80]={0};
 //force to place in code area.
 static const uint8_t data_drom[320+3] = {
@@ -544,12 +543,23 @@ TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
 #ifdef CONFIG_SPIRAM_SUPPORT
     //test psram if enabled
     ESP_LOGI(TAG, "testing PSRAM...");
-    uint32_t* data_malloc = (uint32_t*)heap_caps_calloc(1, 324, MALLOC_CAP_SPIRAM);
+    uint32_t* data_malloc = (uint32_t*)heap_caps_malloc(324, MALLOC_CAP_SPIRAM);
+    TEST_ASSERT(esp_ptr_external_ram(data_malloc));
 #else
-    uint32_t* data_malloc = (uint32_t*)heap_caps_calloc(1, 324, MALLOC_CAP_DMA);
+    uint32_t* data_malloc = (uint32_t*)heap_caps_malloc(324, MALLOC_CAP_DMA);
+    TEST_ASSERT(esp_ptr_in_dram(data_malloc));
 #endif
-
     TEST_ASSERT(data_malloc != NULL);
+
+    //refer to soc_memory_layout.c
+    uint32_t* data_iram = (uint32_t*)heap_caps_malloc(324, MALLOC_CAP_EXEC);
+    TEST_ASSERT(data_iram != NULL);
+
+    ESP_LOGI(TAG, "iram: %p, dram: %p", data_iram, data_dram);
+    ESP_LOGI(TAG, "drom: %p, malloc: %p", data_drom, data_malloc);
+    TEST_ASSERT(esp_ptr_in_dram(data_dram));
+    TEST_ASSERT(esp_ptr_in_iram(data_iram));
+    TEST_ASSERT(esp_ptr_in_drom(data_drom));
 
     srand(52);
     for (int i = 0; i < 320/4; i++) {
@@ -577,8 +587,6 @@ TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
     static spi_transaction_t trans[TEST_REGION_SIZE];
     int x;
 
-    ESP_LOGI(TAG, "iram: %p, dram: %p", data_iram, data_dram);
-    ESP_LOGI(TAG, "drom: %p, malloc: %p", data_drom, data_malloc);
 
     memset(trans, 0, sizeof(trans));
 
@@ -619,6 +627,7 @@ TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
     TEST_ASSERT(spi_bus_remove_device(spi) == ESP_OK);
     TEST_ASSERT(spi_bus_free(HSPI_HOST) == ESP_OK);
     free(data_malloc);
+    free(data_iram);
 }
 
 //this part tests 3 DMA issues in master mode, full-duplex in IDF2.1
