@@ -216,7 +216,10 @@ INPUT = \
     ### System APIs
     ../../components/esp_common/include/esp_system.h \
     ### Modbus controller component header file
-    ../../components/freemodbus/modbus_controller/mbcontroller.h
+    ../../components/freemodbus/common/include/esp_modbus_common.h \
+    ../../components/freemodbus/common/include/esp_modbus_slave.h \
+    ../../components/freemodbus/common/include/esp_modbus_master.h
+
 
 ## Get warnings for functions that have no documentation for their parameters or return value
 ##

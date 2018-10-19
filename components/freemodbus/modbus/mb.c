@@ -41,12 +41,12 @@
 #include "mbframe.h"
 #include "mbproto.h"
 #include "mbfunc.h"
-
 #include "mbport.h"
-#if MB_RTU_ENABLED == 1
+
+#if MB_SLAVE_RTU_ENABLED == 1
 #include "mbrtu.h"
 #endif
-#if MB_ASCII_ENABLED == 1
+#if MB_SLAVE_ASCII_ENABLED == 1
 #include "mbascii.h"
 #endif
 #if MB_TCP_ENABLED == 1
@@ -85,7 +85,6 @@ static pvMBFrameClose pvMBFrameCloseCur;
 BOOL( *pxMBFrameCBByteReceived ) ( void );
 BOOL( *pxMBFrameCBTransmitterEmpty ) ( void );
 BOOL( *pxMBPortCBTimerExpired ) ( void );
-
 BOOL( *pxMBFrameCBReceiveFSMCur ) ( void );
 BOOL( *pxMBFrameCBTransmitFSMCur ) ( void );
 
@@ -143,7 +142,7 @@ eMBInit( eMBMode eMode, UCHAR ucSlaveAddress, UCHAR ucPort, ULONG ulBaudRate, eM
 
         switch ( eMode )
         {
-#if MB_RTU_ENABLED > 0
+#if MB_SLAVE_RTU_ENABLED > 0
         case MB_RTU:
             pvMBFrameStartCur = eMBRTUStart;
             pvMBFrameStopCur = eMBRTUStop;
@@ -157,7 +156,7 @@ eMBInit( eMBMode eMode, UCHAR ucSlaveAddress, UCHAR ucPort, ULONG ulBaudRate, eM
             eStatus = eMBRTUInit( ucMBAddress, ucPort, ulBaudRate, eParity );
             break;
 #endif
-#if MB_ASCII_ENABLED > 0
+#if MB_SLAVE_ASCII_ENABLED > 0
         case MB_ASCII:
             pvMBFrameStartCur = eMBASCIIStart;
             pvMBFrameStopCur = eMBASCIIStop;
