@@ -113,7 +113,7 @@ esp_err_t sdmmc_init_cid(sdmmc_card_t* card)
 
 esp_err_t sdmmc_init_csd(sdmmc_card_t* card)
 {
-    assert(card->is_mem);
+    assert(card->is_mem == 1);
     /* Get and decode the contents of CSD register. Determine card capacity. */
     esp_err_t err = sdmmc_send_cmd_send_csd(card, &card->csd);
     if (err != ESP_OK) {
