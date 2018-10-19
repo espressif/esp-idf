@@ -44,7 +44,7 @@
 #include "mbcrc.h"
 #include "mbport.h"
 
-#if MB_ASCII_ENABLED > 0
+#if MB_SLAVE_ASCII_ENABLED > 0
 
 /* ----------------------- Defines ------------------------------------------*/
 #define MB_ASCII_DEFAULT_CR     '\r'    /*!< Default CR character for Modbus ASCII. */
