@@ -15,7 +15,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
-#include <assert.h>
 #include <stdlib.h>
 #include "rom/ets_sys.h"
 #include "rom/rtc.h"
@@ -118,7 +117,10 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     uint32_t freq_before = old_config.freq_mhz;
 
     bool res = rtc_clk_cpu_freq_mhz_to_config(cfg.cpu_freq_mhz, &new_config);
-    assert(res && "invalid CPU frequency value");
+    if (!res) {
+        SOC_LOGE(TAG, "invalid CPU frequency value");
+        abort();
+    }
     rtc_clk_cpu_freq_set_config(&new_config);
 
     /* Configure REF_TICK */

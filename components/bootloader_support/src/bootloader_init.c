@@ -537,3 +537,14 @@ void __assert_func(const char *file, int line, const char *func, const char *exp
     ESP_LOGE(TAG, "Assert failed in %s, %s:%d (%s)", func, file, line, expr);
     while(1) {}
 }
+
+void abort()
+{
+#if !CONFIG_ESP32_PANIC_SILENT_REBOOT
+    ets_printf("abort() was called at PC 0x%08x\r\n", (intptr_t)__builtin_return_address(0) - 3);
+#endif
+    if (esp_cpu_in_ocd_debug_mode()) {
+        __asm__ ("break 0,0");
+    }
+    while(1) {}
+}
