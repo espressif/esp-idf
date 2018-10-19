@@ -23,6 +23,7 @@ set(CMAKE_MODULE_PATH
 include(GetGitRevisionDescription)
 include(utilities)
 include(components)
+include(targets)
 include(kconfig)
 include(git_submodules)
 include(idf_functions)
@@ -53,6 +54,9 @@ endif()
 # top-level "project" call but customize it to do what we want in the IDF build.
 #
 macro(project name)
+    # Determine the build target
+    idf_set_target()
+
     # Set global variables used by rest of the build
     idf_set_global_variables()
 
@@ -71,6 +75,7 @@ macro(project name)
         -D "COMPONENT_DIRS=${COMPONENT_DIRS}"
         -D "BOOTLOADER_BUILD=${BOOTLOADER_BUILD}"
         -D "IDF_PATH=${IDF_PATH}"
+        -D "IDF_TARGET=${IDF_TARGET}"
         -D "DEBUG=${DEBUG}"
         -P "${IDF_PATH}/tools/cmake/scripts/expand_requirements.cmake"
         WORKING_DIRECTORY "${PROJECT_PATH}")
@@ -102,10 +107,11 @@ macro(project name)
     # Include sdkconfig.cmake so rest of the build knows the configuration
     include(${SDKCONFIG_CMAKE})
 
+    # Check that the targets set in cache, sdkconfig, and in environment all match
+    idf_check_config_target()
+
     # Now the configuration is loaded, set the toolchain appropriately
-    #
-    # TODO: support more toolchains than just ESP32
-    set(CMAKE_TOOLCHAIN_FILE $ENV{IDF_PATH}/tools/cmake/toolchain-esp32.cmake)
+    idf_set_toolchain()
 
     # Declare the actual cmake-level project
     _project(${name} ASM C CXX)

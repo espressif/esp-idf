@@ -15,7 +15,7 @@ macro(idf_set_global_variables)
 
     # Commmon components, required by every component in the build
     #
-    set_default(COMPONENT_REQUIRES_COMMON "cxx esp32 newlib freertos heap log soc")
+    set_default(COMPONENT_REQUIRES_COMMON "cxx ${IDF_TARGET} newlib freertos heap log soc")
 
     # PROJECT_PATH has the path to the IDF project (top-level cmake directory)
     #
@@ -76,7 +76,7 @@ function(idf_set_global_compiler_options)
     endif()
 
     # Default compiler configuration
-    add_compile_options(-ffunction-sections -fdata-sections -fstrict-volatile-bitfields -mlongcalls -nostdlib)
+    add_compile_options(-ffunction-sections -fdata-sections -fstrict-volatile-bitfields -nostdlib)
 
     # Default warnings configuration
     add_compile_options(

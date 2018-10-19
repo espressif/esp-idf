@@ -212,6 +212,41 @@ function run_tests()
     mv CMakeLists.bak CMakeLists.txt
     assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
 
+    # Next two tests will use this fake 'esp31b' target
+    export fake_target=esp31b
+    mkdir -p components/$fake_target
+    touch components/$fake_target/CMakeLists.txt
+    cp ${IDF_PATH}/tools/cmake/toolchain-esp32.cmake components/$fake_target/toolchain-$fake_target.cmake
+    sed -i.old '/cmake_minimum_required/ a\
+        set(COMPONENTS esptool_py)' CMakeLists.txt
+
+    print_status "Can override IDF_TARGET from environment"
+    clean_build_dir
+    rm sdkconfig
+    export IDF_TARGET=$fake_target
+    (cd build && cmake -G Ninja .. ) || failure "Failed to configure with IDF_TARGET set in environment"
+    grep "CONFIG_IDF_TARGET=\"${fake_target}\"" sdkconfig || failure "Project not configured for IDF_TARGET correctly"
+    grep "IDF_TARGET:STRING=${fake_target}" build/CMakeCache.txt || failure "IDF_TARGET not set in CMakeCache.txt"
+    unset IDF_TARGET
+
+    print_status "Can set target using idf.py -D"
+    clean_build_dir
+    rm sdkconfig
+    idf.py -DIDF_TARGET=$fake_target reconfigure || failure "Failed to set target via idf.py"
+    grep "CONFIG_IDF_TARGET=\"${fake_target}\"" sdkconfig || failure "Project not configured correctly using idf.py -D"
+    grep "IDF_TARGET:STRING=${fake_target}" build/CMakeCache.txt || failure "IDF_TARGET not set in CMakeCache.txt using idf.py -D"
+
+    # Clean up modifications for the fake target
+    mv CMakeLists.txt.old CMakeLists.txt
+    rm -rf components
+
+    print_status "Can find toolchain file in component directory"
+    clean_build_dir
+    mv ${IDF_PATH}/tools/cmake/toolchain-esp32.cmake ${IDF_PATH}/components/esp32/
+    idf.py build || failure "Failed to build with toolchain file in component directory"
+    mv ${IDF_PATH}/components/esp32/toolchain-esp32.cmake ${IDF_PATH}/tools/cmake/
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
+
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
         echo "Some failures were detected:"

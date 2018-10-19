@@ -1,5 +1,11 @@
 menu "ESP32-specific"
 
+# Hidden option to support checking for this specific target in C code and Kconfig files
+config IDF_TARGET_ESP32
+	bool
+	default "y" if IDF_TARGET="esp32"
+	default "n"
+
 choice ESP32_DEFAULT_CPU_FREQ_MHZ
     prompt "CPU frequency"
     default ESP32_DEFAULT_CPU_FREQ_160
