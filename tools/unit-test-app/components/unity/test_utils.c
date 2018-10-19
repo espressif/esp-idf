@@ -17,6 +17,10 @@
 #include "test_utils.h"
 #include "rom/ets_sys.h"
 #include "rom/uart.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "tcpip_adapter.h"
+#include "lwip/sockets.h"
 
 const esp_partition_t *get_test_data_partition()
 {
@@ -39,6 +43,32 @@ static void wait_user_control()
         /* Read line */
         UartRxString((uint8_t*) sign, sizeof(sign) - 1);
     }
+}
+
+void test_case_uses_tcpip()
+{
+    // Can be called more than once, does nothing on subsequent calls
+    tcpip_adapter_init();
+
+    // Allocate all sockets then free them
+    // (First time each socket is allocated some one-time allocations happen.)
+    int sockets[CONFIG_LWIP_MAX_SOCKETS];
+    for (int i = 0; i < CONFIG_LWIP_MAX_SOCKETS; i++) {
+        int type = (i % 2 == 0) ? SOCK_DGRAM : SOCK_STREAM;
+        int family = (i % 3 == 0) ? PF_INET6 : PF_INET;
+        sockets[i] = socket(family, type, IPPROTO_IP);
+    }
+    for (int i = 0; i < CONFIG_LWIP_MAX_SOCKETS; i++) {
+        close(sockets[i]);
+    }
+
+    // Allow LWIP tasks to finish initialising themselves
+    vTaskDelay(25 / portTICK_RATE_MS);
+
+    printf("Note: tcpip_adapter_init() has been called. Until next reset, TCP/IP task will periodicially allocate memory and consume CPU time.\n");
+
+    // Reset the leak checker as LWIP allocates a lot of memory on first run
+    unity_reset_leak_checks();
 }
 
 // signal functions, used for sync between unity DUTs for multiple devices cases
