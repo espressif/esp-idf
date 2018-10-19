@@ -296,6 +296,7 @@ build_docs:
       - docs/en/sphinx-warning-log.txt
       - docs/en/sphinx-warning-log-sanitized.txt
       - docs/en/_build/html
+      - docs/sphinx-err-*
       # Chinese version of documentation
       - docs/zh_CN/doxygen-warning-log.txt
       - docs/zh_CN/sphinx-warning-log.txt
@@ -307,7 +308,7 @@ build_docs:
     - ./check_lang_folder_sync.sh
     - cd en
     - make gh-linkcheck
-    - make html
+    - make html || cat /tmp/sphinx-err*.log
     - ../check_doc_warnings.sh
     - cd ../zh_CN
     - make gh-linkcheck
@@ -1043,7 +1044,7 @@ UT_001_36:
   tags:
     - ESP32_IDF
     - UT_T1_1
-
+    
 UT_002_01:
   <<: *unit_test_template
   tags:
@@ -1148,7 +1149,7 @@ UT_004_10:
   tags:
     - ESP32_IDF
     - UT_T1_1
-    - psram
+    - psram    
 
 UT_004_11:
   <<: *unit_test_template
@@ -1265,6 +1266,31 @@ UT_008_04:
   tags:
     - ESP32_IDF
     - UT_T1_LEDC
+    - psram
+    
+UT_009_01:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T2_RS485
+
+UT_009_02:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T2_RS485
+    
+UT_009_03:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T2_RS485
+
+UT_009_04:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T2_RS485
     - psram
 
 UT_010_01:
