@@ -165,7 +165,7 @@ def _ensure_build_directory(args, always_run_cmake=False):
         if args.generator is None:
             args.generator = detect_cmake_generator()
         try:
-            cmake_args = ["cmake", "-G", args.generator, "-DPYTHON_DEPS_CHECKED=1"]
+            cmake_args = ["cmake", "-G", args.generator, "-DPYTHON_DEPS_CHECKED=1", "-DESP_PLATFORM=1"]
             if not args.no_warnings:
                 cmake_args += ["--warn-uninitialized"]
             if args.no_ccache:
