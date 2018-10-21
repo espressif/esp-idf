@@ -68,6 +68,7 @@ macro(project name)
         -D "BOOTLOADER_BUILD=${BOOTLOADER_BUILD}"
         -D "IDF_PATH=${IDF_PATH}"
         -D "DEBUG=${DEBUG}"
+        -D "ESP_PLATFORM=1"
         -P "${IDF_PATH}/tools/cmake/scripts/expand_requirements.cmake"
         WORKING_DIRECTORY "${PROJECT_PATH}")
     include("${CMAKE_BINARY_DIR}/component_depends.cmake")
