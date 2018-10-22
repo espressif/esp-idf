@@ -62,6 +62,12 @@ static esp_err_t _udp_join_group(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t
 {
     struct netif * netif = NULL;
     void * nif = NULL;
+
+    if (!tcpip_adapter_is_netif_up(tcpip_if)) {
+        // Network interface went down before event propagated, skipping IGMP config
+        return ESP_ERR_INVALID_STATE;
+    }
+
     esp_err_t err = tcpip_adapter_get_netif(tcpip_if, &nif);
     if (err) {
         return ESP_ERR_INVALID_ARG;
