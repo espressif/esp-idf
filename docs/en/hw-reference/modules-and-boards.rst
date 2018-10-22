@@ -119,7 +119,10 @@ ESP32-WROVER
 
 A step upgrade of ESP32-WROOM-32x modules with an additional 8MB SPI PSRAM (Pseudo static RAM). 
 
-The module comes in couple of versions listed in section :ref:`esp-wroom-solo-wrover-modules`. ESP32-WROVER and ESP32-WROVER-I have PSRAM that operates at 1.8V and can support up to 144 MHz clock rate. ESP32-WROVER-B and ESP32-WROVER-IB have PSRAM that operates at 3.3V and can support up to 133 MHz clock rate.
+The module comes in couple of versions listed in section :ref:`esp-wroom-solo-wrover-modules`:
+
+* **ESP32-WROVER** and **ESP32-WROVER-I** have PSRAM that operates at 1.8V and can support up to 144 MHz clock rate.
+* **ESP32-WROVER-B** and **ESP32-WROVER-IB** have PSRAM that operates at 3.3V and can support up to 133 MHz clock rate.
 
 By default the module has 4MB flash and may be also ordered with custom flash size of 8 or 16MB, see `Espressif Products Ordering Information`_. 
 
