@@ -43,7 +43,6 @@ def main():
     scratch_build_code_linux_macos = """
 ::
 
-    cd ~/esp
     git clone -b xtensa-1.22.x https://github.com/espressif/crosstool-NG.git
     cd crosstool-NG
     ./bootstrap && ./configure --enable-local && make install
