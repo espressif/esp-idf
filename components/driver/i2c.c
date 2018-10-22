@@ -548,7 +548,7 @@ static esp_err_t i2c_master_clear_bus(i2c_port_t i2c_num)
     gpio_set_level(sda_io, 1);
     ets_delay_us(scl_half_period);
     int i=0;
-    while( !gpio_get_level(sda_id) && (i<9)){ // cycle SCL until SDA is HIGH
+    while( !gpio_get_level(sda_io) && (i<9)){ // cycle SCL until SDA is HIGH
         gpio_set_level(scl_io, 1);
         ets_delay_us(scl_half_period);
         gpio_set_level(scl_io, 0);
