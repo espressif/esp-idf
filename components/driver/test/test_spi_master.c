@@ -1359,9 +1359,26 @@ static void sorted_array_insert(uint32_t* array, int* size, uint32_t item)
 
 #define TEST_TIMES  11
 
-TEST_CASE("spi_speed","[spi]")
+static IRAM_ATTR void spi_transmit_measure(spi_device_handle_t spi, spi_transaction_t* trans, uint32_t* t_flight)
 {
     RECORD_TIME_PREPARE();
+    spi_device_transmit(spi, trans); // prime the flash cache
+    RECORD_TIME_START();
+    spi_device_transmit(spi, trans);
+    RECORD_TIME_END(t_flight);
+}
+
+static IRAM_ATTR void spi_transmit_polling_measure(spi_device_handle_t spi, spi_transaction_t* trans, uint32_t* t_flight)
+{
+    RECORD_TIME_PREPARE();
+    spi_device_polling_transmit(spi, trans); // prime the flash cache
+    RECORD_TIME_START();
+    spi_device_polling_transmit(spi, trans);
+    RECORD_TIME_END(t_flight);
+}
+
+TEST_CASE("spi_speed","[spi]")
+{
     uint32_t t_flight;
     //to get rid of the influence of randomly interrupts, we measured the performance by median value
     uint32_t t_flight_sorted[TEST_TIMES];
@@ -1381,16 +1398,13 @@ TEST_CASE("spi_speed","[spi]")
     //record flight time by isr, with DMA
     t_flight_num = 0;
     for (int i = 0; i < TEST_TIMES; i++) {
-        spi_device_transmit(spi, &trans); // prime the flash cache
-        RECORD_TIME_START();
-        spi_device_transmit(spi, &trans);
-        RECORD_TIME_END(&t_flight);
+        spi_transmit_measure(spi, &trans, &t_flight);
         sorted_array_insert(t_flight_sorted, &t_flight_num, t_flight);
     }
-    TEST_PERFORMANCE_LESS_THAN(SPI_PER_TRANS_NO_POLLING, "%d us", t_flight_sorted[(TEST_TIMES+1)/2]);
     for (int i = 0; i < TEST_TIMES; i++) {
         ESP_LOGI(TAG, "%d", t_flight_sorted[i]);
     }
+    TEST_PERFORMANCE_LESS_THAN(SPI_PER_TRANS_NO_POLLING, "%d us", t_flight_sorted[(TEST_TIMES+1)/2]);
 
     //acquire the bus to send polling transactions faster
     ret = spi_device_acquire_bus(spi, portMAX_DELAY);
@@ -1399,16 +1413,13 @@ TEST_CASE("spi_speed","[spi]")
     //record flight time by polling and with DMA
     t_flight_num = 0;
     for (int i = 0; i < TEST_TIMES; i++) {
-        spi_device_polling_transmit(spi, &trans); // prime the flash cache
-        RECORD_TIME_START();
-        spi_device_polling_transmit(spi, &trans);
-        RECORD_TIME_END(&t_flight);
+        spi_transmit_polling_measure(spi, &trans, &t_flight);
         sorted_array_insert(t_flight_sorted, &t_flight_num, t_flight);
     }
-    TEST_PERFORMANCE_LESS_THAN(SPI_PER_TRANS_POLLING, "%d us", t_flight_sorted[(TEST_TIMES+1)/2]);
     for (int i = 0; i < TEST_TIMES; i++) {
         ESP_LOGI(TAG, "%d", t_flight_sorted[i]);
     }
+    TEST_PERFORMANCE_LESS_THAN(SPI_PER_TRANS_POLLING, "%d us", t_flight_sorted[(TEST_TIMES+1)/2]);
 
     //release the bus
     spi_device_release_bus(spi);
@@ -1419,16 +1430,13 @@ TEST_CASE("spi_speed","[spi]")
     //record flight time by isr, without DMA
     t_flight_num = 0;
     for (int i = 0; i < TEST_TIMES; i++) {
-        spi_device_transmit(spi, &trans); // prime the flash cache
-        RECORD_TIME_START();
-        spi_device_transmit(spi, &trans);
-        RECORD_TIME_END(&t_flight);
+        spi_transmit_measure(spi, &trans, &t_flight);
         sorted_array_insert(t_flight_sorted, &t_flight_num, t_flight);
     }
-    TEST_PERFORMANCE_LESS_THAN( SPI_PER_TRANS_NO_POLLING_NO_DMA, "%d us", t_flight_sorted[(TEST_TIMES+1)/2]);
     for (int i = 0; i < TEST_TIMES; i++) {
         ESP_LOGI(TAG, "%d", t_flight_sorted[i]);
     }
+    TEST_PERFORMANCE_LESS_THAN( SPI_PER_TRANS_NO_POLLING_NO_DMA, "%d us", t_flight_sorted[(TEST_TIMES+1)/2]);
 
     //acquire the bus to send polling transactions faster
     ret = spi_device_acquire_bus(spi, portMAX_DELAY);
@@ -1436,16 +1444,13 @@ TEST_CASE("spi_speed","[spi]")
     //record flight time by polling, without DMA
     t_flight_num = 0;
     for (int i = 0; i < TEST_TIMES; i++) {
-        spi_device_polling_transmit(spi, &trans); // prime the flash cache
-        RECORD_TIME_START();
-        spi_device_polling_transmit(spi, &trans);
-        RECORD_TIME_END(&t_flight);
+        spi_transmit_polling_measure(spi, &trans, &t_flight);
         sorted_array_insert(t_flight_sorted, &t_flight_num, t_flight);
     }
-    TEST_PERFORMANCE_LESS_THAN(SPI_PER_TRANS_POLLING_NO_DMA, "%d us", t_flight_sorted[(TEST_TIMES+1)/2]);
     for (int i = 0; i < TEST_TIMES; i++) {
         ESP_LOGI(TAG, "%d", t_flight_sorted[i]);
     }
+    TEST_PERFORMANCE_LESS_THAN(SPI_PER_TRANS_POLLING_NO_DMA, "%d us", t_flight_sorted[(TEST_TIMES+1)/2]);
 
     //release the bus
     spi_device_release_bus(spi);

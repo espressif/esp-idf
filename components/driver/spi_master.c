@@ -135,7 +135,6 @@ We have two bits to control the interrupt:
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
 #include "freertos/task.h"
-#include "freertos/ringbuf.h"
 #include "soc/soc.h"
 #include "soc/soc_memory_layout.h"
 #include "soc/dport_reg.h"
@@ -709,7 +708,7 @@ static SPI_MASTER_ISR_ATTR esp_err_t device_acquire_bus_internal(spi_device_t *h
 
 /*  This function check for whether the ISR is done, if not, block until semaphore given.
  */
-static inline esp_err_t device_wait_for_isr_idle(spi_device_t *handle, TickType_t wait)
+static inline SPI_MASTER_ISR_ATTR esp_err_t device_wait_for_isr_idle(spi_device_t *handle, TickType_t wait)
 {
     //quickly skip if the isr is already free
     if (!handle->host->isr_free) {
@@ -767,7 +766,7 @@ static SPI_MASTER_ISR_ATTR void device_release_bus_internal(spi_host_t *host)
     }
 }
 
-static inline bool device_is_polling(spi_device_t *handle)
+static inline SPI_MASTER_ISR_ATTR bool device_is_polling(spi_device_t *handle)
 {
     return atomic_load(&handle->host->acquire_cs) == handle->id && handle->host->polling;
 }
@@ -1088,7 +1087,7 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
     if (do_yield) portYIELD_FROM_ISR();
 }
 
-static esp_err_t check_trans_valid(spi_device_handle_t handle, spi_transaction_t *trans_desc)
+static SPI_MASTER_ISR_ATTR esp_err_t check_trans_valid(spi_device_handle_t handle, spi_transaction_t *trans_desc)
 {
     SPI_CHECK(handle!=NULL, "invalid dev handle", ESP_ERR_INVALID_ARG);
     spi_host_t *host = handle->host;
@@ -1112,7 +1111,7 @@ static esp_err_t check_trans_valid(spi_device_handle_t handle, spi_transaction_t
     return ESP_OK;
 }
 
-static SPI_MASTER_ATTR void uninstall_priv_desc(spi_trans_priv_t* trans_buf)
+static SPI_MASTER_ISR_ATTR void uninstall_priv_desc(spi_trans_priv_t* trans_buf)
 {
     spi_transaction_t *trans_desc = trans_buf->trans;
     if ((void *)trans_buf->buffer_to_send != &trans_desc->tx_data[0] &&
@@ -1131,7 +1130,7 @@ static SPI_MASTER_ATTR void uninstall_priv_desc(spi_trans_priv_t* trans_buf)
     }
 }
 
-static SPI_MASTER_ATTR esp_err_t setup_priv_desc(spi_transaction_t *trans_desc, spi_trans_priv_t* new_desc, bool isdma)
+static SPI_MASTER_ISR_ATTR esp_err_t setup_priv_desc(spi_transaction_t *trans_desc, spi_trans_priv_t* new_desc, bool isdma)
 {
     *new_desc = (spi_trans_priv_t) { .trans = trans_desc, };
 
