@@ -63,6 +63,10 @@ macro(project name)
     execute_process(COMMAND "${CMAKE_COMMAND}"
         -D "COMPONENTS=${COMPONENTS}"
         -D "COMPONENT_REQUIRES_COMMON=${COMPONENT_REQUIRES_COMMON}"
+        -D "EXCLUDE_COMPONENTS=${EXCLUDE_COMPONENTS}"
+        -D "TEST_COMPONENTS=${TEST_COMPONENTS}"
+        -D "TEST_EXCLUDE_COMPONENTS=${TEST_EXCLUDE_COMPONENTS}"
+        -D "TESTS_ALL=${TESTS_ALL}"
         -D "DEPENDENCIES_FILE=${CMAKE_BINARY_DIR}/component_depends.cmake"
         -D "COMPONENT_DIRS=${COMPONENT_DIRS}"
         -D "BOOTLOADER_BUILD=${BOOTLOADER_BUILD}"
@@ -82,6 +86,14 @@ macro(project name)
     message(STATUS "Component names: ${BUILD_COMPONENTS_SPACES}")
     unset(BUILD_COMPONENTS_SPACES)
     message(STATUS "Component paths: ${BUILD_COMPONENT_PATHS}")
+
+    # Print list of test components
+    if(TESTS_ALL EQUAL 1 OR TEST_COMPONENTS)
+        string(REPLACE ";" " " BUILD_TEST_COMPONENTS_SPACES "${BUILD_TEST_COMPONENTS}")
+        message(STATUS "Test component names: ${BUILD_TEST_COMPONENTS_SPACES}")
+        unset(BUILD_TEST_COMPONENTS_SPACES)
+        message(STATUS "Test component paths: ${BUILD_TEST_COMPONENT_PATHS}")
+    endif()
 
     kconfig_set_variables()
 
@@ -124,7 +136,15 @@ macro(project name)
     # Add each component to the build as a library
     #
     foreach(COMPONENT_PATH ${BUILD_COMPONENT_PATHS})
-        get_filename_component(COMPONENT_NAME ${COMPONENT_PATH} NAME)
+        list(FIND BUILD_TEST_COMPONENT_PATHS ${COMPONENT_PATH} idx)
+
+        if(NOT idx EQUAL -1)
+            list(GET BUILD_TEST_COMPONENTS ${idx} test_component)
+            set(COMPONENT_NAME ${test_component})
+        else()
+            get_filename_component(COMPONENT_NAME ${COMPONENT_PATH} NAME)
+        endif()
+
         add_subdirectory(${COMPONENT_PATH} ${COMPONENT_NAME})
     endforeach()
     unset(COMPONENT_NAME)
