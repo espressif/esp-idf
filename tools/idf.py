@@ -84,7 +84,6 @@ def _run_tool(tool_name, args, cwd):
     except subprocess.CalledProcessError as e:
         raise FatalError("%s failed with exit code %d" % (tool_name, e.returncode))
 
-
 def check_environment():
     """
     Verify the environment contains the top-level tools we need to operate
@@ -152,7 +151,7 @@ def _ensure_build_directory(args, always_run_cmake=False):
     # Verify/create the build directory
     build_dir = args.build_dir
     if not os.path.isdir(build_dir):
-        os.mkdir(build_dir)
+        os.makedirs(build_dir)
     cache_path = os.path.join(build_dir, "CMakeCache.txt")
     if not os.path.exists(cache_path) or always_run_cmake:
         if args.generator is None:
@@ -163,7 +162,10 @@ def _ensure_build_directory(args, always_run_cmake=False):
                 cmake_args += [ "--warn-uninitialized" ]
             if args.no_ccache:
                 cmake_args += [ "-DCCACHE_DISABLE=1" ]
+            if args.define_cache_entry:
+                cmake_args +=  ["-D" + d for d in args.define_cache_entry]
             cmake_args += [ project_dir]
+
             _run_tool("cmake", cmake_args, cwd=args.build_dir)
         except:
             # don't allow partially valid CMakeCache.txt files,
@@ -220,6 +222,7 @@ def build_target(target_name, args):
     """
     _ensure_build_directory(args)
     generator_cmd = GENERATOR_CMDS[args.generator]
+
     if not args.no_ccache:
         # Setting CCACHE_BASEDIR & CCACHE_NO_HASHDIR ensures that project paths aren't stored in the ccache entries
         # (this means ccache hits can be shared between different projects. It may mean that some debug information
@@ -258,12 +261,10 @@ def flash(action, args):
     esptool_args += [ "write_flash", "@"+flasher_args_path ]
     _run_tool("esptool.py", esptool_args, args.build_dir)
 
-
 def erase_flash(action, args):
     esptool_args = _get_esptool_args(args)
     esptool_args += [ "erase_flash" ]
     _run_tool("esptool.py", esptool_args, args.build_dir)
-
 
 def monitor(action, args):
     """
@@ -331,7 +332,6 @@ def fullclean(action, args):
 def print_closing_message(args):
     # print a closing message of some kind
     #
-
     if "flash" in str(args.actions):
         print("Done")
         return
@@ -380,28 +380,28 @@ def print_closing_message(args):
 
 ACTIONS = {
     # action name : ( function (or alias), dependencies, order-only dependencies )
-    "all" :                  ( build_target, [], [ "reconfigure", "menuconfig", "clean", "fullclean" ] ),
-    "build":                 ( "all",        [], [] ),  # build is same as 'all' target
-    "clean":                 ( clean,        [], [ "fullclean" ] ),
-    "fullclean":             ( fullclean,    [], [] ),
-    "reconfigure":           ( reconfigure,  [], [ "menuconfig" ] ),
-    "menuconfig":            ( build_target, [], [] ),
-    "confserver":            ( build_target, [], [] ),
-    "size":                  ( build_target, [ "app" ], [] ),
-    "size-components":       ( build_target, [ "app" ], [] ),
-    "size-files":            ( build_target, [ "app" ], [] ),
-    "bootloader":            ( build_target, [], [] ),
-    "bootloader-clean":      ( build_target, [], [] ),
-    "bootloader-flash":      ( flash,        [ "bootloader" ], [ "erase_flash"] ),
-    "app":                   ( build_target, [], [ "clean", "fullclean", "reconfigure" ] ),
-    "app-flash":             ( flash,        [ "app" ], [ "erase_flash"]),
-    "partition_table":       ( build_target, [], [ "reconfigure" ] ),
-    "partition_table-flash": ( flash,        [ "partition_table" ], [ "erase_flash" ]),
-    "flash":                 ( flash,        [ "all" ], [ "erase_flash" ] ),
-    "erase_flash":           ( erase_flash,  [], []),
-    "monitor":               ( monitor,      [], [ "flash", "partition_table-flash", "bootloader-flash", "app-flash" ]),
+    "all" :                  ( build_target,    [], [ "reconfigure", "menuconfig", "clean", "fullclean" ] ),
+    "build":                 ( "all",           [], [] ),  # build is same as 'all' target
+    "clean":                 ( clean,           [], [ "fullclean" ] ),
+    "fullclean":             ( fullclean,       [], [] ),
+    "reconfigure":           ( reconfigure,     [], [ "menuconfig" ] ),
+    "menuconfig":            ( build_target,    [], [] ),
+    "defconfig":             ( build_target,    [], [] ),
+    "confserver":            ( build_target,    [], [] ),
+    "size":                  ( build_target,    [ "app" ], [] ),
+    "size-components":       ( build_target,    [ "app" ], [] ),
+    "size-files":            ( build_target,    [ "app" ], [] ),
+    "bootloader":            ( build_target,    [], [] ),
+    "bootloader-clean":      ( build_target,    [], [] ),
+    "bootloader-flash":      ( flash,           [ "bootloader" ], [ "erase_flash"] ),
+    "app":                   ( build_target,    [], [ "clean", "fullclean", "reconfigure" ] ),
+    "app-flash":             ( flash,           [ "app" ], [ "erase_flash"]),
+    "partition_table":       ( build_target,    [], [ "reconfigure" ] ),
+    "partition_table-flash": ( flash,           [ "partition_table" ], [ "erase_flash" ]),
+    "flash":                 ( flash,           [ "all" ], [ "erase_flash" ] ),
+    "erase_flash":           ( erase_flash,     [], []),
+    "monitor":               ( monitor,         [], [ "flash", "partition_table-flash", "bootloader-flash", "app-flash" ]),
 }
-
 
 def get_commandline_options():
     """ Return all the command line options up to but not including the action """
@@ -427,12 +427,34 @@ def get_default_serial_port():
     except IndexError:
         raise RuntimeError("No serial ports found. Connect a device, or use '-p PORT' option to set a specific port.")
 
+# Import the actions, arguments extension file
+if os.path.exists(os.path.join(os.getcwd(), "idf_ext.py")):
+    sys.path.append(os.getcwd())
+    try:
+        from idf_ext import add_action_extensions, add_argument_extensions
+    except ImportError as e:
+        print("Error importing extension file idf_ext.py. Skipping.")
+        print("Please make sure that it contains implementations (even if they're empty implementations) of")
+        print("add_action_extensions and add_argument_extensions.")
 
 def main():
     if sys.version_info[0] != 2 or sys.version_info[1] != 7:
         print("Note: You are using Python %d.%d.%d. Python 3 support is new, please report any problems "
               "you encounter. Search for 'Setting the Python Interpreter' in the ESP-IDF docs if you want to use "
               "Python 2.7." % sys.version_info[:3])
+
+    # Add actions extensions
+    try:
+        add_action_extensions({
+                    "build_target": build_target,
+                    "reconfigure" : reconfigure,
+                    "flash" : flash,
+                    "monitor" : monitor,
+                    "clean" : clean,
+                    "fullclean" : fullclean
+                    }, ACTIONS)
+    except NameError:
+        pass
 
     parser = argparse.ArgumentParser(description='ESP-IDF build management tool')
     parser.add_argument('-p', '--port', help="Serial port",
@@ -444,9 +466,16 @@ def main():
     parser.add_argument('-G', '--generator', help="Cmake generator", choices=GENERATOR_CMDS.keys())
     parser.add_argument('-n', '--no-warnings', help="Disable Cmake warnings", action="store_true")
     parser.add_argument('-v', '--verbose', help="Verbose build output", action="store_true")
+    parser.add_argument('-D', '--define-cache-entry', help="Create a cmake cache entry", nargs='+')
     parser.add_argument('--no-ccache', help="Disable ccache. Otherwise, if ccache is available on the PATH then it will be used for faster builds.", action="store_true")
     parser.add_argument('actions', help="Actions (build targets or other operations)", nargs='+',
                         choices=ACTIONS.keys())
+
+    # Add arguments extensions
+    try:
+        add_argument_extensions(parser)
+    except NameError:
+        pass
 
     args = parser.parse_args()
 

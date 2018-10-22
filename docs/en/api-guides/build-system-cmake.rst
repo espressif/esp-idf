@@ -219,6 +219,7 @@ Project CMakeLists File
 
 Each project has a single top-level ``CMakeLists.txt`` file that contains build settings for the entire project. By default, the project CMakeLists can be quite minimal.
 
+
 Minimal Example CMakeLists
 --------------------------
 
@@ -796,6 +797,7 @@ Here is an example minimal "pure CMake" component CMakeLists file for a componen
 - This file is quite simple as there are not a lot of source files. For components with a large number of files, the globbing behaviour of ESP-IDF's component logic can make the component CMakeLists style simpler.)
 - Any time a component adds a library target with the component name, the ESP-IDF build system will automatically add this to the build, expose public include directories, etc. If a component wants to add a library target with a different name, dependencies will need to be added manually via CMake commands.
 
+.. _cmake-file-globbing:
 
 File Globbing & Incremental Builds
 ==================================

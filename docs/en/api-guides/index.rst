@@ -22,6 +22,7 @@ API Guides
    ULP Coprocessor <ulp>
    ULP Coprocessor (CMake) <ulp-cmake>
    Unit Testing <unit-tests>
+   Unit Testing (CMake) <unit-tests-cmake>
    Application Level Tracing <app_trace>
    Console Component <console>
    ROM debug console <romconsole>
