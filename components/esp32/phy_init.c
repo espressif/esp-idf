@@ -446,6 +446,7 @@ esp_err_t esp_phy_load_cal_data_from_nvs(esp_phy_calibration_data_t* out_cal_dat
     if (err == ESP_ERR_NVS_NOT_INITIALIZED) {
         ESP_LOGE(TAG, "%s: NVS has not been initialized. "
                 "Call nvs_flash_init before starting WiFi/BT.", __func__);
+        return err;
     } else if (err != ESP_OK) {
         ESP_LOGD(TAG, "%s: failed to open NVS namespace (0x%x)", __func__, err);
         return err;
