@@ -67,6 +67,34 @@ static void set_cache_and_start_app(uint32_t drom_addr,
     uint32_t irom_size,
     uint32_t entry_addr);
 
+// Read ota_info partition and fill array from two otadata structures.
+static esp_err_t read_otadata(const esp_partition_pos_t *ota_info, esp_ota_select_entry_t *two_otadata)
+{
+    const esp_ota_select_entry_t *ota_select_map;
+    if (ota_info->offset == 0) {
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    // partition table has OTA data partition
+    if (ota_info->size < 2 * SPI_SEC_SIZE) {
+        ESP_LOGE(TAG, "ota_info partition size %d is too small (minimum %d bytes)", ota_info->size, sizeof(esp_ota_select_entry_t));
+        return ESP_FAIL; // can't proceed
+    }
+
+    ESP_LOGD(TAG, "OTA data offset 0x%x", ota_info->offset);
+    ota_select_map = bootloader_mmap(ota_info->offset, ota_info->size);
+    if (!ota_select_map) {
+        ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", ota_info->offset, ota_info->size);
+        return ESP_FAIL; // can't proceed
+    }
+
+    memcpy(&two_otadata[0], ota_select_map, sizeof(esp_ota_select_entry_t));
+    memcpy(&two_otadata[1], (uint8_t *)ota_select_map + SPI_SEC_SIZE, sizeof(esp_ota_select_entry_t));
+    bootloader_munmap(ota_select_map);
+
+    return ESP_OK;
+}
+
 bool bootloader_utility_load_partition_table(bootloader_state_t* bs)
 {
     const esp_partition_info_t *partitions;
@@ -194,71 +222,48 @@ static void log_invalid_app_partition(int index)
 
 int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
 {
-    esp_ota_select_entry_t sa,sb;
-    const esp_ota_select_entry_t *ota_select_map;
+    esp_ota_select_entry_t otadata[2];
+    int boot_index = FACTORY_INDEX;
 
-    if (bs->ota_info.offset != 0) {
-        // partition table has OTA data partition
-        if (bs->ota_info.size < 2 * SPI_SEC_SIZE) {
-            ESP_LOGE(TAG, "ota_info partition size %d is too small (minimum %d bytes)", bs->ota_info.size, sizeof(esp_ota_select_entry_t));
-            return INVALID_INDEX; // can't proceed
+    if (bs->ota_info.offset == 0) {
+        return FACTORY_INDEX;
+    }
+
+    if (read_otadata(&bs->ota_info, otadata) != ESP_OK) {
+        return INVALID_INDEX;
+    }
+
+    ESP_LOGD(TAG, "otadata[0]: sequence values 0x%08x", otadata[0].ota_seq);
+    ESP_LOGD(TAG, "otadata[1]: sequence values 0x%08x", otadata[1].ota_seq);
+
+    if ((bootloader_common_ota_select_invalid(&otadata[0]) &&
+         bootloader_common_ota_select_invalid(&otadata[1])) ||
+         bs->app_count == 0) {
+        ESP_LOGD(TAG, "OTA sequence numbers both empty (all-0xFF) or partition table does not have bootable ota_apps (app_count=%d)", bs->app_count);
+        if (bs->factory.offset != 0) {
+            ESP_LOGI(TAG, "Defaulting to factory image");
+            boot_index = FACTORY_INDEX;
+        } else {
+            ESP_LOGI(TAG, "No factory image, trying OTA 0");
+            boot_index = 0;
         }
-
-        ESP_LOGD(TAG, "OTA data offset 0x%x", bs->ota_info.offset);
-        ota_select_map = bootloader_mmap(bs->ota_info.offset, bs->ota_info.size);
-        if (!ota_select_map) {
-            ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", bs->ota_info.offset, bs->ota_info.size);
-            return INVALID_INDEX; // can't proceed
-        }
-        memcpy(&sa, ota_select_map, sizeof(esp_ota_select_entry_t));
-        memcpy(&sb, (uint8_t *)ota_select_map + SPI_SEC_SIZE, sizeof(esp_ota_select_entry_t));
-        bootloader_munmap(ota_select_map);
-
-        ESP_LOGD(TAG, "OTA sequence values A 0x%08x B 0x%08x", sa.ota_seq, sb.ota_seq);
-        if ((sa.ota_seq == UINT32_MAX && sb.ota_seq == UINT32_MAX) || (bs->app_count == 0)) {
-            ESP_LOGD(TAG, "OTA sequence numbers both empty (all-0xFF) or partition table does not have bootable ota_apps (app_count=%d)", bs->app_count);
-            if (bs->factory.offset != 0) {
-                ESP_LOGI(TAG, "Defaulting to factory image");
-                return FACTORY_INDEX;
-            } else {
-                ESP_LOGI(TAG, "No factory image, trying OTA 0");
-                return 0;
-            }
-        } else  {
-            bool ota_valid = false;
-            const char *ota_msg;
-            int ota_seq; // Raw OTA sequence number. May be more than # of OTA slots
-            if(bootloader_common_ota_select_valid(&sa) && bootloader_common_ota_select_valid(&sb)) {
-                ota_valid = true;
-                ota_msg = "Both OTA values";
-                ota_seq = MAX(sa.ota_seq, sb.ota_seq) - 1;
-            } else if(bootloader_common_ota_select_valid(&sa)) {
-                ota_valid = true;
-                ota_msg = "Only OTA sequence A is";
-                ota_seq = sa.ota_seq - 1;
-            } else if(bootloader_common_ota_select_valid(&sb)) {
-                ota_valid = true;
-                ota_msg = "Only OTA sequence B is";
-                ota_seq = sb.ota_seq - 1;
-            }
-
-            if (ota_valid) {
-                int ota_slot = ota_seq % bs->app_count; // Actual OTA partition selection
-                ESP_LOGD(TAG, "%s valid. Mapping seq %d -> OTA slot %d", ota_msg, ota_seq, ota_slot);
-                return ota_slot;
-            } else if (bs->factory.offset != 0) {
-                ESP_LOGE(TAG, "ota data partition invalid, falling back to factory");
-                return FACTORY_INDEX;
-            } else {
-                ESP_LOGE(TAG, "ota data partition invalid and no factory, will try all partitions");
-                return FACTORY_INDEX;
-            }
+    } else {
+        int active_otadata = bootloader_common_get_active_otadata(otadata);
+        if (active_otadata != -1) {
+            ESP_LOGD(TAG, "Active OTADATA copy is #%d", active_otadata);
+            uint32_t ota_seq = otadata[active_otadata].ota_seq - 1; // Raw OTA sequence number. May be more than # of OTA slots
+            boot_index = ota_seq % bs->app_count; // Actual OTA partition selection
+            ESP_LOGD(TAG, "Mapping seq %d -> OTA slot %d", ota_seq, boot_index);
+        } else if (bs->factory.offset != 0) {
+            ESP_LOGE(TAG, "ota data partition invalid, falling back to factory");
+            boot_index = FACTORY_INDEX;
+        } else {
+            ESP_LOGE(TAG, "ota data partition invalid and no factory, will try all partitions");
+            boot_index = FACTORY_INDEX;
         }
     }
 
-    // otherwise, start from factory app partition and let the search logic
-    // proceed from there
-    return FACTORY_INDEX;
+    return boot_index;
 }
 
 /* Return true if a partition has a valid app image that was successfully loaded */
