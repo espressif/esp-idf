@@ -313,6 +313,7 @@ The following component-specific variables are available for use inside componen
 
 - ``COMPONENT_PATH``: The component directory. Evaluates to the absolute path of the directory containing ``component.mk``. The component path cannot contain spaces. This is the same as the ``CMAKE_CURRENT_SOURCE_DIR`` variable.
 - ``COMPONENT_NAME``: Name of the component. Same as the name of the component directory.
+- ``COMPONENT_TARGET``: Name of the library target created internally by the build system for the component.
 
 The following variables are set at the project level, but available for use in component CMakeLists:
 
@@ -637,7 +638,7 @@ file called graphics_lib.c::
          VERBATIM)
 
     add_custom_target(logo DEPENDS logo.h)
-    add_dependencies(${COMPONENT_NAME} logo)
+    add_dependencies(${COMPONENT_TARGET} logo)
 
     set_property(DIRECTORY "${COMPONENT_PATH}" APPEND PROPERTY
          ADDITIONAL_MAKE_CLEAN_FILES logo.h)
@@ -652,7 +653,7 @@ it is added to the `ADDITIONAL_MAKE_CLEAN_FILES`_ property.
 
 .. note::
 
-   If generating files as part of the project CMakeLists.txt file, not a component CMakeLists.txt, then use ``${PROJECT_PATH}`` instead of ``${COMPONENT_PATH}`` and ``${PROJECT_NAME}.elf`` instead of ``${COMPONENT_NAME}``.)
+   If generating files as part of the project CMakeLists.txt file, not a component CMakeLists.txt, then use ``${PROJECT_PATH}`` instead of ``${COMPONENT_PATH}`` and ``${PROJECT_NAME}.elf`` instead of ``${COMPONENT_TARGET}``.)
 
 If a a source file from another component included ``logo.h``, then ``add_dependencies`` would need to be called to add a dependency between
 the two components, to ensure that the component source files were always compiled in the correct order.
@@ -837,6 +838,96 @@ Here is an example minimal "pure CMake" component CMakeLists file for a componen
 - This is actually an equivalent declaration to the IDF ``json`` component :idf_file:`/components/json/CMakeLists.txt`.
 - This file is quite simple as there are not a lot of source files. For components with a large number of files, the globbing behaviour of ESP-IDF's component logic can make the component CMakeLists style simpler.)
 - Any time a component adds a library target with the component name, the ESP-IDF build system will automatically add this to the build, expose public include directories, etc. If a component wants to add a library target with a different name, dependencies will need to be added manually via CMake commands.
+
+
+Using Third-Party CMake Projects with Components
+================================================
+
+CMake is used for a lot of open-source C and C++ projects — code that users can tap into for their applications. One of the benefits of having a CMake build system
+is the ability to import these third-party projects, sometimes even without modification! This allows for users to be able to get functionality that may 
+not yet be provided by a component, or use another library for the same functionality.
+
+.. highlight:: cmake
+
+Importing a library might look like this for a hypothetical library ``foo`` to be used in the ``main`` component::
+
+  # Register the component
+  register_component()
+
+  # Set values of hypothetical variables that control the build of `foo`
+  set(FOO_BUILD_STATIC OFF)
+  set(FOO_BUILD_TESTS OFF)
+  
+  # Create and import the library targets
+  add_subdirectory(foo)
+
+  # Propagate IDF-wide compile settings/definitions/options to `foo`
+  target_include_directories(foo ${IDF_INCLUDE_DIRECTORIES})
+  target_compile_options(foo ${IDF_COMPILE_OPTIONS})
+  target_compile_definitions(foo ${IDF_COMPILE_DEFINITIONS})
+
+  # Link `foo` to `main` component
+  target_link_libraries(main foo)
+
+For an actual example, take a look at :example:`build_system/cmake/import_lib`. Take note that what needs to be done in order to import
+the library may vary. It is recommended to read up on the library's documentation for instructions on how to
+import it from other projects. Studying the library's CMakeLists.txt and build structure can also be helpful.
+
+It is also possible to wrap a third-party library to be used as a component in this manner. For example, the :component:`mbedtls` component is a wrapper for 
+Espressif's fork of `mbedtls <https://github.com/ARMmbed/mbedtls>`_. See its :component_file:`component CMakeLists.txt <mbedtls/CMakeLists.txt>`.
+
+Using ESP-IDF in Custom CMake Projects
+======================================
+
+ESP-IDF provides a template CMake project for easily creating an application. However, in some instances the user might already
+have an existing CMake project or may want to create one. In these cases it is desirable to be able to consume IDF components
+as libraries to be linked to the user's targets (libraries/ executables). 
+
+.. highlight:: cmake
+
+It is possible to do so by using functions  ``idf_import_components``
+and ``idf_link_components`` provided provided by :idf_file:`tools/cmake/idf_functions.cmake`. For example::
+
+  cmake_minimum_required(VERSION 3.5)
+  project(my_custom_app C)
+
+  # The source file main.c contains app_main() definition
+  add_executable(${CMAKE_PROJECT_NAME}.elf main.c)
+
+  # Provides idf_import_components and idf_link_components
+  include($ENV{IDF_PATH}/tools/cmake/idf_functions.cmake)
+
+  # Do some configuration for idf_import_components. This enables creation of artifacts (which might not be
+  # needed) for some projects
+  set(IDF_BUILD_ARTIFACTS ON)
+  set(IDF_PROJECT_EXECUTABLE ${CMAKE_PROJECT_NAME}.elf)
+  set(IDF_BUILD_ARTIFACTS_DIR ${CMAKE_BINARY_DIR})
+
+  # Wraps add_subdirectory() to create library targets for components, and then `return` them using the given variable.
+  # In this case the variable is named `component`
+  idf_import_components(components $ENV{IDF_PATH} esp-idf)
+
+  # Wraps target_link_libraries() to link processed components by idf_import_components to target
+  idf_link_components(${CMAKE_PROJECT_NAME}.elf "${components}")
+
+
+The snippet above includes all of the components in the ESP-IDF directory and uses KConfig defaults.
+It also builds artifacts (partition table, project information json files, bootloader, etc.). There are also other build
+parameters which can be set, the full list of which is as follows:
+
+- ``IDF_BUILD_ARTIFACTS``: Build artifacts such as bootloader, partition table binary file, partition binaries, project information json typically needed for flashing binaries to the target chip. Requires ``IDF_PROJECT_EXECUTABLE`` and ``IDF_BUILD_ARTIFACTS_DIR`` to be set as well.
+- ``IDF_PROJECT_EXECUTABLE``: Name of the final executable file. This parameter is needed for creating some of the artifacts.
+- ``IDF_BUILD_ARTIFACTS_DIR``: Location where created artifacts are to be placed.
+- ``IDF_EXTRA_COMPONENTS_DIR``: Locations to search for components in aside from the :idf:`default components directory <components>`
+- ``IDF_COMPONENTS``: A list of components to import. Use this to trim down the imported components to only what is needed for faster builds. If not set, all components found from the default components directory as well as ``IDF_EXTRA_COMPONENTS_DIR`` (if specified) are imported. Note that dependencies of components in this list (other than ``IDF_COMPONENT_REQUIRES_COMMON``) will also get pulled into the build.
+- ``IDF_COMPONENT_REQUIRES_COMMON``: List of components that every component requires. Components in this list (and their dependencies) are imported regardless of the value of ``IDF_COMPONENTS``. By default, this variable is set to the minimal set of core "system" components.
+- ``IDF_SDKCONFIG_DEFAULTS``: Path to the configuration override file. If unset, components are built with default configurations.
+- ``IDF_BUILD_TESTS``: Include component tests in the build. By default, all component tests are included. The component tests are filtered using ``IDF_TEST_COMPONENTS`` and ``IDF_TEST_EXCLUDE_COMPONENTS``.
+- ``IDF_TEST_COMPONENTS``: If ``IDF_BUILD_TESTS`` is set, only component tests in this list will be included in the build. Ignored if ``IDF_BUILD_TESTS`` is not set. 
+- ``IDF_TEST_EXCLUDE_COMPONENTS``: If ``IDF_BUILD_TESTS`` is set, component tests in this list will not be included in the build. Ignored if ``IDF_BUILD_TESTS`` is not set. This variable takes precedence over ``IDF_TEST_COMPONENTS``. This means that a component test in this list will not be included in the build even if it is also present in ``IDF_TEST_COMPONENTS``.
+
+The example in :example:`build_system/cmake/idf_as_lib` demonstrates the creation of an application equivalent to :example:`hello world application <get-started/hello_world>`
+using a custom CMake project.
 
 .. _cmake-file-globbing:
 
