@@ -783,11 +783,13 @@ static uint16_t _mdns_append_question(uint8_t * packet, uint16_t * index, mdns_o
  */
 static tcpip_adapter_if_t _mdns_get_other_if (tcpip_adapter_if_t tcpip_if)
 {
+#ifdef _DECL_ethernet
     if (tcpip_if == TCPIP_ADAPTER_IF_STA) {
         return TCPIP_ADAPTER_IF_ETH;
     } else if (tcpip_if == TCPIP_ADAPTER_IF_ETH) {
         return TCPIP_ADAPTER_IF_STA;
     }
+#endif
     return TCPIP_ADAPTER_IF_MAX;
 }
 
@@ -3077,6 +3079,7 @@ static void _mdns_handle_system_event(esp_event_base_t event_base,
             default:
                 break;
         }
+#ifdef _DECL_ethernet
     } else if (event_base == ETH_EVENT) {
         switch (event_id) {
             case ETHERNET_EVENT_CONNECTED:
@@ -3093,15 +3096,18 @@ static void _mdns_handle_system_event(esp_event_base_t event_base,
             default:
                 break;
         }
+#endif
     } else if (event_base == IP_EVENT) {
         switch (event_id) {
             case IP_EVENT_STA_GOT_IP:
                 _mdns_enable_pcb(TCPIP_ADAPTER_IF_STA, MDNS_IP_PROTOCOL_V4);
                 _mdns_announce_pcb(TCPIP_ADAPTER_IF_STA, MDNS_IP_PROTOCOL_V6, NULL, 0, true);
                 break;
+#ifdef _DECL_ethernet
             case IP_EVENT_ETH_GOT_IP:
                 _mdns_enable_pcb(TCPIP_ADAPTER_IF_ETH, MDNS_IP_PROTOCOL_V4);
                 break;
+#endif
             case IP_EVENT_GOT_IP6:
                 _mdns_enable_pcb(interface, MDNS_IP_PROTOCOL_V6);
                 _mdns_announce_pcb(interface, MDNS_IP_PROTOCOL_V4, NULL, 0, true);

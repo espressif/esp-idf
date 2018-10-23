@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#ifdef _DECL_console
 #include <stdio.h>
 #include <string.h>
 #include "esp_console.h"
@@ -1058,3 +1059,4 @@ void mdns_console_register(void)
     register_mdns_query_svc();
 }
 
+#endif /* _DECL_console */
