@@ -138,7 +138,7 @@ esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const e
  */
 esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg);
    
-/*
+/**
  * @brief      Create a new non-blocking TLS/SSL connection
  *
  * This function initiates a non-blocking TLS/SSL connection with the specified host, but due to
@@ -151,9 +151,10 @@ esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg);
  *                       this structure should be set to be true.
  * @param[in]  tls       pointer to esp-tls as esp-tls handle.
  *
- * @return     - 1       If connection establishment fails.
- *             - 0       If connection establishment is in progress.
- *             - 1       If connection establishment is successful.
+ * @return
+ *             - -1      If connection establishment fails.
+ *             -  0      If connection establishment is in progress.
+ *             -  1      If connection establishment is successful.
  */
 int esp_tls_conn_new_async(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_t *tls);
 
@@ -163,12 +164,13 @@ int esp_tls_conn_new_async(const char *hostname, int hostlen, int port, const es
  * The behaviour is same as esp_tls_conn_new() API. However this API accepts host's url.
  *
  * @param[in]  url     url of host.
- * @param[in]  tls     pointer to esp-tls as esp-tls handle.
  * @param[in]  cfg     TLS configuration as esp_tls_cfg_t.
+ * @param[in]  tls     pointer to esp-tls as esp-tls handle.
  *
- * @return     - 1     If connection establishment fails.
- *             - 0     If connection establishment is in progress.
- *             - 1     If connection establishment is successful.
+ * @return
+ *             - -1     If connection establishment fails.
+ *             -  0     If connection establishment is in progress.
+ *             -  1     If connection establishment is successful.
  */
 int esp_tls_conn_http_new_async(const char *url, const esp_tls_cfg_t *cfg, esp_tls_t *tls);
 
