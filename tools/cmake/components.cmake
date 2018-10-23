@@ -16,7 +16,8 @@ endfunction()
 #
 function(register_component)
     get_filename_component(component_dir ${CMAKE_CURRENT_LIST_FILE} DIRECTORY)
-    get_filename_component(component ${component_dir} NAME)
+    get_filename_component(component ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+
 
     spaces2list(COMPONENT_SRCDIRS)
     spaces2list(COMPONENT_ADD_INCLUDEDIRS)
