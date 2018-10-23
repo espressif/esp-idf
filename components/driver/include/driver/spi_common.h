@@ -87,6 +87,11 @@ typedef struct {
     int quadhd_io_num;              ///< GPIO pin for HD (HolD) signal which is used as D3 in 4-bit communication modes, or -1 if not used.
     int max_transfer_sz;            ///< Maximum transfer size, in bytes. Defaults to 4094 if 0.
     uint32_t flags;                 ///< Abilities of bus to be checked by the driver. Or-ed value of ``SPICOMMON_BUSFLAG_*`` flags.
+    int intr_flags;    /**< Interrupt flag for the bus to set the priority, and IRAM attribute, see
+                         *  ``esp_intr_alloc.h``. Note that the EDGE, INTRDISABLED attribute are ignored
+                         *  by the driver. Note that if ESP_INTR_FLAG_IRAM is set, ALL the callbacks of
+                         *  the driver, and their callee functions, should be put in the IRAM.
+                         */
 } spi_bus_config_t;
 
 

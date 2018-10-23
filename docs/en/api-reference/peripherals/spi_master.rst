@@ -305,7 +305,8 @@ Speed and Timing Considerations
 Transferring speed
 ^^^^^^^^^^^^^^^^^^
 
-There're two factors limiting the transferring speed: (1) The transaction interval, (2) The SPI clock frequency used.
+There're three factors limiting the transferring speed: (1) The transaction interval, (2) The SPI clock frequency used.
+(3) The cache miss of SPI functions including callbacks.
 When large transactions are used, the clock frequency determines the transferring speed; while the interval effects the
 speed a lot if small transactions are used.
 
@@ -343,6 +344,13 @@ speed a lot if small transactions are used.
     2. SPI clock frequency: Each byte transferred takes 8 times of the clock period *8/fspi*. If the clock frequency is
        too high, some functions may be limited to use. See :ref:`timing_considerations`.
 
+    3. The cache miss: the default config puts only the ISR into the IRAM.
+       Other SPI related functions including the driver itself and the callback
+       may suffer from the cache miss and wait for some time while reading code
+       from the flash. Select :ref:`CONFIG_SPI_MASTER_IN_IRAM` to put the whole
+       SPI driver into IRAM, and put the entire callback(s) and its callee
+       functions into IRAM to prevent this.
+
 For an interrupt transaction, the overall cost is *20+8n/Fspi[MHz]* [us] for n bytes tranferred
 in one transaction. Hence the transferring speed is : *n/(20+8n/Fspi)*. Example of transferring speed under 8MHz
 clock speed:
@@ -365,6 +373,15 @@ clock speed:
 
 When the length of transaction is short, the cost of transaction interval is really high. Please try to squash data
 into one transaction if possible to get higher transfer speed.
+
+BTW, the ISR is disabled during flash operation by default. To keep sending
+transactions during flash operations, enable
+:ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` and set :cpp:class:`ESP_INTR_FLAG_IRAM`
+in the ``intr_flags`` member of :cpp:class:`spi_bus_config_t`. Then all the
+transactions queued before the flash operations will be handled by the ISR
+continuously during flash operation. Note that the callback of each devices,
+and their callee functions, should be in the IRAM in this case, or your
+callback will crash due to cache miss.
 
 .. _timing_considerations:
 
