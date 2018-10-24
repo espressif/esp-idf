@@ -933,7 +933,7 @@ example_test_002_01:
   image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - ESP32
-    - Example_ShieldBox
+    - Example_ShieldBox_Basic
 
 example_test_003_01:
   <<: *example_test_template
@@ -952,6 +952,16 @@ example_test_005_01:
   tags:
     - ESP32
     - Example_WIFI_BT
+
+example_test_006_01:
+  <<: *example_test_template
+  image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
+  only:
+    variables:
+      - $BOT_LABEL_IPERF_STRESS_TEST
+  tags:
+    - ESP32
+    - Example_ShieldBox
 
 UT_001_01:
   <<: *unit_test_template
