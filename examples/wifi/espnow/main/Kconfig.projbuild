@@ -48,8 +48,14 @@ config ESPNOW_SEND_DELAY
 config ESPNOW_SEND_LEN
     int "Send len"
     range 10 250
-    default 200
+    default 10
     help
         Length of ESPNOW data to be sent, unit: byte.
+
+config ENABLE_LONG_RANGE
+    bool "Enable Long Range"
+    default "n"
+    help 
+        When enable long range, the PHY rate of ESP32 will be 512Kbps or 256Kbps
 
 endmenu
