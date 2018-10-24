@@ -81,7 +81,7 @@ Application Example
             /* Generate default configuration */
             httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
-            /* Empty handle to http_server */
+            /* Empty handle to esp_http_server */
             httpd_handle_t server = NULL;
 
             /* Start the httpd server */
@@ -154,4 +154,4 @@ Check the example under :example:`protocols/http_server/persistent_sockets`.
 API Reference
 -------------
 
-.. include:: /_build/inc/http_server.inc
+.. include:: /_build/inc/esp_http_server.inc
