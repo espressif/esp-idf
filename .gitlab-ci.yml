@@ -34,6 +34,7 @@ variables:
   python $APPLY_BOT_FILTER_SCRIPT || exit 0
 
 before_script:
+  - source tools/ci/setup_python.sh
   # apply bot filter in before script
   - *apply_bot_filter
   # add gitlab ssh key
@@ -54,6 +55,7 @@ before_script:
 
 .do_nothing_before:
   before_script: &do_nothing_before
+    - source tools/ci/setup_python.sh
     # apply bot filter in before script
     - *apply_bot_filter
     - echo "Not setting up GitLab key, not fetching submodules"
@@ -61,6 +63,7 @@ before_script:
 
 .add_gitlab_key_before:
   before_script: &add_gitlab_key_before
+    - source tools/ci/setup_python.sh
     # apply bot filter in before script
     - *apply_bot_filter
     - echo "Not fetching submodules"
