@@ -89,11 +89,17 @@ The SDIO slave driver uses the following terms:
   and from slave to host (called host interrupts below). See more in :ref:`interrupts`.
 - Registers: specific address in Function 1 access by CMD52 or CMD53.
 
-ESP SDIO Slave Protocol
-^^^^^^^^^^^^^^^^^^^^^^^
+Communication with ESP SDIO Slave
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The communication protocol slave used to communicate with the host is ESP32 specific, please refer to
-:doc:`esp_slave_protocol`, or example :example:`peripherals/sdio` for designing a host.
+The host should initialize the ESP32 SDIO slave according to the standard
+SDIO initialization process (Sector 3.1.2 of `SDIO Simplified
+Specification <https://www.sdcard.org/downloads/pls/>`_), which is described
+briefly in :ref:`esp_slave_init`.
+
+However, there's an ESP32-specific upper-level communication protocol upon
+the CMD52/CMD53 to Func 1. Please refer to :ref:`esp_slave_protocol_layer`,
+or example :example:`peripherals/sdio` when programming your host.
 
 .. toctree::
     :hidden:
