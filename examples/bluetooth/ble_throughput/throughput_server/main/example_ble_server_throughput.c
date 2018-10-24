@@ -6,6 +6,12 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
+/****************************************************************************
+*
+* This is the demo to test the BLE throughput. It should be used together with throughput_client demo.
+*
+****************************************************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -68,11 +74,10 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
 
 #define PREPARE_BUF_MAX_SIZE 1024
 
-uint8_t char1_str[] = {0x11,0x22,0x33};
-esp_gatt_char_prop_t a_property = 0;
-esp_gatt_char_prop_t b_property = 0;
+static uint8_t char1_str[] = {0x11,0x22,0x33};
+static esp_gatt_char_prop_t a_property = 0;
 
-esp_attr_value_t gatts_demo_char1_val =
+static esp_attr_value_t gatts_demo_char1_val =
 {
     .attr_max_len = GATTS_DEMO_CHAR_VAL_LEN_MAX,
     .attr_len     = sizeof(char1_str),

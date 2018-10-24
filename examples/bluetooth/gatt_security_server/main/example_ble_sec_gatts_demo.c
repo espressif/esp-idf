@@ -18,7 +18,6 @@
 #include "esp_gatts_api.h"
 #include "esp_bt_defs.h"
 #include "esp_bt_main.h"
-#include "esp_bt_main.h"
 #include "example_ble_sec_gatts_demo.h"
 
 #define GATTS_TABLE_TAG "SEC_GATTS_DEMO"
@@ -36,16 +35,8 @@
 
 static uint8_t adv_config_done = 0;
 
-uint8_t heart_str[] = {0x11,0x22,0x33};
+static uint16_t heart_rate_handle_table[HRS_IDX_NB];
 
-uint16_t heart_rate_handle_table[HRS_IDX_NB];
-
-esp_attr_value_t gatts_demo_char1_val =
-{
-  .attr_max_len = GATTS_DEMO_CHAR_VAL_LEN_MAX,
-  .attr_len     = sizeof(heart_str),
-  .attr_value   = heart_str,
-};
 static uint8_t test_manufacturer[3]={'E', 'S', 'P'};
 
 static uint8_t sec_service_uuid[16] = {

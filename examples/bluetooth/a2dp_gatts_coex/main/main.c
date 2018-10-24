@@ -7,19 +7,16 @@
 */
 
 /****************************************************************************
-* The demo shows BLE and classic Bluetooth coexistence. You can use BLE gatt server and classic bluetooth A2DP together.
-
-* The BLE GATT SERVER part of demo creates GATT a service and then starts advertising, waiting to be connected by a GATT client. 
-* After the program is started, the GATT client can discover a device named "ESP_COEX_BLE_DEMO". Once a connection is established, 
-* GATT client can reaad or write data to the device. Or GATT client receive notification or indication data. 
-* Attention: IF you test the demo with iphone, BLE gatt server adv name will change to "ESP_COEX_A2DP_DEMO" afte you connect it.
-
-* The classic bluetooth A2DP part of the demo of API implementing Advanced Audio Distribution Profile to receive an audio stream. 
-* After the program is started, other bluetooth devices such as smart phones can discover a device named "ESP_COEX_A2DP_DEMO". 
-* Once a connection is established, audio data can be transmitted. This will be visible in the application log including a count 
+* The demo shows BLE and classic Bluetooth coexistence. You can use BLE GATT server and classic bluetooth A2DP together.
+* The BLE GATT server part of the demo creates a GATT service and then starts advertising, waiting to be connected by a GATT client.
+* After the program is started, a GATT client can discover the device named "ESP_COEX_BLE_DEMO". Once the connection is established,
+* GATT client can read or write data to the device. It can also receive notification or indication data.
+* Attention: If you test the demo with iPhone, BLE GATT server adv name will change to "ESP_COEX_A2DP_DEMO" after you connect it.
+* The classic bluetooth A2DP part of the demo implements Advanced Audio Distribution Profile to receive an audio stream.
+* After the program is started, other bluetooth devices such as smart phones can discover the device named "ESP_COEX_A2DP_DEMO".
+* Once the connection is established, audio data can be transmitted. This will be visible in the application log including a count
 * of audio data packets.
 ****************************************************************************/
-
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -182,7 +179,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         }
         break;
     case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT:
-         ESP_LOGI(BT_BLE_COEX_TAG, "update connetion params status = %d, min_int = %d, max_int = %d,conn_int = %d,latency = %d, timeout = %d",
+         ESP_LOGI(BT_BLE_COEX_TAG, "update connection params status = %d, min_int = %d, max_int = %d,conn_int = %d,latency = %d, timeout = %d",
                   param->update_conn_params.status,
                   param->update_conn_params.min_int,
                   param->update_conn_params.max_int,

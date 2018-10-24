@@ -6,14 +6,9 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
-
-
 /****************************************************************************
 *
-* This file is for gatt client. It can scan ble device, connect one device.
-* Run the gatt_server demo, the client demo will automatically connect to the gatt_server demo.
-* Client demo will enable gatt_server's notify after connection. Then the two devices will exchange
-* data.
+* This is the demo to test the BLE throughput. It should be used together with throughput_server demo.
 *
 ****************************************************************************/
 
@@ -65,7 +60,7 @@ uint8_t write_data[GATTC_WRITE_LEN] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 
 static bool is_connecet = false;
 
-/* eclare static functions */
+/* Declare static functions */
 static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
 static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param);
 static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param);
@@ -219,7 +214,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                         ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_char_by_uuid error");
                     }
 
-                    /*  Every service have only one char in our 'ESP_GATTS_DEMO' demo, so we used first 'char_elem_result' */
+                    /*  Every service has only one char in our 'throughput_server' demo, so we use first 'char_elem_result' */
                     if (count > 0 && (char_elem_result[0].properties & ESP_GATT_CHAR_PROP_BIT_NOTIFY)){
                         gl_profile_tab[PROFILE_A_APP_ID].char_handle = char_elem_result[0].char_handle;
                         esp_ble_gattc_register_for_notify (gattc_if, gl_profile_tab[PROFILE_A_APP_ID].remote_bda, char_elem_result[0].char_handle);
@@ -264,7 +259,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                         ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_descr_by_char_handle error");
                     }
 
-                    /* Erery char have only one descriptor in our 'ESP_GATTS_DEMO' demo, so we used first 'descr_elem_result' */
+                    /* Every char has only one descriptor in our 'throughput_server' demo, so we use first 'descr_elem_result' */
                     if (count > 0 && descr_elem_result[0].uuid.len == ESP_UUID_LEN_16 && descr_elem_result[0].uuid.uuid.uuid16 == ESP_GATT_UUID_CHAR_CLIENT_CONFIG){
                         ret_status = esp_ble_gattc_write_char_descr( gattc_if,
                                                                      gl_profile_tab[PROFILE_A_APP_ID].conn_id,
@@ -429,7 +424,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
         ESP_LOGI(GATTC_TAG, "stop adv successfully");
         break;
     case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT:
-         ESP_LOGI(GATTC_TAG, "update connetion params status = %d, min_int = %d, max_int = %d,conn_int = %d,latency = %d, timeout = %d",
+         ESP_LOGI(GATTC_TAG, "update connection params status = %d, min_int = %d, max_int = %d,conn_int = %d,latency = %d, timeout = %d",
                   param->update_conn_params.status,
                   param->update_conn_params.min_int,
                   param->update_conn_params.max_int,
