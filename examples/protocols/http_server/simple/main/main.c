@@ -14,7 +14,7 @@
 #include <nvs_flash.h>
 #include <sys/param.h>
 
-#include <http_server.h>
+#include <esp_http_server.h>
 
 /* A simple example that demonstrates how to create GET and POST
  * handlers for the web server.

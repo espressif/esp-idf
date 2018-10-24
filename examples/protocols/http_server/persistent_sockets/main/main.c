@@ -13,7 +13,7 @@
 #include <esp_system.h>
 #include <nvs_flash.h>
 
-#include <http_server.h>
+#include <esp_http_server.h>
 
 /* An example to demonstrate persistent sockets, with context maintained across
  * multiple requests on that socket.
