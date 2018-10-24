@@ -114,7 +114,7 @@ typedef struct {
     esp_http_client_transport_t transport_type;           /*!< HTTP transport type, see `esp_http_client_transport_t` */
     int                         buffer_size;              /*!< HTTP buffer size (both send and receive) */
     void                        *user_data;               /*!< HTTP user_data context */
-    bool                        is_async;                 /*!< Set asynchronous mode */
+    bool                        is_async;                 /*!< Set asynchronous mode, only supported with HTTPS for now */
 } esp_http_client_config_t;
 
 
