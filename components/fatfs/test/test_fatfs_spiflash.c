@@ -110,6 +110,13 @@ TEST_CASE("(WL) stat returns correct values", "[fatfs][wear_levelling]")
     test_teardown();
 }
 
+TEST_CASE("(WL) utime sets modification time", "[fatfs][wear_levelling]")
+{
+    test_setup();
+    test_fatfs_utime("/spiflash/utime.txt", "/spiflash");
+    test_teardown();
+}
+
 TEST_CASE("(WL) unlink removes a file", "[fatfs][wear_levelling]")
 {
     test_setup();
