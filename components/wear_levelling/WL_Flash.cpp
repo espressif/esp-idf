@@ -132,7 +132,7 @@ esp_err_t WL_Flash::init()
     result = this->flash_drv->read(this->addr_state2, state_copy, sizeof(wl_state_t));
     WL_RESULT_CHECK(result);
 
-    int check_size = offsetof(wl_state_t, crc);
+    int check_size = WL_STATE_CRC_LEN_V2;
     // Chech CRC and recover state
     uint32_t crc1 = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)&this->state, check_size);
     uint32_t crc2 = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)state_copy, check_size);
@@ -288,7 +288,7 @@ esp_err_t WL_Flash::initSections()
 
     this->state.max_pos = 1 + this->flash_size / this->cfg.page_size;
 
-    this->state.crc = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)&this->state, offsetof(wl_state_t, crc));
+    this->state.crc = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)&this->state, WL_STATE_CRC_LEN_V2);
 
     result = this->flash_drv->erase_range(this->addr_state1, this->state_size);
     WL_RESULT_CHECK(result);
@@ -327,7 +327,7 @@ esp_err_t WL_Flash::updateV1_V2()
     esp_err_t result = ESP_OK;
     // Check crc for old version and old version
     ESP_LOGV(TAG, "%s start", __func__);
-    int check_size = offsetof(wl_state_t, device_id);
+    int check_size = WL_STATE_CRC_LEN_V1;
     // Chech CRC and recover state
     uint32_t crc1 = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)&this->state, check_size);
     wl_state_t sa_copy;
@@ -365,9 +365,9 @@ esp_err_t WL_Flash::updateV1_V2()
 
         this->state.version = 2;
         this->state.pos = 0;
-        this->state.crc = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)&this->state, offsetof(wl_state_t, crc));
         this->state.device_id = esp_random();
         memset(this->state.reserved, 0, sizeof(this->state.reserved));
+        this->state.crc = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)&this->state, WL_STATE_CRC_LEN_V2);
 
         result = this->flash_drv->erase_range(this->addr_state1, this->state_size);
         WL_RESULT_CHECK(result);
@@ -493,7 +493,7 @@ esp_err_t WL_Flash::updateWL()
             this->state.move_count = 0;
         }
         // write main state
-        this->state.crc = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)&this->state, offsetof(wl_state_t, crc));
+        this->state.crc = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)&this->state, WL_STATE_CRC_LEN_V2);
 
         result = this->flash_drv->erase_range(this->addr_state1, this->state_size);
         WL_RESULT_CHECK(result);

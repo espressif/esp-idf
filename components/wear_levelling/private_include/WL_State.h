@@ -45,5 +45,7 @@ public:
 static_assert(sizeof(wl_state_t) % 16 == 0, "Size of wl_state_t structure should be compatible with flash encryption");
 #endif // _MSC_VER
 
+#define WL_STATE_CRC_LEN_V1 offsetof(wl_state_t, device_id)
+#define WL_STATE_CRC_LEN_V2 offsetof(wl_state_t, crc)
 
 #endif // _WL_State_H_
