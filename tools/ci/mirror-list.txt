@@ -16,3 +16,4 @@ third-party/mruby                                   @GENERAL_MIRROR_SERVER@/idf/
 third-party/neverbleed                              @GENERAL_MIRROR_SERVER@/idf/neverbleed.git                      ALLOW_TO_SYNC_FROM_PUBLIC
 components/mqtt/esp-mqtt                            @GENERAL_MIRROR_SERVER@/idf/esp-mqtt.git                        ALLOW_TO_SYNC_FROM_PUBLIC
 components/protobuf-c/protobuf-c                    @GENERAL_MIRROR_SERVER@/idf/protobuf-c.git                      ALLOW_TO_SYNC_FROM_PUBLIC
+components/unity/unity                              @GENERAL_MIRROR_SERVER@/idf/Unity.git                           ALLOW_TO_SYNC_FROM_PUBLIC

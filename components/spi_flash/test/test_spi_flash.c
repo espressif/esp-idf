@@ -8,6 +8,7 @@
 #include <esp_attr.h>
 #include "driver/timer.h"
 #include "esp_intr_alloc.h"
+#include "test_utils.h"
 
 struct flash_test_ctx {
     uint32_t offset;

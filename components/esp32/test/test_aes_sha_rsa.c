@@ -10,6 +10,7 @@
 #include "freertos/xtensa_timer.h"
 #include "soc/cpu.h"
 #include "unity.h"
+#include "test_utils.h"
 #include "rom/uart.h"
 #include "rom/sha.h"
 #include "soc/uart_reg.h"
