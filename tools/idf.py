@@ -22,7 +22,7 @@
 # limitations under the License.
 #
 
-# Note: we don't check for Python build-time dependencies until
+# WARNING: we don't check for Python build-time dependencies until
 # check_environment() function below. If possible, avoid importing
 # any external libraries here - put in external script, or import in
 # their specific function instead.
@@ -35,7 +35,6 @@ import multiprocessing
 import re
 import shutil
 import json
-import serial.tools.list_ports
 
 class FatalError(RuntimeError):
     """
@@ -419,6 +418,9 @@ def get_default_serial_port():
 
     Same logic as esptool.py search order, reverse sort by name and choose the first port.
     """
+    # Import is done here in order to move it after the check_environment() ensured that pyserial has been installed
+    import serial.tools.list_ports
+
     ports = list(reversed(sorted(
         p.device for p in serial.tools.list_ports.comports() )))
     try:
