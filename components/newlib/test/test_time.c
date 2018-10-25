@@ -12,6 +12,7 @@
 #include "soc/rtc.h"
 #include "esp_clk.h"
 #include "esp_system.h"
+#include "test_utils.h"
 
 #if portNUM_PROCESSORS == 2
 

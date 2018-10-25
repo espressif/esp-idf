@@ -16,6 +16,7 @@
 #include "soc/soc.h"            // for direct register read macros
 #include "rom/rtc.h"
 #include "esp_newlib.h"
+#include "test_utils.h"
 
 #define ESP_EXT0_WAKEUP_LEVEL_LOW 0
 #define ESP_EXT0_WAKEUP_LEVEL_HIGH 1

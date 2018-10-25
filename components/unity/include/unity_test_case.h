@@ -1,25 +1,23 @@
-#ifndef UNITY_CONFIG_H
-#define UNITY_CONFIG_H
+// Copyright 2016-2018 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+#pragma once
 
-// This file gets included from unity.h via unity_internals.h
+#include <stdint.h>
+
+// This file gets included from unity.h via unity_internals.h via unity_config.h
 // It is inside #ifdef __cplusplus / extern "C" block, so we can
 // only use C features here
-
-// Adapt Unity to our environment, disable FP support
-
-#include <esp_err.h>
-#include <sdkconfig.h>
-
-/* Some definitions applicable to Unity running in FreeRTOS */
-#define UNITY_FREERTOS_PRIORITY CONFIG_UNITY_FREERTOS_PRIORITY
-#define UNITY_FREERTOS_CPU CONFIG_UNITY_FREERTOS_CPU
-#define UNITY_FREERTOS_STACK_SIZE CONFIG_UNITY_FREERTOS_STACK_SIZE
-
-#define UNITY_EXCLUDE_FLOAT
-#define UNITY_EXCLUDE_DOUBLE
-
-#define UNITY_OUTPUT_CHAR unity_putc
-#define UNITY_OUTPUT_FLUSH unity_flush
 
 // Define helpers to register test cases from multiple files
 #define UNITY_EXPAND2(a, b) a ## b
@@ -70,22 +68,17 @@ struct test_desc_t
 
 void unity_testcase_register(struct test_desc_t* desc);
 
-void unity_run_menu() __attribute__((noreturn));
-
-void unity_run_tests_with_filter(const char* filter);
-
-void unity_run_all_tests();
 
 /*  Test case macro, a-la CATCH framework.
-	First argument is a free-form description,
-	second argument is (by convention) a list of identifiers, each one in square brackets.
-	Identifiers are used to group related tests, or tests with specific properties.
+    First argument is a free-form description,
+    second argument is (by convention) a list of identifiers, each one in square brackets.
+    Identifiers are used to group related tests, or tests with specific properties.
     Use like:
 
-	TEST_CASE("Frobnicator forbnicates", "[frobnicator][rom]")
-	{
-		// test goes here
-	}
+    TEST_CASE("Frobnicator forbnicates", "[frobnicator][rom]")
+    {
+        // test goes here
+    }
 */
 
 #define TEST_CASE(name_, desc_) \
@@ -169,10 +162,3 @@ void unity_run_all_tests();
  * field names are treated as annotations and don't affect initialization
  * order. Also make sure all the fields are initialized.
  */
-
-// shorthand to check esp_err_t return code
-#define TEST_ESP_OK(rc)	TEST_ASSERT_EQUAL_HEX32(ESP_OK, rc)
-#define TEST_ESP_ERR(err, rc) TEST_ASSERT_EQUAL_HEX32(err, rc)
-
-
-#endif //UNITY_CONFIG_H

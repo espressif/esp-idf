@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,39 @@
 
 #include <stdint.h>
 #include <esp_partition.h>
+#include "sdkconfig.h"
+
+/* include performance pass standards header file */
+#include "idf_performance.h"
+
+/* For performance check with unity test on IDF */
+/* These macros should only be used with ESP-IDF.
+ * To use performance check, we need to first define pass standard in idf_performance.h.
+ */
+#define TEST_PERFORMANCE_LESS_THAN(name, value_fmt, value)  do { \
+    printf("[Performance]["#name"]: "value_fmt"\n", value); \
+    TEST_ASSERT(value < IDF_PERFORMANCE_MAX_##name); \
+} while(0)
+
+#define TEST_PERFORMANCE_GREATER_THAN(name, value_fmt, value)  do { \
+    printf("[Performance]["#name"]: "value_fmt"\n", value); \
+    TEST_ASSERT(value > IDF_PERFORMANCE_MIN_##name); \
+} while(0)
+
+
+/* @brief macro to print IDF performance
+ * @param mode :        performance item name. a string pointer.
+ * @param value_fmt:    print format and unit of the value, for example: "%02fms", "%dKB"
+ * @param value :       the performance value.
+*/
+#define IDF_LOG_PERFORMANCE(item, value_fmt, value) \
+    printf("[Performance][%s]: "value_fmt"\n", item, value)
+
+
+/* Some definitions applicable to Unity running in FreeRTOS */
+#define UNITY_FREERTOS_PRIORITY CONFIG_UNITY_FREERTOS_PRIORITY
+#define UNITY_FREERTOS_CPU CONFIG_UNITY_FREERTOS_CPU
+#define UNITY_FREERTOS_STACK_SIZE CONFIG_UNITY_FREERTOS_STACK_SIZE
 
 /* Return the 'flash_test' custom data partition (type 0x55)
    defined in the custom partition table.
@@ -43,6 +76,12 @@ void ref_clock_deinit();
  */
 uint64_t ref_clock_get();
 
+/**
+ * @brief Entry point of the test application
+ *
+ * Starts Unity test runner in a separate task and returns.
+ */
+void test_main();
 
 /**
  * @brief Reset automatic leak checking which happens in unit tests.
