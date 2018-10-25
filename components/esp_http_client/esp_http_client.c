@@ -535,6 +535,13 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
     client->parser->data = client;
     client->event.client = client;
 
+    if (config->username) {
+        client->connection_info.username = config->username;
+    }
+
+    if (config->password) {
+        client->connection_info.password = config->password;
+    }
     client->state = HTTP_STATE_INIT;
     return client;
 }
