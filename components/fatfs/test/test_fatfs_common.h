@@ -49,6 +49,8 @@ void test_fatfs_truncate_file(const char* path);
 
 void test_fatfs_stat(const char* filename, const char* root_dir);
 
+void test_fatfs_utime(const char* filename, const char* root_dir);
+
 void test_fatfs_unlink(const char* filename);
 
 void test_fatfs_link_rename(const char* filename_prefix);

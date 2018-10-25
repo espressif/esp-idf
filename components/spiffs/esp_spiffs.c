@@ -71,6 +71,7 @@ static int vfs_spiffs_mkdir(void* ctx, const char* name, mode_t mode);
 static int vfs_spiffs_rmdir(void* ctx, const char* name);
 static void vfs_spiffs_update_mtime(spiffs *fs, spiffs_file f);
 static time_t vfs_spiffs_get_mtime(const spiffs_stat* s);
+static int vfs_spiffs_utime(void *ctx, const char *path, const struct utimbuf *times);
 
 static esp_spiffs_t * _efs[CONFIG_SPIFFS_MAX_PARTITIONS];
 
@@ -347,7 +348,12 @@ esp_err_t esp_vfs_spiffs_register(const esp_vfs_spiffs_conf_t * conf)
         .seekdir_p = &vfs_spiffs_seekdir,
         .telldir_p = &vfs_spiffs_telldir,
         .mkdir_p = &vfs_spiffs_mkdir,
-        .rmdir_p = &vfs_spiffs_rmdir
+        .rmdir_p = &vfs_spiffs_rmdir,
+#ifdef CONFIG_SPIFFS_USE_MTIME
+        .utime_p = &vfs_spiffs_utime,
+#else
+        .utime_p = NULL,
+#endif // CONFIG_SPIFFS_USE_MTIME
     };
 
     esp_err_t err = esp_spiffs_init(conf);
@@ -744,3 +750,49 @@ static time_t vfs_spiffs_get_mtime(const spiffs_stat* s)
 #endif
     return t;
 }
+
+#ifdef CONFIG_SPIFFS_USE_MTIME
+static int vfs_spiffs_update_mtime_value(spiffs *fs, const char *path, time_t t)
+{
+    int ret = SPIFFS_OK;
+    spiffs_stat s;
+    if (CONFIG_SPIFFS_META_LENGTH > sizeof(t)) {
+        ret = SPIFFS_stat(fs, path, &s);
+    }
+    if (ret == SPIFFS_OK) {
+        memcpy(s.meta, &t, sizeof(t));
+        ret = SPIFFS_update_meta(fs, path, s.meta);
+    }
+    if (ret != SPIFFS_OK) {
+        ESP_LOGW(TAG, "Failed to update mtime (%d)", ret);
+    }
+    return ret;
+}
+#endif //CONFIG_SPIFFS_USE_MTIME
+
+#ifdef CONFIG_SPIFFS_USE_MTIME
+static int vfs_spiffs_utime(void *ctx, const char *path, const struct utimbuf *times)
+{
+    assert(path);
+
+    esp_spiffs_t *efs = (esp_spiffs_t *) ctx;
+    time_t t;
+
+    if (times) {
+        t = times->modtime;
+    } else {
+        // use current time
+        t = time(NULL);
+    }
+
+    int ret = vfs_spiffs_update_mtime_value(efs->fs, path, t);
+
+    if (ret != SPIFFS_OK) {
+        errno = spiffs_res_to_errno(SPIFFS_errno(efs->fs));
+        SPIFFS_clearerr(efs->fs);
+        return -1;
+    }
+
+    return 0;
+}
+#endif //CONFIG_SPIFFS_USE_MTIME
