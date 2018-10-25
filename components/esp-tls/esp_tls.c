@@ -456,9 +456,9 @@ static int get_port(const char *url, struct http_parser_url *u)
     if (u->field_data[UF_PORT].len) {
         return strtol(&url[u->field_data[UF_PORT].off], NULL, 10);
     } else {
-        if (strncmp(&url[u->field_data[UF_SCHEMA].off], "http", u->field_data[UF_SCHEMA].len) == 0) {
+        if (strncasecmp(&url[u->field_data[UF_SCHEMA].off], "http", u->field_data[UF_SCHEMA].len) == 0) {
             return 80;
-        } else if (strncmp(&url[u->field_data[UF_SCHEMA].off], "https", u->field_data[UF_SCHEMA].len) == 0) {
+        } else if (strncasecmp(&url[u->field_data[UF_SCHEMA].off], "https", u->field_data[UF_SCHEMA].len) == 0) {
             return 443;
         }
     }

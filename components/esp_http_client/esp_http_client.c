@@ -1171,9 +1171,9 @@ bool esp_http_client_is_chunked_response(esp_http_client_handle_t client)
 
 esp_http_client_transport_t esp_http_client_get_transport_type(esp_http_client_handle_t client)
 {
-    if (!strcmp(client->connection_info.scheme, "https") ) {
+    if (!strcasecmp(client->connection_info.scheme, "https") ) {
         return HTTP_TRANSPORT_OVER_SSL;
-    } else if (!strcmp(client->connection_info.scheme, "http")) {
+    } else if (!strcasecmp(client->connection_info.scheme, "http")) {
         return HTTP_TRANSPORT_OVER_TCP;
     } else {
         return HTTP_TRANSPORT_UNKNOWN;
