@@ -14,30 +14,25 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <ctype.h>
 #include <stdio.h>
-#include "esp_clk.h"
-#include "soc/cpu.h"
 #include "unity.h"
 
+/* similar to UNITY_PRINT_EOL */
+#define UNITY_PRINT_TAB() UNITY_OUTPUT_CHAR('\t')
 
 // Pointers to the head and tail of linked list of test description structs:
-static struct test_desc_t* s_unity_tests_first = NULL;
-static struct test_desc_t* s_unity_tests_last = NULL;
+static test_desc_t *s_unity_tests_first = NULL;
+static test_desc_t *s_unity_tests_last = NULL;
 
-// Inverse of the filter
-static bool s_invert = false;
-
-void unity_testcase_register(struct test_desc_t* desc)
+void unity_testcase_register(test_desc_t *desc)
 {
-    if (!s_unity_tests_first)
-    {
+    if (!s_unity_tests_first) {
         s_unity_tests_first = desc;
         s_unity_tests_last = desc;
-    }
-    else
-    {
-        struct test_desc_t* temp = s_unity_tests_first;
+    } else {
+        test_desc_t *temp = s_unity_tests_first;
         s_unity_tests_first = desc;
         s_unity_tests_first->next = temp;
     }
@@ -49,47 +44,58 @@ void unity_testcase_register(struct test_desc_t* desc)
  *       (1)master case
  *       (2)slave case
  * */
-static void print_multiple_function_test_menu(const struct test_desc_t* test_ms)
- {
-    printf("%s\n", test_ms->name);
-    for (int i = 0; i < test_ms->test_fn_count; i++)
-    {
-        printf("\t(%d)\t\"%s\"\n", i+1, test_ms->test_fn_name[i]);
+static void print_multiple_function_test_menu(const test_desc_t *test_ms)
+{
+    UnityPrint(test_ms->name);
+    UNITY_PRINT_EOL();
+    for (int i = 0; i < test_ms->test_fn_count; i++) {
+        UNITY_PRINT_TAB();
+        UnityPrint("(");
+        UnityPrintNumberUnsigned(i + 1);
+        UnityPrint(")");
+        UNITY_PRINT_TAB();
+        UnityPrint("\"");
+        UnityPrint(test_ms->test_fn_name[i]);
+        UnityPrint("\"");
+        UNITY_PRINT_EOL();
     }
- }
+}
 
-void multiple_function_option(const struct test_desc_t* test_ms)
+static void multiple_function_option(const test_desc_t *test_ms)
 {
     int selection;
     char cmdline[256] = {0};
 
     print_multiple_function_test_menu(test_ms);
-    while(strlen(cmdline) == 0)
-    {
+    while (strlen(cmdline) == 0) {
         unity_gets(cmdline, sizeof(cmdline));
-        if(strlen(cmdline) == 0) {
+        if (strlen(cmdline) == 0) {
             /* if input was newline, print a new menu */
             print_multiple_function_test_menu(test_ms);
         }
     }
     selection = atoi((const char *) cmdline) - 1;
-    if(selection >= 0 && selection < test_ms->test_fn_count) {
+    if (selection >= 0 && selection < test_ms->test_fn_count) {
         UnityDefaultTestRun(test_ms->fn[selection], test_ms->name, test_ms->line);
     } else {
-        printf("Invalid selection, your should input number 1-%d!", test_ms->test_fn_count);
+        UnityPrint("Invalid selection, your should input number 1-");
+        UnityPrintNumber(test_ms->test_fn_count);
+        UNITY_PRINT_EOL();
     }
 }
 
-static void unity_run_single_test(const struct test_desc_t* test)
+static void unity_run_single_test(const test_desc_t *test)
 {
-    printf("Running %s...\n", test->name);
+    UnityPrint("Running ");
+    UnityPrint(test->name);
+    UnityPrint("...");
+    UNITY_PRINT_EOL();
     // Unit test runner expects to see test name before the test starts
-    fflush(stdout);
-    unity_flush();
+    UNITY_OUTPUT_FLUSH();
 
     Unity.TestFile = test->file;
     Unity.CurrentDetail1 = test->desc;
-    if(test->test_fn_count == 1) {
+    if (test->test_fn_count == 1) {
         UnityDefaultTestRun(test->fn[0], test->name, test->line);
     } else {
         multiple_function_option(test);
@@ -98,51 +104,34 @@ static void unity_run_single_test(const struct test_desc_t* test)
 
 static void unity_run_single_test_by_index(int index)
 {
-    const struct test_desc_t* test;
-    for (test = s_unity_tests_first; test != NULL && index != 0; test = test->next, --index)
-    {
-
+    const test_desc_t *test;
+    for (test = s_unity_tests_first; test != NULL && index != 0; test = test->next, --index) {
+        ;
     }
-    if (test != NULL)
-    {
+    if (test != NULL) {
         unity_run_single_test(test);
     }
 }
 
-static void unity_run_single_test_by_index_parse(const char* filter, int index_max)
+static void unity_run_single_test_by_index_parse(const char *filter, int index_max)
 {
-    if (s_invert)
-    {
-        printf("Inverse is not supported for that kind of filter\n");
-        return;
-    }
     int test_index = strtol(filter, NULL, 10);
-    if (test_index >= 1 && test_index <= index_max)
-    {
-        uint32_t start;
-        RSR(CCOUNT, start);
+    if (test_index >= 1 && test_index <= index_max) {
+        UNITY_EXEC_TIME_START();
         unity_run_single_test_by_index(test_index - 1);
-        uint32_t end;
-        RSR(CCOUNT, end);
-        uint32_t ms = (end - start) / (esp_clk_cpu_freq() / 1000);
-        printf("Test ran in %dms\n", ms);
+        UNITY_EXEC_TIME_STOP();
+        UnityPrint("Test ran in ");
+        UnityPrintNumberUnsigned(UNITY_EXEC_TIME_MS());
+        UnityPrint("ms");
+        UNITY_PRINT_EOL();
+        UNITY_OUTPUT_FLUSH();
     }
 }
 
-void unity_run_single_test_by_name(const char* filter)
+void unity_run_test_by_name(const char *name)
 {
-    if (s_invert)
-    {
-        printf("Inverse is not supported for that kind of filter\n");
-        return;
-    }
-    char tmp[256];
-    strncpy(tmp, filter + 1, sizeof(tmp) - 1);
-    tmp[strlen(filter) - 2] = 0;
-    for (const struct test_desc_t* test = s_unity_tests_first; test != NULL; test = test->next)
-    {
-        if (strcmp(test->name, tmp) == 0)
-        {
+    for (const test_desc_t *test = s_unity_tests_first; test != NULL; test = test->next) {
+        if (strcmp(test->name, name) == 0) {
             unity_run_single_test(test);
         }
     }
@@ -150,39 +139,33 @@ void unity_run_single_test_by_name(const char* filter)
 
 void unity_run_all_tests()
 {
-    if (s_invert)
-    {
-        printf("Inverse is not supported for that kind of filter\n");
-        return;
-    }
-    for (const struct test_desc_t* test = s_unity_tests_first; test != NULL; test = test->next)
-    {
+    for (const test_desc_t *test = s_unity_tests_first; test != NULL; test = test->next) {
         unity_run_single_test(test);
     }
 }
 
-void unity_run_tests_with_filter(const char* filter)
+void unity_run_tests_by_tag(const char *tag, bool invert)
 {
-    if (s_invert)
-    {
-        ++filter;
+    UnityPrint("Running tests ");
+    if (invert) {
+        UnityPrint("NOT ");
     }
-    printf("Running tests %smatching '%s'...\n", s_invert ? "NOT " : "", filter);
+    UnityPrint("matching '");
+    UnityPrint(tag);
+    UnityPrint("'...");
+    UNITY_PRINT_EOL();
 
-    for (const struct test_desc_t* test = s_unity_tests_first; test != NULL; test = test->next)
-    {
-        if ((strstr(test->desc, filter) != NULL) == !s_invert)
-        {
+    for (const test_desc_t *test = s_unity_tests_first; test != NULL; test = test->next) {
+        if ((strstr(test->desc, tag) != NULL) == !invert) {
             unity_run_single_test(test);
         }
     }
 }
 
-static void trim_trailing_space(char* str)
+static void trim_trailing_space(char *str)
 {
-    char* end = str + strlen(str) - 1;
-    while (end >= str && isspace((int) *end))
-    {
+    char *end = str + strlen(str) - 1;
+    while (end >= str && isspace((int) *end)) {
         *end = 0;
         --end;
     }
@@ -191,31 +174,51 @@ static void trim_trailing_space(char* str)
 static int print_test_menu(void)
 {
     int test_counter = 0;
-    printf("\n\nHere's the test menu, pick your combo:\n");
-    for (const struct test_desc_t* test = s_unity_tests_first;
-         test != NULL;
-         test = test->next, ++test_counter)
-    {
-        printf("(%d)\t\"%s\" %s\n", test_counter + 1, test->name, test->desc);
-        if(test->test_fn_count > 1)
-        {
-            for (int i = 0; i < test->test_fn_count; i++)
-            {
-                printf("\t(%d)\t\"%s\"\n", i+1, test->test_fn_name[i]);
+    UNITY_PRINT_EOL();
+    UNITY_PRINT_EOL();
+    UnityPrint("Here's the test menu, pick your combo:");
+    UNITY_PRINT_EOL();
+    for (const test_desc_t *test = s_unity_tests_first;
+            test != NULL;
+            test = test->next, ++test_counter) {
+
+        UnityPrint("(");
+        UnityPrintNumber(test_counter + 1);
+        UnityPrint(")");
+        UNITY_PRINT_TAB();
+        UnityPrint("\"");
+        UnityPrint(test->name);
+        UnityPrint("\" ");
+        UnityPrint(test->desc);
+        UNITY_PRINT_EOL();
+
+        if (test->test_fn_count > 1) {
+            for (int i = 0; i < test->test_fn_count; i++) {
+                UNITY_PRINT_TAB();
+                UnityPrint("(");
+                UnityPrintNumber(i + 1);
+                UnityPrint(")");
+                UNITY_PRINT_TAB();
+                UnityPrint("\"");
+                UnityPrint(test->test_fn_name[i]);
+                UnityPrint("\"");
+                UNITY_PRINT_EOL();
             }
-         }
-     }
-     printf("\nEnter test for running.\n"); /* unit_test.py needs it for finding the end of test menu */
-     return test_counter;
+        }
+    }
+    UNITY_PRINT_EOL();
+    UnityPrint("Enter test for running."); /* unit_test.py needs it for finding the end of test menu */
+    UNITY_PRINT_EOL();
+    UNITY_OUTPUT_FLUSH();
+    return test_counter;
 }
 
 static int get_test_count(void)
 {
     int test_counter = 0;
-    for (const struct test_desc_t* test = s_unity_tests_first;
-         test != NULL;
-         test = test->next)
-    {
+    for (const test_desc_t *test = s_unity_tests_first;
+            test != NULL;
+            test = test->next) {
         ++test_counter;
     }
     return test_counter;
@@ -223,23 +226,23 @@ static int get_test_count(void)
 
 void unity_run_menu()
 {
-    printf("\n\nPress ENTER to see the list of tests.\n");
+    UNITY_PRINT_EOL();
+    UNITY_PRINT_EOL();
+    UnityPrint("Press ENTER to see the list of tests.");
+    UNITY_PRINT_EOL();
     int test_count = get_test_count();
-    while (true)
-    {
+    while (true) {
         char cmdline[256] = { 0 };
-        while(strlen(cmdline) == 0)
-        {
+        while (strlen(cmdline) == 0) {
             unity_gets(cmdline, sizeof(cmdline));
             trim_trailing_space(cmdline);
-            if(strlen(cmdline) == 0) {
+            if (strlen(cmdline) == 0) {
                 /* if input was newline, print a new menu */
                 print_test_menu();
             }
         }
         /*use '-' to show test history. Need to do it before UNITY_BEGIN cleanup history */
-        if (cmdline[0] == '-')
-        {
+        if (cmdline[0] == '-') {
             UNITY_END();
             continue;
         }
@@ -247,35 +250,30 @@ void unity_run_menu()
         UNITY_BEGIN();
 
         size_t idx = 0;
-        if (cmdline[idx] == '!')
-        {
-            s_invert = true;
+        bool invert = false;
+        if (cmdline[idx] == '!') {
+            invert = true;
             ++idx;
         }
-        else
-        {
-            s_invert = false;
-        }
 
-        if (cmdline[idx] == '*')
-        {
+        if (cmdline[idx] == '*') {
             unity_run_all_tests();
-        }
-        else if (cmdline[idx] =='[')
-        {
-            unity_run_tests_with_filter(cmdline + idx);
-        }
-        else if (cmdline[idx] =='"')
-        {
-            unity_run_single_test_by_name(cmdline + idx);
-        }
-        else if (isdigit((unsigned char)cmdline[idx]))
-        {
+        } else if (cmdline[idx] == '[') {
+            unity_run_tests_by_tag(cmdline + idx, invert);
+        } else if (cmdline[idx] == '"') {
+            char* end = strrchr(cmdline, '"');
+            if (end > &cmdline[idx]) {
+                *end = 0;
+                unity_run_test_by_name(cmdline + idx + 1);
+            }
+        } else if (isdigit((unsigned char)cmdline[idx])) {
             unity_run_single_test_by_index_parse(cmdline + idx, test_count);
         }
 
         UNITY_END();
 
-        printf("Enter next test, or 'enter' to see menu\n");
+        UnityPrint("Enter next test, or 'enter' to see menu");
+        UNITY_PRINT_EOL();
+        UNITY_OUTPUT_FLUSH();
     }
 }

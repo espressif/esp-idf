@@ -40,19 +40,11 @@ uint32_t unity_exec_time_get_ms(void);
 #define UNITY_EXEC_TIME_STOP()  unity_exec_time_stop()
 #define UNITY_EXEC_TIME_MS()    unity_exec_time_get_ms()
 
-#ifdef CONFIG_UNITY_ENABLE_TEST_RUNNER
+#ifdef CONFIG_UNITY_ENABLE_IDF_TEST_RUNNER
 
-#include "unity_test_case.h"
+#include "unity_test_runner.h"
 
-void unity_run_menu() __attribute__((noreturn));
-
-void unity_run_tests_with_filter(const char* filter);
-
-void unity_run_all_tests();
-
-void unity_run_single_test_by_name(const char* name);
-
-#endif //CONFIG_UNITY_ENABLE_TEST_RUNNER
+#endif //CONFIG_UNITY_ENABLE_IDF_TEST_RUNNER
 
 // shorthand to check esp_err_t return code
 #define TEST_ESP_OK(rc) TEST_ASSERT_EQUAL_HEX32(ESP_OK, rc)
