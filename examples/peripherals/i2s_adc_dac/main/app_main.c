@@ -74,7 +74,7 @@ void example_i2s_init()
     //init DAC pad
     i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
     //init ADC pad
-    const adc_i2s_pattern_t adc_i2s_pattern[] = {
+    static const adc_i2s_pattern_t adc_i2s_pattern[] = {
         {.atten = ADC_ATTEN_DB_11, .bits = ADC_WIDTH_BIT_12, .channel = I2S_ADC_CHANNEL}
     };
     i2s_set_adc_mode(I2S_ADC_UNIT, adc_i2s_pattern, sizeof(adc_i2s_pattern));
