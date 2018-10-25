@@ -14,6 +14,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 // This file gets included from unity.h via unity_internals.h via unity_config.h
 // It is inside #ifdef __cplusplus / extern "C" block, so we can
@@ -54,7 +55,7 @@
 
 typedef void (* test_func)(void);
 
-struct test_desc_t
+typedef struct test_desc_t
 {
     const char* name;
     const char* desc;
@@ -64,9 +65,9 @@ struct test_desc_t
     uint8_t test_fn_count;
     const char ** test_fn_name;
     struct test_desc_t* next;
-};
+} test_desc_t;
 
-void unity_testcase_register(struct test_desc_t* desc);
+void unity_testcase_register(test_desc_t* desc);
 
 
 /*  Test case macro, a-la CATCH framework.
@@ -86,7 +87,7 @@ void unity_testcase_register(struct test_desc_t* desc);
     static void __attribute__((constructor)) UNITY_TEST_UID(test_reg_helper_) () \
     { \
         static test_func test_fn_[] = {&UNITY_TEST_UID(test_func_)}; \
-        static struct test_desc_t UNITY_TEST_UID(test_desc_) = { \
+        static test_desc_t UNITY_TEST_UID(test_desc_) = { \
             .name = name_, \
             .desc = desc_, \
             .fn = test_fn_, \
@@ -116,7 +117,7 @@ void unity_testcase_register(struct test_desc_t* desc);
     UNITY_TEST_FN_SET(__VA_ARGS__); \
     static void __attribute__((constructor)) UNITY_TEST_UID(test_reg_helper_) () \
     { \
-        static struct test_desc_t UNITY_TEST_UID(test_desc_) = { \
+        static test_desc_t UNITY_TEST_UID(test_desc_) = { \
             .name = name_, \
             .desc = desc_"[multi_stage]", \
             .fn = UNITY_TEST_UID(test_functions), \
@@ -141,7 +142,7 @@ void unity_testcase_register(struct test_desc_t* desc);
     UNITY_TEST_FN_SET(__VA_ARGS__); \
     static void __attribute__((constructor)) UNITY_TEST_UID(test_reg_helper_) () \
     { \
-        static struct test_desc_t UNITY_TEST_UID(test_desc_) = { \
+        static test_desc_t UNITY_TEST_UID(test_desc_) = { \
             .name = name_, \
             .desc = desc_"[multi_device]", \
             .fn = UNITY_TEST_UID(test_functions), \
@@ -162,3 +163,12 @@ void unity_testcase_register(struct test_desc_t* desc);
  * field names are treated as annotations and don't affect initialization
  * order. Also make sure all the fields are initialized.
  */
+
+void unity_run_test_by_name(const char *name);
+
+void unity_run_tests_by_tag(const char *tag, bool invert);
+
+void unity_run_all_tests();
+
+void unity_run_menu();
+
