@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015-2016 Intel Corporation
+ * Additional Copyright (c) 2018 Espressif Systems (Shanghai) PTE LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
