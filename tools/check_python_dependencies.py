@@ -68,7 +68,9 @@ if __name__ == "__main__":
         print('The following Python requirements are not satisfied:')
         for requirement in not_satisfied:
             print(requirement)
-        print('Please run "{} -m pip install --user -r {}" for resolving the issue.'.format(sys.executable, args.requirements))
+        print('Please refer to the Get Started section of the ESP-IDF Programming Guide for setting up the required '
+              'packages. Alternatively, you can run "{} -m pip install --user -r {}" for resolving the issue.'
+              ''.format(sys.executable, args.requirements))
         sys.exit(1)
 
     print('Python requirements from {} are satisfied.'.format(args.requirements))
