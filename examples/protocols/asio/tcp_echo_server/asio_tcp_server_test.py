@@ -28,7 +28,7 @@ def test_examples_protocol_asio_tcp_server(env, extra_data):
       4. Test evaluates received test message from server
       5. Test evaluates received test message on server stdout
     """
-    test_msg="echo message from client to server"
+    test_msg=b"echo message from client to server"
     dut1 = env.get_dut("tcp_echo_server", "examples/protocols/asio/tcp_echo_server")
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, "asio_tcp_echo_server.bin")
@@ -53,7 +53,7 @@ def test_examples_protocol_asio_tcp_server(env, extra_data):
         print("Failure!")
         raise ValueError('Wrong data received from asi tcp server: {} (expoected:{})'.format(data, test_msg))
     # 5. check the client message appears also on server terminal
-    dut1.expect(test_msg)
+    dut1.expect(test_msg.decode())
 
 
 if __name__ == '__main__':
