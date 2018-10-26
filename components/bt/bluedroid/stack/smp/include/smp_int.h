@@ -301,6 +301,7 @@ typedef struct {
     tSMP_OOB_FLAG   loc_oob_flag;
     tSMP_AUTH_REQ   peer_auth_req;
     tSMP_AUTH_REQ   loc_auth_req;
+    tSMP_AUTH_REQ   auth_mode;
     BOOLEAN         secure_connections_only_mode_required;/* TRUE if locally SM is required to operate */
     /* either in Secure Connections mode or not at all */
     tSMP_ASSO_MODEL selected_association_model;
