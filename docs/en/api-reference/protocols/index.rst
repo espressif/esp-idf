@@ -7,7 +7,7 @@ Protocols API
    mDNS <mdns>
    ESP-TLS <esp_tls>
    HTTP Client <esp_http_client>
-   HTTP Server <http_server>
+   HTTP Server <esp_http_server>
    ASIO <asio>
    ESP-MQTT <mqtt>
    Modbus slave <modbus>

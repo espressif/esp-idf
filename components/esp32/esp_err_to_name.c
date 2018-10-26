@@ -13,6 +13,9 @@
 #if __has_include("esp_http_client.h")
 #include "esp_http_client.h"
 #endif
+#if __has_include("esp_http_server.h")
+#include "esp_http_server.h"
+#endif
 #if __has_include("esp_image_format.h")
 #include "esp_image_format.h"
 #endif
@@ -36,9 +39,6 @@
 #endif
 #if __has_include("esp_wps.h")
 #include "esp_wps.h"
-#endif
-#if __has_include("http_server.h")
-#include "http_server.h"
 #endif
 #if __has_include("nvs.h")
 #include "nvs.h"
@@ -456,7 +456,7 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_HTTP_EAGAIN
     ERR_TBL_IT(ESP_ERR_HTTP_EAGAIN),                        /* 28679 0x7007 Mapping of errno EAGAIN to esp_err_t */
 #   endif
-    // components/http_server/include/http_server.h
+    // components/esp_http_server/include/esp_http_server.h
 #   ifdef      ESP_ERR_HTTPD_BASE
     ERR_TBL_IT(ESP_ERR_HTTPD_BASE),                         /* 32768 0x8000 Starting number of HTTPD error codes */
 #   endif
