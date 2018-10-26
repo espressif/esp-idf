@@ -356,27 +356,6 @@ void SMP_SetStaticPasskey (BOOLEAN add, UINT32 passkey)
 
 /*******************************************************************************
 **
-** Function         SMP_SetAcceptAuthMode
-**
-** Description      This function is called to set only accept specified Authentication
-**
-**
-** Parameters:      enable         - Whether to enable this function
-**
-**                  auth_mode      - Authentication mode
-**
-**
-*******************************************************************************/
-void SMP_SetAcceptAuthMode (UINT8 enable, UINT8 auth_mode)
-{
-    tSMP_CB *p_cb = & smp_cb;
-
-    p_cb->accept_specified_sec_auth = enable;
-    p_cb->origin_loc_auth_req = auth_mode;
-    
-}
-/*******************************************************************************
-**
 ** Function         SMP_ConfirmReply
 **
 ** Description      This function is called after Security Manager submitted

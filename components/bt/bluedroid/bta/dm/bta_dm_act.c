@@ -4296,9 +4296,6 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
     switch (event) {
     case BTM_LE_IO_REQ_EVT: {
         // #if (BT_SSP_INCLUDED == TRUE)
-        UINT8 enable = bta_dm_co_ble_get_accept_auth_enable();
-        UINT8 origin_auth = bta_dm_co_ble_get_auth_req();
-        BTM_BleSetAcceptAuthMode(enable, origin_auth);
         bta_dm_co_ble_io_req(bda,
                              &p_data->io_req.io_cap,
                              &p_data->io_req.oob_data,
