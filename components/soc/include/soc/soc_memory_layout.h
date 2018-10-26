@@ -173,3 +173,15 @@ inline static bool IRAM_ATTR esp_ptr_internal(const void *p) {
 inline static bool IRAM_ATTR esp_ptr_external_ram(const void *p) {
     return ((intptr_t)p >= SOC_EXTRAM_DATA_LOW && (intptr_t)p < SOC_EXTRAM_DATA_HIGH);
 }
+
+inline static bool IRAM_ATTR esp_ptr_in_iram(const void *p) {
+    return ((intptr_t)p >= SOC_IRAM_LOW && (intptr_t)p < SOC_IRAM_HIGH);
+}
+
+inline static bool IRAM_ATTR esp_ptr_in_drom(const void *p) {
+    return ((intptr_t)p >= SOC_DROM_LOW && (intptr_t)p < SOC_DROM_HIGH);
+}
+
+inline static bool IRAM_ATTR esp_ptr_in_dram(const void *p) {
+    return ((intptr_t)p >= SOC_DRAM_LOW && (intptr_t)p < SOC_DRAM_HIGH);
+}

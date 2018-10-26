@@ -29,7 +29,6 @@
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
 #include "freertos/task.h"
-#include "freertos/ringbuf.h"
 #include "soc/soc.h"
 #include "soc/soc_memory_layout.h"
 #include "soc/dport_reg.h"
