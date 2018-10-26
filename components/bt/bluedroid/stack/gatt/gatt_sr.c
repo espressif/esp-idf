@@ -557,7 +557,7 @@ void gatt_process_read_multi_req (tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, U
                                                           key_size,
                                                           trans_id);
 
-                    if (err == GATT_SUCCESS) {
+                    if (err == GATT_SUCCESS || err == GATT_STACK_RSP) {
                         gatt_sr_process_app_rsp(p_tcb, gatt_cb.sr_reg[i_rcb].gatt_if , trans_id, op_code, GATT_SUCCESS, p_msg);
                     }
                     /* either not using or done using the buffer, release it now */
@@ -572,9 +572,8 @@ void gatt_process_read_multi_req (tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, U
             err = GATT_NO_RESOURCES;
         }
     }
-
     /* in theroy BUSY is not possible(should already been checked), protected check */
-    if (err != GATT_SUCCESS && err != GATT_PENDING && err != GATT_BUSY) {
+    if (err != GATT_SUCCESS && err != GATT_STACK_RSP && err != GATT_PENDING && err != GATT_BUSY) {
         gatt_send_error_rsp(p_tcb, err, op_code, handle, FALSE);
     }
 }
