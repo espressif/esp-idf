@@ -928,6 +928,12 @@ example_test_001_01:
     - ESP32
     - Example_WIFI
 
+example_test_001_02:
+  <<: *example_test_template
+  tags:
+    - ESP32
+    - Example_WIFI
+
 example_test_002_01:
   <<: *example_test_template
   image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
@@ -1168,7 +1174,19 @@ UT_001_36:
   tags:
     - ESP32_IDF
     - UT_T1_1
-    
+
+UT_001_37:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+UT_001_38:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
 UT_002_01:
   <<: *unit_test_template
   tags:

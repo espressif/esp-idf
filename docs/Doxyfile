@@ -184,6 +184,9 @@ INPUT = \
     ../../components/esp32/include/esp32/pm.h \
     ### esp_timer, High Resolution Timer
     ../../components/esp32/include/esp_timer.h \
+    ### esp_event, Event Loop Library
+    ../../components/esp_event/include/esp_event.h \
+    ../../components/esp_event/include/esp_event_base.h \
     ### ESP Pthread parameters
     ../../components/pthread/include/esp_pthread.h \
     ###

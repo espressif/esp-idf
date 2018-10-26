@@ -18,8 +18,8 @@
 
 #include "esp_err.h"
 #include "esp_wifi.h"
-#include "esp_event.h"
 #include "esp_event_loop.h"
+#include "esp_event_legacy.h"
 #include "esp_task.h"
 #include "esp_mesh.h"
 
