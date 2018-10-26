@@ -138,6 +138,12 @@ $ make -j8 flash monitor
 
 # Reporting Issues
 
+## Report Issues on GitHub
+
+* [Check the Issues section on github](https://github.com/espressif/esp-idf/issues) if you find a bug or have a feature request. Please check existing Issues and FAQs document before opening a new one.
+
+## Report Issues on Glab
+
 * Make sure you have access to "ble_mesh_issues/CustomerName_xxx_issues" repository
 * You can file and track issues under "Issues" section of the repository
 * Before submitting an issue, please check:
