@@ -28,7 +28,7 @@
 #include "bta/bta_sys.h"
 #include "bta/bta_api.h"
 #include "bta_dm_int.h"
-// #include "bta/bta_jv_api.h"
+#include "bta/bta_jv_api.h"
 
 #ifndef BTA_DM_LINK_POLICY_SETTINGS
 #define BTA_DM_LINK_POLICY_SETTINGS    (HCI_ENABLE_MASTER_SLAVE_SWITCH | HCI_ENABLE_HOLD_MODE | HCI_ENABLE_SNIFF_MODE | HCI_ENABLE_PARK_MODE)
@@ -116,11 +116,11 @@ tBTA_DM_CFG *p_bta_dm_cfg = (tBTA_DM_CFG *) &bta_dm_cfg;
 tBTA_DM_RM *p_bta_dm_rm_cfg = (tBTA_DM_RM *) &bta_dm_rm_cfg;
 
 #if BLE_INCLUDED == TRUE
+#  define BTA_DM_NUM_PM_ENTRY         8  /* number of entries in bta_dm_pm_cfg except the first */
+#  define BTA_DM_NUM_PM_SPEC          8  /* number of entries in bta_dm_pm_spec */
+#else
 #  define BTA_DM_NUM_PM_ENTRY         6  /* number of entries in bta_dm_pm_cfg except the first */
 #  define BTA_DM_NUM_PM_SPEC          6  /* number of entries in bta_dm_pm_spec */
-#else
-#  define BTA_DM_NUM_PM_ENTRY         4  /* number of entries in bta_dm_pm_cfg except the first */
-#  define BTA_DM_NUM_PM_SPEC          4  /* number of entries in bta_dm_pm_spec */
 #endif
 
 #if (BTA_DM_PM_INCLUDED == TRUE)
@@ -129,11 +129,13 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_CFG bta_dm_pm_cfg[BTA_DM_NUM_PM_ENTRY + 1] 
     {BTA_ID_SYS, BTA_DM_NUM_PM_ENTRY, 0},  /* reserved: specifies length of this table. */
     {BTA_ID_AG,  BTA_ALL_APP_ID,      0},  /* ag uses first spec table for app id 0 */
     {BTA_ID_AV,  BTA_ALL_APP_ID,      1},  /* av spec table */
-    {BTA_ID_HS,  BTA_ALL_APP_ID,      2},  /* HS spec table */
-    {BTA_ID_AVK, BTA_ALL_APP_ID,      3}   /* avk spec table */
+    {BTA_ID_JV,  BTA_APP_ID_1,        2},  /* app BTA_JV_PM_ID_1, reuse ftc spec table */
+    {BTA_ID_JV,  BTA_ALL_APP_ID,      3},  /* reuse fts spec table */
+    {BTA_ID_HS,  BTA_ALL_APP_ID,      4},  /* HS spec table */
+    {BTA_ID_AVK, BTA_ALL_APP_ID,      5}   /* avk spec table */
 #if BLE_INCLUDED == TRUE
-    , {BTA_ID_GATTC,  BTA_ALL_APP_ID,   4} /* gattc spec table */
-    , {BTA_ID_GATTS,  BTA_ALL_APP_ID,   5} /* gatts spec table */
+    , {BTA_ID_GATTC,  BTA_ALL_APP_ID,   6} /* gattc spec table */
+    , {BTA_ID_GATTS,  BTA_ALL_APP_ID,   7} /* gatts spec table */
 #endif
 };
 
@@ -177,7 +179,45 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
         }
     },
 
-    /* HS : 2 */
+    /* FTC, OPC, JV : 2 */
+    {
+        (BTA_DM_PM_SNIFF),                                             /* allow sniff */
+  #if (BTM_SSR_INCLUDED == TRUE)
+        (BTA_DM_PM_SSR2),                                              /* the SSR entry */
+  #endif
+        {
+            {{BTA_DM_PM_SNIFF_JV_IDX, BTA_FTC_OPS_IDLE_TO_SNIFF_DELAY_MS + BTA_DM_PM_SPEC_TO_OFFSET}, {BTA_DM_PM_NO_ACTION, 0}},    /* conn open  active */
+            {{BTA_DM_PM_NO_PREF,   0},   {BTA_DM_PM_NO_ACTION, 0}},    /* conn close  */
+            {{BTA_DM_PM_ACTIVE,    0},   {BTA_DM_PM_NO_ACTION, 0}},    /* app open */
+            {{BTA_DM_PM_NO_ACTION, 0},   {BTA_DM_PM_NO_ACTION, 0}},    /* app close */
+            {{BTA_DM_PM_NO_ACTION, 0},   {BTA_DM_PM_NO_ACTION, 0}},    /* sco open  */
+            {{BTA_DM_PM_NO_ACTION, 0},   {BTA_DM_PM_NO_ACTION, 0}},    /* sco close   */
+            {{BTA_DM_PM_SNIFF_JV_IDX, BTA_FTC_OPS_IDLE_TO_SNIFF_DELAY_MS + BTA_DM_PM_SPEC_TO_OFFSET}, {BTA_DM_PM_NO_ACTION, 0}},    /* idle */
+            {{BTA_DM_PM_ACTIVE,    0},   {BTA_DM_PM_NO_ACTION, 0}},    /* busy */
+            {{BTA_DM_PM_NO_ACTION, 0},   {BTA_DM_PM_NO_ACTION, 0}}     /* mode change retry */
+        }
+    },
+
+    /* FTS, PBS, OPS, MSE, BTA_JV_PM_ID_1 : 3 */
+    {
+        (BTA_DM_PM_SNIFF),                                             /* allow sniff */
+  #if (BTM_SSR_INCLUDED == TRUE)
+        (BTA_DM_PM_SSR2),                                              /* the SSR entry */
+  #endif
+        {
+            {{BTA_DM_PM_SNIFF_JV_IDX, BTA_FTS_OPS_IDLE_TO_SNIFF_DELAY_MS + BTA_DM_PM_SPEC_TO_OFFSET}, {BTA_DM_PM_NO_ACTION, 0}},    /* conn open  active */
+            {{BTA_DM_PM_NO_PREF,   0},   {BTA_DM_PM_NO_ACTION, 0}},    /* conn close  */
+            {{BTA_DM_PM_ACTIVE,    0},   {BTA_DM_PM_NO_ACTION, 0}},    /* app open */
+            {{BTA_DM_PM_NO_ACTION, 0},   {BTA_DM_PM_NO_ACTION, 0}},    /* app close */
+            {{BTA_DM_PM_NO_ACTION, 0},   {BTA_DM_PM_NO_ACTION, 0}},    /* sco open  */
+            {{BTA_DM_PM_NO_ACTION, 0},   {BTA_DM_PM_NO_ACTION, 0}},    /* sco close   */
+            {{BTA_DM_PM_SNIFF_JV_IDX, BTA_FTS_OPS_IDLE_TO_SNIFF_DELAY_MS + BTA_DM_PM_SPEC_TO_OFFSET}, {BTA_DM_PM_NO_ACTION, 0}}, /* idle */
+            {{BTA_DM_PM_ACTIVE,    0},   {BTA_DM_PM_NO_ACTION, 0}},    /* busy */
+            {{BTA_DM_PM_NO_ACTION, 0},   {BTA_DM_PM_NO_ACTION, 0}}     /* mode change retry */
+        }
+    },
+
+    /* HS : 4 */
     {
         (BTA_DM_PM_SNIFF | BTA_DM_PM_PARK),                           /* allow park & sniff */
 #if (BTM_SSR_INCLUDED == TRUE)
@@ -196,7 +236,7 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
         }
     },
 
-    /* AVK : 3 */
+    /* AVK : 5 */
     {
         (BTA_DM_PM_SNIFF),                                             /* allow sniff */
 #if (BTM_SSR_INCLUDED == TRUE)
@@ -216,7 +256,7 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
     }
 
 #if BLE_INCLUDED == TRUE
-    /* GATTC : 4 */
+    /* GATTC : 6 */
     , {
         (BTA_DM_PM_SNIFF | BTA_DM_PM_PARK),                           /* allow park & sniff */
 #if (BTM_SSR_INCLUDED == TRUE)
@@ -237,7 +277,7 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
             {{BTA_DM_PM_RETRY,   5000 + BTA_DM_PM_SPEC_TO_OFFSET},   {BTA_DM_PM_NO_ACTION, 0}}    /* mode change retry */
         }
     }
-    /* GATTS : 5 */
+    /* GATTS : 7 */
     , {
         (BTA_DM_PM_SNIFF | BTA_DM_PM_PARK),                           /* allow park & sniff */
 #if (BTM_SSR_INCLUDED == TRUE)
