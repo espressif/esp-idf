@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _HTTP_SERVER_H_
-#define _HTTP_SERVER_H_
+#ifndef _ESP_HTTP_SERVER_H_
+#define _ESP_HTTP_SERVER_H_
 
 #include <stdio.h>
 #include <string.h>
@@ -993,4 +993,4 @@ esp_err_t httpd_queue_work(httpd_handle_t handle, httpd_work_fn_t work, void *ar
 }
 #endif
 
-#endif /* ! _HTTP_SERVER_H_ */
+#endif /* ! _ESP_HTTP_SERVER_H_ */

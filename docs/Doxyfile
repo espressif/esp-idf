@@ -97,7 +97,7 @@ INPUT = \
     ## mDNS
     ../../components/mdns/include/mdns.h \
     ../../components/esp_http_client/include/esp_http_client.h \
-    ../../components/http_server/include/http_server.h \
+    ../../components/esp_http_server/include/esp_http_server.h \
     ##
     ## Provisioning - API Reference
     ##
