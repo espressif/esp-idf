@@ -17,7 +17,7 @@
 SPHINXOPTS    =
 # note: this is changed from sphinx-build so it depends on default python interpreter, not on /bin/sphinx-build
 # (which will be the most recently installed version of sphinx and may not match)
-SPHINXBUILD   = python2 -m sphinx
+SPHINXBUILD   = python -m sphinx
 PAPER         =
 BUILDDIR      = _build
 

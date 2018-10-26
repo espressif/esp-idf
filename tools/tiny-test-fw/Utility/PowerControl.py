@@ -27,15 +27,15 @@ class Control(object):
     @classmethod
     def apc_telnet_make_choice(cls, telnet, choice):
         """ select a choice """
-        telnet.read_until("Event Log")
-        telnet.read_until(">")
-        telnet.write(choice + "\r\n")
+        telnet.read_until(b"Event Log")
+        telnet.read_until(b">")
+        telnet.write(choice.encode() + b"\r\n")
 
     @classmethod
     def apc_telnet_common_action(cls, telnet, check_str, action):
         """ wait until a pattern and then write a line """
-        telnet.read_until(check_str)
-        telnet.write(action + "\r\n")
+        telnet.read_until(check_str.encode())
+        telnet.write(action.encode() + b"\r\n")
 
     @classmethod
     def control(cls, apc_ip, control_dict):
@@ -83,13 +83,13 @@ class Control(object):
             cls.apc_telnet_make_choice(tn, "\033")
 
         # exit to main menu and logout
-        tn.write("\033\r\n")
-        tn.write("\033\r\n")
-        tn.write("\033\r\n")
-        tn.write("4\r\n")
+        tn.write(b"\033\r\n")
+        tn.write(b"\033\r\n")
+        tn.write(b"\033\r\n")
+        tn.write(b"4\r\n")
 
     @classmethod
     def control_rest(cls, apc_ip, outlet, action):
-        outlet_list = range(1, 9)
+        outlet_list = list(range(1, 9)) # has to be a list if we want to remove from it under Python 3
         outlet_list.remove(outlet)
         cls.control(apc_ip, dict.fromkeys(outlet_list, action))

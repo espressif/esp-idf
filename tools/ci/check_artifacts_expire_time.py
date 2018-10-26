@@ -23,7 +23,7 @@ def check_artifacts_expire_time():
 
     print("expire time for jobs:")
 
-    job_names = config.keys()
+    job_names = list(config.keys())
     job_names.sort()
 
     for job_name in job_names:
