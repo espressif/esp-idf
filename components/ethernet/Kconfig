@@ -27,7 +27,7 @@ config EMAC_L2_TO_L3_RX_BUF_MODE
         passing it from the Ethernet MAC (L2) to the IP stack (L3). Otherwise, IP stack
         will receive pointers to the DMA buffers used by Ethernet MAC.
 
-        When Ethernet MAC doesn't have any unused buffers left, it will drop incomming
+        When Ethernet MAC doesn't have any unused buffers left, it will drop incoming
         packets (flow control may help with this problem, to some extent).
 
         The buffers for the IP stack are allocated from the heap, so the total number of
