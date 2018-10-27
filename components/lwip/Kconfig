@@ -128,6 +128,12 @@ config LWIP_ETHARP_TRUST_IP_MAC
         So the recommendation is to disable this option. 
         Here the LAN peer means the other side to which the ESP station or soft-AP is connected.
 
+config LWIP_ETHARP_SUPPORT_VLAN
+    bool "Enable VLAN support"
+    default n
+    help
+        Enable this option to accept packets tagged according to IEEE 802.1q.
+
 config ESP_GRATUITOUS_ARP
     bool "Send gratuitous ARP periodically"
     default y

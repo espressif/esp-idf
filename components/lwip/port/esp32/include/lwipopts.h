@@ -713,6 +713,10 @@
  */
 #define ETHARP_TRUST_IP_MAC             CONFIG_LWIP_ETHARP_TRUST_IP_MAC
 
+/**
+ * ETHARP_SUPPORT_VLAN enables tagged packet to be processed (IEEE 802.1q)
+ */
+#define ETHARP_SUPPORT_VLAN             CONFIG_LWIP_ETHARP_SUPPORT_VLAN
 
 /**
  * POSIX I/O functions are mapped to LWIP via the VFS layer
