@@ -115,7 +115,7 @@ typedef struct {
 /**
  * @brief  Init ethernet mac
  *
- * @note   config can not be NULL,and phy chip must be suitable to phy init func.
+ * @note   config can not be NULL, and phy chip must be suitable to phy init func.
  *
  * @param[in] config  mac init data.
  *
@@ -144,7 +144,7 @@ esp_err_t esp_eth_deinit(void);
  * This function may be called, if you only need to initialize the Ethernet
  * driver without having to use the network stack on top.
  *
- * @note   config can not be NULL,and phy chip must be suitable to phy init func.
+ * @note   config can not be NULL, and phy chip must be suitable to phy init func.
  * @param[in] config  mac init data.
  *
  * @return
@@ -156,7 +156,7 @@ esp_err_t esp_eth_init_internal(eth_config_t *config);
 /**
  * @brief  Send packet from tcp/ip to mac
  *
- * @note   buf can not be NULL,size must be less than 1580
+ * @note   buf can not be NULL, size must be less than 1580
  *
  * @param[in] buf:  start address of packet data.
  *
@@ -254,7 +254,7 @@ static inline esp_err_t esp_eth_smi_wait_set(uint32_t reg_num, uint16_t value_ma
 /**
  * @brief  Free emac rx buf.
  *
- * @note  buf can not be null,and it is tcpip input buf.
+ * @note  buf can not be null, and it is tcpip input buf.
  *
  * @param[in] buf: start address of recevie packet data.
  *
@@ -264,7 +264,7 @@ void esp_eth_free_rx_buf(void *buf);
 /**
  * @brief  Set mac of ethernet interface.
  *
- * @note user can call this function after emac_init,and the new mac address will be enabled after emac_enable.
+ * @note user can call this function after emac_init, and the new mac address will be enabled after emac_enable.
  *
  * @param[in] mac: the Mac address.
  *
