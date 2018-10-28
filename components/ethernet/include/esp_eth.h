@@ -200,24 +200,24 @@ esp_err_t esp_eth_disable(void);
 void esp_eth_get_mac(uint8_t mac[6]);
 
 /**
- * @brief  Read phy reg with smi interface.
+ * @brief  Write PHY reg with SMI interface.
  *
- * @note  phy base addr must be right.
+ * @note  PHY base addr must be right.
  *
- * @param[in] reg_num:  phy reg num.
+ * @param[in] reg_num:  PHY reg num.
  *
- * @param[in] value: value which write to phy reg.
+ * @param[in] value: value which is written to PHY reg.
  */
 void esp_eth_smi_write(uint32_t reg_num, uint16_t value);
 
 /**
- * @brief  Read phy reg with smi interface.
+ * @brief  Read PHY reg with SMI interface.
  *
- * @note  phy base addr must be right.
+ * @note  PHY base addr must be right.
  *
- * @param[in] reg_num:  phy reg num.
+ * @param[in] reg_num:  PHY reg num.
  *
- * @return value what read from phy reg
+ * @return value that is read from PHY reg
  */
 uint16_t esp_eth_smi_read(uint32_t reg_num);
 
