@@ -40,6 +40,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "driver/periph_ctrl.h"
 
 static const __attribute__((unused)) char *TAG = "bignum";
 
@@ -75,7 +76,7 @@ void esp_mpi_acquire_hardware( void )
 {
     /* newlib locks lazy initialize on ESP-IDF */
     _lock_acquire(&mpi_lock);
-
+#if defined(DPORT_PROTECT_STALL_OTHER_CPU_USE)
     DPORT_STALL_OTHER_CPU_START();
     {
         _DPORT_REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_RSA);
@@ -87,7 +88,10 @@ void esp_mpi_acquire_hardware( void )
         _DPORT_REG_CLR_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
     }
     DPORT_STALL_OTHER_CPU_END();
-
+#else
+    periph_module_enable(PERIPH_RSA_MODULE);
+    DPORT_REG_CLR_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
+#endif
     while(DPORT_REG_READ(RSA_CLEAN_REG) != 1);
     // Note: from enabling RSA clock to here takes about 1.3us
 
@@ -98,6 +102,7 @@ void esp_mpi_acquire_hardware( void )
 
 void esp_mpi_release_hardware( void )
 {
+#if defined(DPORT_PROTECT_STALL_OTHER_CPU_USE)
     DPORT_STALL_OTHER_CPU_START();
     {
         _DPORT_REG_SET_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
@@ -107,7 +112,11 @@ void esp_mpi_release_hardware( void )
         _DPORT_REG_CLR_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_RSA);
     }
     DPORT_STALL_OTHER_CPU_END();
-
+#else
+    /* Disable RSA hardware */
+    DPORT_REG_SET_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
+    periph_module_disable(PERIPH_RSA_MODULE);
+#endif
     _lock_release(&mpi_lock);
 }
 
