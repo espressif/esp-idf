@@ -76,7 +76,7 @@ An example project directory tree might look like this::
 
 This example "myProject" contains the following elements:
 
-- A top-level project Makefile. This Makefile set the ``PROJECT_NAME`` variable and (optionally) defines
+- A top-level project Makefile. This Makefile sets the ``PROJECT_NAME`` variable and (optionally) defines
   other project-wide make variables. It includes the core ``$(IDF_PATH)/make/project.mk`` makefile which
   implements the rest of the ESP-IDF build system.
 
