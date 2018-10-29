@@ -25,9 +25,19 @@ Example should be able to run on any commonly available ESP32 development board.
 
 ### Application Required
 
-To provision the device running this example, the `esp_prov.py` script needs to be run (found under `$IDF_PATH/tools/esp_prov`). This feature of `esp_prov` should work on all platforms as long long as all Python dependencies are satisfied.
+Provisioning applications are available for various platforms. See below
 
-For android, a provisioning tool along with source code is available [here](https://github.com/espressif/esp-idf-provisioning-android). This offers a simpler and more close to actual user experience.
+#### Platform : Android
+
+For Android, a provisioning application along with source code is available on GitHub : [esp-idf-provisioning-android](https://github.com/espressif/esp-idf-provisioning-android)
+
+#### Platform : iOS
+
+For iOS, a provisioning application along with source code is available on GitHub : [esp-idf-provisioning-ios](https://github.com/espressif/esp-idf-provisioning-ios)
+
+#### Platform : Linux / Windows / macOS
+
+To provision the device running this example, the `esp_prov.py` script needs to be run (found under `$IDF_PATH/tools/esp_prov`). This feature of `esp_prov` should work on all platforms, given the dependencies are satisfied.
 
 ### Configure the project
 

@@ -26,13 +26,23 @@ Example should be able to run on any commonly available ESP32 development board.
 
 ### Application Required
 
+Provisioning applications are available for various platforms. See below
+
+#### Platform : Android
+
+For Android, a provisioning application along with source code is available on GitHub : [esp-idf-provisioning-android](https://github.com/espressif/esp-idf-provisioning-android)
+
+#### Platform : iOS
+
+For iOS, a provisioning application along with source code is available on GitHub : [esp-idf-provisioning-ios](https://github.com/espressif/esp-idf-provisioning-ios)
+
+#### Platform : Linux / Windows / macOS
+
 To provision the device running this example, the `esp_prov.py` script needs to be run (found under `$IDF_PATH/tools/esp_prov`). Make sure to satisfy all the dependencies prior to running the script.
 
 Presently, `esp_prov` supports BLE transport only for Linux platform. For Windows/macOS it falls back to console mode and requires another application (for BLE) through which the communication can take place.
 
 There are various applications, specific to Windows and macOS platform which can be used. The `esp_prov` console will guide you through the provisioning process of locating the correct BLE GATT services and characteristics, the values to write, and input read values.
-
-For android, a provisioning tool along with source code is available [here](https://github.com/espressif/esp-idf-provisioning-android). This offers a simpler and more close to actual user experience.
 
 ### Configure the project
 
