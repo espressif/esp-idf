@@ -47,6 +47,40 @@ typedef struct {
 } wifi_static_queue_t;
 
 /**
+  * @brief WiFi log level
+  *
+  */
+typedef enum {
+    WIFI_LOG_ERROR = 0,   /*enabled by default*/
+    WIFI_LOG_WARNING,     /*enabled by default*/
+    WIFI_LOG_INFO,        /*enabled by default*/
+    WIFI_LOG_DEBUG,       /*can be set in menuconfig*/
+    WIFI_LOG_VERBOSE,     /*can be set in menuconfig*/
+} wifi_log_level_t;
+  
+/**
+  * @brief WiFi log module definition
+  *
+  */
+typedef enum {
+    WIFI_LOG_MODULE_ALL  = 0, /*all log modules */
+    WIFI_LOG_MODULE_WIFI, /*logs related to WiFi*/
+    WIFI_LOG_MODULE_COEX, /*logs related to WiFi and BT(or BLE) coexist*/
+    WIFI_LOG_MODULE_MESH, /*logs related to Mesh*/
+} wifi_log_module_t;
+
+/**
+  * @brief WiFi log submodule definition
+  *
+  */
+#define WIFI_LOG_SUBMODULE_ALL   (0)    /*all log submodules*/
+#define WIFI_LOG_SUBMODULE_INIT  (1)    /*logs related to initialization*/
+#define WIFI_LOG_SUBMODULE_IOCTL (1<<1) /*logs related to API calling*/
+#define WIFI_LOG_SUBMODULE_CONN  (1<<2) /*logs related to connecting*/
+#define WIFI_LOG_SUBMODULE_SCAN  (1<<3) /*logs related to scaning*/
+
+
+/**
  * @brief Initialize Wi-Fi Driver
  *     Alloc resource for WiFi driver, such as WiFi control structure, RX/TX buffer,
  *     WiFi NVS structure among others.
@@ -223,6 +257,46 @@ void *wifi_calloc( size_t n, size_t size );
   * @return    Always returns ESP_OK
   */
 esp_err_t esp_wifi_internal_update_mac_time( uint32_t time_delta );
+
+/**
+  * @brief     Set current WiFi log level     
+  *
+  * @param     level   Log level.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_FAIL: level is invalid
+  */
+esp_err_t esp_wifi_internal_set_log_level(wifi_log_level_t level);
+
+/**
+  * @brief     Set current log module and submodule
+  *
+  * @param     module      Log module
+  * @param     submodule   Log submodule
+  * @param     enable      enable or disable
+  *            If module == 0 && enable == 0, all log modules are disabled.
+  *            If module == 0 && enable == 1, all log modules are enabled.
+  *            If submodule == 0 && enable == 0, all log submodules are disabled.
+  *            If submodule == 0 && enable == 1, all log submodules are enabled.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_ARG: invalid argument
+  */
+esp_err_t esp_wifi_internal_set_log_mod(wifi_log_module_t module, uint32_t submodule, bool enable);
+
+/**
+  * @brief     Get current WiFi log info     
+  *
+  * @param     log_level  the return log level.
+  * @param     log_mod    the return log module and submodule
+  *
+  * @return
+  *    - ESP_OK: succeed
+  */
+esp_err_t esp_wifi_internal_get_log(wifi_log_level_t *log_level, uint32_t *log_mod);
 
 #ifdef __cplusplus
 }
