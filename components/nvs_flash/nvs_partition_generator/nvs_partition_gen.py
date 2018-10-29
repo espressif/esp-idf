@@ -501,7 +501,7 @@ class NVS(object):
     def create_new_page(self, is_rsrv_page=False):
         # Update available size as each page is created
         if self.size == 0:
-            raise InsufficientSizeError("Size parameter is is less than the size of data in csv.Please increase size.")
+            raise InsufficientSizeError("Size parameter is less than the size of data in csv.Please increase size.")
         if not is_rsrv_page:
             self.size = self.size - Page.PAGE_PARAMS["max_size"]
         self.page_num += 1
