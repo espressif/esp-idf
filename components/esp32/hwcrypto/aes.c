@@ -36,6 +36,7 @@
 
 #include "soc/cpu.h"
 #include <stdio.h>
+#include "driver/periph_ctrl.h"
 
 
 /* AES uses a spinlock mux not a lock as the underlying block operation
@@ -50,26 +51,16 @@ static portMUX_TYPE aes_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 void esp_aes_acquire_hardware( void )
 {
-    /* newlib locks lazy initialize on ESP-IDF */
     portENTER_CRITICAL(&aes_spinlock);
 
     /* Enable AES hardware */
-    DPORT_REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_AES);
-    /* Clear reset on digital signature & secure boot units,
-       otherwise AES unit is held in reset also. */
-    DPORT_REG_CLR_BIT(DPORT_PERI_RST_EN_REG,
-                       DPORT_PERI_EN_AES
-                       | DPORT_PERI_EN_DIGITAL_SIGNATURE
-                       | DPORT_PERI_EN_SECUREBOOT);
+    periph_module_enable(PERIPH_AES_MODULE);
 }
 
 void esp_aes_release_hardware( void )
 {
     /* Disable AES hardware */
-    DPORT_REG_SET_BIT(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_AES);
-    /* Don't return other units to reset, as this pulls
-       reset on RSA & SHA units, respectively. */
-    DPORT_REG_CLR_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_AES);
+    periph_module_disable(PERIPH_AES_MODULE);
 
     portEXIT_CRITICAL(&aes_spinlock);
 }
@@ -116,7 +107,10 @@ static inline void esp_aes_setkey_hardware( esp_aes_context *ctx, int mode)
     const uint32_t MODE_DECRYPT_BIT = 4;
     unsigned mode_reg_base = (mode == ESP_AES_ENCRYPT) ? 0 : MODE_DECRYPT_BIT;
 
-    memcpy((uint32_t *)AES_KEY_BASE, ctx->key, ctx->key_bytes);
+    for (int i = 0; i < ctx->key_bytes/4; ++i) {
+        DPORT_REG_WRITE(AES_KEY_BASE + i * 4, *(((uint32_t *)ctx->key) + i));
+    }
+
     DPORT_REG_WRITE(AES_MODE_REG, mode_reg_base + ((ctx->key_bytes / 8) - 2));
 }
 

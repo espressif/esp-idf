@@ -41,6 +41,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "driver/periph_ctrl.h"
 
 /* Some implementation notes:
  *
@@ -91,12 +92,8 @@ void esp_mpi_acquire_hardware( void )
     /* newlib locks lazy initialize on ESP-IDF */
     _lock_acquire(&mpi_lock);
 
-    DPORT_REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_RSA);
-    /* also clear reset on digital signature, otherwise RSA is held in reset */
-    DPORT_REG_CLR_BIT(DPORT_PERI_RST_EN_REG,
-                       DPORT_PERI_EN_RSA
-                       | DPORT_PERI_EN_DIGITAL_SIGNATURE);
-
+    /* Enable RSA hardware */
+    periph_module_enable(PERIPH_RSA_MODULE);
     DPORT_REG_CLR_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
 
     while(DPORT_REG_READ(RSA_CLEAN_REG) != 1);
@@ -111,9 +108,8 @@ void esp_mpi_release_hardware( void )
 {
     DPORT_REG_SET_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
 
-    /* don't reset digital signature unit, as this resets AES also */
-    DPORT_REG_SET_BIT(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_RSA);
-    DPORT_REG_CLR_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_RSA);
+    /* Disable RSA hardware */
+    periph_module_disable(PERIPH_RSA_MODULE);
 
     _lock_release(&mpi_lock);
 }
