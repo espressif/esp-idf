@@ -14,6 +14,10 @@ These consist of the following examples :
 * custom_config
     Similar to softap_prov examples, but allows for configuration of custom (device-local) information during provisioning. This is intended as an example for implementing custom provisioning schemes.
 
-A python based utility is provided under "$IDF_PATH/tools/esp_prov" for testing the examples over a host.
+Provisioning applications are available for various platforms:
+
+* For Android, a provisioning application along with source code is available on GitHub : [esp-idf-provisioning-android](https://github.com/espressif/esp-idf-provisioning-android)
+* For iOS, a provisioning application along with source code is available on GitHub : [esp-idf-provisioning-ios](https://github.com/espressif/esp-idf-provisioning-ios)
+* For all other platforms a python based command line tool is provided under "$IDF_PATH/tools/esp_prov"
 
 Refer to the README.md files in each example directory for more information.

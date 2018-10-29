@@ -149,6 +149,10 @@ Various use case implementations can be found as examples under :example:`provis
 Provisioning Tools
 >>>>>>>>>>>>>>>>>>
 
-A python based provisioning tool is provided under `$IDF_PATH/tools/esp_prov`, intended for use along with the examples under :example:`provisioning`.
+Provisioning applications are available for various platforms, along with source code:
 
-For android, a provisioning tool along with source code is available on Github as `esp-idf-provisioning-android <https://github.com/espressif/esp-idf-provisioning-android>`_
+* Android : `esp-idf-provisioning-android <https://github.com/espressif/esp-idf-provisioning-android>`_
+* iOS : `esp-idf-provisioning-ios <https://github.com/espressif/esp-idf-provisioning-ios>`_
+* Linux/MacOS/Windows : :idf:`tools/esp_prov` (a python based command line tool for provisioning)
+
+The phone applications offer simple UI and thus more user centric, while the command line application is useful as a debugging tool for developers.
