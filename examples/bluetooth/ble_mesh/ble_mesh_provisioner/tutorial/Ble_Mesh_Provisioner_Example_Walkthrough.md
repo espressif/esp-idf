@@ -3,13 +3,14 @@
 
 ## 1. Introduction
 
-This Demo is used for the demonstration of BLE Device working as a Provisioner. Please go check the [Demo for ESP-IDF BLE Mesh Node](../ble_mesh_node/README.md) first, if you don't have much experience with BLE Mesh.
+This Demo is used for the demonstration of BLE Device working as a Provisioner. Please go check the [Demo for ESP-IDF BLE Mesh Node](../../ble_mesh_node/README.md) first, if you don't have much experience with BLE Mesh.
 
 ## 2. Code Flow
 
 ### 2.1 Initialization and Enabling
 
 <center>
+
 ![](https://i.imgur.com/l3xoiba.png)
 
 **Figure 1**
@@ -27,6 +28,7 @@ As shown in **Figure 1**, the following should be done for the initialization of
 When working as a Provisioner that initiates the provisioning, BLE Device also has to configure parameters, including App key, TTL and proxy, after the provisioning, which are not required when working as a Node. Please note the configuration of App key is of vital importance. The Application can only send/receive data (set state, get state and publish) after the App key has been set and bound.
 
 <center>
+
 ![](https://i.imgur.com/OLjmmW4.png)
 
 **Figure 2**
@@ -42,6 +44,7 @@ As shown in **Figure 2**, after the provisioning is completed, API `esp_ble_mesh
 The process to register a Configuration Client Model is similar to the process of registering other models, which can be seen below:
 
 <center>
+
 ![](https://i.imgur.com/Z2hdRqY.png)
 
 **Figure 3**

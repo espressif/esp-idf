@@ -115,8 +115,7 @@ This example shows how a device can act as a BLE Mesh provisioner to provision d
 ## Mobile Apps 
 
 Espressif BLE Mesh implementation works with a few phone applications like Silicon Labs BLE Mesh and nRF Mesh.
-These apps are available on the Google play store and iOS App Store. Additionally, we also have an in-house Android app that is still under development. You can download the apk from [here]
-(http://download.espressif.com/BLE_MESH/BLE_Mesh_Tools/BLE_Mesh_App/EspBleMesh-v0.9.2)
+These apps are available on the Google play store and iOS App Store. Additionally, we also have an in-house Android app that is still under development. You can download the apk from [here](http://download.espressif.com/BLE_MESH/BLE_Mesh_Tools/BLE_Mesh_App/EspBleMesh-v0.9.2)
 
 Note: There is a bug in the current version of Silicon Labs App which is fixed by a workaround on the SDK side. The fix is through a configuration option (enabled by default) and needs to be disabled when using other Android/iOS apps from menuconfig `make menuconfig -> Example Configuration -> This option fixes the bug of Silicon Lab Android App 1.1.0 when reconnection will cause the sequence number to recount from 0`
 
@@ -147,20 +146,20 @@ $ make -j8 flash monitor
 * Make sure you have access to "ble_mesh_issues/CustomerName_xxx_issues" repository
 * You can file and track issues under "Issues" section of the repository
 * Before submitting an issue, please check:
- * If the issue is already present in the list of Known Issues document
- * If the solution to the issue is already present in the FAQs document
+    * If the issue is already present in the list of Known Issues document
+    * If the solution to the issue is already present in the FAQs document
 In these cases please do not create the issue
 * To create a new issue, choose appropriate template for your issue:
- * Bug report: For issues/bugs
- * Enhancement request: For any enhancement
- * Feature request: For any new features required
+    * Bug report: For issues/bugs
+    * Enhancement request: For any enhancement
+    * Feature request: For any new features required
 * Follow the instructions while submitting the issue and confirm if all the information is crisp and clear
 * Add appropriate labels for your issue:
- * Bug: The problem impairs or prevents the functions of the product
- * Enhancement: An improvement or enhancement to an existing feature or task
- * Feature: A new feature of the product, which has yet to be developed
- * Priority - Critical: The problem will block progress
- * Priority - High: Serious problem that could block progress 
- * Priority - Medium: The problem has the potential to affect progress
- * Priority - Low: Minor problem or easily worked around
+    * Bug: The problem impairs or prevents the functions of the product
+    * Enhancement: An improvement or enhancement to an existing feature or task
+    * Feature: A new feature of the product, which has yet to be developed
+    * Priority - Critical: The problem will block progress
+    * Priority - High: Serious problem that could block progress
+    * Priority - Medium: The problem has the potential to affect progress
+    * Priority - Low: Minor problem or easily worked around
 * Default labels are chosen for each template. You can modify them as per your issue with proper justification

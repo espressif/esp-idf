@@ -21,7 +21,7 @@
 * [FAQs](components/bt/ble_mesh/mesh_docs/BLE-Mesh_FAQs_EN.md)
 * [Known Issues](components/bt/ble_mesh/mesh_docs/BLE-Mesh_Known_Issues_EN.md)
 
-### BLE Mesh Protocol Study Documentation
+### BLE Mesh Protocol Documentation
 
 * [BLE Mesh Core Specification](https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633)
 * [BLE Mesh Model Specification](https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429634)

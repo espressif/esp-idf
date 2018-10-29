@@ -13,6 +13,7 @@ ESP32 BLE-Mesh is built upon Zephyr Mesh lib. It supports network provisioning a
 ### 2.1 Code File Structure
 
 <center>
+
 ![](https://i.imgur.com/oYe8tR9.png)
 
 **Figure 1**
@@ -20,6 +21,7 @@ ESP32 BLE-Mesh is built upon Zephyr Mesh lib. It supports network provisioning a
 ![](https://i.imgur.com/eDH2lPY.png)
 
 **Figure 2**
+
 </center>
 
 As presented in **Figure 1**, under the **ble\_mesh\_node** folder, are the following files and subfolders:
@@ -48,9 +50,11 @@ To help users better understand how to implement the demo, this section provides
 #### 2.2.1 Initialization and Enabling of BLE Mesh 
 
 <center>
+
 ![](https://i.imgur.com/xqDvf88.png)
 
 **Figure 3**
+
 </center>
 
 **Figure 3** demonstrates the implementation of the related codes after `app_main` is called. When ESP32 system initialization is completed, it will call `app_main` that implements the following two functions:
@@ -61,9 +65,11 @@ To help users better understand how to implement the demo, this section provides
 The next part will introduce the initialization function of BLE Mesh protocol stack. Let's see what actions are required to initialize BLE Mesh.
 
 <center>
+
 ![](https://i.imgur.com/Xw3fpAQ.png)
 
 **Figure 4**
+
 </center>
 **Figure 4** displays the codes to implement the initialization of BLE Mesh protocol stack, with main focus on the functions below:
 
@@ -105,11 +111,13 @@ This section will answer those questions.
 First, before calling `esp_ble_mesh_init` API to initialize the BLE Mesh, we have to declare and define Element and Model as demonstrated in the picture below, detailing the codes to define Element:
 
 <center>
+
 	<img src="https://i.imgur.com/fSs0iyy.png" width="%" height="%" />
 	<img src="https://i.imgur.com/pNipHHc.png" width="%" height="%" />
 	<img src="https://i.imgur.com/OkEyOab.png" width="%" height="%" />
 
 **Figure 5**
+
 </center>
 
 The top picture in **Figure 5** shows the declaration of the Element structure, the middle shows the definition of the Element structure, and the bottom shows the Macro to be used when defining the Element.  The next part will introduce the variables of the Element structure:
@@ -135,6 +143,7 @@ The above section has introduced the specific ways to implement and define the E
 	<img src="https://i.imgur.com/4sxvONQ.png" />
 
 **Figure 6**
+
 </center>
 
 First, let's take a look at the top picture in **Figure 6**, which shows the specific implementation of the Model structure. There are many variables in this structure, but only the following four variables will be used for applications:
