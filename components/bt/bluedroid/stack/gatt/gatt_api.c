@@ -766,7 +766,8 @@ tGATT_STATUS GATTS_GetAttributeValue(UINT16 attr_handle, UINT16 *length, UINT8 *
                     attr_handle);
 
      if ((p_decl = gatt_find_hdl_buffer_by_attr_handle(attr_handle)) == NULL) {
-         GATT_TRACE_ERROR("Service not created\n"); 
+         GATT_TRACE_ERROR("Service not created\n");
+         *length = 0;
          return GATT_INVALID_HANDLE;
      }
 
