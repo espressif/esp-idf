@@ -60,7 +60,22 @@ typedef struct esp_tls_cfg {
  
     unsigned int cacert_pem_bytes;          /*!< Size of Certificate Authority certificate
                                                  pointed to by cacert_pem_buf */
+
+    const unsigned char *clientcert_pem_buf;/*!< Client certificate in a buffer */
  
+    unsigned int clientcert_pem_bytes;      /*!< Size of client certificate pointed to by
+                                                 clientcert_pem_buf */
+
+    const unsigned char *clientkey_pem_buf; /*!< Client key in a buffer */
+
+    unsigned int clientkey_pem_bytes;       /*!< Size of client key pointed to by
+                                                 clientkey_pem_buf */
+
+    const unsigned char *clientkey_password;/*!< Client key decryption password string */
+
+    unsigned int clientkey_password_len;    /*!< String length of the password pointed to by
+                                                 clientkey_password */
+
     bool non_block;                         /*!< Configure non-blocking mode. If set to true the 
                                                  underneath socket will be configured in non 
                                                  blocking mode after tls session is established */
@@ -89,9 +104,14 @@ typedef struct esp_tls {
  
     mbedtls_net_context server_fd;                                              /*!< mbedTLS wrapper type for sockets */
  
-    mbedtls_x509_crt cacert;                                                    /*!< Container for an X.509 certificate */
- 
+    mbedtls_x509_crt cacert;                                                    /*!< Container for the X.509 CA certificate */
+
     mbedtls_x509_crt *cacert_ptr;                                               /*!< Pointer to the cacert being used. */
+
+    mbedtls_x509_crt clientcert;                                                /*!< Container for the X.509 client certificate */
+
+    mbedtls_pk_context clientkey;                                               /*!< Container for the private key of the client
+                                                                                     certificate */
 
     int sockfd;                                                                 /*!< Underlying socket file descriptor. */
  
