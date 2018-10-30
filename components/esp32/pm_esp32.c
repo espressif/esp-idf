@@ -81,11 +81,11 @@ static uint32_t s_ccount_div;
 static uint32_t s_ccount_mul;
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
-/* Indicates if light sleep entry was successful for given CPU.
+/* Indicates if light sleep entry was skipped in vApplicationSleep for given CPU.
  * This in turn gets used in IDLE hook to decide if `waiti` needs
  * to be invoked or not.
  */
-static bool s_entered_light_sleep[portNUM_PROCESSORS];
+static bool s_skipped_light_sleep[portNUM_PROCESSORS];
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
 /* Indicates to the ISR hook that CCOMPARE needs to be updated on the given CPU.
@@ -465,10 +465,14 @@ void esp_pm_impl_waiti()
 {
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
     int core_id = xPortGetCoreID();
-    if (!s_entered_light_sleep[core_id]) {
+    if (s_skipped_light_sleep[core_id]) {
         asm("waiti 0");
-    } else {
-        s_entered_light_sleep[core_id] = false;
+        /* Interrupt took the CPU out of waiti and s_rtos_lock_handle[core_id]
+         * is now taken. However since we are back to idle task, we can release
+         * the lock so that vApplicationSleep can attempt to enter light sleep.
+         */
+        esp_pm_impl_idle_hook();
+        s_skipped_light_sleep[core_id] = false;
     }
 #else
     asm("waiti 0");
@@ -480,7 +484,11 @@ void esp_pm_impl_waiti()
 void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
 {
     portENTER_CRITICAL(&s_switch_lock);
-    if (s_mode == PM_MODE_LIGHT_SLEEP && !s_is_switching) {
+    int core_id = xPortGetCoreID();
+    if (s_mode != PM_MODE_LIGHT_SLEEP || s_is_switching) {
+        s_skipped_light_sleep[core_id] = true;
+    } else {
+        s_skipped_light_sleep[core_id] = false;
         /* Calculate how much we can sleep */
         int64_t next_esp_timer_alarm = esp_timer_get_next_alarm();
         int64_t now = esp_timer_get_time();
@@ -494,7 +502,6 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
             esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
 #endif
             /* Enter sleep */
-            int core_id = xPortGetCoreID();
             ESP_PM_TRACE_ENTER(SLEEP, core_id);
             int64_t sleep_start = esp_timer_get_time();
             esp_light_sleep_start();
@@ -516,7 +523,6 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
                     ;
                 }
             }
-            s_entered_light_sleep[core_id] = true;
         }
     }
     portEXIT_CRITICAL(&s_switch_lock);
