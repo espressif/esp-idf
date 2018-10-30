@@ -204,6 +204,9 @@ static void mbedtls_cleanup(esp_tls_t *tls)
         mbedtls_x509_crt_free(tls->cacert_ptr);
     }
     tls->cacert_ptr = NULL;
+    mbedtls_x509_crt_free(&tls->cacert);
+    mbedtls_x509_crt_free(&tls->clientcert);
+    mbedtls_pk_free(&tls->clientkey);
     mbedtls_entropy_free(&tls->entropy);
     mbedtls_ssl_config_free(&tls->conf);
     mbedtls_ctr_drbg_free(&tls->ctr_drbg);
@@ -274,7 +277,34 @@ static int create_ssl_handle(esp_tls_t *tls, const char *hostname, size_t hostle
     } else {
         mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_NONE);
     }
-    
+
+    if (cfg->clientcert_pem_buf != NULL && cfg->clientkey_pem_buf != NULL) {
+        mbedtls_x509_crt_init(&tls->clientcert);
+        mbedtls_pk_init(&tls->clientkey);
+
+        ret = mbedtls_x509_crt_parse(&tls->clientcert, cfg->clientcert_pem_buf, cfg->clientcert_pem_bytes);
+        if (ret < 0) {
+            ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
+            goto exit;
+        }
+
+        ret = mbedtls_pk_parse_key(&tls->clientkey, cfg->clientkey_pem_buf, cfg->clientkey_pem_bytes,
+                  cfg->clientkey_password, cfg->clientkey_password_len);
+        if (ret < 0) {
+            ESP_LOGE(TAG, "mbedtls_pk_parse_keyfile returned -0x%x\n\n", -ret);
+            goto exit;
+        }
+
+        ret = mbedtls_ssl_conf_own_cert(&tls->conf, &tls->clientcert, &tls->clientkey);
+        if (ret < 0) {
+            ESP_LOGE(TAG, "mbedtls_ssl_conf_own_cert returned -0x%x\n\n", -ret);
+            goto exit;
+        }
+    } else if (cfg->clientcert_pem_buf != NULL || cfg->clientkey_pem_buf != NULL) {
+        ESP_LOGE(TAG, "You have to provide both clientcert_pem_buf and clientkey_pem_buf for mutual authentication\n\n");
+        goto exit;
+    }
+
     mbedtls_ssl_conf_rng(&tls->conf, mbedtls_ctr_drbg_random, &tls->ctr_drbg);
 
 #ifdef CONFIG_MBEDTLS_DEBUG
