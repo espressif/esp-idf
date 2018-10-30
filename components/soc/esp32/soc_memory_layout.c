@@ -131,7 +131,9 @@ const size_t soc_memory_region_count = sizeof(soc_memory_regions)/sizeof(soc_mem
    These are removed from the soc_memory_regions array when heaps are created.
  */
 SOC_RESERVE_MEMORY_REGION(0x40070000, 0x40078000, cpu0_cache);
+#ifndef CONFIG_FREERTOS_UNICORE
 SOC_RESERVE_MEMORY_REGION(0x40078000, 0x40080000, cpu1_cache);
+#endif
 
     /* Warning: The ROM stack is located in the 0x3ffe0000 area. We do not specifically disable that area here because
        after the scheduler has started, the ROM stack is not used anymore by anything. We handle it instead by not allowing
@@ -150,7 +152,9 @@ SOC_RESERVE_MEMORY_REGION(0x40078000, 0x40080000, cpu1_cache);
     */
 
 SOC_RESERVE_MEMORY_REGION(0x3ffe0000, 0x3ffe0440, rom_pro_data); //Reserve ROM PRO data region
-SOC_RESERVE_MEMORY_REGION(0x3ffe4000, 0x3ffe4350, rom_app_data); //Reserve ROM APP data region
+#ifndef CONFIG_FREERTOS_UNICORE
+SOC_RESERVE_MEMORY_REGION(0x3ffe3f20, 0x3ffe4350, rom_app_data); //Reserve ROM APP data region
+#endif
 
 SOC_RESERVE_MEMORY_REGION(0x3ffae000, 0x3ffae6e0, rom_data);
 
