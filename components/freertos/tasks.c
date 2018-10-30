@@ -2153,6 +2153,8 @@ void vTaskSuspendAll( void )
 
 #if ( configUSE_TICKLESS_IDLE != 0 )
 
+#if ( portNUM_PROCESSORS > 1 )
+
 	static BaseType_t xHaveReadyTasks()
 	{
 		for (int i = tskIDLE_PRIORITY + 1; i < configMAX_PRIORITIES; ++i)
@@ -2169,6 +2171,7 @@ void vTaskSuspendAll( void )
 		return pdFALSE;
 	}
 
+#endif // portNUM_PROCESSORS > 1
 
 	static TickType_t prvGetExpectedIdleTime( void )
 	{
