@@ -55,7 +55,7 @@
 #define BTC_TASK_NAME                   "btcT"
 #define BTC_TASK_PRIO                   (BT_TASK_MAX_PRIORITIES - 6)
 
-static osi_thread_t *btc_thread;
+osi_thread_t *btc_thread;
 
 static const btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_MAIN_INIT]   = {btc_main_call_handler,       NULL                    },
@@ -135,7 +135,7 @@ static bt_status_t btc_task_post(btc_msg_t *msg, osi_thread_blocking_t blocking)
 
     memcpy(lmsg, msg, sizeof(btc_msg_t));
 
-    if (osi_thread_post(btc_thread, btc_thread_handler, lmsg, 0, blocking) == false) {
+    if (osi_thread_post(btc_thread, btc_thread_handler, lmsg, 2, blocking) == false) {
         return BT_STATUS_BUSY;
     }
 
@@ -262,7 +262,7 @@ static void btc_deinit_mem(void) {
 
 int btc_init(void)
 {
-    btc_thread = osi_thread_create("BTC_TASK", BTC_TASK_STACK_SIZE, BTC_TASK_PRIO, BTC_TASK_PINNED_TO_CORE, 1);
+    btc_thread = osi_thread_create("BTC_TASK", BTC_TASK_STACK_SIZE, BTC_TASK_PRIO, BTC_TASK_PINNED_TO_CORE, 3);
     if (btc_thread == NULL) {
         return BT_STATUS_NOMEM;
     }
@@ -297,7 +297,7 @@ void btc_deinit(void)
 
 bool btc_check_queue_is_congest(void)
 {
-    if (osi_thread_queue_wait_size(btc_thread, 0) >= QUEUE_CONGEST_SIZE) {
+    if (osi_thread_queue_wait_size(btc_thread, 2) >= QUEUE_CONGEST_SIZE) {
         return true;
     }
 
