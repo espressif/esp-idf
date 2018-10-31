@@ -218,6 +218,8 @@ build_esp_idf_tests:
 
 .build_examples_make_template: &build_examples_make_template
   <<: *build_template
+  # This is a workaround for a rarely encountered issue with building examples in CI.
+  # Probably related to building of Kconfig in 'make clean' stage
   retry: 1
   artifacts:
     when: always
@@ -251,7 +253,6 @@ build_esp_idf_tests:
 # same as above, but for CMake
 .build_examples_cmake_template: &build_examples_cmake_template
   <<: *build_template
-  retry: 1
   artifacts:
     when: always
     paths:

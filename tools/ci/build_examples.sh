@@ -121,13 +121,18 @@ build_example () {
         local BUILDLOG=${LOG_PATH}/ex_${ID}_log.txt
         touch ${BUILDLOG}
 
+        local FLASH_ARGS=build/download.config
+
         make clean >>${BUILDLOG} 2>&1 &&
         make defconfig >>${BUILDLOG} 2>&1 &&
         make all >>${BUILDLOG} 2>&1 &&
-        ( make print_flash_cmd | tail -n 1 >build/download.config ) >>${BUILDLOG} 2>&1 ||
+        make print_flash_cmd >${FLASH_ARGS}.full 2>>${BUILDLOG} ||
         {
             RESULT=$?; FAILED_EXAMPLES+=" ${EXAMPLE_NAME}" ;
         }
+
+        tail -n 1 ${FLASH_ARGS}.full > ${FLASH_ARGS} || :
+        test -s ${FLASH_ARGS} || die "Error: ${FLASH_ARGS} file is empty"
 
         cat ${BUILDLOG}
     popd
