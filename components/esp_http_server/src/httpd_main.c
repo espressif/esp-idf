@@ -62,8 +62,8 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
     tv.tv_usec = 0;
     setsockopt(new_fd, SOL_SOCKET, SO_SNDTIMEO, (const char*)&tv, sizeof(tv));
 
-    if (httpd_sess_new(hd, new_fd)) {
-        ESP_LOGW(TAG, LOG_FMT("no slots left for launching new session"));
+    if (ESP_OK != httpd_sess_new(hd, new_fd)) {
+        ESP_LOGW(TAG, LOG_FMT("session creation failed"));
         close(new_fd);
         return ESP_FAIL;
     }
@@ -100,6 +100,16 @@ esp_err_t httpd_queue_work(httpd_handle_t handle, httpd_work_fn_t work, void *ar
     }
 
     return ESP_OK;
+}
+
+void *httpd_get_global_user_ctx(httpd_handle_t handle)
+{
+    return ((struct httpd_data *)handle)->config.global_user_ctx;
+}
+
+void *httpd_get_global_transport_ctx(httpd_handle_t handle)
+{
+    return ((struct httpd_data *)handle)->config.global_transport_ctx;
 }
 
 static void httpd_close_all_sessions(struct httpd_data *hd)
@@ -159,11 +169,8 @@ static esp_err_t httpd_server(struct httpd_data *hd)
     int active_cnt = select(maxfd + 1, &read_set, NULL, NULL, NULL);
     if (active_cnt < 0) {
         ESP_LOGE(TAG, LOG_FMT("error in select (%d)"), errno);
-        /* Assert, as it's not possible to recover from this point onwards,
-         * and there is no way to notify the main thread that server handle
-         * has become invalid */
-        assert(false);
-        return ESP_FAIL;
+        httpd_sess_delete_invalid(hd);
+        return ESP_OK;
     }
 
     /* Case0: Do we have a control message? */
@@ -367,7 +374,27 @@ esp_err_t httpd_stop(httpd_handle_t handle)
 
     ESP_LOGD(TAG, LOG_FMT("sent control msg to stop server"));
     while (hd->hd_td.status != THREAD_STOPPED) {
-        httpd_os_thread_sleep(1000);
+        httpd_os_thread_sleep(100);
+    }
+
+    /* Release global user context, if not NULL */
+    if (hd->config.global_user_ctx) {
+        if (hd->config.global_user_ctx_free_fn) {
+            hd->config.global_user_ctx_free_fn(hd->config.global_user_ctx);
+        } else {
+            free(hd->config.global_user_ctx);
+        }
+        hd->config.global_user_ctx = NULL;
+    }
+
+    /* Release global transport context, if not NULL */
+    if (hd->config.global_transport_ctx) {
+        if (hd->config.global_transport_ctx_free_fn) {
+            hd->config.global_transport_ctx_free_fn(hd->config.global_transport_ctx);
+        } else {
+            free(hd->config.global_transport_ctx);
+        }
+        hd->config.global_transport_ctx = NULL;
     }
 
     ESP_LOGD(TAG, LOG_FMT("server stopped"));
