@@ -45,12 +45,7 @@
 
 #if (BTC_AV_SINK_INCLUDED == TRUE)
 
-/* Macro */
-#define BTC_A2DP_SINK_TASK_PINNED_TO_CORE     (TASK_PINNED_TO_CORE)
-#define BTC_A2DP_SINK_TASK_STACK_SIZE         (A2DP_SINK_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE) // by menuconfig
-#define BTC_A2DP_SINK_TASK_NAME               "BtA2dSinkT"
-#define BTC_A2DP_SINK_TASK_PRIO               (BT_TASK_MAX_PRIORITIES - 3)
-
+extern osi_thread_t *btc_thread;
 
 /*****************************************************************************
  **  Constants
@@ -242,10 +237,7 @@ bool btc_a2dp_sink_startup(void)
 
     APPL_TRACE_EVENT("## A2DP SINK START MEDIA THREAD ##");
 
-    a2dp_sink_local_param.btc_aa_snk_task_hdl = osi_thread_create(BTC_A2DP_SINK_TASK_NAME, BTC_A2DP_SINK_TASK_STACK_SIZE, BTC_A2DP_SINK_TASK_PRIO, BTC_A2DP_SINK_TASK_PINNED_TO_CORE, 2);
-    if (a2dp_sink_local_param.btc_aa_snk_task_hdl == NULL) {
-        goto error_exit;
-    }
+    a2dp_sink_local_param.btc_aa_snk_task_hdl = btc_thread;
 
     if (btc_a2dp_sink_ctrl_post(BTC_MEDIA_TASK_SINK_INIT, NULL) == false) {
         goto error_exit;
@@ -257,10 +249,7 @@ bool btc_a2dp_sink_startup(void)
 
 error_exit:;
     APPL_TRACE_ERROR("%s unable to start up media thread\n", __func__);
-    if (a2dp_sink_local_param.btc_aa_snk_task_hdl != NULL) {
-        osi_thread_free(a2dp_sink_local_param.btc_aa_snk_task_hdl);
-        a2dp_sink_local_param.btc_aa_snk_task_hdl = NULL;
-    }
+    a2dp_sink_local_param.btc_aa_snk_task_hdl = NULL;
 
 #if A2D_DYNAMIC_MEMORY == TRUE
     osi_free(a2dp_sink_local_param_ptr);
@@ -282,7 +271,6 @@ void btc_a2dp_sink_shutdown(void)
     future_await(a2dp_sink_local_param.btc_a2dp_sink_future);
     a2dp_sink_local_param.btc_a2dp_sink_future = NULL;
 
-    osi_thread_free(a2dp_sink_local_param.btc_aa_snk_task_hdl);
     a2dp_sink_local_param.btc_aa_snk_task_hdl = NULL;
 
 #if A2D_DYNAMIC_MEMORY == TRUE

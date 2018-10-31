@@ -50,12 +50,7 @@
 
 #if BTC_AV_SRC_INCLUDED
 
-/* Macro */
-#define BTC_A2DP_SOURCE_TASK_PINNED_TO_CORE   (TASK_PINNED_TO_CORE)
-#define BTC_A2DP_SOURCE_TASK_STACK_SIZE       (A2DP_SOURCE_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE) // by menuconfig
-#define BTC_A2DP_SOURCE_TASK_NAME             "BtA2dSourceT"
-#define BTC_A2DP_SOURCE_TASK_PRIO             (BT_TASK_MAX_PRIORITIES - 3)
-
+extern osi_thread_t *btc_thread;
 
 /*****************************************************************************
  **  Constants
@@ -243,18 +238,18 @@ bool btc_a2dp_source_is_task_shutting_down(void)
     return btc_a2dp_source_state == BTC_A2DP_SOURCE_STATE_SHUTTING_DOWN;
 }
 
-static void btc_a2dp_source_ctrl_post(uint32_t sig, void *param)
+static bool btc_a2dp_source_ctrl_post(uint32_t sig, void *param)
 {
     a2dp_src_task_evt_t *evt = (a2dp_src_task_evt_t *)osi_malloc(sizeof(a2dp_src_task_evt_t));
 
     if (evt == NULL) {
-        return;
+        return false;
     }
 
     evt->sig = sig;
     evt->param = param;
 
-    osi_thread_post(a2dp_source_local_param.btc_aa_src_task_hdl, btc_a2dp_source_ctrl_handler, evt, 0, OSI_THREAD_BLOCKING);
+    return osi_thread_post(a2dp_source_local_param.btc_aa_src_task_hdl, btc_a2dp_source_ctrl_handler, evt, 0, OSI_THREAD_BLOCKING);
 }
 
 static void btc_a2dp_source_ctrl_handler(void *arg)
@@ -318,19 +313,18 @@ bool btc_a2dp_source_startup(void)
 
     APPL_TRACE_EVENT("## A2DP SOURCE START MEDIA THREAD ##");
 
-    a2dp_source_local_param.btc_aa_src_task_hdl = osi_thread_create(BTC_A2DP_SOURCE_TASK_NAME, BTC_A2DP_SOURCE_TASK_STACK_SIZE, BTC_A2DP_SOURCE_TASK_PRIO, BTC_A2DP_SOURCE_TASK_PINNED_TO_CORE, 2);
-    if (a2dp_source_local_param.btc_aa_src_task_hdl == NULL) {
+    a2dp_source_local_param.btc_aa_src_task_hdl = btc_thread;
+
+    if (btc_a2dp_source_ctrl_post(BTC_MEDIA_TASK_INIT, NULL) == false) {
         goto error_exit;
     }
 
-    btc_a2dp_source_ctrl_post(BTC_MEDIA_TASK_INIT, NULL);
     APPL_TRACE_EVENT("## A2DP SOURCE MEDIA THREAD STARTED ##\n");
 
     return true;
 
 error_exit:;
     APPL_TRACE_ERROR("%s unable to start up media thread\n", __func__);
-    osi_thread_free(a2dp_source_local_param.btc_aa_src_task_hdl);
     a2dp_source_local_param.btc_aa_src_task_hdl = NULL;
 
 #if A2D_DYNAMIC_MEMORY == TRUE
@@ -353,7 +347,6 @@ void btc_a2dp_source_shutdown(void)
     future_await(a2dp_source_local_param.btc_a2dp_source_future);
     a2dp_source_local_param.btc_a2dp_source_future = NULL;
 
-    osi_thread_free(a2dp_source_local_param.btc_aa_src_task_hdl);
     a2dp_source_local_param.btc_aa_src_task_hdl = NULL;
 
 #if A2D_DYNAMIC_MEMORY == TRUE
