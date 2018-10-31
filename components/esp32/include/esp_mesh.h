@@ -185,6 +185,7 @@ typedef enum {
                                              Fixed Root Setting of each device is variable as that setting changes of the root. */
     MESH_EVENT_SCAN_DONE,               /**< if self-organized networking is disabled, user can call esp_wifi_scan_start() to trigger
                                              this event, and add the corresponding scan done handler in this event. */
+    MESH_EVENT_NETWORK_STATE,           /**< network state, such as whether current mesh network has a root. */
     MESH_EVENT_MAX,
 } mesh_event_id_t;
 
@@ -229,13 +230,18 @@ typedef enum {
  * @brief Mesh disconnect reason code
  */
 typedef enum {
-    MESH_REASON_CYCLIC = 100,      /**< cyclic is detected */
-    MESH_REASON_PARENT_IDLE,       /**< parent is idle */
-    MESH_REASON_LEAF,              /**< the connected device is changed to a leaf */
-    MESH_REASON_DIFF_ID,           /**< in different mesh ID */
-    MESH_REASON_ROOTS,             /**< root conflict is detected */
-    MESH_REASON_PARENT_STOPPED,    /**< parent has stopped the mesh */
-    MESH_REASON_SCAN_FAIL,         /**< scan fail */
+    MESH_REASON_CYCLIC = 100,               /**< cyclic is detected */
+    MESH_REASON_PARENT_IDLE,                /**< parent is idle */
+    MESH_REASON_LEAF,                       /**< the connected device is changed to a leaf */
+    MESH_REASON_DIFF_ID,                    /**< in different mesh ID */
+    MESH_REASON_ROOTS,                      /**< root conflict is detected */
+    MESH_REASON_PARENT_STOPPED,             /**< parent has stopped the mesh */
+    MESH_REASON_SCAN_FAIL,                  /**< scan fail */
+    MESH_REASON_IE_UNKNOWN,                 /**< unknown IE */
+    MESH_REASON_WAIVE_ROOT,                 /**< waive root */
+    MESH_REASON_PARENT_WORSE,               /**< parent with very poor RSSI */
+    MESH_REASON_EMPTY_PASSWORD,             /**< use an empty password to connect to an encrypted parent */
+    MESH_REASON_PARENT_UNENCRYPTED,         /**< connect to an unencrypted parent/router */
 } mesh_disconnect_reason_t;
 
 /*******************************************************
@@ -368,6 +374,13 @@ typedef struct {
 } mesh_event_scan_done_t;
 
 /**
+ * @brief Network state information
+ */
+typedef struct {
+    bool is_rootless;     /**< whether current mesh network has a root */
+} mesh_event_network_state_t;
+
+/**
  * @brief Mesh event information
  */
 typedef union {
@@ -390,6 +403,7 @@ typedef union {
     mesh_event_root_conflict_t root_conflict;              /**< other powerful root */
     mesh_event_root_fixed_t root_fixed;                    /**< fixed root */
     mesh_event_scan_done_t scan_done;                      /**< scan done */
+    mesh_event_network_state_t network_state;              /**< network state, such as whether current mesh network has a root. */
 } mesh_event_info_t;
 
 /**
