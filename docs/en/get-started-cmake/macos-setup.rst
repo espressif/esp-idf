@@ -41,15 +41,15 @@ ESP-IDF will use the version of Python installed by default on Mac OS.
 Toolchain Setup
 ===============
 
+.. include:: /_build/inc/download-links.inc
+
 ESP32 toolchain for macOS is available for download from Espressif website:
 
-https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-80-g6c4433a-5.2.0.tar.gz
+|download_link_osx|
 
-Download this file, then extract it in ``~/esp`` directory::
+Download this file, then extract it in ``~/esp`` directory:
 
-    mkdir -p ~/esp
-    cd ~/esp
-    tar -xzf ~/Downloads/xtensa-esp32-elf-osx-1.22.0-80-g6c4433a-5.2.0.tar.gz
+.. include:: /_build/inc/unpack-code-osx.inc
 
 .. _setup-macos-toolchain-add-it-to-path-cmake:
 
