@@ -172,6 +172,19 @@ esp_err_t ledc_timer_config(const ledc_timer_config_t* timer_conf);
 esp_err_t ledc_update_duty(ledc_mode_t speed_mode, ledc_channel_t channel);
 
 /**
+ * @brief Set LEDC output gpio.
+ *
+ * @param  gpio_num The LEDC output gpio
+ * @param speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode
+ * @param  ledc_channel LEDC channel (0-7), select from ledc_channel_t
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t ledc_set_pin(int gpio_num, ledc_mode_t speed_mode, ledc_channel_t ledc_channel);
+
+/**
  * @brief LEDC stop.
  *        Disable LEDC output, and set idle level
  *
