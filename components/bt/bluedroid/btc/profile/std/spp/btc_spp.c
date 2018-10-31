@@ -52,7 +52,7 @@ typedef struct {
     list_t *list;
     list_t *incoming_list;
     uint8_t service_uuid[16];
-    char service_name[ESP_SPP_SERVER_NAME_MAX];
+    char service_name[ESP_SPP_SERVER_NAME_MAX + 1];
 } spp_slot_t;
 
 static struct spp_local_param_t {
