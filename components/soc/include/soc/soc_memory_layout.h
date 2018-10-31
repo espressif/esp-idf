@@ -175,7 +175,11 @@ inline static bool IRAM_ATTR esp_ptr_external_ram(const void *p) {
 }
 
 inline static bool IRAM_ATTR esp_ptr_in_iram(const void *p) {
+#ifndef CONFIG_FREERTOS_UNICORE
     return ((intptr_t)p >= SOC_IRAM_LOW && (intptr_t)p < SOC_IRAM_HIGH);
+#else
+    return ((intptr_t)p >= SOC_CACHE_APP_LOW && (intptr_t)p < SOC_IRAM_HIGH);
+#endif
 }
 
 inline static bool IRAM_ATTR esp_ptr_in_drom(const void *p) {
