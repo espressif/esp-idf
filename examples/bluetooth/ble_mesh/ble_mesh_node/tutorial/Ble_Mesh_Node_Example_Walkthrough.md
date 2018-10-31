@@ -111,10 +111,10 @@ This section will answer those questions.
 First, before calling `esp_ble_mesh_init` API to initialize the BLE Mesh, we have to declare and define Element and Model as demonstrated in the picture below, detailing the codes to define Element:
 
 <center>
-
-	<img src="https://i.imgur.com/fSs0iyy.png" width="%" height="%" />
-	<img src="https://i.imgur.com/pNipHHc.png" width="%" height="%" />
-	<img src="https://i.imgur.com/OkEyOab.png" width="%" height="%" />
+    <img src="https://i.imgur.com/fSs0iyy.png" />
+    <img src="https://i.imgur.com/pNipHHc.png" />
+    <img src="https://i.imgur.com/OkEyOab.png" />
+    
 
 **Figure 5**
 
