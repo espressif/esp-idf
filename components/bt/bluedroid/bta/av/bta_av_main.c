@@ -577,15 +577,19 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
 #endif
             }
 
-            /* Set the Capturing service class bit */
+            /* Set the Calss of Device (Audio & Capturing/Rendering service class bit) */
             if (p_data->api_reg.tsep == AVDT_TSEP_SRC) {
-                cod.service = BTM_COD_SERVICE_CAPTURING;
+                cod.service = BTM_COD_SERVICE_CAPTURING | BTM_COD_SERVICE_AUDIO;
+                cod.major = BTM_COD_MAJOR_AUDIO;
+                cod.minor = BTM_COD_MINOR_UNCLASSIFIED;
             } else {
 #if (BTA_AV_SINK_INCLUDED == TRUE)
-                cod.service = BTM_COD_SERVICE_RENDERING;
+                cod.service = BTM_COD_SERVICE_RENDERING | BTM_COD_SERVICE_AUDIO;
+                cod.major = BTM_COD_MAJOR_AUDIO;
+                cod.minor = BTM_COD_MINOR_LOUDSPEAKER;
 #endif
             }
-            utl_set_device_class(&cod, BTA_UTL_SET_COD_SERVICE_CLASS);
+            utl_set_device_class(&cod, BTA_UTL_SET_COD_ALL);
         } /* if 1st channel */
 
         /* get stream configuration and create stream */
