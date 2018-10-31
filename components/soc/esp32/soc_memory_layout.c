@@ -130,9 +130,9 @@ const size_t soc_memory_region_count = sizeof(soc_memory_regions)/sizeof(soc_mem
 
    These are removed from the soc_memory_regions array when heaps are created.
  */
-SOC_RESERVE_MEMORY_REGION(0x40070000, 0x40078000, cpu0_cache);
+SOC_RESERVE_MEMORY_REGION(SOC_CACHE_PRO_LOW, SOC_CACHE_PRO_HIGH, cpu0_cache);
 #ifndef CONFIG_FREERTOS_UNICORE
-SOC_RESERVE_MEMORY_REGION(0x40078000, 0x40080000, cpu1_cache);
+SOC_RESERVE_MEMORY_REGION(SOC_CACHE_APP_LOW, SOC_CACHE_APP_HIGH, cpu1_cache);
 #endif
 
     /* Warning: The ROM stack is located in the 0x3ffe0000 area. We do not specifically disable that area here because
