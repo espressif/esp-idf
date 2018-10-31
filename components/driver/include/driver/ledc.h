@@ -171,6 +171,8 @@ esp_err_t ledc_timer_config(const ledc_timer_config_t* timer_conf);
  */
 esp_err_t ledc_update_duty(ledc_mode_t speed_mode, ledc_channel_t channel);
 
+esp_err_t ledc_set_pin(int gpio_num, ledc_mode_t speed_mode, ledc_channel_t ledc_channel);
+
 /**
  * @brief LEDC stop.
  *        Disable LEDC output, and set idle level
