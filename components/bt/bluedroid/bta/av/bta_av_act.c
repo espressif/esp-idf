@@ -1870,8 +1870,14 @@ void bta_av_dereg_comp(tBTA_AV_DATA *p_data)
             bta_av_cb.features  = 0;
         }
 
-        /* Clear the Capturing service class bit */
-        cod.service = BTM_COD_SERVICE_CAPTURING;
+        /* Clear the Capturing/Rendering service class bit */
+        if (p_data->api_reg.tsep == AVDT_TSEP_SRC) {
+            cod.service = BTM_COD_SERVICE_CAPTURING | BTM_COD_SERVICE_AUDIO;
+        } else {
+#if (BTA_AV_SINK_INCLUDED == TRUE)
+            cod.service = BTM_COD_SERVICE_RENDERING | BTM_COD_SERVICE_AUDIO;
+#endif
+        }
         utl_set_device_class(&cod, BTA_UTL_CLR_COD_SERVICE_CLASS);
     }
 }
