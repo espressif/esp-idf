@@ -143,9 +143,21 @@ static inline void btc_a2d_data_cb_to_app(const uint8_t *data, uint32_t len)
     }
 }
 
-OI_CODEC_SBC_DECODER_CONTEXT context;
-OI_UINT32 contextData[CODEC_DATA_WORDS(2, SBC_CODEC_FAST_FILTER_BUFFERS)];
-OI_INT16 pcmData[15 * SBC_MAX_SAMPLES_PER_FRAME * SBC_MAX_CHANNELS];
+#define BTC_SBC_DEC_CONTEXT_DATA_LEN (CODEC_DATA_WORDS(2, SBC_CODEC_FAST_FILTER_BUFFERS))
+#define BTC_SBC_DEC_PCM_DATA_LEN (15 * SBC_MAX_SAMPLES_PER_FRAME * SBC_MAX_CHANNELS)
+
+#if BTC_SBC_DEC_DYNAMIC_MEMORY == FALSE
+static OI_CODEC_SBC_DECODER_CONTEXT btc_sbc_decoder_context;
+static OI_UINT32 btc_sbc_decoder_context_data[BTC_SBC_DEC_CONTEXT_DATA_LEN];
+static OI_INT16 btc_sbc_pcm_data[BTC_SBC_DEC_PCM_DATA_LEN];
+#else
+static OI_CODEC_SBC_DECODER_CONTEXT *btc_sbc_decoder_context_ptr;
+static OI_UINT32 *btc_sbc_decoder_context_data;
+static OI_INT16 *btc_sbc_pcm_data;
+#define btc_sbc_decoder_context (*btc_sbc_decoder_context_ptr)
+#endif /* BTC_SBC_DEC_DYNAMIC_MEMORY == FALSE */
+
+
 
 /*****************************************************************************
  **  Misc helper functions
@@ -235,6 +247,16 @@ bool btc_a2dp_sink_startup(void)
 
     APPL_TRACE_EVENT("## A2DP SINK START MEDIA THREAD ##");
 
+#if (BTC_SBC_DEC_DYNAMIC_MEMORY == TRUE)
+    btc_sbc_decoder_context_ptr = osi_calloc(sizeof(OI_CODEC_SBC_DECODER_CONTEXT));
+    btc_sbc_decoder_context_data = osi_calloc(BTC_SBC_DEC_CONTEXT_DATA_LEN * sizeof(OI_UINT32));
+    btc_sbc_pcm_data = osi_calloc(BTC_SBC_DEC_PCM_DATA_LEN * sizeof(OI_INT16));
+    if (!btc_sbc_decoder_context_ptr || !btc_sbc_decoder_context_data || !btc_sbc_pcm_data) {
+        APPL_TRACE_ERROR("failed to allocate SBC decoder");
+        goto error_exit;
+    }
+#endif /* BTC_SBC_DEC_DYNAMIC_MEMORY == TRUE */
+
     btc_aa_snk_queue_set = xQueueCreateSet(BTC_A2DP_SINK_TASK_QUEUE_SET_LEN);
     configASSERT(btc_aa_snk_queue_set);
     btc_aa_snk_data_queue = xQueueCreate(BTC_A2DP_SINK_DATA_QUEUE_LEN, sizeof(int32_t));
@@ -280,6 +302,21 @@ error_exit:;
         vQueueDelete(btc_aa_snk_queue_set);
         btc_aa_snk_queue_set = NULL;
     }
+#if (BTC_SBC_DEC_DYNAMIC_MEMORY == TRUE)
+    if (btc_sbc_decoder_context_ptr) {
+        osi_free(btc_sbc_decoder_context_ptr);
+        btc_sbc_decoder_context_ptr = NULL;
+    }
+    if (btc_sbc_decoder_context_data) {
+        osi_free(btc_sbc_decoder_context_data);
+        btc_sbc_decoder_context_data = NULL;
+    }
+    if (btc_sbc_pcm_data) {
+        osi_free(btc_sbc_pcm_data);
+        btc_sbc_pcm_data = NULL;
+    }
+#endif /* BTC_SBC_DEC_DYNAMIC_MEMORY == TRUE */
+
     return false;
 }
 
@@ -306,6 +343,17 @@ void btc_a2dp_sink_shutdown(void)
 
     vQueueDelete(btc_aa_snk_queue_set);
     btc_aa_snk_queue_set = NULL;
+
+#if (BTC_SBC_DEC_DYNAMIC_MEMORY == TRUE)
+    osi_free(btc_sbc_decoder_context_ptr);
+    btc_sbc_decoder_context_ptr = NULL;
+
+    osi_free(btc_sbc_decoder_context_data);
+    btc_sbc_decoder_context_data = NULL;
+
+    osi_free(btc_sbc_pcm_data);
+    btc_sbc_pcm_data = NULL;
+#endif /* BTC_SBC_DEC_DYNAMIC_MEMORY == TRUE */
 }
 
 /*****************************************************************************
@@ -467,7 +515,8 @@ static void btc_a2dp_sink_handle_decoder_reset(tBTC_MEDIA_SINK_CFG_UPDATE *p_msg
 
     btc_aa_snk_cb.rx_flush = FALSE;
     APPL_TRACE_EVENT("Reset to sink role");
-    status = OI_CODEC_SBC_DecoderReset(&context, contextData, sizeof(contextData), 2, 2, FALSE);
+    status = OI_CODEC_SBC_DecoderReset(&btc_sbc_decoder_context, btc_sbc_decoder_context_data,
+                                       BTC_SBC_DEC_CONTEXT_DATA_LEN * sizeof(OI_UINT32), 2, 2, FALSE);
     if (!OI_SUCCESS(status)) {
         APPL_TRACE_ERROR("OI_CODEC_SBC_DecoderReset failed with error code %d\n", status);
     }
@@ -582,11 +631,11 @@ static void btc_a2dp_sink_handle_inc_media(tBT_SBC_HDR *p_msg)
     UINT8 *sbc_start_frame = ((UINT8 *)(p_msg + 1) + p_msg->offset + 1);
     int count;
     UINT32 pcmBytes, availPcmBytes;
-    OI_INT16 *pcmDataPointer = pcmData; /*Will be overwritten on next packet receipt*/
+    OI_INT16 *pcmDataPointer = btc_sbc_pcm_data; /*Will be overwritten on next packet receipt*/
     OI_STATUS status;
     int num_sbc_frames = p_msg->num_frames_to_be_processed;
     UINT32 sbc_frame_len = p_msg->len - 1;
-    availPcmBytes = sizeof(pcmData);
+    availPcmBytes = BTC_SBC_DEC_PCM_DATA_LEN * sizeof(OI_INT16);
 
     /* XXX: Check if the below check is correct, we are checking for peer to be sink when we are sink */
     if (btc_av_get_peer_sep() == AVDT_TSEP_SNK || (btc_aa_snk_cb.rx_flush)) {
@@ -603,7 +652,7 @@ static void btc_a2dp_sink_handle_inc_media(tBT_SBC_HDR *p_msg)
 
     for (count = 0; count < num_sbc_frames && sbc_frame_len != 0; count ++) {
         pcmBytes = availPcmBytes;
-        status = OI_CODEC_SBC_DecodeFrame(&context, (const OI_BYTE **)&sbc_start_frame,
+        status = OI_CODEC_SBC_DecodeFrame(&btc_sbc_decoder_context, (const OI_BYTE **)&sbc_start_frame,
                                           (OI_UINT32 *)&sbc_frame_len,
                                           (OI_INT16 *)pcmDataPointer,
                                           (OI_UINT32 *)&pcmBytes);
@@ -617,7 +666,7 @@ static void btc_a2dp_sink_handle_inc_media(tBT_SBC_HDR *p_msg)
         p_msg->len = sbc_frame_len + 1;
     }
 
-    btc_a2d_data_cb_to_app((uint8_t *)pcmData, (sizeof(pcmData) - availPcmBytes));
+    btc_a2d_data_cb_to_app((uint8_t *)btc_sbc_pcm_data, (BTC_SBC_DEC_PCM_DATA_LEN * sizeof(OI_INT16) - availPcmBytes));
 }
 
 /*******************************************************************************

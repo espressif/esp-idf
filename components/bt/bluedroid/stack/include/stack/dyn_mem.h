@@ -51,6 +51,7 @@
 #define SLIP_DYNAMIC_MEMORY        TRUE
 #define LLCP_DYNAMIC_MEMORY        TRUE
 #define BTC_SBC_DEC_DYNAMIC_MEMORY TRUE
+#define BTC_SBC_ENC_DYNAMIC_MEMORY TRUE
 
 #else  /* #if CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY */
 
@@ -79,6 +80,7 @@
 #define SLIP_DYNAMIC_MEMORY        FALSE
 #define LLCP_DYNAMIC_MEMORY        FALSE
 #define BTC_SBC_DEC_DYNAMIC_MEMORY FALSE
+#define BTC_SBC_ENC_DYNAMIC_MEMORY FALSE
 
 #endif /* #if CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY */
 /****************************************************************************
