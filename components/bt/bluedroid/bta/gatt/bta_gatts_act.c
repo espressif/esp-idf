@@ -691,6 +691,7 @@ void bta_gatts_indicate_handle (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
                 p_rcb && p_cb->rcb[p_srvc_cb->rcb_idx].p_cback) {
             cb_data.req_data.status = status;
             cb_data.req_data.conn_id = p_msg->api_indicate.hdr.layer_specific;
+            cb_data.req_data.handle = p_msg->api_indicate.attr_id;
 
             cb_data.req_data.value = (uint8_t *)osi_malloc(p_msg->api_indicate.len);
             if (cb_data.req_data.value != NULL){
