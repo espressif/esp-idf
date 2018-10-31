@@ -54,9 +54,11 @@ This tool will also need to be unzipped to a directory which is then `added to y
 Toolchain Setup
 ===============
 
-Download the precompiled Windows toolchain from dl.espressif.com:
+.. include:: /_build/inc/download-links.inc
 
-https://dl.espressif.com/dl/xtensa-esp32-elf-win32-1.22.0-80-g6c4433a-5.2.0.zip
+Download the precompiled Windows toolchain:
+
+|download_link_win32|
 
 Unzip the zip file to ``C:\Program Files`` (or some other location). The zip file contains a single directory ``xtensa-esp32-elf``.
 
