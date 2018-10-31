@@ -481,9 +481,9 @@ is used in assert() statements. */
  * cause the function to fail.
  *
  * @return If neither pxStackBuffer or pxTaskBuffer are NULL, then the task will
- * be created and pdPASS is returned.  If either pxStackBuffer or pxTaskBuffer
- * are NULL then the task will not be created and
- * errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY is returned.
+ * be created and a task handle will be returned by which the created task
+ * can be referenced.  If either pxStackBuffer or pxTaskBuffer
+ * are NULL then the task will not be created and NULL is returned.
  *
  * \ingroup Tasks
  */
@@ -535,9 +535,9 @@ is used in assert() statements. */
  * memory to be allocated dynamically.
  *
  * @return If neither pxStackBuffer or pxTaskBuffer are NULL, then the task will
- * be created and pdPASS is returned.  If either pxStackBuffer or pxTaskBuffer
- * are NULL then the task will not be created and
- * errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY is returned.
+ * be created and a task handle will be returned by which the created task
+ * can be referenced.  If either pxStackBuffer or pxTaskBuffer
+ * are NULL then the task will not be created and NULL is returned.
  *
  * @note If program uses thread local variables (ones specified with "__thread" keyword)
  * then storage for them will be allocated on the task's stack.
