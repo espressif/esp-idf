@@ -150,6 +150,10 @@ typedef struct httpd_config {
      * function for freeing the global user context, please specify that here.
      */
     void * global_user_ctx;
+
+    /**
+     * Free function for global user context
+     */
     httpd_free_ctx_fn_t global_user_ctx_free_fn;
 
     /**
@@ -159,6 +163,10 @@ typedef struct httpd_config {
      * It will be freed using free(), unless global_transport_ctx_free_fn is specified.
      */
     void * global_transport_ctx;
+
+    /**
+     * Free function for global transport context
+     */
     httpd_free_ctx_fn_t global_transport_ctx_free_fn;
 
     /**
@@ -570,8 +578,8 @@ esp_err_t httpd_set_pending_override(httpd_req_t *r, httpd_pending_func_t pendin
  *
  * @see httpd_set_send_override()
  *
- * @param[in] hd  HTTPD instance handle
- * @param[in] fd  session socket FD
+ * @param[in] hd        HTTPD instance handle
+ * @param[in] sockfd    Session socket FD
  * @param[in] send_func The send function to be set for this session
  *
  * @return status code
@@ -583,8 +591,8 @@ esp_err_t httpd_set_sess_send_override(httpd_handle_t hd, int sockfd, httpd_send
  *
  * @see httpd_set_recv_override()
  *
- * @param[in] hd  HTTPD instance handle
- * @param[in] fd  session socket FD
+ * @param[in] hd        HTTPD instance handle
+ * @param[in] sockfd    Session socket FD
  * @param[in] recv_func The receive function to be set for this session
  *
  * @return status code
@@ -596,8 +604,8 @@ esp_err_t httpd_set_sess_recv_override(httpd_handle_t hd, int sockfd, httpd_recv
  *
  * @see httpd_set_pending_override()
  *
- * @param[in] hd  HTTPD instance handle
- * @param[in] fd  session socket FD
+ * @param[in] hd           HTTPD instance handle
+ * @param[in] sockfd       Session socket FD
  * @param[in] pending_func The receive function to be set for this session
  *
  * @return status code
