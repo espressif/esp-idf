@@ -87,6 +87,7 @@ static void wdt_reset_check(void);
 void call_start_cpu0()
 {
     cpu_configure_region_protection();
+    cpu_init_memctl();
 
     /* Sanity check that static RAM is after the stack */
 #ifndef NDEBUG

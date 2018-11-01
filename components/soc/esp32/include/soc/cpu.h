@@ -19,6 +19,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "xtensa/corebits.h"
+#include "xtensa/config/core.h"
 
 /* C macros for xtensa special register read/write/exchange */
 
@@ -49,6 +50,14 @@ static inline void cpu_write_dtlb(uint32_t vpn, unsigned attr)
 static inline void cpu_write_itlb(unsigned vpn, unsigned attr)
 {
     asm volatile ("witlb  %1, %0; isync\n" :: "r" (vpn), "r" (attr));
+}
+
+static inline void cpu_init_memctl()
+{
+#if XCHAL_ERRATUM_572
+    uint32_t memctl = XCHAL_CACHE_MEMCTL_DEFAULT;
+    WSR(MEMCTL, memctl);
+#endif // XCHAL_ERRATUM_572
 }
 
 /**
