@@ -780,8 +780,12 @@ static void performance_test(bool dedicated_task)
     // Enabling profiling will slow down event dispatch, so the set threshold
     // is not valid when it is enabled.
 #else
+#ifndef CONFIG_SPIRAM_SUPPORT
     TEST_PERFORMANCE_GREATER_THAN(EVENT_DISPATCH, "%d", average);
-#endif
+#else
+    TEST_PERFORMANCE_GREATER_THAN(EVENT_DISPATCH_PSRAM, "%d", average);
+#endif // CONFIG_SPIRAM_SUPPORT
+#endif // CONFIG_EVENT_LOOP_PROFILING
 
     if (!dedicated_task) {
         ((esp_event_loop_instance_t*) loop)->task = mtask;
