@@ -698,6 +698,9 @@ Timer_t *pxTimer;
 BaseType_t xTimerListsWereSwitched, xResult;
 TickType_t xTimeNow;
 
+List_t* xDeletedTimerList = NULL;
+
+int deleted_timer_count = 0;
 	while( xQueueReceive( xTimerQueue, &xMessage, tmrNO_DELAY ) != pdFAIL ) /*lint !e603 xMessage does not have to be initialised as it is passed out, not in, and it is not used unless xQueueReceive() returns pdTRUE. */
 	{
 		#if ( INCLUDE_xTimerPendFunctionCall == 1 )
@@ -803,6 +806,40 @@ TickType_t xTimeNow;
 					break;
 
 				case tmrCOMMAND_DELETE :
+					/* Maintain a dynamic list of deleted timers, avoid deleting them
+					more than once */
+					if (xDeletedTimerList == NULL) {
+						xDeletedTimerList = malloc(sizeof(List_t));
+						vListInitialise( xDeletedTimerList );
+					}
+					/* Check if this timer pointer is already present in the list of
+					deleted timers */
+					bool found = pdFALSE;
+					if (xDeletedTimerList != NULL && !listLIST_IS_EMPTY( xDeletedTimerList )) {
+						ListItem_t* item = listGET_HEAD_ENTRY( xDeletedTimerList );
+						const ListItem_t* end = listGET_END_MARKER( xDeletedTimerList );
+						for( ; item != end; item = listGET_NEXT(item) ) {
+							/* If the list item owner pointer matches the current timer,
+							indicate the result has been found and stop checking */
+							if (listGET_LIST_ITEM_OWNER(item) == pxTimer) {
+								found = pdTRUE;
+								break;
+							}
+						}
+					}
+
+					if (found) {
+						break;
+					}
+					else {
+						/* Insert list item containing this timer, it will be deleted now */
+						ListItem_t* xDeletedTimerListItem = malloc(sizeof(ListItem_t));
+						vListInitialiseItem( xDeletedTimerListItem );
+						listSET_LIST_ITEM_VALUE( xDeletedTimerListItem, 0 );
+						listSET_LIST_ITEM_OWNER( xDeletedTimerListItem, pxTimer );
+						vListInsertEnd( xDeletedTimerList, xDeletedTimerListItem );
+					}
+					deleted_timer_count++;
 					/* The timer has already been removed from the active list,
 					just free up the memory if the memory was dynamically
 					allocated. */
@@ -834,6 +871,16 @@ TickType_t xTimeNow;
 					break;
 			}
 		}
+	}
+	/* Ensure dynamic list of deleted timers is emptied with  all elements freed.
+	Then free the list as well, after it has been emptied. */
+	if (xDeletedTimerList != NULL) {
+		while (!listLIST_IS_EMPTY( xDeletedTimerList )) {
+			ListItem_t* item = listGET_HEAD_ENTRY( xDeletedTimerList );
+			uxListRemove( item );
+			free( item );
+		}
+		free( xDeletedTimerList );
 	}
 }
 /*-----------------------------------------------------------*/
