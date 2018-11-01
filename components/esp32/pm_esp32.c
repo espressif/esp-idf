@@ -86,6 +86,15 @@ static uint32_t s_ccount_mul;
  * to be invoked or not.
  */
 static bool s_skipped_light_sleep[portNUM_PROCESSORS];
+
+#if portNUM_PROCESSORS == 2
+/* When light sleep is finished on one CPU, it is possible that the other CPU
+ * will enter light sleep again very soon, before interrupts on the first CPU
+ * get a chance to run. To avoid such situation, set a flag for the other CPU to
+ * skip light sleep attempt.
+ */
+static bool s_skip_light_sleep[portNUM_PROCESSORS];
+#endif // portNUM_PROCESSORS == 2
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
 /* Indicates to the ISR hook that CCOMPARE needs to be updated on the given CPU.
@@ -481,14 +490,35 @@ void esp_pm_impl_waiti()
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
-void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
+static inline bool IRAM_ATTR should_skip_light_sleep(int core_id)
 {
-    portENTER_CRITICAL(&s_switch_lock);
-    int core_id = xPortGetCoreID();
+#if portNUM_PROCESSORS == 2
+    if (s_skip_light_sleep[core_id]) {
+        s_skip_light_sleep[core_id] = false;
+        s_skipped_light_sleep[core_id] = true;
+        return true;
+    }
+#endif // portNUM_PROCESSORS == 2
     if (s_mode != PM_MODE_LIGHT_SLEEP || s_is_switching) {
         s_skipped_light_sleep[core_id] = true;
     } else {
         s_skipped_light_sleep[core_id] = false;
+    }
+    return s_skipped_light_sleep[core_id];
+}
+
+static inline void IRAM_ATTR other_core_should_skip_light_sleep(int core_id)
+{
+#if portNUM_PROCESSORS == 2
+    s_skip_light_sleep[!core_id] = true;
+#endif
+}
+
+void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
+{
+    portENTER_CRITICAL(&s_switch_lock);
+    int core_id = xPortGetCoreID();
+    if (!should_skip_light_sleep(core_id)) {
         /* Calculate how much we can sleep */
         int64_t next_esp_timer_alarm = esp_timer_get_next_alarm();
         int64_t now = esp_timer_get_time();
@@ -523,6 +553,7 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
                     ;
                 }
             }
+            other_core_should_skip_light_sleep(core_id);
         }
     }
     portEXIT_CRITICAL(&s_switch_lock);
