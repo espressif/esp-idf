@@ -700,7 +700,6 @@ TickType_t xTimeNow;
 
 List_t* xDeletedTimerList = NULL;
 
-int deleted_timer_count = 0;
 	while( xQueueReceive( xTimerQueue, &xMessage, tmrNO_DELAY ) != pdFAIL ) /*lint !e603 xMessage does not have to be initialised as it is passed out, not in, and it is not used unless xQueueReceive() returns pdTRUE. */
 	{
 		#if ( INCLUDE_xTimerPendFunctionCall == 1 )
@@ -839,7 +838,6 @@ int deleted_timer_count = 0;
 						listSET_LIST_ITEM_OWNER( xDeletedTimerListItem, pxTimer );
 						vListInsertEnd( xDeletedTimerList, xDeletedTimerListItem );
 					}
-					deleted_timer_count++;
 					/* The timer has already been removed from the active list,
 					just free up the memory if the memory was dynamically
 					allocated. */
