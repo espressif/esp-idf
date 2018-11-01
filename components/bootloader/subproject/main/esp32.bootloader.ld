@@ -27,6 +27,7 @@ SECTIONS
   .iram1.text :
   {
     . = ALIGN (16);
+    _loader_text_start = ABSOLUTE(.);
     *(.entry.text)
     *(.init.literal)
     *(.init)
@@ -126,6 +127,7 @@ SECTIONS
     *(.fini)
     *(.gnu.version)
     _text_end = ABSOLUTE(.);
+    _loader_text_end = ABSOLUTE(.);
     _etext = .;
   } > iram_seg
 
