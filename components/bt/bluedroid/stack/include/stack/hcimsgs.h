@@ -275,7 +275,10 @@ BOOLEAN btsnd_hcic_hold_mode(UINT16 handle, UINT16 max_hold_period,
 #define HCI_HOLD_MODE_MIN_PER_OFF       4
 /* Hold Mode */
 
-/* Sniff Mode */
+/**
+ * Sniff Mode
+ * sniff_attempt should no more than 0xFF
+ */
 BOOLEAN btsnd_hcic_sniff_mode(UINT16 handle,
                               UINT16 max_sniff_period,
                               UINT16 min_sniff_period,
