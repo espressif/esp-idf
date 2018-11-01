@@ -80,7 +80,8 @@ else
     [ -z ${JOB_PATTERN} ] && die "JOB_PATTERN is bad"
 
     # parse number 'NUM' at the end of string 'some_your_text_NUM'
-    JOB_NUM=$( echo ${JOB_NAME} | sed -n -r 's/^.*_([0-9]+)$/\1/p' )
+    # NOTE: Getting rid of the leading zero to get the decimal
+    JOB_NUM=$( echo ${JOB_NAME} | sed -n -r 's/^.*_0*([0-9]+)$/\1/p' )
     [ -z ${JOB_NUM} ] && die "JOB_NUM is bad"
 
     # count number of the jobs
