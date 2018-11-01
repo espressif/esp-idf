@@ -30,12 +30,12 @@ SECTIONS
   .iram_loader.text :
   {
     . = ALIGN (16);
-    _stext = .;
-    _text_start = ABSOLUTE(.);
+    _loader_text_start = ABSOLUTE(.);
     *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
      *(.iram1 .iram1.*) /* catch stray IRAM_ATTR */
     *liblog.a:(.literal .text .literal.* .text.*)
     *libgcc.a:(.literal .text .literal.* .text.*)
+    *libbootloader_support.a:bootloader_common.o(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_flash.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_random.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_utility.*(.literal .text .literal.* .text.*)
@@ -48,11 +48,11 @@ SECTIONS
     *libbootloader_support.a:secure_boot_signatures.*(.literal .text .literal.* .text.*)
     *libmicro-ecc.a:*.*(.literal .text .literal.* .text.*)
     *libspi_flash.a:*.*(.literal .text .literal.* .text.*)
+    *libsoc.a:rtc_wdt.*(.literal .text .literal.* .text.*)
     *(.fini.literal)
     *(.fini)
     *(.gnu.version)
-    _text_end = ABSOLUTE(.);
-    _etext = .;
+    _loader_text_end = ABSOLUTE(.);
   } > iram_loader_seg
 
   .iram.text :
