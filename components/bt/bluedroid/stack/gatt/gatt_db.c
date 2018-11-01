@@ -783,10 +783,12 @@ tGATT_STATUS gatts_get_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
 
     if (p_db == NULL) {
         GATT_TRACE_ERROR("gatts_get_attribute_value Fail:p_db is NULL.\n");
+        *length = 0;
         return GATT_INVALID_PDU;
     }
     if (p_db->p_attr_list == NULL) {
         GATT_TRACE_ERROR("gatts_get_attribute_value Fail:p_db->p_attr_list is NULL.\n");
+        *length = 0;
         return GATT_INVALID_PDU;
     }
     if (length == NULL){
@@ -795,6 +797,7 @@ tGATT_STATUS gatts_get_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
     }
     if (value == NULL){
         GATT_TRACE_ERROR("gatts_get_attribute_value Fail:value is NULL.\n");
+        *length = 0;
         return GATT_INVALID_PDU;
     }
 
@@ -814,19 +817,19 @@ tGATT_STATUS gatts_get_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
                         *value = p_cur->p_value->attr_val.attr_val;
                         return GATT_SUCCESS;
                     } else {
-                        GATT_TRACE_ERROR("gatts_get_attribute_value failed:the value length is 0");
-                        return GATT_INVALID_ATTR_LEN;
+                        *length = 0;
+                        return GATT_SUCCESS;
                     }
                     break;
                 }
             } else {
-                if (p_cur->p_value->attr_val.attr_len != 0) {
+                if (p_cur->p_value && p_cur->p_value->attr_val.attr_len != 0) {
                     *length = p_cur->p_value->attr_val.attr_len;
                     *value = p_cur->p_value->attr_val.attr_val;
                     return GATT_SUCCESS;
                 } else {
-                    GATT_TRACE_ERROR("gatts_get_attribute_value failed:the value length is 0");
-                    return GATT_INVALID_ATTR_LEN;
+                    *length = 0;
+                    return GATT_SUCCESS;
                 }
 
             }
