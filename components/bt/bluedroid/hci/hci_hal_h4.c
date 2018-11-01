@@ -25,10 +25,10 @@
 #include "hci/hci_layer.h"
 #include "osi/thread.h"
 #include "esp_bt.h"
+#include "stack/hcimsgs.h"
 
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
 #include "l2c_int.h"
-#include "stack/hcimsgs.h"
 #endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
 
 #define HCI_HAL_SERIAL_BUFFER_SIZE 1026
