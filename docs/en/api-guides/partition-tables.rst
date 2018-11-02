@@ -6,7 +6,7 @@ Overview
 
 A single ESP32's flash can contain multiple apps, as well as many different kinds of data (calibration data, filesystems, parameter storage, etc). For this reason a partition table is flashed to (:ref:`default offset <CONFIG_PARTITION_TABLE_OFFSET>`) 0x8000 in the flash.
 
-Partition table length is 0xC00 bytes (maximum 95 partition table entries). An MD5 checksum, which is used for checking the integrity of the partition table is appended after the table data. If the partition table is signed due to `secure boot`, the signature is appended after the partition table.
+Partition table length is 0xC00 bytes (maximum 95 partition table entries). An MD5 checksum, which is used for checking the integrity of the partition table, is appended after the table data. If the partition table is signed due to `secure boot`, the signature is appended after the partition table.
 
 Each entry in the partition table has a name (label), type (app, data, or something else), subtype and the offset in flash where the partition is loaded.
 
@@ -43,7 +43,7 @@ Here is the summary printed for the "Factory app, two OTA definitions" configura
   ota_1,    0,    ota_1,  0x210000, 1M,
 
 * There are now three app partition definitions. The type of the factory app (at 0x10000) and the next two "OTA" apps are all set to "app", but their subtypes are different.
-* There is also a new "ota data" slot, which holds the data for OTA updates. The bootloader consults this data in order to know which app to execute. If "ota data" is empty, it will execute the factory app.
+* There is also a new "otadata" slot, which holds the data for OTA updates. The bootloader consults this data in order to know which app to execute. If "ota data" is empty, it will execute the factory app.
 
 Creating Custom Tables
 ----------------------
@@ -79,46 +79,38 @@ If your application needs to store data, please add a custom partition type in t
 
 The bootloader ignores any partition types other than app (0) & data (1).
 
-Subtype
+SubType
 ~~~~~~~
 
-The 8-bit subtype field is specific to a given partition type.
+The 8-bit subtype field is specific to a given partition type. esp-idf currently only specifies the meaning of the subtype field for "app" and "data" partition types.
 
-esp-idf currently only specifies the meaning of the subtype field for "app" and "data" partition types.
+* When type is "app", the subtype field can be specified as factory (0), ota_0 (0x10) ... ota_15 (0x1F) or test (0x20).
 
-App Subtypes
-~~~~~~~~~~~~
+  - factory (0) is the default app partition. The bootloader will execute the factory app unless there it sees a partition of type data/ota, in which case it reads this partition to determine which OTA image to boot.
 
-When type is "app", the subtype field can be specified as factory (0), ota_0 (0x10) ... ota_15 (0x1F) or test (0x20).
+    - OTA never updates the factory partition.
+    - If you want to conserve flash usage in an OTA project, you can remove the factory partition and use ota_0 instead.
+  - ota_0 (0x10) ... ota_15 (0x1F) are the OTA app slots. Refer to the :doc:`OTA documentation <../api-reference/system/ota>` for more details, which then use the OTA data partition to configure which app slot the bootloader should boot. If using OTA, an application should have at least two OTA application slots (ota_0 & ota_1). Refer to the :doc:`OTA documentation <../api-reference/system/ota>` for more details.
+  - test (0x2) is a reserved subtype for factory test procedures. It is not currently supported by the esp-idf bootloader.
 
-- factory (0) is the default app partition. The bootloader will execute the factory app unless there it sees a partition of type data/ota, in which case it reads this partition to determine which OTA image to boot.
+* When type is "data", the subtype field can be specified as ota (0), phy (1), nvs (2), or nvs_keys (4).
 
-  - OTA never updates the factory partition.
-  - If you want to conserve flash usage in an OTA project, you can remove the factory partition and use ota_0 instead.
-- ota_0 (0x10) ... ota_15 (0x1F) are the OTA app slots. Refer to the :doc:`OTA documentation <../api-reference/system/ota>` for more details, which then use the OTA data partition to configure which app slot the bootloader should boot. If using OTA, an application should have at least two OTA application slots (ota_0 & ota_1). Refer to the :doc:`OTA documentation <../api-reference/system/ota>` for more details.
-- test (0x2) is a reserved subtype for factory test procedures. It is not currently supported by the esp-idf bootloader.
+  - ota (0) is the :ref:`OTA data partition <ota_data_partition>` which stores information about the currently selected OTA application. This partition should be 0x2000 bytes in size. Refer to the :ref:`OTA documentation <ota_data_partition>` for more details.
+  - phy (1) is for storing PHY initialisation data. This allows PHY to be configured per-device, instead of in firmware.
 
-Data Subtypes
-~~~~~~~~~~~~~
+    - In the default configuration, the phy partition is not used and PHY initialisation data is compiled into the app itself. As such, this partition can be removed from the partition table to save space.
+    - To load PHY data from this partition, run ``make menuconfig`` and enable :ref:`CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION` option. You will also need to flash your devices with phy init data as the esp-idf build system does not do this automatically.
+  - nvs (2) is for the :doc:`Non-Volatile Storage (NVS) API <../api-reference/storage/nvs_flash>`.
 
-When type is "data", the subtype field can be specified as ota (0), phy (1), nvs (2) or nvs_keys (4).
+    - NVS is used to store per-device PHY calibration data (different to initialisation data).
+    - NVS is used to store WiFi data if the :doc:`esp_wifi_set_storage(WIFI_STORAGE_FLASH) <../api-reference/wifi/esp_wifi>` initialisation function is used.
+    - The NVS API can also be used for other application data.
+    - It is strongly recommended that you include an NVS partition of at least 0x3000 bytes in your project.
+    - If using NVS API to store a lot of data, increase the NVS partition size from the default 0x6000 bytes.
+  - nvs_keys (4) is for the NVS key partition. See :doc:`Non-Volatile Storage (NVS) API <../api-reference/storage/nvs_flash>` for more details.
 
-- ota (0) is the :ref:`OTA data partition <ota_data_partition>` which stores information about the currently selected OTA application. This partition should be 0x2000 bytes in size. Refer to the :ref:`OTA documentation <ota_data_partition>` for more details.
-- phy (1) is for storing PHY initialisation data. This allows PHY to be configured per-device, instead of in firmware.
-
-  - In the default configuration, the phy partition is not used and PHY initialisation data is compiled into the app itself. As such, this partition can be removed from the partition table to save space.
-  - To load PHY data from this partition, run ``make menuconfig`` and enable :ref:`CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION` option. You will also need to flash your devices with phy init data as the esp-idf build system does not do this automatically.
-- nvs (2) is for the :doc:`Non-Volatile Storage (NVS) API <../api-reference/storage/nvs_flash>`.
-
-  - NVS is used to store per-device PHY calibration data (different to initialisation data).
-  - NVS is used to store WiFi data if the :doc:`esp_wifi_set_storage(WIFI_STORAGE_FLASH) <../api-reference/wifi/esp_wifi>` initialisation function is used.
-  - The NVS API can also be used for other application data.
-  - It is strongly recommended that you include an NVS partition of at least 0x3000 bytes in your project.
-  - If using NVS API to store a lot of data, increase the NVS partition size from the default 0x6000 bytes.
-- nvs_keys (4) is for the NVS key partition. See :doc:`Non-Volatile Storage (NVS) API <../api-reference/storage/nvs_flash>` for more details.
-
-  - It is used to store NVS encryption keys when `NVS Encryption` feature is enabled.
-  - The size of this partition should be 4096 bytes (minimum partition size).
+    - It is used to store NVS encryption keys when `NVS Encryption` feature is enabled.
+    - The size of this partition should be 4096 bytes (minimum partition size).
 
 Other data subtypes are reserved for future esp-idf uses.
 
@@ -127,7 +119,7 @@ Offset & Size
 
 Partitions with blank offsets will start after the previous partition, or after the partition table in the case of the first partition.
 
-App partitions have to be at offsets aligned to 0x10000 (64K). If you leave the offset field blank, the tool will automatically align the partition. If you specify an unaligned offset for an app partition, the tool will return an error.
+App partitions have to be at offsets aligned to 0x10000 (64K). If you leave the offset field blank,  ``gen_esp32part.py`` will automatically align the partition. If you specify an unaligned offset for an app partition, the tool will return an error.
 
 Sizes and offsets can be specified as decimal numbers, hex numbers with the prefix 0x, or size multipliers K or M (1024 and 1024*1024 bytes).
 
@@ -151,7 +143,7 @@ To convert CSV to Binary manually::
 
   python gen_esp32part.py input_partitions.csv binary_partitions.bin
 
-To convert binary format back to CSV::
+To convert binary format back to CSV manually::
 
   python gen_esp32part.py binary_partitions.bin input_partitions.csv
 
