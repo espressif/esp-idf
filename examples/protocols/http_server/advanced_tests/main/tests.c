@@ -12,6 +12,11 @@ static const char *TAG="TESTS";
 int pre_start_mem, post_stop_mem, post_stop_min_mem;
 bool basic_sanity = true;
 
+struct async_resp_arg {
+    httpd_handle_t hd;
+    int fd;
+};
+
 /********************* Basic Handlers Start *******************/
 
 esp_err_t hello_get_handler(httpd_req_t *req)
@@ -157,11 +162,13 @@ esp_err_t leftover_data_post_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-int httpd_default_send(int sockfd, const char *buf, unsigned buf_len, int flags);
+int httpd_default_send(httpd_handle_t hd, int sockfd, const char *buf, unsigned buf_len, int flags);
 void generate_async_resp(void *arg)
 {
     char buf[250];
-    int fd = (int )arg;
+    struct async_resp_arg *resp_arg = (struct async_resp_arg *)arg;
+    httpd_handle_t hd = resp_arg->hd;
+    int fd = resp_arg->fd;
 #define HTTPD_HDR_STR      "HTTP/1.1 200 OK\r\n"                   \
                            "Content-Type: text/html\r\n"           \
                            "Content-Length: %d\r\n"
@@ -171,11 +178,12 @@ void generate_async_resp(void *arg)
 
     snprintf(buf, sizeof(buf), HTTPD_HDR_STR,
          strlen(STR));
-    httpd_default_send(fd, buf, strlen(buf), 0);
+    httpd_default_send(hd, fd, buf, strlen(buf), 0);
     /* Space for sending additional headers based on set_header */
-    httpd_default_send(fd, "\r\n", strlen("\r\n"), 0);
-    httpd_default_send(fd, STR, strlen(STR), 0);
+    httpd_default_send(hd, fd, "\r\n", strlen("\r\n"), 0);
+    httpd_default_send(hd, fd, STR, strlen(STR), 0);
 #undef STR
+    free(arg);
 }
 
 esp_err_t async_get_handler(httpd_req_t *req)
@@ -185,12 +193,15 @@ esp_err_t async_get_handler(httpd_req_t *req)
     /* Also register a HTTPD Work which sends the same data on the same
      * socket again
      */
-    int fd = httpd_req_to_sockfd(req);
-    if (fd < 0) {
+    struct async_resp_arg *resp_arg = malloc(sizeof(struct async_resp_arg));
+    resp_arg->hd = req->handle;
+    resp_arg->fd = httpd_req_to_sockfd(req);
+    if (resp_arg->fd < 0) {
         return ESP_FAIL;
     }
-    ESP_LOGI(TAG, "Queuing work fd : %d", fd);
-    httpd_queue_work(req->handle, generate_async_resp, (void *)fd);
+
+    ESP_LOGI(TAG, "Queuing work fd : %d", resp_arg->fd);
+    httpd_queue_work(req->handle, generate_async_resp, resp_arg);
     return ESP_OK;
 #undef STR
 }
