@@ -75,7 +75,8 @@ else
     [ -z ${JOB_PATTERN} ] && die "JOB_PATTERN is bad"
 
     # parse number 'NUM' at the end of string 'some_your_text_NUM'
-    JOB_NUM=$( echo ${JOB_NAME} | sed -n -r 's/^.*_([0-9]+)$/\1/p' )
+    # NOTE: Getting rid of the leading zero to get the decimal
+    JOB_NUM=$( echo ${JOB_NAME} | sed -n -r 's/^.*_0*([0-9]+)$/\1/p' )
     [ -z ${JOB_NUM} ] && die "JOB_NUM is bad"
 
     # count number of the jobs
@@ -120,13 +121,18 @@ build_example () {
         local BUILDLOG=${LOG_PATH}/ex_${ID}_log.txt
         touch ${BUILDLOG}
 
+        local FLASH_ARGS=build/download.config
+
         make clean >>${BUILDLOG} 2>&1 &&
         make defconfig >>${BUILDLOG} 2>&1 &&
         make all >>${BUILDLOG} 2>&1 &&
-        ( make print_flash_cmd | tail -n 1 >build/download.config ) >>${BUILDLOG} 2>&1 ||
+        make print_flash_cmd >${FLASH_ARGS}.full 2>>${BUILDLOG} ||
         {
             RESULT=$?; FAILED_EXAMPLES+=" ${EXAMPLE_NAME}" ;
         }
+
+        tail -n 1 ${FLASH_ARGS}.full > ${FLASH_ARGS} || :
+        test -s ${FLASH_ARGS} || die "Error: ${FLASH_ARGS} file is empty"
 
         cat ${BUILDLOG}
     popd
