@@ -29,3 +29,4 @@
 #define IDF_PERFORMANCE_MIN_UDP_TX_THROUGHPUT                                   50
 // events dispatched per second by event loop library
 #define IDF_PERFORMANCE_MIN_EVENT_DISPATCH                                      25000
+#define IDF_PERFORMANCE_MIN_EVENT_DISPATCH_PSRAM                                21000
