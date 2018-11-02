@@ -22,72 +22,33 @@
 
 static const char *TAG = "httpd_txrx";
 
-esp_err_t httpd_set_sess_send_override(httpd_handle_t hd, int sockfd, httpd_send_func_t send_func)
+esp_err_t httpd_sess_set_send_override(httpd_handle_t hd, int sockfd, httpd_send_func_t send_func)
 {
     struct sock_db *sess = httpd_sess_get(hd, sockfd);
-    if (!sess) return ESP_ERR_INVALID_ARG;
+    if (!sess) {
+        return ESP_ERR_INVALID_ARG;
+    }
     sess->send_fn = send_func;
     return ESP_OK;
 }
 
-esp_err_t httpd_set_sess_recv_override(httpd_handle_t hd, int sockfd, httpd_recv_func_t recv_func)
+esp_err_t httpd_sess_set_recv_override(httpd_handle_t hd, int sockfd, httpd_recv_func_t recv_func)
 {
     struct sock_db *sess = httpd_sess_get(hd, sockfd);
-    if (!sess) return ESP_ERR_INVALID_ARG;
+    if (!sess) {
+        return ESP_ERR_INVALID_ARG;
+    }
     sess->recv_fn = recv_func;
     return ESP_OK;
 }
 
-esp_err_t httpd_set_sess_pending_override(httpd_handle_t hd, int sockfd, httpd_pending_func_t pending_func)
+esp_err_t httpd_sess_set_pending_override(httpd_handle_t hd, int sockfd, httpd_pending_func_t pending_func)
 {
     struct sock_db *sess = httpd_sess_get(hd, sockfd);
-    if (!sess) return ESP_ERR_INVALID_ARG;
+    if (!sess) {
+        return ESP_ERR_INVALID_ARG;
+    }
     sess->pending_fn = pending_func;
-    return ESP_OK;
-}
-
-esp_err_t httpd_set_send_override(httpd_req_t *r, httpd_send_func_t send_func)
-{
-    if (r == NULL || send_func == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    if (!httpd_valid_req(r)) {
-        return ESP_ERR_HTTPD_INVALID_REQ;
-    }
-
-    struct httpd_req_aux *ra = r->aux;
-    ra->sd->send_fn = send_func;
-    return ESP_OK;
-}
-
-esp_err_t httpd_set_recv_override(httpd_req_t *r, httpd_recv_func_t recv_func)
-{
-    if (r == NULL || recv_func == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    if (!httpd_valid_req(r)) {
-        return ESP_ERR_HTTPD_INVALID_REQ;
-    }
-
-    struct httpd_req_aux *ra = r->aux;
-    ra->sd->recv_fn = recv_func;
-    return ESP_OK;
-}
-
-esp_err_t httpd_set_pending_override(httpd_req_t *r, httpd_pending_func_t pending_func)
-{
-    if (r == NULL || pending_func == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    if (!httpd_valid_req(r)) {
-        return ESP_ERR_HTTPD_INVALID_REQ;
-    }
-
-    struct httpd_req_aux *ra = r->aux;
-    ra->sd->pending_fn = pending_func;
     return ESP_OK;
 }
 

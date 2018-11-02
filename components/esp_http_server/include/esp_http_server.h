@@ -150,6 +150,10 @@ typedef struct httpd_config {
      * function for freeing the global user context, please specify that here.
      */
     void * global_user_ctx;
+
+    /**
+     * Free function for global user context
+     */
     httpd_free_ctx_fn_t global_user_ctx_free_fn;
 
     /**
@@ -159,6 +163,10 @@ typedef struct httpd_config {
      * It will be freed using free(), unless global_transport_ctx_free_fn is specified.
      */
     void * global_transport_ctx;
+
+    /**
+     * Free function for global transport context
+     */
     httpd_free_ctx_fn_t global_transport_ctx_free_fn;
 
     /**
@@ -509,100 +517,64 @@ typedef int (*httpd_pending_func_t)(httpd_handle_t hd, int sockfd);
  */
 
 /**
- * @brief   Override web server's receive function
+ * @brief   Override web server's receive function (by session FD)
  *
  * This function overrides the web server's receive function. This same function is
- * used to read and parse HTTP headers as well as body.
+ * used to read HTTP request packets.
  *
- * @note    This API is supposed to be called only from the context of
- *          a URI handler where httpd_req_t* request pointer is valid.
+ * @note    This API is supposed to be called either from the context of
+ *          - an http session APIs where sockfd is a valid parameter
+ *          - a URI handler where sockfd is obtained using httpd_req_to_sockfd()
  *
- * @param[in] r         The request being responded to
- * @param[in] recv_func The receive function to be set for this request
- *
- * @return
- *  - ESP_OK : On successfully registering override
- *  - ESP_ERR_INVALID_ARG : Null arguments
- *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request pointer
- */
-esp_err_t httpd_set_recv_override(httpd_req_t *r, httpd_recv_func_t recv_func);
-
-/**
- * @brief   Override web server's send function
- *
- * This function overrides the web server's send function. This same function is
- * used to send out any response to any HTTP request.
- *
- * @note    This API is supposed to be called only from the context of
- *          a URI handler where httpd_req_t* request pointer is valid.
- *
- * @param[in] r         The request being responded to
- * @param[in] send_func The send function to be set for this request
+ * @param[in] hd        HTTPD instance handle
+ * @param[in] sockfd    Session socket FD
+ * @param[in] recv_func The receive function to be set for this session
  *
  * @return
  *  - ESP_OK : On successfully registering override
  *  - ESP_ERR_INVALID_ARG : Null arguments
- *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request pointer
  */
-esp_err_t httpd_set_send_override(httpd_req_t *r, httpd_send_func_t send_func);
-
-/**
- * @brief   Override web server's pending function
- *
- * This function overrides the web server's pending function. This function is
- * used to test for pending bytes in a socket.
- *
- * @note    This API is supposed to be called only from the context of
- *          a URI handler where httpd_req_t* request pointer is valid.
- *
- * @param[in] r            The request being responded to
- * @param[in] pending_func The pending function to be set for this request
- *
- * @return
- *  - ESP_OK : On successfully registering override
- *  - ESP_ERR_INVALID_ARG : Null arguments
- *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request pointer
- */
-esp_err_t httpd_set_pending_override(httpd_req_t *r, httpd_pending_func_t pending_func);
+esp_err_t httpd_sess_set_recv_override(httpd_handle_t hd, int sockfd, httpd_recv_func_t recv_func);
 
 /**
  * @brief   Override web server's send function (by session FD)
  *
- * @see httpd_set_send_override()
+ * This function overrides the web server's send function. This same function is
+ * used to send out any response to any HTTP request.
  *
- * @param[in] hd  HTTPD instance handle
- * @param[in] fd  session socket FD
+ * @note    This API is supposed to be called either from the context of
+ *          - an http session APIs where sockfd is a valid parameter
+ *          - a URI handler where sockfd is obtained using httpd_req_to_sockfd()
+ *
+ * @param[in] hd        HTTPD instance handle
+ * @param[in] sockfd    Session socket FD
  * @param[in] send_func The send function to be set for this session
  *
- * @return status code
+ * @return
+ *  - ESP_OK : On successfully registering override
+ *  - ESP_ERR_INVALID_ARG : Null arguments
  */
-esp_err_t httpd_set_sess_send_override(httpd_handle_t hd, int sockfd, httpd_send_func_t send_func);
-
-/**
- * @brief   Override web server's receive function (by session FD)
- *
- * @see httpd_set_recv_override()
- *
- * @param[in] hd  HTTPD instance handle
- * @param[in] fd  session socket FD
- * @param[in] recv_func The receive function to be set for this session
- *
- * @return status code
- */
-esp_err_t httpd_set_sess_recv_override(httpd_handle_t hd, int sockfd, httpd_recv_func_t recv_func);
+esp_err_t httpd_sess_set_send_override(httpd_handle_t hd, int sockfd, httpd_send_func_t send_func);
 
 /**
  * @brief   Override web server's pending function (by session FD)
  *
- * @see httpd_set_pending_override()
+ * This function overrides the web server's pending function. This function is
+ * used to test for pending bytes in a socket.
  *
- * @param[in] hd  HTTPD instance handle
- * @param[in] fd  session socket FD
+ * @note    This API is supposed to be called either from the context of
+ *          - an http session APIs where sockfd is a valid parameter
+ *          - a URI handler where sockfd is obtained using httpd_req_to_sockfd()
+ *
+ * @param[in] hd           HTTPD instance handle
+ * @param[in] sockfd       Session socket FD
  * @param[in] pending_func The receive function to be set for this session
  *
- * @return status code
+ * @return
+ *  - ESP_OK : On successfully registering override
+ *  - ESP_ERR_INVALID_ARG : Null arguments
  */
-esp_err_t httpd_set_sess_pending_override(httpd_handle_t hd, int sockfd, httpd_pending_func_t pending_func);
+esp_err_t httpd_sess_set_pending_override(httpd_handle_t hd, int sockfd, httpd_pending_func_t pending_func);
 
 /**
  * @brief   Get the Socket Descriptor from the HTTP request
@@ -612,7 +584,7 @@ esp_err_t httpd_set_sess_pending_override(httpd_handle_t hd, int sockfd, httpd_p
  * This is useful when user wants to call functions that require
  * session socket fd, from within a URI handler, ie. :
  *      httpd_sess_get_ctx(),
- *      httpd_trigger_sess_close(),
+ *      httpd_sess_trigger_close(),
  *      httpd_sess_update_timestamp().
  *
  * @note    This API is supposed to be called only from the context of
@@ -1136,7 +1108,7 @@ void *httpd_get_global_transport_ctx(httpd_handle_t handle);
  *  - ESP_ERR_NOT_FOUND   : Socket fd not found
  *  - ESP_ERR_INVALID_ARG : Null arguments
  */
-esp_err_t httpd_trigger_sess_close(httpd_handle_t handle, int sockfd);
+esp_err_t httpd_sess_trigger_close(httpd_handle_t handle, int sockfd);
 
 /**
  * @brief   Update timestamp for a given socket
