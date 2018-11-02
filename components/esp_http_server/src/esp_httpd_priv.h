@@ -241,6 +241,14 @@ esp_err_t httpd_sess_process(struct httpd_data *hd, int clifd);
 int httpd_sess_delete(struct httpd_data *hd, int clifd);
 
 /**
+ * @brief   Free session context
+ *
+ * @param[in] ctx     Pointer to session context
+ * @param[in] free_fn Free function to call on session context
+ */
+void httpd_sess_free_ctx(void *ctx, httpd_free_ctx_fn_t free_fn);
+
+/**
  * @brief   Add descriptors present in the socket database to an fd_set and
  *          update the value of maxfd which are needed by the select function
  *          for looking through all available sockets for incoming data.
@@ -351,7 +359,16 @@ void httpd_unregister_all_uri_handlers(struct httpd_data *hd);
  *  - true  : if valid request
  *  - false : otherwise
  */
-bool httpd_valid_req(httpd_req_t *r);
+bool httpd_validate_req_ptr(httpd_req_t *r);
+
+/* httpd_validate_req_ptr() adds some overhead to frequently used APIs,
+ * and is useful mostly for debugging, so it's preferable to disable
+ * the check by defaut and enable it only if necessary */
+#ifdef CONFIG_HTTPD_VALIDATE_REQ
+#define httpd_valid_req(r)  httpd_validate_req_ptr(r)
+#else
+#define httpd_valid_req(r)  true
+#endif
 
 /** End of Group : URI Handling
  * @}
