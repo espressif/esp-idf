@@ -363,7 +363,7 @@ build_docs:
     - ./check_lang_folder_sync.sh
     - cd en
     - make gh-linkcheck
-    - make html || cat /tmp/sphinx-err*.log
+    - make html
     - ../check_doc_warnings.sh
     - cd ../zh_CN
     - make gh-linkcheck
