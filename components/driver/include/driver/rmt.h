@@ -657,6 +657,8 @@ esp_err_t rmt_fill_tx_items(rmt_channel_t channel, const rmt_item32_t* item, uin
  *
  * @param rx_buf_size Size of RMT RX ringbuffer. Can be 0 if the RX ringbuffer is not used.
  *
+ * @param min_items_count The minimum count of elements that the frame must have in order not to be discarded.
+ *
  * @param intr_alloc_flags Flags for the RMT driver interrupt handler. Pass 0 for default flags. See esp_intr_alloc.h for details.
  *        If ESP_INTR_FLAG_IRAM is used, please do not use the memory allocated from psram when calling rmt_write_items.
  *
@@ -666,7 +668,7 @@ esp_err_t rmt_fill_tx_items(rmt_channel_t channel, const rmt_item32_t* item, uin
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_OK Success
  */
-esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr_alloc_flags);
+esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size,int min_items_count, int intr_alloc_flags);
 
 /**
  * @brief Uninstall RMT driver.
