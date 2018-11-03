@@ -80,6 +80,7 @@ typedef struct {
 #endif
     rmt_item32_t* tx_buf;
     RingbufHandle_t rx_buf;
+    int min_items_count; //The minimum count of items that the frame must have in order not to be discarded
     sample_to_rmt_t sample_to_rmt;
     size_t sample_size_remain;
     const uint8_t *sample_cur;
@@ -580,11 +581,13 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
                         //change memory owner to protect data.
                         RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_TX;
                         if(p_rmt->rx_buf) {
-                            BaseType_t res = xRingbufferSendFromISR(p_rmt->rx_buf, (void*) RMTMEM.chan[channel].data32, item_len * 4, &HPTaskAwoken);
-                            if(res == pdFALSE) {
+                            if(item_len >= p_rmt->min_items_count) {
+                                BaseType_t res = xRingbufferSendFromISR(p_rmt->rx_buf, (void*) RMTMEM.chan[channel].data32, item_len * 4, &HPTaskAwoken);
+                                if(res == pdFALSE) {
                                 ESP_EARLY_LOGE(RMT_TAG, "RMT RX BUFFER FULL");
-                            } else {
+                                } else {
 
+                                }
                             }
                         } else {
                             ESP_EARLY_LOGE(RMT_TAG, "RMT RX BUFFER ERROR\n");
@@ -711,7 +714,7 @@ esp_err_t rmt_driver_uninstall(rmt_channel_t channel)
     return ESP_OK;
 }
 
-esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr_alloc_flags)
+esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size,int min_items_count, int intr_alloc_flags)
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     RMT_CHECK((s_rmt_driver_channels & BIT(channel)) == 0, "RMT driver already installed for channel", ESP_ERR_INVALID_STATE);
@@ -747,6 +750,7 @@ esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr
     p_rmt_obj[channel]->wait_done = false;
     p_rmt_obj[channel]->translator = false;
     p_rmt_obj[channel]->sample_to_rmt = NULL;
+    p_rmt_obj[channel]->min_items_count = min_items_count;
     if(p_rmt_obj[channel]->tx_sem == NULL) {
 #if !CONFIG_SPIRAM_USE_MALLOC
         p_rmt_obj[channel]->tx_sem = xSemaphoreCreateBinary();
