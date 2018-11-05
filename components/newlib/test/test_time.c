@@ -135,12 +135,10 @@ TEST_CASE("test adjtime function", "[newlib]")
 static volatile bool exit_flag;
 static bool adjtime_test_result;
 static bool gettimeofday_test_result;
-static uint64_t count_adjtime;
-static uint64_t count_settimeofday;
-static uint64_t count_gettimeofday;
 
 static void adjtimeTask2(void *pvParameters)
 {
+    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
     struct timeval delta = {.tv_sec = 0, .tv_usec = 0};
     struct timeval outdelta;
 
@@ -150,34 +148,23 @@ static void adjtimeTask2(void *pvParameters)
         delta.tv_usec = 900000;
         if (delta.tv_sec >= 2146) delta.tv_sec = 1;
         adjtime(&delta, &outdelta);
-        count_adjtime++;
     }
+    xSemaphoreGive(*sema);
     vTaskDelete(NULL);
 }
 
-static void settimeofdayTask2(void *pvParameters)
+static void timeTask(void *pvParameters)
 {
+    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
     struct timeval tv_time = { .tv_sec = 1520000000, .tv_usec = 900000 };
 
     // although exit flag is set in another task, checking (exit_flag == false) is safe
     while (exit_flag == false) {
         tv_time.tv_sec += 1;
         settimeofday(&tv_time, NULL);
-        count_settimeofday++;
-        vTaskDelay(1);
-    }
-    vTaskDelete(NULL);
-}
-
-static void gettimeofdayTask2(void *pvParameters)
-{
-    struct timeval tv_time;
-    // although exit flag is set in another task, checking (exit_flag == false) is safe
-    while (exit_flag == false) {
         gettimeofday(&tv_time, NULL);
-        count_gettimeofday++;
-        vTaskDelay(1);
     }
+    xSemaphoreGive(*sema);
     vTaskDelete(NULL);
 }
 
@@ -185,32 +172,37 @@ TEST_CASE("test for no interlocking adjtime, gettimeofday and settimeofday funct
 {
     TaskHandle_t th[4];
     exit_flag = false;
-    count_adjtime = 0;
-    count_settimeofday = 0;
-    count_gettimeofday = 0;
     struct timeval tv_time = { .tv_sec = 1520000000, .tv_usec = 900000 };
     TEST_ASSERT_EQUAL(settimeofday(&tv_time, NULL), 0);
 
+    const int max_tasks = 2;
+    xSemaphoreHandle exit_sema[max_tasks];
+
+    for (int i = 0; i < max_tasks; ++i) {
+        exit_sema[i] = xSemaphoreCreateBinary();
+    }
+
 #ifndef CONFIG_FREERTOS_UNICORE
     printf("CPU0 and CPU1. Tasks run: 1 - adjtimeTask, 2 - gettimeofdayTask, 3 - settimeofdayTask \n");
-    xTaskCreatePinnedToCore(adjtimeTask2, "adjtimeTask1", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, &th[0], 0);
-    xTaskCreatePinnedToCore(gettimeofdayTask2, "gettimeofdayTask1", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, &th[1], 1);
-    xTaskCreatePinnedToCore(settimeofdayTask2, "settimeofdayTask1", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, &th[2], 0);
+    xTaskCreatePinnedToCore(adjtimeTask2, "adjtimeTask2", 2048, &exit_sema[0], UNITY_FREERTOS_PRIORITY - 1, &th[0], 0);
+    xTaskCreatePinnedToCore(timeTask, "timeTask", 2048, &exit_sema[1], UNITY_FREERTOS_PRIORITY - 1, &th[1], 1);
 #else
     printf("Only one CPU. Tasks run: 1 - adjtimeTask, 2 - gettimeofdayTask, 3 - settimeofdayTask\n");
-    xTaskCreate(adjtimeTask2, "adjtimeTask1", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, &th[0]);
-    xTaskCreate(gettimeofdayTask2, "gettimeofdayTask1", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, &th[1]);
-    xTaskCreate(settimeofdayTask2, "settimeofdayTask1", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, &th[2]);
+    xTaskCreate(adjtimeTask2, "adjtimeTask2", 2048, &exit_sema[0], UNITY_FREERTOS_PRIORITY - 1, &th[0]);
+    xTaskCreate(timeTask, "timeTask", 2048, &exit_sema[1], UNITY_FREERTOS_PRIORITY - 1, &th[1]);
 #endif
 
-    printf("start wait for 10 seconds\n");
-    vTaskDelay(10000 / portTICK_PERIOD_MS);
+    printf("start wait for 5 seconds\n");
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
 
     // set exit flag to let thread exit
     exit_flag = true;
-    vTaskDelay(20 / portTICK_PERIOD_MS);
-    printf("count_adjtime %lld, count_settimeofday %lld, count_gettimeofday %lld\n", count_adjtime, count_settimeofday, count_gettimeofday);
-    TEST_ASSERT(count_adjtime > 1000LL && count_settimeofday > 1000LL && count_gettimeofday > 1000LL);
+    for (int i = 0; i < max_tasks; ++i) {
+        if (!xSemaphoreTake(exit_sema[i], 2000/portTICK_PERIOD_MS)) {
+            TEST_FAIL_MESSAGE("exit_sema not released by test task");
+        }
+        vSemaphoreDelete(exit_sema[i]);
+    }
 }
 
 static void adjtimeTask(void *pvParameters)
@@ -270,20 +262,15 @@ TEST_CASE("test for thread safety adjtime and gettimeofday functions", "[newlib]
     printf("CPU0 and CPU1. Tasks run: 1 - adjtimeTask, 2 - gettimeofdayTask\n");
     xTaskCreatePinnedToCore(adjtimeTask, "adjtimeTask1", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, &th[0], 0);
     xTaskCreatePinnedToCore(gettimeofdayTask, "gettimeofdayTask1", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, &th[1], 1);
-
-    xTaskCreatePinnedToCore(adjtimeTask, "adjtimeTask2", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, &th[2], 0);
-    xTaskCreatePinnedToCore(gettimeofdayTask, "gettimeofdayTask2", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, &th[3], 1);
+    xTaskCreatePinnedToCore(gettimeofdayTask, "gettimeofdayTask2", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, &th[2], 0);
 #else
     printf("Only one CPU. Tasks run: 1 - adjtimeTask, 2 - gettimeofdayTask\n");
     xTaskCreate(adjtimeTask, "adjtimeTask1", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, &th[0]);
     xTaskCreate(gettimeofdayTask, "gettimeofdayTask1", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, &th[1]);
-
-    xTaskCreate(adjtimeTask, "adjtimeTask2", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, &th[2]);
-    xTaskCreate(gettimeofdayTask, "gettimeofdayTask2", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, &th[3]);
 #endif
 
-    printf("start wait for 10 seconds\n");
-    vTaskDelay(10000 / portTICK_PERIOD_MS);
+    printf("start wait for 5 seconds\n");
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
 
     // set exit flag to let thread exit
     exit_flag = true;
