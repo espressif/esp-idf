@@ -943,6 +943,10 @@ static esp_err_t esp_http_client_connect(esp_http_client_handle_t client)
             int ret = esp_transport_connect_async(client->transport, client->connection_info.host, client->connection_info.port, client->timeout_ms);
             if (ret == ASYNC_TRANS_CONNECT_FAIL) {
                 ESP_LOGE(TAG, "Connection failed");
+                if (strcasecmp(client->connection_info.scheme, "http") == 0) {
+                    ESP_LOGE(TAG, "Asynchronous mode doesn't work for HTTP based connection");
+                    return ESP_ERR_INVALID_ARG;
+                }
                 return ESP_ERR_HTTP_CONNECT;
             } else if (ret == ASYNC_TRANS_CONNECTING) {
                 ESP_LOGD(TAG, "Connection not yet established");
