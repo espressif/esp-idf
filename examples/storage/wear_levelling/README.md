@@ -1,5 +1,7 @@
 # Wear levelling example
 
+(See the README.md file in the upper level 'examples' directory for more information about examples.)
+
 This example demonstrates how to use wear levelling library and FATFS library to store files in a partition inside SPI flash. Example does the following steps:
 
 1. Use an "all-in-one" `esp_vfs_fat_spiflash_mount` function to:
@@ -9,6 +11,38 @@ This example demonstrates how to use wear levelling library and FATFS library to
     - register FAT filesystem in VFS, enabling C standard library and POSIX functions to be used.
 2. Create a file using `fopen` and write to it using `fprintf`.
 3. Open file for reading, read back the line, and print it to the terminal.
+
+Wear levelling partition size is set in partitions_example.csv file. See [Partition Tables](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/partition-tables.html) documentation for more information.
+
+## How to use example
+
+### Hardware required
+
+This example does not require any special hardware, and can be run on any common development board.
+
+### Configure the project
+
+If using Make based build system, run `make menuconfig` and set serial port under Serial Flasher Options.
+
+If using CMake based build system, no configuration is required.
+
+### Build and flash
+
+Build the project and flash it to the board, then run monitor tool to view serial output:
+
+```
+make -j4 flash monitor
+```
+
+Or, for CMake based build system (replace PORT with serial port name):
+
+```
+idf.py -p PORT flash monitor
+```
+
+(To exit the serial monitor, type ``Ctrl-]``.)
+
+See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
 
 ## Example output
 
@@ -26,3 +60,5 @@ I (920) example: Read from file: 'written using ESP-IDF v3.1-dev-171-gf9ad17eee-
 I (920) example: Unmounting FAT filesystem
 I (1000) example: Done
 ```
+
+To erase the contents of wear levelling partition, run `make erase_flash` command (or `idf.py erase_flash`, if using CMake build system). Then upload the example again as described above.
