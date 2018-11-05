@@ -330,6 +330,32 @@ void SMP_PasskeyReply (BD_ADDR bd_addr, UINT8 res, UINT32 passkey)
 
 /*******************************************************************************
 **
+** Function         SMP_SetStaticPasskey
+**
+** Description      This function is called to set static passkey
+**
+**
+** Parameters:      add          - set static passkey when add is TRUE
+**                                 clear static passkey when add is FALSE
+**                  passkey      - static passkey
+**
+**
+*******************************************************************************/
+void SMP_SetStaticPasskey (BOOLEAN add, UINT32 passkey)
+{
+    SMP_TRACE_DEBUG("static passkey %6d", passkey);
+    tSMP_CB *p_cb = & smp_cb;
+    if(add) {
+        p_cb->static_passkey = passkey;
+        p_cb->use_static_passkey = true;
+    } else {
+        p_cb->static_passkey = 0;
+        p_cb->use_static_passkey = false;
+    }
+}
+
+/*******************************************************************************
+**
 ** Function         SMP_ConfirmReply
 **
 ** Description      This function is called after Security Manager submitted

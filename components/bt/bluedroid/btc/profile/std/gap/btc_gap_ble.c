@@ -1116,6 +1116,25 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
                 bta_dm_co_ble_set_max_key_size(key_size);
                 break;
             }
+            case ESP_BLE_SM_SET_STATIC_PASSKEY: {
+                uint32_t passkey = 0;
+                for(uint8_t i = 0; i < arg->set_security_param.len; i++)
+                {
+                    passkey += (((uint8_t *)value)[i]<<(8*i));
+                }
+                BTA_DmBleSetStaticPasskey(true, passkey);
+                break;
+            }
+            case ESP_BLE_SM_CLEAR_STATIC_PASSKEY: {
+                BTA_DmBleSetStaticPasskey(false, 0);
+                break;
+            }
+            case ESP_BLE_SM_ONLY_ACCEPT_SPECIFIED_SEC_AUTH: {
+                uint8_t enable = 0;
+                STREAM_TO_UINT8(enable, value);
+                bta_dm_co_ble_set_accept_auth_enable(enable);
+                break;
+            }
             default:
                 break;
         }

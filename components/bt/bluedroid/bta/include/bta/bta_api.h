@@ -763,6 +763,7 @@ typedef struct {
     UINT8           fail_reason;        /* The HCI reason/error code for when success=FALSE */
     tBLE_ADDR_TYPE  addr_type;          /* Peer device address type */
     tBT_DEVICE_TYPE dev_type;
+    UINT8           auth_mode;
 } tBTA_DM_AUTH_CMPL;
 
 
@@ -1801,6 +1802,22 @@ extern void BTA_DmBleSetBgConnType(tBTA_DM_BLE_CONN_TYPE bg_conn_type, tBTA_DM_B
 **
 *******************************************************************************/
 extern void BTA_DmBlePasskeyReply(BD_ADDR bd_addr, BOOLEAN accept, UINT32 passkey);
+
+/*******************************************************************************
+**
+** Function         BTA_DmBleSetStaticPasskey
+**
+** Description      Set BLE SMP static passkey.
+**
+** Parameters:      add              - add static passkey when add is true
+**                                     clear static passkey when add is false
+**                  passkey          - static passkey value
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_DmBleSetStaticPasskey(bool add, uint32_t passkey);
 
 /*******************************************************************************
 **
