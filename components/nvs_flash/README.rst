@@ -205,7 +205,7 @@ Data
         (Only for blob index.) Total number of blob-data chunks into which the blob was divided during storage. 
      
     - ChunkStart 
-        (Only for blob index.) ChunkIndex of the first blob-data chunk of this blob. Subsequent chunks have chunkIndex incrementely allocated (step of 1). 
+        (Only for blob index.) ChunkIndex of the first blob-data chunk of this blob. Subsequent chunks have chunkIndex incrementally allocated (step of 1)
 
     For string and blob data chunks, these 8 bytes hold additional data about the value, described next:
   
@@ -241,7 +241,7 @@ Item hash list
 
 To reduce the number of reads performed from flash memory, each member of Page class maintains a list of pairs: (item index; item hash). This list makes searches much quicker. Instead of iterating over all entries, reading them from flash one at a time, ``Page::findItem`` first performs search for item hash in the hash list. This gives the item index within the page, if such an item exists. Due to a hash collision it is possible that a different item will be found. This is handled by falling back to iteration over items in flash.
 
-Each node in hash list contains a 24-bit hash and 8-bit item index. Hash is calculated based on item namespace, key name and ChunkIndex. CRC32 is used for calculation, result is truncated to 24 bits. To reduce overhead of storing 32-bit entries in a linked list, list is implemented as a doubly-linked list of arrays. Each array holds 29 entries, for the total size of 128 bytes, together with linked list pointers and 32-bit count field. Minimal amount of extra RAM useage per page is therefore 128 bytes, maximum is 640 bytes.
+Each node in hash list contains a 24-bit hash and 8-bit item index. Hash is calculated based on item namespace, key name and ChunkIndex. CRC32 is used for calculation, result is truncated to 24 bits. To reduce overhead of storing 32-bit entries in a linked list, list is implemented as a doubly-linked list of arrays. Each array holds 29 entries, for the total size of 128 bytes, together with linked list pointers and 32-bit count field. Minimal amount of extra RAM usage per page is therefore 128 bytes, maximum is 640 bytes.
 
 .. _nvs_encryption:
 
@@ -269,7 +269,7 @@ An application requiring NVS encryption support needs to be compiled with a key-
 
 This partition can be generated using `nvs partition generator` utility and flashed onto the device. Since the partition is marked `encrypted` and :doc:`Flash Encryption <../../security/flash-encryption>` is enabled, bootloader will encrypt this partition using flash encryption key on first boot. Alternatively, the keys can be generated after startup using ``nvs_flash_generate_keys`` API provided by ``nvs_flash.h``, which will then write those keys onto the key-partition in encrypted form.
 
-It is possible for an application to use different keys for different NVS partitions and thereby have multiple key-partitions. However, it is a responsibilty of the application to provide correct key-partition/keys for the purpose of encryption/decryption.
+It is possible for an application to use different keys for different NVS partitions and thereby have multiple key-partitions. However, it is a responsibility of the application to provide correct key-partition/keys for the purpose of encryption/decryption.
 
 Encrypted Read/Write
 ^^^^^^^^^^^^^^^^^^^^
@@ -284,3 +284,8 @@ Applications are expected to follow the following steps in order to perform NVS 
     4. Open a namespace using ``nvs_open`` or ``nvs_open_from_part`` APIs
     5. Perform NVS read/write operations using ``nvs_read_*`` or ``nvs_write_*``
     6. Deinitialise NVS partition using ``nvs_flash_deinit``.
+
+NVS iterators
+^^^^^^^^^^^^^
+
+Iterators allow to list key-value pairs stored in NVS based on specified partition name, namespace and data type. ``nvs_entry_find`` returns an opaque handle, which is used in subsequent calls to ``nvs_entry_next`` and ``nvs_entry_info`` function. ``nvs_entry_next`` function returns iterator to the next key-value pair. If none or no other key-value pair was found for given criteria, ``nvs_entry_find`` and ``nvs_entry_next`` functions return NULL. In that case, iterator does not have to be released. Otherwise, ``nvs_release_iterator`` function has to be used, when iterator is no longer needed. Information about each key-value pair can be obtained from ``nvs_entry_info`` function.
