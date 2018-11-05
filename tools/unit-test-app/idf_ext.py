@@ -141,12 +141,12 @@ def add_action_extensions(base_functions, base_actions):
                 # config folder to build config
                 sdkconfig_default = os.path.join(PROJECT_PATH, "sdkconfig.defaults")
 
-                with open(sdkconfig_default, "r") as sdkconfig_default_file:
+                with open(sdkconfig_default, "rb") as sdkconfig_default_file:
                     sdkconfig_temp.write(sdkconfig_default_file.read())
 
                 sdkconfig_config = os.path.join(PROJECT_PATH, "configs", config_name)
-                with open(sdkconfig_config, "r") as sdkconfig_config_file:
-                    sdkconfig_temp.write("\n")
+                with open(sdkconfig_config, "rb") as sdkconfig_config_file:
+                    sdkconfig_temp.write(b"\n")
                     sdkconfig_temp.write(sdkconfig_config_file.read())
 
                 sdkconfig_temp.flush()
