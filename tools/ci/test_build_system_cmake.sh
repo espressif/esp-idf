@@ -258,6 +258,14 @@ function run_tests()
     mv ${IDF_PATH}/components/esp32/toolchain-esp32.cmake ${IDF_PATH}/tools/cmake/
     assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
 
+    print_status "Can build with auto generated CMakeLists.txt"
+    clean_build_dir
+    mv CMakeLists.txt CMakeLists.bak
+    ${IDF_PATH}/tools/cmake/convert_to_cmake.py .
+    idf.py build || failure "Auto generated CMakeLists.txt build failed"
+    mv CMakeLists.bak CMakeLists.txt
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
+
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
         echo "Some failures were detected:"
