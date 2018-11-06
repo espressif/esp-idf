@@ -98,6 +98,27 @@ typedef enum {
 #define _SPI_80M_CLK_DIV  1
 #define _SPI_40M_CLK_DIV  2
 
+//For 4MB PSRAM, we need one more SPI host, select which one to use by kconfig
+#ifdef CONFIG_SPIRAM_OCCUPY_HSPI_HOST
+#define PSRAM_SPI_MODULE    PERIPH_HSPI_MODULE
+#define PSRAM_SPI_HOST      HSPI_HOST
+#define PSRAM_CLK_SIGNAL    HSPICLK_OUT_IDX
+#define PSRAM_SPI_NUM       PSRAM_SPI_2
+#define PSRAM_SPICLKEN      DPORT_SPI2_CLK_EN
+#elif defined CONFIG_SPIRAM_OCCUPY_VSPI_HOST
+#define PSRAM_SPI_MODULE    PERIPH_VSPI_MODULE
+#define PSRAM_SPI_HOST      VSPI_HOST
+#define PSRAM_CLK_SIGNAL    VSPICLK_OUT_IDX
+#define PSRAM_SPI_NUM       PSRAM_SPI_3
+#define PSRAM_SPICLKEN      DPORT_SPI3_CLK_EN
+#else   //set to SPI avoid HSPI and VSPI being used
+#define PSRAM_SPI_MODULE    PERIPH_SPI_MODULE
+#define PSRAM_SPI_HOST      SPI_HOST
+#define PSRAM_CLK_SIGNAL    SPICLK_OUT_IDX
+#define PSRAM_SPI_NUM       PSRAM_SPI_1
+#define PSRAM_SPICLKEN      DPORT_SPI01_CLK_EN
+#endif
+
 static const char* TAG = "psram";
 typedef enum {
     PSRAM_SPI_1  = 0x1,
@@ -566,9 +587,9 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
             CLEAR_PERI_REG_MASK(SPI_USER_REG(PSRAM_SPI_1), SPI_CS_HOLD);
             gpio_matrix_out(PSRAM_CS_IO, SPICS1_OUT_IDX, 0, 0);
             /* We need to delay CLK to the PSRAM with respect to the clock signal as output by the SPI peripheral.
-            We do this by routing it signal to signal 224/225, which are used as a loopback; the extra run through 
-            the GPIO matrix causes the delay. We use GPIO20 (which is not in any package but has pad logic in 
-            silicon) as a temporary pad for this. So the signal path is: 
+            We do this by routing it signal to signal 224/225, which are used as a loopback; the extra run through
+            the GPIO matrix causes the delay. We use GPIO20 (which is not in any package but has pad logic in
+            silicon) as a temporary pad for this. So the signal path is:
             SPI CLK --> GPIO28 --> signal224(in then out) --> internal GPIO29 --> signal225(in then out) --> GPIO17(PSRAM CLK)
             */
             gpio_matrix_out(PSRAM_INTERNAL_IO_28, SPICLK_OUT_IDX, 0, 0);
@@ -621,27 +642,27 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
     } else if (PSRAM_IS_32MBIT_VER0(s_psram_id)) {
         s_clk_mode = PSRAM_CLK_MODE_DCLK;
         if (mode == PSRAM_CACHE_F80M_S80M) {
-            /*   note: If the third mode(80Mhz+80Mhz) is enabled for 32MBit 1V8 psram, VSPI port will be 
-                 occupied by the system.
-                 Application code should never touch VSPI hardware in this case.  We try to stop applications
+            /*   note: If the third mode(80Mhz+80Mhz) is enabled for 32MBit 1V8 psram, one of HSPI/VSPI port will be
+                 occupied by the system (according to kconfig).
+                 Application code should never touch HSPI/VSPI hardware in this case.  We try to stop applications
                  from doing this using the drivers by claiming the port for ourselves */
-            periph_module_enable(PERIPH_VSPI_MODULE);
-            bool r=spicommon_periph_claim(VSPI_HOST);
+            periph_module_enable(PSRAM_SPI_MODULE);
+            bool r=spicommon_periph_claim(PSRAM_SPI_HOST, "psram");
             if (!r) {
                 return ESP_ERR_INVALID_STATE;
             }
-            gpio_matrix_out(PSRAM_CLK_IO, VSPICLK_OUT_IDX, 0, 0);
+            gpio_matrix_out(PSRAM_CLK_IO, PSRAM_CLK_SIGNAL, 0, 0);
             //use spi3 clock,but use spi1 data/cs wires
             //We get a solid 80MHz clock from SPI3 by setting it up, starting a transaction, waiting until it
             //is in progress, then cutting the clock (but not the reset!) to that peripheral.
-            WRITE_PERI_REG(SPI_ADDR_REG(PSRAM_SPI_3), 32 << 24);
-            WRITE_PERI_REG(SPI_CLOCK_REG(PSRAM_SPI_3), SPI_CLK_EQU_SYSCLK_M);   //SET 80M AND CLEAR OTHERS
-            SET_PERI_REG_MASK(SPI_CMD_REG(PSRAM_SPI_3), SPI_FLASH_READ_M);
+            WRITE_PERI_REG(SPI_ADDR_REG(PSRAM_SPI_NUM), 32 << 24);
+            WRITE_PERI_REG(SPI_CLOCK_REG(PSRAM_SPI_NUM), SPI_CLK_EQU_SYSCLK_M);   //SET 80M AND CLEAR OTHERS
+            SET_PERI_REG_MASK(SPI_CMD_REG(PSRAM_SPI_NUM), SPI_FLASH_READ_M);
             uint32_t spi_status;
             while (1) {
-                spi_status = READ_PERI_REG(SPI_EXT2_REG(PSRAM_SPI_3));
+                spi_status = READ_PERI_REG(SPI_EXT2_REG(PSRAM_SPI_NUM));
                 if (spi_status != 0 && spi_status != 1) {
-                    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI3_CLK_EN);
+                    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, PSRAM_SPICLKEN);
                     break;
                 }
             }
