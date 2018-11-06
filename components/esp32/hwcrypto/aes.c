@@ -122,7 +122,10 @@ static inline void esp_aes_setkey_hardware( esp_aes_context *ctx, int mode)
     const uint32_t MODE_DECRYPT_BIT = 4;
     unsigned mode_reg_base = (mode == ESP_AES_ENCRYPT) ? 0 : MODE_DECRYPT_BIT;
 
-    memcpy((uint32_t *)AES_KEY_BASE, ctx->key, ctx->key_bytes);
+    for (int i = 0; i < ctx->key_bytes/4; ++i) {
+        DPORT_REG_WRITE(AES_KEY_BASE + i * 4, *(((uint32_t *)ctx->key) + i));
+    }
+
     DPORT_REG_WRITE(AES_MODE_REG, mode_reg_base + ((ctx->key_bytes / 8) - 2));
 }
 
