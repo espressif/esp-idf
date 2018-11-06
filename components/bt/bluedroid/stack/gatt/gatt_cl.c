@@ -47,7 +47,7 @@
 *********************************************************************************/
 void gatt_send_prepare_write(tGATT_TCB  *p_tcb, tGATT_CLCB *p_clcb);
 
-UINT8   disc_type_to_att_opcode[GATT_DISC_MAX] = {
+static const UINT8 disc_type_to_att_opcode[GATT_DISC_MAX] = {
     0,
     GATT_REQ_READ_BY_GRP_TYPE,     /*  GATT_DISC_SRVC_ALL = 1, */
     GATT_REQ_FIND_TYPE_VALUE,      /*  GATT_DISC_SRVC_BY_UUID,  */
@@ -56,7 +56,7 @@ UINT8   disc_type_to_att_opcode[GATT_DISC_MAX] = {
     GATT_REQ_FIND_INFO             /*  GATT_DISC_CHAR_DSCPT,    */
 };
 
-UINT16 disc_type_to_uuid[GATT_DISC_MAX] = {
+static const UINT16 disc_type_to_uuid[GATT_DISC_MAX] = {
     0,                  /* reserved */
     GATT_UUID_PRI_SERVICE, /* <service> DISC_SRVC_ALL */
     GATT_UUID_PRI_SERVICE, /* <service> for DISC_SERVC_BY_UUID */

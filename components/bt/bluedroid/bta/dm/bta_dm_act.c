@@ -233,10 +233,12 @@ const tBTM_APPL_INFO bta_security = {
 #endif  ///SMP_INCLUDED == TRUE
 
 #if (SDP_INCLUDED == TRUE)
-#define MAX_DISC_RAW_DATA_BUF       (1024)
+#if BTA_DYNAMIC_MEMORY == FALSE
 UINT8 g_disc_raw_data_buf[MAX_DISC_RAW_DATA_BUF];
+#else
+UINT8 *g_disc_raw_data_buf;
+#endif
 #endif  ///SDP_INCLUDED == TRUE
-extern DEV_CLASS local_device_default_class;
 
 /*******************************************************************************
 **
@@ -2303,7 +2305,7 @@ static void bta_dm_find_services ( BD_ADDR bd_addr)
                 APPL_TRACE_DEBUG("%s search UUID = %04x", __func__, uuid.uu.uuid16);
                 SDP_InitDiscoveryDb (bta_dm_search_cb.p_sdp_db, BTA_DM_SDP_DB_SIZE, 1, &uuid, 0, NULL);
 
-                memset(g_disc_raw_data_buf, 0, sizeof(g_disc_raw_data_buf));
+                memset(g_disc_raw_data_buf, 0, MAX_DISC_RAW_DATA_BUF);
                 bta_dm_search_cb.p_sdp_db->raw_data = g_disc_raw_data_buf;
 
                 bta_dm_search_cb.p_sdp_db->raw_size = MAX_DISC_RAW_DATA_BUF;
@@ -2496,7 +2498,7 @@ static void bta_dm_discover_device(BD_ADDR remote_bd_addr)
             if (transport == BT_TRANSPORT_LE) {
                 if (bta_dm_search_cb.services_to_search & BTA_BLE_SERVICE_MASK) {
                     //set the raw data buffer here
-                    memset(g_disc_raw_data_buf, 0, sizeof(g_disc_raw_data_buf));
+                    memset(g_disc_raw_data_buf, 0, MAX_DISC_RAW_DATA_BUF);
                     bta_dm_search_cb.p_ble_rawdata = g_disc_raw_data_buf;
 
                     bta_dm_search_cb.ble_raw_size = MAX_DISC_RAW_DATA_BUF;

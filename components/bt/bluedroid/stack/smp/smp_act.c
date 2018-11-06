@@ -283,6 +283,7 @@ void smp_send_confirm(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     smp_send_cmd(SMP_OPCODE_CONFIRM, p_cb);
 }
 
+#if 0 //Unused
 /*******************************************************************************
 ** Function     smp_send_init
 ** Description  process pairing initializer to slave device
@@ -292,6 +293,7 @@ void smp_send_init(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     SMP_TRACE_DEBUG("%s\n", __func__);
     smp_send_cmd(SMP_OPCODE_INIT, p_cb);
 }
+#endif
 
 /*******************************************************************************
 ** Function     smp_send_rand
@@ -675,6 +677,7 @@ void smp_proc_confirm(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     p_cb->flags |= SMP_PAIR_FLAGS_CMD_CONFIRM;
 }
 
+#if 0 //Unused
 /*******************************************************************************
 ** Function     smp_proc_init
 ** Description  process pairing initializer from peer device
@@ -694,6 +697,7 @@ void smp_proc_init(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     /* save the SRand for comparison */
     STREAM_TO_ARRAY(p_cb->rrand, p, BT_OCTET16_LEN);
 }
+#endif
 
 /*******************************************************************************
 ** Function     smp_proc_rand

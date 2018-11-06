@@ -105,58 +105,12 @@ const tA2D_SBC_CIE btc_av_sbc_default_config = {
     A2D_SBC_IE_MIN_BITPOOL          /* min_bitpool */
 };
 
-
-/*****************************************************************************
-**  Local data
-*****************************************************************************/
-typedef struct {
-    UINT8 sep_info_idx;                 /* local SEP index (in BTA tables) */
-    UINT8 seid;                         /* peer SEP index (in peer tables) */
-    UINT8 codec_type;                   /* peer SEP codec type */
-    UINT8 codec_caps[AVDT_CODEC_SIZE];  /* peer SEP codec capabilities */
-    UINT8 num_protect;                  /* peer SEP number of CP elements */
-    UINT8 protect_info[BTA_AV_CP_INFO_LEN];  /* peer SEP content protection info */
-} tBTA_AV_CO_SINK;
-
-typedef struct {
-    BD_ADDR         addr;               /* address of audio/video peer */
-    tBTA_AV_CO_SINK snks[BTC_SV_AV_AA_SEP_INDEX]; /* array of supported sinks */
-    tBTA_AV_CO_SINK srcs[BTC_SV_AV_AA_SEP_INDEX]; /* array of supported srcs */
-    UINT8           num_snks;           /* total number of sinks at peer */
-    UINT8           num_srcs;           /* total number of srcs at peer */
-    UINT8           num_seps;           /* total number of seids at peer */
-    UINT8           num_rx_snks;        /* number of received sinks */
-    UINT8           num_rx_srcs;        /* number of received srcs */
-    UINT8           num_sup_snks;       /* number of supported sinks in the snks array */
-    UINT8           num_sup_srcs;       /* number of supported srcs in the srcs array */
-    tBTA_AV_CO_SINK *p_snk;             /* currently selected sink */
-    tBTA_AV_CO_SINK *p_src;             /* currently selected src */
-    UINT8           codec_cfg[AVDT_CODEC_SIZE]; /* current codec configuration */
-    BOOLEAN         cp_active;          /* current CP configuration */
-    BOOLEAN         acp;                /* acceptor */
-    BOOLEAN         recfg_needed;       /* reconfiguration is needed */
-    BOOLEAN         opened;             /* opened */
-    UINT16          mtu;                /* maximum transmit unit size */
-    UINT16          uuid_to_connect;    /* uuid of peer device */
-} tBTA_AV_CO_PEER;
-
-typedef struct {
-    BOOLEAN active;
-    UINT8 flag;
-} tBTA_AV_CO_CP;
-
-typedef struct {
-    /* Connected peer information */
-    tBTA_AV_CO_PEER peers[BTA_AV_NUM_STRS];
-    /* Current codec configuration - access to this variable must be protected */
-    tBTC_AV_CODEC_INFO codec_cfg;
-    tBTC_AV_CODEC_INFO codec_cfg_setconfig; /* remote peer setconfig preference */
-
-    tBTA_AV_CO_CP cp;
-} tBTA_AV_CO_CB;
-
 /* Control block instance */
-static tBTA_AV_CO_CB bta_av_co_cb;
+#if AVRC_DYNAMIC_MEMORY == FALSE
+tBTA_AV_CO_CB bta_av_co_cb;
+#else
+tBTA_AV_CO_CB *bta_av_co_cb_ptr;
+#endif
 
 static BOOLEAN bta_av_co_audio_codec_build_config(const UINT8 *p_codec_caps, UINT8 *p_codec_cfg);
 static void bta_av_co_audio_peer_reset_config(tBTA_AV_CO_PEER *p_peer);
@@ -1735,7 +1689,7 @@ BOOLEAN bta_av_co_get_remote_bitpool_pref(UINT8 *min, UINT8 *max)
 }
 
 /* the call out functions for audio stream */
-tBTA_AV_CO_FUNCTS bta_av_a2d_cos = {
+const tBTA_AV_CO_FUNCTS bta_av_a2d_cos = {
     bta_av_co_audio_init,
     bta_av_co_audio_disc_res,
     bta_av_co_audio_getconfig,

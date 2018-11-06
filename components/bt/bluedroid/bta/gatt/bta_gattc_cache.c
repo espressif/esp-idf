@@ -26,6 +26,7 @@
 #include "common/bt_target.h"
 
 #if defined(GATTC_INCLUDED) && (GATTC_INCLUDED == TRUE)
+//#if( defined GATTC_CACHE_NVS ) && (GATTC_CACHE_NVS == TRUE)
 
 #include <string.h>
 #include "bta/utl.h"
@@ -2190,5 +2191,7 @@ void bta_gattc_cache_reset(BD_ADDR server_bda)
     bta_gattc_co_cache_reset(server_bda);
     //unlink(fname);
 }
+
+//#endif /* GATTC_CACHE_NVS */
 #endif /* BTA_GATT_INCLUDED */
 

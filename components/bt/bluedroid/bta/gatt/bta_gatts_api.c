@@ -82,7 +82,7 @@ void BTA_GATTS_Disable(void)
 ** Returns          None
 **
 *******************************************************************************/
-void BTA_GATTS_AppRegister(tBT_UUID *p_app_uuid, tBTA_GATTS_CBACK *p_cback)
+void BTA_GATTS_AppRegister(const tBT_UUID * p_app_uuid, tBTA_GATTS_CBACK *p_cback)
 {
     tBTA_GATTS_API_REG  *p_buf;
 
@@ -149,7 +149,7 @@ void BTA_GATTS_AppDeregister(tBTA_GATTS_IF server_if)
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_GATTS_CreateService(tBTA_GATTS_IF server_if, tBT_UUID *p_service_uuid, UINT8 inst,
+void BTA_GATTS_CreateService(tBTA_GATTS_IF server_if, const tBT_UUID * p_service_uuid, UINT8 inst,
                              UINT16 num_handle, BOOLEAN is_primary)
 {
     tBTA_GATTS_API_CREATE_SRVC  *p_buf;
@@ -214,8 +214,8 @@ void BTA_GATTS_AddIncludeService(UINT16 service_id, UINT16 included_service_id)
 ** Returns          None
 **
 *******************************************************************************/
-void BTA_GATTS_AddCharacteristic (UINT16 service_id,  tBT_UUID  *p_char_uuid,
-                                  tBTA_GATT_PERM perm, tBTA_GATT_CHAR_PROP property, tGATT_ATTR_VAL *attr_val, 
+void BTA_GATTS_AddCharacteristic (UINT16 service_id,  const tBT_UUID  * p_char_uuid,
+                                  tBTA_GATT_PERM perm, tBTA_GATT_CHAR_PROP property, tGATT_ATTR_VAL *attr_val,
                                   tBTA_GATTS_ATTR_CONTROL *control)
 {
     tBTA_GATTS_API_ADD_CHAR  *p_buf;
@@ -270,7 +270,7 @@ void BTA_GATTS_AddCharacteristic (UINT16 service_id,  tBT_UUID  *p_char_uuid,
 *******************************************************************************/
 void BTA_GATTS_AddCharDescriptor (UINT16 service_id,
                                   tBTA_GATT_PERM perm,
-                                  tBT_UUID   *p_descr_uuid, tBTA_GATT_ATTR_VAL *attr_val, 
+                                  const tBT_UUID * p_descr_uuid, tBTA_GATT_ATTR_VAL *attr_val,
                                   tBTA_GATTS_ATTR_CONTROL *control)
 {
     tBTA_GATTS_API_ADD_DESCR  *p_buf;

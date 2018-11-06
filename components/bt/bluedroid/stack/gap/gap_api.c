@@ -21,8 +21,13 @@
 #include "common/bt_target.h"
 //#include "bt_utils.h"
 #include "gap_int.h"
+#include "osi/allocator.h"
 
+#if GAP_DYNAMIC_MEMORY == FALSE
 tGAP_CB  gap_cb;
+#else
+tGAP_CB  *gap_cb_ptr;
+#endif
 
 /*******************************************************************************
 **
@@ -57,6 +62,10 @@ UINT8 GAP_SetTraceLevel (UINT8 new_level)
 *******************************************************************************/
 void GAP_Init(void)
 {
+#if GAP_DYNAMIC_MEMORY == TRUE
+    gap_cb_ptr = (tGAP_CB *)osi_malloc(sizeof(tGAP_CB));
+#endif
+
     memset (&gap_cb, 0, sizeof (tGAP_CB));
 
 #if defined(GAP_INITIAL_TRACE_LEVEL)
@@ -74,3 +83,20 @@ void GAP_Init(void)
 #endif
 }
 
+/*******************************************************************************
+**
+** Function         GAP_Deinit
+**
+** Description      This function is called to deinitialize the control block
+**                  for this layer.
+**
+** Returns          void
+**
+*******************************************************************************/
+void GAP_Deinit(void)
+{
+#if GAP_DYNAMIC_MEMORY == TRUE
+    osi_free(gap_cb_ptr);
+    gap_cb_ptr = NULL;
+#endif
+}

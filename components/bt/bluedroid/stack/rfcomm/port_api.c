@@ -826,6 +826,8 @@ int PORT_FlowControl (UINT16 handle, BOOLEAN enable)
     }
     return (PORT_SUCCESS);
 }
+
+#if 0 //Unused
 /*******************************************************************************
 **
 ** Function         PORT_FlowControl_MaxCredit
@@ -839,7 +841,6 @@ int PORT_FlowControl (UINT16 handle, BOOLEAN enable)
 **                  enable     - enables data flow
 **
 *******************************************************************************/
-
 int PORT_FlowControl_MaxCredit (UINT16 handle, BOOLEAN enable)
 {
     tPORT      *p_port;
@@ -896,7 +897,7 @@ int PORT_FlowControl_MaxCredit (UINT16 handle, BOOLEAN enable)
     }
     return (PORT_SUCCESS);
 }
-
+#endif
 
 /*******************************************************************************
 **
@@ -1713,7 +1714,7 @@ int PORT_Test (UINT16 handle, UINT8 *p_data, UINT16 len)
 *******************************************************************************/
 void RFCOMM_Init (void)
 {
-#if (RFC_DYNAMIC_MEMORY)
+#if RFC_DYNAMIC_MEMORY == TRUE
     rfc_cb_ptr = (tRFC_CB *)osi_malloc(sizeof(tRFC_CB));
 #endif /* #if (RFC_DYNAMIC_MEMORY) */
     memset (&rfc_cb, 0, sizeof (tRFC_CB));  /* Init RFCOMM control block */
@@ -1727,6 +1728,24 @@ void RFCOMM_Init (void)
 #endif
 
     rfcomm_l2cap_if_init ();
+}
+
+/*******************************************************************************
+**
+** Function         RFCOMM_Deinit
+**
+** Description      This function is called to deinitialize the control block
+**                  for this layer.
+**
+** Returns          void
+**
+*******************************************************************************/
+void RFCOMM_Deinit(void)
+{
+#if RFC_DYNAMIC_MEMORY == TRUE
+    osi_free(rfc_cb_ptr);
+    rfc_cb_ptr = NULL;
+#endif
 }
 
 /*******************************************************************************

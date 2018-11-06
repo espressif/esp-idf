@@ -67,8 +67,17 @@ tBTA_JV_STATUS BTA_JvEnable(tBTA_JV_DM_CBACK *p_cback)
     tBTA_JV_STATUS status = BTA_JV_FAILURE;
     tBTA_JV_API_ENABLE  *p_buf;
     int i;
-
     APPL_TRACE_API( "BTA_JvEnable");
+
+#if BTA_DYNAMIC_MEMORY == TRUE
+    /* Malloc buffer for JV configuration structure */
+    p_bta_jv_cfg->p_sdp_raw_data = (UINT8 *)osi_malloc(p_bta_jv_cfg->sdp_raw_size);
+    p_bta_jv_cfg->p_sdp_db = (tSDP_DISCOVERY_DB *)osi_malloc(p_bta_jv_cfg->sdp_db_size);
+    if (p_bta_jv_cfg->p_sdp_raw_data == NULL || p_bta_jv_cfg->p_sdp_db == NULL) {
+        return BTA_JV_NO_DATA;
+    }
+#endif
+
     if (p_cback && FALSE == bta_sys_is_register(BTA_ID_JV)) {
         memset(&bta_jv_cb, 0, sizeof(tBTA_JV_CB));
         /* set handle to invalid value by default */
@@ -110,6 +119,14 @@ void BTA_JvDisable(void)
         p_buf->event = BTA_JV_API_DISABLE_EVT;
         bta_sys_sendmsg(p_buf);
     }
+
+#if BTA_DYNAMIC_MEMORY == TRUE
+    /* Free buffer for JV configuration structure */
+    osi_free(p_bta_jv_cfg->p_sdp_raw_data);
+    osi_free(p_bta_jv_cfg->p_sdp_db);
+    p_bta_jv_cfg->p_sdp_raw_data = NULL;
+    p_bta_jv_cfg->p_sdp_db = NULL;
+#endif
 }
 
 /*******************************************************************************

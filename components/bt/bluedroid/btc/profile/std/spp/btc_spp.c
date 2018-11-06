@@ -55,13 +55,20 @@ typedef struct {
     char service_name[ESP_SPP_SERVER_NAME_MAX + 1];
 } spp_slot_t;
 
-static struct spp_local_param_t {
+typedef struct {
     spp_slot_t *spp_slots[BTA_JV_MAX_RFC_SR_SESSION + 1];
     uint32_t spp_slot_id;
     esp_spp_mode_t spp_mode;
     osi_mutex_t spp_slot_mutex;
     esp_vfs_id_t spp_vfs_id;
-} spp_local_param;
+} spp_local_param_t;
+
+#if SPP_DYNAMIC_MEMORY == FALSE
+static spp_local_param_t spp_local_param;
+#else
+static spp_local_param_t *spp_local_param_ptr;
+#define spp_local_param (*spp_local_param_ptr)
+#endif
 
 static void spp_osi_free(void *p)
 {
@@ -313,6 +320,15 @@ static void btc_spp_dm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *user_d
 
 static void btc_spp_init(btc_spp_args_t *arg)
 {
+
+#if SPP_DYNAMIC_MEMORY == TRUE
+    if ((spp_local_param_ptr = (spp_local_param_t *)osi_malloc(sizeof(spp_local_param_t))) == NULL) {
+        BTC_TRACE_ERROR("%s malloc failed\n", __func__);
+        return;
+    }
+    memset((void *)spp_local_param_ptr, 0, sizeof(spp_local_param_t));
+#endif
+
     if (osi_mutex_new(&spp_local_param.spp_slot_mutex) != 0) {
         BTC_TRACE_ERROR("%s osi_mutex_new failed\n", __func__);
         return;
@@ -349,6 +365,11 @@ static void btc_spp_uninit(void)
     BTA_JvDisable();
     osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
     osi_mutex_free(&spp_local_param.spp_slot_mutex);
+
+#if SPP_DYNAMIC_MEMORY == TRUE
+    osi_free(spp_local_param_ptr);
+    spp_local_param_ptr = NULL;
+#endif
 }
 
 static void btc_spp_start_discovery(btc_spp_args_t *arg)

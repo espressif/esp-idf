@@ -93,6 +93,7 @@ void smp_debug_print_nbyte_little_endian(UINT8 *p, const UINT8 *key_name, UINT8 
 #endif
 }
 
+#if 0 //Unused
 void smp_debug_print_nbyte_big_endian (UINT8 *p, const UINT8 *key_name, UINT8 len)
 {
 #if SMP_DEBUG == TRUE
@@ -115,6 +116,7 @@ void smp_debug_print_nbyte_big_endian (UINT8 *p, const UINT8 *key_name, UINT8 le
     }
 #endif
 }
+#endif
 
 /*******************************************************************************
 **

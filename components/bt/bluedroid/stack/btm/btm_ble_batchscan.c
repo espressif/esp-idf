@@ -30,9 +30,15 @@
 
 #if (BLE_INCLUDED == TRUE)
 
-tBTM_BLE_BATCH_SCAN_CB ble_batchscan_cb;
-tBTM_BLE_ADV_TRACK_CB ble_advtrack_cb;
-
+#if BTM_DYNAMIC_MEMORY == FALSE
+tBTM_BLE_BATCH_SCAN_CB      ble_batchscan_cb;
+tBTM_BLE_ADV_TRACK_CB       ble_advtrack_cb;
+#else
+tBTM_BLE_BATCH_SCAN_CB      *ble_batchscan_cb_ptr;
+tBTM_BLE_ADV_TRACK_CB       *ble_advtrack_cb_ptr;
+#define ble_batchscan_cb    (*ble_batchscan_cb_ptr)
+#define ble_advtrack_cb     (*ble_advtrack_cb_ptr)
+#endif
 
 /* length of each batch scan command */
 #define BTM_BLE_BATCH_SCAN_STORAGE_CFG_LEN      4
@@ -896,6 +902,14 @@ tBTM_STATUS BTM_BleTrackAdvertiser(tBTM_BLE_TRACK_ADV_CBACK *p_track_cback,
 *******************************************************************************/
 void btm_ble_batchscan_init(void)
 {
+#if BTM_DYNAMIC_MEMORY == TRUE
+    ble_batchscan_cb_ptr = (tBTM_BLE_BATCH_SCAN_CB *)osi_malloc(sizeof(tBTM_BLE_BATCH_SCAN_CB));
+    ble_advtrack_cb_ptr = (tBTM_BLE_ADV_TRACK_CB *)osi_malloc(sizeof(tBTM_BLE_ADV_TRACK_CB));
+    if (ble_batchscan_cb_ptr == NULL || ble_advtrack_cb_ptr == NULL) {
+        BTM_TRACE_ERROR("%s malloc failed", __func__);
+        return;
+    }
+#endif
     BTM_TRACE_EVENT (" btm_ble_batchscan_init");
     memset(&ble_batchscan_cb, 0, sizeof(tBTM_BLE_BATCH_SCAN_CB));
     memset(&ble_advtrack_cb, 0, sizeof(tBTM_BLE_ADV_TRACK_CB));
@@ -927,6 +941,13 @@ void btm_ble_batchscan_cleanup(void)
 
     memset(&ble_batchscan_cb, 0, sizeof(tBTM_BLE_BATCH_SCAN_CB));
     memset(&ble_advtrack_cb, 0, sizeof(tBTM_BLE_ADV_TRACK_CB));
+
+#if BTM_DYNAMIC_MEMORY == TRUE
+    osi_free(ble_batchscan_cb_ptr);
+    osi_free(ble_advtrack_cb_ptr);
+    ble_batchscan_cb_ptr = NULL;
+    ble_advtrack_cb_ptr = NULL;
+#endif
 }
 
 #endif

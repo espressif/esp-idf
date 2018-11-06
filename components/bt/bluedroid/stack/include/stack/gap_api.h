@@ -325,6 +325,18 @@ extern UINT8 GAP_SetTraceLevel (UINT8 new_level);
 *******************************************************************************/
 extern void GAP_Init(void);
 
+/*******************************************************************************
+**
+** Function         GAP_Deinit
+**
+** Description      This function is called to deinitialize the control block
+**                  for this layer.
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void GAP_Deinit(void);
+
 #if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
 **

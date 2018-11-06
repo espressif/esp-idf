@@ -52,7 +52,7 @@ static void gatt_cl_op_cmpl_cback(UINT16 conn_id, tGATTC_OPTYPE op, tGATT_STATUS
 static void gatt_cl_start_config_ccc(tGATT_PROFILE_CLCB *p_clcb);
 
 
-static tGATT_CBACK gatt_profile_cback = {
+static const tGATT_CBACK gatt_profile_cback = {
     gatt_connect_cback,
     gatt_cl_op_cmpl_cback,
     gatt_disc_res_cback,
@@ -308,7 +308,7 @@ static void gatt_connect_cback (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn_id,
         p_clcb->connected = TRUE;
         p_clcb->conn_id = conn_id;
     }
-    
+
 
     if (!p_clcb->connected) {
         /* wait for connection */
@@ -348,7 +348,7 @@ void gatt_profile_db_init (void)
 
     service_handle = GATTS_CreateService (gatt_cb.gatt_if , &uuid, 0, GATTP_MAX_ATTR_NUM, TRUE);
     GATT_TRACE_DEBUG ("GATTS_CreateService:  handle of service handle%x", service_handle);
-	
+
     /* add Service Changed characteristic
     */
     uuid.uu.uuid16 = gatt_cb.gattp_attr.uuid = GATT_UUID_GATT_SRV_CHGD;

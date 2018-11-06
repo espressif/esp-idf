@@ -25,6 +25,7 @@
 #pragma once
 
 #include "p_256_multprecision.h"
+#include "common/bt_target.h"
 
 typedef unsigned long  DWORD;
 
@@ -53,8 +54,16 @@ typedef struct {
 
 } elliptic_curve_t;
 
+#if SMP_DYNAMIC_MEMORY == FALSE
 extern elliptic_curve_t curve;
 extern elliptic_curve_t curve_p256;
+#else
+extern elliptic_curve_t *curve_ptr;
+extern elliptic_curve_t *curve_p256_ptr;
+#define curve           (*curve_ptr)
+#define curve_p256      (*curve_p256_ptr)
+#endif
+
 
 void ECC_PointMult_Bin_NAF(Point *q, Point *p, DWORD *n, uint32_t keyLength);
 

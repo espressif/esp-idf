@@ -466,6 +466,11 @@ void esp_hf_client_pcm_resample_init(uint32_t src_sps, uint32_t bits, uint32_t c
     BTA_DmPcmInitSamples(src_sps, bits, channels);
 }
 
+void esp_hf_client_pcm_resample_deinit(void)
+{
+    BTA_DmPcmDeinitSamples();
+}
+
 int32_t esp_hf_client_pcm_resample(void *src, uint32_t in_bytes, void *dst)
 {
     return BTA_DmPcmResample(src, in_bytes, dst);

@@ -49,7 +49,7 @@ static void  gap_ble_c_connect_cback (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn
                                       tGATT_DISCONN_REASON reason, tGATT_TRANSPORT transport);
 static void  gap_ble_c_cmpl_cback (UINT16 conn_id, tGATTC_OPTYPE op, tGATT_STATUS status, tGATT_CL_COMPLETE *p_data);
 
-static tGATT_CBACK gap_cback = {
+static const tGATT_CBACK gap_cback = {
     gap_ble_c_connect_cback,
     gap_ble_c_cmpl_cback,
     NULL,

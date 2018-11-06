@@ -35,40 +35,6 @@
 
 #if BTC_AV_INCLUDED
 
-/*****************************************************************************
-**  Constants & Macros
-******************************************************************************/
-#define BTC_RC_CT_INIT_MAGIC            0x20181128
-#define BTC_RC_TG_INIT_MAGIC            0x20181129
-
-#define MAX_RC_NOTIFICATIONS            (13)  // refer to ESP_AVRC_RN_MAX_EVT
-
-#define CHECK_ESP_RC_CONNECTED       do { \
-        BTC_TRACE_DEBUG("## %s ##", __FUNCTION__); \
-        if (btc_rc_cb.rc_connected == FALSE) { \
-            BTC_TRACE_WARNING("Function %s() called when RC is not connected", __FUNCTION__); \
-        return ESP_ERR_INVALID_STATE; \
-        } \
-    } while (0)
-
-/*****************************************************************************
-**  Local type definitions
-******************************************************************************/
-typedef struct {
-    BOOLEAN registered;
-    UINT8 label;
-} btc_rc_reg_ntf_t;
-
-typedef struct {
-    BOOLEAN                     rc_connected;
-    UINT8                       rc_handle;
-    tBTA_AV_FEAT                rc_features;
-    UINT16                      rc_ct_features;
-    UINT16                      rc_tg_features;
-    BD_ADDR                     rc_addr;
-    btc_rc_reg_ntf_t            rc_ntf[MAX_RC_NOTIFICATIONS];
-} btc_rc_cb_t;
-
 static UINT8 opcode_from_pdu(UINT8 pdu);
 static void send_reject_response (UINT8 rc_handle, UINT8 label, UINT8 pdu, UINT8 status);
 static void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open);
@@ -86,7 +52,11 @@ static void btc_rc_upstreams_evt(UINT16 event, tAVRC_COMMAND *pavrc_cmd, UINT8 c
 static uint32_t s_rc_ct_init;
 static uint32_t s_rc_tg_init;
 
+#if AVRC_DYNAMIC_MEMORY == FALSE
 static btc_rc_cb_t btc_rc_cb;
+#else
+btc_rc_cb_t *btc_rc_cb_ptr;
+#endif ///AVRC_DYNAMIC_MEMORY == FALSE
 
 const static uint16_t cs_psth_allowed_cmd[8] = {
     0x0000, /* bit mask: 0=SELECT, 1=UP, 2=DOWN, 3=LEFT,
@@ -1031,7 +1001,9 @@ static void btc_avrc_ct_init(void)
 
     /// initialize CT-TG shared resources
     if (s_rc_tg_init != BTC_RC_TG_INIT_MAGIC) {
-        memset (&btc_rc_cb, 0, sizeof(btc_rc_cb));
+        memset (&btc_rc_cb, 0, sizeof(btc_rc_cb_t));
+        btc_rc_cb.rc_vol_label = MAX_LABEL;
+        btc_rc_cb.rc_volume = MAX_VOLUME;
     }
 }
 
@@ -1059,7 +1031,7 @@ static void btc_avrc_ct_deinit(void)
 
     /// deinit CT-TG shared resources
     if (s_rc_tg_init != BTC_RC_TG_INIT_MAGIC) {
-        memset (&btc_rc_cb, 0, sizeof(btc_rc_cb));
+        memset (&btc_rc_cb, 0, sizeof(btc_rc_cb_t));
     }
 
     BTC_TRACE_API("## %s ## completed", __FUNCTION__);
