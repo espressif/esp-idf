@@ -336,7 +336,7 @@ class IperfTestUtility(object):
         else:
             raise AssertionError("Failed to scan AP")
         self.dut.write("sta {} {}".format(self.ap_ssid, self.ap_password))
-        dut_ip = self.dut.expect(re.compile(r"event: sta ip: ([\d.]+), mask: ([\d.]+), gw: ([\d.]+)"))[0]
+        dut_ip = self.dut.expect(re.compile(r"sta ip: ([\d.]+), mask: ([\d.]+), gw: ([\d.]+)"))[0]
         return dut_ip, rssi
 
     def _save_test_result(self, test_case, raw_data, att, rssi, heap_size):
