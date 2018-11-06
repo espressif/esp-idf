@@ -762,6 +762,7 @@ PROVIDE ( lmp_io_cap_req_handler = 0x4002c7a4 );
 PROVIDE ( ld_acl_tx_packet_type_select = 0x4002fb40 );
 PROVIDE ( ld_acl_sched = 0x40033268 );
 PROVIDE ( ld_acl_sniff_sched = 0x4003340c );
+PROVIDE ( ld_acl_clk_isr = 0x40030cf8 );
 PROVIDE ( lm_cmd_cmp_send = 0x40051838 );
 PROVIDE ( r_ld_acl_active_hop_types_get = 0x40036e10 );
 PROVIDE ( r_ld_acl_afh_confirm = 0x40036d40 );
@@ -1485,8 +1486,8 @@ PROVIDE ( esp_rom_spiflash_attach = 0x40062a6c );
 PROVIDE ( esp_rom_spiflash_config_clk = 0x40062bc8 );
 PROVIDE ( g_rom_spiflash_chip = 0x3ffae270 );
 
-/* 
-These functions are xtos-related (or call xtos-related functions) and do not play well 
+/*
+These functions are xtos-related (or call xtos-related functions) and do not play well
 with multicore FreeRTOS. Where needed, we provide alternatives that are multicore
 compatible. These functions also use a chunk of static RAM, by not using them we can
 allocate that RAM for general use.
