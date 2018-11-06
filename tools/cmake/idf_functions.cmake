@@ -67,7 +67,7 @@ function(idf_set_global_compiler_options)
 
     add_c_compile_options(-std=gnu99)
 
-    add_cxx_compile_options(-std=gnu++11 -fno-rtti)
+    add_cxx_compile_options(${IDF_CXX_STD} -fno-rtti)
 
     if(CONFIG_CXX_EXCEPTIONS)
         add_cxx_compile_options(-fexceptions)
