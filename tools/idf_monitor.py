@@ -373,7 +373,7 @@ class Monitor(object):
                 else:
                     raise RuntimeError("Bad event data %r" % ((event_tag,data),))
         except SerialStopException:
-            pass
+            sys.stderr.write(ANSI_NORMAL + "Stopping condition has been received\n")
         finally:
             try:
                 self.console_reader.stop()
