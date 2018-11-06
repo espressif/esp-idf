@@ -196,7 +196,6 @@ if (netif->input(p, netif) != ERR_OK) {
   /* full packet send to tcpip_thread to process */
 if (netif->input(p, netif) != ERR_OK) {
   LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
-  p->l2_owner = NULL;
   pbuf_free(p);
 }
 #endif
