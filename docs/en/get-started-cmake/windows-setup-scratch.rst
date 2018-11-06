@@ -2,6 +2,8 @@
 Setup Windows Toolchain from Scratch (CMake)
 ********************************************
 
+:link_to_translation:`zh_CN:[中文]`
+
 .. include:: ../cmake-warning.rst
 
 This is a step-by-step alternative to running the :doc:`ESP-IDF Tools Installer <windows-setup>` for the CMake-based build system. Installing all of the tools by hand allows more control over the process, and also provides the information for advanced users to customize the install.

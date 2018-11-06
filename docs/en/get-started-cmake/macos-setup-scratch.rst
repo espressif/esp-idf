@@ -2,6 +2,8 @@
 Setup Toolchain for Mac OS from Scratch (CMake)
 ***********************************************
 
+:link_to_translation:`zh_CN:[中文]`
+
 .. include:: ../cmake-warning.rst
 
 Package Manager
