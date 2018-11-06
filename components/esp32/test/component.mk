@@ -6,7 +6,11 @@ COMPONENT_EXTRA_CLEAN := test_tjpgd_logo.h
 
 COMPONENT_ADD_LDFLAGS = -Wl,--whole-archive -l$(COMPONENT_NAME) -Wl,--no-whole-archive
 
-COMPONENT_SRCDIRS := . test_vectors
+ifdef CONFIG_TEST_ESP32_SUBTEST_ONLY
+COMPONENT_SRCDIRS := psram_4m
+else
+COMPONENT_SRCDIRS := . test_vectors psram_4m
+endif
 
 # Calculate MD5 value of header file esp_wifi_os_adapter.h
 WIFI_OS_ADAPTER_MD5_VAL=\"$(shell md5sum $(IDF_PATH)/components/esp32/include/esp_wifi_os_adapter.h | cut -c 1-7)\"

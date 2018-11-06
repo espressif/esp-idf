@@ -32,6 +32,7 @@
 #include "driver/periph_ctrl.h"
 #include "xtensa/core-macros.h"
 #include "bootloader_clock.h"
+#include "driver/spi_common.h"
 
 /* Number of cycles to wait from the 32k XTAL oscillator to consider it running.
  * Larger values increase startup delay. Smaller values may cause false positive
@@ -131,10 +132,10 @@ void esp_clk_init(void)
     // Wait for UART TX to finish, otherwise some UART output will be lost
     // when switching APB frequency
     uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
-    
+
     rtc_clk_cpu_freq_set_config(&new_config);
 
-    // Re calculate the ccount to make time calculation correct. 
+    // Re calculate the ccount to make time calculation correct.
     XTHAL_SET_CCOUNT( XTHAL_GET_CCOUNT() * new_freq_mhz / old_freq_mhz );
 }
 
@@ -292,11 +293,16 @@ void esp_perip_clk_init(void)
                         DPORT_SPI_DMA_CLK_EN;
 
 #if CONFIG_SPIRAM_SPEED_80M
-//80MHz SPIRAM uses SPI3 as well; it's initialized before this is called. Because it is used in
+//80MHz SPIRAM uses SPI2/SPI3 as well; it's initialized before this is called. Because it is used in
 //a weird mode where clock to the peripheral is disabled but reset is also disabled, it 'hangs'
 //in a state where it outputs a continuous 80MHz signal. Mask its bit here because we should
 //not modify that state, regardless of what we calculated earlier.
-    common_perip_clk &= ~DPORT_SPI3_CLK_EN;
+    if (!spicommon_periph_in_use(HSPI_HOST)) {
+        common_perip_clk &= ~DPORT_SPI2_CLK_EN;
+    }
+    if (!spicommon_periph_in_use(VSPI_HOST)) {
+        common_perip_clk &= ~DPORT_SPI3_CLK_EN;
+    }
 #endif
 
     /* Change I2S clock to audio PLL first. Because if I2S uses 160MHz clock,
