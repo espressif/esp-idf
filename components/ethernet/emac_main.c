@@ -73,6 +73,7 @@ static uint8_t emac_sig_cnt[EMAC_SIG_MAX] = {0};
 static TimerHandle_t emac_timer = NULL;
 static SemaphoreHandle_t emac_rx_xMutex = NULL;
 static SemaphoreHandle_t emac_tx_xMutex = NULL;
+static intr_handle_t eth_intr_handle = NULL;
 static const char *TAG = "emac";
 static bool pause_send = false;
 #ifdef CONFIG_PM_ENABLE
@@ -1168,7 +1169,7 @@ esp_err_t esp_eth_init_internal(eth_config_t *config)
                 EMAC_TASK_PRIORITY,
                 &emac_task_hdl);
 
-    esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, 0, emac_process_intr, NULL, NULL);
+    esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, 0, emac_process_intr, NULL, &eth_intr_handle);
 
     emac_config.emac_status = EMAC_RUNTIME_INIT;
 
@@ -1211,6 +1212,7 @@ esp_err_t esp_eth_deinit(void)
         free(emac_dma_tx_buf[i]);
         emac_dma_tx_buf[i] = NULL;
     }
+    esp_intr_free(eth_intr_handle);
     ret = ESP_OK;
 _exit:
     return ret;
