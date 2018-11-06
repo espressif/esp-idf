@@ -6,6 +6,7 @@ set(COMPONENT_SRCS "locks.c"
                    "syscall_table.c"
                    "syscalls.c"
                    "termios.c"
+                   "utime.c"
                    "time.c")
 set(COMPONENT_ADD_INCLUDEDIRS platform_include include)
 
