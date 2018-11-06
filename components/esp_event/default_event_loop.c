@@ -113,3 +113,7 @@ esp_err_t esp_event_loop_delete_default()
 }
 
 
+/* Include the code to forward legacy system_event_t events to the this default
+ * event loop.
+ */
+#include "event_send_compat.inc"
