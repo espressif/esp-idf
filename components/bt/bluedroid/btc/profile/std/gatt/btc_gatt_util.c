@@ -20,7 +20,7 @@
 #define GATTC_READ_VALUE_TYPE_VALUE          0x0000  /* Attribute value itself */
 #define GATTC_READ_VALUE_TYPE_AGG_FORMAT     0x2905  /* Characteristic Aggregate Format*/
 
-static unsigned char BASE_UUID[16] = {
+static const unsigned char BASE_UUID[16] = {
     0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80,
     0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };

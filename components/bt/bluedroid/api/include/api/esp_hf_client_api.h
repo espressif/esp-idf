@@ -616,6 +616,11 @@ void esp_hf_client_outgoing_data_ready(void);
 void esp_hf_client_pcm_resample_init(uint32_t src_sps, uint32_t bits, uint32_t channels);
 
 /**
+ * @brief           Deinitialize the down sampling converter.
+ */
+void esp_hf_client_pcm_resample_deinit(void);
+
+/**
  * @brief           Down sampling utility to convert high sampling rate into 8K/16bits 1-channel mode PCM
  *                  samples. This can only be used in the case that Voice Over HCI is enabled.
  *

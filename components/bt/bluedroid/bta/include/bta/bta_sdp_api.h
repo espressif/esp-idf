@@ -98,6 +98,19 @@ extern tBTA_SDP_STATUS BTA_SdpEnable(tBTA_SDP_DM_CBACK *p_cback);
 
 /*******************************************************************************
 **
+** Function         BTA_SdpDisable
+**
+** Description      Disable the SDP search I/F service.
+**                  Free buffer for SDP configuration structure.
+**
+** Returns          BTA_SDP_SUCCESS if successful.
+**                  BTA_SDP_FAIL if internal failure.
+**
+*******************************************************************************/
+extern tBTA_SDP_STATUS BTA_SdpDisable(void);
+
+/*******************************************************************************
+**
 ** Function         BTA_SdpSearch
 **
 ** Description      Start a search for sdp records for a specific BD_ADDR with a

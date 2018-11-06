@@ -28,6 +28,7 @@
 #include <string.h>
 #include "bta/bta_api.h"
 #include "bta/bta_sys.h"
+#include "osi/allocator.h"
 
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
 
@@ -67,7 +68,7 @@ typedef struct {
     UINT32              divisor;
 } tBTA_DM_PCM_RESAMPLE_CB;
 
-tBTA_DM_PCM_RESAMPLE_CB bta_dm_pcm_cb;
+static tBTA_DM_PCM_RESAMPLE_CB* p_bta_dm_pcm_cb;
 
 /*****************************************************************************
 **  Macro Definition
@@ -560,7 +561,11 @@ INT32 Convert_16S_ToBT_NoFilter (void *pSrc, void *pDst, UINT32 dwSrcSamples, UI
 *******************************************************************************/
 void BTA_DmPcmInitSamples (UINT32 src_sps, UINT32 bits, UINT32 n_channels)
 {
-    tBTA_DM_PCM_RESAMPLE_CB *p_cb = &bta_dm_pcm_cb;
+    if ((p_bta_dm_pcm_cb = (tBTA_DM_PCM_RESAMPLE_CB *)osi_malloc(sizeof(tBTA_DM_PCM_RESAMPLE_CB))) == NULL) {
+        APPL_TRACE_ERROR("%s malloc failed!", __func__);
+        return;
+    }
+    tBTA_DM_PCM_RESAMPLE_CB *p_cb = p_bta_dm_pcm_cb;
 
     p_cb->cur_pos       = src_sps / 2;
     p_cb->src_sps       = src_sps;
@@ -615,6 +620,20 @@ void BTA_DmPcmInitSamples (UINT32 src_sps, UINT32 bits, UINT32 n_channels)
 
 }
 
+/*******************************************************************************
+**
+** Function         BTA_DmPcmDeinitSamples
+**
+** Description      Deinitialize the down sample converter.
+**
+** Returns          none
+**
+*******************************************************************************/
+void BTA_DmPcmDeinitSamples(void) {
+    osi_free(p_bta_dm_pcm_cb);
+    p_bta_dm_pcm_cb = NULL;
+}
+
 /**************************************************************************************
 ** Function         BTA_DmPcmResample
 **
@@ -636,14 +655,14 @@ INT32 BTA_DmPcmResample (void *p_src, UINT32 in_bytes, void *p_dst)
     UINT32 out_sample;
 
 #if BTA_DM_SCO_DEBUG
-    APPL_TRACE_DEBUG("bta_pcm_resample : insamples  %d",  (in_bytes  / bta_dm_pcm_cb.divisor));
+    APPL_TRACE_DEBUG("bta_pcm_resample : insamples  %d",  (in_bytes  / p_bta_dm_pcm_cb->divisor));
 #endif
-    if (bta_dm_pcm_cb.can_be_filtered) {
-        out_sample = (*bta_dm_pcm_cb.filter) (p_src, p_dst, (in_bytes  / bta_dm_pcm_cb.divisor),
-                                              bta_dm_pcm_cb.src_sps, (INT32 *) &bta_dm_pcm_cb.cur_pos, bta_dm_pcm_cb.overlap_area);
+    if (p_bta_dm_pcm_cb->can_be_filtered) {
+        out_sample = (*p_bta_dm_pcm_cb->filter) (p_src, p_dst, (in_bytes  / p_bta_dm_pcm_cb->divisor),
+                                              p_bta_dm_pcm_cb->src_sps, (INT32 *) &(p_bta_dm_pcm_cb->cur_pos), p_bta_dm_pcm_cb->overlap_area);
     } else {
-        out_sample = (*bta_dm_pcm_cb.nofilter) (p_src, p_dst,
-                                                (in_bytes / bta_dm_pcm_cb.divisor), bta_dm_pcm_cb.src_sps);
+        out_sample = (*p_bta_dm_pcm_cb->nofilter) (p_src, p_dst,
+                                                (in_bytes / p_bta_dm_pcm_cb->divisor), p_bta_dm_pcm_cb->src_sps);
     }
 
 #if BTA_DM_SCO_DEBUG

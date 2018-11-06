@@ -24,10 +24,10 @@ typedef struct {
     /* Protocol reference */
     tGATT_IF                gatt_if;
     UINT8                   srvc_inst;
-    UINT16                  handle_srvc;             
-    UINT16                  handle_char_p2e;             
-    UINT16                  handle_char_e2p;             
-    UINT16                  handle_descr_e2p;             
+    UINT16                  handle_srvc;
+    UINT16                  handle_char_p2e;
+    UINT16                  handle_char_e2p;
+    UINT16                  handle_descr_e2p;
     UINT16                  conn_id;
     BOOLEAN                 is_connected;
     BD_ADDR                 remote_bda;
@@ -68,17 +68,24 @@ struct blufi_frag_hdr {
 };
 typedef struct blufi_frag_hdr blufi_frag_hdr_t;
 
-#define BLUFI_DATA_SEC_MODE_CHECK_MASK  0x01  
-#define BLUFI_DATA_SEC_MODE_ENC_MASK    0x02  
-#define BLUFI_CTRL_SEC_MODE_CHECK_MASK  0x10  
+#if GATT_DYNAMIC_MEMORY == FALSE
+extern tBLUFI_ENV blufi_env;
+#else
+extern tBLUFI_ENV *blufi_env_ptr;
+#define blufi_env (*blufi_env_ptr)
+#endif
+
+#define BLUFI_DATA_SEC_MODE_CHECK_MASK  0x01
+#define BLUFI_DATA_SEC_MODE_ENC_MASK    0x02
+#define BLUFI_CTRL_SEC_MODE_CHECK_MASK  0x10
 #define BLUFI_CTRL_SEC_MODE_ENC_MASK    0x20
 #define BLUFI_MAX_DATA_LEN              255
 
 // packet type
 #define BLUFI_TYPE_MASK         0x03
-#define BLUFI_TYPE_SHIFT        0 
+#define BLUFI_TYPE_SHIFT        0
 #define BLUFI_SUBTYPE_MASK      0xFC
-#define BLUFI_SUBTYPE_SHIFT     2 
+#define BLUFI_SUBTYPE_SHIFT     2
 
 #define BLUFI_GET_TYPE(type)    ((type) & BLUFI_TYPE_MASK)
 #define BLUFI_GET_SUBTYPE(type) (((type) & BLUFI_SUBTYPE_MASK) >>BLUFI_SUBTYPE_SHIFT)
@@ -161,12 +168,12 @@ typedef struct blufi_frag_hdr blufi_frag_hdr_t;
 #define BLUFI_FC_REQ_ACK        0x08
 #define BLUFI_FC_FRAG           0x10
 
-#define BLUFI_FC_IS_ENC(fc)       ((fc) & BLUFI_FC_ENC_MASK) 
-#define BLUFI_FC_IS_CHECK(fc)     ((fc) & BLUFI_FC_CHECK_MASK) 
-#define BLUFI_FC_IS_DIR_P2E(fc)   ((fc) & BLUFI_FC_DIR_P2E_MASK) 
-#define BLUFI_FC_IS_DIR_E2P(fc)   (!((fc) & BLUFI_DIR_P2E_MASK)) 
-#define BLUFI_FC_IS_REQ_ACK(fc)   ((fc) & BLUFI_FC_REQ_ACK_MASK) 
-#define BLUFI_FC_IS_FRAG(fc)      ((fc) & BLUFI_FC_FRAG_MASK) 
+#define BLUFI_FC_IS_ENC(fc)       ((fc) & BLUFI_FC_ENC_MASK)
+#define BLUFI_FC_IS_CHECK(fc)     ((fc) & BLUFI_FC_CHECK_MASK)
+#define BLUFI_FC_IS_DIR_P2E(fc)   ((fc) & BLUFI_FC_DIR_P2E_MASK)
+#define BLUFI_FC_IS_DIR_E2P(fc)   (!((fc) & BLUFI_DIR_P2E_MASK))
+#define BLUFI_FC_IS_REQ_ACK(fc)   ((fc) & BLUFI_FC_REQ_ACK_MASK)
+#define BLUFI_FC_IS_FRAG(fc)      ((fc) & BLUFI_FC_FRAG_MASK)
 
 /* BLUFI HEADER + TOTAL(REMAIN) LENGTH + CRC + L2CAP RESERVED */
 #define BLUFI_MTU_RESERVED_SIZE     (sizeof(struct blufi_hdr) + 2 + 2 + 3)

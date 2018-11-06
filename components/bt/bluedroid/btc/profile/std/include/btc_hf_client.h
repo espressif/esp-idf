@@ -112,6 +112,34 @@ typedef union {
     } reg_data_cb;
 } btc_hf_client_args_t;
 
+/************************************************************************************
+**  Local type definitions
+************************************************************************************/
+/* BTC-HF control block to map bdaddr to BTA handle */
+typedef struct
+{
+    bool                               initialized;
+    UINT16                             handle;
+    bt_bdaddr_t                        connected_bda;
+    esp_hf_client_connection_state_t   state;
+    esp_hf_vr_state_t                  vr_state;
+    tBTA_HF_CLIENT_PEER_FEAT           peer_feat;
+    tBTA_HF_CLIENT_CHLD_FEAT           chld_feat;
+} btc_hf_client_cb_t;
+
+typedef struct
+{
+    UINT32                              btc_hf_client_features;
+    btc_hf_client_cb_t                  btc_hf_client_cb;
+    esp_hf_client_incoming_data_cb_t    btc_hf_client_incoming_data_cb;
+    esp_hf_client_outgoing_data_cb_t    btc_hf_client_outgoing_data_cb;
+}hf_client_local_param_t;
+
+#if HFP_DYNAMIC_MEMORY == TRUE
+extern hf_client_local_param_t *hf_client_local_param_ptr;
+#define hf_client_local_param (*hf_client_local_param_ptr)
+#endif
+
 /*******************************************************************************
 **  BTC HF AG API
 ********************************************************************************/

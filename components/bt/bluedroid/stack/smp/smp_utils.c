@@ -866,9 +866,10 @@ void smp_mask_enc_key(UINT8 loc_enc_size, UINT8 *p_data)
 ** Returns          void
 **
 *******************************************************************************/
-void smp_xor_128(BT_OCTET16 a, BT_OCTET16 b)
+void smp_xor_128(BT_OCTET16 a, const BT_OCTET16 b)
 {
-    UINT8 i, *aa = a, *bb = b;
+    UINT8 i, *aa = a;
+    const UINT8 *bb = b;
 
     SMP_TRACE_EVENT("smp_xor_128\n");
     for (i = 0; i < BT_OCTET16_LEN; i++) {

@@ -1809,6 +1809,17 @@ extern void bta_dmexecutecallback (tBTA_DM_EXEC_CBACK *p_callback, void *p_param
 *******************************************************************************/
 extern void BTA_DmPcmInitSamples (UINT32 src_sps, UINT32 bits, UINT32 n_channels);
 
+/*******************************************************************************
+**
+** Function         BTA_DmPcmDeinitSamples
+**
+** Description      Deinitialize the down sample converter.
+**
+** Returns          none
+**
+*******************************************************************************/
+extern void BTA_DmPcmDeinitSamples(void);
+
 /**************************************************************************************
 ** Function         BTA_DmPcmResample
 **

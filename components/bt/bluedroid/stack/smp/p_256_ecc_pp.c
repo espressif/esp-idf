@@ -26,9 +26,15 @@
 #include <string.h>
 #include "p_256_ecc_pp.h"
 #include "p_256_multprecision.h"
+#include "common/bt_target.h"
 
+#if SMP_DYNAMIC_MEMORY == FALSE
 elliptic_curve_t curve;
 elliptic_curve_t curve_p256;
+#else
+elliptic_curve_t *curve_ptr;
+elliptic_curve_t *curve_p256_ptr;
+#endif
 
 static void p_256_init_point(Point *q)
 {
@@ -248,7 +254,7 @@ bool ECC_CheckPointIsInElliCur_P256(Point *p)
     DWORD x_x_q[KEY_LENGTH_DWORDS_P256] = {0x0};
     /* x % q */
     DWORD x_q[KEY_LENGTH_DWORDS_P256] = {0x0};
-    /* x^2, To prevent overflow, the length of the x square here needs to 
+    /* x^2, To prevent overflow, the length of the x square here needs to
        be expanded to two times the original one. */
     DWORD x_x[2*KEY_LENGTH_DWORDS_P256] = {0x0};
     /* y_y_q =(p->y)^2(mod q) */
@@ -259,7 +265,7 @@ bool ECC_CheckPointIsInElliCur_P256(Point *p)
        y^2 = (x^2 - 3)*x + b (mod q),
        so we calculate the x^2 - 3 value here */
     x_x[0] -= 3;
-    /* Using math relations. (a*b) % q = ((a%q)*(b%q)) % q ==> 
+    /* Using math relations. (a*b) % q = ((a%q)*(b%q)) % q ==>
       (x^2 - 3)*x = (((x^2 - 3) % q) * x % q) % q */
     multiprecision_fast_mod_P256(x_x_q, x_x);
     /* x_x = x_x_q * x_q */

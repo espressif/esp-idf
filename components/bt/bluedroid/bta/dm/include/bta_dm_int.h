@@ -976,7 +976,6 @@ typedef struct {
 
 }  tBTA_DM_CONNECTED_SRVCS;
 
-extern tBTA_DM_CONNECTED_SRVCS bta_dm_conn_srvcs;
 
 #if (BTA_DM_PM_INCLUDED == TRUE)
 
@@ -1150,8 +1149,8 @@ typedef struct {
 
 } tBTA_DM_RM ;
 
-extern tBTA_DM_CFG *p_bta_dm_cfg;
-extern tBTA_DM_RM *p_bta_dm_rm_cfg;
+extern tBTA_DM_CFG *const p_bta_dm_cfg;
+extern tBTA_DM_RM *const p_bta_dm_rm_cfg;
 
 typedef struct {
 
@@ -1192,11 +1191,11 @@ typedef struct {
 } tBTA_DM_LMP_VER_INFO;
 
 #if (BTA_DM_PM_INCLUDED == TRUE)
-extern tBTA_DM_PM_CFG *p_bta_dm_pm_cfg;
-extern tBTA_DM_PM_SPEC *p_bta_dm_pm_spec;
-extern tBTM_PM_PWR_MD *p_bta_dm_pm_md;
+extern tBTA_DM_PM_CFG *const p_bta_dm_pm_cfg;
+extern tBTA_DM_PM_SPEC *const p_bta_dm_pm_spec;
+extern tBTM_PM_PWR_MD *const p_bta_dm_pm_md;
 #if (BTM_SSR_INCLUDED == TRUE)
-extern tBTA_DM_SSR_SPEC *p_bta_dm_ssr_spec;
+extern tBTA_DM_SSR_SPEC *const p_bta_dm_ssr_spec;
 #endif
 #endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
 
@@ -1226,6 +1225,19 @@ extern tBTA_DM_DI_CB  bta_dm_di_cb;
 #else
 extern tBTA_DM_DI_CB *bta_dm_di_cb_ptr;
 #define bta_dm_di_cb (*bta_dm_di_cb_ptr)
+#endif
+
+#if BTA_DYNAMIC_MEMORY == FALSE
+extern tBTA_DM_CONNECTED_SRVCS  bta_dm_conn_srvcs;
+#else
+extern tBTA_DM_CONNECTED_SRVCS *bta_dm_conn_srvcs_ptr;
+#define bta_dm_conn_srvcs (*bta_dm_conn_srvcs_ptr)
+#endif
+
+/* Discovery raw data buffer */
+#define MAX_DISC_RAW_DATA_BUF       (1024)
+#if BTA_DYNAMIC_MEMORY == TRUE
+extern UINT8 *g_disc_raw_data_buf;
 #endif
 
 extern BOOLEAN bta_dm_sm_execute(BT_HDR *p_msg);

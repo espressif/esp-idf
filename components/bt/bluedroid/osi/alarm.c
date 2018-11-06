@@ -44,7 +44,11 @@ enum {
 static osi_mutex_t alarm_mutex;
 static int alarm_state;
 
+#if BT_BLE_DYNAMIC_ENV_MEMORY == FALSE
 static struct alarm_t alarm_cbs[ALARM_CBS_NUM];
+#else
+static struct alarm_t *alarm_cbs;
+#endif
 
 static osi_alarm_err_t alarm_free(osi_alarm_t *alarm);
 static osi_alarm_err_t alarm_set(osi_alarm_t *alarm, period_ms_t timeout, bool is_periodic);
@@ -78,7 +82,14 @@ void osi_alarm_init(void)
         OSI_TRACE_WARNING("%s, invalid state %d\n", __func__, alarm_state);
         goto end;
     }
-    memset(alarm_cbs, 0x00, sizeof(alarm_cbs));
+#if BT_BLE_DYNAMIC_ENV_MEMORY == TRUE
+    if ((alarm_cbs = (osi_alarm_t *)osi_malloc(sizeof(osi_alarm_t) * ALARM_CBS_NUM)) == NULL) {
+        OSI_TRACE_ERROR("%s, malloc failed\n", __func__);
+        goto end;
+    }
+#endif
+
+    memset(alarm_cbs, 0x00, sizeof(osi_alarm_t) * ALARM_CBS_NUM);
     alarm_state = ALARM_STATE_OPEN;
 
 end:
@@ -100,6 +111,12 @@ void osi_alarm_deinit(void)
             alarm_free(&alarm_cbs[i]);
         }
     }
+
+#if BT_BLE_DYNAMIC_ENV_MEMORY == TRUE
+    osi_free(alarm_cbs);
+    alarm_cbs = NULL;
+#endif
+
     alarm_state = ALARM_STATE_IDLE;
 
 end:

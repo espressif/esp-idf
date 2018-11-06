@@ -2049,12 +2049,6 @@ The maximum number of payload octets that the local device can receive in a sing
 #define HEAP_ALLOCATION_FROM_SPIRAM_FIRST FALSE
 #endif
 
-#if UC_BT_BLE_DYNAMIC_ENV_MEMORY
-#define BT_BLE_DYNAMIC_ENV_MEMORY   TRUE
-#else
-#define BT_BLE_DYNAMIC_ENV_MEMORY   FALSE
-#endif
-
 #include "common/bt_trace.h"
 
 #endif /* BT_TARGET_H */

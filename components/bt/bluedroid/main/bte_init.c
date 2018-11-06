@@ -116,7 +116,6 @@
 
 #if BTA_JV_INCLUDED==TRUE
 #include "bta_jv_int.h"
-tBTA_JV_CB *bta_jv_cb_ptr = NULL;
 #endif
 
 #if BTA_HL_INCLUDED == TRUE
@@ -224,10 +223,14 @@ void BTE_InitStack(void)
     if ((bta_dm_di_cb_ptr = (tBTA_DM_DI_CB *)osi_malloc(sizeof(tBTA_DM_DI_CB))) == NULL) {
         return;
     }
+    if ((bta_dm_conn_srvcs_ptr = (tBTA_DM_CONNECTED_SRVCS *)osi_malloc(sizeof(tBTA_DM_CONNECTED_SRVCS))) == NULL) {
+        return;
+    }
     memset((void *)bta_sys_cb_ptr, 0, sizeof(tBTA_SYS_CB));
     memset((void *)bta_dm_cb_ptr, 0, sizeof(tBTA_DM_CB));
     memset((void *)bta_dm_search_cb_ptr, 0, sizeof(tBTA_DM_SEARCH_CB));
     memset((void *)bta_dm_di_cb_ptr, 0, sizeof(tBTA_DM_DI_CB));
+    memset((void *)bta_dm_conn_srvcs_ptr, 0, sizeof(tBTA_DM_CONNECTED_SRVCS));
     //memset((void *)bta_prm_cb_ptr, 0, sizeof(tBTA_PRM_CB));
 
 #if (defined BTA_HF_INCLUDED && BTA_HF_INCLUDED == TRUE)
@@ -251,6 +254,12 @@ void BTE_InitStack(void)
     }
     memset((void *)bta_sdp_cb_ptr, 0, sizeof(tBTA_SDP_CB));
 #endif
+#if SDP_INCLUDED == TRUE
+    if ((g_disc_raw_data_buf = (UINT8 *)osi_malloc(MAX_DISC_RAW_DATA_BUF)) == NULL) {
+        return;
+    }
+    memset((void *)g_disc_raw_data_buf, 0, MAX_DISC_RAW_DATA_BUF);
+#endif
 #if BTA_AR_INCLUDED==TRUE
     if ((bta_ar_cb_ptr = (tBTA_AR_CB *)osi_malloc(sizeof(tBTA_AR_CB))) == NULL) {
         return;
@@ -262,6 +271,11 @@ void BTE_InitStack(void)
         return;
     }
     memset((void *)bta_av_cb_ptr, 0, sizeof(tBTA_AV_CB));
+
+    if ((bta_av_sbc_ups_cb_ptr = (tBTA_AV_SBC_UPS_CB *)osi_malloc(sizeof(tBTA_AV_SBC_UPS_CB))) == NULL) {
+        return;
+    }
+    memset((void *)bta_av_sbc_ups_cb_ptr, 0, sizeof(tBTA_AV_SBC_UPS_CB));
 #endif
 #if BTA_HH_INCLUDED==TRUE
     if ((bta_hh_cb_ptr = (tBTA_HH_CB *)osi_malloc(sizeof(tBTA_HH_CB))) == NULL) {
@@ -322,10 +336,16 @@ void BTE_DeinitStack(void)
 #if BTA_AV_INCLUDED==TRUE
     osi_free(bta_av_cb_ptr);
     bta_av_cb_ptr = NULL;
+    osi_free(bta_av_sbc_ups_cb_ptr);
+    bta_av_sbc_ups_cb_ptr = NULL;
 #endif
 #if BTA_AR_INCLUDED==TRUE
     osi_free(bta_ar_cb_ptr);
     bta_ar_cb_ptr = NULL;
+#endif
+#if SDP_INCLUDED == TRUE
+    osi_free(g_disc_raw_data_buf);
+    g_disc_raw_data_buf = NULL;
 #endif
 #if BTA_SDP_INCLUDED == TRUE
     osi_free(bta_sdp_cb_ptr);
@@ -339,6 +359,8 @@ void BTE_DeinitStack(void)
     osi_free(bta_hf_client_cb_ptr);
     bta_hf_client_cb_ptr = NULL;
 #endif
+    osi_free(bta_dm_conn_srvcs_ptr);
+    bta_dm_conn_srvcs_ptr = NULL;
     osi_free(bta_dm_di_cb_ptr);
     bta_dm_di_cb_ptr = NULL;
     osi_free(bta_dm_search_cb_ptr);
@@ -348,6 +370,10 @@ void BTE_DeinitStack(void)
     osi_free(bta_sys_cb_ptr);
     bta_sys_cb_ptr = NULL;
 #endif // BTA_INCLUDED == TRUE
+
+#if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE)
+    GAP_Deinit();
+#endif
 
 #if (defined(AVCT_INCLUDED) && AVCT_INCLUDED == TRUE && AVCT_DYNAMIC_MEMORY == TRUE)
     osi_free(avct_cb_ptr);
@@ -365,5 +391,9 @@ void BTE_DeinitStack(void)
 
 #if (defined(A2D_INCLUDED) && A2D_INCLUDED == TRUE)
     A2D_Deinit();
+#endif
+
+#if (defined(RFCOMM_INCLUDED) && RFCOMM_INCLUDED == TRUE)
+    RFCOMM_Deinit();
 #endif
 }

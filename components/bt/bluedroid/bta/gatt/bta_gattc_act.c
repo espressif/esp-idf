@@ -68,7 +68,7 @@ static void bta_gattc_cong_cback (UINT16 conn_id, BOOLEAN congested);
 static void bta_gattc_req_cback (UINT16 conn_id, UINT32 trans_id, tGATTS_REQ_TYPE type, tGATTS_DATA *p_data);
 static tBTA_GATTC_FIND_SERVICE_CB bta_gattc_register_service_change_notify(UINT16 conn_id, BD_ADDR remote_bda);
 
-static tGATT_CBACK bta_gattc_cl_cback = {
+static const tGATT_CBACK bta_gattc_cl_cback = {
     bta_gattc_conn_cback,
     bta_gattc_cmpl_cback,
     bta_gattc_disc_res_cback,
@@ -79,7 +79,7 @@ static tGATT_CBACK bta_gattc_cl_cback = {
 };
 
 /* opcode(tGATTC_OPTYPE) order has to be comply with internal event order */
-static UINT16 bta_gattc_opcode_to_int_evt[] = {
+static const UINT16 bta_gattc_opcode_to_int_evt[] = {
     BTA_GATTC_API_READ_EVT,
     BTA_GATTC_API_WRITE_EVT,
     BTA_GATTC_API_EXEC_EVT,

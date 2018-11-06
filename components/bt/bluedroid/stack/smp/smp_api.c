@@ -51,8 +51,12 @@ void SMP_Init(void)
 {
 #if SMP_DYNAMIC_MEMORY
     smp_cb_ptr = (tSMP_CB *)osi_malloc(sizeof(tSMP_CB));
+    curve_ptr = (elliptic_curve_t *)osi_malloc(sizeof(elliptic_curve_t));
+    curve_p256_ptr = (elliptic_curve_t *)osi_malloc(sizeof(elliptic_curve_t));
 #endif
     memset(&smp_cb, 0, sizeof(tSMP_CB));
+    memset(&curve, 0, sizeof(elliptic_curve_t));
+    memset(&curve_p256, 0, sizeof(elliptic_curve_t));
 
 #if defined(SMP_INITIAL_TRACE_LEVEL)
     smp_cb.trace_level = SMP_INITIAL_TRACE_LEVEL;
@@ -71,6 +75,8 @@ void SMP_Free(void)
     memset(&smp_cb, 0, sizeof(tSMP_CB));
 #if SMP_DYNAMIC_MEMORY
     FREE_AND_RESET(smp_cb_ptr);
+    FREE_AND_RESET(curve_ptr);
+    FREE_AND_RESET(curve_p256_ptr);
 #endif /* #if SMP_DYNAMIC_MEMORY */
 }
 
