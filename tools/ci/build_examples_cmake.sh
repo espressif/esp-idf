@@ -126,8 +126,13 @@ build_example () {
         local BUILDLOG=${LOG_PATH}/ex_${ID}_log.txt
         touch ${BUILDLOG}
 
-        idf.py fullclean >>${BUILDLOG} 2>&1 &&
-        idf.py build >>${BUILDLOG} 2>&1 &&
+        if [ "$EXAMPLE_NAME" != "idf_as_lib" ]; then
+            idf.py fullclean >>${BUILDLOG} 2>&1 &&
+            idf.py build >>${BUILDLOG} 2>&1
+        else
+            rm -rf build sdkconfig &&
+            ./build.sh >>${BUILDLOG} 2>&1
+        fi &&
         cp build/flash_project_args build/download.config || # backwards compatible download.config filename
         {
             RESULT=$?; FAILED_EXAMPLES+=" ${EXAMPLE_NAME}" ;
